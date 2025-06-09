@@ -1,0 +1,23 @@
+{
+  "name": "xiaozhi-client",
+  "version": "0.0.1",
+  "description": "小智AI客户端，目前主要用于MCP的对接",
+  "main": "mcp_pipe.js",
+  "type": "module",
+  "bin": {
+    "xiaozhi": "./bin/xiaozhi"
+  },
+  "scripts": {
+    "start": "node mcp_pipe.js calculator.js"
+  },
+  "author": "shenjingnan",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "chalk": "^5.4.1",
+    "commander": "^14.0.0",
+    "dotenv": "^16.5.0",
+    "ora": "^8.2.0",
+    "ws": "^8.18.2"
+  }
+}
