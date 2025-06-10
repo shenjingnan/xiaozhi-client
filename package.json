@@ -19,5 +19,8 @@
     "dotenv": "^16.5.0",
     "ora": "^8.2.0",
     "ws": "^8.18.2"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.3"
   }
 }
