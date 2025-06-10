@@ -10,12 +10,19 @@ import ProxyMcpServer from './proxyMcpServer.js';
 import SettingManager from './settingManager.js';
 import process from 'process';
 
+// 定义MCP服务器配置接口
+interface McpServerConfig {
+  command: string;
+  args?: string[];
+  env?: Record<string, string>;
+}
+
 // Create logger
 const logger = {
-  info: (msg) => console.error(`[ProxyRunner] INFO: ${msg}`),
-  error: (msg) => console.error(`[ProxyRunner] ERROR: ${msg}`),
-  debug: (msg) => console.error(`[ProxyRunner] DEBUG: ${msg}`),
-  warning: (msg) => console.error(`[ProxyRunner] WARNING: ${msg}`)
+  info: (msg: string) => console.error(`[ProxyRunner] INFO: ${msg}`),
+  error: (msg: string) => console.error(`[ProxyRunner] ERROR: ${msg}`),
+  debug: (msg: string) => console.error(`[ProxyRunner] DEBUG: ${msg}`),
+  warning: (msg: string) => console.error(`[ProxyRunner] WARNING: ${msg}`)
 };
 
 /**
@@ -35,10 +42,10 @@ async function main() {
 
     // Filter out non-server entries (like "desc")
     const validServers = Object.fromEntries(
-      Object.entries(mcpServers).filter(([key, value]) =>
-        typeof value === 'object' && value.command
+      Object.entries(mcpServers).filter(([, value]) =>
+        typeof value === 'object' && value !== null && 'command' in value && typeof (value as McpServerConfig).command === 'string'
       )
-    );
+    ) as Record<string, McpServerConfig>;
 
     if (Object.keys(validServers).length === 0) {
       logger.error('No valid MCP servers found in configuration');
@@ -52,7 +59,8 @@ async function main() {
     await proxyServer.start();
 
   } catch (error) {
-    logger.error(`Failed to start proxy server: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error(`Failed to start proxy server: ${errorMessage}`);
     process.exit(1);
   }
 }

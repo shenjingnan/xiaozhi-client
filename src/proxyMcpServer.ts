@@ -12,25 +12,54 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  CallToolRequest,
 } from '@modelcontextprotocol/sdk/types.js';
-import { spawn } from 'child_process';
+import { spawn, ChildProcess } from 'child_process';
 import process from 'process';
+
+// 定义接口
+interface McpServerConfig {
+  command: string;
+  args?: string[];
+  env?: Record<string, string>;
+}
+
+interface BackendServer {
+  process: ChildProcess;
+  tools: any[];
+  ready: boolean;
+  messageQueue: any[];
+  responseHandlers: Map<any, { resolve: (value: any) => void; reject: (reason: any) => void }>;
+}
+
+interface Logger {
+  info: (msg: string) => void;
+  error: (msg: string) => void;
+  debug: (msg: string) => void;
+  warning: (msg: string) => void;
+}
 
 /**
  * ProxyMcpServer class that manages multiple backend MCP servers
  */
 export default class ProxyMcpServer {
-  constructor(mcpServersConfig) {
+  private mcpServersConfig: Record<string, McpServerConfig>;
+  private backendServers: Map<string, BackendServer>;
+  private aggregatedTools: any[];
+  private logger: Logger;
+  private server: Server;
+
+  constructor(mcpServersConfig: Record<string, McpServerConfig>) {
     this.mcpServersConfig = mcpServersConfig;
     this.backendServers = new Map(); // serverName -> { process, tools, ready }
     this.aggregatedTools = []; // All tools with prefixed names
     
     // Create logger
     this.logger = {
-      info: (msg) => console.error(`[ProxyMCP] INFO: ${msg}`),
-      error: (msg) => console.error(`[ProxyMCP] ERROR: ${msg}`),
-      debug: (msg) => console.error(`[ProxyMCP] DEBUG: ${msg}`),
-      warning: (msg) => console.error(`[ProxyMCP] WARNING: ${msg}`)
+      info: (msg: string) => console.error(`[ProxyMCP] INFO: ${msg}`),
+      error: (msg: string) => console.error(`[ProxyMCP] ERROR: ${msg}`),
+      debug: (msg: string) => console.error(`[ProxyMCP] DEBUG: ${msg}`),
+      warning: (msg: string) => console.error(`[ProxyMCP] WARNING: ${msg}`)
     };
 
     // Create MCP server
@@ -62,23 +91,23 @@ export default class ProxyMcpServer {
     });
 
     // Handle tool call requests
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    this.server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest) => {
       const { name, arguments: args } = request.params;
-      
+
       // Parse the prefixed tool name to find the target server
       const { serverName, originalToolName } = this.parseToolName(name);
-      
+
       if (!serverName || !this.backendServers.has(serverName)) {
         throw new Error(`Unknown tool: ${name}`);
       }
 
       const backendServer = this.backendServers.get(serverName);
-      if (!backendServer.ready) {
+      if (!backendServer || !backendServer.ready) {
         throw new Error(`Backend server ${serverName} is not ready`);
       }
 
       // Forward the request to the backend server
-      return await this.forwardToolCall(serverName, originalToolName, args);
+      return await this.forwardToolCall(serverName, originalToolName!, args);
     });
   }
 
@@ -86,7 +115,7 @@ export default class ProxyMcpServer {
    * Parse a prefixed tool name to extract server name and original tool name
    * Format: serverName_toolName (with hyphens converted to underscores in serverName)
    */
-  parseToolName(prefixedName) {
+  parseToolName(prefixedName: string): { serverName: string | null; originalToolName: string | null } {
     // Find all possible server names that could match
     for (const serverName of Object.keys(this.mcpServersConfig)) {
       const prefix = this.getServerPrefix(serverName);
@@ -101,7 +130,7 @@ export default class ProxyMcpServer {
   /**
    * Get the prefix for a server name (convert hyphens to underscores and add underscore)
    */
-  getServerPrefix(serverName) {
+  getServerPrefix(serverName: string): string {
     return serverName.replace(/-/g, '_') + '__xzcli__';
   }
 
@@ -122,15 +151,14 @@ export default class ProxyMcpServer {
   /**
    * Start a single backend MCP server
    */
-  async startBackendServer(serverName, serverConfig) {
+  async startBackendServer(serverName: string, serverConfig: McpServerConfig): Promise<void> {
     const { command, args = [], env = {} } = serverConfig;
-    
+
     // Merge environment variables
     const processEnv = { ...process.env, ...env };
 
     const childProcess = spawn(command, args, {
       stdio: ['pipe', 'pipe', 'pipe'],
-      encoding: 'utf8',
       env: processEnv
     });
 
@@ -155,27 +183,27 @@ export default class ProxyMcpServer {
   /**
    * Setup event handlers for a backend server process
    */
-  setupBackendServerHandlers(serverName, backendServer) {
+  setupBackendServerHandlers(serverName: string, backendServer: BackendServer): void {
     const { process: childProcess } = backendServer;
 
     // Handle process exit
-    childProcess.on('exit', (code, signal) => {
+    childProcess.on('exit', (code: number | null, signal: NodeJS.Signals | null) => {
       this.logger.warning(`Backend server ${serverName} exited with code ${code}, signal ${signal}`);
       backendServer.ready = false;
       this.backendServers.delete(serverName);
     });
 
     // Handle process error
-    childProcess.on('error', (error) => {
+    childProcess.on('error', (error: Error) => {
       this.logger.error(`Backend server ${serverName} error: ${error.message}`);
       backendServer.ready = false;
     });
 
     // Handle stderr
     if (childProcess.stderr) {
-      childProcess.stderr.on('data', (data) => {
-        const lines = data.toString().split('\n').filter(line => line.trim());
-        lines.forEach(line => {
+      childProcess.stderr.on('data', (data: Buffer) => {
+        const lines = data.toString().split('\n').filter((line: string) => line.trim());
+        lines.forEach((line: string) => {
           this.logger.debug(`[${serverName}] ${line}`);
         });
       });
@@ -201,33 +229,36 @@ export default class ProxyMcpServer {
   /**
    * Handle messages from backend servers
    */
-  handleBackendMessage(serverName, message) {
+  handleBackendMessage(serverName: string, message: string): void {
     try {
       const parsed = JSON.parse(message);
       const backendServer = this.backendServers.get(serverName);
-      
+
       if (!backendServer) return;
 
       // Handle responses to our requests
       if (parsed.id && backendServer.responseHandlers.has(parsed.id)) {
         const handler = backendServer.responseHandlers.get(parsed.id);
-        backendServer.responseHandlers.delete(parsed.id);
-        
-        if (parsed.error) {
-          handler.reject(new Error(parsed.error.message || 'Backend server error'));
-        } else {
-          handler.resolve(parsed.result);
+        if (handler) {
+          backendServer.responseHandlers.delete(parsed.id);
+
+          if (parsed.error) {
+            handler.reject(new Error(parsed.error.message || 'Backend server error'));
+          } else {
+            handler.resolve(parsed.result);
+          }
         }
       }
     } catch (error) {
-      this.logger.error(`Failed to parse message from ${serverName}: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Failed to parse message from ${serverName}: ${errorMessage}`);
     }
   }
 
   /**
    * Initialize a backend server and get its tools
    */
-  async initializeBackendServer(serverName, backendServer) {
+  async initializeBackendServer(serverName: string, backendServer: BackendServer): Promise<void> {
     try {
       // Send initialize request
       await this.sendToBackendServer(serverName, {
@@ -250,7 +281,7 @@ export default class ProxyMcpServer {
         id: 2,
         method: 'tools/list',
         params: {}
-      });
+      }) as any;
 
       if (toolsResult && toolsResult.tools) {
         backendServer.tools = toolsResult.tools;
@@ -259,14 +290,15 @@ export default class ProxyMcpServer {
         this.logger.info(`Backend server ${serverName} is ready with ${toolsResult.tools.length} tools`);
       }
     } catch (error) {
-      this.logger.error(`Failed to initialize backend server ${serverName}: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Failed to initialize backend server ${serverName}: ${errorMessage}`);
     }
   }
 
   /**
    * Send a message to a backend server and wait for response
    */
-  async sendToBackendServer(serverName, message) {
+  async sendToBackendServer(serverName: string, message: any): Promise<any> {
     const backendServer = this.backendServers.get(serverName);
     if (!backendServer || !backendServer.process || backendServer.process.killed) {
       throw new Error(`Backend server ${serverName} is not available`);
@@ -286,7 +318,9 @@ export default class ProxyMcpServer {
 
       // Send message
       const messageStr = JSON.stringify(message) + '\n';
-      backendServer.process.stdin.write(messageStr);
+      if (backendServer.process.stdin) {
+        backendServer.process.stdin.write(messageStr);
+      }
     });
   }
 
@@ -321,9 +355,9 @@ export default class ProxyMcpServer {
   /**
    * Forward a tool call to the appropriate backend server
    */
-  async forwardToolCall(serverName, toolName, args) {
+  async forwardToolCall(serverName: string, toolName: string, args: any): Promise<any> {
     const requestId = Date.now() + Math.random();
-    
+
     const result = await this.sendToBackendServer(serverName, {
       jsonrpc: '2.0',
       id: requestId,
@@ -369,7 +403,8 @@ export default class ProxyMcpServer {
       
       this.logger.info('Proxy MCP Server started successfully');
     } catch (error) {
-      this.logger.error(`Failed to start proxy server: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Failed to start proxy server: ${errorMessage}`);
       throw error;
     }
   }

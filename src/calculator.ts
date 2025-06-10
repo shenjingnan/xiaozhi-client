@@ -15,9 +15,9 @@ import {
 
 // Create logger
 const logger = {
-  info: (msg) => console.error(`[Calculator] INFO: ${msg}`),
-  error: (msg) => console.error(`[Calculator] ERROR: ${msg}`),
-  debug: (msg) => console.error(`[Calculator] DEBUG: ${msg}`)
+  info: (msg: string) => console.error(`[Calculator] INFO: ${msg}`),
+  error: (msg: string) => console.error(`[Calculator] ERROR: ${msg}`),
+  debug: (msg: string) => console.error(`[Calculator] DEBUG: ${msg}`)
 };
 
 // Create MCP server
@@ -61,7 +61,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   
   if (name === 'calculator') {
     try {
-      const expression = args.javascript_expression;
+      const expression = args?.javascript_expression;
       
       // Create a safe evaluation context with Math and random functions
       const safeContext = {
@@ -104,12 +104,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         ]
       };
     } catch (error) {
-      logger.error(`Error calculating expression: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error(`Error calculating expression: ${errorMessage}`);
       return {
         content: [
           {
             type: 'text',
-            text: JSON.stringify({ success: false, error: error.message })
+            text: JSON.stringify({ success: false, error: errorMessage })
           }
         ]
       };

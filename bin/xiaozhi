@@ -5,4 +5,4 @@
  * 提供配置管理和其他实用功能
  */
 
-import '../src/cli.js';
+import '../dist/cli.js';

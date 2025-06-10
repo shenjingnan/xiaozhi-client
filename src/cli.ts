@@ -12,8 +12,15 @@ import SettingManager from './settingManager.js';
 import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { spawn, fork } from 'child_process';
+import { spawn } from 'child_process';
 import process from 'process';
+
+// 定义MCP服务器配置接口
+interface McpServerConfig {
+  command: string;
+  args?: string[];
+  env?: Record<string, string>;
+}
 
 // 获取package.json中的版本信息
 const __filename = fileURLToPath(import.meta.url);
@@ -32,7 +39,7 @@ class ProcessManager {
   /**
    * 检查进程是否正在运行
    */
-  static isProcessRunning(pid) {
+  static isProcessRunning(pid: number): boolean {
     try {
       // 发送信号0来检查进程是否存在，不会实际杀死进程
       process.kill(pid, 0);
@@ -45,7 +52,7 @@ class ProcessManager {
   /**
    * 获取当前运行的服务PID
    */
-  static getRunningPid() {
+  static getRunningPid(): number | null {
     if (!existsSync(PID_FILE)) {
       return null;
     }
@@ -67,33 +74,34 @@ class ProcessManager {
   /**
    * 保存PID到文件
    */
-  static savePid(pid) {
+  static savePid(pid: number): void {
     try {
-      const settingManager = SettingManager.getInstance();
       // 确保.xiaozhi目录存在
       writeFileSync(PID_FILE, pid.toString());
     } catch (error) {
-      console.error(chalk.red(`保存PID文件失败: ${error.message}`));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(chalk.red(`保存PID文件失败: ${errorMessage}`));
     }
   }
 
   /**
    * 清理PID文件
    */
-  static cleanupPidFile() {
+  static cleanupPidFile(): void {
     try {
       if (existsSync(PID_FILE)) {
         unlinkSync(PID_FILE);
       }
     } catch (error) {
-      console.error(chalk.red(`清理PID文件失败: ${error.message}`));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(chalk.red(`清理PID文件失败: ${errorMessage}`));
     }
   }
 
   /**
    * 停止运行中的服务
    */
-  static stopService(pid) {
+  static stopService(pid: number): boolean {
     try {
       process.kill(pid, 'SIGTERM');
 
@@ -168,14 +176,16 @@ program
         // 后台模式启动
         console.log(chalk.blue('正在后台启动小智服务...'));
 
-        const child = spawn('node', [join(__dirname, 'mcp_pipe.js')], {
+        const child = spawn('node', [join(__dirname, 'mcpWebSocketClient.js')], {
           detached: true,
           stdio: ['ignore', 'ignore', 'ignore'],
           cwd: join(__dirname, '..')
         });
 
         // 保存PID
-        ProcessManager.savePid(child.pid);
+        if (child.pid) {
+          ProcessManager.savePid(child.pid);
+        }
 
         // 分离子进程，让它独立运行
         child.unref();
@@ -200,7 +210,9 @@ program
         });
 
         // 保存PID
-        ProcessManager.savePid(child.pid);
+        if (child.pid) {
+          ProcessManager.savePid(child.pid);
+        }
 
         // 处理进程退出
         child.on('exit', (code, signal) => {
@@ -223,7 +235,8 @@ program
       }
 
     } catch (error) {
-      spinner.fail(chalk.red(`启动服务失败: ${error.message}`));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      spinner.fail(chalk.red(`启动服务失败: ${errorMessage}`));
       process.exit(1);
     }
   });
@@ -255,7 +268,8 @@ program
       }
 
     } catch (error) {
-      spinner.fail(chalk.red(`停止服务失败: ${error.message}`));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      spinner.fail(chalk.red(`停止服务失败: ${errorMessage}`));
       process.exit(1);
     }
   });
@@ -291,8 +305,8 @@ program
       const mcpServers = settingManager.get('mcpServers');
       if (mcpServers && typeof mcpServers === 'object') {
         const validServers = Object.fromEntries(
-          Object.entries(mcpServers).filter(([key, value]) =>
-            typeof value === 'object' && value.command
+          Object.entries(mcpServers).filter(([, value]) =>
+            typeof value === 'object' && value !== null && 'command' in value && typeof (value as McpServerConfig).command === 'string'
           )
         );
         console.log(chalk.blue(`  MCP服务器: ${Object.keys(validServers).length}个`));
@@ -304,7 +318,8 @@ program
       }
 
     } catch (error) {
-      console.error(chalk.red(`获取状态失败: ${error.message}`));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(chalk.red(`获取状态失败: ${errorMessage}`));
       process.exit(1);
     }
   });
@@ -342,13 +357,15 @@ program
       console.log(chalk.gray('按 Ctrl+C 停止服务'));
       console.log('');
 
-      const child = spawn('node', [join(__dirname, 'mcp_pipe.js')], {
+      const child = spawn('node', [join(__dirname, 'mcpWebSocketClient.js')], {
         stdio: 'inherit',
         cwd: join(__dirname, '..')
       });
 
       // 保存PID
-      ProcessManager.savePid(child.pid);
+      if (child.pid) {
+        ProcessManager.savePid(child.pid);
+      }
 
       // 处理进程退出
       child.on('exit', (code, signal) => {
@@ -370,7 +387,8 @@ program
       });
 
     } catch (error) {
-      spinner.fail(chalk.red(`转换到前台失败: ${error.message}`));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      spinner.fail(chalk.red(`转换到前台失败: ${errorMessage}`));
       process.exit(1);
     }
   });
@@ -401,12 +419,13 @@ program
 
       // 重新启动服务（复用start命令的逻辑）
       const startCommand = program.commands.find(cmd => cmd.name() === 'start');
-      if (startCommand) {
-        await startCommand._actionHandler(options);
+      if (startCommand && typeof (startCommand as any)._actionHandler === 'function') {
+        await (startCommand as any)._actionHandler(options);
       }
 
     } catch (error) {
-      spinner.fail(chalk.red(`重启服务失败: ${error.message}`));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      spinner.fail(chalk.red(`重启服务失败: ${errorMessage}`));
       process.exit(1);
     }
   });
@@ -457,7 +476,8 @@ program
       console.log(chalk.gray(`配置已保存到: .xiaozhi/settings.json`));
       
     } catch (error) {
-      spinner.fail(chalk.red(`配置更新失败: ${error.message}`));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      spinner.fail(chalk.red(`配置更新失败: ${errorMessage}`));
       process.exit(1);
     }
   });
@@ -492,7 +512,8 @@ program
       }
       
     } catch (error) {
-      console.error(chalk.red(`获取配置失败: ${error.message}`));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(chalk.red(`获取配置失败: ${errorMessage}`));
       process.exit(1);
     }
   });

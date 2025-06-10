@@ -2,13 +2,20 @@
   "name": "xiaozhi-client",
   "version": "0.0.1",
   "description": "小智AI客户端，目前主要用于MCP的对接",
-  "main": "src/mcpWebSocketClient.js",
+  "main": "dist/mcpWebSocketClient.js",
   "type": "module",
   "bin": {
     "xiaozhi": "./bin/xiaozhi"
   },
   "scripts": {
-    "start": "node src/mcpWebSocketClient.js"
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "npm run build && node dist/mcpWebSocketClient.js",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "test": "vitest",
+    "prepublishOnly": "npm run build"
   },
   "author": "shenjingnan",
   "license": "MIT",
@@ -21,6 +28,9 @@
     "ws": "^8.18.2"
   },
   "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/ws": "^8.18.1",
+    "typescript": "^5.8.3",
     "vitest": "^3.2.3"
   }
 }

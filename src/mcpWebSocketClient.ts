@@ -19,12 +19,19 @@ import SettingManager from './settingManager.js';
 // Load environment variables
 config();
 
+// 定义MCP服务器配置接口
+interface McpServerConfig {
+  command: string;
+  args?: string[];
+  env?: Record<string, string>;
+}
+
 // Configure logging
 const logger = {
-  info: (msg) => console.log(`[${new Date().toISOString()}] [SIMPLE] INFO: ${msg}`),
-  error: (msg) => console.error(`[${new Date().toISOString()}] [SIMPLE] ERROR: ${msg}`),
-  warning: (msg) => console.warn(`[${new Date().toISOString()}] [SIMPLE] WARNING: ${msg}`),
-  debug: (msg) => console.log(`[${new Date().toISOString()}] [SIMPLE] DEBUG: ${msg}`)
+  info: (msg: string) => console.log(`[${new Date().toISOString()}] [SIMPLE] INFO: ${msg}`),
+  error: (msg: string) => console.error(`[${new Date().toISOString()}] [SIMPLE] ERROR: ${msg}`),
+  warning: (msg: string) => console.warn(`[${new Date().toISOString()}] [SIMPLE] WARNING: ${msg}`),
+  debug: (msg: string) => console.log(`[${new Date().toISOString()}] [SIMPLE] DEBUG: ${msg}`)
 };
 
 async function main() {
@@ -50,8 +57,8 @@ async function main() {
 
     // Filter out non-server entries (like "desc")
     const validServers = Object.fromEntries(
-      Object.entries(mcpServers).filter(([key, value]) =>
-        typeof value === 'object' && value.command
+      Object.entries(mcpServers).filter(([, value]) =>
+        typeof value === 'object' && value !== null && 'command' in value && typeof (value as McpServerConfig).command === 'string'
       )
     );
 
@@ -66,16 +73,15 @@ async function main() {
     
     // Start proxy server
     logger.info('Starting proxy MCP server...');
-    const proxyProcess = spawn('node', ['src/proxyMcpServerRunner.js'], {
-      stdio: ['pipe', 'pipe', 'pipe'],
-      encoding: 'utf8'
+    const proxyProcess = spawn('node', ['dist/proxyMcpServerRunner.js'], {
+      stdio: ['pipe', 'pipe', 'pipe']
     });
     
     // Handle proxy process stderr
     if (proxyProcess.stderr) {
-      proxyProcess.stderr.on('data', (data) => {
-        const lines = data.toString().split('\n').filter(line => line.trim());
-        lines.forEach(line => {
+      proxyProcess.stderr.on('data', (data: Buffer) => {
+        const lines = data.toString().split('\n').filter((line: string) => line.trim());
+        lines.forEach((line: string) => {
           console.error(`[ProxyMCP] ${line}`);
         });
       });
@@ -92,20 +98,20 @@ async function main() {
       logger.info('WebSocket connection opened');
     });
     
-    ws.on('message', (data) => {
+    ws.on('message', (data: WebSocket.Data) => {
       const message = data.toString();
       logger.info(`<< ${message.substring(0, 100)}...`);
-      
+
       // Forward to proxy server
       if (proxyProcess && !proxyProcess.killed) {
-        proxyProcess.stdin.write(message + '\n');
+        proxyProcess.stdin?.write(message + '\n');
       }
     });
-    
+
     // Handle proxy server stdout
     if (proxyProcess.stdout) {
       let buffer = '';
-      proxyProcess.stdout.on('data', (data) => {
+      proxyProcess.stdout.on('data', (data: Buffer) => {
         buffer += data.toString();
         const lines = buffer.split('\n');
         buffer = lines.pop() || '';
@@ -122,14 +128,14 @@ async function main() {
       });
     }
     
-    ws.on('close', (code, reason) => {
+    ws.on('close', (code: number, reason: Buffer) => {
       logger.info(`WebSocket closed: ${code} ${reason}`);
       if (proxyProcess && !proxyProcess.killed) {
         proxyProcess.kill('SIGTERM');
       }
     });
-    
-    ws.on('error', (error) => {
+
+    ws.on('error', (error: Error) => {
       logger.error(`WebSocket error: ${error.message}`);
       if (proxyProcess && !proxyProcess.killed) {
         proxyProcess.kill('SIGTERM');
@@ -166,8 +172,10 @@ async function main() {
     });
     
   } catch (error) {
-    logger.error(`Error: ${error.message}`);
-    logger.error(`Stack: ${error.stack}`);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : '';
+    logger.error(`Error: ${errorMessage}`);
+    logger.error(`Stack: ${errorStack}`);
     process.exit(1);
   }
 }
