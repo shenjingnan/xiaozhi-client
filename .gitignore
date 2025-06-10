@@ -136,3 +136,4 @@ dist
 .pnp.*
 
 settings.json
+.DS_Store
