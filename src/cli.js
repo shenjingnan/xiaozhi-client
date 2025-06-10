@@ -8,7 +8,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import ora from 'ora';
-import SettingManager from './SettingManager.js';
+import SettingManager from './settingManager.js';
 import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -194,7 +194,7 @@ program
         console.log(chalk.gray('按 Ctrl+C 停止服务'));
         console.log('');
 
-        const child = spawn('node', [join(__dirname, 'mcp_pipe.js')], {
+        const child = spawn('node', [join(__dirname, 'mcpWebSocketClient.js')], {
           stdio: 'inherit',
           cwd: join(__dirname, '..')
         });

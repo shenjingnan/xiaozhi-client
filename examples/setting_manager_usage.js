@@ -5,7 +5,7 @@
  * 展示如何使用 SettingManager 来管理配置
  */
 
-import SettingManager from '../src/SettingManager.js';
+import SettingManager from '../src/settingManager.js';
 
 console.log('=== SettingManager 使用示例 ===\n');
 

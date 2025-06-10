@@ -14,7 +14,7 @@ import WebSocket from 'ws';
 import { spawn } from 'child_process';
 import { config } from 'dotenv';
 import process from 'process';
-import SettingManager from './SettingManager.js';
+import SettingManager from './settingManager.js';
 
 // Load environment variables
 config();
@@ -66,7 +66,7 @@ async function main() {
     
     // Start proxy server
     logger.info('Starting proxy MCP server...');
-    const proxyProcess = spawn('node', ['src/proxy_mcp_server_runner.js'], {
+    const proxyProcess = spawn('node', ['src/proxyMcpServerRunner.js'], {
       stdio: ['pipe', 'pipe', 'pipe'],
       encoding: 'utf8'
     });

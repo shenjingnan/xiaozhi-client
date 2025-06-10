@@ -15,7 +15,7 @@ SettingManager 是一个单例配置管理器，用于管理 `.xiaozhi/settings.
 ### 获取实例
 
 ```javascript
-import SettingManager from './src/SettingManager.js';
+import SettingManager from './src/settingManager.js';
 
 const settings = SettingManager.getInstance();
 ```
@@ -92,7 +92,7 @@ settings.reload();
 }
 ```
 
-## 在 mcp_pipe.js 中的使用
+## 在 mcpWebSocketClient.js 中的使用
 
 原来的代码使用环境变量：
 
@@ -103,7 +103,7 @@ const endpointUrl = process.env.MCP_ENDPOINT;
 现在使用 SettingManager：
 
 ```javascript
-import SettingManager from './SettingManager.js';
+import SettingManager from './settingManager.js';
 
 const settingManager = SettingManager.getInstance();
 const endpointUrl = settingManager.get('xiaozhi.endpoint');
