@@ -1,8 +1,0 @@
-#!/usr/bin/env node
-
-/**
- * Xiaozhi CLI - 小智AI客户端命令行工具
- * 提供配置管理和其他实用功能
- */
-
-import '../dist/cli.js';

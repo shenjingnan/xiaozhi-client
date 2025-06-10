@@ -5,10 +5,11 @@
   "main": "dist/mcpWebSocketClient.js",
   "type": "module",
   "bin": {
-    "xiaozhi": "./bin/xiaozhi"
+    "xiaozhi": "./dist/cli.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsup",
+    "build:tsc": "tsc",
     "dev": "tsc --watch",
     "start": "npm run build && node dist/mcpWebSocketClient.js",
     "clean": "rm -rf dist",
@@ -30,6 +31,7 @@
   "devDependencies": {
     "@types/node": "^24.0.0",
     "@types/ws": "^8.18.1",
+    "tsup": "^8.5.0",
     "typescript": "^5.8.3",
     "vitest": "^3.2.3"
   }

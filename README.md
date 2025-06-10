@@ -4,53 +4,93 @@
 
 ![效果图](./docs/preview.png)
 
-## 开发环境
+## 安装和使用
 
-本项目使用 TypeScript 开发，需要先编译后运行。
+### 开发环境
 
-### 安装依赖
+1. 克隆项目：
+```bash
+git clone <repository-url>
+cd xiaozhi-client
+```
 
+2. 安装依赖：
 ```bash
 pnpm install
 ```
 
-### 编译项目
-
+3. 构建项目：
 ```bash
 pnpm run build
 ```
 
-### 开发模式
-
+4. 本地安装（用于开发测试）：
 ```bash
-pnpm run dev  # 监听文件变化并自动编译
+npm link
 ```
 
-### 可用脚本
+现在你可以在任何地方使用 `xiaozhi` 命令了。
 
-- `pnpm run build` - 编译 TypeScript 代码到 dist/ 目录
-- `pnpm run dev` - 开发模式，监听文件变化
-- `pnpm run clean` - 清理编译输出
-- `pnpm run type-check` - 仅进行类型检查，不生成文件
-- `pnpm run start` - 编译并启动服务
+### 生产环境
 
-## 使用方法
+项目使用 tsup 打包成单个可执行的 JavaScript 文件，所有依赖都被正确处理。
 
-编译完成后，可以使用以下命令：
+构建后的文件位于 `dist/cli.js`，这是一个完整的可执行文件，包含：
+- 正确的 shebang (`#!/usr/bin/env node`)
+- 所有必要的代码（除了外部依赖）
+- 可执行权限
+
+### 可用命令
 
 ```bash
 # 查看帮助
-node bin/xiaozhi --help
+xiaozhi --help
 
 # 配置端点
-node bin/xiaozhi set-config xiaozhi.endpoint=wss://your-endpoint
+xiaozhi set-config xiaozhi.endpoint=wss://your-endpoint
 
 # 查看配置
-node bin/xiaozhi get-config
+xiaozhi get-config
 
 # 启动服务
-node bin/xiaozhi start
+xiaozhi start
+
+# 后台启动服务
+xiaozhi start --daemon
 
 # 查看服务状态
-node bin/xiaozhi status
+xiaozhi status
+
+# 停止服务
+xiaozhi stop
+
+# 重启服务
+xiaozhi restart
 ```
+
+## 开发
+
+### 构建脚本
+
+- `pnpm run build` - 使用 tsup 构建项目（推荐）
+- `pnpm run build:tsc` - 使用 TypeScript 编译器构建（备用）
+- `pnpm run clean` - 清理构建文件
+- `pnpm run dev` - 开发模式（监听文件变化）
+- `pnpm run type-check` - 仅进行类型检查
+- `pnpm run start` - 编译并启动服务
+
+### 技术栈
+
+- TypeScript
+- tsup (打包工具)
+- Commander.js (CLI 框架)
+- Chalk (终端颜色)
+- Ora (加载动画)
+
+### 打包特性
+
+- 使用 tsup 进行快速打包
+- 自动处理 shebang 重复问题
+- 自动添加可执行权限
+- 支持 ES 模块
+- 生成 source maps 和类型定义文件
