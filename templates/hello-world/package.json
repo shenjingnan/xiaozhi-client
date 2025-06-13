@@ -1,12 +1,12 @@
 {
-	"name": "hello-world",
-	"version": "1.0.0",
-	"description": "",
-	"keywords": [],
-	"author": "shenjingnan <sjn.code@gmail.com>",
-	"license": "MIT",
-	"dependencies": {
-		"@modelcontextprotocol/sdk": "^1.12.1",
-		"zod": "^3.25.64"
-	}
+  "name": "hello-world",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [],
+  "author": "shenjingnan <sjn.code@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "zod": "^3.25.64"
+  }
 }
