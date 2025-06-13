@@ -53,6 +53,7 @@ class MCPClient {
   private process: ChildProcess | null;
   public initialized: boolean;
   public tools: Tool[];
+  private originalTools: Tool[]; // 存储原始工具名称
   private requestId: number;
   private pendingRequests: Map<number, PendingRequest>;
   private messageBuffer: string;
@@ -63,9 +64,33 @@ class MCPClient {
     this.process = null;
     this.initialized = false;
     this.tools = [];
+    this.originalTools = [];
     this.requestId = 1;
     this.pendingRequests = new Map();
     this.messageBuffer = "";
+  }
+
+  /**
+   * 生成带前缀的工具名称
+   * 将服务器名称中的中划线替换为下划线，并添加 xzcli 前缀
+   */
+  private generatePrefixedToolName(originalToolName: string): string {
+    const normalizedServerName = this.name.replace(/-/g, "_");
+    return `${normalizedServerName}_xzcli_${originalToolName}`;
+  }
+
+  /**
+   * 根据前缀工具名称获取原始工具名称
+   */
+  getOriginalToolName(prefixedToolName: string): string | null {
+    const normalizedServerName = this.name.replace(/-/g, "_");
+    const prefix = `${normalizedServerName}_xzcli_`;
+
+    if (prefixedToolName.startsWith(prefix)) {
+      return prefixedToolName.substring(prefix.length);
+    }
+
+    return null;
   }
 
   async start() {
@@ -233,28 +258,45 @@ class MCPClient {
   async refreshTools(): Promise<void> {
     try {
       const result = await this.sendRequest("tools/list");
-      this.tools = (result as any).tools || [];
+      this.originalTools = (result as any).tools || [];
+
+      // 为每个工具生成带前缀的名称
+      this.tools = this.originalTools.map((tool) => ({
+        ...tool,
+        name: this.generatePrefixedToolName(tool.name),
+      }));
+
       logger.info(
-        `${this.name} loaded ${this.tools.length} tools: ${this.tools.map((t) => t.name).join(", ")}`
+        `${this.name} loaded ${this.originalTools.length} tools: ${this.originalTools.map((t) => t.name).join(", ")}`
+      );
+      logger.info(
+        `${this.name} prefixed tools: ${this.tools.map((t) => t.name).join(", ")}`
       );
     } catch (error) {
       logger.error(
         `Failed to get tools from ${this.name}: ${error instanceof Error ? error.message : String(error)}`
       );
       this.tools = [];
+      this.originalTools = [];
     }
   }
 
-  async callTool(name: string, arguments_: any): Promise<any> {
+  async callTool(prefixedName: string, arguments_: any): Promise<any> {
     try {
+      // 将前缀名称转换回原始名称
+      const originalName = this.getOriginalToolName(prefixedName);
+      if (!originalName) {
+        throw new Error(`Invalid tool name format: ${prefixedName}`);
+      }
+
       const result = await this.sendRequest("tools/call", {
-        name: name,
+        name: originalName,
         arguments: arguments_,
       });
       return result;
     } catch (error) {
       logger.error(
-        `Failed to call tool ${name} on ${this.name}: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to call tool ${prefixedName} (original: ${this.getOriginalToolName(prefixedName)}) on ${this.name}: ${error instanceof Error ? error.message : String(error)}`
       );
       throw error;
     }
@@ -396,6 +438,8 @@ class MCPServerProxy {
 
     for (const [clientName, client] of this.clients) {
       for (const tool of client.tools) {
+        // 工具名称现在已经带有前缀，应该不会有重复
+        // 但我们仍然检查以防万一
         if (this.toolMap.has(tool.name)) {
           logger.error(
             `Duplicate tool name: ${tool.name} (from ${clientName} and ${this.toolMap.get(tool.name)})`
@@ -407,6 +451,7 @@ class MCPServerProxy {
     }
 
     logger.info(`Built tool map with ${this.toolMap.size} tools`);
+    logger.debug(`Tool map: ${Array.from(this.toolMap.keys()).join(", ")}`);
   }
 
   getAllTools(): Tool[] {
