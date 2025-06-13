@@ -9,7 +9,8 @@
     "LICENSE"
   ],
   "bin": {
-    "xiaozhi": "./dist/cli.cjs"
+    "xiaozhi": "./dist/cli.cjs",
+    "xiaozhi-client": "./dist/cli.cjs"
   },
   "scripts": {
     "build": "tsup && sed -i '' 's/\\.js\"/\\.cjs\"/g' dist/*.cjs && sed -i '' '/const __dirname = /d' dist/*.cjs",
