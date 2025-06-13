@@ -442,8 +442,6 @@ async function restartService(daemon = false): Promise<void> {
   await startService(daemon);
 }
 
-
-
 /**
  * 显示详细信息
  */
