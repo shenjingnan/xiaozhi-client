@@ -7,14 +7,14 @@ import { resolve } from "node:path";
 
 // 配置文件接口定义
 export interface MCPServerConfig {
-	command: string;
-	args: string[];
-	env?: Record<string, string>;
+  command: string;
+  args: string[];
+  env?: Record<string, string>;
 }
 
 export interface AppConfig {
-	mcpEndpoint: string;
-	mcpServers: Record<string, MCPServerConfig>;
+  mcpEndpoint: string;
+  mcpServers: Record<string, MCPServerConfig>;
 }
 
 /**
@@ -22,274 +22,274 @@ export interface AppConfig {
  * 负责管理应用配置，提供只读访问和安全的配置更新功能
  */
 export class ConfigManager {
-	private static instance: ConfigManager;
-	private defaultConfigPath: string;
-	private config: AppConfig | null = null;
+  private static instance: ConfigManager;
+  private defaultConfigPath: string;
+  private config: AppConfig | null = null;
 
-	private constructor() {
-		this.defaultConfigPath = resolve(__dirname, "xiaozhi.config.default.json");
-	}
+  private constructor() {
+    this.defaultConfigPath = resolve(__dirname, "xiaozhi.config.default.json");
+  }
 
-	/**
-	 * 获取配置文件路径（动态计算）
-	 */
-	private getConfigFilePath(): string {
-		// 配置文件路径 - 优先使用环境变量指定的目录，否则使用当前工作目录
-		const configDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();
-		return resolve(configDir, "xiaozhi.config.json");
-	}
+  /**
+   * 获取配置文件路径（动态计算）
+   */
+  private getConfigFilePath(): string {
+    // 配置文件路径 - 优先使用环境变量指定的目录，否则使用当前工作目录
+    const configDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();
+    return resolve(configDir, "xiaozhi.config.json");
+  }
 
-	/**
-	 * 获取配置管理器单例实例
-	 */
-	public static getInstance(): ConfigManager {
-		if (!ConfigManager.instance) {
-			ConfigManager.instance = new ConfigManager();
-		}
-		return ConfigManager.instance;
-	}
+  /**
+   * 获取配置管理器单例实例
+   */
+  public static getInstance(): ConfigManager {
+    if (!ConfigManager.instance) {
+      ConfigManager.instance = new ConfigManager();
+    }
+    return ConfigManager.instance;
+  }
 
-	/**
-	 * 检查配置文件是否存在
-	 */
-	public configExists(): boolean {
-		const configPath = this.getConfigFilePath();
-		return existsSync(configPath);
-	}
+  /**
+   * 检查配置文件是否存在
+   */
+  public configExists(): boolean {
+    const configPath = this.getConfigFilePath();
+    return existsSync(configPath);
+  }
 
-	/**
-	 * 初始化配置文件
-	 * 从 config.default.json 复制到 config.json
-	 */
-	public initConfig(): void {
-		if (!existsSync(this.defaultConfigPath)) {
-			throw new Error("默认配置文件 xiaozhi.config.default.json 不存在");
-		}
+  /**
+   * 初始化配置文件
+   * 从 config.default.json 复制到 config.json
+   */
+  public initConfig(): void {
+    if (!existsSync(this.defaultConfigPath)) {
+      throw new Error("默认配置文件 xiaozhi.config.default.json 不存在");
+    }
 
-		if (this.configExists()) {
-			throw new Error("配置文件 xiaozhi.config.json 已存在，无需重复初始化");
-		}
+    if (this.configExists()) {
+      throw new Error("配置文件 xiaozhi.config.json 已存在，无需重复初始化");
+    }
 
-		const configPath = this.getConfigFilePath();
-		copyFileSync(this.defaultConfigPath, configPath);
-		this.config = null; // 重置缓存
-	}
+    const configPath = this.getConfigFilePath();
+    copyFileSync(this.defaultConfigPath, configPath);
+    this.config = null; // 重置缓存
+  }
 
-	/**
-	 * 加载配置文件
-	 */
-	private loadConfig(): AppConfig {
-		if (!this.configExists()) {
-			throw new Error(
-				"配置文件 xiaozhi.config.json 不存在，请先运行 xiaozhi init 初始化配置"
-			);
-		}
+  /**
+   * 加载配置文件
+   */
+  private loadConfig(): AppConfig {
+    if (!this.configExists()) {
+      throw new Error(
+        "配置文件 xiaozhi.config.json 不存在，请先运行 xiaozhi init 初始化配置"
+      );
+    }
 
-		try {
-			const configPath = this.getConfigFilePath();
-			const configData = readFileSync(configPath, "utf8");
-			const config = JSON.parse(configData) as AppConfig;
+    try {
+      const configPath = this.getConfigFilePath();
+      const configData = readFileSync(configPath, "utf8");
+      const config = JSON.parse(configData) as AppConfig;
 
-			// 验证配置结构
-			this.validateConfig(config);
+      // 验证配置结构
+      this.validateConfig(config);
 
-			return config;
-		} catch (error) {
-			if (error instanceof SyntaxError) {
-				throw new Error(`配置文件格式错误: ${error.message}`);
-			}
-			throw error;
-		}
-	}
+      return config;
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        throw new Error(`配置文件格式错误: ${error.message}`);
+      }
+      throw error;
+    }
+  }
 
-	/**
-	 * 验证配置文件结构
-	 */
-	private validateConfig(config: unknown): void {
-		if (!config || typeof config !== "object") {
-			throw new Error("配置文件格式错误：根对象无效");
-		}
+  /**
+   * 验证配置文件结构
+   */
+  private validateConfig(config: unknown): void {
+    if (!config || typeof config !== "object") {
+      throw new Error("配置文件格式错误：根对象无效");
+    }
 
-		const configObj = config as Record<string, unknown>;
+    const configObj = config as Record<string, unknown>;
 
-		if (!configObj.mcpEndpoint || typeof configObj.mcpEndpoint !== "string") {
-			throw new Error("配置文件格式错误：mcpEndpoint 字段无效");
-		}
+    if (!configObj.mcpEndpoint || typeof configObj.mcpEndpoint !== "string") {
+      throw new Error("配置文件格式错误：mcpEndpoint 字段无效");
+    }
 
-		if (!configObj.mcpServers || typeof configObj.mcpServers !== "object") {
-			throw new Error("配置文件格式错误：mcpServers 字段无效");
-		}
+    if (!configObj.mcpServers || typeof configObj.mcpServers !== "object") {
+      throw new Error("配置文件格式错误：mcpServers 字段无效");
+    }
 
-		// 验证每个 MCP 服务配置
-		for (const [serverName, serverConfig] of Object.entries(
-			configObj.mcpServers as Record<string, unknown>
-		)) {
-			if (!serverConfig || typeof serverConfig !== "object") {
-				throw new Error(`配置文件格式错误：mcpServers.${serverName} 无效`);
-			}
+    // 验证每个 MCP 服务配置
+    for (const [serverName, serverConfig] of Object.entries(
+      configObj.mcpServers as Record<string, unknown>
+    )) {
+      if (!serverConfig || typeof serverConfig !== "object") {
+        throw new Error(`配置文件格式错误：mcpServers.${serverName} 无效`);
+      }
 
-			const sc = serverConfig as Record<string, unknown>;
-			if (!sc.command || typeof sc.command !== "string") {
-				throw new Error(
-					`配置文件格式错误：mcpServers.${serverName}.command 无效`
-				);
-			}
+      const sc = serverConfig as Record<string, unknown>;
+      if (!sc.command || typeof sc.command !== "string") {
+        throw new Error(
+          `配置文件格式错误：mcpServers.${serverName}.command 无效`
+        );
+      }
 
-			if (!Array.isArray(sc.args)) {
-				throw new Error(
-					`配置文件格式错误：mcpServers.${serverName}.args 必须是数组`
-				);
-			}
+      if (!Array.isArray(sc.args)) {
+        throw new Error(
+          `配置文件格式错误：mcpServers.${serverName}.args 必须是数组`
+        );
+      }
 
-			if (sc.env && typeof sc.env !== "object") {
-				throw new Error(
-					`配置文件格式错误：mcpServers.${serverName}.env 必须是对象`
-				);
-			}
-		}
-	}
+      if (sc.env && typeof sc.env !== "object") {
+        throw new Error(
+          `配置文件格式错误：mcpServers.${serverName}.env 必须是对象`
+        );
+      }
+    }
+  }
 
-	/**
-	 * 获取配置（只读）
-	 */
-	public getConfig(): Readonly<AppConfig> {
-		if (!this.config) {
-			this.config = this.loadConfig();
-		}
+  /**
+   * 获取配置（只读）
+   */
+  public getConfig(): Readonly<AppConfig> {
+    if (!this.config) {
+      this.config = this.loadConfig();
+    }
 
-		// 返回深度只读副本
-		return JSON.parse(JSON.stringify(this.config));
-	}
+    // 返回深度只读副本
+    return JSON.parse(JSON.stringify(this.config));
+  }
 
-	/**
-	 * 获取 MCP 端点
-	 */
-	public getMcpEndpoint(): string {
-		const config = this.getConfig();
-		return config.mcpEndpoint;
-	}
+  /**
+   * 获取 MCP 端点
+   */
+  public getMcpEndpoint(): string {
+    const config = this.getConfig();
+    return config.mcpEndpoint;
+  }
 
-	/**
-	 * 获取 MCP 服务配置
-	 */
-	public getMcpServers(): Readonly<Record<string, MCPServerConfig>> {
-		const config = this.getConfig();
-		return config.mcpServers;
-	}
+  /**
+   * 获取 MCP 服务配置
+   */
+  public getMcpServers(): Readonly<Record<string, MCPServerConfig>> {
+    const config = this.getConfig();
+    return config.mcpServers;
+  }
 
-	/**
-	 * 更新 MCP 端点
-	 */
-	public updateMcpEndpoint(endpoint: string): void {
-		if (!endpoint || typeof endpoint !== "string") {
-			throw new Error("MCP 端点必须是非空字符串");
-		}
+  /**
+   * 更新 MCP 端点
+   */
+  public updateMcpEndpoint(endpoint: string): void {
+    if (!endpoint || typeof endpoint !== "string") {
+      throw new Error("MCP 端点必须是非空字符串");
+    }
 
-		const config = this.getConfig();
-		const newConfig = { ...config, mcpEndpoint: endpoint };
-		this.saveConfig(newConfig);
-	}
+    const config = this.getConfig();
+    const newConfig = { ...config, mcpEndpoint: endpoint };
+    this.saveConfig(newConfig);
+  }
 
-	/**
-	 * 更新 MCP 服务配置
-	 */
-	public updateMcpServer(
-		serverName: string,
-		serverConfig: MCPServerConfig
-	): void {
-		if (!serverName || typeof serverName !== "string") {
-			throw new Error("服务名称必须是非空字符串");
-		}
+  /**
+   * 更新 MCP 服务配置
+   */
+  public updateMcpServer(
+    serverName: string,
+    serverConfig: MCPServerConfig
+  ): void {
+    if (!serverName || typeof serverName !== "string") {
+      throw new Error("服务名称必须是非空字符串");
+    }
 
-		// 验证服务配置
-		if (!serverConfig.command || typeof serverConfig.command !== "string") {
-			throw new Error("服务配置的 command 字段必须是非空字符串");
-		}
+    // 验证服务配置
+    if (!serverConfig.command || typeof serverConfig.command !== "string") {
+      throw new Error("服务配置的 command 字段必须是非空字符串");
+    }
 
-		if (!Array.isArray(serverConfig.args)) {
-			throw new Error("服务配置的 args 字段必须是数组");
-		}
+    if (!Array.isArray(serverConfig.args)) {
+      throw new Error("服务配置的 args 字段必须是数组");
+    }
 
-		if (serverConfig.env && typeof serverConfig.env !== "object") {
-			throw new Error("服务配置的 env 字段必须是对象");
-		}
+    if (serverConfig.env && typeof serverConfig.env !== "object") {
+      throw new Error("服务配置的 env 字段必须是对象");
+    }
 
-		const config = this.getConfig();
-		const newConfig = {
-			...config,
-			mcpServers: {
-				...config.mcpServers,
-				[serverName]: serverConfig,
-			},
-		};
-		this.saveConfig(newConfig);
-	}
+    const config = this.getConfig();
+    const newConfig = {
+      ...config,
+      mcpServers: {
+        ...config.mcpServers,
+        [serverName]: serverConfig,
+      },
+    };
+    this.saveConfig(newConfig);
+  }
 
-	/**
-	 * 删除 MCP 服务配置
-	 */
-	public removeMcpServer(serverName: string): void {
-		if (!serverName || typeof serverName !== "string") {
-			throw new Error("服务名称必须是非空字符串");
-		}
+  /**
+   * 删除 MCP 服务配置
+   */
+  public removeMcpServer(serverName: string): void {
+    if (!serverName || typeof serverName !== "string") {
+      throw new Error("服务名称必须是非空字符串");
+    }
 
-		const config = this.getConfig();
-		if (!config.mcpServers[serverName]) {
-			throw new Error(`服务 ${serverName} 不存在`);
-		}
+    const config = this.getConfig();
+    if (!config.mcpServers[serverName]) {
+      throw new Error(`服务 ${serverName} 不存在`);
+    }
 
-		const newMcpServers = { ...config.mcpServers };
-		delete newMcpServers[serverName];
+    const newMcpServers = { ...config.mcpServers };
+    delete newMcpServers[serverName];
 
-		const newConfig = {
-			...config,
-			mcpServers: newMcpServers,
-		};
-		this.saveConfig(newConfig);
-	}
+    const newConfig = {
+      ...config,
+      mcpServers: newMcpServers,
+    };
+    this.saveConfig(newConfig);
+  }
 
-	/**
-	 * 保存配置到文件
-	 */
-	private saveConfig(config: AppConfig): void {
-		try {
-			// 验证配置
-			this.validateConfig(config);
+  /**
+   * 保存配置到文件
+   */
+  private saveConfig(config: AppConfig): void {
+    try {
+      // 验证配置
+      this.validateConfig(config);
 
-			// 格式化 JSON 并保存
-			const configPath = this.getConfigFilePath();
-			const configJson = JSON.stringify(config, null, 2);
-			writeFileSync(configPath, configJson, "utf8");
+      // 格式化 JSON 并保存
+      const configPath = this.getConfigFilePath();
+      const configJson = JSON.stringify(config, null, 2);
+      writeFileSync(configPath, configJson, "utf8");
 
-			// 更新缓存
-			this.config = config;
-		} catch (error) {
-			throw new Error(
-				`保存配置失败: ${error instanceof Error ? error.message : String(error)}`
-			);
-		}
-	}
+      // 更新缓存
+      this.config = config;
+    } catch (error) {
+      throw new Error(
+        `保存配置失败: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
 
-	/**
-	 * 重新加载配置（清除缓存）
-	 */
-	public reloadConfig(): void {
-		this.config = null;
-	}
+  /**
+   * 重新加载配置（清除缓存）
+   */
+  public reloadConfig(): void {
+    this.config = null;
+  }
 
-	/**
-	 * 获取配置文件路径
-	 */
-	public getConfigPath(): string {
-		return this.getConfigFilePath();
-	}
+  /**
+   * 获取配置文件路径
+   */
+  public getConfigPath(): string {
+    return this.getConfigFilePath();
+  }
 
-	/**
-	 * 获取默认配置文件路径
-	 */
-	public getDefaultConfigPath(): string {
-		return this.defaultConfigPath;
-	}
+  /**
+   * 获取默认配置文件路径
+   */
+  public getDefaultConfigPath(): string {
+    return this.defaultConfigPath;
+  }
 }
 
 // 导出单例实例
