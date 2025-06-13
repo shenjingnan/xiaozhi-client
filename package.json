@@ -1,10 +1,11 @@
 {
   "name": "xiaozhi-client",
-  "version": "0.0.1-beta.2",
+  "version": "0.0.1-beta.3",
   "description": "小智 AI 客户端 命令行工具",
   "main": "dist/cli.cjs",
   "files": [
     "dist",
+    "docs",
     "README.md",
     "LICENSE"
   ],
