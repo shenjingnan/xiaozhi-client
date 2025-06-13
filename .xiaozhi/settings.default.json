@@ -1,8 +1,0 @@
-{
-  "xiaozhi": {
-    "endpoint": "<请输入 xiaozhi.me 获取的接入点地址>"
-  },
-  "mcpServers": {
-    "desc": "请在此填写获取的 mcp server 比如从 mcp.so 获取的 mcp"
-  }
-}

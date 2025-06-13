@@ -1,6 +1,6 @@
 # Xiaozhi Client
 
-小智AI客户端，目前主要用于MCP的对接
+小智 AI 客户端，目前主要用于 MCP 的对接
 
 ![效果图](./docs/preview.png)
 
@@ -9,22 +9,26 @@
 ### 开发环境
 
 1. 克隆项目：
+
 ```bash
 git clone <repository-url>
 cd xiaozhi-client
 ```
 
 2. 安装依赖：
+
 ```bash
 pnpm install
 ```
 
 3. 构建项目：
+
 ```bash
 pnpm run build
 ```
 
 4. 本地安装（用于开发测试）：
+
 ```bash
 npm link
 ```
@@ -36,6 +40,7 @@ npm link
 项目使用 tsup 打包成单个可执行的 JavaScript 文件，所有依赖都被正确处理。
 
 构建后的文件位于 `dist/cli.js`，这是一个完整的可执行文件，包含：
+
 - 正确的 shebang (`#!/usr/bin/env node`)
 - 所有必要的代码（除了外部依赖）
 - 可执行权限

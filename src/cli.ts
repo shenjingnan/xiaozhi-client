@@ -1,522 +1,629 @@
 #!/usr/bin/env node
 
-/**
- * Xiaozhi CLI - 小智AI客户端命令行工具
- * 提供配置管理和服务管理功能
- */
-
 import { Command } from 'commander';
 import chalk from 'chalk';
 import ora from 'ora';
-import SettingManager from './settingManager.js';
-import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { spawn } from 'child_process';
-import process from 'process';
-
-// 定义MCP服务器配置接口
-interface McpServerConfig {
-  command: string;
-  args?: string[];
-  env?: Record<string, string>;
-}
-
-// 获取package.json中的版本信息
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const packageJson = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf8'));
-
-// PID文件路径
-const PID_FILE = join(__dirname, '..', '.xiaozhi', 'xiaozhi.pid');
+import { spawn, ChildProcess } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+import { configManager } from './configManager.js';
 
 const program = new Command();
+const VERSION = '0.0.1';
+const SERVICE_NAME = 'xiaozhi-mcp-service';
 
-/**
- * 进程管理工具类
- */
-class ProcessManager {
-  /**
-   * 检查进程是否正在运行
-   */
-  static isProcessRunning(pid: number): boolean {
-    try {
-      // 发送信号0来检查进程是否存在，不会实际杀死进程
-      process.kill(pid, 0);
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
+// PID 文件路径
+const PID_FILE = path.join(os.tmpdir(), `${SERVICE_NAME}.pid`);
+const LOG_FILE = path.join(os.tmpdir(), `${SERVICE_NAME}.log`);
 
-  /**
-   * 获取当前运行的服务PID
-   */
-  static getRunningPid(): number | null {
-    if (!existsSync(PID_FILE)) {
-      return null;
-    }
-
-    try {
-      const pid = parseInt(readFileSync(PID_FILE, 'utf8').trim());
-      if (this.isProcessRunning(pid)) {
-        return pid;
-      } else {
-        // PID文件存在但进程不存在，清理PID文件
-        this.cleanupPidFile();
-        return null;
-      }
-    } catch (error) {
-      return null;
-    }
-  }
-
-  /**
-   * 保存PID到文件
-   */
-  static savePid(pid: number): void {
-    try {
-      // 确保.xiaozhi目录存在
-      writeFileSync(PID_FILE, pid.toString());
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(chalk.red(`保存PID文件失败: ${errorMessage}`));
-    }
-  }
-
-  /**
-   * 清理PID文件
-   */
-  static cleanupPidFile(): void {
-    try {
-      if (existsSync(PID_FILE)) {
-        unlinkSync(PID_FILE);
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(chalk.red(`清理PID文件失败: ${errorMessage}`));
-    }
-  }
-
-  /**
-   * 停止运行中的服务
-   */
-  static stopService(pid: number): boolean {
-    try {
-      process.kill(pid, 'SIGTERM');
-
-      // 等待进程优雅退出
-      setTimeout(() => {
-        if (this.isProcessRunning(pid)) {
-          // 如果进程仍在运行，强制杀死
-          try {
-            process.kill(pid, 'SIGKILL');
-          } catch (error) {
-            // 进程可能已经退出
-          }
-        }
-        this.cleanupPidFile();
-      }, 5000);
-
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
+interface ServiceStatus {
+    running: boolean;
+    pid?: number;
+    uptime?: string;
+    mode?: 'foreground' | 'daemon';
 }
 
-// 配置CLI基本信息
-program
-  .name('xiaozhi')
-  .description('小智AI客户端命令行工具 - 将您的电脑作为AI服务端')
-  .version(packageJson.version);
-
 /**
- * start 命令 - 启动小智服务
- * 用法: xiaozhi start [options]
- * 选项: -d, --daemon  在后台运行服务
+ * 获取服务状态
  */
-program
-  .command('start')
-  .description('启动小智服务（将本机作为AI服务端）')
-  .option('-d, --daemon', '在后台运行服务')
-  .action(async (options) => {
-    const spinner = ora('检查服务状态...').start();
-
+function getServiceStatus(): ServiceStatus {
     try {
-      // 检查是否已有服务在运行
-      const runningPid = ProcessManager.getRunningPid();
-      if (runningPid) {
-        spinner.fail(chalk.red('服务已在运行中！'));
-        console.log(chalk.yellow(`当前服务PID: ${runningPid}`));
-        console.log(chalk.blue('如需重启服务，请先执行: xiaozhi stop'));
-        console.log(chalk.blue('如需查看服务状态，请执行: xiaozhi status'));
-        process.exit(1);
-      }
-
-      // 检查配置
-      const settingManager = SettingManager.getInstance();
-      const endpointUrl = settingManager.get('xiaozhi.endpoint');
-      if (!endpointUrl) {
-        spinner.fail(chalk.red('未配置服务端点！'));
-        console.log(chalk.yellow('请先配置端点: xiaozhi set-config xiaozhi.endpoint=wss://your-endpoint'));
-        process.exit(1);
-      }
-
-      const mcpServers = settingManager.get('mcpServers');
-      if (!mcpServers || typeof mcpServers !== 'object') {
-        spinner.fail(chalk.red('未配置MCP服务器！'));
-        console.log(chalk.yellow('请先在 .xiaozhi/settings.json 中配置 mcpServers'));
-        process.exit(1);
-      }
-
-      spinner.succeed(chalk.green('配置检查通过'));
-
-      if (options.daemon) {
-        // 后台模式启动
-        console.log(chalk.blue('正在后台启动小智服务...'));
-
-        const child = spawn('node', [join(__dirname, 'mcpWebSocketClient.js')], {
-          detached: true,
-          stdio: ['ignore', 'ignore', 'ignore'],
-          cwd: join(__dirname, '..')
-        });
-
-        // 保存PID
-        if (child.pid) {
-          ProcessManager.savePid(child.pid);
+        if (!fs.existsSync(PID_FILE)) {
+            return { running: false };
         }
 
-        // 分离子进程，让它独立运行
-        child.unref();
+        const pidContent = fs.readFileSync(PID_FILE, 'utf8').trim();
+        const [pidStr, startTime, mode] = pidContent.split('|');
+        const pid = parseInt(pidStr);
 
-        console.log(chalk.green(`✓ 小智服务已在后台启动`));
-        console.log(chalk.blue(`服务PID: ${child.pid}`));
-        console.log(chalk.blue(`连接端点: ${endpointUrl}`));
-        console.log(chalk.gray('使用 "xiaozhi status" 查看服务状态'));
-        console.log(chalk.gray('使用 "xiaozhi attach" 将服务转到前台'));
-        console.log(chalk.gray('使用 "xiaozhi stop" 停止服务'));
-
-      } else {
-        // 前台模式启动
-        console.log(chalk.blue('正在前台启动小智服务...'));
-        console.log(chalk.blue(`连接端点: ${endpointUrl}`));
-        console.log(chalk.gray('按 Ctrl+C 停止服务'));
-        console.log('');
-
-        const child = spawn('node', [join(__dirname, 'mcpWebSocketClient.js')], {
-          stdio: 'inherit',
-          cwd: join(__dirname, '..')
-        });
-
-        // 保存PID
-        if (child.pid) {
-          ProcessManager.savePid(child.pid);
+        if (isNaN(pid)) {
+            // PID 文件损坏，删除它
+            fs.unlinkSync(PID_FILE);
+            return { running: false };
         }
 
-        // 处理进程退出
-        child.on('exit', (code, signal) => {
-          ProcessManager.cleanupPidFile();
-          if (code !== 0) {
-            console.log(chalk.red(`服务异常退出，代码: ${code}, 信号: ${signal}`));
-          }
-        });
+        // 检查进程是否还在运行
+        try {
+            process.kill(pid, 0); // 发送信号 0 来检查进程是否存在
 
-        // 处理中断信号
-        process.on('SIGINT', () => {
-          console.log(chalk.yellow('\n正在停止服务...'));
-          child.kill('SIGTERM');
-        });
+            // 计算运行时间
+            const start = parseInt(startTime);
+            const uptime = formatUptime(Date.now() - start);
 
-        process.on('SIGTERM', () => {
-          console.log(chalk.yellow('\n正在停止服务...'));
-          child.kill('SIGTERM');
-        });
-      }
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      spinner.fail(chalk.red(`启动服务失败: ${errorMessage}`));
-      process.exit(1);
-    }
-  });
-
-/**
- * stop 命令 - 停止小智服务
- * 用法: xiaozhi stop
- */
-program
-  .command('stop')
-  .description('停止小智服务')
-  .action(async () => {
-    const spinner = ora('检查服务状态...').start();
-
-    try {
-      const runningPid = ProcessManager.getRunningPid();
-      if (!runningPid) {
-        spinner.fail(chalk.yellow('没有运行中的服务'));
-        process.exit(0);
-      }
-
-      spinner.text = '正在停止服务...';
-
-      if (ProcessManager.stopService(runningPid)) {
-        spinner.succeed(chalk.green('服务已停止'));
-      } else {
-        spinner.fail(chalk.red('停止服务失败'));
-        process.exit(1);
-      }
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      spinner.fail(chalk.red(`停止服务失败: ${errorMessage}`));
-      process.exit(1);
-    }
-  });
-
-/**
- * status 命令 - 查看服务状态
- * 用法: xiaozhi status
- */
-program
-  .command('status')
-  .description('查看小智服务状态')
-  .action(async () => {
-    try {
-      const runningPid = ProcessManager.getRunningPid();
-      const settingManager = SettingManager.getInstance();
-      const endpointUrl = settingManager.get('xiaozhi.endpoint');
-
-      console.log(chalk.blue('=== 小智服务状态 ==='));
-
-      if (runningPid) {
-        console.log(chalk.green('✓ 服务状态: 运行中'));
-        console.log(chalk.blue(`  PID: ${runningPid}`));
-      } else {
-        console.log(chalk.red('✗ 服务状态: 未运行'));
-      }
-
-      if (endpointUrl) {
-        console.log(chalk.blue(`  端点: ${endpointUrl}`));
-      } else {
-        console.log(chalk.yellow('  端点: 未配置'));
-      }
-
-      const mcpServers = settingManager.get('mcpServers');
-      if (mcpServers && typeof mcpServers === 'object') {
-        const validServers = Object.fromEntries(
-          Object.entries(mcpServers).filter(([, value]) =>
-            typeof value === 'object' && value !== null && 'command' in value && typeof (value as McpServerConfig).command === 'string'
-          )
-        );
-        console.log(chalk.blue(`  MCP服务器: ${Object.keys(validServers).length}个`));
-        Object.keys(validServers).forEach(name => {
-          console.log(chalk.gray(`    - ${name}`));
-        });
-      } else {
-        console.log(chalk.yellow('  MCP服务器: 未配置'));
-      }
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(chalk.red(`获取状态失败: ${errorMessage}`));
-      process.exit(1);
-    }
-  });
-
-/**
- * attach 命令 - 将后台服务转到前台
- * 用法: xiaozhi attach
- */
-program
-  .command('attach')
-  .description('将后台运行的服务转到前台（注意：这会停止后台服务并重新在前台启动）')
-  .action(async () => {
-    const spinner = ora('检查服务状态...').start();
-
-    try {
-      const runningPid = ProcessManager.getRunningPid();
-      if (!runningPid) {
-        spinner.fail(chalk.yellow('没有运行中的后台服务'));
-        console.log(chalk.blue('使用 "xiaozhi start" 在前台启动服务'));
-        process.exit(0);
-      }
-
-      spinner.text = '正在停止后台服务...';
-
-      // 停止后台服务
-      ProcessManager.stopService(runningPid);
-
-      // 等待服务完全停止
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      spinner.succeed(chalk.green('后台服务已停止'));
-
-      // 在前台重新启动服务
-      console.log(chalk.blue('正在前台重新启动服务...'));
-      console.log(chalk.gray('按 Ctrl+C 停止服务'));
-      console.log('');
-
-      const child = spawn('node', [join(__dirname, 'mcpWebSocketClient.js')], {
-        stdio: 'inherit',
-        cwd: join(__dirname, '..')
-      });
-
-      // 保存PID
-      if (child.pid) {
-        ProcessManager.savePid(child.pid);
-      }
-
-      // 处理进程退出
-      child.on('exit', (code, signal) => {
-        ProcessManager.cleanupPidFile();
-        if (code !== 0) {
-          console.log(chalk.red(`服务异常退出，代码: ${code}, 信号: ${signal}`));
+            return {
+                running: true,
+                pid,
+                uptime,
+                mode: (mode as 'foreground' | 'daemon') || 'foreground'
+            };
+        } catch (error) {
+            // 进程不存在，删除 PID 文件
+            fs.unlinkSync(PID_FILE);
+            return { running: false };
         }
-      });
-
-      // 处理中断信号
-      process.on('SIGINT', () => {
-        console.log(chalk.yellow('\n正在停止服务...'));
-        child.kill('SIGTERM');
-      });
-
-      process.on('SIGTERM', () => {
-        console.log(chalk.yellow('\n正在停止服务...'));
-        child.kill('SIGTERM');
-      });
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      spinner.fail(chalk.red(`转换到前台失败: ${errorMessage}`));
-      process.exit(1);
+        return { running: false };
     }
-  });
+}
 
 /**
- * restart 命令 - 重启服务
- * 用法: xiaozhi restart [options]
+ * 格式化运行时间
  */
-program
-  .command('restart')
-  .description('重启小智服务')
-  .option('-d, --daemon', '在后台运行服务')
-  .action(async (options) => {
+function formatUptime(ms: number): string {
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (days > 0) {
+        return `${days}天 ${hours % 24}小时 ${minutes % 60}分钟`;
+    } else if (hours > 0) {
+        return `${hours}小时 ${minutes % 60}分钟`;
+    } else if (minutes > 0) {
+        return `${minutes}分钟 ${seconds % 60}秒`;
+    } else {
+        return `${seconds}秒`;
+    }
+}
+
+/**
+ * 保存 PID 信息
+ */
+function savePidInfo(pid: number, mode: 'foreground' | 'daemon') {
+    const pidInfo = `${pid}|${Date.now()}|${mode}`;
+    fs.writeFileSync(PID_FILE, pidInfo);
+}
+
+/**
+ * 清理 PID 文件
+ */
+function cleanupPidFile() {
+    try {
+        if (fs.existsSync(PID_FILE)) {
+            fs.unlinkSync(PID_FILE);
+        }
+    } catch (error) {
+        // 忽略清理错误
+    }
+}
+
+/**
+ * 检查配置文件和环境
+ */
+function checkEnvironment(): boolean {
+    // 首先检查配置文件是否存在
+    if (!configManager.configExists()) {
+        console.error(chalk.red('❌ 错误: 配置文件不存在'));
+        console.log(chalk.yellow('💡 提示: 请运行 "xiaozhi init" 初始化配置'));
+        return false;
+    }
+
+    try {
+        // 检查配置是否有效
+        const endpoint = configManager.getMcpEndpoint();
+        if (!endpoint || endpoint.includes('<请填写')) {
+            console.error(chalk.red('❌ 错误: MCP 端点未配置'));
+            console.log(chalk.yellow('💡 提示: 请运行 "xiaozhi config mcpEndpoint <your-endpoint-url>" 设置端点'));
+            return false;
+        }
+        return true;
+    } catch (error) {
+        console.error(chalk.red(`❌ 错误: 配置文件无效 - ${error instanceof Error ? error.message : String(error)}`));
+        console.log(chalk.yellow('💡 提示: 请运行 "xiaozhi init" 重新初始化配置'));
+        return false;
+    }
+}
+
+/**
+ * 获取服务启动命令和参数
+ */
+function getServiceCommand(): { command: string; args: string[]; cwd: string } {
+    // 获取当前脚本所在目录
+    const scriptDir = __dirname;
+
+    // 检查是否在开发环境（js-demo/dist）还是全局安装环境
+    let distDir: string;
+    if (scriptDir.includes('js-demo/dist')) {
+        // 开发环境
+        distDir = scriptDir;
+    } else {
+        // 全局安装环境，需要找到实际的项目目录
+        // 通常全局安装后，脚本在 node_modules/.bin 或类似位置
+        // 我们需要找到实际的 dist 目录
+        const possiblePaths = [
+            path.join(scriptDir, '..', 'js-demo', 'dist'),
+            path.join(scriptDir, '..', '..', 'js-demo', 'dist'),
+            path.join(scriptDir, '..', '..', '..', 'js-demo', 'dist'),
+            path.join(process.cwd(), 'js-demo', 'dist'),
+            path.join(process.cwd(), 'dist')
+        ];
+
+        distDir = possiblePaths.find(p =>
+            fs.existsSync(path.join(p, 'mcpPipe.cjs')) &&
+            fs.existsSync(path.join(p, 'mcpServerProxy.cjs'))
+        ) || scriptDir;
+    }
+
+    return {
+        command: 'node',
+        args: ['mcpPipe.cjs', 'mcpServerProxy.cjs'],
+        cwd: distDir
+    };
+}
+
+/**
+ * 启动服务
+ */
+async function startService(daemon: boolean = false): Promise<void> {
     const spinner = ora('检查服务状态...').start();
 
     try {
-      const runningPid = ProcessManager.getRunningPid();
+        // 检查服务是否已经在运行
+        const status = getServiceStatus();
+        if (status.running) {
+            spinner.fail(`服务已经在运行 (PID: ${status.pid})`);
+            return;
+        }
 
-      if (runningPid) {
-        spinner.text = '正在停止现有服务...';
-        ProcessManager.stopService(runningPid);
+        // 检查环境变量
+        spinner.text = '检查环境配置...';
+        if (!checkEnvironment()) {
+            spinner.fail('环境配置检查失败');
+            return;
+        }
 
-        // 等待服务完全停止
-        await new Promise(resolve => setTimeout(resolve, 3000));
-      }
+        // 获取启动命令
+        const { command, args, cwd } = getServiceCommand();
 
-      spinner.succeed(chalk.green('准备重新启动服务'));
+        spinner.text = `启动服务 (${daemon ? '后台模式' : '前台模式'})...`;
 
-      // 重新启动服务（复用start命令的逻辑）
-      const startCommand = program.commands.find(cmd => cmd.name() === 'start');
-      if (startCommand && typeof (startCommand as any)._actionHandler === 'function') {
-        await (startCommand as any)._actionHandler(options);
-      }
+        if (daemon) {
+            // 后台模式
+            const child = spawn(command, args, {
+                cwd,
+                detached: true,
+                stdio: ['ignore', 'pipe', 'pipe'],
+                env: { ...process.env }
+            });
 
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      spinner.fail(chalk.red(`重启服务失败: ${errorMessage}`));
-      process.exit(1);
-    }
-  });
+            // 保存 PID 信息
+            savePidInfo(child.pid!, 'daemon');
 
-/**
- * set-config 命令
- * 用法: xiaozhi set-config key=value
- * 例如: xiaozhi set-config xiaozhi.endpoint=wss://api.xiaozhi.me/mcp
- */
-program
-  .command('set-config')
-  .description('设置配置项')
-  .argument('<config>', '配置项，格式为 key=value，支持嵌套键如 xiaozhi.endpoint=value')
-  .action(async (config) => {
-    const spinner = ora('正在更新配置...').start();
-    
-    try {
-      // 解析配置参数
-      const equalIndex = config.indexOf('=');
-      if (equalIndex === -1) {
-        spinner.fail(chalk.red('错误: 配置格式不正确，请使用 key=value 格式'));
-        console.log(chalk.yellow('示例: xiaozhi set-config xiaozhi.endpoint=wss://api.xiaozhi.me/mcp'));
-        process.exit(1);
-      }
-      
-      const key = config.substring(0, equalIndex).trim();
-      const value = config.substring(equalIndex + 1).trim();
-      
-      if (!key) {
-        spinner.fail(chalk.red('错误: 配置键不能为空'));
-        process.exit(1);
-      }
-      
-      // 获取SettingManager实例并更新配置
-      const settingManager = SettingManager.getInstance();
-      const oldValue = settingManager.get(key);
-      
-      settingManager.set(key, value);
-      
-      spinner.succeed(chalk.green('配置更新成功!'));
-      
-      // 显示更新信息
-      console.log(chalk.blue('配置项:'), chalk.white(key));
-      if (oldValue !== null) {
-        console.log(chalk.blue('旧值:'), chalk.gray(oldValue));
-      }
-      console.log(chalk.blue('新值:'), chalk.white(value));
-      console.log(chalk.gray(`配置已保存到: .xiaozhi/settings.json`));
-      
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      spinner.fail(chalk.red(`配置更新失败: ${errorMessage}`));
-      process.exit(1);
-    }
-  });
+            // 设置日志输出
+            const logStream = fs.createWriteStream(LOG_FILE, { flags: 'a' });
+            child.stdout?.pipe(logStream);
+            child.stderr?.pipe(logStream);
 
-/**
- * get-config 命令
- * 用法: xiaozhi get-config [key]
- * 例如: xiaozhi get-config xiaozhi.endpoint
- */
-program
-  .command('get-config')
-  .description('获取配置项')
-  .argument('[key]', '配置键，不指定则显示所有配置')
-  .action(async (key) => {
-    try {
-      const settingManager = SettingManager.getInstance();
-      
-      if (key) {
-        // 获取指定配置
-        const value = settingManager.get(key);
-        if (value !== null) {
-          console.log(chalk.blue('配置项:'), chalk.white(key));
-          console.log(chalk.blue('值:'), chalk.white(typeof value === 'object' ? JSON.stringify(value, null, 2) : value));
+            // 分离进程
+            child.unref();
+
+            spinner.succeed(`服务已在后台启动 (PID: ${child.pid})`);
+            console.log(chalk.gray(`日志文件: ${LOG_FILE}`));
+            console.log(chalk.gray(`使用 'xiaozhi attach' 可以查看实时日志`));
         } else {
-          console.log(chalk.yellow(`配置项 "${key}" 不存在`));
+            // 前台模式
+            spinner.succeed('服务启动中...');
+
+            const child = spawn(command, args, {
+                cwd,
+                stdio: 'inherit',
+                env: { ...process.env }
+            });
+
+            // 保存 PID 信息
+            savePidInfo(child.pid!, 'foreground');
+
+            // 处理进程退出
+            child.on('exit', (code, signal) => {
+                cleanupPidFile();
+                if (code !== 0) {
+                    console.log(chalk.red(`\n服务异常退出 (代码: ${code}, 信号: ${signal})`));
+                } else {
+                    console.log(chalk.green('\n服务已停止'));
+                }
+            });
+
+            // 处理中断信号
+            process.on('SIGINT', () => {
+                console.log(chalk.yellow('\n正在停止服务...'));
+                child.kill('SIGTERM');
+            });
+
+            process.on('SIGTERM', () => {
+                child.kill('SIGTERM');
+            });
         }
-      } else {
-        // 显示所有配置
-        const allSettings = settingManager.getAll();
-        console.log(chalk.blue('所有配置:'));
-        console.log(JSON.stringify(allSettings, null, 2));
-      }
-      
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(chalk.red(`获取配置失败: ${errorMessage}`));
-      process.exit(1);
+        spinner.fail(`启动服务失败: ${error instanceof Error ? error.message : String(error)}`);
     }
-  });
+}
+
+/**
+ * 停止服务
+ */
+async function stopService(): Promise<void> {
+    const spinner = ora('检查服务状态...').start();
+
+    try {
+        const status = getServiceStatus();
+
+        if (!status.running) {
+            spinner.warn('服务未在运行');
+            return;
+        }
+
+        spinner.text = `停止服务 (PID: ${status.pid})...`;
+
+        try {
+            // 尝试优雅停止
+            process.kill(status.pid!, 'SIGTERM');
+
+            // 等待进程停止
+            let attempts = 0;
+            const maxAttempts = 30; // 3秒超时
+
+            while (attempts < maxAttempts) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                try {
+                    process.kill(status.pid!, 0);
+                    attempts++;
+                } catch {
+                    // 进程已停止
+                    break;
+                }
+            }
+
+            // 检查是否还在运行
+            try {
+                process.kill(status.pid!, 0);
+                // 如果还在运行，强制停止
+                spinner.text = '强制停止服务...';
+                process.kill(status.pid!, 'SIGKILL');
+                await new Promise(resolve => setTimeout(resolve, 500));
+            } catch {
+                // 进程已停止
+            }
+
+            cleanupPidFile();
+            spinner.succeed('服务已停止');
+
+        } catch (error) {
+            cleanupPidFile();
+            spinner.fail(`停止服务失败: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    } catch (error) {
+        spinner.fail(`停止服务失败: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+
+/**
+ * 检查服务状态
+ */
+async function checkStatus(): Promise<void> {
+    const spinner = ora('检查服务状态...').start();
+
+    try {
+        const status = getServiceStatus();
+
+        if (status.running) {
+            spinner.succeed('服务状态');
+            console.log(chalk.green('✅ 服务正在运行'));
+            console.log(chalk.gray(`   PID: ${status.pid}`));
+            console.log(chalk.gray(`   运行时间: ${status.uptime}`));
+            console.log(chalk.gray(`   运行模式: ${status.mode === 'daemon' ? '后台模式' : '前台模式'}`));
+
+            if (status.mode === 'daemon') {
+                console.log(chalk.gray(`   日志文件: ${LOG_FILE}`));
+            }
+        } else {
+            spinner.succeed('服务状态');
+            console.log(chalk.red('❌ 服务未运行'));
+        }
+    } catch (error) {
+        spinner.fail(`检查状态失败: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+
+/**
+ * 附加到后台服务
+ */
+async function attachService(): Promise<void> {
+    const spinner = ora('检查服务状态...').start();
+
+    try {
+        const status = getServiceStatus();
+
+        if (!status.running) {
+            spinner.fail('服务未在运行');
+            return;
+        }
+
+        if (status.mode !== 'daemon') {
+            spinner.fail('服务不是在后台模式运行');
+            return;
+        }
+
+        spinner.succeed('连接到后台服务...');
+        console.log(chalk.green(`已连接到服务 (PID: ${status.pid})`));
+        console.log(chalk.gray('按 Ctrl+C 可以断开连接（不会停止服务）'));
+        console.log(chalk.gray('=' .repeat(50)));
+
+        // 显示日志文件内容
+        if (fs.existsSync(LOG_FILE)) {
+            // 显示最后100行日志
+            const { spawn } = await import('child_process');
+            const tail = spawn('tail', ['-f', LOG_FILE], { stdio: 'inherit' });
+
+            // 处理中断信号
+            process.on('SIGINT', () => {
+                console.log(chalk.yellow('\n断开连接，服务继续在后台运行'));
+                tail.kill();
+                process.exit(0);
+            });
+
+            tail.on('exit', () => {
+                process.exit(0);
+            });
+        } else {
+            console.log(chalk.yellow('日志文件不存在'));
+        }
+
+    } catch (error) {
+        spinner.fail(`连接失败: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+
+/**
+ * 重启服务
+ */
+async function restartService(daemon: boolean = false): Promise<void> {
+    console.log(chalk.blue('🔄 重启服务...'));
+
+    // 先停止服务
+    await stopService();
+
+    // 等待一下确保完全停止
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // 重新启动服务
+    await startService(daemon);
+}
+
+/**
+ * 显示版本信息
+ */
+function showVersion(): void {
+    console.log(chalk.blue(`xiaozhi v${VERSION}`));
+}
+
+/**
+ * 显示详细信息
+ */
+function showDetailedInfo(): void {
+    console.log(chalk.blue(`xiaozhi v${VERSION}`));
+    console.log(chalk.gray('MCP Calculator Service CLI Tool'));
+    console.log(chalk.gray('Built with Node.js and TypeScript'));
+    console.log(chalk.gray(`Node.js: ${process.version}`));
+    console.log(chalk.gray(`Platform: ${process.platform} ${process.arch}`));
+}
+
+/**
+ * 初始化配置
+ */
+async function initConfig(): Promise<void> {
+    const spinner = ora('初始化配置...').start();
+
+    try {
+        if (configManager.configExists()) {
+            spinner.warn('配置文件已存在');
+            console.log(chalk.yellow('如需重新初始化，请先删除现有的 config.json 文件'));
+            return;
+        }
+
+        configManager.initConfig();
+        spinner.succeed('配置文件初始化成功');
+
+        console.log(chalk.green('✅ 配置文件已创建: config.json'));
+        console.log(chalk.yellow('📝 请编辑配置文件设置你的 MCP 端点:'));
+        console.log(chalk.gray(`   配置文件路径: ${configManager.getConfigPath()}`));
+        console.log(chalk.yellow('💡 或者使用命令设置:'));
+        console.log(chalk.gray('   xiaozhi config mcpEndpoint <your-endpoint-url>'));
+    } catch (error) {
+        spinner.fail(`初始化配置失败: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+
+/**
+ * 配置管理命令
+ */
+async function configCommand(key: string, value?: string): Promise<void> {
+    const spinner = ora('更新配置...').start();
+
+    try {
+        if (!configManager.configExists()) {
+            spinner.fail('配置文件不存在');
+            console.log(chalk.yellow('💡 提示: 请先运行 "xiaozhi init" 初始化配置'));
+            return;
+        }
+
+        if (!value) {
+            // 显示配置值
+            spinner.text = '读取配置...';
+            const config = configManager.getConfig();
+
+            switch (key) {
+                case 'mcpEndpoint':
+                    spinner.succeed('配置信息');
+                    console.log(chalk.green(`MCP 端点: ${config.mcpEndpoint}`));
+                    break;
+                case 'mcpServers':
+                    spinner.succeed('配置信息');
+                    console.log(chalk.green('MCP 服务:'));
+                    for (const [name, serverConfig] of Object.entries(config.mcpServers)) {
+                        console.log(chalk.gray(`  ${name}: ${serverConfig.command} ${serverConfig.args.join(' ')}`));
+                    }
+                    break;
+                default:
+                    spinner.fail(`未知的配置项: ${key}`);
+                    console.log(chalk.yellow('支持的配置项: mcpEndpoint, mcpServers'));
+                    return;
+            }
+        } else {
+            // 设置配置值
+            switch (key) {
+                case 'mcpEndpoint':
+                    configManager.updateMcpEndpoint(value);
+                    spinner.succeed(`MCP 端点已更新为: ${value}`);
+                    break;
+                default:
+                    spinner.fail(`配置项 ${key} 不支持通过命令行设置`);
+                    console.log(chalk.yellow('支持设置的配置项: mcpEndpoint'));
+                    return;
+            }
+        }
+    } catch (error) {
+        spinner.fail(`配置操作失败: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+
+/**
+ * 显示帮助信息
+ */
+function showHelp(): void {
+    console.log(chalk.blue.bold('xiaozhi - MCP Calculator Service CLI'));
+    console.log();
+    console.log(chalk.yellow('使用方法:'));
+    console.log('  xiaozhi <command> [options]');
+    console.log();
+    console.log(chalk.yellow('命令:'));
+    console.log('  init                初始化配置文件');
+    console.log('  config <key> [value] 查看或设置配置');
+    console.log('  start [--daemon]    启动服务 (--daemon 后台运行)');
+    console.log('  stop                停止服务');
+    console.log('  status              检查服务状态');
+    console.log('  attach              连接到后台服务查看日志');
+    console.log('  restart [--daemon]  重启服务 (--daemon 后台运行)');
+    console.log();
+    console.log(chalk.yellow('选项:'));
+    console.log('  -v, --version       显示版本信息');
+    console.log('  -V                  显示详细信息');
+    console.log('  -h, --help          显示帮助信息');
+    console.log();
+    console.log(chalk.yellow('配置示例:'));
+    console.log('  xiaozhi init                          # 初始化配置');
+    console.log('  xiaozhi config mcpEndpoint             # 查看 MCP 端点');
+    console.log('  xiaozhi config mcpEndpoint wss://...   # 设置 MCP 端点');
+    console.log();
+    console.log(chalk.yellow('服务示例:'));
+    console.log('  xiaozhi start                # 前台启动服务');
+    console.log('  xiaozhi start --daemon       # 后台启动服务');
+    console.log('  xiaozhi status               # 检查服务状态');
+    console.log('  xiaozhi attach               # 查看后台服务日志');
+    console.log('  xiaozhi stop                 # 停止服务');
+}
+
+// 配置 Commander 程序
+program
+    .name('xiaozhi')
+    .description('MCP Calculator Service CLI Tool')
+    .version(VERSION, '-v, --version', '显示版本信息')
+    .helpOption('-h, --help', '显示帮助信息');
+
+// init 命令
+program
+    .command('init')
+    .description('初始化配置文件')
+    .action(async () => {
+        await initConfig();
+    });
+
+// config 命令
+program
+    .command('config <key> [value]')
+    .description('查看或设置配置')
+    .action(async (key, value) => {
+        await configCommand(key, value);
+    });
+
+// start 命令
+program
+    .command('start')
+    .description('启动服务')
+    .option('-d, --daemon', '在后台运行服务')
+    .action(async (options) => {
+        await startService(options.daemon);
+    });
+
+// stop 命令
+program
+    .command('stop')
+    .description('停止服务')
+    .action(async () => {
+        await stopService();
+    });
+
+// status 命令
+program
+    .command('status')
+    .description('检查服务状态')
+    .action(async () => {
+        await checkStatus();
+    });
+
+// attach 命令
+program
+    .command('attach')
+    .description('连接到后台服务查看日志')
+    .action(async () => {
+        await attachService();
+    });
+
+// restart 命令
+program
+    .command('restart')
+    .description('重启服务')
+    .option('-d, --daemon', '在后台运行服务')
+    .action(async (options) => {
+        await restartService(options.daemon);
+    });
+
+// -V 选项 (详细信息)
+program
+    .option('-V', '显示详细信息')
+    .action((options) => {
+        if (options.V) {
+            showDetailedInfo();
+            process.exit(0);
+        }
+    });
+
+// 处理无参数情况，显示帮助
+if (process.argv.length <= 2) {
+    showHelp();
+    process.exit(0);
+}
 
 // 解析命令行参数
-program.parse();
+program.parse(process.argv);
