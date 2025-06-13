@@ -1,8 +1,8 @@
 {
-  "name": "mcp-calculator-js",
-  "version": "0.1.0",
-  "description": "JavaScript implementation of MCP Calculator with WebSocket communication",
-  "main": "calculator.js",
+  "name": "xiaozhi-client",
+  "version": "0.0.1",
+  "description": "小智 AI 客户端 命令行工具",
+  "main": "dist/cli.cjs",
   "files": [
     "dist",
     "README.md",
@@ -28,7 +28,7 @@
     "ai",
     "tools"
   ],
-  "author": "",
+  "author": "shenjingnan(sjn.code@gmail.com)",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
