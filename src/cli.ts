@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { ChildProcess, spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -37,7 +37,7 @@ function getServiceStatus(): ServiceStatus {
     const [pidStr, startTime, mode] = pidContent.split("|");
     const pid = Number.parseInt(pidStr);
 
-    if (isNaN(pid)) {
+    if (Number.isNaN(pid)) {
       // PID 文件损坏，删除它
       fs.unlinkSync(PID_FILE);
       return { running: false };
@@ -78,13 +78,14 @@ function formatUptime(ms: number): string {
 
   if (days > 0) {
     return `${days}天 ${hours % 24}小时 ${minutes % 60}分钟`;
-  } else if (hours > 0) {
-    return `${hours}小时 ${minutes % 60}分钟`;
-  } else if (minutes > 0) {
-    return `${minutes}分钟 ${seconds % 60}秒`;
-  } else {
-    return `${seconds}秒`;
   }
+  if (hours > 0) {
+    return `${hours}小时 ${minutes % 60}分钟`;
+  }
+  if (minutes > 0) {
+    return `${minutes}分钟 ${seconds % 60}秒`;
+  }
+  return `${seconds}秒`;
 }
 
 /**
@@ -402,7 +403,7 @@ async function attachService(): Promise<void> {
     // 显示日志文件内容
     if (fs.existsSync(LOG_FILE)) {
       // 显示最后100行日志
-      const { spawn } = await import("child_process");
+      const { spawn } = await import("node:child_process");
       const tail = spawn("tail", ["-f", LOG_FILE], { stdio: "inherit" });
 
       // 处理中断信号
@@ -441,12 +442,7 @@ async function restartService(daemon = false): Promise<void> {
   await startService(daemon);
 }
 
-/**
- * 显示版本信息
- */
-function showVersion(): void {
-  console.log(chalk.blue(`xiaozhi v${VERSION}`));
-}
+
 
 /**
  * 显示详细信息
@@ -494,89 +490,266 @@ async function initConfig(): Promise<void> {
 }
 
 /**
+ * 获取可用模板列表
+ */
+function getAvailableTemplates(): string[] {
+  const scriptDir = __dirname;
+  const possiblePaths = [
+    path.join(scriptDir, "..", "templates"), // 开发环境
+    path.join(scriptDir, "templates"), // 打包后的环境
+    path.join(scriptDir, "..", "..", "templates"), // npm 全局安装
+  ];
+
+  const templatesDir = possiblePaths.find((p) => fs.existsSync(p));
+  if (!templatesDir) {
+    return [];
+  }
+
+  return fs.readdirSync(templatesDir).filter((item) => {
+    const itemPath = path.join(templatesDir, item);
+    return fs.statSync(itemPath).isDirectory();
+  });
+}
+
+/**
+ * 计算字符串相似度（简单的编辑距离算法）
+ */
+function calculateSimilarity(str1: string, str2: string): number {
+  const len1 = str1.length;
+  const len2 = str2.length;
+  const matrix = Array(len1 + 1)
+    .fill(null)
+    .map(() => Array(len2 + 1).fill(0));
+
+  for (let i = 0; i <= len1; i++) matrix[i][0] = i;
+  for (let j = 0; j <= len2; j++) matrix[0][j] = j;
+
+  for (let i = 1; i <= len1; i++) {
+    for (let j = 1; j <= len2; j++) {
+      if (str1[i - 1] === str2[j - 1]) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j - 1] + 1
+        );
+      }
+    }
+  }
+
+  const maxLen = Math.max(len1, len2);
+  return maxLen === 0 ? 1 : (maxLen - matrix[len1][len2]) / maxLen;
+}
+
+/**
+ * 查找最相似的模板
+ */
+function findSimilarTemplate(
+  input: string,
+  templates: string[]
+): string | null {
+  if (templates.length === 0) return null;
+
+  let bestMatch = templates[0];
+  let bestSimilarity = calculateSimilarity(
+    input.toLowerCase(),
+    bestMatch.toLowerCase()
+  );
+
+  for (const template of templates.slice(1)) {
+    const similarity = calculateSimilarity(
+      input.toLowerCase(),
+      template.toLowerCase()
+    );
+    if (similarity > bestSimilarity) {
+      bestSimilarity = similarity;
+      bestMatch = template;
+    }
+  }
+
+  // 只有相似度超过 0.5 才认为是可能的匹配
+  return bestSimilarity > 0.5 ? bestMatch : null;
+}
+
+/**
+ * 询问用户确认
+ */
+async function askUserConfirmation(question: string): Promise<boolean> {
+  // 检查是否在交互式终端中
+  if (!process.stdin.isTTY) {
+    // 非交互式环境，默认返回 false
+    console.log("n (非交互式环境)");
+    return false;
+  }
+
+  // 使用 readline 接口处理用户输入
+  const readline = await import("node:readline");
+
+  return new Promise((resolve) => {
+    process.stdout.write(question);
+
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    const handleInput = (input: string) => {
+      const char = input.trim().toLowerCase();
+      if (char === "y" || char === "yes") {
+        rl.close();
+        resolve(true);
+      } else if (char === "n" || char === "no" || char === "") {
+        rl.close();
+        resolve(false);
+      } else {
+        // 无效输入，重新询问
+        process.stdout.write("请输入 y 或 n: ");
+      }
+    };
+
+    rl.on("line", handleInput);
+    rl.on("SIGINT", () => {
+      rl.close();
+      resolve(false);
+    });
+  });
+}
+
+/**
+ * 创建基本的 xiaozhi.config.json 文件
+ */
+function createBasicConfig(projectPath: string): void {
+  const configContent = {
+    mcpEndpoint: "<请填写你的接入点地址（获取地址在 xiaozhi.me）>",
+    mcpServers: {},
+  };
+
+  const configPath = path.join(projectPath, "xiaozhi.config.json");
+  fs.writeFileSync(configPath, JSON.stringify(configContent, null, 2), "utf8");
+}
+
+/**
  * 创建项目命令
  */
 async function createProject(
-  templateName: string,
-  projectName?: string
+  projectName: string,
+  options: { template?: string }
 ): Promise<void> {
-  const spinner = ora("检查模板...").start();
+  const spinner = ora("初始化项目...").start();
 
   try {
-    // 获取当前脚本所在目录
-    const scriptDir = __dirname;
-
-    // 查找 templates 目录
-    let templatesDir: string;
-    const possiblePaths = [
-      path.join(scriptDir, "..", "templates"), // 开发环境
-      path.join(scriptDir, "templates"), // 打包后的环境
-      path.join(scriptDir, "..", "..", "templates"), // npm 全局安装
-    ];
-
-    templatesDir = possiblePaths.find((p) => fs.existsSync(p)) || "";
-
-    if (!templatesDir || !fs.existsSync(templatesDir)) {
-      spinner.fail("找不到 templates 目录");
-      console.log(chalk.yellow("💡 提示: 请确保 xiaozhi-client 正确安装"));
-      return;
-    }
-
-    // 检查模板是否存在
-    const templatePath = path.join(templatesDir, templateName);
-    if (!fs.existsSync(templatePath)) {
-      spinner.fail(`模板 "${templateName}" 不存在`);
-
-      // 列出可用的模板
-      try {
-        const availableTemplates = fs
-          .readdirSync(templatesDir)
-          .filter((item) =>
-            fs.statSync(path.join(templatesDir, item)).isDirectory()
-          );
-
-        if (availableTemplates.length > 0) {
-          console.log(chalk.yellow("可用的模板:"));
-          availableTemplates.forEach((template) => {
-            console.log(chalk.gray(`  - ${template}`));
-          });
-        } else {
-          console.log(chalk.yellow("没有可用的模板"));
-        }
-      } catch (error) {
-        // 忽略列出模板的错误
-      }
-      return;
-    }
-
-    // 确定项目名称和目标目录
-    const targetName = projectName || templateName;
-    const targetPath = path.join(process.cwd(), targetName);
+    // 确定目标目录
+    const targetPath = path.join(process.cwd(), projectName);
 
     // 检查目标目录是否已存在
     if (fs.existsSync(targetPath)) {
-      spinner.fail(`目录 "${targetName}" 已存在`);
+      spinner.fail(`目录 "${projectName}" 已存在`);
       console.log(chalk.yellow("💡 提示: 请选择不同的项目名称或删除现有目录"));
       return;
     }
 
-    spinner.text = `创建项目 "${targetName}"...`;
+    if (options.template) {
+      // 使用模板创建项目
+      spinner.text = "检查模板...";
 
-    // 复制模板到目标目录
-    copyDirectory(templatePath, targetPath, [
-      "node_modules",
-      ".pnpm-debug.log",
-      "pnpm-lock.yaml",
-    ]);
+      // 获取可用模板列表
+      const availableTemplates = getAvailableTemplates();
 
-    spinner.succeed(`项目 "${targetName}" 创建成功`);
+      if (availableTemplates.length === 0) {
+        spinner.fail("找不到 templates 目录");
+        console.log(chalk.yellow("💡 提示: 请确保 xiaozhi-client 正确安装"));
+        return;
+      }
 
-    console.log(chalk.green("✅ 项目创建完成!"));
-    console.log(chalk.yellow("📝 接下来的步骤:"));
-    console.log(chalk.gray(`   cd ${targetName}`));
-    console.log(chalk.gray("   pnpm install  # 安装依赖"));
-    console.log(chalk.gray("   # 编辑 xiaozhi.config.json 设置你的 MCP 端点"));
-    console.log(chalk.gray("   xiaozhi start  # 启动服务"));
+      // 检查模板是否存在
+      if (!availableTemplates.includes(options.template)) {
+        spinner.fail(`模板 "${options.template}" 不存在`);
+
+        // 尝试找到相似的模板
+        const similarTemplate = findSimilarTemplate(
+          options.template,
+          availableTemplates
+        );
+
+        if (similarTemplate) {
+          console.log(
+            chalk.yellow(`💡 你是想使用模板 "${similarTemplate}" 吗？`)
+          );
+          const confirmed = await askUserConfirmation(
+            chalk.cyan("确认使用此模板？(y/n): ")
+          );
+
+          if (confirmed) {
+            options.template = similarTemplate;
+          } else {
+            console.log(chalk.yellow("可用的模板:"));
+            for (const template of availableTemplates) {
+              console.log(chalk.gray(`  - ${template}`));
+            }
+            return;
+          }
+        } else {
+          console.log(chalk.yellow("可用的模板:"));
+          for (const template of availableTemplates) {
+            console.log(chalk.gray(`  - ${template}`));
+          }
+          return;
+        }
+      }
+
+      // 获取模板路径
+      const scriptDir = __dirname;
+      const possiblePaths = [
+        path.join(scriptDir, "..", "templates"), // 开发环境
+        path.join(scriptDir, "templates"), // 打包后的环境
+        path.join(scriptDir, "..", "..", "templates"), // npm 全局安装
+      ];
+      const templatesDir = possiblePaths.find((p) => fs.existsSync(p))!;
+      const templatePath = path.join(templatesDir, options.template);
+
+      spinner.text = `从模板 "${options.template}" 创建项目 "${projectName}"...`;
+
+      // 复制模板到目标目录
+      copyDirectory(templatePath, targetPath, [
+        "node_modules",
+        ".pnpm-debug.log",
+        "pnpm-lock.yaml",
+      ]);
+
+      spinner.succeed(`项目 "${projectName}" 创建成功`);
+
+      console.log(chalk.green("✅ 项目创建完成!"));
+      console.log(chalk.yellow("📝 接下来的步骤:"));
+      console.log(chalk.gray(`   cd ${projectName}`));
+      console.log(chalk.gray("   pnpm install  # 安装依赖"));
+      console.log(
+        chalk.gray("   # 编辑 xiaozhi.config.json 设置你的 MCP 端点")
+      );
+      console.log(chalk.gray("   xiaozhi start  # 启动服务"));
+    } else {
+      // 创建基本项目（只有配置文件）
+      spinner.text = `创建基本项目 "${projectName}"...`;
+
+      // 创建项目目录
+      fs.mkdirSync(targetPath, { recursive: true });
+
+      // 创建基本的 xiaozhi.config.json
+      createBasicConfig(targetPath);
+
+      spinner.succeed(`项目 "${projectName}" 创建成功`);
+
+      console.log(chalk.green("✅ 基本项目创建完成!"));
+      console.log(chalk.yellow("📝 接下来的步骤:"));
+      console.log(chalk.gray(`   cd ${projectName}`));
+      console.log(
+        chalk.gray("   # 编辑 xiaozhi.config.json 设置你的 MCP 端点和服务")
+      );
+      console.log(chalk.gray("   xiaozhi start  # 启动服务"));
+      console.log(
+        chalk.yellow("💡 提示: 使用 --template 选项可以从模板创建项目")
+      );
+    }
   } catch (error) {
     spinner.fail(
       `创建项目失败: ${error instanceof Error ? error.message : String(error)}`
@@ -688,24 +861,28 @@ function showHelp(): void {
   console.log("  xiaozhi <command> [options]");
   console.log();
   console.log(chalk.yellow("命令:"));
-  console.log("  create <template> [name] 从模板创建项目");
-  console.log("  init                初始化配置文件");
-  console.log("  config <key> [value] 查看或设置配置");
-  console.log("  start [--daemon]    启动服务 (--daemon 后台运行)");
-  console.log("  stop                停止服务");
-  console.log("  status              检查服务状态");
-  console.log("  attach              连接到后台服务查看日志");
-  console.log("  restart [--daemon]  重启服务 (--daemon 后台运行)");
+  console.log("  create <projectName>     创建项目");
+  console.log("  init                     初始化配置文件");
+  console.log("  config <key> [value]     查看或设置配置");
+  console.log("  start [--daemon]         启动服务 (--daemon 后台运行)");
+  console.log("  stop                     停止服务");
+  console.log("  status                   检查服务状态");
+  console.log("  attach                   连接到后台服务查看日志");
+  console.log("  restart [--daemon]       重启服务 (--daemon 后台运行)");
   console.log();
   console.log(chalk.yellow("选项:"));
-  console.log("  -v, --version       显示版本信息");
-  console.log("  -V                  显示详细信息");
-  console.log("  -h, --help          显示帮助信息");
+  console.log("  -v, --version            显示版本信息");
+  console.log("  -V                       显示详细信息");
+  console.log("  -h, --help               显示帮助信息");
+  console.log("  -t, --template <name>    指定模板名称（用于 create 命令）");
   console.log();
   console.log(chalk.yellow("项目示例:"));
-  console.log("  xiaozhi create hello-world           # 创建 hello-world 项目");
+  console.log("  xiaozhi create my-app                    # 创建基本项目");
   console.log(
-    "  xiaozhi create hello-world my-app    # 创建名为 my-app 的项目"
+    "  xiaozhi create my-app -t hello-world     # 使用 hello-world 模板"
+  );
+  console.log(
+    "  xiaozhi create my-app --template hello-world  # 同上，完整选项名"
   );
   console.log();
   console.log(chalk.yellow("配置示例:"));
@@ -730,10 +907,11 @@ program
 
 // create 命令
 program
-  .command("create <template> [name]")
-  .description("从模板创建项目")
-  .action(async (template, name) => {
-    await createProject(template, name);
+  .command("create <projectName>")
+  .description("创建项目")
+  .option("-t, --template <templateName>", "使用指定模板创建项目")
+  .action(async (projectName, options) => {
+    await createProject(projectName, options);
   });
 
 // init 命令
