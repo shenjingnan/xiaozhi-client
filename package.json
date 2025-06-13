@@ -15,7 +15,10 @@
     "calculator": "node calculator.js",
     "pipe": "node dist/mcpPipe.cjs",
     "dev": "node --inspect dist/mcpPipe.cjs calculator.js",
-    "test": "node test.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
     "install-deps": "npm install",
     "format": "biome format --write .",
     "format:check": "biome format .",
@@ -41,9 +44,11 @@
     "@biomejs/biome": "1.9.4",
     "@types/node": "^20.8.0",
     "@types/ws": "^8.18.1",
+    "@vitest/coverage-v8": "^3.2.3",
     "pkg": "^5.8.1",
     "tsup": "^8.5.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.3"
   },
   "engines": {
     "node": ">=18.0.0"
