@@ -438,14 +438,14 @@ async function initConfig(): Promise<void> {
     try {
         if (configManager.configExists()) {
             spinner.warn('配置文件已存在');
-            console.log(chalk.yellow('如需重新初始化，请先删除现有的 config.json 文件'));
+            console.log(chalk.yellow('如需重新初始化，请先删除现有的 xiaozhi.config.json 文件'));
             return;
         }
 
         configManager.initConfig();
         spinner.succeed('配置文件初始化成功');
 
-        console.log(chalk.green('✅ 配置文件已创建: config.json'));
+        console.log(chalk.green('✅ 配置文件已创建: xiaozhi.config.json'));
         console.log(chalk.yellow('📝 请编辑配置文件设置你的 MCP 端点:'));
         console.log(chalk.gray(`   配置文件路径: ${configManager.getConfigPath()}`));
         console.log(chalk.yellow('💡 或者使用命令设置:'));

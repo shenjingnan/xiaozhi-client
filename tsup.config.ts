@@ -55,10 +55,10 @@ export default defineConfig({
       mkdirSync(distDir, { recursive: true });
     }
 
-    // 复制 config.default.json
-    if (existsSync('config.default.json')) {
-      copyFileSync('config.default.json', join(distDir, 'config.default.json'));
-      console.log('✅ 已复制 config.default.json 到 dist/');
+    // 复制 xiaozhi.config.default.json
+    if (existsSync('xiaozhi.config.default.json')) {
+      copyFileSync('xiaozhi.config.default.json', join(distDir, 'xiaozhi.config.default.json'));
+      console.log('✅ 已复制 xiaozhi.config.default.json 到 dist/');
     }
 
     // 复制 mcpServers 目录

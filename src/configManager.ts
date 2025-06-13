@@ -28,9 +28,9 @@ export class ConfigManager {
     private config: AppConfig | null = null;
 
     private constructor() {
-        // 配置文件路径
-        this.configPath = resolve(__dirname, 'config.json');
-        this.defaultConfigPath = resolve(__dirname, 'config.default.json');
+        // 配置文件路径 - 使用当前工作目录而不是 __dirname
+        this.configPath = resolve(process.cwd(), 'xiaozhi.config.json');
+        this.defaultConfigPath = resolve(__dirname, 'xiaozhi.config.default.json');
     }
 
     /**
@@ -56,11 +56,11 @@ export class ConfigManager {
      */
     public initConfig(): void {
         if (!existsSync(this.defaultConfigPath)) {
-            throw new Error('默认配置文件 config.default.json 不存在');
+            throw new Error('默认配置文件 xiaozhi.config.default.json 不存在');
         }
 
         if (this.configExists()) {
-            throw new Error('配置文件 config.json 已存在，无需重复初始化');
+            throw new Error('配置文件 xiaozhi.config.json 已存在，无需重复初始化');
         }
 
         copyFileSync(this.defaultConfigPath, this.configPath);
@@ -72,7 +72,7 @@ export class ConfigManager {
      */
     private loadConfig(): AppConfig {
         if (!this.configExists()) {
-            throw new Error('配置文件 config.json 不存在，请先运行 xiaozhi init 初始化配置');
+            throw new Error('配置文件 xiaozhi.config.json 不存在，请先运行 xiaozhi init 初始化配置');
         }
 
         try {
