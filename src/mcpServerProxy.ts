@@ -147,7 +147,7 @@ class MCPClient {
   }
 
   handleStdoutData(data: string): void {
-    this.messageBuffer += data;
+    this.messageBuffer = `${this.messageBuffer}${data}`;
 
     // Split by newlines and process complete messages
     const lines = this.messageBuffer.split("\n");
@@ -509,14 +509,12 @@ class JSONRPCServer {
           // This is a request
           const response = await this.handleRequest(parsedMessage);
           return JSON.stringify(response);
-        } else {
-          // This is a notification
-          await this.handleNotification(parsedMessage);
-          return null; // No response for notifications
         }
-      } else {
-        throw new Error("Invalid JSON-RPC message");
+        // This is a notification
+        await this.handleNotification(parsedMessage);
+        return null; // No response for notifications
       }
+      throw new Error("Invalid JSON-RPC message");
     } catch (error) {
       logger.error(
         `Error handling message: ${error instanceof Error ? error.message : String(error)}`
@@ -669,7 +667,7 @@ async function main() {
     let messageBuffer = "";
 
     process.stdin.on("data", async (data) => {
-      messageBuffer += data;
+      messageBuffer = `${messageBuffer}${data}`;
 
       // Split by newlines and process complete messages
       const lines = messageBuffer.split("\n");
