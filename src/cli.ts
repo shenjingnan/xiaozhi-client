@@ -204,7 +204,10 @@ async function startService(daemon: boolean = false): Promise<void> {
                 cwd,
                 detached: true,
                 stdio: ['ignore', 'pipe', 'pipe'],
-                env: { ...process.env }
+                env: {
+                    ...process.env,
+                    XIAOZHI_CONFIG_DIR: process.cwd() // 传递用户的当前工作目录
+                }
             });
 
             // 保存 PID 信息
@@ -228,7 +231,10 @@ async function startService(daemon: boolean = false): Promise<void> {
             const child = spawn(command, args, {
                 cwd,
                 stdio: 'inherit',
-                env: { ...process.env }
+                env: {
+                    ...process.env,
+                    XIAOZHI_CONFIG_DIR: process.cwd() // 传递用户的当前工作目录
+                }
             });
 
             // 保存 PID 信息

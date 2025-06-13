@@ -23,14 +23,20 @@ export interface AppConfig {
  */
 export class ConfigManager {
     private static instance: ConfigManager;
-    private configPath: string;
     private defaultConfigPath: string;
     private config: AppConfig | null = null;
 
     private constructor() {
-        // 配置文件路径 - 使用当前工作目录而不是 __dirname
-        this.configPath = resolve(process.cwd(), 'xiaozhi.config.json');
         this.defaultConfigPath = resolve(__dirname, 'xiaozhi.config.default.json');
+    }
+
+    /**
+     * 获取配置文件路径（动态计算）
+     */
+    private getConfigFilePath(): string {
+        // 配置文件路径 - 优先使用环境变量指定的目录，否则使用当前工作目录
+        const configDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();
+        return resolve(configDir, 'xiaozhi.config.json');
     }
 
     /**
@@ -47,7 +53,8 @@ export class ConfigManager {
      * 检查配置文件是否存在
      */
     public configExists(): boolean {
-        return existsSync(this.configPath);
+        const configPath = this.getConfigFilePath();
+        return existsSync(configPath);
     }
 
     /**
@@ -63,7 +70,8 @@ export class ConfigManager {
             throw new Error('配置文件 xiaozhi.config.json 已存在，无需重复初始化');
         }
 
-        copyFileSync(this.defaultConfigPath, this.configPath);
+        const configPath = this.getConfigFilePath();
+        copyFileSync(this.defaultConfigPath, configPath);
         this.config = null; // 重置缓存
     }
 
@@ -76,12 +84,13 @@ export class ConfigManager {
         }
 
         try {
-            const configData = readFileSync(this.configPath, 'utf8');
+            const configPath = this.getConfigFilePath();
+            const configData = readFileSync(configPath, 'utf8');
             const config = JSON.parse(configData) as AppConfig;
-            
+
             // 验证配置结构
             this.validateConfig(config);
-            
+
             return config;
         } catch (error) {
             if (error instanceof SyntaxError) {
@@ -231,11 +240,12 @@ export class ConfigManager {
         try {
             // 验证配置
             this.validateConfig(config);
-            
+
             // 格式化 JSON 并保存
+            const configPath = this.getConfigFilePath();
             const configJson = JSON.stringify(config, null, 2);
-            writeFileSync(this.configPath, configJson, 'utf8');
-            
+            writeFileSync(configPath, configJson, 'utf8');
+
             // 更新缓存
             this.config = config;
         } catch (error) {
@@ -254,7 +264,7 @@ export class ConfigManager {
      * 获取配置文件路径
      */
     public getConfigPath(): string {
-        return this.configPath;
+        return this.getConfigFilePath();
     }
 
     /**

@@ -267,6 +267,12 @@ async function main() {
     let endpointUrl: string;
 
     try {
+        // 调试信息 - 使用 process.stderr.write 确保能看到
+        process.stderr.write(`[DEBUG] XIAOZHI_CONFIG_DIR: ${process.env.XIAOZHI_CONFIG_DIR}\n`);
+        process.stderr.write(`[DEBUG] process.cwd(): ${process.cwd()}\n`);
+        process.stderr.write(`[DEBUG] configManager.getConfigPath(): ${configManager.getConfigPath()}\n`);
+        process.stderr.write(`[DEBUG] configManager.configExists(): ${configManager.configExists()}\n`);
+
         // 首先尝试从配置文件读取
         if (configManager.configExists()) {
             endpointUrl = configManager.getMcpEndpoint();
