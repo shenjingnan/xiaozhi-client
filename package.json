@@ -1,55 +1,51 @@
 {
-  "name": "xiaozhi-client",
-  "version": "0.0.1-beta.3",
-  "description": "小智 AI 客户端 命令行工具",
-  "main": "dist/cli.cjs",
-  "files": [
-    "dist",
-    "docs",
-    "templates",
-    "README.md",
-    "LICENSE"
-  ],
-  "bin": {
-    "xiaozhi": "./dist/cli.cjs",
-    "xiaozhi-client": "./dist/cli.cjs"
-  },
-  "scripts": {
-    "build": "tsup && sed -i '' 's/\\.js\"/\\.cjs\"/g' dist/*.cjs && sed -i '' '/const __dirname = /d' dist/*.cjs",
-    "build:raw": "tsup",
-    "start": "node dist/mcpPipe.cjs calculator.js",
-    "calculator": "node calculator.js",
-    "pipe": "node dist/mcpPipe.cjs",
-    "dev": "node --inspect dist/mcpPipe.cjs calculator.js",
-    "test": "node test.js",
-    "install-deps": "npm install"
-  },
-  "keywords": [
-    "mcp",
-    "calculator",
-    "websocket",
-    "ai",
-    "tools"
-  ],
-  "author": "shenjingnan(sjn.code@gmail.com)",
-  "license": "MIT",
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.12.1",
-    "chalk": "^5.4.1",
-    "commander": "^14.0.0",
-    "dotenv": "^16.3.1",
-    "ora": "^8.2.0",
-    "ws": "^8.14.2",
-    "zod": "^3.25.62"
-  },
-  "devDependencies": {
-    "@types/node": "^20.8.0",
-    "@types/ws": "^8.18.1",
-    "pkg": "^5.8.1",
-    "tsup": "^8.5.0",
-    "typescript": "^5.8.3"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  }
+	"name": "xiaozhi-client",
+	"version": "0.0.1-beta.3",
+	"description": "小智 AI 客户端 命令行工具",
+	"main": "dist/cli.cjs",
+	"files": ["dist", "docs", "templates", "README.md", "LICENSE"],
+	"bin": {
+		"xiaozhi": "./dist/cli.cjs",
+		"xiaozhi-client": "./dist/cli.cjs"
+	},
+	"scripts": {
+		"build": "tsup && sed -i '' 's/\\.js\"/\\.cjs\"/g' dist/*.cjs && sed -i '' '/const __dirname = /d' dist/*.cjs",
+		"build:raw": "tsup",
+		"start": "node dist/mcpPipe.cjs calculator.js",
+		"calculator": "node calculator.js",
+		"pipe": "node dist/mcpPipe.cjs",
+		"dev": "node --inspect dist/mcpPipe.cjs calculator.js",
+		"test": "node test.js",
+		"install-deps": "npm install",
+		"format": "biome format --write .",
+		"format:check": "biome format .",
+		"lint": "biome lint --write .",
+		"lint:check": "biome lint .",
+		"check": "biome check .",
+		"check:write": "biome check --write .",
+		"ci": "biome ci ."
+	},
+	"keywords": ["mcp", "calculator", "websocket", "ai", "tools"],
+	"author": "shenjingnan(sjn.code@gmail.com)",
+	"license": "MIT",
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "^1.12.1",
+		"chalk": "^5.4.1",
+		"commander": "^14.0.0",
+		"dotenv": "^16.3.1",
+		"ora": "^8.2.0",
+		"ws": "^8.14.2",
+		"zod": "^3.25.62"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "1.9.4",
+		"@types/node": "^20.8.0",
+		"@types/ws": "^8.18.1",
+		"pkg": "^5.8.1",
+		"tsup": "^8.5.0",
+		"typescript": "^5.8.3"
+	},
+	"engines": {
+		"node": ">=18.0.0"
+	}
 }

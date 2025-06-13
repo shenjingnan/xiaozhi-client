@@ -1,13 +1,13 @@
 {
-  "mcpEndpoint": "<请填写你的接入点地址（获取地址在 xiaozhi.me）>",
-  "mcpServers": {
-    "calculator": {
-      "command": "node",
-      "args": ["./mcpServers/calculator.js"]
-    },
-    "datetime": {
-      "command": "node",
-      "args": ["./mcpServers/datetime.js"]
-    }
-  }
+	"mcpEndpoint": "<请填写你的接入点地址（获取地址在 xiaozhi.me）>",
+	"mcpServers": {
+		"calculator": {
+			"command": "node",
+			"args": ["./mcpServers/calculator.js"]
+		},
+		"datetime": {
+			"command": "node",
+			"args": ["./mcpServers/datetime.js"]
+		}
+	}
 }
