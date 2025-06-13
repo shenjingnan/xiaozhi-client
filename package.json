@@ -6,6 +6,7 @@
   "files": [
     "dist",
     "docs",
+    "templates",
     "README.md",
     "LICENSE"
   ],

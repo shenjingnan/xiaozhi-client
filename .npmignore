@@ -1,2 +1,9 @@
 config.json
 dist/config.json
+node_modules
+templates/hello-world/node_modules
+templates/hello-world/pnpm-lock.yaml
+templates/hello-world/.pnpm-debug.log*
+templates/*/node_modules
+templates/*/pnpm-lock.yaml
+templates/*/.pnpm-debug.log*

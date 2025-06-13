@@ -1,5 +1,5 @@
 import { defineConfig } from 'tsup';
-import { copyFileSync, cpSync, existsSync, mkdirSync } from 'fs';
+import { copyFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import type { Plugin } from 'esbuild';
 
@@ -47,7 +47,7 @@ export default defineConfig({
     'ora'
   ],
   onSuccess: async () => {
-    // 复制配置文件和 mcpServers 目录到 dist
+    // 复制配置文件到 dist
     const distDir = 'dist';
 
     // 确保 dist 目录存在
@@ -61,10 +61,6 @@ export default defineConfig({
       console.log('✅ 已复制 xiaozhi.config.default.json 到 dist/');
     }
 
-    // 复制 mcpServers 目录
-    if (existsSync('mcpServers')) {
-      cpSync('mcpServers', join(distDir, 'mcpServers'), { recursive: true });
-      console.log('✅ 已复制 mcpServers/ 到 dist/');
-    }
+    console.log('✅ 构建完成，mcpServers 现在位于 templates/ 目录中');
   }
 });

@@ -462,6 +462,115 @@ async function initConfig(): Promise<void> {
 }
 
 /**
+ * 创建项目命令
+ */
+async function createProject(templateName: string, projectName?: string): Promise<void> {
+    const spinner = ora('检查模板...').start();
+
+    try {
+        // 获取当前脚本所在目录
+        const scriptDir = __dirname;
+
+        // 查找 templates 目录
+        let templatesDir: string;
+        const possiblePaths = [
+            path.join(scriptDir, '..', 'templates'),  // 开发环境
+            path.join(scriptDir, 'templates'),        // 打包后的环境
+            path.join(scriptDir, '..', '..', 'templates'), // npm 全局安装
+        ];
+
+        templatesDir = possiblePaths.find(p => fs.existsSync(p)) || '';
+
+        if (!templatesDir || !fs.existsSync(templatesDir)) {
+            spinner.fail('找不到 templates 目录');
+            console.log(chalk.yellow('💡 提示: 请确保 xiaozhi-client 正确安装'));
+            return;
+        }
+
+        // 检查模板是否存在
+        const templatePath = path.join(templatesDir, templateName);
+        if (!fs.existsSync(templatePath)) {
+            spinner.fail(`模板 "${templateName}" 不存在`);
+
+            // 列出可用的模板
+            try {
+                const availableTemplates = fs.readdirSync(templatesDir)
+                    .filter(item => fs.statSync(path.join(templatesDir, item)).isDirectory());
+
+                if (availableTemplates.length > 0) {
+                    console.log(chalk.yellow('可用的模板:'));
+                    availableTemplates.forEach(template => {
+                        console.log(chalk.gray(`  - ${template}`));
+                    });
+                } else {
+                    console.log(chalk.yellow('没有可用的模板'));
+                }
+            } catch (error) {
+                // 忽略列出模板的错误
+            }
+            return;
+        }
+
+        // 确定项目名称和目标目录
+        const targetName = projectName || templateName;
+        const targetPath = path.join(process.cwd(), targetName);
+
+        // 检查目标目录是否已存在
+        if (fs.existsSync(targetPath)) {
+            spinner.fail(`目录 "${targetName}" 已存在`);
+            console.log(chalk.yellow('💡 提示: 请选择不同的项目名称或删除现有目录'));
+            return;
+        }
+
+        spinner.text = `创建项目 "${targetName}"...`;
+
+        // 复制模板到目标目录
+        copyDirectory(templatePath, targetPath, ['node_modules', '.pnpm-debug.log', 'pnpm-lock.yaml']);
+
+        spinner.succeed(`项目 "${targetName}" 创建成功`);
+
+        console.log(chalk.green('✅ 项目创建完成!'));
+        console.log(chalk.yellow('📝 接下来的步骤:'));
+        console.log(chalk.gray(`   cd ${targetName}`));
+        console.log(chalk.gray('   pnpm install  # 安装依赖'));
+        console.log(chalk.gray('   # 编辑 xiaozhi.config.json 设置你的 MCP 端点'));
+        console.log(chalk.gray('   xiaozhi start  # 启动服务'));
+
+    } catch (error) {
+        spinner.fail(`创建项目失败: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+
+/**
+ * 递归复制目录
+ */
+function copyDirectory(src: string, dest: string, excludePatterns: string[] = []): void {
+    // 创建目标目录
+    if (!fs.existsSync(dest)) {
+        fs.mkdirSync(dest, { recursive: true });
+    }
+
+    const items = fs.readdirSync(src);
+
+    for (const item of items) {
+        // 检查是否应该排除此项
+        if (excludePatterns.some(pattern => item.includes(pattern))) {
+            continue;
+        }
+
+        const srcPath = path.join(src, item);
+        const destPath = path.join(dest, item);
+        const stat = fs.statSync(srcPath);
+
+        if (stat.isDirectory()) {
+            copyDirectory(srcPath, destPath, excludePatterns);
+        } else {
+            fs.copyFileSync(srcPath, destPath);
+        }
+    }
+}
+
+/**
  * 配置管理命令
  */
 async function configCommand(key: string, value?: string): Promise<void> {
@@ -524,6 +633,7 @@ function showHelp(): void {
     console.log('  xiaozhi <command> [options]');
     console.log();
     console.log(chalk.yellow('命令:'));
+    console.log('  create <template> [name] 从模板创建项目');
     console.log('  init                初始化配置文件');
     console.log('  config <key> [value] 查看或设置配置');
     console.log('  start [--daemon]    启动服务 (--daemon 后台运行)');
@@ -536,6 +646,10 @@ function showHelp(): void {
     console.log('  -v, --version       显示版本信息');
     console.log('  -V                  显示详细信息');
     console.log('  -h, --help          显示帮助信息');
+    console.log();
+    console.log(chalk.yellow('项目示例:'));
+    console.log('  xiaozhi create hello-world           # 创建 hello-world 项目');
+    console.log('  xiaozhi create hello-world my-app    # 创建名为 my-app 的项目');
     console.log();
     console.log(chalk.yellow('配置示例:'));
     console.log('  xiaozhi init                          # 初始化配置');
@@ -556,6 +670,14 @@ program
     .description('MCP Calculator Service CLI Tool')
     .version(VERSION, '-v, --version', '显示版本信息')
     .helpOption('-h, --help', '显示帮助信息');
+
+// create 命令
+program
+    .command('create <template> [name]')
+    .description('从模板创建项目')
+    .action(async (template, name) => {
+        await createProject(template, name);
+    });
 
 // init 命令
 program
