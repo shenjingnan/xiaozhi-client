@@ -76,9 +76,16 @@ class MCPClient {
             stdio: ['pipe', 'pipe', 'pipe']
         };
 
+        // Set working directory to user's current working directory
+        // This ensures relative paths in MCP server configs are resolved correctly
+        const userWorkingDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();
+        spawnOptions.cwd = userWorkingDir;
+
         // Add environment variables if specified
         if (env) {
             spawnOptions.env = { ...process.env, ...env };
+        } else {
+            spawnOptions.env = { ...process.env };
         }
 
         this.process = spawn(command, args, spawnOptions);
