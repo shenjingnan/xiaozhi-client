@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - next
 
 permissions:
   contents: read
@@ -39,8 +40,13 @@ jobs:
       - name: 构建项目
         run: pnpm run build
 
+      - name: 运行测试
+        run: pnpm test
+        continue-on-error: false
+
       - name: 验证已安装依赖项的来源证明和注册中心签名的完整性
         run: pnpm audit signatures
+
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
