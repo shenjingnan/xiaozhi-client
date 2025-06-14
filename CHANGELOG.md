@@ -1,3 +1,10 @@
+# [1.1.0-next.2](https://github.com/shenjingnan/xiaozhi-client/compare/v1.1.0-next.1...v1.1.0-next.2) (2025-06-14)
+
+
+### Features
+
+* **ci:** 添加 next 分支预发布支持和增强发布流程 ([#17](https://github.com/shenjingnan/xiaozhi-client/issues/17)) ([#19](https://github.com/shenjingnan/xiaozhi-client/issues/19)) ([db10935](https://github.com/shenjingnan/xiaozhi-client/commit/db109352082f3ddfbbb82080ea5f4a89a6137887))
+
 # [1.1.0-next.1](https://github.com/shenjingnan/xiaozhi-client/compare/v1.0.1...v1.1.0-next.1) (2025-06-14)
 
 
