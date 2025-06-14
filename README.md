@@ -2,66 +2,75 @@
 
 小智 AI 客户端，目前主要用于 MCP 的对接
 
-![效果图](./docs/images/preview.png)
+![效果图](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/preview.png)
 
-## 安装和使用
+## 功能特性
 
-### 开发环境
+- 支持 小智(xiaozhi.me) 官方服务器接入点
+- 支持 自定义 MCP 服务
+- 支持 使用标准 MCP 配置方式多个 MCP Server
+- 支持 聚合多个 MCP Server
+- 支持 动态控制 MCP Server 提供的工具
+- 支持 通过模板创建
+- 支持 后台运行
 
-1. 克隆项目：
+## 快速上手
+
+### 全局安装 xiaozhi-client 命令行工具
 
 ```bash
-git clone <repository-url>
-cd xiaozhi-client
-```
+## 安装
+npm i -g xiaozhi-client
 
-2. 安装依赖：
+## 创建项目
+xiaozhi create my-app --template hello-world
 
-```bash
+## 进入项目
+cd my-app
+
+## 安装依赖（主要是示例代码中mcp服务所使用的依赖）
 pnpm install
+
+# 修改 xiaozhi.config.json 中的 mcpEndpoint 为你的接入点地址（需要自行前往xiaozhi.me获取）
+# 小智AI配置MCP接入点使用说明：https://ccnphfhqs21z.feishu.cn/wiki/HiPEwZ37XiitnwktX13cEM5KnSb
+
+## 运行
+xiaozhi start
 ```
 
-3. 构建项目：
+### 通过 npx 直接运行
 
 ```bash
-pnpm run build
+# 创建项目
+npx -y xiaozhi-client create --template hello-world
+
+# 进入项目目录
+cd hello-world
+
+# 安装依赖
+pnpm install
+
+# 修改 xiaozhi.config.json 中的 mcpEndpoint 为你的接入点地址（需要自行前往xiaozhi.me获取）
+# 小智AI配置MCP接入点使用说明：https://ccnphfhqs21z.feishu.cn/wiki/HiPEwZ37XiitnwktX13cEM5KnSb
+
+# 启动服务
+npx -y xiaozhi-client start
 ```
 
-4. 本地安装（用于开发测试）：
-
-```bash
-npm link
-```
-
-现在你可以在任何地方使用 `xiaozhi` 命令了。
-
-### 生产环境
-
-项目使用 tsup 打包成单个可执行的 JavaScript 文件，所有依赖都被正确处理。
-
-构建后的文件位于 `dist/cli.js`，这是一个完整的可执行文件，包含：
-
-- 正确的 shebang (`#!/usr/bin/env node`)
-- 所有必要的代码（除了外部依赖）
-- 可执行权限
-
-### 可用命令
+## 可用命令
 
 ```bash
 # 查看帮助
 xiaozhi --help
-
-# 配置端点
-xiaozhi set-config xiaozhi.endpoint=wss://your-endpoint
-
-# 查看配置
-xiaozhi get-config
 
 # 启动服务
 xiaozhi start
 
 # 后台启动服务
 xiaozhi start --daemon
+
+# 将后台服务转到前台运行
+xiaozhi attach
 
 # 查看服务状态
 xiaozhi status
@@ -71,89 +80,16 @@ xiaozhi stop
 
 # 重启服务
 xiaozhi restart
+
+# 列出所有使用的mcp服务
+xiaozhi mcp list
+
+# 列出所有mcp所提供的tools
+xiaozhi mcp --tools
 ```
 
-## 开发
+## 路线图
 
-### 构建脚本
-
-- `pnpm run build` - 使用 tsup 构建项目（推荐）
-- `pnpm run build:tsc` - 使用 TypeScript 编译器构建（备用）
-- `pnpm run clean` - 清理构建文件
-- `pnpm run dev` - 开发模式（监听文件变化）
-- `pnpm run type-check` - 仅进行类型检查
-- `pnpm run start` - 编译并启动服务
-
-### 技术栈
-
-- TypeScript
-- tsup (打包工具)
-- Commander.js (CLI 框架)
-- Chalk (终端颜色)
-- Ora (加载动画)
-- Biome (代码格式化和检查)
-- Vitest (单元测试)
-
-### 代码质量
-
-项目使用完整的 CI/CD 流程确保代码质量：
-
-#### 测试
-
-```bash
-# 运行所有测试
-pnpm run test
-
-# 运行测试并生成覆盖率报告
-pnpm run test:coverage
-
-# 监听模式运行测试
-pnpm run test:watch
-
-# 运行测试UI界面
-pnpm run test:ui
-```
-
-#### 代码检查和格式化
-
-```bash
-# 运行Biome代码检查（CI模式）
-pnpm run ci
-
-# 格式化代码
-pnpm run format
-
-# 检查格式（不修改文件）
-pnpm run format:check
-
-# 运行lint检查
-pnpm run lint:check
-
-# 运行lint并自动修复
-pnpm run lint
-
-# TypeScript类型检查
-pnpm run type-check
-```
-
-#### CI/CD 流程
-
-每次向 main 分支提交 PR 时，会自动运行以下检查：
-
-1. **TypeScript 类型检查** - 确保没有类型错误
-2. **Biome 代码检查** - 确保代码格式和质量符合规范
-3. **单元测试** - 运行所有测试用例并生成覆盖率报告
-4. **覆盖率检查** - 确保测试覆盖率不低于配置的阈值
-5. **构建验证** - 确保项目能够正确构建
-6. **产物验证** - 验证所有必要的构建产物都已生成
-7. **CLI 可执行性测试** - 确保 CLI 工具可以正常执行
-
-只有所有检查都通过，PR 才能被合并到 main 分支。
-
-### 打包特性
-
-- 使用 tsup 进行快速打包
-- 自动处理 shebang 重复问题
-- 自动添加可执行权限
-- 支持 ES 模块
-- 生成 source maps 和类型定义文件
+- 支持 通过 SSE 类型的MCP Server
+- 支持 直接使用 [modelscope](https://www.modelscope.cn/mcp) 中托管的MCP 服务
+- 支持 通过使用网页进行MCP配置
