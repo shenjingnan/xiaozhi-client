@@ -3,13 +3,7 @@
   "version": "0.0.1-beta.8",
   "description": "小智 AI 客户端 命令行工具",
   "main": "dist/cli.cjs",
-  "files": [
-    "dist",
-    "docs",
-    "templates",
-    "README.md",
-    "LICENSE"
-  ],
+  "files": ["dist", "docs", "templates", "README.md", "LICENSE"],
   "bin": {
     "xiaozhi": "./dist/cli.cjs",
     "xiaozhi-client": "./dist/cli.cjs"
@@ -28,13 +22,7 @@
     "check:write": "biome check --write .",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s"
   },
-  "keywords": [
-    "mcp",
-    "calculator",
-    "websocket",
-    "ai",
-    "tools"
-  ],
+  "keywords": ["xiaozhi", "mcp", "websocket", "ai"],
   "author": "shenjingnan(sjn.code@gmail.com)",
   "license": "MIT",
   "dependencies": {
