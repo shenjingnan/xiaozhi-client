@@ -40,7 +40,7 @@ jobs:
         run: pnpm run build
 
       - name: 验证已安装依赖项的来源证明和注册中心签名的完整性
-        run: npm audit signatures
+        run: pnpm audit signatures
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
