@@ -71,6 +71,12 @@ export default defineConfig({
       console.log("✅ 已复制 xiaozhi.config.default.json 到 dist/");
     }
 
+    // 复制 package.json 到 dist 目录，以便运行时能读取版本号
+    if (existsSync("package.json")) {
+      copyFileSync("package.json", join(distDir, "package.json"));
+      console.log("✅ 已复制 package.json 到 dist/");
+    }
+
     console.log("✅ 构建完成，mcpServers 现在位于 templates/ 目录中");
   },
 });
