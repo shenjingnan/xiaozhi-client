@@ -4,6 +4,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import chalk from "chalk";
 import { Command } from "commander";
 import ora from "ora";
@@ -15,8 +16,57 @@ import {
 } from "./mcpCommands.js";
 
 const program = new Command();
-const VERSION = "0.0.1";
 const SERVICE_NAME = "xiaozhi-mcp-service";
+
+/**
+ * 获取版本号
+ */
+function getVersion(): string {
+  try {
+    let currentDir: string;
+
+    // 检查是否在 ES 模块环境中
+    if (typeof import.meta !== "undefined" && import.meta.url) {
+      // ES 模块环境
+      const __filename = fileURLToPath(import.meta.url);
+      currentDir = path.dirname(__filename);
+    } else {
+      // CommonJS 环境，使用 require.main 或 process.cwd()
+      if (require.main?.filename) {
+        currentDir = path.dirname(require.main.filename);
+      } else {
+        currentDir = process.cwd();
+      }
+    }
+
+    // 尝试多个可能的 package.json 路径
+    const possiblePaths = [
+      // 开发环境：src/cli.ts -> package.json
+      path.join(currentDir, "..", "package.json"),
+      // 构建后环境：dist/cli.cjs -> package.json
+      path.join(currentDir, "..", "package.json"),
+      // 全局安装环境
+      path.join(currentDir, "..", "..", "package.json"),
+      // 如果 package.json 被复制到 dist 目录
+      path.join(currentDir, "package.json"),
+    ];
+
+    for (const packagePath of possiblePaths) {
+      if (fs.existsSync(packagePath)) {
+        const packageJson = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+        if (packageJson.version) {
+          return packageJson.version;
+        }
+      }
+    }
+
+    // 如果都找不到，返回默认版本
+    return "unknown";
+  } catch (error) {
+    console.warn("Warning: Could not read version from package.json:", error);
+    return "unknown";
+  }
+}
 
 // PID 文件路径
 const PID_FILE = path.join(os.tmpdir(), `${SERVICE_NAME}.pid`);
@@ -451,7 +501,8 @@ async function restartService(daemon = false): Promise<void> {
  * 显示详细信息
  */
 function showDetailedInfo(): void {
-  console.log(chalk.blue(`xiaozhi v${VERSION}`));
+  const version = getVersion();
+  console.log(chalk.blue(`xiaozhi v${version}`));
   console.log(chalk.gray("MCP Calculator Service CLI Tool"));
   console.log(chalk.gray("Built with Node.js and TypeScript"));
   console.log(chalk.gray(`Node.js: ${process.version}`));
@@ -912,7 +963,7 @@ function showHelp(): void {
 program
   .name("xiaozhi")
   .description("MCP Calculator Service CLI Tool")
-  .version(VERSION, "-v, --version", "显示版本信息")
+  .version(getVersion(), "-v, --version", "显示版本信息")
   .helpOption("-h, --help", "显示帮助信息");
 
 // create 命令
