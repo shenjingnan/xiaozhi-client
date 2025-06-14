@@ -36,10 +36,10 @@ jobs:
       run: pnpm install --frozen-lockfile
 
     - name: TypeScript 类型检查
-      run: pnpm run type-check
+      run: pnpm run type:check
 
     - name: Biome 代码检查 (CI模式)
-      run: pnpm run ci
+      run: pnpm run check
 
     - name: 运行测试并生成覆盖率报告
       run: pnpm run test:coverage
