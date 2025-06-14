@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/shenjingnan/xiaozhi-client/compare/v1.0.2...v1.0.3) (2025-06-14)
+
+
+### Features
+
+* **cli:** 实现动态版本号读取机制 ([#29](https://github.com/shenjingnan/xiaozhi-client/issues/29)) ([#33](https://github.com/shenjingnan/xiaozhi-client/issues/33)) ([a905bdb](https://github.com/shenjingnan/xiaozhi-client/commit/a905bdbd9923ea0d7334d9d8275ed5bba4dc37e9))
+
 # [1.1.0-next.5](https://github.com/shenjingnan/xiaozhi-client/compare/v1.1.0-next.4...v1.1.0-next.5) (2025-06-14)
 
 
