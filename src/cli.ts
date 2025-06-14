@@ -8,6 +8,11 @@ import chalk from "chalk";
 import { Command } from "commander";
 import ora from "ora";
 import { configManager } from "./configManager.js";
+import {
+  listMcpServers,
+  listServerTools,
+  setToolEnabled,
+} from "./mcpCommands.js";
 
 const program = new Command();
 const VERSION = "0.0.1";
@@ -894,6 +899,13 @@ function showHelp(): void {
   console.log("  xiaozhi status               # 检查服务状态");
   console.log("  xiaozhi attach               # 查看后台服务日志");
   console.log("  xiaozhi stop                 # 停止服务");
+  console.log();
+  console.log(chalk.yellow("MCP 管理示例:"));
+  console.log("  xiaozhi mcp list             # 列出所有 MCP 服务");
+  console.log("  xiaozhi mcp list --tools     # 列出所有服务的工具");
+  console.log("  xiaozhi mcp server <name>    # 列出指定服务的工具");
+  console.log("  xiaozhi mcp tool <server> <tool> enable   # 启用工具");
+  console.log("  xiaozhi mcp tool <server> <tool> disable  # 禁用工具");
 }
 
 // 配置 Commander 程序
@@ -968,6 +980,40 @@ program
   .option("-d, --daemon", "在后台运行服务")
   .action(async (options) => {
     await restartService(options.daemon);
+  });
+
+// mcp 命令组
+const mcpCommand = program.command("mcp").description("MCP 服务和工具管理");
+
+// mcp list 命令
+mcpCommand
+  .command("list")
+  .description("列出 MCP 服务")
+  .option("--tools", "显示所有服务的工具列表")
+  .action(async (options) => {
+    await listMcpServers(options);
+  });
+
+// mcp <server> list 命令
+mcpCommand
+  .command("server <serverName>")
+  .description("管理指定的 MCP 服务")
+  .action(async (serverName) => {
+    await listServerTools(serverName);
+  });
+
+// mcp <server> <tool> enable/disable 命令
+mcpCommand
+  .command("tool <serverName> <toolName> <action>")
+  .description("启用或禁用指定服务的工具")
+  .action(async (serverName, toolName, action) => {
+    if (action !== "enable" && action !== "disable") {
+      console.error(chalk.red("错误: 操作必须是 'enable' 或 'disable'"));
+      process.exit(1);
+    }
+
+    const enabled = action === "enable";
+    await setToolEnabled(serverName, toolName, enabled);
   });
 
 // -V 选项 (详细信息)

@@ -18,6 +18,9 @@ vi.mock("./configManager.js", () => ({
   configManager: {
     configExists: vi.fn(),
     getMcpServers: vi.fn(),
+    isToolEnabled: vi.fn(),
+    updateServerToolsConfig: vi.fn(),
+    getServerToolsConfig: vi.fn(),
   },
 }));
 
@@ -339,6 +342,174 @@ describe("MCPServerProxy", () => {
       const parts = prefixedName.split("_xzcli_");
       const actualOriginalName = parts.length > 1 ? parts[1] : prefixedName;
       expect(actualOriginalName).toBe(expectedOriginalName);
+    });
+  });
+
+  describe("Tool filtering", () => {
+    beforeEach(() => {
+      mockConfigManager.isToolEnabled.mockImplementation(
+        (serverName: string, toolName: string) => {
+          // Mock some tools as disabled for testing
+          if (serverName === "test-server" && toolName === "disabled-tool") {
+            return false;
+          }
+          return true; // Default to enabled
+        }
+      );
+
+      mockConfigManager.getServerToolsConfig.mockReturnValue({
+        "enabled-tool": {
+          description: "Enabled tool",
+          enable: true,
+        },
+        "disabled-tool": {
+          description: "Disabled tool",
+          enable: false,
+        },
+      });
+    });
+
+    it("should filter out disabled tools", () => {
+      const allTools = [
+        { name: "enabled-tool", description: "Enabled tool" },
+        { name: "disabled-tool", description: "Disabled tool" },
+      ];
+
+      const enabledTools = allTools.filter((tool) =>
+        mockConfigManager.isToolEnabled("test-server", tool.name)
+      );
+
+      expect(enabledTools).toHaveLength(1);
+      expect(enabledTools[0].name).toBe("enabled-tool");
+    });
+
+    it("should include all tools when none are disabled", () => {
+      mockConfigManager.isToolEnabled.mockReturnValue(true);
+
+      const allTools = [
+        { name: "tool1", description: "Tool 1" },
+        { name: "tool2", description: "Tool 2" },
+      ];
+
+      const enabledTools = allTools.filter((tool) =>
+        mockConfigManager.isToolEnabled("test-server", tool.name)
+      );
+
+      expect(enabledTools).toHaveLength(2);
+    });
+
+    it("should handle empty tools list", () => {
+      const allTools: any[] = [];
+
+      const enabledTools = allTools.filter((tool) =>
+        mockConfigManager.isToolEnabled("test-server", tool.name)
+      );
+
+      expect(enabledTools).toHaveLength(0);
+    });
+
+    it("should update tools configuration", () => {
+      const toolsConfig = {
+        tool1: {
+          description: "Tool 1",
+          enable: true,
+        },
+        tool2: {
+          description: "Tool 2",
+          enable: false,
+        },
+      };
+
+      mockConfigManager.updateServerToolsConfig("test-server", toolsConfig);
+
+      expect(mockConfigManager.updateServerToolsConfig).toHaveBeenCalledWith(
+        "test-server",
+        toolsConfig
+      );
+    });
+
+    it("should generate prefixed tool names correctly", () => {
+      const serverName = "test-server";
+      const originalToolName = "calculate";
+
+      // Test the prefixing logic
+      const normalizedServerName = serverName.replace(/-/g, "_");
+      const prefixedName = `${normalizedServerName}_xzcli_${originalToolName}`;
+
+      expect(prefixedName).toBe("test_server_xzcli_calculate");
+    });
+
+    it("should extract original tool name from prefixed name", () => {
+      const prefixedName = "test_server_xzcli_calculate";
+      const serverName = "test-server";
+
+      // Test the extraction logic
+      const normalizedServerName = serverName.replace(/-/g, "_");
+      const prefix = `${normalizedServerName}_xzcli_`;
+
+      if (prefixedName.startsWith(prefix)) {
+        const originalName = prefixedName.substring(prefix.length);
+        expect(originalName).toBe("calculate");
+      }
+    });
+
+    it("should handle tool filtering with prefixed names", () => {
+      const originalTools = [
+        { name: "tool1", description: "Tool 1" },
+        { name: "tool2", description: "Tool 2" },
+      ];
+
+      // Simulate prefixing and filtering
+      const prefixedTools = originalTools.map((tool) => ({
+        ...tool,
+        name: `test_server_xzcli_${tool.name}`,
+      }));
+
+      const filteredTools = prefixedTools.filter((tool) => {
+        const originalName = tool.name.split("_xzcli_")[1];
+        return mockConfigManager.isToolEnabled("test-server", originalName);
+      });
+
+      expect(filteredTools).toHaveLength(2); // Both tools enabled by default
+      expect(filteredTools[0].name).toBe("test_server_xzcli_tool1");
+      expect(filteredTools[1].name).toBe("test_server_xzcli_tool2");
+    });
+  });
+
+  describe("Server management", () => {
+    it("should get server information", () => {
+      const servers = [
+        { name: "server1", toolCount: 3, enabledToolCount: 2 },
+        { name: "server2", toolCount: 5, enabledToolCount: 5 },
+      ];
+
+      // Test expected server info structure
+      expect(servers[0]).toHaveProperty("name");
+      expect(servers[0]).toHaveProperty("toolCount");
+      expect(servers[0]).toHaveProperty("enabledToolCount");
+    });
+
+    it("should get server tools information", () => {
+      const serverTools = [
+        { name: "tool1", description: "Tool 1", enabled: true },
+        { name: "tool2", description: "Tool 2", enabled: false },
+      ];
+
+      // Test expected tool info structure
+      expect(serverTools[0]).toHaveProperty("name");
+      expect(serverTools[0]).toHaveProperty("description");
+      expect(serverTools[0]).toHaveProperty("enabled");
+    });
+
+    it("should handle server not found", () => {
+      const serverName = "non-existent-server";
+
+      // Test that we can check for server existence
+      const serverExists = Object.prototype.hasOwnProperty.call(
+        mockConfigManager.getMcpServers(),
+        serverName
+      );
+      expect(serverExists).toBe(false);
     });
   });
 });

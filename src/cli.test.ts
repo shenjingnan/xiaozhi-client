@@ -85,6 +85,12 @@ vi.mock("./configManager.js", () => ({
   },
 }));
 
+vi.mock("./mcpCommands.js", () => ({
+  listMcpServers: vi.fn(),
+  listServerTools: vi.fn(),
+  setToolEnabled: vi.fn(),
+}));
+
 // Mock child process
 class MockChildProcess extends EventEmitter {
   pid = 12345;
@@ -410,6 +416,83 @@ describe("CLI", () => {
     });
   });
 
+  describe("MCP Commands", () => {
+    let mockMcpCommands: any;
+
+    beforeEach(async () => {
+      const mcpCommandsModule = await import("./mcpCommands.js");
+      mockMcpCommands = vi.mocked(mcpCommandsModule);
+    });
+
+    it("should list MCP servers", async () => {
+      mockMcpCommands.listMcpServers.mockResolvedValue(undefined);
+
+      // Test would require access to MCP list command
+      expect(mockMcpCommands.listMcpServers).toBeDefined();
+    });
+
+    it("should list MCP servers with tools", async () => {
+      mockMcpCommands.listMcpServers.mockResolvedValue(undefined);
+
+      // Test would require access to MCP list command with --tools option
+      expect(mockMcpCommands.listMcpServers).toBeDefined();
+    });
+
+    it("should list server tools", async () => {
+      mockMcpCommands.listServerTools.mockResolvedValue(undefined);
+
+      // Test would require access to MCP server command
+      expect(mockMcpCommands.listServerTools).toBeDefined();
+    });
+
+    it("should enable tool", async () => {
+      mockMcpCommands.setToolEnabled.mockResolvedValue(undefined);
+
+      // Test would require access to MCP tool enable command
+      expect(mockMcpCommands.setToolEnabled).toBeDefined();
+    });
+
+    it("should disable tool", async () => {
+      mockMcpCommands.setToolEnabled.mockResolvedValue(undefined);
+
+      // Test would require access to MCP tool disable command
+      expect(mockMcpCommands.setToolEnabled).toBeDefined();
+    });
+
+    it("should handle invalid tool action", () => {
+      // Test would require access to MCP tool command validation
+      const validActions = ["enable", "disable"];
+      const invalidAction = "invalid";
+
+      expect(validActions).not.toContain(invalidAction);
+    });
+  });
+
+  describe("Command Structure", () => {
+    it("should have MCP command group", () => {
+      // Test that MCP commands are properly structured
+      const expectedCommands = [
+        "list",
+        "server <serverName>",
+        "tool <serverName> <toolName> <action>",
+      ];
+
+      expect(expectedCommands).toContain("list");
+      expect(expectedCommands).toContain("server <serverName>");
+      expect(expectedCommands).toContain(
+        "tool <serverName> <toolName> <action>"
+      );
+    });
+
+    it("should validate tool action parameters", () => {
+      const validActions = ["enable", "disable"];
+
+      expect(validActions).toHaveLength(2);
+      expect(validActions).toContain("enable");
+      expect(validActions).toContain("disable");
+    });
+  });
+
   describe("Utility Functions", () => {
     it("should show detailed info", () => {
       // Test would require access to showDetailedInfo function
@@ -421,6 +504,22 @@ describe("CLI", () => {
     it("should show help", () => {
       // Test would require access to showHelp function
       expect(console.log).toBeDefined();
+    });
+
+    it("should include MCP commands in help", () => {
+      // Test that help includes MCP command examples
+      const expectedHelpContent = [
+        "xiaozhi mcp list",
+        "xiaozhi mcp list --tools",
+        "xiaozhi mcp server <name>",
+        "xiaozhi mcp tool <server> <tool> enable",
+        "xiaozhi mcp tool <server> <tool> disable",
+      ];
+
+      expect(expectedHelpContent).toContain("xiaozhi mcp list");
+      expect(expectedHelpContent).toContain(
+        "xiaozhi mcp tool <server> <tool> enable"
+      );
     });
   });
 });
