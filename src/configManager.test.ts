@@ -5,6 +5,8 @@ import {
   type AppConfig,
   ConfigManager,
   type MCPServerConfig,
+  type MCPServerToolsConfig,
+  type MCPToolConfig,
 } from "./configManager";
 
 // Mock fs module
@@ -35,6 +37,20 @@ describe("ConfigManager", () => {
         command: "node",
         args: ["test.js"],
         env: { TEST_VAR: "test_value" },
+      },
+    },
+    mcpServerConfig: {
+      "test-server": {
+        tools: {
+          "test-tool": {
+            description: "Test tool description",
+            enable: true,
+          },
+          "disabled-tool": {
+            description: "Disabled tool",
+            enable: false,
+          },
+        },
       },
     },
   };
@@ -196,6 +212,85 @@ describe("ConfigManager", () => {
     });
   });
 
+  describe("getMcpServerConfig", () => {
+    it("should return MCP server tools config", () => {
+      mockExistsSync.mockReturnValue(true);
+      mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+
+      const serverConfig = configManager.getMcpServerConfig();
+      expect(serverConfig).toEqual(mockConfig.mcpServerConfig);
+    });
+
+    it("should return empty object when mcpServerConfig is undefined", () => {
+      const configWithoutServerConfig = {
+        ...mockConfig,
+        mcpServerConfig: undefined,
+      };
+      mockExistsSync.mockReturnValue(true);
+      mockReadFileSync.mockReturnValue(
+        JSON.stringify(configWithoutServerConfig)
+      );
+
+      const serverConfig = configManager.getMcpServerConfig();
+      expect(serverConfig).toEqual({});
+    });
+  });
+
+  describe("getServerToolsConfig", () => {
+    beforeEach(() => {
+      mockExistsSync.mockReturnValue(true);
+      mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+    });
+
+    it("should return tools config for existing server", () => {
+      const toolsConfig = configManager.getServerToolsConfig("test-server");
+      expect(toolsConfig).toEqual(
+        mockConfig.mcpServerConfig!["test-server"].tools
+      );
+    });
+
+    it("should return empty object for non-existent server", () => {
+      const toolsConfig = configManager.getServerToolsConfig("non-existent");
+      expect(toolsConfig).toEqual({});
+    });
+  });
+
+  describe("isToolEnabled", () => {
+    beforeEach(() => {
+      mockExistsSync.mockReturnValue(true);
+      mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+    });
+
+    it("should return true for enabled tool", () => {
+      const isEnabled = configManager.isToolEnabled("test-server", "test-tool");
+      expect(isEnabled).toBe(true);
+    });
+
+    it("should return false for disabled tool", () => {
+      const isEnabled = configManager.isToolEnabled(
+        "test-server",
+        "disabled-tool"
+      );
+      expect(isEnabled).toBe(false);
+    });
+
+    it("should return true for non-existent tool (default enabled)", () => {
+      const isEnabled = configManager.isToolEnabled(
+        "test-server",
+        "non-existent-tool"
+      );
+      expect(isEnabled).toBe(true);
+    });
+
+    it("should return true for non-existent server (default enabled)", () => {
+      const isEnabled = configManager.isToolEnabled(
+        "non-existent-server",
+        "any-tool"
+      );
+      expect(isEnabled).toBe(true);
+    });
+  });
+
   describe("updateMcpEndpoint", () => {
     beforeEach(() => {
       mockExistsSync.mockReturnValue(true);
@@ -291,6 +386,138 @@ describe("ConfigManager", () => {
       expect(() => configManager.updateMcpServer("test", serverConfig)).toThrow(
         "服务配置的 env 字段必须是对象"
       );
+    });
+  });
+
+  describe("updateServerToolsConfig", () => {
+    beforeEach(() => {
+      mockExistsSync.mockReturnValue(true);
+      mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+    });
+
+    it("should update server tools config", () => {
+      const newToolsConfig: Record<string, MCPToolConfig> = {
+        "new-tool": {
+          description: "New tool",
+          enable: true,
+        },
+        "another-tool": {
+          description: "Another tool",
+          enable: false,
+        },
+      };
+
+      configManager.updateServerToolsConfig("test-server", newToolsConfig);
+
+      const savedConfig = JSON.parse(
+        mockWriteFileSync.mock.calls[0][1] as string
+      );
+      expect(savedConfig.mcpServerConfig["test-server"].tools).toEqual(
+        newToolsConfig
+      );
+    });
+
+    it("should create mcpServerConfig if it doesn't exist", () => {
+      const configWithoutServerConfig = {
+        ...mockConfig,
+        mcpServerConfig: undefined,
+      };
+      mockReadFileSync.mockReturnValue(
+        JSON.stringify(configWithoutServerConfig)
+      );
+
+      const toolsConfig: Record<string, MCPToolConfig> = {
+        tool1: { description: "Tool 1", enable: true },
+      };
+
+      configManager.updateServerToolsConfig("new-server", toolsConfig);
+
+      const savedConfig = JSON.parse(
+        mockWriteFileSync.mock.calls[0][1] as string
+      );
+      expect(savedConfig.mcpServerConfig).toBeDefined();
+      expect(savedConfig.mcpServerConfig["new-server"].tools).toEqual(
+        toolsConfig
+      );
+    });
+  });
+
+  describe("setToolEnabled", () => {
+    beforeEach(() => {
+      mockExistsSync.mockReturnValue(true);
+      mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+    });
+
+    it("should enable tool with description", () => {
+      configManager.setToolEnabled(
+        "test-server",
+        "new-tool",
+        true,
+        "New tool description"
+      );
+
+      const savedConfig = JSON.parse(
+        mockWriteFileSync.mock.calls[0][1] as string
+      );
+      expect(
+        savedConfig.mcpServerConfig["test-server"].tools["new-tool"]
+      ).toEqual({
+        enable: true,
+        description: "New tool description",
+      });
+    });
+
+    it("should disable tool without description", () => {
+      configManager.setToolEnabled("test-server", "test-tool", false);
+
+      const savedConfig = JSON.parse(
+        mockWriteFileSync.mock.calls[0][1] as string
+      );
+      expect(
+        savedConfig.mcpServerConfig["test-server"].tools["test-tool"]
+      ).toEqual({
+        enable: false,
+      });
+    });
+
+    it("should create server config if it doesn't exist", () => {
+      configManager.setToolEnabled(
+        "new-server",
+        "new-tool",
+        true,
+        "Description"
+      );
+
+      const savedConfig = JSON.parse(
+        mockWriteFileSync.mock.calls[0][1] as string
+      );
+      expect(savedConfig.mcpServerConfig["new-server"]).toBeDefined();
+      expect(
+        savedConfig.mcpServerConfig["new-server"].tools["new-tool"]
+      ).toEqual({
+        enable: true,
+        description: "Description",
+      });
+    });
+
+    it("should create mcpServerConfig if it doesn't exist", () => {
+      const configWithoutServerConfig = {
+        ...mockConfig,
+        mcpServerConfig: undefined,
+      };
+      mockReadFileSync.mockReturnValue(
+        JSON.stringify(configWithoutServerConfig)
+      );
+
+      configManager.setToolEnabled("test-server", "tool1", true);
+
+      const savedConfig = JSON.parse(
+        mockWriteFileSync.mock.calls[0][1] as string
+      );
+      expect(savedConfig.mcpServerConfig).toBeDefined();
+      expect(savedConfig.mcpServerConfig["test-server"].tools.tool1).toEqual({
+        enable: true,
+      });
     });
   });
 
