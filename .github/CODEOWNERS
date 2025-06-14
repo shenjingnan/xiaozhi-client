@@ -1,0 +1,30 @@
+# 代码所有者文件
+# 详细信息请参考: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# 全局代码所有者
+* @shenjingnan
+
+# 核心源代码
+/src/ @shenjingnan
+
+# 配置文件
+*.json @shenjingnan
+*.yml @shenjingnan
+*.yaml @shenjingnan
+*.toml @shenjingnan
+
+# 文档
+/docs/ @shenjingnan
+*.md @shenjingnan
+
+# CI/CD配置
+/.github/ @shenjingnan
+
+# 模板文件
+/templates/ @shenjingnan
+
+# 构建配置
+tsup.config.ts @shenjingnan
+tsconfig.json @shenjingnan
+vitest.config.ts @shenjingnan
+biome.json @shenjingnan
