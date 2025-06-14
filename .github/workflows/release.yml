@@ -17,17 +17,29 @@ jobs:
       pull-requests: write
       id-token: write
     steps:
-      - name: Checkout
+      - name: 检出代码
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Setup Node.js
+
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: 设置 Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "lts/iron"
-      - name: Install dependencies
-        run: npm clean-install
-      - name: Verify the integrity of provenance attestations and registry signatures for installed dependencies
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 构建项目
+        run: pnpm run build
+
+      - name: 验证已安装依赖项的来源证明和注册中心签名的完整性
         run: npm audit signatures
       - name: Release
         env:
