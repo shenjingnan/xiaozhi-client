@@ -3,13 +3,7 @@
   "version": "1.0.1",
   "description": "小智 AI 客户端 命令行工具",
   "main": "dist/cli.cjs",
-  "files": [
-    "dist",
-    "docs",
-    "templates",
-    "README.md",
-    "LICENSE"
-  ],
+  "files": ["dist", "docs", "templates", "README.md", "LICENSE"],
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org"
@@ -32,12 +26,7 @@
     "check:write": "biome check --write .",
     "release": "semantic-release"
   },
-  "keywords": [
-    "xiaozhi",
-    "mcp",
-    "websocket",
-    "ai"
-  ],
+  "keywords": ["xiaozhi", "mcp", "websocket", "ai"],
   "author": "shenjingnan(sjn.code@gmail.com)",
   "license": "MIT",
   "dependencies": {
