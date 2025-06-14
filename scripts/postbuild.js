@@ -1,6 +1,6 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { glob } from 'glob';
+import fs from "node:fs";
+import path from "node:path";
+import { glob } from "glob";
 
 console.log("🔧 开始后处理构建文件...");
 
