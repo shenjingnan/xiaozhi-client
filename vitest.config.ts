@@ -1,14 +1,25 @@
 import { defineConfig } from "vitest/config";
+import { codecovVitePlugin } from "@codecov/vite-plugin";
 
 export default defineConfig({
+  plugins: [
+    // 添加 Codecov 插件
+    codecovVitePlugin({
+      enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
+      bundleName: "xiaozhi-client",
+      uploadToken: process.env.CODECOV_TOKEN,
+    }),
+  ],
   test: {
     globals: true,
     environment: "node",
     include: ["src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     exclude: ["node_modules", "dist", "templates/**/*"],
     coverage: {
+      enabled: true,
       provider: "v8",
-      reporter: ["text", "json", "html"],
+      reporter: ["text", "json", "html", "lcov"],
+      reportsDirectory: "./coverage",
       exclude: [
         "node_modules/**",
         "dist/**",
