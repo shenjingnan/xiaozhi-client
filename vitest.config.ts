@@ -1,5 +1,5 @@
-import { defineConfig } from "vitest/config";
 import { codecovVitePlugin } from "@codecov/vite-plugin";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [
