@@ -10,7 +10,11 @@ import { type ChildProcess, spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import process from "node:process";
-import { type MCPServerConfig, configManager } from "./configManager.js";
+import {
+  type MCPServerConfig,
+  type MCPToolConfig,
+  configManager,
+} from "./configManager.js";
 
 // CommonJS 兼容的 __dirname
 const __dirname = dirname(__filename);
@@ -53,7 +57,7 @@ class MCPClient {
   private process: ChildProcess | null;
   public initialized: boolean;
   public tools: Tool[];
-  private originalTools: Tool[]; // 存储原始工具名称
+  public originalTools: Tool[]; // 存储原始工具名称
   private requestId: number;
   private pendingRequests: Map<number, PendingRequest>;
   private messageBuffer: string;
@@ -260,17 +264,23 @@ class MCPClient {
       const result = await this.sendRequest("tools/list");
       this.originalTools = (result as any).tools || [];
 
-      // 为每个工具生成带前缀的名称
-      this.tools = this.originalTools.map((tool) => ({
+      // 为每个工具生成带前缀的名称，并应用过滤
+      const allPrefixedTools = this.originalTools.map((tool) => ({
         ...tool,
         name: this.generatePrefixedToolName(tool.name),
       }));
+
+      // 根据配置过滤工具
+      this.tools = this.filterEnabledTools(allPrefixedTools);
+
+      // 更新配置文件中的工具列表（如果需要）
+      await this.updateToolsConfig();
 
       logger.info(
         `${this.name} loaded ${this.originalTools.length} tools: ${this.originalTools.map((t) => t.name).join(", ")}`
       );
       logger.info(
-        `${this.name} prefixed tools: ${this.tools.map((t) => t.name).join(", ")}`
+        `${this.name} enabled ${this.tools.length} tools: ${this.tools.map((t) => t.name).join(", ")}`
       );
     } catch (error) {
       logger.error(
@@ -278,6 +288,57 @@ class MCPClient {
       );
       this.tools = [];
       this.originalTools = [];
+    }
+  }
+
+  /**
+   * 过滤启用的工具
+   */
+  private filterEnabledTools(allTools: Tool[]): Tool[] {
+    return allTools.filter((tool) => {
+      const originalName = this.getOriginalToolName(tool.name);
+      if (!originalName) return true; // 如果无法解析原始名称，默认启用
+
+      return configManager.isToolEnabled(this.name, originalName);
+    });
+  }
+
+  /**
+   * 更新配置文件中的工具列表
+   */
+  private async updateToolsConfig(): Promise<void> {
+    try {
+      const currentConfig = configManager.getServerToolsConfig(this.name);
+      const toolsConfig: Record<string, MCPToolConfig> = {};
+
+      // 为每个工具创建配置项
+      for (const tool of this.originalTools) {
+        const existingConfig = currentConfig[tool.name];
+        toolsConfig[tool.name] = {
+          description: tool.description || "",
+          enable: existingConfig?.enable !== false, // 默认启用
+        };
+      }
+
+      // 只有当配置发生变化时才更新
+      const hasChanges = Object.keys(toolsConfig).some((toolName) => {
+        const existing = currentConfig[toolName];
+        const newConfig = toolsConfig[toolName];
+        return (
+          !existing ||
+          existing.enable !== newConfig.enable ||
+          existing.description !== newConfig.description
+        );
+      });
+
+      if (hasChanges || Object.keys(currentConfig).length === 0) {
+        configManager.updateServerToolsConfig(this.name, toolsConfig);
+        logger.info(`${this.name} updated tools configuration`);
+      }
+    } catch (error) {
+      logger.error(
+        `Failed to update tools config for ${this.name}: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -460,6 +521,73 @@ class MCPServerProxy {
       allTools.push(...client.tools);
     }
     return allTools;
+  }
+
+  /**
+   * 获取所有服务器的信息
+   */
+  getAllServers(): Array<{
+    name: string;
+    toolCount: number;
+    enabledToolCount: number;
+  }> {
+    const servers: Array<{
+      name: string;
+      toolCount: number;
+      enabledToolCount: number;
+    }> = [];
+
+    for (const [serverName, client] of this.clients) {
+      servers.push({
+        name: serverName,
+        toolCount: client.originalTools.length,
+        enabledToolCount: client.tools.length,
+      });
+    }
+
+    return servers;
+  }
+
+  /**
+   * 获取指定服务器的工具信息
+   */
+  getServerTools(
+    serverName: string
+  ): Array<{ name: string; description: string; enabled: boolean }> {
+    const client = this.clients.get(serverName);
+    if (!client) {
+      throw new Error(`Server ${serverName} not found`);
+    }
+
+    return client.originalTools.map((tool) => ({
+      name: tool.name,
+      description: tool.description || "",
+      enabled: configManager.isToolEnabled(serverName, tool.name),
+    }));
+  }
+
+  /**
+   * 刷新指定服务器的工具列表
+   */
+  async refreshServerTools(serverName: string): Promise<void> {
+    const client = this.clients.get(serverName);
+    if (!client) {
+      throw new Error(`Server ${serverName} not found`);
+    }
+
+    await client.refreshTools();
+    this.buildToolMap(); // 重新构建工具映射
+  }
+
+  /**
+   * 刷新所有服务器的工具列表
+   */
+  async refreshAllTools(): Promise<void> {
+    const refreshPromises = Array.from(this.clients.values()).map((client) =>
+      client.refreshTools()
+    );
+    await Promise.allSettled(refreshPromises);
+    this.buildToolMap(); // 重新构建工具映射
   }
 
   async callTool(toolName: string, arguments_: any): Promise<any> {

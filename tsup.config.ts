@@ -22,6 +22,7 @@ export default defineConfig({
 		"src/mcpServerProxy.ts",
 		"src/cli.ts",
 		"src/configManager.ts",
+		"src/mcpCommands.ts",
 	],
 	format: ["cjs"],
 	target: "node18",

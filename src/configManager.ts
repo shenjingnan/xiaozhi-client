@@ -12,9 +12,19 @@ export interface MCPServerConfig {
   env?: Record<string, string>;
 }
 
+export interface MCPToolConfig {
+  description?: string;
+  enable: boolean;
+}
+
+export interface MCPServerToolsConfig {
+  tools: Record<string, MCPToolConfig>;
+}
+
 export interface AppConfig {
   mcpEndpoint: string;
   mcpServers: Record<string, MCPServerConfig>;
+  mcpServerConfig?: Record<string, MCPServerToolsConfig>;
 }
 
 /**
@@ -178,6 +188,33 @@ export class ConfigManager {
   }
 
   /**
+   * 获取 MCP 服务工具配置
+   */
+  public getMcpServerConfig(): Readonly<Record<string, MCPServerToolsConfig>> {
+    const config = this.getConfig();
+    return config.mcpServerConfig || {};
+  }
+
+  /**
+   * 获取指定服务的工具配置
+   */
+  public getServerToolsConfig(
+    serverName: string
+  ): Readonly<Record<string, MCPToolConfig>> {
+    const serverConfig = this.getMcpServerConfig();
+    return serverConfig[serverName]?.tools || {};
+  }
+
+  /**
+   * 检查工具是否启用
+   */
+  public isToolEnabled(serverName: string, toolName: string): boolean {
+    const toolsConfig = this.getServerToolsConfig(serverName);
+    const toolConfig = toolsConfig[toolName];
+    return toolConfig?.enable !== false; // 默认启用
+  }
+
+  /**
    * 更新 MCP 端点
    */
   public updateMcpEndpoint(endpoint: string): void {
@@ -245,6 +282,60 @@ export class ConfigManager {
       ...config,
       mcpServers: newMcpServers,
     };
+    this.saveConfig(newConfig);
+  }
+
+  /**
+   * 更新服务工具配置
+   */
+  public updateServerToolsConfig(
+    serverName: string,
+    toolsConfig: Record<string, MCPToolConfig>
+  ): void {
+    const config = this.getConfig();
+    const newConfig = { ...config };
+
+    // 确保 mcpServerConfig 存在
+    if (!newConfig.mcpServerConfig) {
+      newConfig.mcpServerConfig = {};
+    }
+
+    // 更新指定服务的工具配置
+    newConfig.mcpServerConfig[serverName] = {
+      tools: toolsConfig,
+    };
+
+    this.saveConfig(newConfig);
+  }
+
+  /**
+   * 设置工具启用状态
+   */
+  public setToolEnabled(
+    serverName: string,
+    toolName: string,
+    enabled: boolean,
+    description?: string
+  ): void {
+    const config = this.getConfig();
+    const newConfig = { ...config };
+
+    // 确保 mcpServerConfig 存在
+    if (!newConfig.mcpServerConfig) {
+      newConfig.mcpServerConfig = {};
+    }
+
+    // 确保服务配置存在
+    if (!newConfig.mcpServerConfig[serverName]) {
+      newConfig.mcpServerConfig[serverName] = { tools: {} };
+    }
+
+    // 更新工具配置
+    newConfig.mcpServerConfig[serverName].tools[toolName] = {
+      enable: enabled,
+      ...(description && { description }),
+    };
+
     this.saveConfig(newConfig);
   }
 
