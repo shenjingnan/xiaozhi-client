@@ -91,6 +91,62 @@ xiaozhi restart
 - Commander.js (CLI 框架)
 - Chalk (终端颜色)
 - Ora (加载动画)
+- Biome (代码格式化和检查)
+- Vitest (单元测试)
+
+### 代码质量
+
+项目使用完整的CI/CD流程确保代码质量：
+
+#### 测试
+```bash
+# 运行所有测试
+pnpm run test
+
+# 运行测试并生成覆盖率报告
+pnpm run test:coverage
+
+# 监听模式运行测试
+pnpm run test:watch
+
+# 运行测试UI界面
+pnpm run test:ui
+```
+
+#### 代码检查和格式化
+```bash
+# 运行Biome代码检查（CI模式）
+pnpm run ci
+
+# 格式化代码
+pnpm run format
+
+# 检查格式（不修改文件）
+pnpm run format:check
+
+# 运行lint检查
+pnpm run lint:check
+
+# 运行lint并自动修复
+pnpm run lint
+
+# TypeScript类型检查
+pnpm run type-check
+```
+
+#### CI/CD流程
+
+每次向main分支提交PR时，会自动运行以下检查：
+
+1. **TypeScript类型检查** - 确保没有类型错误
+2. **Biome代码检查** - 确保代码格式和质量符合规范
+3. **单元测试** - 运行所有测试用例并生成覆盖率报告
+4. **覆盖率检查** - 确保测试覆盖率不低于配置的阈值
+5. **构建验证** - 确保项目能够正确构建
+6. **产物验证** - 验证所有必要的构建产物都已生成
+7. **CLI可执行性测试** - 确保CLI工具可以正常执行
+
+只有所有检查都通过，PR才能被合并到main分支。
 
 ### 打包特性
 

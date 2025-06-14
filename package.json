@@ -19,6 +19,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
+    "type-check": "tsc --noEmit",
     "install-deps": "npm install",
     "format": "biome format --write .",
     "format:check": "biome format .",
