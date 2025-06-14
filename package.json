@@ -60,6 +60,7 @@
     "@types/node": "^24.0.1",
     "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "^3.2.3",
+    "conventional-changelog-conventionalcommits": "^9.0.0",
     "esbuild": "^0.25.5",
     "glob": "^11.0.3",
     "semantic-release": "^24.2.5",
