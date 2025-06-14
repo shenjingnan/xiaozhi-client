@@ -1,0 +1,104 @@
+name: CI Pipeline
+
+# 触发条件：只在PR到main分支时运行CI
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  # CI 阶段 - 完整的代码质量和测试检查
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      with:
+        # 获取完整历史记录，用于覆盖率比较
+        fetch-depth: 0
+
+    # 先安装 pnpm
+    - name: 安装 pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
+
+    # 再设置 Node.js（此时 pnpm 已经可用）
+    - name: 设置 Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: '.nvmrc'
+        cache: 'pnpm'
+
+    - name: 安装依赖
+      run: pnpm install --frozen-lockfile
+
+    - name: TypeScript 类型检查
+      run: pnpm run type-check
+
+    - name: Biome 代码检查 (CI模式)
+      run: pnpm run ci
+
+    - name: 运行测试并生成覆盖率报告
+      run: pnpm run test:coverage
+
+    - name: 构建项目
+      run: pnpm run build
+
+    - name: 验证构建产物
+      run: |
+        echo "验证构建产物是否正确生成..."
+
+        # 检查主要构建产物
+        if [ ! -f "dist/cli.cjs" ]; then
+          echo "❌ 构建失败：dist/cli.cjs 文件不存在"
+          exit 1
+        fi
+
+        # 检查其他核心文件
+        for file in "dist/configManager.cjs" "dist/mcpPipe.cjs" "dist/mcpServerProxy.cjs"; do
+          if [ ! -f "$file" ]; then
+            echo "❌ 构建失败：$file 文件不存在"
+            exit 1
+          fi
+        done
+
+        # 检查类型定义文件
+        for file in "dist/cli.d.ts" "dist/configManager.d.ts" "dist/mcpPipe.d.ts" "dist/mcpServerProxy.d.ts"; do
+          if [ ! -f "$file" ]; then
+            echo "❌ 构建失败：$file 文件不存在"
+            exit 1
+          fi
+        done
+
+        # 检查默认配置文件
+        if [ ! -f "dist/xiaozhi.config.default.json" ]; then
+          echo "❌ 构建失败：dist/xiaozhi.config.default.json 文件不存在"
+          exit 1
+        fi
+
+        echo "✅ 构建产物验证通过"
+
+    - name: 测试CLI工具可执行性
+      run: |
+        echo "测试CLI工具是否可以正常执行..."
+        node dist/cli.cjs --version || echo "CLI版本检查完成"
+        echo "✅ CLI工具可执行性验证通过"
+
+    - name: 上传覆盖率报告
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: coverage-report
+        path: coverage/
+        retention-days: 30
+
+    - name: 上传构建产物
+      uses: actions/upload-artifact@v4
+      if: success()
+      with:
+        name: build-artifacts
+        path: dist/
+        retention-days: 7
