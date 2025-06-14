@@ -1,3 +1,17 @@
+# [1.1.0-next.4](https://github.com/shenjingnan/xiaozhi-client/compare/v1.1.0-next.3...v1.1.0-next.4) (2025-06-14)
+
+
+### Features
+
+* **ci:** 集成 Codecov 代码覆盖率报告 ([#24](https://github.com/shenjingnan/xiaozhi-client/issues/24)) ([0500866](https://github.com/shenjingnan/xiaozhi-client/commit/05008666a706ac3fc9e5bedc4d20be05258f1928))
+
+# [1.1.0-next.3](https://github.com/shenjingnan/xiaozhi-client/compare/v1.1.0-next.2...v1.1.0-next.3) (2025-06-14)
+
+
+### Features
+
+* **release:** 增强语义化发布配置和规则 ([#22](https://github.com/shenjingnan/xiaozhi-client/issues/22)) ([b010246](https://github.com/shenjingnan/xiaozhi-client/commit/b010246d62984651e9099393b72ddbdbe3542d6b))
+
 # [1.1.0-next.2](https://github.com/shenjingnan/xiaozhi-client/compare/v1.1.0-next.1...v1.1.0-next.2) (2025-06-14)
 
 

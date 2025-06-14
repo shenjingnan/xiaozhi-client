@@ -1,5 +1,10 @@
 # Xiaozhi Client
 
+[![npm version](https://badge.fury.io/js/xiaozhi-client.svg)](https://badge.fury.io/js/xiaozhi-client)
+[![codecov](https://codecov.io/gh/shenjingnan/xiaozhi-client/branch/main/graph/badge.svg)](https://codecov.io/gh/shenjingnan/xiaozhi-client)
+[![CI](https://github.com/shenjingnan/xiaozhi-client/workflows/Release/badge.svg)](https://github.com/shenjingnan/xiaozhi-client/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 小智 AI 客户端，目前主要用于 MCP 的对接
 
 ![效果图](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/preview.png)
@@ -90,6 +95,6 @@ xiaozhi mcp --tools
 
 ## 路线图
 
-- 支持 通过 SSE 类型的MCP Server
-- 支持 直接使用 [modelscope](https://www.modelscope.cn/mcp) 中托管的MCP 服务
-- 支持 通过使用网页进行MCP配置
+- 支持 通过 SSE 类型的 MCP Server
+- 支持 直接使用 [modelscope](https://www.modelscope.cn/mcp) 中托管的 MCP 服务
+- 支持 通过使用网页进行 MCP 配置

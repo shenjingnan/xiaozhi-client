@@ -41,6 +41,16 @@ jobs:
     - name: 运行测试并生成覆盖率报告
       run: pnpm run test:coverage
 
+    - name: 上传覆盖率报告
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: true
+        verbose: true
+
     - name: 构建项目
       run: pnpm run build
 
