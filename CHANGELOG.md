@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/shenjingnan/xiaozhi-client/compare/v1.0.3...v1.0.4) (2025-06-15)
+
+
+### Features
+
+* **templates:** 修复模板文件的 ES 模块兼容性问题 ([#39](https://github.com/shenjingnan/xiaozhi-client/issues/39)) ([d4a266b](https://github.com/shenjingnan/xiaozhi-client/commit/d4a266b15212a539b630259ce4110719707c2df1))
+
 # [1.1.0-next.7](https://github.com/shenjingnan/xiaozhi-client/compare/v1.1.0-next.6...v1.1.0-next.7) (2025-06-15)
 
 
