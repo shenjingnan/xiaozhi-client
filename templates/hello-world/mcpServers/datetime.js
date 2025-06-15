@@ -374,7 +374,13 @@ async function main() {
 }
 
 // Run the server if this file is executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
+
+const currentFile = fileURLToPath(import.meta.url);
+const argFile = process.argv[1] ? resolve(process.argv[1]) : null;
+
+if (argFile && currentFile === argFile) {
 	main().catch((error) => {
 		logger.error(`Failed to start server: ${error.message}`);
 		process.exit(1);
