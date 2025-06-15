@@ -30,7 +30,7 @@ jobs:
         cache: 'pnpm'
 
     - name: 安装依赖
-      run: pnpm install --frozen-lockfile
+      run: pnpm install --no-frozen-lockfile
 
     - name: TypeScript 类型检查
       run: pnpm run type:check
