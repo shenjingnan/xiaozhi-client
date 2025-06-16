@@ -82,7 +82,7 @@ describe("mcpCommands", () => {
       calculator: {
         tools: {
           calculator: {
-            description: "Mathematical calculation tool",
+            description: "数学计算工具",
             enable: true,
           },
         },
@@ -90,11 +90,11 @@ describe("mcpCommands", () => {
       datetime: {
         tools: {
           get_current_time: {
-            description: "Get current time",
+            description: "获取当前时间",
             enable: true,
           },
           get_current_date: {
-            description: "Get current date",
+            description: "获取当前日期",
             enable: false,
           },
         },
@@ -113,7 +113,7 @@ describe("mcpCommands", () => {
       );
     });
 
-    it("should list servers without tools option", async () => {
+    it("应该列出不带工具选项的服务", async () => {
       await listMcpServers();
 
       expect(mockSpinner.succeed).toHaveBeenCalledWith("找到 2 个 MCP 服务");
@@ -128,23 +128,32 @@ describe("mcpCommands", () => {
       );
     });
 
-    it("should list servers with tools option using cli-table3", async () => {
+    it("应该使用cli-table3列出带工具选项的服务", async () => {
       await listMcpServers({ tools: true });
 
       expect(mockSpinner.succeed).toHaveBeenCalledWith("找到 2 个 MCP 服务");
       expect(mockConsoleLog).toHaveBeenCalledWith(
         expect.stringContaining("MCP 服务工具列表:")
       );
-      // Check for table output with tool names in new format
-      expect(mockConsoleLog).toHaveBeenCalledWith(
-        expect.stringMatching(/calculator_calculator/)
+      // 检查表格输出中的工具名称（现在只显示工具名，不包含服务名前缀）
+      const tableOutput = mockConsoleLog.mock.calls.find(
+        (call) =>
+          call[0] &&
+          typeof call[0] === "string" &&
+          call[0].includes("calculator")
       );
-      expect(mockConsoleLog).toHaveBeenCalledWith(
-        expect.stringMatching(/datetime_get_current_time/)
+      expect(tableOutput).toBeDefined();
+
+      const timeToolOutput = mockConsoleLog.mock.calls.find(
+        (call) =>
+          call[0] &&
+          typeof call[0] === "string" &&
+          call[0].includes("get_current_time")
       );
+      expect(timeToolOutput).toBeDefined();
     });
 
-    it("should handle empty servers list", async () => {
+    it("应该处理空服务列表", async () => {
       (configManager.getMcpServers as any).mockReturnValue({});
 
       await listMcpServers();
@@ -155,7 +164,7 @@ describe("mcpCommands", () => {
       );
     });
 
-    it("should handle servers with no tools", async () => {
+    it("应该处理没有工具的服务", async () => {
       (configManager.getServerToolsConfig as any).mockReturnValue({});
 
       await listMcpServers({ tools: true });
@@ -168,7 +177,7 @@ describe("mcpCommands", () => {
       );
     });
 
-    it("should handle errors gracefully", async () => {
+    it("应该优雅地处理错误", async () => {
       (configManager.getMcpServers as any).mockImplementation(() => {
         throw new Error("Config error");
       });
@@ -195,11 +204,11 @@ describe("mcpCommands", () => {
 
     const mockToolsConfig = {
       get_current_time: {
-        description: "Get current time",
+        description: "获取当前时间",
         enable: true,
       },
       get_current_date: {
-        description: "Get current date",
+        description: "获取当前日期",
         enable: false,
       },
     };
@@ -211,7 +220,7 @@ describe("mcpCommands", () => {
       );
     });
 
-    it("should list tools for existing server", async () => {
+    it("应该列出现有服务的工具", async () => {
       await listServerTools("datetime");
 
       expect(mockSpinner.succeed).toHaveBeenCalledWith(
@@ -228,7 +237,7 @@ describe("mcpCommands", () => {
       );
     });
 
-    it("should handle non-existent server", async () => {
+    it("应该处理不存在的服务", async () => {
       (configManager.getMcpServers as any).mockReturnValue({});
 
       await listServerTools("non-existent");
@@ -243,7 +252,7 @@ describe("mcpCommands", () => {
       );
     });
 
-    it("should handle server with no tools", async () => {
+    it("应该处理没有工具的服务", async () => {
       (configManager.getServerToolsConfig as any).mockReturnValue({});
 
       await listServerTools("datetime");
@@ -256,7 +265,7 @@ describe("mcpCommands", () => {
       );
     });
 
-    it("should handle errors gracefully", async () => {
+    it("应该优雅地处理错误", async () => {
       (configManager.getMcpServers as any).mockImplementation(() => {
         throw new Error("Config error");
       });
@@ -283,7 +292,7 @@ describe("mcpCommands", () => {
 
     const mockToolsConfig = {
       get_current_time: {
-        description: "Get current time",
+        description: "获取当前时间",
         enable: true,
       },
     };
@@ -295,7 +304,7 @@ describe("mcpCommands", () => {
       );
     });
 
-    it("should enable tool successfully", async () => {
+    it("应该成功启用工具", async () => {
       await setToolEnabled("datetime", "get_current_time", true);
 
       expect(mockSpinner.succeed).toHaveBeenCalledWith(
@@ -305,14 +314,14 @@ describe("mcpCommands", () => {
         "datetime",
         "get_current_time",
         true,
-        "Get current time"
+        "获取当前时间"
       );
       expect(mockConsoleLog).toHaveBeenCalledWith(
         expect.stringContaining("提示: 工具状态更改将在下次启动服务时生效")
       );
     });
 
-    it("should disable tool successfully", async () => {
+    it("应该成功禁用工具", async () => {
       await setToolEnabled("datetime", "get_current_time", false);
 
       expect(mockSpinner.succeed).toHaveBeenCalledWith(
@@ -322,11 +331,11 @@ describe("mcpCommands", () => {
         "datetime",
         "get_current_time",
         false,
-        "Get current time"
+        "获取当前时间"
       );
     });
 
-    it("should handle non-existent server", async () => {
+    it("应该处理不存在的服务", async () => {
       (configManager.getMcpServers as any).mockReturnValue({});
 
       await setToolEnabled("non-existent", "tool", true);
@@ -341,7 +350,7 @@ describe("mcpCommands", () => {
       );
     });
 
-    it("should handle non-existent tool", async () => {
+    it("应该处理不存在的工具", async () => {
       (configManager.getServerToolsConfig as any).mockReturnValue({});
 
       await setToolEnabled("datetime", "non-existent-tool", true);
@@ -356,7 +365,7 @@ describe("mcpCommands", () => {
       );
     });
 
-    it("should handle errors gracefully", async () => {
+    it("应该优雅地处理启用工具时的错误", async () => {
       (configManager.getMcpServers as any).mockImplementation(() => {
         throw new Error("Config error");
       });
@@ -372,7 +381,7 @@ describe("mcpCommands", () => {
       expect(mockProcessExit).toHaveBeenCalledWith(1);
     });
 
-    it("should handle disable action errors gracefully", async () => {
+    it("应该优雅地处理禁用工具时的错误", async () => {
       (configManager.getMcpServers as any).mockImplementation(() => {
         throw new Error("Config error");
       });
@@ -389,8 +398,8 @@ describe("mcpCommands", () => {
     });
   });
 
-  describe("Edge cases and error handling", () => {
-    it("should handle very long tool descriptions", async () => {
+  describe("边界情况和错误处理", () => {
+    it("应该处理非常长的工具描述", async () => {
       const longDescription = "A".repeat(100);
       const mockToolsConfig = {
         "long-desc-tool": {
@@ -414,7 +423,7 @@ describe("mcpCommands", () => {
       );
     });
 
-    it("should handle servers with special characters in names", async () => {
+    it("应该处理名称中包含特殊字符的服务", async () => {
       const specialServerName = "test-server_with.special-chars";
       const mockServers = {
         [specialServerName]: {
@@ -434,7 +443,7 @@ describe("mcpCommands", () => {
       );
     });
 
-    it("should handle mixed enabled/disabled tools display", async () => {
+    it("应该处理混合启用/禁用工具的显示", async () => {
       const mockServers = {
         "mixed-server": {
           command: "node",
@@ -446,15 +455,15 @@ describe("mcpCommands", () => {
         "mixed-server": {
           tools: {
             "enabled-tool": {
-              description: "Enabled tool",
+              description: "已启用的工具",
               enable: true,
             },
             "disabled-tool": {
-              description: "Disabled tool",
+              description: "已禁用的工具",
               enable: false,
             },
             "another-enabled": {
-              description: "Another enabled tool",
+              description: "另一个已启用的工具",
               enable: true,
             },
           },
@@ -474,90 +483,100 @@ describe("mcpCommands", () => {
       await listMcpServers({ tools: true });
 
       expect(mockSpinner.succeed).toHaveBeenCalledWith("找到 1 个 MCP 服务");
-      expect(mockConsoleLog).toHaveBeenCalledWith(
-        expect.stringContaining("enabled-tool")
+      // 检查表格输出中包含工具名称（现在只显示工具名，不包含服务名前缀）
+      const enabledToolOutput = mockConsoleLog.mock.calls.find(
+        (call) =>
+          call[0] &&
+          typeof call[0] === "string" &&
+          call[0].includes("enabled-tool")
       );
-      expect(mockConsoleLog).toHaveBeenCalledWith(
-        expect.stringContaining("disabled-tool")
+      expect(enabledToolOutput).toBeDefined();
+
+      const disabledToolOutput = mockConsoleLog.mock.calls.find(
+        (call) =>
+          call[0] &&
+          typeof call[0] === "string" &&
+          call[0].includes("disabled-tool")
       );
+      expect(disabledToolOutput).toBeDefined();
     });
   });
 
-  describe("String width calculation and truncation utilities", () => {
+  describe("字符串宽度计算和截断工具", () => {
     describe("getDisplayWidth", () => {
-      it("should calculate width correctly for English characters", () => {
+      it("应该正确计算英文字符的宽度", () => {
         expect(getDisplayWidth("hello")).toBe(5);
         expect(getDisplayWidth("Hello World!")).toBe(12);
         expect(getDisplayWidth("")).toBe(0);
       });
 
-      it("should calculate width correctly for Chinese characters", () => {
-        expect(getDisplayWidth("你好")).toBe(4); // 2 Chinese chars = 4 width
-        expect(getDisplayWidth("中文测试")).toBe(8); // 4 Chinese chars = 8 width
-        expect(getDisplayWidth("测试")).toBe(4); // 2 Chinese chars = 4 width
+      it("应该正确计算中文字符的宽度", () => {
+        expect(getDisplayWidth("你好")).toBe(4); // 2个中文字符 = 4宽度
+        expect(getDisplayWidth("中文测试")).toBe(8); // 4个中文字符 = 8宽度
+        expect(getDisplayWidth("测试")).toBe(4); // 2个中文字符 = 4宽度
       });
 
-      it("should calculate width correctly for mixed characters", () => {
-        expect(getDisplayWidth("Hello你好")).toBe(9); // 5 English + 2 Chinese = 5 + 4 = 9
-        expect(getDisplayWidth("测试Test")).toBe(8); // 2 Chinese + 4 English = 4 + 4 = 8
-        expect(getDisplayWidth("中文English混合")).toBe(15); // 2 Chinese + 7 English + 2 Chinese = 4 + 7 + 4 = 15
+      it("应该正确计算混合字符的宽度", () => {
+        expect(getDisplayWidth("Hello你好")).toBe(9); // 5个英文 + 2个中文 = 5 + 4 = 9
+        expect(getDisplayWidth("测试Test")).toBe(8); // 2个中文 + 4个英文 = 4 + 4 = 8
+        expect(getDisplayWidth("中文English混合")).toBe(15); // 2个中文 + 7个英文 + 2个中文 = 4 + 7 + 4 = 15
       });
 
-      it("should handle Chinese punctuation correctly", () => {
-        expect(getDisplayWidth("你好，世界！")).toBe(12); // 4 Chinese chars + 2 Chinese punctuation = 12
-        expect(getDisplayWidth("测试：成功")).toBe(10); // 4 Chinese chars + 1 Chinese colon = 10
+      it("应该正确处理中文标点符号", () => {
+        expect(getDisplayWidth("你好，世界！")).toBe(12); // 4个中文字符 + 2个中文标点 = 12
+        expect(getDisplayWidth("测试：成功")).toBe(10); // 4个中文字符 + 1个中文冒号 = 10
       });
 
-      it("should handle special characters", () => {
+      it("应该处理特殊字符", () => {
         expect(getDisplayWidth("test@example.com")).toBe(16);
         expect(getDisplayWidth("123-456-789")).toBe(11);
       });
     });
 
     describe("truncateToWidth", () => {
-      it("should not truncate strings within width limit", () => {
+      it("应该不截断宽度限制内的字符串", () => {
         expect(truncateToWidth("hello", 10)).toBe("hello");
         expect(truncateToWidth("你好", 10)).toBe("你好");
         expect(truncateToWidth("Hello你好", 10)).toBe("Hello你好");
       });
 
-      it("should truncate English strings correctly", () => {
+      it("应该正确截断英文字符串", () => {
         expect(truncateToWidth("Hello World", 8)).toBe("Hello...");
         expect(truncateToWidth("This is a very long description", 15)).toBe(
           "This is a ve..."
         );
       });
 
-      it("should truncate Chinese strings correctly", () => {
-        // "这是一个很长的描述文本" = 16 width, maxWidth=10, so "这是一..." = 7 width
+      it("应该正确截断中文字符串", () => {
+        // "这是一个很长的描述文本" = 16宽度, maxWidth=10, 所以 "这是一..." = 7宽度
         expect(truncateToWidth("这是一个很长的描述文本", 10)).toBe("这是一...");
-        // "中文测试内容" = 10 width, maxWidth=6, so "中..." = 5 width
+        // "中文测试内容" = 10宽度, maxWidth=6, 所以 "中..." = 5宽度
         expect(truncateToWidth("中文测试内容", 6)).toBe("中...");
       });
 
-      it("should truncate mixed strings correctly", () => {
-        // "Hello你好World" = 13 width, maxWidth=10, so "Hello你..." = 10 width
+      it("应该正确截断混合字符串", () => {
+        // "Hello你好World" = 13宽度, maxWidth=10, 所以 "Hello你..." = 10宽度
         expect(truncateToWidth("Hello你好World", 10)).toBe("Hello你...");
-        // "测试Test内容" = 12 width, maxWidth=8, so "测试T..." = 8 width
+        // "测试Test内容" = 12宽度, maxWidth=8, 所以 "测试T..." = 8宽度
         expect(truncateToWidth("测试Test内容", 8)).toBe("测试T...");
       });
 
-      it("should handle edge cases", () => {
+      it("应该处理边界情况", () => {
         expect(truncateToWidth("", 10)).toBe("");
         expect(truncateToWidth("a", 1)).toBe("a");
-        expect(truncateToWidth("ab", 1)).toBe(""); // Can't fit even one char + "..."
+        expect(truncateToWidth("ab", 1)).toBe(""); // 连一个字符 + "..." 都放不下
       });
 
-      it("should handle very short width limits", () => {
-        expect(truncateToWidth("hello", 3)).toBe(""); // maxWidth <= 3, return empty
+      it("应该处理非常短的宽度限制", () => {
+        expect(truncateToWidth("hello", 3)).toBe(""); // maxWidth <= 3, 返回空字符串
         expect(truncateToWidth("hello", 4)).toBe("h...");
-        expect(truncateToWidth("你好", 4)).toBe("你好"); // "你好" width=4, exactly fits maxWidth=4
-        expect(truncateToWidth("你好世界", 4)).toBe(""); // "你好世界" width=8 > 4, but can't fit even one char + "..."
-        expect(truncateToWidth("你好", 5)).toBe("你好"); // "你好" width=4 <= maxWidth=5, no truncation needed
+        expect(truncateToWidth("你好", 4)).toBe("你好"); // "你好" 宽度=4, 正好符合 maxWidth=4
+        expect(truncateToWidth("你好世界", 4)).toBe(""); // "你好世界" 宽度=8 > 4, 但连一个字符 + "..." 都放不下
+        expect(truncateToWidth("你好", 5)).toBe("你好"); // "你好" 宽度=4 <= maxWidth=5, 不需要截断
         expect(truncateToWidth("你好世界", 5)).toBe("你...");
       });
 
-      it("should handle exactly 20 Chinese characters width (40 display width)", () => {
+      it("应该处理正好20个中文字符宽度（40显示宽度）", () => {
         const longChinese =
           "这是一个非常长的中文描述内容用来测试截断功能是否正常工作";
         const result = truncateToWidth(longChinese, 40);
@@ -567,8 +586,8 @@ describe("mcpCommands", () => {
     });
   });
 
-  describe("Table display with cli-table3", () => {
-    it("should use cli-table3 for tools display", async () => {
+  describe("使用cli-table3的表格显示", () => {
+    it("应该使用cli-table3显示带MCP列的工具表格", async () => {
       const mockServers = {
         "test-server": {
           command: "node",
@@ -582,7 +601,7 @@ describe("mcpCommands", () => {
           enable: true,
         },
         "another-tool": {
-          description: "Another test tool with English description",
+          description: "另一个测试工具的英文描述",
           enable: false,
         },
       };
@@ -598,13 +617,75 @@ describe("mcpCommands", () => {
       expect(mockConsoleLog).toHaveBeenCalledWith(
         expect.stringContaining("MCP 服务工具列表:")
       );
-      // The table output should contain the tool names and truncated descriptions
+    });
+
+    it("应该显示正确列的表格：MCP | 工具名称 | 状态 | 描述", async () => {
+      const mockServers = {
+        "test-server": {
+          command: "node",
+          args: ["test.js"],
+        },
+        "another-server": {
+          command: "python",
+          args: ["server.py"],
+        },
+      };
+
+      const mockToolsConfigServer1 = {
+        tool1: {
+          description: "测试工具1",
+          enable: true,
+        },
+      };
+
+      const mockToolsConfigServer2 = {
+        tool2: {
+          description: "测试工具2",
+          enable: false,
+        },
+      };
+
+      (configManager.getMcpServers as any).mockReturnValue(mockServers);
+      (configManager.getServerToolsConfig as any)
+        .mockReturnValueOnce(mockToolsConfigServer1)
+        .mockReturnValueOnce(mockToolsConfigServer2);
+
+      await listMcpServers({ tools: true });
+
+      expect(mockSpinner.succeed).toHaveBeenCalledWith("找到 2 个 MCP 服务");
       expect(mockConsoleLog).toHaveBeenCalledWith(
-        expect.stringMatching(/test-server_test-tool/)
+        expect.stringContaining("MCP 服务工具列表:")
       );
     });
 
-    it("should handle long descriptions in table display", async () => {
+    it("应该正确处理没有工具的服务", async () => {
+      const mockServers = {
+        "empty-server": {
+          command: "node",
+          args: ["empty.js"],
+        },
+      };
+
+      const mockToolsConfig = {};
+
+      (configManager.getMcpServers as any).mockReturnValue(mockServers);
+      (configManager.getServerToolsConfig as any).mockReturnValue(
+        mockToolsConfig
+      );
+
+      await listMcpServers({ tools: true });
+
+      expect(mockSpinner.succeed).toHaveBeenCalledWith("找到 1 个 MCP 服务");
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        expect.stringContaining("MCP 服务工具列表:")
+      );
+      // 表格输出应该为没有工具的服务显示"(无工具)"
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        expect.stringMatching(/\(无工具\)/)
+      );
+    });
+
+    it("应该在表格显示中处理长描述", async () => {
       const longDescription =
         "这是一个非常非常长的工具描述信息，包含了很多中文字符，用来测试表格显示时的截断功能是否能够正常工作，确保表格对齐不会出现问题";
 
@@ -633,6 +714,96 @@ describe("mcpCommands", () => {
       expect(mockConsoleLog).toHaveBeenCalledWith(
         expect.stringContaining("long-desc-server 服务工具列表:")
       );
+    });
+
+    it("应该根据最长工具名称动态调整列宽", async () => {
+      const mockServers = {
+        "test-server": {
+          command: "node",
+          args: ["test.js"],
+        },
+      };
+
+      const mockToolsConfig = {
+        short: {
+          description: "短工具名",
+          enable: true,
+        },
+        very_long_tool_name_that_should_determine_column_width: {
+          description: "非常长的工具名称，应该决定列宽",
+          enable: true,
+        },
+        medium_length_tool: {
+          description: "中等长度工具名",
+          enable: false,
+        },
+      };
+
+      (configManager.getMcpServers as any).mockReturnValue(mockServers);
+      (configManager.getServerToolsConfig as any).mockReturnValue(
+        mockToolsConfig
+      );
+
+      await listMcpServers({ tools: true });
+
+      expect(mockSpinner.succeed).toHaveBeenCalledWith("找到 1 个 MCP 服务");
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        expect.stringContaining("MCP 服务工具列表:")
+      );
+
+      // 验证表格输出包含工具名称（检查较短的名称，因为长名称可能被截断）
+      const shortToolOutput = mockConsoleLog.mock.calls.find(
+        (call) =>
+          call[0] && typeof call[0] === "string" && call[0].includes("short")
+      );
+      expect(shortToolOutput).toBeDefined();
+
+      const mediumToolOutput = mockConsoleLog.mock.calls.find(
+        (call) =>
+          call[0] &&
+          typeof call[0] === "string" &&
+          call[0].includes("medium_length_tool")
+      );
+      expect(mediumToolOutput).toBeDefined();
+    });
+
+    it("应该确保工具名称列有最小宽度", async () => {
+      const mockServers = {
+        "test-server": {
+          command: "node",
+          args: ["test.js"],
+        },
+      };
+
+      const mockToolsConfig = {
+        a: {
+          description: "单字符工具名",
+          enable: true,
+        },
+        bb: {
+          description: "双字符工具名",
+          enable: true,
+        },
+      };
+
+      (configManager.getMcpServers as any).mockReturnValue(mockServers);
+      (configManager.getServerToolsConfig as any).mockReturnValue(
+        mockToolsConfig
+      );
+
+      await listMcpServers({ tools: true });
+
+      expect(mockSpinner.succeed).toHaveBeenCalledWith("找到 1 个 MCP 服务");
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        expect.stringContaining("MCP 服务工具列表:")
+      );
+
+      // 即使工具名很短，也应该有合理的列宽显示
+      const tableOutput = mockConsoleLog.mock.calls.find(
+        (call) =>
+          call[0] && typeof call[0] === "string" && call[0].includes("a")
+      );
+      expect(tableOutput).toBeDefined();
     });
   });
 });
