@@ -23,6 +23,7 @@ export default defineConfig({
     "src/cli.ts",
     "src/configManager.ts",
     "src/mcpCommands.ts",
+    "src/autoCompletion.ts",
   ],
   format: ["cjs"],
   target: "node18",

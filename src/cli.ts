@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import chalk from "chalk";
 import { Command } from "commander";
 import ora from "ora";
+import { setupAutoCompletion, showCompletionHelp } from "./autoCompletion.js";
 import { configManager } from "./configManager.js";
 import {
   listMcpServers,
@@ -923,6 +924,7 @@ function showHelp(): void {
   console.log("  status                   检查服务状态");
   console.log("  attach                   连接到后台服务查看日志");
   console.log("  restart [--daemon]       重启服务 (--daemon 后台运行)");
+  console.log("  completion               显示自动补全设置说明");
   console.log();
   console.log(chalk.yellow("选项:"));
   console.log("  -v, --version            显示版本信息");
@@ -957,6 +959,10 @@ function showHelp(): void {
   console.log("  xiaozhi mcp server <name>    # 列出指定服务的工具");
   console.log("  xiaozhi mcp tool <server> <tool> enable   # 启用工具");
   console.log("  xiaozhi mcp tool <server> <tool> disable  # 禁用工具");
+  console.log();
+  console.log(chalk.yellow("自动补全:"));
+  console.log("  xiaozhi completion           # 显示自动补全设置说明");
+  console.log("  # 设置后可使用 Tab 键进行命令、参数自动补全");
 }
 
 // 配置 Commander 程序
@@ -1067,6 +1073,14 @@ mcpCommand
     await setToolEnabled(serverName, toolName, enabled);
   });
 
+// completion 命令
+program
+  .command("completion")
+  .description("显示自动补全设置说明")
+  .action(async () => {
+    showCompletionHelp();
+  });
+
 // -V 选项 (详细信息)
 program.option("-V", "显示详细信息").action((options) => {
   if (options.V) {
@@ -1074,6 +1088,9 @@ program.option("-V", "显示详细信息").action((options) => {
     process.exit(0);
   }
 });
+
+// 设置自动补全
+setupAutoCompletion();
 
 // 处理无参数情况，显示帮助
 if (process.argv.length <= 2) {

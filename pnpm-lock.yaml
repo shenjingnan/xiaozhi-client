@@ -23,6 +23,9 @@ importers:
       dotenv:
         specifier: ^16.3.1
         version: 16.5.0
+      omelette:
+        specifier: ^0.4.17
+        version: 0.4.17
       ora:
         specifier: ^8.2.0
         version: 8.2.0
@@ -60,6 +63,9 @@ importers:
       '@types/node':
         specifier: ^24.0.1
         version: 24.0.1
+      '@types/omelette':
+        specifier: ^0.4.5
+        version: 0.4.5
       '@types/ws':
         specifier: ^8.18.1
         version: 8.18.1
@@ -690,6 +696,9 @@ packages:
 
   '@types/normalize-package-data@2.4.4':
     resolution: {integrity: sha512-37i+OaWTh9qeK4LSHPsyRC7NahnGotNuZvjLSgcPzblpHB3rrCJxAOgI5gCdKm7coonsaX1Of0ILiTcnZjbfxA==}
+
+  '@types/omelette@0.4.5':
+    resolution: {integrity: sha512-zUCJpVRwfMcZfkxSCGp73mgd3/xesvPz5tQJIORlfP/zkYEyp9KUfF7IP3RRjyZR3DwxkPs96/IFf70GmYZYHQ==}
 
   '@types/ws@8.18.1':
     resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
@@ -1807,6 +1816,10 @@ packages:
   object-inspect@1.13.4:
     resolution: {integrity: sha512-W67iLl4J2EXEGTbfeHCffrjDfitvLANg0UlX3wFUUSTx92KXRFegMHUVgSqE+wvhAbi4WqjGg9czysTV2Epbew==}
     engines: {node: '>= 0.4'}
+
+  omelette@0.4.17:
+    resolution: {integrity: sha512-UlU69G6Bhu0XFjw3tjFZ0qyiMUjAOR+rdzblA1nLQ8xiqFtxOVlkhM39BlgTpLFx9fxkm6rnxNNRsS5GxE/yww==}
+    engines: {node: '>=0.8.0'}
 
   on-finished@2.4.1:
     resolution: {integrity: sha512-oVlzkg3ENAhCk2zdv7IJwd/QUD4z2RxRwpkcGY8psCVcCYZNq4wYnVWALHM+brtuJjePWiYF/ClmuDr8Ch5+kg==}
@@ -3173,6 +3186,8 @@ snapshots:
 
   '@types/normalize-package-data@2.4.4': {}
 
+  '@types/omelette@0.4.5': {}
+
   '@types/ws@8.18.1':
     dependencies:
       '@types/node': 24.0.1
@@ -4230,6 +4245,8 @@ snapshots:
   object-assign@4.1.1: {}
 
   object-inspect@1.13.4: {}
+
+  omelette@0.4.17: {}
 
   on-finished@2.4.1:
     dependencies:
