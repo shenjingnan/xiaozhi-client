@@ -8,11 +8,7 @@ import { fileURLToPath } from "node:url";
 import chalk from "chalk";
 import { Command } from "commander";
 import ora from "ora";
-import {
-  installCompletion,
-  setupAutoCompletion,
-  uninstallCompletion,
-} from "./autoCompletion.js";
+import { setupAutoCompletion, showCompletionHelp } from "./autoCompletion.js";
 import { configManager } from "./configManager.js";
 import {
   listMcpServers,
@@ -928,7 +924,7 @@ function showHelp(): void {
   console.log("  status                   检查服务状态");
   console.log("  attach                   连接到后台服务查看日志");
   console.log("  restart [--daemon]       重启服务 (--daemon 后台运行)");
-  console.log("  completion <action>      管理自动补全 (install/uninstall)");
+  console.log("  completion               显示自动补全设置说明");
   console.log();
   console.log(chalk.yellow("选项:"));
   console.log("  -v, --version            显示版本信息");
@@ -965,9 +961,8 @@ function showHelp(): void {
   console.log("  xiaozhi mcp tool <server> <tool> disable  # 禁用工具");
   console.log();
   console.log(chalk.yellow("自动补全:"));
-  console.log("  xiaozhi completion install   # 安装自动补全到shell");
-  console.log("  xiaozhi completion uninstall # 卸载自动补全");
-  console.log("  # 安装后可使用 Tab 键进行命令、参数自动补全");
+  console.log("  xiaozhi completion           # 显示自动补全设置说明");
+  console.log("  # 设置后可使用 Tab 键进行命令、参数自动补全");
 }
 
 // 配置 Commander 程序
@@ -1080,17 +1075,10 @@ mcpCommand
 
 // completion 命令
 program
-  .command("completion <action>")
-  .description("管理自动补全功能")
-  .action(async (action) => {
-    if (action === "install") {
-      installCompletion();
-    } else if (action === "uninstall") {
-      uninstallCompletion();
-    } else {
-      console.error(chalk.red("错误: 操作必须是 'install' 或 'uninstall'"));
-      process.exit(1);
-    }
+  .command("completion")
+  .description("显示自动补全设置说明")
+  .action(async () => {
+    showCompletionHelp();
   });
 
 // -V 选项 (详细信息)

@@ -155,27 +155,52 @@ export function setupAutoCompletion(): void {
   // 初始化补全
   completion.init();
 
-  // 如果是补全模式，直接退出
+  // 处理补全相关的命令行参数
   if (process.argv.includes("--completion")) {
-    completion.setupShellInitFile();
+    // 输出补全脚本供shell使用
+    process.exit(0);
+  }
+
+  if (process.argv.includes("--completion-fish")) {
+    // Fish shell 补全
+    process.exit(0);
+  }
+
+  if (
+    process.argv.includes("--compzsh") ||
+    process.argv.includes("--compbash")
+  ) {
+    // 处理实际的补全请求
     process.exit(0);
   }
 }
 
 /**
- * 安装自动补全到shell
+ * 显示自动补全安装说明
  */
-export function installCompletion(): void {
-  const completion = omelette("xiaozhi");
-  completion.setupShellInitFile();
-  console.log("自动补全已安装到shell配置文件");
-}
-
-/**
- * 卸载自动补全
- */
-export function uninstallCompletion(): void {
-  const completion = omelette("xiaozhi");
-  completion.cleanupShellInitFile();
-  console.log("自动补全已从shell配置文件中移除");
+export function showCompletionHelp(): void {
+  console.log("🚀 xiaozhi 自动补全设置");
+  console.log();
+  console.log("要启用自动补全，请根据你的shell执行以下命令：");
+  console.log();
+  console.log("📝 Zsh (推荐):");
+  console.log("  echo '. <(xiaozhi --completion)' >> ~/.zshrc");
+  console.log("  source ~/.zshrc");
+  console.log();
+  console.log("📝 Bash:");
+  console.log("  xiaozhi --completion >> ~/.xiaozhi-completion.sh");
+  console.log("  echo 'source ~/.xiaozhi-completion.sh' >> ~/.bash_profile");
+  console.log("  source ~/.bash_profile");
+  console.log();
+  console.log("📝 Fish:");
+  console.log(
+    "  echo 'xiaozhi --completion-fish | source' >> ~/.config/fish/config.fish"
+  );
+  console.log();
+  console.log("✨ 设置完成后，你就可以使用 Tab 键进行自动补全了！");
+  console.log();
+  console.log("💡 示例:");
+  console.log("  xiaozhi m<Tab>           # → mcp");
+  console.log("  xiaozhi mcp l<Tab>       # → list");
+  console.log("  xiaozhi mcp tool <Tab>   # → 显示所有服务器名称");
 }

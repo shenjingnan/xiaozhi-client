@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { setupAutoCompletion } from "./autoCompletion.js";
+import { setupAutoCompletion, showCompletionHelp } from "./autoCompletion.js";
 import { configManager } from "./configManager.js";
 
 // Mock configManager
@@ -213,6 +213,26 @@ describe("autoCompletion", () => {
       });
 
       expect(mockReply).toHaveBeenCalledWith([]);
+    });
+  });
+
+  describe("showCompletionHelp", () => {
+    it("应该显示自动补全设置说明", () => {
+      const mockConsoleLog = vi
+        .spyOn(console, "log")
+        .mockImplementation(() => {});
+
+      showCompletionHelp();
+
+      expect(mockConsoleLog).toHaveBeenCalledWith("🚀 xiaozhi 自动补全设置");
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        expect.stringContaining("echo '. <(xiaozhi --completion)' >> ~/.zshrc")
+      );
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        expect.stringContaining("xiaozhi m<Tab>")
+      );
+
+      mockConsoleLog.mockRestore();
     });
   });
 });
