@@ -43,6 +43,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
     "chalk": "^5.4.1",
+    "cli-table3": "^0.6.5",
     "commander": "^14.0.0",
     "dotenv": "^16.3.1",
     "ora": "^8.2.0",

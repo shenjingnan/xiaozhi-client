@@ -1,10 +1,68 @@
 import chalk from "chalk";
+import Table from "cli-table3";
 import ora from "ora";
 import { configManager } from "./configManager.js";
 
 /**
  * MCP 相关的命令行功能
  */
+
+/**
+ * 计算字符串的显示宽度（中文字符占2个宽度，英文字符占1个宽度）
+ */
+export function getDisplayWidth(str: string): number {
+  let width = 0;
+  for (const char of str) {
+    // 判断是否为中文字符（包括中文标点符号）
+    if (/[\u4e00-\u9fff\u3400-\u4dbf\uff00-\uffef]/.test(char)) {
+      width += 2;
+    } else {
+      width += 1;
+    }
+  }
+  return width;
+}
+
+/**
+ * 截断字符串到指定的显示宽度
+ */
+export function truncateToWidth(str: string, maxWidth: number): string {
+  if (getDisplayWidth(str) <= maxWidth) {
+    return str;
+  }
+
+  // 如果最大宽度小于等于省略号的宽度，返回空字符串
+  if (maxWidth <= 3) {
+    return "";
+  }
+
+  let result = "";
+  let currentWidth = 0;
+  let hasAddedChar = false;
+
+  for (const char of str) {
+    const charWidth = /[\u4e00-\u9fff\u3400-\u4dbf\uff00-\uffef]/.test(char)
+      ? 2
+      : 1;
+
+    // 如果加上当前字符会超出限制
+    if (currentWidth + charWidth > maxWidth - 3) {
+      // 如果还没有添加任何字符，说明连一个字符都放不下，返回空字符串
+      if (!hasAddedChar) {
+        return "";
+      }
+      // 否则添加省略号并退出
+      result += "...";
+      break;
+    }
+
+    result += char;
+    currentWidth += charWidth;
+    hasAddedChar = true;
+  }
+
+  return result;
+}
 
 /**
  * 列出所有 MCP 服务
@@ -34,53 +92,55 @@ export async function listMcpServers(
       console.log(chalk.bold("MCP 服务工具列表:"));
       console.log();
 
-      // 表头
-      const headers = ["服务名称", "工具名称", "工具描述", "状态"];
-      const colWidths = [20, 30, 40, 8];
-
-      console.log(
-        headers
-          .map((header, i) => chalk.bold(header.padEnd(colWidths[i])))
-          .join(" | ")
-      );
-      console.log(headers.map((_, i) => "-".repeat(colWidths[i])).join("-|-"));
+      // 使用 cli-table3 创建表格
+      const table = new Table({
+        head: [chalk.bold("工具名称"), chalk.bold("状态"), chalk.bold("描述")],
+        colWidths: [30, 8, 50], // 工具名称 | 状态 | 描述
+        wordWrap: true,
+        style: {
+          head: [],
+          border: [],
+        },
+      });
 
       for (const serverName of serverNames) {
         const toolsConfig = configManager.getServerToolsConfig(serverName);
         const toolNames = Object.keys(toolsConfig);
 
         if (toolNames.length === 0) {
-          console.log(
-            [
-              serverName.padEnd(colWidths[0]),
-              chalk.gray("(无工具)").padEnd(colWidths[1]),
-              chalk.gray("请先启动服务扫描工具").padEnd(colWidths[2]),
-              chalk.gray("-").padEnd(colWidths[3]),
-            ].join(" | ")
-          );
+          // 服务没有工具时显示提示信息
+          table.push([
+            chalk.gray(`${serverName} (无工具)`),
+            chalk.gray("-"),
+            chalk.gray("请先启动服务扫描工具"),
+          ]);
         } else {
-          let displayServerName = serverName;
+          // 添加服务分隔行
+          if (table.length > 0) {
+            table.push([{ colSpan: 3, content: "" }]);
+          }
+
           for (const toolName of toolNames) {
             const toolConfig = toolsConfig[toolName];
             const status = toolConfig.enable
               ? chalk.green("启用")
               : chalk.red("禁用");
-            const description = (toolConfig.description || "").substring(0, 35);
 
-            console.log(
-              [
-                displayServerName.padEnd(colWidths[0]),
-                toolName.padEnd(colWidths[1]),
-                description.padEnd(colWidths[2]),
-                status.padEnd(colWidths[3]),
-              ].join(" | ")
+            // 截断描述到最大40个字符宽度（约20个中文字符）
+            const description = truncateToWidth(
+              toolConfig.description || "",
+              40
             );
 
-            // 只显示第一行服务名称
-            displayServerName = "";
+            // 工具名称格式：服务名_工具名
+            const fullToolName = `${serverName}_${toolName}`;
+
+            table.push([fullToolName, status, description]);
           }
         }
       }
+
+      console.log(table.toString());
     } else {
       // 只显示服务列表
       console.log();
@@ -163,32 +223,30 @@ export async function listServerTools(serverName: string): Promise<void> {
     console.log(chalk.bold(`${serverName} 服务工具列表:`));
     console.log();
 
-    // 表头
-    const headers = ["工具名称", "工具描述", "状态"];
-    const colWidths = [30, 50, 8];
-
-    console.log(
-      headers
-        .map((header, i) => chalk.bold(header.padEnd(colWidths[i])))
-        .join(" | ")
-    );
-    console.log(headers.map((_, i) => "-".repeat(colWidths[i])).join("-|-"));
+    // 使用 cli-table3 创建表格
+    const table = new Table({
+      head: [chalk.bold("工具名称"), chalk.bold("状态"), chalk.bold("描述")],
+      colWidths: [30, 8, 50], // 工具名称 | 状态 | 描述
+      wordWrap: true,
+      style: {
+        head: [],
+        border: [],
+      },
+    });
 
     for (const toolName of toolNames) {
       const toolConfig = toolsConfig[toolName];
       const status = toolConfig.enable
         ? chalk.green("启用")
         : chalk.red("禁用");
-      const description = (toolConfig.description || "").substring(0, 45);
 
-      console.log(
-        [
-          toolName.padEnd(colWidths[0]),
-          description.padEnd(colWidths[1]),
-          status.padEnd(colWidths[2]),
-        ].join(" | ")
-      );
+      // 截断描述到最大40个字符宽度（约20个中文字符）
+      const description = truncateToWidth(toolConfig.description || "", 40);
+
+      table.push([toolName, status, description]);
     }
+
+    console.log(table.toString());
 
     console.log();
     console.log(chalk.gray("💡 提示:"));

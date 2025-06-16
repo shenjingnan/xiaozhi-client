@@ -3,9 +3,11 @@ import ora from "ora";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { configManager } from "./configManager.js";
 import {
+  getDisplayWidth,
   listMcpServers,
   listServerTools,
   setToolEnabled,
+  truncateToWidth,
 } from "./mcpCommands.js";
 
 // Mock dependencies
@@ -126,18 +128,19 @@ describe("mcpCommands", () => {
       );
     });
 
-    it("should list servers with tools option", async () => {
+    it("should list servers with tools option using cli-table3", async () => {
       await listMcpServers({ tools: true });
 
       expect(mockSpinner.succeed).toHaveBeenCalledWith("找到 2 个 MCP 服务");
       expect(mockConsoleLog).toHaveBeenCalledWith(
         expect.stringContaining("MCP 服务工具列表:")
       );
+      // Check for table output with tool names in new format
       expect(mockConsoleLog).toHaveBeenCalledWith(
-        expect.stringContaining("服务名称")
+        expect.stringMatching(/calculator_calculator/)
       );
       expect(mockConsoleLog).toHaveBeenCalledWith(
-        expect.stringContaining("工具名称")
+        expect.stringMatching(/datetime_get_current_time/)
       );
     });
 
@@ -476,6 +479,159 @@ describe("mcpCommands", () => {
       );
       expect(mockConsoleLog).toHaveBeenCalledWith(
         expect.stringContaining("disabled-tool")
+      );
+    });
+  });
+
+  describe("String width calculation and truncation utilities", () => {
+    describe("getDisplayWidth", () => {
+      it("should calculate width correctly for English characters", () => {
+        expect(getDisplayWidth("hello")).toBe(5);
+        expect(getDisplayWidth("Hello World!")).toBe(12);
+        expect(getDisplayWidth("")).toBe(0);
+      });
+
+      it("should calculate width correctly for Chinese characters", () => {
+        expect(getDisplayWidth("你好")).toBe(4); // 2 Chinese chars = 4 width
+        expect(getDisplayWidth("中文测试")).toBe(8); // 4 Chinese chars = 8 width
+        expect(getDisplayWidth("测试")).toBe(4); // 2 Chinese chars = 4 width
+      });
+
+      it("should calculate width correctly for mixed characters", () => {
+        expect(getDisplayWidth("Hello你好")).toBe(9); // 5 English + 2 Chinese = 5 + 4 = 9
+        expect(getDisplayWidth("测试Test")).toBe(8); // 2 Chinese + 4 English = 4 + 4 = 8
+        expect(getDisplayWidth("中文English混合")).toBe(15); // 2 Chinese + 7 English + 2 Chinese = 4 + 7 + 4 = 15
+      });
+
+      it("should handle Chinese punctuation correctly", () => {
+        expect(getDisplayWidth("你好，世界！")).toBe(12); // 4 Chinese chars + 2 Chinese punctuation = 12
+        expect(getDisplayWidth("测试：成功")).toBe(10); // 4 Chinese chars + 1 Chinese colon = 10
+      });
+
+      it("should handle special characters", () => {
+        expect(getDisplayWidth("test@example.com")).toBe(16);
+        expect(getDisplayWidth("123-456-789")).toBe(11);
+      });
+    });
+
+    describe("truncateToWidth", () => {
+      it("should not truncate strings within width limit", () => {
+        expect(truncateToWidth("hello", 10)).toBe("hello");
+        expect(truncateToWidth("你好", 10)).toBe("你好");
+        expect(truncateToWidth("Hello你好", 10)).toBe("Hello你好");
+      });
+
+      it("should truncate English strings correctly", () => {
+        expect(truncateToWidth("Hello World", 8)).toBe("Hello...");
+        expect(truncateToWidth("This is a very long description", 15)).toBe(
+          "This is a ve..."
+        );
+      });
+
+      it("should truncate Chinese strings correctly", () => {
+        // "这是一个很长的描述文本" = 16 width, maxWidth=10, so "这是一..." = 7 width
+        expect(truncateToWidth("这是一个很长的描述文本", 10)).toBe("这是一...");
+        // "中文测试内容" = 10 width, maxWidth=6, so "中..." = 5 width
+        expect(truncateToWidth("中文测试内容", 6)).toBe("中...");
+      });
+
+      it("should truncate mixed strings correctly", () => {
+        // "Hello你好World" = 13 width, maxWidth=10, so "Hello你..." = 10 width
+        expect(truncateToWidth("Hello你好World", 10)).toBe("Hello你...");
+        // "测试Test内容" = 12 width, maxWidth=8, so "测试T..." = 8 width
+        expect(truncateToWidth("测试Test内容", 8)).toBe("测试T...");
+      });
+
+      it("should handle edge cases", () => {
+        expect(truncateToWidth("", 10)).toBe("");
+        expect(truncateToWidth("a", 1)).toBe("a");
+        expect(truncateToWidth("ab", 1)).toBe(""); // Can't fit even one char + "..."
+      });
+
+      it("should handle very short width limits", () => {
+        expect(truncateToWidth("hello", 3)).toBe(""); // maxWidth <= 3, return empty
+        expect(truncateToWidth("hello", 4)).toBe("h...");
+        expect(truncateToWidth("你好", 4)).toBe("你好"); // "你好" width=4, exactly fits maxWidth=4
+        expect(truncateToWidth("你好世界", 4)).toBe(""); // "你好世界" width=8 > 4, but can't fit even one char + "..."
+        expect(truncateToWidth("你好", 5)).toBe("你好"); // "你好" width=4 <= maxWidth=5, no truncation needed
+        expect(truncateToWidth("你好世界", 5)).toBe("你...");
+      });
+
+      it("should handle exactly 20 Chinese characters width (40 display width)", () => {
+        const longChinese =
+          "这是一个非常长的中文描述内容用来测试截断功能是否正常工作";
+        const result = truncateToWidth(longChinese, 40);
+        expect(getDisplayWidth(result)).toBeLessThanOrEqual(40);
+        expect(result.endsWith("...")).toBe(true);
+      });
+    });
+  });
+
+  describe("Table display with cli-table3", () => {
+    it("should use cli-table3 for tools display", async () => {
+      const mockServers = {
+        "test-server": {
+          command: "node",
+          args: ["test.js"],
+        },
+      };
+
+      const mockToolsConfig = {
+        "test-tool": {
+          description: "这是一个测试工具的描述信息，用来验证表格显示功能",
+          enable: true,
+        },
+        "another-tool": {
+          description: "Another test tool with English description",
+          enable: false,
+        },
+      };
+
+      (configManager.getMcpServers as any).mockReturnValue(mockServers);
+      (configManager.getServerToolsConfig as any).mockReturnValue(
+        mockToolsConfig
+      );
+
+      await listMcpServers({ tools: true });
+
+      expect(mockSpinner.succeed).toHaveBeenCalledWith("找到 1 个 MCP 服务");
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        expect.stringContaining("MCP 服务工具列表:")
+      );
+      // The table output should contain the tool names and truncated descriptions
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        expect.stringMatching(/test-server_test-tool/)
+      );
+    });
+
+    it("should handle long descriptions in table display", async () => {
+      const longDescription =
+        "这是一个非常非常长的工具描述信息，包含了很多中文字符，用来测试表格显示时的截断功能是否能够正常工作，确保表格对齐不会出现问题";
+
+      const mockServers = {
+        "long-desc-server": {
+          command: "node",
+          args: ["test.js"],
+        },
+      };
+
+      const mockToolsConfig = {
+        "long-desc-tool": {
+          description: longDescription,
+          enable: true,
+        },
+      };
+
+      (configManager.getMcpServers as any).mockReturnValue(mockServers);
+      (configManager.getServerToolsConfig as any).mockReturnValue(
+        mockToolsConfig
+      );
+
+      await listServerTools("long-desc-server");
+
+      expect(mockSpinner.succeed).toHaveBeenCalled();
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        expect.stringContaining("long-desc-server 服务工具列表:")
       );
     });
   });
