@@ -92,10 +92,36 @@ export async function listMcpServers(
       console.log(chalk.bold("MCP 服务工具列表:"));
       console.log();
 
+      // 计算所有工具名称的最大长度，用于动态设置列宽
+      let maxToolNameWidth = 8; // 默认最小宽度
+      const allToolNames: string[] = [];
+
+      for (const serverName of serverNames) {
+        const toolsConfig = configManager.getServerToolsConfig(serverName);
+        const toolNames = Object.keys(toolsConfig);
+        allToolNames.push(...toolNames);
+      }
+
+      // 计算最长工具名称的显示宽度
+      for (const toolName of allToolNames) {
+        const width = getDisplayWidth(toolName);
+        if (width > maxToolNameWidth) {
+          maxToolNameWidth = width;
+        }
+      }
+
+      // 确保工具名称列宽度至少为10，最多为30
+      maxToolNameWidth = Math.max(10, Math.min(maxToolNameWidth + 2, 30));
+
       // 使用 cli-table3 创建表格
       const table = new Table({
-        head: [chalk.bold("工具名称"), chalk.bold("状态"), chalk.bold("描述")],
-        colWidths: [30, 8, 50], // 工具名称 | 状态 | 描述
+        head: [
+          chalk.bold("MCP"),
+          chalk.bold("工具名称"),
+          chalk.bold("状态"),
+          chalk.bold("描述"),
+        ],
+        colWidths: [15, maxToolNameWidth, 8, 40], // MCP | 工具名称 | 状态 | 描述
         wordWrap: true,
         style: {
           head: [],
@@ -110,14 +136,15 @@ export async function listMcpServers(
         if (toolNames.length === 0) {
           // 服务没有工具时显示提示信息
           table.push([
-            chalk.gray(`${serverName} (无工具)`),
+            chalk.gray(serverName),
+            chalk.gray("(无工具)"),
             chalk.gray("-"),
             chalk.gray("请先启动服务扫描工具"),
           ]);
         } else {
           // 添加服务分隔行
           if (table.length > 0) {
-            table.push([{ colSpan: 3, content: "" }]);
+            table.push([{ colSpan: 4, content: "" }]);
           }
 
           for (const toolName of toolNames) {
@@ -126,16 +153,14 @@ export async function listMcpServers(
               ? chalk.green("启用")
               : chalk.red("禁用");
 
-            // 截断描述到最大40个字符宽度（约20个中文字符）
+            // 截断描述到最大32个字符宽度（约16个中文字符）
             const description = truncateToWidth(
               toolConfig.description || "",
-              40
+              32
             );
 
-            // 工具名称格式：服务名_工具名
-            const fullToolName = `${serverName}_${toolName}`;
-
-            table.push([fullToolName, status, description]);
+            // 只显示工具名称，不包含服务名前缀
+            table.push([serverName, toolName, status, description]);
           }
         }
       }
@@ -157,11 +182,15 @@ export async function listMcpServers(
 
         console.log(`${chalk.cyan("•")} ${chalk.bold(serverName)}`);
         console.log(
-          `  命令: ${chalk.gray(serverConfig.command)} ${chalk.gray(serverConfig.args.join(" "))}`
+          `  命令: ${chalk.gray(serverConfig.command)} ${chalk.gray(
+            serverConfig.args.join(" ")
+          )}`
         );
         if (toolCount > 0) {
           console.log(
-            `  工具: ${chalk.green(enabledCount)} 启用 / ${chalk.yellow(toolCount)} 总计`
+            `  工具: ${chalk.green(enabledCount)} 启用 / ${chalk.yellow(
+              toolCount
+            )} 总计`
           );
         } else {
           console.log(`  工具: ${chalk.gray("未扫描 (请先启动服务)")}`);
