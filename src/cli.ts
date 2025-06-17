@@ -759,8 +759,8 @@ async function createProject(
         }
       }
 
-      // 获取模板路径
-      const scriptDir = __dirname;
+      // 获取模板路径 (ESM 环境)
+      const scriptDir = path.dirname(new URL(import.meta.url).pathname);
       const possiblePaths = [
         path.join(scriptDir, "..", "templates"), // 开发环境
         path.join(scriptDir, "templates"), // 打包后的环境
