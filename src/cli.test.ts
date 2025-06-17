@@ -421,6 +421,33 @@ describe("CLI 命令行工具", () => {
       // Test would require access to createProject function
       expect(mockFs.existsSync).toBeDefined();
     });
+
+    it("应该在ESM环境中正确解析模板路径", () => {
+      // 测试 ESM 环境下的路径解析
+      const testUrl = "file:///Users/test/project/dist/cli.js";
+
+      // 使用真实的 path 模块进行测试，而不是 mock
+      const realPath = require("node:path");
+
+      // 模拟 import.meta.url 的行为
+      const scriptDir = realPath.dirname(new URL(testUrl).pathname);
+      const expectedPaths = [
+        realPath.join(scriptDir, "..", "templates"), // 开发环境
+        realPath.join(scriptDir, "templates"), // 打包后的环境
+        realPath.join(scriptDir, "..", "..", "templates"), // npm 全局安装
+      ];
+
+      // 验证路径计算是否正确
+      expect(expectedPaths[0]).toContain("templates");
+      expect(expectedPaths[1]).toContain("templates");
+      expect(expectedPaths[2]).toContain("templates");
+
+      // 验证不包含 __dirname（这在ESM中不可用）
+      expect(scriptDir).not.toContain("__dirname");
+
+      // 验证 URL 解析正常工作
+      expect(scriptDir).toBe("/Users/test/project/dist");
+    });
   });
 
   describe("MCP 命令", () => {

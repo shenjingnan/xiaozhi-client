@@ -1,5 +1,6 @@
 import { copyFileSync, existsSync, mkdirSync } from "fs";
 import { join } from "path";
+import { execSync } from "child_process";
 import { defineConfig } from "tsup";
 
 export default defineConfig({
@@ -61,6 +62,16 @@ export default defineConfig({
     if (existsSync("package.json")) {
       copyFileSync("package.json", join(distDir, "package.json"));
       console.log("✅ 已复制 package.json 到 dist/");
+    }
+
+    // 复制 templates 目录到 dist 目录
+    if (existsSync("templates")) {
+      try {
+        execSync(`cp -r templates ${distDir}/`, { stdio: "inherit" });
+        console.log("✅ 已复制 templates 目录到 dist/");
+      } catch (error) {
+        console.warn("⚠️ 复制 templates 目录失败:", error);
+      }
     }
 
     console.log("✅ 构建完成，产物现在为 ESM 格式");
