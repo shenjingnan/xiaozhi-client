@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import chalk from "chalk";
 import { Command } from "commander";
 import ora from "ora";
-import { setupAutoCompletion, showCompletionHelp } from "./autoCompletion";
+import { setupAutoCompletion, showCompletionHelp } from "./autoCompletion.js";
 import { configManager } from "./configManager.js";
 import {
   listMcpServers,
