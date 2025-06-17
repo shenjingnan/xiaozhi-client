@@ -19,8 +19,8 @@
     "xiaozhi-client": "./dist/cli.cjs"
   },
   "scripts": {
-    "build": "tsup && node scripts/postbuild.js",
-    "dev": "tsup --watch && node scripts/postbuild.js",
+    "build": "tsup && node scripts/postbuild.mjs",
+    "dev": "tsup --watch && node scripts/postbuild.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
