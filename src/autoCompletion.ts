@@ -152,17 +152,16 @@ export function setupAutoCompletion(): void {
     reply([]);
   });
 
-  // 初始化补全
-  completion.init();
-
   // 处理补全相关的命令行参数
   if (process.argv.includes("--completion")) {
     // 输出补全脚本供shell使用
+    console.log(completion.setupShellInitFile());
     process.exit(0);
   }
 
   if (process.argv.includes("--completion-fish")) {
     // Fish shell 补全
+    console.log(completion.setupShellInitFile("fish"));
     process.exit(0);
   }
 
@@ -170,9 +169,12 @@ export function setupAutoCompletion(): void {
     process.argv.includes("--compzsh") ||
     process.argv.includes("--compbash")
   ) {
-    // 处理实际的补全请求
-    process.exit(0);
+    // 处理实际的补全请求 - 这些是omelette内部使用的参数
+    // 不需要手动处理，让omelette自己处理
   }
+
+  // 初始化补全
+  completion.init();
 }
 
 /**
@@ -184,17 +186,18 @@ export function showCompletionHelp(): void {
   console.log("要启用自动补全，请根据你的shell执行以下命令：");
   console.log();
   console.log("📝 Zsh (推荐):");
-  console.log("  echo '. <(xiaozhi --completion)' >> ~/.zshrc");
+  console.log("  xiaozhi --completion >> ~/.xiaozhi-completion.zsh");
+  console.log("  echo 'source ~/.xiaozhi-completion.zsh' >> ~/.zshrc");
   console.log("  source ~/.zshrc");
   console.log();
   console.log("📝 Bash:");
-  console.log("  xiaozhi --completion >> ~/.xiaozhi-completion.sh");
-  console.log("  echo 'source ~/.xiaozhi-completion.sh' >> ~/.bash_profile");
+  console.log("  xiaozhi --completion >> ~/.xiaozhi-completion.bash");
+  console.log("  echo 'source ~/.xiaozhi-completion.bash' >> ~/.bash_profile");
   console.log("  source ~/.bash_profile");
   console.log();
   console.log("📝 Fish:");
   console.log(
-    "  echo 'xiaozhi --completion-fish | source' >> ~/.config/fish/config.fish"
+    "  xiaozhi --completion-fish >> ~/.config/fish/completions/xiaozhi.fish"
   );
   console.log();
   console.log("✨ 设置完成后，你就可以使用 Tab 键进行自动补全了！");
