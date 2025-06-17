@@ -21,7 +21,7 @@ vi.mock("dotenv", () => ({
 }));
 
 // Mock configManager
-vi.mock("./configManager.js", () => ({
+vi.mock("./configManager", () => ({
   configManager: {
     configExists: vi.fn(),
     getMcpEndpoint: vi.fn(),
@@ -30,7 +30,7 @@ vi.mock("./configManager.js", () => ({
 }));
 
 // Import after mocking
-import { configManager } from "./configManager.js";
+import { configManager } from "./configManager";
 
 // Mock child process
 class MockChildProcess extends EventEmitter {
@@ -109,7 +109,7 @@ describe("MCP管道", () => {
         .mockImplementation(() => {});
 
       // 导入模块以触发日志记录器创建
-      await import("./mcpPipe.js");
+      await import("./mcpPipe");
 
       // 日志记录器应该被创建（我们无法直接测试，因为它没有被导出）
       expect(true).toBe(true); // 占位符断言

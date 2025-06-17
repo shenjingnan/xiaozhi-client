@@ -1,14 +1,14 @@
 import chalk from "chalk";
 import ora from "ora";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { configManager } from "./configManager.js";
+import { configManager } from "./configManager";
 import {
   getDisplayWidth,
   listMcpServers,
   listServerTools,
   setToolEnabled,
   truncateToWidth,
-} from "./mcpCommands.js";
+} from "./mcpCommands";
 
 // Mock dependencies
 vi.mock("chalk", () => ({
@@ -31,7 +31,7 @@ vi.mock("ora", () => ({
   })),
 }));
 
-vi.mock("./configManager.js", () => ({
+vi.mock("./configManager", () => ({
   configManager: {
     getMcpServers: vi.fn(),
     getMcpServerConfig: vi.fn(),

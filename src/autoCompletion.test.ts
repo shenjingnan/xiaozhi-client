@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { setupAutoCompletion, showCompletionHelp } from "./autoCompletion.js";
-import { configManager } from "./configManager.js";
+import { setupAutoCompletion, showCompletionHelp } from "./autoCompletion";
+import { configManager } from "./configManager";
 
 // Mock configManager
-vi.mock("./configManager.js", () => ({
+vi.mock("./configManager", () => ({
   configManager: {
     configExists: vi.fn(),
     getMcpServers: vi.fn(),

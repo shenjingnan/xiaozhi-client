@@ -8,13 +8,9 @@ import { fileURLToPath } from "node:url";
 import chalk from "chalk";
 import { Command } from "commander";
 import ora from "ora";
-import { setupAutoCompletion, showCompletionHelp } from "./autoCompletion.js";
-import { configManager } from "./configManager.js";
-import {
-  listMcpServers,
-  listServerTools,
-  setToolEnabled,
-} from "./mcpCommands.js";
+import { setupAutoCompletion, showCompletionHelp } from "./autoCompletion";
+import { configManager } from "./configManager";
+import { listMcpServers, listServerTools, setToolEnabled } from "./mcpCommands";
 
 const program = new Command();
 const SERVICE_NAME = "xiaozhi-mcp-service";
@@ -24,21 +20,9 @@ const SERVICE_NAME = "xiaozhi-mcp-service";
  */
 function getVersion(): string {
   try {
-    let currentDir: string;
-
-    // 检查是否在 ES 模块环境中
-    if (typeof import.meta !== "undefined" && import.meta.url) {
-      // ES 模块环境
-      const __filename = fileURLToPath(import.meta.url);
-      currentDir = path.dirname(__filename);
-    } else {
-      // CommonJS 环境，使用 require.main 或 process.cwd()
-      if (require.main?.filename) {
-        currentDir = path.dirname(require.main.filename);
-      } else {
-        currentDir = process.cwd();
-      }
-    }
+    // 在 ES 模块环境中获取当前目录
+    const __filename = fileURLToPath(import.meta.url);
+    const currentDir = path.dirname(__filename);
 
     // 尝试多个可能的 package.json 路径
     const possiblePaths = [

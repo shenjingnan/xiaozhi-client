@@ -10,14 +10,15 @@ import { type ChildProcess, spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 import {
   type MCPServerConfig,
   type MCPToolConfig,
   configManager,
-} from "./configManager.js";
+} from "./configManager";
 
-// CommonJS 兼容的 __dirname
-const __dirname = dirname(__filename);
+// ESM 兼容的 __dirname
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Simple logger utility
 const logger = {
@@ -832,7 +833,7 @@ async function main() {
 }
 
 // Run the server if this file is executed directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch((error) => {
     logger.error(
       `Unhandled error: ${error instanceof Error ? error.message : String(error)}`
