@@ -37,7 +37,7 @@ class MockChildProcess extends EventEmitter {
   kill = vi.fn();
 }
 
-describe("MCPServerProxy", () => {
+describe("MCP服务器代理", () => {
   let mockSpawn: any;
   let mockConfigManager: any;
   let mockReadFileSync: any;
@@ -64,14 +64,14 @@ describe("MCPServerProxy", () => {
     vi.restoreAllMocks();
   });
 
-  describe("loadMCPConfig", () => {
-    it("should have config manager available", () => {
-      // Test that config manager methods are available
+  describe("加载MCP配置", () => {
+    it("应该有可用的配置管理器", () => {
+      // 测试配置管理器方法是否可用
       expect(mockConfigManager.configExists).toBeDefined();
       expect(mockConfigManager.getMcpServers).toBeDefined();
     });
 
-    it("should handle legacy config fallback", () => {
+    it("应该处理遗留配置回退", () => {
       mockConfigManager.configExists.mockReturnValue(false);
       mockReadFileSync.mockReturnValue(
         JSON.stringify({
@@ -84,40 +84,40 @@ describe("MCPServerProxy", () => {
         })
       );
 
-      // Test that readFileSync is available for fallback
+      // 测试readFileSync是否可用于回退
       expect(mockReadFileSync).toBeDefined();
     });
 
-    it("should handle config loading errors", () => {
+    it("应该处理配置加载错误", () => {
       mockConfigManager.configExists.mockReturnValue(false);
       mockReadFileSync.mockImplementation(() => {
         throw new Error("File not found");
       });
 
-      // Test that error handling is available
+      // 测试错误处理是否可用
       expect(() => mockReadFileSync()).toThrow("File not found");
     });
   });
 
-  describe("MCPClient", () => {
+  describe("MCP客户端", () => {
     let MCPClient: any;
     let mockProcess: MockChildProcess;
 
     beforeEach(async () => {
-      // Import MCPClient class (it's not exported, so we need to access it differently)
-      // For now, we'll test it indirectly through MCPServerProxy
+      // 导入MCPClient类（它没有被导出，所以我们需要以不同方式访问它）
+      // 现在，我们将通过MCPServerProxy间接测试它
       mockProcess = new MockChildProcess();
       mockSpawn.mockReturnValue(mockProcess);
     });
 
-    it("should create client with correct configuration", () => {
+    it("应该使用正确的配置创建客户端", () => {
       const config = {
         command: "node",
         args: ["test.js"],
         env: { TEST_VAR: "test" },
       };
 
-      // Test indirectly through spawn call
+      // 通过spawn调用间接测试
       mockSpawn(
         "node",
         ["test.js"],
@@ -137,54 +137,54 @@ describe("MCPServerProxy", () => {
       );
     });
 
-    it("should handle process stdout data", () => {
+    it("应该处理进程stdout数据", () => {
       const testMessage = JSON.stringify({
         jsonrpc: "2.0",
         id: 1,
         result: { tools: [] },
       });
 
-      // Simulate stdout data
+      // 模拟stdout数据
       mockProcess.stdout.emit("data", Buffer.from(`${testMessage}\n`));
 
-      // The message should be processed (we can't directly test this without access to the class)
-      expect(true).toBe(true); // Placeholder assertion
+      // 消息应该被处理（我们无法直接测试，因为无法访问类）
+      expect(true).toBe(true); // 占位符断言
     });
 
-    it("should handle process stderr data", () => {
+    it("应该处理进程stderr数据", () => {
       const errorMessage = "Error message";
 
-      // Simulate stderr data
+      // 模拟stderr数据
       mockProcess.stderr.emit("data", Buffer.from(errorMessage));
 
-      // Error should be logged (we can't directly test this without access to the class)
-      expect(true).toBe(true); // Placeholder assertion
+      // 错误应该被记录（我们无法直接测试，因为无法访问类）
+      expect(true).toBe(true); // 占位符断言
     });
 
-    it("should handle process exit", () => {
-      // Simulate process exit
+    it("应该处理进程退出", () => {
+      // 模拟进程退出
       mockProcess.emit("exit", 1, "SIGTERM");
 
-      // Process should be marked as not initialized
-      expect(true).toBe(true); // Placeholder assertion
+      // 进程应该被标记为未初始化
+      expect(true).toBe(true); // 占位符断言
     });
 
-    it("should handle process error", () => {
-      // Add error listener to prevent uncaught error
+    it("应该处理进程错误", () => {
+      // 添加错误监听器以防止未捕获的错误
       mockProcess.on("error", () => {});
 
-      // Test that process error event can be emitted
+      // 测试进程错误事件可以被触发
       expect(() => {
         mockProcess.emit("error", new Error("Process error"));
       }).not.toThrow();
 
-      // Error should be handled
-      expect(true).toBe(true); // Placeholder assertion
+      // 错误应该被处理
+      expect(true).toBe(true); // 占位符断言
     });
   });
 
-  describe("JSONRPCServer", () => {
-    it("should handle initialize request", async () => {
+  describe("JSONRPC服务器", () => {
+    it("应该处理初始化请求", async () => {
       const initRequest = {
         jsonrpc: "2.0",
         id: 1,
@@ -195,8 +195,8 @@ describe("MCPServerProxy", () => {
         },
       };
 
-      // Test would require access to JSONRPCServer class
-      // For now, we test the expected response format
+      // 测试需要访问JSONRPCServer类
+      // 现在，我们测试预期的响应格式
       const expectedResponse = {
         jsonrpc: "2.0",
         id: 1,
@@ -217,7 +217,7 @@ describe("MCPServerProxy", () => {
       expect(expectedResponse.result.serverInfo.name).toBe("MCPServerProxy");
     });
 
-    it("should handle tools/list request", async () => {
+    it("应该处理工具列表请求", async () => {
       const toolsListRequest = {
         jsonrpc: "2.0",
         id: 2,
@@ -225,7 +225,7 @@ describe("MCPServerProxy", () => {
         params: {},
       };
 
-      // Expected response format
+      // 预期的响应格式
       const expectedResponse = {
         jsonrpc: "2.0",
         id: 2,
@@ -237,7 +237,7 @@ describe("MCPServerProxy", () => {
       expect(expectedResponse.result).toHaveProperty("tools");
     });
 
-    it("should handle tools/call request", async () => {
+    it("应该处理工具调用请求", async () => {
       const toolsCallRequest = {
         jsonrpc: "2.0",
         id: 3,
@@ -248,11 +248,11 @@ describe("MCPServerProxy", () => {
         },
       };
 
-      // Test would require actual tool execution
+      // 测试需要实际的工具执行
       expect(toolsCallRequest.params.name).toBe("test_tool");
     });
 
-    it("should handle ping request", async () => {
+    it("应该处理ping请求", async () => {
       const pingRequest = {
         jsonrpc: "2.0",
         id: 4,
@@ -269,17 +269,17 @@ describe("MCPServerProxy", () => {
       expect(expectedResponse.result).toEqual({});
     });
 
-    it("should handle notifications/initialized", async () => {
+    it("应该处理初始化完成通知", async () => {
       const initializedNotification = {
         jsonrpc: "2.0",
         method: "notifications/initialized",
       };
 
-      // Notifications don't return responses
+      // 通知不返回响应
       expect(initializedNotification.method).toBe("notifications/initialized");
     });
 
-    it("should handle invalid JSON", async () => {
+    it("应该处理无效的JSON", async () => {
       const invalidJson = "invalid json";
 
       const expectedErrorResponse = {
@@ -294,7 +294,7 @@ describe("MCPServerProxy", () => {
       expect(expectedErrorResponse.error.code).toBe(-32700);
     });
 
-    it("should handle unknown method", async () => {
+    it("应该处理未知方法", async () => {
       const unknownMethodRequest = {
         jsonrpc: "2.0",
         id: 5,
@@ -315,18 +315,18 @@ describe("MCPServerProxy", () => {
     });
   });
 
-  describe("Tool name prefixing", () => {
-    it("should prefix tool names correctly", () => {
+  describe("工具名称前缀", () => {
+    it("应该正确添加工具名称前缀", () => {
       const serverName = "test-server";
       const toolName = "calculate";
       const expectedPrefixedName = "test_server_xzcli_calculate";
 
-      // Test the expected format
+      // 测试预期格式
       const actualPrefixedName = `${serverName.replace(/-/g, "_")}_xzcli_${toolName}`;
       expect(actualPrefixedName).toBe(expectedPrefixedName);
     });
 
-    it("should handle server names with hyphens", () => {
+    it("应该处理带连字符的服务器名称", () => {
       const serverName = "amap-maps";
       const toolName = "geocode";
       const expectedPrefixedName = "amap_maps_xzcli_geocode";
@@ -335,7 +335,7 @@ describe("MCPServerProxy", () => {
       expect(actualPrefixedName).toBe(expectedPrefixedName);
     });
 
-    it("should convert prefixed names back to original", () => {
+    it("应该将带前缀的名称转换回原始名称", () => {
       const prefixedName = "test_server_xzcli_calculate";
       const expectedOriginalName = "calculate";
 
@@ -345,15 +345,15 @@ describe("MCPServerProxy", () => {
     });
   });
 
-  describe("Tool filtering", () => {
+  describe("工具过滤", () => {
     beforeEach(() => {
       mockConfigManager.isToolEnabled.mockImplementation(
         (serverName: string, toolName: string) => {
-          // Mock some tools as disabled for testing
+          // 模拟一些工具被禁用用于测试
           if (serverName === "test-server" && toolName === "disabled-tool") {
             return false;
           }
-          return true; // Default to enabled
+          return true; // 默认启用
         }
       );
 
@@ -369,7 +369,7 @@ describe("MCPServerProxy", () => {
       });
     });
 
-    it("should filter out disabled tools", () => {
+    it("应该过滤掉已禁用的工具", () => {
       const allTools = [
         { name: "enabled-tool", description: "Enabled tool" },
         { name: "disabled-tool", description: "Disabled tool" },
@@ -383,7 +383,7 @@ describe("MCPServerProxy", () => {
       expect(enabledTools[0].name).toBe("enabled-tool");
     });
 
-    it("should include all tools when none are disabled", () => {
+    it("当没有工具被禁用时应该包含所有工具", () => {
       mockConfigManager.isToolEnabled.mockReturnValue(true);
 
       const allTools = [
@@ -398,7 +398,7 @@ describe("MCPServerProxy", () => {
       expect(enabledTools).toHaveLength(2);
     });
 
-    it("should handle empty tools list", () => {
+    it("应该处理空工具列表", () => {
       const allTools: any[] = [];
 
       const enabledTools = allTools.filter((tool) =>
@@ -408,7 +408,7 @@ describe("MCPServerProxy", () => {
       expect(enabledTools).toHaveLength(0);
     });
 
-    it("should update tools configuration", () => {
+    it("应该更新工具配置", () => {
       const toolsConfig = {
         tool1: {
           description: "Tool 1",
@@ -428,22 +428,22 @@ describe("MCPServerProxy", () => {
       );
     });
 
-    it("should generate prefixed tool names correctly", () => {
+    it("应该正确生成带前缀的工具名称", () => {
       const serverName = "test-server";
       const originalToolName = "calculate";
 
-      // Test the prefixing logic
+      // 测试前缀逻辑
       const normalizedServerName = serverName.replace(/-/g, "_");
       const prefixedName = `${normalizedServerName}_xzcli_${originalToolName}`;
 
       expect(prefixedName).toBe("test_server_xzcli_calculate");
     });
 
-    it("should extract original tool name from prefixed name", () => {
+    it("应该从带前缀的名称中提取原始工具名称", () => {
       const prefixedName = "test_server_xzcli_calculate";
       const serverName = "test-server";
 
-      // Test the extraction logic
+      // 测试提取逻辑
       const normalizedServerName = serverName.replace(/-/g, "_");
       const prefix = `${normalizedServerName}_xzcli_`;
 
@@ -453,13 +453,13 @@ describe("MCPServerProxy", () => {
       }
     });
 
-    it("should handle tool filtering with prefixed names", () => {
+    it("应该处理带前缀名称的工具过滤", () => {
       const originalTools = [
         { name: "tool1", description: "Tool 1" },
         { name: "tool2", description: "Tool 2" },
       ];
 
-      // Simulate prefixing and filtering
+      // 模拟前缀和过滤
       const prefixedTools = originalTools.map((tool) => ({
         ...tool,
         name: `test_server_xzcli_${tool.name}`,
@@ -470,41 +470,41 @@ describe("MCPServerProxy", () => {
         return mockConfigManager.isToolEnabled("test-server", originalName);
       });
 
-      expect(filteredTools).toHaveLength(2); // Both tools enabled by default
+      expect(filteredTools).toHaveLength(2); // 默认情况下两个工具都启用
       expect(filteredTools[0].name).toBe("test_server_xzcli_tool1");
       expect(filteredTools[1].name).toBe("test_server_xzcli_tool2");
     });
   });
 
-  describe("Server management", () => {
-    it("should get server information", () => {
+  describe("服务器管理", () => {
+    it("应该获取服务器信息", () => {
       const servers = [
         { name: "server1", toolCount: 3, enabledToolCount: 2 },
         { name: "server2", toolCount: 5, enabledToolCount: 5 },
       ];
 
-      // Test expected server info structure
+      // 测试预期的服务器信息结构
       expect(servers[0]).toHaveProperty("name");
       expect(servers[0]).toHaveProperty("toolCount");
       expect(servers[0]).toHaveProperty("enabledToolCount");
     });
 
-    it("should get server tools information", () => {
+    it("应该获取服务器工具信息", () => {
       const serverTools = [
         { name: "tool1", description: "Tool 1", enabled: true },
         { name: "tool2", description: "Tool 2", enabled: false },
       ];
 
-      // Test expected tool info structure
+      // 测试预期的工具信息结构
       expect(serverTools[0]).toHaveProperty("name");
       expect(serverTools[0]).toHaveProperty("description");
       expect(serverTools[0]).toHaveProperty("enabled");
     });
 
-    it("should handle server not found", () => {
+    it("应该处理找不到服务器的情况", () => {
       const serverName = "non-existent-server";
 
-      // Test that we can check for server existence
+      // 测试我们可以检查服务器是否存在
       const serverExists = Object.prototype.hasOwnProperty.call(
         mockConfigManager.getMcpServers(),
         serverName
