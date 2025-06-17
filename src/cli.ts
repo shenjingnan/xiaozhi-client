@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import chalk from "chalk";
 import { Command } from "commander";
 import ora from "ora";
-import { setupAutoCompletion, showCompletionHelp } from "./autoCompletion.js";
+import { setupAutoCompletion, showCompletionHelp } from "./autoCompletion";
 import { configManager } from "./configManager.js";
 import {
   listMcpServers,
@@ -192,7 +192,9 @@ function checkEnvironment(): boolean {
   } catch (error) {
     console.error(
       chalk.red(
-        `❌ 错误: 配置文件无效 - ${error instanceof Error ? error.message : String(error)}`
+        `❌ 错误: 配置文件无效 - ${
+          error instanceof Error ? error.message : String(error)
+        }`
       )
     );
     console.log(chalk.yellow('💡 提示: 请运行 "xiaozhi init" 重新初始化配置'));
@@ -388,7 +390,9 @@ async function stopService(): Promise<void> {
     } catch (error) {
       cleanupPidFile();
       spinner.fail(
-        `停止服务失败: ${error instanceof Error ? error.message : String(error)}`
+        `停止服务失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   } catch (error) {
@@ -539,7 +543,9 @@ async function initConfig(): Promise<void> {
     );
   } catch (error) {
     spinner.fail(
-      `初始化配置失败: ${error instanceof Error ? error.message : String(error)}`
+      `初始化配置失败: ${
+        error instanceof Error ? error.message : String(error)
+      }`
     );
   }
 }
@@ -876,7 +882,9 @@ async function configCommand(key: string, value?: string): Promise<void> {
           )) {
             console.log(
               chalk.gray(
-                `  ${name}: ${serverConfig.command} ${serverConfig.args.join(" ")}`
+                `  ${name}: ${serverConfig.command} ${serverConfig.args.join(
+                  " "
+                )}`
               )
             );
           }

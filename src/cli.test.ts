@@ -107,7 +107,7 @@ class MockChildProcess extends EventEmitter {
   unref = vi.fn();
 }
 
-describe("CLI", () => {
+describe("CLI 命令行工具", () => {
   let mockSpawn: any;
   let mockFs: any;
   let mockOs: any;
@@ -175,8 +175,8 @@ describe("CLI", () => {
     vi.restoreAllMocks();
   });
 
-  describe("Service Status", () => {
-    it("should detect running service", () => {
+  describe("服务状态", () => {
+    it("应该检测到正在运行的服务", () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue('{"pid": 12345, "mode": "daemon"}');
 
@@ -189,14 +189,14 @@ describe("CLI", () => {
       expect(mockFs.readFileSync).toBeDefined();
     });
 
-    it("should detect stopped service", () => {
+    it("应该检测到已停止的服务", () => {
       mockFs.existsSync.mockReturnValue(false);
 
       // Test would require access to getServiceStatus function
       expect(mockFs.existsSync).toBeDefined();
     });
 
-    it("should clean up stale PID file", () => {
+    it("应该清理过期的 PID 文件", () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue('{"pid": 99999, "mode": "daemon"}');
 
@@ -210,8 +210,8 @@ describe("CLI", () => {
     });
   });
 
-  describe("Environment Check", () => {
-    it("should pass when config exists and is valid", () => {
+  describe("环境检查", () => {
+    it("当配置存在且有效时应该通过", () => {
       mockConfigManager.configExists.mockReturnValue(true);
       mockConfigManager.getMcpEndpoint.mockReturnValue(
         "wss://valid.endpoint.com/mcp"
@@ -222,14 +222,14 @@ describe("CLI", () => {
       expect(mockConfigManager.getMcpEndpoint).toBeDefined();
     });
 
-    it("should fail when config does not exist", () => {
+    it("当配置不存在时应该失败", () => {
       mockConfigManager.configExists.mockReturnValue(false);
 
       // Test would require access to checkEnvironment function
       expect(mockConfigManager.configExists).toBeDefined();
     });
 
-    it("should fail when endpoint is not configured", () => {
+    it("当端点未配置时应该失败", () => {
       mockConfigManager.configExists.mockReturnValue(true);
       mockConfigManager.getMcpEndpoint.mockReturnValue("<请填写你的端点>");
 
@@ -237,7 +237,7 @@ describe("CLI", () => {
       expect(mockConfigManager.getMcpEndpoint).toBeDefined();
     });
 
-    it("should handle config loading errors", () => {
+    it("应该处理配置加载错误", () => {
       mockConfigManager.configExists.mockReturnValue(true);
       mockConfigManager.getMcpEndpoint.mockImplementation(() => {
         throw new Error("Config error");
@@ -248,8 +248,8 @@ describe("CLI", () => {
     });
   });
 
-  describe("Service Commands", () => {
-    it("should get correct service command", () => {
+  describe("服务命令", () => {
+    it("应该获取正确的服务命令", () => {
       const expectedCommand = "node";
       const expectedArgs = [expect.stringContaining("mcpServerProxy")];
 
@@ -261,8 +261,8 @@ describe("CLI", () => {
     });
   });
 
-  describe("PID File Management", () => {
-    it("should save PID info correctly", () => {
+  describe("PID 文件管理", () => {
+    it("应该正确保存 PID 信息", () => {
       const pid = 12345;
       const mode = "daemon";
 
@@ -271,7 +271,7 @@ describe("CLI", () => {
       expect(mockFs.writeFileSync).toBeDefined();
     });
 
-    it("should clean up PID file", () => {
+    it("应该清理 PID 文件", () => {
       mockFs.existsSync.mockReturnValue(true);
 
       // Test would require access to cleanupPidFile function
@@ -279,8 +279,8 @@ describe("CLI", () => {
     });
   });
 
-  describe("Start Service", () => {
-    it("should start service in foreground mode", async () => {
+  describe("启动服务", () => {
+    it("应该在前台模式启动服务", async () => {
       mockConfigManager.configExists.mockReturnValue(true);
       mockConfigManager.getMcpEndpoint.mockReturnValue("wss://test.com/mcp");
 
@@ -291,7 +291,7 @@ describe("CLI", () => {
       expect(mockSpawn).toBeDefined();
     });
 
-    it("should start service in daemon mode", async () => {
+    it("应该在守护进程模式启动服务", async () => {
       mockConfigManager.configExists.mockReturnValue(true);
       mockConfigManager.getMcpEndpoint.mockReturnValue("wss://test.com/mcp");
 
@@ -302,7 +302,7 @@ describe("CLI", () => {
       expect(mockSpawn).toBeDefined();
     });
 
-    it("should not start if service already running", async () => {
+    it("如果服务已在运行则不应启动", async () => {
       // Mock service already running
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue('{"pid": 12345, "mode": "daemon"}');
@@ -312,7 +312,7 @@ describe("CLI", () => {
       expect(mockFs.existsSync).toBeDefined();
     });
 
-    it("should not start if environment check fails", async () => {
+    it("如果环境检查失败则不应启动", async () => {
       mockConfigManager.configExists.mockReturnValue(false);
 
       // Test would require access to startService function
@@ -320,8 +320,8 @@ describe("CLI", () => {
     });
   });
 
-  describe("Stop Service", () => {
-    it("should stop running service gracefully", async () => {
+  describe("停止服务", () => {
+    it("应该优雅地停止正在运行的服务", async () => {
       // Mock service running
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue('{"pid": 12345, "mode": "daemon"}');
@@ -338,7 +338,7 @@ describe("CLI", () => {
       expect(process.kill).toBeDefined();
     });
 
-    it("should force kill if graceful stop fails", async () => {
+    it("如果优雅停止失败应该强制终止", async () => {
       // Mock service running and not responding to SIGTERM
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue('{"pid": 12345, "mode": "daemon"}');
@@ -349,7 +349,7 @@ describe("CLI", () => {
       expect(process.kill).toBeDefined();
     });
 
-    it("should handle service not running", async () => {
+    it("应该处理服务未运行的情况", async () => {
       mockFs.existsSync.mockReturnValue(false);
 
       // Test would require access to stopService function
@@ -357,8 +357,8 @@ describe("CLI", () => {
     });
   });
 
-  describe("Config Commands", () => {
-    it("should initialize config successfully", async () => {
+  describe("配置命令", () => {
+    it("应该成功初始化配置", async () => {
       mockConfigManager.configExists.mockReturnValue(false);
       mockConfigManager.initConfig.mockImplementation(() => {});
 
@@ -366,14 +366,14 @@ describe("CLI", () => {
       expect(mockConfigManager.initConfig).toBeDefined();
     });
 
-    it("should not reinitialize existing config", async () => {
+    it("不应重新初始化已存在的配置", async () => {
       mockConfigManager.configExists.mockReturnValue(true);
 
       // Test would require access to initConfig function
       expect(mockConfigManager.configExists).toBeDefined();
     });
 
-    it("should get config value", async () => {
+    it("应该获取配置值", async () => {
       mockConfigManager.configExists.mockReturnValue(true);
       mockConfigManager.getConfig.mockReturnValue({
         mcpEndpoint: "wss://test.com/mcp",
@@ -384,7 +384,7 @@ describe("CLI", () => {
       expect(mockConfigManager.getConfig).toBeDefined();
     });
 
-    it("should set config value", async () => {
+    it("应该设置配置值", async () => {
       mockConfigManager.configExists.mockReturnValue(true);
       mockConfigManager.updateMcpEndpoint.mockImplementation(() => {});
 
@@ -393,8 +393,8 @@ describe("CLI", () => {
     });
   });
 
-  describe("Project Creation", () => {
-    it("should create basic project", async () => {
+  describe("项目创建", () => {
+    it("应该创建基础项目", async () => {
       mockFs.existsSync.mockReturnValue(false); // Target directory doesn't exist
       mockFs.mkdirSync.mockImplementation(() => {});
       mockFs.writeFileSync.mockImplementation(() => {});
@@ -404,7 +404,7 @@ describe("CLI", () => {
       expect(mockFs.writeFileSync).toBeDefined();
     });
 
-    it("should create project from template", async () => {
+    it("应该从模板创建项目", async () => {
       mockFs.existsSync.mockImplementation((path) => {
         if (path.includes("templates")) return true;
         return false; // Target directory doesn't exist
@@ -415,7 +415,7 @@ describe("CLI", () => {
       expect(mockFs.existsSync).toBeDefined();
     });
 
-    it("should not create project if directory exists", async () => {
+    it("如果目录已存在则不应创建项目", async () => {
       mockFs.existsSync.mockReturnValue(true); // Target directory exists
 
       // Test would require access to createProject function
@@ -423,7 +423,7 @@ describe("CLI", () => {
     });
   });
 
-  describe("MCP Commands", () => {
+  describe("MCP 命令", () => {
     let mockMcpCommands: any;
 
     beforeEach(async () => {
@@ -431,42 +431,42 @@ describe("CLI", () => {
       mockMcpCommands = vi.mocked(mcpCommandsModule);
     });
 
-    it("should list MCP servers", async () => {
+    it("应该列出 MCP 服务器", async () => {
       mockMcpCommands.listMcpServers.mockResolvedValue(undefined);
 
       // Test would require access to MCP list command
       expect(mockMcpCommands.listMcpServers).toBeDefined();
     });
 
-    it("should list MCP servers with tools", async () => {
+    it("应该列出带工具的 MCP 服务器", async () => {
       mockMcpCommands.listMcpServers.mockResolvedValue(undefined);
 
       // Test would require access to MCP list command with --tools option
       expect(mockMcpCommands.listMcpServers).toBeDefined();
     });
 
-    it("should list server tools", async () => {
+    it("应该列出服务器工具", async () => {
       mockMcpCommands.listServerTools.mockResolvedValue(undefined);
 
       // Test would require access to MCP server command
       expect(mockMcpCommands.listServerTools).toBeDefined();
     });
 
-    it("should enable tool", async () => {
+    it("应该启用工具", async () => {
       mockMcpCommands.setToolEnabled.mockResolvedValue(undefined);
 
       // Test would require access to MCP tool enable command
       expect(mockMcpCommands.setToolEnabled).toBeDefined();
     });
 
-    it("should disable tool", async () => {
+    it("应该禁用工具", async () => {
       mockMcpCommands.setToolEnabled.mockResolvedValue(undefined);
 
       // Test would require access to MCP tool disable command
       expect(mockMcpCommands.setToolEnabled).toBeDefined();
     });
 
-    it("should handle invalid tool action", () => {
+    it("应该处理无效的工具操作", () => {
       // Test would require access to MCP tool command validation
       const validActions = ["enable", "disable"];
       const invalidAction = "invalid";
@@ -475,8 +475,8 @@ describe("CLI", () => {
     });
   });
 
-  describe("Command Structure", () => {
-    it("should have MCP command group", () => {
+  describe("命令结构", () => {
+    it("应该有 MCP 命令组", () => {
       // Test that MCP commands are properly structured
       const expectedCommands = [
         "list",
@@ -491,7 +491,7 @@ describe("CLI", () => {
       );
     });
 
-    it("should validate tool action parameters", () => {
+    it("应该验证工具操作参数", () => {
       const validActions = ["enable", "disable"];
 
       expect(validActions).toHaveLength(2);
@@ -500,8 +500,8 @@ describe("CLI", () => {
     });
   });
 
-  describe("Version Management", () => {
-    it("should read version from package.json in development", async () => {
+  describe("版本管理", () => {
+    it("应该在开发环境中从 package.json 读取版本", async () => {
       const { fileURLToPath } = await import("node:url");
       const mockFileURLToPath = vi.mocked(fileURLToPath);
 
@@ -526,7 +526,7 @@ describe("CLI", () => {
       expect(mockFs.readFileSync).toBeDefined();
     });
 
-    it("should read version from package.json in dist", async () => {
+    it("应该在 dist 环境中从 package.json 读取版本", async () => {
       const { fileURLToPath } = await import("node:url");
       const mockFileURLToPath = vi.mocked(fileURLToPath);
 
@@ -549,7 +549,7 @@ describe("CLI", () => {
       expect(mockFs.readFileSync).toBeDefined();
     });
 
-    it("should return 'unknown' when package.json not found", async () => {
+    it("当找不到 package.json 时应该返回 'unknown'", async () => {
       const { fileURLToPath } = await import("node:url");
       const mockFileURLToPath = vi.mocked(fileURLToPath);
 
@@ -564,7 +564,7 @@ describe("CLI", () => {
       expect(mockFs.existsSync).toBeDefined();
     });
 
-    it("should handle JSON parse errors gracefully", async () => {
+    it("应该优雅地处理 JSON 解析错误", async () => {
       const { fileURLToPath } = await import("node:url");
       const mockFileURLToPath = vi.mocked(fileURLToPath);
 
@@ -583,20 +583,20 @@ describe("CLI", () => {
     });
   });
 
-  describe("Utility Functions", () => {
-    it("should show detailed info", () => {
+  describe("工具函数", () => {
+    it("应该显示详细信息", () => {
       // Test would require access to showDetailedInfo function
       expect(process.version).toBeDefined();
       expect(process.platform).toBeDefined();
       expect(process.arch).toBeDefined();
     });
 
-    it("should show help", () => {
+    it("应该显示帮助信息", () => {
       // Test would require access to showHelp function
       expect(console.log).toBeDefined();
     });
 
-    it("should include MCP commands in help", () => {
+    it("帮助信息应该包含 MCP 命令", () => {
       // Test that help includes MCP command examples
       const expectedHelpContent = [
         "xiaozhi mcp list",
