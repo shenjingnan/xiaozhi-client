@@ -81,7 +81,7 @@ vi.mock("ora", () => ({
   })),
 }));
 
-vi.mock("./configManager.js", () => ({
+vi.mock("./configManager", () => ({
   configManager: {
     configExists: vi.fn(),
     getMcpEndpoint: vi.fn(),
@@ -92,7 +92,7 @@ vi.mock("./configManager.js", () => ({
   },
 }));
 
-vi.mock("./mcpCommands.js", () => ({
+vi.mock("./mcpCommands", () => ({
   listMcpServers: vi.fn(),
   listServerTools: vi.fn(),
   setToolEnabled: vi.fn(),
@@ -122,7 +122,7 @@ describe("CLI 命令行工具", () => {
     mockFs = vi.mocked(fs);
     mockOs = vi.mocked(os);
     mockPath = vi.mocked(path);
-    const configManagerModule = await import("./configManager.js");
+    const configManagerModule = await import("./configManager");
     mockConfigManager = vi.mocked(configManagerModule.configManager);
 
     // Setup mock instances
@@ -454,7 +454,7 @@ describe("CLI 命令行工具", () => {
     let mockMcpCommands: any;
 
     beforeEach(async () => {
-      const mcpCommandsModule = await import("./mcpCommands.js");
+      const mcpCommandsModule = await import("./mcpCommands");
       mockMcpCommands = vi.mocked(mcpCommandsModule);
     });
 
@@ -584,7 +584,7 @@ describe("CLI 命令行工具", () => {
       );
 
       // Import and test getVersion function
-      const cliModule = await import("./cli.js");
+      const cliModule = await import("./cli");
       // Since getVersion is not exported, we test through the CLI setup
       expect(mockFs.readFileSync).toBeDefined();
     });
@@ -756,13 +756,15 @@ describe("CLI 命令行工具", () => {
       }
     });
 
-    it("应该确保源码中的导入使用 .js 扩展名", () => {
+    it("应该确保源码中的导入不使用 .js 扩展名", () => {
       const projectRoot = getProjectRoot();
       const srcFiles = [
         "src/cli.ts",
         "src/autoCompletion.ts",
         "src/mcpCommands.ts",
         "src/mcpPipe.ts",
+        "src/mcpServerProxy.ts",
+        "src/configManager.ts",
       ];
 
       for (const file of srcFiles) {
@@ -773,8 +775,43 @@ describe("CLI 命令行工具", () => {
 
           if (relativeImports) {
             for (const importStatement of relativeImports) {
-              // 相对导入应该以 .js 结尾
-              expect(importStatement).toMatch(/\.js["']$/);
+              // 相对导入不应该包含 .js 后缀（ESM 项目中 TypeScript 会自动处理）
+              expect(importStatement).not.toMatch(/\.js["']$/);
+            }
+          }
+        }
+      }
+    });
+
+    it("应该确保源码中不使用 CommonJS 语法", () => {
+      const projectRoot = getProjectRoot();
+      const srcFiles = [
+        "src/cli.ts",
+        "src/autoCompletion.ts",
+        "src/mcpCommands.ts",
+        "src/mcpPipe.ts",
+        "src/mcpServerProxy.ts",
+        "src/configManager.ts",
+      ];
+
+      for (const file of srcFiles) {
+        const filePath = realPath.join(projectRoot, file);
+        if (realFs.existsSync(filePath)) {
+          const content = realFs.readFileSync(filePath, "utf8");
+
+          // 检查不应该使用的 CommonJS 语法
+          expect(content).not.toMatch(/require\.main\s*===\s*module/);
+          expect(content).not.toMatch(/module\.exports\s*=/);
+          expect(content).not.toMatch(/exports\./);
+
+          // 检查应该使用 ESM 语法
+          if (content.includes("import.meta.url")) {
+            // 如果使用了 import.meta.url，应该配合 fileURLToPath 使用
+            if (
+              content.includes("__filename") ||
+              content.includes("__dirname")
+            ) {
+              expect(content).toMatch(/fileURLToPath\(import\.meta\.url\)/);
             }
           }
         }

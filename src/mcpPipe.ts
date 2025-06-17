@@ -15,7 +15,7 @@ import { type ChildProcess, spawn } from "node:child_process";
 import process from "node:process";
 import { config } from "dotenv";
 import WebSocket from "ws";
-import { configManager } from "./configManager.js";
+import { configManager } from "./configManager";
 
 // Load environment variables
 config();
@@ -350,7 +350,7 @@ async function main() {
 }
 
 // Run if this file is executed directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch((error) => {
     logger.error(
       `Unhandled error: ${error instanceof Error ? error.message : String(error)}`

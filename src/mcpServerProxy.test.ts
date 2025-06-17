@@ -14,7 +14,7 @@ vi.mock("node:fs", () => ({
 }));
 
 // Mock configManager
-vi.mock("./configManager.js", () => ({
+vi.mock("./configManager", () => ({
   configManager: {
     configExists: vi.fn(),
     getMcpServers: vi.fn(),
@@ -25,7 +25,7 @@ vi.mock("./configManager.js", () => ({
 }));
 
 // Import after mocking
-import { configManager } from "./configManager.js";
+import { configManager } from "./configManager";
 
 // Mock child process
 class MockChildProcess extends EventEmitter {

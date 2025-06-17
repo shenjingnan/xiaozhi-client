@@ -1,5 +1,5 @@
 import omelette from "omelette";
-import { configManager } from "./configManager.js";
+import { configManager } from "./configManager";
 
 /**
  * 自动补全功能模块

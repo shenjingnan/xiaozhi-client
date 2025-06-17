@@ -20,7 +20,7 @@ export default defineConfig({
   dts: true,
   minify: true,
   splitting: false,
-  bundle: false,
+  bundle: true,
   keepNames: true,
   platform: "node",
   outExtension() {
