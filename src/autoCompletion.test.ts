@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setupAutoCompletion, showCompletionHelp } from "./autoCompletion.js";
 import { configManager } from "./configManager.js";
 
@@ -226,13 +226,64 @@ describe("autoCompletion", () => {
 
       expect(mockConsoleLog).toHaveBeenCalledWith("🚀 xiaozhi 自动补全设置");
       expect(mockConsoleLog).toHaveBeenCalledWith(
-        expect.stringContaining("echo '. <(xiaozhi --completion)' >> ~/.zshrc")
+        expect.stringContaining(
+          "xiaozhi --completion >> ~/.xiaozhi-completion.zsh"
+        )
+      );
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        expect.stringContaining("source ~/.xiaozhi-completion.zsh")
       );
       expect(mockConsoleLog).toHaveBeenCalledWith(
         expect.stringContaining("xiaozhi m<Tab>")
       );
 
       mockConsoleLog.mockRestore();
+    });
+  });
+
+  describe("自动补全脚本生成", () => {
+    let originalArgv: string[];
+    let mockConsoleLog: any;
+    let mockProcessExit: any;
+
+    beforeEach(() => {
+      originalArgv = [...process.argv];
+      mockConsoleLog = vi.spyOn(console, "log").mockImplementation(() => {});
+      mockProcessExit = vi.spyOn(process, "exit").mockImplementation(() => {
+        throw new Error("process.exit called");
+      });
+    });
+
+    afterEach(() => {
+      process.argv = originalArgv;
+      mockConsoleLog.mockRestore();
+      mockProcessExit.mockRestore();
+    });
+
+    it("应该在--completion参数时输出补全脚本", () => {
+      process.argv = ["node", "xiaozhi", "--completion"];
+
+      expect(() => setupAutoCompletion()).toThrow("process.exit called");
+      expect(mockOmelette.setupShellInitFile).toHaveBeenCalledWith();
+      expect(mockConsoleLog).toHaveBeenCalled();
+      expect(mockProcessExit).toHaveBeenCalledWith(0);
+    });
+
+    it("应该在--completion-fish参数时输出Fish补全脚本", () => {
+      process.argv = ["node", "xiaozhi", "--completion-fish"];
+
+      expect(() => setupAutoCompletion()).toThrow("process.exit called");
+      expect(mockOmelette.setupShellInitFile).toHaveBeenCalledWith("fish");
+      expect(mockConsoleLog).toHaveBeenCalled();
+      expect(mockProcessExit).toHaveBeenCalledWith(0);
+    });
+
+    it("应该正确处理--compzsh和--compbash参数", () => {
+      process.argv = ["node", "xiaozhi", "--compzsh"];
+
+      // 这些参数不应该导致退出，而是让omelette处理
+      setupAutoCompletion();
+      expect(mockOmelette.init).toHaveBeenCalled();
     });
   });
 });
