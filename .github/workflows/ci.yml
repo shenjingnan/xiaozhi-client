@@ -38,6 +38,12 @@ jobs:
     - name: Biome 代码检查 (CI模式)
       run: pnpm run check
 
+    - name: 拼写检查
+      run: pnpm run spell:check
+
+    - name: 代码重复率检查
+      run: pnpm run duplicate:check
+
     - name: 运行测试并生成覆盖率报告
       run: pnpm run test:coverage
 
