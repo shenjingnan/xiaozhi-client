@@ -65,13 +65,13 @@ jobs:
         echo "验证构建产物是否正确生成..."
 
         # 检查主要构建产物
-        if [ ! -f "dist/cli.cjs" ]; then
-          echo "❌ 构建失败：dist/cli.cjs 文件不存在"
+        if [ ! -f "dist/cli.js" ]; then
+          echo "❌ 构建失败：dist/cli.js 文件不存在"
           exit 1
         fi
 
         # 检查其他核心文件
-        for file in "dist/configManager.cjs" "dist/mcpPipe.cjs" "dist/mcpServerProxy.cjs"; do
+        for file in "dist/configManager.js" "dist/mcpPipe.js" "dist/mcpServerProxy.js"; do
           if [ ! -f "$file" ]; then
             echo "❌ 构建失败：$file 文件不存在"
             exit 1
@@ -97,7 +97,7 @@ jobs:
     - name: 测试CLI工具可执行性
       run: |
         echo "测试CLI工具是否可以正常执行..."
-        node dist/cli.cjs --version || echo "CLI版本检查完成"
+        node dist/cli.js --version || echo "CLI版本检查完成"
         echo "✅ CLI工具可执行性验证通过"
 
     - name: 上传覆盖率报告

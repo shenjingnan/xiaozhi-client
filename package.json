@@ -2,7 +2,8 @@
   "name": "xiaozhi-client",
   "version": "1.0.4",
   "description": "小智 AI 客户端 命令行工具",
-  "main": "dist/cli.cjs",
+  "type": "module",
+  "main": "dist/cli.js",
   "files": [
     "dist",
     "docs",
@@ -15,12 +16,12 @@
     "registry": "https://registry.npmjs.org"
   },
   "bin": {
-    "xiaozhi": "./dist/cli.cjs",
-    "xiaozhi-client": "./dist/cli.cjs"
+    "xiaozhi": "./dist/cli.js",
+    "xiaozhi-client": "./dist/cli.js"
   },
   "scripts": {
-    "build": "tsup && node scripts/postbuild.mjs",
-    "dev": "tsup --watch && node scripts/postbuild.mjs",
+    "build": "tsup",
+    "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

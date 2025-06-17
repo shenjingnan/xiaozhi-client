@@ -20,6 +20,12 @@ vi.mock("node:fs", () => ({
 // Mock path module
 vi.mock("node:path", () => ({
   resolve: vi.fn(),
+  dirname: vi.fn(),
+}));
+
+// Mock url module
+vi.mock("node:url", () => ({
+  fileURLToPath: vi.fn(),
 }));
 
 describe("ConfigManager", () => {

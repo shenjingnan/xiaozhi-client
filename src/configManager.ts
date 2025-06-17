@@ -1,9 +1,9 @@
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-// 在 CommonJS 中，__dirname 是内置的，不需要定义
-// 在 ESM 中，需要从 import.meta.url 获取
-// 这里我们假设编译后是 CommonJS，所以直接使用内置的 __dirname
+// 在 ESM 中，需要从 import.meta.url 获取当前文件目录
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // 配置文件接口定义
 export interface MCPServerConfig {

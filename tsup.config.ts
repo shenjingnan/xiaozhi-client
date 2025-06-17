@@ -1,20 +1,6 @@
 import { copyFileSync, existsSync, mkdirSync } from "fs";
 import { join } from "path";
-import type { Plugin } from "esbuild";
 import { defineConfig } from "tsup";
-
-// Plugin to rewrite .js imports to .cjs in CommonJS output
-const rewriteImportsPlugin: Plugin = {
-  name: "rewrite-imports",
-  setup(build) {
-    if (build.initialOptions.format === "cjs") {
-      build.onResolve({ filter: /^\..*\.js$/ }, (args) => {
-        const newPath = args.path.replace(/\.js$/, ".cjs");
-        return { path: newPath, external: true };
-      });
-    }
-  },
-};
 
 export default defineConfig({
   entry: [
@@ -25,7 +11,7 @@ export default defineConfig({
     "src/mcpCommands.ts",
     "src/autoCompletion.ts",
   ],
-  format: ["cjs"],
+  format: ["esm"],
   target: "node18",
   outDir: "dist",
   clean: true,
@@ -36,12 +22,11 @@ export default defineConfig({
   bundle: false,
   keepNames: true,
   platform: "node",
-  outExtension({ format }) {
+  outExtension() {
     return {
-      js: format === "cjs" ? ".cjs" : ".js",
+      js: ".js",
     };
   },
-  esbuildPlugins: [rewriteImportsPlugin],
   external: [
     "ws",
     "child_process",
@@ -78,6 +63,6 @@ export default defineConfig({
       console.log("✅ 已复制 package.json 到 dist/");
     }
 
-    console.log("✅ 构建完成，mcpServers 现在位于 templates/ 目录中");
+    console.log("✅ 构建完成，产物现在为 ESM 格式");
   },
 });

@@ -44,7 +44,7 @@ function getVersion(): string {
     const possiblePaths = [
       // 开发环境：src/cli.ts -> package.json
       path.join(currentDir, "..", "package.json"),
-      // 构建后环境：dist/cli.cjs -> package.json
+      // 构建后环境：dist/cli.js -> package.json
       path.join(currentDir, "..", "package.json"),
       // 全局安装环境
       path.join(currentDir, "..", "..", "package.json"),
@@ -207,7 +207,7 @@ function checkEnvironment(): boolean {
  */
 function getServiceCommand(): { command: string; args: string[]; cwd: string } {
   // 获取当前脚本所在目录
-  const scriptDir = __dirname;
+  const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 
   // 检查是否在开发环境（js-demo/dist）还是全局安装环境
   let distDir: string;
@@ -229,14 +229,14 @@ function getServiceCommand(): { command: string; args: string[]; cwd: string } {
     distDir =
       possiblePaths.find(
         (p) =>
-          fs.existsSync(path.join(p, "mcpPipe.cjs")) &&
-          fs.existsSync(path.join(p, "mcpServerProxy.cjs"))
+          fs.existsSync(path.join(p, "mcpPipe.js")) &&
+          fs.existsSync(path.join(p, "mcpServerProxy.js"))
       ) || scriptDir;
   }
 
   return {
     command: "node",
-    args: ["mcpPipe.cjs", "mcpServerProxy.cjs"],
+    args: ["mcpPipe.js", "mcpServerProxy.js"],
     cwd: distDir,
   };
 }
@@ -554,7 +554,7 @@ async function initConfig(): Promise<void> {
  * 获取可用模板列表
  */
 function getAvailableTemplates(): string[] {
-  const scriptDir = __dirname;
+  const scriptDir = path.dirname(fileURLToPath(import.meta.url));
   const possiblePaths = [
     path.join(scriptDir, "..", "templates"), // 开发环境
     path.join(scriptDir, "templates"), // 打包后的环境
