@@ -669,7 +669,11 @@ describe("CLI 命令行工具", () => {
 
     it("应该确保 postbuild.js 已被移除", () => {
       const projectRoot = getProjectRoot();
-      const postbuildPath = realPath.join(projectRoot, "scripts", "postbuild.js");
+      const postbuildPath = realPath.join(
+        projectRoot,
+        "scripts",
+        "postbuild.js"
+      );
       expect(realFs.existsSync(postbuildPath)).toBe(false);
     });
 
@@ -678,7 +682,9 @@ describe("CLI 命令行工具", () => {
       const packageJsonPath = realPath.join(projectRoot, "package.json");
 
       if (realFs.existsSync(packageJsonPath)) {
-        const packageJson = JSON.parse(realFs.readFileSync(packageJsonPath, "utf8"));
+        const packageJson = JSON.parse(
+          realFs.readFileSync(packageJsonPath, "utf8")
+        );
 
         expect(packageJson.scripts.build).not.toContain("postbuild.js");
         expect(packageJson.scripts.dev).not.toContain("postbuild.js");
@@ -690,7 +696,9 @@ describe("CLI 命令行工具", () => {
       const packageJsonPath = realPath.join(projectRoot, "package.json");
 
       if (realFs.existsSync(packageJsonPath)) {
-        const packageJson = JSON.parse(realFs.readFileSync(packageJsonPath, "utf8"));
+        const packageJson = JSON.parse(
+          realFs.readFileSync(packageJsonPath, "utf8")
+        );
 
         expect(packageJson.scripts.build).toBe("tsup");
         expect(packageJson.scripts.dev).toBe("tsup --watch");
@@ -702,7 +710,9 @@ describe("CLI 命令行工具", () => {
       const packageJsonPath = realPath.join(projectRoot, "package.json");
 
       if (realFs.existsSync(packageJsonPath)) {
-        const packageJson = JSON.parse(realFs.readFileSync(packageJsonPath, "utf8"));
+        const packageJson = JSON.parse(
+          realFs.readFileSync(packageJsonPath, "utf8")
+        );
 
         expect(packageJson.type).toBe("module");
       }
@@ -725,7 +735,7 @@ describe("CLI 命令行工具", () => {
         "src/cli.ts",
         "src/autoCompletion.ts",
         "src/mcpCommands.ts",
-        "src/mcpPipe.ts"
+        "src/mcpPipe.ts",
       ];
 
       for (const file of srcFiles) {
