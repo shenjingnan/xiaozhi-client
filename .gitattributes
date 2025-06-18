@@ -1,0 +1,15 @@
+# 自动处理行尾符
+* text=auto
+
+# 特定文件类型强制使用 LF
+*.js text eol=lf
+*.ts text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# 二进制文件
+*.png binary
+*.jpg binary
+*.ico binary
