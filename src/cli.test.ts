@@ -157,7 +157,7 @@ describe("CLI 命令行工具", () => {
     vi.spyOn(console, "log").mockImplementation(() => {});
     vi.spyOn(console, "error").mockImplementation(() => {});
 
-    // Mock process
+    // Mock process - preserve the actual platform for cross-platform testing
     vi.stubGlobal("process", {
       ...process,
       cwd: vi.fn().mockReturnValue("/test/cwd"),
@@ -165,7 +165,7 @@ describe("CLI 命令行工具", () => {
       kill: vi.fn(),
       on: vi.fn(),
       version: "v18.0.0",
-      platform: "darwin",
+      platform: process.platform, // Use actual platform for cross-platform compatibility
       arch: "x64",
     });
   });
@@ -494,13 +494,18 @@ describe("CLI 命令行工具", () => {
       const scriptPath = fileURLToPath(testUrl);
       const scriptDir = realPath.dirname(scriptPath);
 
-      // 根据当前操作系统调整期望值
+      // 验证 fileURLToPath 的实际行为
+      // fileURLToPath 在不同平台上的行为是一致的，会根据当前平台返回正确的路径格式
+      // 在 Windows 上：file:///C:/... -> C:\...
+      // 在 Unix 上：file:///C:/... -> /C:/...（这是正确的，因为 C: 在 Unix 上不是有效的根路径）
+
+      // 验证路径是否符合当前平台的格式
       if (process.platform === "win32") {
-        // 在真正的Windows环境中
+        // Windows 环境：应该返回 Windows 风格的路径
         expect(scriptPath).toBe("C:\\Users\\test\\project\\dist\\cli.js");
         expect(scriptDir).toBe("C:\\Users\\test\\project\\dist");
       } else {
-        // 在Unix/Linux/macOS环境中，fileURLToPath会返回Unix风格的路径
+        // Unix/Linux/macOS 环境：对于 Windows 风格的 URL，会保留驱动器字母前的斜杠
         expect(scriptPath).toBe("/C:/Users/test/project/dist/cli.js");
         expect(scriptDir).toBe("/C:/Users/test/project/dist");
       }
@@ -527,7 +532,10 @@ describe("CLI 命令行工具", () => {
       // 使用 fileURLToPath 转换 import.meta.url
       const scriptPath = fileURLToPath(importMetaUrl);
 
-      // 根据当前操作系统调整期望值
+      // 验证 fileURLToPath 的实际行为
+      // fileURLToPath 在不同平台上的行为是一致的，会根据当前平台返回正确的路径格式
+      // 在 Windows 上：file:///C:/... -> C:\...
+      // 在 Unix 上：file:///C:/... -> /C:/...
       const expectedPath =
         process.platform === "win32"
           ? "C:\\Users\\test\\project\\dist\\cli.js"
