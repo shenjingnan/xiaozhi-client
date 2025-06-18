@@ -56,7 +56,7 @@ describe("MCP服务器代理", () => {
         command: "node",
         args: ["test-server.js"],
       },
-      "calculator": {
+      calculator: {
         command: "python",
         args: ["calculator.py"],
         env: {
@@ -87,7 +87,7 @@ describe("MCP服务器代理", () => {
           command: "node",
           args: ["test-server.js"],
         },
-        "calculator": {
+        calculator: {
           command: "python",
           args: ["calculator.py"],
           env: {
@@ -103,7 +103,7 @@ describe("MCP服务器代理", () => {
       expect(config).toEqual(expectedConfig);
       expect(config["test-server"]).toHaveProperty("command");
       expect(config["test-server"]).toHaveProperty("args");
-      expect(config["calculator"]).toHaveProperty("env");
+      expect(config.calculator).toHaveProperty("env");
     });
 
     it("应该能够创建 MCPClient 实例", async () => {
@@ -114,7 +114,10 @@ describe("MCP服务器代理", () => {
 
       // 测试 MCPClient 类的创建
       const mcpServerProxyModule = await import("./mcpServerProxy");
-      const mcpClient = new mcpServerProxyModule.MCPClient("test-server", serverConfig);
+      const mcpClient = new mcpServerProxyModule.MCPClient(
+        "test-server",
+        serverConfig
+      );
 
       expect(mcpClient).toBeDefined();
       expect(mcpClient).toBeInstanceOf(mcpServerProxyModule.MCPClient);
@@ -126,7 +129,9 @@ describe("MCP服务器代理", () => {
       const mcpServerProxy = new mcpServerProxyModule.MCPServerProxy();
 
       expect(mcpServerProxy).toBeDefined();
-      expect(mcpServerProxy).toBeInstanceOf(mcpServerProxyModule.MCPServerProxy);
+      expect(mcpServerProxy).toBeInstanceOf(
+        mcpServerProxyModule.MCPServerProxy
+      );
       expect(mcpServerProxy.initialized).toBe(false);
     });
 
@@ -426,7 +431,10 @@ describe("MCP服务器代理", () => {
       const expectedPrefixedName = "test_server_xzcli_calculate";
 
       // 测试预期格式
-      const actualPrefixedName = `${serverName.replace(/-/g, "_")}_xzcli_${toolName}`;
+      const actualPrefixedName = `${serverName.replace(
+        /-/g,
+        "_"
+      )}_xzcli_${toolName}`;
       expect(actualPrefixedName).toBe(expectedPrefixedName);
     });
 
@@ -435,7 +443,10 @@ describe("MCP服务器代理", () => {
       const toolName = "geocode";
       const expectedPrefixedName = "amap_maps_xzcli_geocode";
 
-      const actualPrefixedName = `${serverName.replace(/-/g, "_")}_xzcli_${toolName}`;
+      const actualPrefixedName = `${serverName.replace(
+        /-/g,
+        "_"
+      )}_xzcli_${toolName}`;
       expect(actualPrefixedName).toBe(expectedPrefixedName);
     });
 

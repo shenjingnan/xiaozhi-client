@@ -189,7 +189,11 @@ export function checkEnvironment(): boolean {
 /**
  * 获取服务启动命令和参数
  */
-export function getServiceCommand(): { command: string; args: string[]; cwd: string } {
+export function getServiceCommand(): {
+  command: string;
+  args: string[];
+  cwd: string;
+} {
   // 获取当前脚本所在目录
   const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 

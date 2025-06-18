@@ -391,7 +391,10 @@ describe("CLI 命令行工具", () => {
     it("应该生成正确的Node.js启动命令", async () => {
       // 设置文件存在的模拟
       mockFs.existsSync.mockImplementation((filePath: string) => {
-        if (filePath.includes("mcpPipe.js") || filePath.includes("mcpServerProxy.js")) {
+        if (
+          filePath.includes("mcpPipe.js") ||
+          filePath.includes("mcpServerProxy.js")
+        ) {
           return true;
         }
         return false;

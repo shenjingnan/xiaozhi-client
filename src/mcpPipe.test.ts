@@ -173,7 +173,10 @@ describe("MCP管道", () => {
     it("应该能够创建 MCPPipe 实例", async () => {
       // 测试 MCPPipe 类的创建
       const mcpPipeModule = await import("./mcpPipe");
-      const mcpPipe = new mcpPipeModule.MCPPipe("test-script.js", "wss://test.com/mcp");
+      const mcpPipe = new mcpPipeModule.MCPPipe(
+        "test-script.js",
+        "wss://test.com/mcp"
+      );
 
       expect(mcpPipe).toBeDefined();
       expect(mcpPipe).toBeInstanceOf(mcpPipeModule.MCPPipe);
