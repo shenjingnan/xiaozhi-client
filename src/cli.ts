@@ -18,7 +18,7 @@ const SERVICE_NAME = "xiaozhi-mcp-service";
 /**
  * 获取版本号
  */
-function getVersion(): string {
+export function getVersion(): string {
   try {
     // 在 ES 模块环境中获取当前目录
     const __filename = fileURLToPath(import.meta.url);
@@ -67,7 +67,7 @@ interface ServiceStatus {
 /**
  * 获取服务状态
  */
-function getServiceStatus(): ServiceStatus {
+export function getServiceStatus(): ServiceStatus {
   try {
     if (!fs.existsSync(PID_FILE)) {
       return { running: false };
@@ -152,7 +152,7 @@ function cleanupPidFile() {
 /**
  * 检查配置文件和环境
  */
-function checkEnvironment(): boolean {
+export function checkEnvironment(): boolean {
   // 首先检查配置文件是否存在
   if (!configManager.configExists()) {
     console.error(chalk.red("❌ 错误: 配置文件不存在"));
@@ -189,7 +189,7 @@ function checkEnvironment(): boolean {
 /**
  * 获取服务启动命令和参数
  */
-function getServiceCommand(): { command: string; args: string[]; cwd: string } {
+export function getServiceCommand(): { command: string; args: string[]; cwd: string } {
   // 获取当前脚本所在目录
   const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -228,7 +228,7 @@ function getServiceCommand(): { command: string; args: string[]; cwd: string } {
 /**
  * 启动服务
  */
-async function startService(daemon = false): Promise<void> {
+export async function startService(daemon = false): Promise<void> {
   const spinner = ora("检查服务状态...").start();
 
   try {
@@ -1103,14 +1103,24 @@ program.option("-V", "显示详细信息").action((options) => {
   }
 });
 
-// 设置自动补全
-setupAutoCompletion();
+/**
+ * 主函数 - 设置和运行CLI程序
+ */
+export function runCLI(argv: string[] = process.argv): void {
+  // 设置自动补全
+  setupAutoCompletion();
 
-// 处理无参数情况，显示帮助
-if (process.argv.length <= 2) {
-  showHelp();
-  process.exit(0);
+  // 处理无参数情况，显示帮助
+  if (argv.length <= 2) {
+    showHelp();
+    process.exit(0);
+  }
+
+  // 解析命令行参数
+  program.parse(argv);
 }
 
-// 解析命令行参数
-program.parse(process.argv);
+// 只有在直接运行此文件时才执行主函数
+if (import.meta.url === `file://${process.argv[1]}`) {
+  runCLI();
+}

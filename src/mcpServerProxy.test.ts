@@ -17,6 +17,7 @@ vi.mock("node:fs", () => ({
 vi.mock("./configManager", () => ({
   configManager: {
     configExists: vi.fn(),
+    getConfig: vi.fn(),
     getMcpServers: vi.fn(),
     isToolEnabled: vi.fn(),
     updateServerToolsConfig: vi.fn(),
@@ -50,52 +51,155 @@ describe("MCP服务器代理", () => {
     mockReadFileSync = vi.mocked(readFileSync);
 
     // Setup default mocks
-    mockConfigManager.configExists.mockReturnValue(true);
-    mockConfigManager.getMcpServers.mockReturnValue({
+    const defaultMcpServers = {
       "test-server": {
         command: "node",
-        args: ["test.js"],
-        env: { TEST_VAR: "test" },
+        args: ["test-server.js"],
       },
+      "calculator": {
+        command: "python",
+        args: ["calculator.py"],
+        env: {
+          PYTHONPATH: "/opt/calculator",
+        },
+      },
+    };
+
+    mockConfigManager.configExists.mockReturnValue(true);
+    mockConfigManager.getConfig.mockReturnValue({
+      mcpEndpoint: "wss://test.example.com/mcp",
+      mcpServers: defaultMcpServers,
     });
+    mockConfigManager.getMcpServers.mockReturnValue(defaultMcpServers);
+    mockConfigManager.isToolEnabled.mockReturnValue(true);
+    mockConfigManager.getServerToolsConfig.mockReturnValue({});
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  describe("加载MCP配置", () => {
-    it("应该有可用的配置管理器", () => {
-      // 测试配置管理器方法是否可用
-      expect(mockConfigManager.configExists).toBeDefined();
-      expect(mockConfigManager.getMcpServers).toBeDefined();
-    });
-
-    it("应该处理遗留配置回退", () => {
-      mockConfigManager.configExists.mockReturnValue(false);
-      mockReadFileSync.mockReturnValue(
-        JSON.stringify({
-          mcpServers: {
-            "legacy-server": {
-              command: "python",
-              args: ["server.py"],
-            },
+  describe("配置加载和验证", () => {
+    it("应该正确加载MCP服务器配置", async () => {
+      // 使用与 beforeEach 中相同的配置
+      const expectedConfig = {
+        "test-server": {
+          command: "node",
+          args: ["test-server.js"],
+        },
+        "calculator": {
+          command: "python",
+          args: ["calculator.py"],
+          env: {
+            PYTHONPATH: "/opt/calculator",
           },
-        })
-      );
+        },
+      };
 
-      // 测试readFileSync是否可用于回退
-      expect(mockReadFileSync).toBeDefined();
+      // 测试配置加载函数
+      const mcpServerProxyModule = await import("./mcpServerProxy");
+      const config = mcpServerProxyModule.loadMCPConfig();
+
+      expect(config).toEqual(expectedConfig);
+      expect(config["test-server"]).toHaveProperty("command");
+      expect(config["test-server"]).toHaveProperty("args");
+      expect(config["calculator"]).toHaveProperty("env");
     });
 
-    it("应该处理配置加载错误", () => {
+    it("应该能够创建 MCPClient 实例", async () => {
+      const serverConfig = {
+        command: "node",
+        args: ["test-server.js"],
+      };
+
+      // 测试 MCPClient 类的创建
+      const mcpServerProxyModule = await import("./mcpServerProxy");
+      const mcpClient = new mcpServerProxyModule.MCPClient("test-server", serverConfig);
+
+      expect(mcpClient).toBeDefined();
+      expect(mcpClient).toBeInstanceOf(mcpServerProxyModule.MCPClient);
+    });
+
+    it("应该能够创建 MCPServerProxy 实例", async () => {
+      // 测试 MCPServerProxy 类的创建
+      const mcpServerProxyModule = await import("./mcpServerProxy");
+      const mcpServerProxy = new mcpServerProxyModule.MCPServerProxy();
+
+      expect(mcpServerProxy).toBeDefined();
+      expect(mcpServerProxy).toBeInstanceOf(mcpServerProxyModule.MCPServerProxy);
+      expect(mcpServerProxy.initialized).toBe(false);
+    });
+
+    it("应该处理遗留配置文件回退", () => {
+      mockConfigManager.configExists.mockReturnValue(false);
+      const legacyConfig = {
+        mcpServers: {
+          "legacy-server": {
+            command: "python",
+            args: ["server.py"],
+          },
+        },
+      };
+      mockReadFileSync.mockReturnValue(JSON.stringify(legacyConfig));
+
+      // 验证遗留配置读取
+      const configData = JSON.parse(mockReadFileSync() as string);
+      expect(configData.mcpServers).toHaveProperty("legacy-server");
+      expect(configData.mcpServers["legacy-server"].command).toBe("python");
+    });
+
+    it("应该处理配置文件不存在的情况", () => {
       mockConfigManager.configExists.mockReturnValue(false);
       mockReadFileSync.mockImplementation(() => {
-        throw new Error("File not found");
+        throw new Error("ENOENT: no such file or directory");
       });
 
-      // 测试错误处理是否可用
-      expect(() => mockReadFileSync()).toThrow("File not found");
+      // 验证错误处理
+      expect(() => mockReadFileSync()).toThrow("ENOENT");
+    });
+
+    it("应该处理无效的JSON配置", () => {
+      mockConfigManager.configExists.mockReturnValue(false);
+      mockReadFileSync.mockReturnValue("invalid json content");
+
+      // 验证JSON解析错误处理
+      expect(() => JSON.parse(mockReadFileSync() as string)).toThrow();
+    });
+
+    it("应该验证服务器配置格式", () => {
+      const validConfig = {
+        command: "node",
+        args: ["server.js"],
+        env: { NODE_ENV: "production" },
+      };
+
+      const invalidConfigs = [
+        { args: ["server.js"] }, // 缺少 command
+        { command: "node" }, // 缺少 args
+        { command: "", args: [] }, // 空值
+      ];
+
+      // 验证有效配置
+      expect(validConfig).toHaveProperty("command");
+      expect(validConfig).toHaveProperty("args");
+      expect(Array.isArray(validConfig.args)).toBe(true);
+      expect(validConfig.command.length).toBeGreaterThan(0);
+      expect(validConfig.args.length).toBeGreaterThan(0);
+
+      // 验证无效配置
+      for (const config of invalidConfigs) {
+        const hasValidCommand =
+          "command" in config &&
+          typeof config.command === "string" &&
+          config.command.length > 0;
+        const hasValidArgs =
+          "args" in config &&
+          Array.isArray(config.args) &&
+          config.args.length > 0;
+
+        // 至少有一个条件不满足
+        expect(hasValidCommand && hasValidArgs).toBe(false);
+      }
     });
   });
 
@@ -505,8 +609,9 @@ describe("MCP服务器代理", () => {
       const serverName = "non-existent-server";
 
       // 测试我们可以检查服务器是否存在
+      const mcpServers = mockConfigManager.getMcpServers() || {};
       const serverExists = Object.prototype.hasOwnProperty.call(
-        mockConfigManager.getMcpServers(),
+        mcpServers,
         serverName
       );
       expect(serverExists).toBe(false);

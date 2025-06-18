@@ -350,6 +350,11 @@ async function main() {
   }
 }
 
+/**
+ * 导出主函数以便测试
+ */
+export { main, MCPPipe };
+
 // Run if this file is executed directly
 // Use fileURLToPath to properly handle Windows paths
 const currentFileUrl = import.meta.url;

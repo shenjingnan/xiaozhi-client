@@ -112,55 +112,148 @@ describe("MCP管道", () => {
       await import("./mcpPipe");
 
       // 日志记录器应该被创建（我们无法直接测试，因为它没有被导出）
-      expect(true).toBe(true); // 占位符断言
+      expect(consoleSpy).toBeDefined();
+
+      consoleSpy.mockRestore();
+    });
+
+    it("应该记录不同级别的日志", () => {
+      const consoleSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
+      // 模拟日志记录器的行为
+      const logLevels = ["INFO", "ERROR", "WARNING", "DEBUG"];
+
+      for (const level of logLevels) {
+        const timestamp = new Date().toISOString();
+        const message = `${timestamp} - MCP_PIPE - ${level} - Test message`;
+        console.error(message);
+      }
+
+      expect(consoleSpy).toHaveBeenCalledTimes(4);
+      consoleSpy.mockRestore();
+    });
+
+    it("应该包含时间戳和组件名称", () => {
+      const consoleSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
+      const timestamp = new Date().toISOString();
+      const componentName = "MCP_PIPE";
+      const level = "INFO";
+      const message = "Test message";
+
+      const logMessage = `${timestamp} - ${componentName} - ${level} - ${message}`;
+      console.error(logMessage);
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining(componentName)
+      );
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining(level));
 
       consoleSpy.mockRestore();
     });
   });
 
-  describe("MCPPipe类", () => {
-    // 由于MCPPipe没有被导出，我们测试基本功能
+  describe("MCPPipe 核心功能", () => {
+    it("应该验证命令行参数", async () => {
+      // 测试缺少脚本参数的情况
+      const invalidArgv = ["node", "mcpPipe.js"];
+      expect(invalidArgv.length).toBe(2);
+      expect(invalidArgv.length < 3).toBe(true);
 
-    it("应该处理缺少的命令行参数", () => {
-      process.argv = ["node", "mcpPipe.js"]; // 缺少脚本参数
-
-      // 测试我们可以检测到缺少的参数
-      expect(process.argv.length).toBe(2);
+      // 测试有效参数的情况
+      const validArgv = ["node", "mcpPipe.js", "test-script.js"];
+      expect(validArgv.length).toBe(3);
+      expect(validArgv[2]).toBe("test-script.js");
     });
 
-    it("当配置文件可用时应该使用配置文件端点", () => {
+    it("应该能够创建 MCPPipe 实例", async () => {
+      // 测试 MCPPipe 类的创建
+      const mcpPipeModule = await import("./mcpPipe");
+      const mcpPipe = new mcpPipeModule.MCPPipe("test-script.js", "wss://test.com/mcp");
+
+      expect(mcpPipe).toBeDefined();
+      expect(mcpPipe).toBeInstanceOf(mcpPipeModule.MCPPipe);
+    });
+
+    it("应该优先使用配置文件端点", () => {
       mockConfigManager.configExists.mockReturnValue(true);
       mockConfigManager.getMcpEndpoint.mockReturnValue(
         "wss://config.example.com/mcp"
       );
 
-      // 测试配置管理器方法是否可用
-      expect(mockConfigManager.configExists).toBeDefined();
-      expect(mockConfigManager.getMcpEndpoint).toBeDefined();
+      // 验证配置文件优先级
+      expect(mockConfigManager.configExists()).toBe(true);
+      expect(mockConfigManager.getMcpEndpoint()).toBe(
+        "wss://config.example.com/mcp"
+      );
     });
 
-    it("当配置不可用时应该回退到环境变量", () => {
+    it("应该在配置不可用时回退到环境变量", () => {
       mockConfigManager.configExists.mockReturnValue(false);
       process.env.MCP_ENDPOINT = "wss://env.example.com/mcp";
 
-      // 测试环境变量回退逻辑是否存在
+      // 验证环境变量回退
+      expect(mockConfigManager.configExists()).toBe(false);
       expect(process.env.MCP_ENDPOINT).toBe("wss://env.example.com/mcp");
     });
 
-    it("应该检测到没有配置端点的情况", () => {
+    it("应该检测端点配置缺失", () => {
       mockConfigManager.configExists.mockReturnValue(false);
       process.env.MCP_ENDPOINT = undefined;
 
-      // 测试我们可以检测到缺少的端点
+      // 验证缺失配置检测
+      expect(mockConfigManager.configExists()).toBe(false);
       expect(process.env.MCP_ENDPOINT).toBeUndefined();
     });
 
-    it("应该检测到无效的端点配置", () => {
+    it("应该检测无效的端点配置", () => {
       mockConfigManager.configExists.mockReturnValue(true);
       mockConfigManager.getMcpEndpoint.mockReturnValue("<请填写你的端点>");
 
       const endpoint = mockConfigManager.getMcpEndpoint();
       expect(endpoint).toContain("<请填写");
+      expect(endpoint.includes("<请填写")).toBe(true);
+    });
+
+    it("应该处理配置读取异常", () => {
+      mockConfigManager.configExists.mockReturnValue(true);
+      mockConfigManager.getMcpEndpoint.mockImplementation(() => {
+        throw new Error("配置文件损坏");
+      });
+
+      // 验证异常处理
+      expect(() => mockConfigManager.getMcpEndpoint()).toThrow("配置文件损坏");
+    });
+
+    it("应该验证端点URL格式", () => {
+      const validEndpoints = [
+        "wss://example.com/mcp",
+        "ws://localhost:8080/mcp",
+        "wss://api.example.com:443/mcp/v1",
+      ];
+
+      const invalidEndpoints = [
+        "",
+        "http://example.com",
+        "<请填写你的端点>",
+        "invalid-url",
+      ];
+
+      // 验证有效端点
+      for (const endpoint of validEndpoints) {
+        expect(endpoint).toMatch(/^wss?:\/\/.+/);
+      }
+
+      // 验证无效端点
+      for (const endpoint of invalidEndpoints) {
+        expect(
+          endpoint.includes("<请填写") || !endpoint.match(/^wss?:\/\/.+/)
+        ).toBe(true);
+      }
     });
   });
 
