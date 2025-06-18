@@ -1,7 +1,35 @@
-import { copyFileSync, existsSync, mkdirSync } from "fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from "fs";
 import { join } from "path";
-import { execSync } from "child_process";
 import { defineConfig } from "tsup";
+
+/**
+ * 递归复制目录 - 跨平台实现
+ */
+function copyDirectory(src: string, dest: string, excludePatterns: string[] = []): void {
+  // 创建目标目录
+  if (!existsSync(dest)) {
+    mkdirSync(dest, { recursive: true });
+  }
+
+  const items = readdirSync(src);
+
+  for (const item of items) {
+    // 检查是否应该排除此项
+    if (excludePatterns.some((pattern) => item.includes(pattern))) {
+      continue;
+    }
+
+    const srcPath = join(src, item);
+    const destPath = join(dest, item);
+    const stat = statSync(srcPath);
+
+    if (stat.isDirectory()) {
+      copyDirectory(srcPath, destPath, excludePatterns);
+    } else {
+      copyFileSync(srcPath, destPath);
+    }
+  }
+}
 
 export default defineConfig({
   entry: [
@@ -67,7 +95,7 @@ export default defineConfig({
     // 复制 templates 目录到 dist 目录
     if (existsSync("templates")) {
       try {
-        execSync(`cp -r templates ${distDir}/`, { stdio: "inherit" });
+        copyDirectory("templates", join(distDir, "templates"));
         console.log("✅ 已复制 templates 目录到 dist/");
       } catch (error) {
         console.warn("⚠️ 复制 templates 目录失败:", error);
