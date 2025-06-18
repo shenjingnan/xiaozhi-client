@@ -406,7 +406,8 @@ describe("MCP管道", () => {
         expect(newComparison).toBe(true);
       } else {
         // 在Unix/Linux/macOS环境中，我们模拟Windows的行为来测试逻辑
-        const windowsProcessArgv1 = "C:\\Users\\test\\project\\dist\\mcpPipe.js";
+        const windowsProcessArgv1 =
+          "C:\\Users\\test\\project\\dist\\mcpPipe.js";
 
         // 旧的比较方式（有问题的）- 模拟Windows环境下的失败情况
         const oldComparison = importMetaUrl === `file://${windowsProcessArgv1}`;

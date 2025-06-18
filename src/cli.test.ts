@@ -528,9 +528,10 @@ describe("CLI 命令行工具", () => {
       const scriptPath = fileURLToPath(importMetaUrl);
 
       // 根据当前操作系统调整期望值
-      const expectedPath = process.platform === "win32"
-        ? "C:\\Users\\test\\project\\dist\\cli.js"
-        : "/C:/Users/test/project/dist/cli.js";
+      const expectedPath =
+        process.platform === "win32"
+          ? "C:\\Users\\test\\project\\dist\\cli.js"
+          : "/C:/Users/test/project/dist/cli.js";
 
       // 验证路径匹配
       expect(scriptPath).toBe(expectedPath);
