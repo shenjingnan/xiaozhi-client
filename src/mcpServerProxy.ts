@@ -10,14 +10,15 @@ import { type ChildProcess, spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 import {
   type MCPServerConfig,
   type MCPToolConfig,
   configManager,
-} from "./configManager.js";
+} from "./configManager";
 
-// CommonJS 兼容的 __dirname
-const __dirname = dirname(__filename);
+// ESM 兼容的 __dirname
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Simple logger utility
 const logger = {
@@ -51,7 +52,7 @@ interface PendingRequest {
 /**
  * MCP Client for communicating with child MCP servers
  */
-class MCPClient {
+export class MCPClient {
   private name: string;
   private config: MCPServerConfig;
   private process: ChildProcess | null;
@@ -72,6 +73,30 @@ class MCPClient {
     this.requestId = 1;
     this.pendingRequests = new Map();
     this.messageBuffer = "";
+  }
+
+  /**
+   * Resolve command for cross-platform execution
+   * On Windows, npm/npx commands need special handling
+   */
+  public resolveCommand(
+    command: string,
+    args: string[]
+  ): { resolvedCommand: string; resolvedArgs: string[] } {
+    if (process.platform === "win32") {
+      // On Windows, npm and npx are .cmd files
+      if (command === "npm" || command === "npx") {
+        return {
+          resolvedCommand: `${command}.cmd`,
+          resolvedArgs: args,
+        };
+      }
+    }
+
+    return {
+      resolvedCommand: command,
+      resolvedArgs: args,
+    };
   }
 
   /**
@@ -101,6 +126,13 @@ class MCPClient {
     logger.info(`Starting MCP client for ${this.name}`);
 
     const { command, args, env } = this.config;
+
+    // Handle cross-platform command execution
+    const { resolvedCommand, resolvedArgs } = this.resolveCommand(
+      command,
+      args
+    );
+
     const spawnOptions: any = {
       stdio: ["pipe", "pipe", "pipe"],
     };
@@ -117,7 +149,22 @@ class MCPClient {
       spawnOptions.env = { ...process.env };
     }
 
-    this.process = spawn(command, args, spawnOptions);
+    // On Windows, we need to set shell: true for npm/npx commands
+    if (
+      process.platform === "win32" &&
+      (command === "npm" || command === "npx")
+    ) {
+      spawnOptions.shell = true;
+    }
+
+    logger.debug(
+      `${this.name} spawning: ${resolvedCommand} ${resolvedArgs.join(" ")} in ${spawnOptions.cwd}`
+    );
+    logger.debug(
+      `${this.name} platform: ${process.platform}, shell: ${spawnOptions.shell || false}`
+    );
+
+    this.process = spawn(resolvedCommand, resolvedArgs, spawnOptions);
 
     // Handle process stdout - parse JSON-RPC messages
     this.process.stdout?.on("data", (data: Buffer) => {
@@ -832,7 +879,12 @@ async function main() {
 }
 
 // Run the server if this file is executed directly
-if (require.main === module) {
+// Use fileURLToPath to properly handle Windows paths
+const currentFileUrl = import.meta.url;
+const scriptPath = fileURLToPath(currentFileUrl);
+const argv1Path = process.argv[1];
+
+if (scriptPath === argv1Path) {
   main().catch((error) => {
     logger.error(
       `Unhandled error: ${error instanceof Error ? error.message : String(error)}`

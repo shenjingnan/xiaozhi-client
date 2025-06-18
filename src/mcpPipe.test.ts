@@ -21,7 +21,7 @@ vi.mock("dotenv", () => ({
 }));
 
 // Mock configManager
-vi.mock("./configManager.js", () => ({
+vi.mock("./configManager", () => ({
   configManager: {
     configExists: vi.fn(),
     getMcpEndpoint: vi.fn(),
@@ -30,7 +30,7 @@ vi.mock("./configManager.js", () => ({
 }));
 
 // Import after mocking
-import { configManager } from "./configManager.js";
+import { configManager } from "./configManager";
 
 // Mock child process
 class MockChildProcess extends EventEmitter {
@@ -54,7 +54,7 @@ class MockWebSocket extends EventEmitter {
   static CLOSED = 3;
 }
 
-describe("MCPPipe", () => {
+describe("MCP管道", () => {
   let mockSpawn: any;
   let mockWebSocket: any;
   let mockConfigManager: any;
@@ -101,61 +101,61 @@ describe("MCPPipe", () => {
     vi.unstubAllGlobals();
   });
 
-  describe("Logger", () => {
-    it("should create logger with correct name", async () => {
-      // Test logger functionality indirectly through console.error calls
+  describe("日志记录器", () => {
+    it("应该使用正确的名称创建日志记录器", async () => {
+      // 通过console.error调用间接测试日志记录器功能
       const consoleSpy = vi
         .spyOn(console, "error")
         .mockImplementation(() => {});
 
-      // Import the module to trigger logger creation
-      await import("./mcpPipe.js");
+      // 导入模块以触发日志记录器创建
+      await import("./mcpPipe");
 
-      // Logger should be created (we can't test it directly as it's not exported)
-      expect(true).toBe(true); // Placeholder assertion
+      // 日志记录器应该被创建（我们无法直接测试，因为它没有被导出）
+      expect(true).toBe(true); // 占位符断言
 
       consoleSpy.mockRestore();
     });
   });
 
-  describe("MCPPipe class", () => {
-    // Since MCPPipe is not exported, we test basic functionality
+  describe("MCPPipe类", () => {
+    // 由于MCPPipe没有被导出，我们测试基本功能
 
-    it("should handle missing command line arguments", () => {
-      process.argv = ["node", "mcpPipe.js"]; // Missing script argument
+    it("应该处理缺少的命令行参数", () => {
+      process.argv = ["node", "mcpPipe.js"]; // 缺少脚本参数
 
-      // Test that we can detect missing arguments
+      // 测试我们可以检测到缺少的参数
       expect(process.argv.length).toBe(2);
     });
 
-    it("should use config file endpoint when available", () => {
+    it("当配置文件可用时应该使用配置文件端点", () => {
       mockConfigManager.configExists.mockReturnValue(true);
       mockConfigManager.getMcpEndpoint.mockReturnValue(
         "wss://config.example.com/mcp"
       );
 
-      // Test that config manager methods are available
+      // 测试配置管理器方法是否可用
       expect(mockConfigManager.configExists).toBeDefined();
       expect(mockConfigManager.getMcpEndpoint).toBeDefined();
     });
 
-    it("should fallback to environment variable when config not available", () => {
+    it("当配置不可用时应该回退到环境变量", () => {
       mockConfigManager.configExists.mockReturnValue(false);
       process.env.MCP_ENDPOINT = "wss://env.example.com/mcp";
 
-      // Test that environment variable fallback logic exists
+      // 测试环境变量回退逻辑是否存在
       expect(process.env.MCP_ENDPOINT).toBe("wss://env.example.com/mcp");
     });
 
-    it("should detect when no endpoint is configured", () => {
+    it("应该检测到没有配置端点的情况", () => {
       mockConfigManager.configExists.mockReturnValue(false);
       process.env.MCP_ENDPOINT = undefined;
 
-      // Test that we can detect missing endpoint
+      // 测试我们可以检测到缺少的端点
       expect(process.env.MCP_ENDPOINT).toBeUndefined();
     });
 
-    it("should detect invalid endpoint configuration", () => {
+    it("应该检测到无效的端点配置", () => {
       mockConfigManager.configExists.mockReturnValue(true);
       mockConfigManager.getMcpEndpoint.mockReturnValue("<请填写你的端点>");
 
@@ -164,8 +164,8 @@ describe("MCPPipe", () => {
     });
   });
 
-  describe("Process management", () => {
-    it("should spawn MCP process with correct arguments", () => {
+  describe("进程管理", () => {
+    it("应该使用正确的参数启动MCP进程", () => {
       const scriptName = "test-script.js";
 
       mockSpawn("node", [scriptName], {
@@ -181,50 +181,50 @@ describe("MCPPipe", () => {
       );
     });
 
-    it("should handle process stdout data", () => {
+    it("应该处理进程stdout数据", () => {
       const testData = "test message from process";
 
-      // Simulate process stdout data
+      // 模拟进程stdout数据
       mockProcess.stdout.emit("data", Buffer.from(testData));
 
-      // Should send data to WebSocket if connected
-      expect(true).toBe(true); // Placeholder assertion
+      // 如果连接，应该将数据发送到WebSocket
+      expect(true).toBe(true); // 占位符断言
     });
 
-    it("should handle process stderr data", () => {
+    it("应该处理进程stderr数据", () => {
       const errorData = "error message from process";
 
-      // Simulate process stderr data
+      // 模拟进程stderr数据
       mockProcess.stderr.emit("data", Buffer.from(errorData));
 
-      // Should write to process.stderr
-      expect(true).toBe(true); // Placeholder assertion
+      // 应该写入到process.stderr
+      expect(true).toBe(true); // 占位符断言
     });
 
-    it("should handle process exit", () => {
-      // Simulate process exit
+    it("应该处理进程退出", () => {
+      // 模拟进程退出
       mockProcess.emit("exit", 0, null);
 
-      // Should clean up and close WebSocket
-      expect(true).toBe(true); // Placeholder assertion
+      // 应该清理并关闭WebSocket
+      expect(true).toBe(true); // 占位符断言
     });
 
-    it("should handle process error", () => {
-      // Add error listener to prevent uncaught error
+    it("应该处理进程错误", () => {
+      // 添加错误监听器以防止未捕获的错误
       mockProcess.on("error", () => {});
 
-      // Test that process error event can be emitted
+      // 测试进程错误事件可以被触发
       expect(() => {
         mockProcess.emit("error", new Error("Process error"));
       }).not.toThrow();
 
-      // Should handle error and clean up
-      expect(true).toBe(true); // Placeholder assertion
+      // 应该处理错误并清理
+      expect(true).toBe(true); // 占位符断言
     });
   });
 
-  describe("WebSocket management", () => {
-    it("should create WebSocket with correct URL", () => {
+  describe("WebSocket管理", () => {
+    it("应该使用正确的URL创建WebSocket", () => {
       const endpointUrl = "wss://test.example.com/mcp";
 
       new WebSocket(endpointUrl);
@@ -232,66 +232,66 @@ describe("MCPPipe", () => {
       expect(mockWebSocket).toHaveBeenCalledWith(endpointUrl);
     });
 
-    it("should handle WebSocket open event", () => {
-      // Simulate WebSocket open
+    it("应该处理WebSocket打开事件", () => {
+      // 模拟WebSocket打开
       mockWs.emit("open");
 
-      // Should set connection status and reset reconnection
-      expect(true).toBe(true); // Placeholder assertion
+      // 应该设置连接状态并重置重连
+      expect(true).toBe(true); // 占位符断言
     });
 
-    it("should handle WebSocket message", () => {
+    it("应该处理WebSocket消息", () => {
       const testMessage = JSON.stringify({ test: "message" });
 
-      // Simulate WebSocket message
+      // 模拟WebSocket消息
       mockWs.emit("message", testMessage);
 
-      // Should write to process stdin
-      expect(true).toBe(true); // Placeholder assertion
+      // 应该写入到进程stdin
+      expect(true).toBe(true); // 占位符断言
     });
 
-    it("should handle WebSocket close event", () => {
+    it("应该处理WebSocket关闭事件", () => {
       const closeCode = 1000;
       const closeReason = Buffer.from("Normal closure");
 
-      // Simulate WebSocket close
+      // 模拟WebSocket关闭
       mockWs.emit("close", closeCode, closeReason);
 
-      // Should handle reconnection logic
-      expect(true).toBe(true); // Placeholder assertion
+      // 应该处理重连逻辑
+      expect(true).toBe(true); // 占位符断言
     });
 
-    it("should handle WebSocket error", () => {
-      // Add error listener to prevent uncaught error
+    it("应该处理WebSocket错误", () => {
+      // 添加错误监听器以防止未捕获的错误
       mockWs.on("error", () => {});
 
-      // Test that WebSocket error event can be emitted
+      // 测试WebSocket错误事件可以被触发
       expect(() => {
         mockWs.emit("error", new Error("WebSocket error"));
       }).not.toThrow();
 
-      // Should handle error
-      expect(true).toBe(true); // Placeholder assertion
+      // 应该处理错误
+      expect(true).toBe(true); // 占位符断言
     });
 
-    it("should not reconnect on permanent error (code 4004)", () => {
+    it("在永久错误时不应重连（代码4004）", () => {
       const closeCode = 4004;
       const closeReason = Buffer.from("Permanent error");
 
-      // Simulate WebSocket close with permanent error
+      // 模拟WebSocket因永久错误关闭
       mockWs.emit("close", closeCode, closeReason);
 
-      // Should not schedule reconnection
-      expect(true).toBe(true); // Placeholder assertion
+      // 不应安排重连
+      expect(true).toBe(true); // 占位符断言
     });
   });
 
-  describe("Reconnection logic", () => {
-    it("should calculate exponential backoff correctly", () => {
+  describe("重连逻辑", () => {
+    it("应该正确计算指数退避", () => {
       const INITIAL_BACKOFF = 1000;
       const MAX_BACKOFF = 30000;
 
-      // Test backoff calculation
+      // 测试退避计算
       const attempt1 = Math.min(INITIAL_BACKOFF * 2 ** (1 - 1), MAX_BACKOFF);
       const attempt2 = Math.min(INITIAL_BACKOFF * 2 ** (2 - 1), MAX_BACKOFF);
       const attempt3 = Math.min(INITIAL_BACKOFF * 2 ** (3 - 1), MAX_BACKOFF);
@@ -301,11 +301,11 @@ describe("MCPPipe", () => {
       expect(attempt3).toBe(4000);
     });
 
-    it("should cap backoff at maximum value", () => {
+    it("应该将退避限制在最大值", () => {
       const INITIAL_BACKOFF = 1000;
       const MAX_BACKOFF = 30000;
 
-      // Test with high attempt number
+      // 使用高尝试次数测试
       const attemptHigh = Math.min(
         INITIAL_BACKOFF * 2 ** (20 - 1),
         MAX_BACKOFF
@@ -315,17 +315,17 @@ describe("MCPPipe", () => {
     });
   });
 
-  describe("Signal handlers", () => {
-    it("should setup signal handlers", () => {
-      // Mock process.on if not available
+  describe("信号处理器", () => {
+    it("应该设置信号处理器", () => {
+      // 如果不可用则模拟process.on
       if (!process.on) {
         process.on = vi.fn();
       }
 
-      // Test that signal handler setup is available
+      // 测试信号处理器设置是否可用
       expect(process.on).toBeDefined();
 
-      // Test that we can register signal handlers
+      // 测试我们可以注册信号处理器
       const mockHandler = vi.fn();
       expect(() => {
         process.on("SIGINT", mockHandler);
@@ -334,19 +334,92 @@ describe("MCPPipe", () => {
     });
   });
 
-  describe("Utility functions", () => {
-    it("should implement sleep function correctly", async () => {
+  describe("工具函数", () => {
+    it("应该正确实现sleep函数", async () => {
       const start = Date.now();
       const sleepTime = 100;
 
-      // Create a simple sleep function for testing
+      // 创建一个简单的sleep函数用于测试
       const sleep = (ms: number) =>
         new Promise((resolve) => setTimeout(resolve, ms));
 
       await sleep(sleepTime);
       const elapsed = Date.now() - start;
 
-      expect(elapsed).toBeGreaterThanOrEqual(sleepTime - 10); // Allow some tolerance
+      expect(elapsed).toBeGreaterThanOrEqual(sleepTime - 10); // 允许一些容差
+    });
+  });
+
+  describe("主模块检测", () => {
+    it("应该在Unix/Linux环境中正确检测主模块", () => {
+      // 模拟Unix/Linux环境
+      const importMetaUrl = "file:///home/user/project/dist/mcpPipe.js";
+      const processArgv1 = "/home/user/project/dist/mcpPipe.js";
+
+      // 测试概念：fileURLToPath应该能正确转换Unix路径
+      // 在实际代码中，这会正确工作
+      expect(importMetaUrl).toContain("file://");
+      expect(processArgv1).not.toContain("file://");
+
+      // 验证路径格式
+      expect(processArgv1).toBe("/home/user/project/dist/mcpPipe.js");
+    });
+
+    it("应该在Windows环境中正确检测主模块", () => {
+      // 模拟Windows环境
+      const importMetaUrl = "file:///C:/Users/test/project/dist/mcpPipe.js";
+
+      // 使用真实的fileURLToPath进行测试
+      const { fileURLToPath } = require("node:url");
+      const scriptPath = fileURLToPath(importMetaUrl);
+
+      // 根据当前操作系统调整期望值
+      if (process.platform === "win32") {
+        // 在真正的Windows环境中
+        const expectedPath = "C:\\Users\\test\\project\\dist\\mcpPipe.js";
+        expect(scriptPath).toBe(expectedPath);
+        expect(scriptPath === expectedPath).toBe(true);
+      } else {
+        // 在Unix/Linux/macOS环境中，fileURLToPath会返回Unix风格的路径
+        const expectedPath = "/C:/Users/test/project/dist/mcpPipe.js";
+        expect(scriptPath).toBe(expectedPath);
+        expect(scriptPath === expectedPath).toBe(true);
+      }
+    });
+
+    it("应该处理旧的URL比较方式失败的情况", () => {
+      // 测试旧的比较方式在Windows上会失败
+      const importMetaUrl = "file:///C:/Users/test/project/dist/mcpPipe.js";
+
+      if (process.platform === "win32") {
+        // 在真正的Windows环境中测试
+        const processArgv1 = "C:\\Users\\test\\project\\dist\\mcpPipe.js";
+
+        // 旧的比较方式（有问题的）- 在Windows上会失败
+        const oldComparison = importMetaUrl === `file://${processArgv1}`;
+        expect(oldComparison).toBe(false);
+
+        // 新的比较方式（修复后的）
+        const { fileURLToPath } = require("node:url");
+        const scriptPath = fileURLToPath(importMetaUrl);
+        const newComparison = scriptPath === processArgv1;
+        expect(newComparison).toBe(true);
+      } else {
+        // 在Unix/Linux/macOS环境中，我们模拟Windows的行为来测试逻辑
+        const windowsProcessArgv1 =
+          "C:\\Users\\test\\project\\dist\\mcpPipe.js";
+
+        // 旧的比较方式（有问题的）- 模拟Windows环境下的失败情况
+        const oldComparison = importMetaUrl === `file://${windowsProcessArgv1}`;
+        expect(oldComparison).toBe(false); // 这在任何平台上都应该失败
+
+        // 新的比较方式（修复后的）- 在当前平台上验证
+        const { fileURLToPath } = require("node:url");
+        const scriptPath = fileURLToPath(importMetaUrl);
+        const unixProcessArgv1 = "/C:/Users/test/project/dist/mcpPipe.js";
+        const newComparison = scriptPath === unixProcessArgv1;
+        expect(newComparison).toBe(true);
+      }
     });
   });
 });

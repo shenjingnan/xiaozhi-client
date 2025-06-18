@@ -1,20 +1,35 @@
-import { copyFileSync, existsSync, mkdirSync } from "fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from "fs";
 import { join } from "path";
-import type { Plugin } from "esbuild";
 import { defineConfig } from "tsup";
 
-// Plugin to rewrite .js imports to .cjs in CommonJS output
-const rewriteImportsPlugin: Plugin = {
-  name: "rewrite-imports",
-  setup(build) {
-    if (build.initialOptions.format === "cjs") {
-      build.onResolve({ filter: /^\..*\.js$/ }, (args) => {
-        const newPath = args.path.replace(/\.js$/, ".cjs");
-        return { path: newPath, external: true };
-      });
+/**
+ * 递归复制目录 - 跨平台实现
+ */
+function copyDirectory(src: string, dest: string, excludePatterns: string[] = []): void {
+  // 创建目标目录
+  if (!existsSync(dest)) {
+    mkdirSync(dest, { recursive: true });
+  }
+
+  const items = readdirSync(src);
+
+  for (const item of items) {
+    // 检查是否应该排除此项
+    if (excludePatterns.some((pattern) => item.includes(pattern))) {
+      continue;
     }
-  },
-};
+
+    const srcPath = join(src, item);
+    const destPath = join(dest, item);
+    const stat = statSync(srcPath);
+
+    if (stat.isDirectory()) {
+      copyDirectory(srcPath, destPath, excludePatterns);
+    } else {
+      copyFileSync(srcPath, destPath);
+    }
+  }
+}
 
 export default defineConfig({
   entry: [
@@ -23,8 +38,9 @@ export default defineConfig({
     "src/cli.ts",
     "src/configManager.ts",
     "src/mcpCommands.ts",
+    "src/autoCompletion.ts",
   ],
-  format: ["cjs"],
+  format: ["esm"],
   target: "node18",
   outDir: "dist",
   clean: true,
@@ -32,15 +48,14 @@ export default defineConfig({
   dts: true,
   minify: true,
   splitting: false,
-  bundle: false,
+  bundle: true,
   keepNames: true,
   platform: "node",
-  outExtension({ format }) {
+  outExtension() {
     return {
-      js: format === "cjs" ? ".cjs" : ".js",
+      js: ".js",
     };
   },
-  esbuildPlugins: [rewriteImportsPlugin],
   external: [
     "ws",
     "child_process",
@@ -77,6 +92,16 @@ export default defineConfig({
       console.log("✅ 已复制 package.json 到 dist/");
     }
 
-    console.log("✅ 构建完成，mcpServers 现在位于 templates/ 目录中");
+    // 复制 templates 目录到 dist 目录
+    if (existsSync("templates")) {
+      try {
+        copyDirectory("templates", join(distDir, "templates"));
+        console.log("✅ 已复制 templates 目录到 dist/");
+      } catch (error) {
+        console.warn("⚠️ 复制 templates 目录失败:", error);
+      }
+    }
+
+    console.log("✅ 构建完成，产物现在为 ESM 格式");
   },
 });

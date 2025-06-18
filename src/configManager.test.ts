@@ -20,6 +20,12 @@ vi.mock("node:fs", () => ({
 // Mock path module
 vi.mock("node:path", () => ({
   resolve: vi.fn(),
+  dirname: vi.fn(),
+}));
+
+// Mock url module
+vi.mock("node:url", () => ({
+  fileURLToPath: vi.fn(),
 }));
 
 describe("ConfigManager", () => {
@@ -82,16 +88,16 @@ describe("ConfigManager", () => {
     vi.unstubAllGlobals();
   });
 
-  describe("getInstance", () => {
-    it("should return singleton instance", () => {
+  describe("获取实例", () => {
+    it("应该返回单例实例", () => {
       const instance1 = ConfigManager.getInstance();
       const instance2 = ConfigManager.getInstance();
       expect(instance1).toBe(instance2);
     });
   });
 
-  describe("configExists", () => {
-    it("should return true when config file exists", () => {
+  describe("配置文件存在性检查", () => {
+    it("当配置文件存在时应该返回true", () => {
       mockExistsSync.mockReturnValue(true);
       expect(configManager.configExists()).toBe(true);
       expect(mockExistsSync).toHaveBeenCalledWith(
@@ -99,12 +105,12 @@ describe("ConfigManager", () => {
       );
     });
 
-    it("should return false when config file does not exist", () => {
+    it("当配置文件不存在时应该返回false", () => {
       mockExistsSync.mockReturnValue(false);
       expect(configManager.configExists()).toBe(false);
     });
 
-    it("should use XIAOZHI_CONFIG_DIR when set", () => {
+    it("当设置了XIAOZHI_CONFIG_DIR时应该使用自定义目录", () => {
       process.env.XIAOZHI_CONFIG_DIR = "/custom/config/dir";
       mockExistsSync.mockReturnValue(true);
 
@@ -115,9 +121,9 @@ describe("ConfigManager", () => {
     });
   });
 
-  describe("initConfig", () => {
-    it("should initialize config successfully", () => {
-      mockExistsSync.mockImplementation((path: string) => {
+  describe("初始化配置", () => {
+    it("应该成功初始化配置", () => {
+      mockExistsSync.mockImplementation((path: any) => {
         if (path.includes("default")) return true;
         return false; // config file doesn't exist
       });
@@ -130,7 +136,7 @@ describe("ConfigManager", () => {
       );
     });
 
-    it("should throw error when default config does not exist", () => {
+    it("当默认配置文件不存在时应该抛出错误", () => {
       mockExistsSync.mockReturnValue(false);
 
       expect(() => configManager.initConfig()).toThrow(
@@ -138,7 +144,7 @@ describe("ConfigManager", () => {
       );
     });
 
-    it("should throw error when config already exists", () => {
+    it("当配置文件已存在时应该抛出错误", () => {
       mockExistsSync.mockReturnValue(true);
 
       expect(() => configManager.initConfig()).toThrow(
@@ -147,13 +153,13 @@ describe("ConfigManager", () => {
     });
   });
 
-  describe("getConfig", () => {
+  describe("获取配置", () => {
     beforeEach(() => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
     });
 
-    it("should load and return config", () => {
+    it("应该加载并返回配置", () => {
       const config = configManager.getConfig();
       expect(config).toEqual(mockConfig);
       expect(mockReadFileSync).toHaveBeenCalledWith(
@@ -162,7 +168,7 @@ describe("ConfigManager", () => {
       );
     });
 
-    it("should return deep copy of config", () => {
+    it("应该返回配置的深拷贝", () => {
       const config = configManager.getConfig();
       config.mcpEndpoint = "modified";
 
@@ -170,14 +176,14 @@ describe("ConfigManager", () => {
       expect(config2.mcpEndpoint).toBe(mockConfig.mcpEndpoint);
     });
 
-    it("should cache config after first load", () => {
+    it("应该在首次加载后缓存配置", () => {
       configManager.getConfig();
       configManager.getConfig();
 
       expect(mockReadFileSync).toHaveBeenCalledTimes(1);
     });
 
-    it("should throw error when config file does not exist", () => {
+    it("当配置文件不存在时应该抛出错误", () => {
       mockExistsSync.mockReturnValue(false);
 
       expect(() => configManager.getConfig()).toThrow(
@@ -185,15 +191,15 @@ describe("ConfigManager", () => {
       );
     });
 
-    it("should throw error for invalid JSON", () => {
+    it("当JSON格式无效时应该抛出错误", () => {
       mockReadFileSync.mockReturnValue("invalid json");
 
       expect(() => configManager.getConfig()).toThrow("配置文件格式错误");
     });
   });
 
-  describe("getMcpEndpoint", () => {
-    it("should return MCP endpoint", () => {
+  describe("获取MCP端点", () => {
+    it("应该返回MCP端点", () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
 
@@ -202,8 +208,8 @@ describe("ConfigManager", () => {
     });
   });
 
-  describe("getMcpServers", () => {
-    it("should return MCP servers config", () => {
+  describe("获取MCP服务器配置", () => {
+    it("应该返回MCP服务器配置", () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
 
@@ -212,8 +218,8 @@ describe("ConfigManager", () => {
     });
   });
 
-  describe("getMcpServerConfig", () => {
-    it("should return MCP server tools config", () => {
+  describe("获取MCP服务器工具配置", () => {
+    it("应该返回MCP服务器工具配置", () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
 
@@ -221,7 +227,7 @@ describe("ConfigManager", () => {
       expect(serverConfig).toEqual(mockConfig.mcpServerConfig);
     });
 
-    it("should return empty object when mcpServerConfig is undefined", () => {
+    it("当mcpServerConfig未定义时应该返回空对象", () => {
       const configWithoutServerConfig = {
         ...mockConfig,
         mcpServerConfig: undefined,
@@ -236,37 +242,37 @@ describe("ConfigManager", () => {
     });
   });
 
-  describe("getServerToolsConfig", () => {
+  describe("获取服务器工具配置", () => {
     beforeEach(() => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
     });
 
-    it("should return tools config for existing server", () => {
+    it("应该返回现有服务器的工具配置", () => {
       const toolsConfig = configManager.getServerToolsConfig("test-server");
       expect(toolsConfig).toEqual(
         mockConfig.mcpServerConfig!["test-server"].tools
       );
     });
 
-    it("should return empty object for non-existent server", () => {
+    it("应该为不存在的服务器返回空对象", () => {
       const toolsConfig = configManager.getServerToolsConfig("non-existent");
       expect(toolsConfig).toEqual({});
     });
   });
 
-  describe("isToolEnabled", () => {
+  describe("工具启用状态检查", () => {
     beforeEach(() => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
     });
 
-    it("should return true for enabled tool", () => {
+    it("应该为已启用的工具返回true", () => {
       const isEnabled = configManager.isToolEnabled("test-server", "test-tool");
       expect(isEnabled).toBe(true);
     });
 
-    it("should return false for disabled tool", () => {
+    it("应该为已禁用的工具返回false", () => {
       const isEnabled = configManager.isToolEnabled(
         "test-server",
         "disabled-tool"
@@ -274,7 +280,7 @@ describe("ConfigManager", () => {
       expect(isEnabled).toBe(false);
     });
 
-    it("should return true for non-existent tool (default enabled)", () => {
+    it("应该为不存在的工具返回true（默认启用）", () => {
       const isEnabled = configManager.isToolEnabled(
         "test-server",
         "non-existent-tool"
@@ -282,7 +288,7 @@ describe("ConfigManager", () => {
       expect(isEnabled).toBe(true);
     });
 
-    it("should return true for non-existent server (default enabled)", () => {
+    it("应该为不存在的服务器返回true（默认启用）", () => {
       const isEnabled = configManager.isToolEnabled(
         "non-existent-server",
         "any-tool"
@@ -291,13 +297,13 @@ describe("ConfigManager", () => {
     });
   });
 
-  describe("updateMcpEndpoint", () => {
+  describe("更新MCP端点", () => {
     beforeEach(() => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
     });
 
-    it("should update MCP endpoint", () => {
+    it("应该更新MCP端点", () => {
       const newEndpoint = "wss://new.example.com/mcp";
       configManager.updateMcpEndpoint(newEndpoint);
 
@@ -308,26 +314,26 @@ describe("ConfigManager", () => {
       );
     });
 
-    it("should throw error for empty endpoint", () => {
+    it("应该为空端点抛出错误", () => {
       expect(() => configManager.updateMcpEndpoint("")).toThrow(
         "MCP 端点必须是非空字符串"
       );
     });
 
-    it("should throw error for non-string endpoint", () => {
+    it("应该为非字符串端点抛出错误", () => {
       expect(() => configManager.updateMcpEndpoint(null as any)).toThrow(
         "MCP 端点必须是非空字符串"
       );
     });
   });
 
-  describe("updateMcpServer", () => {
+  describe("更新MCP服务器配置", () => {
     beforeEach(() => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
     });
 
-    it("should update MCP server config", () => {
+    it("应该更新MCP服务器配置", () => {
       const serverConfig: MCPServerConfig = {
         command: "python",
         args: ["server.py"],
@@ -343,7 +349,7 @@ describe("ConfigManager", () => {
       );
     });
 
-    it("should throw error for empty server name", () => {
+    it("应该为空服务器名称抛出错误", () => {
       const serverConfig: MCPServerConfig = {
         command: "node",
         args: ["test.js"],
@@ -354,7 +360,7 @@ describe("ConfigManager", () => {
       );
     });
 
-    it("should throw error for invalid command", () => {
+    it("应该为无效命令抛出错误", () => {
       const serverConfig = {
         command: "",
         args: ["test.js"],
@@ -365,7 +371,7 @@ describe("ConfigManager", () => {
       );
     });
 
-    it("should throw error for invalid args", () => {
+    it("应该为无效参数抛出错误", () => {
       const serverConfig = {
         command: "node",
         args: "not-array",
@@ -376,7 +382,7 @@ describe("ConfigManager", () => {
       );
     });
 
-    it("should throw error for invalid env", () => {
+    it("应该为无效环境变量抛出错误", () => {
       const serverConfig = {
         command: "node",
         args: ["test.js"],
@@ -389,13 +395,13 @@ describe("ConfigManager", () => {
     });
   });
 
-  describe("updateServerToolsConfig", () => {
+  describe("更新服务器工具配置", () => {
     beforeEach(() => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
     });
 
-    it("should update server tools config", () => {
+    it("应该更新服务器工具配置", () => {
       const newToolsConfig: Record<string, MCPToolConfig> = {
         "new-tool": {
           description: "New tool",
@@ -417,7 +423,7 @@ describe("ConfigManager", () => {
       );
     });
 
-    it("should create mcpServerConfig if it doesn't exist", () => {
+    it("如果mcpServerConfig不存在应该创建它", () => {
       const configWithoutServerConfig = {
         ...mockConfig,
         mcpServerConfig: undefined,
@@ -442,13 +448,13 @@ describe("ConfigManager", () => {
     });
   });
 
-  describe("setToolEnabled", () => {
+  describe("设置工具启用状态", () => {
     beforeEach(() => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
     });
 
-    it("should enable tool with description", () => {
+    it("应该启用带描述的工具", () => {
       configManager.setToolEnabled(
         "test-server",
         "new-tool",
@@ -467,7 +473,7 @@ describe("ConfigManager", () => {
       });
     });
 
-    it("should disable tool without description", () => {
+    it("应该禁用不带描述的工具", () => {
       configManager.setToolEnabled("test-server", "test-tool", false);
 
       const savedConfig = JSON.parse(
@@ -480,7 +486,7 @@ describe("ConfigManager", () => {
       });
     });
 
-    it("should create server config if it doesn't exist", () => {
+    it("如果服务器配置不存在应该创建它", () => {
       configManager.setToolEnabled(
         "new-server",
         "new-tool",
@@ -500,7 +506,7 @@ describe("ConfigManager", () => {
       });
     });
 
-    it("should create mcpServerConfig if it doesn't exist", () => {
+    it("如果mcpServerConfig不存在应该创建它", () => {
       const configWithoutServerConfig = {
         ...mockConfig,
         mcpServerConfig: undefined,
@@ -521,13 +527,13 @@ describe("ConfigManager", () => {
     });
   });
 
-  describe("removeMcpServer", () => {
+  describe("移除MCP服务器", () => {
     beforeEach(() => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
     });
 
-    it("should remove MCP server", () => {
+    it("应该移除MCP服务器", () => {
       configManager.removeMcpServer("test-server");
 
       const savedConfig = JSON.parse(
@@ -536,58 +542,58 @@ describe("ConfigManager", () => {
       expect(savedConfig.mcpServers).not.toHaveProperty("test-server");
     });
 
-    it("should throw error for empty server name", () => {
+    it("应该为空服务器名称抛出错误", () => {
       expect(() => configManager.removeMcpServer("")).toThrow(
         "服务名称必须是非空字符串"
       );
     });
 
-    it("should throw error for non-existent server", () => {
+    it("应该为不存在的服务器抛出错误", () => {
       expect(() => configManager.removeMcpServer("non-existent")).toThrow(
         "服务 non-existent 不存在"
       );
     });
   });
 
-  describe("reloadConfig", () => {
-    it("should clear cached config", () => {
+  describe("重新加载配置", () => {
+    it("应该清除缓存的配置", () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
 
-      // Load config first time
+      // 首次加载配置
       configManager.getConfig();
       expect(mockReadFileSync).toHaveBeenCalledTimes(1);
 
-      // Reload and get config again
+      // 重新加载并再次获取配置
       configManager.reloadConfig();
       configManager.getConfig();
       expect(mockReadFileSync).toHaveBeenCalledTimes(2);
     });
   });
 
-  describe("getConfigPath", () => {
-    it("should return config file path", () => {
+  describe("获取配置文件路径", () => {
+    it("应该返回配置文件路径", () => {
       const path = configManager.getConfigPath();
       expect(path).toBe("/test/cwd/xiaozhi.config.json");
     });
   });
 
-  describe("getDefaultConfigPath", () => {
-    it("should return default config file path", () => {
+  describe("获取默认配置文件路径", () => {
+    it("应该返回默认配置文件路径", () => {
       const path = configManager.getDefaultConfigPath();
       expect(path).toContain("xiaozhi.config.default.json");
     });
   });
 
-  describe("validateConfig", () => {
-    it("should validate valid config", () => {
+  describe("配置验证", () => {
+    it("应该验证有效的配置", () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
 
       expect(() => configManager.getConfig()).not.toThrow();
     });
 
-    it("should throw error for invalid root object", () => {
+    it("应该为无效的根对象抛出错误", () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue("null");
 
@@ -596,7 +602,7 @@ describe("ConfigManager", () => {
       );
     });
 
-    it("should throw error for missing mcpEndpoint", () => {
+    it("应该为缺少mcpEndpoint抛出错误", () => {
       const invalidConfig = { mcpServers: {} };
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(JSON.stringify(invalidConfig));
@@ -606,7 +612,7 @@ describe("ConfigManager", () => {
       );
     });
 
-    it("should throw error for missing mcpServers", () => {
+    it("应该为缺少mcpServers抛出错误", () => {
       const invalidConfig = { mcpEndpoint: "wss://test.com" };
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(JSON.stringify(invalidConfig));
@@ -616,7 +622,7 @@ describe("ConfigManager", () => {
       );
     });
 
-    it("should throw error for invalid server config", () => {
+    it("应该为无效的服务器配置抛出错误", () => {
       const invalidConfig = {
         mcpEndpoint: "wss://test.com",
         mcpServers: {

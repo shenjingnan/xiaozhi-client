@@ -8,12 +8,9 @@ import { fileURLToPath } from "node:url";
 import chalk from "chalk";
 import { Command } from "commander";
 import ora from "ora";
-import { configManager } from "./configManager.js";
-import {
-  listMcpServers,
-  listServerTools,
-  setToolEnabled,
-} from "./mcpCommands.js";
+import { setupAutoCompletion, showCompletionHelp } from "./autoCompletion";
+import { configManager } from "./configManager";
+import { listMcpServers, listServerTools, setToolEnabled } from "./mcpCommands";
 
 const program = new Command();
 const SERVICE_NAME = "xiaozhi-mcp-service";
@@ -23,27 +20,15 @@ const SERVICE_NAME = "xiaozhi-mcp-service";
  */
 function getVersion(): string {
   try {
-    let currentDir: string;
-
-    // 检查是否在 ES 模块环境中
-    if (typeof import.meta !== "undefined" && import.meta.url) {
-      // ES 模块环境
-      const __filename = fileURLToPath(import.meta.url);
-      currentDir = path.dirname(__filename);
-    } else {
-      // CommonJS 环境，使用 require.main 或 process.cwd()
-      if (require.main?.filename) {
-        currentDir = path.dirname(require.main.filename);
-      } else {
-        currentDir = process.cwd();
-      }
-    }
+    // 在 ES 模块环境中获取当前目录
+    const __filename = fileURLToPath(import.meta.url);
+    const currentDir = path.dirname(__filename);
 
     // 尝试多个可能的 package.json 路径
     const possiblePaths = [
       // 开发环境：src/cli.ts -> package.json
       path.join(currentDir, "..", "package.json"),
-      // 构建后环境：dist/cli.cjs -> package.json
+      // 构建后环境：dist/cli.js -> package.json
       path.join(currentDir, "..", "package.json"),
       // 全局安装环境
       path.join(currentDir, "..", "..", "package.json"),
@@ -191,7 +176,9 @@ function checkEnvironment(): boolean {
   } catch (error) {
     console.error(
       chalk.red(
-        `❌ 错误: 配置文件无效 - ${error instanceof Error ? error.message : String(error)}`
+        `❌ 错误: 配置文件无效 - ${
+          error instanceof Error ? error.message : String(error)
+        }`
       )
     );
     console.log(chalk.yellow('💡 提示: 请运行 "xiaozhi init" 重新初始化配置'));
@@ -204,7 +191,7 @@ function checkEnvironment(): boolean {
  */
 function getServiceCommand(): { command: string; args: string[]; cwd: string } {
   // 获取当前脚本所在目录
-  const scriptDir = __dirname;
+  const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 
   // 检查是否在开发环境（js-demo/dist）还是全局安装环境
   let distDir: string;
@@ -226,14 +213,14 @@ function getServiceCommand(): { command: string; args: string[]; cwd: string } {
     distDir =
       possiblePaths.find(
         (p) =>
-          fs.existsSync(path.join(p, "mcpPipe.cjs")) &&
-          fs.existsSync(path.join(p, "mcpServerProxy.cjs"))
+          fs.existsSync(path.join(p, "mcpPipe.js")) &&
+          fs.existsSync(path.join(p, "mcpServerProxy.js"))
       ) || scriptDir;
   }
 
   return {
     command: "node",
-    args: ["mcpPipe.cjs", "mcpServerProxy.cjs"],
+    args: ["mcpPipe.js", "mcpServerProxy.js"],
     cwd: distDir,
   };
 }
@@ -387,7 +374,9 @@ async function stopService(): Promise<void> {
     } catch (error) {
       cleanupPidFile();
       spinner.fail(
-        `停止服务失败: ${error instanceof Error ? error.message : String(error)}`
+        `停止服务失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   } catch (error) {
@@ -457,20 +446,42 @@ async function attachService(): Promise<void> {
 
     // 显示日志文件内容
     if (fs.existsSync(LOG_FILE)) {
-      // 显示最后100行日志
-      const { spawn } = await import("node:child_process");
-      const tail = spawn("tail", ["-f", LOG_FILE], { stdio: "inherit" });
+      // 跨平台的日志查看实现
+      if (process.platform === "win32") {
+        // Windows 使用 PowerShell 的 Get-Content -Wait
+        const { spawn } = await import("node:child_process");
+        const tail = spawn(
+          "powershell",
+          ["-Command", `Get-Content -Path "${LOG_FILE}" -Wait`],
+          { stdio: "inherit" }
+        );
 
-      // 处理中断信号
-      process.on("SIGINT", () => {
-        console.log(chalk.yellow("\n断开连接，服务继续在后台运行"));
-        tail.kill();
-        process.exit(0);
-      });
+        // 处理中断信号
+        process.on("SIGINT", () => {
+          console.log(chalk.yellow("\n断开连接，服务继续在后台运行"));
+          tail.kill();
+          process.exit(0);
+        });
 
-      tail.on("exit", () => {
-        process.exit(0);
-      });
+        tail.on("exit", () => {
+          process.exit(0);
+        });
+      } else {
+        // Unix/Linux/macOS 使用 tail -f
+        const { spawn } = await import("node:child_process");
+        const tail = spawn("tail", ["-f", LOG_FILE], { stdio: "inherit" });
+
+        // 处理中断信号
+        process.on("SIGINT", () => {
+          console.log(chalk.yellow("\n断开连接，服务继续在后台运行"));
+          tail.kill();
+          process.exit(0);
+        });
+
+        tail.on("exit", () => {
+          process.exit(0);
+        });
+      }
     } else {
       console.log(chalk.yellow("日志文件不存在"));
     }
@@ -538,7 +549,9 @@ async function initConfig(): Promise<void> {
     );
   } catch (error) {
     spinner.fail(
-      `初始化配置失败: ${error instanceof Error ? error.message : String(error)}`
+      `初始化配置失败: ${
+        error instanceof Error ? error.message : String(error)
+      }`
     );
   }
 }
@@ -547,7 +560,7 @@ async function initConfig(): Promise<void> {
  * 获取可用模板列表
  */
 function getAvailableTemplates(): string[] {
-  const scriptDir = __dirname;
+  const scriptDir = path.dirname(fileURLToPath(import.meta.url));
   const possiblePaths = [
     path.join(scriptDir, "..", "templates"), // 开发环境
     path.join(scriptDir, "templates"), // 打包后的环境
@@ -752,8 +765,8 @@ async function createProject(
         }
       }
 
-      // 获取模板路径
-      const scriptDir = __dirname;
+      // 获取模板路径 (ESM 环境)
+      const scriptDir = path.dirname(fileURLToPath(import.meta.url));
       const possiblePaths = [
         path.join(scriptDir, "..", "templates"), // 开发环境
         path.join(scriptDir, "templates"), // 打包后的环境
@@ -875,7 +888,9 @@ async function configCommand(key: string, value?: string): Promise<void> {
           )) {
             console.log(
               chalk.gray(
-                `  ${name}: ${serverConfig.command} ${serverConfig.args.join(" ")}`
+                `  ${name}: ${serverConfig.command} ${serverConfig.args.join(
+                  " "
+                )}`
               )
             );
           }
@@ -923,6 +938,7 @@ function showHelp(): void {
   console.log("  status                   检查服务状态");
   console.log("  attach                   连接到后台服务查看日志");
   console.log("  restart [--daemon]       重启服务 (--daemon 后台运行)");
+  console.log("  completion               显示自动补全设置说明");
   console.log();
   console.log(chalk.yellow("选项:"));
   console.log("  -v, --version            显示版本信息");
@@ -957,6 +973,10 @@ function showHelp(): void {
   console.log("  xiaozhi mcp server <name>    # 列出指定服务的工具");
   console.log("  xiaozhi mcp tool <server> <tool> enable   # 启用工具");
   console.log("  xiaozhi mcp tool <server> <tool> disable  # 禁用工具");
+  console.log();
+  console.log(chalk.yellow("自动补全:"));
+  console.log("  xiaozhi completion           # 显示自动补全设置说明");
+  console.log("  # 设置后可使用 Tab 键进行命令、参数自动补全");
 }
 
 // 配置 Commander 程序
@@ -1067,6 +1087,14 @@ mcpCommand
     await setToolEnabled(serverName, toolName, enabled);
   });
 
+// completion 命令
+program
+  .command("completion")
+  .description("显示自动补全设置说明")
+  .action(async () => {
+    showCompletionHelp();
+  });
+
 // -V 选项 (详细信息)
 program.option("-V", "显示详细信息").action((options) => {
   if (options.V) {
@@ -1074,6 +1102,9 @@ program.option("-V", "显示详细信息").action((options) => {
     process.exit(0);
   }
 });
+
+// 设置自动补全
+setupAutoCompletion();
 
 // 处理无参数情况，显示帮助
 if (process.argv.length <= 2) {

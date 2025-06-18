@@ -1,0 +1,28 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "xiaozhi",
+    "Xiaozhi",
+    "XIAOZHI",
+    "shenjingnan",
+    "modelcontextprotocol",
+    "postbuild",
+    "modelscope",
+    "compzsh",
+    "compbash",
+    "unstub",
+    "xzcli",
+    "amap"
+  ],
+  "ignorePaths": [
+    "node_modules/**",
+    "dist/**",
+    "coverage/**",
+    ".git/**",
+    "*.log",
+    "pnpm-lock.yaml"
+  ],
+  "ignoreWords": [],
+  "flagWords": []
+}
