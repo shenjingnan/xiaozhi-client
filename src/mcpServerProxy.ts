@@ -52,7 +52,7 @@ interface PendingRequest {
 /**
  * MCP Client for communicating with child MCP servers
  */
-class MCPClient {
+export class MCPClient {
   private name: string;
   private config: MCPServerConfig;
   private process: ChildProcess | null;
@@ -73,6 +73,30 @@ class MCPClient {
     this.requestId = 1;
     this.pendingRequests = new Map();
     this.messageBuffer = "";
+  }
+
+  /**
+   * Resolve command for cross-platform execution
+   * On Windows, npm/npx commands need special handling
+   */
+  public resolveCommand(
+    command: string,
+    args: string[]
+  ): { resolvedCommand: string; resolvedArgs: string[] } {
+    if (process.platform === "win32") {
+      // On Windows, npm and npx are .cmd files
+      if (command === "npm" || command === "npx") {
+        return {
+          resolvedCommand: `${command}.cmd`,
+          resolvedArgs: args,
+        };
+      }
+    }
+
+    return {
+      resolvedCommand: command,
+      resolvedArgs: args,
+    };
   }
 
   /**
@@ -102,6 +126,13 @@ class MCPClient {
     logger.info(`Starting MCP client for ${this.name}`);
 
     const { command, args, env } = this.config;
+
+    // Handle cross-platform command execution
+    const { resolvedCommand, resolvedArgs } = this.resolveCommand(
+      command,
+      args
+    );
+
     const spawnOptions: any = {
       stdio: ["pipe", "pipe", "pipe"],
     };
@@ -118,7 +149,22 @@ class MCPClient {
       spawnOptions.env = { ...process.env };
     }
 
-    this.process = spawn(command, args, spawnOptions);
+    // On Windows, we need to set shell: true for npm/npx commands
+    if (
+      process.platform === "win32" &&
+      (command === "npm" || command === "npx")
+    ) {
+      spawnOptions.shell = true;
+    }
+
+    logger.debug(
+      `${this.name} spawning: ${resolvedCommand} ${resolvedArgs.join(" ")} in ${spawnOptions.cwd}`
+    );
+    logger.debug(
+      `${this.name} platform: ${process.platform}, shell: ${spawnOptions.shell || false}`
+    );
+
+    this.process = spawn(resolvedCommand, resolvedArgs, spawnOptions);
 
     // Handle process stdout - parse JSON-RPC messages
     this.process.stdout?.on("data", (data: Buffer) => {

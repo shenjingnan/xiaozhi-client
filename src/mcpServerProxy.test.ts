@@ -99,6 +99,118 @@ describe("MCP服务器代理", () => {
     });
   });
 
+  describe("跨平台命令解析", () => {
+    let originalPlatform: string;
+
+    beforeEach(() => {
+      originalPlatform = process.platform;
+    });
+
+    afterEach(() => {
+      // 恢复原始平台
+      Object.defineProperty(process, "platform", {
+        value: originalPlatform,
+        writable: true,
+        configurable: true,
+      });
+    });
+
+    it("在Windows平台应该为npm命令添加.cmd扩展名", async () => {
+      // 模拟Windows平台
+      Object.defineProperty(process, "platform", {
+        value: "win32",
+        writable: true,
+        configurable: true,
+      });
+
+      const config = {
+        command: "npm",
+        args: ["install", "package"],
+        env: {},
+      };
+
+      // 创建一个MCPClient实例来测试resolveCommand方法
+      const { MCPClient } = await import("./mcpServerProxy");
+      const client = new MCPClient("test", config);
+      const result = client.resolveCommand("npm", ["install", "package"]);
+
+      expect(result.resolvedCommand).toBe("npm.cmd");
+      expect(result.resolvedArgs).toEqual(["install", "package"]);
+    });
+
+    it("在Windows平台应该为npx命令添加.cmd扩展名", async () => {
+      // 模拟Windows平台
+      Object.defineProperty(process, "platform", {
+        value: "win32",
+        writable: true,
+        configurable: true,
+      });
+
+      const config = {
+        command: "npx",
+        args: ["-y", "@amap/amap-maps-mcp-server"],
+        env: { AMAP_MAPS_API_KEY: "test-key" },
+      };
+
+      const { MCPClient } = await import("./mcpServerProxy");
+      const client = new MCPClient("test", config);
+      const result = client.resolveCommand("npx", [
+        "-y",
+        "@amap/amap-maps-mcp-server",
+      ]);
+
+      expect(result.resolvedCommand).toBe("npx.cmd");
+      expect(result.resolvedArgs).toEqual(["-y", "@amap/amap-maps-mcp-server"]);
+    });
+
+    it("在非Windows平台应该保持命令不变", async () => {
+      // 模拟Linux/macOS平台
+      Object.defineProperty(process, "platform", {
+        value: "linux",
+        writable: true,
+        configurable: true,
+      });
+
+      const config = {
+        command: "npx",
+        args: ["-y", "@amap/amap-maps-mcp-server"],
+        env: {},
+      };
+
+      const { MCPClient } = await import("./mcpServerProxy");
+      const client = new MCPClient("test", config);
+      const result = client.resolveCommand("npx", [
+        "-y",
+        "@amap/amap-maps-mcp-server",
+      ]);
+
+      expect(result.resolvedCommand).toBe("npx");
+      expect(result.resolvedArgs).toEqual(["-y", "@amap/amap-maps-mcp-server"]);
+    });
+
+    it("对于非npm/npx命令应该保持不变", async () => {
+      // 模拟Windows平台
+      Object.defineProperty(process, "platform", {
+        value: "win32",
+        writable: true,
+        configurable: true,
+      });
+
+      const config = {
+        command: "node",
+        args: ["server.js"],
+        env: {},
+      };
+
+      const { MCPClient } = await import("./mcpServerProxy");
+      const client = new MCPClient("test", config);
+      const result = client.resolveCommand("node", ["server.js"]);
+
+      expect(result.resolvedCommand).toBe("node");
+      expect(result.resolvedArgs).toEqual(["server.js"]);
+    });
+  });
+
   describe("MCP客户端", () => {
     let MCPClient: any;
     let mockProcess: MockChildProcess;
