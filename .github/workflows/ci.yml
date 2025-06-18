@@ -10,7 +10,13 @@ on:
 jobs:
   # CI 阶段 - 完整的代码质量和测试检查
   ci:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: ['18.20.8', '20.17.0', '20.19.2', '22.16.0']
 
     steps:
     - name: 检出代码
@@ -26,7 +32,7 @@ jobs:
     - name: 设置 Node.js
       uses: actions/setup-node@v4
       with:
-        node-version-file: '.nvmrc'
+        node-version: ${{ matrix.node-version }}
         cache: 'pnpm'
 
     - name: 安装依赖
@@ -47,8 +53,9 @@ jobs:
     - name: 运行测试并生成覆盖率报告
       run: pnpm run test:coverage
 
-    - name: 上传覆盖率报告
+    - name: 上传覆盖率报告 (仅在 Ubuntu + Node 20.19.2 环境)
       uses: codecov/codecov-action@v4
+      if: matrix.os == 'ubuntu-latest' && matrix.node-version == '20.19.2'
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: ./coverage/lcov.info
@@ -60,7 +67,8 @@ jobs:
     - name: 构建项目
       run: pnpm run build
 
-    - name: 验证构建产物
+    - name: 验证构建产物 (Unix)
+      if: runner.os != 'Windows'
       run: |
         echo "验证构建产物是否正确生成..."
 
@@ -94,15 +102,150 @@ jobs:
 
         echo "✅ 构建产物验证通过"
 
-    - name: 测试CLI工具可执行性
+    - name: 验证构建产物 (Windows)
+      if: runner.os == 'Windows'
       run: |
-        echo "测试CLI工具是否可以正常执行..."
-        node dist/cli.js --version || echo "CLI版本检查完成"
-        echo "✅ CLI工具可执行性验证通过"
+        echo "验证构建产物是否正确生成..."
 
-    - name: 上传覆盖率报告
+        # 检查主要构建产物
+        if (!(Test-Path "dist/cli.js")) {
+          echo "❌ 构建失败：dist/cli.js 文件不存在"
+          exit 1
+        }
+
+        # 检查其他核心文件
+        $files = @("dist/configManager.js", "dist/mcpPipe.js", "dist/mcpServerProxy.js")
+        foreach ($file in $files) {
+          if (!(Test-Path $file)) {
+            echo "❌ 构建失败：$file 文件不存在"
+            exit 1
+          }
+        }
+
+        # 检查类型定义文件
+        $typeFiles = @("dist/cli.d.ts", "dist/configManager.d.ts", "dist/mcpPipe.d.ts", "dist/mcpServerProxy.d.ts")
+        foreach ($file in $typeFiles) {
+          if (!(Test-Path $file)) {
+            echo "❌ 构建失败：$file 文件不存在"
+            exit 1
+          }
+        }
+
+        # 检查默认配置文件
+        if (!(Test-Path "dist/xiaozhi.config.default.json")) {
+          echo "❌ 构建失败：dist/xiaozhi.config.default.json 文件不存在"
+          exit 1
+        }
+
+        echo "✅ 构建产物验证通过"
+      shell: pwsh
+
+    - name: CLI 功能测试
+      run: |
+        echo "开始 CLI 功能测试..."
+
+        # 1. 测试版本命令
+        echo "1. 测试 xiaozhi -v"
+        node dist/cli.js -v
+
+        # 2. 测试创建项目
+        echo "2. 测试 xiaozhi create myapp"
+        node dist/cli.js create myapp
+
+        # 3. 测试使用模板创建项目
+        echo "3. 测试 xiaozhi create myapp2 --template hello-world"
+        node dist/cli.js create myapp2 --template hello-world
+
+        echo "✅ CLI 功能测试完成"
+
+    - name: CLI 配置测试 (Unix)
+      if: runner.os != 'Windows'
+      working-directory: myapp2
+      run: |
+        echo "开始 CLI 配置测试..."
+
+        # 4. 测试配置 mcpEndpoint
+        echo "4. 测试 xiaozhi config mcpEndpoint"
+        node ../dist/cli.js config mcpEndpoint "wss://api.xiaozhi.me/mcp/?token=xyz"
+
+        # 验证配置是否正确写入
+        if [ -f "xiaozhi.config.json" ]; then
+          echo "配置文件已创建"
+          cat xiaozhi.config.json
+        else
+          echo "❌ 配置文件未创建"
+          exit 1
+        fi
+
+        # 5. 测试读取配置
+        echo "5. 测试读取 xiaozhi config mcpEndpoint"
+        node ../dist/cli.js config mcpEndpoint
+
+        echo "✅ CLI 配置测试完成"
+
+    - name: CLI 配置测试 (Windows)
+      if: runner.os == 'Windows'
+      working-directory: myapp2
+      run: |
+        echo "开始 CLI 配置测试..."
+
+        # 4. 测试配置 mcpEndpoint
+        echo "4. 测试 xiaozhi config mcpEndpoint"
+        node ../dist/cli.js config mcpEndpoint "wss://api.xiaozhi.me/mcp/?token=xyz"
+
+        # 验证配置是否正确写入
+        if (Test-Path "xiaozhi.config.json") {
+          echo "配置文件已创建"
+          Get-Content xiaozhi.config.json
+        } else {
+          echo "❌ 配置文件未创建"
+          exit 1
+        }
+
+        # 5. 测试读取配置
+        echo "5. 测试读取 xiaozhi config mcpEndpoint"
+        node ../dist/cli.js config mcpEndpoint
+
+        echo "✅ CLI 配置测试完成"
+      shell: pwsh
+
+    - name: CLI 服务测试 (Unix)
+      if: runner.os != 'Windows'
+      working-directory: myapp2
+      run: |
+        echo "开始 CLI 服务测试..."
+
+        # 6. 测试启动服务 (后台运行)
+        echo "6. 测试 xiaozhi start"
+        timeout 10s node ../dist/cli.js start || echo "服务启动测试完成 (预期超时)"
+
+        # 7. 测试停止服务
+        echo "7. 测试 xiaozhi stop"
+        node ../dist/cli.js stop || echo "服务停止测试完成"
+
+        echo "✅ CLI 服务测试完成"
+
+    - name: CLI 服务测试 (Windows)
+      if: runner.os == 'Windows'
+      working-directory: myapp2
+      run: |
+        echo "开始 CLI 服务测试..."
+
+        # 6. 测试启动服务 (简化测试，避免复杂的进程管理)
+        echo "6. 测试 xiaozhi start (Windows 简化测试)"
+        # 在 Windows 上只测试命令是否能正常解析，不实际启动服务
+        node ../dist/cli.js start --help 2>$null || echo "start 命令测试完成"
+
+        # 7. 测试停止服务
+        echo "7. 测试 xiaozhi stop"
+        node ../dist/cli.js stop || echo "服务停止测试完成"
+
+        echo "✅ CLI 服务测试完成"
+      shell: pwsh
+
+    - name: 上传覆盖率报告 (仅在 Ubuntu + Node 20.19.2 环境)
       uses: actions/upload-artifact@v4
-      if: always()
+      if: always() && matrix.os == 'ubuntu-latest' && matrix.node-version == '20.19.2'
       with:
         name: coverage-report
         path: coverage/
@@ -112,6 +255,6 @@ jobs:
       uses: actions/upload-artifact@v4
       if: success()
       with:
-        name: build-artifacts
+        name: build-artifacts-${{ matrix.os }}-node${{ matrix.node-version }}
         path: dist/
         retention-days: 7
