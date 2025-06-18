@@ -13,6 +13,7 @@
 
 import { type ChildProcess, spawn } from "node:child_process";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
 import WebSocket from "ws";
 import { configManager } from "./configManager";
@@ -350,7 +351,12 @@ async function main() {
 }
 
 // Run if this file is executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Use fileURLToPath to properly handle Windows paths
+const currentFileUrl = import.meta.url;
+const scriptPath = fileURLToPath(currentFileUrl);
+const argv1Path = process.argv[1];
+
+if (scriptPath === argv1Path) {
   main().catch((error) => {
     logger.error(
       `Unhandled error: ${error instanceof Error ? error.message : String(error)}`
