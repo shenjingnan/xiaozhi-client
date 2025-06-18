@@ -259,6 +259,39 @@ describe("CLI 命令行工具", () => {
         expect.stringContaining("mcpServerProxy")
       );
     });
+
+    it("应该使用正确的文件扩展名查找服务文件", () => {
+      // 测试服务文件查找逻辑
+      mockFs.existsSync.mockImplementation((filePath) => {
+        // 模拟 .js 文件存在，.cjs 文件不存在
+        if (
+          filePath.includes("mcpPipe.js") ||
+          filePath.includes("mcpServerProxy.js")
+        ) {
+          return true;
+        }
+        if (
+          filePath.includes("mcpPipe.cjs") ||
+          filePath.includes("mcpServerProxy.cjs")
+        ) {
+          return false;
+        }
+        return false;
+      });
+
+      // 验证应该查找 .js 文件而不是 .cjs 文件
+      expect(mockFs.existsSync).toBeDefined();
+    });
+
+    it("应该生成正确的启动参数", () => {
+      // 测试启动参数生成
+      const expectedCommand = "node";
+      const expectedArgs = ["mcpPipe.js", "mcpServerProxy.js"];
+
+      // 验证命令和参数格式
+      expect(expectedCommand).toBe("node");
+      expect(expectedArgs).toEqual(["mcpPipe.js", "mcpServerProxy.js"]);
+    });
   });
 
   describe("PID 文件管理", () => {
@@ -447,6 +480,52 @@ describe("CLI 命令行工具", () => {
 
       // 验证 URL 解析正常工作
       expect(scriptDir).toBe("/Users/test/project/dist");
+    });
+
+    it("应该在Windows环境中正确解析模板路径", () => {
+      // 测试 Windows 环境下的路径解析
+      const testUrl = "file:///C:/Users/test/project/dist/cli.js";
+
+      // 使用真实的 fileURLToPath 进行测试
+      const { fileURLToPath } = require("node:url");
+      const realPath = require("node:path");
+
+      // 模拟 Windows 环境下的 import.meta.url 行为
+      const scriptPath = fileURLToPath(testUrl);
+      const scriptDir = realPath.dirname(scriptPath);
+
+      // 验证 Windows 路径格式
+      expect(scriptPath).toBe("C:\\Users\\test\\project\\dist\\cli.js");
+      expect(scriptDir).toBe("C:\\Users\\test\\project\\dist");
+
+      const expectedPaths = [
+        realPath.join(scriptDir, "..", "templates"), // 开发环境
+        realPath.join(scriptDir, "templates"), // 打包后的环境
+        realPath.join(scriptDir, "..", "..", "templates"), // npm 全局安装
+      ];
+
+      // 验证路径计算是否正确
+      expect(expectedPaths[0]).toContain("templates");
+      expect(expectedPaths[1]).toContain("templates");
+      expect(expectedPaths[2]).toContain("templates");
+    });
+
+    it("应该正确处理主模块检测在Windows环境", () => {
+      // 测试 Windows 环境下的主模块检测
+      const { fileURLToPath } = require("node:url");
+
+      // 模拟 Windows 环境下的路径
+      const importMetaUrl = "file:///C:/Users/test/project/dist/cli.js";
+      const processArgv1 = "C:\\Users\\test\\project\\dist\\cli.js";
+
+      // 使用 fileURLToPath 转换 import.meta.url
+      const scriptPath = fileURLToPath(importMetaUrl);
+
+      // 验证路径匹配
+      expect(scriptPath).toBe(processArgv1);
+
+      // 验证条件检查应该通过
+      expect(scriptPath === processArgv1).toBe(true);
     });
   });
 

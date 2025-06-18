@@ -446,20 +446,42 @@ async function attachService(): Promise<void> {
 
     // 显示日志文件内容
     if (fs.existsSync(LOG_FILE)) {
-      // 显示最后100行日志
-      const { spawn } = await import("node:child_process");
-      const tail = spawn("tail", ["-f", LOG_FILE], { stdio: "inherit" });
+      // 跨平台的日志查看实现
+      if (process.platform === "win32") {
+        // Windows 使用 PowerShell 的 Get-Content -Wait
+        const { spawn } = await import("node:child_process");
+        const tail = spawn(
+          "powershell",
+          ["-Command", `Get-Content -Path "${LOG_FILE}" -Wait`],
+          { stdio: "inherit" }
+        );
 
-      // 处理中断信号
-      process.on("SIGINT", () => {
-        console.log(chalk.yellow("\n断开连接，服务继续在后台运行"));
-        tail.kill();
-        process.exit(0);
-      });
+        // 处理中断信号
+        process.on("SIGINT", () => {
+          console.log(chalk.yellow("\n断开连接，服务继续在后台运行"));
+          tail.kill();
+          process.exit(0);
+        });
 
-      tail.on("exit", () => {
-        process.exit(0);
-      });
+        tail.on("exit", () => {
+          process.exit(0);
+        });
+      } else {
+        // Unix/Linux/macOS 使用 tail -f
+        const { spawn } = await import("node:child_process");
+        const tail = spawn("tail", ["-f", LOG_FILE], { stdio: "inherit" });
+
+        // 处理中断信号
+        process.on("SIGINT", () => {
+          console.log(chalk.yellow("\n断开连接，服务继续在后台运行"));
+          tail.kill();
+          process.exit(0);
+        });
+
+        tail.on("exit", () => {
+          process.exit(0);
+        });
+      }
     } else {
       console.log(chalk.yellow("日志文件不存在"));
     }
@@ -744,7 +766,7 @@ async function createProject(
       }
 
       // 获取模板路径 (ESM 环境)
-      const scriptDir = path.dirname(new URL(import.meta.url).pathname);
+      const scriptDir = path.dirname(fileURLToPath(import.meta.url));
       const possiblePaths = [
         path.join(scriptDir, "..", "templates"), // 开发环境
         path.join(scriptDir, "templates"), // 打包后的环境
