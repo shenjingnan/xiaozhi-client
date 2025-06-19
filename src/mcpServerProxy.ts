@@ -423,7 +423,7 @@ export class MCPClient {
 /**
  * Configuration loader for MCP servers
  */
-function loadMCPConfig(): Record<string, MCPServerConfig> {
+export function loadMCPConfig(): Record<string, MCPServerConfig> {
   try {
     // 首先尝试从配置管理器读取
     if (configManager.configExists()) {
@@ -471,7 +471,7 @@ function loadMCPConfig(): Record<string, MCPServerConfig> {
 /**
  * MCP Server Proxy - Main proxy server implementation
  */
-class MCPServerProxy {
+export class MCPServerProxy {
   private clients: Map<string, MCPClient>;
   private toolMap: Map<string, string>; // Maps tool name to client name
   public initialized: boolean;
@@ -663,7 +663,7 @@ class MCPServerProxy {
 /**
  * Manual JSON-RPC 2.0 Server Implementation
  */
-class JSONRPCServer {
+export class JSONRPCServer {
   private proxy: MCPServerProxy;
   private requestId: number;
 

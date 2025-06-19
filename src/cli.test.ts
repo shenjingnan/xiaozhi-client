@@ -98,6 +98,35 @@ vi.mock("./mcpCommands", () => ({
   setToolEnabled: vi.fn(),
 }));
 
+// Mock process before any imports
+const originalArgv = process.argv;
+
+beforeAll(() => {
+  // Mock process.argv to prevent showHelp execution during import
+  Object.defineProperty(process, "argv", {
+    value: ["node", "cli.js", "test"],
+    writable: true,
+    configurable: true,
+  });
+});
+
+afterAll(() => {
+  // Restore original process.argv
+  Object.defineProperty(process, "argv", {
+    value: originalArgv,
+    writable: true,
+    configurable: true,
+  });
+});
+
+// Import functions to test - this will be done after beforeAll
+let cliModule: any;
+
+beforeAll(async () => {
+  // Dynamic import after mocking
+  cliModule = await import("./cli");
+});
+
 // Mock child process
 class MockChildProcess extends EventEmitter {
   pid = 12345;
@@ -178,35 +207,72 @@ describe("CLI 命令行工具", () => {
   describe("服务状态", () => {
     it("应该检测到正在运行的服务", () => {
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.readFileSync.mockReturnValue('{"pid": 12345, "mode": "daemon"}');
+      mockFs.readFileSync.mockReturnValue("12345|1640995200000|daemon");
 
       // Mock process.kill to not throw (process exists)
-      process.kill = vi.fn();
+      const mockKill = vi.fn();
+      vi.stubGlobal("process", { ...process, kill: mockKill });
 
-      // Test would require access to getServiceStatus function
-      // For now, we test the expected behavior
-      expect(mockFs.existsSync).toBeDefined();
-      expect(mockFs.readFileSync).toBeDefined();
+      const status = cliModule.getServiceStatus();
+      expect(status.running).toBe(true);
+      expect(status.pid).toBe(12345);
+      expect(status.mode).toBe("daemon");
+      expect(status.uptime).toBeDefined();
     });
 
     it("应该检测到已停止的服务", () => {
       mockFs.existsSync.mockReturnValue(false);
 
-      // Test would require access to getServiceStatus function
-      expect(mockFs.existsSync).toBeDefined();
+      const status = cliModule.getServiceStatus();
+      expect(status.running).toBe(false);
+      expect(status.pid).toBeUndefined();
     });
 
     it("应该清理过期的 PID 文件", () => {
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.readFileSync.mockReturnValue('{"pid": 99999, "mode": "daemon"}');
+      mockFs.readFileSync.mockReturnValue("99999|1640995200000|daemon");
 
       // Mock process.kill to throw (process doesn't exist)
-      process.kill = vi.fn().mockImplementation(() => {
+      const mockKill = vi.fn().mockImplementation(() => {
         throw new Error("ESRCH");
       });
+      vi.stubGlobal("process", { ...process, kill: mockKill });
 
-      // Test would require access to getServiceStatus function
-      expect(process.kill).toBeDefined();
+      const status = cliModule.getServiceStatus();
+      expect(status.running).toBe(false);
+      expect(mockFs.unlinkSync).toHaveBeenCalled();
+    });
+
+    it("应该处理损坏的 PID 文件格式", () => {
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockReturnValue("invalid-pid-format");
+
+      const status = cliModule.getServiceStatus();
+      expect(status.running).toBe(false);
+      expect(mockFs.unlinkSync).toHaveBeenCalled();
+    });
+
+    it("应该处理 PID 文件读取错误", () => {
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockImplementation(() => {
+        throw new Error("Permission denied");
+      });
+
+      const status = cliModule.getServiceStatus();
+      expect(status.running).toBe(false);
+    });
+
+    it("应该正确计算服务运行时间", () => {
+      const startTime = Date.now() - 5000; // 5秒前启动
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockReturnValue(`12345|${startTime}|foreground`);
+
+      const mockKill = vi.fn();
+      vi.stubGlobal("process", { ...process, kill: mockKill });
+
+      const status = cliModule.getServiceStatus();
+      expect(status.running).toBe(true);
+      expect(status.uptime).toBe("5秒");
     });
   });
 
@@ -217,24 +283,23 @@ describe("CLI 命令行工具", () => {
         "wss://valid.endpoint.com/mcp"
       );
 
-      // Test would require access to checkEnvironment function
-      expect(mockConfigManager.configExists).toBeDefined();
-      expect(mockConfigManager.getMcpEndpoint).toBeDefined();
+      const result = cliModule.checkEnvironment();
+      expect(result).toBe(true);
     });
 
     it("当配置不存在时应该失败", () => {
       mockConfigManager.configExists.mockReturnValue(false);
 
-      // Test would require access to checkEnvironment function
-      expect(mockConfigManager.configExists).toBeDefined();
+      const result = cliModule.checkEnvironment();
+      expect(result).toBe(false);
     });
 
     it("当端点未配置时应该失败", () => {
       mockConfigManager.configExists.mockReturnValue(true);
       mockConfigManager.getMcpEndpoint.mockReturnValue("<请填写你的端点>");
 
-      // Test would require access to checkEnvironment function
-      expect(mockConfigManager.getMcpEndpoint).toBeDefined();
+      const result = cliModule.checkEnvironment();
+      expect(result).toBe(false);
     });
 
     it("应该处理配置加载错误", () => {
@@ -243,8 +308,24 @@ describe("CLI 命令行工具", () => {
         throw new Error("Config error");
       });
 
-      // Test would require access to checkEnvironment function
-      expect(mockConfigManager.getMcpEndpoint).toBeDefined();
+      const result = cliModule.checkEnvironment();
+      expect(result).toBe(false);
+    });
+
+    it("应该处理空的端点配置", () => {
+      mockConfigManager.configExists.mockReturnValue(true);
+      mockConfigManager.getMcpEndpoint.mockReturnValue("");
+
+      const result = cliModule.checkEnvironment();
+      expect(result).toBe(false);
+    });
+
+    it("应该处理null端点配置", () => {
+      mockConfigManager.configExists.mockReturnValue(true);
+      mockConfigManager.getMcpEndpoint.mockReturnValue(null);
+
+      const result = cliModule.checkEnvironment();
+      expect(result).toBe(false);
     });
   });
 
@@ -673,7 +754,7 @@ describe("CLI 命令行工具", () => {
 
       // Mock package.json exists and has version
       mockFs.existsSync.mockImplementation((path) => {
-        return path === "/test/package.json";
+        return path.includes("package.json");
       });
       mockFs.readFileSync.mockReturnValue(
         JSON.stringify({
@@ -682,10 +763,8 @@ describe("CLI 命令行工具", () => {
         })
       );
 
-      // Import and test getVersion function
-      const cliModule = await import("./cli");
-      // Since getVersion is not exported, we test through the CLI setup
-      expect(mockFs.readFileSync).toBeDefined();
+      const version = cliModule.getVersion();
+      expect(version).toBe("1.2.3");
     });
 
     it("应该在 dist 环境中从 package.json 读取版本", async () => {
@@ -722,8 +801,8 @@ describe("CLI 命令行工具", () => {
       // Mock no package.json found
       mockFs.existsSync.mockReturnValue(false);
 
-      // Test that unknown version is returned
-      expect(mockFs.existsSync).toBeDefined();
+      const version = cliModule.getVersion();
+      expect(version).toBe("unknown");
     });
 
     it("应该优雅地处理 JSON 解析错误", async () => {
@@ -740,12 +819,69 @@ describe("CLI 命令行工具", () => {
         throw new Error("Invalid JSON");
       });
 
-      // Test that errors are handled gracefully
-      expect(mockFs.readFileSync).toBeDefined();
+      const version = cliModule.getVersion();
+      expect(version).toBe("unknown");
     });
   });
 
   describe("工具函数", () => {
+    it("应该正确格式化运行时间", () => {
+      // 测试0毫秒
+      expect(cliModule.formatUptime(0)).toBe("0秒");
+
+      // 测试秒
+      expect(cliModule.formatUptime(5000)).toBe("5秒");
+      expect(cliModule.formatUptime(59000)).toBe("59秒");
+
+      // 测试分钟
+      expect(cliModule.formatUptime(60000)).toBe("1分钟 0秒");
+      expect(cliModule.formatUptime(65000)).toBe("1分钟 5秒");
+      expect(cliModule.formatUptime(3599000)).toBe("59分钟 59秒");
+
+      // 测试小时
+      expect(cliModule.formatUptime(3600000)).toBe("1小时 0分钟");
+      expect(cliModule.formatUptime(3665000)).toBe("1小时 1分钟");
+      expect(cliModule.formatUptime(86399000)).toBe("23小时 59分钟");
+
+      // 测试天
+      expect(cliModule.formatUptime(86400000)).toBe("1天 0小时 0分钟");
+      expect(cliModule.formatUptime(90061000)).toBe("1天 1小时 1分钟");
+      expect(cliModule.formatUptime(172800000)).toBe("2天 0小时 0分钟");
+
+      // 测试非常小的值
+      expect(cliModule.formatUptime(500)).toBe("0秒");
+    });
+
+    it("应该正确计算字符串相似度", () => {
+      // 完全相同的字符串
+      expect(cliModule.calculateSimilarity("hello", "hello")).toBe(1);
+
+      // 完全不同的字符串
+      expect(cliModule.calculateSimilarity("abc", "xyz")).toBe(0);
+
+      // 相似的字符串
+      expect(cliModule.calculateSimilarity("hello", "hallo")).toBeGreaterThan(
+        0.7
+      );
+
+      // 空字符串
+      expect(cliModule.calculateSimilarity("", "")).toBe(1);
+      expect(cliModule.calculateSimilarity("abc", "")).toBeLessThan(1);
+      expect(cliModule.calculateSimilarity("", "abc")).toBeLessThan(1);
+
+      // 单字符
+      expect(cliModule.calculateSimilarity("a", "a")).toBe(1);
+      expect(cliModule.calculateSimilarity("a", "b")).toBeLessThan(1);
+
+      // 长度差异很大的字符串
+      expect(
+        cliModule.calculateSimilarity("short", "verylongstring")
+      ).toBeLessThan(0.5);
+
+      // 大小写敏感性
+      expect(cliModule.calculateSimilarity("Hello", "hello")).toBeLessThan(1);
+    });
+
     it("应该显示详细信息", () => {
       // Test would require access to showDetailedInfo function
       expect(process.version).toBeDefined();

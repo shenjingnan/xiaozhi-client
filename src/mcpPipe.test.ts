@@ -31,6 +31,7 @@ vi.mock("./configManager", () => ({
 
 // Import after mocking
 import { configManager } from "./configManager";
+import { Logger, MCPPipe, setupSignalHandlers } from "./mcpPipe";
 
 // Mock child process
 class MockChildProcess extends EventEmitter {
@@ -102,24 +103,92 @@ describe("MCP管道", () => {
   });
 
   describe("日志记录器", () => {
-    it("应该使用正确的名称创建日志记录器", async () => {
-      // 通过console.error调用间接测试日志记录器功能
+    it("应该使用正确的名称创建日志记录器", () => {
+      const logger = new Logger("TEST_LOGGER");
+      expect(logger).toBeDefined();
+    });
+
+    it("应该正确记录info消息", () => {
       const consoleSpy = vi
         .spyOn(console, "error")
         .mockImplementation(() => {});
 
-      // 导入模块以触发日志记录器创建
-      await import("./mcpPipe");
+      const logger = new Logger("TEST");
+      logger.info("test message");
 
-      // 日志记录器应该被创建（我们无法直接测试，因为它没有被导出）
-      expect(true).toBe(true); // 占位符断言
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("TEST - INFO - test message")
+      );
+
+      consoleSpy.mockRestore();
+    });
+
+    it("应该正确记录error消息", () => {
+      const consoleSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
+      const logger = new Logger("TEST");
+      logger.error("error message");
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("TEST - ERROR - error message")
+      );
+
+      consoleSpy.mockRestore();
+    });
+
+    it("应该正确记录warning消息", () => {
+      const consoleSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
+      const logger = new Logger("TEST");
+      logger.warning("warning message");
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("TEST - WARNING - warning message")
+      );
+
+      consoleSpy.mockRestore();
+    });
+
+    it("应该正确记录debug消息", () => {
+      const consoleSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
+      const logger = new Logger("TEST");
+      logger.debug("debug message");
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("TEST - DEBUG - debug message")
+      );
+
+      consoleSpy.mockRestore();
+    });
+
+    it("应该在消息中包含时间戳", () => {
+      const consoleSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
+      const logger = new Logger("TEST");
+      logger.info("test message");
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringMatching(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/)
+      );
 
       consoleSpy.mockRestore();
     });
   });
 
   describe("MCPPipe类", () => {
-    // 由于MCPPipe没有被导出，我们测试基本功能
+    it("应该正确创建MCPPipe实例", () => {
+      const mcpPipe = new MCPPipe("test-script.js", "wss://test.example.com");
+      expect(mcpPipe).toBeDefined();
+    });
 
     it("应该处理缺少的命令行参数", () => {
       process.argv = ["node", "mcpPipe.js"]; // 缺少脚本参数
@@ -161,6 +230,34 @@ describe("MCP管道", () => {
 
       const endpoint = mockConfigManager.getMcpEndpoint();
       expect(endpoint).toContain("<请填写");
+    });
+
+    it("应该正确实现sleep方法", async () => {
+      const mcpPipe = new MCPPipe("test-script.js", "wss://test.example.com");
+
+      const start = Date.now();
+      await mcpPipe.sleep(100);
+      const end = Date.now();
+
+      expect(end - start).toBeGreaterThanOrEqual(90); // 允许一些误差
+    });
+
+    it("应该正确处理cleanup方法", () => {
+      const mcpPipe = new MCPPipe("test-script.js", "wss://test.example.com");
+
+      // 设置一个mock进程
+      const mockChildProcess = new MockChildProcess();
+      (mcpPipe as any).process = mockChildProcess;
+
+      // 调用cleanup应该不会抛出错误
+      expect(() => mcpPipe.cleanup()).not.toThrow();
+    });
+
+    it("应该正确实现shutdown方法的部分逻辑", () => {
+      const mcpPipe = new MCPPipe("test-script.js", "wss://test.example.com");
+
+      // 只测试cleanup部分，不测试process.exit
+      expect(() => mcpPipe.cleanup()).not.toThrow();
     });
   });
 
@@ -316,21 +413,12 @@ describe("MCP管道", () => {
   });
 
   describe("信号处理器", () => {
-    it("应该设置信号处理器", () => {
-      // 如果不可用则模拟process.on
-      if (!process.on) {
-        process.on = vi.fn();
-      }
+    it("应该定义setupSignalHandlers函数", () => {
+      const mcpPipe = new MCPPipe("test-script.js", "wss://test.example.com");
 
-      // 测试信号处理器设置是否可用
-      expect(process.on).toBeDefined();
-
-      // 测试我们可以注册信号处理器
-      const mockHandler = vi.fn();
-      expect(() => {
-        process.on("SIGINT", mockHandler);
-        process.on("SIGTERM", mockHandler);
-      }).not.toThrow();
+      // 测试函数存在且不会抛出错误
+      expect(setupSignalHandlers).toBeDefined();
+      expect(typeof setupSignalHandlers).toBe("function");
     });
   });
 

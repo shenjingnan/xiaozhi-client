@@ -13,7 +13,8 @@
     "compbash",
     "unstub",
     "xzcli",
-    "amap"
+    "amap",
+    "verylongstring"
   ],
   "ignorePaths": [
     "node_modules/**",

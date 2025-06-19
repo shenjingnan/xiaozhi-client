@@ -26,6 +26,12 @@ vi.mock("./configManager", () => ({
 
 // Import after mocking
 import { configManager } from "./configManager";
+import {
+  JSONRPCServer,
+  MCPClient,
+  MCPServerProxy,
+  loadMCPConfig,
+} from "./mcpServerProxy";
 
 // Mock child process
 class MockChildProcess extends EventEmitter {
@@ -65,10 +71,24 @@ describe("MCP服务器代理", () => {
   });
 
   describe("加载MCP配置", () => {
-    it("应该有可用的配置管理器", () => {
-      // 测试配置管理器方法是否可用
-      expect(mockConfigManager.configExists).toBeDefined();
-      expect(mockConfigManager.getMcpServers).toBeDefined();
+    it("应该成功从配置管理器加载配置", () => {
+      mockConfigManager.configExists.mockReturnValue(true);
+      mockConfigManager.getMcpServers.mockReturnValue({
+        "test-server": {
+          command: "node",
+          args: ["test.js"],
+          env: { TEST_VAR: "test" },
+        },
+      });
+
+      const config = loadMCPConfig();
+      expect(config).toEqual({
+        "test-server": {
+          command: "node",
+          args: ["test.js"],
+          env: { TEST_VAR: "test" },
+        },
+      });
     });
 
     it("应该处理遗留配置回退", () => {
@@ -94,8 +114,16 @@ describe("MCP服务器代理", () => {
         throw new Error("File not found");
       });
 
-      // 测试错误处理是否可用
-      expect(() => mockReadFileSync()).toThrow("File not found");
+      expect(() => loadMCPConfig()).toThrow("配置文件不存在");
+    });
+
+    it("应该处理配置文件不存在的情况", () => {
+      mockConfigManager.configExists.mockReturnValue(false);
+      mockReadFileSync.mockImplementation(() => {
+        throw new Error("ENOENT: no such file");
+      });
+
+      expect(() => loadMCPConfig()).toThrow();
     });
   });
 
@@ -212,41 +240,61 @@ describe("MCP服务器代理", () => {
   });
 
   describe("MCP客户端", () => {
-    let MCPClient: any;
     let mockProcess: MockChildProcess;
 
     beforeEach(async () => {
-      // 导入MCPClient类（它没有被导出，所以我们需要以不同方式访问它）
-      // 现在，我们将通过MCPServerProxy间接测试它
       mockProcess = new MockChildProcess();
       mockSpawn.mockReturnValue(mockProcess);
     });
 
-    it("应该使用正确的配置创建客户端", () => {
+    it("应该正确创建MCPClient实例", () => {
       const config = {
         command: "node",
         args: ["test.js"],
         env: { TEST_VAR: "test" },
       };
 
-      // 通过spawn调用间接测试
-      mockSpawn(
-        "node",
-        ["test.js"],
-        expect.objectContaining({
-          stdio: ["pipe", "pipe", "pipe"],
-          env: expect.objectContaining({ TEST_VAR: "test" }),
-        })
-      );
+      const client = new MCPClient("test-server", config);
+      expect(client).toBeDefined();
+      expect(client.initialized).toBe(false);
+      expect(client.tools).toEqual([]);
+    });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        "node",
-        ["test.js"],
-        expect.objectContaining({
-          stdio: ["pipe", "pipe", "pipe"],
-          env: expect.objectContaining({ TEST_VAR: "test" }),
-        })
+    it("应该正确生成带前缀的工具名称", () => {
+      const config = {
+        command: "node",
+        args: ["test.js"],
+      };
+
+      const client = new MCPClient("test-server", config);
+      const prefixedName = (client as any).generatePrefixedToolName(
+        "calculate"
       );
+      expect(prefixedName).toBe("test_server_xzcli_calculate");
+    });
+
+    it("应该正确解析带前缀的工具名称", () => {
+      const config = {
+        command: "node",
+        args: ["test.js"],
+      };
+
+      const client = new MCPClient("test-server", config);
+      const originalName = client.getOriginalToolName(
+        "test_server_xzcli_calculate"
+      );
+      expect(originalName).toBe("calculate");
+    });
+
+    it("对于无效前缀应该返回null", () => {
+      const config = {
+        command: "node",
+        args: ["test.js"],
+      };
+
+      const client = new MCPClient("test-server", config);
+      const originalName = client.getOriginalToolName("invalid_prefix_tool");
+      expect(originalName).toBeNull();
     });
 
     it("应该处理进程stdout数据", () => {
@@ -296,7 +344,16 @@ describe("MCP服务器代理", () => {
   });
 
   describe("JSONRPC服务器", () => {
+    it("应该正确创建JSONRPCServer实例", () => {
+      const proxy = new MCPServerProxy();
+      const server = new JSONRPCServer(proxy);
+      expect(server).toBeDefined();
+    });
+
     it("应该处理初始化请求", async () => {
+      const proxy = new MCPServerProxy();
+      const server = new JSONRPCServer(proxy);
+
       const initRequest = {
         jsonrpc: "2.0",
         id: 1,
@@ -307,29 +364,19 @@ describe("MCP服务器代理", () => {
         },
       };
 
-      // 测试需要访问JSONRPCServer类
-      // 现在，我们测试预期的响应格式
-      const expectedResponse = {
-        jsonrpc: "2.0",
-        id: 1,
-        result: {
-          protocolVersion: "2024-11-05",
-          capabilities: {
-            tools: {
-              listChanged: false,
-            },
-          },
-          serverInfo: {
-            name: "MCPServerProxy",
-            version: "0.3.0",
-          },
-        },
-      };
+      const response = await server.handleRequest(initRequest);
 
-      expect(expectedResponse.result.serverInfo.name).toBe("MCPServerProxy");
+      expect(response.jsonrpc).toBe("2.0");
+      expect(response.id).toBe(1);
+      expect(response.result.serverInfo.name).toBe("MCPServerProxy");
+      expect(response.result.protocolVersion).toBe("2024-11-05");
     });
 
     it("应该处理工具列表请求", async () => {
+      const proxy = new MCPServerProxy();
+      proxy.initialized = true; // Mock initialization
+      const server = new JSONRPCServer(proxy);
+
       const toolsListRequest = {
         jsonrpc: "2.0",
         id: 2,
@@ -337,16 +384,12 @@ describe("MCP服务器代理", () => {
         params: {},
       };
 
-      // 预期的响应格式
-      const expectedResponse = {
-        jsonrpc: "2.0",
-        id: 2,
-        result: {
-          tools: [],
-        },
-      };
+      const response = await server.handleRequest(toolsListRequest);
 
-      expect(expectedResponse.result).toHaveProperty("tools");
+      expect(response.jsonrpc).toBe("2.0");
+      expect(response.id).toBe(2);
+      expect(response.result).toHaveProperty("tools");
+      expect(Array.isArray(response.result.tools)).toBe(true);
     });
 
     it("应该处理工具调用请求", async () => {
@@ -365,6 +408,9 @@ describe("MCP服务器代理", () => {
     });
 
     it("应该处理ping请求", async () => {
+      const proxy = new MCPServerProxy();
+      const server = new JSONRPCServer(proxy);
+
       const pingRequest = {
         jsonrpc: "2.0",
         id: 4,
@@ -372,13 +418,11 @@ describe("MCP服务器代理", () => {
         params: {},
       };
 
-      const expectedResponse = {
-        jsonrpc: "2.0",
-        id: 4,
-        result: {},
-      };
+      const response = await server.handleRequest(pingRequest);
 
-      expect(expectedResponse.result).toEqual({});
+      expect(response.jsonrpc).toBe("2.0");
+      expect(response.id).toBe(4);
+      expect(response.result).toEqual({});
     });
 
     it("应该处理初始化完成通知", async () => {
@@ -392,21 +436,23 @@ describe("MCP服务器代理", () => {
     });
 
     it("应该处理无效的JSON", async () => {
+      const proxy = new MCPServerProxy();
+      const server = new JSONRPCServer(proxy);
+
       const invalidJson = "invalid json";
+      const response = await server.handleMessage(invalidJson);
+      const parsedResponse = JSON.parse(response!);
 
-      const expectedErrorResponse = {
-        jsonrpc: "2.0",
-        id: null,
-        error: {
-          code: -32700,
-          message: "Parse error",
-        },
-      };
-
-      expect(expectedErrorResponse.error.code).toBe(-32700);
+      expect(parsedResponse.jsonrpc).toBe("2.0");
+      expect(parsedResponse.id).toBeNull();
+      expect(parsedResponse.error.code).toBe(-32700);
+      expect(parsedResponse.error.message).toBe("Parse error");
     });
 
     it("应该处理未知方法", async () => {
+      const proxy = new MCPServerProxy();
+      const server = new JSONRPCServer(proxy);
+
       const unknownMethodRequest = {
         jsonrpc: "2.0",
         id: 5,
@@ -414,16 +460,32 @@ describe("MCP服务器代理", () => {
         params: {},
       };
 
-      const expectedErrorResponse = {
+      const response = await server.handleRequest(unknownMethodRequest);
+
+      expect(response.jsonrpc).toBe("2.0");
+      expect(response.id).toBe(5);
+      expect(response.error.code).toBe(-32603);
+      expect(response.error.message).toContain("Unknown method");
+    });
+
+    it("应该处理工具列表请求当代理未初始化时", async () => {
+      const proxy = new MCPServerProxy();
+      // 不设置initialized为true，保持默认的false
+      const server = new JSONRPCServer(proxy);
+
+      const toolsListRequest = {
         jsonrpc: "2.0",
-        id: 5,
-        error: {
-          code: -32603,
-          message: "Unknown method: unknown/method",
-        },
+        id: 6,
+        method: "tools/list",
+        params: {},
       };
 
-      expect(expectedErrorResponse.error.message).toContain("Unknown method");
+      const response = await server.handleRequest(toolsListRequest);
+
+      expect(response.jsonrpc).toBe("2.0");
+      expect(response.id).toBe(6);
+      expect(response.error).toBeDefined();
+      expect(response.error.message).toBe("Proxy not initialized");
     });
   });
 
