@@ -39,71 +39,50 @@ function getServerToolNames(serverName: string): string[] {
  * 设置自动补全功能
  */
 export function setupAutoCompletion(): void {
-  // 创建 omelette 实例，使用简单的模板
-  const completion = omelette("xiaozhi");
+  // 创建 omelette 实例，使用更简单的模板
+  const completion = omelette`xiaozhi <command>`;
 
-  // 使用全局事件处理所有补全
+  // 处理主命令补全
+  completion.on("command", ({ reply }) => {
+    reply([
+      "create",
+      "init",
+      "config",
+      "start",
+      "stop",
+      "status",
+      "attach",
+      "restart",
+      "mcp",
+      "completion",
+    ]);
+  });
+
+  // 处理复杂的多级命令补全
   completion.on("complete", (fragment, { line, before, reply }) => {
-    // 处理行尾空格的情况
-    const trimmedLine = line.trim();
-    const parts = trimmedLine.split(/\s+/);
+    // 调试信息
+    if (process.env.XIAOZHI_DEBUG_COMPLETION) {
+      console.error(
+        `Debug completion - line: "${line}", before: "${before}", fragment: "${fragment}"`
+      );
+    }
 
-    // 如果原始行以空格结尾，说明用户想要补全下一个参数
-    const endsWithSpace = line !== trimmedLine;
+    const parts = line.trim().split(/\s+/);
+    const endsWithSpace = line !== line.trim();
     const currentIndex = endsWithSpace ? parts.length : parts.length - 1;
 
-    // 主命令补全
-    if (currentIndex === 1) {
-      const commands = [
-        "create",
-        "init",
-        "config",
-        "start",
-        "stop",
-        "status",
-        "attach",
-        "restart",
-        "mcp",
-        "completion",
-      ];
-
-      const current = parts[1] || "";
-      const matches = commands.filter((cmd) => cmd.startsWith(current));
-      reply(matches);
-      return;
-    }
-
-    // 子命令补全
-    if (currentIndex === 2) {
-      const command = parts[1];
-
-      switch (command) {
-        case "create":
-          reply(["--template", "-t"]);
-          break;
-        case "start":
-        case "restart":
-          reply(["--daemon", "-d"]);
-          break;
-        case "completion":
-          reply(["install", "uninstall"]);
-          break;
-        case "mcp": {
-          const subcommands = ["list", "server", "tool"];
-          const current = parts[2] || "";
-          const matches = subcommands.filter((cmd) => cmd.startsWith(current));
-          reply(matches);
-          break;
-        }
-        default:
-          reply([]);
-      }
-      return;
-    }
-
-    // MCP 相关的进一步补全
+    // MCP 相关的补全
     if (parts[1] === "mcp") {
       const subcommand = parts[2];
+
+      if (currentIndex === 2) {
+        // mcp 子命令
+        const subcommands = ["list", "server", "tool"];
+        const current = parts[2] || "";
+        const matches = subcommands.filter((cmd) => cmd.startsWith(current));
+        reply(matches);
+        return;
+      }
 
       if (currentIndex === 3) {
         switch (subcommand) {
@@ -148,6 +127,26 @@ export function setupAutoCompletion(): void {
       }
     }
 
+    // 其他命令的子参数补全
+    if (currentIndex === 2) {
+      const command = parts[1];
+      switch (command) {
+        case "create":
+          reply(["--template", "-t"]);
+          break;
+        case "start":
+        case "restart":
+          reply(["--daemon", "-d"]);
+          break;
+        case "completion":
+          reply(["install", "uninstall"]);
+          break;
+        default:
+          reply([]);
+      }
+      return;
+    }
+
     // 默认情况
     reply([]);
   });
@@ -155,7 +154,11 @@ export function setupAutoCompletion(): void {
   // 处理补全相关的命令行参数
   if (process.argv.includes("--completion")) {
     // 输出补全脚本供shell使用
-    console.log(completion.setupShellInitFile());
+    try {
+      console.log(completion.setupShellInitFile());
+    } catch (error) {
+      console.error("生成自动补全脚本时出错:", error);
+    }
     process.exit(0);
   }
 

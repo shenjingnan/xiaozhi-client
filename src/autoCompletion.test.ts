@@ -79,21 +79,30 @@ describe("autoCompletion", () => {
     it("应该正确处理主命令补全", () => {
       setupAutoCompletion();
 
-      // 获取complete事件的回调函数
-      const completeCallback = (mockOmelette.on as any).mock.calls.find(
-        (call: any) => call[0] === "complete"
+      // 获取command事件的回调函数
+      const commandCallback = (mockOmelette.on as any).mock.calls.find(
+        (call: any) => call[0] === "command"
       )[1];
 
       const mockReply = vi.fn();
 
       // 测试主命令补全
-      completeCallback(undefined, {
-        line: "xiaozhi m",
-        before: "m",
+      commandCallback({
         reply: mockReply,
       });
 
-      expect(mockReply).toHaveBeenCalledWith(["mcp"]);
+      expect(mockReply).toHaveBeenCalledWith([
+        "create",
+        "init",
+        "config",
+        "start",
+        "stop",
+        "status",
+        "attach",
+        "restart",
+        "mcp",
+        "completion",
+      ]);
     });
 
     it("应该正确处理MCP子命令补全", () => {
