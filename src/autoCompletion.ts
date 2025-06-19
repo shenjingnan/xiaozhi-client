@@ -39,8 +39,8 @@ function getServerToolNames(serverName: string): string[] {
  * 设置自动补全功能
  */
 export function setupAutoCompletion(): void {
-  // 创建 omelette 实例，使用更简单的模板
-  const completion = omelette`xiaozhi <command>`;
+  // 创建 omelette 实例，使用简单的模板
+  const completion = omelette("xiaozhi <command>");
 
   // 处理主命令补全
   completion.on("command", ({ reply }) => {
