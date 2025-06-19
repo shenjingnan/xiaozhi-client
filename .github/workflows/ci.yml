@@ -3,9 +3,9 @@ name: CI Pipeline
 # 触发条件：只在PR到main分支时运行CI
 on:
   pull_request:
-    branches: [ main, next ]
+    branches: [ main ]
   push:
-    branches: [ main, next ]
+    branches: [ main ]
 
 jobs:
   # CI 阶段 - 完整的代码质量和测试检查

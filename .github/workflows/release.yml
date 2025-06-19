@@ -29,15 +29,9 @@ jobs:
         with:
           fetch-depth: 0
           
-      - name: 切换到目标分支
+      - name: 确认当前分支
         run: |
-          if [ "${{ github.event.inputs.version_type }}" = "stable" ]; then
-            git checkout main
-            echo "切换到 main 分支用于稳定版发布"
-          else
-            git checkout next
-            echo "切换到 next 分支用于 beta 版发布"
-          fi
+          echo "当前在 main 分支，准备发布 ${{ github.event.inputs.version_type }} 版本"
 
       - name: 安装 pnpm
         uses: pnpm/action-setup@v4
@@ -70,7 +64,8 @@ jobs:
         run: |
           if [ "${{ github.event.inputs.version_type }}" = "stable" ]; then
             echo "执行稳定版发布 (main 分支)"
+            npx semantic-release
           else
-            echo "执行 beta 版发布 (next 分支)"
+            echo "执行 beta 版发布 (main 分支)"
+            npx semantic-release --prerelease beta
           fi
-          npx semantic-release
