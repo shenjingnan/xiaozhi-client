@@ -18,7 +18,7 @@ const SERVICE_NAME = "xiaozhi-mcp-service";
 /**
  * 获取版本号
  */
-function getVersion(): string {
+export function getVersion(): string {
   try {
     // 在 ES 模块环境中获取当前目录
     const __filename = fileURLToPath(import.meta.url);
@@ -67,7 +67,7 @@ interface ServiceStatus {
 /**
  * 获取服务状态
  */
-function getServiceStatus(): ServiceStatus {
+export function getServiceStatus(): ServiceStatus {
   try {
     if (!fs.existsSync(PID_FILE)) {
       return { running: false };
@@ -110,7 +110,7 @@ function getServiceStatus(): ServiceStatus {
 /**
  * 格式化运行时间
  */
-function formatUptime(ms: number): string {
+export function formatUptime(ms: number): string {
   const seconds = Math.floor(ms / 1000);
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
@@ -152,7 +152,7 @@ function cleanupPidFile() {
 /**
  * 检查配置文件和环境
  */
-function checkEnvironment(): boolean {
+export function checkEnvironment(): boolean {
   // 首先检查配置文件是否存在
   if (!configManager.configExists()) {
     console.error(chalk.red("❌ 错误: 配置文件不存在"));
@@ -581,7 +581,7 @@ function getAvailableTemplates(): string[] {
 /**
  * 计算字符串相似度（简单的编辑距离算法）
  */
-function calculateSimilarity(str1: string, str2: string): number {
+export function calculateSimilarity(str1: string, str2: string): number {
   const len1 = str1.length;
   const len2 = str2.length;
   const matrix = Array(len1 + 1)

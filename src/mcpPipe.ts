@@ -22,7 +22,7 @@ import { configManager } from "./configManager";
 config();
 
 // Logger utility
-class Logger {
+export class Logger {
   private name: string;
 
   constructor(name: string) {
@@ -58,7 +58,7 @@ const MAX_BACKOFF = 30000; // Maximum wait time in milliseconds (reduced)
 let reconnectAttempt = 0;
 let backoff = INITIAL_BACKOFF;
 
-class MCPPipe {
+export class MCPPipe {
   private mcpScript: string;
   private endpointUrl: string;
   private process: ChildProcess | null;
@@ -254,7 +254,7 @@ class MCPPipe {
 }
 
 // Signal handlers
-function setupSignalHandlers(mcpPipe: MCPPipe): void {
+export function setupSignalHandlers(mcpPipe: MCPPipe): void {
   process.on("SIGINT", () => {
     logger.info("Received interrupt signal, shutting down...");
     mcpPipe.shutdown();
