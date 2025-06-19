@@ -234,28 +234,28 @@ describe("MCP管道", () => {
 
     it("应该正确实现sleep方法", async () => {
       const mcpPipe = new MCPPipe("test-script.js", "wss://test.example.com");
-      
+
       const start = Date.now();
       await mcpPipe.sleep(100);
       const end = Date.now();
-      
+
       expect(end - start).toBeGreaterThanOrEqual(90); // 允许一些误差
     });
 
     it("应该正确处理cleanup方法", () => {
       const mcpPipe = new MCPPipe("test-script.js", "wss://test.example.com");
-      
+
       // 设置一个mock进程
       const mockChildProcess = new MockChildProcess();
       (mcpPipe as any).process = mockChildProcess;
-      
+
       // 调用cleanup应该不会抛出错误
       expect(() => mcpPipe.cleanup()).not.toThrow();
     });
 
     it("应该正确实现shutdown方法的部分逻辑", () => {
       const mcpPipe = new MCPPipe("test-script.js", "wss://test.example.com");
-      
+
       // 只测试cleanup部分，不测试process.exit
       expect(() => mcpPipe.cleanup()).not.toThrow();
     });
@@ -415,7 +415,7 @@ describe("MCP管道", () => {
   describe("信号处理器", () => {
     it("应该定义setupSignalHandlers函数", () => {
       const mcpPipe = new MCPPipe("test-script.js", "wss://test.example.com");
-      
+
       // 测试函数存在且不会抛出错误
       expect(setupSignalHandlers).toBeDefined();
       expect(typeof setupSignalHandlers).toBe("function");

@@ -103,19 +103,19 @@ const originalArgv = process.argv;
 
 beforeAll(() => {
   // Mock process.argv to prevent showHelp execution during import
-  Object.defineProperty(process, 'argv', {
+  Object.defineProperty(process, "argv", {
     value: ["node", "cli.js", "test"],
     writable: true,
-    configurable: true
+    configurable: true,
   });
 });
 
 afterAll(() => {
   // Restore original process.argv
-  Object.defineProperty(process, 'argv', {
+  Object.defineProperty(process, "argv", {
     value: originalArgv,
     writable: true,
-    configurable: true
+    configurable: true,
   });
 });
 
@@ -828,26 +828,26 @@ describe("CLI 命令行工具", () => {
     it("应该正确格式化运行时间", () => {
       // 测试0毫秒
       expect(cliModule.formatUptime(0)).toBe("0秒");
-      
+
       // 测试秒
       expect(cliModule.formatUptime(5000)).toBe("5秒");
       expect(cliModule.formatUptime(59000)).toBe("59秒");
-      
+
       // 测试分钟
       expect(cliModule.formatUptime(60000)).toBe("1分钟 0秒");
       expect(cliModule.formatUptime(65000)).toBe("1分钟 5秒");
       expect(cliModule.formatUptime(3599000)).toBe("59分钟 59秒");
-      
+
       // 测试小时
       expect(cliModule.formatUptime(3600000)).toBe("1小时 0分钟");
       expect(cliModule.formatUptime(3665000)).toBe("1小时 1分钟");
       expect(cliModule.formatUptime(86399000)).toBe("23小时 59分钟");
-      
+
       // 测试天
       expect(cliModule.formatUptime(86400000)).toBe("1天 0小时 0分钟");
       expect(cliModule.formatUptime(90061000)).toBe("1天 1小时 1分钟");
       expect(cliModule.formatUptime(172800000)).toBe("2天 0小时 0分钟");
-      
+
       // 测试非常小的值
       expect(cliModule.formatUptime(500)).toBe("0秒");
     });
@@ -855,25 +855,29 @@ describe("CLI 命令行工具", () => {
     it("应该正确计算字符串相似度", () => {
       // 完全相同的字符串
       expect(cliModule.calculateSimilarity("hello", "hello")).toBe(1);
-      
+
       // 完全不同的字符串
       expect(cliModule.calculateSimilarity("abc", "xyz")).toBe(0);
-      
+
       // 相似的字符串
-      expect(cliModule.calculateSimilarity("hello", "hallo")).toBeGreaterThan(0.7);
-      
+      expect(cliModule.calculateSimilarity("hello", "hallo")).toBeGreaterThan(
+        0.7
+      );
+
       // 空字符串
       expect(cliModule.calculateSimilarity("", "")).toBe(1);
       expect(cliModule.calculateSimilarity("abc", "")).toBeLessThan(1);
       expect(cliModule.calculateSimilarity("", "abc")).toBeLessThan(1);
-      
+
       // 单字符
       expect(cliModule.calculateSimilarity("a", "a")).toBe(1);
       expect(cliModule.calculateSimilarity("a", "b")).toBeLessThan(1);
-      
+
       // 长度差异很大的字符串
-      expect(cliModule.calculateSimilarity("short", "verylongstring")).toBeLessThan(0.5);
-      
+      expect(
+        cliModule.calculateSimilarity("short", "verylongstring")
+      ).toBeLessThan(0.5);
+
       // 大小写敏感性
       expect(cliModule.calculateSimilarity("Hello", "hello")).toBeLessThan(1);
     });

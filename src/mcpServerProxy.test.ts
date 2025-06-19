@@ -26,11 +26,11 @@ vi.mock("./configManager", () => ({
 
 // Import after mocking
 import { configManager } from "./configManager";
-import { 
-  MCPClient, 
-  MCPServerProxy, 
-  JSONRPCServer, 
-  loadMCPConfig 
+import {
+  JSONRPCServer,
+  MCPClient,
+  MCPServerProxy,
+  loadMCPConfig,
 } from "./mcpServerProxy";
 
 // Mock child process
@@ -267,7 +267,9 @@ describe("MCP服务器代理", () => {
       };
 
       const client = new MCPClient("test-server", config);
-      const prefixedName = (client as any).generatePrefixedToolName("calculate");
+      const prefixedName = (client as any).generatePrefixedToolName(
+        "calculate"
+      );
       expect(prefixedName).toBe("test_server_xzcli_calculate");
     });
 
@@ -278,7 +280,9 @@ describe("MCP服务器代理", () => {
       };
 
       const client = new MCPClient("test-server", config);
-      const originalName = client.getOriginalToolName("test_server_xzcli_calculate");
+      const originalName = client.getOriginalToolName(
+        "test_server_xzcli_calculate"
+      );
       expect(originalName).toBe("calculate");
     });
 
@@ -349,7 +353,7 @@ describe("MCP服务器代理", () => {
     it("应该处理初始化请求", async () => {
       const proxy = new MCPServerProxy();
       const server = new JSONRPCServer(proxy);
-      
+
       const initRequest = {
         jsonrpc: "2.0",
         id: 1,
@@ -361,7 +365,7 @@ describe("MCP服务器代理", () => {
       };
 
       const response = await server.handleRequest(initRequest);
-      
+
       expect(response.jsonrpc).toBe("2.0");
       expect(response.id).toBe(1);
       expect(response.result.serverInfo.name).toBe("MCPServerProxy");
@@ -372,7 +376,7 @@ describe("MCP服务器代理", () => {
       const proxy = new MCPServerProxy();
       proxy.initialized = true; // Mock initialization
       const server = new JSONRPCServer(proxy);
-      
+
       const toolsListRequest = {
         jsonrpc: "2.0",
         id: 2,
@@ -381,7 +385,7 @@ describe("MCP服务器代理", () => {
       };
 
       const response = await server.handleRequest(toolsListRequest);
-      
+
       expect(response.jsonrpc).toBe("2.0");
       expect(response.id).toBe(2);
       expect(response.result).toHaveProperty("tools");
@@ -406,7 +410,7 @@ describe("MCP服务器代理", () => {
     it("应该处理ping请求", async () => {
       const proxy = new MCPServerProxy();
       const server = new JSONRPCServer(proxy);
-      
+
       const pingRequest = {
         jsonrpc: "2.0",
         id: 4,
@@ -415,7 +419,7 @@ describe("MCP服务器代理", () => {
       };
 
       const response = await server.handleRequest(pingRequest);
-      
+
       expect(response.jsonrpc).toBe("2.0");
       expect(response.id).toBe(4);
       expect(response.result).toEqual({});
@@ -434,7 +438,7 @@ describe("MCP服务器代理", () => {
     it("应该处理无效的JSON", async () => {
       const proxy = new MCPServerProxy();
       const server = new JSONRPCServer(proxy);
-      
+
       const invalidJson = "invalid json";
       const response = await server.handleMessage(invalidJson);
       const parsedResponse = JSON.parse(response!);
@@ -448,7 +452,7 @@ describe("MCP服务器代理", () => {
     it("应该处理未知方法", async () => {
       const proxy = new MCPServerProxy();
       const server = new JSONRPCServer(proxy);
-      
+
       const unknownMethodRequest = {
         jsonrpc: "2.0",
         id: 5,
@@ -468,7 +472,7 @@ describe("MCP服务器代理", () => {
       const proxy = new MCPServerProxy();
       // 不设置initialized为true，保持默认的false
       const server = new JSONRPCServer(proxy);
-      
+
       const toolsListRequest = {
         jsonrpc: "2.0",
         id: 6,
