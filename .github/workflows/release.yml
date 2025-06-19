@@ -70,8 +70,7 @@ jobs:
         run: |
           if [ "${{ github.event.inputs.version_type }}" = "stable" ]; then
             echo "执行稳定版发布 (main 分支)"
-            npx semantic-release --branches main
           else
             echo "执行 beta 版发布 (next 分支)"
-            npx semantic-release --branches next
           fi
+          npx semantic-release
