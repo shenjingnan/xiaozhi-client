@@ -67,5 +67,5 @@ jobs:
             npx semantic-release
           else
             echo "执行 beta 版发布 (main 分支)"
-            npx semantic-release --prerelease beta
+            npx semantic-release --extends ./.releaserc.beta.json
           fi
