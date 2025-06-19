@@ -1,3 +1,10 @@
+## [1.0.6](https://github.com/shenjingnan/xiaozhi-client/compare/v1.0.5...v1.0.6) (2025-06-19)
+
+
+### Bug Fixes
+
+* **release:** 修复beta版本发布配置和版本号问题 ([#67](https://github.com/shenjingnan/xiaozhi-client/issues/67)) ([5389e6b](https://github.com/shenjingnan/xiaozhi-client/commit/5389e6b219919b23fe76209c90986a14cbd4f570))
+
 ## [1.0.5](https://github.com/shenjingnan/xiaozhi-client/compare/v1.0.4...v1.0.5) (2025-06-19)
 
 
