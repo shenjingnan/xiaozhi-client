@@ -16,25 +16,19 @@ import {
   type MCPToolConfig,
   configManager,
 } from "./configManager";
+import { logger as globalLogger } from "./logger";
 
 // ESM 兼容的 __dirname
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Simple logger utility
-const logger = {
-  info: (message: string): void => {
-    const timestamp = new Date().toISOString();
-    console.error(`${timestamp} - MCPProxy - INFO - ${message}`);
-  },
-  error: (message: string): void => {
-    const timestamp = new Date().toISOString();
-    console.error(`${timestamp} - MCPProxy - ERROR - ${message}`);
-  },
-  debug: (message: string): void => {
-    const timestamp = new Date().toISOString();
-    console.error(`${timestamp} - MCPProxy - DEBUG - ${message}`);
-  },
-};
+// 为 MCPProxy 创建带标签的 logger
+const logger = globalLogger.withTag("MCPProxy");
+
+// 如果在守护进程模式下运行，初始化日志文件
+if (process.env.XIAOZHI_DAEMON === "true" && process.env.XIAOZHI_CONFIG_DIR) {
+  globalLogger.initLogFile(process.env.XIAOZHI_CONFIG_DIR);
+  globalLogger.enableFileLogging(true);
+}
 
 // Type definitions
 

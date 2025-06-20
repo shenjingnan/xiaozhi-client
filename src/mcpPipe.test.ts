@@ -31,7 +31,7 @@ vi.mock("./configManager", () => ({
 
 // Import after mocking
 import { configManager } from "./configManager";
-import { Logger, MCPPipe, setupSignalHandlers } from "./mcpPipe";
+import { MCPPipe, setupSignalHandlers } from "./mcpPipe";
 
 // Mock child process
 class MockChildProcess extends EventEmitter {
@@ -102,87 +102,7 @@ describe("MCP管道", () => {
     vi.unstubAllGlobals();
   });
 
-  describe("日志记录器", () => {
-    it("应该使用正确的名称创建日志记录器", () => {
-      const logger = new Logger("TEST_LOGGER");
-      expect(logger).toBeDefined();
-    });
-
-    it("应该正确记录info消息", () => {
-      const consoleSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
-
-      const logger = new Logger("TEST");
-      logger.info("test message");
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining("TEST - INFO - test message")
-      );
-
-      consoleSpy.mockRestore();
-    });
-
-    it("应该正确记录error消息", () => {
-      const consoleSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
-
-      const logger = new Logger("TEST");
-      logger.error("error message");
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining("TEST - ERROR - error message")
-      );
-
-      consoleSpy.mockRestore();
-    });
-
-    it("应该正确记录warning消息", () => {
-      const consoleSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
-
-      const logger = new Logger("TEST");
-      logger.warning("warning message");
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining("TEST - WARNING - warning message")
-      );
-
-      consoleSpy.mockRestore();
-    });
-
-    it("应该正确记录debug消息", () => {
-      const consoleSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
-
-      const logger = new Logger("TEST");
-      logger.debug("debug message");
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining("TEST - DEBUG - debug message")
-      );
-
-      consoleSpy.mockRestore();
-    });
-
-    it("应该在消息中包含时间戳", () => {
-      const consoleSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
-
-      const logger = new Logger("TEST");
-      logger.info("test message");
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringMatching(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/)
-      );
-
-      consoleSpy.mockRestore();
-    });
-  });
+  // Logger 相关测试已移除，因为我们现在使用全局 logger 模块
 
   describe("MCPPipe类", () => {
     it("应该正确创建MCPPipe实例", () => {

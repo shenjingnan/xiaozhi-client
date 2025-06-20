@@ -17,40 +17,19 @@ import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
 import WebSocket from "ws";
 import { configManager } from "./configManager";
+import { logger as globalLogger } from "./logger";
 
 // Load environment variables
 config();
 
-// Logger utility
-export class Logger {
-  private name: string;
+// 为 MCP_PIPE 创建带标签的 logger
+const logger = globalLogger.withTag("MCP_PIPE");
 
-  constructor(name: string) {
-    this.name = name;
-  }
-
-  info(message: string): void {
-    const timestamp = new Date().toISOString();
-    console.error(`${timestamp} - ${this.name} - INFO - ${message}`);
-  }
-
-  error(message: string): void {
-    const timestamp = new Date().toISOString();
-    console.error(`${timestamp} - ${this.name} - ERROR - ${message}`);
-  }
-
-  warning(message: string): void {
-    const timestamp = new Date().toISOString();
-    console.error(`${timestamp} - ${this.name} - WARNING - ${message}`);
-  }
-
-  debug(message: string): void {
-    const timestamp = new Date().toISOString();
-    console.error(`${timestamp} - ${this.name} - DEBUG - ${message}`);
-  }
+// 如果在守护进程模式下运行，初始化日志文件
+if (process.env.XIAOZHI_DAEMON === "true" && process.env.XIAOZHI_CONFIG_DIR) {
+  globalLogger.initLogFile(process.env.XIAOZHI_CONFIG_DIR);
+  globalLogger.enableFileLogging(true);
 }
-
-const logger = new Logger("MCP_PIPE");
 
 // Reconnection settings - 从配置文件读取，有默认值兜底
 let reconnectAttempt = 0;
@@ -97,7 +76,7 @@ export class MCPPipe {
         heartbeatTimeout: 10000,
         reconnectInterval: 5000,
       };
-      logger.warning(
+      logger.warn(
         `无法获取连接配置，使用默认值: ${error instanceof Error ? error.message : String(error)}`
       );
     }
@@ -219,7 +198,7 @@ export class MCPPipe {
 
         // 设置心跳超时检测
         this.heartbeatTimeoutTimer = setTimeout(() => {
-          logger.warning("Heartbeat timeout, connection may be lost");
+          logger.warn("Heartbeat timeout, connection may be lost");
           // 心跳超时，主动关闭连接触发重连
           if (this.websocket) {
             this.websocket.terminate();
@@ -257,7 +236,7 @@ export class MCPPipe {
       try {
         this.process.kill("SIGTERM");
       } catch (error) {
-        logger.warning(`Error killing existing MCP process: ${error}`);
+        logger.warn(`Error killing existing MCP process: ${error}`);
       }
       this.process = null;
     }
@@ -297,7 +276,7 @@ export class MCPPipe {
     this.process.on(
       "exit",
       (code: number | null, signal: NodeJS.Signals | null) => {
-        logger.warning(
+        logger.warn(
           `${this.mcpScript} process exited with code ${code}, signal ${signal}`
         );
         this.process = null;
@@ -363,7 +342,7 @@ export class MCPPipe {
       try {
         this.websocket.close();
       } catch (error) {
-        logger.warning(`Error closing websocket: ${error}`);
+        logger.warn(`Error closing websocket: ${error}`);
       }
       this.websocket = null;
     }
