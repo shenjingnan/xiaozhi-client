@@ -9,5 +9,10 @@
       "command": "node",
       "args": ["./mcpServers/datetime.js"]
     }
+  },
+  "connection": {
+    "heartbeatInterval": 30000,
+    "heartbeatTimeout": 10000,
+    "reconnectInterval": 5000
   }
 }
