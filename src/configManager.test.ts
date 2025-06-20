@@ -4,10 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   type AppConfig,
   ConfigManager,
+  type ConnectionConfig,
   type MCPServerConfig,
   type MCPServerToolsConfig,
   type MCPToolConfig,
-  type ConnectionConfig,
 } from "./configManager";
 
 // Mock fs module
@@ -656,7 +656,7 @@ describe("ConfigManager", () => {
     describe("getConnectionConfig", () => {
       it("应该返回完整的连接配置", () => {
         const config = configManager.getConnectionConfig();
-        
+
         expect(config).toEqual({
           heartbeatInterval: 30000,
           heartbeatTimeout: 10000,
@@ -669,10 +669,12 @@ describe("ConfigManager", () => {
           mcpEndpoint: "wss://api.example.com/mcp",
           mcpServers: mockConfig.mcpServers,
         };
-        mockReadFileSync.mockReturnValue(JSON.stringify(configWithoutConnection));
-        
+        mockReadFileSync.mockReturnValue(
+          JSON.stringify(configWithoutConnection)
+        );
+
         const config = configManager.getConnectionConfig();
-        
+
         expect(config).toEqual({
           heartbeatInterval: 30000,
           heartbeatTimeout: 10000,
@@ -687,14 +689,16 @@ describe("ConfigManager", () => {
             heartbeatInterval: 15000, // 只设置了一个值
           },
         };
-        mockReadFileSync.mockReturnValue(JSON.stringify(configWithPartialConnection));
-        
+        mockReadFileSync.mockReturnValue(
+          JSON.stringify(configWithPartialConnection)
+        );
+
         const config = configManager.getConnectionConfig();
-        
+
         expect(config).toEqual({
           heartbeatInterval: 15000, // 用户设置的值
-          heartbeatTimeout: 10000,  // 默认值
-          reconnectInterval: 5000,  // 默认值
+          heartbeatTimeout: 10000, // 默认值
+          reconnectInterval: 5000, // 默认值
         });
       });
     });
@@ -740,11 +744,11 @@ describe("ConfigManager", () => {
         const writtenConfig = JSON.parse(
           (mockWriteFileSync.mock.calls[0] as any)[1]
         );
-        
+
         expect(writtenConfig.connection).toEqual({
           heartbeatInterval: 45000, // 更新的值
-          heartbeatTimeout: 10000,  // 保留的值
-          reconnectInterval: 5000,  // 保留的值
+          heartbeatTimeout: 10000, // 保留的值
+          reconnectInterval: 5000, // 保留的值
         });
       });
     });
@@ -752,7 +756,7 @@ describe("ConfigManager", () => {
     describe("设置单个连接配置项", () => {
       it("应该正确设置心跳检测间隔", () => {
         configManager.setHeartbeatInterval(45000);
-        
+
         expect(mockWriteFileSync).toHaveBeenCalledWith(
           "/test/cwd/xiaozhi.config.json",
           expect.stringContaining('"heartbeatInterval": 45000'),
@@ -762,7 +766,7 @@ describe("ConfigManager", () => {
 
       it("应该正确设置心跳超时时间", () => {
         configManager.setHeartbeatTimeout(15000);
-        
+
         expect(mockWriteFileSync).toHaveBeenCalledWith(
           "/test/cwd/xiaozhi.config.json",
           expect.stringContaining('"heartbeatTimeout": 15000'),
@@ -772,7 +776,7 @@ describe("ConfigManager", () => {
 
       it("应该正确设置重连间隔", () => {
         configManager.setReconnectInterval(3000);
-        
+
         expect(mockWriteFileSync).toHaveBeenCalledWith(
           "/test/cwd/xiaozhi.config.json",
           expect.stringContaining('"reconnectInterval": 3000'),

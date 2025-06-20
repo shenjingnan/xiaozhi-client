@@ -81,14 +81,14 @@ export class MCPPipe {
     this.shouldReconnect = true;
     this.isConnected = false;
     this.mcpProcessRestartAttempts = 0;
-    
+
     // 获取连接配置，如果配置文件不存在则使用默认值
     try {
       this.connectionConfig = configManager.getConnectionConfig();
       logger.info(
         `连接配置: 心跳间隔=${this.connectionConfig.heartbeatInterval}ms, ` +
-        `心跳超时=${this.connectionConfig.heartbeatTimeout}ms, ` +
-        `重连间隔=${this.connectionConfig.reconnectInterval}ms`
+          `心跳超时=${this.connectionConfig.heartbeatTimeout}ms, ` +
+          `重连间隔=${this.connectionConfig.reconnectInterval}ms`
       );
     } catch (error) {
       // 如果无法获取配置（如配置文件不存在），使用默认值

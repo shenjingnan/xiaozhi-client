@@ -30,7 +30,7 @@ export interface MCPServerToolsConfig {
 
 export interface ConnectionConfig {
   heartbeatInterval?: number; // 心跳检测间隔（毫秒），默认30000
-  heartbeatTimeout?: number; // 心跳超时时间（毫秒），默认10000  
+  heartbeatTimeout?: number; // 心跳超时时间（毫秒），默认10000
   reconnectInterval?: number; // 重连间隔（毫秒），默认5000
 }
 
@@ -402,11 +402,17 @@ export class ConfigManager {
   public getConnectionConfig(): Required<ConnectionConfig> {
     const config = this.getConfig();
     const connectionConfig = config.connection || {};
-    
+
     return {
-      heartbeatInterval: connectionConfig.heartbeatInterval ?? DEFAULT_CONNECTION_CONFIG.heartbeatInterval,
-      heartbeatTimeout: connectionConfig.heartbeatTimeout ?? DEFAULT_CONNECTION_CONFIG.heartbeatTimeout,
-      reconnectInterval: connectionConfig.reconnectInterval ?? DEFAULT_CONNECTION_CONFIG.reconnectInterval,
+      heartbeatInterval:
+        connectionConfig.heartbeatInterval ??
+        DEFAULT_CONNECTION_CONFIG.heartbeatInterval,
+      heartbeatTimeout:
+        connectionConfig.heartbeatTimeout ??
+        DEFAULT_CONNECTION_CONFIG.heartbeatTimeout,
+      reconnectInterval:
+        connectionConfig.reconnectInterval ??
+        DEFAULT_CONNECTION_CONFIG.reconnectInterval,
     };
   }
 
@@ -434,20 +440,22 @@ export class ConfigManager {
   /**
    * 更新连接配置
    */
-  public updateConnectionConfig(connectionConfig: Partial<ConnectionConfig>): void {
+  public updateConnectionConfig(
+    connectionConfig: Partial<ConnectionConfig>
+  ): void {
     const config = this.getConfig();
     const currentConnectionConfig = config.connection || {};
-    
+
     const newConnectionConfig = {
       ...currentConnectionConfig,
       ...connectionConfig,
     };
-    
+
     const newConfig = {
       ...config,
       connection: newConnectionConfig,
     };
-    
+
     this.saveConfig(newConfig);
   }
 
