@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   type AppConfig,
   ConfigManager,
+  type ConnectionConfig,
   type MCPServerConfig,
   type MCPServerToolsConfig,
   type MCPToolConfig,
@@ -58,6 +59,11 @@ describe("ConfigManager", () => {
           },
         },
       },
+    },
+    connection: {
+      heartbeatInterval: 30000,
+      heartbeatTimeout: 10000,
+      reconnectInterval: 5000,
     },
   };
 
@@ -638,6 +644,172 @@ describe("ConfigManager", () => {
       expect(() => configManager.getConfig()).toThrow(
         "配置文件格式错误：mcpServers.invalid-server.command 无效"
       );
+    });
+  });
+
+  describe("连接配置管理", () => {
+    beforeEach(() => {
+      mockExistsSync.mockReturnValue(true);
+      mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+    });
+
+    describe("getConnectionConfig", () => {
+      it("应该返回完整的连接配置", () => {
+        const config = configManager.getConnectionConfig();
+
+        expect(config).toEqual({
+          heartbeatInterval: 30000,
+          heartbeatTimeout: 10000,
+          reconnectInterval: 5000,
+        });
+      });
+
+      it("应该为缺少连接配置的情况提供默认值", () => {
+        const configWithoutConnection = {
+          mcpEndpoint: "wss://api.example.com/mcp",
+          mcpServers: mockConfig.mcpServers,
+        };
+        mockReadFileSync.mockReturnValue(
+          JSON.stringify(configWithoutConnection)
+        );
+
+        const config = configManager.getConnectionConfig();
+
+        expect(config).toEqual({
+          heartbeatInterval: 30000,
+          heartbeatTimeout: 10000,
+          reconnectInterval: 5000,
+        });
+      });
+
+      it("应该为部分连接配置提供默认值", () => {
+        const configWithPartialConnection = {
+          ...mockConfig,
+          connection: {
+            heartbeatInterval: 15000, // 只设置了一个值
+          },
+        };
+        mockReadFileSync.mockReturnValue(
+          JSON.stringify(configWithPartialConnection)
+        );
+
+        const config = configManager.getConnectionConfig();
+
+        expect(config).toEqual({
+          heartbeatInterval: 15000, // 用户设置的值
+          heartbeatTimeout: 10000, // 默认值
+          reconnectInterval: 5000, // 默认值
+        });
+      });
+    });
+
+    describe("获取单个连接配置项", () => {
+      it("应该正确获取心跳检测间隔", () => {
+        expect(configManager.getHeartbeatInterval()).toBe(30000);
+      });
+
+      it("应该正确获取心跳超时时间", () => {
+        expect(configManager.getHeartbeatTimeout()).toBe(10000);
+      });
+
+      it("应该正确获取重连间隔", () => {
+        expect(configManager.getReconnectInterval()).toBe(5000);
+      });
+    });
+
+    describe("updateConnectionConfig", () => {
+      it("应该正确更新连接配置", () => {
+        const newConnectionConfig: Partial<ConnectionConfig> = {
+          heartbeatInterval: 45000,
+          reconnectInterval: 3000,
+        };
+
+        configManager.updateConnectionConfig(newConnectionConfig);
+
+        expect(mockWriteFileSync).toHaveBeenCalledWith(
+          "/test/cwd/xiaozhi.config.json",
+          expect.stringContaining('"heartbeatInterval": 45000'),
+          "utf8"
+        );
+        expect(mockWriteFileSync).toHaveBeenCalledWith(
+          "/test/cwd/xiaozhi.config.json",
+          expect.stringContaining('"reconnectInterval": 3000'),
+          "utf8"
+        );
+      });
+
+      it("应该保留现有连接配置的其他值", () => {
+        configManager.updateConnectionConfig({ heartbeatInterval: 45000 });
+
+        const writtenConfig = JSON.parse(
+          (mockWriteFileSync.mock.calls[0] as any)[1]
+        );
+
+        expect(writtenConfig.connection).toEqual({
+          heartbeatInterval: 45000, // 更新的值
+          heartbeatTimeout: 10000, // 保留的值
+          reconnectInterval: 5000, // 保留的值
+        });
+      });
+    });
+
+    describe("设置单个连接配置项", () => {
+      it("应该正确设置心跳检测间隔", () => {
+        configManager.setHeartbeatInterval(45000);
+
+        expect(mockWriteFileSync).toHaveBeenCalledWith(
+          "/test/cwd/xiaozhi.config.json",
+          expect.stringContaining('"heartbeatInterval": 45000'),
+          "utf8"
+        );
+      });
+
+      it("应该正确设置心跳超时时间", () => {
+        configManager.setHeartbeatTimeout(15000);
+
+        expect(mockWriteFileSync).toHaveBeenCalledWith(
+          "/test/cwd/xiaozhi.config.json",
+          expect.stringContaining('"heartbeatTimeout": 15000'),
+          "utf8"
+        );
+      });
+
+      it("应该正确设置重连间隔", () => {
+        configManager.setReconnectInterval(3000);
+
+        expect(mockWriteFileSync).toHaveBeenCalledWith(
+          "/test/cwd/xiaozhi.config.json",
+          expect.stringContaining('"reconnectInterval": 3000'),
+          "utf8"
+        );
+      });
+
+      it("应该为无效的心跳检测间隔抛出错误", () => {
+        expect(() => configManager.setHeartbeatInterval(0)).toThrow(
+          "心跳检测间隔必须大于0"
+        );
+        expect(() => configManager.setHeartbeatInterval(-1000)).toThrow(
+          "心跳检测间隔必须大于0"
+        );
+      });
+
+      it("应该为无效的心跳超时时间抛出错误", () => {
+        expect(() => configManager.setHeartbeatTimeout(0)).toThrow(
+          "心跳超时时间必须大于0"
+        );
+        expect(() => configManager.setHeartbeatTimeout(-500)).toThrow(
+          "心跳超时时间必须大于0"
+        );
+      });
+
+      it("应该为无效的重连间隔抛出错误", () => {
+        expect(() => configManager.setReconnectInterval(0)).toThrow(
+          "重连间隔必须大于0"
+        );
+        expect(() => configManager.setReconnectInterval(-2000)).toThrow(
+          "重连间隔必须大于0"
+        );
+      });
     });
   });
 });

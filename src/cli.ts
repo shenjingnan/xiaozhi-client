@@ -915,9 +915,52 @@ async function configCommand(key: string, value?: string): Promise<void> {
             );
           }
           break;
+        case "connection": {
+          spinner.succeed("配置信息");
+          const connectionConfig = configManager.getConnectionConfig();
+          console.log(chalk.green("连接配置:"));
+          console.log(
+            chalk.gray(
+              `  心跳检测间隔: ${connectionConfig.heartbeatInterval}ms`
+            )
+          );
+          console.log(
+            chalk.gray(`  心跳超时时间: ${connectionConfig.heartbeatTimeout}ms`)
+          );
+          console.log(
+            chalk.gray(`  重连间隔: ${connectionConfig.reconnectInterval}ms`)
+          );
+          break;
+        }
+        case "heartbeatInterval":
+          spinner.succeed("配置信息");
+          console.log(
+            chalk.green(
+              `心跳检测间隔: ${configManager.getHeartbeatInterval()}ms`
+            )
+          );
+          break;
+        case "heartbeatTimeout":
+          spinner.succeed("配置信息");
+          console.log(
+            chalk.green(
+              `心跳超时时间: ${configManager.getHeartbeatTimeout()}ms`
+            )
+          );
+          break;
+        case "reconnectInterval":
+          spinner.succeed("配置信息");
+          console.log(
+            chalk.green(`重连间隔: ${configManager.getReconnectInterval()}ms`)
+          );
+          break;
         default:
           spinner.fail(`未知的配置项: ${key}`);
-          console.log(chalk.yellow("支持的配置项: mcpEndpoint, mcpServers"));
+          console.log(
+            chalk.yellow(
+              "支持的配置项: mcpEndpoint, mcpServers, connection, heartbeatInterval, heartbeatTimeout, reconnectInterval"
+            )
+          );
           return;
       }
     } else {
@@ -927,9 +970,43 @@ async function configCommand(key: string, value?: string): Promise<void> {
           configManager.updateMcpEndpoint(value);
           spinner.succeed(`MCP 端点已更新为: ${value}`);
           break;
+        case "heartbeatInterval": {
+          const heartbeatInterval = Number.parseInt(value, 10);
+          if (Number.isNaN(heartbeatInterval) || heartbeatInterval <= 0) {
+            spinner.fail("心跳检测间隔必须是大于0的数字（毫秒）");
+            return;
+          }
+          configManager.setHeartbeatInterval(heartbeatInterval);
+          spinner.succeed(`心跳检测间隔已更新为: ${heartbeatInterval}ms`);
+          break;
+        }
+        case "heartbeatTimeout": {
+          const heartbeatTimeout = Number.parseInt(value, 10);
+          if (Number.isNaN(heartbeatTimeout) || heartbeatTimeout <= 0) {
+            spinner.fail("心跳超时时间必须是大于0的数字（毫秒）");
+            return;
+          }
+          configManager.setHeartbeatTimeout(heartbeatTimeout);
+          spinner.succeed(`心跳超时时间已更新为: ${heartbeatTimeout}ms`);
+          break;
+        }
+        case "reconnectInterval": {
+          const reconnectInterval = Number.parseInt(value, 10);
+          if (Number.isNaN(reconnectInterval) || reconnectInterval <= 0) {
+            spinner.fail("重连间隔必须是大于0的数字（毫秒）");
+            return;
+          }
+          configManager.setReconnectInterval(reconnectInterval);
+          spinner.succeed(`重连间隔已更新为: ${reconnectInterval}ms`);
+          break;
+        }
         default:
           spinner.fail(`配置项 ${key} 不支持通过命令行设置`);
-          console.log(chalk.yellow("支持设置的配置项: mcpEndpoint"));
+          console.log(
+            chalk.yellow(
+              "支持设置的配置项: mcpEndpoint, heartbeatInterval, heartbeatTimeout, reconnectInterval"
+            )
+          );
           return;
       }
     }

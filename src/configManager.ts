@@ -5,6 +5,13 @@ import { fileURLToPath } from "node:url";
 // 在 ESM 中，需要从 import.meta.url 获取当前文件目录
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+// 默认连接配置
+const DEFAULT_CONNECTION_CONFIG: Required<ConnectionConfig> = {
+  heartbeatInterval: 30000, // 30秒心跳间隔
+  heartbeatTimeout: 10000, // 10秒心跳超时
+  reconnectInterval: 5000, // 5秒重连间隔
+};
+
 // 配置文件接口定义
 export interface MCPServerConfig {
   command: string;
@@ -21,10 +28,17 @@ export interface MCPServerToolsConfig {
   tools: Record<string, MCPToolConfig>;
 }
 
+export interface ConnectionConfig {
+  heartbeatInterval?: number; // 心跳检测间隔（毫秒），默认30000
+  heartbeatTimeout?: number; // 心跳超时时间（毫秒），默认10000
+  reconnectInterval?: number; // 重连间隔（毫秒），默认5000
+}
+
 export interface AppConfig {
   mcpEndpoint: string;
   mcpServers: Record<string, MCPServerConfig>;
   mcpServerConfig?: Record<string, MCPServerToolsConfig>;
+  connection?: ConnectionConfig; // 连接配置（可选，用于向后兼容）
 }
 
 /**
@@ -380,6 +394,99 @@ export class ConfigManager {
    */
   public getDefaultConfigPath(): string {
     return this.defaultConfigPath;
+  }
+
+  /**
+   * 获取连接配置（包含默认值）
+   */
+  public getConnectionConfig(): Required<ConnectionConfig> {
+    const config = this.getConfig();
+    const connectionConfig = config.connection || {};
+
+    return {
+      heartbeatInterval:
+        connectionConfig.heartbeatInterval ??
+        DEFAULT_CONNECTION_CONFIG.heartbeatInterval,
+      heartbeatTimeout:
+        connectionConfig.heartbeatTimeout ??
+        DEFAULT_CONNECTION_CONFIG.heartbeatTimeout,
+      reconnectInterval:
+        connectionConfig.reconnectInterval ??
+        DEFAULT_CONNECTION_CONFIG.reconnectInterval,
+    };
+  }
+
+  /**
+   * 获取心跳检测间隔（毫秒）
+   */
+  public getHeartbeatInterval(): number {
+    return this.getConnectionConfig().heartbeatInterval;
+  }
+
+  /**
+   * 获取心跳超时时间（毫秒）
+   */
+  public getHeartbeatTimeout(): number {
+    return this.getConnectionConfig().heartbeatTimeout;
+  }
+
+  /**
+   * 获取重连间隔（毫秒）
+   */
+  public getReconnectInterval(): number {
+    return this.getConnectionConfig().reconnectInterval;
+  }
+
+  /**
+   * 更新连接配置
+   */
+  public updateConnectionConfig(
+    connectionConfig: Partial<ConnectionConfig>
+  ): void {
+    const config = this.getConfig();
+    const currentConnectionConfig = config.connection || {};
+
+    const newConnectionConfig = {
+      ...currentConnectionConfig,
+      ...connectionConfig,
+    };
+
+    const newConfig = {
+      ...config,
+      connection: newConnectionConfig,
+    };
+
+    this.saveConfig(newConfig);
+  }
+
+  /**
+   * 设置心跳检测间隔
+   */
+  public setHeartbeatInterval(interval: number): void {
+    if (interval <= 0) {
+      throw new Error("心跳检测间隔必须大于0");
+    }
+    this.updateConnectionConfig({ heartbeatInterval: interval });
+  }
+
+  /**
+   * 设置心跳超时时间
+   */
+  public setHeartbeatTimeout(timeout: number): void {
+    if (timeout <= 0) {
+      throw new Error("心跳超时时间必须大于0");
+    }
+    this.updateConnectionConfig({ heartbeatTimeout: timeout });
+  }
+
+  /**
+   * 设置重连间隔
+   */
+  public setReconnectInterval(interval: number): void {
+    if (interval <= 0) {
+      throw new Error("重连间隔必须大于0");
+    }
+    this.updateConnectionConfig({ reconnectInterval: interval });
   }
 }
 
