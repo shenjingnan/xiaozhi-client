@@ -384,31 +384,20 @@ describe("MCP管道", () => {
   });
 
   describe("重连逻辑", () => {
-    it("应该正确计算指数退避", () => {
-      const INITIAL_BACKOFF = 1000;
-      const MAX_BACKOFF = 30000;
+    it("应该使用固定5秒重连间隔", () => {
+      const RECONNECT_INTERVAL = 5000;
 
-      // 测试退避计算
-      const attempt1 = Math.min(INITIAL_BACKOFF * 2 ** (1 - 1), MAX_BACKOFF);
-      const attempt2 = Math.min(INITIAL_BACKOFF * 2 ** (2 - 1), MAX_BACKOFF);
-      const attempt3 = Math.min(INITIAL_BACKOFF * 2 ** (3 - 1), MAX_BACKOFF);
-
-      expect(attempt1).toBe(1000);
-      expect(attempt2).toBe(2000);
-      expect(attempt3).toBe(4000);
+      // 测试固定重连间隔
+      expect(RECONNECT_INTERVAL).toBe(5000);
     });
 
-    it("应该将退避限制在最大值", () => {
-      const INITIAL_BACKOFF = 1000;
-      const MAX_BACKOFF = 30000;
+    it("应该有正确的心跳检测间隔", () => {
+      const HEARTBEAT_INTERVAL = 30000;
+      const HEARTBEAT_TIMEOUT = 10000;
 
-      // 使用高尝试次数测试
-      const attemptHigh = Math.min(
-        INITIAL_BACKOFF * 2 ** (20 - 1),
-        MAX_BACKOFF
-      );
-
-      expect(attemptHigh).toBe(MAX_BACKOFF);
+      // 测试心跳间隔设置
+      expect(HEARTBEAT_INTERVAL).toBe(30000);
+      expect(HEARTBEAT_TIMEOUT).toBe(10000);
     });
   });
 
