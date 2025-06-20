@@ -271,7 +271,7 @@ async function startService(daemon = false): Promise<void> {
       const logStream = fs.createWriteStream(LOG_FILE, { flags: "a" });
       child.stdout?.pipe(logStream);
       child.stderr?.pipe(logStream);
-      
+
       // 监听进程异常退出
       child.on("exit", (code, signal) => {
         if (code !== 0 && code !== null) {
@@ -281,7 +281,7 @@ async function startService(daemon = false): Promise<void> {
         }
         cleanupPidFile();
       });
-      
+
       // 监听进程错误
       child.on("error", (error) => {
         const errorLog = `\n[${new Date().toISOString()}] 后台服务启动错误: ${error.message}\n`;
