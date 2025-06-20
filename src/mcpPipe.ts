@@ -52,10 +52,7 @@ export class Logger {
 
 const logger = new Logger("MCP_PIPE");
 
-// Reconnection settings - 固定5秒重连间隔
-const RECONNECT_INTERVAL = 5000; // 固定5秒重连间隔
-const HEARTBEAT_INTERVAL = 30000; // 心跳检测间隔30秒
-const HEARTBEAT_TIMEOUT = 10000; // 心跳超时10秒
+// Reconnection settings - 从配置文件读取，有默认值兜底
 let reconnectAttempt = 0;
 
 export class MCPPipe {
@@ -70,6 +67,11 @@ export class MCPPipe {
   private heartbeatTimeoutTimer?: NodeJS.Timeout;
   private reconnectTimer?: NodeJS.Timeout;
   private mcpProcessRestartAttempts: number;
+  private connectionConfig: {
+    heartbeatInterval: number;
+    heartbeatTimeout: number;
+    reconnectInterval: number;
+  };
 
   constructor(mcpScript: string, endpointUrl: string) {
     this.mcpScript = mcpScript;
@@ -79,6 +81,26 @@ export class MCPPipe {
     this.shouldReconnect = true;
     this.isConnected = false;
     this.mcpProcessRestartAttempts = 0;
+    
+    // 获取连接配置，如果配置文件不存在则使用默认值
+    try {
+      this.connectionConfig = configManager.getConnectionConfig();
+      logger.info(
+        `连接配置: 心跳间隔=${this.connectionConfig.heartbeatInterval}ms, ` +
+        `心跳超时=${this.connectionConfig.heartbeatTimeout}ms, ` +
+        `重连间隔=${this.connectionConfig.reconnectInterval}ms`
+      );
+    } catch (error) {
+      // 如果无法获取配置（如配置文件不存在），使用默认值
+      this.connectionConfig = {
+        heartbeatInterval: 30000,
+        heartbeatTimeout: 10000,
+        reconnectInterval: 5000,
+      };
+      logger.warning(
+        `无法获取连接配置，使用默认值: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
   }
 
   async start() {
@@ -169,7 +191,7 @@ export class MCPPipe {
     reconnectAttempt++;
 
     logger.info(
-      `Scheduling reconnection attempt ${reconnectAttempt} in ${(RECONNECT_INTERVAL / 1000).toFixed(2)} seconds...`
+      `Scheduling reconnection attempt ${reconnectAttempt} in ${(this.connectionConfig.reconnectInterval / 1000).toFixed(2)} seconds...`
     );
 
     this.reconnectTimer = setTimeout(() => {
@@ -181,7 +203,7 @@ export class MCPPipe {
         }
         this.connectToServer();
       }
-    }, RECONNECT_INTERVAL);
+    }, this.connectionConfig.reconnectInterval);
   }
 
   // 心跳检测机制
@@ -202,9 +224,9 @@ export class MCPPipe {
           if (this.websocket) {
             this.websocket.terminate();
           }
-        }, HEARTBEAT_TIMEOUT);
+        }, this.connectionConfig.heartbeatTimeout);
       }
-    }, HEARTBEAT_INTERVAL);
+    }, this.connectionConfig.heartbeatInterval);
   }
 
   private stopHeartbeat() {
