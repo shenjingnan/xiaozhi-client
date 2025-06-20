@@ -260,6 +260,7 @@ async function startService(daemon = false): Promise<void> {
         env: {
           ...process.env,
           XIAOZHI_CONFIG_DIR: process.cwd(), // 传递用户的当前工作目录
+          XIAOZHI_DAEMON: "true", // 标记这是守护进程模式
         },
       });
 
@@ -270,6 +271,25 @@ async function startService(daemon = false): Promise<void> {
       const logStream = fs.createWriteStream(LOG_FILE, { flags: "a" });
       child.stdout?.pipe(logStream);
       child.stderr?.pipe(logStream);
+      
+      // 监听进程异常退出
+      child.on("exit", (code, signal) => {
+        if (code !== 0 && code !== null) {
+          // 进程异常退出，记录日志
+          const errorLog = `\n[${new Date().toISOString()}] 后台服务异常退出 (代码: ${code}, 信号: ${signal})\n`;
+          fs.appendFileSync(LOG_FILE, errorLog);
+        }
+        cleanupPidFile();
+      });
+      
+      // 监听进程错误
+      child.on("error", (error) => {
+        const errorLog = `\n[${new Date().toISOString()}] 后台服务启动错误: ${error.message}\n`;
+        fs.appendFileSync(LOG_FILE, errorLog);
+        cleanupPidFile();
+        spinner.fail(`后台服务启动失败: ${error.message}`);
+        return;
+      });
 
       // 分离进程
       child.unref();

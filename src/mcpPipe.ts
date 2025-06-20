@@ -52,11 +52,11 @@ export class Logger {
 
 const logger = new Logger("MCP_PIPE");
 
-// Reconnection settings
-const INITIAL_BACKOFF = 1000; // Initial wait time in milliseconds
-const MAX_BACKOFF = 30000; // Maximum wait time in milliseconds (reduced)
+// Reconnection settings - 固定5秒重连间隔
+const RECONNECT_INTERVAL = 5000; // 固定5秒重连间隔
+const HEARTBEAT_INTERVAL = 30000; // 心跳检测间隔30秒
+const HEARTBEAT_TIMEOUT = 10000; // 心跳超时10秒
 let reconnectAttempt = 0;
-let backoff = INITIAL_BACKOFF;
 
 export class MCPPipe {
   private mcpScript: string;
@@ -66,6 +66,10 @@ export class MCPPipe {
   private shouldReconnect: boolean;
   private isConnected: boolean;
   private shutdownResolve?: () => void;
+  private heartbeatTimer?: NodeJS.Timeout;
+  private heartbeatTimeoutTimer?: NodeJS.Timeout;
+  private reconnectTimer?: NodeJS.Timeout;
+  private mcpProcessRestartAttempts: number;
 
   constructor(mcpScript: string, endpointUrl: string) {
     this.mcpScript = mcpScript;
@@ -74,6 +78,7 @@ export class MCPPipe {
     this.websocket = null;
     this.shouldReconnect = true;
     this.isConnected = false;
+    this.mcpProcessRestartAttempts = 0;
   }
 
   async start() {
@@ -105,7 +110,10 @@ export class MCPPipe {
 
       // Reset reconnection counter
       reconnectAttempt = 0;
-      backoff = INITIAL_BACKOFF;
+      this.mcpProcessRestartAttempts = 0;
+      
+      // 启动心跳检测
+      this.startHeartbeat();
     });
 
     this.websocket.on("message", (data: WebSocket.Data) => {
@@ -122,6 +130,9 @@ export class MCPPipe {
       logger.error(`WebSocket connection closed: ${code} ${reason}`);
       this.isConnected = false;
       this.websocket = null;
+      
+      // 停止心跳检测
+      this.stopHeartbeat();
 
       // Only reconnect if we should and it's not a permanent error
       if (this.shouldReconnect && code !== 4004) {
@@ -132,27 +143,103 @@ export class MCPPipe {
     this.websocket.on("error", (error: Error) => {
       logger.error(`WebSocket error: ${error.message}`);
       this.isConnected = false;
+      
+      // 网络错误时停止心跳检测
+      this.stopHeartbeat();
+    });
+
+    // 添加 pong 响应处理
+    this.websocket.on("pong", () => {
+      // 收到 pong 响应，清除心跳超时定时器
+      if (this.heartbeatTimeoutTimer) {
+        clearTimeout(this.heartbeatTimeoutTimer);
+        this.heartbeatTimeoutTimer = undefined;
+      }
     });
   }
 
   scheduleReconnect() {
     if (!this.shouldReconnect) return;
+    
+    // 清除之前的重连定时器
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+    }
 
     reconnectAttempt++;
-    const waitTime = Math.min(
-      backoff * 2 ** (reconnectAttempt - 1),
-      MAX_BACKOFF
-    );
-
+    
     logger.info(
-      `Scheduling reconnection attempt ${reconnectAttempt} in ${(waitTime / 1000).toFixed(2)} seconds...`
+      `Scheduling reconnection attempt ${reconnectAttempt} in ${(RECONNECT_INTERVAL / 1000).toFixed(2)} seconds...`
     );
 
-    setTimeout(() => {
+    this.reconnectTimer = setTimeout(() => {
       if (this.shouldReconnect) {
+        // 如果MCP进程不存在，先尝试重启
+        if (!this.process || this.process.killed) {
+          logger.info("MCP process not running, attempting to restart...");
+          this.restartMCPProcess();
+        }
         this.connectToServer();
       }
-    }, waitTime);
+    }, RECONNECT_INTERVAL);
+  }
+
+  // 心跳检测机制
+  private startHeartbeat() {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+    }
+    
+    this.heartbeatTimer = setInterval(() => {
+      if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
+        // 发送 ping 并设置超时检测
+        this.websocket.ping();
+        
+        // 设置心跳超时检测
+        this.heartbeatTimeoutTimer = setTimeout(() => {
+          logger.warning("Heartbeat timeout, connection may be lost");
+          // 心跳超时，主动关闭连接触发重连
+          if (this.websocket) {
+            this.websocket.terminate();
+          }
+        }, HEARTBEAT_TIMEOUT);
+      }
+    }, HEARTBEAT_INTERVAL);
+  }
+  
+  private stopHeartbeat() {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = undefined;
+    }
+    if (this.heartbeatTimeoutTimer) {
+      clearTimeout(this.heartbeatTimeoutTimer);
+      this.heartbeatTimeoutTimer = undefined;
+    }
+  }
+  
+  // MCP进程重启功能
+  private restartMCPProcess() {
+    if (this.mcpProcessRestartAttempts >= 3) {
+      logger.error("MCP process restart attempts exceeded, giving up");
+      return;
+    }
+    
+    this.mcpProcessRestartAttempts++;
+    logger.info(`Attempting to restart MCP process (attempt ${this.mcpProcessRestartAttempts})`);
+    
+    // 清理现有进程
+    if (this.process) {
+      try {
+        this.process.kill("SIGTERM");
+      } catch (error) {
+        logger.warning(`Error killing existing MCP process: ${error}`);
+      }
+      this.process = null;
+    }
+    
+    // 重新启动进程
+    this.startMCPProcess();
   }
 
   startMCPProcess() {
@@ -186,13 +273,15 @@ export class MCPPipe {
     this.process.on(
       "exit",
       (code: number | null, signal: NodeJS.Signals | null) => {
-        logger.info(
+        logger.warning(
           `${this.mcpScript} process exited with code ${code}, signal ${signal}`
         );
         this.process = null;
-        this.shouldReconnect = false;
-        if (this.websocket) {
-          this.websocket.close();
+        
+        // 如果不是主动关闭且应该重连，则尝试重启MCP进程
+        if (this.shouldReconnect && signal !== "SIGTERM" && signal !== "SIGKILL") {
+          logger.info("MCP process unexpectedly exited, will attempt restart on next reconnection");
+          // 不立即重启，而是在下次重连时处理
         }
       }
     );
@@ -201,14 +290,24 @@ export class MCPPipe {
     this.process.on("error", (error: Error) => {
       logger.error(`Process error: ${error.message}`);
       this.process = null;
-      this.shouldReconnect = false;
-      if (this.websocket) {
-        this.websocket.close();
+      
+      // 进程错误时不停止重连，让重连机制处理
+      if (this.shouldReconnect) {
+        logger.info("MCP process error occurred, will attempt restart on next reconnection");
       }
     });
   }
 
   cleanup() {
+    // 停止心跳检测
+    this.stopHeartbeat();
+    
+    // 清除重连定时器
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = undefined;
+    }
+    
     if (this.process) {
       logger.info(`Terminating ${this.mcpScript} process`);
       try {
@@ -229,6 +328,11 @@ export class MCPPipe {
     }
 
     if (this.websocket) {
+      try {
+        this.websocket.close();
+      } catch (error) {
+        logger.warning(`Error closing websocket: ${error}`);
+      }
       this.websocket = null;
     }
 
@@ -255,6 +359,9 @@ export class MCPPipe {
 
 // Signal handlers
 export function setupSignalHandlers(mcpPipe: MCPPipe): void {
+  // 检查是否为守护进程模式
+  const isDaemon = process.env.XIAOZHI_DAEMON === "true";
+  
   process.on("SIGINT", () => {
     logger.info("Received interrupt signal, shutting down...");
     mcpPipe.shutdown();
@@ -264,6 +371,31 @@ export function setupSignalHandlers(mcpPipe: MCPPipe): void {
     logger.info("Received terminate signal, shutting down...");
     mcpPipe.shutdown();
   });
+  
+  // 守护进程模式下的额外信号处理
+  if (isDaemon) {
+    // 忽略 SIGHUP 信号（终端关闭）
+    process.on("SIGHUP", () => {
+      logger.info("Received SIGHUP signal (terminal closed), continuing in daemon mode...");
+      // 守护进程不应该因为终端关闭而退出
+    });
+    
+    // 处理未捕获的异常
+    process.on("uncaughtException", (error) => {
+      logger.error(`Uncaught exception in daemon mode: ${error.message}`);
+      logger.error(error.stack || "No stack trace available");
+      // 守护进程遇到未捕获的异常时不退出，而是继续运行
+    });
+    
+    // 处理未处理的 Promise 拒绝
+    process.on("unhandledRejection", (reason, promise) => {
+      logger.error(`Unhandled promise rejection in daemon mode: ${reason}`);
+      logger.error(`Promise: ${promise}`);
+      // 守护进程遇到未处理的 Promise 拒绝时不退出
+    });
+    
+    logger.info("Daemon mode signal handlers initialized");
+  }
 }
 
 // Main execution
