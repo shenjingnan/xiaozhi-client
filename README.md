@@ -90,7 +90,7 @@ xiaozhi restart
 xiaozhi mcp list
 
 # 列出所有mcp所提供的tools
-xiaozhi mcp --tools
+xiaozhi mcp list --tools
 ```
 
 ## 路线图
