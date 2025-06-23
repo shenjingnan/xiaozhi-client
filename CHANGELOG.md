@@ -1,3 +1,10 @@
+## [1.0.9](https://github.com/shenjingnan/xiaozhi-client/compare/v1.0.8...v1.0.9) (2025-06-23)
+
+
+### Features
+
+* **ci:** 实现 PR 合并后自动发布正式版 ([#74](https://github.com/shenjingnan/xiaozhi-client/issues/74)) ([70b03b8](https://github.com/shenjingnan/xiaozhi-client/commit/70b03b8b07e883adcad4a54e12135178b48b87fc))
+
 ## [1.0.8](https://github.com/shenjingnan/xiaozhi-client/compare/v1.0.7...v1.0.8) (2025-06-23)
 
 
