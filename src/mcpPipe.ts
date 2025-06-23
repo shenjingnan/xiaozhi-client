@@ -17,40 +17,19 @@ import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
 import WebSocket from "ws";
 import { configManager } from "./configManager";
+import { logger as globalLogger } from "./logger";
 
 // Load environment variables
 config();
 
-// Logger utility
-export class Logger {
-  private name: string;
+// 为 MCP_PIPE 创建带标签的 logger
+const logger = globalLogger.withTag("MCP_PIPE");
 
-  constructor(name: string) {
-    this.name = name;
-  }
-
-  info(message: string): void {
-    const timestamp = new Date().toISOString();
-    console.error(`${timestamp} - ${this.name} - INFO - ${message}`);
-  }
-
-  error(message: string): void {
-    const timestamp = new Date().toISOString();
-    console.error(`${timestamp} - ${this.name} - ERROR - ${message}`);
-  }
-
-  warning(message: string): void {
-    const timestamp = new Date().toISOString();
-    console.error(`${timestamp} - ${this.name} - WARNING - ${message}`);
-  }
-
-  debug(message: string): void {
-    const timestamp = new Date().toISOString();
-    console.error(`${timestamp} - ${this.name} - DEBUG - ${message}`);
-  }
+// 如果在守护进程模式下运行，初始化日志文件
+if (process.env.XIAOZHI_DAEMON === "true" && process.env.XIAOZHI_CONFIG_DIR) {
+  globalLogger.initLogFile(process.env.XIAOZHI_CONFIG_DIR);
+  globalLogger.enableFileLogging(true);
 }
-
-const logger = new Logger("MCP_PIPE");
 
 // Reconnection settings - 从配置文件读取，有默认值兜底
 let reconnectAttempt = 0;
@@ -97,7 +76,7 @@ export class MCPPipe {
         heartbeatTimeout: 10000,
         reconnectInterval: 5000,
       };
-      logger.warning(
+      logger.warn(
         `无法获取连接配置，使用默认值: ${error instanceof Error ? error.message : String(error)}`
       );
     }
@@ -122,12 +101,12 @@ export class MCPPipe {
       return;
     }
 
-    logger.info("Connecting to WebSocket server...");
+    logger.info("正在连接 WebSocket 服务器...");
 
     this.websocket = new WebSocket(this.endpointUrl);
 
     this.websocket.on("open", () => {
-      logger.info("Successfully connected to WebSocket server");
+      logger.info("成功连接到 WebSocket 服务器");
       this.isConnected = true;
 
       // Reset reconnection counter
@@ -149,7 +128,7 @@ export class MCPPipe {
     });
 
     this.websocket.on("close", (code: number, reason: Buffer) => {
-      logger.error(`WebSocket connection closed: ${code} ${reason}`);
+      logger.error(`WebSocket 连接已关闭: ${code} ${reason}`);
       this.isConnected = false;
       this.websocket = null;
 
@@ -163,7 +142,7 @@ export class MCPPipe {
     });
 
     this.websocket.on("error", (error: Error) => {
-      logger.error(`WebSocket error: ${error.message}`);
+      logger.error(`WebSocket 错误: ${error.message}`);
       this.isConnected = false;
 
       // 网络错误时停止心跳检测
@@ -191,14 +170,14 @@ export class MCPPipe {
     reconnectAttempt++;
 
     logger.info(
-      `Scheduling reconnection attempt ${reconnectAttempt} in ${(this.connectionConfig.reconnectInterval / 1000).toFixed(2)} seconds...`
+      `计划在 ${(this.connectionConfig.reconnectInterval / 1000).toFixed(2)} 秒后进行第 ${reconnectAttempt} 次重连尝试...`
     );
 
     this.reconnectTimer = setTimeout(() => {
       if (this.shouldReconnect) {
         // 如果MCP进程不存在，先尝试重启
         if (!this.process || this.process.killed) {
-          logger.info("MCP process not running, attempting to restart...");
+          logger.info("MCP 进程未运行，正在尝试重启...");
           this.restartMCPProcess();
         }
         this.connectToServer();
@@ -219,7 +198,7 @@ export class MCPPipe {
 
         // 设置心跳超时检测
         this.heartbeatTimeoutTimer = setTimeout(() => {
-          logger.warning("Heartbeat timeout, connection may be lost");
+          logger.warn("心跳超时，连接可能已断开");
           // 心跳超时，主动关闭连接触发重连
           if (this.websocket) {
             this.websocket.terminate();
@@ -243,13 +222,13 @@ export class MCPPipe {
   // MCP进程重启功能
   private restartMCPProcess() {
     if (this.mcpProcessRestartAttempts >= 3) {
-      logger.error("MCP process restart attempts exceeded, giving up");
+      logger.error("MCP 进程重启尝试次数超限，放弃重启");
       return;
     }
 
     this.mcpProcessRestartAttempts++;
     logger.info(
-      `Attempting to restart MCP process (attempt ${this.mcpProcessRestartAttempts})`
+      `正在尝试重启 MCP 进程（第 ${this.mcpProcessRestartAttempts} 次尝试）`
     );
 
     // 清理现有进程
@@ -257,7 +236,7 @@ export class MCPPipe {
       try {
         this.process.kill("SIGTERM");
       } catch (error) {
-        logger.warning(`Error killing existing MCP process: ${error}`);
+        logger.warn(`终止现有 MCP 进程时出错: ${error}`);
       }
       this.process = null;
     }
@@ -268,11 +247,11 @@ export class MCPPipe {
 
   startMCPProcess() {
     if (this.process) {
-      logger.info(`${this.mcpScript} process already running`);
+      logger.info(`${this.mcpScript} 进程已在运行`);
       return;
     }
 
-    logger.info(`Starting ${this.mcpScript} process`);
+    logger.info(`正在启动 ${this.mcpScript} 进程`);
 
     this.process = spawn("node", [this.mcpScript], {
       stdio: ["pipe", "pipe", "pipe"],
@@ -297,8 +276,8 @@ export class MCPPipe {
     this.process.on(
       "exit",
       (code: number | null, signal: NodeJS.Signals | null) => {
-        logger.warning(
-          `${this.mcpScript} process exited with code ${code}, signal ${signal}`
+        logger.warn(
+          `${this.mcpScript} 进程已退出，退出码: ${code}, 信号: ${signal}`
         );
         this.process = null;
 
@@ -308,9 +287,7 @@ export class MCPPipe {
           signal !== "SIGTERM" &&
           signal !== "SIGKILL"
         ) {
-          logger.info(
-            "MCP process unexpectedly exited, will attempt restart on next reconnection"
-          );
+          logger.info("MCP 进程意外退出，将在下次重连时尝试重启");
           // 不立即重启，而是在下次重连时处理
         }
       }
@@ -318,14 +295,12 @@ export class MCPPipe {
 
     // Handle process error
     this.process.on("error", (error: Error) => {
-      logger.error(`Process error: ${error.message}`);
+      logger.error(`进程错误: ${error.message}`);
       this.process = null;
 
       // 进程错误时不停止重连，让重连机制处理
       if (this.shouldReconnect) {
-        logger.info(
-          "MCP process error occurred, will attempt restart on next reconnection"
-        );
+        logger.info("MCP 进程发生错误，将在下次重连时尝试重启");
       }
     });
   }
@@ -341,7 +316,7 @@ export class MCPPipe {
     }
 
     if (this.process) {
-      logger.info(`Terminating ${this.mcpScript} process`);
+      logger.info(`正在终止 ${this.mcpScript} 进程`);
       try {
         this.process.kill("SIGTERM");
 
@@ -353,7 +328,7 @@ export class MCPPipe {
         }, 5000);
       } catch (error) {
         logger.error(
-          `Error terminating process: ${error instanceof Error ? error.message : String(error)}`
+          `终止进程时出错: ${error instanceof Error ? error.message : String(error)}`
         );
       }
       this.process = null;
@@ -363,7 +338,7 @@ export class MCPPipe {
       try {
         this.websocket.close();
       } catch (error) {
-        logger.warning(`Error closing websocket: ${error}`);
+        logger.warn(`关闭 WebSocket 时出错: ${error}`);
       }
       this.websocket = null;
     }
@@ -376,7 +351,7 @@ export class MCPPipe {
   }
 
   shutdown() {
-    logger.info("Shutting down MCP Pipe...");
+    logger.info("正在关闭 MCP Pipe...");
     this.shouldReconnect = false;
     this.cleanup();
     if (this.websocket) {
@@ -395,12 +370,12 @@ export function setupSignalHandlers(mcpPipe: MCPPipe): void {
   const isDaemon = process.env.XIAOZHI_DAEMON === "true";
 
   process.on("SIGINT", () => {
-    logger.info("Received interrupt signal, shutting down...");
+    logger.info("收到中断信号，正在关闭...");
     mcpPipe.shutdown();
   });
 
   process.on("SIGTERM", () => {
-    logger.info("Received terminate signal, shutting down...");
+    logger.info("收到终止信号，正在关闭...");
     mcpPipe.shutdown();
   });
 
@@ -409,26 +384,26 @@ export function setupSignalHandlers(mcpPipe: MCPPipe): void {
     // 忽略 SIGHUP 信号（终端关闭）
     process.on("SIGHUP", () => {
       logger.info(
-        "Received SIGHUP signal (terminal closed), continuing in daemon mode..."
+        "收到 SIGHUP 信号（终端已关闭），继续在守护进程模式下运行..."
       );
       // 守护进程不应该因为终端关闭而退出
     });
 
     // 处理未捕获的异常
     process.on("uncaughtException", (error) => {
-      logger.error(`Uncaught exception in daemon mode: ${error.message}`);
+      logger.error(`守护进程模式下的未捕获异常: ${error.message}`);
       logger.error(error.stack || "No stack trace available");
       // 守护进程遇到未捕获的异常时不退出，而是继续运行
     });
 
     // 处理未处理的 Promise 拒绝
     process.on("unhandledRejection", (reason, promise) => {
-      logger.error(`Unhandled promise rejection in daemon mode: ${reason}`);
+      logger.error(`守护进程模式下的未处理 Promise 拒绝: ${reason}`);
       logger.error(`Promise: ${promise}`);
       // 守护进程遇到未处理的 Promise 拒绝时不退出
     });
 
-    logger.info("Daemon mode signal handlers initialized");
+    logger.info("守护进程模式信号处理器已初始化");
   }
 }
 
@@ -436,7 +411,7 @@ export function setupSignalHandlers(mcpPipe: MCPPipe): void {
 async function main() {
   // Check command line arguments
   if (process.argv.length < 3) {
-    logger.error("Usage: node mcp_pipe.js <mcp_script>");
+    logger.error("用法: node mcp_pipe.js <mcp_script>");
     process.exit(1);
   }
 
@@ -510,7 +485,7 @@ async function main() {
     await mcpPipe.start();
   } catch (error) {
     logger.error(
-      `Program execution error: ${error instanceof Error ? error.message : String(error)}`
+      `程序执行错误: ${error instanceof Error ? error.message : String(error)}`
     );
     process.exit(1);
   }
@@ -525,7 +500,7 @@ const argv1Path = process.argv[1];
 if (scriptPath === argv1Path) {
   main().catch((error) => {
     logger.error(
-      `Unhandled error: ${error instanceof Error ? error.message : String(error)}`
+      `未处理的错误: ${error instanceof Error ? error.message : String(error)}`
     );
     process.exit(1);
   });

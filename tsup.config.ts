@@ -39,6 +39,7 @@ export default defineConfig({
     "src/configManager.ts",
     "src/mcpCommands.ts",
     "src/autoCompletion.ts",
+    "src/logger.ts",
   ],
   format: ["esm"],
   target: "node18",

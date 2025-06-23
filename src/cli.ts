@@ -10,6 +10,7 @@ import { Command } from "commander";
 import ora from "ora";
 import { setupAutoCompletion, showCompletionHelp } from "./autoCompletion";
 import { configManager } from "./configManager";
+import { logger } from "./logger";
 import { listMcpServers, listServerTools, setToolEnabled } from "./mcpCommands";
 
 const program = new Command();
@@ -48,14 +49,13 @@ export function getVersion(): string {
     // 如果都找不到，返回默认版本
     return "unknown";
   } catch (error) {
-    console.warn("Warning: Could not read version from package.json:", error);
+    console.warn("无法从 package.json 读取版本信息:", error);
     return "unknown";
   }
 }
 
 // PID 文件路径
 const PID_FILE = path.join(os.tmpdir(), `${SERVICE_NAME}.pid`);
-const LOG_FILE = path.join(os.tmpdir(), `${SERVICE_NAME}.log`);
 
 interface ServiceStatus {
   running: boolean;
@@ -267,8 +267,14 @@ async function startService(daemon = false): Promise<void> {
       // 保存 PID 信息
       savePidInfo(child.pid!, "daemon");
 
-      // 设置日志输出
-      const logStream = fs.createWriteStream(LOG_FILE, { flags: "a" });
+      // 初始化日志文件
+      const projectDir = process.cwd();
+      logger.initLogFile(projectDir);
+      logger.enableFileLogging(true);
+
+      // 设置日志输出到文件
+      const logFilePath = path.join(projectDir, "xiaozhi.log");
+      const logStream = fs.createWriteStream(logFilePath, { flags: "a" });
       child.stdout?.pipe(logStream);
       child.stderr?.pipe(logStream);
 
@@ -276,16 +282,14 @@ async function startService(daemon = false): Promise<void> {
       child.on("exit", (code, signal) => {
         if (code !== 0 && code !== null) {
           // 进程异常退出，记录日志
-          const errorLog = `\n[${new Date().toISOString()}] 后台服务异常退出 (代码: ${code}, 信号: ${signal})\n`;
-          fs.appendFileSync(LOG_FILE, errorLog);
+          logger.error(`后台服务异常退出 (代码: ${code}, 信号: ${signal})`);
         }
         cleanupPidFile();
       });
 
       // 监听进程错误
       child.on("error", (error) => {
-        const errorLog = `\n[${new Date().toISOString()}] 后台服务启动错误: ${error.message}\n`;
-        fs.appendFileSync(LOG_FILE, errorLog);
+        logger.error(`后台服务启动错误: ${error.message}`);
         cleanupPidFile();
         spinner.fail(`后台服务启动失败: ${error.message}`);
         return;
@@ -295,7 +299,7 @@ async function startService(daemon = false): Promise<void> {
       child.unref();
 
       spinner.succeed(`服务已在后台启动 (PID: ${child.pid})`);
-      console.log(chalk.gray(`日志文件: ${LOG_FILE}`));
+      console.log(chalk.gray(`日志文件: ${logFilePath}`));
       console.log(chalk.gray(`使用 'xiaozhi attach' 可以查看实时日志`));
     } else {
       // 前台模式
@@ -427,7 +431,8 @@ async function checkStatus(): Promise<void> {
       );
 
       if (status.mode === "daemon") {
-        console.log(chalk.gray(`   日志文件: ${LOG_FILE}`));
+        const logFilePath = path.join(process.cwd(), "xiaozhi.log");
+        console.log(chalk.gray(`   日志文件: ${logFilePath}`));
       }
     } else {
       spinner.succeed("服务状态");
@@ -465,14 +470,15 @@ async function attachService(): Promise<void> {
     console.log(chalk.gray("=".repeat(50)));
 
     // 显示日志文件内容
-    if (fs.existsSync(LOG_FILE)) {
+    const logFilePath = path.join(process.cwd(), "xiaozhi.log");
+    if (fs.existsSync(logFilePath)) {
       // 跨平台的日志查看实现
       if (process.platform === "win32") {
         // Windows 使用 PowerShell 的 Get-Content -Wait
         const { spawn } = await import("node:child_process");
         const tail = spawn(
           "powershell",
-          ["-Command", `Get-Content -Path "${LOG_FILE}" -Wait`],
+          ["-Command", `Get-Content -Path "${logFilePath}" -Wait`],
           { stdio: "inherit" }
         );
 
@@ -489,7 +495,7 @@ async function attachService(): Promise<void> {
       } else {
         // Unix/Linux/macOS 使用 tail -f
         const { spawn } = await import("node:child_process");
-        const tail = spawn("tail", ["-f", LOG_FILE], { stdio: "inherit" });
+        const tail = spawn("tail", ["-f", logFilePath], { stdio: "inherit" });
 
         // 处理中断信号
         process.on("SIGINT", () => {
@@ -804,6 +810,12 @@ async function createProject(
         "pnpm-lock.yaml",
       ]);
 
+      // 创建日志文件
+      const logFilePath = path.join(targetPath, "xiaozhi.log");
+      if (!fs.existsSync(logFilePath)) {
+        fs.writeFileSync(logFilePath, "", "utf8");
+      }
+
       spinner.succeed(`项目 "${projectName}" 创建成功`);
 
       console.log(chalk.green("✅ 项目创建完成!"));
@@ -823,6 +835,10 @@ async function createProject(
 
       // 创建基本的 xiaozhi.config.json
       createBasicConfig(targetPath);
+
+      // 创建日志文件
+      const logFilePath = path.join(targetPath, "xiaozhi.log");
+      fs.writeFileSync(logFilePath, "", "utf8");
 
       spinner.succeed(`项目 "${projectName}" 创建成功`);
 

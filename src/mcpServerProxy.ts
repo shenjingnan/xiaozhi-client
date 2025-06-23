@@ -16,25 +16,19 @@ import {
   type MCPToolConfig,
   configManager,
 } from "./configManager";
+import { logger as globalLogger } from "./logger";
 
 // ESM 兼容的 __dirname
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Simple logger utility
-const logger = {
-  info: (message: string): void => {
-    const timestamp = new Date().toISOString();
-    console.error(`${timestamp} - MCPProxy - INFO - ${message}`);
-  },
-  error: (message: string): void => {
-    const timestamp = new Date().toISOString();
-    console.error(`${timestamp} - MCPProxy - ERROR - ${message}`);
-  },
-  debug: (message: string): void => {
-    const timestamp = new Date().toISOString();
-    console.error(`${timestamp} - MCPProxy - DEBUG - ${message}`);
-  },
-};
+// 为 MCPProxy 创建带标签的 logger
+const logger = globalLogger.withTag("MCPProxy");
+
+// 如果在守护进程模式下运行，初始化日志文件
+if (process.env.XIAOZHI_DAEMON === "true" && process.env.XIAOZHI_CONFIG_DIR) {
+  globalLogger.initLogFile(process.env.XIAOZHI_CONFIG_DIR);
+  globalLogger.enableFileLogging(true);
+}
 
 // Type definitions
 
@@ -123,7 +117,7 @@ export class MCPClient {
   }
 
   async start() {
-    logger.info(`Starting MCP client for ${this.name}`);
+    logger.info(`正在启动 MCP 客户端：${this.name}`);
 
     const { command, args, env } = this.config;
 
@@ -158,10 +152,10 @@ export class MCPClient {
     }
 
     logger.debug(
-      `${this.name} spawning: ${resolvedCommand} ${resolvedArgs.join(" ")} in ${spawnOptions.cwd}`
+      `${this.name} 正在生成进程：${resolvedCommand} ${resolvedArgs.join(" ")} 工作目录：${spawnOptions.cwd}`
     );
     logger.debug(
-      `${this.name} platform: ${process.platform}, shell: ${spawnOptions.shell || false}`
+      `${this.name} 平台：${process.platform}，shell 模式：${spawnOptions.shell || false}`
     );
 
     this.process = spawn(resolvedCommand, resolvedArgs, spawnOptions);
@@ -173,7 +167,7 @@ export class MCPClient {
 
     // Handle process stderr - log errors
     this.process.stderr?.on("data", (data: Buffer) => {
-      logger.debug(`${this.name} stderr: ${data.toString().trim()}`);
+      logger.debug(`${this.name} 标准错误输出：${data.toString().trim()}`);
     });
 
     // Handle process exit
@@ -181,7 +175,7 @@ export class MCPClient {
       "exit",
       (code: number | null, signal: NodeJS.Signals | null) => {
         logger.error(
-          `${this.name} process exited with code ${code}, signal ${signal}`
+          `${this.name} 进程已退出，退出码：${code}，信号：${signal}`
         );
         this.initialized = false;
       }
@@ -189,7 +183,7 @@ export class MCPClient {
 
     // Handle process error
     this.process.on("error", (error: Error) => {
-      logger.error(`${this.name} process error: ${error.message}`);
+      logger.error(`${this.name} 进程错误：${error.message}`);
       this.initialized = false;
     });
 
@@ -210,7 +204,7 @@ export class MCPClient {
           const message = JSON.parse(line.trim());
           this.handleMessage(message);
         } catch (error) {
-          logger.error(`${this.name} failed to parse message: ${line.trim()}`);
+          logger.error(`${this.name} 解析消息失败：${line.trim()}`);
         }
       }
     }
@@ -218,7 +212,7 @@ export class MCPClient {
 
   handleMessage(message: any): void {
     logger.debug(
-      `${this.name} received: ${JSON.stringify(message).substring(0, 200)}...`
+      `${this.name} 收到消息：${JSON.stringify(message).substring(0, 200)}...`
     );
 
     if (message.id && this.pendingRequests.has(message.id)) {
@@ -242,7 +236,7 @@ export class MCPClient {
 
   async sendRequest(method: string, params: any = {}): Promise<any> {
     if (!this.process || !this.process.stdin) {
-      throw new Error(`${this.name} process not available`);
+      throw new Error(`${this.name} 进程不可用`);
     }
 
     const id = this.requestId++;
@@ -260,12 +254,12 @@ export class MCPClient {
       setTimeout(() => {
         if (this.pendingRequests.has(id)) {
           this.pendingRequests.delete(id);
-          reject(new Error(`Request timeout for ${method}`));
+          reject(new Error(`请求超时：${method}`));
         }
       }, 30000); // 30 second timeout
 
       const message = `${JSON.stringify(request)}\n`;
-      logger.debug(`${this.name} sending: ${message.trim()}`);
+      logger.debug(`${this.name} 正在发送：${message.trim()}`);
       this.process?.stdin?.write(message);
     });
   }
@@ -283,7 +277,7 @@ export class MCPClient {
       });
 
       logger.info(
-        `${this.name} initialized with capabilities: ${JSON.stringify((initResult as any).capabilities)}`
+        `${this.name} 已初始化，能力：${JSON.stringify((initResult as any).capabilities)}`
       );
 
       // Send initialized notification
@@ -297,10 +291,10 @@ export class MCPClient {
       await this.refreshTools();
 
       this.initialized = true;
-      logger.info(`${this.name} client ready with ${this.tools.length} tools`);
+      logger.info(`${this.name} 客户端已就绪，共 ${this.tools.length} 个工具`);
     } catch (error) {
       logger.error(
-        `Failed to initialize ${this.name}: ${error instanceof Error ? error.message : String(error)}`
+        `初始化 ${this.name} 失败：${error instanceof Error ? error.message : String(error)}`
       );
       throw error;
     }
@@ -324,14 +318,14 @@ export class MCPClient {
       await this.updateToolsConfig();
 
       logger.info(
-        `${this.name} loaded ${this.originalTools.length} tools: ${this.originalTools.map((t) => t.name).join(", ")}`
+        `${this.name} 加载了 ${this.originalTools.length} 个工具：${this.originalTools.map((t) => t.name).join(", ")}`
       );
       logger.info(
-        `${this.name} enabled ${this.tools.length} tools: ${this.tools.map((t) => t.name).join(", ")}`
+        `${this.name} 启用了 ${this.tools.length} 个工具：${this.tools.map((t) => t.name).join(", ")}`
       );
     } catch (error) {
       logger.error(
-        `Failed to get tools from ${this.name}: ${error instanceof Error ? error.message : String(error)}`
+        `从 ${this.name} 获取工具失败：${error instanceof Error ? error.message : String(error)}`
       );
       this.tools = [];
       this.originalTools = [];
@@ -380,11 +374,11 @@ export class MCPClient {
 
       if (hasChanges || Object.keys(currentConfig).length === 0) {
         configManager.updateServerToolsConfig(this.name, toolsConfig);
-        logger.info(`${this.name} updated tools configuration`);
+        logger.info(`${this.name} 已更新工具配置`);
       }
     } catch (error) {
       logger.error(
-        `Failed to update tools config for ${this.name}: ${error instanceof Error ? error.message : String(error)}`
+        `更新 ${this.name} 的工具配置失败：${error instanceof Error ? error.message : String(error)}`
       );
     }
   }
@@ -394,7 +388,7 @@ export class MCPClient {
       // 将前缀名称转换回原始名称
       const originalName = this.getOriginalToolName(prefixedName);
       if (!originalName) {
-        throw new Error(`Invalid tool name format: ${prefixedName}`);
+        throw new Error(`无效的工具名称格式：${prefixedName}`);
       }
 
       const result = await this.sendRequest("tools/call", {
@@ -404,7 +398,7 @@ export class MCPClient {
       return result;
     } catch (error) {
       logger.error(
-        `Failed to call tool ${prefixedName} (original: ${this.getOriginalToolName(prefixedName)}) on ${this.name}: ${error instanceof Error ? error.message : String(error)}`
+        `在 ${this.name} 上调用工具 ${prefixedName} (原始名称：${this.getOriginalToolName(prefixedName)}) 失败：${error instanceof Error ? error.message : String(error)}`
       );
       throw error;
     }
@@ -412,7 +406,7 @@ export class MCPClient {
 
   stop(): void {
     if (this.process) {
-      logger.info(`Stopping ${this.name} client`);
+      logger.info(`正在停止 ${this.name} 客户端`);
       this.process.kill("SIGTERM");
       this.process = null;
     }
@@ -443,9 +437,7 @@ export function loadMCPConfig(): Record<string, MCPServerConfig> {
         const config = JSON.parse(configData);
 
         if (!config.mcpServers || typeof config.mcpServers !== "object") {
-          throw new Error(
-            "Invalid configuration: mcpServers section not found or invalid"
-          );
+          throw new Error("无效的配置：mcpServers 部分未找到或无效");
         }
 
         logger.info(
@@ -462,7 +454,7 @@ export function loadMCPConfig(): Record<string, MCPServerConfig> {
     throw new Error('配置文件不存在，请运行 "xiaozhi init" 初始化配置');
   } catch (error) {
     logger.error(
-      `Failed to load MCP configuration: ${error instanceof Error ? error.message : String(error)}`
+      `加载 MCP 配置失败：${error instanceof Error ? error.message : String(error)}`
     );
     throw error;
   }
@@ -485,7 +477,7 @@ export class MCPServerProxy {
   }
 
   async start() {
-    logger.info("Starting MCP Server Proxy");
+    logger.info("正在启动 MCP 服务代理");
 
     // Load configuration
     this.config = loadMCPConfig();
@@ -494,7 +486,7 @@ export class MCPServerProxy {
     const clientPromises = [];
 
     for (const [serverName, serverConfig] of Object.entries(this.config)) {
-      logger.info(`Initializing MCP client: ${serverName}`);
+      logger.info(`正在初始化 MCP 客户端：${serverName}`);
       const client = new MCPClient(serverName, serverConfig);
       this.clients.set(serverName, client);
       clientPromises.push(client.start());
@@ -512,10 +504,10 @@ export class MCPServerProxy {
 
         if (result.status === "fulfilled") {
           successCount++;
-          logger.info(`Successfully started MCP client: ${serverName}`);
+          logger.info(`成功启动 MCP 客户端：${serverName}`);
         } else {
           logger.error(
-            `Failed to start MCP client ${serverName}: ${result.reason.message}`
+            `启动 MCP 客户端 ${serverName} 失败：${result.reason.message}`
           );
           // Remove failed client from clients map
           this.clients.delete(serverName);
@@ -523,7 +515,7 @@ export class MCPServerProxy {
       }
 
       if (successCount === 0) {
-        throw new Error("No MCP clients started successfully");
+        throw new Error("没有成功启动任何 MCP 客户端");
       }
 
       // Build tool mapping
@@ -531,11 +523,11 @@ export class MCPServerProxy {
       this.initialized = true;
 
       logger.info(
-        `MCP Server Proxy initialized successfully with ${successCount}/${Object.keys(this.config).length} clients`
+        `MCP 服务代理初始化成功，启动了 ${successCount}/${Object.keys(this.config).length} 个客户端`
       );
     } catch (error) {
       logger.error(
-        `Failed to start MCP clients: ${error instanceof Error ? error.message : String(error)}`
+        `启动 MCP 客户端失败：${error instanceof Error ? error.message : String(error)}`
       );
       throw error;
     }
@@ -550,7 +542,7 @@ export class MCPServerProxy {
         // 但我们仍然检查以防万一
         if (this.toolMap.has(tool.name)) {
           logger.error(
-            `Duplicate tool name: ${tool.name} (from ${clientName} and ${this.toolMap.get(tool.name)})`
+            `重复的工具名称：${tool.name} (来自 ${clientName} 和 ${this.toolMap.get(tool.name)})`
           );
         } else {
           this.toolMap.set(tool.name, clientName);
@@ -558,8 +550,8 @@ export class MCPServerProxy {
       }
     }
 
-    logger.info(`Built tool map with ${this.toolMap.size} tools`);
-    logger.debug(`Tool map: ${Array.from(this.toolMap.keys()).join(", ")}`);
+    logger.info(`已构建工具映射，共 ${this.toolMap.size} 个工具`);
+    logger.debug(`工具映射：${Array.from(this.toolMap.keys()).join(", ")}`);
   }
 
   getAllTools(): Tool[] {
@@ -603,7 +595,7 @@ export class MCPServerProxy {
   ): Array<{ name: string; description: string; enabled: boolean }> {
     const client = this.clients.get(serverName);
     if (!client) {
-      throw new Error(`Server ${serverName} not found`);
+      throw new Error(`未找到服务器 ${serverName}`);
     }
 
     return client.originalTools.map((tool) => ({
@@ -619,7 +611,7 @@ export class MCPServerProxy {
   async refreshServerTools(serverName: string): Promise<void> {
     const client = this.clients.get(serverName);
     if (!client) {
-      throw new Error(`Server ${serverName} not found`);
+      throw new Error(`未找到服务器 ${serverName}`);
     }
 
     await client.refreshTools();
@@ -640,19 +632,19 @@ export class MCPServerProxy {
   async callTool(toolName: string, arguments_: any): Promise<any> {
     const clientName = this.toolMap.get(toolName);
     if (!clientName) {
-      throw new Error(`Unknown tool: ${toolName}`);
+      throw new Error(`未知的工具：${toolName}`);
     }
 
     const client = this.clients.get(clientName);
     if (!client || !client.initialized) {
-      throw new Error(`Client ${clientName} not available`);
+      throw new Error(`客户端 ${clientName} 不可用`);
     }
 
     return await client.callTool(toolName, arguments_);
   }
 
   stop() {
-    logger.info("Stopping MCP Server Proxy");
+    logger.info("正在停止 MCP 服务代理");
     for (const client of this.clients.values()) {
       client.stop();
     }
@@ -676,7 +668,7 @@ export class JSONRPCServer {
     try {
       const parsedMessage = JSON.parse(message);
       logger.debug(
-        `Received request: ${JSON.stringify(parsedMessage).substring(0, 200)}...`
+        `收到请求：${JSON.stringify(parsedMessage).substring(0, 200)}...`
       );
 
       if (parsedMessage.method) {
@@ -689,17 +681,17 @@ export class JSONRPCServer {
         await this.handleNotification(parsedMessage);
         return null; // No response for notifications
       }
-      throw new Error("Invalid JSON-RPC message");
+      throw new Error("无效的 JSON-RPC 消息");
     } catch (error) {
       logger.error(
-        `Error handling message: ${error instanceof Error ? error.message : String(error)}`
+        `处理消息时出错：${error instanceof Error ? error.message : String(error)}`
       );
       return JSON.stringify({
         jsonrpc: "2.0",
         id: null,
         error: {
           code: -32700,
-          message: "Parse error",
+          message: "解析错误",
         },
       });
     }
@@ -725,7 +717,7 @@ export class JSONRPCServer {
           result = await this.handlePing(params);
           break;
         default:
-          throw new Error(`Unknown method: ${method}`);
+          throw new Error(`未知的方法：${method}`);
       }
 
       return {
@@ -735,7 +727,7 @@ export class JSONRPCServer {
       };
     } catch (error) {
       logger.error(
-        `Error handling request ${method}: ${error instanceof Error ? error.message : String(error)}`
+        `处理请求 ${method} 时出错：${error instanceof Error ? error.message : String(error)}`
       );
       return {
         jsonrpc: "2.0",
@@ -753,18 +745,16 @@ export class JSONRPCServer {
 
     switch (method) {
       case "notifications/initialized":
-        logger.info("Client sent initialized notification");
+        logger.info("客户端发送了初始化通知");
         break;
       default:
-        logger.debug(`Received notification: ${method}`);
+        logger.debug(`收到通知：${method}`);
         break;
     }
   }
 
   async handleInitialize(params: any): Promise<any> {
-    logger.info(
-      `Initialize request from client: ${JSON.stringify(params.clientInfo)}`
-    );
+    logger.info(`收到客户端的初始化请求：${JSON.stringify(params.clientInfo)}`);
 
     return {
       protocolVersion: "2024-11-05",
@@ -782,11 +772,11 @@ export class JSONRPCServer {
 
   async handleToolsList(_params: any): Promise<any> {
     if (!this.proxy.initialized) {
-      throw new Error("Proxy not initialized");
+      throw new Error("代理未初始化");
     }
 
     const tools = this.proxy.getAllTools();
-    logger.info(`Returning ${tools.length} tools`);
+    logger.info(`返回 ${tools.length} 个工具`);
 
     return {
       tools: tools,
@@ -797,17 +787,17 @@ export class JSONRPCServer {
     const { name, arguments: args } = params;
 
     if (!name) {
-      throw new Error("Tool name is required");
+      throw new Error("工具名称是必需的");
     }
 
-    logger.info(`Calling tool: ${name} with args: ${JSON.stringify(args)}`);
+    logger.info(`调用工具：${name}，参数：${JSON.stringify(args)}`);
 
     const result = await this.proxy.callTool(name, args || {});
     return result;
   }
 
   async handlePing(_params: any): Promise<any> {
-    logger.debug("Received ping request");
+    logger.debug("收到 ping 请求");
     return {}; // Empty response for ping
   }
 }
@@ -816,7 +806,7 @@ export class JSONRPCServer {
  * Main function to start the MCP Server Proxy
  */
 async function main() {
-  logger.info("Starting MCP Server Proxy");
+  logger.info("正在启动 MCP 服务代理");
 
   // Create and start the proxy
   const proxy = new MCPServerProxy();
@@ -824,7 +814,7 @@ async function main() {
 
   // Setup graceful shutdown
   const cleanup = () => {
-    logger.info("Shutting down MCP Server Proxy");
+    logger.info("正在关闭 MCP 服务代理");
     proxy.stop();
     process.exit(0);
   };
@@ -857,7 +847,7 @@ async function main() {
             }
           } catch (error) {
             logger.error(
-              `Error processing message: ${error instanceof Error ? error.message : String(error)}`
+              `处理消息时出错：${error instanceof Error ? error.message : String(error)}`
             );
           }
         }
@@ -865,14 +855,14 @@ async function main() {
     });
 
     process.stdin.on("end", () => {
-      logger.info("stdin closed, shutting down");
+      logger.info("标准输入已关闭，正在关闭");
       cleanup();
     });
 
-    logger.info("MCP Server Proxy is running on stdio");
+    logger.info("MCP 服务代理正在通过 stdio 运行");
   } catch (error) {
     logger.error(
-      `Failed to start MCP Server Proxy: ${error instanceof Error ? error.message : String(error)}`
+      `启动 MCP 服务代理失败：${error instanceof Error ? error.message : String(error)}`
     );
     process.exit(1);
   }
@@ -887,7 +877,7 @@ const argv1Path = process.argv[1];
 if (scriptPath === argv1Path) {
   main().catch((error) => {
     logger.error(
-      `Unhandled error: ${error instanceof Error ? error.message : String(error)}`
+      `未处理的错误：${error instanceof Error ? error.message : String(error)}`
     );
     process.exit(1);
   });
