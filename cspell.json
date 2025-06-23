@@ -14,7 +14,8 @@
     "unstub",
     "xzcli",
     "amap",
-    "verylongstring"
+    "verylongstring",
+    "pyenv"
   ],
   "ignorePaths": [
     "node_modules/**",
