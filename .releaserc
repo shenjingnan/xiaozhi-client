@@ -8,7 +8,7 @@
       {
         "preset": "conventionalcommits",
         "releaseRules": [
-          {"type": "feat", "release": "patch"},
+          {"type": "feat", "release": "minor"},
           {"type": "fix", "release": "patch"},
           {"type": "perf", "release": "patch"},
           {"type": "revert", "release": "patch"},
@@ -20,7 +20,7 @@
           {"type": "build", "release": false},
           {"type": "ci", "release": false},
           {"scope": "no-release", "release": false},
-          {"breaking": true, "release": "minor"}
+          {"breaking": true, "release": "major"}
         ]
       }
     ],
