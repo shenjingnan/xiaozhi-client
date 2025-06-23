@@ -446,7 +446,7 @@ describe("MCP服务器代理", () => {
       expect(parsedResponse.jsonrpc).toBe("2.0");
       expect(parsedResponse.id).toBeNull();
       expect(parsedResponse.error.code).toBe(-32700);
-      expect(parsedResponse.error.message).toBe("Parse error");
+      expect(parsedResponse.error.message).toBe("解析错误");
     });
 
     it("应该处理未知方法", async () => {
@@ -465,7 +465,7 @@ describe("MCP服务器代理", () => {
       expect(response.jsonrpc).toBe("2.0");
       expect(response.id).toBe(5);
       expect(response.error.code).toBe(-32603);
-      expect(response.error.message).toContain("Unknown method");
+      expect(response.error.message).toContain("未知的方法");
     });
 
     it("应该处理工具列表请求当代理未初始化时", async () => {
@@ -485,7 +485,7 @@ describe("MCP服务器代理", () => {
       expect(response.jsonrpc).toBe("2.0");
       expect(response.id).toBe(6);
       expect(response.error).toBeDefined();
-      expect(response.error.message).toBe("Proxy not initialized");
+      expect(response.error.message).toBe("代理未初始化");
     });
   });
 

@@ -49,7 +49,7 @@ export function getVersion(): string {
     // 如果都找不到，返回默认版本
     return "unknown";
   } catch (error) {
-    console.warn("Warning: Could not read version from package.json:", error);
+    console.warn("警告: 无法从 package.json 读取版本信息:", error);
     return "unknown";
   }
 }
