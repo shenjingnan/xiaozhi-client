@@ -191,6 +191,34 @@ describe("MCP服务器代理", () => {
       expect(result.resolvedArgs).toEqual(["-y", "@amap/amap-maps-mcp-server"]);
     });
 
+    it("在Windows平台应该为uvx命令添加.bat扩展名", async () => {
+      // 模拟Windows平台
+      Object.defineProperty(process, "platform", {
+        value: "win32",
+        writable: true,
+        configurable: true,
+      });
+
+      const config = {
+        command: "uvx",
+        args: ["mcp-server-time", "--local-timezone=America/New_York"],
+        env: {},
+      };
+
+      const { MCPClient } = await import("./mcpServerProxy");
+      const client = new MCPClient("test", config);
+      const result = client.resolveCommand("uvx", [
+        "mcp-server-time",
+        "--local-timezone=America/New_York",
+      ]);
+
+      expect(result.resolvedCommand).toBe("uvx.bat");
+      expect(result.resolvedArgs).toEqual([
+        "mcp-server-time",
+        "--local-timezone=America/New_York",
+      ]);
+    });
+
     it("在非Windows平台应该保持命令不变", async () => {
       // 模拟Linux/macOS平台
       Object.defineProperty(process, "platform", {
@@ -216,7 +244,7 @@ describe("MCP服务器代理", () => {
       expect(result.resolvedArgs).toEqual(["-y", "@amap/amap-maps-mcp-server"]);
     });
 
-    it("对于非npm/npx命令应该保持不变", async () => {
+    it("对于非npm/npx/uvx命令应该保持不变", async () => {
       // 模拟Windows平台
       Object.defineProperty(process, "platform", {
         value: "win32",
@@ -236,6 +264,83 @@ describe("MCP服务器代理", () => {
 
       expect(result.resolvedCommand).toBe("node");
       expect(result.resolvedArgs).toEqual(["server.js"]);
+    });
+  });
+
+  describe("非Windows平台", () => {
+    it("应该保持npm命令不变", async () => {
+      // 模拟非Windows平台
+      Object.defineProperty(process, "platform", {
+        value: "linux",
+        writable: true,
+        configurable: true,
+      });
+
+      const config = {
+        command: "npm",
+        args: ["install", "package"],
+        env: {},
+      };
+
+      const { MCPClient } = await import("./mcpServerProxy");
+      const client = new MCPClient("test", config);
+      const result = client.resolveCommand("npm", ["install", "package"]);
+
+      expect(result.resolvedCommand).toBe("npm");
+      expect(result.resolvedArgs).toEqual(["install", "package"]);
+    });
+
+    it("应该保持npx命令不变", async () => {
+      // 模拟非Windows平台
+      Object.defineProperty(process, "platform", {
+        value: "darwin",
+        writable: true,
+        configurable: true,
+      });
+
+      const config = {
+        command: "npx",
+        args: ["-y", "@amap/amap-maps-mcp-server"],
+        env: {},
+      };
+
+      const { MCPClient } = await import("./mcpServerProxy");
+      const client = new MCPClient("test", config);
+      const result = client.resolveCommand("npx", [
+        "-y",
+        "@amap/amap-maps-mcp-server",
+      ]);
+
+      expect(result.resolvedCommand).toBe("npx");
+      expect(result.resolvedArgs).toEqual(["-y", "@amap/amap-maps-mcp-server"]);
+    });
+
+    it("应该保持uvx命令不变", async () => {
+      // 模拟非Windows平台
+      Object.defineProperty(process, "platform", {
+        value: "linux",
+        writable: true,
+        configurable: true,
+      });
+
+      const config = {
+        command: "uvx",
+        args: ["mcp-server-time", "--local-timezone=America/New_York"],
+        env: {},
+      };
+
+      const { MCPClient } = await import("./mcpServerProxy");
+      const client = new MCPClient("test", config);
+      const result = client.resolveCommand("uvx", [
+        "mcp-server-time",
+        "--local-timezone=America/New_York",
+      ]);
+
+      expect(result.resolvedCommand).toBe("uvx");
+      expect(result.resolvedArgs).toEqual([
+        "mcp-server-time",
+        "--local-timezone=America/New_York",
+      ]);
     });
   });
 

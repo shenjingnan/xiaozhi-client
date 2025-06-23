@@ -71,17 +71,24 @@ export class MCPClient {
 
   /**
    * Resolve command for cross-platform execution
-   * On Windows, npm/npx commands need special handling
+   * On Windows, npm/npx/uvx commands need special handling
    */
   public resolveCommand(
     command: string,
     args: string[]
   ): { resolvedCommand: string; resolvedArgs: string[] } {
     if (process.platform === "win32") {
-      // On Windows, npm and npx are .cmd files
+      // On Windows, npm, npx, and uvx are .cmd files or .exe files
       if (command === "npm" || command === "npx") {
         return {
           resolvedCommand: `${command}.cmd`,
+          resolvedArgs: args,
+        };
+      }
+      // uvx is typically installed as uvx.bat on Windows (via pyenv)
+      if (command === "uvx") {
+        return {
+          resolvedCommand: "uvx.bat",
           resolvedArgs: args,
         };
       }
@@ -143,10 +150,10 @@ export class MCPClient {
       spawnOptions.env = { ...process.env };
     }
 
-    // On Windows, we need to set shell: true for npm/npx commands
+    // On Windows, we need to set shell: true for npm/npx/uvx commands
     if (
       process.platform === "win32" &&
-      (command === "npm" || command === "npx")
+      (command === "npm" || command === "npx" || command === "uvx")
     ) {
       spawnOptions.shell = true;
     }
