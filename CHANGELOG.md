@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.0.10...v1.1.0) (2025-06-23)
+
+
+### Features
+
+* **release:** 调整语义化版本发布规则 ([#75](https://github.com/shenjingnan/xiaozhi-client/issues/75)) ([0f405e0](https://github.com/shenjingnan/xiaozhi-client/commit/0f405e0127ed3cea3ff1921ce5c567b4ed6c8552))
+
 ## [1.0.10](https://github.com/shenjingnan/xiaozhi-client/compare/v1.0.9...v1.0.10) (2025-06-23)
 
 
