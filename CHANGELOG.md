@@ -1,3 +1,10 @@
+## [1.0.10](https://github.com/shenjingnan/xiaozhi-client/compare/v1.0.9...v1.0.10) (2025-06-23)
+
+
+### Bug Fixes
+
+* **mcp:** 修复windows环境中uvx mcp无法使用的问题 ([#73](https://github.com/shenjingnan/xiaozhi-client/issues/73)) ([d44e24e](https://github.com/shenjingnan/xiaozhi-client/commit/d44e24e59af7bfcd16623a5a8286ab3d05124d64))
+
 ## [1.0.9](https://github.com/shenjingnan/xiaozhi-client/compare/v1.0.8...v1.0.9) (2025-06-23)
 
 
