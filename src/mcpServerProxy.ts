@@ -12,11 +12,14 @@ import { dirname, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import {
+  type LocalMCPServerConfig,
   type MCPServerConfig,
   type MCPToolConfig,
+  type SSEMCPServerConfig,
   configManager,
 } from "./configManager";
 import { logger as globalLogger } from "./logger";
+import { ModelScopeMCPClient } from "./modelScopeMCPClient";
 
 // ESM 兼容的 __dirname
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -43,12 +46,24 @@ interface PendingRequest {
   reject: (reason: any) => void;
 }
 
+// 定义 MCP 客户端接口
+export interface IMCPClient {
+  initialized: boolean;
+  tools: Tool[];
+  originalTools: Tool[];
+  start(): Promise<void>;
+  refreshTools(): Promise<void>;
+  callTool(toolName: string, arguments_: any): Promise<any>;
+  stop(): void | Promise<void>;
+  getOriginalToolName(prefixedToolName: string): string | null;
+}
+
 /**
  * MCP Client for communicating with child MCP servers
  */
-export class MCPClient {
+export class MCPClient implements IMCPClient {
   private name: string;
-  private config: MCPServerConfig;
+  private config: LocalMCPServerConfig;
   private process: ChildProcess | null;
   public initialized: boolean;
   public tools: Tool[];
@@ -57,7 +72,7 @@ export class MCPClient {
   private pendingRequests: Map<number, PendingRequest>;
   private messageBuffer: string;
 
-  constructor(name: string, config: MCPServerConfig) {
+  constructor(name: string, config: LocalMCPServerConfig) {
     this.name = name;
     this.config = config;
     this.process = null;
@@ -471,7 +486,7 @@ export function loadMCPConfig(): Record<string, MCPServerConfig> {
  * MCP Server Proxy - Main proxy server implementation
  */
 export class MCPServerProxy {
-  private clients: Map<string, MCPClient>;
+  private clients: Map<string, IMCPClient>;
   private toolMap: Map<string, string>; // Maps tool name to client name
   public initialized: boolean;
   private config: Record<string, MCPServerConfig> | null;
@@ -494,7 +509,21 @@ export class MCPServerProxy {
 
     for (const [serverName, serverConfig] of Object.entries(this.config)) {
       logger.info(`正在初始化 MCP 客户端：${serverName}`);
-      const client = new MCPClient(serverName, serverConfig);
+
+      let client: IMCPClient;
+
+      // 判断是 SSE 类型还是本地类型
+      if ("type" in serverConfig && serverConfig.type === "sse") {
+        // ModelScope SSE MCP 服务
+        client = new ModelScopeMCPClient(serverName, serverConfig);
+      } else {
+        // 本地 MCP 服务
+        client = new MCPClient(
+          serverName,
+          serverConfig as LocalMCPServerConfig
+        );
+      }
+
       this.clients.set(serverName, client);
       clientPromises.push(client.start());
     }

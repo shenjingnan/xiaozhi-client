@@ -45,6 +45,10 @@ describe("ConfigManager", () => {
         args: ["test.js"],
         env: { TEST_VAR: "test_value" },
       },
+      "modelscope-server": {
+        type: "sse" as const,
+        url: "https://mcp.api-inference.modelscope.net/test/sse",
+      },
     },
     mcpServerConfig: {
       "test-server": {
@@ -221,6 +225,40 @@ describe("ConfigManager", () => {
 
       const servers = configManager.getMcpServers();
       expect(servers).toEqual(mockConfig.mcpServers);
+    });
+
+    it("应该支持本地MCP服务器配置", () => {
+      mockExistsSync.mockReturnValue(true);
+      mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+
+      const servers = configManager.getMcpServers();
+      const localServer = servers["test-server"];
+
+      expect(localServer).toBeDefined();
+      expect("command" in localServer).toBe(true);
+      expect("args" in localServer).toBe(true);
+      if ("command" in localServer) {
+        expect(localServer.command).toBe("node");
+        expect(localServer.args).toEqual(["test.js"]);
+      }
+    });
+
+    it("应该支持ModelScope SSE MCP服务器配置", () => {
+      mockExistsSync.mockReturnValue(true);
+      mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+
+      const servers = configManager.getMcpServers();
+      const sseServer = servers["modelscope-server"];
+
+      expect(sseServer).toBeDefined();
+      expect("type" in sseServer).toBe(true);
+      expect("url" in sseServer).toBe(true);
+      if ("type" in sseServer) {
+        expect(sseServer.type).toBe("sse");
+        expect(sseServer.url).toBe(
+          "https://mcp.api-inference.modelscope.net/test/sse"
+        );
+      }
     });
   });
 

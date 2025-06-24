@@ -13,11 +13,21 @@ const DEFAULT_CONNECTION_CONFIG: Required<ConnectionConfig> = {
 };
 
 // 配置文件接口定义
-export interface MCPServerConfig {
+// 本地 MCP 服务配置
+export interface LocalMCPServerConfig {
   command: string;
   args: string[];
   env?: Record<string, string>;
 }
+
+// ModelScope SSE MCP 服务配置
+export interface SSEMCPServerConfig {
+  type: "sse";
+  url: string;
+}
+
+// 统一的 MCP 服务配置
+export type MCPServerConfig = LocalMCPServerConfig | SSEMCPServerConfig;
 
 export interface MCPToolConfig {
   description?: string;
@@ -153,22 +163,34 @@ export class ConfigManager {
       }
 
       const sc = serverConfig as Record<string, unknown>;
-      if (!sc.command || typeof sc.command !== "string") {
-        throw new Error(
-          `配置文件格式错误：mcpServers.${serverName}.command 无效`
-        );
-      }
 
-      if (!Array.isArray(sc.args)) {
-        throw new Error(
-          `配置文件格式错误：mcpServers.${serverName}.args 必须是数组`
-        );
-      }
+      // 检查是否是 SSE 类型
+      if (sc.type === "sse") {
+        // SSE 类型的验证
+        if (!sc.url || typeof sc.url !== "string") {
+          throw new Error(
+            `配置文件格式错误：mcpServers.${serverName}.url 无效`
+          );
+        }
+      } else {
+        // 本地类型的验证
+        if (!sc.command || typeof sc.command !== "string") {
+          throw new Error(
+            `配置文件格式错误：mcpServers.${serverName}.command 无效`
+          );
+        }
 
-      if (sc.env && typeof sc.env !== "object") {
-        throw new Error(
-          `配置文件格式错误：mcpServers.${serverName}.env 必须是对象`
-        );
+        if (!Array.isArray(sc.args)) {
+          throw new Error(
+            `配置文件格式错误：mcpServers.${serverName}.args 必须是数组`
+          );
+        }
+
+        if (sc.env && typeof sc.env !== "object") {
+          throw new Error(
+            `配置文件格式错误：mcpServers.${serverName}.env 必须是对象`
+          );
+        }
       }
     }
   }
@@ -253,16 +275,25 @@ export class ConfigManager {
     }
 
     // 验证服务配置
-    if (!serverConfig.command || typeof serverConfig.command !== "string") {
-      throw new Error("服务配置的 command 字段必须是非空字符串");
-    }
+    if ('type' in serverConfig && serverConfig.type === 'sse') {
+      // SSE 类型的验证
+      if (!serverConfig.url || typeof serverConfig.url !== "string") {
+        throw new Error("SSE 服务配置的 url 字段必须是非空字符串");
+      }
+    } else {
+      // 本地类型的验证
+      const localConfig = serverConfig as LocalMCPServerConfig;
+      if (!localConfig.command || typeof localConfig.command !== "string") {
+        throw new Error("服务配置的 command 字段必须是非空字符串");
+      }
 
-    if (!Array.isArray(serverConfig.args)) {
-      throw new Error("服务配置的 args 字段必须是数组");
-    }
+      if (!Array.isArray(localConfig.args)) {
+        throw new Error("服务配置的 args 字段必须是数组");
+      }
 
-    if (serverConfig.env && typeof serverConfig.env !== "object") {
-      throw new Error("服务配置的 env 字段必须是对象");
+      if (localConfig.env && typeof localConfig.env !== "object") {
+        throw new Error("服务配置的 env 字段必须是对象");
+      }
     }
 
     const config = this.getConfig();

@@ -181,11 +181,18 @@ export async function listMcpServers(
         ).length;
 
         console.log(`${chalk.cyan("•")} ${chalk.bold(serverName)}`);
-        console.log(
-          `  命令: ${chalk.gray(serverConfig.command)} ${chalk.gray(
-            serverConfig.args.join(" ")
-          )}`
-        );
+        
+        // 检查是否是 SSE 类型
+        if ('type' in serverConfig && serverConfig.type === 'sse') {
+          console.log(`  类型: ${chalk.gray('SSE')}`);
+          console.log(`  URL: ${chalk.gray(serverConfig.url)}`);
+        } else {
+          console.log(
+            `  命令: ${chalk.gray((serverConfig as any).command)} ${chalk.gray(
+              (serverConfig as any).args.join(" ")
+            )}`
+          );
+        }
         if (toolCount > 0) {
           console.log(
             `  工具: ${chalk.green(enabledCount)} 启用 / ${chalk.yellow(

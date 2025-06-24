@@ -24,6 +24,22 @@ vi.mock("./configManager", () => ({
   },
 }));
 
+// Mock ModelScopeMCPClient
+vi.mock("./modelScopeMCPClient", () => ({
+  ModelScopeMCPClient: vi.fn().mockImplementation((name, config) => ({
+    name,
+    config,
+    initialized: false,
+    tools: [],
+    originalTools: [],
+    start: vi.fn().mockResolvedValue(undefined),
+    stop: vi.fn().mockResolvedValue(undefined),
+    refreshTools: vi.fn().mockResolvedValue(undefined),
+    callTool: vi.fn().mockResolvedValue({ result: "mocked" }),
+    getOriginalToolName: vi.fn().mockReturnValue("original-tool"),
+  })),
+}));
+
 // Import after mocking
 import { configManager } from "./configManager";
 import {
@@ -789,6 +805,116 @@ describe("MCP服务器代理", () => {
         serverName
       );
       expect(serverExists).toBe(false);
+    });
+  });
+
+  describe("ModelScope MCP 集成", () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it("应该识别并创建 ModelScope MCP 客户端", async () => {
+      const { ModelScopeMCPClient } = await import("./modelScopeMCPClient");
+
+      mockConfigManager.configExists.mockReturnValue(true);
+      mockConfigManager.getMcpServers.mockReturnValue({
+        "local-server": {
+          command: "node",
+          args: ["server.js"],
+        },
+        "modelscope-server": {
+          type: "sse",
+          url: "https://mcp.api-inference.modelscope.net/test/sse",
+        },
+      });
+
+      const proxy = new MCPServerProxy();
+
+      // Mock ModelScopeMCPClient 的 start 方法
+      const mockModelScopeClient = {
+        initialized: true,
+        tools: [{ name: "modelscope_server_xzcli_test-tool" }],
+        originalTools: [{ name: "test-tool" }],
+        start: vi.fn().mockResolvedValue(undefined),
+      };
+      (ModelScopeMCPClient as any).mockReturnValue(mockModelScopeClient);
+
+      // Mock MCPClient 的 start 方法
+      const mockLocalClient = {
+        initialized: true,
+        tools: [{ name: "local_server_xzcli_local-tool" }],
+        originalTools: [{ name: "local-tool" }],
+        start: vi.fn().mockResolvedValue(undefined),
+      };
+
+      await proxy.start();
+
+      // 验证 ModelScopeMCPClient 被创建
+      expect(ModelScopeMCPClient).toHaveBeenCalledWith("modelscope-server", {
+        type: "sse",
+        url: "https://mcp.api-inference.modelscope.net/test/sse",
+      });
+    });
+
+    it("应该处理 ModelScope MCP 客户端启动失败", async () => {
+      const { ModelScopeMCPClient } = await import("./modelScopeMCPClient");
+
+      mockConfigManager.configExists.mockReturnValue(true);
+      mockConfigManager.getMcpServers.mockReturnValue({
+        "modelscope-server": {
+          type: "sse",
+          url: "https://mcp.api-inference.modelscope.net/test/sse",
+        },
+      });
+
+      const proxy = new MCPServerProxy();
+
+      // Mock ModelScopeMCPClient 启动失败
+      const mockModelScopeClient = {
+        start: vi.fn().mockRejectedValue(new Error("Failed to connect")),
+      };
+      (ModelScopeMCPClient as any).mockReturnValue(mockModelScopeClient);
+
+      // 应该抛出错误，因为没有客户端成功启动
+      await expect(proxy.start()).rejects.toThrow(
+        "没有成功启动任何 MCP 客户端"
+      );
+    });
+
+    it("应该正确调用 ModelScope MCP 工具", async () => {
+      const { ModelScopeMCPClient } = await import("./modelScopeMCPClient");
+
+      mockConfigManager.configExists.mockReturnValue(true);
+      mockConfigManager.getMcpServers.mockReturnValue({
+        "modelscope-server": {
+          type: "sse",
+          url: "https://mcp.api-inference.modelscope.net/test/sse",
+        },
+      });
+
+      const proxy = new MCPServerProxy();
+
+      // Mock ModelScopeMCPClient
+      const mockModelScopeClient = {
+        initialized: true,
+        tools: [{ name: "modelscope_server_xzcli_test-tool" }],
+        originalTools: [{ name: "test-tool" }],
+        start: vi.fn().mockResolvedValue(undefined),
+        callTool: vi.fn().mockResolvedValue({ result: "success" }),
+      };
+      (ModelScopeMCPClient as any).mockReturnValue(mockModelScopeClient);
+
+      await proxy.start();
+
+      const result = await proxy.callTool("modelscope_server_xzcli_test-tool", {
+        input: "test",
+      });
+
+      expect(mockModelScopeClient.callTool).toHaveBeenCalledWith(
+        "modelscope_server_xzcli_test-tool",
+        { input: "test" }
+      );
+      expect(result).toEqual({ result: "success" });
     });
   });
 });

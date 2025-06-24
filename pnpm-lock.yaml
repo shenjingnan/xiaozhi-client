@@ -26,6 +26,9 @@ importers:
       dotenv:
         specifier: ^16.3.1
         version: 16.5.0
+      eventsource:
+        specifier: ^4.0.0
+        version: 4.0.0
       omelette:
         specifier: ^0.4.17
         version: 0.4.17
@@ -63,6 +66,9 @@ importers:
       '@semantic-release/release-notes-generator':
         specifier: ^14.0.3
         version: 14.0.3(semantic-release@24.2.5(typescript@5.8.3))
+      '@types/eventsource':
+        specifier: ^3.0.0
+        version: 3.0.0
       '@types/node':
         specifier: ^24.0.1
         version: 24.0.1
@@ -934,6 +940,10 @@ packages:
   '@types/estree@1.0.7':
     resolution: {integrity: sha512-w28IoSUCJpidD/TGviZwwMJckNESJZXFu7NBZ5YJ4mEUnNraUn9Pm8HSZm/jDF1pDWYKspWE7oVphigUPRakIQ==}
 
+  '@types/eventsource@3.0.0':
+    resolution: {integrity: sha512-yEhFj31FTD29DtNeqePu+A+lD6loRef6YOM5XfN1kUwBHyy2DySGlA3jJU+FbQSkrfmlBVluf2Dub/OyReFGKA==}
+    deprecated: This is a stub types definition. eventsource provides its own type definitions, so you do not need this installed.
+
   '@types/node@24.0.1':
     resolution: {integrity: sha512-MX4Zioh39chHlDJbKmEgydJDS3tspMP/lnQC67G3SWsTnb9NeYVWOjkxpOSy4oMfPs4StcWHwBrvUb4ybfnuaw==}
 
@@ -1497,6 +1507,10 @@ packages:
   eventsource@3.0.7:
     resolution: {integrity: sha512-CRT1WTyuQoD771GW56XEZFQ/ZoSfWid1alKGDYMmkt2yl8UXrVR4pspqWNEcqKvVIzg6PAltWjxcSSPrboA4iA==}
     engines: {node: '>=18.0.0'}
+
+  eventsource@4.0.0:
+    resolution: {integrity: sha512-fvIkb9qZzdMxgZrEQDyll+9oJsyaVvY92I2Re+qK0qEJ+w5s0X3dtz+M0VAPOjP1gtU3iqWyjQ0G3nvd5CLZ2g==}
+    engines: {node: '>=20.0.0'}
 
   execa@4.1.0:
     resolution: {integrity: sha512-j5W0//W7f8UxAn8hXVnwG8tLwdiUy4FJLcSupCg6maBYZDpyBvTApK7KyuI4bKj8KOh1r2YH+6ucuYtJv1bTZA==}
@@ -3964,6 +3978,10 @@ snapshots:
 
   '@types/estree@1.0.7': {}
 
+  '@types/eventsource@3.0.0':
+    dependencies:
+      eventsource: 4.0.0
+
   '@types/node@24.0.1':
     dependencies:
       undici-types: 7.8.0
@@ -4568,6 +4586,10 @@ snapshots:
   eventsource-parser@3.0.2: {}
 
   eventsource@3.0.7:
+    dependencies:
+      eventsource-parser: 3.0.2
+
+  eventsource@4.0.0:
     dependencies:
       eventsource-parser: 3.0.2
 
