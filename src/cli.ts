@@ -928,9 +928,7 @@ async function configCommand(key: string, value?: string): Promise<void> {
             } else {
               console.log(
                 chalk.gray(
-                  `  ${name}: ${(serverConfig as any).command} ${(
-                    serverConfig as any
-                  ).args.join(" ")}`
+                  `  ${name}: ${(serverConfig as any).command} ${(serverConfig as any).args.join(" ")}`
                 )
               );
             }
