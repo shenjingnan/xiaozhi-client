@@ -62,7 +62,7 @@ export class ModelScopeMCPClient implements IMCPClient {
     try {
       // 从环境变量获取 API Token
       const token = process.env.MODELSCOPE_API_TOKEN;
-      if (!token) {
+      if (!token || token === "") {
         throw new Error(
           "未设置 MODELSCOPE_API_TOKEN 环境变量。请设置该环境变量后重试。"
         );

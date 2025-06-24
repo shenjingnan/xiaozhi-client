@@ -32,7 +32,7 @@ vi.mock("@modelcontextprotocol/sdk/client/sse.js", () => ({
 }));
 
 vi.mock("eventsource", () => ({
-  default: vi.fn().mockImplementation(() => ({})),
+  EventSource: vi.fn().mockImplementation(() => ({})),
 }));
 
 describe("ModelScopeMCPClient", () => {
@@ -41,16 +41,23 @@ describe("ModelScopeMCPClient", () => {
     type: "sse",
     url: "https://mcp.api-inference.modelscope.net/test/sse",
   };
+  let originalToken: string | undefined;
 
   beforeEach(() => {
+    // 保存原始环境变量
+    originalToken = process.env.MODELSCOPE_API_TOKEN;
     // 设置环境变量
     process.env.MODELSCOPE_API_TOKEN = "test-token";
     client = new ModelScopeMCPClient("test-server", testConfig);
   });
 
   afterEach(() => {
-    // 清理环境变量
-    process.env.MODELSCOPE_API_TOKEN = undefined;
+    // 恢复原始环境变量
+    if (originalToken === undefined) {
+      process.env.MODELSCOPE_API_TOKEN = undefined as any;
+    } else {
+      process.env.MODELSCOPE_API_TOKEN = originalToken;
+    }
     vi.clearAllMocks();
   });
 
@@ -75,7 +82,7 @@ describe("ModelScopeMCPClient", () => {
     });
 
     it("应该在没有 API Token 时抛出错误", async () => {
-      process.env.MODELSCOPE_API_TOKEN = undefined;
+      process.env.MODELSCOPE_API_TOKEN = "" as any;
 
       await expect(client.start()).rejects.toThrow(
         "未设置 MODELSCOPE_API_TOKEN 环境变量"
