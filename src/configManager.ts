@@ -275,7 +275,7 @@ export class ConfigManager {
     }
 
     // 验证服务配置
-    if ('type' in serverConfig && serverConfig.type === 'sse') {
+    if ("type" in serverConfig && serverConfig.type === "sse") {
       // SSE 类型的验证
       if (!serverConfig.url || typeof serverConfig.url !== "string") {
         throw new Error("SSE 服务配置的 url 字段必须是非空字符串");

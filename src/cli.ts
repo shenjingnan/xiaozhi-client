@@ -923,18 +923,14 @@ async function configCommand(key: string, value?: string): Promise<void> {
             config.mcpServers
           )) {
             // 检查是否是 SSE 类型
-            if ('type' in serverConfig && serverConfig.type === 'sse') {
-              console.log(
-                chalk.gray(
-                  `  ${name}: [SSE] ${serverConfig.url}`
-                )
-              );
+            if ("type" in serverConfig && serverConfig.type === "sse") {
+              console.log(chalk.gray(`  ${name}: [SSE] ${serverConfig.url}`));
             } else {
               console.log(
                 chalk.gray(
-                  `  ${name}: ${(serverConfig as any).command} ${(serverConfig as any).args.join(
-                    " "
-                  )}`
+                  `  ${name}: ${(serverConfig as any).command} ${(
+                    serverConfig as any
+                  ).args.join(" ")}`
                 )
               );
             }
