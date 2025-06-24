@@ -44,11 +44,16 @@ export interface ConnectionConfig {
   reconnectInterval?: number; // 重连间隔（毫秒），默认5000
 }
 
+export interface ModelScopeConfig {
+  apiKey?: string; // ModelScope API 密钥
+}
+
 export interface AppConfig {
   mcpEndpoint: string;
   mcpServers: Record<string, MCPServerConfig>;
   mcpServerConfig?: Record<string, MCPServerToolsConfig>;
   connection?: ConnectionConfig; // 连接配置（可选，用于向后兼容）
+  modelscope?: ModelScopeConfig; // ModelScope 配置（可选）
 }
 
 /**
@@ -518,6 +523,55 @@ export class ConfigManager {
       throw new Error("重连间隔必须大于0");
     }
     this.updateConnectionConfig({ reconnectInterval: interval });
+  }
+
+  /**
+   * 获取 ModelScope 配置
+   */
+  public getModelScopeConfig(): Readonly<ModelScopeConfig> {
+    const config = this.getConfig();
+    return config.modelscope || {};
+  }
+
+  /**
+   * 获取 ModelScope API Key
+   * 优先从配置文件读取，其次从环境变量读取
+   */
+  public getModelScopeApiKey(): string | undefined {
+    const modelScopeConfig = this.getModelScopeConfig();
+    return modelScopeConfig.apiKey || process.env.MODELSCOPE_API_TOKEN;
+  }
+
+  /**
+   * 更新 ModelScope 配置
+   */
+  public updateModelScopeConfig(
+    modelScopeConfig: Partial<ModelScopeConfig>
+  ): void {
+    const config = this.getConfig();
+    const currentModelScopeConfig = config.modelscope || {};
+
+    const newModelScopeConfig = {
+      ...currentModelScopeConfig,
+      ...modelScopeConfig,
+    };
+
+    const newConfig = {
+      ...config,
+      modelscope: newModelScopeConfig,
+    };
+
+    this.saveConfig(newConfig);
+  }
+
+  /**
+   * 设置 ModelScope API Key
+   */
+  public setModelScopeApiKey(apiKey: string): void {
+    if (!apiKey || typeof apiKey !== "string") {
+      throw new Error("API Key 必须是非空字符串");
+    }
+    this.updateModelScopeConfig({ apiKey });
   }
 }
 

@@ -849,5 +849,114 @@ describe("ConfigManager", () => {
         );
       });
     });
+
+    describe("ModelScope 配置", () => {
+      beforeEach(() => {
+        const mockConfigWithModelScope: AppConfig = {
+          ...mockConfig,
+          modelscope: {
+            apiKey: "test-api-key",
+          },
+        };
+        mockReadFileSync.mockReturnValue(
+          JSON.stringify(mockConfigWithModelScope)
+        );
+      });
+
+      describe("getModelScopeConfig", () => {
+        it("应该返回 ModelScope 配置", () => {
+          const modelScopeConfig = configManager.getModelScopeConfig();
+          expect(modelScopeConfig).toEqual({
+            apiKey: "test-api-key",
+          });
+        });
+
+        it("应该在没有配置时返回空对象", () => {
+          mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+          configManager.reloadConfig();
+
+          const modelScopeConfig = configManager.getModelScopeConfig();
+          expect(modelScopeConfig).toEqual({});
+        });
+      });
+
+      describe("getModelScopeApiKey", () => {
+        it("应该从配置中返回 API Key", () => {
+          const apiKey = configManager.getModelScopeApiKey();
+          expect(apiKey).toBe("test-api-key");
+        });
+
+        it("应该在配置中没有时从环境变量获取", () => {
+          mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+          configManager.reloadConfig();
+
+          const originalEnv = process.env.MODELSCOPE_API_TOKEN;
+          process.env.MODELSCOPE_API_TOKEN = "env-api-key";
+
+          const apiKey = configManager.getModelScopeApiKey();
+          expect(apiKey).toBe("env-api-key");
+
+          // 恢复环境变量
+          if (originalEnv === undefined) {
+            process.env.MODELSCOPE_API_TOKEN = undefined as any;
+          } else {
+            process.env.MODELSCOPE_API_TOKEN = originalEnv;
+          }
+        });
+
+        it("应该优先使用配置文件中的 API Key", () => {
+          const originalEnv = process.env.MODELSCOPE_API_TOKEN;
+          process.env.MODELSCOPE_API_TOKEN = "env-api-key";
+
+          const apiKey = configManager.getModelScopeApiKey();
+          expect(apiKey).toBe("test-api-key");
+
+          // 恢复环境变量
+          if (originalEnv === undefined) {
+            process.env.MODELSCOPE_API_TOKEN = undefined as any;
+          } else {
+            process.env.MODELSCOPE_API_TOKEN = originalEnv;
+          }
+        });
+      });
+
+      describe("updateModelScopeConfig", () => {
+        it("应该正确更新 ModelScope 配置", () => {
+          configManager.updateModelScopeConfig({ apiKey: "new-api-key" });
+
+          const writtenConfig = JSON.parse(
+            (mockWriteFileSync.mock.calls[0] as any)[1]
+          );
+
+          expect(writtenConfig.modelscope).toEqual({
+            apiKey: "new-api-key",
+          });
+        });
+      });
+
+      describe("setModelScopeApiKey", () => {
+        it("应该正确设置 API Key", () => {
+          configManager.setModelScopeApiKey("new-api-key");
+
+          const writtenConfig = JSON.parse(
+            (mockWriteFileSync.mock.calls[0] as any)[1]
+          );
+
+          expect(writtenConfig.modelscope.apiKey).toBe("new-api-key");
+        });
+
+        it("应该为空的 API Key 抛出错误", () => {
+          expect(() => configManager.setModelScopeApiKey("")).toThrow(
+            "API Key 必须是非空字符串"
+          );
+        });
+
+        it("应该为非字符串 API Key 抛出错误", () => {
+          expect(() => configManager.setModelScopeApiKey(null as any)).toThrow(
+            "API Key 必须是非空字符串"
+          );
+        });
+      });
+    });
   });
 });

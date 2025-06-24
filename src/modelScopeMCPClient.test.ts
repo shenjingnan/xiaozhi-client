@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { SSEMCPServerConfig } from "./configManager";
+import { configManager, type SSEMCPServerConfig } from "./configManager";
 import { ModelScopeMCPClient } from "./modelScopeMCPClient";
 
 // Mock dependencies
@@ -35,6 +35,18 @@ vi.mock("eventsource", () => ({
   EventSource: vi.fn().mockImplementation(() => ({})),
 }));
 
+// Mock configManager
+vi.mock("./configManager", async () => {
+  const actual =
+    await vi.importActual<typeof import("./configManager")>("./configManager");
+  return {
+    ...actual,
+    configManager: {
+      getModelScopeApiKey: vi.fn().mockReturnValue("test-token"),
+    },
+  };
+});
+
 describe("ModelScopeMCPClient", () => {
   let client: ModelScopeMCPClient;
   const testConfig: SSEMCPServerConfig = {
@@ -46,8 +58,12 @@ describe("ModelScopeMCPClient", () => {
   beforeEach(() => {
     // 保存原始环境变量
     originalToken = process.env.MODELSCOPE_API_TOKEN;
-    // 设置环境变量
-    process.env.MODELSCOPE_API_TOKEN = "test-token";
+    // 清除环境变量，确保使用 mock 的配置
+    process.env.MODELSCOPE_API_TOKEN = undefined as any;
+
+    // 重置 mock
+    vi.mocked(configManager.getModelScopeApiKey).mockReturnValue("test-token");
+
     client = new ModelScopeMCPClient("test-server", testConfig);
   });
 
@@ -82,11 +98,9 @@ describe("ModelScopeMCPClient", () => {
     });
 
     it("应该在没有 API Token 时抛出错误", async () => {
-      process.env.MODELSCOPE_API_TOKEN = "" as any;
+      vi.mocked(configManager.getModelScopeApiKey).mockReturnValue("");
 
-      await expect(client.start()).rejects.toThrow(
-        "未设置 MODELSCOPE_API_TOKEN 环境变量"
-      );
+      await expect(client.start()).rejects.toThrow("未设置 ModelScope API Key");
     });
 
     it("应该处理连接失败", async () => {

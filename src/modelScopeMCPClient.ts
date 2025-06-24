@@ -1,7 +1,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { EventSource } from "eventsource";
-import type { SSEMCPServerConfig } from "./configManager";
+import { configManager, type SSEMCPServerConfig } from "./configManager";
 import { logger as globalLogger } from "./logger";
 import type { IMCPClient } from "./mcpServerProxy";
 
@@ -60,11 +60,11 @@ export class ModelScopeMCPClient implements IMCPClient {
     logger.info(`正在启动 ModelScope MCP 客户端：${this.name}`);
 
     try {
-      // 从环境变量获取 API Token
-      const token = process.env.MODELSCOPE_API_TOKEN;
+      // 从配置或环境变量获取 API Token
+      const token = configManager.getModelScopeApiKey();
       if (!token || token === "") {
         throw new Error(
-          "未设置 MODELSCOPE_API_TOKEN 环境变量。请设置该环境变量后重试。"
+          "未设置 ModelScope API Key。请在配置文件中设置 modelscope.apiKey 或设置 MODELSCOPE_API_TOKEN 环境变量。"
         );
       }
 
