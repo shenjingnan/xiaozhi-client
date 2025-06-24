@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { configManager, type SSEMCPServerConfig } from "./configManager";
+import { type SSEMCPServerConfig, configManager } from "./configManager";
 import { ModelScopeMCPClient } from "./modelScopeMCPClient";
 
 // Mock dependencies

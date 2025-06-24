@@ -1,7 +1,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { EventSource } from "eventsource";
-import { configManager, type SSEMCPServerConfig } from "./configManager";
+import { type SSEMCPServerConfig, configManager } from "./configManager";
 import { logger as globalLogger } from "./logger";
 import type { IMCPClient } from "./mcpServerProxy";
 
