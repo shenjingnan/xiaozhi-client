@@ -180,6 +180,10 @@ export class ModelScopeMCPClient implements IMCPClient {
         arguments: arguments_,
       });
 
+      logger.info(
+        `ModelScope 工具调用返回: ${JSON.stringify(result).substring(0, 500)}...`
+      );
+
       return result;
     } catch (error) {
       logger.error(
