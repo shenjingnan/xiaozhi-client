@@ -31,6 +31,7 @@
     "type:check": "tsc --noEmit",
     "check": "biome check .",
     "check:write": "biome check --write .",
+    "check:all": "pnpm check && pnpm type:check && pnpm spell:check && pnpm duplicate:check",
     "spell:check": "cspell \"src/**/*.ts\" \"*.md\" \"*.json\"",
     "duplicate:check": "jscpd src/",
     "release": "semantic-release"
@@ -50,6 +51,7 @@
     "commander": "^14.0.0",
     "consola": "^3.4.2",
     "dotenv": "^16.3.1",
+    "eventsource": "^4.0.0",
     "omelette": "^0.4.17",
     "ora": "^8.2.0",
     "ws": "^8.14.2",
@@ -64,6 +66,7 @@
     "@semantic-release/github": "^11.0.3",
     "@semantic-release/npm": "^12.0.1",
     "@semantic-release/release-notes-generator": "^14.0.3",
+    "@types/eventsource": "^3.0.0",
     "@types/node": "^24.0.1",
     "@types/omelette": "^0.4.5",
     "@types/ws": "^8.18.1",

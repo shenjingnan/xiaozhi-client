@@ -9,13 +9,20 @@
     "modelcontextprotocol",
     "postbuild",
     "modelscope",
+    "ModelScope",
+    "MODELSCOPE",
     "compzsh",
     "compbash",
     "unstub",
     "xzcli",
     "amap",
     "verylongstring",
-    "pyenv"
+    "pyenv",
+    "eventsource",
+    "EventSource",
+    "SSEMCP",
+    "IMCP",
+    "gaode"
   ],
   "ignorePaths": [
     "node_modules/**",

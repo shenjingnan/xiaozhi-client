@@ -922,13 +922,16 @@ async function configCommand(key: string, value?: string): Promise<void> {
           for (const [name, serverConfig] of Object.entries(
             config.mcpServers
           )) {
-            console.log(
-              chalk.gray(
-                `  ${name}: ${serverConfig.command} ${serverConfig.args.join(
-                  " "
-                )}`
-              )
-            );
+            // 检查是否是 SSE 类型
+            if ("type" in serverConfig && serverConfig.type === "sse") {
+              console.log(chalk.gray(`  ${name}: [SSE] ${serverConfig.url}`));
+            } else {
+              console.log(
+                chalk.gray(
+                  `  ${name}: ${(serverConfig as any).command} ${(serverConfig as any).args.join(" ")}`
+                )
+              );
+            }
           }
           break;
         case "connection": {

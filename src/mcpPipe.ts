@@ -46,6 +46,7 @@ export class MCPPipe {
   private heartbeatTimeoutTimer?: NodeJS.Timeout;
   private reconnectTimer?: NodeJS.Timeout;
   private mcpProcessRestartAttempts: number;
+  private stdoutBuffer: string; // 添加缓冲区来处理分片消息
   private connectionConfig: {
     heartbeatInterval: number;
     heartbeatTimeout: number;
@@ -60,6 +61,7 @@ export class MCPPipe {
     this.shouldReconnect = true;
     this.isConnected = false;
     this.mcpProcessRestartAttempts = 0;
+    this.stdoutBuffer = ""; // 初始化缓冲区
 
     // 获取连接配置，如果配置文件不存在则使用默认值
     try {
@@ -119,7 +121,7 @@ export class MCPPipe {
 
     this.websocket.on("message", (data: WebSocket.Data) => {
       const message = data.toString();
-      logger.debug(`<< ${message.substring(0, 120)}...`);
+      logger.info(`<< WebSocket收到消息: ${message}`);
 
       // Write to process stdin
       if (this.process?.stdin && !this.process.stdin.destroyed) {
@@ -259,11 +261,31 @@ export class MCPPipe {
 
     // Handle process stdout - send to WebSocket
     this.process.stdout?.on("data", (data: Buffer) => {
-      const message = data.toString();
-      logger.debug(`>> ${message.substring(0, 120)}...`);
+      // 将数据添加到缓冲区
+      this.stdoutBuffer += data.toString();
 
-      if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
-        this.websocket.send(message);
+      // 按换行符分割消息
+      const lines = this.stdoutBuffer.split("\n");
+      this.stdoutBuffer = lines.pop() || ""; // 保留最后一个不完整的行
+
+      // 处理每个完整的消息
+      for (const line of lines) {
+        if (line.trim()) {
+          logger.info(`>> mcpServerProxy发送消息长度: ${line.length} 字节`);
+          logger.info(
+            `>> mcpServerProxy发送消息: ${line.substring(0, 500)}...`
+          );
+
+          if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
+            try {
+              // 发送完整的消息行（包含换行符）
+              this.websocket.send(`${line}\n`);
+              logger.info(">> 成功发送消息到 WebSocket");
+            } catch (error) {
+              logger.error(`>> 发送消息到 WebSocket 失败: ${error}`);
+            }
+          }
+        }
       }
     });
 
@@ -314,6 +336,9 @@ export class MCPPipe {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = undefined;
     }
+
+    // 清空缓冲区
+    this.stdoutBuffer = "";
 
     if (this.process) {
       logger.info(`正在终止 ${this.mcpScript} 进程`);
