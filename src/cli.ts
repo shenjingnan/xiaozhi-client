@@ -12,6 +12,7 @@ import { setupAutoCompletion, showCompletionHelp } from "./autoCompletion";
 import { configManager } from "./configManager";
 import { logger } from "./logger";
 import { listMcpServers, listServerTools, setToolEnabled } from "./mcpCommands";
+import { WebServer } from "./webServer";
 
 const program = new Command();
 const SERVICE_NAME = "xiaozhi-mcp-service";
@@ -894,6 +895,64 @@ function copyDirectory(
 }
 
 /**
+ * 启动 UI 服务
+ */
+async function startUIService(): Promise<void> {
+  const spinner = ora("启动 UI 服务...").start();
+
+  try {
+    // 检查配置是否存在
+    if (!configManager.configExists()) {
+      spinner.fail("配置文件不存在");
+      console.log(chalk.yellow('💡 提示: 请先运行 "xiaozhi init" 初始化配置'));
+      return;
+    }
+
+    // 启动 Web 服务器
+    const webServer = new WebServer(9999);
+    await webServer.start();
+
+    spinner.succeed("UI 服务已启动");
+    console.log(chalk.green("✅ 配置管理网页已启动: http://localhost:9999"));
+    console.log(chalk.yellow("💡 提示: 按 Ctrl+C 停止服务"));
+
+    // 自动打开浏览器
+    const { spawn } = await import("node:child_process");
+    const url = "http://localhost:9999";
+
+    // 根据不同平台打开浏览器
+    const openCommand =
+      process.platform === "darwin"
+        ? "open"
+        : process.platform === "win32"
+          ? "start"
+          : "xdg-open";
+
+    try {
+      spawn(openCommand, [url], { detached: true, stdio: "ignore" }).unref();
+    } catch (error) {
+      // 忽略打开浏览器的错误
+    }
+
+    // 处理退出信号
+    process.on("SIGINT", async () => {
+      console.log(chalk.yellow("\n正在停止 UI 服务..."));
+      await webServer.stop();
+      process.exit(0);
+    });
+
+    process.on("SIGTERM", async () => {
+      await webServer.stop();
+      process.exit(0);
+    });
+  } catch (error) {
+    spinner.fail(
+      `启动 UI 服务失败: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
+
+/**
  * 配置管理命令
  */
 async function configCommand(key: string, value?: string): Promise<void> {
@@ -1054,6 +1113,7 @@ function showHelp(): void {
   console.log("  status                   检查服务状态");
   console.log("  attach                   连接到后台服务查看日志");
   console.log("  restart [--daemon]       重启服务 (--daemon 后台运行)");
+  console.log("  ui                       启动配置管理网页");
   console.log("  completion               显示自动补全设置说明");
   console.log();
   console.log(chalk.yellow("选项:"));
@@ -1201,6 +1261,14 @@ mcpCommand
 
     const enabled = action === "enable";
     await setToolEnabled(serverName, toolName, enabled);
+  });
+
+// ui 命令
+program
+  .command("ui")
+  .description("启动配置管理网页")
+  .action(async () => {
+    await startUIService();
   });
 
 // completion 命令
