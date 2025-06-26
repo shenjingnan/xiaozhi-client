@@ -1,8 +1,5 @@
 name: Release
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       version_type:
@@ -34,11 +31,7 @@ jobs:
           
       - name: 确认当前分支
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            echo "PR 合并到 main 分支，准备自动发布正式版"
-          else
-            echo "手动触发发布，准备发布 ${{ github.event.inputs.version_type }} 版本"
-          fi
+          echo "手动触发发布，准备发布 ${{ github.event.inputs.version_type }} 版本"
 
       - name: 安装 pnpm
         uses: pnpm/action-setup@v4
@@ -69,10 +62,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            echo "PR 合并触发，执行稳定版发布"
-            npx semantic-release
-          elif [ "${{ github.event.inputs.version_type }}" = "stable" ]; then
+          if [ "${{ github.event.inputs.version_type }}" = "stable" ]; then
             echo "手动触发稳定版发布"
             npx semantic-release
           else
