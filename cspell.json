@@ -21,7 +21,8 @@
     "eventsource",
     "EventSource",
     "SSEMCP",
-    "IMCP"
+    "IMCP",
+    "gaode"
   ],
   "ignorePaths": [
     "node_modules/**",

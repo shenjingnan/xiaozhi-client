@@ -31,7 +31,7 @@
     "type:check": "tsc --noEmit",
     "check": "biome check .",
     "check:write": "biome check --write .",
-    "check:all": "pnpm check && pnpm ts:check && pnpm spell:check && pnpm duplicate:check",
+    "check:all": "pnpm check && pnpm type:check && pnpm spell:check && pnpm duplicate:check",
     "spell:check": "cspell \"src/**/*.ts\" \"*.md\" \"*.json\"",
     "duplicate:check": "jscpd src/",
     "release": "semantic-release"

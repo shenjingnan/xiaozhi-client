@@ -263,22 +263,24 @@ export class MCPPipe {
     this.process.stdout?.on("data", (data: Buffer) => {
       // 将数据添加到缓冲区
       this.stdoutBuffer += data.toString();
-      
+
       // 按换行符分割消息
       const lines = this.stdoutBuffer.split("\n");
       this.stdoutBuffer = lines.pop() || ""; // 保留最后一个不完整的行
-      
+
       // 处理每个完整的消息
       for (const line of lines) {
         if (line.trim()) {
           logger.info(`>> mcpServerProxy发送消息长度: ${line.length} 字节`);
-          logger.info(`>> mcpServerProxy发送消息: ${line.substring(0, 500)}...`);
-          
+          logger.info(
+            `>> mcpServerProxy发送消息: ${line.substring(0, 500)}...`
+          );
+
           if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
             try {
               // 发送完整的消息行（包含换行符）
-              this.websocket.send(line + "\n");
-              logger.info(`>> 成功发送消息到 WebSocket`);
+              this.websocket.send(`${line}\n`);
+              logger.info(">> 成功发送消息到 WebSocket");
             } catch (error) {
               logger.error(`>> 发送消息到 WebSocket 失败: ${error}`);
             }

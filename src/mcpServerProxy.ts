@@ -829,11 +829,11 @@ export class JSONRPCServer {
     logger.info(`调用工具：${name}，参数：${JSON.stringify(args)}`);
 
     const result = await this.proxy.callTool(name, args || {});
-    
+
     // 添加调试日志
     logger.info(`工具调用结果类型: ${typeof result}`);
     logger.info(`工具调用结果: ${JSON.stringify(result).substring(0, 500)}...`);
-    
+
     return result;
   }
 
