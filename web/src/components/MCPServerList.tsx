@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import type { MCPServerConfig, MCPServerToolsConfig } from "../types";
 
 interface MCPServerListProps {

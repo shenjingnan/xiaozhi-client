@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useWebSocket } from "./useWebSocket";
 
 // Mock WebSocket
@@ -19,7 +19,7 @@ class MockWebSocket {
     }, 0);
   }
 
-  send(data: string) {
+  send(_data: string) {
     // Mock send
   }
 
@@ -31,11 +31,31 @@ class MockWebSocket {
 
 global.WebSocket = MockWebSocket as any;
 
+// Mock instances tracking
+let mockInstances: MockWebSocket[] = [];
+(global.WebSocket as any).mock = {
+  instances: mockInstances,
+};
+
+// Override constructor to track instances
+const OriginalMockWebSocket = MockWebSocket;
+global.WebSocket = class extends OriginalMockWebSocket {
+  constructor(url: string) {
+    super(url);
+    mockInstances.push(this);
+  }
+} as any;
+(global.WebSocket as any).mock = {
+  instances: mockInstances,
+};
+
 describe("useWebSocket", () => {
   let mockWebSocket: MockWebSocket;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockInstances = [];
+    (global.WebSocket as any).mock.instances = mockInstances;
   });
 
   it("initializes with disconnected state", () => {

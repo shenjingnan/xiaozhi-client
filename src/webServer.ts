@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { parse } from "node:url";
 import { fileURLToPath } from "node:url";
 import { WebSocketServer } from "ws";
-import { ConfigManager } from "./configManager.js";
+import { configManager } from "./configManager.js";
 import type { AppConfig } from "./configManager.js";
 import { Logger } from "./logger.js";
 
@@ -19,7 +19,6 @@ interface ClientInfo {
 export class WebServer {
   private httpServer: ReturnType<typeof createServer>;
   private wss: WebSocketServer;
-  private configManager: ConfigManager;
   private logger: Logger;
   private port: number;
   private clientInfo: ClientInfo = {
@@ -30,8 +29,7 @@ export class WebServer {
 
   constructor(port = 9999) {
     this.port = port;
-    this.configManager = new ConfigManager();
-    this.logger = new Logger("WebServer");
+    this.logger = new Logger();
 
     this.httpServer = createServer((req, res) => {
       this.handleHttpRequest(req, res);
@@ -62,7 +60,7 @@ export class WebServer {
       }
 
       if (pathname === "/api/config" && req.method === "GET") {
-        const config = await this.configManager.readConfig();
+        const config = configManager.getConfig();
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(config));
       } else if (pathname === "/api/config" && req.method === "PUT") {
@@ -73,14 +71,18 @@ export class WebServer {
         req.on("end", async () => {
           try {
             const newConfig: AppConfig = JSON.parse(body);
-            await this.configManager.updateConfig(newConfig);
+            this.updateConfig(newConfig);
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify({ success: true }));
 
             this.broadcastConfigUpdate(newConfig);
           } catch (error) {
             res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: error.message }));
+            res.end(
+              JSON.stringify({
+                error: error instanceof Error ? error.message : String(error),
+              })
+            );
           }
         });
       } else if (pathname === "/api/status" && req.method === "GET") {
@@ -207,7 +209,12 @@ export class WebServer {
           await this.handleWebSocketMessage(ws, data);
         } catch (error) {
           this.logger.error("WebSocket message error:", error);
-          ws.send(JSON.stringify({ type: "error", error: error.message }));
+          ws.send(
+            JSON.stringify({
+              type: "error",
+              error: error instanceof Error ? error.message : String(error),
+            })
+          );
         }
       });
 
@@ -222,13 +229,13 @@ export class WebServer {
   private async handleWebSocketMessage(ws: any, data: any) {
     switch (data.type) {
       case "getConfig": {
-        const config = await this.configManager.readConfig();
+        const config = configManager.getConfig();
         ws.send(JSON.stringify({ type: "config", data: config }));
         break;
       }
 
       case "updateConfig":
-        await this.configManager.updateConfig(data.config);
+        this.updateConfig(data.config);
         this.broadcastConfigUpdate(data.config);
         break;
 
@@ -244,7 +251,7 @@ export class WebServer {
   }
 
   private async sendInitialData(ws: any) {
-    const config = await this.configManager.readConfig();
+    const config = configManager.getConfig();
     ws.send(JSON.stringify({ type: "config", data: config }));
     ws.send(JSON.stringify({ type: "status", data: this.clientInfo }));
   }
@@ -274,6 +281,52 @@ export class WebServer {
     this.clientInfo = { ...this.clientInfo, ...info };
     if (info.lastHeartbeat) {
       this.clientInfo.lastHeartbeat = Date.now();
+    }
+  }
+
+  private updateConfig(newConfig: AppConfig) {
+    // 更新 MCP 端点
+    if (newConfig.mcpEndpoint !== configManager.getMcpEndpoint()) {
+      configManager.updateMcpEndpoint(newConfig.mcpEndpoint);
+    }
+
+    // 更新 MCP 服务
+    const currentServers = configManager.getMcpServers();
+    for (const [name, config] of Object.entries(newConfig.mcpServers)) {
+      if (JSON.stringify(currentServers[name]) !== JSON.stringify(config)) {
+        configManager.updateMcpServer(name, config);
+      }
+    }
+
+    // 删除不存在的服务
+    for (const name of Object.keys(currentServers)) {
+      if (!(name in newConfig.mcpServers)) {
+        configManager.removeMcpServer(name);
+      }
+    }
+
+    // 更新连接配置
+    if (newConfig.connection) {
+      configManager.updateConnectionConfig(newConfig.connection);
+    }
+
+    // 更新 ModelScope 配置
+    if (newConfig.modelscope) {
+      configManager.updateModelScopeConfig(newConfig.modelscope);
+    }
+
+    // 更新服务工具配置
+    if (newConfig.mcpServerConfig) {
+      for (const [serverName, toolsConfig] of Object.entries(
+        newConfig.mcpServerConfig
+      )) {
+        for (const [toolName, toolConfig] of Object.entries(
+          toolsConfig.tools
+        )) {
+          configManager.setToolEnabled(serverName, toolName, toolConfig.enable);
+          // 注释：configManager 不支持直接设置工具描述，描述作为工具配置的一部分保存
+        }
+      }
     }
   }
 

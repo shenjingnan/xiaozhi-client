@@ -1,4 +1,3 @@
-import React from "react";
 import ConfigEditor from "../components/ConfigEditor";
 import MCPServerList from "../components/MCPServerList";
 import StatusCard from "../components/StatusCard";

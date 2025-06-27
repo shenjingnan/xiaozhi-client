@@ -1,4 +1,3 @@
-import React from "react";
 import type { ClientStatus } from "../types";
 
 interface StatusCardProps {
