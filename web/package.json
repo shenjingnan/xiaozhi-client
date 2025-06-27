@@ -17,13 +17,20 @@
     "check:write": "biome check --write ."
   },
   "dependencies": {
+    "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-toast": "^1.2.14",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.523.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
     "@testing-library/jest-dom": "^6.1.5",
     "@testing-library/react": "^14.1.2",
+    "@types/node": "^24.0.4",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
     "@vitejs/plugin-react": "^4.2.1",

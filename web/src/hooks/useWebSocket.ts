@@ -54,10 +54,33 @@ export function useWebSocket() {
     };
   }, []);
 
-  const updateConfig = useCallback((config: AppConfig) => {
-    if (socketRef.current?.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify({ type: "updateConfig", config }));
-    }
+  const updateConfig = useCallback((config: AppConfig): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (socketRef.current?.readyState === WebSocket.OPEN) {
+        // 先通过 HTTP API 更新
+        fetch("http://localhost:9999/api/config", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(config),
+        })
+          .then((response) => {
+            if (response.ok) {
+              // 然后通过 WebSocket 通知
+              socketRef.current?.send(
+                JSON.stringify({ type: "updateConfig", config })
+              );
+              resolve();
+            } else {
+              return response.text().then((text) => {
+                reject(new Error(text || "保存配置失败"));
+              });
+            }
+          })
+          .catch(reject);
+      } else {
+        reject(new Error("WebSocket 未连接"));
+      }
+    });
   }, []);
 
   const refreshStatus = useCallback(() => {

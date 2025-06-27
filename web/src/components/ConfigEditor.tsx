@@ -1,3 +1,6 @@
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import type { AppConfig } from "../types";
 
@@ -8,6 +11,8 @@ interface ConfigEditorProps {
 
 function ConfigEditor({ config, onChange }: ConfigEditorProps) {
   const [localConfig, setLocalConfig] = useState(config);
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     setLocalConfig(config);
@@ -29,17 +34,36 @@ function ConfigEditor({ config, onChange }: ConfigEditorProps) {
     setLocalConfig(newConfig);
   };
 
-  const handleSave = () => {
-    onChange(localConfig);
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await onChange(localConfig);
+      toast({
+        title: "配置已保存",
+        description: "您的配置已成功更新",
+      });
+    } catch (error) {
+      toast({
+        title: "保存失败",
+        description:
+          error instanceof Error ? error.message : "保存配置时发生错误",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="space-y-4">
+    <Card>
+      <CardHeader>
+        <CardTitle>配置设置</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
         <div>
           <label
             htmlFor="mcpEndpoint"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium mb-2"
           >
             MCP 接入点
           </label>
@@ -48,18 +72,18 @@ function ConfigEditor({ config, onChange }: ConfigEditorProps) {
             type="text"
             value={localConfig.mcpEndpoint}
             onChange={(e) => handleChange("mcpEndpoint", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
             placeholder="wss://api.xiaozhi.me/mcp/?token=..."
           />
         </div>
 
         <div>
-          <h4 className="text-sm font-medium text-gray-700 mb-2">连接配置</h4>
+          <h4 className="text-sm font-medium mb-2">连接配置</h4>
           <div className="space-y-2 pl-4">
             <div>
               <label
                 htmlFor="heartbeatInterval"
-                className="block text-xs text-gray-600"
+                className="block text-xs text-muted-foreground"
               >
                 心跳间隔 (毫秒)
               </label>
@@ -73,14 +97,14 @@ function ConfigEditor({ config, onChange }: ConfigEditorProps) {
                     Number(e.target.value)
                   )
                 }
-                className="w-full px-3 py-1 border border-gray-300 rounded-md text-sm"
+                className="w-full px-3 py-1 border rounded-md text-sm"
               />
             </div>
 
             <div>
               <label
                 htmlFor="heartbeatTimeout"
-                className="block text-xs text-gray-600"
+                className="block text-xs text-muted-foreground"
               >
                 心跳超时 (毫秒)
               </label>
@@ -94,14 +118,14 @@ function ConfigEditor({ config, onChange }: ConfigEditorProps) {
                     Number(e.target.value)
                   )
                 }
-                className="w-full px-3 py-1 border border-gray-300 rounded-md text-sm"
+                className="w-full px-3 py-1 border rounded-md text-sm"
               />
             </div>
 
             <div>
               <label
                 htmlFor="reconnectInterval"
-                className="block text-xs text-gray-600"
+                className="block text-xs text-muted-foreground"
               >
                 重连间隔 (毫秒)
               </label>
@@ -115,7 +139,7 @@ function ConfigEditor({ config, onChange }: ConfigEditorProps) {
                     Number(e.target.value)
                   )
                 }
-                className="w-full px-3 py-1 border border-gray-300 rounded-md text-sm"
+                className="w-full px-3 py-1 border rounded-md text-sm"
               />
             </div>
           </div>
@@ -125,7 +149,7 @@ function ConfigEditor({ config, onChange }: ConfigEditorProps) {
           <div>
             <label
               htmlFor="modelScopeApiKey"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium mb-2"
             >
               ModelScope API Key
             </label>
@@ -136,21 +160,22 @@ function ConfigEditor({ config, onChange }: ConfigEditorProps) {
               onChange={(e) =>
                 handleChange("modelscope.apiKey", e.target.value)
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="输入您的 API 密钥"
             />
           </div>
         )}
 
-        <button
+        <Button
           type="button"
           onClick={handleSave}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+          className="w-full"
+          disabled={isSaving}
         >
-          保存配置
-        </button>
-      </div>
-    </div>
+          {isSaving ? "保存中..." : "保存配置"}
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 
