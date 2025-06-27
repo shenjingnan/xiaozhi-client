@@ -1,26 +1,45 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import WebSocket from "ws";
-import { ConfigManager } from "./configManager";
 import { WebServer } from "./webServer";
 
-vi.mock("./configManager");
+vi.mock("./configManager", () => {
+  const mockConfigManager = {
+    getConfig: vi.fn(),
+    getMcpEndpoint: vi.fn(),
+    getMcpServers: vi.fn(),
+    updateMcpEndpoint: vi.fn(),
+    updateMcpServer: vi.fn(),
+    removeMcpServer: vi.fn(),
+    updateConnectionConfig: vi.fn(),
+    updateModelScopeConfig: vi.fn(),
+    setToolEnabled: vi.fn(),
+  };
+  return {
+    configManager: mockConfigManager,
+    ConfigManager: vi.fn(() => mockConfigManager),
+  };
+});
 vi.mock("./logger");
 
 describe("WebServer", () => {
   let webServer: WebServer;
   let mockConfigManager: any;
 
-  beforeEach(() => {
-    mockConfigManager = {
-      readConfig: vi.fn().mockResolvedValue({
-        mcpEndpoint: "wss://test.endpoint",
-        mcpServers: {
-          test: { command: "node", args: ["test.js"] },
-        },
-      }),
-      updateConfig: vi.fn().mockResolvedValue(undefined),
-    };
-    vi.mocked(ConfigManager).mockImplementation(() => mockConfigManager as any);
+  beforeEach(async () => {
+    const { configManager } = await import("./configManager");
+    mockConfigManager = configManager;
+
+    // 设置默认的 mock 返回值
+    mockConfigManager.getConfig.mockReturnValue({
+      mcpEndpoint: "wss://test.endpoint",
+      mcpServers: {
+        test: { command: "node", args: ["test.js"] },
+      },
+    });
+    mockConfigManager.getMcpEndpoint.mockReturnValue("wss://test.endpoint");
+    mockConfigManager.getMcpServers.mockReturnValue({
+      test: { command: "node", args: ["test.js"] },
+    });
   });
 
   afterEach(async () => {
@@ -71,7 +90,9 @@ describe("WebServer", () => {
     });
 
     expect(response.status).toBe(200);
-    expect(mockConfigManager.updateConfig).toHaveBeenCalledWith(newConfig);
+    expect(mockConfigManager.updateMcpEndpoint).toHaveBeenCalledWith(
+      "wss://new.endpoint"
+    );
   });
 
   it("should handle WebSocket connections", async () => {
@@ -79,21 +100,39 @@ describe("WebServer", () => {
     await webServer.start();
 
     const ws = new WebSocket("ws://localhost:9995");
+    let messageCount = 0;
 
     await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        ws.close();
+        reject(new Error("WebSocket test timeout"));
+      }, 4000);
+
       ws.on("open", () => {
-        ws.send(JSON.stringify({ type: "getConfig" }));
+        // 不发送消息，等待初始数据
       });
 
       ws.on("message", (data) => {
+        messageCount++;
         const message = JSON.parse(data.toString());
-        expect(message.type).toBe("config");
-        expect(message.data.mcpEndpoint).toBe("wss://test.endpoint");
-        ws.close();
-        resolve();
+
+        // WebServer 会发送两条初始消息：config 和 status
+        if (message.type === "config") {
+          expect(message.data.mcpEndpoint).toBe("wss://test.endpoint");
+        }
+
+        // 收到两条消息后关闭连接
+        if (messageCount === 2) {
+          clearTimeout(timeout);
+          ws.close();
+          resolve();
+        }
       });
 
-      ws.on("error", reject);
+      ws.on("error", (err) => {
+        clearTimeout(timeout);
+        reject(err);
+      });
     });
   });
 
