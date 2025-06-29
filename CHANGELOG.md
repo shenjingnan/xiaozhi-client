@@ -1,3 +1,11 @@
+# [1.1.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.0.10...v1.1.0) (2025-06-29)
+
+
+### Features
+
+* **mcp:** 集成 ModelScope MCP 服务支持 ([#76](https://github.com/shenjingnan/xiaozhi-client/issues/76)) ([b93fd35](https://github.com/shenjingnan/xiaozhi-client/commit/b93fd358dceb0480a76cc16d9cc9a2eb72ac4c1a))
+* **release:** 调整语义化版本发布规则 ([#75](https://github.com/shenjingnan/xiaozhi-client/issues/75)) ([0f405e0](https://github.com/shenjingnan/xiaozhi-client/commit/0f405e0127ed3cea3ff1921ce5c567b4ed6c8552))
+
 # [1.1.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.0.10...v1.1.0) (2025-06-23)
 
 
