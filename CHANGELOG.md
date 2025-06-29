@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.2.0...v1.3.0) (2025-06-29)
+
+
+### Features
+
+* trigger release for new version ([ab57dbf](https://github.com/shenjingnan/xiaozhi-client/commit/ab57dbfb3ed800acb384424b9b0277deee7fd240))
+
 # [1.1.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.0.10...v1.1.0) (2025-06-29)
 
 
