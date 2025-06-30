@@ -40,6 +40,7 @@ export default defineConfig({
     "src/mcpCommands.ts",
     "src/autoCompletion.ts",
     "src/logger.ts",
+    "src/webServer.ts",
   ],
   format: ["esm"],
   target: "node18",
