@@ -116,12 +116,14 @@ xiaozhi-client 现已支持接入 [ModelScope](https://www.modelscope.cn/mcp) �
 ### 使用前准备
 
 1. 获取 ModelScope API Token：
+
    - 访问 [ModelScope](https://www.modelscope.cn) 并登录
    - 在个人中心获取 API Token
 
 2. 配置 API Token（两种方式任选其一）：
-   
+
    **方式一：在配置文件中设置（推荐）**
+
    ```json
    {
      "modelscope": {
@@ -129,8 +131,9 @@ xiaozhi-client 现已支持接入 [ModelScope](https://www.modelscope.cn/mcp) �
      }
    }
    ```
-   
+
    **方式二：设置环境变量**
+
    ```bash
    export MODELSCOPE_API_TOKEN="你的API Token"
    ```
@@ -154,22 +157,25 @@ xiaozhi-client 现已支持接入 [ModelScope](https://www.modelscope.cn/mcp) �
 ### 消息类型
 
 #### 1. 请求（Request）- 需要响应
+
 ```json
 {
   "jsonrpc": "2.0",
   "method": "方法名",
   "params": {},
-  "id": 1  // 必须包含id字段，可以是数字或字符串
+  "id": 1 // 必须包含id字段，可以是数字或字符串
 }
 ```
 
 支持的请求方法：
+
 - `initialize` - 初始化连接
 - `tools/list` - 获取工具列表
 - `tools/call` - 调用工具
 - `ping` - 连接测试
 
 #### 2. 通知（Notification）- 不需要响应
+
 ```json
 {
   "jsonrpc": "2.0",
@@ -180,18 +186,21 @@ xiaozhi-client 现已支持接入 [ModelScope](https://www.modelscope.cn/mcp) �
 ```
 
 支持的通知方法：
+
 - `notifications/initialized` - 初始化完成通知
 
 #### 3. 成功响应（Response）
+
 ```json
 {
   "jsonrpc": "2.0",
   "result": {},
-  "id": 1  // 必须与请求的id相同
+  "id": 1 // 必须与请求的id相同
 }
 ```
 
 #### 4. 错误响应（Error）
+
 ```json
 {
   "jsonrpc": "2.0",
@@ -199,24 +208,26 @@ xiaozhi-client 现已支持接入 [ModelScope](https://www.modelscope.cn/mcp) �
     "code": -32600,
     "message": "错误描述"
   },
-  "id": 1  // 必须与请求的id相同
+  "id": 1 // 必须与请求的id相同
 }
 ```
 
 ### 重要注意事项
 
 1. **关键区别**：请求和通知的唯一区别是是否包含 `id` 字段
+
    - 有 `id` = 请求，需要响应
    - 无 `id` = 通知，不需要响应
 
 2. **"notifications/initialized" 必须作为通知发送**：
+
    ```json
    // ✅ 正确
    {
      "jsonrpc": "2.0",
      "method": "notifications/initialized"
    }
-   
+
    // ❌ 错误 - 不应包含id
    {
      "jsonrpc": "2.0",
@@ -239,25 +250,25 @@ xiaozhi-client 现已支持接入 [ModelScope](https://www.modelscope.cn/mcp) �
 sequenceDiagram
     participant Client as 小智客户端
     participant Server as 自建MCP服务端
-    
+
     Note over Client,Server: 初始化阶段
     Client->>Server: {"jsonrpc":"2.0","method":"initialize","params":{...},"id":1}
     Server->>Client: {"jsonrpc":"2.0","result":{...},"id":1}
     Client->>Server: {"jsonrpc":"2.0","method":"notifications/initialized"}
     Note over Server: 无需响应通知
-    
+
     Note over Client,Server: 获取工具列表
     Client->>Server: {"jsonrpc":"2.0","method":"tools/list","params":{},"id":2}
     Server->>Client: {"jsonrpc":"2.0","result":{"tools":[...]},"id":2}
-    
+
     Note over Client,Server: 调用工具
     Client->>Server: {"jsonrpc":"2.0","method":"tools/call","params":{...},"id":3}
     Server->>Client: {"jsonrpc":"2.0","result":{...},"id":3}
-    
+
     Note over Client,Server: 保持连接
     Client->>Server: {"jsonrpc":"2.0","method":"ping","params":{},"id":4}
     Server->>Client: {"jsonrpc":"2.0","result":{},"id":4}
-    
+
     Note over Client,Server: 错误处理示例
     Client->>Server: {"jsonrpc":"2.0","method":"unknown_method","params":{},"id":5}
     Server->>Client: {"jsonrpc":"2.0","error":{"code":-32601,"message":"Method not found"},"id":5}
@@ -267,8 +278,27 @@ sequenceDiagram
 
 如果您看到类似 "未知的方法：notifications/initialized" 的错误，通常是因为在通知消息中错误地包含了 `id` 字段，导致客户端将其识别为请求而非通知。
 
-## 路线图
+## Web UI 配置界面
 
-- ✅ 支持 通过 SSE 类型的 MCP Server
-- ✅ 支持 直接使用 [modelscope](https://www.modelscope.cn/mcp) 中托管的 MCP 服务
-- 支持 通过使用网页进行 MCP 配置
+xiaozhi-client 提供了一个现代化的 Web UI 界面，让配置 MCP 服务更加直观和便捷。
+
+![Web UI 配置界面](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/web-ui-preview.png)
+
+### 功能特性
+
+- 🎨 **现代化界面**：基于 React + TypeScript + Tailwind CSS 构建
+- 🔧 **可视化配置**：直观的界面操作，无需手动编辑 JSON 文件
+- 🚀 **实时连接状态**：实时显示与小智服务器的连接状态
+- 📦 **MCP 服务管理**：
+  - 添加/编辑/删除 MCP 服务
+  - 支持本地服务和 SSE 服务
+  - 支持批量导入配置
+- ⚙️ **配置管理**：
+  - 编辑连接参数（心跳间隔、超时时间等）
+  - 管理 ModelScope API Key
+
+### 启动 Web UI
+
+```bash
+xiaozhi ui
+```
