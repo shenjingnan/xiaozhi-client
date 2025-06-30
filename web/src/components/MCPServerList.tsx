@@ -108,13 +108,6 @@ function MCPServerList({
     onChange(newServers, serverConfig);
     setNewServerInput("");
     setShowAddForm(false);
-    
-    // 如果只添加了一个服务，自动进入编辑模式
-    const addedNames = Object.keys(parsedServers);
-    if (addedNames.length === 1) {
-      setEditingServer(addedNames[0]);
-      setEditingServerJson(JSON.stringify(parsedServers[addedNames[0]], null, 2));
-    }
   };
 
   const handleUpdateServer = (name: string, jsonStr: string) => {
