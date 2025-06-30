@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Edit2, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import type { MCPServerConfig, MCPServerToolsConfig } from "../types";
+import { useToast } from "@/hooks/use-toast";
 
 interface MCPServerListProps {
   servers: Record<string, MCPServerConfig>;
@@ -19,8 +20,10 @@ function MCPServerList({
   onChange,
 }: MCPServerListProps) {
   const [editingServer, setEditingServer] = useState<string | null>(null);
-  const [newServerName, setNewServerName] = useState("");
+  const [editingServerJson, setEditingServerJson] = useState<string>("");
+  const [newServerInput, setNewServerInput] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
+  const { toast } = useToast();
 
   const isSSEServer = (
     config: MCPServerConfig
@@ -40,72 +43,137 @@ function MCPServerList({
     onChange(newServers, newServerConfig);
   };
 
+  const parseMCPConfig = (input: string): Record<string, MCPServerConfig> | null => {
+    try {
+      const trimmed = input.trim();
+      if (!trimmed) return null;
+      
+      const parsed = JSON.parse(trimmed);
+      
+      // 检查是否包含 mcpServers 层
+      if (parsed.mcpServers && typeof parsed.mcpServers === 'object') {
+        return parsed.mcpServers;
+      }
+      
+      // 检查是否是直接的服务配置对象
+      if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+        // 判断是否是单个服务配置（有 command 或 type 字段）
+        if ('command' in parsed || ('type' in parsed && parsed.type === 'sse')) {
+          // 生成一个默认名称
+          const defaultName = parsed.command ? 
+            parsed.command.split('/').pop() || 'mcp-server' : 
+            'sse-server';
+          return { [defaultName]: parsed };
+        }
+        
+        // 否则认为是多个服务的配置对象
+        return parsed;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('解析配置失败:', error);
+      return null;
+    }
+  };
+
   const handleAddServer = () => {
-    if (newServerName && !servers[newServerName]) {
-      const newServers = {
-        ...servers,
-        [newServerName]: {
-          command: "node",
-          args: ["./mcpServers/example.js"],
+    const parsedServers = parseMCPConfig(newServerInput);
+    
+    if (!parsedServers) {
+      toast({
+        title: "配置格式错误",
+        description: "请输入有效的 JSON 配置",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // 检查是否有重名的服务
+    const existingNames = Object.keys(parsedServers).filter(name => name in servers);
+    if (existingNames.length > 0) {
+      toast({
+        title: "服务名称冲突",
+        description: `以下服务已存在: ${existingNames.join(', ')}`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const newServers = {
+      ...servers,
+      ...parsedServers,
+    };
+    
+    onChange(newServers, serverConfig);
+    setNewServerInput("");
+    setShowAddForm(false);
+    
+    // 如果只添加了一个服务，自动进入编辑模式
+    const addedNames = Object.keys(parsedServers);
+    if (addedNames.length === 1) {
+      setEditingServer(addedNames[0]);
+      setEditingServerJson(JSON.stringify(parsedServers[addedNames[0]], null, 2));
+    }
+  };
+
+  const handleUpdateServer = (name: string, jsonStr: string) => {
+    try {
+      const config = JSON.parse(jsonStr);
+      onChange(
+        {
+          ...servers,
+          [name]: config,
         },
-      };
-      onChange(newServers, serverConfig);
-      setNewServerName("");
-      setShowAddForm(false);
-      setEditingServer(newServerName);
-    }
-  };
-
-  const handleUpdateServer = (name: string, config: MCPServerConfig) => {
-    onChange(
-      {
-        ...servers,
-        [name]: config,
-      },
-      serverConfig
-    );
-  };
-
-  const renderServerEditor = (name: string, config: MCPServerConfig) => {
-    if (isSSEServer(config)) {
-      return (
-        <div className="mt-2 space-y-2">
-          <input
-            type="text"
-            value={config.url}
-            onChange={(e) =>
-              handleUpdateServer(name, { type: "sse", url: e.target.value })
-            }
-            className="w-full px-3 py-1 border rounded-md text-sm"
-            placeholder="SSE URL"
-          />
-        </div>
+        serverConfig
       );
+      toast({
+        title: "保存成功",
+        description: "服务配置已更新",
+      });
+    } catch (error) {
+      toast({
+        title: "配置格式错误",
+        description: "请输入有效的 JSON 配置",
+        variant: "destructive",
+      });
     }
+  };
 
+  const renderServerEditor = (name: string) => {
     return (
       <div className="mt-2 space-y-2">
-        <input
-          type="text"
-          value={config.command}
-          onChange={(e) =>
-            handleUpdateServer(name, { ...config, command: e.target.value })
-          }
-          className="w-full px-3 py-1 border rounded-md text-sm"
-          placeholder="命令"
+        <textarea
+          value={editingServerJson}
+          onChange={(e) => setEditingServerJson(e.target.value)}
+          className="w-full px-3 py-2 border rounded-md text-sm font-mono"
+          placeholder="输入 JSON 配置"
+          rows={8}
         />
-        <input
-          type="text"
-          value={config.args.join(" ")}
-          onChange={(e) =>
-            handleUpdateServer(name, {
-              ...config,
-              args: e.target.value.split(" ").filter((arg) => arg),
-            })
-          }
-          className="w-full px-3 py-1 border rounded-md text-sm"
-          placeholder="参数"
-        />
+        <div className="flex justify-end space-x-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setEditingServer(null);
+              setEditingServerJson("");
+            }}
+          >
+            取消
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => {
+              handleUpdateServer(name, editingServerJson);
+              setEditingServer(null);
+              setEditingServerJson("");
+            }}
+          >
+            保存
+          </Button>
+        </div>
       </div>
     );
   };
@@ -130,9 +198,15 @@ function MCPServerList({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() =>
-                    setEditingServer(editingServer === name ? null : name)
-                  }
+                  onClick={() => {
+                    if (editingServer === name) {
+                      setEditingServer(null);
+                      setEditingServerJson("");
+                    } else {
+                      setEditingServer(name);
+                      setEditingServerJson(JSON.stringify(config, null, 2));
+                    }
+                  }}
                 >
                   {editingServer === name ? (
                     <X className="h-4 w-4" />
@@ -152,7 +226,7 @@ function MCPServerList({
               </div>
             </div>
 
-            {editingServer === name && renderServerEditor(name, config)}
+            {editingServer === name && renderServerEditor(name)}
 
             {!editingServer && (
               <div className="mt-2 text-sm text-muted-foreground">
@@ -169,29 +243,39 @@ function MCPServerList({
         ))}
 
         {showAddForm ? (
-          <div className="border rounded-lg p-4 bg-muted/50">
-            <div className="flex space-x-2">
-              <input
-                type="text"
-                value={newServerName}
-                onChange={(e) => setNewServerName(e.target.value)}
-                placeholder="服务名称"
-                className="flex-1 px-3 py-2 border rounded-md"
-                onKeyPress={(e) => e.key === "Enter" && handleAddServer()}
-              />
-              <Button type="button" onClick={handleAddServer} size="sm">
-                添加
-              </Button>
+          <div className="border rounded-lg p-4 bg-muted/50 space-y-2">
+            <p className="text-sm text-muted-foreground mb-2">
+              粘贴 MCP 服务的 JSON 配置：
+            </p>
+            <textarea
+              value={newServerInput}
+              onChange={(e) => setNewServerInput(e.target.value)}
+              placeholder={`例如：
+{
+  "mcpServers": {
+    "example-server": {
+      "command": "npx",
+      "args": ["-y", "@example/mcp-server"]
+    }
+  }
+}`}
+              className="w-full px-3 py-2 border rounded-md font-mono text-sm"
+              rows={6}
+            />
+            <div className="flex justify-end space-x-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => {
                   setShowAddForm(false);
-                  setNewServerName("");
+                  setNewServerInput("");
                 }}
               >
                 取消
+              </Button>
+              <Button type="button" onClick={handleAddServer} size="sm">
+                添加
               </Button>
             </div>
           </div>
