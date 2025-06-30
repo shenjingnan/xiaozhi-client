@@ -32,6 +32,9 @@ function MCPServerList({
   };
 
   const handleDeleteServer = (name: string) => {
+    const confirmed = window.confirm(`确定要删除 MCP 服务 "${name}" 吗？`);
+    if (!confirmed) return;
+    
     const newServers = { ...servers };
     delete newServers[name];
 
@@ -41,6 +44,10 @@ function MCPServerList({
     }
 
     onChange(newServers, newServerConfig);
+    toast({
+      title: "删除成功",
+      description: `MCP 服务 "${name}" 已删除`,
+    });
   };
 
   const parseMCPConfig = (input: string): Record<string, MCPServerConfig> | null => {
@@ -108,9 +115,17 @@ function MCPServerList({
     onChange(newServers, serverConfig);
     setNewServerInput("");
     setShowAddForm(false);
+    
+    const addedCount = Object.keys(parsedServers).length;
+    toast({
+      title: "添加成功",
+      description: addedCount === 1 
+        ? `已添加 MCP 服务 "${Object.keys(parsedServers)[0]}"`
+        : `已添加 ${addedCount} 个 MCP 服务`,
+    });
   };
 
-  const handleUpdateServer = (name: string, jsonStr: string) => {
+  const handleUpdateServer = (name: string, jsonStr: string): boolean => {
     try {
       const config = JSON.parse(jsonStr);
       onChange(
@@ -122,14 +137,16 @@ function MCPServerList({
       );
       toast({
         title: "保存成功",
-        description: "服务配置已更新",
+        description: `MCP 服务 "${name}" 配置已更新`,
       });
+      return true;
     } catch (error) {
       toast({
         title: "配置格式错误",
         description: "请输入有效的 JSON 配置",
         variant: "destructive",
       });
+      return false;
     }
   };
 
@@ -159,9 +176,11 @@ function MCPServerList({
             type="button"
             size="sm"
             onClick={() => {
-              handleUpdateServer(name, editingServerJson);
-              setEditingServer(null);
-              setEditingServerJson("");
+              const success = handleUpdateServer(name, editingServerJson);
+              if (success) {
+                setEditingServer(null);
+                setEditingServerJson("");
+              }
             }}
           >
             保存
