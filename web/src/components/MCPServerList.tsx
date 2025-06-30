@@ -2,8 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Edit2, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import type { MCPServerConfig, MCPServerToolsConfig } from "../types";
-import { useToast } from "@/hooks/use-toast";
 
 interface MCPServerListProps {
   servers: Record<string, MCPServerConfig>;
@@ -23,7 +23,6 @@ function MCPServerList({
   const [editingServerJson, setEditingServerJson] = useState<string>("");
   const [newServerInput, setNewServerInput] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
-  const { toast } = useToast();
 
   const isSSEServer = (
     config: MCPServerConfig
@@ -34,7 +33,7 @@ function MCPServerList({
   const handleDeleteServer = (name: string) => {
     const confirmed = window.confirm(`确定要删除 MCP 服务 "${name}" 吗？`);
     if (!confirmed) return;
-    
+
     const newServers = { ...servers };
     delete newServers[name];
 
@@ -44,85 +43,80 @@ function MCPServerList({
     }
 
     onChange(newServers, newServerConfig);
-    toast({
-      title: "删除成功",
-      description: `MCP 服务 "${name}" 已删除`,
-    });
+    toast.success(`MCP 服务 "${name}" 已删除`);
   };
 
-  const parseMCPConfig = (input: string): Record<string, MCPServerConfig> | null => {
+  const parseMCPConfig = (
+    input: string
+  ): Record<string, MCPServerConfig> | null => {
     try {
       const trimmed = input.trim();
       if (!trimmed) return null;
-      
+
       const parsed = JSON.parse(trimmed);
-      
+
       // 检查是否包含 mcpServers 层
-      if (parsed.mcpServers && typeof parsed.mcpServers === 'object') {
+      if (parsed.mcpServers && typeof parsed.mcpServers === "object") {
         return parsed.mcpServers;
       }
-      
+
       // 检查是否是直接的服务配置对象
-      if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+      if (typeof parsed === "object" && !Array.isArray(parsed)) {
         // 判断是否是单个服务配置（有 command 或 type 字段）
-        if ('command' in parsed || ('type' in parsed && parsed.type === 'sse')) {
+        if (
+          "command" in parsed ||
+          ("type" in parsed && parsed.type === "sse")
+        ) {
           // 生成一个默认名称
-          const defaultName = parsed.command ? 
-            parsed.command.split('/').pop() || 'mcp-server' : 
-            'sse-server';
+          const defaultName = parsed.command
+            ? parsed.command.split("/").pop() || "mcp-server"
+            : "sse-server";
           return { [defaultName]: parsed };
         }
-        
+
         // 否则认为是多个服务的配置对象
         return parsed;
       }
-      
+
       return null;
     } catch (error) {
-      console.error('解析配置失败:', error);
+      console.error("解析配置失败:", error);
       return null;
     }
   };
 
   const handleAddServer = () => {
     const parsedServers = parseMCPConfig(newServerInput);
-    
+
     if (!parsedServers) {
-      toast({
-        title: "配置格式错误",
-        description: "请输入有效的 JSON 配置",
-        variant: "destructive",
-      });
+      toast.error("配置格式错误: 请输入有效的 JSON 配置");
       return;
     }
-    
+
     // 检查是否有重名的服务
-    const existingNames = Object.keys(parsedServers).filter(name => name in servers);
+    const existingNames = Object.keys(parsedServers).filter(
+      (name) => name in servers
+    );
     if (existingNames.length > 0) {
-      toast({
-        title: "服务名称冲突",
-        description: `以下服务已存在: ${existingNames.join(', ')}`,
-        variant: "destructive",
-      });
+      toast.error(`服务名称冲突: 以下服务已存在: ${existingNames.join(", ")}`);
       return;
     }
-    
+
     const newServers = {
       ...servers,
       ...parsedServers,
     };
-    
+
     onChange(newServers, serverConfig);
     setNewServerInput("");
     setShowAddForm(false);
-    
+
     const addedCount = Object.keys(parsedServers).length;
-    toast({
-      title: "添加成功",
-      description: addedCount === 1 
+    toast.success(
+      addedCount === 1
         ? `已添加 MCP 服务 "${Object.keys(parsedServers)[0]}"`
-        : `已添加 ${addedCount} 个 MCP 服务`,
-    });
+        : `已添加 ${addedCount} 个 MCP 服务`
+    );
   };
 
   const handleUpdateServer = (name: string, jsonStr: string): boolean => {
@@ -135,17 +129,10 @@ function MCPServerList({
         },
         serverConfig
       );
-      toast({
-        title: "保存成功",
-        description: `MCP 服务 "${name}" 配置已更新`,
-      });
+      toast.success(`MCP 服务 "${name}" 配置已更新`);
       return true;
     } catch (error) {
-      toast({
-        title: "配置格式错误",
-        description: "请输入有效的 JSON 配置",
-        variant: "destructive",
-      });
+      toast.error("配置格式错误: 请输入有效的 JSON 配置");
       return false;
     }
   };

@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import type { AppConfig } from "../types";
 
 interface ConfigEditorProps {
@@ -12,7 +12,6 @@ interface ConfigEditorProps {
 function ConfigEditor({ config, onChange }: ConfigEditorProps) {
   const [localConfig, setLocalConfig] = useState(config);
   const [isSaving, setIsSaving] = useState(false);
-  const { toast } = useToast();
 
   useEffect(() => {
     setLocalConfig(config);
@@ -38,17 +37,11 @@ function ConfigEditor({ config, onChange }: ConfigEditorProps) {
     setIsSaving(true);
     try {
       await onChange(localConfig);
-      toast({
-        title: "配置已保存",
-        description: "您的配置已成功更新",
-      });
+      toast.success("配置已保存");
     } catch (error) {
-      toast({
-        title: "保存失败",
-        description:
-          error instanceof Error ? error.message : "保存配置时发生错误",
-        variant: "destructive",
-      });
+      toast.error(
+        error instanceof Error ? error.message : "保存配置时发生错误"
+      );
     } finally {
       setIsSaving(false);
     }
