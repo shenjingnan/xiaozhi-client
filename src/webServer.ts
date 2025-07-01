@@ -284,19 +284,19 @@ export class WebServer {
     if (info.lastHeartbeat) {
       this.clientInfo.lastHeartbeat = Date.now();
     }
-    
+
     // Reset heartbeat timeout when receiving client status
     if (info.status === "connected") {
       this.resetHeartbeatTimeout();
     }
   }
-  
+
   private resetHeartbeatTimeout() {
     // Clear existing timeout
     if (this.heartbeatTimeout) {
       clearTimeout(this.heartbeatTimeout);
     }
-    
+
     // Set new timeout
     this.heartbeatTimeout = setTimeout(() => {
       this.logger.warn("客户端心跳超时，标记为断开连接");
@@ -376,7 +376,7 @@ export class WebServer {
         clearTimeout(this.heartbeatTimeout);
         this.heartbeatTimeout = undefined;
       }
-      
+
       this.wss.close(() => {
         this.httpServer.close(() => {
           this.logger.info("Web server stopped");
