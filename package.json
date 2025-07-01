@@ -8,6 +8,7 @@
     "dist",
     "docs",
     "templates",
+    "web/dist",
     "README.md",
     "LICENSE"
   ],
@@ -20,7 +21,8 @@
     "xiaozhi-client": "./dist/cli.js"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "pnpm run build:web && tsup",
+    "build:web": "cd web && pnpm run build",
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",
