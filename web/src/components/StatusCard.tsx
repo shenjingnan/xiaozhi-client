@@ -53,15 +53,6 @@ function StatusCard({ connected, status }: StatusCardProps) {
           </span>
         </div>
 
-        {status?.mcpEndpoint && (
-          <div className="pt-3 border-t">
-            <p className="text-xs text-muted-foreground">接入点</p>
-            <p className="text-sm font-mono break-all text-foreground">
-              {status.mcpEndpoint}
-            </p>
-          </div>
-        )}
-
         {status?.activeMCPServers && status.activeMCPServers.length > 0 && (
           <div className="pt-3 border-t">
             <p className="text-xs text-muted-foreground mb-1">活跃 MCP 服务</p>
