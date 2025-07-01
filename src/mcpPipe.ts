@@ -411,6 +411,11 @@ export class MCPPipe {
 
   // Report status to web UI server
   private async reportStatusToWebUI() {
+    // Skip in test environment
+    if (process.env.NODE_ENV === "test" || process.env.VITEST === "true") {
+      return;
+    }
+    
     try {
       const statusWs = new WebSocket("ws://localhost:9999");
       
