@@ -962,7 +962,7 @@ describe("CLI 命令行工具", () => {
           realFs.readFileSync(packageJsonPath, "utf8")
         );
 
-        expect(packageJson.scripts.build).toBe("tsup");
+        expect(packageJson.scripts.build).toBe("pnpm run build:web && tsup");
         expect(packageJson.scripts.dev).toBe("tsup --watch");
       }
     });
