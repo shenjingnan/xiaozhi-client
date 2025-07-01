@@ -91,6 +91,9 @@ export class MCPPipe {
     // Start WebSocket connection
     await this.connectToServer();
 
+    // Report status to web UI
+    this.reportStatusToWebUI();
+
     // Keep the process running
     return new Promise<void>((resolve) => {
       // This promise will only resolve when shutdown is called
@@ -110,6 +113,9 @@ export class MCPPipe {
     this.websocket.on("open", () => {
       logger.info("成功连接到 WebSocket 服务器");
       this.isConnected = true;
+
+      // Report status to web UI when connected
+      this.reportStatusToWebUI();
 
       // Reset reconnection counter
       reconnectAttempt = 0;
@@ -136,6 +142,9 @@ export class MCPPipe {
 
       // 停止心跳检测
       this.stopHeartbeat();
+
+      // Report disconnected status to web UI
+      this.reportStatusToWebUI();
 
       // Only reconnect if we should and it's not a permanent error
       if (this.shouldReconnect && code !== 4004) {
@@ -206,6 +215,9 @@ export class MCPPipe {
             this.websocket.terminate();
           }
         }, this.connectionConfig.heartbeatTimeout);
+
+        // Report status to web UI periodically
+        this.reportStatusToWebUI();
       }
     }, this.connectionConfig.heartbeatInterval);
   }
@@ -378,6 +390,11 @@ export class MCPPipe {
   shutdown() {
     logger.info("正在关闭 MCP Pipe...");
     this.shouldReconnect = false;
+
+    // Report disconnected status before shutting down
+    this.isConnected = false;
+    this.reportStatusToWebUI();
+
     this.cleanup();
     if (this.websocket) {
       this.websocket.close();
@@ -385,7 +402,50 @@ export class MCPPipe {
     if (this.shutdownResolve) {
       this.shutdownResolve();
     }
-    process.exit(0);
+
+    // Give a moment for the status report to be sent
+    setTimeout(() => {
+      process.exit(0);
+    }, 100);
+  }
+
+  // Report status to web UI server
+  private async reportStatusToWebUI() {
+    // Skip in test environment
+    if (process.env.NODE_ENV === "test" || process.env.VITEST === "true") {
+      return;
+    }
+
+    try {
+      const statusWs = new WebSocket("ws://localhost:9999");
+
+      statusWs.on("open", () => {
+        const status = {
+          type: "clientStatus",
+          data: {
+            status: this.isConnected ? "connected" : "disconnected",
+            mcpEndpoint: this.endpointUrl,
+            activeMCPServers: [], // This will be filled by mcpServerProxy
+            lastHeartbeat: Date.now(),
+          },
+        };
+        statusWs.send(JSON.stringify(status));
+        logger.info("已向 Web UI 报告状态");
+
+        // Close connection after sending status
+        setTimeout(() => {
+          statusWs.close();
+        }, 1000);
+      });
+
+      statusWs.on("error", (error) => {
+        logger.debug(`Web UI 连接失败（可能未运行）: ${error.message}`);
+      });
+    } catch (error) {
+      logger.debug(
+        `向 Web UI 报告状态失败: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
   }
 }
 

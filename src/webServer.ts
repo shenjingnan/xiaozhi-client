@@ -26,6 +26,8 @@ export class WebServer {
     mcpEndpoint: "",
     activeMCPServers: [],
   };
+  private heartbeatTimeout?: NodeJS.Timeout;
+  private readonly HEARTBEAT_TIMEOUT = 35000; // 35 seconds (slightly more than client's 30s interval)
 
   constructor(port = 9999) {
     this.port = port;
@@ -282,6 +284,25 @@ export class WebServer {
     if (info.lastHeartbeat) {
       this.clientInfo.lastHeartbeat = Date.now();
     }
+
+    // Reset heartbeat timeout when receiving client status
+    if (info.status === "connected") {
+      this.resetHeartbeatTimeout();
+    }
+  }
+
+  private resetHeartbeatTimeout() {
+    // Clear existing timeout
+    if (this.heartbeatTimeout) {
+      clearTimeout(this.heartbeatTimeout);
+    }
+
+    // Set new timeout
+    this.heartbeatTimeout = setTimeout(() => {
+      this.logger.warn("客户端心跳超时，标记为断开连接");
+      this.updateClientInfo({ status: "disconnected" });
+      this.broadcastStatusUpdate();
+    }, this.HEARTBEAT_TIMEOUT);
   }
 
   private updateConfig(newConfig: AppConfig) {
@@ -350,6 +371,12 @@ export class WebServer {
 
   public stop(): Promise<void> {
     return new Promise((resolve) => {
+      // Clear heartbeat timeout
+      if (this.heartbeatTimeout) {
+        clearTimeout(this.heartbeatTimeout);
+        this.heartbeatTimeout = undefined;
+      }
+
       this.wss.close(() => {
         this.httpServer.close(() => {
           this.logger.info("Web server stopped");
