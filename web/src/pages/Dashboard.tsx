@@ -1,10 +1,12 @@
 import ConfigEditor from "../components/ConfigEditor";
+import { ConnectionSettings } from "../components/ConnectionSettings";
 import MCPServerList from "../components/MCPServerList";
 import StatusCard from "../components/StatusCard";
 import { useWebSocket } from "../hooks/useWebSocket";
 
 function Dashboard() {
-  const { connected, config, status, updateConfig } = useWebSocket();
+  const { connected, config, status, updateConfig, wsUrl, setCustomWsUrl } =
+    useWebSocket();
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -17,6 +19,13 @@ function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <StatusCard connected={connected} status={status} />
+        <div className="lg:col-span-2">
+          <ConnectionSettings
+            wsUrl={wsUrl}
+            connected={connected}
+            onUrlChange={setCustomWsUrl}
+          />
+        </div>
       </div>
 
       {config && (
