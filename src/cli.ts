@@ -233,7 +233,7 @@ async function startWebUIInBackground(): Promise<void> {
   try {
     // 检查配置是否存在
     if (!configManager.configExists()) {
-      console.log(chalk.yellow('💡 提示: 配置文件不存在，跳过 Web UI 启动'));
+      console.log(chalk.yellow("💡 提示: 配置文件不存在，跳过 Web UI 启动"));
       return;
     }
 
@@ -242,7 +242,7 @@ async function startWebUIInBackground(): Promise<void> {
     await webServer.start();
 
     console.log(chalk.green("✅ Web UI 已启动: http://localhost:9999"));
-    
+
     // 尝试打开浏览器
     const { spawn } = await import("node:child_process");
     const url = "http://localhost:9999";
@@ -262,7 +262,11 @@ async function startWebUIInBackground(): Promise<void> {
     // 保存 webServer 实例供后续使用
     (global as any).__webServer = webServer;
   } catch (error) {
-    console.log(chalk.yellow(`⚠️ Web UI 启动失败: ${error instanceof Error ? error.message : String(error)}`));
+    console.log(
+      chalk.yellow(
+        `⚠️ Web UI 启动失败: ${error instanceof Error ? error.message : String(error)}`
+      )
+    );
   }
 }
 
@@ -387,7 +391,7 @@ async function startService(daemon = false, ui = false): Promise<void> {
       process.on("SIGINT", async () => {
         console.log(chalk.yellow("\n正在停止服务..."));
         child.kill("SIGTERM");
-        
+
         // 如果启动了 Web UI，也要停止它
         if ((global as any).__webServer) {
           try {
@@ -401,7 +405,7 @@ async function startService(daemon = false, ui = false): Promise<void> {
 
       process.on("SIGTERM", async () => {
         child.kill("SIGTERM");
-        
+
         // 如果启动了 Web UI，也要停止它
         if ((global as any).__webServer) {
           try {
@@ -1180,11 +1184,15 @@ function showHelp(): void {
   console.log("  create <projectName>     创建项目");
   console.log("  init                     初始化配置文件");
   console.log("  config <key> [value]     查看或设置配置");
-  console.log("  start [--daemon] [--ui]  启动服务 (--daemon 后台运行, --ui 同时启动 Web UI)");
+  console.log(
+    "  start [--daemon] [--ui]  启动服务 (--daemon 后台运行, --ui 同时启动 Web UI)"
+  );
   console.log("  stop                     停止服务");
   console.log("  status                   检查服务状态");
   console.log("  attach                   连接到后台服务查看日志");
-  console.log("  restart [--daemon] [--ui] 重启服务 (--daemon 后台运行, --ui 同时启动 Web UI)");
+  console.log(
+    "  restart [--daemon] [--ui] 重启服务 (--daemon 后台运行, --ui 同时启动 Web UI)"
+  );
   console.log("  ui                       启动配置管理网页");
   console.log("  completion               显示自动补全设置说明");
   console.log();
