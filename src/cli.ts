@@ -227,9 +227,53 @@ function getServiceCommand(): { command: string; args: string[]; cwd: string } {
 }
 
 /**
+ * 在后台启动 Web UI 服务
+ */
+async function startWebUIInBackground(): Promise<void> {
+  try {
+    // 检查配置是否存在
+    if (!configManager.configExists()) {
+      console.log(chalk.yellow("💡 提示: 配置文件不存在，跳过 Web UI 启动"));
+      return;
+    }
+
+    // 启动 Web 服务器
+    const webServer = new WebServer(9999);
+    await webServer.start();
+
+    console.log(chalk.green("✅ Web UI 已启动: http://localhost:9999"));
+
+    // 尝试打开浏览器
+    const { spawn } = await import("node:child_process");
+    const url = "http://localhost:9999";
+    const openCommand =
+      process.platform === "darwin"
+        ? "open"
+        : process.platform === "win32"
+          ? "start"
+          : "xdg-open";
+
+    try {
+      spawn(openCommand, [url], { detached: true, stdio: "ignore" }).unref();
+    } catch (error) {
+      // 忽略打开浏览器的错误
+    }
+
+    // 保存 webServer 实例供后续使用
+    (global as any).__webServer = webServer;
+  } catch (error) {
+    console.log(
+      chalk.yellow(
+        `⚠️ Web UI 启动失败: ${error instanceof Error ? error.message : String(error)}`
+      )
+    );
+  }
+}
+
+/**
  * 启动服务
  */
-async function startService(daemon = false): Promise<void> {
+async function startService(daemon = false, ui = false): Promise<void> {
   const spinner = ora("检查服务状态...").start();
 
   try {
@@ -302,6 +346,11 @@ async function startService(daemon = false): Promise<void> {
       spinner.succeed(`服务已在后台启动 (PID: ${child.pid})`);
       console.log(chalk.gray(`日志文件: ${logFilePath}`));
       console.log(chalk.gray(`使用 'xiaozhi attach' 可以查看实时日志`));
+
+      // 如果指定了 --ui 参数，同时启动 Web UI
+      if (ui) {
+        await startWebUIInBackground();
+      }
     } else {
       // 前台模式
       spinner.succeed("服务启动中...");
@@ -330,14 +379,41 @@ async function startService(daemon = false): Promise<void> {
         }
       });
 
+      // 如果指定了 --ui 参数，在主进程启动后同时启动 Web UI
+      if (ui) {
+        // 等待一下确保主服务已经启动
+        setTimeout(() => {
+          startWebUIInBackground();
+        }, 1000);
+      }
+
       // 处理中断信号
-      process.on("SIGINT", () => {
+      process.on("SIGINT", async () => {
         console.log(chalk.yellow("\n正在停止服务..."));
         child.kill("SIGTERM");
+
+        // 如果启动了 Web UI，也要停止它
+        if ((global as any).__webServer) {
+          try {
+            await (global as any).__webServer.stop();
+            console.log(chalk.green("Web UI 已停止"));
+          } catch (error) {
+            // 忽略错误
+          }
+        }
       });
 
-      process.on("SIGTERM", () => {
+      process.on("SIGTERM", async () => {
         child.kill("SIGTERM");
+
+        // 如果启动了 Web UI，也要停止它
+        if ((global as any).__webServer) {
+          try {
+            await (global as any).__webServer.stop();
+          } catch (error) {
+            // 忽略错误
+          }
+        }
       });
     }
   } catch (error) {
@@ -522,7 +598,7 @@ async function attachService(): Promise<void> {
 /**
  * 重启服务
  */
-async function restartService(daemon = false): Promise<void> {
+async function restartService(daemon = false, ui = false): Promise<void> {
   console.log(chalk.blue("🔄 重启服务..."));
 
   // 先停止服务
@@ -532,7 +608,7 @@ async function restartService(daemon = false): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 1000));
 
   // 重新启动服务
-  await startService(daemon);
+  await startService(daemon, ui);
 }
 
 /**
@@ -1108,11 +1184,15 @@ function showHelp(): void {
   console.log("  create <projectName>     创建项目");
   console.log("  init                     初始化配置文件");
   console.log("  config <key> [value]     查看或设置配置");
-  console.log("  start [--daemon]         启动服务 (--daemon 后台运行)");
+  console.log(
+    "  start [--daemon] [--ui]  启动服务 (--daemon 后台运行, --ui 同时启动 Web UI)"
+  );
   console.log("  stop                     停止服务");
   console.log("  status                   检查服务状态");
   console.log("  attach                   连接到后台服务查看日志");
-  console.log("  restart [--daemon]       重启服务 (--daemon 后台运行)");
+  console.log(
+    "  restart [--daemon] [--ui] 重启服务 (--daemon 后台运行, --ui 同时启动 Web UI)"
+  );
   console.log("  ui                       启动配置管理网页");
   console.log("  completion               显示自动补全设置说明");
   console.log();
@@ -1139,6 +1219,8 @@ function showHelp(): void {
   console.log(chalk.yellow("服务示例:"));
   console.log("  xiaozhi start                # 前台启动服务");
   console.log("  xiaozhi start --daemon       # 后台启动服务");
+  console.log("  xiaozhi start --ui           # 启动服务并同时启动 Web UI");
+  console.log("  xiaozhi start -d -u          # 后台启动服务并同时启动 Web UI");
   console.log("  xiaozhi status               # 检查服务状态");
   console.log("  xiaozhi attach               # 查看后台服务日志");
   console.log("  xiaozhi stop                 # 停止服务");
@@ -1192,8 +1274,9 @@ program
   .command("start")
   .description("启动服务")
   .option("-d, --daemon", "在后台运行服务")
+  .option("-u, --ui", "同时启动 Web UI 服务")
   .action(async (options) => {
-    await startService(options.daemon);
+    await startService(options.daemon, options.ui);
   });
 
 // stop 命令
@@ -1225,8 +1308,9 @@ program
   .command("restart")
   .description("重启服务")
   .option("-d, --daemon", "在后台运行服务")
+  .option("-u, --ui", "同时启动 Web UI 服务")
   .action(async (options) => {
-    await restartService(options.daemon);
+    await restartService(options.daemon, options.ui);
   });
 
 // mcp 命令组
