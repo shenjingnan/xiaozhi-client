@@ -75,7 +75,7 @@ export class Logger {
               console.error(message);
             } catch (error) {
               // 忽略 EPIPE 错误
-              if (error instanceof Error && error.message.includes('EPIPE')) {
+              if (error instanceof Error && error.message.includes("EPIPE")) {
                 return;
               }
               throw error;

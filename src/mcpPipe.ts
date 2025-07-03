@@ -484,11 +484,11 @@ export function setupSignalHandlers(mcpPipe: MCPPipe): void {
     // 处理未捕获的异常
     process.on("uncaughtException", (error) => {
       // 如果是 EPIPE 错误（通常是因为终端关闭），静默处理
-      if (error.message && error.message.includes('EPIPE')) {
+      if (error.message && error.message.includes("EPIPE")) {
         // EPIPE 错误在守护进程模式下是正常的，不需要记录
         return;
       }
-      
+
       // 其他错误正常记录
       try {
         logger.error(`守护进程模式下的未捕获异常: ${error.message}`);
