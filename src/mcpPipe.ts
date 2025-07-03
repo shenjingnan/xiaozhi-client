@@ -430,7 +430,7 @@ export class MCPPipe {
           },
         };
         statusWs.send(JSON.stringify(status));
-        logger.info("已向 Web UI 报告状态");
+        logger.debug("已向 Web UI 报告状态");
 
         // Close connection after sending status
         setTimeout(() => {
