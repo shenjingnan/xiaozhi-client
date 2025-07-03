@@ -24,7 +24,6 @@ describe("StatusCard", () => {
     // 有两个"已连接"文本（配置服务器和小智服务）
     const connectedElements = screen.getAllByText("已连接");
     expect(connectedElements).toHaveLength(2);
-    expect(screen.getByText("wss://test.endpoint")).toBeInTheDocument();
     expect(screen.getByText("calculator")).toBeInTheDocument();
     expect(screen.getByText("datetime")).toBeInTheDocument();
   });

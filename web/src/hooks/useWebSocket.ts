@@ -14,9 +14,27 @@ export function useWebSocket() {
     status: null,
   });
   const socketRef = useRef<WebSocket | null>(null);
+  const [wsUrl, setWsUrl] = useState<string>("");
+
+  // 动态获取WebSocket连接地址
+  const getWebSocketUrl = useCallback(() => {
+    // 优先使用localStorage中保存的地址
+    const savedUrl = localStorage.getItem("xiaozhi-ws-url");
+    if (savedUrl) {
+      return savedUrl;
+    }
+
+    // 否则使用当前页面的hostname
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const hostname = window.location.hostname || "localhost";
+    const port = 9999; // 默认端口
+    return `${protocol}//${hostname}:${port}`;
+  }, []);
 
   useEffect(() => {
-    const ws = new WebSocket("ws://localhost:9999");
+    const url = getWebSocketUrl();
+    setWsUrl(url);
+    const ws = new WebSocket(url);
 
     ws.onopen = () => {
       setState((prev) => ({ ...prev, connected: true }));
@@ -52,36 +70,40 @@ export function useWebSocket() {
     return () => {
       ws.close();
     };
-  }, []);
+  }, [getWebSocketUrl]);
 
-  const updateConfig = useCallback((config: AppConfig): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      if (socketRef.current?.readyState === WebSocket.OPEN) {
-        // 先通过 HTTP API 更新
-        fetch("http://localhost:9999/api/config", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(config),
-        })
-          .then((response) => {
-            if (response.ok) {
-              // 然后通过 WebSocket 通知
-              socketRef.current?.send(
-                JSON.stringify({ type: "updateConfig", config })
-              );
-              resolve();
-            } else {
-              return response.text().then((text) => {
-                reject(new Error(text || "保存配置失败"));
-              });
-            }
+  const updateConfig = useCallback(
+    (config: AppConfig): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        if (socketRef.current?.readyState === WebSocket.OPEN) {
+          // 先通过 HTTP API 更新
+          const apiUrl = `${wsUrl.replace(/^ws(s)?:\/\//, "http$1://")}/api/config`;
+          fetch(apiUrl, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(config),
           })
-          .catch(reject);
-      } else {
-        reject(new Error("WebSocket 未连接"));
-      }
-    });
-  }, []);
+            .then((response) => {
+              if (response.ok) {
+                // 然后通过 WebSocket 通知
+                socketRef.current?.send(
+                  JSON.stringify({ type: "updateConfig", config })
+                );
+                resolve();
+              } else {
+                return response.text().then((text) => {
+                  reject(new Error(text || "保存配置失败"));
+                });
+              }
+            })
+            .catch(reject);
+        } else {
+          reject(new Error("WebSocket 未连接"));
+        }
+      });
+    },
+    [wsUrl]
+  );
 
   const refreshStatus = useCallback(() => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
@@ -89,9 +111,22 @@ export function useWebSocket() {
     }
   }, []);
 
+  // 保存自定义WebSocket地址
+  const setCustomWsUrl = useCallback((url: string) => {
+    if (url) {
+      localStorage.setItem("xiaozhi-ws-url", url);
+    } else {
+      localStorage.removeItem("xiaozhi-ws-url");
+    }
+    // 重新加载页面以应用新的连接地址
+    window.location.reload();
+  }, []);
+
   return {
     ...state,
     updateConfig,
     refreshStatus,
+    wsUrl,
+    setCustomWsUrl,
   };
 }
