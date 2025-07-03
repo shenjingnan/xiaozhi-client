@@ -79,7 +79,9 @@ export class MCPPipe {
         reconnectInterval: 5000,
       };
       logger.warn(
-        `无法获取连接配置，使用默认值: ${error instanceof Error ? error.message : String(error)}`
+        `无法获取连接配置，使用默认值: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   }
@@ -181,7 +183,9 @@ export class MCPPipe {
     reconnectAttempt++;
 
     logger.info(
-      `计划在 ${(this.connectionConfig.reconnectInterval / 1000).toFixed(2)} 秒后进行第 ${reconnectAttempt} 次重连尝试...`
+      `计划在 ${(this.connectionConfig.reconnectInterval / 1000).toFixed(
+        2
+      )} 秒后进行第 ${reconnectAttempt} 次重连尝试...`
     );
 
     this.reconnectTimer = setTimeout(() => {
@@ -372,7 +376,9 @@ export class MCPPipe {
         }, 5000);
       } catch (error) {
         logger.error(
-          `终止进程时出错: ${error instanceof Error ? error.message : String(error)}`
+          `终止进程时出错: ${
+            error instanceof Error ? error.message : String(error)
+          }`
         );
       }
       this.process = null;
@@ -450,7 +456,9 @@ export class MCPPipe {
       });
     } catch (error) {
       logger.debug(
-        `向 Web UI 报告状态失败: ${error instanceof Error ? error.message : String(error)}`
+        `向 Web UI 报告状态失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   }
@@ -484,7 +492,7 @@ export function setupSignalHandlers(mcpPipe: MCPPipe): void {
     // 处理未捕获的异常
     process.on("uncaughtException", (error) => {
       // 如果是 EPIPE 错误（通常是因为终端关闭），静默处理
-      if (error.message && error.message.includes("EPIPE")) {
+      if (error.message?.includes("EPIPE")) {
         // EPIPE 错误在守护进程模式下是正常的，不需要记录
         return;
       }
