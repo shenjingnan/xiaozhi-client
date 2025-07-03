@@ -1,5 +1,5 @@
 {
-  "mcpEndpoint": "<请填写你的接入点地址（获取地址在 xiaozhi.me）>",
+  "mcpEndpoint": "wss://example.com/test",
   "mcpServers": {
     "calculator": {
       "command": "node",
@@ -9,5 +9,8 @@
       "command": "node",
       "args": ["./mcpServers/datetime.js"]
     }
+  },
+  "webUI": {
+    "port": 9999
   }
 }

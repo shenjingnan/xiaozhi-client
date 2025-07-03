@@ -12,6 +12,8 @@ vi.mock("./configManager", () => {
     removeMcpServer: vi.fn(),
     updateConnectionConfig: vi.fn(),
     updateModelScopeConfig: vi.fn(),
+    updateWebUIConfig: vi.fn(),
+    getWebUIPort: vi.fn(),
     setToolEnabled: vi.fn(),
   };
   return {
@@ -154,5 +156,64 @@ describe("WebServer", () => {
 
     const response = await fetch("http://localhost:9993/api/unknown");
     expect(response.status).toBe(404);
+  });
+
+  describe("端口配置", () => {
+    beforeEach(() => {
+      mockConfigManager.getWebUIPort.mockReturnValue(8080);
+    });
+
+    it("应该使用指定的端口号", async () => {
+      webServer = new WebServer(9992);
+      await webServer.start();
+
+      const response = await fetch("http://localhost:9992/api/status");
+      expect(response.status).toBe(200);
+    });
+
+    it("应该在没有指定端口时从配置文件获取端口", async () => {
+      mockConfigManager.getWebUIPort.mockReturnValue(8080);
+      webServer = new WebServer();
+      await webServer.start();
+
+      const response = await fetch("http://localhost:8080/api/status");
+      expect(response.status).toBe(200);
+      expect(mockConfigManager.getWebUIPort).toHaveBeenCalled();
+    });
+
+    it("应该在配置读取失败时使用默认端口", async () => {
+      mockConfigManager.getWebUIPort.mockImplementation(() => {
+        throw new Error("配置文件不存在");
+      });
+
+      webServer = new WebServer();
+      await webServer.start();
+
+      // 默认端口 9999
+      const response = await fetch("http://localhost:9999/api/status");
+      expect(response.status).toBe(200);
+    });
+
+    it("应该处理 webUI 配置更新", async () => {
+      webServer = new WebServer(9991);
+      await webServer.start();
+
+      const newConfig = {
+        mcpEndpoint: "wss://test.endpoint",
+        mcpServers: {},
+        webUI: { port: 8080 },
+      };
+
+      const response = await fetch("http://localhost:9991/api/config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newConfig),
+      });
+
+      expect(response.status).toBe(200);
+      expect(mockConfigManager.updateWebUIConfig).toHaveBeenCalledWith({
+        port: 8080,
+      });
+    });
   });
 });

@@ -24,10 +24,10 @@ export function useWebSocket() {
       return savedUrl;
     }
 
-    // 否则使用当前页面的hostname
+    // 否则使用当前页面的hostname和端口
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const hostname = window.location.hostname || "localhost";
-    const port = 9999; // 默认端口
+    const port = window.location.port || "9999"; // 使用当前页面端口，默认9999
     return `${protocol}//${hostname}:${port}`;
   }, []);
 

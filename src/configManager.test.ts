@@ -8,6 +8,7 @@ import {
   type MCPServerConfig,
   type MCPServerToolsConfig,
   type MCPToolConfig,
+  type WebUIConfig,
 } from "./configManager";
 
 // Mock fs module
@@ -956,6 +957,147 @@ describe("ConfigManager", () => {
             "API Key 必须是非空字符串"
           );
         });
+      });
+    });
+  });
+
+  describe("Web UI 配置管理", () => {
+    beforeEach(() => {
+      const mockConfigWithWebUI: AppConfig = {
+        ...mockConfig,
+        webUI: {
+          port: 8080,
+        },
+      };
+      mockExistsSync.mockReturnValue(true);
+      mockReadFileSync.mockReturnValue(JSON.stringify(mockConfigWithWebUI));
+    });
+
+    describe("getWebUIConfig", () => {
+      it("应该返回 Web UI 配置", () => {
+        const webUIConfig = configManager.getWebUIConfig();
+        expect(webUIConfig).toEqual({
+          port: 8080,
+        });
+      });
+
+      it("应该在没有配置时返回空对象", () => {
+        mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+        configManager.reloadConfig();
+
+        const webUIConfig = configManager.getWebUIConfig();
+        expect(webUIConfig).toEqual({});
+      });
+    });
+
+    describe("getWebUIPort", () => {
+      it("应该从配置中返回端口号", () => {
+        const port = configManager.getWebUIPort();
+        expect(port).toBe(8080);
+      });
+
+      it("应该在没有配置时返回默认端口 9999", () => {
+        mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+        configManager.reloadConfig();
+
+        const port = configManager.getWebUIPort();
+        expect(port).toBe(9999);
+      });
+
+      it("应该在端口未定义时返回默认端口 9999", () => {
+        const configWithEmptyWebUI: AppConfig = {
+          ...mockConfig,
+          webUI: {},
+        };
+        mockReadFileSync.mockReturnValue(JSON.stringify(configWithEmptyWebUI));
+        configManager.reloadConfig();
+
+        const port = configManager.getWebUIPort();
+        expect(port).toBe(9999);
+      });
+    });
+
+    describe("updateWebUIConfig", () => {
+      it("应该正确更新 Web UI 配置", () => {
+        configManager.updateWebUIConfig({ port: 3000 });
+
+        const writtenConfig = JSON.parse(
+          (mockWriteFileSync.mock.calls[0] as any)[1]
+        );
+
+        expect(writtenConfig.webUI).toEqual({
+          port: 3000,
+        });
+      });
+
+      it("应该在没有现有配置时创建新配置", () => {
+        mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+        configManager.reloadConfig();
+
+        configManager.updateWebUIConfig({ port: 3000 });
+
+        const writtenConfig = JSON.parse(
+          (mockWriteFileSync.mock.calls[0] as any)[1]
+        );
+
+        expect(writtenConfig.webUI).toEqual({
+          port: 3000,
+        });
+      });
+
+      it("应该保留现有配置的其他值", () => {
+        const configWithFullWebUI: AppConfig = {
+          ...mockConfig,
+          webUI: {
+            port: 8080,
+          },
+        };
+        mockReadFileSync.mockReturnValue(JSON.stringify(configWithFullWebUI));
+        configManager.reloadConfig();
+
+        configManager.updateWebUIConfig({ port: 3000 });
+
+        const writtenConfig = JSON.parse(
+          (mockWriteFileSync.mock.calls[0] as any)[1]
+        );
+
+        expect(writtenConfig.webUI).toEqual({
+          port: 3000,
+        });
+      });
+    });
+
+    describe("setWebUIPort", () => {
+      it("应该正确设置端口号", () => {
+        configManager.setWebUIPort(3000);
+
+        const writtenConfig = JSON.parse(
+          (mockWriteFileSync.mock.calls[0] as any)[1]
+        );
+
+        expect(writtenConfig.webUI.port).toBe(3000);
+      });
+
+      it("应该为无效端口号抛出错误", () => {
+        expect(() => configManager.setWebUIPort(0)).toThrow(
+          "端口号必须是 1-65535 之间的整数"
+        );
+        expect(() => configManager.setWebUIPort(-1)).toThrow(
+          "端口号必须是 1-65535 之间的整数"
+        );
+        expect(() => configManager.setWebUIPort(65536)).toThrow(
+          "端口号必须是 1-65535 之间的整数"
+        );
+        expect(() => configManager.setWebUIPort(1.5)).toThrow(
+          "端口号必须是 1-65535 之间的整数"
+        );
+      });
+
+      it("应该接受有效端口号范围", () => {
+        expect(() => configManager.setWebUIPort(1)).not.toThrow();
+        expect(() => configManager.setWebUIPort(80)).not.toThrow();
+        expect(() => configManager.setWebUIPort(8080)).not.toThrow();
+        expect(() => configManager.setWebUIPort(65535)).not.toThrow();
       });
     });
   });

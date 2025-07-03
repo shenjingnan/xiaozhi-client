@@ -48,12 +48,17 @@ export interface ModelScopeConfig {
   apiKey?: string; // ModelScope API 密钥
 }
 
+export interface WebUIConfig {
+  port?: number; // Web UI 端口号，默认 9999
+}
+
 export interface AppConfig {
   mcpEndpoint: string;
   mcpServers: Record<string, MCPServerConfig>;
   mcpServerConfig?: Record<string, MCPServerToolsConfig>;
   connection?: ConnectionConfig; // 连接配置（可选，用于向后兼容）
   modelscope?: ModelScopeConfig; // ModelScope 配置（可选）
+  webUI?: WebUIConfig; // Web UI 配置（可选）
 }
 
 /**
@@ -572,6 +577,52 @@ export class ConfigManager {
       throw new Error("API Key 必须是非空字符串");
     }
     this.updateModelScopeConfig({ apiKey });
+  }
+
+  /**
+   * 获取 Web UI 配置
+   */
+  public getWebUIConfig(): Readonly<WebUIConfig> {
+    const config = this.getConfig();
+    return config.webUI || {};
+  }
+
+  /**
+   * 获取 Web UI 端口号
+   */
+  public getWebUIPort(): number {
+    const webUIConfig = this.getWebUIConfig();
+    return webUIConfig.port ?? 9999; // 默认端口 9999
+  }
+
+  /**
+   * 更新 Web UI 配置
+   */
+  public updateWebUIConfig(webUIConfig: Partial<WebUIConfig>): void {
+    const config = this.getConfig();
+    const currentWebUIConfig = config.webUI || {};
+
+    const newWebUIConfig = {
+      ...currentWebUIConfig,
+      ...webUIConfig,
+    };
+
+    const newConfig = {
+      ...config,
+      webUI: newWebUIConfig,
+    };
+
+    this.saveConfig(newConfig);
+  }
+
+  /**
+   * 设置 Web UI 端口号
+   */
+  public setWebUIPort(port: number): void {
+    if (!Number.isInteger(port) || port <= 0 || port > 65535) {
+      throw new Error("端口号必须是 1-65535 之间的整数");
+    }
+    this.updateWebUIConfig({ port });
   }
 }
 
