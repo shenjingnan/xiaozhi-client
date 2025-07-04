@@ -17,5 +17,8 @@
     "heartbeatInterval": 30000,
     "heartbeatTimeout": 10000,
     "reconnectInterval": 5000
+  },
+  "webUI": {
+    "port": 9999
   }
 }

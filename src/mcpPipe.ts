@@ -430,7 +430,9 @@ export class MCPPipe {
     }
 
     try {
-      const statusWs = new WebSocket("ws://localhost:9999");
+      // 从配置获取 WebUI 端口
+      const port = configManager.getWebUIPort();
+      const statusWs = new WebSocket(`ws://localhost:${port}`);
 
       statusWs.on("open", () => {
         const status = {

@@ -29,8 +29,18 @@ export class WebServer {
   private heartbeatTimeout?: NodeJS.Timeout;
   private readonly HEARTBEAT_TIMEOUT = 35000; // 35 seconds (slightly more than client's 30s interval)
 
-  constructor(port = 9999) {
-    this.port = port;
+  constructor(port?: number) {
+    // 如果没有指定端口，从配置文件获取
+    if (port === undefined) {
+      try {
+        this.port = configManager.getWebUIPort();
+      } catch (error) {
+        // 如果配置文件不存在或读取失败，使用默认端口
+        this.port = 9999;
+      }
+    } else {
+      this.port = port;
+    }
     this.logger = new Logger();
 
     this.httpServer = createServer((req, res) => {
@@ -336,6 +346,11 @@ export class WebServer {
     // 更新 ModelScope 配置
     if (newConfig.modelscope) {
       configManager.updateModelScopeConfig(newConfig.modelscope);
+    }
+
+    // 更新 Web UI 配置
+    if (newConfig.webUI) {
+      configManager.updateWebUIConfig(newConfig.webUI);
     }
 
     // 更新服务工具配置

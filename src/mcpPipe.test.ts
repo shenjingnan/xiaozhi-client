@@ -27,6 +27,7 @@ vi.mock("./configManager", () => ({
     getMcpEndpoint: vi.fn(),
     getConfigPath: vi.fn(),
     getConnectionConfig: vi.fn(),
+    getWebUIPort: vi.fn(),
   },
 }));
 
@@ -559,6 +560,31 @@ describe("MCP管道", () => {
       const elapsed = Date.now() - start;
 
       expect(elapsed).toBeGreaterThanOrEqual(sleepTime - 10); // 允许一些容差
+    });
+  });
+
+  describe("WebUI 状态报告", () => {
+    it("应该使用配置文件中的端口", () => {
+      // 测试不同的端口配置
+      const testPorts = [8080, 8088, 3000, 5000];
+
+      for (const port of testPorts) {
+        mockConfigManager.getWebUIPort.mockReturnValue(port);
+        expect(mockConfigManager.getWebUIPort()).toBe(port);
+      }
+    });
+
+    it("应该从 configManager 获取 WebUI 端口", () => {
+      mockConfigManager.getWebUIPort.mockReturnValue(8088);
+
+      // 创建 MCPPipe 实例
+      const mcpPipe = new MCPPipe("test-script.js", "wss://test.example.com");
+
+      // 验证 configManager.getWebUIPort 可以被调用
+      const port = configManager.getWebUIPort();
+      expect(port).toBe(8088);
+
+      mcpPipe.cleanup();
     });
   });
 

@@ -238,14 +238,16 @@ async function startWebUIInBackground(): Promise<void> {
     }
 
     // 启动 Web 服务器
-    const webServer = new WebServer(9999);
+    const webServer = new WebServer();
     await webServer.start();
 
-    console.log(chalk.green("✅ Web UI 已启动: http://localhost:9999"));
+    // 从配置获取端口号
+    const port = configManager.getWebUIPort();
+    console.log(chalk.green(`✅ Web UI 已启动: http://localhost:${port}`));
 
     // 尝试打开浏览器
     const { spawn } = await import("node:child_process");
-    const url = "http://localhost:9999";
+    const url = `http://localhost:${port}`;
     const openCommand =
       process.platform === "darwin"
         ? "open"
@@ -985,16 +987,19 @@ async function startUIService(): Promise<void> {
     }
 
     // 启动 Web 服务器
-    const webServer = new WebServer(9999);
+    const webServer = new WebServer();
     await webServer.start();
 
     spinner.succeed("UI 服务已启动");
-    console.log(chalk.green("✅ 配置管理网页已启动: http://localhost:9999"));
+
+    // 从配置获取端口号
+    const port = configManager.getWebUIPort();
+    console.log(chalk.green(`✅ 配置管理网页已启动: http://localhost:${port}`));
     console.log(chalk.yellow("💡 提示: 按 Ctrl+C 停止服务"));
 
     // 自动打开浏览器
     const { spawn } = await import("node:child_process");
-    const url = "http://localhost:9999";
+    const url = `http://localhost:${port}`;
 
     // 根据不同平台打开浏览器
     const openCommand =

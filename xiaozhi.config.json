@@ -9,5 +9,8 @@
       "command": "node",
       "args": ["./mcpServers/datetime.js"]
     }
+  },
+  "webUI": {
+    "port": 9999
   }
 }

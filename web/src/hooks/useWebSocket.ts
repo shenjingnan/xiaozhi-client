@@ -24,11 +24,17 @@ export function useWebSocket() {
       return savedUrl;
     }
 
-    // 否则使用当前页面的hostname
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const hostname = window.location.hostname || "localhost";
-    const port = 9999; // 默认端口
-    return `${protocol}//${hostname}:${port}`;
+    // 使用当前页面的 origin，这样可以正确处理端口
+    const { protocol, hostname, port } = window.location;
+    const wsProtocol = protocol === "https:" ? "wss:" : "ws:";
+
+    // 如果当前页面有端口，就使用当前端口；否则使用默认端口
+    if (port) {
+      return `${wsProtocol}//${hostname}:${port}`;
+    }
+    // 当通过标准端口（80/443）访问时，port 为空
+    // 这种情况下应该使用相同的标准端口，而不是 9999
+    return `${wsProtocol}//${hostname}`;
   }, []);
 
   useEffect(() => {
