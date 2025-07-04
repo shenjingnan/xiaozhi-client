@@ -1,5 +1,5 @@
 {
-  "mcpEndpoint": "wss://example.com/test",
+  "mcpEndpoint": "<请填写你的接入点地址（获取地址在 xiaozhi.me）>",
   "mcpServers": {
     "calculator": {
       "command": "node",
