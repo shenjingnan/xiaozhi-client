@@ -567,26 +567,25 @@ describe("MCP管道", () => {
     it("应该使用配置文件中的端口", () => {
       // 测试不同的端口配置
       const testPorts = [8080, 8088, 3000, 5000];
-      
-      testPorts.forEach(port => {
+
+      for (const port of testPorts) {
         mockConfigManager.getWebUIPort.mockReturnValue(port);
         expect(mockConfigManager.getWebUIPort()).toBe(port);
-      });
+      }
     });
 
     it("应该从 configManager 获取 WebUI 端口", () => {
       mockConfigManager.getWebUIPort.mockReturnValue(8088);
-      
+
       // 创建 MCPPipe 实例
       const mcpPipe = new MCPPipe("test-script.js", "wss://test.example.com");
-      
+
       // 验证 configManager.getWebUIPort 可以被调用
       const port = configManager.getWebUIPort();
       expect(port).toBe(8088);
-      
+
       mcpPipe.cleanup();
     });
-
   });
 
   describe("主模块检测", () => {
