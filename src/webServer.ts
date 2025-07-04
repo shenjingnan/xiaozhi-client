@@ -203,7 +203,8 @@ export class WebServer {
 
   private setupWebSocket() {
     this.wss.on("connection", (ws) => {
-      this.logger.info("WebSocket client connected");
+      // 只在调试模式下输出连接日志
+      this.logger.debug("WebSocket client connected");
 
       ws.on("message", async (message) => {
         try {
@@ -221,7 +222,8 @@ export class WebServer {
       });
 
       ws.on("close", () => {
-        this.logger.info("WebSocket client disconnected");
+        // 只在调试模式下输出断开日志
+        this.logger.debug("WebSocket client disconnected");
       });
 
       this.sendInitialData(ws);
@@ -377,11 +379,24 @@ export class WebServer {
         this.heartbeatTimeout = undefined;
       }
 
+      // 强制断开所有 WebSocket 客户端连接
+      for (const client of this.wss.clients) {
+        client.terminate();
+      }
+
+      // 关闭 WebSocket 服务器
       this.wss.close(() => {
+        // 强制关闭 HTTP 服务器，不等待现有连接
         this.httpServer.close(() => {
           this.logger.info("Web server stopped");
           resolve();
         });
+
+        // 设置超时，如果 2 秒内没有关闭则强制退出
+        setTimeout(() => {
+          this.logger.info("Web server force stopped");
+          resolve();
+        }, 2000);
       });
     });
   }
