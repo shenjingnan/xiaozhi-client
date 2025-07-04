@@ -18,8 +18,11 @@ export class Logger {
   private logFilePath: string | null = null;
   private writeStream: fs.WriteStream | null = null;
   private consolaInstance: typeof consola;
+  private isDaemonMode: boolean;
 
   constructor() {
+    // 检查是否为守护进程模式
+    this.isDaemonMode = process.env.XIAOZHI_DAEMON === "true";
     // 创建自定义的 consola 实例，禁用图标并自定义格式
     this.consolaInstance = createConsola({
       formatOptions: {
@@ -29,6 +32,9 @@ export class Logger {
       },
       fancy: false,
     });
+
+    // 保存对当前实例的引用，以便在闭包中访问
+    const isDaemonMode = this.isDaemonMode;
 
     // 自定义格式化器
     this.consolaInstance.setReporters([
@@ -62,8 +68,19 @@ export class Logger {
             " "
           )}`;
 
-          // 输出到 stderr（与原来保持一致）
-          console.error(message);
+          // 守护进程模式下不输出到控制台，只写入文件
+          if (!isDaemonMode) {
+            // 输出到 stderr（与原来保持一致）
+            try {
+              console.error(message);
+            } catch (error) {
+              // 忽略 EPIPE 错误
+              if (error instanceof Error && error.message?.includes("EPIPE")) {
+                return;
+              }
+              throw error;
+            }
+          }
         },
       },
     ]);

@@ -1016,13 +1016,25 @@ async function startUIService(): Promise<void> {
     }
 
     // 处理退出信号
+    let isExiting = false;
     process.on("SIGINT", async () => {
+      if (isExiting) {
+        console.log(chalk.red("\n强制退出..."));
+        process.exit(1);
+      }
+      isExiting = true;
       console.log(chalk.yellow("\n正在停止 UI 服务..."));
-      await webServer.stop();
+      try {
+        await webServer.stop();
+        console.log(chalk.green("UI 服务已停止"));
+      } catch (error) {
+        console.log(chalk.red("停止服务时出错，强制退出"));
+      }
       process.exit(0);
     });
 
     process.on("SIGTERM", async () => {
+      isExiting = true;
       await webServer.stop();
       process.exit(0);
     });
