@@ -79,7 +79,9 @@ export class MCPPipe {
         reconnectInterval: 5000,
       };
       logger.warn(
-        `无法获取连接配置，使用默认值: ${error instanceof Error ? error.message : String(error)}`
+        `无法获取连接配置，使用默认值: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   }
@@ -181,7 +183,9 @@ export class MCPPipe {
     reconnectAttempt++;
 
     logger.info(
-      `计划在 ${(this.connectionConfig.reconnectInterval / 1000).toFixed(2)} 秒后进行第 ${reconnectAttempt} 次重连尝试...`
+      `计划在 ${(this.connectionConfig.reconnectInterval / 1000).toFixed(
+        2
+      )} 秒后进行第 ${reconnectAttempt} 次重连尝试...`
     );
 
     this.reconnectTimer = setTimeout(() => {
@@ -303,7 +307,14 @@ export class MCPPipe {
 
     // Handle process stderr - print to terminal
     this.process.stderr?.on("data", (data: Buffer) => {
-      process.stderr.write(data);
+      // 在守护进程模式下，避免写入已关闭的 stderr
+      if (process.env.XIAOZHI_DAEMON !== "true") {
+        try {
+          process.stderr.write(data);
+        } catch (error) {
+          // 忽略 EPIPE 错误
+        }
+      }
     });
 
     // Handle process exit
@@ -365,7 +376,9 @@ export class MCPPipe {
         }, 5000);
       } catch (error) {
         logger.error(
-          `终止进程时出错: ${error instanceof Error ? error.message : String(error)}`
+          `终止进程时出错: ${
+            error instanceof Error ? error.message : String(error)
+          }`
         );
       }
       this.process = null;
@@ -443,7 +456,9 @@ export class MCPPipe {
       });
     } catch (error) {
       logger.debug(
-        `向 Web UI 报告状态失败: ${error instanceof Error ? error.message : String(error)}`
+        `向 Web UI 报告状态失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   }
@@ -476,8 +491,19 @@ export function setupSignalHandlers(mcpPipe: MCPPipe): void {
 
     // 处理未捕获的异常
     process.on("uncaughtException", (error) => {
-      logger.error(`守护进程模式下的未捕获异常: ${error.message}`);
-      logger.error(error.stack || "No stack trace available");
+      // 如果是 EPIPE 错误（通常是因为终端关闭），静默处理
+      if (error.message?.includes("EPIPE")) {
+        // EPIPE 错误在守护进程模式下是正常的，不需要记录
+        return;
+      }
+
+      // 其他错误正常记录
+      try {
+        logger.error(`守护进程模式下的未捕获异常: ${error.message}`);
+        logger.error(error.stack || "No stack trace available");
+      } catch (logError) {
+        // 如果日志记录失败（可能因为另一个 EPIPE 错误），则忽略
+      }
       // 守护进程遇到未捕获的异常时不退出，而是继续运行
     });
 
@@ -506,17 +532,23 @@ async function main() {
   let endpointUrl: string;
 
   try {
-    // 调试信息 - 使用 process.stderr.write 确保能看到
-    process.stderr.write(
-      `[DEBUG] XIAOZHI_CONFIG_DIR: ${process.env.XIAOZHI_CONFIG_DIR}\n`
-    );
-    process.stderr.write(`[DEBUG] process.cwd(): ${process.cwd()}\n`);
-    process.stderr.write(
-      `[DEBUG] configManager.getConfigPath(): ${configManager.getConfigPath()}\n`
-    );
-    process.stderr.write(
-      `[DEBUG] configManager.configExists(): ${configManager.configExists()}\n`
-    );
+    // 调试信息 - 只在非守护进程模式下输出
+    if (process.env.XIAOZHI_DAEMON !== "true") {
+      try {
+        process.stderr.write(
+          `[DEBUG] XIAOZHI_CONFIG_DIR: ${process.env.XIAOZHI_CONFIG_DIR}\n`
+        );
+        process.stderr.write(`[DEBUG] process.cwd(): ${process.cwd()}\n`);
+        process.stderr.write(
+          `[DEBUG] configManager.getConfigPath(): ${configManager.getConfigPath()}\n`
+        );
+        process.stderr.write(
+          `[DEBUG] configManager.configExists(): ${configManager.configExists()}\n`
+        );
+      } catch (error) {
+        // 忽略写入错误
+      }
+    }
 
     // 首先尝试从配置文件读取
     if (configManager.configExists()) {
