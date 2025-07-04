@@ -56,6 +56,17 @@ describe("useWebSocket", () => {
     vi.clearAllMocks();
     mockInstances = [];
     (global.WebSocket as any).mock.instances = mockInstances;
+    // Clear localStorage
+    localStorage.clear();
+    // Reset window.location
+    Object.defineProperty(window, "location", {
+      value: {
+        protocol: "http:",
+        hostname: "localhost",
+        port: "",
+      },
+      writable: true,
+    });
   });
 
   it("initializes with disconnected state", () => {
@@ -151,5 +162,90 @@ describe("useWebSocket", () => {
     });
 
     expect(result.current.connected).toBe(false);
+  });
+
+  describe("WebSocket URL generation", () => {
+    it("uses current page port when available", () => {
+      // Set window location with port
+      Object.defineProperty(window, "location", {
+        value: {
+          protocol: "http:",
+          hostname: "localhost",
+          port: "8080",
+        },
+        writable: true,
+      });
+
+      renderHook(() => useWebSocket());
+
+      // Get the WebSocket instance
+      const ws = (global as any).WebSocket.mock.instances[0];
+      expect(ws.url).toBe("ws://localhost:8080");
+    });
+
+    it("uses no port for standard HTTP port", () => {
+      // Set window location without port (standard HTTP)
+      Object.defineProperty(window, "location", {
+        value: {
+          protocol: "http:",
+          hostname: "localhost",
+          port: "",
+        },
+        writable: true,
+      });
+
+      renderHook(() => useWebSocket());
+
+      // Get the WebSocket instance
+      const ws = (global as any).WebSocket.mock.instances[0];
+      expect(ws.url).toBe("ws://localhost");
+    });
+
+    it("uses wss protocol for https pages", () => {
+      // Set window location with HTTPS
+      Object.defineProperty(window, "location", {
+        value: {
+          protocol: "https:",
+          hostname: "localhost",
+          port: "8443",
+        },
+        writable: true,
+      });
+
+      renderHook(() => useWebSocket());
+
+      // Get the WebSocket instance
+      const ws = (global as any).WebSocket.mock.instances[0];
+      expect(ws.url).toBe("wss://localhost:8443");
+    });
+
+    it("uses saved URL from localStorage when available", () => {
+      // Set a custom URL in localStorage
+      localStorage.setItem("xiaozhi-ws-url", "ws://custom.host:9999");
+
+      renderHook(() => useWebSocket());
+
+      // Get the WebSocket instance
+      const ws = (global as any).WebSocket.mock.instances[0];
+      expect(ws.url).toBe("ws://custom.host:9999");
+    });
+
+    it("uses custom port 8088", () => {
+      // Set window location with custom port 8088
+      Object.defineProperty(window, "location", {
+        value: {
+          protocol: "http:",
+          hostname: "localhost",
+          port: "8088",
+        },
+        writable: true,
+      });
+
+      renderHook(() => useWebSocket());
+
+      // Get the WebSocket instance
+      const ws = (global as any).WebSocket.mock.instances[0];
+      expect(ws.url).toBe("ws://localhost:8088");
+    });
   });
 });
