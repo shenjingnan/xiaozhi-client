@@ -1,3 +1,21 @@
+# [1.4.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.3.0...v1.4.0) (2025-07-07)
+
+
+### Bug Fixes
+
+* **logger:** 修复守护进程模式下 EPIPE 错误导致日志文件快速膨胀问题 ([#91](https://github.com/shenjingnan/xiaozhi-client/issues/91)) ([3eefc9a](https://github.com/shenjingnan/xiaozhi-client/commit/3eefc9a20976e1d9d5b181a7e7f9b90be26ad421))
+* **web-ui:** 修复 Web UI 连接状态显示不准确的问题 ([#83](https://github.com/shenjingnan/xiaozhi-client/issues/83)) ([7efdb9e](https://github.com/shenjingnan/xiaozhi-client/commit/7efdb9ea0c8173c6d8fac9e8724629ba81405274))
+* **web-ui:** 修复 WebSocket 日志噪音和退出卡顿问题 ([#87](https://github.com/shenjingnan/xiaozhi-client/issues/87)) ([5034dd9](https://github.com/shenjingnan/xiaozhi-client/commit/5034dd97de11f25b684767d26744d4c781b58c13))
+
+
+### Features
+
+* **build:** 支持发布 web 界面到 npm 包 ([#82](https://github.com/shenjingnan/xiaozhi-client/issues/82)) ([2cab860](https://github.com/shenjingnan/xiaozhi-client/commit/2cab860ee8063d672ea6eb562e6d914e1895a588))
+* **cli:** 添加 --ui 参数支持同时启动 Web UI 服务 ([#86](https://github.com/shenjingnan/xiaozhi-client/issues/86)) ([f9420f5](https://github.com/shenjingnan/xiaozhi-client/commit/f9420f5bfbeda341b60da44f1fa6526070ab00d9))
+* **ui:** 实现可视化配置管理网页 ([#78](https://github.com/shenjingnan/xiaozhi-client/issues/78)) ([14c5e06](https://github.com/shenjingnan/xiaozhi-client/commit/14c5e06d3d73309a99b645861b663a9a670f7ae4))
+* **web-ui:** 支持动态配置 WebSocket 连接地址 ([#84](https://github.com/shenjingnan/xiaozhi-client/issues/84)) ([b93b617](https://github.com/shenjingnan/xiaozhi-client/commit/b93b617e5841c12f9b7ddef2f24d5d78fcb887c3))
+* **webui:** 支持在配置文件中自定义 Web UI 端口号 ([#90](https://github.com/shenjingnan/xiaozhi-client/issues/90)) ([d2b492e](https://github.com/shenjingnan/xiaozhi-client/commit/d2b492ea4a5d28ba2ac1a41e22a8c89597e2ced3))
+
 # [1.3.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.2.0...v1.3.0) (2025-06-29)
 
 
