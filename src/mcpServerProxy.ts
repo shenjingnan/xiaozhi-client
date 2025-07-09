@@ -847,7 +847,7 @@ export class JSONRPCServer {
  * Check if running in MCP Server mode
  */
 function isMCPServerMode(): boolean {
-  return process.env.MCP_SERVER_MODE === 'true';
+  return process.env.MCP_SERVER_MODE === "true";
 }
 
 /**
