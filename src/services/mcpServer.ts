@@ -1,11 +1,11 @@
-import type { Server } from "node:http";
-import express from "express";
+import { type ChildProcess, spawn } from "node:child_process";
 import { EventEmitter } from "node:events";
-import { spawn, type ChildProcess } from "node:child_process";
+import type { Server } from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { logger as globalLogger } from "../logger.js";
+import express from "express";
 import { configManager } from "../configManager.js";
+import { logger as globalLogger } from "../logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
