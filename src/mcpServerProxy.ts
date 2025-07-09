@@ -844,6 +844,13 @@ export class JSONRPCServer {
 }
 
 /**
+ * Check if running in MCP Server mode
+ */
+function isMCPServerMode(): boolean {
+  return process.env.MCP_SERVER_MODE === 'true';
+}
+
+/**
  * Main function to start the MCP Server Proxy
  */
 async function main() {
@@ -866,6 +873,12 @@ async function main() {
   try {
     // Start the proxy (initialize child clients)
     await proxy.start();
+
+    // In MCP Server mode, announce readiness
+    if (isMCPServerMode()) {
+      logger.info("MCP proxy ready in server mode");
+      console.log("MCP proxy ready"); // For parent process detection
+    }
 
     // Handle stdin/stdout communication
     process.stdin.setEncoding("utf8");

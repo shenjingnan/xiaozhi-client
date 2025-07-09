@@ -614,6 +614,85 @@ async function restartService(daemon = false, ui = false): Promise<void> {
 }
 
 /**
+ * 以 MCP Server 模式启动服务
+ */
+async function startMCPServerMode(port: number, daemon = false): Promise<void> {
+  const spinner = ora("启动 MCP Server 模式...").start();
+
+  try {
+    // 检查配置是否存在
+    if (!configManager.configExists()) {
+      spinner.fail("配置文件不存在");
+      console.log(chalk.yellow('💡 提示: 请先运行 "xiaozhi init" 初始化配置'));
+      return;
+    }
+
+    // 导入 MCPServer
+    const { MCPServer } = await import("./services/mcpServer.js");
+    
+    if (daemon) {
+      // 后台模式 - 创建子进程
+      const scriptPath = fileURLToPath(import.meta.url);
+      const distDir = path.dirname(scriptPath);
+      
+      const child = spawn("node", [
+        path.join(distDir, "cli.js"),
+        "start",
+        "--server",
+        port.toString()
+      ], {
+        detached: true,
+        stdio: ["ignore", "pipe", "pipe"],
+        env: {
+          ...process.env,
+          XIAOZHI_CONFIG_DIR: process.cwd(),
+          XIAOZHI_DAEMON: "true",
+          MCP_SERVER_MODE: "true"
+        }
+      });
+
+      // 保存 PID 信息
+      savePidInfo(child.pid!, "daemon");
+
+      // 设置日志输出
+      const logFilePath = path.join(process.cwd(), "xiaozhi-mcp-server.log");
+      const logStream = fs.createWriteStream(logFilePath, { flags: "a" });
+      child.stdout?.pipe(logStream);
+      child.stderr?.pipe(logStream);
+
+      child.unref();
+
+      spinner.succeed(`MCP Server 已在后台启动 (PID: ${child.pid}, Port: ${port})`);
+      console.log(chalk.gray(`日志文件: ${logFilePath}`));
+    } else {
+      // 前台模式
+      const server = new MCPServer(port);
+      
+      // 处理退出信号
+      const cleanup = async () => {
+        console.log(chalk.yellow("\n正在停止 MCP Server..."));
+        await server.stop();
+        process.exit(0);
+      };
+
+      process.on("SIGINT", cleanup);
+      process.on("SIGTERM", cleanup);
+
+      await server.start();
+      
+      spinner.succeed(`MCP Server 已启动`);
+      console.log(chalk.green(`✅ SSE endpoint: http://localhost:${port}/sse`));
+      console.log(chalk.green(`✅ RPC endpoint: http://localhost:${port}/rpc`));
+      console.log(chalk.yellow("💡 提示: 按 Ctrl+C 停止服务"));
+    }
+  } catch (error) {
+    spinner.fail(
+      `启动 MCP Server 失败: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
+
+/**
  * 显示详细信息
  */
 function showDetailedInfo(): void {
@@ -1202,7 +1281,7 @@ function showHelp(): void {
   console.log("  init                     初始化配置文件");
   console.log("  config <key> [value]     查看或设置配置");
   console.log(
-    "  start [--daemon] [--ui]  启动服务 (--daemon 后台运行, --ui 同时启动 Web UI)"
+    "  start [--daemon] [--ui] [--server]  启动服务 (--daemon 后台运行, --ui 同时启动 Web UI, --server MCP Server 模式)"
   );
   console.log("  stop                     停止服务");
   console.log("  status                   检查服务状态");
@@ -1238,6 +1317,9 @@ function showHelp(): void {
   console.log("  xiaozhi start --daemon       # 后台启动服务");
   console.log("  xiaozhi start --ui           # 启动服务并同时启动 Web UI");
   console.log("  xiaozhi start -d -u          # 后台启动服务并同时启动 Web UI");
+  console.log("  xiaozhi start --server       # 以 MCP Server 模式启动 (端口 3000)");
+  console.log("  xiaozhi start -s 8080        # 以 MCP Server 模式启动 (端口 8080)");
+  console.log("  xiaozhi start -s -d          # 后台运行 MCP Server");
   console.log("  xiaozhi status               # 检查服务状态");
   console.log("  xiaozhi attach               # 查看后台服务日志");
   console.log("  xiaozhi stop                 # 停止服务");
@@ -1292,8 +1374,33 @@ program
   .description("启动服务")
   .option("-d, --daemon", "在后台运行服务")
   .option("-u, --ui", "同时启动 Web UI 服务")
+  .option("-s, --server [port]", "以 MCP Server 模式启动 (可选指定端口，默认 3000)")
+  .option("--stdio", "以 stdio 模式运行 MCP Server (用于 Cursor 等客户端)")
   .action(async (options) => {
-    await startService(options.daemon, options.ui);
+    if (options.stdio) {
+      // stdio 模式 - 直接运行 mcpServerProxy
+      const { spawn } = await import("child_process");
+      const scriptPath = fileURLToPath(import.meta.url);
+      const distDir = path.dirname(scriptPath);
+      const mcpProxyPath = path.join(distDir, "mcpServerProxy.js");
+      
+      // 直接执行 mcpServerProxy，它已经支持 stdio
+      spawn("node", [mcpProxyPath], {
+        stdio: "inherit",
+        env: {
+          ...process.env,
+          // 如果用户没有设置 XIAOZHI_CONFIG_DIR，则使用当前工作目录
+          XIAOZHI_CONFIG_DIR: process.env.XIAOZHI_CONFIG_DIR || process.cwd()
+        }
+      });
+    } else if (options.server) {
+      // MCP Server 模式
+      const port = typeof options.server === 'string' ? parseInt(options.server) : 3000;
+      await startMCPServerMode(port, options.daemon);
+    } else {
+      // 传统模式
+      await startService(options.daemon, options.ui);
+    }
   });
 
 // stop 命令

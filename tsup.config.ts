@@ -41,6 +41,7 @@ export default defineConfig({
     "src/autoCompletion.ts",
     "src/logger.ts",
     "src/webServer.ts",
+    "src/services/mcpServer.ts",
   ],
   format: ["esm"],
   target: "node18",
@@ -69,6 +70,7 @@ export default defineConfig({
     "commander",
     "chalk",
     "ora",
+    "express",
   ],
   onSuccess: async () => {
     // 复制配置文件到 dist
