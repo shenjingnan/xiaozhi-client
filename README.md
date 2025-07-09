@@ -139,6 +139,7 @@ xiaozhi-client 现已支持接入 [ModelScope](https://www.modelscope.cn/mcp) �
    ```
 
 3. 启动服务：
+
    ```bash
    xiaozhi start
    ```
@@ -302,3 +303,79 @@ xiaozhi-client 提供了一个现代化的 Web UI 界面，让配置 MCP 服务�
 ```bash
 xiaozhi ui
 ```
+
+## 作为 MCP Server 集成到其他客户端
+
+xiaozhi-client 不仅可以作为小智 AI 的客户端使用，还可以作为标准的 MCP Server 被 Cursor、Cherry Studio 等支持 MCP 协议的客户端集成。
+
+### Cursor 集成配置
+
+#### 方式一：使用 stdio 模式（推荐）
+
+1. 确保已全局安装 xiaozhi-client：
+
+   ```bash
+   npm install -g xiaozhi-client
+   ```
+
+2. 在 Cursor 的 MCP 配置文件中添加：
+
+   ```json
+   {
+     "mcpServers": {
+       "xiaozhi-client": {
+         "command": "xiaozhi",
+         "args": ["start", "--stdio"]
+       }
+     }
+   }
+   ```
+
+3. 如果需要指定配置文件位置，可以使用环境变量：
+
+   ```json
+   {
+     "mcpServers": {
+       "xiaozhi-client": {
+         "command": "xiaozhi",
+         "args": ["start", "--stdio"],
+         "env": {
+           "XIAOZHI_CONFIG_DIR": "/path/to/your/config/directory"
+         }
+       }
+     }
+   }
+   ```
+
+#### 方式二：使用 HTTP Server 模式
+
+1. 启动 xiaozhi-client 的 HTTP Server：
+
+   ```bash
+   # 使用默认端口 3000
+   xiaozhi start --server
+
+   # 使用自定义端口
+   xiaozhi start --server 8080
+
+   # 后台运行
+   xiaozhi start --server --daemon
+   ```
+
+2. 在 Cursor 中配置 SSE 连接：
+
+   ```json
+   {
+     "mcpServers": {
+       "xiaozhi-client": {
+         "type": "sse",
+         "url": "http://localhost:3000/sse"
+       }
+     }
+   }
+   ```
+
+### 配置文件的查找顺序
+
+1. 当前工作目录
+2. 通过 `XIAOZHI_CONFIG_DIR` 环境变量指定的目录
