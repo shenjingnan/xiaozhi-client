@@ -16,7 +16,7 @@
 - 支持 配置多个小智接入点，实现多个小智设备共享一个 MCP 配置
 - 支持 通过标准方式聚合多个 MCP Server
 - 支持 动态控制 MCP Server 工具的可见性，避免由于无用工具过多导致的小智服务端异常
-- 支持 自定义小智服务端集成，你可以使用和小智官方服务端一样的 RPC 通信或直接使用标准 MCP 集成方式
+- 支持 本地化部署的开源服务端集成，你可以使用和小智官方服务端一样的 RPC 通信或直接使用标准 MCP 集成方式
 - 支持 Web 网页可视化配置(允许自定义 IP 和端口，你能将 xiaozhi-client 部署在设备 A，然后在设备 B 通过网页控制 xiaozhi-client)
 - 支持 集成 ModelScope 的远程MCP服务
 - 支持 通过模板创建 xiaozhi-client 项目 (xiaozhi create \<my-app\> --template hello-world)
