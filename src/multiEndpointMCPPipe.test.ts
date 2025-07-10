@@ -95,8 +95,8 @@ describe("MultiEndpointMCPPipe", () => {
     });
   });
 
-  describe("message routing", () => {
-    it("should route response to correct endpoint", () => {
+  describe("message handling", () => {
+    it("should send MCP messages to correct endpoint", () => {
       mcpPipe = new MultiEndpointMCPPipe("test.js", mockEndpoints);
 
       // Setup mock endpoints
@@ -114,6 +114,8 @@ describe("MultiEndpointMCPPipe", () => {
         websocket: mockWs1,
         isConnected: true,
         reconnectAttempt: 0,
+        process: null,
+        stdoutBuffer: "",
       });
 
       // @ts-ignore - accessing private property for testing
@@ -122,35 +124,26 @@ describe("MultiEndpointMCPPipe", () => {
         websocket: mockWs2,
         isConnected: true,
         reconnectAttempt: 0,
+        process: null,
+        stdoutBuffer: "",
       });
 
-      // Send a request from endpoint1
-      const request = JSON.stringify({
-        jsonrpc: "2.0",
-        id: 123,
-        method: "test",
-        params: {},
-      });
-
-      // @ts-ignore - accessing private method for testing
-      mcpPipe.sendToEndpoint(mockEndpoints[0], request);
-
-      // Now send a response
-      const response = JSON.stringify({
+      // Send a message to endpoint1
+      const message = JSON.stringify({
         jsonrpc: "2.0",
         id: 123,
         result: { success: true },
       });
 
       // @ts-ignore - accessing private method for testing
-      mcpPipe.handleMCPMessage(response);
+      mcpPipe.handleMCPMessage(mockEndpoints[0], message);
 
-      // Response should be sent back to endpoint1
-      expect(mockWs1.send).toHaveBeenCalledWith(`${response}\n`);
+      // Message should be sent to endpoint1 only
+      expect(mockWs1.send).toHaveBeenCalledWith(`${message}\n`);
       expect(mockWs2.send).not.toHaveBeenCalled();
     });
 
-    it("should handle notifications without ID", () => {
+    it("should handle notifications", () => {
       mcpPipe = new MultiEndpointMCPPipe("test.js", mockEndpoints);
 
       const mockWs = new EventEmitter() as any;
@@ -163,6 +156,8 @@ describe("MultiEndpointMCPPipe", () => {
         websocket: mockWs,
         isConnected: true,
         reconnectAttempt: 0,
+        process: null,
+        stdoutBuffer: "",
       });
 
       const notification = JSON.stringify({
@@ -172,68 +167,45 @@ describe("MultiEndpointMCPPipe", () => {
       });
 
       // @ts-ignore - accessing private method for testing
-      mcpPipe.handleMCPMessage(notification);
+      mcpPipe.handleMCPMessage(mockEndpoints[0], notification);
 
-      // Notification should be sent using load balancing
+      // Notification should be sent to the endpoint
       expect(mockWs.send).toHaveBeenCalledWith(`${notification}\n`);
     });
   });
 
-  describe("load balancing", () => {
-    it("should use round-robin for new requests", () => {
+  describe("independent processes", () => {
+    it("should create separate MCP process for each endpoint", async () => {
+      const childProcessModule = await import("node:child_process");
       mcpPipe = new MultiEndpointMCPPipe("test.js", mockEndpoints);
 
-      // Setup all endpoints as connected
-      const mockWebSockets: any[] = [];
-      mockEndpoints.forEach((url, index) => {
-        const ws = new EventEmitter() as any;
-        ws.readyState = WebSocket.OPEN;
-        ws.send = vi.fn();
-        mockWebSockets.push(ws);
+      // Start MCP processes for endpoints
+      // @ts-ignore - accessing private method for testing
+      mcpPipe.startMCPProcessForEndpoint(mockEndpoints[0]);
+      // @ts-ignore - accessing private method for testing
+      mcpPipe.startMCPProcessForEndpoint(mockEndpoints[1]);
 
-        // @ts-ignore - accessing private property for testing
-        mcpPipe.endpoints.set(url, {
-          url,
-          websocket: ws,
-          isConnected: true,
-          reconnectAttempt: 0,
-        });
-      });
-
-      // Send multiple requests
-      for (let i = 0; i < 6; i++) {
-        const request = JSON.stringify({
-          jsonrpc: "2.0",
-          id: 1000 + i,
-          method: "test",
-          params: {},
-        });
-
-        // @ts-ignore - accessing private method for testing
-        mcpPipe.handleMCPMessage(request);
-      }
-
-      // Each endpoint should receive 2 requests
-      for (const ws of mockWebSockets) {
-        expect(ws.send).toHaveBeenCalledTimes(2);
-      }
+      // Should create two separate processes
+      expect(childProcessModule.spawn).toHaveBeenCalledTimes(2);
+      expect(childProcessModule.spawn).toHaveBeenCalledWith(
+        "node",
+        ["test.js"],
+        {
+          stdio: ["pipe", "pipe", "pipe"],
+        }
+      );
     });
 
-    it("should skip unavailable endpoints", () => {
+    it("should handle process output independently", () => {
       mcpPipe = new MultiEndpointMCPPipe("test.js", mockEndpoints);
 
-      // Setup endpoints with one disconnected
       const mockWs1 = new EventEmitter() as any;
       mockWs1.readyState = WebSocket.OPEN;
       mockWs1.send = vi.fn();
 
       const mockWs2 = new EventEmitter() as any;
-      mockWs2.readyState = WebSocket.CLOSED;
+      mockWs2.readyState = WebSocket.OPEN;
       mockWs2.send = vi.fn();
-
-      const mockWs3 = new EventEmitter() as any;
-      mockWs3.readyState = WebSocket.OPEN;
-      mockWs3.send = vi.fn();
 
       // @ts-ignore - accessing private property for testing
       mcpPipe.endpoints.set(mockEndpoints[0], {
@@ -241,41 +213,42 @@ describe("MultiEndpointMCPPipe", () => {
         websocket: mockWs1,
         isConnected: true,
         reconnectAttempt: 0,
+        process: null,
+        stdoutBuffer: "",
       });
 
       // @ts-ignore - accessing private property for testing
       mcpPipe.endpoints.set(mockEndpoints[1], {
         url: mockEndpoints[1],
         websocket: mockWs2,
-        isConnected: false,
-        reconnectAttempt: 0,
-      });
-
-      // @ts-ignore - accessing private property for testing
-      mcpPipe.endpoints.set(mockEndpoints[2], {
-        url: mockEndpoints[2],
-        websocket: mockWs3,
         isConnected: true,
         reconnectAttempt: 0,
+        process: null,
+        stdoutBuffer: "",
       });
 
-      // Send requests
-      for (let i = 0; i < 4; i++) {
-        const request = JSON.stringify({
-          jsonrpc: "2.0",
-          id: 2000 + i,
-          method: "test",
-          params: {},
-        });
+      // Send messages from different endpoints
+      const message1 = JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        result: "test1",
+      });
+      const message2 = JSON.stringify({
+        jsonrpc: "2.0",
+        id: 2,
+        result: "test2",
+      });
 
-        // @ts-ignore - accessing private method for testing
-        mcpPipe.handleMCPMessage(request);
-      }
+      // @ts-ignore - accessing private method for testing
+      mcpPipe.handleMCPMessage(mockEndpoints[0], message1);
+      // @ts-ignore - accessing private method for testing
+      mcpPipe.handleMCPMessage(mockEndpoints[1], message2);
 
-      // Only connected endpoints should receive requests
-      expect(mockWs1.send).toHaveBeenCalledTimes(2);
-      expect(mockWs2.send).not.toHaveBeenCalled();
-      expect(mockWs3.send).toHaveBeenCalledTimes(2);
+      // Each endpoint should only receive its own message
+      expect(mockWs1.send).toHaveBeenCalledWith(`${message1}\n`);
+      expect(mockWs1.send).not.toHaveBeenCalledWith(`${message2}\n`);
+      expect(mockWs2.send).toHaveBeenCalledWith(`${message2}\n`);
+      expect(mockWs2.send).not.toHaveBeenCalledWith(`${message1}\n`);
     });
   });
 
@@ -388,6 +361,8 @@ describe("MultiEndpointMCPPipe", () => {
           websocket: ws,
           isConnected: true,
           reconnectAttempt: 0,
+          process: null,
+          stdoutBuffer: "",
         });
       }
 
@@ -399,8 +374,12 @@ describe("MultiEndpointMCPPipe", () => {
         expect(ws.close).toHaveBeenCalled();
       }
 
+      // Verify endpoints are cleaned up properly
       // @ts-ignore - accessing private property for testing
-      expect(mcpPipe.messageRoutes.size).toBe(0);
+      for (const endpoint of mcpPipe.endpoints.values()) {
+        expect(endpoint.websocket).toBeNull();
+        expect(endpoint.stdoutBuffer).toBe("");
+      }
     });
   });
 
@@ -414,6 +393,8 @@ describe("MultiEndpointMCPPipe", () => {
         websocket: null,
         isConnected: true,
         reconnectAttempt: 0,
+        process: null,
+        stdoutBuffer: "",
       });
 
       // @ts-ignore - accessing private property for testing
@@ -422,6 +403,8 @@ describe("MultiEndpointMCPPipe", () => {
         websocket: null,
         isConnected: false,
         reconnectAttempt: 0,
+        process: null,
+        stdoutBuffer: "",
       });
 
       // @ts-ignore - accessing private property for testing
@@ -430,6 +413,8 @@ describe("MultiEndpointMCPPipe", () => {
         websocket: null,
         isConnected: true,
         reconnectAttempt: 0,
+        process: null,
+        stdoutBuffer: "",
       });
 
       expect(mcpPipe.hasAnyConnection()).toBe(true);

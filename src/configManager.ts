@@ -169,7 +169,9 @@ export class ConfigManager {
       }
       for (const endpoint of configObj.mcpEndpoint) {
         if (typeof endpoint !== "string" || endpoint.trim() === "") {
-          throw new Error("配置文件格式错误：mcpEndpoint 数组中的每个元素必须是非空字符串");
+          throw new Error(
+            "配置文件格式错误：mcpEndpoint 数组中的每个元素必须是非空字符串"
+          );
         }
       }
     } else {

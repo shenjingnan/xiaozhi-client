@@ -264,7 +264,9 @@ export class MultiEndpointMCPPipe {
           signal !== "SIGTERM" &&
           signal !== "SIGKILL"
         ) {
-          logger.info(`[${endpointUrl}] MCP 进程意外退出，将在下次重连时尝试重启`);
+          logger.info(
+            `[${endpointUrl}] MCP 进程意外退出，将在下次重连时尝试重启`
+          );
         }
       }
     );
@@ -275,15 +277,20 @@ export class MultiEndpointMCPPipe {
       endpoint.process = null;
 
       if (this.shouldReconnect) {
-        logger.info(`[${endpointUrl}] MCP 进程发生错误，将在下次重连时尝试重启`);
+        logger.info(
+          `[${endpointUrl}] MCP 进程发生错误，将在下次重连时尝试重启`
+        );
       }
     });
   }
 
-
   handleMCPMessage(endpointUrl: string, line: string) {
-    logger.info(`>> [${endpointUrl}] mcpServerProxy发送消息长度: ${line.length} 字节`);
-    logger.info(`>> [${endpointUrl}] mcpServerProxy发送消息: ${line.substring(0, 500)}...`);
+    logger.info(
+      `>> [${endpointUrl}] mcpServerProxy发送消息长度: ${line.length} 字节`
+    );
+    logger.info(
+      `>> [${endpointUrl}] mcpServerProxy发送消息: ${line.substring(0, 500)}...`
+    );
 
     // 直接发送回对应的端点
     this.sendToEndpoint(endpointUrl, line);
@@ -307,7 +314,6 @@ export class MultiEndpointMCPPipe {
       logger.error(`>> [${endpointUrl}] 发送消息到 WebSocket 失败: ${error}`);
     }
   }
-
 
   startHeartbeat(endpointUrl: string) {
     const endpoint = this.endpoints.get(endpointUrl);
@@ -397,7 +403,6 @@ export class MultiEndpointMCPPipe {
         endpoint.websocket = null;
       }
     }
-
   }
 
   shutdown() {
@@ -524,4 +529,3 @@ export function setupSignalHandlers(mcpPipe: MultiEndpointMCPPipe): void {
     });
   }
 }
-

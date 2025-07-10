@@ -1118,17 +1118,20 @@ describe("ConfigManager", () => {
           mcpServers: {},
         };
         mockReadFileSync.mockReturnValue(JSON.stringify(validConfig));
-        
+
         expect(() => configManager.getConfig()).not.toThrow();
       });
 
       it("应该接受数组类型的 mcpEndpoint", () => {
         const validConfig = {
-          mcpEndpoint: ["https://endpoint1.com/mcp", "https://endpoint2.com/mcp"],
+          mcpEndpoint: [
+            "https://endpoint1.com/mcp",
+            "https://endpoint2.com/mcp",
+          ],
           mcpServers: {},
         };
         mockReadFileSync.mockReturnValue(JSON.stringify(validConfig));
-        
+
         expect(() => configManager.getConfig()).not.toThrow();
       });
 
@@ -1138,7 +1141,7 @@ describe("ConfigManager", () => {
           mcpServers: {},
         };
         mockReadFileSync.mockReturnValue(JSON.stringify(invalidConfig));
-        
+
         expect(() => configManager.getConfig()).toThrow(
           "配置文件格式错误：mcpEndpoint 数组不能为空"
         );
@@ -1146,11 +1149,15 @@ describe("ConfigManager", () => {
 
       it("应该拒绝包含空字符串的 mcpEndpoint 数组", () => {
         const invalidConfig = {
-          mcpEndpoint: ["https://endpoint1.com/mcp", "", "https://endpoint2.com/mcp"],
+          mcpEndpoint: [
+            "https://endpoint1.com/mcp",
+            "",
+            "https://endpoint2.com/mcp",
+          ],
           mcpServers: {},
         };
         mockReadFileSync.mockReturnValue(JSON.stringify(invalidConfig));
-        
+
         expect(() => configManager.getConfig()).toThrow(
           "配置文件格式错误：mcpEndpoint 数组中的每个元素必须是非空字符串"
         );
@@ -1162,7 +1169,7 @@ describe("ConfigManager", () => {
           mcpServers: {},
         };
         mockReadFileSync.mockReturnValue(JSON.stringify(invalidConfig));
-        
+
         expect(() => configManager.getConfig()).toThrow(
           "配置文件格式错误：mcpEndpoint 必须是字符串或字符串数组"
         );
@@ -1234,7 +1241,6 @@ describe("ConfigManager", () => {
         const endpoint = configManager.getMcpEndpoint();
         expect(endpoint).toBe("https://endpoint1.com/mcp");
       });
-
     });
 
     describe("updateMcpEndpoint", () => {
