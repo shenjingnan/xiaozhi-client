@@ -53,7 +53,7 @@ export interface WebUIConfig {
 }
 
 export interface AppConfig {
-  mcpEndpoint: string;
+  mcpEndpoint: string | string[];
   mcpServers: Record<string, MCPServerConfig>;
   mcpServerConfig?: Record<string, MCPServerToolsConfig>;
   connection?: ConnectionConfig; // 连接配置（可选，用于向后兼容）
@@ -156,8 +156,24 @@ export class ConfigManager {
 
     const configObj = config as Record<string, unknown>;
 
-    if (!configObj.mcpEndpoint || typeof configObj.mcpEndpoint !== "string") {
+    if (configObj.mcpEndpoint === undefined || configObj.mcpEndpoint === null) {
       throw new Error("配置文件格式错误：mcpEndpoint 字段无效");
+    }
+
+    // 验证 mcpEndpoint 类型（字符串或字符串数组）
+    if (typeof configObj.mcpEndpoint === "string") {
+      // 空字符串是允许的，getMcpEndpoints 会返回空数组
+    } else if (Array.isArray(configObj.mcpEndpoint)) {
+      if (configObj.mcpEndpoint.length === 0) {
+        throw new Error("配置文件格式错误：mcpEndpoint 数组不能为空");
+      }
+      for (const endpoint of configObj.mcpEndpoint) {
+        if (typeof endpoint !== "string" || endpoint.trim() === "") {
+          throw new Error("配置文件格式错误：mcpEndpoint 数组中的每个元素必须是非空字符串");
+        }
+      }
+    } else {
+      throw new Error("配置文件格式错误：mcpEndpoint 必须是字符串或字符串数组");
     }
 
     if (!configObj.mcpServers || typeof configObj.mcpServers !== "object") {
@@ -218,11 +234,26 @@ export class ConfigManager {
   }
 
   /**
-   * 获取 MCP 端点
+   * 获取 MCP 端点（向后兼容）
+   * @deprecated 使用 getMcpEndpoints() 获取所有端点
    */
   public getMcpEndpoint(): string {
     const config = this.getConfig();
+    if (Array.isArray(config.mcpEndpoint)) {
+      return config.mcpEndpoint[0] || "";
+    }
     return config.mcpEndpoint;
+  }
+
+  /**
+   * 获取所有 MCP 端点
+   */
+  public getMcpEndpoints(): string[] {
+    const config = this.getConfig();
+    if (Array.isArray(config.mcpEndpoint)) {
+      return [...config.mcpEndpoint];
+    }
+    return config.mcpEndpoint ? [config.mcpEndpoint] : [];
   }
 
   /**
@@ -261,15 +292,74 @@ export class ConfigManager {
   }
 
   /**
-   * 更新 MCP 端点
+   * 更新 MCP 端点（支持字符串或数组）
    */
-  public updateMcpEndpoint(endpoint: string): void {
+  public updateMcpEndpoint(endpoint: string | string[]): void {
+    if (Array.isArray(endpoint)) {
+      if (endpoint.length === 0) {
+        throw new Error("MCP 端点数组不能为空");
+      }
+      for (const ep of endpoint) {
+        if (!ep || typeof ep !== "string") {
+          throw new Error("MCP 端点数组中的每个元素必须是非空字符串");
+        }
+      }
+    } else {
+      if (!endpoint || typeof endpoint !== "string") {
+        throw new Error("MCP 端点必须是非空字符串");
+      }
+    }
+
+    const config = this.getConfig();
+    const newConfig = { ...config, mcpEndpoint: endpoint };
+    this.saveConfig(newConfig);
+  }
+
+  /**
+   * 添加 MCP 端点
+   */
+  public addMcpEndpoint(endpoint: string): void {
     if (!endpoint || typeof endpoint !== "string") {
       throw new Error("MCP 端点必须是非空字符串");
     }
 
     const config = this.getConfig();
-    const newConfig = { ...config, mcpEndpoint: endpoint };
+    const currentEndpoints = this.getMcpEndpoints();
+
+    // 检查是否已存在
+    if (currentEndpoints.includes(endpoint)) {
+      throw new Error(`MCP 端点 ${endpoint} 已存在`);
+    }
+
+    const newEndpoints = [...currentEndpoints, endpoint];
+    const newConfig = { ...config, mcpEndpoint: newEndpoints };
+    this.saveConfig(newConfig);
+  }
+
+  /**
+   * 移除 MCP 端点
+   */
+  public removeMcpEndpoint(endpoint: string): void {
+    if (!endpoint || typeof endpoint !== "string") {
+      throw new Error("MCP 端点必须是非空字符串");
+    }
+
+    const config = this.getConfig();
+    const currentEndpoints = this.getMcpEndpoints();
+
+    // 检查是否存在
+    const index = currentEndpoints.indexOf(endpoint);
+    if (index === -1) {
+      throw new Error(`MCP 端点 ${endpoint} 不存在`);
+    }
+
+    // 不允许删除最后一个端点
+    if (currentEndpoints.length === 1) {
+      throw new Error("不能删除最后一个 MCP 端点");
+    }
+
+    const newEndpoints = currentEndpoints.filter((ep) => ep !== endpoint);
+    const newConfig = { ...config, mcpEndpoint: newEndpoints };
     this.saveConfig(newConfig);
   }
 

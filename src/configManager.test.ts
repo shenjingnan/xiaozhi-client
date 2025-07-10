@@ -39,7 +39,7 @@ describe("ConfigManager", () => {
   const mockResolve = vi.mocked(resolve);
 
   const mockConfig: AppConfig = {
-    mcpEndpoint: "wss://api.example.com/mcp",
+    mcpEndpoint: "https://example.com/mcp",
     mcpServers: {
       "test-server": {
         command: "node",
@@ -1098,6 +1098,260 @@ describe("ConfigManager", () => {
         expect(() => configManager.setWebUIPort(80)).not.toThrow();
         expect(() => configManager.setWebUIPort(8080)).not.toThrow();
         expect(() => configManager.setWebUIPort(65535)).not.toThrow();
+      });
+    });
+  });
+
+  describe("多端点配置管理", () => {
+    beforeEach(() => {
+      // 重置配置管理器实例，确保每个测试开始时都是干净的状态
+      configManager.reloadConfig();
+      // 默认设置 mock 配置
+      mockExistsSync.mockReturnValue(true);
+      mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+    });
+
+    describe("配置验证", () => {
+      it("应该接受字符串类型的 mcpEndpoint", () => {
+        const validConfig = {
+          mcpEndpoint: "https://example.com/mcp",
+          mcpServers: {},
+        };
+        mockReadFileSync.mockReturnValue(JSON.stringify(validConfig));
+        
+        expect(() => configManager.getConfig()).not.toThrow();
+      });
+
+      it("应该接受数组类型的 mcpEndpoint", () => {
+        const validConfig = {
+          mcpEndpoint: ["https://endpoint1.com/mcp", "https://endpoint2.com/mcp"],
+          mcpServers: {},
+        };
+        mockReadFileSync.mockReturnValue(JSON.stringify(validConfig));
+        
+        expect(() => configManager.getConfig()).not.toThrow();
+      });
+
+      it("应该拒绝空的 mcpEndpoint 数组", () => {
+        const invalidConfig = {
+          mcpEndpoint: [],
+          mcpServers: {},
+        };
+        mockReadFileSync.mockReturnValue(JSON.stringify(invalidConfig));
+        
+        expect(() => configManager.getConfig()).toThrow(
+          "配置文件格式错误：mcpEndpoint 数组不能为空"
+        );
+      });
+
+      it("应该拒绝包含空字符串的 mcpEndpoint 数组", () => {
+        const invalidConfig = {
+          mcpEndpoint: ["https://endpoint1.com/mcp", "", "https://endpoint2.com/mcp"],
+          mcpServers: {},
+        };
+        mockReadFileSync.mockReturnValue(JSON.stringify(invalidConfig));
+        
+        expect(() => configManager.getConfig()).toThrow(
+          "配置文件格式错误：mcpEndpoint 数组中的每个元素必须是非空字符串"
+        );
+      });
+
+      it("应该拒绝其他类型的 mcpEndpoint", () => {
+        const invalidConfig = {
+          mcpEndpoint: 123,
+          mcpServers: {},
+        };
+        mockReadFileSync.mockReturnValue(JSON.stringify(invalidConfig));
+        
+        expect(() => configManager.getConfig()).toThrow(
+          "配置文件格式错误：mcpEndpoint 必须是字符串或字符串数组"
+        );
+      });
+    });
+
+    describe("getMcpEndpoints", () => {
+      it("应该返回单个端点作为数组", () => {
+        const endpoints = configManager.getMcpEndpoints();
+        expect(endpoints).toEqual(["https://example.com/mcp"]);
+      });
+
+      it("应该返回多个端点数组", () => {
+        const mockConfigWithMultipleEndpoints: AppConfig = {
+          ...mockConfig,
+          mcpEndpoint: [
+            "https://endpoint1.com/mcp",
+            "https://endpoint2.com/mcp",
+            "https://endpoint3.com/mcp",
+          ],
+        };
+        mockReadFileSync.mockReturnValue(
+          JSON.stringify(mockConfigWithMultipleEndpoints)
+        );
+        configManager.reloadConfig();
+
+        const endpoints = configManager.getMcpEndpoints();
+        expect(endpoints).toEqual([
+          "https://endpoint1.com/mcp",
+          "https://endpoint2.com/mcp",
+          "https://endpoint3.com/mcp",
+        ]);
+      });
+
+      it("应该在端点为空字符串时返回空数组", () => {
+        const mockConfigWithEmptyEndpoint: AppConfig = {
+          ...mockConfig,
+          mcpEndpoint: "",
+        };
+        mockReadFileSync.mockReturnValue(
+          JSON.stringify(mockConfigWithEmptyEndpoint)
+        );
+        configManager.reloadConfig();
+
+        const endpoints = configManager.getMcpEndpoints();
+        expect(endpoints).toEqual([]);
+      });
+    });
+
+    describe("getMcpEndpoint (向后兼容)", () => {
+      it("应该返回单个端点字符串", () => {
+        const endpoint = configManager.getMcpEndpoint();
+        expect(endpoint).toBe("https://example.com/mcp");
+      });
+
+      it("应该返回数组的第一个端点", () => {
+        const mockConfigWithMultipleEndpoints: AppConfig = {
+          ...mockConfig,
+          mcpEndpoint: [
+            "https://endpoint1.com/mcp",
+            "https://endpoint2.com/mcp",
+          ],
+        };
+        mockReadFileSync.mockReturnValue(
+          JSON.stringify(mockConfigWithMultipleEndpoints)
+        );
+        configManager.reloadConfig();
+
+        const endpoint = configManager.getMcpEndpoint();
+        expect(endpoint).toBe("https://endpoint1.com/mcp");
+      });
+
+    });
+
+    describe("updateMcpEndpoint", () => {
+      it("应该接受字符串端点", () => {
+        configManager.updateMcpEndpoint("https://new-endpoint.com/mcp");
+
+        const writtenConfig = JSON.parse(
+          (mockWriteFileSync.mock.calls[0] as any)[1]
+        );
+
+        expect(writtenConfig.mcpEndpoint).toBe("https://new-endpoint.com/mcp");
+      });
+
+      it("应该接受端点数组", () => {
+        const newEndpoints = [
+          "https://endpoint1.com/mcp",
+          "https://endpoint2.com/mcp",
+        ];
+        configManager.updateMcpEndpoint(newEndpoints);
+
+        const writtenConfig = JSON.parse(
+          (mockWriteFileSync.mock.calls[0] as any)[1]
+        );
+
+        expect(writtenConfig.mcpEndpoint).toEqual(newEndpoints);
+      });
+
+      it("应该拒绝空数组", () => {
+        expect(() => configManager.updateMcpEndpoint([])).toThrow(
+          "MCP 端点数组不能为空"
+        );
+      });
+
+      it("应该拒绝数组中的无效元素", () => {
+        expect(() =>
+          configManager.updateMcpEndpoint(["valid", "", "another"])
+        ).toThrow("MCP 端点数组中的每个元素必须是非空字符串");
+      });
+    });
+
+    describe("addMcpEndpoint", () => {
+      it("应该添加新端点到现有列表", () => {
+        configManager.addMcpEndpoint("https://new-endpoint.com/mcp");
+
+        const writtenConfig = JSON.parse(
+          (mockWriteFileSync.mock.calls[0] as any)[1]
+        );
+
+        expect(writtenConfig.mcpEndpoint).toEqual([
+          "https://example.com/mcp",
+          "https://new-endpoint.com/mcp",
+        ]);
+      });
+
+      it("应该拒绝重复的端点", () => {
+        expect(() =>
+          configManager.addMcpEndpoint("https://example.com/mcp")
+        ).toThrow("MCP 端点 https://example.com/mcp 已存在");
+      });
+
+      it("应该拒绝空端点", () => {
+        expect(() => configManager.addMcpEndpoint("")).toThrow(
+          "MCP 端点必须是非空字符串"
+        );
+      });
+    });
+
+    describe("removeMcpEndpoint", () => {
+      beforeEach(() => {
+        const mockConfigWithMultipleEndpoints: AppConfig = {
+          ...mockConfig,
+          mcpEndpoint: [
+            "https://endpoint1.com/mcp",
+            "https://endpoint2.com/mcp",
+            "https://endpoint3.com/mcp",
+          ],
+        };
+        mockReadFileSync.mockReturnValue(
+          JSON.stringify(mockConfigWithMultipleEndpoints)
+        );
+        configManager.reloadConfig();
+      });
+
+      it("应该移除指定的端点", () => {
+        configManager.removeMcpEndpoint("https://endpoint2.com/mcp");
+
+        const writtenConfig = JSON.parse(
+          (mockWriteFileSync.mock.calls[0] as any)[1]
+        );
+
+        expect(writtenConfig.mcpEndpoint).toEqual([
+          "https://endpoint1.com/mcp",
+          "https://endpoint3.com/mcp",
+        ]);
+      });
+
+      it("应该拒绝移除不存在的端点", () => {
+        expect(() =>
+          configManager.removeMcpEndpoint("https://nonexistent.com/mcp")
+        ).toThrow("MCP 端点 https://nonexistent.com/mcp 不存在");
+      });
+
+      it("应该拒绝移除最后一个端点", () => {
+        // 先移除两个端点
+        configManager.removeMcpEndpoint("https://endpoint2.com/mcp");
+        configManager.removeMcpEndpoint("https://endpoint3.com/mcp");
+
+        // 尝试移除最后一个应该失败
+        expect(() =>
+          configManager.removeMcpEndpoint("https://endpoint1.com/mcp")
+        ).toThrow("不能删除最后一个 MCP 端点");
+      });
+
+      it("应该拒绝空端点", () => {
+        expect(() => configManager.removeMcpEndpoint("")).toThrow(
+          "MCP 端点必须是非空字符串"
+        );
       });
     });
   });

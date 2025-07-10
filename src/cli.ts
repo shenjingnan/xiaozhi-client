@@ -214,14 +214,14 @@ function getServiceCommand(): { command: string; args: string[]; cwd: string } {
     distDir =
       possiblePaths.find(
         (p) =>
-          fs.existsSync(path.join(p, "mcpPipe.js")) &&
+          fs.existsSync(path.join(p, "adaptiveMCPPipe.js")) &&
           fs.existsSync(path.join(p, "mcpServerProxy.js"))
       ) || scriptDir;
   }
 
   return {
     command: "node",
-    args: ["mcpPipe.js", "mcpServerProxy.js"],
+    args: ["adaptiveMCPPipe.js", "mcpServerProxy.js"],
     cwd: distDir,
   };
 }
@@ -1147,10 +1147,21 @@ async function configCommand(key: string, value?: string): Promise<void> {
       const config = configManager.getConfig();
 
       switch (key) {
-        case "mcpEndpoint":
+        case "mcpEndpoint": {
           spinner.succeed("配置信息");
-          console.log(chalk.green(`MCP 端点: ${config.mcpEndpoint}`));
+          const endpoints = configManager.getMcpEndpoints();
+          if (endpoints.length === 0) {
+            console.log(chalk.yellow("未配置任何 MCP 端点"));
+          } else if (endpoints.length === 1) {
+            console.log(chalk.green(`MCP 端点: ${endpoints[0]}`));
+          } else {
+            console.log(chalk.green(`MCP 端点 (${endpoints.length} 个):`));
+            endpoints.forEach((ep, index) => {
+              console.log(chalk.gray(`  ${index + 1}. ${ep}`));
+            });
+          }
           break;
+        }
         case "mcpServers":
           spinner.succeed("配置信息");
           console.log(chalk.green("MCP 服务:"));
@@ -1483,6 +1494,98 @@ mcpCommand
 
     const enabled = action === "enable";
     await setToolEnabled(serverName, toolName, enabled);
+  });
+
+// endpoint 命令组
+const endpointCommand = program
+  .command("endpoint")
+  .description("管理 MCP 端点");
+
+// endpoint list 命令
+endpointCommand
+  .command("list")
+  .description("列出所有 MCP 端点")
+  .action(async () => {
+    const spinner = ora("读取端点配置...").start();
+    try {
+      const endpoints = configManager.getMcpEndpoints();
+      spinner.succeed("端点列表");
+
+      if (endpoints.length === 0) {
+        console.log(chalk.yellow("未配置任何 MCP 端点"));
+      } else {
+        console.log(chalk.green(`共 ${endpoints.length} 个端点:`));
+        endpoints.forEach((ep, index) => {
+          console.log(chalk.gray(`  ${index + 1}. ${ep}`));
+        });
+      }
+    } catch (error) {
+      spinner.fail(
+        `读取端点失败: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  });
+
+// endpoint add 命令
+endpointCommand
+  .command("add <url>")
+  .description("添加新的 MCP 端点")
+  .action(async (url) => {
+    const spinner = ora("添加端点...").start();
+    try {
+      configManager.addMcpEndpoint(url);
+      spinner.succeed(`成功添加端点: ${url}`);
+
+      const endpoints = configManager.getMcpEndpoints();
+      console.log(chalk.gray(`当前共 ${endpoints.length} 个端点`));
+    } catch (error) {
+      spinner.fail(
+        `添加端点失败: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  });
+
+// endpoint remove 命令
+endpointCommand
+  .command("remove <url>")
+  .description("移除指定的 MCP 端点")
+  .action(async (url) => {
+    const spinner = ora("移除端点...").start();
+    try {
+      configManager.removeMcpEndpoint(url);
+      spinner.succeed(`成功移除端点: ${url}`);
+
+      const endpoints = configManager.getMcpEndpoints();
+      console.log(chalk.gray(`当前剩余 ${endpoints.length} 个端点`));
+    } catch (error) {
+      spinner.fail(
+        `移除端点失败: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  });
+
+// endpoint set 命令
+endpointCommand
+  .command("set <urls...>")
+  .description("设置 MCP 端点（可以是单个或多个）")
+  .action(async (urls) => {
+    const spinner = ora("设置端点...").start();
+    try {
+      if (urls.length === 1) {
+        configManager.updateMcpEndpoint(urls[0]);
+        spinner.succeed(`成功设置端点: ${urls[0]}`);
+      } else {
+        configManager.updateMcpEndpoint(urls);
+        spinner.succeed(`成功设置 ${urls.length} 个端点`);
+        for (const [index, url] of urls.entries()) {
+          console.log(chalk.gray(`  ${index + 1}. ${url}`));
+        }
+      }
+    } catch (error) {
+      spinner.fail(
+        `设置端点失败: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
   });
 
 // ui 命令
