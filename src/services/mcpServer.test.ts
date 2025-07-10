@@ -95,6 +95,10 @@ describe("MCPServer", () => {
 
     expect(mockApp.use).toHaveBeenCalled();
     expect(mockApp.get).toHaveBeenCalledWith("/sse", expect.any(Function));
+    expect(mockApp.post).toHaveBeenCalledWith(
+      "/messages",
+      expect.any(Function)
+    );
     expect(mockApp.post).toHaveBeenCalledWith("/rpc", expect.any(Function));
     expect(mockApp.get).toHaveBeenCalledWith("/health", expect.any(Function));
   });
@@ -128,7 +132,7 @@ describe("MCPServer", () => {
       );
       expect(mockRes.setHeader).toHaveBeenCalledWith(
         "Cache-Control",
-        "no-cache"
+        "no-cache, no-transform"
       );
       expect(mockRes.setHeader).toHaveBeenCalledWith(
         "Connection",
@@ -136,10 +140,256 @@ describe("MCPServer", () => {
       );
       expect(mockRes.setHeader).toHaveBeenCalledWith("X-Accel-Buffering", "no");
 
-      // Check initial event was sent
+      // Check endpoint event was sent with sessionId
       expect(mockRes.write).toHaveBeenCalledWith(
-        expect.stringContaining("event: open")
+        expect.stringMatching(
+          /event: endpoint\ndata: \/messages\?sessionId=[\w-]+\n\n/
+        )
       );
+    });
+
+    it("should generate unique sessionId for each connection", () => {
+      const mockExpress = vi.mocked(express);
+      const mockApp = mockExpress();
+
+      const sseHandler = mockApp.get.mock.calls.find(
+        (call) => call[0] === "/sse"
+      )?.[1];
+
+      const sessionIds = new Set<string>();
+
+      // Test multiple connections
+      for (let i = 0; i < 5; i++) {
+        const mockReq = new EventEmitter() as any;
+        const mockRes = {
+          setHeader: vi.fn(),
+          write: vi.fn(),
+        };
+
+        sseHandler?.(mockReq, mockRes);
+
+        // Extract sessionId from the write call
+        const writeCall = mockRes.write.mock.calls[0][0];
+        const match = writeCall.match(/sessionId=([\w-]+)/);
+        if (match) {
+          sessionIds.add(match[1]);
+        }
+      }
+
+      // All sessionIds should be unique
+      expect(sessionIds.size).toBe(5);
+    });
+  });
+
+  describe("Messages endpoint", () => {
+    it("should handle messages with valid sessionId", async () => {
+      const mockExpress = vi.mocked(express);
+      const mockApp = mockExpress();
+
+      // Start the server to initialize proxy
+      await server.start();
+
+      // Get the messages handler
+      const messagesHandler = mockApp.post.mock.calls.find(
+        (call) => call[0] === "/messages"
+      )?.[1];
+
+      expect(messagesHandler).toBeDefined();
+
+      // Mock request and response
+      const mockReq = {
+        query: { sessionId: "test-session-123" },
+        body: {
+          jsonrpc: "2.0",
+          id: 1,
+          method: "test",
+          params: {},
+        },
+      };
+      const mockRes = {
+        status: vi.fn(() => mockRes),
+        json: vi.fn(),
+        send: vi.fn(),
+      };
+
+      // Setup a mock client in the server
+      const mockClient = {
+        id: "client-1",
+        sessionId: "test-session-123",
+        response: {
+          write: vi.fn(),
+        },
+      };
+      // Access the private clients map (for testing purposes)
+      (server as any).clients.set("test-session-123", mockClient);
+
+      // Setup mcpProxy mock to handle the forwarding
+      const mockProxy = (server as any).mcpProxy;
+      if (mockProxy?.stdout) {
+        // Simulate response from proxy
+        setTimeout(() => {
+          mockProxy.stdout.emit(
+            "data",
+            Buffer.from(
+              `${JSON.stringify({
+                jsonrpc: "2.0",
+                id: 1,
+                result: { success: true },
+              })}\n`
+            )
+          );
+        }, 10);
+      }
+
+      // Call the handler
+      await messagesHandler?.(mockReq as any, mockRes as any);
+
+      // Check response
+      expect(mockRes.status).toHaveBeenCalledWith(202);
+      expect(mockRes.send).toHaveBeenCalled();
+    });
+
+    it("should handle notification messages (no id)", async () => {
+      const mockExpress = vi.mocked(express);
+      const mockApp = mockExpress();
+
+      await server.start();
+
+      const messagesHandler = mockApp.post.mock.calls.find(
+        (call) => call[0] === "/messages"
+      )?.[1];
+
+      const mockReq = {
+        query: { sessionId: "test-session-123" },
+        body: {
+          jsonrpc: "2.0",
+          method: "notifications/initialized",
+          // No id field - this is a notification
+        },
+      };
+      const mockRes = {
+        status: vi.fn(() => mockRes),
+        json: vi.fn(),
+        send: vi.fn(),
+      };
+
+      // Setup a mock client
+      const mockClient = {
+        id: "client-1",
+        sessionId: "test-session-123",
+        response: {
+          write: vi.fn(),
+        },
+      };
+      (server as any).clients.set("test-session-123", mockClient);
+
+      // Call the handler
+      await messagesHandler?.(mockReq as any, mockRes as any);
+
+      // Should immediately return 202 for notifications
+      expect(mockRes.status).toHaveBeenCalledWith(202);
+      expect(mockRes.send).toHaveBeenCalled();
+    });
+
+    it("should return 400 for missing sessionId", async () => {
+      const mockExpress = vi.mocked(express);
+      const mockApp = mockExpress();
+
+      const messagesHandler = mockApp.post.mock.calls.find(
+        (call) => call[0] === "/messages"
+      )?.[1];
+
+      const mockReq = {
+        query: {}, // No sessionId
+        body: { jsonrpc: "2.0", id: 1, method: "test" },
+      };
+      const mockRes = {
+        status: vi.fn(() => mockRes),
+        json: vi.fn(),
+      };
+
+      await messagesHandler?.(mockReq as any, mockRes as any);
+
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        jsonrpc: "2.0",
+        error: {
+          code: -32600,
+          message: "Invalid or missing sessionId",
+        },
+        id: 1,
+      });
+    });
+
+    it("should return 400 for invalid sessionId", async () => {
+      const mockExpress = vi.mocked(express);
+      const mockApp = mockExpress();
+
+      const messagesHandler = mockApp.post.mock.calls.find(
+        (call) => call[0] === "/messages"
+      )?.[1];
+
+      const mockReq = {
+        query: { sessionId: "invalid-session" },
+        body: { jsonrpc: "2.0", id: 1, method: "test" },
+      };
+      const mockRes = {
+        status: vi.fn(() => mockRes),
+        json: vi.fn(),
+      };
+
+      await messagesHandler?.(mockReq as any, mockRes as any);
+
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        jsonrpc: "2.0",
+        error: {
+          code: -32600,
+          message: "Invalid or missing sessionId",
+        },
+        id: 1,
+      });
+    });
+
+    it("should return 503 when proxy is not running", async () => {
+      const mockExpress = vi.mocked(express);
+      const mockApp = mockExpress();
+
+      const messagesHandler = mockApp.post.mock.calls.find(
+        (call) => call[0] === "/messages"
+      )?.[1];
+
+      const mockReq = {
+        query: { sessionId: "test-session-123" },
+        body: { jsonrpc: "2.0", id: 1, method: "test" },
+      };
+      const mockRes = {
+        status: vi.fn(() => mockRes),
+        json: vi.fn(),
+      };
+
+      // Setup a mock client but no proxy
+      const mockClient = {
+        id: "client-1",
+        sessionId: "test-session-123",
+        response: {
+          write: vi.fn(),
+        },
+      };
+      (server as any).clients.set("test-session-123", mockClient);
+      (server as any).mcpProxy = null; // Ensure proxy is not running
+
+      await messagesHandler?.(mockReq as any, mockRes as any);
+
+      expect(mockRes.status).toHaveBeenCalledWith(503);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        jsonrpc: "2.0",
+        error: {
+          code: -32603,
+          message: "MCP proxy not running",
+        },
+        id: 1,
+      });
     });
   });
 
@@ -274,6 +524,149 @@ describe("MCPServer", () => {
 
       // Client should be removed (we can't directly test this without accessing private state)
       expect(true).toBe(true);
+    });
+  });
+
+  describe("forwardToProxy", () => {
+    it("should handle timeout gracefully without rejecting", async () => {
+      // Start the server to initialize proxy
+      await server.start();
+
+      // Access the private forwardToProxy method
+      const forwardToProxy = (server as any).forwardToProxy.bind(server);
+
+      // Mock the proxy to not respond (simulating timeout)
+      const mockProxy = (server as any).mcpProxy;
+      if (mockProxy?.stdin) {
+        mockProxy.stdin.write = vi.fn();
+      }
+
+      // Create a message to forward
+      const message = {
+        jsonrpc: "2.0",
+        id: 123,
+        method: "test/method",
+        params: {},
+      };
+
+      // Speed up test by reducing timeout
+      vi.useFakeTimers();
+
+      // Call forwardToProxy
+      const resultPromise = forwardToProxy(message);
+
+      // Fast-forward time to trigger timeout
+      vi.advanceTimersByTime(31000);
+
+      // Wait for the promise to resolve
+      const result = await resultPromise;
+
+      // Should resolve with timeout indicator instead of rejecting
+      expect(result).toEqual({
+        jsonrpc: "2.0",
+        id: 123,
+        result: {
+          _timeout: true,
+          message: "Response may have been sent via SSE",
+        },
+      });
+
+      vi.useRealTimers();
+    });
+
+    it("should clear timeout when response is received", async () => {
+      await server.start();
+
+      const forwardToProxy = (server as any).forwardToProxy.bind(server);
+      const mockProxy = (server as any).mcpProxy;
+
+      const message = {
+        jsonrpc: "2.0",
+        id: 456,
+        method: "test/method",
+        params: {},
+      };
+
+      // Set up response simulation
+      if (mockProxy?.stdout) {
+        setTimeout(() => {
+          mockProxy.stdout.emit(
+            "data",
+            Buffer.from(
+              `${JSON.stringify({
+                jsonrpc: "2.0",
+                id: 456,
+                result: { success: true },
+              })}\n`
+            )
+          );
+        }, 100);
+      }
+
+      const result = await forwardToProxy(message);
+
+      // Should receive the actual response, not timeout
+      expect(result).toEqual({
+        jsonrpc: "2.0",
+        id: 456,
+        result: { success: true },
+      });
+    });
+  });
+
+  describe("sendToClient", () => {
+    it("should send messages in correct SSE format", async () => {
+      await server.start();
+
+      const mockClient = {
+        id: "client-1",
+        sessionId: "test-session",
+        response: {
+          write: vi.fn(),
+        },
+      };
+
+      // Access the private sendToClient method
+      const sendToClient = (server as any).sendToClient.bind(server);
+
+      const message = {
+        jsonrpc: "2.0",
+        id: 1,
+        result: { test: "data" },
+      };
+
+      sendToClient(mockClient, message);
+
+      // Check message was sent in correct format
+      expect(mockClient.response.write).toHaveBeenCalledWith(
+        `event: message\ndata: ${JSON.stringify(message)}\n\n`
+      );
+    });
+
+    it("should handle write errors gracefully", async () => {
+      await server.start();
+
+      const mockClient = {
+        id: "client-1",
+        sessionId: "test-session",
+        response: {
+          write: vi.fn(() => {
+            throw new Error("Write failed");
+          }),
+        },
+      };
+
+      // Add client to server
+      (server as any).clients.set("test-session", mockClient);
+
+      const sendToClient = (server as any).sendToClient.bind(server);
+      const message = { jsonrpc: "2.0", id: 1, result: {} };
+
+      // Should not throw
+      expect(() => sendToClient(mockClient, message)).not.toThrow();
+
+      // Client should be removed on error
+      expect((server as any).clients.has("test-session")).toBe(false);
     });
   });
 });

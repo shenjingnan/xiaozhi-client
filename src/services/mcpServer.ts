@@ -1,9 +1,9 @@
 import { type ChildProcess, spawn } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import { EventEmitter } from "node:events";
 import type { Server } from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { randomUUID } from "node:crypto";
 import express from "express";
 import { configManager } from "../configManager.js";
 import { logger as globalLogger } from "../logger.js";
@@ -69,7 +69,9 @@ export class MCPServer extends EventEmitter {
       // Handle client disconnect
       req.on("close", () => {
         this.clients.delete(sessionId);
-        logger.info(`MCP client disconnected: ${clientId} (session: ${sessionId})`);
+        logger.info(
+          `MCP client disconnected: ${clientId} (session: ${sessionId})`
+        );
       });
     });
 
@@ -78,8 +80,11 @@ export class MCPServer extends EventEmitter {
       try {
         const sessionId = req.query.sessionId as string;
         const message = req.body;
-        
-        logger.info(`Received message via SSE transport (session: ${sessionId}):`, JSON.stringify(message));
+
+        logger.info(
+          `Received message via SSE transport (session: ${sessionId}):`,
+          JSON.stringify(message)
+        );
 
         if (!sessionId || !this.clients.has(sessionId)) {
           res.status(400).json({
@@ -110,19 +115,19 @@ export class MCPServer extends EventEmitter {
           // This is a notification, forward it but don't wait for response
           logger.info(`Forwarding notification: ${message.method}`);
           this.mcpProxy!.stdin!.write(`${JSON.stringify(message)}\n`);
-          
+
           // Send 202 Accepted immediately for notifications
           res.status(202).send();
         } else {
           // This is a request, forward and wait for response
           const response = await this.forwardToProxy(message);
-          
+
           // Send response to specific client via SSE
           const client = this.clients.get(sessionId);
           if (client) {
             this.sendToClient(client, response);
           }
-          
+
           // Send 202 Accepted to acknowledge receipt (SDK standard)
           res.status(202).send();
         }
@@ -191,7 +196,8 @@ export class MCPServer extends EventEmitter {
         return;
       }
 
-      let timeoutId: NodeJS.Timeout;
+      // biome-ignore lint/style/useConst: timeoutId is assigned in the setTimeout callback
+      let timeoutId: NodeJS.Timeout | undefined;
 
       const messageHandler = (data: Buffer) => {
         try {
@@ -205,9 +211,11 @@ export class MCPServer extends EventEmitter {
               logger.debug(`Received response from proxy: ${line}`);
               // Check if this is a response to our request
               // Notifications don't have id, so we also check for matching method
-              if (response.id === message.id || 
-                  (message.method === "notifications/initialized" && !response.id)) {
-                clearTimeout(timeoutId);
+              if (
+                response.id === message.id ||
+                (message.method === "notifications/initialized" && !response.id)
+              ) {
+                if (timeoutId) clearTimeout(timeoutId);
                 this.mcpProxy?.stdout?.removeListener("data", messageHandler);
                 resolve(response);
                 return;
@@ -218,13 +226,13 @@ export class MCPServer extends EventEmitter {
             }
           }
         } catch (error) {
-          clearTimeout(timeoutId);
+          if (timeoutId) clearTimeout(timeoutId);
           reject(error);
         }
       };
 
       this.mcpProxy.stdout.on("data", messageHandler);
-      
+
       // Log the message being sent
       logger.info(`Forwarding message to proxy: ${JSON.stringify(message)}`);
       this.mcpProxy.stdin.write(`${JSON.stringify(message)}\n`);
@@ -232,13 +240,18 @@ export class MCPServer extends EventEmitter {
       // Timeout after 30 seconds
       timeoutId = setTimeout(() => {
         this.mcpProxy?.stdout?.removeListener("data", messageHandler);
-        logger.warn(`Request timeout for message id: ${message.id}, method: ${message.method} - This may be normal if the response was already sent via SSE`);
+        logger.warn(
+          `Request timeout for message id: ${message.id}, method: ${message.method} - This may be normal if the response was already sent via SSE`
+        );
         // Don't reject with error, just resolve with a timeout indicator
         // This prevents error logs when the response was actually sent successfully
-        resolve({ 
-          jsonrpc: "2.0", 
+        resolve({
+          jsonrpc: "2.0",
           id: message.id,
-          result: { _timeout: true, message: "Response may have been sent via SSE" }
+          result: {
+            _timeout: true,
+            message: "Response may have been sent via SSE",
+          },
         });
       }, 30000);
     });
@@ -270,7 +283,9 @@ export class MCPServer extends EventEmitter {
       this.server = this.app.listen(this.port, () => {
         logger.info(`MCP Server listening on port ${this.port}`);
         logger.info(`SSE endpoint: http://localhost:${this.port}/sse`);
-        logger.info(`Messages endpoint: http://localhost:${this.port}/messages`);
+        logger.info(
+          `Messages endpoint: http://localhost:${this.port}/messages`
+        );
         logger.info(`RPC endpoint: http://localhost:${this.port}/rpc`);
       });
 
@@ -339,7 +354,11 @@ export class MCPServer extends EventEmitter {
         const message = data.toString().trim();
         // mcpServerProxy 使用 logger 输出日志到 stderr，这些不是错误
         // 只有真正的错误信息才应该被标记为 ERROR
-        if (message.includes("[ERROR]") || message.includes("Error:") || message.includes("Failed")) {
+        if (
+          message.includes("[ERROR]") ||
+          message.includes("Error:") ||
+          message.includes("Failed")
+        ) {
           logger.error("MCP proxy stderr:", message);
         } else {
           // 将正常的日志信息作为 info 级别输出
