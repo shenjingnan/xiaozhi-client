@@ -22,7 +22,9 @@
     "EventSource",
     "SSEMCP",
     "IMCP",
-    "gaode"
+    "gaode",
+    "EPIPE",
+    "webui"
   ],
   "ignorePaths": [
     "node_modules/**",
