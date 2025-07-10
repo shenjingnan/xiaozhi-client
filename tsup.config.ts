@@ -33,7 +33,6 @@ function copyDirectory(src: string, dest: string, excludePatterns: string[] = []
 
 export default defineConfig({
   entry: [
-    "src/mcpPipe.ts",
     "src/multiEndpointMCPPipe.ts",
     "src/adaptiveMCPPipe.ts",
     "src/modelScopeMCPClient.ts",
