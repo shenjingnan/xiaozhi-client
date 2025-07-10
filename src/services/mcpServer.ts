@@ -3,6 +3,7 @@ import { EventEmitter } from "node:events";
 import type { Server } from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { randomUUID } from "node:crypto";
 import express from "express";
 import { configManager } from "../configManager.js";
 import { logger as globalLogger } from "../logger.js";
@@ -13,6 +14,7 @@ const logger = globalLogger.withTag("mcp-server");
 
 interface SSEClient {
   id: string;
+  sessionId: string;
   response: express.Response;
 }
 
@@ -49,28 +51,95 @@ export class MCPServer extends EventEmitter {
     // SSE endpoint for MCP protocol
     this.app.get("/sse", (req, res) => {
       const clientId = Date.now().toString();
+      const sessionId = randomUUID();
 
-      // Set SSE headers
+      // Set SSE headers (matching SDK implementation)
       res.setHeader("Content-Type", "text/event-stream");
-      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Cache-Control", "no-cache, no-transform");
       res.setHeader("Connection", "keep-alive");
       res.setHeader("X-Accel-Buffering", "no");
 
-      // Register client
-      this.clients.set(clientId, { id: clientId, response: res });
-      logger.info(`MCP client connected: ${clientId}`);
+      // Register client with sessionId
+      this.clients.set(sessionId, { id: clientId, sessionId, response: res });
+      logger.info(`MCP client connected: ${clientId} (session: ${sessionId})`);
 
-      // Send initial connection event
-      res.write(`event: open\ndata: {"protocol":"mcp","version":"1.0"}\n\n`);
+      // Send endpoint event first (SDK standard)
+      res.write(`event: endpoint\ndata: /messages?sessionId=${sessionId}\n\n`);
 
       // Handle client disconnect
       req.on("close", () => {
-        this.clients.delete(clientId);
-        logger.info(`MCP client disconnected: ${clientId}`);
+        this.clients.delete(sessionId);
+        logger.info(`MCP client disconnected: ${clientId} (session: ${sessionId})`);
       });
     });
 
-    // JSON-RPC endpoint for MCP protocol
+    // Messages endpoint for SSE transport (MCP SDK standard)
+    this.app.post("/messages", async (req, res) => {
+      try {
+        const sessionId = req.query.sessionId as string;
+        const message = req.body;
+        
+        logger.info(`Received message via SSE transport (session: ${sessionId}):`, JSON.stringify(message));
+
+        if (!sessionId || !this.clients.has(sessionId)) {
+          res.status(400).json({
+            jsonrpc: "2.0",
+            error: {
+              code: -32600,
+              message: "Invalid or missing sessionId",
+            },
+            id: message.id,
+          });
+          return;
+        }
+
+        if (!this.mcpProxy) {
+          res.status(503).json({
+            jsonrpc: "2.0",
+            error: {
+              code: -32603,
+              message: "MCP proxy not running",
+            },
+            id: message.id,
+          });
+          return;
+        }
+
+        // Check if this is a notification (no id field means it's a notification)
+        if (message.id === undefined) {
+          // This is a notification, forward it but don't wait for response
+          logger.info(`Forwarding notification: ${message.method}`);
+          this.mcpProxy!.stdin!.write(`${JSON.stringify(message)}\n`);
+          
+          // Send 202 Accepted immediately for notifications
+          res.status(202).send();
+        } else {
+          // This is a request, forward and wait for response
+          const response = await this.forwardToProxy(message);
+          
+          // Send response to specific client via SSE
+          const client = this.clients.get(sessionId);
+          if (client) {
+            this.sendToClient(client, response);
+          }
+          
+          // Send 202 Accepted to acknowledge receipt (SDK standard)
+          res.status(202).send();
+        }
+      } catch (error) {
+        logger.error("SSE message error:", error);
+        res.status(500).json({
+          jsonrpc: "2.0",
+          error: {
+            code: -32603,
+            message: error instanceof Error ? error.message : "Internal error",
+          },
+          id: req.body.id,
+        });
+      }
+    });
+
+    // JSON-RPC endpoint for direct RPC communication (legacy)
     this.app.post("/rpc", async (req, res) => {
       try {
         const message = req.body;
@@ -131,13 +200,18 @@ export class MCPServer extends EventEmitter {
           for (const line of lines) {
             try {
               const response = JSON.parse(line);
-              if (response.id === message.id) {
+              logger.debug(`Received response from proxy: ${line}`);
+              // Check if this is a response to our request
+              // Notifications don't have id, so we also check for matching method
+              if (response.id === message.id || 
+                  (message.method === "notifications/initialized" && !response.id)) {
                 this.mcpProxy?.stdout?.removeListener("data", messageHandler);
                 resolve(response);
                 return;
               }
             } catch (e) {
               // Skip invalid JSON lines
+              logger.debug(`Non-JSON line from proxy: ${line}`);
             }
           }
         } catch (error) {
@@ -146,25 +220,34 @@ export class MCPServer extends EventEmitter {
       };
 
       this.mcpProxy.stdout.on("data", messageHandler);
+      
+      // Log the message being sent
+      logger.info(`Forwarding message to proxy: ${JSON.stringify(message)}`);
       this.mcpProxy.stdin.write(`${JSON.stringify(message)}\n`);
 
       // Timeout after 30 seconds
       setTimeout(() => {
         this.mcpProxy?.stdout?.removeListener("data", messageHandler);
+        logger.error(`Request timeout for message id: ${message.id}, method: ${message.method}`);
         reject(new Error("Request timeout"));
       }, 30000);
     });
   }
 
+  private sendToClient(client: SSEClient, message: any): void {
+    try {
+      // Use event: message format (SDK standard)
+      const data = `event: message\ndata: ${JSON.stringify(message)}\n\n`;
+      client.response.write(data);
+    } catch (error) {
+      logger.error(`Failed to send to client ${client.id}:`, error);
+      this.clients.delete(client.sessionId);
+    }
+  }
+
   private broadcastToClients(message: any): void {
-    const data = `data: ${JSON.stringify(message)}\n\n`;
     for (const client of this.clients.values()) {
-      try {
-        client.response.write(data);
-      } catch (error) {
-        logger.error(`Failed to send to client ${client.id}:`, error);
-        this.clients.delete(client.id);
-      }
+      this.sendToClient(client, message);
     }
   }
 
@@ -177,6 +260,7 @@ export class MCPServer extends EventEmitter {
       this.server = this.app.listen(this.port, () => {
         logger.info(`MCP Server listening on port ${this.port}`);
         logger.info(`SSE endpoint: http://localhost:${this.port}/sse`);
+        logger.info(`Messages endpoint: http://localhost:${this.port}/messages`);
         logger.info(`RPC endpoint: http://localhost:${this.port}/rpc`);
       });
 
@@ -242,7 +326,15 @@ export class MCPServer extends EventEmitter {
 
     if (this.mcpProxy.stderr) {
       this.mcpProxy.stderr.on("data", (data) => {
-        logger.error("MCP proxy stderr:", data.toString());
+        const message = data.toString().trim();
+        // mcpServerProxy 使用 logger 输出日志到 stderr，这些不是错误
+        // 只有真正的错误信息才应该被标记为 ERROR
+        if (message.includes("[ERROR]") || message.includes("Error:") || message.includes("Failed")) {
+          logger.error("MCP proxy stderr:", message);
+        } else {
+          // 将正常的日志信息作为 info 级别输出
+          logger.info("MCP proxy output:", message);
+        }
       });
     }
 

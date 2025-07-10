@@ -683,6 +683,7 @@ async function startMCPServerMode(port: number, daemon = false): Promise<void> {
 
       spinner.succeed("MCP Server 已启动");
       console.log(chalk.green(`✅ SSE endpoint: http://localhost:${port}/sse`));
+      console.log(chalk.green(`✅ Messages endpoint: http://localhost:${port}/messages`));
       console.log(chalk.green(`✅ RPC endpoint: http://localhost:${port}/rpc`));
       console.log(chalk.yellow("💡 提示: 按 Ctrl+C 停止服务"));
     }
