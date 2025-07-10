@@ -11,12 +11,8 @@ import { config } from "dotenv";
 import { configManager } from "./configManager.js";
 import { logger as globalLogger } from "./logger.js";
 import {
-  MCPPipe,
-  setupSignalHandlers as setupSingleSignalHandlers,
-} from "./mcpPipe.js";
-import {
   MultiEndpointMCPPipe,
-  setupSignalHandlers as setupMultiSignalHandlers,
+  setupSignalHandlers,
 } from "./multiEndpointMCPPipe.js";
 
 // Load environment variables
@@ -119,35 +115,24 @@ export async function main() {
     process.exit(1);
   }
 
-  // 根据端点数量选择使用哪种模式
-  if (validEndpoints.length === 1) {
-    // 单端点模式
-    logger.info("使用单端点模式");
-    const mcpPipe = new MCPPipe(mcpScript, validEndpoints[0]);
-    setupSingleSignalHandlers(mcpPipe);
+  // 统一使用 MultiEndpointMCPPipe 处理所有情况
+  // 无论是单端点还是多端点，都作为数组处理，简化架构
+  logger.info(
+    validEndpoints.length === 1
+      ? "启动单端点连接"
+      : `启动多端点连接（${validEndpoints.length} 个端点）`
+  );
 
-    try {
-      await mcpPipe.start();
-    } catch (error) {
-      logger.error(
-        `程序执行错误: ${error instanceof Error ? error.message : String(error)}`
-      );
-      process.exit(1);
-    }
-  } else {
-    // 多端点模式
-    logger.info(`使用多端点模式（${validEndpoints.length} 个端点）`);
-    const mcpPipe = new MultiEndpointMCPPipe(mcpScript, validEndpoints);
-    setupMultiSignalHandlers(mcpPipe);
+  const mcpPipe = new MultiEndpointMCPPipe(mcpScript, validEndpoints);
+  setupSignalHandlers(mcpPipe);
 
-    try {
-      await mcpPipe.start();
-    } catch (error) {
-      logger.error(
-        `程序执行错误: ${error instanceof Error ? error.message : String(error)}`
-      );
-      process.exit(1);
-    }
+  try {
+    await mcpPipe.start();
+  } catch (error) {
+    logger.error(
+      `程序执行错误: ${error instanceof Error ? error.message : String(error)}`
+    );
+    process.exit(1);
   }
 }
 

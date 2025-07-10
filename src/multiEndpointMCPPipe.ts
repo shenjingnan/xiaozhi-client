@@ -48,6 +48,13 @@ export class MultiEndpointMCPPipe {
     this.endpoints = new Map();
     this.shouldReconnect = true;
 
+    // 记录端点数量，明确表示支持单端点和多端点
+    logger.info(
+      endpointUrls.length === 1
+        ? `初始化单端点连接: ${endpointUrls[0]}`
+        : `初始化多端点连接（${endpointUrls.length} 个端点）`
+    );
+
     // 初始化所有端点
     for (const url of endpointUrls) {
       this.endpoints.set(url, {

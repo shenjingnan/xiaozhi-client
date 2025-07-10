@@ -3,7 +3,11 @@
 /**
  * MCP Pipe - JavaScript Implementation
  * Connects to MCP server and pipes input/output to WebSocket endpoint
- * d
+ *
+ * @deprecated 请使用 MultiEndpointMCPPipe 代替。
+ * MultiEndpointMCPPipe 支持单端点和多端点，架构更统一。
+ * 此文件保留仅为向后兼容。
+ *
  * Version: 0.2.0
  *
  * Usage:
