@@ -79,7 +79,7 @@ jobs:
         fi
 
         # 检查其他核心文件
-        for file in "dist/configManager.js" "dist/mcpPipe.js" "dist/mcpServerProxy.js"; do
+        for file in "dist/configManager.js" "dist/multiEndpointMCPPipe.js" "dist/adaptiveMCPPipe.js" "dist/mcpServerProxy.js"; do
           if [ ! -f "$file" ]; then
             echo "❌ 构建失败：$file 文件不存在"
             exit 1
@@ -87,7 +87,7 @@ jobs:
         done
 
         # 检查类型定义文件
-        for file in "dist/cli.d.ts" "dist/configManager.d.ts" "dist/mcpPipe.d.ts" "dist/mcpServerProxy.d.ts"; do
+        for file in "dist/cli.d.ts" "dist/configManager.d.ts" "dist/multiEndpointMCPPipe.d.ts" "dist/adaptiveMCPPipe.d.ts" "dist/mcpServerProxy.d.ts"; do
           if [ ! -f "$file" ]; then
             echo "❌ 构建失败：$file 文件不存在"
             exit 1
@@ -114,7 +114,7 @@ jobs:
         }
 
         # 检查其他核心文件
-        $files = @("dist/configManager.js", "dist/mcpPipe.js", "dist/mcpServerProxy.js")
+        $files = @("dist/configManager.js", "dist/multiEndpointMCPPipe.js", "dist/adaptiveMCPPipe.js", "dist/mcpServerProxy.js")
         foreach ($file in $files) {
           if (!(Test-Path $file)) {
             echo "❌ 构建失败：$file 文件不存在"
@@ -123,7 +123,7 @@ jobs:
         }
 
         # 检查类型定义文件
-        $typeFiles = @("dist/cli.d.ts", "dist/configManager.d.ts", "dist/mcpPipe.d.ts", "dist/mcpServerProxy.d.ts")
+        $typeFiles = @("dist/cli.d.ts", "dist/configManager.d.ts", "dist/multiEndpointMCPPipe.d.ts", "dist/adaptiveMCPPipe.d.ts", "dist/mcpServerProxy.d.ts")
         foreach ($file in $typeFiles) {
           if (!(Test-Path $file)) {
             echo "❌ 构建失败：$file 文件不存在"

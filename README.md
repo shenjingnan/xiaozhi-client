@@ -9,16 +9,18 @@
 
 ![效果图](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/preview.png)
 
-## 功能特性
+## 功能特色
 
 - 支持 小智(xiaozhi.me) 官方服务器接入点
-- 支持 自定义 MCP 服务
-- 支持 使用标准 MCP 配置方式多个 MCP Server
-- 支持 聚合多个 MCP Server
-- 支持 动态控制 MCP Server 提供的工具
-- 支持 通过模板创建
-- 支持 后台运行
-- 支持 通过 SSE 类型接入 ModelScope MCP 服务
+- 支持 作为普通 MCP Server 集成到 Cursor/Cherry Studio 等客户端
+- 支持 配置多个小智接入点，实现多个小智设备共享一个 MCP 配置
+- 支持 通过标准方式聚合多个 MCP Server
+- 支持 动态控制 MCP Server 工具的可见性，避免由于无用工具过多导致的小智服务端异常
+- 支持 本地化部署的开源服务端集成，你可以使用和小智官方服务端一样的 RPC 通信或直接使用标准 MCP 集成方式
+- 支持 Web 网页可视化配置(允许自定义 IP 和端口，你能将 xiaozhi-client 部署在设备 A，然后在设备 B 通过网页控制 xiaozhi-client)
+- 支持 集成 ModelScope 的远程MCP服务
+- 支持 通过模板创建 xiaozhi-client 项目 (xiaozhi create \<my-app\> --template hello-world)
+- 支持 后台运行(xiaozhi start -d)
 
 ## 快速上手
 
@@ -93,6 +95,78 @@ xiaozhi mcp list
 # 列出所有mcp所提供的tools
 xiaozhi mcp list --tools
 ```
+
+## 多接入点配置
+
+xiaozhi-client 支持同时连接多个小智 AI 接入点
+
+### 配置方式
+
+在 `xiaozhi.config.json` 中，`mcpEndpoint` 字段支持两种配置方式：
+
+#### 方式一：单接入点配置（字符串）
+
+```json
+{
+  "mcpEndpoint": "wss://api.xiaozhi.me/mcp/your-endpoint-id"
+}
+```
+
+#### 方式二：多接入点配置（字符串数组）
+
+```json
+{
+  "mcpEndpoint": [
+    "wss://api.xiaozhi.me/mcp/endpoint-1",
+    "wss://api.xiaozhi.me/mcp/endpoint-2",
+    "wss://api.xiaozhi.me/mcp/endpoint-3"
+  ]
+}
+```
+
+### 使用命令管理接入点
+
+```bash
+# 查看当前配置的所有接入点
+xiaozhi endpoint list
+
+# 添加新的接入点
+xiaozhi endpoint add wss://api.xiaozhi.me/mcp/new-endpoint
+
+# 移除指定的接入点
+xiaozhi endpoint remove wss://api.xiaozhi.me/mcp/old-endpoint
+
+# 设置接入点（覆盖现有配置）
+xiaozhi endpoint set wss://api.xiaozhi.me/mcp/endpoint-1 wss://api.xiaozhi.me/mcp/endpoint-2
+```
+
+### 示例配置
+
+```json
+{
+  "mcpEndpoint": [
+    "wss://api.xiaozhi.me/mcp/305847/abc123",
+    "wss://api.xiaozhi.me/mcp/468832/def456"
+  ],
+  "mcpServers": {
+    "calculator": {
+      "command": "node",
+      "args": ["./mcpServers/calculator.js"]
+    },
+    "datetime": {
+      "command": "node",
+      "args": ["./mcpServers/datetime.js"]
+    }
+  }
+}
+```
+
+### 注意事项
+
+- 多接入点配置时，每个接入点会启动独立的 MCP 进程
+- 确保每个接入点的 URL 都是有效的
+- 接入点之间相互独立，一个接入点的故障不会影响其他接入点
+- 建议根据实际需求合理配置接入点数量
 
 ## ModelScope MCP 服务集成
 
@@ -359,7 +433,7 @@ npm install -g xiaozhi-client
 }
 ```
 
-#### 方式二：使用 HTTP Server 模式
+### 方式二：使用 HTTP Server 模式
 
 > 如果你将 xiaozhi-client 装在 docker 中使用，可以通过 http server 的方式暴露给外部客户端
 
