@@ -55,8 +55,12 @@ export function getVersion(): string {
   }
 }
 
-// PID 文件路径
-const PID_FILE = path.join(os.tmpdir(), `${SERVICE_NAME}.pid`);
+// PID 文件路径 - 使用项目目录下的 PID 文件，支持多实例运行
+const getPidFile = () => {
+  // 优先使用环境变量中的配置目录，否则使用当前工作目录
+  const configDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();
+  return path.join(configDir, `.${SERVICE_NAME}.pid`);
+};
 
 interface ServiceStatus {
   running: boolean;
@@ -70,17 +74,18 @@ interface ServiceStatus {
  */
 export function getServiceStatus(): ServiceStatus {
   try {
-    if (!fs.existsSync(PID_FILE)) {
+    const pidFile = getPidFile();
+    if (!fs.existsSync(pidFile)) {
       return { running: false };
     }
 
-    const pidContent = fs.readFileSync(PID_FILE, "utf8").trim();
+    const pidContent = fs.readFileSync(pidFile, "utf8").trim();
     const [pidStr, startTime, mode] = pidContent.split("|");
     const pid = Number.parseInt(pidStr);
 
     if (Number.isNaN(pid)) {
       // PID 文件损坏，删除它
-      fs.unlinkSync(PID_FILE);
+      fs.unlinkSync(pidFile);
       return { running: false };
     }
 
@@ -100,7 +105,7 @@ export function getServiceStatus(): ServiceStatus {
       };
     } catch (error) {
       // 进程不存在，删除 PID 文件
-      fs.unlinkSync(PID_FILE);
+      fs.unlinkSync(pidFile);
       return { running: false };
     }
   } catch (error) {
@@ -134,7 +139,7 @@ export function formatUptime(ms: number): string {
  */
 function savePidInfo(pid: number, mode: "foreground" | "daemon") {
   const pidInfo = `${pid}|${Date.now()}|${mode}`;
-  fs.writeFileSync(PID_FILE, pidInfo);
+  fs.writeFileSync(getPidFile(), pidInfo);
 }
 
 /**
@@ -142,8 +147,9 @@ function savePidInfo(pid: number, mode: "foreground" | "daemon") {
  */
 function cleanupPidFile() {
   try {
-    if (fs.existsSync(PID_FILE)) {
-      fs.unlinkSync(PID_FILE);
+    const pidFile = getPidFile();
+    if (fs.existsSync(pidFile)) {
+      fs.unlinkSync(pidFile);
     }
   } catch (error) {
     // 忽略清理错误
