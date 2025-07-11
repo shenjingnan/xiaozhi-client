@@ -26,8 +26,14 @@ export interface SSEMCPServerConfig {
   url: string;
 }
 
+// Streamable HTTP MCP 服务配置
+export interface StreamableHTTPMCPServerConfig {
+  type?: "streamable-http"; // 可选，因为默认就是 streamable-http
+  url: string;
+}
+
 // 统一的 MCP 服务配置
-export type MCPServerConfig = LocalMCPServerConfig | SSEMCPServerConfig;
+export type MCPServerConfig = LocalMCPServerConfig | SSEMCPServerConfig | StreamableHTTPMCPServerConfig;
 
 export interface MCPToolConfig {
   description?: string;
@@ -192,12 +198,13 @@ export class ConfigManager {
 
       const sc = serverConfig as Record<string, unknown>;
 
-      // 检查是否是 SSE 类型
-      if (sc.type === "sse") {
-        // SSE 类型的验证
-        if (!sc.url || typeof sc.url !== "string") {
+      // 检查服务类型
+      if (sc.url && typeof sc.url === "string") {
+        // URL 类型的服务（SSE 或 Streamable HTTP）
+        // type 字段是可选的，可以是 "sse" 或 "streamable-http"
+        if (sc.type && sc.type !== "sse" && sc.type !== "streamable-http") {
           throw new Error(
-            `配置文件格式错误：mcpServers.${serverName}.url 无效`
+            `配置文件格式错误：mcpServers.${serverName}.type 必须是 "sse" 或 "streamable-http"`
           );
         }
       } else {

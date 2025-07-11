@@ -16,10 +16,12 @@ import {
   type MCPServerConfig,
   type MCPToolConfig,
   type SSEMCPServerConfig,
+  type StreamableHTTPMCPServerConfig,
   configManager,
 } from "./configManager";
 import { logger as globalLogger } from "./logger";
 import { ModelScopeMCPClient } from "./modelScopeMCPClient";
+import { StreamableHTTPMCPClient } from "./streamableHttpMCPClient";
 
 // ESM 兼容的 __dirname
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -512,10 +514,27 @@ export class MCPServerProxy {
 
       let client: IMCPClient;
 
-      // 判断是 SSE 类型还是本地类型
-      if ("type" in serverConfig && serverConfig.type === "sse") {
-        // ModelScope SSE MCP 服务
-        client = new ModelScopeMCPClient(serverName, serverConfig);
+      // 判断服务类型
+      if ("url" in serverConfig) {
+        // URL 类型的配置
+        const url = serverConfig.url;
+        
+        // 判断是 SSE 还是 Streamable HTTP
+        const isSSE = 
+          // 1. 显式指定 type: "sse"
+          ("type" in serverConfig && serverConfig.type === "sse") ||
+          // 2. URL 以 /sse 结尾
+          url.endsWith("/sse") ||
+          // 3. 域名包含 modelscope.net（向后兼容魔搭社区）
+          url.includes("modelscope.net");
+        
+        if (isSSE) {
+          // SSE MCP 服务
+          client = new ModelScopeMCPClient(serverName, serverConfig as SSEMCPServerConfig);
+        } else {
+          // Streamable HTTP MCP 服务
+          client = new StreamableHTTPMCPClient(serverName, serverConfig as StreamableHTTPMCPServerConfig);
+        }
       } else {
         // 本地 MCP 服务
         client = new MCPClient(
