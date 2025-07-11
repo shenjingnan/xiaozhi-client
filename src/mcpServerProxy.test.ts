@@ -40,6 +40,22 @@ vi.mock("./modelScopeMCPClient", () => ({
   })),
 }));
 
+// Mock StreamableHTTPMCPClient
+vi.mock("./streamableHttpMCPClient", () => ({
+  StreamableHTTPMCPClient: vi.fn().mockImplementation((name, config) => ({
+    name,
+    config,
+    initialized: false,
+    tools: [],
+    originalTools: [],
+    start: vi.fn().mockResolvedValue(undefined),
+    stop: vi.fn().mockResolvedValue(undefined),
+    refreshTools: vi.fn().mockResolvedValue(undefined),
+    callTool: vi.fn().mockResolvedValue({ result: "mocked" }),
+    getOriginalToolName: vi.fn().mockReturnValue("original-tool"),
+  })),
+}));
+
 // Import after mocking
 import { configManager } from "./configManager";
 import {
@@ -48,6 +64,8 @@ import {
   MCPServerProxy,
   loadMCPConfig,
 } from "./mcpServerProxy";
+import { ModelScopeMCPClient } from "./modelScopeMCPClient";
+import { StreamableHTTPMCPClient } from "./streamableHttpMCPClient";
 
 // Mock child process
 class MockChildProcess extends EventEmitter {
@@ -637,6 +655,119 @@ describe("MCP服务器代理", () => {
       const parts = prefixedName.split("_xzcli_");
       const actualOriginalName = parts.length > 1 ? parts[1] : prefixedName;
       expect(actualOriginalName).toBe(expectedOriginalName);
+    });
+  });
+
+  describe("Streamable HTTP MCP客户端支持", () => {
+    let MockStreamableHTTPMCPClient: any;
+    let MockModelScopeMCPClient: any;
+
+    beforeEach(() => {
+      MockStreamableHTTPMCPClient = vi.mocked(StreamableHTTPMCPClient);
+      MockModelScopeMCPClient = vi.mocked(ModelScopeMCPClient);
+    });
+
+    it("应该为Streamable HTTP服务创建StreamableHTTPMCPClient", async () => {
+      mockConfigManager.getMcpServers.mockReturnValue({
+        "http-server": {
+          url: "https://example.com/mcp",
+        },
+      });
+
+      const proxy = new MCPServerProxy();
+      await proxy.start();
+
+      expect(MockStreamableHTTPMCPClient).toHaveBeenCalledWith("http-server", {
+        url: "https://example.com/mcp",
+      });
+    });
+
+    it("应该为带type字段的Streamable HTTP服务创建正确的客户端", async () => {
+      mockConfigManager.getMcpServers.mockReturnValue({
+        "http-server-typed": {
+          type: "streamable-http",
+          url: "https://example.com/mcp",
+        },
+      });
+
+      const proxy = new MCPServerProxy();
+      await proxy.start();
+
+      expect(MockStreamableHTTPMCPClient).toHaveBeenCalledWith(
+        "http-server-typed",
+        { type: "streamable-http", url: "https://example.com/mcp" }
+      );
+    });
+
+    it("应该为SSE类型的服务创建ModelScopeMCPClient", async () => {
+      mockConfigManager.getMcpServers.mockReturnValue({
+        "sse-server": {
+          type: "sse",
+          url: "https://example.com/sse",
+        },
+      });
+
+      const proxy = new MCPServerProxy();
+      await proxy.start();
+
+      expect(MockModelScopeMCPClient).toHaveBeenCalledWith("sse-server", {
+        type: "sse",
+        url: "https://example.com/sse",
+      });
+    });
+
+    it("应该为以/sse结尾的URL创建SSE客户端", async () => {
+      mockConfigManager.getMcpServers.mockReturnValue({
+        "auto-sse-server": {
+          url: "https://example.com/api/sse",
+        },
+      });
+
+      const proxy = new MCPServerProxy();
+      await proxy.start();
+
+      expect(MockModelScopeMCPClient).toHaveBeenCalledWith("auto-sse-server", {
+        url: "https://example.com/api/sse",
+      });
+    });
+
+    it("应该为modelscope.net域名创建SSE客户端（向后兼容）", async () => {
+      mockConfigManager.getMcpServers.mockReturnValue({
+        "modelscope-server": {
+          url: "https://api.modelscope.net/mcp/endpoint",
+        },
+      });
+
+      const proxy = new MCPServerProxy();
+      await proxy.start();
+
+      expect(MockModelScopeMCPClient).toHaveBeenCalledWith(
+        "modelscope-server",
+        { url: "https://api.modelscope.net/mcp/endpoint" }
+      );
+    });
+
+    it("应该为本地命令创建MCPClient", async () => {
+      const mockChildProcess = new MockChildProcess();
+      mockSpawn.mockReturnValue(mockChildProcess);
+
+      mockConfigManager.getMcpServers.mockReturnValue({
+        "local-server": {
+          command: "node",
+          args: ["local.js"],
+        },
+      });
+
+      const proxy = new MCPServerProxy();
+      await proxy.start();
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "node",
+        ["local.js"],
+        expect.objectContaining({
+          stdio: ["pipe", "pipe", "pipe"],
+        })
+      );
     });
   });
 

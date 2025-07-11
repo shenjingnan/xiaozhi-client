@@ -518,22 +518,28 @@ export class MCPServerProxy {
       if ("url" in serverConfig) {
         // URL 类型的配置
         const url = serverConfig.url;
-        
+
         // 判断是 SSE 还是 Streamable HTTP
-        const isSSE = 
+        const isSSE =
           // 1. 显式指定 type: "sse"
           ("type" in serverConfig && serverConfig.type === "sse") ||
           // 2. URL 以 /sse 结尾
           url.endsWith("/sse") ||
           // 3. 域名包含 modelscope.net（向后兼容魔搭社区）
           url.includes("modelscope.net");
-        
+
         if (isSSE) {
           // SSE MCP 服务
-          client = new ModelScopeMCPClient(serverName, serverConfig as SSEMCPServerConfig);
+          client = new ModelScopeMCPClient(
+            serverName,
+            serverConfig as SSEMCPServerConfig
+          );
         } else {
           // Streamable HTTP MCP 服务
-          client = new StreamableHTTPMCPClient(serverName, serverConfig as StreamableHTTPMCPServerConfig);
+          client = new StreamableHTTPMCPClient(
+            serverName,
+            serverConfig as StreamableHTTPMCPServerConfig
+          );
         }
       } else {
         // 本地 MCP 服务

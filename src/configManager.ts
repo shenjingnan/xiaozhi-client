@@ -33,7 +33,10 @@ export interface StreamableHTTPMCPServerConfig {
 }
 
 // 统一的 MCP 服务配置
-export type MCPServerConfig = LocalMCPServerConfig | SSEMCPServerConfig | StreamableHTTPMCPServerConfig;
+export type MCPServerConfig =
+  | LocalMCPServerConfig
+  | SSEMCPServerConfig
+  | StreamableHTTPMCPServerConfig;
 
 export interface MCPToolConfig {
   description?: string;

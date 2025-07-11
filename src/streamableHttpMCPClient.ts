@@ -1,4 +1,7 @@
-import { type StreamableHTTPMCPServerConfig, configManager } from "./configManager";
+import {
+  type StreamableHTTPMCPServerConfig,
+  configManager,
+} from "./configManager";
 import { logger as globalLogger } from "./logger";
 import type { IMCPClient } from "./mcpServerProxy";
 
@@ -84,12 +87,12 @@ export class StreamableHTTPMCPClient implements IMCPClient {
     try {
       // 动态导入 node-fetch
       const fetch = (await import("node-fetch")).default;
-      
+
       const response = await fetch(this.config.url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Accept": "application/json, text/event-stream",
+          Accept: "application/json, text/event-stream",
         },
         body: JSON.stringify(request),
       });
@@ -143,10 +146,10 @@ export class StreamableHTTPMCPClient implements IMCPClient {
 
       // 获取工具列表
       const listToolsResult = await this.sendRequest("tools/list");
-      
-      if (listToolsResult && listToolsResult.tools) {
+
+      if (listToolsResult?.tools) {
         this.originalTools = listToolsResult.tools;
-        
+
         // 生成带前缀的工具名称
         this.tools = this.originalTools
           .filter((tool) => configManager.isToolEnabled(this.name, tool.name))
@@ -154,7 +157,7 @@ export class StreamableHTTPMCPClient implements IMCPClient {
             ...tool,
             name: this.generatePrefixedToolName(tool.name),
           }));
-        
+
         logger.info(
           `Streamable HTTP MCP 客户端 ${this.name} 已初始化，包含 ${this.tools.length}/${this.originalTools.length} 个已启用的工具`
         );
@@ -174,10 +177,10 @@ export class StreamableHTTPMCPClient implements IMCPClient {
   async refreshTools() {
     try {
       const listToolsResult = await this.sendRequest("tools/list");
-      
-      if (listToolsResult && listToolsResult.tools) {
+
+      if (listToolsResult?.tools) {
         this.originalTools = listToolsResult.tools;
-        
+
         // 重新生成带前缀的工具名称
         this.tools = this.originalTools
           .filter((tool) => configManager.isToolEnabled(this.name, tool.name))
@@ -185,7 +188,7 @@ export class StreamableHTTPMCPClient implements IMCPClient {
             ...tool,
             name: this.generatePrefixedToolName(tool.name),
           }));
-        
+
         logger.info(
           `已刷新 ${this.name} 的工具列表，包含 ${this.tools.length}/${this.originalTools.length} 个已启用的工具`
         );
