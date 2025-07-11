@@ -36,6 +36,7 @@ export default defineConfig({
     "src/multiEndpointMCPPipe.ts",
     "src/adaptiveMCPPipe.ts",
     "src/modelScopeMCPClient.ts",
+    "src/streamableHttpMCPClient.ts",
     "src/mcpServerProxy.ts",
     "src/cli.ts",
     "src/configManager.ts",
