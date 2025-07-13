@@ -24,7 +24,10 @@
     "IMCP",
     "gaode",
     "EPIPE",
-    "webui"
+    "webui",
+    "streamable",
+    "Streamable",
+    "HTTPMCP"
   ],
   "ignorePaths": [
     "node_modules/**",
