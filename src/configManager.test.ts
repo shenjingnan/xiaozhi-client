@@ -586,9 +586,11 @@ describe("ConfigManager", () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(JSON.stringify(invalidConfig));
 
-      // 当前的验证逻辑会通过，因为只检查了 url 存在时的 type
-      // 这是一个潜在的改进点，但保持当前行为
-      expect(() => configManager.getConfig()).not.toThrow();
+      // 没有 url 字段时，验证逻辑会检查 command 字段
+      // 由于没有 command 字段，会抛出错误
+      expect(() => configManager.getConfig()).toThrow(
+        "配置文件格式错误：mcpServers.no-url-server.command 无效"
+      );
     });
   });
 
