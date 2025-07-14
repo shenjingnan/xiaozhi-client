@@ -252,7 +252,7 @@ function MCPServerList({
                     <span>URL: {config.url}</span>
                   ) : (
                     <span>
-                      {config.command} {config.args.join(" ")}
+                      {config.command} {config.args?.join(" ") || ""}
                     </span>
                   )}
                 </div>

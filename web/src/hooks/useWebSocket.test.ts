@@ -248,4 +248,78 @@ describe("useWebSocket", () => {
       expect(ws.url).toBe("ws://localhost:8088");
     });
   });
+
+  describe("restart status handling", () => {
+    it("should handle restart status messages", async () => {
+      const { result } = renderHook(() => useWebSocket());
+
+      // Wait for connection
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      });
+
+      // Get the WebSocket instance
+      const mockWebSocket = (global as any).WebSocket.mock.instances[0];
+
+      // Test restarting status
+      act(() => {
+        mockWebSocket.onmessage?.({
+          data: JSON.stringify({
+            type: "restartStatus",
+            data: {
+              status: "restarting",
+              timestamp: Date.now(),
+            },
+          }),
+        });
+      });
+
+      expect(result.current.restartStatus).toEqual(
+        expect.objectContaining({
+          status: "restarting",
+        })
+      );
+
+      // Test completed status
+      act(() => {
+        mockWebSocket.onmessage?.({
+          data: JSON.stringify({
+            type: "restartStatus",
+            data: {
+              status: "completed",
+              timestamp: Date.now(),
+            },
+          }),
+        });
+      });
+
+      expect(result.current.restartStatus).toEqual(
+        expect.objectContaining({
+          status: "completed",
+        })
+      );
+
+      // Test failed status with error
+      const errorMessage = "Service restart failed";
+      act(() => {
+        mockWebSocket.onmessage?.({
+          data: JSON.stringify({
+            type: "restartStatus",
+            data: {
+              status: "failed",
+              error: errorMessage,
+              timestamp: Date.now(),
+            },
+          }),
+        });
+      });
+
+      expect(result.current.restartStatus).toEqual(
+        expect.objectContaining({
+          status: "failed",
+          error: errorMessage,
+        })
+      );
+    });
+  });
 });

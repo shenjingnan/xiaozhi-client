@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
@@ -5,6 +6,7 @@ import { dirname, join } from "node:path";
 import { parse } from "node:url";
 import { fileURLToPath } from "node:url";
 import { WebSocketServer } from "ws";
+import { getServiceStatus } from "./cli.js";
 import { configManager } from "./configManager.js";
 import type { AppConfig } from "./configManager.js";
 import { Logger } from "./logger.js";
@@ -84,10 +86,14 @@ export class WebServer {
           try {
             const newConfig: AppConfig = JSON.parse(body);
             this.updateConfig(newConfig);
+
+            // 广播配置更新
+            this.broadcastConfigUpdate(newConfig);
+
+            // 直接返回成功，不再自动重启
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify({ success: true }));
-
-            this.broadcastConfigUpdate(newConfig);
+            this.logger.info("配置已更新");
           } catch (error) {
             res.writeHead(400, { "Content-Type": "application/json" });
             res.end(
@@ -261,6 +267,31 @@ export class WebServer {
         this.updateClientInfo(data.data);
         this.broadcastStatusUpdate();
         break;
+
+      case "restartService":
+        // 处理手动重启请求
+        this.logger.info("收到手动重启服务请求");
+        this.broadcastRestartStatus("restarting");
+
+        // 延迟执行重启
+        setTimeout(async () => {
+          try {
+            await this.restartService();
+            // 服务重启需要一些时间，延迟发送成功状态
+            setTimeout(() => {
+              this.broadcastRestartStatus("completed");
+            }, 5000);
+          } catch (error) {
+            this.logger.error(
+              `手动重启失败: ${error instanceof Error ? error.message : String(error)}`
+            );
+            this.broadcastRestartStatus(
+              "failed",
+              error instanceof Error ? error.message : "未知错误"
+            );
+          }
+        }, 500);
+        break;
     }
   }
 
@@ -272,6 +303,25 @@ export class WebServer {
 
   private broadcastConfigUpdate(config: AppConfig) {
     const message = JSON.stringify({ type: "configUpdate", data: config });
+    for (const client of this.wss.clients) {
+      if (client.readyState === 1) {
+        client.send(message);
+      }
+    }
+  }
+
+  private broadcastRestartStatus(
+    status: "restarting" | "completed" | "failed",
+    error?: string
+  ) {
+    const message = JSON.stringify({
+      type: "restartStatus",
+      data: {
+        status,
+        error,
+        timestamp: Date.now(),
+      },
+    });
     for (const client of this.wss.clients) {
       if (client.readyState === 1) {
         client.send(message);
@@ -365,6 +415,71 @@ export class WebServer {
           // 注释：configManager 不支持直接设置工具描述，描述作为工具配置的一部分保存
         }
       }
+    }
+  }
+
+  private async restartService(): Promise<void> {
+    this.logger.info("正在重启 MCP 服务...");
+
+    // 清除心跳超时定时器，避免重启过程中误报断开连接
+    if (this.heartbeatTimeout) {
+      clearTimeout(this.heartbeatTimeout);
+      this.heartbeatTimeout = undefined;
+    }
+
+    try {
+      // 获取当前服务状态
+      const status = getServiceStatus();
+      if (!status.running) {
+        this.logger.warn("MCP 服务未运行，尝试启动服务");
+
+        // 如果服务未运行，尝试启动服务
+        const startArgs = ["start", "--daemon"];
+        const child = spawn("xiaozhi", startArgs, {
+          detached: true,
+          stdio: "ignore",
+          env: {
+            ...process.env,
+            XIAOZHI_CONFIG_DIR: process.env.XIAOZHI_CONFIG_DIR || process.cwd(),
+          },
+        });
+        child.unref();
+        this.logger.info("MCP 服务启动命令已发送");
+        return;
+      }
+
+      // 获取服务运行模式
+      const isDaemon = status.mode === "daemon";
+
+      // 执行重启命令
+      const restartArgs = ["restart"];
+      if (isDaemon) {
+        restartArgs.push("--daemon");
+      }
+
+      // 在子进程中执行重启命令
+      const child = spawn("xiaozhi", restartArgs, {
+        detached: true,
+        stdio: "ignore",
+        env: {
+          ...process.env,
+          XIAOZHI_CONFIG_DIR: process.env.XIAOZHI_CONFIG_DIR || process.cwd(),
+        },
+      });
+
+      child.unref();
+
+      this.logger.info("MCP 服务重启命令已发送");
+
+      // 重启后重新设置心跳超时
+      this.resetHeartbeatTimeout();
+    } catch (error) {
+      this.logger.error(
+        `重启服务失败: ${error instanceof Error ? error.message : String(error)}`
+      );
+      // 失败时也要重新设置心跳超时
+      this.resetHeartbeatTimeout();
+      throw error;
     }
   }
 
