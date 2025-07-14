@@ -158,7 +158,7 @@ export class MultiEndpointMCPPipe {
         if (
           parsedMessage.method === "notifications/initialized" ||
           (parsedMessage.method === "tools/list" && parsedMessage.id) ||
-          (parsedMessage.result && parsedMessage.result.tools)
+          (parsedMessage?.result?.tools)
         ) {
           // 延迟一秒后报告状态，确保初始化完成
           setTimeout(() => {
