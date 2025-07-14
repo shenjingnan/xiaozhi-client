@@ -50,6 +50,13 @@ describe("ConfigManager", () => {
         type: "sse" as const,
         url: "https://mcp.api-inference.modelscope.net/test/sse",
       },
+      "streamable-http-server": {
+        type: "streamable-http" as const,
+        url: "https://example.com/mcp/http",
+      },
+      "streamable-http-server-no-type": {
+        url: "https://example.com/mcp/http2",
+      },
     },
     mcpServerConfig: {
       "test-server": {
@@ -259,6 +266,38 @@ describe("ConfigManager", () => {
         expect(sseServer.url).toBe(
           "https://mcp.api-inference.modelscope.net/test/sse"
         );
+      }
+    });
+
+    it("应该支持Streamable HTTP MCP服务器配置（带type字段）", () => {
+      mockExistsSync.mockReturnValue(true);
+      mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+
+      const servers = configManager.getMcpServers();
+      const httpServer = servers["streamable-http-server"];
+
+      expect(httpServer).toBeDefined();
+      expect("type" in httpServer).toBe(true);
+      expect("url" in httpServer).toBe(true);
+      if ("type" in httpServer && httpServer.type === "streamable-http") {
+        expect(httpServer.type).toBe("streamable-http");
+        expect(httpServer.url).toBe("https://example.com/mcp/http");
+      }
+    });
+
+    it("应该支持Streamable HTTP MCP服务器配置（不带type字段）", () => {
+      mockExistsSync.mockReturnValue(true);
+      mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+
+      const servers = configManager.getMcpServers();
+      const httpServer = servers["streamable-http-server-no-type"];
+
+      expect(httpServer).toBeDefined();
+      expect("url" in httpServer).toBe(true);
+      if ("url" in httpServer) {
+        expect(httpServer.url).toBe("https://example.com/mcp/http2");
+        // 不带 type 字段的情况
+        expect("type" in httpServer).toBe(false);
       }
     });
   });
@@ -489,6 +528,68 @@ describe("ConfigManager", () => {
       expect(savedConfig.mcpServerConfig).toBeDefined();
       expect(savedConfig.mcpServerConfig["new-server"].tools).toEqual(
         toolsConfig
+      );
+    });
+  });
+
+  describe("配置验证", () => {
+    it("应该接受有效的Streamable HTTP配置", () => {
+      const validConfig = {
+        mcpEndpoint: "https://example.com",
+        mcpServers: {
+          "http-server": {
+            url: "https://example.com/mcp",
+          },
+          "http-server-with-type": {
+            type: "streamable-http" as const,
+            url: "https://example.com/mcp",
+          },
+        },
+      };
+
+      mockExistsSync.mockReturnValue(true);
+      mockReadFileSync.mockReturnValue(JSON.stringify(validConfig));
+
+      // 不应该抛出错误
+      expect(() => configManager.getConfig()).not.toThrow();
+    });
+
+    it("应该拒绝无效的type字段", () => {
+      const invalidConfig = {
+        mcpEndpoint: "https://example.com",
+        mcpServers: {
+          "invalid-server": {
+            type: "invalid-type",
+            url: "https://example.com/mcp",
+          },
+        },
+      };
+
+      mockExistsSync.mockReturnValue(true);
+      mockReadFileSync.mockReturnValue(JSON.stringify(invalidConfig));
+
+      expect(() => configManager.getConfig()).toThrow(
+        'mcpServers.invalid-server.type 必须是 "sse" 或 "streamable-http"'
+      );
+    });
+
+    it("应该验证URL类型服务必须有url字段", () => {
+      const invalidConfig = {
+        mcpEndpoint: "https://example.com",
+        mcpServers: {
+          "no-url-server": {
+            type: "streamable-http" as const,
+          },
+        },
+      };
+
+      mockExistsSync.mockReturnValue(true);
+      mockReadFileSync.mockReturnValue(JSON.stringify(invalidConfig));
+
+      // 没有 url 字段时，验证逻辑会检查 command 字段
+      // 由于没有 command 字段，会抛出错误
+      expect(() => configManager.getConfig()).toThrow(
+        "配置文件格式错误：mcpServers.no-url-server.command 无效"
       );
     });
   });
