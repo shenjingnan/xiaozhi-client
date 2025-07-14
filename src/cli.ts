@@ -259,7 +259,10 @@ async function startWebUIInBackground(): Promise<void> {
       if (process.platform === "darwin") {
         spawn("open", [url], { detached: true, stdio: "ignore" }).unref();
       } else if (process.platform === "win32") {
-        spawn("cmd", ["/c", "start", url], { detached: true, stdio: "ignore" }).unref();
+        spawn("cmd", ["/c", "start", url], {
+          detached: true,
+          stdio: "ignore",
+        }).unref();
       } else {
         spawn("xdg-open", [url], { detached: true, stdio: "ignore" }).unref();
       }
@@ -1095,7 +1098,10 @@ async function startUIService(): Promise<void> {
       if (process.platform === "darwin") {
         spawn("open", [url], { detached: true, stdio: "ignore" }).unref();
       } else if (process.platform === "win32") {
-        spawn("cmd", ["/c", "start", url], { detached: true, stdio: "ignore" }).unref();
+        spawn("cmd", ["/c", "start", url], {
+          detached: true,
+          stdio: "ignore",
+        }).unref();
       } else {
         spawn("xdg-open", [url], { detached: true, stdio: "ignore" }).unref();
       }
