@@ -254,15 +254,15 @@ async function startWebUIInBackground(): Promise<void> {
     // 尝试打开浏览器
     const { spawn } = await import("node:child_process");
     const url = `http://localhost:${port}`;
-    const openCommand =
-      process.platform === "darwin"
-        ? "open"
-        : process.platform === "win32"
-          ? "start"
-          : "xdg-open";
 
     try {
-      spawn(openCommand, [url], { detached: true, stdio: "ignore" }).unref();
+      if (process.platform === "darwin") {
+        spawn("open", [url], { detached: true, stdio: "ignore" }).unref();
+      } else if (process.platform === "win32") {
+        spawn("cmd", ["/c", "start", url], { detached: true, stdio: "ignore" }).unref();
+      } else {
+        spawn("xdg-open", [url], { detached: true, stdio: "ignore" }).unref();
+      }
     } catch (error) {
       // 忽略打开浏览器的错误
     }
@@ -1091,15 +1091,14 @@ async function startUIService(): Promise<void> {
     const url = `http://localhost:${port}`;
 
     // 根据不同平台打开浏览器
-    const openCommand =
-      process.platform === "darwin"
-        ? "open"
-        : process.platform === "win32"
-          ? "start"
-          : "xdg-open";
-
     try {
-      spawn(openCommand, [url], { detached: true, stdio: "ignore" }).unref();
+      if (process.platform === "darwin") {
+        spawn("open", [url], { detached: true, stdio: "ignore" }).unref();
+      } else if (process.platform === "win32") {
+        spawn("cmd", ["/c", "start", url], { detached: true, stdio: "ignore" }).unref();
+      } else {
+        spawn("xdg-open", [url], { detached: true, stdio: "ignore" }).unref();
+      }
     } catch (error) {
       // 忽略打开浏览器的错误
     }
