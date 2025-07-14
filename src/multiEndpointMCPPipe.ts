@@ -173,7 +173,9 @@ export class MultiEndpointMCPPipe {
         if (code === 4004) {
           if (endpoint.reconnectAttempt < endpoint.maxReconnectAttempts) {
             logger.warn(
-              `[${endpointUrl}] 服务器内部错误(4004)，将进行第 ${endpoint.reconnectAttempt + 1} 次重连尝试（最多 ${endpoint.maxReconnectAttempts} 次）`
+              `[${endpointUrl}] 服务器内部错误(4004)，将进行第 ${
+                endpoint.reconnectAttempt + 1
+              } 次重连尝试（最多 ${endpoint.maxReconnectAttempts} 次）`
             );
             this.scheduleReconnect(endpointUrl);
           } else {
@@ -221,12 +223,14 @@ export class MultiEndpointMCPPipe {
     const baseDelay = this.connectionConfig.reconnectInterval;
     const maxDelay = 60000; // 最大延迟60秒
     const exponentialDelay = Math.min(
-      baseDelay * (2 ** (endpoint.reconnectAttempt - 1)),
+      baseDelay * 2 ** (endpoint.reconnectAttempt - 1),
       maxDelay
     );
 
     logger.info(
-      `[${endpointUrl}] 计划在 ${(exponentialDelay / 1000).toFixed(2)} 秒后进行第 ${endpoint.reconnectAttempt} 次重连尝试...`
+      `[${endpointUrl}] 计划在 ${(exponentialDelay / 1000).toFixed(
+        2
+      )} 秒后进行第 ${endpoint.reconnectAttempt} 次重连尝试...`
     );
 
     endpoint.reconnectTimer = setTimeout(async () => {
