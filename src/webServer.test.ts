@@ -236,16 +236,9 @@ describe("WebServer", () => {
       mockSpawn = vi.mocked(spawn);
     });
 
-    it("should trigger restart when config is updated with autoRestart enabled", async () => {
+    it("should not trigger automatic restart when config is updated", async () => {
       webServer = new WebServer(9992);
       await webServer.start();
-
-      // Mock service status
-      mockGetServiceStatus.mockReturnValue({
-        running: true,
-        pid: 12345,
-        mode: "daemon",
-      });
 
       const newConfig = {
         mcpEndpoint: "wss://test.endpoint",
@@ -261,22 +254,16 @@ describe("WebServer", () => {
 
       const result = await response.json();
       expect(response.status).toBe(200);
-      expect(result.restarting).toBe(true);
+      expect(result.success).toBe(true);
 
-      // Wait for restart to be triggered
+      // Wait to ensure no restart is triggered
       await new Promise((resolve) => setTimeout(resolve, 600));
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        "xiaozhi",
-        ["restart", "--daemon"],
-        expect.objectContaining({
-          detached: true,
-          stdio: "ignore",
-        })
-      );
+      // 验证没有触发重启
+      expect(mockSpawn).not.toHaveBeenCalled();
     });
 
-    it("should not trigger restart when autoRestart is disabled", async () => {
+    it("should save config without restart regardless of autoRestart setting", async () => {
       webServer = new WebServer(9993);
       await webServer.start();
 
@@ -294,7 +281,7 @@ describe("WebServer", () => {
 
       const result = await response.json();
       expect(response.status).toBe(200);
-      expect(result.restarting).toBe(false);
+      expect(result.success).toBe(true);
 
       // Wait to ensure no restart is triggered
       await new Promise((resolve) => setTimeout(resolve, 600));
@@ -302,7 +289,7 @@ describe("WebServer", () => {
       expect(mockSpawn).not.toHaveBeenCalled();
     });
 
-    it("should broadcast restart status updates", async () => {
+    it("should broadcast restart status updates on manual restart", async () => {
       webServer = new WebServer(9994);
       await webServer.start();
 
@@ -325,20 +312,11 @@ describe("WebServer", () => {
         mode: "daemon",
       });
 
-      const newConfig = {
-        mcpEndpoint: "wss://test.endpoint",
-        mcpServers: {},
-        webUI: { autoRestart: true },
-      };
-
-      await fetch("http://localhost:9994/api/config", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newConfig),
-      });
+      // Send manual restart request
+      ws.send(JSON.stringify({ type: "restartService" }));
 
       // Wait for messages
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 600));
 
       // Check for restart status message
       const restartMessage = messages.find((m) => m.type === "restartStatus");
@@ -348,26 +326,24 @@ describe("WebServer", () => {
       ws.close();
     });
 
-    it("should start service if not running", async () => {
+    it("should start service on manual restart if not running", async () => {
       webServer = new WebServer(9995);
       await webServer.start();
+
+      // Connect a WebSocket client
+      const ws = new WebSocket("ws://localhost:9995");
+
+      await new Promise<void>((resolve) => {
+        ws.on("open", resolve);
+      });
 
       // Mock service as not running
       mockGetServiceStatus.mockReturnValue({
         running: false,
       });
 
-      const newConfig = {
-        mcpEndpoint: "wss://test.endpoint",
-        mcpServers: {},
-        webUI: { autoRestart: true },
-      };
-
-      await fetch("http://localhost:9995/api/config", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newConfig),
-      });
+      // Send manual restart request
+      ws.send(JSON.stringify({ type: "restartService" }));
 
       // Wait for start to be triggered
       await new Promise((resolve) => setTimeout(resolve, 600));
@@ -380,6 +356,8 @@ describe("WebServer", () => {
           stdio: "ignore",
         })
       );
+
+      ws.close();
     });
   });
 });
