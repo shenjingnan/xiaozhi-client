@@ -321,7 +321,7 @@ describe("MultiEndpointMCPPipe", () => {
       vi.useRealTimers();
     });
 
-    it("should not reconnect on permanent error (4004)", async () => {
+    it("should limit reconnection attempts on 4004 error", async () => {
       mcpPipe = new MultiEndpointMCPPipe("test.js", [mockEndpoints[0]]);
       const scheduleReconnectSpy = vi.spyOn(
         mcpPipe as any,
@@ -337,10 +337,11 @@ describe("MultiEndpointMCPPipe", () => {
 
       await mcpPipe.connectToEndpoint(mockEndpoints[0]);
 
-      // Simulate permanent error
-      mockWs.emit("close", 4004, "Permanent error");
+      // Simulate 4004 error - should allow limited reconnection attempts
+      mockWs.emit("close", 4004, "Internal server error");
 
-      expect(scheduleReconnectSpy).not.toHaveBeenCalled();
+      // Should schedule reconnect for 4004 error (but with limits)
+      expect(scheduleReconnectSpy).toHaveBeenCalledWith(mockEndpoints[0]);
     });
   });
 

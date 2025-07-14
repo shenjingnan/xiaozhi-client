@@ -167,19 +167,14 @@ describe("StreamableHTTPMCPClient", () => {
             capabilities: {},
           },
         },
-        // notifications/initialized 响应（错误）
+        // notifications/initialized 响应（现在是通知，可能返回空响应或错误）
         {
-          jsonrpc: "2.0",
-          id: 2,
-          error: {
-            code: -32601,
-            message: "Method not found",
-          },
+          ok: true, // HTTP 200 但可能没有有意义的JSON响应
         },
         // tools/list 响应
         {
           jsonrpc: "2.0",
-          id: 3,
+          id: 2, // 现在是id 2因为通知不占用id
           result: {
             tools: mockTools,
           },
@@ -187,12 +182,20 @@ describe("StreamableHTTPMCPClient", () => {
       ];
 
       let callIndex = 0;
-      mockFetch.mockImplementation(() =>
-        Promise.resolve({
+      mockFetch.mockImplementation(() => {
+        const response = responses[callIndex++];
+        if (callIndex === 2) {
+          // notifications/initialized 调用 - 返回空响应
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({}),
+          });
+        }
+        return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve(responses[callIndex++]),
-        })
-      );
+          json: () => Promise.resolve(response),
+        });
+      });
 
       await client.start();
 

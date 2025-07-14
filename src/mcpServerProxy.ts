@@ -46,6 +46,7 @@ interface Tool {
 interface PendingRequest {
   resolve: (value: any) => void;
   reject: (reason: any) => void;
+  method: string; // 添加方法名以便错误处理
 }
 
 // 定义 MCP 客户端接口
@@ -247,9 +248,17 @@ export class MCPClient implements IMCPClient {
         this.pendingRequests.delete(message.id);
 
         if (message.error) {
-          reject(
-            new Error(`${message.error.message} (code: ${message.error.code})`)
-          );
+          // 对于 notifications/initialized 的 "Method not found" 错误，记录为调试信息而不是错误
+          if (message.error.code === -32601 && pendingRequest.method === "notifications/initialized") {
+            logger.debug(
+              `${this.name} 服务器不支持 notifications/initialized 通知，这是正常的`
+            );
+            resolve(null); // 将其视为成功
+          } else {
+            reject(
+              new Error(`${message.error.message} (code: ${message.error.code})`)
+            );
+          }
         } else {
           resolve(message.result);
         }
@@ -272,7 +281,7 @@ export class MCPClient implements IMCPClient {
     };
 
     return new Promise((resolve, reject) => {
-      this.pendingRequests.set(id, { resolve, reject });
+      this.pendingRequests.set(id, { resolve, reject, method });
 
       // Set timeout for request
       setTimeout(() => {
@@ -304,12 +313,20 @@ export class MCPClient implements IMCPClient {
         `${this.name} 已初始化，能力：${JSON.stringify((initResult as any).capabilities)}`
       );
 
-      // Send initialized notification
-      const notification = {
-        jsonrpc: "2.0",
-        method: "notifications/initialized",
-      };
-      this.process?.stdin?.write(`${JSON.stringify(notification)}\n`);
+      // Send initialized notification (ignore errors as some servers don't support it)
+      try {
+        const notification = {
+          jsonrpc: "2.0",
+          method: "notifications/initialized",
+        };
+        this.process?.stdin?.write(`${JSON.stringify(notification)}\n`);
+      } catch (error) {
+        logger.debug(
+          `${this.name} notifications/initialized 发送失败（某些服务器不支持此通知）：${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+      }
 
       // Get tools list
       await this.refreshTools();

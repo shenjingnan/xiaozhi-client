@@ -120,6 +120,48 @@ export class StreamableHTTPMCPClient implements IMCPClient {
     }
   }
 
+  /**
+   * 发送 JSON-RPC 通知到 HTTP 端点（不包含 id 字段，不期望响应）
+   */
+  private async sendNotification(method: string, params?: any): Promise<void> {
+    const notification = {
+      jsonrpc: "2.0",
+      method,
+      params,
+      // 注意：通知不包含 id 字段
+    };
+
+    logger.debug(`发送通知到 ${this.name}: ${JSON.stringify(notification)}`);
+
+    try {
+      // 动态导入 node-fetch
+      const fetch = (await import("node-fetch")).default;
+
+      const response = await fetch(this.config.url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json, text/event-stream",
+        },
+        body: JSON.stringify(notification),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // 对于通知，我们不期望有意义的响应，只要没有HTTP错误就认为成功
+      logger.debug(`通知 ${method} 发送成功`);
+    } catch (error) {
+      logger.debug(
+        `通知发送失败 (${method}): ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+      throw error;
+    }
+  }
+
   async start() {
     logger.info(`正在启动 Streamable HTTP MCP 客户端：${this.name}`);
 
@@ -136,9 +178,9 @@ export class StreamableHTTPMCPClient implements IMCPClient {
         },
       });
 
-      // 通知初始化完成（某些服务可能不支持此方法）
+      // 发送初始化完成通知（作为通知发送，不是请求）
       try {
-        await this.sendRequest("notifications/initialized");
+        await this.sendNotification("notifications/initialized");
       } catch (error) {
         // 忽略此错误，因为某些服务（如高德地图）不支持此通知
         logger.debug(`${this.name} 不支持 notifications/initialized: ${error}`);
