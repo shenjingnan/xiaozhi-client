@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { AppConfig } from "../types";
@@ -158,6 +160,22 @@ function ConfigEditor({ config, onChange }: ConfigEditorProps) {
             />
           </div>
         )}
+
+        <div className="flex items-center justify-between space-x-2">
+          <Label htmlFor="autoRestart" className="flex flex-col space-y-1">
+            <span>自动重启服务</span>
+            <span className="text-xs text-muted-foreground">
+              配置更新后自动重启 MCP 服务以应用新配置
+            </span>
+          </Label>
+          <Switch
+            id="autoRestart"
+            checked={localConfig.webUI?.autoRestart !== false}
+            onCheckedChange={(checked) =>
+              handleChange("webUI.autoRestart", checked)
+            }
+          />
+        </div>
 
         <Button
           type="button"

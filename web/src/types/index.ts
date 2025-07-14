@@ -30,12 +30,18 @@ export interface ModelScopeConfig {
   apiKey?: string;
 }
 
+export interface WebUIConfig {
+  port?: number;
+  autoRestart?: boolean;
+}
+
 export interface AppConfig {
   mcpEndpoint: string;
   mcpServers: Record<string, MCPServerConfig>;
   mcpServerConfig?: Record<string, MCPServerToolsConfig>;
   connection?: ConnectionConfig;
   modelscope?: ModelScopeConfig;
+  webUI?: WebUIConfig;
 }
 
 export interface ClientStatus {

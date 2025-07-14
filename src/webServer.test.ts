@@ -22,6 +22,14 @@ vi.mock("./configManager", () => {
   };
 });
 vi.mock("./logger");
+vi.mock("./cli", () => ({
+  getServiceStatus: vi.fn(),
+}));
+vi.mock("node:child_process", () => ({
+  spawn: vi.fn(() => ({
+    unref: vi.fn(),
+  })),
+}));
 
 describe("WebServer", () => {
   let webServer: WebServer;
@@ -214,6 +222,164 @@ describe("WebServer", () => {
       expect(mockConfigManager.updateWebUIConfig).toHaveBeenCalledWith({
         port: 8080,
       });
+    });
+  });
+
+  describe("Auto Restart Feature", () => {
+    let mockGetServiceStatus: any;
+    let mockSpawn: any;
+
+    beforeEach(async () => {
+      const { getServiceStatus } = await import("./cli");
+      const { spawn } = await import("node:child_process");
+      mockGetServiceStatus = vi.mocked(getServiceStatus);
+      mockSpawn = vi.mocked(spawn);
+    });
+
+    it("should trigger restart when config is updated with autoRestart enabled", async () => {
+      webServer = new WebServer(9992);
+      await webServer.start();
+
+      // Mock service status
+      mockGetServiceStatus.mockReturnValue({
+        running: true,
+        pid: 12345,
+        mode: "daemon",
+      });
+
+      const newConfig = {
+        mcpEndpoint: "wss://test.endpoint",
+        mcpServers: {},
+        webUI: { autoRestart: true },
+      };
+
+      const response = await fetch("http://localhost:9992/api/config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newConfig),
+      });
+
+      const result = await response.json();
+      expect(response.status).toBe(200);
+      expect(result.restarting).toBe(true);
+
+      // Wait for restart to be triggered
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "xiaozhi",
+        ["restart", "--daemon"],
+        expect.objectContaining({
+          detached: true,
+          stdio: "ignore",
+        })
+      );
+    });
+
+    it("should not trigger restart when autoRestart is disabled", async () => {
+      webServer = new WebServer(9993);
+      await webServer.start();
+
+      const newConfig = {
+        mcpEndpoint: "wss://test.endpoint",
+        mcpServers: {},
+        webUI: { autoRestart: false },
+      };
+
+      const response = await fetch("http://localhost:9993/api/config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newConfig),
+      });
+
+      const result = await response.json();
+      expect(response.status).toBe(200);
+      expect(result.restarting).toBe(false);
+
+      // Wait to ensure no restart is triggered
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
+      expect(mockSpawn).not.toHaveBeenCalled();
+    });
+
+    it("should broadcast restart status updates", async () => {
+      webServer = new WebServer(9994);
+      await webServer.start();
+
+      // Connect a WebSocket client
+      const ws = new WebSocket("ws://localhost:9994");
+      const messages: any[] = [];
+
+      await new Promise<void>((resolve) => {
+        ws.on("open", resolve);
+      });
+
+      ws.on("message", (data) => {
+        messages.push(JSON.parse(data.toString()));
+      });
+
+      // Mock service status
+      mockGetServiceStatus.mockReturnValue({
+        running: true,
+        pid: 12345,
+        mode: "daemon",
+      });
+
+      const newConfig = {
+        mcpEndpoint: "wss://test.endpoint",
+        mcpServers: {},
+        webUI: { autoRestart: true },
+      };
+
+      await fetch("http://localhost:9994/api/config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newConfig),
+      });
+
+      // Wait for messages
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Check for restart status message
+      const restartMessage = messages.find((m) => m.type === "restartStatus");
+      expect(restartMessage).toBeDefined();
+      expect(restartMessage.data.status).toBe("restarting");
+
+      ws.close();
+    });
+
+    it("should start service if not running", async () => {
+      webServer = new WebServer(9995);
+      await webServer.start();
+
+      // Mock service as not running
+      mockGetServiceStatus.mockReturnValue({
+        running: false,
+      });
+
+      const newConfig = {
+        mcpEndpoint: "wss://test.endpoint",
+        mcpServers: {},
+        webUI: { autoRestart: true },
+      };
+
+      await fetch("http://localhost:9995/api/config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newConfig),
+      });
+
+      // Wait for start to be triggered
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "xiaozhi",
+        ["start", "--daemon"],
+        expect.objectContaining({
+          detached: true,
+          stdio: "ignore",
+        })
+      );
     });
   });
 });

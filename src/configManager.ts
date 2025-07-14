@@ -59,6 +59,7 @@ export interface ModelScopeConfig {
 
 export interface WebUIConfig {
   port?: number; // Web UI 端口号，默认 9999
+  autoRestart?: boolean; // 是否在配置更新后自动重启服务，默认 true
 }
 
 export interface AppConfig {

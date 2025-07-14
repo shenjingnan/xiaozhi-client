@@ -5,6 +5,11 @@ interface WebSocketState {
   connected: boolean;
   config: AppConfig | null;
   status: ClientStatus | null;
+  restartStatus?: {
+    status: "restarting" | "completed" | "failed";
+    error?: string;
+    timestamp: number;
+  };
 }
 
 export function useWebSocket() {
@@ -60,6 +65,9 @@ export function useWebSocket() {
         case "statusUpdate":
           setState((prev) => ({ ...prev, status: message.data }));
           break;
+        case "restartStatus":
+          setState((prev) => ({ ...prev, restartStatus: message.data }));
+          break;
       }
     };
 
@@ -91,16 +99,17 @@ export function useWebSocket() {
           })
             .then((response) => {
               if (response.ok) {
-                // 然后通过 WebSocket 通知
-                socketRef.current?.send(
-                  JSON.stringify({ type: "updateConfig", config })
-                );
-                resolve();
-              } else {
-                return response.text().then((text) => {
-                  reject(new Error(text || "保存配置失败"));
+                return response.json().then(() => {
+                  // 通过 WebSocket 通知配置更新
+                  socketRef.current?.send(
+                    JSON.stringify({ type: "updateConfig", config })
+                  );
+                  resolve();
                 });
               }
+              return response.text().then((text) => {
+                reject(new Error(text || "保存配置失败"));
+              });
             })
             .catch(reject);
         } else {

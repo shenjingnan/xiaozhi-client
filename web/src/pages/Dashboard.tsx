@@ -1,12 +1,20 @@
 import ConfigEditor from "../components/ConfigEditor";
 import { ConnectionSettings } from "../components/ConnectionSettings";
 import MCPServerList from "../components/MCPServerList";
+import { RestartNotification } from "../components/RestartNotification";
 import StatusCard from "../components/StatusCard";
 import { useWebSocket } from "../hooks/useWebSocket";
 
 function Dashboard() {
-  const { connected, config, status, updateConfig, wsUrl, setCustomWsUrl } =
-    useWebSocket();
+  const {
+    connected,
+    config,
+    status,
+    restartStatus,
+    updateConfig,
+    wsUrl,
+    setCustomWsUrl,
+  } = useWebSocket();
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -16,6 +24,8 @@ function Dashboard() {
           管理您的小智 AI 客户端配置和 MCP 服务
         </p>
       </header>
+
+      <RestartNotification restartStatus={restartStatus} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <StatusCard connected={connected} status={status} />
