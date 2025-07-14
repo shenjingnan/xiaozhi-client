@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { AppConfig } from "../types";
@@ -9,15 +8,40 @@ import type { AppConfig } from "../types";
 interface ConfigEditorProps {
   config: AppConfig;
   onChange: (config: AppConfig) => void;
+  onRestart?: () => void;
+  restartStatus?: {
+    status: "restarting" | "completed" | "failed";
+    error?: string;
+    timestamp: number;
+  };
 }
 
-function ConfigEditor({ config, onChange }: ConfigEditorProps) {
+function ConfigEditor({
+  config,
+  onChange,
+  onRestart,
+  restartStatus,
+}: ConfigEditorProps) {
   const [localConfig, setLocalConfig] = useState(config);
   const [isSaving, setIsSaving] = useState(false);
+  const [isRestarting, setIsRestarting] = useState(false);
 
   useEffect(() => {
     setLocalConfig(config);
   }, [config]);
+
+  // 监听重启状态变化
+  useEffect(() => {
+    if (restartStatus) {
+      if (
+        restartStatus.status === "completed" ||
+        restartStatus.status === "failed"
+      ) {
+        // 重启完成或失败时，清除 loading 状态
+        setIsRestarting(false);
+      }
+    }
+  }, [restartStatus]);
 
   const handleChange = (field: string, value: any) => {
     const newConfig = { ...localConfig };
@@ -46,6 +70,22 @@ function ConfigEditor({ config, onChange }: ConfigEditorProps) {
       );
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleRestart = async () => {
+    if (!onRestart) return;
+
+    setIsRestarting(true);
+    try {
+      await onRestart();
+      // 成功时不再立即清除 loading 状态，等待 restartStatus 更新
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "重启服务时发生错误"
+      );
+      // 错误时立即清除 loading 状态
+      setIsRestarting(false);
     }
   };
 
@@ -161,30 +201,30 @@ function ConfigEditor({ config, onChange }: ConfigEditorProps) {
           </div>
         )}
 
-        <div className="flex items-center justify-between space-x-2">
-          <Label htmlFor="autoRestart" className="flex flex-col space-y-1">
-            <span>自动重启服务</span>
-            <span className="text-xs text-muted-foreground">
-              配置更新后自动重启 MCP 服务以应用新配置
-            </span>
-          </Label>
-          <Switch
-            id="autoRestart"
-            checked={localConfig.webUI?.autoRestart !== false}
-            onCheckedChange={(checked) =>
-              handleChange("webUI.autoRestart", checked)
-            }
-          />
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            onClick={handleSave}
+            className="flex-1"
+            disabled={isSaving}
+          >
+            {isSaving ? "保存中..." : "保存配置"}
+          </Button>
+          {onRestart && (
+            <Button
+              type="button"
+              onClick={handleRestart}
+              variant="outline"
+              disabled={isRestarting}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${isRestarting ? "animate-spin" : ""}`}
+              />
+              {isRestarting ? "重启中..." : "重启服务"}
+            </Button>
+          )}
         </div>
-
-        <Button
-          type="button"
-          onClick={handleSave}
-          className="w-full"
-          disabled={isSaving}
-        >
-          {isSaving ? "保存中..." : "保存配置"}
-        </Button>
       </CardContent>
     </Card>
   );

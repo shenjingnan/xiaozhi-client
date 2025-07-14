@@ -20,6 +20,7 @@ export function useWebSocket() {
   });
   const socketRef = useRef<WebSocket | null>(null);
   const [wsUrl, setWsUrl] = useState<string>("");
+  const statusCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // 动态获取WebSocket连接地址
   const getWebSocketUrl = useCallback(() => {
@@ -42,6 +43,34 @@ export function useWebSocket() {
     return `${wsProtocol}//${hostname}`;
   }, []);
 
+  const stopStatusCheck = useCallback(() => {
+    if (statusCheckIntervalRef.current) {
+      clearInterval(statusCheckIntervalRef.current);
+      statusCheckIntervalRef.current = null;
+    }
+  }, []);
+
+  const startStatusCheck = useCallback(
+    (ws: WebSocket) => {
+      // 清除之前的定时器
+      stopStatusCheck();
+
+      // 使用固定间隔的定时器
+      const checkStatus = () => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: "getStatus" }));
+        }
+      };
+
+      // 立即执行一次检查
+      checkStatus();
+
+      // 每秒检查一次状态
+      statusCheckIntervalRef.current = setInterval(checkStatus, 1000);
+    },
+    [stopStatusCheck]
+  );
+
   useEffect(() => {
     const url = getWebSocketUrl();
     setWsUrl(url);
@@ -51,6 +80,9 @@ export function useWebSocket() {
       setState((prev) => ({ ...prev, connected: true }));
       ws.send(JSON.stringify({ type: "getConfig" }));
       ws.send(JSON.stringify({ type: "getStatus" }));
+
+      // 开始定期查询状态
+      startStatusCheck(ws);
     };
 
     ws.onmessage = (event) => {
@@ -73,6 +105,7 @@ export function useWebSocket() {
 
     ws.onclose = () => {
       setState((prev) => ({ ...prev, connected: false }));
+      stopStatusCheck();
     };
 
     ws.onerror = (error) => {
@@ -82,9 +115,10 @@ export function useWebSocket() {
     socketRef.current = ws;
 
     return () => {
+      stopStatusCheck();
       ws.close();
     };
-  }, [getWebSocketUrl]);
+  }, [getWebSocketUrl, startStatusCheck, stopStatusCheck]);
 
   const updateConfig = useCallback(
     (config: AppConfig): Promise<void> => {
@@ -126,6 +160,36 @@ export function useWebSocket() {
     }
   }, []);
 
+  const restartService = useCallback((): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (socketRef.current?.readyState === WebSocket.OPEN) {
+        // 发送重启请求
+        socketRef.current.send(JSON.stringify({ type: "restartService" }));
+
+        // 监听重启状态，在成功或失败时 resolve/reject
+        const checkRestartStatus = setInterval(() => {
+          if (state.restartStatus) {
+            if (state.restartStatus.status === "completed") {
+              clearInterval(checkRestartStatus);
+              resolve();
+            } else if (state.restartStatus.status === "failed") {
+              clearInterval(checkRestartStatus);
+              reject(new Error(state.restartStatus.error || "重启失败"));
+            }
+          }
+        }, 100);
+
+        // 设置超时
+        setTimeout(() => {
+          clearInterval(checkRestartStatus);
+          reject(new Error("重启超时"));
+        }, 30000);
+      } else {
+        reject(new Error("WebSocket 未连接"));
+      }
+    });
+  }, [state.restartStatus]);
+
   // 保存自定义WebSocket地址
   const setCustomWsUrl = useCallback((url: string) => {
     if (url) {
@@ -141,6 +205,7 @@ export function useWebSocket() {
     ...state,
     updateConfig,
     refreshStatus,
+    restartService,
     wsUrl,
     setCustomWsUrl,
   };

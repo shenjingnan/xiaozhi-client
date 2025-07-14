@@ -12,6 +12,7 @@ function Dashboard() {
     status,
     restartStatus,
     updateConfig,
+    restartService,
     wsUrl,
     setCustomWsUrl,
   } = useWebSocket();
@@ -52,7 +53,12 @@ function Dashboard() {
             }}
           />
 
-          <ConfigEditor config={config} onChange={updateConfig} />
+          <ConfigEditor
+            config={config}
+            onChange={updateConfig}
+            onRestart={restartService}
+            restartStatus={restartStatus}
+          />
         </div>
       )}
     </div>

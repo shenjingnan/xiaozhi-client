@@ -90,37 +90,10 @@ export class WebServer {
             // 广播配置更新
             this.broadcastConfigUpdate(newConfig);
 
-            // 检查是否启用自动重启（默认启用）
-            const autoRestart = newConfig.webUI?.autoRestart !== false;
-
-            if (autoRestart) {
-              this.broadcastRestartStatus("restarting");
-              res.writeHead(200, { "Content-Type": "application/json" });
-              res.end(JSON.stringify({ success: true, restarting: true }));
-
-              // 延迟执行重启，让响应先返回给客户端
-              setTimeout(async () => {
-                try {
-                  await this.restartService();
-                  // 服务重启需要一些时间，延迟发送成功状态
-                  setTimeout(() => {
-                    this.broadcastRestartStatus("completed");
-                  }, 5000);
-                } catch (error) {
-                  this.logger.error(
-                    `自动重启失败: ${error instanceof Error ? error.message : String(error)}`
-                  );
-                  this.broadcastRestartStatus(
-                    "failed",
-                    error instanceof Error ? error.message : "未知错误"
-                  );
-                }
-              }, 500);
-            } else {
-              res.writeHead(200, { "Content-Type": "application/json" });
-              res.end(JSON.stringify({ success: true, restarting: false }));
-              this.logger.info("配置已更新，但自动重启已禁用");
-            }
+            // 直接返回成功，不再自动重启
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ success: true }));
+            this.logger.info("配置已更新");
           } catch (error) {
             res.writeHead(400, { "Content-Type": "application/json" });
             res.end(
@@ -294,6 +267,31 @@ export class WebServer {
         this.updateClientInfo(data.data);
         this.broadcastStatusUpdate();
         break;
+
+      case "restartService":
+        // 处理手动重启请求
+        this.logger.info("收到手动重启服务请求");
+        this.broadcastRestartStatus("restarting");
+
+        // 延迟执行重启
+        setTimeout(async () => {
+          try {
+            await this.restartService();
+            // 服务重启需要一些时间，延迟发送成功状态
+            setTimeout(() => {
+              this.broadcastRestartStatus("completed");
+            }, 5000);
+          } catch (error) {
+            this.logger.error(
+              `手动重启失败: ${error instanceof Error ? error.message : String(error)}`
+            );
+            this.broadcastRestartStatus(
+              "failed",
+              error instanceof Error ? error.message : "未知错误"
+            );
+          }
+        }, 500);
+        break;
     }
   }
 
@@ -423,6 +421,12 @@ export class WebServer {
   private async restartService(): Promise<void> {
     this.logger.info("正在重启 MCP 服务...");
 
+    // 清除心跳超时定时器，避免重启过程中误报断开连接
+    if (this.heartbeatTimeout) {
+      clearTimeout(this.heartbeatTimeout);
+      this.heartbeatTimeout = undefined;
+    }
+
     try {
       // 获取当前服务状态
       const status = getServiceStatus();
@@ -466,10 +470,15 @@ export class WebServer {
       child.unref();
 
       this.logger.info("MCP 服务重启命令已发送");
+
+      // 重启后重新设置心跳超时
+      this.resetHeartbeatTimeout();
     } catch (error) {
       this.logger.error(
         `重启服务失败: ${error instanceof Error ? error.message : String(error)}`
       );
+      // 失败时也要重新设置心跳超时
+      this.resetHeartbeatTimeout();
       throw error;
     }
   }

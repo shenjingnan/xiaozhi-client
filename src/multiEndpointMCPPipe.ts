@@ -150,6 +150,25 @@ export class MultiEndpointMCPPipe {
       const message = data.toString();
       logger.info(`<< [${endpointUrl}] WebSocket收到消息: ${message}`);
 
+      // 解析消息检查是否是初始化确认
+      try {
+        const parsedMessage = JSON.parse(message);
+
+        // 检查是否是初始化相关的消息
+        if (
+          parsedMessage.method === "notifications/initialized" ||
+          (parsedMessage.method === "tools/list" && parsedMessage.id) ||
+          (parsedMessage.result && parsedMessage.result.tools)
+        ) {
+          // 延迟一秒后报告状态，确保初始化完成
+          setTimeout(() => {
+            this.reportStatusToWebUI();
+          }, 1000);
+        }
+      } catch (e) {
+        // 忽略解析错误
+      }
+
       // 将消息写入对应端点的进程标准输入
       if (endpoint.process?.stdin && !endpoint.process.stdin.destroyed) {
         endpoint.process.stdin.write(`${message}\n`);
@@ -379,6 +398,9 @@ export class MultiEndpointMCPPipe {
           logger.warn(`[${endpointUrl}] 心跳超时，断开连接`);
           endpoint.websocket?.close();
         }, this.connectionConfig.heartbeatTimeout);
+
+        // 定期报告状态到 Web UI
+        this.reportStatusToWebUI();
       }
     }, this.connectionConfig.heartbeatInterval);
   }
