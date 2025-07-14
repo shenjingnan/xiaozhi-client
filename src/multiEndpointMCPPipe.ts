@@ -25,6 +25,7 @@ interface EndpointConnection {
   websocket: WebSocket | null;
   isConnected: boolean;
   reconnectAttempt: number;
+  maxReconnectAttempts: number; // 最大重连次数
   reconnectTimer?: NodeJS.Timeout;
   heartbeatTimer?: NodeJS.Timeout;
   heartbeatTimeoutTimer?: NodeJS.Timeout;
@@ -62,6 +63,7 @@ export class MultiEndpointMCPPipe {
         websocket: null,
         isConnected: false,
         reconnectAttempt: 0,
+        maxReconnectAttempts: 5, // 允许最多5次重连尝试
         process: null,
         stdoutBuffer: "",
       });
@@ -129,7 +131,13 @@ export class MultiEndpointMCPPipe {
     ws.on("open", () => {
       logger.info(`成功连接到 WebSocket 服务器: ${endpointUrl}`);
       endpoint.isConnected = true;
-      endpoint.reconnectAttempt = 0;
+      endpoint.reconnectAttempt = 0; // 重置重连计数器
+
+      // 清除重连定时器
+      if (endpoint.reconnectTimer) {
+        clearTimeout(endpoint.reconnectTimer);
+        endpoint.reconnectTimer = undefined;
+      }
 
       // 报告状态
       this.reportStatusToWebUI();
@@ -159,9 +167,26 @@ export class MultiEndpointMCPPipe {
       // 报告断开状态
       this.reportStatusToWebUI();
 
-      // 如果应该重连且不是永久错误
-      if (this.shouldReconnect && code !== 4004) {
-        this.scheduleReconnect(endpointUrl);
+      // 改进重连逻辑：允许对4004错误进行有限次数的重连
+      if (this.shouldReconnect) {
+        // 对于4004错误，只在重连次数未超过限制时重连
+        if (code === 4004) {
+          if (endpoint.reconnectAttempt < endpoint.maxReconnectAttempts) {
+            logger.warn(
+              `[${endpointUrl}] 服务器内部错误(4004)，将进行第 ${
+                endpoint.reconnectAttempt + 1
+              } 次重连尝试（最多 ${endpoint.maxReconnectAttempts} 次）`
+            );
+            this.scheduleReconnect(endpointUrl);
+          } else {
+            logger.error(
+              `[${endpointUrl}] 服务器内部错误(4004)，已达到最大重连次数(${endpoint.maxReconnectAttempts})，停止重连`
+            );
+          }
+        } else {
+          // 其他错误码正常重连
+          this.scheduleReconnect(endpointUrl);
+        }
       }
     });
 
@@ -194,21 +219,32 @@ export class MultiEndpointMCPPipe {
 
     endpoint.reconnectAttempt++;
 
-    logger.info(
-      `[${endpointUrl}] 计划在 ${(
-        this.connectionConfig.reconnectInterval / 1000
-      ).toFixed(2)} 秒后进行第 ${endpoint.reconnectAttempt} 次重连尝试...`
+    // 使用指数退避算法计算重连延迟
+    const baseDelay = this.connectionConfig.reconnectInterval;
+    const maxDelay = 60000; // 最大延迟60秒
+    const exponentialDelay = Math.min(
+      baseDelay * 2 ** (endpoint.reconnectAttempt - 1),
+      maxDelay
     );
 
-    endpoint.reconnectTimer = setTimeout(() => {
+    logger.info(
+      `[${endpointUrl}] 计划在 ${(exponentialDelay / 1000).toFixed(
+        2
+      )} 秒后进行第 ${endpoint.reconnectAttempt} 次重连尝试...`
+    );
+
+    endpoint.reconnectTimer = setTimeout(async () => {
       if (this.shouldReconnect) {
+        // 在重连前清理资源
+        await this.cleanupEndpointResources(endpointUrl);
+
         // 如果MCP进程不存在，先尝试重启
         if (!endpoint.process || endpoint.process.killed) {
           logger.info(`[${endpointUrl}] MCP 进程未运行，将在重连时启动...`);
         }
         this.connectToEndpoint(endpointUrl);
       }
-    }, this.connectionConfig.reconnectInterval);
+    }, exponentialDelay);
   }
 
   startMCPProcessForEndpoint(endpointUrl: string) {
@@ -360,6 +396,67 @@ export class MultiEndpointMCPPipe {
       clearTimeout(endpoint.heartbeatTimeoutTimer);
       endpoint.heartbeatTimeoutTimer = undefined;
     }
+  }
+
+  async cleanupEndpointResources(endpointUrl: string) {
+    const endpoint = this.endpoints.get(endpointUrl);
+    if (!endpoint) return;
+
+    logger.debug(`[${endpointUrl}] 清理端点资源...`);
+
+    // 停止心跳检测
+    this.stopHeartbeat(endpointUrl);
+
+    // 清除重连定时器
+    if (endpoint.reconnectTimer) {
+      clearTimeout(endpoint.reconnectTimer);
+      endpoint.reconnectTimer = undefined;
+    }
+
+    // 关闭 WebSocket 连接
+    if (endpoint.websocket) {
+      try {
+        if (endpoint.websocket.readyState === WebSocket.OPEN) {
+          endpoint.websocket.close();
+        }
+      } catch (error) {
+        logger.debug(`[${endpointUrl}] 关闭 WebSocket 时出错: ${error}`);
+      }
+      endpoint.websocket = null;
+    }
+
+    // 终止 MCP 进程（如果存在且仍在运行）
+    if (endpoint.process && !endpoint.process.killed) {
+      try {
+        logger.debug(`[${endpointUrl}] 终止 MCP 进程...`);
+        endpoint.process.kill("SIGTERM");
+
+        // 等待进程退出，最多等待2秒
+        await new Promise<void>((resolve) => {
+          const timeout = setTimeout(() => {
+            if (endpoint.process && !endpoint.process.killed) {
+              logger.warn(`[${endpointUrl}] MCP 进程未能正常退出，强制终止`);
+              endpoint.process.kill("SIGKILL");
+            }
+            resolve();
+          }, 2000);
+
+          endpoint.process?.on("exit", () => {
+            clearTimeout(timeout);
+            resolve();
+          });
+        });
+      } catch (error) {
+        logger.warn(`[${endpointUrl}] 终止 MCP 进程时出错: ${error}`);
+      }
+      endpoint.process = null;
+    }
+
+    // 清空输出缓冲区
+    endpoint.stdoutBuffer = "";
+    endpoint.isConnected = false;
+
+    logger.debug(`[${endpointUrl}] 端点资源清理完成`);
   }
 
   cleanup() {

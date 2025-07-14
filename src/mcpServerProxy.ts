@@ -46,6 +46,7 @@ interface Tool {
 interface PendingRequest {
   resolve: (value: any) => void;
   reject: (reason: any) => void;
+  method: string; // 添加方法名以便错误处理
 }
 
 // 定义 MCP 客户端接口
@@ -176,10 +177,14 @@ export class MCPClient implements IMCPClient {
     }
 
     logger.debug(
-      `${this.name} 正在生成进程：${resolvedCommand} ${resolvedArgs.join(" ")} 工作目录：${spawnOptions.cwd}`
+      `${this.name} 正在生成进程：${resolvedCommand} ${resolvedArgs.join(
+        " "
+      )} 工作目录：${spawnOptions.cwd}`
     );
     logger.debug(
-      `${this.name} 平台：${process.platform}，shell 模式：${spawnOptions.shell || false}`
+      `${this.name} 平台：${process.platform}，shell 模式：${
+        spawnOptions.shell || false
+      }`
     );
 
     this.process = spawn(resolvedCommand, resolvedArgs, spawnOptions);
@@ -247,9 +252,22 @@ export class MCPClient implements IMCPClient {
         this.pendingRequests.delete(message.id);
 
         if (message.error) {
-          reject(
-            new Error(`${message.error.message} (code: ${message.error.code})`)
-          );
+          // 对于 notifications/initialized 的 "Method not found" 错误，记录为调试信息而不是错误
+          if (
+            message.error.code === -32601 &&
+            pendingRequest.method === "notifications/initialized"
+          ) {
+            logger.debug(
+              `${this.name} 服务器不支持 notifications/initialized 通知，这是正常的`
+            );
+            resolve(null); // 将其视为成功
+          } else {
+            reject(
+              new Error(
+                `${message.error.message} (code: ${message.error.code})`
+              )
+            );
+          }
         } else {
           resolve(message.result);
         }
@@ -272,7 +290,7 @@ export class MCPClient implements IMCPClient {
     };
 
     return new Promise((resolve, reject) => {
-      this.pendingRequests.set(id, { resolve, reject });
+      this.pendingRequests.set(id, { resolve, reject, method });
 
       // Set timeout for request
       setTimeout(() => {
@@ -301,15 +319,27 @@ export class MCPClient implements IMCPClient {
       });
 
       logger.info(
-        `${this.name} 已初始化，能力：${JSON.stringify((initResult as any).capabilities)}`
+        `${this.name} 已初始化，能力：${JSON.stringify(
+          (initResult as any).capabilities
+        )}`
       );
 
-      // Send initialized notification
-      const notification = {
-        jsonrpc: "2.0",
-        method: "notifications/initialized",
-      };
-      this.process?.stdin?.write(`${JSON.stringify(notification)}\n`);
+      // Send initialized notification (ignore errors as some servers don't support it)
+      try {
+        const notification = {
+          jsonrpc: "2.0",
+          method: "notifications/initialized",
+        };
+        this.process?.stdin?.write(`${JSON.stringify(notification)}\n`);
+      } catch (error) {
+        logger.debug(
+          `${
+            this.name
+          } notifications/initialized 发送失败（某些服务器不支持此通知）：${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+      }
 
       // Get tools list
       await this.refreshTools();
@@ -318,7 +348,9 @@ export class MCPClient implements IMCPClient {
       logger.info(`${this.name} 客户端已就绪，共 ${this.tools.length} 个工具`);
     } catch (error) {
       logger.error(
-        `初始化 ${this.name} 失败：${error instanceof Error ? error.message : String(error)}`
+        `初始化 ${this.name} 失败：${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
       throw error;
     }
@@ -342,14 +374,20 @@ export class MCPClient implements IMCPClient {
       await this.updateToolsConfig();
 
       logger.info(
-        `${this.name} 加载了 ${this.originalTools.length} 个工具：${this.originalTools.map((t) => t.name).join(", ")}`
+        `${this.name} 加载了 ${
+          this.originalTools.length
+        } 个工具：${this.originalTools.map((t) => t.name).join(", ")}`
       );
       logger.info(
-        `${this.name} 启用了 ${this.tools.length} 个工具：${this.tools.map((t) => t.name).join(", ")}`
+        `${this.name} 启用了 ${this.tools.length} 个工具：${this.tools
+          .map((t) => t.name)
+          .join(", ")}`
       );
     } catch (error) {
       logger.error(
-        `从 ${this.name} 获取工具失败：${error instanceof Error ? error.message : String(error)}`
+        `从 ${this.name} 获取工具失败：${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
       this.tools = [];
       this.originalTools = [];
@@ -402,7 +440,9 @@ export class MCPClient implements IMCPClient {
       }
     } catch (error) {
       logger.error(
-        `更新 ${this.name} 的工具配置失败：${error instanceof Error ? error.message : String(error)}`
+        `更新 ${this.name} 的工具配置失败：${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   }
@@ -422,7 +462,11 @@ export class MCPClient implements IMCPClient {
       return result;
     } catch (error) {
       logger.error(
-        `在 ${this.name} 上调用工具 ${prefixedName} (原始名称：${this.getOriginalToolName(prefixedName)}) 失败：${error instanceof Error ? error.message : String(error)}`
+        `在 ${
+          this.name
+        } 上调用工具 ${prefixedName} (原始名称：${this.getOriginalToolName(
+          prefixedName
+        )}) 失败：${error instanceof Error ? error.message : String(error)}`
       );
       throw error;
     }
@@ -465,7 +509,9 @@ export function loadMCPConfig(): Record<string, MCPServerConfig> {
         }
 
         logger.info(
-          `从旧配置文件加载了 ${Object.keys(config.mcpServers).length} 个 MCP 服务（建议迁移到新配置格式）`
+          `从旧配置文件加载了 ${
+            Object.keys(config.mcpServers).length
+          } 个 MCP 服务（建议迁移到新配置格式）`
         );
         return config.mcpServers;
       } catch (legacyError) {
@@ -478,7 +524,9 @@ export function loadMCPConfig(): Record<string, MCPServerConfig> {
     throw new Error('配置文件不存在，请运行 "xiaozhi init" 初始化配置');
   } catch (error) {
     logger.error(
-      `加载 MCP 配置失败：${error instanceof Error ? error.message : String(error)}`
+      `加载 MCP 配置失败：${
+        error instanceof Error ? error.message : String(error)
+      }`
     );
     throw error;
   }
@@ -584,11 +632,15 @@ export class MCPServerProxy {
       this.initialized = true;
 
       logger.info(
-        `MCP 服务代理初始化成功，启动了 ${successCount}/${Object.keys(this.config).length} 个客户端`
+        `MCP 服务代理初始化成功，启动了 ${successCount}/${
+          Object.keys(this.config).length
+        } 个客户端`
       );
     } catch (error) {
       logger.error(
-        `启动 MCP 客户端失败：${error instanceof Error ? error.message : String(error)}`
+        `启动 MCP 客户端失败：${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
       throw error;
     }
@@ -603,7 +655,9 @@ export class MCPServerProxy {
         // 但我们仍然检查以防万一
         if (this.toolMap.has(tool.name)) {
           logger.error(
-            `重复的工具名称：${tool.name} (来自 ${clientName} 和 ${this.toolMap.get(tool.name)})`
+            `重复的工具名称：${
+              tool.name
+            } (来自 ${clientName} 和 ${this.toolMap.get(tool.name)})`
           );
         } else {
           this.toolMap.set(tool.name, clientName);
@@ -745,7 +799,9 @@ export class JSONRPCServer {
       throw new Error("无效的 JSON-RPC 消息");
     } catch (error) {
       logger.error(
-        `处理消息时出错：${error instanceof Error ? error.message : String(error)}`
+        `处理消息时出错：${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
       return JSON.stringify({
         jsonrpc: "2.0",
@@ -788,7 +844,9 @@ export class JSONRPCServer {
       };
     } catch (error) {
       logger.error(
-        `处理请求 ${method} 时出错：${error instanceof Error ? error.message : String(error)}`
+        `处理请求 ${method} 时出错：${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
       return {
         jsonrpc: "2.0",
@@ -926,7 +984,9 @@ async function main() {
             }
           } catch (error) {
             logger.error(
-              `处理消息时出错：${error instanceof Error ? error.message : String(error)}`
+              `处理消息时出错：${
+                error instanceof Error ? error.message : String(error)
+              }`
             );
           }
         }
@@ -941,7 +1001,9 @@ async function main() {
     logger.info("MCP 服务代理正在通过 stdio 运行");
   } catch (error) {
     logger.error(
-      `启动 MCP 服务代理失败：${error instanceof Error ? error.message : String(error)}`
+      `启动 MCP 服务代理失败：${
+        error instanceof Error ? error.message : String(error)
+      }`
     );
     process.exit(1);
   }
