@@ -1,7 +1,11 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { EventSource } from "eventsource";
-import { type SSEMCPServerConfig, configManager } from "./configManager";
+import {
+  type MCPToolConfig,
+  type SSEMCPServerConfig,
+  configManager,
+} from "./configManager";
 import { logger as globalLogger } from "./logger";
 import type { IMCPClient } from "./mcpServerProxy";
 
@@ -135,14 +139,25 @@ export class ModelScopeMCPClient implements IMCPClient {
       const result = await this.client.listTools();
       this.originalTools = result.tools || [];
 
-      // 为每个工具生成带前缀的名称
-      this.tools = this.originalTools.map((tool) => ({
+      // 为每个工具生成带前缀的名称，并应用过滤
+      const allPrefixedTools = this.originalTools.map((tool) => ({
         ...tool,
         name: this.generatePrefixedToolName(tool.name),
       }));
 
+      // 根据配置过滤工具
+      this.tools = this.filterEnabledTools(allPrefixedTools);
+
+      // 更新配置文件中的工具列表（如果需要）
+      await this.updateToolsConfig();
+
       logger.info(
-        `${this.name} 加载了 ${this.originalTools.length} 个工具：${this.originalTools
+        `${this.name} 加载了 ${
+          this.originalTools.length
+        } 个工具：${this.originalTools.map((t) => t.name).join(", ")}`
+      );
+      logger.info(
+        `${this.name} 启用了 ${this.tools.length} 个工具：${this.tools
           .map((t) => t.name)
           .join(", ")}`
       );
@@ -154,6 +169,59 @@ export class ModelScopeMCPClient implements IMCPClient {
       );
       this.tools = [];
       this.originalTools = [];
+    }
+  }
+
+  /**
+   * 过滤启用的工具
+   */
+  private filterEnabledTools(allTools: Tool[]): Tool[] {
+    return allTools.filter((tool) => {
+      const originalName = this.getOriginalToolName(tool.name);
+      if (!originalName) return true; // 如果无法解析原始名称，默认启用
+
+      return configManager.isToolEnabled(this.name, originalName);
+    });
+  }
+
+  /**
+   * 更新配置文件中的工具列表
+   */
+  private async updateToolsConfig(): Promise<void> {
+    try {
+      const currentConfig = configManager.getServerToolsConfig(this.name);
+      const toolsConfig: Record<string, MCPToolConfig> = {};
+
+      // 为每个工具创建配置项
+      for (const tool of this.originalTools) {
+        const existingConfig = currentConfig[tool.name];
+        toolsConfig[tool.name] = {
+          description: tool.description || "",
+          enable: existingConfig?.enable !== false, // 默认启用
+        };
+      }
+
+      // 只有当配置发生变化时才更新
+      const hasChanges = Object.keys(toolsConfig).some((toolName) => {
+        const existing = currentConfig[toolName];
+        const newConfig = toolsConfig[toolName];
+        return (
+          !existing ||
+          existing.enable !== newConfig.enable ||
+          existing.description !== newConfig.description
+        );
+      });
+
+      if (hasChanges || Object.keys(currentConfig).length === 0) {
+        configManager.updateServerToolsConfig(this.name, toolsConfig);
+        logger.info(`${this.name} 已更新工具配置`);
+      }
+    } catch (error) {
+      logger.error(
+        `更新 ${this.name} 的工具配置失败：${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
     }
   }
 
