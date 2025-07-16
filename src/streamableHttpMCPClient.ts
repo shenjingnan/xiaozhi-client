@@ -1,4 +1,5 @@
 import {
+  type MCPToolConfig,
   type StreamableHTTPMCPServerConfig,
   configManager,
 } from "./configManager";
@@ -192,6 +193,9 @@ export class StreamableHTTPMCPClient implements IMCPClient {
       if (listToolsResult?.tools) {
         this.originalTools = listToolsResult.tools;
 
+        // 更新配置文件中的工具列表
+        await this.updateToolsConfig();
+
         // 生成带前缀的工具名称
         this.tools = this.originalTools
           .filter((tool) => configManager.isToolEnabled(this.name, tool.name))
@@ -222,6 +226,9 @@ export class StreamableHTTPMCPClient implements IMCPClient {
 
       if (listToolsResult?.tools) {
         this.originalTools = listToolsResult.tools;
+
+        // 更新配置文件中的工具列表
+        await this.updateToolsConfig();
 
         // 重新生成带前缀的工具名称
         this.tools = this.originalTools
@@ -265,6 +272,47 @@ export class StreamableHTTPMCPClient implements IMCPClient {
         }`
       );
       throw error;
+    }
+  }
+
+  /**
+   * 更新配置文件中的工具列表
+   */
+  private async updateToolsConfig(): Promise<void> {
+    try {
+      const currentConfig = configManager.getServerToolsConfig(this.name);
+      const toolsConfig: Record<string, MCPToolConfig> = {};
+
+      // 为每个工具创建配置项
+      for (const tool of this.originalTools) {
+        const existingConfig = currentConfig[tool.name];
+        toolsConfig[tool.name] = {
+          description: tool.description || "",
+          enable: existingConfig?.enable !== false, // 默认启用
+        };
+      }
+
+      // 只有当配置发生变化时才更新
+      const hasChanges = Object.keys(toolsConfig).some((toolName) => {
+        const existing = currentConfig[toolName];
+        const newConfig = toolsConfig[toolName];
+        return (
+          !existing ||
+          existing.enable !== newConfig.enable ||
+          existing.description !== newConfig.description
+        );
+      });
+
+      if (hasChanges || Object.keys(currentConfig).length === 0) {
+        configManager.updateServerToolsConfig(this.name, toolsConfig);
+        logger.info(`${this.name} 已更新工具配置`);
+      }
+    } catch (error) {
+      logger.error(
+        `更新 ${this.name} 的工具配置失败：${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
     }
   }
 
