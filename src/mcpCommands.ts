@@ -182,11 +182,17 @@ export async function listMcpServers(
 
         console.log(`${chalk.cyan("•")} ${chalk.bold(serverName)}`);
 
-        // 检查是否是 SSE 类型
-        if ("type" in serverConfig && serverConfig.type === "sse") {
-          console.log(`  类型: ${chalk.gray("SSE")}`);
+        // 检查服务类型并显示相应信息
+        if ("url" in serverConfig) {
+          // URL 类型的服务（SSE 或 Streamable HTTP）
+          if ("type" in serverConfig && serverConfig.type === "sse") {
+            console.log(`  类型: ${chalk.gray("SSE")}`);
+          } else {
+            console.log(`  类型: ${chalk.gray("Streamable HTTP")}`);
+          }
           console.log(`  URL: ${chalk.gray(serverConfig.url)}`);
         } else {
+          // 本地服务
           console.log(
             `  命令: ${chalk.gray((serverConfig as any).command)} ${chalk.gray(
               (serverConfig as any).args.join(" ")

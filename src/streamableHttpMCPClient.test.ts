@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { StreamableHTTPMCPServerConfig } from "./configManager";
+import {
+  type StreamableHTTPMCPServerConfig,
+  configManager,
+} from "./configManager";
 import { StreamableHTTPMCPClient } from "./streamableHttpMCPClient";
 
 // Mock node-fetch
@@ -11,6 +14,8 @@ vi.mock("node-fetch", () => ({
 vi.mock("./configManager", () => ({
   configManager: {
     isToolEnabled: vi.fn().mockReturnValue(true),
+    getServerToolsConfig: vi.fn().mockReturnValue({}),
+    updateServerToolsConfig: vi.fn(),
   },
 }));
 
@@ -204,6 +209,21 @@ describe("StreamableHTTPMCPClient", () => {
       expect(client.tools).toHaveLength(2);
       expect(client.tools[0].name).toBe("test_server_xzcli_tool1");
       expect(client.tools[1].name).toBe("test_server_xzcli_tool2");
+
+      // 验证配置更新被调用
+      expect(configManager.updateServerToolsConfig).toHaveBeenCalledWith(
+        "test-server",
+        {
+          tool1: {
+            description: "Tool 1",
+            enable: true,
+          },
+          tool2: {
+            description: "Tool 2",
+            enable: true,
+          },
+        }
+      );
     });
 
     it("应该处理初始化失败", async () => {
@@ -244,6 +264,42 @@ describe("StreamableHTTPMCPClient", () => {
 
       // refreshTools 不会抛出错误，只会记录日志
       await expect(client.refreshTools()).resolves.not.toThrow();
+    });
+
+    it("应该在刷新工具时更新配置", async () => {
+      const mockTools = [
+        { name: "tool1", description: "Tool 1" },
+        { name: "tool2", description: "Tool 2" },
+      ];
+
+      const mockResponse = {
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          jsonrpc: "2.0",
+          id: 1,
+          result: {
+            tools: mockTools,
+          },
+        }),
+      };
+      mockFetch.mockResolvedValue(mockResponse);
+
+      await client.refreshTools();
+
+      // 验证配置更新被调用
+      expect(configManager.updateServerToolsConfig).toHaveBeenCalledWith(
+        "test-server",
+        {
+          tool1: {
+            description: "Tool 1",
+            enable: true,
+          },
+          tool2: {
+            description: "Tool 2",
+            enable: true,
+          },
+        }
+      );
     });
   });
 
