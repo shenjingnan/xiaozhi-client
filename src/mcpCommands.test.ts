@@ -170,10 +170,7 @@ describe("mcpCommands", () => {
       await listMcpServers({ tools: true });
 
       expect(mockConsoleLog).toHaveBeenCalledWith(
-        expect.stringContaining("(无工具)")
-      );
-      expect(mockConsoleLog).toHaveBeenCalledWith(
-        expect.stringContaining("请先启动服务扫描工具")
+        expect.stringContaining("暂未识别到相关工具")
       );
     });
 
@@ -679,9 +676,9 @@ describe("mcpCommands", () => {
       expect(mockConsoleLog).toHaveBeenCalledWith(
         expect.stringContaining("MCP 服务工具列表:")
       );
-      // 表格输出应该为没有工具的服务显示"(无工具)"
+      // 表格输出应该为没有工具的服务显示"暂未识别到相关工具"
       expect(mockConsoleLog).toHaveBeenCalledWith(
-        expect.stringMatching(/\(无工具\)/)
+        expect.stringMatching(/暂未识别到相关工具/)
       );
     });
 

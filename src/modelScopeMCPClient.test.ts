@@ -43,6 +43,9 @@ vi.mock("./configManager", async () => {
     ...actual,
     configManager: {
       getModelScopeApiKey: vi.fn().mockReturnValue("test-token"),
+      isToolEnabled: vi.fn().mockReturnValue(true),
+      getServerToolsConfig: vi.fn().mockReturnValue({}),
+      updateServerToolsConfig: vi.fn(),
     },
   };
 });
@@ -63,6 +66,11 @@ describe("ModelScopeMCPClient", () => {
 
     // 重置 mock
     vi.mocked(configManager.getModelScopeApiKey).mockReturnValue("test-token");
+    vi.mocked(configManager.isToolEnabled).mockReturnValue(true);
+    vi.mocked(configManager.getServerToolsConfig).mockReturnValue({});
+    vi.mocked(configManager.updateServerToolsConfig).mockImplementation(
+      () => {}
+    );
 
     client = new ModelScopeMCPClient("test-server", testConfig);
   });
@@ -236,7 +244,7 @@ describe("ModelScopeMCPClient", () => {
       await client.start();
     });
 
-    it("应该刷新工具列表", async () => {
+    it("应该刷新工具列表并更新配置", async () => {
       const { Client } = await import(
         "@modelcontextprotocol/sdk/client/index.js"
       );
@@ -256,6 +264,19 @@ describe("ModelScopeMCPClient", () => {
 
       expect(client.tools).toHaveLength(1);
       expect(client.tools[0].name).toBe("test_server_xzcli_new-tool");
+      expect(client.originalTools).toHaveLength(1);
+      expect(client.originalTools[0].name).toBe("new-tool");
+
+      // 验证配置更新被调用
+      expect(configManager.updateServerToolsConfig).toHaveBeenCalledWith(
+        "test-server",
+        {
+          "new-tool": {
+            description: "A new tool",
+            enable: true,
+          },
+        }
+      );
     });
 
     it("应该处理刷新工具失败的情况", async () => {
@@ -318,6 +339,186 @@ describe("ModelScopeMCPClient", () => {
       // 不应该抛出错误
       await expect(client.stop()).resolves.not.toThrow();
       expect(client.initialized).toBe(false);
+    });
+  });
+
+  describe("filterEnabledTools", () => {
+    beforeEach(async () => {
+      // 重置 mock
+      vi.clearAllMocks();
+      const { Client } = await import(
+        "@modelcontextprotocol/sdk/client/index.js"
+      );
+      (Client as any).mockImplementation(() => ({
+        connect: vi.fn().mockResolvedValue(undefined),
+        close: vi.fn().mockResolvedValue(undefined),
+        listTools: vi.fn().mockResolvedValue({
+          tools: [
+            {
+              name: "enabled-tool",
+              description: "An enabled tool",
+            },
+            {
+              name: "disabled-tool",
+              description: "A disabled tool",
+            },
+          ],
+        }),
+        callTool: vi.fn().mockResolvedValue({
+          content: [{ type: "text", text: "Tool result" }],
+        }),
+      }));
+
+      // 重新创建客户端并启动
+      client = new ModelScopeMCPClient("test-server", testConfig);
+      await client.start();
+    });
+
+    it("应该过滤出启用的工具", async () => {
+      // 设置 mock：enabled-tool 启用，disabled-tool 禁用
+      vi.mocked(configManager.isToolEnabled).mockImplementation(
+        (serverName: string, toolName: string) => {
+          return toolName === "enabled-tool";
+        }
+      );
+
+      await client.refreshTools();
+
+      expect(client.tools).toHaveLength(1);
+      expect(client.tools[0].name).toBe("test_server_xzcli_enabled-tool");
+      expect(client.originalTools).toHaveLength(2); // 原始工具列表不变
+    });
+
+    it("应该在无法解析工具名称时默认启用工具", async () => {
+      // 创建一个无效前缀的工具
+      const invalidPrefixedTool = {
+        name: "invalid_prefix_tool",
+        description: "Invalid prefixed tool",
+      };
+
+      // 直接调用 filterEnabledTools 方法
+      const result = (client as any).filterEnabledTools([invalidPrefixedTool]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual(invalidPrefixedTool);
+    });
+  });
+
+  describe("updateToolsConfig", () => {
+    beforeEach(async () => {
+      // 重置 mock
+      vi.clearAllMocks();
+      const { Client } = await import(
+        "@modelcontextprotocol/sdk/client/index.js"
+      );
+      (Client as any).mockImplementation(() => ({
+        connect: vi.fn().mockResolvedValue(undefined),
+        close: vi.fn().mockResolvedValue(undefined),
+        listTools: vi.fn().mockResolvedValue({
+          tools: [
+            {
+              name: "tool1",
+              description: "First tool",
+            },
+            {
+              name: "tool2",
+              description: "Second tool",
+            },
+          ],
+        }),
+        callTool: vi.fn().mockResolvedValue({
+          content: [{ type: "text", text: "Tool result" }],
+        }),
+      }));
+
+      // 重新创建客户端并启动
+      client = new ModelScopeMCPClient("test-server", testConfig);
+      await client.start();
+    });
+
+    it("应该更新工具配置", async () => {
+      // 设置现有配置为空
+      vi.mocked(configManager.getServerToolsConfig).mockReturnValue({});
+
+      await client.refreshTools();
+
+      expect(configManager.updateServerToolsConfig).toHaveBeenCalledWith(
+        "test-server",
+        {
+          tool1: {
+            description: "First tool",
+            enable: true,
+          },
+          tool2: {
+            description: "Second tool",
+            enable: true,
+          },
+        }
+      );
+    });
+
+    it("应该保留现有工具的启用状态", async () => {
+      // 设置现有配置
+      vi.mocked(configManager.getServerToolsConfig).mockReturnValue({
+        tool1: {
+          description: "Old description",
+          enable: false, // 已禁用
+        },
+      });
+
+      await client.refreshTools();
+
+      expect(configManager.updateServerToolsConfig).toHaveBeenCalledWith(
+        "test-server",
+        {
+          tool1: {
+            description: "First tool", // 描述会更新
+            enable: false, // 启用状态保持不变
+          },
+          tool2: {
+            description: "Second tool",
+            enable: true, // 新工具默认启用
+          },
+        }
+      );
+    });
+
+    it("应该在没有配置变化时跳过更新", async () => {
+      // 先调用一次 refreshTools 来建立初始配置
+      await client.refreshTools();
+
+      // 清除之前的调用记录
+      vi.mocked(configManager.updateServerToolsConfig).mockClear();
+
+      // 设置现有配置与新配置相同
+      vi.mocked(configManager.getServerToolsConfig).mockReturnValue({
+        tool1: {
+          description: "First tool",
+          enable: true,
+        },
+        tool2: {
+          description: "Second tool",
+          enable: true,
+        },
+      });
+
+      // 再次调用 refreshTools
+      await client.refreshTools();
+
+      // 应该不会调用更新方法
+      expect(configManager.updateServerToolsConfig).not.toHaveBeenCalled();
+    });
+
+    it("应该处理更新配置时的错误", async () => {
+      // 设置更新方法抛出错误
+      vi.mocked(configManager.updateServerToolsConfig).mockImplementation(
+        () => {
+          throw new Error("Update failed");
+        }
+      );
+
+      // 不应该抛出错误，应该被捕获并记录
+      await expect(client.refreshTools()).resolves.not.toThrow();
     });
   });
 });

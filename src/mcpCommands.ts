@@ -137,9 +137,9 @@ export async function listMcpServers(
           // 服务没有工具时显示提示信息
           table.push([
             chalk.gray(serverName),
-            chalk.gray("(无工具)"),
             chalk.gray("-"),
-            chalk.gray("请先启动服务扫描工具"),
+            chalk.gray("-"),
+            chalk.gray("暂未识别到相关工具"),
           ]);
         } else {
           // 添加服务分隔行
