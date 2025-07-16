@@ -139,7 +139,7 @@ export class ModelScopeMCPClient implements IMCPClient {
       const result = await this.client.listTools();
       this.originalTools = result.tools || [];
 
-      // 为每个工具生成带前缀的名称，并应用过滤
+      // 为每个工具生成带前缀的名称
       const allPrefixedTools = this.originalTools.map((tool) => ({
         ...tool,
         name: this.generatePrefixedToolName(tool.name),
