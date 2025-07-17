@@ -40,6 +40,22 @@ vi.mock("./modelScopeMCPClient", () => ({
   })),
 }));
 
+// Mock SSEMCPClient
+vi.mock("./sseMCPClient", () => ({
+  SSEMCPClient: vi.fn().mockImplementation((name, config) => ({
+    name,
+    config,
+    initialized: false,
+    tools: [],
+    originalTools: [],
+    start: vi.fn().mockResolvedValue(undefined),
+    stop: vi.fn().mockResolvedValue(undefined),
+    refreshTools: vi.fn().mockResolvedValue(undefined),
+    callTool: vi.fn().mockResolvedValue({ result: "mocked" }),
+    getOriginalToolName: vi.fn().mockReturnValue("original-tool"),
+  })),
+}));
+
 // Mock StreamableHTTPMCPClient
 vi.mock("./streamableHttpMCPClient", () => ({
   StreamableHTTPMCPClient: vi.fn().mockImplementation((name, config) => ({
@@ -65,6 +81,7 @@ import {
   loadMCPConfig,
 } from "./mcpServerProxy";
 import { ModelScopeMCPClient } from "./modelScopeMCPClient";
+import { SSEMCPClient } from "./sseMCPClient";
 import { StreamableHTTPMCPClient } from "./streamableHttpMCPClient";
 
 // Mock child process
@@ -699,7 +716,7 @@ describe("MCP服务器代理", () => {
       );
     });
 
-    it("应该为SSE类型的服务创建ModelScopeMCPClient", async () => {
+    it("应该为SSE类型的服务创建SSEMCPClient", async () => {
       mockConfigManager.getMcpServers.mockReturnValue({
         "sse-server": {
           type: "sse",
@@ -710,10 +727,11 @@ describe("MCP服务器代理", () => {
       const proxy = new MCPServerProxy();
       await proxy.start();
 
-      expect(MockModelScopeMCPClient).toHaveBeenCalledWith("sse-server", {
+      expect(SSEMCPClient).toHaveBeenCalledWith("sse-server", {
         type: "sse",
         url: "https://example.com/sse",
       });
+      expect(ModelScopeMCPClient).not.toHaveBeenCalled();
     });
 
     it("应该为以/sse结尾的URL创建SSE客户端", async () => {
@@ -726,9 +744,10 @@ describe("MCP服务器代理", () => {
       const proxy = new MCPServerProxy();
       await proxy.start();
 
-      expect(MockModelScopeMCPClient).toHaveBeenCalledWith("auto-sse-server", {
+      expect(SSEMCPClient).toHaveBeenCalledWith("auto-sse-server", {
         url: "https://example.com/api/sse",
       });
+      expect(ModelScopeMCPClient).not.toHaveBeenCalled();
     });
 
     it("应该为modelscope.net域名创建SSE客户端（向后兼容）", async () => {
@@ -1082,6 +1101,130 @@ describe("MCP服务器代理", () => {
         { input: "test" }
       );
       expect(result).toEqual({ result: "success" });
+    });
+  });
+
+  describe("SSE 服务识别逻辑", () => {
+    it("应该识别显式指定 type: 'sse' 的服务", async () => {
+      mockConfigManager.configExists.mockReturnValue(true);
+      mockConfigManager.getMcpServers.mockReturnValue({
+        "explicit-sse": {
+          type: "sse",
+          url: "https://example.com/api",
+        },
+      });
+
+      const proxy = new MCPServerProxy();
+      await proxy.start();
+
+      expect(ModelScopeMCPClient).not.toHaveBeenCalled();
+      expect(SSEMCPClient).toHaveBeenCalledWith("explicit-sse", {
+        type: "sse",
+        url: "https://example.com/api",
+      });
+    });
+
+    it("应该识别 URL 路径以 /sse 结尾的服务（带查询参数）", async () => {
+      mockConfigManager.configExists.mockReturnValue(true);
+      mockConfigManager.getMcpServers.mockReturnValue({
+        "amap-sse": {
+          url: "https://mcp.amap.com/sse?key=123456",
+        },
+      });
+
+      const proxy = new MCPServerProxy();
+      await proxy.start();
+
+      expect(SSEMCPClient).toHaveBeenCalledWith("amap-sse", {
+        url: "https://mcp.amap.com/sse?key=123456",
+      });
+      expect(StreamableHTTPMCPClient).not.toHaveBeenCalled();
+    });
+
+    it("应该识别 URL 路径以 /sse 结尾的服务（无查询参数）", async () => {
+      mockConfigManager.configExists.mockReturnValue(true);
+      mockConfigManager.getMcpServers.mockReturnValue({
+        "simple-sse": {
+          url: "https://example.com/api/sse",
+        },
+      });
+
+      const proxy = new MCPServerProxy();
+      await proxy.start();
+
+      expect(SSEMCPClient).toHaveBeenCalledWith("simple-sse", {
+        url: "https://example.com/api/sse",
+      });
+      expect(StreamableHTTPMCPClient).not.toHaveBeenCalled();
+    });
+
+    it("应该将 ModelScope 域名的 SSE 服务识别为 ModelScope 客户端", async () => {
+      mockConfigManager.configExists.mockReturnValue(true);
+      mockConfigManager.getMcpServers.mockReturnValue({
+        "modelscope-sse": {
+          url: "https://mcp.api-inference.modelscope.net/test/sse",
+        },
+      });
+
+      const proxy = new MCPServerProxy();
+      await proxy.start();
+
+      expect(ModelScopeMCPClient).toHaveBeenCalledWith("modelscope-sse", {
+        url: "https://mcp.api-inference.modelscope.net/test/sse",
+      });
+      expect(SSEMCPClient).not.toHaveBeenCalled();
+    });
+
+    it("应该将非 SSE URL 识别为 Streamable HTTP 服务", async () => {
+      mockConfigManager.configExists.mockReturnValue(true);
+      mockConfigManager.getMcpServers.mockReturnValue({
+        "http-service": {
+          url: "https://example.com/api/mcp",
+        },
+      });
+
+      const proxy = new MCPServerProxy();
+      await proxy.start();
+
+      expect(StreamableHTTPMCPClient).toHaveBeenCalledWith("http-service", {
+        url: "https://example.com/api/mcp",
+      });
+      expect(SSEMCPClient).not.toHaveBeenCalled();
+      expect(ModelScopeMCPClient).not.toHaveBeenCalled();
+    });
+
+    it("应该处理无效 URL 格式", async () => {
+      mockConfigManager.configExists.mockReturnValue(true);
+      mockConfigManager.getMcpServers.mockReturnValue({
+        "invalid-url": {
+          url: "invalid-url-format/sse",
+        },
+      });
+
+      const proxy = new MCPServerProxy();
+      await proxy.start();
+
+      // 应该回退到简单的字符串匹配，识别为 SSE
+      expect(SSEMCPClient).toHaveBeenCalledWith("invalid-url", {
+        url: "invalid-url-format/sse",
+      });
+    });
+
+    it("应该处理复杂的 URL 路径", async () => {
+      mockConfigManager.configExists.mockReturnValue(true);
+      mockConfigManager.getMcpServers.mockReturnValue({
+        "complex-sse": {
+          url: "https://api.example.com/v1/mcp/sse?token=abc&format=json",
+        },
+      });
+
+      const proxy = new MCPServerProxy();
+      await proxy.start();
+
+      expect(SSEMCPClient).toHaveBeenCalledWith("complex-sse", {
+        url: "https://api.example.com/v1/mcp/sse?token=abc&format=json",
+      });
+      expect(StreamableHTTPMCPClient).not.toHaveBeenCalled();
     });
   });
 });

@@ -20,7 +20,7 @@ export interface LocalMCPServerConfig {
   env?: Record<string, string>;
 }
 
-// ModelScope SSE MCP 服务配置
+// SSE MCP 服务配置
 export interface SSEMCPServerConfig {
   type: "sse";
   url: string;
