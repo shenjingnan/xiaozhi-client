@@ -21,6 +21,7 @@ import {
 } from "./configManager";
 import { logger as globalLogger } from "./logger";
 import { ModelScopeMCPClient } from "./modelScopeMCPClient";
+import { SSEMCPClient } from "./sseMCPClient";
 import { StreamableHTTPMCPClient } from "./streamableHttpMCPClient";
 
 // ESM 兼容的 __dirname
@@ -571,17 +572,34 @@ export class MCPServerProxy {
         const isSSE =
           // 1. 显式指定 type: "sse"
           ("type" in serverConfig && serverConfig.type === "sse") ||
-          // 2. URL 以 /sse 结尾
-          url.endsWith("/sse") ||
+          // 2. URL 路径以 /sse 结尾（忽略查询参数）
+          (() => {
+            try {
+              const urlObj = new URL(url);
+              return urlObj.pathname.endsWith("/sse");
+            } catch {
+              // 如果 URL 解析失败，回退到简单的字符串匹配
+              return url.includes("/sse");
+            }
+          })() ||
           // 3. 域名包含 modelscope.net（向后兼容魔搭社区）
           url.includes("modelscope.net");
 
         if (isSSE) {
-          // SSE MCP 服务
-          client = new ModelScopeMCPClient(
-            serverName,
-            serverConfig as SSEMCPServerConfig
-          );
+          // SSE MCP 服务 - 区分 ModelScope 和通用 SSE
+          if (url.includes("modelscope.net")) {
+            // ModelScope SSE 服务（需要特殊认证）
+            client = new ModelScopeMCPClient(
+              serverName,
+              serverConfig as SSEMCPServerConfig
+            );
+          } else {
+            // 通用 SSE 服务（如高德地图等）
+            client = new SSEMCPClient(
+              serverName,
+              serverConfig as SSEMCPServerConfig
+            );
+          }
         } else {
           // Streamable HTTP MCP 服务
           client = new StreamableHTTPMCPClient(
