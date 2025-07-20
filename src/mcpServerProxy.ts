@@ -30,11 +30,12 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // 为 MCPProxy 创建带标签的 logger
 const logger = globalLogger.withTag("MCPProxy");
 
-// 如果在守护进程模式下运行，初始化日志文件
-if (process.env.XIAOZHI_DAEMON === "true" && process.env.XIAOZHI_CONFIG_DIR) {
-  globalLogger.initLogFile(process.env.XIAOZHI_CONFIG_DIR);
-  globalLogger.enableFileLogging(true);
-}
+// 初始化日志文件
+// 优先使用配置目录，如果没有则使用当前工作目录
+const logDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();
+globalLogger.initLogFile(logDir);
+globalLogger.enableFileLogging(true);
+logger.info(`日志文件已初始化: ${logDir}/xiaozhi.log`);
 
 // Type definitions
 
@@ -449,6 +450,8 @@ export class MCPClient implements IMCPClient {
   }
 
   async callTool(prefixedName: string, arguments_: any): Promise<any> {
+    const startTime = Date.now();
+    
     try {
       // 将前缀名称转换回原始名称
       const originalName = this.getOriginalToolName(prefixedName);
@@ -456,18 +459,36 @@ export class MCPClient implements IMCPClient {
         throw new Error(`无效的工具名称格式：${prefixedName}`);
       }
 
+      // 记录MCP客户端级别的工具调用请求
+      logger.info(`[MCP客户端 ${this.name}] 工具调用开始`);
+      logger.info(`[MCP客户端 ${this.name}] 工具名称: ${originalName} (前缀: ${prefixedName})`);
+      logger.info(`[MCP客户端 ${this.name}] 请求参数: ${JSON.stringify(arguments_, null, 2)}`);
+
       const result = await this.sendRequest("tools/call", {
         name: originalName,
         arguments: arguments_,
       });
+      
+      const duration = Date.now() - startTime;
+      
+      // 记录MCP客户端级别的工具调用结果
+      logger.info(`[MCP客户端 ${this.name}] 工具调用成功`);
+      logger.info(`[MCP客户端 ${this.name}] 工具名称: ${originalName}`);
+      logger.info(`[MCP客户端 ${this.name}] 执行耗时: ${duration}ms`);
+      logger.info(`[MCP客户端 ${this.name}] 完整结果: ${JSON.stringify(result, null, 2)}`);
+      
       return result;
     } catch (error) {
+      const duration = Date.now() - startTime;
+      
       logger.error(
-        `在 ${
-          this.name
-        } 上调用工具 ${prefixedName} (原始名称：${this.getOriginalToolName(
-          prefixedName
-        )}) 失败：${error instanceof Error ? error.message : String(error)}`
+        `[MCP客户端 ${this.name}] 工具调用失败` +
+        `工具: ${prefixedName} -> ${this.getOriginalToolName(prefixedName) || '未知'}` +
+        `耗时: ${duration}ms` +
+        `错误: ${error instanceof Error ? error.message : String(error)}`
+      );
+      logger.error(
+        `[MCP客户端 ${this.name}] 错误堆栈: ${error instanceof Error ? error.stack : '无堆栈信息'}`
       );
       throw error;
     }
@@ -763,7 +784,9 @@ export class MCPServerProxy {
   }
 
   async callTool(toolName: string, arguments_: any): Promise<any> {
+    const startTime = Date.now();
     const clientName = this.toolMap.get(toolName);
+    
     if (!clientName) {
       throw new Error(`未知的工具：${toolName}`);
     }
@@ -773,7 +796,35 @@ export class MCPServerProxy {
       throw new Error(`客户端 ${clientName} 不可用`);
     }
 
-    return await client.callTool(toolName, arguments_);
+    // 记录在代理层的工具调用请求
+    logger.info(`[代理层] 工具调用开始`);
+    logger.info(`[代理层] 工具名称: ${toolName}`);
+    logger.info(`[代理层] 所属客户端: ${clientName}`);
+    logger.info(`[代理层] 请求参数: ${JSON.stringify(arguments_, null, 2)}`);
+
+    try {
+      const result = await client.callTool(toolName, arguments_);
+      const duration = Date.now() - startTime;
+
+      // 记录在代理层的工具调用结果
+      logger.info(`[代理层] 工具调用成功`);
+      logger.info(`[代理层] 工具名称: ${toolName}`);
+      logger.info(`[代理层] 所属客户端: ${clientName}`);
+      logger.info(`[代理层] 执行耗时: ${duration}ms`);
+      logger.info(`[代理层] 完整结果: ${JSON.stringify(result, null, 2)}`);
+
+      return result;
+    } catch (error) {
+      const duration = Date.now() - startTime;
+
+      logger.error(`[代理层] 工具调用失败`);
+      logger.error(`[代理层] 工具名称: ${toolName}`);
+      logger.error(`[代理层] 所属客户端: ${clientName}`);
+      logger.error(`[代理层] 执行耗时: ${duration}ms`);
+      logger.error(`[代理层] 错误信息: ${error instanceof Error ? error.message : String(error)}`);
+
+      throw error;
+    }
   }
 
   stop() {
@@ -922,20 +973,45 @@ export class JSONRPCServer {
 
   async handleToolsCall(params: any): Promise<any> {
     const { name, arguments: args } = params;
+    const startTime = Date.now();
 
     if (!name) {
       throw new Error("工具名称是必需的");
     }
 
-    logger.info(`调用工具：${name}，参数：${JSON.stringify(args)}`);
+    // 记录完整的工具调用请求
+    logger.info(`=== 工具调用开始 ===`);
+    logger.info(`工具名称: ${name}`);
+    logger.info(`请求参数: ${JSON.stringify(args, null, 2)}`);
+    logger.info(`调用时间: ${new Date().toISOString()}`);
 
-    const result = await this.proxy.callTool(name, args || {});
+    try {
+      const result = await this.proxy.callTool(name, args || {});
+      const duration = Date.now() - startTime;
 
-    // 添加调试日志
-    logger.info(`工具调用结果类型: ${typeof result}`);
-    logger.info(`工具调用结果: ${JSON.stringify(result).substring(0, 500)}...`);
+      // 记录完整的工具调用结果
+      logger.info(`=== 工具调用成功 ===`);
+      logger.info(`工具名称: ${name}`);
+      logger.info(`执行耗时: ${duration}ms`);
+      logger.info(`完整结果: ${JSON.stringify(result, null, 2)}`);
+      logger.info(`结果类型: ${typeof result}`);
+      if (result && typeof result === 'object') {
+        logger.info(`结果长度: ${Array.isArray(result) ? result.length : Object.keys(result).length} 项`);
+      }
 
-    return result;
+      return result;
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      
+      // 记录工具调用错误
+      logger.error(`=== 工具调用失败 ===`);
+      logger.error(`工具名称: ${name}`);
+      logger.error(`执行耗时: ${duration}ms`);
+      logger.error(`错误信息: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(`错误堆栈: ${error instanceof Error ? error.stack : '无堆栈信息'}`);
+      
+      throw error;
+    }
   }
 
   async handlePing(_params: any): Promise<any> {
