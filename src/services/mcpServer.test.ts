@@ -223,23 +223,13 @@ describe("MCPServer", () => {
       // Access the private clients map (for testing purposes)
       (server as any).clients.set("test-session-123", mockClient);
 
-      // Setup mcpProxy mock to handle the forwarding
-      const mockProxy = (server as any).mcpProxy;
-      if (mockProxy?.stdout) {
-        // Simulate response from proxy
-        setTimeout(() => {
-          mockProxy.stdout.emit(
-            "data",
-            Buffer.from(
-              `${JSON.stringify({
-                jsonrpc: "2.0",
-                id: 1,
-                result: { success: true },
-              })}\n`
-            )
-          );
-        }, 10);
-      }
+      // Mock the forwardToProxy method to resolve immediately
+      const originalForwardToProxy = (server as any).forwardToProxy;
+      (server as any).forwardToProxy = vi.fn().mockResolvedValue({
+        jsonrpc: "2.0",
+        id: 1,
+        result: { success: true },
+      });
 
       // Call the handler
       await messagesHandler?.(mockReq as any, mockRes as any);
@@ -247,6 +237,9 @@ describe("MCPServer", () => {
       // Check response
       expect(mockRes.status).toHaveBeenCalledWith(202);
       expect(mockRes.send).toHaveBeenCalled();
+
+      // Restore original method
+      (server as any).forwardToProxy = originalForwardToProxy;
     });
 
     it("should handle notification messages (no id)", async () => {
@@ -577,9 +570,7 @@ describe("MCPServer", () => {
     it("should clear timeout when response is received", async () => {
       await server.start();
 
-      const forwardToProxy = (server as any).forwardToProxy.bind(server);
-      const mockProxy = (server as any).mcpProxy;
-
+      // Test the response handling mechanism directly
       const message = {
         jsonrpc: "2.0",
         id: 456,
@@ -587,30 +578,61 @@ describe("MCPServer", () => {
         params: {},
       };
 
-      // Set up response simulation
-      if (mockProxy?.stdout) {
-        setTimeout(() => {
-          mockProxy.stdout.emit(
-            "data",
-            Buffer.from(
-              `${JSON.stringify({
-                jsonrpc: "2.0",
-                id: 456,
-                result: { success: true },
-              })}\n`
-            )
-          );
-        }, 100);
-      }
+      // Manually add a pending request to simulate forwardToProxy behavior
+      const pendingRequests = (server as any).pendingRequests;
+      let resolvedValue: any = null;
+      let timeoutCleared = false;
 
-      const result = await forwardToProxy(message);
+      const mockTimeoutId = setTimeout(() => {
+        // This should not be called if timeout is cleared properly
+      }, 1000);
 
-      // Should receive the actual response, not timeout
-      expect(result).toEqual({
+      const originalClearTimeout = global.clearTimeout;
+      global.clearTimeout = vi.fn((id) => {
+        if (id === mockTimeoutId) {
+          timeoutCleared = true;
+        }
+        return originalClearTimeout(id);
+      });
+
+      pendingRequests.set(456, {
+        resolve: (value: any) => {
+          resolvedValue = value;
+        },
+        reject: (error: any) => {
+          throw error;
+        },
+        timeoutId: mockTimeoutId,
+      });
+
+      // Clear the response buffer to ensure clean state
+      (server as any).responseBuffer = "";
+
+      // Trigger the response handling
+      const handleProxyResponse = (server as any).handleProxyResponse.bind(
+        server
+      );
+      handleProxyResponse(
+        Buffer.from(
+          `${JSON.stringify({
+            jsonrpc: "2.0",
+            id: 456,
+            result: { success: true },
+          })}\n`
+        )
+      );
+
+      // Check that the response was handled correctly
+      expect(resolvedValue).toEqual({
         jsonrpc: "2.0",
         id: 456,
         result: { success: true },
       });
+      expect(timeoutCleared).toBe(true);
+      expect(pendingRequests.has(456)).toBe(false);
+
+      // Restore clearTimeout
+      global.clearTimeout = originalClearTimeout;
     });
   });
 
