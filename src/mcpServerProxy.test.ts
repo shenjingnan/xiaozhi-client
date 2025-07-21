@@ -10,7 +10,22 @@ vi.mock("node:child_process", () => ({
 
 // Mock fs
 vi.mock("node:fs", () => ({
+  default: {
+    readFileSync: vi.fn(),
+    existsSync: vi.fn().mockReturnValue(true),
+    writeFileSync: vi.fn(),
+    createWriteStream: vi.fn().mockReturnValue({
+      write: vi.fn(),
+      end: vi.fn(),
+    }),
+  },
   readFileSync: vi.fn(),
+  existsSync: vi.fn().mockReturnValue(true),
+  writeFileSync: vi.fn(),
+  createWriteStream: vi.fn().mockReturnValue({
+    write: vi.fn(),
+    end: vi.fn(),
+  }),
 }));
 
 // Mock configManager
@@ -1225,6 +1240,102 @@ describe("MCP服务器代理", () => {
         url: "https://api.example.com/v1/mcp/sse?token=abc&format=json",
       });
       expect(StreamableHTTPMCPClient).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("日志记录功能", () => {
+    it("应该在工具调用时记录详细的输入输出日志", async () => {
+      const proxy = new MCPServerProxy();
+      proxy.initialized = true;
+
+      // 使用 spy 来监控 callTool 方法
+      const callToolSpy = vi
+        .spyOn(proxy, "callTool")
+        .mockResolvedValue({ result: "test result" });
+
+      const server = new JSONRPCServer(proxy);
+
+      const toolsCallRequest = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: {
+          name: "test_client_xzcli_test-tool",
+          arguments: { input: "test input" },
+        },
+      };
+
+      const response = await server.handleRequest(toolsCallRequest);
+
+      // 验证工具调用成功
+      expect(callToolSpy).toHaveBeenCalledWith("test_client_xzcli_test-tool", {
+        input: "test input",
+      });
+      expect(response.result).toEqual({ result: "test result" });
+    });
+
+    it("应该在工具调用失败时记录错误日志", async () => {
+      const proxy = new MCPServerProxy();
+      proxy.initialized = true;
+
+      // 使用 spy 来监控 callTool 方法，让它抛出错误
+      const callToolSpy = vi
+        .spyOn(proxy, "callTool")
+        .mockRejectedValue(new Error("Tool execution failed"));
+
+      const server = new JSONRPCServer(proxy);
+
+      const toolsCallRequest = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: {
+          name: "test_client_xzcli_test-tool",
+          arguments: { input: "test input" },
+        },
+      };
+
+      const response = await server.handleRequest(toolsCallRequest);
+
+      // 验证返回了错误响应
+      expect(response.error).toBeDefined();
+      expect(response.error.message).toContain("Tool execution failed");
+      expect(callToolSpy).toHaveBeenCalledWith("test_client_xzcli_test-tool", {
+        input: "test input",
+      });
+    });
+
+    it("应该记录工具调用的执行时间", async () => {
+      const proxy = new MCPServerProxy();
+      proxy.initialized = true;
+
+      // 使用 spy 来监控 callTool 方法，模拟延迟
+      const callToolSpy = vi
+        .spyOn(proxy, "callTool")
+        .mockImplementation(async () => {
+          await new Promise((resolve) => setTimeout(resolve, 10));
+          return { result: "delayed result" };
+        });
+
+      const server = new JSONRPCServer(proxy);
+
+      const toolsCallRequest = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: {
+          name: "test_client_xzcli_test-tool",
+          arguments: { input: "test input" },
+        },
+      };
+
+      const response = await server.handleRequest(toolsCallRequest);
+
+      // 验证工具调用成功
+      expect(response.result).toEqual({ result: "delayed result" });
+      expect(callToolSpy).toHaveBeenCalledWith("test_client_xzcli_test-tool", {
+        input: "test input",
+      });
     });
   });
 });
