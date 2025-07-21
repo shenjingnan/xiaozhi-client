@@ -1,3 +1,25 @@
+# [1.5.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.4.0...v1.5.0) (2025-07-21)
+
+
+### Bug Fixes
+
+* **cli:** 支持多实例并行运行 ([#98](https://github.com/shenjingnan/xiaozhi-client/issues/98)) ([67ed498](https://github.com/shenjingnan/xiaozhi-client/commit/67ed498ddabf959d587e07cb5a8009920cb15075))
+* **mcp:** 优化错误重试机制和连接稳定性 ([#102](https://github.com/shenjingnan/xiaozhi-client/issues/102)) ([e49ff2f](https://github.com/shenjingnan/xiaozhi-client/commit/e49ff2f93d741c22127b2d4d479946180b8ef25c))
+* **mcp:** 修复 Streamable HTTP MCP 服务工具列表不显示的问题 ([#107](https://github.com/shenjingnan/xiaozhi-client/issues/107)) ([0b54456](https://github.com/shenjingnan/xiaozhi-client/commit/0b54456d8e0551a40bcef783b0861c7e1a1d4bec))
+* **mcp:** 修复SSE传输中GetLiveContext工具响应超时问题 ([#119](https://github.com/shenjingnan/xiaozhi-client/issues/119)) ([68c34cf](https://github.com/shenjingnan/xiaozhi-client/commit/68c34cfa175746397121f6530c00acc7efd0e313))
+* **mcp:** 修复远端MCP服务工具配置不写入配置文件的问题 ([#106](https://github.com/shenjingnan/xiaozhi-client/issues/106)) ([d87ce90](https://github.com/shenjingnan/xiaozhi-client/commit/d87ce90975a1bfb6120b11b074d51e9251ba1bf6))
+* 修复windows中使用ui命令报错 ([#105](https://github.com/shenjingnan/xiaozhi-client/issues/105)) ([aefd777](https://github.com/shenjingnan/xiaozhi-client/commit/aefd777bfb6c33f12e90a151e291ab383a6e5cbf))
+
+
+### Features
+
+* **logging:** 增强工具调用日志记录功能 ([#117](https://github.com/shenjingnan/xiaozhi-client/issues/117)) ([4124721](https://github.com/shenjingnan/xiaozhi-client/commit/41247212e63dcb9ee1c55e0cacc7cd08638489b6))
+* **mcp:** 支持多 MCP 端点配置和独立进程架构 ([#97](https://github.com/shenjingnan/xiaozhi-client/issues/97)) ([40f2dfd](https://github.com/shenjingnan/xiaozhi-client/commit/40f2dfdc9628c2c74faaef3ccb43d4839945ac7d))
+* **mcp:** 添加 MCP Server 模式支持，允许作为标准 MCP Server 被 Cursor 等客户端使用 ([#96](https://github.com/shenjingnan/xiaozhi-client/issues/96)) ([c091a12](https://github.com/shenjingnan/xiaozhi-client/commit/c091a122334090c58c9db430eeeab13d14b89686))
+* **mcp:** 添加 SSE 方式通信的 MCP 服务支持 ([#112](https://github.com/shenjingnan/xiaozhi-client/issues/112)) ([4c88a17](https://github.com/shenjingnan/xiaozhi-client/commit/4c88a17ec7a45163fbe8c41006e6c43c118bb52a))
+* **mcp:** 添加 Streamable HTTP MCP 客户端支持 ([#99](https://github.com/shenjingnan/xiaozhi-client/issues/99)) ([6b63d89](https://github.com/shenjingnan/xiaozhi-client/commit/6b63d89ffdcb8f95d85cbfc470c9400be48f6aaf))
+* **web:** 添加配置更新后自动重启服务功能 ([#103](https://github.com/shenjingnan/xiaozhi-client/issues/103)) ([fed508b](https://github.com/shenjingnan/xiaozhi-client/commit/fed508b4db52aca966441c32ca43665c5fa16ac8))
+
 # [1.4.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.3.0...v1.4.0) (2025-07-07)
 
 
