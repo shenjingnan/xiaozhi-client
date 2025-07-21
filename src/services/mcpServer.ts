@@ -189,6 +189,13 @@ export class MCPServer extends EventEmitter {
     });
   }
 
+  private responseBuffer = "";
+  private pendingRequests = new Map<number | string, {
+    resolve: (value: any) => void;
+    reject: (error: any) => void;
+    timeoutId: NodeJS.Timeout;
+  }>();
+
   private async forwardToProxy(message: any): Promise<any> {
     return new Promise((resolve, reject) => {
       if (!this.mcpProxy || !this.mcpProxy.stdin || !this.mcpProxy.stdout) {
@@ -196,55 +203,13 @@ export class MCPServer extends EventEmitter {
         return;
       }
 
-      // biome-ignore lint/style/useConst: timeoutId is assigned in the setTimeout callback
-      let timeoutId: NodeJS.Timeout | undefined;
-
-      const messageHandler = (data: Buffer) => {
-        try {
-          const lines = data
-            .toString()
-            .split("\n")
-            .filter((line) => line.trim());
-          for (const line of lines) {
-            try {
-              const response = JSON.parse(line);
-              logger.debug(`Received response from proxy: ${line}`);
-              // Check if this is a response to our request
-              // Notifications don't have id, so we also check for matching method
-              if (
-                response.id === message.id ||
-                (message.method === "notifications/initialized" && !response.id)
-              ) {
-                if (timeoutId) clearTimeout(timeoutId);
-                this.mcpProxy?.stdout?.removeListener("data", messageHandler);
-                resolve(response);
-                return;
-              }
-            } catch (e) {
-              // Skip invalid JSON lines
-              logger.debug(`Non-JSON line from proxy: ${line}`);
-            }
-          }
-        } catch (error) {
-          if (timeoutId) clearTimeout(timeoutId);
-          reject(error);
-        }
-      };
-
-      this.mcpProxy.stdout.on("data", messageHandler);
-
-      // Log the message being sent
-      logger.info(`Forwarding message to proxy: ${JSON.stringify(message)}`);
-      this.mcpProxy.stdin.write(`${JSON.stringify(message)}\n`);
-
-      // Timeout after 30 seconds
-      timeoutId = setTimeout(() => {
-        this.mcpProxy?.stdout?.removeListener("data", messageHandler);
+      // Set up timeout
+      const timeoutId = setTimeout(() => {
+        this.pendingRequests.delete(message.id);
         logger.warn(
           `Request timeout for message id: ${message.id}, method: ${message.method} - This may be normal if the response was already sent via SSE`
         );
         // Don't reject with error, just resolve with a timeout indicator
-        // This prevents error logs when the response was actually sent successfully
         resolve({
           jsonrpc: "2.0",
           id: message.id,
@@ -254,7 +219,47 @@ export class MCPServer extends EventEmitter {
           },
         });
       }, 30000);
+
+      // Store the pending request
+      this.pendingRequests.set(message.id, { resolve, reject, timeoutId });
+
+      // Log the message being sent
+      logger.info(`Forwarding message to proxy: ${JSON.stringify(message)}`);
+      this.mcpProxy.stdin.write(`${JSON.stringify(message)}\n`);
     });
+  }
+
+  private handleProxyResponse(data: Buffer): void {
+    try {
+      // Accumulate data in buffer
+      this.responseBuffer += data.toString();
+
+      // Process complete lines
+      const lines = this.responseBuffer.split("\n");
+      this.responseBuffer = lines.pop() || ""; // Keep incomplete line in buffer
+
+      for (const line of lines) {
+        if (line.trim()) {
+          try {
+            const response = JSON.parse(line);
+            logger.debug(`Received response from proxy: ${line.substring(0, 200)}...`);
+
+            // Check if this is a response to a pending request
+            if (response.id !== undefined && this.pendingRequests.has(response.id)) {
+              const pendingRequest = this.pendingRequests.get(response.id)!;
+              clearTimeout(pendingRequest.timeoutId);
+              this.pendingRequests.delete(response.id);
+              pendingRequest.resolve(response);
+            }
+          } catch (e) {
+            // Skip invalid JSON lines
+            logger.debug(`Non-JSON line from proxy: ${line}`);
+          }
+        }
+      }
+    } catch (error) {
+      logger.error("Error handling proxy response:", error);
+    }
   }
 
   private sendToClient(client: SSEClient, message: any): void {
@@ -364,6 +369,13 @@ export class MCPServer extends EventEmitter {
           // 将正常的日志信息作为 info 级别输出
           logger.info("MCP proxy output:", message);
         }
+      });
+    }
+
+    // Set up global stdout handler for responses
+    if (this.mcpProxy.stdout) {
+      this.mcpProxy.stdout.on("data", (data: Buffer) => {
+        this.handleProxyResponse(data);
       });
     }
 
