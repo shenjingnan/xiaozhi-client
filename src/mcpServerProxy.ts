@@ -451,7 +451,7 @@ export class MCPClient implements IMCPClient {
 
   async callTool(prefixedName: string, arguments_: any): Promise<any> {
     const startTime = Date.now();
-    
+
     try {
       // 将前缀名称转换回原始名称
       const originalName = this.getOriginalToolName(prefixedName);
@@ -461,34 +461,40 @@ export class MCPClient implements IMCPClient {
 
       // 记录MCP客户端级别的工具调用请求
       logger.info(`[MCP客户端 ${this.name}] 工具调用开始`);
-      logger.info(`[MCP客户端 ${this.name}] 工具名称: ${originalName} (前缀: ${prefixedName})`);
-      logger.info(`[MCP客户端 ${this.name}] 请求参数: ${JSON.stringify(arguments_, null, 2)}`);
+      logger.info(
+        `[MCP客户端 ${this.name}] 工具名称: ${originalName} (前缀: ${prefixedName})`
+      );
+      logger.info(
+        `[MCP客户端 ${this.name}] 请求参数: ${JSON.stringify(arguments_, null, 2)}`
+      );
 
       const result = await this.sendRequest("tools/call", {
         name: originalName,
         arguments: arguments_,
       });
-      
+
       const duration = Date.now() - startTime;
-      
+
       // 记录MCP客户端级别的工具调用结果
       logger.info(`[MCP客户端 ${this.name}] 工具调用成功`);
       logger.info(`[MCP客户端 ${this.name}] 工具名称: ${originalName}`);
       logger.info(`[MCP客户端 ${this.name}] 执行耗时: ${duration}ms`);
-      logger.info(`[MCP客户端 ${this.name}] 完整结果: ${JSON.stringify(result, null, 2)}`);
-      
+      logger.info(
+        `[MCP客户端 ${this.name}] 完整结果: ${JSON.stringify(result, null, 2)}`
+      );
+
       return result;
     } catch (error) {
       const duration = Date.now() - startTime;
-      
+
       logger.error(
         `[MCP客户端 ${this.name}] 工具调用失败` +
-        `工具: ${prefixedName} -> ${this.getOriginalToolName(prefixedName) || '未知'}` +
-        `耗时: ${duration}ms` +
-        `错误: ${error instanceof Error ? error.message : String(error)}`
+          `工具: ${prefixedName} -> ${this.getOriginalToolName(prefixedName) || "未知"}` +
+          `耗时: ${duration}ms` +
+          `错误: ${error instanceof Error ? error.message : String(error)}`
       );
       logger.error(
-        `[MCP客户端 ${this.name}] 错误堆栈: ${error instanceof Error ? error.stack : '无堆栈信息'}`
+        `[MCP客户端 ${this.name}] 错误堆栈: ${error instanceof Error ? error.stack : "无堆栈信息"}`
       );
       throw error;
     }
@@ -786,7 +792,7 @@ export class MCPServerProxy {
   async callTool(toolName: string, arguments_: any): Promise<any> {
     const startTime = Date.now();
     const clientName = this.toolMap.get(toolName);
-    
+
     if (!clientName) {
       throw new Error(`未知的工具：${toolName}`);
     }
@@ -797,7 +803,7 @@ export class MCPServerProxy {
     }
 
     // 记录在代理层的工具调用请求
-    logger.info(`[代理层] 工具调用开始`);
+    logger.info("[代理层] 工具调用开始");
     logger.info(`[代理层] 工具名称: ${toolName}`);
     logger.info(`[代理层] 所属客户端: ${clientName}`);
     logger.info(`[代理层] 请求参数: ${JSON.stringify(arguments_, null, 2)}`);
@@ -807,7 +813,7 @@ export class MCPServerProxy {
       const duration = Date.now() - startTime;
 
       // 记录在代理层的工具调用结果
-      logger.info(`[代理层] 工具调用成功`);
+      logger.info("[代理层] 工具调用成功");
       logger.info(`[代理层] 工具名称: ${toolName}`);
       logger.info(`[代理层] 所属客户端: ${clientName}`);
       logger.info(`[代理层] 执行耗时: ${duration}ms`);
@@ -817,11 +823,13 @@ export class MCPServerProxy {
     } catch (error) {
       const duration = Date.now() - startTime;
 
-      logger.error(`[代理层] 工具调用失败`);
+      logger.error("[代理层] 工具调用失败");
       logger.error(`[代理层] 工具名称: ${toolName}`);
       logger.error(`[代理层] 所属客户端: ${clientName}`);
       logger.error(`[代理层] 执行耗时: ${duration}ms`);
-      logger.error(`[代理层] 错误信息: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(
+        `[代理层] 错误信息: ${error instanceof Error ? error.message : String(error)}`
+      );
 
       throw error;
     }
@@ -980,7 +988,7 @@ export class JSONRPCServer {
     }
 
     // 记录完整的工具调用请求
-    logger.info(`=== 工具调用开始 ===`);
+    logger.info("=== 工具调用开始 ===");
     logger.info(`工具名称: ${name}`);
     logger.info(`请求参数: ${JSON.stringify(args, null, 2)}`);
     logger.info(`调用时间: ${new Date().toISOString()}`);
@@ -990,26 +998,32 @@ export class JSONRPCServer {
       const duration = Date.now() - startTime;
 
       // 记录完整的工具调用结果
-      logger.info(`=== 工具调用成功 ===`);
+      logger.info("=== 工具调用成功 ===");
       logger.info(`工具名称: ${name}`);
       logger.info(`执行耗时: ${duration}ms`);
       logger.info(`完整结果: ${JSON.stringify(result, null, 2)}`);
       logger.info(`结果类型: ${typeof result}`);
-      if (result && typeof result === 'object') {
-        logger.info(`结果长度: ${Array.isArray(result) ? result.length : Object.keys(result).length} 项`);
+      if (result && typeof result === "object") {
+        logger.info(
+          `结果长度: ${Array.isArray(result) ? result.length : Object.keys(result).length} 项`
+        );
       }
 
       return result;
     } catch (error) {
       const duration = Date.now() - startTime;
-      
+
       // 记录工具调用错误
-      logger.error(`=== 工具调用失败 ===`);
+      logger.error("=== 工具调用失败 ===");
       logger.error(`工具名称: ${name}`);
       logger.error(`执行耗时: ${duration}ms`);
-      logger.error(`错误信息: ${error instanceof Error ? error.message : String(error)}`);
-      logger.error(`错误堆栈: ${error instanceof Error ? error.stack : '无堆栈信息'}`);
-      
+      logger.error(
+        `错误信息: ${error instanceof Error ? error.message : String(error)}`
+      );
+      logger.error(
+        `错误堆栈: ${error instanceof Error ? error.stack : "无堆栈信息"}`
+      );
+
       throw error;
     }
   }
