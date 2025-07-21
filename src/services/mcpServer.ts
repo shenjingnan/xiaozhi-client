@@ -190,11 +190,14 @@ export class MCPServer extends EventEmitter {
   }
 
   private responseBuffer = "";
-  private pendingRequests = new Map<number | string, {
-    resolve: (value: any) => void;
-    reject: (error: any) => void;
-    timeoutId: NodeJS.Timeout;
-  }>();
+  private pendingRequests = new Map<
+    number | string,
+    {
+      resolve: (value: any) => void;
+      reject: (error: any) => void;
+      timeoutId: NodeJS.Timeout;
+    }
+  >();
 
   private async forwardToProxy(message: any): Promise<any> {
     return new Promise((resolve, reject) => {
@@ -242,10 +245,15 @@ export class MCPServer extends EventEmitter {
         if (line.trim()) {
           try {
             const response = JSON.parse(line);
-            logger.debug(`Received response from proxy: ${line.substring(0, 200)}...`);
+            logger.debug(
+              `Received response from proxy: ${line.substring(0, 200)}...`
+            );
 
             // Check if this is a response to a pending request
-            if (response.id !== undefined && this.pendingRequests.has(response.id)) {
+            if (
+              response.id !== undefined &&
+              this.pendingRequests.has(response.id)
+            ) {
               const pendingRequest = this.pendingRequests.get(response.id)!;
               clearTimeout(pendingRequest.timeoutId);
               this.pendingRequests.delete(response.id);
