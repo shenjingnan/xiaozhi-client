@@ -39,7 +39,7 @@ describe("WebServer 配置清理功能", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockConfigManager = vi.mocked(configManager);
-    
+
     // 设置默认的 mock 返回值
     mockConfigManager.getConfig.mockReturnValue({
       mcpEndpoint: "wss://test.endpoint",
@@ -65,15 +65,17 @@ describe("WebServer 配置清理功能", () => {
 
     // @ts-ignore - 访问私有方法用于测试
     const webServerInstance = new WebServer(9999);
-    
+
     // @ts-ignore - 调用私有方法用于测试
     webServerInstance.updateConfig(newConfig);
 
     // 验证删除服务的方法被调用
     expect(mockConfigManager.removeMcpServer).toHaveBeenCalledWith("test");
-    
+
     // 验证清理工具配置的方法被调用
-    expect(mockConfigManager.removeServerToolsConfig).toHaveBeenCalledWith("test");
+    expect(mockConfigManager.removeServerToolsConfig).toHaveBeenCalledWith(
+      "test"
+    );
   });
 
   it("应该只清理被删除的服务配置", () => {
@@ -93,16 +95,20 @@ describe("WebServer 配置清理功能", () => {
 
     // @ts-ignore - 访问私有方法用于测试
     const webServerInstance = new WebServer(9999);
-    
+
     // @ts-ignore - 调用私有方法用于测试
     webServerInstance.updateConfig(newConfig);
 
     // 验证只删除了 calculator 服务
-    expect(mockConfigManager.removeMcpServer).toHaveBeenCalledWith("calculator");
+    expect(mockConfigManager.removeMcpServer).toHaveBeenCalledWith(
+      "calculator"
+    );
     expect(mockConfigManager.removeMcpServer).toHaveBeenCalledTimes(1);
-    
+
     // 验证只清理了 calculator 服务的工具配置
-    expect(mockConfigManager.removeServerToolsConfig).toHaveBeenCalledWith("calculator");
+    expect(mockConfigManager.removeServerToolsConfig).toHaveBeenCalledWith(
+      "calculator"
+    );
     expect(mockConfigManager.removeServerToolsConfig).toHaveBeenCalledTimes(1);
   });
 });

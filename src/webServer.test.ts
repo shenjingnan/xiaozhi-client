@@ -22,7 +22,7 @@ vi.mock("./configManager", () => {
     configManager: mockConfigManager,
     ConfigManager: vi.fn(() => mockConfigManager),
   };
-})
+});
 vi.mock("./logger");
 vi.mock("./cli", () => ({
   getServiceStatus: vi.fn(),

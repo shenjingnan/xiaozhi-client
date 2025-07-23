@@ -29,32 +29,33 @@ describe("MCPServerProxy 清理功能", () => {
   it("应该清理已删除的服务对应的工具配置", async () => {
     // 模拟配置
     const currentConfig = {
-      "calculator": {
+      calculator: {
         command: "node",
-        args: ["calculator.js"]
+        args: ["calculator.js"],
       },
-      "datetime": {
+      datetime: {
         command: "node",
-        args: ["datetime.js"]
-      }
+        args: ["datetime.js"],
+      },
     };
 
     const serverToolsConfig = {
-      "calculator": {
+      calculator: {
         tools: {
-          "add": { enable: true, description: "Add two numbers" }
-        }
+          add: { enable: true, description: "Add two numbers" },
+        },
       },
-      "datetime": {
+      datetime: {
         tools: {
-          "get_current_time": { enable: true, description: "Get current time" }
-        }
+          get_current_time: { enable: true, description: "Get current time" },
+        },
       },
-      "weather": {  // 已删除的服务
+      weather: {
+        // 已删除的服务
         tools: {
-          "get_weather": { enable: true, description: "Get weather information" }
-        }
-      }
+          get_weather: { enable: true, description: "Get weather information" },
+        },
+      },
     };
 
     mockConfigManager.getMcpServers.mockReturnValue(currentConfig);
@@ -67,33 +68,35 @@ describe("MCPServerProxy 清理功能", () => {
     await proxy.cleanupRemovedServers();
 
     // 验证是否调用了清理方法
-    expect(mockConfigManager.removeServerToolsConfig).toHaveBeenCalledWith("weather");
+    expect(mockConfigManager.removeServerToolsConfig).toHaveBeenCalledWith(
+      "weather"
+    );
     expect(mockConfigManager.removeServerToolsConfig).toHaveBeenCalledTimes(1);
   });
 
   it("当没有需要清理的服务时不应调用清理方法", async () => {
     const currentConfig = {
-      "calculator": {
+      calculator: {
         command: "node",
-        args: ["calculator.js"]
+        args: ["calculator.js"],
       },
-      "datetime": {
+      datetime: {
         command: "node",
-        args: ["datetime.js"]
-      }
+        args: ["datetime.js"],
+      },
     };
 
     const serverToolsConfig = {
-      "calculator": {
+      calculator: {
         tools: {
-          "add": { enable: true, description: "Add two numbers" }
-        }
+          add: { enable: true, description: "Add two numbers" },
+        },
       },
-      "datetime": {
+      datetime: {
         tools: {
-          "get_current_time": { enable: true, description: "Get current time" }
-        }
-      }
+          get_current_time: { enable: true, description: "Get current time" },
+        },
+      },
     };
 
     mockConfigManager.getMcpServers.mockReturnValue(currentConfig);
@@ -111,23 +114,24 @@ describe("MCPServerProxy 清理功能", () => {
 
   it("应该处理清理过程中的错误", async () => {
     const currentConfig = {
-      "calculator": {
+      calculator: {
         command: "node",
-        args: ["calculator.js"]
-      }
+        args: ["calculator.js"],
+      },
     };
 
     const serverToolsConfig = {
-      "calculator": {
+      calculator: {
         tools: {
-          "add": { enable: true, description: "Add two numbers" }
-        }
+          add: { enable: true, description: "Add two numbers" },
+        },
       },
-      "weather": {  // 已删除的服务
+      weather: {
+        // 已删除的服务
         tools: {
-          "get_weather": { enable: true, description: "Get weather information" }
-        }
-      }
+          get_weather: { enable: true, description: "Get weather information" },
+        },
+      },
     };
 
     mockConfigManager.getMcpServers.mockReturnValue(currentConfig);
@@ -143,6 +147,8 @@ describe("MCPServerProxy 清理功能", () => {
     await proxy.cleanupRemovedServers();
 
     // 验证即使有错误，清理过程也不会中断
-    expect(mockConfigManager.removeServerToolsConfig).toHaveBeenCalledWith("weather");
+    expect(mockConfigManager.removeServerToolsConfig).toHaveBeenCalledWith(
+      "weather"
+    );
   });
 });
