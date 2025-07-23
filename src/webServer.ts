@@ -385,6 +385,9 @@ export class WebServer {
     for (const name of Object.keys(currentServers)) {
       if (!(name in newConfig.mcpServers)) {
         configManager.removeMcpServer(name);
+
+        // 同时清理该服务在 mcpServerConfig 中的工具配置
+        configManager.removeServerToolsConfig(name);
       }
     }
 

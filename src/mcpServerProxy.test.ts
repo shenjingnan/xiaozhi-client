@@ -36,6 +36,8 @@ vi.mock("./configManager", () => ({
     isToolEnabled: vi.fn(),
     updateServerToolsConfig: vi.fn(),
     getServerToolsConfig: vi.fn(),
+    getMcpServerConfig: vi.fn(),
+    removeServerToolsConfig: vi.fn(),
   },
 }));
 
