@@ -1,6 +1,8 @@
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import * as JSON5 from "json5";
+import * as jsonc from "jsonc-parser";
 
 // 在 ESM 中，需要从 import.meta.url 获取当前文件目录
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -86,11 +88,43 @@ export class ConfigManager {
 
   /**
    * 获取配置文件路径（动态计算）
+   * 支持多种配置文件格式：json5 > jsonc > json
    */
   private getConfigFilePath(): string {
     // 配置文件路径 - 优先使用环境变量指定的目录，否则使用当前工作目录
     const configDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();
+
+    // 按优先级检查配置文件是否存在
+    const configFileNames = [
+      "xiaozhi.config.json5",
+      "xiaozhi.config.jsonc",
+      "xiaozhi.config.json",
+    ];
+
+    for (const fileName of configFileNames) {
+      const filePath = resolve(configDir, fileName);
+      if (existsSync(filePath)) {
+        return filePath;
+      }
+    }
+
+    // 如果都不存在，返回默认的 JSON 文件路径
     return resolve(configDir, "xiaozhi.config.json");
+  }
+
+  /**
+   * 获取配置文件格式
+   */
+  private getConfigFileFormat(filePath: string): "json5" | "jsonc" | "json" {
+    if (filePath.endsWith(".json5")) {
+      return "json5";
+    }
+
+    if (filePath.endsWith(".jsonc")) {
+      return "jsonc";
+    }
+
+    return "json";
   }
 
   /**
@@ -107,24 +141,47 @@ export class ConfigManager {
    * 检查配置文件是否存在
    */
   public configExists(): boolean {
-    const configPath = this.getConfigFilePath();
-    return existsSync(configPath);
+    // 配置文件路径 - 优先使用环境变量指定的目录，否则使用当前工作目录
+    const configDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();
+
+    // 按优先级检查配置文件是否存在
+    const configFileNames = [
+      "xiaozhi.config.json5",
+      "xiaozhi.config.jsonc",
+      "xiaozhi.config.json",
+    ];
+
+    for (const fileName of configFileNames) {
+      const filePath = resolve(configDir, fileName);
+      if (existsSync(filePath)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**
    * 初始化配置文件
    * 从 config.default.json 复制到 config.json
+   * @param format 配置文件格式，默认为 json
    */
-  public initConfig(): void {
+  public initConfig(format: "json" | "json5" | "jsonc" = "json"): void {
     if (!existsSync(this.defaultConfigPath)) {
       throw new Error("默认配置文件 xiaozhi.config.default.json 不存在");
     }
 
+    // 检查是否已有任何格式的配置文件
     if (this.configExists()) {
-      throw new Error("配置文件 xiaozhi.config.json 已存在，无需重复初始化");
+      throw new Error("配置文件已存在，无需重复初始化");
     }
 
-    const configPath = this.getConfigFilePath();
+    // 确定目标配置文件路径
+    const configDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();
+    const targetFileName = `xiaozhi.config.${format}`;
+    const configPath = resolve(configDir, targetFileName);
+
+    // 复制默认配置文件
     copyFileSync(this.defaultConfigPath, configPath);
     this.config = null; // 重置缓存
   }
@@ -134,15 +191,28 @@ export class ConfigManager {
    */
   private loadConfig(): AppConfig {
     if (!this.configExists()) {
-      throw new Error(
-        "配置文件 xiaozhi.config.json 不存在，请先运行 xiaozhi init 初始化配置"
-      );
+      throw new Error("配置文件不存在，请先运行 xiaozhi init 初始化配置");
     }
 
     try {
       const configPath = this.getConfigFilePath();
+      const configFileFormat = this.getConfigFileFormat(configPath);
       const configData = readFileSync(configPath, "utf8");
-      const config = JSON.parse(configData) as AppConfig;
+
+      let config: AppConfig;
+
+      // 根据文件格式使用相应的解析器
+      switch (configFileFormat) {
+        case "json5":
+          config = JSON5.parse(configData) as AppConfig;
+          break;
+        case "jsonc":
+          config = jsonc.parse(configData) as AppConfig;
+          break;
+        default:
+          config = JSON.parse(configData) as AppConfig;
+          break;
+      }
 
       // 验证配置结构
       this.validateConfig(config);
@@ -519,14 +589,18 @@ export class ConfigManager {
 
   /**
    * 保存配置到文件
+   * 始终保存为标准 JSON 格式以确保向后兼容性
    */
   private saveConfig(config: AppConfig): void {
     try {
       // 验证配置
       this.validateConfig(config);
 
+      // 获取配置文件路径，但始终保存为 JSON 格式
+      const configDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();
+      const configPath = resolve(configDir, "xiaozhi.config.json");
+
       // 格式化 JSON 并保存
-      const configPath = this.getConfigFilePath();
       const configJson = JSON.stringify(config, null, 2);
       writeFileSync(configPath, configJson, "utf8");
 
