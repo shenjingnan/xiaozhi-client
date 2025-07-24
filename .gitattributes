@@ -12,6 +12,8 @@
 *.yaml text eol=lf
 *.html text eol=lf
 *.css text eol=lf
+*.jsonc text eol=lf
+*.json5 text eol=lf
 
 # 二进制文件
 *.png binary
