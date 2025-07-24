@@ -1,3 +1,11 @@
+## [1.5.1](https://github.com/shenjingnan/xiaozhi-client/compare/v1.5.0...v1.5.1) (2025-07-24)
+
+
+### Bug Fixes
+
+* **deps:** 升级 form-data 到 v4.0.4 以解决安全问题 ([#128](https://github.com/shenjingnan/xiaozhi-client/issues/128)) ([d28595e](https://github.com/shenjingnan/xiaozhi-client/commit/d28595ef2bc9d5ebcdfa7fddf7896da2d02b7a25))
+* 实现 MCP 服务配置同步清理功能 ([#125](https://github.com/shenjingnan/xiaozhi-client/issues/125)) ([d60b2c1](https://github.com/shenjingnan/xiaozhi-client/commit/d60b2c1fd8e86f5180a78d871b7e2ed682a9017d))
+
 # [1.5.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.4.0...v1.5.0) (2025-07-21)
 
 
