@@ -1,7 +1,7 @@
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import * as JSON5 from "json5";
+import JSON5 from "json5";
 import * as jsonc from "jsonc-parser";
 
 // 在 ESM 中，需要从 import.meta.url 获取当前文件目录
