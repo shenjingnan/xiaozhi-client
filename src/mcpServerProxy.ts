@@ -576,11 +576,58 @@ export class MCPServerProxy {
     this.config = null;
   }
 
+  /**
+   * 清理 mcpServerConfig 中已删除的服务对应的工具配置
+   * 确保 mcpServerConfig 与 mcpServers 保持同步
+   */
+  private async cleanupRemovedServers(): Promise<void> {
+    try {
+      // 获取当前配置中的所有服务名称
+      const currentServers = Object.keys(this.config || {});
+
+      // 获取配置文件中现有的所有工具配置
+      const serverToolsConfig = configManager.getMcpServerConfig();
+
+      // 防护措施：确保 serverToolsConfig 是一个对象
+      if (!serverToolsConfig || typeof serverToolsConfig !== "object") {
+        logger.debug("mcpServerConfig 为空或不是对象，无需清理");
+        return;
+      }
+
+      const configuredServers = Object.keys(serverToolsConfig);
+
+      // 查找需要清理的服务（在工具配置中存在但在当前服务配置中不存在）
+      const serversToRemove = configuredServers.filter(
+        (serverName) => !currentServers.includes(serverName)
+      );
+
+      // 异步清理每个需要删除的服务对应的工具配置
+      if (serversToRemove.length > 0) {
+        logger.info(`正在清理已删除的服务配置: ${serversToRemove.join(", ")}`);
+
+        // 逐个删除已移除服务的工具配置
+        for (const serverName of serversToRemove) {
+          try {
+            configManager.removeServerToolsConfig(serverName);
+            logger.info(`已清理服务 "${serverName}" 的工具配置`);
+          } catch (error) {
+            logger.error(`清理服务 "${serverName}" 的工具配置时出错: ${error}`);
+          }
+        }
+      }
+    } catch (error) {
+      logger.error(`清理已删除服务时出错: ${error}`);
+    }
+  }
+
   async start() {
     logger.info("正在启动 MCP 服务代理");
 
     // Load configuration
     this.config = loadMCPConfig();
+
+    // 清理已删除服务的工具配置
+    await this.cleanupRemovedServers();
 
     // Initialize child MCP clients from configuration
     const clientPromises = [];

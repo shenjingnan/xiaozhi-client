@@ -7,6 +7,7 @@ vi.mock("./configManager", () => {
     getConfig: vi.fn(),
     getMcpEndpoint: vi.fn(),
     getMcpServers: vi.fn(),
+    getMcpServerConfig: vi.fn(),
     updateMcpEndpoint: vi.fn(),
     updateMcpServer: vi.fn(),
     removeMcpServer: vi.fn(),
@@ -15,6 +16,7 @@ vi.mock("./configManager", () => {
     updateWebUIConfig: vi.fn(),
     getWebUIPort: vi.fn(),
     setToolEnabled: vi.fn(),
+    removeServerToolsConfig: vi.fn(),
   };
   return {
     configManager: mockConfigManager,

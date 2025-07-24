@@ -458,12 +458,32 @@ export class ConfigManager {
       newConfig.mcpServerConfig = {};
     }
 
-    // 更新指定服务的工具配置
-    newConfig.mcpServerConfig[serverName] = {
-      tools: toolsConfig,
-    };
+    // 如果 toolsConfig 为空对象，则删除该服务的配置
+    if (Object.keys(toolsConfig).length === 0) {
+      delete newConfig.mcpServerConfig[serverName];
+    } else {
+      // 更新指定服务的工具配置
+      newConfig.mcpServerConfig[serverName] = {
+        tools: toolsConfig,
+      };
+    }
 
     this.saveConfig(newConfig);
+  }
+
+  /**
+   * 删除指定服务器的工具配置
+   */
+  public removeServerToolsConfig(serverName: string): void {
+    const config = this.getConfig();
+    const newConfig = { ...config };
+
+    // 确保 mcpServerConfig 存在
+    if (newConfig.mcpServerConfig) {
+      // 删除指定服务的工具配置
+      delete newConfig.mcpServerConfig[serverName];
+      this.saveConfig(newConfig);
+    }
   }
 
   /**
