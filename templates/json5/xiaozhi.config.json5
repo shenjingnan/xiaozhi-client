@@ -1,0 +1,41 @@
+{
+  // 小智 AI 客户端配置文件 (JSON5 格式)
+  // JSON5 格式支持注释、尾随逗号等特性，更易于手写和维护
+  
+  // MCP 接入点地址
+  // 请访问 xiaozhi.me 获取你的专属接入点地址
+  mcpEndpoint: "<请填写你的接入点地址（获取地址在 xiaozhi.me）>",
+  
+  // MCP 服务配置
+  mcpServers: {
+    // 计算器服务
+    calculator: {
+      command: "node",
+      args: ["./mcpServers/calculator.js"],
+    },
+    
+    // 日期时间服务
+    datetime: {
+      command: "node",
+      args: ["./mcpServers/datetime.js"],
+    },
+  },
+  
+  // 连接配置
+  connection: {
+    // 心跳检测间隔（毫秒）
+    heartbeatInterval: 30000,
+    
+    // 心跳超时时间（毫秒）
+    heartbeatTimeout: 10000,
+    
+    // 重连间隔（毫秒）
+    reconnectInterval: 5000,
+  },
+  
+  // Web UI 配置
+  webUI: {
+    // Web UI 端口号
+    port: 9999,
+  },
+}

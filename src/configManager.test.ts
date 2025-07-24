@@ -116,10 +116,12 @@ describe("ConfigManager", () => {
 
   describe("配置文件存在性检查", () => {
     it("当配置文件存在时应该返回true", () => {
-      mockExistsSync.mockReturnValue(true);
+      mockExistsSync.mockImplementation((path: string) => {
+        return path.includes("xiaozhi.config.json");
+      });
       expect(configManager.configExists()).toBe(true);
       expect(mockExistsSync).toHaveBeenCalledWith(
-        "/test/cwd/xiaozhi.config.json"
+        "/test/cwd/xiaozhi.config.json5"
       );
     });
 
@@ -130,11 +132,13 @@ describe("ConfigManager", () => {
 
     it("当设置了XIAOZHI_CONFIG_DIR时应该使用自定义目录", () => {
       process.env.XIAOZHI_CONFIG_DIR = "/custom/config/dir";
-      mockExistsSync.mockReturnValue(true);
+      mockExistsSync.mockImplementation((path: string) => {
+        return path.includes("/custom/config/dir/xiaozhi.config.json");
+      });
 
       configManager.configExists();
       expect(mockExistsSync).toHaveBeenCalledWith(
-        "/custom/config/dir/xiaozhi.config.json"
+        "/custom/config/dir/xiaozhi.config.json5"
       );
     });
   });
@@ -154,6 +158,34 @@ describe("ConfigManager", () => {
       );
     });
 
+    it("应该成功初始化 JSON5 格式配置", () => {
+      mockExistsSync.mockImplementation((path: any) => {
+        if (path.includes("default")) return true;
+        return false; // config file doesn't exist
+      });
+
+      configManager.initConfig("json5");
+
+      expect(mockCopyFileSync).toHaveBeenCalledWith(
+        expect.stringContaining("xiaozhi.config.default.json"),
+        "/test/cwd/xiaozhi.config.json5"
+      );
+    });
+
+    it("应该成功初始化 JSONC 格式配置", () => {
+      mockExistsSync.mockImplementation((path: any) => {
+        if (path.includes("default")) return true;
+        return false; // config file doesn't exist
+      });
+
+      configManager.initConfig("jsonc");
+
+      expect(mockCopyFileSync).toHaveBeenCalledWith(
+        expect.stringContaining("xiaozhi.config.default.json"),
+        "/test/cwd/xiaozhi.config.jsonc"
+      );
+    });
+
     it("当默认配置文件不存在时应该抛出错误", () => {
       mockExistsSync.mockReturnValue(false);
 
@@ -163,21 +195,42 @@ describe("ConfigManager", () => {
     });
 
     it("当配置文件已存在时应该抛出错误", () => {
-      mockExistsSync.mockReturnValue(true);
+      mockExistsSync.mockImplementation((path: string) => {
+        // 模拟默认配置文件存在，但任何配置文件也存在
+        if (path.includes("default")) return true;
+        return path.includes("xiaozhi.config.json");
+      });
 
       expect(() => configManager.initConfig()).toThrow(
-        "配置文件 xiaozhi.config.json 已存在，无需重复初始化"
+        "配置文件已存在，无需重复初始化"
       );
     });
   });
 
   describe("获取配置", () => {
     beforeEach(() => {
-      mockExistsSync.mockReturnValue(true);
+      mockExistsSync.mockImplementation((path: string) => {
+        return path.includes("xiaozhi.config.json");
+      });
       mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+      mockResolve.mockImplementation((dir: string, file: string) => {
+        // 根据文件名返回对应的路径
+        if (file.includes("json5")) return `${dir}/${file}`;
+        if (file.includes("jsonc")) return `${dir}/${file}`;
+        return `${dir}/xiaozhi.config.json`;
+      });
     });
 
     it("应该加载并返回配置", () => {
+      // 确保只存在 JSON 配置文件
+      mockExistsSync.mockImplementation((path: string) => {
+        return (
+          path.includes("xiaozhi.config.json") &&
+          !path.includes("json5") &&
+          !path.includes("jsonc")
+        );
+      });
+
       const config = configManager.getConfig();
       expect(config).toEqual(mockConfig);
       expect(mockReadFileSync).toHaveBeenCalledWith(
@@ -205,7 +258,7 @@ describe("ConfigManager", () => {
       mockExistsSync.mockReturnValue(false);
 
       expect(() => configManager.getConfig()).toThrow(
-        "配置文件 xiaozhi.config.json 不存在，请先运行 xiaozhi init 初始化配置"
+        "配置文件不存在，请先运行 xiaozhi init 初始化配置"
       );
     });
 
@@ -213,6 +266,57 @@ describe("ConfigManager", () => {
       mockReadFileSync.mockReturnValue("invalid json");
 
       expect(() => configManager.getConfig()).toThrow("配置文件格式错误");
+    });
+
+    it("应该正确加载 JSON5 格式配置文件", () => {
+      // 模拟存在 JSON5 配置文件
+      mockExistsSync.mockImplementation((path: string) => {
+        return path.includes("xiaozhi.config.json5");
+      });
+
+      mockResolve.mockImplementation(() => "/test/cwd/xiaozhi.config.json5");
+
+      // 模拟 JSON5 格式的配置内容
+      const json5Config = `{
+        mcpEndpoint: "https://example.com/mcp",
+        mcpServers: {
+          "test-server": {
+            command: "node",
+            args: ["test.js"]
+          }
+        }
+      }`;
+
+      mockReadFileSync.mockReturnValue(json5Config);
+
+      // 不应该抛出错误
+      expect(() => configManager.getConfig()).not.toThrow();
+    });
+
+    it("应该正确加载 JSONC 格式配置文件", () => {
+      // 模拟存在 JSONC 配置文件
+      mockExistsSync.mockImplementation((path: string) => {
+        return path.includes("xiaozhi.config.jsonc");
+      });
+
+      mockResolve.mockImplementation(() => "/test/cwd/xiaozhi.config.jsonc");
+
+      // 模拟 JSONC 格式的配置内容
+      const jsoncConfig = `{
+        // MCP 接入点
+        "mcpEndpoint": "https://example.com/mcp",
+        "mcpServers": {
+          "test-server": {
+            "command": "node",
+            "args": ["test.js"]
+          }
+        }
+      }`;
+
+      mockReadFileSync.mockReturnValue(jsoncConfig);
+
+      // 不应该抛出错误
+      expect(() => configManager.getConfig()).not.toThrow();
     });
   });
 
@@ -719,8 +823,55 @@ describe("ConfigManager", () => {
 
   describe("获取配置文件路径", () => {
     it("应该返回配置文件路径", () => {
+      // 模拟存在 JSON 配置文件
+      mockExistsSync.mockImplementation((path: string) => {
+        return (
+          path.includes("xiaozhi.config.json") &&
+          !path.includes("json5") &&
+          !path.includes("jsonc")
+        );
+      });
+
+      mockResolve.mockImplementation((dir: string, file: string) => {
+        return `${dir}/${file}`;
+      });
+
       const path = configManager.getConfigPath();
       expect(path).toBe("/test/cwd/xiaozhi.config.json");
+    });
+
+    it("应该优先返回 JSON5 配置文件路径", () => {
+      // 模拟存在 JSON5 配置文件
+      mockExistsSync.mockImplementation((path: string) => {
+        if (path.includes("xiaozhi.config.json5")) return true;
+        if (path.includes("xiaozhi.config.jsonc")) return true;
+        if (path.includes("xiaozhi.config.json")) return true;
+        return false;
+      });
+
+      mockResolve.mockImplementation((dir: string, file: string) => {
+        return `${dir}/${file}`;
+      });
+
+      const path = configManager.getConfigPath();
+      expect(path).toBe("/test/cwd/xiaozhi.config.json5");
+    });
+
+    it("应该在没有 JSON5 时返回 JSONC 配置文件路径", () => {
+      // 模拟存在 JSONC 配置文件但没有 JSON5
+      mockExistsSync.mockImplementation((path: string) => {
+        if (path.includes("xiaozhi.config.json5")) return false;
+        if (path.includes("xiaozhi.config.jsonc")) return true;
+        if (path.includes("xiaozhi.config.json")) return true;
+        return false;
+      });
+
+      mockResolve.mockImplementation((dir: string, file: string) => {
+        return `${dir}/${file}`;
+      });
+
+      const path = configManager.getConfigPath();
+      expect(path).toBe("/test/cwd/xiaozhi.config.jsonc");
     });
   });
 

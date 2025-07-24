@@ -719,27 +719,31 @@ function showDetailedInfo(): void {
 
 /**
  * 初始化配置
+ * @param format 配置文件格式，默认为 json
  */
-async function initConfig(): Promise<void> {
+async function initConfig(
+  format: "json" | "json5" | "jsonc" = "json"
+): Promise<void> {
   const spinner = ora("初始化配置...").start();
 
   try {
     if (configManager.configExists()) {
       spinner.warn("配置文件已存在");
-      console.log(
-        chalk.yellow("如需重新初始化，请先删除现有的 xiaozhi.config.json 文件")
-      );
+      console.log(chalk.yellow("如需重新初始化，请先删除现有的配置文件"));
       return;
     }
 
-    configManager.initConfig();
+    configManager.initConfig(format);
     spinner.succeed("配置文件初始化成功");
 
-    console.log(chalk.green("✅ 配置文件已创建: xiaozhi.config.json"));
+    // 获取实际创建的配置文件路径
+    const configDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();
+    const configFileName = `xiaozhi.config.${format}`;
+    const configPath = path.join(configDir, configFileName);
+
+    console.log(chalk.green(`✅ 配置文件已创建: ${configFileName}`));
     console.log(chalk.yellow("📝 请编辑配置文件设置你的 MCP 端点:"));
-    console.log(
-      chalk.gray(`   配置文件路径: ${configManager.getConfigPath()}`)
-    );
+    console.log(chalk.gray(`   配置文件路径: ${configPath}`));
     console.log(chalk.yellow("💡 或者使用命令设置:"));
     console.log(
       chalk.gray("   xiaozhi config mcpEndpoint <your-endpoint-url>")
@@ -1386,8 +1390,14 @@ program
 program
   .command("init")
   .description("初始化配置文件")
-  .action(async () => {
-    await initConfig();
+  .option("-f, --format <format>", "配置文件格式 (json, json5, jsonc)", "json")
+  .action(async (options) => {
+    const format = options.format as "json" | "json5" | "jsonc";
+    if (format !== "json" && format !== "json5" && format !== "jsonc") {
+      console.error(chalk.red("错误: 格式必须是 json, json5 或 jsonc"));
+      process.exit(1);
+    }
+    await initConfig(format);
   });
 
 // config 命令
