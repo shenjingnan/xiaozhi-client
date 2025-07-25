@@ -292,7 +292,7 @@ export class MCPServer extends EventEmitter {
   public async start(): Promise<void> {
     try {
       // Start mcpServerProxy and HTTP server in parallel
-      // We don't need to wait for the MCP client to connect to xiaozhi.me 
+      // We don't need to wait for the MCP client to connect to xiaozhi.me
       // before starting the server to accept connections from other clients
       await Promise.all([
         this.startMCPProxy(),
@@ -307,11 +307,11 @@ export class MCPServer extends EventEmitter {
             logger.info(`RPC endpoint: http://localhost:${this.port}/rpc`);
             resolve();
           });
-        })
+        }),
       ]);
-      
+
       // Start MCP client to connect to xiaozhi.me (don't block server startup)
-      this.startMCPClient().catch(error => {
+      this.startMCPClient().catch((error) => {
         logger.error("Failed to start MCP client for xiaozhi.me:", error);
       });
 
@@ -434,13 +434,13 @@ export class MCPServer extends EventEmitter {
     } catch (error) {
       logger.warn("Failed to read MCP endpoints from config:", error);
     }
-    
+
     // 只有在配置中有端点时才启动客户端
     if (endpoints.length > 0) {
       // 获取 mcpServerProxy.js 的正确路径
       const currentScript = fileURLToPath(import.meta.url);
       let searchDir = path.dirname(currentScript);
-      
+
       // 向上查找直到找到 mcpServerProxy.js
       let mcpProxyPath: string | null = null;
       for (let i = 0; i < 5; i++) {
@@ -459,12 +459,14 @@ export class MCPServer extends EventEmitter {
         }
         searchDir = path.dirname(searchDir);
       }
-      
+
       if (!mcpProxyPath) {
-        logger.error("Could not find mcpServerProxy.js in the project structure");
+        logger.error(
+          "Could not find mcpServerProxy.js in the project structure"
+        );
         return;
       }
-      
+
       this.mcpClient = new MultiEndpointMCPPipe(mcpProxyPath, endpoints);
       await this.mcpClient.start();
       logger.info("MCP client started, connecting to xiaozhi.me");
@@ -506,7 +508,7 @@ export class MCPServer extends EventEmitter {
       });
       this.mcpProxy = null;
     }
-    
+
     // Stop MCP client
     if (this.mcpClient) {
       this.mcpClient.shutdown();
