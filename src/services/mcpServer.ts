@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import express from "express";
 import { configManager } from "../configManager.js";
 import { logger as globalLogger } from "../logger.js";
+import { MultiEndpointMCPPipe } from "../multiEndpointMCPPipe.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,6 +24,7 @@ export class MCPServer extends EventEmitter {
   private server: Server | null = null;
   private clients: Map<string, SSEClient> = new Map();
   private mcpProxy: ChildProcess | null = null;
+  private mcpClient: MultiEndpointMCPPipe | null = null;
   private port: number;
 
   constructor(port = 3000) {
@@ -289,17 +291,28 @@ export class MCPServer extends EventEmitter {
 
   public async start(): Promise<void> {
     try {
-      // Start mcpServerProxy
-      await this.startMCPProxy();
-
-      // Start HTTP server
-      this.server = this.app.listen(this.port, () => {
-        logger.info(`MCP Server listening on port ${this.port}`);
-        logger.info(`SSE endpoint: http://localhost:${this.port}/sse`);
-        logger.info(
-          `Messages endpoint: http://localhost:${this.port}/messages`
-        );
-        logger.info(`RPC endpoint: http://localhost:${this.port}/rpc`);
+      // Start mcpServerProxy and HTTP server in parallel
+      // We don't need to wait for the MCP client to connect to xiaozhi.me 
+      // before starting the server to accept connections from other clients
+      await Promise.all([
+        this.startMCPProxy(),
+        new Promise<void>((resolve) => {
+          // Start HTTP server
+          this.server = this.app.listen(this.port, () => {
+            logger.info(`MCP Server listening on port ${this.port}`);
+            logger.info(`SSE endpoint: http://localhost:${this.port}/sse`);
+            logger.info(
+              `Messages endpoint: http://localhost:${this.port}/messages`
+            );
+            logger.info(`RPC endpoint: http://localhost:${this.port}/rpc`);
+            resolve();
+          });
+        })
+      ]);
+      
+      // Start MCP client to connect to xiaozhi.me (don't block server startup)
+      this.startMCPClient().catch(error => {
+        logger.error("Failed to start MCP client for xiaozhi.me:", error);
       });
 
       this.emit("started");
@@ -411,6 +424,55 @@ export class MCPServer extends EventEmitter {
     logger.info("MCP proxy started successfully");
   }
 
+  private async startMCPClient(): Promise<void> {
+    // 获取配置中的端点
+    let endpoints: string[] = [];
+    try {
+      if (configManager.configExists()) {
+        endpoints = configManager.getMcpEndpoints();
+      }
+    } catch (error) {
+      logger.warn("Failed to read MCP endpoints from config:", error);
+    }
+    
+    // 只有在配置中有端点时才启动客户端
+    if (endpoints.length > 0) {
+      // 获取 mcpServerProxy.js 的正确路径
+      const currentScript = fileURLToPath(import.meta.url);
+      let searchDir = path.dirname(currentScript);
+      
+      // 向上查找直到找到 mcpServerProxy.js
+      let mcpProxyPath: string | null = null;
+      for (let i = 0; i < 5; i++) {
+        // 最多向上查找5级
+        const testPath = path.join(searchDir, "mcpServerProxy.js");
+        const fs = await import("node:fs");
+        if (fs.existsSync(testPath)) {
+          mcpProxyPath = testPath;
+          break;
+        }
+        // 也检查 dist 目录
+        const distPath = path.join(searchDir, "dist", "mcpServerProxy.js");
+        if (fs.existsSync(distPath)) {
+          mcpProxyPath = distPath;
+          break;
+        }
+        searchDir = path.dirname(searchDir);
+      }
+      
+      if (!mcpProxyPath) {
+        logger.error("Could not find mcpServerProxy.js in the project structure");
+        return;
+      }
+      
+      this.mcpClient = new MultiEndpointMCPPipe(mcpProxyPath, endpoints);
+      await this.mcpClient.start();
+      logger.info("MCP client started, connecting to xiaozhi.me");
+    } else {
+      logger.info("No MCP endpoints configured, skipping client connection");
+    }
+  }
+
   public async stop(): Promise<void> {
     logger.info("Stopping MCP server...");
 
@@ -443,6 +505,12 @@ export class MCPServer extends EventEmitter {
         }, 5000);
       });
       this.mcpProxy = null;
+    }
+    
+    // Stop MCP client
+    if (this.mcpClient) {
+      this.mcpClient.shutdown();
+      this.mcpClient = null;
     }
 
     this.emit("stopped");
