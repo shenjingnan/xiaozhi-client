@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
 import type { Server } from "node:http";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
@@ -346,23 +347,26 @@ export class MCPServer extends EventEmitter {
       const normalizedPath = path.normalize(process.env.MCP_SERVER_PROXY_PATH);
       const resolvedPath = path.resolve(normalizedPath);
 
-      // 确保路径在预期的目录内或具有正确的文件名
+      // 定义允许的目录白名单（仅限项目目录和系统临时目录）
+      const allowedBaseDirectories = [
+        __dirname, // 当前模块目录
+        path.join(__dirname, ".."), // 上级目录
+        path.join(__dirname, "..", ".."), // 项目根目录
+        path.join(__dirname, "..", "..", "dist"), // 项目dist目录
+        os.tmpdir(), // 系统临时目录
+      ];
+
+      // 确保路径在白名单目录内且具有正确的文件名
       if (
         fs.existsSync(resolvedPath) &&
-        path.basename(resolvedPath) === MCP_SERVER_PROXY_FILENAME
+        path.basename(resolvedPath) === MCP_SERVER_PROXY_FILENAME &&
+        allowedBaseDirectories.some((dir) => resolvedPath.startsWith(dir))
       ) {
-        // 额外检查：确保路径不包含危险模式
-        if (
-          !normalizedPath.includes("..") &&
-          !normalizedPath.startsWith("/etc/") &&
-          !normalizedPath.startsWith("/usr/")
-        ) {
-          this.mcpProxyPath = resolvedPath;
-          return this.mcpProxyPath;
-        }
-
-        logger.warn(`MCP_SERVER_PROXY_PATH 路径不安全: ${normalizedPath}`);
+        this.mcpProxyPath = resolvedPath;
+        return this.mcpProxyPath;
       }
+
+      logger.warn(`MCP_SERVER_PROXY_PATH 路径不安全: ${normalizedPath}`);
       throw new Error(
         `指定的 MCP 代理路径不存在或不安全: ${process.env.MCP_SERVER_PROXY_PATH}`
       );
