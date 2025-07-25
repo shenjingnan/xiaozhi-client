@@ -548,9 +548,12 @@ export class MultiEndpointMCPPipe {
     }
 
     // 给状态报告一点时间
-    setTimeout(() => {
-      process.exit(0);
-    }, 100);
+    // 在测试环境中不调用 process.exit
+    if (process.env.NODE_ENV !== "test" && process.env.VITEST !== "true") {
+      setTimeout(() => {
+        process.exit(0);
+      }, 100);
+    }
   }
 
   // 报告状态到 Web UI 服务器
