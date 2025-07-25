@@ -13,6 +13,7 @@ import { MultiEndpointMCPPipe } from "../multiEndpointMCPPipe.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const logger = globalLogger.withTag("mcp-server");
+const MCP_SERVER_PROXY_FILENAME = "mcpServerProxy.js";
 
 interface SSEClient {
   id: string;
@@ -340,13 +341,13 @@ export class MCPServer extends EventEmitter {
     let mcpProxyPath: string | null = null;
     for (let i = 0; i < 5; i++) {
       // 最多向上查找5级
-      const testPath = path.join(searchDir, "mcpServerProxy.js");
+      const testPath = path.join(searchDir, MCP_SERVER_PROXY_FILENAME);
       if (fs.existsSync(testPath)) {
         mcpProxyPath = testPath;
         break;
       }
       // 也检查 dist 目录
-      const distPath = path.join(searchDir, "dist", "mcpServerProxy.js");
+      const distPath = path.join(searchDir, "dist", MCP_SERVER_PROXY_FILENAME);
       if (fs.existsSync(distPath)) {
         mcpProxyPath = distPath;
         break;
@@ -357,14 +358,18 @@ export class MCPServer extends EventEmitter {
     // 如果还没找到，尝试从项目根目录查找
     if (!mcpProxyPath) {
       const projectRoot = path.resolve(__dirname, "..", "..");
-      const rootDistPath = path.join(projectRoot, "dist", "mcpServerProxy.js");
+      const rootDistPath = path.join(
+        projectRoot,
+        "dist",
+        MCP_SERVER_PROXY_FILENAME
+      );
       if (fs.existsSync(rootDistPath)) {
         mcpProxyPath = rootDistPath;
       }
     }
 
     if (!mcpProxyPath) {
-      throw new Error("在项目结构中找不到 mcpServerProxy.js");
+      throw new Error(`在项目结构中找不到 ${MCP_SERVER_PROXY_FILENAME}`);
     }
 
     return mcpProxyPath;
