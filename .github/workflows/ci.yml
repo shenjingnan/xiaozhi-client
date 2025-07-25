@@ -50,6 +50,9 @@ jobs:
     - name: 代码重复率检查
       run: pnpm run duplicate:check
 
+    - name: 构建项目
+      run: pnpm run build
+
     - name: 运行测试并生成覆盖率报告
       run: pnpm run test:coverage
 

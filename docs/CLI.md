@@ -187,3 +187,9 @@ node bin/xiaozhi --help
 # 或者使用src中的文件
 node src/cli.js --help
 ```
+
+## 环境变量
+
+- `MCP_SERVER_PROXY_PATH`: 指定 `mcpServerProxy.js` 文件的完整路径，主要用于测试环境
+- `XIAOZHI_CONFIG_DIR`: 指定配置文件目录，默认为当前工作目录
+- `XIAOZHI_DAEMON`: 标记进程是否以守护进程模式运行
