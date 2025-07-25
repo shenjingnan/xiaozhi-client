@@ -27,6 +27,7 @@ export class MCPServer extends EventEmitter {
   private clients: Map<string, SSEClient> = new Map();
   private mcpProxy: ChildProcess | null = null;
   private mcpClient: MultiEndpointMCPPipe | null = null;
+  private mcpProxyPath: string | null = null; // 缓存MCP代理路径
   private port: number;
 
   constructor(port = 3000) {
@@ -329,6 +330,11 @@ export class MCPServer extends EventEmitter {
   }
 
   private findMCPProxyPath(): string {
+    // 如果已经缓存了路径，直接返回
+    if (this.mcpProxyPath) {
+      return this.mcpProxyPath;
+    }
+
     // 由于 tsup 打包的原因，import.meta.url 可能不准确
     // 我们需要找到 mcpServerProxy.js 的正确位置
 
@@ -351,7 +357,8 @@ export class MCPServer extends EventEmitter {
           !normalizedPath.startsWith("/etc/") &&
           !normalizedPath.startsWith("/usr/")
         ) {
-          return resolvedPath;
+          this.mcpProxyPath = resolvedPath;
+          return this.mcpProxyPath;
         }
 
         logger.warn(`MCP_SERVER_PROXY_PATH 路径不安全: ${normalizedPath}`);
@@ -400,7 +407,9 @@ export class MCPServer extends EventEmitter {
       throw new Error(`在项目结构中找不到 ${MCP_SERVER_PROXY_FILENAME}`);
     }
 
-    return mcpProxyPath;
+    // 缓存并返回路径
+    this.mcpProxyPath = mcpProxyPath;
+    return this.mcpProxyPath;
   }
 
   private async startMCPProxy(): Promise<void> {
@@ -537,6 +546,9 @@ export class MCPServer extends EventEmitter {
       this.mcpClient.shutdown();
       this.mcpClient = null;
     }
+
+    // 清除缓存的MCP代理路径
+    this.mcpProxyPath = null;
 
     this.emit("stopped");
     logger.info("MCP服务器已停止");
