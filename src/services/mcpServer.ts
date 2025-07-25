@@ -321,6 +321,8 @@ export class MCPServer extends EventEmitter {
     // 我们需要找到 mcpServerProxy.js 的正确位置
 
     // 首先尝试使用环境变量指定的路径（主要用于测试环境）
+    // MCP_SERVER_PROXY_PATH: 指定 mcpServerProxy.js 文件的完整路径
+    // 在测试环境中，可以设置此环境变量来直接指定文件位置
     if (process.env.MCP_SERVER_PROXY_PATH) {
       if (fs.existsSync(process.env.MCP_SERVER_PROXY_PATH)) {
         return process.env.MCP_SERVER_PROXY_PATH;
