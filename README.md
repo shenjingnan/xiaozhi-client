@@ -5,6 +5,8 @@
 [![CI](https://github.com/shenjingnan/xiaozhi-client/workflows/Release/badge.svg)](https://github.com/shenjingnan/xiaozhi-client/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+![QQ群](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/qq-group-qrcode.png)
+
 小智 AI 客户端，目前主要用于 MCP 的对接
 
 ![效果图](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/preview.png)
@@ -18,7 +20,7 @@
 - 支持 动态控制 MCP Server 工具的可见性，避免由于无用工具过多导致的小智服务端异常
 - 支持 本地化部署的开源服务端集成，你可以使用和小智官方服务端一样的 RPC 通信或直接使用标准 MCP 集成方式
 - 支持 Web 网页可视化配置(允许自定义 IP 和端口，你能将 xiaozhi-client 部署在设备 A，然后在设备 B 通过网页控制 xiaozhi-client)
-- 支持 集成 ModelScope 的远程MCP服务
+- 支持 集成 ModelScope 的远程 MCP 服务
 - 支持 通过模板创建 xiaozhi-client 项目 (xiaozhi create \<my-app\> --template hello-world)
 - 支持 后台运行(xiaozhi start -d)
 
