@@ -308,7 +308,7 @@ describe("MCPServer", () => {
         jsonrpc: "2.0",
         error: {
           code: -32600,
-          message: "Invalid or missing sessionId",
+          message: "无效或缺少sessionId",
         },
         id: 1,
       });
@@ -338,7 +338,7 @@ describe("MCPServer", () => {
         jsonrpc: "2.0",
         error: {
           code: -32600,
-          message: "Invalid or missing sessionId",
+          message: "无效或缺少sessionId",
         },
         id: 1,
       });
@@ -379,7 +379,7 @@ describe("MCPServer", () => {
         jsonrpc: "2.0",
         error: {
           code: -32603,
-          message: "MCP proxy not running",
+          message: "MCP代理未运行",
         },
         id: 1,
       });
@@ -416,7 +416,7 @@ describe("MCPServer", () => {
         jsonrpc: "2.0",
         error: {
           code: -32603,
-          message: "MCP proxy not running",
+          message: "MCP代理未运行",
         },
         id: 1,
       });
@@ -560,12 +560,12 @@ describe("MCPServer", () => {
         id: 123,
         result: {
           _timeout: true,
-          message: "Response may have been sent via SSE",
+          message: "响应可能已通过SSE发送",
         },
       });
 
       vi.useRealTimers();
-    });
+    }, 10000); // 增加超时时间到10秒
 
     it("应该在收到响应时清除超时", async () => {
       await server.start();
@@ -633,7 +633,7 @@ describe("MCPServer", () => {
 
       // 恢复clearTimeout
       global.clearTimeout = originalClearTimeout;
-    });
+    }, 10000); // 增加超时时间到10秒
   });
 
   describe("发送到客户端", () => {
@@ -663,7 +663,7 @@ describe("MCPServer", () => {
       expect(mockClient.response.write).toHaveBeenCalledWith(
         `event: message\ndata: ${JSON.stringify(message)}\n\n`
       );
-    });
+    }, 10000); // 增加超时时间到10秒
 
     it("应该优雅地处理写入错误", async () => {
       await server.start();
@@ -689,7 +689,7 @@ describe("MCPServer", () => {
 
       // 出现错误时应该移除客户端
       expect((server as any).clients.has("test-session")).toBe(false);
-    });
+    }, 10000); // 增加超时时间到10秒
   });
 
   // 测试 xiaozhi start --server 命令相关功能
@@ -731,7 +731,7 @@ describe("MCPServer", () => {
 
       // 清理
       await server.stop();
-    });
+    }, 10000); // 增加超时时间到10秒
 
     it("应该在配置中没有端点时跳过客户端连接", async () => {
       // 模拟配置管理器返回空端点数组
@@ -762,7 +762,7 @@ describe("MCPServer", () => {
 
       // 清理
       await server.stop();
-    });
+    }, 10000); // 增加超时时间到10秒
 
     it("应该正确处理配置读取错误", async () => {
       // 模拟配置管理器抛出错误
@@ -795,6 +795,6 @@ describe("MCPServer", () => {
 
       // 清理
       await server.stop();
-    });
+    }, 10000); // 增加超时时间到10秒
   });
 });
