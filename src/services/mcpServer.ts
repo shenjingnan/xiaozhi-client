@@ -291,7 +291,7 @@ export class MCPServer extends EventEmitter {
     try {
       // 并行启动mcpServerProxy和HTTP服务器
       // 在接受其他客户端连接之前，我们不需要等待MCP客户端连接到xiaozhi.me
-      await Promise.all([
+      const results = await Promise.allSettled([
         this.startMCPProxy(),
         new Promise<void>((resolve) => {
           // 启动HTTP服务器
@@ -304,6 +304,17 @@ export class MCPServer extends EventEmitter {
           });
         }),
       ]);
+
+      // 检查 MCP 代理启动结果
+      const [mcpProxyResult, httpServerResult] = results;
+      if (mcpProxyResult.status === "rejected") {
+        logger.error("MCP代理启动失败:", mcpProxyResult.reason);
+      }
+
+      if (httpServerResult.status === "rejected") {
+        logger.error("HTTP服务器启动失败:", httpServerResult.reason);
+        throw httpServerResult.reason;
+      }
 
       // 启动MCP客户端连接到xiaozhi.me（不要阻塞服务器启动）
       this.startMCPClient().catch((error) => {
