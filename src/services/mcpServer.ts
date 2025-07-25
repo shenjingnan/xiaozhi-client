@@ -320,6 +320,16 @@ export class MCPServer extends EventEmitter {
     // 由于 tsup 打包的原因，import.meta.url 可能不准确
     // 我们需要找到 mcpServerProxy.js 的正确位置
 
+    // 首先尝试使用环境变量指定的路径（主要用于测试环境）
+    if (process.env.MCP_SERVER_PROXY_PATH) {
+      if (fs.existsSync(process.env.MCP_SERVER_PROXY_PATH)) {
+        return process.env.MCP_SERVER_PROXY_PATH;
+      }
+      throw new Error(
+        `指定的 MCP 代理路径不存在: ${process.env.MCP_SERVER_PROXY_PATH}`
+      );
+    }
+
     // 方法1：尝试从当前脚本的目录开始查找
     const currentScript = fileURLToPath(import.meta.url);
     let searchDir = path.dirname(currentScript);
@@ -340,6 +350,15 @@ export class MCPServer extends EventEmitter {
         break;
       }
       searchDir = path.dirname(searchDir);
+    }
+
+    // 如果还没找到，尝试从项目根目录查找
+    if (!mcpProxyPath) {
+      const projectRoot = path.resolve(__dirname, "..", "..");
+      const rootDistPath = path.join(projectRoot, "dist", "mcpServerProxy.js");
+      if (fs.existsSync(rootDistPath)) {
+        mcpProxyPath = rootDistPath;
+      }
     }
 
     if (!mcpProxyPath) {

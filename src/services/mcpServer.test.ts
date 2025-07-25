@@ -70,7 +70,13 @@ vi.mock("node:fs", async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...actual,
-    existsSync: vi.fn((path: string) => path.includes("mcpServerProxy.js")),
+    existsSync: vi.fn((path: string) => {
+      // 在测试环境中模拟文件存在情况
+      if (path.includes("mcpServerProxy.js")) {
+        return true;
+      }
+      return (actual as any).existsSync(path);
+    }),
   };
 });
 
