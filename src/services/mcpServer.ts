@@ -1,6 +1,7 @@
 import { type ChildProcess, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { EventEmitter } from "node:events";
+import fs from "node:fs";
 import type { Server } from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -315,7 +316,7 @@ export class MCPServer extends EventEmitter {
     }
   }
 
-  private async startMCPProxy(): Promise<void> {
+  private findMCPProxyPath(): string {
     // 由于 tsup 打包的原因，import.meta.url 可能不准确
     // 我们需要找到 mcpServerProxy.js 的正确位置
 
@@ -328,7 +329,6 @@ export class MCPServer extends EventEmitter {
     for (let i = 0; i < 5; i++) {
       // 最多向上查找5级
       const testPath = path.join(searchDir, "mcpServerProxy.js");
-      const fs = await import("node:fs");
       if (fs.existsSync(testPath)) {
         mcpProxyPath = testPath;
         break;
@@ -346,6 +346,11 @@ export class MCPServer extends EventEmitter {
       throw new Error("在项目结构中找不到 mcpServerProxy.js");
     }
 
+    return mcpProxyPath;
+  }
+
+  private async startMCPProxy(): Promise<void> {
+    const mcpProxyPath = this.findMCPProxyPath();
     logger.info(`正在启动MCP代理: ${mcpProxyPath}`);
 
     this.mcpProxy = spawn("node", [mcpProxyPath], {
@@ -429,32 +434,7 @@ export class MCPServer extends EventEmitter {
     // 只有在配置中有端点时才启动客户端
     if (endpoints.length > 0) {
       // 获取 mcpServerProxy.js 的正确路径
-      const currentScript = fileURLToPath(import.meta.url);
-      let searchDir = path.dirname(currentScript);
-
-      // 向上查找直到找到 mcpServerProxy.js
-      let mcpProxyPath: string | null = null;
-      for (let i = 0; i < 5; i++) {
-        // 最多向上查找5级
-        const testPath = path.join(searchDir, "mcpServerProxy.js");
-        const fs = await import("node:fs");
-        if (fs.existsSync(testPath)) {
-          mcpProxyPath = testPath;
-          break;
-        }
-        // 也检查 dist 目录
-        const distPath = path.join(searchDir, "dist", "mcpServerProxy.js");
-        if (fs.existsSync(distPath)) {
-          mcpProxyPath = distPath;
-          break;
-        }
-        searchDir = path.dirname(searchDir);
-      }
-
-      if (!mcpProxyPath) {
-        logger.error("在项目结构中找不到 mcpServerProxy.js");
-        return;
-      }
+      const mcpProxyPath = this.findMCPProxyPath();
 
       this.mcpClient = new MultiEndpointMCPPipe(mcpProxyPath, endpoints);
       await this.mcpClient.start();
