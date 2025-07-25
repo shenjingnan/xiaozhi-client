@@ -336,11 +336,28 @@ export class MCPServer extends EventEmitter {
     // MCP_SERVER_PROXY_PATH: 指定 mcpServerProxy.js 文件的完整路径
     // 在测试环境中，可以设置此环境变量来直接指定文件位置
     if (process.env.MCP_SERVER_PROXY_PATH) {
-      if (fs.existsSync(process.env.MCP_SERVER_PROXY_PATH)) {
-        return process.env.MCP_SERVER_PROXY_PATH;
+      // 验证路径是否安全，防止路径遍历攻击
+      const normalizedPath = path.normalize(process.env.MCP_SERVER_PROXY_PATH);
+      const resolvedPath = path.resolve(normalizedPath);
+
+      // 确保路径在预期的目录内或具有正确的文件名
+      if (
+        fs.existsSync(resolvedPath) &&
+        path.basename(resolvedPath) === MCP_SERVER_PROXY_FILENAME
+      ) {
+        // 额外检查：确保路径不包含危险模式
+        if (
+          !normalizedPath.includes("..") &&
+          !normalizedPath.startsWith("/etc/") &&
+          !normalizedPath.startsWith("/usr/")
+        ) {
+          return resolvedPath;
+        }
+
+        logger.warn(`MCP_SERVER_PROXY_PATH 路径不安全: ${normalizedPath}`);
       }
       throw new Error(
-        `指定的 MCP 代理路径不存在: ${process.env.MCP_SERVER_PROXY_PATH}`
+        `指定的 MCP 代理路径不存在或不安全: ${process.env.MCP_SERVER_PROXY_PATH}`
       );
     }
 
