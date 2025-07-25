@@ -691,4 +691,110 @@ describe("MCPServer", () => {
       expect((server as any).clients.has("test-session")).toBe(false);
     });
   });
+
+  // 测试 xiaozhi start --server 命令相关功能
+  describe("MCP Server模式", () => {
+    it("应该能够创建MCPServer实例", () => {
+      const server = new MCPServer(8080);
+      expect(server).toBeInstanceOf(MCPServer);
+    });
+
+    it("应该正确处理同时连接xiaozhi.me和其他MCP客户端的功能", async () => {
+      // 模拟配置管理器返回多个端点
+      const mockConfigManager = await import("../configManager.js");
+      mockConfigManager.configManager.getMcpEndpoints = vi.fn(() => [
+        "wss://xiaozhi.me/api/mcp",
+        "wss://other-client.com/mcp",
+      ]);
+
+      // 创建服务器实例
+      const server = new MCPServer(8080);
+
+      // 模拟startMCPClient方法
+      const startMCPClientSpy = vi.spyOn(server as any, "startMCPClient");
+
+      // 模拟startMCPProxy方法
+      const startMCPProxySpy = vi.spyOn(server as any, "startMCPProxy");
+
+      // 模拟HTTP服务器启动
+      const mockExpress = vi.mocked(express);
+      const mockApp = mockExpress();
+      const listenSpy = vi.spyOn(mockApp, "listen");
+
+      // 启动服务器
+      await server.start();
+
+      // 验证是否同时启动了MCP代理和MCP客户端
+      expect(startMCPProxySpy).toHaveBeenCalled();
+      expect(startMCPClientSpy).toHaveBeenCalled();
+      expect(listenSpy).toHaveBeenCalledWith(8080, expect.any(Function));
+
+      // 清理
+      await server.stop();
+    });
+
+    it("应该在配置中没有端点时跳过客户端连接", async () => {
+      // 模拟配置管理器返回空端点数组
+      const mockConfigManager = await import("../configManager.js");
+      mockConfigManager.configManager.getMcpEndpoints = vi.fn(() => []);
+
+      // 创建服务器实例
+      const server = new MCPServer(8080);
+
+      // 模拟startMCPClient方法
+      const startMCPClientSpy = vi.spyOn(server as any, "startMCPClient");
+
+      // 模拟startMCPProxy方法
+      const startMCPProxySpy = vi.spyOn(server as any, "startMCPProxy");
+
+      // 模拟HTTP服务器启动
+      const mockExpress = vi.mocked(express);
+      const mockApp = mockExpress();
+      const listenSpy = vi.spyOn(mockApp, "listen");
+
+      // 启动服务器
+      await server.start();
+
+      // 验证是否启动了MCP代理但跳过了MCP客户端
+      expect(startMCPProxySpy).toHaveBeenCalled();
+      expect(startMCPClientSpy).toHaveBeenCalled();
+      expect(listenSpy).toHaveBeenCalledWith(8080, expect.any(Function));
+
+      // 清理
+      await server.stop();
+    });
+
+    it("应该正确处理配置读取错误", async () => {
+      // 模拟配置管理器抛出错误
+      const mockConfigManager = await import("../configManager.js");
+      mockConfigManager.configManager.getMcpEndpoints = vi.fn(() => {
+        throw new Error("配置读取错误");
+      });
+
+      // 创建服务器实例
+      const server = new MCPServer(8080);
+
+      // 模拟startMCPClient方法
+      const startMCPClientSpy = vi.spyOn(server as any, "startMCPClient");
+
+      // 模拟startMCPProxy方法
+      const startMCPProxySpy = vi.spyOn(server as any, "startMCPProxy");
+
+      // 模拟HTTP服务器启动
+      const mockExpress = vi.mocked(express);
+      const mockApp = mockExpress();
+      const listenSpy = vi.spyOn(mockApp, "listen");
+
+      // 启动服务器
+      await server.start();
+
+      // 验证是否仍然启动了MCP代理和MCP客户端（即使配置读取失败）
+      expect(startMCPProxySpy).toHaveBeenCalled();
+      expect(startMCPClientSpy).toHaveBeenCalled();
+      expect(listenSpy).toHaveBeenCalledWith(8080, expect.any(Function));
+
+      // 清理
+      await server.stop();
+    });
+  });
 });
