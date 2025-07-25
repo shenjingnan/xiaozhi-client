@@ -15,6 +15,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const logger = globalLogger.withTag("mcp-server");
 const MCP_SERVER_PROXY_FILENAME = "mcpServerProxy.js";
+const MAX_SEARCH_LEVELS = 5; // 查找 mcpServerProxy.js 文件时的最大目录层级
 
 interface SSEClient {
   id: string;
@@ -378,8 +379,8 @@ export class MCPServer extends EventEmitter {
 
     // 向上查找直到找到 mcpServerProxy.js
     let mcpProxyPath: string | null = null;
-    for (let i = 0; i < 5; i++) {
-      // 最多向上查找5级
+    for (let i = 0; i < MAX_SEARCH_LEVELS; i++) {
+      // 最多向上查找MAX_SEARCH_LEVELS级
       const testPath = path.join(searchDir, MCP_SERVER_PROXY_FILENAME);
       if (fs.existsSync(testPath)) {
         mcpProxyPath = testPath;
