@@ -343,12 +343,10 @@ export class MCPServer extends EventEmitter {
     }
 
     if (!mcpProxyPath) {
-      throw new Error(
-        "Could not find mcpServerProxy.js in the project structure"
-      );
+      throw new Error("在项目结构中找不到 mcpServerProxy.js");
     }
 
-    logger.info(`Starting MCP proxy from: ${mcpProxyPath}`);
+    logger.info(`正在启动MCP代理: ${mcpProxyPath}`);
 
     this.mcpProxy = spawn("node", [mcpProxyPath], {
       stdio: ["pipe", "pipe", "pipe"],
@@ -360,11 +358,11 @@ export class MCPServer extends EventEmitter {
     });
 
     this.mcpProxy.on("error", (error) => {
-      logger.error("MCP proxy error:", error);
+      logger.error("MCP代理错误:", error);
     });
 
     this.mcpProxy.on("exit", (code, signal) => {
-      logger.warn(`MCP proxy exited with code ${code}, signal ${signal}`);
+      logger.warn(`MCP代理退出，代码 ${code}，信号 ${signal}`);
       this.mcpProxy = null;
     });
 
@@ -425,7 +423,7 @@ export class MCPServer extends EventEmitter {
         endpoints = configManager.getMcpEndpoints();
       }
     } catch (error) {
-      logger.warn("Failed to read MCP endpoints from config:", error);
+      logger.warn("从配置中读取MCP端点失败:", error);
     }
 
     // 只有在配置中有端点时才启动客户端
@@ -454,34 +452,32 @@ export class MCPServer extends EventEmitter {
       }
 
       if (!mcpProxyPath) {
-        logger.error(
-          "Could not find mcpServerProxy.js in the project structure"
-        );
+        logger.error("在项目结构中找不到 mcpServerProxy.js");
         return;
       }
 
       this.mcpClient = new MultiEndpointMCPPipe(mcpProxyPath, endpoints);
       await this.mcpClient.start();
-      logger.info("MCP client started, connecting to xiaozhi.me");
+      logger.info("MCP客户端已启动，正在连接到 xiaozhi.me");
     } else {
-      logger.info("No MCP endpoints configured, skipping client connection");
+      logger.info("未配置MCP端点，跳过客户端连接");
     }
   }
 
   public async stop(): Promise<void> {
-    logger.info("Stopping MCP server...");
+    logger.info("正在停止MCP服务器...");
 
-    // Close all SSE connections
+    // 关闭所有SSE连接
     for (const client of this.clients.values()) {
       try {
         client.response.end();
       } catch (error) {
-        // Ignore errors when closing
+        // 忽略关闭时的错误
       }
     }
     this.clients.clear();
 
-    // Stop HTTP server
+    // 停止HTTP服务器
     if (this.server) {
       await new Promise<void>((resolve) => {
         this.server!.close(() => resolve());
@@ -489,7 +485,7 @@ export class MCPServer extends EventEmitter {
       this.server = null;
     }
 
-    // Stop MCP proxy
+    // 停止MCP代理
     if (this.mcpProxy) {
       this.mcpProxy.kill("SIGTERM");
       await new Promise<void>((resolve) => {
@@ -502,13 +498,13 @@ export class MCPServer extends EventEmitter {
       this.mcpProxy = null;
     }
 
-    // Stop MCP client
+    // 停止MCP客户端
     if (this.mcpClient) {
       this.mcpClient.shutdown();
       this.mcpClient = null;
     }
 
     this.emit("stopped");
-    logger.info("MCP server stopped");
+    logger.info("MCP服务器已停止");
   }
 }
