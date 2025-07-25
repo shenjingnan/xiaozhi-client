@@ -5,7 +5,7 @@
 [![CI](https://github.com/shenjingnan/xiaozhi-client/workflows/Release/badge.svg)](https://github.com/shenjingnan/xiaozhi-client/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-![QQ群](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/qq-group-qrcode.jpg)
+<img src="https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/qq-qrcode.jpg" alt="QQ群" width="200"/>
 
 小智 AI 客户端，目前主要用于 MCP 的对接
 
