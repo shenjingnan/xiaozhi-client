@@ -32,7 +32,7 @@
     "lint": "biome lint --write .",
     "type:check": "tsc --noEmit",
     "check": "biome check .",
-    "check:write": "biome check --write .",
+    "check:fix": "biome check --write --unsafe .",
     "check:all": "pnpm check && pnpm type:check && pnpm spell:check && pnpm duplicate:check",
     "spell:check": "cspell \"src/**/*.ts\" \"*.md\" \"*.json\"",
     "duplicate:check": "jscpd src/",

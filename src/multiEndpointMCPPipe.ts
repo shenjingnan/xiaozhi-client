@@ -11,6 +11,11 @@ import WebSocket from "ws";
 import { configManager } from "./configManager.js";
 import { logger as globalLogger } from "./logger.js";
 
+// 检查是否在测试环境中运行
+const isTestEnvironment = (): boolean => {
+  return process.env.NODE_ENV === "test" || process.env.VITEST === "true";
+};
+
 // 为 MultiEndpointMCPPipe 创建带标签的 logger
 const logger = globalLogger.withTag("MULTI_MCP_PIPE");
 
@@ -549,7 +554,7 @@ export class MultiEndpointMCPPipe {
 
     // 给状态报告一点时间
     // 在测试环境中不调用 process.exit
-    if (process.env.NODE_ENV !== "test" && process.env.VITEST !== "true") {
+    if (!isTestEnvironment()) {
       setTimeout(() => {
         process.exit(0);
       }, 100);
@@ -559,7 +564,7 @@ export class MultiEndpointMCPPipe {
   // 报告状态到 Web UI 服务器
   private async reportStatusToWebUI() {
     // 在测试环境中跳过
-    if (process.env.NODE_ENV === "test" || process.env.VITEST === "true") {
+    if (isTestEnvironment()) {
       return;
     }
 
