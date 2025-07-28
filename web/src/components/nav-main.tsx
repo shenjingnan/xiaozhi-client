@@ -1,4 +1,4 @@
-import { type LucideIcon, MailIcon, PlusCircleIcon } from "lucide-react";
+import { LayoutDashboardIcon, type LucideIcon, MailIcon, PlusCircleIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,17 +27,17 @@ export function NavMain({
               tooltip="Quick Create"
               className="min-w-8 bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
             >
-              <PlusCircleIcon />
-              <span>Quick Create</span>
+              <LayoutDashboardIcon />
+              <span>仪表板</span>
             </SidebarMenuButton>
-            <Button
+            {/* <Button
               size="icon"
               className="h-9 w-9 shrink-0 group-data-[collapsible=icon]:opacity-0"
               variant="outline"
             >
               <MailIcon />
               <span className="sr-only">Inbox</span>
-            </Button>
+            </Button> */}
           </SidebarMenuItem>
         </SidebarMenu>
         <SidebarMenu>
