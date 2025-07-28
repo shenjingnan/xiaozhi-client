@@ -1,13 +1,15 @@
-import { Toaster } from "@/components/ui/sonner";
-import Dashboard from "./pages/Dashboard";
+// import { Toaster } from "@/components/ui/sonner";
+import DashboardPage from "@/app/dashboard/page";
+// import Dashboard from "./pages/Dashboard";
 
 function App() {
   return (
     <>
-      <div className="min-h-screen bg-background">
-        <Dashboard />
-      </div>
-      <Toaster />
+      <DashboardPage />
+      {/* <div className="min-h-screen bg-background"> */}
+      {/* <Dashboard /> */}
+      {/* </div>
+      <Toaster /> */}
     </>
   );
 }

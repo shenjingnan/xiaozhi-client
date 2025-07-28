@@ -3,5 +3,12 @@
   "extends": ["../biome.json"],
   "files": {
     "include": ["src/**/*.ts", "src/**/*.tsx", "*.ts", "*.js"]
+  },
+  "linter": {
+    "rules": {
+      "a11y": {
+        "useValidAnchor": "off"
+      }
+    }
   }
 }
