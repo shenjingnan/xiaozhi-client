@@ -9,75 +9,162 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+// // 圆环进度条组件
+// const CircularProgress = ({
+//   value,
+//   size = 120,
+//   strokeWidth = 8,
+//   color = "#3b82f6",
+//   children,
+// }) => {
+//   const radius = (size - strokeWidth) / 2;
+//   const circumference = radius * 2 * Math.PI;
+//   const strokeDasharray = circumference;
+//   const strokeDashoffset = circumference - (value / 100) * circumference;
+
+//   return (
+//     <div className="relative inline-flex items-center justify-center">
+//       <svg width={size} height={size} className="transform -rotate-90">
+//         <circle
+//           cx={size / 2}
+//           cy={size / 2}
+//           r={radius}
+//           stroke="#e5e7eb"
+//           strokeWidth={strokeWidth}
+//           fill="none"
+//         />
+//         <circle
+//           cx={size / 2}
+//           cy={size / 2}
+//           r={radius}
+//           stroke={color}
+//           strokeWidth={strokeWidth}
+//           fill="none"
+//           strokeDasharray={strokeDasharray}
+//           strokeDashoffset={strokeDashoffset}
+//           strokeLinecap="round"
+//           className="transition-all duration-300 ease-in-out"
+//         />
+//       </svg>
+//       <div className="absolute inset-0 flex items-center justify-center">
+//         {children}
+//       </div>
+//     </div>
+//   );
+// };
+
+// 小型圆环进度条
+const MiniCircularProgress = ({
+  showValue = true,
+  value = 0,
+  maxValue = 100,
+  size = 60,
+  color = "#3b82f6",
+  symbol = "%",
+}) => {
+  const radius = (size - 6) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const strokeDasharray = circumference;
+  const strokeDashoffset = circumference - (value / maxValue) * circumference;
+
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <svg width={size} height={size} className="transform -rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="#e5e7eb"
+          strokeWidth={6}
+          fill="none"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={color}
+          strokeWidth={6}
+          fill="none"
+          strokeDasharray={strokeDasharray}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          className="transition-all duration-300 ease-in-out"
+        />
+      </svg>
+      {showValue && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-xs font-medium">
+            {value}
+            {symbol}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export function SectionCards() {
   return (
     <div className="*:data-[slot=card]:shadow-xs @xl/main:grid-cols-2 @5xl/main:grid-cols-4 grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card lg:px-6">
       <Card className="@container/card">
         <CardHeader className="relative">
-          <CardDescription>Total Revenue</CardDescription>
+          <CardDescription>小智接入点</CardDescription>
           <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
-            $1,250.00
+            1
+          </CardTitle>
+          <div className="absolute right-4 top-4 flex flex-col items-center">
+            <MiniCircularProgress
+              showValue={false}
+              value={1}
+              maxValue={1}
+              color="#16a34a"
+              size={30}
+              symbol=""
+            />
+          </div>
+        </CardHeader>
+      </Card>
+      <Card className="@container/card">
+        <CardHeader className="relative">
+          <CardDescription>Xiaozhi Client</CardDescription>
+          <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
+            已连接
           </CardTitle>
           <div className="absolute right-4 top-4">
-            <Badge variant="outline" className="flex gap-1 rounded-lg text-xs">
-              <TrendingUpIcon className="size-3" />
-              +12.5%
-            </Badge>
+            <MiniCircularProgress
+              showValue={false}
+              value={1}
+              maxValue={1}
+              color="#16a34a"
+              size={30}
+              symbol=""
+            />
           </div>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Trending up this month <TrendingUpIcon className="size-4" />
-          </div>
-          <div className="text-muted-foreground">
-            Visitors for the last 6 months
-          </div>
+          <div className="text-muted-foreground">ws://localhost:9999</div>
         </CardFooter>
       </Card>
       <Card className="@container/card">
         <CardHeader className="relative">
-          <CardDescription>New Customers</CardDescription>
+          <CardDescription>MCP服务</CardDescription>
           <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
-            1,234
+            5
           </CardTitle>
           <div className="absolute right-4 top-4">
-            <Badge variant="outline" className="flex gap-1 rounded-lg text-xs">
-              <TrendingDownIcon className="size-3" />
-              -20%
-            </Badge>
+            <MiniCircularProgress
+              showValue={false}
+              value={3}
+              maxValue={5}
+              color="#16a34a"
+              size={30}
+              symbol=""
+            />
           </div>
         </CardHeader>
-        <CardFooter className="flex-col items-start gap-1 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Down 20% this period <TrendingDownIcon className="size-4" />
-          </div>
-          <div className="text-muted-foreground">
-            Acquisition needs attention
-          </div>
-        </CardFooter>
       </Card>
-      <Card className="@container/card">
-        <CardHeader className="relative">
-          <CardDescription>Active Accounts</CardDescription>
-          <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
-            45,678
-          </CardTitle>
-          <div className="absolute right-4 top-4">
-            <Badge variant="outline" className="flex gap-1 rounded-lg text-xs">
-              <TrendingUpIcon className="size-3" />
-              +12.5%
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Strong user retention <TrendingUpIcon className="size-4" />
-          </div>
-          <div className="text-muted-foreground">Engagement exceed targets</div>
-        </CardFooter>
-      </Card>
-      <Card className="@container/card">
-        <CardHeader className="relative">
+      {/* <Card className="@container/card"> */}
+        {/* <CardHeader className="relative">
           <CardDescription>Growth Rate</CardDescription>
           <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
             4.5%
@@ -88,14 +175,14 @@ export function SectionCards() {
               +4.5%
             </Badge>
           </div>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1 text-sm">
+        </CardHeader> */}
+        {/* <CardFooter className="flex-col items-start gap-1 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
             Steady performance <TrendingUpIcon className="size-4" />
           </div>
           <div className="text-muted-foreground">Meets growth projections</div>
-        </CardFooter>
-      </Card>
+        </CardFooter> */}
+      {/* </Card> */}
     </div>
   );
 }
