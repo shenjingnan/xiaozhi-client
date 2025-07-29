@@ -258,18 +258,38 @@ async function startWebUIInBackground(): Promise<void> {
     const url = `http://localhost:${port}`;
 
     try {
+      let browserProcess: ReturnType<typeof spawn>;
       if (process.platform === "darwin") {
-        spawn("open", [url], { detached: true, stdio: "ignore" }).unref();
-      } else if (process.platform === "win32") {
-        spawn("cmd", ["/c", "start", url], {
+        browserProcess = spawn("open", [url], {
           detached: true,
           stdio: "ignore",
-        }).unref();
+        });
+      } else if (process.platform === "win32") {
+        browserProcess = spawn("cmd", ["/c", "start", url], {
+          detached: true,
+          stdio: "ignore",
+        });
       } else {
-        spawn("xdg-open", [url], { detached: true, stdio: "ignore" }).unref();
+        browserProcess = spawn("xdg-open", [url], {
+          detached: true,
+          stdio: "ignore",
+        });
       }
+
+      // 处理spawn错误，避免程序崩溃
+      browserProcess.on("error", () => {
+        // 静默处理浏览器启动错误，不影响主程序
+        console.log(
+          chalk.gray(`💡 提示: 无法自动打开浏览器，请手动访问: ${url}`)
+        );
+      });
+
+      browserProcess.unref();
     } catch (error) {
       // 忽略打开浏览器的错误
+      console.log(
+        chalk.gray(`💡 提示: 无法自动打开浏览器，请手动访问: ${url}`)
+      );
     }
 
     // 保存 webServer 实例供后续使用
@@ -1105,18 +1125,38 @@ async function startUIService(): Promise<void> {
 
     // 根据不同平台打开浏览器
     try {
+      let browserProcess: ReturnType<typeof spawn>;
       if (process.platform === "darwin") {
-        spawn("open", [url], { detached: true, stdio: "ignore" }).unref();
-      } else if (process.platform === "win32") {
-        spawn("cmd", ["/c", "start", url], {
+        browserProcess = spawn("open", [url], {
           detached: true,
           stdio: "ignore",
-        }).unref();
+        });
+      } else if (process.platform === "win32") {
+        browserProcess = spawn("cmd", ["/c", "start", url], {
+          detached: true,
+          stdio: "ignore",
+        });
       } else {
-        spawn("xdg-open", [url], { detached: true, stdio: "ignore" }).unref();
+        browserProcess = spawn("xdg-open", [url], {
+          detached: true,
+          stdio: "ignore",
+        });
       }
+
+      // 处理spawn错误，避免程序崩溃
+      browserProcess.on("error", () => {
+        // 静默处理浏览器启动错误，不影响主程序
+        console.log(
+          chalk.gray(`💡 提示: 无法自动打开浏览器，请手动访问: ${url}`)
+        );
+      });
+
+      browserProcess.unref();
     } catch (error) {
       // 忽略打开浏览器的错误
+      console.log(
+        chalk.gray(`💡 提示: 无法自动打开浏览器，请手动访问: ${url}`)
+      );
     }
 
     // 处理退出信号
