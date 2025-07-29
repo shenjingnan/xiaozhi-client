@@ -412,6 +412,7 @@ export function DataTable({
           >
             <SelectValue placeholder="Select a view" />
           </SelectTrigger>
+          {/* mcpName method enable config desc */}
           <SelectContent>
             <SelectItem value="outline">Outline</SelectItem>
             <SelectItem value="past-performance">Past Performance</SelectItem>
