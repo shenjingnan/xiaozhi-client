@@ -494,10 +494,11 @@ export class WebServer {
   public start(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.httpServer
-        .listen(this.port, () => {
+        .listen(this.port, "0.0.0.0", () => {
           this.logger.info(
-            `Web server listening on http://localhost:${this.port}`
+            `Web server listening on http://0.0.0.0:${this.port}`
           );
+          this.logger.info(`Local access: http://localhost:${this.port}`);
           resolve();
         })
         .on("error", reject);
@@ -506,6 +507,15 @@ export class WebServer {
 
   public stop(): Promise<void> {
     return new Promise((resolve) => {
+      let resolved = false;
+
+      const doResolve = () => {
+        if (!resolved) {
+          resolved = true;
+          resolve();
+        }
+      };
+
       // Clear heartbeat timeout
       if (this.heartbeatTimeout) {
         clearTimeout(this.heartbeatTimeout);
@@ -522,13 +532,13 @@ export class WebServer {
         // 强制关闭 HTTP 服务器，不等待现有连接
         this.httpServer.close(() => {
           this.logger.info("Web server stopped");
-          resolve();
+          doResolve();
         });
 
         // 设置超时，如果 2 秒内没有关闭则强制退出
         setTimeout(() => {
           this.logger.info("Web server force stopped");
-          resolve();
+          doResolve();
         }, 2000);
       });
     });

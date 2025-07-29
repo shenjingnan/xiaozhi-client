@@ -10,8 +10,14 @@ vi.mock("express", () => {
     use: vi.fn(),
     get: vi.fn(),
     post: vi.fn(),
-    listen: vi.fn((port, callback) => {
-      callback?.();
+    listen: vi.fn((port, host, callback) => {
+      // 处理不同的参数组合：listen(port, callback) 或 listen(port, host, callback)
+      let actualCallback = callback;
+      if (typeof host === "function") {
+        // 如果第二个参数是函数，说明没有传host参数
+        actualCallback = host;
+      }
+      actualCallback?.();
       return { close: vi.fn((cb) => cb?.()) };
     }),
   };
@@ -471,7 +477,11 @@ describe("MCPServer", () => {
       const mockExpress = vi.mocked(express);
       const mockApp = mockExpress();
 
-      expect(mockApp.listen).toHaveBeenCalledWith(3000, expect.any(Function));
+      expect(mockApp.listen).toHaveBeenCalledWith(
+        3000,
+        "0.0.0.0",
+        expect.any(Function)
+      );
     });
 
     it("应该在成功启动后发出started事件", async () => {
@@ -737,7 +747,11 @@ describe("MCPServer", () => {
       // 验证是否同时启动了MCP代理和MCP客户端
       expect(startMCPProxySpy).toHaveBeenCalled();
       expect(startMCPClientSpy).toHaveBeenCalled();
-      expect(listenSpy).toHaveBeenCalledWith(8080, expect.any(Function));
+      expect(listenSpy).toHaveBeenCalledWith(
+        8080,
+        "0.0.0.0",
+        expect.any(Function)
+      );
 
       // 清理
       await server.stop();
@@ -768,7 +782,11 @@ describe("MCPServer", () => {
       // 验证是否启动了MCP代理但跳过了MCP客户端
       expect(startMCPProxySpy).toHaveBeenCalled();
       expect(startMCPClientSpy).toHaveBeenCalled();
-      expect(listenSpy).toHaveBeenCalledWith(8080, expect.any(Function));
+      expect(listenSpy).toHaveBeenCalledWith(
+        8080,
+        "0.0.0.0",
+        expect.any(Function)
+      );
 
       // 清理
       await server.stop();
@@ -801,7 +819,11 @@ describe("MCPServer", () => {
       // 验证是否仍然启动了MCP代理和MCP客户端（即使配置读取失败）
       expect(startMCPProxySpy).toHaveBeenCalled();
       expect(startMCPClientSpy).toHaveBeenCalled();
-      expect(listenSpy).toHaveBeenCalledWith(8080, expect.any(Function));
+      expect(listenSpy).toHaveBeenCalledWith(
+        8080,
+        "0.0.0.0",
+        expect.any(Function)
+      );
 
       // 清理
       await server.stop();
