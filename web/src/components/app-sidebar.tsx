@@ -1,7 +1,9 @@
 import {
   ArrowUpCircleIcon,
+  BadgeQuestionMarkIcon,
   BarChartIcon,
   BotIcon,
+  CableIcon,
   CameraIcon,
   ClipboardListIcon,
   DatabaseIcon,
@@ -16,6 +18,7 @@ import {
   SearchIcon,
   SettingsIcon,
   UsersIcon,
+  ZapIcon,
 } from "lucide-react";
 import type React from "react";
 
@@ -41,30 +44,30 @@ const data = {
   },
   navMain: [
     {
-      title: "小智服务",
+      title: "小智服务端",
       url: "#",
       icon: BotIcon,
     },
     {
-      title: "MCP服务",
+      title: "MCP 服务",
       url: "#",
-      icon: Link2Icon,
+      icon: CableIcon,
     },
-    // {
-    //   title: "Analytics",
-    //   url: "#",
-    //   icon: BarChartIcon,
-    // },
-    // {
-    //   title: "Projects",
-    //   url: "#",
-    //   icon: FolderIcon,
-    // },
-    // {
-    //   title: "Team",
-    //   url: "#",
-    //   icon: UsersIcon,
-    // },
+    {
+      title: "烧录固件",
+      url: "#",
+      icon: ZapIcon,
+    },
+    {
+      title: "帮助文档",
+      url: "#",
+      icon: BadgeQuestionMarkIcon,
+    },
+    {
+      title: "全局配置",
+      url: "#",
+      icon: SettingsIcon,
+    },
   ],
   // navClouds: [
   //   {
