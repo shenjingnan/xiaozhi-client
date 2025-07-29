@@ -7,7 +7,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 import data from "./data.json";
 import MCPServerList from "@/components/MCPServerList";
-import MCPList from "@/components/MCPList";
+import McpList from "@/components/mcp-list";
 
 export default function Page() {
   return (
@@ -23,7 +23,7 @@ export default function Page() {
                 <ChartAreaInteractive />
               </div> */}
               {/* <MCPServerList servers={data} onChange={() => {}} /> */}
-              <MCPList />
+              <McpList />
               {/* <DataTable data={data} /> */}
             </div>
           </div>
