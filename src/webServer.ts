@@ -507,6 +507,15 @@ export class WebServer {
 
   public stop(): Promise<void> {
     return new Promise((resolve) => {
+      let resolved = false;
+
+      const doResolve = () => {
+        if (!resolved) {
+          resolved = true;
+          resolve();
+        }
+      };
+
       // Clear heartbeat timeout
       if (this.heartbeatTimeout) {
         clearTimeout(this.heartbeatTimeout);
@@ -523,13 +532,13 @@ export class WebServer {
         // 强制关闭 HTTP 服务器，不等待现有连接
         this.httpServer.close(() => {
           this.logger.info("Web server stopped");
-          resolve();
+          doResolve();
         });
 
         // 设置超时，如果 2 秒内没有关闭则强制退出
         setTimeout(() => {
           this.logger.info("Web server force stopped");
-          resolve();
+          doResolve();
         }, 2000);
       });
     });
