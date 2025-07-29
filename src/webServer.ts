@@ -494,10 +494,11 @@ export class WebServer {
   public start(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.httpServer
-        .listen(this.port, () => {
+        .listen(this.port, "0.0.0.0", () => {
           this.logger.info(
-            `Web server listening on http://localhost:${this.port}`
+            `Web server listening on http://0.0.0.0:${this.port}`
           );
+          this.logger.info(`Local access: http://localhost:${this.port}`);
           resolve();
         })
         .on("error", reject);

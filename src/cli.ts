@@ -249,7 +249,9 @@ async function startWebUIInBackground(): Promise<void> {
 
     // 从配置获取端口号
     const port = configManager.getWebUIPort();
-    console.log(chalk.green(`✅ Web UI 已启动: http://localhost:${port}`));
+    console.log(chalk.green("✅ Web UI 已启动，可通过以下地址访问:"));
+    console.log(chalk.green(`   本地访问: http://localhost:${port}`));
+    console.log(chalk.green(`   网络访问: http://<你的IP地址>:${port}`));
 
     // 尝试打开浏览器
     const { spawn } = await import("node:child_process");
@@ -691,11 +693,13 @@ async function startMCPServerMode(port: number, daemon = false): Promise<void> {
       await server.start();
 
       spinner.succeed("MCP Server 已启动");
-      console.log(chalk.green(`✅ SSE endpoint: http://localhost:${port}/sse`));
+      console.log(chalk.green("✅ MCP Server 端点已启动，可通过以下地址访问:"));
+      console.log(chalk.green(`   SSE endpoint: http://localhost:${port}/sse`));
       console.log(
-        chalk.green(`✅ Messages endpoint: http://localhost:${port}/messages`)
+        chalk.green(`   Messages endpoint: http://localhost:${port}/messages`)
       );
-      console.log(chalk.green(`✅ RPC endpoint: http://localhost:${port}/rpc`));
+      console.log(chalk.green(`   RPC endpoint: http://localhost:${port}/rpc`));
+      console.log(chalk.green("   网络访问: 将 localhost 替换为你的IP地址"));
       console.log(chalk.yellow("💡 提示: 按 Ctrl+C 停止服务"));
     }
   } catch (error) {
@@ -1090,7 +1094,9 @@ async function startUIService(): Promise<void> {
 
     // 从配置获取端口号
     const port = configManager.getWebUIPort();
-    console.log(chalk.green(`✅ 配置管理网页已启动: http://localhost:${port}`));
+    console.log(chalk.green("✅ 配置管理网页已启动，可通过以下地址访问:"));
+    console.log(chalk.green(`   本地访问: http://localhost:${port}`));
+    console.log(chalk.green(`   网络访问: http://<你的IP地址>:${port}`));
     console.log(chalk.yellow("💡 提示: 按 Ctrl+C 停止服务"));
 
     // 自动打开浏览器
