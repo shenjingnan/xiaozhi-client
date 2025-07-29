@@ -1,5 +1,5 @@
-import { Toaster } from "@/components/ui/sonner";
 import DashboardPage from "@/app/dashboard/page";
+import { Toaster } from "@/components/ui/sonner";
 import Dashboard from "./pages/Dashboard";
 
 function App() {

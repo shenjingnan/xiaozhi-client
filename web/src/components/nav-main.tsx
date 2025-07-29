@@ -1,6 +1,5 @@
-import { LayoutDashboardIcon, type LucideIcon, MailIcon, PlusCircleIcon } from "lucide-react";
+import { LayoutDashboardIcon, type LucideIcon } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import {
   SidebarGroup,
   SidebarGroupContent,

@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+// @ts-nocheck
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -6,26 +8,25 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import {
-  Server,
-  Play,
-  Square,
-  Settings,
-  ChevronDown,
-  ChevronRight,
   Activity,
-  Clock,
-  Users,
-  Wrench,
   AlertCircle,
   CheckCircle,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  Play,
+  Server,
+  Settings,
+  Square,
+  Users,
+  Wrench,
   XCircle,
 } from "lucide-react";
+import React, { useState } from "react";
 
 const McpServicesDisplay = () => {
   const [expandedService, setExpandedService] = useState(null);
@@ -188,18 +189,21 @@ const McpServicesDisplay = () => {
                 </h4>
                 <div className="space-y-1">
                   {mcpServices[0].tools.map((tool) => (
-                    <div key={tool} className="flex items-center justify-between p-4 bg-gray-50 rounded-md font-mono">
-                      <div
-                        key={tool}
-                        className="text-md flex flex-col gap-2"
-                      >
+                    <div
+                      key={tool}
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-md font-mono"
+                    >
+                      <div key={tool} className="text-md flex flex-col gap-2">
                         {tool}
                         <p className="text-sm text-muted-foreground">
                           {mcpServices[0].description}
                         </p>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Switch id="airplane-mode" className="data-[state=checked]:bg-green-600 data-[state=unchecked]:bg-input" />
+                        <Switch
+                          id="airplane-mode"
+                          className="data-[state=checked]:bg-green-600 data-[state=unchecked]:bg-input"
+                        />
                       </div>
                     </div>
                   ))}

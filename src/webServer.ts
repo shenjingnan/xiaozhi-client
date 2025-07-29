@@ -3,8 +3,10 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { dirname, join } from "node:path";
-import { parse } from "node:url";
 import { fileURLToPath } from "node:url";
+import { serve } from "@hono/node-server";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { WebSocketServer } from "ws";
 import { getServiceStatus } from "./cli.js";
 import { configManager } from "./configManager.js";
@@ -19,8 +21,9 @@ interface ClientInfo {
 }
 
 export class WebServer {
-  private httpServer: ReturnType<typeof createServer>;
-  private wss: WebSocketServer;
+  private app: Hono;
+  private httpServer: any = null;
+  private wss: WebSocketServer | null = null;
   private logger: Logger;
   private port: number;
   private clientInfo: ClientInfo = {
@@ -45,79 +48,75 @@ export class WebServer {
     }
     this.logger = new Logger();
 
-    this.httpServer = createServer((req, res) => {
-      this.handleHttpRequest(req, res);
+    // 初始化 Hono 应用
+    this.app = new Hono();
+    this.setupMiddleware();
+    this.setupRoutes();
+  }
+
+  private setupMiddleware() {
+    // CORS 中间件
+    this.app.use(
+      "*",
+      cors({
+        origin: "*",
+        allowMethods: ["GET", "POST", "PUT", "OPTIONS"],
+        allowHeaders: ["Content-Type"],
+      })
+    );
+
+    // 错误处理中间件
+    this.app.onError((err, c) => {
+      this.logger.error("HTTP request error:", err);
+      return c.json({ error: "Internal Server Error" }, 500);
+    });
+  }
+
+  private setupRoutes() {
+    // API 路由
+    this.app.get("/api/config", async (c) => {
+      const config = configManager.getConfig();
+      return c.json(config);
     });
 
-    this.wss = new WebSocketServer({ server: this.httpServer });
-    this.setupWebSocket();
+    this.app.put("/api/config", async (c) => {
+      try {
+        const newConfig: AppConfig = await c.req.json();
+        this.updateConfig(newConfig);
+
+        // 广播配置更新
+        this.broadcastConfigUpdate(newConfig);
+
+        // 直接返回成功，不再自动重启
+        this.logger.info("配置已更新");
+        return c.json({ success: true });
+      } catch (error) {
+        return c.json(
+          {
+            error: error instanceof Error ? error.message : String(error),
+          },
+          400
+        );
+      }
+    });
+
+    this.app.get("/api/status", async (c) => {
+      return c.json(this.clientInfo);
+    });
+
+    // 处理未知的 API 路由
+    this.app.all("/api/*", async (c) => {
+      return c.text("Not Found", 404);
+    });
+
+    // 静态文件服务 - 放在最后作为回退
+    this.app.get("*", async (c) => {
+      return this.serveStaticFile(c);
+    });
   }
 
-  private async handleHttpRequest(req: any, res: any) {
-    const { pathname } = parse(req.url || "", true);
-
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
-    if (req.method === "OPTIONS") {
-      res.writeHead(200);
-      res.end();
-      return;
-    }
-
-    try {
-      // 提供静态文件
-      if (req.method === "GET" && !pathname?.startsWith("/api/")) {
-        await this.serveStaticFile(pathname || "/", res);
-        return;
-      }
-
-      if (pathname === "/api/config" && req.method === "GET") {
-        const config = configManager.getConfig();
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(config));
-      } else if (pathname === "/api/config" && req.method === "PUT") {
-        let body = "";
-        req.on("data", (chunk: any) => {
-          body += chunk.toString();
-        });
-        req.on("end", async () => {
-          try {
-            const newConfig: AppConfig = JSON.parse(body);
-            this.updateConfig(newConfig);
-
-            // 广播配置更新
-            this.broadcastConfigUpdate(newConfig);
-
-            // 直接返回成功，不再自动重启
-            res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ success: true }));
-            this.logger.info("配置已更新");
-          } catch (error) {
-            res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(
-              JSON.stringify({
-                error: error instanceof Error ? error.message : String(error),
-              })
-            );
-          }
-        });
-      } else if (pathname === "/api/status" && req.method === "GET") {
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(this.clientInfo));
-      } else {
-        res.writeHead(404);
-        res.end("Not Found");
-      }
-    } catch (error) {
-      this.logger.error("HTTP request error:", error);
-      res.writeHead(500, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "Internal Server Error" }));
-    }
-  }
-
-  private async serveStaticFile(pathname: string, res: any) {
+  private async serveStaticFile(c: any) {
+    const pathname = new URL(c.req.url).pathname;
     try {
       // 获取当前文件所在目录
       const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -134,8 +133,7 @@ export class WebServer {
 
       if (!webPath) {
         // 如果找不到 web 目录，返回简单的 HTML 页面
-        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-        res.end(`
+        const errorHtml = `
           <!DOCTYPE html>
           <html>
           <head>
@@ -155,8 +153,8 @@ export class WebServer {
             </div>
           </body>
           </html>
-        `);
-        return;
+        `;
+        return c.html(errorHtml);
       }
 
       // 处理路径
@@ -167,9 +165,7 @@ export class WebServer {
 
       // 安全性检查：防止路径遍历
       if (filePath.includes("..")) {
-        res.writeHead(403);
-        res.end("Forbidden");
-        return;
+        return c.text("Forbidden", 403);
       }
 
       const fullPath = join(webPath, filePath);
@@ -180,13 +176,9 @@ export class WebServer {
         const indexPath = join(webPath, "index.html");
         if (existsSync(indexPath)) {
           const content = await readFile(indexPath);
-          res.writeHead(200, { "Content-Type": "text/html" });
-          res.end(content);
-        } else {
-          res.writeHead(404);
-          res.end("Not Found");
+          return c.html(content.toString());
         }
-        return;
+        return c.text("Not Found", 404);
       }
 
       // 读取文件
@@ -208,16 +200,25 @@ export class WebServer {
       };
 
       const contentType = contentTypes[ext || ""] || "application/octet-stream";
-      res.writeHead(200, { "Content-Type": contentType });
-      res.end(content);
+
+      // 对于文本文件，返回字符串；对于二进制文件，返回 ArrayBuffer
+      if (
+        contentType.startsWith("text/") ||
+        contentType.includes("javascript") ||
+        contentType.includes("json")
+      ) {
+        return c.text(content.toString(), 200, { "Content-Type": contentType });
+      }
+      return c.body(content, 200, { "Content-Type": contentType });
     } catch (error) {
       this.logger.error("Serve static file error:", error);
-      res.writeHead(500);
-      res.end("Internal Server Error");
+      return c.text("Internal Server Error", 500);
     }
   }
 
   private setupWebSocket() {
+    if (!this.wss) return;
+
     this.wss.on("connection", (ws) => {
       // 只在调试模式下输出连接日志
       this.logger.debug("WebSocket client connected");
@@ -302,6 +303,8 @@ export class WebServer {
   }
 
   private broadcastConfigUpdate(config: AppConfig) {
+    if (!this.wss) return;
+
     const message = JSON.stringify({ type: "configUpdate", data: config });
     for (const client of this.wss.clients) {
       if (client.readyState === 1) {
@@ -314,6 +317,8 @@ export class WebServer {
     status: "restarting" | "completed" | "failed",
     error?: string
   ) {
+    if (!this.wss) return;
+
     const message = JSON.stringify({
       type: "restartStatus",
       data: {
@@ -330,6 +335,8 @@ export class WebServer {
   }
 
   private broadcastStatusUpdate() {
+    if (!this.wss) return;
+
     const message = JSON.stringify({
       type: "statusUpdate",
       data: this.clientInfo,
@@ -493,14 +500,30 @@ export class WebServer {
 
   public start(): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.httpServer
-        .listen(this.port, () => {
-          this.logger.info(
-            `Web server listening on http://localhost:${this.port}`
-          );
-          resolve();
-        })
-        .on("error", reject);
+      try {
+        // 使用 @hono/node-server 启动服务器
+        const server = serve({
+          fetch: this.app.fetch,
+          port: this.port,
+          createServer,
+        });
+
+        // 保存服务器实例
+        this.httpServer = server;
+
+        // 设置 WebSocket 服务器
+        this.wss = new WebSocketServer({ server: this.httpServer });
+        this.setupWebSocket();
+
+        this.logger.info(
+          `Web server listening on http://localhost:${this.port}`
+        );
+        resolve();
+
+        this.httpServer.on("error", reject);
+      } catch (error) {
+        reject(error);
+      }
     });
   }
 
@@ -513,24 +536,34 @@ export class WebServer {
       }
 
       // 强制断开所有 WebSocket 客户端连接
-      for (const client of this.wss.clients) {
-        client.terminate();
-      }
+      if (this.wss) {
+        for (const client of this.wss.clients) {
+          client.terminate();
+        }
 
-      // 关闭 WebSocket 服务器
-      this.wss.close(() => {
-        // 强制关闭 HTTP 服务器，不等待现有连接
-        this.httpServer.close(() => {
-          this.logger.info("Web server stopped");
-          resolve();
+        // 关闭 WebSocket 服务器
+        this.wss.close(() => {
+          // 强制关闭 HTTP 服务器，不等待现有连接
+          if (this.httpServer) {
+            this.httpServer.close(() => {
+              this.logger.info("Web server stopped");
+              resolve();
+            });
+          } else {
+            this.logger.info("Web server stopped");
+            resolve();
+          }
+
+          // 设置超时，如果 2 秒内没有关闭则强制退出
+          setTimeout(() => {
+            this.logger.info("Web server force stopped");
+            resolve();
+          }, 2000);
         });
-
-        // 设置超时，如果 2 秒内没有关闭则强制退出
-        setTimeout(() => {
-          this.logger.info("Web server force stopped");
-          resolve();
-        }, 2000);
-      });
+      } else {
+        this.logger.info("Web server stopped");
+        resolve();
+      }
     });
   }
 }
