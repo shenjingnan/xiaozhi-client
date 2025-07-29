@@ -11,7 +11,8 @@ const MiniCircularProgress = ({
   value = 0,
   maxValue = 100,
   size = 60,
-  color = "#3b82f6",
+  activeColor = "#3b82f6",
+  inactiveColor = "#e5e7eb",
   symbol = "%",
 }) => {
   const radius = (size - 6) / 2;
@@ -26,7 +27,7 @@ const MiniCircularProgress = ({
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="#e5e7eb"
+          stroke={inactiveColor}
           strokeWidth={6}
           fill="none"
         />
@@ -34,7 +35,7 @@ const MiniCircularProgress = ({
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={color}
+          stroke={activeColor}
           strokeWidth={6}
           fill="none"
           strokeDasharray={strokeDasharray}
@@ -69,7 +70,8 @@ export function SectionCards() {
               showValue={false}
               value={1}
               maxValue={1}
-              color="#16a34a"
+              activeColor="#16a34a"
+              inactiveColor="#f87171"
               size={30}
               symbol=""
             />
@@ -87,7 +89,8 @@ export function SectionCards() {
               showValue={false}
               value={1}
               maxValue={1}
-              color="#16a34a"
+              activeColor="#16a34a"
+              inactiveColor="#f87171"
               size={30}
               symbol=""
             />
@@ -108,7 +111,8 @@ export function SectionCards() {
               showValue={false}
               value={3}
               maxValue={5}
-              color="#16a34a"
+              activeColor="#16a34a"
+              inactiveColor="#f87171"
               size={30}
               symbol=""
             />
@@ -116,7 +120,7 @@ export function SectionCards() {
         </CardHeader>
       </Card>
       {/* <Card className="@container/card"> */}
-        {/* <CardHeader className="relative">
+      {/* <CardHeader className="relative">
           <CardDescription>Growth Rate</CardDescription>
           <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
             4.5%
@@ -128,7 +132,7 @@ export function SectionCards() {
             </Badge>
           </div>
         </CardHeader> */}
-        {/* <CardFooter className="flex-col items-start gap-1 text-sm">
+      {/* <CardFooter className="flex-col items-start gap-1 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
             Steady performance <TrendingUpIcon className="size-4" />
           </div>
