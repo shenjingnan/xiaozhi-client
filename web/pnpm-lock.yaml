@@ -104,6 +104,9 @@ importers:
       zod:
         specifier: ^4.0.10
         version: 4.0.10
+      zustand:
+        specifier: ^5.0.6
+        version: 5.0.6(@types/react@18.3.23)(react@18.3.1)(use-sync-external-store@1.5.0(react@18.3.1))
     devDependencies:
       '@biomejs/biome':
         specifier: 1.9.4
@@ -2465,6 +2468,24 @@ packages:
   zod@4.0.10:
     resolution: {integrity: sha512-3vB+UU3/VmLL2lvwcY/4RV2i9z/YU0DTV/tDuYjrwmx5WeJ7hwy+rGEEx8glHp6Yxw7ibRbKSaIFBgReRPe5KA==}
 
+  zustand@5.0.6:
+    resolution: {integrity: sha512-ihAqNeUVhe0MAD+X8M5UzqyZ9k3FFZLBTtqo6JLPwV53cbRB/mJwBI0PxcIgqhBBHlEs8G45OTDTMq3gNcLq3A==}
+    engines: {node: '>=12.20.0'}
+    peerDependencies:
+      '@types/react': '>=18.0.0'
+      immer: '>=9.0.6'
+      react: '>=18.0.0'
+      use-sync-external-store: '>=1.2.0'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      immer:
+        optional: true
+      react:
+        optional: true
+      use-sync-external-store:
+        optional: true
+
 snapshots:
 
   '@adobe/css-tools@4.4.3': {}
@@ -4784,3 +4805,9 @@ snapshots:
   yaml@2.8.0: {}
 
   zod@4.0.10: {}
+
+  zustand@5.0.6(@types/react@18.3.23)(react@18.3.1)(use-sync-external-store@1.5.0(react@18.3.1)):
+    optionalDependencies:
+      '@types/react': 18.3.23
+      react: 18.3.1
+      use-sync-external-store: 1.5.0(react@18.3.1)

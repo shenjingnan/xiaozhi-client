@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AppConfig, ClientStatus } from "../types";
+import { useWebSocketActions } from "../stores/websocket";
 
 interface WebSocketState {
   connected: boolean;
@@ -22,6 +23,43 @@ export function useWebSocket() {
   const [wsUrl, setWsUrl] = useState<string>("");
   const statusCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // 获取 zustand store 的 actions
+  const storeActions = useWebSocketActions();
+
+  // 同步数据到 store 的辅助函数
+  const syncToStore = useCallback(
+    (key: string, value: any) => {
+      console.log("[WebSocket] 同步到 store:", key, value);
+      try {
+        switch (key) {
+          case "connected":
+            storeActions.setConnected(value);
+            console.log("[WebSocket] Store connected 已更新为:", value);
+            break;
+          case "config":
+            storeActions.setConfig(value);
+            console.log("[WebSocket] Store config 已更新");
+            break;
+          case "status":
+            storeActions.setStatus(value);
+            console.log("[WebSocket] Store status 已更新:", value);
+            break;
+          case "restartStatus":
+            storeActions.setRestartStatus(value);
+            console.log("[WebSocket] Store restartStatus 已更新");
+            break;
+          case "wsUrl":
+            storeActions.setWsUrl(value);
+            console.log("[WebSocket] Store wsUrl 已更新:", value);
+            break;
+        }
+      } catch (error) {
+        console.error("Failed to sync to store:", error);
+      }
+    },
+    [storeActions]
+  );
+
   // 动态获取WebSocket连接地址
   const getWebSocketUrl = useCallback(() => {
     // 优先使用localStorage中保存的地址
@@ -36,7 +74,7 @@ export function useWebSocket() {
 
     // 如果当前页面有端口，就使用当前端口；否则使用默认端口
     if (port) {
-      return `${wsProtocol}//${hostname}:${port}`;
+      return `${wsProtocol}//${hostname}:9999`;
     }
     // 当通过标准端口（80/443）访问时，port 为空
     // 这种情况下应该使用相同的标准端口，而不是 9999
@@ -74,10 +112,19 @@ export function useWebSocket() {
   useEffect(() => {
     const url = getWebSocketUrl();
     setWsUrl(url);
+    // 同步 URL 到 store
+    syncToStore("wsUrl", url);
+
     const ws = new WebSocket(url);
 
     ws.onopen = () => {
-      setState((prev) => ({ ...prev, connected: true }));
+      console.log(`[WebSocket] 连接已建立，URL: ${url}`);
+      const newState = { connected: true };
+      setState((prev) => ({ ...prev, ...newState }));
+      // 同步连接状态到 store
+      syncToStore("connected", true);
+
+      console.log(`[WebSocket] 发送初始请求: getConfig, getStatus`);
       ws.send(JSON.stringify({ type: "getConfig" }));
       ws.send(JSON.stringify({ type: "getStatus" }));
 
@@ -87,24 +134,48 @@ export function useWebSocket() {
 
     ws.onmessage = (event) => {
       const message = JSON.parse(event.data);
+      console.log(`[WebSocket] 收到消息:`, message);
 
       switch (message.type) {
         case "config":
         case "configUpdate":
+          console.log(`[WebSocket] 处理 config 更新:`, message.data);
           setState((prev) => ({ ...prev, config: message.data }));
+          // 同步 config 到 store
+          syncToStore("config", message.data);
           break;
         case "status":
-        case "statusUpdate":
-          setState((prev) => ({ ...prev, status: message.data }));
+        case "statusUpdate": {
+          console.log("[WebSocket] 处理 status 更新:", message.data);
+          // 确保状态数据格式正确
+          const statusData = message.data;
+          if (statusData && typeof statusData === 'object') {
+            setState((prev) => ({ ...prev, status: statusData }));
+            // 同步 status 到 store，使用 setTimeout 确保状态更新完成
+            setTimeout(() => {
+              syncToStore("status", statusData);
+            }, 0);
+          } else {
+            console.warn("[WebSocket] 收到无效的 status 数据:", statusData);
+          }
           break;
+        }
         case "restartStatus":
+          console.log(`[WebSocket] 处理 restartStatus 更新:`, message.data);
           setState((prev) => ({ ...prev, restartStatus: message.data }));
+          // 同步 restartStatus 到 store
+          syncToStore("restartStatus", message.data);
           break;
+        default:
+          console.log(`[WebSocket] 未处理的消息类型: ${message.type}`);
       }
     };
 
     ws.onclose = () => {
+      console.log(`[WebSocket] 连接已断开`);
       setState((prev) => ({ ...prev, connected: false }));
+      // 同步断开连接状态到 store
+      syncToStore("connected", false);
       stopStatusCheck();
     };
 
@@ -118,7 +189,7 @@ export function useWebSocket() {
       stopStatusCheck();
       ws.close();
     };
-  }, [getWebSocketUrl, startStatusCheck, stopStatusCheck]);
+  }, [getWebSocketUrl, startStatusCheck, stopStatusCheck, syncToStore]);
 
   const updateConfig = useCallback(
     (config: AppConfig): Promise<void> => {
