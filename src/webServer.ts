@@ -256,6 +256,7 @@ export class WebServer {
       }
 
       case "updateConfig":
+        debugger;
         this.updateConfig(data.config);
         this.broadcastConfigUpdate(data.config);
         break;

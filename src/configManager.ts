@@ -580,6 +580,7 @@ export class ConfigManager {
 
     // 更新工具配置
     newConfig.mcpServerConfig[serverName].tools[toolName] = {
+      ...newConfig.mcpServerConfig[serverName].tools[toolName],
       enable: enabled,
       ...(description && { description }),
     };

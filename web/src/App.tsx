@@ -8,7 +8,7 @@ import "./utils/testInfiniteLoop";
 function App() {
   return (
     <>
-      {/* <DashboardPage /> */}
+      <DashboardPage />
       <DashboardWithStore />
       {/* <div className="min-h-screen bg-background">
         <Dashboard />

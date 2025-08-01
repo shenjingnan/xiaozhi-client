@@ -9,12 +9,30 @@ interface RestartStatus {
   timestamp: number;
 }
 
+interface Tool {
+  enable: boolean;
+  description: string;
+}
+
+interface McpServerConfig {
+  [key: string]: {
+    tools: Record<string, Tool>;
+  };
+}
+
+interface McpServer {
+  command: string;
+  args: string[];
+}
+
 interface WebSocketState {
   connected: boolean;
   config: AppConfig | null;
   status: ClientStatus | null;
   restartStatus?: RestartStatus;
   wsUrl: string;
+  mcpServers: Record<string, McpServer>;
+  mcpServerConfig: Record<string, McpServerConfig> | null;
 }
 
 interface WebSocketActions {
@@ -35,6 +53,8 @@ const initialState: WebSocketState = {
   status: null,
   restartStatus: undefined,
   wsUrl: "",
+  mcpServers: {},
+  mcpServerConfig: {},
 };
 
 export const useWebSocketStore = create<WebSocketStore>()(
@@ -48,7 +68,10 @@ export const useWebSocketStore = create<WebSocketStore>()(
       },
 
       setConfig: (config: AppConfig | null) => {
-        console.log("[Store] 更新 config 状态:", config ? "有配置数据" : "无配置数据");
+        console.log(
+          "[Store] 更新 config 状态:",
+          config ? "有配置数据" : "无配置数据"
+        );
         set({ config }, false, "setConfig");
       },
 
@@ -66,6 +89,12 @@ export const useWebSocketStore = create<WebSocketStore>()(
         set((state) => ({ ...state, ...data }), false, "updateFromWebSocket"),
 
       reset: () => set(initialState, false, "reset"),
+
+      setMcpServers: (mcpServers: Record<string, McpServer>) =>
+        set({ mcpServers }, false, "setMcpServers"),
+
+      setMcpServerConfig: (mcpServerConfig: Record<string, McpServerConfig>) =>
+        set({ mcpServerConfig }, false, "setMcpServerConfig"),
     }),
     {
       name: "websocket-store",
@@ -83,6 +112,10 @@ export const useWebSocketStatus = () =>
 export const useWebSocketRestartStatus = () =>
   useWebSocketStore((state) => state.restartStatus);
 export const useWebSocketUrl = () => useWebSocketStore((state) => state.wsUrl);
+export const useWebSocketMcpServers = () =>
+  useWebSocketStore((state) => state.config?.mcpServers);
+export const useWebSocketMcpServerConfig = () =>
+  useWebSocketStore((state) => state.config?.mcpServerConfig);
 
 // 复合选择器
 export const useWebSocketConnectionInfo = () =>
