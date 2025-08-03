@@ -81,7 +81,7 @@ export function WebUrlSettingButton() {
 
     if (portChangeStatus?.status === "polling") {
       const { currentAttempt, maxAttempts } = portChangeStatus;
-      return `等待服务重启 (${currentAttempt}/${maxAttempts})`;
+      return `等待服务重启 (${currentAttempt || 0}/${maxAttempts || 45})`;
     }
 
     if (portChangeStatus?.status === "connecting") {
@@ -101,18 +101,30 @@ export function WebUrlSettingButton() {
       return;
     }
 
+    console.log(`[WebUrlSettingButton] 开始端口切换: ${currentPort} -> ${newPort}`);
     setIsLoading(true);
+
     try {
+      // 显示开始处理的提示
+      toast.info(
+        connected
+          ? `正在将端口从 ${currentPort} 切换到 ${newPort}...`
+          : `正在连接到端口 ${newPort}...`
+      );
+
       await changePort(newPort);
+
+      // 成功提示
       toast.success(
         connected
-          ? "端口配置已更新，服务正在重启..."
-          : "端口配置已更新，正在连接新端口..."
+          ? `端口已成功切换到 ${newPort}，页面即将刷新...`
+          : `已成功连接到端口 ${newPort}，页面即将刷新...`
       );
       setOpen(false);
     } catch (error) {
       console.error("端口切换失败:", error);
-      toast.error(error instanceof Error ? error.message : "端口切换失败");
+      const errorMessage = error instanceof Error ? error.message : "端口切换失败";
+      toast.error(`端口切换失败: ${errorMessage}`);
     } finally {
       setIsLoading(false);
     }

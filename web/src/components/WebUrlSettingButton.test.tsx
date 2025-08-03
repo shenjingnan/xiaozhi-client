@@ -1,4 +1,4 @@
-import type { AppConfig } from "@/types";
+// import type { AppConfig } from "@/types";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WebUrlSettingButton } from "./WebUrlSettingButton";
@@ -23,14 +23,14 @@ vi.mock("sonner", () => ({
 }));
 
 describe("WebUrlSettingButton", () => {
-  const mockConfig: AppConfig = {
-    mcpEndpoint: "test-endpoint",
-    mcpServers: {},
-    webUI: {
-      port: 8888,
-      autoRestart: true,
-    },
-  };
+  // const mockConfig: AppConfig = {
+  //   mcpEndpoint: "test-endpoint",
+  //   mcpServers: {},
+  //   webUI: {
+  //     port: 8888,
+  //     autoRestart: true,
+  //   },
+  // };
 
   beforeEach(() => {
     vi.clearAllMocks();

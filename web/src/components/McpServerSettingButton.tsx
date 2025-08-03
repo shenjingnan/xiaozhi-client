@@ -16,7 +16,7 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
-import { useWebSocket } from "@/hooks/useWebSocket";
+
 import { useWebSocketConfig } from "@/stores/websocket";
 import type { MCPServerConfig } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,6 +26,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
 import { Textarea } from "./ui/textarea";
+import { useWebSocket } from "@/hooks/useWebSocket";
 
 const formSchema = z.object({
   config: z.string().min(2, {
@@ -43,6 +44,7 @@ export function McpServerSettingButton({
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const config = useWebSocketConfig();
+  const { updateConfig } = useWebSocket();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -83,7 +85,7 @@ export function McpServerSettingButton({
         },
       };
 
-      // await updateConfig(updatedConfig);
+      await updateConfig(updatedConfig);
       toast.success("MCP服务器配置已更新");
       setOpen(false);
     } catch (error) {

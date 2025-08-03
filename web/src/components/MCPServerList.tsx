@@ -6,7 +6,7 @@ import {
   useWebSocketMcpServerConfig,
   useWebSocketMcpServers,
 } from "@/stores/websocket";
-import type { LocalMCPServerConfig, MCPServerConfig } from "@/types";
+import type { MCPServerConfig } from "@/types";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
 import { CoffeeIcon, MinusIcon, PlusIcon, Wrench } from "lucide-react";
 import { useMemo } from "react";
@@ -99,7 +99,7 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
                 在这里管理你的 MCP 服务器和工具。
               </p>
             </div>
-            <AddMcpServerButton />
+            {/* <AddMcpServerButton /> */}
           </div>
 
           <div className="px-4 lg:px-6">

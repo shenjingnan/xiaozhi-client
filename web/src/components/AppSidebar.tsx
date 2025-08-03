@@ -1,10 +1,6 @@
 import {
-  BadgeQuestionMarkIcon,
-  BotIcon,
-  CableIcon,
   LayoutDashboardIcon,
   SettingsIcon,
-  ZapIcon,
 } from "lucide-react";
 import type React from "react";
 import { Link } from "react-router-dom";
