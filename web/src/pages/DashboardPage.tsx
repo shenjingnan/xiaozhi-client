@@ -1,7 +1,7 @@
 import { AppSidebar } from "@/components/AppSidebar";
 import McpList from "@/components/mcp-list";
 import { SectionCards } from "@/components/section-cards";
-import { SiteHeader } from "@/components/site-header";
+import { SiteHeader } from "@/components/SiteHeder";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export default function DashboardPage() {
