@@ -31,6 +31,7 @@ interface WebSocketState {
   status: ClientStatus | null;
   restartStatus?: RestartStatus;
   wsUrl: string;
+  mcpEndpoint: string | string[];
   mcpServers: Record<string, McpServer>;
   mcpServerConfig: Record<string, McpServerConfig> | null;
 }
@@ -41,6 +42,11 @@ interface WebSocketActions {
   setStatus: (status: ClientStatus | null) => void;
   setRestartStatus: (restartStatus: RestartStatus | undefined) => void;
   setWsUrl: (url: string) => void;
+  setMcpEndpoint: (mcpEndpoint: string | string[]) => void;
+  setMcpServers: (mcpServers: Record<string, McpServer>) => void;
+  setMcpServerConfig: (
+    mcpServerConfig: Record<string, McpServerConfig>
+  ) => void;
   updateFromWebSocket: (data: Partial<WebSocketState>) => void;
   reset: () => void;
 }
@@ -53,6 +59,7 @@ const initialState: WebSocketState = {
   status: null,
   restartStatus: undefined,
   wsUrl: "",
+  mcpEndpoint: "",
   mcpServers: {},
   mcpServerConfig: {},
 };
@@ -72,7 +79,15 @@ export const useWebSocketStore = create<WebSocketStore>()(
           "[Store] 更新 config 状态:",
           config ? "有配置数据" : "无配置数据"
         );
-        set({ config }, false, "setConfig");
+        console.log("[Store] 同步更新 mcpEndpoint:", config?.mcpEndpoint);
+        set(
+          {
+            config,
+            mcpEndpoint: config?.mcpEndpoint ?? "",
+          },
+          false,
+          "setConfig"
+        );
       },
 
       setStatus: (status: ClientStatus | null) => {
@@ -95,6 +110,9 @@ export const useWebSocketStore = create<WebSocketStore>()(
 
       setMcpServerConfig: (mcpServerConfig: Record<string, McpServerConfig>) =>
         set({ mcpServerConfig }, false, "setMcpServerConfig"),
+
+      setMcpEndpoint: (mcpEndpoint: string | string[]) =>
+        set({ mcpEndpoint }, false, "setMcpEndpoint"),
     }),
     {
       name: "websocket-store",
@@ -103,6 +121,8 @@ export const useWebSocketStore = create<WebSocketStore>()(
 );
 
 // 选择器 hooks，用于组件只订阅需要的状态
+export const useMcpEndpoint = () =>
+  useWebSocketStore((state) => state.mcpEndpoint);
 export const useWebSocketConnected = () =>
   useWebSocketStore((state) => state.connected);
 export const useWebSocketConfig = () =>
@@ -142,6 +162,9 @@ export const useWebSocketActions = () =>
       setStatus: state.setStatus,
       setRestartStatus: state.setRestartStatus,
       setWsUrl: state.setWsUrl,
+      setMcpEndpoint: state.setMcpEndpoint,
+      setMcpServers: state.setMcpServers,
+      setMcpServerConfig: state.setMcpServerConfig,
       updateFromWebSocket: state.updateFromWebSocket,
       reset: state.reset,
     }))

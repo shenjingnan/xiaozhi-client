@@ -44,7 +44,7 @@ export interface WebUIConfig {
 }
 
 export interface AppConfig {
-  mcpEndpoint: string;
+  mcpEndpoint: string | string[];
   mcpServers: Record<string, MCPServerConfig>;
   mcpServerConfig?: Record<string, MCPServerToolsConfig>;
   connection?: ConnectionConfig;
