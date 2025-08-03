@@ -19,6 +19,7 @@ import { useMemo } from "react";
 import { toast } from "sonner";
 import { McpServerSettingButton } from "./McpServerSettingButton";
 import { AddMcpServerButton } from "./AddMcpServerButton";
+import { RemoveMcpServerButton } from "./RemoveMcpServerButton";
 
 const McpServicesDisplay = () => {
   const mcpServerConfig = useWebSocketMcpServerConfig();
@@ -225,6 +226,9 @@ const McpServicesDisplay = () => {
                         <McpServerSettingButton
                           mcpServerName={mcpServerName}
                           mcpServer={mcpServer as MCPServerConfig}
+                        />
+                        <RemoveMcpServerButton
+                          mcpServerName={mcpServerName}
                         />
                       </div>
                     </div>
