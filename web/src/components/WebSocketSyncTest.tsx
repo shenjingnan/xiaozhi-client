@@ -51,9 +51,9 @@ function WebSocketSyncTest() {
     const storeStatusValue = storeStatus;
 
     if (JSON.stringify(hookStatus) === JSON.stringify(storeStatusValue)) {
-      addTestResult(`✅ 状态对象同步正常`);
+      addTestResult("✅ 状态对象同步正常");
     } else {
-      addTestResult(`❌ 状态对象不同步`);
+      addTestResult("❌ 状态对象不同步");
       addTestResult(`Hook status: ${hookStatus?.status || "null"}`);
       addTestResult(`Store status: ${storeStatusValue?.status || "null"}`);
     }
@@ -70,7 +70,8 @@ function WebSocketSyncTest() {
   };
 
   // 自动运行测试
-  useEffect(() => {
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+    useEffect(() => {
     const interval = setInterval(() => {
       runSyncTest();
     }, 5000);
@@ -144,7 +145,8 @@ function WebSocketSyncTest() {
               <div className="text-gray-500">等待测试结果...</div>
             ) : (
               testResults.map((result, index) => (
-                <div key={index} className="mb-1">
+                // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+<div key={index} className="mb-1">
                   {result}
                 </div>
               ))

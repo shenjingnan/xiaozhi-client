@@ -1,16 +1,6 @@
 import { Button } from "@/components/ui/button";
 
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -20,12 +10,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useMcpEndpoint, useWebSocketConfig } from "@/stores/websocket";
 import { CopyIcon, PlusIcon, SettingsIcon, TrashIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
 
 const sliceEndpoint = (endpoint: string) => {
   return `${endpoint.slice(0, 30)}...${endpoint.slice(-10)}`;
@@ -50,7 +50,7 @@ const validateEndpoint = (endpoint: string): string | null => {
   }
 
   // 验证 JWT 格式（应该有两个点分隔的三个部分）
-  const jwtParts = token.split('.');
+  const jwtParts = token.split(".");
   if (jwtParts.length !== 3) {
     return "接入点格式无效，token 格式不正确";
   }
@@ -116,13 +116,20 @@ export function McpEndpointSettingButton() {
 
     setIsDeleting(true);
     try {
-      const currentEndpoints = Array.isArray(mcpEndpoint) ? mcpEndpoint : [mcpEndpoint];
-      const updatedEndpoints = currentEndpoints.filter(ep => ep !== endpointToDelete);
+      const currentEndpoints = Array.isArray(mcpEndpoint)
+        ? mcpEndpoint
+        : [mcpEndpoint];
+      const updatedEndpoints = currentEndpoints.filter(
+        (ep) => ep !== endpointToDelete
+      );
 
       // 如果删除后没有接入点了，设置为空字符串
-      const newMcpEndpoint = updatedEndpoints.length > 0 ?
-        (updatedEndpoints.length === 1 ? updatedEndpoints[0] : updatedEndpoints) :
-        "";
+      const newMcpEndpoint =
+        updatedEndpoints.length > 0
+          ? updatedEndpoints.length === 1
+            ? updatedEndpoints[0]
+            : updatedEndpoints
+          : "";
 
       const updatedConfig = {
         ...config,
@@ -150,7 +157,9 @@ export function McpEndpointSettingButton() {
     }
 
     // 检查是否与现有接入点重复
-    const currentEndpoints = Array.isArray(mcpEndpoint) ? mcpEndpoint : [mcpEndpoint];
+    const currentEndpoints = Array.isArray(mcpEndpoint)
+      ? mcpEndpoint
+      : [mcpEndpoint];
     if (currentEndpoints.includes(newEndpoint)) {
       setValidationError("该接入点已存在");
       return;
@@ -164,7 +173,10 @@ export function McpEndpointSettingButton() {
     setIsAdding(true);
     try {
       // 将新接入点添加到数组的第一位
-      const updatedEndpoints = [newEndpoint, ...currentEndpoints.filter(ep => ep)];
+      const updatedEndpoints = [
+        newEndpoint,
+        ...currentEndpoints.filter((ep) => ep),
+      ];
 
       const updatedConfig = {
         ...config,
@@ -263,46 +275,14 @@ export function McpEndpointSettingButton() {
               variant="outline"
               size="icon"
               className="flex-1 flex items-center gap-2"
-              onClick={() => window.open('https://xiaozhi.me/console/agents', '_blank')}
+              onClick={() =>
+                window.open("https://xiaozhi.me/console/agents", "_blank")
+              }
             >
               <span>打开小智服务端</span>
             </Button>
           </div>
         </div>
-
-        {/* <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <div className="grid gap-4">
-              <FormField
-                control={form.control}
-                name="config"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Textarea
-                        placeholder="MCP服务配置"
-                        className="resize-none h-[300px] font-mono text-sm"
-                        disabled={isLoading}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </form>
-        </Form> */}
-        {/* <DialogFooter className="mt-4">
-          <DialogClose asChild>
-            <Button variant="outline">
-              取消
-            </Button>
-          </DialogClose>
-          <Button type="submit">
-            保存
-          </Button>
-        </DialogFooter> */}
       </DialogContent>
 
       {/* 删除确认对话框 */}
@@ -311,7 +291,8 @@ export function McpEndpointSettingButton() {
           <AlertDialogHeader>
             <AlertDialogTitle>确认删除接入点</AlertDialogTitle>
             <AlertDialogDescription>
-              确定要删除接入点 "{sliceEndpoint(endpointToDelete)}" 吗？此操作无法撤销。
+              确定要删除接入点 "{sliceEndpoint(endpointToDelete)}"
+              吗？此操作无法撤销。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -332,9 +313,7 @@ export function McpEndpointSettingButton() {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>添加新的接入点</DialogTitle>
-            <DialogDescription>
-              请输入小智服务端接入点地址
-            </DialogDescription>
+            <DialogDescription>请输入小智服务端接入点地址</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">

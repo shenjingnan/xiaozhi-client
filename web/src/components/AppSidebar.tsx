@@ -1,36 +1,18 @@
-// @ts-nocheck
 import {
-  ArrowUpCircleIcon,
   BadgeQuestionMarkIcon,
-  BarChartIcon,
   BotIcon,
   CableIcon,
-  CameraIcon,
-  ClipboardListIcon,
-  DatabaseIcon,
-  FileCodeIcon,
-  FileIcon,
-  FileTextIcon,
-  FolderIcon,
-  HelpCircleIcon,
   LayoutDashboardIcon,
-  Link2Icon,
-  ListIcon,
-  SearchIcon,
   SettingsIcon,
-  UsersIcon,
   ZapIcon,
 } from "lucide-react";
 import type React from "react";
+import { Link } from "react-router-dom";
 
-import { NavDocuments } from "@/components/nav-documents";
-import { NavMain } from "@/components/nav-main";
-import { NavSecondary } from "@/components/nav-secondary";
-import { NavUser } from "@/components/nav-user";
+import { AppSidebarNav } from "@/components/AppSidebarNav";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -38,11 +20,6 @@ import {
 } from "@/components/ui/sidebar";
 
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navMain: [
     {
       title: "仪表板",
@@ -71,7 +48,7 @@ const data = {
     },
     {
       title: "全局配置",
-      url: "#",
+      url: "/settings",
       icon: SettingsIcon,
     },
   ],
@@ -87,16 +64,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <button type="button">
-                {/* <ArrowUpCircleIcon className="h-5 w-5" /> */}
+              <Link to="/">
                 <span className="text-base font-semibold">Xiaozhi Client</span>
-              </button>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <AppSidebarNav items={data.navMain} />
       </SidebarContent>
     </Sidebar>
   );

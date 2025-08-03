@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { BrowserRouter, MemoryRouter } from "react-router-dom";
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import App from "../App";
 
 // Mock the dashboard page component to avoid complex dependencies
@@ -13,9 +13,7 @@ vi.mock("../utils/testInfiniteLoop", () => ({}));
 
 function renderWithRouter(ui: React.ReactElement, initialEntries = ["//"]) {
   return render(
-    <MemoryRouter initialEntries={initialEntries}>
-      {ui}
-    </MemoryRouter>
+    <MemoryRouter initialEntries={initialEntries}>{ui}</MemoryRouter>
   );
 }
 
@@ -58,6 +56,8 @@ describe("App Routing", () => {
 
     // Should have navigation links
     expect(screen.getByRole("link", { name: "Dashboard" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "MCP Endpoint" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "MCP Endpoint" })
+    ).toBeInTheDocument();
   });
 });

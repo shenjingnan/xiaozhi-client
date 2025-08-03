@@ -1,20 +1,17 @@
-import { AppSidebar } from "@/components/app-sidebar";
-import McpList from "@/components/mcp-list";
-import { SectionCards } from "@/components/section-cards";
+import { AppSidebar } from "@/components/AppSidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
-export default function Page() {
+export default function SettingsPage() {
   return (
     <SidebarProvider>
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader />
+        <SiteHeader title="设置" />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <SectionCards />
-              <McpList />
+              <h1 className="text-2xl font-bold">设置</h1>
             </div>
           </div>
         </div>

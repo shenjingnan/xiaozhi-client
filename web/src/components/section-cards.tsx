@@ -11,8 +11,8 @@ import {
   useWebSocketMcpServers,
   useWebSocketUrl,
 } from "@/stores/websocket";
-import { SettingsIcon } from "lucide-react";
 import { McpEndpointSettingButton } from "./McpEndpointSettingButton";
+import { WebUrlSettingButton } from "./WebUrlSettingButton";
 
 const MiniCircularProgress = ({
   showValue = true,
@@ -116,8 +116,9 @@ export function SectionCards() {
             />
           </div>
         </CardHeader>
-        <CardFooter className="flex-col items-start gap-1 text-sm">
+        <CardFooter className="flex items-center justify-between gap-1 text-sm">
           <div className="text-muted-foreground">{wsUrl}</div>
+          <WebUrlSettingButton />
         </CardFooter>
       </Card>
       <Card className="@container/card">

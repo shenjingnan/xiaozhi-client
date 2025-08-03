@@ -103,97 +103,89 @@ const McpServicesDisplay = () => {
       <div className="*:data-[slot=card]:shadow-xs @xl/main:grid-cols-8 @5xl/main:grid-cols-8 grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card">
         {/* <div>{JSON.stringify(enabledTools, null, 2)}</div> */}
         <Card className="transition-all duration-200 col-span-3">
-          <CardContent className="p-0">
-            <div className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-                <div>
-                  <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
-                    <Wrench className="h-4 w-4" />
-                    聚合后的MCP服务 ({enabledTools.length})
-                  </h4>
-                  <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                    {enabledTools.map((tool) => (
-                      <div
-                        key={tool.toolName}
-                        className="flex items-start justify-between p-4 bg-gray-50 rounded-md font-mono"
-                      >
-                        <div className="text-md flex flex-col gap-2">
-                          {tool.toolName}
-                          <p className="text-sm text-muted-foreground">
-                            {tool.tool.description}
-                          </p>
-                        </div>
+          <CardContent className="p-4">
+            <div className="flex-col">
+              <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                <Wrench className="h-4 w-4" />
+                聚合后的MCP服务 ({enabledTools.length})
+              </h4>
+              <div className="flex-1 space-y-2 h-[500px] overflow-y-auto">
+                {enabledTools.map((tool) => (
+                  <div
+                    key={tool.toolName}
+                    className="flex items-start justify-between p-4 bg-gray-50 rounded-md font-mono"
+                  >
+                    <div className="text-md flex flex-col gap-2">
+                      {tool.toolName}
+                      <p className="text-sm text-muted-foreground">
+                        {tool.tool.description}
+                      </p>
+                    </div>
 
-                        <div className="flex items-center gap-2 ml-4">
-                          <Button
-                            variant="secondary"
-                            size="icon"
-                            className="size-8 hover:bg-red-500 hover:text-white"
-                            onClick={() =>
-                              handleToggleTool(tool.serverName, tool.toolName)
-                            }
-                          >
-                            <MinusIcon size={18} />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
+                    <div className="flex items-center gap-2 ml-4">
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className="size-8 hover:bg-red-500 hover:text-white"
+                        onClick={() =>
+                          handleToggleTool(tool.serverName, tool.toolName)
+                        }
+                      >
+                        <MinusIcon size={18} />
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
             </div>
           </CardContent>
         </Card>
         <Card className="transition-all duration-200 col-span-3">
-          <CardContent className="p-0">
-            <div className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-                <div className="flex flex-col h-full">
-                  <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
-                    <Wrench className="h-4 w-4" />
-                    可用工具 ({disabledTools.length})
-                  </h4>
-                  {disabledTools.length === 0 && (
-                    <div className="flex-1 flex flex-col items-center gap-4 py-20 px-4 bg-gray-50 rounded-md font-mono h-full">
-                      <CoffeeIcon
-                        strokeWidth={1.5}
-                        size={48}
-                        className="text-muted-foreground"
-                      />
-                      <span className="text-sm text-muted-foreground">
-                        全部工具都已经启用
-                      </span>
-                    </div>
-                  )}
-                  <div className="space-y-2">
-                    {disabledTools.map((tool) => (
-                      <div
-                        key={tool.toolName}
-                        className="flex items-start justify-between p-4 bg-gray-50 rounded-md font-mono"
-                      >
-                        <div className="text-md flex flex-col gap-2">
-                          {tool.toolName}
-                          <p className="text-sm text-muted-foreground">
-                            {tool.tool.description}
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-2 ml-4">
-                          <Button
-                            variant="secondary"
-                            size="icon"
-                            className="size-8 hover:bg-green-500 hover:text-white"
-                            onClick={() =>
-                              handleToggleTool(tool.serverName, tool.toolName)
-                            }
-                          >
-                            <PlusIcon className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+          <CardContent className="p-4">
+            <div className="flex-col">
+              <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                <Wrench className="h-4 w-4" />
+                可用工具 ({disabledTools.length})
+              </h4>
+              {disabledTools.length === 0 && (
+                <div className="flex-1 flex flex-col items-center gap-4 py-20 px-4 bg-gray-50 rounded-md font-mono h-full">
+                  <CoffeeIcon
+                    strokeWidth={1.5}
+                    size={48}
+                    className="text-muted-foreground"
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    全部工具都已经启用
+                  </span>
                 </div>
+              )}
+              <div className="flex-1 space-y-2 h-[500px] overflow-y-auto">
+                {disabledTools.map((tool) => (
+                  <div
+                    key={tool.toolName}
+                    className="flex items-start justify-between p-4 bg-gray-50 rounded-md font-mono"
+                  >
+                    <div className="text-md flex flex-col gap-2">
+                      {tool.toolName}
+                      <p className="text-sm text-muted-foreground">
+                        {tool.tool.description}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 ml-4">
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className="size-8 hover:bg-green-500 hover:text-white"
+                        onClick={() =>
+                          handleToggleTool(tool.serverName, tool.toolName)
+                        }
+                      >
+                        <PlusIcon className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </CardContent>
