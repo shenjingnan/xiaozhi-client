@@ -19,7 +19,7 @@ import {
 import type { MCPServerConfig } from "@/types";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useWebSocketConfig } from "@/stores/websocket";
-import { SettingsIcon } from "lucide-react";
+import { PlusIcon, SettingsIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Textarea } from "./ui/textarea";
@@ -33,81 +33,80 @@ const formSchema = z.object({
   }),
 });
 
-export function McpServerSettingButton({
-  mcpServer,
-  mcpServerName,
-}: {
-  mcpServer: MCPServerConfig;
-  mcpServerName: string;
-}) {
+export function AddMcpServerButton() {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { updateConfig } = useWebSocket();
   const config = useWebSocketConfig();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      config: JSON.stringify(mcpServer, null, 2),
+      config: `{
+  "mcpServers": {
+    "example-server": {
+      "command": "npx",
+      "args": ["-y", "@example/mcp-server"]
+    }
+  }
+}`,
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!config) {
-      toast.error("配置数据未加载，请稍后重试");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // 解析用户输入的JSON配置
-      let newMcpServerConfig: MCPServerConfig;
-      try {
-        newMcpServerConfig = JSON.parse(values.config);
-      } catch (error) {
-        toast.error("JSON格式错误，请检查配置格式");
-        return;
-      }
-
-      // 验证配置格式
-      if (!newMcpServerConfig || typeof newMcpServerConfig !== 'object') {
-        toast.error("配置格式无效");
-        return;
-      }
-
-      // 更新配置
-      const updatedConfig = {
-        ...config,
-        mcpServers: {
-          ...config.mcpServers,
-          [mcpServerName]: newMcpServerConfig,
-        },
-      };
-
-      // await updateConfig(updatedConfig);
-      toast.success("MCP服务器配置已更新");
-      setOpen(false);
-    } catch (error) {
-      console.error("更新配置失败:", error);
-      toast.error(error instanceof Error ? error.message : "更新配置失败");
-    } finally {
-      setIsLoading(false);
-    }
+    // if (!config) {
+    //   toast.error("配置数据未加载，请稍后重试");
+    //   return;
+    // }
+    // setIsLoading(true);
+    // try {
+    //   // 解析用户输入的JSON配置
+    //   let newMcpServerConfig: MCPServerConfig;
+    //   try {
+    //     newMcpServerConfig = JSON.parse(values.config);
+    //   } catch (error) {
+    //     toast.error("JSON格式错误，请检查配置格式");
+    //     return;
+    //   }
+    //   // 验证配置格式
+    //   if (!newMcpServerConfig || typeof newMcpServerConfig !== 'object') {
+    //     toast.error("配置格式无效");
+    //     return;
+    //   }
+    //   // 更新配置
+    //   const updatedConfig = {
+    //     ...config,
+    //     mcpServers: {
+    //       ...config.mcpServers,
+    //       [mcpServerName]: newMcpServerConfig,
+    //     },
+    //   };
+    //   // await updateConfig(updatedConfig);
+    //   toast.success("MCP服务器配置已更新");
+    //   setOpen(false);
+    // } catch (error) {
+    //   console.error("更新配置失败:", error);
+    //   toast.error(error instanceof Error ? error.message : "更新配置失败");
+    // } finally {
+    //   setIsLoading(false);
+    // }
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="secondary" size="icon" className="size-8">
-          <SettingsIcon className="h-4 w-4" />
+        <Button size="icon" className="w-full">
+          <PlusIcon className="h-4 w-4" />
+          <span>添加MCP服务</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <DialogHeader className="mb-4">
-              <DialogTitle>配置 {mcpServerName} MCP</DialogTitle>
+              <DialogTitle>添加MCP服务</DialogTitle>
               <DialogDescription>
-                点击保存后，需要重启服务才会生效。
+                添加后，需要重启服务才会生效。
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4">
@@ -118,9 +117,17 @@ export function McpServerSettingButton({
                   <FormItem>
                     <FormControl>
                       <Textarea
-                        placeholder="MCP服务配置"
                         className="resize-none h-[300px] font-mono text-sm"
                         disabled={isLoading}
+                        placeholder={`例如：
+{
+  "mcpServers": {
+    "example-server": {
+      "command": "npx",
+      "args": ["-y", "@example/mcp-server"]
+    }
+  }
+}`}
                         {...field}
                       />
                     </FormControl>

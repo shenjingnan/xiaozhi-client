@@ -18,6 +18,7 @@ import {
 import { useMemo } from "react";
 import { toast } from "sonner";
 import { McpServerSettingButton } from "./McpServerSettingButton";
+import { AddMcpServerButton } from "./AddMcpServerButton";
 
 const McpServicesDisplay = () => {
   const mcpServerConfig = useWebSocketMcpServerConfig();
@@ -193,7 +194,7 @@ const McpServicesDisplay = () => {
           </CardContent>
         </Card>
         <div className="transition-all duration-200 gap-4 flex flex-col col-span-2">
-          {/* {JSON.stringify(mcpServers)} */}
+          <AddMcpServerButton />
           {Object.entries(mcpServers || {}).map(([mcpServerName, mcpServer]) => (
             <Card key={mcpServerName} className={"transition-all duration-200"}>
               <CardContent className="p-0">
