@@ -1,7 +1,7 @@
 import { AppSidebar } from "@/components/AppSidebar";
+import { RestartButton } from "@/components/RestartButton";
 import { SiteHeader } from "@/components/SiteHeder";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import DashboardWithStore from "./DashboardWithStore";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -10,16 +10,16 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import z from "zod";
-import { toast } from "sonner";
-import type { AppConfig } from "@/types";
-import { useWebSocketConfig } from "@/stores/websocket";
 import { Input } from "@/components/ui/input";
-import { RestartButton } from "@/components/RestartButton";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { useWebSocket } from "@/hooks/useWebSocket";
+import { useWebSocketConfig } from "@/stores/websocket";
+import type { AppConfig } from "@/types";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import z from "zod";
 
 const formSchema = z.object({
   modelscope: z.object({
@@ -42,26 +42,45 @@ const formSchema = z.object({
 
 export default function SettingsPage() {
   const config = useWebSocketConfig();
+  const { updateConfig } = useWebSocket();
+  console.log(config);
   const [isLoading, setIsLoading] = useState(false);
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       modelscope: {
-        apiKey: "",
+        apiKey: config?.modelscope?.apiKey || "",
       },
       connection: {
-        heartbeatInterval: 30000,
-        heartbeatTimeout: 10000,
-        reconnectInterval: 5000,
+        heartbeatInterval: config?.connection?.heartbeatInterval || 30000,
+        heartbeatTimeout: config?.connection?.heartbeatTimeout || 10000,
+        reconnectInterval: config?.connection?.reconnectInterval || 5000,
       },
     },
   });
 
+  useEffect(() => {
+    form.reset({
+      modelscope: {
+        apiKey: config?.modelscope?.apiKey || "",
+      },
+      connection: {
+        heartbeatInterval: config?.connection?.heartbeatInterval || 30000,
+        heartbeatTimeout: config?.connection?.heartbeatTimeout || 10000,
+        reconnectInterval: config?.connection?.reconnectInterval || 5000,
+      },
+    });
+  }, [config, form.reset]);
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!config) {
+      toast.error("配置数据未加载，请稍后重试");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const newConfig: Partial<AppConfig> = {
+      const newConfig: AppConfig = {
         ...config,
         modelscope: {
           apiKey: values.modelscope.apiKey,
@@ -73,9 +92,8 @@ export default function SettingsPage() {
         },
       };
 
-      console.log(newConfig);
-      // updateConfig(newConfig);
-      toast.success("MCP服务器配置已更新");
+      await updateConfig(newConfig);
+      toast.success("配置已更新");
     } catch (error) {
       console.error("更新配置失败:", error);
       toast.error(error instanceof Error ? error.message : "更新配置失败");
@@ -129,30 +147,6 @@ export default function SettingsPage() {
                     />
                     <FormField
                       control={form.control}
-                      name="connection.heartbeatTimeout"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>心跳超时（毫秒）</FormLabel>
-                          <div className="flex gap-2 items-center">
-                            <FormControl>
-                              <Input
-                                placeholder="心跳超时（毫秒）"
-                                className="font-mono text-sm"
-                                type="number"
-                                disabled={isLoading}
-                                {...field}
-                              />
-                            </FormControl>
-                            <span className="text-sm text-muted-foreground w-[50px]">
-                              毫秒
-                            </span>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
                       name="connection.heartbeatInterval"
                       render={({ field }) => (
                         <FormItem>
@@ -165,6 +159,44 @@ export default function SettingsPage() {
                                 type="number"
                                 disabled={isLoading}
                                 {...field}
+                                value={field.value || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  field.onChange(
+                                    value === "" ? "" : Number(value)
+                                  );
+                                }}
+                              />
+                            </FormControl>
+                            <span className="text-sm text-muted-foreground w-[50px]">
+                              毫秒
+                            </span>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="connection.heartbeatTimeout"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>心跳超时（毫秒）</FormLabel>
+                          <div className="flex gap-2 items-center">
+                            <FormControl>
+                              <Input
+                                placeholder="心跳超时（毫秒）"
+                                className="font-mono text-sm"
+                                type="number"
+                                disabled={isLoading}
+                                {...field}
+                                value={field.value || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  field.onChange(
+                                    value === "" ? "" : Number(value)
+                                  );
+                                }}
                               />
                             </FormControl>
                             <span className="text-sm text-muted-foreground w-[50px]">
@@ -189,6 +221,13 @@ export default function SettingsPage() {
                                 type="number"
                                 disabled={isLoading}
                                 {...field}
+                                value={field.value || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  field.onChange(
+                                    value === "" ? "" : Number(value)
+                                  );
+                                }}
                               />
                             </FormControl>
                             <span className="text-sm text-muted-foreground w-[50px]">

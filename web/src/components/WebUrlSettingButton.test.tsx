@@ -1,7 +1,7 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { vi, describe, it, expect, beforeEach } from "vitest";
-import { WebUrlSettingButton } from "./WebUrlSettingButton";
 import type { AppConfig } from "@/types";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { WebUrlSettingButton } from "./WebUrlSettingButton";
 
 // Mock the hooks
 vi.mock("@/hooks/useWebSocket", () => ({

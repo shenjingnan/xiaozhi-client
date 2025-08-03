@@ -1,9 +1,8 @@
-import ConfigEditor from "../components/ConfigEditor";
-import { ConnectionSettings } from "../components/ConnectionSettings";
-import MCPServerList from "../components/MCPServerList";
-import { RestartNotification } from "../components/RestartNotification";
-import StatusCard from "../components/StatusCard";
-import { useWebSocket } from "../hooks/useWebSocket";
+import ConfigEditor from "@/components/ConfigEditor";
+import { ConnectionSettings } from "@/components/ConnectionSettings";
+import { RestartNotification } from "@/components/RestartNotification";
+import StatusCard from "@/components/StatusCard";
+import { useWebSocket } from "@/hooks/useWebSocket";
 
 function Dashboard() {
   const {
@@ -41,7 +40,7 @@ function Dashboard() {
 
       {config && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <MCPServerList
+          {/* <MCPServerList
             servers={config.mcpServers}
             serverConfig={config.mcpServerConfig}
             onChange={(servers, serverConfig) => {
@@ -51,7 +50,7 @@ function Dashboard() {
                 mcpServerConfig: serverConfig,
               });
             }}
-          />
+          /> */}
 
           <ConfigEditor
             config={config}

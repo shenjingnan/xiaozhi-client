@@ -107,7 +107,7 @@ export function McpServerList() {
             <div className="flex-col">
               <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
                 <Wrench className="h-4 w-4" />
-                聚合后的MCP服务 ({enabledTools.length})
+                使用中的工具 ({enabledTools.length})
               </h4>
               <div className="flex-1 space-y-2 h-[500px] overflow-y-auto">
                 {enabledTools.map((tool) => (
@@ -145,7 +145,7 @@ export function McpServerList() {
             <div className="flex-col">
               <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
                 <Wrench className="h-4 w-4" />
-                可用工具 ({disabledTools.length})
+                未使用的工具 ({disabledTools.length})
               </h4>
               {disabledTools.length === 0 && (
                 <div className="flex-1 flex flex-col items-center gap-4 py-20 px-4 bg-gray-50 rounded-md font-mono h-full">
@@ -237,4 +237,4 @@ export function McpServerList() {
       </div>
     </div>
   );
-};
+}

@@ -71,7 +71,7 @@ function WebSocketSyncTest() {
 
   // 自动运行测试
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-    useEffect(() => {
+  useEffect(() => {
     const interval = setInterval(() => {
       runSyncTest();
     }, 5000);
@@ -146,7 +146,7 @@ function WebSocketSyncTest() {
             ) : (
               testResults.map((result, index) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-<div key={index} className="mb-1">
+                <div key={index} className="mb-1">
                   {result}
                 </div>
               ))

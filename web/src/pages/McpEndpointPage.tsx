@@ -1,5 +1,5 @@
-import { McpEndpointTable } from "@/components/McpEndpointTable";
 import { AppSidebar } from "@/components/AppSidebar";
+import { McpEndpointTable } from "@/components/McpEndpointTable";
 import { SiteHeader } from "@/components/SiteHeder";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import data from "./data.json";

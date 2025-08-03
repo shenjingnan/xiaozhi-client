@@ -7,8 +7,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { Link, useLocation } from "react-router-dom";
 
 export function AppSidebarNav({
   items,
@@ -33,13 +33,12 @@ export function AppSidebarNav({
             return (
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton
-                  className={
-                    cn(
-                      "min-w-8 duration-200 ease-linear hover:bg-primary/5",
-                      isActive
-                        ? "bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
-                        : "min-w-8 duration-200 ease-linear"
-                    )}
+                  className={cn(
+                    "min-w-8 duration-200 ease-linear hover:bg-primary/5",
+                    isActive
+                      ? "bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
+                      : "min-w-8 duration-200 ease-linear"
+                  )}
                   tooltip={item.title}
                   asChild
                 >
