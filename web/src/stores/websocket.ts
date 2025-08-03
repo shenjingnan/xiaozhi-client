@@ -14,7 +14,7 @@ interface Tool {
   description: string;
 }
 
-interface McpServerConfig {
+export interface McpServerConfig {
   [key: string]: {
     tools: Record<string, Tool>;
   };

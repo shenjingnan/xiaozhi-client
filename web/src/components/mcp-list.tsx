@@ -6,6 +6,7 @@ import {
   useWebSocketMcpServers,
   useWebSocketConfig,
 } from "@/stores/websocket";
+import type { MCPServerConfig } from "@/types";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import {
   CoffeeIcon,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 import { useMemo } from "react";
 import { toast } from "sonner";
+import { McpServerSettingButton } from "./McpServerSettingButton";
 
 const McpServicesDisplay = () => {
   const mcpServerConfig = useWebSocketMcpServerConfig();
@@ -192,8 +194,8 @@ const McpServicesDisplay = () => {
         </Card>
         <div className="transition-all duration-200 gap-4 flex flex-col col-span-2">
           {/* {JSON.stringify(mcpServers)} */}
-          {Object.entries(mcpServers || {}).map(([key]) => (
-            <Card key={key} className={"transition-all duration-200"}>
+          {Object.entries(mcpServers || {}).map(([mcpServerName, mcpServer]) => (
+            <Card key={mcpServerName} className={"transition-all duration-200"}>
               <CardContent className="p-0">
                 <div className="p-4 pb-2">
                   <div className="flex items-start justify-between">
@@ -201,19 +203,13 @@ const McpServicesDisplay = () => {
                       {/* <div className="mt-1">{getStatusIcon(service.status)}</div> */}
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-lg font-semibold">{key}</h3>
+                          <h3 className="text-lg font-semibold">{mcpServerName}</h3>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2 ml-4">
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="size-8"
-                      >
-                        <Settings className="h-4 w-4" />
-                      </Button>
+                      <McpServerSettingButton mcpServerName={mcpServerName} mcpServer={mcpServer as MCPServerConfig} />
                     </div>
                   </div>
                 </div>
