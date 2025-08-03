@@ -9,6 +9,15 @@ interface RestartStatus {
   timestamp: number;
 }
 
+interface PortChangeStatus {
+  status: "idle" | "checking" | "polling" | "connecting" | "completed" | "failed";
+  targetPort?: number;
+  currentAttempt?: number;
+  maxAttempts?: number;
+  error?: string;
+  timestamp: number;
+}
+
 interface Tool {
   enable: boolean;
   description: string;
@@ -30,6 +39,7 @@ interface WebSocketState {
   config: AppConfig | null;
   status: ClientStatus | null;
   restartStatus?: RestartStatus;
+  portChangeStatus?: PortChangeStatus;
   wsUrl: string;
   mcpEndpoint: string | string[];
   mcpServers: Record<string, McpServer>;
@@ -41,6 +51,7 @@ interface WebSocketActions {
   setConfig: (config: AppConfig | null) => void;
   setStatus: (status: ClientStatus | null) => void;
   setRestartStatus: (restartStatus: RestartStatus | undefined) => void;
+  setPortChangeStatus: (portChangeStatus: PortChangeStatus | undefined) => void;
   setWsUrl: (url: string) => void;
   setMcpEndpoint: (mcpEndpoint: string | string[]) => void;
   setMcpServers: (mcpServers: Record<string, McpServer>) => void;
@@ -58,6 +69,7 @@ const initialState: WebSocketState = {
   config: null,
   status: null,
   restartStatus: undefined,
+  portChangeStatus: undefined,
   wsUrl: "",
   mcpEndpoint: "",
   mcpServers: {},
@@ -98,6 +110,9 @@ export const useWebSocketStore = create<WebSocketStore>()(
       setRestartStatus: (restartStatus: RestartStatus | undefined) =>
         set({ restartStatus }, false, "setRestartStatus"),
 
+      setPortChangeStatus: (portChangeStatus: PortChangeStatus | undefined) =>
+        set({ portChangeStatus }, false, "setPortChangeStatus"),
+
       setWsUrl: (wsUrl: string) => set({ wsUrl }, false, "setWsUrl"),
 
       updateFromWebSocket: (data: Partial<WebSocketState>) =>
@@ -131,6 +146,8 @@ export const useWebSocketStatus = () =>
   useWebSocketStore((state) => state.status);
 export const useWebSocketRestartStatus = () =>
   useWebSocketStore((state) => state.restartStatus);
+export const useWebSocketPortChangeStatus = () =>
+  useWebSocketStore((state) => state.portChangeStatus);
 export const useWebSocketUrl = () => useWebSocketStore((state) => state.wsUrl);
 export const useWebSocketMcpServers = () =>
   useWebSocketStore((state) => state.config?.mcpServers);
@@ -161,6 +178,7 @@ export const useWebSocketActions = () =>
       setConfig: state.setConfig,
       setStatus: state.setStatus,
       setRestartStatus: state.setRestartStatus,
+      setPortChangeStatus: state.setPortChangeStatus,
       setWsUrl: state.setWsUrl,
       setMcpEndpoint: state.setMcpEndpoint,
       setMcpServers: state.setMcpServers,

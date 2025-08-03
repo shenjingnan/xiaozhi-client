@@ -11,8 +11,8 @@ import {
   useWebSocketMcpServers,
   useWebSocketUrl,
 } from "@/stores/websocket";
-import { McpEndpointSettingButton } from "./McpEndpointSettingButton";
-import { WebUrlSettingButton } from "./WebUrlSettingButton";
+import { WebUrlSettingButton } from "@/components/WebUrlSettingButton";
+import { McpEndpointSettingButton } from "@/components/McpEndpointSettingButton";
 
 const MiniCircularProgress = ({
   showValue = true,
@@ -64,7 +64,7 @@ const MiniCircularProgress = ({
   );
 };
 
-export function SectionCards() {
+export function DashboardStatusCard() {
   const mcpServers = useWebSocketMcpServers();
   const connected = useWebSocketConnected();
   const mcpServerCount = Object.keys(mcpServers || {}).length;
@@ -140,26 +140,6 @@ export function SectionCards() {
           </div>
         </CardHeader>
       </Card>
-      {/* <Card className="@container/card"> */}
-      {/* <CardHeader className="relative">
-          <CardDescription>Growth Rate</CardDescription>
-          <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
-            4.5%
-          </CardTitle>
-          <div className="absolute right-4 top-4">
-            <Badge variant="outline" className="flex gap-1 rounded-lg text-xs">
-              <TrendingUpIcon className="size-3" />
-              +4.5%
-            </Badge>
-          </div>
-        </CardHeader> */}
-      {/* <CardFooter className="flex-col items-start gap-1 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Steady performance <TrendingUpIcon className="size-4" />
-          </div>
-          <div className="text-muted-foreground">Meets growth projections</div>
-        </CardFooter> */}
-      {/* </Card> */}
     </div>
   );
 }

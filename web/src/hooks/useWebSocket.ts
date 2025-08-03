@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useWebSocketActions } from "../stores/websocket";
 import type { AppConfig, ClientStatus } from "../types";
+import {
+  buildWebSocketUrl,
+  checkPortAvailability,
+  extractPortFromUrl,
+  pollPortUntilAvailable,
+} from "../utils/portUtils";
 
 interface WebSocketState {
   connected: boolean;
@@ -61,25 +67,27 @@ export function useWebSocket() {
   );
 
   // 动态获取WebSocket连接地址
-  const getWebSocketUrl = useCallback(() => {
+  const getWebSocketUrl = useCallback((configPort?: number) => {
     // 优先使用localStorage中保存的地址
     const savedUrl = localStorage.getItem("xiaozhi-ws-url");
     if (savedUrl) {
       return savedUrl;
     }
 
-    // 使用当前页面的 origin，这样可以正确处理端口
-    const { protocol, hostname, port } = window.location;
-    const wsProtocol = protocol === "https:" ? "wss:" : "ws:";
+    // 确定要使用的端口号
+    let targetPort = 9999; // 默认端口
 
-    // 如果当前页面有端口，就使用当前端口；否则使用默认端口
-    if (port) {
-      return `${wsProtocol}//${hostname}:9999`;
+    // 如果传入了配置端口，使用配置端口
+    if (configPort) {
+      targetPort = configPort;
+    } else if (state.config?.webUI?.port) {
+      // 如果当前状态中有配置，使用配置中的端口
+      targetPort = state.config.webUI.port;
     }
-    // 当通过标准端口（80/443）访问时，port 为空
-    // 这种情况下应该使用相同的标准端口，而不是 9999
-    return `${wsProtocol}//${hostname}`;
-  }, []);
+
+    // 构建 WebSocket URL
+    return buildWebSocketUrl(targetPort);
+  }, [state.config]);
 
   const stopStatusCheck = useCallback(() => {
     if (statusCheckIntervalRef.current) {
@@ -275,6 +283,144 @@ export function useWebSocket() {
     window.location.reload();
   }, []);
 
+  // 端口切换核心函数
+  const changePort = useCallback(
+    async (newPort: number): Promise<void> => {
+      const currentPort = extractPortFromUrl(wsUrl) || 9999;
+
+      // 如果端口号相同，直接返回
+      if (currentPort === newPort) {
+        return;
+      }
+
+      // 更新端口切换状态
+      syncToStore("portChangeStatus", {
+        status: "checking",
+        targetPort: newPort,
+        timestamp: Date.now(),
+      });
+
+      try {
+        if (state.connected) {
+          // 场景2：已连接状态 - 先更新配置，然后重启服务，最后轮询新端口
+          await handleConnectedPortChange(newPort);
+        } else {
+          // 场景1：未连接状态 - 直接检测新端口并连接
+          await handleDisconnectedPortChange(newPort);
+        }
+
+        // 成功完成端口切换
+        syncToStore("portChangeStatus", {
+          status: "completed",
+          targetPort: newPort,
+          timestamp: Date.now(),
+        });
+      } catch (error) {
+        // 端口切换失败
+        syncToStore("portChangeStatus", {
+          status: "failed",
+          targetPort: newPort,
+          error: error instanceof Error ? error.message : "端口切换失败",
+          timestamp: Date.now(),
+        });
+        throw error;
+      }
+    },
+    [wsUrl, state.connected, syncToStore]
+  );
+
+  // 处理已连接状态下的端口切换
+  const handleConnectedPortChange = useCallback(
+    async (newPort: number): Promise<void> => {
+      if (!state.config) {
+        throw new Error("配置数据未加载");
+      }
+
+      // 1. 更新配置
+      const updatedConfig = {
+        ...state.config,
+        webUI: {
+          ...state.config.webUI,
+          port: newPort,
+        },
+      };
+
+      await updateConfig(updatedConfig);
+
+      // 2. 发送重启请求
+      syncToStore("portChangeStatus", {
+        status: "polling",
+        targetPort: newPort,
+        currentAttempt: 0,
+        maxAttempts: 30,
+        timestamp: Date.now(),
+      });
+
+      await restartService();
+
+      // 3. 轮询新端口
+      const isAvailable = await pollPortUntilAvailable(
+        newPort,
+        30,
+        2000,
+        (attempt, maxAttempts) => {
+          syncToStore("portChangeStatus", {
+            status: "polling",
+            targetPort: newPort,
+            currentAttempt: attempt,
+            maxAttempts,
+            timestamp: Date.now(),
+          });
+        }
+      );
+
+      if (!isAvailable) {
+        throw new Error(`新端口 ${newPort} 在超时时间内未可用`);
+      }
+
+      // 4. 连接到新端口
+      await connectToNewPort(newPort);
+    },
+    [state.config, updateConfig, restartService, syncToStore]
+  );
+
+  // 处理未连接状态下的端口切换
+  const handleDisconnectedPortChange = useCallback(
+    async (newPort: number): Promise<void> => {
+      // 1. 检测新端口是否可用
+      const isAvailable = await checkPortAvailability(newPort);
+
+      if (!isAvailable) {
+        throw new Error(`端口 ${newPort} 不可用，请检查服务端是否已启动`);
+      }
+
+      // 2. 连接到新端口
+      await connectToNewPort(newPort);
+    },
+    []
+  );
+
+  // 连接到新端口
+  const connectToNewPort = useCallback(
+    async (newPort: number): Promise<void> => {
+      syncToStore("portChangeStatus", {
+        status: "connecting",
+        targetPort: newPort,
+        timestamp: Date.now(),
+      });
+
+      // 构建新的 WebSocket URL
+      const newUrl = buildWebSocketUrl(newPort);
+
+      // 保存新的 URL 到 localStorage
+      localStorage.setItem("xiaozhi-ws-url", newUrl);
+
+      // 重新加载页面以建立新连接
+      window.location.reload();
+    },
+    [syncToStore]
+  );
+
   return {
     ...state,
     updateConfig,
@@ -282,5 +428,6 @@ export function useWebSocket() {
     restartService,
     wsUrl,
     setCustomWsUrl,
+    changePort,
   };
 }

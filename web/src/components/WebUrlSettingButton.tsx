@@ -18,7 +18,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import { useWebSocketConfig } from "@/stores/websocket";
+import {
+  useWebSocketConfig,
+  useWebSocketConnected,
+  useWebSocketPortChangeStatus
+} from "@/stores/websocket";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SettingsIcon } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -45,7 +49,9 @@ export function WebUrlSettingButton() {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const config = useWebSocketConfig();
-  const { updateConfig } = useWebSocket();
+  const connected = useWebSocketConnected();
+  const portChangeStatus = useWebSocketPortChangeStatus();
+  const { changePort } = useWebSocket();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -63,29 +69,50 @@ export function WebUrlSettingButton() {
     }
   }, [config, form]);
 
+  // 获取按钮文本
+  const getButtonText = () => {
+    if (isLoading) {
+      return "处理中...";
+    }
+
+    if (portChangeStatus?.status === "checking") {
+      return "检测端口...";
+    }
+
+    if (portChangeStatus?.status === "polling") {
+      const { currentAttempt, maxAttempts } = portChangeStatus;
+      return `等待服务重启 (${currentAttempt}/${maxAttempts})`;
+    }
+
+    if (portChangeStatus?.status === "connecting") {
+      return "连接中...";
+    }
+
+    return connected ? "保存并重启" : "保存并连接";
+  };
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!config) {
-      toast.error("配置数据未加载，请稍后重试");
+    const newPort = Number(values.port);
+    const currentPort = config?.webUI?.port || 9999;
+
+    // 如果端口号没有变化，直接关闭对话框
+    if (newPort === currentPort) {
+      setOpen(false);
       return;
     }
 
     setIsLoading(true);
     try {
-      // 更新配置中的 webUI.port
-      const updatedConfig = {
-        ...config,
-        webUI: {
-          ...config.webUI,
-          port: Number(values.port),
-        },
-      };
-
-      await updateConfig(updatedConfig);
-      toast.success("端口配置已更新");
+      await changePort(newPort);
+      toast.success(
+        connected
+          ? "端口配置已更新，服务正在重启..."
+          : "端口配置已更新，正在连接新端口..."
+      );
       setOpen(false);
     } catch (error) {
-      console.error("更新配置失败:", error);
-      toast.error(error instanceof Error ? error.message : "更新配置失败");
+      console.error("端口切换失败:", error);
+      toast.error(error instanceof Error ? error.message : "端口切换失败");
     } finally {
       setIsLoading(false);
     }
@@ -102,9 +129,12 @@ export function WebUrlSettingButton() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <DialogHeader className="mb-4">
-              <DialogTitle>配置服务端</DialogTitle>
+              <DialogTitle>配置服务端端口</DialogTitle>
               <DialogDescription>
-                点击保存后，需要重启服务才会生效。
+                {connected
+                  ? "修改端口后将自动重启服务并重新连接。"
+                  : "请输入服务端端口号，系统将尝试连接。"
+                }
               </DialogDescription>
             </DialogHeader>
             <div className="flex items-center gap-2">
@@ -136,8 +166,8 @@ export function WebUrlSettingButton() {
                   取消
                 </Button>
               </DialogClose>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "保存中..." : "保存"}
+              <Button type="submit" disabled={isLoading || portChangeStatus?.status === "polling"}>
+                {getButtonText()}
               </Button>
             </DialogFooter>
           </form>
