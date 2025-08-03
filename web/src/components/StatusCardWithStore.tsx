@@ -12,7 +12,12 @@ function StatusCardWithStore() {
   const status = useWebSocketStatus();
 
   // 添加调试日志
-  console.log("[StatusCardWithStore] 组件渲染 - connected:", connected, "status:", status);
+  console.log(
+    "[StatusCardWithStore] 组件渲染 - connected:",
+    connected,
+    "status:",
+    status
+  );
 
   const getStatusColor = () => {
     if (!connected) return "bg-muted text-muted-foreground";
@@ -24,7 +29,7 @@ function StatusCardWithStore() {
   const getStatusText = () => {
     if (!connected) return "未连接到配置服务器";
     if (status?.status === "connected") return "已连接";
-    return `未连接到小智服务 (状态: ${status?.status || 'null'})`;
+    return `未连接到小智服务 (状态: ${status?.status || "null"})`;
   };
 
   return (

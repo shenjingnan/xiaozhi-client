@@ -6,7 +6,7 @@ import {
   useWebSocketStatus,
   useWebSocketActions,
   useWebSocketConnectionInfo,
-  useWebSocketData
+  useWebSocketData,
 } from "../stores/websocket";
 
 /**
@@ -16,7 +16,7 @@ function RenderCountTest() {
   // 渲染计数器
   const renderCount = useRef(0);
   const lastRenderTime = useRef(Date.now());
-  
+
   // 各种 hook 的渲染计数
   const useWebSocketRenderCount = useRef(0);
   const useWebSocketConnectedRenderCount = useRef(0);
@@ -48,7 +48,7 @@ function RenderCountTest() {
 
   // 检测快速重渲染（可能的无限循环）
   const isRapidRerender = timeSinceLastRender < 100; // 100ms 内的重渲染认为是快速重渲染
-  
+
   useEffect(() => {
     if (renderCount.current > 10 && isRapidRerender) {
       console.warn("⚠️ 检测到可能的无限循环：组件在短时间内多次重渲染");
@@ -78,21 +78,25 @@ function RenderCountTest() {
         <div>
           <h4 className="font-semibold text-sm mb-2">总体渲染信息:</h4>
           <div className="bg-white dark:bg-gray-800 p-3 rounded text-xs space-y-1">
-            <div className={`p-2 rounded ${
-              renderCount.current > 20 
-                ? 'bg-red-100 text-red-800' 
-                : renderCount.current > 10 
-                ? 'bg-yellow-100 text-yellow-800'
-                : 'bg-green-100 text-green-800'
-            }`}>
+            <div
+              className={`p-2 rounded ${
+                renderCount.current > 20
+                  ? "bg-red-100 text-red-800"
+                  : renderCount.current > 10
+                    ? "bg-yellow-100 text-yellow-800"
+                    : "bg-green-100 text-green-800"
+              }`}
+            >
               总渲染次数: {renderCount.current}
             </div>
-            
-            <div className={`p-2 rounded ${
-              isRapidRerender 
-                ? 'bg-red-100 text-red-800' 
-                : 'bg-green-100 text-green-800'
-            }`}>
+
+            <div
+              className={`p-2 rounded ${
+                isRapidRerender
+                  ? "bg-red-100 text-red-800"
+                  : "bg-green-100 text-green-800"
+              }`}
+            >
               距离上次渲染: {timeSinceLastRender}ms
               {isRapidRerender && " ⚠️ 快速重渲染"}
             </div>
@@ -104,10 +108,19 @@ function RenderCountTest() {
           <h4 className="font-semibold text-sm mb-2">各 Hook 渲染次数:</h4>
           <div className="bg-white dark:bg-gray-800 p-3 rounded text-xs space-y-1">
             <div>useWebSocket: {useWebSocketRenderCount.current}</div>
-            <div>useWebSocketConnected: {useWebSocketConnectedRenderCount.current}</div>
-            <div>useWebSocketStatus: {useWebSocketStatusRenderCount.current}</div>
-            <div>useWebSocketActions: {useWebSocketActionsRenderCount.current}</div>
-            <div>useWebSocketConnectionInfo: {useWebSocketConnectionInfoRenderCount.current}</div>
+            <div>
+              useWebSocketConnected: {useWebSocketConnectedRenderCount.current}
+            </div>
+            <div>
+              useWebSocketStatus: {useWebSocketStatusRenderCount.current}
+            </div>
+            <div>
+              useWebSocketActions: {useWebSocketActionsRenderCount.current}
+            </div>
+            <div>
+              useWebSocketConnectionInfo:{" "}
+              {useWebSocketConnectionInfoRenderCount.current}
+            </div>
             <div>useWebSocketData: {useWebSocketDataRenderCount.current}</div>
           </div>
         </div>
@@ -116,9 +129,18 @@ function RenderCountTest() {
         <div>
           <h4 className="font-semibold text-sm mb-2">Hook 返回值稳定性:</h4>
           <div className="bg-white dark:bg-gray-800 p-3 rounded text-xs space-y-1">
-            <div>actions 对象引用: {typeof actions === 'object' ? '✅ 对象' : '❌ 非对象'}</div>
-            <div>connectionInfo 对象引用: {typeof connectionInfo === 'object' ? '✅ 对象' : '❌ 非对象'}</div>
-            <div>data 对象引用: {typeof data === 'object' ? '✅ 对象' : '❌ 非对象'}</div>
+            <div>
+              actions 对象引用:{" "}
+              {typeof actions === "object" ? "✅ 对象" : "❌ 非对象"}
+            </div>
+            <div>
+              connectionInfo 对象引用:{" "}
+              {typeof connectionInfo === "object" ? "✅ 对象" : "❌ 非对象"}
+            </div>
+            <div>
+              data 对象引用:{" "}
+              {typeof data === "object" ? "✅ 对象" : "❌ 非对象"}
+            </div>
           </div>
         </div>
 
@@ -127,9 +149,9 @@ function RenderCountTest() {
           <h4 className="font-semibold text-sm mb-2">当前状态快照:</h4>
           <div className="bg-white dark:bg-gray-800 p-3 rounded text-xs space-y-1">
             <div>连接状态: {String(connected)}</div>
-            <div>状态: {status?.status || 'null'}</div>
-            <div>WebSocket URL: {connectionInfo.wsUrl || 'empty'}</div>
-            <div>配置: {data.config ? '已加载' : '未加载'}</div>
+            <div>状态: {status?.status || "null"}</div>
+            <div>WebSocket URL: {connectionInfo.wsUrl || "empty"}</div>
+            <div>配置: {data.config ? "已加载" : "未加载"}</div>
           </div>
         </div>
 

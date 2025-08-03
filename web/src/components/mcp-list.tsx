@@ -26,16 +26,16 @@ const McpServicesDisplay = () => {
   const config = useWebSocketConfig();
   const { updateConfig } = useWebSocket();
 
-
   const tools = useMemo(() => {
-    return Object.entries(mcpServerConfig || {})
-      .flatMap(([serverName, value]) => {
+    return Object.entries(mcpServerConfig || {}).flatMap(
+      ([serverName, value]) => {
         return Object.entries(value?.tools || {}).map(([toolName, tool]) => ({
           serverName,
           toolName,
           tool,
-        }))
-      });
+        }));
+      }
+    );
   }, [mcpServerConfig]);
 
   const enabledTools = useMemo(() => {
@@ -87,7 +87,9 @@ const McpServicesDisplay = () => {
       toast.success(`工具 "${toolName}" 已${action}`);
     } catch (error) {
       console.error("切换工具状态失败:", error);
-      toast.error(`切换工具状态失败: ${error instanceof Error ? error.message : "未知错误"}`);
+      toast.error(
+        `切换工具状态失败: ${error instanceof Error ? error.message : "未知错误"}`
+      );
     }
   };
 
@@ -128,7 +130,9 @@ const McpServicesDisplay = () => {
                             variant="secondary"
                             size="icon"
                             className="size-8 hover:bg-red-500 hover:text-white"
-                            onClick={() => handleToggleTool(tool.serverName, tool.toolName)}
+                            onClick={() =>
+                              handleToggleTool(tool.serverName, tool.toolName)
+                            }
                           >
                             <MinusIcon size={18} />
                           </Button>
@@ -180,7 +184,9 @@ const McpServicesDisplay = () => {
                             variant="secondary"
                             size="icon"
                             className="size-8 hover:bg-green-500 hover:text-white"
-                            onClick={() => handleToggleTool(tool.serverName, tool.toolName)}
+                            onClick={() =>
+                              handleToggleTool(tool.serverName, tool.toolName)
+                            }
                           >
                             <PlusIcon className="h-4 w-4" />
                           </Button>
@@ -195,33 +201,43 @@ const McpServicesDisplay = () => {
         </Card>
         <div className="transition-all duration-200 gap-4 flex flex-col col-span-2">
           <AddMcpServerButton />
-          {Object.entries(mcpServers || {}).map(([mcpServerName, mcpServer]) => (
-            <Card key={mcpServerName} className={"transition-all duration-200"}>
-              <CardContent className="p-0">
-                <div className="p-4 pb-2">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-4 flex-1">
-                      {/* <div className="mt-1">{getStatusIcon(service.status)}</div> */}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-lg font-semibold">{mcpServerName}</h3>
+          {Object.entries(mcpServers || {}).map(
+            ([mcpServerName, mcpServer]) => (
+              <Card
+                key={mcpServerName}
+                className={"transition-all duration-200"}
+              >
+                <CardContent className="p-0">
+                  <div className="p-4 pb-2">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-4 flex-1">
+                        {/* <div className="mt-1">{getStatusIcon(service.status)}</div> */}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="text-lg font-semibold">
+                              {mcpServerName}
+                            </h3>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center gap-2 ml-4">
-                      <McpServerSettingButton mcpServerName={mcpServerName} mcpServer={mcpServer as MCPServerConfig} />
+                      <div className="flex items-center gap-2 ml-4">
+                        <McpServerSettingButton
+                          mcpServerName={mcpServerName}
+                          mcpServer={mcpServer as MCPServerConfig}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-              <CardFooter className="p-4 pt-2">
-                <Badge variant="outline" className="text-xs">
-                  stdio
-                </Badge>
-              </CardFooter>
-            </Card>
-          ))}
+                </CardContent>
+                <CardFooter className="p-4 pt-2">
+                  <Badge variant="outline" className="text-xs">
+                    stdio
+                  </Badge>
+                </CardFooter>
+              </Card>
+            )
+          )}
         </div>
       </div>
     </div>

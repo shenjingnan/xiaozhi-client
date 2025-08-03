@@ -5,7 +5,7 @@ import { useWebSocket } from "../hooks/useWebSocket";
 import {
   useWebSocketConnected,
   useWebSocketStatus,
-  useWebSocketStore
+  useWebSocketStore,
 } from "../stores/websocket";
 
 /**
@@ -43,7 +43,9 @@ function DebugStatusPanel() {
       <CardContent className="space-y-4">
         {/* WebSocket Hook 状态 */}
         <div>
-          <h4 className="font-semibold text-sm mb-2">useWebSocket Hook 状态:</h4>
+          <h4 className="font-semibold text-sm mb-2">
+            useWebSocket Hook 状态:
+          </h4>
           <div className="bg-white dark:bg-gray-800 p-3 rounded text-xs font-mono">
             <div>connected: {JSON.stringify(webSocketState.connected)}</div>
             <div>status: {JSON.stringify(webSocketState.status, null, 2)}</div>
@@ -65,26 +67,37 @@ function DebugStatusPanel() {
         <div>
           <h4 className="font-semibold text-sm mb-2">状态对比:</h4>
           <div className="bg-white dark:bg-gray-800 p-3 rounded text-xs">
-            <div className={`p-2 rounded ${
-              webSocketState.connected === storeConnected
-                ? 'bg-green-100 text-green-800'
-                : 'bg-red-100 text-red-800'
-            }`}>
-              Connected 同步: {webSocketState.connected === storeConnected ? '✅' : '❌'}
+            <div
+              className={`p-2 rounded ${
+                webSocketState.connected === storeConnected
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
+              }`}
+            >
+              Connected 同步:{" "}
+              {webSocketState.connected === storeConnected ? "✅" : "❌"}
               <br />
-              Hook: {JSON.stringify(webSocketState.connected)} | Store: {JSON.stringify(storeConnected)}
+              Hook: {JSON.stringify(webSocketState.connected)} | Store:{" "}
+              {JSON.stringify(storeConnected)}
             </div>
 
-            <div className={`p-2 rounded mt-2 ${
-              JSON.stringify(webSocketState.status) === JSON.stringify(storeStatus)
-                ? 'bg-green-100 text-green-800'
-                : 'bg-red-100 text-red-800'
-            }`}>
-              Status 同步: {JSON.stringify(webSocketState.status) === JSON.stringify(storeStatus) ? '✅' : '❌'}
+            <div
+              className={`p-2 rounded mt-2 ${
+                JSON.stringify(webSocketState.status) ===
+                JSON.stringify(storeStatus)
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
+              }`}
+            >
+              Status 同步:{" "}
+              {JSON.stringify(webSocketState.status) ===
+              JSON.stringify(storeStatus)
+                ? "✅"
+                : "❌"}
               <br />
-              Hook status: {webSocketState.status?.status || 'null'}
+              Hook status: {webSocketState.status?.status || "null"}
               <br />
-              Store status: {storeStatus?.status || 'null'}
+              Store status: {storeStatus?.status || "null"}
             </div>
           </div>
         </div>
@@ -94,7 +107,14 @@ function DebugStatusPanel() {
           <h4 className="font-semibold text-sm mb-2">实时更新:</h4>
           <div className="bg-white dark:bg-gray-800 p-3 rounded text-xs font-mono">
             <div>当前时间: {new Date().toLocaleTimeString()}</div>
-            <div>最后心跳: {webSocketState.status?.lastHeartbeat ? new Date(webSocketState.status.lastHeartbeat).toLocaleTimeString() : 'N/A'}</div>
+            <div>
+              最后心跳:{" "}
+              {webSocketState.status?.lastHeartbeat
+                ? new Date(
+                    webSocketState.status.lastHeartbeat
+                  ).toLocaleTimeString()
+                : "N/A"}
+            </div>
           </div>
         </div>
 

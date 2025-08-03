@@ -13,7 +13,7 @@ function StatusSyncTest() {
   const simulateConnected = () => {
     console.log("[Test] 模拟设置 connected = true");
     store.setConnected(true);
-    
+
     // 模拟服务端发送状态数据
     setTimeout(() => {
       console.log("[Test] 模拟发送 status 数据");
@@ -21,7 +21,7 @@ function StatusSyncTest() {
         status: "connected",
         mcpEndpoint: "ws://localhost:9999",
         activeMCPServers: ["test-server"],
-        lastHeartbeat: Date.now()
+        lastHeartbeat: Date.now(),
       });
     }, 1000);
   };
@@ -34,7 +34,7 @@ function StatusSyncTest() {
       status: "disconnected",
       mcpEndpoint: "ws://localhost:9999",
       activeMCPServers: [],
-      lastHeartbeat: Date.now()
+      lastHeartbeat: Date.now(),
     });
   };
 
@@ -55,29 +55,17 @@ function StatusSyncTest() {
         <div className="text-sm text-muted-foreground">
           使用这些按钮来测试状态同步是否正常工作：
         </div>
-        
+
         <div className="grid grid-cols-1 gap-2">
-          <Button 
-            onClick={simulateConnected}
-            variant="default"
-            size="sm"
-          >
+          <Button onClick={simulateConnected} variant="default" size="sm">
             模拟连接成功
           </Button>
-          
-          <Button 
-            onClick={simulateDisconnected}
-            variant="secondary"
-            size="sm"
-          >
+
+          <Button onClick={simulateDisconnected} variant="secondary" size="sm">
             模拟连接断开
           </Button>
-          
-          <Button 
-            onClick={resetState}
-            variant="outline"
-            size="sm"
-          >
+
+          <Button onClick={resetState} variant="outline" size="sm">
             重置状态
           </Button>
         </div>

@@ -69,7 +69,7 @@ export function McpServerSettingButton({
       }
 
       // 验证配置格式
-      if (!newMcpServerConfig || typeof newMcpServerConfig !== 'object') {
+      if (!newMcpServerConfig || typeof newMcpServerConfig !== "object") {
         toast.error("配置格式无效");
         return;
       }

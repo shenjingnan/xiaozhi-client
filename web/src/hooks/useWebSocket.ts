@@ -149,7 +149,7 @@ export function useWebSocket() {
           console.log("[WebSocket] 处理 status 更新:", message.data);
           // 确保状态数据格式正确
           const statusData = message.data;
-          if (statusData && typeof statusData === 'object') {
+          if (statusData && typeof statusData === "object") {
             setState((prev) => ({ ...prev, status: statusData }));
             // 同步 status 到 store，使用 setTimeout 确保状态更新完成
             setTimeout(() => {
