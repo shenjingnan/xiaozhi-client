@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useRef } from "react";
-import { useWebSocket } from "../hooks/useWebSocket";
+// import { useWebSocket } from "../hooks/useWebSocket";
 import {
   useWebSocketActions,
   useWebSocketConnected,
@@ -26,7 +26,7 @@ function RenderCountTest() {
   const useWebSocketDataRenderCount = useRef(0);
 
   // 调用各种 hooks
-  const webSocketState = useWebSocket();
+  // const webSocketState = useWebSocket();
   const connected = useWebSocketConnected();
   const status = useWebSocketStatus();
   const actions = useWebSocketActions();

@@ -93,7 +93,7 @@ export function WebUrlSettingButton() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     const newPort = Number(values.port);
-    const currentPort = config?.webUI?.port || 9999;
+    const currentPort = config?.webUI?.port;
 
     // 如果端口号没有变化，直接关闭对话框
     if (newPort === currentPort) {

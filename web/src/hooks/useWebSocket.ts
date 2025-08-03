@@ -260,7 +260,6 @@ export function useWebSocket() {
           console.log("[WebSocket] 服务重启等待时间结束，假设重启完成");
           resolve();
         }, 5000); // 等待5秒，给服务足够的重启时间
-
       } else {
         reject(new Error("WebSocket 未连接"));
       }
@@ -298,7 +297,9 @@ export function useWebSocket() {
       try {
         // 从 store 获取最新的连接状态
         const isConnected = useWebSocketStore.getState().connected;
-        console.log(`[WebSocket] 开始端口切换到 ${newPort}，当前连接状态: ${isConnected}`);
+        console.log(
+          `[WebSocket] 开始端口切换到 ${newPort}，当前连接状态: ${isConnected}`
+        );
 
         if (isConnected) {
           // 场景2：已连接状态 - 先更新配置，然后重启服务，最后轮询新端口
@@ -319,7 +320,8 @@ export function useWebSocket() {
         });
       } catch (error) {
         // 端口切换失败
-        const errorMessage = error instanceof Error ? error.message : "端口切换失败";
+        const errorMessage =
+          error instanceof Error ? error.message : "端口切换失败";
         console.error(`[WebSocket] 端口切换到 ${newPort} 失败:`, errorMessage);
 
         syncToStore("portChangeStatus", {
@@ -344,7 +346,9 @@ export function useWebSocket() {
         throw new Error("配置数据未加载，请刷新页面后重试");
       }
 
-      console.log(`[WebSocket] 当前配置端口: ${currentConfig.webUI?.port}, 目标端口: ${newPort}`);
+      console.log(
+        `[WebSocket] 当前配置端口: ${currentConfig.webUI?.port}, 目标端口: ${newPort}`
+      );
 
       // 1. 更新配置
       console.log("[WebSocket] 步骤1: 更新配置文件");
@@ -360,7 +364,11 @@ export function useWebSocket() {
         await updateConfig(updatedConfig);
         console.log("[WebSocket] 配置文件更新成功");
       } catch (error) {
-        throw new Error(`配置文件更新失败: ${error instanceof Error ? error.message : '未知错误'}`);
+        throw new Error(
+          `配置文件更新失败: ${
+            error instanceof Error ? error.message : "未知错误"
+          }`
+        );
       }
 
       // 2. 发送重启请求
@@ -377,7 +385,9 @@ export function useWebSocket() {
         await restartService();
         console.log("[WebSocket] 服务重启请求已发送");
       } catch (error) {
-        throw new Error(`服务重启失败: ${error instanceof Error ? error.message : '未知错误'}`);
+        throw new Error(
+          `服务重启失败: ${error instanceof Error ? error.message : "未知错误"}`
+        );
       }
 
       // 3. 轮询新端口 - 增加重试次数和总超时时间
@@ -399,7 +409,9 @@ export function useWebSocket() {
       );
 
       if (!isAvailable) {
-        throw new Error(`新端口 ${newPort} 在90秒超时时间内未可用，请检查服务是否正常启动`);
+        throw new Error(
+          `新端口 ${newPort} 在90秒超时时间内未可用，请检查服务是否正常启动`
+        );
       }
 
       console.log(`[WebSocket] 新端口 ${newPort} 已可用`);
@@ -450,7 +462,11 @@ export function useWebSocket() {
         console.log("[WebSocket] 重新加载页面以建立新连接");
         window.location.reload();
       } catch (error) {
-        throw new Error(`连接到新端口失败: ${error instanceof Error ? error.message : '未知错误'}`);
+        throw new Error(
+          `连接到新端口失败: ${
+            error instanceof Error ? error.message : "未知错误"
+          }`
+        );
       }
     },
     [syncToStore]
