@@ -1,344 +1,240 @@
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Edit2, Plus, Trash2, X } from "lucide-react";
-import { useState } from "react";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { useWebSocket } from "@/hooks/useWebSocket";
+import {
+  useWebSocketConfig,
+  useWebSocketMcpServerConfig,
+  useWebSocketMcpServers,
+} from "@/stores/websocket";
+import type { MCPServerConfig } from "@/types";
+import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
+import { CoffeeIcon, MinusIcon, PlusIcon, Wrench } from "lucide-react";
+import { useMemo } from "react";
 import { toast } from "sonner";
-import type { MCPServerConfig, MCPServerToolsConfig } from "../types";
-import { getMcpServerCommunicationType } from "../utils/mcpServerUtils";
+import { AddMcpServerButton } from "./AddMcpServerButton";
+import { McpServerSettingButton } from "./McpServerSettingButton";
+import { RemoveMcpServerButton } from "./RemoveMcpServerButton";
+import { RestartButton } from "./RestartButton";
 
-interface MCPServerListProps {
-  servers: Record<string, MCPServerConfig>;
-  serverConfig?: Record<string, MCPServerToolsConfig>;
-  onChange: (
-    servers: Record<string, MCPServerConfig>,
-    serverConfig?: Record<string, MCPServerToolsConfig>
-  ) => void;
-}
+export function McpServerList() {
+  const mcpServerConfig = useWebSocketMcpServerConfig();
+  const mcpServers = useWebSocketMcpServers();
+  const config = useWebSocketConfig();
+  const { updateConfig } = useWebSocket();
 
-function MCPServerList({
-  servers,
-  serverConfig,
-  onChange,
-}: MCPServerListProps) {
-  const [editingServer, setEditingServer] = useState<string | null>(null);
-  const [editingServerJson, setEditingServerJson] = useState<string>("");
-  const [newServerInput, setNewServerInput] = useState("");
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [serverToDelete, setServerToDelete] = useState<string | null>(null);
-
-  // 使用统一的工具函数来判断服务类型
-
-  const handleDeleteServer = () => {
-    if (!serverToDelete) return;
-
-    const newServers = { ...servers };
-    delete newServers[serverToDelete];
-
-    const newServerConfig = serverConfig ? { ...serverConfig } : undefined;
-    if (newServerConfig && serverToDelete in newServerConfig) {
-      delete newServerConfig[serverToDelete];
-    }
-
-    onChange(newServers, newServerConfig);
-    toast.success(`MCP 服务 "${serverToDelete}" 已删除`);
-    setDeleteConfirmOpen(false);
-    setServerToDelete(null);
-  };
-
-  const openDeleteConfirm = (name: string) => {
-    setServerToDelete(name);
-    setDeleteConfirmOpen(true);
-  };
-
-  const parseMCPConfig = (
-    input: string
-  ): Record<string, MCPServerConfig> | null => {
-    try {
-      const trimmed = input.trim();
-      if (!trimmed) return null;
-
-      const parsed = JSON.parse(trimmed);
-
-      // 检查是否包含 mcpServers 层
-      if (parsed.mcpServers && typeof parsed.mcpServers === "object") {
-        return parsed.mcpServers;
+  const tools = useMemo(() => {
+    return Object.entries(mcpServerConfig || {}).flatMap(
+      ([serverName, value]) => {
+        return Object.entries(value?.tools || {}).map(([toolName, tool]) => ({
+          serverName,
+          toolName,
+          tool,
+        }));
       }
+    );
+  }, [mcpServerConfig]);
 
-      // 检查是否是直接的服务配置对象
-      if (typeof parsed === "object" && !Array.isArray(parsed)) {
-        // 判断是否是单个服务配置（有 command 或 type 字段）
-        if (
-          "command" in parsed ||
-          ("type" in parsed && parsed.type === "sse")
-        ) {
-          // 生成一个默认名称
-          const defaultName = parsed.command
-            ? parsed.command.split("/").pop() || "mcp-server"
-            : "sse-server";
-          return { [defaultName]: parsed };
-        }
+  const enabledTools = useMemo(() => {
+    return tools.filter(({ tool }) => tool.enable);
+  }, [tools]);
+  const disabledTools = useMemo(() => {
+    return tools.filter(({ tool }) => !tool.enable);
+  }, [tools]);
 
-        // 否则认为是多个服务的配置对象
-        return parsed;
-      }
-
-      return null;
-    } catch (error) {
-      console.error("解析配置失败:", error);
-      return null;
-    }
-  };
-
-  const handleAddServer = () => {
-    const parsedServers = parseMCPConfig(newServerInput);
-
-    if (!parsedServers) {
-      toast.error("配置格式错误: 请输入有效的 JSON 配置");
+  const handleToggleTool = async (serverName: string, toolName: string) => {
+    if (!config || !mcpServerConfig) {
+      toast.error("配置数据未加载，请稍后重试");
       return;
     }
 
-    // 检查是否有重名的服务
-    const existingNames = Object.keys(parsedServers).filter(
-      (name) => name in servers
-    );
-    if (existingNames.length > 0) {
-      toast.error(`服务名称冲突: 以下服务已存在: ${existingNames.join(", ")}`);
-      return;
-    }
-
-    const newServers = {
-      ...servers,
-      ...parsedServers,
-    };
-
-    onChange(newServers, serverConfig);
-    setNewServerInput("");
-    setShowAddForm(false);
-
-    const addedCount = Object.keys(parsedServers).length;
-    toast.success(
-      addedCount === 1
-        ? `已添加 MCP 服务 "${Object.keys(parsedServers)[0]}"`
-        : `已添加 ${addedCount} 个 MCP 服务`
-    );
-  };
-
-  const handleUpdateServer = (name: string, jsonStr: string): boolean => {
     try {
-      const config = JSON.parse(jsonStr);
-      onChange(
-        {
-          ...servers,
-          [name]: config,
+      // 找到包含该工具的服务器
+      const targetServerName = serverName;
+      const targetTool = mcpServerConfig[serverName]?.tools?.[toolName];
+
+      if (!targetServerName || !targetTool) {
+        toast.error(`未找到工具 "${toolName}" 的配置`);
+        return;
+      }
+
+      // 创建新的配置对象
+      const newConfig = {
+        ...config,
+        mcpServerConfig: {
+          ...config.mcpServerConfig,
+          [targetServerName]: {
+            ...config.mcpServerConfig![targetServerName],
+            tools: {
+              ...config.mcpServerConfig![targetServerName].tools,
+              [toolName]: {
+                ...targetTool,
+                enable: !targetTool.enable,
+              },
+            },
+          },
         },
-        serverConfig
-      );
-      toast.success(`MCP 服务 "${name}" 配置已更新`);
-      return true;
-    } catch (error) {
-      toast.error("配置格式错误: 请输入有效的 JSON 配置");
-      return false;
-    }
-  };
+      };
 
-  const renderServerEditor = (name: string) => {
-    return (
-      <div className="mt-2 space-y-2">
-        <textarea
-          value={editingServerJson}
-          onChange={(e) => setEditingServerJson(e.target.value)}
-          className="w-full px-3 py-2 border rounded-md text-sm font-mono"
-          placeholder="输入 JSON 配置"
-          rows={8}
-        />
-        <div className="flex justify-end space-x-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setEditingServer(null);
-              setEditingServerJson("");
-            }}
-          >
-            取消
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => {
-              const success = handleUpdateServer(name, editingServerJson);
-              if (success) {
-                setEditingServer(null);
-                setEditingServerJson("");
-              }
-            }}
-          >
-            保存
-          </Button>
-        </div>
-      </div>
-    );
+      // 更新配置
+      await updateConfig(newConfig);
+
+      // 显示成功提示
+      const action = !targetTool.enable ? "启用" : "禁用";
+      toast.success(`工具 "${toolName}" 已${action}`);
+    } catch (error) {
+      console.error("切换工具状态失败:", error);
+      toast.error(
+        `切换工具状态失败: ${
+          error instanceof Error ? error.message : "未知错误"
+        }`
+      );
+    }
   };
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle>MCP 服务</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {Object.entries(servers).map(([name, config]) => (
-            <div key={name} className="border rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <h4 className="font-medium">{name}</h4>
-                  <span className="text-xs px-2 py-1 bg-muted rounded">
-                    {getMcpServerCommunicationType(config)}
+    <div className="flex flex-col gap-4 px-4 lg:px-6">
+      <h2 className="text-2xl font-bold">你的聚合 MCP 服务</h2>
+      <p className="text-sm text-muted-foreground">
+        你可以在这里管理你的 MCP
+        服务，包括启用/禁用工具，以及查看工具的详细信息。
+        最终暴露给小智服务端和其他MCP客户端的是这里聚合MCP
+      </p>
+      <div className="*:data-[slot=card]:shadow-xs @xl/main:grid-cols-8 @5xl/main:grid-cols-8 grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card">
+        {/* <div>{JSON.stringify(enabledTools, null, 2)}</div> */}
+        <Card className="transition-all duration-200 col-span-3">
+          <CardContent className="p-4">
+            <div className="flex-col">
+              <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                <Wrench className="h-4 w-4" />
+                聚合后的MCP服务 ({enabledTools.length})
+              </h4>
+              <div className="flex-1 space-y-2 h-[500px] overflow-y-auto">
+                {enabledTools.map((tool) => (
+                  <div
+                    key={tool.toolName}
+                    className="flex items-start justify-between p-4 bg-gray-50 rounded-md font-mono"
+                  >
+                    <div className="text-md flex flex-col gap-2">
+                      {tool.toolName}
+                      <p className="text-sm text-muted-foreground">
+                        {tool.tool.description}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 ml-4">
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className="size-8 hover:bg-red-500 hover:text-white"
+                        onClick={() =>
+                          handleToggleTool(tool.serverName, tool.toolName)
+                        }
+                      >
+                        <MinusIcon size={18} />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="transition-all duration-200 col-span-3">
+          <CardContent className="p-4">
+            <div className="flex-col">
+              <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                <Wrench className="h-4 w-4" />
+                可用工具 ({disabledTools.length})
+              </h4>
+              {disabledTools.length === 0 && (
+                <div className="flex-1 flex flex-col items-center gap-4 py-20 px-4 bg-gray-50 rounded-md font-mono h-full">
+                  <CoffeeIcon
+                    strokeWidth={1.5}
+                    size={48}
+                    className="text-muted-foreground"
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    全部工具都已经启用
                   </span>
                 </div>
-                <div className="flex space-x-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      if (editingServer === name) {
-                        setEditingServer(null);
-                        setEditingServerJson("");
-                      } else {
-                        setEditingServer(name);
-                        setEditingServerJson(JSON.stringify(config, null, 2));
-                      }
-                    }}
-                  >
-                    {editingServer === name ? (
-                      <X className="h-4 w-4" />
-                    ) : (
-                      <Edit2 className="h-4 w-4" />
-                    )}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => openDeleteConfirm(name)}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              {editingServer === name && renderServerEditor(name)}
-
-              {!editingServer && (
-                <div className="mt-2 text-sm text-muted-foreground">
-                  {(() => {
-                    const type = getMcpServerCommunicationType(config);
-                    if (type === "stdio" && "command" in config) {
-                      return (
-                        <span>
-                          {config.command} {config.args?.join(" ") || ""}
-                        </span>
-                      );
-                      // biome-ignore lint/style/noUselessElse: <explanation>
-                    } else if (
-                      (type === "sse" || type === "streamable-http") &&
-                      "url" in config
-                    ) {
-                      return <span>URL: {config.url}</span>;
-                    }
-                    return <span>配置信息不可用</span>;
-                  })()}
-                </div>
               )}
-            </div>
-          ))}
+              <div className="flex-1 space-y-2 h-[500px] overflow-y-auto">
+                {disabledTools.map((tool) => (
+                  <div
+                    key={tool.toolName}
+                    className="flex items-start justify-between p-4 bg-gray-50 rounded-md font-mono"
+                  >
+                    <div className="text-md flex flex-col gap-2">
+                      {tool.toolName}
+                      <p className="text-sm text-muted-foreground">
+                        {tool.tool.description}
+                      </p>
+                    </div>
 
-          {showAddForm ? (
-            <div className="border rounded-lg p-4 bg-muted/50 space-y-2">
-              <p className="text-sm text-muted-foreground mb-2">
-                粘贴 MCP 服务的 JSON 配置：
-              </p>
-              <textarea
-                value={newServerInput}
-                onChange={(e) => setNewServerInput(e.target.value)}
-                placeholder={`例如：
-{
-  "mcpServers": {
-    "example-server": {
-      "command": "npx",
-      "args": ["-y", "@example/mcp-server"]
-    }
-  }
-}`}
-                className="w-full px-3 py-2 border rounded-md font-mono text-sm"
-                rows={6}
-              />
-              <div className="flex justify-end space-x-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setShowAddForm(false);
-                    setNewServerInput("");
-                  }}
-                >
-                  取消
-                </Button>
-                <Button type="button" onClick={handleAddServer} size="sm">
-                  添加
-                </Button>
+                    <div className="flex items-center gap-2 ml-4">
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className="size-8 hover:bg-green-500 hover:text-white"
+                        onClick={() =>
+                          handleToggleTool(tool.serverName, tool.toolName)
+                        }
+                      >
+                        <PlusIcon className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ) : (
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full border-dashed"
-              onClick={() => setShowAddForm(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              添加 MCP 服务
-            </Button>
+          </CardContent>
+        </Card>
+        <div className="transition-all duration-200 gap-4 flex flex-col col-span-2">
+          <div className="flex items-center gap-2">
+            <AddMcpServerButton />
+            <RestartButton />
+          </div>
+          {Object.entries(mcpServers || {}).map(
+            ([mcpServerName, mcpServer]) => (
+              <Card
+                key={mcpServerName}
+                className={"transition-all duration-200"}
+              >
+                <CardContent className="p-0">
+                  <div className="p-4 pb-2">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-4 flex-1">
+                        {/* <div className="mt-1">{getStatusIcon(service.status)}</div> */}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="text-lg font-semibold">
+                              {mcpServerName}
+                            </h3>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 ml-4">
+                        <McpServerSettingButton
+                          mcpServerName={mcpServerName}
+                          mcpServer={mcpServer as MCPServerConfig}
+                        />
+                        <RemoveMcpServerButton mcpServerName={mcpServerName} />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="p-4 pt-2">
+                  <Badge variant="outline" className="text-xs">
+                    {getMcpServerCommunicationType(mcpServer)}
+                  </Badge>
+                </CardFooter>
+              </Card>
+            )
           )}
-        </CardContent>
-      </Card>
-
-      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>确认删除</AlertDialogTitle>
-            <AlertDialogDescription>
-              确定要删除 MCP 服务 "{serverToDelete}" 吗？此操作无法撤销。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteServer}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              删除
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+        </div>
+      </div>
+    </div>
   );
-}
-
-export default MCPServerList;
+};

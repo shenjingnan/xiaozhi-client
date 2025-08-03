@@ -26,26 +26,26 @@ const data = {
       url: "/",
       icon: LayoutDashboardIcon,
     },
-    {
-      title: "小智服务端",
-      url: "/mcp-endpoint",
-      icon: BotIcon,
-    },
-    {
-      title: "MCP 服务",
-      url: "#",
-      icon: CableIcon,
-    },
-    {
-      title: "烧录固件",
-      url: "#",
-      icon: ZapIcon,
-    },
-    {
-      title: "帮助文档",
-      url: "#",
-      icon: BadgeQuestionMarkIcon,
-    },
+    // {
+    //   title: "小智服务端",
+    //   url: "/mcp-endpoint",
+    //   icon: BotIcon,
+    // },
+    // {
+    //   title: "MCP 服务",
+    //   url: "#",
+    //   icon: CableIcon,
+    // },
+    // {
+    //   title: "烧录固件",
+    //   url: "#",
+    //   icon: ZapIcon,
+    // },
+    // {
+    //   title: "帮助文档",
+    //   url: "#",
+    //   icon: BadgeQuestionMarkIcon,
+    // },
     {
       title: "全局配置",
       url: "/settings",
