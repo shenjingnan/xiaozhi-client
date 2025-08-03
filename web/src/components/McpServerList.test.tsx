@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import McpServicesDisplay from "./McpServerList";
+import { McpServerList } from "./McpServerList";
 
 // Mock the hooks
 vi.mock("@/stores/websocket", () => ({
@@ -51,7 +51,7 @@ vi.mock("lucide-react", () => ({
   Wrench: () => <span>Wrench</span>,
 }));
 
-describe("McpServicesDisplay", () => {
+describe("McpServerList", () => {
   const mockUpdateConfig = vi.fn();
 
   const mockMcpServerConfig = {
@@ -92,7 +92,7 @@ describe("McpServicesDisplay", () => {
   });
 
   it("should render enabled and disabled tools correctly", () => {
-    render(<McpServicesDisplay />);
+    render(<McpServerList />);
 
     // Check if enabled tools section shows correct count
     expect(screen.getByText("聚合后的MCP服务 (2)")).toBeInTheDocument();
@@ -107,7 +107,7 @@ describe("McpServicesDisplay", () => {
   });
 
   it("should handle tool toggle correctly", async () => {
-    render(<McpServicesDisplay />);
+    render(<McpServerList />);
 
     // Find and click the minus button for an enabled tool (tool1)
     const minusButtons = screen.getAllByText("MinusIcon");
@@ -119,11 +119,11 @@ describe("McpServicesDisplay", () => {
         mcpServerConfig: {
           ...mockConfig.mcpServerConfig,
           server1: {
-            ...mockConfig.mcpServerConfig["server1"],
+            ...mockConfig.mcpServerConfig.server1,
             tools: {
-              ...mockConfig.mcpServerConfig["server1"].tools,
+              ...mockConfig.mcpServerConfig.server1.tools,
               tool1: {
-                ...mockConfig.mcpServerConfig["server1"].tools["tool1"],
+                ...mockConfig.mcpServerConfig.server1.tools.tool1,
                 enable: false,
               },
             },
@@ -136,7 +136,7 @@ describe("McpServicesDisplay", () => {
   });
 
   it("should handle enabling a disabled tool", async () => {
-    render(<McpServicesDisplay />);
+    render(<McpServerList />);
 
     // Find and click the plus button for a disabled tool (tool2)
     const plusButtons = screen.getAllByText("PlusIcon");
@@ -148,11 +148,11 @@ describe("McpServicesDisplay", () => {
         mcpServerConfig: {
           ...mockConfig.mcpServerConfig,
           server1: {
-            ...mockConfig.mcpServerConfig["server1"],
+            ...mockConfig.mcpServerConfig.server1,
             tools: {
-              ...mockConfig.mcpServerConfig["server1"].tools,
+              ...mockConfig.mcpServerConfig.server1.tools,
               tool2: {
-                ...mockConfig.mcpServerConfig["server1"].tools["tool2"],
+                ...mockConfig.mcpServerConfig.server1.tools.tool2,
                 enable: true,
               },
             },
@@ -168,7 +168,7 @@ describe("McpServicesDisplay", () => {
     const { useWebSocketConfig } = require("@/stores/websocket");
     useWebSocketConfig.mockReturnValue(null);
 
-    render(<McpServicesDisplay />);
+    render(<McpServerList />);
 
     const minusButtons = screen.getAllByText("MinusIcon");
     fireEvent.click(minusButtons[0]);
@@ -191,7 +191,7 @@ describe("McpServicesDisplay", () => {
       },
     });
 
-    render(<McpServicesDisplay />);
+    render(<McpServerList />);
 
     // Try to toggle a non-existent tool
     const buttons = screen.getAllByRole("button");

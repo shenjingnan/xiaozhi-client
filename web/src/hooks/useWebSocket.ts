@@ -80,14 +80,12 @@ export function useWebSocket() {
     // 如果传入了配置端口，使用配置端口
     if (configPort) {
       targetPort = configPort;
-    } else if (state.config?.webUI?.port) {
-      // 如果当前状态中有配置，使用配置中的端口
-      targetPort = state.config.webUI.port;
     }
+    // 注意：移除了对 state.config 的依赖，避免循环依赖
 
     // 构建 WebSocket URL
     return buildWebSocketUrl(targetPort);
-  }, [state.config]);
+  }, []); // 移除 state.config 依赖
 
   const stopStatusCheck = useCallback(() => {
     if (statusCheckIntervalRef.current) {

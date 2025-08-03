@@ -1,7 +1,7 @@
 import ConfigEditorWithStore from "../components/ConfigEditorWithStore";
 import { ConnectionSettings } from "../components/ConnectionSettings";
 import DebugStatusPanel from "../components/DebugStatusPanel";
-import MCPServerList from "../components/MCPServerList";
+import { McpServerList } from "../components/McpServerList";
 import RenderCountTest from "../components/RenderCountTest";
 import { RestartNotification } from "../components/RestartNotification";
 import StatusCardWithStore from "../components/StatusCardWithStore";
@@ -63,17 +63,7 @@ function DashboardWithStore() {
 
       {config && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <MCPServerList
-            servers={config.mcpServers}
-            serverConfig={config.mcpServerConfig}
-            onChange={(servers, serverConfig) => {
-              updateConfig({
-                ...config,
-                mcpServers: servers,
-                mcpServerConfig: serverConfig,
-              });
-            }}
-          />
+          <McpServerList updateConfig={updateConfig} />
 
           {/* 使用 store 的 ConfigEditor，只需要传递操作方法 */}
           <ConfigEditorWithStore
