@@ -25,9 +25,44 @@ import { useMcpEndpoint, useWebSocketConfig } from "@/stores/websocket";
 import { CopyIcon, PlusIcon, SettingsIcon, TrashIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 
 const sliceEndpoint = (endpoint: string) => {
   return `${endpoint.slice(0, 30)}...${endpoint.slice(-10)}`;
+};
+
+// 验证接入点格式
+const validateEndpoint = (endpoint: string): string | null => {
+  if (!endpoint.trim()) {
+    return "请输入接入点地址";
+  }
+
+  // 检查是否以正确的前缀开头
+  const expectedPrefix = "wss://api.xiaozhi.me/mcp/?token=";
+  if (!endpoint.startsWith(expectedPrefix)) {
+    return "接入点格式无效，请输入正确的小智服务端接入点地址";
+  }
+
+  // 提取 token 部分
+  const token = endpoint.substring(expectedPrefix.length);
+  if (!token) {
+    return "接入点格式无效，缺少 token 参数";
+  }
+
+  // 验证 JWT 格式（应该有两个点分隔的三个部分）
+  const jwtParts = token.split('.');
+  if (jwtParts.length !== 3) {
+    return "接入点格式无效，token 格式不正确";
+  }
+
+  // 检查每个部分是否为有效的 base64 字符串（简单检查）
+  for (const part of jwtParts) {
+    if (!part || !/^[A-Za-z0-9_-]+$/.test(part)) {
+      return "接入点格式无效，token 格式不正确";
+    }
+  }
+
+  return null; // 验证通过
 };
 
 export function McpEndpointSettingButton() {
@@ -35,6 +70,10 @@ export function McpEndpointSettingButton() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [endpointToDelete, setEndpointToDelete] = useState<string>("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [newEndpoint, setNewEndpoint] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
+  const [validationError, setValidationError] = useState("");
 
   const config = useWebSocketConfig();
   const mcpEndpoint = useMcpEndpoint();
@@ -102,6 +141,64 @@ export function McpEndpointSettingButton() {
     }
   };
 
+  // 添加新接入点
+  const handleAddEndpoint = async () => {
+    const error = validateEndpoint(newEndpoint);
+    if (error) {
+      setValidationError(error);
+      return;
+    }
+
+    // 检查是否与现有接入点重复
+    const currentEndpoints = Array.isArray(mcpEndpoint) ? mcpEndpoint : [mcpEndpoint];
+    if (currentEndpoints.includes(newEndpoint)) {
+      setValidationError("该接入点已存在");
+      return;
+    }
+
+    if (!config) {
+      toast.error("配置数据未加载，请稍后重试");
+      return;
+    }
+
+    setIsAdding(true);
+    try {
+      // 将新接入点添加到数组的第一位
+      const updatedEndpoints = [newEndpoint, ...currentEndpoints.filter(ep => ep)];
+
+      const updatedConfig = {
+        ...config,
+        mcpEndpoint: updatedEndpoints,
+      };
+
+      await updateConfig(updatedConfig);
+      toast.success("接入点添加成功");
+      setAddDialogOpen(false);
+      setNewEndpoint("");
+      setValidationError("");
+    } catch (error) {
+      console.error("添加接入点失败:", error);
+      toast.error(error instanceof Error ? error.message : "添加接入点失败");
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
+  // 打开添加接入点对话框
+  const openAddDialog = () => {
+    setNewEndpoint("");
+    setValidationError("");
+    setAddDialogOpen(true);
+  };
+
+  // 处理输入变化
+  const handleInputChange = (value: string) => {
+    setNewEndpoint(value);
+    if (validationError) {
+      setValidationError("");
+    }
+  };
+
   // 打开删除确认对话框
   const openDeleteConfirm = (endpoint: string) => {
     setEndpointToDelete(endpoint);
@@ -157,6 +254,7 @@ export function McpEndpointSettingButton() {
             <Button
               size="icon"
               className="flex-1 flex items-center gap-2"
+              onClick={openAddDialog}
             >
               <PlusIcon className="size-4" />
               <span>添加小智服务端接入点</span>
@@ -228,6 +326,45 @@ export function McpEndpointSettingButton() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 添加接入点对话框 */}
+      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>添加新的接入点</DialogTitle>
+            <DialogDescription>
+              请输入小智服务端接入点地址
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Input
+                placeholder="请输入接入点地址，例如：wss://api.xiaozhi.me/mcp/?token=..."
+                value={newEndpoint}
+                onChange={(e) => handleInputChange(e.target.value)}
+                disabled={isAdding}
+                className="font-mono text-sm"
+              />
+              {validationError && (
+                <p className="text-sm text-red-500">{validationError}</p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" disabled={isAdding}>
+                取消
+              </Button>
+            </DialogClose>
+            <Button
+              onClick={handleAddEndpoint}
+              disabled={isAdding || !newEndpoint.trim()}
+            >
+              {isAdding ? "添加中..." : "确定"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
