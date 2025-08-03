@@ -3,7 +3,6 @@ import { Navigation } from "@/components/Navigation";
 import { Toaster } from "@/components/ui/sonner";
 import { Route, Routes } from "react-router-dom";
 import McpEndpoint from "./pages/McpEndpoint";
-import "./utils/testInfiniteLoop";
 
 function App() {
   return (
