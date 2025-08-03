@@ -16,16 +16,17 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
-import type { MCPServerConfig } from "@/types";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useWebSocketConfig } from "@/stores/websocket";
+import type { MCPServerConfig } from "@/types";
+import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
-import { Textarea } from "./ui/textarea";
-import z from "zod";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import z from "zod";
+import { Textarea } from "./ui/textarea";
 
 const formSchema = z.object({
   config: z.string().min(2, {
@@ -46,43 +47,139 @@ export function AddMcpServerButton() {
     },
   });
 
-  // 解析 MCP 配置的函数，复制自 MCPServerList.tsx
-  const parseMCPConfig = (
-    input: string
-  ): Record<string, MCPServerConfig> | null => {
+  // 验证结果接口
+  interface ValidationResult {
+    success: boolean;
+    data?: Record<string, MCPServerConfig>;
+    error?: string;
+  }
+
+  // 验证单个 MCP 服务配置
+  const validateSingleServerConfig = (
+    serverName: string,
+    serverConfig: any
+  ): { valid: boolean; error?: string } => {
+    if (!serverConfig || typeof serverConfig !== "object") {
+      return {
+        valid: false,
+        error: `服务 "${serverName}" 的配置必须是一个对象`,
+      };
+    }
+
+    // 先进行基本字段检查，避免 getMcpServerCommunicationType 抛出错误
+    const hasCommand = "command" in serverConfig;
+    const hasType = "type" in serverConfig;
+    const hasUrl = "url" in serverConfig;
+
+    // 判断配置类型并验证相应字段
+    if (hasCommand) {
+      // stdio 类型
+      if (!serverConfig.command || typeof serverConfig.command !== "string") {
+        return {
+          valid: false,
+          error: `服务 "${serverName}" 缺少必需的 command 字段或字段类型不正确`,
+        };
+      }
+      if (!Array.isArray(serverConfig.args)) {
+        return {
+          valid: false,
+          error: `服务 "${serverName}" 的 args 字段必须是数组`,
+        };
+      }
+    } else if (hasType && serverConfig.type === "sse") {
+      // sse 类型
+      if (!serverConfig.url || typeof serverConfig.url !== "string") {
+        return {
+          valid: false,
+          error: `服务 "${serverName}" 缺少必需的 url 字段或字段类型不正确`,
+        };
+      }
+    } else if (hasUrl) {
+      // streamable-http 类型
+      if (!serverConfig.url || typeof serverConfig.url !== "string") {
+        return {
+          valid: false,
+          error: `服务 "${serverName}" 缺少必需的 url 字段或字段类型不正确`,
+        };
+      }
+      if (serverConfig.type && serverConfig.type !== "streamable-http") {
+        return {
+          valid: false,
+          error: `服务 "${serverName}" 的 type 字段如果存在，必须是 "streamable-http"`,
+        };
+      }
+    } else {
+      // 无法识别的配置类型
+      return {
+        valid: false,
+        error: `服务 "${serverName}" 的配置无效: 必须包含 command 字段（stdio）、type: 'sse' 字段（sse）或 url 字段（streamable-http）`,
+      };
+    }
+
+    // 最后用工具函数验证配置是否完整
+    try {
+      getMcpServerCommunicationType(serverConfig);
+      return { valid: true };
+    } catch (error) {
+      return {
+        valid: false,
+        error: `服务 "${serverName}" 的配置无效: ${
+          error instanceof Error ? error.message : "未知错误"
+        }`,
+      };
+    }
+  };
+
+  // 验证 MCP 配置的函数
+  const validateMCPConfig = (input: string): ValidationResult => {
     try {
       const trimmed = input.trim();
-      if (!trimmed) return null;
+      if (!trimmed) {
+        return { success: false, error: "配置不能为空" };
+      }
 
       const parsed = JSON.parse(trimmed);
 
+      let mcpServers: Record<string, any>;
+
       // 检查是否包含 mcpServers 层
       if (parsed.mcpServers && typeof parsed.mcpServers === "object") {
-        return parsed.mcpServers;
-      }
-
-      // 检查是否是直接的服务配置对象
-      if (typeof parsed === "object" && !Array.isArray(parsed)) {
-        // 判断是否是单个服务配置（有 command 或 type 字段）
-        if (
-          "command" in parsed ||
-          ("type" in parsed && parsed.type === "sse")
-        ) {
-          // 生成一个默认名称
+        mcpServers = parsed.mcpServers;
+      } else if (typeof parsed === "object" && !Array.isArray(parsed)) {
+        // 检查是否是单个服务配置
+        try {
+          getMcpServerCommunicationType(parsed);
+          // 如果能识别类型，说明是单个服务配置，生成默认名称
           const defaultName = parsed.command
             ? parsed.command.split("/").pop() || "mcp-server"
-            : "sse-server";
-          return { [defaultName]: parsed };
+            : parsed.type === "sse"
+              ? "sse-server"
+              : "http-server";
+          mcpServers = { [defaultName]: parsed };
+        } catch {
+          // 无法识别为单个服务配置，认为是多个服务的配置对象
+          mcpServers = parsed;
         }
-
-        // 否则认为是多个服务的配置对象
-        return parsed;
+      } else {
+        return { success: false, error: "配置格式错误: 必须是对象格式" };
       }
 
-      return null;
+      // 验证每个服务配置
+      for (const [serverName, serverConfig] of Object.entries(mcpServers)) {
+        const validation = validateSingleServerConfig(serverName, serverConfig);
+        if (!validation.valid) {
+          return { success: false, error: validation.error };
+        }
+      }
+
+      return { success: true, data: mcpServers };
     } catch (error) {
-      console.error("解析配置失败:", error);
-      return null;
+      return {
+        success: false,
+        error: `JSON 格式错误: ${
+          error instanceof Error ? error.message : "无法解析 JSON"
+        }`,
+      };
     }
   };
 
@@ -94,13 +191,15 @@ export function AddMcpServerButton() {
 
     setIsLoading(true);
     try {
-      // 解析用户输入的配置
-      const parsedServers = parseMCPConfig(values.config);
+      // 验证用户输入的配置
+      const validation = validateMCPConfig(values.config);
 
-      if (!parsedServers) {
-        toast.error("配置格式错误: 请输入有效的 JSON 配置");
+      if (!validation.success) {
+        toast.error(validation.error || "配置验证失败");
         return;
       }
+
+      const parsedServers = validation.data!;
 
       // 检查是否有重名的服务
       const existingNames = Object.keys(parsedServers).filter(
@@ -170,12 +269,33 @@ export function AddMcpServerButton() {
                       <Textarea
                         className="resize-none h-[300px] font-mono text-sm"
                         disabled={isLoading}
-                        placeholder={`例如：
+                        placeholder={`支持三种通信方式：
+
+1. 本地进程 (stdio):
 {
   "mcpServers": {
-    "example-server": {
+    "local-server": {
       "command": "npx",
       "args": ["-y", "@example/mcp-server"]
+    }
+  }
+}
+
+2. 服务器推送 (SSE):
+{
+  "mcpServers": {
+    "sse-server": {
+      "type": "sse",
+      "url": "https://example.com/sse"
+    }
+  }
+}
+
+3. 流式 HTTP:
+{
+  "mcpServers": {
+    "http-server": {
+      "url": "https://example.com/mcp"
     }
   }
 }`}

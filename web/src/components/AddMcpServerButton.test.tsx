@@ -1,7 +1,7 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { vi, describe, it, expect, beforeEach } from "vitest";
-import { AddMcpServerButton } from "./AddMcpServerButton";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { toast } from "sonner";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { AddMcpServerButton } from "./AddMcpServerButton";
 
 // Mock dependencies
 vi.mock("sonner", () => ({
@@ -11,9 +11,11 @@ vi.mock("sonner", () => ({
   },
 }));
 
+const mockUpdateConfig = vi.fn().mockResolvedValue(undefined);
+
 vi.mock("@/hooks/useWebSocket", () => ({
   useWebSocket: () => ({
-    updateConfig: vi.fn().mockResolvedValue(undefined),
+    updateConfig: mockUpdateConfig,
   }),
 }));
 
@@ -32,6 +34,7 @@ vi.mock("@/stores/websocket", () => ({
 describe("AddMcpServerButton", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUpdateConfig.mockClear();
   });
 
   it("should render the add button", () => {
@@ -49,7 +52,9 @@ describe("AddMcpServerButton", () => {
 
     await waitFor(() => {
       expect(screen.getByRole("dialog")).toBeInTheDocument();
-      expect(screen.getByText("添加后，需要重启服务才会生效。")).toBeInTheDocument();
+      expect(
+        screen.getByText("添加后，需要重启服务才会生效。")
+      ).toBeInTheDocument();
     });
   });
 
@@ -68,7 +73,9 @@ describe("AddMcpServerButton", () => {
     });
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("配置格式错误: 请输入有效的 JSON 配置");
+      expect(toast.error).toHaveBeenCalledWith(
+        expect.stringContaining("JSON 格式错误")
+      );
     });
   });
 
@@ -89,8 +96,8 @@ describe("AddMcpServerButton", () => {
                 args: ["new.js"],
               },
             },
-          })
-        }
+          }),
+        },
       });
 
       const saveButton = screen.getByRole("button", { name: /保存/ });
@@ -98,17 +105,13 @@ describe("AddMcpServerButton", () => {
     });
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("服务名称冲突: 以下服务已存在: existing-server");
+      expect(toast.error).toHaveBeenCalledWith(
+        "服务名称冲突: 以下服务已存在: existing-server"
+      );
     });
   });
 
-  it("should successfully add a new server", async () => {
-    const mockUpdateConfig = vi.fn().mockResolvedValue(undefined);
-
-    vi.mocked(require("@/hooks/useWebSocket").useWebSocket).mockReturnValue({
-      updateConfig: mockUpdateConfig,
-    });
-
+  it("should successfully add a new stdio server", async () => {
     render(<AddMcpServerButton />);
 
     const addButton = screen.getByRole("button", { name: /添加MCP服务/ });
@@ -125,8 +128,8 @@ describe("AddMcpServerButton", () => {
                 args: ["new.js"],
               },
             },
-          })
-        }
+          }),
+        },
       });
 
       const saveButton = screen.getByRole("button", { name: /保存/ });
@@ -147,7 +150,340 @@ describe("AddMcpServerButton", () => {
           },
         },
       });
-      expect(toast.success).toHaveBeenCalledWith('已添加 MCP 服务 "new-server"');
+      expect(toast.success).toHaveBeenCalledWith(
+        '已添加 MCP 服务 "new-server"'
+      );
+    });
+  });
+
+  it("should successfully add a new SSE server", async () => {
+    render(<AddMcpServerButton />);
+
+    const addButton = screen.getByRole("button", { name: /添加MCP服务/ });
+    fireEvent.click(addButton);
+
+    await waitFor(() => {
+      const textarea = screen.getByRole("textbox");
+      fireEvent.change(textarea, {
+        target: {
+          value: JSON.stringify({
+            mcpServers: {
+              "sse-server": {
+                type: "sse",
+                url: "https://example.com/sse",
+              },
+            },
+          }),
+        },
+      });
+
+      const saveButton = screen.getByRole("button", { name: /保存/ });
+      fireEvent.click(saveButton);
+    });
+
+    await waitFor(() => {
+      expect(mockUpdateConfig).toHaveBeenCalledWith({
+        mcpEndpoint: "wss://test.example.com",
+        mcpServers: {
+          "existing-server": {
+            command: "node",
+            args: ["existing.js"],
+          },
+          "sse-server": {
+            type: "sse",
+            url: "https://example.com/sse",
+          },
+        },
+      });
+      expect(toast.success).toHaveBeenCalledWith(
+        '已添加 MCP 服务 "sse-server"'
+      );
+    });
+  });
+
+  it("should successfully add a new streamable-http server with type", async () => {
+    render(<AddMcpServerButton />);
+
+    const addButton = screen.getByRole("button", { name: /添加MCP服务/ });
+    fireEvent.click(addButton);
+
+    await waitFor(() => {
+      const textarea = screen.getByRole("textbox");
+      fireEvent.change(textarea, {
+        target: {
+          value: JSON.stringify({
+            mcpServers: {
+              "http-server": {
+                type: "streamable-http",
+                url: "https://example.com/mcp",
+              },
+            },
+          }),
+        },
+      });
+
+      const saveButton = screen.getByRole("button", { name: /保存/ });
+      fireEvent.click(saveButton);
+    });
+
+    await waitFor(() => {
+      expect(mockUpdateConfig).toHaveBeenCalledWith({
+        mcpEndpoint: "wss://test.example.com",
+        mcpServers: {
+          "existing-server": {
+            command: "node",
+            args: ["existing.js"],
+          },
+          "http-server": {
+            type: "streamable-http",
+            url: "https://example.com/mcp",
+          },
+        },
+      });
+      expect(toast.success).toHaveBeenCalledWith(
+        '已添加 MCP 服务 "http-server"'
+      );
+    });
+  });
+
+  it("should successfully add a new streamable-http server without type", async () => {
+    render(<AddMcpServerButton />);
+
+    const addButton = screen.getByRole("button", { name: /添加MCP服务/ });
+    fireEvent.click(addButton);
+
+    await waitFor(() => {
+      const textarea = screen.getByRole("textbox");
+      fireEvent.change(textarea, {
+        target: {
+          value: JSON.stringify({
+            mcpServers: {
+              "http-server-no-type": {
+                url: "https://example.com/mcp",
+              },
+            },
+          }),
+        },
+      });
+
+      const saveButton = screen.getByRole("button", { name: /保存/ });
+      fireEvent.click(saveButton);
+    });
+
+    await waitFor(() => {
+      expect(mockUpdateConfig).toHaveBeenCalledWith({
+        mcpEndpoint: "wss://test.example.com",
+        mcpServers: {
+          "existing-server": {
+            command: "node",
+            args: ["existing.js"],
+          },
+          "http-server-no-type": {
+            url: "https://example.com/mcp",
+          },
+        },
+      });
+      expect(toast.success).toHaveBeenCalledWith(
+        '已添加 MCP 服务 "http-server-no-type"'
+      );
+    });
+  });
+
+  describe("Field validation", () => {
+    it("should show error for stdio server missing command", async () => {
+      render(<AddMcpServerButton />);
+
+      const addButton = screen.getByRole("button", { name: /添加MCP服务/ });
+      fireEvent.click(addButton);
+
+      await waitFor(() => {
+        const textarea = screen.getByRole("textbox");
+        fireEvent.change(textarea, {
+          target: {
+            value: JSON.stringify({
+              mcpServers: {
+                "invalid-server": {
+                  args: ["test.js"],
+                },
+              },
+            }),
+          },
+        });
+
+        const saveButton = screen.getByRole("button", { name: /保存/ });
+        fireEvent.click(saveButton);
+      });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          expect.stringContaining("必须包含 command 字段")
+        );
+      });
+    });
+
+    it("should show error for stdio server with invalid args", async () => {
+      render(<AddMcpServerButton />);
+
+      const addButton = screen.getByRole("button", { name: /添加MCP服务/ });
+      fireEvent.click(addButton);
+
+      await waitFor(() => {
+        const textarea = screen.getByRole("textbox");
+        fireEvent.change(textarea, {
+          target: {
+            value: JSON.stringify({
+              mcpServers: {
+                "invalid-server": {
+                  command: "node",
+                  args: "not-an-array",
+                },
+              },
+            }),
+          },
+        });
+
+        const saveButton = screen.getByRole("button", { name: /保存/ });
+        fireEvent.click(saveButton);
+      });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          expect.stringContaining("args 字段必须是数组")
+        );
+      });
+    });
+
+    it("should show error for SSE server missing url", async () => {
+      render(<AddMcpServerButton />);
+
+      const addButton = screen.getByRole("button", { name: /添加MCP服务/ });
+      fireEvent.click(addButton);
+
+      await waitFor(() => {
+        const textarea = screen.getByRole("textbox");
+        fireEvent.change(textarea, {
+          target: {
+            value: JSON.stringify({
+              mcpServers: {
+                "invalid-sse": {
+                  type: "sse",
+                },
+              },
+            }),
+          },
+        });
+
+        const saveButton = screen.getByRole("button", { name: /保存/ });
+        fireEvent.click(saveButton);
+      });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          expect.stringContaining("缺少必需的 url 字段")
+        );
+      });
+    });
+
+    it("should show error for streamable-http server missing url", async () => {
+      render(<AddMcpServerButton />);
+
+      const addButton = screen.getByRole("button", { name: /添加MCP服务/ });
+      fireEvent.click(addButton);
+
+      await waitFor(() => {
+        const textarea = screen.getByRole("textbox");
+        fireEvent.change(textarea, {
+          target: {
+            value: JSON.stringify({
+              mcpServers: {
+                "invalid-http": {
+                  type: "streamable-http",
+                },
+              },
+            }),
+          },
+        });
+
+        const saveButton = screen.getByRole("button", { name: /保存/ });
+        fireEvent.click(saveButton);
+      });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          expect.stringContaining("必须包含 command 字段")
+        );
+      });
+    });
+
+    it("should show error for streamable-http server with invalid type", async () => {
+      render(<AddMcpServerButton />);
+
+      const addButton = screen.getByRole("button", { name: /添加MCP服务/ });
+      fireEvent.click(addButton);
+
+      await waitFor(() => {
+        const textarea = screen.getByRole("textbox");
+        fireEvent.change(textarea, {
+          target: {
+            value: JSON.stringify({
+              mcpServers: {
+                "invalid-http": {
+                  type: "invalid-type",
+                  url: "https://example.com",
+                },
+              },
+            }),
+          },
+        });
+
+        const saveButton = screen.getByRole("button", { name: /保存/ });
+        fireEvent.click(saveButton);
+      });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          expect.stringContaining("type 字段如果存在，必须是")
+        );
+      });
+    });
+
+    it("should handle single server config without mcpServers wrapper", async () => {
+      render(<AddMcpServerButton />);
+
+      const addButton = screen.getByRole("button", { name: /添加MCP服务/ });
+      fireEvent.click(addButton);
+
+      await waitFor(() => {
+        const textarea = screen.getByRole("textbox");
+        fireEvent.change(textarea, {
+          target: {
+            value: JSON.stringify({
+              url: "https://example.com/mcp",
+            }),
+          },
+        });
+
+        const saveButton = screen.getByRole("button", { name: /保存/ });
+        fireEvent.click(saveButton);
+      });
+
+      await waitFor(() => {
+        expect(mockUpdateConfig).toHaveBeenCalledWith({
+          mcpEndpoint: "wss://test.example.com",
+          mcpServers: {
+            "existing-server": {
+              command: "node",
+              args: ["existing.js"],
+            },
+            "http-server": {
+              url: "https://example.com/mcp",
+            },
+          },
+        });
+        expect(toast.success).toHaveBeenCalledWith(
+          '已添加 MCP 服务 "http-server"'
+        );
+      });
     });
   });
 });

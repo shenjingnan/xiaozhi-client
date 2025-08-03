@@ -60,7 +60,9 @@ export function RemoveMcpServerButton({
       toast.success(`MCP 服务 "${mcpServerName}" 已删除`);
     } catch (error) {
       console.error("删除 MCP 服务失败:", error);
-      toast.error(`删除 MCP 服务失败: ${error instanceof Error ? error.message : "未知错误"}`);
+      toast.error(
+        `删除 MCP 服务失败: ${error instanceof Error ? error.message : "未知错误"}`
+      );
     } finally {
       setIsLoading(false);
     }

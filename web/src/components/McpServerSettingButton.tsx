@@ -16,16 +16,16 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
-import type { MCPServerConfig } from "@/types";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useWebSocketConfig } from "@/stores/websocket";
+import type { MCPServerConfig } from "@/types";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { SettingsIcon } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
-import { Textarea } from "./ui/textarea";
-import z from "zod";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import z from "zod";
+import { Textarea } from "./ui/textarea";
 
 const formSchema = z.object({
   config: z.string().min(2, {

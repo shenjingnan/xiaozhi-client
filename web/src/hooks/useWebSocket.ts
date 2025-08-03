@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { AppConfig, ClientStatus } from "../types";
 import { useWebSocketActions } from "../stores/websocket";
+import type { AppConfig, ClientStatus } from "../types";
 
 interface WebSocketState {
   connected: boolean;
@@ -196,7 +196,10 @@ export function useWebSocket() {
       return new Promise((resolve, reject) => {
         if (socketRef.current?.readyState === WebSocket.OPEN) {
           // 先通过 HTTP API 更新
-          const apiUrl = `${wsUrl.replace(/^ws(s)?:\/\//, "http$1://")}/api/config`;
+          const apiUrl = `${wsUrl.replace(
+            /^ws(s)?:\/\//,
+            "http$1://"
+          )}/api/config`;
           fetch(apiUrl, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },

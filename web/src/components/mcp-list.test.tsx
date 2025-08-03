@@ -1,7 +1,7 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { vi, describe, it, expect, beforeEach } from "vitest";
-import McpServicesDisplay from "./mcp-list";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { toast } from "sonner";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import McpServicesDisplay from "./mcp-list";
 
 // Mock the hooks
 vi.mock("@/stores/websocket", () => ({

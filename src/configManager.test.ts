@@ -555,7 +555,7 @@ describe("ConfigManager", () => {
       } as MCPServerConfig;
 
       expect(() => configManager.updateMcpServer("test", serverConfig)).toThrow(
-        "服务配置的 command 字段必须是非空字符串"
+        "缺少必需的 command 字段或字段类型不正确"
       );
     });
 
@@ -566,7 +566,7 @@ describe("ConfigManager", () => {
       } as any;
 
       expect(() => configManager.updateMcpServer("test", serverConfig)).toThrow(
-        "服务配置的 args 字段必须是数组"
+        "args 字段必须是数组"
       );
     });
 
@@ -578,7 +578,7 @@ describe("ConfigManager", () => {
       } as any;
 
       expect(() => configManager.updateMcpServer("test", serverConfig)).toThrow(
-        "服务配置的 env 字段必须是对象"
+        "env 字段必须是对象"
       );
     });
   });
@@ -673,7 +673,7 @@ describe("ConfigManager", () => {
       mockReadFileSync.mockReturnValue(JSON.stringify(invalidConfig));
 
       expect(() => configManager.getConfig()).toThrow(
-        'mcpServers.invalid-server.type 必须是 "sse" 或 "streamable-http"'
+        'type 字段如果存在，必须是 "streamable-http"'
       );
     });
 
@@ -693,7 +693,7 @@ describe("ConfigManager", () => {
       // 没有 url 字段时，验证逻辑会检查 command 字段
       // 由于没有 command 字段，会抛出错误
       expect(() => configManager.getConfig()).toThrow(
-        "配置文件格式错误：mcpServers.no-url-server.command 无效"
+        "无法识别的 MCP 服务配置类型"
       );
     });
   });
@@ -733,6 +733,7 @@ describe("ConfigManager", () => {
         savedConfig.mcpServerConfig["test-server"].tools["test-tool"]
       ).toEqual({
         enable: false,
+        description: "Test tool description", // 保留原有描述
       });
     });
 
@@ -933,7 +934,7 @@ describe("ConfigManager", () => {
       mockReadFileSync.mockReturnValue(JSON.stringify(invalidConfig));
 
       expect(() => configManager.getConfig()).toThrow(
-        "配置文件格式错误：mcpServers.invalid-server.command 无效"
+        "缺少必需的 command 字段或字段类型不正确"
       );
     });
   });

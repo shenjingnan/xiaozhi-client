@@ -1,25 +1,21 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import {
-  useWebSocketMcpServerConfig,
-  useWebSocketMcpServers,
-  useWebSocketConfig,
-} from "@/stores/websocket";
-import type { MCPServerConfig } from "@/types";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import {
-  CoffeeIcon,
-  MinusIcon,
-  PlusIcon,
-  Settings,
-  Wrench,
-} from "lucide-react";
+  useWebSocketConfig,
+  useWebSocketMcpServerConfig,
+  useWebSocketMcpServers,
+} from "@/stores/websocket";
+import type { MCPServerConfig } from "@/types";
+import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
+import { CoffeeIcon, MinusIcon, PlusIcon, Wrench } from "lucide-react";
 import { useMemo } from "react";
 import { toast } from "sonner";
-import { McpServerSettingButton } from "./McpServerSettingButton";
 import { AddMcpServerButton } from "./AddMcpServerButton";
+import { McpServerSettingButton } from "./McpServerSettingButton";
 import { RemoveMcpServerButton } from "./RemoveMcpServerButton";
+import { RestartButton } from "./RestartButton";
 
 const McpServicesDisplay = () => {
   const mcpServerConfig = useWebSocketMcpServerConfig();
@@ -89,7 +85,9 @@ const McpServicesDisplay = () => {
     } catch (error) {
       console.error("切换工具状态失败:", error);
       toast.error(
-        `切换工具状态失败: ${error instanceof Error ? error.message : "未知错误"}`
+        `切换工具状态失败: ${
+          error instanceof Error ? error.message : "未知错误"
+        }`
       );
     }
   };
@@ -201,7 +199,10 @@ const McpServicesDisplay = () => {
           </CardContent>
         </Card>
         <div className="transition-all duration-200 gap-4 flex flex-col col-span-2">
-          <AddMcpServerButton />
+          <div className="flex items-center gap-2">
+            <AddMcpServerButton />
+            <RestartButton />
+          </div>
           {Object.entries(mcpServers || {}).map(
             ([mcpServerName, mcpServer]) => (
               <Card
@@ -227,16 +228,14 @@ const McpServicesDisplay = () => {
                           mcpServerName={mcpServerName}
                           mcpServer={mcpServer as MCPServerConfig}
                         />
-                        <RemoveMcpServerButton
-                          mcpServerName={mcpServerName}
-                        />
+                        <RemoveMcpServerButton mcpServerName={mcpServerName} />
                       </div>
                     </div>
                   </div>
                 </CardContent>
                 <CardFooter className="p-4 pt-2">
                   <Badge variant="outline" className="text-xs">
-                    stdio
+                    {getMcpServerCommunicationType(mcpServer)}
                   </Badge>
                 </CardFooter>
               </Card>

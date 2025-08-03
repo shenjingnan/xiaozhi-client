@@ -14,6 +14,7 @@ import { Edit2, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import type { MCPServerConfig, MCPServerToolsConfig } from "../types";
+import { getMcpServerCommunicationType } from "../utils/mcpServerUtils";
 
 interface MCPServerListProps {
   servers: Record<string, MCPServerConfig>;
@@ -36,11 +37,7 @@ function MCPServerList({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [serverToDelete, setServerToDelete] = useState<string | null>(null);
 
-  const isSSEServer = (
-    config: MCPServerConfig
-  ): config is { type: "sse"; url: string } => {
-    return "type" in config && config.type === "sse";
-  };
+  // 使用统一的工具函数来判断服务类型
 
   const handleDeleteServer = () => {
     if (!serverToDelete) return;
@@ -208,7 +205,7 @@ function MCPServerList({
                 <div className="flex items-center space-x-2">
                   <h4 className="font-medium">{name}</h4>
                   <span className="text-xs px-2 py-1 bg-muted rounded">
-                    {isSSEServer(config) ? "SSE" : "Local"}
+                    {getMcpServerCommunicationType(config)}
                   </span>
                 </div>
                 <div className="flex space-x-2">
@@ -248,13 +245,23 @@ function MCPServerList({
 
               {!editingServer && (
                 <div className="mt-2 text-sm text-muted-foreground">
-                  {isSSEServer(config) ? (
-                    <span>URL: {config.url}</span>
-                  ) : (
-                    <span>
-                      {config.command} {config.args?.join(" ") || ""}
-                    </span>
-                  )}
+                  {(() => {
+                    const type = getMcpServerCommunicationType(config);
+                    if (type === "stdio" && "command" in config) {
+                      return (
+                        <span>
+                          {config.command} {config.args?.join(" ") || ""}
+                        </span>
+                      );
+                      // biome-ignore lint/style/noUselessElse: <explanation>
+                    } else if (
+                      (type === "sse" || type === "streamable-http") &&
+                      "url" in config
+                    ) {
+                      return <span>URL: {config.url}</span>;
+                    }
+                    return <span>配置信息不可用</span>;
+                  })()}
                 </div>
               )}
             </div>
