@@ -124,7 +124,7 @@ export function useWebSocket() {
       // 同步连接状态到 store
       syncToStore("connected", true);
 
-      console.log(`[WebSocket] 发送初始请求: getConfig, getStatus`);
+      console.log("[WebSocket] 发送初始请求: getConfig, getStatus");
       ws.send(JSON.stringify({ type: "getConfig" }));
       ws.send(JSON.stringify({ type: "getStatus" }));
 
@@ -134,12 +134,12 @@ export function useWebSocket() {
 
     ws.onmessage = (event) => {
       const message = JSON.parse(event.data);
-      console.log(`[WebSocket] 收到消息:`, message);
+      console.log("[WebSocket] 收到消息:", message);
 
       switch (message.type) {
         case "config":
         case "configUpdate":
-          console.log(`[WebSocket] 处理 config 更新:`, message.data);
+          console.log("[WebSocket] 处理 config 更新:", message.data);
           setState((prev) => ({ ...prev, config: message.data }));
           // 同步 config 到 store
           syncToStore("config", message.data);
@@ -161,18 +161,18 @@ export function useWebSocket() {
           break;
         }
         case "restartStatus":
-          console.log(`[WebSocket] 处理 restartStatus 更新:`, message.data);
+          console.log("[WebSocket] 处理 restartStatus 更新:", message.data);
           setState((prev) => ({ ...prev, restartStatus: message.data }));
           // 同步 restartStatus 到 store
           syncToStore("restartStatus", message.data);
           break;
         default:
-          console.log(`[WebSocket] 未处理的消息类型: ${message.type}`);
+          console.log("[WebSocket] 未处理的消息类型:", message.type);
       }
     };
 
     ws.onclose = () => {
-      console.log(`[WebSocket] 连接已断开`);
+      console.log("[WebSocket] 连接已断开");
       setState((prev) => ({ ...prev, connected: false }));
       // 同步断开连接状态到 store
       syncToStore("connected", false);

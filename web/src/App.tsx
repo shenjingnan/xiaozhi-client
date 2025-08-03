@@ -1,18 +1,18 @@
-// @ts-nocheck
 import DashboardPage from "@/app/dashboard/page";
+import { Navigation } from "@/components/Navigation";
 import { Toaster } from "@/components/ui/sonner";
-import Dashboard from "./pages/Dashboard";
-import DashboardWithStore from "./pages/DashboardWithStore";
+import { Route, Routes } from "react-router-dom";
+import McpEndpoint from "./pages/McpEndpoint";
 import "./utils/testInfiniteLoop";
 
 function App() {
   return (
     <>
-      <DashboardPage />
-      <DashboardWithStore />
-      {/* <div className="min-h-screen bg-background">
-        <Dashboard />
-      </div> */}
+      {/* <Navigation /> */}
+      <Routes>
+        <Route path="/" element={<DashboardPage />} />
+        <Route path="/mcp-endpoint" element={<McpEndpoint />} />
+      </Routes>
       <Toaster />
     </>
   );

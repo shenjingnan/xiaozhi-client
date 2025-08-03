@@ -45,8 +45,13 @@ const data = {
   },
   navMain: [
     {
+      title: "仪表板",
+      url: "/",
+      icon: LayoutDashboardIcon,
+    },
+    {
       title: "小智服务端",
-      url: "#",
+      url: "/mcp-endpoint",
       icon: BotIcon,
     },
     {
@@ -70,88 +75,6 @@ const data = {
       icon: SettingsIcon,
     },
   ],
-  // navClouds: [
-  //   {
-  //     title: "Capture",
-  //     icon: CameraIcon,
-  //     isActive: true,
-  //     url: "#",
-  //     items: [
-  //       {
-  //         title: "Active Proposals",
-  //         url: "#",
-  //       },
-  //       {
-  //         title: "Archived",
-  //         url: "#",
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     title: "Proposal",
-  //     icon: FileTextIcon,
-  //     url: "#",
-  //     items: [
-  //       {
-  //         title: "Active Proposals",
-  //         url: "#",
-  //       },
-  //       {
-  //         title: "Archived",
-  //         url: "#",
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     title: "Prompts",
-  //     icon: FileCodeIcon,
-  //     url: "#",
-  //     items: [
-  //       {
-  //         title: "Active Proposals",
-  //         url: "#",
-  //       },
-  //       {
-  //         title: "Archived",
-  //         url: "#",
-  //       },
-  //     ],
-  //   },
-  // ],
-  // navSecondary: [
-  //   {
-  //     title: "Settings",
-  //     url: "#",
-  //     icon: SettingsIcon,
-  //   },
-  //   {
-  //     title: "Get Help",
-  //     url: "#",
-  //     icon: HelpCircleIcon,
-  //   },
-  //   {
-  //     title: "Search",
-  //     url: "#",
-  //     icon: SearchIcon,
-  //   },
-  // ],
-  // documents: [
-  //   {
-  //     name: "Data Library",
-  //     url: "#",
-  //     icon: DatabaseIcon,
-  //   },
-  //   {
-  //     name: "Reports",
-  //     url: "#",
-  //     icon: ClipboardListIcon,
-  //   },
-  //   {
-  //     name: "Word Assistant",
-  //     url: "#",
-  //     icon: FileIcon,
-  //   },
-  // ],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -174,12 +97,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        {/* <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
-      {/* <SidebarFooter> */}
-      {/* <NavUser user={data.user} /> */}
-      {/* </SidebarFooter> */}
     </Sidebar>
   );
 }

@@ -144,9 +144,7 @@ export function RestartButtonExample() {
  */
 export function ConfigEditorWithRestartButton() {
   // 假设这些是从 props 或 hooks 获取的
-  const [restartStatus] = useState<
-    RestartStatus | undefined
-  >();
+  const [restartStatus] = useState<RestartStatus | undefined>();
 
   const handleRestart = async () => {
     // 实际的重启逻辑
