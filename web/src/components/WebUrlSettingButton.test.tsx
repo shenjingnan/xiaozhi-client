@@ -1,7 +1,23 @@
-// import type { AppConfig } from "@/types";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WebUrlSettingButton } from "./WebUrlSettingButton";
+
+// Mock react-hook-form
+vi.mock("react-hook-form", () => ({
+  useForm: () => ({
+    control: {},
+    handleSubmit: vi.fn((fn) => fn),
+    reset: vi.fn(),
+    formState: { errors: {} },
+  }),
+  FormProvider: ({ children }: { children: React.ReactNode }) => children,
+  Controller: ({ render }: { render: any }) =>
+    render({ field: {}, fieldState: {}, formState: {} }),
+  useFormContext: () => ({
+    getFieldState: vi.fn(() => ({})),
+    formState: { errors: {} },
+  }),
+}));
 
 // Mock the hooks
 vi.mock("@/hooks/useWebSocket", () => ({
@@ -12,9 +28,16 @@ vi.mock("@/hooks/useWebSocket", () => ({
 }));
 
 vi.mock("@/stores/websocket", () => ({
-  useWebSocketConfig: vi.fn(),
-  useWebSocketConnected: vi.fn(),
-  useWebSocketPortChangeStatus: vi.fn(),
+  useWebSocketConfig: vi.fn(() => ({
+    webUI: {
+      port: 9999,
+      autoRestart: true,
+    },
+    mcpEndpoint: "test-endpoint",
+    mcpServers: {},
+  })),
+  useWebSocketConnected: vi.fn(() => false),
+  useWebSocketPortChangeStatus: vi.fn(() => undefined),
 }));
 
 // Mock sonner toast
@@ -22,19 +45,11 @@ vi.mock("sonner", () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),
+    info: vi.fn(),
   },
 }));
 
 describe("WebUrlSettingButton", () => {
-  // const mockConfig: AppConfig = {
-  //   mcpEndpoint: "test-endpoint",
-  //   mcpServers: {},
-  //   webUI: {
-  //     port: 8888,
-  //     autoRestart: true,
-  //   },
-  // };
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -53,7 +68,21 @@ describe("WebUrlSettingButton", () => {
     fireEvent.click(button);
 
     await waitFor(() => {
-      expect(screen.getByText("配置服务端")).toBeInTheDocument();
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
+  });
+
+  it("displays dialog title and description", async () => {
+    render(<WebUrlSettingButton />);
+
+    const button = screen.getByRole("button");
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(screen.getByText("配置服务端端口")).toBeInTheDocument();
+      expect(
+        screen.getByText("请输入服务端端口号，系统将尝试连接。")
+      ).toBeInTheDocument();
     });
   });
 });
