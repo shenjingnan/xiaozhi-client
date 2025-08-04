@@ -82,6 +82,7 @@ export class ConfigManager {
   private static instance: ConfigManager;
   private defaultConfigPath: string;
   private config: AppConfig | null = null;
+  private currentConfigPath: string | null = null; // 跟踪当前使用的配置文件路径
 
   private constructor() {
     this.defaultConfigPath = resolve(__dirname, "xiaozhi.config.default.json");
@@ -197,6 +198,7 @@ export class ConfigManager {
 
     try {
       const configPath = this.getConfigFilePath();
+      this.currentConfigPath = configPath; // 记录当前使用的配置文件路径
       const configFileFormat = this.getConfigFileFormat(configPath);
       const configData = readFileSync(configPath, "utf8");
 
@@ -548,20 +550,43 @@ export class ConfigManager {
 
   /**
    * 保存配置到文件
-   * 始终保存为标准 JSON 格式以确保向后兼容性
+   * 保存到原始配置文件路径，保持文件格式一致性
    */
   private saveConfig(config: AppConfig): void {
     try {
       // 验证配置
       this.validateConfig(config);
 
-      // 获取配置文件路径，但始终保存为 JSON 格式
-      const configDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();
-      const configPath = resolve(configDir, "xiaozhi.config.json");
+      // 确定保存路径 - 优先使用当前配置文件路径，否则使用默认路径
+      let configPath: string;
+      if (this.currentConfigPath) {
+        configPath = this.currentConfigPath;
+      } else {
+        // 如果没有当前路径，使用 getConfigFilePath 获取
+        configPath = this.getConfigFilePath();
+        this.currentConfigPath = configPath;
+      }
 
-      // 格式化 JSON 并保存
-      const configJson = JSON.stringify(config, null, 2);
-      writeFileSync(configPath, configJson, "utf8");
+      // 根据文件格式选择序列化方法
+      const configFileFormat = this.getConfigFileFormat(configPath);
+      let configContent: string;
+
+      switch (configFileFormat) {
+        case "json5":
+          configContent = JSON5.stringify(config, null, 2);
+          break;
+        case "jsonc":
+          // 对于 JSONC 格式，暂时使用标准 JSON 格式保存
+          // 注意：这会丢失注释，但保持了文件路径的一致性
+          configContent = JSON.stringify(config, null, 2);
+          break;
+        default:
+          configContent = JSON.stringify(config, null, 2);
+          break;
+      }
+
+      // 保存到文件
+      writeFileSync(configPath, configContent, "utf8");
 
       // 更新缓存
       this.config = config;
@@ -579,6 +604,7 @@ export class ConfigManager {
    */
   public reloadConfig(): void {
     this.config = null;
+    this.currentConfigPath = null; // 清除配置文件路径缓存
   }
 
   /**

@@ -840,6 +840,113 @@ describe("ConfigManager", () => {
     });
   });
 
+  describe("配置文件格式保持", () => {
+    it("应该保存到原始的 JSONC 配置文件路径", () => {
+      // 模拟存在 JSONC 配置文件
+      mockExistsSync.mockImplementation((path: string) => {
+        return path.includes("xiaozhi.config.jsonc");
+      });
+
+      mockResolve.mockImplementation((dir: string, file: string) => {
+        if (file.includes("jsonc")) return `${dir}/xiaozhi.config.jsonc`;
+        return `${dir}/${file}`;
+      });
+
+      // 模拟 JSONC 格式的配置内容
+      const jsoncConfig = `{
+        // MCP 接入点
+        "mcpEndpoint": "https://example.com/mcp",
+        "mcpServers": {
+          "test-server": {
+            "command": "node",
+            "args": ["test.js"]
+          }
+        }
+      }`;
+
+      mockReadFileSync.mockReturnValue(jsoncConfig);
+
+      // 加载配置
+      configManager.getConfig();
+
+      // 更新配置
+      configManager.updateMcpEndpoint("https://new-endpoint.com/mcp");
+
+      // 验证保存到了正确的 JSONC 文件路径
+      expect(mockWriteFileSync).toHaveBeenCalledWith(
+        "/test/cwd/xiaozhi.config.jsonc",
+        expect.any(String),
+        "utf8"
+      );
+    });
+
+    it("应该保存到原始的 JSON5 配置文件路径", () => {
+      // 模拟存在 JSON5 配置文件
+      mockExistsSync.mockImplementation((path: string) => {
+        return path.includes("xiaozhi.config.json5");
+      });
+
+      mockResolve.mockImplementation((dir: string, file: string) => {
+        if (file.includes("json5")) return `${dir}/xiaozhi.config.json5`;
+        return `${dir}/${file}`;
+      });
+
+      // 模拟 JSON5 格式的配置内容
+      const json5Config = `{
+        // MCP 接入点
+        mcpEndpoint: "https://example.com/mcp",
+        mcpServers: {
+          "test-server": {
+            command: "node",
+            args: ["test.js"],
+          }
+        }
+      }`;
+
+      mockReadFileSync.mockReturnValue(json5Config);
+
+      // 加载配置
+      configManager.getConfig();
+
+      // 更新配置
+      configManager.updateMcpEndpoint("https://new-endpoint.com/mcp");
+
+      // 验证保存到了正确的 JSON5 文件路径
+      expect(mockWriteFileSync).toHaveBeenCalledWith(
+        "/test/cwd/xiaozhi.config.json5",
+        expect.any(String),
+        "utf8"
+      );
+    });
+
+    it("应该在没有当前配置路径时使用 getConfigFilePath", () => {
+      // 模拟存在标准 JSON 配置文件
+      mockExistsSync.mockImplementation((path: string) => {
+        return (
+          path.includes("xiaozhi.config.json") &&
+          !path.includes("json5") &&
+          !path.includes("jsonc")
+        );
+      });
+
+      mockResolve.mockImplementation((dir: string, file: string) => {
+        return `${dir}/${file}`;
+      });
+
+      mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+
+      // 直接更新配置而不先加载（模拟没有当前配置路径的情况）
+      configManager.updateMcpEndpoint("https://new-endpoint.com/mcp");
+
+      // 验证保存到了正确的 JSON 文件路径
+      expect(mockWriteFileSync).toHaveBeenCalledWith(
+        "/test/cwd/xiaozhi.config.json",
+        expect.any(String),
+        "utf8"
+      );
+    });
+  });
+
   describe("获取配置文件路径", () => {
     it("应该返回配置文件路径", () => {
       // 模拟存在 JSON 配置文件
