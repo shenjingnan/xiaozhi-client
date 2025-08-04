@@ -79,6 +79,7 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
 
   return (
     <style
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: This is safe as the content is generated from predefined themes and config, no user input
       dangerouslySetInnerHTML={{
         __html: Object.entries(THEMES)
           .map(

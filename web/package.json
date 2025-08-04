@@ -14,7 +14,7 @@
     "lint": "biome lint --write .",
     "type:check": "tsc --noEmit",
     "check": "biome check .",
-    "check:write": "biome check --write ."
+    "check:fix": "biome check --write ."
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

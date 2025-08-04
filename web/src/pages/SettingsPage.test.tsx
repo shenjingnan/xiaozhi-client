@@ -32,7 +32,11 @@ vi.mock("@/components/ui/sidebar", () => ({
 }));
 
 vi.mock("@/components/RestartButton", () => ({
-  RestartButton: () => <button data-testid="restart-button">重启</button>,
+  RestartButton: () => (
+    <button type="button" data-testid="restart-button">
+      重启
+    </button>
+  ),
 }));
 
 vi.mock("sonner", () => ({

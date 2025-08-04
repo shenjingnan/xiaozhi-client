@@ -103,7 +103,7 @@ export function extractPortFromUrl(url: string): number | null {
   try {
     const urlObj = new URL(url);
     const port = Number.parseInt(urlObj.port);
-    return isNaN(port) ? null : port;
+    return Number.isNaN(port) ? null : port;
   } catch {
     return null;
   }

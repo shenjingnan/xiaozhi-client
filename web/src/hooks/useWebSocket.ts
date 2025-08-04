@@ -87,7 +87,7 @@ export function useWebSocket() {
     } else if (window.location.port) {
       // 如果当前页面有端口号，使用当前页面的端口号
       const currentPort = Number.parseInt(window.location.port);
-      if (!isNaN(currentPort)) {
+      if (!Number.isNaN(currentPort)) {
         targetPort = currentPort;
       }
     } else if (window.location.protocol === "http:" && !window.location.port) {
