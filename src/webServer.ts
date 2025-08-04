@@ -518,12 +518,8 @@ export class WebServer {
         this.wss = new WebSocketServer({ server: this.httpServer });
         this.setupWebSocket();
 
-        this.logger.info(
-          `Web server listening on http://0.0.0.0:${this.port}`
-        );
-        this.logger.info(
-          `Local access: http://localhost:${this.port}`
-        );
+        this.logger.info(`Web server listening on http://0.0.0.0:${this.port}`);
+        this.logger.info(`Local access: http://localhost:${this.port}`);
         resolve();
 
         this.httpServer.on("error", reject);

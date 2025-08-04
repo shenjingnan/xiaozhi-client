@@ -437,8 +437,6 @@ export class ConfigManager {
     if (!validation.valid) {
       throw new Error(validation.error || "服务配置验证失败");
     }
-
-    debugger;
     const config = this.getConfig();
     const newConfig = {
       ...config,

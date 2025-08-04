@@ -201,10 +201,7 @@ export function validateMcpServerConfig(
             error: `服务 "${serverName}" 缺少必需的 url 字段或字段类型不正确`,
           };
         }
-        if (
-          serverConfig.type &&
-          serverConfig.type !== "streamable-http"
-        ) {
+        if (serverConfig.type && serverConfig.type !== "streamable-http") {
           return {
             valid: false,
             error: `服务 "${serverName}" 的 type 字段如果存在，必须是 "streamable-http"`,
