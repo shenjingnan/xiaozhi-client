@@ -16,7 +16,7 @@ const data = {
   navMain: [
     {
       title: "仪表板",
-      url: "/",
+      url: "/dashboard",
       icon: LayoutDashboardIcon,
     },
     // {

@@ -152,7 +152,7 @@ export function WebUrlSettingButton() {
               </DialogDescription>
             </DialogHeader>
             <div className="flex items-center gap-2">
-              <div>ws://localhost</div>
+              <div>ws://{window.location.hostname}:</div>
               <div className="w-[100px]">
                 <FormField
                   control={form.control}
