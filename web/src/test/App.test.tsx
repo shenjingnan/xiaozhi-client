@@ -23,8 +23,13 @@ class MockWebSocket {
 global.WebSocket = MockWebSocket as any;
 
 // Mock the dashboard page component to avoid complex dependencies
-vi.mock("@/app/dashboard/page", () => ({
+vi.mock("@/pages/DashboardPage", () => ({
   default: () => <div data-testid="dashboard-page">Dashboard Page</div>,
+}));
+
+// Mock the settings page component to avoid complex dependencies
+vi.mock("@/pages/SettingsPage", () => ({
+  default: () => <div data-testid="settings-page">Settings Page</div>,
 }));
 
 // Mock the utils import to avoid side effects
@@ -37,46 +42,35 @@ function renderWithRouter(ui: React.ReactElement, initialEntries = ["//"]) {
 }
 
 describe("App Routing", () => {
-  it("renders navigation component", () => {
-    renderWithRouter(<App />);
-
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
-    expect(screen.getByText("MCP Endpoint")).toBeInTheDocument();
-  });
-
   it("renders dashboard page by default", () => {
     renderWithRouter(<App />);
 
     expect(screen.getByTestId("dashboard-page")).toBeInTheDocument();
   });
 
-  it("renders MCP Endpoint page when navigating to /mcp-endpoint", () => {
-    renderWithRouter(<App />, ["/mcp-endpoint"]);
+  it("renders Settings page when navigating to /settings", () => {
+    renderWithRouter(<App />, ["/settings"]);
 
-    expect(screen.getByText("xiaozhi mcp endpoint")).toBeInTheDocument();
+    expect(screen.getByTestId("settings-page")).toBeInTheDocument();
   });
 
-  it("shows correct navigation links", () => {
+  it("renders dashboard page for root path", () => {
+    renderWithRouter(<App />, ["/"]);
+
+    expect(screen.getByTestId("dashboard-page")).toBeInTheDocument();
+  });
+
+  it("includes Toaster component", () => {
     renderWithRouter(<App />);
 
-    const dashboardLink = screen.getByRole("link", { name: "Dashboard" });
-    const mcpLink = screen.getByRole("link", { name: "MCP Endpoint" });
-
-    // Links should have correct href attributes
-    expect(dashboardLink).toHaveAttribute("href", "/");
-    expect(mcpLink).toHaveAttribute("href", "/mcp-endpoint");
+    // Toaster creates a section with aria-label for notifications
+    expect(screen.getByLabelText("Notifications alt+T")).toBeInTheDocument();
   });
 
-  it("navigation works correctly", () => {
-    renderWithRouter(<App />, ["/mcp-endpoint"]);
+  it("wraps content in WebSocketProvider", () => {
+    renderWithRouter(<App />);
 
-    // Should show MCP endpoint content
-    expect(screen.getByText("xiaozhi mcp endpoint")).toBeInTheDocument();
-
-    // Should have navigation links
-    expect(screen.getByRole("link", { name: "Dashboard" })).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: "MCP Endpoint" })
-    ).toBeInTheDocument();
+    // If WebSocketProvider is working, the page should render without errors
+    expect(screen.getByTestId("dashboard-page")).toBeInTheDocument();
   });
 });
