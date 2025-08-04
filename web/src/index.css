@@ -68,4 +68,39 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* 移除按钮和链接的焦点外边框和环形边框 */
+  button:focus,
+  button:focus-visible,
+  a:focus,
+  a:focus-visible,
+  [role="button"]:focus,
+  [role="button"]:focus-visible,
+  [role="link"]:focus,
+  [role="link"]:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  /* 移除 Tailwind 的 ring 样式（针对按钮和链接） */
+  button:focus,
+  button:focus-visible,
+  a:focus,
+  a:focus-visible,
+  [role="button"]:focus,
+  [role="button"]:focus-visible {
+    --tw-ring-shadow: none !important;
+  }
+
+  /* 为按钮和链接提供替代的焦点指示 */
+  button:focus-visible,
+  a:focus-visible,
+  [role="button"]:focus-visible,
+  [role="link"]:focus-visible {
+    background-color: hsl(var(--accent)) !important;
+    color: hsl(var(--accent-foreground)) !important;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  /* input、textarea、select 保留原始焦点样式，包括 Tailwind 的 ring 样式 */
 }
