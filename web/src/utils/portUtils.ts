@@ -10,7 +10,7 @@
  */
 export async function checkPortAvailability(
   port: number,
-  timeout: number = 3000
+  timeout = 3000
 ): Promise<boolean> {
   try {
     const controller = new AbortController();
@@ -50,8 +50,8 @@ export async function checkPortAvailability(
  */
 export async function pollPortUntilAvailable(
   port: number,
-  maxAttempts: number = 30,
-  interval: number = 2000,
+  maxAttempts = 30,
+  interval = 2000,
   onProgress?: (attempt: number, maxAttempts: number) => void
 ): Promise<boolean> {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -76,15 +76,22 @@ export async function pollPortUntilAvailable(
 /**
  * 构建 WebSocket URL
  * @param port 端口号
- * @param hostname 主机名，默认为 localhost
+ * @param hostname 主机名，默认使用当前页面的 hostname
  * @returns WebSocket URL
  */
-export function buildWebSocketUrl(
-  port: number,
-  hostname: string = "localhost"
-): string {
+export function buildWebSocketUrl(port: number, hostname?: string): string {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  return `${protocol}//${hostname}:${port}`;
+  const host = hostname || window.location.hostname || "localhost";
+
+  // 如果是标准端口（80 for HTTP, 443 for HTTPS），不显示端口号
+  if (
+    (protocol === "ws:" && port === 80) ||
+    (protocol === "wss:" && port === 443)
+  ) {
+    return `${protocol}//${host}`;
+  }
+
+  return `${protocol}//${host}:${port}`;
 }
 
 /**
@@ -95,7 +102,7 @@ export function buildWebSocketUrl(
 export function extractPortFromUrl(url: string): number | null {
   try {
     const urlObj = new URL(url);
-    const port = parseInt(urlObj.port);
+    const port = Number.parseInt(urlObj.port);
     return isNaN(port) ? null : port;
   } catch {
     return null;

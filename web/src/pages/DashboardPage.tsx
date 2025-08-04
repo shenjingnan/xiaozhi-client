@@ -1,7 +1,7 @@
 import { AppSidebar } from "@/components/AppSidebar";
+import { DashboardStatusCard } from "@/components/DashboardStatusCard";
 import { McpServerList } from "@/components/McpServerList";
 import { SiteHeader } from "@/components/SiteHeder";
-import { DashboardStatusCard } from "@/components/DashboardStatusCard";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useWebSocketActions } from "@/providers/WebSocketProvider";
 

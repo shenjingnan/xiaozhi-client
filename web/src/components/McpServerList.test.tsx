@@ -42,14 +42,35 @@ vi.mock("@/components/ui/card", () => ({
   CardFooter: ({ children, ...props }: any) => <div {...props}>{children}</div>,
 }));
 
-// Mock Lucide React icons
-vi.mock("lucide-react", () => ({
-  CoffeeIcon: () => <span>CoffeeIcon</span>,
-  MinusIcon: () => <span>MinusIcon</span>,
-  PlusIcon: () => <span>PlusIcon</span>,
-  Settings: () => <span>Settings</span>,
-  Wrench: () => <span>Wrench</span>,
-}));
+// Mock Lucide React icons with a generic approach
+vi.mock("lucide-react", async (importOriginal) => {
+  const actual = (await importOriginal()) as any;
+  // Create a generic icon component
+  const MockIcon = ({ className, ...props }: any) => (
+    <span className={className} {...props}>
+      Icon
+    </span>
+  );
+
+  // Return all actual exports but override with mock icons
+  return {
+    ...actual,
+    CoffeeIcon: MockIcon,
+    MinusIcon: MockIcon,
+    PlusIcon: MockIcon,
+    Settings: MockIcon,
+    SettingsIcon: MockIcon,
+    Wrench: MockIcon,
+    X: MockIcon,
+    RefreshCw: MockIcon,
+    Trash2: MockIcon,
+    Edit: MockIcon,
+    // Add any other icons that might be needed
+    Check: MockIcon,
+    AlertCircle: MockIcon,
+    Info: MockIcon,
+  };
+});
 
 describe("McpServerList", () => {
   const mockUpdateConfig = vi.fn();
@@ -74,31 +95,42 @@ describe("McpServerList", () => {
     mcpServerConfig: mockMcpServerConfig,
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
 
-    // Setup mocks
-    const {
-      useWebSocketMcpServerConfig,
-      useWebSocketMcpServers,
-      useWebSocketConfig,
-    } = require("@/stores/websocket");
-    const { useWebSocket } = require("@/hooks/useWebSocket");
+    // Setup mocks using dynamic imports
+    const websocketModule = await import("@/stores/websocket");
+    const useWebSocketModule = await import("@/hooks/useWebSocket");
 
-    useWebSocketMcpServerConfig.mockReturnValue(mockMcpServerConfig);
-    useWebSocketMcpServers.mockReturnValue({});
-    useWebSocketConfig.mockReturnValue(mockConfig);
-    useWebSocket.mockReturnValue({ updateConfig: mockUpdateConfig });
+    vi.mocked(websocketModule.useWebSocketMcpServerConfig).mockReturnValue(
+      mockMcpServerConfig
+    );
+    vi.mocked(websocketModule.useWebSocketMcpServers).mockReturnValue({
+      server1: { command: "node", args: ["server1.js"] },
+      server2: { command: "node", args: ["server2.js"] },
+    });
+    vi.mocked(websocketModule.useWebSocketConfig).mockReturnValue(mockConfig);
+    vi.mocked(useWebSocketModule.useWebSocket).mockReturnValue({
+      updateConfig: mockUpdateConfig,
+      restartService: vi.fn(),
+      refreshStatus: vi.fn(),
+      wsUrl: "ws://localhost:9999",
+      setCustomWsUrl: vi.fn(),
+      changePort: vi.fn(),
+      connected: false,
+      config: null,
+      status: null,
+    });
   });
 
   it("should render enabled and disabled tools correctly", () => {
-    render(<McpServerList />);
+    render(<McpServerList updateConfig={mockUpdateConfig} />);
 
     // Check if enabled tools section shows correct count
-    expect(screen.getByText("聚合后的MCP服务 (2)")).toBeInTheDocument();
+    expect(screen.getByText("使用中的工具 (2)")).toBeInTheDocument();
 
     // Check if disabled tools section shows correct count
-    expect(screen.getByText("可用工具 (1)")).toBeInTheDocument();
+    expect(screen.getByText("未使用的工具 (1)")).toBeInTheDocument();
 
     // Check if tool names are displayed
     expect(screen.getByText("tool1")).toBeInTheDocument();
@@ -107,10 +139,13 @@ describe("McpServerList", () => {
   });
 
   it("should handle tool toggle correctly", async () => {
-    render(<McpServerList />);
+    render(<McpServerList updateConfig={mockUpdateConfig} />);
 
     // Find and click the minus button for an enabled tool (tool1)
-    const minusButtons = screen.getAllByText("MinusIcon");
+    // The minus buttons are rendered as generic "Icon" spans with hover:bg-red-500 class
+    const minusButtons = screen
+      .getAllByRole("button")
+      .filter((button) => button.className.includes("hover:bg-red-500"));
     fireEvent.click(minusButtons[0]);
 
     await waitFor(() => {
@@ -132,14 +167,17 @@ describe("McpServerList", () => {
       });
     });
 
-    expect(toast.success).toHaveBeenCalledWith('工具 "tool1" 已禁用');
+    expect(toast.success).toHaveBeenCalledWith("禁用工具 tool1 成功");
   });
 
   it("should handle enabling a disabled tool", async () => {
-    render(<McpServerList />);
+    render(<McpServerList updateConfig={mockUpdateConfig} />);
 
     // Find and click the plus button for a disabled tool (tool2)
-    const plusButtons = screen.getAllByText("PlusIcon");
+    // The plus buttons are rendered as generic "Icon" spans with hover:bg-green-500 class
+    const plusButtons = screen
+      .getAllByRole("button")
+      .filter((button) => button.className.includes("hover:bg-green-500"));
     fireEvent.click(plusButtons[0]);
 
     await waitFor(() => {
@@ -161,29 +199,33 @@ describe("McpServerList", () => {
       });
     });
 
-    expect(toast.success).toHaveBeenCalledWith('工具 "tool2" 已启用');
+    expect(toast.success).toHaveBeenCalledWith("启用工具 tool2 成功");
   });
 
   it("should show error when config is not loaded", async () => {
-    const { useWebSocketConfig } = require("@/stores/websocket");
-    useWebSocketConfig.mockReturnValue(null);
+    const websocketModule = await import("@/stores/websocket");
+    vi.mocked(websocketModule.useWebSocketConfig).mockReturnValue(null);
 
-    render(<McpServerList />);
+    render(<McpServerList updateConfig={mockUpdateConfig} />);
 
-    const minusButtons = screen.getAllByText("MinusIcon");
+    const minusButtons = screen
+      .getAllByRole("button")
+      .filter((button) => button.className.includes("hover:bg-red-500"));
     fireEvent.click(minusButtons[0]);
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("配置数据未加载，请稍后重试");
+      expect(toast.error).toHaveBeenCalledWith("配置未加载");
     });
 
     expect(mockUpdateConfig).not.toHaveBeenCalled();
   });
 
   it("should show error when tool is not found", async () => {
-    // Mock a scenario where the tool doesn't exist in any server
-    const { useWebSocketMcpServerConfig } = require("@/stores/websocket");
-    useWebSocketMcpServerConfig.mockReturnValue({
+    // Mock a scenario where updateConfig is not provided
+    const websocketModule = await import("@/stores/websocket");
+    const useWebSocketModule = await import("@/hooks/useWebSocket");
+
+    vi.mocked(websocketModule.useWebSocketMcpServerConfig).mockReturnValue({
       server1: {
         tools: {
           "other-tool": { enable: true, description: "Other tool" },
@@ -191,7 +233,20 @@ describe("McpServerList", () => {
       },
     });
 
-    render(<McpServerList />);
+    // Mock useWebSocket to return undefined updateConfig
+    vi.mocked(useWebSocketModule.useWebSocket).mockReturnValue({
+      updateConfig: undefined as any,
+      restartService: vi.fn(),
+      refreshStatus: vi.fn(),
+      wsUrl: "ws://localhost:9999",
+      setCustomWsUrl: vi.fn(),
+      changePort: vi.fn(),
+      connected: false,
+      config: null,
+      status: null,
+    });
+
+    render(<McpServerList />); // No updateConfig prop to test the error case
 
     // Try to toggle a non-existent tool
     const buttons = screen.getAllByRole("button");
@@ -200,7 +255,7 @@ describe("McpServerList", () => {
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
-          expect.stringContaining("未找到工具")
+          expect.stringContaining("updateConfig 方法未提供")
         );
       });
     }

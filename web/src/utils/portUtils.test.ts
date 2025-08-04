@@ -46,12 +46,16 @@ describe("portUtils", () => {
 
     it("应该在超时时返回 false", async () => {
       const mockFetch = vi.mocked(fetch);
-      mockFetch.mockImplementationOnce(
-        () =>
-          new Promise((resolve) => {
-            setTimeout(() => resolve({ ok: true } as Response), 200);
-          })
-      );
+      // Mock fetch 抛出 AbortError 来模拟超时
+      mockFetch.mockImplementation(() => {
+        return new Promise((_, reject) => {
+          setTimeout(() => {
+            const error = new Error("The operation was aborted");
+            error.name = "AbortError";
+            reject(error);
+          }, 50);
+        });
+      });
 
       const result = await checkPortAvailability(9999, 100);
       expect(result).toBe(false);

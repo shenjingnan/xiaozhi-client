@@ -1,3 +1,5 @@
+import { McpEndpointSettingButton } from "@/components/McpEndpointSettingButton";
+import { WebUrlSettingButton } from "@/components/WebUrlSettingButton";
 import {
   Card,
   CardDescription,
@@ -11,8 +13,6 @@ import {
   useWebSocketMcpServers,
   useWebSocketUrl,
 } from "@/stores/websocket";
-import { WebUrlSettingButton } from "@/components/WebUrlSettingButton";
-import { McpEndpointSettingButton } from "@/components/McpEndpointSettingButton";
 
 const MiniCircularProgress = ({
   showValue = true,

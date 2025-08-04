@@ -79,9 +79,7 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
       toast.success(`${action}工具 ${toolName} 成功`);
     } catch (error) {
       console.error("切换工具状态失败:", error);
-      toast.error(
-        error instanceof Error ? error.message : "切换工具状态失败"
-      );
+      toast.error(error instanceof Error ? error.message : "切换工具状态失败");
     }
   };
 
@@ -205,7 +203,11 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
                         size="icon"
                         className="size-8 hover:bg-green-500 hover:text-white"
                         onClick={() =>
-                          handleToggleTool(tool.serverName, tool.toolName, false)
+                          handleToggleTool(
+                            tool.serverName,
+                            tool.toolName,
+                            false
+                          )
                         }
                       >
                         <PlusIcon className="h-4 w-4" />

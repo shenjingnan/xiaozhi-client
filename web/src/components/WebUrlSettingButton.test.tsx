@@ -7,11 +7,14 @@ import { WebUrlSettingButton } from "./WebUrlSettingButton";
 vi.mock("@/hooks/useWebSocket", () => ({
   useWebSocket: () => ({
     updateConfig: vi.fn(),
+    changePort: vi.fn(),
   }),
 }));
 
 vi.mock("@/stores/websocket", () => ({
   useWebSocketConfig: vi.fn(),
+  useWebSocketConnected: vi.fn(),
+  useWebSocketPortChangeStatus: vi.fn(),
 }));
 
 // Mock sonner toast

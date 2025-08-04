@@ -21,7 +21,7 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import {
   useWebSocketConfig,
   useWebSocketConnected,
-  useWebSocketPortChangeStatus
+  useWebSocketPortChangeStatus,
 } from "@/stores/websocket";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SettingsIcon } from "lucide-react";
@@ -101,7 +101,9 @@ export function WebUrlSettingButton() {
       return;
     }
 
-    console.log(`[WebUrlSettingButton] 开始端口切换: ${currentPort} -> ${newPort}`);
+    console.log(
+      `[WebUrlSettingButton] 开始端口切换: ${currentPort} -> ${newPort}`
+    );
     setIsLoading(true);
 
     try {
@@ -123,7 +125,8 @@ export function WebUrlSettingButton() {
       setOpen(false);
     } catch (error) {
       console.error("端口切换失败:", error);
-      const errorMessage = error instanceof Error ? error.message : "端口切换失败";
+      const errorMessage =
+        error instanceof Error ? error.message : "端口切换失败";
       toast.error(`端口切换失败: ${errorMessage}`);
     } finally {
       setIsLoading(false);
@@ -145,8 +148,7 @@ export function WebUrlSettingButton() {
               <DialogDescription>
                 {connected
                   ? "修改端口后将自动重启服务并重新连接。"
-                  : "请输入服务端端口号，系统将尝试连接。"
-                }
+                  : "请输入服务端端口号，系统将尝试连接。"}
               </DialogDescription>
             </DialogHeader>
             <div className="flex items-center gap-2">
@@ -178,7 +180,10 @@ export function WebUrlSettingButton() {
                   取消
                 </Button>
               </DialogClose>
-              <Button type="submit" disabled={isLoading || portChangeStatus?.status === "polling"}>
+              <Button
+                type="submit"
+                disabled={isLoading || portChangeStatus?.status === "polling"}
+              >
                 {getButtonText()}
               </Button>
             </DialogFooter>

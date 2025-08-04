@@ -17,6 +17,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 
+import { useWebSocket } from "@/hooks/useWebSocket";
 import { useWebSocketConfig } from "@/stores/websocket";
 import type { MCPServerConfig } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,7 +27,6 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
 import { Textarea } from "./ui/textarea";
-import { useWebSocket } from "@/hooks/useWebSocket";
 
 const formSchema = z.object({
   config: z.string().min(2, {

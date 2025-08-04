@@ -1,7 +1,26 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import App from "../App";
+
+// Mock WebSocket
+class MockWebSocket {
+  url: string;
+  readyState = 0;
+  onopen: ((event: Event) => void) | null = null;
+  onmessage: ((event: MessageEvent) => void) | null = null;
+  onclose: ((event: CloseEvent) => void) | null = null;
+  onerror: ((event: Event) => void) | null = null;
+
+  constructor(url: string) {
+    this.url = url;
+  }
+
+  send(_data: string) {}
+  close() {}
+}
+
+global.WebSocket = MockWebSocket as any;
 
 // Mock the dashboard page component to avoid complex dependencies
 vi.mock("@/app/dashboard/page", () => ({

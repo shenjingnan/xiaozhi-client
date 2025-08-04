@@ -10,7 +10,13 @@ interface RestartStatus {
 }
 
 interface PortChangeStatus {
-  status: "idle" | "checking" | "polling" | "connecting" | "completed" | "failed";
+  status:
+    | "idle"
+    | "checking"
+    | "polling"
+    | "connecting"
+    | "completed"
+    | "failed";
   targetPort?: number;
   currentAttempt?: number;
   maxAttempts?: number;

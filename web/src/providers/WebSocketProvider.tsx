@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { type ReactNode, createContext, useContext } from "react";
 import { useWebSocket } from "../hooks/useWebSocket";
 import type { AppConfig } from "../types";
 
@@ -39,7 +39,9 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
 export function useWebSocketActions() {
   const context = useContext(WebSocketContext);
   if (!context) {
-    throw new Error("useWebSocketActions must be used within a WebSocketProvider");
+    throw new Error(
+      "useWebSocketActions must be used within a WebSocketProvider"
+    );
   }
   return context;
 }

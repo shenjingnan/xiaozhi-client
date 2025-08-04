@@ -84,6 +84,18 @@ export function useWebSocket() {
     // 如果传入了配置端口，使用配置端口
     if (configPort) {
       targetPort = configPort;
+    } else if (window.location.port) {
+      // 如果当前页面有端口号，使用当前页面的端口号
+      const currentPort = Number.parseInt(window.location.port);
+      if (!isNaN(currentPort)) {
+        targetPort = currentPort;
+      }
+    } else if (window.location.protocol === "http:" && !window.location.port) {
+      // 标准 HTTP 端口 (80)
+      targetPort = 80;
+    } else if (window.location.protocol === "https:" && !window.location.port) {
+      // 标准 HTTPS 端口 (443)
+      targetPort = 443;
     }
     // 注意：移除了对 state.config 的依赖，避免循环依赖
 
