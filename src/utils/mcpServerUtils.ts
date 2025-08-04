@@ -80,8 +80,11 @@ export function getMcpServerCommunicationType(
     return "sse";
   }
 
-  // 3. 检查是否为 streamable-http 类型（有 url 字段）
-  if ("url" in serverConfig && typeof serverConfig.url === "string") {
+  // 3. 检查是否为 streamable-http 类型（有 type: "streamable-http" 字段或有 url 字段）
+  if (
+    ("type" in serverConfig && serverConfig.type === "streamable-http") ||
+    ("url" in serverConfig && typeof serverConfig.url === "string")
+  ) {
     return "streamable-http";
   }
 
