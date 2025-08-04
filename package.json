@@ -47,6 +47,7 @@
   "author": "shenjingnan(sjn.code@gmail.com)",
   "license": "MIT",
   "dependencies": {
+    "@hono/node-server": "^1.17.1",
     "@modelcontextprotocol/sdk": "^1.12.1",
     "@types/express": "^5.0.3",
     "chalk": "^5.4.1",
@@ -56,6 +57,7 @@
     "dotenv": "^16.3.1",
     "eventsource": "^4.0.0",
     "express": "^5.1.0",
+    "hono": "^4.8.10",
     "json5": "^2.2.3",
     "jsonc-parser": "^3.3.1",
     "node-fetch": "2",
@@ -83,6 +85,7 @@
     "cspell": "^9.1.1",
     "esbuild": "^0.25.5",
     "glob": "^11.0.3",
+    "happy-dom": "^18.0.1",
     "jscpd": "^4.0.5",
     "semantic-release": "^24.2.5",
     "semver": "^7.7.2",

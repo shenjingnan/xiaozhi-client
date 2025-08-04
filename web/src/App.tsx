@@ -1,14 +1,19 @@
 import { Toaster } from "@/components/ui/sonner";
-import Dashboard from "./pages/Dashboard";
+import DashboardPage from "@/pages/DashboardPage";
+import SettingsPage from "@/pages/SettingsPage";
+import { WebSocketProvider } from "@/providers/WebSocketProvider";
+import { Navigate, Route, Routes } from "react-router-dom";
 
 function App() {
   return (
-    <>
-      <div className="min-h-screen bg-background">
-        <Dashboard />
-      </div>
+    <WebSocketProvider>
+      <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+      </Routes>
       <Toaster />
-    </>
+    </WebSocketProvider>
   );
 }
 

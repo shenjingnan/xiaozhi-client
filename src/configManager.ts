@@ -3,6 +3,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import JSON5 from "json5";
 import * as jsonc from "jsonc-parser";
+import { validateMcpServerConfig } from "./utils/mcpServerUtils";
 
 // 在 ESM 中，需要从 import.meta.url 获取当前文件目录
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -270,36 +271,10 @@ export class ConfigManager {
         throw new Error(`配置文件格式错误：mcpServers.${serverName} 无效`);
       }
 
-      const sc = serverConfig as Record<string, unknown>;
-
-      // 检查服务类型
-      if (sc.url && typeof sc.url === "string") {
-        // URL 类型的服务（SSE 或 Streamable HTTP）
-        // type 字段是可选的，可以是 "sse" 或 "streamable-http"
-        if (sc.type && sc.type !== "sse" && sc.type !== "streamable-http") {
-          throw new Error(
-            `配置文件格式错误：mcpServers.${serverName}.type 必须是 "sse" 或 "streamable-http"`
-          );
-        }
-      } else {
-        // 本地类型的验证
-        if (!sc.command || typeof sc.command !== "string") {
-          throw new Error(
-            `配置文件格式错误：mcpServers.${serverName}.command 无效`
-          );
-        }
-
-        if (!Array.isArray(sc.args)) {
-          throw new Error(
-            `配置文件格式错误：mcpServers.${serverName}.args 必须是数组`
-          );
-        }
-
-        if (sc.env && typeof sc.env !== "object") {
-          throw new Error(
-            `配置文件格式错误：mcpServers.${serverName}.env 必须是对象`
-          );
-        }
+      // 使用统一的验证逻辑
+      const validation = validateMcpServerConfig(serverName, serverConfig);
+      if (!validation.valid) {
+        throw new Error(`配置文件格式错误：${validation.error}`);
       }
     }
   }
@@ -457,34 +432,17 @@ export class ConfigManager {
       throw new Error("服务名称必须是非空字符串");
     }
 
-    // 验证服务配置
-    if ("type" in serverConfig && serverConfig.type === "sse") {
-      // SSE 类型的验证
-      if (!serverConfig.url || typeof serverConfig.url !== "string") {
-        throw new Error("SSE 服务配置的 url 字段必须是非空字符串");
-      }
-    } else {
-      // 本地类型的验证
-      const localConfig = serverConfig as LocalMCPServerConfig;
-      if (!localConfig.command || typeof localConfig.command !== "string") {
-        throw new Error("服务配置的 command 字段必须是非空字符串");
-      }
-
-      if (!Array.isArray(localConfig.args)) {
-        throw new Error("服务配置的 args 字段必须是数组");
-      }
-
-      if (localConfig.env && typeof localConfig.env !== "object") {
-        throw new Error("服务配置的 env 字段必须是对象");
-      }
+    // 使用统一的验证逻辑
+    const validation = validateMcpServerConfig(serverName, serverConfig);
+    if (!validation.valid) {
+      throw new Error(validation.error || "服务配置验证失败");
     }
-
     const config = this.getConfig();
     const newConfig = {
       ...config,
       mcpServers: {
-        ...config.mcpServers,
         [serverName]: serverConfig,
+        ...config.mcpServers,
       },
     };
     this.saveConfig(newConfig);
@@ -580,6 +538,7 @@ export class ConfigManager {
 
     // 更新工具配置
     newConfig.mcpServerConfig[serverName].tools[toolName] = {
+      ...newConfig.mcpServerConfig[serverName].tools[toolName],
       enable: enabled,
       ...(description && { description }),
     };
@@ -608,7 +567,9 @@ export class ConfigManager {
       this.config = config;
     } catch (error) {
       throw new Error(
-        `保存配置失败: ${error instanceof Error ? error.message : String(error)}`
+        `保存配置失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   }

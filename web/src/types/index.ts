@@ -9,7 +9,15 @@ export interface SSEMCPServerConfig {
   url: string;
 }
 
-export type MCPServerConfig = LocalMCPServerConfig | SSEMCPServerConfig;
+export interface StreamableHTTPMCPServerConfig {
+  type?: "streamable-http"; // 可选，因为默认就是 streamable-http
+  url: string;
+}
+
+export type MCPServerConfig =
+  | LocalMCPServerConfig
+  | SSEMCPServerConfig
+  | StreamableHTTPMCPServerConfig;
 
 export interface MCPToolConfig {
   description?: string;
@@ -36,7 +44,7 @@ export interface WebUIConfig {
 }
 
 export interface AppConfig {
-  mcpEndpoint: string;
+  mcpEndpoint: string | string[];
   mcpServers: Record<string, MCPServerConfig>;
   mcpServerConfig?: Record<string, MCPServerToolsConfig>;
   connection?: ConnectionConfig;

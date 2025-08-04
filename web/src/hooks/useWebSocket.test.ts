@@ -58,12 +58,12 @@ describe("useWebSocket", () => {
     (global.WebSocket as any).mock.instances = mockInstances;
     // Clear localStorage
     localStorage.clear();
-    // Reset window.location
+    // Reset window.location to default state
     Object.defineProperty(window, "location", {
       value: {
         protocol: "http:",
         hostname: "localhost",
-        port: "",
+        port: "9999", // 设置默认端口为 9999，这样测试会使用这个端口
       },
       writable: true,
     });

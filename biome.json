@@ -38,6 +38,10 @@
         "useConst": "error",
         "useTemplate": "error",
         "noNonNullAssertion": "off"
+      },
+      "a11y": {
+        "useValidAnchor": "off",
+        "noSvgWithoutTitle": "off"
       }
     }
   },
