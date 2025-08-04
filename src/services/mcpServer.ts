@@ -298,11 +298,12 @@ export class MCPServer extends EventEmitter {
         this.startMCPProxy(),
         new Promise<void>((resolve) => {
           // 启动HTTP服务器
-          this.server = this.app.listen(this.port, () => {
-            logger.info(`MCP服务器监听端口 ${this.port}`);
-            logger.info(`SSE端点: http://localhost:${this.port}/sse`);
-            logger.info(`消息端点: http://localhost:${this.port}/messages`);
-            logger.info(`RPC端点: http://localhost:${this.port}/rpc`);
+          this.server = this.app.listen(this.port, "0.0.0.0", () => {
+            logger.info(`MCP服务器监听端口 ${this.port} (所有网络接口)`);
+            logger.info(`SSE端点: http://0.0.0.0:${this.port}/sse`);
+            logger.info(`消息端点: http://0.0.0.0:${this.port}/messages`);
+            logger.info(`RPC端点: http://0.0.0.0:${this.port}/rpc`);
+            logger.info(`本地访问: http://localhost:${this.port}`);
             resolve();
           });
         }),

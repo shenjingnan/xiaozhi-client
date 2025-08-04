@@ -85,6 +85,7 @@
     "cspell": "^9.1.1",
     "esbuild": "^0.25.5",
     "glob": "^11.0.3",
+    "happy-dom": "^18.0.1",
     "jscpd": "^4.0.5",
     "semantic-release": "^24.2.5",
     "semver": "^7.7.2",

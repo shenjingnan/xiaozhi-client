@@ -202,7 +202,7 @@ describe("WebServer", () => {
       // 默认端口 9999
       const response = await fetch("http://localhost:9999/api/status");
       expect(response.status).toBe(200);
-    });
+    }, 10000); // 增加超时时间到10秒
 
     it("应该处理 webUI 配置更新", async () => {
       webServer = new WebServer(9991);

@@ -52,6 +52,8 @@ export class WebServer {
     this.app = new Hono();
     this.setupMiddleware();
     this.setupRoutes();
+
+    // HTTP 服务器和 WebSocket 服务器将在 start() 方法中初始化
   }
 
   private setupMiddleware() {
@@ -501,10 +503,11 @@ export class WebServer {
   public start(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
-        // 使用 @hono/node-server 启动服务器
+        // 使用 @hono/node-server 启动服务器，绑定到 0.0.0.0
         const server = serve({
           fetch: this.app.fetch,
           port: this.port,
+          hostname: "0.0.0.0", // 绑定到所有网络接口，支持 Docker 部署
           createServer,
         });
 
@@ -516,7 +519,10 @@ export class WebServer {
         this.setupWebSocket();
 
         this.logger.info(
-          `Web server listening on http://localhost:${this.port}`
+          `Web server listening on http://0.0.0.0:${this.port}`
+        );
+        this.logger.info(
+          `Local access: http://localhost:${this.port}`
         );
         resolve();
 
@@ -529,6 +535,15 @@ export class WebServer {
 
   public stop(): Promise<void> {
     return new Promise((resolve) => {
+      let resolved = false;
+
+      const doResolve = () => {
+        if (!resolved) {
+          resolved = true;
+          resolve();
+        }
+      };
+
       // Clear heartbeat timeout
       if (this.heartbeatTimeout) {
         clearTimeout(this.heartbeatTimeout);
@@ -547,22 +562,22 @@ export class WebServer {
           if (this.httpServer) {
             this.httpServer.close(() => {
               this.logger.info("Web server stopped");
-              resolve();
+              doResolve();
             });
           } else {
             this.logger.info("Web server stopped");
-            resolve();
+            doResolve();
           }
 
           // 设置超时，如果 2 秒内没有关闭则强制退出
           setTimeout(() => {
             this.logger.info("Web server force stopped");
-            resolve();
+            doResolve();
           }, 2000);
         });
       } else {
         this.logger.info("Web server stopped");
-        resolve();
+        doResolve();
       }
     });
   }
