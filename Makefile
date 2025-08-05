@@ -46,6 +46,10 @@ help: ## 显示帮助信息
 	@echo "  make clean      - 清理未使用的镜像和容器"
 	@echo "  make clean-all  - 清理所有相关镜像和容器"
 	@echo "  make update     - 更新并重新部署"
+	@echo ""
+	@echo "$(GREEN)发布命令:$(NC)"
+	@echo "  make publish DOCKER_USER=username     - 发布到 Docker Hub"
+	@echo "  make publish DOCKER_USER=username VERSION=v1.0.0  - 发布指定版本"
 
 # 构建命令
 build: ## 构建生产环境镜像
@@ -150,6 +154,16 @@ update: ## 更新并重新部署
 	@make build
 	@make start
 	@echo "$(GREEN)更新部署完成$(NC)"
+
+# 发布命令
+publish: ## 发布到 Docker Hub (需要设置 DOCKER_USER 变量)
+	@if [ -z "$(DOCKER_USER)" ]; then \
+		echo "$(RED)错误: 请设置 DOCKER_USER 变量$(NC)"; \
+		echo "$(YELLOW)用法: make publish DOCKER_USER=your-username$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(BLUE)发布到 Docker Hub...$(NC)"
+	@./scripts/docker-publish.sh $(DOCKER_USER) $(VERSION)
 
 # 快捷命令
 up: start ## 启动生产环境服务 (start 的别名)

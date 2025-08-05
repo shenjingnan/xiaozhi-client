@@ -1,7 +1,11 @@
 {
   "cSpell.words": [
+    "addgroup",
+    "adduser",
     "amap",
     "conventionalcommits",
+    "cpus",
+    "healthcheck",
     "modelcontextprotocol",
     "modelscope",
     "nvmrc",
