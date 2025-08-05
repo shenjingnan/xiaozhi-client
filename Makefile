@@ -50,12 +50,12 @@ help: ## 显示帮助信息
 # 构建命令
 build: ## 构建生产环境镜像
 	@echo "$(BLUE)构建生产环境镜像...$(NC)"
-	@docker build --target production -t $(PROJECT_NAME):latest .
+	@docker build -t $(PROJECT_NAME):latest .
 	@echo "$(GREEN)生产环境镜像构建完成$(NC)"
 
 build-dev: ## 构建开发环境镜像
 	@echo "$(BLUE)构建开发环境镜像...$(NC)"
-	@docker build --target builder -t $(PROJECT_NAME):dev .
+	@docker build -t $(PROJECT_NAME):dev .
 	@echo "$(GREEN)开发环境镜像构建完成$(NC)"
 
 build-all: build build-dev ## 构建所有环境镜像
@@ -63,18 +63,29 @@ build-all: build build-dev ## 构建所有环境镜像
 # 运行命令
 start: ## 启动生产环境服务
 	@echo "$(BLUE)启动生产环境服务...$(NC)"
-	@mkdir -p config logs
+	@mkdir -p logs workspace mcpServers
+	@if [ ! -f "xiaozhi.config.json" ]; then \
+		echo "$(YELLOW)创建配置文件模板...$(NC)"; \
+		cp xiaozhi.config.example.json xiaozhi.config.json; \
+		echo "$(RED)请编辑 xiaozhi.config.json 文件，填入你的接入点地址$(NC)"; \
+		echo "$(YELLOW)获取接入点地址：https://xiaozhi.me$(NC)"; \
+	fi
 	@docker-compose -f $(COMPOSE_FILE) up -d
 	@echo "$(GREEN)生产环境服务已启动$(NC)"
-	@echo "$(YELLOW)Web 界面: http://localhost:3000$(NC)"
+	@echo "$(YELLOW)Web 界面: http://localhost:9999$(NC)"
 
 start-dev: ## 启动开发环境服务
 	@echo "$(BLUE)启动开发环境服务...$(NC)"
-	@mkdir -p config logs
+	@mkdir -p logs workspace mcpServers
+	@if [ ! -f "xiaozhi.config.json" ]; then \
+		echo "$(YELLOW)创建配置文件模板...$(NC)"; \
+		cp xiaozhi.config.example.json xiaozhi.config.json; \
+		echo "$(RED)请编辑 xiaozhi.config.json 文件，填入你的接入点地址$(NC)"; \
+		echo "$(YELLOW)获取接入点地址：https://xiaozhi.me$(NC)"; \
+	fi
 	@docker-compose -f $(COMPOSE_DEV_FILE) up -d
 	@echo "$(GREEN)开发环境服务已启动$(NC)"
-	@echo "$(YELLOW)Web 界面: http://localhost:3000$(NC)"
-	@echo "$(YELLOW)Vite 开发服务器: http://localhost:5173$(NC)"
+	@echo "$(YELLOW)Web 界面: http://localhost:9999$(NC)"
 
 stop: ## 停止生产环境服务
 	@echo "$(BLUE)停止生产环境服务...$(NC)"

@@ -1,3 +1,5 @@
+# 只保留必要的模板文件，其他都排除
+
 # Dependencies
 node_modules
 web/node_modules
@@ -11,10 +13,16 @@ dist
 web/dist
 *.tsbuildinfo
 
+# Source code (不需要，因为使用 npm 包)
+src
+web/src
+
 # Testing
 coverage
 .nyc_output
 test-results
+*.test.*
+*.spec.*
 
 # Environment files
 .env
@@ -58,7 +66,6 @@ docker-compose*.yml
 # Documentation
 docs
 *.md
-!README.md
 
 # Logs
 logs
@@ -101,6 +108,7 @@ pids
 # Local configuration files
 xiaozhi.config.json
 config/
+workspace/
 
 # Development and testing tools
 .prettierrc*
@@ -111,3 +119,10 @@ tsconfig.json
 tsup.config.ts
 biome.json
 cspell.json
+package.json
+pnpm-lock.yaml
+
+# Scripts
+scripts/
+Makefile
+quick-deploy.sh

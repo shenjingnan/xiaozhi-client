@@ -467,7 +467,7 @@ xiaozhi start --server --daemon
 
 ## 🐳 Docker 部署
 
-xiaozhi-client 支持 Docker 容器化部署，提供了完整的 Docker 配置和管理脚本。
+xiaozhi-client 提供了 Docker 容器化运行方案，让你无需安装 Node.js 即可快速使用。
 
 ### 快速开始
 
@@ -476,51 +476,61 @@ xiaozhi-client 支持 Docker 容器化部署，提供了完整的 Docker 配置�
 git clone <repository-url>
 cd xiaozhi-client
 
-# 使用 Makefile 快速部署
-make build    # 构建镜像
-make start    # 启动服务
+# 一键部署
+./quick-deploy.sh
 
-# 或使用 docker-compose 直接部署
-docker-compose up -d
+# 或使用 Makefile
+make build && make start
 ```
+
+### 配置要求
+
+使用 Docker 部署前，你需要：
+
+1. **创建配置文件**：
+   ```bash
+   cp xiaozhi.config.example.json xiaozhi.config.json
+   ```
+
+2. **编辑配置文件**，填入你的接入点地址：
+   - 获取地址：<https://xiaozhi.me>
+   - 配置说明：<https://ccnphfhqs21z.feishu.cn/wiki/HiPEwZ37XiitnwktX13cEM5KnSb>
 
 ### 访问服务
 
-- **Web 配置界面**: http://localhost:3000
-- **MCP 服务端口**: 8080
+- **Web 配置界面**: <http://localhost:9999>
+- **备用端口**: <http://localhost:3000>
 
 ### 管理命令
 
 ```bash
 # 使用 Makefile (推荐)
 make help         # 查看所有可用命令
-make build        # 构建生产镜像
-make build-dev    # 构建开发镜像
-make start        # 启动生产环境
-make start-dev    # 启动开发环境
+make build        # 构建镜像
+make start        # 启动服务
 make logs         # 查看日志
 make status       # 查看状态
 make stop         # 停止服务
 make clean        # 清理资源
 
 # 或使用脚本
-./scripts/docker-build.sh production   # 构建生产镜像
-./scripts/docker-run.sh start          # 启动服务
-./scripts/docker-run.sh logs           # 查看日志
-./scripts/docker-run.sh status         # 查看状态
+./scripts/docker-run.sh start    # 启动服务
+./scripts/docker-run.sh logs     # 查看日志
+./scripts/docker-run.sh status   # 查看状态
 ```
 
-### 配置持久化
+### 数据持久化
 
-Docker 部署会自动创建以下目录用于数据持久化：
+Docker 部署会挂载以下文件和目录：
 
-- `./config/` - 配置文件存储
+- `./xiaozhi.config.json` - 主配置文件（必需）
 - `./logs/` - 日志文件存储
+- `./mcpServers/` - 自定义 MCP 服务器（可选）
 
 ### 开发环境
 
 ```bash
-# 启动开发环境（支持热重载）
+# 启动开发环境（支持文件挂载和修改）
 make start-dev
 
 # 或使用 docker-compose

@@ -3,82 +3,49 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: builder  # 使用构建阶段，包含开发工具
     image: xiaozhi-client:dev
     container_name: xiaozhi-client-dev
     restart: unless-stopped
 
     # 端口映射
     ports:
-      - "3000:3000"  # Web 配置界面端口
-      - "8080:8080"  # MCP 服务端口
-      - "5173:5173"  # Vite 开发服务器端口
+      - "9999:9999"  # Web UI 端口
+      - "3000:3000"  # 备用端口
 
     # 环境变量
     environment:
       - NODE_ENV=development
-      - XIAOZHI_CONFIG_DIR=/app/config
-      - XIAOZHI_LOG_DIR=/app/logs
-      - VITE_PORT=5173
+      - XIAOZHI_WORKSPACE=/workspace
 
-    # 挂载卷 - 开发模式下挂载源代码
+    # 挂载卷 - 开发模式下挂载配置和自定义文件
     volumes:
-      # 源代码挂载（用于热重载）
-      - .:/app
-      - /app/node_modules  # 避免本地 node_modules 覆盖容器内的
-      - /app/web/node_modules
-      # 配置和日志持久化
-      - ./config:/app/config
-      - ./logs:/app/logs
-
-    # 工作目录
-    working_dir: /app
-
-    # 开发模式命令
-    command: ["sh", "-c", "pnpm run dev"]
+      # 挂载自定义配置文件
+      - ./xiaozhi.config.json:/workspace/xiaozhi.config.json:ro
+      # 日志文件持久化
+      - ./logs:/workspace/logs
+      # 挂载自定义 MCP 服务器（开发时可修改）
+      - ./mcpServers:/workspace/mcpServers
+      # 挂载整个工作空间（开发模式）
+      - ./workspace:/workspace
 
     # 健康检查
     healthcheck:
-      test: ["CMD", "node", "dist/cli.js", "--version"]
+      test: ["CMD", "xiaozhi", "--version"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 30s
 
     # 网络配置
     networks:
       - xiaozhi-dev-network
 
-    # 开发环境不设置资源限制
-    stdin_open: true
-    tty: true
-
-  # Web 开发服务器（可选，用于前端开发）
-  xiaozhi-web-dev:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: builder
-    image: xiaozhi-client:dev
-    container_name: xiaozhi-web-dev
-    restart: unless-stopped
-
-    ports:
-      - "5173:5173"
-
-    environment:
-      - NODE_ENV=development
-      - VITE_PORT=5173
-
-    volumes:
-      - ./web:/app/web
-      - /app/web/node_modules
-
-    working_dir: /app/web
-    command: ["pnpm", "run", "dev", "--host", "0.0.0.0"]
-
-    networks:
-      - xiaozhi-dev-network
+    # 开发环境不设置严格的资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
 
     stdin_open: true
     tty: true
