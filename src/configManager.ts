@@ -1,8 +1,8 @@
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import JSON5 from "json5";
 import * as commentJson from "comment-json";
+import JSON5 from "json5";
 import { validateMcpServerConfig } from "./utils/mcpServerUtils";
 
 // 在 ESM 中，需要从 import.meta.url 获取当前文件目录
@@ -587,7 +587,10 @@ export class ConfigManager {
             configContent = commentJson.stringify(config, null, 2);
           } catch (commentJsonError) {
             // 如果 comment-json 序列化失败，回退到标准 JSON
-            console.warn("使用 comment-json 保存失败，回退到标准 JSON 格式:", commentJsonError);
+            console.warn(
+              "使用 comment-json 保存失败，回退到标准 JSON 格式:",
+              commentJsonError
+            );
             configContent = JSON.stringify(config, null, 2);
           }
           break;
