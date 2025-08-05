@@ -1,0 +1,20 @@
+{
+  "mcpEndpoint": "<请填写你的接入点地址（获取地址在 xiaozhi.me）>",
+  "mcpServers": {
+    "modelscope-12306": {
+      "type": "sse",
+      "url": "https://mcp.api-inference.modelscope.net/f89ef6f3597d48/sse"
+    }
+  },
+  "modelscope": {
+    "apiKey": "<请填写你的 API Key（获取地址在 https://www.modelscope.cn/my/myaccesstoken）>"
+  },
+  "connection": {
+    "heartbeatInterval": 30000,
+    "heartbeatTimeout": 10000,
+    "reconnectInterval": 5000
+  },
+  "webUI": {
+    "port": 9999
+  }
+}
