@@ -464,3 +464,67 @@ xiaozhi start --server --daemon
   }
 }
 ```
+
+## 🐳 Docker 部署
+
+xiaozhi-client 支持 Docker 容器化部署，提供了完整的 Docker 配置和管理脚本。
+
+### 快速开始
+
+```bash
+# 克隆项目
+git clone <repository-url>
+cd xiaozhi-client
+
+# 使用 Makefile 快速部署
+make build    # 构建镜像
+make start    # 启动服务
+
+# 或使用 docker-compose 直接部署
+docker-compose up -d
+```
+
+### 访问服务
+
+- **Web 配置界面**: http://localhost:3000
+- **MCP 服务端口**: 8080
+
+### 管理命令
+
+```bash
+# 使用 Makefile (推荐)
+make help         # 查看所有可用命令
+make build        # 构建生产镜像
+make build-dev    # 构建开发镜像
+make start        # 启动生产环境
+make start-dev    # 启动开发环境
+make logs         # 查看日志
+make status       # 查看状态
+make stop         # 停止服务
+make clean        # 清理资源
+
+# 或使用脚本
+./scripts/docker-build.sh production   # 构建生产镜像
+./scripts/docker-run.sh start          # 启动服务
+./scripts/docker-run.sh logs           # 查看日志
+./scripts/docker-run.sh status         # 查看状态
+```
+
+### 配置持久化
+
+Docker 部署会自动创建以下目录用于数据持久化：
+
+- `./config/` - 配置文件存储
+- `./logs/` - 日志文件存储
+
+### 开发环境
+
+```bash
+# 启动开发环境（支持热重载）
+make start-dev
+
+# 或使用 docker-compose
+docker-compose -f docker-compose.dev.yml up -d
+```
+
+详细的 Docker 部署文档请参考 [DOCKER.md](./DOCKER.md)。

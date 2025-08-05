@@ -1,0 +1,66 @@
+services:
+  xiaozhi-client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: xiaozhi-client:latest
+    container_name: xiaozhi-client
+    restart: unless-stopped
+
+    # 端口映射
+    ports:
+      - "3000:3000"  # Web 配置界面端口
+      - "8080:8080"  # MCP 服务端口（如果需要）
+
+    # 环境变量
+    environment:
+      - NODE_ENV=production
+      - XIAOZHI_CONFIG_DIR=/app/config
+      - XIAOZHI_LOG_DIR=/app/logs
+      # 可以在这里添加其他环境变量
+      # - XIAOZHI_WEB_PORT=3000
+      # - XIAOZHI_MCP_PORT=8080
+
+    # 挂载卷
+    volumes:
+      # 配置文件持久化
+      - ./config:/app/config
+      # 日志文件持久化
+      - ./logs:/app/logs
+      # 如果需要挂载自定义配置文件
+      # - ./xiaozhi.config.json:/app/xiaozhi.config.json:ro
+
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "node", "dist/cli.js", "--version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    # 网络配置
+    networks:
+      - xiaozhi-network
+
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+# 网络配置
+networks:
+  xiaozhi-network:
+    driver: bridge
+
+# 卷配置
+volumes:
+  xiaozhi-config:
+    driver: local
+  xiaozhi-logs:
+    driver: local

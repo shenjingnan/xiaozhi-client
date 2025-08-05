@@ -1,0 +1,89 @@
+# Docker Compose 示例配置文件
+# 复制此文件为 docker-compose.override.yml 来自定义配置
+
+services:
+  xiaozhi-client:
+    # 自定义端口映射
+    ports:
+      - "3001:3000"  # 将 Web 界面映射到本地 3001 端口
+      - "8081:8080"  # 将 MCP 服务映射到本地 8081 端口
+    
+    # 自定义环境变量
+    environment:
+      - NODE_ENV=production
+      - XIAOZHI_CONFIG_DIR=/app/config
+      - XIAOZHI_LOG_DIR=/app/logs
+      # 添加自定义环境变量
+      - XIAOZHI_WEB_PORT=3000
+      - XIAOZHI_MCP_PORT=8080
+      - XIAOZHI_LOG_LEVEL=info
+    
+    # 自定义卷挂载
+    volumes:
+      # 配置文件持久化
+      - ./config:/app/config
+      # 日志文件持久化  
+      - ./logs:/app/logs
+      # 挂载自定义配置文件（如果存在）
+      - ./xiaozhi.config.json:/app/xiaozhi.config.json:ro
+      # 挂载自定义模板目录（如果需要）
+      # - ./custom-templates:/app/templates:ro
+    
+    # 自定义资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 1G      # 增加内存限制
+          cpus: '1.0'     # 增加 CPU 限制
+        reservations:
+          memory: 512M    # 增加内存预留
+          cpus: '0.5'     # 增加 CPU 预留
+    
+    # 自定义健康检查
+    healthcheck:
+      test: ["CMD", "node", "dist/cli.js", "--version"]
+      interval: 60s       # 增加检查间隔
+      timeout: 15s        # 增加超时时间
+      retries: 5          # 增加重试次数
+      start_period: 60s   # 增加启动等待时间
+    
+    # 添加标签
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.xiaozhi.rule=Host(`xiaozhi.local`)"
+      - "traefik.http.services.xiaozhi.loadbalancer.server.port=3000"
+
+# 添加额外的服务（如果需要）
+  # nginx:
+  #   image: nginx:alpine
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #   depends_on:
+  #     - xiaozhi-client
+  #   networks:
+  #     - xiaozhi-network
+
+# 自定义网络配置
+networks:
+  xiaozhi-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# 自定义卷配置
+volumes:
+  xiaozhi-config:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./config
+  xiaozhi-logs:
+    driver: local
+    driver_opts:
+      type: none  
+      o: bind
+      device: ./logs
