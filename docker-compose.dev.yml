@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: dev  # 使用开发环境目标
     image: xiaozhi-client:dev
     container_name: xiaozhi-client-dev
     restart: unless-stopped
@@ -16,17 +17,19 @@ services:
     environment:
       - NODE_ENV=development
       - XIAOZHI_WORKSPACE=/workspace
+      - XIAOZHI_CONTAINER=true
+      - XIAOZHI_CONFIG_DIR=/workspace
 
     # 挂载卷 - 开发模式下挂载配置和自定义文件
     volumes:
-      # 挂载自定义配置文件
-      - ./xiaozhi.config.json:/workspace/xiaozhi.config.json:ro
+      # 挂载自定义配置文件（开发模式允许修改）
+      - ./xiaozhi.config.json:/workspace/xiaozhi.config.json
       # 日志文件持久化
       - ./logs:/workspace/logs
       # 挂载自定义 MCP 服务器（开发时可修改）
       - ./mcpServers:/workspace/mcpServers
-      # 挂载整个工作空间（开发模式）
-      - ./workspace:/workspace
+      # 配置目录挂载
+      - ./config:/workspace/config
 
     # 健康检查
     healthcheck:

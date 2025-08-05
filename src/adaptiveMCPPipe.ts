@@ -14,6 +14,7 @@ import {
   MultiEndpointMCPPipe,
   setupSignalHandlers,
 } from "./multiEndpointMCPPipe.js";
+import { isDockerContainer } from "./cli.js";
 
 // Load environment variables
 config();
@@ -66,6 +67,15 @@ export async function main() {
       // 如果配置文件不存在，尝试从环境变量读取（向后兼容）
       const envEndpoint = process.env.MCP_ENDPOINT;
       if (!envEndpoint) {
+        // 检查是否在容器环境中
+        if (isDockerContainer()) {
+          logger.warn("🐳 容器环境中配置文件不存在且未设置 MCP_ENDPOINT 环境变量");
+          logger.info("💡 请通过 Web UI 初始化配置");
+          logger.info("服务将继续启动，但 MCP 功能暂时不可用");
+          // 在容器环境中不退出程序，允许服务继续启动
+          return;
+        }
+
         logger.error("配置文件不存在且未设置 MCP_ENDPOINT 环境变量");
         logger.error(
           '请运行 "xiaozhi init" 初始化配置，或设置 MCP_ENDPOINT 环境变量'
@@ -83,6 +93,15 @@ export async function main() {
     // 尝试从环境变量读取作为备用方案
     const envEndpoint = process.env.MCP_ENDPOINT;
     if (!envEndpoint) {
+      // 检查是否在容器环境中
+      if (isDockerContainer()) {
+        logger.warn("🐳 容器环境中配置读取失败且未设置 MCP_ENDPOINT 环境变量");
+        logger.info("💡 请通过 Web UI 重新配置");
+        logger.info("服务将继续启动，但 MCP 功能暂时不可用");
+        // 在容器环境中不退出程序，允许服务继续启动
+        return;
+      }
+
       logger.error(
         '请运行 "xiaozhi init" 初始化配置，或设置 MCP_ENDPOINT 环境变量'
       );
@@ -108,6 +127,16 @@ export async function main() {
   });
 
   if (validEndpoints.length === 0) {
+    // 检查是否在容器环境中
+    if (isDockerContainer()) {
+      logger.warn("🐳 容器环境中未配置有效的 MCP 端点");
+      logger.info("💡 请通过 Web UI 配置 MCP 端点后重启服务");
+      logger.info("服务将继续启动，但 MCP 功能暂时不可用");
+      // 在容器环境中不退出程序，允许服务继续启动
+      return;
+    }
+
+    // 非容器环境保持原有逻辑
     logger.error("没有有效的 MCP 端点");
     logger.error(
       '请运行 "xiaozhi config mcpEndpoint <your-endpoint-url>" 设置端点'

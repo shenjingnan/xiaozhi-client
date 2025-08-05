@@ -285,6 +285,38 @@ describe("CLI 命令行工具", () => {
     });
   });
 
+  describe("容器环境检测", () => {
+    it("应该通过环境变量检测容器环境", () => {
+      const originalEnv = process.env.XIAOZHI_CONTAINER;
+      process.env.XIAOZHI_CONTAINER = "true";
+
+      try {
+        const result = cliModule.isDockerContainer();
+        expect(result).toBe(true);
+      } finally {
+        if (originalEnv !== undefined) {
+          process.env.XIAOZHI_CONTAINER = originalEnv;
+        } else {
+          process.env.XIAOZHI_CONTAINER = undefined;
+        }
+      }
+    });
+
+    it("在非容器环境中应该返回false", () => {
+      const originalEnv = process.env.XIAOZHI_CONTAINER;
+      process.env.XIAOZHI_CONTAINER = undefined;
+
+      try {
+        const result = cliModule.isDockerContainer();
+        expect(result).toBe(false);
+      } finally {
+        if (originalEnv !== undefined) {
+          process.env.XIAOZHI_CONTAINER = originalEnv;
+        }
+      }
+    });
+  });
+
   describe("环境检查", () => {
     it("当配置存在且有效时应该通过", () => {
       mockConfigManager.configExists.mockReturnValue(true);
@@ -319,6 +351,45 @@ describe("CLI 命令行工具", () => {
 
       const result = cliModule.checkEnvironment();
       expect(result).toBe(false);
+    });
+
+    it("在容器环境中应该跳过端点验证", () => {
+      // 设置容器环境变量
+      const originalEnv = process.env.XIAOZHI_CONTAINER;
+      process.env.XIAOZHI_CONTAINER = "true";
+
+      try {
+        const result = cliModule.checkEnvironment();
+        expect(result).toBe(true);
+      } finally {
+        // 恢复原始环境变量
+        if (originalEnv !== undefined) {
+          process.env.XIAOZHI_CONTAINER = originalEnv;
+        } else {
+          delete process.env.XIAOZHI_CONTAINER;
+        }
+      }
+    });
+
+    it("在容器环境中即使配置无效也应该通过", () => {
+      // 设置容器环境变量
+      const originalEnv = process.env.XIAOZHI_CONTAINER;
+      process.env.XIAOZHI_CONTAINER = "true";
+
+      try {
+        mockConfigManager.configExists.mockReturnValue(true);
+        mockConfigManager.getMcpEndpoint.mockReturnValue("<请填写你的端点>");
+
+        const result = cliModule.checkEnvironment();
+        expect(result).toBe(true);
+      } finally {
+        // 恢复原始环境变量
+        if (originalEnv !== undefined) {
+          process.env.XIAOZHI_CONTAINER = originalEnv;
+        } else {
+          delete process.env.XIAOZHI_CONTAINER;
+        }
+      }
     });
 
     it("应该处理空的端点配置", () => {

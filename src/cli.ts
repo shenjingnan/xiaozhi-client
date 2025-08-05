@@ -157,9 +157,47 @@ function cleanupPidFile() {
 }
 
 /**
+ * 检测是否运行在 Docker 容器环境中
+ */
+export function isDockerContainer(): boolean {
+  // 方法1: 检查环境变量（优先级最高）
+  if (process.env.XIAOZHI_CONTAINER === "true") {
+    return true;
+  }
+
+  // 方法2: 检查 Docker 环境文件
+  try {
+    if (fs.existsSync("/.dockerenv")) {
+      return true;
+    }
+  } catch (error) {
+    // 忽略文件系统错误
+  }
+
+  // 方法3: 检查 cgroup 信息（Linux 容器）
+  try {
+    const cgroup = fs.readFileSync("/proc/1/cgroup", "utf8");
+    if (cgroup.includes("docker") || cgroup.includes("containerd")) {
+      return true;
+    }
+  } catch (error) {
+    // 忽略文件系统错误（非 Linux 系统或权限问题）
+  }
+
+  return false;
+}
+
+/**
  * 检查配置文件和环境
  */
 export function checkEnvironment(): boolean {
+  // 检查是否在容器环境中
+  if (isDockerContainer()) {
+    console.log(chalk.yellow("🐳 检测到容器环境，跳过 MCP 端点验证"));
+    console.log(chalk.gray("💡 请稍后通过 Web UI 配置 MCP 端点"));
+    return true; // 在容器环境中跳过验证
+  }
+
   // 首先检查配置文件是否存在
   if (!configManager.configExists()) {
     console.error(chalk.red("❌ 错误: 配置文件不存在"));
@@ -253,6 +291,14 @@ async function startWebUIInBackground(): Promise<void> {
     console.log(chalk.green(`   本地访问: http://localhost:${port}`));
     console.log(chalk.green(`   网络访问: http://<你的IP地址>:${port}`));
 
+    // 检查是否在容器环境中，如果是则跳过浏览器打开
+    if (process.env.XIAOZHI_CONTAINER === "true") {
+      console.log(
+        chalk.gray(`💡 容器环境检测到，请手动访问: http://localhost:${port}`)
+      );
+      return;
+    }
+
     // 尝试打开浏览器
     const { spawn } = await import("node:child_process");
     const url = `http://localhost:${port}`;
@@ -277,7 +323,7 @@ async function startWebUIInBackground(): Promise<void> {
       }
 
       // 处理spawn错误，避免程序崩溃
-      browserProcess.on("error", () => {
+      browserProcess.on("error", (error) => {
         // 静默处理浏览器启动错误，不影响主程序
         console.log(
           chalk.gray(`💡 提示: 无法自动打开浏览器，请手动访问: ${url}`)
@@ -421,33 +467,53 @@ async function startService(daemon = false, ui = false): Promise<void> {
       }
 
       // 处理中断信号
-      process.on("SIGINT", async () => {
-        console.log(chalk.yellow("\n正在停止服务..."));
-        child.kill("SIGTERM");
-
-        // 如果启动了 Web UI，也要停止它
-        if ((global as any).__webServer) {
-          try {
-            await (global as any).__webServer.stop();
-            console.log(chalk.green("Web UI 已停止"));
-          } catch (error) {
-            // 忽略错误
-          }
+      let isExiting = false;
+      const gracefulShutdown = async (signal: string) => {
+        if (isExiting) {
+          console.log(chalk.red("\n强制退出..."));
+          process.exit(1);
         }
-      });
+        isExiting = true;
 
-      process.on("SIGTERM", async () => {
-        child.kill("SIGTERM");
+        console.log(chalk.yellow(`\n正在停止服务... (收到 ${signal} 信号)`));
 
-        // 如果启动了 Web UI，也要停止它
-        if ((global as any).__webServer) {
-          try {
-            await (global as any).__webServer.stop();
-          } catch (error) {
-            // 忽略错误
+        try {
+          // 停止子进程
+          child.kill("SIGTERM");
+
+          // 如果启动了 Web UI，也要停止它
+          if ((global as any).__webServer) {
+            try {
+              await (global as any).__webServer.stop();
+              console.log(chalk.green("Web UI 已停止"));
+            } catch (error) {
+              console.log(chalk.yellow("Web UI 停止时出现问题，但继续退出"));
+            }
           }
+
+          // 等待子进程退出
+          await new Promise<void>((resolve) => {
+            const timeout = setTimeout(() => {
+              console.log(chalk.yellow("等待子进程超时，强制退出"));
+              resolve();
+            }, 5000); // 5秒超时
+
+            child.on("exit", () => {
+              clearTimeout(timeout);
+              resolve();
+            });
+          });
+
+          console.log(chalk.green("服务已停止"));
+          process.exit(0);
+        } catch (error) {
+          console.log(chalk.red(`停止服务时出错: ${error instanceof Error ? error.message : String(error)}`));
+          process.exit(1);
         }
-      });
+      };
+
+      process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+      process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
     }
   } catch (error) {
     spinner.fail(
@@ -1119,6 +1185,14 @@ async function startUIService(): Promise<void> {
     console.log(chalk.green(`   网络访问: http://<你的IP地址>:${port}`));
     console.log(chalk.yellow("💡 提示: 按 Ctrl+C 停止服务"));
 
+    // 检查是否在容器环境中，如果是则跳过浏览器打开
+    if (process.env.XIAOZHI_CONTAINER === "true") {
+      console.log(
+        chalk.gray(`💡 容器环境检测到，请手动访问: http://localhost:${port}`)
+      );
+      return;
+    }
+
     // 自动打开浏览器
     const { spawn } = await import("node:child_process");
     const url = `http://localhost:${port}`;
@@ -1144,7 +1218,7 @@ async function startUIService(): Promise<void> {
       }
 
       // 处理spawn错误，避免程序崩溃
-      browserProcess.on("error", () => {
+      browserProcess.on("error", (error) => {
         // 静默处理浏览器启动错误，不影响主程序
         console.log(
           chalk.gray(`💡 提示: 无法自动打开浏览器，请手动访问: ${url}`)

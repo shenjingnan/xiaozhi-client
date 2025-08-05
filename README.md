@@ -529,12 +529,34 @@ Docker 部署会挂载以下文件和目录：
 
 ### 开发环境
 
-```bash
-# 启动开发环境（支持文件挂载和修改）
-make start-dev
+xiaozhi-client 现在支持开发和生产两种 Docker 构建模式：
 
-# 或使用 docker-compose
+**开发模式**（使用本地代码）：
+```bash
+# 方式一：使用开发管理脚本（推荐）
+./scripts/docker-dev.sh build    # 构建开发镜像
+./scripts/docker-dev.sh start    # 启动开发容器
+
+# 方式二：使用测试脚本
+./scripts/docker-test.sh --dev   # 开发模式测试
+
+# 方式三：使用 docker-compose
 docker-compose -f docker-compose.dev.yml up -d
 ```
 
-详细的 Docker 部署文档请参考 [DOCKER.md](./DOCKER.md)。
+**生产模式**（使用 npm 正式版本）：
+```bash
+# 使用测试脚本
+./scripts/docker-test.sh --prod  # 生产模式测试
+
+# 使用 docker-compose
+docker-compose up -d
+```
+
+**特点对比**：
+- 开发模式：使用本地源码构建，适合测试代码修改
+- 生产模式：使用 npm 正式版本，镜像更小，适合生产部署
+
+详细的 Docker 部署文档请参考：
+- [DOCKER.md](./DOCKER.md) - 基础 Docker 使用
+- [docs/docker-development.md](./docs/docker-development.md) - 开发环境详细指南

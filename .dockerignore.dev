@@ -1,0 +1,108 @@
+# 开发环境 Docker 忽略文件
+# 只排除不必要的文件，保留源码和构建配置
+
+# Dependencies (会重新安装)
+node_modules
+web/node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs (会重新构建)
+dist
+web/dist
+*.tsbuildinfo
+
+# Testing outputs
+coverage
+.nyc_output
+test-results
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile*
+.dockerignore*
+docker-compose*.yml
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+.circleci
+
+# Logs
+logs
+*.log
+xiaozhi.log
+
+# Temporary files
+tmp
+temp
+.tmp
+.temp
+docker-test
+
+# Cache directories
+.cache
+.parcel-cache
+.next
+.nuxt
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# Local configuration files (保留示例配置)
+xiaozhi.config.json
+config/
+workspace/
+
+# Scripts (保留，可能需要)
+# scripts/
+Makefile
+quick-deploy.sh
