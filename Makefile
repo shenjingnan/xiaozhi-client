@@ -54,12 +54,12 @@ help: ## 显示帮助信息
 # 构建命令
 build: ## 构建生产环境镜像
 	@echo "$(BLUE)构建生产环境镜像...$(NC)"
-	@docker build -t $(PROJECT_NAME):latest .
+	@docker build --target production -t $(PROJECT_NAME):latest .
 	@echo "$(GREEN)生产环境镜像构建完成$(NC)"
 
 build-dev: ## 构建开发环境镜像
 	@echo "$(BLUE)构建开发环境镜像...$(NC)"
-	@docker build -t $(PROJECT_NAME):dev .
+	@docker build --target dev -t $(PROJECT_NAME):dev .
 	@echo "$(GREEN)开发环境镜像构建完成$(NC)"
 
 build-all: build build-dev ## 构建所有环境镜像

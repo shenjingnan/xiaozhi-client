@@ -13,9 +13,9 @@ dist
 web/dist
 *.tsbuildinfo
 
-# Source code (不需要，因为使用 npm 包)
-src
-web/src
+# Source code (生产环境不需要，开发环境需要)
+# src
+# web/src
 
 # Testing
 coverage
@@ -110,17 +110,17 @@ xiaozhi.config.json
 config/
 workspace/
 
-# Development and testing tools
+# Development and testing tools (生产环境不需要，开发环境需要)
 .prettierrc*
 .eslintrc*
 jest.config.*
 vitest.config.*
-tsconfig.json
-tsup.config.ts
-biome.json
-cspell.json
-package.json
-pnpm-lock.yaml
+# tsconfig.json
+# tsup.config.ts
+# biome.json
+# cspell.json
+# package.json
+# pnpm-lock.yaml
 
 # Scripts
 scripts/
