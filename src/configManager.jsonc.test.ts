@@ -1,4 +1,9 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  type PathLike,
+  existsSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { resolve } from "node:path";
 import * as commentJson from "comment-json";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -86,7 +91,9 @@ describe("ConfigManager JSONC Comment Preservation", () => {
 }`;
 
   // 解析后的配置对象
-  const parsedConfig = commentJson.parse(jsoncConfigContent) as AppConfig;
+  const parsedConfig = commentJson.parse(
+    jsoncConfigContent
+  ) as unknown as AppConfig;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -104,8 +111,8 @@ describe("ConfigManager JSONC Comment Preservation", () => {
     });
 
     // Mock 配置文件存在且为 JSONC 格式
-    mockExistsSync.mockImplementation((path: string) => {
-      return path.includes("xiaozhi.config.jsonc");
+    mockExistsSync.mockImplementation((path: PathLike) => {
+      return path.toString().includes("xiaozhi.config.jsonc");
     });
 
     // Mock 读取 JSONC 配置文件
@@ -175,7 +182,9 @@ describe("ConfigManager JSONC Comment Preservation", () => {
       expect(hasComment(savedContent, "Web UI 配置")).toBe(true);
 
       // 验证新服务已添加
-      const parsedSaved = commentJson.parse(savedContent) as AppConfig;
+      const parsedSaved = commentJson.parse(
+        savedContent
+      ) as unknown as AppConfig;
       expect(parsedSaved.mcpServers["test-server"]).toEqual(newServerConfig);
     });
 
@@ -200,7 +209,9 @@ describe("ConfigManager JSONC Comment Preservation", () => {
       expect(hasComment(savedContent, "重连间隔（毫秒）")).toBe(true);
 
       // 验证配置值已更新
-      const parsedSaved = commentJson.parse(savedContent) as AppConfig;
+      const parsedSaved = commentJson.parse(
+        savedContent
+      ) as unknown as AppConfig;
       expect(parsedSaved.connection?.heartbeatInterval).toBe(45000);
       expect(parsedSaved.connection?.heartbeatTimeout).toBe(15000);
       expect(parsedSaved.connection?.reconnectInterval).toBe(5000); // 保持原值
@@ -224,7 +235,9 @@ describe("ConfigManager JSONC Comment Preservation", () => {
       expect(hasComment(savedContent, "Web UI 端口号")).toBe(true);
 
       // 验证配置值已更新
-      const parsedSaved = commentJson.parse(savedContent) as AppConfig;
+      const parsedSaved = commentJson.parse(
+        savedContent
+      ) as unknown as AppConfig;
       expect(parsedSaved.webUI?.port).toBe(8888);
     });
 
@@ -246,7 +259,9 @@ describe("ConfigManager JSONC Comment Preservation", () => {
       expect(hasComment(savedContent, "API 密钥")).toBe(true);
 
       // 验证配置值已更新
-      const parsedSaved = commentJson.parse(savedContent) as AppConfig;
+      const parsedSaved = commentJson.parse(
+        savedContent
+      ) as unknown as AppConfig;
       expect(parsedSaved.modelscope?.apiKey).toBe("new-api-key");
     });
   });
@@ -272,7 +287,9 @@ describe("ConfigManager JSONC Comment Preservation", () => {
       expect(hasComment(savedContent, "连接配置")).toBe(true);
 
       // 验证工具配置已添加
-      const parsedSaved = commentJson.parse(savedContent) as AppConfig;
+      const parsedSaved = commentJson.parse(
+        savedContent
+      ) as unknown as AppConfig;
       expect(
         parsedSaved.mcpServerConfig?.calculator?.tools?.["test-tool"]
       ).toEqual({
@@ -316,7 +333,9 @@ describe("ConfigManager JSONC Comment Preservation", () => {
       expect(hasComment(finalSavedContent, "Web UI 端口号")).toBe(true);
 
       // 验证所有配置更新都生效
-      const parsedFinal = commentJson.parse(finalSavedContent) as AppConfig;
+      const parsedFinal = commentJson.parse(
+        finalSavedContent
+      ) as unknown as AppConfig;
       expect(parsedFinal.mcpServers["new-service"]).toBeDefined();
       expect(parsedFinal.connection?.heartbeatInterval).toBe(60000);
       expect(parsedFinal.webUI?.port).toBe(3000);
@@ -337,7 +356,9 @@ describe("ConfigManager JSONC Comment Preservation", () => {
       expect(countComments(savedContent)).toBe(15);
 
       // 验证配置已更新
-      const parsedSaved = commentJson.parse(savedContent) as AppConfig;
+      const parsedSaved = commentJson.parse(
+        savedContent
+      ) as unknown as AppConfig;
       expect(parsedSaved.mcpServerConfig?.calculator?.tools).toEqual(
         toolsConfig
       );
@@ -398,7 +419,9 @@ describe("ConfigManager JSONC Comment Preservation", () => {
       const savedContent = mockWriteFileSync.mock.calls[0][1] as string;
 
       // 验证配置已正确添加
-      const parsedSaved = commentJson.parse(savedContent) as AppConfig;
+      const parsedSaved = commentJson.parse(
+        savedContent
+      ) as unknown as AppConfig;
       expect(parsedSaved.connection?.heartbeatInterval).toBe(45000);
 
       // 验证原有注释仍然存在
@@ -422,7 +445,7 @@ describe("ConfigManager JSONC Comment Preservation", () => {
       expect(savedContent.includes("//")).toBe(true);
 
       // 验证 JSON 结构正确
-      const parsed = commentJson.parse(savedContent) as AppConfig;
+      const parsed = commentJson.parse(savedContent) as unknown as AppConfig;
       expect(parsed.mcpEndpoint).toBeDefined();
       expect(parsed.mcpServers).toBeDefined();
     });
