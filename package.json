@@ -60,6 +60,7 @@
     "express": "^5.1.0",
     "hono": "^4.8.10",
     "json5": "^2.2.3",
+    "json5-writer": "^0.2.0",
     "jsonc-parser": "^3.3.1",
     "node-fetch": "2",
     "omelette": "^0.4.17",

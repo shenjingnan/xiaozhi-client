@@ -3,6 +3,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as commentJson from "comment-json";
 import JSON5 from "json5";
+import * as json5Writer from "json5-writer";
 import { validateMcpServerConfig } from "./utils/mcpServerUtils";
 
 // 在 ESM 中，需要从 import.meta.url 获取当前文件目录
@@ -83,6 +84,7 @@ export class ConfigManager {
   private defaultConfigPath: string;
   private config: AppConfig | null = null;
   private currentConfigPath: string | null = null; // 跟踪当前使用的配置文件路径
+  private json5Writer: any = null; // json5-writer 实例，用于保留 JSON5 注释
 
   private constructor() {
     this.defaultConfigPath = resolve(__dirname, "xiaozhi.config.default.json");
@@ -186,6 +188,7 @@ export class ConfigManager {
     // 复制默认配置文件
     copyFileSync(this.defaultConfigPath, configPath);
     this.config = null; // 重置缓存
+    this.json5Writer = null; // 重置 json5Writer 实例
   }
 
   /**
@@ -207,7 +210,10 @@ export class ConfigManager {
       // 根据文件格式使用相应的解析器
       switch (configFileFormat) {
         case "json5":
+          // 使用 JSON5 解析配置对象，同时使用 json5-writer 保留注释信息
           config = JSON5.parse(configData) as AppConfig;
+          // 创建 json5-writer 实例用于后续保存时保留注释
+          this.json5Writer = json5Writer.load(configData);
           break;
         case "jsonc":
           // 使用 comment-json 解析 JSONC 格式，保留注释信息
@@ -577,7 +583,25 @@ export class ConfigManager {
 
       switch (configFileFormat) {
         case "json5":
-          configContent = JSON5.stringify(config, null, 2);
+          // 对于 JSON5 格式，使用 json5-writer 库保留注释
+          try {
+            if (this.json5Writer) {
+              // 使用 json5-writer 更新配置并保留注释
+              this.json5Writer.write(config);
+              configContent = this.json5Writer.toSource();
+            } else {
+              // 如果没有 json5Writer 实例，回退到标准 JSON5
+              console.warn("没有 json5Writer 实例，回退到标准 JSON5 格式");
+              configContent = JSON5.stringify(config, null, 2);
+            }
+          } catch (json5WriterError) {
+            // 如果 json5-writer 序列化失败，回退到标准 JSON5
+            console.warn(
+              "使用 json5-writer 保存失败，回退到标准 JSON5 格式:",
+              json5WriterError
+            );
+            configContent = JSON5.stringify(config, null, 2);
+          }
           break;
         case "jsonc":
           // 对于 JSONC 格式，使用 comment-json 库保留注释
@@ -619,6 +643,7 @@ export class ConfigManager {
   public reloadConfig(): void {
     this.config = null;
     this.currentConfigPath = null; // 清除配置文件路径缓存
+    this.json5Writer = null; // 清除 json5Writer 实例
   }
 
   /**
