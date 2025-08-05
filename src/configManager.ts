@@ -1,8 +1,8 @@
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import * as commentJson from "comment-json";
 import JSON5 from "json5";
-import * as jsonc from "jsonc-parser";
 import { validateMcpServerConfig } from "./utils/mcpServerUtils";
 
 // 在 ESM 中，需要从 import.meta.url 获取当前文件目录
@@ -82,6 +82,7 @@ export class ConfigManager {
   private static instance: ConfigManager;
   private defaultConfigPath: string;
   private config: AppConfig | null = null;
+  private currentConfigPath: string | null = null; // 跟踪当前使用的配置文件路径
 
   private constructor() {
     this.defaultConfigPath = resolve(__dirname, "xiaozhi.config.default.json");
@@ -197,6 +198,7 @@ export class ConfigManager {
 
     try {
       const configPath = this.getConfigFilePath();
+      this.currentConfigPath = configPath; // 记录当前使用的配置文件路径
       const configFileFormat = this.getConfigFileFormat(configPath);
       const configData = readFileSync(configPath, "utf8");
 
@@ -208,7 +210,8 @@ export class ConfigManager {
           config = JSON5.parse(configData) as AppConfig;
           break;
         case "jsonc":
-          config = jsonc.parse(configData) as AppConfig;
+          // 使用 comment-json 解析 JSONC 格式，保留注释信息
+          config = commentJson.parse(configData) as unknown as AppConfig;
           break;
         default:
           config = JSON.parse(configData) as AppConfig;
@@ -292,6 +295,16 @@ export class ConfigManager {
   }
 
   /**
+   * 获取可修改的配置对象（内部使用，保留注释信息）
+   */
+  private getMutableConfig(): AppConfig {
+    if (!this.config) {
+      this.config = this.loadConfig();
+    }
+    return this.config;
+  }
+
+  /**
    * 获取 MCP 端点（向后兼容）
    * @deprecated 使用 getMcpEndpoints() 获取所有端点
    */
@@ -368,9 +381,9 @@ export class ConfigManager {
       }
     }
 
-    const config = this.getConfig();
-    const newConfig = { ...config, mcpEndpoint: endpoint };
-    this.saveConfig(newConfig);
+    const config = this.getMutableConfig();
+    config.mcpEndpoint = endpoint;
+    this.saveConfig(config);
   }
 
   /**
@@ -381,7 +394,7 @@ export class ConfigManager {
       throw new Error("MCP 端点必须是非空字符串");
     }
 
-    const config = this.getConfig();
+    const config = this.getMutableConfig();
     const currentEndpoints = this.getMcpEndpoints();
 
     // 检查是否已存在
@@ -390,8 +403,8 @@ export class ConfigManager {
     }
 
     const newEndpoints = [...currentEndpoints, endpoint];
-    const newConfig = { ...config, mcpEndpoint: newEndpoints };
-    this.saveConfig(newConfig);
+    config.mcpEndpoint = newEndpoints;
+    this.saveConfig(config);
   }
 
   /**
@@ -437,15 +450,10 @@ export class ConfigManager {
     if (!validation.valid) {
       throw new Error(validation.error || "服务配置验证失败");
     }
-    const config = this.getConfig();
-    const newConfig = {
-      ...config,
-      mcpServers: {
-        [serverName]: serverConfig,
-        ...config.mcpServers,
-      },
-    };
-    this.saveConfig(newConfig);
+    const config = this.getMutableConfig();
+    // 直接修改配置对象以保留注释信息
+    config.mcpServers[serverName] = serverConfig;
+    this.saveConfig(config);
   }
 
   /**
@@ -478,25 +486,24 @@ export class ConfigManager {
     serverName: string,
     toolsConfig: Record<string, MCPToolConfig>
   ): void {
-    const config = this.getConfig();
-    const newConfig = { ...config };
+    const config = this.getMutableConfig();
 
     // 确保 mcpServerConfig 存在
-    if (!newConfig.mcpServerConfig) {
-      newConfig.mcpServerConfig = {};
+    if (!config.mcpServerConfig) {
+      config.mcpServerConfig = {};
     }
 
     // 如果 toolsConfig 为空对象，则删除该服务的配置
     if (Object.keys(toolsConfig).length === 0) {
-      delete newConfig.mcpServerConfig[serverName];
+      delete config.mcpServerConfig[serverName];
     } else {
       // 更新指定服务的工具配置
-      newConfig.mcpServerConfig[serverName] = {
+      config.mcpServerConfig[serverName] = {
         tools: toolsConfig,
       };
     }
 
-    this.saveConfig(newConfig);
+    this.saveConfig(config);
   }
 
   /**
@@ -523,45 +530,77 @@ export class ConfigManager {
     enabled: boolean,
     description?: string
   ): void {
-    const config = this.getConfig();
-    const newConfig = { ...config };
+    const config = this.getMutableConfig();
 
     // 确保 mcpServerConfig 存在
-    if (!newConfig.mcpServerConfig) {
-      newConfig.mcpServerConfig = {};
+    if (!config.mcpServerConfig) {
+      config.mcpServerConfig = {};
     }
 
     // 确保服务配置存在
-    if (!newConfig.mcpServerConfig[serverName]) {
-      newConfig.mcpServerConfig[serverName] = { tools: {} };
+    if (!config.mcpServerConfig[serverName]) {
+      config.mcpServerConfig[serverName] = { tools: {} };
     }
 
     // 更新工具配置
-    newConfig.mcpServerConfig[serverName].tools[toolName] = {
-      ...newConfig.mcpServerConfig[serverName].tools[toolName],
+    config.mcpServerConfig[serverName].tools[toolName] = {
+      ...config.mcpServerConfig[serverName].tools[toolName],
       enable: enabled,
       ...(description && { description }),
     };
 
-    this.saveConfig(newConfig);
+    this.saveConfig(config);
   }
 
   /**
    * 保存配置到文件
-   * 始终保存为标准 JSON 格式以确保向后兼容性
+   * 保存到原始配置文件路径，保持文件格式一致性
    */
   private saveConfig(config: AppConfig): void {
     try {
       // 验证配置
       this.validateConfig(config);
 
-      // 获取配置文件路径，但始终保存为 JSON 格式
-      const configDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();
-      const configPath = resolve(configDir, "xiaozhi.config.json");
+      // 确定保存路径 - 优先使用当前配置文件路径，否则使用默认路径
+      let configPath: string;
+      if (this.currentConfigPath) {
+        configPath = this.currentConfigPath;
+      } else {
+        // 如果没有当前路径，使用 getConfigFilePath 获取
+        configPath = this.getConfigFilePath();
+        this.currentConfigPath = configPath;
+      }
 
-      // 格式化 JSON 并保存
-      const configJson = JSON.stringify(config, null, 2);
-      writeFileSync(configPath, configJson, "utf8");
+      // 根据文件格式选择序列化方法
+      const configFileFormat = this.getConfigFileFormat(configPath);
+      let configContent: string;
+
+      switch (configFileFormat) {
+        case "json5":
+          configContent = JSON5.stringify(config, null, 2);
+          break;
+        case "jsonc":
+          // 对于 JSONC 格式，使用 comment-json 库保留注释
+          try {
+            // 直接使用 comment-json 的 stringify 方法
+            // 如果 config 是通过 comment-json.parse 解析的，注释信息会被保留
+            configContent = commentJson.stringify(config, null, 2);
+          } catch (commentJsonError) {
+            // 如果 comment-json 序列化失败，回退到标准 JSON
+            console.warn(
+              "使用 comment-json 保存失败，回退到标准 JSON 格式:",
+              commentJsonError
+            );
+            configContent = JSON.stringify(config, null, 2);
+          }
+          break;
+        default:
+          configContent = JSON.stringify(config, null, 2);
+          break;
+      }
+
+      // 保存到文件
+      writeFileSync(configPath, configContent, "utf8");
 
       // 更新缓存
       this.config = config;
@@ -579,6 +618,7 @@ export class ConfigManager {
    */
   public reloadConfig(): void {
     this.config = null;
+    this.currentConfigPath = null; // 清除配置文件路径缓存
   }
 
   /**
@@ -642,20 +682,16 @@ export class ConfigManager {
   public updateConnectionConfig(
     connectionConfig: Partial<ConnectionConfig>
   ): void {
-    const config = this.getConfig();
-    const currentConnectionConfig = config.connection || {};
+    const config = this.getMutableConfig();
 
-    const newConnectionConfig = {
-      ...currentConnectionConfig,
-      ...connectionConfig,
-    };
+    // 确保 connection 对象存在
+    if (!config.connection) {
+      config.connection = {};
+    }
 
-    const newConfig = {
-      ...config,
-      connection: newConnectionConfig,
-    };
-
-    this.saveConfig(newConfig);
+    // 直接修改现有的 connection 对象以保留注释
+    Object.assign(config.connection, connectionConfig);
+    this.saveConfig(config);
   }
 
   /**
@@ -711,20 +747,16 @@ export class ConfigManager {
   public updateModelScopeConfig(
     modelScopeConfig: Partial<ModelScopeConfig>
   ): void {
-    const config = this.getConfig();
-    const currentModelScopeConfig = config.modelscope || {};
+    const config = this.getMutableConfig();
 
-    const newModelScopeConfig = {
-      ...currentModelScopeConfig,
-      ...modelScopeConfig,
-    };
+    // 确保 modelscope 对象存在
+    if (!config.modelscope) {
+      config.modelscope = {};
+    }
 
-    const newConfig = {
-      ...config,
-      modelscope: newModelScopeConfig,
-    };
-
-    this.saveConfig(newConfig);
+    // 直接修改现有的 modelscope 对象以保留注释
+    Object.assign(config.modelscope, modelScopeConfig);
+    this.saveConfig(config);
   }
 
   /**
@@ -757,20 +789,16 @@ export class ConfigManager {
    * 更新 Web UI 配置
    */
   public updateWebUIConfig(webUIConfig: Partial<WebUIConfig>): void {
-    const config = this.getConfig();
-    const currentWebUIConfig = config.webUI || {};
+    const config = this.getMutableConfig();
 
-    const newWebUIConfig = {
-      ...currentWebUIConfig,
-      ...webUIConfig,
-    };
+    // 确保 webUI 对象存在
+    if (!config.webUI) {
+      config.webUI = {};
+    }
 
-    const newConfig = {
-      ...config,
-      webUI: newWebUIConfig,
-    };
-
-    this.saveConfig(newConfig);
+    // 直接修改现有的 webUI 对象以保留注释
+    Object.assign(config.webUI, webUIConfig);
+    this.saveConfig(config);
   }
 
   /**

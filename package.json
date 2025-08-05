@@ -53,6 +53,7 @@
     "chalk": "^5.4.1",
     "cli-table3": "^0.6.5",
     "commander": "^14.0.0",
+    "comment-json": "^4.2.5",
     "consola": "^3.4.2",
     "dotenv": "^16.3.1",
     "eventsource": "^4.0.0",
