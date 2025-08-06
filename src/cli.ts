@@ -370,150 +370,227 @@ async function startService(daemon = false, ui = false): Promise<void> {
       return;
     }
 
-    // 获取启动命令
-    const { command, args, cwd } = getServiceCommand();
+    // 检查是否在Docker环境下且MCP端点未配置
+    const isContainer = isDockerContainer();
+    let shouldStartMCPService = true;
 
-    spinner.text = `启动服务 (${daemon ? "后台模式" : "前台模式"})...`;
+    if (isContainer && configManager.configExists()) {
+      try {
+        const endpoints = configManager.getMcpEndpoints();
+        const validEndpoints = endpoints.filter(endpoint =>
+          endpoint && !endpoint.includes("<请填写") && endpoint.trim() !== ""
+        );
 
-    if (daemon) {
-      // 后台模式
-      const child = spawn(command, args, {
-        cwd,
-        detached: true,
-        stdio: ["ignore", "pipe", "pipe"],
-        env: {
-          ...process.env,
-          XIAOZHI_CONFIG_DIR: process.cwd(), // 传递用户的当前工作目录
-          XIAOZHI_DAEMON: "true", // 标记这是守护进程模式
-        },
-      });
-
-      // 保存 PID 信息
-      savePidInfo(child.pid!, "daemon");
-
-      // 初始化日志文件
-      const projectDir = process.cwd();
-      logger.initLogFile(projectDir);
-      logger.enableFileLogging(true);
-
-      // 设置日志输出到文件
-      const logFilePath = path.join(projectDir, "xiaozhi.log");
-      const logStream = fs.createWriteStream(logFilePath, { flags: "a" });
-      child.stdout?.pipe(logStream);
-      child.stderr?.pipe(logStream);
-
-      // 监听进程异常退出
-      child.on("exit", (code, signal) => {
-        if (code !== 0 && code !== null) {
-          // 进程异常退出，记录日志
-          logger.error(`后台服务异常退出 (代码: ${code}, 信号: ${signal})`);
+        if (validEndpoints.length === 0) {
+          shouldStartMCPService = false;
+          spinner.text = "Docker环境检测到，跳过MCP服务启动...";
+          console.log(chalk.yellow("🐳 Docker环境下MCP端点未配置，仅启动Web UI"));
+          console.log(chalk.gray("💡 请通过Web UI配置MCP端点后重启服务"));
         }
-        cleanupPidFile();
-      });
-
-      // 监听进程错误
-      child.on("error", (error) => {
-        logger.error(`后台服务启动错误: ${error.message}`);
-        cleanupPidFile();
-        spinner.fail(`后台服务启动失败: ${error.message}`);
-        return;
-      });
-
-      // 分离进程
-      child.unref();
-
-      spinner.succeed(`服务已在后台启动 (PID: ${child.pid})`);
-      console.log(chalk.gray(`日志文件: ${logFilePath}`));
-      console.log(chalk.gray(`使用 'xiaozhi attach' 可以查看实时日志`));
-
-      // 如果指定了 --ui 参数，同时启动 Web UI
-      if (ui) {
-        await startWebUIInBackground();
+      } catch (error) {
+        // 配置读取失败，在容器环境下跳过MCP服务
+        shouldStartMCPService = false;
+        spinner.text = "Docker环境检测到，配置读取失败，跳过MCP服务启动...";
+        console.log(chalk.yellow("🐳 Docker环境下配置读取失败，仅启动Web UI"));
+        console.log(chalk.gray("💡 请通过Web UI重新配置后重启服务"));
       }
+    }
+
+    let mcpServiceCommand = null;
+    if (shouldStartMCPService) {
+      // 获取启动命令
+      mcpServiceCommand = getServiceCommand();
+    }
+
+    if (shouldStartMCPService) {
+      spinner.text = `启动服务 (${daemon ? "后台模式" : "前台模式"})...`;
     } else {
-      // 前台模式
-      spinner.succeed("服务启动中...");
+      spinner.text = `启动Web UI服务 (${daemon ? "后台模式" : "前台模式"})...`;
+    }
 
-      const child = spawn(command, args, {
-        cwd,
-        stdio: "inherit",
-        env: {
-          ...process.env,
-          XIAOZHI_CONFIG_DIR: process.cwd(), // 传递用户的当前工作目录
-        },
-      });
+    let child: any = null;
+    if (shouldStartMCPService && mcpServiceCommand) {
+      const { command, args, cwd } = mcpServiceCommand;
 
-      // 保存 PID 信息
-      savePidInfo(child.pid!, "foreground");
+      if (daemon) {
+        // 后台模式
+        child = spawn(command, args, {
+          cwd,
+          detached: true,
+          stdio: ["ignore", "pipe", "pipe"],
+          env: {
+            ...process.env,
+            XIAOZHI_CONFIG_DIR: process.cwd(), // 传递用户的当前工作目录
+            XIAOZHI_DAEMON: "true", // 标记这是守护进程模式
+          },
+        });
 
-      // 处理进程退出
-      child.on("exit", (code, signal) => {
-        cleanupPidFile();
-        if (code !== 0) {
-          console.log(
-            chalk.red(`\n服务异常退出 (代码: ${code}, 信号: ${signal})`)
-          );
-        } else {
-          console.log(chalk.green("\n服务已停止"));
+        // 保存 PID 信息
+        if (child) {
+          savePidInfo(child.pid!, "daemon");
         }
-      });
 
-      // 如果指定了 --ui 参数，在主进程启动后同时启动 Web UI
-      if (ui) {
-        // 等待一下确保主服务已经启动
-        setTimeout(() => {
-          startWebUIInBackground();
-        }, 1000);
-      }
+        // 初始化日志文件
+        const projectDir = process.cwd();
+        logger.initLogFile(projectDir);
+        logger.enableFileLogging(true);
 
-      // 处理中断信号
-      let isExiting = false;
-      const gracefulShutdown = async (signal: string) => {
-        if (isExiting) {
-          console.log(chalk.red("\n强制退出..."));
-          process.exit(1);
-        }
-        isExiting = true;
+        // 设置日志输出到文件
+        const logFilePath = path.join(projectDir, "xiaozhi.log");
+        if (child) {
+          const logStream = fs.createWriteStream(logFilePath, { flags: "a" });
+          child.stdout?.pipe(logStream);
+          child.stderr?.pipe(logStream);
 
-        console.log(chalk.yellow(`\n正在停止服务... (收到 ${signal} 信号)`));
-
-        try {
-          // 停止子进程
-          child.kill("SIGTERM");
-
-          // 如果启动了 Web UI，也要停止它
-          if ((global as any).__webServer) {
-            try {
-              await (global as any).__webServer.stop();
-              console.log(chalk.green("Web UI 已停止"));
-            } catch (error) {
-              console.log(chalk.yellow("Web UI 停止时出现问题，但继续退出"));
+          // 监听进程异常退出
+          child.on("exit", (code: number | null, signal: string | null) => {
+            if (code !== 0 && code !== null) {
+              // 进程异常退出，记录日志
+              logger.error(`后台服务异常退出 (代码: ${code}, 信号: ${signal})`);
             }
-          }
-
-          // 等待子进程退出
-          await new Promise<void>((resolve) => {
-            const timeout = setTimeout(() => {
-              console.log(chalk.yellow("等待子进程超时，强制退出"));
-              resolve();
-            }, 5000); // 5秒超时
-
-            child.on("exit", () => {
-              clearTimeout(timeout);
-              resolve();
-            });
+            cleanupPidFile();
           });
 
-          console.log(chalk.green("服务已停止"));
-          process.exit(0);
-        } catch (error) {
-          console.log(chalk.red(`停止服务时出错: ${error instanceof Error ? error.message : String(error)}`));
-          process.exit(1);
-        }
-      };
+          // 监听进程错误
+          child.on("error", (error: Error) => {
+            logger.error(`后台服务启动错误: ${error.message}`);
+            cleanupPidFile();
+            spinner.fail(`后台服务启动失败: ${error.message}`);
+            return;
+          });
 
-      process.on("SIGINT", () => gracefulShutdown("SIGINT"));
-      process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+          // 分离进程
+          child.unref();
+
+          spinner.succeed(`服务已在后台启动 (PID: ${child.pid})`);
+          console.log(chalk.gray(`日志文件: ${logFilePath}`));
+          console.log(chalk.gray(`使用 'xiaozhi attach' 可以查看实时日志`));
+        } else {
+          // 只启动Web UI的情况
+          spinner.succeed("Web UI服务已在后台启动");
+          console.log(chalk.gray(`日志文件: ${logFilePath}`));
+        }
+
+        // 如果指定了 --ui 参数，同时启动 Web UI
+        if (ui) {
+          await startWebUIInBackground();
+        }
+      } else {
+        // 前台模式
+        if (shouldStartMCPService && mcpServiceCommand) {
+          const { command, args, cwd } = mcpServiceCommand;
+          spinner.succeed("服务启动中...");
+
+          child = spawn(command, args, {
+            cwd,
+            stdio: "inherit",
+            env: {
+              ...process.env,
+              XIAOZHI_CONFIG_DIR: process.cwd(), // 传递用户的当前工作目录
+            },
+          });
+
+          // 保存 PID 信息
+          savePidInfo(child.pid!, "foreground");
+
+          // 处理进程退出
+          child.on("exit", (code: number | null, signal: string | null) => {
+            cleanupPidFile();
+            if (code !== 0) {
+              console.log(
+                chalk.red(`\n服务异常退出 (代码: ${code}, 信号: ${signal})`)
+              );
+            } else {
+              console.log(chalk.green("\n服务已停止"));
+            }
+          });
+        }
+
+        // 如果指定了 --ui 参数且有MCP服务，在主进程启动后同时启动 Web UI
+        if (ui && shouldStartMCPService) {
+          // 等待一下确保主服务已经启动
+          setTimeout(() => {
+            startWebUIInBackground();
+          }, 1000);
+        }
+
+        // 处理中断信号
+        let isExiting = false;
+        const gracefulShutdown = async (signal: string) => {
+          if (isExiting) {
+            console.log(chalk.red("\n强制退出..."));
+            process.exit(1);
+          }
+          isExiting = true;
+
+          console.log(chalk.yellow(`\n正在停止服务... (收到 ${signal} 信号)`));
+
+          try {
+            // 停止子进程
+            if (child) {
+              child.kill("SIGTERM");
+            }
+
+            // 如果启动了 Web UI，也要停止它
+            if ((global as any).__webServer) {
+              try {
+                await (global as any).__webServer.stop();
+                console.log(chalk.green("Web UI 已停止"));
+              } catch (error) {
+                console.log(chalk.yellow("Web UI 停止时出现问题，但继续退出"));
+              }
+            }
+
+            // 等待子进程退出
+            if (child) {
+              await new Promise<void>((resolve) => {
+                const timeout = setTimeout(() => {
+                  console.log(chalk.yellow("等待子进程超时，强制退出"));
+                  resolve();
+                }, 5000); // 5秒超时
+
+                child.on("exit", () => {
+                  clearTimeout(timeout);
+                  resolve();
+                });
+              });
+            }
+
+            console.log(chalk.green("服务已停止"));
+            process.exit(0);
+          } catch (error) {
+            console.log(chalk.red(`停止服务时出错: ${error instanceof Error ? error.message : String(error)}`));
+            process.exit(1);
+          }
+        };
+
+        process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+        process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+      }
+    } else {
+      // 处理不启动 MCP 服务的情况（Docker环境下mcpEndpoint为空等）
+      if (daemon) {
+        // 后台模式：只启动 Web UI（如果需要）
+        if (ui) {
+          await startWebUIInBackground();
+          spinner.succeed("Web UI服务已在后台启动");
+          console.log(chalk.gray("💡 请通过Web UI配置MCP端点后重启服务"));
+        } else {
+          spinner.succeed("跳过MCP服务启动，仅配置检查完成");
+          console.log(chalk.gray("💡 使用 'xiaozhi start --ui' 启动Web UI进行配置"));
+        }
+      } else {
+        // 前台模式：启动 Web UI 服务
+        if (ui) {
+          spinner.stop(); // 先停止当前的 spinner
+          await startUIService(); // startUIService 内部会创建自己的 spinner
+          return;
+        } else {
+          spinner.succeed("跳过MCP服务启动，仅配置检查完成");
+          console.log(chalk.gray("💡 使用 'xiaozhi ui' 或 'xiaozhi start --ui' 启动Web UI进行配置"));
+          return;
+        }
+      }
     }
   } catch (error) {
     spinner.fail(

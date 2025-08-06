@@ -503,6 +503,8 @@ export class WebServer {
   public start(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
+        console.log(`[DEBUG] Starting web server on port ${this.port}...`);
+
         // 使用 @hono/node-server 启动服务器，绑定到 0.0.0.0
         const server = serve({
           fetch: this.app.fetch,
@@ -511,19 +513,47 @@ export class WebServer {
           createServer,
         });
 
+        console.log(`[DEBUG] Server created, setting up event listeners...`);
+
         // 保存服务器实例
         this.httpServer = server;
 
-        // 设置 WebSocket 服务器
-        this.wss = new WebSocketServer({ server: this.httpServer });
-        this.setupWebSocket();
+        // 设置超时，防止无限等待
+        const timeout = setTimeout(() => {
+          console.log(`[DEBUG] Server start timeout after 10 seconds`);
+          reject(new Error("Server start timeout"));
+        }, 10000);
 
-        this.logger.info(`Web server listening on http://0.0.0.0:${this.port}`);
-        this.logger.info(`Local access: http://localhost:${this.port}`);
-        resolve();
+        // 等待服务器真正开始监听
+        this.httpServer.on("listening", () => {
+          try {
+            clearTimeout(timeout);
+            console.log(`[DEBUG] Server is now listening, setting up WebSocket...`);
 
-        this.httpServer.on("error", reject);
+            // 设置 WebSocket 服务器
+            this.wss = new WebSocketServer({ server: this.httpServer });
+            this.setupWebSocket();
+
+            console.log(`[DEBUG] WebSocket setup complete`);
+            this.logger.info(`Web server listening on http://0.0.0.0:${this.port}`);
+            this.logger.info(`Local access: http://localhost:${this.port}`);
+            resolve();
+          } catch (error) {
+            clearTimeout(timeout);
+            console.log(`[DEBUG] Error in listening handler:`, error);
+            reject(error);
+          }
+        });
+
+        this.httpServer.on("error", (error: Error) => {
+          clearTimeout(timeout);
+          console.log(`[DEBUG] Server error:`, error);
+          reject(error);
+        });
+
+        console.log(`[DEBUG] Event listeners set up, waiting for server to start...`);
       } catch (error) {
+        console.log(`[DEBUG] Error in start method:`, error);
         reject(error);
       }
     });
