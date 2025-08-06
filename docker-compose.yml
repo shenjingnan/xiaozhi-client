@@ -20,7 +20,7 @@ services:
     # 挂载卷
     volumes:
       # 挂载自定义配置文件（用户需要提供）
-      - ./xiaozhi.config.json:/workspace/xiaozhi.config.json:ro
+      - ./xiaozhi.config.json:/workspace/xiaozhi.config.json
       # 日志文件持久化
       - ./logs:/workspace/logs
       # 可选：挂载自定义 MCP 服务器

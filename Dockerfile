@@ -53,8 +53,8 @@ FROM base AS runtime
 # 设置工作目录
 WORKDIR /workspace
 
-# 复制 hello-world 模板作为初始项目结构
-COPY templates/hello-world/ ./
+# 复制模板作为初始项目结构
+COPY templates/docker/ ./
 
 # 安装模板项目的依赖
 RUN npm install
@@ -93,7 +93,7 @@ FROM development AS dev
 # 继承 runtime 阶段的设置，但先安装开发版本
 USER root
 WORKDIR /workspace
-COPY templates/hello-world/ ./
+COPY templates/docker/ ./
 RUN npm install
 RUN mkdir -p /workspace/config /workspace/logs
 RUN chown -R xiaozhi:xiaozhi /workspace
@@ -114,7 +114,7 @@ CMD ["xiaozhi", "start", "--ui"]
 FROM production
 # 继承 runtime 阶段的设置
 WORKDIR /workspace
-COPY templates/hello-world/ ./
+COPY templates/docker/ ./
 RUN npm install
 RUN mkdir -p /workspace/config /workspace/logs
 RUN chown -R xiaozhi:xiaozhi /workspace
