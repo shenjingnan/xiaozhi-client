@@ -40,8 +40,7 @@
     "release": "semantic-release",
     "release:beta": "semantic-release --extends ./.releaserc.beta.json",
     "release:dry": "semantic-release --dry-run",
-    "release:dry:beta": "semantic-release --dry-run --extends ./.releaserc.beta.json",
-    "release:preview": "semantic-release --dry-run"
+    "release:dry:beta": "semantic-release --dry-run --extends ./.releaserc.beta.json"
   },
   "keywords": [
     "xiaozhi",
