@@ -25,7 +25,7 @@ const formSchema = z.object({
   modelscope: z.object({
     apiKey: z.string().min(2, {
       message: "API Key不能为空",
-    }),
+    }).optional(),
   }),
   connection: z.object({
     heartbeatInterval: z.number().min(1000, {

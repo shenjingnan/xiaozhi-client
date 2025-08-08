@@ -85,8 +85,17 @@ export function DashboardStatusCard() {
           <div className="absolute right-4 top-4 flex flex-col items-center">
             <MiniCircularProgress
               showValue={false}
-              value={1}
-              maxValue={1}
+              value={
+                Array.isArray(mcpEndpoint)
+                  ? mcpEndpoint.length
+                  : mcpEndpoint
+                    ? 1
+                    : 0
+              }
+              maxValue={Math.max(
+                Array.isArray(mcpEndpoint) ? mcpEndpoint.length : 1,
+                1
+              )}
               activeColor="#16a34a"
               inactiveColor="#f87171"
               size={30}
