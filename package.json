@@ -102,7 +102,9 @@
   },
   "pnpm": {
     "overrides": {
-      "form-data": "^4.0.4"
+      "form-data": "^4.0.4",
+      "braces": ">=3.0.3",
+      "micromatch": ">=4.0.8"
     }
   }
 }
