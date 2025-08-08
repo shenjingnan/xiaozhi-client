@@ -224,7 +224,7 @@ export function McpEndpointSettingButton() {
   };
 
   const mcpEndpoints = useMemo(() => {
-    let list: any[] = [];
+    let list: string[] = [];
     if (Array.isArray(mcpEndpoint)) list = mcpEndpoint;
     if (typeof mcpEndpoint === "string" && mcpEndpoint.length) {
       list.push(mcpEndpoint);
