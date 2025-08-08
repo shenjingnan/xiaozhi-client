@@ -393,7 +393,7 @@ async function startService(daemon = false, ui = false): Promise<void> {
         stdio: "inherit",
         env: {
           ...process.env,
-          XIAOZHI_CONFIG_DIR: process.cwd(), // 传递用户的当前工作目录
+          XIAOZHI_CONFIG_DIR: process.env.FORCE_CONFIG_DIR || process.cwd(), // 传递用户的当前工作目录
         },
       });
 

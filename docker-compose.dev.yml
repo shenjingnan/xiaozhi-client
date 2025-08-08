@@ -1,0 +1,77 @@
+services:
+  xiaozhi-client:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      args:
+        - DOCKERIGNORE_FILE=.dockerignore.dev
+    image: xiaozhi-client:dev
+    container_name: xiaozhi-client-dev
+    restart: unless-stopped
+
+    # 端口映射
+    ports:
+      - "9999:9999"  # Web UI 端口
+      - "3000:3000"  # 备用端口
+
+    # 环境变量
+    environment:
+      - NODE_ENV=development
+      - XIAOZHI_WORKSPACE=/workspaces
+      - XIAOZHI_CONTAINER=true
+      - XIAOZHI_CONFIG_DIR=/workspaces
+      # 强制覆盖 CLI 代码中的 process.cwd() 逻辑
+      - FORCE_CONFIG_DIR=/workspaces
+
+    # 挂载卷
+    volumes:
+      # 挂载构建产物和必要文件（基于 package.json 的 files 字段）
+      - ./dist:/app/dist                    # 主项目构建产物
+      - ./web/dist:/app/web/dist            # Web界面构建产物
+      - ./templates:/app/templates          # 模板文件
+      - ./docs:/app/docs                    # 文档文件
+      - ./package.json:/app/package.json    # package.json 文件
+      - ./README.md:/app/README.md          # README 文件
+      - ./LICENSE:/app/LICENSE              # LICENSE 文件
+      # 挂载运行时依赖
+      - ./node_modules:/app/node_modules    # 运行时依赖
+      # 日志文件持久化
+      - ./logs:/workspaces/logs
+      # 日志文件持久化（主日志文件）
+      - ./xiaozhi.log:/workspaces/xiaozhi.log
+      # 配置文件持久化（可选，用户可以自定义配置）
+      - ./config:/workspaces/config
+
+    # 健康检查 (开发环境需要更长的启动时间)
+    healthcheck:
+      test: ["CMD", "xiaozhi", "--version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s  # 开发环境需要时间构建和链接
+
+    # 网络配置
+    networks:
+      - xiaozhi-network
+
+    # 资源限制 (开发环境需要更多内存用于构建)
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+
+# 网络配置
+networks:
+  xiaozhi-network:
+    driver: bridge
+
+# 卷配置
+volumes:
+  xiaozhi-config:
+    driver: local
+  xiaozhi-logs:
+    driver: local

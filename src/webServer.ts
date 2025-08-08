@@ -253,6 +253,7 @@ export class WebServer {
     switch (data.type) {
       case "getConfig": {
         const config = configManager.getConfig();
+        console.log('getConfig ws getConfig', config);
         ws.send(JSON.stringify({ type: "config", data: config }));
         break;
       }
@@ -266,10 +267,14 @@ export class WebServer {
         ws.send(JSON.stringify({ type: "status", data: this.clientInfo }));
         break;
 
-      case "clientStatus":
+      case "clientStatus": {
         this.updateClientInfo(data.data);
         this.broadcastStatusUpdate();
+        // 每次客户端状态更新时，也发送最新的配置
+        const latestConfig = configManager.getConfig();
+        ws.send(JSON.stringify({ type: "configUpdate", data: latestConfig }));
         break;
+      }
 
       case "restartService":
         // 处理手动重启请求
@@ -302,9 +307,15 @@ export class WebServer {
     const config = configManager.getConfig();
     ws.send(JSON.stringify({ type: "config", data: config }));
     ws.send(JSON.stringify({ type: "status", data: this.clientInfo }));
+
+    // 延迟发送配置更新，确保 MCP Server Proxy 有足够时间完成工具列表更新
+    setTimeout(() => {
+      const updatedConfig = configManager.getConfig();
+      ws.send(JSON.stringify({ type: "configUpdate", data: updatedConfig }));
+    }, 2000); // 2秒延迟
   }
 
-  private broadcastConfigUpdate(config: AppConfig) {
+  public broadcastConfigUpdate(config: AppConfig) {
     if (!this.wss) return;
 
     const message = JSON.stringify({ type: "configUpdate", data: config });
