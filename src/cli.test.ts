@@ -94,6 +94,7 @@ vi.mock("./configManager", () => ({
   configManager: {
     configExists: vi.fn(),
     getMcpEndpoint: vi.fn(),
+    getMcpEndpoints: vi.fn(),
     initConfig: vi.fn(),
     getConfig: vi.fn(),
     getConfigPath: vi.fn(),
@@ -183,6 +184,9 @@ describe("CLI 命令行工具", () => {
     mockConfigManager.getMcpEndpoint.mockReturnValue(
       "wss://test.example.com/mcp"
     );
+    mockConfigManager.getMcpEndpoints.mockReturnValue([
+      "wss://test.example.com/mcp"
+    ]);
     mockConfigManager.getConfigPath.mockReturnValue(
       "/test/xiaozhi.config.json"
     );
@@ -288,9 +292,9 @@ describe("CLI 命令行工具", () => {
   describe("环境检查", () => {
     it("当配置存在且有效时应该通过", () => {
       mockConfigManager.configExists.mockReturnValue(true);
-      mockConfigManager.getMcpEndpoint.mockReturnValue(
+      mockConfigManager.getMcpEndpoints.mockReturnValue([
         "wss://valid.endpoint.com/mcp"
-      );
+      ]);
 
       const result = cliModule.checkEnvironment();
       expect(result).toBe(true);
@@ -303,17 +307,17 @@ describe("CLI 命令行工具", () => {
       expect(result).toBe(false);
     });
 
-    it("当端点未配置时应该失败", () => {
+    it("当端点未配置时应该显示警告但继续", () => {
       mockConfigManager.configExists.mockReturnValue(true);
-      mockConfigManager.getMcpEndpoint.mockReturnValue("<请填写你的端点>");
+      mockConfigManager.getMcpEndpoints.mockReturnValue(["<请填写你的端点>"]);
 
       const result = cliModule.checkEnvironment();
-      expect(result).toBe(false);
+      expect(result).toBe(true); // 现在应该继续而不是失败
     });
 
     it("应该处理配置加载错误", () => {
       mockConfigManager.configExists.mockReturnValue(true);
-      mockConfigManager.getMcpEndpoint.mockImplementation(() => {
+      mockConfigManager.getMcpEndpoints.mockImplementation(() => {
         throw new Error("Config error");
       });
 
@@ -323,18 +327,18 @@ describe("CLI 命令行工具", () => {
 
     it("应该处理空的端点配置", () => {
       mockConfigManager.configExists.mockReturnValue(true);
-      mockConfigManager.getMcpEndpoint.mockReturnValue("");
+      mockConfigManager.getMcpEndpoints.mockReturnValue([""]);
 
       const result = cliModule.checkEnvironment();
-      expect(result).toBe(false);
+      expect(result).toBe(true); // 现在应该继续而不是失败
     });
 
     it("应该处理null端点配置", () => {
       mockConfigManager.configExists.mockReturnValue(true);
-      mockConfigManager.getMcpEndpoint.mockReturnValue(null);
+      mockConfigManager.getMcpEndpoints.mockReturnValue([]);
 
       const result = cliModule.checkEnvironment();
-      expect(result).toBe(false);
+      expect(result).toBe(true); // 现在应该继续而不是失败
     });
   });
 
