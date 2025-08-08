@@ -2,8 +2,8 @@
   "extends": "./.releaserc",
   "branches": [
     {
-      "name": "main",
-      "prerelease": "beta"
+      "name": "*",
+      "prerelease": true
     }
   ],
   "plugins": [

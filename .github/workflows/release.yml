@@ -64,10 +64,10 @@ jobs:
         run: |
           if [ "${{ github.event.inputs.version_type }}" = "stable" ]; then
             echo "手动触发稳定版发布"
-            npx semantic-release
+            pnpm run release:dry
           else
             echo "手动触发 beta 版发布"
-            npx semantic-release --extends ./.releaserc.beta.json
+            pnpm run release:dry:beta
           fi
 
       - name: 设置 Docker Buildx
