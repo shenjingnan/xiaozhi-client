@@ -292,10 +292,9 @@ export class ConfigManager {
    * 获取配置（只读）
    */
   public getConfig(): Readonly<AppConfig> {
-    // if (!this.config) {
-    //   this.config = this.loadConfig();
-    // }
-    this.config = this.loadConfig();
+    if (!this.config) {
+      this.config = this.loadConfig();
+    }
 
     // 返回深度只读副本
     return JSON.parse(JSON.stringify(this.config));
@@ -422,7 +421,7 @@ export class ConfigManager {
       throw new Error("MCP 端点必须是非空字符串");
     }
 
-    const config = this.getConfig();
+    const config = this.getMutableConfig();
     const currentEndpoints = this.getMcpEndpoints();
 
     // 检查是否存在
@@ -437,8 +436,8 @@ export class ConfigManager {
     }
 
     const newEndpoints = currentEndpoints.filter((ep) => ep !== endpoint);
-    const newConfig = { ...config, mcpEndpoint: newEndpoints };
-    this.saveConfig(newConfig);
+    config.mcpEndpoint = newEndpoints;
+    this.saveConfig(config);
   }
 
   /**
