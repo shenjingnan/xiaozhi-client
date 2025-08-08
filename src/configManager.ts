@@ -628,7 +628,6 @@ export class ConfigManager {
 
       // 更新缓存
       this.config = config;
-      logger.info("saveConfig", this.config);
 
       // 通知 Web 界面配置已更新（如果 Web 服务器正在运行）
       this.notifyConfigUpdate(config);
