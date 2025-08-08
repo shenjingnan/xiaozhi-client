@@ -79,10 +79,10 @@ jobs:
           else
             if [ "${{ github.event.inputs.version_type }}" = "stable" ]; then
               echo "手动触发稳定版实际发布"
-              pnpm run release
+              # pnpm run release
             else
               echo "手动触发 beta 版实际发布"
-              pnpm run release:beta
+              # pnpm run release:beta
             fi
           fi
 
