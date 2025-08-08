@@ -1,7 +1,7 @@
 {
   "branches": [
     {
-      "name": "*",
+      "name": "feature/*",
       "prerelease": true
     }
   ],
