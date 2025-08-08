@@ -2,13 +2,13 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
-      version_type:
-        description: "Version type to release"
+      branch:
+        description: "Branch to release from"
         required: true
-        default: "stable"
+        default: "main"
         type: choice
         options:
-          - stable
+          - main
           - beta
       dry_run:
         description: "Dry run mode (preview only, no actual release)"
@@ -32,11 +32,12 @@ jobs:
       - name: 检出代码
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.inputs.branch }}
           fetch-depth: 0
 
       - name: 确认当前分支
         run: |
-          echo "手动触发发布，准备发布 ${{ github.event.inputs.version_type }} 版本"
+          echo "手动触发发布，从分支 ${{ github.event.inputs.branch }} 发布"
           echo "Dry run 模式: ${{ github.event.inputs.dry_run }}"
 
       - name: 安装 pnpm
@@ -69,30 +70,20 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            if [ "${{ github.event.inputs.version_type }}" = "stable" ]; then
+            if [ "${{ github.event.inputs.branch }}" = "main" ]; then
               echo "手动触发稳定版 Dry Run（预览模式）"
               pnpm run release:dry
             else
               echo "手动触发 beta 版 Dry Run（预览模式）"
-              # 临时替换配置文件以支持从 feature/docker 分支发布
-              mv .releaserc .releaserc.backup
-              cp .releaserc.beta.json .releaserc
-              pnpm run release:dry
-              # 恢复原始配置文件
-              mv .releaserc.backup .releaserc
+              pnpm run release:dry:beta
             fi
           else
-            if [ "${{ github.event.inputs.version_type }}" = "stable" ]; then
+            if [ "${{ github.event.inputs.branch }}" = "main" ]; then
               echo "手动触发稳定版实际发布"
               # pnpm run release
             else
               echo "手动触发 beta 版实际发布"
-              # 临时替换配置文件以支持从 feature/docker 分支发布
-              mv .releaserc .releaserc.backup
-              cp .releaserc.beta.json .releaserc
-              pnpm run release
-              # 恢复原始配置文件
-              mv .releaserc.backup .releaserc
+              pnpm run release:beta
             fi
           fi
 
@@ -127,6 +118,6 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/xiaozhi-client:latest
             ${{ secrets.DOCKER_USERNAME }}/xiaozhi-client:${{ steps.get_version.outputs.version }}
-            ${{ secrets.DOCKER_USERNAME }}/xiaozhi-client:${{ github.event.inputs.version_type == 'stable' && 'stable' || 'beta' }}
+            ${{ secrets.DOCKER_USERNAME }}/xiaozhi-client:${{ github.event.inputs.branch == 'main' && 'stable' || 'beta' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
