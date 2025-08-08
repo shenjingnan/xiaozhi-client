@@ -23,7 +23,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useMcpEndpoint, useWebSocketConfig } from "@/stores/websocket";
-import { BadgeInfoIcon, CopyIcon, PlusIcon, SettingsIcon, TrashIcon } from "lucide-react";
+import {
+  BadgeInfoIcon,
+  CopyIcon,
+  PlusIcon,
+  SettingsIcon,
+  TrashIcon,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -242,34 +248,33 @@ export function McpEndpointSettingButton() {
         </DialogHeader>
         <div className="flex flex-col gap-2">
           {mcpEndpoints.map((item) => (
-              <div
-                key={item}
-                className="flex items-center justify-between p-4 bg-gray-50 rounded-md font-mono"
-              >
-                <span className="flex-1 text-ellipsis overflow-hidden whitespace-nowrap">
-                  {sliceEndpoint(item)}
-                </span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleCopy(item)}
-                    title="复制完整地址"
-                  >
-                    <CopyIcon className="size-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => openDeleteConfirm(item)}
-                    title="删除此接入点"
-                  >
-                    <TrashIcon className="size-4 text-red-500" />
-                  </Button>
-                </div>
+            <div
+              key={item}
+              className="flex items-center justify-between p-4 bg-gray-50 rounded-md font-mono"
+            >
+              <span className="flex-1 text-ellipsis overflow-hidden whitespace-nowrap">
+                {sliceEndpoint(item)}
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleCopy(item)}
+                  title="复制完整地址"
+                >
+                  <CopyIcon className="size-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => openDeleteConfirm(item)}
+                  title="删除此接入点"
+                >
+                  <TrashIcon className="size-4 text-red-500" />
+                </Button>
               </div>
-            )
-          )}
+            </div>
+          ))}
           {mcpEndpoints.length === 0 && (
             <div className="flex flex-col items-center flex-1 text-sm text-muted-foreground text-center justify-center gap-2">
               <BadgeInfoIcon />

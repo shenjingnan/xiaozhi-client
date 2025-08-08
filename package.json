@@ -36,6 +36,7 @@
     "check:all": "pnpm check && pnpm type:check && pnpm spell:check && pnpm duplicate:check",
     "spell:check": "cspell \"src/**/*.ts\" \"*.md\" \"*.json\"",
     "duplicate:check": "jscpd src/",
+    "docker:update-version": "node scripts/update-dockerfile-version.js",
     "release": "semantic-release"
   },
   "keywords": [
@@ -73,6 +74,7 @@
     "@codecov/vite-plugin": "^1.9.1",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/exec": "^7.1.0",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^11.0.3",
     "@semantic-release/npm": "^12.0.1",

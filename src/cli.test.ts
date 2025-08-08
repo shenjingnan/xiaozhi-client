@@ -185,7 +185,7 @@ describe("CLI 命令行工具", () => {
       "wss://test.example.com/mcp"
     );
     mockConfigManager.getMcpEndpoints.mockReturnValue([
-      "wss://test.example.com/mcp"
+      "wss://test.example.com/mcp",
     ]);
     mockConfigManager.getConfigPath.mockReturnValue(
       "/test/xiaozhi.config.json"
@@ -293,7 +293,7 @@ describe("CLI 命令行工具", () => {
     it("当配置存在且有效时应该通过", () => {
       mockConfigManager.configExists.mockReturnValue(true);
       mockConfigManager.getMcpEndpoints.mockReturnValue([
-        "wss://valid.endpoint.com/mcp"
+        "wss://valid.endpoint.com/mcp",
       ]);
 
       const result = cliModule.checkEnvironment();

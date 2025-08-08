@@ -253,7 +253,7 @@ export class WebServer {
     switch (data.type) {
       case "getConfig": {
         const config = configManager.getConfig();
-        console.log('getConfig ws getConfig', config);
+        console.log("getConfig ws getConfig", config);
         ws.send(JSON.stringify({ type: "config", data: config }));
         break;
       }

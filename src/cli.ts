@@ -170,8 +170,8 @@ export function checkEnvironment(): boolean {
   try {
     // 检查配置是否有效
     const endpoints = configManager.getMcpEndpoints();
-    const validEndpoints = endpoints.filter(endpoint =>
-      endpoint && !endpoint.includes("<请填写")
+    const validEndpoints = endpoints.filter(
+      (endpoint) => endpoint && !endpoint.includes("<请填写")
     );
 
     if (validEndpoints.length === 0) {
@@ -181,9 +181,15 @@ export function checkEnvironment(): boolean {
           '💡 提示: 服务将启动但无法连接小智服务端，请运行 "xiaozhi config mcpEndpoint <your-endpoint-url>" 设置端点'
         )
       );
-      console.log(chalk.gray("   MCP 服务器功能仍然可用，可通过 Web 界面配置端点后重启服务"));
+      console.log(
+        chalk.gray(
+          "   MCP 服务器功能仍然可用，可通过 Web 界面配置端点后重启服务"
+        )
+      );
     } else {
-      console.log(chalk.green(`✅ 已配置 ${validEndpoints.length} 个有效的 MCP 端点`));
+      console.log(
+        chalk.green(`✅ 已配置 ${validEndpoints.length} 个有效的 MCP 端点`)
+      );
     }
     return true;
   } catch (error) {

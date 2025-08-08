@@ -27,6 +27,12 @@
     "@semantic-release/release-notes-generator",
     "@semantic-release/changelog",
     [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "node scripts/update-dockerfile-version.js"
+      }
+    ],
+    [
       "@semantic-release/npm",
       {
         "npmPublish": true
@@ -36,7 +42,7 @@
     [
       "@semantic-release/git",
       {
-        "assets": ["CHANGELOG.md", "package.json", "pnpm-lock.yaml"],
+        "assets": ["CHANGELOG.md", "package.json", "pnpm-lock.yaml", "Dockerfile"],
         "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }
     ]
