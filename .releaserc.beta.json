@@ -1,5 +1,4 @@
 {
-  "extends": "./.releaserc",
   "branches": [
     {
       "name": "*",

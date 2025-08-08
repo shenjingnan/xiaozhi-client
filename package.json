@@ -38,9 +38,9 @@
     "duplicate:check": "jscpd src/",
     "docker:update-version": "node scripts/update-dockerfile-version.js",
     "release": "semantic-release",
-    "release:beta": "semantic-release --extends ./.releaserc.beta.json",
+    "release:beta": "semantic-release",
     "release:dry": "semantic-release --dry-run",
-    "release:dry:beta": "semantic-release --dry-run --extends ./.releaserc.beta.json"
+    "release:dry:beta": "semantic-release --dry-run"
   },
   "keywords": [
     "xiaozhi",
