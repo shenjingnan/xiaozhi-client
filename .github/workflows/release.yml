@@ -10,6 +10,11 @@ on:
         options:
           - stable
           - beta
+      dry_run:
+        description: "Dry run mode (preview only, no actual release)"
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -32,6 +37,7 @@ jobs:
       - name: 确认当前分支
         run: |
           echo "手动触发发布，准备发布 ${{ github.event.inputs.version_type }} 版本"
+          echo "Dry run 模式: ${{ github.event.inputs.dry_run }}"
 
       - name: 安装 pnpm
         uses: pnpm/action-setup@v4
@@ -62,27 +68,37 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          if [ "${{ github.event.inputs.version_type }}" = "stable" ]; then
-            echo "手动触发稳定版发布"
-            pnpm run release:dry
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            if [ "${{ github.event.inputs.version_type }}" = "stable" ]; then
+              echo "手动触发稳定版 Dry Run（预览模式）"
+              pnpm run release:dry
+            else
+              echo "手动触发 beta 版 Dry Run（预览模式）"
+              pnpm run release:dry:beta
+            fi
           else
-            echo "手动触发 beta 版发布"
-            pnpm run release:dry:beta
+            if [ "${{ github.event.inputs.version_type }}" = "stable" ]; then
+              echo "手动触发稳定版实际发布"
+              pnpm run release
+            else
+              echo "手动触发 beta 版实际发布"
+              pnpm run release:beta
+            fi
           fi
 
       - name: 设置 Docker Buildx
-        if: success()
+        if: success() && github.event.inputs.dry_run == 'false'
         uses: docker/setup-buildx-action@v3
 
       - name: 登录 Docker Hub
-        if: success()
+        if: success() && github.event.inputs.dry_run == 'false'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: 获取发布版本号
-        if: success()
+        if: success() && github.event.inputs.dry_run == 'false'
         id: get_version
         run: |
           VERSION=$(node -p "require('./package.json').version")
@@ -90,7 +106,7 @@ jobs:
           echo "发布版本: $VERSION"
 
       - name: 构建并推送 Docker 镜像
-        if: success()
+        if: success() && github.event.inputs.dry_run == 'false'
         uses: docker/build-push-action@v5
         with:
           context: .
