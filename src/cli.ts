@@ -169,15 +169,27 @@ export function checkEnvironment(): boolean {
 
   try {
     // 检查配置是否有效
-    const endpoint = configManager.getMcpEndpoint();
-    if (!endpoint || endpoint.includes("<请填写")) {
-      console.error(chalk.red("❌ 错误: MCP 端点未配置"));
+    const endpoints = configManager.getMcpEndpoints();
+    const validEndpoints = endpoints.filter(
+      (endpoint) => endpoint && !endpoint.includes("<请填写")
+    );
+
+    if (validEndpoints.length === 0) {
+      console.log(chalk.yellow("⚠️ 警告: MCP 端点未配置"));
       console.log(
         chalk.yellow(
-          '💡 提示: 请运行 "xiaozhi config mcpEndpoint <your-endpoint-url>" 设置端点'
+          '💡 提示: 服务将启动但无法连接小智服务端，请运行 "xiaozhi config mcpEndpoint <your-endpoint-url>" 设置端点'
         )
       );
-      return false;
+      console.log(
+        chalk.gray(
+          "   MCP 服务器功能仍然可用，可通过 Web 界面配置端点后重启服务"
+        )
+      );
+    } else {
+      console.log(
+        chalk.green(`✅ 已配置 ${validEndpoints.length} 个有效的 MCP 端点`)
+      );
     }
     return true;
   } catch (error) {
@@ -393,7 +405,7 @@ async function startService(daemon = false, ui = false): Promise<void> {
         stdio: "inherit",
         env: {
           ...process.env,
-          XIAOZHI_CONFIG_DIR: process.cwd(), // 传递用户的当前工作目录
+          XIAOZHI_CONFIG_DIR: process.env.FORCE_CONFIG_DIR || process.cwd(), // 传递用户的当前工作目录
         },
       });
 

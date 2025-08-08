@@ -1,0 +1,63 @@
+services:
+  xiaozhi-client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: xiaozhi-client:latest
+    container_name: xiaozhi-client
+    restart: unless-stopped
+
+    # 端口映射
+    ports:
+      - "9999:9999"  # Web UI 端口
+      - "3000:3000"  # 备用端口
+
+    # 环境变量
+    environment:
+      - NODE_ENV=production
+      - XIAOZHI_WORKSPACE=/workspaces
+      - XIAOZHI_CONTAINER=true
+      - XIAOZHI_CONFIG_DIR=/workspaces
+
+    # 挂载卷
+    volumes:
+      # 日志文件持久化
+      - ./logs:/workspaces/logs
+      # 日志文件持久化（主日志文件）
+      - ./xiaozhi.log:/workspaces/xiaozhi.log
+      # 配置文件持久化（可选，用户可以自定义配置）
+      - ./config:/workspaces/config
+
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "xiaozhi", "--version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    # 网络配置
+    networks:
+      - xiaozhi-network
+
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+# 网络配置
+networks:
+  xiaozhi-network:
+    driver: bridge
+
+# 卷配置
+volumes:
+  xiaozhi-config:
+    driver: local
+  xiaozhi-logs:
+    driver: local

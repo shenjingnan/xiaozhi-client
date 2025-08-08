@@ -92,12 +92,6 @@ export async function main() {
     logger.info("使用环境变量中的 MCP 端点作为备用方案");
   }
 
-  // 验证端点
-  if (endpoints.length === 0) {
-    logger.error("没有配置任何 MCP 端点");
-    process.exit(1);
-  }
-
   // 过滤无效端点
   const validEndpoints = endpoints.filter((endpoint) => {
     if (!endpoint || endpoint.includes("<请填写")) {
@@ -108,11 +102,15 @@ export async function main() {
   });
 
   if (validEndpoints.length === 0) {
-    logger.error("没有有效的 MCP 端点");
-    logger.error(
-      '请运行 "xiaozhi config mcpEndpoint <your-endpoint-url>" 设置端点'
+    logger.warn("没有有效的 MCP 端点，将跳过小智服务端连接");
+    logger.info("MCP 服务器功能仍然可用，可通过 Web 界面配置端点后重启服务");
+    logger.info(
+      '提示: 请运行 "xiaozhi config mcpEndpoint <your-endpoint-url>" 设置端点'
     );
-    process.exit(1);
+
+    // 即使没有端点，也要启动 MCP 服务器代理
+    await startMCPServerProxyOnly(mcpScript);
+    return;
   }
 
   // 统一使用 MultiEndpointMCPPipe 处理所有情况
@@ -134,6 +132,62 @@ export async function main() {
     );
     process.exit(1);
   }
+}
+
+/**
+ * 仅启动 MCP 服务器代理（不连接小智服务端）
+ */
+async function startMCPServerProxyOnly(mcpScript: string): Promise<void> {
+  logger.info("启动 MCP 服务器代理（无小智服务端连接）");
+
+  const { spawn } = await import("node:child_process");
+
+  // 启动 MCP 服务器代理进程
+  const mcpProcess = spawn("node", [mcpScript], {
+    stdio: ["pipe", "inherit", "inherit"],
+    env: {
+      ...process.env,
+      XIAOZHI_CONFIG_DIR: process.env.XIAOZHI_CONFIG_DIR || process.cwd(),
+    },
+  });
+
+  // 设置信号处理器
+  const cleanup = () => {
+    logger.info("正在关闭 MCP 服务器代理...");
+    if (mcpProcess && !mcpProcess.killed) {
+      mcpProcess.kill("SIGTERM");
+      setTimeout(() => {
+        if (!mcpProcess.killed) {
+          mcpProcess.kill("SIGKILL");
+        }
+      }, 5000);
+    }
+    process.exit(0);
+  };
+
+  process.on("SIGINT", cleanup);
+  process.on("SIGTERM", cleanup);
+
+  // 处理进程退出
+  mcpProcess.on("exit", (code, signal) => {
+    logger.warn(`MCP 服务器代理已退出，退出码: ${code}, 信号: ${signal}`);
+    if (signal !== "SIGTERM" && signal !== "SIGKILL") {
+      logger.error("MCP 服务器代理意外退出");
+      process.exit(1);
+    }
+  });
+
+  mcpProcess.on("error", (error) => {
+    logger.error(`MCP 服务器代理错误: ${error.message}`);
+    process.exit(1);
+  });
+
+  logger.info("MCP 服务器代理已启动，等待连接...");
+
+  // 保持进程运行
+  return new Promise<void>(() => {
+    // 这个 Promise 永远不会 resolve，保持进程运行
+  });
 }
 
 // Run if this file is executed directly

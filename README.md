@@ -67,6 +67,104 @@ pnpm install
 npx -y xiaozhi-client start
 ```
 
+### 使用 Docker 运行
+
+我们提供了预配置的 Docker 镜像，可以快速启动 xiaozhi-client 环境。
+
+#### 准备工作
+
+1. **获取小智接入点地址**：
+
+   - 访问 [xiaozhi.me](https://xiaozhi.me) 获取你的接入点地址
+   - 参考文档：[小智 AI 配置 MCP 接入点使用说明](https://ccnphfhqs21z.feishu.cn/wiki/HiPEwZ37XiitnwktX13cEM5KnSb)
+
+2. **创建工作目录**（用于配置文件持久化）：
+
+```bash
+mkdir -p ~/.xiaozhi-client
+```
+
+#### 快速启动
+
+```bash
+# 拉取并运行 Docker 镜像（后台运行）
+docker run -d \
+  --name xiaozhi-client \
+  -p 9999:9999 \
+  -p 3000:3000 \
+  -v ~/.xiaozhi-client:/workspaces \
+  shenjingnan/xiaozhi-client
+```
+
+**端口说明**：
+
+- `9999`：Web UI 配置界面端口
+- `3000`：HTTP Server 模式端口（用于与其他 MCP 客户端集成）
+
+#### 配置服务
+
+容器启动后，有两种方式配置 xiaozhi-client：
+
+##### 方式一：通过 Web UI 配置（推荐）
+
+1. 打开浏览器访问：<http://localhost:9999>
+2. 在 Web UI 界面中设置你的小智接入点地址
+3. 配置其他 MCP 服务（可选）
+
+##### 方式二：直接编辑配置文件
+
+1. 编辑配置文件：
+
+```bash
+# 配置文件位于挂载的工作目录中
+vim ~/.xiaozhi-client/xiaozhi.config.json
+```
+
+2. 修改 `mcpEndpoint` 字段：
+
+```json
+{
+  "mcpEndpoint": "wss://api.xiaozhi.me/mcp/your-endpoint-id",
+  "mcpServers": {
+    // ... 其他配置
+  }
+}
+```
+
+3. 重启容器使配置生效：
+
+```bash
+docker restart xiaozhi-client
+```
+
+#### 常用操作
+
+```bash
+# 查看日志
+docker logs -f xiaozhi-client
+
+# 停止服务
+docker stop xiaozhi-client
+
+# 启动服务
+docker start xiaozhi-client
+
+# 重启服务
+docker restart xiaozhi-client
+
+# 删除容器（注意：配置文件会保留在 ~/.xiaozhi-client 中）
+docker rm -f xiaozhi-client
+
+# 检查服务状态
+docker exec -it xiaozhi-client xiaozhi status
+
+# 列出所有mcp服务
+docker exec -it xiaozhi-client xiaozhi mcp list
+
+# 列出所有mcp所提供的tools
+docker exec -it xiaozhi-client xiaozhi mcp list --tools
+```
+
 ## 可用命令
 
 ```bash

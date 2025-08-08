@@ -421,7 +421,7 @@ export class ConfigManager {
       throw new Error("MCP 端点必须是非空字符串");
     }
 
-    const config = this.getConfig();
+    const config = this.getMutableConfig();
     const currentEndpoints = this.getMcpEndpoints();
 
     // 检查是否存在
@@ -436,8 +436,8 @@ export class ConfigManager {
     }
 
     const newEndpoints = currentEndpoints.filter((ep) => ep !== endpoint);
-    const newConfig = { ...config, mcpEndpoint: newEndpoints };
-    this.saveConfig(newConfig);
+    config.mcpEndpoint = newEndpoints;
+    this.saveConfig(config);
   }
 
   /**
@@ -628,6 +628,9 @@ export class ConfigManager {
 
       // 更新缓存
       this.config = config;
+
+      // 通知 Web 界面配置已更新（如果 Web 服务器正在运行）
+      this.notifyConfigUpdate(config);
     } catch (error) {
       throw new Error(
         `保存配置失败: ${
@@ -808,6 +811,28 @@ export class ConfigManager {
   public getWebUIPort(): number {
     const webUIConfig = this.getWebUIConfig();
     return webUIConfig.port ?? 9999; // 默认端口 9999
+  }
+
+  /**
+   * 通知 Web 界面配置已更新
+   * 如果 Web 服务器正在运行，通过 WebSocket 广播配置更新
+   */
+  private notifyConfigUpdate(config: AppConfig): void {
+    try {
+      // 检查是否有全局的 webServer 实例（当使用 --ui 参数启动时会设置）
+      const webServer = (global as any).__webServer;
+      if (webServer && typeof webServer.broadcastConfigUpdate === "function") {
+        // 调用 webServer 的 broadcastConfigUpdate 方法来通知所有连接的客户端
+        webServer.broadcastConfigUpdate(config);
+        console.log("已通过 WebSocket 广播配置更新");
+      }
+    } catch (error) {
+      // 静默处理错误，不影响配置保存的主要功能
+      console.warn(
+        "通知 Web 界面配置更新失败:",
+        error instanceof Error ? error.message : String(error)
+      );
+    }
   }
 
   /**
