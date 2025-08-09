@@ -1,7 +1,7 @@
 # Xiaozhi Client Docker 运行环境
-# 基于 Node.js 20 Alpine 的预配置容器，用于快速运行 xiaozhi-client
+# 基于 Node.js 20 的预配置容器，用于快速运行 xiaozhi-client
 
-FROM node:20-alpine
+FROM node:20
 
 # 定义 xiaozhi-client 版本号
 # 默认使用当前项目版本，可在构建时通过 --build-arg 覆盖
@@ -9,12 +9,13 @@ FROM node:20-alpine
 ARG XIAOZHI_VERSION=1.5.1
 
 # 安装必要的系统依赖
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y \
     dumb-init \
     git \
+    && rm -rf /var/lib/apt/lists/* \
     && npm install -g pnpm xiaozhi-client@${XIAOZHI_VERSION} \
-    && addgroup -g 1001 xiaozhi \
-    && adduser -D -u 1001 -G xiaozhi xiaozhi
+    && groupadd -g 1001 xiaozhi \
+    && useradd -u 1001 -g xiaozhi -m xiaozhi
 
 # 设置工作目录
 # 推荐挂载点: -v ~/xiaozhi-client:/workspaces
