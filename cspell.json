@@ -2,7 +2,6 @@
   "version": "0.2",
   "language": "en",
   "words": [
-    "findstr",
     "addgroup",
     "adduser",
     "amap",
@@ -12,7 +11,9 @@
     "EPIPE",
     "eventsource",
     "EventSource",
+    "findstr",
     "gaode",
+    "Gitee",
     "healthcheck",
     "HTTPMCP",
     "IMCP",
