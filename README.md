@@ -152,10 +152,7 @@ chmod +x docker-start.sh
 ./docker-start.sh
 
 # 通过位置参数指定版本
-./docker-start.sh v1.2.3
-
-# 通过命名参数指定版本
-./docker-start.sh --version v1.2.3
+./docker-start.sh v1.6.0
 
 # 查看帮助信息
 ./docker-start.sh --help
