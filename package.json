@@ -59,6 +59,7 @@
     "commander": "^14.0.0",
     "comment-json": "^4.2.5",
     "consola": "^3.4.2",
+    "dayjs": "^1.11.13",
     "dotenv": "^16.3.1",
     "eventsource": "^4.0.0",
     "express": "^5.1.0",

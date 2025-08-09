@@ -138,13 +138,36 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
                 {enabledTools.map((tool) => (
                   <div
                     key={tool.toolName}
-                    className="flex items-start justify-between p-4 bg-gray-50 rounded-md font-mono"
+                    className="flex items-start justify-between p-4 bg-slate-50 rounded-md font-mono"
                   >
                     <div className="text-md flex flex-col gap-2">
-                      {tool.toolName}
-                      <p className="text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2 justify-start">
+                        <Badge variant="secondary" className="rounded-md">
+                          {tool.serverName}
+                        </Badge>
+                        <span>{tool.toolName}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground my-2">
                         {tool.description}
                       </p>
+                      <div className="flex items-center gap-4">
+                        <span className="text-sm text-muted-foreground">
+                          <span className="text-muted-foreground">
+                            使用次数:
+                          </span>{" "}
+                          <span className="text-primary font-bold">
+                            {tool.usageCount || 0}
+                          </span>
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          <span className="text-muted-foreground">
+                            最后使用:
+                          </span>{" "}
+                          <span className="text-primary font-bold">
+                            {tool.lastUsedTime || "-"}
+                          </span>
+                        </span>
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-2 ml-4">
@@ -173,7 +196,7 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
                 未使用的工具 ({disabledTools.length})
               </h4>
               {disabledTools.length === 0 && (
-                <div className="flex-1 flex flex-col items-center gap-4 py-20 px-4 bg-gray-50 rounded-md font-mono h-full">
+                <div className="flex-1 flex flex-col items-center gap-4 py-20 px-4 bg-slate-50 rounded-md font-mono h-full">
                   <CoffeeIcon
                     strokeWidth={1.5}
                     size={48}
@@ -188,13 +211,36 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
                 {disabledTools.map((tool) => (
                   <div
                     key={tool.toolName}
-                    className="flex items-start justify-between p-4 bg-gray-50 rounded-md font-mono"
+                    className="flex items-start justify-between p-4 bg-slate-50 rounded-md font-mono"
                   >
                     <div className="text-md flex flex-col gap-2">
-                      {tool.toolName}
+                      <div className="flex items-center gap-2 justify-start">
+                        <Badge variant="secondary" className="rounded-md">
+                          {tool.serverName}
+                        </Badge>
+                        <span>{tool.toolName}</span>
+                      </div>
                       <p className="text-sm text-muted-foreground">
                         {tool.description}
                       </p>
+                      <div className="flex items-center gap-4">
+                        <span className="text-sm text-muted-foreground">
+                          <span className="text-muted-foreground">
+                            使用次数:
+                          </span>{" "}
+                          <span className="text-primary font-bold">
+                            {tool.usageCount || 0}
+                          </span>
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          <span className="text-muted-foreground">
+                            最后使用:
+                          </span>{" "}
+                          <span className="text-primary font-bold">
+                            {tool.lastUsedTime || "-"}
+                          </span>
+                        </span>
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-2 ml-4">

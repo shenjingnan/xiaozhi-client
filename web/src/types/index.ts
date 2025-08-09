@@ -22,6 +22,8 @@ export type MCPServerConfig =
 export interface MCPToolConfig {
   description?: string;
   enable: boolean;
+  usageCount?: number;
+  lastUsedTime?: string;
 }
 
 export interface MCPServerToolsConfig {

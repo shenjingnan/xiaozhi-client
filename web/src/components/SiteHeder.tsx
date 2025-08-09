@@ -19,7 +19,11 @@ export function SiteHeader({ title }: { title: string }) {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <GithubIcon size={24} className="text-gray-500" fill="currentColor" />
+          <GithubIcon
+            size={24}
+            className="text-slate-500"
+            fill="currentColor"
+          />
         </a>
       </div>
     </header>

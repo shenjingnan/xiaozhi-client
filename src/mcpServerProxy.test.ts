@@ -38,6 +38,7 @@ vi.mock("./configManager", () => ({
     getServerToolsConfig: vi.fn(),
     getMcpServerConfig: vi.fn(),
     removeServerToolsConfig: vi.fn(),
+    updateToolUsageStats: vi.fn(),
   },
 }));
 
@@ -1029,6 +1030,14 @@ describe("MCP服务器代理", () => {
         tools: [{ name: "modelscope_server_xzcli_test-tool" }],
         originalTools: [{ name: "test-tool" }],
         start: vi.fn().mockResolvedValue(undefined),
+        getOriginalToolName: vi
+          .fn()
+          .mockImplementation((prefixedName: string) => {
+            if (prefixedName.startsWith("modelscope_server_xzcli_")) {
+              return prefixedName.substring("modelscope_server_xzcli_".length);
+            }
+            return null;
+          }),
       };
       (ModelScopeMCPClient as any).mockReturnValue(mockModelScopeClient);
 
@@ -1104,6 +1113,14 @@ describe("MCP服务器代理", () => {
         originalTools: [{ name: "test-tool" }],
         start: vi.fn().mockResolvedValue(undefined),
         callTool: vi.fn().mockResolvedValue({ result: "success" }),
+        getOriginalToolName: vi
+          .fn()
+          .mockImplementation((prefixedName: string) => {
+            if (prefixedName.startsWith("modelscope_server_xzcli_")) {
+              return prefixedName.substring("modelscope_server_xzcli_".length);
+            }
+            return null;
+          }),
       };
       (ModelScopeMCPClient as any).mockReturnValue(mockModelScopeClient);
 
@@ -1338,6 +1355,162 @@ describe("MCP服务器代理", () => {
       expect(callToolSpy).toHaveBeenCalledWith("test_client_xzcli_test-tool", {
         input: "test input",
       });
+    });
+  });
+
+  describe("工具使用统计", () => {
+    let proxy: MCPServerProxy;
+    let mockClient: any;
+
+    beforeEach(() => {
+      // 设置 mock 配置
+      mockConfigManager.configExists.mockReturnValue(true);
+      mockConfigManager.getMcpServers.mockReturnValue({
+        "test-server": {
+          command: "node",
+          args: ["test.js"],
+        },
+      });
+      mockConfigManager.isToolEnabled.mockReturnValue(true);
+      mockConfigManager.getServerToolsConfig.mockReturnValue({});
+      mockConfigManager.updateToolUsageStats.mockResolvedValue(undefined);
+
+      // 创建 mock 客户端
+      mockClient = {
+        name: "test-server",
+        initialized: true,
+        tools: [{ name: "test-tool", description: "Test tool" }],
+        originalTools: [{ name: "test-tool", description: "Test tool" }],
+        start: vi.fn().mockResolvedValue(undefined),
+        refreshTools: vi.fn().mockResolvedValue(undefined),
+        callTool: vi.fn().mockResolvedValue({ result: "test result" }),
+        stop: vi.fn(),
+        getOriginalToolName: vi
+          .fn()
+          .mockImplementation((prefixedName: string) => {
+            // 默认实现：从 test_server_xzcli_xxx 中提取 xxx
+            if (prefixedName.startsWith("test_server_xzcli_")) {
+              return prefixedName.substring("test_server_xzcli_".length);
+            }
+            return null;
+          }),
+      };
+
+      proxy = new MCPServerProxy();
+      proxy.initialized = true; // 直接设置为已初始化，避免调用 start()
+
+      // 手动设置客户端和工具映射
+      proxy.clients.set("test-server", mockClient);
+      proxy.toolMap.set("test_server_xzcli_test-tool", "test-server");
+    });
+
+    afterEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it("应该在工具调用成功后异步更新使用统计", async () => {
+      // 调用工具
+      const result = await proxy.callTool("test_server_xzcli_test-tool", {
+        input: "test",
+      });
+
+      // 验证工具调用成功
+      expect(result).toEqual({ result: "test result" });
+      expect(mockClient.callTool).toHaveBeenCalledWith(
+        "test_server_xzcli_test-tool",
+        { input: "test" }
+      );
+
+      // 等待异步统计更新完成
+      await new Promise((resolve) => setImmediate(resolve));
+
+      // 验证统计更新被调用，使用原始工具名称（去除前缀）
+      expect(mockConfigManager.updateToolUsageStats).toHaveBeenCalledWith(
+        "test-server",
+        "test-tool", // 应该是原始工具名称，不是带前缀的
+        expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/) // ISO 8601 格式
+      );
+    });
+
+    it("应该在工具调用失败时不更新使用统计", async () => {
+      // 设置工具调用失败
+      mockClient.callTool.mockRejectedValue(new Error("Tool call failed"));
+
+      // 调用工具并期望失败
+      await expect(
+        proxy.callTool("test_server_xzcli_test-tool", { input: "test" })
+      ).rejects.toThrow("Tool call failed");
+
+      // 等待可能的异步操作
+      await new Promise((resolve) => setImmediate(resolve));
+
+      // 验证统计更新没有被调用
+      expect(mockConfigManager.updateToolUsageStats).not.toHaveBeenCalled();
+    });
+
+    it("应该处理统计更新失败的情况", async () => {
+      // 设置统计更新失败
+      mockConfigManager.updateToolUsageStats.mockRejectedValue(
+        new Error("Config update failed")
+      );
+
+      // 调用工具
+      const result = await proxy.callTool("test_server_xzcli_test-tool", {
+        input: "test",
+      });
+
+      // 验证工具调用仍然成功
+      expect(result).toEqual({ result: "test result" });
+
+      // 等待异步统计更新完成
+      await new Promise((resolve) => setImmediate(resolve));
+
+      // 验证统计更新被尝试调用
+      expect(mockConfigManager.updateToolUsageStats).toHaveBeenCalled();
+    });
+
+    it("应该正确处理工具名称映射（去除前缀）", async () => {
+      // 设置 mock 客户端的 getOriginalToolName 方法
+      mockClient.getOriginalToolName.mockImplementation(
+        (prefixedName: string) => {
+          if (prefixedName === "test_server_xzcli_test-tool") {
+            return "test-tool";
+          }
+          return null;
+        }
+      );
+
+      // 调用工具
+      await proxy.callTool("test_server_xzcli_test-tool", { input: "test" });
+
+      // 等待异步统计更新完成
+      await new Promise((resolve) => setImmediate(resolve));
+
+      // 验证使用原始工具名称调用统计更新
+      expect(mockConfigManager.updateToolUsageStats).toHaveBeenCalledWith(
+        "test-server",
+        "test-tool", // 原始工具名称
+        expect.any(String)
+      );
+
+      // 验证 getOriginalToolName 被调用
+      expect(mockClient.getOriginalToolName).toHaveBeenCalledWith(
+        "test_server_xzcli_test-tool"
+      );
+    });
+
+    it("应该在无法获取原始工具名称时跳过统计更新", async () => {
+      // 设置 getOriginalToolName 返回 null
+      mockClient.getOriginalToolName.mockReturnValue(null);
+
+      // 调用工具
+      await proxy.callTool("test_server_xzcli_test-tool", { input: "test" });
+
+      // 等待可能的异步操作
+      await new Promise((resolve) => setImmediate(resolve));
+
+      // 验证统计更新没有被调用
+      expect(mockConfigManager.updateToolUsageStats).not.toHaveBeenCalled();
     });
   });
 });

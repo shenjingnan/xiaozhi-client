@@ -866,6 +866,19 @@ export class MCPServerProxy {
       logger.info(`[代理层] 执行耗时: ${duration}ms`);
       logger.info(`[代理层] 完整结果: ${JSON.stringify(result, null, 2)}`);
 
+      // 异步更新工具使用统计，不阻塞主流程
+      setImmediate(() => {
+        // 获取原始工具名称（去除前缀）
+        const originalToolName = client.getOriginalToolName(toolName);
+        if (originalToolName) {
+          this.updateToolUsageStatsAsync(
+            clientName,
+            originalToolName,
+            new Date().toISOString()
+          );
+        }
+      });
+
       return result;
     } catch (error) {
       const duration = Date.now() - startTime;
@@ -880,6 +893,36 @@ export class MCPServerProxy {
 
       throw error;
     }
+  }
+
+  /**
+   * 异步更新工具使用统计信息
+   * @param serverName 服务名称
+   * @param toolName 工具名称
+   * @param callTime 调用时间（ISO 8601 格式）
+   */
+  private updateToolUsageStatsAsync(
+    serverName: string,
+    toolName: string,
+    callTime: string
+  ): void {
+    // 使用 Promise.resolve().then() 确保异步执行，不阻塞主流程
+    Promise.resolve().then(async () => {
+      try {
+        await configManager.updateToolUsageStats(
+          serverName,
+          toolName,
+          callTime
+        );
+      } catch (error) {
+        // 统计更新失败不应该影响主要功能
+        logger.error(
+          `异步更新工具使用统计失败 (${serverName}/${toolName}): ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+      }
+    });
   }
 
   stop() {

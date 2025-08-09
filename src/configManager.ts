@@ -2,8 +2,10 @@ import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as commentJson from "comment-json";
+import dayjs from "dayjs";
 import JSON5 from "json5";
 import * as json5Writer from "json5-writer";
+import { logger } from "./logger";
 import { validateMcpServerConfig } from "./utils/mcpServerUtils";
 
 // 在 ESM 中，需要从 import.meta.url 获取当前文件目录
@@ -45,6 +47,8 @@ export type MCPServerConfig =
 export interface MCPToolConfig {
   description?: string;
   enable: boolean;
+  usageCount?: number; // 工具使用次数
+  lastUsedTime?: string; // 最后使用时间（ISO 8601 格式）
 }
 
 export interface MCPServerToolsConfig {
@@ -723,6 +727,69 @@ export class ConfigManager {
     // 直接修改现有的 connection 对象以保留注释
     Object.assign(config.connection, connectionConfig);
     this.saveConfig(config);
+  }
+
+  /**
+   * 更新工具使用统计信息
+   * @param serverName 服务名称
+   * @param toolName 工具名称
+   * @param callTime 调用时间（ISO 8601 格式）
+   */
+  public async updateToolUsageStats(
+    serverName: string,
+    toolName: string,
+    callTime: string
+  ): Promise<void> {
+    try {
+      const config = this.getMutableConfig();
+
+      // 确保 mcpServerConfig 存在
+      if (!config.mcpServerConfig) {
+        config.mcpServerConfig = {};
+      }
+
+      // 确保服务配置存在
+      if (!config.mcpServerConfig[serverName]) {
+        config.mcpServerConfig[serverName] = { tools: {} };
+      }
+
+      // 确保工具配置存在
+      if (!config.mcpServerConfig[serverName].tools[toolName]) {
+        config.mcpServerConfig[serverName].tools[toolName] = {
+          enable: true, // 默认启用
+        };
+      }
+
+      const toolConfig = config.mcpServerConfig[serverName].tools[toolName];
+      const currentUsageCount = toolConfig.usageCount || 0;
+      const currentLastUsedTime = toolConfig.lastUsedTime;
+
+      // 更新使用次数
+      toolConfig.usageCount = currentUsageCount + 1;
+
+      // 时间校验：只有新时间晚于现有时间才更新 lastUsedTime
+      if (
+        !currentLastUsedTime ||
+        new Date(callTime) > new Date(currentLastUsedTime)
+      ) {
+        // 使用 dayjs 格式化时间为更易读的格式
+        toolConfig.lastUsedTime = dayjs(callTime).format("YYYY-MM-DD HH:mm:ss");
+      }
+
+      // 保存配置
+      this.saveConfig(config);
+
+      logger.debug(
+        `工具使用统计已更新: ${serverName}/${toolName}, 使用次数: ${toolConfig.usageCount}`
+      );
+    } catch (error) {
+      // 错误不应该影响主要的工具调用流程
+      logger.error(
+        `更新工具使用统计失败 (${serverName}/${toolName}): ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
   }
 
   /**

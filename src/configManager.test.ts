@@ -6,6 +6,8 @@ import {
   writeFileSync,
 } from "node:fs";
 import { resolve } from "node:path";
+import dayjs from "dayjs";
+import JSON5 from "json5";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   type AppConfig,
@@ -1793,6 +1795,138 @@ describe("ConfigManager", () => {
         expect(() => configManager.removeMcpEndpoint("")).toThrow(
           "MCP 端点必须是非空字符串"
         );
+      });
+    });
+  });
+
+  describe("工具使用统计", () => {
+    beforeEach(() => {
+      mockExistsSync.mockReturnValue(true);
+      mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+      mockResolve.mockImplementation((...args) => args.join("/"));
+    });
+
+    describe("updateToolUsageStats", () => {
+      it("应该为新工具初始化使用统计", async () => {
+        const callTime = "2023-12-01T10:00:00.000Z";
+        const expectedFormattedTime = dayjs(callTime).format(
+          "YYYY-MM-DD HH:mm:ss"
+        );
+
+        await configManager.updateToolUsageStats(
+          "test-server",
+          "new-tool",
+          callTime
+        );
+
+        expect(mockWriteFileSync).toHaveBeenCalled();
+        const savedConfig = JSON5.parse(
+          mockWriteFileSync.mock.calls[0][1] as string
+        );
+
+        expect(
+          savedConfig.mcpServerConfig["test-server"].tools["new-tool"]
+        ).toEqual({
+          enable: true,
+          usageCount: 1,
+          lastUsedTime: expectedFormattedTime,
+        });
+      });
+
+      it("应该增加现有工具的使用次数", async () => {
+        const initialConfig = {
+          ...mockConfig,
+          mcpServerConfig: {
+            "test-server": {
+              tools: {
+                "existing-tool": {
+                  enable: true,
+                  usageCount: 5,
+                  lastUsedTime: "2023-11-01 10:00:00", // 使用新格式
+                },
+              },
+            },
+          },
+        };
+        mockReadFileSync.mockReturnValue(JSON.stringify(initialConfig));
+
+        const callTime = "2023-12-01T10:00:00.000Z";
+        const expectedFormattedTime = dayjs(callTime).format(
+          "YYYY-MM-DD HH:mm:ss"
+        );
+
+        await configManager.updateToolUsageStats(
+          "test-server",
+          "existing-tool",
+          callTime
+        );
+
+        expect(mockWriteFileSync).toHaveBeenCalled();
+        const savedConfig = JSON5.parse(
+          mockWriteFileSync.mock.calls[0][1] as string
+        );
+
+        expect(
+          savedConfig.mcpServerConfig["test-server"].tools["existing-tool"]
+        ).toEqual({
+          enable: true,
+          usageCount: 6,
+          lastUsedTime: expectedFormattedTime,
+        });
+      });
+
+      it("应该在新时间早于现有时间时跳过 lastUsedTime 更新", async () => {
+        const existingFormattedTime = "2023-12-01 10:00:00"; // 使用新格式
+        const initialConfig = {
+          ...mockConfig,
+          mcpServerConfig: {
+            "test-server": {
+              tools: {
+                "existing-tool": {
+                  enable: true,
+                  usageCount: 5,
+                  lastUsedTime: existingFormattedTime,
+                },
+              },
+            },
+          },
+        };
+        mockReadFileSync.mockReturnValue(JSON.stringify(initialConfig));
+
+        const earlierTime = "2023-11-01T10:00:00.000Z";
+        await configManager.updateToolUsageStats(
+          "test-server",
+          "existing-tool",
+          earlierTime
+        );
+
+        expect(mockWriteFileSync).toHaveBeenCalled();
+        const savedConfig = JSON5.parse(
+          mockWriteFileSync.mock.calls[0][1] as string
+        );
+
+        expect(
+          savedConfig.mcpServerConfig["test-server"].tools["existing-tool"]
+        ).toEqual({
+          enable: true,
+          usageCount: 6,
+          lastUsedTime: existingFormattedTime, // 应该保持原来的时间
+        });
+      });
+
+      it("应该处理配置文件不存在的情况", async () => {
+        mockExistsSync.mockReturnValue(false);
+
+        const callTime = "2023-12-01T10:00:00.000Z";
+
+        // 应该不抛出异常
+        await expect(
+          configManager.updateToolUsageStats(
+            "test-server",
+            "test-tool",
+            callTime
+          )
+        ).resolves.not.toThrow();
       });
     });
   });
