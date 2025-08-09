@@ -208,7 +208,7 @@ export class ConfigManager {
       // 移除可能存在的UTF-8 BOM字符（\uFEFF）
       // BOM字符在某些编辑器中不可见，但会导致JSON解析失败
       // 这个过滤确保即使文件包含BOM字符也能正常解析
-      const configData = rawConfigData.replace(/^\uFEFF/, '');
+      const configData = rawConfigData.replace(/^\uFEFF/, "");
 
       let config: AppConfig;
 
