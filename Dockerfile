@@ -15,11 +15,14 @@ RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debia
     sed -i 's/security.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources
 
 # 配置 npm 和 pnpm 使用国内镜像源
-RUN npm config set registry https://registry.npmmirror.com && \
-    npm config set disturl https://npmmirror.com/dist && \
-    npm config set electron_mirror https://npmmirror.com/mirrors/electron/ && \
-    npm config set sass_binary_site https://npmmirror.com/mirrors/node-sass/ && \
-    npm config set phantomjs_cdnurl https://npmmirror.com/mirrors/phantomjs/
+# 设置 npm 注册表镜像
+RUN npm config set registry https://registry.npmmirror.com
+
+# 设置 node-gyp 相关的环境变量用于二进制文件下载镜像
+ENV npm_config_dist_url=https://npmmirror.com/dist \
+    npm_config_electron_mirror=https://npmmirror.com/mirrors/electron/ \
+    npm_config_sass_binary_site=https://npmmirror.com/mirrors/node-sass/ \
+    npm_config_phantomjs_cdnurl=https://npmmirror.com/mirrors/phantomjs/
 
 # 安装必要的系统依赖和 Python3
 RUN apt-get update && apt-get install -y \
