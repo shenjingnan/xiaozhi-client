@@ -71,20 +71,29 @@ npx -y xiaozhi-client start
 
 我们提供了预配置的 Docker 镜像，可以快速启动 xiaozhi-client 环境。
 
-#### 准备工作
+#### 快速启动
 
-1. **获取小智接入点地址**：
-
-   - 访问 [xiaozhi.me](https://xiaozhi.me) 获取你的接入点地址
-   - 参考文档：[小智 AI 配置 MCP 接入点使用说明](https://ccnphfhqs21z.feishu.cn/wiki/HiPEwZ37XiitnwktX13cEM5KnSb)
-
-2. **创建工作目录**（用于配置文件持久化）：
+**方式一：使用启动脚本（推荐）**
 
 ```bash
-mkdir -p ~/.xiaozhi-client
+# 下载并运行启动脚本
+curl -fsSL https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docker-start.sh | bash
 ```
 
-#### 快速启动
+**方式二：使用 Docker Compose**
+
+```bash
+# 使用 Docker Compose 启动
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down
+```
+
+**方式三：手动启动**
 
 ```bash
 # 拉取并运行 Docker 镜像（后台运行）
@@ -92,7 +101,7 @@ docker run -d \
   --name xiaozhi-client \
   -p 9999:9999 \
   -p 3000:3000 \
-  -v ~/.xiaozhi-client:/workspaces \
+  -v ~/xiaozhi-client:/workspaces \
   shenjingnan/xiaozhi-client
 ```
 
@@ -117,7 +126,7 @@ docker run -d \
 
 ```bash
 # 配置文件位于挂载的工作目录中
-vim ~/.xiaozhi-client/xiaozhi.config.json
+vim ~/xiaozhi-client/xiaozhi.config.json
 ```
 
 2. 修改 `mcpEndpoint` 字段：
@@ -152,7 +161,7 @@ docker start xiaozhi-client
 # 重启服务
 docker restart xiaozhi-client
 
-# 删除容器（注意：配置文件会保留在 ~/.xiaozhi-client 中）
+# 删除容器（注意：配置文件会保留在 ~/xiaozhi-client 中）
 docker rm -f xiaozhi-client
 
 # 检查服务状态
