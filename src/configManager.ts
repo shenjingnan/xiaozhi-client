@@ -292,9 +292,7 @@ export class ConfigManager {
    * 获取配置（只读）
    */
   public getConfig(): Readonly<AppConfig> {
-    if (!this.config) {
-      this.config = this.loadConfig();
-    }
+    this.config = this.loadConfig();
 
     // 返回深度只读副本
     return JSON.parse(JSON.stringify(this.config));
