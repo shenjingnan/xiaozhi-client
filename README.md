@@ -5,7 +5,7 @@
 [![CI](https://github.com/shenjingnan/xiaozhi-client/workflows/Release/badge.svg)](https://github.com/shenjingnan/xiaozhi-client/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-<img src="https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/qq-group-qrcode.jpg" alt="QQ群" width="200"/>
+<img src="https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/qq-group-qrcode.jpg" alt="QQ群" width="300"/>
 
 小智 AI 客户端，目前主要用于 MCP 的对接
 
@@ -74,7 +74,7 @@ npx -y xiaozhi-client start
 #### 前置要求
 
 - 已安装 Docker
-- 已获取小智接入点地址（参见下方"获取小智接入点地址"部分）
+- 已获取小智接入点地址（参见下方"[获取小智接入点地址](#获取小智接入点地址)"部分）
 
 #### 快速启动
 
@@ -164,19 +164,10 @@ docker run -d \
 # 创建配置文件
 cat > ~/xiaozhi-client/xiaozhi.config.json << 'EOF'
 {
-  "mcpEndpoint": "<请填写你的接入点地址>",
-  "mcpServers": {
-    "calculator": {
-      "command": "node",
-      "args": ["./mcpServers/calculator.js"]
-    },
-    "datetime": {
-      "command": "node",
-      "args": ["./mcpServers/datetime.js"]
-    }
-  },
+  "mcpEndpoint": "",
+  "mcpServers": {},
   "modelscope": {
-    "apiKey": "<你的API密钥>"
+    "apiKey": ""
   },
   "connection": {
     "heartbeatInterval": 30000,
