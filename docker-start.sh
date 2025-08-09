@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Xiaozhi Client Docker 启动脚本
-# 使用改进的挂载点配置
+# 使用改进的挂载点配置，支持自定义镜像版本
 
 set -e
 
@@ -15,13 +15,115 @@ NC='\033[0m' # No Color
 # 配置
 CONTAINER_NAME="xiaozhi-client"
 IMAGE_NAME="shenjingnan/xiaozhi-client"
-IMAGE_TAG="latest"
+IMAGE_TAG="latest"  # 默认版本，可通过参数覆盖
 WORKSPACE_DIR="$HOME/xiaozhi-client"
 WEB_PORT="9999"
 HTTP_PORT="3000"
 
+# 显示帮助信息
+show_help() {
+    echo -e "${BLUE}Xiaozhi Client Docker 启动脚本${NC}"
+    echo "=================================="
+    echo ""
+    echo "使用方法:"
+    echo "  $0                        # 使用默认版本 (latest)"
+    echo "  $0 <version>              # 通过位置参数指定版本号"
+    echo "  $0 --version <version>    # 通过命名参数指定版本号"
+    echo "  $0 --help|-h              # 显示此帮助信息"
+    echo ""
+    echo "版本号格式示例:"
+    echo "  • 语义化版本: v1.2.3, 1.2.3"
+    echo "  • 预发布版本: v1.2.3-alpha, v1.2.3-beta.1"
+    echo "  • 特殊标签: latest, stable, dev, main"
+    echo "  • Git commit: abc123f"
+    echo ""
+    echo "使用示例:"
+    echo "  $0                        # 使用 latest 版本"
+    echo "  $0 v1.2.3                 # 使用 v1.2.3 版本"
+    echo "  $0 --version stable       # 使用 stable 版本"
+    echo ""
+}
+
+# 验证版本号格式
+validate_version() {
+    local version="$1"
+
+    # 允许的格式：
+    # 1. 语义化版本：v1.2.3, 1.2.3 (可选的v前缀，可选的预发布标识和构建元数据)
+    # 2. 特殊标签：latest, stable, dev, main
+    # 3. Git commit hash：6-40位十六进制字符
+    if [[ "$version" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9\.-]+)?(\+[a-zA-Z0-9\.-]+)?$ ]] || \
+       [[ "$version" =~ ^(latest|stable|dev|main)$ ]] || \
+       [[ "$version" =~ ^[a-f0-9]{6,40}$ ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# 参数解析
+IMAGE_TAG_SET=false
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --help|-h)
+            show_help
+            exit 0
+            ;;
+        --version)
+            if [[ -n "$2" && ! "$2" =~ ^- ]]; then
+                IMAGE_TAG="$2"
+                IMAGE_TAG_SET=true
+                shift 2
+            else
+                echo -e "${RED}❌ 错误：--version 参数需要指定版本号${NC}"
+                echo ""
+                show_help
+                exit 1
+            fi
+            ;;
+        -*)
+            echo -e "${RED}❌ 错误：未知参数 $1${NC}"
+            echo ""
+            show_help
+            exit 1
+            ;;
+        *)
+            # 位置参数
+            if [[ "$IMAGE_TAG_SET" == "false" ]]; then
+                IMAGE_TAG="$1"
+                IMAGE_TAG_SET=true
+                shift
+            else
+                echo -e "${RED}❌ 错误：只能指定一个版本号${NC}"
+                echo ""
+                show_help
+                exit 1
+            fi
+            ;;
+    esac
+done
+
+# 验证版本号格式
+if ! validate_version "$IMAGE_TAG"; then
+    echo -e "${RED}❌ 错误：无效的版本号格式: $IMAGE_TAG${NC}"
+    echo ""
+    echo "支持的版本号格式："
+    echo "  • 语义化版本: v1.2.3, 1.2.3"
+    echo "  • 预发布版本: v1.2.3-alpha, v1.2.3-beta.1"
+    echo "  • 特殊标签: latest, stable, dev, main"
+    echo "  • Git commit: abc123f"
+    echo ""
+    show_help
+    exit 1
+fi
+
+
+
 echo -e "${BLUE}🚀 Xiaozhi Client Docker 启动脚本${NC}"
 echo "=================================="
+echo -e "${BLUE}📦 使用镜像版本: ${GREEN}$IMAGE_TAG${NC}"
+echo ""
 
 # 检查 Docker 是否安装
 if ! command -v docker &> /dev/null; then
@@ -40,7 +142,7 @@ if docker ps -a --format 'table {{.Names}}' | grep -q "^$CONTAINER_NAME$"; then
     docker rm "$CONTAINER_NAME" 2>/dev/null || true
 fi
 
-# 拉取最新镜像
+# 拉取指定版本的镜像
 echo -e "${YELLOW}📥 拉取镜像: $IMAGE_NAME:$IMAGE_TAG${NC}"
 docker pull "$IMAGE_NAME:$IMAGE_TAG"
 
