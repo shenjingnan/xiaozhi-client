@@ -1,10 +1,6 @@
 services:
   xiaozhi-client:
     image: shenjingnan/xiaozhi-client:latest
-    # 如果需要本地构建，取消注释以下行：
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
     container_name: xiaozhi-client
     restart: unless-stopped
 
