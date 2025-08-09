@@ -36,10 +36,16 @@ RUN apt-get update && apt-get install -y \
     && pip3 config set global.trusted-host pypi.tuna.tsinghua.edu.cn \
     && ln -sf /usr/bin/python3 /usr/bin/python \
     && ln -sf /usr/bin/pip3 /usr/bin/pip \
+    && pip3 install --break-system-packages uv \
     && npm install -g pnpm xiaozhi-client@${XIAOZHI_VERSION} \
     && pnpm config set registry https://registry.npmmirror.com \
     && groupadd -g 1001 xiaozhi \
     && useradd -u 1001 -g xiaozhi -m xiaozhi
+
+# 验证工具可用性
+RUN npx --version && echo "✓ npx is available" \
+    && uv --version && echo "✓ uv is available" \
+    && uvx --version && echo "✓ uvx is available"
 
 # 设置工作目录
 # 推荐挂载点: -v ~/xiaozhi-client:/workspaces
