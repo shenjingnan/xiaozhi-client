@@ -250,7 +250,7 @@ export function McpEndpointSettingButton() {
           {mcpEndpoints.map((item) => (
             <div
               key={item}
-              className="flex items-center justify-between p-4 bg-gray-50 rounded-md font-mono"
+              className="flex items-center justify-between p-4 bg-slate-50 rounded-md font-mono"
             >
               <span className="flex-1 text-ellipsis overflow-hidden whitespace-nowrap">
                 {sliceEndpoint(item)}
