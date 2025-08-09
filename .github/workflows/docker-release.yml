@@ -1,0 +1,165 @@
+name: Docker 发布
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "要发布的版本号（不带 'v' 前缀，例如：1.2.3）"
+        required: false
+        type: string
+      branch:
+        description: "发布源分支"
+        required: true
+        default: "main"
+        type: choice
+        options:
+          - main
+          - beta
+      force_latest:
+        description: "强制更新 latest 标签（即使是 beta 版本）"
+        required: false
+        default: false
+        type: boolean
+  workflow_run:
+    workflows: ["NPM 发布"]
+    types:
+      - completed
+    branches: [main, beta]
+
+permissions:
+  contents: read
+
+jobs:
+  docker-release:
+    name: Docker 发布
+    runs-on: ubuntu-latest
+    # 只有在 NPM 发布成功完成或手动触发时才运行
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.event.workflow_run.head_branch }}
+          fetch-depth: 0
+
+      - name: 确认触发方式和分支
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "手动触发 Docker 发布，从分支 ${{ github.event.inputs.branch }} 发布"
+            echo "指定版本: ${{ github.event.inputs.version || '自动获取' }}"
+            echo "强制更新 latest: ${{ github.event.inputs.force_latest }}"
+          else
+            echo "由 NPM 发布工作流自动触发 Docker 发布"
+            echo "触发分支: ${{ github.event.workflow_run.head_branch }}"
+          fi
+
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 构建项目
+        run: pnpm run build
+
+      - name: 获取版本号
+        id: get_version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            # 手动指定版本号
+            VERSION="${{ github.event.inputs.version }}"
+            echo "使用手动指定的版本号: $VERSION"
+          else
+            # 从 package.json 自动获取版本号
+            VERSION=$(node -p "require('./package.json').version")
+            echo "从 package.json 获取版本号: $VERSION"
+          fi
+
+          # 生成带 v 前缀的版本号用于 Docker 标签
+          VERSION_WITH_V="v$VERSION"
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version_with_v=$VERSION_WITH_V" >> $GITHUB_OUTPUT
+          echo "Docker 发布版本: $VERSION_WITH_V"
+
+      - name: 确定分支类型
+        id: branch_info
+        run: |
+          if [ "${{ github.event.inputs.branch }}" = "main" ] || [ "${{ github.event.workflow_run.head_branch }}" = "main" ]; then
+            echo "branch_type=stable" >> $GITHUB_OUTPUT
+            echo "is_main_branch=true" >> $GITHUB_OUTPUT
+            echo "分支类型: stable (main)"
+          else
+            echo "branch_type=beta" >> $GITHUB_OUTPUT
+            echo "is_main_branch=false" >> $GITHUB_OUTPUT
+            echo "分支类型: beta"
+          fi
+
+      - name: 设置 Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 登录 Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: 生成 Docker 标签
+        id: docker_tags
+        run: |
+          USERNAME="${{ secrets.DOCKER_USERNAME }}"
+          VERSION="${{ steps.get_version.outputs.version }}"
+          VERSION_WITH_V="${{ steps.get_version.outputs.version_with_v }}"
+          BRANCH_TYPE="${{ steps.branch_info.outputs.branch_type }}"
+          IS_MAIN="${{ steps.branch_info.outputs.is_main_branch }}"
+          FORCE_LATEST="${{ github.event.inputs.force_latest }}"
+
+          # 基础标签：版本号（带 v 前缀）和分支类型
+          TAGS="$USERNAME/xiaozhi-client:$VERSION_WITH_V,$USERNAME/xiaozhi-client:$BRANCH_TYPE"
+
+          # 如果是 main 分支或强制更新 latest，添加 latest 标签
+          if [ "$IS_MAIN" = "true" ] || [ "$FORCE_LATEST" = "true" ]; then
+            TAGS="$TAGS,$USERNAME/xiaozhi-client:latest"
+          fi
+
+          echo "tags=$TAGS" >> $GITHUB_OUTPUT
+          echo "生成的 Docker 标签:"
+          echo "$TAGS" | tr ',' '\n' | sed 's/^/  - /'
+
+      - name: 构建并推送 Docker 镜像
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            XIAOZHI_VERSION=${{ steps.get_version.outputs.version }}
+          tags: ${{ steps.docker_tags.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: 发布总结
+        run: |
+          echo "🎉 Docker 镜像发布完成！"
+          echo ""
+          echo "📦 发布信息:"
+          echo "  版本号: ${{ steps.get_version.outputs.version_with_v }}"
+          echo "  分支: ${{ github.event.inputs.branch || github.event.workflow_run.head_branch }}"
+          echo "  分支类型: ${{ steps.branch_info.outputs.branch_type }}"
+          echo ""
+          echo "🏷️ Docker 标签:"
+          echo "${{ steps.docker_tags.outputs.tags }}" | tr ',' '\n' | sed 's/^/  - /'
+          echo ""
+          echo "🚀 使用方法:"
+          echo "  docker pull ${{ secrets.DOCKER_USERNAME }}/xiaozhi-client:${{ steps.get_version.outputs.version_with_v }}"
+          echo "  docker run -it ${{ secrets.DOCKER_USERNAME }}/xiaozhi-client:${{ steps.get_version.outputs.version_with_v }}"

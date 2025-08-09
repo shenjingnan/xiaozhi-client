@@ -140,6 +140,12 @@ npx -y xiaozhi-client start
 curl -fsSL https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docker-start.sh | bash
 ```
 
+> 无法访问 `Github` 可以使用 `Gitee` 替代
+
+```bash
+curl -fsSL https://gitee.com/shenjingnan/xiaozhi-client/raw/main/docker-start.sh | bash
+```
+
 **指定版本运行：**
 
 启动脚本现在支持灵活的版本指定方式：
@@ -147,6 +153,11 @@ curl -fsSL https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/doc
 ```bash
 # 下载脚本
 curl -fsSL https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docker-start.sh -o docker-start.sh
+
+# 下载脚本（Gitee）
+curl -fsSL https://gitee.com/shenjingnan/xiaozhi-client/raw/main/docker-start.sh | bash
+
+# 为脚本设置可执行权限
 chmod +x docker-start.sh
 
 # 使用默认版本 (latest)
@@ -166,6 +177,9 @@ chmod +x docker-start.sh
 ```bash
 # 下载 docker-compose.yml 文件
 curl -O https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docker-compose.yml
+
+# 下载 docker-compose.yml 文件（Gitee）
+curl -O https://gitee.com/shenjingnan/xiaozhi-client/raw/main/docker-compose.yml
 
 # 使用 Docker Compose 启动
 docker-compose up -d

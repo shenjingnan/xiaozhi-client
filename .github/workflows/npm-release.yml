@@ -1,9 +1,10 @@
-name: Release
+name: NPM 发布
+
 on:
   workflow_dispatch:
     inputs:
       branch:
-        description: "Branch to release from"
+        description: "发布源分支"
         required: true
         default: "main"
         type: choice
@@ -11,7 +12,7 @@ on:
           - main
           - beta
       dry_run:
-        description: "Dry run mode (preview only, no actual release)"
+        description: "预演模式（仅预览，不实际发布）"
         required: true
         default: false
         type: boolean
@@ -20,14 +21,17 @@ permissions:
   contents: read
 
 jobs:
-  release:
-    name: Release
+  npm-release:
+    name: NPM 发布
     runs-on: ubuntu-latest
     permissions:
       contents: write
       issues: write
       pull-requests: write
       id-token: write
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+      release_created: ${{ steps.release_check.outputs.release_created }}
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
@@ -37,8 +41,8 @@ jobs:
 
       - name: 确认当前分支
         run: |
-          echo "手动触发发布，从分支 ${{ github.event.inputs.branch }} 发布"
-          echo "Dry run 模式: ${{ github.event.inputs.dry_run }}"
+          echo "手动触发 NPM 发布，从分支 ${{ github.event.inputs.branch }} 发布"
+          echo "预演模式: ${{ github.event.inputs.dry_run }}"
 
       - name: 安装 pnpm
         uses: pnpm/action-setup@v4
@@ -64,39 +68,28 @@ jobs:
       - name: 验证已安装依赖项的来源证明和注册中心签名的完整性
         run: pnpm audit signatures
 
-      - name: Release
+      - name: NPM 发布
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
             if [ "${{ github.event.inputs.branch }}" = "main" ]; then
-              echo "手动触发稳定版 Dry Run（预览模式）"
+              echo "手动触发稳定版预演（预览模式）"
               pnpm run release:dry
             else
-              echo "手动触发 beta 版 Dry Run（预览模式）"
+              echo "手动触发 beta 版预演（预览模式）"
               pnpm run release:dry:beta
             fi
           else
             if [ "${{ github.event.inputs.branch }}" = "main" ]; then
               echo "手动触发稳定版实际发布"
-              # pnpm run release
+              pnpm run release
             else
               echo "手动触发 beta 版实际发布"
               pnpm run release:beta
             fi
           fi
-
-      - name: 设置 Docker Buildx
-        if: success() && github.event.inputs.dry_run == 'false'
-        uses: docker/setup-buildx-action@v3
-
-      - name: 登录 Docker Hub
-        if: success() && github.event.inputs.dry_run == 'false'
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: 获取发布版本号
         if: success() && github.event.inputs.dry_run == 'false'
@@ -104,20 +97,38 @@ jobs:
         run: |
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "发布版本: $VERSION"
+          echo "NPM 发布版本: $VERSION"
 
-      - name: 构建并推送 Docker 镜像
+      - name: 检查是否有新版本发布
         if: success() && github.event.inputs.dry_run == 'false'
-        uses: docker/build-push-action@v5
+        id: release_check
+        run: |
+          # 检查是否有新的 release 被创建（通过检查最新的 git tag）
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          CURRENT_VERSION="${{ steps.get_version.outputs.version }}"
+
+          if [ "$LATEST_TAG" = "v$CURRENT_VERSION" ]; then
+            echo "release_created=true" >> $GITHUB_OUTPUT
+            echo "✅ 新版本 v$CURRENT_VERSION 已发布"
+          else
+            echo "release_created=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ 没有新版本发布"
+          fi
+
+      - name: 触发 Docker 发布
+        if: success() && github.event.inputs.dry_run == 'false' && steps.release_check.outputs.release_created == 'true'
+        uses: actions/github-script@v7
         with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          build-args: |
-            XIAOZHI_VERSION=${{ steps.get_version.outputs.version }}
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/xiaozhi-client:latest
-            ${{ secrets.DOCKER_USERNAME }}/xiaozhi-client:${{ steps.get_version.outputs.version }}
-            ${{ secrets.DOCKER_USERNAME }}/xiaozhi-client:${{ github.event.inputs.branch == 'main' && 'stable' || 'beta' }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          github-token: ${{ secrets.GH_TOKEN }}
+          script: |
+            const result = await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'docker-release.yml',
+              ref: '${{ github.event.inputs.branch }}',
+              inputs: {
+                version: '${{ steps.get_version.outputs.version }}',
+                branch: '${{ github.event.inputs.branch }}'
+              }
+            });
+            console.log('✅ 已触发 Docker 发布工作流');
