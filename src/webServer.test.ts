@@ -56,7 +56,14 @@ describe("WebServer", () => {
 
   afterEach(async () => {
     if (webServer) {
-      await webServer.stop();
+      try {
+        await webServer.stop();
+        // 添加短暂延迟确保端口完全释放
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      } catch (error) {
+        console.warn("Failed to stop webServer in afterEach:", error);
+      }
+      webServer = null as any;
     }
     vi.clearAllMocks();
   });
@@ -239,7 +246,7 @@ describe("WebServer", () => {
     });
 
     it("should not trigger automatic restart when config is updated", async () => {
-      webServer = new WebServer(9992);
+      webServer = new WebServer(9989);
       await webServer.start();
 
       const newConfig = {
@@ -248,7 +255,7 @@ describe("WebServer", () => {
         webUI: { autoRestart: true },
       };
 
-      const response = await fetch("http://localhost:9992/api/config", {
+      const response = await fetch("http://localhost:9989/api/config", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newConfig),
@@ -266,7 +273,7 @@ describe("WebServer", () => {
     });
 
     it("should save config without restart regardless of autoRestart setting", async () => {
-      webServer = new WebServer(9993);
+      webServer = new WebServer(9988);
       await webServer.start();
 
       const newConfig = {
@@ -275,7 +282,7 @@ describe("WebServer", () => {
         webUI: { autoRestart: false },
       };
 
-      const response = await fetch("http://localhost:9993/api/config", {
+      const response = await fetch("http://localhost:9988/api/config", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newConfig),
@@ -292,11 +299,11 @@ describe("WebServer", () => {
     });
 
     it("should broadcast restart status updates on manual restart", async () => {
-      webServer = new WebServer(9994);
+      webServer = new WebServer(9987);
       await webServer.start();
 
       // Connect a WebSocket client
-      const ws = new WebSocket("ws://localhost:9994");
+      const ws = new WebSocket("ws://localhost:9987");
       const messages: any[] = [];
 
       await new Promise<void>((resolve) => {
@@ -329,11 +336,11 @@ describe("WebServer", () => {
     });
 
     it("should start service on manual restart if not running", async () => {
-      webServer = new WebServer(9995);
+      webServer = new WebServer(9986);
       await webServer.start();
 
       // Connect a WebSocket client
-      const ws = new WebSocket("ws://localhost:9995");
+      const ws = new WebSocket("ws://localhost:9986");
 
       await new Promise<void>((resolve) => {
         ws.on("open", resolve);
