@@ -3,13 +3,56 @@
 [![npm version](https://badge.fury.io/js/xiaozhi-client.svg)](https://badge.fury.io/js/xiaozhi-client)
 [![codecov](https://codecov.io/gh/shenjingnan/xiaozhi-client/branch/main/graph/badge.svg)](https://codecov.io/gh/shenjingnan/xiaozhi-client)
 [![CI](https://github.com/shenjingnan/xiaozhi-client/workflows/Release/badge.svg)](https://github.com/shenjingnan/xiaozhi-client/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 <img src="https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/qq-group-qrcode.jpg" alt="QQ群" width="300"/>
 
 小智 AI 客户端，目前主要用于 MCP 的对接
 
 ![效果图](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/preview.png)
+
+## 目录
+
+- [功能特色](#功能特色)
+- [快速上手](#快速上手)
+  - [全局安装 xiaozhi-client 命令行工具](#全局安装-xiaozhi-client-命令行工具)
+  - [通过 npx 直接运行](#通过-npx-直接运行)
+  - [使用 Docker 运行](#使用-docker-运行)
+    - [前置要求](#前置要求)
+    - [快速启动](#快速启动)
+    - [获取小智接入点地址](#获取小智接入点地址)
+    - [配置服务](#配置服务)
+      - [方式一：通过 Web UI 配置（推荐）](#方式一通过-web-ui-配置推荐)
+      - [方式二：直接编辑配置文件](#方式二直接编辑配置文件)
+    - [常用操作](#常用操作)
+    - [故障排除](#故障排除)
+- [可用命令](#可用命令)
+- [多接入点配置](#多接入点配置)
+  - [配置方式](#配置方式)
+    - [方式一：单接入点配置（字符串）](#方式一单接入点配置字符串)
+    - [方式二：多接入点配置（字符串数组）](#方式二多接入点配置字符串数组)
+  - [使用命令管理接入点](#使用命令管理接入点)
+  - [示例配置](#示例配置)
+  - [注意事项](#注意事项)
+- [ModelScope MCP 服务集成](#modelscope-mcp-服务集成)
+  - [配置方式](#配置方式-1)
+  - [使用前准备](#使用前准备)
+  - [注意事项](#注意事项-1)
+- [自建服务端 JSON-RPC 消息格式规范](#自建服务端-json-rpc-消息格式规范)
+  - [消息类型](#消息类型)
+    - [1. 请求（Request）- 需要响应](#1-请求request--需要响应)
+    - [2. 通知（Notification）- 不需要响应](#2-通知notification--不需要响应)
+    - [3. 成功响应（Response）](#3-成功响应response)
+    - [4. 错误响应（Error）](#4-错误响应error)
+  - [重要注意事项](#重要注意事项)
+  - [通信时序图](#通信时序图)
+  - [常见错误](#常见错误)
+- [Web UI 配置界面](#web-ui-配置界面)
+  - [功能特性](#功能特性)
+  - [启动 Web UI](#启动-web-ui)
+- [作为 MCP Server 集成到其他客户端](#作为-mcp-server-集成到其他客户端)
+  - [方式一：使用 stdio 模式（推荐）](#方式一使用-stdio-模式推荐)
+  - [方式二：使用 HTTP Server 模式](#方式二使用-http-server-模式)
 
 ## 功能特色
 
