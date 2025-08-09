@@ -15,6 +15,7 @@ NC='\033[0m' # No Color
 # 配置
 CONTAINER_NAME="xiaozhi-client"
 IMAGE_NAME="shenjingnan/xiaozhi-client"
+IMAGE_TAG="latest"
 WORKSPACE_DIR="$HOME/xiaozhi-client"
 WEB_PORT="9999"
 HTTP_PORT="3000"
@@ -40,8 +41,8 @@ if docker ps -a --format 'table {{.Names}}' | grep -q "^$CONTAINER_NAME$"; then
 fi
 
 # 拉取最新镜像
-echo -e "${YELLOW}📥 拉取最新镜像${NC}"
-docker pull "$IMAGE_NAME"
+echo -e "${YELLOW}📥 拉取镜像: $IMAGE_NAME:$IMAGE_TAG${NC}"
+docker pull "$IMAGE_NAME:$IMAGE_TAG"
 
 # 启动容器
 echo -e "${YELLOW}🚀 启动 Xiaozhi Client 容器${NC}"
@@ -51,7 +52,7 @@ docker run -d \
     -p "$HTTP_PORT:3000" \
     -v "$WORKSPACE_DIR:/workspaces" \
     --restart unless-stopped \
-    "$IMAGE_NAME"
+    "$IMAGE_NAME:$IMAGE_TAG"
 
 # 等待容器启动
 echo -e "${YELLOW}⏳ 等待容器启动...${NC}"
