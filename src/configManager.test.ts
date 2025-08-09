@@ -6,6 +6,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { resolve } from "node:path";
+import dayjs from "dayjs";
 import JSON5 from "json5";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -1808,6 +1809,9 @@ describe("ConfigManager", () => {
     describe("updateToolUsageStats", () => {
       it("应该为新工具初始化使用统计", async () => {
         const callTime = "2023-12-01T10:00:00.000Z";
+        const expectedFormattedTime = dayjs(callTime).format(
+          "YYYY-MM-DD HH:mm:ss"
+        );
 
         await configManager.updateToolUsageStats(
           "test-server",
@@ -1825,7 +1829,7 @@ describe("ConfigManager", () => {
         ).toEqual({
           enable: true,
           usageCount: 1,
-          lastUsedTime: callTime,
+          lastUsedTime: expectedFormattedTime,
         });
       });
 
@@ -1838,7 +1842,7 @@ describe("ConfigManager", () => {
                 "existing-tool": {
                   enable: true,
                   usageCount: 5,
-                  lastUsedTime: "2023-11-01T10:00:00.000Z",
+                  lastUsedTime: "2023-11-01 10:00:00", // 使用新格式
                 },
               },
             },
@@ -1847,6 +1851,10 @@ describe("ConfigManager", () => {
         mockReadFileSync.mockReturnValue(JSON.stringify(initialConfig));
 
         const callTime = "2023-12-01T10:00:00.000Z";
+        const expectedFormattedTime = dayjs(callTime).format(
+          "YYYY-MM-DD HH:mm:ss"
+        );
+
         await configManager.updateToolUsageStats(
           "test-server",
           "existing-tool",
@@ -1863,11 +1871,12 @@ describe("ConfigManager", () => {
         ).toEqual({
           enable: true,
           usageCount: 6,
-          lastUsedTime: callTime,
+          lastUsedTime: expectedFormattedTime,
         });
       });
 
       it("应该在新时间早于现有时间时跳过 lastUsedTime 更新", async () => {
+        const existingFormattedTime = "2023-12-01 10:00:00"; // 使用新格式
         const initialConfig = {
           ...mockConfig,
           mcpServerConfig: {
@@ -1876,7 +1885,7 @@ describe("ConfigManager", () => {
                 "existing-tool": {
                   enable: true,
                   usageCount: 5,
-                  lastUsedTime: "2023-12-01T10:00:00.000Z",
+                  lastUsedTime: existingFormattedTime,
                 },
               },
             },
@@ -1901,7 +1910,7 @@ describe("ConfigManager", () => {
         ).toEqual({
           enable: true,
           usageCount: 6,
-          lastUsedTime: "2023-12-01T10:00:00.000Z", // 应该保持原来的时间
+          lastUsedTime: existingFormattedTime, // 应该保持原来的时间
         });
       });
 

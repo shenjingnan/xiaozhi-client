@@ -2,6 +2,7 @@ import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as commentJson from "comment-json";
+import dayjs from "dayjs";
 import JSON5 from "json5";
 import * as json5Writer from "json5-writer";
 import { logger } from "./logger";
@@ -771,7 +772,8 @@ export class ConfigManager {
         !currentLastUsedTime ||
         new Date(callTime) > new Date(currentLastUsedTime)
       ) {
-        toolConfig.lastUsedTime = callTime;
+        // 使用 dayjs 格式化时间为更易读的格式
+        toolConfig.lastUsedTime = dayjs(callTime).format("YYYY-MM-DD HH:mm:ss");
       }
 
       // 保存配置

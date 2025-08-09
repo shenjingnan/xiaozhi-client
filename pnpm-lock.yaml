@@ -37,6 +37,9 @@ importers:
       consola:
         specifier: ^3.4.2
         version: 3.4.2
+      dayjs:
+        specifier: ^1.11.13
+        version: 1.11.13
       dotenv:
         specifier: ^16.3.1
         version: 16.6.1
@@ -2066,6 +2069,9 @@ packages:
     resolution: {integrity: sha512-AlFoGplH1YyRoCFHg2K0auS8vDna4yJjUiuP2mVZn82MaEKJQ4tMgnvUMdP+HtPP1lFlQ0iCvFr6+VVqCJVEDg==}
     engines: {node: '>=20'}
     hasBin: true
+
+  dayjs@1.11.13:
+    resolution: {integrity: sha512-oaMBel6gjolK862uaPQOVTA7q3TZhuSvuMQAAglQDOWYO9A91IrAOUJEyKVlqJlHE0vq5p5UXxzdPfMH/x6xNg==}
 
   debug@4.4.1:
     resolution: {integrity: sha512-KcKCqiftBJcZr++7ykoDIEwSa3XWowTfNPo92BYxjXiyYEVrUQh2aLyhxBCwww+heortUFxEJYcRzosstTEBYQ==}
@@ -6294,6 +6300,8 @@ snapshots:
       file-entry-cache: 9.1.0
       semver: 7.7.2
       tinyglobby: 0.2.14
+
+  dayjs@1.11.13: {}
 
   debug@4.4.1:
     dependencies:
