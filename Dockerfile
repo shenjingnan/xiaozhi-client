@@ -6,7 +6,7 @@ FROM node:20
 # 定义 xiaozhi-client 版本号
 # 默认使用当前项目版本，可在构建时通过 --build-arg 覆盖
 # 例如: docker build --build-arg XIAOZHI_VERSION=1.6.0 .
-ARG XIAOZHI_VERSION=1.5.1
+ARG XIAOZHI_VERSION=latest
 
 # 安装必要的系统依赖
 RUN apt-get update && apt-get install -y \
