@@ -1,9 +1,10 @@
 services:
   xiaozhi-client:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: xiaozhi-client:latest
+    image: shenjingnan/xiaozhi-client:latest
+    # 如果需要本地构建，取消注释以下行：
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     container_name: xiaozhi-client
     restart: unless-stopped
 
@@ -21,12 +22,8 @@ services:
 
     # 挂载卷
     volumes:
-      # 日志文件持久化
-      - ./logs:/workspaces/logs
-      # 日志文件持久化（主日志文件）
-      - ./xiaozhi.log:/workspaces/xiaozhi.log
-      # 配置文件持久化（可选，用户可以自定义配置）
-      - ./config:/workspaces/config
+      # 工作目录持久化（推荐使用 ~/xiaozhi-client）
+      - ~/xiaozhi-client:/workspaces
 
     # 健康检查
     healthcheck:
