@@ -1,3 +1,27 @@
+# [1.6.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.5.1...v1.6.0) (2025-08-09)
+
+
+### Bug Fixes
+
+* **config:** 修复JSON5配置文件格式保持功能 ([#139](https://github.com/shenjingnan/xiaozhi-client/issues/139)) ([2336487](https://github.com/shenjingnan/xiaozhi-client/commit/23364872c9cd23661d461f5e111db422cb5f4f42))
+* **config:** 修复配置文件包含BOM字符导致解析失败的问题 ([#146](https://github.com/shenjingnan/xiaozhi-client/issues/146)) ([c9a979a](https://github.com/shenjingnan/xiaozhi-client/commit/c9a979a1d57e9dd4e4b320098c38d9c0cd050a4e))
+* **docker:** 修复Docker镜像标签问题 ([#153](https://github.com/shenjingnan/xiaozhi-client/issues/153)) ([0ceff01](https://github.com/shenjingnan/xiaozhi-client/commit/0ceff0197ee55383f8afe91216923ee4c49ac7b4))
+* **mcp-server:** 并行启动 MCP 代理和客户端以避免阻塞 ([#133](https://github.com/shenjingnan/xiaozhi-client/issues/133)) ([04a4369](https://github.com/shenjingnan/xiaozhi-client/commit/04a43695cc31b004378876b8a6e29700651b0137))
+* 修复飞牛OS无法访问web服务的问题 ([#136](https://github.com/shenjingnan/xiaozhi-client/issues/136)) ([bfaf356](https://github.com/shenjingnan/xiaozhi-client/commit/bfaf3566ce97d153994da002800b4fb267d16480))
+
+
+### Features
+
+* **ci/cd:** 分离 Docker 和 NPM 发布流程并优化部署体验 ([#156](https://github.com/shenjingnan/xiaozhi-client/issues/156)) ([e417b49](https://github.com/shenjingnan/xiaozhi-client/commit/e417b49e073d58a3cdd668fef8972a9c3f299f1c))
+* **config:** 支持 JSON5 和 JSONC 配置文件格式 ([#129](https://github.com/shenjingnan/xiaozhi-client/issues/129)) ([81b9271](https://github.com/shenjingnan/xiaozhi-client/commit/81b92714ee86fc7271dbc54e06192d27e7f0f038))
+* **config:** 添加 JSONC 配置文件注释保留功能 ([4084f8d](https://github.com/shenjingnan/xiaozhi-client/commit/4084f8d44b56117cf455a8037b68f33b884414e4))
+* **config:** 添加ModelScope平台配置模板 ([#140](https://github.com/shenjingnan/xiaozhi-client/issues/140)) ([15466e2](https://github.com/shenjingnan/xiaozhi-client/commit/15466e241317557ffa3ebce5c8c157c270254365))
+* **docker:** 优化 Docker 容器启动体验和持久化配置 ([#145](https://github.com/shenjingnan/xiaozhi-client/issues/145)) ([add7a11](https://github.com/shenjingnan/xiaozhi-client/commit/add7a11c57bcdb7f3ea863060e4826a5ebc75e3e))
+* **docker:** 优化中国网络环境下的Docker构建和运行体验 ([#147](https://github.com/shenjingnan/xiaozhi-client/issues/147)) ([aaf4ac4](https://github.com/shenjingnan/xiaozhi-client/commit/aaf4ac46530589e7e198313f05446cdcecb6e566))
+* **docker:** 实现 docker 容器化部署 ([#144](https://github.com/shenjingnan/xiaozhi-client/issues/144)) ([e95ae82](https://github.com/shenjingnan/xiaozhi-client/commit/e95ae82e4ea4a477289e5a027190719a494fb47e))
+* **stats:** 添加MCP工具使用统计功能 ([#148](https://github.com/shenjingnan/xiaozhi-client/issues/148)) ([6a3adbe](https://github.com/shenjingnan/xiaozhi-client/commit/6a3adbe5cf0b41b72036011c9ef12d8cdad7164c))
+* 重构 web 服务界面 ([#135](https://github.com/shenjingnan/xiaozhi-client/issues/135)) ([a63a3bf](https://github.com/shenjingnan/xiaozhi-client/commit/a63a3bf2d3d5b57bba5c2040608129551ccc0b41))
+
 ## [1.5.1](https://github.com/shenjingnan/xiaozhi-client/compare/v1.5.0...v1.5.1) (2025-07-24)
 
 
