@@ -134,8 +134,9 @@ npx -y xiaozhi-client start
 
 **基本使用：**
 
+> 下载并运行启动脚本（默认使用最新版本）
+
 ```bash
-# 下载并运行启动脚本（使用最新版本）
 curl -fsSL https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docker-start.sh | bash
 ```
 
