@@ -225,7 +225,6 @@ export class ConfigManager {
           config = commentJson.parse(configData) as unknown as AppConfig;
           break;
         default:
-          console.log(configData);
           config = JSON.parse(configData) as AppConfig;
           break;
       }
