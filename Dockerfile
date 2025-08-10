@@ -7,7 +7,7 @@ FROM node:20
 # 定义 xiaozhi-client 版本号
 # 默认使用当前项目版本，可在构建时通过 --build-arg 覆盖
 # 例如: docker build --build-arg XIAOZHI_VERSION=1.6.0 .
-ARG XIAOZHI_VERSION=1.5.1
+ARG XIAOZHI_VERSION=1.6.0
 
 # 配置国内镜像源以提升下载速度
 # 配置 Debian 镜像源为阿里云镜像

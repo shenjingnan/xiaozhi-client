@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.0...v1.6.1) (2025-08-10)
+
+
+### Bug Fixes
+
+* **docker:** 移除Docker容器中的非root用户限制 ([#157](https://github.com/shenjingnan/xiaozhi-client/issues/157)) ([e1b95e4](https://github.com/shenjingnan/xiaozhi-client/commit/e1b95e461cbf37800788a2c47d25063e87ba5cb2))
+
 # [1.6.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.5.1...v1.6.0) (2025-08-09)
 
 
