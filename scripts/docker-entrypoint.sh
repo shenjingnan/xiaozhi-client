@@ -25,11 +25,6 @@ if [ ! -f "/workspaces/xiaozhi.config.json" ] || [ ! -f "/workspaces/package.jso
         exit 1
     fi
 
-    # 设置正确的权限（仅在有权限时执行）
-    if [ "$(id -u)" = "0" ]; then
-        chown -R xiaozhi:xiaozhi /workspaces
-    fi
-
     log "工作目录初始化完成"
     log "配置文件位置: ~/xiaozhi-client/xiaozhi.config.json"
 else

@@ -38,9 +38,7 @@ RUN apt-get update && apt-get install -y \
     && ln -sf /usr/bin/pip3 /usr/bin/pip \
     && pip3 install --break-system-packages uv \
     && npm install -g pnpm xiaozhi-client@${XIAOZHI_VERSION} \
-    && pnpm config set registry https://registry.npmmirror.com \
-    && groupadd -g 1001 xiaozhi \
-    && useradd -u 1001 -g xiaozhi -m xiaozhi
+    && pnpm config set registry https://registry.npmmirror.com
 
 # 验证工具可用性
 RUN npx --version && echo "✓ npx is available" \
@@ -61,12 +59,9 @@ COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 # 使用国内镜像源安装依赖
 RUN cd /templates-backup && npm install --registry=https://registry.npmmirror.com
 
-# 设置脚本权限和目录权限
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
-    && chown -R xiaozhi:xiaozhi /workspaces /templates-backup
+# 设置脚本权限
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# 切换到非 root 用户
-USER xiaozhi
 
 # 暴露端口
 EXPOSE 9999 3000
