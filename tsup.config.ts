@@ -44,6 +44,7 @@ export default defineConfig({
     "src/autoCompletion.ts",
     "src/logger.ts",
     "src/webServer.ts",
+    "src/mcpClient.ts",
     "src/services/mcpServer.ts",
   ],
   format: ["esm"],

@@ -12,6 +12,7 @@ import { getServiceStatus } from "./cli.js";
 import { configManager } from "./configManager.js";
 import type { AppConfig } from "./configManager.js";
 import { Logger } from "./logger.js";
+import { MCPClient } from "./mcpClient.js";
 
 interface ClientInfo {
   status: "connected" | "disconnected";
@@ -33,6 +34,7 @@ export class WebServer {
   };
   private heartbeatTimeout?: NodeJS.Timeout;
   private readonly HEARTBEAT_TIMEOUT = 35000; // 35 seconds (slightly more than client's 30s interval)
+  private mcpClient: MCPClient;
 
   constructor(port?: number) {
     // 如果没有指定端口，从配置文件获取
@@ -47,6 +49,9 @@ export class WebServer {
       this.port = port;
     }
     this.logger = new Logger();
+
+    // 初始化 MCP 客户端
+    this.mcpClient = new MCPClient();
 
     // 初始化 Hono 应用
     this.app = new Hono();
@@ -103,7 +108,11 @@ export class WebServer {
     });
 
     this.app.get("/api/status", async (c) => {
-      return c.json(this.clientInfo);
+      const mcpStatus = this.mcpClient.getStatus();
+      return c.json({
+        ...this.clientInfo,
+        mcpConnection: mcpStatus,
+      });
     });
 
     // 处理未知的 API 路由
@@ -511,33 +520,33 @@ export class WebServer {
     this.broadcastStatusUpdate();
   }
 
-  public start(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      try {
-        // 使用 @hono/node-server 启动服务器，绑定到 0.0.0.0
-        const server = serve({
-          fetch: this.app.fetch,
-          port: this.port,
-          hostname: "0.0.0.0", // 绑定到所有网络接口，支持 Docker 部署
-          createServer,
-        });
-
-        // 保存服务器实例
-        this.httpServer = server;
-
-        // 设置 WebSocket 服务器
-        this.wss = new WebSocketServer({ server: this.httpServer });
-        this.setupWebSocket();
-
-        this.logger.info(`Web server listening on http://0.0.0.0:${this.port}`);
-        this.logger.info(`Local access: http://localhost:${this.port}`);
-        resolve();
-
-        this.httpServer.on("error", reject);
-      } catch (error) {
-        reject(error);
-      }
+  public async start(): Promise<void> {
+    // 使用 @hono/node-server 启动服务器，绑定到 0.0.0.0
+    const server = serve({
+      fetch: this.app.fetch,
+      port: this.port,
+      hostname: "0.0.0.0", // 绑定到所有网络接口，支持 Docker 部署
+      createServer,
     });
+
+    // 保存服务器实例
+    this.httpServer = server;
+
+    // 设置 WebSocket 服务器
+    this.wss = new WebSocketServer({ server: this.httpServer });
+    this.setupWebSocket();
+
+    this.logger.info(`Web server listening on http://0.0.0.0:${this.port}`);
+    this.logger.info(`Local access: http://localhost:${this.port}`);
+
+    // 启动 MCP 客户端连接
+    try {
+      await this.mcpClient.connect();
+      this.logger.info("MCP 客户端连接成功");
+    } catch (error) {
+      this.logger.error("MCP 客户端连接失败:", error);
+      // MCP 连接失败不影响 Web 服务器启动
+    }
   }
 
   public stop(): Promise<void> {
@@ -550,6 +559,9 @@ export class WebServer {
           resolve();
         }
       };
+
+      // 停止 MCP 客户端
+      this.mcpClient.disconnect();
 
       // Clear heartbeat timeout
       if (this.heartbeatTimeout) {
