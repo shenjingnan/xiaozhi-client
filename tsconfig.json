@@ -27,7 +27,7 @@
     "skipLibCheck": true,
     "resolveJsonModule": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "MCPServiceManager.js"],
   "exclude": [
     "node_modules",
     "dist",
