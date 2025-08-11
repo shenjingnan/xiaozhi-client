@@ -129,7 +129,11 @@ export class ProxyMCPServer {
     }
   }
 
-  async connect(): Promise<void> {
+  /**
+   * 连接 MCP 接入点
+   * @returns 连接成功后的 Promise
+   */
+  public async connect(): Promise<void> {
     // 连接前验证
     if (this.tools.size === 0) {
       throw new Error("未配置任何工具。请在连接前至少添加一个工具。");
@@ -224,8 +228,10 @@ export class ProxyMCPServer {
     }
   }
 
-
-
+  /**
+   * 获取 MCP 服务器状态
+   * @returns 服务器状态
+   */
   public getStatus(): ProxyMCPServerStatus {
     return {
       connected: this.isConnected,
@@ -235,6 +241,9 @@ export class ProxyMCPServer {
     };
   }
 
+  /**
+   * 主动断开 MCP 连接
+   */
   public disconnect(): void {
     this.logger.info("主动断开 MCP 连接");
 
@@ -247,6 +256,9 @@ export class ProxyMCPServer {
     this.serverInitialized = false;
   }
 
+  /**
+   * 重连小智接入点
+   */
   public async reconnect(): Promise<void> {
     this.disconnect();
     await this.connect();
