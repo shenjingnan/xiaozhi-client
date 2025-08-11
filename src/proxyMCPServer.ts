@@ -246,4 +246,9 @@ export class ProxyMCPServer {
     this.isConnected = false;
     this.serverInitialized = false;
   }
+
+  public async reconnect(): Promise<void> {
+    this.disconnect();
+    await this.connect();
+  }
 }
