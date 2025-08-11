@@ -1,0 +1,12 @@
+{
+  "name": "xiaozhi-mcp-test",
+  "version": "1.0.0",
+  "description": "简化的 MCP 客户端连接测试",
+  "main": "test-mcp-connection.js",
+  "scripts": {
+    "test:mcp": "node test-mcp-connection.js"
+  },
+  "dependencies": {
+    "ws": "^8.14.2"
+  }
+}
