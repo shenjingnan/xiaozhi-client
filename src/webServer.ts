@@ -12,8 +12,7 @@ import { getServiceStatus } from "./cli.js";
 import { configManager } from "./configManager.js";
 import type { AppConfig } from "./configManager.js";
 import { Logger } from "./logger.js";
-import { ProxyMCPServer } from "./proxyMCPServer.js";
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import { ProxyMCPServer, type Tool } from "./proxyMCPServer.js";
 
 // 默认工具集合
 const MOCK_TOOLS: Tool[] = [

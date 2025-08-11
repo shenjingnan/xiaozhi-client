@@ -2,6 +2,8 @@ import WebSocket from "ws";
 import { Logger } from "./logger.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 
+export type { Tool };
+
 // MCP 消息接口
 interface MCPMessage {
   jsonrpc: string;
@@ -11,12 +13,50 @@ interface MCPMessage {
   result?: any;
 }
 
+// 连接状态枚举
+enum ConnectionState {
+  DISCONNECTED = "disconnected",
+  CONNECTING = "connecting",
+  CONNECTED = "connected",
+  RECONNECTING = "reconnecting",
+  FAILED = "failed",
+}
+
+// 重连配置接口
+interface ReconnectOptions {
+  enabled: boolean; // 是否启用自动重连
+  maxAttempts: number; // 最大重连次数
+  initialInterval: number; // 初始重连间隔(ms)
+  maxInterval: number; // 最大重连间隔(ms)
+  backoffStrategy: "linear" | "exponential" | "fixed"; // 退避策略
+  backoffMultiplier: number; // 退避倍数
+  timeout: number; // 单次连接超时时间(ms)
+  jitter: boolean; // 是否添加随机抖动
+}
+
+// 重连状态接口
+interface ReconnectState {
+  attempts: number; // 当前重连次数
+  nextInterval: number; // 下次重连间隔
+  timer: NodeJS.Timeout | null; // 重连定时器
+  lastError: Error | null; // 最后一次错误
+  isManualDisconnect: boolean; // 是否为主动断开
+}
+
+// 服务器选项接口
+interface ProxyMCPServerOptions {
+  reconnect?: Partial<ReconnectOptions>;
+}
+
 // 服务器状态接口
 interface ProxyMCPServerStatus {
   connected: boolean;
   initialized: boolean;
   url: string;
   availableTools: number;
+  connectionState: ConnectionState;
+  reconnectAttempts: number;
+  lastError: string | null;
 }
 
 export class ProxyMCPServer {
@@ -29,9 +69,42 @@ export class ProxyMCPServer {
   // 工具管理
   private tools: Map<string, Tool> = new Map();
 
-  constructor(endpointUrl: string) {
+  // 连接状态管理
+  private connectionState: ConnectionState = ConnectionState.DISCONNECTED;
+
+  // 重连配置
+  private reconnectOptions: ReconnectOptions;
+
+  // 重连状态
+  private reconnectState: ReconnectState = {
+    attempts: 0,
+    nextInterval: 0,
+    timer: null,
+    lastError: null,
+    isManualDisconnect: false,
+  };
+
+  // 连接超时定时器
+  private connectionTimeout: NodeJS.Timeout | null = null;
+
+  constructor(endpointUrl: string, options?: ProxyMCPServerOptions) {
     this.endpointUrl = endpointUrl;
     this.logger = new Logger();
+
+    // 初始化重连配置
+    this.reconnectOptions = {
+      enabled: true,
+      maxAttempts: 10,
+      initialInterval: 3000,
+      maxInterval: 30000,
+      backoffStrategy: "exponential",
+      backoffMultiplier: 1.5,
+      timeout: 10000,
+      jitter: true,
+      ...options?.reconnect,
+    };
+
+    this.reconnectState.nextInterval = this.reconnectOptions.initialInterval;
   }
 
   /**
@@ -98,7 +171,7 @@ export class ProxyMCPServer {
    * @param tool 工具定义
    */
   private validateTool(name: string, tool: Tool): void {
-    if (!name || typeof name !== 'string' || name.trim() === '') {
+    if (!name || typeof name !== "string" || name.trim() === "") {
       throw new Error("工具名称必须是非空字符串");
     }
 
@@ -106,26 +179,28 @@ export class ProxyMCPServer {
       throw new Error(`工具 '${name}' 已存在`);
     }
 
-    if (!tool || typeof tool !== 'object') {
+    if (!tool || typeof tool !== "object") {
       throw new Error("工具必须是有效的对象");
     }
 
     // 验证工具的必需字段
-    if (!tool.name || typeof tool.name !== 'string') {
+    if (!tool.name || typeof tool.name !== "string") {
       throw new Error("工具必须包含有效的 'name' 字段");
     }
 
-    if (!tool.description || typeof tool.description !== 'string') {
+    if (!tool.description || typeof tool.description !== "string") {
       throw new Error("工具必须包含有效的 'description' 字段");
     }
 
-    if (!tool.inputSchema || typeof tool.inputSchema !== 'object') {
+    if (!tool.inputSchema || typeof tool.inputSchema !== "object") {
       throw new Error("工具必须包含有效的 'inputSchema' 字段");
     }
 
     // 验证 inputSchema 的基本结构
     if (!tool.inputSchema.type || !tool.inputSchema.properties) {
-      throw new Error("工具的 inputSchema 必须包含 'type' 和 'properties' 字段");
+      throw new Error(
+        "工具的 inputSchema 必须包含 'type' 和 'properties' 字段"
+      );
     }
   }
 
@@ -139,16 +214,46 @@ export class ProxyMCPServer {
       throw new Error("未配置任何工具。请在连接前至少添加一个工具。");
     }
 
-    this.logger.info(`准备连接 MCP 接入点，当前配置了 ${this.tools.size} 个工具: ${Array.from(this.tools.keys()).join(', ')}`);
+    // 如果正在连接中，等待当前连接完成
+    if (this.connectionState === ConnectionState.CONNECTING) {
+      throw new Error("连接正在进行中，请等待连接完成");
+    }
+
+    // 清理之前的连接
+    this.cleanupConnection();
+
+    // 重置手动断开标志
+    this.reconnectState.isManualDisconnect = false;
+
+    return this.attemptConnection();
+  }
+
+  /**
+   * 尝试建立连接
+   * @returns 连接成功后的 Promise
+   */
+  private async attemptConnection(): Promise<void> {
+    this.connectionState = ConnectionState.CONNECTING;
+    this.logger.info(
+      `正在连接 MCP 接入点: ${this.endpointUrl} (尝试 ${
+        this.reconnectState.attempts + 1
+      }/${this.reconnectOptions.maxAttempts})`
+    );
 
     return new Promise((resolve, reject) => {
-      this.logger.info(`正在连接 MCP 接入点: ${this.endpointUrl}`);
+      // 设置连接超时
+      this.connectionTimeout = setTimeout(() => {
+        const error = new Error(
+          `连接超时 (${this.reconnectOptions.timeout}ms)`
+        );
+        this.handleConnectionError(error);
+        reject(error);
+      }, this.reconnectOptions.timeout);
 
       this.ws = new WebSocket(this.endpointUrl);
 
       this.ws.on("open", () => {
-        this.isConnected = true;
-        this.logger.info("MCP WebSocket 连接已建立");
+        this.handleConnectionSuccess();
         resolve();
       });
 
@@ -162,16 +267,205 @@ export class ProxyMCPServer {
       });
 
       this.ws.on("close", (code, reason) => {
-        this.isConnected = false;
-        this.serverInitialized = false;
-        this.logger.info(`MCP 连接已关闭 (代码: ${code}, 原因: ${reason})`);
+        this.handleConnectionClose(code, reason.toString());
       });
 
       this.ws.on("error", (error) => {
-        this.logger.error("MCP WebSocket 错误:", error.message);
+        this.handleConnectionError(error);
         reject(error);
       });
     });
+  }
+
+  /**
+   * 处理连接成功
+   */
+  private handleConnectionSuccess(): void {
+    // 清理连接超时定时器
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout);
+      this.connectionTimeout = null;
+    }
+
+    this.isConnected = true;
+    this.connectionState = ConnectionState.CONNECTED;
+
+    // 重置重连状态
+    this.reconnectState.attempts = 0;
+    this.reconnectState.nextInterval = this.reconnectOptions.initialInterval;
+    this.reconnectState.lastError = null;
+
+    this.logger.info("MCP WebSocket 连接已建立");
+  }
+
+  /**
+   * 处理连接错误
+   */
+  private handleConnectionError(error: Error): void {
+    // 清理连接超时定时器
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout);
+      this.connectionTimeout = null;
+    }
+
+    this.reconnectState.lastError = error;
+    this.logger.error("MCP WebSocket 错误:", error.message);
+
+    // 清理当前连接
+    this.cleanupConnection();
+  }
+
+  /**
+   * 处理连接关闭
+   */
+  private handleConnectionClose(code: number, reason: string): void {
+    this.isConnected = false;
+    this.serverInitialized = false;
+    this.logger.info(`MCP 连接已关闭 (代码: ${code}, 原因: ${reason})`);
+
+    // 如果是手动断开，不进行重连
+    if (this.reconnectState.isManualDisconnect) {
+      this.connectionState = ConnectionState.DISCONNECTED;
+      return;
+    }
+
+    // 检查是否需要重连
+    if (this.shouldReconnect()) {
+      this.scheduleReconnect();
+    } else {
+      this.connectionState = ConnectionState.FAILED;
+      this.logger.warn(
+        `已达到最大重连次数 (${this.reconnectOptions.maxAttempts})，停止重连`
+      );
+    }
+  }
+
+  /**
+   * 检查是否应该重连
+   */
+  private shouldReconnect(): boolean {
+    return (
+      this.reconnectOptions.enabled &&
+      this.reconnectState.attempts < this.reconnectOptions.maxAttempts &&
+      !this.reconnectState.isManualDisconnect
+    );
+  }
+
+  /**
+   * 安排重连
+   */
+  private scheduleReconnect(): void {
+    this.connectionState = ConnectionState.RECONNECTING;
+    this.reconnectState.attempts++;
+
+    // 计算下次重连间隔
+    this.calculateNextInterval();
+
+    this.logger.info(
+      `将在 ${this.reconnectState.nextInterval}ms 后进行第 ${this.reconnectState.attempts} 次重连`
+    );
+
+    // 清理之前的重连定时器
+    if (this.reconnectState.timer) {
+      clearTimeout(this.reconnectState.timer);
+    }
+
+    // 设置重连定时器
+    this.reconnectState.timer = setTimeout(async () => {
+      try {
+        await this.attemptConnection();
+      } catch (error) {
+        // 连接失败会触发 handleConnectionError，无需额外处理
+      }
+    }, this.reconnectState.nextInterval);
+  }
+
+  /**
+   * 计算下次重连间隔
+   */
+  private calculateNextInterval(): void {
+    let interval: number;
+
+    switch (this.reconnectOptions.backoffStrategy) {
+      case "fixed":
+        interval = this.reconnectOptions.initialInterval;
+        break;
+
+      case "linear":
+        interval =
+          this.reconnectOptions.initialInterval +
+          this.reconnectState.attempts *
+            this.reconnectOptions.backoffMultiplier *
+            1000;
+        break;
+
+      case "exponential":
+        interval =
+          this.reconnectOptions.initialInterval *
+          this.reconnectOptions.backoffMultiplier **
+            (this.reconnectState.attempts - 1);
+        break;
+
+      default:
+        interval = this.reconnectOptions.initialInterval;
+    }
+
+    // 限制最大间隔
+    interval = Math.min(interval, this.reconnectOptions.maxInterval);
+
+    // 添加随机抖动
+    if (this.reconnectOptions.jitter) {
+      const jitterRange = interval * 0.1; // 10% 抖动
+      const jitter = (Math.random() - 0.5) * 2 * jitterRange;
+      interval += jitter;
+    }
+
+    this.reconnectState.nextInterval = Math.max(interval, 1000); // 最小1秒
+  }
+
+  /**
+   * 清理连接资源
+   */
+  private cleanupConnection(): void {
+    // 清理 WebSocket
+    if (this.ws) {
+      // 移除所有事件监听器，防止在关闭时触发错误事件
+      this.ws.removeAllListeners();
+
+      // 安全关闭 WebSocket
+      try {
+        if (this.ws.readyState === WebSocket.OPEN) {
+          this.ws.close(1000, "Cleaning up connection");
+        } else if (this.ws.readyState === WebSocket.CONNECTING) {
+          this.ws.terminate(); // 强制终止正在连接的 WebSocket
+        }
+      } catch (error) {
+        // 忽略关闭时的错误
+        this.logger.debug("WebSocket 关闭时出现错误（已忽略）:", error);
+      }
+
+      this.ws = null;
+    }
+
+    // 清理连接超时定时器
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout);
+      this.connectionTimeout = null;
+    }
+
+    // 重置连接状态
+    this.isConnected = false;
+    this.serverInitialized = false;
+  }
+
+  /**
+   * 停止重连
+   */
+  private stopReconnect(): void {
+    if (this.reconnectState.timer) {
+      clearTimeout(this.reconnectState.timer);
+      this.reconnectState.timer = null;
+    }
   }
 
   private handleMessage(message: MCPMessage): void {
@@ -238,6 +532,9 @@ export class ProxyMCPServer {
       initialized: this.serverInitialized,
       url: this.endpointUrl,
       availableTools: this.tools.size,
+      connectionState: this.connectionState,
+      reconnectAttempts: this.reconnectState.attempts,
+      lastError: this.reconnectState.lastError?.message || null,
     };
   }
 
@@ -247,20 +544,80 @@ export class ProxyMCPServer {
   public disconnect(): void {
     this.logger.info("主动断开 MCP 连接");
 
-    if (this.ws) {
-      this.ws.close(1000, "Client disconnecting");
-      this.ws = null;
-    }
+    // 标记为手动断开，阻止自动重连
+    this.reconnectState.isManualDisconnect = true;
 
-    this.isConnected = false;
-    this.serverInitialized = false;
+    // 停止重连定时器
+    this.stopReconnect();
+
+    // 清理连接资源
+    this.cleanupConnection();
+
+    // 设置状态为已断开
+    this.connectionState = ConnectionState.DISCONNECTED;
   }
 
   /**
-   * 重连小智接入点
+   * 手动重连 MCP 接入点
    */
   public async reconnect(): Promise<void> {
-    this.disconnect();
+    this.logger.info("手动重连 MCP 接入点");
+
+    // 停止自动重连
+    this.stopReconnect();
+
+    // 重置重连状态
+    this.reconnectState.attempts = 0;
+    this.reconnectState.nextInterval = this.reconnectOptions.initialInterval;
+    this.reconnectState.isManualDisconnect = false;
+
+    // 清理现有连接
+    this.cleanupConnection();
+
+    // 尝试连接
     await this.connect();
+  }
+
+  /**
+   * 启用自动重连
+   */
+  public enableReconnect(): void {
+    this.reconnectOptions.enabled = true;
+    this.logger.info("自动重连已启用");
+  }
+
+  /**
+   * 禁用自动重连
+   */
+  public disableReconnect(): void {
+    this.reconnectOptions.enabled = false;
+    this.stopReconnect();
+    this.logger.info("自动重连已禁用");
+  }
+
+  /**
+   * 更新重连配置
+   */
+  public updateReconnectOptions(options: Partial<ReconnectOptions>): void {
+    this.reconnectOptions = { ...this.reconnectOptions, ...options };
+    this.logger.info("重连配置已更新", options);
+  }
+
+  /**
+   * 获取重连配置
+   */
+  public getReconnectOptions(): ReconnectOptions {
+    return { ...this.reconnectOptions };
+  }
+
+  /**
+   * 重置重连状态
+   */
+  public resetReconnectState(): void {
+    this.stopReconnect();
+    this.reconnectState.attempts = 0;
+    this.reconnectState.nextInterval = this.reconnectOptions.initialInterval;
+    this.reconnectState.lastError = null;
+    this.logger.info("重连状态已重置");
   }
 }
