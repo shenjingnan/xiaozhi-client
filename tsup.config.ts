@@ -45,6 +45,7 @@ export default defineConfig({
     "src/logger.ts",
     "src/webServer.ts",
     "src/mcpClient.ts",
+    "src/proxyMCPServer.ts",
     "src/services/mcpServer.ts",
   ],
   format: ["esm"],

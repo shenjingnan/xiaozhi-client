@@ -13,6 +13,7 @@ import { configManager } from "./configManager.js";
 import type { AppConfig } from "./configManager.js";
 import { Logger } from "./logger.js";
 import { ProxyMCPServer } from "./proxyMCPServer.js";
+import { Tool } from "@modelcontextprotocol/sdk/types.js";
 
 interface ClientInfo {
   status: "connected" | "disconnected";
@@ -51,8 +52,36 @@ export class WebServer {
     this.logger = new Logger();
 
     // 初始化 MCP 客户端
-    const endpointUrl = "wss://api.xiaozhi.me/mcp/?token=eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMwMjcyMCwiYWdlbnRJZCI6NDgwMjU2LCJlbmRwb2ludElkIjoiYWdlbnRfNDgwMjU2IiwicHVycG9zZSI6Im1jcC1lbmRwb2ludCIsImlhdCI6MTc1NDg5MTkyMn0.GjjPD8J31faYDJKymp-e1zJB3miE_nwd00zMLRFfNzZmmE-ale0_2Ppa-dWwRPt6HQ1DHyKSQM_3wh-55KEewg";
+    const endpointUrl =
+      "wss://api.xiaozhi.me/mcp/?token=eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMwMjcyMCwiYWdlbnRJZCI6NDgwMjU2LCJlbmRwb2ludElkIjoiYWdlbnRfNDgwMjU2IiwicHVycG9zZSI6Im1jcC1lbmRwb2ludCIsImlhdCI6MTc1NDg5MTkyMn0.GjjPD8J31faYDJKymp-e1zJB3miE_nwd00zMLRFfNzZmmE-ale0_2Ppa-dWwRPt6HQ1DHyKSQM_3wh-55KEewg";
     this.proxyMCPServer = new ProxyMCPServer(endpointUrl);
+    // 默认工具集合
+    const MOCK_TOOLS: Tool[] = [
+      {
+        name: "calculator_add",
+        description: "简单的加法计算器",
+        inputSchema: {
+          type: "object",
+          properties: {
+            a: { type: "number", description: "第一个数字" },
+            b: { type: "number", description: "第二个数字" },
+          },
+          required: ["a", "b"],
+        },
+      },
+      {
+        name: "weather_get",
+        description: "获取天气信息",
+        inputSchema: {
+          type: "object",
+          properties: {
+            city: { type: "string", description: "城市名称" },
+          },
+          required: ["city"],
+        },
+      },
+    ];
+    this.proxyMCPServer.addTool(MOCK_TOOLS[0].name, MOCK_TOOLS[0]);
 
     // 初始化 Hono 应用
     this.app = new Hono();

@@ -1,32 +1,8 @@
 import WebSocket from "ws";
 import { Logger } from "./logger.js";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 
-const MOCK_TOOLS = [
-  {
-    name: "calculator_add",
-    description: "简单的加法计算器",
-    inputSchema: {
-      type: "object",
-      properties: {
-        a: { type: "number", description: "第一个数字" },
-        b: { type: "number", description: "第二个数字" },
-      },
-      required: ["a", "b"],
-    },
-  },
-  {
-    name: "weather_get",
-    description: "获取天气信息",
-    inputSchema: {
-      type: "object",
-      properties: {
-        city: { type: "string", description: "城市名称" },
-      },
-      required: ["city"],
-    },
-  },
-];
-
+// MCP 消息接口
 interface MCPMessage {
   jsonrpc: string;
   id?: number | string;
@@ -35,6 +11,7 @@ interface MCPMessage {
   result?: any;
 }
 
+// 服务器状态接口
 interface ProxyMCPServerStatus {
   connected: boolean;
   initialized: boolean;
@@ -48,15 +25,118 @@ export class ProxyMCPServer {
   private logger: Logger;
   private isConnected = false;
   private serverInitialized = false;
-  private messageId = 0;
-  private availableTools = MOCK_TOOLS; // 直接使用所有工具，不延迟添加
+
+  // 工具管理
+  private tools: Map<string, Tool> = new Map();
 
   constructor(endpointUrl: string) {
     this.endpointUrl = endpointUrl;
     this.logger = new Logger();
   }
 
+  /**
+   * 添加单个工具
+   * @param name 工具名称
+   * @param tool 工具定义
+   * @param options 工具选项（可选）
+   * @returns 返回 this 支持链式调用
+   */
+  addTool(name: string, tool: Tool): this {
+    this.validateTool(name, tool);
+    this.tools.set(name, tool);
+    this.logger.debug(`工具 '${name}' 已添加`);
+    // TODO: 未来可以使用 options 参数来设置工具的启用状态、元数据等
+    return this;
+  }
+
+  /**
+   * 批量添加工具
+   * @param tools 工具对象，键为工具名称，值为工具定义
+   * @returns 返回 this 支持链式调用
+   */
+  addTools(tools: Record<string, Tool>): this {
+    for (const [name, tool] of Object.entries(tools)) {
+      this.addTool(name, tool);
+    }
+    return this;
+  }
+
+  /**
+   * 移除单个工具
+   * @param name 工具名称
+   * @returns 返回 this 支持链式调用
+   */
+  removeTool(name: string): this {
+    if (this.tools.delete(name)) {
+      this.logger.debug(`工具 '${name}' 已移除`);
+    } else {
+      this.logger.warn(`尝试移除不存在的工具: '${name}'`);
+    }
+    return this;
+  }
+
+  /**
+   * 获取当前所有工具列表
+   * @returns 工具数组
+   */
+  getTools(): Tool[] {
+    return Array.from(this.tools.values());
+  }
+
+  /**
+   * 检查工具是否存在
+   * @param name 工具名称
+   * @returns 是否存在
+   */
+  hasTool(name: string): boolean {
+    return this.tools.has(name);
+  }
+
+  /**
+   * 验证工具的有效性
+   * @param name 工具名称
+   * @param tool 工具定义
+   */
+  private validateTool(name: string, tool: Tool): void {
+    if (!name || typeof name !== 'string' || name.trim() === '') {
+      throw new Error("工具名称必须是非空字符串");
+    }
+
+    if (this.tools.has(name)) {
+      throw new Error(`工具 '${name}' 已存在`);
+    }
+
+    if (!tool || typeof tool !== 'object') {
+      throw new Error("工具必须是有效的对象");
+    }
+
+    // 验证工具的必需字段
+    if (!tool.name || typeof tool.name !== 'string') {
+      throw new Error("工具必须包含有效的 'name' 字段");
+    }
+
+    if (!tool.description || typeof tool.description !== 'string') {
+      throw new Error("工具必须包含有效的 'description' 字段");
+    }
+
+    if (!tool.inputSchema || typeof tool.inputSchema !== 'object') {
+      throw new Error("工具必须包含有效的 'inputSchema' 字段");
+    }
+
+    // 验证 inputSchema 的基本结构
+    if (!tool.inputSchema.type || !tool.inputSchema.properties) {
+      throw new Error("工具的 inputSchema 必须包含 'type' 和 'properties' 字段");
+    }
+  }
+
   async connect(): Promise<void> {
+    // 连接前验证
+    if (this.tools.size === 0) {
+      throw new Error("未配置任何工具。请在连接前至少添加一个工具。");
+    }
+
+    this.logger.info(`准备连接 MCP 接入点，当前配置了 ${this.tools.size} 个工具: ${Array.from(this.tools.keys()).join(', ')}`);
+
     return new Promise((resolve, reject) => {
       this.logger.info(`正在连接 MCP 接入点: ${this.endpointUrl}`);
 
@@ -116,10 +196,12 @@ export class ProxyMCPServer {
         this.logger.info("MCP 服务器初始化完成");
         break;
 
-      case "tools/list":
-        this.sendResponse(request.id, { tools: this.availableTools });
-        this.logger.info(`MCP 工具列表已发送 (${this.availableTools.length}个工具)`);
+      case "tools/list": {
+        const toolsList = this.getTools();
+        this.sendResponse(request.id, { tools: toolsList });
+        this.logger.info(`MCP 工具列表已发送 (${toolsList.length}个工具)`);
         break;
+      }
 
       case "ping":
         this.sendResponse(request.id, {});
@@ -142,18 +224,14 @@ export class ProxyMCPServer {
     }
   }
 
-  private sendMessage(message: MCPMessage): void {
-    if (this.isConnected && this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(message));
-    }
-  }
+
 
   public getStatus(): ProxyMCPServerStatus {
     return {
       connected: this.isConnected,
       initialized: this.serverInitialized,
       url: this.endpointUrl,
-      availableTools: this.availableTools.length,
+      availableTools: this.tools.size,
     };
   }
 
