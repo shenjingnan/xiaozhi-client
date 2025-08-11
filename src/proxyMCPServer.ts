@@ -1,10 +1,6 @@
 import WebSocket from "ws";
 import { Logger } from "./logger.js";
 
-// 固定的接入点 URL 和工具列表
-const ENDPOINT_URL =
-  "wss://api.xiaozhi.me/mcp/?token=eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMwMjcyMCwiYWdlbnRJZCI6NDgwMjU2LCJlbmRwb2ludElkIjoiYWdlbnRfNDgwMjU2IiwicHVycG9zZSI6Im1jcC1lbmRwb2ludCIsImlhdCI6MTc1NDg5MTkyMn0.GjjPD8J31faYDJKymp-e1zJB3miE_nwd00zMLRFfNzZmmE-ale0_2Ppa-dWwRPt6HQ1DHyKSQM_3wh-55KEewg";
-
 const MOCK_TOOLS = [
   {
     name: "calculator_add",
@@ -39,14 +35,15 @@ interface MCPMessage {
   result?: any;
 }
 
-interface MCPClientStatus {
+interface ProxyMCPServerStatus {
   connected: boolean;
   initialized: boolean;
   url: string;
   availableTools: number;
 }
 
-export class MCPClient {
+export class ProxyMCPServer {
+  private endpointUrl: string;
   private ws: WebSocket | null = null;
   private logger: Logger;
   private isConnected = false;
@@ -54,15 +51,16 @@ export class MCPClient {
   private messageId = 0;
   private availableTools = MOCK_TOOLS; // 直接使用所有工具，不延迟添加
 
-  constructor() {
+  constructor(endpointUrl: string) {
+    this.endpointUrl = endpointUrl;
     this.logger = new Logger();
   }
 
   async connect(): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.logger.info(`正在连接 MCP 接入点: ${ENDPOINT_URL}`);
+      this.logger.info(`正在连接 MCP 接入点: ${this.endpointUrl}`);
 
-      this.ws = new WebSocket(ENDPOINT_URL);
+      this.ws = new WebSocket(this.endpointUrl);
 
       this.ws.on("open", () => {
         this.isConnected = true;
@@ -150,23 +148,23 @@ export class MCPClient {
     }
   }
 
-  public getStatus(): MCPClientStatus {
+  public getStatus(): ProxyMCPServerStatus {
     return {
       connected: this.isConnected,
       initialized: this.serverInitialized,
-      url: ENDPOINT_URL,
+      url: this.endpointUrl,
       availableTools: this.availableTools.length,
     };
   }
 
   public disconnect(): void {
     this.logger.info("主动断开 MCP 连接");
-    
+
     if (this.ws) {
       this.ws.close(1000, "Client disconnecting");
       this.ws = null;
     }
-    
+
     this.isConnected = false;
     this.serverInitialized = false;
   }

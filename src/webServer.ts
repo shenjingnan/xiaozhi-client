@@ -12,7 +12,7 @@ import { getServiceStatus } from "./cli.js";
 import { configManager } from "./configManager.js";
 import type { AppConfig } from "./configManager.js";
 import { Logger } from "./logger.js";
-import { MCPClient } from "./mcpClient.js";
+import { ProxyMCPServer } from "./proxyMCPServer.js";
 
 interface ClientInfo {
   status: "connected" | "disconnected";
@@ -34,7 +34,7 @@ export class WebServer {
   };
   private heartbeatTimeout?: NodeJS.Timeout;
   private readonly HEARTBEAT_TIMEOUT = 35000; // 35 seconds (slightly more than client's 30s interval)
-  private mcpClient: MCPClient;
+  private proxyMCPServer: ProxyMCPServer;
 
   constructor(port?: number) {
     // 如果没有指定端口，从配置文件获取
@@ -51,7 +51,8 @@ export class WebServer {
     this.logger = new Logger();
 
     // 初始化 MCP 客户端
-    this.mcpClient = new MCPClient();
+    const endpointUrl = "wss://api.xiaozhi.me/mcp/?token=eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMwMjcyMCwiYWdlbnRJZCI6NDgwMjU2LCJlbmRwb2ludElkIjoiYWdlbnRfNDgwMjU2IiwicHVycG9zZSI6Im1jcC1lbmRwb2ludCIsImlhdCI6MTc1NDg5MTkyMn0.GjjPD8J31faYDJKymp-e1zJB3miE_nwd00zMLRFfNzZmmE-ale0_2Ppa-dWwRPt6HQ1DHyKSQM_3wh-55KEewg";
+    this.proxyMCPServer = new ProxyMCPServer(endpointUrl);
 
     // 初始化 Hono 应用
     this.app = new Hono();
@@ -108,7 +109,7 @@ export class WebServer {
     });
 
     this.app.get("/api/status", async (c) => {
-      const mcpStatus = this.mcpClient.getStatus();
+      const mcpStatus = this.proxyMCPServer.getStatus();
       return c.json({
         ...this.clientInfo,
         mcpConnection: mcpStatus,
@@ -300,7 +301,9 @@ export class WebServer {
             }, 5000);
           } catch (error) {
             this.logger.error(
-              `手动重启失败: ${error instanceof Error ? error.message : String(error)}`
+              `手动重启失败: ${
+                error instanceof Error ? error.message : String(error)
+              }`
             );
             this.broadcastRestartStatus(
               "failed",
@@ -507,7 +510,9 @@ export class WebServer {
       this.resetHeartbeatTimeout();
     } catch (error) {
       this.logger.error(
-        `重启服务失败: ${error instanceof Error ? error.message : String(error)}`
+        `重启服务失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
       // 失败时也要重新设置心跳超时
       this.resetHeartbeatTimeout();
@@ -541,7 +546,7 @@ export class WebServer {
 
     // 启动 MCP 客户端连接
     try {
-      await this.mcpClient.connect();
+      await this.proxyMCPServer.connect();
       this.logger.info("MCP 客户端连接成功");
     } catch (error) {
       this.logger.error("MCP 客户端连接失败:", error);
@@ -561,7 +566,7 @@ export class WebServer {
       };
 
       // 停止 MCP 客户端
-      this.mcpClient.disconnect();
+      this.proxyMCPServer.disconnect();
 
       // Clear heartbeat timeout
       if (this.heartbeatTimeout) {
