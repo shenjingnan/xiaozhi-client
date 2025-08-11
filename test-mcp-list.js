@@ -1,4 +1,4 @@
-fetch("https://api.xiaozhi.me/mcp/endpoints/list?endpoint_ids=agent_480256", {
+const resp = await fetch("https://api.xiaozhi.me/mcp/endpoints/list?endpoint_ids=agent_480256", {
   "headers": {
     "accept": "*/*",
     "accept-language": "en,en-US;q=0.9",
@@ -18,3 +18,4 @@ fetch("https://api.xiaozhi.me/mcp/endpoints/list?endpoint_ids=agent_480256", {
   "body": null,
   "method": "GET"
 });
+console.log((await resp.json()).endpoints[0].tools);
