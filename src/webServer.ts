@@ -38,8 +38,6 @@ const DEFAULT_MCP_SERVERS = {
     name: "amap",
     type: MCPTransportType.SSE,
     url: "https://mcp.amap.com/sse?key=1ec31da021b2702787841ea4ee822de3",
-    // type: MCPTransportType.STREAMABLE_HTTP,
-    // url: "https://mcp.amap.com/mcp?key=1ec31da021b2702787841ea4ee822de3",
   },
 };
 
