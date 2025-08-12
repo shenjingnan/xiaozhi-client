@@ -3,19 +3,19 @@
  * 提供全局唯一的 MCPServiceManager 实例，解决多实例资源冲突问题
  */
 
-import MCPServiceManager from './MCPServiceManager.js';
+import MCPServiceManager from "./MCPServiceManager.js";
 
 // 重新导出相关类型，便于外部使用
-export type { Tool } from '@modelcontextprotocol/sdk/types.js';
-export type { LocalMCPServerConfig } from '../configManager.js';
+export type { Tool } from "@modelcontextprotocol/sdk/types.js";
+export type { LocalMCPServerConfig } from "../configManager.js";
 
 // 单例状态枚举
 enum SingletonState {
-  NOT_INITIALIZED = 'not_initialized',
-  INITIALIZING = 'initializing',
-  INITIALIZED = 'initialized',
-  FAILED = 'failed',
-  CLEANUP = 'cleanup'
+  NOT_INITIALIZED = "not_initialized",
+  INITIALIZING = "initializing",
+  INITIALIZED = "initialized",
+  FAILED = "failed",
+  CLEANUP = "cleanup",
 }
 
 // 单例状态接口
@@ -37,7 +37,7 @@ let instanceId: string | null = null;
  * 创建 MCPServiceManager 实例（私有函数）
  */
 async function createInstance(): Promise<MCPServiceManager> {
-  console.log('🚀 正在初始化 MCPServiceManager 单例...');
+  console.log("🚀 正在初始化 MCPServiceManager 单例...");
 
   const manager = new MCPServiceManager();
   await manager.startAllServices();
@@ -84,7 +84,10 @@ async function getInstance(): Promise<MCPServiceManager> {
     lastError = error as Error;
     initPromise = null;
 
-    console.error('❌ MCPServiceManager 单例初始化失败:', (error as Error).message);
+    console.error(
+      "❌ MCPServiceManager 单例初始化失败:",
+      (error as Error).message
+    );
     throw error;
   }
 }
@@ -96,11 +99,11 @@ async function getInstance(): Promise<MCPServiceManager> {
  */
 async function cleanup(): Promise<void> {
   if (state === SingletonState.CLEANUP) {
-    console.log('⚠️  MCPServiceManager 单例已在清理中，跳过重复清理');
+    console.log("⚠️  MCPServiceManager 单例已在清理中，跳过重复清理");
     return;
   }
 
-  console.log('🧹 正在清理 MCPServiceManager 单例资源...');
+  console.log("🧹 正在清理 MCPServiceManager 单例资源...");
   state = SingletonState.CLEANUP;
 
   try {
@@ -110,7 +113,7 @@ async function cleanup(): Promise<void> {
         const instanceFromPromise = await initPromise;
         await instanceFromPromise.stopAllServices();
       } catch (error) {
-        console.error('清理初始化中的实例失败:', (error as Error).message);
+        console.error("清理初始化中的实例失败:", (error as Error).message);
       }
       initPromise = null;
     }
@@ -125,9 +128,12 @@ async function cleanup(): Promise<void> {
     lastError = null;
     instanceId = null;
 
-    console.log('✅ MCPServiceManager 单例资源清理完成');
+    console.log("✅ MCPServiceManager 单例资源清理完成");
   } catch (error) {
-    console.error('❌ MCPServiceManager 单例清理失败:', (error as Error).message);
+    console.error(
+      "❌ MCPServiceManager 单例清理失败:",
+      (error as Error).message
+    );
     // 即使清理失败，也要重置状态，避免永久锁定
     reset();
     throw error;
@@ -141,7 +147,7 @@ async function cleanup(): Promise<void> {
  * 如果需要清理资源，请使用 cleanup() 方法
  */
 function reset(): void {
-  console.log('🔄 重置 MCPServiceManager 单例状态');
+  console.log("🔄 重置 MCPServiceManager 单例状态");
 
   instance = null;
   initPromise = null;
@@ -169,7 +175,7 @@ function getStatus(): SingletonStatus {
     state: state,
     initializationTime: instanceId ? new Date() : undefined,
     lastError: lastError || undefined,
-    instanceId: instanceId || undefined
+    instanceId: instanceId || undefined,
   };
 }
 
@@ -181,7 +187,7 @@ function getStatus(): SingletonStatus {
  * @returns Promise<MCPServiceManager> 新的管理器实例
  */
 async function forceReinitialize(): Promise<MCPServiceManager> {
-  console.log('🔄 强制重新初始化 MCPServiceManager 单例...');
+  console.log("🔄 强制重新初始化 MCPServiceManager 单例...");
 
   await cleanup();
   return getInstance();
@@ -231,37 +237,37 @@ export const MCPServiceManagerSingleton = {
   getStatus,
   forceReinitialize,
   getCurrentInstance,
-  waitForInitialization
+  waitForInitialization,
 } as const;
 
 // 导出默认实例（便于使用）
 export default MCPServiceManagerSingleton;
 
 // 进程退出时自动清理资源
-process.on('exit', () => {
+process.on("exit", () => {
   if (MCPServiceManagerSingleton.isInitialized()) {
-    console.log('🔄 进程退出，正在清理 MCPServiceManager 单例...');
+    console.log("🔄 进程退出，正在清理 MCPServiceManager 单例...");
     // 注意：这里不能使用 await，因为 exit 事件是同步的
     MCPServiceManagerSingleton.reset();
   }
 });
 
 // 处理未捕获的异常
-process.on('uncaughtException', async (error) => {
-  console.error('💥 未捕获的异常，清理 MCPServiceManager 单例:', error);
+process.on("uncaughtException", async (error) => {
+  console.error("💥 未捕获的异常，清理 MCPServiceManager 单例:", error);
   try {
     await MCPServiceManagerSingleton.cleanup();
   } catch (cleanupError) {
-    console.error('清理过程中发生错误:', cleanupError);
+    console.error("清理过程中发生错误:", cleanupError);
   }
 });
 
 // 处理未处理的Promise拒绝
-process.on('unhandledRejection', async (reason) => {
-  console.error('💥 未处理的Promise拒绝，清理 MCPServiceManager 单例:', reason);
+process.on("unhandledRejection", async (reason) => {
+  console.error("💥 未处理的Promise拒绝，清理 MCPServiceManager 单例:", reason);
   try {
     await MCPServiceManagerSingleton.cleanup();
   } catch (cleanupError) {
-    console.error('清理过程中发生错误:', cleanupError);
+    console.error("清理过程中发生错误:", cleanupError);
   }
 });

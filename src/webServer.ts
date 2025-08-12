@@ -13,8 +13,8 @@ import { configManager } from "./configManager.js";
 import type { AppConfig } from "./configManager.js";
 import { Logger } from "./logger.js";
 import { ProxyMCPServer, type Tool } from "./proxyMCPServer.js";
-import { MCPServiceManagerSingleton } from "./services/mcpServiceManagerSingleton.js";
 import type { MCPServiceManager } from "./services/MCPServiceManager.js";
+import { MCPServiceManagerSingleton } from "./services/mcpServiceManagerSingleton.js";
 
 // 默认工具集合
 const MOCK_TOOLS: Tool[] = [

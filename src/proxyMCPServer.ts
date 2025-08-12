@@ -1,6 +1,6 @@
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import WebSocket from "ws";
 import { Logger } from "./logger.js";
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 
 export type { Tool };
 
