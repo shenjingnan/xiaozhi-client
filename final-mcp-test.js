@@ -68,7 +68,6 @@ ws.on("message", (data) => {
     };
     ws.send(JSON.stringify(response));
     console.log("🔍 回应服务器初始化");
-
   } else if (msg.method === "tools/list") {
     // 提供模拟工具
     const response = {
@@ -77,9 +76,11 @@ ws.on("message", (data) => {
       result: { tools: MOCK_TOOLS },
     };
     ws.send(JSON.stringify(response));
-    console.log("🎯 工具已提供:", MOCK_TOOLS.map((t) => t.name));
+    console.log(
+      "🎯 工具已提供:",
+      MOCK_TOOLS.map((t) => t.name)
+    );
     toolsSent = true;
-
   } else if (msg.method === "ping") {
     // 处理ping消息
     const response = {
@@ -89,7 +90,6 @@ ws.on("message", (data) => {
     };
     ws.send(JSON.stringify(response));
     console.log("🏓 回应ping消息");
-
   } else if (msg.method === "tools/call") {
     // 处理工具调用
     const { name, arguments: args } = msg.params;

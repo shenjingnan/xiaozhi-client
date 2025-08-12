@@ -84,9 +84,9 @@ export class WebServer {
     this.logger = new Logger();
 
     this.mcpServiceManager = await MCPServiceManagerSingleton.getInstance();
-    await this.mcpServiceManager.startAllServices();
-    const tools = this.mcpServiceManager.getAllTools();
-    console.log("tools", tools);
+    // await this.mcpServiceManager.startAllServices();
+    // const tools = this.mcpServiceManager.getAllTools();
+    // console.log("tools", tools);
 
     // 初始化 MCP 客户端
     const endpointUrl =

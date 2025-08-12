@@ -248,9 +248,7 @@ class EnhancedMCPClient {
 
   addSecondTool() {
     if (this.toolsLoaded) {
-      console.log(
-        `ℹ️ ${new Date().toISOString()} 所有工具已加载，无需再次添加`
-      );
+      console.log(`ℹ️ ${new Date().toISOString()} 所有工具已加载，无需再次添加`);
       return;
     }
 
