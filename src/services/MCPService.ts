@@ -31,6 +31,15 @@ export interface ReconnectOptions {
   jitter: boolean;
 }
 
+// Ping配置接口
+export interface PingOptions {
+  enabled: boolean;
+  interval: number; // ping间隔（毫秒）
+  timeout: number; // ping超时（毫秒）
+  maxFailures: number; // 最大连续失败次数
+  startDelay: number; // 连接成功后开始ping的延迟（毫秒）
+}
+
 // MCPService 配置接口
 export interface MCPServiceConfig {
   name: string;
@@ -45,6 +54,8 @@ export interface MCPServiceConfig {
   headers?: Record<string, string>;
   // 重连配置
   reconnect?: Partial<ReconnectOptions>;
+  // ping配置
+  ping?: Partial<PingOptions>;
   // 超时配置
   timeout?: number;
   // 重试配置
@@ -61,6 +72,11 @@ export interface MCPServiceStatus {
   lastError?: string;
   reconnectAttempts: number;
   connectionState: ConnectionState;
+  // ping状态
+  pingEnabled: boolean;
+  lastPingTime?: Date;
+  pingFailureCount: number;
+  isPinging: boolean;
 }
 
 // MCPService 选项接口
@@ -102,6 +118,13 @@ export class MCPService {
   private connectionTimeout: NodeJS.Timeout | null = null;
   private initialized = false;
 
+  // Ping相关属性
+  private pingOptions: PingOptions;
+  private pingTimer: NodeJS.Timeout | null = null;
+  private pingFailureCount = 0;
+  private lastPingTime: Date | null = null;
+  private isPinging = false;
+
   constructor(config: MCPServiceConfig, options?: MCPServiceOptions) {
     this.config = config;
     this.logger = new Logger().withTag(`MCP-${config.name}`);
@@ -121,6 +144,16 @@ export class MCPService {
       jitter: true,
       ...options?.reconnect,
       ...config.reconnect,
+    };
+
+    // 初始化ping配置
+    this.pingOptions = {
+      enabled: true, // 默认禁用，保持向后兼容
+      interval: 30000, // 30秒
+      timeout: 5000, // 5秒超时
+      maxFailures: 3, // 最大连续失败3次
+      startDelay: 5000, // 连接成功后5秒开始ping
+      ...config.ping,
     };
 
     // 初始化重连状态
@@ -236,7 +269,13 @@ export class MCPService {
     this.reconnectState.nextInterval = this.reconnectOptions.initialInterval;
     this.reconnectState.lastError = null;
 
+    // 重置ping状态
+    this.resetPingState();
+
     this.logger.info(`MCP 服务 ${this.config.name} 连接已建立`);
+
+    // 启动ping监控
+    this.startPingMonitoring();
   }
 
   /**
@@ -353,6 +392,9 @@ export class MCPService {
    * 清理连接资源
    */
   private cleanupConnection(): void {
+    // 停止ping监控
+    this.stopPingMonitoring();
+
     // 清理客户端
     if (this.client) {
       try {
@@ -430,6 +472,9 @@ export class MCPService {
 
     // 标记为手动断开，阻止自动重连
     this.reconnectState.isManualDisconnect = true;
+
+    // 停止ping监控
+    this.stopPingMonitoring();
 
     // 停止重连定时器
     this.stopReconnect();
@@ -527,6 +572,11 @@ export class MCPService {
       lastError: this.reconnectState.lastError?.message,
       reconnectAttempts: this.reconnectState.attempts,
       connectionState: this.connectionState,
+      // ping状态
+      pingEnabled: this.pingOptions.enabled,
+      lastPingTime: this.lastPingTime || undefined,
+      pingFailureCount: this.pingFailureCount,
+      isPinging: this.isPinging,
     };
   }
 
@@ -580,5 +630,168 @@ export class MCPService {
     this.reconnectState.nextInterval = this.reconnectOptions.initialInterval;
     this.reconnectState.lastError = null;
     this.logger.info(`${this.config.name} 重连状态已重置`);
+  }
+
+  /**
+   * 启动ping监控
+   */
+  private startPingMonitoring(): void {
+    if (!this.pingOptions.enabled || this.pingTimer || !this.isConnected()) {
+      return;
+    }
+
+    this.logger.info(`${this.config.name} 启动ping监控，间隔: ${this.pingOptions.interval}ms`);
+
+    // 延迟启动ping，让连接稳定
+    setTimeout(() => {
+      if (this.isConnected() && !this.pingTimer) {
+        this.pingTimer = setInterval(() => {
+          this.performPing();
+        }, this.pingOptions.interval);
+      }
+    }, this.pingOptions.startDelay);
+  }
+
+  /**
+   * 停止ping监控
+   */
+  private stopPingMonitoring(): void {
+    if (this.pingTimer) {
+      clearInterval(this.pingTimer);
+      this.pingTimer = null;
+      this.logger.debug(`${this.config.name} 停止ping监控`);
+    }
+  }
+
+  /**
+   * 执行ping检查
+   */
+  private async performPing(): Promise<void> {
+    if (!this.client || this.isPinging || !this.isConnected()) {
+      return;
+    }
+
+    this.isPinging = true;
+    const startTime = performance.now();
+
+    try {
+      this.logger.debug(`${this.config.name} 发送ping请求（通过listTools检测连接）`);
+
+      // 使用Promise.race实现超时控制
+      // 由于MCP SDK可能没有直接的ping方法，我们使用listTools作为连接检测
+      // 这是一个轻量级的操作，可以有效检测连接状态
+      const pingPromise = this.client.listTools();
+
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error(`Ping超时 (${this.pingOptions.timeout}ms)`));
+        }, this.pingOptions.timeout);
+      });
+
+      await Promise.race([pingPromise, timeoutPromise]);
+
+      const duration = performance.now() - startTime;
+      this.handlePingSuccess(duration);
+    } catch (error) {
+      const duration = performance.now() - startTime;
+      this.handlePingFailure(error as Error, duration);
+    } finally {
+      this.isPinging = false;
+    }
+  }
+
+  /**
+   * 处理ping成功
+   */
+  private handlePingSuccess(duration: number): void {
+    this.pingFailureCount = 0;
+    this.lastPingTime = new Date();
+    this.logger.debug(
+      `${this.config.name} ping成功，延迟: ${duration.toFixed(2)}ms`
+    );
+  }
+
+  /**
+   * 处理ping失败
+   */
+  private handlePingFailure(error: Error, duration: number): void {
+    this.pingFailureCount++;
+    this.logger.warn(
+      `${this.config.name} ping失败 (${this.pingFailureCount}/${this.pingOptions.maxFailures})，` +
+      `延迟: ${duration.toFixed(2)}ms，错误: ${error.message}`
+    );
+
+    // 如果连续失败次数达到阈值，触发重连
+    if (this.pingFailureCount >= this.pingOptions.maxFailures) {
+      this.logger.error(
+        `${this.config.name} 连续ping失败达到阈值，触发重连机制`
+      );
+
+      // 停止ping监控，避免干扰重连过程
+      this.stopPingMonitoring();
+
+      // 创建连接错误并触发现有的重连机制
+      const connectionError = new Error(
+        `Ping检测失败，连续失败${this.pingFailureCount}次，连接可能已断开`
+      );
+      this.handleConnectionError(connectionError);
+    }
+  }
+
+  /**
+   * 重置ping状态
+   */
+  private resetPingState(): void {
+    this.pingFailureCount = 0;
+    this.lastPingTime = null;
+    this.isPinging = false;
+  }
+
+  /**
+   * 启用ping监控
+   */
+  enablePing(): void {
+    this.pingOptions.enabled = true;
+    this.logger.info(`${this.config.name} ping监控已启用`);
+
+    // 如果当前已连接，立即启动ping监控
+    if (this.isConnected()) {
+      this.startPingMonitoring();
+    }
+  }
+
+  /**
+   * 禁用ping监控
+   */
+  disablePing(): void {
+    this.pingOptions.enabled = false;
+    this.stopPingMonitoring();
+    this.logger.info(`${this.config.name} ping监控已禁用`);
+  }
+
+  /**
+   * 更新ping配置
+   */
+  updatePingOptions(options: Partial<PingOptions>): void {
+    const wasEnabled = this.pingOptions.enabled;
+    this.pingOptions = { ...this.pingOptions, ...options };
+
+    this.logger.info(`${this.config.name} ping配置已更新`, options);
+
+    // 如果启用状态发生变化，相应地启动或停止监控
+    if (wasEnabled !== this.pingOptions.enabled) {
+      if (this.pingOptions.enabled && this.isConnected()) {
+        this.startPingMonitoring();
+      } else if (!this.pingOptions.enabled) {
+        this.stopPingMonitoring();
+      }
+    }
+  }
+
+  /**
+   * 获取ping配置
+   */
+  getPingOptions(): PingOptions {
+    return { ...this.pingOptions };
   }
 }

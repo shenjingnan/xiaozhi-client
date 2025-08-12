@@ -299,6 +299,11 @@ describe("MCPService", () => {
         lastError: undefined,
         reconnectAttempts: 0,
         connectionState: ConnectionState.DISCONNECTED,
+        // ping状态
+        pingEnabled: false,
+        lastPingTime: undefined,
+        pingFailureCount: 0,
+        isPinging: false,
       });
     });
 
