@@ -8,6 +8,7 @@ export enum MCPTransportType {
   STDIO = "stdio",
   SSE = "sse",
   STREAMABLE_HTTP = "streamable-http",
+  MODELSCOPE_SSE = "modelscope-sse",
 }
 
 // 连接状态枚举
@@ -40,6 +41,14 @@ export interface PingOptions {
   startDelay: number; // 连接成功后开始ping的延迟（毫秒）
 }
 
+// ModelScope SSE 自定义选项接口
+export interface ModelScopeSSEOptions {
+  eventSourceInit?: {
+    fetch?: (url: string | URL | Request, init?: RequestInit) => Promise<Response>;
+  };
+  requestInit?: RequestInit;
+}
+
 // MCPService 配置接口
 export interface MCPServiceConfig {
   name: string;
@@ -52,6 +61,9 @@ export interface MCPServiceConfig {
   // 认证配置
   apiKey?: string;
   headers?: Record<string, string>;
+  // ModelScope 特有配置
+  modelScopeAuth?: boolean;
+  customSSEOptions?: ModelScopeSSEOptions;
   // 重连配置
   reconnect?: Partial<ReconnectOptions>;
   // ping配置
@@ -148,7 +160,7 @@ export class MCPService {
 
     // 初始化ping配置
     this.pingOptions = {
-      enabled: true, // 默认禁用，保持向后兼容
+      enabled: true, // 默认启用
       interval: 30000, // 30秒
       timeout: 5000, // 5秒超时
       maxFailures: 3, // 最大连续失败3次

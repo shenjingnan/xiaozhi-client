@@ -43,6 +43,9 @@ export function createTransport(config: MCPServiceConfig): any {
     case MCPTransportType.SSE:
       return createSSETransport(config);
 
+    case MCPTransportType.MODELSCOPE_SSE:
+      return createModelScopeSSETransport(config);
+
     case MCPTransportType.STREAMABLE_HTTP:
       return createStreamableHTTPTransport(config);
 
@@ -79,6 +82,24 @@ function createSSETransport(config: MCPServiceConfig): SSEClientTransport {
   return new SSEClientTransport(url, options);
 }
 
+/**
+ * 创建 ModelScope SSE transport
+ */
+function createModelScopeSSETransport(config: MCPServiceConfig): SSEClientTransport {
+  if (!config.url) {
+    throw new Error("ModelScope SSE transport 需要 URL 配置");
+  }
+
+  if (!config.apiKey) {
+    throw new Error("ModelScope SSE transport 需要 apiKey 配置");
+  }
+
+  const url = new URL(config.url);
+  const options = createModelScopeSSEOptions(config);
+
+  return new SSEClientTransport(url, options);
+}
+
 function createStreamableHTTPTransport(
   config: MCPServiceConfig
 ): StreamableHTTPClientTransport {
@@ -108,6 +129,39 @@ function createSSEOptions(config: MCPServiceConfig): SSEClientTransportOptions {
   }
 
   return options;
+}
+
+/**
+ * 创建 ModelScope SSE 选项
+ */
+function createModelScopeSSEOptions(config: MCPServiceConfig): any {
+  const token = config.apiKey!; // 已在调用方验证过
+
+  // 如果有自定义SSE选项，使用它们
+  if (config.customSSEOptions) {
+    return config.customSSEOptions;
+  }
+
+  // 默认的ModelScope SSE选项配置
+  return {
+    eventSourceInit: {
+      fetch: async (url: string | URL | Request, init?: RequestInit) => {
+        // 添加认证头
+        const headers = {
+          ...init?.headers,
+          Authorization: `Bearer ${token}`,
+        };
+
+        return fetch(url, { ...init, headers });
+      },
+    },
+    requestInit: {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        ...config.headers,
+      },
+    },
+  };
 }
 
 function createStreamableHTTPOptions(
@@ -154,6 +208,15 @@ export function validateConfig(config: MCPServiceConfig): void {
       }
       break;
 
+    case MCPTransportType.MODELSCOPE_SSE:
+      if (!config.url) {
+        throw new Error("modelscope-sse 类型需要 url 字段");
+      }
+      if (!config.apiKey) {
+        throw new Error("modelscope-sse 类型需要 apiKey 字段");
+      }
+      break;
+
     default:
       throw new Error(`不支持的传输类型: ${config.type}`);
   }
@@ -166,6 +229,7 @@ export function getSupportedTypes(): MCPTransportType[] {
   return [
     MCPTransportType.STDIO,
     MCPTransportType.SSE,
+    MCPTransportType.MODELSCOPE_SSE,
     MCPTransportType.STREAMABLE_HTTP,
   ];
 }

@@ -16,9 +16,10 @@ async function main() {
 
   // 配置 MCP 服务
   const config: MCPServiceConfig = {
-    name: "12306",
-    type: MCPTransportType.SSE,
-    url: "https://mcp.api-inference.modelscope.net/xyz/sse", // 这个地址是无效的，使用时请换成自己的地址
+    name: "modelscope-test",
+    type: MCPTransportType.MODELSCOPE_SSE,
+    url: "https://mcp.api-inference.modelscope.net/xxx/sse",
+    apiKey: "<请填写apikey>",
   };
 
   // 创建 MCPService 实例
@@ -60,6 +61,19 @@ async function main() {
       initialInterval: 1500,
     });
     console.log("🔄 更新后的重连配置:", service.getReconnectOptions());
+
+    // 测试工具调用
+    if (tools.length > 0) {
+      console.log("🧪 测试工具调用...");
+      try {
+        const result = await service.callTool("getChineseCalendar", {
+          date: "2025-08-12"
+        });
+        console.log("✅ 工具调用成功:", JSON.stringify(result, null, 2));
+      } catch (error) {
+        console.error("❌ 工具调用失败:", error);
+      }
+    }
   } catch (error) {
     console.error("❌ 连接失败:", error);
   } finally {

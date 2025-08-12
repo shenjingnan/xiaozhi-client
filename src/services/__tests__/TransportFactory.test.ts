@@ -121,6 +121,19 @@ describe("TransportFactory", () => {
       expect(transport).toBeInstanceOf(StreamableHTTPClientTransport);
     });
 
+    it("should create ModelScope SSE transport", () => {
+      const config: MCPServiceConfig = {
+        name: "test-modelscope",
+        type: "modelscope-sse",
+        url: "https://mcp.api-inference.modelscope.net/test/sse",
+        apiKey: "test-token",
+      };
+
+      const transport = TransportFactory.create(config);
+
+      expect(transport).toBeInstanceOf(SSEClientTransport);
+    });
+
     it("should throw error for unsupported transport type", () => {
       const config = {
         name: "test-unsupported",
@@ -165,6 +178,30 @@ describe("TransportFactory", () => {
         "StreamableHTTP transport 需要 URL 配置"
       );
     });
+
+    it("should throw error for ModelScope SSE without URL", () => {
+      const config: MCPServiceConfig = {
+        name: "test-modelscope-invalid",
+        type: "modelscope-sse",
+        apiKey: "test-token",
+      };
+
+      expect(() => TransportFactory.create(config)).toThrow(
+        "ModelScope SSE transport 需要 URL 配置"
+      );
+    });
+
+    it("should throw error for ModelScope SSE without API key", () => {
+      const config: MCPServiceConfig = {
+        name: "test-modelscope-invalid",
+        type: "modelscope-sse",
+        url: "https://example.com/sse",
+      };
+
+      expect(() => TransportFactory.create(config)).toThrow(
+        "ModelScope SSE transport 需要 apiKey 配置"
+      );
+    });
   });
 
   describe("validateConfig", () => {
@@ -194,6 +231,17 @@ describe("TransportFactory", () => {
         name: "test-http",
         type: "streamable-http",
         url: "https://example.com/api",
+      };
+
+      expect(() => TransportFactory.validateConfig(config)).not.toThrow();
+    });
+
+    it("should validate ModelScope SSE config", () => {
+      const config: MCPServiceConfig = {
+        name: "test-modelscope",
+        type: "modelscope-sse",
+        url: "https://mcp.api-inference.modelscope.net/test/sse",
+        apiKey: "test-token",
       };
 
       expect(() => TransportFactory.validateConfig(config)).not.toThrow();
@@ -253,13 +301,37 @@ describe("TransportFactory", () => {
         "streamable-http 类型需要 url 字段"
       );
     });
+
+    it("should throw error for ModelScope SSE without URL", () => {
+      const config: MCPServiceConfig = {
+        name: "test-modelscope",
+        type: "modelscope-sse",
+        apiKey: "test-token",
+      };
+
+      expect(() => TransportFactory.validateConfig(config)).toThrow(
+        "modelscope-sse 类型需要 url 字段"
+      );
+    });
+
+    it("should throw error for ModelScope SSE without API key", () => {
+      const config: MCPServiceConfig = {
+        name: "test-modelscope",
+        type: "modelscope-sse",
+        url: "https://example.com/sse",
+      };
+
+      expect(() => TransportFactory.validateConfig(config)).toThrow(
+        "modelscope-sse 类型需要 apiKey 字段"
+      );
+    });
   });
 
   describe("getSupportedTypes", () => {
     it("should return all supported transport types", () => {
       const types = TransportFactory.getSupportedTypes();
 
-      expect(types).toEqual(["stdio", "sse", "streamable-http"]);
+      expect(types).toEqual(["stdio", "sse", "modelscope-sse", "streamable-http"]);
     });
   });
 });

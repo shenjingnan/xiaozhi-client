@@ -49,6 +49,7 @@ describe("MCPService", () => {
       info: vi.fn(),
       error: vi.fn(),
       warn: vi.fn(),
+      debug: vi.fn(),
       withTag: vi.fn().mockReturnThis(),
     };
     vi.mocked(Logger).mockImplementation(() => mockLogger);
