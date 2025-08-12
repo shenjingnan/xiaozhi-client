@@ -85,7 +85,9 @@ function createSSETransport(config: MCPServiceConfig): SSEClientTransport {
 /**
  * 创建 ModelScope SSE transport
  */
-function createModelScopeSSETransport(config: MCPServiceConfig): SSEClientTransport {
+function createModelScopeSSETransport(
+  config: MCPServiceConfig
+): SSEClientTransport {
   if (!config.url) {
     throw new Error("ModelScope SSE transport 需要 URL 配置");
   }

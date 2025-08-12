@@ -67,7 +67,7 @@ async function main() {
       console.log("🧪 测试工具调用...");
       try {
         const result = await service.callTool("getChineseCalendar", {
-          date: "2025-08-12"
+          date: "2025-08-12",
         });
         console.log("✅ 工具调用成功:", JSON.stringify(result, null, 2));
       } catch (error) {

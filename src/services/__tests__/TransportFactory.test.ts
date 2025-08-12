@@ -331,7 +331,12 @@ describe("TransportFactory", () => {
     it("should return all supported transport types", () => {
       const types = TransportFactory.getSupportedTypes();
 
-      expect(types).toEqual(["stdio", "sse", "modelscope-sse", "streamable-http"]);
+      expect(types).toEqual([
+        "stdio",
+        "sse",
+        "modelscope-sse",
+        "streamable-http",
+      ]);
     });
   });
 });

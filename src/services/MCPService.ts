@@ -44,7 +44,10 @@ export interface PingOptions {
 // ModelScope SSE 自定义选项接口
 export interface ModelScopeSSEOptions {
   eventSourceInit?: {
-    fetch?: (url: string | URL | Request, init?: RequestInit) => Promise<Response>;
+    fetch?: (
+      url: string | URL | Request,
+      init?: RequestInit
+    ) => Promise<Response>;
   };
   requestInit?: RequestInit;
 }
