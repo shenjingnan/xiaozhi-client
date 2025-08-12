@@ -27,7 +27,6 @@ async function testWebServer(): Promise<void> {
     console.log("✅ WebServer 停止成功\n");
 
     console.log("=== 所有测试完成 ===");
-
   } catch (error) {
     console.error("❌ 测试过程中发生错误:", (error as Error).message);
     console.error("错误堆栈:", (error as Error).stack);

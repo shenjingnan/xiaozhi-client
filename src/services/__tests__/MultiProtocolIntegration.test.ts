@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MCPServiceManager } from "../MCPServiceManager.js";
-import { MCPTransportType, type MCPServiceConfig } from "../MCPService.js";
-import { TransportFactory } from "../TransportFactory.js";
 import { Logger } from "../../logger.js";
+import { type MCPServiceConfig, MCPTransportType } from "../MCPService.js";
+import { MCPServiceManager } from "../MCPServiceManager.js";
+import { TransportFactory } from "../TransportFactory.js";
 
 // Mock dependencies
 vi.mock("../MCPService.js");
@@ -30,11 +30,9 @@ describe("Multi-Protocol Integration", () => {
     // Mock TransportFactory
     vi.mocked(TransportFactory).validateConfig = vi.fn();
     vi.mocked(TransportFactory).create = vi.fn();
-    vi.mocked(TransportFactory).getSupportedTypes = vi.fn().mockReturnValue([
-      "stdio",
-      "sse",
-      "streamable-http"
-    ]);
+    vi.mocked(TransportFactory).getSupportedTypes = vi
+      .fn()
+      .mockReturnValue(["stdio", "sse", "streamable-http"]);
   });
 
   afterEach(() => {
@@ -135,12 +133,14 @@ describe("Multi-Protocol Integration", () => {
       expect(manager.getService("http-translate")).toBeUndefined(); // Not started yet
 
       // Verify configs were added by checking if we can add them without error
-      expect(() => manager.addServiceConfig("stdio-calc", {
-        name: "stdio-calc",
-        type: MCPTransportType.STDIO,
-        command: "node",
-        args: ["calc.js"],
-      })).not.toThrow();
+      expect(() =>
+        manager.addServiceConfig("stdio-calc", {
+          name: "stdio-calc",
+          type: MCPTransportType.STDIO,
+          command: "node",
+          args: ["calc.js"],
+        })
+      ).not.toThrow();
     });
 
     it("should handle mixed protocol startup", async () => {
@@ -232,7 +232,9 @@ describe("Multi-Protocol Integration", () => {
       };
 
       // Should work exactly as before
-      expect(() => manager.addServiceConfig("legacy-calculator", legacyConfig)).not.toThrow();
+      expect(() =>
+        manager.addServiceConfig("legacy-calculator", legacyConfig)
+      ).not.toThrow();
       expect(() => TransportFactory.validateConfig(legacyConfig)).not.toThrow();
       expect(() => TransportFactory.create(legacyConfig)).not.toThrow();
     });

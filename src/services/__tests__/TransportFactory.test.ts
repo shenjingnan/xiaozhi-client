@@ -1,16 +1,15 @@
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Logger } from "../../logger.js";
 import type { MCPServiceConfig } from "../MCPService.js";
-import {
-  StreamableHttpTransport,
-  TransportFactory,
-} from "../TransportFactory.js";
+import { TransportFactory } from "../TransportFactory.js";
 
 // Mock dependencies
 vi.mock("@modelcontextprotocol/sdk/client/stdio.js");
 vi.mock("@modelcontextprotocol/sdk/client/sse.js");
+vi.mock("@modelcontextprotocol/sdk/client/streamableHttp.js");
 vi.mock("../../logger.js");
 vi.mock("eventsource");
 
@@ -119,7 +118,7 @@ describe("TransportFactory", () => {
 
       const transport = TransportFactory.create(config);
 
-      expect(transport).toBeInstanceOf(StreamableHttpTransport);
+      expect(transport).toBeInstanceOf(StreamableHTTPClientTransport);
     });
 
     it("should throw error for unsupported transport type", () => {
@@ -163,7 +162,7 @@ describe("TransportFactory", () => {
       };
 
       expect(() => TransportFactory.create(config)).toThrow(
-        "streamable-http transport 需要 URL 配置"
+        "StreamableHTTP transport 需要 URL 配置"
       );
     });
   });
@@ -261,56 +260,6 @@ describe("TransportFactory", () => {
       const types = TransportFactory.getSupportedTypes();
 
       expect(types).toEqual(["stdio", "sse", "streamable-http"]);
-    });
-  });
-});
-
-describe("StreamableHttpTransport", () => {
-  let transport: StreamableHttpTransport;
-  let mockLogger: any;
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-
-    // Mock Logger
-    mockLogger = {
-      info: vi.fn(),
-      error: vi.fn(),
-      warn: vi.fn(),
-      withTag: vi.fn().mockReturnThis(),
-    };
-    vi.mocked(Logger).mockImplementation(() => mockLogger);
-
-    const config: MCPServiceConfig = {
-      name: "test-http",
-      type: "streamable-http",
-      url: "https://example.com/api",
-    };
-
-    transport = new StreamableHttpTransport(config);
-  });
-
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
-
-  describe("connect", () => {
-    it("should connect successfully", async () => {
-      await transport.connect();
-
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        "连接到 HTTP MCP 服务: https://example.com/api"
-      );
-    });
-  });
-
-  describe("close", () => {
-    it("should close successfully", async () => {
-      await transport.close();
-
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        "关闭 HTTP MCP 服务连接: https://example.com/api"
-      );
     });
   });
 });

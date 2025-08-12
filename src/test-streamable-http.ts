@@ -5,8 +5,8 @@
  * 用于验证 streamable-http 协议的 MCP 服务配置和启动
  */
 
-import MCPServiceManager from "./services/MCPServiceManager.js";
 import { MCPTransportType } from "./services/MCPService.js";
+import MCPServiceManager from "./services/MCPServiceManager.js";
 
 async function testStreamableHttpService(): Promise<void> {
   console.log("=== Streamable HTTP MCP 服务测试开始 ===\n");
@@ -21,7 +21,7 @@ async function testStreamableHttpService(): Promise<void> {
       type: MCPTransportType.STREAMABLE_HTTP,
       url: "https://mcp.amap.com/mcp?key=1ec31da021b2702787841ea4ee822de3",
     };
-    
+
     manager.addServiceConfig("amap", amapConfig);
     console.log("✅ amap 服务配置添加成功\n");
 
@@ -56,29 +56,31 @@ async function testStreamableHttpService(): Promise<void> {
       try {
         const firstTool = tools[0];
         console.log(`尝试调用工具: ${firstTool.name}`);
-        
+
         // 根据工具的输入模式构造测试参数
         const testParams = {};
-        if (firstTool.inputSchema && firstTool.inputSchema.properties) {
-          for (const [key, prop] of Object.entries(firstTool.inputSchema.properties)) {
-            if (typeof prop === 'object' && prop !== null && 'type' in prop) {
+        if (firstTool.inputSchema?.properties) {
+          for (const [key, prop] of Object.entries(
+            firstTool.inputSchema.properties
+          )) {
+            if (typeof prop === "object" && prop !== null && "type" in prop) {
               switch (prop.type) {
-                case 'string':
-                  testParams[key] = 'test';
+                case "string":
+                  testParams[key] = "test";
                   break;
-                case 'number':
+                case "number":
                   testParams[key] = 123;
                   break;
-                case 'boolean':
+                case "boolean":
                   testParams[key] = true;
                   break;
                 default:
-                  testParams[key] = 'test';
+                  testParams[key] = "test";
               }
             }
           }
         }
-        
+
         const result = await manager.callTool(firstTool.name, testParams);
         console.log("工具调用结果:", result);
         console.log("✅ amap 工具调用成功\n");
@@ -97,7 +99,6 @@ async function testStreamableHttpService(): Promise<void> {
     console.log("✅ 最终状态检查完成\n");
 
     console.log("=== 所有测试完成 ===\n");
-
   } catch (error) {
     console.error("❌ 测试过程中发生错误:", (error as Error).message);
     console.error("错误堆栈:", (error as Error).stack);
