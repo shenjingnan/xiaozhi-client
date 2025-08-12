@@ -58,7 +58,7 @@ async function testStreamableHttpService(): Promise<void> {
         console.log(`尝试调用工具: ${firstTool.name}`);
 
         // 根据工具的输入模式构造测试参数
-        const testParams = {};
+        const testParams: Record<string, any> = {};
         if (firstTool.inputSchema?.properties) {
           for (const [key, prop] of Object.entries(
             firstTool.inputSchema.properties

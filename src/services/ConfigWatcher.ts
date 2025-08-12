@@ -121,7 +121,10 @@ class ConfigWatcherClass {
 
     this.watcher.on("error", (error) => {
       this.logger.error("配置文件监听错误:", error);
-      const mcpError = categorizeError(error, "ConfigWatcher");
+      const mcpError = categorizeError(
+        error instanceof Error ? error : new Error(String(error)),
+        "ConfigWatcher"
+      );
       if (shouldAlert(mcpError)) {
         this.logger.error("配置监听器发生严重错误，需要人工干预");
       }

@@ -45,6 +45,10 @@ export interface MCPServiceConfig {
   headers?: Record<string, string>;
   // 重连配置
   reconnect?: Partial<ReconnectOptions>;
+  // 超时配置
+  timeout?: number;
+  // 重试配置
+  retryAttempts?: number;
 }
 
 // MCPService 状态接口
@@ -501,6 +505,13 @@ export class MCPService {
       );
       throw error;
     }
+  }
+
+  /**
+   * 获取服务配置
+   */
+  getConfig(): MCPServiceConfig {
+    return this.config;
   }
 
   /**

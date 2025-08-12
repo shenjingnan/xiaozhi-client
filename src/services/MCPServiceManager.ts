@@ -286,11 +286,40 @@ export class MCPServiceManager {
   }
 
   /**
-   * 添加服务配置
+   * 获取所有服务实例
    */
-  addServiceConfig(name: string, config: MCPServiceConfig): void {
+  getAllServices(): Map<string, MCPService> {
+    return new Map(this.services);
+  }
+
+  /**
+   * 添加服务配置（重载方法以支持两种调用方式）
+   */
+  addServiceConfig(name: string, config: MCPServiceConfig): void;
+  addServiceConfig(config: MCPServiceConfig): void;
+  addServiceConfig(
+    nameOrConfig: string | MCPServiceConfig,
+    config?: MCPServiceConfig
+  ): void {
+    if (typeof nameOrConfig === "string" && config) {
+      // 两参数版本
+      this.configs[nameOrConfig] = config;
+      this.logger.info(`已添加服务配置: ${nameOrConfig}`);
+    } else if (typeof nameOrConfig === "object") {
+      // 单参数版本
+      this.configs[nameOrConfig.name] = nameOrConfig;
+      this.logger.info(`已添加服务配置: ${nameOrConfig.name}`);
+    } else {
+      throw new Error("Invalid arguments for addServiceConfig");
+    }
+  }
+
+  /**
+   * 更新服务配置
+   */
+  updateServiceConfig(name: string, config: MCPServiceConfig): void {
     this.configs[name] = config;
-    this.logger.info(`已添加服务配置: ${name}`);
+    this.logger.info(`已更新服务配置: ${name}`);
   }
 
   /**

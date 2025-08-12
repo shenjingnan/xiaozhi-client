@@ -179,7 +179,7 @@ class HealthCheckerClass {
 
     // 并行检查所有服务
     const checkPromises = Array.from(services.entries()).map(
-      async ([serviceName, service]) => {
+      async ([serviceName, service]: [string, MCPService]) => {
         try {
           const status = await this.checkService(service);
           results.set(serviceName, status);

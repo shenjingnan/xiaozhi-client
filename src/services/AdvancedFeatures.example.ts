@@ -13,7 +13,7 @@ import {
   shouldAlert,
 } from "./ErrorHandler.js";
 import { HealthChecker } from "./HealthChecker.js";
-import type { MCPServiceConfig } from "./MCPService.js";
+import { type MCPServiceConfig, MCPTransportType } from "./MCPService.js";
 import MCPServiceManager from "./MCPServiceManager.js";
 import { OperationType, PerformanceMonitor } from "./PerformanceMonitor.js";
 
@@ -146,7 +146,7 @@ class AdvancedFeaturesDemo {
     const testConfigs: MCPServiceConfig[] = [
       {
         name: "test-stdio-service",
-        type: "stdio",
+        type: MCPTransportType.STDIO,
         command: "echo",
         args: ["Hello MCP"],
       },
@@ -258,7 +258,7 @@ class AdvancedFeaturesDemo {
       const testConfig = [
         {
           name: "valid-service",
-          type: "stdio",
+          type: MCPTransportType.STDIO,
           command: "echo",
           args: ["test"],
         },
