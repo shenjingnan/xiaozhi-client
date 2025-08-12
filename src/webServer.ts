@@ -12,7 +12,7 @@ import { getServiceStatus } from "./cli.js";
 import { configManager } from "./configManager.js";
 import type { AppConfig } from "./configManager.js";
 import { Logger } from "./logger.js";
-import { ProxyMCPServer, type Tool } from "./proxyMCPServer.js";
+import { ProxyMCPServer, type Tool } from "./ProxyMCPServer.js";
 import { MCPTransportType } from "./services/MCPService.js";
 import type { MCPServiceManager } from "./services/MCPServiceManager.js";
 import { MCPServiceManagerSingleton } from "./services/MCPServiceManagerSingleton.js";

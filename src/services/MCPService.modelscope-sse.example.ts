@@ -19,7 +19,7 @@ async function main() {
     name: "modelscope-test",
     type: MCPTransportType.MODELSCOPE_SSE,
     url: "https://mcp.api-inference.modelscope.net/xxx/sse",
-    apiKey: "<请填写apikey>",
+    apiKey: "<请填写apiKey>",
   };
 
   // 创建 MCPService 实例
