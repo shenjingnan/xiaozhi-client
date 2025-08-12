@@ -8,7 +8,7 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
-import type { LocalMCPServerConfig } from './configManager.js';
+import type { LocalMCPServerConfig } from '../configManager.js';
 
 // 工具信息接口
 interface ToolInfo {
@@ -50,14 +50,14 @@ export class MCPServiceManager {
     this.mcpServers = {
       "calculator": {
         "command": "node",
-        "args": ["./templates/hello-world/mcpServers/calculator.js"]
+        "args": ["/Users/nemo/github/shenjingnan/xiaozhi-client/templates/hello-world/mcpServers/calculator.js"]
       },
       "datetime": {
-        "command": "node", 
-        "args": ["./templates/hello-world/mcpServers/datetime.js"]
+        "command": "node",
+        "args": ["/Users/nemo/github/shenjingnan/xiaozhi-client/templates/hello-world/mcpServers/datetime.js"]
       }
     };
-    
+
     this.clients = new Map(); // 存储 MCP 客户端实例
     this.processes = new Map(); // 存储 MCP 进程实例
     this.tools = new Map(); // 存储工具映射
@@ -68,11 +68,11 @@ export class MCPServiceManager {
    */
   async startAllServices(): Promise<void> {
     console.log('正在启动所有 MCP 服务...');
-    
+
     for (const [serviceName, config] of Object.entries(this.mcpServers)) {
       await this.startService(serviceName, config);
     }
-    
+
     console.log('所有 MCP 服务启动完成');
   }
 
@@ -81,7 +81,7 @@ export class MCPServiceManager {
    */
   async startService(serviceName: string, config: LocalMCPServerConfig): Promise<void> {
     console.log(`启动 MCP 服务: ${serviceName}`);
-    
+
     try {
       // 创建 MCP 客户端
       const client = new Client({
@@ -92,21 +92,21 @@ export class MCPServiceManager {
           tools: {}
         }
       });
-      
+
       // 创建 stdio 传输层，让 SDK 自己管理进程
       const transport = new StdioClientTransport({
         command: config.command,
         args: config.args
       });
-      
+
       // 连接到 MCP 服务
       await client.connect(transport);
       this.clients.set(serviceName, client);
-      
+
       // 获取工具列表
       const toolsResult = await client.listTools();
       const tools: Tool[] = toolsResult.tools || [];
-      
+
       // 注册工具到映射表
       for (const tool of tools) {
         const toolKey = `${serviceName}__${tool.name}`;
@@ -116,10 +116,10 @@ export class MCPServiceManager {
           tool
         });
       }
-      
-      console.log(`${serviceName} 服务启动成功，加载了 ${tools.length} 个工具:`, 
+
+      console.log(`${serviceName} 服务启动成功，加载了 ${tools.length} 个工具:`,
                   tools.map(t => t.name).join(', '));
-      
+
     } catch (error) {
       console.error(`启动 ${serviceName} 服务失败:`, (error as Error).message);
       throw error;
@@ -143,7 +143,7 @@ export class MCPServiceManager {
       serviceName: string;
       originalName: string;
     }> = [];
-    
+
     for (const [toolKey, toolInfo] of this.tools) {
       allTools.push({
         name: toolKey,
@@ -161,23 +161,23 @@ export class MCPServiceManager {
    */
   async callTool(toolName: string, arguments_: any): Promise<ToolCallResult> {
     console.log(`调用工具: ${toolName}，参数:`, arguments_);
-    
+
     const toolInfo = this.tools.get(toolName);
     if (!toolInfo) {
       throw new Error(`未找到工具: ${toolName}`);
     }
-    
+
     const client = this.clients.get(toolInfo.serviceName);
     if (!client) {
       throw new Error(`服务 ${toolInfo.serviceName} 不可用`);
     }
-    
+
     try {
       const result = await client.callTool({
         name: toolInfo.originalName,
         arguments: arguments_ || {}
       });
-      
+
       console.log(`工具 ${toolName} 调用成功，结果:`, result);
       return result as ToolCallResult;
     } catch (error) {
@@ -191,7 +191,7 @@ export class MCPServiceManager {
    */
   async stopAllServices(): Promise<void> {
     console.log('正在停止所有 MCP 服务...');
-    
+
     // 关闭所有客户端连接（SDK会自动管理进程）
     for (const [serviceName, client] of this.clients) {
       try {
@@ -201,11 +201,11 @@ export class MCPServiceManager {
         console.error(`关闭 ${serviceName} 客户端失败:`, (error as Error).message);
       }
     }
-    
+
     this.clients.clear();
     this.processes.clear();
     this.tools.clear();
-    
+
     console.log('所有 MCP 服务已停止');
   }
 
@@ -218,14 +218,14 @@ export class MCPServiceManager {
       totalTools: this.tools.size,
       availableTools: Array.from(this.tools.keys())
     };
-    
+
     for (const [serviceName, client] of this.clients) {
       status.services[serviceName] = {
         connected: !!client,
         clientName: (client as any)?.name || 'unknown'
       };
     }
-    
+
     return status;
   }
 }

@@ -13,6 +13,8 @@ import { configManager } from "./configManager.js";
 import type { AppConfig } from "./configManager.js";
 import { Logger } from "./logger.js";
 import { ProxyMCPServer, type Tool } from "./proxyMCPServer.js";
+import { MCPServiceManagerSingleton } from "./services/mcpServiceManagerSingleton.js";
+import type { MCPServiceManager } from "./services/MCPServiceManager.js";
 
 // 默认工具集合
 const MOCK_TOOLS: Tool[] = [
@@ -48,11 +50,11 @@ interface ClientInfo {
 }
 
 export class WebServer {
-  private app: Hono;
+  private app: Hono | undefined;
   private httpServer: any = null;
   private wss: WebSocketServer | null = null;
-  private logger: Logger;
-  private port: number;
+  private logger: Logger | undefined;
+  private port: number | undefined;
   private clientInfo: ClientInfo = {
     status: "disconnected",
     mcpEndpoint: "",
@@ -60,9 +62,14 @@ export class WebServer {
   };
   private heartbeatTimeout?: NodeJS.Timeout;
   private readonly HEARTBEAT_TIMEOUT = 35000; // 35 seconds (slightly more than client's 30s interval)
-  private proxyMCPServer: ProxyMCPServer;
+  private proxyMCPServer: ProxyMCPServer | undefined;
+  private mcpServiceManager: MCPServiceManager;
 
   constructor(port?: number) {
+    this.init(port);
+  }
+
+  private async init(port?: number) {
     // 如果没有指定端口，从配置文件获取
     if (port === undefined) {
       try {
@@ -75,6 +82,11 @@ export class WebServer {
       this.port = port;
     }
     this.logger = new Logger();
+
+    this.mcpServiceManager = await MCPServiceManagerSingleton.getInstance();
+    await this.mcpServiceManager.startAllServices();
+    const tools = this.mcpServiceManager.getAllTools();
+    console.log("tools", tools);
 
     // 初始化 MCP 客户端
     const endpointUrl =
