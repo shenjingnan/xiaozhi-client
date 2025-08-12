@@ -55,6 +55,7 @@
     "@modelcontextprotocol/sdk": "^1.12.1",
     "@types/express": "^5.0.3",
     "chalk": "^5.4.1",
+    "chokidar": "^4.0.3",
     "cli-table3": "^0.6.5",
     "commander": "^14.0.0",
     "comment-json": "^4.2.5",
