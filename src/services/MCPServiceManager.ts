@@ -7,14 +7,8 @@
  */
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { LocalMCPServerConfig } from "../configManager.js";
 import { Logger } from "../logger.js";
-import {
-  MCPService,
-  type MCPServiceConfig,
-  type MCPServiceStatus,
-  MCPTransportType,
-} from "./MCPService.js";
+import { MCPService, type MCPServiceConfig } from "./MCPService.js";
 
 // 工具信息接口（保持向后兼容）
 interface ToolInfo {
@@ -51,8 +45,13 @@ export class MCPServiceManager {
   private logger: Logger;
   private tools: Map<string, ToolInfo> = new Map(); // 缓存工具信息，保持向后兼容
 
-  constructor() {
+  /**
+   * 创建 MCPServiceManager 实例
+   * @param configs 可选的初始服务配置
+   */
+  constructor(configs?: Record<string, MCPServiceConfig>) {
     this.logger = new Logger().withTag("MCPManager");
+    this.configs = configs || {};
   }
 
   /**
@@ -61,7 +60,15 @@ export class MCPServiceManager {
   async startAllServices(): Promise<void> {
     this.logger.info("正在启动所有 MCP 服务...");
 
-    for (const [serviceName, config] of Object.entries(this.configs)) {
+    const configEntries = Object.entries(this.configs);
+    if (configEntries.length === 0) {
+      this.logger.warn(
+        "没有配置任何 MCP 服务，请使用 addServiceConfig() 添加服务配置"
+      );
+      return;
+    }
+
+    for (const [serviceName] of configEntries) {
       await this.startService(serviceName);
     }
 

@@ -40,6 +40,21 @@ describe("MCPServiceManager", () => {
     vi.mocked(MCPService).mockImplementation(() => mockMCPService);
 
     manager = new MCPServiceManager();
+
+    // 添加测试用的服务配置
+    manager.addServiceConfig("calculator", {
+      name: "calculator",
+      type: MCPTransportType.STDIO,
+      command: "node",
+      args: ["calculator.js"],
+    });
+
+    manager.addServiceConfig("datetime", {
+      name: "datetime",
+      type: MCPTransportType.STDIO,
+      command: "node",
+      args: ["datetime.js"],
+    });
   });
 
   afterEach(() => {
@@ -47,8 +62,9 @@ describe("MCPServiceManager", () => {
   });
 
   describe("constructor", () => {
-    it("should create MCPServiceManager with default configs", () => {
-      expect(manager).toBeInstanceOf(MCPServiceManager);
+    it("should create MCPServiceManager with empty configs by default", () => {
+      const emptyManager = new MCPServiceManager();
+      expect(emptyManager).toBeInstanceOf(MCPServiceManager);
       expect(mockLogger.withTag).toHaveBeenCalledWith("MCPManager");
     });
 
@@ -68,6 +84,18 @@ describe("MCPServiceManager", () => {
   });
 
   describe("startAllServices", () => {
+    it("should warn when no services are configured", async () => {
+      const emptyManager = new MCPServiceManager();
+
+      await emptyManager.startAllServices();
+
+      expect(mockLogger.info).toHaveBeenCalledWith("正在启动所有 MCP 服务...");
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        "没有配置任何 MCP 服务，请使用 addServiceConfig() 添加服务配置"
+      );
+      expect(MCPService).not.toHaveBeenCalled();
+    });
+
     it("should start all configured services", async () => {
       mockMCPService.connect.mockResolvedValue(undefined);
       mockMCPService.getTools.mockReturnValue([]);

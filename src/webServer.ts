@@ -13,9 +13,9 @@ import { configManager } from "./configManager.js";
 import type { AppConfig } from "./configManager.js";
 import { Logger } from "./logger.js";
 import { ProxyMCPServer, type Tool } from "./proxyMCPServer.js";
+import { MCPTransportType } from "./services/MCPService.js";
 import type { MCPServiceManager } from "./services/MCPServiceManager.js";
 import { MCPServiceManagerSingleton } from "./services/mcpServiceManagerSingleton.js";
-import { MCPTransportType } from "./services/MCPService.js";
 
 const DEFAULT_MCP_SERVERS = {
   calculator: {
@@ -70,7 +70,7 @@ interface ClientInfo {
 }
 
 export class WebServer {
-  private app: Hono | undefined;
+  private app: Hono;
   private httpServer: any = null;
   private wss: WebSocketServer | null = null;
   private logger: Logger;
