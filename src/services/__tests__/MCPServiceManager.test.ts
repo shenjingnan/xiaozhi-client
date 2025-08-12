@@ -352,4 +352,141 @@ describe("MCPServiceManager", () => {
       );
     });
   });
+
+  describe("multi-protocol support", () => {
+    it("should support SSE services", async () => {
+      const sseConfig: MCPServiceConfig = {
+        name: "sse-service",
+        type: MCPTransportType.SSE,
+        url: "https://example.com/sse",
+        apiKey: "test-key",
+      };
+
+      manager.addServiceConfig("sse-service", sseConfig);
+
+      mockMCPService.connect.mockResolvedValue(undefined);
+      mockMCPService.getTools.mockReturnValue([
+        { name: "sse-tool", description: "SSE tool", inputSchema: {} },
+      ]);
+
+      await manager.startService("sse-service");
+
+      expect(MCPService).toHaveBeenCalledWith(sseConfig);
+      expect(mockMCPService.connect).toHaveBeenCalled();
+    });
+
+    it("should support streamable-http services", async () => {
+      const httpConfig: MCPServiceConfig = {
+        name: "http-service",
+        type: MCPTransportType.STREAMABLE_HTTP,
+        url: "https://example.com/api",
+        headers: { Authorization: "Bearer token" },
+      };
+
+      manager.addServiceConfig("http-service", httpConfig);
+
+      mockMCPService.connect.mockResolvedValue(undefined);
+      mockMCPService.getTools.mockReturnValue([
+        { name: "http-tool", description: "HTTP tool", inputSchema: {} },
+      ]);
+
+      await manager.startService("http-service");
+
+      expect(MCPService).toHaveBeenCalledWith(httpConfig);
+      expect(mockMCPService.connect).toHaveBeenCalled();
+    });
+
+    it("should handle mixed protocol services", async () => {
+      // Add different protocol services
+      manager.addServiceConfig("sse-service", {
+        name: "sse-service",
+        type: MCPTransportType.SSE,
+        url: "https://example.com/sse",
+      });
+
+      manager.addServiceConfig("http-service", {
+        name: "http-service",
+        type: MCPTransportType.STREAMABLE_HTTP,
+        url: "https://example.com/api",
+      });
+
+      mockMCPService.connect.mockResolvedValue(undefined);
+      mockMCPService.getTools.mockReturnValue([
+        { name: "mixed-tool", description: "Mixed tool", inputSchema: {} },
+      ]);
+      mockMCPService.isConnected.mockReturnValue(true);
+
+      // Start all services
+      await manager.startAllServices();
+
+      // Should have started 4 services (calculator, datetime, sse-service, http-service)
+      expect(MCPService).toHaveBeenCalledTimes(4);
+    });
+
+    it("should aggregate tools from different protocols", async () => {
+      // Setup services with different protocols
+      manager.addServiceConfig("sse-service", {
+        name: "sse-service",
+        type: MCPTransportType.SSE,
+        url: "https://example.com/sse",
+      });
+
+      // Create separate mock instances for each service
+      const mockServices = new Map();
+
+      vi.mocked(MCPService).mockImplementation((config: MCPServiceConfig) => {
+        if (!mockServices.has(config.name)) {
+          const serviceMock = {
+            connect: vi.fn().mockResolvedValue(undefined),
+            disconnect: vi.fn().mockResolvedValue(undefined),
+            isConnected: vi.fn().mockReturnValue(true),
+            getTools: vi.fn(),
+            callTool: vi.fn(),
+            getStatus: vi.fn(),
+          };
+
+          // Set different tools for each service
+          if (config.name === "calculator") {
+            serviceMock.getTools.mockReturnValue([
+              {
+                name: "calc-add",
+                description: "Calculator add",
+                inputSchema: {},
+              },
+            ]);
+          } else if (config.name === "datetime") {
+            serviceMock.getTools.mockReturnValue([
+              {
+                name: "time-now",
+                description: "Current time",
+                inputSchema: {},
+              },
+            ]);
+          } else if (config.name === "sse-service") {
+            serviceMock.getTools.mockReturnValue([
+              {
+                name: "sse-notify",
+                description: "SSE notification",
+                inputSchema: {},
+              },
+            ]);
+          }
+
+          mockServices.set(config.name, serviceMock);
+        }
+        return mockServices.get(config.name);
+      });
+
+      await manager.startAllServices();
+
+      const tools = manager.getAllTools();
+
+      expect(tools).toHaveLength(3);
+      expect(tools.map((t) => t.name)).toEqual([
+        "calculator__calc-add",
+        "datetime__time-now",
+        "sse-service__sse-notify",
+      ]);
+    });
+  });
 });

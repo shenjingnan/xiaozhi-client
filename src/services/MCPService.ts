@@ -1,7 +1,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { Logger } from "../logger.js";
+import { TransportFactory } from "./TransportFactory.js";
 
 // 通信方式枚举
 export enum MCPTransportType {
@@ -89,7 +89,7 @@ export interface ToolCallResult {
 export class MCPService {
   private config: MCPServiceConfig;
   private client: Client | null = null;
-  private transport: StdioClientTransport | null = null;
+  private transport: any = null;
   private tools: Map<string, Tool> = new Map();
   private connectionState: ConnectionState = ConnectionState.DISCONNECTED;
   private reconnectOptions: ReconnectOptions;
@@ -133,19 +133,8 @@ export class MCPService {
    * 验证配置
    */
   private validateConfig(): void {
-    if (!this.config.name || typeof this.config.name !== "string") {
-      throw new Error("MCPService 配置必须包含有效的 name 字段");
-    }
-
-    if (this.config.type !== MCPTransportType.STDIO) {
-      throw new Error(
-        `当前版本仅支持 stdio 通信方式，收到: ${this.config.type}`
-      );
-    }
-
-    if (!this.config.command || typeof this.config.command !== "string") {
-      throw new Error("stdio 通信方式必须提供有效的 command 字段");
-    }
+    // 使用 TransportFactory 进行配置验证
+    TransportFactory.validateConfig(this.config);
   }
 
   /**
@@ -201,11 +190,8 @@ export class MCPService {
           }
         );
 
-        // 创建 stdio 传输层
-        this.transport = new StdioClientTransport({
-          command: this.config.command!,
-          args: this.config.args || [],
-        });
+        // 使用 TransportFactory 创建传输层
+        this.transport = TransportFactory.create(this.config);
 
         // 连接到 MCP 服务
         this.client

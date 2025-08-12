@@ -9,11 +9,13 @@ import {
   MCPTransportType,
   type ReconnectOptions,
 } from "../MCPService.js";
+import { TransportFactory } from "../TransportFactory.js";
 
 // Mock dependencies
 vi.mock("@modelcontextprotocol/sdk/client/index.js");
 vi.mock("@modelcontextprotocol/sdk/client/stdio.js");
 vi.mock("../../logger.js");
+vi.mock("../TransportFactory.js");
 
 describe("MCPService", () => {
   let mockClient: any;
@@ -37,6 +39,10 @@ describe("MCPService", () => {
     // Mock StdioClientTransport
     mockTransport = {};
     vi.mocked(StdioClientTransport).mockImplementation(() => mockTransport);
+
+    // Mock TransportFactory
+    vi.mocked(TransportFactory).validateConfig = vi.fn();
+    vi.mocked(TransportFactory).create = vi.fn().mockReturnValue(mockTransport);
 
     // Mock Logger
     mockLogger = {
@@ -70,22 +76,37 @@ describe("MCPService", () => {
 
     it("should throw error for invalid name", () => {
       const invalidConfig = { ...config, name: "" };
+      const error = new Error("配置必须包含有效的 name 字段");
+      vi.mocked(TransportFactory).validateConfig.mockImplementation(() => {
+        throw error;
+      });
+
       expect(() => new MCPService(invalidConfig)).toThrow(
-        "MCPService 配置必须包含有效的 name 字段"
+        "配置必须包含有效的 name 字段"
       );
     });
 
-    it("should throw error for unsupported transport type", () => {
+    it("should throw error for SSE without URL", () => {
       const invalidConfig = { ...config, type: MCPTransportType.SSE };
+      const error = new Error("sse 类型需要 url 字段");
+      vi.mocked(TransportFactory).validateConfig.mockImplementation(() => {
+        throw error;
+      });
+
       expect(() => new MCPService(invalidConfig)).toThrow(
-        "当前版本仅支持 stdio 通信方式"
+        "sse 类型需要 url 字段"
       );
     });
 
     it("should throw error for missing command", () => {
       const invalidConfig = { ...config, command: undefined };
+      const error = new Error("stdio 类型需要 command 字段");
+      vi.mocked(TransportFactory).validateConfig.mockImplementation(() => {
+        throw error;
+      });
+
       expect(() => new MCPService(invalidConfig)).toThrow(
-        "stdio 通信方式必须提供有效的 command 字段"
+        "stdio 类型需要 command 字段"
       );
     });
 
@@ -123,10 +144,7 @@ describe("MCPService", () => {
           },
         }
       );
-      expect(StdioClientTransport).toHaveBeenCalledWith({
-        command: "node",
-        args: ["test-server.js"],
-      });
+      expect(TransportFactory.create).toHaveBeenCalledWith(config);
       expect(mockClient.connect).toHaveBeenCalledWith(mockTransport);
       expect(service.isConnected()).toBe(true);
     });
@@ -524,6 +542,76 @@ describe("MCPService", () => {
       expect(testService.getStatus().connectionState).toBe(
         ConnectionState.RECONNECTING
       );
+    });
+  });
+
+  describe("multi-protocol support", () => {
+    it("should support SSE transport", async () => {
+      const sseConfig: MCPServiceConfig = {
+        name: "test-sse-service",
+        type: MCPTransportType.SSE,
+        url: "https://example.com/sse",
+        apiKey: "test-key",
+      };
+
+      const sseService = new MCPService(sseConfig);
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [] });
+
+      await sseService.connect();
+
+      expect(TransportFactory.create).toHaveBeenCalledWith(sseConfig);
+      expect(sseService.isConnected()).toBe(true);
+      expect(sseService.getStatus().transportType).toBe(MCPTransportType.SSE);
+    });
+
+    it("should support streamable-http transport", async () => {
+      const httpConfig: MCPServiceConfig = {
+        name: "test-http-service",
+        type: MCPTransportType.STREAMABLE_HTTP,
+        url: "https://example.com/api",
+        headers: { "Custom-Header": "value" },
+      };
+
+      const httpService = new MCPService(httpConfig);
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [] });
+
+      await httpService.connect();
+
+      expect(TransportFactory.create).toHaveBeenCalledWith(httpConfig);
+      expect(httpService.isConnected()).toBe(true);
+      expect(httpService.getStatus().transportType).toBe(
+        MCPTransportType.STREAMABLE_HTTP
+      );
+    });
+
+    it("should handle different transport configurations", () => {
+      const configs = [
+        {
+          name: "stdio-service",
+          type: MCPTransportType.STDIO,
+          command: "node",
+          args: ["server.js"],
+        },
+        {
+          name: "sse-service",
+          type: MCPTransportType.SSE,
+          url: "https://example.com/sse",
+          apiKey: "key123",
+        },
+        {
+          name: "http-service",
+          type: MCPTransportType.STREAMABLE_HTTP,
+          url: "https://example.com/api",
+          headers: { Authorization: "Bearer token" },
+        },
+      ];
+
+      for (const cfg of configs) {
+        expect(() => new MCPService(cfg)).not.toThrow();
+        expect(TransportFactory.validateConfig).toHaveBeenCalledWith(cfg);
+      }
     });
   });
 });

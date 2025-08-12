@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * MCP 服务管理器 - 重构版本
+ * MCP 服务管理器
  * 使用 MCPService 实例管理多个 MCP 服务
  * 专注于实例管理、工具聚合和路由调用
  */
