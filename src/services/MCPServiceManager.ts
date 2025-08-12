@@ -47,37 +47,12 @@ interface ToolCallResult {
 
 export class MCPServiceManager {
   private services: Map<string, MCPService> = new Map();
-  private configs: Record<string, MCPServiceConfig>;
+  private configs: Record<string, MCPServiceConfig> = {};
   private logger: Logger;
   private tools: Map<string, ToolInfo> = new Map(); // 缓存工具信息，保持向后兼容
 
-  constructor(configs?: Record<string, MCPServiceConfig>) {
+  constructor() {
     this.logger = new Logger().withTag("MCPManager");
-    this.configs = configs || this.loadDefaultConfigs();
-  }
-
-  /**
-   * 加载默认配置（保持向后兼容）
-   */
-  private loadDefaultConfigs(): Record<string, MCPServiceConfig> {
-    return {
-      calculator: {
-        name: "calculator",
-        type: MCPTransportType.STDIO,
-        command: "node",
-        args: [
-          "/Users/nemo/github/shenjingnan/xiaozhi-client/templates/hello-world/mcpServers/calculator.js",
-        ],
-      },
-      datetime: {
-        name: "datetime",
-        type: MCPTransportType.STDIO,
-        command: "node",
-        args: [
-          "/Users/nemo/github/shenjingnan/xiaozhi-client/templates/hello-world/mcpServers/datetime.js",
-        ],
-      },
-    };
   }
 
   /**
