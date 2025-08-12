@@ -11,6 +11,8 @@
     "compbash",
     "compzsh",
     "cpus",
+    "EACCES",
+    "ENOENT",
     "EPIPE",
     "eventsource",
     "EventSource",
