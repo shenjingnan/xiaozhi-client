@@ -18,7 +18,7 @@ async function main() {
   const config: MCPServiceConfig = {
     name: "12306",
     type: MCPTransportType.SSE,
-    url: "https://mcp.api-inference.modelscope.net/xyz/sse" // 这个地址是无效的，使用时请换成自己的地址
+    url: "https://mcp.api-inference.modelscope.net/xyz/sse", // 这个地址是无效的，使用时请换成自己的地址
   };
 
   // 创建 MCPService 实例

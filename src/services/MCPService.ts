@@ -640,7 +640,9 @@ export class MCPService {
       return;
     }
 
-    this.logger.info(`${this.config.name} 启动ping监控，间隔: ${this.pingOptions.interval}ms`);
+    this.logger.info(
+      `${this.config.name} 启动ping监控，间隔: ${this.pingOptions.interval}ms`
+    );
 
     // 延迟启动ping，让连接稳定
     setTimeout(() => {
@@ -675,7 +677,9 @@ export class MCPService {
     const startTime = performance.now();
 
     try {
-      this.logger.debug(`${this.config.name} 发送ping请求（通过listTools检测连接）`);
+      this.logger.debug(
+        `${this.config.name} 发送ping请求（通过listTools检测连接）`
+      );
 
       // 使用Promise.race实现超时控制
       // 由于MCP SDK可能没有直接的ping方法，我们使用listTools作为连接检测
@@ -718,7 +722,7 @@ export class MCPService {
     this.pingFailureCount++;
     this.logger.warn(
       `${this.config.name} ping失败 (${this.pingFailureCount}/${this.pingOptions.maxFailures})，` +
-      `延迟: ${duration.toFixed(2)}ms，错误: ${error.message}`
+        `延迟: ${duration.toFixed(2)}ms，错误: ${error.message}`
     );
 
     // 如果连续失败次数达到阈值，触发重连

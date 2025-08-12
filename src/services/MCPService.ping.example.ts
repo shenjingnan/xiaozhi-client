@@ -5,7 +5,11 @@
  * 展示如何使用ping监控功能
  */
 
-import { MCPService, MCPTransportType, type MCPServiceConfig } from "./MCPService.js";
+import {
+  MCPService,
+  type MCPServiceConfig,
+  MCPTransportType,
+} from "./MCPService.js";
 
 async function demonstratePingFeature() {
   console.log("🏓 MCP Service Ping功能演示\n");
@@ -50,8 +54,8 @@ async function demonstratePingFeature() {
     console.log();
 
     console.log("4. 等待ping监控启动...");
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
     status = service.getStatus();
     console.log("   更新后的状态:", {
       connected: status.connected,
@@ -63,7 +67,7 @@ async function demonstratePingFeature() {
     console.log();
 
     console.log("5. 演示ping配置管理");
-    
+
     // 更新ping配置
     console.log("   更新ping间隔为5秒...");
     service.updatePingOptions({ interval: 5000 });
@@ -85,8 +89,8 @@ async function demonstratePingFeature() {
     console.log();
 
     console.log("6. 等待几个ping周期...");
-    await new Promise(resolve => setTimeout(resolve, 12000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 12000));
+
     status = service.getStatus();
     console.log("   最终状态:", {
       connected: status.connected,
@@ -99,13 +103,12 @@ async function demonstratePingFeature() {
     console.log("7. 断开连接...");
     await service.disconnect();
     console.log("   ✅ 已断开连接");
-    
+
     status = service.getStatus();
     console.log("   断开后状态:", {
       connected: status.connected,
       pingEnabled: status.pingEnabled,
     });
-
   } catch (error) {
     console.error("❌ 演示过程中发生错误:", error);
   }
@@ -153,8 +156,8 @@ async function demonstrateDefaultBehavior() {
     console.log();
 
     console.log("5. 等待ping开始工作...");
-    await new Promise(resolve => setTimeout(resolve, 8000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 8000));
+
     const finalStatus = service.getStatus();
     console.log("   最终状态:", {
       connected: finalStatus.connected,
@@ -165,7 +168,6 @@ async function demonstrateDefaultBehavior() {
 
     await service.disconnect();
     console.log("   ✅ 已断开连接");
-
   } catch (error) {
     console.error("❌ 默认行为演示中发生错误:", error);
   }
@@ -176,7 +178,7 @@ async function demonstrateDefaultBehavior() {
 // 运行演示
 async function main() {
   console.log("🚀 开始MCP Service Ping功能演示\n");
-  
+
   try {
     await demonstratePingFeature();
     await demonstrateDefaultBehavior();
@@ -184,7 +186,7 @@ async function main() {
     console.error("❌ 演示失败:", error);
     process.exit(1);
   }
-  
+
   console.log("\n🎊 所有演示完成！");
 }
 

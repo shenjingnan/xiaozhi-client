@@ -1,5 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { MCPService, MCPTransportType, type MCPServiceConfig } from "../MCPService.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  MCPService,
+  type MCPServiceConfig,
+  MCPTransportType,
+} from "../MCPService.js";
 
 // Mock the dependencies
 vi.mock("../TransportFactory.js", () => ({
@@ -73,7 +77,7 @@ describe("MCPService Ping功能", () => {
 
       const defaultService = new MCPService(defaultConfig);
       const pingOptions = defaultService.getPingOptions();
-      
+
       expect(pingOptions.enabled).toBe(false); // 默认禁用
       expect(pingOptions.interval).toBe(30000); // 30秒
       expect(pingOptions.timeout).toBe(5000); // 5秒
@@ -105,7 +109,7 @@ describe("MCPService Ping功能", () => {
   describe("服务状态", () => {
     it("应该在状态中包含ping信息", () => {
       const status = service.getStatus();
-      
+
       expect(status.pingEnabled).toBe(true);
       expect(status.pingFailureCount).toBe(0);
       expect(status.isPinging).toBe(false);
@@ -124,14 +128,16 @@ describe("MCPService Ping功能", () => {
       };
 
       // 使用反射访问私有方法进行测试
-      const handleConnectionSuccess = (service as any).handleConnectionSuccess.bind(service);
-      
+      const handleConnectionSuccess = (
+        service as any
+      ).handleConnectionSuccess.bind(service);
+
       // 设置必要的内部状态
       (service as any).client = mockClient;
-      
+
       // 调用连接成功处理
       handleConnectionSuccess();
-      
+
       // 验证ping状态被重置
       const status = service.getStatus();
       expect(status.pingFailureCount).toBe(0);
@@ -142,9 +148,9 @@ describe("MCPService Ping功能", () => {
       // 模拟已连接状态
       (service as any).connectionState = "connected";
       (service as any).initialized = true;
-      
+
       await service.disconnect();
-      
+
       // 验证连接状态
       const status = service.getStatus();
       expect(status.connected).toBe(false);
