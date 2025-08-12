@@ -15,7 +15,7 @@ import { Logger } from "./logger.js";
 import { ProxyMCPServer, type Tool } from "./proxyMCPServer.js";
 import { MCPTransportType } from "./services/MCPService.js";
 import type { MCPServiceManager } from "./services/MCPServiceManager.js";
-import { MCPServiceManagerSingleton } from "./services/mcpServiceManagerSingleton.js";
+import { MCPServiceManagerSingleton } from "./services/MCPServiceManagerSingleton.js";
 
 const DEFAULT_MCP_SERVERS = {
   calculator: {
@@ -33,6 +33,11 @@ const DEFAULT_MCP_SERVERS = {
     args: [
       "/Users/nemo/github/shenjingnan/xiaozhi-client/templates/hello-world/mcpServers/datetime.js",
     ],
+  },
+  amap: {
+    name: "amap",
+    type: MCPTransportType.STREAMABLE_HTTP,
+    url: "https://mcp.amap.com/mcp?key=1ec31da021b2702787841ea4ee822de3",
   },
 };
 
@@ -108,6 +113,7 @@ export class WebServer {
         "datetime",
         DEFAULT_MCP_SERVERS.datetime
       );
+      this.mcpServiceManager.addServiceConfig("amap", DEFAULT_MCP_SERVERS.amap);
       this.mcpServiceManager.startAllServices().then(() => {
         const tools = this.mcpServiceManager?.getAllTools();
         console.log("tools", tools);

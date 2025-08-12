@@ -1,5 +1,12 @@
-import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
+import {
+  SSEClientTransport,
+  type SSEClientTransportOptions,
+} from "@modelcontextprotocol/sdk/client/sse.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import {
+  StreamableHTTPClientTransport,
+  type StreamableHTTPClientTransportOptions,
+} from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { EventSource } from "eventsource";
 import { Logger } from "../logger.js";
 import { type MCPServiceConfig, MCPTransportType } from "./MCPService.js";
@@ -13,63 +20,6 @@ if (typeof global !== "undefined" && !global.EventSource) {
 export interface Transport {
   connect?(): Promise<void>;
   close?(): Promise<void>;
-}
-
-// HTTP Transport 实现（用于 streamable-http）
-class StreamableHttpTransport implements Transport {
-  private config: MCPServiceConfig;
-  private logger: Logger;
-
-  constructor(config: MCPServiceConfig) {
-    this.config = config;
-    this.logger = new Logger().withTag(`HTTP-${config.name}`);
-  }
-
-  async connect(): Promise<void> {
-    this.logger.info(`连接到 HTTP MCP 服务: ${this.config.url}`);
-    // HTTP transport 通常不需要持久连接
-  }
-
-  async close(): Promise<void> {
-    this.logger.info(`关闭 HTTP MCP 服务连接: ${this.config.url}`);
-    // HTTP transport 清理逻辑
-  }
-
-  // HTTP 特定的请求方法
-  async request(method: string, params?: any): Promise<any> {
-    if (!this.config.url) {
-      throw new Error("HTTP transport 需要 URL 配置");
-    }
-
-    const requestBody = {
-      jsonrpc: "2.0",
-      method,
-      params: params || {},
-      id: Date.now(),
-    };
-
-    const response = await fetch(this.config.url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...this.config.headers,
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `HTTP 请求失败: ${response.status} ${response.statusText}`
-      );
-    }
-
-    const result = await response.json();
-    if (result.error) {
-      throw new Error(`MCP 错误: ${result.error.message}`);
-    }
-
-    return result.result;
-  }
 }
 
 // 创建 logger 实例
@@ -94,7 +44,7 @@ export function createTransport(config: MCPServiceConfig): any {
       return createSSETransport(config);
 
     case MCPTransportType.STREAMABLE_HTTP:
-      return createStreamableHttpTransport(config);
+      return createStreamableHTTPTransport(config);
 
     default:
       throw new Error(`不支持的传输类型: ${config.type}`);
@@ -129,10 +79,22 @@ function createSSETransport(config: MCPServiceConfig): SSEClientTransport {
   return new SSEClientTransport(url, options);
 }
 
+function createStreamableHTTPTransport(
+  config: MCPServiceConfig
+): StreamableHTTPClientTransport {
+  if (!config.url) {
+    throw new Error("StreamableHTTP transport 需要 URL 配置");
+  }
+
+  const url = new URL(config.url);
+  const options = createStreamableHTTPOptions(config);
+  return new StreamableHTTPClientTransport(url, options);
+}
+
 /**
  * 创建 SSE 选项
  */
-function createSSEOptions(config: MCPServiceConfig): any {
+function createSSEOptions(config: MCPServiceConfig): SSEClientTransportOptions {
   const options: any = {};
 
   // 添加认证头
@@ -148,17 +110,22 @@ function createSSEOptions(config: MCPServiceConfig): any {
   return options;
 }
 
-/**
- * 创建 Streamable HTTP transport
- */
-function createStreamableHttpTransport(
+function createStreamableHTTPOptions(
   config: MCPServiceConfig
-): StreamableHttpTransport {
-  if (!config.url) {
-    throw new Error("streamable-http transport 需要 URL 配置");
+): StreamableHTTPClientTransportOptions {
+  const options: any = {};
+
+  // 添加认证头
+  if (config.apiKey) {
+    options.headers = {
+      Authorization: `Bearer ${config.apiKey}`,
+      ...config.headers,
+    };
+  } else if (config.headers) {
+    options.headers = config.headers;
   }
 
-  return new StreamableHttpTransport(config);
+  return options;
 }
 
 /**
@@ -196,7 +163,11 @@ export function validateConfig(config: MCPServiceConfig): void {
  * 获取支持的传输类型列表
  */
 export function getSupportedTypes(): MCPTransportType[] {
-  return [MCPTransportType.STDIO, MCPTransportType.SSE, MCPTransportType.STREAMABLE_HTTP];
+  return [
+    MCPTransportType.STDIO,
+    MCPTransportType.SSE,
+    MCPTransportType.STREAMABLE_HTTP,
+  ];
 }
 
 /**
@@ -207,5 +178,3 @@ export const TransportFactory = {
   validateConfig,
   getSupportedTypes,
 };
-
-export { StreamableHttpTransport };

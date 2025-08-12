@@ -10,6 +10,14 @@
       "args": ["./mcpServers/datetime.js"]
     }
   },
+  "modelscope": {
+    "apiKey": "<你的API密钥>"
+  },
+  "connection": {
+    "heartbeatInterval": 30000,
+    "heartbeatTimeout": 10000,
+    "reconnectInterval": 5000
+  },
   "webUI": {
     "port": 9999
   }

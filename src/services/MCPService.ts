@@ -177,7 +177,6 @@ export class MCPService {
       }, this.reconnectOptions.timeout);
 
       try {
-        // 创建 MCP 客户端
         this.client = new Client(
           {
             name: `xiaozhi-${this.config.name}-client`,
@@ -406,7 +405,9 @@ export class MCPService {
       }
 
       this.logger.info(
-        `${this.config.name} 服务加载了 ${tools.length} 个工具: ${tools.map((t) => t.name).join(", ")}`
+        `${this.config.name} 服务加载了 ${tools.length} 个工具: ${tools
+          .map((t) => t.name)
+          .join(", ")}`
       );
     } catch (error) {
       this.logger.error(

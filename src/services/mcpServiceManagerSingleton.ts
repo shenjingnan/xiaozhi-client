@@ -40,7 +40,6 @@ async function createInstance(): Promise<MCPServiceManager> {
   console.log("🚀 正在初始化 MCPServiceManager 单例...");
 
   const manager = new MCPServiceManager();
-  await manager.startAllServices();
 
   return manager;
 }
