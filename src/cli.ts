@@ -11,7 +11,7 @@ import { setupAutoCompletion, showCompletionHelp } from "./autoCompletion";
 import { configManager } from "./configManager";
 import { logger } from "./logger";
 import { listMcpServers, listServerTools, setToolEnabled } from "./mcpCommands";
-import { WebServer } from "./webServer";
+import { WebServer } from "./WebServer";
 
 const program = new Command();
 const SERVICE_NAME = "xiaozhi-mcp-service";
@@ -204,10 +204,6 @@ export function checkEnvironment(): boolean {
   }
 }
 
-
-
-
-
 /**
  * 启动服务（重构后的统一启动逻辑）
  */
@@ -237,7 +233,6 @@ async function startService(daemon = false, ui = false): Promise<void> {
     } else {
       await startWebServerInForeground(ui);
     }
-
   } catch (error) {
     spinner.fail(
       `启动服务失败: ${error instanceof Error ? error.message : String(error)}`
@@ -258,7 +253,7 @@ async function startWebServerInDaemon(openBrowser = false): Promise<void> {
   const command = "node";
   const args = [
     path.join(scriptDir, "webServerStandalone.js"), // 新的独立启动脚本
-    openBrowser ? "--open-browser" : ""
+    openBrowser ? "--open-browser" : "",
   ].filter(Boolean);
 
   const child = spawn(command, args, {
@@ -641,7 +636,9 @@ async function startMCPServerMode(port: number, daemon = false): Promise<void> {
     }
   } catch (error) {
     spinner.fail(
-      `启动 MCP Server 失败: ${error instanceof Error ? error.message : String(error)}`
+      `启动 MCP Server 失败: ${
+        error instanceof Error ? error.message : String(error)
+      }`
     );
   }
 }
@@ -1101,7 +1098,9 @@ async function startUIService(): Promise<void> {
     });
   } catch (error) {
     spinner.fail(
-      `启动 UI 服务失败: ${error instanceof Error ? error.message : String(error)}`
+      `启动 UI 服务失败: ${
+        error instanceof Error ? error.message : String(error)
+      }`
     );
   }
 }
@@ -1152,7 +1151,9 @@ async function configCommand(key: string, value?: string): Promise<void> {
             } else {
               console.log(
                 chalk.gray(
-                  `  ${name}: ${(serverConfig as any).command} ${(serverConfig as any).args.join(" ")}`
+                  `  ${name}: ${(serverConfig as any).command} ${(
+                    serverConfig as any
+                  ).args.join(" ")}`
                 )
               );
             }
@@ -1505,7 +1506,9 @@ endpointCommand
       }
     } catch (error) {
       spinner.fail(
-        `读取端点失败: ${error instanceof Error ? error.message : String(error)}`
+        `读取端点失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   });
@@ -1524,7 +1527,9 @@ endpointCommand
       console.log(chalk.gray(`当前共 ${endpoints.length} 个端点`));
     } catch (error) {
       spinner.fail(
-        `添加端点失败: ${error instanceof Error ? error.message : String(error)}`
+        `添加端点失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   });
@@ -1543,7 +1548,9 @@ endpointCommand
       console.log(chalk.gray(`当前剩余 ${endpoints.length} 个端点`));
     } catch (error) {
       spinner.fail(
-        `移除端点失败: ${error instanceof Error ? error.message : String(error)}`
+        `移除端点失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   });
@@ -1567,7 +1574,9 @@ endpointCommand
       }
     } catch (error) {
       spinner.fail(
-        `设置端点失败: ${error instanceof Error ? error.message : String(error)}`
+        `设置端点失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   });
