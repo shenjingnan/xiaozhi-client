@@ -17,8 +17,8 @@ import { Logger } from "./logger.js";
 // MCPTransportType 已移除，不再需要导入
 import type { MCPServiceManager } from "./services/MCPServiceManager.js";
 import { MCPServiceManagerSingleton } from "./services/MCPServiceManagerSingleton.js";
-import { XiaozhiConnectionManagerSingleton } from "./services/XiaozhiConnectionManagerSingleton.js";
 import type { XiaozhiConnectionManager } from "./services/XiaozhiConnectionManager.js";
+import { XiaozhiConnectionManagerSingleton } from "./services/XiaozhiConnectionManagerSingleton.js";
 
 // 硬编码常量已移除，改为配置驱动
 interface ClientInfo {

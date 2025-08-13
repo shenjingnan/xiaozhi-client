@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  ConnectionErrorType,
   ReconnectStrategy,
   XiaozhiConnectionManager,
   type XiaozhiConnectionOptions,
@@ -34,7 +33,7 @@ describe("XiaozhiConnectionManager", () => {
     {
       name: "test-tool",
       description: "Test tool",
-      inputSchema: { type: "object", properties: {} },
+      inputSchema: { type: "object" as const, properties: {} },
     },
   ];
 
