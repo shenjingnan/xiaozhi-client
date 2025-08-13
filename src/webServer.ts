@@ -11,62 +11,14 @@ import { WebSocketServer } from "ws";
 import { ProxyMCPServer, type Tool } from "./ProxyMCPServer.js";
 import { getServiceStatus } from "./cli.js";
 import { configManager } from "./configManager.js";
-import type { AppConfig } from "./configManager.js";
+import type { AppConfig, MCPServerConfig } from "./configManager.js";
+import { convertLegacyToNew } from "./adapters/ConfigAdapter.js";
 import { Logger } from "./logger.js";
-import { MCPTransportType } from "./services/MCPService.js";
+// MCPTransportType 已移除，不再需要导入
 import type { MCPServiceManager } from "./services/MCPServiceManager.js";
 import { MCPServiceManagerSingleton } from "./services/MCPServiceManagerSingleton.js";
 
-const DEFAULT_MCP_SERVERS = {
-  calculator: {
-    name: "calculator",
-    type: MCPTransportType.STDIO,
-    command: "node",
-    args: [
-      "/Users/nemo/github/shenjingnan/xiaozhi-client/templates/hello-world/mcpServers/calculator.js",
-    ],
-  },
-  datetime: {
-    name: "datetime",
-    type: MCPTransportType.STDIO,
-    command: "node",
-    args: [
-      "/Users/nemo/github/shenjingnan/xiaozhi-client/templates/hello-world/mcpServers/datetime.js",
-    ],
-  },
-  amap: {
-    name: "amap",
-    type: MCPTransportType.SSE,
-    url: "https://mcp.amap.com/sse?key=1ec31da021b2702787841ea4ee822de3",
-  },
-};
-
-// 默认工具集合
-const MOCK_TOOLS: Tool[] = [
-  {
-    name: "calculator_add",
-    description: "简单的加法计算器",
-    inputSchema: {
-      type: "object",
-      properties: {
-        a: { type: "number", description: "第一个数字" },
-        b: { type: "number", description: "第二个数字" },
-      },
-      required: ["a", "b"],
-    },
-  },
-  {
-    name: "weather_get",
-    description: "获取天气信息",
-    inputSchema: {
-      type: "object",
-      properties: {
-        city: { type: "string", description: "城市名称" },
-      },
-      required: ["city"],
-    },
-  },
-];
+// 硬编码常量已移除，改为配置驱动
 interface ClientInfo {
   status: "connected" | "disconnected";
   mcpEndpoint: string;
@@ -87,43 +39,16 @@ export class WebServer {
   };
   private heartbeatTimeout?: NodeJS.Timeout;
   private readonly HEARTBEAT_TIMEOUT = 35000; // 35 seconds (slightly more than client's 30s interval)
-  private proxyMCPServer: ProxyMCPServer;
+  private proxyMCPServer: ProxyMCPServer | undefined;
   private mcpServiceManager: MCPServiceManager | undefined;
 
   constructor(port?: number) {
-    // 如果没有指定端口，从配置文件获取
-    if (port === undefined) {
-      try {
-        this.port = configManager.getWebUIPort();
-      } catch (error) {
-        // 如果配置文件不存在或读取失败，使用默认端口
-        this.port = 9999;
-      }
-    } else {
-      this.port = port;
-    }
+    // 端口配置
+    this.port = port ?? configManager.getWebUIPort() ?? 9999;
     this.logger = new Logger();
-    MCPServiceManagerSingleton.getInstance().then((mcpServiceManager) => {
-      this.mcpServiceManager = mcpServiceManager;
-      this.mcpServiceManager.addServiceConfig(
-        "calculator",
-        DEFAULT_MCP_SERVERS.calculator
-      );
-      this.mcpServiceManager.addServiceConfig(
-        "datetime",
-        DEFAULT_MCP_SERVERS.datetime
-      );
-      this.mcpServiceManager.addServiceConfig("amap", DEFAULT_MCP_SERVERS.amap);
-      this.mcpServiceManager.startAllServices().then(() => {
-        const tools = this.mcpServiceManager?.getAllTools();
-        console.log("tools", tools);
-      });
-    });
-    // 初始化 MCP 客户端
-    const endpointUrl =
-      "wss://api.xiaozhi.me/mcp/?token=eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMwMjcyMCwiYWdlbnRJZCI6NDgwMjU2LCJlbmRwb2ludElkIjoiYWdlbnRfNDgwMjU2IiwicHVycG9zZSI6Im1jcC1lbmRwb2ludCIsImlhdCI6MTc1NDg5MTkyMn0.GjjPD8J31faYDJKymp-e1zJB3miE_nwd00zMLRFfNzZmmE-ale0_2Ppa-dWwRPt6HQ1DHyKSQM_3wh-55KEewg";
-    this.proxyMCPServer = new ProxyMCPServer(endpointUrl);
-    this.proxyMCPServer.addTool(MOCK_TOOLS[0].name, MOCK_TOOLS[0]);
+
+    // 延迟初始化，在 start() 方法中进行连接管理
+    // 移除硬编码的 MCP 服务和工具配置
 
     // 初始化 Hono 应用
     this.app = new Hono();
@@ -131,6 +56,143 @@ export class WebServer {
     this.setupRoutes();
 
     // HTTP 服务器和 WebSocket 服务器将在 start() 方法中初始化
+  }
+
+  /**
+   * 初始化所有连接（配置驱动）
+   */
+  private async initializeConnections(): Promise<void> {
+    try {
+      this.logger.info("开始初始化连接...");
+
+      // 1. 读取配置
+      const config = await this.loadConfiguration();
+
+      // 2. 初始化 MCP 服务管理器
+      this.mcpServiceManager = await MCPServiceManagerSingleton.getInstance();
+
+      // 3. 从配置加载 MCP 服务
+      await this.loadMCPServicesFromConfig(config.mcpServers);
+
+      // 4. 获取工具列表
+      const tools = this.mcpServiceManager.getAllTools();
+      this.logger.info(`已加载 ${tools.length} 个工具`);
+
+      // 5. 初始化小智接入点连接
+      await this.initializeXiaozhiConnection(config.mcpEndpoint, tools);
+
+      this.logger.info("所有连接初始化完成");
+    } catch (error) {
+      this.logger.error("连接初始化失败:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 加载配置文件
+   */
+  private async loadConfiguration(): Promise<{
+    mcpEndpoint: string | string[];
+    mcpServers: Record<string, MCPServerConfig>;
+    webUIPort: number;
+  }> {
+    if (!configManager.configExists()) {
+      throw new Error("配置文件不存在，请先运行 'xiaozhi init' 初始化配置");
+    }
+
+    const config = configManager.getConfig();
+
+    return {
+      mcpEndpoint: config.mcpEndpoint,
+      mcpServers: config.mcpServers,
+      webUIPort: config.webUI?.port ?? 9999
+    };
+  }
+
+  /**
+   * 从配置加载 MCP 服务
+   */
+  private async loadMCPServicesFromConfig(mcpServers: Record<string, MCPServerConfig>): Promise<void> {
+    if (!this.mcpServiceManager) {
+      throw new Error("MCPServiceManager 未初始化");
+    }
+
+    for (const [name, config] of Object.entries(mcpServers)) {
+      this.logger.info(`添加 MCP 服务配置: ${name}`);
+      // 使用配置适配器转换配置格式
+      const serviceConfig = convertLegacyToNew(name, config);
+      this.mcpServiceManager.addServiceConfig(name, serviceConfig);
+    }
+
+    await this.mcpServiceManager.startAllServices();
+    this.logger.info("所有 MCP 服务已启动");
+  }
+
+  /**
+   * 初始化小智接入点连接
+   */
+  private async initializeXiaozhiConnection(mcpEndpoint: string | string[], tools: Tool[]): Promise<void> {
+    // 处理多端点配置
+    const endpoints = Array.isArray(mcpEndpoint) ? mcpEndpoint : [mcpEndpoint];
+    const validEndpoint = endpoints.find(ep => ep && !ep.includes('<请填写'));
+
+    if (!validEndpoint) {
+      this.logger.warn("未配置有效的小智接入点，跳过连接");
+      return;
+    }
+
+    this.logger.info(`初始化小智接入点连接: ${validEndpoint}`);
+    this.proxyMCPServer = new ProxyMCPServer(validEndpoint);
+    this.proxyMCPServer.setServiceManager(this.mcpServiceManager);
+
+    // 使用重连机制连接到小智接入点
+    await this.connectWithRetry(
+      () => this.proxyMCPServer!.connect(),
+      "小智接入点连接"
+    );
+    this.logger.info("小智接入点连接成功");
+  }
+
+  /**
+   * 带重试的连接方法
+   */
+  private async connectWithRetry<T>(
+    connectionFn: () => Promise<T>,
+    context: string,
+    maxAttempts = 5,
+    initialDelay = 1000,
+    maxDelay = 30000,
+    backoffMultiplier = 2
+  ): Promise<T> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        this.logger.info(`${context} - 尝试连接 (${attempt}/${maxAttempts})`);
+        return await connectionFn();
+      } catch (error) {
+        lastError = error as Error;
+        this.logger.warn(`${context} - 连接失败:`, error);
+
+        if (attempt < maxAttempts) {
+          const delay = Math.min(
+            initialDelay * (backoffMultiplier ** (attempt - 1)),
+            maxDelay
+          );
+          this.logger.info(`${context} - ${delay}ms 后重试...`);
+          await this.sleep(delay);
+        }
+      }
+    }
+
+    throw new Error(`${context} - 连接失败，已达到最大重试次数: ${lastError?.message}`);
+  }
+
+  /**
+   * 延迟工具方法
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   private setupMiddleware() {
@@ -180,7 +242,7 @@ export class WebServer {
     });
 
     this.app?.get("/api/status", async (c) => {
-      const mcpStatus = this.proxyMCPServer.getStatus();
+      const mcpStatus = this.proxyMCPServer?.getStatus();
       return c.json({
         ...this.clientInfo,
         mcpConnection: mcpStatus,
@@ -597,7 +659,7 @@ export class WebServer {
   }
 
   public async start(): Promise<void> {
-    // 使用 @hono/node-server 启动服务器，绑定到 0.0.0.0
+    // 1. 启动 HTTP 服务器
     const server = serve({
       fetch: this.app.fetch,
       port: this.port,
@@ -615,13 +677,13 @@ export class WebServer {
     this.logger.info(`Web server listening on http://0.0.0.0:${this.port}`);
     this.logger.info(`Local access: http://localhost:${this.port}`);
 
-    // 启动 MCP 客户端连接
+    // 2. 初始化所有连接（配置驱动）
     try {
-      await this.proxyMCPServer.connect();
-      this.logger.info("MCP 客户端连接成功");
+      await this.initializeConnections();
+      this.logger.info("所有连接初始化完成");
     } catch (error) {
-      this.logger.error("MCP 客户端连接失败:", error);
-      // MCP 连接失败不影响 Web 服务器启动
+      this.logger.error("连接初始化失败，但 Web 服务器继续运行:", error);
+      // 连接失败不影响 Web 服务器启动，用户可以通过界面查看错误信息
     }
   }
 
@@ -637,7 +699,7 @@ export class WebServer {
       };
 
       // 停止 MCP 客户端
-      this.proxyMCPServer.disconnect();
+      this.proxyMCPServer?.disconnect();
 
       // Clear heartbeat timeout
       if (this.heartbeatTimeout) {
