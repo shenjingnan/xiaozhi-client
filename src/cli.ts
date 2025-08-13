@@ -316,7 +316,7 @@ async function startWebUIInBackground(): Promise<void> {
 }
 
 /**
- * 启动服务
+ * 启动服务（重构后的统一启动逻辑）
  */
 async function startService(daemon = false, ui = false): Promise<void> {
   const spinner = ora("检查服务状态...").start();
@@ -329,142 +329,154 @@ async function startService(daemon = false, ui = false): Promise<void> {
       return;
     }
 
-    // 检查环境变量
+    // 检查环境配置
     spinner.text = "检查环境配置...";
     if (!checkEnvironment()) {
       spinner.fail("环境配置检查失败");
       return;
     }
 
-    // 获取启动命令
-    const { command, args, cwd } = getServiceCommand();
-
+    // 新的统一启动逻辑：直接启动 WebServer
     spinner.text = `启动服务 (${daemon ? "后台模式" : "前台模式"})...`;
 
     if (daemon) {
-      // 后台模式
-      const child = spawn(command, args, {
-        cwd,
-        detached: true,
-        stdio: ["ignore", "pipe", "pipe"],
-        env: {
-          ...process.env,
-          XIAOZHI_CONFIG_DIR: process.cwd(), // 传递用户的当前工作目录
-          XIAOZHI_DAEMON: "true", // 标记这是守护进程模式
-        },
-      });
-
-      // 保存 PID 信息
-      savePidInfo(child.pid!, "daemon");
-
-      // 初始化日志文件
-      const projectDir = process.cwd();
-      logger.initLogFile(projectDir);
-      logger.enableFileLogging(true);
-
-      // 设置日志输出到文件
-      const logFilePath = path.join(projectDir, "xiaozhi.log");
-      const logStream = fs.createWriteStream(logFilePath, { flags: "a" });
-      child.stdout?.pipe(logStream);
-      child.stderr?.pipe(logStream);
-
-      // 监听进程异常退出
-      child.on("exit", (code, signal) => {
-        if (code !== 0 && code !== null) {
-          // 进程异常退出，记录日志
-          logger.error(`后台服务异常退出 (代码: ${code}, 信号: ${signal})`);
-        }
-        cleanupPidFile();
-      });
-
-      // 监听进程错误
-      child.on("error", (error) => {
-        logger.error(`后台服务启动错误: ${error.message}`);
-        cleanupPidFile();
-        spinner.fail(`后台服务启动失败: ${error.message}`);
-        return;
-      });
-
-      // 分离进程
-      child.unref();
-
-      spinner.succeed(`服务已在后台启动 (PID: ${child.pid})`);
-      console.log(chalk.gray(`日志文件: ${logFilePath}`));
-      console.log(chalk.gray(`使用 'xiaozhi attach' 可以查看实时日志`));
-
-      // 如果指定了 --ui 参数，同时启动 Web UI
-      if (ui) {
-        await startWebUIInBackground();
-      }
+      await startWebServerInDaemon(ui);
     } else {
-      // 前台模式
-      spinner.succeed("服务启动中...");
-
-      const child = spawn(command, args, {
-        cwd,
-        stdio: "inherit",
-        env: {
-          ...process.env,
-          XIAOZHI_CONFIG_DIR: process.env.FORCE_CONFIG_DIR || process.cwd(), // 传递用户的当前工作目录
-        },
-      });
-
-      // 保存 PID 信息
-      savePidInfo(child.pid!, "foreground");
-
-      // 处理进程退出
-      child.on("exit", (code, signal) => {
-        cleanupPidFile();
-        if (code !== 0) {
-          console.log(
-            chalk.red(`\n服务异常退出 (代码: ${code}, 信号: ${signal})`)
-          );
-        } else {
-          console.log(chalk.green("\n服务已停止"));
-        }
-      });
-
-      // 如果指定了 --ui 参数，在主进程启动后同时启动 Web UI
-      if (ui) {
-        // 等待一下确保主服务已经启动
-        setTimeout(() => {
-          startWebUIInBackground();
-        }, 1000);
-      }
-
-      // 处理中断信号
-      process.on("SIGINT", async () => {
-        console.log(chalk.yellow("\n正在停止服务..."));
-        child.kill("SIGTERM");
-
-        // 如果启动了 Web UI，也要停止它
-        if ((global as any).__webServer) {
-          try {
-            await (global as any).__webServer.stop();
-            console.log(chalk.green("Web UI 已停止"));
-          } catch (error) {
-            // 忽略错误
-          }
-        }
-      });
-
-      process.on("SIGTERM", async () => {
-        child.kill("SIGTERM");
-
-        // 如果启动了 Web UI，也要停止它
-        if ((global as any).__webServer) {
-          try {
-            await (global as any).__webServer.stop();
-          } catch (error) {
-            // 忽略错误
-          }
-        }
-      });
+      await startWebServerInForeground(ui);
     }
+
   } catch (error) {
     spinner.fail(
       `启动服务失败: ${error instanceof Error ? error.message : String(error)}`
     );
+  }
+}
+
+/**
+ * 后台模式启动 WebServer
+ */
+async function startWebServerInDaemon(openBrowser = false): Promise<void> {
+  const { spawn } = await import("node:child_process");
+
+  // 获取当前脚本所在目录
+  const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+
+  // 构建启动命令
+  const command = "node";
+  const args = [
+    path.join(scriptDir, "webServerStandalone.js"), // 新的独立启动脚本
+    openBrowser ? "--open-browser" : ""
+  ].filter(Boolean);
+
+  const child = spawn(command, args, {
+    detached: true,
+    stdio: ["ignore", "pipe", "pipe"],
+    env: {
+      ...process.env,
+      XIAOZHI_CONFIG_DIR: process.env.FORCE_CONFIG_DIR || process.cwd(),
+      XIAOZHI_DAEMON: "true",
+    },
+  });
+
+  // 保存 PID 信息
+  savePidInfo(child.pid!, "daemon");
+
+  // 初始化日志文件
+  const projectDir = process.cwd();
+  logger.initLogFile(projectDir);
+  logger.enableFileLogging(true);
+
+  // 设置日志输出到文件
+  const logFilePath = path.join(projectDir, "xiaozhi.log");
+  const logStream = fs.createWriteStream(logFilePath, { flags: "a" });
+  child.stdout?.pipe(logStream);
+  child.stderr?.pipe(logStream);
+
+  // 监听进程异常退出
+  child.on("exit", (code, signal) => {
+    if (code !== 0 && code !== null) {
+      logger.error(`后台服务异常退出 (代码: ${code}, 信号: ${signal})`);
+    }
+    cleanupPidFile();
+  });
+
+  // 监听进程错误
+  child.on("error", (error) => {
+    logger.error(`后台服务启动错误: ${error.message}`);
+    cleanupPidFile();
+    throw error;
+  });
+
+  // 分离进程
+  child.unref();
+
+  console.log(chalk.green(`✅ 服务已在后台启动 (PID: ${child.pid})`));
+  console.log(chalk.gray(`日志文件: ${logFilePath}`));
+  console.log(chalk.gray(`使用 'xiaozhi attach' 可以查看实时日志`));
+
+  if (openBrowser) {
+    console.log(chalk.green("🌐 浏览器将自动打开"));
+  }
+}
+
+/**
+ * 前台模式启动 WebServer
+ */
+async function startWebServerInForeground(openBrowser = false): Promise<void> {
+  const webServer = new WebServer();
+
+  // 处理退出信号
+  const cleanup = async () => {
+    console.log(chalk.yellow("\n正在停止服务..."));
+    await webServer.stop();
+    cleanupPidFile();
+    process.exit(0);
+  };
+
+  process.on("SIGINT", cleanup);
+  process.on("SIGTERM", cleanup);
+
+  // 保存 PID 信息
+  savePidInfo(process.pid, "foreground");
+
+  await webServer.start();
+
+  console.log(chalk.green("✅ 服务已启动"));
+
+  if (openBrowser) {
+    const port = configManager.getWebUIPort();
+    const url = `http://localhost:${port}`;
+    // 自动打开浏览器逻辑
+    await openBrowserUrl(url);
+  }
+}
+
+/**
+ * 打开浏览器URL
+ */
+async function openBrowserUrl(url: string): Promise<void> {
+  try {
+    const { spawn } = await import("node:child_process");
+    const platform = process.platform;
+
+    let command: string;
+    let args: string[];
+
+    if (platform === "darwin") {
+      command = "open";
+      args = [url];
+    } else if (platform === "win32") {
+      command = "start";
+      args = ["", url];
+    } else {
+      command = "xdg-open";
+      args = [url];
+    }
+
+    spawn(command, args, { detached: true, stdio: "ignore" });
+    console.log(chalk.green(`🌐 已尝试打开浏览器: ${url}`));
+  } catch (error) {
+    console.log(chalk.yellow(`⚠️  自动打开浏览器失败，请手动访问: ${url}`));
   }
 }
 

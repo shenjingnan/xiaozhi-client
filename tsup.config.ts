@@ -44,6 +44,7 @@ export default defineConfig({
     "src/autoCompletion.ts",
     "src/logger.ts",
     "src/webServer.ts",
+    "src/webServerStandalone.ts",
     "src/mcpClient.ts",
     "src/proxyMCPServer.ts",
     "src/services/mcpServer.ts",
