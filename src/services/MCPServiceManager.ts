@@ -8,7 +8,8 @@
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { Logger } from "../logger.js";
-import { MCPService, type MCPServiceConfig } from "./MCPService.js";
+import { MCPService, type MCPServiceConfig, MCPTransportType } from "./MCPService.js";
+import { configManager } from "../configManager.js";
 
 // 工具信息接口（保持向后兼容）
 interface ToolInfo {
@@ -293,6 +294,33 @@ export class MCPServiceManager {
   }
 
   /**
+   * 增强服务配置
+   * 根据服务类型添加必要的全局配置
+   */
+  private enhanceServiceConfig(config: MCPServiceConfig): MCPServiceConfig {
+    const enhancedConfig = { ...config };
+
+    try {
+      // 处理 ModelScope SSE 服务
+      if (config.type === MCPTransportType.MODELSCOPE_SSE) {
+        const modelScopeApiKey = configManager.getModelScopeApiKey();
+        if (modelScopeApiKey) {
+          enhancedConfig.apiKey = modelScopeApiKey;
+          this.logger.info(`为 ${config.name} 服务添加 ModelScope API Key`);
+        } else {
+          this.logger.warn(`${config.name} 服务需要 ModelScope API Key，但未在配置中找到`);
+          throw new Error(`ModelScope SSE 服务 ${config.name} 需要 API Key，请在配置文件中设置 modelscope.apiKey`);
+        }
+      }
+
+      return enhancedConfig;
+    } catch (error) {
+      this.logger.error(`配置增强失败: ${config.name}`, error);
+      throw error;
+    }
+  }
+
+  /**
    * 添加服务配置（重载方法以支持两种调用方式）
    */
   addServiceConfig(name: string, config: MCPServiceConfig): void;
@@ -301,25 +329,39 @@ export class MCPServiceManager {
     nameOrConfig: string | MCPServiceConfig,
     config?: MCPServiceConfig
   ): void {
+    let finalConfig: MCPServiceConfig;
+    let serviceName: string;
+
     if (typeof nameOrConfig === "string" && config) {
       // 两参数版本
-      this.configs[nameOrConfig] = config;
-      this.logger.info(`已添加服务配置: ${nameOrConfig}`);
+      serviceName = nameOrConfig;
+      finalConfig = config;
     } else if (typeof nameOrConfig === "object") {
       // 单参数版本
-      this.configs[nameOrConfig.name] = nameOrConfig;
-      this.logger.info(`已添加服务配置: ${nameOrConfig.name}`);
+      serviceName = nameOrConfig.name;
+      finalConfig = nameOrConfig;
     } else {
       throw new Error("Invalid arguments for addServiceConfig");
     }
+
+    // 增强配置
+    const enhancedConfig = this.enhanceServiceConfig(finalConfig);
+
+    // 存储增强后的配置
+    this.configs[serviceName] = enhancedConfig;
+    this.logger.info(`已添加并增强服务配置: ${serviceName}`);
   }
 
   /**
    * 更新服务配置
    */
   updateServiceConfig(name: string, config: MCPServiceConfig): void {
-    this.configs[name] = config;
-    this.logger.info(`已更新服务配置: ${name}`);
+    // 增强配置
+    const enhancedConfig = this.enhanceServiceConfig(config);
+
+    // 存储增强后的配置
+    this.configs[name] = enhancedConfig;
+    this.logger.info(`已更新并增强服务配置: ${name}`);
   }
 
   /**

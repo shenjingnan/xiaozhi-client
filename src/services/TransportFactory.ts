@@ -215,7 +215,9 @@ export function validateConfig(config: MCPServiceConfig): void {
         throw new Error("modelscope-sse 类型需要 url 字段");
       }
       if (!config.apiKey) {
-        throw new Error("modelscope-sse 类型需要 apiKey 字段");
+        throw new Error(
+          "modelscope-sse 类型需要 apiKey 字段。请在配置文件中设置 modelscope.apiKey 或确保服务配置包含 apiKey"
+        );
       }
       break;
 
