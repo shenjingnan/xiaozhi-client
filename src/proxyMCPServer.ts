@@ -108,6 +108,52 @@ export class ProxyMCPServer {
   }
 
   /**
+   * 设置 MCPServiceManager 实例
+   * @param serviceManager MCPServiceManager 实例
+   */
+  setServiceManager(serviceManager: any): void {
+    // 临时存储在一个变量中，避免类型检查问题
+    (this as any).serviceManager = serviceManager;
+    this.logger.info("已设置 MCPServiceManager");
+
+    // 立即同步工具
+    this.syncToolsFromServiceManager();
+  }
+
+  /**
+   * 从 MCPServiceManager 同步工具
+   */
+  syncToolsFromServiceManager(): void {
+    const serviceManager = (this as any).serviceManager;
+    if (!serviceManager) {
+      this.logger.warn("MCPServiceManager 未设置，无法同步工具");
+      return;
+    }
+
+    try {
+      // 清空现有工具
+      this.tools.clear();
+
+      // 从 MCPServiceManager 获取所有工具
+      const allTools = serviceManager.getAllTools();
+
+      for (const toolInfo of allTools) {
+        this.tools.set(toolInfo.name, {
+          name: toolInfo.name,
+          description: toolInfo.description,
+          inputSchema: toolInfo.inputSchema,
+        });
+      }
+
+      this.logger.info(`已从 MCPServiceManager 同步 ${this.tools.size} 个工具`);
+    } catch (error) {
+      this.logger.error(
+        `同步工具失败: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  /**
    * 添加单个工具
    * @param name 工具名称
    * @param tool 工具定义
@@ -153,6 +199,13 @@ export class ProxyMCPServer {
    * @returns 工具数组
    */
   getTools(): Tool[] {
+    // 每次获取工具时都尝试从 MCPServiceManager 同步
+    try {
+      this.syncToolsFromServiceManager();
+    } catch (error) {
+      // 静默处理同步错误，不影响现有工具的返回
+    }
+
     return Array.from(this.tools.values());
   }
 

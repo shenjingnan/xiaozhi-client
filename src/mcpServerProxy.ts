@@ -11,6 +11,11 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import type { Tool as MCPTool } from "@modelcontextprotocol/sdk/types.js";
+import {
+  convertLegacyConfigBatch,
+  convertLegacyToNew,
+} from "./adapters/ConfigAdapter.js";
 import {
   type LocalMCPServerConfig,
   type MCPServerConfig,
@@ -20,6 +25,10 @@ import {
   configManager,
 } from "./configManager";
 import { logger as globalLogger } from "./logger";
+import type { MCPServiceConfig } from "./services/MCPService.js";
+import { MCPServiceManager } from "./services/MCPServiceManager.js";
+
+// 保留旧的客户端导入以支持向后兼容（在过渡期间）
 import { ModelScopeMCPClient } from "./modelScopeMCPClient";
 import { SSEMCPClient } from "./sseMCPClient";
 import { StreamableHTTPMCPClient } from "./streamableHttpMCPClient";
@@ -562,16 +571,17 @@ export function loadMCPConfig(): Record<string, MCPServerConfig> {
 
 /**
  * MCP Server Proxy - Main proxy server implementation
+ * 重构版本：使用 MCPServiceManager 管理服务
  */
 export class MCPServerProxy {
-  private clients: Map<string, IMCPClient>;
-  private toolMap: Map<string, string>; // Maps tool name to client name
+  private serviceManager: MCPServiceManager;
+  private toolMap: Map<string, string>; // Maps tool name to service name
   public initialized: boolean;
   private config: Record<string, MCPServerConfig> | null;
 
   constructor() {
-    this.clients = new Map();
-    this.toolMap = new Map(); // Maps tool name to client name
+    this.serviceManager = new MCPServiceManager();
+    this.toolMap = new Map(); // Maps tool name to service name
     this.initialized = false;
     this.config = null;
   }
@@ -621,7 +631,7 @@ export class MCPServerProxy {
   }
 
   async start() {
-    logger.info("正在启动 MCP 服务代理");
+    logger.info("正在启动 MCP 服务代理（使用新架构）");
 
     // Load configuration
     this.config = loadMCPConfig();
@@ -629,131 +639,68 @@ export class MCPServerProxy {
     // 清理已删除服务的工具配置
     await this.cleanupRemovedServers();
 
-    // Initialize child MCP clients from configuration
-    const clientPromises = [];
+    // 转换配置格式
+    logger.info("正在转换配置格式...");
+    const convertedConfigs = convertLegacyConfigBatch(this.config);
 
-    for (const [serverName, serverConfig] of Object.entries(this.config)) {
-      logger.info(`正在初始化 MCP 客户端：${serverName}`);
+    // 使用 MCPServiceManager 管理服务
+    logger.info(
+      `正在初始化 ${Object.keys(convertedConfigs).length} 个 MCP 服务`
+    );
 
-      let client: IMCPClient;
-
-      // 判断服务类型
-      if ("url" in serverConfig) {
-        // URL 类型的配置
-        const url = serverConfig.url;
-
-        // 判断是 SSE 还是 Streamable HTTP
-        const isSSE =
-          // 1. 显式指定 type: "sse"
-          ("type" in serverConfig && serverConfig.type === "sse") ||
-          // 2. URL 路径以 /sse 结尾（忽略查询参数）
-          (() => {
-            try {
-              const urlObj = new URL(url);
-              return urlObj.pathname.endsWith("/sse");
-            } catch {
-              // 如果 URL 解析失败，回退到简单的字符串匹配
-              return url.includes("/sse");
-            }
-          })() ||
-          // 3. 域名包含 modelscope.net（向后兼容魔搭社区）
-          url.includes("modelscope.net");
-
-        if (isSSE) {
-          // SSE MCP 服务 - 区分 ModelScope 和通用 SSE
-          if (url.includes("modelscope.net")) {
-            // ModelScope SSE 服务（需要特殊认证）
-            client = new ModelScopeMCPClient(
-              serverName,
-              serverConfig as SSEMCPServerConfig
-            );
-          } else {
-            // 通用 SSE 服务（如高德地图等）
-            client = new SSEMCPClient(
-              serverName,
-              serverConfig as SSEMCPServerConfig
-            );
-          }
-        } else {
-          // Streamable HTTP MCP 服务
-          client = new StreamableHTTPMCPClient(
-            serverName,
-            serverConfig as StreamableHTTPMCPServerConfig
-          );
-        }
-      } else {
-        // 本地 MCP 服务
-        client = new MCPClient(
-          serverName,
-          serverConfig as LocalMCPServerConfig
-        );
-      }
-
-      this.clients.set(serverName, client);
-      clientPromises.push(client.start());
+    // 添加服务配置到 MCPServiceManager
+    for (const [serviceName, serviceConfig] of Object.entries(
+      convertedConfigs
+    )) {
+      logger.info(`正在添加服务配置：${serviceName} (${serviceConfig.type})`);
+      this.serviceManager.addServiceConfig(serviceName, serviceConfig);
     }
 
-    // Start all clients
+    // 启动所有服务
     try {
-      const results = await Promise.allSettled(clientPromises);
-
-      // Check for failed clients
-      let successCount = 0;
-      for (let i = 0; i < results.length; i++) {
-        const result = results[i];
-        const serverName = Object.keys(this.config)[i];
-
-        if (result.status === "fulfilled") {
-          successCount++;
-          logger.info(`成功启动 MCP 客户端：${serverName}`);
-        } else {
-          logger.error(
-            `启动 MCP 客户端 ${serverName} 失败：${result.reason.message}`
-          );
-          // Remove failed client from clients map
-          this.clients.delete(serverName);
-        }
-      }
-
-      if (successCount === 0) {
-        throw new Error("没有成功启动任何 MCP 客户端");
-      }
-
-      // Build tool mapping
-      this.buildToolMap();
-      this.initialized = true;
-
-      logger.info(
-        `MCP 服务代理初始化成功，启动了 ${successCount}/${
-          Object.keys(this.config).length
-        } 个客户端`
-      );
+      await this.serviceManager.startAllServices();
+      logger.info("所有 MCP 服务启动成功");
     } catch (error) {
       logger.error(
-        `启动 MCP 客户端失败：${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `启动 MCP 服务失败：${error instanceof Error ? error.message : String(error)}`
       );
       throw error;
     }
+
+    // 构建工具映射
+    this.buildToolMap();
+    this.initialized = true;
+
+    const status = this.serviceManager.getStatus();
+    const connectedServices = Object.keys(status.services).filter(
+      (name) => status.services[name].connected
+    );
+
+    logger.info(
+      `MCP 服务代理初始化成功，启动了 ${connectedServices.length}/${
+        Object.keys(convertedConfigs).length
+      } 个服务，共 ${status.totalTools} 个工具`
+    );
   }
 
   buildToolMap() {
     this.toolMap.clear();
 
-    for (const [clientName, client] of this.clients) {
-      for (const tool of client.tools) {
-        // 工具名称现在已经带有前缀，应该不会有重复
-        // 但我们仍然检查以防万一
-        if (this.toolMap.has(tool.name)) {
-          logger.error(
-            `重复的工具名称：${
-              tool.name
-            } (来自 ${clientName} 和 ${this.toolMap.get(tool.name)})`
-          );
-        } else {
-          this.toolMap.set(tool.name, clientName);
-        }
+    // 从 MCPServiceManager 获取所有工具
+    const allTools = this.serviceManager.getAllTools();
+
+    for (const toolInfo of allTools) {
+      // 工具名称格式：serviceName__toolName
+      const toolName = toolInfo.name;
+      const serviceName = toolInfo.serviceName;
+
+      // 检查工具名称冲突（理论上不应该发生）
+      if (this.toolMap.has(toolName)) {
+        logger.error(
+          `重复的工具名称：${toolName} (来自 ${serviceName} 和 ${this.toolMap.get(toolName)})`
+        );
+      } else {
+        this.toolMap.set(toolName, serviceName);
       }
     }
 
@@ -763,8 +710,14 @@ export class MCPServerProxy {
 
   getAllTools(): Tool[] {
     const allTools: Tool[] = [];
-    for (const client of this.clients.values()) {
-      allTools.push(...client.tools);
+    const toolInfos = this.serviceManager.getAllTools();
+
+    for (const toolInfo of toolInfos) {
+      allTools.push({
+        name: toolInfo.name,
+        description: toolInfo.description,
+        inputSchema: toolInfo.inputSchema,
+      });
     }
     return allTools;
   }
@@ -783,11 +736,17 @@ export class MCPServerProxy {
       enabledToolCount: number;
     }> = [];
 
-    for (const [serverName, client] of this.clients) {
+    const status = this.serviceManager.getStatus();
+    for (const [serviceName, serviceStatus] of Object.entries(
+      status.services
+    )) {
+      const service = this.serviceManager.getService(serviceName);
+      const toolCount = service ? service.getTools().length : 0;
+
       servers.push({
-        name: serverName,
-        toolCount: client.originalTools.length,
-        enabledToolCount: client.tools.length,
+        name: serviceName,
+        toolCount: toolCount,
+        enabledToolCount: toolCount, // 在新架构中，所有工具都是启用的
       });
     }
 
@@ -800,12 +759,13 @@ export class MCPServerProxy {
   getServerTools(
     serverName: string
   ): Array<{ name: string; description: string; enabled: boolean }> {
-    const client = this.clients.get(serverName);
-    if (!client) {
+    const service = this.serviceManager.getService(serverName);
+    if (!service) {
       throw new Error(`未找到服务器 ${serverName}`);
     }
 
-    return client.originalTools.map((tool) => ({
+    const tools = service.getTools();
+    return tools.map((tool) => ({
       name: tool.name,
       description: tool.description || "",
       enabled: configManager.isToolEnabled(serverName, tool.name),
@@ -816,12 +776,12 @@ export class MCPServerProxy {
    * 刷新指定服务器的工具列表
    */
   async refreshServerTools(serverName: string): Promise<void> {
-    const client = this.clients.get(serverName);
-    if (!client) {
+    const service = this.serviceManager.getService(serverName);
+    if (!service) {
       throw new Error(`未找到服务器 ${serverName}`);
     }
 
-    await client.refreshTools();
+    // 在新架构中，工具列表会自动更新，这里主要是重新构建映射
     this.buildToolMap(); // 重新构建工具映射
   }
 
@@ -829,50 +789,46 @@ export class MCPServerProxy {
    * 刷新所有服务器的工具列表
    */
   async refreshAllTools(): Promise<void> {
-    const refreshPromises = Array.from(this.clients.values()).map((client) =>
-      client.refreshTools()
-    );
-    await Promise.allSettled(refreshPromises);
+    // 在新架构中，工具列表会自动更新，这里主要是重新构建映射
     this.buildToolMap(); // 重新构建工具映射
   }
 
   async callTool(toolName: string, arguments_: any): Promise<any> {
     const startTime = Date.now();
-    const clientName = this.toolMap.get(toolName);
+    const serviceName = this.toolMap.get(toolName);
 
-    if (!clientName) {
+    if (!serviceName) {
       throw new Error(`未知的工具：${toolName}`);
-    }
-
-    const client = this.clients.get(clientName);
-    if (!client || !client.initialized) {
-      throw new Error(`客户端 ${clientName} 不可用`);
     }
 
     // 记录在代理层的工具调用请求
     logger.info("[代理层] 工具调用开始");
     logger.info(`[代理层] 工具名称: ${toolName}`);
-    logger.info(`[代理层] 所属客户端: ${clientName}`);
+    logger.info(`[代理层] 所属服务: ${serviceName}`);
     logger.info(`[代理层] 请求参数: ${JSON.stringify(arguments_, null, 2)}`);
 
     try {
-      const result = await client.callTool(toolName, arguments_);
+      // 使用 MCPServiceManager 调用工具
+      const result = await this.serviceManager.callTool(toolName, arguments_);
       const duration = Date.now() - startTime;
 
       // 记录在代理层的工具调用结果
       logger.info("[代理层] 工具调用成功");
       logger.info(`[代理层] 工具名称: ${toolName}`);
-      logger.info(`[代理层] 所属客户端: ${clientName}`);
+      logger.info(`[代理层] 所属服务: ${serviceName}`);
       logger.info(`[代理层] 执行耗时: ${duration}ms`);
       logger.info(`[代理层] 完整结果: ${JSON.stringify(result, null, 2)}`);
 
       // 异步更新工具使用统计，不阻塞主流程
       setImmediate(() => {
-        // 获取原始工具名称（去除前缀）
-        const originalToolName = client.getOriginalToolName(toolName);
+        // 从工具名称中提取原始工具名称（格式：serviceName__toolName）
+        const originalToolName = toolName.includes("__")
+          ? toolName.split("__")[1]
+          : toolName;
+
         if (originalToolName) {
           this.updateToolUsageStatsAsync(
-            clientName,
+            serviceName,
             originalToolName,
             new Date().toISOString()
           );
@@ -885,7 +841,7 @@ export class MCPServerProxy {
 
       logger.error("[代理层] 工具调用失败");
       logger.error(`[代理层] 工具名称: ${toolName}`);
-      logger.error(`[代理层] 所属客户端: ${clientName}`);
+      logger.error(`[代理层] 所属服务: ${serviceName}`);
       logger.error(`[代理层] 执行耗时: ${duration}ms`);
       logger.error(
         `[代理层] 错误信息: ${error instanceof Error ? error.message : String(error)}`
@@ -925,11 +881,9 @@ export class MCPServerProxy {
     });
   }
 
-  stop() {
+  async stop() {
     logger.info("正在停止 MCP 服务代理");
-    for (const client of this.clients.values()) {
-      client.stop();
-    }
+    await this.serviceManager.stopAllServices();
     this.initialized = false;
   }
 }
