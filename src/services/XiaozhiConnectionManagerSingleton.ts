@@ -3,11 +3,17 @@
  * 提供全局唯一的 XiaozhiConnectionManager 实例，解决多实例资源冲突问题
  */
 
-import { XiaozhiConnectionManager, type XiaozhiConnectionOptions } from "./XiaozhiConnectionManager.js";
+import {
+  XiaozhiConnectionManager,
+  type XiaozhiConnectionOptions,
+} from "./XiaozhiConnectionManager.js";
 
 // 重新导出相关类型，便于外部使用
 export type { Tool } from "@modelcontextprotocol/sdk/types.js";
-export type { XiaozhiConnectionOptions, ConnectionStatus } from "./XiaozhiConnectionManager.js";
+export type {
+  XiaozhiConnectionOptions,
+  ConnectionStatus,
+} from "./XiaozhiConnectionManager.js";
 
 // 单例状态枚举
 enum SingletonState {
@@ -36,7 +42,9 @@ let instanceId: string | null = null;
 /**
  * 创建 XiaozhiConnectionManager 实例（私有函数）
  */
-async function createInstance(options?: XiaozhiConnectionOptions): Promise<XiaozhiConnectionManager> {
+async function createInstance(
+  options?: XiaozhiConnectionOptions
+): Promise<XiaozhiConnectionManager> {
   console.log("🚀 正在初始化 XiaozhiConnectionManager 单例...");
 
   const manager = new XiaozhiConnectionManager(options);
@@ -51,7 +59,9 @@ async function createInstance(options?: XiaozhiConnectionOptions): Promise<Xiaoz
  * @returns Promise<XiaozhiConnectionManager> 管理器实例
  * @throws Error 如果初始化失败
  */
-async function getInstance(options?: XiaozhiConnectionOptions): Promise<XiaozhiConnectionManager> {
+async function getInstance(
+  options?: XiaozhiConnectionOptions
+): Promise<XiaozhiConnectionManager> {
   // 如果已经初始化完成，直接返回实例
   if (instance && state === SingletonState.INITIALIZED) {
     return instance;
@@ -77,7 +87,9 @@ async function getInstance(options?: XiaozhiConnectionOptions): Promise<XiaozhiC
     instanceId = `xiaozhi-connection-manager-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     lastError = null;
 
-    console.log(`✅ XiaozhiConnectionManager 单例初始化成功，实例ID: ${instanceId}`);
+    console.log(
+      `✅ XiaozhiConnectionManager 单例初始化成功，实例ID: ${instanceId}`
+    );
     return instance;
   } catch (error) {
     state = SingletonState.FAILED;
@@ -194,7 +206,9 @@ function getStatus(): SingletonStatus {
  * @param options 连接选项
  * @returns Promise<XiaozhiConnectionManager> 新的管理器实例
  */
-async function forceReinitialize(options?: XiaozhiConnectionOptions): Promise<XiaozhiConnectionManager> {
+async function forceReinitialize(
+  options?: XiaozhiConnectionOptions
+): Promise<XiaozhiConnectionManager> {
   console.log("🔄 强制重新初始化 XiaozhiConnectionManager 单例...");
 
   await cleanup();
@@ -272,7 +286,10 @@ process.on("uncaughtException", async (error) => {
 
 // 处理未处理的Promise拒绝
 process.on("unhandledRejection", async (reason) => {
-  console.error("💥 未处理的Promise拒绝，清理 XiaozhiConnectionManager 单例:", reason);
+  console.error(
+    "💥 未处理的Promise拒绝，清理 XiaozhiConnectionManager 单例:",
+    reason
+  );
   try {
     await XiaozhiConnectionManagerSingleton.cleanup();
   } catch (cleanupError) {

@@ -1326,7 +1326,6 @@ function showHelp(): void {
   console.log("  xiaozhi mcp tool <server> <tool> enable   # 启用工具");
   console.log("  xiaozhi mcp tool <server> <tool> disable  # 禁用工具");
   console.log();
-
 }
 
 // 配置 Commander 程序

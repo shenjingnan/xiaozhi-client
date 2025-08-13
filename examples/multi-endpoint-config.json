@@ -1,0 +1,43 @@
+{
+  "$schema": "../src/schemas/config.schema.json",
+  "port": 3001,
+  "mcpEndpoint": [
+    "wss://xiaozhi-primary.example.com",
+    "wss://xiaozhi-secondary.example.com",
+    "wss://xiaozhi-tertiary.example.com"
+  ],
+  "connectionOptions": {
+    "healthCheckInterval": 30000,
+    "reconnectInterval": 5000,
+    "maxReconnectAttempts": 10,
+    "loadBalanceStrategy": "health-based",
+    "connectionTimeout": 10000,
+    "reconnectStrategy": "exponential-backoff"
+  },
+  "mcpServers": [
+    {
+      "name": "filesystem",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/path/to/allowed/files"
+      ],
+      "env": {}
+    },
+    {
+      "name": "git",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-git",
+        "--repository",
+        "/path/to/git/repo"
+      ],
+      "env": {}
+    }
+  ],
+  "enableCors": true,
+  "enableLogging": true,
+  "logLevel": "info"
+}

@@ -17,6 +17,8 @@ import { Logger } from "./logger.js";
 // MCPTransportType 已移除，不再需要导入
 import type { MCPServiceManager } from "./services/MCPServiceManager.js";
 import { MCPServiceManagerSingleton } from "./services/MCPServiceManagerSingleton.js";
+import { XiaozhiConnectionManagerSingleton } from "./services/XiaozhiConnectionManagerSingleton.js";
+import type { XiaozhiConnectionManager } from "./services/XiaozhiConnectionManager.js";
 
 // 硬编码常量已移除，改为配置驱动
 interface ClientInfo {
@@ -39,7 +41,8 @@ export class WebServer {
   };
   private heartbeatTimeout?: NodeJS.Timeout;
   private readonly HEARTBEAT_TIMEOUT = 35000; // 35 seconds (slightly more than client's 30s interval)
-  private proxyMCPServer: ProxyMCPServer | undefined;
+  private proxyMCPServer: ProxyMCPServer | undefined; // 保留用于向后兼容
+  private xiaozhiConnectionManager: XiaozhiConnectionManager | undefined;
   private mcpServiceManager: MCPServiceManager | undefined;
 
   constructor(port?: number) {
@@ -139,23 +142,115 @@ export class WebServer {
   ): Promise<void> {
     // 处理多端点配置
     const endpoints = Array.isArray(mcpEndpoint) ? mcpEndpoint : [mcpEndpoint];
-    const validEndpoint = endpoints.find((ep) => ep && !ep.includes("<请填写"));
+    const validEndpoints = endpoints.filter(
+      (ep) => ep && !ep.includes("<请填写")
+    );
 
-    if (!validEndpoint) {
+    if (validEndpoints.length === 0) {
       this.logger.warn("未配置有效的小智接入点，跳过连接");
       return;
     }
 
-    this.logger.info(`初始化小智接入点连接: ${validEndpoint}`);
-    this.proxyMCPServer = new ProxyMCPServer(validEndpoint);
-    this.proxyMCPServer.setServiceManager(this.mcpServiceManager);
-
-    // 使用重连机制连接到小智接入点
-    await this.connectWithRetry(
-      () => this.proxyMCPServer!.connect(),
-      "小智接入点连接"
+    this.logger.info(
+      `初始化小智接入点连接管理器，端点数量: ${validEndpoints.length}`
     );
-    this.logger.info("小智接入点连接成功");
+    this.logger.debug("有效端点列表:", validEndpoints);
+
+    try {
+      // 获取小智连接管理器单例
+      this.xiaozhiConnectionManager =
+        await XiaozhiConnectionManagerSingleton.getInstance({
+          healthCheckInterval: 30000,
+          reconnectInterval: 5000,
+          maxReconnectAttempts: 10,
+          loadBalanceStrategy: "round-robin",
+          connectionTimeout: 10000,
+        });
+
+      // 设置 MCP 服务管理器
+      if (this.mcpServiceManager) {
+        this.xiaozhiConnectionManager.setServiceManager(this.mcpServiceManager);
+      }
+
+      // 初始化连接管理器
+      await this.xiaozhiConnectionManager.initialize(validEndpoints, tools);
+
+      // 连接所有端点
+      await this.xiaozhiConnectionManager.connect();
+
+      // 设置配置变更监听器
+      this.xiaozhiConnectionManager.on("configChange", (event: any) => {
+        this.logger.info(`小智连接配置变更: ${event.type}`, event.data);
+      });
+
+      this.logger.info(
+        `小智接入点连接管理器初始化完成，管理 ${validEndpoints.length} 个端点`
+      );
+    } catch (error) {
+      this.logger.error("小智接入点连接管理器初始化失败:", error);
+
+      // 如果新的连接管理器失败，回退到原有的单连接模式（向后兼容）
+      this.logger.warn("回退到单连接模式");
+      const validEndpoint = validEndpoints[0];
+
+      this.logger.info(`初始化单个小智接入点连接: ${validEndpoint}`);
+      this.proxyMCPServer = new ProxyMCPServer(validEndpoint);
+
+      if (this.mcpServiceManager) {
+        this.proxyMCPServer.setServiceManager(this.mcpServiceManager);
+      }
+
+      // 使用重连机制连接到小智接入点
+      await this.connectWithRetry(
+        () => this.proxyMCPServer!.connect(),
+        "小智接入点连接"
+      );
+      this.logger.info("小智接入点连接成功（单连接模式）");
+    }
+  }
+
+  /**
+   * 获取最佳的小智连接（用于向后兼容）
+   */
+  private getBestXiaozhiConnection(): ProxyMCPServer | null {
+    if (this.xiaozhiConnectionManager) {
+      return this.xiaozhiConnectionManager.selectBestConnection();
+    }
+    return this.proxyMCPServer || null;
+  }
+
+  /**
+   * 获取小智连接状态信息
+   */
+  getXiaozhiConnectionStatus(): any {
+    if (this.xiaozhiConnectionManager) {
+      return {
+        type: "multi-endpoint",
+        manager: {
+          healthyConnections:
+            this.xiaozhiConnectionManager.getHealthyConnections().length,
+          totalConnections:
+            this.xiaozhiConnectionManager.getConnectionStatus().length,
+          loadBalanceStats: this.xiaozhiConnectionManager.getLoadBalanceStats(),
+          healthCheckStats: this.xiaozhiConnectionManager.getHealthCheckStats(),
+          reconnectStats: this.xiaozhiConnectionManager.getReconnectStats(),
+        },
+        connections: this.xiaozhiConnectionManager.getConnectionStatus(),
+      };
+    }
+
+    if (this.proxyMCPServer) {
+      return {
+        type: "single-endpoint",
+        connected: true,
+        endpoint: "unknown",
+      };
+    }
+
+    return {
+      type: "none",
+      connected: false,
+    };
   }
 
   /**

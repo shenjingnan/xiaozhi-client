@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  ConnectionErrorType,
+  ReconnectStrategy,
   XiaozhiConnectionManager,
   type XiaozhiConnectionOptions,
-  ReconnectStrategy,
-  ConnectionErrorType
 } from "../XiaozhiConnectionManager.js";
 import { XiaozhiConnectionManagerSingleton } from "../XiaozhiConnectionManagerSingleton.js";
 
@@ -31,7 +31,11 @@ describe("XiaozhiConnectionManager", () => {
   let manager: XiaozhiConnectionManager;
   const mockEndpoints = ["wss://test1.example.com", "wss://test2.example.com"];
   const mockTools = [
-    { name: "test-tool", description: "Test tool", inputSchema: { type: "object", properties: {} } }
+    {
+      name: "test-tool",
+      description: "Test tool",
+      inputSchema: { type: "object", properties: {} },
+    },
   ];
 
   beforeEach(() => {
@@ -77,19 +81,21 @@ describe("XiaozhiConnectionManager", () => {
     });
 
     it("should throw error for empty endpoints array", async () => {
-      await expect(manager.initialize([], mockTools)).rejects.toThrow("端点列表不能为空");
+      await expect(manager.initialize([], mockTools)).rejects.toThrow(
+        "端点列表不能为空"
+      );
     });
 
     it("should throw error for invalid endpoint URL", async () => {
-      await expect(manager.initialize(["invalid-url"], mockTools)).rejects.toThrow(
-        "端点地址必须是 WebSocket URL"
-      );
+      await expect(
+        manager.initialize(["invalid-url"], mockTools)
+      ).rejects.toThrow("端点地址必须是 WebSocket URL");
     });
 
     it("should throw error for non-WebSocket URL", async () => {
-      await expect(manager.initialize(["http://example.com"], mockTools)).rejects.toThrow(
-        "端点地址必须是 WebSocket URL"
-      );
+      await expect(
+        manager.initialize(["http://example.com"], mockTools)
+      ).rejects.toThrow("端点地址必须是 WebSocket URL");
     });
 
     it("should skip duplicate initialization", async () => {
@@ -109,7 +115,9 @@ describe("XiaozhiConnectionManager", () => {
     });
 
     it("should throw error when not initialized", async () => {
-      await expect(manager.connect()).rejects.toThrow("XiaozhiConnectionManager 未初始化");
+      await expect(manager.connect()).rejects.toThrow(
+        "XiaozhiConnectionManager 未初始化"
+      );
     });
 
     it("should connect to all endpoints", async () => {
@@ -141,9 +149,9 @@ describe("XiaozhiConnectionManager", () => {
     });
 
     it("should throw error when not initialized", async () => {
-      await expect(manager.addEndpoint("wss://new.example.com")).rejects.toThrow(
-        "XiaozhiConnectionManager 未初始化"
-      );
+      await expect(
+        manager.addEndpoint("wss://new.example.com")
+      ).rejects.toThrow("XiaozhiConnectionManager 未初始化");
     });
 
     it("should add new endpoint successfully", async () => {
@@ -154,7 +162,9 @@ describe("XiaozhiConnectionManager", () => {
 
       const connectionStatus = manager.getConnectionStatus();
       expect(connectionStatus).toHaveLength(3);
-      expect(connectionStatus.some(status => status.endpoint === newEndpoint)).toBe(true);
+      expect(
+        connectionStatus.some((status) => status.endpoint === newEndpoint)
+      ).toBe(true);
     });
 
     it("should skip adding duplicate endpoint", async () => {
@@ -350,14 +360,17 @@ describe("XiaozhiConnectionManager", () => {
       connectionStatus[0].lastError = "Connection failed";
 
       // 手动触发重连
-      await expect(manager.triggerReconnect(mockEndpoints[0])).resolves.not.toThrow();
+      await expect(
+        manager.triggerReconnect(mockEndpoints[0])
+      ).resolves.not.toThrow();
     });
 
     it("should throw error when triggering reconnect for non-existent endpoint", async () => {
       await manager.initialize(mockEndpoints, mockTools);
 
-      await expect(manager.triggerReconnect("wss://non-existent.example.com"))
-        .rejects.toThrow("端点 wss://non-existent.example.com 不存在");
+      await expect(
+        manager.triggerReconnect("wss://non-existent.example.com")
+      ).rejects.toThrow("端点 wss://non-existent.example.com 不存在");
     });
 
     it("should skip reconnect for already connected endpoint", async () => {
@@ -368,7 +381,9 @@ describe("XiaozhiConnectionManager", () => {
       connectionStatus[0].connected = true;
 
       // 手动触发重连应该被跳过
-      await expect(manager.triggerReconnect(mockEndpoints[0])).resolves.not.toThrow();
+      await expect(
+        manager.triggerReconnect(mockEndpoints[0])
+      ).resolves.not.toThrow();
     });
 
     it("should stop reconnect for specific endpoint", async () => {
@@ -443,8 +458,13 @@ describe("XiaozhiConnectionManager", () => {
       await manager.initialize(mockEndpoints, mockTools);
 
       // 测试有效端点
-      const validEndpoints = ["wss://valid1.example.com", "wss://valid2.example.com"];
-      await expect(manager.updateEndpoints(validEndpoints)).resolves.not.toThrow();
+      const validEndpoints = [
+        "wss://valid1.example.com",
+        "wss://valid2.example.com",
+      ];
+      await expect(
+        manager.updateEndpoints(validEndpoints)
+      ).resolves.not.toThrow();
     });
 
     it("should reject invalid endpoints", async () => {
@@ -452,14 +472,16 @@ describe("XiaozhiConnectionManager", () => {
 
       // 测试无效端点
       const invalidEndpoints = ["http://invalid.com", "not-a-url"];
-      await expect(manager.updateEndpoints(invalidEndpoints)).rejects.toThrow("没有有效的端点");
+      await expect(manager.updateEndpoints(invalidEndpoints)).rejects.toThrow(
+        "没有有效的端点"
+      );
     });
 
     it("should update endpoints and emit events", async () => {
       await manager.initialize(mockEndpoints, mockTools);
 
       const eventPromise = new Promise((resolve) => {
-        manager.once('configChange', resolve);
+        manager.once("configChange", resolve);
       });
 
       const newEndpoints = ["wss://new1.example.com", "wss://new2.example.com"];
@@ -479,7 +501,7 @@ describe("XiaozhiConnectionManager", () => {
       };
 
       const eventPromise = new Promise((resolve) => {
-        manager.once('configChange', resolve);
+        manager.once("configChange", resolve);
       });
 
       manager.updateOptions(newOptions);
@@ -490,7 +512,7 @@ describe("XiaozhiConnectionManager", () => {
 
       return eventPromise.then((event) => {
         expect(event).toMatchObject({
-          type: 'options_updated',
+          type: "options_updated",
           timestamp: expect.any(Date),
         });
       });
@@ -499,7 +521,7 @@ describe("XiaozhiConnectionManager", () => {
     it("should reject invalid options", () => {
       const invalidOptions = {
         healthCheckInterval: -1000, // 无效值
-        reconnectInterval: 50,      // 太小
+        reconnectInterval: 50, // 太小
       };
 
       expect(() => {
@@ -562,7 +584,7 @@ describe("XiaozhiConnectionManager", () => {
   describe("load balancing functionality", () => {
     beforeEach(() => {
       manager = new XiaozhiConnectionManager({
-        loadBalanceStrategy: 'round-robin',
+        loadBalanceStrategy: "round-robin",
       });
     });
 
@@ -587,7 +609,7 @@ describe("XiaozhiConnectionManager", () => {
 
     it("should select best connection with random strategy", async () => {
       manager = new XiaozhiConnectionManager({
-        loadBalanceStrategy: 'random',
+        loadBalanceStrategy: "random",
       });
 
       await manager.initialize(mockEndpoints, mockTools);
@@ -605,7 +627,7 @@ describe("XiaozhiConnectionManager", () => {
 
     it("should select best connection with health-based strategy", async () => {
       manager = new XiaozhiConnectionManager({
-        loadBalanceStrategy: 'health-based',
+        loadBalanceStrategy: "health-based",
       });
 
       await manager.initialize(mockEndpoints, mockTools);
@@ -652,7 +674,8 @@ describe("XiaozhiConnectionManager", () => {
 
       // 排除第一个端点
       const connection = manager.selectBestConnection([mockEndpoints[0]]);
-      const selectedEndpoint = manager.getLoadBalanceStats().lastSelectedEndpoint;
+      const selectedEndpoint =
+        manager.getLoadBalanceStats().lastSelectedEndpoint;
 
       expect(connection).toBeDefined();
       expect(selectedEndpoint).not.toBe(mockEndpoints[0]);
@@ -664,7 +687,7 @@ describe("XiaozhiConnectionManager", () => {
       const stats = manager.getLoadBalanceStats();
 
       expect(stats).toMatchObject({
-        strategy: 'round-robin',
+        strategy: "round-robin",
         totalConnections: 2,
         healthyConnections: expect.any(Number),
         lastSelectedEndpoint: null,
@@ -675,18 +698,18 @@ describe("XiaozhiConnectionManager", () => {
 
     it("should switch load balance strategy", () => {
       const eventPromise = new Promise((resolve) => {
-        manager.once('configChange', resolve);
+        manager.once("configChange", resolve);
       });
 
-      manager.setLoadBalanceStrategy('health-based');
+      manager.setLoadBalanceStrategy("health-based");
 
       const stats = manager.getLoadBalanceStats();
-      expect(stats.strategy).toBe('health-based');
+      expect(stats.strategy).toBe("health-based");
       expect(stats.roundRobinIndex).toBe(0); // 应该重置
 
       return eventPromise.then((event) => {
         expect(event).toMatchObject({
-          type: 'options_updated',
+          type: "options_updated",
           timestamp: expect.any(Date),
         });
       });
@@ -705,7 +728,8 @@ describe("XiaozhiConnectionManager", () => {
       const backupConnection = await manager.performFailover(mockEndpoints[0]);
       expect(backupConnection).toBeDefined();
 
-      const selectedEndpoint = manager.getLoadBalanceStats().lastSelectedEndpoint;
+      const selectedEndpoint =
+        manager.getLoadBalanceStats().lastSelectedEndpoint;
       expect(selectedEndpoint).not.toBe(mockEndpoints[0]);
     });
 
@@ -719,6 +743,114 @@ describe("XiaozhiConnectionManager", () => {
 
       const backupConnection = await manager.performFailover(mockEndpoints[0]);
       expect(backupConnection).toBeNull();
+    });
+  });
+
+  describe("performance optimization", () => {
+    beforeEach(() => {
+      manager = new XiaozhiConnectionManager();
+    });
+
+    it("should track performance metrics", async () => {
+      await manager.initialize(mockEndpoints, mockTools);
+
+      const metrics = manager.getPerformanceMetrics();
+
+      expect(metrics).toMatchObject({
+        connectionTime: {
+          total: expect.any(Number),
+          average: expect.any(Number),
+          count: expect.any(Number),
+        },
+        memoryUsage: {
+          initial: expect.any(Number),
+          current: expect.any(Number),
+          peak: expect.any(Number),
+          growth: expect.any(Number),
+          growthPercentage: expect.any(Number),
+        },
+        prewarmedConnections: expect.any(Number),
+        totalConnections: expect.any(Number),
+        healthyConnections: expect.any(Number),
+      });
+    });
+
+    it("should prewarm connections", async () => {
+      await manager.initialize(mockEndpoints, mockTools);
+
+      await manager.prewarmConnections();
+
+      const metrics = manager.getPerformanceMetrics();
+      expect(metrics.prewarmedConnections).toBeGreaterThan(0);
+    });
+
+    it("should prewarm specific endpoints", async () => {
+      await manager.initialize(mockEndpoints, mockTools);
+
+      await manager.prewarmConnections([mockEndpoints[0]]);
+
+      const metrics = manager.getPerformanceMetrics();
+      expect(metrics.prewarmedConnections).toBe(1);
+    });
+
+    it("should optimize memory usage", async () => {
+      await manager.initialize(mockEndpoints, mockTools);
+
+      // 不应该抛出错误
+      expect(() => {
+        manager.optimizeMemoryUsage();
+      }).not.toThrow();
+    });
+
+    it("should track connection time", async () => {
+      await manager.initialize(mockEndpoints, mockTools);
+
+      const metricsBefore = manager.getPerformanceMetrics();
+      const connectionCountBefore = metricsBefore.connectionTime.count;
+
+      await manager.connect();
+
+      const metricsAfter = manager.getPerformanceMetrics();
+      expect(metricsAfter.connectionTime.count).toBe(connectionCountBefore + 1);
+      expect(metricsAfter.connectionTime.total).toBeGreaterThanOrEqual(
+        metricsBefore.connectionTime.total
+      );
+    });
+
+    it("should track memory growth", async () => {
+      await manager.initialize(mockEndpoints, mockTools);
+
+      const metrics = manager.getPerformanceMetrics();
+
+      expect(metrics.memoryUsage.initial).toBeGreaterThan(0);
+      expect(metrics.memoryUsage.current).toBeGreaterThan(0);
+      expect(metrics.memoryUsage.peak).toBeGreaterThanOrEqual(
+        metrics.memoryUsage.current
+      );
+      expect(typeof metrics.memoryUsage.growthPercentage).toBe("number");
+    });
+
+    it("should handle prewarm for non-existent endpoints", async () => {
+      await manager.initialize(mockEndpoints, mockTools);
+
+      // 不应该抛出错误
+      await expect(
+        manager.prewarmConnections(["wss://nonexistent.com"])
+      ).resolves.not.toThrow();
+    });
+
+    it("should skip already prewarmed connections", async () => {
+      await manager.initialize(mockEndpoints, mockTools);
+
+      await manager.prewarmConnections([mockEndpoints[0]]);
+      const metrics1 = manager.getPerformanceMetrics();
+
+      // 再次预热同一个端点
+      await manager.prewarmConnections([mockEndpoints[0]]);
+      const metrics2 = manager.getPerformanceMetrics();
+
+      // 预热连接数应该保持不变
+      expect(metrics2.prewarmedConnections).toBe(metrics1.prewarmedConnections);
     });
   });
 });
@@ -743,7 +875,8 @@ describe("XiaozhiConnectionManagerSingleton", () => {
         reconnectInterval: 3000,
       };
 
-      const instance = await XiaozhiConnectionManagerSingleton.getInstance(options);
+      const instance =
+        await XiaozhiConnectionManagerSingleton.getInstance(options);
       expect(instance).toBeInstanceOf(XiaozhiConnectionManager);
     });
   });
@@ -771,7 +904,8 @@ describe("XiaozhiConnectionManagerSingleton", () => {
   describe("forceReinitialize", () => {
     it("should force reinitialize singleton", async () => {
       const instance1 = await XiaozhiConnectionManagerSingleton.getInstance();
-      const instance2 = await XiaozhiConnectionManagerSingleton.forceReinitialize();
+      const instance2 =
+        await XiaozhiConnectionManagerSingleton.forceReinitialize();
 
       expect(instance1).not.toBe(instance2); // 应该是不同的实例
       expect(XiaozhiConnectionManagerSingleton.isInitialized()).toBe(true);
@@ -795,12 +929,14 @@ describe("XiaozhiConnectionManagerSingleton", () => {
   describe("waitForInitialization", () => {
     it("should return true when already initialized", async () => {
       await XiaozhiConnectionManagerSingleton.getInstance();
-      const result = await XiaozhiConnectionManagerSingleton.waitForInitialization();
+      const result =
+        await XiaozhiConnectionManagerSingleton.waitForInitialization();
       expect(result).toBe(true);
     });
 
     it("should return false when not initialized", async () => {
-      const result = await XiaozhiConnectionManagerSingleton.waitForInitialization();
+      const result =
+        await XiaozhiConnectionManagerSingleton.waitForInitialization();
       expect(result).toBe(false);
     });
   });
