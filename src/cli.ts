@@ -2,7 +2,6 @@
 
 import { spawn } from "node:child_process";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import chalk from "chalk";
@@ -205,117 +204,9 @@ export function checkEnvironment(): boolean {
   }
 }
 
-/**
- * @deprecated 此函数已废弃，新的启动方式直接使用 WebServer
- * 获取服务启动命令和参数
- */
-function getServiceCommand(): { command: string; args: string[]; cwd: string } {
-  // 获取当前脚本所在目录
-  const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 
-  // 检查是否在开发环境（js-demo/dist）还是全局安装环境
-  let distDir: string;
-  if (scriptDir.includes("js-demo/dist")) {
-    // 开发环境
-    distDir = scriptDir;
-  } else {
-    // 全局安装环境，需要找到实际的项目目录
-    // 通常全局安装后，脚本在 node_modules/.bin 或类似位置
-    // 我们需要找到实际的 dist 目录
-    const possiblePaths = [
-      path.join(scriptDir, "..", "js-demo", "dist"),
-      path.join(scriptDir, "..", "..", "js-demo", "dist"),
-      path.join(scriptDir, "..", "..", "..", "js-demo", "dist"),
-      path.join(process.cwd(), "js-demo", "dist"),
-      path.join(process.cwd(), "dist"),
-    ];
 
-    distDir =
-      possiblePaths.find(
-        (p) =>
-          fs.existsSync(path.join(p, "adaptiveMCPPipe.js")) &&
-          fs.existsSync(path.join(p, "mcpServerProxy.js"))
-      ) || scriptDir;
-  }
 
-  return {
-    command: "node",
-    args: ["adaptiveMCPPipe.js", "mcpServerProxy.js"],
-    cwd: distDir,
-  };
-}
-
-/**
- * @deprecated 此函数已废弃，新的启动方式统一在 WebServer 中处理
- * 在后台启动 Web UI 服务
- */
-async function startWebUIInBackground(): Promise<void> {
-  try {
-    // 检查配置是否存在
-    if (!configManager.configExists()) {
-      console.log(chalk.yellow("💡 提示: 配置文件不存在，跳过 Web UI 启动"));
-      return;
-    }
-
-    // 启动 Web 服务器
-    const webServer = new WebServer();
-    await webServer.start();
-
-    // 从配置获取端口号
-    const port = configManager.getWebUIPort();
-    console.log(chalk.green("✅ Web UI 已启动，可通过以下地址访问:"));
-    console.log(chalk.green(`   本地访问: http://localhost:${port}`));
-    console.log(chalk.green(`   网络访问: http://<你的IP地址>:${port}`));
-
-    // 尝试打开浏览器
-    const { spawn } = await import("node:child_process");
-    const url = `http://localhost:${port}`;
-
-    try {
-      let browserProcess: ReturnType<typeof spawn>;
-      if (process.platform === "darwin") {
-        browserProcess = spawn("open", [url], {
-          detached: true,
-          stdio: "ignore",
-        });
-      } else if (process.platform === "win32") {
-        browserProcess = spawn("cmd", ["/c", "start", url], {
-          detached: true,
-          stdio: "ignore",
-        });
-      } else {
-        browserProcess = spawn("xdg-open", [url], {
-          detached: true,
-          stdio: "ignore",
-        });
-      }
-
-      // 处理spawn错误，避免程序崩溃
-      browserProcess.on("error", () => {
-        // 静默处理浏览器启动错误，不影响主程序
-        console.log(
-          chalk.gray(`💡 提示: 无法自动打开浏览器，请手动访问: ${url}`)
-        );
-      });
-
-      browserProcess.unref();
-    } catch (error) {
-      // 忽略打开浏览器的错误
-      console.log(
-        chalk.gray(`💡 提示: 无法自动打开浏览器，请手动访问: ${url}`)
-      );
-    }
-
-    // 保存 webServer 实例供后续使用
-    (global as any).__webServer = webServer;
-  } catch (error) {
-    console.log(
-      chalk.yellow(
-        `⚠️ Web UI 启动失败: ${error instanceof Error ? error.message : String(error)}`
-      )
-    );
-  }
-}
 
 /**
  * 启动服务（重构后的统一启动逻辑）

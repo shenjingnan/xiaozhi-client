@@ -9,7 +9,8 @@ import { fileURLToPath } from "node:url";
 import express from "express";
 import { configManager } from "../configManager.js";
 import { logger as globalLogger } from "../logger.js";
-import { MultiEndpointMCPPipe } from "../multiEndpointMCPPipe.js";
+import { ProxyMCPServer } from "../ProxyMCPServer.js";
+import { MCPServiceManager } from "./MCPServiceManager.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,7 +29,8 @@ export class MCPServer extends EventEmitter {
   private server: Server | null = null;
   private clients: Map<string, SSEClient> = new Map();
   private mcpProxy: ChildProcess | null = null;
-  private mcpClient: MultiEndpointMCPPipe | null = null;
+  private proxyMCPServer: ProxyMCPServer | null = null;
+  private mcpServiceManager: MCPServiceManager | null = null;
   private mcpProxyPath: string | null = null; // 缓存MCP代理路径
   private port: number;
 
@@ -490,26 +492,33 @@ export class MCPServer extends EventEmitter {
   }
 
   private async startMCPClient(): Promise<void> {
-    // 获取配置中的端点
-    let endpoints: string[] = [];
     try {
-      if (configManager.configExists()) {
-        endpoints = configManager.getMcpEndpoints();
+      // 初始化 MCPServiceManager
+      this.mcpServiceManager = new MCPServiceManager();
+
+      // 获取小智接入点配置
+      let mcpEndpoint: string | null = null;
+      try {
+        if (configManager.configExists()) {
+          const endpoints = configManager.getMcpEndpoints();
+          mcpEndpoint = endpoints.find(ep => ep && !ep.includes('<请填写')) || null;
+        }
+      } catch (error) {
+        logger.warn("从配置中读取小智接入点失败:", error);
+      }
+
+      // 只有在配置了有效端点时才启动连接
+      if (mcpEndpoint) {
+        this.proxyMCPServer = new ProxyMCPServer(mcpEndpoint);
+        this.proxyMCPServer.setServiceManager(this.mcpServiceManager);
+
+        await this.proxyMCPServer.connect();
+        logger.info("小智接入点连接成功");
+      } else {
+        logger.info("未配置有效的小智接入点，跳过连接");
       }
     } catch (error) {
-      logger.warn("从配置中读取MCP端点失败:", error);
-    }
-
-    // 只有在配置中有端点时才启动客户端
-    if (endpoints.length > 0) {
-      // 获取 mcpServerProxy.js 的正确路径
-      const mcpProxyPath = this.findMCPProxyPath();
-
-      this.mcpClient = new MultiEndpointMCPPipe(mcpProxyPath, endpoints);
-      await this.mcpClient.start();
-      logger.info("MCP客户端已启动，正在连接到 xiaozhi.me");
-    } else {
-      logger.info("未配置MCP端点，跳过客户端连接");
+      logger.error("启动MCP客户端失败:", error);
     }
   }
 
@@ -547,10 +556,16 @@ export class MCPServer extends EventEmitter {
       this.mcpProxy = null;
     }
 
-    // 停止MCP客户端
-    if (this.mcpClient) {
-      this.mcpClient.shutdown();
-      this.mcpClient = null;
+    // 停止小智接入点连接
+    if (this.proxyMCPServer) {
+      await this.proxyMCPServer.disconnect();
+      this.proxyMCPServer = null;
+    }
+
+    // 停止 MCP 服务管理器
+    if (this.mcpServiceManager) {
+      await this.mcpServiceManager.stopAllServices();
+      this.mcpServiceManager = null;
     }
 
     // 清除缓存的MCP代理路径
