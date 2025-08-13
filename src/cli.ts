@@ -230,8 +230,10 @@ async function startService(daemon = false, ui = false): Promise<void> {
 
     if (daemon) {
       await startWebServerInDaemon(ui);
+      spinner.succeed("服务已在后台启动");
     } else {
       await startWebServerInForeground(ui);
+      spinner.succeed("服务已启动");
     }
   } catch (error) {
     spinner.fail(
@@ -328,8 +330,6 @@ async function startWebServerInForeground(openBrowser = false): Promise<void> {
   savePidInfo(process.pid, "foreground");
 
   await webServer.start();
-
-  console.log(chalk.green("✅ 服务已启动"));
 
   if (openBrowser) {
     const port = configManager.getWebUIPort();
