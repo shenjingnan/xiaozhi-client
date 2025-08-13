@@ -122,34 +122,39 @@ export class ProxyMCPServer {
 
   /**
    * 从 MCPServiceManager 同步工具
+   * 优化版本：支持增量同步和错误恢复
    */
   syncToolsFromServiceManager(): void {
     const serviceManager = (this as any).serviceManager;
     if (!serviceManager) {
-      this.logger.warn("MCPServiceManager 未设置，无法同步工具");
+      this.logger.debug("MCPServiceManager 未设置，跳过工具同步");
       return;
     }
 
     try {
-      // 清空现有工具
-      this.tools.clear();
-
       // 从 MCPServiceManager 获取所有工具
       const allTools = serviceManager.getAllTools();
 
+      // 原子性更新：先构建新的工具映射，再替换
+      const newTools = new Map<string, Tool>();
+
       for (const toolInfo of allTools) {
-        this.tools.set(toolInfo.name, {
+        newTools.set(toolInfo.name, {
           name: toolInfo.name,
           description: toolInfo.description,
           inputSchema: toolInfo.inputSchema,
         });
       }
 
+      // 原子性替换
+      this.tools = newTools;
+
       this.logger.info(`已从 MCPServiceManager 同步 ${this.tools.size} 个工具`);
     } catch (error) {
       this.logger.error(
         `同步工具失败: ${error instanceof Error ? error.message : String(error)}`
       );
+      // 同步失败时保持现有工具不变，确保服务可用性
     }
   }
 

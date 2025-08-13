@@ -11,27 +11,17 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-import type { Tool as MCPTool } from "@modelcontextprotocol/sdk/types.js";
-import {
-  convertLegacyConfigBatch,
-  convertLegacyToNew,
-} from "./adapters/ConfigAdapter.js";
+import { convertLegacyConfigBatch } from "./adapters/ConfigAdapter.js";
 import {
   type LocalMCPServerConfig,
   type MCPServerConfig,
   type MCPToolConfig,
-  type SSEMCPServerConfig,
-  type StreamableHTTPMCPServerConfig,
   configManager,
 } from "./configManager";
 import { logger as globalLogger } from "./logger";
-import type { MCPServiceConfig } from "./services/MCPService.js";
 import { MCPServiceManager } from "./services/MCPServiceManager.js";
 
-// 保留旧的客户端导入以支持向后兼容（在过渡期间）
-import { ModelScopeMCPClient } from "./modelScopeMCPClient";
-import { SSEMCPClient } from "./sseMCPClient";
-import { StreamableHTTPMCPClient } from "./streamableHttpMCPClient";
+// 旧的客户端导入已移除，现在完全使用 MCPServiceManager
 
 // ESM 兼容的 __dirname
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -73,7 +63,8 @@ export interface IMCPClient {
 }
 
 /**
- * MCP Client for communicating with child MCP servers
+ * @deprecated MCPClient 类已废弃，功能已迁移到 MCPServiceManager
+ * 此类保留仅为向后兼容，将在下一个主要版本中移除
  */
 export class MCPClient implements IMCPClient {
   private name: string;
@@ -737,9 +728,7 @@ export class MCPServerProxy {
     }> = [];
 
     const status = this.serviceManager.getStatus();
-    for (const [serviceName, serviceStatus] of Object.entries(
-      status.services
-    )) {
+    for (const serviceName of Object.keys(status.services)) {
       const service = this.serviceManager.getService(serviceName);
       const toolCount = service ? service.getTools().length : 0;
 
@@ -893,11 +882,9 @@ export class MCPServerProxy {
  */
 export class JSONRPCServer {
   private proxy: MCPServerProxy;
-  private requestId: number;
 
   constructor(proxy: MCPServerProxy) {
     this.proxy = proxy;
-    this.requestId = 1;
   }
 
   async handleMessage(message: string): Promise<string | null> {

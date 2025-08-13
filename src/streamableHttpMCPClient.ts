@@ -1,3 +1,28 @@
+/**
+ * @deprecated 此文件已废弃，请使用新的 MCPService 架构
+ *
+ * 迁移指南：
+ * 1. 使用 MCPServiceManager 替代直接使用此客户端
+ * 2. 配置格式已更新，使用 MCPTransportType.STREAMABLE_HTTP
+ * 3. HTTP 流式传输和 JSON-RPC 处理已统一到新架构中
+ *
+ * 新的使用方式：
+ * ```typescript
+ * import { MCPServiceManager } from './services/MCPServiceManager.js';
+ * import { convertLegacyToNew } from './adapters/ConfigAdapter.js';
+ *
+ * const config = convertLegacyToNew('http-service', {
+ *   url: 'https://api.example.com/mcp'
+ * });
+ *
+ * const manager = new MCPServiceManager();
+ * manager.addServiceConfig('http-service', config);
+ * await manager.startAllServices();
+ * ```
+ *
+ * 此文件将在下一个主要版本中移除。
+ */
+
 import {
   type MCPToolConfig,
   type StreamableHTTPMCPServerConfig,
@@ -36,6 +61,10 @@ interface JSONRPCResponse {
 /**
  * Streamable HTTP MCP Client
  * 用于连接基于 HTTP 的 MCP 服务，如高德地图 MCP
+ *
+ * @deprecated 此类已废弃，请使用 MCPServiceManager 和新的架构
+ * @see MCPServiceManager
+ * @see MCPTransportType.STREAMABLE_HTTP
  */
 export class StreamableHTTPMCPClient implements IMCPClient {
   private name: string;

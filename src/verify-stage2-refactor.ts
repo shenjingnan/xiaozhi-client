@@ -77,7 +77,9 @@ async function verifyProxyMCPServerRefactor() {
 
     // 验证基本属性
     console.log("📋 检查基本属性:");
-    console.log(`   tools Map 存在: ${typeof proxyServer.getTools === 'function' ? "✅" : "❌"}`);
+    console.log(
+      `   tools Map 存在: ${typeof proxyServer.getTools === "function" ? "✅" : "❌"}`
+    );
 
     // 验证新增的方法
     const newMethods = ["setServiceManager", "syncToolsFromServiceManager"];

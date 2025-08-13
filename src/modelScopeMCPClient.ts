@@ -1,3 +1,29 @@
+/**
+ * @deprecated 此文件已废弃，请使用新的 MCPService 架构
+ *
+ * 迁移指南：
+ * 1. 使用 MCPServiceManager 替代直接使用此客户端
+ * 2. 配置格式已更新，使用 MCPTransportType.MODELSCOPE_SSE
+ * 3. 工具前缀和认证机制已集成到新架构中
+ *
+ * 新的使用方式：
+ * ```typescript
+ * import { MCPServiceManager } from './services/MCPServiceManager.js';
+ * import { convertLegacyToNew } from './adapters/ConfigAdapter.js';
+ *
+ * const config = convertLegacyToNew('modelscope-service', {
+ *   type: 'sse',
+ *   url: 'https://api.modelscope.net/mcp/sse'
+ * });
+ *
+ * const manager = new MCPServiceManager();
+ * manager.addServiceConfig('modelscope-service', config);
+ * await manager.startAllServices();
+ * ```
+ *
+ * 此文件将在下一个主要版本中移除。
+ */
+
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { EventSource } from "eventsource";
@@ -23,6 +49,10 @@ interface Tool {
 
 /**
  * ModelScope MCP Client for SSE connections
+ *
+ * @deprecated 此类已废弃，请使用 MCPServiceManager 和新的架构
+ * @see MCPServiceManager
+ * @see MCPTransportType.MODELSCOPE_SSE
  */
 export class ModelScopeMCPClient implements IMCPClient {
   private name: string;

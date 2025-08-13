@@ -1,3 +1,29 @@
+/**
+ * @deprecated 此文件已废弃，请使用新的 MCPService 架构
+ *
+ * 迁移指南：
+ * 1. 使用 MCPServiceManager 替代直接使用此客户端
+ * 2. 配置格式已更新，使用 MCPTransportType.SSE
+ * 3. 连接管理和错误处理已统一到新架构中
+ *
+ * 新的使用方式：
+ * ```typescript
+ * import { MCPServiceManager } from './services/MCPServiceManager.js';
+ * import { convertLegacyToNew } from './adapters/ConfigAdapter.js';
+ *
+ * const config = convertLegacyToNew('sse-service', {
+ *   type: 'sse',
+ *   url: 'https://example.com/sse'
+ * });
+ *
+ * const manager = new MCPServiceManager();
+ * manager.addServiceConfig('sse-service', config);
+ * await manager.startAllServices();
+ * ```
+ *
+ * 此文件将在下一个主要版本中移除。
+ */
+
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { EventSource } from "eventsource";
@@ -24,6 +50,10 @@ interface Tool {
 /**
  * 通用 SSE MCP Client
  * 用于连接基于 SSE 的 MCP 服务，支持不需要特殊认证的服务
+ *
+ * @deprecated 此类已废弃，请使用 MCPServiceManager 和新的架构
+ * @see MCPServiceManager
+ * @see MCPTransportType.SSE
  */
 export class SSEMCPClient implements IMCPClient {
   private name: string;
