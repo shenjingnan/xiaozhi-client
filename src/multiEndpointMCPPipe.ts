@@ -1,8 +1,18 @@
 #!/usr/bin/env node
 
 /**
+ * @deprecated 此文件已废弃，请使用新的 WebServer 统一启动方式
+ *
  * Multi-Endpoint MCP Pipe - 支持多个 MCP 接入点
  * 管理多个 WebSocket 连接，并正确路由消息到对应的接入点
+ *
+ * ⚠️  警告：此模块已在架构重构中被废弃
+ * 新的连接管理方式：
+ * - 统一在 WebServer 中管理所有连接
+ * - 使用 ProxyMCPServer 处理小智接入点连接
+ * - 使用 MCPServiceManager 管理 MCP 服务连接
+ *
+ * 此文件仅作为备用方案保留，不应在正常流程中使用
  */
 
 import { type ChildProcess, spawn } from "node:child_process";
@@ -50,6 +60,10 @@ export class MultiEndpointMCPPipe {
   };
 
   constructor(mcpScript: string, endpointUrls: string[]) {
+    // 废弃警告
+    logger.warn("⚠️  警告：MultiEndpointMCPPipe 已废弃，建议使用新的 WebServer 连接管理");
+    logger.warn("新的连接管理在 WebServer 中统一处理，提供更好的稳定性和可维护性");
+
     this.mcpScript = mcpScript;
     this.endpoints = new Map();
     this.shouldReconnect = true;

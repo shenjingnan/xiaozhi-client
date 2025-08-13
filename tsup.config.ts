@@ -33,8 +33,9 @@ function copyDirectory(src: string, dest: string, excludePatterns: string[] = []
 
 export default defineConfig({
   entry: [
-    "src/multiEndpointMCPPipe.ts",
-    "src/adaptiveMCPPipe.ts",
+    // 废弃文件已移除构建入口，但保留源码作为备用：
+    // "src/multiEndpointMCPPipe.ts", // @deprecated
+    // "src/adaptiveMCPPipe.ts", // @deprecated
     "src/modelScopeMCPClient.ts",
     "src/streamableHttpMCPClient.ts",
     "src/mcpServerProxy.ts",

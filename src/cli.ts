@@ -206,6 +206,7 @@ export function checkEnvironment(): boolean {
 }
 
 /**
+ * @deprecated 此函数已废弃，新的启动方式直接使用 WebServer
  * 获取服务启动命令和参数
  */
 function getServiceCommand(): { command: string; args: string[]; cwd: string } {
@@ -245,6 +246,7 @@ function getServiceCommand(): { command: string; args: string[]; cwd: string } {
 }
 
 /**
+ * @deprecated 此函数已废弃，新的启动方式统一在 WebServer 中处理
  * 在后台启动 Web UI 服务
  */
 async function startWebUIInBackground(): Promise<void> {

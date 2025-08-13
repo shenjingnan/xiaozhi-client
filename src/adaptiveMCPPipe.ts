@@ -1,8 +1,17 @@
 #!/usr/bin/env node
 
 /**
+ * @deprecated 此文件已废弃，请使用新的 WebServer 统一启动方式
+ *
  * Adaptive MCP Pipe - 自适应选择单端点或多端点模式
  * 根据配置自动选择使用 MCPPipe 或 MultiEndpointMCPPipe
+ *
+ * ⚠️  警告：此模块已在架构重构中被废弃
+ * 新的启动方式：
+ * - 前台模式：直接使用 WebServer
+ * - 后台模式：使用 webServerStandalone.js
+ *
+ * 此文件仅作为备用方案保留，不应在正常流程中使用
  */
 
 import process from "node:process";
@@ -29,6 +38,11 @@ if (process.env.XIAOZHI_DAEMON === "true" && process.env.XIAOZHI_CONFIG_DIR) {
 
 // Main function
 export async function main() {
+  // 废弃警告
+  logger.warn("⚠️  警告：adaptiveMCPPipe 已废弃，建议使用新的 WebServer 启动方式");
+  logger.warn("新的启动方式：xiaozhi start 或 xiaozhi start --ui");
+  logger.warn("此模块仅作为备用方案运行，可能在未来版本中移除");
+
   if (process.argv.length < 3) {
     logger.error("用法: node adaptiveMCPPipe.js <mcp_script>");
     process.exit(1);
