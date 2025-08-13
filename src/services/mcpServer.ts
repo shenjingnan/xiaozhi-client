@@ -7,9 +7,9 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
+import { ProxyMCPServer } from "../ProxyMCPServer.js";
 import { configManager } from "../configManager.js";
 import { logger as globalLogger } from "../logger.js";
-import { ProxyMCPServer } from "../ProxyMCPServer.js";
 import { MCPServiceManager } from "./MCPServiceManager.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -501,7 +501,8 @@ export class MCPServer extends EventEmitter {
       try {
         if (configManager.configExists()) {
           const endpoints = configManager.getMcpEndpoints();
-          mcpEndpoint = endpoints.find(ep => ep && !ep.includes('<请填写')) || null;
+          mcpEndpoint =
+            endpoints.find((ep) => ep && !ep.includes("<请填写")) || null;
         }
       } catch (error) {
         logger.warn("从配置中读取小智接入点失败:", error);

@@ -39,7 +39,6 @@ export default defineConfig({
     "src/cli.ts",
     "src/configManager.ts",
     "src/mcpCommands.ts",
-    "src/autoCompletion.ts",
     "src/logger.ts",
     "src/webServer.ts",
     "src/webServerStandalone.ts",

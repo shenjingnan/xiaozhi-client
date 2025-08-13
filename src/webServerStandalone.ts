@@ -13,7 +13,7 @@ async function importModules() {
   return {
     WebServer: webServerModule.WebServer,
     configManager: configModule.configManager,
-    Logger: loggerModule.Logger
+    Logger: loggerModule.Logger,
   };
 }
 
@@ -57,7 +57,6 @@ async function main() {
 
     process.on("SIGINT", cleanup);
     process.on("SIGTERM", cleanup);
-
   } catch (error) {
     console.error("WebServer 启动失败:", error);
     process.exit(1);

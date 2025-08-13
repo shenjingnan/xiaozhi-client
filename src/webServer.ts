@@ -9,10 +9,10 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { WebSocketServer } from "ws";
 import { ProxyMCPServer, type Tool } from "./ProxyMCPServer.js";
+import { convertLegacyToNew } from "./adapters/ConfigAdapter.js";
 import { getServiceStatus } from "./cli.js";
 import { configManager } from "./configManager.js";
 import type { AppConfig, MCPServerConfig } from "./configManager.js";
-import { convertLegacyToNew } from "./adapters/ConfigAdapter.js";
 import { Logger } from "./logger.js";
 // MCPTransportType 已移除，不再需要导入
 import type { MCPServiceManager } from "./services/MCPServiceManager.js";
@@ -105,14 +105,16 @@ export class WebServer {
     return {
       mcpEndpoint: config.mcpEndpoint,
       mcpServers: config.mcpServers,
-      webUIPort: config.webUI?.port ?? 9999
+      webUIPort: config.webUI?.port ?? 9999,
     };
   }
 
   /**
    * 从配置加载 MCP 服务
    */
-  private async loadMCPServicesFromConfig(mcpServers: Record<string, MCPServerConfig>): Promise<void> {
+  private async loadMCPServicesFromConfig(
+    mcpServers: Record<string, MCPServerConfig>
+  ): Promise<void> {
     if (!this.mcpServiceManager) {
       throw new Error("MCPServiceManager 未初始化");
     }
@@ -131,10 +133,13 @@ export class WebServer {
   /**
    * 初始化小智接入点连接
    */
-  private async initializeXiaozhiConnection(mcpEndpoint: string | string[], tools: Tool[]): Promise<void> {
+  private async initializeXiaozhiConnection(
+    mcpEndpoint: string | string[],
+    tools: Tool[]
+  ): Promise<void> {
     // 处理多端点配置
     const endpoints = Array.isArray(mcpEndpoint) ? mcpEndpoint : [mcpEndpoint];
-    const validEndpoint = endpoints.find(ep => ep && !ep.includes('<请填写'));
+    const validEndpoint = endpoints.find((ep) => ep && !ep.includes("<请填写"));
 
     if (!validEndpoint) {
       this.logger.warn("未配置有效的小智接入点，跳过连接");
@@ -176,7 +181,7 @@ export class WebServer {
 
         if (attempt < maxAttempts) {
           const delay = Math.min(
-            initialDelay * (backoffMultiplier ** (attempt - 1)),
+            initialDelay * backoffMultiplier ** (attempt - 1),
             maxDelay
           );
           this.logger.info(`${context} - ${delay}ms 后重试...`);
@@ -185,14 +190,16 @@ export class WebServer {
       }
     }
 
-    throw new Error(`${context} - 连接失败，已达到最大重试次数: ${lastError?.message}`);
+    throw new Error(
+      `${context} - 连接失败，已达到最大重试次数: ${lastError?.message}`
+    );
   }
 
   /**
    * 延迟工具方法
    */
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private setupMiddleware() {

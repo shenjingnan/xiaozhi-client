@@ -7,11 +7,11 @@ import { fileURLToPath } from "node:url";
 import chalk from "chalk";
 import { Command } from "commander";
 import ora from "ora";
-import { setupAutoCompletion, showCompletionHelp } from "./autoCompletion";
+
+import { WebServer } from "./WebServer";
 import { configManager } from "./configManager";
 import { logger } from "./logger";
 import { listMcpServers, listServerTools, setToolEnabled } from "./mcpCommands";
-import { WebServer } from "./WebServer";
 
 const program = new Command();
 const SERVICE_NAME = "xiaozhi-mcp-service";
@@ -1151,9 +1151,7 @@ async function configCommand(key: string, value?: string): Promise<void> {
             } else {
               console.log(
                 chalk.gray(
-                  `  ${name}: ${(serverConfig as any).command} ${(
-                    serverConfig as any
-                  ).args.join(" ")}`
+                  `  ${name}: ${(serverConfig as any).command} ${(serverConfig as any).args.join(" ")}`
                 )
               );
             }
@@ -1284,7 +1282,6 @@ function showHelp(): void {
     "  restart [--daemon] [--ui] 重启服务 (--daemon 后台运行, --ui 同时启动 Web UI)"
   );
   console.log("  ui                       启动配置管理网页");
-  console.log("  completion               显示自动补全设置说明");
   console.log();
   console.log(chalk.yellow("选项:"));
   console.log("  -v, --version            显示版本信息");
@@ -1329,9 +1326,7 @@ function showHelp(): void {
   console.log("  xiaozhi mcp tool <server> <tool> enable   # 启用工具");
   console.log("  xiaozhi mcp tool <server> <tool> disable  # 禁用工具");
   console.log();
-  console.log(chalk.yellow("自动补全:"));
-  console.log("  xiaozhi completion           # 显示自动补全设置说明");
-  console.log("  # 设置后可使用 Tab 键进行命令、参数自动补全");
+
 }
 
 // 配置 Commander 程序
@@ -1589,14 +1584,6 @@ program
     await startUIService();
   });
 
-// completion 命令
-program
-  .command("completion")
-  .description("显示自动补全设置说明")
-  .action(async () => {
-    showCompletionHelp();
-  });
-
 // -V 选项 (详细信息)
 program.option("-V", "显示详细信息").action((options) => {
   if (options.V) {
@@ -1604,9 +1591,6 @@ program.option("-V", "显示详细信息").action((options) => {
     process.exit(0);
   }
 });
-
-// 设置自动补全
-setupAutoCompletion();
 
 // 处理无参数情况，显示帮助
 if (process.argv.length <= 2) {
