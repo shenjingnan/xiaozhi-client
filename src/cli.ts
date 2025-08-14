@@ -571,7 +571,7 @@ async function startMCPServerMode(port: number, daemon = false): Promise<void> {
     }
 
     // 导入 MCPServer
-    const { MCPServer } = await import("./services/mcpServer.js");
+    const { MCPServer } = await import("./services/MCPServer.js");
 
     if (daemon) {
       // 后台模式 - 创建子进程
