@@ -74,7 +74,7 @@ vi.mock("../configManager.js", () => ({
 vi.mock("node:fs", async (importOriginal) => {
   const actual = await importOriginal();
   return {
-    ...actual,
+    ...(actual as any),
     existsSync: vi.fn((path: string) => {
       // 在测试环境中模拟文件存在情况
       if (path.includes("mcpServerProxy.js")) {
@@ -124,7 +124,7 @@ describe("MCPServer", () => {
       const mockApp = mockExpress();
 
       // 获取SSE处理器
-      const sseHandler = mockApp.get.mock.calls.find(
+      const sseHandler = (mockApp.get as any).mock.calls.find(
         (call) => call[0] === "/sse"
       )?.[1];
 
@@ -167,7 +167,7 @@ describe("MCPServer", () => {
       const mockExpress = vi.mocked(express);
       const mockApp = mockExpress();
 
-      const sseHandler = mockApp.get.mock.calls.find(
+      const sseHandler = (mockApp.get as any).mock.calls.find(
         (call) => call[0] === "/sse"
       )?.[1];
 
@@ -205,7 +205,7 @@ describe("MCPServer", () => {
       await server.start();
 
       // 获取消息处理器
-      const messagesHandler = mockApp.post.mock.calls.find(
+      const messagesHandler = (mockApp.post as any).mock.calls.find(
         (call) => call[0] === "/messages"
       )?.[1];
 
@@ -263,7 +263,7 @@ describe("MCPServer", () => {
 
       await server.start();
 
-      const messagesHandler = mockApp.post.mock.calls.find(
+      const messagesHandler = (mockApp.post as any).mock.calls.find(
         (call) => call[0] === "/messages"
       )?.[1];
 
@@ -303,7 +303,7 @@ describe("MCPServer", () => {
       const mockExpress = vi.mocked(express);
       const mockApp = mockExpress();
 
-      const messagesHandler = mockApp.post.mock.calls.find(
+      const messagesHandler = (mockApp.post as any).mock.calls.find(
         (call) => call[0] === "/messages"
       )?.[1];
 
@@ -333,7 +333,7 @@ describe("MCPServer", () => {
       const mockExpress = vi.mocked(express);
       const mockApp = mockExpress();
 
-      const messagesHandler = mockApp.post.mock.calls.find(
+      const messagesHandler = (mockApp.post as any).mock.calls.find(
         (call) => call[0] === "/messages"
       )?.[1];
 
@@ -363,7 +363,7 @@ describe("MCPServer", () => {
       const mockExpress = vi.mocked(express);
       const mockApp = mockExpress();
 
-      const messagesHandler = mockApp.post.mock.calls.find(
+      const messagesHandler = (mockApp.post as any).mock.calls.find(
         (call) => call[0] === "/messages"
       )?.[1];
 
@@ -407,7 +407,7 @@ describe("MCPServer", () => {
       const mockApp = mockExpress();
 
       // 获取RPC处理器
-      const rpcHandler = mockApp.post.mock.calls.find(
+      const rpcHandler = (mockApp.post as any).mock.calls.find(
         (call) => call[0] === "/rpc"
       )?.[1];
 
@@ -444,7 +444,7 @@ describe("MCPServer", () => {
       const mockApp = mockExpress();
 
       // 获取健康检查处理器
-      const healthHandler = mockApp.get.mock.calls.find(
+      const healthHandler = (mockApp.get as any).mock.calls.find(
         (call) => call[0] === "/health"
       )?.[1];
 
@@ -517,7 +517,7 @@ describe("MCPServer", () => {
       const mockApp = mockExpress();
 
       // 获取SSE处理器
-      const sseHandler = mockApp.get.mock.calls.find(
+      const sseHandler = (mockApp.get as any).mock.calls.find(
         (call) => call[0] === "/sse"
       )?.[1];
 
