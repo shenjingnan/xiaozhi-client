@@ -1,7 +1,0 @@
-{
-  "port": 3001,
-  "mcpEndpoint": ["wss://xiaozhi-1.example.com", "wss://xiaozhi-2.example.com"],
-  "mcpServers": [],
-  "enableCors": true,
-  "enableLogging": true
-}
