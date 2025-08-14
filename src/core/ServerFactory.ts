@@ -13,6 +13,10 @@ import { Logger } from "../logger.js";
 import { HTTPAdapter, type HTTPConfig } from "../transports/HTTPAdapter.js";
 import { StdioAdapter, type StdioConfig } from "../transports/StdioAdapter.js";
 import { TransportAdapter } from "../transports/TransportAdapter.js";
+import {
+  WebSocketAdapter,
+  type WebSocketConfig,
+} from "../transports/WebSocketAdapter.js";
 import type { MCPMessageHandler } from "./MCPMessageHandler.js";
 import {
   UnifiedMCPServer,
@@ -25,6 +29,7 @@ import {
 export enum ServerMode {
   STDIO = "stdio", // 标准输入输出模式（Cursor 等客户端）
   HTTP = "http", // HTTP 服务器模式（Web 客户端）
+  WEBSOCKET = "websocket", // WebSocket 模式（实时双向通信）
   HYBRID = "hybrid", // 混合模式（同时支持多种传输）
   AUTO = "auto", // 自动检测模式
 }
@@ -37,6 +42,7 @@ export interface ServerFactoryConfig {
   serverConfig?: UnifiedServerConfig;
   stdioConfig?: StdioConfig;
   httpConfig?: HTTPConfig;
+  websocketConfig?: WebSocketConfig;
   autoDetect?: {
     checkStdin?: boolean;
     checkEnvironment?: boolean;
@@ -130,12 +136,37 @@ export async function createHTTPServer(
 }
 
 /**
+ * 创建 WebSocket 模式服务器
+ * 专门用于实时双向通信
+ */
+export async function createWebSocketServer(
+  config: WebSocketConfig = {
+    name: "websocket",
+    endpointUrl: "ws://localhost:8080",
+  }
+): Promise<UnifiedMCPServer> {
+  logger.info("创建 WebSocket 模式服务器");
+
+  const server = new UnifiedMCPServer();
+  await server.initialize();
+
+  const messageHandler = server.getMessageHandler();
+  const wsAdapter = new WebSocketAdapter(messageHandler, config);
+
+  await server.registerTransport("websocket", wsAdapter);
+
+  logger.info("WebSocket 模式服务器创建成功");
+  return server;
+}
+
+/**
  * 创建混合模式服务器
  * 同时支持多种传输协议
  */
 export async function createHybridServer(
   stdioConfig: StdioConfig = { name: "stdio" },
-  httpConfig: HTTPConfig = { name: "http" }
+  httpConfig: HTTPConfig = { name: "http" },
+  websocketConfig?: WebSocketConfig
 ): Promise<UnifiedMCPServer> {
   logger.info("创建混合模式服务器");
 
@@ -151,6 +182,12 @@ export async function createHybridServer(
   // 注册 HTTP 适配器
   const httpAdapter = new HTTPAdapter(messageHandler, httpConfig);
   await server.registerTransport("http", httpAdapter);
+
+  // 可选注册 WebSocket 适配器
+  if (websocketConfig) {
+    const wsAdapter = new WebSocketAdapter(messageHandler, websocketConfig);
+    await server.registerTransport("websocket", wsAdapter);
+  }
 
   logger.info("混合模式服务器创建成功");
   return server;
@@ -218,6 +255,9 @@ async function detectEnvironment(
     } else if (mcpServerMode === "http") {
       detection.suggestedMode = ServerMode.HTTP;
       detection.reasons.push("环境变量 MCP_SERVER_MODE=http");
+    } else if (mcpServerMode === "websocket") {
+      detection.suggestedMode = ServerMode.WEBSOCKET;
+      detection.reasons.push("环境变量 MCP_SERVER_MODE=websocket");
     } else if (mcpServerMode === "hybrid") {
       detection.suggestedMode = ServerMode.HYBRID;
       detection.reasons.push("环境变量 MCP_SERVER_MODE=hybrid");
@@ -262,9 +302,24 @@ async function registerTransportsForMode(
       await registerHTTPTransport(server, messageHandler, config.httpConfig);
       break;
 
+    case ServerMode.WEBSOCKET:
+      await registerWebSocketTransport(
+        server,
+        messageHandler,
+        config.websocketConfig
+      );
+      break;
+
     case ServerMode.HYBRID:
       await registerStdioTransport(server, messageHandler, config.stdioConfig);
       await registerHTTPTransport(server, messageHandler, config.httpConfig);
+      if (config.websocketConfig) {
+        await registerWebSocketTransport(
+          server,
+          messageHandler,
+          config.websocketConfig
+        );
+      }
       break;
 
     default:
@@ -313,6 +368,39 @@ async function registerHTTPTransport(
 }
 
 /**
+ * 注册 WebSocket 传输适配器
+ */
+async function registerWebSocketTransport(
+  server: UnifiedMCPServer,
+  messageHandler: MCPMessageHandler,
+  config: WebSocketConfig = {
+    name: "websocket",
+    endpointUrl: "ws://localhost:8080",
+  }
+): Promise<void> {
+  // 设置默认配置
+  const wsConfig: WebSocketConfig = {
+    mode: "client",
+    compression: true,
+    batchSize: 10,
+    batchTimeout: 100,
+    maxConnections: 100,
+    ...config,
+  };
+
+  // 从环境变量获取端点URL
+  if (process.env.WEBSOCKET_URL) {
+    wsConfig.endpointUrl = process.env.WEBSOCKET_URL;
+  } else if (process.env.MCP_WEBSOCKET_URL) {
+    wsConfig.endpointUrl = process.env.MCP_WEBSOCKET_URL;
+  }
+
+  const wsAdapter = new WebSocketAdapter(messageHandler, wsConfig);
+  await server.registerTransport("websocket", wsAdapter);
+  logger.info(`WebSocket 传输适配器注册成功 (端点: ${wsConfig.endpointUrl})`);
+}
+
+/**
  * 获取推荐的服务器配置
  * 根据环境提供最佳的配置建议
  */
@@ -346,6 +434,19 @@ export async function getRecommendedConfig(): Promise<ServerFactoryConfig> {
     };
   }
 
+  // WebSocket 配置（如果有相关环境变量）
+  if (process.env.WEBSOCKET_URL || process.env.MCP_WEBSOCKET_URL) {
+    config.websocketConfig = {
+      name: "websocket",
+      endpointUrl:
+        process.env.WEBSOCKET_URL ||
+        process.env.MCP_WEBSOCKET_URL ||
+        "ws://localhost:8080",
+      mode: "client",
+      compression: true,
+    };
+  }
+
   return config;
 }
 
@@ -373,6 +474,42 @@ export function validateConfig(config: ServerFactoryConfig): void {
     ];
     if (!validEncodings.includes(config.stdioConfig.encoding)) {
       throw new Error(`不支持的编码: ${config.stdioConfig.encoding}`);
+    }
+  }
+
+  if (config.websocketConfig) {
+    const wsConfig = config.websocketConfig;
+
+    // 验证端点URL
+    if (!wsConfig.endpointUrl) {
+      throw new Error("WebSocket 端点URL不能为空");
+    }
+
+    try {
+      new URL(wsConfig.endpointUrl);
+    } catch {
+      throw new Error(`无效的 WebSocket 端点URL: ${wsConfig.endpointUrl}`);
+    }
+
+    // 验证模式
+    if (wsConfig.mode && !["client", "server"].includes(wsConfig.mode)) {
+      throw new Error(`无效的 WebSocket 模式: ${wsConfig.mode}`);
+    }
+
+    // 验证批处理配置
+    if (
+      wsConfig.batchSize &&
+      (wsConfig.batchSize < 1 || wsConfig.batchSize > 1000)
+    ) {
+      throw new Error(`无效的批处理大小: ${wsConfig.batchSize}`);
+    }
+
+    // 验证最大连接数
+    if (
+      wsConfig.maxConnections &&
+      (wsConfig.maxConnections < 1 || wsConfig.maxConnections > 10000)
+    ) {
+      throw new Error(`无效的最大连接数: ${wsConfig.maxConnections}`);
     }
   }
 }

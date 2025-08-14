@@ -11,6 +11,7 @@ import {
   createHTTPServer,
   createHybridServer,
   createServer,
+  createWebSocketServer,
   getRecommendedConfig,
   validateConfig,
 } from "../ServerFactory.js";
@@ -141,6 +142,27 @@ describe("阶段三统一 MCP 服务器集成测试", () => {
       expect(response.body.mode).toBe("http-adapter");
     });
 
+    test("应该创建 WebSocket 模式服务器", async () => {
+      const port = 8000 + Math.floor(Math.random() * 1000);
+
+      server = await createWebSocketServer({
+        name: "test-websocket-factory",
+        endpointUrl: `ws://localhost:${port}`,
+        mode: "server",
+        compression: true,
+      });
+
+      expect(server).toBeDefined();
+      expect(server.getStatus().transportCount).toBe(1);
+
+      await server.start();
+      expect(server.isServerRunning()).toBe(true);
+
+      // 验证 WebSocket 适配器状态
+      const status = server.getStatus();
+      expect(status.isRunning).toBe(true);
+    });
+
     test("应该根据环境自动选择模式", async () => {
       // 设置环境变量
       const originalMode = process.env.MCP_SERVER_MODE;
@@ -183,6 +205,41 @@ describe("阶段三统一 MCP 服务器集成测试", () => {
           stdioConfig: { name: "test", encoding: "invalid" as any },
         });
       }).toThrow("不支持的编码");
+
+      // 有效 WebSocket 配置
+      expect(() => {
+        validateConfig({
+          mode: ServerMode.WEBSOCKET,
+          websocketConfig: {
+            name: "test",
+            endpointUrl: "ws://localhost:8080",
+            mode: "client",
+          },
+        });
+      }).not.toThrow();
+
+      // 无效 WebSocket URL
+      expect(() => {
+        validateConfig({
+          mode: ServerMode.WEBSOCKET,
+          websocketConfig: {
+            name: "test",
+            endpointUrl: "invalid-url",
+          },
+        });
+      }).toThrow("无效的 WebSocket 端点URL");
+
+      // 无效批处理大小
+      expect(() => {
+        validateConfig({
+          mode: ServerMode.WEBSOCKET,
+          websocketConfig: {
+            name: "test",
+            endpointUrl: "ws://localhost:8080",
+            batchSize: 0,
+          },
+        });
+      }).toThrow("无效的批处理大小");
     });
   });
 

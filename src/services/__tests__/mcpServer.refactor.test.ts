@@ -150,7 +150,7 @@ describe("MCPServer 阶段一重构验收测试", () => {
     // 验证 SSE 响应头设置正确
     expect(response.headers["content-type"]).toContain("text/event-stream");
     expect(response.headers["cache-control"]).toContain("no-cache");
-    expect(response.headers["connection"]).toContain("keep-alive");
+    expect(response.headers.connection).toContain("keep-alive");
   });
 
   test("性能测试：响应时间应该有显著改善", async () => {

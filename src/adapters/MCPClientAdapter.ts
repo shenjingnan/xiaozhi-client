@@ -5,15 +5,30 @@
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { logger as globalLogger } from "../logger.js";
-import type { IMCPClient } from "../mcpServerProxy.js";
 import {
   MCPService,
   type MCPServiceConfig,
   type ToolCallResult,
 } from "../services/MCPService.js";
 
-// 为适配器创建带标签的 logger
-const logger = globalLogger.withTag("MCPClientAdapter");
+/**
+ * MCP 客户端接口
+ * 定义了 MCP 客户端的标准接口
+ */
+export interface IMCPClient {
+  readonly initialized: boolean;
+  readonly tools: Tool[];
+  readonly originalTools: Tool[];
+
+  start(): Promise<void>;
+  refreshTools(): Promise<void>;
+  callTool(toolName: string, arguments_: any): Promise<any>;
+  stop(): Promise<void>;
+  getOriginalToolName(prefixedToolName: string): string | null;
+}
+
+// 为适配器创建 logger
+const logger = globalLogger;
 
 /**
  * MCP 客户端适配器类
