@@ -17,13 +17,6 @@ export {
 export { StdioAdapter, type StdioConfig } from "./StdioAdapter.js";
 export { HTTPAdapter, type HTTPConfig } from "./HTTPAdapter.js";
 
-// 验证工具
-export {
-  verifyTransportLayer,
-  verifyHTTPAdapter,
-  verifyStdioAdapter,
-} from "./verify-transport-layer.js";
-
 /**
  * 传输层抽象使用指南
  *

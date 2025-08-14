@@ -7,19 +7,13 @@ import {
   configManager,
 } from "./configManager";
 import { logger as globalLogger } from "./logger";
-import type { IMCPClient } from "./mcpServerProxy";
+import type { IMCPClient, Tool } from "./mcpServerProxy";
 
 // 全局 polyfill EventSource
 (global as any).EventSource = EventSource;
 
 // 为 ModelScope MCP 创建带标签的 logger
 const logger = globalLogger.withTag("ModelScopeMCP");
-
-interface Tool {
-  name: string;
-  description?: string;
-  inputSchema?: any;
-}
 
 /**
  * ModelScope MCP Client for SSE connections

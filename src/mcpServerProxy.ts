@@ -13,6 +13,24 @@ import { configManager } from "./configManager.js";
 import { ServerMode, createServer } from "./core/ServerFactory.js";
 import { Logger } from "./logger.js";
 
+export interface Tool {
+  name: string;
+  description?: string;
+  inputSchema?: any;
+}
+
+// 定义 MCP 客户端接口
+export interface IMCPClient {
+  initialized: boolean;
+  tools: Tool[];
+  originalTools: Tool[];
+  start(): Promise<void>;
+  refreshTools(): Promise<void>;
+  callTool(toolName: string, arguments_: any): Promise<any>;
+  stop(): void | Promise<void>;
+  getOriginalToolName(prefixedToolName: string): string | null;
+}
+
 // ESM 兼容的 __dirname
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -83,7 +101,9 @@ async function loadConfiguration(): Promise<void> {
     // 读取配置
     const config = configManager.getConfig();
     logger.info(
-      `已加载配置，包含 ${Object.keys(config.mcpServers || {}).length} 个 MCP 服务器`
+      `已加载配置，包含 ${
+        Object.keys(config.mcpServers || {}).length
+      } 个 MCP 服务器`
     );
   } catch (error) {
     logger.error("加载配置失败:", error);

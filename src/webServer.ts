@@ -16,7 +16,7 @@ import type { AppConfig, MCPServerConfig } from "./configManager.js";
 import { Logger } from "./logger.js";
 // MCPTransportType 已移除，不再需要导入
 import type { MCPServiceManager } from "./services/MCPServiceManager.js";
-import { MCPServiceManagerSingleton } from "./services/MCPServiceManagerSingleton.js";
+import { MCPServiceManagerSingleton } from "./services/McpServiceManagerSingleton.js";
 import type { XiaozhiConnectionManager } from "./services/XiaozhiConnectionManager.js";
 import { XiaozhiConnectionManagerSingleton } from "./services/XiaozhiConnectionManagerSingleton.js";
 
