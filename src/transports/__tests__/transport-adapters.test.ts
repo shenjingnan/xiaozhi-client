@@ -3,13 +3,13 @@
  * 验证 TransportAdapter、StdioAdapter 和 HTTPAdapter 的功能
  */
 
-import { describe, test, expect, beforeEach, afterEach, vi } from "vitest";
 import request from "supertest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { MCPMessageHandler } from "../../core/MCPMessageHandler.js";
 import { MCPServiceManager } from "../../services/MCPServiceManager.js";
-import { TransportAdapter, ConnectionState } from "../TransportAdapter.js";
-import { StdioAdapter } from "../StdioAdapter.js";
 import { HTTPAdapter } from "../HTTPAdapter.js";
+import { StdioAdapter } from "../StdioAdapter.js";
+import { ConnectionState, TransportAdapter } from "../TransportAdapter.js";
 
 // Mock process.stdin and process.stdout for stdio tests
 const mockStdin = {
@@ -31,7 +31,7 @@ const mockProcess = {
 };
 
 // Mock global process
-vi.stubGlobal('process', mockProcess);
+vi.stubGlobal("process", mockProcess);
 
 describe("传输层抽象验收测试", () => {
   let serviceManager: MCPServiceManager;
@@ -273,8 +273,7 @@ describe("传输层抽象验收测试", () => {
       await adapter.initialize();
       await adapter.start();
 
-      const response = await request(`http://localhost:${port}`)
-        .get("/status");
+      const response = await request(`http://localhost:${port}`).get("/status");
 
       expect(response.status).toBe(200);
       expect(response.body.status).toBe("ok");
@@ -288,8 +287,7 @@ describe("传输层抽象验收测试", () => {
       await adapter.initialize();
       await adapter.start();
 
-      const response = await request(`http://localhost:${port}`)
-        .get("/health");
+      const response = await request(`http://localhost:${port}`).get("/health");
 
       expect(response.status).toBe(200);
       expect(response.body.status).toBe("ok");
@@ -317,12 +315,17 @@ describe("传输层抽象验收测试", () => {
       await adapter.initialize();
       await adapter.start();
 
-      const response = await request(`http://localhost:${port}`)
-        .options("/rpc");
+      const response = await request(`http://localhost:${port}`).options(
+        "/rpc"
+      );
 
       expect(response.headers["access-control-allow-origin"]).toBe("*");
-      expect(response.headers["access-control-allow-methods"]).toContain("POST");
-      expect(response.headers["access-control-allow-headers"]).toContain("Content-Type");
+      expect(response.headers["access-control-allow-methods"]).toContain(
+        "POST"
+      );
+      expect(response.headers["access-control-allow-headers"]).toContain(
+        "Content-Type"
+      );
     });
 
     test("应该正确处理客户端限制", async () => {

@@ -26,7 +26,6 @@ async function verifyTransportLayer() {
     await verifyStdioAdapter(messageHandler);
 
     console.log("🎉 传输层抽象验证完成！所有功能正常");
-
   } catch (error) {
     console.error("❌ 传输层抽象验证失败:", error);
     process.exit(1);
@@ -86,7 +85,6 @@ async function verifyHTTPAdapter(messageHandler: MCPMessageHandler) {
     await adapter.stop();
     console.log("  ✅ HTTPAdapter 停止成功");
     console.log(`  📊 最终状态: ${adapter.getState()}`);
-
   } catch (error) {
     console.error("  ❌ HTTPAdapter 验证失败:", error);
     await adapter.stop().catch(() => {}); // 确保清理
@@ -148,7 +146,6 @@ async function verifyStdioAdapter(messageHandler: MCPMessageHandler) {
     await adapter.stop();
     console.log("  ✅ StdioAdapter 停止成功");
     console.log(`  📊 最终状态: ${adapter.getState()}`);
-
   } catch (error) {
     console.error("  ❌ StdioAdapter 验证失败:", error);
     await adapter.stop().catch(() => {}); // 确保清理
@@ -175,10 +172,12 @@ function verifyArchitecture() {
     console.log(`  📋 ${adapter.getConfig().name}:`);
     console.log(`    - 连接ID: ${adapter.getConnectionId()}`);
     console.log(`    - 初始状态: ${adapter.getState()}`);
-    console.log(`    - 消息处理器: ${adapter.getMessageHandler() === messageHandler ? '✅' : '❌'}`);
+    console.log(
+      `    - 消息处理器: ${adapter.getMessageHandler() === messageHandler ? "✅" : "❌"}`
+    );
 
     // 验证连接ID唯一性
-    const otherId = adapters.find(a => a !== adapter)?.getConnectionId();
+    const otherId = adapters.find((a) => a !== adapter)?.getConnectionId();
     if (otherId && adapter.getConnectionId() !== otherId) {
       console.log("    - 连接ID唯一性: ✅");
     } else {
@@ -191,9 +190,9 @@ function verifyArchitecture() {
 
 // 运行验证
 async function main() {
-  console.log("=" .repeat(60));
+  console.log("=".repeat(60));
   console.log("🔍 阶段二传输层抽象验证");
-  console.log("=" .repeat(60));
+  console.log("=".repeat(60));
 
   // 验证架构设计
   verifyArchitecture();
@@ -201,19 +200,19 @@ async function main() {
   // 验证功能实现
   await verifyTransportLayer();
 
-  console.log(`\n${"=" .repeat(60)}`);
+  console.log(`\n${"=".repeat(60)}`);
   console.log("🎯 阶段二验收标准检查:");
   console.log("  ✅ 传输协议功能正常");
   console.log("  ✅ 统一的传输层抽象接口");
   console.log("  ✅ 代码重复率显著降低");
   console.log("  ✅ 性能无明显下降");
   console.log("  ✅ 支持多种传输协议");
-  console.log("=" .repeat(60));
+  console.log("=".repeat(60));
 }
 
 // 如果直接运行此脚本
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch(error => {
+  main().catch((error) => {
     console.error("验证脚本执行失败:", error);
     process.exit(1);
   });

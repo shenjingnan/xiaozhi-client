@@ -3,12 +3,12 @@
  * 专注于核心功能验证，避免复杂的 mock 和超时问题
  */
 
-import { describe, test, expect, beforeEach, afterEach } from "vitest";
 import request from "supertest";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { MCPMessageHandler } from "../../core/MCPMessageHandler.js";
 import { MCPServiceManager } from "../../services/MCPServiceManager.js";
-import { TransportAdapter, ConnectionState } from "../TransportAdapter.js";
 import { HTTPAdapter } from "../HTTPAdapter.js";
+import { ConnectionState, TransportAdapter } from "../TransportAdapter.js";
 
 describe("传输层抽象集成测试", () => {
   let serviceManager: MCPServiceManager;

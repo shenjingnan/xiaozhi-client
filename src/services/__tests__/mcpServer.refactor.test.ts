@@ -3,8 +3,8 @@
  * 验证消除双层代理后的 MCP 服务器功能
  */
 
-import { describe, test, expect, beforeEach, afterEach } from "vitest";
 import request from "supertest";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { MCPServer } from "../mcpServer.js";
 
 describe("MCPServer 阶段一重构验收测试", () => {
@@ -117,8 +117,7 @@ describe("MCPServer 阶段一重构验收测试", () => {
   test("应该正确处理状态端点", async () => {
     await server.start();
 
-    const response = await request(`http://localhost:${port}`)
-      .get("/status");
+    const response = await request(`http://localhost:${port}`).get("/status");
 
     expect(response.status).toBe(200);
     expect(response.body.status).toBe("ok");
@@ -131,8 +130,7 @@ describe("MCPServer 阶段一重构验收测试", () => {
   test("应该正确处理健康检查端点", async () => {
     await server.start();
 
-    const response = await request(`http://localhost:${port}`)
-      .get("/health");
+    const response = await request(`http://localhost:${port}`).get("/health");
 
     expect(response.status).toBe(200);
     expect(response.body.status).toBe("ok");

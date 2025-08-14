@@ -4,13 +4,13 @@
  * 从 mcpServerProxy.ts 中抽取的 stdio 处理逻辑
  */
 
-import { TransportAdapter, ConnectionState } from "./TransportAdapter.js";
+import type { MCPMessageHandler } from "../core/MCPMessageHandler.js";
+import { ConnectionState, TransportAdapter } from "./TransportAdapter.js";
 import type {
   MCPMessage,
   MCPResponse,
   TransportConfig,
 } from "./TransportAdapter.js";
-import type { MCPMessageHandler } from "../core/MCPMessageHandler.js";
 
 /**
  * Stdio 适配器配置

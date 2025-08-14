@@ -7,9 +7,13 @@
  */
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { Logger } from "../logger.js";
-import { MCPService, type MCPServiceConfig, MCPTransportType } from "./MCPService.js";
 import { configManager } from "../configManager.js";
+import { Logger } from "../logger.js";
+import {
+  MCPService,
+  type MCPServiceConfig,
+  MCPTransportType,
+} from "./MCPService.js";
 
 // 工具信息接口（保持向后兼容）
 interface ToolInfo {
@@ -308,8 +312,12 @@ export class MCPServiceManager {
           enhancedConfig.apiKey = modelScopeApiKey;
           this.logger.info(`为 ${config.name} 服务添加 ModelScope API Key`);
         } else {
-          this.logger.warn(`${config.name} 服务需要 ModelScope API Key，但未在配置中找到`);
-          throw new Error(`ModelScope SSE 服务 ${config.name} 需要 API Key，请在配置文件中设置 modelscope.apiKey`);
+          this.logger.warn(
+            `${config.name} 服务需要 ModelScope API Key，但未在配置中找到`
+          );
+          throw new Error(
+            `ModelScope SSE 服务 ${config.name} 需要 API Key，请在配置文件中设置 modelscope.apiKey`
+          );
         }
       }
 

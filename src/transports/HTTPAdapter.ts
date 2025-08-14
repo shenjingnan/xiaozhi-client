@@ -4,17 +4,17 @@
  * 从 mcpServer.ts 中抽取的 HTTP/SSE 处理逻辑
  */
 
-import express from "express";
-import type { Request, Response } from "express";
 import { randomUUID } from "node:crypto";
 import type { Server } from "node:http";
-import { TransportAdapter, ConnectionState } from "./TransportAdapter.js";
+import express from "express";
+import type { Request, Response } from "express";
+import type { MCPMessageHandler } from "../core/MCPMessageHandler.js";
+import { ConnectionState, TransportAdapter } from "./TransportAdapter.js";
 import type {
   MCPMessage,
   MCPResponse,
   TransportConfig,
 } from "./TransportAdapter.js";
-import type { MCPMessageHandler } from "../core/MCPMessageHandler.js";
 
 /**
  * SSE 客户端接口
@@ -101,7 +101,7 @@ export class HTTPAdapter extends TransportAdapter {
     return new Promise((resolve, reject) => {
       this.server = this.app.listen(this.port, this.host, () => {
         this.setState(ConnectionState.CONNECTED);
-        this.logger.info('HTTP 适配器启动成功');
+        this.logger.info("HTTP 适配器启动成功");
         this.logger.info(`- RPC 端点: http://${this.host}:${this.port}/rpc`);
         if (this.enableSSE) {
           this.logger.info(`- SSE 端点: http://${this.host}:${this.port}/sse`);
