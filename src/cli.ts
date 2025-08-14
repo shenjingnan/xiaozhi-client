@@ -2,17 +2,16 @@
 
 import { spawn } from "node:child_process";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import chalk from "chalk";
 import { Command } from "commander";
 import ora from "ora";
-import { setupAutoCompletion, showCompletionHelp } from "./autoCompletion";
+
+import { WebServer } from "./WebServer";
 import { configManager } from "./configManager";
 import { logger } from "./logger";
 import { listMcpServers, listServerTools, setToolEnabled } from "./mcpCommands";
-import { WebServer } from "./webServer";
 
 const program = new Command();
 const SERVICE_NAME = "xiaozhi-mcp-service";
@@ -206,117 +205,7 @@ export function checkEnvironment(): boolean {
 }
 
 /**
- * 获取服务启动命令和参数
- */
-function getServiceCommand(): { command: string; args: string[]; cwd: string } {
-  // 获取当前脚本所在目录
-  const scriptDir = path.dirname(fileURLToPath(import.meta.url));
-
-  // 检查是否在开发环境（js-demo/dist）还是全局安装环境
-  let distDir: string;
-  if (scriptDir.includes("js-demo/dist")) {
-    // 开发环境
-    distDir = scriptDir;
-  } else {
-    // 全局安装环境，需要找到实际的项目目录
-    // 通常全局安装后，脚本在 node_modules/.bin 或类似位置
-    // 我们需要找到实际的 dist 目录
-    const possiblePaths = [
-      path.join(scriptDir, "..", "js-demo", "dist"),
-      path.join(scriptDir, "..", "..", "js-demo", "dist"),
-      path.join(scriptDir, "..", "..", "..", "js-demo", "dist"),
-      path.join(process.cwd(), "js-demo", "dist"),
-      path.join(process.cwd(), "dist"),
-    ];
-
-    distDir =
-      possiblePaths.find(
-        (p) =>
-          fs.existsSync(path.join(p, "adaptiveMCPPipe.js")) &&
-          fs.existsSync(path.join(p, "mcpServerProxy.js"))
-      ) || scriptDir;
-  }
-
-  return {
-    command: "node",
-    args: ["adaptiveMCPPipe.js", "mcpServerProxy.js"],
-    cwd: distDir,
-  };
-}
-
-/**
- * 在后台启动 Web UI 服务
- */
-async function startWebUIInBackground(): Promise<void> {
-  try {
-    // 检查配置是否存在
-    if (!configManager.configExists()) {
-      console.log(chalk.yellow("💡 提示: 配置文件不存在，跳过 Web UI 启动"));
-      return;
-    }
-
-    // 启动 Web 服务器
-    const webServer = new WebServer();
-    await webServer.start();
-
-    // 从配置获取端口号
-    const port = configManager.getWebUIPort();
-    console.log(chalk.green("✅ Web UI 已启动，可通过以下地址访问:"));
-    console.log(chalk.green(`   本地访问: http://localhost:${port}`));
-    console.log(chalk.green(`   网络访问: http://<你的IP地址>:${port}`));
-
-    // 尝试打开浏览器
-    const { spawn } = await import("node:child_process");
-    const url = `http://localhost:${port}`;
-
-    try {
-      let browserProcess: ReturnType<typeof spawn>;
-      if (process.platform === "darwin") {
-        browserProcess = spawn("open", [url], {
-          detached: true,
-          stdio: "ignore",
-        });
-      } else if (process.platform === "win32") {
-        browserProcess = spawn("cmd", ["/c", "start", url], {
-          detached: true,
-          stdio: "ignore",
-        });
-      } else {
-        browserProcess = spawn("xdg-open", [url], {
-          detached: true,
-          stdio: "ignore",
-        });
-      }
-
-      // 处理spawn错误，避免程序崩溃
-      browserProcess.on("error", () => {
-        // 静默处理浏览器启动错误，不影响主程序
-        console.log(
-          chalk.gray(`💡 提示: 无法自动打开浏览器，请手动访问: ${url}`)
-        );
-      });
-
-      browserProcess.unref();
-    } catch (error) {
-      // 忽略打开浏览器的错误
-      console.log(
-        chalk.gray(`💡 提示: 无法自动打开浏览器，请手动访问: ${url}`)
-      );
-    }
-
-    // 保存 webServer 实例供后续使用
-    (global as any).__webServer = webServer;
-  } catch (error) {
-    console.log(
-      chalk.yellow(
-        `⚠️ Web UI 启动失败: ${error instanceof Error ? error.message : String(error)}`
-      )
-    );
-  }
-}
-
-/**
- * 启动服务
+ * 启动服务（重构后的统一启动逻辑）
  */
 async function startService(daemon = false, ui = false): Promise<void> {
   const spinner = ora("检查服务状态...").start();
@@ -329,142 +218,153 @@ async function startService(daemon = false, ui = false): Promise<void> {
       return;
     }
 
-    // 检查环境变量
+    // 检查环境配置
     spinner.text = "检查环境配置...";
     if (!checkEnvironment()) {
       spinner.fail("环境配置检查失败");
       return;
     }
 
-    // 获取启动命令
-    const { command, args, cwd } = getServiceCommand();
-
+    // 新的统一启动逻辑：直接启动 WebServer
     spinner.text = `启动服务 (${daemon ? "后台模式" : "前台模式"})...`;
 
     if (daemon) {
-      // 后台模式
-      const child = spawn(command, args, {
-        cwd,
-        detached: true,
-        stdio: ["ignore", "pipe", "pipe"],
-        env: {
-          ...process.env,
-          XIAOZHI_CONFIG_DIR: process.cwd(), // 传递用户的当前工作目录
-          XIAOZHI_DAEMON: "true", // 标记这是守护进程模式
-        },
-      });
-
-      // 保存 PID 信息
-      savePidInfo(child.pid!, "daemon");
-
-      // 初始化日志文件
-      const projectDir = process.cwd();
-      logger.initLogFile(projectDir);
-      logger.enableFileLogging(true);
-
-      // 设置日志输出到文件
-      const logFilePath = path.join(projectDir, "xiaozhi.log");
-      const logStream = fs.createWriteStream(logFilePath, { flags: "a" });
-      child.stdout?.pipe(logStream);
-      child.stderr?.pipe(logStream);
-
-      // 监听进程异常退出
-      child.on("exit", (code, signal) => {
-        if (code !== 0 && code !== null) {
-          // 进程异常退出，记录日志
-          logger.error(`后台服务异常退出 (代码: ${code}, 信号: ${signal})`);
-        }
-        cleanupPidFile();
-      });
-
-      // 监听进程错误
-      child.on("error", (error) => {
-        logger.error(`后台服务启动错误: ${error.message}`);
-        cleanupPidFile();
-        spinner.fail(`后台服务启动失败: ${error.message}`);
-        return;
-      });
-
-      // 分离进程
-      child.unref();
-
-      spinner.succeed(`服务已在后台启动 (PID: ${child.pid})`);
-      console.log(chalk.gray(`日志文件: ${logFilePath}`));
-      console.log(chalk.gray(`使用 'xiaozhi attach' 可以查看实时日志`));
-
-      // 如果指定了 --ui 参数，同时启动 Web UI
-      if (ui) {
-        await startWebUIInBackground();
-      }
+      await startWebServerInDaemon(ui);
+      spinner.succeed("服务已在后台启动");
     } else {
-      // 前台模式
-      spinner.succeed("服务启动中...");
-
-      const child = spawn(command, args, {
-        cwd,
-        stdio: "inherit",
-        env: {
-          ...process.env,
-          XIAOZHI_CONFIG_DIR: process.env.FORCE_CONFIG_DIR || process.cwd(), // 传递用户的当前工作目录
-        },
-      });
-
-      // 保存 PID 信息
-      savePidInfo(child.pid!, "foreground");
-
-      // 处理进程退出
-      child.on("exit", (code, signal) => {
-        cleanupPidFile();
-        if (code !== 0) {
-          console.log(
-            chalk.red(`\n服务异常退出 (代码: ${code}, 信号: ${signal})`)
-          );
-        } else {
-          console.log(chalk.green("\n服务已停止"));
-        }
-      });
-
-      // 如果指定了 --ui 参数，在主进程启动后同时启动 Web UI
-      if (ui) {
-        // 等待一下确保主服务已经启动
-        setTimeout(() => {
-          startWebUIInBackground();
-        }, 1000);
-      }
-
-      // 处理中断信号
-      process.on("SIGINT", async () => {
-        console.log(chalk.yellow("\n正在停止服务..."));
-        child.kill("SIGTERM");
-
-        // 如果启动了 Web UI，也要停止它
-        if ((global as any).__webServer) {
-          try {
-            await (global as any).__webServer.stop();
-            console.log(chalk.green("Web UI 已停止"));
-          } catch (error) {
-            // 忽略错误
-          }
-        }
-      });
-
-      process.on("SIGTERM", async () => {
-        child.kill("SIGTERM");
-
-        // 如果启动了 Web UI，也要停止它
-        if ((global as any).__webServer) {
-          try {
-            await (global as any).__webServer.stop();
-          } catch (error) {
-            // 忽略错误
-          }
-        }
-      });
+      await startWebServerInForeground(ui);
+      spinner.succeed("服务已启动");
     }
   } catch (error) {
     spinner.fail(
       `启动服务失败: ${error instanceof Error ? error.message : String(error)}`
     );
+  }
+}
+
+/**
+ * 后台模式启动 WebServer
+ */
+async function startWebServerInDaemon(openBrowser = false): Promise<void> {
+  const { spawn } = await import("node:child_process");
+
+  // 获取当前脚本所在目录
+  const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+
+  // 构建启动命令
+  const command = "node";
+  const args = [
+    path.join(scriptDir, "webServerStandalone.js"), // 新的独立启动脚本
+    openBrowser ? "--open-browser" : "",
+  ].filter(Boolean);
+
+  const child = spawn(command, args, {
+    detached: true,
+    stdio: ["ignore", "pipe", "pipe"],
+    env: {
+      ...process.env,
+      XIAOZHI_CONFIG_DIR: process.env.FORCE_CONFIG_DIR || process.cwd(),
+      XIAOZHI_DAEMON: "true",
+    },
+  });
+
+  // 保存 PID 信息
+  savePidInfo(child.pid!, "daemon");
+
+  // 初始化日志文件
+  const projectDir = process.cwd();
+  logger.initLogFile(projectDir);
+  logger.enableFileLogging(true);
+
+  // 设置日志输出到文件
+  const logFilePath = path.join(projectDir, "xiaozhi.log");
+  const logStream = fs.createWriteStream(logFilePath, { flags: "a" });
+  child.stdout?.pipe(logStream);
+  child.stderr?.pipe(logStream);
+
+  // 监听进程异常退出
+  child.on("exit", (code, signal) => {
+    if (code !== 0 && code !== null) {
+      logger.error(`后台服务异常退出 (代码: ${code}, 信号: ${signal})`);
+    }
+    cleanupPidFile();
+  });
+
+  // 监听进程错误
+  child.on("error", (error) => {
+    logger.error(`后台服务启动错误: ${error.message}`);
+    cleanupPidFile();
+    throw error;
+  });
+
+  // 分离进程
+  child.unref();
+
+  console.log(chalk.green(`✅ 服务已在后台启动 (PID: ${child.pid})`));
+  console.log(chalk.gray(`日志文件: ${logFilePath}`));
+  console.log(chalk.gray(`使用 'xiaozhi attach' 可以查看实时日志`));
+
+  if (openBrowser) {
+    console.log(chalk.green("🌐 浏览器将自动打开"));
+  }
+}
+
+/**
+ * 前台模式启动 WebServer
+ */
+async function startWebServerInForeground(openBrowser = false): Promise<void> {
+  const webServer = new WebServer();
+
+  // 处理退出信号
+  const cleanup = async () => {
+    console.log(chalk.yellow("\n正在停止服务..."));
+    await webServer.stop();
+    cleanupPidFile();
+    process.exit(0);
+  };
+
+  process.on("SIGINT", cleanup);
+  process.on("SIGTERM", cleanup);
+
+  // 保存 PID 信息
+  savePidInfo(process.pid, "foreground");
+
+  await webServer.start();
+
+  if (openBrowser) {
+    const port = configManager.getWebUIPort();
+    const url = `http://localhost:${port}`;
+    // 自动打开浏览器逻辑
+    await openBrowserUrl(url);
+  }
+}
+
+/**
+ * 打开浏览器URL
+ */
+async function openBrowserUrl(url: string): Promise<void> {
+  try {
+    const { spawn } = await import("node:child_process");
+    const platform = process.platform;
+
+    let command: string;
+    let args: string[];
+
+    if (platform === "darwin") {
+      command = "open";
+      args = [url];
+    } else if (platform === "win32") {
+      command = "start";
+      args = ["", url];
+    } else {
+      command = "xdg-open";
+      args = [url];
+    }
+
+    spawn(command, args, { detached: true, stdio: "ignore" });
+    console.log(chalk.green(`🌐 已尝试打开浏览器: ${url}`));
+  } catch (error) {
+    console.log(chalk.yellow(`⚠️  自动打开浏览器失败，请手动访问: ${url}`));
   }
 }
 
@@ -736,7 +636,9 @@ async function startMCPServerMode(port: number, daemon = false): Promise<void> {
     }
   } catch (error) {
     spinner.fail(
-      `启动 MCP Server 失败: ${error instanceof Error ? error.message : String(error)}`
+      `启动 MCP Server 失败: ${
+        error instanceof Error ? error.message : String(error)
+      }`
     );
   }
 }
@@ -1196,7 +1098,9 @@ async function startUIService(): Promise<void> {
     });
   } catch (error) {
     spinner.fail(
-      `启动 UI 服务失败: ${error instanceof Error ? error.message : String(error)}`
+      `启动 UI 服务失败: ${
+        error instanceof Error ? error.message : String(error)
+      }`
     );
   }
 }
@@ -1378,7 +1282,6 @@ function showHelp(): void {
     "  restart [--daemon] [--ui] 重启服务 (--daemon 后台运行, --ui 同时启动 Web UI)"
   );
   console.log("  ui                       启动配置管理网页");
-  console.log("  completion               显示自动补全设置说明");
   console.log();
   console.log(chalk.yellow("选项:"));
   console.log("  -v, --version            显示版本信息");
@@ -1423,9 +1326,6 @@ function showHelp(): void {
   console.log("  xiaozhi mcp tool <server> <tool> enable   # 启用工具");
   console.log("  xiaozhi mcp tool <server> <tool> disable  # 禁用工具");
   console.log();
-  console.log(chalk.yellow("自动补全:"));
-  console.log("  xiaozhi completion           # 显示自动补全设置说明");
-  console.log("  # 设置后可使用 Tab 键进行命令、参数自动补全");
 }
 
 // 配置 Commander 程序
@@ -1600,7 +1500,9 @@ endpointCommand
       }
     } catch (error) {
       spinner.fail(
-        `读取端点失败: ${error instanceof Error ? error.message : String(error)}`
+        `读取端点失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   });
@@ -1619,7 +1521,9 @@ endpointCommand
       console.log(chalk.gray(`当前共 ${endpoints.length} 个端点`));
     } catch (error) {
       spinner.fail(
-        `添加端点失败: ${error instanceof Error ? error.message : String(error)}`
+        `添加端点失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   });
@@ -1638,7 +1542,9 @@ endpointCommand
       console.log(chalk.gray(`当前剩余 ${endpoints.length} 个端点`));
     } catch (error) {
       spinner.fail(
-        `移除端点失败: ${error instanceof Error ? error.message : String(error)}`
+        `移除端点失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   });
@@ -1662,7 +1568,9 @@ endpointCommand
       }
     } catch (error) {
       spinner.fail(
-        `设置端点失败: ${error instanceof Error ? error.message : String(error)}`
+        `设置端点失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   });
@@ -1675,14 +1583,6 @@ program
     await startUIService();
   });
 
-// completion 命令
-program
-  .command("completion")
-  .description("显示自动补全设置说明")
-  .action(async () => {
-    showCompletionHelp();
-  });
-
 // -V 选项 (详细信息)
 program.option("-V", "显示详细信息").action((options) => {
   if (options.V) {
@@ -1690,9 +1590,6 @@ program.option("-V", "显示详细信息").action((options) => {
     process.exit(0);
   }
 });
-
-// 设置自动补全
-setupAutoCompletion();
 
 // 处理无参数情况，显示帮助
 if (process.argv.length <= 2) {

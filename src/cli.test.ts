@@ -1008,7 +1008,6 @@ describe("CLI 命令行工具", () => {
       const projectRoot = getProjectRoot();
       const srcFiles = [
         "src/cli.ts",
-        "src/autoCompletion.ts",
         "src/mcpCommands.ts",
         "src/mcpPipe.ts",
         "src/mcpServerProxy.ts",
@@ -1035,7 +1034,6 @@ describe("CLI 命令行工具", () => {
       const projectRoot = getProjectRoot();
       const srcFiles = [
         "src/cli.ts",
-        "src/autoCompletion.ts",
         "src/mcpCommands.ts",
         "src/mcpPipe.ts",
         "src/mcpServerProxy.ts",
