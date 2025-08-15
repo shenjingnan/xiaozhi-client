@@ -282,7 +282,7 @@ describe("传输层抽象验收测试", () => {
 
       expect(response.status).toBe(200);
       expect(response.body.status).toBe("ok");
-      expect(response.body.mode).toBe("http-adapter");
+      expect(response.body.mode).toBe("mcp-server");
       expect(response.body.clients).toBe(0);
       expect(response.body.enableSSE).toBe(true);
       expect(response.body.enableRPC).toBe(true);
@@ -296,7 +296,7 @@ describe("传输层抽象验收测试", () => {
 
       expect(response.status).toBe(200);
       expect(response.body.status).toBe("ok");
-      expect(response.body.mode).toBe("http-adapter");
+      expect(response.body.mode).toBe("mcp-server");
       expect(response.body.timestamp).toBeDefined();
     });
 
