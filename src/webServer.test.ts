@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import WebSocket from "ws";
-import { WebServer } from "./webServer";
+import { WebServer } from "./WebServer";
 
 vi.mock("./configManager", () => {
   const mockConfigManager = {

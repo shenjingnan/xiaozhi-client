@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { configManager } from "./configManager";
-import { WebServer } from "./webServer";
+import { WebServer } from "./WebServer";
 
 // Mock configManager
 vi.mock("./configManager", () => ({

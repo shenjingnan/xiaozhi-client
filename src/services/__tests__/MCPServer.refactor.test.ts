@@ -5,7 +5,7 @@
 
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { MCPServer } from "../mcpServer.js";
+import { MCPServer } from "../MCPServer.js";
 
 describe("MCPServer 阶段一重构验收测试", () => {
   let server: MCPServer;
@@ -177,7 +177,7 @@ describe("MCPServer 阶段一重构验收测试", () => {
 });
 
 // 扩展 MCPServer 类型以便测试
-declare module "../mcpServer.js" {
+declare module "../MCPServer.js" {
   interface MCPServer {
     getServiceManager(): any;
   }
