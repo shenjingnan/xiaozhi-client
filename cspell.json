@@ -24,6 +24,7 @@
     "healthcheck",
     "HTTPMCP",
     "IMCP",
+    "MCPN",
     "modelcontextprotocol",
     "modelscope",
     "ModelScope",

@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import chalk from "chalk";
 import { type consola, createConsola } from "consola";
+import { PinoAdapter, type PinoAdapterConfig } from "./logger/PinoAdapter.js";
 
 function formatDateTime(date: Date) {
   const year = date.getFullYear();
@@ -17,12 +18,36 @@ function formatDateTime(date: Date) {
 export class Logger {
   private logFilePath: string | null = null;
   private writeStream: fs.WriteStream | null = null;
-  private consolaInstance: typeof consola;
+  private consolaInstance: typeof consola | null = null;
   private isDaemonMode: boolean;
+  private pinoAdapter: PinoAdapter | null = null;
+  private usePino: boolean;
 
   constructor() {
+    // 检查是否启用Pino
+    this.usePino = process.env.XIAOZHI_USE_PINO === "true";
     // 检查是否为守护进程模式
     this.isDaemonMode = process.env.XIAOZHI_DAEMON === "true";
+
+    if (this.usePino) {
+      this.initializePino();
+    } else {
+      this.initializeOriginal();
+    }
+  }
+
+  private initializePino(): void {
+    const config: PinoAdapterConfig = {
+      level: process.env.XIAOZHI_LOG_LEVEL || "info",
+      isDaemonMode: this.isDaemonMode,
+      logFilePath: this.logFilePath || "./xiaozhi.log",
+      enableFileLogging: true,
+    };
+
+    this.pinoAdapter = new PinoAdapter(config);
+  }
+
+  private initializeOriginal(): void {
     // 创建自定义的 consola 实例，禁用图标并自定义格式
     this.consolaInstance = createConsola({
       formatOptions: {
@@ -93,16 +118,28 @@ export class Logger {
   initLogFile(projectDir: string): void {
     this.logFilePath = path.join(projectDir, "xiaozhi.log");
 
-    // 确保日志文件存在
-    if (!fs.existsSync(this.logFilePath)) {
-      fs.writeFileSync(this.logFilePath, "");
-    }
+    if (this.usePino && this.pinoAdapter) {
+      // Pino模式下，重新初始化adapter以使用新的文件路径
+      const config: PinoAdapterConfig = {
+        level: process.env.XIAOZHI_LOG_LEVEL || "info",
+        isDaemonMode: this.isDaemonMode,
+        logFilePath: this.logFilePath,
+        enableFileLogging: true,
+      };
+      this.pinoAdapter = new PinoAdapter(config);
+    } else {
+      // 原有实现
+      // 确保日志文件存在
+      if (!fs.existsSync(this.logFilePath)) {
+        fs.writeFileSync(this.logFilePath, "");
+      }
 
-    // 创建写入流，追加模式
-    this.writeStream = fs.createWriteStream(this.logFilePath, {
-      flags: "a",
-      encoding: "utf8",
-    });
+      // 创建写入流，追加模式
+      this.writeStream = fs.createWriteStream(this.logFilePath, {
+        flags: "a",
+        encoding: "utf8",
+      });
+    }
   }
 
   /**
@@ -133,14 +170,26 @@ export class Logger {
    * @param enable 是否启用
    */
   enableFileLogging(enable: boolean): void {
-    if (enable && !this.writeStream && this.logFilePath) {
-      this.writeStream = fs.createWriteStream(this.logFilePath, {
-        flags: "a",
-        encoding: "utf8",
-      });
-    } else if (!enable && this.writeStream) {
-      this.writeStream.end();
-      this.writeStream = null;
+    if (this.usePino && this.pinoAdapter) {
+      // Pino模式下，重新初始化adapter
+      const config: PinoAdapterConfig = {
+        level: process.env.XIAOZHI_LOG_LEVEL || "info",
+        isDaemonMode: this.isDaemonMode,
+        logFilePath: this.logFilePath || "./xiaozhi.log",
+        enableFileLogging: enable,
+      };
+      this.pinoAdapter = new PinoAdapter(config);
+    } else {
+      // 原有实现
+      if (enable && !this.writeStream && this.logFilePath) {
+        this.writeStream = fs.createWriteStream(this.logFilePath, {
+          flags: "a",
+          encoding: "utf8",
+        });
+      } else if (!enable && this.writeStream) {
+        this.writeStream.end();
+        this.writeStream = null;
+      }
     }
   }
 
@@ -148,42 +197,76 @@ export class Logger {
    * 日志方法
    */
   info(message: string, ...args: any[]): void {
-    this.consolaInstance.info(message, ...args);
-    this.logToFile("info", message, ...args);
+    if (this.usePino && this.pinoAdapter) {
+      this.pinoAdapter.info(message, ...args);
+    } else if (this.consolaInstance) {
+      this.consolaInstance.info(message, ...args);
+      this.logToFile("info", message, ...args);
+    }
   }
 
   success(message: string, ...args: any[]): void {
-    this.consolaInstance.success(message, ...args);
-    this.logToFile("success", message, ...args);
+    if (this.usePino && this.pinoAdapter) {
+      this.pinoAdapter.success(message, ...args);
+    } else if (this.consolaInstance) {
+      this.consolaInstance.success(message, ...args);
+      this.logToFile("success", message, ...args);
+    }
   }
 
   warn(message: string, ...args: any[]): void {
-    this.consolaInstance.warn(message, ...args);
-    this.logToFile("warn", message, ...args);
+    if (this.usePino && this.pinoAdapter) {
+      this.pinoAdapter.warn(message, ...args);
+    } else if (this.consolaInstance) {
+      this.consolaInstance.warn(message, ...args);
+      this.logToFile("warn", message, ...args);
+    }
   }
 
   error(message: string, ...args: any[]): void {
-    this.consolaInstance.error(message, ...args);
-    this.logToFile("error", message, ...args);
+    if (this.usePino && this.pinoAdapter) {
+      this.pinoAdapter.error(message, ...args);
+    } else if (this.consolaInstance) {
+      this.consolaInstance.error(message, ...args);
+      this.logToFile("error", message, ...args);
+    }
   }
 
   debug(message: string, ...args: any[]): void {
-    this.consolaInstance.debug(message, ...args);
-    this.logToFile("debug", message, ...args);
+    if (this.usePino && this.pinoAdapter) {
+      this.pinoAdapter.debug(message, ...args);
+    } else if (this.consolaInstance) {
+      this.consolaInstance.debug(message, ...args);
+      this.logToFile("debug", message, ...args);
+    }
   }
 
   log(message: string, ...args: any[]): void {
-    this.consolaInstance.log(message, ...args);
-    this.logToFile("log", message, ...args);
+    if (this.usePino && this.pinoAdapter) {
+      this.pinoAdapter.log(message, ...args);
+    } else if (this.consolaInstance) {
+      this.consolaInstance.log(message, ...args);
+      this.logToFile("log", message, ...args);
+    }
   }
 
   /**
-   * 创建一个带标签的日志实例（已废弃，直接返回原实例）
-   * @param tag 标签（不再使用）
-   * @deprecated 标签功能已移除
+   * 创建一个带标签的日志实例
+   * @param tag 标签
    */
   withTag(tag: string): Logger {
-    // 不再添加标签，直接返回共享实例
+    if (this.usePino && this.pinoAdapter) {
+      // 使用Pino的子logger功能
+      const childAdapter = this.pinoAdapter.withTag(tag);
+      const childLogger = new Logger();
+      childLogger.usePino = true;
+      childLogger.pinoAdapter = childAdapter;
+      childLogger.isDaemonMode = this.isDaemonMode;
+      childLogger.logFilePath = this.logFilePath;
+      return childLogger;
+    }
+
+    // 原有实现：直接返回共享实例
     return this;
   }
 
@@ -191,7 +274,10 @@ export class Logger {
    * 关闭日志文件流
    */
   close(): void {
-    if (this.writeStream) {
+    if (this.usePino && this.pinoAdapter) {
+      // Pino会自动处理资源清理
+      this.pinoAdapter = null;
+    } else if (this.writeStream) {
       this.writeStream.end();
       this.writeStream = null;
     }
