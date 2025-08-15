@@ -301,7 +301,7 @@ describe("MCPService", () => {
         reconnectAttempts: 0,
         connectionState: ConnectionState.DISCONNECTED,
         // ping状态
-        pingEnabled: false,
+        pingEnabled: true,
         lastPingTime: undefined,
         pingFailureCount: 0,
         isPinging: false,
@@ -377,6 +377,10 @@ describe("MCPService", () => {
     });
 
     it("should attempt reconnection on connection failure", async () => {
+      // 创建一个禁用 ping 的服务实例，避免定时器无限循环
+      const testConfig = { ...config, ping: { enabled: false } };
+      const testService = new MCPService(testConfig);
+
       let connectAttempts = 0;
       mockClient.connect.mockImplementation(() => {
         connectAttempts++;
@@ -388,10 +392,10 @@ describe("MCPService", () => {
       mockClient.listTools.mockResolvedValue({ tools: [] });
 
       // Start connection (will fail)
-      const connectPromise = service.connect().catch(() => {});
+      const connectPromise = testService.connect().catch(() => {});
       await connectPromise;
 
-      expect(service.getStatus().connectionState).toBe(
+      expect(testService.getStatus().connectionState).toBe(
         ConnectionState.RECONNECTING
       );
 
