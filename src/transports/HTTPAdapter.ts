@@ -333,8 +333,10 @@ export class HTTPAdapter extends TransportAdapter {
   private handleStatus(req: Request, res: Response): void {
     res.json({
       status: "ok",
-      mode: "http-adapter",
+      mode: "mcp-server", // 从用户角度看，这是 MCP 服务器的状态
+      serviceManager: "running", // 添加服务管理器状态
       clients: this.clients.size,
+      tools: 0, // 工具数量，这里先设为0，后续可以从消息处理器获取
       maxClients: this.maxClients,
       enableSSE: this.enableSSE,
       enableRPC: this.enableRPC,
@@ -348,7 +350,7 @@ export class HTTPAdapter extends TransportAdapter {
   private handleHealth(req: Request, res: Response): void {
     res.json({
       status: "ok",
-      mode: "http-adapter",
+      mode: "mcp-server", // 从用户角度看，这是 MCP 服务器的健康状态
       timestamp: new Date().toISOString(),
     });
   }
