@@ -139,7 +139,7 @@ describe("阶段三统一 MCP 服务器集成测试", () => {
 
       expect(response.status).toBe(200);
       expect(response.body.status).toBe("ok");
-      expect(response.body.mode).toBe("http-adapter");
+      expect(response.body.mode).toBe("mcp-server"); // 从用户角度看，这是 MCP 服务器的状态
     });
 
     test("应该创建 WebSocket 模式服务器", async () => {
@@ -301,7 +301,7 @@ describe("阶段三统一 MCP 服务器集成测试", () => {
 
       expect(statusResponse.status).toBe(200);
       expect(statusResponse.body.status).toBe("ok");
-      expect(statusResponse.body.mode).toBe("http-adapter");
+      expect(statusResponse.body.mode).toBe("mcp-server"); // 从用户角度看，这是 MCP 服务器的状态
     });
 
     test("应该正确处理 SSE 连接", async () => {

@@ -245,6 +245,7 @@ async function detectEnvironment(
   }
 
   // 检查环境变量
+  let explicitModeSet = false;
   if (checkEnvironment) {
     const mcpServerMode = process.env.MCP_SERVER_MODE;
     const port = process.env.PORT || process.env.MCP_PORT;
@@ -252,15 +253,19 @@ async function detectEnvironment(
     if (mcpServerMode === "stdio") {
       detection.suggestedMode = ServerMode.STDIO;
       detection.reasons.push("环境变量 MCP_SERVER_MODE=stdio");
+      explicitModeSet = true;
     } else if (mcpServerMode === "http") {
       detection.suggestedMode = ServerMode.HTTP;
       detection.reasons.push("环境变量 MCP_SERVER_MODE=http");
+      explicitModeSet = true;
     } else if (mcpServerMode === "websocket") {
       detection.suggestedMode = ServerMode.WEBSOCKET;
       detection.reasons.push("环境变量 MCP_SERVER_MODE=websocket");
+      explicitModeSet = true;
     } else if (mcpServerMode === "hybrid") {
       detection.suggestedMode = ServerMode.HYBRID;
       detection.reasons.push("环境变量 MCP_SERVER_MODE=hybrid");
+      explicitModeSet = true;
     }
 
     if (port) {
@@ -269,8 +274,8 @@ async function detectEnvironment(
     }
   }
 
-  // 智能推断模式
-  if (detection.suggestedMode === defaultMode) {
+  // 智能推断模式（仅在没有明确设置环境变量时）
+  if (!explicitModeSet && detection.suggestedMode === defaultMode) {
     if (detection.hasStdin && !detection.isInteractive) {
       detection.suggestedMode = ServerMode.STDIO;
       detection.reasons.push("推断：非交互式环境，适合 Stdio 模式");
@@ -498,7 +503,7 @@ export function validateConfig(config: ServerFactoryConfig): void {
 
     // 验证批处理配置
     if (
-      wsConfig.batchSize &&
+      wsConfig.batchSize !== undefined &&
       (wsConfig.batchSize < 1 || wsConfig.batchSize > 1000)
     ) {
       throw new Error(`无效的批处理大小: ${wsConfig.batchSize}`);
