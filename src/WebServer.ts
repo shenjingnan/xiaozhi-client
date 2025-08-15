@@ -761,6 +761,12 @@ export class WebServer {
   }
 
   public async start(): Promise<void> {
+    // 检查服务器是否已经启动
+    if (this.httpServer) {
+      this.logger.warn("Web server is already running");
+      return;
+    }
+
     // 1. 启动 HTTP 服务器
     const server = serve({
       fetch: this.app.fetch,

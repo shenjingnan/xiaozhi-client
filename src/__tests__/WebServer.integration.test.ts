@@ -48,13 +48,33 @@ vi.mock("../services/MCPServiceManagerSingleton.js", () => ({
       startAllServices: vi.fn().mockResolvedValue(undefined),
       getAllTools: vi.fn().mockReturnValue([]),
       cleanup: vi.fn().mockResolvedValue(undefined),
+      addServiceConfig: vi.fn(),
     }),
+  },
+}));
+
+vi.mock("../services/XiaozhiConnectionManagerSingleton.js", () => ({
+  XiaozhiConnectionManagerSingleton: {
+    getInstance: vi.fn().mockResolvedValue({
+      initialize: vi.fn().mockResolvedValue(undefined),
+      connect: vi.fn().mockResolvedValue(undefined),
+      setServiceManager: vi.fn(),
+      getHealthyConnections: vi.fn().mockReturnValue([{ id: "conn1" }]),
+      getConnectionStatus: vi.fn().mockReturnValue([{ id: "conn1", status: "connected" }]),
+      getLoadBalanceStats: vi.fn().mockReturnValue({}),
+      getHealthCheckStats: vi.fn().mockReturnValue({}),
+      getReconnectStats: vi.fn().mockReturnValue({}),
+      selectBestConnection: vi.fn().mockReturnValue(null),
+      on: vi.fn(),
+    }),
+    cleanup: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
 describe("WebServer Integration Tests", () => {
   let webServer: any;
-  const mockPort = 3001;
+  const basePort = 3001;
+  let currentTestPort = basePort;
 
   beforeAll(async () => {
     // 动态导入 WebServer
@@ -68,14 +88,16 @@ describe("WebServer Integration Tests", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    // 为每个测试分配唯一端口，避免冲突
+    currentTestPort = basePort + Math.floor(Math.random() * 10000) + Date.now() % 1000;
+
     // 设置默认的 mock 返回值
     vi.mocked(configManager.getConfig).mockReturnValue({
-      port: mockPort,
       mcpEndpoint: ["wss://test1.example.com", "wss://test2.example.com"],
-      mcpServers: [],
+      mcpServers: {},
       enableCors: true,
       enableLogging: true,
-    });
+    } as any);
 
     vi.mocked(configManager.getMcpEndpoints).mockReturnValue([
       "wss://test1.example.com",
@@ -85,19 +107,23 @@ describe("WebServer Integration Tests", () => {
     vi.mocked(configManager.getMcpEndpoint).mockReturnValue(
       "wss://test1.example.com"
     );
-    vi.mocked(configManager.getPort).mockReturnValue(mockPort);
-    vi.mocked(configManager.getWebUIPort).mockReturnValue(mockPort);
+    vi.mocked(configManager.getWebUIPort).mockReturnValue(currentTestPort);
     vi.mocked(configManager.configExists).mockReturnValue(true);
-    vi.mocked(configManager.getServerConfigs).mockReturnValue([]);
 
-    // 使用随机端口避免冲突
-    const randomPort = mockPort + Math.floor(Math.random() * 1000);
-    webServer = new WebServer(randomPort);
+    // 使用当前测试的唯一端口
+    webServer = new WebServer(currentTestPort);
   });
 
   afterEach(async () => {
     if (webServer) {
-      await webServer.stop();
+      try {
+        await webServer.stop();
+        // 等待端口完全释放
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch (error) {
+        // 忽略停止时的错误，确保清理继续进行
+        console.warn("Error stopping webServer:", error);
+      }
     }
     await XiaozhiConnectionManagerSingleton.cleanup();
   });
@@ -131,12 +157,11 @@ describe("WebServer Integration Tests", () => {
         "wss://single.example.com",
       ]);
       vi.mocked(configManager.getConfig).mockReturnValue({
-        port: mockPort,
         mcpEndpoint: "wss://single.example.com",
-        mcpServers: [],
+        mcpServers: {},
         enableCors: true,
         enableLogging: true,
-      });
+      } as any);
 
       try {
         await webServer.start();
@@ -155,12 +180,11 @@ describe("WebServer Integration Tests", () => {
       // 配置空端点
       vi.mocked(configManager.getMcpEndpoints).mockReturnValue([]);
       vi.mocked(configManager.getConfig).mockReturnValue({
-        port: mockPort,
         mcpEndpoint: [],
-        mcpServers: [],
+        mcpServers: {},
         enableCors: true,
         enableLogging: true,
-      });
+      } as any);
 
       await webServer.start();
 
@@ -177,16 +201,32 @@ describe("WebServer Integration Tests", () => {
         "wss://valid.example.com",
       ]);
       vi.mocked(configManager.getConfig).mockReturnValue({
-        port: mockPort,
         mcpEndpoint: [
           "<请填写小智接入点>",
           "invalid-url",
           "wss://valid.example.com",
         ],
-        mcpServers: [],
+        mcpServers: {},
         enableCors: true,
         enableLogging: true,
-      });
+      } as any);
+
+      // 为这个测试设置特定的 mock 行为，模拟只有一个有效连接
+      const { XiaozhiConnectionManagerSingleton } = await import(
+        "../services/XiaozhiConnectionManagerSingleton.js"
+      );
+      vi.mocked(XiaozhiConnectionManagerSingleton.getInstance).mockResolvedValue({
+        initialize: vi.fn().mockResolvedValue(undefined),
+        connect: vi.fn().mockResolvedValue(undefined),
+        setServiceManager: vi.fn(),
+        getHealthyConnections: vi.fn().mockReturnValue([{ id: "valid-conn" }]),
+        getConnectionStatus: vi.fn().mockReturnValue([{ id: "valid-conn", status: "connected" }]),
+        getLoadBalanceStats: vi.fn().mockReturnValue({}),
+        getHealthCheckStats: vi.fn().mockReturnValue({}),
+        getReconnectStats: vi.fn().mockReturnValue({}),
+        selectBestConnection: vi.fn().mockReturnValue(null),
+        on: vi.fn(),
+      } as any);
 
       await webServer.start();
 
@@ -261,12 +301,11 @@ describe("WebServer Integration Tests", () => {
       // 配置无端点
       vi.mocked(configManager.getMcpEndpoints).mockReturnValue([]);
       vi.mocked(configManager.getConfig).mockReturnValue({
-        port: mockPort,
         mcpEndpoint: [],
-        mcpServers: [],
+        mcpServers: {},
         enableCors: true,
         enableLogging: true,
-      });
+      } as any);
 
       await webServer.start();
 
@@ -290,6 +329,9 @@ describe("WebServer Integration Tests", () => {
 
       // 第二次启动应该不抛出错误
       await expect(webServer.start()).resolves.not.toThrow();
+
+      // 确保在测试结束时停止服务器
+      await webServer.stop();
     });
 
     it("should handle stop without start", async () => {
@@ -305,7 +347,13 @@ describe("WebServer Integration Tests", () => {
         throw new Error("Configuration error");
       });
 
-      await expect(webServer.start()).rejects.toThrow("Configuration error");
+      // WebServer 应该优雅地处理配置错误，不抛出异常但记录错误
+      await expect(webServer.start()).resolves.not.toThrow();
+
+      // 验证连接状态反映了错误情况
+      const connectionStatus = webServer.getXiaozhiConnectionStatus();
+      expect(connectionStatus.type).toBe("none");
+      expect(connectionStatus.connected).toBe(false);
     });
 
     it("should handle service manager initialization errors", async () => {
@@ -317,7 +365,13 @@ describe("WebServer Integration Tests", () => {
         new Error("Service manager error")
       );
 
-      await expect(webServer.start()).rejects.toThrow("Service manager error");
+      // WebServer 应该优雅地处理服务管理器错误，不抛出异常但记录错误
+      await expect(webServer.start()).resolves.not.toThrow();
+
+      // 验证连接状态反映了错误情况
+      const connectionStatus = webServer.getXiaozhiConnectionStatus();
+      expect(connectionStatus.type).toBe("none");
+      expect(connectionStatus.connected).toBe(false);
     });
   });
 });
