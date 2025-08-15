@@ -78,7 +78,7 @@ describe("MCPService Ping功能", () => {
       const defaultService = new MCPService(defaultConfig);
       const pingOptions = defaultService.getPingOptions();
 
-      expect(pingOptions.enabled).toBe(false); // 默认禁用
+      expect(pingOptions.enabled).toBe(true); // 默认启用
       expect(pingOptions.interval).toBe(30000); // 30秒
       expect(pingOptions.timeout).toBe(5000); // 5秒
       expect(pingOptions.maxFailures).toBe(3); // 3次
