@@ -27,6 +27,7 @@ export default defineConfig({
         "**/*.d.ts",
         "**/*.config.{js,ts}",
         "coverage/**",
+        "**/*.example.ts",
       ],
       include: ["src/**/*.ts"],
       all: true,

@@ -33,18 +33,18 @@ function copyDirectory(src: string, dest: string, excludePatterns: string[] = []
 
 export default defineConfig({
   entry: [
-    "src/multiEndpointMCPPipe.ts",
-    "src/adaptiveMCPPipe.ts",
     "src/modelScopeMCPClient.ts",
     "src/streamableHttpMCPClient.ts",
     "src/mcpServerProxy.ts",
     "src/cli.ts",
     "src/configManager.ts",
     "src/mcpCommands.ts",
-    "src/autoCompletion.ts",
     "src/logger.ts",
-    "src/webServer.ts",
-    "src/services/mcpServer.ts",
+    "src/WebServer.ts",
+    "src/WebServerStandalone.ts",
+    "src/mcpClient.ts",
+    "src/ProxyMCPServer.ts",
+    "src/services/MCPServer.ts",
   ],
   format: ["esm"],
   target: "node18",

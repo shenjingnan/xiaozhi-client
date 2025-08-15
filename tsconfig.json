@@ -33,6 +33,7 @@
     "dist",
     "**/*.test.ts",
     "**/*.spec.ts",
+    "**/*.example.ts",
     "scripts/**/*",
     "templates/**/*"
   ]
