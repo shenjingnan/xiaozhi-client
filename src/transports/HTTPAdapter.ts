@@ -64,7 +64,7 @@ export class HTTPAdapter extends TransportAdapter {
     this.enableSSE = config.enableSSE !== false; // 默认启用
     this.enableRPC = config.enableRPC !== false; // 默认启用
     this.corsOrigin = config.corsOrigin || "*";
-    this.maxClients = config.maxClients || 100;
+    this.maxClients = config.maxClients !== undefined ? config.maxClients : 100;
 
     this.app = express();
     this.setupMiddleware();

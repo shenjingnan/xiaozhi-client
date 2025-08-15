@@ -28,6 +28,11 @@ const mockProcess = {
   stdout: mockStdout,
   on: vi.fn(),
   exit: vi.fn(),
+  uptime: vi.fn(() => 123.456), // Mock uptime 方法
+  env: {
+    XIAOZHI_DAEMON: "false", // 设置默认值避免 Logger 初始化失败
+    NODE_ENV: "test",
+  },
 };
 
 // Mock global process
