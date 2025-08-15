@@ -357,7 +357,7 @@ export class MCPServiceManager {
 
     // 存储增强后的配置
     this.configs[serviceName] = enhancedConfig;
-    this.logger.info(`已添加并增强服务配置: ${serviceName}`);
+    this.logger.info(`已添加服务配置: ${serviceName}`);
   }
 
   /**
