@@ -60,7 +60,9 @@ vi.mock("../services/XiaozhiConnectionManagerSingleton.js", () => ({
       connect: vi.fn().mockResolvedValue(undefined),
       setServiceManager: vi.fn(),
       getHealthyConnections: vi.fn().mockReturnValue([{ id: "conn1" }]),
-      getConnectionStatus: vi.fn().mockReturnValue([{ id: "conn1", status: "connected" }]),
+      getConnectionStatus: vi
+        .fn()
+        .mockReturnValue([{ id: "conn1", status: "connected" }]),
       getLoadBalanceStats: vi.fn().mockReturnValue({}),
       getHealthCheckStats: vi.fn().mockReturnValue({}),
       getReconnectStats: vi.fn().mockReturnValue({}),
@@ -89,7 +91,8 @@ describe("WebServer Integration Tests", () => {
     vi.clearAllMocks();
 
     // 为每个测试分配唯一端口，避免冲突
-    currentTestPort = basePort + Math.floor(Math.random() * 10000) + Date.now() % 1000;
+    currentTestPort =
+      basePort + Math.floor(Math.random() * 10000) + (Date.now() % 1000);
 
     // 设置默认的 mock 返回值
     vi.mocked(configManager.getConfig).mockReturnValue({
@@ -119,7 +122,7 @@ describe("WebServer Integration Tests", () => {
       try {
         await webServer.stop();
         // 等待端口完全释放
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
       } catch (error) {
         // 忽略停止时的错误，确保清理继续进行
         console.warn("Error stopping webServer:", error);
@@ -215,12 +218,16 @@ describe("WebServer Integration Tests", () => {
       const { XiaozhiConnectionManagerSingleton } = await import(
         "../services/XiaozhiConnectionManagerSingleton.js"
       );
-      vi.mocked(XiaozhiConnectionManagerSingleton.getInstance).mockResolvedValue({
+      vi.mocked(
+        XiaozhiConnectionManagerSingleton.getInstance
+      ).mockResolvedValue({
         initialize: vi.fn().mockResolvedValue(undefined),
         connect: vi.fn().mockResolvedValue(undefined),
         setServiceManager: vi.fn(),
         getHealthyConnections: vi.fn().mockReturnValue([{ id: "valid-conn" }]),
-        getConnectionStatus: vi.fn().mockReturnValue([{ id: "valid-conn", status: "connected" }]),
+        getConnectionStatus: vi
+          .fn()
+          .mockReturnValue([{ id: "valid-conn", status: "connected" }]),
         getLoadBalanceStats: vi.fn().mockReturnValue({}),
         getHealthCheckStats: vi.fn().mockReturnValue({}),
         getReconnectStats: vi.fn().mockReturnValue({}),
