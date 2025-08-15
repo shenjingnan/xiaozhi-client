@@ -47,7 +47,12 @@ export class WebServer {
 
   constructor(port?: number) {
     // 端口配置
-    this.port = port ?? configManager.getWebUIPort() ?? 9999;
+    try {
+      this.port = port ?? configManager.getWebUIPort() ?? 9999;
+    } catch (error) {
+      // 配置读取失败时使用默认端口
+      this.port = port ?? 9999;
+    }
     this.logger = new Logger();
 
     // 延迟初始化，在 start() 方法中进行连接管理
