@@ -1,3 +1,4 @@
+import { createServer } from "node:http";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import WebSocket from "ws";
 import { WebServer } from "./WebServer";
@@ -33,14 +34,65 @@ vi.mock("node:child_process", () => ({
   })),
 }));
 
+// 端口管理工具函数
+const getAvailablePort = async (): Promise<number> => {
+  return new Promise((resolve, reject) => {
+    const server = createServer();
+    server.listen(0, () => {
+      const port = (server.address() as any)?.port;
+      server.close(() => {
+        if (port) {
+          resolve(port);
+        } else {
+          reject(new Error("Failed to get available port"));
+        }
+      });
+    });
+    server.on("error", reject);
+  });
+};
+
+// 检查端口是否可用
+const isPortAvailable = async (port: number): Promise<boolean> => {
+  return new Promise((resolve) => {
+    const server = createServer();
+    server.listen(port, () => {
+      server.close(() => resolve(true));
+    });
+    server.on("error", () => resolve(false));
+  });
+};
+
+// 等待端口释放
+const waitForPortRelease = async (
+  port: number,
+  maxWait = 3000
+): Promise<void> => {
+  const startTime = Date.now();
+  while (Date.now() - startTime < maxWait) {
+    if (await isPortAvailable(port)) {
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error(`Port ${port} is still in use after ${maxWait}ms`);
+};
+
+// 检测CI环境
+const isCI = process.env.CI === "true" || process.env.GITHUB_ACTIONS === "true";
+const cleanupDelay = isCI ? 1000 : 500; // CI环境使用更长的清理时间
+
 describe("WebServer", () => {
   let webServer: WebServer;
   let mockConfigManager: any;
+  let currentPort: number;
 
   beforeEach(async () => {
     const { configManager } = await import("./configManager");
     mockConfigManager = configManager;
 
+    // 获取可用端口
+    currentPort = await getAvailablePort();
     // 设置默认的 mock 返回值
     mockConfigManager.getConfig.mockReturnValue({
       mcpEndpoint: "wss://test.endpoint",
@@ -58,8 +110,17 @@ describe("WebServer", () => {
     if (webServer) {
       try {
         await webServer.stop();
-        // 添加短暂延迟确保端口完全释放
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        // 在CI环境中使用更长的清理时间
+        await new Promise((resolve) => setTimeout(resolve, cleanupDelay));
+
+        // 等待端口完全释放
+        if (currentPort) {
+          try {
+            await waitForPortRelease(currentPort);
+          } catch (error) {
+            console.warn(`Port ${currentPort} cleanup warning:`, error);
+          }
+        }
       } catch (error) {
         console.warn("Failed to stop webServer in afterEach:", error);
       }
@@ -69,10 +130,10 @@ describe("WebServer", () => {
   });
 
   it("should start the server on the specified port", async () => {
-    webServer = new WebServer(9998);
+    webServer = new WebServer(currentPort);
     await webServer.start();
 
-    const response = await fetch("http://localhost:9998/api/status");
+    const response = await fetch(`http://localhost:${currentPort}/api/status`);
     expect(response.status).toBe(200);
 
     const data = await response.json();
@@ -82,10 +143,10 @@ describe("WebServer", () => {
   });
 
   it("should return config via HTTP API", async () => {
-    webServer = new WebServer(9997);
+    webServer = new WebServer(currentPort);
     await webServer.start();
 
-    const response = await fetch("http://localhost:9997/api/config");
+    const response = await fetch(`http://localhost:${currentPort}/api/config`);
     expect(response.status).toBe(200);
 
     const data = await response.json();
@@ -94,7 +155,7 @@ describe("WebServer", () => {
   });
 
   it("should update config via HTTP API", async () => {
-    webServer = new WebServer(9996);
+    webServer = new WebServer(currentPort);
     await webServer.start();
 
     const newConfig = {
@@ -102,7 +163,7 @@ describe("WebServer", () => {
       mcpServers: {},
     };
 
-    const response = await fetch("http://localhost:9996/api/config", {
+    const response = await fetch(`http://localhost:${currentPort}/api/config`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newConfig),
@@ -115,10 +176,10 @@ describe("WebServer", () => {
   });
 
   it("should handle WebSocket connections", async () => {
-    webServer = new WebServer(9995);
+    webServer = new WebServer(currentPort);
     await webServer.start();
 
-    const ws = new WebSocket("ws://localhost:9995");
+    const ws = new WebSocket(`ws://localhost:${currentPort}`);
     let messageCount = 0;
 
     await new Promise<void>((resolve, reject) => {
@@ -156,7 +217,7 @@ describe("WebServer", () => {
   });
 
   it("should update client status", () => {
-    webServer = new WebServer(9994);
+    webServer = new WebServer(currentPort);
 
     const clientInfo = {
       status: "connected" as const,
@@ -168,10 +229,10 @@ describe("WebServer", () => {
   });
 
   it("should handle 404 for unknown routes", async () => {
-    webServer = new WebServer(9993);
+    webServer = new WebServer(currentPort);
     await webServer.start();
 
-    const response = await fetch("http://localhost:9993/api/unknown");
+    const response = await fetch(`http://localhost:${currentPort}/api/unknown`);
     expect(response.status).toBe(404);
   });
 
@@ -181,10 +242,12 @@ describe("WebServer", () => {
     });
 
     it("应该使用指定的端口号", async () => {
-      webServer = new WebServer(9992);
+      webServer = new WebServer(currentPort);
       await webServer.start();
 
-      const response = await fetch("http://localhost:9992/api/status");
+      const response = await fetch(
+        `http://localhost:${currentPort}/api/status`
+      );
       expect(response.status).toBe(200);
     });
 
@@ -212,7 +275,7 @@ describe("WebServer", () => {
     }, 10000); // 增加超时时间到10秒
 
     it("应该处理 webUI 配置更新", async () => {
-      webServer = new WebServer(9991);
+      webServer = new WebServer(currentPort);
       await webServer.start();
 
       const newConfig = {
@@ -221,11 +284,14 @@ describe("WebServer", () => {
         webUI: { port: 8080 },
       };
 
-      const response = await fetch("http://localhost:9991/api/config", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newConfig),
-      });
+      const response = await fetch(
+        `http://localhost:${currentPort}/api/config`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newConfig),
+        }
+      );
 
       expect(response.status).toBe(200);
       expect(mockConfigManager.updateWebUIConfig).toHaveBeenCalledWith({
@@ -246,7 +312,7 @@ describe("WebServer", () => {
     });
 
     it("should not trigger automatic restart when config is updated", async () => {
-      webServer = new WebServer(9989);
+      webServer = new WebServer(currentPort);
       await webServer.start();
 
       const newConfig = {
@@ -255,11 +321,14 @@ describe("WebServer", () => {
         webUI: { autoRestart: true },
       };
 
-      const response = await fetch("http://localhost:9989/api/config", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newConfig),
-      });
+      const response = await fetch(
+        `http://localhost:${currentPort}/api/config`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newConfig),
+        }
+      );
 
       const result = await response.json();
       expect(response.status).toBe(200);
@@ -273,7 +342,7 @@ describe("WebServer", () => {
     });
 
     it("should save config without restart regardless of autoRestart setting", async () => {
-      webServer = new WebServer(9988);
+      webServer = new WebServer(currentPort);
       await webServer.start();
 
       const newConfig = {
@@ -282,11 +351,14 @@ describe("WebServer", () => {
         webUI: { autoRestart: false },
       };
 
-      const response = await fetch("http://localhost:9988/api/config", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newConfig),
-      });
+      const response = await fetch(
+        `http://localhost:${currentPort}/api/config`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newConfig),
+        }
+      );
 
       const result = await response.json();
       expect(response.status).toBe(200);
@@ -299,11 +371,11 @@ describe("WebServer", () => {
     });
 
     it("should broadcast restart status updates on manual restart", async () => {
-      webServer = new WebServer(9987);
+      webServer = new WebServer(currentPort);
       await webServer.start();
 
       // Connect a WebSocket client
-      const ws = new WebSocket("ws://localhost:9987");
+      const ws = new WebSocket(`ws://localhost:${currentPort}`);
       const messages: any[] = [];
 
       await new Promise<void>((resolve) => {
@@ -336,11 +408,11 @@ describe("WebServer", () => {
     });
 
     it("should start service on manual restart if not running", async () => {
-      webServer = new WebServer(9986);
+      webServer = new WebServer(currentPort);
       await webServer.start();
 
       // Connect a WebSocket client
-      const ws = new WebSocket("ws://localhost:9986");
+      const ws = new WebSocket(`ws://localhost:${currentPort}`);
 
       await new Promise<void>((resolve) => {
         ws.on("open", resolve);
