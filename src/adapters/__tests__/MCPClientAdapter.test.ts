@@ -55,7 +55,42 @@ describe("MCPClientAdapter", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     adapter = new MCPClientAdapter("test-service", testConfig);
+    // 获取 mock 的 MCPService 实例
     mockMCPService = (adapter as any).mcpService;
+
+    // 确保所有方法都是 mock 函数
+    if (!mockMCPService.connect?.mockReturnValue) {
+      mockMCPService.connect = vi.fn().mockResolvedValue(undefined);
+    }
+    if (!mockMCPService.disconnect?.mockReturnValue) {
+      mockMCPService.disconnect = vi.fn().mockResolvedValue(undefined);
+    }
+    if (!mockMCPService.getTools?.mockReturnValue) {
+      mockMCPService.getTools = vi.fn().mockReturnValue([]);
+    }
+    if (!mockMCPService.callTool?.mockReturnValue) {
+      mockMCPService.callTool = vi.fn().mockResolvedValue({
+        content: [{ type: "text", text: '{"result": "success"}' }],
+        isError: false,
+      });
+    }
+    if (!mockMCPService.getStatus?.mockReturnValue) {
+      mockMCPService.getStatus = vi.fn().mockReturnValue({
+        name: "test-service",
+        connected: true,
+        initialized: true,
+        transportType: "stdio",
+        toolCount: 0,
+        reconnectAttempts: 0,
+        connectionState: "connected",
+        pingEnabled: true,
+        pingFailureCount: 0,
+        isPinging: false,
+      });
+    }
+    if (!mockMCPService.isConnected?.mockReturnValue) {
+      mockMCPService.isConnected = vi.fn().mockReturnValue(true);
+    }
   });
 
   afterEach(() => {
