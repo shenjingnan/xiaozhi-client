@@ -215,7 +215,7 @@ describe("传输层抽象集成测试", () => {
       );
       expect(statusResponse.status).toBe(200);
       expect(statusResponse.body.status).toBe("ok");
-      expect(statusResponse.body.mode).toBe("http-adapter");
+      expect(statusResponse.body.mode).toBe("mcp-server"); // 从用户角度看，这是 MCP 服务器的状态
 
       // 健康检查
       const healthResponse = await request(`http://localhost:${port}`).get(
@@ -223,7 +223,7 @@ describe("传输层抽象集成测试", () => {
       );
       expect(healthResponse.status).toBe(200);
       expect(healthResponse.body.status).toBe("ok");
-      expect(healthResponse.body.mode).toBe("http-adapter");
+      expect(healthResponse.body.mode).toBe("mcp-server"); // 从用户角度看，这是 MCP 服务器的健康状态
     });
 
     test("应该正确配置 CORS", async () => {
