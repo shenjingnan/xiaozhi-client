@@ -17,7 +17,7 @@ vi.mock("@modelcontextprotocol/sdk/client/stdio.js");
 vi.mock("../../logger.js");
 vi.mock("../TransportFactory.js");
 
-describe("MCPService", () => {
+describe("MCP 服务", () => {
   let mockClient: any;
   let mockTransport: any;
   let mockLogger: any;
@@ -69,13 +69,13 @@ describe("MCPService", () => {
     vi.clearAllMocks();
   });
 
-  describe("constructor", () => {
-    it("should create MCPService with valid config", () => {
+  describe("构造函数", () => {
+    it("应该使用有效配置创建 MCP 服务", () => {
       expect(service).toBeInstanceOf(MCPService);
       expect(mockLogger.withTag).toHaveBeenCalledWith("MCP-test-service");
     });
 
-    it("should throw error for invalid name", () => {
+    it("应该对无效名称抛出错误", () => {
       const invalidConfig = { ...config, name: "" };
       const error = new Error("配置必须包含有效的 name 字段");
       vi.mocked(TransportFactory).validateConfig.mockImplementation(() => {
@@ -87,7 +87,7 @@ describe("MCPService", () => {
       );
     });
 
-    it("should throw error for SSE without URL", () => {
+    it("应该对没有 URL 的 SSE 抛出错误", () => {
       const invalidConfig = { ...config, type: MCPTransportType.SSE };
       const error = new Error("sse 类型需要 url 字段");
       vi.mocked(TransportFactory).validateConfig.mockImplementation(() => {
@@ -99,7 +99,7 @@ describe("MCPService", () => {
       );
     });
 
-    it("should throw error for missing command", () => {
+    it("应该对缺少命令抛出错误", () => {
       const invalidConfig = { ...config, command: undefined };
       const error = new Error("stdio 类型需要 command 字段");
       vi.mocked(TransportFactory).validateConfig.mockImplementation(() => {
@@ -111,7 +111,7 @@ describe("MCPService", () => {
       );
     });
 
-    it("should merge reconnect options correctly", () => {
+    it("应该正确合并重连选项", () => {
       const customReconnectOptions: Partial<ReconnectOptions> = {
         maxAttempts: 5,
         initialInterval: 2000,
@@ -127,8 +127,8 @@ describe("MCPService", () => {
     });
   });
 
-  describe("connect", () => {
-    it("should connect successfully", async () => {
+  describe("连接", () => {
+    it("应该成功连接", async () => {
       mockClient.connect.mockResolvedValue(undefined);
       mockClient.listTools.mockResolvedValue({ tools: [] });
 
@@ -150,7 +150,7 @@ describe("MCPService", () => {
       expect(service.isConnected()).toBe(true);
     });
 
-    it("should handle connection timeout", async () => {
+    it("应该处理连接超时", async () => {
       vi.useFakeTimers();
 
       const connectPromise = new Promise(() => {}); // Never resolves
@@ -166,7 +166,7 @@ describe("MCPService", () => {
       vi.useRealTimers();
     });
 
-    it("should handle connection error", async () => {
+    it("应该处理连接错误", async () => {
       const error = new Error("Connection failed");
       mockClient.connect.mockRejectedValue(error);
 
@@ -174,7 +174,7 @@ describe("MCPService", () => {
       expect(service.isConnected()).toBe(false);
     });
 
-    it("should throw error if already connecting", async () => {
+    it("如果已在连接中应该抛出错误", async () => {
       mockClient.connect.mockImplementation(() => new Promise(() => {})); // Never resolves
 
       const firstConnect = service.connect();
@@ -188,8 +188,8 @@ describe("MCPService", () => {
     });
   });
 
-  describe("disconnect", () => {
-    it("should disconnect successfully", async () => {
+  describe("断开连接", () => {
+    it("应该成功断开连接", async () => {
       mockClient.connect.mockResolvedValue(undefined);
       mockClient.listTools.mockResolvedValue({ tools: [] });
       mockClient.close.mockResolvedValue(undefined);
@@ -204,7 +204,7 @@ describe("MCPService", () => {
     });
   });
 
-  describe("reconnect", () => {
+  describe("重新连接", () => {
     it("should reconnect successfully", async () => {
       mockClient.connect.mockResolvedValue(undefined);
       mockClient.listTools.mockResolvedValue({ tools: [] });

@@ -59,7 +59,7 @@ vi.mock("./logger/PinoAdapter.js", () => ({
 const originalConsoleError = console.error;
 const mockConsoleError = vi.fn();
 
-describe("Logger", async () => {
+describe("日志记录器", async () => {
   const mockFs = vi.mocked(fs);
   const mockPath = vi.mocked(path);
   const consolaModule = await import("consola");
@@ -120,8 +120,8 @@ describe("Logger", async () => {
     console.error = originalConsoleError;
   });
 
-  describe("constructor", () => {
-    it("should create logger instance with default settings (using Pino)", () => {
+  describe("构造函数", () => {
+    it("应该使用默认设置创建日志记录器实例（使用 Pino）", () => {
       const testLogger = new Logger();
 
       // 现在默认使用 Pino，所以应该创建 PinoAdapter 实例
@@ -130,7 +130,7 @@ describe("Logger", async () => {
       expect(mockCreateConsola).not.toHaveBeenCalled();
     });
 
-    it("should detect daemon mode from environment", () => {
+    it("应该从环境变量检测守护进程模式", () => {
       process.env.XIAOZHI_DAEMON = "true";
       const testLogger = new Logger();
 
@@ -138,7 +138,7 @@ describe("Logger", async () => {
       expect(MockPinoAdapter).toHaveBeenCalled();
     });
 
-    it("should detect non-daemon mode", () => {
+    it("应该检测非守护进程模式", () => {
       process.env.XIAOZHI_DAEMON = "false";
       const testLogger = new Logger();
 
@@ -147,8 +147,8 @@ describe("Logger", async () => {
     });
   });
 
-  describe("initLogFile", () => {
-    it("should initialize log file when it does not exist (Pino mode)", () => {
+  describe("初始化日志文件", () => {
+    it("当日志文件不存在时应该初始化日志文件（Pino 模式）", () => {
       const testLogger = new Logger();
       mockFs.existsSync.mockReturnValue(false);
 
@@ -162,7 +162,7 @@ describe("Logger", async () => {
       expect(MockPinoAdapter).toHaveBeenCalledTimes(2); // 一次构造函数，一次 initLogFile
     });
 
-    it("should initialize log file when it already exists (Pino mode)", () => {
+    it("当日志文件已存在时应该初始化日志文件（Pino 模式）", () => {
       const testLogger = new Logger();
       mockFs.existsSync.mockReturnValue(true);
 
@@ -173,8 +173,8 @@ describe("Logger", async () => {
     });
   });
 
-  describe("enableFileLogging", () => {
-    it("should enable file logging when log file path is set (Pino mode)", () => {
+  describe("启用文件日志", () => {
+    it("当设置日志文件路径时应该启用文件日志（Pino 模式）", () => {
       const testLogger = new Logger();
       testLogger.initLogFile("/test/project");
 
@@ -187,7 +187,7 @@ describe("Logger", async () => {
       expect(MockPinoAdapter).toHaveBeenCalled();
     });
 
-    it("should not enable file logging when log file path is not set (Pino mode)", () => {
+    it("当未设置日志文件路径时不应启用文件日志（Pino 模式）", () => {
       const testLogger = new Logger();
 
       // Clear the mock calls
@@ -199,7 +199,7 @@ describe("Logger", async () => {
       expect(MockPinoAdapter).toHaveBeenCalled();
     });
 
-    it("should disable file logging (Pino mode)", () => {
+    it("应该禁用文件日志（Pino 模式）", () => {
       const testLogger = new Logger();
       testLogger.initLogFile("/test/project");
 
@@ -212,7 +212,7 @@ describe("Logger", async () => {
       expect(MockPinoAdapter).toHaveBeenCalled();
     });
 
-    it("should handle disable when no write stream exists (Pino mode)", () => {
+    it("当不存在写入流时应该处理禁用操作（Pino 模式）", () => {
       const testLogger = new Logger();
 
       // Should not throw error
@@ -220,7 +220,7 @@ describe("Logger", async () => {
     });
   });
 
-  describe("logging methods", () => {
+  describe("日志记录方法", () => {
     let testLogger: Logger;
 
     beforeEach(() => {
@@ -228,7 +228,7 @@ describe("Logger", async () => {
       testLogger.initLogFile("/test/project");
     });
 
-    it("should log info messages (Pino mode)", () => {
+    it("应该记录信息消息（Pino 模式）", () => {
       testLogger.info("Test info message", "arg1", "arg2");
 
       // 在 Pino 模式下，应该调用 PinoAdapter 的方法
@@ -241,7 +241,7 @@ describe("Logger", async () => {
       expect(mockConsolaInstance.info).not.toHaveBeenCalled();
     });
 
-    it("should log success messages (Pino mode)", () => {
+    it("应该记录成功消息（Pino 模式）", () => {
       testLogger.success("Test success message");
 
       expect(mockPinoAdapterInstance.success).toHaveBeenCalledWith(
@@ -250,7 +250,7 @@ describe("Logger", async () => {
       expect(mockConsolaInstance.success).not.toHaveBeenCalled();
     });
 
-    it("should log warning messages (Pino mode)", () => {
+    it("应该记录警告消息（Pino 模式）", () => {
       testLogger.warn("Test warning message");
 
       expect(mockPinoAdapterInstance.warn).toHaveBeenCalledWith(
@@ -259,7 +259,7 @@ describe("Logger", async () => {
       expect(mockConsolaInstance.warn).not.toHaveBeenCalled();
     });
 
-    it("should log error messages (Pino mode)", () => {
+    it("应该记录错误消息（Pino 模式）", () => {
       testLogger.error("Test error message");
 
       expect(mockPinoAdapterInstance.error).toHaveBeenCalledWith(
@@ -268,7 +268,7 @@ describe("Logger", async () => {
       expect(mockConsolaInstance.error).not.toHaveBeenCalled();
     });
 
-    it("should log debug messages (Pino mode)", () => {
+    it("应该记录调试消息（Pino 模式）", () => {
       testLogger.debug("Test debug message");
 
       expect(mockPinoAdapterInstance.debug).toHaveBeenCalledWith(
@@ -277,16 +277,18 @@ describe("Logger", async () => {
       expect(mockConsolaInstance.debug).not.toHaveBeenCalled();
     });
 
-    it("should log general messages (Pino mode)", () => {
+    it("应该记录一般消息（Pino 模式）", () => {
       testLogger.log("Test log message");
 
-      expect(mockPinoAdapterInstance.log).toHaveBeenCalledWith("Test log message");
+      expect(mockPinoAdapterInstance.log).toHaveBeenCalledWith(
+        "Test log message"
+      );
       expect(mockConsolaInstance.log).not.toHaveBeenCalled();
     });
   });
 
-  describe("withTag", () => {
-    it("should return a new instance with tag (Pino mode)", () => {
+  describe("带标签", () => {
+    it("应该返回带标签的新实例（Pino 模式）", () => {
       const testLogger = new Logger();
 
       // Mock the withTag method to return a new Logger instance
@@ -300,8 +302,8 @@ describe("Logger", async () => {
     });
   });
 
-  describe("close", () => {
-    it("should close resources when they exist (Pino mode)", () => {
+  describe("关闭", () => {
+    it("当资源存在时应该关闭资源（Pino 模式）", () => {
       const testLogger = new Logger();
       testLogger.initLogFile("/test/project");
 
@@ -311,7 +313,7 @@ describe("Logger", async () => {
       expect(mockWriteStream.end).not.toHaveBeenCalled();
     });
 
-    it("should handle close when no resources exist (Pino mode)", () => {
+    it("当没有资源存在时应该处理关闭操作（Pino 模式）", () => {
       const testLogger = new Logger();
 
       // Should not throw error
@@ -319,13 +321,13 @@ describe("Logger", async () => {
     });
   });
 
-  describe("singleton instance", () => {
-    it("should export a singleton logger instance", () => {
+  describe("单例实例", () => {
+    it("应该导出单例日志记录器实例", () => {
       expect(logger).toBeInstanceOf(Logger);
     });
   });
 
-  describe("logToFile", () => {
+  describe("记录到文件", () => {
     let testLogger: Logger;
 
     beforeEach(() => {
@@ -333,7 +335,7 @@ describe("Logger", async () => {
       testLogger.initLogFile("/test/project");
     });
 
-    it("should format log messages with timestamp (Pino mode)", () => {
+    it("应该格式化带时间戳的日志消息（Pino 模式）", () => {
       testLogger.info("Test message");
 
       // 在 Pino 模式下，不会直接写入 writeStream
@@ -341,15 +343,18 @@ describe("Logger", async () => {
       expect(mockWriteStream.write).not.toHaveBeenCalled();
     });
 
-    it("should handle object arguments (Pino mode)", () => {
+    it("应该处理对象参数（Pino 模式）", () => {
       const testObj = { key: "value", number: 42 };
       testLogger.info("Test message", testObj);
 
-      expect(mockPinoAdapterInstance.info).toHaveBeenCalledWith("Test message", testObj);
+      expect(mockPinoAdapterInstance.info).toHaveBeenCalledWith(
+        "Test message",
+        testObj
+      );
       expect(mockWriteStream.write).not.toHaveBeenCalled();
     });
 
-    it("should handle mixed argument types (Pino mode)", () => {
+    it("应该处理混合参数类型（Pino 模式）", () => {
       testLogger.info(
         "Test message",
         "string",
@@ -370,7 +375,7 @@ describe("Logger", async () => {
       expect(mockWriteStream.write).not.toHaveBeenCalled();
     });
 
-    it("should not write to file when write stream is null (Pino mode)", () => {
+    it("当写入流为空时不应写入文件（Pino 模式）", () => {
       testLogger.close(); // This sets pinoAdapter to null
 
       testLogger.info("Test message");
@@ -381,8 +386,8 @@ describe("Logger", async () => {
     });
   });
 
-  describe("formatDateTime", () => {
-    it("should format date correctly (legacy test - not applicable in Pino mode)", () => {
+  describe("格式化日期时间", () => {
+    it("应该正确格式化日期（遗留测试 - 在 Pino 模式下不适用）", () => {
       // 这个测试在 Pino 模式下不再适用，因为日期格式化由 Pino 处理
       // 但我们保留测试以确保不会抛出错误
       const testLogger = new Logger();
@@ -392,8 +397,8 @@ describe("Logger", async () => {
     });
   });
 
-  describe("reporter functionality (legacy - not applicable in Pino mode)", () => {
-    it("should use Pino for logging instead of custom reporter", () => {
+  describe("报告器功能（遗留 - 在 Pino 模式下不适用）", () => {
+    it("应该使用 Pino 进行日志记录而不是自定义报告器", () => {
       const testLogger = new Logger();
 
       // 在 Pino 模式下，不会设置自定义 reporter
