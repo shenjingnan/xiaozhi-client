@@ -101,7 +101,7 @@ class StressTester {
 
     const endTime = Date.now();
     this.metrics.duration = endTime - startTime;
-    this.metrics.final = process.memoryUsage();
+    this.metrics.memoryStats.final = process.memoryUsage();
 
     // 计算统计数据
     this.calculateStats();
