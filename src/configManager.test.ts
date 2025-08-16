@@ -38,7 +38,7 @@ vi.mock("node:url", () => ({
   fileURLToPath: vi.fn(),
 }));
 
-describe("ConfigManager", () => {
+describe("配置管理器", () => {
   let configManager: ConfigManager;
   const mockExistsSync = vi.mocked(existsSync);
   const mockReadFileSync = vi.mocked(readFileSync);

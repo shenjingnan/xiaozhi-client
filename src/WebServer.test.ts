@@ -129,7 +129,7 @@ describe("WebServer", () => {
     vi.clearAllMocks();
   });
 
-  it("should start the server on the specified port", async () => {
+  it("应该在指定端口启动服务器", async () => {
     webServer = new WebServer(currentPort);
     await webServer.start();
 
@@ -142,7 +142,7 @@ describe("WebServer", () => {
     expect(data).toHaveProperty("activeMCPServers");
   });
 
-  it("should return config via HTTP API", async () => {
+  it("应该通过 HTTP API 返回配置", async () => {
     webServer = new WebServer(currentPort);
     await webServer.start();
 
@@ -154,7 +154,7 @@ describe("WebServer", () => {
     expect(data.mcpServers).toHaveProperty("test");
   });
 
-  it("should update config via HTTP API", async () => {
+  it("应该通过 HTTP API 更新配置", async () => {
     webServer = new WebServer(currentPort);
     await webServer.start();
 
@@ -175,7 +175,7 @@ describe("WebServer", () => {
     );
   });
 
-  it("should handle WebSocket connections", async () => {
+  it("应该处理 WebSocket 连接", async () => {
     webServer = new WebServer(currentPort);
     await webServer.start();
 
@@ -216,7 +216,7 @@ describe("WebServer", () => {
     });
   });
 
-  it("should update client status", () => {
+  it("应该更新客户端状态", () => {
     webServer = new WebServer(currentPort);
 
     const clientInfo = {
@@ -228,7 +228,7 @@ describe("WebServer", () => {
     webServer.updateStatus(clientInfo);
   });
 
-  it("should handle 404 for unknown routes", async () => {
+  it("应该对未知路由返回 404", async () => {
     webServer = new WebServer(currentPort);
     await webServer.start();
 
@@ -306,7 +306,7 @@ describe("WebServer", () => {
     });
   });
 
-  describe("Auto Restart Feature", () => {
+  describe("自动重启功能", () => {
     let mockGetServiceStatus: any;
     let mockSpawn: any;
 
@@ -317,7 +317,7 @@ describe("WebServer", () => {
       mockSpawn = vi.mocked(spawn);
     });
 
-    it("should not trigger automatic restart when config is updated", async () => {
+    it("配置更新时不应触发自动重启", async () => {
       webServer = new WebServer(currentPort);
       await webServer.start();
 
@@ -340,14 +340,14 @@ describe("WebServer", () => {
       expect(response.status).toBe(200);
       expect(result.success).toBe(true);
 
-      // Wait to ensure no restart is triggered
+      // 等待确保没有触发重启
       await new Promise((resolve) => setTimeout(resolve, 600));
 
       // 验证没有触发重启
       expect(mockSpawn).not.toHaveBeenCalled();
     });
 
-    it("should save config without restart regardless of autoRestart setting", async () => {
+    it("无论自动重启设置如何，都应该保存配置而不重启", async () => {
       webServer = new WebServer(currentPort);
       await webServer.start();
 
@@ -370,17 +370,17 @@ describe("WebServer", () => {
       expect(response.status).toBe(200);
       expect(result.success).toBe(true);
 
-      // Wait to ensure no restart is triggered
+      // 等待确保没有触发重启
       await new Promise((resolve) => setTimeout(resolve, 600));
 
       expect(mockSpawn).not.toHaveBeenCalled();
     });
 
-    it("should broadcast restart status updates on manual restart", async () => {
+    it("手动重启时应广播重启状态更新", async () => {
       webServer = new WebServer(currentPort);
       await webServer.start();
 
-      // Connect a WebSocket client
+      // 连接 WebSocket 客户端
       const ws = new WebSocket(`ws://localhost:${currentPort}`);
       const messages: any[] = [];
 
@@ -392,20 +392,20 @@ describe("WebServer", () => {
         messages.push(JSON.parse(data.toString()));
       });
 
-      // Mock service status
+      // 模拟服务状态
       mockGetServiceStatus.mockReturnValue({
         running: true,
         pid: 12345,
         mode: "daemon",
       });
 
-      // Send manual restart request
+      // 发送手动重启请求
       ws.send(JSON.stringify({ type: "restartService" }));
 
-      // Wait for messages
+      // 等待消息
       await new Promise((resolve) => setTimeout(resolve, 600));
 
-      // Check for restart status message
+      // 检查重启状态消息
       const restartMessage = messages.find((m) => m.type === "restartStatus");
       expect(restartMessage).toBeDefined();
       expect(restartMessage.data.status).toBe("restarting");
@@ -413,26 +413,26 @@ describe("WebServer", () => {
       ws.close();
     });
 
-    it("should start service on manual restart if not running", async () => {
+    it("如果服务未运行，手动重启时应启动服务", async () => {
       webServer = new WebServer(currentPort);
       await webServer.start();
 
-      // Connect a WebSocket client
+      // 连接 WebSocket 客户端
       const ws = new WebSocket(`ws://localhost:${currentPort}`);
 
       await new Promise<void>((resolve) => {
         ws.on("open", resolve);
       });
 
-      // Mock service as not running
+      // 模拟服务未运行
       mockGetServiceStatus.mockReturnValue({
         running: false,
       });
 
-      // Send manual restart request
+      // 发送手动重启请求
       ws.send(JSON.stringify({ type: "restartService" }));
 
-      // Wait for start to be triggered
+      // 等待启动被触发
       await new Promise((resolve) => setTimeout(resolve, 600));
 
       expect(mockSpawn).toHaveBeenCalledWith(

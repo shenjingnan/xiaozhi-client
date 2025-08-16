@@ -12,8 +12,8 @@ import {
   validateMcpServerConfig,
 } from "./mcpServerUtils";
 
-describe("MCP Server Utils - Server Side", () => {
-  describe("getMcpServerCommunicationType", () => {
+describe("MCP 服务器工具 - 服务端", () => {
+  describe("获取 MCP 服务器通信类型", () => {
     it("应该正确识别 stdio 类型的服务", () => {
       const stdioConfig = {
         command: "node",
@@ -97,7 +97,7 @@ describe("MCP Server Utils - Server Side", () => {
     });
   });
 
-  describe("getMcpServerTypeDisplayName", () => {
+  describe("获取 MCP 服务器类型显示名称", () => {
     it("应该返回正确的显示名称", () => {
       const stdioConfig = { command: "node", args: ["test.js"] };
       const sseConfig = {
@@ -112,7 +112,7 @@ describe("MCP Server Utils - Server Side", () => {
     });
   });
 
-  describe("validateMcpServerConfig", () => {
+  describe("验证 MCP 服务器配置", () => {
     it("应该验证 stdio 配置", () => {
       const validStdio = {
         command: "node",

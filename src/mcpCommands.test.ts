@@ -49,7 +49,7 @@ const mockProcessExit = vi.spyOn(process, "exit").mockImplementation(() => {
   throw new Error("process.exit called");
 });
 
-describe("mcpCommands", () => {
+describe("MCP 命令", () => {
   const mockSpinner = {
     start: vi.fn().mockReturnThis(),
     succeed: vi.fn().mockReturnThis(),
@@ -66,7 +66,7 @@ describe("mcpCommands", () => {
     vi.clearAllMocks();
   });
 
-  describe("listMcpServers", () => {
+  describe("列出 MCP 服务", () => {
     const mockServers = {
       calculator: {
         command: "node",
@@ -191,7 +191,7 @@ describe("mcpCommands", () => {
     });
   });
 
-  describe("listServerTools", () => {
+  describe("列出服务工具", () => {
     const mockServers = {
       datetime: {
         command: "node",
@@ -279,7 +279,7 @@ describe("mcpCommands", () => {
     });
   });
 
-  describe("setToolEnabled", () => {
+  describe("设置工具启用状态", () => {
     const mockServers = {
       datetime: {
         command: "node",
@@ -500,7 +500,7 @@ describe("mcpCommands", () => {
   });
 
   describe("字符串宽度计算和截断工具", () => {
-    describe("getDisplayWidth", () => {
+    describe("获取显示宽度", () => {
       it("应该正确计算英文字符的宽度", () => {
         expect(getDisplayWidth("hello")).toBe(5);
         expect(getDisplayWidth("Hello World!")).toBe(12);
@@ -530,7 +530,7 @@ describe("mcpCommands", () => {
       });
     });
 
-    describe("truncateToWidth", () => {
+    describe("截断到指定宽度", () => {
       it("应该不截断宽度限制内的字符串", () => {
         expect(truncateToWidth("hello", 10)).toBe("hello");
         expect(truncateToWidth("你好", 10)).toBe("你好");
