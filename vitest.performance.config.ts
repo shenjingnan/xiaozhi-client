@@ -13,7 +13,9 @@ export default defineConfig({
     globals: true,
     environment: "node",
     // 只包含性能测试
-    include: ["src/performance/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
+    include: [
+      "src/performance/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
+    ],
     exclude: ["node_modules", "dist", "templates/**/*"],
     // 性能测试专用配置
     testTimeout: 300000, // 5分钟超时
@@ -25,7 +27,7 @@ export default defineConfig({
       forks: {
         singleFork: true,
         isolate: true,
-      }
+      },
     },
     // 禁用覆盖率收集以提高性能
     coverage: {

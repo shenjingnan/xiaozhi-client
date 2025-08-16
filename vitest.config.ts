@@ -19,21 +19,23 @@ export default defineConfig({
       "dist",
       "templates/**/*",
       // 默认排除性能测试
-      ...(process.env.VITEST_INCLUDE_PERFORMANCE !== "true" ? [
-        "src/performance/**/*.test.ts"
-      ] : [])
+      ...(process.env.VITEST_INCLUDE_PERFORMANCE !== "true"
+        ? ["src/performance/**/*.test.ts"]
+        : []),
     ],
     // 设置合理的超时时间
-    testTimeout: process.env.VITEST_INCLUDE_PERFORMANCE === "true" ? 300000 : 30000, // 5分钟 vs 30秒
+    testTimeout:
+      process.env.VITEST_INCLUDE_PERFORMANCE === "true" ? 300000 : 30000, // 5分钟 vs 30秒
     // 性能测试时禁用并发以避免资源竞争
-    pool: process.env.VITEST_INCLUDE_PERFORMANCE === "true" ? "forks" : "threads",
+    pool:
+      process.env.VITEST_INCLUDE_PERFORMANCE === "true" ? "forks" : "threads",
     poolOptions: {
       threads: {
-        singleThread: process.env.VITEST_INCLUDE_PERFORMANCE === "true"
+        singleThread: process.env.VITEST_INCLUDE_PERFORMANCE === "true",
       },
       forks: {
-        singleFork: process.env.VITEST_INCLUDE_PERFORMANCE === "true"
-      }
+        singleFork: process.env.VITEST_INCLUDE_PERFORMANCE === "true",
+      },
     },
     coverage: {
       enabled: true,

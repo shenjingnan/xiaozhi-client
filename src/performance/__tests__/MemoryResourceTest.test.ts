@@ -363,8 +363,12 @@ describe("内存和资源使用验证", () => {
   const longTestDuration = isPerformanceMode ? 180000 : quickTestDuration; // 3分钟 vs 10秒
 
   // 调试信息
-  console.log(`🔧 性能测试配置: isPerformanceMode=${isPerformanceMode}, VITEST_INCLUDE_PERFORMANCE=${process.env.VITEST_INCLUDE_PERFORMANCE}`);
-  console.log(`⏱️  测试时长配置: medium=${mediumTestDuration}ms, long=${longTestDuration}ms`);
+  console.log(
+    `🔧 性能测试配置: isPerformanceMode=${isPerformanceMode}, VITEST_INCLUDE_PERFORMANCE=${process.env.VITEST_INCLUDE_PERFORMANCE}`
+  );
+  console.log(
+    `⏱️  测试时长配置: medium=${mediumTestDuration}ms, long=${longTestDuration}ms`
+  );
 
   beforeEach(() => {
     tester = new MemoryResourceTester();
@@ -374,96 +378,114 @@ describe("内存和资源使用验证", () => {
     // 清理
   });
 
-  it("应该验证基础日志记录的内存使用", async () => {
-    const opsPerSecond = isPerformanceMode ? 50 : 10; // 降低操作频率用于快速测试
-    const metrics = await tester.runMemoryLeakTest(
-      "基础日志记录",
-      mediumTestDuration,
-      opsPerSecond,
-      true
-    );
+  it(
+    "应该验证基础日志记录的内存使用",
+    async () => {
+      const opsPerSecond = isPerformanceMode ? 50 : 10; // 降低操作频率用于快速测试
+      const metrics = await tester.runMemoryLeakTest(
+        "基础日志记录",
+        mediumTestDuration,
+        opsPerSecond,
+        true
+      );
 
-    results.set("基础日志记录", metrics);
+      results.set("基础日志记录", metrics);
 
-    // 验证内存使用合理 - 根据测试模式调整期望
-    expect(metrics.memoryLeakDetected).toBe(false);
-    const expectedGrowthRate = isPerformanceMode ? 10 : 30; // 快速测试允许更高增长率
-    const expectedPeakUsage = isPerformanceMode ? 300 : 150; // 快速测试峰值更低
-    expect(metrics.memoryGrowthRate).toBeLessThan(expectedGrowthRate);
-    expect(metrics.peakMemoryUsage).toBeLessThan(expectedPeakUsage);
-  }, isPerformanceMode ? 90000 : 20000);
+      // 验证内存使用合理 - 根据测试模式调整期望
+      expect(metrics.memoryLeakDetected).toBe(false);
+      const expectedGrowthRate = isPerformanceMode ? 10 : 30; // 快速测试允许更高增长率
+      const expectedPeakUsage = isPerformanceMode ? 300 : 150; // 快速测试峰值更低
+      expect(metrics.memoryGrowthRate).toBeLessThan(expectedGrowthRate);
+      expect(metrics.peakMemoryUsage).toBeLessThan(expectedPeakUsage);
+    },
+    isPerformanceMode ? 90000 : 20000
+  );
 
-  it("应该验证高频日志记录的内存稳定性", async () => {
-    const opsPerSecond = isPerformanceMode ? 200 : 20;
-    const metrics = await tester.runMemoryLeakTest(
-      "高频日志记录",
-      mediumTestDuration,
-      opsPerSecond,
-      true
-    );
+  it(
+    "应该验证高频日志记录的内存稳定性",
+    async () => {
+      const opsPerSecond = isPerformanceMode ? 200 : 20;
+      const metrics = await tester.runMemoryLeakTest(
+        "高频日志记录",
+        mediumTestDuration,
+        opsPerSecond,
+        true
+      );
 
-    results.set("高频日志记录", metrics);
+      results.set("高频日志记录", metrics);
 
-    expect(metrics.memoryLeakDetected).toBe(false);
-    const expectedGrowthRate = isPerformanceMode ? 20 : 50;
-    expect(metrics.memoryGrowthRate).toBeLessThan(expectedGrowthRate);
-  }, isPerformanceMode ? 90000 : 20000);
+      expect(metrics.memoryLeakDetected).toBe(false);
+      const expectedGrowthRate = isPerformanceMode ? 20 : 50;
+      expect(metrics.memoryGrowthRate).toBeLessThan(expectedGrowthRate);
+    },
+    isPerformanceMode ? 90000 : 20000
+  );
 
-  it("应该验证长时间运行的内存稳定性", async () => {
-    const opsPerSecond = isPerformanceMode ? 30 : 5;
-    const metrics = await tester.runMemoryLeakTest(
-      "长时间运行",
-      longTestDuration,
-      opsPerSecond,
-      true
-    );
+  it(
+    "应该验证长时间运行的内存稳定性",
+    async () => {
+      const opsPerSecond = isPerformanceMode ? 30 : 5;
+      const metrics = await tester.runMemoryLeakTest(
+        "长时间运行",
+        longTestDuration,
+        opsPerSecond,
+        true
+      );
 
-    results.set("长时间运行", metrics);
+      results.set("长时间运行", metrics);
 
-    expect(metrics.memoryLeakDetected).toBe(false);
-    const expectedGrowthRate = isPerformanceMode ? 5 : 20;
-    expect(metrics.memoryGrowthRate).toBeLessThan(expectedGrowthRate);
+      expect(metrics.memoryLeakDetected).toBe(false);
+      const expectedGrowthRate = isPerformanceMode ? 5 : 20;
+      expect(metrics.memoryGrowthRate).toBeLessThan(expectedGrowthRate);
 
-    // 生成最终报告
-    const report = tester.generateMemoryReport(results);
-    console.log(report);
-  }, isPerformanceMode ? 240000 : 25000); // 4分钟 vs 25秒超时
+      // 生成最终报告
+      const report = tester.generateMemoryReport(results);
+      console.log(report);
+    },
+    isPerformanceMode ? 240000 : 25000
+  ); // 4分钟 vs 25秒超时
 
-  it("应该对比Pino与Console的内存使用", async () => {
-    const testDuration = isPerformanceMode ? 30000 : quickTestDuration;
-    const opsPerSecond = isPerformanceMode ? 100 : 10;
+  it(
+    "应该对比Pino与Console的内存使用",
+    async () => {
+      const testDuration = isPerformanceMode ? 30000 : quickTestDuration;
+      const opsPerSecond = isPerformanceMode ? 100 : 10;
 
-    // 测试Console模式
-    const consoleMetrics = await tester.runMemoryLeakTest(
-      "Console模式",
-      testDuration,
-      opsPerSecond,
-      false
-    );
+      // 测试Console模式
+      const consoleMetrics = await tester.runMemoryLeakTest(
+        "Console模式",
+        testDuration,
+        opsPerSecond,
+        false
+      );
 
-    // 测试Pino模式
-    const pinoMetrics = await tester.runMemoryLeakTest(
-      "Pino模式",
-      testDuration,
-      opsPerSecond,
-      true
-    );
+      // 测试Pino模式
+      const pinoMetrics = await tester.runMemoryLeakTest(
+        "Pino模式",
+        testDuration,
+        opsPerSecond,
+        true
+      );
 
-    results.set("Console模式", consoleMetrics);
-    results.set("Pino模式", pinoMetrics);
+      results.set("Console模式", consoleMetrics);
+      results.set("Pino模式", pinoMetrics);
 
-    // 对比分析
-    const memoryDiff =
-      pinoMetrics.peakMemoryUsage - consoleMetrics.peakMemoryUsage;
-    console.log("\n📊 内存使用对比:");
-    console.log(
-      `  Console模式峰值: ${consoleMetrics.peakMemoryUsage.toFixed(2)} MB`
-    );
-    console.log(`  Pino模式峰值: ${pinoMetrics.peakMemoryUsage.toFixed(2)} MB`);
-    console.log(`  差异: ${memoryDiff.toFixed(2)} MB`);
+      // 对比分析
+      const memoryDiff =
+        pinoMetrics.peakMemoryUsage - consoleMetrics.peakMemoryUsage;
+      console.log("\n📊 内存使用对比:");
+      console.log(
+        `  Console模式峰值: ${consoleMetrics.peakMemoryUsage.toFixed(2)} MB`
+      );
+      console.log(
+        `  Pino模式峰值: ${pinoMetrics.peakMemoryUsage.toFixed(2)} MB`
+      );
+      console.log(`  差异: ${memoryDiff.toFixed(2)} MB`);
 
-    // Pino的内存使用应该在合理范围内
-    const expectedMemoryDiff = isPerformanceMode ? 100 : 50;
-    expect(Math.abs(memoryDiff)).toBeLessThan(expectedMemoryDiff);
-  }, isPerformanceMode ? 120000 : 30000);
+      // Pino的内存使用应该在合理范围内
+      const expectedMemoryDiff = isPerformanceMode ? 100 : 50;
+      expect(Math.abs(memoryDiff)).toBeLessThan(expectedMemoryDiff);
+    },
+    isPerformanceMode ? 120000 : 30000
+  );
 });

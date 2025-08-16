@@ -471,75 +471,99 @@ describe("日志系统压力测试", () => {
     },
   ];
 
-  it("应该通过高并发基础测试", async () => {
-    const config = stressTestConfigs[0];
-    const metrics = await tester.runStressTest(config);
-    results.set(config.name, metrics);
+  it(
+    "应该通过高并发基础测试",
+    async () => {
+      const config = stressTestConfigs[0];
+      const metrics = await tester.runStressTest(config);
+      results.set(config.name, metrics);
 
-    // 基本稳定性检查 - 根据测试模式调整期望
-    const expectedErrorRate = isPerformanceMode ? 5 : 15; // 快速测试允许更高错误率
-    const expectedThroughputRatio = isPerformanceMode ? 0.7 : 0.5; // 快速测试降低吞吐量要求
+      // 基本稳定性检查 - 根据测试模式调整期望
+      const expectedErrorRate = isPerformanceMode ? 5 : 15; // 快速测试允许更高错误率
+      const expectedThroughputRatio = isPerformanceMode ? 0.7 : 0.5; // 快速测试降低吞吐量要求
 
-    expect(metrics.errorRate).toBeLessThan(expectedErrorRate);
-    expect(metrics.averageThroughput).toBeGreaterThan(config.targetQPS * expectedThroughputRatio);
+      expect(metrics.errorRate).toBeLessThan(expectedErrorRate);
+      expect(metrics.averageThroughput).toBeGreaterThan(
+        config.targetQPS * expectedThroughputRatio
+      );
 
-    // 内存增长检查
-    const memoryGrowth =
-      (metrics.memoryStats.final.heapUsed -
-        metrics.memoryStats.initial.heapUsed) /
-      1024 /
-      1024;
-    const expectedMemoryGrowth = isPerformanceMode ? 200 : 50; // 快速测试内存增长更少
-    expect(memoryGrowth).toBeLessThan(expectedMemoryGrowth);
-  }, isPerformanceMode ? 60000 : 15000);
+      // 内存增长检查
+      const memoryGrowth =
+        (metrics.memoryStats.final.heapUsed -
+          metrics.memoryStats.initial.heapUsed) /
+        1024 /
+        1024;
+      const expectedMemoryGrowth = isPerformanceMode ? 200 : 50; // 快速测试内存增长更少
+      expect(memoryGrowth).toBeLessThan(expectedMemoryGrowth);
+    },
+    isPerformanceMode ? 60000 : 15000
+  );
 
-  it("应该通过高并发全功能测试", async () => {
-    const config = stressTestConfigs[1];
-    const metrics = await tester.runStressTest(config);
-    results.set(config.name, metrics);
+  it(
+    "应该通过高并发全功能测试",
+    async () => {
+      const config = stressTestConfigs[1];
+      const metrics = await tester.runStressTest(config);
+      results.set(config.name, metrics);
 
-    const expectedErrorRate = isPerformanceMode ? 10 : 20;
-    const expectedThroughputRatio = isPerformanceMode ? 0.6 : 0.4;
+      const expectedErrorRate = isPerformanceMode ? 10 : 20;
+      const expectedThroughputRatio = isPerformanceMode ? 0.6 : 0.4;
 
-    expect(metrics.errorRate).toBeLessThan(expectedErrorRate);
-    expect(metrics.averageThroughput).toBeGreaterThan(config.targetQPS * expectedThroughputRatio);
-  }, isPerformanceMode ? 60000 : 15000);
+      expect(metrics.errorRate).toBeLessThan(expectedErrorRate);
+      expect(metrics.averageThroughput).toBeGreaterThan(
+        config.targetQPS * expectedThroughputRatio
+      );
+    },
+    isPerformanceMode ? 60000 : 15000
+  );
 
-  it("应该通过极高并发采样测试", async () => {
-    const config = stressTestConfigs[2];
-    const metrics = await tester.runStressTest(config);
-    results.set(config.name, metrics);
+  it(
+    "应该通过极高并发采样测试",
+    async () => {
+      const config = stressTestConfigs[2];
+      const metrics = await tester.runStressTest(config);
+      results.set(config.name, metrics);
 
-    const expectedErrorRate = isPerformanceMode ? 5 : 15;
-    const expectedThroughputRatio = isPerformanceMode ? 0.5 : 0.3;
+      const expectedErrorRate = isPerformanceMode ? 5 : 15;
+      const expectedThroughputRatio = isPerformanceMode ? 0.5 : 0.3;
 
-    expect(metrics.errorRate).toBeLessThan(expectedErrorRate);
-    expect(metrics.averageThroughput).toBeGreaterThan(config.targetQPS * expectedThroughputRatio);
-  }, isPerformanceMode ? 60000 : 15000);
+      expect(metrics.errorRate).toBeLessThan(expectedErrorRate);
+      expect(metrics.averageThroughput).toBeGreaterThan(
+        config.targetQPS * expectedThroughputRatio
+      );
+    },
+    isPerformanceMode ? 60000 : 15000
+  );
 
-  it("应该通过长时间稳定性测试", async () => {
-    const config = stressTestConfigs[3];
-    const metrics = await tester.runStressTest(config);
-    results.set(config.name, metrics);
+  it(
+    "应该通过长时间稳定性测试",
+    async () => {
+      const config = stressTestConfigs[3];
+      const metrics = await tester.runStressTest(config);
+      results.set(config.name, metrics);
 
-    // 长时间运行的稳定性要求 - 根据测试模式调整
-    const expectedErrorRate = isPerformanceMode ? 2 : 10;
-    const expectedThroughputRatio = isPerformanceMode ? 0.8 : 0.5;
-    const expectedMemoryGrowth = isPerformanceMode ? 100 : 30;
+      // 长时间运行的稳定性要求 - 根据测试模式调整
+      const expectedErrorRate = isPerformanceMode ? 2 : 10;
+      const expectedThroughputRatio = isPerformanceMode ? 0.8 : 0.5;
+      const expectedMemoryGrowth = isPerformanceMode ? 100 : 30;
 
-    expect(metrics.errorRate).toBeLessThan(expectedErrorRate);
-    expect(metrics.averageThroughput).toBeGreaterThan(config.targetQPS * expectedThroughputRatio);
+      expect(metrics.errorRate).toBeLessThan(expectedErrorRate);
+      expect(metrics.averageThroughput).toBeGreaterThan(
+        config.targetQPS * expectedThroughputRatio
+      );
 
-    // 内存泄漏检查
-    const memoryGrowth =
-      (metrics.memoryStats.final.heapUsed -
-        metrics.memoryStats.initial.heapUsed) /
-      1024 /
-      1024;
-    expect(memoryGrowth).toBeLessThan(expectedMemoryGrowth);
+      // 内存泄漏检查
+      const memoryGrowth =
+        (metrics.memoryStats.final.heapUsed -
+          metrics.memoryStats.initial.heapUsed) /
+        1024 /
+        1024;
+      expect(memoryGrowth).toBeLessThan(expectedMemoryGrowth);
 
-    // 生成最终报告
-    const report = tester.generateStressTestReport(results);
-    console.log(report);
-  }, isPerformanceMode ? 180000 : 20000); // 3分钟 vs 20秒超时
+      // 生成最终报告
+      const report = tester.generateStressTestReport(results);
+      console.log(report);
+    },
+    isPerformanceMode ? 180000 : 20000
+  ); // 3分钟 vs 20秒超时
 });
