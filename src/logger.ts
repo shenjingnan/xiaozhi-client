@@ -37,14 +37,8 @@ export class Logger {
   }
 
   private initializePino(): void {
-    const config: PinoAdapterConfig = {
-      level: process.env.XIAOZHI_LOG_LEVEL || "info",
-      isDaemonMode: this.isDaemonMode,
-      logFilePath: this.logFilePath || "./xiaozhi.log",
-      enableFileLogging: true,
-    };
-
-    this.pinoAdapter = new PinoAdapter(config);
+    // 使用新的PinoAdapter，它会自动从PinoConfigManager获取配置
+    this.pinoAdapter = new PinoAdapter();
   }
 
   private initializeOriginal(): void {
@@ -257,10 +251,9 @@ export class Logger {
   withTag(tag: string): Logger {
     if (this.usePino && this.pinoAdapter) {
       // 使用Pino的子logger功能
-      const childAdapter = this.pinoAdapter.withTag(tag);
       const childLogger = new Logger();
       childLogger.usePino = true;
-      childLogger.pinoAdapter = childAdapter;
+      childLogger.pinoAdapter = new PinoAdapter(undefined, tag);
       childLogger.isDaemonMode = this.isDaemonMode;
       childLogger.logFilePath = this.logFilePath;
       return childLogger;
