@@ -24,8 +24,7 @@ export class Logger {
   private usePino: boolean;
 
   constructor() {
-    // 检查是否启用Pino
-    this.usePino = process.env.XIAOZHI_USE_PINO === "true";
+    this.usePino = true;
     // 检查是否为守护进程模式
     this.isDaemonMode = process.env.XIAOZHI_DAEMON === "true";
 
