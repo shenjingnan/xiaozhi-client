@@ -421,12 +421,18 @@ describe("日志系统压力测试", () => {
     // 清理
   });
 
+  // 根据环境变量调整测试配置
+  const isPerformanceMode = process.env.VITEST_INCLUDE_PERFORMANCE === "true";
+  const quickTestDuration = 5000; // 5秒用于快速验证
+  const fullTestDuration = isPerformanceMode ? 30000 : quickTestDuration; // 30秒用于完整测试
+  const longTestDuration = isPerformanceMode ? 120000 : quickTestDuration; // 2分钟用于长时间测试
+
   const stressTestConfigs: StressTestConfig[] = [
     {
       name: "高并发基础测试",
-      duration: 30000, // 30秒
-      targetQPS: 1000,
-      concurrency: 10,
+      duration: fullTestDuration,
+      targetQPS: isPerformanceMode ? 1000 : 100, // 降低QPS用于快速测试
+      concurrency: isPerformanceMode ? 10 : 2,
       usePino: true,
       useContext: false,
       useStructured: false,
@@ -434,9 +440,9 @@ describe("日志系统压力测试", () => {
     },
     {
       name: "高并发全功能测试",
-      duration: 30000,
-      targetQPS: 500,
-      concurrency: 10,
+      duration: fullTestDuration,
+      targetQPS: isPerformanceMode ? 500 : 50,
+      concurrency: isPerformanceMode ? 10 : 2,
       usePino: true,
       useContext: true,
       useStructured: true,
@@ -444,9 +450,9 @@ describe("日志系统压力测试", () => {
     },
     {
       name: "极高并发采样测试",
-      duration: 30000,
-      targetQPS: 2000,
-      concurrency: 20,
+      duration: fullTestDuration,
+      targetQPS: isPerformanceMode ? 2000 : 100,
+      concurrency: isPerformanceMode ? 20 : 3,
       usePino: true,
       useContext: true,
       useStructured: true,
@@ -455,9 +461,9 @@ describe("日志系统压力测试", () => {
     },
     {
       name: "长时间稳定性测试",
-      duration: 120000, // 2分钟
-      targetQPS: 200,
-      concurrency: 5,
+      duration: longTestDuration,
+      targetQPS: isPerformanceMode ? 200 : 20,
+      concurrency: isPerformanceMode ? 5 : 1,
       usePino: true,
       useContext: true,
       useStructured: true,
@@ -465,14 +471,17 @@ describe("日志系统压力测试", () => {
     },
   ];
 
-  it.skip("应该通过高并发基础测试", async () => {
+  it("应该通过高并发基础测试", async () => {
     const config = stressTestConfigs[0];
     const metrics = await tester.runStressTest(config);
     results.set(config.name, metrics);
 
-    // 基本稳定性检查
-    expect(metrics.errorRate).toBeLessThan(5); // 错误率应低于5%
-    expect(metrics.averageThroughput).toBeGreaterThan(config.targetQPS * 0.7); // 至少达到目标QPS的70%
+    // 基本稳定性检查 - 根据测试模式调整期望
+    const expectedErrorRate = isPerformanceMode ? 5 : 15; // 快速测试允许更高错误率
+    const expectedThroughputRatio = isPerformanceMode ? 0.7 : 0.5; // 快速测试降低吞吐量要求
+
+    expect(metrics.errorRate).toBeLessThan(expectedErrorRate);
+    expect(metrics.averageThroughput).toBeGreaterThan(config.targetQPS * expectedThroughputRatio);
 
     // 内存增长检查
     const memoryGrowth =
@@ -480,35 +489,46 @@ describe("日志系统压力测试", () => {
         metrics.memoryStats.initial.heapUsed) /
       1024 /
       1024;
-    expect(memoryGrowth).toBeLessThan(200); // 内存增长不应超过200MB
-  }, 60000);
+    const expectedMemoryGrowth = isPerformanceMode ? 200 : 50; // 快速测试内存增长更少
+    expect(memoryGrowth).toBeLessThan(expectedMemoryGrowth);
+  }, isPerformanceMode ? 60000 : 15000);
 
-  it.skip("应该通过高并发全功能测试", async () => {
+  it("应该通过高并发全功能测试", async () => {
     const config = stressTestConfigs[1];
     const metrics = await tester.runStressTest(config);
     results.set(config.name, metrics);
 
-    expect(metrics.errorRate).toBeLessThan(10); // 全功能模式下允许稍高的错误率
-    expect(metrics.averageThroughput).toBeGreaterThan(config.targetQPS * 0.6); // 至少达到目标QPS的60%
-  }, 60000);
+    const expectedErrorRate = isPerformanceMode ? 10 : 20;
+    const expectedThroughputRatio = isPerformanceMode ? 0.6 : 0.4;
 
-  it.skip("应该通过极高并发采样测试", async () => {
+    expect(metrics.errorRate).toBeLessThan(expectedErrorRate);
+    expect(metrics.averageThroughput).toBeGreaterThan(config.targetQPS * expectedThroughputRatio);
+  }, isPerformanceMode ? 60000 : 15000);
+
+  it("应该通过极高并发采样测试", async () => {
     const config = stressTestConfigs[2];
     const metrics = await tester.runStressTest(config);
     results.set(config.name, metrics);
 
-    expect(metrics.errorRate).toBeLessThan(5); // 采样应该降低错误率
-    expect(metrics.averageThroughput).toBeGreaterThan(config.targetQPS * 0.5); // 极高并发下的最低要求
-  }, 60000);
+    const expectedErrorRate = isPerformanceMode ? 5 : 15;
+    const expectedThroughputRatio = isPerformanceMode ? 0.5 : 0.3;
+
+    expect(metrics.errorRate).toBeLessThan(expectedErrorRate);
+    expect(metrics.averageThroughput).toBeGreaterThan(config.targetQPS * expectedThroughputRatio);
+  }, isPerformanceMode ? 60000 : 15000);
 
   it("应该通过长时间稳定性测试", async () => {
     const config = stressTestConfigs[3];
     const metrics = await tester.runStressTest(config);
     results.set(config.name, metrics);
 
-    // 长时间运行的稳定性要求更严格
-    expect(metrics.errorRate).toBeLessThan(2); // 错误率应低于2%
-    expect(metrics.averageThroughput).toBeGreaterThan(config.targetQPS * 0.8); // 至少达到目标QPS的80%
+    // 长时间运行的稳定性要求 - 根据测试模式调整
+    const expectedErrorRate = isPerformanceMode ? 2 : 10;
+    const expectedThroughputRatio = isPerformanceMode ? 0.8 : 0.5;
+    const expectedMemoryGrowth = isPerformanceMode ? 100 : 30;
+
+    expect(metrics.errorRate).toBeLessThan(expectedErrorRate);
+    expect(metrics.averageThroughput).toBeGreaterThan(config.targetQPS * expectedThroughputRatio);
 
     // 内存泄漏检查
     const memoryGrowth =
@@ -516,10 +536,10 @@ describe("日志系统压力测试", () => {
         metrics.memoryStats.initial.heapUsed) /
       1024 /
       1024;
-    expect(memoryGrowth).toBeLessThan(100); // 长时间运行内存增长应更少
+    expect(memoryGrowth).toBeLessThan(expectedMemoryGrowth);
 
     // 生成最终报告
     const report = tester.generateStressTestReport(results);
     console.log(report);
-  }, 180000); // 3分钟超时
+  }, isPerformanceMode ? 180000 : 20000); // 3分钟 vs 20秒超时
 });

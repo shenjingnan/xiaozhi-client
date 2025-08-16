@@ -356,6 +356,16 @@ describe("内存和资源使用验证", () => {
   let tester: MemoryResourceTester;
   const results = new Map<string, ResourceUsageMetrics>();
 
+  // 根据环境变量调整测试配置
+  const isPerformanceMode = process.env.VITEST_INCLUDE_PERFORMANCE === "true";
+  const quickTestDuration = 10000; // 10秒用于快速验证
+  const mediumTestDuration = isPerformanceMode ? 60000 : quickTestDuration; // 1分钟 vs 10秒
+  const longTestDuration = isPerformanceMode ? 180000 : quickTestDuration; // 3分钟 vs 10秒
+
+  // 调试信息
+  console.log(`🔧 性能测试配置: isPerformanceMode=${isPerformanceMode}, VITEST_INCLUDE_PERFORMANCE=${process.env.VITEST_INCLUDE_PERFORMANCE}`);
+  console.log(`⏱️  测试时长配置: medium=${mediumTestDuration}ms, long=${longTestDuration}ms`);
+
   beforeEach(() => {
     tester = new MemoryResourceTester();
   });
@@ -365,67 +375,77 @@ describe("内存和资源使用验证", () => {
   });
 
   it("应该验证基础日志记录的内存使用", async () => {
+    const opsPerSecond = isPerformanceMode ? 50 : 10; // 降低操作频率用于快速测试
     const metrics = await tester.runMemoryLeakTest(
       "基础日志记录",
-      60000, // 1分钟
-      50, // 50 ops/sec
+      mediumTestDuration,
+      opsPerSecond,
       true
     );
 
     results.set("基础日志记录", metrics);
 
-    // 验证内存使用合理
+    // 验证内存使用合理 - 根据测试模式调整期望
     expect(metrics.memoryLeakDetected).toBe(false);
-    expect(metrics.memoryGrowthRate).toBeLessThan(10); // 每分钟增长不超过10MB
-    expect(metrics.peakMemoryUsage).toBeLessThan(300); // 峰值不超过300MB
-  }, 90000);
+    const expectedGrowthRate = isPerformanceMode ? 10 : 30; // 快速测试允许更高增长率
+    const expectedPeakUsage = isPerformanceMode ? 300 : 150; // 快速测试峰值更低
+    expect(metrics.memoryGrowthRate).toBeLessThan(expectedGrowthRate);
+    expect(metrics.peakMemoryUsage).toBeLessThan(expectedPeakUsage);
+  }, isPerformanceMode ? 90000 : 20000);
 
   it("应该验证高频日志记录的内存稳定性", async () => {
+    const opsPerSecond = isPerformanceMode ? 200 : 20;
     const metrics = await tester.runMemoryLeakTest(
       "高频日志记录",
-      60000, // 1分钟
-      200, // 200 ops/sec
+      mediumTestDuration,
+      opsPerSecond,
       true
     );
 
     results.set("高频日志记录", metrics);
 
     expect(metrics.memoryLeakDetected).toBe(false);
-    expect(metrics.memoryGrowthRate).toBeLessThan(20); // 高频下允许更高的增长率
-  }, 90000);
+    const expectedGrowthRate = isPerformanceMode ? 20 : 50;
+    expect(metrics.memoryGrowthRate).toBeLessThan(expectedGrowthRate);
+  }, isPerformanceMode ? 90000 : 20000);
 
   it("应该验证长时间运行的内存稳定性", async () => {
+    const opsPerSecond = isPerformanceMode ? 30 : 5;
     const metrics = await tester.runMemoryLeakTest(
       "长时间运行",
-      180000, // 3分钟
-      30, // 30 ops/sec
+      longTestDuration,
+      opsPerSecond,
       true
     );
 
     results.set("长时间运行", metrics);
 
     expect(metrics.memoryLeakDetected).toBe(false);
-    expect(metrics.memoryGrowthRate).toBeLessThan(5); // 长时间运行应该更稳定
+    const expectedGrowthRate = isPerformanceMode ? 5 : 20;
+    expect(metrics.memoryGrowthRate).toBeLessThan(expectedGrowthRate);
 
     // 生成最终报告
     const report = tester.generateMemoryReport(results);
     console.log(report);
-  }, 240000); // 4分钟超时
+  }, isPerformanceMode ? 240000 : 25000); // 4分钟 vs 25秒超时
 
   it("应该对比Pino与Console的内存使用", async () => {
+    const testDuration = isPerformanceMode ? 30000 : quickTestDuration;
+    const opsPerSecond = isPerformanceMode ? 100 : 10;
+
     // 测试Console模式
     const consoleMetrics = await tester.runMemoryLeakTest(
       "Console模式",
-      30000, // 30秒
-      100, // 100 ops/sec
+      testDuration,
+      opsPerSecond,
       false
     );
 
     // 测试Pino模式
     const pinoMetrics = await tester.runMemoryLeakTest(
       "Pino模式",
-      30000, // 30秒
-      100, // 100 ops/sec
+      testDuration,
+      opsPerSecond,
       true
     );
 
@@ -443,6 +463,7 @@ describe("内存和资源使用验证", () => {
     console.log(`  差异: ${memoryDiff.toFixed(2)} MB`);
 
     // Pino的内存使用应该在合理范围内
-    expect(Math.abs(memoryDiff)).toBeLessThan(100); // 差异不应超过100MB
-  }, 120000);
+    const expectedMemoryDiff = isPerformanceMode ? 100 : 50;
+    expect(Math.abs(memoryDiff)).toBeLessThan(expectedMemoryDiff);
+  }, isPerformanceMode ? 120000 : 30000);
 });

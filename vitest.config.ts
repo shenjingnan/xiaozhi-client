@@ -14,7 +14,27 @@ export default defineConfig({
     globals: true,
     environment: "node",
     include: ["src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
-    exclude: ["node_modules", "dist", "templates/**/*"],
+    exclude: [
+      "node_modules",
+      "dist",
+      "templates/**/*",
+      // 默认排除性能测试
+      ...(process.env.VITEST_INCLUDE_PERFORMANCE !== "true" ? [
+        "src/performance/**/*.test.ts"
+      ] : [])
+    ],
+    // 设置合理的超时时间
+    testTimeout: process.env.VITEST_INCLUDE_PERFORMANCE === "true" ? 300000 : 30000, // 5分钟 vs 30秒
+    // 性能测试时禁用并发以避免资源竞争
+    pool: process.env.VITEST_INCLUDE_PERFORMANCE === "true" ? "forks" : "threads",
+    poolOptions: {
+      threads: {
+        singleThread: process.env.VITEST_INCLUDE_PERFORMANCE === "true"
+      },
+      forks: {
+        singleFork: process.env.VITEST_INCLUDE_PERFORMANCE === "true"
+      }
+    },
     coverage: {
       enabled: true,
       provider: "v8",
