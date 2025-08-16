@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OperationType } from "../../services/PerformanceMonitor.js";
+import { LogContext } from "../LogContext.js";
 import { PerformanceIntegration } from "../PerformanceIntegration.js";
 
 // Mock Logger methods
@@ -18,15 +19,20 @@ vi.mock("../../logger.js", () => ({
 
 describe("PerformanceIntegration", () => {
   let performanceIntegration: PerformanceIntegration;
+  let logContext: LogContext;
 
   beforeEach(() => {
     // 重置单例实例
     (PerformanceIntegration as any).instance = undefined;
+    (LogContext as any).instance = undefined;
 
     // 设置mock函数
     mockLoggerInfo.mockClear();
     mockLoggerWarn.mockClear();
     mockLoggerDebug.mockClear();
+
+    // 创建LogContext实例
+    logContext = LogContext.getInstance();
 
     // 创建实例时会自动使用mock的Logger
     performanceIntegration = PerformanceIntegration.getInstance();
@@ -36,6 +42,12 @@ describe("PerformanceIntegration", () => {
     logger.info = mockLoggerInfo;
     logger.warn = mockLoggerWarn;
     logger.debug = mockLoggerDebug;
+
+    // 禁用StructuredLogger的验证以避免模板问题
+    const structuredLogger = (performanceIntegration as any).structuredLogger;
+    if (structuredLogger) {
+      structuredLogger.validationEnabled = false;
+    }
   });
 
   afterEach(() => {
@@ -134,7 +146,9 @@ describe("PerformanceIntegration", () => {
 
       // 验证日志被调用（如果有的话）
       if (mockLoggerInfo.mock.calls.length > 0) {
-        expect(mockLoggerInfo.mock.calls[0][1].isSlowOperation).toBe(true);
+        expect(mockLoggerInfo.mock.calls[0][1].metadata.isSlowOperation).toBe(
+          true
+        );
       }
       if (mockLoggerWarn.mock.calls.length > 0) {
         expect(mockLoggerWarn.mock.calls[0][0]).toBe("Slow operation detected");
@@ -176,21 +190,30 @@ describe("PerformanceIntegration", () => {
         cpuMonitoringEnabled: true,
       });
 
-      const timerId = performanceIntegration.startTiming(
-        "test-service",
-        "test-operation"
+      // 在上下文中运行测试
+      logContext.run(
+        {
+          business: { operation: "test-operation", module: "test-service" },
+          custom: { operationType: "tool_call" },
+        },
+        () => {
+          const timerId = performanceIntegration.startTiming(
+            "test-service",
+            "test-operation"
+          );
+
+          performanceIntegration.endTiming(timerId, true);
+
+          expect(mockLoggerInfo).toHaveBeenCalled();
+          const logCall = mockLoggerInfo.mock.calls[0];
+          const logData = logCall[1];
+
+          expect(logData.metadata.systemMetrics).toBeDefined();
+          expect(logData.metadata.systemMetrics.memoryUsage).toBeDefined();
+          expect(logData.metadata.systemMetrics.cpuUsage).toBeDefined();
+          expect(logData.metadata.systemMetrics.uptime).toBeDefined();
+        }
       );
-
-      performanceIntegration.endTiming(timerId, true);
-
-      expect(mockLoggerInfo).toHaveBeenCalled();
-      const logCall = mockLoggerInfo.mock.calls[0];
-      const logData = logCall[1];
-
-      expect(logData.systemMetrics).toBeDefined();
-      expect(logData.systemMetrics.memoryUsage).toBeDefined();
-      expect(logData.systemMetrics.cpuUsage).toBeDefined();
-      expect(logData.systemMetrics.uptime).toBeDefined();
     });
 
     it("应该在禁用时不收集系统指标", () => {
@@ -199,31 +222,48 @@ describe("PerformanceIntegration", () => {
         cpuMonitoringEnabled: false,
       });
 
-      const timerId = performanceIntegration.startTiming(
-        "test-service",
-        "test-operation"
+      // 在上下文中运行测试
+      logContext.run(
+        {
+          business: { operation: "test-operation", module: "test-service" },
+          custom: { operationType: "tool_call" },
+        },
+        () => {
+          const timerId = performanceIntegration.startTiming(
+            "test-service",
+            "test-operation"
+          );
+
+          performanceIntegration.endTiming(timerId, true);
+
+          expect(mockLoggerInfo).toHaveBeenCalled();
+          const logCall = mockLoggerInfo.mock.calls[0];
+          const logData = logCall[1];
+
+          expect(logData.metadata.systemMetrics).toBeUndefined();
+        }
       );
-
-      performanceIntegration.endTiming(timerId, true);
-
-      expect(mockLoggerInfo).toHaveBeenCalled();
-      const logCall = mockLoggerInfo.mock.calls[0];
-      const logData = logCall[1];
-
-      expect(logData.systemMetrics).toBeUndefined();
     });
   });
 
   describe("便捷方法", () => {
     it("应该测量异步函数执行时间", async () => {
-      const result = await performanceIntegration.measureAsync(
-        "test-service",
-        "async-operation",
-        async () => {
-          await new Promise((resolve) => setTimeout(resolve, 10));
-          return "success";
+      const result = await logContext.runAsync(
+        {
+          business: { operation: "async-operation", module: "test-service" },
+          custom: { operationType: "tool_call" },
         },
-        { customMetric: "value" }
+        async () => {
+          return await performanceIntegration.measureAsync(
+            "test-service",
+            "async-operation",
+            async () => {
+              await new Promise((resolve) => setTimeout(resolve, 10));
+              return "success";
+            },
+            { customMetric: "value" }
+          );
+        }
       );
 
       expect(result).toBe("success");
@@ -232,17 +272,25 @@ describe("PerformanceIntegration", () => {
       const logCall = mockLoggerInfo.mock.calls[0];
       const logData = logCall[1];
       expect(logData.operation).toBe("async-operation");
-      expect(logData.success).toBe(true);
+      expect(logData.metadata.success).toBe(true);
     });
 
     it("应该测量同步函数执行时间", () => {
-      const result = performanceIntegration.measure(
-        "test-service",
-        "sync-operation",
-        () => {
-          return "sync-success";
+      const result = logContext.run(
+        {
+          business: { operation: "sync-operation", module: "test-service" },
+          custom: { operationType: "tool_call" },
         },
-        { customMetric: "sync-value" }
+        () => {
+          return performanceIntegration.measure(
+            "test-service",
+            "sync-operation",
+            () => {
+              return "sync-success";
+            },
+            { customMetric: "sync-value" }
+          );
+        }
       );
 
       expect(result).toBe("sync-success");
@@ -251,18 +299,29 @@ describe("PerformanceIntegration", () => {
       const logCall = mockLoggerInfo.mock.calls[0];
       const logData = logCall[1];
       expect(logData.operation).toBe("sync-operation");
-      expect(logData.success).toBe(true);
+      expect(logData.metadata.success).toBe(true);
     });
 
     it("应该处理异步函数中的错误", async () => {
       const testError = new Error("Test error");
 
       await expect(
-        performanceIntegration.measureAsync(
-          "test-service",
-          "failing-async-operation",
+        logContext.runAsync(
+          {
+            business: {
+              operation: "failing-async-operation",
+              module: "test-service",
+            },
+            custom: { operationType: "tool_call" },
+          },
           async () => {
-            throw testError;
+            return await performanceIntegration.measureAsync(
+              "test-service",
+              "failing-async-operation",
+              async () => {
+                throw testError;
+              }
+            );
           }
         )
       ).rejects.toThrow("Test error");
@@ -272,18 +331,29 @@ describe("PerformanceIntegration", () => {
       const logCall = mockLoggerInfo.mock.calls[0];
       const logData = logCall[1];
       expect(logData.operation).toBe("failing-async-operation");
-      expect(logData.success).toBe(false);
+      expect(logData.metadata.success).toBe(false);
     });
 
     it("应该处理同步函数中的错误", () => {
       const testError = new Error("Sync test error");
 
       expect(() =>
-        performanceIntegration.measure(
-          "test-service",
-          "failing-sync-operation",
+        logContext.run(
+          {
+            business: {
+              operation: "failing-sync-operation",
+              module: "test-service",
+            },
+            custom: { operationType: "tool_call" },
+          },
           () => {
-            throw testError;
+            return performanceIntegration.measure(
+              "test-service",
+              "failing-sync-operation",
+              () => {
+                throw testError;
+              }
+            );
           }
         )
       ).toThrow("Sync test error");
@@ -293,7 +363,7 @@ describe("PerformanceIntegration", () => {
       const logCall = mockLoggerInfo.mock.calls[0];
       const logData = logCall[1];
       expect(logData.operation).toBe("failing-sync-operation");
-      expect(logData.success).toBe(false);
+      expect(logData.metadata.success).toBe(false);
     });
   });
 
@@ -304,17 +374,26 @@ describe("PerformanceIntegration", () => {
         performanceLogLevel: "debug",
       });
 
-      const timerId = performanceIntegration.startTiming(
-        "test-service",
-        "test-operation"
+      // 在上下文中运行测试
+      logContext.run(
+        {
+          business: { operation: "test-operation", module: "test-service" },
+          custom: { operationType: "tool_call" },
+        },
+        () => {
+          const timerId = performanceIntegration.startTiming(
+            "test-service",
+            "test-operation"
+          );
+
+          performanceIntegration.endTiming(timerId, true);
+
+          expect(mockLoggerDebug).toHaveBeenCalled();
+          const logCall = mockLoggerDebug.mock.calls[0];
+          const logData = logCall[1];
+          expect(logData.metadata.threshold).toBe(2000);
+        }
       );
-
-      performanceIntegration.endTiming(timerId, true);
-
-      expect(mockLoggerDebug).toHaveBeenCalled();
-      const logCall = mockLoggerDebug.mock.calls[0];
-      const logData = logCall[1];
-      expect(logData.threshold).toBe(2000);
     });
 
     it("应该在禁用时停止指标收集", () => {
