@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { spawn } from "node:child_process";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("CLI create command", () => {
   const testProjectName = "test-cli-project";
@@ -59,7 +59,9 @@ describe("CLI create command", () => {
 
     // 验证项目目录和文件被创建
     expect(fs.existsSync(testProjectPath)).toBe(true);
-    expect(fs.existsSync(path.join(testProjectPath, "xiaozhi.config.json"))).toBe(true);
+    expect(
+      fs.existsSync(path.join(testProjectPath, "xiaozhi.config.json"))
+    ).toBe(true);
     expect(fs.existsSync(path.join(testProjectPath, "xiaozhi.log"))).toBe(true);
 
     // 验证配置文件内容
@@ -76,9 +78,13 @@ describe("CLI create command", () => {
     const cliPath = path.join(process.cwd(), "dist", "cli.js");
 
     // 执行 create 命令使用模板
-    const child = spawn("node", [cliPath, "create", testProjectName, "--template", "hello-world"], {
-      stdio: ["pipe", "pipe", "pipe"],
-    });
+    const child = spawn(
+      "node",
+      [cliPath, "create", testProjectName, "--template", "hello-world"],
+      {
+        stdio: ["pipe", "pipe", "pipe"],
+      }
+    );
 
     let stdout = "";
     let stderr = "";
@@ -107,7 +113,9 @@ describe("CLI create command", () => {
 
     // 验证项目目录和文件被创建
     expect(fs.existsSync(testProjectPath)).toBe(true);
-    expect(fs.existsSync(path.join(testProjectPath, "xiaozhi.config.json"))).toBe(true);
+    expect(
+      fs.existsSync(path.join(testProjectPath, "xiaozhi.config.json"))
+    ).toBe(true);
   }, 10000);
 
   it("should handle existing directory gracefully", async () => {
