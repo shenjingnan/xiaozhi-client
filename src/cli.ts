@@ -793,28 +793,31 @@ async function askUserConfirmation(question: string): Promise<boolean> {
   const readline = await import("node:readline");
 
   return new Promise((resolve) => {
-    process.stdout.write(question);
-
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
     });
 
-    const handleInput = (input: string) => {
-      const char = input.trim().toLowerCase();
-      if (char === "y" || char === "yes") {
-        rl.close();
-        resolve(true);
-      } else if (char === "n" || char === "no" || char === "") {
-        rl.close();
-        resolve(false);
-      } else {
-        // 无效输入，重新询问
-        process.stdout.write("请输入 y 或 n: ");
-      }
+    const askQuestion = (prompt: string) => {
+      rl.question(prompt, (input: string) => {
+        const char = input.trim().toLowerCase();
+        if (char === "y" || char === "yes") {
+          rl.close();
+          resolve(true);
+        } else if (char === "n" || char === "no" || char === "") {
+          rl.close();
+          resolve(false);
+        } else {
+          // 无效输入，重新询问
+          askQuestion("请输入 y 或 n: ");
+        }
+      });
     };
 
-    rl.on("line", handleInput);
+    // 开始询问
+    askQuestion(question);
+
+    // 处理中断信号
     rl.on("SIGINT", () => {
       rl.close();
       resolve(false);
@@ -852,7 +855,7 @@ async function createProject(
     if (fs.existsSync(targetPath)) {
       spinner.fail(`目录 "${projectName}" 已存在`);
       console.log(chalk.yellow("💡 提示: 请选择不同的项目名称或删除现有目录"));
-      return;
+      process.exit(1);
     }
 
     if (options.template) {
@@ -865,7 +868,7 @@ async function createProject(
       if (availableTemplates.length === 0) {
         spinner.fail("找不到 templates 目录");
         console.log(chalk.yellow("💡 提示: 请确保 xiaozhi-client 正确安装"));
-        return;
+        process.exit(1);
       }
 
       // 检查模板是否存在
@@ -893,14 +896,14 @@ async function createProject(
             for (const template of availableTemplates) {
               console.log(chalk.gray(`  - ${template}`));
             }
-            return;
+            process.exit(1);
           }
         } else {
           console.log(chalk.yellow("可用的模板:"));
           for (const template of availableTemplates) {
             console.log(chalk.gray(`  - ${template}`));
           }
-          return;
+          process.exit(1);
         }
       }
 
@@ -970,7 +973,11 @@ async function createProject(
     spinner.fail(
       `创建项目失败: ${error instanceof Error ? error.message : String(error)}`
     );
+    process.exit(1);
   }
+
+  // 确保进程正常退出
+  process.exit(0);
 }
 
 /**
