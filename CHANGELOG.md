@@ -1,3 +1,10 @@
+## [1.6.2](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.1...v1.6.2) (2025-08-17)
+
+
+### Bug Fixes
+
+* resolve case sensitivity issue - rename webServer.test.ts to WebServer.test.ts ([94bab63](https://github.com/shenjingnan/xiaozhi-client/commit/94bab63302f0e75d6543712f9f8a9e1f344b5808))
+
 ## [1.6.1](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.0...v1.6.1) (2025-08-10)
 
 
