@@ -4,7 +4,7 @@
  */
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { logger as globalLogger } from "../logger.js";
+import { logger as globalLogger } from "../Logger.js";
 import {
   MCPService,
   type MCPServiceConfig,

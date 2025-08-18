@@ -39,7 +39,7 @@ export default defineConfig({
     "src/cli.ts",
     "src/configManager.ts",
     "src/mcpCommands.ts",
-    "src/logger.ts",
+    "src/Logger.ts",
     "src/WebServer.ts",
     "src/WebServerStandalone.ts",
     "src/mcpClient.ts",

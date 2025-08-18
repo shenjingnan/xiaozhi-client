@@ -13,7 +13,7 @@ vi.mock("../TransportFactory.js", () => ({
   },
 }));
 
-vi.mock("../../logger.js", () => ({
+vi.mock("../../Logger.js", () => ({
   Logger: vi.fn(() => ({
     withTag: vi.fn(() => ({
       info: vi.fn(),

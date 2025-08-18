@@ -22,10 +22,15 @@ const mockStdout = {
   write: vi.fn(),
 };
 
+const mockStderr = {
+  write: vi.fn(),
+};
+
 // Mock process object
 const mockProcess = {
   stdin: mockStdin,
   stdout: mockStdout,
+  stderr: mockStderr,
   on: vi.fn(),
   exit: vi.fn(),
   uptime: vi.fn(() => 123.456), // Mock uptime 方法

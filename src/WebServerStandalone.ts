@@ -9,7 +9,7 @@
 async function importModules() {
   const webServerModule = await import("./WebServer.js");
   const configModule = await import("./configManager.js");
-  const loggerModule = await import("./logger.js");
+  const loggerModule = await import("./Logger.js");
   return {
     WebServer: webServerModule.WebServer,
     configManager: configModule.configManager,

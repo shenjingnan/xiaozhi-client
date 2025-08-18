@@ -1,6 +1,6 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { Logger } from "../logger.js";
+import { Logger } from "../Logger.js";
 import { TransportFactory } from "./TransportFactory.js";
 
 // 通信方式枚举

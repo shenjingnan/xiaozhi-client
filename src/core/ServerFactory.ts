@@ -9,7 +9,7 @@
  * 4. 提供便捷的服务器创建方法
  */
 
-import { Logger } from "../logger.js";
+import { Logger } from "../Logger.js";
 import { HTTPAdapter, type HTTPConfig } from "../transports/HTTPAdapter.js";
 import { StdioAdapter, type StdioConfig } from "../transports/StdioAdapter.js";
 import { TransportAdapter } from "../transports/TransportAdapter.js";

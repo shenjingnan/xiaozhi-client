@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Logger } from "../../logger.js";
+import { Logger } from "../../Logger.js";
 import {
   type HealthCheckConfig,
   HealthChecker,
@@ -11,7 +11,7 @@ import type { MCPServiceManager } from "../MCPServiceManager.js";
 import { PerformanceMonitor } from "../PerformanceMonitor.js";
 
 // Mock dependencies
-vi.mock("../../logger.js");
+vi.mock("../../Logger.js");
 vi.mock("../PerformanceMonitor.js");
 
 describe("HealthChecker", () => {

@@ -1,4 +1,4 @@
-import { Logger } from "../logger.js";
+import { Logger } from "../Logger.js";
 import { type MCPError, categorizeError, shouldAlert } from "./ErrorHandler.js";
 import type { MCPService } from "./MCPService.js";
 import type { MCPServiceManager } from "./MCPServiceManager.js";

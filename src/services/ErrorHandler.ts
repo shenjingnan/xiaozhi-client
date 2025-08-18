@@ -1,4 +1,4 @@
-import { Logger } from "../logger.js";
+import { Logger } from "../Logger.js";
 
 /**
  * 错误分类枚举

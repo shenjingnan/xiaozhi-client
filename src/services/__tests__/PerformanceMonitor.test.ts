@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Logger } from "../../logger.js";
+import { Logger } from "../../Logger.js";
 import {
   OperationType,
   type PerformanceMetrics,
@@ -8,7 +8,7 @@ import {
 } from "../PerformanceMonitor.js";
 
 // Mock dependencies
-vi.mock("../../logger.js");
+vi.mock("../../Logger.js");
 
 describe("PerformanceMonitor", () => {
   let monitor: PerformanceMonitorClass;

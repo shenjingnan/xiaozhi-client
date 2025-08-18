@@ -8,9 +8,9 @@ import chalk from "chalk";
 import { Command } from "commander";
 import ora from "ora";
 
+import { logger } from "./Logger";
 import { WebServer } from "./WebServer";
 import { configManager } from "./configManager";
-import { logger } from "./logger";
 import { listMcpServers, listServerTools, setToolEnabled } from "./mcpCommands";
 
 const program = new Command();

@@ -1,4 +1,4 @@
-import { Logger } from "../logger.js";
+import { Logger } from "../Logger.js";
 
 /**
  * 性能指标接口
