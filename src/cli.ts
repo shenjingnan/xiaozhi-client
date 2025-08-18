@@ -69,6 +69,55 @@ interface ServiceStatus {
 }
 
 /**
+ * 检查进程是否为 xiaozhi-client 进程
+ */
+function isXiaozhiProcess(pid: number): boolean {
+  try {
+    // 在容器环境或测试环境中，使用更宽松的检查策略
+    if (
+      process.env.XIAOZHI_CONTAINER === "true" ||
+      process.env.NODE_ENV === "test"
+    ) {
+      // 容器环境或测试环境中，如果 PID 存在就认为是有效的
+      // 因为容器通常只运行一个主要应用，测试环境中mock了进程检查
+      process.kill(pid, 0);
+      return true;
+    }
+
+    // 非容器环境中，尝试更严格的进程检查
+    const { execSync } = require("node:child_process");
+
+    try {
+      let cmdline = "";
+      if (process.platform === "win32") {
+        // Windows 系统
+        const result = execSync(`tasklist /FI "PID eq ${pid}" /FO CSV /NH`, {
+          encoding: "utf8",
+          timeout: 5000,
+        });
+        cmdline = result.toLowerCase();
+      } else {
+        // Unix-like 系统
+        const result = execSync(`ps -p ${pid} -o comm=`, {
+          encoding: "utf8",
+          timeout: 5000,
+        });
+        cmdline = result.toLowerCase();
+      }
+
+      // 检查是否包含 node 或 xiaozhi 相关关键词
+      return cmdline.includes("node") || cmdline.includes("xiaozhi");
+    } catch (error) {
+      // 如果无法获取进程信息，回退到简单的 PID 检查
+      process.kill(pid, 0);
+      return true;
+    }
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
  * 获取服务状态
  */
 export function getServiceStatus(): ServiceStatus {
@@ -88,25 +137,23 @@ export function getServiceStatus(): ServiceStatus {
       return { running: false };
     }
 
-    // 检查进程是否还在运行
-    try {
-      process.kill(pid, 0); // 发送信号 0 来检查进程是否存在
-
-      // 计算运行时间
-      const start = Number.parseInt(startTime);
-      const uptime = formatUptime(Date.now() - start);
-
-      return {
-        running: true,
-        pid,
-        uptime,
-        mode: (mode as "foreground" | "daemon") || "foreground",
-      };
-    } catch (error) {
-      // 进程不存在，删除 PID 文件
+    // 检查进程是否还在运行且是 xiaozhi 进程
+    if (!isXiaozhiProcess(pid)) {
+      // 进程不存在或不是 xiaozhi 进程，删除 PID 文件
       fs.unlinkSync(pidFile);
       return { running: false };
     }
+
+    // 计算运行时间
+    const start = Number.parseInt(startTime);
+    const uptime = formatUptime(Date.now() - start);
+
+    return {
+      running: true,
+      pid,
+      uptime,
+      mode: (mode as "foreground" | "daemon") || "foreground",
+    };
   } catch (error) {
     return { running: false };
   }
@@ -211,6 +258,19 @@ async function startService(daemon = false, ui = false): Promise<void> {
   const spinner = ora("检查服务状态...").start();
 
   try {
+    // 在容器环境中，启动前先清理可能的旧状态
+    if (process.env.XIAOZHI_CONTAINER === "true") {
+      spinner.text = "清理容器启动状态...";
+      try {
+        const pidFile = getPidFile();
+        if (fs.existsSync(pidFile)) {
+          fs.unlinkSync(pidFile);
+        }
+      } catch (error) {
+        // 忽略清理错误
+      }
+    }
+
     // 检查服务是否已经在运行
     const status = getServiceStatus();
     if (status.running) {

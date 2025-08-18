@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { execSync, spawn } from "node:child_process";
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
 import os from "node:os";
@@ -17,6 +17,7 @@ import {
 // Mock dependencies
 vi.mock("node:child_process", () => ({
   spawn: vi.fn(),
+  execSync: vi.fn(),
 }));
 
 vi.mock("node:fs", () => ({
@@ -112,9 +113,16 @@ vi.mock("./mcpCommands", () => ({
 const originalArgv = process.argv;
 
 beforeAll(() => {
-  // Mock process.argv to prevent showHelp execution during import
+  // Mock process.exit to prevent test process from exiting
+  vi.spyOn(process, "exit").mockImplementation(() => {
+    // Don't actually exit, just return undefined
+    return undefined as never;
+  });
+
+  // Mock process.argv to prevent command execution during import
+  // Use a valid command that won't cause errors
   Object.defineProperty(process, "argv", {
-    value: ["node", "cli.js", "test"],
+    value: ["node", "cli.js", "status"],
     writable: true,
     configurable: true,
   });
@@ -148,6 +156,7 @@ class MockChildProcess extends EventEmitter {
 
 describe("CLI 命令行工具", () => {
   let mockSpawn: any;
+  let mockExecSync: any;
   let mockFs: any;
   let mockOs: any;
   let mockPath: any;
@@ -158,6 +167,7 @@ describe("CLI 命令行工具", () => {
     vi.clearAllMocks();
 
     mockSpawn = vi.mocked(spawn);
+    mockExecSync = vi.mocked(execSync);
     mockFs = vi.mocked(fs);
     mockOs = vi.mocked(os);
     mockPath = vi.mocked(path);
@@ -209,6 +219,7 @@ describe("CLI 命令行工具", () => {
       version: "v18.0.0",
       platform: process.platform, // Use actual platform for cross-platform compatibility
       arch: "x64",
+      env: { ...process.env, NODE_ENV: "test" }, // Set test environment
     });
   });
 
@@ -225,6 +236,15 @@ describe("CLI 命令行工具", () => {
       // Mock process.kill to not throw (process exists)
       const mockKill = vi.fn();
       vi.stubGlobal("process", { ...process, kill: mockKill });
+
+      // Mock execSync for Windows process checking
+      if (process.platform === "win32") {
+        mockExecSync.mockReturnValue(
+          '"node.exe","12345","Console","1","Normal","N/A","0 K","Running"'
+        );
+      } else {
+        mockExecSync.mockReturnValue("node");
+      }
 
       const status = cliModule.getServiceStatus();
       expect(status.running).toBe(true);
@@ -250,6 +270,11 @@ describe("CLI 命令行工具", () => {
         throw new Error("ESRCH");
       });
       vi.stubGlobal("process", { ...process, kill: mockKill });
+
+      // Mock execSync to throw (process doesn't exist)
+      mockExecSync.mockImplementation(() => {
+        throw new Error("Process not found");
+      });
 
       const status = cliModule.getServiceStatus();
       expect(status.running).toBe(false);
@@ -282,6 +307,15 @@ describe("CLI 命令行工具", () => {
 
       const mockKill = vi.fn();
       vi.stubGlobal("process", { ...process, kill: mockKill });
+
+      // Mock execSync for Windows process checking
+      if (process.platform === "win32") {
+        mockExecSync.mockReturnValue(
+          '"node.exe","12345","Console","1","Normal","N/A","0 K","Running"'
+        );
+      } else {
+        mockExecSync.mockReturnValue("node");
+      }
 
       const status = cliModule.getServiceStatus();
       expect(status.running).toBe(true);
