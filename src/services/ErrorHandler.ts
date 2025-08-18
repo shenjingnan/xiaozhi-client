@@ -1,4 +1,4 @@
-import { Logger } from "../Logger.js";
+import { type Logger, logger } from "../Logger.js";
 
 /**
  * 错误分类枚举
@@ -57,7 +57,7 @@ const errorHistory: Map<string, MCPError[]> = new Map();
 const MAX_ERROR_HISTORY = 100;
 
 function getLogger(): Logger {
-  return new Logger().withTag("ErrorHandler");
+  return logger;
 }
 
 /**
@@ -219,7 +219,9 @@ function recordError(serviceName: string, error: MCPError): void {
     errors.shift();
   }
 
-  getLogger().debug(`记录错误历史: ${serviceName} - ${error.code}`);
+  getLogger().debug(
+    `[ErrorHandler] 记录错误历史: ${serviceName} - ${error.code}`
+  );
 }
 
 /**
@@ -275,10 +277,10 @@ export function getAllErrorStatistics(): Map<string, ErrorStatistics> {
 export function clearErrorHistory(serviceName?: string): void {
   if (serviceName) {
     errorHistory.delete(serviceName);
-    getLogger().info(`已清理服务 ${serviceName} 的错误历史`);
+    getLogger().info(`[ErrorHandler] 已清理服务 ${serviceName} 的错误历史`);
   } else {
     errorHistory.clear();
-    getLogger().info("已清理所有错误历史");
+    getLogger().info("[ErrorHandler] 已清理所有错误历史");
   }
 }
 

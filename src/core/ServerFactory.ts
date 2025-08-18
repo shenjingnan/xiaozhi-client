@@ -9,7 +9,7 @@
  * 4. 提供便捷的服务器创建方法
  */
 
-import { Logger } from "../Logger.js";
+import { logger } from "../Logger.js";
 import { HTTPAdapter, type HTTPConfig } from "../transports/HTTPAdapter.js";
 import { StdioAdapter, type StdioConfig } from "../transports/StdioAdapter.js";
 import { TransportAdapter } from "../transports/TransportAdapter.js";
@@ -61,8 +61,7 @@ interface EnvironmentDetection {
   reasons: string[];
 }
 
-// 创建 logger 实例
-const logger = new Logger();
+// 使用全局 logger 实例
 
 /**
  * 创建 MCP 服务器
@@ -71,12 +70,12 @@ const logger = new Logger();
 export async function createServer(
   config: ServerFactoryConfig = {}
 ): Promise<UnifiedMCPServer> {
-  logger.info("开始创建 MCP 服务器", config);
+  logger.info("[ServerFactory] 开始创建 MCP 服务器", config);
 
   try {
     // 确定服务器模式
     const mode = await determineServerMode(config);
-    logger.info(`确定服务器模式: ${mode}`);
+    logger.info(`[ServerFactory] 确定服务器模式: ${mode}`);
 
     // 创建统一服务器实例
     const server = new UnifiedMCPServer(config.serverConfig);
@@ -85,10 +84,10 @@ export async function createServer(
     // 根据模式注册传输适配器
     await registerTransportsForMode(server, mode, config);
 
-    logger.info("MCP 服务器创建成功");
+    logger.info("[ServerFactory] MCP 服务器创建成功");
     return server;
   } catch (error) {
-    logger.error("创建 MCP 服务器失败", error);
+    logger.error("[ServerFactory] 创建 MCP 服务器失败", error);
     throw error;
   }
 }
@@ -100,7 +99,7 @@ export async function createServer(
 export async function createStdioServer(
   config: StdioConfig = { name: "stdio" }
 ): Promise<UnifiedMCPServer> {
-  logger.info("创建 Stdio 模式服务器");
+  logger.info("[ServerFactory] 创建 Stdio 模式服务器");
 
   const server = new UnifiedMCPServer();
   await server.initialize();
@@ -110,7 +109,7 @@ export async function createStdioServer(
 
   await server.registerTransport("stdio", stdioAdapter);
 
-  logger.info("Stdio 模式服务器创建成功");
+  logger.info("[ServerFactory] Stdio 模式服务器创建成功");
   return server;
 }
 

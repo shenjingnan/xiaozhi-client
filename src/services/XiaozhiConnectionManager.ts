@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { Logger } from "../Logger.js";
+import { type Logger, logger } from "../Logger.js";
 import { ProxyMCPServer } from "../ProxyMCPServer.js";
 
 // 使用接口定义避免循环依赖
@@ -152,11 +152,11 @@ export class XiaozhiConnectionManager extends EventEmitter {
 
   constructor(options?: XiaozhiConnectionOptions) {
     super();
-    this.logger = new Logger();
+    this.logger = logger;
     this.options = { ...DEFAULT_OPTIONS, ...options };
 
-    this.logger.info("XiaozhiConnectionManager 实例已创建");
-    this.logger.debug("配置选项:", this.options);
+    this.logger.info("[XiaozhiConnectionManager] 实例已创建");
+    this.logger.debug("[XiaozhiConnectionManager] 配置选项:", this.options);
   }
 
   /**

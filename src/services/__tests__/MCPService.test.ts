@@ -72,7 +72,7 @@ describe("MCPService", () => {
   describe("constructor", () => {
     it("should create MCPService with valid config", () => {
       expect(service).toBeInstanceOf(MCPService);
-      expect(mockLogger.withTag).toHaveBeenCalledWith("MCP-test-service");
+      // No longer using withTag, logger is used directly
     });
 
     it("should throw error for invalid name", () => {

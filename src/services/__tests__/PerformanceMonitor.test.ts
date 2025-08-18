@@ -8,24 +8,26 @@ import {
 } from "../PerformanceMonitor.js";
 
 // Mock dependencies
-vi.mock("../../Logger.js");
+vi.mock("../../Logger.js", () => ({
+  Logger: vi.fn(),
+  logger: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
 
 describe("PerformanceMonitor", () => {
   let monitor: PerformanceMonitorClass;
   let mockLogger: any;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
 
-    // Mock Logger
-    mockLogger = {
-      info: vi.fn(),
-      error: vi.fn(),
-      warn: vi.fn(),
-      debug: vi.fn(),
-      withTag: vi.fn().mockReturnThis(),
-    };
-    vi.mocked(Logger).mockImplementation(() => mockLogger);
+    // Get the mocked logger instance
+    const { logger } = await import("../../Logger.js");
+    mockLogger = logger;
 
     // Create a new instance for testing
     monitor = new PerformanceMonitorClass();
@@ -76,7 +78,7 @@ describe("PerformanceMonitor", () => {
       const duration = monitor.endTiming("invalid-timer-id");
       expect(duration).toBe(0);
       expect(mockLogger.warn).toHaveBeenCalledWith(
-        "未找到计时器: invalid-timer-id"
+        "[PerformanceMonitor] 未找到计时器: invalid-timer-id"
       );
     });
 

@@ -1,4 +1,4 @@
-import { Logger } from "../Logger.js";
+import { type Logger, logger } from "../Logger.js";
 import { type MCPError, categorizeError, shouldAlert } from "./ErrorHandler.js";
 import type { MCPService } from "./MCPService.js";
 import type { MCPServiceManager } from "./MCPServiceManager.js";
@@ -59,7 +59,7 @@ class HealthCheckerClass {
   private readonly MAX_HISTORY = 50; // 保留最近50次检查记录
 
   constructor(config?: Partial<HealthCheckConfig>) {
-    this.logger = new Logger().withTag("HealthChecker");
+    this.logger = logger;
     this.config = {
       interval: 30000, // 30秒
       timeout: 5000, // 5秒
@@ -78,7 +78,7 @@ class HealthCheckerClass {
     const serviceName = service.getConfig().name;
     const startTime = performance.now();
 
-    this.logger.debug(`开始健康检查: ${serviceName}`);
+    this.logger.debug(`[HealthChecker] 开始健康检查: ${serviceName}`);
 
     const status: HealthStatus = {
       serviceName,
@@ -148,7 +148,7 @@ class HealthCheckerClass {
       this.recordHealthHistory(serviceName, status);
 
       this.logger.debug(
-        `健康检查完成: ${serviceName} - ${status.healthy ? "健康" : "不健康"} (${status.responseTime.toFixed(0)}ms)`
+        `[HealthChecker] 健康检查完成: ${serviceName} - ${status.healthy ? "健康" : "不健康"} (${status.responseTime.toFixed(0)}ms)`
       );
 
       return status;
@@ -160,7 +160,7 @@ class HealthCheckerClass {
       status.lastError = (error as Error).message;
 
       this.recordHealthHistory(serviceName, status);
-      this.logger.error(`健康检查异常: ${serviceName}`, error);
+      this.logger.error(`[HealthChecker] 健康检查异常: ${serviceName}`, error);
 
       return status;
     }
@@ -175,7 +175,9 @@ class HealthCheckerClass {
     const results = new Map<string, HealthStatus>();
     const services = manager.getAllServices();
 
-    this.logger.debug(`开始检查 ${services.size} 个服务的健康状态`);
+    this.logger.debug(
+      `[HealthChecker] 开始检查 ${services.size} 个服务的健康状态`
+    );
 
     // 并行检查所有服务
     const checkPromises = Array.from(services.entries()).map(
@@ -189,7 +191,10 @@ class HealthCheckerClass {
             await this.attemptRecovery(service, status);
           }
         } catch (error) {
-          this.logger.error(`检查服务 ${serviceName} 时发生错误:`, error);
+          this.logger.error(
+            `[HealthChecker] 检查服务 ${serviceName} 时发生错误:`,
+            error
+          );
           results.set(serviceName, {
             serviceName,
             healthy: false,
@@ -208,7 +213,7 @@ class HealthCheckerClass {
     await Promise.all(checkPromises);
 
     this.logger.info(
-      `健康检查完成: ${results.size} 个服务，${Array.from(results.values()).filter((s) => s.healthy).length} 个健康`
+      `[HealthChecker] 健康检查完成: ${results.size} 个服务，${Array.from(results.values()).filter((s) => s.healthy).length} 个健康`
     );
 
     return results;
@@ -219,17 +224,19 @@ class HealthCheckerClass {
    */
   startPeriodicCheck(manager: MCPServiceManager): void {
     if (this.intervalId) {
-      this.logger.warn("定期健康检查已在运行");
+      this.logger.warn("[HealthChecker] 定期健康检查已在运行");
       return;
     }
 
-    this.logger.info(`开始定期健康检查，间隔: ${this.config.interval}ms`);
+    this.logger.info(
+      `[HealthChecker] 开始定期健康检查，间隔: ${this.config.interval}ms`
+    );
 
     this.intervalId = setInterval(async () => {
       try {
         await this.checkAllServices(manager);
       } catch (error) {
-        this.logger.error("定期健康检查失败:", error);
+        this.logger.error("[HealthChecker] 定期健康检查失败:", error);
       }
     }, this.config.interval);
   }
@@ -241,7 +248,7 @@ class HealthCheckerClass {
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
-      this.logger.info("已停止定期健康检查");
+      this.logger.info("[HealthChecker] 已停止定期健康检查");
     }
   }
 
@@ -290,10 +297,10 @@ class HealthCheckerClass {
   clearHealthHistory(serviceName?: string): void {
     if (serviceName) {
       this.healthHistory.delete(serviceName);
-      this.logger.info(`已清理服务 ${serviceName} 的健康历史`);
+      this.logger.info(`[HealthChecker] 已清理服务 ${serviceName} 的健康历史`);
     } else {
       this.healthHistory.clear();
-      this.logger.info("已清理所有健康历史");
+      this.logger.info("[HealthChecker] 已清理所有健康历史");
     }
   }
 
@@ -302,7 +309,7 @@ class HealthCheckerClass {
    */
   updateConfig(config: Partial<HealthCheckConfig>): void {
     this.config = { ...this.config, ...config };
-    this.logger.info("健康检查配置已更新");
+    this.logger.info("[HealthChecker] 健康检查配置已更新");
   }
 
   /**
@@ -337,12 +344,12 @@ class HealthCheckerClass {
     status: HealthStatus
   ): Promise<void> {
     const serviceName = status.serviceName;
-    this.logger.info(`尝试恢复不健康的服务: ${serviceName}`);
+    this.logger.info(`[HealthChecker] 尝试恢复不健康的服务: ${serviceName}`);
 
     try {
       // 如果服务未连接，尝试重新连接
       if (!service.isConnected()) {
-        this.logger.info(`尝试重新连接服务: ${serviceName}`);
+        this.logger.info(`[HealthChecker] 尝试重新连接服务: ${serviceName}`);
         await service.reconnect();
 
         // 等待一段时间让连接稳定
@@ -351,13 +358,16 @@ class HealthCheckerClass {
         // 重新检查状态
         const newStatus = await this.checkService(service);
         if (newStatus.healthy) {
-          this.logger.info(`服务 ${serviceName} 恢复成功`);
+          this.logger.info(`[HealthChecker] 服务 ${serviceName} 恢复成功`);
         } else {
-          this.logger.warn(`服务 ${serviceName} 恢复失败`);
+          this.logger.warn(`[HealthChecker] 服务 ${serviceName} 恢复失败`);
         }
       }
     } catch (error) {
-      this.logger.error(`恢复服务 ${serviceName} 时发生错误:`, error);
+      this.logger.error(
+        `[HealthChecker] 恢复服务 ${serviceName} 时发生错误:`,
+        error
+      );
     }
   }
 }

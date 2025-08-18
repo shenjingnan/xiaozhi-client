@@ -22,6 +22,12 @@ vi.mock("../../Logger.js", () => ({
       error: vi.fn(),
     })),
   })),
+  logger: {
+    info: vi.fn(),
+    debug: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
 }));
 
 vi.mock("@modelcontextprotocol/sdk/client/index.js", () => ({

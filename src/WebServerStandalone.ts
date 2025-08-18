@@ -13,7 +13,7 @@ async function importModules() {
   return {
     WebServer: webServerModule.WebServer,
     configManager: configModule.configManager,
-    Logger: loggerModule.Logger,
+    logger: loggerModule.logger,
   };
 }
 
@@ -25,9 +25,7 @@ async function main() {
 
   try {
     // 动态导入模块
-    const { WebServer, configManager, Logger } = await importModules();
-
-    const logger = new Logger().withTag("WEBSERVER_STANDALONE");
+    const { WebServer, configManager, logger } = await importModules();
 
     // 初始化日志
     if (process.env.XIAOZHI_CONFIG_DIR) {
@@ -39,7 +37,7 @@ async function main() {
     const webServer = new WebServer();
     await webServer.start();
 
-    logger.info("WebServer 启动成功");
+    logger.info("[WEBSERVER_STANDALONE] WebServer 启动成功");
 
     // 自动打开浏览器
     if (openBrowser) {
@@ -50,7 +48,7 @@ async function main() {
 
     // 处理退出信号
     const cleanup = async () => {
-      logger.info("正在停止 WebServer...");
+      logger.info("[WEBSERVER_STANDALONE] 正在停止 WebServer...");
       await webServer.stop();
       process.exit(0);
     };
