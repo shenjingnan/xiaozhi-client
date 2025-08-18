@@ -1,7 +1,7 @@
 import { EventEmitter } from "node:events";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { ProxyMCPServer } from "../ProxyMCPServer.js";
-import { Logger } from "../logger.js";
+import { Logger } from "../Logger.js";
 
 // 使用接口定义避免循环依赖
 interface IMCPServiceManager {

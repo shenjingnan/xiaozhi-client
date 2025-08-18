@@ -10,7 +10,7 @@
  */
 
 import { EventEmitter } from "node:events";
-import { Logger } from "../logger.js";
+import { Logger } from "../Logger.js";
 import { MCPServiceManager } from "../services/MCPServiceManager.js";
 import {
   ConnectionState,

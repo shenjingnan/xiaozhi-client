@@ -5,7 +5,7 @@
  */
 
 import type { MCPMessageHandler } from "../core/MCPMessageHandler.js";
-import { Logger } from "../logger.js";
+import { Logger } from "../Logger.js";
 
 // MCP 消息接口
 export interface MCPMessage {

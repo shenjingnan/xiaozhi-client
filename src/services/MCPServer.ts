@@ -3,7 +3,7 @@ import { ProxyMCPServer } from "../ProxyMCPServer.js";
 import { configManager } from "../configManager.js";
 import { createHTTPServer } from "../core/ServerFactory.js";
 import type { UnifiedMCPServer } from "../core/UnifiedMCPServer.js";
-import { Logger } from "../logger.js";
+import { Logger } from "../Logger.js";
 import type { HTTPConfig } from "../transports/HTTPAdapter.js";
 
 const logger = new Logger();

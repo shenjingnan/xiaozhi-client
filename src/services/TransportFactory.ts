@@ -8,7 +8,7 @@ import {
   type StreamableHTTPClientTransportOptions,
 } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { EventSource } from "eventsource";
-import { Logger } from "../logger.js";
+import { Logger } from "../Logger.js";
 import { type MCPServiceConfig, MCPTransportType } from "./MCPService.js";
 
 // 全局 polyfill EventSource（用于 SSE）

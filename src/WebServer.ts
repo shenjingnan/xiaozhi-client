@@ -13,7 +13,7 @@ import { convertLegacyToNew } from "./adapters/ConfigAdapter.js";
 import { getServiceStatus } from "./cli.js";
 import { configManager } from "./configManager.js";
 import type { AppConfig, MCPServerConfig } from "./configManager.js";
-import { Logger } from "./logger.js";
+import { Logger } from "./Logger.js";
 // MCPTransportType 已移除，不再需要导入
 import type { MCPServiceManager } from "./services/MCPServiceManager.js";
 import { MCPServiceManagerSingleton } from "./services/MCPServiceManagerSingleton.js";

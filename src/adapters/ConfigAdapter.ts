@@ -9,7 +9,7 @@ import type {
   SSEMCPServerConfig,
   StreamableHTTPMCPServerConfig,
 } from "../configManager.js";
-import { logger as globalLogger } from "../logger.js";
+import { logger as globalLogger } from "../Logger.js";
 import type { MCPServiceConfig } from "../services/MCPService.js";
 import { MCPTransportType } from "../services/MCPService.js";
 

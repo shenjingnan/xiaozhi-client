@@ -10,7 +10,7 @@ import ora from "ora";
 
 import { WebServer } from "./WebServer";
 import { configManager } from "./configManager";
-import { logger } from "./logger";
+import { logger } from "./Logger";
 import { listMcpServers, listServerTools, setToolEnabled } from "./mcpCommands";
 
 const program = new Command();
