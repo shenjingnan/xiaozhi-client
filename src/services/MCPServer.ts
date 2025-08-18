@@ -1,9 +1,9 @@
 import { EventEmitter } from "node:events";
+import { Logger } from "../Logger.js";
 import { ProxyMCPServer } from "../ProxyMCPServer.js";
 import { configManager } from "../configManager.js";
 import { createHTTPServer } from "../core/ServerFactory.js";
 import type { UnifiedMCPServer } from "../core/UnifiedMCPServer.js";
-import { Logger } from "../Logger.js";
 import type { HTTPConfig } from "../transports/HTTPAdapter.js";
 
 const logger = new Logger();

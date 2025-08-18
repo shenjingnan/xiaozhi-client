@@ -8,12 +8,12 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { WebSocketServer } from "ws";
+import { Logger } from "./Logger.js";
 import { ProxyMCPServer, type Tool } from "./ProxyMCPServer.js";
 import { convertLegacyToNew } from "./adapters/ConfigAdapter.js";
 import { getServiceStatus } from "./cli.js";
 import { configManager } from "./configManager.js";
 import type { AppConfig, MCPServerConfig } from "./configManager.js";
-import { Logger } from "./Logger.js";
 // MCPTransportType 已移除，不再需要导入
 import type { MCPServiceManager } from "./services/MCPServiceManager.js";
 import { MCPServiceManagerSingleton } from "./services/MCPServiceManagerSingleton.js";

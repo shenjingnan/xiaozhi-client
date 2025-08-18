@@ -7,8 +7,8 @@
  */
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { configManager } from "../configManager.js";
 import { Logger } from "../Logger.js";
+import { configManager } from "../configManager.js";
 import {
   MCPService,
   type MCPServiceConfig,
