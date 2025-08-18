@@ -44,5 +44,16 @@ else
     log "依赖已存在，跳过安装"
 fi
 
+# 清理可能存在的旧 PID 文件（容器重启时）
+log "清理容器启动前的状态..."
+if [ -f "/workspaces/.xiaozhi-client.pid" ]; then
+    log "发现旧的 PID 文件，正在清理..."
+    rm -f "/workspaces/.xiaozhi-client.pid"
+    log "旧 PID 文件已清理"
+fi
+
+# 清理其他可能的 PID 文件
+find /workspaces -name "*.pid" -type f -delete 2>/dev/null || true
+
 log "启动 xiaozhi-client..."
 exec "$@"
