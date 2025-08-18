@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Logger } from "../../logger.js";
+import { Logger } from "../../Logger.js";
 import {
   MCPService,
   type MCPServiceConfig,
@@ -9,7 +9,7 @@ import { MCPServiceManager } from "../MCPServiceManager.js";
 
 // Mock dependencies
 vi.mock("../MCPService.js");
-vi.mock("../../logger.js");
+vi.mock("../../Logger.js");
 
 describe("MCPServiceManager", () => {
   let manager: MCPServiceManager;

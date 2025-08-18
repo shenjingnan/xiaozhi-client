@@ -2,7 +2,7 @@ import { existsSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Logger } from "../../logger.js";
+import { Logger } from "../../Logger.js";
 import {
   type ConfigChangeEvent,
   ConfigChangeType,
@@ -13,7 +13,7 @@ import {
 import type { MCPServiceConfig } from "../MCPService.js";
 
 // Mock dependencies
-vi.mock("../../logger.js");
+vi.mock("../../Logger.js");
 vi.mock("../ErrorHandler.js", () => ({
   categorizeError: vi.fn().mockReturnValue({
     category: "configuration",

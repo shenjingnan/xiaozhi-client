@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Logger } from "../../logger.js";
+import { Logger } from "../../Logger.js";
 import { type MCPServiceConfig, MCPTransportType } from "../MCPService.js";
 import { MCPServiceManager } from "../MCPServiceManager.js";
 import { TransportFactory } from "../TransportFactory.js";
@@ -7,7 +7,7 @@ import { TransportFactory } from "../TransportFactory.js";
 // Mock dependencies
 vi.mock("../MCPService.js");
 vi.mock("../TransportFactory.js");
-vi.mock("../../logger.js");
+vi.mock("../../Logger.js");
 
 describe("Multi-Protocol Integration", () => {
   let manager: MCPServiceManager;

@@ -1,7 +1,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Logger } from "../../logger.js";
+import { Logger } from "../../Logger.js";
 import {
   ConnectionState,
   MCPService,
@@ -14,7 +14,7 @@ import { TransportFactory } from "../TransportFactory.js";
 // Mock dependencies
 vi.mock("@modelcontextprotocol/sdk/client/index.js");
 vi.mock("@modelcontextprotocol/sdk/client/stdio.js");
-vi.mock("../../logger.js");
+vi.mock("../../Logger.js");
 vi.mock("../TransportFactory.js");
 
 describe("MCPService", () => {

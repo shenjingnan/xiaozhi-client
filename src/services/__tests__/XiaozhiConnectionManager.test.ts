@@ -17,7 +17,7 @@ vi.mock("../../ProxyMCPServer.js", () => ({
 }));
 
 // Mock Logger
-vi.mock("../../logger.js", () => ({
+vi.mock("../../Logger.js", () => ({
   Logger: vi.fn().mockImplementation(() => ({
     info: vi.fn(),
     warn: vi.fn(),

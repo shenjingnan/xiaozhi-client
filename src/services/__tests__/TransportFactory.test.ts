@@ -2,7 +2,7 @@ import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Logger } from "../../logger.js";
+import { Logger } from "../../Logger.js";
 import type { MCPServiceConfig } from "../MCPService.js";
 import { TransportFactory } from "../TransportFactory.js";
 
@@ -10,7 +10,7 @@ import { TransportFactory } from "../TransportFactory.js";
 vi.mock("@modelcontextprotocol/sdk/client/stdio.js");
 vi.mock("@modelcontextprotocol/sdk/client/sse.js");
 vi.mock("@modelcontextprotocol/sdk/client/streamableHttp.js");
-vi.mock("../../logger.js");
+vi.mock("../../Logger.js");
 vi.mock("eventsource");
 
 describe("TransportFactory", () => {
