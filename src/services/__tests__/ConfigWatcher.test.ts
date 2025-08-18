@@ -2,7 +2,6 @@ import { existsSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Logger } from "../../Logger.js";
 import {
   type ConfigChangeEvent,
   ConfigChangeType,
@@ -13,7 +12,15 @@ import {
 import type { MCPServiceConfig } from "../MCPService.js";
 
 // Mock dependencies
-vi.mock("../../Logger.js");
+vi.mock("../../Logger.js", () => ({
+  Logger: vi.fn(),
+  logger: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
 vi.mock("../ErrorHandler.js", () => ({
   categorizeError: vi.fn().mockReturnValue({
     category: "configuration",
@@ -33,18 +40,12 @@ describe("ConfigWatcher", () => {
   let testConfigPath: string;
   let testConfigs: MCPServiceConfig[];
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
 
-    // Mock Logger
-    mockLogger = {
-      info: vi.fn(),
-      error: vi.fn(),
-      warn: vi.fn(),
-      debug: vi.fn(),
-      withTag: vi.fn().mockReturnThis(),
-    };
-    vi.mocked(Logger).mockImplementation(() => mockLogger);
+    // Get the mocked logger instance
+    const { logger } = await import("../../Logger.js");
+    mockLogger = logger;
 
     // Create test configuration
     testConfigs = [

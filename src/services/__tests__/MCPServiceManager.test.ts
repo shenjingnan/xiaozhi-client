@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Logger } from "../../Logger.js";
 import {
   MCPService,
   type MCPServiceConfig,
@@ -9,24 +8,26 @@ import { MCPServiceManager } from "../MCPServiceManager.js";
 
 // Mock dependencies
 vi.mock("../MCPService.js");
-vi.mock("../../Logger.js");
+vi.mock("../../Logger.js", () => ({
+  logger: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
 
 describe("MCPServiceManager", () => {
   let manager: MCPServiceManager;
   let mockLogger: any;
   let mockMCPService: any;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
 
-    // Mock Logger
-    mockLogger = {
-      info: vi.fn(),
-      error: vi.fn(),
-      warn: vi.fn(),
-      withTag: vi.fn().mockReturnThis(),
-    };
-    vi.mocked(Logger).mockImplementation(() => mockLogger);
+    // Get the mocked logger instance
+    const { logger } = await import("../../Logger.js");
+    mockLogger = logger;
 
     // Mock MCPService
     mockMCPService = {
@@ -65,7 +66,7 @@ describe("MCPServiceManager", () => {
     it("should create MCPServiceManager with empty configs by default", () => {
       const emptyManager = new MCPServiceManager();
       expect(emptyManager).toBeInstanceOf(MCPServiceManager);
-      expect(mockLogger.withTag).toHaveBeenCalledWith("MCPManager");
+      // No longer using withTag, logger is used directly
     });
 
     it("should create MCPServiceManager with custom configs", () => {
@@ -89,9 +90,11 @@ describe("MCPServiceManager", () => {
 
       await emptyManager.startAllServices();
 
-      expect(mockLogger.info).toHaveBeenCalledWith("正在启动所有 MCP 服务...");
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        "[MCPManager] 正在启动所有 MCP 服务..."
+      );
       expect(mockLogger.warn).toHaveBeenCalledWith(
-        "没有配置任何 MCP 服务，请使用 addServiceConfig() 添加服务配置"
+        "[MCPManager] 没有配置任何 MCP 服务，请使用 addServiceConfig() 添加服务配置"
       );
       expect(MCPService).not.toHaveBeenCalled();
     });
@@ -102,8 +105,12 @@ describe("MCPServiceManager", () => {
 
       await manager.startAllServices();
 
-      expect(mockLogger.info).toHaveBeenCalledWith("正在启动所有 MCP 服务...");
-      expect(mockLogger.info).toHaveBeenCalledWith("所有 MCP 服务启动完成");
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        "[MCPManager] 正在启动所有 MCP 服务..."
+      );
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        "[MCPManager] 所有 MCP 服务启动完成"
+      );
       expect(MCPService).toHaveBeenCalledTimes(2); // calculator and datetime
     });
 
@@ -133,7 +140,9 @@ describe("MCPServiceManager", () => {
         })
       );
       expect(mockMCPService.connect).toHaveBeenCalled();
-      expect(mockLogger.info).toHaveBeenCalledWith("启动 MCP 服务: calculator");
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        "[MCPManager] 启动 MCP 服务: calculator"
+      );
     });
 
     it("should throw error for non-existent service", async () => {
@@ -171,14 +180,16 @@ describe("MCPServiceManager", () => {
       await manager.stopService("calculator");
 
       expect(mockMCPService.disconnect).toHaveBeenCalled();
-      expect(mockLogger.info).toHaveBeenCalledWith("calculator 服务已停止");
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        "[MCPManager] calculator 服务已停止"
+      );
     });
 
     it("should handle stopping non-existent service", async () => {
       await manager.stopService("non-existent");
 
       expect(mockLogger.warn).toHaveBeenCalledWith(
-        "服务 non-existent 不存在或未启动"
+        "[MCPManager] 服务 non-existent 不存在或未启动"
       );
     });
   });
@@ -197,7 +208,9 @@ describe("MCPServiceManager", () => {
       await manager.stopAllServices();
 
       expect(mockMCPService.disconnect).toHaveBeenCalledTimes(2);
-      expect(mockLogger.info).toHaveBeenCalledWith("所有 MCP 服务已停止");
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        "[MCPManager] 所有 MCP 服务已停止"
+      );
     });
   });
 
@@ -340,7 +353,7 @@ describe("MCPServiceManager", () => {
       manager.addServiceConfig("new-service", config);
 
       expect(mockLogger.info).toHaveBeenCalledWith(
-        "已添加服务配置: new-service"
+        "[MCPManager] 已添加服务配置: new-service"
       );
     });
 
@@ -348,7 +361,7 @@ describe("MCPServiceManager", () => {
       manager.removeServiceConfig("calculator");
 
       expect(mockLogger.info).toHaveBeenCalledWith(
-        "已移除服务配置: calculator"
+        "[MCPManager] 已移除服务配置: calculator"
       );
     });
   });

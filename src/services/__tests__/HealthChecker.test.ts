@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Logger } from "../../Logger.js";
 import {
   type HealthCheckConfig,
   HealthChecker,
@@ -11,7 +10,15 @@ import type { MCPServiceManager } from "../MCPServiceManager.js";
 import { PerformanceMonitor } from "../PerformanceMonitor.js";
 
 // Mock dependencies
-vi.mock("../../Logger.js");
+vi.mock("../../Logger.js", () => ({
+  Logger: vi.fn(),
+  logger: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
 vi.mock("../PerformanceMonitor.js");
 
 describe("HealthChecker", () => {
@@ -20,18 +27,12 @@ describe("HealthChecker", () => {
   let mockService: MCPService;
   let mockManager: MCPServiceManager;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
 
-    // Mock Logger
-    mockLogger = {
-      info: vi.fn(),
-      error: vi.fn(),
-      warn: vi.fn(),
-      debug: vi.fn(),
-      withTag: vi.fn().mockReturnThis(),
-    };
-    vi.mocked(Logger).mockImplementation(() => mockLogger);
+    // Get the mocked logger instance
+    const { logger } = await import("../../Logger.js");
+    mockLogger = logger;
 
     // Mock PerformanceMonitor
     vi.mocked(PerformanceMonitor.getMetrics).mockReturnValue({
@@ -214,18 +215,22 @@ describe("HealthChecker", () => {
 
       healthChecker.startPeriodicCheck(mockManager);
       expect(mockLogger.info).toHaveBeenCalledWith(
-        expect.stringContaining("开始定期健康检查")
+        expect.stringContaining("[HealthChecker] 开始定期健康检查")
       );
 
       healthChecker.stopPeriodicCheck();
-      expect(mockLogger.info).toHaveBeenCalledWith("已停止定期健康检查");
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        "[HealthChecker] 已停止定期健康检查"
+      );
     });
 
     it("should not start multiple periodic checks", () => {
       healthChecker.startPeriodicCheck(mockManager);
       healthChecker.startPeriodicCheck(mockManager);
 
-      expect(mockLogger.warn).toHaveBeenCalledWith("定期健康检查已在运行");
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        "[HealthChecker] 定期健康检查已在运行"
+      );
     });
   });
 
