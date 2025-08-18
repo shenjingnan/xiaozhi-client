@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Logger, logger } from "./logger.js";
+import { Logger, logger } from "./Logger.js";
 
 // Mock dependencies
 vi.mock("node:fs", () => ({
