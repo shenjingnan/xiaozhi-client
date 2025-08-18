@@ -112,9 +112,16 @@ vi.mock("./mcpCommands", () => ({
 const originalArgv = process.argv;
 
 beforeAll(() => {
-  // Mock process.argv to prevent showHelp execution during import
+  // Mock process.exit to prevent test process from exiting
+  vi.spyOn(process, "exit").mockImplementation(() => {
+    // Don't actually exit, just return undefined
+    return undefined as never;
+  });
+
+  // Mock process.argv to prevent command execution during import
+  // Use a valid command that won't cause errors
   Object.defineProperty(process, "argv", {
-    value: ["node", "cli.js", "test"],
+    value: ["node", "cli.js", "status"],
     writable: true,
     configurable: true,
   });
