@@ -93,8 +93,8 @@ export class Logger {
         // 禁用不必要的功能以提升性能
         base: null, // 不包含 pid 和 hostname
         serializers: {
-          // 优化错误序列化
-          err: pino.stdSerializers.err,
+          // 优化错误序列化，在测试环境中安全处理
+          err: pino.stdSerializers?.err || ((err: any) => err),
         },
       },
       pino.multistream(streams, { dedupe: true })
@@ -116,13 +116,30 @@ export class Logger {
         try {
           const logObj = JSON.parse(chunk);
           const message = this.formatConsoleMessageOptimized(logObj, levelMap);
-          process.stderr.write(`${message}\n`);
+          // 在测试环境中安全地写入
+          this.safeWrite(`${message}\n`);
         } catch (error) {
           // 如果解析失败，直接输出原始内容
-          process.stderr.write(chunk);
+          this.safeWrite(chunk);
         }
       },
     };
+  }
+
+  /**
+   * 安全地写入到 stderr，在测试环境中避免错误
+   */
+  private safeWrite(content: string): void {
+    try {
+      if (process.stderr && typeof process.stderr.write === "function") {
+        process.stderr.write(content);
+      } else if (console && typeof console.error === "function") {
+        // 在测试环境中回退到 console.error
+        console.error(content.trim());
+      }
+    } catch (error) {
+      // 在极端情况下静默失败，避免测试中断
+    }
   }
 
   private formatConsoleMessageOptimized(
