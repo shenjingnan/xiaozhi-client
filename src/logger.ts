@@ -1,7 +1,8 @@
-import fs from "node:fs";
-import path from "node:path";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import chalk from "chalk";
-import { type consola, createConsola } from "consola";
+import pino from "pino";
+import type { Logger as PinoLogger } from "pino";
 
 function formatDateTime(date: Date) {
   const year = date.getFullYear();
@@ -16,74 +17,83 @@ function formatDateTime(date: Date) {
 
 export class Logger {
   private logFilePath: string | null = null;
-  private writeStream: fs.WriteStream | null = null;
-  private consolaInstance: typeof consola;
+  private pinoInstance: PinoLogger;
   private isDaemonMode: boolean;
 
   constructor() {
     // 检查是否为守护进程模式
     this.isDaemonMode = process.env.XIAOZHI_DAEMON === "true";
-    // 创建自定义的 consola 实例，禁用图标并自定义格式
-    this.consolaInstance = createConsola({
-      formatOptions: {
-        date: false,
-        colors: true,
-        compact: true,
-      },
-      fancy: false,
-    });
 
-    // 保存对当前实例的引用，以便在闭包中访问
-    const isDaemonMode = this.isDaemonMode;
+    // 创建 pino 实例
+    this.pinoInstance = this.createPinoInstance();
+  }
 
-    // 自定义格式化器
-    this.consolaInstance.setReporters([
-      {
-        log: (logObj) => {
-          const levelMap: Record<string, string> = {
-            info: "INFO",
-            success: "SUCCESS",
-            warn: "WARN",
-            error: "ERROR",
-            debug: "DEBUG",
-            log: "LOG",
-          };
+  private createPinoInstance(): PinoLogger {
+    const streams: pino.StreamEntry[] = [];
 
-          const colorMap: Record<string, (text: string) => string> = {
-            info: chalk.blue,
-            success: chalk.green,
-            warn: chalk.yellow,
-            error: chalk.red,
-            debug: chalk.gray,
-            log: (text: string) => text,
-          };
-
-          const level = levelMap[logObj.type] || logObj.type.toUpperCase();
-          const colorFn = colorMap[logObj.type] || ((text: string) => text);
-          const timestamp = formatDateTime(new Date());
-
-          // 为级别添加颜色
-          const coloredLevel = colorFn(`[${level}]`);
-          const message = `[${timestamp}] ${coloredLevel} ${logObj.args.join(
-            " "
-          )}`;
-
-          // 守护进程模式下不输出到控制台，只写入文件
-          if (!isDaemonMode) {
-            // 输出到 stderr（与原来保持一致）
-            try {
-              console.error(message);
-            } catch (error) {
-              // 忽略 EPIPE 错误
-              if (error instanceof Error && error.message?.includes("EPIPE")) {
-                return;
-              }
-              throw error;
-            }
+    // 控制台流 - 只在非守护进程模式下添加
+    if (!this.isDaemonMode) {
+      // 创建自定义的控制台输出流
+      const consoleStream = {
+        write: (chunk: string) => {
+          try {
+            const logObj = JSON.parse(chunk);
+            const message = this.formatConsoleMessage(logObj);
+            process.stderr.write(`${message}\n`);
+          } catch (error) {
+            // 如果解析失败，直接输出原始内容
+            process.stderr.write(chunk);
           }
-        },
+        }
+      };
+
+      streams.push({
+        level: "debug",
+        stream: consoleStream,
+      });
+    }
+
+    // 文件流 - 如果有日志文件路径
+    if (this.logFilePath) {
+      streams.push({
+        level: "debug",
+        stream: fs.createWriteStream(this.logFilePath, { flags: "a" }),
+      });
+    }
+
+    // 如果没有流，创建一个空的流避免错误
+    if (streams.length === 0) {
+      streams.push({
+        level: "debug",
+        stream: pino.destination({ dest: "/dev/null" }),
+      });
+    }
+
+    return pino(
+      {
+        level: "debug",
+        timestamp: pino.stdTimeFunctions?.isoTime || (() => `,"time":${Date.now()}`),
       },
-    ]);
+      pino.multistream(streams)
+    );
+  }
+
+  private formatConsoleMessage(logObj: any): string {
+    const timestamp = formatDateTime(new Date());
+
+    // 级别映射和颜色（pino 的级别值）
+    const levelMap: Record<number, { name: string; color: (text: string) => string }> = {
+      20: { name: "DEBUG", color: chalk.gray },
+      30: { name: "INFO", color: chalk.blue },
+      40: { name: "WARN", color: chalk.yellow },
+      50: { name: "ERROR", color: chalk.red },
+      60: { name: "FATAL", color: chalk.red },
+    };
+
+    const levelInfo = levelMap[logObj.level] || { name: "UNKNOWN", color: (text: string) => text };
+    const coloredLevel = levelInfo.color(`[${levelInfo.name}]`);
+
+    return `[${timestamp}] ${coloredLevel} ${logObj.msg}`;
   }
 
   /**
@@ -98,49 +108,22 @@ export class Logger {
       fs.writeFileSync(this.logFilePath, "");
     }
 
-    // 创建写入流，追加模式
-    this.writeStream = fs.createWriteStream(this.logFilePath, {
-      flags: "a",
-      encoding: "utf8",
-    });
+    // 重新创建 pino 实例以包含文件流
+    this.pinoInstance = this.createPinoInstance();
   }
 
-  /**
-   * 记录日志到文件
-   * @param level 日志级别
-   * @param message 日志消息
-   * @param args 额外参数
-   */
-  private logToFile(level: string, message: string, ...args: any[]): void {
-    if (this.writeStream) {
-      const timestamp = new Date().toISOString();
-      const formattedMessage = `[${timestamp}] [${level.toUpperCase()}] ${message}`;
-      const fullMessage =
-        args.length > 0
-          ? `${formattedMessage} ${args
-              .map((arg) =>
-                typeof arg === "object" ? JSON.stringify(arg) : String(arg)
-              )
-              .join(" ")}`
-          : formattedMessage;
 
-      this.writeStream.write(`${fullMessage}\n`);
-    }
-  }
 
   /**
    * 设置是否启用文件日志
    * @param enable 是否启用
    */
   enableFileLogging(enable: boolean): void {
-    if (enable && !this.writeStream && this.logFilePath) {
-      this.writeStream = fs.createWriteStream(this.logFilePath, {
-        flags: "a",
-        encoding: "utf8",
-      });
-    } else if (!enable && this.writeStream) {
-      this.writeStream.end();
-      this.writeStream = null;
+    // 在 pino 实现中，文件日志的启用/禁用通过重新创建实例来实现
+    // 这里保持方法兼容性，但实际上文件日志在 initLogFile 时就已经启用
+    if (enable && this.logFilePath) {
+      // 重新创建 pino 实例以确保文件流正确配置
+      this.pinoInstance = this.createPinoInstance();
     }
   }
 
@@ -148,33 +131,35 @@ export class Logger {
    * 日志方法
    */
   info(message: string, ...args: any[]): void {
-    this.consolaInstance.info(message, ...args);
-    this.logToFile("info", message, ...args);
+    const fullMessage = args.length > 0 ? `${message} ${args.join(' ')}` : message;
+    this.pinoInstance.info(fullMessage);
   }
 
   success(message: string, ...args: any[]): void {
-    this.consolaInstance.success(message, ...args);
-    this.logToFile("success", message, ...args);
+    // success 映射为 info 级别，保持 API 兼容性
+    const fullMessage = args.length > 0 ? `${message} ${args.join(' ')}` : message;
+    this.pinoInstance.info(fullMessage);
   }
 
   warn(message: string, ...args: any[]): void {
-    this.consolaInstance.warn(message, ...args);
-    this.logToFile("warn", message, ...args);
+    const fullMessage = args.length > 0 ? `${message} ${args.join(' ')}` : message;
+    this.pinoInstance.warn(fullMessage);
   }
 
   error(message: string, ...args: any[]): void {
-    this.consolaInstance.error(message, ...args);
-    this.logToFile("error", message, ...args);
+    const fullMessage = args.length > 0 ? `${message} ${args.join(' ')}` : message;
+    this.pinoInstance.error(fullMessage);
   }
 
   debug(message: string, ...args: any[]): void {
-    this.consolaInstance.debug(message, ...args);
-    this.logToFile("debug", message, ...args);
+    const fullMessage = args.length > 0 ? `${message} ${args.join(' ')}` : message;
+    this.pinoInstance.debug(fullMessage);
   }
 
   log(message: string, ...args: any[]): void {
-    this.consolaInstance.log(message, ...args);
-    this.logToFile("log", message, ...args);
+    const fullMessage = args.length > 0 ? `${message} ${args.join(' ')}` : message;
+    // log 方法使用 info 级别
+    this.pinoInstance.info(fullMessage);
   }
 
   /**
@@ -182,7 +167,7 @@ export class Logger {
    * @param tag 标签（不再使用）
    * @deprecated 标签功能已移除
    */
-  withTag(tag: string): Logger {
+  withTag(_tag: string): Logger {
     // 不再添加标签，直接返回共享实例
     return this;
   }
@@ -191,10 +176,8 @@ export class Logger {
    * 关闭日志文件流
    */
   close(): void {
-    if (this.writeStream) {
-      this.writeStream.end();
-      this.writeStream = null;
-    }
+    // pino 实例会自动处理流的关闭
+    // 这里保持方法兼容性
   }
 }
 

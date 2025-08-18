@@ -1,22 +1,18 @@
-import fs from "node:fs";
-import path from "node:path";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Logger, logger } from "./logger.js";
 
 // Mock dependencies
 vi.mock("node:fs", () => ({
-  default: {
-    existsSync: vi.fn(),
-    writeFileSync: vi.fn(),
-    createWriteStream: vi.fn(),
-    WriteStream: vi.fn(),
-  },
+  existsSync: vi.fn(),
+  writeFileSync: vi.fn(),
+  createWriteStream: vi.fn(),
+  WriteStream: vi.fn(),
 }));
 
 vi.mock("node:path", () => ({
-  default: {
-    join: vi.fn(),
-  },
+  join: vi.fn(),
 }));
 
 vi.mock("chalk", () => ({
@@ -29,17 +25,27 @@ vi.mock("chalk", () => ({
   },
 }));
 
-vi.mock("consola", () => ({
-  createConsola: vi.fn(() => ({
-    setReporters: vi.fn(),
+vi.mock("pino", () => {
+  const mockPinoInstance = {
     info: vi.fn(),
-    success: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
     debug: vi.fn(),
-    log: vi.fn(),
-  })),
-}));
+    fatal: vi.fn(),
+  };
+
+  const mockPino = Object.assign(vi.fn(() => mockPinoInstance), {
+    multistream: vi.fn(() => mockPinoInstance),
+    destination: vi.fn(() => ({})),
+    stdTimeFunctions: {
+      isoTime: vi.fn(() => `,"time":${Date.now()}`),
+    },
+  });
+
+  return {
+    default: mockPino,
+  };
+});
 
 // Mock console.error to avoid actual output during tests
 const originalConsoleError = console.error;
@@ -48,11 +54,11 @@ const mockConsoleError = vi.fn();
 describe("Logger", async () => {
   const mockFs = vi.mocked(fs);
   const mockPath = vi.mocked(path);
-  const consolaModule = await import("consola");
-  const mockCreateConsola = vi.mocked(consolaModule.createConsola);
+  const pinoModule = await import("pino");
+  const mockPino = vi.mocked(pinoModule.default);
 
   let mockWriteStream: any;
-  let mockConsolaInstance: any;
+  let mockPinoInstance: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -63,18 +69,16 @@ describe("Logger", async () => {
       end: vi.fn(),
     };
 
-    // Mock consola instance
-    mockConsolaInstance = {
-      setReporters: vi.fn(),
+    // Mock pino instance
+    mockPinoInstance = {
       info: vi.fn(),
-      success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
       debug: vi.fn(),
-      log: vi.fn(),
+      fatal: vi.fn(),
     };
 
-    mockCreateConsola.mockReturnValue(mockConsolaInstance);
+    mockPino.mockReturnValue(mockPinoInstance);
     mockFs.createWriteStream.mockReturnValue(mockWriteStream);
     mockPath.join.mockImplementation((...args) => args.join("/"));
 
@@ -94,29 +98,24 @@ describe("Logger", async () => {
     it("should create logger instance with default settings", () => {
       const testLogger = new Logger();
 
-      expect(mockCreateConsola).toHaveBeenCalledWith({
-        formatOptions: {
-          date: false,
-          colors: true,
-          compact: true,
-        },
-        fancy: false,
-      });
-      expect(mockConsolaInstance.setReporters).toHaveBeenCalled();
+      expect(mockPino).toHaveBeenCalled();
+      expect(testLogger).toBeInstanceOf(Logger);
     });
 
     it("should detect daemon mode from environment", () => {
       process.env.XIAOZHI_DAEMON = "true";
       const testLogger = new Logger();
 
-      expect(mockCreateConsola).toHaveBeenCalled();
+      expect(mockPino).toHaveBeenCalled();
+      expect(testLogger).toBeInstanceOf(Logger);
     });
 
     it("should detect non-daemon mode", () => {
       process.env.XIAOZHI_DAEMON = "false";
       const testLogger = new Logger();
 
-      expect(mockCreateConsola).toHaveBeenCalled();
+      expect(mockPino).toHaveBeenCalled();
+      expect(testLogger).toBeInstanceOf(Logger);
     });
   });
 
@@ -139,7 +138,6 @@ describe("Logger", async () => {
         "/test/project/xiaozhi.log",
         {
           flags: "a",
-          encoding: "utf8",
         }
       );
     });
@@ -155,7 +153,6 @@ describe("Logger", async () => {
         "/test/project/xiaozhi.log",
         {
           flags: "a",
-          encoding: "utf8",
         }
       );
     });
@@ -178,7 +175,6 @@ describe("Logger", async () => {
         "/test/project/xiaozhi.log",
         {
           flags: "a",
-          encoding: "utf8",
         }
       );
     });
@@ -219,67 +215,47 @@ describe("Logger", async () => {
     it("should log info messages", () => {
       testLogger.info("Test info message", "arg1", "arg2");
 
-      expect(mockConsolaInstance.info).toHaveBeenCalledWith(
-        "Test info message",
-        "arg1",
-        "arg2"
-      );
-      expect(mockWriteStream.write).toHaveBeenCalledWith(
-        expect.stringContaining("[INFO] Test info message arg1 arg2")
+      expect(mockPinoInstance.info).toHaveBeenCalledWith(
+        "Test info message arg1 arg2"
       );
     });
 
-    it("should log success messages", () => {
+    it("should log success messages (mapped to info)", () => {
       testLogger.success("Test success message");
 
-      expect(mockConsolaInstance.success).toHaveBeenCalledWith(
+      expect(mockPinoInstance.info).toHaveBeenCalledWith(
         "Test success message"
-      );
-      expect(mockWriteStream.write).toHaveBeenCalledWith(
-        expect.stringContaining("[SUCCESS] Test success message")
       );
     });
 
     it("should log warning messages", () => {
       testLogger.warn("Test warning message");
 
-      expect(mockConsolaInstance.warn).toHaveBeenCalledWith(
+      expect(mockPinoInstance.warn).toHaveBeenCalledWith(
         "Test warning message"
-      );
-      expect(mockWriteStream.write).toHaveBeenCalledWith(
-        expect.stringContaining("[WARN] Test warning message")
       );
     });
 
     it("should log error messages", () => {
       testLogger.error("Test error message");
 
-      expect(mockConsolaInstance.error).toHaveBeenCalledWith(
+      expect(mockPinoInstance.error).toHaveBeenCalledWith(
         "Test error message"
-      );
-      expect(mockWriteStream.write).toHaveBeenCalledWith(
-        expect.stringContaining("[ERROR] Test error message")
       );
     });
 
     it("should log debug messages", () => {
       testLogger.debug("Test debug message");
 
-      expect(mockConsolaInstance.debug).toHaveBeenCalledWith(
+      expect(mockPinoInstance.debug).toHaveBeenCalledWith(
         "Test debug message"
-      );
-      expect(mockWriteStream.write).toHaveBeenCalledWith(
-        expect.stringContaining("[DEBUG] Test debug message")
       );
     });
 
-    it("should log general messages", () => {
+    it("should log general messages (mapped to info)", () => {
       testLogger.log("Test log message");
 
-      expect(mockConsolaInstance.log).toHaveBeenCalledWith("Test log message");
-      expect(mockWriteStream.write).toHaveBeenCalledWith(
-        expect.stringContaining("[LOG] Test log message")
-      );
+      expect(mockPinoInstance.info).toHaveBeenCalledWith("Test log message");
     });
   });
 
