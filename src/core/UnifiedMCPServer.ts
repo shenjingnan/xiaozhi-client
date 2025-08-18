@@ -10,7 +10,7 @@
  */
 
 import { EventEmitter } from "node:events";
-import { Logger } from "../Logger.js";
+import { type Logger, logger } from "../Logger.js";
 import { MCPServiceManager } from "../services/MCPServiceManager.js";
 import {
   ConnectionState,
@@ -65,7 +65,7 @@ export class ToolRegistry {
 
   constructor(serviceManager: MCPServiceManager) {
     this.serviceManager = serviceManager;
-    this.logger = new Logger().withTag("ToolRegistry");
+    this.logger = logger;
   }
 
   async initialize(): Promise<void> {
@@ -112,7 +112,7 @@ export class ConnectionManager extends EventEmitter {
 
   constructor() {
     super();
-    this.logger = new Logger().withTag("ConnectionManager");
+    this.logger = logger;
   }
 
   async initialize(): Promise<void> {
@@ -217,7 +217,7 @@ export class UnifiedMCPServer extends EventEmitter {
       ...config,
     };
 
-    this.logger = new Logger().withTag(this.config.name!);
+    this.logger = logger;
 
     // 初始化核心组件
     this.serviceManager = new MCPServiceManager();

@@ -8,7 +8,7 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { WebSocketServer } from "ws";
-import { Logger } from "./Logger.js";
+import { type Logger, logger } from "./Logger.js";
 import { ProxyMCPServer, type Tool } from "./ProxyMCPServer.js";
 import { convertLegacyToNew } from "./adapters/ConfigAdapter.js";
 import { getServiceStatus } from "./cli.js";
@@ -53,7 +53,7 @@ export class WebServer {
       // 配置读取失败时使用默认端口
       this.port = port ?? 9999;
     }
-    this.logger = new Logger();
+    this.logger = logger;
 
     // 延迟初始化，在 start() 方法中进行连接管理
     // 移除硬编码的 MCP 服务和工具配置

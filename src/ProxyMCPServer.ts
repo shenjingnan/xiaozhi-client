@@ -1,6 +1,6 @@
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import WebSocket from "ws";
-import { Logger } from "./Logger.js";
+import { type Logger, logger } from "./Logger.js";
 
 export type { Tool };
 
@@ -89,7 +89,7 @@ export class ProxyMCPServer {
 
   constructor(endpointUrl: string, options?: ProxyMCPServerOptions) {
     this.endpointUrl = endpointUrl;
-    this.logger = new Logger();
+    this.logger = logger;
 
     // 初始化重连配置
     this.reconnectOptions = {

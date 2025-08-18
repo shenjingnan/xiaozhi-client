@@ -9,15 +9,14 @@
 import { dirname } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-import { Logger } from "./Logger";
+import { logger } from "./Logger";
 import { configManager } from "./configManager";
 import { ServerMode, createServer } from "./core/ServerFactory";
 
 // ESM 兼容的 __dirname
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// 创建 logger
-const logger = new Logger();
+// 使用全局 logger 实例
 
 // 初始化日志文件
 const logDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();

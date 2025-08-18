@@ -1,6 +1,6 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { Logger } from "../Logger.js";
+import { type Logger, logger } from "../Logger.js";
 import { TransportFactory } from "./TransportFactory.js";
 
 // 通信方式枚举
@@ -142,7 +142,7 @@ export class MCPService {
 
   constructor(config: MCPServiceConfig, options?: MCPServiceOptions) {
     this.config = config;
-    this.logger = new Logger().withTag(`MCP-${config.name}`);
+    this.logger = logger;
 
     // 验证配置
     this.validateConfig();
@@ -182,6 +182,18 @@ export class MCPService {
   }
 
   /**
+   * 带标签的日志方法
+   */
+  private logWithTag(
+    level: "info" | "error" | "warn" | "debug",
+    message: string,
+    ...args: any[]
+  ): void {
+    const taggedMessage = `[MCP-${this.config.name}] ${message}`;
+    this.logger[level](taggedMessage, ...args);
+  }
+
+  /**
    * 验证配置
    */
   private validateConfig(): void {
@@ -212,7 +224,8 @@ export class MCPService {
    */
   private async attemptConnection(): Promise<void> {
     this.connectionState = ConnectionState.CONNECTING;
-    this.logger.info(
+    this.logWithTag(
+      "info",
       `正在连接 MCP 服务: ${this.config.name} (尝试 ${
         this.reconnectState.attempts + 1
       }/${this.reconnectOptions.maxAttempts})`
@@ -287,7 +300,7 @@ export class MCPService {
     // 重置ping状态
     this.resetPingState();
 
-    this.logger.info(`MCP 服务 ${this.config.name} 连接已建立`);
+    this.logWithTag("info", `MCP 服务 ${this.config.name} 连接已建立`);
 
     // 启动ping监控
     this.startPingMonitoring();

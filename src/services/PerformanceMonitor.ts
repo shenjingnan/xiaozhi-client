@@ -1,4 +1,4 @@
-import { Logger } from "../Logger.js";
+import { type Logger, logger } from "../Logger.js";
 
 /**
  * 性能指标接口
@@ -49,7 +49,7 @@ class PerformanceMonitorClass {
   private readonly MAX_LATENCY_HISTORY = 100; // 保留最近100次的延迟记录
 
   constructor() {
-    this.logger = new Logger().withTag("PerformanceMonitor");
+    this.logger = logger;
   }
 
   /**
@@ -72,7 +72,9 @@ class PerformanceMonitorClass {
         uptime: 0,
         startTime: now,
       });
-      this.logger.debug(`初始化服务 ${serviceName} 的性能指标`);
+      this.logger.debug(
+        `[PerformanceMonitor] 初始化服务 ${serviceName} 的性能指标`
+      );
     }
   }
 
@@ -94,7 +96,9 @@ class PerformanceMonitorClass {
     };
 
     this.timers.set(timerId, timer);
-    this.logger.debug(`开始计时: ${serviceName} - ${operation} (${timerId})`);
+    this.logger.debug(
+      `[PerformanceMonitor] 开始计时: ${serviceName} - ${operation} (${timerId})`
+    );
 
     return timerId;
   }
@@ -105,7 +109,7 @@ class PerformanceMonitorClass {
   endTiming(timerId: string, success = true): number {
     const timer = this.timers.get(timerId);
     if (!timer) {
-      this.logger.warn(`未找到计时器: ${timerId}`);
+      this.logger.warn(`[PerformanceMonitor] 未找到计时器: ${timerId}`);
       return 0;
     }
 
@@ -122,7 +126,7 @@ class PerformanceMonitorClass {
     this.timers.delete(timerId);
 
     this.logger.debug(
-      `结束计时: ${timer.serviceName} - ${timer.operation} = ${duration.toFixed(2)}ms (${success ? "成功" : "失败"})`
+      `[PerformanceMonitor] 结束计时: ${timer.serviceName} - ${timer.operation} = ${duration.toFixed(2)}ms (${success ? "成功" : "失败"})`
     );
 
     return duration;
@@ -148,7 +152,9 @@ class PerformanceMonitorClass {
     }
 
     metrics.lastUpdated = new Date();
-    this.logger.debug(`记录成功操作: ${serviceName} - ${operation}`);
+    this.logger.debug(
+      `[PerformanceMonitor] 记录成功操作: ${serviceName} - ${operation}`
+    );
   }
 
   /**
@@ -163,7 +169,9 @@ class PerformanceMonitorClass {
     this.updateRates(metrics);
 
     metrics.lastUpdated = new Date();
-    this.logger.debug(`记录失败操作: ${serviceName} - ${operation}`);
+    this.logger.debug(
+      `[PerformanceMonitor] 记录失败操作: ${serviceName} - ${operation}`
+    );
   }
 
   /**
@@ -175,7 +183,9 @@ class PerformanceMonitorClass {
 
     metrics.connectionLatency = latency;
     metrics.lastUpdated = new Date();
-    this.logger.debug(`记录连接延迟: ${serviceName} = ${latency.toFixed(2)}ms`);
+    this.logger.debug(
+      `[PerformanceMonitor] 记录连接延迟: ${serviceName} = ${latency.toFixed(2)}ms`
+    );
   }
 
   /**
@@ -263,11 +273,13 @@ class PerformanceMonitorClass {
           this.timers.delete(timerId);
         }
       }
-      this.logger.info(`已清理服务 ${serviceName} 的性能数据`);
+      this.logger.info(
+        `[PerformanceMonitor] 已清理服务 ${serviceName} 的性能数据`
+      );
     } else {
       this.metrics.clear();
       this.timers.clear();
-      this.logger.info("已清理所有性能数据");
+      this.logger.info("[PerformanceMonitor] 已清理所有性能数据");
     }
   }
 

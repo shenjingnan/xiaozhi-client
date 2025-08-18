@@ -4,7 +4,7 @@
  * 这是阶段二重构的核心组件，用于抽象不同的传输层实现
  */
 
-import { Logger } from "../Logger.js";
+import { type Logger, logger } from "../Logger.js";
 import type { MCPMessageHandler } from "../core/MCPMessageHandler.js";
 
 // MCP 消息接口
@@ -61,7 +61,7 @@ export abstract class TransportAdapter {
     this.messageHandler = messageHandler;
     this.config = config;
     this.connectionId = this.generateConnectionId();
-    this.logger = new Logger().withTag(`TransportAdapter:${config.name}`);
+    this.logger = logger;
   }
 
   /**

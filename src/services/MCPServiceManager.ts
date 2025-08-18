@@ -7,7 +7,7 @@
  */
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { Logger } from "../Logger.js";
+import { type Logger, logger } from "../Logger.js";
 import { configManager } from "../configManager.js";
 import {
   MCPService,
@@ -55,7 +55,7 @@ export class MCPServiceManager {
    * @param configs 可选的初始服务配置
    */
   constructor(configs?: Record<string, MCPServiceConfig>) {
-    this.logger = new Logger().withTag("MCPManager");
+    this.logger = logger;
     this.configs = configs || {};
   }
 
@@ -63,12 +63,12 @@ export class MCPServiceManager {
    * 启动所有 MCP 服务
    */
   async startAllServices(): Promise<void> {
-    this.logger.info("正在启动所有 MCP 服务...");
+    this.logger.info("[MCPManager] 正在启动所有 MCP 服务...");
 
     const configEntries = Object.entries(this.configs);
     if (configEntries.length === 0) {
       this.logger.warn(
-        "没有配置任何 MCP 服务，请使用 addServiceConfig() 添加服务配置"
+        "[MCPManager] 没有配置任何 MCP 服务，请使用 addServiceConfig() 添加服务配置"
       );
       return;
     }
@@ -77,14 +77,14 @@ export class MCPServiceManager {
       await this.startService(serviceName);
     }
 
-    this.logger.info("所有 MCP 服务启动完成");
+    this.logger.info("[MCPManager] 所有 MCP 服务启动完成");
   }
 
   /**
    * 启动单个 MCP 服务
    */
   async startService(serviceName: string): Promise<void> {
-    this.logger.info(`启动 MCP 服务: ${serviceName}`);
+    this.logger.info(`[MCPManager] 启动 MCP 服务: ${serviceName}`);
 
     const config = this.configs[serviceName];
     if (!config) {
@@ -111,12 +111,12 @@ export class MCPServiceManager {
 
       const tools = service.getTools();
       this.logger.info(
-        `${serviceName} 服务启动成功，加载了 ${tools.length} 个工具:`,
+        `[MCPManager] ${serviceName} 服务启动成功，加载了 ${tools.length} 个工具:`,
         tools.map((t) => t.name).join(", ")
       );
     } catch (error) {
       this.logger.error(
-        `启动 ${serviceName} 服务失败:`,
+        `[MCPManager] 启动 ${serviceName} 服务失败:`,
         (error as Error).message
       );
       throw error;
@@ -127,11 +127,11 @@ export class MCPServiceManager {
    * 停止单个服务
    */
   async stopService(serviceName: string): Promise<void> {
-    this.logger.info(`停止 MCP 服务: ${serviceName}`);
+    this.logger.info(`[MCPManager] 停止 MCP 服务: ${serviceName}`);
 
     const service = this.services.get(serviceName);
     if (!service) {
-      this.logger.warn(`服务 ${serviceName} 不存在或未启动`);
+      this.logger.warn(`[MCPManager] 服务 ${serviceName} 不存在或未启动`);
       return;
     }
 
@@ -142,10 +142,10 @@ export class MCPServiceManager {
       // 更新工具缓存
       await this.refreshToolsCache();
 
-      this.logger.info(`${serviceName} 服务已停止`);
+      this.logger.info(`[MCPManager] ${serviceName} 服务已停止`);
     } catch (error) {
       this.logger.error(
-        `停止 ${serviceName} 服务失败:`,
+        `[MCPManager] 停止 ${serviceName} 服务失败:`,
         (error as Error).message
       );
       throw error;
@@ -207,7 +207,7 @@ export class MCPServiceManager {
    * 调用 MCP 工具
    */
   async callTool(toolName: string, arguments_: any): Promise<ToolCallResult> {
-    this.logger.info(`调用工具: ${toolName}，参数:`, arguments_);
+    this.logger.info(`[MCPManager] 调用工具: ${toolName}，参数:`, arguments_);
 
     const toolInfo = this.tools.get(toolName);
     if (!toolInfo) {
@@ -229,10 +229,13 @@ export class MCPServiceManager {
         arguments_ || {}
       );
 
-      this.logger.info(`工具 ${toolName} 调用成功，结果:`, result);
+      this.logger.info(`[MCPManager] 工具 ${toolName} 调用成功，结果:`, result);
       return result as ToolCallResult;
     } catch (error) {
-      this.logger.error(`工具 ${toolName} 调用失败:`, (error as Error).message);
+      this.logger.error(
+        `[MCPManager] 工具 ${toolName} 调用失败:`,
+        (error as Error).message
+      );
       throw error;
     }
   }
@@ -241,16 +244,16 @@ export class MCPServiceManager {
    * 停止所有服务
    */
   async stopAllServices(): Promise<void> {
-    this.logger.info("正在停止所有 MCP 服务...");
+    this.logger.info("[MCPManager] 正在停止所有 MCP 服务...");
 
     // 停止所有服务实例
     for (const [serviceName, service] of this.services) {
       try {
         await service.disconnect();
-        this.logger.info(`${serviceName} 服务已停止`);
+        this.logger.info(`[MCPManager] ${serviceName} 服务已停止`);
       } catch (error) {
         this.logger.error(
-          `停止 ${serviceName} 服务失败:`,
+          `[MCPManager] 停止 ${serviceName} 服务失败:`,
           (error as Error).message
         );
       }
@@ -259,7 +262,7 @@ export class MCPServiceManager {
     this.services.clear();
     this.tools.clear();
 
-    this.logger.info("所有 MCP 服务已停止");
+    this.logger.info("[MCPManager] 所有 MCP 服务已停止");
   }
 
   /**
@@ -310,10 +313,12 @@ export class MCPServiceManager {
         const modelScopeApiKey = configManager.getModelScopeApiKey();
         if (modelScopeApiKey) {
           enhancedConfig.apiKey = modelScopeApiKey;
-          this.logger.info(`为 ${config.name} 服务添加 ModelScope API Key`);
+          this.logger.info(
+            `[MCPManager] 为 ${config.name} 服务添加 ModelScope API Key`
+          );
         } else {
           this.logger.warn(
-            `${config.name} 服务需要 ModelScope API Key，但未在配置中找到`
+            `[MCPManager] ${config.name} 服务需要 ModelScope API Key，但未在配置中找到`
           );
           throw new Error(
             `ModelScope SSE 服务 ${config.name} 需要 API Key，请在配置文件中设置 modelscope.apiKey`
@@ -323,7 +328,7 @@ export class MCPServiceManager {
 
       return enhancedConfig;
     } catch (error) {
-      this.logger.error(`配置增强失败: ${config.name}`, error);
+      this.logger.error(`[MCPManager] 配置增强失败: ${config.name}`, error);
       throw error;
     }
   }
@@ -357,7 +362,7 @@ export class MCPServiceManager {
 
     // 存储增强后的配置
     this.configs[serviceName] = enhancedConfig;
-    this.logger.info(`已添加服务配置: ${serviceName}`);
+    this.logger.info(`[MCPManager] 已添加服务配置: ${serviceName}`);
   }
 
   /**
@@ -369,7 +374,7 @@ export class MCPServiceManager {
 
     // 存储增强后的配置
     this.configs[name] = enhancedConfig;
-    this.logger.info(`已更新并增强服务配置: ${name}`);
+    this.logger.info(`[MCPManager] 已更新并增强服务配置: ${name}`);
   }
 
   /**
@@ -377,7 +382,7 @@ export class MCPServiceManager {
    */
   removeServiceConfig(name: string): void {
     delete this.configs[name];
-    this.logger.info(`已移除服务配置: ${name}`);
+    this.logger.info(`[MCPManager] 已移除服务配置: ${name}`);
   }
 }
 

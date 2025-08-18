@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { type FSWatcher, watch } from "chokidar";
-import { Logger } from "../Logger.js";
+import { type Logger, logger } from "../Logger.js";
 import { categorizeError, shouldAlert } from "./ErrorHandler.js";
 import type { MCPServiceConfig } from "./MCPService.js";
 
@@ -68,7 +68,7 @@ class ConfigWatcherClass {
   private backupConfigs: MCPServiceConfig[] = [];
 
   constructor(options?: Partial<ConfigWatcherOptions>) {
-    this.logger = new Logger().withTag("ConfigWatcher");
+    this.logger = logger;
     this.options = {
       debounceMs: 1000, // 1秒防抖
       validateOnChange: true,
