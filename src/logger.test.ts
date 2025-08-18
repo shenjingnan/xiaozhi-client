@@ -7,12 +7,15 @@ import { Logger, logger } from "./logger.js";
 vi.mock("node:fs", () => ({
   existsSync: vi.fn(),
   writeFileSync: vi.fn(),
-  createWriteStream: vi.fn(),
-  WriteStream: vi.fn(),
+  statSync: vi.fn(),
+  renameSync: vi.fn(),
+  unlinkSync: vi.fn(),
 }));
 
 vi.mock("node:path", () => ({
   join: vi.fn(),
+  dirname: vi.fn(),
+  basename: vi.fn(),
 }));
 
 vi.mock("chalk", () => ({
@@ -25,7 +28,13 @@ vi.mock("chalk", () => ({
   },
 }));
 
+// Mock pino with proper structure
 vi.mock("pino", () => {
+  const mockDestination = vi.fn(() => ({
+    write: vi.fn(),
+    end: vi.fn(),
+  }));
+
   const mockPinoInstance = {
     info: vi.fn(),
     warn: vi.fn(),
@@ -34,13 +43,18 @@ vi.mock("pino", () => {
     fatal: vi.fn(),
   };
 
+  const mockMultistream = vi.fn(() => mockPinoInstance);
+
   const mockPino = Object.assign(
     vi.fn(() => mockPinoInstance),
     {
-      multistream: vi.fn(() => mockPinoInstance),
-      destination: vi.fn(() => ({})),
+      multistream: mockMultistream,
+      destination: mockDestination,
+      stdSerializers: {
+        err: vi.fn((err) => ({ message: err.message, stack: err.stack })),
+      },
       stdTimeFunctions: {
-        isoTime: vi.fn(() => `,"time":${Date.now()}`),
+        isoTime: vi.fn(() => `,"time":"${new Date().toISOString()}"`),
       },
     }
   );
@@ -60,14 +74,14 @@ describe("Logger", async () => {
   const pinoModule = await import("pino");
   const mockPino = vi.mocked(pinoModule.default);
 
-  let mockWriteStream: any;
+  let mockDestination: any;
   let mockPinoInstance: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Mock WriteStream
-    mockWriteStream = {
+    // Mock pino destination
+    mockDestination = {
       write: vi.fn(),
       end: vi.fn(),
     };
@@ -81,9 +95,20 @@ describe("Logger", async () => {
       fatal: vi.fn(),
     };
 
+    // Setup pino mocks
     mockPino.mockReturnValue(mockPinoInstance);
-    mockFs.createWriteStream.mockReturnValue(mockWriteStream);
+    mockPino.multistream.mockReturnValue(mockPinoInstance);
+    mockPino.destination.mockReturnValue(mockDestination);
+
+    // Setup fs mocks
     mockPath.join.mockImplementation((...args) => args.join("/"));
+    mockPath.dirname.mockImplementation((p) =>
+      p.split("/").slice(0, -1).join("/")
+    );
+    mockPath.basename.mockImplementation((p, ext) => {
+      const name = p.split("/").pop() || "";
+      return ext ? name.replace(ext, "") : name;
+    });
 
     // Mock console.error
     console.error = mockConsoleError;
@@ -137,12 +162,8 @@ describe("Logger", async () => {
         "/test/project/xiaozhi.log",
         ""
       );
-      expect(mockFs.createWriteStream).toHaveBeenCalledWith(
-        "/test/project/xiaozhi.log",
-        {
-          flags: "a",
-        }
-      );
+      // 验证 pino 实例被重新创建
+      expect(mockPino).toHaveBeenCalledTimes(2); // 一次构造函数，一次 initLogFile
     });
 
     it("should initialize log file when it already exists", () => {
@@ -152,58 +173,48 @@ describe("Logger", async () => {
       testLogger.initLogFile("/test/project");
 
       expect(mockFs.writeFileSync).not.toHaveBeenCalled();
-      expect(mockFs.createWriteStream).toHaveBeenCalledWith(
-        "/test/project/xiaozhi.log",
-        {
-          flags: "a",
-        }
-      );
+      // 验证 pino 实例被重新创建
+      expect(mockPino).toHaveBeenCalledTimes(2); // 一次构造函数，一次 initLogFile
     });
   });
 
-  describe("enableFileLogging", () => {
-    it("should enable file logging when log file path is set", () => {
+  describe("file logging", () => {
+    it("should automatically enable file logging when log file is initialized", () => {
+      const testLogger = new Logger();
+
+      testLogger.initLogFile("/test/project");
+
+      // 验证 pino.destination 被调用来创建文件流
+      expect(mockPino.destination).toHaveBeenCalledWith({
+        dest: "/test/project/xiaozhi.log",
+        sync: false,
+        append: true,
+        mkdir: true,
+      });
+    });
+
+    it("should not create file stream when no log file path is set", () => {
+      const testLogger = new Logger();
+
+      // 只应该创建控制台流，不创建文件流
+      expect(mockPino.destination).not.toHaveBeenCalled();
+    });
+
+    it("should handle file logging in daemon mode", () => {
+      process.env.XIAOZHI_DAEMON = "true";
       const testLogger = new Logger();
       testLogger.initLogFile("/test/project");
 
-      // First disable file logging to clear the write stream
-      testLogger.enableFileLogging(false);
-
-      // Clear the mock calls
-      mockFs.createWriteStream.mockClear();
-
-      testLogger.enableFileLogging(true);
-
-      expect(mockFs.createWriteStream).toHaveBeenCalledWith(
-        "/test/project/xiaozhi.log",
-        {
-          flags: "a",
-        }
-      );
+      // 在守护进程模式下，应该只有文件流，没有控制台流
+      expect(mockPino.multistream).toHaveBeenCalled();
+      expect(mockPino.destination).toHaveBeenCalled();
     });
 
-    it("should not enable file logging when log file path is not set", () => {
+    it("should handle close method", () => {
       const testLogger = new Logger();
 
-      testLogger.enableFileLogging(true);
-
-      expect(mockFs.createWriteStream).not.toHaveBeenCalled();
-    });
-
-    it("should disable file logging", () => {
-      const testLogger = new Logger();
-      testLogger.initLogFile("/test/project");
-
-      testLogger.enableFileLogging(false);
-
-      expect(mockWriteStream.end).toHaveBeenCalled();
-    });
-
-    it("should handle disable when no write stream exists", () => {
-      const testLogger = new Logger();
-
-      // Should not throw error
-      expect(() => testLogger.enableFileLogging(false)).not.toThrow();
+      // close 方法应该存在且不抛出错误
+      expect(() => testLogger.close()).not.toThrow();
     });
   });
 
@@ -219,8 +230,24 @@ describe("Logger", async () => {
       testLogger.info("Test info message", "arg1", "arg2");
 
       expect(mockPinoInstance.info).toHaveBeenCalledWith(
-        "Test info message arg1 arg2"
+        { args: ["arg1", "arg2"] },
+        "Test info message"
       );
+    });
+
+    it("should log info messages with structured data", () => {
+      testLogger.info({ userId: 123, action: "test" }, "User action");
+
+      expect(mockPinoInstance.info).toHaveBeenCalledWith(
+        { userId: 123, action: "test" },
+        "User action"
+      );
+    });
+
+    it("should log info messages without arguments", () => {
+      testLogger.info("Simple message");
+
+      expect(mockPinoInstance.info).toHaveBeenCalledWith("Simple message");
     });
 
     it("should log success messages (mapped to info)", () => {
@@ -243,6 +270,25 @@ describe("Logger", async () => {
       testLogger.error("Test error message");
 
       expect(mockPinoInstance.error).toHaveBeenCalledWith("Test error message");
+    });
+
+    it("should log error messages with Error objects", () => {
+      const error = new Error("Test error");
+      testLogger.error("Operation failed", error);
+
+      expect(mockPinoInstance.error).toHaveBeenCalledWith(
+        {
+          args: [
+            {
+              message: "Test error",
+              stack: error.stack,
+              name: "Error",
+              cause: undefined,
+            },
+          ],
+        },
+        "Operation failed"
+      );
     });
 
     it("should log debug messages", () => {
@@ -268,16 +314,15 @@ describe("Logger", async () => {
   });
 
   describe("close", () => {
-    it("should close write stream when it exists", () => {
+    it("should handle close gracefully", () => {
       const testLogger = new Logger();
       testLogger.initLogFile("/test/project");
 
-      testLogger.close();
-
-      expect(mockWriteStream.end).toHaveBeenCalled();
+      // Should not throw error
+      expect(() => testLogger.close()).not.toThrow();
     });
 
-    it("should handle close when no write stream exists", () => {
+    it("should handle close when no log file exists", () => {
       const testLogger = new Logger();
 
       // Should not throw error
@@ -291,244 +336,55 @@ describe("Logger", async () => {
     });
   });
 
-  describe("logToFile", () => {
+  describe("file management", () => {
     let testLogger: Logger;
 
     beforeEach(() => {
       testLogger = new Logger();
-      testLogger.initLogFile("/test/project");
     });
 
-    it("should format log messages with timestamp", () => {
-      testLogger.info("Test message");
-
-      const writeCall = mockWriteStream.write.mock.calls[0][0];
-      expect(writeCall).toMatch(
-        /\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] \[INFO\] Test message\n/
-      );
-    });
-
-    it("should handle object arguments", () => {
-      const testObj = { key: "value", number: 42 };
-      testLogger.info("Test message", testObj);
-
-      const writeCall = mockWriteStream.write.mock.calls[0][0];
-      expect(writeCall).toContain('{"key":"value","number":42}');
-    });
-
-    it("should handle mixed argument types", () => {
-      testLogger.info(
-        "Test message",
-        "string",
-        123,
-        { obj: "value" },
-        null,
-        undefined
-      );
-
-      const writeCall = mockWriteStream.write.mock.calls[0][0];
-      expect(writeCall).toContain("string 123");
-      expect(writeCall).toContain('{"obj":"value"}');
-      expect(writeCall).toContain("null undefined");
-    });
-
-    it("should not write to file when write stream is null", () => {
-      testLogger.close(); // This sets writeStream to null
-
-      testLogger.info("Test message");
-
-      // Should still call consola but not write to file
-      expect(mockConsolaInstance.info).toHaveBeenCalledWith("Test message");
-      expect(mockWriteStream.write).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("formatDateTime", () => {
-    it("should format date correctly", () => {
-      // We can't directly test the private formatDateTime function,
-      // but we can test its output through the reporter
-      const testLogger = new Logger();
-
-      // Get the reporter function that was set
-      const reporterCall = mockConsolaInstance.setReporters.mock.calls[0][0][0];
-      const mockLogObj = {
-        type: "info",
-        args: ["Test message"],
-      };
-
-      // Create a mock date that will return the expected local time
-      // Since the formatDateTime function uses local time, we need to account for timezone
-      const mockDate = {
-        getFullYear: () => 2023,
-        getMonth: () => 11, // December (0-based)
-        getDate: () => 25,
-        getHours: () => 10,
-        getMinutes: () => 30,
-        getSeconds: () => 45,
-      };
-
-      vi.spyOn(global, "Date").mockImplementation(() => mockDate as any);
-
-      reporterCall.log(mockLogObj);
-
-      expect(mockConsoleError).toHaveBeenCalledWith(
-        expect.stringContaining("[2023-12-25 10:30:45]")
-      );
-
-      vi.restoreAllMocks();
-    });
-  });
-
-  describe("reporter functionality", () => {
-    let testLogger: Logger;
-    let reporter: any;
-
-    beforeEach(() => {
-      testLogger = new Logger();
-      reporter = mockConsolaInstance.setReporters.mock.calls[0][0][0];
-    });
-
-    it("should format info messages with blue color", () => {
-      const mockLogObj = {
-        type: "info",
-        args: ["Test info"],
-      };
-
-      reporter.log(mockLogObj);
-
-      expect(mockConsoleError).toHaveBeenCalledWith(
-        expect.stringContaining("blue([INFO])")
-      );
-    });
-
-    it("should format success messages with green color", () => {
-      const mockLogObj = {
-        type: "success",
-        args: ["Test success"],
-      };
-
-      reporter.log(mockLogObj);
-
-      expect(mockConsoleError).toHaveBeenCalledWith(
-        expect.stringContaining("green([SUCCESS])")
-      );
-    });
-
-    it("should format warning messages with yellow color", () => {
-      const mockLogObj = {
-        type: "warn",
-        args: ["Test warning"],
-      };
-
-      reporter.log(mockLogObj);
-
-      expect(mockConsoleError).toHaveBeenCalledWith(
-        expect.stringContaining("yellow([WARN])")
-      );
-    });
-
-    it("should format error messages with red color", () => {
-      const mockLogObj = {
-        type: "error",
-        args: ["Test error"],
-      };
-
-      reporter.log(mockLogObj);
-
-      expect(mockConsoleError).toHaveBeenCalledWith(
-        expect.stringContaining("red([ERROR])")
-      );
-    });
-
-    it("should format debug messages with gray color", () => {
-      const mockLogObj = {
-        type: "debug",
-        args: ["Test debug"],
-      };
-
-      reporter.log(mockLogObj);
-
-      expect(mockConsoleError).toHaveBeenCalledWith(
-        expect.stringContaining("gray([DEBUG])")
-      );
-    });
-
-    it("should handle unknown log types", () => {
-      const mockLogObj = {
-        type: "unknown",
-        args: ["Test unknown"],
-      };
-
-      reporter.log(mockLogObj);
-
-      expect(mockConsoleError).toHaveBeenCalledWith(
-        expect.stringContaining("[UNKNOWN]")
-      );
-    });
-
-    it("should not output to console in daemon mode", () => {
-      process.env.XIAOZHI_DAEMON = "true";
-      const daemonLogger = new Logger();
-      const daemonReporter =
-        mockConsolaInstance.setReporters.mock.calls[1][0][0];
-
-      const mockLogObj = {
-        type: "info",
-        args: ["Test daemon"],
-      };
-
-      daemonReporter.log(mockLogObj);
-
-      // Should not call console.error in daemon mode
-      expect(mockConsoleError).not.toHaveBeenCalled();
-    });
-
-    it("should handle EPIPE errors gracefully", () => {
-      const mockLogObj = {
-        type: "info",
-        args: ["Test message"],
-      };
-
-      // Mock console.error to throw EPIPE error
-      mockConsoleError.mockImplementation(() => {
-        const error = new Error("EPIPE: broken pipe");
-        error.message = "EPIPE: broken pipe";
-        throw error;
-      });
+    it("should set log file options", () => {
+      testLogger.setLogFileOptions(5 * 1024 * 1024, 10);
 
       // Should not throw error
-      expect(() => reporter.log(mockLogObj)).not.toThrow();
+      expect(() => testLogger.setLogFileOptions(1024, 3)).not.toThrow();
     });
 
-    it("should re-throw non-EPIPE errors", () => {
-      const mockLogObj = {
-        type: "info",
-        args: ["Test message"],
-      };
+    it("should clean up old logs", () => {
+      testLogger.initLogFile("/test/project");
 
-      // Mock console.error to throw non-EPIPE error
-      mockConsoleError.mockImplementation(() => {
-        throw new Error("Other error");
-      });
-
-      // Should throw the error
-      expect(() => reporter.log(mockLogObj)).toThrow("Other error");
+      // Should not throw error
+      expect(() => testLogger.cleanupOldLogs()).not.toThrow();
     });
 
-    it("should join multiple arguments", () => {
-      // Reset the mock to ensure it doesn't throw errors from previous tests
-      mockConsoleError.mockReset();
+    it("should handle log rotation", () => {
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.statSync.mockReturnValue({ size: 20 * 1024 * 1024 }); // 20MB file
 
-      const mockLogObj = {
-        type: "info",
-        args: ["Message", "arg1", "arg2", 123],
-      };
+      testLogger.initLogFile("/test/project");
 
-      reporter.log(mockLogObj);
+      // Should not throw error during rotation
+      expect(() => testLogger.initLogFile("/test/project")).not.toThrow();
+    });
+  });
 
-      expect(mockConsoleError).toHaveBeenCalledWith(
-        expect.stringContaining("Message arg1 arg2 123")
-      );
+  describe("utility functions", () => {
+    it("should handle safe write operations", () => {
+      const testLogger = new Logger();
+
+      // Test that logging works even in edge cases
+      expect(() => testLogger.info("Test message")).not.toThrow();
+      expect(() => testLogger.error("Test error")).not.toThrow();
+    });
+
+    it("should enhance error objects", () => {
+      const testLogger = new Logger();
+      const error = new Error("Test error");
+      error.cause = new Error("Root cause");
+
+      testLogger.error({ operation: "test", error }, "Operation failed");
+
+      expect(mockPinoInstance.error).toHaveBeenCalled();
     });
   });
 });
