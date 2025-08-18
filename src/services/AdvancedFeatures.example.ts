@@ -5,7 +5,7 @@
  * 展示如何使用错误处理、性能监控、健康检查和配置热重载功能
  */
 
-import { Logger } from "../logger.js";
+import { Logger } from "../Logger.js";
 import { ConfigChangeType, ConfigWatcher } from "./ConfigWatcher.js";
 import {
   categorizeError,
