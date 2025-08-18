@@ -34,13 +34,16 @@ vi.mock("pino", () => {
     fatal: vi.fn(),
   };
 
-  const mockPino = Object.assign(vi.fn(() => mockPinoInstance), {
-    multistream: vi.fn(() => mockPinoInstance),
-    destination: vi.fn(() => ({})),
-    stdTimeFunctions: {
-      isoTime: vi.fn(() => `,"time":${Date.now()}`),
-    },
-  });
+  const mockPino = Object.assign(
+    vi.fn(() => mockPinoInstance),
+    {
+      multistream: vi.fn(() => mockPinoInstance),
+      destination: vi.fn(() => ({})),
+      stdTimeFunctions: {
+        isoTime: vi.fn(() => `,"time":${Date.now()}`),
+      },
+    }
+  );
 
   return {
     default: mockPino,
@@ -239,17 +242,13 @@ describe("Logger", async () => {
     it("should log error messages", () => {
       testLogger.error("Test error message");
 
-      expect(mockPinoInstance.error).toHaveBeenCalledWith(
-        "Test error message"
-      );
+      expect(mockPinoInstance.error).toHaveBeenCalledWith("Test error message");
     });
 
     it("should log debug messages", () => {
       testLogger.debug("Test debug message");
 
-      expect(mockPinoInstance.debug).toHaveBeenCalledWith(
-        "Test debug message"
-      );
+      expect(mockPinoInstance.debug).toHaveBeenCalledWith("Test debug message");
     });
 
     it("should log general messages (mapped to info)", () => {
