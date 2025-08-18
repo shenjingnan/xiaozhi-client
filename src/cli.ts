@@ -90,14 +90,14 @@ function isXiaozhiProcess(pid: number): boolean {
         // Windows 系统
         const result = execSync(`tasklist /FI "PID eq ${pid}" /FO CSV /NH`, {
           encoding: "utf8",
-          timeout: 5000
+          timeout: 5000,
         });
         cmdline = result.toLowerCase();
       } else {
         // Unix-like 系统
         const result = execSync(`ps -p ${pid} -o comm=`, {
           encoding: "utf8",
-          timeout: 5000
+          timeout: 5000,
         });
         cmdline = result.toLowerCase();
       }
