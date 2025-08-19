@@ -193,9 +193,12 @@ export class CommandRegistry implements ICommandRegistry {
   /**
    * 注册向后兼容的顶级服务命令
    */
-  private registerLegacyServiceCommands(program: Command, handlers: CommandHandler[]): void {
+  private registerLegacyServiceCommands(
+    program: Command,
+    handlers: CommandHandler[]
+  ): void {
     // 找到服务命令处理器
-    const serviceHandler = handlers.find(h => h.name === 'service');
+    const serviceHandler = handlers.find((h) => h.name === "service");
     if (!serviceHandler || !serviceHandler.subcommands) {
       return;
     }
