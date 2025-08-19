@@ -127,7 +127,7 @@ export class DIContainer implements IDIContainer {
 
     // 注册配置管理器（单例）
     container.registerSingleton("configManager", () => {
-      const { configManager } = require("../configManager.js");
+      const { configManager } = require("../../configManager.js");
       return configManager;
     });
 
