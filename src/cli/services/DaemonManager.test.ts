@@ -2,10 +2,10 @@
  * 守护进程管理服务单元测试
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { DaemonManagerImpl, type DaemonOptions } from "./DaemonManager.js";
-import type { ProcessManager } from "../interfaces/Service.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ServiceError } from "../errors/index.js";
+import type { ProcessManager } from "../interfaces/Service.js";
+import { DaemonManagerImpl, type DaemonOptions } from "./DaemonManager.js";
 
 // Mock 依赖
 const mockProcessManager: ProcessManager = {

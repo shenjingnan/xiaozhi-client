@@ -56,6 +56,18 @@ export interface ProcessManager {
   cleanupPidFile(): void;
   /** 检查是否为 xiaozhi 进程 */
   isXiaozhiProcess(pid: number): boolean;
+  /** 保存进程信息 */
+  savePidInfo(pid: number, mode: "foreground" | "daemon"): void;
+  /** 优雅停止进程 */
+  gracefulKillProcess(pid: number): Promise<void>;
+  /** 检查进程是否存在 */
+  processExists(pid: number): boolean;
+  /** 清理容器环境状态 */
+  cleanupContainerState(): void;
+  /** 获取进程信息 */
+  getProcessInfo(pid: number): { exists: boolean; isXiaozhi: boolean };
+  /** 验证 PID 文件完整性 */
+  validatePidFile(): boolean;
 }
 
 /**
@@ -73,9 +85,15 @@ export interface DaemonManager {
  */
 export interface TemplateManager {
   /** 获取可用模板列表 */
-  getAvailableTemplates(): string[];
+  getAvailableTemplates(): Promise<any[]>;
   /** 复制模板到目标目录 */
   copyTemplate(templateName: string, targetPath: string): Promise<void>;
   /** 验证模板是否存在 */
-  validateTemplate(templateName: string): boolean;
+  validateTemplate(templateName: string): Promise<boolean>;
+  /** 获取模板信息 */
+  getTemplateInfo(templateName: string): Promise<any | null>;
+  /** 创建项目 */
+  createProject(options: any): Promise<void>;
+  /** 清除模板缓存 */
+  clearCache(): void;
 }

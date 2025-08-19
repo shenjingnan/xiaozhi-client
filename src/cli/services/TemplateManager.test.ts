@@ -2,12 +2,12 @@
  * 模板管理服务单元测试
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import {
-  TemplateManagerImpl,
-  type TemplateCreateOptions,
-} from "./TemplateManager.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FileError, ValidationError } from "../errors/index.js";
+import {
+  type TemplateCreateOptions,
+  TemplateManagerImpl,
+} from "./TemplateManager.js";
 
 // Mock 依赖
 vi.mock("../utils/PathUtils.js", () => ({
@@ -46,7 +46,7 @@ vi.mock("node:path", () => ({
   default: {
     join: vi.fn((...args) => args.join("/")),
     resolve: vi.fn((p) => `/resolved/${p}`),
-    relative: vi.fn((from, to) => to.replace(from + "/", "")),
+    relative: vi.fn((from, to) => String(to).replace(`${String(from)}/`, "")),
   },
 }));
 

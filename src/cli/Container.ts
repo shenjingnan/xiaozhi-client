@@ -147,8 +147,8 @@ export class DIContainer implements IDIContainer {
 
     container.registerSingleton("daemonManager", async () => {
       const { DaemonManagerImpl } = await import("./services/DaemonManager.js");
-      const processManager = container.get("processManager");
-      const logger = container.get("logger");
+      const processManager = container.get("processManager") as any;
+      const logger = container.get("logger") as any;
       return new DaemonManagerImpl(processManager, logger);
     });
 
@@ -156,9 +156,9 @@ export class DIContainer implements IDIContainer {
       const { ServiceManagerImpl } = await import(
         "./services/ServiceManager.js"
       );
-      const processManager = container.get("processManager");
-      const configManager = container.get("configManager");
-      const logger = container.get("logger");
+      const processManager = container.get("processManager") as any;
+      const configManager = container.get("configManager") as any;
+      const logger = container.get("logger") as any;
       return new ServiceManagerImpl(processManager, configManager, logger);
     });
 

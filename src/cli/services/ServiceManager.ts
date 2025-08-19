@@ -2,15 +2,15 @@
  * 服务管理服务
  */
 
+import { ConfigError, ServiceError } from "../errors/index.js";
 import type {
   ServiceManager as IServiceManager,
+  ProcessManager,
   ServiceStartOptions,
   ServiceStatus,
-  ProcessManager,
 } from "../interfaces/Service.js";
-import { ServiceError, ConfigError } from "../errors/index.js";
-import { PlatformUtils } from "../utils/PlatformUtils.js";
 import { PathUtils } from "../utils/PathUtils.js";
+import { PlatformUtils } from "../utils/PlatformUtils.js";
 import { Validation } from "../utils/Validation.js";
 
 /**
@@ -52,6 +52,8 @@ export class ServiceManagerImpl implements IServiceManager {
           await this.startStdioMode(options);
           break;
         case "normal":
+          await this.startNormalMode(options);
+          break;
         default:
           await this.startNormalMode(options);
           break;

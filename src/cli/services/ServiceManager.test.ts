@@ -2,13 +2,13 @@
  * 服务管理服务单元测试
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { ServiceManagerImpl } from "./ServiceManager.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ConfigError, ServiceError } from "../errors/index.js";
 import type {
   ProcessManager,
   ServiceStartOptions,
 } from "../interfaces/Service.js";
-import { ServiceError, ConfigError } from "../errors/index.js";
+import { ServiceManagerImpl } from "./ServiceManager.js";
 
 // Mock 依赖
 const mockProcessManager: ProcessManager = {

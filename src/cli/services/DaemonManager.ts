@@ -2,13 +2,13 @@
  * 守护进程管理服务
  */
 
+import { type ChildProcess, spawn } from "node:child_process";
 import fs from "node:fs";
-import { spawn, type ChildProcess } from "node:child_process";
+import { ProcessError, ServiceError } from "../errors/index.js";
 import type {
   DaemonManager as IDaemonManager,
   ProcessManager,
 } from "../interfaces/Service.js";
-import { ServiceError, ProcessError } from "../errors/index.js";
 import { PathUtils } from "../utils/PathUtils.js";
 import { PlatformUtils } from "../utils/PlatformUtils.js";
 

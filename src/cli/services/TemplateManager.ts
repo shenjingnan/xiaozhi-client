@@ -4,10 +4,10 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import type { TemplateManager as ITemplateManager } from "../interfaces/Service.js";
 import { FileError, ValidationError } from "../errors/index.js";
-import { PathUtils } from "../utils/PathUtils.js";
+import type { TemplateManager as ITemplateManager } from "../interfaces/Service.js";
 import { FileUtils } from "../utils/FileUtils.js";
+import { PathUtils } from "../utils/PathUtils.js";
 import { Validation } from "../utils/Validation.js";
 
 /**
@@ -129,6 +129,17 @@ export class TemplateManagerImpl implements ITemplateManager {
       }
       throw new FileError(`无法获取模板信息: ${templateName}`, "");
     }
+  }
+
+  /**
+   * 复制模板到目标目录
+   */
+  async copyTemplate(templateName: string, targetPath: string): Promise<void> {
+    await this.createProject({
+      templateName,
+      targetPath,
+      projectName: path.basename(targetPath),
+    });
   }
 
   /**
