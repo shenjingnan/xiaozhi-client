@@ -35,23 +35,31 @@ const mockLogger = {
   warn: vi.fn(),
 };
 
-// Mock 动态导入
-vi.mock("node:child_process", () => ({
-  spawn: vi.fn(),
-}));
+
 
 const mockWebServerInstance = {
-  start: vi.fn(),
-  stop: vi.fn(),
+  start: vi.fn().mockResolvedValue(undefined),
+  stop: vi.fn().mockResolvedValue(undefined),
 };
 
 const mockMCPServerInstance = {
-  start: vi.fn(),
-  stop: vi.fn(),
+  start: vi.fn().mockResolvedValue(undefined),
+  stop: vi.fn().mockResolvedValue(undefined),
 };
 
 vi.mock("../../WebServer.js", () => ({
   WebServer: vi.fn().mockImplementation(() => mockWebServerInstance),
+}));
+
+// Mock dynamic imports
+vi.mock("node:child_process", () => ({
+  spawn: vi.fn().mockReturnValue({
+    pid: 1234,
+    stdout: { pipe: vi.fn() },
+    stderr: { pipe: vi.fn() },
+    on: vi.fn(),
+    unref: vi.fn(),
+  }),
 }));
 
 vi.mock("../../services/MCPServer.js", () => ({
@@ -83,6 +91,12 @@ describe("ServiceManagerImpl", () => {
     (mockProcessManager.getServiceStatus as any).mockReturnValue({
       running: false,
     });
+    (mockProcessManager.gracefulKillProcess as any).mockResolvedValue(undefined);
+
+    // Mock dynamic import for WebServer
+    vi.doMock("../../WebServer.js", () => ({
+      WebServer: vi.fn().mockImplementation(() => mockWebServerInstance),
+    }));
   });
 
   afterEach(() => {
@@ -111,7 +125,7 @@ describe("ServiceManagerImpl", () => {
       mockConfigManager.configExists.mockReturnValue(false);
 
       await expect(serviceManager.start(defaultOptions)).rejects.toThrow(
-        ConfigError
+        ServiceError
       );
     });
 
@@ -223,10 +237,14 @@ describe("ServiceManagerImpl", () => {
     it("should stop and start service", async () => {
       const options: ServiceStartOptions = { daemon: false, ui: false };
 
-      // Mock running service
+      // Mock running service - restart() calls getStatus(), then stop() calls getStatus() again
       (mockProcessManager.getServiceStatus as any)
-        .mockReturnValueOnce({ running: true, pid: 1234 })
-        .mockReturnValueOnce({ running: false });
+        .mockReturnValueOnce({ running: true, pid: 1234 }) // restart() check
+        .mockReturnValueOnce({ running: true, pid: 1234 }) // stop() check
+        .mockReturnValueOnce({ running: false }); // after stop
+
+      // Mock gracefulKillProcess to resolve successfully
+      (mockProcessManager.gracefulKillProcess as any).mockResolvedValue(undefined);
 
       await serviceManager.restart(options);
 

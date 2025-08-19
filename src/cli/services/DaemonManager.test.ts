@@ -225,10 +225,14 @@ describe("DaemonManagerImpl", () => {
 
   describe("restartDaemon", () => {
     it("should restart daemon", async () => {
-      // Mock running daemon first, then stopped
+      // Mock running daemon - restartDaemon() calls getServiceStatus(), then stopDaemon() calls getServiceStatus() again
       (mockProcessManager.getServiceStatus as any)
-        .mockReturnValueOnce({ running: true, pid: 1234 })
-        .mockReturnValueOnce({ running: false });
+        .mockReturnValueOnce({ running: true, pid: 1234 }) // restartDaemon() check
+        .mockReturnValueOnce({ running: true, pid: 1234 }) // stopDaemon() check
+        .mockReturnValueOnce({ running: false }); // after stop
+
+      // Mock gracefulKillProcess to resolve successfully
+      (mockProcessManager.gracefulKillProcess as any).mockResolvedValue(undefined);
 
       await daemonManager.restartDaemon(mockServerFactory);
 
