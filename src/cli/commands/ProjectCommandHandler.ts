@@ -106,15 +106,18 @@ export class ProjectCommandHandler extends BaseCommandHandler {
       return;
     }
 
+    // 使用局部变量避免重新赋值函数参数
+    let actualTemplateName = templateName;
+
     // 验证模板是否存在
     const isValidTemplate =
-      await templateManager.validateTemplate(templateName);
+      await templateManager.validateTemplate(actualTemplateName);
     if (!isValidTemplate) {
-      spinner.fail(`模板 "${templateName}" 不存在`);
+      spinner.fail(`模板 "${actualTemplateName}" 不存在`);
 
       // 尝试找到相似的模板
       const similarTemplate = this.findSimilarTemplate(
-        templateName,
+        actualTemplateName,
         availableTemplates
       );
 
@@ -127,7 +130,7 @@ export class ProjectCommandHandler extends BaseCommandHandler {
         );
 
         if (confirmed) {
-          templateName = similarTemplate;
+          actualTemplateName = similarTemplate;
         } else {
           this.showAvailableTemplates(availableTemplates);
           return;
@@ -138,11 +141,11 @@ export class ProjectCommandHandler extends BaseCommandHandler {
       }
     }
 
-    spinner.text = `从模板 "${templateName}" 创建项目 "${projectName}"...`;
+    spinner.text = `从模板 "${actualTemplateName}" 创建项目 "${projectName}"...`;
 
     // 使用模板管理器创建项目
     await templateManager.createProject({
-      templateName,
+      templateName: actualTemplateName,
       targetPath,
       projectName,
     });

@@ -4,8 +4,8 @@
  * 小智客户端 CLI 入口文件（重构版）
  */
 
-import { Command } from "commander";
 import chalk from "chalk";
+import { Command } from "commander";
 import { createContainer } from "./cli/Container.js";
 import { CommandRegistry } from "./cli/commands/index.js";
 
@@ -17,7 +17,9 @@ const program = new Command();
 function showHelp(): void {
   console.log(chalk.blue("🤖 小智 MCP 客户端"));
   console.log();
-  console.log("一个强大的 MCP (Model Context Protocol) 客户端，支持多种连接方式和服务管理。");
+  console.log(
+    "一个强大的 MCP (Model Context Protocol) 客户端，支持多种连接方式和服务管理。"
+  );
   console.log();
   console.log(chalk.yellow("主要功能:"));
   console.log("  • 支持 WebSocket 和 HTTP 连接");
@@ -107,15 +109,13 @@ async function main(): Promise<void> {
       });
 
     // 添加详细信息选项
-    program
-      .option("-V", "显示详细信息")
-      .hook("preAction", (thisCommand) => {
-        const options = thisCommand.opts();
-        if (options.V) {
-          showDetailedInfo(container);
-          process.exit(0);
-        }
-      });
+    program.option("-V", "显示详细信息").hook("preAction", (thisCommand) => {
+      const options = thisCommand.opts();
+      if (options.V) {
+        showDetailedInfo(container);
+        process.exit(0);
+      }
+    });
 
     // 注册所有命令
     await commandRegistry.registerCommands(program);
@@ -152,13 +152,19 @@ async function main(): Promise<void> {
     // 解析命令行参数
     await program.parseAsync(process.argv);
   } catch (error) {
-    console.error(chalk.red("程序启动失败:"), error instanceof Error ? error.message : String(error));
+    console.error(
+      chalk.red("程序启动失败:"),
+      error instanceof Error ? error.message : String(error)
+    );
     process.exit(1);
   }
 }
 
 // 启动程序
 main().catch((error) => {
-  console.error(chalk.red("程序执行失败:"), error instanceof Error ? error.message : String(error));
+  console.error(
+    chalk.red("程序执行失败:"),
+    error instanceof Error ? error.message : String(error)
+  );
   process.exit(1);
 });

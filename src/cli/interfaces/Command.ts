@@ -92,7 +92,9 @@ export abstract class BaseCommandHandler implements CommandHandler {
    */
   protected validateArgs(args: any[], expectedCount: number): void {
     if (args.length < expectedCount) {
-      throw new Error(`命令需要至少 ${expectedCount} 个参数，但只提供了 ${args.length} 个`);
+      throw new Error(
+        `命令需要至少 ${expectedCount} 个参数，但只提供了 ${args.length} 个`
+      );
     }
   }
 }

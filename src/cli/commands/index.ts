@@ -6,8 +6,8 @@ import type { Command } from "commander";
 import { ErrorHandler } from "../errors/ErrorHandlers.js";
 import type {
   CommandHandler,
-  ICommandRegistry,
   ICommandHandlerFactory,
+  ICommandRegistry,
 } from "../interfaces/Command.js";
 import type { IDIContainer } from "../interfaces/Config.js";
 import { CommandHandlerFactory } from "./CommandHandlerFactory.js";
