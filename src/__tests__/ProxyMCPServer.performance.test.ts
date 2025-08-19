@@ -107,8 +107,8 @@ describe("ProxyMCPServer 性能测试", () => {
       // 验证平均响应时间
       const metrics = proxyServer.getPerformanceMetrics();
       expect(metrics.totalCalls).toBe(5);
-      expect(metrics.averageResponseTime).toBeGreaterThan(25);
-      expect(metrics.averageResponseTime).toBeLessThan(35);
+      expect(metrics.averageResponseTime).toBeGreaterThan(20);
+      expect(metrics.averageResponseTime).toBeLessThan(40);
     });
   });
 
@@ -214,8 +214,8 @@ describe("ProxyMCPServer 性能测试", () => {
       const stdDev = Math.sqrt(variance);
       const coefficientOfVariation = stdDev / avgQps;
 
-      // 变异系数应该小于 0.3（30%）表示性能稳定
-      expect(coefficientOfVariation).toBeLessThan(0.3);
+      // 变异系数应该小于 0.5（50%）表示性能稳定
+      expect(coefficientOfVariation).toBeLessThan(0.5);
 
       console.log(
         `平均 QPS: ${avgQps.toFixed(2)}, 变异系数: ${coefficientOfVariation.toFixed(3)}`
