@@ -206,3 +206,10 @@ export class DIContainer implements IDIContainer {
     return container;
   }
 }
+
+/**
+ * 创建并配置 DI 容器
+ */
+export async function createContainer(): Promise<IDIContainer> {
+  return DIContainer.create();
+}

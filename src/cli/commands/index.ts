@@ -7,14 +7,21 @@ import { ErrorHandler } from "../errors/ErrorHandlers.js";
 import type {
   CommandHandler,
   ICommandRegistry,
+  ICommandHandlerFactory,
 } from "../interfaces/Command.js";
 import type { IDIContainer } from "../interfaces/Config.js";
+import { CommandHandlerFactory } from "./CommandHandlerFactory.js";
 
 /**
  * 命令注册器实现
  */
 export class CommandRegistry implements ICommandRegistry {
-  constructor(private container: IDIContainer) {}
+  private handlers: CommandHandler[] = [];
+  private handlerFactory: ICommandHandlerFactory;
+
+  constructor(private container: IDIContainer) {
+    this.handlerFactory = new CommandHandlerFactory(container);
+  }
 
   /**
    * 注册所有命令到 Commander 程序
@@ -25,39 +32,73 @@ export class CommandRegistry implements ICommandRegistry {
       this.registerVersionCommand(program);
       this.registerHelpCommand(program);
 
-      // 注册功能命令（稍后实现）
-      // await this.registerServiceCommands(program);
-      // await this.registerConfigCommands(program);
-      // await this.registerProjectCommands(program);
-      // await this.registerMcpCommands(program);
+      // 创建并注册所有功能命令处理器
+      const handlers = this.handlerFactory.createHandlers();
+      for (const handler of handlers) {
+        this.registerHandler(handler);
+        this.registerCommand(program, handler);
+      }
     } catch (error) {
       ErrorHandler.handle(error as Error);
     }
   }
 
   /**
+   * 注册命令处理器
+   */
+  registerHandler(handler: CommandHandler): void {
+    this.handlers.push(handler);
+  }
+
+  /**
    * 注册单个命令
    */
   registerCommand(program: Command, handler: CommandHandler): void {
-    const command = program
-      .command(handler.name)
-      .description(handler.description);
+    // 如果有子命令，直接注册子命令到根程序
+    if (handler.subcommands && handler.subcommands.length > 0) {
+      for (const subcommand of handler.subcommands) {
+        const cmd = program
+          .command(subcommand.name)
+          .description(subcommand.description);
 
-    // 添加选项
-    if (handler.options) {
-      for (const option of handler.options) {
-        command.option(option.flags, option.description, option.defaultValue);
+        // 添加子命令选项
+        if (subcommand.options) {
+          for (const option of subcommand.options) {
+            cmd.option(option.flags, option.description, option.defaultValue);
+          }
+        }
+
+        // 设置子命令处理函数
+        cmd.action(async (...args) => {
+          try {
+            await subcommand.execute(args.slice(0, -1), args[args.length - 1]);
+          } catch (error) {
+            ErrorHandler.handle(error as Error);
+          }
+        });
       }
+    } else {
+      // 没有子命令，注册为普通命令
+      const command = program
+        .command(handler.name)
+        .description(handler.description);
+
+      // 添加选项
+      if (handler.options) {
+        for (const option of handler.options) {
+          command.option(option.flags, option.description, option.defaultValue);
+        }
+      }
+
+      // 设置主命令处理函数
+      command.action(async (...args) => {
+        try {
+          await handler.execute(args.slice(0, -1), args[args.length - 1]);
+        } catch (error) {
+          ErrorHandler.handle(error as Error);
+        }
+      });
     }
-
-    // 设置命令处理函数
-    command.action(async (...args) => {
-      try {
-        await handler.execute(args.slice(0, -1), args[args.length - 1]);
-      } catch (error) {
-        ErrorHandler.handle(error as Error);
-      }
-    });
   }
 
   /**

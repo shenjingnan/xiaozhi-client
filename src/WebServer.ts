@@ -11,7 +11,7 @@ import { WebSocketServer } from "ws";
 import { type Logger, logger } from "./Logger.js";
 import { ProxyMCPServer, type Tool } from "./ProxyMCPServer.js";
 import { convertLegacyToNew } from "./adapters/ConfigAdapter.js";
-import { getServiceStatus } from "./cli.js";
+import { createContainer } from "./cli/Container.js";
 import { configManager } from "./configManager.js";
 import type { AppConfig, MCPServerConfig } from "./configManager.js";
 // MCPTransportType 已移除，不再需要导入
@@ -704,7 +704,9 @@ export class WebServer {
 
     try {
       // 获取当前服务状态
-      const status = getServiceStatus();
+      const container = await createContainer();
+      const serviceManager = container.get("serviceManager") as any;
+      const status = await serviceManager.getStatus();
       if (!status.running) {
         this.logger.warn("MCP 服务未运行，尝试启动服务");
 
