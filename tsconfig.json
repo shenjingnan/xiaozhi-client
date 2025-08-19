@@ -9,6 +9,15 @@
     "checkJs": false,
     "outDir": "./dist",
     "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@cli/*": ["src/cli/*"],
+      "@cli/commands/*": ["src/cli/commands/*"],
+      "@cli/services/*": ["src/cli/services/*"],
+      "@cli/utils/*": ["src/cli/utils/*"],
+      "@cli/errors/*": ["src/cli/errors/*"],
+      "@cli/interfaces/*": ["src/cli/interfaces/*"]
+    },
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,

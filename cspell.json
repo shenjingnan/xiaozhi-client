@@ -10,6 +10,7 @@
     "Appender",
     "appenders",
     "cdnurl",
+    "chdir",
     "cmdline",
     "compbash",
     "compzsh",
