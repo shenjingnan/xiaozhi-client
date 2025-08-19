@@ -876,7 +876,7 @@ export class ProxyMCPServer {
 
     if (
       params.arguments !== undefined &&
-      typeof params.arguments !== "object"
+      (typeof params.arguments !== "object" || Array.isArray(params.arguments))
     ) {
       throw new ToolCallError(
         ToolCallErrorCode.INVALID_PARAMS,
@@ -1053,8 +1053,8 @@ export class ProxyMCPServer {
       // 未知错误
       errorResponse = {
         code: ToolCallErrorCode.TOOL_EXECUTION_ERROR,
-        message: error.message || "未知错误",
-        data: { originalError: error.toString() },
+        message: error?.message || "未知错误",
+        data: { originalError: error?.toString() || "null" },
       };
     }
 
