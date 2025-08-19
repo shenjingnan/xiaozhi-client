@@ -91,27 +91,14 @@ async function main(): Promise<void> {
     const commandRegistry = new CommandRegistry(container);
 
     // 设置程序基本信息
-    const versionUtils = container.get("versionUtils") as any;
     program
       .name("xiaozhi")
-      .description("小智 MCP 客户端 - 强大的 Model Context Protocol 客户端")
-      .version(versionUtils.getVersion(), "-v, --version", "显示版本信息");
-
-    // 添加详细版本信息选项
-    program
-      .option("--version-info", "显示详细版本信息")
-      .hook("preAction", (thisCommand) => {
-        const options = thisCommand.opts();
-        if (options.versionInfo) {
-          showDetailedInfo(container);
-          process.exit(0);
-        }
-      });
+      .description("小智 MCP 客户端 - 强大的 Model Context Protocol 客户端");
 
     // 添加详细信息选项
-    program.option("-V", "显示详细信息").hook("preAction", (thisCommand) => {
+    program.option("--info", "显示详细信息").hook("preAction", (thisCommand) => {
       const options = thisCommand.opts();
-      if (options.V) {
+      if (options.info) {
         showDetailedInfo(container);
         process.exit(0);
       }

@@ -3,6 +3,14 @@
  */
 
 import type { IDIContainer } from "./interfaces/Config.js";
+import { VersionUtils } from "./utils/VersionUtils.js";
+import { PlatformUtils } from "./utils/PlatformUtils.js";
+import { FormatUtils } from "./utils/FormatUtils.js";
+import { FileUtils } from "./utils/FileUtils.js";
+import { PathUtils } from "./utils/PathUtils.js";
+import { Validation } from "./utils/Validation.js";
+import { configManager } from "../configManager.js";
+import { logger } from "../Logger.js";
 
 /**
  * 依赖注入容器实现
@@ -96,44 +104,36 @@ export class DIContainer implements IDIContainer {
 
     // 注册工具类（单例）
     container.registerSingleton("versionUtils", () => {
-      const { VersionUtils } = require("./utils/VersionUtils.js");
       return VersionUtils;
     });
 
     container.registerSingleton("platformUtils", () => {
-      const { PlatformUtils } = require("./utils/PlatformUtils.js");
       return PlatformUtils;
     });
 
     container.registerSingleton("formatUtils", () => {
-      const { FormatUtils } = require("./utils/FormatUtils.js");
       return FormatUtils;
     });
 
     container.registerSingleton("fileUtils", () => {
-      const { FileUtils } = require("./utils/FileUtils.js");
       return FileUtils;
     });
 
     container.registerSingleton("pathUtils", () => {
-      const { PathUtils } = require("./utils/PathUtils.js");
       return PathUtils;
     });
 
     container.registerSingleton("validation", () => {
-      const { Validation } = require("./utils/Validation.js");
       return Validation;
     });
 
     // 注册配置管理器（单例）
     container.registerSingleton("configManager", () => {
-      const { configManager } = require("../../configManager.js");
       return configManager;
     });
 
     // 注册日志管理器（单例）
     container.registerSingleton("logger", () => {
-      const { logger } = require("../Logger.js");
       return logger;
     });
 

@@ -54,10 +54,14 @@ export class CommandRegistry implements ICommandRegistry {
    * 注册单个命令
    */
   registerCommand(program: Command, handler: CommandHandler): void {
-    // 如果有子命令，直接注册子命令到根程序
+    // 如果有子命令，创建命令组
     if (handler.subcommands && handler.subcommands.length > 0) {
+      const commandGroup = program
+        .command(handler.name)
+        .description(handler.description);
+
       for (const subcommand of handler.subcommands) {
-        const cmd = program
+        const cmd = commandGroup
           .command(subcommand.name)
           .description(subcommand.description);
 
@@ -77,6 +81,15 @@ export class CommandRegistry implements ICommandRegistry {
           }
         });
       }
+
+      // 设置主命令的默认行为
+      commandGroup.action(async (...args) => {
+        try {
+          await handler.execute(args.slice(0, -1), args[args.length - 1]);
+        } catch (error) {
+          ErrorHandler.handle(error as Error);
+        }
+      });
     } else {
       // 没有子命令，注册为普通命令
       const command = program
