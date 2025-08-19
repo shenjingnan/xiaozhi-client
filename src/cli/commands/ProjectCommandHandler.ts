@@ -2,9 +2,9 @@
  * 项目管理命令处理器
  */
 
+import path from "node:path";
 import chalk from "chalk";
 import ora from "ora";
-import path from "node:path";
 import type { CommandOption } from "../interfaces/Command.js";
 import { BaseCommandHandler } from "../interfaces/Command.js";
 import type { IDIContainer } from "../interfaces/Config.js";

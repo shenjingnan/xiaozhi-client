@@ -4,6 +4,7 @@
 
 import { logger } from "../Logger.js";
 import { configManager } from "../configManager.js";
+import { ErrorHandler } from "./errors/ErrorHandlers.js";
 import type { IDIContainer } from "./interfaces/Config.js";
 import { FileUtils } from "./utils/FileUtils.js";
 import { FormatUtils } from "./utils/FormatUtils.js";
@@ -11,7 +12,6 @@ import { PathUtils } from "./utils/PathUtils.js";
 import { PlatformUtils } from "./utils/PlatformUtils.js";
 import { Validation } from "./utils/Validation.js";
 import { VersionUtils } from "./utils/VersionUtils.js";
-import { ErrorHandler } from "./errors/ErrorHandlers.js";
 
 /**
  * 依赖注入容器实现
@@ -162,7 +162,11 @@ export class DIContainer implements IDIContainer {
       const processManager = container.get("processManager") as any;
       const configManager = container.get("configManager") as any;
       const logger = container.get("logger") as any;
-      return new ServiceManagerModule.ServiceManagerImpl(processManager, configManager, logger);
+      return new ServiceManagerModule.ServiceManagerImpl(
+        processManager,
+        configManager,
+        logger
+      );
     });
 
     container.registerSingleton("templateManager", () => {
