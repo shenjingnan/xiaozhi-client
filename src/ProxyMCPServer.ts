@@ -50,6 +50,39 @@ interface ToolCallOptions {
   retryDelay?: number;
 }
 
+// 性能指标接口
+interface PerformanceMetrics {
+  totalCalls: number;
+  successfulCalls: number;
+  failedCalls: number;
+  averageResponseTime: number;
+  minResponseTime: number;
+  maxResponseTime: number;
+  successRate: number;
+  lastUpdated: Date;
+}
+
+// 调用记录接口
+interface CallRecord {
+  id: string;
+  toolName: string;
+  startTime: Date;
+  endTime?: Date;
+  duration?: number;
+  success: boolean;
+  errorCode?: number;
+  errorMessage?: string;
+}
+
+// 重试配置接口
+interface RetryConfig {
+  maxAttempts: number;
+  initialDelay: number;
+  maxDelay: number;
+  backoffMultiplier: number;
+  retryableErrors: ToolCallErrorCode[];
+}
+
 // 重连配置接口
 interface ReconnectOptions {
   enabled: boolean; // 是否启用自动重连
@@ -114,6 +147,41 @@ export class ProxyMCPServer {
 
   // 连接超时定时器
   private connectionTimeout: NodeJS.Timeout | null = null;
+
+  // 性能监控
+  private performanceMetrics: PerformanceMetrics = {
+    totalCalls: 0,
+    successfulCalls: 0,
+    failedCalls: 0,
+    averageResponseTime: 0,
+    minResponseTime: Number.MAX_VALUE,
+    maxResponseTime: 0,
+    successRate: 0,
+    lastUpdated: new Date(),
+  };
+
+  // 调用记录（保留最近100条）
+  private callRecords: CallRecord[] = [];
+  private readonly maxCallRecords = 100;
+
+  // 重试配置
+  private retryConfig: RetryConfig = {
+    maxAttempts: 3,
+    initialDelay: 1000,
+    maxDelay: 10000,
+    backoffMultiplier: 2,
+    retryableErrors: [
+      ToolCallErrorCode.SERVICE_UNAVAILABLE,
+      ToolCallErrorCode.TIMEOUT,
+    ],
+  };
+
+  // 工具调用配置
+  private toolCallConfig: ToolCallOptions = {
+    timeout: 30000,
+    retryAttempts: 3,
+    retryDelay: 1000,
+  };
 
   constructor(endpointUrl: string, options?: ProxyMCPServerOptions) {
     this.endpointUrl = endpointUrl;
@@ -720,14 +788,16 @@ export class ProxyMCPServer {
    * 处理工具调用请求
    */
   private async handleToolCall(request: MCPMessage): Promise<void> {
-    const startTime = Date.now();
-    const requestId = request.id;
+    const requestId = String(request.id || "unknown");
+    let callRecord: CallRecord | null = null;
 
     try {
       // 1. 验证请求格式
       const params = this.validateToolCallParams(request.params);
 
       // 2. 记录调用开始
+      callRecord = this.recordCallStart(params.name, requestId);
+
       this.logger.info(`开始处理工具调用: ${params.name}`, {
         requestId,
         toolName: params.name,
@@ -743,8 +813,8 @@ export class ProxyMCPServer {
         );
       }
 
-      // 4. 执行工具调用（带超时控制）
-      const result = await this.executeToolWithTimeout(
+      // 4. 执行工具调用（带重试机制）
+      const result = await this.executeToolWithRetry(
         serviceManager,
         params.name,
         params.arguments || {}
@@ -759,15 +829,27 @@ export class ProxyMCPServer {
       });
 
       // 6. 记录调用成功
-      const duration = Date.now() - startTime;
+      if (callRecord) {
+        this.recordCallEnd(callRecord, true);
+      }
+
       this.logger.info(`工具调用成功: ${params.name}`, {
         requestId,
-        duration: `${duration}ms`,
+        duration: callRecord?.duration ? `${callRecord.duration}ms` : "unknown",
       });
     } catch (error) {
       // 7. 处理错误并发送错误响应
-      const duration = Date.now() - startTime;
-      this.handleToolCallError(error, requestId, duration);
+      if (callRecord) {
+        const errorCode =
+          error instanceof ToolCallError
+            ? error.code
+            : ToolCallErrorCode.TOOL_EXECUTION_ERROR;
+        const errorMessage =
+          error instanceof Error ? error.message : "未知错误";
+        this.recordCallEnd(callRecord, false, errorCode, errorMessage);
+      }
+
+      this.handleToolCallError(error, requestId, callRecord?.duration || 0);
     }
   }
 
@@ -806,6 +888,72 @@ export class ProxyMCPServer {
       name: params.name,
       arguments: params.arguments,
     };
+  }
+
+  /**
+   * 带重试机制的工具执行
+   */
+  private async executeToolWithRetry(
+    serviceManager: any,
+    toolName: string,
+    arguments_: any
+  ): Promise<any> {
+    let lastError: ToolCallError | null = null;
+
+    for (let attempt = 1; attempt <= this.retryConfig.maxAttempts; attempt++) {
+      try {
+        return await this.executeToolWithTimeout(
+          serviceManager,
+          toolName,
+          arguments_,
+          this.toolCallConfig.timeout
+        );
+      } catch (error) {
+        // 确保错误是 ToolCallError 类型
+        if (error instanceof ToolCallError) {
+          lastError = error;
+        } else {
+          // 如果不是 ToolCallError，转换为 ToolCallError
+          lastError = new ToolCallError(
+            ToolCallErrorCode.TOOL_EXECUTION_ERROR,
+            error instanceof Error ? error.message : "未知错误"
+          );
+        }
+
+        // 检查是否是可重试的错误
+        if (
+          this.retryConfig.retryableErrors.includes(lastError.code) &&
+          attempt < this.retryConfig.maxAttempts
+        ) {
+          // 计算重试延迟
+          const delay = Math.min(
+            this.retryConfig.initialDelay *
+              this.retryConfig.backoffMultiplier ** (attempt - 1),
+            this.retryConfig.maxDelay
+          );
+
+          this.logger.warn(
+            `工具调用失败，将在 ${delay}ms 后重试 (${attempt}/${this.retryConfig.maxAttempts})`,
+            {
+              toolName,
+              error: lastError.message,
+              attempt,
+              delay,
+            }
+          );
+
+          // 等待重试延迟
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+
+        // 不可重试的错误或已达到最大重试次数
+        break;
+      }
+    }
+
+    // 所有重试都失败了，抛出最后一个错误
+    throw lastError;
   }
 
   /**
@@ -850,6 +998,22 @@ export class ProxyMCPServer {
             error.message?.includes("服务") &&
             error.message?.includes("不可用")
           ) {
+            reject(
+              new ToolCallError(
+                ToolCallErrorCode.SERVICE_UNAVAILABLE,
+                error.message
+              )
+            );
+          } else if (error.message?.includes("暂时不可用")) {
+            // 处理临时性错误，标记为服务不可用（可重试）
+            reject(
+              new ToolCallError(
+                ToolCallErrorCode.SERVICE_UNAVAILABLE,
+                error.message
+              )
+            );
+          } else if (error.message?.includes("持续不可用")) {
+            // 处理持续性错误，也标记为服务不可用（可重试）
             reject(
               new ToolCallError(
                 ToolCallErrorCode.SERVICE_UNAVAILABLE,
@@ -921,5 +1085,173 @@ export class ProxyMCPServer {
       this.ws.send(JSON.stringify(response));
       this.logger.debug("已发送错误响应:", response);
     }
+  }
+
+  /**
+   * 记录工具调用开始
+   */
+  private recordCallStart(toolName: string, requestId: string): CallRecord {
+    const record: CallRecord = {
+      id: requestId,
+      toolName,
+      startTime: new Date(),
+      success: false,
+    };
+
+    // 添加到记录列表
+    this.callRecords.push(record);
+
+    // 保持记录数量在限制内
+    if (this.callRecords.length > this.maxCallRecords) {
+      this.callRecords.shift();
+    }
+
+    return record;
+  }
+
+  /**
+   * 记录工具调用结束
+   */
+  private recordCallEnd(
+    record: CallRecord,
+    success: boolean,
+    errorCode?: number,
+    errorMessage?: string
+  ): void {
+    record.endTime = new Date();
+    record.duration = record.endTime.getTime() - record.startTime.getTime();
+    record.success = success;
+    record.errorCode = errorCode;
+    record.errorMessage = errorMessage;
+
+    // 更新性能指标
+    this.updatePerformanceMetrics(record);
+  }
+
+  /**
+   * 更新性能指标
+   */
+  private updatePerformanceMetrics(record: CallRecord): void {
+    this.performanceMetrics.totalCalls++;
+
+    if (record.success) {
+      this.performanceMetrics.successfulCalls++;
+    } else {
+      this.performanceMetrics.failedCalls++;
+    }
+
+    if (record.duration !== undefined) {
+      // 更新响应时间统计
+      if (record.duration < this.performanceMetrics.minResponseTime) {
+        this.performanceMetrics.minResponseTime = record.duration;
+      }
+      if (record.duration > this.performanceMetrics.maxResponseTime) {
+        this.performanceMetrics.maxResponseTime = record.duration;
+      }
+
+      // 计算平均响应时间
+      const totalTime = this.callRecords
+        .filter((r) => r.duration !== undefined)
+        .reduce((sum, r) => sum + (r.duration || 0), 0);
+      const completedCalls = this.callRecords.filter(
+        (r) => r.duration !== undefined
+      ).length;
+      this.performanceMetrics.averageResponseTime =
+        completedCalls > 0 ? totalTime / completedCalls : 0;
+    }
+
+    // 计算成功率
+    this.performanceMetrics.successRate =
+      this.performanceMetrics.totalCalls > 0
+        ? (this.performanceMetrics.successfulCalls /
+            this.performanceMetrics.totalCalls) *
+          100
+        : 0;
+
+    this.performanceMetrics.lastUpdated = new Date();
+  }
+
+  /**
+   * 获取性能指标
+   */
+  public getPerformanceMetrics(): PerformanceMetrics {
+    return { ...this.performanceMetrics };
+  }
+
+  /**
+   * 获取调用记录
+   */
+  public getCallRecords(limit?: number): CallRecord[] {
+    const records = [...this.callRecords].reverse(); // 最新的在前
+    return limit ? records.slice(0, limit) : records;
+  }
+
+  /**
+   * 重置性能指标
+   */
+  public resetPerformanceMetrics(): void {
+    this.performanceMetrics = {
+      totalCalls: 0,
+      successfulCalls: 0,
+      failedCalls: 0,
+      averageResponseTime: 0,
+      minResponseTime: Number.MAX_VALUE,
+      maxResponseTime: 0,
+      successRate: 0,
+      lastUpdated: new Date(),
+    };
+    this.callRecords = [];
+  }
+
+  /**
+   * 更新工具调用配置
+   */
+  public updateToolCallConfig(config: Partial<ToolCallOptions>): void {
+    this.toolCallConfig = { ...this.toolCallConfig, ...config };
+    this.logger.info("工具调用配置已更新", this.toolCallConfig);
+  }
+
+  /**
+   * 更新重试配置
+   */
+  public updateRetryConfig(config: Partial<RetryConfig>): void {
+    this.retryConfig = { ...this.retryConfig, ...config };
+    this.logger.info("重试配置已更新", this.retryConfig);
+  }
+
+  /**
+   * 获取当前配置
+   */
+  public getConfiguration(): {
+    toolCall: ToolCallOptions;
+    retry: RetryConfig;
+  } {
+    return {
+      toolCall: { ...this.toolCallConfig },
+      retry: { ...this.retryConfig },
+    };
+  }
+
+  /**
+   * 获取服务器状态（增强版）
+   */
+  public getEnhancedStatus(): ProxyMCPServerStatus & {
+    performance: PerformanceMetrics;
+    configuration: {
+      toolCall: ToolCallOptions;
+      retry: RetryConfig;
+    };
+  } {
+    return {
+      connected: this.isConnected,
+      initialized: this.serverInitialized,
+      url: this.endpointUrl,
+      availableTools: this.tools.size,
+      connectionState: this.connectionState,
+      reconnectAttempts: this.reconnectState.attempts,
+      lastError: this.reconnectState.lastError?.message || null,
+      performance: this.getPerformanceMetrics(),
+      configuration: this.getConfiguration(),
+    };
   }
 }

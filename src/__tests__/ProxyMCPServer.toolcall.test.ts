@@ -164,15 +164,9 @@ describe("ProxyMCPServer 工具调用功能", () => {
         },
       };
 
-      // 使用较短的超时时间进行测试
-      const originalExecute = (proxyServer as any).executeToolWithTimeout;
-      (proxyServer as any).executeToolWithTimeout = function (
-        sm: any,
-        name: string,
-        args: any
-      ) {
-        return originalExecute.call(this, sm, name, args, 100); // 100ms 超时
-      };
+      // 临时设置较短的超时时间和禁用重试
+      proxyServer.updateToolCallConfig({ timeout: 100 });
+      proxyServer.updateRetryConfig({ maxAttempts: 1 });
 
       await (proxyServer as any).handleToolCall(request);
 
@@ -182,6 +176,123 @@ describe("ProxyMCPServer 工具调用功能", () => {
       expect(mockWs.send).toHaveBeenCalledWith(
         expect.stringContaining("-32002")
       );
-    }, 1000); // 测试超时时间设为1秒
+    }, 2000); // 增加测试超时时间
+  });
+
+  describe("性能监控", () => {
+    it("应该正确记录成功调用的性能指标", async () => {
+      const mockResult = {
+        content: [{ type: "text", text: "success" }],
+        isError: false,
+      };
+
+      mockServiceManager.callTool.mockResolvedValue(mockResult);
+
+      const request = {
+        jsonrpc: "2.0",
+        id: "perf-test-id",
+        method: "tools/call",
+        params: {
+          name: "test-tool",
+          arguments: { input: "test" },
+        },
+      };
+
+      await (proxyServer as any).handleToolCall(request);
+
+      const metrics = proxyServer.getPerformanceMetrics();
+      expect(metrics.totalCalls).toBe(1);
+      expect(metrics.successfulCalls).toBe(1);
+      expect(metrics.failedCalls).toBe(0);
+      expect(metrics.successRate).toBe(100);
+    });
+
+    it("应该正确记录失败调用的性能指标", async () => {
+      mockServiceManager.callTool.mockRejectedValue(new Error("工具执行失败"));
+
+      const request = {
+        jsonrpc: "2.0",
+        id: "perf-fail-test-id",
+        method: "tools/call",
+        params: {
+          name: "failing-tool",
+          arguments: {},
+        },
+      };
+
+      await (proxyServer as any).handleToolCall(request);
+
+      const metrics = proxyServer.getPerformanceMetrics();
+      expect(metrics.totalCalls).toBe(1);
+      expect(metrics.successfulCalls).toBe(0);
+      expect(metrics.failedCalls).toBe(1);
+      expect(metrics.successRate).toBe(0);
+    });
+
+    it("应该能够获取调用记录", async () => {
+      const mockResult = {
+        content: [{ type: "text", text: "success" }],
+        isError: false,
+      };
+
+      mockServiceManager.callTool.mockResolvedValue(mockResult);
+
+      const request = {
+        jsonrpc: "2.0",
+        id: "record-test-id",
+        method: "tools/call",
+        params: {
+          name: "test-tool",
+          arguments: { input: "test" },
+        },
+      };
+
+      await (proxyServer as any).handleToolCall(request);
+
+      const records = proxyServer.getCallRecords(1);
+      expect(records).toHaveLength(1);
+      expect(records[0].id).toBe("record-test-id");
+      expect(records[0].toolName).toBe("test-tool");
+      expect(records[0].success).toBe(true);
+      expect(records[0].duration).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe("配置管理", () => {
+    it("应该能够更新工具调用配置", () => {
+      const newConfig = {
+        timeout: 60000,
+        retryAttempts: 5,
+      };
+
+      proxyServer.updateToolCallConfig(newConfig);
+
+      const config = proxyServer.getConfiguration();
+      expect(config.toolCall.timeout).toBe(60000);
+      expect(config.toolCall.retryAttempts).toBe(5);
+    });
+
+    it("应该能够更新重试配置", () => {
+      const newRetryConfig = {
+        maxAttempts: 5,
+        initialDelay: 2000,
+      };
+
+      proxyServer.updateRetryConfig(newRetryConfig);
+
+      const config = proxyServer.getConfiguration();
+      expect(config.retry.maxAttempts).toBe(5);
+      expect(config.retry.initialDelay).toBe(2000);
+    });
+
+    it("应该能够获取增强状态信息", () => {
+      const status = proxyServer.getEnhancedStatus();
+
+      expect(status).toHaveProperty("performance");
+      expect(status).toHaveProperty("configuration");
+      expect(status.performance).toHaveProperty("totalCalls");
+      expect(status.configuration).toHaveProperty("toolCall");
+      expect(status.configuration).toHaveProperty("retry");
+    });
   });
 });
