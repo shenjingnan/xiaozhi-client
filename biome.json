@@ -32,7 +32,8 @@
     "rules": {
       "recommended": true,
       "complexity": {
-        "noStaticOnlyClass": "off"
+        "noStaticOnlyClass": "off",
+        "noUselessConstructor": "off"
       },
       "suspicious": {
         "noExplicitAny": "off"
