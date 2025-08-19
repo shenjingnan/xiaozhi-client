@@ -31,6 +31,9 @@
     "enabled": true,
     "rules": {
       "recommended": true,
+      "complexity": {
+        "noStaticOnlyClass": "off"
+      },
       "suspicious": {
         "noExplicitAny": "off"
       },
