@@ -35,8 +35,6 @@ const mockLogger = {
   warn: vi.fn(),
 };
 
-
-
 const mockWebServerInstance = {
   start: vi.fn().mockResolvedValue(undefined),
   stop: vi.fn().mockResolvedValue(undefined),
@@ -91,7 +89,9 @@ describe("ServiceManagerImpl", () => {
     (mockProcessManager.getServiceStatus as any).mockReturnValue({
       running: false,
     });
-    (mockProcessManager.gracefulKillProcess as any).mockResolvedValue(undefined);
+    (mockProcessManager.gracefulKillProcess as any).mockResolvedValue(
+      undefined
+    );
 
     // Mock dynamic import for WebServer
     vi.doMock("../../WebServer.js", () => ({
@@ -244,7 +244,9 @@ describe("ServiceManagerImpl", () => {
         .mockReturnValueOnce({ running: false }); // after stop
 
       // Mock gracefulKillProcess to resolve successfully
-      (mockProcessManager.gracefulKillProcess as any).mockResolvedValue(undefined);
+      (mockProcessManager.gracefulKillProcess as any).mockResolvedValue(
+        undefined
+      );
 
       await serviceManager.restart(options);
 

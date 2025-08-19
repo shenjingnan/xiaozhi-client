@@ -232,7 +232,9 @@ describe("DaemonManagerImpl", () => {
         .mockReturnValueOnce({ running: false }); // after stop
 
       // Mock gracefulKillProcess to resolve successfully
-      (mockProcessManager.gracefulKillProcess as any).mockResolvedValue(undefined);
+      (mockProcessManager.gracefulKillProcess as any).mockResolvedValue(
+        undefined
+      );
 
       await daemonManager.restartDaemon(mockServerFactory);
 
