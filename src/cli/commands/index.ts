@@ -38,6 +38,9 @@ export class CommandRegistry implements ICommandRegistry {
         this.registerHandler(handler);
         this.registerCommand(program, handler);
       }
+
+      // 注册向后兼容的顶级服务命令
+      this.registerLegacyServiceCommands(program, handlers);
     } catch (error) {
       ErrorHandler.handle(error as Error);
     }
@@ -185,6 +188,40 @@ export class CommandRegistry implements ICommandRegistry {
 更多信息请访问: https://github.com/your-org/xiaozhi-client
 `
     );
+  }
+
+  /**
+   * 注册向后兼容的顶级服务命令
+   */
+  private registerLegacyServiceCommands(program: Command, handlers: CommandHandler[]): void {
+    // 找到服务命令处理器
+    const serviceHandler = handlers.find(h => h.name === 'service');
+    if (!serviceHandler || !serviceHandler.subcommands) {
+      return;
+    }
+
+    // 为每个服务子命令创建顶级命令
+    for (const subcommand of serviceHandler.subcommands) {
+      const command = program
+        .command(subcommand.name)
+        .description(subcommand.description);
+
+      // 添加选项
+      if (subcommand.options) {
+        for (const option of subcommand.options) {
+          command.option(option.flags, option.description, option.defaultValue);
+        }
+      }
+
+      // 设置命令处理函数
+      command.action(async (...args) => {
+        try {
+          await subcommand.execute(args.slice(0, -1), args[args.length - 1]);
+        } catch (error) {
+          ErrorHandler.handle(error as Error);
+        }
+      });
+    }
   }
 
   /**
