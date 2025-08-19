@@ -22,6 +22,34 @@ enum ConnectionState {
   FAILED = "failed",
 }
 
+// 工具调用错误码枚举
+enum ToolCallErrorCode {
+  INVALID_PARAMS = -32602, // 无效参数
+  TOOL_NOT_FOUND = -32601, // 工具不存在
+  TOOL_EXECUTION_ERROR = -32000, // 工具执行错误
+  SERVICE_UNAVAILABLE = -32001, // 服务不可用
+  TIMEOUT = -32002, // 调用超时
+}
+
+// 工具调用错误类
+class ToolCallError extends Error {
+  constructor(
+    public code: ToolCallErrorCode,
+    message: string,
+    public data?: any
+  ) {
+    super(message);
+    this.name = "ToolCallError";
+  }
+}
+
+// 工具调用配置接口
+interface ToolCallOptions {
+  timeout?: number;
+  retryAttempts?: number;
+  retryDelay?: number;
+}
+
 // 重连配置接口
 interface ReconnectOptions {
   enabled: boolean; // 是否启用自动重连
@@ -537,6 +565,7 @@ export class ProxyMCPServer {
   private handleServerRequest(request: MCPMessage): void {
     switch (request.method) {
       case "initialize":
+      case "notifications/initialized":
         this.sendResponse(request.id, {
           protocolVersion: "2024-11-05",
           capabilities: {
@@ -556,6 +585,14 @@ export class ProxyMCPServer {
         const toolsList = this.getTools();
         this.sendResponse(request.id, { tools: toolsList });
         this.logger.info(`MCP 工具列表已发送 (${toolsList.length}个工具)`);
+        break;
+      }
+
+      case "tools/call": {
+        // 异步处理工具调用，避免阻塞其他消息
+        this.handleToolCall(request).catch((error) => {
+          this.logger.error("处理工具调用时发生未捕获错误:", error);
+        });
         break;
       }
 
@@ -677,5 +714,212 @@ export class ProxyMCPServer {
     this.reconnectState.nextInterval = this.reconnectOptions.initialInterval;
     this.reconnectState.lastError = null;
     this.logger.info("重连状态已重置");
+  }
+
+  /**
+   * 处理工具调用请求
+   */
+  private async handleToolCall(request: MCPMessage): Promise<void> {
+    const startTime = Date.now();
+    const requestId = request.id;
+
+    try {
+      // 1. 验证请求格式
+      const params = this.validateToolCallParams(request.params);
+
+      // 2. 记录调用开始
+      this.logger.info(`开始处理工具调用: ${params.name}`, {
+        requestId,
+        toolName: params.name,
+        hasArguments: !!params.arguments,
+      });
+
+      // 3. 检查服务管理器是否可用
+      const serviceManager = (this as any).serviceManager;
+      if (!serviceManager) {
+        throw new ToolCallError(
+          ToolCallErrorCode.SERVICE_UNAVAILABLE,
+          "MCPServiceManager 未设置"
+        );
+      }
+
+      // 4. 执行工具调用（带超时控制）
+      const result = await this.executeToolWithTimeout(
+        serviceManager,
+        params.name,
+        params.arguments || {}
+      );
+
+      // 5. 发送成功响应
+      this.sendResponse(requestId, {
+        content: result.content || [
+          { type: "text", text: JSON.stringify(result) },
+        ],
+        isError: result.isError || false,
+      });
+
+      // 6. 记录调用成功
+      const duration = Date.now() - startTime;
+      this.logger.info(`工具调用成功: ${params.name}`, {
+        requestId,
+        duration: `${duration}ms`,
+      });
+    } catch (error) {
+      // 7. 处理错误并发送错误响应
+      const duration = Date.now() - startTime;
+      this.handleToolCallError(error, requestId, duration);
+    }
+  }
+
+  /**
+   * 验证工具调用参数
+   */
+  private validateToolCallParams(params: any): {
+    name: string;
+    arguments?: any;
+  } {
+    if (!params || typeof params !== "object") {
+      throw new ToolCallError(
+        ToolCallErrorCode.INVALID_PARAMS,
+        "请求参数必须是对象"
+      );
+    }
+
+    if (!params.name || typeof params.name !== "string") {
+      throw new ToolCallError(
+        ToolCallErrorCode.INVALID_PARAMS,
+        "工具名称必须是非空字符串"
+      );
+    }
+
+    if (
+      params.arguments !== undefined &&
+      typeof params.arguments !== "object"
+    ) {
+      throw new ToolCallError(
+        ToolCallErrorCode.INVALID_PARAMS,
+        "工具参数必须是对象"
+      );
+    }
+
+    return {
+      name: params.name,
+      arguments: params.arguments,
+    };
+  }
+
+  /**
+   * 带超时控制的工具执行
+   */
+  private async executeToolWithTimeout(
+    serviceManager: any,
+    toolName: string,
+    arguments_: any,
+    timeoutMs = 30000
+  ): Promise<any> {
+    return new Promise((resolve, reject) => {
+      // 设置超时定时器
+      const timeoutId = setTimeout(() => {
+        reject(
+          new ToolCallError(
+            ToolCallErrorCode.TIMEOUT,
+            `工具调用超时 (${timeoutMs}ms): ${toolName}`
+          )
+        );
+      }, timeoutMs);
+
+      // 执行工具调用
+      serviceManager
+        .callTool(toolName, arguments_)
+        .then((result: any) => {
+          clearTimeout(timeoutId);
+          resolve(result);
+        })
+        .catch((error: any) => {
+          clearTimeout(timeoutId);
+
+          // 将内部错误转换为工具调用错误
+          if (error.message?.includes("未找到工具")) {
+            reject(
+              new ToolCallError(
+                ToolCallErrorCode.TOOL_NOT_FOUND,
+                `工具不存在: ${toolName}`
+              )
+            );
+          } else if (
+            error.message?.includes("服务") &&
+            error.message?.includes("不可用")
+          ) {
+            reject(
+              new ToolCallError(
+                ToolCallErrorCode.SERVICE_UNAVAILABLE,
+                error.message
+              )
+            );
+          } else {
+            reject(
+              new ToolCallError(
+                ToolCallErrorCode.TOOL_EXECUTION_ERROR,
+                `工具执行失败: ${error.message}`
+              )
+            );
+          }
+        });
+    });
+  }
+
+  /**
+   * 处理工具调用错误
+   */
+  private handleToolCallError(
+    error: any,
+    requestId: string | number | undefined,
+    duration: number
+  ): void {
+    let errorResponse: any;
+
+    if (error instanceof ToolCallError) {
+      // 标准工具调用错误
+      errorResponse = {
+        code: error.code,
+        message: error.message,
+        data: error.data,
+      };
+    } else {
+      // 未知错误
+      errorResponse = {
+        code: ToolCallErrorCode.TOOL_EXECUTION_ERROR,
+        message: error.message || "未知错误",
+        data: { originalError: error.toString() },
+      };
+    }
+
+    // 发送错误响应
+    this.sendErrorResponse(requestId, errorResponse);
+
+    // 记录错误日志
+    this.logger.error("工具调用失败", {
+      requestId,
+      duration: `${duration}ms`,
+      error: errorResponse,
+    });
+  }
+
+  /**
+   * 发送错误响应
+   */
+  private sendErrorResponse(
+    id: string | number | undefined,
+    error: { code: number; message: string; data?: any }
+  ): void {
+    if (this.isConnected && this.ws?.readyState === WebSocket.OPEN) {
+      const response = {
+        jsonrpc: "2.0",
+        id,
+        error,
+      };
+      this.ws.send(JSON.stringify(response));
+      this.logger.debug("已发送错误响应:", response);
+    }
   }
 }
