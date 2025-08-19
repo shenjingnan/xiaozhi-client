@@ -61,8 +61,17 @@ export class CommandRegistry implements ICommandRegistry {
         .description(handler.description);
 
       for (const subcommand of handler.subcommands) {
+        let subcommandName = subcommand.name;
+
+        // 特殊处理需要参数的子命令
+        if (subcommand.name === "get") {
+          subcommandName = "get <key>";
+        } else if (subcommand.name === "set") {
+          subcommandName = "set <key> <value>";
+        }
+
         const cmd = commandGroup
-          .command(subcommand.name)
+          .command(subcommandName)
           .description(subcommand.description);
 
         // 添加子命令选项
@@ -92,8 +101,15 @@ export class CommandRegistry implements ICommandRegistry {
       });
     } else {
       // 没有子命令，注册为普通命令
+      let commandName = handler.name;
+
+      // 特殊处理 create 命令，需要接受项目名称参数
+      if (handler.name === "create") {
+        commandName = "create <projectName>";
+      }
+
       const command = program
-        .command(handler.name)
+        .command(commandName)
         .description(handler.description);
 
       // 添加选项

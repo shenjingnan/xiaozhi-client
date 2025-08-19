@@ -4,6 +4,7 @@
 
 import chalk from "chalk";
 import ora from "ora";
+import path from "node:path";
 import type { CommandOption } from "../interfaces/Command.js";
 import { BaseCommandHandler } from "../interfaces/Command.js";
 import type { IDIContainer } from "../interfaces/Config.js";
@@ -44,11 +45,10 @@ export class ProjectCommandHandler extends BaseCommandHandler {
 
     try {
       const templateManager = this.getService<any>("templateManager");
-      const pathUtils = this.getService<any>("pathUtils");
       const fileUtils = this.getService<any>("fileUtils");
 
       // 确定目标目录
-      const targetPath = pathUtils.join(process.cwd(), projectName);
+      const targetPath = path.join(process.cwd(), projectName);
 
       // 检查目标目录是否已存在
       if (await fileUtils.exists(targetPath)) {

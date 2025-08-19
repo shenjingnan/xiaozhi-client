@@ -57,8 +57,11 @@ export class PathUtils {
     const scriptDir = path.dirname(__filename);
 
     return [
-      path.join(scriptDir, "..", "..", "..", PATH_CONSTANTS.TEMPLATES_DIR), // 开发环境
-      path.join(scriptDir, "..", "..", PATH_CONSTANTS.TEMPLATES_DIR), // 构建后的环境
+      // 构建后的环境：dist/cli.js -> dist/templates
+      path.join(scriptDir, PATH_CONSTANTS.TEMPLATES_DIR),
+      // 开发环境：src/cli/utils/PathUtils.ts -> templates
+      path.join(scriptDir, "..", "..", "..", PATH_CONSTANTS.TEMPLATES_DIR),
+      // npm 全局安装
       path.join(
         scriptDir,
         "..",
@@ -66,7 +69,7 @@ export class PathUtils {
         "..",
         "..",
         PATH_CONSTANTS.TEMPLATES_DIR
-      ), // npm 全局安装
+      ),
     ];
   }
 

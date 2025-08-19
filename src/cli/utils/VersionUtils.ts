@@ -38,14 +38,14 @@ export class VersionUtils {
 
       // 尝试多个可能的 package.json 路径
       const possiblePaths = [
+        // 构建后环境：dist/cli.js -> dist/package.json (优先)
+        path.join(currentDir, "package.json"),
+        // 构建后环境：dist/cli.js -> package.json
+        path.join(currentDir, "..", "package.json"),
         // 开发环境：src/cli/utils/VersionUtils.ts -> package.json
-        path.join(currentDir, "..", "..", "..", "package.json"),
-        // 构建后环境：dist/cli/utils/VersionUtils.js -> package.json
         path.join(currentDir, "..", "..", "..", "package.json"),
         // 全局安装环境
         path.join(currentDir, "..", "..", "..", "..", "package.json"),
-        // 如果 package.json 被复制到 dist 目录
-        path.join(currentDir, "..", "..", "package.json"),
       ];
 
       for (const packagePath of possiblePaths) {
@@ -77,10 +77,14 @@ export class VersionUtils {
       const currentDir = path.dirname(__filename);
 
       const possiblePaths = [
+        // 构建后环境：dist/cli.js -> dist/package.json (优先)
+        path.join(currentDir, "package.json"),
+        // 构建后环境：dist/cli.js -> package.json
+        path.join(currentDir, "..", "package.json"),
+        // 开发环境：src/cli/utils/VersionUtils.ts -> package.json
         path.join(currentDir, "..", "..", "..", "package.json"),
-        path.join(currentDir, "..", "..", "..", "package.json"),
+        // 全局安装环境
         path.join(currentDir, "..", "..", "..", "..", "package.json"),
-        path.join(currentDir, "..", "..", "package.json"),
       ];
 
       for (const packagePath of possiblePaths) {
