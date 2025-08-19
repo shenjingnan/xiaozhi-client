@@ -137,28 +137,37 @@ export class DIContainer implements IDIContainer {
       return logger;
     });
 
-    // 注册服务层（稍后在服务层实现时添加）
-    // container.registerSingleton('processManager', () => {
-    //   const { ProcessManagerImpl } = require('./services/ProcessManager.js');
-    //   return new ProcessManagerImpl();
-    // });
+    // 注册服务层
+    container.registerSingleton("processManager", async () => {
+      const { ProcessManagerImpl } = await import(
+        "./services/ProcessManager.js"
+      );
+      return new ProcessManagerImpl();
+    });
 
-    // container.registerSingleton('serviceManager', () => {
-    //   const { ServiceManagerImpl } = require('./services/ServiceManager.js');
-    //   const processManager = container.get('processManager');
-    //   const daemonManager = container.get('daemonManager');
-    //   return new ServiceManagerImpl(processManager, daemonManager);
-    // });
+    container.registerSingleton("daemonManager", async () => {
+      const { DaemonManagerImpl } = await import("./services/DaemonManager.js");
+      const processManager = container.get("processManager");
+      const logger = container.get("logger");
+      return new DaemonManagerImpl(processManager, logger);
+    });
 
-    // container.registerSingleton('daemonManager', () => {
-    //   const { DaemonManagerImpl } = require('./services/DaemonManager.js');
-    //   return new DaemonManagerImpl();
-    // });
+    container.registerSingleton("serviceManager", async () => {
+      const { ServiceManagerImpl } = await import(
+        "./services/ServiceManager.js"
+      );
+      const processManager = container.get("processManager");
+      const configManager = container.get("configManager");
+      const logger = container.get("logger");
+      return new ServiceManagerImpl(processManager, configManager, logger);
+    });
 
-    // container.registerSingleton('templateManager', () => {
-    //   const { TemplateManagerImpl } = require('./services/TemplateManager.js');
-    //   return new TemplateManagerImpl();
-    // });
+    container.registerSingleton("templateManager", async () => {
+      const { TemplateManagerImpl } = await import(
+        "./services/TemplateManager.js"
+      );
+      return new TemplateManagerImpl();
+    });
 
     // 注册命令层（稍后在命令层实现时添加）
     // container.register('serviceCommand', () => {
