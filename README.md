@@ -86,7 +86,11 @@ cd my-app
 ## 安装依赖（主要是示例代码中mcp服务所使用的依赖）
 pnpm install
 
-# 修改 xiaozhi.config.json 中的 mcpEndpoint 为你的接入点地址（需要自行前往xiaozhi.me获取）
+## 初始化配置
+xiaozhi config init
+
+## 设置接入点地址（需要自行前往xiaozhi.me获取）
+xiaozhi config set mcpEndpoint "your-endpoint-url"
 # 小智AI配置MCP接入点使用说明：https://ccnphfhqs21z.feishu.cn/wiki/HiPEwZ37XiitnwktX13cEM5KnSb
 
 ## 运行
@@ -97,15 +101,19 @@ xiaozhi start
 
 ```bash
 # 创建项目
-npx -y xiaozhi-client create --template hello-world
+npx -y xiaozhi-client create my-app --template hello-world
 
 # 进入项目目录
-cd hello-world
+cd my-app
 
 # 安装依赖
 pnpm install
 
-# 修改 xiaozhi.config.json 中的 mcpEndpoint 为你的接入点地址（需要自行前往xiaozhi.me获取）
+# 初始化配置
+npx -y xiaozhi-client config init
+
+# 设置接入点地址（需要自行前往xiaozhi.me获取）
+npx -y xiaozhi-client config set mcpEndpoint "your-endpoint-url"
 # 小智AI配置MCP接入点使用说明：https://ccnphfhqs21z.feishu.cn/wiki/HiPEwZ37XiitnwktX13cEM5KnSb
 
 # 启动服务
@@ -360,18 +368,49 @@ docker run -d \
 
 ## 可用命令
 
+### 基本命令
+
 ```bash
 # 查看帮助
 xiaozhi --help
 
-# 启动服务
+# 查看版本信息
+xiaozhi --version
+
+# 查看详细系统信息
+xiaozhi --info
+```
+
+### 项目管理
+
+```bash
+# 创建项目
+xiaozhi create my-app --template hello-world
+
+# 初始化配置文件
+xiaozhi config init
+
+# 查看配置
+xiaozhi config get mcpEndpoint
+
+# 设置配置
+xiaozhi config set mcpEndpoint "your-endpoint-url"
+```
+
+### 服务管理
+
+```bash
+# 启动服务（前台）
 xiaozhi start
 
 # 后台启动服务
-xiaozhi start --daemon
+xiaozhi start -d
 
-# 将后台服务转到前台运行
-xiaozhi attach
+# 启动并打开 Web UI
+xiaozhi start -u
+
+# 以 MCP Server 模式启动（用于 Cursor 等客户端）
+xiaozhi start --stdio
 
 # 查看服务状态
 xiaozhi status
@@ -382,12 +421,44 @@ xiaozhi stop
 # 重启服务
 xiaozhi restart
 
-# 列出所有使用的mcp服务
+# 将后台服务转到前台运行
+xiaozhi attach
+```
+
+### MCP 管理
+
+```bash
+# 列出所有 MCP 服务
 xiaozhi mcp list
 
-# 列出所有mcp所提供的tools
+# 列出所有 MCP 工具
 xiaozhi mcp list --tools
+
+# 查看特定服务
+xiaozhi mcp server calculator
 ```
+
+### 端点管理
+
+```bash
+# 列出所有端点
+xiaozhi endpoint list
+
+# 添加端点
+xiaozhi endpoint add "ws://new-server:8080"
+
+# 移除端点
+xiaozhi endpoint remove "ws://old-server:8080"
+```
+
+### Web UI
+
+```bash
+# 启动 Web 配置界面
+xiaozhi ui
+```
+
+> 📖 **详细使用说明**: 查看 [CLI 使用手册](docs/CLI.md) 获取完整的命令参考和使用示例。
 
 ## 多接入点配置
 
@@ -424,13 +495,16 @@ xiaozhi-client 支持同时连接多个小智 AI 接入点
 xiaozhi endpoint list
 
 # 添加新的接入点
-xiaozhi endpoint add wss://api.xiaozhi.me/mcp/new-endpoint
+xiaozhi endpoint add "wss://api.xiaozhi.me/mcp/new-endpoint"
 
 # 移除指定的接入点
-xiaozhi endpoint remove wss://api.xiaozhi.me/mcp/old-endpoint
+xiaozhi endpoint remove "wss://api.xiaozhi.me/mcp/old-endpoint"
 
-# 设置接入点（覆盖现有配置）
-xiaozhi endpoint set wss://api.xiaozhi.me/mcp/endpoint-1 wss://api.xiaozhi.me/mcp/endpoint-2
+# 设置单个接入点（覆盖现有配置）
+xiaozhi endpoint set "wss://api.xiaozhi.me/mcp/endpoint-1"
+
+# 或者使用 config 命令设置
+xiaozhi config set mcpEndpoint "wss://api.xiaozhi.me/mcp/endpoint-1"
 ```
 
 ### 示例配置
@@ -668,8 +742,14 @@ xiaozhi-client 提供了一个现代化的 Web UI 界面，让配置 MCP 服务�
 ### 启动 Web UI
 
 ```bash
+# 启动 Web 配置界面
 xiaozhi ui
+
+# 或者在启动服务时同时启动 Web UI
+xiaozhi start -u
 ```
+
+启动后访问 <http://localhost:9999> 进行可视化配置。
 
 ## 作为 MCP Server 集成到其他客户端
 
@@ -734,13 +814,13 @@ npm install -g xiaozhi-client
 
 ```bash
 # 使用默认端口 3000
-xiaozhi start --server
+xiaozhi start -s
 
 # 使用自定义端口
-xiaozhi start --server 8080
+xiaozhi start -s 8080
 
 # 后台运行
-xiaozhi start --server --daemon
+xiaozhi start -s -d
 ```
 
 第二步：在 客户端 中配置 SSE 连接：

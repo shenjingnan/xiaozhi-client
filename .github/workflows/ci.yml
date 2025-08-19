@@ -95,8 +95,8 @@ jobs:
         echo "开始 CLI 配置测试..."
 
         # 4. 测试配置 mcpEndpoint
-        echo "4. 测试 xiaozhi config mcpEndpoint"
-        node ../dist/cli.js config mcpEndpoint "wss://api.xiaozhi.me/mcp/?token=xyz"
+        echo "4. 测试 xiaozhi config set mcpEndpoint"
+        node ../dist/cli.js config set mcpEndpoint "wss://api.xiaozhi.me/mcp/?token=xyz"
 
         # 验证配置是否正确写入
         if [ -f "xiaozhi.config.json" ]; then
@@ -108,8 +108,8 @@ jobs:
         fi
 
         # 5. 测试读取配置
-        echo "5. 测试读取 xiaozhi config mcpEndpoint"
-        node ../dist/cli.js config mcpEndpoint
+        echo "5. 测试读取 xiaozhi config get mcpEndpoint"
+        node ../dist/cli.js config get mcpEndpoint
 
         echo "✅ CLI 配置测试完成"
 
@@ -120,8 +120,8 @@ jobs:
         echo "开始 CLI 配置测试..."
 
         # 4. 测试配置 mcpEndpoint
-        echo "4. 测试 xiaozhi config mcpEndpoint"
-        node ../dist/cli.js config mcpEndpoint "wss://api.xiaozhi.me/mcp/?token=xyz"
+        echo "4. 测试 xiaozhi config set mcpEndpoint"
+        node ../dist/cli.js config set mcpEndpoint "wss://api.xiaozhi.me/mcp/?token=xyz"
 
         # 验证配置是否正确写入
         if (Test-Path "xiaozhi.config.json") {
@@ -133,8 +133,8 @@ jobs:
         }
 
         # 5. 测试读取配置
-        echo "5. 测试读取 xiaozhi config mcpEndpoint"
-        node ../dist/cli.js config mcpEndpoint
+        echo "5. 测试读取 xiaozhi config get mcpEndpoint"
+        node ../dist/cli.js config get mcpEndpoint
 
         echo "✅ CLI 配置测试完成"
       shell: pwsh
@@ -164,12 +164,16 @@ jobs:
         # 6. 测试启动服务 (简化测试，避免复杂的进程管理)
         echo "6. 测试 xiaozhi start (Windows 简化测试)"
         # 在 Windows 上只测试命令是否能正常解析，不实际启动服务
-        node ../dist/cli.js start --help 2>$null || echo "start 命令测试完成"
+        node ../dist/cli.js start --help 2>$null
+        if ($LASTEXITCODE -ne 0) { echo "start 命令测试完成" }
 
         # 7. 测试停止服务
         echo "7. 测试 xiaozhi stop"
-        node ../dist/cli.js stop || echo "服务停止测试完成"
+        node ../dist/cli.js stop
+        if ($LASTEXITCODE -ne 0) { echo "服务停止测试完成" }
 
+        # 确保步骤以成功状态结束
+        $global:LASTEXITCODE = 0
         echo "✅ CLI 服务测试完成"
       shell: pwsh
 

@@ -25,8 +25,17 @@ vi.mock("./configManager", () => {
   };
 });
 vi.mock("./logger");
-vi.mock("./cli", () => ({
-  getServiceStatus: vi.fn(),
+vi.mock("./cli/Container", () => ({
+  createContainer: vi.fn(() => ({
+    get: vi.fn((serviceName) => {
+      if (serviceName === "serviceManager") {
+        return {
+          getStatus: vi.fn(),
+        };
+      }
+      return {};
+    }),
+  })),
 }));
 vi.mock("node:child_process", () => ({
   spawn: vi.fn(() => ({
@@ -307,13 +316,24 @@ describe("WebServer", () => {
   });
 
   describe("Auto Restart Feature", () => {
-    let mockGetServiceStatus: any;
+    let mockServiceManager: any;
     let mockSpawn: any;
 
     beforeEach(async () => {
-      const { getServiceStatus } = await import("./cli");
+      const { createContainer } = await import("./cli/Container");
       const { spawn } = await import("node:child_process");
-      mockGetServiceStatus = vi.mocked(getServiceStatus);
+      const mockContainer = vi.mocked(createContainer);
+      mockServiceManager = {
+        getStatus: vi.fn(),
+      };
+      mockContainer.mockResolvedValue({
+        get: vi.fn((serviceName) => {
+          if (serviceName === "serviceManager") {
+            return mockServiceManager;
+          }
+          return {};
+        }),
+      });
       mockSpawn = vi.mocked(spawn);
     });
 
@@ -393,7 +413,7 @@ describe("WebServer", () => {
       });
 
       // Mock service status
-      mockGetServiceStatus.mockReturnValue({
+      mockServiceManager.getStatus.mockResolvedValue({
         running: true,
         pid: 12345,
         mode: "daemon",
@@ -425,7 +445,7 @@ describe("WebServer", () => {
       });
 
       // Mock service as not running
-      mockGetServiceStatus.mockReturnValue({
+      mockServiceManager.getStatus.mockResolvedValue({
         running: false,
       });
 
