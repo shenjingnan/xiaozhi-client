@@ -228,10 +228,6 @@ describe("CLI 命令行工具", () => {
     vi.restoreAllMocks();
   });
 
-
-
-
-
   describe("服务命令", () => {
     it("应该获取正确的服务命令", () => {
       const expectedCommand = "node";
@@ -646,11 +642,7 @@ describe("CLI 命令行工具", () => {
     });
   });
 
-
-
   describe("工具函数", () => {
-
-
     it("应该显示详细信息", () => {
       // Test would require access to showDetailedInfo function
       expect(process.version).toBeDefined();
@@ -759,8 +751,6 @@ describe("CLI 命令行工具", () => {
         expect(tsupConfig).toContain('format: ["esm"]');
       }
     });
-
-
 
     it("应该确保源码中不使用 CommonJS 语法", () => {
       const projectRoot = getProjectRoot();
