@@ -2,15 +2,15 @@
  * 依赖注入容器
  */
 
-import type { IDIContainer } from "./interfaces/Config.js";
-import { VersionUtils } from "./utils/VersionUtils.js";
-import { PlatformUtils } from "./utils/PlatformUtils.js";
-import { FormatUtils } from "./utils/FormatUtils.js";
-import { FileUtils } from "./utils/FileUtils.js";
-import { PathUtils } from "./utils/PathUtils.js";
-import { Validation } from "./utils/Validation.js";
-import { configManager } from "../configManager.js";
 import { logger } from "../Logger.js";
+import { configManager } from "../configManager.js";
+import type { IDIContainer } from "./interfaces/Config.js";
+import { FileUtils } from "./utils/FileUtils.js";
+import { FormatUtils } from "./utils/FormatUtils.js";
+import { PathUtils } from "./utils/PathUtils.js";
+import { PlatformUtils } from "./utils/PlatformUtils.js";
+import { Validation } from "./utils/Validation.js";
+import { VersionUtils } from "./utils/VersionUtils.js";
 
 /**
  * 依赖注入容器实现

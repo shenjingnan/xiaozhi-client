@@ -96,13 +96,15 @@ async function main(): Promise<void> {
       .description("小智 MCP 客户端 - 强大的 Model Context Protocol 客户端");
 
     // 添加详细信息选项
-    program.option("--info", "显示详细信息").hook("preAction", (thisCommand) => {
-      const options = thisCommand.opts();
-      if (options.info) {
-        showDetailedInfo(container);
-        process.exit(0);
-      }
-    });
+    program
+      .option("--info", "显示详细信息")
+      .hook("preAction", (thisCommand) => {
+        const options = thisCommand.opts();
+        if (options.info) {
+          showDetailedInfo(container);
+          process.exit(0);
+        }
+      });
 
     // 注册所有命令
     await commandRegistry.registerCommands(program);
