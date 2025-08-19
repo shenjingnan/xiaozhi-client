@@ -22,6 +22,67 @@ enum ConnectionState {
   FAILED = "failed",
 }
 
+// 工具调用错误码枚举
+enum ToolCallErrorCode {
+  INVALID_PARAMS = -32602, // 无效参数
+  TOOL_NOT_FOUND = -32601, // 工具不存在
+  TOOL_EXECUTION_ERROR = -32000, // 工具执行错误
+  SERVICE_UNAVAILABLE = -32001, // 服务不可用
+  TIMEOUT = -32002, // 调用超时
+}
+
+// 工具调用错误类
+class ToolCallError extends Error {
+  constructor(
+    public code: ToolCallErrorCode,
+    message: string,
+    public data?: any
+  ) {
+    super(message);
+    this.name = "ToolCallError";
+  }
+}
+
+// 工具调用配置接口
+interface ToolCallOptions {
+  timeout?: number;
+  retryAttempts?: number;
+  retryDelay?: number;
+}
+
+// 性能指标接口
+interface PerformanceMetrics {
+  totalCalls: number;
+  successfulCalls: number;
+  failedCalls: number;
+  averageResponseTime: number;
+  minResponseTime: number;
+  maxResponseTime: number;
+  successRate: number;
+  lastUpdated: Date;
+}
+
+// 调用记录接口
+interface CallRecord {
+  id: string;
+  toolName: string;
+  startTime: Date;
+  endTime?: Date;
+  duration?: number;
+  success: boolean;
+  errorCode?: number;
+  errorMessage?: string;
+}
+
+// 重试配置接口
+interface RetryConfig {
+  maxAttempts: number;
+  initialDelay: number;
+  maxDelay: number;
+  backoffMultiplier: number;
+  retryableErrors: ToolCallErrorCode[];
+}
+
 // 重连配置接口
 interface ReconnectOptions {
   enabled: boolean; // 是否启用自动重连
@@ -86,6 +147,41 @@ export class ProxyMCPServer {
 
   // 连接超时定时器
   private connectionTimeout: NodeJS.Timeout | null = null;
+
+  // 性能监控
+  private performanceMetrics: PerformanceMetrics = {
+    totalCalls: 0,
+    successfulCalls: 0,
+    failedCalls: 0,
+    averageResponseTime: 0,
+    minResponseTime: Number.MAX_VALUE,
+    maxResponseTime: 0,
+    successRate: 0,
+    lastUpdated: new Date(),
+  };
+
+  // 调用记录（保留最近100条）
+  private callRecords: CallRecord[] = [];
+  private readonly maxCallRecords = 100;
+
+  // 重试配置
+  private retryConfig: RetryConfig = {
+    maxAttempts: 3,
+    initialDelay: 1000,
+    maxDelay: 10000,
+    backoffMultiplier: 2,
+    retryableErrors: [
+      ToolCallErrorCode.SERVICE_UNAVAILABLE,
+      ToolCallErrorCode.TIMEOUT,
+    ],
+  };
+
+  // 工具调用配置
+  private toolCallConfig: ToolCallOptions = {
+    timeout: 30000,
+    retryAttempts: 3,
+    retryDelay: 1000,
+  };
 
   constructor(endpointUrl: string, options?: ProxyMCPServerOptions) {
     this.endpointUrl = endpointUrl;
@@ -537,6 +633,7 @@ export class ProxyMCPServer {
   private handleServerRequest(request: MCPMessage): void {
     switch (request.method) {
       case "initialize":
+      case "notifications/initialized":
         this.sendResponse(request.id, {
           protocolVersion: "2024-11-05",
           capabilities: {
@@ -556,6 +653,14 @@ export class ProxyMCPServer {
         const toolsList = this.getTools();
         this.sendResponse(request.id, { tools: toolsList });
         this.logger.info(`MCP 工具列表已发送 (${toolsList.length}个工具)`);
+        break;
+      }
+
+      case "tools/call": {
+        // 异步处理工具调用，避免阻塞其他消息
+        this.handleToolCall(request).catch((error) => {
+          this.logger.error("处理工具调用时发生未捕获错误:", error);
+        });
         break;
       }
 
@@ -677,5 +782,476 @@ export class ProxyMCPServer {
     this.reconnectState.nextInterval = this.reconnectOptions.initialInterval;
     this.reconnectState.lastError = null;
     this.logger.info("重连状态已重置");
+  }
+
+  /**
+   * 处理工具调用请求
+   */
+  private async handleToolCall(request: MCPMessage): Promise<void> {
+    const requestId = String(request.id || "unknown");
+    let callRecord: CallRecord | null = null;
+
+    try {
+      // 1. 验证请求格式
+      const params = this.validateToolCallParams(request.params);
+
+      // 2. 记录调用开始
+      callRecord = this.recordCallStart(params.name, requestId);
+
+      this.logger.info(`开始处理工具调用: ${params.name}`, {
+        requestId,
+        toolName: params.name,
+        hasArguments: !!params.arguments,
+      });
+
+      // 3. 检查服务管理器是否可用
+      const serviceManager = (this as any).serviceManager;
+      if (!serviceManager) {
+        throw new ToolCallError(
+          ToolCallErrorCode.SERVICE_UNAVAILABLE,
+          "MCPServiceManager 未设置"
+        );
+      }
+
+      // 4. 执行工具调用（带重试机制）
+      const result = await this.executeToolWithRetry(
+        serviceManager,
+        params.name,
+        params.arguments || {}
+      );
+
+      // 5. 发送成功响应
+      this.sendResponse(requestId, {
+        content: result.content || [
+          { type: "text", text: JSON.stringify(result) },
+        ],
+        isError: result.isError || false,
+      });
+
+      // 6. 记录调用成功
+      if (callRecord) {
+        this.recordCallEnd(callRecord, true);
+      }
+
+      this.logger.info(`工具调用成功: ${params.name}`, {
+        requestId,
+        duration: callRecord?.duration ? `${callRecord.duration}ms` : "unknown",
+      });
+    } catch (error) {
+      // 7. 处理错误并发送错误响应
+      if (callRecord) {
+        const errorCode =
+          error instanceof ToolCallError
+            ? error.code
+            : ToolCallErrorCode.TOOL_EXECUTION_ERROR;
+        const errorMessage =
+          error instanceof Error ? error.message : "未知错误";
+        this.recordCallEnd(callRecord, false, errorCode, errorMessage);
+      }
+
+      this.handleToolCallError(error, requestId, callRecord?.duration || 0);
+    }
+  }
+
+  /**
+   * 验证工具调用参数
+   */
+  private validateToolCallParams(params: any): {
+    name: string;
+    arguments?: any;
+  } {
+    if (!params || typeof params !== "object") {
+      throw new ToolCallError(
+        ToolCallErrorCode.INVALID_PARAMS,
+        "请求参数必须是对象"
+      );
+    }
+
+    if (!params.name || typeof params.name !== "string") {
+      throw new ToolCallError(
+        ToolCallErrorCode.INVALID_PARAMS,
+        "工具名称必须是非空字符串"
+      );
+    }
+
+    if (
+      params.arguments !== undefined &&
+      (typeof params.arguments !== "object" || Array.isArray(params.arguments))
+    ) {
+      throw new ToolCallError(
+        ToolCallErrorCode.INVALID_PARAMS,
+        "工具参数必须是对象"
+      );
+    }
+
+    return {
+      name: params.name,
+      arguments: params.arguments,
+    };
+  }
+
+  /**
+   * 带重试机制的工具执行
+   */
+  private async executeToolWithRetry(
+    serviceManager: any,
+    toolName: string,
+    arguments_: any
+  ): Promise<any> {
+    let lastError: ToolCallError | null = null;
+
+    for (let attempt = 1; attempt <= this.retryConfig.maxAttempts; attempt++) {
+      try {
+        return await this.executeToolWithTimeout(
+          serviceManager,
+          toolName,
+          arguments_,
+          this.toolCallConfig.timeout
+        );
+      } catch (error) {
+        // 确保错误是 ToolCallError 类型
+        if (error instanceof ToolCallError) {
+          lastError = error;
+        } else {
+          // 如果不是 ToolCallError，转换为 ToolCallError
+          lastError = new ToolCallError(
+            ToolCallErrorCode.TOOL_EXECUTION_ERROR,
+            error instanceof Error ? error.message : "未知错误"
+          );
+        }
+
+        // 检查是否是可重试的错误
+        if (
+          this.retryConfig.retryableErrors.includes(lastError.code) &&
+          attempt < this.retryConfig.maxAttempts
+        ) {
+          // 计算重试延迟
+          const delay = Math.min(
+            this.retryConfig.initialDelay *
+              this.retryConfig.backoffMultiplier ** (attempt - 1),
+            this.retryConfig.maxDelay
+          );
+
+          this.logger.warn(
+            `工具调用失败，将在 ${delay}ms 后重试 (${attempt}/${this.retryConfig.maxAttempts})`,
+            {
+              toolName,
+              error: lastError.message,
+              attempt,
+              delay,
+            }
+          );
+
+          // 等待重试延迟
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+
+        // 不可重试的错误或已达到最大重试次数
+        break;
+      }
+    }
+
+    // 所有重试都失败了，抛出最后一个错误
+    throw lastError;
+  }
+
+  /**
+   * 带超时控制的工具执行
+   */
+  private async executeToolWithTimeout(
+    serviceManager: any,
+    toolName: string,
+    arguments_: any,
+    timeoutMs = 30000
+  ): Promise<any> {
+    return new Promise((resolve, reject) => {
+      // 设置超时定时器
+      const timeoutId = setTimeout(() => {
+        reject(
+          new ToolCallError(
+            ToolCallErrorCode.TIMEOUT,
+            `工具调用超时 (${timeoutMs}ms): ${toolName}`
+          )
+        );
+      }, timeoutMs);
+
+      // 执行工具调用
+      serviceManager
+        .callTool(toolName, arguments_)
+        .then((result: any) => {
+          clearTimeout(timeoutId);
+          resolve(result);
+        })
+        .catch((error: any) => {
+          clearTimeout(timeoutId);
+
+          // 将内部错误转换为工具调用错误
+          if (error.message?.includes("未找到工具")) {
+            reject(
+              new ToolCallError(
+                ToolCallErrorCode.TOOL_NOT_FOUND,
+                `工具不存在: ${toolName}`
+              )
+            );
+          } else if (
+            error.message?.includes("服务") &&
+            error.message?.includes("不可用")
+          ) {
+            reject(
+              new ToolCallError(
+                ToolCallErrorCode.SERVICE_UNAVAILABLE,
+                error.message
+              )
+            );
+          } else if (error.message?.includes("暂时不可用")) {
+            // 处理临时性错误，标记为服务不可用（可重试）
+            reject(
+              new ToolCallError(
+                ToolCallErrorCode.SERVICE_UNAVAILABLE,
+                error.message
+              )
+            );
+          } else if (error.message?.includes("持续不可用")) {
+            // 处理持续性错误，也标记为服务不可用（可重试）
+            reject(
+              new ToolCallError(
+                ToolCallErrorCode.SERVICE_UNAVAILABLE,
+                error.message
+              )
+            );
+          } else {
+            reject(
+              new ToolCallError(
+                ToolCallErrorCode.TOOL_EXECUTION_ERROR,
+                `工具执行失败: ${error.message}`
+              )
+            );
+          }
+        });
+    });
+  }
+
+  /**
+   * 处理工具调用错误
+   */
+  private handleToolCallError(
+    error: any,
+    requestId: string | number | undefined,
+    duration: number
+  ): void {
+    let errorResponse: any;
+
+    if (error instanceof ToolCallError) {
+      // 标准工具调用错误
+      errorResponse = {
+        code: error.code,
+        message: error.message,
+        data: error.data,
+      };
+    } else {
+      // 未知错误
+      errorResponse = {
+        code: ToolCallErrorCode.TOOL_EXECUTION_ERROR,
+        message: error?.message || "未知错误",
+        data: { originalError: error?.toString() || "null" },
+      };
+    }
+
+    // 发送错误响应
+    this.sendErrorResponse(requestId, errorResponse);
+
+    // 记录错误日志
+    this.logger.error("工具调用失败", {
+      requestId,
+      duration: `${duration}ms`,
+      error: errorResponse,
+    });
+  }
+
+  /**
+   * 发送错误响应
+   */
+  private sendErrorResponse(
+    id: string | number | undefined,
+    error: { code: number; message: string; data?: any }
+  ): void {
+    if (this.isConnected && this.ws?.readyState === WebSocket.OPEN) {
+      const response = {
+        jsonrpc: "2.0",
+        id,
+        error,
+      };
+      this.ws.send(JSON.stringify(response));
+      this.logger.debug("已发送错误响应:", response);
+    }
+  }
+
+  /**
+   * 记录工具调用开始
+   */
+  private recordCallStart(toolName: string, requestId: string): CallRecord {
+    const record: CallRecord = {
+      id: requestId,
+      toolName,
+      startTime: new Date(),
+      success: false,
+    };
+
+    // 添加到记录列表
+    this.callRecords.push(record);
+
+    // 保持记录数量在限制内
+    if (this.callRecords.length > this.maxCallRecords) {
+      this.callRecords.shift();
+    }
+
+    return record;
+  }
+
+  /**
+   * 记录工具调用结束
+   */
+  private recordCallEnd(
+    record: CallRecord,
+    success: boolean,
+    errorCode?: number,
+    errorMessage?: string
+  ): void {
+    record.endTime = new Date();
+    record.duration = record.endTime.getTime() - record.startTime.getTime();
+    record.success = success;
+    record.errorCode = errorCode;
+    record.errorMessage = errorMessage;
+
+    // 更新性能指标
+    this.updatePerformanceMetrics(record);
+  }
+
+  /**
+   * 更新性能指标
+   */
+  private updatePerformanceMetrics(record: CallRecord): void {
+    this.performanceMetrics.totalCalls++;
+
+    if (record.success) {
+      this.performanceMetrics.successfulCalls++;
+    } else {
+      this.performanceMetrics.failedCalls++;
+    }
+
+    if (record.duration !== undefined) {
+      // 更新响应时间统计
+      if (record.duration < this.performanceMetrics.minResponseTime) {
+        this.performanceMetrics.minResponseTime = record.duration;
+      }
+      if (record.duration > this.performanceMetrics.maxResponseTime) {
+        this.performanceMetrics.maxResponseTime = record.duration;
+      }
+
+      // 计算平均响应时间
+      const totalTime = this.callRecords
+        .filter((r) => r.duration !== undefined)
+        .reduce((sum, r) => sum + (r.duration || 0), 0);
+      const completedCalls = this.callRecords.filter(
+        (r) => r.duration !== undefined
+      ).length;
+      this.performanceMetrics.averageResponseTime =
+        completedCalls > 0 ? totalTime / completedCalls : 0;
+    }
+
+    // 计算成功率
+    this.performanceMetrics.successRate =
+      this.performanceMetrics.totalCalls > 0
+        ? (this.performanceMetrics.successfulCalls /
+            this.performanceMetrics.totalCalls) *
+          100
+        : 0;
+
+    this.performanceMetrics.lastUpdated = new Date();
+  }
+
+  /**
+   * 获取性能指标
+   */
+  public getPerformanceMetrics(): PerformanceMetrics {
+    return { ...this.performanceMetrics };
+  }
+
+  /**
+   * 获取调用记录
+   */
+  public getCallRecords(limit?: number): CallRecord[] {
+    const records = [...this.callRecords].reverse(); // 最新的在前
+    return limit ? records.slice(0, limit) : records;
+  }
+
+  /**
+   * 重置性能指标
+   */
+  public resetPerformanceMetrics(): void {
+    this.performanceMetrics = {
+      totalCalls: 0,
+      successfulCalls: 0,
+      failedCalls: 0,
+      averageResponseTime: 0,
+      minResponseTime: Number.MAX_VALUE,
+      maxResponseTime: 0,
+      successRate: 0,
+      lastUpdated: new Date(),
+    };
+    this.callRecords = [];
+  }
+
+  /**
+   * 更新工具调用配置
+   */
+  public updateToolCallConfig(config: Partial<ToolCallOptions>): void {
+    this.toolCallConfig = { ...this.toolCallConfig, ...config };
+    this.logger.info("工具调用配置已更新", this.toolCallConfig);
+  }
+
+  /**
+   * 更新重试配置
+   */
+  public updateRetryConfig(config: Partial<RetryConfig>): void {
+    this.retryConfig = { ...this.retryConfig, ...config };
+    this.logger.info("重试配置已更新", this.retryConfig);
+  }
+
+  /**
+   * 获取当前配置
+   */
+  public getConfiguration(): {
+    toolCall: ToolCallOptions;
+    retry: RetryConfig;
+  } {
+    return {
+      toolCall: { ...this.toolCallConfig },
+      retry: { ...this.retryConfig },
+    };
+  }
+
+  /**
+   * 获取服务器状态（增强版）
+   */
+  public getEnhancedStatus(): ProxyMCPServerStatus & {
+    performance: PerformanceMetrics;
+    configuration: {
+      toolCall: ToolCallOptions;
+      retry: RetryConfig;
+    };
+  } {
+    return {
+      connected: this.isConnected,
+      initialized: this.serverInitialized,
+      url: this.endpointUrl,
+      availableTools: this.tools.size,
+      connectionState: this.connectionState,
+      reconnectAttempts: this.reconnectState.attempts,
+      lastError: this.reconnectState.lastError?.message || null,
+      performance: this.getPerformanceMetrics(),
+      configuration: this.getConfiguration(),
+    };
   }
 }
