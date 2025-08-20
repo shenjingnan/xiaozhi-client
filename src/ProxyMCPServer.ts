@@ -23,7 +23,7 @@ enum ConnectionState {
 }
 
 // 工具调用错误码枚举
-enum ToolCallErrorCode {
+export enum ToolCallErrorCode {
   INVALID_PARAMS = -32602, // 无效参数
   TOOL_NOT_FOUND = -32601, // 工具不存在
   TOOL_EXECUTION_ERROR = -32000, // 工具执行错误
@@ -32,7 +32,7 @@ enum ToolCallErrorCode {
 }
 
 // 工具调用错误类
-class ToolCallError extends Error {
+export class ToolCallError extends Error {
   constructor(
     public code: ToolCallErrorCode,
     message: string,
@@ -675,7 +675,9 @@ export class ProxyMCPServer {
   }
 
   private sendResponse(id: number | string | undefined, result: any): void {
-    this.logger.debug(`尝试发送响应: id=${id}, isConnected=${this.isConnected}, wsReadyState=${this.ws?.readyState}`);
+    this.logger.debug(
+      `尝试发送响应: id=${id}, isConnected=${this.isConnected}, wsReadyState=${this.ws?.readyState}`
+    );
 
     if (this.isConnected && this.ws?.readyState === WebSocket.OPEN) {
       const response: MCPMessage = {
@@ -686,7 +688,9 @@ export class ProxyMCPServer {
 
       try {
         this.ws.send(JSON.stringify(response));
-        this.logger.info(`响应已发送: id=${id}`, { responseSize: JSON.stringify(response).length });
+        this.logger.info(`响应已发送: id=${id}`, {
+          responseSize: JSON.stringify(response).length,
+        });
       } catch (error) {
         this.logger.error(`发送响应失败: id=${id}`, error);
       }
@@ -694,10 +698,16 @@ export class ProxyMCPServer {
       this.logger.error(`无法发送响应: id=${id}, 连接状态检查失败`, {
         isConnected: this.isConnected,
         wsReadyState: this.ws?.readyState,
-        wsReadyStateText: this.ws?.readyState === WebSocket.OPEN ? 'OPEN' :
-                         this.ws?.readyState === WebSocket.CONNECTING ? 'CONNECTING' :
-                         this.ws?.readyState === WebSocket.CLOSING ? 'CLOSING' :
-                         this.ws?.readyState === WebSocket.CLOSED ? 'CLOSED' : 'UNKNOWN'
+        wsReadyStateText:
+          this.ws?.readyState === WebSocket.OPEN
+            ? "OPEN"
+            : this.ws?.readyState === WebSocket.CONNECTING
+              ? "CONNECTING"
+              : this.ws?.readyState === WebSocket.CLOSING
+                ? "CLOSING"
+                : this.ws?.readyState === WebSocket.CLOSED
+                  ? "CLOSED"
+                  : "UNKNOWN",
       });
 
       // 尝试重新连接并发送响应
@@ -1122,7 +1132,10 @@ export class ProxyMCPServer {
   /**
    * 记录工具调用开始
    */
-  private recordCallStart(toolName: string, requestId: string | number): CallRecord {
+  private recordCallStart(
+    toolName: string,
+    requestId: string | number
+  ): CallRecord {
     const record: CallRecord = {
       id: String(requestId), // 内部记录时转换为字符串，但不影响响应 ID 类型
       toolName,
