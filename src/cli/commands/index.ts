@@ -147,6 +147,12 @@ export class CommandRegistry implements ICommandRegistry {
     const versionUtils = this.container.get("versionUtils") as any;
 
     program.version(versionUtils.getVersion(), "-v, --version", "显示版本信息");
+
+    // 注册 --info 选项
+    program.option("--info", "显示详细信息");
+
+    // 注册 --version-info 选项
+    program.option("--version-info", "显示详细版本信息");
   }
 
   /**

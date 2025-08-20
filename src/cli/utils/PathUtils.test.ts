@@ -77,7 +77,9 @@ describe("PathUtils 路径工具", () => {
 
   describe("路径解析一致性", () => {
     it("应该在不同方法间保持一致的路径解析", () => {
-      process.argv = ["node", "/test/dist/cli.js"];
+      // 使用跨平台的路径格式
+      const testCliPath = path.join("/test", "dist", "cli.js");
+      process.argv = ["node", testCliPath];
 
       const webServerPath = PathUtils.getWebServerStandalonePath();
       const mcpProxyPath = PathUtils.getMcpServerProxyPath();
@@ -90,7 +92,9 @@ describe("PathUtils 路径工具", () => {
 
       expect(webServerDir).toBe(mcpProxyDir);
       expect(mcpProxyDir).toBe(customDir);
-      expect(customDir).toBe("/test/dist");
+      // 使用跨平台的期望路径
+      const expectedDir = path.join("/test", "dist");
+      expect(customDir).toBe(expectedDir);
     });
   });
 
