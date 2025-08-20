@@ -4,6 +4,7 @@
 
 import chalk from "chalk";
 import ora from "ora";
+import path from "node:path";
 import type { CommandOption, SubCommand } from "../interfaces/Command.js";
 import { BaseCommandHandler } from "../interfaces/Command.js";
 import type { IDIContainer } from "../interfaces/Config.js";
@@ -83,10 +84,9 @@ export class ConfigCommandHandler extends BaseCommandHandler {
       spinner.succeed("配置文件初始化成功");
 
       // 获取实际创建的配置文件路径
-      const pathUtils = this.getService<any>("pathUtils");
       const configDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();
       const configFileName = `xiaozhi.config.${format}`;
-      const configPath = pathUtils.join(configDir, configFileName);
+      const configPath = path.join(configDir, configFileName);
 
       console.log(chalk.green(`✅ 配置文件已创建: ${configFileName}`));
       console.log(chalk.yellow("📝 请编辑配置文件设置你的 MCP 端点:"));
