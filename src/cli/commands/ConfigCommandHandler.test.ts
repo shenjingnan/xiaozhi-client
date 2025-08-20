@@ -21,22 +21,19 @@ const mockErrorHandler = {
 };
 
 const mockContainer: IDIContainer = {
-  get: vi.fn((serviceName: string) => {
+  get: <T>(serviceName: string): T => {
     switch (serviceName) {
       case "configManager":
-        return mockConfigManager;
+        return mockConfigManager as T;
       case "pathUtils":
-        return mockPathUtils;
+        return mockPathUtils as T;
       case "errorHandler":
-        return mockErrorHandler;
+        return mockErrorHandler as T;
       default:
-        return {};
+        return {} as T;
     }
-  }),
+  },
   register: vi.fn(),
-  registerSingleton: vi.fn(),
-  registerInstance: vi.fn(),
-  registerAsync: vi.fn(),
   has: vi.fn(),
 };
 
@@ -48,7 +45,7 @@ const mockConsoleError = vi
 
 // Mock process.cwd and process.env
 const mockProcessCwd = vi.fn().mockReturnValue("/test/project");
-const mockProcessEnv = { XIAOZHI_CONFIG_DIR: undefined };
+const mockProcessEnv = { XIAOZHI_CONFIG_DIR: undefined as string | undefined };
 
 vi.stubGlobal("process", {
   ...process,
