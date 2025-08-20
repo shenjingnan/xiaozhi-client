@@ -59,7 +59,7 @@ export class DaemonManagerImpl implements IDaemonManager {
       this.processManager.savePidInfo(child.pid!, "daemon");
 
       // 设置日志重定向
-      this.setupLogging(child, options.logFileName || "xiaozhi.log");
+      await this.setupLogging(child, options.logFileName || "xiaozhi.log");
 
       // 设置进程事件监听
       this.setupEventHandlers(child);
@@ -213,12 +213,13 @@ export class DaemonManagerImpl implements IDaemonManager {
   /**
    * 设置日志重定向
    */
-  private setupLogging(child: ChildProcess, logFileName: string): void {
+  private async setupLogging(child: ChildProcess, logFileName: string): Promise<void> {
     try {
       const logFilePath = PathUtils.getLogFile();
 
       // 确保日志目录存在
-      const logDir = require("node:path").dirname(logFilePath);
+      const path = await import("node:path");
+      const logDir = path.dirname(logFilePath);
       if (!fs.existsSync(logDir)) {
         fs.mkdirSync(logDir, { recursive: true });
       }

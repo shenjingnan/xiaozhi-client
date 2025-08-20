@@ -210,7 +210,7 @@ export class ServiceManagerImpl implements IServiceManager {
       this.processManager.savePidInfo(child.pid!, "daemon");
 
       // 设置日志输出
-      this.setupDaemonLogging(child, "xiaozhi-mcp-server.log");
+      await this.setupDaemonLogging(child, "xiaozhi-mcp-server.log");
 
       child.unref();
     } else {
@@ -258,6 +258,11 @@ export class ServiceManagerImpl implements IServiceManager {
     const { spawn } = await import("node:child_process");
     const webServerPath = PathUtils.getWebServerStandalonePath();
 
+    const fs = await import("node:fs");
+    if (!fs.default.existsSync(webServerPath)) {
+      throw new ServiceError(`WebServer 文件不存在: ${webServerPath}`);
+    }
+
     const args = [webServerPath];
     if (openBrowser) {
       args.push("--open-browser");
@@ -277,12 +282,14 @@ export class ServiceManagerImpl implements IServiceManager {
     this.processManager.savePidInfo(child.pid!, "daemon");
 
     // 设置日志输出
-    this.setupDaemonLogging(child, "xiaozhi.log");
+    await this.setupDaemonLogging(child, "xiaozhi.log");
 
     // 监听进程事件
     this.setupProcessEventHandlers(child);
 
     child.unref();
+
+    this.logger.info(`后台服务已启动 (PID: ${child.pid})`);
   }
 
   /**
@@ -319,10 +326,10 @@ export class ServiceManagerImpl implements IServiceManager {
   /**
    * 设置守护进程日志
    */
-  private setupDaemonLogging(child: any, logFileName: string): void {
+  private async setupDaemonLogging(child: any, logFileName: string): Promise<void> {
     const logFilePath = PathUtils.getLogFile();
-    const fs = require("node:fs");
-    const logStream = fs.createWriteStream(logFilePath, { flags: "a" });
+    const fs = await import("node:fs");
+    const logStream = fs.default.createWriteStream(logFilePath, { flags: "a" });
 
     child.stdout?.pipe(logStream);
     child.stderr?.pipe(logStream);

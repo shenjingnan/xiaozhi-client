@@ -203,7 +203,10 @@ export class CommandRegistry implements ICommandRegistry {
       // 设置命令处理函数
       command.action(async (...args) => {
         try {
-          await subcommand.execute(args.slice(0, -1), args[args.length - 1]);
+          // Commander.js 传递的最后一个参数是 Command 对象，包含选项值
+          const command = args[args.length - 1];
+          const options = command.opts(); // 获取解析后的选项
+          await subcommand.execute(args.slice(0, -1), options);
         } catch (error) {
           ErrorHandler.handle(error as Error);
         }
