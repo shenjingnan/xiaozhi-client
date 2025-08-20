@@ -140,36 +140,15 @@ export class CommandRegistry implements ICommandRegistry {
     }
   }
 
+
+
   /**
    * 注册版本命令
    */
   private registerVersionCommand(program: Command): void {
     const versionUtils = this.container.get("versionUtils") as any;
 
-    program
-      .version(versionUtils.getVersion(), "-v, --version", "显示版本信息")
-      .option("--version-info", "显示详细版本信息")
-      .hook("preAction", (thisCommand) => {
-        const options = thisCommand.opts();
-        if (options.versionInfo) {
-          const versionInfo = versionUtils.getVersionInfo();
-          const platformUtils = this.container.get("platformUtils") as any;
-          const systemInfo = platformUtils.getSystemInfo();
-
-          console.log(
-            `${versionInfo.name || "xiaozhi"} v${versionInfo.version}`
-          );
-          if (versionInfo.description) {
-            console.log(versionInfo.description);
-          }
-          console.log(`Node.js: ${systemInfo.nodeVersion}`);
-          console.log(`Platform: ${systemInfo.platform} ${systemInfo.arch}`);
-          if (systemInfo.isContainer) {
-            console.log("Environment: Container");
-          }
-          process.exit(0);
-        }
-      });
+    program.version(versionUtils.getVersion(), "-v, --version", "显示版本信息");
   }
 
   /**
