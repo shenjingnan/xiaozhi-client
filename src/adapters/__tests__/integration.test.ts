@@ -142,9 +142,9 @@ describe("适配器集成测试", () => {
 
   describe("错误处理", () => {
     it("应该在无效配置时抛出错误", () => {
-      expect(() => convertLegacyToNew("", { command: "test" })).toThrow(
-        "服务名称必须是非空字符串"
-      );
+      expect(() =>
+        convertLegacyToNew("", { command: "test", args: [] })
+      ).toThrow("服务名称必须是非空字符串");
 
       expect(() => convertLegacyToNew("test", null as any)).toThrow(
         "配置对象不能为空"

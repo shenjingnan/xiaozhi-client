@@ -10,6 +10,7 @@ import {
   type ConfigWatcherOptions,
 } from "../ConfigWatcher.js";
 import type { MCPServiceConfig } from "../MCPService.js";
+import { MCPTransportType } from "../MCPService.js";
 
 // Mock dependencies
 vi.mock("../../Logger.js", () => ({
@@ -51,13 +52,13 @@ describe("ConfigWatcher", () => {
     testConfigs = [
       {
         name: "test-service-1",
-        type: "stdio",
+        type: MCPTransportType.STDIO,
         command: "test-command",
         args: ["--test"],
       },
       {
         name: "test-service-2",
-        type: "sse",
+        type: MCPTransportType.SSE,
         url: "http://localhost:3000/sse",
       },
     ];
@@ -95,7 +96,7 @@ describe("ConfigWatcher", () => {
     it("should detect missing name field", () => {
       const invalidConfigs = [
         {
-          type: "stdio",
+          type: MCPTransportType.STDIO,
           command: "test-command",
         } as MCPServiceConfig,
       ];
@@ -124,12 +125,12 @@ describe("ConfigWatcher", () => {
       const invalidConfigs = [
         {
           name: "duplicate-service",
-          type: "stdio",
+          type: MCPTransportType.STDIO,
           command: "test-command-1",
         },
         {
           name: "duplicate-service",
-          type: "stdio",
+          type: MCPTransportType.STDIO,
           command: "test-command-2",
         },
       ];
@@ -144,7 +145,7 @@ describe("ConfigWatcher", () => {
       const invalidConfigs = [
         {
           name: "stdio-service",
-          type: "stdio",
+          type: MCPTransportType.STDIO,
         } as MCPServiceConfig,
       ];
 
@@ -160,7 +161,7 @@ describe("ConfigWatcher", () => {
       const invalidConfigs = [
         {
           name: "sse-service",
-          type: "sse",
+          type: MCPTransportType.SSE,
         } as MCPServiceConfig,
       ];
 
@@ -174,7 +175,7 @@ describe("ConfigWatcher", () => {
       const configsWithWarnings = [
         {
           name: "test-service",
-          type: "stdio",
+          type: MCPTransportType.STDIO,
           command: "test-command",
           timeout: -1,
         },
@@ -325,7 +326,7 @@ describe("ConfigWatcher", () => {
         ...testConfigs,
         {
           name: "test-service-3",
-          type: "streamable-http",
+          type: MCPTransportType.STREAMABLE_HTTP,
           url: "http://localhost:3000/api",
         },
       ];

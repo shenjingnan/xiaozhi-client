@@ -9,9 +9,8 @@ vi.mock("../configManager.js", () => ({
     getConfig: vi.fn(),
     getMcpEndpoints: vi.fn(),
     getMcpEndpoint: vi.fn(),
+    getMcpServers: vi.fn(),
     updateMcpEndpoint: vi.fn(),
-    getServerConfigs: vi.fn(),
-    getPort: vi.fn(),
     getWebUIPort: vi.fn(),
     configExists: vi.fn(),
     on: vi.fn(),
@@ -71,11 +70,11 @@ describe("WebServer Unit Tests", () => {
     // 设置默认的 mock 返回值
     const { configManager } = await import("../configManager.js");
     vi.mocked(configManager.getConfig).mockReturnValue({
-      port: mockPort,
       mcpEndpoint: ["wss://test1.example.com", "wss://test2.example.com"],
-      mcpServers: [],
-      enableCors: true,
-      enableLogging: true,
+      mcpServers: {},
+      webUI: {
+        port: mockPort,
+      },
     });
 
     vi.mocked(configManager.getMcpEndpoints).mockReturnValue([
@@ -86,10 +85,9 @@ describe("WebServer Unit Tests", () => {
     vi.mocked(configManager.getMcpEndpoint).mockReturnValue(
       "wss://test1.example.com"
     );
-    vi.mocked(configManager.getPort).mockReturnValue(mockPort);
     vi.mocked(configManager.getWebUIPort).mockReturnValue(mockPort);
     vi.mocked(configManager.configExists).mockReturnValue(true);
-    vi.mocked(configManager.getServerConfigs).mockReturnValue([]);
+    vi.mocked(configManager.getMcpServers).mockReturnValue({});
 
     webServer = new WebServer(mockPort);
   });
@@ -125,8 +123,26 @@ describe("WebServer Unit Tests", () => {
         "../services/XiaozhiConnectionManagerSingleton.js"
       );
       const mockManager = {
+        // 基本属性
+        connections: new Map(),
+        connectionStates: new Map(),
+        mcpServiceManager: null,
+        logger: vi.fn(),
+
+        // 状态属性
+        isInitialized: true,
+        isConnecting: false,
+        options: {},
+        healthCheckInterval: null,
+        reconnectTimers: new Map(),
+        roundRobinIndex: 0,
+        lastSelectedEndpoint: null,
+        performanceMetrics: {},
+
+        // 方法
         initialize: vi.fn().mockResolvedValue(undefined),
         connect: vi.fn().mockResolvedValue(undefined),
+        disconnect: vi.fn().mockResolvedValue(undefined),
         setServiceManager: vi.fn(),
         getHealthyConnections: vi.fn().mockReturnValue([{}, {}]),
         getConnectionStatus: vi.fn().mockReturnValue([{}, {}]),
@@ -136,8 +152,32 @@ describe("WebServer Unit Tests", () => {
         getHealthCheckStats: vi.fn().mockReturnValue({ totalChecks: 10 }),
         getReconnectStats: vi.fn().mockReturnValue({ totalReconnects: 0 }),
         selectBestConnection: vi.fn().mockReturnValue({}),
+        updateEndpoints: vi.fn().mockResolvedValue(undefined),
+        updateOptions: vi.fn(),
+        getCurrentConfig: vi
+          .fn()
+          .mockReturnValue({ endpoints: [], options: {} }),
+        reloadConfig: vi.fn().mockResolvedValue(undefined),
+        cleanup: vi.fn().mockResolvedValue(undefined),
+        optimizeMemoryUsage: vi.fn(),
+
+        // EventEmitter 方法
         on: vi.fn(),
-      };
+        off: vi.fn(),
+        emit: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        removeAllListeners: vi.fn(),
+        setMaxListeners: vi.fn(),
+        getMaxListeners: vi.fn(),
+        listeners: vi.fn(),
+        rawListeners: vi.fn(),
+        listenerCount: vi.fn(),
+        prependListener: vi.fn(),
+        prependOnceListener: vi.fn(),
+        eventNames: vi.fn(),
+        once: vi.fn(),
+      } as any;
 
       vi.mocked(
         XiaozhiConnectionManagerSingleton.getInstance
@@ -165,11 +205,55 @@ describe("WebServer Unit Tests", () => {
       // Mock ProxyMCPServer
       const { ProxyMCPServer } = await import("../ProxyMCPServer.js");
       const mockProxyServer = {
+        // 基本属性
+        endpointUrl: "wss://test.example.com",
+        ws: null,
+        logger: vi.fn(),
+        isConnected: false,
+        serverInitialized: false,
+        tools: new Map(),
+        connectionState: "disconnected",
+        reconnectOptions: {},
+        reconnectState: {},
+        connectionTimeout: null,
+        performanceMetrics: {},
+        callRecords: [],
+        maxCallRecords: 100,
+        retryConfig: {},
+        toolCallConfig: {},
+
+        // 方法
         endpoint: "wss://test.example.com",
         connect: vi.fn().mockResolvedValue(undefined),
         disconnect: vi.fn(),
         setServiceManager: vi.fn(),
-      };
+        syncToolsFromServiceManager: vi.fn(),
+        addTool: vi.fn(),
+        removeTool: vi.fn(),
+        getTools: vi.fn().mockReturnValue([]),
+        getStatus: vi.fn().mockReturnValue({
+          connected: false,
+          initialized: false,
+          url: "wss://test.example.com",
+          availableTools: 0,
+          connectionState: "disconnected",
+          reconnectAttempts: 0,
+          lastError: null,
+        }),
+        reconnect: vi.fn().mockResolvedValue(undefined),
+        enableReconnect: vi.fn(),
+        disableReconnect: vi.fn(),
+        updateReconnectOptions: vi.fn(),
+        getReconnectOptions: vi.fn().mockReturnValue({}),
+        resetReconnectState: vi.fn(),
+        getPerformanceMetrics: vi.fn().mockReturnValue({}),
+        getCallHistory: vi.fn().mockReturnValue([]),
+        resetPerformanceMetrics: vi.fn(),
+        updateToolCallConfig: vi.fn(),
+        updateRetryConfig: vi.fn(),
+        getConfiguration: vi.fn().mockReturnValue({}),
+        getEnhancedStatus: vi.fn().mockReturnValue({}),
+      } as any;
 
       vi.mocked(ProxyMCPServer).mockReturnValue(mockProxyServer);
 

@@ -180,8 +180,8 @@ describe("CLI 命令行工具", () => {
 
     // Setup default mocks
     mockOs.tmpdir.mockReturnValue("/tmp");
-    mockPath.join.mockImplementation((...args) => args.join("/"));
-    mockPath.resolve.mockImplementation((...args) => args.join("/"));
+    mockPath.join.mockImplementation((...args: string[]) => args.join("/"));
+    mockPath.resolve.mockImplementation((...args: string[]) => args.join("/"));
     mockPath.dirname.mockReturnValue("/test/dir");
 
     mockFs.existsSync.mockReturnValue(false);
@@ -242,7 +242,7 @@ describe("CLI 命令行工具", () => {
 
     it("应该使用正确的文件扩展名查找服务文件", () => {
       // 测试服务文件查找逻辑
-      mockFs.existsSync.mockImplementation((filePath) => {
+      mockFs.existsSync.mockImplementation((filePath: string) => {
         // 模拟 .js 文件存在，.cjs 文件不存在
         if (
           filePath.includes("mcpPipe.js") ||
@@ -418,7 +418,7 @@ describe("CLI 命令行工具", () => {
     });
 
     it("应该从模板创建项目", async () => {
-      mockFs.existsSync.mockImplementation((path) => {
+      mockFs.existsSync.mockImplementation((path: string) => {
         if (path.includes("templates")) return true;
         return false; // Target directory doesn't exist
       });
@@ -609,12 +609,12 @@ describe("CLI 命令行工具", () => {
   describe("ESM 兼容性", () => {
     it("应该在 ESM 环境中正确读取版本号", () => {
       // Mock package.json existence and content
-      mockFs.existsSync.mockImplementation((path) => {
+      mockFs.existsSync.mockImplementation((path: string) => {
         if (path.includes("package.json")) return true;
         return false;
       });
 
-      mockFs.readFileSync.mockImplementation((path) => {
+      mockFs.readFileSync.mockImplementation((path: string) => {
         if (path.includes("package.json")) {
           return JSON.stringify({ version: "1.0.4" });
         }

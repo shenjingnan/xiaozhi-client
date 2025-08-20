@@ -14,7 +14,7 @@ import { MCPClientAdapter } from "../MCPClientAdapter.js";
 
 // Mock MCPService
 vi.mock("../../services/MCPService.js", async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = (await importOriginal()) as any;
   return {
     ...actual,
     MCPService: vi.fn().mockImplementation(() => ({
