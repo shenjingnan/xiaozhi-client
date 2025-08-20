@@ -91,7 +91,20 @@ export class ConfigManager {
   private json5Writer: any = null; // json5-writer 实例，用于保留 JSON5 注释
 
   private constructor() {
-    this.defaultConfigPath = resolve(__dirname, "xiaozhi.config.default.json");
+    // 使用模板目录中的默认配置文件
+    // 在不同环境中尝试不同的路径
+    const possiblePaths = [
+      // 构建后的环境：dist/configManager.js -> dist/templates/default/xiaozhi.config.json
+      resolve(__dirname, "templates", "default", "xiaozhi.config.json"),
+      // 开发环境：src/configManager.ts -> templates/default/xiaozhi.config.json
+      resolve(__dirname, "..", "templates", "default", "xiaozhi.config.json"),
+      // 测试环境或其他情况
+      resolve(process.cwd(), "templates", "default", "xiaozhi.config.json"),
+    ];
+
+    // 找到第一个存在的路径
+    this.defaultConfigPath =
+      possiblePaths.find((path) => existsSync(path)) || possiblePaths[0];
   }
 
   /**
@@ -176,7 +189,7 @@ export class ConfigManager {
    */
   public initConfig(format: "json" | "json5" | "jsonc" = "json"): void {
     if (!existsSync(this.defaultConfigPath)) {
-      throw new Error("默认配置文件 xiaozhi.config.default.json 不存在");
+      throw new Error(`默认配置模板文件不存在: ${this.defaultConfigPath}`);
     }
 
     // 检查是否已有任何格式的配置文件
