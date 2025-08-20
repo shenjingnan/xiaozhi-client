@@ -389,9 +389,10 @@ describe("ProxyMCPServer 边界条件和异常场景测试", () => {
         content: [{ type: "text", text: "success" }],
       });
 
+      // 修复：现在应该期望抛出 ToolCallError，因为请求 ID 不能为空
       await expect(
         (proxyServer as any).handleToolCall(request)
-      ).resolves.not.toThrow();
+      ).rejects.toThrow("请求 ID 不能为空");
     });
   });
 });

@@ -23,7 +23,7 @@ enum ConnectionState {
 }
 
 // 工具调用错误码枚举
-enum ToolCallErrorCode {
+export enum ToolCallErrorCode {
   INVALID_PARAMS = -32602, // 无效参数
   TOOL_NOT_FOUND = -32601, // 工具不存在
   TOOL_EXECUTION_ERROR = -32000, // 工具执行错误
@@ -32,7 +32,7 @@ enum ToolCallErrorCode {
 }
 
 // 工具调用错误类
-class ToolCallError extends Error {
+export class ToolCallError extends Error {
   constructor(
     public code: ToolCallErrorCode,
     message: string,
@@ -675,13 +675,46 @@ export class ProxyMCPServer {
   }
 
   private sendResponse(id: number | string | undefined, result: any): void {
+    this.logger.debug(
+      `尝试发送响应: id=${id}, isConnected=${this.isConnected}, wsReadyState=${this.ws?.readyState}`
+    );
+
     if (this.isConnected && this.ws?.readyState === WebSocket.OPEN) {
       const response: MCPMessage = {
         jsonrpc: "2.0",
         id,
         result,
       };
-      this.ws.send(JSON.stringify(response));
+
+      try {
+        this.ws.send(JSON.stringify(response));
+        this.logger.info(`响应已发送: id=${id}`, {
+          responseSize: JSON.stringify(response).length,
+        });
+      } catch (error) {
+        this.logger.error(`发送响应失败: id=${id}`, error);
+      }
+    } else {
+      this.logger.error(`无法发送响应: id=${id}, 连接状态检查失败`, {
+        isConnected: this.isConnected,
+        wsReadyState: this.ws?.readyState,
+        wsReadyStateText:
+          this.ws?.readyState === WebSocket.OPEN
+            ? "OPEN"
+            : this.ws?.readyState === WebSocket.CONNECTING
+              ? "CONNECTING"
+              : this.ws?.readyState === WebSocket.CLOSING
+                ? "CLOSING"
+                : this.ws?.readyState === WebSocket.CLOSED
+                  ? "CLOSED"
+                  : "UNKNOWN",
+      });
+
+      // 尝试重新连接并发送响应
+      if (!this.isConnected || this.ws?.readyState !== WebSocket.OPEN) {
+        this.logger.warn(`尝试重新连接以发送响应: id=${id}`);
+        this.scheduleReconnect();
+      }
     }
   }
 
@@ -788,7 +821,16 @@ export class ProxyMCPServer {
    * 处理工具调用请求
    */
   private async handleToolCall(request: MCPMessage): Promise<void> {
-    const requestId = String(request.id || "unknown");
+    // 确保 request.id 存在且类型正确
+    if (request.id === undefined || request.id === null) {
+      throw new ToolCallError(
+        ToolCallErrorCode.INVALID_PARAMS,
+        "请求 ID 不能为空"
+      );
+    }
+
+    // 保持原始 ID 类型（number | string），不进行类型转换
+    const requestId = request.id;
     let callRecord: CallRecord | null = null;
 
     try {
@@ -1090,9 +1132,12 @@ export class ProxyMCPServer {
   /**
    * 记录工具调用开始
    */
-  private recordCallStart(toolName: string, requestId: string): CallRecord {
+  private recordCallStart(
+    toolName: string,
+    requestId: string | number
+  ): CallRecord {
     const record: CallRecord = {
-      id: requestId,
+      id: String(requestId), // 内部记录时转换为字符串，但不影响响应 ID 类型
       toolName,
       startTime: new Date(),
       success: false,
