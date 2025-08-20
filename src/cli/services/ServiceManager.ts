@@ -213,7 +213,9 @@ export class ServiceManagerImpl implements IServiceManager {
       child.unref();
 
       // 输出启动信息后立即退出父进程
-      console.log(`✅ MCP Server 已在后台启动 (PID: ${child.pid}, Port: ${port})`);
+      console.log(
+        `✅ MCP Server 已在后台启动 (PID: ${child.pid}, Port: ${port})`
+      );
       console.log(`💡 使用 'xiaozhi status' 查看状态`);
 
       // 立即退出父进程，释放终端控制权
@@ -328,8 +330,6 @@ export class ServiceManagerImpl implements IServiceManager {
       await this.openBrowserUrl(`http://localhost:${port}`);
     }
   }
-
-
 
   /**
    * 打开浏览器URL

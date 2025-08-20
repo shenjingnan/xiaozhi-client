@@ -213,7 +213,10 @@ export class DaemonManagerImpl implements IDaemonManager {
   /**
    * 设置日志重定向
    */
-  private async setupLogging(child: ChildProcess, logFileName: string): Promise<void> {
+  private async setupLogging(
+    child: ChildProcess,
+    logFileName: string
+  ): Promise<void> {
     try {
       const logFilePath = PathUtils.getLogFile();
 
