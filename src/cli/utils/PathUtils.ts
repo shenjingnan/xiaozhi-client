@@ -190,8 +190,9 @@ export class PathUtils {
    * 获取可执行文件路径
    */
   static getExecutablePath(name: string): string {
-    const scriptDir = PathUtils.getScriptDir();
-    const distDir = path.dirname(scriptDir);
+    // 直接基于当前执行的 CLI 脚本位置计算
+    const cliPath = process.argv[1]; // 当前执行的脚本路径
+    const distDir = path.dirname(cliPath); // 获取 dist 目录
     return path.join(distDir, `${name}.js`);
   }
 
@@ -206,7 +207,7 @@ export class PathUtils {
    * 获取 Web 服务器独立启动脚本路径
    */
   static getWebServerStandalonePath(): string {
-    return PathUtils.getExecutablePath("webServerStandalone");
+    return PathUtils.getExecutablePath("WebServerStandalone");
   }
 
   /**
