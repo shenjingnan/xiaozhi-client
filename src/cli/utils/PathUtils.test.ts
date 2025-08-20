@@ -5,7 +5,7 @@ import { PathUtils } from "./PathUtils.js";
 // Mock process.argv
 const originalArgv = process.argv;
 
-describe("PathUtils", () => {
+describe("PathUtils 路径工具", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -14,8 +14,8 @@ describe("PathUtils", () => {
     process.argv = originalArgv;
   });
 
-  describe("getExecutablePath", () => {
-    it("should return correct path based on current CLI script location", () => {
+  describe("getExecutablePath 获取可执行文件路径", () => {
+    it("应该基于当前 CLI 脚本位置返回正确路径", () => {
       // Mock process.argv[1] to simulate CLI script path
       process.argv = ["node", "/Users/test/xiaozhi-client/dist/cli.js"];
 
@@ -28,7 +28,7 @@ describe("PathUtils", () => {
       expect(result).toBe(expected);
     });
 
-    it("should handle different CLI script locations", () => {
+    it("应该处理不同的 CLI 脚本位置", () => {
       process.argv = ["node", "/opt/xiaozhi/dist/cli.js"];
 
       const result = PathUtils.getExecutablePath("mcpServerProxy");
@@ -37,7 +37,7 @@ describe("PathUtils", () => {
       expect(result).toBe(expected);
     });
 
-    it("should work with relative paths", () => {
+    it("应该支持相对路径", () => {
       process.argv = ["node", "./dist/cli.js"];
 
       const result = PathUtils.getExecutablePath("test");
@@ -47,8 +47,8 @@ describe("PathUtils", () => {
     });
   });
 
-  describe("getWebServerStandalonePath", () => {
-    it("should return correct WebServerStandalone path", () => {
+  describe("getWebServerStandalonePath 获取 WebServer 独立启动路径", () => {
+    it("应该返回正确的 WebServerStandalone 路径", () => {
       process.argv = ["node", "/Users/test/xiaozhi-client/dist/cli.js"];
 
       const result = PathUtils.getWebServerStandalonePath();
@@ -61,8 +61,8 @@ describe("PathUtils", () => {
     });
   });
 
-  describe("getMcpServerProxyPath", () => {
-    it("should return correct mcpServerProxy path", () => {
+  describe("getMcpServerProxyPath 获取 MCP 服务器代理路径", () => {
+    it("应该返回正确的 mcpServerProxy 路径", () => {
       process.argv = ["node", "/Users/test/xiaozhi-client/dist/cli.js"];
 
       const result = PathUtils.getMcpServerProxyPath();
@@ -75,8 +75,8 @@ describe("PathUtils", () => {
     });
   });
 
-  describe("path resolution consistency", () => {
-    it("should maintain consistent path resolution across different methods", () => {
+  describe("路径解析一致性", () => {
+    it("应该在不同方法间保持一致的路径解析", () => {
       process.argv = ["node", "/test/dist/cli.js"];
 
       const webServerPath = PathUtils.getWebServerStandalonePath();
@@ -94,8 +94,8 @@ describe("PathUtils", () => {
     });
   });
 
-  describe("edge cases", () => {
-    it("should handle empty executable name", () => {
+  describe("边界情况", () => {
+    it("应该处理空的可执行文件名", () => {
       process.argv = ["node", "/test/dist/cli.js"];
 
       const result = PathUtils.getExecutablePath("");
@@ -104,7 +104,7 @@ describe("PathUtils", () => {
       expect(result).toBe(expected);
     });
 
-    it("should handle executable name with extension", () => {
+    it("应该处理带扩展名的可执行文件名", () => {
       process.argv = ["node", "/test/dist/cli.js"];
 
       const result = PathUtils.getExecutablePath("test.exe");
@@ -113,7 +113,7 @@ describe("PathUtils", () => {
       expect(result).toBe(expected);
     });
 
-    it("should handle complex directory structures", () => {
+    it("应该处理复杂的目录结构", () => {
       process.argv = [
         "node",
         "/very/deep/nested/directory/structure/dist/cli.js",

@@ -35,7 +35,7 @@ const mockProcessExit = vi.spyOn(process, "exit").mockImplementation(() => {
 // Mock console methods
 const mockConsoleLog = vi.spyOn(console, "log").mockImplementation(() => {});
 
-describe("Daemon Mode Integration Tests", () => {
+describe("Daemon 模式集成测试", () => {
   let serviceManager: ServiceManagerImpl;
   let mockProcessManager: any;
 
@@ -77,8 +77,8 @@ describe("Daemon Mode Integration Tests", () => {
     vi.restoreAllMocks();
   });
 
-  describe("WebServer Daemon Mode", () => {
-    it("should complete full daemon startup workflow", async () => {
+  describe("WebServer Daemon 模式", () => {
+    it("应完成完整的 daemon 启动工作流程", async () => {
       const { spawn } = await import("node:child_process");
       const mockSpawn = vi.mocked(spawn);
 
@@ -127,7 +127,7 @@ describe("Daemon Mode Integration Tests", () => {
       expect(mockProcessExit).toHaveBeenCalledWith(0);
     });
 
-    it("should handle daemon startup with browser option", async () => {
+    it("应处理带浏览器选项的 daemon 启动", async () => {
       const { spawn } = await import("node:child_process");
       const mockSpawn = vi.mocked(spawn);
 
@@ -163,8 +163,8 @@ describe("Daemon Mode Integration Tests", () => {
     });
   });
 
-  describe("MCP Server Daemon Mode", () => {
-    it("should complete full MCP daemon startup workflow", async () => {
+  describe("MCP Server Daemon 模式", () => {
+    it("应完成完整的 MCP daemon 启动工作流程", async () => {
       const { spawn } = await import("node:child_process");
       const mockSpawn = vi.mocked(spawn);
 
@@ -209,8 +209,8 @@ describe("Daemon Mode Integration Tests", () => {
     });
   });
 
-  describe("Error Handling", () => {
-    it("should handle missing WebServer file", async () => {
+  describe("错误处理", () => {
+    it("应处理缺失的 WebServer 文件", async () => {
       const fs = require("node:fs");
       vi.mocked(fs.default.existsSync).mockReturnValue(false);
 
@@ -228,7 +228,7 @@ describe("Daemon Mode Integration Tests", () => {
       expect(mockProcessExit).not.toHaveBeenCalled();
     });
 
-    it("should handle spawn errors", async () => {
+    it("应处理 spawn 错误", async () => {
       const { spawn } = await import("node:child_process");
       const mockSpawn = vi.mocked(spawn);
 
@@ -249,8 +249,8 @@ describe("Daemon Mode Integration Tests", () => {
     });
   });
 
-  describe("Process Separation", () => {
-    it("should ensure complete process separation", async () => {
+  describe("进程分离", () => {
+    it("应确保完全的进程分离", async () => {
       const { spawn } = await import("node:child_process");
       const mockSpawn = vi.mocked(spawn);
 

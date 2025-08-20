@@ -28,7 +28,7 @@ vi.mock("../services/ProcessManager.js", () => ({
   ProcessManager: vi.fn().mockImplementation(() => mockProcessManager),
 }));
 
-describe("Service Commands Integration Tests", () => {
+describe("服务命令集成测试", () => {
   let serviceCommandHandler: ServiceCommandHandler;
 
   beforeEach(() => {
@@ -40,8 +40,8 @@ describe("Service Commands Integration Tests", () => {
     vi.restoreAllMocks();
   });
 
-  describe("start command with daemon option", () => {
-    it("should execute start command with daemon option correctly", async () => {
+  describe("带 daemon 选项的 start 命令", () => {
+    it("应正确执行带 daemon 选项的 start 命令", async () => {
       const options = {
         daemon: true,
         port: "3000",
@@ -59,7 +59,7 @@ describe("Service Commands Integration Tests", () => {
       );
     });
 
-    it("should execute start command with daemon and ui options", async () => {
+    it("应执行带 daemon 和 ui 选项的 start 命令", async () => {
       const options = {
         daemon: true,
         ui: true,
@@ -77,7 +77,7 @@ describe("Service Commands Integration Tests", () => {
       );
     });
 
-    it("should handle short form daemon option (-d)", async () => {
+    it("应处理短格式的 daemon 选项 (-d)", async () => {
       const options = {
         d: true, // short form
         port: "3000",
@@ -93,7 +93,7 @@ describe("Service Commands Integration Tests", () => {
       );
     });
 
-    it("should handle missing daemon option (foreground mode)", async () => {
+    it("应处理缺失 daemon 选项的情况（前台模式）", async () => {
       const options = {
         port: "3000",
         ui: true,
@@ -111,8 +111,8 @@ describe("Service Commands Integration Tests", () => {
     });
   });
 
-  describe("status command", () => {
-    it("should execute status command correctly", async () => {
+  describe("status 命令", () => {
+    it("应正确执行 status 命令", async () => {
       const mockStatus = {
         isRunning: true,
         pid: 12345,
@@ -128,7 +128,7 @@ describe("Service Commands Integration Tests", () => {
       expect(mockServiceManager.getStatus).toHaveBeenCalled();
     });
 
-    it("should handle status command when service is not running", async () => {
+    it("应处理服务未运行时的 status 命令", async () => {
       const mockStatus = {
         isRunning: false,
         pid: null,
@@ -145,8 +145,8 @@ describe("Service Commands Integration Tests", () => {
     });
   });
 
-  describe("stop command", () => {
-    it("should execute stop command correctly", async () => {
+  describe("stop 命令", () => {
+    it("应正确执行 stop 命令", async () => {
       mockServiceManager.stop.mockResolvedValue(undefined);
 
       await serviceCommandHandler.execute(["stop"], {});
@@ -154,7 +154,7 @@ describe("Service Commands Integration Tests", () => {
       expect(mockServiceManager.stop).toHaveBeenCalled();
     });
 
-    it("should handle stop command when service is not running", async () => {
+    it("应处理服务未运行时的 stop 命令", async () => {
       mockServiceManager.stop.mockRejectedValue(
         new Error("Service is not running")
       );
@@ -165,8 +165,8 @@ describe("Service Commands Integration Tests", () => {
     });
   });
 
-  describe("restart command", () => {
-    it("should execute restart command with daemon option", async () => {
+  describe("restart 命令", () => {
+    it("应执行带 daemon 选项的 restart 命令", async () => {
       const options = {
         daemon: true,
         port: "3000",
@@ -184,7 +184,7 @@ describe("Service Commands Integration Tests", () => {
       );
     });
 
-    it("should execute restart command without daemon option", async () => {
+    it("应执行不带 daemon 选项的 restart 命令", async () => {
       const options = {
         port: "3000",
         ui: true,
@@ -204,8 +204,8 @@ describe("Service Commands Integration Tests", () => {
     });
   });
 
-  describe("attach command", () => {
-    it("should execute attach command correctly", async () => {
+  describe("attach 命令", () => {
+    it("应正确执行 attach 命令", async () => {
       mockServiceManager.attach.mockResolvedValue(undefined);
 
       await serviceCommandHandler.execute(["attach"], {});
@@ -213,7 +213,7 @@ describe("Service Commands Integration Tests", () => {
       expect(mockServiceManager.attach).toHaveBeenCalled();
     });
 
-    it("should handle attach command when service is not running", async () => {
+    it("应处理服务未运行时的 attach 命令", async () => {
       mockServiceManager.attach.mockRejectedValue(
         new Error("No service running to attach to")
       );
@@ -224,8 +224,8 @@ describe("Service Commands Integration Tests", () => {
     });
   });
 
-  describe("option parsing and validation", () => {
-    it("should handle numeric port conversion", async () => {
+  describe("选项解析和验证", () => {
+    it("应处理数字端口转换", async () => {
       const options = {
         daemon: true,
         port: "8080",
@@ -240,7 +240,7 @@ describe("Service Commands Integration Tests", () => {
       );
     });
 
-    it("should handle invalid port values", async () => {
+    it("应处理无效的端口值", async () => {
       const options = {
         daemon: true,
         port: "invalid",
@@ -252,7 +252,7 @@ describe("Service Commands Integration Tests", () => {
       ).rejects.toThrow();
     });
 
-    it("should handle boolean option variations", async () => {
+    it("应处理布尔选项的各种变体", async () => {
       const testCases = [
         { daemon: true, expected: true },
         { daemon: false, expected: false },
@@ -275,8 +275,8 @@ describe("Service Commands Integration Tests", () => {
     });
   });
 
-  describe("error handling", () => {
-    it("should handle service manager errors gracefully", async () => {
+  describe("错误处理", () => {
+    it("应优雅地处理服务管理器错误", async () => {
       const error = new Error("Service manager error");
       mockServiceManager.start.mockRejectedValue(error);
 
@@ -285,13 +285,13 @@ describe("Service Commands Integration Tests", () => {
       ).rejects.toThrow("Service manager error");
     });
 
-    it("should handle unknown commands", async () => {
+    it("应处理未知命令", async () => {
       await expect(
         serviceCommandHandler.execute(["unknown"], {})
       ).rejects.toThrow();
     });
 
-    it("should handle missing required options", async () => {
+    it("应处理缺失的必需选项", async () => {
       // Test cases where certain options might be required
       await expect(
         serviceCommandHandler.execute(["start"], {})

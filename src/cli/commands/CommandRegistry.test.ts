@@ -28,7 +28,7 @@ vi.mock("../utils/ErrorHandler.js", () => ({
   },
 }));
 
-describe("CommandRegistry - Legacy Service Commands", () => {
+describe("CommandRegistry - 传统服务命令", () => {
   let commandRegistry: CommandRegistry;
   let program: Command;
 
@@ -42,8 +42,8 @@ describe("CommandRegistry - Legacy Service Commands", () => {
     vi.restoreAllMocks();
   });
 
-  describe("registerLegacyServiceCommands", () => {
-    it("should register legacy service commands with correct option parsing", async () => {
+  describe("registerLegacyServiceCommands 注册传统服务命令", () => {
+    it("应注册传统服务命令并正确解析选项", async () => {
       // 注册命令
       commandRegistry.registerLegacyServiceCommands(program);
 
@@ -61,7 +61,7 @@ describe("CommandRegistry - Legacy Service Commands", () => {
       );
     });
 
-    it("should correctly parse and pass daemon option to handler", async () => {
+    it("应正确解析并传递 daemon 选项给处理器", async () => {
       commandRegistry.registerLegacyServiceCommands(program);
 
       // 模拟带有 --daemon 选项的命令执行
@@ -89,7 +89,7 @@ describe("CommandRegistry - Legacy Service Commands", () => {
       });
     });
 
-    it("should correctly parse and pass multiple options to handler", async () => {
+    it("应正确解析并传递多个选项给处理器", async () => {
       commandRegistry.registerLegacyServiceCommands(program);
 
       const mockCommand = {
@@ -114,7 +114,7 @@ describe("CommandRegistry - Legacy Service Commands", () => {
       });
     });
 
-    it("should handle command execution with no options", async () => {
+    it("应处理无选项的命令执行", async () => {
       commandRegistry.registerLegacyServiceCommands(program);
 
       const mockCommand = {
@@ -131,7 +131,7 @@ describe("CommandRegistry - Legacy Service Commands", () => {
       expect(mockServiceCommandHandler.execute).toHaveBeenCalledWith([], {});
     });
 
-    it("should handle command execution with positional arguments", async () => {
+    it("应处理带位置参数的命令执行", async () => {
       commandRegistry.registerLegacyServiceCommands(program);
 
       const mockCommand = {
@@ -156,7 +156,7 @@ describe("CommandRegistry - Legacy Service Commands", () => {
       );
     });
 
-    it("should handle errors during command execution", async () => {
+    it("应处理命令执行期间的错误", async () => {
       const { ErrorHandler } = await import("../utils/ErrorHandler.js");
       const mockError = new Error("Test error");
       mockServiceCommandHandler.execute.mockRejectedValue(mockError);
@@ -178,8 +178,8 @@ describe("CommandRegistry - Legacy Service Commands", () => {
     });
   });
 
-  describe("option parsing edge cases", () => {
-    it("should handle boolean flags correctly", async () => {
+  describe("选项解析边界情况", () => {
+    it("应正确处理布尔标志", async () => {
       commandRegistry.registerLegacyServiceCommands(program);
 
       const mockCommand = {
@@ -204,7 +204,7 @@ describe("CommandRegistry - Legacy Service Commands", () => {
       });
     });
 
-    it("should handle string options correctly", async () => {
+    it("应正确处理字符串选项", async () => {
       commandRegistry.registerLegacyServiceCommands(program);
 
       const mockCommand = {

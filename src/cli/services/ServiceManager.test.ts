@@ -94,7 +94,7 @@ const mockProcessExit = vi.spyOn(process, "exit").mockImplementation(() => {
   throw new Error("process.exit called");
 });
 
-describe("ServiceManagerImpl", () => {
+describe("ServiceManagerImpl 服务管理器实现", () => {
   let serviceManager: ServiceManagerImpl;
 
   beforeEach(async () => {
@@ -147,14 +147,14 @@ describe("ServiceManagerImpl", () => {
     mockProcessExit.mockClear();
   });
 
-  describe("start", () => {
+  describe("start 启动服务", () => {
     const defaultOptions: ServiceStartOptions = {
       daemon: false,
       ui: false,
       mode: "normal",
     };
 
-    it("should throw error if service is already running", async () => {
+    it("如果服务已在运行应抛出错误", async () => {
       (mockProcessManager.getServiceStatus as any).mockReturnValue({
         running: true,
         pid: 1234,
@@ -165,7 +165,7 @@ describe("ServiceManagerImpl", () => {
       );
     });
 
-    it("should throw error if config does not exist", async () => {
+    it("如果配置不存在应抛出错误", async () => {
       mockConfigManager.configExists.mockReturnValue(false);
 
       await expect(serviceManager.start(defaultOptions)).rejects.toThrow(
@@ -173,7 +173,7 @@ describe("ServiceManagerImpl", () => {
       );
     });
 
-    it("should validate port option", async () => {
+    it("应验证端口选项", async () => {
       const invalidOptions: ServiceStartOptions = {
         ...defaultOptions,
         port: 99999, // Invalid port
@@ -182,7 +182,7 @@ describe("ServiceManagerImpl", () => {
       await expect(serviceManager.start(invalidOptions)).rejects.toThrow();
     });
 
-    it("should validate mode option", async () => {
+    it("应验证模式选项", async () => {
       const invalidOptions: ServiceStartOptions = {
         ...defaultOptions,
         mode: "invalid" as any,
@@ -193,13 +193,13 @@ describe("ServiceManagerImpl", () => {
       );
     });
 
-    it("should cleanup container state before starting", async () => {
+    it("启动前应清理容器状态", async () => {
       await serviceManager.start(defaultOptions);
 
       expect(mockProcessManager.cleanupContainerState).toHaveBeenCalled();
     });
 
-    it("should start in normal mode by default", async () => {
+    it("默认应以普通模式启动", async () => {
       await serviceManager.start(defaultOptions);
 
       expect(mockWebServerInstance.start).toHaveBeenCalled();
@@ -209,7 +209,7 @@ describe("ServiceManagerImpl", () => {
       );
     });
 
-    it("should start in MCP server mode", async () => {
+    it("应以 MCP 服务器模式启动", async () => {
       const mcpOptions: ServiceStartOptions = {
         ...defaultOptions,
         mode: "mcp-server",
@@ -221,7 +221,7 @@ describe("ServiceManagerImpl", () => {
       expect(mockMCPServerInstance.start).toHaveBeenCalled();
     });
 
-    it("should handle stdio mode", async () => {
+    it("应处理 stdio 模式", async () => {
       const { spawn } = await import("node:child_process");
       const mockSpawn = vi.mocked(spawn);
       mockSpawn.mockReturnValue({
@@ -242,8 +242,8 @@ describe("ServiceManagerImpl", () => {
       );
     });
 
-    describe("daemon mode", () => {
-      it("should start WebServer in daemon mode and exit parent process", async () => {
+    describe("daemon 模式", () => {
+      it("应以 daemon 模式启动 WebServer 并退出父进程", async () => {
         // Ensure file exists
         const fs = await import("node:fs");
         vi.mocked(fs.default.existsSync).mockReturnValue(true);
@@ -293,7 +293,7 @@ describe("ServiceManagerImpl", () => {
         // mockProcessExit 在测试中抛出异常，所以不直接检查调用
       });
 
-      it("should start WebServer in daemon mode with browser option", async () => {
+      it("应以 daemon 模式启动 WebServer 并支持浏览器选项", async () => {
         // Ensure file exists
         const fs = await import("node:fs");
         vi.mocked(fs.default.existsSync).mockReturnValue(true);
@@ -330,7 +330,7 @@ describe("ServiceManagerImpl", () => {
         );
       });
 
-      it("should start MCP Server in daemon mode and exit parent process", async () => {
+      it("应以 daemon 模式启动 MCP Server 并退出父进程", async () => {
         // Ensure file exists
         const fs = await import("node:fs");
         vi.mocked(fs.default.existsSync).mockReturnValue(true);
@@ -377,7 +377,7 @@ describe("ServiceManagerImpl", () => {
         // mockProcessExit 在测试中抛出异常，所以不直接检查调用
       });
 
-      it("should throw error if WebServer file does not exist", async () => {
+      it("如果 WebServer 文件不存在应抛出错误", async () => {
         const fs = await import("node:fs");
         vi.mocked(fs.default.existsSync).mockReturnValue(false);
 
@@ -391,7 +391,7 @@ describe("ServiceManagerImpl", () => {
         );
       });
 
-      it("should handle spawn errors gracefully", async () => {
+      it("应优雅地处理 spawn 错误", async () => {
         // Ensure file exists first
         const fs = await import("node:fs");
         vi.mocked(fs.default.existsSync).mockReturnValue(true);
@@ -414,7 +414,7 @@ describe("ServiceManagerImpl", () => {
         expect(mockProcessExit).not.toHaveBeenCalled();
       });
 
-      it("should handle child process without PID", async () => {
+      it("应处理没有 PID 的子进程", async () => {
         // Ensure file exists
         const fs = await import("node:fs");
         vi.mocked(fs.default.existsSync).mockReturnValue(true);
@@ -442,7 +442,7 @@ describe("ServiceManagerImpl", () => {
         );
       });
 
-      it("should pass correct environment variables", async () => {
+      it("应传递正确的环境变量", async () => {
         // Ensure file exists
         const fs = await import("node:fs");
         vi.mocked(fs.default.existsSync).mockReturnValue(true);
@@ -488,8 +488,8 @@ describe("ServiceManagerImpl", () => {
     });
   });
 
-  describe("stop", () => {
-    it("should throw error if service is not running", async () => {
+  describe("stop 停止服务", () => {
+    it("如果服务未运行应抛出错误", async () => {
       (mockProcessManager.getServiceStatus as any).mockReturnValue({
         running: false,
       });
@@ -497,7 +497,7 @@ describe("ServiceManagerImpl", () => {
       await expect(serviceManager.stop()).rejects.toThrow(ServiceError);
     });
 
-    it("should gracefully kill process and cleanup PID file", async () => {
+    it("应优雅地终止进程并清理 PID 文件", async () => {
       (mockProcessManager.getServiceStatus as any).mockReturnValue({
         running: true,
         pid: 1234,
@@ -509,7 +509,7 @@ describe("ServiceManagerImpl", () => {
       expect(mockProcessManager.cleanupPidFile).toHaveBeenCalled();
     });
 
-    it("should handle kill process errors", async () => {
+    it("应处理终止进程错误", async () => {
       (mockProcessManager.getServiceStatus as any).mockReturnValue({
         running: true,
         pid: 1234,
@@ -522,8 +522,8 @@ describe("ServiceManagerImpl", () => {
     });
   });
 
-  describe("restart", () => {
-    it("should stop and start service", async () => {
+  describe("restart 重启服务", () => {
+    it("应停止并启动服务", async () => {
       const options: ServiceStartOptions = { daemon: false, ui: false };
 
       // Mock running service - restart() calls getStatus(), then stop() calls getStatus() again
@@ -544,7 +544,7 @@ describe("ServiceManagerImpl", () => {
       expect(mockWebServerInstance.start).toHaveBeenCalled();
     });
 
-    it("should start service if not running", async () => {
+    it("如果服务未运行应启动服务", async () => {
       const options: ServiceStartOptions = { daemon: false, ui: false };
 
       (mockProcessManager.getServiceStatus as any).mockReturnValue({
@@ -558,8 +558,8 @@ describe("ServiceManagerImpl", () => {
     });
   });
 
-  describe("getStatus", () => {
-    it("should delegate to process manager", () => {
+  describe("getStatus 获取状态", () => {
+    it("应委托给进程管理器", () => {
       const expectedStatus = { running: true, pid: 1234, uptime: "1分钟" };
       (mockProcessManager.getServiceStatus as any).mockReturnValue(
         expectedStatus
@@ -572,8 +572,8 @@ describe("ServiceManagerImpl", () => {
     });
   });
 
-  describe("checkEnvironment", () => {
-    it("should throw ConfigError if config does not exist", () => {
+  describe("checkEnvironment 检查环境", () => {
+    it("如果配置不存在应抛出 ConfigError", () => {
       mockConfigManager.configExists.mockReturnValue(false);
 
       expect(() => (serviceManager as any).checkEnvironment()).toThrow(
@@ -581,7 +581,7 @@ describe("ServiceManagerImpl", () => {
       );
     });
 
-    it("should throw ConfigError if config is invalid", () => {
+    it("如果配置无效应抛出 ConfigError", () => {
       mockConfigManager.configExists.mockReturnValue(true);
       mockConfigManager.getConfig.mockReturnValue(null);
 
@@ -590,7 +590,7 @@ describe("ServiceManagerImpl", () => {
       );
     });
 
-    it("should pass if config is valid", () => {
+    it("如果配置有效应通过", () => {
       mockConfigManager.configExists.mockReturnValue(true);
       mockConfigManager.getConfig.mockReturnValue({ valid: true });
 
@@ -598,8 +598,8 @@ describe("ServiceManagerImpl", () => {
     });
   });
 
-  describe("validateStartOptions", () => {
-    it("should validate port", () => {
+  describe("validateStartOptions 验证启动选项", () => {
+    it("应验证端口", () => {
       const invalidOptions = { port: 99999 };
 
       expect(() =>
@@ -607,7 +607,7 @@ describe("ServiceManagerImpl", () => {
       ).toThrow();
     });
 
-    it("should validate mode", () => {
+    it("应验证模式", () => {
       const invalidOptions = { mode: "invalid" };
 
       expect(() =>
@@ -615,7 +615,7 @@ describe("ServiceManagerImpl", () => {
       ).toThrow(ServiceError);
     });
 
-    it("should pass valid options", () => {
+    it("应通过有效选项", () => {
       const validOptions = { port: 3000, mode: "normal" };
 
       expect(() =>
