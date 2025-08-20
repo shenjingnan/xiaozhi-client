@@ -84,6 +84,34 @@ function showDetailedInfo(container: any): void {
  */
 async function main(): Promise<void> {
   try {
+    // 检查是否有 --info 参数，如果有则直接处理
+    if (process.argv.includes("--info")) {
+      const container = await createContainer();
+      showDetailedInfo(container);
+      process.exit(0);
+    }
+
+    // 检查是否有 --version-info 参数，如果有则直接处理
+    if (process.argv.includes("--version-info")) {
+      const container = await createContainer();
+      const versionUtils = container.get("versionUtils") as any;
+      const platformUtils = container.get("platformUtils") as any;
+
+      const versionInfo = versionUtils.getVersionInfo();
+      const systemInfo = platformUtils.getSystemInfo();
+
+      console.log(`${versionInfo.name || "xiaozhi"} v${versionInfo.version}`);
+      if (versionInfo.description) {
+        console.log(versionInfo.description);
+      }
+      console.log(`Node.js: ${systemInfo.nodeVersion}`);
+      console.log(`Platform: ${systemInfo.platform} ${systemInfo.arch}`);
+      if (systemInfo.isContainer) {
+        console.log("Environment: Container");
+      }
+      process.exit(0);
+    }
+
     // 创建 DI 容器
     const container = await createContainer();
 
@@ -94,17 +122,6 @@ async function main(): Promise<void> {
     program
       .name("xiaozhi")
       .description("小智 MCP 客户端 - 强大的 Model Context Protocol 客户端");
-
-    // 添加详细信息选项
-    program
-      .option("--info", "显示详细信息")
-      .hook("preAction", (thisCommand) => {
-        const options = thisCommand.opts();
-        if (options.info) {
-          showDetailedInfo(container);
-          process.exit(0);
-        }
-      });
 
     // 注册所有命令
     await commandRegistry.registerCommands(program);
