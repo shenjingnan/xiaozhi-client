@@ -140,8 +140,6 @@ export class CommandRegistry implements ICommandRegistry {
     }
   }
 
-
-
   /**
    * 注册版本命令
    */
