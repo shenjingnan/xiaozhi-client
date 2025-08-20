@@ -92,14 +92,14 @@ vi.mock("../errors/ErrorHandlers.js", () => ({
 
 // Create mock DI container
 const mockContainer: IDIContainer = {
-  get: vi.fn((serviceName: string) => {
+  get: vi.fn().mockImplementation(<T>(serviceName: string): T => {
     switch (serviceName) {
       case "versionUtils":
         return {
           getVersion: vi.fn().mockReturnValue("1.0.0"),
-        };
+        } as T;
       default:
-        return {};
+        return {} as T;
     }
   }),
   register: vi.fn(),

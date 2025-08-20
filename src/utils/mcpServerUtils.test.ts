@@ -64,7 +64,7 @@ describe("MCP Server Utils - Server Side", () => {
         "无法识别的 MCP 服务配置类型"
       );
 
-      expect(() => getMcpServerCommunicationType(null)).toThrow(
+      expect(() => getMcpServerCommunicationType(null as any)).toThrow(
         "服务配置必须是一个有效的对象"
       );
     });

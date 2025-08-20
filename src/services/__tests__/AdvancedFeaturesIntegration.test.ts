@@ -17,6 +17,7 @@ import {
 } from "../HealthChecker.js";
 import type { MCPService } from "../MCPService.js";
 import type { MCPServiceConfig } from "../MCPService.js";
+import { MCPTransportType } from "../MCPService.js";
 import type { MCPServiceManager } from "../MCPServiceManager.js";
 import {
   OperationType,
@@ -47,7 +48,7 @@ describe("Advanced Features Integration", () => {
     const testConfigs: MCPServiceConfig[] = [
       {
         name: "test-service",
-        type: "stdio",
+        type: MCPTransportType.STDIO,
         command: "test-command",
         args: ["--test"],
       },

@@ -373,7 +373,7 @@ describe("ProxyMCPServer 边界条件和异常场景测试", () => {
         });
       } catch (error) {
         expect(error).toBeInstanceOf(TypeError);
-        expect(error.message).toContain("circular");
+        expect((error as Error).message).toContain("circular");
       }
     });
 

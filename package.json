@@ -30,7 +30,7 @@
     "test:ui": "vitest --ui",
     "format": "biome format --write .",
     "lint": "biome lint --write .",
-    "type:check": "tsc --noEmit",
+    "type:check": "tsc --project tsconfig.typecheck.json",
     "check": "biome check .",
     "check:fix": "biome check --write --unsafe .",
     "check:all": "pnpm check && pnpm type:check && pnpm spell:check && pnpm duplicate:check",

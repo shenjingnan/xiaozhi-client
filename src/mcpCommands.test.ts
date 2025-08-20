@@ -108,7 +108,7 @@ describe("mcpCommands", () => {
       );
       (configManager.getServerToolsConfig as any).mockImplementation(
         (serverName: string) => {
-          return mockServerConfig[serverName]?.tools || {};
+          return (mockServerConfig as any)[serverName]?.tools || {};
         }
       );
     });
@@ -473,7 +473,7 @@ describe("mcpCommands", () => {
       );
       (configManager.getServerToolsConfig as any).mockImplementation(
         (serverName: string) => {
-          return mockServerConfig[serverName]?.tools || {};
+          return (mockServerConfig as any)[serverName]?.tools || {};
         }
       );
 

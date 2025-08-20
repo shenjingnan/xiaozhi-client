@@ -97,8 +97,8 @@ describe("Logger", async () => {
 
     // Setup pino mocks
     mockPino.mockReturnValue(mockPinoInstance);
-    mockPino.multistream.mockReturnValue(mockPinoInstance);
-    mockPino.destination.mockReturnValue(mockDestination);
+    (mockPino as any).multistream = vi.fn().mockReturnValue(mockPinoInstance);
+    (mockPino as any).destination = vi.fn().mockReturnValue(mockDestination);
 
     // Setup fs mocks
     mockPath.join.mockImplementation((...args) => args.join("/"));
@@ -359,7 +359,33 @@ describe("Logger", async () => {
 
     it("should handle log rotation", () => {
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue({ size: 20 * 1024 * 1024 }); // 20MB file
+      mockFs.statSync.mockReturnValue({
+        size: BigInt(20 * 1024 * 1024),
+        isFile: () => true,
+        isDirectory: () => false,
+        isBlockDevice: () => false,
+        isCharacterDevice: () => false,
+        isSymbolicLink: () => false,
+        isFIFO: () => false,
+        isSocket: () => false,
+        dev: BigInt(0),
+        ino: BigInt(0),
+        mode: BigInt(0),
+        nlink: BigInt(0),
+        uid: BigInt(0),
+        gid: BigInt(0),
+        rdev: BigInt(0),
+        blksize: BigInt(0),
+        blocks: BigInt(0),
+        atimeNs: BigInt(0),
+        mtimeNs: BigInt(0),
+        ctimeNs: BigInt(0),
+        birthtimeNs: BigInt(0),
+        atime: new Date(),
+        mtime: new Date(),
+        ctime: new Date(),
+        birthtime: new Date(),
+      } as any); // 20MB file
 
       testLogger.initLogFile("/test/project");
 
