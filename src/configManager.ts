@@ -103,7 +103,8 @@ export class ConfigManager {
     ];
 
     // 找到第一个存在的路径
-    this.defaultConfigPath = possiblePaths.find(path => existsSync(path)) || possiblePaths[0];
+    this.defaultConfigPath =
+      possiblePaths.find((path) => existsSync(path)) || possiblePaths[0];
   }
 
   /**
