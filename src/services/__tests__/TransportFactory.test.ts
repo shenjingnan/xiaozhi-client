@@ -4,6 +4,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Logger } from "../../Logger.js";
 import type { MCPServiceConfig } from "../MCPService.js";
+import { MCPTransportType } from "../MCPService.js";
 import { TransportFactory } from "../TransportFactory.js";
 
 // Mock dependencies
@@ -37,7 +38,7 @@ describe("TransportFactory", () => {
     it("should create stdio transport", () => {
       const config: MCPServiceConfig = {
         name: "test-stdio",
-        type: "stdio",
+        type: MCPTransportType.STDIO,
         command: "node",
         args: ["test.js"],
       };
@@ -54,7 +55,7 @@ describe("TransportFactory", () => {
     it("should create SSE transport", () => {
       const config: MCPServiceConfig = {
         name: "test-sse",
-        type: "sse",
+        type: MCPTransportType.SSE,
         url: "https://example.com/sse",
       };
 
@@ -70,7 +71,7 @@ describe("TransportFactory", () => {
     it("should create SSE transport with API key", () => {
       const config: MCPServiceConfig = {
         name: "test-sse-auth",
-        type: "sse",
+        type: MCPTransportType.SSE,
         url: "https://example.com/sse",
         apiKey: "test-api-key",
       };
@@ -90,7 +91,7 @@ describe("TransportFactory", () => {
     it("should create SSE transport with custom headers", () => {
       const config: MCPServiceConfig = {
         name: "test-sse-headers",
-        type: "sse",
+        type: MCPTransportType.SSE,
         url: "https://example.com/sse",
         headers: {
           "Custom-Header": "custom-value",
@@ -112,7 +113,7 @@ describe("TransportFactory", () => {
     it("should create streamable-http transport", () => {
       const config: MCPServiceConfig = {
         name: "test-http",
-        type: "streamable-http",
+        type: MCPTransportType.STREAMABLE_HTTP,
         url: "https://example.com/api",
       };
 
@@ -124,7 +125,7 @@ describe("TransportFactory", () => {
     it("should create ModelScope SSE transport", () => {
       const config: MCPServiceConfig = {
         name: "test-modelscope",
-        type: "modelscope-sse",
+        type: MCPTransportType.MODELSCOPE_SSE,
         url: "https://mcp.api-inference.modelscope.net/test/sse",
         apiKey: "test-token",
       };
@@ -149,7 +150,7 @@ describe("TransportFactory", () => {
     it("should throw error for stdio without command", () => {
       const config: MCPServiceConfig = {
         name: "test-stdio-invalid",
-        type: "stdio",
+        type: MCPTransportType.STDIO,
       };
 
       expect(() => TransportFactory.create(config)).toThrow(
@@ -160,7 +161,7 @@ describe("TransportFactory", () => {
     it("should throw error for SSE without URL", () => {
       const config: MCPServiceConfig = {
         name: "test-sse-invalid",
-        type: "sse",
+        type: MCPTransportType.SSE,
       };
 
       expect(() => TransportFactory.create(config)).toThrow(
@@ -171,7 +172,7 @@ describe("TransportFactory", () => {
     it("should throw error for streamable-http without URL", () => {
       const config: MCPServiceConfig = {
         name: "test-http-invalid",
-        type: "streamable-http",
+        type: MCPTransportType.STREAMABLE_HTTP,
       };
 
       expect(() => TransportFactory.create(config)).toThrow(
@@ -182,7 +183,7 @@ describe("TransportFactory", () => {
     it("should throw error for ModelScope SSE without URL", () => {
       const config: MCPServiceConfig = {
         name: "test-modelscope-invalid",
-        type: "modelscope-sse",
+        type: MCPTransportType.MODELSCOPE_SSE,
         apiKey: "test-token",
       };
 
@@ -194,7 +195,7 @@ describe("TransportFactory", () => {
     it("should throw error for ModelScope SSE without API key", () => {
       const config: MCPServiceConfig = {
         name: "test-modelscope-invalid",
-        type: "modelscope-sse",
+        type: MCPTransportType.MODELSCOPE_SSE,
         url: "https://example.com/sse",
       };
 
@@ -208,7 +209,7 @@ describe("TransportFactory", () => {
     it("should validate stdio config", () => {
       const config: MCPServiceConfig = {
         name: "test-stdio",
-        type: "stdio",
+        type: MCPTransportType.STDIO,
         command: "node",
         args: ["test.js"],
       };
@@ -219,7 +220,7 @@ describe("TransportFactory", () => {
     it("should validate SSE config", () => {
       const config: MCPServiceConfig = {
         name: "test-sse",
-        type: "sse",
+        type: MCPTransportType.SSE,
         url: "https://example.com/sse",
       };
 
@@ -229,7 +230,7 @@ describe("TransportFactory", () => {
     it("should validate streamable-http config", () => {
       const config: MCPServiceConfig = {
         name: "test-http",
-        type: "streamable-http",
+        type: MCPTransportType.STREAMABLE_HTTP,
         url: "https://example.com/api",
       };
 
@@ -239,7 +240,7 @@ describe("TransportFactory", () => {
     it("should validate ModelScope SSE config", () => {
       const config: MCPServiceConfig = {
         name: "test-modelscope",
-        type: "modelscope-sse",
+        type: MCPTransportType.MODELSCOPE_SSE,
         url: "https://mcp.api-inference.modelscope.net/test/sse",
         apiKey: "test-token",
       };
@@ -272,7 +273,7 @@ describe("TransportFactory", () => {
     it("should throw error for stdio without command", () => {
       const config: MCPServiceConfig = {
         name: "test-stdio",
-        type: "stdio",
+        type: MCPTransportType.STDIO,
       };
 
       expect(() => TransportFactory.validateConfig(config)).toThrow(
@@ -283,7 +284,7 @@ describe("TransportFactory", () => {
     it("should throw error for SSE without URL", () => {
       const config: MCPServiceConfig = {
         name: "test-sse",
-        type: "sse",
+        type: MCPTransportType.SSE,
       };
 
       expect(() => TransportFactory.validateConfig(config)).toThrow(
@@ -294,7 +295,7 @@ describe("TransportFactory", () => {
     it("should throw error for streamable-http without URL", () => {
       const config: MCPServiceConfig = {
         name: "test-http",
-        type: "streamable-http",
+        type: MCPTransportType.STREAMABLE_HTTP,
       };
 
       expect(() => TransportFactory.validateConfig(config)).toThrow(
@@ -305,7 +306,7 @@ describe("TransportFactory", () => {
     it("should throw error for ModelScope SSE without URL", () => {
       const config: MCPServiceConfig = {
         name: "test-modelscope",
-        type: "modelscope-sse",
+        type: MCPTransportType.MODELSCOPE_SSE,
         apiKey: "test-token",
       };
 
@@ -317,7 +318,7 @@ describe("TransportFactory", () => {
     it("should throw error for ModelScope SSE without API key", () => {
       const config: MCPServiceConfig = {
         name: "test-modelscope",
-        type: "modelscope-sse",
+        type: MCPTransportType.MODELSCOPE_SSE,
         url: "https://example.com/sse",
       };
 

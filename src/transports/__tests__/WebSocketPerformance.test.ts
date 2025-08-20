@@ -12,9 +12,9 @@ import { WebSocketAdapter, type WebSocketConfig } from "../WebSocketAdapter.js";
 describe("WebSocket 性能测试", () => {
   let serviceManager: MCPServiceManager;
   let messageHandler: MCPMessageHandler;
-  let serverAdapter: WebSocketAdapter;
-  let clientAdapter: WebSocketAdapter;
-  let wsServer: WebSocketServer;
+  let serverAdapter: WebSocketAdapter | undefined;
+  let clientAdapter: WebSocketAdapter | undefined;
+  let wsServer: WebSocketServer | undefined;
 
   beforeEach(async () => {
     serviceManager = new MCPServiceManager();

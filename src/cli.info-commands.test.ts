@@ -5,7 +5,16 @@
 
 import { spawn } from "node:child_process";
 import path from "node:path";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 // Mock console methods
 const mockConsoleLog = vi.fn();
