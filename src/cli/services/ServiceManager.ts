@@ -196,7 +196,7 @@ export class ServiceManagerImpl implements IServiceManager {
         [scriptPath, "start", "--server", port.toString()],
         {
           detached: true,
-          stdio: ["ignore", "pipe", "pipe"],
+          stdio: ["ignore", "ignore", "ignore"], // 完全忽略所有 stdio，避免阻塞
           env: {
             ...process.env,
             XIAOZHI_CONFIG_DIR: PathUtils.getConfigDir(),
@@ -209,10 +209,15 @@ export class ServiceManagerImpl implements IServiceManager {
       // 保存 PID 信息
       this.processManager.savePidInfo(child.pid!, "daemon");
 
-      // 设置日志输出
-      await this.setupDaemonLogging(child, "xiaozhi-mcp-server.log");
-
+      // 完全分离子进程
       child.unref();
+
+      // 输出启动信息后立即退出父进程
+      console.log(`✅ MCP Server 已在后台启动 (PID: ${child.pid}, Port: ${port})`);
+      console.log(`💡 使用 'xiaozhi status' 查看状态`);
+
+      // 立即退出父进程，释放终端控制权
+      process.exit(0);
     } else {
       // 前台模式 - 直接启动 MCP Server
       const { MCPServer } = await import("../../services/MCPServer.js");
@@ -270,7 +275,7 @@ export class ServiceManagerImpl implements IServiceManager {
 
     const child = spawn("node", args, {
       detached: true,
-      stdio: ["ignore", "pipe", "pipe"],
+      stdio: ["ignore", "ignore", "ignore"], // 完全忽略所有 stdio，避免阻塞
       env: {
         ...process.env,
         XIAOZHI_CONFIG_DIR: PathUtils.getConfigDir(),
@@ -281,15 +286,16 @@ export class ServiceManagerImpl implements IServiceManager {
     // 保存 PID 信息
     this.processManager.savePidInfo(child.pid!, "daemon");
 
-    // 设置日志输出
-    await this.setupDaemonLogging(child, "xiaozhi.log");
-
-    // 监听进程事件
-    this.setupProcessEventHandlers(child);
-
+    // 完全分离子进程
     child.unref();
 
-    this.logger.info(`后台服务已启动 (PID: ${child.pid})`);
+    // 输出启动信息后立即退出父进程
+    console.log(`✅ 后台服务已启动 (PID: ${child.pid})`);
+    console.log(`💡 使用 'xiaozhi status' 查看状态`);
+    console.log(`💡 使用 'xiaozhi attach' 查看日志`);
+
+    // 立即退出父进程，释放终端控制权
+    process.exit(0);
   }
 
   /**
@@ -323,37 +329,7 @@ export class ServiceManagerImpl implements IServiceManager {
     }
   }
 
-  /**
-   * 设置守护进程日志
-   */
-  private async setupDaemonLogging(child: any, logFileName: string): Promise<void> {
-    const logFilePath = PathUtils.getLogFile();
-    const fs = await import("node:fs");
-    const logStream = fs.default.createWriteStream(logFilePath, { flags: "a" });
 
-    child.stdout?.pipe(logStream);
-    child.stderr?.pipe(logStream);
-  }
-
-  /**
-   * 设置进程事件处理器
-   */
-  private setupProcessEventHandlers(child: any): void {
-    // 监听进程异常退出
-    child.on("exit", (code: number | null, signal: string | null) => {
-      if (code !== 0 && code !== null) {
-        this.logger.error(`后台服务异常退出 (代码: ${code}, 信号: ${signal})`);
-      }
-      this.processManager.cleanupPidFile();
-    });
-
-    // 监听进程错误
-    child.on("error", (error: Error) => {
-      this.logger.error(`后台服务启动错误: ${error.message}`);
-      this.processManager.cleanupPidFile();
-      throw error;
-    });
-  }
 
   /**
    * 打开浏览器URL
