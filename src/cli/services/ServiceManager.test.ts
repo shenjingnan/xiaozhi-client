@@ -64,10 +64,40 @@ vi.mock("../../services/MCPServer.js", () => ({
   MCPServer: vi.fn().mockImplementation(() => mockMCPServerInstance),
 }));
 
+// Mock PathUtils
+vi.mock("../utils/PathUtils.js", () => ({
+  PathUtils: {
+    getWebServerStandalonePath: vi
+      .fn()
+      .mockReturnValue("/mock/path/WebServerStandalone.js"),
+    getExecutablePath: vi.fn().mockReturnValue("/mock/path/cli.js"),
+    getConfigDir: vi.fn().mockReturnValue("/mock/config"),
+    getMcpServerProxyPath: vi
+      .fn()
+      .mockReturnValue("/mock/path/mcpServerProxy.js"),
+    getLogFile: vi.fn().mockReturnValue("/mock/logs/xiaozhi.log"),
+  },
+}));
+
+// Mock fs
+vi.mock("node:fs", () => ({
+  default: {
+    existsSync: vi.fn().mockReturnValue(true),
+    createWriteStream: vi.fn().mockReturnValue({
+      write: vi.fn(),
+    }),
+  },
+}));
+
+// Mock process.exit
+const mockProcessExit = vi.spyOn(process, "exit").mockImplementation(() => {
+  throw new Error("process.exit called");
+});
+
 describe("ServiceManagerImpl", () => {
   let serviceManager: ServiceManagerImpl;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     serviceManager = new ServiceManagerImpl(
       mockProcessManager,
       mockConfigManager,
@@ -76,6 +106,19 @@ describe("ServiceManagerImpl", () => {
 
     // 重置所有 mock
     vi.clearAllMocks();
+    mockProcessExit.mockClear();
+
+    // Reset PathUtils mocks
+    const { PathUtils } = await import("../utils/PathUtils.js");
+    vi.mocked(PathUtils.getWebServerStandalonePath).mockReturnValue(
+      "/mock/path/WebServerStandalone.js"
+    );
+    vi.mocked(PathUtils.getExecutablePath).mockReturnValue("/mock/path/cli.js");
+    vi.mocked(PathUtils.getConfigDir).mockReturnValue("/mock/config");
+    vi.mocked(PathUtils.getMcpServerProxyPath).mockReturnValue(
+      "/mock/path/mcpServerProxy.js"
+    );
+    vi.mocked(PathUtils.getLogFile).mockReturnValue("/mock/logs/xiaozhi.log");
 
     // 重置 mock 实例
     mockWebServerInstance.start.mockClear();
@@ -101,6 +144,7 @@ describe("ServiceManagerImpl", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    mockProcessExit.mockClear();
   });
 
   describe("start", () => {
@@ -196,6 +240,251 @@ describe("ServiceManagerImpl", () => {
         1234,
         "foreground"
       );
+    });
+
+    describe("daemon mode", () => {
+      it("should start WebServer in daemon mode and exit parent process", async () => {
+        // Ensure file exists
+        const fs = await import("node:fs");
+        vi.mocked(fs.default.existsSync).mockReturnValue(true);
+
+        const { spawn } = await import("node:child_process");
+        const mockSpawn = vi.mocked(spawn);
+        const mockChild = {
+          pid: 1234,
+          unref: vi.fn(),
+        };
+        mockSpawn.mockReturnValue(mockChild as any);
+
+        const daemonOptions: ServiceStartOptions = {
+          ...defaultOptions,
+          daemon: true,
+        };
+
+        // 测试 daemon 模式启动
+        await expect(serviceManager.start(daemonOptions)).rejects.toThrow(
+          /process\.exit/
+        );
+
+        // 验证子进程正确启动
+        expect(mockSpawn).toHaveBeenCalledWith(
+          "node",
+          ["/mock/path/WebServerStandalone.js"],
+          {
+            detached: true,
+            stdio: ["ignore", "ignore", "ignore"],
+            env: expect.objectContaining({
+              XIAOZHI_CONFIG_DIR: "/mock/config",
+              XIAOZHI_DAEMON: "true",
+            }),
+          }
+        );
+
+        // 验证 PID 信息保存
+        expect(mockProcessManager.savePidInfo).toHaveBeenCalledWith(
+          1234,
+          "daemon"
+        );
+
+        // 验证子进程分离
+        expect(mockChild.unref).toHaveBeenCalled();
+
+        // 验证父进程退出 (通过异常抛出验证)
+        // mockProcessExit 在测试中抛出异常，所以不直接检查调用
+      });
+
+      it("should start WebServer in daemon mode with browser option", async () => {
+        // Ensure file exists
+        const fs = await import("node:fs");
+        vi.mocked(fs.default.existsSync).mockReturnValue(true);
+
+        const { spawn } = await import("node:child_process");
+        const mockSpawn = vi.mocked(spawn);
+        const mockChild = {
+          pid: 1234,
+          unref: vi.fn(),
+        };
+        mockSpawn.mockReturnValue(mockChild as any);
+
+        const daemonOptions: ServiceStartOptions = {
+          ...defaultOptions,
+          daemon: true,
+          ui: true,
+        };
+
+        await expect(serviceManager.start(daemonOptions)).rejects.toThrow(
+          /process\.exit/
+        );
+
+        expect(mockSpawn).toHaveBeenCalledWith(
+          "node",
+          ["/mock/path/WebServerStandalone.js", "--open-browser"],
+          {
+            detached: true,
+            stdio: ["ignore", "ignore", "ignore"],
+            env: expect.objectContaining({
+              XIAOZHI_CONFIG_DIR: "/mock/config",
+              XIAOZHI_DAEMON: "true",
+            }),
+          }
+        );
+      });
+
+      it("should start MCP Server in daemon mode and exit parent process", async () => {
+        // Ensure file exists
+        const fs = await import("node:fs");
+        vi.mocked(fs.default.existsSync).mockReturnValue(true);
+
+        const { spawn } = await import("node:child_process");
+        const mockSpawn = vi.mocked(spawn);
+        const mockChild = {
+          pid: 5678,
+          unref: vi.fn(),
+        };
+        mockSpawn.mockReturnValue(mockChild as any);
+
+        const mcpDaemonOptions: ServiceStartOptions = {
+          ...defaultOptions,
+          daemon: true,
+          mode: "mcp-server",
+          port: 3000,
+        };
+
+        await expect(serviceManager.start(mcpDaemonOptions)).rejects.toThrow(
+          /process\.exit/
+        );
+
+        expect(mockSpawn).toHaveBeenCalledWith(
+          "node",
+          ["/mock/path/cli.js", "start", "--server", "3000"],
+          {
+            detached: true,
+            stdio: ["ignore", "ignore", "ignore"],
+            env: expect.objectContaining({
+              XIAOZHI_CONFIG_DIR: "/mock/config",
+              XIAOZHI_DAEMON: "true",
+              MCP_SERVER_MODE: "true",
+            }),
+          }
+        );
+
+        expect(mockProcessManager.savePidInfo).toHaveBeenCalledWith(
+          5678,
+          "daemon"
+        );
+        expect(mockChild.unref).toHaveBeenCalled();
+        // 验证父进程退出 (通过异常抛出验证)
+        // mockProcessExit 在测试中抛出异常，所以不直接检查调用
+      });
+
+      it("should throw error if WebServer file does not exist", async () => {
+        const fs = await import("node:fs");
+        vi.mocked(fs.default.existsSync).mockReturnValue(false);
+
+        const daemonOptions: ServiceStartOptions = {
+          ...defaultOptions,
+          daemon: true,
+        };
+
+        await expect(serviceManager.start(daemonOptions)).rejects.toThrow(
+          /WebServer 文件不存在/
+        );
+      });
+
+      it("should handle spawn errors gracefully", async () => {
+        // Ensure file exists first
+        const fs = await import("node:fs");
+        vi.mocked(fs.default.existsSync).mockReturnValue(true);
+
+        const { spawn } = await import("node:child_process");
+        const mockSpawn = vi.mocked(spawn);
+
+        mockSpawn.mockImplementation(() => {
+          throw new Error("Failed to spawn process");
+        });
+
+        const daemonOptions: ServiceStartOptions = {
+          ...defaultOptions,
+          daemon: true,
+        };
+
+        await expect(serviceManager.start(daemonOptions)).rejects.toThrow(
+          "Failed to spawn process"
+        );
+        expect(mockProcessExit).not.toHaveBeenCalled();
+      });
+
+      it("should handle child process without PID", async () => {
+        // Ensure file exists
+        const fs = await import("node:fs");
+        vi.mocked(fs.default.existsSync).mockReturnValue(true);
+
+        const { spawn } = await import("node:child_process");
+        const mockSpawn = vi.mocked(spawn);
+        const mockChild = {
+          pid: undefined,
+          unref: vi.fn(),
+        };
+        mockSpawn.mockReturnValue(mockChild as any);
+
+        const daemonOptions: ServiceStartOptions = {
+          ...defaultOptions,
+          daemon: true,
+        };
+
+        // Should handle undefined PID gracefully
+        await expect(serviceManager.start(daemonOptions)).rejects.toThrow(
+          /process\.exit/
+        );
+        expect(mockProcessManager.savePidInfo).toHaveBeenCalledWith(
+          undefined,
+          "daemon"
+        );
+      });
+
+      it("should pass correct environment variables", async () => {
+        // Ensure file exists
+        const fs = await import("node:fs");
+        vi.mocked(fs.default.existsSync).mockReturnValue(true);
+
+        const { spawn } = await import("node:child_process");
+        const mockSpawn = vi.mocked(spawn);
+        const mockChild = {
+          pid: 1234,
+          unref: vi.fn(),
+        };
+        mockSpawn.mockReturnValue(mockChild as any);
+
+        // Set some existing environment variables
+        const originalEnv = process.env;
+        process.env = {
+          ...originalEnv,
+          EXISTING_VAR: "existing_value",
+          PATH: "/usr/bin:/bin",
+        };
+
+        const daemonOptions: ServiceStartOptions = {
+          ...defaultOptions,
+          daemon: true,
+        };
+
+        await expect(serviceManager.start(daemonOptions)).rejects.toThrow(
+          /process\.exit/
+        );
+
+        const spawnCall = mockSpawn.mock.calls[0];
+        expect(spawnCall[2]?.env).toEqual(
+          expect.objectContaining({
+            EXISTING_VAR: "existing_value",
+            PATH: "/usr/bin:/bin",
+            XIAOZHI_CONFIG_DIR: "/mock/config",
+            XIAOZHI_DAEMON: "true",
+          })
+        );
+
+        // Restore original environment
+        process.env = originalEnv;
+      });
     });
   });
 
