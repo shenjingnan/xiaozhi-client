@@ -87,7 +87,10 @@ export class CommandRegistry implements ICommandRegistry {
         // 设置子命令处理函数
         cmd.action(async (...args) => {
           try {
-            await subcommand.execute(args.slice(0, -1), args[args.length - 1]);
+            // Commander.js 传递的最后一个参数是 Command 对象，包含选项值
+            const command = args[args.length - 1];
+            const options = command.opts(); // 获取解析后的选项
+            await subcommand.execute(args.slice(0, -1), options);
           } catch (error) {
             ErrorHandler.handle(error as Error);
           }
@@ -97,7 +100,9 @@ export class CommandRegistry implements ICommandRegistry {
       // 设置主命令的默认行为
       commandGroup.action(async (...args) => {
         try {
-          await handler.execute(args.slice(0, -1), args[args.length - 1]);
+          const command = args[args.length - 1];
+          const options = command.opts(); // 获取解析后的选项
+          await handler.execute(args.slice(0, -1), options);
         } catch (error) {
           ErrorHandler.handle(error as Error);
         }
@@ -125,7 +130,9 @@ export class CommandRegistry implements ICommandRegistry {
       // 设置主命令处理函数
       command.action(async (...args) => {
         try {
-          await handler.execute(args.slice(0, -1), args[args.length - 1]);
+          const command = args[args.length - 1];
+          const options = command.opts(); // 获取解析后的选项
+          await handler.execute(args.slice(0, -1), options);
         } catch (error) {
           ErrorHandler.handle(error as Error);
         }
@@ -139,30 +146,13 @@ export class CommandRegistry implements ICommandRegistry {
   private registerVersionCommand(program: Command): void {
     const versionUtils = this.container.get("versionUtils") as any;
 
-    program
-      .version(versionUtils.getVersion(), "-v, --version", "显示版本信息")
-      .option("--version-info", "显示详细版本信息")
-      .hook("preAction", (thisCommand) => {
-        const options = thisCommand.opts();
-        if (options.versionInfo) {
-          const versionInfo = versionUtils.getVersionInfo();
-          const platformUtils = this.container.get("platformUtils") as any;
-          const systemInfo = platformUtils.getSystemInfo();
+    program.version(versionUtils.getVersion(), "-v, --version", "显示版本信息");
 
-          console.log(
-            `${versionInfo.name || "xiaozhi"} v${versionInfo.version}`
-          );
-          if (versionInfo.description) {
-            console.log(versionInfo.description);
-          }
-          console.log(`Node.js: ${systemInfo.nodeVersion}`);
-          console.log(`Platform: ${systemInfo.platform} ${systemInfo.arch}`);
-          if (systemInfo.isContainer) {
-            console.log("Environment: Container");
-          }
-          process.exit(0);
-        }
-      });
+    // 注册 --info 选项
+    program.option("--info", "显示详细信息");
+
+    // 注册 --version-info 选项
+    program.option("--version-info", "显示详细版本信息");
   }
 
   /**
@@ -219,7 +209,10 @@ export class CommandRegistry implements ICommandRegistry {
       // 设置命令处理函数
       command.action(async (...args) => {
         try {
-          await subcommand.execute(args.slice(0, -1), args[args.length - 1]);
+          // Commander.js 传递的最后一个参数是 Command 对象，包含选项值
+          const command = args[args.length - 1];
+          const options = command.opts(); // 获取解析后的选项
+          await subcommand.execute(args.slice(0, -1), options);
         } catch (error) {
           ErrorHandler.handle(error as Error);
         }
