@@ -333,6 +333,8 @@ describe("WebServer", () => {
           }
           return {};
         }),
+        register: vi.fn(),
+        has: vi.fn(),
       });
       mockSpawn = vi.mocked(spawn);
     });

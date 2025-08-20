@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ServiceStartOptions } from "../interfaces/Service.js";
 import { PathUtils } from "../utils/PathUtils.js";
-import { ProcessManager } from "./ProcessManager.js";
+import { ProcessManagerImpl } from "./ProcessManager.js";
 import { ServiceManagerImpl } from "./ServiceManager.js";
 
 // Mock external dependencies

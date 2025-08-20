@@ -5,7 +5,16 @@
 
 import { spawn } from "node:child_process";
 import path from "node:path";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 // Mock console methods
 const mockConsoleLog = vi.fn();
@@ -294,14 +303,16 @@ describe("CLI --info 和 --version-info 命令测试", () => {
       const helpResult = await runCLI(["--help"]);
       expect(helpResult.exitCode).toBe(0);
       expect(helpResult.stdout).toContain("Usage:");
-    }, 15000);
+    });
   });
 
   describe("参数解析优先级测试", () => {
     it("应该正确识别 --info 参数的不同位置", async () => {
       const argVariations = [
         ["--info"],
-        ["--info", "--help"], // 测试与其他有效选项的组合
+        ["--info", "extra"],
+        ["command", "--info"],
+        ["--other", "--info", "--more"],
       ];
 
       for (const args of argVariations) {
@@ -310,12 +321,14 @@ describe("CLI --info 和 --version-info 命令测试", () => {
         expect(result.exitCode).toBe(0);
         expect(result.stdout).toContain("🤖 小智 MCP 客户端 - 详细信息");
       }
-    }, 10000);
+    });
 
     it("应该正确识别 --version-info 参数的不同位置", async () => {
       const argVariations = [
         ["--version-info"],
-        ["--version-info", "--help"], // 测试与其他有效选项的组合
+        ["--version-info", "extra"],
+        ["command", "--version-info"],
+        ["--other", "--version-info", "--more"],
       ];
 
       for (const args of argVariations) {
@@ -324,11 +337,16 @@ describe("CLI --info 和 --version-info 命令测试", () => {
         expect(result.exitCode).toBe(0);
         expect(result.stdout).toContain("xiaozhi-client v1.6.2");
       }
-    }, 10000);
+    });
 
     it("应该不处理类似但不完全匹配的参数", async () => {
       const nonMatchingArgs = [
-        ["--help"], // 使用有效的帮助命令来测试
+        ["--information"],
+        ["--info-detailed"],
+        ["--version-information"],
+        ["--version-info-detailed"],
+        ["info"],
+        ["version-info"],
       ];
 
       for (const args of nonMatchingArgs) {
@@ -337,23 +355,25 @@ describe("CLI --info 和 --version-info 命令测试", () => {
         // 这些参数不应该触发 --info 或 --version-info 的处理
         expect(result.stdout).not.toContain("🤖 小智 MCP 客户端 - 详细信息");
         expect(result.stdout).not.toContain("xiaozhi-client v1.6.2");
-        // 应该显示帮助信息
-        expect(result.stdout).toContain("Usage:");
       }
-    }, 10000);
+    });
 
     it("应该处理参数的大小写敏感性", async () => {
-      // 测试正确的大小写
-      const correctCase = await runCLI(["--info"]);
-      expect(correctCase.exitCode).toBe(0);
-      expect(correctCase.stdout).toContain("🤖 小智 MCP 客户端 - 详细信息");
+      const caseVariations = [
+        ["--INFO"],
+        ["--Info"],
+        ["--VERSION-INFO"],
+        ["--Version-Info"],
+      ];
 
-      // 测试错误的大小写应该显示帮助信息（因为参数无效）
-      const wrongCase = await runCLI(["--help"]);
-      expect(wrongCase.exitCode).toBe(0);
-      expect(wrongCase.stdout).not.toContain("🤖 小智 MCP 客户端 - 详细信息");
-      expect(wrongCase.stdout).toContain("Usage:");
-    }, 10000);
+      for (const args of caseVariations) {
+        const result = await runCLI(args);
+
+        // 大小写不匹配的参数不应该触发特殊处理
+        expect(result.stdout).not.toContain("🤖 小智 MCP 客户端 - 详细信息");
+        expect(result.stdout).not.toContain("xiaozhi-client v1.6.2");
+      }
+    });
   });
 
   describe("错误处理测试", () => {
@@ -471,7 +491,9 @@ describe("CLI --info 和 --version-info 命令测试", () => {
 
     it("应该正确处理命令行参数的边界情况", async () => {
       const edgeCases = [
-        { args: ["--help"], shouldMatch: false }, // 简化测试，使用有效的帮助命令
+        { args: ["--info=value"], shouldMatch: false }, // 不应该匹配
+        { args: ["--info", ""], shouldMatch: true }, // 应该匹配
+        { args: ["--INFO"], shouldMatch: false }, // 不应该匹配（大小写敏感）
       ];
 
       for (const testCase of edgeCases) {
@@ -482,10 +504,9 @@ describe("CLI --info 和 --version-info 命令测试", () => {
           expect(result.stdout).toContain("🤖 小智 MCP 客户端 - 详细信息");
         } else {
           expect(result.stdout).not.toContain("🤖 小智 MCP 客户端 - 详细信息");
-          expect(result.stdout).toContain("Usage:"); // 应该显示帮助信息
         }
       }
-    }, 15000);
+    });
 
     it("应该在不同环境下保持一致的行为", async () => {
       // 测试多次执行的一致性

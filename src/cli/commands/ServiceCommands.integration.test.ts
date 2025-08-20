@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ServiceStartOptions } from "../services/types.js";
+import type { ServiceStartOptions } from "../interfaces/Service.js";
 import { ServiceCommandHandler } from "./ServiceCommandHandler.js";
 
 // Mock ServiceManager
