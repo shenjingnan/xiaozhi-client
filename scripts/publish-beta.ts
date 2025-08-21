@@ -10,6 +10,62 @@ const __dirname = dirname(__filename);
 const rootDir = join(__dirname, "..");
 
 /**
+ * 全局状态：是否需要恢复 package.json
+ */
+let needsPackageJsonRestore = false;
+
+/**
+ * 恢复 package.json 文件
+ */
+function restorePackageJson(): void {
+  if (!needsPackageJsonRestore) {
+    return;
+  }
+
+  console.log("\n🔄 正在恢复 package.json 文件...");
+  try {
+    const [cmd, ...args] = "git checkout package.json".split(" ");
+    execaSync(cmd, args, {
+      cwd: rootDir,
+      stdio: "inherit",
+    });
+    console.log("✅ package.json 已成功恢复");
+    needsPackageJsonRestore = false;
+  } catch (error: unknown) {
+    console.error("❌ 恢复 package.json 失败，请手动检查文件状态");
+    if (error instanceof Error) {
+      console.error(`恢复错误详情: ${error.message}`);
+    }
+  }
+}
+
+/**
+ * 信号处理函数
+ * @param signal - 接收到的信号
+ */
+function handleSignal(signal: string): void {
+  console.log(`\n\n⚠️  接收到 ${signal} 信号，正在优雅地退出...`);
+
+  // 恢复 package.json 文件
+  restorePackageJson();
+
+  console.log("👋 脚本已安全退出");
+  process.exit(0);
+}
+
+/**
+ * 注册信号处理器
+ */
+function setupSignalHandlers(): void {
+  // 监听常见的进程终止信号
+  const signals: NodeJS.Signals[] = ["SIGINT", "SIGTERM", "SIGQUIT"];
+
+  for (const signal of signals) {
+    process.on(signal, () => handleSignal(signal));
+  }
+}
+
+/**
  * 包信息接口
  */
 interface PackageJson {
@@ -46,6 +102,17 @@ function executeCommand(command: string, options: CommandOptions = {}): string {
     console.error(`❌ 命令执行失败: ${command}`);
     if (error instanceof Error) {
       console.error(error.message);
+
+      // 检查是否是由于信号中断导致的错误
+      if (
+        error.message.includes("SIGINT") ||
+        error.message.includes("SIGTERM")
+      ) {
+        console.log("\n⚠️  检测到进程中断信号");
+        restorePackageJson();
+        console.log("👋 脚本已安全退出");
+        process.exit(0);
+      }
     }
     process.exit(1);
   }
@@ -78,6 +145,9 @@ function getCurrentVersion(): string {
  * 主函数
  */
 function main(): void {
+  // 注册信号处理器
+  setupSignalHandlers();
+
   // 获取命令行参数中的版本号
   const args: string[] = process.argv.slice(2);
 
@@ -140,6 +210,9 @@ function main(): void {
     console.log("📝 步骤 1: 更新 package.json 版本号");
     executeCommand(`npm version ${targetVersion} --no-git-tag-version`);
 
+    // 设置恢复标志，表示 package.json 已被修改，需要在异常时恢复
+    needsPackageJsonRestore = true;
+
     // 步骤 2: 发布到 npm beta 标签
     console.log("\n📤 步骤 2: 发布到 npm beta 标签");
     executeCommand("pnpm publish --tag beta --no-git-checks");
@@ -148,23 +221,20 @@ function main(): void {
     console.log("\n🔄 步骤 3: 恢复 package.json 文件");
     executeCommand("git checkout package.json");
 
+    // 清除恢复标志，表示 package.json 已正常恢复
+    needsPackageJsonRestore = false;
+
     console.log("\n✅ Beta 版本发布成功!");
     console.log(`🎉 版本 ${targetVersion} 已发布到 npm beta 标签`);
     console.log("📋 安装命令: npm install xiaozhi-client@beta");
   } catch (error: unknown) {
-    console.error("\n❌ 发布过程中出现错误，正在恢复 package.json...");
+    console.error("\n❌ 发布过程中出现错误");
     if (error instanceof Error) {
       console.error(`错误详情: ${error.message}`);
     }
-    try {
-      executeCommand("git checkout package.json");
-      console.log("✅ package.json 已恢复");
-    } catch (restoreError: unknown) {
-      console.error("❌ 恢复 package.json 失败，请手动检查文件状态");
-      if (restoreError instanceof Error) {
-        console.error(`恢复错误详情: ${restoreError.message}`);
-      }
-    }
+
+    // 使用统一的恢复函数
+    restorePackageJson();
     process.exit(1);
   }
 }
