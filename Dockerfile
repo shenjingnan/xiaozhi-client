@@ -9,11 +9,6 @@ FROM node:20
 # 例如: docker build --build-arg XIAOZHI_VERSION=1.6.0 .
 ARG XIAOZHI_VERSION=1.6.1
 
-# 配置国内镜像源以提升下载速度
-# 配置 Debian 镜像源为阿里云镜像
-RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources && \
-    sed -i 's/security.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources
-
 # 配置 npm 和 pnpm 使用国内镜像源
 # 设置 npm 注册表镜像
 RUN npm config set registry https://registry.npmmirror.com
@@ -32,18 +27,35 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-venv \
     && rm -rf /var/lib/apt/lists/* \
-    && pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple \
-    && pip3 config set global.trusted-host pypi.tuna.tsinghua.edu.cn \
     && ln -sf /usr/bin/python3 /usr/bin/python \
-    && ln -sf /usr/bin/pip3 /usr/bin/pip \
-    && pip3 install --break-system-packages uv \
     && npm install -g pnpm xiaozhi-client@${XIAOZHI_VERSION} \
     && pnpm config set registry https://registry.npmmirror.com
 
+# 创建 Python 虚拟环境
+RUN python3 -m venv /opt/venv
+
+# 激活虚拟环境并配置 pip 镜像源
+ENV PATH="/opt/venv/bin:$PATH"
+RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple \
+    && pip config set global.trusted-host pypi.tuna.tsinghua.edu.cn
+
+# 在虚拟环境中安装基础 Python 工具
+RUN pip install --upgrade pip \
+    && pip install uv
+
+# 复制 Python 依赖文件（如果存在）并安装依赖
+COPY requirements.txt* /tmp/
+RUN if [ -f /tmp/requirements.txt ] && [ -s /tmp/requirements.txt ]; then \
+        grep -v '^#' /tmp/requirements.txt | grep -v '^$' | head -1 > /dev/null && \
+        pip install -r /tmp/requirements.txt; \
+    fi \
+    && rm -f /tmp/requirements.txt*
+
 # 验证工具可用性
 RUN npx --version && echo "✓ npx is available" \
-    && uv --version && echo "✓ uv is available" \
-    && uvx --version && echo "✓ uvx is available"
+    && /opt/venv/bin/uv --version && echo "✓ uv is available" \
+    && /opt/venv/bin/uvx --version && echo "✓ uvx is available" \
+    && /opt/venv/bin/python --version && echo "✓ Python virtual environment is available"
 
 # 设置工作目录
 # 推荐挂载点: -v ~/xiaozhi-client:/workspaces
