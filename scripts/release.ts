@@ -2,16 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { execa } from "execa";
+import semver from "semver";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// 检查版本号是否符合 semver 规范
-function isValidSemver(version: string): boolean {
-  const semverRegex =
-    /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/;
-  return semverRegex.test(version);
-}
 
 // 更新文件中的版本号
 async function updateVersionInFile(filePath: string, version: string) {
@@ -96,7 +90,7 @@ async function main() {
   }
 
   // 检查版本号格式
-  if (!isValidSemver(version)) {
+  if (!semver.valid(version)) {
     console.error("错误: 版本号不符合 semver 规范");
     console.error("正确的格式例如: 1.0.0, 1.0.0-beta.1");
     process.exit(1);
