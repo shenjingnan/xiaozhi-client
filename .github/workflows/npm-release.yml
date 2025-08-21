@@ -37,13 +37,14 @@ jobs:
         id: check_release
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then
-            # 检查最新 commit 消息是否符合 release: <version> 格式
+            # 检查最新 commit 消息是否符合 release: <version> 格式（可能包含PR编号）
             COMMIT_MSG=$(git log -1 --pretty=%s)
             echo "最新 commit 消息: $COMMIT_MSG"
 
-            if [[ $COMMIT_MSG =~ ^release:\ [0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
+            if [[ $COMMIT_MSG =~ ^release:\ [0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?(\s+\(#[0-9]+\))?.*$ ]]; then
               echo "检测到发版 commit: $COMMIT_MSG"
-              VERSION=$(echo "$COMMIT_MSG" | sed 's/^release: //')
+              # 提取版本号：匹配 release: 后面的版本号部分，忽略可能的PR编号和其他内容
+              VERSION=$(echo "$COMMIT_MSG" | sed -E 's/^release: ([0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?).*$/\1/')
               echo "从 commit 消息提取的版本号: $VERSION"
               echo "commit_version=$VERSION" >> $GITHUB_OUTPUT
               echo "is_release=true" >> $GITHUB_OUTPUT
