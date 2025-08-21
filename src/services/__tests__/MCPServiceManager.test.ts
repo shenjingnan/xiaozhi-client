@@ -6,7 +6,7 @@ import {
 } from "../MCPService.js";
 import { MCPServiceManager } from "../MCPServiceManager.js";
 
-// Mock dependencies
+// 模拟依赖项
 vi.mock("../MCPService.js");
 vi.mock("../../Logger.js", () => ({
   logger: {
@@ -32,15 +32,15 @@ describe("MCPServiceManager", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
 
-    // Get the mocked logger instance
+    // 获取模拟的 logger 实例
     const { logger } = await import("../../Logger.js");
     mockLogger = logger;
 
-    // Get the mocked configManager instance
+    // 获取模拟的 configManager 实例
     const { configManager } = await import("../../configManager.js");
     mockConfigManager = configManager;
 
-    // Mock MCPService
+    // 模拟 MCPService
     mockMCPService = {
       connect: vi.fn(),
       disconnect: vi.fn(),
@@ -77,7 +77,7 @@ describe("MCPServiceManager", () => {
     it("应该创建默认空配置的 MCPServiceManager", () => {
       const emptyManager = new MCPServiceManager();
       expect(emptyManager).toBeInstanceOf(MCPServiceManager);
-      // No longer using withTag, logger is used directly
+      // 不再使用 withTag，直接使用 logger
     });
 
     it("应该创建带自定义配置的 MCPServiceManager", () => {
@@ -122,7 +122,7 @@ describe("MCPServiceManager", () => {
       expect(mockLogger.info).toHaveBeenCalledWith(
         "[MCPManager] 所有 MCP 服务启动完成"
       );
-      expect(MCPService).toHaveBeenCalledTimes(2); // calculator and datetime
+      expect(MCPService).toHaveBeenCalledTimes(2); // calculator 和 datetime
     });
 
     it("应该处理服务启动失败的情况", async () => {
@@ -167,10 +167,10 @@ describe("MCPServiceManager", () => {
       mockMCPService.disconnect.mockResolvedValue(undefined);
       mockMCPService.getTools.mockReturnValue([]);
 
-      // Start service first time
+      // 第一次启动服务
       await manager.startService("calculator");
 
-      // Start service second time (should stop first)
+      // 第二次启动服务（应该先停止第一个）
       await manager.startService("calculator");
 
       expect(mockMCPService.disconnect).toHaveBeenCalled();
@@ -184,10 +184,10 @@ describe("MCPServiceManager", () => {
       mockMCPService.disconnect.mockResolvedValue(undefined);
       mockMCPService.getTools.mockReturnValue([]);
 
-      // Start service first
+      // 先启动服务
       await manager.startService("calculator");
 
-      // Then stop it
+      // 然后停止它
       await manager.stopService("calculator");
 
       expect(mockMCPService.disconnect).toHaveBeenCalled();
@@ -211,11 +211,11 @@ describe("MCPServiceManager", () => {
       mockMCPService.disconnect.mockResolvedValue(undefined);
       mockMCPService.getTools.mockReturnValue([]);
 
-      // Start services first
+      // 先启动服务
       await manager.startService("calculator");
       await manager.startService("datetime");
 
-      // Then stop all
+      // 然后停止所有服务
       await manager.stopAllServices();
 
       expect(mockMCPService.disconnect).toHaveBeenCalledTimes(2);
@@ -284,7 +284,7 @@ describe("MCPServiceManager", () => {
     });
 
     it("对于不可用的服务应该抛出错误", async () => {
-      // Stop the service
+      // 停止服务
       mockMCPService.disconnect.mockResolvedValue(undefined);
       await manager.stopService("calculator");
 
@@ -421,7 +421,7 @@ describe("MCPServiceManager", () => {
     });
 
     it("应该处理混合协议服务", async () => {
-      // Add different protocol services
+      // 添加不同协议的服务
       manager.addServiceConfig("sse-service", {
         name: "sse-service",
         type: MCPTransportType.SSE,
@@ -440,22 +440,22 @@ describe("MCPServiceManager", () => {
       ]);
       mockMCPService.isConnected.mockReturnValue(true);
 
-      // Start all services
+      // 启动所有服务
       await manager.startAllServices();
 
-      // Should have started 4 services (calculator, datetime, sse-service, http-service)
+      // 应该启动了 4 个服务（calculator, datetime, sse-service, http-service）
       expect(MCPService).toHaveBeenCalledTimes(4);
     });
 
     it("应该聚合不同协议的工具", async () => {
-      // Setup services with different protocols
+      // 设置不同协议的服务
       manager.addServiceConfig("sse-service", {
         name: "sse-service",
         type: MCPTransportType.SSE,
         url: "https://example.com/sse",
       });
 
-      // Create separate mock instances for each service
+      // 为每个服务创建单独的模拟实例
       const mockServices = new Map();
 
       vi.mocked(MCPService).mockImplementation((config: MCPServiceConfig) => {
@@ -469,7 +469,7 @@ describe("MCPServiceManager", () => {
             getStatus: vi.fn(),
           };
 
-          // Set different tools for each service
+          // 为每个服务设置不同的工具
           if (config.name === "calculator") {
             serviceMock.getTools.mockReturnValue([
               {
@@ -516,10 +516,10 @@ describe("MCPServiceManager", () => {
 
   describe("工具配置同步", () => {
     it("应该将新服务工具同步到配置文件", async () => {
-      // Mock configManager to return empty config
+      // 模拟 configManager 返回空配置
       mockConfigManager.getMcpServerConfig.mockReturnValue({});
 
-      // Mock service with tools
+      // 模拟带有工具的服务
       mockMCPService.isConnected.mockReturnValue(true);
       mockMCPService.getTools.mockReturnValue([
         {
@@ -536,7 +536,7 @@ describe("MCPServiceManager", () => {
 
       await manager.startService("calculator");
 
-      // Verify that updateServerToolsConfig was called with correct parameters
+      // 验证 updateServerToolsConfig 被正确参数调用
       expect(mockConfigManager.updateServerToolsConfig).toHaveBeenCalledWith(
         "calculator",
         {
@@ -553,19 +553,19 @@ describe("MCPServiceManager", () => {
     });
 
     it("同步时应该保留现有工具的启用状态", async () => {
-      // Mock configManager to return existing config
+      // 模拟 configManager 返回现有配置
       mockConfigManager.getMcpServerConfig.mockReturnValue({
         calculator: {
           tools: {
             add: {
               description: "Old description",
-              enable: false, // User disabled this tool
+              enable: false, // 用户禁用了此工具
             },
           },
         },
       });
 
-      // Mock service with updated tools
+      // 模拟带有更新工具的服务
       mockMCPService.isConnected.mockReturnValue(true);
       mockMCPService.getTools.mockReturnValue([
         {
@@ -582,24 +582,24 @@ describe("MCPServiceManager", () => {
 
       await manager.startService("calculator");
 
-      // Verify that existing tool's enable status is preserved but description is updated
+      // 验证现有工具的启用状态被保留但描述被更新
       expect(mockConfigManager.updateServerToolsConfig).toHaveBeenCalledWith(
         "calculator",
         {
           add: {
             description: "Add two numbers (updated)",
-            enable: false, // Should preserve user's setting
+            enable: false, // 应该保留用户的设置
           },
           multiply: {
             description: "Multiply two numbers",
-            enable: true, // New tool should be enabled by default
+            enable: true, // 新工具应该默认启用
           },
         }
       );
     });
 
     it("应该正确处理已移除的工具", async () => {
-      // Mock configManager to return config with more tools than currently available
+      // 模拟 configManager 返回比当前可用工具更多的配置
       mockConfigManager.getMcpServerConfig.mockReturnValue({
         calculator: {
           tools: {
@@ -619,7 +619,7 @@ describe("MCPServiceManager", () => {
         },
       });
 
-      // Mock service with fewer tools (divide tool removed)
+      // 模拟工具较少的服务（divide 工具被移除）
       mockMCPService.isConnected.mockReturnValue(true);
       mockMCPService.getTools.mockReturnValue([
         {
@@ -636,7 +636,7 @@ describe("MCPServiceManager", () => {
 
       await manager.startService("calculator");
 
-      // Verify that only existing tools are included in the config
+      // 验证配置中只包含现有工具
       expect(mockConfigManager.updateServerToolsConfig).toHaveBeenCalledWith(
         "calculator",
         {
@@ -648,13 +648,13 @@ describe("MCPServiceManager", () => {
             description: "Subtract two numbers",
             enable: false,
           },
-          // divide tool should be removed
+          // divide 工具应该被移除
         }
       );
     });
 
     it("当没有检测到变化时不应该同步配置", async () => {
-      // Mock configManager to return existing config that matches current tools
+      // 模拟 configManager 返回与当前工具匹配的现有配置
       mockConfigManager.getMcpServerConfig.mockReturnValue({
         calculator: {
           tools: {
@@ -666,7 +666,7 @@ describe("MCPServiceManager", () => {
         },
       });
 
-      // Mock service with same tools
+      // 模拟具有相同工具的服务
       mockMCPService.isConnected.mockReturnValue(true);
       mockMCPService.getTools.mockReturnValue([
         {
@@ -678,12 +678,12 @@ describe("MCPServiceManager", () => {
 
       await manager.startService("calculator");
 
-      // Verify that updateServerToolsConfig was not called since no changes
+      // 验证由于没有变化，updateServerToolsConfig 没有被调用
       expect(mockConfigManager.updateServerToolsConfig).not.toHaveBeenCalled();
     });
 
     it("应该优雅地处理同步错误", async () => {
-      // Mock configManager to throw error
+      // 模拟 configManager 抛出错误
       mockConfigManager.getMcpServerConfig.mockImplementation(() => {
         throw new Error("Config read error");
       });
@@ -697,10 +697,10 @@ describe("MCPServiceManager", () => {
         },
       ]);
 
-      // Should not throw error, just log it
+      // 不应该抛出错误，只是记录日志
       await expect(manager.startService("calculator")).resolves.not.toThrow();
 
-      // Verify error was logged
+      // 验证错误已被记录
       expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining("同步工具配置到配置文件失败"),
         expect.any(Error)
