@@ -20,10 +20,13 @@ async function generateChangelog(version: string) {
     // 使用 conventional-changelog 生成 changelog
     await execa("npx", [
       "conventional-changelog",
-      "-p", "conventionalcommits",
-      "-i", "CHANGELOG.md",
+      "-p",
+      "conventionalcommits",
+      "-i",
+      "CHANGELOG.md",
       "-s",
-      "-r", "0"
+      "-r",
+      "0",
     ]);
     console.log("Changelog 生成完成");
   } catch (error) {
