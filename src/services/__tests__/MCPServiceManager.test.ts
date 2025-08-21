@@ -706,5 +706,106 @@ describe("MCPServiceManager", () => {
         expect.any(Error)
       );
     });
+
+    it("应该检测到工具替换的变化（相同数量但不同工具）", async () => {
+      // 模拟 configManager 返回现有配置
+      mockConfigManager.getMcpServerConfig.mockReturnValue({
+        calculator: {
+          tools: {
+            add: {
+              description: "Add two numbers",
+              enable: true,
+            },
+            subtract: {
+              description: "Subtract two numbers",
+              enable: false,
+            },
+          },
+        },
+      });
+
+      // 模拟服务返回相同数量但不同的工具（subtract 被 multiply 替换）
+      mockMCPService.isConnected.mockReturnValue(true);
+      mockMCPService.getTools.mockReturnValue([
+        {
+          name: "add",
+          description: "Add two numbers",
+          inputSchema: { type: "object", properties: {} },
+        },
+        {
+          name: "multiply",
+          description: "Multiply two numbers",
+          inputSchema: { type: "object", properties: {} },
+        },
+      ]);
+
+      await manager.startService("calculator");
+
+      // 验证配置被更新，因为检测到工具替换
+      expect(mockConfigManager.updateServerToolsConfig).toHaveBeenCalledWith(
+        "calculator",
+        {
+          add: {
+            description: "Add two numbers",
+            enable: true,
+          },
+          multiply: {
+            description: "Multiply two numbers",
+            enable: true, // 新工具应该默认启用
+          },
+          // subtract 工具被移除，multiply 工具被添加
+        }
+      );
+    });
+
+    it("应该检测到仅工具描述的变化", async () => {
+      // 模拟 configManager 返回现有配置
+      mockConfigManager.getMcpServerConfig.mockReturnValue({
+        calculator: {
+          tools: {
+            add: {
+              description: "Add two numbers",
+              enable: true,
+            },
+            subtract: {
+              description: "Subtract two numbers",
+              enable: false,
+            },
+          },
+        },
+      });
+
+      // 模拟服务返回相同工具但描述发生变化
+      mockMCPService.isConnected.mockReturnValue(true);
+      mockMCPService.getTools.mockReturnValue([
+        {
+          name: "add",
+          description: "Add two numbers (improved)",
+          inputSchema: { type: "object", properties: {} },
+        },
+        {
+          name: "subtract",
+          description: "Subtract two numbers",
+          inputSchema: { type: "object", properties: {} },
+        },
+      ]);
+
+      await manager.startService("calculator");
+
+      // 验证配置被更新，因为检测到描述变化
+      expect(mockConfigManager.updateServerToolsConfig).toHaveBeenCalledWith(
+        "calculator",
+        {
+          add: {
+            description: "Add two numbers (improved)",
+            enable: true, // 保留原有的启用状态
+          },
+          subtract: {
+            description: "Subtract two numbers",
+            enable: false, // 保留原有的启用状态
+          },
+        }
+      );
+    });
   });
 });
