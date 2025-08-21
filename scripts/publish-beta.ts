@@ -42,7 +42,7 @@ function executeCommand(
       stdio: "inherit",
       ...options,
     });
-    return result;
+    return result as Buffer;
   } catch (error: unknown) {
     console.error(`❌ 命令执行失败: ${command}`);
     if (error instanceof Error) {
