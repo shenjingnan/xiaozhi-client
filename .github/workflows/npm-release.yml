@@ -155,21 +155,3 @@ jobs:
             echo "release_created=true" >> $GITHUB_OUTPUT
             echo "✅ 新版本 v$VERSION 已发布并创建标签"
           fi
-
-      - name: 触发 Docker 发布
-        if: success() && github.event.inputs.dry_run != 'true' && steps.release_check.outputs.release_created == 'true'
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const result = await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'docker-release.yml',
-              ref: 'main',
-              inputs: {
-                version: '${{ steps.get_version.outputs.version }}',
-                branch: 'main'
-              }
-            });
-            console.log('✅ 已触发 Docker 发布工作流');
