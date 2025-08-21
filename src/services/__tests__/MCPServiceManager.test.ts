@@ -16,11 +16,18 @@ vi.mock("../../Logger.js", () => ({
     debug: vi.fn(),
   },
 }));
+vi.mock("../../configManager.js", () => ({
+  configManager: {
+    getMcpServerConfig: vi.fn(),
+    updateServerToolsConfig: vi.fn(),
+  },
+}));
 
 describe("MCPServiceManager", () => {
   let manager: MCPServiceManager;
   let mockLogger: any;
   let mockMCPService: any;
+  let mockConfigManager: any;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -28,6 +35,10 @@ describe("MCPServiceManager", () => {
     // Get the mocked logger instance
     const { logger } = await import("../../Logger.js");
     mockLogger = logger;
+
+    // Get the mocked configManager instance
+    const { configManager } = await import("../../configManager.js");
+    mockConfigManager = configManager;
 
     // Mock MCPService
     mockMCPService = {
@@ -500,6 +511,200 @@ describe("MCPServiceManager", () => {
         "datetime__time-now",
         "sse-service__sse-notify",
       ]);
+    });
+  });
+
+  describe("工具配置同步", () => {
+    it("should sync new service tools to config file", async () => {
+      // Mock configManager to return empty config
+      mockConfigManager.getMcpServerConfig.mockReturnValue({});
+
+      // Mock service with tools
+      mockMCPService.isConnected.mockReturnValue(true);
+      mockMCPService.getTools.mockReturnValue([
+        {
+          name: "add",
+          description: "Add two numbers",
+          inputSchema: { type: "object", properties: {} },
+        },
+        {
+          name: "subtract",
+          description: "Subtract two numbers",
+          inputSchema: { type: "object", properties: {} },
+        },
+      ]);
+
+      await manager.startService("calculator");
+
+      // Verify that updateServerToolsConfig was called with correct parameters
+      expect(mockConfigManager.updateServerToolsConfig).toHaveBeenCalledWith(
+        "calculator",
+        {
+          add: {
+            description: "Add two numbers",
+            enable: true,
+          },
+          subtract: {
+            description: "Subtract two numbers",
+            enable: true,
+          },
+        }
+      );
+    });
+
+    it("should preserve existing tool enable status when syncing", async () => {
+      // Mock configManager to return existing config
+      mockConfigManager.getMcpServerConfig.mockReturnValue({
+        calculator: {
+          tools: {
+            add: {
+              description: "Old description",
+              enable: false, // User disabled this tool
+            },
+          },
+        },
+      });
+
+      // Mock service with updated tools
+      mockMCPService.isConnected.mockReturnValue(true);
+      mockMCPService.getTools.mockReturnValue([
+        {
+          name: "add",
+          description: "Add two numbers (updated)",
+          inputSchema: { type: "object", properties: {} },
+        },
+        {
+          name: "multiply",
+          description: "Multiply two numbers",
+          inputSchema: { type: "object", properties: {} },
+        },
+      ]);
+
+      await manager.startService("calculator");
+
+      // Verify that existing tool's enable status is preserved but description is updated
+      expect(mockConfigManager.updateServerToolsConfig).toHaveBeenCalledWith(
+        "calculator",
+        {
+          add: {
+            description: "Add two numbers (updated)",
+            enable: false, // Should preserve user's setting
+          },
+          multiply: {
+            description: "Multiply two numbers",
+            enable: true, // New tool should be enabled by default
+          },
+        }
+      );
+    });
+
+    it("should handle removed tools correctly", async () => {
+      // Mock configManager to return config with more tools than currently available
+      mockConfigManager.getMcpServerConfig.mockReturnValue({
+        calculator: {
+          tools: {
+            add: {
+              description: "Add two numbers",
+              enable: true,
+            },
+            subtract: {
+              description: "Subtract two numbers",
+              enable: false,
+            },
+            divide: {
+              description: "Divide two numbers",
+              enable: true,
+            },
+          },
+        },
+      });
+
+      // Mock service with fewer tools (divide tool removed)
+      mockMCPService.isConnected.mockReturnValue(true);
+      mockMCPService.getTools.mockReturnValue([
+        {
+          name: "add",
+          description: "Add two numbers",
+          inputSchema: { type: "object", properties: {} },
+        },
+        {
+          name: "subtract",
+          description: "Subtract two numbers",
+          inputSchema: { type: "object", properties: {} },
+        },
+      ]);
+
+      await manager.startService("calculator");
+
+      // Verify that only existing tools are included in the config
+      expect(mockConfigManager.updateServerToolsConfig).toHaveBeenCalledWith(
+        "calculator",
+        {
+          add: {
+            description: "Add two numbers",
+            enable: true,
+          },
+          subtract: {
+            description: "Subtract two numbers",
+            enable: false,
+          },
+          // divide tool should be removed
+        }
+      );
+    });
+
+    it("should not sync config if no changes detected", async () => {
+      // Mock configManager to return existing config that matches current tools
+      mockConfigManager.getMcpServerConfig.mockReturnValue({
+        calculator: {
+          tools: {
+            add: {
+              description: "Add two numbers",
+              enable: true,
+            },
+          },
+        },
+      });
+
+      // Mock service with same tools
+      mockMCPService.isConnected.mockReturnValue(true);
+      mockMCPService.getTools.mockReturnValue([
+        {
+          name: "add",
+          description: "Add two numbers",
+          inputSchema: { type: "object", properties: {} },
+        },
+      ]);
+
+      await manager.startService("calculator");
+
+      // Verify that updateServerToolsConfig was not called since no changes
+      expect(mockConfigManager.updateServerToolsConfig).not.toHaveBeenCalled();
+    });
+
+    it("should handle sync errors gracefully", async () => {
+      // Mock configManager to throw error
+      mockConfigManager.getMcpServerConfig.mockImplementation(() => {
+        throw new Error("Config read error");
+      });
+
+      mockMCPService.isConnected.mockReturnValue(true);
+      mockMCPService.getTools.mockReturnValue([
+        {
+          name: "add",
+          description: "Add two numbers",
+          inputSchema: { type: "object", properties: {} },
+        },
+      ]);
+
+      // Should not throw error, just log it
+      await expect(manager.startService("calculator")).resolves.not.toThrow();
+
+      // Verify error was logged
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.stringContaining("同步工具配置到配置文件失败"),
+        expect.any(Error)
+      );
     });
   });
 });
