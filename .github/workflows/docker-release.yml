@@ -20,11 +20,6 @@ on:
         required: false
         default: false
         type: boolean
-  workflow_run:
-    workflows: ["NPM 发布"]
-    types:
-      - completed
-    branches: [main, beta]
 
 permissions:
   contents: read
@@ -33,27 +28,20 @@ jobs:
   docker-release:
     name: Docker 发布
     runs-on: ubuntu-latest
-    # 只有在 NPM 发布成功完成或手动触发时才运行
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    # 只有在手动触发时才运行
+    if: github.event_name == 'workflow_dispatch'
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.branch || github.event.workflow_run.head_branch }}
+          ref: ${{ github.event.inputs.branch }}
           fetch-depth: 0
 
       - name: 确认触发方式和分支
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "手动触发 Docker 发布，从分支 ${{ github.event.inputs.branch }} 发布"
-            echo "指定版本: ${{ github.event.inputs.version || '自动获取' }}"
-            echo "强制更新 latest: ${{ github.event.inputs.force_latest }}"
-          else
-            echo "由 NPM 发布工作流自动触发 Docker 发布"
-            echo "触发分支: ${{ github.event.workflow_run.head_branch }}"
-          fi
+          echo "手动触发 Docker 发布，从分支 ${{ github.event.inputs.branch }} 发布"
+          echo "指定版本: ${{ github.event.inputs.version || '自动获取' }}"
+          echo "强制更新 latest: ${{ github.event.inputs.force_latest }}"
 
       - name: 安装 pnpm
         uses: pnpm/action-setup@v4
@@ -95,7 +83,7 @@ jobs:
       - name: 确定分支类型
         id: branch_info
         run: |
-          if [ "${{ github.event.inputs.branch }}" = "main" ] || [ "${{ github.event.workflow_run.head_branch }}" = "main" ]; then
+          if [ "${{ github.event.inputs.branch }}" = "main" ]; then
             echo "branch_type=stable" >> $GITHUB_OUTPUT
             echo "is_main_branch=true" >> $GITHUB_OUTPUT
             echo "分支类型: stable (main)"
@@ -154,7 +142,7 @@ jobs:
           echo ""
           echo "📦 发布信息:"
           echo "  版本号: ${{ steps.get_version.outputs.version_with_v }}"
-          echo "  分支: ${{ github.event.inputs.branch || github.event.workflow_run.head_branch }}"
+          echo "  分支: ${{ github.event.inputs.branch }}"
           echo "  分支类型: ${{ steps.branch_info.outputs.branch_type }}"
           echo ""
           echo "🏷️ Docker 标签:"
