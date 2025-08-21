@@ -112,31 +112,25 @@ async function main() {
   console.log("检查远程tag...");
   await checkExistingTag(version);
 
-  // 3. 更新版本号
-  console.log("更新版本号...");
-  const packageJsonPath = path.join(__dirname, "../package.json");
-
   try {
-    await updateVersionInFile(packageJsonPath, version);
-  } catch (error) {
-    console.error("更新版本号时出错:", error);
-    process.exit(1);
-  }
-
-  try {
-    // 5. 拉取主分支
+    // 3. 拉取主分支
     console.log("拉取主分支...");
     await execa("git", ["fetch", "origin"]);
 
-    // 6. 创建发布分支
+    // 4. 创建发布分支
     console.log("创建发布分支...");
     await execa("git", ["checkout", "-b", `release/${version}`, "origin/main"]);
 
-    // 7. 生成changelog
+    // 5. 更新版本号
+    console.log("更新版本号...");
+    const packageJsonPath = path.join(__dirname, "../package.json");
+    await updateVersionInFile(packageJsonPath, version);
+
+    // 6. 生成changelog
     console.log("生成 changelog...");
     await generateChangelog(version);
 
-    // 8. 提交并推送更改
+    // 7. 提交并推送更改
     console.log("提交更改...");
     await execa("git", ["add", "."]);
     await execa("git", ["commit", "-m", `release: ${version}`]);
