@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
-import { type ExecSyncOptions, execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { type SyncOptions, execaSync } from "execa";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -21,7 +21,7 @@ interface PackageJson {
 /**
  * 命令执行选项接口
  */
-interface CommandOptions extends ExecSyncOptions {
+interface CommandOptions extends SyncOptions {
   cwd?: string;
   stdio?: "inherit" | "pipe" | "ignore";
 }
@@ -31,18 +31,17 @@ interface CommandOptions extends ExecSyncOptions {
  * @param command - 要执行的命令
  * @param options - 执行选项
  */
-function executeCommand(
-  command: string,
-  options: CommandOptions = {}
-): Buffer | null {
+function executeCommand(command: string, options: CommandOptions = {}): string {
   console.log(`🔄 执行命令: ${command}`);
   try {
-    const result = execSync(command, {
+    // 将命令字符串分割为命令和参数
+    const [cmd, ...args] = command.split(" ");
+    const result = execaSync(cmd, args, {
       cwd: rootDir,
       stdio: "inherit",
       ...options,
     });
-    return result as Buffer;
+    return (result.stdout as string) || "";
   } catch (error: unknown) {
     console.error(`❌ 命令执行失败: ${command}`);
     if (error instanceof Error) {
