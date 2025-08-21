@@ -38,6 +38,7 @@
     "duplicate:check": "jscpd src/",
     "docker:update-version": "node scripts/update-dockerfile-version.js",
     "release": "npx tsx scripts/release.ts",
+    "publish": "npm publish",
     "publish:beta": "npx tsx scripts/publish-beta.ts",
     "example": "node --loader ts-node/esm"
   },
