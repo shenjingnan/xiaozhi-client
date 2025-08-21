@@ -12,8 +12,5 @@
 #
 # 然后重启容器，依赖会自动安装到虚拟环境中
 
-# 官方 MCP Python SDK - 核心协议实现
-mcp>=1.13.0
-
 # FastMCP - 构建 MCP 服务器的高级框架
-fastmcp>=2.11.0
+# fastmcp>=2.11.0
