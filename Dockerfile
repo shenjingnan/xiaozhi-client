@@ -9,11 +9,6 @@ FROM node:20
 # 例如: docker build --build-arg XIAOZHI_VERSION=1.6.0 .
 ARG XIAOZHI_VERSION=1.6.1
 
-# 配置国内镜像源以提升下载速度
-# 配置 Debian 镜像源为阿里云镜像
-RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources && \
-    sed -i 's/security.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources
-
 # 配置 npm 和 pnpm 使用国内镜像源
 # 设置 npm 注册表镜像
 RUN npm config set registry https://registry.npmmirror.com
