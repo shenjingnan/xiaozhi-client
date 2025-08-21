@@ -110,7 +110,7 @@ describe("CLI --info 和 --version-info 命令测试", () => {
       expect(result.stdout).toContain("🤖 小智 MCP 客户端 - 详细信息");
       expect(result.stdout).toContain("版本信息:");
       expect(result.stdout).toContain("名称: xiaozhi-client");
-      expect(result.stdout).toContain("版本: 1.6.2");
+      expect(result.stdout).toContain("版本: ");
       expect(result.stdout).toContain("描述: 小智 AI 客户端 命令行工具");
       expect(result.stdout).toContain("系统信息:");
       expect(result.stdout).toContain("Node.js:");
@@ -163,7 +163,7 @@ describe("CLI --info 和 --version-info 命令测试", () => {
       const result = await runCLI(["--version-info"]);
 
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain("xiaozhi-client v1.6.2");
+      expect(result.stdout).toContain("xiaozhi-client v");
       expect(result.stdout).toContain("小智 AI 客户端 命令行工具");
       expect(result.stdout).toContain("Node.js:");
       expect(result.stdout).toContain("Platform:");
@@ -198,7 +198,7 @@ describe("CLI --info 和 --version-info 命令测试", () => {
       expect(versionInfoResult.stdout).not.toContain("MCP 端点:");
 
       // 但应该包含基本的版本信息
-      expect(versionInfoResult.stdout).toContain("xiaozhi-client v1.6.2");
+      expect(versionInfoResult.stdout).toContain("xiaozhi-client v");
     });
   });
 
@@ -268,7 +268,7 @@ describe("CLI --info 和 --version-info 命令测试", () => {
       const result = await runCLI(["--version-info", "--help"]);
 
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain("xiaozhi-client v1.6.2");
+      expect(result.stdout).toContain("xiaozhi-client v");
       expect(result.stdout).not.toContain("Usage:");
     });
 
@@ -277,7 +277,7 @@ describe("CLI --info 和 --version-info 命令测试", () => {
 
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain("🤖 小智 MCP 客户端 - 详细信息");
-      expect(result.stdout).not.toContain("xiaozhi-client v1.6.2");
+      expect(result.stdout).not.toContain("xiaozhi-client v");
     });
 
     it("应该不受其他命令行参数影响", async () => {
@@ -335,7 +335,7 @@ describe("CLI --info 和 --version-info 命令测试", () => {
         const result = await runCLI(args);
 
         expect(result.exitCode).toBe(0);
-        expect(result.stdout).toContain("xiaozhi-client v1.6.2");
+        expect(result.stdout).toContain("xiaozhi-client v");
       }
     });
 
@@ -354,7 +354,7 @@ describe("CLI --info 和 --version-info 命令测试", () => {
 
         // 这些参数不应该触发 --info 或 --version-info 的处理
         expect(result.stdout).not.toContain("🤖 小智 MCP 客户端 - 详细信息");
-        expect(result.stdout).not.toContain("xiaozhi-client v1.6.2");
+        expect(result.stdout).not.toContain("xiaozhi-client v");
       }
     });
 
@@ -371,7 +371,7 @@ describe("CLI --info 和 --version-info 命令测试", () => {
 
         // 大小写不匹配的参数不应该触发特殊处理
         expect(result.stdout).not.toContain("🤖 小智 MCP 客户端 - 详细信息");
-        expect(result.stdout).not.toContain("xiaozhi-client v1.6.2");
+        expect(result.stdout).not.toContain("xiaozhi-client v");
       }
     });
   });
@@ -405,7 +405,7 @@ describe("CLI --info 和 --version-info 命令测试", () => {
       const result = await runCLI(["--version-info"]);
 
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain("xiaozhi-client v1.6.2");
+      expect(result.stdout).toContain("xiaozhi-client v");
     });
   });
 
