@@ -11,11 +11,13 @@ vi.mock("sonner", () => ({
   },
 }));
 
-const mockUpdateConfig = vi.fn().mockResolvedValue(undefined);
+const mockSendUpdateConfig = vi.fn().mockResolvedValue(undefined);
 
 vi.mock("@/providers/WebSocketProvider", () => ({
   useWebSocketContext: () => ({
-    updateConfig: mockUpdateConfig,
+    websocket: {
+      sendUpdateConfig: mockSendUpdateConfig,
+    },
   }),
 }));
 
@@ -34,7 +36,7 @@ vi.mock("@/stores/websocket", () => ({
 describe("AddMcpServerButton", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUpdateConfig.mockClear();
+    mockSendUpdateConfig.mockClear();
   });
 
   it("should render the add button", () => {
@@ -137,7 +139,7 @@ describe("AddMcpServerButton", () => {
     });
 
     await waitFor(() => {
-      expect(mockUpdateConfig).toHaveBeenCalledWith({
+      expect(mockSendUpdateConfig).toHaveBeenCalledWith({
         mcpEndpoint: "wss://test.example.com",
         mcpServers: {
           "existing-server": {
@@ -182,7 +184,7 @@ describe("AddMcpServerButton", () => {
     });
 
     await waitFor(() => {
-      expect(mockUpdateConfig).toHaveBeenCalledWith({
+      expect(mockSendUpdateConfig).toHaveBeenCalledWith({
         mcpEndpoint: "wss://test.example.com",
         mcpServers: {
           "existing-server": {
@@ -227,7 +229,7 @@ describe("AddMcpServerButton", () => {
     });
 
     await waitFor(() => {
-      expect(mockUpdateConfig).toHaveBeenCalledWith({
+      expect(mockSendUpdateConfig).toHaveBeenCalledWith({
         mcpEndpoint: "wss://test.example.com",
         mcpServers: {
           "existing-server": {
@@ -271,7 +273,7 @@ describe("AddMcpServerButton", () => {
     });
 
     await waitFor(() => {
-      expect(mockUpdateConfig).toHaveBeenCalledWith({
+      expect(mockSendUpdateConfig).toHaveBeenCalledWith({
         mcpEndpoint: "wss://test.example.com",
         mcpServers: {
           "existing-server": {
@@ -468,7 +470,7 @@ describe("AddMcpServerButton", () => {
       });
 
       await waitFor(() => {
-        expect(mockUpdateConfig).toHaveBeenCalledWith({
+        expect(mockSendUpdateConfig).toHaveBeenCalledWith({
           mcpEndpoint: "wss://test.example.com",
           mcpServers: {
             "existing-server": {

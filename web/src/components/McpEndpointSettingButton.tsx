@@ -189,7 +189,7 @@ export function McpEndpointSettingButton() {
         mcpEndpoint: updatedEndpoints,
       };
 
-      await updateConfig(updatedConfig);
+      await websocket.sendUpdateConfig(updatedConfig);
       toast.success("接入点添加成功");
       setAddDialogOpen(false);
       setNewEndpoint("");

@@ -1,17 +1,17 @@
+import { type ReactNode, createContext, useContext, useEffect } from "react";
 import {
-  type ReactNode,
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-import {
-  type PortChangeStatus,
-  type RestartStatus,
   WebSocketManager,
   type WebSocketState,
 } from "../services/WebSocketManager";
-import { useWebSocketStore } from "../stores/websocket";
+import {
+  useWebSocketConfig,
+  useWebSocketConnected,
+  useWebSocketPortChangeStatus,
+  useWebSocketRestartStatus,
+  useWebSocketStatus,
+  useWebSocketStore,
+  useWebSocketUrl,
+} from "../stores/websocket";
 import type { AppConfig, ClientStatus } from "../types";
 
 interface WebSocketContextType {
@@ -19,24 +19,14 @@ interface WebSocketContextType {
   manager: WebSocketManager;
   websocket: WebSocketManager;
 
-  // 状态信息
+  // 状态信息（直接从 Zustand store 获取）
   state: WebSocketState;
   connected: boolean;
   config: AppConfig | null;
   status: ClientStatus | null;
-  restartStatus?: RestartStatus;
-  portChangeStatus?: PortChangeStatus;
+  restartStatus?: any;
+  portChangeStatus?: any;
   wsUrl: string;
-
-  // 操作方法
-  getState: () => WebSocketState;
-  currentState: WebSocketState;
-  isConnected: boolean;
-  updateConfig: (config: AppConfig) => Promise<void>;
-  restartService: () => Promise<void>;
-  refreshStatus: () => void;
-  changePort: (port: number) => Promise<void>;
-  setCustomWsUrl: (url: string) => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
@@ -47,17 +37,8 @@ interface WebSocketProviderProps {
 
 export function WebSocketProvider({ children }: WebSocketProviderProps) {
   const manager = WebSocketManager.getInstance();
-  const [state, setState] = useState<WebSocketState>(manager.getState());
-  const [config, setConfig] = useState<AppConfig | null>(null);
-  const [status, setStatus] = useState<ClientStatus | null>(null);
-  const [restartStatus, setRestartStatus] = useState<RestartStatus | undefined>(
-    undefined
-  );
-  const [portChangeStatus, setPortChangeStatus] = useState<
-    PortChangeStatus | undefined
-  >(undefined);
 
-  // 同步状态到 Zustand store
+  // 获取 Zustand store 的状态更新方法
   const {
     setConnected,
     setConfig: setStoreConfig,
@@ -68,32 +49,29 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   } = useWebSocketStore();
 
   useEffect(() => {
-    // 监听状态变化
+    // 简化的事件处理函数，直接更新 Zustand store
     const handleStateChange = (newState: WebSocketState) => {
-      console.log("nemo handleStateChange", newState);
-      setState(newState);
+      console.log("[WebSocketProvider] 状态变化:", newState);
       setConnected(newState === "connected");
     };
 
     const handleConfigUpdate = (newConfig: AppConfig) => {
-      setConfig(newConfig);
+      console.log("[WebSocketProvider] 配置更新");
       setStoreConfig(newConfig);
     };
 
     const handleStatusUpdate = (newStatus: ClientStatus) => {
-      setStatus(newStatus);
+      console.log("[WebSocketProvider] 状态更新");
       setStoreStatus(newStatus);
     };
 
-    const handleRestartStatusUpdate = (newRestartStatus: RestartStatus) => {
-      setRestartStatus(newRestartStatus);
+    const handleRestartStatusUpdate = (newRestartStatus: any) => {
+      console.log("[WebSocketProvider] 重启状态更新");
       setStoreRestartStatus(newRestartStatus);
     };
 
-    const handlePortChangeStatusUpdate = (
-      newPortChangeStatus: PortChangeStatus
-    ) => {
-      setPortChangeStatus(newPortChangeStatus);
+    const handlePortChangeStatusUpdate = (newPortChangeStatus: any) => {
+      console.log("[WebSocketProvider] 端口切换状态更新");
       setStorePortChangeStatus(newPortChangeStatus);
     };
 
@@ -136,25 +114,24 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
     setWsUrl,
   ]);
 
+  // 直接从 Zustand store 获取状态
+  const connected = useWebSocketConnected();
+  const config = useWebSocketConfig();
+  const status = useWebSocketStatus();
+  const restartStatus = useWebSocketRestartStatus();
+  const portChangeStatus = useWebSocketPortChangeStatus();
+  const wsUrl = useWebSocketUrl();
+
   const contextValue: WebSocketContextType = {
     manager,
     websocket: manager,
-    state,
-    currentState: manager.getState(),
-    connected: manager.isConnected(),
+    state: manager.getState(),
+    connected,
     config,
     status,
     restartStatus,
     portChangeStatus,
-    wsUrl: manager.getCurrentUrl(),
-
-    isConnected: manager.isConnected(),
-    getState: () => manager.getState(),
-    updateConfig: (config: AppConfig) => manager.sendUpdateConfig(config),
-    restartService: () => manager.sendRestartService(),
-    refreshStatus: () => manager.sendGetStatus(),
-    changePort: (port: number) => manager.changePort(port),
-    setCustomWsUrl: (url: string) => manager.setCustomUrl(url),
+    wsUrl,
   };
 
   return (
