@@ -44,7 +44,7 @@ export function McpServerSettingButton({
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const config = useWebSocketConfig();
-  const { updateConfig } = useWebSocketContext();
+  const { websocket } = useWebSocketContext();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -85,7 +85,7 @@ export function McpServerSettingButton({
         },
       };
 
-      await updateConfig(updatedConfig);
+      await websocket.sendUpdateConfig(updatedConfig);
       toast.success("MCP服务器配置已更新");
       setOpen(false);
     } catch (error) {
