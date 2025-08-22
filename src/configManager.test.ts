@@ -39,6 +39,16 @@ vi.mock("node:url", () => ({
   fileURLToPath: vi.fn(),
 }));
 
+// Mock logger
+vi.mock("./Logger", () => ({
+  logger: {
+    info: vi.fn(),
+    debug: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+  },
+}));
+
 describe("ConfigManager", () => {
   let configManager: ConfigManager;
   const mockExistsSync = vi.mocked(existsSync);
@@ -1953,6 +1963,192 @@ describe("ConfigManager", () => {
             callTime
           )
         ).resolves.not.toThrow();
+      });
+    });
+
+    describe("清理无效的服务器工具配置", () => {
+      beforeEach(() => {
+        // 只让 JSON 文件存在，确保使用正确的文件格式
+        mockExistsSync.mockImplementation((path: PathLike) => {
+          if (path.toString().includes("xiaozhi.config.json5")) return false;
+          if (path.toString().includes("xiaozhi.config.jsonc")) return false;
+          if (path.toString().includes("xiaozhi.config.json")) return true;
+          return false;
+        });
+      });
+
+      it("应该清理不存在于mcpServers中的服务器工具配置", () => {
+        const configWithInvalidServers: AppConfig = {
+          ...mockConfig,
+          mcpServers: {
+            "test-server": {
+              command: "node",
+              args: ["test.js"],
+            },
+            // 注意：removed-server 不在 mcpServers 中
+          },
+          mcpServerConfig: {
+            "test-server": {
+              tools: {
+                "test-tool": {
+                  description: "Test tool",
+                  enable: true,
+                },
+              },
+            },
+            "removed-server": {
+              tools: {
+                "removed-tool": {
+                  description: "Removed tool",
+                  enable: true,
+                },
+              },
+            },
+            "another-removed-server": {
+              tools: {
+                "another-tool": {
+                  description: "Another removed tool",
+                  enable: false,
+                },
+              },
+            },
+          },
+        };
+
+        mockReadFileSync.mockReturnValue(
+          JSON.stringify(configWithInvalidServers)
+        );
+
+        configManager.cleanupInvalidServerToolsConfig();
+
+        expect(mockWriteFileSync).toHaveBeenCalledTimes(1);
+        const savedConfig = JSON.parse(
+          mockWriteFileSync.mock.calls[0][1] as string
+        );
+
+        // 验证只保留了有效的服务器配置
+        expect(savedConfig.mcpServerConfig).toEqual({
+          "test-server": {
+            tools: {
+              "test-tool": {
+                description: "Test tool",
+                enable: true,
+              },
+            },
+          },
+        });
+
+        // 验证无效的服务器配置被删除
+        expect(savedConfig.mcpServerConfig).not.toHaveProperty(
+          "removed-server"
+        );
+        expect(savedConfig.mcpServerConfig).not.toHaveProperty(
+          "another-removed-server"
+        );
+      });
+
+      it("应该在没有无效配置时不修改文件", () => {
+        const validConfig: AppConfig = {
+          ...mockConfig,
+          mcpServers: {
+            "test-server": {
+              command: "node",
+              args: ["test.js"],
+            },
+            "valid-server": {
+              command: "python",
+              args: ["server.py"],
+            },
+          },
+          mcpServerConfig: {
+            "test-server": {
+              tools: {
+                "test-tool": {
+                  description: "Test tool",
+                  enable: true,
+                },
+              },
+            },
+            "valid-server": {
+              tools: {
+                "valid-tool": {
+                  description: "Valid tool",
+                  enable: true,
+                },
+              },
+            },
+          },
+        };
+
+        mockReadFileSync.mockReturnValue(JSON.stringify(validConfig));
+
+        configManager.cleanupInvalidServerToolsConfig();
+
+        // 不应该调用 writeFileSync，因为没有需要清理的配置
+        expect(mockWriteFileSync).not.toHaveBeenCalled();
+      });
+
+      it("应该在mcpServerConfig不存在时不执行任何操作", () => {
+        const configWithoutServerConfig: AppConfig = {
+          ...mockConfig,
+          mcpServerConfig: undefined,
+        };
+
+        mockReadFileSync.mockReturnValue(
+          JSON.stringify(configWithoutServerConfig)
+        );
+
+        configManager.cleanupInvalidServerToolsConfig();
+
+        // 不应该调用 writeFileSync
+        expect(mockWriteFileSync).not.toHaveBeenCalled();
+      });
+
+      it("应该在mcpServerConfig为空对象时不执行任何操作", () => {
+        const configWithEmptyServerConfig: AppConfig = {
+          ...mockConfig,
+          mcpServerConfig: {},
+        };
+
+        mockReadFileSync.mockReturnValue(
+          JSON.stringify(configWithEmptyServerConfig)
+        );
+
+        configManager.cleanupInvalidServerToolsConfig();
+
+        // 不应该调用 writeFileSync
+        expect(mockWriteFileSync).not.toHaveBeenCalled();
+      });
+
+      it("应该处理mcpServers为空的情况", () => {
+        const configWithEmptyServers: AppConfig = {
+          ...mockConfig,
+          mcpServers: {},
+          mcpServerConfig: {
+            "orphaned-server": {
+              tools: {
+                "orphaned-tool": {
+                  description: "Orphaned tool",
+                  enable: true,
+                },
+              },
+            },
+          },
+        };
+
+        mockReadFileSync.mockReturnValue(
+          JSON.stringify(configWithEmptyServers)
+        );
+
+        configManager.cleanupInvalidServerToolsConfig();
+
+        expect(mockWriteFileSync).toHaveBeenCalledTimes(1);
+        const savedConfig = JSON.parse(
+          mockWriteFileSync.mock.calls[0][1] as string
+        );
+
+        // 所有服务器配置都应该被清理
+        expect(savedConfig.mcpServerConfig).toEqual({});
       });
     });
   });

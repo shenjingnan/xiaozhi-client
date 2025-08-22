@@ -5,6 +5,7 @@ import { configManager } from "./configManager";
 // Mock configManager
 vi.mock("./configManager", () => ({
   configManager: {
+    configExists: vi.fn(),
     getConfig: vi.fn(),
     getMcpEndpoint: vi.fn(),
     getMcpServers: vi.fn(),
@@ -17,6 +18,7 @@ vi.mock("./configManager", () => ({
     getWebUIPort: vi.fn(),
     setToolEnabled: vi.fn(),
     removeServerToolsConfig: vi.fn(),
+    cleanupInvalidServerToolsConfig: vi.fn(),
   },
 }));
 
@@ -32,6 +34,34 @@ vi.mock("node:child_process", () => ({
   })),
 }));
 
+// Mock MCPServiceManagerSingleton
+vi.mock("./services/MCPServiceManagerSingleton", () => ({
+  MCPServiceManagerSingleton: {
+    getInstance: vi.fn(() => ({
+      addServiceConfig: vi.fn(),
+      startAllServices: vi.fn(),
+      getAllTools: vi.fn(() => []),
+    })),
+  },
+}));
+
+// Mock XiaozhiConnectionManagerSingleton
+vi.mock("./services/XiaozhiConnectionManagerSingleton", () => ({
+  XiaozhiConnectionManagerSingleton: {
+    getInstance: vi.fn(() => ({
+      setServiceManager: vi.fn(),
+      initialize: vi.fn(),
+      connect: vi.fn(),
+      on: vi.fn(),
+    })),
+  },
+}));
+
+// Mock convertLegacyToNew
+vi.mock("./adapters/ConfigAdapter", () => ({
+  convertLegacyToNew: vi.fn((name, config) => config),
+}));
+
 describe("WebServer 配置清理功能", () => {
   let mockConfigManager: any;
   let webServer: WebServer;
@@ -41,6 +71,7 @@ describe("WebServer 配置清理功能", () => {
     mockConfigManager = vi.mocked(configManager);
 
     // 设置默认的 mock 返回值
+    mockConfigManager.configExists.mockReturnValue(true);
     mockConfigManager.getConfig.mockReturnValue({
       mcpEndpoint: "wss://test.endpoint",
       mcpServers: {
@@ -51,6 +82,7 @@ describe("WebServer 配置清理功能", () => {
     mockConfigManager.getMcpServers.mockReturnValue({
       test: { command: "node", args: ["test.js"] },
     });
+    mockConfigManager.getWebUIPort.mockReturnValue(9999);
   });
 
   afterEach(() => {
@@ -110,5 +142,101 @@ describe("WebServer 配置清理功能", () => {
       "calculator"
     );
     expect(mockConfigManager.removeServerToolsConfig).toHaveBeenCalledTimes(1);
+  });
+
+  describe("启动时配置清理", () => {
+    beforeEach(() => {
+      // Mock Hono and WebSocket
+      vi.doMock("hono", () => ({
+        Hono: vi.fn(() => ({
+          use: vi.fn(),
+          get: vi.fn(),
+          put: vi.fn(),
+          onError: vi.fn(),
+          fetch: vi.fn(),
+        })),
+      }));
+
+      vi.doMock("hono/cors", () => ({
+        cors: vi.fn(),
+      }));
+
+      vi.doMock("@hono/node-server", () => ({
+        serve: vi.fn(() => ({
+          close: vi.fn(),
+        })),
+        createServer: vi.fn(),
+      }));
+
+      vi.doMock("ws", () => ({
+        WebSocketServer: vi.fn(() => ({
+          clients: new Set(),
+          close: vi.fn(),
+        })),
+      }));
+    });
+
+    it("应该在启动时调用配置清理方法", async () => {
+      const webServer = new WebServer(9999);
+
+      // 模拟启动过程中的配置加载
+      try {
+        // @ts-ignore - 调用私有方法用于测试
+        await webServer.loadConfiguration();
+      } catch (error) {
+        // 忽略其他初始化错误，我们只关心配置清理是否被调用
+      }
+
+      // 验证配置清理方法被调用
+      expect(
+        mockConfigManager.cleanupInvalidServerToolsConfig
+      ).toHaveBeenCalledTimes(1);
+    });
+
+    it("应该在配置文件不存在时抛出错误而不调用清理方法", async () => {
+      mockConfigManager.configExists.mockReturnValue(false);
+
+      const webServer = new WebServer(9999);
+
+      // 应该抛出错误
+      await expect(async () => {
+        // @ts-ignore - 调用私有方法用于测试
+        await webServer.loadConfiguration();
+      }).rejects.toThrow("配置文件不存在");
+
+      // 验证配置清理方法没有被调用
+      expect(
+        mockConfigManager.cleanupInvalidServerToolsConfig
+      ).not.toHaveBeenCalled();
+    });
+
+    it("应该在清理配置后正常返回配置信息", async () => {
+      const expectedConfig = {
+        mcpEndpoint: "wss://test.endpoint",
+        mcpServers: {
+          test: { command: "node", args: ["test.js"] },
+        },
+        webUI: { port: 9999 },
+      };
+
+      mockConfigManager.getConfig.mockReturnValue(expectedConfig);
+
+      const webServer = new WebServer(9999);
+
+      // @ts-ignore - 调用私有方法用于测试
+      const config = await webServer.loadConfiguration();
+
+      // 验证配置清理方法被调用
+      expect(
+        mockConfigManager.cleanupInvalidServerToolsConfig
+      ).toHaveBeenCalledTimes(1);
+
+      // 验证返回的配置正确
+      expect(config).toEqual({
+        mcpEndpoint: expectedConfig.mcpEndpoint,
+        mcpServers: expectedConfig.mcpServers,
+        webUIPort: 9999,
+      });
+    });
   });
 });
