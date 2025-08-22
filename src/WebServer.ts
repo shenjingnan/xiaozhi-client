@@ -108,6 +108,10 @@ export class WebServer {
       throw new Error("配置文件不存在，请先运行 'xiaozhi init' 初始化配置");
     }
 
+    // 在加载配置前，先清理无效的服务器工具配置
+    // 确保 mcpServerConfig 与 mcpServers 保持同步
+    configManager.cleanupInvalidServerToolsConfig();
+
     const config = configManager.getConfig();
 
     return {

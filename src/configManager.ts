@@ -548,6 +548,40 @@ export class ConfigManager {
   }
 
   /**
+   * 清理无效的服务器工具配置
+   * 删除在 mcpServerConfig 中存在但在 mcpServers 中不存在的服务配置
+   */
+  public cleanupInvalidServerToolsConfig(): void {
+    const config = this.getMutableConfig();
+
+    // 如果没有 mcpServerConfig，无需清理
+    if (!config.mcpServerConfig) {
+      return;
+    }
+
+    const validServerNames = Object.keys(config.mcpServers);
+    const configuredServerNames = Object.keys(config.mcpServerConfig);
+
+    // 找出需要清理的服务名称
+    const invalidServerNames = configuredServerNames.filter(
+      (serverName) => !validServerNames.includes(serverName)
+    );
+
+    if (invalidServerNames.length > 0) {
+      // 删除无效的服务配置
+      for (const serverName of invalidServerNames) {
+        delete config.mcpServerConfig[serverName];
+      }
+
+      this.saveConfig(config);
+
+      logger.info(
+        `已清理 ${invalidServerNames.length} 个无效的服务工具配置: ${invalidServerNames.join(", ")}`
+      );
+    }
+  }
+
+  /**
    * 设置工具启用状态
    */
   public setToolEnabled(
