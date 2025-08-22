@@ -28,6 +28,9 @@ interface WebSocketContextType {
   wsUrl: string;
 
   // 操作方法
+  getState: () => WebSocketState;
+  currentState: WebSocketState;
+  isConnected: boolean;
   updateConfig: (config: AppConfig) => Promise<void>;
   restartService: () => Promise<void>;
   refreshStatus: () => void;
@@ -66,6 +69,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   useEffect(() => {
     // 监听状态变化
     const handleStateChange = (newState: WebSocketState) => {
+      console.log('nemo handleStateChange', newState)
       setState(newState);
       setConnected(newState === "connected");
     };
@@ -134,13 +138,16 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   const contextValue: WebSocketContextType = {
     manager,
     state,
-    connected: state === "connected",
+    currentState: manager.getState(),
+    connected: manager.isConnected(),
     config,
     status,
     restartStatus,
     portChangeStatus,
     wsUrl: manager.getCurrentUrl(),
 
+    isConnected: manager.isConnected(),
+    getState: () => manager.getState(),
     updateConfig: (config: AppConfig) => manager.sendUpdateConfig(config),
     restartService: () => manager.sendRestartService(),
     refreshStatus: () => manager.sendGetStatus(),

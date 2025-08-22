@@ -8,8 +8,8 @@ vi.mock("@/stores/websocket", () => ({
   useWebSocketConfig: vi.fn(),
 }));
 
-vi.mock("@/hooks/useWebSocket", () => ({
-  useWebSocket: vi.fn(),
+vi.mock("@/providers/WebSocketProvider", () => ({
+  useWebSocketContext: vi.fn(),
 }));
 
 vi.mock("@/components/AppSidebar", () => ({
@@ -46,18 +46,18 @@ vi.mock("sonner", () => ({
   },
 }));
 
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { useWebSocketContext } from "@/providers/WebSocketProvider";
 import { useWebSocketConfig } from "@/stores/websocket";
 
 const mockUseWebSocketConfig = useWebSocketConfig as ReturnType<typeof vi.fn>;
-const mockUseWebSocket = useWebSocket as ReturnType<typeof vi.fn>;
+const mockUseWebSocketContext = useWebSocketContext as ReturnType<typeof vi.fn>;
 
 describe("SettingsPage", () => {
   const mockUpdateConfig = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseWebSocket.mockReturnValue({
+    mockUseWebSocketContext.mockReturnValue({
       updateConfig: mockUpdateConfig,
     });
   });

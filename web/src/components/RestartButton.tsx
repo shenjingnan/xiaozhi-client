@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useWebSocketContext } from "@/providers/WebSocketProvider";
-import type { RestartStatus } from "@/services/WebSocketManager";
+import { WebSocketState, type RestartStatus } from "@/services/WebSocketManager";
+import { useWebSocketConnected } from "@/stores/websocket";
 import { RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -9,8 +10,6 @@ import { toast } from "sonner";
  * RestartButton 组件属性接口
  */
 export interface RestartButtonProps {
-  /** 重启回调函数 */
-  onRestart?: () => Promise<void> | void;
   /** 重启状态 */
   restartStatus?: RestartStatus;
   /** 是否禁用按钮 */
@@ -36,7 +35,6 @@ export interface RestartButtonProps {
  * 基于 ConfigEditor.tsx 中的重启服务功能实现
  */
 export function RestartButton({
-  onRestart,
   disabled = false,
   variant = "outline",
   className = "",
@@ -44,41 +42,27 @@ export function RestartButton({
   defaultText = "重启服务",
 }: RestartButtonProps) {
   const [isRestarting, setIsRestarting] = useState(false);
-  const { restartStatus, restartService } = useWebSocketContext();
+  const { restartService, getState } = useWebSocketContext();
+  // const connected = useWebSocketConnected();
 
-  // 监听重启状态变化
-  useEffect(() => {
-    if (restartStatus) {
-      if (
-        restartStatus.status === "completed" ||
-        restartStatus.status === "failed"
-      ) {
-        // 重启完成或失败时，清除 loading 状态
+  const checkStatus = () => {
+    setTimeout(() => {
+      if (getState() === WebSocketState.CONNECTED) {
         setIsRestarting(false);
+        toast.success("重启服务成功");
+        return;
       }
-    }
-  }, [restartStatus]);
+      checkStatus();
+    }, 1000);
+  };
 
   const handleRestart = async () => {
-    // if (!onRestart) return;
     if (isRestarting) {
       return;
     }
     restartService();
-
     setIsRestarting(true);
-    try {
-      if (onRestart) {
-        await onRestart();
-      }
-      // 成功时不再立即清除 loading 状态，等待 restartStatus 更新
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "重启服务时发生错误"
-      );
-      // 错误时立即清除 loading 状态
-      setIsRestarting(false);
-    }
+    checkStatus();
   };
 
   return (

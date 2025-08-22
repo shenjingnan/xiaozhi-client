@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { useWebSocketContext } from "@/providers/WebSocketProvider";
 import { useWebSocketConfig } from "@/stores/websocket";
 import type { AppConfig } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,7 +45,7 @@ const formSchema = z.object({
 
 export default function SettingsPage() {
   const config = useWebSocketConfig();
-  const { updateConfig } = useWebSocket();
+  const { updateConfig } = useWebSocketContext();
   console.log(config);
   const [isLoading, setIsLoading] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({

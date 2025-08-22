@@ -227,21 +227,10 @@ export class WebSocketManager {
    * 重启服务
    */
   async sendRestartService(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (this.ws?.readyState !== WebSocket.OPEN) {
-        reject(new Error("WebSocket 未连接"));
-        return;
-      }
-
-      console.log("[WebSocketManager] 发送重启请求");
-      this.send({ type: "restartService" });
-
-      // 由于服务重启会断开WebSocket连接，我们等待一段时间让服务重启
-      setTimeout(() => {
-        console.log("[WebSocketManager] 服务重启等待时间结束");
-        resolve();
-      }, 5000);
-    });
+    if (this.ws?.readyState !== WebSocket.OPEN) {
+      throw new Error("WebSocket 未连接");
+    }
+    this.send({ type: "restartService" });
   }
 
   /**
