@@ -79,6 +79,18 @@ describe("ServiceError", () => {
 
     expect(error.message).toBe("服务已经在运行 (PID: 1234)");
     expect(error.suggestions).toContain('请先运行 "xiaozhi stop" 停止现有服务');
+    expect(error.suggestions).toContain('或者使用 "xiaozhi restart" 重启服务');
+  });
+
+  it("should create auto restarting error", () => {
+    const error = ServiceError.autoRestarting(1234);
+
+    expect(error.message).toBe(
+      "检测到服务已在运行 (PID: 1234)，正在自动重启..."
+    );
+    expect(error.suggestions).toContain(
+      "如果不希望自动重启，请使用 xiaozhi stop 手动停止服务"
+    );
   });
 
   it("should create not running error", () => {

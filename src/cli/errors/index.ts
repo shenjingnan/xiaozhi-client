@@ -69,7 +69,15 @@ export class ServiceError extends CLIError {
   static alreadyRunning(pid: number): ServiceError {
     return new ServiceError(`服务已经在运行 (PID: ${pid})`, [
       '请先运行 "xiaozhi stop" 停止现有服务',
+      '或者使用 "xiaozhi restart" 重启服务',
     ]);
+  }
+
+  static autoRestarting(pid: number): ServiceError {
+    return new ServiceError(
+      `检测到服务已在运行 (PID: ${pid})，正在自动重启...`,
+      ["如果不希望自动重启，请使用 xiaozhi stop 手动停止服务"]
+    );
   }
 
   static notRunning(): ServiceError {
