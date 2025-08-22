@@ -51,7 +51,7 @@ export function WebUrlSettingButton() {
   const config = useWebSocketConfig();
   const connected = useWebSocketConnected();
   const portChangeStatus = useWebSocketPortChangeStatus();
-  const { changePort } = useWebSocketContext();
+  const { websocket } = useWebSocketContext();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -114,7 +114,7 @@ export function WebUrlSettingButton() {
           : `正在连接到端口 ${newPort}...`
       );
 
-      await changePort(newPort);
+      await websocket.changePort(newPort);
 
       // 成功提示
       toast.success(
