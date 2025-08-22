@@ -53,12 +53,14 @@ const mockUseWebSocketConfig = useWebSocketConfig as ReturnType<typeof vi.fn>;
 const mockUseWebSocketContext = useWebSocketContext as ReturnType<typeof vi.fn>;
 
 describe("SettingsPage", () => {
-  const mockUpdateConfig = vi.fn();
+  const mockSendUpdateConfig = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseWebSocketContext.mockReturnValue({
-      updateConfig: mockUpdateConfig,
+      websocket: {
+        sendUpdateConfig: mockSendUpdateConfig,
+      },
     });
   });
 
