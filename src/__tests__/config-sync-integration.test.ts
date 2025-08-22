@@ -37,8 +37,6 @@ vi.mock("../Logger", () => ({
   },
 }));
 
-
-
 describe("配置同步集成测试", () => {
   let configManager: ConfigManager;
   const mockExistsSync = vi.mocked(existsSync);
@@ -56,7 +54,9 @@ describe("配置同步集成测试", () => {
     configManager = ConfigManager.getInstance();
 
     // Setup default mocks
-    mockResolve.mockImplementation((dir: string, file: string) => `${dir}/${file}`);
+    mockResolve.mockImplementation(
+      (dir: string, file: string) => `${dir}/${file}`
+    );
 
     // Mock process.cwd and process.env
     vi.stubGlobal("process", {
