@@ -10,8 +10,27 @@ vi.mock("@/stores/websocket", () => ({
   useWebSocketConfig: vi.fn(),
 }));
 
-vi.mock("@/hooks/useWebSocket", () => ({
-  useWebSocket: vi.fn(),
+// Mock all child components that use WebSocketProvider
+vi.mock("@/components/AddMcpServerButton", () => ({
+  AddMcpServerButton: () => (
+    <div data-testid="add-mcp-server-button">Add MCP Server</div>
+  ),
+}));
+
+vi.mock("@/components/RestartButton", () => ({
+  RestartButton: () => <div data-testid="restart-button">Restart</div>,
+}));
+
+vi.mock("@/components/McpServerSettingButton", () => ({
+  McpServerSettingButton: () => (
+    <div data-testid="mcp-server-setting-button">Settings</div>
+  ),
+}));
+
+vi.mock("@/components/RemoveMcpServerButton", () => ({
+  RemoveMcpServerButton: () => (
+    <div data-testid="remove-mcp-server-button">Remove</div>
+  ),
 }));
 
 vi.mock("sonner", () => ({
@@ -100,7 +119,6 @@ describe("McpServerList", () => {
 
     // Setup mocks using dynamic imports
     const websocketModule = await import("@/stores/websocket");
-    const useWebSocketModule = await import("@/hooks/useWebSocket");
 
     vi.mocked(websocketModule.useWebSocketMcpServerConfig).mockReturnValue(
       mockMcpServerConfig
@@ -110,17 +128,6 @@ describe("McpServerList", () => {
       server2: { command: "node", args: ["server2.js"] },
     });
     vi.mocked(websocketModule.useWebSocketConfig).mockReturnValue(mockConfig);
-    vi.mocked(useWebSocketModule.useWebSocket).mockReturnValue({
-      updateConfig: mockUpdateConfig,
-      restartService: vi.fn(),
-      refreshStatus: vi.fn(),
-      wsUrl: "ws://localhost:9999",
-      setCustomWsUrl: vi.fn(),
-      changePort: vi.fn(),
-      connected: false,
-      config: null,
-      status: null,
-    });
   });
 
   it("should render enabled and disabled tools correctly", () => {
@@ -223,7 +230,6 @@ describe("McpServerList", () => {
   it("should show error when tool is not found", async () => {
     // Mock a scenario where updateConfig is not provided
     const websocketModule = await import("@/stores/websocket");
-    const useWebSocketModule = await import("@/hooks/useWebSocket");
 
     vi.mocked(websocketModule.useWebSocketMcpServerConfig).mockReturnValue({
       server1: {
@@ -231,19 +237,6 @@ describe("McpServerList", () => {
           "other-tool": { enable: true, description: "Other tool" },
         },
       },
-    });
-
-    // Mock useWebSocket to return undefined updateConfig
-    vi.mocked(useWebSocketModule.useWebSocket).mockReturnValue({
-      updateConfig: undefined as any,
-      restartService: vi.fn(),
-      refreshStatus: vi.fn(),
-      wsUrl: "ws://localhost:9999",
-      setCustomWsUrl: vi.fn(),
-      changePort: vi.fn(),
-      connected: false,
-      config: null,
-      status: null,
     });
 
     render(<McpServerList />); // No updateConfig prop to test the error case

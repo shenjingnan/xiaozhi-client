@@ -1,13 +1,14 @@
+import type { RestartStatus } from "@/services/WebSocketManager";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { vi } from "vitest";
-import { RestartButton, type RestartStatus } from "./RestartButton";
+import { RestartButton } from "./RestartButton";
 
-// Mock useWebSocket hook
+// Mock useWebSocketContext hook
 const mockRestartService = vi.fn();
 const mockRestartStatus: any = undefined;
 
-vi.mock("@/hooks/useWebSocket", () => ({
-  useWebSocket: () => ({
+vi.mock("@/providers/WebSocketProvider", () => ({
+  useWebSocketContext: () => ({
     restartService: mockRestartService,
     restartStatus: mockRestartStatus,
   }),

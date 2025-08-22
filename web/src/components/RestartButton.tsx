@@ -1,17 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { useWebSocketContext } from "@/providers/WebSocketProvider";
+import type { RestartStatus } from "@/services/WebSocketManager";
 import { RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-
-/**
- * 重启状态接口
- */
-export interface RestartStatus {
-  status: "restarting" | "completed" | "failed";
-  error?: string;
-  timestamp: number;
-}
 
 /**
  * RestartButton 组件属性接口
@@ -52,7 +44,7 @@ export function RestartButton({
   defaultText = "重启服务",
 }: RestartButtonProps) {
   const [isRestarting, setIsRestarting] = useState(false);
-  const { restartStatus, restartService } = useWebSocket();
+  const { restartStatus, restartService } = useWebSocketContext();
 
   // 监听重启状态变化
   useEffect(() => {

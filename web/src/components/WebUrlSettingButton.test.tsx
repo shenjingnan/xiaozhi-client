@@ -19,9 +19,9 @@ vi.mock("react-hook-form", () => ({
   }),
 }));
 
-// Mock the hooks
-vi.mock("@/hooks/useWebSocket", () => ({
-  useWebSocket: () => ({
+// Mock the WebSocketProvider
+vi.mock("@/providers/WebSocketProvider", () => ({
+  useWebSocketContext: () => ({
     updateConfig: vi.fn(),
     changePort: vi.fn(),
   }),

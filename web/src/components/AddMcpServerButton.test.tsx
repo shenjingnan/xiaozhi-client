@@ -13,8 +13,8 @@ vi.mock("sonner", () => ({
 
 const mockUpdateConfig = vi.fn().mockResolvedValue(undefined);
 
-vi.mock("@/hooks/useWebSocket", () => ({
-  useWebSocket: () => ({
+vi.mock("@/providers/WebSocketProvider", () => ({
+  useWebSocketContext: () => ({
     updateConfig: mockUpdateConfig,
   }),
 }));
