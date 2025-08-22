@@ -182,6 +182,46 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
       expect(mockWebServerInstance.start).toHaveBeenCalled();
     });
 
+    it("如果停止现有服务失败应继续启动新服务", async () => {
+      // 第一次调用返回服务正在运行
+      (mockProcessManager.getServiceStatus as any)
+        .mockReturnValueOnce({
+          running: true,
+          pid: 1234,
+        })
+        // 第二次调用（停止后）返回服务未运行
+        .mockReturnValueOnce({
+          running: false,
+        });
+
+      // Mock gracefulKillProcess 抛出错误
+      const stopError = new Error("无法停止进程");
+      mockProcessManager.gracefulKillProcess = vi
+        .fn()
+        .mockRejectedValue(stopError);
+      mockProcessManager.cleanupPidFile = vi.fn();
+
+      // Mock console.warn 来验证警告信息
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      await serviceManager.start(defaultOptions);
+
+      // 验证调用了停止进程的方法
+      expect(mockProcessManager.gracefulKillProcess).toHaveBeenCalledWith(1234);
+      // 注意：当 gracefulKillProcess 失败时，cleanupPidFile 不会在 catch 块中被调用
+      // 这是当前实现的行为，所以我们不应该期望它被调用
+
+      // 验证输出了警告信息
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "停止现有服务时出现警告: 无法停止进程"
+      );
+
+      // 验证最终仍然启动了服务
+      expect(mockWebServerInstance.start).toHaveBeenCalled();
+
+      consoleSpy.mockRestore();
+    });
+
     it("如果配置不存在应抛出错误", async () => {
       mockConfigManager.configExists.mockReturnValue(false);
 
@@ -573,6 +613,45 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
       expect(mockProcessManager.gracefulKillProcess).not.toHaveBeenCalled();
       expect(mockWebServerInstance.start).toHaveBeenCalled();
     });
+
+    it("应处理重启过程中的错误", async () => {
+      const options: ServiceStartOptions = { daemon: false, ui: false };
+
+      // Mock running service
+      (mockProcessManager.getServiceStatus as any)
+        .mockReturnValueOnce({ running: true, pid: 1234 }) // restart() check
+        .mockReturnValueOnce({ running: true, pid: 1234 }); // stop() check
+
+      // Mock gracefulKillProcess to throw error (this will cause stop() to throw)
+      const killError = new Error("无法停止进程");
+      mockProcessManager.gracefulKillProcess = vi
+        .fn()
+        .mockRejectedValue(killError);
+
+      await expect(serviceManager.restart(options)).rejects.toThrow(
+        ServiceError
+      );
+    });
+
+    it("应处理启动过程中的错误", async () => {
+      const options: ServiceStartOptions = { daemon: false, ui: false };
+
+      // Mock service not running
+      (mockProcessManager.getServiceStatus as any)
+        .mockReturnValueOnce({ running: false }) // restart() check
+        .mockReturnValueOnce({ running: false }); // start() check
+
+      // Mock WebServer start to throw error
+      const startError = new Error("启动失败");
+      mockWebServerInstance.start.mockRejectedValue(startError);
+
+      await expect(serviceManager.restart(options)).rejects.toThrow(
+        ServiceError
+      );
+      await expect(serviceManager.restart(options)).rejects.toThrow(
+        "重启服务失败: 服务启动失败: 启动失败"
+      );
+    });
   });
 
   describe("getStatus 获取状态", () => {
@@ -612,6 +691,34 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
       mockConfigManager.getConfig.mockReturnValue({ valid: true });
 
       expect(() => (serviceManager as any).checkEnvironment()).not.toThrow();
+    });
+
+    it("应处理配置获取时的异常", () => {
+      mockConfigManager.configExists.mockReturnValue(true);
+      mockConfigManager.getConfig.mockImplementation(() => {
+        throw new Error("配置解析失败");
+      });
+
+      expect(() => (serviceManager as any).checkEnvironment()).toThrow(
+        ConfigError
+      );
+      expect(() => (serviceManager as any).checkEnvironment()).toThrow(
+        "配置文件错误: 配置解析失败"
+      );
+    });
+
+    it("应处理非 Error 类型的异常", () => {
+      mockConfigManager.configExists.mockReturnValue(true);
+      mockConfigManager.getConfig.mockImplementation(() => {
+        throw "字符串错误";
+      });
+
+      expect(() => (serviceManager as any).checkEnvironment()).toThrow(
+        ConfigError
+      );
+      expect(() => (serviceManager as any).checkEnvironment()).toThrow(
+        "配置文件错误: 字符串错误"
+      );
     });
   });
 
