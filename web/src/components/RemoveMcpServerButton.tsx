@@ -22,7 +22,7 @@ export function RemoveMcpServerButton({
   mcpServerName: string;
 }) {
   const [isLoading, setIsLoading] = useState(false);
-  const { updateConfig } = useWebSocketContext();
+  const { websocket } = useWebSocketContext();
   const config = useWebSocketConfig();
 
   const onRemove = async () => {
@@ -55,7 +55,7 @@ export function RemoveMcpServerButton({
       };
 
       // 更新配置
-      await updateConfig(newConfig);
+      await websocket.sendUpdateConfig(newConfig);
 
       toast.success(`MCP 服务 "${mcpServerName}" 已删除`);
     } catch (error) {
