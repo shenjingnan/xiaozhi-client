@@ -37,7 +37,7 @@ const formSchema = z.object({
 export function AddMcpServerButton() {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { updateConfig } = useWebSocketContext();
+  const { websocket } = useWebSocketContext();
   const config = useWebSocketConfig();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -221,7 +221,7 @@ export function AddMcpServerButton() {
         },
       };
 
-      await updateConfig(updatedConfig);
+      await websocket.sendUpdateConfig(updatedConfig);
 
       // 成功反馈
       const addedCount = Object.keys(parsedServers).length;

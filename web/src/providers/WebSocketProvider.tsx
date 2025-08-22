@@ -17,6 +17,7 @@ import type { AppConfig, ClientStatus } from "../types";
 interface WebSocketContextType {
   // WebSocket 管理器实例
   manager: WebSocketManager;
+  websocket: WebSocketManager;
 
   // 状态信息
   state: WebSocketState;
@@ -69,7 +70,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   useEffect(() => {
     // 监听状态变化
     const handleStateChange = (newState: WebSocketState) => {
-      console.log('nemo handleStateChange', newState)
+      console.log("nemo handleStateChange", newState);
       setState(newState);
       setConnected(newState === "connected");
     };
@@ -137,6 +138,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
 
   const contextValue: WebSocketContextType = {
     manager,
+    websocket: manager,
     state,
     currentState: manager.getState(),
     connected: manager.isConnected(),
