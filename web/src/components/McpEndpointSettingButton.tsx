@@ -83,7 +83,7 @@ export function McpEndpointSettingButton() {
 
   const config = useWebSocketConfig();
   const mcpEndpoint = useMcpEndpoint();
-  const { updateConfig } = useWebSocketContext();
+  const { websocket } = useWebSocketContext();
 
   // 复制接入点地址到剪贴板
   const handleCopy = async (endpoint: string) => {
@@ -142,7 +142,7 @@ export function McpEndpointSettingButton() {
         mcpEndpoint: newMcpEndpoint,
       };
 
-      await updateConfig(updatedConfig);
+      await websocket.sendUpdateConfig(updatedConfig);
       toast.success("接入点已删除");
       setDeleteConfirmOpen(false);
       setEndpointToDelete("");
