@@ -28,6 +28,7 @@ vi.mock("../configManager.js", () => ({
     getPort: vi.fn(),
     getWebUIPort: vi.fn(),
     configExists: vi.fn(),
+    cleanupInvalidServerToolsConfig: vi.fn(),
     on: vi.fn(),
     off: vi.fn(),
   },
@@ -73,7 +74,7 @@ vi.mock("../services/XiaozhiConnectionManagerSingleton.js", () => ({
   },
 }));
 
-describe("WebServer Integration Tests", () => {
+describe("WebServer 集成测试", () => {
   let webServer: any;
   const basePort = 3001;
   let currentTestPort = basePort;
@@ -135,8 +136,8 @@ describe("WebServer Integration Tests", () => {
     await XiaozhiConnectionManagerSingleton.cleanup();
   });
 
-  describe("Multi-endpoint Connection Management", () => {
-    it("should initialize with multiple endpoints", async () => {
+  describe("多端点连接管理", () => {
+    it("应该能够初始化多个端点", async () => {
       // 启动 WebServer（不实际启动服务器，只测试连接管理器）
       try {
         await webServer.start();
@@ -154,7 +155,7 @@ describe("WebServer Integration Tests", () => {
       );
     });
 
-    it("should handle single endpoint configuration", async () => {
+    it("应该能够处理单端点配置", async () => {
       // 配置单个端点
       vi.mocked(configManager.getMcpEndpoints).mockReturnValue([
         "wss://single.example.com",
@@ -179,7 +180,7 @@ describe("WebServer Integration Tests", () => {
       );
     });
 
-    it("should handle empty endpoint configuration", async () => {
+    it("应该能够处理空端点配置", async () => {
       // 配置空端点
       vi.mocked(configManager.getMcpEndpoints).mockReturnValue([]);
       vi.mocked(configManager.getConfig).mockReturnValue({
@@ -196,7 +197,7 @@ describe("WebServer Integration Tests", () => {
       expect(connectionStatus.connected).toBe(false);
     });
 
-    it("should handle invalid endpoint configuration", async () => {
+    it("应该能够处理无效端点配置", async () => {
       // 配置无效端点
       vi.mocked(configManager.getMcpEndpoints).mockReturnValue([
         "<请填写小智接入点>",
@@ -243,8 +244,8 @@ describe("WebServer Integration Tests", () => {
     });
   });
 
-  describe("Fallback to Single Connection Mode", () => {
-    it("should fallback to single connection mode when manager fails", async () => {
+  describe("回退到单连接模式", () => {
+    it("应该在管理器失败时回退到单连接模式", async () => {
       // Mock 连接管理器初始化失败
       const originalGetInstance = XiaozhiConnectionManagerSingleton.getInstance;
       vi.spyOn(
@@ -267,8 +268,8 @@ describe("WebServer Integration Tests", () => {
     });
   });
 
-  describe("Connection Status API", () => {
-    it("should provide detailed connection status for multi-endpoint", async () => {
+  describe("连接状态 API", () => {
+    it("应该为多端点提供详细的连接状态", async () => {
       await webServer.start();
 
       const connectionStatus = webServer.getXiaozhiConnectionStatus();
@@ -286,7 +287,7 @@ describe("WebServer Integration Tests", () => {
       });
     });
 
-    it("should provide connection status for single-endpoint fallback", async () => {
+    it("应该为单端点回退提供连接状态", async () => {
       // Mock 连接管理器失败，触发单连接模式
       vi.spyOn(
         XiaozhiConnectionManagerSingleton,
@@ -304,7 +305,7 @@ describe("WebServer Integration Tests", () => {
       });
     });
 
-    it("should provide connection status when no connections", async () => {
+    it("应该在无连接时提供连接状态", async () => {
       // 配置无端点
       vi.mocked(configManager.getMcpEndpoints).mockReturnValue([]);
       vi.mocked(configManager.getConfig).mockReturnValue({
@@ -325,13 +326,13 @@ describe("WebServer Integration Tests", () => {
     });
   });
 
-  describe("Server Lifecycle", () => {
-    it("should start and stop server successfully", async () => {
+  describe("服务器生命周期", () => {
+    it("应该能够成功启动和停止服务器", async () => {
       await expect(webServer.start()).resolves.not.toThrow();
       await expect(webServer.stop()).resolves.not.toThrow();
     });
 
-    it("should handle multiple start calls gracefully", async () => {
+    it("应该能够优雅地处理多次启动调用", async () => {
       await webServer.start();
 
       // 第二次启动应该不抛出错误
@@ -341,14 +342,14 @@ describe("WebServer Integration Tests", () => {
       await webServer.stop();
     });
 
-    it("should handle stop without start", async () => {
+    it("应该能够处理未启动就停止的情况", async () => {
       // 未启动就停止应该不抛出错误
       await expect(webServer.stop()).resolves.not.toThrow();
     });
   });
 
-  describe("Error Handling", () => {
-    it("should handle configuration errors gracefully", async () => {
+  describe("错误处理", () => {
+    it("应该能够优雅地处理配置错误", async () => {
       // Mock 配置错误
       vi.mocked(configManager.getConfig).mockImplementation(() => {
         throw new Error("Configuration error");
@@ -363,7 +364,7 @@ describe("WebServer Integration Tests", () => {
       expect(connectionStatus.connected).toBe(false);
     });
 
-    it("should handle service manager initialization errors", async () => {
+    it("应该能够处理服务管理器初始化错误", async () => {
       // Mock 服务管理器错误
       const { MCPServiceManagerSingleton } = await import(
         "../services/MCPServiceManagerSingleton.js"
