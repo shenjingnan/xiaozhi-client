@@ -114,24 +114,17 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
     setWsUrl,
   ]);
 
-  // 直接从 Zustand store 获取状态
-  const connected = useWebSocketConnected();
-  const config = useWebSocketConfig();
-  const status = useWebSocketStatus();
-  const restartStatus = useWebSocketRestartStatus();
-  const portChangeStatus = useWebSocketPortChangeStatus();
-  const wsUrl = useWebSocketUrl();
-
+  // 简化的 contextValue，只提供 WebSocketManager 实例
   const contextValue: WebSocketContextType = {
     manager,
     websocket: manager,
     state: manager.getState(),
-    connected,
-    config,
-    status,
-    restartStatus,
-    portChangeStatus,
-    wsUrl,
+    connected: false, // 这些值不再通过 Context 传递，仅为类型兼容
+    config: null,
+    status: null,
+    restartStatus: undefined,
+    portChangeStatus: undefined,
+    wsUrl: "",
   };
 
   return (
@@ -152,14 +145,31 @@ export function useWebSocketActions() {
 }
 
 /**
- * 新的 hook 名称，更符合语义
+ * 新的 hook 实现，直接从 Zustand store 获取状态
  */
 export function useWebSocketContext() {
-  const context = useContext(WebSocketContext);
-  if (!context) {
-    throw new Error(
-      "useWebSocketContext must be used within a WebSocketProvider"
-    );
-  }
-  return context;
+  const manager = WebSocketManager.getInstance();
+
+  // 直接从 Zustand store 获取状态
+  const connected = useWebSocketConnected();
+  const config = useWebSocketConfig();
+  const status = useWebSocketStatus();
+  const restartStatus = useWebSocketRestartStatus();
+  const portChangeStatus = useWebSocketPortChangeStatus();
+  const wsUrl = useWebSocketUrl();
+
+  return {
+    // WebSocket 管理器实例
+    manager,
+    websocket: manager,
+
+    // 状态信息（直接从 Zustand store 获取）
+    state: manager.getState(),
+    connected,
+    config,
+    status,
+    restartStatus,
+    portChangeStatus,
+    wsUrl,
+  };
 }
