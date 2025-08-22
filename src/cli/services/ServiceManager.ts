@@ -37,7 +37,26 @@ export class ServiceManagerImpl implements IServiceManager {
       // 检查服务是否已经在运行
       const status = this.getStatus();
       if (status.running) {
-        throw ServiceError.alreadyRunning(status.pid!);
+        // 自动停止现有服务并重新启动
+        console.log(`检测到服务已在运行 (PID: ${status.pid})，正在自动重启...`);
+
+        try {
+          // 优雅停止现有进程
+          await this.processManager.gracefulKillProcess(status.pid!);
+
+          // 清理 PID 文件
+          this.processManager.cleanupPidFile();
+
+          // 等待一下确保完全停止
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+
+          console.log("现有服务已停止，正在启动新服务...");
+        } catch (stopError) {
+          console.warn(
+            `停止现有服务时出现警告: ${stopError instanceof Error ? stopError.message : String(stopError)}`
+          );
+          // 继续尝试启动新服务，因为旧进程可能已经不存在了
+        }
       }
 
       // 检查环境配置

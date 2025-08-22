@@ -154,15 +154,32 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
       mode: "normal",
     };
 
-    it("如果服务已在运行应抛出错误", async () => {
-      (mockProcessManager.getServiceStatus as any).mockReturnValue({
-        running: true,
-        pid: 1234,
-      });
+    it("如果服务已在运行应自动重启", async () => {
+      // 第一次调用返回服务正在运行
+      (mockProcessManager.getServiceStatus as any)
+        .mockReturnValueOnce({
+          running: true,
+          pid: 1234,
+        })
+        // 第二次调用（停止后）返回服务未运行
+        .mockReturnValueOnce({
+          running: false,
+        });
 
-      await expect(serviceManager.start(defaultOptions)).rejects.toThrow(
-        ServiceError
-      );
+      // Mock gracefulKillProcess 方法
+      mockProcessManager.gracefulKillProcess = vi
+        .fn()
+        .mockResolvedValue(undefined);
+      mockProcessManager.cleanupPidFile = vi.fn();
+
+      await serviceManager.start(defaultOptions);
+
+      // 验证调用了停止进程的方法
+      expect(mockProcessManager.gracefulKillProcess).toHaveBeenCalledWith(1234);
+      expect(mockProcessManager.cleanupPidFile).toHaveBeenCalled();
+
+      // 验证最终启动了服务
+      expect(mockWebServerInstance.start).toHaveBeenCalled();
     });
 
     it("如果配置不存在应抛出错误", async () => {
