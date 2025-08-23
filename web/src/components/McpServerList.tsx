@@ -7,6 +7,7 @@ import {
   useWebSocketMcpServers,
 } from "@/stores/websocket";
 import type { MCPServerConfig } from "@/types";
+import { useWebSocketContext } from "@/providers/WebSocketProvider";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
 import { CoffeeIcon, MinusIcon, PlusIcon, Wrench } from "lucide-react";
 import { useMemo } from "react";
@@ -24,6 +25,7 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
   const mcpServerConfig = useWebSocketMcpServerConfig();
   const mcpServers = useWebSocketMcpServers();
   const config = useWebSocketConfig();
+  const { websocket } = useWebSocketContext();
 
   const tools = useMemo(() => {
     return Object.entries(mcpServerConfig || {}).flatMap(
@@ -72,7 +74,7 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
       };
 
       // 更新配置
-      await updateConfig(newConfig);
+      await websocket.sendUpdateConfig(newConfig);
 
       // 显示成功提示
       const action = !currentEnable ? "启用" : "禁用";
