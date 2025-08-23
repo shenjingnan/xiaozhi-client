@@ -4,4 +4,5 @@
  */
 
 export { RouteManager } from "./RouteManager.js";
+export { StaticRoutes } from "./StaticRoutes.js";
 export * from "./api/index.js";
