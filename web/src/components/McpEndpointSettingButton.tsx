@@ -21,7 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { useWebSocketContext } from "@/providers/WebSocketProvider";
 import { useMcpEndpoint, useWebSocketConfig } from "@/stores/websocket";
 import {
   BadgeInfoIcon,
@@ -83,7 +83,7 @@ export function McpEndpointSettingButton() {
 
   const config = useWebSocketConfig();
   const mcpEndpoint = useMcpEndpoint();
-  const { updateConfig } = useWebSocket();
+  const { websocket } = useWebSocketContext();
 
   // 复制接入点地址到剪贴板
   const handleCopy = async (endpoint: string) => {
@@ -142,7 +142,7 @@ export function McpEndpointSettingButton() {
         mcpEndpoint: newMcpEndpoint,
       };
 
-      await updateConfig(updatedConfig);
+      await websocket.sendUpdateConfig(updatedConfig);
       toast.success("接入点已删除");
       setDeleteConfirmOpen(false);
       setEndpointToDelete("");
@@ -189,7 +189,7 @@ export function McpEndpointSettingButton() {
         mcpEndpoint: updatedEndpoints,
       };
 
-      await updateConfig(updatedConfig);
+      await websocket.sendUpdateConfig(updatedConfig);
       toast.success("接入点添加成功");
       setAddDialogOpen(false);
       setNewEndpoint("");

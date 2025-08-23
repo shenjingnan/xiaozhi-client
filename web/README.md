@@ -76,9 +76,14 @@ web/
 │   │   ├── MCPServerList.tsx   # MCP 服务列表
 │   │   └── StatusCard.tsx      # 状态卡片
 │   ├── hooks/           # 自定义 React Hooks
-│   │   └── useWebSocket.ts     # WebSocket 连接管理
 │   ├── pages/           # 页面组件
 │   │   └── Dashboard.tsx       # 主控制台页面
+│   ├── providers/       # React Context Providers
+│   │   └── WebSocketProvider.tsx  # WebSocket 连接管理
+│   ├── services/        # 业务服务层
+│   │   └── WebSocketManager.ts    # WebSocket 单例管理器
+│   ├── stores/          # Zustand 状态管理
+│   │   └── websocket.ts           # WebSocket 状态存储
 │   ├── types/           # TypeScript 类型定义
 │   ├── utils/           # 工具函数
 │   ├── App.tsx          # 应用主组件
@@ -87,6 +92,61 @@ web/
 ├── public/              # 静态资源
 ├── tests/               # 测试文件
 └── package.json         # 项目配置
+```
+
+### WebSocket 连接管理
+
+项目使用单例模式的 WebSocketManager 管理所有 WebSocket 连接：
+
+#### 基本使用
+
+```typescript
+import { useWebSocketContext } from '@/providers/WebSocketProvider';
+
+function MyComponent() {
+  const { connected, config, updateConfig, restartService } = useWebSocketContext();
+
+  // 使用连接状态
+  if (!connected) {
+    return <div>连接中...</div>;
+  }
+
+  // 更新配置
+  const handleUpdateConfig = async (newConfig) => {
+    await updateConfig(newConfig);
+  };
+
+  // 重启服务
+  const handleRestart = async () => {
+    await restartService();
+  };
+
+  return (
+    <div>
+      <button onClick={handleUpdateConfig}>更新配置</button>
+      <button onClick={handleRestart}>重启服务</button>
+    </div>
+  );
+}
+```
+
+#### 高级用法
+
+```typescript
+import { WebSocketManager } from '@/services/WebSocketManager';
+
+// 直接使用 WebSocketManager
+const manager = WebSocketManager.getInstance();
+
+// 监听状态变化
+manager.on('stateChange', (state) => {
+  console.log('连接状态变化:', state);
+});
+
+// 监听配置更新
+manager.on('configUpdate', (config) => {
+  console.log('配置更新:', config);
+});
 ```
 
 ### UI 组件说明

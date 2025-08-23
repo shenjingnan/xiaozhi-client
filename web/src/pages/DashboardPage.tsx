@@ -3,11 +3,11 @@ import { DashboardStatusCard } from "@/components/DashboardStatusCard";
 import { McpServerList } from "@/components/McpServerList";
 import { SiteHeader } from "@/components/SiteHeder";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { useWebSocketActions } from "@/providers/WebSocketProvider";
+import { useWebSocketContext } from "@/providers/WebSocketProvider";
 
 export default function DashboardPage() {
-  // 从 WebSocketProvider 获取操作方法
-  const { updateConfig } = useWebSocketActions();
+  // 从 WebSocketProvider 获取 WebSocket 管理器
+  const { websocket } = useWebSocketContext();
 
   return (
     <SidebarProvider>
@@ -18,7 +18,9 @@ export default function DashboardPage() {
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               <DashboardStatusCard />
-              <McpServerList updateConfig={updateConfig} />
+              <McpServerList
+                updateConfig={(config) => websocket.sendUpdateConfig(config)}
+              />
             </div>
           </div>
         </div>

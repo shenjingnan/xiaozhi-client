@@ -17,7 +17,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { useWebSocketContext } from "@/providers/WebSocketProvider";
 import {
   useWebSocketConfig,
   useWebSocketConnected,
@@ -51,7 +51,7 @@ export function WebUrlSettingButton() {
   const config = useWebSocketConfig();
   const connected = useWebSocketConnected();
   const portChangeStatus = useWebSocketPortChangeStatus();
-  const { changePort } = useWebSocket();
+  const { websocket } = useWebSocketContext();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -114,7 +114,7 @@ export function WebUrlSettingButton() {
           : `正在连接到端口 ${newPort}...`
       );
 
-      await changePort(newPort);
+      await websocket.changePort(newPort);
 
       // 成功提示
       toast.success(
