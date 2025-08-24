@@ -15,9 +15,13 @@ import { MCPServiceManagerSingleton } from "./services/MCPServiceManagerSingleto
 import type { XiaozhiConnectionManager } from "./services/XiaozhiConnectionManager.js";
 import { XiaozhiConnectionManagerSingleton } from "./services/XiaozhiConnectionManagerSingleton.js";
 import { RouteManager } from "./routes/RouteManager.js";
-import { ConfigRoutes, StatusRoutes, StaticRoutes } from "./routes/index.js";
+import { ConfigRoutes, StaticRoutes, StatusRoutes } from "./routes/index.js";
 import { WebSocketManager } from "./websocket/WebSocketManager.js";
-import { ConfigHandler, StatusHandler, ServiceHandler } from "./websocket/handlers/index.js";
+import {
+  ConfigHandler,
+  ServiceHandler,
+  StatusHandler,
+} from "./websocket/handlers/index.js";
 
 // 硬编码常量已移除，改为配置驱动
 interface ClientInfo {

@@ -60,10 +60,12 @@ export class StaticRoutes implements RouteHandler {
 
       // 确定web目录路径
       const possibleWebPaths = [
-        join(__dirname, "..", "..", "web", "dist"), // 构建后的目录
-        join(__dirname, "..", "..", "web"), // 开发目录
-        join(process.cwd(), "web", "dist"), // 当前工作目录
-        join(process.cwd(), "web"),
+        join(process.cwd(), "web", "dist"), // 当前工作目录（优先）
+        join(process.cwd(), "web"), // 开发目录
+        join(__dirname, "..", "..", "web", "dist"), // 从源码目录计算
+        join(__dirname, "..", "..", "web"), // 从源码目录计算（开发）
+        join(__dirname, "..", "web", "dist"), // 从 dist 目录计算
+        join(__dirname, "..", "web"), // 从 dist 目录计算（开发）
       ];
 
       const webPath = possibleWebPaths.find((p) => existsSync(p));
@@ -136,11 +138,11 @@ export class StaticRoutes implements RouteHandler {
         <title>小智配置管理</title>
         <meta charset="utf-8">
         <style>
-          body { 
-            font-family: sans-serif; 
-            max-width: 800px; 
-            margin: 50px auto; 
-            padding: 20px; 
+          body {
+            font-family: sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
             background-color: #f5f5f5;
           }
           .container {
@@ -149,11 +151,11 @@ export class StaticRoutes implements RouteHandler {
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
           }
-          .error { 
-            color: #e53e3e; 
-            background: #fed7d7; 
-            padding: 20px; 
-            border-radius: 8px; 
+          .error {
+            color: #e53e3e;
+            background: #fed7d7;
+            padding: 20px;
+            border-radius: 8px;
             margin: 20px 0;
           }
           h1 {
