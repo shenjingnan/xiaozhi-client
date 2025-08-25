@@ -27,9 +27,14 @@ export class StaticFileHandler {
 
       // 确定web目录路径
       const possibleWebPaths = [
-        join(__dirname, "..", "..", "web", "dist"), // 构建后的目录
-        join(__dirname, "..", "..", "web"), // 开发目录
-        join(process.cwd(), "web", "dist"), // 当前工作目录
+        // 从构建后的 dist/ 目录
+        join(__dirname, "..", "web", "dist"),
+        join(__dirname, "..", "web"),
+        // 从源码目录（开发模式）
+        join(__dirname, "..", "..", "web", "dist"),
+        join(__dirname, "..", "..", "web"),
+        // 从当前工作目录
+        join(process.cwd(), "web", "dist"),
         join(process.cwd(), "web"),
       ];
 
@@ -51,7 +56,7 @@ export class StaticFileHandler {
    */
   async handleStaticFile(c: Context): Promise<Response> {
     const pathname = new URL(c.req.url).pathname;
-    
+
     try {
       this.logger.debug(`处理静态文件请求: ${pathname}`);
 
@@ -81,14 +86,14 @@ export class StaticFileHandler {
           this.logger.debug(`SPA 回退到 index.html: ${pathname}`);
           return this.serveFile(c, indexPath, "text/html");
         }
-        
+
         this.logger.debug(`文件不存在: ${fullPath}`);
         return c.text("Not Found", 404);
       }
 
       // 确定 Content-Type
       const contentType = this.getContentType(fullPath);
-      
+
       this.logger.debug(`服务静态文件: ${fullPath}, Content-Type: ${contentType}`);
       return this.serveFile(c, fullPath, contentType);
     } catch (error) {
@@ -112,7 +117,7 @@ export class StaticFileHandler {
       ) {
         return c.text(content.toString(), 200, { "Content-Type": contentType });
       }
-      
+
       return c.body(content, 200, { "Content-Type": contentType });
     } catch (error) {
       this.logger.error(`读取文件失败: ${filePath}`, error);
@@ -125,7 +130,7 @@ export class StaticFileHandler {
    */
   private getContentType(filePath: string): string {
     const ext = filePath.split(".").pop()?.toLowerCase();
-    
+
     const contentTypes: Record<string, string> = {
       html: "text/html",
       htm: "text/html",
@@ -166,19 +171,19 @@ export class StaticFileHandler {
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <style>
-          body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-            max-width: 800px; 
-            margin: 50px auto; 
-            padding: 20px; 
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
             line-height: 1.6;
             color: #333;
           }
-          .error { 
-            color: #e53e3e; 
-            background: #fed7d7; 
-            padding: 20px; 
-            border-radius: 8px; 
+          .error {
+            color: #e53e3e;
+            background: #fed7d7;
+            padding: 20px;
+            border-radius: 8px;
             border-left: 4px solid #e53e3e;
           }
           .info {
@@ -214,7 +219,7 @@ export class StaticFileHandler {
       </body>
       </html>
     `;
-    
+
     return c.html(errorHtml);
   }
 
