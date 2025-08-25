@@ -42,7 +42,6 @@ export function useWebSocket() {
   });
   const socketRef = useRef<WebSocket | null>(null);
   const [wsUrl, setWsUrl] = useState<string>("");
-  const statusCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // 获取 zustand store 的 actions
   const storeActions = useWebSocketActions();
@@ -118,45 +117,6 @@ export function useWebSocket() {
     return buildWebSocketUrl(targetPort);
   }, []); // 移除 state.config 依赖
 
-  const stopStatusCheck = useCallback(() => {
-    if (statusCheckIntervalRef.current) {
-      clearInterval(statusCheckIntervalRef.current);
-      statusCheckIntervalRef.current = null;
-    }
-  }, []);
-
-  const startStatusCheck = useCallback(
-    () => {
-      // 清除之前的定时器
-      stopStatusCheck();
-
-      // 使用 HTTP API 检查状态的函数
-      const checkStatus = async () => {
-        try {
-          console.log("[HTTP API] 检查状态");
-          const status = await apiClient.getStatus();
-
-          // 更新本地状态
-          setState((prev) => ({ ...prev, status: status.client }));
-          // 同步到 store
-          syncToStore("status", status.client);
-
-          console.log("[HTTP API] 状态检查成功:", status.client);
-        } catch (error) {
-          console.error("[HTTP API] 状态检查失败:", error);
-          // 状态检查失败时不更新状态，保持现有状态
-        }
-      };
-
-      // 立即执行一次检查
-      checkStatus();
-
-      // 每秒检查一次状态 (使用 HTTP API)
-      statusCheckIntervalRef.current = setInterval(checkStatus, 1000);
-    },
-    [stopStatusCheck, syncToStore]
-  );
-
   useEffect(() => {
     const url = getWebSocketUrl();
     setWsUrl(url);
@@ -174,9 +134,6 @@ export function useWebSocket() {
 
       console.log("[WebSocket] 发送初始配置请求，启动 HTTP 状态检查");
       ws.send(JSON.stringify({ type: "getConfig" }));
-
-      // 开始定期查询状态 (使用 HTTP API)
-      startStatusCheck();
     };
 
     ws.onmessage = (event) => {
@@ -224,7 +181,6 @@ export function useWebSocket() {
       setState((prev) => ({ ...prev, connected: false }));
       // 同步断开连接状态到 store
       syncToStore("connected", false);
-      stopStatusCheck();
     };
 
     ws.onerror = (error) => {
@@ -234,10 +190,9 @@ export function useWebSocket() {
     socketRef.current = ws;
 
     return () => {
-      stopStatusCheck();
       ws.close();
     };
-  }, [getWebSocketUrl, startStatusCheck, stopStatusCheck, syncToStore]);
+  }, [getWebSocketUrl, syncToStore]);
 
   const updateConfig = useCallback(
     (config: AppConfig): Promise<void> => {
