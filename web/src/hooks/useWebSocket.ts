@@ -1,6 +1,20 @@
+/**
+ * WebSocket Hook - 重构后的架构
+ *
+ * 职责分离：
+ * - HTTP API: 负责主动操作（获取状态、更新配置、重启服务等）
+ * - WebSocket: 负责实时通知（statusUpdate、configUpdate、restartStatus等）
+ *
+ * 状态检查机制：
+ * - 使用 HTTP API 定期检查状态 (GET /api/status)
+ * - WebSocket 监听实时状态更新通知
+ * - 两种机制互补，确保状态同步的及时性和可靠性
+ */
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useWebSocketActions, useWebSocketStore } from "../stores/websocket";
 import { ConnectionState } from "../services/websocket";
+import { apiClient } from "../services/api";
 import type { AppConfig, ClientStatus } from "../types";
 import {
   buildWebSocketUrl,
@@ -112,24 +126,35 @@ export function useWebSocket() {
   }, []);
 
   const startStatusCheck = useCallback(
-    (ws: WebSocket) => {
+    () => {
       // 清除之前的定时器
       stopStatusCheck();
 
-      // 使用固定间隔的定时器
-      const checkStatus = () => {
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: "getStatus" }));
+      // 使用 HTTP API 检查状态的函数
+      const checkStatus = async () => {
+        try {
+          console.log("[HTTP API] 检查状态");
+          const status = await apiClient.getStatus();
+
+          // 更新本地状态
+          setState((prev) => ({ ...prev, status: status.client }));
+          // 同步到 store
+          syncToStore("status", status.client);
+
+          console.log("[HTTP API] 状态检查成功:", status.client);
+        } catch (error) {
+          console.error("[HTTP API] 状态检查失败:", error);
+          // 状态检查失败时不更新状态，保持现有状态
         }
       };
 
       // 立即执行一次检查
       checkStatus();
 
-      // 每秒检查一次状态
+      // 每秒检查一次状态 (使用 HTTP API)
       statusCheckIntervalRef.current = setInterval(checkStatus, 1000);
     },
-    [stopStatusCheck]
+    [stopStatusCheck, syncToStore]
   );
 
   useEffect(() => {
@@ -147,12 +172,11 @@ export function useWebSocket() {
       // 同步连接状态到 store
       syncToStore("connected", true);
 
-      console.log("[WebSocket] 发送初始请求: getConfig, getStatus");
+      console.log("[WebSocket] 发送初始配置请求，启动 HTTP 状态检查");
       ws.send(JSON.stringify({ type: "getConfig" }));
-      ws.send(JSON.stringify({ type: "getStatus" }));
 
-      // 开始定期查询状态
-      startStatusCheck(ws);
+      // 开始定期查询状态 (使用 HTTP API)
+      startStatusCheck();
     };
 
     ws.onmessage = (event) => {
@@ -169,7 +193,8 @@ export function useWebSocket() {
           break;
         case "status":
         case "statusUpdate": {
-          console.log("[WebSocket] 处理 status 更新:", message.data);
+          console.log("[WebSocket] 处理实时 status 更新:", message.data);
+          // WebSocket 专注于实时通知：当服务器状态发生变化时推送更新
           // 确保状态数据格式正确
           const statusData = message.data;
           if (statusData && typeof statusData === "object") {
@@ -251,11 +276,22 @@ export function useWebSocket() {
     [wsUrl]
   );
 
-  const refreshStatus = useCallback(() => {
-    if (socketRef.current?.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify({ type: "getStatus" }));
+  const refreshStatus = useCallback(async () => {
+    try {
+      console.log("[HTTP API] 手动刷新状态");
+      const status = await apiClient.getStatus();
+
+      // 更新本地状态
+      setState((prev) => ({ ...prev, status: status.client }));
+      // 同步到 store
+      syncToStore("status", status.client);
+
+      console.log("[HTTP API] 状态刷新成功:", status.client);
+    } catch (error) {
+      console.error("[HTTP API] 状态刷新失败:", error);
+      throw error; // 重新抛出错误，让调用者处理
     }
-  }, []);
+  }, [syncToStore]);
 
   const restartService = useCallback((): Promise<void> => {
     return new Promise((resolve, reject) => {
