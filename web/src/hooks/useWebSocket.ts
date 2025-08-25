@@ -125,15 +125,46 @@ export function useWebSocket() {
 
     const ws = new WebSocket(url);
 
-    ws.onopen = () => {
+    ws.onopen = async () => {
       console.log(`[WebSocket] 连接已建立，URL: ${url}`);
       const newState = { connected: true };
       setState((prev) => ({ ...prev, ...newState }));
       // 同步连接状态到 store
       syncToStore("connected", true);
 
-      console.log("[WebSocket] 发送初始配置请求，启动 HTTP 状态检查");
-      ws.send(JSON.stringify({ type: "getConfig" }));
+      console.log("[WebSocket] 连接建立，通过 HTTP API 获取初始配置和状态");
+
+      // 通过 HTTP API 获取初始配置和状态
+      try {
+        console.log("[HTTP API] 获取初始配置");
+        const config = await apiClient.getConfig();
+
+        // 更新本地状态
+        setState((prev) => ({ ...prev, config }));
+        // 同步到 store
+        syncToStore("config", config);
+
+        console.log("[HTTP API] 初始配置获取成功:", config);
+      } catch (error) {
+        console.error("[HTTP API] 初始配置获取失败:", error);
+        // 配置获取失败不影响 WebSocket 连接，继续其他初始化
+      }
+
+      // 通过 HTTP API 获取初始状态
+      try {
+        console.log("[HTTP API] 获取初始状态");
+        const status = await apiClient.getStatus();
+
+        // 更新本地状态
+        setState((prev) => ({ ...prev, status: status.client }));
+        // 同步到 store
+        syncToStore("status", status.client);
+
+        console.log("[HTTP API] 初始状态获取成功:", status.client);
+      } catch (error) {
+        console.error("[HTTP API] 初始状态获取失败:", error);
+        // 状态获取失败不影响 WebSocket 连接
+      }
     };
 
     ws.onmessage = (event) => {
