@@ -15,17 +15,21 @@ import { MCPServiceManagerSingleton } from "./services/MCPServiceManagerSingleto
 import type { XiaozhiConnectionManager } from "./services/XiaozhiConnectionManager.js";
 import { XiaozhiConnectionManagerSingleton } from "./services/XiaozhiConnectionManagerSingleton.js";
 
-// 导入新的服务和处理器
-import { getEventBus, destroyEventBus, type EventBus } from "./services/EventBus.js";
-import { ConfigService } from "./services/ConfigService.js";
-import { StatusService } from "./services/StatusService.js";
-import { NotificationService } from "./services/NotificationService.js";
 import { ConfigApiHandler } from "./handlers/ConfigApiHandler.js";
-import { StatusApiHandler } from "./handlers/StatusApiHandler.js";
+import { HeartbeatHandler } from "./handlers/HeartbeatHandler.js";
+import { RealtimeNotificationHandler } from "./handlers/RealtimeNotificationHandler.js";
 import { ServiceApiHandler } from "./handlers/ServiceApiHandler.js";
 import { StaticFileHandler } from "./handlers/StaticFileHandler.js";
-import { RealtimeNotificationHandler } from "./handlers/RealtimeNotificationHandler.js";
-import { HeartbeatHandler } from "./handlers/HeartbeatHandler.js";
+import { StatusApiHandler } from "./handlers/StatusApiHandler.js";
+import { ConfigService } from "./services/ConfigService.js";
+// 导入新的服务和处理器
+import {
+  type EventBus,
+  destroyEventBus,
+  getEventBus,
+} from "./services/EventBus.js";
+import { NotificationService } from "./services/NotificationService.js";
+import { StatusService } from "./services/StatusService.js";
 
 // 统一错误响应格式
 interface ApiErrorResponse {
@@ -91,7 +95,11 @@ export class WebServer {
    * 创建统一的错误响应
    * @deprecated 使用处理器中的方法替代
    */
-  private createErrorResponse(code: string, message: string, details?: any): ApiErrorResponse {
+  private createErrorResponse(
+    code: string,
+    message: string,
+    details?: any
+  ): ApiErrorResponse {
     return {
       error: {
         code,
@@ -105,7 +113,10 @@ export class WebServer {
    * 创建统一的成功响应
    * @deprecated 使用处理器中的方法替代
    */
-  private createSuccessResponse<T>(data?: T, message?: string): ApiSuccessResponse<T> {
+  private createSuccessResponse<T>(
+    data?: T,
+    message?: string
+  ): ApiSuccessResponse<T> {
     return {
       success: true,
       data,
@@ -118,7 +129,9 @@ export class WebServer {
    * @deprecated 使用处理器中的方法替代
    */
   private logDeprecationWarning(feature: string, alternative: string): void {
-    this.logger.warn(`[DEPRECATED] ${feature} 功能已废弃，请使用 ${alternative} 替代`);
+    this.logger.warn(
+      `[DEPRECATED] ${feature} 功能已废弃，请使用 ${alternative} 替代`
+    );
   }
 
   constructor(port?: number) {
@@ -432,31 +445,71 @@ export class WebServer {
     // 配置相关 API 路由
     this.app?.get("/api/config", (c) => this.configApiHandler.getConfig(c));
     this.app?.put("/api/config", (c) => this.configApiHandler.updateConfig(c));
-    this.app?.get("/api/config/mcp-endpoint", (c) => this.configApiHandler.getMcpEndpoint(c));
-    this.app?.get("/api/config/mcp-endpoints", (c) => this.configApiHandler.getMcpEndpoints(c));
-    this.app?.get("/api/config/mcp-servers", (c) => this.configApiHandler.getMcpServers(c));
-    this.app?.get("/api/config/connection", (c) => this.configApiHandler.getConnectionConfig(c));
-    this.app?.post("/api/config/reload", (c) => this.configApiHandler.reloadConfig(c));
-    this.app?.get("/api/config/path", (c) => this.configApiHandler.getConfigPath(c));
-    this.app?.get("/api/config/exists", (c) => this.configApiHandler.checkConfigExists(c));
+    this.app?.get("/api/config/mcp-endpoint", (c) =>
+      this.configApiHandler.getMcpEndpoint(c)
+    );
+    this.app?.get("/api/config/mcp-endpoints", (c) =>
+      this.configApiHandler.getMcpEndpoints(c)
+    );
+    this.app?.get("/api/config/mcp-servers", (c) =>
+      this.configApiHandler.getMcpServers(c)
+    );
+    this.app?.get("/api/config/connection", (c) =>
+      this.configApiHandler.getConnectionConfig(c)
+    );
+    this.app?.post("/api/config/reload", (c) =>
+      this.configApiHandler.reloadConfig(c)
+    );
+    this.app?.get("/api/config/path", (c) =>
+      this.configApiHandler.getConfigPath(c)
+    );
+    this.app?.get("/api/config/exists", (c) =>
+      this.configApiHandler.checkConfigExists(c)
+    );
 
     // 状态相关 API 路由
     this.app?.get("/api/status", (c) => this.statusApiHandler.getStatus(c));
-    this.app?.get("/api/status/client", (c) => this.statusApiHandler.getClientStatus(c));
-    this.app?.get("/api/status/restart", (c) => this.statusApiHandler.getRestartStatus(c));
-    this.app?.get("/api/status/connected", (c) => this.statusApiHandler.checkClientConnected(c));
-    this.app?.get("/api/status/heartbeat", (c) => this.statusApiHandler.getLastHeartbeat(c));
-    this.app?.get("/api/status/mcp-servers", (c) => this.statusApiHandler.getActiveMCPServers(c));
-    this.app?.put("/api/status/client", (c) => this.statusApiHandler.updateClientStatus(c));
-    this.app?.put("/api/status/mcp-servers", (c) => this.statusApiHandler.setActiveMCPServers(c));
-    this.app?.post("/api/status/reset", (c) => this.statusApiHandler.resetStatus(c));
+    this.app?.get("/api/status/client", (c) =>
+      this.statusApiHandler.getClientStatus(c)
+    );
+    this.app?.get("/api/status/restart", (c) =>
+      this.statusApiHandler.getRestartStatus(c)
+    );
+    this.app?.get("/api/status/connected", (c) =>
+      this.statusApiHandler.checkClientConnected(c)
+    );
+    this.app?.get("/api/status/heartbeat", (c) =>
+      this.statusApiHandler.getLastHeartbeat(c)
+    );
+    this.app?.get("/api/status/mcp-servers", (c) =>
+      this.statusApiHandler.getActiveMCPServers(c)
+    );
+    this.app?.put("/api/status/client", (c) =>
+      this.statusApiHandler.updateClientStatus(c)
+    );
+    this.app?.put("/api/status/mcp-servers", (c) =>
+      this.statusApiHandler.setActiveMCPServers(c)
+    );
+    this.app?.post("/api/status/reset", (c) =>
+      this.statusApiHandler.resetStatus(c)
+    );
 
     // 服务相关 API 路由
-    this.app?.post("/api/services/restart", (c) => this.serviceApiHandler.restartService(c));
-    this.app?.post("/api/services/stop", (c) => this.serviceApiHandler.stopService(c));
-    this.app?.post("/api/services/start", (c) => this.serviceApiHandler.startService(c));
-    this.app?.get("/api/services/status", (c) => this.serviceApiHandler.getServiceStatus(c));
-    this.app?.get("/api/services/health", (c) => this.serviceApiHandler.getServiceHealth(c));
+    this.app?.post("/api/services/restart", (c) =>
+      this.serviceApiHandler.restartService(c)
+    );
+    this.app?.post("/api/services/stop", (c) =>
+      this.serviceApiHandler.stopService(c)
+    );
+    this.app?.post("/api/services/start", (c) =>
+      this.serviceApiHandler.startService(c)
+    );
+    this.app?.get("/api/services/status", (c) =>
+      this.serviceApiHandler.getServiceStatus(c)
+    );
+    this.app?.get("/api/services/health", (c) =>
+      this.serviceApiHandler.getServiceHealth(c)
+    );
 
     // 处理未知的 API 路由
     this.app?.all("/api/*", async (c) => {
@@ -471,8 +524,6 @@ export class WebServer {
     this.app.get("*", (c) => this.staticFileHandler.handleStaticFile(c));
   }
 
-
-
   private setupWebSocket() {
     if (!this.wss) return;
 
@@ -481,7 +532,9 @@ export class WebServer {
       const clientId = `client-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
       this.logger.info(`WebSocket 客户端已连接: ${clientId}`);
-      this.logger.debug(`当前 WebSocket 连接数: ${this.wss?.clients.size || 0}`);
+      this.logger.debug(
+        `当前 WebSocket 连接数: ${this.wss?.clients.size || 0}`
+      );
 
       // 注册客户端到通知服务
       this.realtimeNotificationHandler.handleClientConnect(ws, clientId);
@@ -495,7 +548,11 @@ export class WebServer {
           if (data.type === "clientStatus") {
             await this.heartbeatHandler.handleClientStatus(ws, data, clientId);
           } else {
-            await this.realtimeNotificationHandler.handleMessage(ws, data, clientId);
+            await this.realtimeNotificationHandler.handleMessage(
+              ws,
+              data,
+              clientId
+            );
           }
         } catch (error) {
           this.logger.error("WebSocket message error:", error);
@@ -504,8 +561,8 @@ export class WebServer {
             error: {
               code: "MESSAGE_PARSE_ERROR",
               message: error instanceof Error ? error.message : "消息解析失败",
-              timestamp: Date.now()
-            }
+              timestamp: Date.now(),
+            },
           };
           ws.send(JSON.stringify(errorResponse));
         }
@@ -513,7 +570,9 @@ export class WebServer {
 
       ws.on("close", () => {
         this.logger.info(`WebSocket 客户端已断开连接: ${clientId}`);
-        this.logger.debug(`剩余 WebSocket 连接数: ${this.wss?.clients.size || 0}`);
+        this.logger.debug(
+          `剩余 WebSocket 连接数: ${this.wss?.clients.size || 0}`
+        );
 
         // 处理客户端断开连接
         this.realtimeNotificationHandler.handleClientDisconnect(clientId);
@@ -528,14 +587,6 @@ export class WebServer {
       this.realtimeNotificationHandler.sendInitialData(ws, clientId);
     });
   }
-
-
-
-
-
-
-
-
 
   public async start(): Promise<void> {
     // 检查服务器是否已经启动
@@ -560,7 +611,8 @@ export class WebServer {
     this.setupWebSocket();
 
     // 启动心跳监控
-    this.heartbeatMonitorInterval = this.heartbeatHandler.startHeartbeatMonitoring();
+    this.heartbeatMonitorInterval =
+      this.heartbeatHandler.startHeartbeatMonitoring();
 
     this.logger.info(`Web server listening on http://0.0.0.0:${this.port}`);
     this.logger.info(`Local access: http://localhost:${this.port}`);
@@ -568,11 +620,15 @@ export class WebServer {
     // 输出架构重构信息
     this.logger.info("=== 通信架构重构信息 - 第二阶段完成 ===");
     this.logger.info("✅ 模块化拆分: HTTP/WebSocket 处理器独立");
-    this.logger.info("✅ 服务层抽象: ConfigService, StatusService, NotificationService");
+    this.logger.info(
+      "✅ 服务层抽象: ConfigService, StatusService, NotificationService"
+    );
     this.logger.info("✅ 事件驱动机制: EventBus 实现模块间解耦通信");
     this.logger.info("✅ HTTP API 职责: 配置管理、状态查询、服务控制");
     this.logger.info("✅ WebSocket 职责: 实时通知、心跳检测、事件广播");
-    this.logger.info("⚠️  已废弃的 WebSocket 消息: getConfig, updateConfig, getStatus, restartService");
+    this.logger.info(
+      "⚠️  已废弃的 WebSocket 消息: getConfig, updateConfig, getStatus, restartService"
+    );
     this.logger.info("📖 推荐使用对应的 HTTP API 替代废弃的 WebSocket 消息");
     this.logger.info("================================================");
 
@@ -602,7 +658,9 @@ export class WebServer {
 
       // 停止心跳监控
       if (this.heartbeatMonitorInterval) {
-        this.heartbeatHandler.stopHeartbeatMonitoring(this.heartbeatMonitorInterval);
+        this.heartbeatHandler.stopHeartbeatMonitoring(
+          this.heartbeatMonitorInterval
+        );
         this.heartbeatMonitorInterval = undefined;
       }
 
@@ -646,7 +704,9 @@ export class WebServer {
 
     // 停止心跳监控
     if (this.heartbeatMonitorInterval) {
-      this.heartbeatHandler.stopHeartbeatMonitoring(this.heartbeatMonitorInterval);
+      this.heartbeatHandler.stopHeartbeatMonitoring(
+        this.heartbeatMonitorInterval
+      );
       this.heartbeatMonitorInterval = undefined;
     }
 

@@ -11,7 +11,10 @@ interface NetworkServiceContextType {
   restartService: () => Promise<void>;
 
   // 混合模式方法 (HTTP + WebSocket)
-  updateConfigWithNotification: (config: AppConfig, timeout?: number) => Promise<void>;
+  updateConfigWithNotification: (
+    config: AppConfig,
+    timeout?: number
+  ) => Promise<void>;
   restartServiceWithNotification: (timeout?: number) => Promise<void>;
 
   // WebSocket 管理
@@ -27,13 +30,17 @@ interface NetworkServiceContextType {
   getWebSocketState: () => any;
 }
 
-const NetworkServiceContext = createContext<NetworkServiceContextType | null>(null);
+const NetworkServiceContext = createContext<NetworkServiceContextType | null>(
+  null
+);
 
 interface NetworkServiceProviderProps {
   children: ReactNode;
 }
 
-export function NetworkServiceProvider({ children }: NetworkServiceProviderProps) {
+export function NetworkServiceProvider({
+  children,
+}: NetworkServiceProviderProps) {
   const networkService = useNetworkService();
 
   return (

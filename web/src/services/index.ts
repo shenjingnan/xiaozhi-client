@@ -3,9 +3,13 @@
  * 整合 HTTP API 客户端和 WebSocket 管理器
  */
 
-import { apiClient, type ApiClient } from "./api";
-import { webSocketManager, type WebSocketManager, type ConnectionState } from "./websocket";
 import type { AppConfig, ClientStatus } from "../types";
+import { type ApiClient, apiClient } from "./api";
+import {
+  type ConnectionState,
+  type WebSocketManager,
+  webSocketManager,
+} from "./websocket";
 
 /**
  * 网络服务管理器类
@@ -235,7 +239,9 @@ export class NetworkService {
   /**
    * 监听 WebSocket 事件
    */
-  onWebSocketEvent<K extends keyof import("./websocket").WebSocketEventListeners>(
+  onWebSocketEvent<
+    K extends keyof import("./websocket").WebSocketEventListeners,
+  >(
     event: K,
     listener: import("./websocket").WebSocketEventListeners[K]
   ): void {
@@ -245,9 +251,9 @@ export class NetworkService {
   /**
    * 移除 WebSocket 事件监听器
    */
-  offWebSocketEvent<K extends keyof import("./websocket").WebSocketEventListeners>(
-    event: K
-  ): void {
+  offWebSocketEvent<
+    K extends keyof import("./websocket").WebSocketEventListeners,
+  >(event: K): void {
     this.webSocketManager.off(event);
   }
 

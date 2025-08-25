@@ -94,7 +94,9 @@ export class StaticFileHandler {
       // 确定 Content-Type
       const contentType = this.getContentType(fullPath);
 
-      this.logger.debug(`服务静态文件: ${fullPath}, Content-Type: ${contentType}`);
+      this.logger.debug(
+        `服务静态文件: ${fullPath}, Content-Type: ${contentType}`
+      );
       return this.serveFile(c, fullPath, contentType);
     } catch (error) {
       this.logger.error(`服务静态文件错误 (${pathname}):`, error);
@@ -105,7 +107,11 @@ export class StaticFileHandler {
   /**
    * 服务文件
    */
-  private async serveFile(c: Context, filePath: string, contentType: string): Promise<Response> {
+  private async serveFile(
+    c: Context,
+    filePath: string,
+    contentType: string
+  ): Promise<Response> {
     try {
       const content = await readFile(filePath);
 

@@ -12,9 +12,9 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useWebSocketActions, useWebSocketStore } from "../stores/websocket";
-import { ConnectionState } from "../services/websocket";
 import { apiClient } from "../services/api";
+import { ConnectionState } from "../services/websocket";
+import { useWebSocketActions, useWebSocketStore } from "../stores/websocket";
 import type { AppConfig, ClientStatus } from "../types";
 import {
   buildWebSocketUrl,

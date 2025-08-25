@@ -1,6 +1,6 @@
 import { type Logger, logger } from "../Logger.js";
-import { getEventBus, type EventBus } from "./EventBus.js";
 import type { AppConfig } from "../configManager.js";
+import { type EventBus, getEventBus } from "./EventBus.js";
 import type { ClientInfo, RestartStatus } from "./StatusService.js";
 
 /**
@@ -85,7 +85,8 @@ export class NotificationService {
         ws,
         readyState: ws.readyState,
         send: (data: string) => {
-          if (ws.readyState === 1) { // WebSocket.OPEN
+          if (ws.readyState === 1) {
+            // WebSocket.OPEN
             ws.send(data);
           }
         },
@@ -179,7 +180,8 @@ export class NotificationService {
     clientId: string
   ): void {
     try {
-      if (client.ws.readyState === 1) { // WebSocket.OPEN
+      if (client.ws.readyState === 1) {
+        // WebSocket.OPEN
         const messageStr = JSON.stringify(message);
         client.send(messageStr);
         this.logger.debug(`消息已发送给客户端 ${clientId}: ${message.type}`);
@@ -302,7 +304,8 @@ export class NotificationService {
     const disconnectedClients: string[] = [];
 
     for (const [clientId, client] of this.clients) {
-      if (client.ws.readyState !== 1) { // Not WebSocket.OPEN
+      if (client.ws.readyState !== 1) {
+        // Not WebSocket.OPEN
         disconnectedClients.push(clientId);
       }
     }

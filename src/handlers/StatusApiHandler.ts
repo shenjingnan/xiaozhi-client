@@ -34,7 +34,11 @@ export class StatusApiHandler {
   /**
    * 创建统一的错误响应
    */
-  private createErrorResponse(code: string, message: string, details?: any): ApiErrorResponse {
+  private createErrorResponse(
+    code: string,
+    message: string,
+    details?: any
+  ): ApiErrorResponse {
     return {
       error: {
         code,
@@ -47,7 +51,10 @@ export class StatusApiHandler {
   /**
    * 创建统一的成功响应
    */
-  private createSuccessResponse<T>(data?: T, message?: string): ApiSuccessResponse<T> {
+  private createSuccessResponse<T>(
+    data?: T,
+    message?: string
+  ): ApiSuccessResponse<T> {
     return {
       success: true,
       data,
@@ -228,7 +235,9 @@ export class StatusApiHandler {
       this.statusService.setActiveMCPServers(servers);
       this.logger.info("活跃 MCP 服务器设置成功");
 
-      return c.json(this.createSuccessResponse(null, "活跃 MCP 服务器设置成功"));
+      return c.json(
+        this.createSuccessResponse(null, "活跃 MCP 服务器设置成功")
+      );
     } catch (error) {
       this.logger.error("设置活跃 MCP 服务器失败:", error);
       const errorResponse = this.createErrorResponse(

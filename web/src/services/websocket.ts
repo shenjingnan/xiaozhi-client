@@ -107,7 +107,10 @@ export class WebSocketManager {
    * 连接 WebSocket
    */
   connect(): void {
-    if (this.state === ConnectionState.CONNECTED || this.state === ConnectionState.CONNECTING) {
+    if (
+      this.state === ConnectionState.CONNECTED ||
+      this.state === ConnectionState.CONNECTING
+    ) {
       return;
     }
 
@@ -167,7 +170,10 @@ export class WebSocketManager {
    * 检查是否已连接
    */
   isConnected(): boolean {
-    return this.state === ConnectionState.CONNECTED && this.ws?.readyState === WebSocket.OPEN;
+    return (
+      this.state === ConnectionState.CONNECTED &&
+      this.ws?.readyState === WebSocket.OPEN
+    );
   }
 
   /**
@@ -251,7 +257,9 @@ export class WebSocketManager {
 
       case "error":
         console.error("[WebSocket] 服务器错误:", message.error);
-        this.listeners.error?.(new Error(message.error?.message || "服务器错误"));
+        this.listeners.error?.(
+          new Error(message.error?.message || "服务器错误")
+        );
         break;
 
       default:

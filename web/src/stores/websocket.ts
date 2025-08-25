@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
-import type { AppConfig, ClientStatus } from "../types";
 import { ConnectionState } from "../services/websocket";
+import type { AppConfig, ClientStatus } from "../types";
 
 interface RestartStatus {
   status: "restarting" | "completed" | "failed";
@@ -124,7 +124,9 @@ export const useWebSocketStore = create<WebSocketStore>()(
       // 向后兼容的废弃方法
       setConnected: (connected: boolean) => {
         console.log("[Store] [DEPRECATED] 更新 connected 状态:", connected);
-        const connectionState: ConnectionState = connected ? ConnectionState.CONNECTED : ConnectionState.DISCONNECTED;
+        const connectionState: ConnectionState = connected
+          ? ConnectionState.CONNECTED
+          : ConnectionState.DISCONNECTED;
         set({ connectionState }, false, "setConnected");
       },
 
@@ -187,7 +189,9 @@ export const useWebSocketConnectionState = () =>
 
 // 向后兼容的连接状态选择器
 export const useWebSocketConnected = () =>
-  useWebSocketStore((state) => state.connectionState === ConnectionState.CONNECTED);
+  useWebSocketStore(
+    (state) => state.connectionState === ConnectionState.CONNECTED
+  );
 
 export const useWebSocketConfig = () =>
   useWebSocketStore((state) => state.config);

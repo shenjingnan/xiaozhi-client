@@ -1,9 +1,9 @@
 import { spawn } from "node:child_process";
 import type { Context } from "hono";
 import { type Logger, logger } from "../Logger.js";
-import type { StatusService } from "../services/StatusService.js";
-import { getEventBus, type EventBus } from "../services/EventBus.js";
 import { createContainer } from "../cli/Container.js";
+import { type EventBus, getEventBus } from "../services/EventBus.js";
+import type { StatusService } from "../services/StatusService.js";
 
 /**
  * 统一响应格式接口
@@ -39,7 +39,11 @@ export class ServiceApiHandler {
   /**
    * 创建统一的错误响应
    */
-  private createErrorResponse(code: string, message: string, details?: any): ApiErrorResponse {
+  private createErrorResponse(
+    code: string,
+    message: string,
+    details?: any
+  ): ApiErrorResponse {
     return {
       error: {
         code,
@@ -52,7 +56,10 @@ export class ServiceApiHandler {
   /**
    * 创建统一的成功响应
    */
-  private createSuccessResponse<T>(data?: T, message?: string): ApiSuccessResponse<T> {
+  private createSuccessResponse<T>(
+    data?: T,
+    message?: string
+  ): ApiSuccessResponse<T> {
     return {
       success: true,
       data,

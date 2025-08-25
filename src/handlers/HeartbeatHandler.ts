@@ -1,7 +1,7 @@
 import { type Logger, logger } from "../Logger.js";
-import type { StatusService } from "../services/StatusService.js";
-import type { NotificationService } from "../services/NotificationService.js";
 import { ConfigService } from "../services/ConfigService.js";
+import type { NotificationService } from "../services/NotificationService.js";
+import type { StatusService } from "../services/StatusService.js";
 
 /**
  * 心跳消息接口
@@ -38,7 +38,11 @@ export class HeartbeatHandler {
   /**
    * 处理客户端状态更新（心跳）
    */
-  async handleClientStatus(ws: any, message: HeartbeatMessage, clientId: string): Promise<void> {
+  async handleClientStatus(
+    ws: any,
+    message: HeartbeatMessage,
+    clientId: string
+  ): Promise<void> {
     try {
       this.logger.debug(`处理客户端状态更新: ${clientId}`, message.data);
 
@@ -48,7 +52,10 @@ export class HeartbeatHandler {
         lastHeartbeat: Date.now(),
       };
 
-      this.statusService.updateClientInfo(statusUpdate, `websocket-${clientId}`);
+      this.statusService.updateClientInfo(
+        statusUpdate,
+        `websocket-${clientId}`
+      );
 
       // 发送最新配置给客户端（心跳响应）
       await this.sendLatestConfig(ws, clientId);
@@ -111,7 +118,7 @@ export class HeartbeatHandler {
     const now = Date.now();
     const HEARTBEAT_TIMEOUT = 35000; // 35 seconds
 
-    if (lastHeartbeat && (now - lastHeartbeat) > HEARTBEAT_TIMEOUT) {
+    if (lastHeartbeat && now - lastHeartbeat > HEARTBEAT_TIMEOUT) {
       this.logger.warn("客户端心跳超时，标记为断开连接");
       this.statusService.updateClientInfo(
         { status: "disconnected" },

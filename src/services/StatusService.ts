@@ -1,5 +1,5 @@
 import { type Logger, logger } from "../Logger.js";
-import { getEventBus, type EventBus } from "./EventBus.js";
+import { type EventBus, getEventBus } from "./EventBus.js";
 
 /**
  * 客户端信息接口
@@ -54,7 +54,7 @@ export class StatusService {
     try {
       const oldStatus = { ...this.clientInfo };
       this.clientInfo = { ...this.clientInfo, ...info };
-      
+
       if (info.lastHeartbeat) {
         this.clientInfo.lastHeartbeat = Date.now();
       }
@@ -200,7 +200,10 @@ export class StatusService {
    * 设置活跃的 MCP 服务器列表
    */
   setActiveMCPServers(servers: string[]): void {
-    this.updateClientInfo({ activeMCPServers: [...servers] }, "mcp-servers-update");
+    this.updateClientInfo(
+      { activeMCPServers: [...servers] },
+      "mcp-servers-update"
+    );
   }
 
   /**

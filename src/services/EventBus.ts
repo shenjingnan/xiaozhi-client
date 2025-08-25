@@ -8,22 +8,22 @@ export interface EventBusEvents {
   // 配置相关事件
   "config:updated": { config: any; source: string };
   "config:error": { error: Error; operation: string };
-  
+
   // 状态相关事件
   "status:updated": { status: any; source: string };
   "status:error": { error: Error; operation: string };
-  
+
   // 服务相关事件
   "service:restart:requested": { source: string };
   "service:restart:started": { timestamp: number };
   "service:restart:completed": { timestamp: number };
   "service:restart:failed": { error: Error; timestamp: number };
-  
+
   // WebSocket 相关事件
   "websocket:client:connected": { clientId: string; timestamp: number };
   "websocket:client:disconnected": { clientId: string; timestamp: number };
   "websocket:message:received": { type: string; data: any; clientId: string };
-  
+
   // 通知相关事件
   "notification:broadcast": { type: string; data: any; target?: string };
   "notification:error": { error: Error; type: string };
@@ -34,7 +34,8 @@ export interface EventBusEvents {
  */
 export class EventBus extends EventEmitter {
   private logger: Logger;
-  private eventStats: Map<string, { count: number; lastEmitted: Date }> = new Map();
+  private eventStats: Map<string, { count: number; lastEmitted: Date }> =
+    new Map();
   private maxListeners = 50; // 增加最大监听器数量
 
   constructor() {
@@ -56,7 +57,9 @@ export class EventBus extends EventEmitter {
     this.on("newListener", (eventName) => {
       const listenerCount = this.listenerCount(eventName);
       if (listenerCount > this.maxListeners * 0.8) {
-        this.logger.warn(`事件 ${eventName} 的监听器数量过多: ${listenerCount}`);
+        this.logger.warn(
+          `事件 ${eventName} 的监听器数量过多: ${listenerCount}`
+        );
       }
     });
   }
@@ -115,7 +118,10 @@ export class EventBus extends EventEmitter {
    * 更新事件统计
    */
   private updateEventStats(eventName: string): void {
-    const stats = this.eventStats.get(eventName) || { count: 0, lastEmitted: new Date() };
+    const stats = this.eventStats.get(eventName) || {
+      count: 0,
+      lastEmitted: new Date(),
+    };
     stats.count++;
     stats.lastEmitted = new Date();
     this.eventStats.set(eventName, stats);
@@ -162,7 +168,10 @@ export class EventBus extends EventEmitter {
   } {
     return {
       totalEvents: this.eventStats.size,
-      totalListeners: Object.values(this.getListenerStats()).reduce((sum, count) => sum + count, 0),
+      totalListeners: Object.values(this.getListenerStats()).reduce(
+        (sum, count) => sum + count,
+        0
+      ),
       eventStats: this.getEventStats(),
       listenerStats: this.getListenerStats(),
     };

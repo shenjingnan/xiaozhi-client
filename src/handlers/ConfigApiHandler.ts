@@ -1,7 +1,7 @@
 import type { Context } from "hono";
 import { type Logger, logger } from "../Logger.js";
-import { ConfigService } from "../services/ConfigService.js";
 import type { AppConfig } from "../configManager.js";
+import { ConfigService } from "../services/ConfigService.js";
 
 /**
  * 统一响应格式接口
@@ -35,7 +35,11 @@ export class ConfigApiHandler {
   /**
    * 创建统一的错误响应
    */
-  private createErrorResponse(code: string, message: string, details?: any): ApiErrorResponse {
+  private createErrorResponse(
+    code: string,
+    message: string,
+    details?: any
+  ): ApiErrorResponse {
     return {
       error: {
         code,
@@ -48,7 +52,10 @@ export class ConfigApiHandler {
   /**
    * 创建统一的成功响应
    */
-  private createSuccessResponse<T>(data?: T, message?: string): ApiSuccessResponse<T> {
+  private createSuccessResponse<T>(
+    data?: T,
+    message?: string
+  ): ApiSuccessResponse<T> {
     return {
       success: true,
       data,
@@ -84,7 +91,7 @@ export class ConfigApiHandler {
     try {
       this.logger.debug("处理更新配置请求");
       const newConfig: AppConfig = await c.req.json();
-      
+
       // 验证请求体
       if (!newConfig || typeof newConfig !== "object") {
         const errorResponse = this.createErrorResponse(
@@ -96,7 +103,7 @@ export class ConfigApiHandler {
 
       await this.configService.updateConfig(newConfig, "http-api");
       this.logger.info("配置更新成功");
-      
+
       return c.json(this.createSuccessResponse(null, "配置更新成功"));
     } catch (error) {
       this.logger.error("配置更新失败:", error);

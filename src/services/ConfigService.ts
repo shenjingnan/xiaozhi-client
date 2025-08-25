@@ -1,6 +1,6 @@
 import { type Logger, logger } from "../Logger.js";
-import { configManager, type AppConfig } from "../configManager.js";
-import { getEventBus, type EventBus } from "./EventBus.js";
+import { type AppConfig, configManager } from "../configManager.js";
+import { type EventBus, getEventBus } from "./EventBus.js";
 
 /**
  * 配置服务 - 统一的配置管理服务
@@ -38,7 +38,7 @@ export class ConfigService {
   async updateConfig(newConfig: AppConfig, source = "unknown"): Promise<void> {
     try {
       this.logger.info(`开始更新配置，来源: ${source}`);
-      
+
       // 验证配置
       this.validateConfig(newConfig);
 
@@ -81,9 +81,17 @@ export class ConfigService {
 
       // 更新服务工具配置
       if (newConfig.mcpServerConfig) {
-        for (const [serverName, toolsConfig] of Object.entries(newConfig.mcpServerConfig)) {
-          for (const [toolName, toolConfig] of Object.entries(toolsConfig.tools)) {
-            configManager.setToolEnabled(serverName, toolName, toolConfig.enable);
+        for (const [serverName, toolsConfig] of Object.entries(
+          newConfig.mcpServerConfig
+        )) {
+          for (const [toolName, toolConfig] of Object.entries(
+            toolsConfig.tools
+          )) {
+            configManager.setToolEnabled(
+              serverName,
+              toolName,
+              toolConfig.enable
+            );
           }
         }
       }
@@ -197,7 +205,7 @@ export class ConfigService {
       this.logger.info("重新加载配置");
       configManager.reloadConfig();
       const config = await this.getConfig();
-      
+
       this.eventBus.emitEvent("config:updated", {
         config,
         source: "reload",

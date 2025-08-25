@@ -92,7 +92,7 @@ export class ApiClient {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
-    
+
     const defaultOptions: RequestInit = {
       headers: {
         "Content-Type": "application/json",
@@ -101,17 +101,17 @@ export class ApiClient {
     };
 
     const response = await fetch(url, { ...defaultOptions, ...options });
-    
+
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-      
+
       try {
         const errorData: ApiErrorResponse = await response.json();
         errorMessage = errorData.error?.message || errorMessage;
       } catch {
         // 如果无法解析错误响应，使用默认错误消息
       }
-      
+
       throw new Error(errorMessage);
     }
 
@@ -139,7 +139,7 @@ export class ApiClient {
       method: "PUT",
       body: JSON.stringify(config),
     });
-    
+
     if (!response.success) {
       throw new Error(response.message || "配置更新失败");
     }
@@ -175,9 +175,8 @@ export class ApiClient {
    * 获取 MCP 服务配置
    */
   async getMcpServers(): Promise<Record<string, any>> {
-    const response: ApiResponse<{ servers: Record<string, any> }> = await this.request(
-      "/api/config/mcp-servers"
-    );
+    const response: ApiResponse<{ servers: Record<string, any> }> =
+      await this.request("/api/config/mcp-servers");
     if (!response.success || !response.data) {
       throw new Error("获取 MCP 服务配置失败");
     }
@@ -215,9 +214,8 @@ export class ApiClient {
    * 获取配置文件路径
    */
   async getConfigPath(): Promise<string> {
-    const response: ApiResponse<{ path: string }> = await this.request(
-      "/api/config/path"
-    );
+    const response: ApiResponse<{ path: string }> =
+      await this.request("/api/config/path");
     if (!response.success || !response.data) {
       throw new Error("获取配置文件路径失败");
     }
@@ -228,9 +226,8 @@ export class ApiClient {
    * 检查配置是否存在
    */
   async checkConfigExists(): Promise<boolean> {
-    const response: ApiResponse<{ exists: boolean }> = await this.request(
-      "/api/config/exists"
-    );
+    const response: ApiResponse<{ exists: boolean }> =
+      await this.request("/api/config/exists");
     if (!response.success || response.data?.exists === undefined) {
       throw new Error("检查配置是否存在失败");
     }
@@ -254,9 +251,8 @@ export class ApiClient {
    * 获取客户端状态
    */
   async getClientStatus(): Promise<ClientStatus> {
-    const response: ApiResponse<ClientStatus> = await this.request(
-      "/api/status/client"
-    );
+    const response: ApiResponse<ClientStatus> =
+      await this.request("/api/status/client");
     if (!response.success || !response.data) {
       throw new Error("获取客户端状态失败");
     }
@@ -293,9 +289,8 @@ export class ApiClient {
    * 获取最后心跳时间
    */
   async getLastHeartbeat(): Promise<number | null> {
-    const response: ApiResponse<{ lastHeartbeat?: number }> = await this.request(
-      "/api/status/heartbeat"
-    );
+    const response: ApiResponse<{ lastHeartbeat?: number }> =
+      await this.request("/api/status/heartbeat");
     if (!response.success) {
       throw new Error("获取最后心跳时间失败");
     }
@@ -323,7 +318,7 @@ export class ApiClient {
       method: "PUT",
       body: JSON.stringify(status),
     });
-    
+
     if (!response.success) {
       throw new Error(response.message || "更新客户端状态失败");
     }
@@ -333,11 +328,14 @@ export class ApiClient {
    * 设置活跃的 MCP 服务器列表
    */
   async setActiveMCPServers(servers: string[]): Promise<void> {
-    const response: ApiResponse = await this.request("/api/status/mcp-servers", {
-      method: "PUT",
-      body: JSON.stringify({ servers }),
-    });
-    
+    const response: ApiResponse = await this.request(
+      "/api/status/mcp-servers",
+      {
+        method: "PUT",
+        body: JSON.stringify({ servers }),
+      }
+    );
+
     if (!response.success) {
       throw new Error(response.message || "设置活跃 MCP 服务器失败");
     }
@@ -350,7 +348,7 @@ export class ApiClient {
     const response: ApiResponse = await this.request("/api/status/reset", {
       method: "POST",
     });
-    
+
     if (!response.success) {
       throw new Error(response.message || "重置状态失败");
     }
@@ -365,7 +363,7 @@ export class ApiClient {
     const response: ApiResponse = await this.request("/api/services/restart", {
       method: "POST",
     });
-    
+
     if (!response.success) {
       throw new Error(response.message || "重启服务失败");
     }
@@ -378,7 +376,7 @@ export class ApiClient {
     const response: ApiResponse = await this.request("/api/services/stop", {
       method: "POST",
     });
-    
+
     if (!response.success) {
       throw new Error(response.message || "停止服务失败");
     }
@@ -391,7 +389,7 @@ export class ApiClient {
     const response: ApiResponse = await this.request("/api/services/start", {
       method: "POST",
     });
-    
+
     if (!response.success) {
       throw new Error(response.message || "启动服务失败");
     }

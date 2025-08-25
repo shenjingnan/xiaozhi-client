@@ -1,8 +1,8 @@
 import { type Logger, logger } from "../Logger.js";
-import type { NotificationService } from "../services/NotificationService.js";
 import { ConfigService } from "../services/ConfigService.js";
+import { type EventBus, getEventBus } from "../services/EventBus.js";
+import type { NotificationService } from "../services/NotificationService.js";
 import type { StatusService } from "../services/StatusService.js";
-import { getEventBus, type EventBus } from "../services/EventBus.js";
 
 /**
  * WebSocket 消息接口
@@ -38,7 +38,11 @@ export class RealtimeNotificationHandler {
    * 处理 WebSocket 消息
    * @deprecated 部分消息类型已废弃，建议使用 HTTP API
    */
-  async handleMessage(ws: any, message: WebSocketMessage, clientId: string): Promise<void> {
+  async handleMessage(
+    ws: any,
+    message: WebSocketMessage,
+    clientId: string
+  ): Promise<void> {
     try {
       this.logger.debug(`处理 WebSocket 消息: ${message.type}`, { clientId });
 
@@ -67,8 +71,14 @@ export class RealtimeNotificationHandler {
           break;
 
         default:
-          this.logger.warn(`未知的 WebSocket 消息类型: ${message.type}`, { clientId });
-          this.sendError(ws, "UNKNOWN_MESSAGE_TYPE", `未知的消息类型: ${message.type}`);
+          this.logger.warn(`未知的 WebSocket 消息类型: ${message.type}`, {
+            clientId,
+          });
+          this.sendError(
+            ws,
+            "UNKNOWN_MESSAGE_TYPE",
+            `未知的消息类型: ${message.type}`
+          );
       }
     } catch (error) {
       this.logger.error(`处理 WebSocket 消息失败: ${message.type}`, error);
@@ -105,11 +115,18 @@ export class RealtimeNotificationHandler {
    * 处理更新配置请求
    * @deprecated 使用 PUT /api/config 替代
    */
-  private async handleUpdateConfig(ws: any, configData: any, clientId: string): Promise<void> {
+  private async handleUpdateConfig(
+    ws: any,
+    configData: any,
+    clientId: string
+  ): Promise<void> {
     this.logDeprecationWarning("WebSocket updateConfig", "PUT /api/config");
 
     try {
-      await this.configService.updateConfig(configData, `websocket-${clientId}`);
+      await this.configService.updateConfig(
+        configData,
+        `websocket-${clientId}`
+      );
       this.logger.debug("WebSocket: updateConfig 请求处理成功", { clientId });
     } catch (error) {
       this.logger.error("WebSocket: updateConfig 请求处理失败", error);
@@ -147,7 +164,10 @@ export class RealtimeNotificationHandler {
    * @deprecated 使用 POST /api/services/restart 替代
    */
   private async handleRestartService(ws: any, clientId: string): Promise<void> {
-    this.logDeprecationWarning("WebSocket restartService", "POST /api/services/restart");
+    this.logDeprecationWarning(
+      "WebSocket restartService",
+      "POST /api/services/restart"
+    );
 
     try {
       this.logger.info("WebSocket: 收到服务重启请求", { clientId });
@@ -192,7 +212,9 @@ export class RealtimeNotificationHandler {
    * 记录废弃功能使用警告
    */
   private logDeprecationWarning(feature: string, alternative: string): void {
-    this.logger.warn(`[DEPRECATED] ${feature} 功能已废弃，请使用 ${alternative} 替代`);
+    this.logger.warn(
+      `[DEPRECATED] ${feature} 功能已废弃，请使用 ${alternative} 替代`
+    );
   }
 
   /**
@@ -212,7 +234,9 @@ export class RealtimeNotificationHandler {
 
       // 如果有重启状态，也发送
       if (status.restart) {
-        ws.send(JSON.stringify({ type: "restartStatus", data: status.restart }));
+        ws.send(
+          JSON.stringify({ type: "restartStatus", data: status.restart })
+        );
       }
 
       this.logger.debug("初始数据发送完成", { clientId });
