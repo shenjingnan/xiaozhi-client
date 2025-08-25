@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useWebSocketActions, useWebSocketStore } from "../stores/websocket";
+import { ConnectionState } from "../services/websocket";
 import type { AppConfig, ClientStatus } from "../types";
 import {
   buildWebSocketUrl,
@@ -308,7 +309,8 @@ export function useWebSocket() {
 
       try {
         // 从 store 获取最新的连接状态
-        const isConnected = useWebSocketStore.getState().connected;
+        const state = useWebSocketStore.getState();
+        const isConnected = state.connectionState === ConnectionState.CONNECTED;
         console.log(
           `[WebSocket] 开始端口切换到 ${newPort}，当前连接状态: ${isConnected}`
         );

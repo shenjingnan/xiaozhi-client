@@ -1,47 +1,58 @@
 import { type ReactNode, createContext, useContext } from "react";
-import { useWebSocket } from "../hooks/useWebSocket";
+import { useNetworkService } from "../hooks/useNetworkService";
 import type { AppConfig } from "../types";
 
-interface WebSocketContextType {
+interface NetworkServiceContextType {
+  // HTTP API 方法
+  getConfig: () => Promise<AppConfig>;
   updateConfig: (config: AppConfig) => Promise<void>;
-  refreshStatus: () => void;
+  getStatus: () => Promise<any>;
+  refreshStatus: () => Promise<void>;
   restartService: () => Promise<void>;
+
+  // 混合模式方法 (HTTP + WebSocket)
+  updateConfigWithNotification: (config: AppConfig, timeout?: number) => Promise<void>;
+  restartServiceWithNotification: (timeout?: number) => Promise<void>;
+
+  // WebSocket 管理
   setCustomWsUrl: (url: string) => void;
+  getWebSocketUrl: () => string;
+
+  // 端口切换 (向后兼容)
   changePort: (newPort: number) => Promise<void>;
-  wsUrl: string;
+
+  // 工具方法
+  loadInitialData: () => Promise<void>;
+  isWebSocketConnected: () => boolean;
+  getWebSocketState: () => any;
 }
 
-const WebSocketContext = createContext<WebSocketContextType | null>(null);
+const NetworkServiceContext = createContext<NetworkServiceContextType | null>(null);
 
-interface WebSocketProviderProps {
+interface NetworkServiceProviderProps {
   children: ReactNode;
 }
 
-export function WebSocketProvider({ children }: WebSocketProviderProps) {
-  const webSocketState = useWebSocket();
-
-  const contextValue: WebSocketContextType = {
-    updateConfig: webSocketState.updateConfig,
-    refreshStatus: webSocketState.refreshStatus,
-    restartService: webSocketState.restartService,
-    setCustomWsUrl: webSocketState.setCustomWsUrl,
-    changePort: webSocketState.changePort,
-    wsUrl: webSocketState.wsUrl,
-  };
+export function NetworkServiceProvider({ children }: NetworkServiceProviderProps) {
+  const networkService = useNetworkService();
 
   return (
-    <WebSocketContext.Provider value={contextValue}>
+    <NetworkServiceContext.Provider value={networkService}>
       {children}
-    </WebSocketContext.Provider>
+    </NetworkServiceContext.Provider>
   );
 }
 
-export function useWebSocketActions() {
-  const context = useContext(WebSocketContext);
+export function useNetworkServiceActions() {
+  const context = useContext(NetworkServiceContext);
   if (!context) {
     throw new Error(
-      "useWebSocketActions must be used within a WebSocketProvider"
+      "useNetworkServiceActions must be used within a NetworkServiceProvider"
     );
   }
   return context;
 }
+
+// 向后兼容的别名
+export const WebSocketProvider = NetworkServiceProvider;
+export const useWebSocketActions = useNetworkServiceActions;
