@@ -1,9 +1,4 @@
-import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
-import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -19,6 +14,18 @@ import type { MCPServiceManager } from "./services/MCPServiceManager.js";
 import { MCPServiceManagerSingleton } from "./services/MCPServiceManagerSingleton.js";
 import type { XiaozhiConnectionManager } from "./services/XiaozhiConnectionManager.js";
 import { XiaozhiConnectionManagerSingleton } from "./services/XiaozhiConnectionManagerSingleton.js";
+
+// 导入新的服务和处理器
+import { getEventBus, destroyEventBus, type EventBus } from "./services/EventBus.js";
+import { ConfigService } from "./services/ConfigService.js";
+import { StatusService } from "./services/StatusService.js";
+import { NotificationService } from "./services/NotificationService.js";
+import { ConfigApiHandler } from "./handlers/ConfigApiHandler.js";
+import { StatusApiHandler } from "./handlers/StatusApiHandler.js";
+import { ServiceApiHandler } from "./handlers/ServiceApiHandler.js";
+import { StaticFileHandler } from "./handlers/StaticFileHandler.js";
+import { RealtimeNotificationHandler } from "./handlers/RealtimeNotificationHandler.js";
+import { HeartbeatHandler } from "./handlers/HeartbeatHandler.js";
 
 // 统一错误响应格式
 interface ApiErrorResponse {
@@ -44,25 +51,45 @@ interface ClientInfo {
   lastHeartbeat?: number;
 }
 
+/**
+ * WebServer - 主控制器，协调各个服务和处理器
+ */
 export class WebServer {
   private app: Hono;
   private httpServer: any = null;
   private wss: WebSocketServer | null = null;
   private logger: Logger;
   private port: number;
-  private clientInfo: ClientInfo = {
-    status: "disconnected",
-    mcpEndpoint: "",
-    activeMCPServers: [],
-  };
-  private heartbeatTimeout?: NodeJS.Timeout;
-  private readonly HEARTBEAT_TIMEOUT = 35000; // 35 seconds (slightly more than client's 30s interval)
-  private proxyMCPServer: ProxyMCPServer | undefined; // 保留用于向后兼容
+
+  // 事件总线
+  private eventBus: EventBus;
+
+  // 服务层
+  private configService: ConfigService;
+  private statusService: StatusService;
+  private notificationService: NotificationService;
+
+  // HTTP API 处理器
+  private configApiHandler: ConfigApiHandler;
+  private statusApiHandler: StatusApiHandler;
+  private serviceApiHandler: ServiceApiHandler;
+  private staticFileHandler: StaticFileHandler;
+
+  // WebSocket 处理器
+  private realtimeNotificationHandler: RealtimeNotificationHandler;
+  private heartbeatHandler: HeartbeatHandler;
+
+  // 心跳监控
+  private heartbeatMonitorInterval?: NodeJS.Timeout;
+
+  // 向后兼容的属性
+  private proxyMCPServer: ProxyMCPServer | undefined;
   private xiaozhiConnectionManager: XiaozhiConnectionManager | undefined;
   private mcpServiceManager: MCPServiceManager | undefined;
 
   /**
    * 创建统一的错误响应
+   * @deprecated 使用处理器中的方法替代
    */
   private createErrorResponse(code: string, message: string, details?: any): ApiErrorResponse {
     return {
@@ -76,6 +103,7 @@ export class WebServer {
 
   /**
    * 创建统一的成功响应
+   * @deprecated 使用处理器中的方法替代
    */
   private createSuccessResponse<T>(data?: T, message?: string): ApiSuccessResponse<T> {
     return {
@@ -87,6 +115,7 @@ export class WebServer {
 
   /**
    * 记录废弃功能使用警告
+   * @deprecated 使用处理器中的方法替代
    */
   private logDeprecationWarning(feature: string, alternative: string): void {
     this.logger.warn(`[DEPRECATED] ${feature} 功能已废弃，请使用 ${alternative} 替代`);
@@ -100,15 +129,38 @@ export class WebServer {
       // 配置读取失败时使用默认端口
       this.port = port ?? 9999;
     }
-    this.logger = logger;
+    this.logger = logger.withTag("WebServer");
 
-    // 延迟初始化，在 start() 方法中进行连接管理
-    // 移除硬编码的 MCP 服务和工具配置
+    // 初始化事件总线
+    this.eventBus = getEventBus();
+
+    // 初始化服务层
+    this.configService = new ConfigService();
+    this.statusService = new StatusService();
+    this.notificationService = new NotificationService();
+
+    // 初始化 HTTP API 处理器
+    this.configApiHandler = new ConfigApiHandler();
+    this.statusApiHandler = new StatusApiHandler(this.statusService);
+    this.serviceApiHandler = new ServiceApiHandler(this.statusService);
+    this.staticFileHandler = new StaticFileHandler();
+
+    // 初始化 WebSocket 处理器
+    this.realtimeNotificationHandler = new RealtimeNotificationHandler(
+      this.notificationService,
+      this.statusService
+    );
+    this.heartbeatHandler = new HeartbeatHandler(
+      this.statusService,
+      this.notificationService
+    );
 
     // 初始化 Hono 应用
     this.app = new Hono();
     this.setupMiddleware();
     this.setupRoutes();
+
+    this.logger.info("WebServer 架构重构完成 - 第二阶段：模块化拆分");
 
     // HTTP 服务器和 WebSocket 服务器将在 start() 方法中初始化
   }
@@ -377,95 +429,34 @@ export class WebServer {
   }
 
   private setupRoutes() {
-    // API 路由
-    this.app?.get("/api/config", async (c) => {
-      try {
-        const config = configManager.getConfig();
-        this.logger.debug("HTTP API: 获取配置成功");
-        return c.json(this.createSuccessResponse(config));
-      } catch (error) {
-        this.logger.error("HTTP API: 获取配置失败", error);
-        const errorResponse = this.createErrorResponse(
-          "CONFIG_READ_ERROR",
-          error instanceof Error ? error.message : "获取配置失败"
-        );
-        return c.json(errorResponse, 500);
-      }
-    });
+    // 配置相关 API 路由
+    this.app?.get("/api/config", (c) => this.configApiHandler.getConfig(c));
+    this.app?.put("/api/config", (c) => this.configApiHandler.updateConfig(c));
+    this.app?.get("/api/config/mcp-endpoint", (c) => this.configApiHandler.getMcpEndpoint(c));
+    this.app?.get("/api/config/mcp-endpoints", (c) => this.configApiHandler.getMcpEndpoints(c));
+    this.app?.get("/api/config/mcp-servers", (c) => this.configApiHandler.getMcpServers(c));
+    this.app?.get("/api/config/connection", (c) => this.configApiHandler.getConnectionConfig(c));
+    this.app?.post("/api/config/reload", (c) => this.configApiHandler.reloadConfig(c));
+    this.app?.get("/api/config/path", (c) => this.configApiHandler.getConfigPath(c));
+    this.app?.get("/api/config/exists", (c) => this.configApiHandler.checkConfigExists(c));
 
-    this.app?.put("/api/config", async (c) => {
-      try {
-        const newConfig: AppConfig = await c.req.json();
-        this.updateConfig(newConfig);
+    // 状态相关 API 路由
+    this.app?.get("/api/status", (c) => this.statusApiHandler.getStatus(c));
+    this.app?.get("/api/status/client", (c) => this.statusApiHandler.getClientStatus(c));
+    this.app?.get("/api/status/restart", (c) => this.statusApiHandler.getRestartStatus(c));
+    this.app?.get("/api/status/connected", (c) => this.statusApiHandler.checkClientConnected(c));
+    this.app?.get("/api/status/heartbeat", (c) => this.statusApiHandler.getLastHeartbeat(c));
+    this.app?.get("/api/status/mcp-servers", (c) => this.statusApiHandler.getActiveMCPServers(c));
+    this.app?.put("/api/status/client", (c) => this.statusApiHandler.updateClientStatus(c));
+    this.app?.put("/api/status/mcp-servers", (c) => this.statusApiHandler.setActiveMCPServers(c));
+    this.app?.post("/api/status/reset", (c) => this.statusApiHandler.resetStatus(c));
 
-        // 广播配置更新
-        this.broadcastConfigUpdate(newConfig);
-
-        this.logger.info("HTTP API: 配置更新成功");
-        return c.json(this.createSuccessResponse(null, "配置更新成功"));
-      } catch (error) {
-        this.logger.error("HTTP API: 配置更新失败", error);
-        const errorResponse = this.createErrorResponse(
-          "CONFIG_UPDATE_ERROR",
-          error instanceof Error ? error.message : "配置更新失败"
-        );
-        return c.json(errorResponse, 400);
-      }
-    });
-
-    this.app?.get("/api/status", async (c) => {
-      try {
-        const mcpStatus = this.proxyMCPServer?.getStatus();
-        const statusData = {
-          ...this.clientInfo,
-          mcpConnection: mcpStatus,
-        };
-        this.logger.debug("HTTP API: 获取状态成功");
-        return c.json(this.createSuccessResponse(statusData));
-      } catch (error) {
-        this.logger.error("HTTP API: 获取状态失败", error);
-        const errorResponse = this.createErrorResponse(
-          "STATUS_READ_ERROR",
-          error instanceof Error ? error.message : "获取状态失败"
-        );
-        return c.json(errorResponse, 500);
-      }
-    });
-
-    // 添加服务重启 API
-    this.app?.post("/api/services/restart", async (c) => {
-      try {
-        this.logger.info("HTTP API: 收到服务重启请求");
-
-        // 广播重启状态
-        this.broadcastRestartStatus("restarting");
-
-        // 异步执行重启，不阻塞响应
-        setTimeout(async () => {
-          try {
-            await this.restartService();
-            setTimeout(() => {
-              this.broadcastRestartStatus("completed");
-            }, 5000);
-          } catch (error) {
-            this.logger.error("HTTP API: 服务重启失败", error);
-            this.broadcastRestartStatus(
-              "failed",
-              error instanceof Error ? error.message : "未知错误"
-            );
-          }
-        }, 500);
-
-        return c.json(this.createSuccessResponse(null, "重启请求已接收"));
-      } catch (error) {
-        this.logger.error("HTTP API: 处理重启请求失败", error);
-        const errorResponse = this.createErrorResponse(
-          "RESTART_REQUEST_ERROR",
-          error instanceof Error ? error.message : "处理重启请求失败"
-        );
-        return c.json(errorResponse, 500);
-      }
-    });
+    // 服务相关 API 路由
+    this.app?.post("/api/services/restart", (c) => this.serviceApiHandler.restartService(c));
+    this.app?.post("/api/services/stop", (c) => this.serviceApiHandler.stopService(c));
+    this.app?.post("/api/services/start", (c) => this.serviceApiHandler.startService(c));
+    this.app?.get("/api/services/status", (c) => this.serviceApiHandler.getServiceStatus(c));
+    this.app?.get("/api/services/health", (c) => this.serviceApiHandler.getServiceHealth(c));
 
     // 处理未知的 API 路由
     this.app?.all("/api/*", async (c) => {
@@ -477,123 +468,35 @@ export class WebServer {
     });
 
     // 静态文件服务 - 放在最后作为回退
-    this.app.get("*", async (c) => {
-      return this.serveStaticFile(c);
-    });
+    this.app.get("*", (c) => this.staticFileHandler.handleStaticFile(c));
   }
 
-  private async serveStaticFile(c: any) {
-    const pathname = new URL(c.req.url).pathname;
-    try {
-      // 获取当前文件所在目录
-      const __dirname = dirname(fileURLToPath(import.meta.url));
 
-      // 确定web目录路径
-      const possibleWebPaths = [
-        join(__dirname, "..", "web", "dist"), // 构建后的目录
-        join(__dirname, "..", "web"), // 开发目录
-        join(process.cwd(), "web", "dist"), // 当前工作目录
-        join(process.cwd(), "web"),
-      ];
-
-      const webPath = possibleWebPaths.find((p) => existsSync(p));
-
-      if (!webPath) {
-        // 如果找不到 web 目录，返回简单的 HTML 页面
-        const errorHtml = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <title>小智配置管理</title>
-            <meta charset="utf-8">
-            <style>
-              body { font-family: sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
-              .error { color: #e53e3e; background: #fed7d7; padding: 20px; border-radius: 8px; }
-            </style>
-          </head>
-          <body>
-            <h1>小智配置管理</h1>
-            <div class="error">
-              <p>错误：找不到前端资源文件。</p>
-              <p>请先构建前端项目：</p>
-              <pre>cd web && pnpm install && pnpm build</pre>
-            </div>
-          </body>
-          </html>
-        `;
-        return c.html(errorHtml);
-      }
-
-      // 处理路径
-      let filePath = pathname;
-      if (filePath === "/") {
-        filePath = "/index.html";
-      }
-
-      // 安全性检查：防止路径遍历
-      if (filePath.includes("..")) {
-        return c.text("Forbidden", 403);
-      }
-
-      const fullPath = join(webPath, filePath);
-
-      // 检查文件是否存在
-      if (!existsSync(fullPath)) {
-        // 对于 SPA，返回 index.html
-        const indexPath = join(webPath, "index.html");
-        if (existsSync(indexPath)) {
-          const content = await readFile(indexPath);
-          return c.html(content.toString());
-        }
-        return c.text("Not Found", 404);
-      }
-
-      // 读取文件
-      const content = await readFile(fullPath);
-
-      // 设置正确的 Content-Type
-      const ext = fullPath.split(".").pop()?.toLowerCase();
-      const contentTypes: Record<string, string> = {
-        html: "text/html",
-        js: "application/javascript",
-        css: "text/css",
-        json: "application/json",
-        png: "image/png",
-        jpg: "image/jpeg",
-        jpeg: "image/jpeg",
-        gif: "image/gif",
-        svg: "image/svg+xml",
-        ico: "image/x-icon",
-      };
-
-      const contentType = contentTypes[ext || ""] || "application/octet-stream";
-
-      // 对于文本文件，返回字符串；对于二进制文件，返回 ArrayBuffer
-      if (
-        contentType.startsWith("text/") ||
-        contentType.includes("javascript") ||
-        contentType.includes("json")
-      ) {
-        return c.text(content.toString(), 200, { "Content-Type": contentType });
-      }
-      return c.body(content, 200, { "Content-Type": contentType });
-    } catch (error) {
-      this.logger.error("Serve static file error:", error);
-      return c.text("Internal Server Error", 500);
-    }
-  }
 
   private setupWebSocket() {
     if (!this.wss) return;
 
     this.wss.on("connection", (ws) => {
-      this.logger.info("WebSocket 客户端已连接");
+      // 生成客户端 ID
+      const clientId = `client-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      this.logger.info(`WebSocket 客户端已连接: ${clientId}`);
       this.logger.debug(`当前 WebSocket 连接数: ${this.wss?.clients.size || 0}`);
+
+      // 注册客户端到通知服务
+      this.realtimeNotificationHandler.handleClientConnect(ws, clientId);
+      this.heartbeatHandler.handleClientConnect(clientId);
 
       ws.on("message", async (message) => {
         try {
           const data = JSON.parse(message.toString());
-          await this.handleWebSocketMessage(ws, data);
+
+          // 根据消息类型分发到不同的处理器
+          if (data.type === "clientStatus") {
+            await this.heartbeatHandler.handleClientStatus(ws, data, clientId);
+          } else {
+            await this.realtimeNotificationHandler.handleMessage(ws, data, clientId);
+          }
         } catch (error) {
           this.logger.error("WebSocket message error:", error);
           const errorResponse = {
@@ -609,365 +512,30 @@ export class WebServer {
       });
 
       ws.on("close", () => {
-        this.logger.info("WebSocket 客户端已断开连接");
+        this.logger.info(`WebSocket 客户端已断开连接: ${clientId}`);
         this.logger.debug(`剩余 WebSocket 连接数: ${this.wss?.clients.size || 0}`);
+
+        // 处理客户端断开连接
+        this.realtimeNotificationHandler.handleClientDisconnect(clientId);
+        this.heartbeatHandler.handleClientDisconnect(clientId);
       });
 
       ws.on("error", (error) => {
-        this.logger.error("WebSocket 连接错误:", error);
+        this.logger.error(`WebSocket 连接错误 (${clientId}):`, error);
       });
 
-      this.sendInitialData(ws);
+      // 发送初始数据
+      this.realtimeNotificationHandler.sendInitialData(ws, clientId);
     });
   }
 
-  /**
-   * 处理 WebSocket 消息
-   * @deprecated 部分消息类型已废弃，建议使用 HTTP API
-   */
-  private async handleWebSocketMessage(ws: any, data: any) {
-    switch (data.type) {
-      case "getConfig": {
-        // @deprecated 使用 GET /api/config 替代
-        this.logDeprecationWarning("WebSocket getConfig", "GET /api/config");
 
-        try {
-          const config = configManager.getConfig();
-          this.logger.debug("WebSocket: getConfig 请求处理成功");
-          ws.send(JSON.stringify({ type: "config", data: config }));
-        } catch (error) {
-          this.logger.error("WebSocket: getConfig 请求处理失败", error);
-          ws.send(JSON.stringify({
-            type: "error",
-            error: {
-              code: "CONFIG_READ_ERROR",
-              message: error instanceof Error ? error.message : "获取配置失败"
-            }
-          }));
-        }
-        break;
-      }
 
-      case "updateConfig":
-        // @deprecated 使用 PUT /api/config 替代
-        this.logDeprecationWarning("WebSocket updateConfig", "PUT /api/config");
 
-        try {
-          this.updateConfig(data.config);
-          this.broadcastConfigUpdate(data.config);
-          this.logger.debug("WebSocket: updateConfig 请求处理成功");
-        } catch (error) {
-          this.logger.error("WebSocket: updateConfig 请求处理失败", error);
-          ws.send(JSON.stringify({
-            type: "error",
-            error: {
-              code: "CONFIG_UPDATE_ERROR",
-              message: error instanceof Error ? error.message : "配置更新失败"
-            }
-          }));
-        }
-        break;
 
-      case "getStatus":
-        // @deprecated 使用 GET /api/status 替代
-        this.logDeprecationWarning("WebSocket getStatus", "GET /api/status");
 
-        try {
-          ws.send(JSON.stringify({ type: "status", data: this.clientInfo }));
-          this.logger.debug("WebSocket: getStatus 请求处理成功");
-        } catch (error) {
-          this.logger.error("WebSocket: getStatus 请求处理失败", error);
-          ws.send(JSON.stringify({
-            type: "error",
-            error: {
-              code: "STATUS_READ_ERROR",
-              message: error instanceof Error ? error.message : "获取状态失败"
-            }
-          }));
-        }
-        break;
 
-      case "clientStatus": {
-        // 心跳检测和状态更新 - 保留此功能，这是 WebSocket 的核心职责
-        try {
-          this.updateClientInfo(data.data);
-          this.broadcastStatusUpdate();
-          // 每次客户端状态更新时，也发送最新的配置
-          const latestConfig = configManager.getConfig();
-          ws.send(JSON.stringify({ type: "configUpdate", data: latestConfig }));
-          this.logger.debug("WebSocket: clientStatus 更新成功");
-        } catch (error) {
-          this.logger.error("WebSocket: clientStatus 更新失败", error);
-          ws.send(JSON.stringify({
-            type: "error",
-            error: {
-              code: "CLIENT_STATUS_ERROR",
-              message: error instanceof Error ? error.message : "客户端状态更新失败"
-            }
-          }));
-        }
-        break;
-      }
 
-      case "restartService":
-        // @deprecated 使用 POST /api/services/restart 替代
-        this.logDeprecationWarning("WebSocket restartService", "POST /api/services/restart");
-
-        try {
-          this.logger.info("WebSocket: 收到服务重启请求");
-          this.broadcastRestartStatus("restarting");
-
-          // 延迟执行重启
-          setTimeout(async () => {
-            try {
-              await this.restartService();
-              // 服务重启需要一些时间，延迟发送成功状态
-              setTimeout(() => {
-                this.broadcastRestartStatus("completed");
-              }, 5000);
-            } catch (error) {
-              this.logger.error("WebSocket: 服务重启失败", error);
-              this.broadcastRestartStatus(
-                "failed",
-                error instanceof Error ? error.message : "未知错误"
-              );
-            }
-          }, 500);
-        } catch (error) {
-          this.logger.error("WebSocket: 处理重启请求失败", error);
-          ws.send(JSON.stringify({
-            type: "error",
-            error: {
-              code: "RESTART_REQUEST_ERROR",
-              message: error instanceof Error ? error.message : "处理重启请求失败"
-            }
-          }));
-        }
-        break;
-
-      default:
-        this.logger.warn(`WebSocket: 未知的消息类型: ${data.type}`);
-        ws.send(JSON.stringify({
-          type: "error",
-          error: {
-            code: "UNKNOWN_MESSAGE_TYPE",
-            message: `未知的消息类型: ${data.type}`
-          }
-        }));
-    }
-  }
-
-  private async sendInitialData(ws: any) {
-    const config = configManager.getConfig();
-    ws.send(JSON.stringify({ type: "config", data: config }));
-    ws.send(JSON.stringify({ type: "status", data: this.clientInfo }));
-
-    // 延迟发送配置更新，确保 MCP Server Proxy 有足够时间完成工具列表更新
-    setTimeout(() => {
-      const updatedConfig = configManager.getConfig();
-      ws.send(JSON.stringify({ type: "configUpdate", data: updatedConfig }));
-    }, 2000); // 2秒延迟
-  }
-
-  public broadcastConfigUpdate(config: AppConfig) {
-    if (!this.wss) return;
-
-    const message = JSON.stringify({ type: "configUpdate", data: config });
-    for (const client of this.wss.clients) {
-      if (client.readyState === 1) {
-        client.send(message);
-      }
-    }
-  }
-
-  private broadcastRestartStatus(
-    status: "restarting" | "completed" | "failed",
-    error?: string
-  ) {
-    if (!this.wss) return;
-
-    const message = JSON.stringify({
-      type: "restartStatus",
-      data: {
-        status,
-        error,
-        timestamp: Date.now(),
-      },
-    });
-    for (const client of this.wss.clients) {
-      if (client.readyState === 1) {
-        client.send(message);
-      }
-    }
-  }
-
-  private broadcastStatusUpdate() {
-    if (!this.wss) return;
-
-    const message = JSON.stringify({
-      type: "statusUpdate",
-      data: this.clientInfo,
-    });
-    for (const client of this.wss.clients) {
-      if (client.readyState === 1) {
-        client.send(message);
-      }
-    }
-  }
-
-  private updateClientInfo(info: Partial<ClientInfo>) {
-    this.clientInfo = { ...this.clientInfo, ...info };
-    if (info.lastHeartbeat) {
-      this.clientInfo.lastHeartbeat = Date.now();
-    }
-
-    // Reset heartbeat timeout when receiving client status
-    if (info.status === "connected") {
-      this.resetHeartbeatTimeout();
-    }
-  }
-
-  private resetHeartbeatTimeout() {
-    // Clear existing timeout
-    if (this.heartbeatTimeout) {
-      clearTimeout(this.heartbeatTimeout);
-    }
-
-    // Set new timeout
-    this.heartbeatTimeout = setTimeout(() => {
-      this.logger.warn("客户端心跳超时，标记为断开连接");
-      this.updateClientInfo({ status: "disconnected" });
-      this.broadcastStatusUpdate();
-    }, this.HEARTBEAT_TIMEOUT);
-  }
-
-  private updateConfig(newConfig: AppConfig) {
-    // 更新 MCP 端点
-    if (newConfig.mcpEndpoint !== configManager.getMcpEndpoint()) {
-      configManager.updateMcpEndpoint(newConfig.mcpEndpoint);
-    }
-
-    // 更新 MCP 服务
-    const currentServers = configManager.getMcpServers();
-    for (const [name, config] of Object.entries(newConfig.mcpServers)) {
-      if (JSON.stringify(currentServers[name]) !== JSON.stringify(config)) {
-        configManager.updateMcpServer(name, config);
-      }
-    }
-
-    // 删除不存在的服务
-    for (const name of Object.keys(currentServers)) {
-      if (!(name in newConfig.mcpServers)) {
-        configManager.removeMcpServer(name);
-
-        // 同时清理该服务在 mcpServerConfig 中的工具配置
-        configManager.removeServerToolsConfig(name);
-      }
-    }
-
-    // 更新连接配置
-    if (newConfig.connection) {
-      configManager.updateConnectionConfig(newConfig.connection);
-    }
-
-    // 更新 ModelScope 配置
-    if (newConfig.modelscope) {
-      configManager.updateModelScopeConfig(newConfig.modelscope);
-    }
-
-    // 更新 Web UI 配置
-    if (newConfig.webUI) {
-      configManager.updateWebUIConfig(newConfig.webUI);
-    }
-
-    // 更新服务工具配置
-    if (newConfig.mcpServerConfig) {
-      for (const [serverName, toolsConfig] of Object.entries(
-        newConfig.mcpServerConfig
-      )) {
-        for (const [toolName, toolConfig] of Object.entries(
-          toolsConfig.tools
-        )) {
-          configManager.setToolEnabled(serverName, toolName, toolConfig.enable);
-          // 注释：configManager 不支持直接设置工具描述，描述作为工具配置的一部分保存
-        }
-      }
-    }
-  }
-
-  private async restartService(): Promise<void> {
-    this.logger.info("正在重启 MCP 服务...");
-
-    // 清除心跳超时定时器，避免重启过程中误报断开连接
-    if (this.heartbeatTimeout) {
-      clearTimeout(this.heartbeatTimeout);
-      this.heartbeatTimeout = undefined;
-    }
-
-    try {
-      // 获取当前服务状态
-      const container = await createContainer();
-      const serviceManager = container.get("serviceManager") as any;
-      const status = await serviceManager.getStatus();
-      if (!status.running) {
-        this.logger.warn("MCP 服务未运行，尝试启动服务");
-
-        // 如果服务未运行，尝试启动服务
-        const startArgs = ["start", "--daemon"];
-        const child = spawn("xiaozhi", startArgs, {
-          detached: true,
-          stdio: "ignore",
-          env: {
-            ...process.env,
-            XIAOZHI_CONFIG_DIR: process.env.XIAOZHI_CONFIG_DIR || process.cwd(),
-          },
-        });
-        child.unref();
-        this.logger.info("MCP 服务启动命令已发送");
-        return;
-      }
-
-      // 获取服务运行模式
-      const isDaemon = status.mode === "daemon";
-
-      // 执行重启命令
-      const restartArgs = ["restart"];
-      if (isDaemon) {
-        restartArgs.push("--daemon");
-      }
-
-      // 在子进程中执行重启命令
-      const child = spawn("xiaozhi", restartArgs, {
-        detached: true,
-        stdio: "ignore",
-        env: {
-          ...process.env,
-          XIAOZHI_CONFIG_DIR: process.env.XIAOZHI_CONFIG_DIR || process.cwd(),
-        },
-      });
-
-      child.unref();
-
-      this.logger.info("MCP 服务重启命令已发送");
-
-      // 重启后重新设置心跳超时
-      this.resetHeartbeatTimeout();
-    } catch (error) {
-      this.logger.error(
-        `重启服务失败: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
-      // 失败时也要重新设置心跳超时
-      this.resetHeartbeatTimeout();
-      throw error;
-    }
-  }
-
-  public updateStatus(info: Partial<ClientInfo>) {
-    this.updateClientInfo(info);
-    this.broadcastStatusUpdate();
-  }
 
   public async start(): Promise<void> {
     // 检查服务器是否已经启动
@@ -991,16 +559,22 @@ export class WebServer {
     this.wss = new WebSocketServer({ server: this.httpServer });
     this.setupWebSocket();
 
+    // 启动心跳监控
+    this.heartbeatMonitorInterval = this.heartbeatHandler.startHeartbeatMonitoring();
+
     this.logger.info(`Web server listening on http://0.0.0.0:${this.port}`);
     this.logger.info(`Local access: http://localhost:${this.port}`);
 
     // 输出架构重构信息
-    this.logger.info("=== 通信架构重构信息 ===");
-    this.logger.info("HTTP API 职责: 配置管理、状态查询、服务控制");
-    this.logger.info("WebSocket 职责: 实时通知、心跳检测、事件广播");
-    this.logger.info("已废弃的 WebSocket 消息: getConfig, updateConfig, getStatus, restartService");
-    this.logger.info("推荐使用对应的 HTTP API 替代废弃的 WebSocket 消息");
-    this.logger.info("========================");
+    this.logger.info("=== 通信架构重构信息 - 第二阶段完成 ===");
+    this.logger.info("✅ 模块化拆分: HTTP/WebSocket 处理器独立");
+    this.logger.info("✅ 服务层抽象: ConfigService, StatusService, NotificationService");
+    this.logger.info("✅ 事件驱动机制: EventBus 实现模块间解耦通信");
+    this.logger.info("✅ HTTP API 职责: 配置管理、状态查询、服务控制");
+    this.logger.info("✅ WebSocket 职责: 实时通知、心跳检测、事件广播");
+    this.logger.info("⚠️  已废弃的 WebSocket 消息: getConfig, updateConfig, getStatus, restartService");
+    this.logger.info("📖 推荐使用对应的 HTTP API 替代废弃的 WebSocket 消息");
+    this.logger.info("================================================");
 
     // 2. 初始化所有连接（配置驱动）
     try {
@@ -1026,10 +600,10 @@ export class WebServer {
       // 停止 MCP 客户端
       this.proxyMCPServer?.disconnect();
 
-      // Clear heartbeat timeout
-      if (this.heartbeatTimeout) {
-        clearTimeout(this.heartbeatTimeout);
-        this.heartbeatTimeout = undefined;
+      // 停止心跳监控
+      if (this.heartbeatMonitorInterval) {
+        this.heartbeatHandler.stopHeartbeatMonitoring(this.heartbeatMonitorInterval);
+        this.heartbeatMonitorInterval = undefined;
       }
 
       // 强制断开所有 WebSocket 客户端连接
@@ -1062,5 +636,30 @@ export class WebServer {
         doResolve();
       }
     });
+  }
+
+  /**
+   * 销毁 WebServer 实例，清理所有资源
+   */
+  public destroy(): void {
+    this.logger.info("销毁 WebServer 实例");
+
+    // 停止心跳监控
+    if (this.heartbeatMonitorInterval) {
+      this.heartbeatHandler.stopHeartbeatMonitoring(this.heartbeatMonitorInterval);
+      this.heartbeatMonitorInterval = undefined;
+    }
+
+    // 销毁服务层
+    this.statusService.destroy();
+    this.notificationService.destroy();
+
+    // 销毁事件总线
+    destroyEventBus();
+
+    // 断开 MCP 连接
+    this.proxyMCPServer?.disconnect();
+
+    this.logger.info("WebServer 实例已销毁");
   }
 }
