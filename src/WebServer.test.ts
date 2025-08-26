@@ -290,7 +290,7 @@ describe("WebServer", () => {
     vi.clearAllMocks();
   });
 
-  it("should start the server on the specified port", async () => {
+  it("应该在指定端口上启动服务器", async () => {
     webServer = new WebServer(currentPort);
     await webServer.start();
 
@@ -303,7 +303,7 @@ describe("WebServer", () => {
     expect(data).toHaveProperty("activeMCPServers");
   });
 
-  it("should return config via HTTP API", async () => {
+  it("应该通过 HTTP API 返回配置", async () => {
     webServer = new WebServer(currentPort);
     await webServer.start();
 
@@ -316,7 +316,7 @@ describe("WebServer", () => {
     expect(data.data.mcpServers).toHaveProperty("test");
   });
 
-  it("should update config via HTTP API", async () => {
+  it("应该通过 HTTP API 更新配置", async () => {
     webServer = new WebServer(currentPort);
     await webServer.start();
 
@@ -339,7 +339,7 @@ describe("WebServer", () => {
     expect(responseData.message).toBe("配置更新成功");
   });
 
-  it("should handle WebSocket connections", async () => {
+  it("应该处理 WebSocket 连接", async () => {
     webServer = new WebServer(currentPort);
     await webServer.start();
 
@@ -380,7 +380,7 @@ describe("WebServer", () => {
     });
   });
 
-  it("should update client status via HTTP API", async () => {
+  it("应该通过 HTTP API 更新客户端状态", async () => {
     webServer = new WebServer(currentPort);
     await webServer.start();
 
@@ -399,7 +399,7 @@ describe("WebServer", () => {
     expect(response.status).toBe(200);
   });
 
-  it("should handle 404 for unknown routes", async () => {
+  it("应该处理 404 未找到路由", async () => {
     webServer = new WebServer(currentPort);
     await webServer.start();
 
@@ -479,7 +479,7 @@ describe("WebServer", () => {
     });
   });
 
-  describe("Auto Restart Feature", () => {
+  describe("自动重启功能", () => {
     let mockServiceManager: any;
     let mockSpawn: any;
 
@@ -503,7 +503,7 @@ describe("WebServer", () => {
       mockSpawn = vi.mocked(spawn);
     });
 
-    it("should not trigger automatic restart when config is updated", async () => {
+    it("应该在配置更新时不会触发自动重启", async () => {
       webServer = new WebServer(currentPort);
       await webServer.start();
 
@@ -533,7 +533,7 @@ describe("WebServer", () => {
       expect(mockSpawn).not.toHaveBeenCalled();
     });
 
-    it("should save config without restart regardless of autoRestart setting", async () => {
+    it("应该在自动重启设置下保存配置而不重启", async () => {
       webServer = new WebServer(currentPort);
       await webServer.start();
 
@@ -562,7 +562,7 @@ describe("WebServer", () => {
       expect(mockSpawn).not.toHaveBeenCalled();
     });
 
-    it("should broadcast restart status updates on manual restart", async () => {
+    it("应该在手动重启时广播重启状态更新", async () => {
       webServer = new WebServer(currentPort);
       await webServer.start();
 
@@ -603,7 +603,7 @@ describe("WebServer", () => {
       ws.close();
     });
 
-    it("should start service on manual restart if not running", async () => {
+    it("应该在手动重启时启动服务", async () => {
       webServer = new WebServer(currentPort);
       await webServer.start();
 
