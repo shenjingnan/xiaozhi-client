@@ -1,3 +1,4 @@
+import { createServer } from "node:http";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WebServer } from "./WebServer";
 import { configManager } from "./configManager";
@@ -129,12 +130,34 @@ vi.mock("./adapters/ConfigAdapter", () => ({
   convertLegacyToNew: vi.fn((name, config) => config),
 }));
 
+// 动态端口管理
+function getAvailablePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const server = createServer();
+    server.listen(0, () => {
+      const port = (server.address() as any)?.port;
+      server.close(() => {
+        if (port) {
+          resolve(port);
+        } else {
+          reject(new Error("无法获取可用端口"));
+        }
+      });
+    });
+  });
+}
+
 describe("WebServer 配置清理功能", () => {
   let mockConfigManager: any;
   let webServer: WebServer;
+  let currentPort: number;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+
+    // 获取可用端口
+    currentPort = await getAvailablePort();
+
     mockConfigManager = vi.mocked(configManager);
 
     // 设置默认的 mock 返回值
@@ -149,10 +172,17 @@ describe("WebServer 配置清理功能", () => {
     mockConfigManager.getMcpServers.mockReturnValue({
       test: { command: "node", args: ["test.js"] },
     });
-    mockConfigManager.getWebUIPort.mockReturnValue(9999);
+    mockConfigManager.getWebUIPort.mockReturnValue(currentPort);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    if (webServer) {
+      try {
+        await webServer.stop();
+      } catch (error) {
+        // 忽略停止时的错误
+      }
+    }
     vi.clearAllMocks();
   });
 
@@ -163,12 +193,12 @@ describe("WebServer 配置清理功能", () => {
     };
 
     // 创建 WebServer 实例并启动
-    const webServerInstance = new WebServer(9999);
-    await webServerInstance.start();
+    webServer = new WebServer(currentPort);
+    await webServer.start();
 
     try {
       // 通过 HTTP API 更新配置
-      const response = await fetch(`http://localhost:9999/api/config`, {
+      const response = await fetch(`http://localhost:${currentPort}/api/config`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -183,7 +213,7 @@ describe("WebServer 配置清理功能", () => {
       expect(responseData.success).toBe(true);
       expect(responseData.message).toBe("配置更新成功");
     } finally {
-      await webServerInstance.stop();
+      await webServer.stop();
     }
   });
 
@@ -203,12 +233,12 @@ describe("WebServer 配置清理功能", () => {
     };
 
     // 创建 WebServer 实例并启动
-    const webServerInstance = new WebServer(9999);
-    await webServerInstance.start();
+    webServer = new WebServer(currentPort);
+    await webServer.start();
 
     try {
       // 通过 HTTP API 更新配置
-      const response = await fetch("http://localhost:9999/api/config", {
+      const response = await fetch(`http://localhost:${currentPort}/api/config`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -223,7 +253,7 @@ describe("WebServer 配置清理功能", () => {
       expect(responseData.success).toBe(true);
       expect(responseData.message).toBe("配置更新成功");
     } finally {
-      await webServerInstance.stop();
+      await webServer.stop();
     }
   });
 
@@ -260,7 +290,7 @@ describe("WebServer 配置清理功能", () => {
     });
 
     it("应该在启动时调用配置清理方法", async () => {
-      const webServer = new WebServer(9999);
+      webServer = new WebServer(currentPort);
 
       // 模拟启动过程中的配置加载
       try {
@@ -279,7 +309,7 @@ describe("WebServer 配置清理功能", () => {
     it("应该在配置文件不存在时抛出错误而不调用清理方法", async () => {
       mockConfigManager.configExists.mockReturnValue(false);
 
-      const webServer = new WebServer(9999);
+      webServer = new WebServer(currentPort);
 
       // 应该抛出错误
       await expect(async () => {
@@ -299,12 +329,12 @@ describe("WebServer 配置清理功能", () => {
         mcpServers: {
           test: { command: "node", args: ["test.js"] },
         },
-        webUI: { port: 9999 },
+        webUI: { port: currentPort },
       };
 
       mockConfigManager.getConfig.mockReturnValue(expectedConfig);
 
-      const webServer = new WebServer(9999);
+      webServer = new WebServer(currentPort);
 
       // @ts-ignore - 调用私有方法用于测试
       const config = await webServer.loadConfiguration();
@@ -318,7 +348,7 @@ describe("WebServer 配置清理功能", () => {
       expect(config).toEqual({
         mcpEndpoint: expectedConfig.mcpEndpoint,
         mcpServers: expectedConfig.mcpServers,
-        webUIPort: 9999,
+        webUIPort: currentPort,
       });
     });
   });
