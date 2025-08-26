@@ -3,6 +3,7 @@
  * 将旧的配置格式转换为新的 MCPServiceConfig 格式，确保向后兼容性
  */
 
+import { resolve } from "node:path";
 import { logger as globalLogger } from "../Logger.js";
 import type {
   LocalMCPServerConfig,
@@ -106,11 +107,25 @@ function convertLocalConfig(
     );
   }
 
+  // 获取用户的工作目录（优先使用环境变量，否则使用当前工作目录）
+  const workingDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();
+
+  // 解析 args 中的相对路径
+  const resolvedArgs = (config.args || []).map((arg) => {
+    // 检查是否为相对路径（以 ./ 开头或不以 / 开头且包含文件扩展名）
+    if (isRelativePath(arg)) {
+      const resolvedPath = resolve(workingDir, arg);
+      logger.debug(`解析相对路径: ${arg} -> ${resolvedPath}`);
+      return resolvedPath;
+    }
+    return arg;
+  });
+
   return {
     name: serviceName,
     type: MCPTransportType.STDIO,
     command: config.command,
-    args: config.args || [],
+    args: resolvedArgs,
     // 默认重连配置
     reconnect: {
       enabled: true,
@@ -254,6 +269,25 @@ export function convertLegacyConfigBatch(
     `批量配置转换成功，共转换 ${Object.keys(newConfigs).length} 个服务`
   );
   return newConfigs;
+}
+
+/**
+ * 检查是否为相对路径
+ */
+function isRelativePath(path: string): boolean {
+  // 检查是否为相对路径的条件：
+  // 1. 以 ./ 或 ../ 开头
+  // 2. 不以 / 开头（非绝对路径）且包含常见的脚本文件扩展名
+  if (path.startsWith("./") || path.startsWith("../")) {
+    return true;
+  }
+
+  // 如果不以 / 开头且包含文件扩展名，也认为是相对路径
+  if (!path.startsWith("/") && /\.(js|py|ts|mjs|cjs)$/i.test(path)) {
+    return true;
+  }
+
+  return false;
 }
 
 /**

@@ -45,6 +45,7 @@ export default defineConfig({
     "src/mcpClient.ts",
     "src/ProxyMCPServer.ts",
     "src/services/MCPServer.ts",
+    "src/adapters/ConfigAdapter.ts",
   ],
   format: ["esm"],
   target: "node18",

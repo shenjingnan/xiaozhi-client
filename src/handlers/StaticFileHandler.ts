@@ -25,25 +25,40 @@ export class StaticFileHandler {
       // 获取当前文件所在目录
       const __dirname = dirname(fileURLToPath(import.meta.url));
 
+      this.logger.debug(`当前文件目录: ${__dirname}`);
+
       // 确定web目录路径
+      // 无论是全局安装还是直接执行，实际运行的都是 dist/cli.js 或 dist/handlers/StaticFileHandler.js
+      // 因此静态文件应该位于相对于 dist 目录的 ../web/dist 路径
       const possibleWebPaths = [
-        // 从构建后的 dist/ 目录
-        join(__dirname, "..", "web", "dist"),
-        join(__dirname, "..", "web"),
-        // 从源码目录（开发模式）
+        // 主要路径：从 dist 目录向上查找 web/dist
+        // 对于 dist/handlers/StaticFileHandler.js -> ../../web/dist
+        // 对于 dist/cli.js -> ../web/dist
         join(__dirname, "..", "..", "web", "dist"),
+        join(__dirname, "..", "web", "dist"),
+
+        // 备用路径：查找未构建的 web 目录（开发模式）
         join(__dirname, "..", "..", "web"),
-        // 从当前工作目录
-        join(process.cwd(), "web", "dist"),
-        join(process.cwd(), "web"),
+        join(__dirname, "..", "web"),
+
+        // 兜底路径：从源码目录查找（开发模式下的源码执行）
+        join(__dirname, "..", "..", "..", "web", "dist"),
+        join(__dirname, "..", "..", "..", "web"),
       ];
 
-      this.webPath = possibleWebPaths.find((p) => existsSync(p)) || null;
+      // 查找第一个存在的路径
+      this.webPath =
+        possibleWebPaths.find((p) => {
+          const exists = existsSync(p);
+          this.logger.debug(`检查路径 ${p}: ${exists ? "存在" : "不存在"}`);
+          return exists;
+        }) || null;
 
       if (this.webPath) {
         this.logger.info(`静态文件服务路径: ${this.webPath}`);
       } else {
         this.logger.warn("未找到静态文件目录");
+        this.logger.debug("尝试的路径:", possibleWebPaths);
       }
     } catch (error) {
       this.logger.error("初始化静态文件路径失败:", error);
