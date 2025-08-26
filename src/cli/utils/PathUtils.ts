@@ -3,6 +3,7 @@
  */
 
 import path from "node:path";
+import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import {
   CONFIG_CONSTANTS,
@@ -229,7 +230,8 @@ export class PathUtils {
    * 获取临时目录路径
    */
   static getTempDir(): string {
-    return process.env.TMPDIR || process.env.TEMP || "/tmp";
+    // 使用 Node.js 的 os.tmpdir() 来获取跨平台的临时目录
+    return process.env.TMPDIR || process.env.TEMP || tmpdir();
   }
 
   /**

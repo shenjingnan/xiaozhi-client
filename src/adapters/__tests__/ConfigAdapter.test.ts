@@ -4,6 +4,7 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { isAbsolute } from "node:path";
 import type {
   LocalMCPServerConfig,
   MCPServerConfig,
@@ -57,7 +58,8 @@ describe("ConfigAdapter", () => {
         // 验证路径解析功能
         expect(result.args).toBeDefined();
         expect(result.args![0]).toMatch(/.*calculator\.js$/);
-        expect(result.args![0]).toMatch(/^\/.*calculator\.js$/); // 应该是绝对路径
+        // 使用 isAbsolute 来检查是否为绝对路径，支持跨平台
+        expect(isAbsolute(result.args![0])).toBe(true);
       });
 
       it("应该处理没有 args 的本地配置", () => {
@@ -95,8 +97,9 @@ describe("ConfigAdapter", () => {
         const result = convertLegacyToNew("datetime", legacyConfig);
 
         expect(result.args).toBeDefined();
-        expect(result.args![0]).toMatch(/.*mcpServers\/datetime\.js$/);
-        expect(result.args![0]).toMatch(/^\/.*mcpServers\/datetime\.js$/);
+        expect(result.args![0]).toMatch(/.*mcpServers[\/\\]datetime\.js$/);
+        // 使用 isAbsolute 来检查是否为绝对路径，支持跨平台
+        expect(isAbsolute(result.args![0])).toBe(true);
       });
 
       it("应该解析相对路径（不以 / 开头的脚本文件）", () => {
@@ -109,7 +112,8 @@ describe("ConfigAdapter", () => {
 
         expect(result.args).toBeDefined();
         expect(result.args![0]).toMatch(/.*server\.py$/);
-        expect(result.args![0]).toMatch(/^\/.*server\.py$/);
+        // 使用 isAbsolute 来检查是否为绝对路径，支持跨平台
+        expect(isAbsolute(result.args![0])).toBe(true);
       });
 
       it("应该保持绝对路径不变", () => {
@@ -159,7 +163,8 @@ describe("ConfigAdapter", () => {
 
           expect(result.args).toBeDefined();
           expect(result.args![0]).toMatch(new RegExp(`.*${file}$`));
-          expect(result.args![0]).toMatch(new RegExp(`^\/.*${file}$`));
+          // 使用 isAbsolute 来检查是否为绝对路径，支持跨平台
+          expect(isAbsolute(result.args![0])).toBe(true);
         }
       });
     });

@@ -3,7 +3,7 @@
  * 将旧的配置格式转换为新的 MCPServiceConfig 格式，确保向后兼容性
  */
 
-import { resolve } from "node:path";
+import { resolve, isAbsolute } from "node:path";
 import { logger as globalLogger } from "../Logger.js";
 import type {
   LocalMCPServerConfig,
@@ -275,15 +275,21 @@ export function convertLegacyConfigBatch(
  * 检查是否为相对路径
  */
 function isRelativePath(path: string): boolean {
+  // 使用 Node.js 的 path.isAbsolute() 来正确检测绝对路径
+  // 这个方法能够正确处理 Windows、macOS、Linux 三个平台的路径格式
+  if (isAbsolute(path)) {
+    return false; // 绝对路径不是相对路径
+  }
+
   // 检查是否为相对路径的条件：
   // 1. 以 ./ 或 ../ 开头
-  // 2. 不以 / 开头（非绝对路径）且包含常见的脚本文件扩展名
+  // 2. 包含常见的脚本文件扩展名（且不是绝对路径）
   if (path.startsWith("./") || path.startsWith("../")) {
     return true;
   }
 
-  // 如果不以 / 开头且包含文件扩展名，也认为是相对路径
-  if (!path.startsWith("/") && /\.(js|py|ts|mjs|cjs)$/i.test(path)) {
+  // 如果包含文件扩展名且不是绝对路径，也认为是相对路径
+  if (/\.(js|py|ts|mjs|cjs)$/i.test(path)) {
     return true;
   }
 
