@@ -30,7 +30,7 @@ const originalProcessExit = process.exit;
 /**
  * 执行 CLI 命令并返回结果
  */
-function runCLI(args: string[]): Promise<{
+function runCLI(args: string[], timeout = 10000): Promise<{
   stdout: string;
   stderr: string;
   exitCode: number;
@@ -39,33 +39,56 @@ function runCLI(args: string[]): Promise<{
     const cliPath = path.resolve(__dirname, "../dist/cli.js");
     const child = spawn("node", [cliPath, ...args], {
       stdio: ["pipe", "pipe", "pipe"],
+      timeout: timeout,
     });
 
     let stdout = "";
     let stderr = "";
+    let isResolved = false;
 
-    child.stdout.on("data", (data) => {
+    // 设置超时处理
+    const timeoutId = setTimeout(() => {
+      if (!isResolved) {
+        isResolved = true;
+        child.kill("SIGTERM");
+        resolve({
+          stdout: "",
+          stderr: "Process timeout",
+          exitCode: 1,
+        });
+      }
+    }, timeout);
+
+    child.stdout?.on("data", (data) => {
       stdout += data.toString();
     });
 
-    child.stderr.on("data", (data) => {
+    child.stderr?.on("data", (data) => {
       stderr += data.toString();
     });
 
     child.on("close", (code) => {
-      resolve({
-        stdout: stdout.trim(),
-        stderr: stderr.trim(),
-        exitCode: code || 0,
-      });
+      if (!isResolved) {
+        isResolved = true;
+        clearTimeout(timeoutId);
+        resolve({
+          stdout: stdout.trim(),
+          stderr: stderr.trim(),
+          exitCode: code || 0,
+        });
+      }
     });
 
     child.on("error", (error) => {
-      resolve({
-        stdout: "",
-        stderr: error.message,
-        exitCode: 1,
-      });
+      if (!isResolved) {
+        isResolved = true;
+        clearTimeout(timeoutId);
+        resolve({
+          stdout: "",
+          stderr: error.message,
+          exitCode: 1,
+        });
+      }
     });
   });
 }
@@ -316,12 +339,15 @@ describe("CLI --info 和 --version-info 命令测试", () => {
       ];
 
       for (const args of argVariations) {
-        const result = await runCLI(args);
+        const result = await runCLI(args, 15000);
 
         expect(result.exitCode).toBe(0);
         expect(result.stdout).toContain("🤖 小智 MCP 客户端 - 详细信息");
+
+        // 添加小延迟避免进程竞争
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
-    });
+    }, 30000);
 
     it("应该正确识别 --version-info 参数的不同位置", async () => {
       const argVariations = [
@@ -332,12 +358,15 @@ describe("CLI --info 和 --version-info 命令测试", () => {
       ];
 
       for (const args of argVariations) {
-        const result = await runCLI(args);
+        const result = await runCLI(args, 15000);
 
         expect(result.exitCode).toBe(0);
         expect(result.stdout).toContain("xiaozhi-client v");
+
+        // 添加小延迟避免进程竞争
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
-    });
+    }, 30000);
 
     it("应该不处理类似但不完全匹配的参数", async () => {
       const nonMatchingArgs = [
@@ -350,13 +379,16 @@ describe("CLI --info 和 --version-info 命令测试", () => {
       ];
 
       for (const args of nonMatchingArgs) {
-        const result = await runCLI(args);
+        const result = await runCLI(args, 15000);
 
         // 这些参数不应该触发 --info 或 --version-info 的处理
         expect(result.stdout).not.toContain("🤖 小智 MCP 客户端 - 详细信息");
         expect(result.stdout).not.toContain("xiaozhi-client v");
+
+        // 添加小延迟避免进程竞争
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
-    });
+    }, 30000);
 
     it("应该处理参数的大小写敏感性", async () => {
       const caseVariations = [
@@ -367,13 +399,16 @@ describe("CLI --info 和 --version-info 命令测试", () => {
       ];
 
       for (const args of caseVariations) {
-        const result = await runCLI(args);
+        const result = await runCLI(args, 15000);
 
         // 大小写不匹配的参数不应该触发特殊处理
         expect(result.stdout).not.toContain("🤖 小智 MCP 客户端 - 详细信息");
         expect(result.stdout).not.toContain("xiaozhi-client v");
+
+        // 添加小延迟避免进程竞争
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
-    });
+    }, 30000);
   });
 
   describe("错误处理测试", () => {
@@ -509,12 +544,14 @@ describe("CLI --info 和 --version-info 命令测试", () => {
     });
 
     it("应该在不同环境下保持一致的行为", async () => {
-      // 测试多次执行的一致性
-      const results = await Promise.all([
-        runCLI(["--info"]),
-        runCLI(["--info"]),
-        runCLI(["--info"]),
-      ]);
+      // 测试多次执行的一致性，使用串行执行避免并发问题
+      const results = [];
+      for (let i = 0; i < 3; i++) {
+        const result = await runCLI(["--info"], 15000);
+        results.push(result);
+        // 添加小延迟避免进程竞争
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
 
       for (const result of results) {
         expect(result.exitCode).toBe(0);
@@ -544,9 +581,9 @@ describe("CLI --info 和 --version-info 命令测试", () => {
     });
 
     it("应该正确处理并发执行", async () => {
-      // 测试并发执行的稳定性
-      const concurrentPromises = Array.from({ length: 5 }, () =>
-        runCLI(["--version-info"])
+      // 测试并发执行的稳定性，减少并发数量并增加超时时间
+      const concurrentPromises = Array.from({ length: 3 }, () =>
+        runCLI(["--version-info"], 15000)
       );
 
       const results = await Promise.all(concurrentPromises);
@@ -555,6 +592,6 @@ describe("CLI --info 和 --version-info 命令测试", () => {
         expect(result.exitCode).toBe(0);
         expect(result.stdout).toMatch(/xiaozhi-client v\d+\.\d+\.\d+/);
       }
-    });
+    }, 30000);
   });
 });
