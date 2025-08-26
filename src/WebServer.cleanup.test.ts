@@ -198,13 +198,16 @@ describe("WebServer 配置清理功能", () => {
 
     try {
       // 通过 HTTP API 更新配置
-      const response = await fetch(`http://localhost:${currentPort}/api/config`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newConfig),
-      });
+      const response = await fetch(
+        `http://localhost:${currentPort}/api/config`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newConfig),
+        }
+      );
 
       expect(response.status).toBe(200);
 
@@ -238,13 +241,16 @@ describe("WebServer 配置清理功能", () => {
 
     try {
       // 通过 HTTP API 更新配置
-      const response = await fetch(`http://localhost:${currentPort}/api/config`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newConfig),
-      });
+      const response = await fetch(
+        `http://localhost:${currentPort}/api/config`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newConfig),
+        }
+      );
 
       expect(response.status).toBe(200);
 

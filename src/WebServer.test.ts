@@ -112,27 +112,35 @@ vi.mock("./services/NotificationService", () => {
 // Mock API 处理器
 vi.mock("./handlers/ConfigApiHandler", () => {
   const mockConfigApiHandler = {
-    getConfig: vi.fn((c) => c.json({
-      success: true,
-      data: {
-        mcpEndpoint: "wss://test.endpoint",
-        mcpServers: { test: { command: "node", args: ["test.js"] } }
-      }
-    })),
-    updateConfig: vi.fn((c) => c.json({
-      success: true,
-      data: null,
-      message: "配置更新成功"
-    })),
-    getMcpEndpoint: vi.fn((c) => c.json({
-      success: true,
-      data: { endpoint: "wss://test.endpoint" }
-    })),
-    updateMcpEndpoint: vi.fn((c) => c.json({
-      success: true,
-      data: null,
-      message: "MCP 端点更新成功"
-    })),
+    getConfig: vi.fn((c) =>
+      c.json({
+        success: true,
+        data: {
+          mcpEndpoint: "wss://test.endpoint",
+          mcpServers: { test: { command: "node", args: ["test.js"] } },
+        },
+      })
+    ),
+    updateConfig: vi.fn((c) =>
+      c.json({
+        success: true,
+        data: null,
+        message: "配置更新成功",
+      })
+    ),
+    getMcpEndpoint: vi.fn((c) =>
+      c.json({
+        success: true,
+        data: { endpoint: "wss://test.endpoint" },
+      })
+    ),
+    updateMcpEndpoint: vi.fn((c) =>
+      c.json({
+        success: true,
+        data: null,
+        message: "MCP 端点更新成功",
+      })
+    ),
   };
   return {
     ConfigApiHandler: vi.fn(() => mockConfigApiHandler),
@@ -141,11 +149,13 @@ vi.mock("./handlers/ConfigApiHandler", () => {
 
 vi.mock("./handlers/StatusApiHandler", () => {
   const mockStatusApiHandler = {
-    getStatus: vi.fn((c) => c.json({
-      status: "connected",
-      mcpEndpoint: "wss://test.endpoint",
-      activeMCPServers: ["test"]
-    })),
+    getStatus: vi.fn((c) =>
+      c.json({
+        status: "connected",
+        mcpEndpoint: "wss://test.endpoint",
+        activeMCPServers: ["test"],
+      })
+    ),
     getClientStatus: vi.fn((c) => c.json({ status: "connected" })),
     getRestartStatus: vi.fn((c) => c.json({ status: "idle" })),
     checkClientConnected: vi.fn((c) => c.json({ connected: true })),
@@ -162,11 +172,13 @@ vi.mock("./handlers/StatusApiHandler", () => {
 
 vi.mock("./handlers/ServiceApiHandler", () => {
   const mockServiceApiHandler = {
-    restartService: vi.fn((c) => c.json({
-      success: true,
-      data: null,
-      message: "重启请求已接收"
-    })),
+    restartService: vi.fn((c) =>
+      c.json({
+        success: true,
+        data: null,
+        message: "重启请求已接收",
+      })
+    ),
   };
   return {
     ServiceApiHandler: vi.fn(() => mockServiceApiHandler),
@@ -388,13 +400,16 @@ describe("WebServer", () => {
       activeMCPServers: ["test-server"],
     };
 
-    const response = await fetch(`http://localhost:${currentPort}/api/status/mcp-servers`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(statusUpdate),
-    });
+    const response = await fetch(
+      `http://localhost:${currentPort}/api/status/mcp-servers`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(statusUpdate),
+      }
+    );
 
     expect(response.status).toBe(200);
   });
@@ -586,9 +601,12 @@ describe("WebServer", () => {
       });
 
       // 使用 HTTP API 发送重启请求（新架构）
-      const response = await fetch(`http://localhost:${currentPort}/api/services/restart`, {
-        method: "POST",
-      });
+      const response = await fetch(
+        `http://localhost:${currentPort}/api/services/restart`,
+        {
+          method: "POST",
+        }
+      );
 
       expect(response.status).toBe(200);
 
@@ -613,9 +631,12 @@ describe("WebServer", () => {
       });
 
       // 使用 HTTP API 发送重启请求（新架构）
-      const response = await fetch(`http://localhost:${currentPort}/api/services/restart`, {
-        method: "POST",
-      });
+      const response = await fetch(
+        `http://localhost:${currentPort}/api/services/restart`,
+        {
+          method: "POST",
+        }
+      );
 
       expect(response.status).toBe(200);
 
