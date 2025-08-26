@@ -383,8 +383,10 @@ describe("PathUtils 路径工具", () => {
       mockFileURLToPath.mockReturnValue("/project/src/cli/utils/PathUtils.js");
 
       const result = PathUtils.getProjectRoot();
+      // 使用跨平台的路径比较
+      const expected = path.normalize("/project");
 
-      expect(result).toBe("/project");
+      expect(result).toBe(expected);
     });
 
     it("应该处理不同深度的脚本路径", () => {
@@ -393,8 +395,10 @@ describe("PathUtils 路径工具", () => {
       );
 
       const result = PathUtils.getProjectRoot();
+      // 使用跨平台的路径比较
+      const expected = path.normalize("/deep/nested");
 
-      expect(result).toBe("/deep/nested");
+      expect(result).toBe(expected);
     });
   });
 
