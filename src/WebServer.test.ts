@@ -24,7 +24,134 @@ vi.mock("./configManager", () => {
     ConfigManager: vi.fn(() => mockConfigManager),
   };
 });
-vi.mock("./logger");
+// Mock Logger 模块 - 注意路径和大小写
+vi.mock("./Logger", () => {
+  const mockLogger = {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    withTag: vi.fn(() => mockLogger),
+  };
+  return {
+    logger: mockLogger,
+    Logger: vi.fn(() => mockLogger),
+  };
+});
+
+// Mock EventBus 服务
+vi.mock("./services/EventBus", () => {
+  const mockEventBus = {
+    onEvent: vi.fn(),
+    emit: vi.fn(),
+    removeAllListeners: vi.fn(),
+    destroy: vi.fn(),
+  };
+  return {
+    getEventBus: vi.fn(() => mockEventBus),
+    destroyEventBus: vi.fn(),
+    EventBus: vi.fn(() => mockEventBus),
+  };
+});
+
+// Mock 各种服务
+vi.mock("./services/ConfigService", () => {
+  const mockConfigService = {
+    getConfig: vi.fn(() => ({
+      mcpEndpoint: "wss://test.endpoint",
+      mcpServers: {
+        test: { command: "node", args: ["test.js"] },
+      },
+    })),
+    updateConfig: vi.fn().mockResolvedValue(undefined),
+    getMcpEndpoint: vi.fn(() => "wss://test.endpoint"),
+    updateMcpEndpoint: vi.fn().mockResolvedValue(undefined),
+  };
+  return {
+    ConfigService: vi.fn(() => mockConfigService),
+  };
+});
+
+vi.mock("./services/StatusService", () => {
+  const mockStatusService = {
+    getStatus: vi.fn(() => ({
+      client: {
+        status: "connected",
+        mcpEndpoint: "wss://test.endpoint",
+        activeMCPServers: ["test"],
+      },
+    })),
+    updateClientInfo: vi.fn(),
+    getClientInfo: vi.fn(() => ({
+      status: "connected",
+      mcpEndpoint: "wss://test.endpoint",
+      activeMCPServers: ["test"],
+    })),
+  };
+  return {
+    StatusService: vi.fn(() => mockStatusService),
+  };
+});
+
+vi.mock("./services/NotificationService", () => {
+  const mockNotificationService = {
+    registerClient: vi.fn(),
+    unregisterClient: vi.fn(),
+    broadcast: vi.fn(),
+    sendToClient: vi.fn(),
+    getConnectedClients: vi.fn(() => []),
+    cleanupDisconnectedClients: vi.fn(),
+  };
+  return {
+    NotificationService: vi.fn(() => mockNotificationService),
+  };
+});
+
+// Mock API 处理器
+vi.mock("./handlers/ConfigApiHandler", () => {
+  const mockConfigApiHandler = {
+    getConfig: vi.fn((c) => c.json({
+      mcpEndpoint: "wss://test.endpoint",
+      mcpServers: { test: { command: "node", args: ["test.js"] } }
+    })),
+    updateConfig: vi.fn((c) => c.json({ success: true })),
+    getMcpEndpoint: vi.fn((c) => c.json({ mcpEndpoint: "wss://test.endpoint" })),
+    updateMcpEndpoint: vi.fn((c) => c.json({ success: true })),
+  };
+  return {
+    ConfigApiHandler: vi.fn(() => mockConfigApiHandler),
+  };
+});
+
+vi.mock("./handlers/StatusApiHandler", () => {
+  const mockStatusApiHandler = {
+    getStatus: vi.fn((c) => c.json({
+      status: "connected",
+      mcpEndpoint: "wss://test.endpoint",
+      activeMCPServers: ["test"]
+    })),
+    getClientStatus: vi.fn((c) => c.json({ status: "connected" })),
+    getRestartStatus: vi.fn((c) => c.json({ status: "idle" })),
+    checkClientConnected: vi.fn((c) => c.json({ connected: true })),
+    getLastHeartbeat: vi.fn((c) => c.json({ lastHeartbeat: Date.now() })),
+    getActiveMCPServers: vi.fn((c) => c.json({ servers: ["test"] })),
+    updateClientStatus: vi.fn((c) => c.json({ success: true })),
+    setActiveMCPServers: vi.fn((c) => c.json({ success: true })),
+    resetStatus: vi.fn((c) => c.json({ success: true })),
+  };
+  return {
+    StatusApiHandler: vi.fn(() => mockStatusApiHandler),
+  };
+});
+
+vi.mock("./handlers/ServiceApiHandler", () => {
+  const mockServiceApiHandler = {
+    restartService: vi.fn((c) => c.json({ success: true })),
+  };
+  return {
+    ServiceApiHandler: vi.fn(() => mockServiceApiHandler),
+  };
+});
 vi.mock("./cli/Container", () => ({
   createContainer: vi.fn(() => ({
     get: vi.fn((serviceName) => {
@@ -113,6 +240,11 @@ describe("WebServer", () => {
     mockConfigManager.getMcpServers.mockReturnValue({
       test: { command: "node", args: ["test.js"] },
     });
+    mockConfigManager.getWebUIPort.mockReturnValue(currentPort);
+    mockConfigManager.updateMcpEndpoint.mockResolvedValue(undefined);
+    mockConfigManager.updateWebUIConfig.mockResolvedValue(undefined);
+    mockConfigManager.removeMcpServer.mockResolvedValue(undefined);
+    mockConfigManager.removeServerToolsConfig.mockResolvedValue(undefined);
   });
 
   afterEach(async () => {
@@ -225,16 +357,23 @@ describe("WebServer", () => {
     });
   });
 
-  it("should update client status", () => {
+  it("should update client status via HTTP API", async () => {
     webServer = new WebServer(currentPort);
+    await webServer.start();
 
-    const clientInfo = {
-      status: "connected" as const,
-      mcpEndpoint: "wss://test.endpoint",
-      activeMCPServers: ["test"],
+    const statusUpdate = {
+      activeMCPServers: ["test-server"],
     };
 
-    webServer.updateStatus(clientInfo);
+    const response = await fetch(`http://localhost:${currentPort}/api/status/mcp-servers`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(statusUpdate),
+    });
+
+    expect(response.status).toBe(200);
   });
 
   it("should handle 404 for unknown routes", async () => {

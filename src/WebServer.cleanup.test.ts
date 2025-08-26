@@ -22,6 +22,72 @@ vi.mock("./configManager", () => ({
   },
 }));
 
+// Mock Logger 模块
+vi.mock("./Logger", () => {
+  const mockLogger = {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    withTag: vi.fn(() => mockLogger),
+  };
+  return {
+    logger: mockLogger,
+    Logger: vi.fn(() => mockLogger),
+  };
+});
+
+// Mock EventBus 服务
+vi.mock("./services/EventBus", () => {
+  const mockEventBus = {
+    onEvent: vi.fn(),
+    emit: vi.fn(),
+    removeAllListeners: vi.fn(),
+    destroy: vi.fn(),
+  };
+  return {
+    getEventBus: vi.fn(() => mockEventBus),
+    destroyEventBus: vi.fn(),
+    EventBus: vi.fn(() => mockEventBus),
+  };
+});
+
+// Mock 各种服务
+vi.mock("./services/ConfigService", () => {
+  const mockConfigService = {
+    getConfig: vi.fn(),
+    updateConfig: vi.fn(),
+    getMcpEndpoint: vi.fn(),
+    updateMcpEndpoint: vi.fn(),
+  };
+  return {
+    ConfigService: vi.fn(() => mockConfigService),
+  };
+});
+
+vi.mock("./services/StatusService", () => {
+  const mockStatusService = {
+    getStatus: vi.fn(),
+    updateClientInfo: vi.fn(),
+    getClientInfo: vi.fn(),
+  };
+  return {
+    StatusService: vi.fn(() => mockStatusService),
+  };
+});
+
+vi.mock("./services/NotificationService", () => {
+  const mockNotificationService = {
+    addClient: vi.fn(),
+    removeClient: vi.fn(),
+    broadcast: vi.fn(),
+    sendToClient: vi.fn(),
+  };
+  return {
+    NotificationService: vi.fn(() => mockNotificationService),
+  };
+});
+
 // Mock CLI
 vi.mock("./cli", () => ({
   getServiceStatus: vi.fn(),
@@ -89,28 +155,41 @@ describe("WebServer 配置清理功能", () => {
     vi.clearAllMocks();
   });
 
-  it("应该在删除服务时同时清理工具配置", () => {
+  it("应该在删除服务时同时清理工具配置", async () => {
     const newConfig = {
       mcpEndpoint: "wss://test.endpoint",
       mcpServers: {}, // 删除了所有服务
     };
 
-    // @ts-ignore - 访问私有方法用于测试
+    // 创建 WebServer 实例并启动
     const webServerInstance = new WebServer(9999);
+    await webServerInstance.start();
 
-    // @ts-ignore - 调用私有方法用于测试
-    webServerInstance.updateConfig(newConfig);
+    try {
+      // 通过 HTTP API 更新配置
+      const response = await fetch(`http://localhost:9999/api/config`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newConfig),
+      });
 
-    // 验证删除服务的方法被调用
-    expect(mockConfigManager.removeMcpServer).toHaveBeenCalledWith("test");
+      expect(response.status).toBe(200);
 
-    // 验证清理工具配置的方法被调用
-    expect(mockConfigManager.removeServerToolsConfig).toHaveBeenCalledWith(
-      "test"
-    );
+      // 验证删除服务的方法被调用
+      expect(mockConfigManager.removeMcpServer).toHaveBeenCalledWith("test");
+
+      // 验证清理工具配置的方法被调用
+      expect(mockConfigManager.removeServerToolsConfig).toHaveBeenCalledWith(
+        "test"
+      );
+    } finally {
+      await webServerInstance.stop();
+    }
   });
 
-  it("应该只清理被删除的服务配置", () => {
+  it("应该只清理被删除的服务配置", async () => {
     // 模拟当前有两个服务
     mockConfigManager.getMcpServers.mockReturnValue({
       calculator: { command: "node", args: ["calculator.js"] },
@@ -125,23 +204,36 @@ describe("WebServer 配置清理功能", () => {
       },
     };
 
-    // @ts-ignore - 访问私有方法用于测试
+    // 创建 WebServer 实例并启动
     const webServerInstance = new WebServer(9999);
+    await webServerInstance.start();
 
-    // @ts-ignore - 调用私有方法用于测试
-    webServerInstance.updateConfig(newConfig);
+    try {
+      // 通过 HTTP API 更新配置
+      const response = await fetch("http://localhost:9999/api/config", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newConfig),
+      });
 
-    // 验证只删除了 calculator 服务
-    expect(mockConfigManager.removeMcpServer).toHaveBeenCalledWith(
-      "calculator"
-    );
-    expect(mockConfigManager.removeMcpServer).toHaveBeenCalledTimes(1);
+      expect(response.status).toBe(200);
 
-    // 验证只清理了 calculator 服务的工具配置
-    expect(mockConfigManager.removeServerToolsConfig).toHaveBeenCalledWith(
-      "calculator"
-    );
-    expect(mockConfigManager.removeServerToolsConfig).toHaveBeenCalledTimes(1);
+      // 验证只删除了 calculator 服务
+      expect(mockConfigManager.removeMcpServer).toHaveBeenCalledWith(
+        "calculator"
+      );
+      expect(mockConfigManager.removeMcpServer).toHaveBeenCalledTimes(1);
+
+      // 验证只清理了 calculator 服务的工具配置
+      expect(mockConfigManager.removeServerToolsConfig).toHaveBeenCalledWith(
+        "calculator"
+      );
+      expect(mockConfigManager.removeServerToolsConfig).toHaveBeenCalledTimes(1);
+    } finally {
+      await webServerInstance.stop();
+    }
   });
 
   describe("启动时配置清理", () => {
