@@ -3,8 +3,8 @@
  * 验证配置转换器的功能和兼容性
  */
 
-import { describe, expect, it } from "vitest";
 import { isAbsolute } from "node:path";
+import { describe, expect, it } from "vitest";
 import type {
   LocalMCPServerConfig,
   MCPServerConfig,

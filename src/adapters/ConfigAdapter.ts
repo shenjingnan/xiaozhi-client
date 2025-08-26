@@ -3,7 +3,7 @@
  * 将旧的配置格式转换为新的 MCPServiceConfig 格式，确保向后兼容性
  */
 
-import { resolve, isAbsolute } from "node:path";
+import { isAbsolute, resolve } from "node:path";
 import { logger as globalLogger } from "../Logger.js";
 import type {
   LocalMCPServerConfig,

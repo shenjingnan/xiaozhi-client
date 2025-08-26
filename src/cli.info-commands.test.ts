@@ -30,7 +30,10 @@ const originalProcessExit = process.exit;
 /**
  * 执行 CLI 命令并返回结果
  */
-function runCLI(args: string[], timeout = 10000): Promise<{
+function runCLI(
+  args: string[],
+  timeout = 10000
+): Promise<{
   stdout: string;
   stderr: string;
   exitCode: number;
@@ -345,7 +348,7 @@ describe("CLI --info 和 --version-info 命令测试", () => {
         expect(result.stdout).toContain("🤖 小智 MCP 客户端 - 详细信息");
 
         // 添加小延迟避免进程竞争
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
       }
     }, 30000);
 
@@ -364,7 +367,7 @@ describe("CLI --info 和 --version-info 命令测试", () => {
         expect(result.stdout).toContain("xiaozhi-client v");
 
         // 添加小延迟避免进程竞争
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
       }
     }, 30000);
 
@@ -386,7 +389,7 @@ describe("CLI --info 和 --version-info 命令测试", () => {
         expect(result.stdout).not.toContain("xiaozhi-client v");
 
         // 添加小延迟避免进程竞争
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
       }
     }, 30000);
 
@@ -406,7 +409,7 @@ describe("CLI --info 和 --version-info 命令测试", () => {
         expect(result.stdout).not.toContain("xiaozhi-client v");
 
         // 添加小延迟避免进程竞争
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
       }
     }, 30000);
   });
@@ -550,7 +553,7 @@ describe("CLI --info 和 --version-info 命令测试", () => {
         const result = await runCLI(["--info"], 15000);
         results.push(result);
         // 添加小延迟避免进程竞争
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 200));
       }
 
       for (const result of results) {
