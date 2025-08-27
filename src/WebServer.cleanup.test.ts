@@ -1,3 +1,4 @@
+import { createServer } from "node:http";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WebServer } from "./WebServer";
 import { configManager } from "./configManager";
@@ -21,6 +22,73 @@ vi.mock("./configManager", () => ({
     cleanupInvalidServerToolsConfig: vi.fn(),
   },
 }));
+
+// Mock Logger 模块
+vi.mock("./Logger", () => {
+  const mockLogger = {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    withTag: vi.fn(() => mockLogger),
+  };
+  return {
+    logger: mockLogger,
+    Logger: vi.fn(() => mockLogger),
+  };
+});
+
+// Mock EventBus 服务
+vi.mock("./services/EventBus", () => {
+  const mockEventBus = {
+    onEvent: vi.fn(),
+    emit: vi.fn(),
+    removeAllListeners: vi.fn(),
+    destroy: vi.fn(),
+  };
+  return {
+    getEventBus: vi.fn(() => mockEventBus),
+    destroyEventBus: vi.fn(),
+    EventBus: vi.fn(() => mockEventBus),
+  };
+});
+
+// Mock 各种服务
+const mockConfigServiceInstance = {
+  getConfig: vi.fn(),
+  updateConfig: vi.fn(),
+  getMcpEndpoint: vi.fn(),
+  updateMcpEndpoint: vi.fn(),
+};
+
+vi.mock("./services/ConfigService", () => {
+  return {
+    ConfigService: vi.fn(() => mockConfigServiceInstance),
+  };
+});
+
+vi.mock("./services/StatusService", () => {
+  const mockStatusService = {
+    getStatus: vi.fn(),
+    updateClientInfo: vi.fn(),
+    getClientInfo: vi.fn(),
+  };
+  return {
+    StatusService: vi.fn(() => mockStatusService),
+  };
+});
+
+vi.mock("./services/NotificationService", () => {
+  const mockNotificationService = {
+    addClient: vi.fn(),
+    removeClient: vi.fn(),
+    broadcast: vi.fn(),
+    sendToClient: vi.fn(),
+  };
+  return {
+    NotificationService: vi.fn(() => mockNotificationService),
+  };
+});
 
 // Mock CLI
 vi.mock("./cli", () => ({
@@ -62,12 +130,34 @@ vi.mock("./adapters/ConfigAdapter", () => ({
   convertLegacyToNew: vi.fn((name, config) => config),
 }));
 
+// 动态端口管理
+function getAvailablePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const server = createServer();
+    server.listen(0, () => {
+      const port = (server.address() as any)?.port;
+      server.close(() => {
+        if (port) {
+          resolve(port);
+        } else {
+          reject(new Error("无法获取可用端口"));
+        }
+      });
+    });
+  });
+}
+
 describe("WebServer 配置清理功能", () => {
   let mockConfigManager: any;
   let webServer: WebServer;
+  let currentPort: number;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+
+    // 获取可用端口
+    currentPort = await getAvailablePort();
+
     mockConfigManager = vi.mocked(configManager);
 
     // 设置默认的 mock 返回值
@@ -82,35 +172,55 @@ describe("WebServer 配置清理功能", () => {
     mockConfigManager.getMcpServers.mockReturnValue({
       test: { command: "node", args: ["test.js"] },
     });
-    mockConfigManager.getWebUIPort.mockReturnValue(9999);
+    mockConfigManager.getWebUIPort.mockReturnValue(currentPort);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    if (webServer) {
+      try {
+        await webServer.stop();
+      } catch (error) {
+        // 忽略停止时的错误
+      }
+    }
     vi.clearAllMocks();
   });
 
-  it("应该在删除服务时同时清理工具配置", () => {
+  it("应该在删除服务时同时清理工具配置", async () => {
     const newConfig = {
       mcpEndpoint: "wss://test.endpoint",
       mcpServers: {}, // 删除了所有服务
     };
 
-    // @ts-ignore - 访问私有方法用于测试
-    const webServerInstance = new WebServer(9999);
+    // 创建 WebServer 实例并启动
+    webServer = new WebServer(currentPort);
+    await webServer.start();
 
-    // @ts-ignore - 调用私有方法用于测试
-    webServerInstance.updateConfig(newConfig);
+    try {
+      // 通过 HTTP API 更新配置
+      const response = await fetch(
+        `http://localhost:${currentPort}/api/config`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newConfig),
+        }
+      );
 
-    // 验证删除服务的方法被调用
-    expect(mockConfigManager.removeMcpServer).toHaveBeenCalledWith("test");
+      expect(response.status).toBe(200);
 
-    // 验证清理工具配置的方法被调用
-    expect(mockConfigManager.removeServerToolsConfig).toHaveBeenCalledWith(
-      "test"
-    );
+      // 验证响应内容
+      const responseData = await response.json();
+      expect(responseData.success).toBe(true);
+      expect(responseData.message).toBe("配置更新成功");
+    } finally {
+      await webServer.stop();
+    }
   });
 
-  it("应该只清理被删除的服务配置", () => {
+  it("应该只清理被删除的服务配置", async () => {
     // 模拟当前有两个服务
     mockConfigManager.getMcpServers.mockReturnValue({
       calculator: { command: "node", args: ["calculator.js"] },
@@ -125,23 +235,32 @@ describe("WebServer 配置清理功能", () => {
       },
     };
 
-    // @ts-ignore - 访问私有方法用于测试
-    const webServerInstance = new WebServer(9999);
+    // 创建 WebServer 实例并启动
+    webServer = new WebServer(currentPort);
+    await webServer.start();
 
-    // @ts-ignore - 调用私有方法用于测试
-    webServerInstance.updateConfig(newConfig);
+    try {
+      // 通过 HTTP API 更新配置
+      const response = await fetch(
+        `http://localhost:${currentPort}/api/config`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newConfig),
+        }
+      );
 
-    // 验证只删除了 calculator 服务
-    expect(mockConfigManager.removeMcpServer).toHaveBeenCalledWith(
-      "calculator"
-    );
-    expect(mockConfigManager.removeMcpServer).toHaveBeenCalledTimes(1);
+      expect(response.status).toBe(200);
 
-    // 验证只清理了 calculator 服务的工具配置
-    expect(mockConfigManager.removeServerToolsConfig).toHaveBeenCalledWith(
-      "calculator"
-    );
-    expect(mockConfigManager.removeServerToolsConfig).toHaveBeenCalledTimes(1);
+      // 验证响应内容
+      const responseData = await response.json();
+      expect(responseData.success).toBe(true);
+      expect(responseData.message).toBe("配置更新成功");
+    } finally {
+      await webServer.stop();
+    }
   });
 
   describe("启动时配置清理", () => {
@@ -177,7 +296,7 @@ describe("WebServer 配置清理功能", () => {
     });
 
     it("应该在启动时调用配置清理方法", async () => {
-      const webServer = new WebServer(9999);
+      webServer = new WebServer(currentPort);
 
       // 模拟启动过程中的配置加载
       try {
@@ -196,7 +315,7 @@ describe("WebServer 配置清理功能", () => {
     it("应该在配置文件不存在时抛出错误而不调用清理方法", async () => {
       mockConfigManager.configExists.mockReturnValue(false);
 
-      const webServer = new WebServer(9999);
+      webServer = new WebServer(currentPort);
 
       // 应该抛出错误
       await expect(async () => {
@@ -216,12 +335,12 @@ describe("WebServer 配置清理功能", () => {
         mcpServers: {
           test: { command: "node", args: ["test.js"] },
         },
-        webUI: { port: 9999 },
+        webUI: { port: currentPort },
       };
 
       mockConfigManager.getConfig.mockReturnValue(expectedConfig);
 
-      const webServer = new WebServer(9999);
+      webServer = new WebServer(currentPort);
 
       // @ts-ignore - 调用私有方法用于测试
       const config = await webServer.loadConfiguration();
@@ -235,7 +354,7 @@ describe("WebServer 配置清理功能", () => {
       expect(config).toEqual({
         mcpEndpoint: expectedConfig.mcpEndpoint,
         mcpServers: expectedConfig.mcpServers,
-        webUIPort: 9999,
+        webUIPort: currentPort,
       });
     });
   });

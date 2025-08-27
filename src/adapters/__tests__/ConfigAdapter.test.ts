@@ -3,6 +3,7 @@
  * 验证配置转换器的功能和兼容性
  */
 
+import { isAbsolute } from "node:path";
 import { describe, expect, it } from "vitest";
 import type {
   LocalMCPServerConfig,
@@ -33,7 +34,7 @@ describe("ConfigAdapter", () => {
           name: "calculator",
           type: MCPTransportType.STDIO,
           command: "node",
-          args: ["calculator.js"],
+          args: [expect.stringContaining("calculator.js")], // 路径解析后会变成绝对路径
           reconnect: {
             enabled: true,
             maxAttempts: 5,
@@ -53,6 +54,12 @@ describe("ConfigAdapter", () => {
           },
           timeout: 30000,
         });
+
+        // 验证路径解析功能
+        expect(result.args).toBeDefined();
+        expect(result.args![0]).toMatch(/.*calculator\.js$/);
+        // 使用 isAbsolute 来检查是否为绝对路径，支持跨平台
+        expect(isAbsolute(result.args![0])).toBe(true);
       });
 
       it("应该处理没有 args 的本地配置", () => {
@@ -77,6 +84,88 @@ describe("ConfigAdapter", () => {
         expect(() => convertLegacyToNew("test", legacyConfig)).toThrow(
           ConfigValidationError
         );
+      });
+    });
+
+    describe("路径解析功能", () => {
+      it("应该解析相对路径（以 ./ 开头）", () => {
+        const legacyConfig: LocalMCPServerConfig = {
+          command: "node",
+          args: ["./mcpServers/datetime.js"],
+        };
+
+        const result = convertLegacyToNew("datetime", legacyConfig);
+
+        expect(result.args).toBeDefined();
+        expect(result.args![0]).toMatch(/.*mcpServers[\/\\]datetime\.js$/);
+        // 使用 isAbsolute 来检查是否为绝对路径，支持跨平台
+        expect(isAbsolute(result.args![0])).toBe(true);
+      });
+
+      it("应该解析相对路径（不以 / 开头的脚本文件）", () => {
+        const legacyConfig: LocalMCPServerConfig = {
+          command: "python",
+          args: ["server.py"],
+        };
+
+        const result = convertLegacyToNew("python-server", legacyConfig);
+
+        expect(result.args).toBeDefined();
+        expect(result.args![0]).toMatch(/.*server\.py$/);
+        // 使用 isAbsolute 来检查是否为绝对路径，支持跨平台
+        expect(isAbsolute(result.args![0])).toBe(true);
+      });
+
+      it("应该保持绝对路径不变", () => {
+        const absolutePath = "/usr/local/bin/mcp-server.js";
+        const legacyConfig: LocalMCPServerConfig = {
+          command: "node",
+          args: [absolutePath],
+        };
+
+        const result = convertLegacyToNew("absolute-server", legacyConfig);
+
+        expect(result.args).toBeDefined();
+        expect(result.args![0]).toBe(absolutePath);
+      });
+
+      it("应该保持非脚本参数不变", () => {
+        const legacyConfig: LocalMCPServerConfig = {
+          command: "node",
+          args: ["--version", "server.js", "--port", "3000"],
+        };
+
+        const result = convertLegacyToNew("server", legacyConfig);
+
+        expect(result.args).toBeDefined();
+        expect(result.args![0]).toBe("--version"); // 非脚本参数保持不变
+        expect(result.args![1]).toMatch(/.*server\.js$/); // 脚本文件被解析
+        expect(result.args![2]).toBe("--port"); // 非脚本参数保持不变
+        expect(result.args![3]).toBe("3000"); // 非脚本参数保持不变
+      });
+
+      it("应该处理不同的脚本文件扩展名", () => {
+        const testCases = [
+          { file: "server.js", ext: "js" },
+          { file: "server.py", ext: "py" },
+          { file: "server.ts", ext: "ts" },
+          { file: "server.mjs", ext: "mjs" },
+          { file: "server.cjs", ext: "cjs" },
+        ];
+
+        for (const { file, ext } of testCases) {
+          const legacyConfig: LocalMCPServerConfig = {
+            command: "node",
+            args: [file],
+          };
+
+          const result = convertLegacyToNew(`test-${ext}`, legacyConfig);
+
+          expect(result.args).toBeDefined();
+          expect(result.args![0]).toMatch(new RegExp(`.*${file}$`));
+          // 使用 isAbsolute 来检查是否为绝对路径，支持跨平台
+          expect(isAbsolute(result.args![0])).toBe(true);
+        }
       });
     });
 
