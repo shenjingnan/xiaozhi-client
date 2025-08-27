@@ -173,9 +173,7 @@ describe("兼容性验证", () => {
     };
 
     const mockRestartStatus = {
-      status: "idle" as const,
-      lastRestart: Date.now(),
-      restartCount: 0,
+      status: "completed" as const,
       timestamp: Date.now(),
     };
 
@@ -192,7 +190,7 @@ describe("兼容性验证", () => {
       "wss://test.example.com/mcp"
     );
     expect(getByTestId("servers").textContent).toBe("服务器数量: 1");
-    expect(getByTestId("restart").textContent).toBe("idle");
+    expect(getByTestId("restart").textContent).toBe("completed");
   });
 
   it("应该确保废弃选择器能够正常获取数据", () => {
