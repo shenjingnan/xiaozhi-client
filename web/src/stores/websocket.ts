@@ -373,11 +373,11 @@ export const useWebSocketConnectionTimes = () =>
 // 导入兼容性选择器
 import {
   useWebSocketConfig as useWebSocketConfigCompat,
-  useWebSocketStatus as useWebSocketStatusCompat,
-  useWebSocketRestartStatus as useWebSocketRestartStatusCompat,
-  useWebSocketMcpServers as useWebSocketMcpServersCompat,
-  useWebSocketMcpServerConfig as useWebSocketMcpServerConfigCompat,
   useWebSocketMcpEndpoint as useWebSocketMcpEndpointCompat,
+  useWebSocketMcpServerConfig as useWebSocketMcpServerConfigCompat,
+  useWebSocketMcpServers as useWebSocketMcpServersCompat,
+  useWebSocketRestartStatus as useWebSocketRestartStatusCompat,
+  useWebSocketStatus as useWebSocketStatusCompat,
 } from "./websocket-compat";
 
 /**

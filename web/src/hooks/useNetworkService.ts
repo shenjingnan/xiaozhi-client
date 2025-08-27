@@ -5,9 +5,9 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { ConnectionState, networkService } from "../services";
-import { useWebSocketActions } from "../stores/websocket";
 import { useConfigStore } from "../stores/config";
 import { useStatusStore } from "../stores/status";
+import { useWebSocketActions } from "../stores/websocket";
 import type { AppConfig, ClientStatus } from "../types";
 
 /**

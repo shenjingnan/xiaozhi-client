@@ -5,11 +5,11 @@
  * 这些选择器将数据从新的专门 stores 中获取并以旧格式返回
  */
 
+import { ConnectionState } from "../services/websocket";
+import type { AppConfig, ClientStatus } from "../types";
 import { useConfigStore } from "./config";
 import { useStatusStore } from "./status";
 import { useWebSocketStore } from "./websocket";
-import { ConnectionState } from "../services/websocket";
-import type { AppConfig, ClientStatus } from "../types";
 
 /**
  * 向后兼容的配置选择器

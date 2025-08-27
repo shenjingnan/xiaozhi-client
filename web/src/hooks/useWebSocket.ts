@@ -16,13 +16,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { webSocketManager } from "../services/websocket";
-import { useWebSocketActions } from "../stores/websocket";
-import { useConfigActions, useConfig } from "../stores/config";
+import { useConfig, useConfigActions } from "../stores/config";
 import {
-  useStatusActions,
   useClientStatus,
   useRestartStatus,
+  useStatusActions,
 } from "../stores/status";
+import { useWebSocketActions } from "../stores/websocket";
 import type { AppConfig, ClientStatus } from "../types";
 import {
   buildWebSocketUrl,

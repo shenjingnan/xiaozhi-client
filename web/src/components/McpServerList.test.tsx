@@ -254,9 +254,10 @@ describe("McpServerList", () => {
 
     // Try to toggle a tool
     const buttons = screen.getAllByRole("button");
-    const toggleButtons = buttons.filter((button) =>
-      button.className.includes("hover:bg-red-500") ||
-      button.className.includes("hover:bg-green-500")
+    const toggleButtons = buttons.filter(
+      (button) =>
+        button.className.includes("hover:bg-red-500") ||
+        button.className.includes("hover:bg-green-500")
     );
 
     if (toggleButtons.length > 0) {

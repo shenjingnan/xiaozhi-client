@@ -7,9 +7,9 @@
  * - 提供统一的初始化入口
  */
 
-import { useWebSocketStore } from "./websocket";
 import { useConfigStore } from "./config";
 import { useStatusStore } from "./status";
+import { useWebSocketStore } from "./websocket";
 
 /**
  * 初始化所有 stores

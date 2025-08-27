@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useWebSocket } from "./useWebSocket";
 import type { AppConfig, ClientStatus } from "../types";
+import { useWebSocket } from "./useWebSocket";
 
 // Mock the stores and services
 vi.mock("../stores/websocket", () => ({
@@ -41,11 +41,15 @@ vi.mock("../utils/portUtils", () => ({
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
+import { webSocketManager } from "../services/websocket";
+import { useConfig, useConfigActions } from "../stores/config";
+import {
+  useClientStatus,
+  useRestartStatus,
+  useStatusActions,
+} from "../stores/status";
 // Import the mocked modules
 import { useWebSocketActions } from "../stores/websocket";
-import { useConfigActions, useConfig } from "../stores/config";
-import { useStatusActions, useClientStatus, useRestartStatus } from "../stores/status";
-import { webSocketManager } from "../services/websocket";
 import { buildWebSocketUrl } from "../utils/portUtils";
 
 const mockUseWebSocketActions = useWebSocketActions as ReturnType<typeof vi.fn>;
@@ -110,12 +114,12 @@ describe("useWebSocket", () => {
     const { result } = renderHook(() => useWebSocket());
 
     // The hook should return an object with the expected properties
-    expect(result.current).toHaveProperty('connected');
-    expect(result.current).toHaveProperty('config');
-    expect(result.current).toHaveProperty('status');
-    expect(result.current).toHaveProperty('restartStatus');
-    expect(result.current).toHaveProperty('updateConfig');
-    expect(result.current).toHaveProperty('wsUrl');
+    expect(result.current).toHaveProperty("connected");
+    expect(result.current).toHaveProperty("config");
+    expect(result.current).toHaveProperty("status");
+    expect(result.current).toHaveProperty("restartStatus");
+    expect(result.current).toHaveProperty("updateConfig");
+    expect(result.current).toHaveProperty("wsUrl");
   });
 
   it("returns data from mocked stores", () => {

@@ -16,8 +16,8 @@ import { apiClient } from "../services/api";
 import { webSocketManager } from "../services/websocket";
 import type {
   AppConfig,
-  MCPServerConfig,
   ConnectionConfig,
+  MCPServerConfig,
   ModelScopeConfig,
   WebUIConfig,
 } from "../types";

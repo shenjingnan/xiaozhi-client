@@ -2,15 +2,15 @@
  * 性能测试 - 验证重构后的性能优化效果
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, act } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 import type React from "react";
 import { useEffect } from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   useConfig,
+  useConfigStore,
   useMcpEndpoint,
   useMcpServers,
-  useConfigStore,
 } from "../stores/config";
 import {
   useClientStatus,
@@ -19,8 +19,8 @@ import {
 } from "../stores/status";
 import {
   useWebSocketConnected,
-  useWebSocketUrl,
   useWebSocketStore,
+  useWebSocketUrl,
 } from "../stores/websocket";
 
 // 性能监控组件

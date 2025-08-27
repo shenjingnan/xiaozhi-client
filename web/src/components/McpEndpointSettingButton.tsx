@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import { useMcpEndpoint, useConfig } from "@/stores/config";
+import { useConfig, useMcpEndpoint } from "@/stores/config";
 import {
   BadgeInfoIcon,
   CopyIcon,

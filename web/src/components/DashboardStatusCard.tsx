@@ -7,8 +7,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useWebSocketConnected, useWebSocketUrl } from "@/stores/websocket";
 import { useMcpEndpoint, useMcpServers } from "@/stores/config";
+import { useWebSocketConnected, useWebSocketUrl } from "@/stores/websocket";
 
 const MiniCircularProgress = ({
   showValue = true,

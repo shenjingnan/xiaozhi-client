@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App";
 
 // Mock WebSocket
@@ -133,7 +133,9 @@ describe("App Routing", () => {
 
     // Then check for Toaster component - it might have a different aria-label
     // Let's check if any toast container exists
-    const toastContainer = screen.queryByRole("region", { name: /notifications/i });
+    const toastContainer = screen.queryByRole("region", {
+      name: /notifications/i,
+    });
     if (toastContainer) {
       expect(toastContainer).toBeInTheDocument();
     } else {

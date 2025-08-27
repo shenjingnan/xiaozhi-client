@@ -6,14 +6,14 @@
  */
 
 import { useCallback } from "react";
-import { webSocketManager, ConnectionState } from "../services/websocket";
+import { ConnectionState, webSocketManager } from "../services/websocket";
 import {
-  useWebSocketConnectionState,
-  useWebSocketConnected,
-  useWebSocketUrl,
-  useWebSocketLastError,
-  useWebSocketConnectionStats,
   useWebSocketActions,
+  useWebSocketConnected,
+  useWebSocketConnectionState,
+  useWebSocketConnectionStats,
+  useWebSocketLastError,
+  useWebSocketUrl,
 } from "../stores/websocket";
 
 /**
