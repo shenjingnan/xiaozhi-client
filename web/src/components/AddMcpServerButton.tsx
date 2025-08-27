@@ -17,7 +17,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import { useWebSocketConfig } from "@/stores/websocket";
+import { useConfig } from "@/stores/config";
 import type { MCPServerConfig } from "@/types";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,7 +38,7 @@ export function AddMcpServerButton() {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { updateConfig } = useWebSocket();
-  const config = useWebSocketConfig();
+  const config = useConfig();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

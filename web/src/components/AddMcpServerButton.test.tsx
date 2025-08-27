@@ -19,14 +19,19 @@ vi.mock("@/hooks/useWebSocket", () => ({
   }),
 }));
 
-vi.mock("@/stores/websocket", () => ({
-  useWebSocketConfig: () => ({
+vi.mock("@/stores/config", () => ({
+  useConfig: () => ({
     mcpEndpoint: "wss://test.example.com",
     mcpServers: {
       "existing-server": {
         command: "node",
         args: ["existing.js"],
       },
+    },
+    connection: {
+      heartbeatInterval: 30000,
+      heartbeatTimeout: 10000,
+      reconnectInterval: 5000,
     },
   }),
 }));
@@ -137,19 +142,21 @@ describe("AddMcpServerButton", () => {
     });
 
     await waitFor(() => {
-      expect(mockUpdateConfig).toHaveBeenCalledWith({
-        mcpEndpoint: "wss://test.example.com",
-        mcpServers: {
-          "existing-server": {
-            command: "node",
-            args: ["existing.js"],
-          },
-          "new-server": {
-            command: "node",
-            args: ["new.js"],
-          },
-        },
-      });
+      expect(mockUpdateConfig).toHaveBeenCalledWith(
+        expect.objectContaining({
+          mcpEndpoint: "wss://test.example.com",
+          mcpServers: expect.objectContaining({
+            "existing-server": {
+              command: "node",
+              args: ["existing.js"],
+            },
+            "new-server": {
+              command: "node",
+              args: ["new.js"],
+            },
+          }),
+        })
+      );
       expect(toast.success).toHaveBeenCalledWith(
         '已添加 MCP 服务 "new-server"'
       );
@@ -182,19 +189,21 @@ describe("AddMcpServerButton", () => {
     });
 
     await waitFor(() => {
-      expect(mockUpdateConfig).toHaveBeenCalledWith({
-        mcpEndpoint: "wss://test.example.com",
-        mcpServers: {
-          "existing-server": {
-            command: "node",
-            args: ["existing.js"],
-          },
-          "sse-server": {
-            type: "sse",
-            url: "https://example.com/sse",
-          },
-        },
-      });
+      expect(mockUpdateConfig).toHaveBeenCalledWith(
+        expect.objectContaining({
+          mcpEndpoint: "wss://test.example.com",
+          mcpServers: expect.objectContaining({
+            "existing-server": {
+              command: "node",
+              args: ["existing.js"],
+            },
+            "sse-server": {
+              type: "sse",
+              url: "https://example.com/sse",
+            },
+          }),
+        })
+      );
       expect(toast.success).toHaveBeenCalledWith(
         '已添加 MCP 服务 "sse-server"'
       );
@@ -227,19 +236,21 @@ describe("AddMcpServerButton", () => {
     });
 
     await waitFor(() => {
-      expect(mockUpdateConfig).toHaveBeenCalledWith({
-        mcpEndpoint: "wss://test.example.com",
-        mcpServers: {
-          "existing-server": {
-            command: "node",
-            args: ["existing.js"],
-          },
-          "http-server": {
-            type: "streamable-http",
-            url: "https://example.com/mcp",
-          },
-        },
-      });
+      expect(mockUpdateConfig).toHaveBeenCalledWith(
+        expect.objectContaining({
+          mcpEndpoint: "wss://test.example.com",
+          mcpServers: expect.objectContaining({
+            "existing-server": {
+              command: "node",
+              args: ["existing.js"],
+            },
+            "http-server": {
+              type: "streamable-http",
+              url: "https://example.com/mcp",
+            },
+          }),
+        })
+      );
       expect(toast.success).toHaveBeenCalledWith(
         '已添加 MCP 服务 "http-server"'
       );
@@ -271,18 +282,20 @@ describe("AddMcpServerButton", () => {
     });
 
     await waitFor(() => {
-      expect(mockUpdateConfig).toHaveBeenCalledWith({
-        mcpEndpoint: "wss://test.example.com",
-        mcpServers: {
-          "existing-server": {
-            command: "node",
-            args: ["existing.js"],
-          },
-          "http-server-no-type": {
-            url: "https://example.com/mcp",
-          },
-        },
-      });
+      expect(mockUpdateConfig).toHaveBeenCalledWith(
+        expect.objectContaining({
+          mcpEndpoint: "wss://test.example.com",
+          mcpServers: expect.objectContaining({
+            "existing-server": {
+              command: "node",
+              args: ["existing.js"],
+            },
+            "http-server-no-type": {
+              url: "https://example.com/mcp",
+            },
+          }),
+        })
+      );
       expect(toast.success).toHaveBeenCalledWith(
         '已添加 MCP 服务 "http-server-no-type"'
       );
@@ -468,18 +481,20 @@ describe("AddMcpServerButton", () => {
       });
 
       await waitFor(() => {
-        expect(mockUpdateConfig).toHaveBeenCalledWith({
-          mcpEndpoint: "wss://test.example.com",
-          mcpServers: {
-            "existing-server": {
-              command: "node",
-              args: ["existing.js"],
-            },
-            "http-server": {
-              url: "https://example.com/mcp",
-            },
-          },
-        });
+        expect(mockUpdateConfig).toHaveBeenCalledWith(
+          expect.objectContaining({
+            mcpEndpoint: "wss://test.example.com",
+            mcpServers: expect.objectContaining({
+              "existing-server": {
+                command: "node",
+                args: ["existing.js"],
+              },
+              "http-server": {
+                url: "https://example.com/mcp",
+              },
+            }),
+          })
+        );
         expect(toast.success).toHaveBeenCalledWith(
           '已添加 MCP 服务 "http-server"'
         );

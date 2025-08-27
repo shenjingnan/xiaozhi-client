@@ -1,6 +1,10 @@
 /**
- * 优化后的 WebSocket 管理器
- * 专注于实时通知：configUpdate、statusUpdate、restartStatus、心跳检测
+ * 重构后的 WebSocket 管理器
+ * 特性：
+ * - 严格单例模式
+ * - 全局事件总线机制
+ * - 完善的错误处理和重连逻辑
+ * - 支持多个 store 订阅 WebSocket 事件
  */
 
 import type { AppConfig, ClientStatus } from "../types";
@@ -29,7 +33,34 @@ interface RestartStatus {
 }
 
 /**
- * WebSocket 事件监听器类型
+ * 事件总线事件类型
+ */
+interface EventBusEvents {
+  // 连接状态事件
+  "connection:connecting": undefined;
+  "connection:connected": undefined;
+  "connection:disconnected": undefined;
+  "connection:reconnecting": { attempt: number; maxAttempts: number };
+  "connection:error": { error: Error; context?: string };
+
+  // 数据更新事件
+  "data:configUpdate": AppConfig;
+  "data:statusUpdate": ClientStatus;
+  "data:restartStatus": RestartStatus;
+
+  // 系统事件
+  "system:heartbeat": { timestamp: number };
+  "system:message": WebSocketMessage;
+  "system:error": { error: Error; message?: WebSocketMessage };
+}
+
+/**
+ * 事件监听器类型
+ */
+type EventListener<T = any> = (data: T) => void;
+
+/**
+ * WebSocket 事件监听器类型（向后兼容）
  */
 interface WebSocketEventListeners {
   connected: () => void;
@@ -62,13 +93,97 @@ interface WebSocketManagerConfig {
 }
 
 /**
- * WebSocket 管理器类
+ * 事件总线类 - 支持多个订阅者
+ */
+class EventBus {
+  private listeners: Map<string, Set<EventListener>> = new Map();
+
+  /**
+   * 订阅事件
+   */
+  on<K extends keyof EventBusEvents>(
+    event: K,
+    listener: EventListener<EventBusEvents[K]>
+  ): () => void {
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, new Set());
+    }
+    this.listeners.get(event)!.add(listener);
+
+    // 返回取消订阅函数
+    return () => {
+      this.off(event, listener);
+    };
+  }
+
+  /**
+   * 取消订阅事件
+   */
+  off<K extends keyof EventBusEvents>(
+    event: K,
+    listener: EventListener<EventBusEvents[K]>
+  ): void {
+    const eventListeners = this.listeners.get(event);
+    if (eventListeners) {
+      eventListeners.delete(listener);
+      if (eventListeners.size === 0) {
+        this.listeners.delete(event);
+      }
+    }
+  }
+
+  /**
+   * 发布事件
+   */
+  emit<K extends keyof EventBusEvents>(
+    event: K,
+    data: EventBusEvents[K]
+  ): void {
+    const eventListeners = this.listeners.get(event);
+    if (eventListeners) {
+      for (const listener of eventListeners) {
+        try {
+          listener(data);
+        } catch (error) {
+          console.error(`[EventBus] 事件监听器执行失败 (${event}):`, error);
+        }
+      }
+    }
+  }
+
+  /**
+   * 清除所有监听器
+   */
+  clear(): void {
+    this.listeners.clear();
+  }
+
+  /**
+   * 获取事件监听器数量
+   */
+  getListenerCount(event?: keyof EventBusEvents): number {
+    if (event) {
+      return this.listeners.get(event)?.size || 0;
+    }
+    return Array.from(this.listeners.values()).reduce(
+      (total, listeners) => total + listeners.size,
+      0
+    );
+  }
+}
+
+/**
+ * WebSocket 管理器类 - 严格单例模式
  */
 export class WebSocketManager {
+  private static instance: WebSocketManager | null = null;
+  private static isCreating = false;
+
   private ws: WebSocket | null = null;
   private url: string;
   private state: ConnectionState = ConnectionState.DISCONNECTED;
-  private listeners: Partial<WebSocketEventListeners> = {};
+  private eventBus: EventBus = new EventBus();
+  private legacyListeners: Partial<WebSocketEventListeners> = {};
   private reconnectAttempts = 0;
   private maxReconnectAttempts: number;
   private reconnectInterval: number;
@@ -78,12 +193,80 @@ export class WebSocketManager {
   private heartbeatTimeout: number;
   private lastHeartbeat = 0;
 
-  constructor(config: WebSocketManagerConfig = {}) {
+  private constructor(config: WebSocketManagerConfig = {}) {
     this.url = config.url || this.getDefaultWebSocketUrl();
     this.maxReconnectAttempts = config.maxReconnectAttempts || 5;
     this.reconnectInterval = config.reconnectInterval || 3000;
     this.heartbeatInterval = config.heartbeatInterval || 30000; // 30秒
     this.heartbeatTimeout = config.heartbeatTimeout || 35000; // 35秒
+
+    // 设置向后兼容的事件桥接
+    this.setupLegacyEventBridge();
+  }
+
+  /**
+   * 获取单例实例
+   */
+  static getInstance(config?: WebSocketManagerConfig): WebSocketManager {
+    if (WebSocketManager.instance) {
+      return WebSocketManager.instance;
+    }
+
+    if (WebSocketManager.isCreating) {
+      throw new Error("[WebSocketManager] 检测到循环创建，请检查代码逻辑");
+    }
+
+    WebSocketManager.isCreating = true;
+    try {
+      WebSocketManager.instance = new WebSocketManager(config);
+      console.log("[WebSocketManager] 单例实例已创建");
+      return WebSocketManager.instance;
+    } finally {
+      WebSocketManager.isCreating = false;
+    }
+  }
+
+  /**
+   * 重置单例实例（仅用于测试）
+   */
+  static resetInstance(): void {
+    if (WebSocketManager.instance) {
+      WebSocketManager.instance.disconnect();
+      WebSocketManager.instance.eventBus.clear();
+      WebSocketManager.instance = null;
+      console.log("[WebSocketManager] 单例实例已重置");
+    }
+  }
+
+  /**
+   * 设置向后兼容的事件桥接
+   */
+  private setupLegacyEventBridge(): void {
+    // 连接状态事件桥接
+    this.eventBus.on("connection:connected", () => {
+      this.legacyListeners.connected?.();
+    });
+
+    this.eventBus.on("connection:disconnected", () => {
+      this.legacyListeners.disconnected?.();
+    });
+
+    this.eventBus.on("connection:error", ({ error }) => {
+      this.legacyListeners.error?.(error);
+    });
+
+    // 数据更新事件桥接
+    this.eventBus.on("data:configUpdate", (config) => {
+      this.legacyListeners.configUpdate?.(config);
+    });
+
+    this.eventBus.on("data:statusUpdate", (status) => {
+      this.legacyListeners.statusUpdate?.(status);
+    });
+
+    this.eventBus.on("data:restartStatus", (status) => {
+      this.legacyListeners.restartStatus?.(status);
+    });
   }
 
   /**
@@ -117,6 +300,9 @@ export class WebSocketManager {
     this.state = ConnectionState.CONNECTING;
     console.log(`[WebSocket] 连接到: ${this.url}`);
 
+    // 发布连接中事件
+    this.eventBus.emit("connection:connecting", undefined);
+
     try {
       this.ws = new WebSocket(this.url);
       this.setupEventHandlers();
@@ -143,20 +329,53 @@ export class WebSocketManager {
   }
 
   /**
-   * 设置事件监听器
+   * 新的事件订阅方法 - 使用事件总线
+   */
+  subscribe<K extends keyof EventBusEvents>(
+    event: K,
+    listener: EventListener<EventBusEvents[K]>
+  ): () => void {
+    return this.eventBus.on(event, listener);
+  }
+
+  /**
+   * 取消事件订阅
+   */
+  unsubscribe<K extends keyof EventBusEvents>(
+    event: K,
+    listener: EventListener<EventBusEvents[K]>
+  ): void {
+    this.eventBus.off(event, listener);
+  }
+
+  /**
+   * 获取事件总线实例（用于高级用法）
+   */
+  getEventBus(): EventBus {
+    return this.eventBus;
+  }
+
+  /**
+   * 设置事件监听器（向后兼容）
+   * @deprecated 使用 subscribe 方法替代
    */
   on<K extends keyof WebSocketEventListeners>(
     event: K,
     listener: WebSocketEventListeners[K]
   ): void {
-    this.listeners[event] = listener;
+    console.warn("[WebSocketManager] on() 方法已废弃，请使用 subscribe() 方法");
+    this.legacyListeners[event] = listener;
   }
 
   /**
-   * 移除事件监听器
+   * 移除事件监听器（向后兼容）
+   * @deprecated 使用 unsubscribe 方法替代
    */
   off<K extends keyof WebSocketEventListeners>(event: K): void {
-    delete this.listeners[event];
+    console.warn(
+      "[WebSocketManager] off() 方法已废弃，请使用 unsubscribe() 方法"
+    );
+    delete this.legacyListeners[event];
   }
 
   /**
@@ -193,6 +412,51 @@ export class WebSocketManager {
   }
 
   /**
+   * 发送消息
+   */
+  send(message: any): boolean {
+    if (!this.isConnected()) {
+      console.warn("[WebSocket] 连接未建立，无法发送消息");
+      return false;
+    }
+
+    try {
+      const messageStr =
+        typeof message === "string" ? message : JSON.stringify(message);
+      this.ws!.send(messageStr);
+      return true;
+    } catch (error) {
+      console.error("[WebSocket] 发送消息失败:", error);
+      this.eventBus.emit("connection:error", {
+        error: error as Error,
+        context: "send_message",
+      });
+      return false;
+    }
+  }
+
+  /**
+   * 获取当前 URL
+   */
+  getUrl(): string {
+    return this.url;
+  }
+
+  /**
+   * 获取连接统计信息
+   */
+  getConnectionStats() {
+    return {
+      state: this.state,
+      url: this.url,
+      reconnectAttempts: this.reconnectAttempts,
+      maxReconnectAttempts: this.maxReconnectAttempts,
+      lastHeartbeat: this.lastHeartbeat,
+      eventListenerCount: this.eventBus.getListenerCount(),
+    };
+  }
+
+  /**
    * 设置 WebSocket 事件处理器
    */
   private setupEventHandlers(): void {
@@ -203,7 +467,9 @@ export class WebSocketManager {
       this.state = ConnectionState.CONNECTED;
       this.reconnectAttempts = 0;
       this.startHeartbeat();
-      this.listeners.connected?.();
+
+      // 发布连接成功事件
+      this.eventBus.emit("connection:connected", undefined);
     };
 
     this.ws.onmessage = (event) => {
@@ -232,38 +498,58 @@ export class WebSocketManager {
   private handleMessage(message: WebSocketMessage): void {
     console.log("[WebSocket] 收到消息:", message.type);
 
-    switch (message.type) {
-      case "configUpdate":
-        if (message.data) {
-          this.listeners.configUpdate?.(message.data);
+    // 发布原始消息事件
+    this.eventBus.emit("system:message", message);
+
+    try {
+      switch (message.type) {
+        case "configUpdate":
+        case "config":
+          if (message.data) {
+            this.eventBus.emit("data:configUpdate", message.data);
+          }
+          break;
+
+        case "statusUpdate":
+        case "status":
+          if (message.data) {
+            this.eventBus.emit("data:statusUpdate", message.data);
+          }
+          break;
+
+        case "restartStatus":
+          if (message.data) {
+            this.eventBus.emit("data:restartStatus", message.data);
+          }
+          break;
+
+        case "heartbeatResponse":
+          this.lastHeartbeat = Date.now();
+          this.eventBus.emit("system:heartbeat", {
+            timestamp: this.lastHeartbeat,
+          });
+          break;
+
+        case "error": {
+          const error = new Error(message.error?.message || "服务器错误");
+          console.error("[WebSocket] 服务器错误:", message.error);
+          this.eventBus.emit("system:error", { error, message });
+          this.eventBus.emit("connection:error", {
+            error,
+            context: "server_error",
+          });
+          break;
         }
-        break;
 
-      case "statusUpdate":
-        if (message.data) {
-          this.listeners.statusUpdate?.(message.data);
-        }
-        break;
-
-      case "restartStatus":
-        if (message.data) {
-          this.listeners.restartStatus?.(message.data);
-        }
-        break;
-
-      case "heartbeatResponse":
-        this.lastHeartbeat = Date.now();
-        break;
-
-      case "error":
-        console.error("[WebSocket] 服务器错误:", message.error);
-        this.listeners.error?.(
-          new Error(message.error?.message || "服务器错误")
-        );
-        break;
-
-      default:
-        console.log("[WebSocket] 未处理的消息类型:", message.type);
+        default:
+          console.log("[WebSocket] 未处理的消息类型:", message.type);
+      }
+    } catch (error) {
+      console.error("[WebSocket] 消息处理失败:", error);
+      this.eventBus.emit("system:error", {
+        error: error as Error,
+        message,
+      });
     }
   }
 
@@ -273,13 +559,19 @@ export class WebSocketManager {
   private handleConnectionClose(): void {
     this.state = ConnectionState.DISCONNECTED;
     this.clearTimers();
-    this.listeners.disconnected?.();
+
+    // 发布连接断开事件
+    this.eventBus.emit("connection:disconnected", undefined);
 
     // 如果不是主动断开连接，尝试重连
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.scheduleReconnect();
     } else {
       console.error("[WebSocket] 达到最大重连次数，停止重连");
+      this.eventBus.emit("connection:error", {
+        error: new Error("达到最大重连次数"),
+        context: "max_reconnect_attempts",
+      });
     }
   }
 
@@ -289,11 +581,18 @@ export class WebSocketManager {
   private handleConnectionError(error: Error): void {
     this.state = ConnectionState.DISCONNECTED;
     this.clearTimers();
-    this.listeners.error?.(error);
+
+    // 发布连接错误事件
+    this.eventBus.emit("connection:error", {
+      error,
+      context: "connection_error",
+    });
 
     // 尝试重连
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.scheduleReconnect();
+    } else {
+      console.error("[WebSocket] 达到最大重连次数，停止重连");
     }
   }
 
@@ -307,6 +606,12 @@ export class WebSocketManager {
     console.log(
       `[WebSocket] 安排重连 (${this.reconnectAttempts}/${this.maxReconnectAttempts}) 在 ${this.reconnectInterval}ms 后`
     );
+
+    // 发布重连事件
+    this.eventBus.emit("connection:reconnecting", {
+      attempt: this.reconnectAttempts,
+      maxAttempts: this.maxReconnectAttempts,
+    });
 
     this.reconnectTimer = setTimeout(() => {
       this.connect();
@@ -368,8 +673,8 @@ export class WebSocketManager {
   }
 }
 
-// 创建默认的 WebSocket 管理器实例
-export const webSocketManager = new WebSocketManager();
+// 创建默认的 WebSocket 管理器实例（使用单例模式）
+export const webSocketManager = WebSocketManager.getInstance();
 
 // 导出类型和枚举
 export { ConnectionState };

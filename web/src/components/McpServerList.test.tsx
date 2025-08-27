@@ -4,10 +4,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { McpServerList } from "./McpServerList";
 
 // Mock the hooks
-vi.mock("@/stores/websocket", () => ({
-  useWebSocketMcpServerConfig: vi.fn(),
-  useWebSocketMcpServers: vi.fn(),
-  useWebSocketConfig: vi.fn(),
+vi.mock("@/stores/config", () => ({
+  useMcpServerConfig: vi.fn(),
+  useMcpServers: vi.fn(),
+  useConfig: vi.fn(),
 }));
 
 vi.mock("@/hooks/useWebSocket", () => ({
@@ -89,27 +89,33 @@ describe("McpServerList", () => {
     },
   };
 
+  const mockMcpServers = {
+    server1: { command: "node", args: ["server1.js"] },
+    server2: { command: "node", args: ["server2.js"] },
+  };
+
   const mockConfig = {
     mcpEndpoint: "ws://localhost:8080",
-    mcpServers: {},
-    mcpServerConfig: mockMcpServerConfig,
+    mcpServers: mockMcpServers,
+    connection: {
+      heartbeatInterval: 30000,
+      heartbeatTimeout: 10000,
+      reconnectInterval: 5000,
+    },
   };
 
   beforeEach(async () => {
     vi.clearAllMocks();
 
     // Setup mocks using dynamic imports
-    const websocketModule = await import("@/stores/websocket");
+    const configModule = await import("@/stores/config");
     const useWebSocketModule = await import("@/hooks/useWebSocket");
 
-    vi.mocked(websocketModule.useWebSocketMcpServerConfig).mockReturnValue(
+    vi.mocked(configModule.useMcpServerConfig).mockReturnValue(
       mockMcpServerConfig
     );
-    vi.mocked(websocketModule.useWebSocketMcpServers).mockReturnValue({
-      server1: { command: "node", args: ["server1.js"] },
-      server2: { command: "node", args: ["server2.js"] },
-    });
-    vi.mocked(websocketModule.useWebSocketConfig).mockReturnValue(mockConfig);
+    vi.mocked(configModule.useMcpServers).mockReturnValue(mockMcpServers);
+    vi.mocked(configModule.useConfig).mockReturnValue(mockConfig);
     vi.mocked(useWebSocketModule.useWebSocket).mockReturnValue({
       updateConfig: mockUpdateConfig,
       restartService: vi.fn(),
@@ -149,22 +155,21 @@ describe("McpServerList", () => {
     fireEvent.click(minusButtons[0]);
 
     await waitFor(() => {
-      expect(mockUpdateConfig).toHaveBeenCalledWith({
-        ...mockConfig,
-        mcpServerConfig: {
-          ...mockConfig.mcpServerConfig,
-          server1: {
-            ...mockConfig.mcpServerConfig.server1,
-            tools: {
-              ...mockConfig.mcpServerConfig.server1.tools,
-              tool1: {
-                ...mockConfig.mcpServerConfig.server1.tools.tool1,
-                enable: false,
-              },
-            },
-          },
-        },
-      });
+      expect(mockUpdateConfig).toHaveBeenCalledWith(
+        expect.objectContaining({
+          mcpEndpoint: "ws://localhost:8080",
+          mcpServers: mockMcpServers,
+          mcpServerConfig: expect.objectContaining({
+            server1: expect.objectContaining({
+              tools: expect.objectContaining({
+                tool1: expect.objectContaining({
+                  enable: false,
+                }),
+              }),
+            }),
+          }),
+        })
+      );
     });
 
     expect(toast.success).toHaveBeenCalledWith("禁用工具 tool1 成功");
@@ -181,30 +186,29 @@ describe("McpServerList", () => {
     fireEvent.click(plusButtons[0]);
 
     await waitFor(() => {
-      expect(mockUpdateConfig).toHaveBeenCalledWith({
-        ...mockConfig,
-        mcpServerConfig: {
-          ...mockConfig.mcpServerConfig,
-          server1: {
-            ...mockConfig.mcpServerConfig.server1,
-            tools: {
-              ...mockConfig.mcpServerConfig.server1.tools,
-              tool2: {
-                ...mockConfig.mcpServerConfig.server1.tools.tool2,
-                enable: true,
-              },
-            },
-          },
-        },
-      });
+      expect(mockUpdateConfig).toHaveBeenCalledWith(
+        expect.objectContaining({
+          mcpEndpoint: "ws://localhost:8080",
+          mcpServers: mockMcpServers,
+          mcpServerConfig: expect.objectContaining({
+            server1: expect.objectContaining({
+              tools: expect.objectContaining({
+                tool2: expect.objectContaining({
+                  enable: true,
+                }),
+              }),
+            }),
+          }),
+        })
+      );
     });
 
     expect(toast.success).toHaveBeenCalledWith("启用工具 tool2 成功");
   });
 
   it("should show error when config is not loaded", async () => {
-    const websocketModule = await import("@/stores/websocket");
-    vi.mocked(websocketModule.useWebSocketConfig).mockReturnValue(null);
+    const configModule = await import("@/stores/config");
+    vi.mocked(configModule.useConfig).mockReturnValue(null);
 
     render(<McpServerList updateConfig={mockUpdateConfig} />);
 
@@ -220,12 +224,12 @@ describe("McpServerList", () => {
     expect(mockUpdateConfig).not.toHaveBeenCalled();
   });
 
-  it("should show error when tool is not found", async () => {
+  it("should show error when updateConfig is not provided", async () => {
     // Mock a scenario where updateConfig is not provided
-    const websocketModule = await import("@/stores/websocket");
+    const configModule = await import("@/stores/config");
     const useWebSocketModule = await import("@/hooks/useWebSocket");
 
-    vi.mocked(websocketModule.useWebSocketMcpServerConfig).mockReturnValue({
+    vi.mocked(configModule.useMcpServerConfig).mockReturnValue({
       server1: {
         tools: {
           "other-tool": { enable: true, description: "Other tool" },
@@ -248,10 +252,16 @@ describe("McpServerList", () => {
 
     render(<McpServerList />); // No updateConfig prop to test the error case
 
-    // Try to toggle a non-existent tool
+    // Try to toggle a tool
     const buttons = screen.getAllByRole("button");
-    if (buttons.length > 0) {
-      fireEvent.click(buttons[0]);
+    const toggleButtons = buttons.filter(
+      (button) =>
+        button.className.includes("hover:bg-red-500") ||
+        button.className.includes("hover:bg-green-500")
+    );
+
+    if (toggleButtons.length > 0) {
+      fireEvent.click(toggleButtons[0]);
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(

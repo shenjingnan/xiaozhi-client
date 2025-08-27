@@ -5,6 +5,8 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { ConnectionState, networkService } from "../services";
+import { useConfigStore } from "../stores/config";
+import { useStatusStore } from "../stores/status";
 import { useWebSocketActions } from "../stores/websocket";
 import type { AppConfig, ClientStatus } from "../types";
 
@@ -12,7 +14,7 @@ import type { AppConfig, ClientStatus } from "../types";
  * 网络服务 Hook
  */
 export function useNetworkService() {
-  const storeActions = useWebSocketActions();
+  const webSocketActions = useWebSocketActions();
   const initializationRef = useRef(false);
 
   // 初始化网络服务
@@ -32,7 +34,7 @@ export function useNetworkService() {
     // 设置 WebSocket 事件监听器
     networkService.onWebSocketEvent("connected", () => {
       console.log("[NetworkService] WebSocket 已连接");
-      storeActions.setConnectionState(ConnectionState.CONNECTED);
+      webSocketActions.setConnectionState(ConnectionState.CONNECTED);
 
       // 连接成功后立即获取初始数据
       loadInitialData();
@@ -40,22 +42,22 @@ export function useNetworkService() {
 
     networkService.onWebSocketEvent("disconnected", () => {
       console.log("[NetworkService] WebSocket 已断开");
-      storeActions.setConnectionState(ConnectionState.DISCONNECTED);
+      webSocketActions.setConnectionState(ConnectionState.DISCONNECTED);
     });
 
     networkService.onWebSocketEvent("configUpdate", (config: AppConfig) => {
       console.log("[NetworkService] 收到配置更新通知");
-      storeActions.setConfig(config);
+      useConfigStore.getState().setConfig(config, "websocket");
     });
 
     networkService.onWebSocketEvent("statusUpdate", (status: ClientStatus) => {
       console.log("[NetworkService] 收到状态更新通知");
-      storeActions.setStatus(status);
+      useStatusStore.getState().setClientStatus(status, "websocket");
     });
 
     networkService.onWebSocketEvent("restartStatus", (restartStatus) => {
       console.log("[NetworkService] 收到重启状态通知:", restartStatus);
-      storeActions.setRestartStatus(restartStatus);
+      useStatusStore.getState().setRestartStatus(restartStatus, "websocket");
     });
 
     networkService.onWebSocketEvent("error", (error: Error) => {
@@ -68,7 +70,7 @@ export function useNetworkService() {
       networkService.destroy();
       initializationRef.current = false;
     };
-  }, [storeActions]);
+  }, [webSocketActions]);
 
   /**
    * 加载初始数据
@@ -84,12 +86,12 @@ export function useNetworkService() {
       ]);
 
       console.log("[NetworkService] 初始数据加载成功");
-      storeActions.setConfig(config);
-      storeActions.setStatus(status);
+      useConfigStore.getState().setConfig(config, "http");
+      useStatusStore.getState().setClientStatus(status, "http");
     } catch (error) {
       console.error("[NetworkService] 加载初始数据失败:", error);
     }
-  }, [storeActions]);
+  }, []);
 
   /**
    * 获取配置
@@ -97,33 +99,30 @@ export function useNetworkService() {
   const getConfig = useCallback(async (): Promise<AppConfig> => {
     try {
       const config = await networkService.getConfig();
-      storeActions.setConfig(config);
+      useConfigStore.getState().setConfig(config, "http");
       return config;
     } catch (error) {
       console.error("[NetworkService] 获取配置失败:", error);
       throw error;
     }
-  }, [storeActions]);
+  }, []);
 
   /**
    * 更新配置
    */
-  const updateConfig = useCallback(
-    async (config: AppConfig): Promise<void> => {
-      try {
-        console.log("[NetworkService] 更新配置");
-        await networkService.updateConfig(config);
+  const updateConfig = useCallback(async (config: AppConfig): Promise<void> => {
+    try {
+      console.log("[NetworkService] 更新配置");
+      await networkService.updateConfig(config);
 
-        // 立即更新本地状态，WebSocket 通知会进一步确认
-        storeActions.setConfig(config);
-        console.log("[NetworkService] 配置更新成功");
-      } catch (error) {
-        console.error("[NetworkService] 配置更新失败:", error);
-        throw error;
-      }
-    },
-    [storeActions]
-  );
+      // 立即更新本地状态，WebSocket 通知会进一步确认
+      useConfigStore.getState().setConfig(config, "http");
+      console.log("[NetworkService] 配置更新成功");
+    } catch (error) {
+      console.error("[NetworkService] 配置更新失败:", error);
+      throw error;
+    }
+  }, []);
 
   /**
    * 获取状态
@@ -131,13 +130,13 @@ export function useNetworkService() {
   const getStatus = useCallback(async () => {
     try {
       const status = await networkService.getStatus();
-      storeActions.setStatus(status.client);
+      useStatusStore.getState().setClientStatus(status.client, "http");
       return status;
     } catch (error) {
       console.error("[NetworkService] 获取状态失败:", error);
       throw error;
     }
-  }, [storeActions]);
+  }, []);
 
   /**
    * 刷新状态
@@ -205,9 +204,9 @@ export function useNetworkService() {
     (url: string): void => {
       console.log("[NetworkService] 设置自定义 WebSocket URL:", url);
       networkService.setWebSocketUrl(url);
-      storeActions.setWsUrl(url);
+      webSocketActions.setWsUrl(url);
     },
-    [storeActions]
+    [webSocketActions]
   );
 
   /**
@@ -219,7 +218,7 @@ export function useNetworkService() {
         console.log(`[NetworkService] 切换到端口 ${newPort}`);
 
         // 更新端口变更状态
-        storeActions.setPortChangeStatus({
+        webSocketActions.setPortChangeStatus({
           status: "checking",
           targetPort: newPort,
           timestamp: Date.now(),
@@ -243,7 +242,7 @@ export function useNetworkService() {
         window.location.reload();
       } catch (error) {
         console.error("[NetworkService] 端口切换失败:", error);
-        storeActions.setPortChangeStatus({
+        webSocketActions.setPortChangeStatus({
           status: "failed",
           targetPort: newPort,
           error: error instanceof Error ? error.message : "端口切换失败",
@@ -252,7 +251,7 @@ export function useNetworkService() {
         throw error;
       }
     },
-    [storeActions, restartService, setCustomWsUrl]
+    [webSocketActions, restartService, setCustomWsUrl]
   );
 
   /**

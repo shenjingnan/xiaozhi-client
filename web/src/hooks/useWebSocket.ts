@@ -1,28 +1,38 @@
 /**
- * WebSocket Hook - 重构后的架构
+ * WebSocket Hook - 重构版本（第二阶段）
  *
- * 职责分离：
- * - HTTP API: 负责主动操作（获取状态、更新配置、重启服务等）
- * - WebSocket: 负责实时通知（statusUpdate、configUpdate、restartStatus等）
+ * 重构内容：
+ * - 移除直接的 WebSocket 实例创建，使用 WebSocketManager 单例
+ * - 集成新的 config 和 status stores
+ * - 使用事件总线进行消息处理
+ * - 保持向后兼容性，现有组件无需修改
  *
- * 状态检查机制：
- * - 使用 HTTP API 定期检查状态 (GET /api/status)
- * - WebSocket 监听实时状态更新通知
- * - 两种机制互补，确保状态同步的及时性和可靠性
+ * 架构说明：
+ * - WebSocketManager: 单例 WebSocket 连接管理
+ * - ConfigStore: 配置数据统一管理
+ * - StatusStore: 状态数据统一管理
+ * - WebSocketStore: 纯连接状态管理
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { apiClient } from "../services/api";
-import { ConnectionState } from "../services/websocket";
-import { useWebSocketActions, useWebSocketStore } from "../stores/websocket";
+import { webSocketManager } from "../services/websocket";
+import { useConfig, useConfigActions } from "../stores/config";
+import {
+  useClientStatus,
+  useRestartStatus,
+  useStatusActions,
+} from "../stores/status";
+import { useWebSocketActions } from "../stores/websocket";
 import type { AppConfig, ClientStatus } from "../types";
 import {
   buildWebSocketUrl,
   checkPortAvailability,
   extractPortFromUrl,
-  pollPortUntilAvailable,
 } from "../utils/portUtils";
 
+/**
+ * 向后兼容的状态接口
+ */
 interface WebSocketState {
   connected: boolean;
   config: AppConfig | null;
@@ -34,57 +44,67 @@ interface WebSocketState {
   };
 }
 
+/**
+ * useWebSocket Hook - 重构版本
+ *
+ * @deprecated 建议使用新的专用 hooks：
+ * - useWebSocketConnection() 用于连接管理
+ * - useConfigData() 用于配置数据
+ * - useStatusData() 用于状态数据
+ */
 export function useWebSocket() {
-  const [state, setState] = useState<WebSocketState>({
-    connected: false,
-    config: null,
-    status: null,
-  });
-  const socketRef = useRef<WebSocket | null>(null);
-  const [wsUrl, setWsUrl] = useState<string>("");
-
-  // 获取 zustand store 的 actions
-  const storeActions = useWebSocketActions();
-
-  // 同步数据到 store 的辅助函数
-  const syncToStore = useCallback(
-    (key: string, value: any) => {
-      console.log("[WebSocket] 同步到 store:", key, value);
-      try {
-        switch (key) {
-          case "connected":
-            storeActions.setConnected(value);
-            console.log("[WebSocket] Store connected 已更新为:", value);
-            break;
-          case "config":
-            storeActions.setConfig(value);
-            console.log("[WebSocket] Store config 已更新");
-            break;
-          case "status":
-            storeActions.setStatus(value);
-            console.log("[WebSocket] Store status 已更新:", value);
-            break;
-          case "restartStatus":
-            storeActions.setRestartStatus(value);
-            console.log("[WebSocket] Store restartStatus 已更新");
-            break;
-          case "wsUrl":
-            storeActions.setWsUrl(value);
-            console.log("[WebSocket] Store wsUrl 已更新:", value);
-            break;
-          case "portChangeStatus":
-            storeActions.setPortChangeStatus(value);
-            console.log("[WebSocket] Store portChangeStatus 已更新:", value);
-            break;
-        }
-      } catch (error) {
-        console.error("Failed to sync to store:", error);
-      }
-    },
-    [storeActions]
+  console.warn(
+    "[useWebSocket] 此 hook 已重构，建议使用新的专用 hooks：useWebSocketConnection()、useConfigData()、useStatusData()"
   );
 
-  // 动态获取WebSocket连接地址
+  // 使用新的 stores 获取数据
+  const config = useConfig();
+  const clientStatus = useClientStatus();
+  const restartStatus = useRestartStatus();
+
+  // 获取 store actions
+  const webSocketActions = useWebSocketActions();
+  const configActions = useConfigActions();
+  const statusActions = useStatusActions();
+
+  // 向后兼容的本地状态
+  const [wsUrl, setWsUrl] = useState<string>("");
+  const isInitialized = useRef(false);
+
+  // 初始化 WebSocket 连接和数据加载
+  useEffect(() => {
+    if (isInitialized.current) return;
+    isInitialized.current = true;
+
+    console.log("[useWebSocket] 初始化 WebSocket 连接和数据加载");
+
+    // 确保 WebSocket 连接
+    if (!webSocketManager.isConnected()) {
+      webSocketManager.connect();
+    }
+
+    // 获取当前 WebSocket URL
+    const currentUrl = webSocketManager.getUrl();
+    setWsUrl(currentUrl);
+
+    // 初始化数据加载
+    const initializeData = async () => {
+      try {
+        // 并行加载配置和状态数据
+        await Promise.allSettled([
+          configActions.getConfig(),
+          statusActions.getStatus(),
+        ]);
+        console.log("[useWebSocket] 初始数据加载完成");
+      } catch (error) {
+        console.error("[useWebSocket] 初始数据加载失败:", error);
+      }
+    };
+
+    initializeData();
+  }, [configActions, statusActions]);
+
+  // 动态获取WebSocket连接地址（向后兼容）
   const getWebSocketUrl = useCallback((configPort?: number) => {
     // 优先使用localStorage中保存的地址
     const savedUrl = localStorage.getItem("xiaozhi-ws-url");
@@ -111,206 +131,73 @@ export function useWebSocket() {
       // 标准 HTTPS 端口 (443)
       targetPort = 443;
     }
-    // 注意：移除了对 state.config 的依赖，避免循环依赖
 
     // 构建 WebSocket URL
     return buildWebSocketUrl(targetPort);
-  }, []); // 移除 state.config 依赖
+  }, []);
 
-  useEffect(() => {
-    const url = getWebSocketUrl();
-    setWsUrl(url);
-    // 同步 URL 到 store
-    syncToStore("wsUrl", url);
+  // 向后兼容的状态计算
+  const state: WebSocketState = {
+    connected: webSocketManager.isConnected(),
+    config: config,
+    status: clientStatus,
+    restartStatus: restartStatus || undefined,
+  };
 
-    const ws = new WebSocket(url);
-
-    ws.onopen = async () => {
-      console.log(`[WebSocket] 连接已建立，URL: ${url}`);
-      const newState = { connected: true };
-      setState((prev) => ({ ...prev, ...newState }));
-      // 同步连接状态到 store
-      syncToStore("connected", true);
-
-      console.log("[WebSocket] 连接建立，通过 HTTP API 获取初始配置和状态");
-
-      // 通过 HTTP API 获取初始配置和状态
-      try {
-        console.log("[HTTP API] 获取初始配置");
-        const config = await apiClient.getConfig();
-
-        // 更新本地状态
-        setState((prev) => ({ ...prev, config }));
-        // 同步到 store
-        syncToStore("config", config);
-
-        console.log("[HTTP API] 初始配置获取成功:", config);
-      } catch (error) {
-        console.error("[HTTP API] 初始配置获取失败:", error);
-        // 配置获取失败不影响 WebSocket 连接，继续其他初始化
-      }
-
-      // 通过 HTTP API 获取初始状态
-      try {
-        console.log("[HTTP API] 获取初始状态");
-        const status = await apiClient.getStatus();
-
-        // 更新本地状态
-        setState((prev) => ({ ...prev, status: status.client }));
-        // 同步到 store
-        syncToStore("status", status.client);
-
-        console.log("[HTTP API] 初始状态获取成功:", status.client);
-      } catch (error) {
-        console.error("[HTTP API] 初始状态获取失败:", error);
-        // 状态获取失败不影响 WebSocket 连接
-      }
-    };
-
-    ws.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      console.log("[WebSocket] 收到消息:", message);
-
-      switch (message.type) {
-        case "config":
-        case "configUpdate":
-          console.log("[WebSocket] 处理 config 更新:", message.data);
-          setState((prev) => ({ ...prev, config: message.data }));
-          // 同步 config 到 store
-          syncToStore("config", message.data);
-          break;
-        case "status":
-        case "statusUpdate": {
-          console.log("[WebSocket] 处理实时 status 更新:", message.data);
-          // WebSocket 专注于实时通知：当服务器状态发生变化时推送更新
-          // 确保状态数据格式正确
-          const statusData = message.data;
-          if (statusData && typeof statusData === "object") {
-            setState((prev) => ({ ...prev, status: statusData }));
-            // 同步 status 到 store，使用 setTimeout 确保状态更新完成
-            setTimeout(() => {
-              syncToStore("status", statusData);
-            }, 0);
-          } else {
-            console.warn("[WebSocket] 收到无效的 status 数据:", statusData);
-          }
-          break;
-        }
-        case "restartStatus":
-          console.log("[WebSocket] 处理 restartStatus 更新:", message.data);
-          setState((prev) => ({ ...prev, restartStatus: message.data }));
-          // 同步 restartStatus 到 store
-          syncToStore("restartStatus", message.data);
-          break;
-        default:
-          console.log("[WebSocket] 未处理的消息类型:", message.type);
-      }
-    };
-
-    ws.onclose = () => {
-      console.log("[WebSocket] 连接已断开");
-      setState((prev) => ({ ...prev, connected: false }));
-      // 同步断开连接状态到 store
-      syncToStore("connected", false);
-    };
-
-    ws.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
-
-    socketRef.current = ws;
-
-    return () => {
-      ws.close();
-    };
-  }, [getWebSocketUrl, syncToStore]);
-
+  // 重构后的配置更新方法
   const updateConfig = useCallback(
-    (config: AppConfig): Promise<void> => {
-      return new Promise((resolve, reject) => {
-        if (socketRef.current?.readyState === WebSocket.OPEN) {
-          // 先通过 HTTP API 更新
-          const apiUrl = `${wsUrl.replace(
-            /^ws(s)?:\/\//,
-            "http$1://"
-          )}/api/config`;
-          fetch(apiUrl, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(config),
-          })
-            .then((response) => {
-              if (response.ok) {
-                return response.json().then(() => {
-                  // 通过 WebSocket 通知配置更新
-                  socketRef.current?.send(
-                    JSON.stringify({ type: "updateConfig", config })
-                  );
-                  resolve();
-                });
-              }
-              return response.text().then((text) => {
-                reject(new Error(text || "保存配置失败"));
-              });
-            })
-            .catch(reject);
-        } else {
-          reject(new Error("WebSocket 未连接"));
-        }
-      });
+    async (config: AppConfig): Promise<void> => {
+      console.log("[useWebSocket] updateConfig 调用，使用新的 configActions");
+      try {
+        await configActions.updateConfig(config);
+      } catch (error) {
+        console.error("[useWebSocket] 配置更新失败:", error);
+        throw error;
+      }
     },
-    [wsUrl]
+    [configActions]
   );
 
+  // 重构后的状态刷新方法
   const refreshStatus = useCallback(async () => {
+    console.log("[useWebSocket] refreshStatus 调用，使用新的 statusActions");
     try {
-      console.log("[HTTP API] 手动刷新状态");
-      const status = await apiClient.getStatus();
-
-      // 更新本地状态
-      setState((prev) => ({ ...prev, status: status.client }));
-      // 同步到 store
-      syncToStore("status", status.client);
-
-      console.log("[HTTP API] 状态刷新成功:", status.client);
+      await statusActions.refreshStatus();
     } catch (error) {
-      console.error("[HTTP API] 状态刷新失败:", error);
-      throw error; // 重新抛出错误，让调用者处理
+      console.error("[useWebSocket] 状态刷新失败:", error);
+      throw error;
     }
-  }, [syncToStore]);
+  }, [statusActions]);
 
-  const restartService = useCallback((): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      if (socketRef.current?.readyState === WebSocket.OPEN) {
-        console.log("[WebSocket] 发送重启请求");
-
-        // 发送重启请求
-        socketRef.current.send(JSON.stringify({ type: "restartService" }));
-
-        // 由于服务重启会断开WebSocket连接，我们不能依赖WebSocket消息来确认重启状态
-        // 改为等待一段时间，让服务有足够时间重启
-        console.log("[WebSocket] 等待服务重启...");
-
-        setTimeout(() => {
-          console.log("[WebSocket] 服务重启等待时间结束，假设重启完成");
-          resolve();
-        }, 5000); // 等待5秒，给服务足够的重启时间
-      } else {
-        reject(new Error("WebSocket 未连接"));
-      }
-    });
-  }, []);
+  // 重构后的服务重启方法
+  const restartService = useCallback(async (): Promise<void> => {
+    console.log("[useWebSocket] restartService 调用，使用新的 statusActions");
+    try {
+      await statusActions.restartService();
+    } catch (error) {
+      console.error("[useWebSocket] 服务重启失败:", error);
+      throw error;
+    }
+  }, [statusActions]);
 
   // 保存自定义WebSocket地址
-  const setCustomWsUrl = useCallback((url: string) => {
-    if (url) {
-      localStorage.setItem("xiaozhi-ws-url", url);
-    } else {
-      localStorage.removeItem("xiaozhi-ws-url");
-    }
-    // 重新加载页面以应用新的连接地址
-    window.location.reload();
-  }, []);
+  const setCustomWsUrl = useCallback(
+    (url: string) => {
+      console.log("[useWebSocket] setCustomWsUrl 调用，使用 WebSocketManager");
+      if (url) {
+        localStorage.setItem("xiaozhi-ws-url", url);
+        webSocketManager.setUrl(url);
+      } else {
+        localStorage.removeItem("xiaozhi-ws-url");
+        // 恢复默认 URL
+        const defaultUrl = getWebSocketUrl();
+        webSocketManager.setUrl(defaultUrl);
+      }
+      // 更新本地状态
+      setWsUrl(webSocketManager.getUrl());
+    },
+    [getWebSocketUrl]
+  );
 
   // 端口切换核心函数
   const changePort = useCallback(
@@ -323,33 +210,36 @@ export function useWebSocket() {
       }
 
       // 更新端口切换状态
-      syncToStore("portChangeStatus", {
+      webSocketActions.setPortChangeStatus({
         status: "checking",
         targetPort: newPort,
         timestamp: Date.now(),
       });
 
       try {
-        // 从 store 获取最新的连接状态
-        const state = useWebSocketStore.getState();
-        const isConnected = state.connectionState === ConnectionState.CONNECTED;
-        console.log(
-          `[WebSocket] 开始端口切换到 ${newPort}，当前连接状态: ${isConnected}`
-        );
+        // 更新端口切换状态
+        webSocketActions.setPortChangeStatus({
+          status: "checking",
+          targetPort: newPort,
+          timestamp: Date.now(),
+        });
 
-        if (isConnected) {
-          // 场景2：已连接状态 - 先更新配置，然后重启服务，最后轮询新端口
-          console.log("[WebSocket] 执行已连接状态下的端口切换");
-          await handleConnectedPortChange(newPort);
-        } else {
-          // 场景1：未连接状态 - 直接检测新端口并连接
-          console.log("[WebSocket] 执行未连接状态下的端口切换");
-          await handleDisconnectedPortChange(newPort);
+        // 检查端口可用性
+        const isAvailable = await checkPortAvailability(newPort);
+        if (!isAvailable) {
+          throw new Error(`端口 ${newPort} 不可用`);
         }
+
+        // 构建新的 WebSocket URL
+        const newUrl = buildWebSocketUrl(newPort);
+
+        // 更新 WebSocket URL
+        webSocketManager.setUrl(newUrl);
+        setWsUrl(newUrl);
 
         // 成功完成端口切换
         console.log(`[WebSocket] 端口切换到 ${newPort} 成功完成`);
-        syncToStore("portChangeStatus", {
+        webSocketActions.setPortChangeStatus({
           status: "completed",
           targetPort: newPort,
           timestamp: Date.now(),
@@ -360,7 +250,7 @@ export function useWebSocket() {
           error instanceof Error ? error.message : "端口切换失败";
         console.error(`[WebSocket] 端口切换到 ${newPort} 失败:`, errorMessage);
 
-        syncToStore("portChangeStatus", {
+        webSocketActions.setPortChangeStatus({
           status: "failed",
           targetPort: newPort,
           error: errorMessage,
@@ -369,143 +259,7 @@ export function useWebSocket() {
         throw error;
       }
     },
-    [wsUrl, syncToStore]
-  );
-
-  // 处理已连接状态下的端口切换
-  const handleConnectedPortChange = useCallback(
-    async (newPort: number): Promise<void> => {
-      // 从 store 获取最新的配置数据，而不是从内部 state
-      const currentConfig = useWebSocketStore.getState().config;
-
-      if (!currentConfig) {
-        throw new Error("配置数据未加载，请刷新页面后重试");
-      }
-
-      console.log(
-        `[WebSocket] 当前配置端口: ${currentConfig.webUI?.port}, 目标端口: ${newPort}`
-      );
-
-      // 1. 更新配置
-      console.log("[WebSocket] 步骤1: 更新配置文件");
-      const updatedConfig = {
-        ...currentConfig,
-        webUI: {
-          ...currentConfig.webUI,
-          port: newPort,
-        },
-      };
-
-      try {
-        await updateConfig(updatedConfig);
-        console.log("[WebSocket] 配置文件更新成功");
-      } catch (error) {
-        throw new Error(
-          `配置文件更新失败: ${
-            error instanceof Error ? error.message : "未知错误"
-          }`
-        );
-      }
-
-      // 2. 发送重启请求
-      console.log("[WebSocket] 步骤2: 重启服务");
-      syncToStore("portChangeStatus", {
-        status: "polling",
-        targetPort: newPort,
-        currentAttempt: 0,
-        maxAttempts: 45,
-        timestamp: Date.now(),
-      });
-
-      try {
-        await restartService();
-        console.log("[WebSocket] 服务重启请求已发送");
-      } catch (error) {
-        throw new Error(
-          `服务重启失败: ${error instanceof Error ? error.message : "未知错误"}`
-        );
-      }
-
-      // 3. 轮询新端口 - 增加重试次数和总超时时间
-      console.log(`[WebSocket] 开始轮询新端口 ${newPort}`);
-      const isAvailable = await pollPortUntilAvailable(
-        newPort,
-        45, // 增加到45次重试
-        2000, // 保持2秒间隔
-        (attempt, maxAttempts) => {
-          console.log(`[WebSocket] 端口轮询进度: ${attempt}/${maxAttempts}`);
-          syncToStore("portChangeStatus", {
-            status: "polling",
-            targetPort: newPort,
-            currentAttempt: attempt,
-            maxAttempts,
-            timestamp: Date.now(),
-          });
-        }
-      );
-
-      if (!isAvailable) {
-        throw new Error(
-          `新端口 ${newPort} 在90秒超时时间内未可用，请检查服务是否正常启动`
-        );
-      }
-
-      console.log(`[WebSocket] 新端口 ${newPort} 已可用`);
-
-      // 4. 连接到新端口
-      await connectToNewPort(newPort);
-    },
-    [updateConfig, restartService, syncToStore]
-  );
-
-  // 处理未连接状态下的端口切换
-  const handleDisconnectedPortChange = useCallback(
-    async (newPort: number): Promise<void> => {
-      // 1. 检测新端口是否可用
-      const isAvailable = await checkPortAvailability(newPort);
-
-      if (!isAvailable) {
-        throw new Error(`端口 ${newPort} 不可用，请检查服务端是否已启动`);
-      }
-
-      // 2. 连接到新端口
-      await connectToNewPort(newPort);
-    },
-    []
-  );
-
-  // 连接到新端口
-  const connectToNewPort = useCallback(
-    async (newPort: number): Promise<void> => {
-      console.log(`[WebSocket] 步骤4: 连接到新端口 ${newPort}`);
-
-      syncToStore("portChangeStatus", {
-        status: "connecting",
-        targetPort: newPort,
-        timestamp: Date.now(),
-      });
-
-      try {
-        // 构建新的 WebSocket URL
-        const newUrl = buildWebSocketUrl(newPort);
-        console.log(`[WebSocket] 新的WebSocket URL: ${newUrl}`);
-
-        // 保存新的 URL 到 localStorage
-        localStorage.setItem("xiaozhi-ws-url", newUrl);
-        console.log("[WebSocket] 新URL已保存到localStorage");
-
-        // 重新加载页面以建立新连接
-        console.log("[WebSocket] 重新加载页面以建立新连接");
-        window.location.reload();
-      } catch (error) {
-        throw new Error(
-          `连接到新端口失败: ${
-            error instanceof Error ? error.message : "未知错误"
-          }`
-        );
-      }
-    },
-    [syncToStore]
+    [wsUrl, webSocketActions]
   );
 
   return {

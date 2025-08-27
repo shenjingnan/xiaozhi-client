@@ -18,8 +18,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useWebSocket } from "@/hooks/useWebSocket";
+import { useConfig } from "@/stores/config";
 import {
-  useWebSocketConfig,
   useWebSocketConnected,
   useWebSocketPortChangeStatus,
 } from "@/stores/websocket";
@@ -48,7 +48,7 @@ const formSchema = z.object({
 export function WebUrlSettingButton() {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const config = useWebSocketConfig();
+  const config = useConfig();
   const connected = useWebSocketConnected();
   const portChangeStatus = useWebSocketPortChangeStatus();
   const { changePort } = useWebSocket();

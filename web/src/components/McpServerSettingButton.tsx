@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/form";
 
 import { useWebSocket } from "@/hooks/useWebSocket";
-import { useWebSocketConfig } from "@/stores/websocket";
+import { useConfig } from "@/stores/config";
 import type { MCPServerConfig } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SettingsIcon } from "lucide-react";
@@ -43,7 +43,7 @@ export function McpServerSettingButton({
 }) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const config = useWebSocketConfig();
+  const config = useConfig();
   const { updateConfig } = useWebSocket();
 
   const form = useForm<z.infer<typeof formSchema>>({
