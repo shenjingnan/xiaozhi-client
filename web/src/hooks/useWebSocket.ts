@@ -18,7 +18,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { webSocketManager } from "../services/websocket";
 import { useWebSocketActions } from "../stores/websocket";
 import { useConfigActions, useConfig } from "../stores/config";
-import { useStatusActions, useClientStatus, useRestartStatus } from "../stores/status";
+import {
+  useStatusActions,
+  useClientStatus,
+  useRestartStatus,
+} from "../stores/status";
 import type { AppConfig, ClientStatus } from "../types";
 import {
   buildWebSocketUrl,
@@ -49,7 +53,9 @@ interface WebSocketState {
  * - useStatusData() 用于状态数据
  */
 export function useWebSocket() {
-  console.warn('[useWebSocket] 此 hook 已重构，建议使用新的专用 hooks：useWebSocketConnection()、useConfigData()、useStatusData()');
+  console.warn(
+    "[useWebSocket] 此 hook 已重构，建议使用新的专用 hooks：useWebSocketConnection()、useConfigData()、useStatusData()"
+  );
 
   // 使用新的 stores 获取数据
   const config = useConfig();
@@ -70,7 +76,7 @@ export function useWebSocket() {
     if (isInitialized.current) return;
     isInitialized.current = true;
 
-    console.log('[useWebSocket] 初始化 WebSocket 连接和数据加载');
+    console.log("[useWebSocket] 初始化 WebSocket 连接和数据加载");
 
     // 确保 WebSocket 连接
     if (!webSocketManager.isConnected()) {
@@ -89,9 +95,9 @@ export function useWebSocket() {
           configActions.getConfig(),
           statusActions.getStatus(),
         ]);
-        console.log('[useWebSocket] 初始数据加载完成');
+        console.log("[useWebSocket] 初始数据加载完成");
       } catch (error) {
-        console.error('[useWebSocket] 初始数据加载失败:', error);
+        console.error("[useWebSocket] 初始数据加载失败:", error);
       }
     };
 
@@ -141,11 +147,11 @@ export function useWebSocket() {
   // 重构后的配置更新方法
   const updateConfig = useCallback(
     async (config: AppConfig): Promise<void> => {
-      console.log('[useWebSocket] updateConfig 调用，使用新的 configActions');
+      console.log("[useWebSocket] updateConfig 调用，使用新的 configActions");
       try {
         await configActions.updateConfig(config);
       } catch (error) {
-        console.error('[useWebSocket] 配置更新失败:', error);
+        console.error("[useWebSocket] 配置更新失败:", error);
         throw error;
       }
     },
@@ -154,41 +160,44 @@ export function useWebSocket() {
 
   // 重构后的状态刷新方法
   const refreshStatus = useCallback(async () => {
-    console.log('[useWebSocket] refreshStatus 调用，使用新的 statusActions');
+    console.log("[useWebSocket] refreshStatus 调用，使用新的 statusActions");
     try {
       await statusActions.refreshStatus();
     } catch (error) {
-      console.error('[useWebSocket] 状态刷新失败:', error);
+      console.error("[useWebSocket] 状态刷新失败:", error);
       throw error;
     }
   }, [statusActions]);
 
   // 重构后的服务重启方法
   const restartService = useCallback(async (): Promise<void> => {
-    console.log('[useWebSocket] restartService 调用，使用新的 statusActions');
+    console.log("[useWebSocket] restartService 调用，使用新的 statusActions");
     try {
       await statusActions.restartService();
     } catch (error) {
-      console.error('[useWebSocket] 服务重启失败:', error);
+      console.error("[useWebSocket] 服务重启失败:", error);
       throw error;
     }
   }, [statusActions]);
 
   // 保存自定义WebSocket地址
-  const setCustomWsUrl = useCallback((url: string) => {
-    console.log('[useWebSocket] setCustomWsUrl 调用，使用 WebSocketManager');
-    if (url) {
-      localStorage.setItem("xiaozhi-ws-url", url);
-      webSocketManager.setUrl(url);
-    } else {
-      localStorage.removeItem("xiaozhi-ws-url");
-      // 恢复默认 URL
-      const defaultUrl = getWebSocketUrl();
-      webSocketManager.setUrl(defaultUrl);
-    }
-    // 更新本地状态
-    setWsUrl(webSocketManager.getUrl());
-  }, [getWebSocketUrl]);
+  const setCustomWsUrl = useCallback(
+    (url: string) => {
+      console.log("[useWebSocket] setCustomWsUrl 调用，使用 WebSocketManager");
+      if (url) {
+        localStorage.setItem("xiaozhi-ws-url", url);
+        webSocketManager.setUrl(url);
+      } else {
+        localStorage.removeItem("xiaozhi-ws-url");
+        // 恢复默认 URL
+        const defaultUrl = getWebSocketUrl();
+        webSocketManager.setUrl(defaultUrl);
+      }
+      // 更新本地状态
+      setWsUrl(webSocketManager.getUrl());
+    },
+    [getWebSocketUrl]
+  );
 
   // 端口切换核心函数
   const changePort = useCallback(

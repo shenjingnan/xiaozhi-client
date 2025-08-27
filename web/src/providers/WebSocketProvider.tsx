@@ -1,4 +1,10 @@
-import { type ReactNode, createContext, useContext, useEffect, useState } from "react";
+import {
+  type ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { useNetworkService } from "../hooks/useNetworkService";
 import { initializeStores } from "../stores";
 import type { AppConfig } from "../types";
@@ -51,15 +57,15 @@ export function NetworkServiceProvider({
 
     const initStores = async () => {
       try {
-        console.log('[WebSocketProvider] 开始初始化 stores');
+        console.log("[WebSocketProvider] 开始初始化 stores");
         await initializeStores();
 
         if (mounted) {
           setStoresInitialized(true);
-          console.log('[WebSocketProvider] Stores 初始化完成');
+          console.log("[WebSocketProvider] Stores 初始化完成");
         }
       } catch (error) {
-        console.error('[WebSocketProvider] Stores 初始化失败:', error);
+        console.error("[WebSocketProvider] Stores 初始化失败:", error);
         // 即使初始化失败，也允许应用继续运行
         if (mounted) {
           setStoresInitialized(true);

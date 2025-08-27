@@ -7,9 +7,9 @@
  * - 提供统一的初始化入口
  */
 
-import { useWebSocketStore } from './websocket';
-import { useConfigStore } from './config';
-import { useStatusStore } from './status';
+import { useWebSocketStore } from "./websocket";
+import { useConfigStore } from "./config";
+import { useStatusStore } from "./status";
 
 /**
  * 初始化所有 stores
@@ -17,24 +17,24 @@ import { useStatusStore } from './status';
  * 这个函数应该在应用启动时调用一次
  */
 export async function initializeStores(): Promise<void> {
-  console.log('[Stores] 开始初始化所有 stores');
+  console.log("[Stores] 开始初始化所有 stores");
 
   try {
     // 1. 首先初始化 WebSocket store（建立连接管理）
-    console.log('[Stores] 初始化 WebSocket store');
+    console.log("[Stores] 初始化 WebSocket store");
     useWebSocketStore.getState().initialize();
 
     // 2. 初始化配置 store（设置配置数据管理和 WebSocket 监听）
-    console.log('[Stores] 初始化配置 store');
+    console.log("[Stores] 初始化配置 store");
     await useConfigStore.getState().initialize();
 
     // 3. 初始化状态 store（设置状态数据管理和 WebSocket 监听）
-    console.log('[Stores] 初始化状态 store');
+    console.log("[Stores] 初始化状态 store");
     await useStatusStore.getState().initialize();
 
-    console.log('[Stores] 所有 stores 初始化完成');
+    console.log("[Stores] 所有 stores 初始化完成");
   } catch (error) {
-    console.error('[Stores] Stores 初始化失败:', error);
+    console.error("[Stores] Stores 初始化失败:", error);
     throw error;
   }
 }
@@ -45,13 +45,13 @@ export async function initializeStores(): Promise<void> {
  * 用于测试或需要完全重置应用状态时
  */
 export function resetAllStores(): void {
-  console.log('[Stores] 重置所有 stores');
+  console.log("[Stores] 重置所有 stores");
 
   useWebSocketStore.getState().reset();
   useConfigStore.getState().reset();
   useStatusStore.getState().reset();
 
-  console.log('[Stores] 所有 stores 已重置');
+  console.log("[Stores] 所有 stores 已重置");
 }
 
 /**
@@ -68,7 +68,7 @@ export function getStoresStatus() {
     websocket: {
       connectionState: websocketState.connectionState,
       url: websocketState.wsUrl,
-      connected: websocketState.connectionState === 'connected',
+      connected: websocketState.connectionState === "connected",
       lastError: websocketState.lastError?.message,
     },
     config: {
@@ -92,9 +92,9 @@ export function getStoresStatus() {
 }
 
 // 导出所有 stores 以便统一访问
-export { useWebSocketStore } from './websocket';
-export { useConfigStore } from './config';
-export { useStatusStore } from './status';
+export { useWebSocketStore } from "./websocket";
+export { useConfigStore } from "./config";
+export { useStatusStore } from "./status";
 
 // 导出所有选择器 hooks（避免命名冲突）
 export {
@@ -117,7 +117,7 @@ export {
   useWebSocketRestartStatus,
   useWebSocketMcpServers,
   useWebSocketMcpServerConfig,
-} from './websocket';
+} from "./websocket";
 
 export {
   // Config store exports
@@ -138,7 +138,7 @@ export {
   useSystemConfig,
   useConfigActions,
   useConfigUpdaters,
-} from './config';
+} from "./config";
 
 export {
   // Status store exports
@@ -163,4 +163,4 @@ export {
   useConnectionInfo,
   useStatusActions,
   usePollingActions,
-} from './status';
+} from "./status";

@@ -180,12 +180,13 @@ function Dashboard() {
 
 **之后 (使用 store):**
 ```typescript
-import { useWebSocketConnected, useWebSocketStatus } from '../stores/websocket';
+import { useWebSocketConnected } from '../stores/websocket';
+import { useClientStatus } from '../stores/status';
 
 function StatusCard() {
   // 直接从 store 获取数据，无需 props
   const connected = useWebSocketConnected();
-  const status = useWebSocketStatus();
+  const status = useClientStatus();
 
   return (
     <div>

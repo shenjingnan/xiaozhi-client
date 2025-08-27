@@ -18,7 +18,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import { useWebSocketConnected, useWebSocketPortChangeStatus } from "@/stores/websocket";
+import {
+  useWebSocketConnected,
+  useWebSocketPortChangeStatus,
+} from "@/stores/websocket";
 import { useConfig } from "@/stores/config";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SettingsIcon } from "lucide-react";

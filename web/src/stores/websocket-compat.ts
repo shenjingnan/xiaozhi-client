@@ -16,7 +16,9 @@ import type { AppConfig, ClientStatus } from "../types";
  * @deprecated 请使用 useConfig() from "./config"
  */
 export function useWebSocketConfig(): AppConfig | null {
-  console.warn('[useWebSocketConfig] 此选择器已废弃，请使用 useConfig() from "./config"');
+  console.warn(
+    '[useWebSocketConfig] 此选择器已废弃，请使用 useConfig() from "./config"'
+  );
   return useConfigStore((state) => state.config);
 }
 
@@ -25,7 +27,9 @@ export function useWebSocketConfig(): AppConfig | null {
  * @deprecated 请使用 useClientStatus() from "./status"
  */
 export function useWebSocketStatus(): ClientStatus | null {
-  console.warn('[useWebSocketStatus] 此选择器已废弃，请使用 useClientStatus() from "./status"');
+  console.warn(
+    '[useWebSocketStatus] 此选择器已废弃，请使用 useClientStatus() from "./status"'
+  );
   return useStatusStore((state) => state.clientStatus);
 }
 
@@ -34,7 +38,9 @@ export function useWebSocketStatus(): ClientStatus | null {
  * @deprecated 请使用 useMcpEndpoint() from "./config"
  */
 export function useWebSocketMcpEndpoint(): string | string[] {
-  console.warn('[useWebSocketMcpEndpoint] 此选择器已废弃，请使用 useMcpEndpoint() from "./config"');
+  console.warn(
+    '[useWebSocketMcpEndpoint] 此选择器已废弃，请使用 useMcpEndpoint() from "./config"'
+  );
   const config = useConfigStore((state) => state.config);
   return config?.mcpEndpoint || "";
 }
@@ -44,7 +50,9 @@ export function useWebSocketMcpEndpoint(): string | string[] {
  * @deprecated 请使用 useMcpServers() from "./config"
  */
 export function useWebSocketMcpServers(): Record<string, any> | null {
-  console.warn('[useWebSocketMcpServers] 此选择器已废弃，请使用 useMcpServers() from "./config"');
+  console.warn(
+    '[useWebSocketMcpServers] 此选择器已废弃，请使用 useMcpServers() from "./config"'
+  );
   const config = useConfigStore((state) => state.config);
   return config?.mcpServers || null;
 }
@@ -54,7 +62,9 @@ export function useWebSocketMcpServers(): Record<string, any> | null {
  * @deprecated 请使用 useMcpServerConfig() from "./config"
  */
 export function useWebSocketMcpServerConfig(): Record<string, any> | null {
-  console.warn('[useWebSocketMcpServerConfig] 此选择器已废弃，请使用 useMcpServerConfig() from "./config"');
+  console.warn(
+    '[useWebSocketMcpServerConfig] 此选择器已废弃，请使用 useMcpServerConfig() from "./config"'
+  );
   const config = useConfigStore((state) => state.config);
   return config?.mcpServerConfig || null;
 }
@@ -64,8 +74,12 @@ export function useWebSocketMcpServerConfig(): Record<string, any> | null {
  * @deprecated 请使用 useWebSocketConnected() from "./websocket"
  */
 export function useWebSocketConnected(): boolean {
-  console.warn('[useWebSocketConnected] 此选择器已废弃，请使用 useWebSocketConnected() from "./websocket"');
-  return useWebSocketStore((state) => state.connectionState === ConnectionState.CONNECTED);
+  console.warn(
+    '[useWebSocketConnected] 此选择器已废弃，请使用 useWebSocketConnected() from "./websocket"'
+  );
+  return useWebSocketStore(
+    (state) => state.connectionState === ConnectionState.CONNECTED
+  );
 }
 
 /**
@@ -73,7 +87,9 @@ export function useWebSocketConnected(): boolean {
  * @deprecated 请使用 useRestartStatus() from "./status"
  */
 export function useWebSocketRestartStatus(): any {
-  console.warn('[useWebSocketRestartStatus] 此选择器已废弃，请使用 useRestartStatus() from "./status"');
+  console.warn(
+    '[useWebSocketRestartStatus] 此选择器已废弃，请使用 useRestartStatus() from "./status"'
+  );
   return useStatusStore((state) => state.restartStatus);
 }
 
@@ -82,7 +98,9 @@ export function useWebSocketRestartStatus(): any {
  * @deprecated 请使用 useWebSocketUrl() from "./websocket"
  */
 export function useWebSocketWsUrl(): string {
-  console.warn('[useWebSocketWsUrl] 此选择器已废弃，请使用 useWebSocketUrl() from "./websocket"');
+  console.warn(
+    '[useWebSocketWsUrl] 此选择器已废弃，请使用 useWebSocketUrl() from "./websocket"'
+  );
   return useWebSocketStore((state) => state.wsUrl);
 }
 
@@ -91,7 +109,9 @@ export function useWebSocketWsUrl(): string {
  * @deprecated 请使用 usePortChangeStatus() from "./websocket"
  */
 export function useWebSocketPortChangeStatus(): any {
-  console.warn('[useWebSocketPortChangeStatus] 此选择器已废弃，请使用 usePortChangeStatus() from "./websocket"');
+  console.warn(
+    '[useWebSocketPortChangeStatus] 此选择器已废弃，请使用 usePortChangeStatus() from "./websocket"'
+  );
   return useWebSocketStore((state) => state.portChangeStatus);
 }
 
@@ -100,12 +120,14 @@ export function useWebSocketPortChangeStatus(): any {
  * @deprecated 请使用新的专用 hooks
  */
 export function useWebSocketState() {
-  console.warn('[useWebSocketState] 此选择器已废弃，请使用新的专用 hooks');
+  console.warn("[useWebSocketState] 此选择器已废弃，请使用新的专用 hooks");
 
   const config = useConfigStore((state) => state.config);
   const clientStatus = useStatusStore((state) => state.clientStatus);
   const restartStatus = useStatusStore((state) => state.restartStatus);
-  const connected = useWebSocketStore((state) => state.connectionState === ConnectionState.CONNECTED);
+  const connected = useWebSocketStore(
+    (state) => state.connectionState === ConnectionState.CONNECTED
+  );
   const wsUrl = useWebSocketStore((state) => state.wsUrl);
   const portChangeStatus = useWebSocketStore((state) => state.portChangeStatus);
 

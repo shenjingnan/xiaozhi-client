@@ -1,19 +1,19 @@
 /**
  * useWebSocketConnection Hook
- * 
+ *
  * 专门用于 WebSocket 连接状态管理
  * 返回连接状态、错误信息、连接控制方法
  */
 
 import { useCallback } from "react";
 import { webSocketManager, ConnectionState } from "../services/websocket";
-import { 
-  useWebSocketConnectionState, 
-  useWebSocketConnected, 
+import {
+  useWebSocketConnectionState,
+  useWebSocketConnected,
   useWebSocketUrl,
   useWebSocketLastError,
   useWebSocketConnectionStats,
-  useWebSocketActions 
+  useWebSocketActions,
 } from "../stores/websocket";
 
 /**
@@ -26,16 +26,17 @@ export function useWebSocketConnection() {
   const wsUrl = useWebSocketUrl();
   const lastError = useWebSocketLastError();
   const connectionStats = useWebSocketConnectionStats();
-  
+
   // 获取操作方法
-  const { connect, disconnect, reconnect, send, updateUrl } = useWebSocketActions();
+  const { connect, disconnect, reconnect, send, updateUrl } =
+    useWebSocketActions();
 
   // 连接控制方法
   const connectToWebSocket = useCallback(async () => {
     try {
       await connect();
     } catch (error) {
-      console.error('[useWebSocketConnection] 连接失败:', error);
+      console.error("[useWebSocketConnection] 连接失败:", error);
       throw error;
     }
   }, [connect]);
@@ -44,7 +45,7 @@ export function useWebSocketConnection() {
     try {
       disconnect();
     } catch (error) {
-      console.error('[useWebSocketConnection] 断开连接失败:', error);
+      console.error("[useWebSocketConnection] 断开连接失败:", error);
       throw error;
     }
   }, [disconnect]);
@@ -53,28 +54,34 @@ export function useWebSocketConnection() {
     try {
       await reconnect();
     } catch (error) {
-      console.error('[useWebSocketConnection] 重连失败:', error);
+      console.error("[useWebSocketConnection] 重连失败:", error);
       throw error;
     }
   }, [reconnect]);
 
-  const sendMessage = useCallback((message: any) => {
-    try {
-      return send(message);
-    } catch (error) {
-      console.error('[useWebSocketConnection] 发送消息失败:', error);
-      return false;
-    }
-  }, [send]);
+  const sendMessage = useCallback(
+    (message: any) => {
+      try {
+        return send(message);
+      } catch (error) {
+        console.error("[useWebSocketConnection] 发送消息失败:", error);
+        return false;
+      }
+    },
+    [send]
+  );
 
-  const changeWebSocketUrl = useCallback((url: string) => {
-    try {
-      updateUrl(url);
-    } catch (error) {
-      console.error('[useWebSocketConnection] 更新 URL 失败:', error);
-      throw error;
-    }
-  }, [updateUrl]);
+  const changeWebSocketUrl = useCallback(
+    (url: string) => {
+      try {
+        updateUrl(url);
+      } catch (error) {
+        console.error("[useWebSocketConnection] 更新 URL 失败:", error);
+        throw error;
+      }
+    },
+    [updateUrl]
+  );
 
   // 获取连接信息
   const getConnectionInfo = useCallback(() => {
@@ -114,20 +121,20 @@ export function useWebSocketConnection() {
     wsUrl,
     lastError,
     connectionStats,
-    
+
     // 连接控制方法
     connect: connectToWebSocket,
     disconnect: disconnectFromWebSocket,
     reconnect: reconnectToWebSocket,
     send: sendMessage,
     updateUrl: changeWebSocketUrl,
-    
+
     // 状态检查方法
     isConnected,
     isConnecting,
     isReconnecting,
     isDisconnected,
-    
+
     // 工具方法
     getConnectionInfo,
   };

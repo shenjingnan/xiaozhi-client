@@ -14,7 +14,13 @@ import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
 import { apiClient } from "../services/api";
 import { webSocketManager } from "../services/websocket";
-import type { AppConfig, MCPServerConfig, ConnectionConfig, ModelScopeConfig, WebUIConfig } from "../types";
+import type {
+  AppConfig,
+  MCPServerConfig,
+  ConnectionConfig,
+  ModelScopeConfig,
+  WebUIConfig,
+} from "../types";
 
 /**
  * 配置加载状态
@@ -38,7 +44,7 @@ interface ConfigState {
   loading: ConfigLoadingState;
 
   // 配置来源追踪
-  lastSource: 'http' | 'websocket' | 'initial' | null;
+  lastSource: "http" | "websocket" | "initial" | null;
 }
 
 /**
@@ -46,7 +52,10 @@ interface ConfigState {
  */
 interface ConfigActions {
   // 基础操作
-  setConfig: (config: AppConfig, source?: 'http' | 'websocket' | 'initial') => void;
+  setConfig: (
+    config: AppConfig,
+    source?: "http" | "websocket" | "initial"
+  ) => void;
   setLoading: (loading: Partial<ConfigLoadingState>) => void;
   setError: (error: Error | null) => void;
 
@@ -98,7 +107,7 @@ export const useConfigStore = create<ConfigStore>()(
 
       // ==================== 基础操作 ====================
 
-      setConfig: (config: AppConfig, source = 'http') => {
+      setConfig: (config: AppConfig, source = "http") => {
         console.log(`[ConfigStore] 设置配置数据，来源: ${source}`);
         set(
           (state) => ({
@@ -111,7 +120,7 @@ export const useConfigStore = create<ConfigStore>()(
             },
           }),
           false,
-          'setConfig'
+          "setConfig"
         );
       },
 
@@ -121,7 +130,7 @@ export const useConfigStore = create<ConfigStore>()(
             loading: { ...state.loading, ...loading },
           }),
           false,
-          'setLoading'
+          "setLoading"
         );
       },
 
@@ -131,7 +140,7 @@ export const useConfigStore = create<ConfigStore>()(
             loading: { ...state.loading, lastError: error },
           }),
           false,
-          'setError'
+          "setError"
         );
       },
 
@@ -141,8 +150,11 @@ export const useConfigStore = create<ConfigStore>()(
         const { config, loading } = get();
 
         // 如果已有配置且不超过5分钟，直接返回
-        if (config && loading.lastUpdated &&
-            Date.now() - loading.lastUpdated < 5 * 60 * 1000) {
+        if (
+          config &&
+          loading.lastUpdated &&
+          Date.now() - loading.lastUpdated < 5 * 60 * 1000
+        ) {
           return config;
         }
 
@@ -155,18 +167,19 @@ export const useConfigStore = create<ConfigStore>()(
 
         try {
           setLoading({ isUpdating: true, lastError: null });
-          console.log('[ConfigStore] 开始更新配置');
+          console.log("[ConfigStore] 开始更新配置");
 
           // 通过 HTTP API 更新配置
           await apiClient.updateConfig(newConfig);
 
           // 更新本地状态
-          setConfig(newConfig, 'http');
+          setConfig(newConfig, "http");
 
-          console.log('[ConfigStore] 配置更新成功');
+          console.log("[ConfigStore] 配置更新成功");
         } catch (error) {
-          const err = error instanceof Error ? error : new Error('配置更新失败');
-          console.error('[ConfigStore] 配置更新失败:', err);
+          const err =
+            error instanceof Error ? error : new Error("配置更新失败");
+          console.error("[ConfigStore] 配置更新失败:", err);
           setError(err);
           throw err;
         } finally {
@@ -179,19 +192,20 @@ export const useConfigStore = create<ConfigStore>()(
 
         try {
           setLoading({ isRefreshing: true, lastError: null });
-          console.log('[ConfigStore] 开始刷新配置');
+          console.log("[ConfigStore] 开始刷新配置");
 
           // 从服务器获取最新配置
           const config = await apiClient.getConfig();
 
           // 更新本地状态
-          setConfig(config, 'http');
+          setConfig(config, "http");
 
-          console.log('[ConfigStore] 配置刷新成功');
+          console.log("[ConfigStore] 配置刷新成功");
           return config;
         } catch (error) {
-          const err = error instanceof Error ? error : new Error('配置刷新失败');
-          console.error('[ConfigStore] 配置刷新失败:', err);
+          const err =
+            error instanceof Error ? error : new Error("配置刷新失败");
+          console.error("[ConfigStore] 配置刷新失败:", err);
           setError(err);
           throw err;
         } finally {
@@ -204,19 +218,20 @@ export const useConfigStore = create<ConfigStore>()(
 
         try {
           setLoading({ isRefreshing: true, lastError: null });
-          console.log('[ConfigStore] 开始重新加载配置');
+          console.log("[ConfigStore] 开始重新加载配置");
 
           // 重新加载配置文件
           const config = await apiClient.reloadConfig();
 
           // 更新本地状态
-          setConfig(config, 'http');
+          setConfig(config, "http");
 
-          console.log('[ConfigStore] 配置重新加载成功');
+          console.log("[ConfigStore] 配置重新加载成功");
           return config;
         } catch (error) {
-          const err = error instanceof Error ? error : new Error('配置重新加载失败');
-          console.error('[ConfigStore] 配置重新加载失败:', err);
+          const err =
+            error instanceof Error ? error : new Error("配置重新加载失败");
+          console.error("[ConfigStore] 配置重新加载失败:", err);
           setError(err);
           throw err;
         } finally {
@@ -229,37 +244,43 @@ export const useConfigStore = create<ConfigStore>()(
       updateMcpEndpoint: async (endpoint: string | string[]): Promise<void> => {
         const { config, updateConfig } = get();
         if (!config) {
-          throw new Error('配置未加载，无法更新 MCP 端点');
+          throw new Error("配置未加载，无法更新 MCP 端点");
         }
 
         const newConfig = { ...config, mcpEndpoint: endpoint };
         await updateConfig(newConfig);
       },
 
-      updateMcpServers: async (servers: Record<string, MCPServerConfig>): Promise<void> => {
+      updateMcpServers: async (
+        servers: Record<string, MCPServerConfig>
+      ): Promise<void> => {
         const { config, updateConfig } = get();
         if (!config) {
-          throw new Error('配置未加载，无法更新 MCP 服务');
+          throw new Error("配置未加载，无法更新 MCP 服务");
         }
 
         const newConfig = { ...config, mcpServers: servers };
         await updateConfig(newConfig);
       },
 
-      updateConnectionConfig: async (connection: ConnectionConfig): Promise<void> => {
+      updateConnectionConfig: async (
+        connection: ConnectionConfig
+      ): Promise<void> => {
         const { config, updateConfig } = get();
         if (!config) {
-          throw new Error('配置未加载，无法更新连接配置');
+          throw new Error("配置未加载，无法更新连接配置");
         }
 
         const newConfig = { ...config, connection };
         await updateConfig(newConfig);
       },
 
-      updateModelScopeConfig: async (modelscope: ModelScopeConfig): Promise<void> => {
+      updateModelScopeConfig: async (
+        modelscope: ModelScopeConfig
+      ): Promise<void> => {
         const { config, updateConfig } = get();
         if (!config) {
-          throw new Error('配置未加载，无法更新 ModelScope 配置');
+          throw new Error("配置未加载，无法更新 ModelScope 配置");
         }
 
         const newConfig = { ...config, modelscope };
@@ -269,7 +290,7 @@ export const useConfigStore = create<ConfigStore>()(
       updateWebUIConfig: async (webUI: WebUIConfig): Promise<void> => {
         const { config, updateConfig } = get();
         if (!config) {
-          throw new Error('配置未加载，无法更新 Web UI 配置');
+          throw new Error("配置未加载，无法更新 Web UI 配置");
         }
 
         const newConfig = { ...config, webUI };
@@ -279,8 +300,8 @@ export const useConfigStore = create<ConfigStore>()(
       // ==================== 工具方法 ====================
 
       reset: () => {
-        console.log('[ConfigStore] 重置状态');
-        set(initialState, false, 'reset');
+        console.log("[ConfigStore] 重置状态");
+        set(initialState, false, "reset");
       },
 
       initialize: async (): Promise<void> => {
@@ -288,20 +309,20 @@ export const useConfigStore = create<ConfigStore>()(
 
         try {
           setLoading({ isLoading: true });
-          console.log('[ConfigStore] 初始化配置 Store');
+          console.log("[ConfigStore] 初始化配置 Store");
 
           // 设置 WebSocket 事件监听
-          webSocketManager.subscribe('data:configUpdate', (config) => {
-            console.log('[ConfigStore] 收到 WebSocket 配置更新');
-            get().setConfig(config, 'websocket');
+          webSocketManager.subscribe("data:configUpdate", (config) => {
+            console.log("[ConfigStore] 收到 WebSocket 配置更新");
+            get().setConfig(config, "websocket");
           });
 
           // 获取初始配置
           await refreshConfig();
 
-          console.log('[ConfigStore] 配置 Store 初始化完成');
+          console.log("[ConfigStore] 配置 Store 初始化完成");
         } catch (error) {
-          console.error('[ConfigStore] 配置 Store 初始化失败:', error);
+          console.error("[ConfigStore] 配置 Store 初始化失败:", error);
           throw error;
         } finally {
           setLoading({ isLoading: false });
@@ -309,7 +330,7 @@ export const useConfigStore = create<ConfigStore>()(
       },
     }),
     {
-      name: 'config-store',
+      name: "config-store",
     }
   )
 );
@@ -330,52 +351,63 @@ export const useConfigLoading = () => useConfigStore((state) => state.loading);
  * 获取配置是否正在加载
  */
 export const useConfigIsLoading = () =>
-  useConfigStore((state) => state.loading.isLoading || state.loading.isRefreshing);
+  useConfigStore(
+    (state) => state.loading.isLoading || state.loading.isRefreshing
+  );
 
 /**
  * 获取配置是否正在更新
  */
-export const useConfigIsUpdating = () => useConfigStore((state) => state.loading.isUpdating);
+export const useConfigIsUpdating = () =>
+  useConfigStore((state) => state.loading.isUpdating);
 
 /**
  * 获取配置错误
  */
-export const useConfigError = () => useConfigStore((state) => state.loading.lastError);
+export const useConfigError = () =>
+  useConfigStore((state) => state.loading.lastError);
 
 /**
  * 获取 MCP 端点
  */
-export const useMcpEndpoint = () => useConfigStore((state) => state.config?.mcpEndpoint);
+export const useMcpEndpoint = () =>
+  useConfigStore((state) => state.config?.mcpEndpoint);
 
 /**
  * 获取 MCP 服务配置
  */
-export const useMcpServers = () => useConfigStore((state) => state.config?.mcpServers);
+export const useMcpServers = () =>
+  useConfigStore((state) => state.config?.mcpServers);
 
 /**
  * 获取 MCP 服务工具配置
  */
-export const useMcpServerConfig = () => useConfigStore((state) => state.config?.mcpServerConfig);
+export const useMcpServerConfig = () =>
+  useConfigStore((state) => state.config?.mcpServerConfig);
 
 /**
  * 获取连接配置
  */
-export const useConnectionConfig = () => useConfigStore((state) => state.config?.connection);
+export const useConnectionConfig = () =>
+  useConfigStore((state) => state.config?.connection);
 
 /**
  * 获取 ModelScope 配置
  */
-export const useModelScopeConfig = () => useConfigStore((state) => state.config?.modelscope);
+export const useModelScopeConfig = () =>
+  useConfigStore((state) => state.config?.modelscope);
 
 /**
  * 获取 Web UI 配置
  */
-export const useWebUIConfig = () => useConfigStore((state) => state.config?.webUI);
+export const useWebUIConfig = () =>
+  useConfigStore((state) => state.config?.webUI);
 
 /**
  * 获取配置来源
  */
-export const useConfigSource = () => useConfigStore((state) => state.lastSource);
+export const useConfigSource = () =>
+  useConfigStore((state) => state.lastSource);
 
 // ==================== 复合选择器 ====================
 

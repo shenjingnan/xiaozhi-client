@@ -37,21 +37,21 @@ interface RestartStatus {
  */
 interface EventBusEvents {
   // 连接状态事件
-  'connection:connecting': undefined;
-  'connection:connected': undefined;
-  'connection:disconnected': undefined;
-  'connection:reconnecting': { attempt: number; maxAttempts: number };
-  'connection:error': { error: Error; context?: string };
+  "connection:connecting": undefined;
+  "connection:connected": undefined;
+  "connection:disconnected": undefined;
+  "connection:reconnecting": { attempt: number; maxAttempts: number };
+  "connection:error": { error: Error; context?: string };
 
   // 数据更新事件
-  'data:configUpdate': AppConfig;
-  'data:statusUpdate': ClientStatus;
-  'data:restartStatus': RestartStatus;
+  "data:configUpdate": AppConfig;
+  "data:statusUpdate": ClientStatus;
+  "data:restartStatus": RestartStatus;
 
   // 系统事件
-  'system:heartbeat': { timestamp: number };
-  'system:message': WebSocketMessage;
-  'system:error': { error: Error; message?: WebSocketMessage };
+  "system:heartbeat": { timestamp: number };
+  "system:message": WebSocketMessage;
+  "system:error": { error: Error; message?: WebSocketMessage };
 }
 
 /**
@@ -213,13 +213,13 @@ export class WebSocketManager {
     }
 
     if (WebSocketManager.isCreating) {
-      throw new Error('[WebSocketManager] 检测到循环创建，请检查代码逻辑');
+      throw new Error("[WebSocketManager] 检测到循环创建，请检查代码逻辑");
     }
 
     WebSocketManager.isCreating = true;
     try {
       WebSocketManager.instance = new WebSocketManager(config);
-      console.log('[WebSocketManager] 单例实例已创建');
+      console.log("[WebSocketManager] 单例实例已创建");
       return WebSocketManager.instance;
     } finally {
       WebSocketManager.isCreating = false;
@@ -234,7 +234,7 @@ export class WebSocketManager {
       WebSocketManager.instance.disconnect();
       WebSocketManager.instance.eventBus.clear();
       WebSocketManager.instance = null;
-      console.log('[WebSocketManager] 单例实例已重置');
+      console.log("[WebSocketManager] 单例实例已重置");
     }
   }
 
@@ -243,28 +243,28 @@ export class WebSocketManager {
    */
   private setupLegacyEventBridge(): void {
     // 连接状态事件桥接
-    this.eventBus.on('connection:connected', () => {
+    this.eventBus.on("connection:connected", () => {
       this.legacyListeners.connected?.();
     });
 
-    this.eventBus.on('connection:disconnected', () => {
+    this.eventBus.on("connection:disconnected", () => {
       this.legacyListeners.disconnected?.();
     });
 
-    this.eventBus.on('connection:error', ({ error }) => {
+    this.eventBus.on("connection:error", ({ error }) => {
       this.legacyListeners.error?.(error);
     });
 
     // 数据更新事件桥接
-    this.eventBus.on('data:configUpdate', (config) => {
+    this.eventBus.on("data:configUpdate", (config) => {
       this.legacyListeners.configUpdate?.(config);
     });
 
-    this.eventBus.on('data:statusUpdate', (status) => {
+    this.eventBus.on("data:statusUpdate", (status) => {
       this.legacyListeners.statusUpdate?.(status);
     });
 
-    this.eventBus.on('data:restartStatus', (status) => {
+    this.eventBus.on("data:restartStatus", (status) => {
       this.legacyListeners.restartStatus?.(status);
     });
   }
@@ -301,7 +301,7 @@ export class WebSocketManager {
     console.log(`[WebSocket] 连接到: ${this.url}`);
 
     // 发布连接中事件
-    this.eventBus.emit('connection:connecting', undefined);
+    this.eventBus.emit("connection:connecting", undefined);
 
     try {
       this.ws = new WebSocket(this.url);
@@ -363,7 +363,7 @@ export class WebSocketManager {
     event: K,
     listener: WebSocketEventListeners[K]
   ): void {
-    console.warn('[WebSocketManager] on() 方法已废弃，请使用 subscribe() 方法');
+    console.warn("[WebSocketManager] on() 方法已废弃，请使用 subscribe() 方法");
     this.legacyListeners[event] = listener;
   }
 
@@ -372,7 +372,9 @@ export class WebSocketManager {
    * @deprecated 使用 unsubscribe 方法替代
    */
   off<K extends keyof WebSocketEventListeners>(event: K): void {
-    console.warn('[WebSocketManager] off() 方法已废弃，请使用 unsubscribe() 方法');
+    console.warn(
+      "[WebSocketManager] off() 方法已废弃，请使用 unsubscribe() 方法"
+    );
     delete this.legacyListeners[event];
   }
 
@@ -414,19 +416,20 @@ export class WebSocketManager {
    */
   send(message: any): boolean {
     if (!this.isConnected()) {
-      console.warn('[WebSocket] 连接未建立，无法发送消息');
+      console.warn("[WebSocket] 连接未建立，无法发送消息");
       return false;
     }
 
     try {
-      const messageStr = typeof message === 'string' ? message : JSON.stringify(message);
+      const messageStr =
+        typeof message === "string" ? message : JSON.stringify(message);
       this.ws!.send(messageStr);
       return true;
     } catch (error) {
-      console.error('[WebSocket] 发送消息失败:', error);
-      this.eventBus.emit('connection:error', {
+      console.error("[WebSocket] 发送消息失败:", error);
+      this.eventBus.emit("connection:error", {
         error: error as Error,
-        context: 'send_message'
+        context: "send_message",
       });
       return false;
     }
@@ -449,7 +452,7 @@ export class WebSocketManager {
       reconnectAttempts: this.reconnectAttempts,
       maxReconnectAttempts: this.maxReconnectAttempts,
       lastHeartbeat: this.lastHeartbeat,
-      eventListenerCount: this.eventBus.getListenerCount()
+      eventListenerCount: this.eventBus.getListenerCount(),
     };
   }
 
@@ -466,7 +469,7 @@ export class WebSocketManager {
       this.startHeartbeat();
 
       // 发布连接成功事件
-      this.eventBus.emit('connection:connected', undefined);
+      this.eventBus.emit("connection:connected", undefined);
     };
 
     this.ws.onmessage = (event) => {
@@ -496,40 +499,45 @@ export class WebSocketManager {
     console.log("[WebSocket] 收到消息:", message.type);
 
     // 发布原始消息事件
-    this.eventBus.emit('system:message', message);
+    this.eventBus.emit("system:message", message);
 
     try {
       switch (message.type) {
         case "configUpdate":
         case "config":
           if (message.data) {
-            this.eventBus.emit('data:configUpdate', message.data);
+            this.eventBus.emit("data:configUpdate", message.data);
           }
           break;
 
         case "statusUpdate":
         case "status":
           if (message.data) {
-            this.eventBus.emit('data:statusUpdate', message.data);
+            this.eventBus.emit("data:statusUpdate", message.data);
           }
           break;
 
         case "restartStatus":
           if (message.data) {
-            this.eventBus.emit('data:restartStatus', message.data);
+            this.eventBus.emit("data:restartStatus", message.data);
           }
           break;
 
         case "heartbeatResponse":
           this.lastHeartbeat = Date.now();
-          this.eventBus.emit('system:heartbeat', { timestamp: this.lastHeartbeat });
+          this.eventBus.emit("system:heartbeat", {
+            timestamp: this.lastHeartbeat,
+          });
           break;
 
         case "error": {
           const error = new Error(message.error?.message || "服务器错误");
           console.error("[WebSocket] 服务器错误:", message.error);
-          this.eventBus.emit('system:error', { error, message });
-          this.eventBus.emit('connection:error', { error, context: 'server_error' });
+          this.eventBus.emit("system:error", { error, message });
+          this.eventBus.emit("connection:error", {
+            error,
+            context: "server_error",
+          });
           break;
         }
 
@@ -538,9 +546,9 @@ export class WebSocketManager {
       }
     } catch (error) {
       console.error("[WebSocket] 消息处理失败:", error);
-      this.eventBus.emit('system:error', {
+      this.eventBus.emit("system:error", {
         error: error as Error,
-        message
+        message,
       });
     }
   }
@@ -553,16 +561,16 @@ export class WebSocketManager {
     this.clearTimers();
 
     // 发布连接断开事件
-    this.eventBus.emit('connection:disconnected', undefined);
+    this.eventBus.emit("connection:disconnected", undefined);
 
     // 如果不是主动断开连接，尝试重连
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.scheduleReconnect();
     } else {
       console.error("[WebSocket] 达到最大重连次数，停止重连");
-      this.eventBus.emit('connection:error', {
-        error: new Error('达到最大重连次数'),
-        context: 'max_reconnect_attempts'
+      this.eventBus.emit("connection:error", {
+        error: new Error("达到最大重连次数"),
+        context: "max_reconnect_attempts",
       });
     }
   }
@@ -575,7 +583,10 @@ export class WebSocketManager {
     this.clearTimers();
 
     // 发布连接错误事件
-    this.eventBus.emit('connection:error', { error, context: 'connection_error' });
+    this.eventBus.emit("connection:error", {
+      error,
+      context: "connection_error",
+    });
 
     // 尝试重连
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
@@ -597,9 +608,9 @@ export class WebSocketManager {
     );
 
     // 发布重连事件
-    this.eventBus.emit('connection:reconnecting', {
+    this.eventBus.emit("connection:reconnecting", {
       attempt: this.reconnectAttempts,
-      maxAttempts: this.maxReconnectAttempts
+      maxAttempts: this.maxReconnectAttempts,
     });
 
     this.reconnectTimer = setTimeout(() => {

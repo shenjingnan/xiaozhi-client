@@ -37,17 +37,17 @@ describe("Config Store", () => {
       };
 
       const store = useConfigStore.getState();
-      store.setConfig(mockConfig, 'http');
+      store.setConfig(mockConfig, "http");
 
       const state = useConfigStore.getState();
       expect(state.config).toEqual(mockConfig);
-      expect(state.lastSource).toBe('http');
+      expect(state.lastSource).toBe("http");
       expect(state.loading.lastUpdated).toBeGreaterThan(0);
     });
 
     it("应该正确设置加载状态", () => {
       const store = useConfigStore.getState();
-      
+
       store.setLoading({ isLoading: true, isUpdating: false });
       expect(useConfigStore.getState().loading.isLoading).toBe(true);
       expect(useConfigStore.getState().loading.isUpdating).toBe(false);
@@ -56,7 +56,7 @@ describe("Config Store", () => {
     it("应该正确设置错误状态", () => {
       const store = useConfigStore.getState();
       const error = new Error("配置加载失败");
-      
+
       store.setError(error);
       expect(useConfigStore.getState().loading.lastError).toBe(error);
     });
@@ -115,7 +115,7 @@ describe("Config Store", () => {
       vi.mocked(apiClient.getConfig).mockRejectedValue(error);
 
       const store = useConfigStore.getState();
-      
+
       await expect(store.getConfig()).rejects.toThrow("API 错误");
       expect(useConfigStore.getState().loading.lastError).toEqual(error);
     });
@@ -166,14 +166,14 @@ describe("Config Store", () => {
   describe("store 重置", () => {
     it("应该能够重置所有状态到初始值", () => {
       const store = useConfigStore.getState();
-      
+
       // 设置一些状态
       store.setConfig({ mcpEndpoint: "test", mcpServers: {} });
       store.setError(new Error("test error"));
-      
+
       // 重置状态
       store.reset();
-      
+
       // 验证状态被重置
       const state = useConfigStore.getState();
       expect(state.config).toBeNull();

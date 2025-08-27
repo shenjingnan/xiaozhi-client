@@ -47,17 +47,17 @@ export function useNetworkService() {
 
     networkService.onWebSocketEvent("configUpdate", (config: AppConfig) => {
       console.log("[NetworkService] 收到配置更新通知");
-      useConfigStore.getState().setConfig(config, 'websocket');
+      useConfigStore.getState().setConfig(config, "websocket");
     });
 
     networkService.onWebSocketEvent("statusUpdate", (status: ClientStatus) => {
       console.log("[NetworkService] 收到状态更新通知");
-      useStatusStore.getState().setClientStatus(status, 'websocket');
+      useStatusStore.getState().setClientStatus(status, "websocket");
     });
 
     networkService.onWebSocketEvent("restartStatus", (restartStatus) => {
       console.log("[NetworkService] 收到重启状态通知:", restartStatus);
-      useStatusStore.getState().setRestartStatus(restartStatus, 'websocket');
+      useStatusStore.getState().setRestartStatus(restartStatus, "websocket");
     });
 
     networkService.onWebSocketEvent("error", (error: Error) => {
@@ -86,8 +86,8 @@ export function useNetworkService() {
       ]);
 
       console.log("[NetworkService] 初始数据加载成功");
-      useConfigStore.getState().setConfig(config, 'http');
-      useStatusStore.getState().setClientStatus(status, 'http');
+      useConfigStore.getState().setConfig(config, "http");
+      useStatusStore.getState().setClientStatus(status, "http");
     } catch (error) {
       console.error("[NetworkService] 加载初始数据失败:", error);
     }
@@ -99,7 +99,7 @@ export function useNetworkService() {
   const getConfig = useCallback(async (): Promise<AppConfig> => {
     try {
       const config = await networkService.getConfig();
-      useConfigStore.getState().setConfig(config, 'http');
+      useConfigStore.getState().setConfig(config, "http");
       return config;
     } catch (error) {
       console.error("[NetworkService] 获取配置失败:", error);
@@ -110,22 +110,19 @@ export function useNetworkService() {
   /**
    * 更新配置
    */
-  const updateConfig = useCallback(
-    async (config: AppConfig): Promise<void> => {
-      try {
-        console.log("[NetworkService] 更新配置");
-        await networkService.updateConfig(config);
+  const updateConfig = useCallback(async (config: AppConfig): Promise<void> => {
+    try {
+      console.log("[NetworkService] 更新配置");
+      await networkService.updateConfig(config);
 
-        // 立即更新本地状态，WebSocket 通知会进一步确认
-        useConfigStore.getState().setConfig(config, 'http');
-        console.log("[NetworkService] 配置更新成功");
-      } catch (error) {
-        console.error("[NetworkService] 配置更新失败:", error);
-        throw error;
-      }
-    },
-    []
-  );
+      // 立即更新本地状态，WebSocket 通知会进一步确认
+      useConfigStore.getState().setConfig(config, "http");
+      console.log("[NetworkService] 配置更新成功");
+    } catch (error) {
+      console.error("[NetworkService] 配置更新失败:", error);
+      throw error;
+    }
+  }, []);
 
   /**
    * 获取状态
@@ -133,7 +130,7 @@ export function useNetworkService() {
   const getStatus = useCallback(async () => {
     try {
       const status = await networkService.getStatus();
-      useStatusStore.getState().setClientStatus(status.client, 'http');
+      useStatusStore.getState().setClientStatus(status.client, "http");
       return status;
     } catch (error) {
       console.error("[NetworkService] 获取状态失败:", error);

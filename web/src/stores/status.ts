@@ -100,7 +100,7 @@ interface StatusState {
   polling: PollingConfig;
 
   // 状态来源追踪
-  lastSource: 'http' | 'websocket' | 'polling' | 'initial' | null;
+  lastSource: "http" | "websocket" | "polling" | "initial" | null;
 }
 
 /**
@@ -108,11 +108,20 @@ interface StatusState {
  */
 interface StatusActions {
   // 基础操作
-  setClientStatus: (status: ClientStatus, source?: 'http' | 'websocket' | 'polling' | 'initial') => void;
-  setRestartStatus: (status: RestartStatus | null, source?: 'http' | 'websocket' | 'polling' | 'initial') => void;
+  setClientStatus: (
+    status: ClientStatus,
+    source?: "http" | "websocket" | "polling" | "initial"
+  ) => void;
+  setRestartStatus: (
+    status: RestartStatus | null,
+    source?: "http" | "websocket" | "polling" | "initial"
+  ) => void;
   setServiceStatus: (status: ServiceStatus) => void;
   setServiceHealth: (health: ServiceHealth) => void;
-  setFullStatus: (status: FullStatus, source?: 'http' | 'websocket' | 'polling' | 'initial') => void;
+  setFullStatus: (
+    status: FullStatus,
+    source?: "http" | "websocket" | "polling" | "initial"
+  ) => void;
   setLoading: (loading: Partial<StatusLoadingState>) => void;
   setError: (error: Error | null) => void;
 
@@ -178,7 +187,7 @@ export const useStatusStore = create<StatusStore>()(
 
       // ==================== 基础操作 ====================
 
-      setClientStatus: (status: ClientStatus, source = 'http') => {
+      setClientStatus: (status: ClientStatus, source = "http") => {
         console.log(`[StatusStore] 设置客户端状态，来源: ${source}`);
         set(
           (state) => ({
@@ -191,11 +200,11 @@ export const useStatusStore = create<StatusStore>()(
             },
           }),
           false,
-          'setClientStatus'
+          "setClientStatus"
         );
       },
 
-      setRestartStatus: (status: RestartStatus | null, source = 'http') => {
+      setRestartStatus: (status: RestartStatus | null, source = "http") => {
         console.log(`[StatusStore] 设置重启状态，来源: ${source}`);
         set(
           (state) => ({
@@ -208,21 +217,21 @@ export const useStatusStore = create<StatusStore>()(
             },
           }),
           false,
-          'setRestartStatus'
+          "setRestartStatus"
         );
       },
 
       setServiceStatus: (status: ServiceStatus) => {
-        console.log('[StatusStore] 设置服务状态');
-        set({ serviceStatus: status }, false, 'setServiceStatus');
+        console.log("[StatusStore] 设置服务状态");
+        set({ serviceStatus: status }, false, "setServiceStatus");
       },
 
       setServiceHealth: (health: ServiceHealth) => {
-        console.log('[StatusStore] 设置服务健康状态');
-        set({ serviceHealth: health }, false, 'setServiceHealth');
+        console.log("[StatusStore] 设置服务健康状态");
+        set({ serviceHealth: health }, false, "setServiceHealth");
       },
 
-      setFullStatus: (status: FullStatus, source = 'http') => {
+      setFullStatus: (status: FullStatus, source = "http") => {
         console.log(`[StatusStore] 设置完整状态，来源: ${source}`);
         set(
           (state) => ({
@@ -237,7 +246,7 @@ export const useStatusStore = create<StatusStore>()(
             },
           }),
           false,
-          'setFullStatus'
+          "setFullStatus"
         );
       },
 
@@ -247,7 +256,7 @@ export const useStatusStore = create<StatusStore>()(
             loading: { ...state.loading, ...loading },
           }),
           false,
-          'setLoading'
+          "setLoading"
         );
       },
 
@@ -257,7 +266,7 @@ export const useStatusStore = create<StatusStore>()(
             loading: { ...state.loading, lastError: error },
           }),
           false,
-          'setError'
+          "setError"
         );
       },
 
@@ -267,8 +276,11 @@ export const useStatusStore = create<StatusStore>()(
         const { fullStatus, loading } = get();
 
         // 如果已有状态且不超过30秒，直接返回
-        if (fullStatus && loading.lastUpdated &&
-            Date.now() - loading.lastUpdated < 30 * 1000) {
+        if (
+          fullStatus &&
+          loading.lastUpdated &&
+          Date.now() - loading.lastUpdated < 30 * 1000
+        ) {
           return fullStatus;
         }
 
@@ -281,24 +293,25 @@ export const useStatusStore = create<StatusStore>()(
 
         try {
           setLoading({ isRefreshing: true, lastError: null });
-          console.log('[StatusStore] 开始刷新状态');
+          console.log("[StatusStore] 开始刷新状态");
 
           // 从服务器获取最新状态
           const status = await apiClient.getStatus();
 
           // 更新本地状态
-          setFullStatus(status, 'http');
+          setFullStatus(status, "http");
 
           // 重置轮询重试计数
           if (polling.enabled) {
             get().setPollingConfig({ currentRetries: 0 });
           }
 
-          console.log('[StatusStore] 状态刷新成功');
+          console.log("[StatusStore] 状态刷新成功");
           return status;
         } catch (error) {
-          const err = error instanceof Error ? error : new Error('状态刷新失败');
-          console.error('[StatusStore] 状态刷新失败:', err);
+          const err =
+            error instanceof Error ? error : new Error("状态刷新失败");
+          console.error("[StatusStore] 状态刷新失败:", err);
           setError(err);
 
           // 增加轮询重试计数
@@ -308,7 +321,7 @@ export const useStatusStore = create<StatusStore>()(
 
             // 如果达到最大重试次数，停止轮询
             if (newRetries >= polling.maxRetries) {
-              console.warn('[StatusStore] 达到最大重试次数，停止轮询');
+              console.warn("[StatusStore] 达到最大重试次数，停止轮询");
               get().stopPolling();
             }
           }
@@ -324,28 +337,35 @@ export const useStatusStore = create<StatusStore>()(
 
         try {
           setLoading({ isRestarting: true, lastError: null });
-          console.log('[StatusStore] 开始重启服务');
+          console.log("[StatusStore] 开始重启服务");
 
           // 设置重启状态
-          setRestartStatus({
-            status: 'restarting',
-            timestamp: Date.now(),
-          }, 'http');
+          setRestartStatus(
+            {
+              status: "restarting",
+              timestamp: Date.now(),
+            },
+            "http"
+          );
 
           // 调用重启 API
           await apiClient.restartService();
 
-          console.log('[StatusStore] 服务重启请求已发送');
+          console.log("[StatusStore] 服务重启请求已发送");
         } catch (error) {
-          const err = error instanceof Error ? error : new Error('服务重启失败');
-          console.error('[StatusStore] 服务重启失败:', err);
+          const err =
+            error instanceof Error ? error : new Error("服务重启失败");
+          console.error("[StatusStore] 服务重启失败:", err);
 
           // 设置重启失败状态
-          setRestartStatus({
-            status: 'failed',
-            error: err.message,
-            timestamp: Date.now(),
-          }, 'http');
+          setRestartStatus(
+            {
+              status: "failed",
+              error: err.message,
+              timestamp: Date.now(),
+            },
+            "http"
+          );
 
           setError(err);
           throw err;
@@ -356,13 +376,14 @@ export const useStatusStore = create<StatusStore>()(
 
       getServiceStatus: async (): Promise<ServiceStatus> => {
         try {
-          console.log('[StatusStore] 获取服务状态');
+          console.log("[StatusStore] 获取服务状态");
           const status = await apiClient.getServiceStatus();
           get().setServiceStatus(status);
           return status;
         } catch (error) {
-          const err = error instanceof Error ? error : new Error('获取服务状态失败');
-          console.error('[StatusStore] 获取服务状态失败:', err);
+          const err =
+            error instanceof Error ? error : new Error("获取服务状态失败");
+          console.error("[StatusStore] 获取服务状态失败:", err);
           get().setError(err);
           throw err;
         }
@@ -370,13 +391,14 @@ export const useStatusStore = create<StatusStore>()(
 
       getServiceHealth: async (): Promise<ServiceHealth> => {
         try {
-          console.log('[StatusStore] 获取服务健康状态');
+          console.log("[StatusStore] 获取服务健康状态");
           const health = await apiClient.getServiceHealth();
           get().setServiceHealth(health);
           return health;
         } catch (error) {
-          const err = error instanceof Error ? error : new Error('获取服务健康状态失败');
-          console.error('[StatusStore] 获取服务健康状态失败:', err);
+          const err =
+            error instanceof Error ? error : new Error("获取服务健康状态失败");
+          console.error("[StatusStore] 获取服务健康状态失败:", err);
           get().setError(err);
           throw err;
         }
@@ -388,7 +410,7 @@ export const useStatusStore = create<StatusStore>()(
         const { polling, refreshStatus } = get();
 
         if (polling.enabled) {
-          console.log('[StatusStore] 轮询已启用，跳过启动');
+          console.log("[StatusStore] 轮询已启用，跳过启动");
           return;
         }
 
@@ -404,12 +426,12 @@ export const useStatusStore = create<StatusStore>()(
             },
           }),
           false,
-          'startPolling'
+          "startPolling"
         );
 
         // 立即执行一次刷新
         refreshStatus().catch((error) => {
-          console.error('[StatusStore] 轮询初始刷新失败:', error);
+          console.error("[StatusStore] 轮询初始刷新失败:", error);
         });
 
         // 设置定时器
@@ -420,13 +442,13 @@ export const useStatusStore = create<StatusStore>()(
           }
 
           refreshStatus().catch((error) => {
-            console.error('[StatusStore] 轮询刷新失败:', error);
+            console.error("[StatusStore] 轮询刷新失败:", error);
           });
         }, interval);
       },
 
       stopPolling: () => {
-        console.log('[StatusStore] 停止状态轮询');
+        console.log("[StatusStore] 停止状态轮询");
 
         set(
           (state) => ({
@@ -437,7 +459,7 @@ export const useStatusStore = create<StatusStore>()(
             },
           }),
           false,
-          'stopPolling'
+          "stopPolling"
         );
 
         if (pollingTimer) {
@@ -452,20 +474,20 @@ export const useStatusStore = create<StatusStore>()(
             polling: { ...state.polling, ...config },
           }),
           false,
-          'setPollingConfig'
+          "setPollingConfig"
         );
       },
 
       // ==================== 工具方法 ====================
 
       reset: () => {
-        console.log('[StatusStore] 重置状态');
+        console.log("[StatusStore] 重置状态");
 
         // 停止轮询
         get().stopPolling();
 
         // 重置状态
-        set(initialState, false, 'reset');
+        set(initialState, false, "reset");
       },
 
       initialize: async (): Promise<void> => {
@@ -473,17 +495,17 @@ export const useStatusStore = create<StatusStore>()(
 
         try {
           setLoading({ isLoading: true });
-          console.log('[StatusStore] 初始化状态 Store');
+          console.log("[StatusStore] 初始化状态 Store");
 
           // 设置 WebSocket 事件监听
-          webSocketManager.subscribe('data:statusUpdate', (status) => {
-            console.log('[StatusStore] 收到 WebSocket 状态更新');
-            get().setClientStatus(status, 'websocket');
+          webSocketManager.subscribe("data:statusUpdate", (status) => {
+            console.log("[StatusStore] 收到 WebSocket 状态更新");
+            get().setClientStatus(status, "websocket");
           });
 
-          webSocketManager.subscribe('data:restartStatus', (status) => {
-            console.log('[StatusStore] 收到 WebSocket 重启状态更新');
-            get().setRestartStatus(status, 'websocket');
+          webSocketManager.subscribe("data:restartStatus", (status) => {
+            console.log("[StatusStore] 收到 WebSocket 重启状态更新");
+            get().setRestartStatus(status, "websocket");
           });
 
           // 获取初始状态
@@ -492,9 +514,9 @@ export const useStatusStore = create<StatusStore>()(
           // 启动轮询（可选）
           // get().startPolling();
 
-          console.log('[StatusStore] 状态 Store 初始化完成');
+          console.log("[StatusStore] 状态 Store 初始化完成");
         } catch (error) {
-          console.error('[StatusStore] 状态 Store 初始化失败:', error);
+          console.error("[StatusStore] 状态 Store 初始化失败:", error);
           throw error;
         } finally {
           setLoading({ isLoading: false });
@@ -502,7 +524,7 @@ export const useStatusStore = create<StatusStore>()(
       },
     }),
     {
-      name: 'status-store',
+      name: "status-store",
     }
   )
 );
@@ -512,22 +534,26 @@ export const useStatusStore = create<StatusStore>()(
 /**
  * 获取客户端状态
  */
-export const useClientStatus = () => useStatusStore((state) => state.clientStatus);
+export const useClientStatus = () =>
+  useStatusStore((state) => state.clientStatus);
 
 /**
  * 获取重启状态
  */
-export const useRestartStatus = () => useStatusStore((state) => state.restartStatus);
+export const useRestartStatus = () =>
+  useStatusStore((state) => state.restartStatus);
 
 /**
  * 获取服务状态
  */
-export const useServiceStatus = () => useStatusStore((state) => state.serviceStatus);
+export const useServiceStatus = () =>
+  useStatusStore((state) => state.serviceStatus);
 
 /**
  * 获取服务健康状态
  */
-export const useServiceHealth = () => useStatusStore((state) => state.serviceHealth);
+export const useServiceHealth = () =>
+  useStatusStore((state) => state.serviceHealth);
 
 /**
  * 获取完整状态
@@ -543,17 +569,21 @@ export const useStatusLoading = () => useStatusStore((state) => state.loading);
  * 获取状态是否正在加载
  */
 export const useStatusIsLoading = () =>
-  useStatusStore((state) => state.loading.isLoading || state.loading.isRefreshing);
+  useStatusStore(
+    (state) => state.loading.isLoading || state.loading.isRefreshing
+  );
 
 /**
  * 获取状态是否正在重启
  */
-export const useStatusIsRestarting = () => useStatusStore((state) => state.loading.isRestarting);
+export const useStatusIsRestarting = () =>
+  useStatusStore((state) => state.loading.isRestarting);
 
 /**
  * 获取状态错误
  */
-export const useStatusError = () => useStatusStore((state) => state.loading.lastError);
+export const useStatusError = () =>
+  useStatusStore((state) => state.loading.lastError);
 
 /**
  * 获取轮询配置
@@ -563,18 +593,20 @@ export const usePollingConfig = () => useStatusStore((state) => state.polling);
 /**
  * 获取轮询是否启用
  */
-export const usePollingEnabled = () => useStatusStore((state) => state.polling.enabled);
+export const usePollingEnabled = () =>
+  useStatusStore((state) => state.polling.enabled);
 
 /**
  * 获取状态来源
  */
-export const useStatusSource = () => useStatusStore((state) => state.lastSource);
+export const useStatusSource = () =>
+  useStatusStore((state) => state.lastSource);
 
 /**
  * 获取连接状态（从客户端状态中提取）
  */
 export const useConnectionStatus = () =>
-  useStatusStore((state) => state.clientStatus?.status === 'connected');
+  useStatusStore((state) => state.clientStatus?.status === "connected");
 
 /**
  * 获取 MCP 端点（从客户端状态中提取）
@@ -630,7 +662,7 @@ export const useServiceInfo = () =>
 export const useConnectionInfo = () =>
   useStatusStore(
     useShallow((state) => ({
-      connected: state.clientStatus?.status === 'connected',
+      connected: state.clientStatus?.status === "connected",
       endpoint: state.clientStatus?.mcpEndpoint,
       activeServers: state.clientStatus?.activeMCPServers || [],
       lastHeartbeat: state.clientStatus?.lastHeartbeat,

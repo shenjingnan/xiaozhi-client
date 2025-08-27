@@ -14,15 +14,21 @@ describe("WebSocket Store - 连接状态管理", () => {
 
       // 测试设置为连接中
       store.setConnectionState(ConnectionState.CONNECTING);
-      expect(useWebSocketStore.getState().connectionState).toBe(ConnectionState.CONNECTING);
+      expect(useWebSocketStore.getState().connectionState).toBe(
+        ConnectionState.CONNECTING
+      );
 
       // 测试设置为已连接
       store.setConnectionState(ConnectionState.CONNECTED);
-      expect(useWebSocketStore.getState().connectionState).toBe(ConnectionState.CONNECTED);
+      expect(useWebSocketStore.getState().connectionState).toBe(
+        ConnectionState.CONNECTED
+      );
 
       // 测试设置为断开连接
       store.setConnectionState(ConnectionState.DISCONNECTED);
-      expect(useWebSocketStore.getState().connectionState).toBe(ConnectionState.DISCONNECTED);
+      expect(useWebSocketStore.getState().connectionState).toBe(
+        ConnectionState.DISCONNECTED
+      );
     });
 
     it("应该正确设置 WebSocket URL", () => {
@@ -67,7 +73,9 @@ describe("WebSocket Store - 连接状态管理", () => {
       };
 
       store.setPortChangeStatus(portChangeStatus);
-      expect(useWebSocketStore.getState().portChangeStatus).toEqual(portChangeStatus);
+      expect(useWebSocketStore.getState().portChangeStatus).toEqual(
+        portChangeStatus
+      );
     });
   });
 
@@ -77,11 +85,15 @@ describe("WebSocket Store - 连接状态管理", () => {
 
       // 测试设置为已连接
       store.setConnected(true);
-      expect(useWebSocketStore.getState().connectionState).toBe(ConnectionState.CONNECTED);
+      expect(useWebSocketStore.getState().connectionState).toBe(
+        ConnectionState.CONNECTED
+      );
 
       // 测试设置为断开连接
       store.setConnected(false);
-      expect(useWebSocketStore.getState().connectionState).toBe(ConnectionState.DISCONNECTED);
+      expect(useWebSocketStore.getState().connectionState).toBe(
+        ConnectionState.DISCONNECTED
+      );
     });
   });
 

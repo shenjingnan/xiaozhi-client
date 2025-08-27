@@ -32,11 +32,11 @@ describe("Status Store", () => {
       };
 
       const store = useStatusStore.getState();
-      store.setClientStatus(mockStatus, 'http');
+      store.setClientStatus(mockStatus, "http");
 
       const state = useStatusStore.getState();
       expect(state.clientStatus).toEqual(mockStatus);
-      expect(state.lastSource).toBe('http');
+      expect(state.lastSource).toBe("http");
       expect(state.loading.lastUpdated).toBeGreaterThan(0);
     });
 
@@ -47,7 +47,7 @@ describe("Status Store", () => {
       };
 
       const store = useStatusStore.getState();
-      store.setRestartStatus(restartStatus, 'websocket');
+      store.setRestartStatus(restartStatus, "websocket");
 
       const state = useStatusStore.getState();
       expect(state.restartStatus).toEqual(restartStatus);
@@ -89,7 +89,9 @@ describe("Status Store", () => {
 
       expect(apiClient.getStatus).toHaveBeenCalled();
       expect(result).toEqual(mockFullStatus);
-      expect(useStatusStore.getState().clientStatus).toEqual(mockFullStatus.client);
+      expect(useStatusStore.getState().clientStatus).toEqual(
+        mockFullStatus.client
+      );
     });
 
     it("refreshStatus 应该刷新状态", async () => {
@@ -110,7 +112,9 @@ describe("Status Store", () => {
 
       expect(apiClient.getStatus).toHaveBeenCalled();
       expect(result).toEqual(mockFullStatus);
-      expect(useStatusStore.getState().clientStatus).toEqual(mockFullStatus.client);
+      expect(useStatusStore.getState().clientStatus).toEqual(
+        mockFullStatus.client
+      );
     });
 
     it("restartService 应该重启服务", async () => {

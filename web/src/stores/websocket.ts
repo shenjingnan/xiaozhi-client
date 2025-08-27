@@ -181,7 +181,10 @@ export const useWebSocketStore = create<WebSocketStore>()(
       // ==================== 端口变更状态管理 ====================
 
       setPortChangeStatus: (portChangeStatus: PortChangeStatus | undefined) => {
-        console.log("[WebSocketStore] 更新端口变更状态:", portChangeStatus?.status);
+        console.log(
+          "[WebSocketStore] 更新端口变更状态:",
+          portChangeStatus?.status
+        );
         set({ portChangeStatus }, false, "setPortChangeStatus");
       },
 
@@ -192,7 +195,7 @@ export const useWebSocketStore = create<WebSocketStore>()(
           console.log("[WebSocketStore] 开始连接 WebSocket");
           webSocketManager.connect();
         } catch (error) {
-          const err = error instanceof Error ? error : new Error('连接失败');
+          const err = error instanceof Error ? error : new Error("连接失败");
           console.error("[WebSocketStore] 连接失败:", err);
           get().setLastError(err);
           throw err;
@@ -208,10 +211,10 @@ export const useWebSocketStore = create<WebSocketStore>()(
         try {
           console.log("[WebSocketStore] 重新连接 WebSocket");
           webSocketManager.disconnect();
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise((resolve) => setTimeout(resolve, 1000));
           webSocketManager.connect();
         } catch (error) {
-          const err = error instanceof Error ? error : new Error('重连失败');
+          const err = error instanceof Error ? error : new Error("重连失败");
           console.error("[WebSocketStore] 重连失败:", err);
           get().setLastError(err);
           throw err;
@@ -222,7 +225,8 @@ export const useWebSocketStore = create<WebSocketStore>()(
         try {
           return webSocketManager.send(message);
         } catch (error) {
-          const err = error instanceof Error ? error : new Error('发送消息失败');
+          const err =
+            error instanceof Error ? error : new Error("发送消息失败");
           console.error("[WebSocketStore] 发送消息失败:", err);
           get().setLastError(err);
           return false;
@@ -260,29 +264,29 @@ export const useWebSocketStore = create<WebSocketStore>()(
         console.log("[WebSocketStore] 初始化 WebSocket Store");
 
         // 设置 WebSocket 事件监听
-        webSocketManager.subscribe('connection:connecting', () => {
+        webSocketManager.subscribe("connection:connecting", () => {
           get().setConnectionState(ConnectionState.CONNECTING);
         });
 
-        webSocketManager.subscribe('connection:connected', () => {
+        webSocketManager.subscribe("connection:connected", () => {
           get().setConnectionState(ConnectionState.CONNECTED);
         });
 
-        webSocketManager.subscribe('connection:disconnected', () => {
+        webSocketManager.subscribe("connection:disconnected", () => {
           get().setConnectionState(ConnectionState.DISCONNECTED);
         });
 
-        webSocketManager.subscribe('connection:reconnecting', () => {
+        webSocketManager.subscribe("connection:reconnecting", () => {
           get().setConnectionState(ConnectionState.RECONNECTING);
           const stats = webSocketManager.getConnectionStats();
           get().setConnectionStats(stats);
         });
 
-        webSocketManager.subscribe('connection:error', ({ error }) => {
+        webSocketManager.subscribe("connection:error", ({ error }) => {
           get().setLastError(error);
         });
 
-        webSocketManager.subscribe('system:heartbeat', () => {
+        webSocketManager.subscribe("system:heartbeat", () => {
           const stats = webSocketManager.getConnectionStats();
           get().setConnectionStats(stats);
         });
@@ -299,7 +303,9 @@ export const useWebSocketStore = create<WebSocketStore>()(
 
       /** @deprecated 使用 setConnectionState 替代 */
       setConnected: (connected: boolean) => {
-        console.warn("[WebSocketStore] setConnected 方法已废弃，请使用 setConnectionState");
+        console.warn(
+          "[WebSocketStore] setConnected 方法已废弃，请使用 setConnectionState"
+        );
         const connectionState: ConnectionState = connected
           ? ConnectionState.CONNECTED
           : ConnectionState.DISCONNECTED;
@@ -495,7 +501,7 @@ export const useWebSocketControls = () =>
  * @deprecated 数据已分离到不同的 stores，请使用对应的选择器
  */
 export const useWebSocketData = () => {
-  console.warn('useWebSocketData 已废弃，请使用对应的专门 stores');
+  console.warn("useWebSocketData 已废弃，请使用对应的专门 stores");
   return {
     config: null,
     status: null,

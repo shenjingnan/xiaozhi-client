@@ -29,7 +29,6 @@ import {
   useConnectionInfo,
 } from "../stores/status";
 
-
 /**
  * 状态数据相关的 hook
  */
@@ -74,7 +73,7 @@ export function useStatusData() {
     try {
       return await getStatus();
     } catch (error) {
-      console.error('[useStatusData] 获取状态失败:', error);
+      console.error("[useStatusData] 获取状态失败:", error);
       throw error;
     }
   }, [getStatus]);
@@ -83,7 +82,7 @@ export function useStatusData() {
     try {
       return await refreshStatus();
     } catch (error) {
-      console.error('[useStatusData] 刷新状态失败:', error);
+      console.error("[useStatusData] 刷新状态失败:", error);
       throw error;
     }
   }, [refreshStatus]);
@@ -92,7 +91,7 @@ export function useStatusData() {
     try {
       return await getServiceStatus();
     } catch (error) {
-      console.error('[useStatusData] 获取服务状态失败:', error);
+      console.error("[useStatusData] 获取服务状态失败:", error);
       throw error;
     }
   }, [getServiceStatus]);
@@ -101,7 +100,7 @@ export function useStatusData() {
     try {
       return await getServiceHealth();
     } catch (error) {
-      console.error('[useStatusData] 获取服务健康状态失败:', error);
+      console.error("[useStatusData] 获取服务健康状态失败:", error);
       throw error;
     }
   }, [getServiceHealth]);
@@ -111,38 +110,44 @@ export function useStatusData() {
     try {
       await restartService();
     } catch (error) {
-      console.error('[useStatusData] 重启服务失败:', error);
+      console.error("[useStatusData] 重启服务失败:", error);
       throw error;
     }
   }, [restartService]);
 
   // 轮询控制方法
-  const startStatusPolling = useCallback((interval?: number) => {
-    try {
-      startPolling(interval);
-    } catch (error) {
-      console.error('[useStatusData] 启动轮询失败:', error);
-      throw error;
-    }
-  }, [startPolling]);
+  const startStatusPolling = useCallback(
+    (interval?: number) => {
+      try {
+        startPolling(interval);
+      } catch (error) {
+        console.error("[useStatusData] 启动轮询失败:", error);
+        throw error;
+      }
+    },
+    [startPolling]
+  );
 
   const stopStatusPolling = useCallback(() => {
     try {
       stopPolling();
     } catch (error) {
-      console.error('[useStatusData] 停止轮询失败:', error);
+      console.error("[useStatusData] 停止轮询失败:", error);
       throw error;
     }
   }, [stopPolling]);
 
-  const updatePollingConfig = useCallback((config: Partial<typeof pollingConfig>) => {
-    try {
-      setPollingConfig(config);
-    } catch (error) {
-      console.error('[useStatusData] 更新轮询配置失败:', error);
-      throw error;
-    }
-  }, [setPollingConfig]);
+  const updatePollingConfig = useCallback(
+    (config: Partial<typeof pollingConfig>) => {
+      try {
+        setPollingConfig(config);
+      } catch (error) {
+        console.error("[useStatusData] 更新轮询配置失败:", error);
+        throw error;
+      }
+    },
+    [setPollingConfig]
+  );
 
   // 状态检查方法
   const hasStatus = useCallback(() => {
@@ -162,15 +167,15 @@ export function useStatusData() {
   }, [serviceStatus]);
 
   const isRestartInProgress = useCallback(() => {
-    return restartStatus?.status === 'restarting';
+    return restartStatus?.status === "restarting";
   }, [restartStatus]);
 
   const isRestartCompleted = useCallback(() => {
-    return restartStatus?.status === 'completed';
+    return restartStatus?.status === "completed";
   }, [restartStatus]);
 
   const isRestartFailed = useCallback(() => {
-    return restartStatus?.status === 'failed';
+    return restartStatus?.status === "failed";
   }, [restartStatus]);
 
   // 获取状态摘要
