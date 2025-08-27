@@ -141,13 +141,13 @@ class EventBus {
   ): void {
     const eventListeners = this.listeners.get(event);
     if (eventListeners) {
-      eventListeners.forEach((listener) => {
+      for (const listener of eventListeners) {
         try {
           listener(data);
         } catch (error) {
           console.error(`[EventBus] 事件监听器执行失败 (${event}):`, error);
         }
-      });
+      }
     }
   }
 

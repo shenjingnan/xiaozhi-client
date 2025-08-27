@@ -31,7 +31,7 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
         return Object.entries(value?.tools || {}).map(([toolName, tool]) => ({
           serverName,
           toolName,
-          ...tool,
+          ...(tool as any),
         }));
       }
     );

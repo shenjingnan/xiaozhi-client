@@ -364,53 +364,50 @@ export const useWebSocketConnectionTimes = () =>
 
 // ==================== 向后兼容的选择器（废弃） ====================
 
+// 导入兼容性选择器
+import {
+  useWebSocketConfig as useWebSocketConfigCompat,
+  useWebSocketStatus as useWebSocketStatusCompat,
+  useWebSocketRestartStatus as useWebSocketRestartStatusCompat,
+  useWebSocketMcpServers as useWebSocketMcpServersCompat,
+  useWebSocketMcpServerConfig as useWebSocketMcpServerConfigCompat,
+  useWebSocketMcpEndpoint as useWebSocketMcpEndpointCompat,
+} from "./websocket-compat";
+
 /**
  * @deprecated 配置数据已迁移到 stores/config.ts，请使用 useConfig()
  */
-export const useWebSocketConfig = () => {
-  console.warn('useWebSocketConfig 已废弃，请使用 stores/config.ts 中的 useConfig()');
-  return null;
-};
+export const useWebSocketConfig = useWebSocketConfigCompat;
 
 /**
  * @deprecated 状态数据已迁移到 stores/status.ts，请使用 useClientStatus()
  */
-export const useWebSocketStatus = () => {
-  console.warn('useWebSocketStatus 已废弃，请使用 stores/status.ts 中的 useClientStatus()');
-  return null;
-};
+export const useWebSocketStatus = useWebSocketStatusCompat;
 
 /**
  * @deprecated 重启状态已迁移到 stores/status.ts，请使用 useRestartStatus()
  */
-export const useWebSocketRestartStatus = () => {
-  console.warn('useWebSocketRestartStatus 已废弃，请使用 stores/status.ts 中的 useRestartStatus()');
-  return null;
-};
+export const useWebSocketRestartStatus = useWebSocketRestartStatusCompat;
 
 /**
  * @deprecated MCP 服务器数据已迁移到 stores/config.ts，请使用 useMcpServers()
  */
-export const useWebSocketMcpServers = () => {
-  console.warn('useWebSocketMcpServers 已废弃，请使用 stores/config.ts 中的 useMcpServers()');
-  return null;
-};
+export const useWebSocketMcpServers = useWebSocketMcpServersCompat;
 
 /**
  * @deprecated MCP 服务器配置已迁移到 stores/config.ts，请使用 useMcpServerConfig()
  */
-export const useWebSocketMcpServerConfig = () => {
-  console.warn('useWebSocketMcpServerConfig 已废弃，请使用 stores/config.ts 中的 useMcpServerConfig()');
-  return null;
-};
+export const useWebSocketMcpServerConfig = useWebSocketMcpServerConfigCompat;
 
 /**
  * @deprecated MCP 端点已迁移到 stores/config.ts，请使用 useMcpEndpoint()
  */
-export const useMcpEndpoint = () => {
-  console.warn('useMcpEndpoint 已废弃，请使用 stores/config.ts 中的 useMcpEndpoint()');
-  return null;
-};
+export const useWebSocketMcpEndpoint = useWebSocketMcpEndpointCompat;
+
+/**
+ * @deprecated MCP 端点已迁移到 stores/config.ts，请使用 useMcpEndpoint()
+ */
+export const useMcpEndpoint = useWebSocketMcpEndpointCompat;
 
 // ==================== 复合选择器 ====================
 
