@@ -4,8 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import SettingsPage from "./SettingsPage";
 
 // Mock the hooks and components
-vi.mock("@/stores/websocket", () => ({
-  useWebSocketConfig: vi.fn(),
+vi.mock("@/stores/config", () => ({
+  useConfig: vi.fn(),
 }));
 
 vi.mock("@/hooks/useWebSocket", () => ({
@@ -47,9 +47,9 @@ vi.mock("sonner", () => ({
 }));
 
 import { useWebSocket } from "@/hooks/useWebSocket";
-import { useWebSocketConfig } from "@/stores/websocket";
+import { useConfig } from "@/stores/config";
 
-const mockUseWebSocketConfig = useWebSocketConfig as ReturnType<typeof vi.fn>;
+const mockUseConfig = useConfig as ReturnType<typeof vi.fn>;
 const mockUseWebSocket = useWebSocket as ReturnType<typeof vi.fn>;
 
 describe("SettingsPage", () => {
@@ -63,7 +63,7 @@ describe("SettingsPage", () => {
   });
 
   it("should display default values when config is null", () => {
-    mockUseWebSocketConfig.mockReturnValue(null);
+    mockUseConfig.mockReturnValue(null);
 
     render(<SettingsPage />);
 
@@ -88,7 +88,7 @@ describe("SettingsPage", () => {
       },
     };
 
-    mockUseWebSocketConfig.mockReturnValue(mockConfig);
+    mockUseConfig.mockReturnValue(mockConfig);
 
     render(<SettingsPage />);
 
@@ -121,7 +121,7 @@ describe("SettingsPage", () => {
       // modelscope 和 connection 字段缺失
     };
 
-    mockUseWebSocketConfig.mockReturnValue(mockConfig);
+    mockUseConfig.mockReturnValue(mockConfig);
 
     render(<SettingsPage />);
 
@@ -150,7 +150,7 @@ describe("SettingsPage", () => {
 
   it("should update form when config changes", async () => {
     // 初始状态：config 为 null
-    mockUseWebSocketConfig.mockReturnValue(null);
+    mockUseConfig.mockReturnValue(null);
 
     const { rerender } = render(<SettingsPage />);
 
@@ -168,7 +168,7 @@ describe("SettingsPage", () => {
       },
     };
 
-    mockUseWebSocketConfig.mockReturnValue(mockConfig);
+    mockUseConfig.mockReturnValue(mockConfig);
     rerender(<SettingsPage />);
 
     // 等待表单更新

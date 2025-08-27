@@ -46,7 +46,6 @@ const formSchema = z.object({
 export default function SettingsPage() {
   const config = useConfig();
   const { updateConfig } = useWebSocket();
-  console.log(config);
   const [isLoading, setIsLoading] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
