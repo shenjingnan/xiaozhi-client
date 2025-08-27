@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import { useMcpEndpoint, useWebSocketConfig } from "@/stores/websocket";
+import { useMcpEndpoint, useConfig } from "@/stores/config";
 import {
   BadgeInfoIcon,
   CopyIcon,
@@ -81,7 +81,7 @@ export function McpEndpointSettingButton() {
   const [isAdding, setIsAdding] = useState(false);
   const [validationError, setValidationError] = useState("");
 
-  const config = useWebSocketConfig();
+  const config = useConfig();
   const mcpEndpoint = useMcpEndpoint();
   const { updateConfig } = useWebSocket();
 
@@ -126,8 +126,8 @@ export function McpEndpointSettingButton() {
         ? mcpEndpoint
         : [mcpEndpoint];
       const updatedEndpoints = currentEndpoints.filter(
-        (ep) => ep !== endpointToDelete
-      );
+        (ep) => ep !== endpointToDelete && ep !== undefined
+      ) as string[];
 
       // 如果删除后没有接入点了，设置为空字符串
       const newMcpEndpoint =
@@ -181,8 +181,8 @@ export function McpEndpointSettingButton() {
       // 将新接入点添加到数组的第一位
       const updatedEndpoints = [
         newEndpoint,
-        ...currentEndpoints.filter((ep) => ep),
-      ];
+        ...currentEndpoints.filter((ep) => ep !== undefined && ep !== ""),
+      ] as string[];
 
       const updatedConfig = {
         ...config,

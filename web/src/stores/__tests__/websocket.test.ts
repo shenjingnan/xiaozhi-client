@@ -1,124 +1,107 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { AppConfig } from "../../types";
+import { ConnectionState } from "../../services/websocket";
 import { useWebSocketStore } from "../websocket";
 
-describe("WebSocket Store", () => {
+describe("WebSocket Store - 连接状态管理", () => {
   beforeEach(() => {
     // 重置 store 状态
     useWebSocketStore.getState().reset();
   });
 
-  describe("mcpEndpoint 数据同步", () => {
-    it("应该在 setConfig 时同步更新 mcpEndpoint 字段 - 单个端点", () => {
-      const mockConfig: AppConfig = {
-        mcpEndpoint: "wss://api.xiaozhi.me/mcp/test-endpoint",
-        mcpServers: {},
+  describe("连接状态管理", () => {
+    it("应该正确设置连接状态", () => {
+      const store = useWebSocketStore.getState();
+
+      // 测试设置为连接中
+      store.setConnectionState(ConnectionState.CONNECTING);
+      expect(useWebSocketStore.getState().connectionState).toBe(ConnectionState.CONNECTING);
+
+      // 测试设置为已连接
+      store.setConnectionState(ConnectionState.CONNECTED);
+      expect(useWebSocketStore.getState().connectionState).toBe(ConnectionState.CONNECTED);
+
+      // 测试设置为断开连接
+      store.setConnectionState(ConnectionState.DISCONNECTED);
+      expect(useWebSocketStore.getState().connectionState).toBe(ConnectionState.DISCONNECTED);
+    });
+
+    it("应该正确设置 WebSocket URL", () => {
+      const store = useWebSocketStore.getState();
+      const testUrl = "ws://localhost:9999/ws";
+
+      store.setWsUrl(testUrl);
+      expect(useWebSocketStore.getState().wsUrl).toBe(testUrl);
+    });
+
+    it("应该正确设置连接统计信息", () => {
+      const store = useWebSocketStore.getState();
+      const stats = {
+        reconnectAttempts: 3,
+        maxReconnectAttempts: 5,
+        lastHeartbeat: Date.now(),
+        eventListenerCount: 2,
       };
 
-      // 更新 config
-      useWebSocketStore.getState().setConfig(mockConfig);
-
-      // 验证 config 和 mcpEndpoint 都被正确更新
-      const state = useWebSocketStore.getState();
-      expect(state.config).toEqual(mockConfig);
-      expect(state.mcpEndpoint).toBe("wss://api.xiaozhi.me/mcp/test-endpoint");
+      store.setConnectionStats(stats);
+      expect(useWebSocketStore.getState().connectionStats).toEqual(stats);
     });
 
-    it("应该在 setConfig 时同步更新 mcpEndpoint 字段 - 多个端点", () => {
-      const mockConfig: AppConfig = {
-        mcpEndpoint: [
-          "wss://api.xiaozhi.me/mcp/endpoint-1",
-          "wss://api.xiaozhi.me/mcp/endpoint-2",
-        ],
-        mcpServers: {},
+    it("应该正确设置最后的连接错误", () => {
+      const store = useWebSocketStore.getState();
+      const error = new Error("连接失败");
+
+      store.setLastError(error);
+      expect(useWebSocketStore.getState().lastError).toBe(error);
+
+      // 测试清除错误
+      store.setLastError(null);
+      expect(useWebSocketStore.getState().lastError).toBeNull();
+    });
+
+    it("应该正确设置端口变更状态", () => {
+      const store = useWebSocketStore.getState();
+      const portChangeStatus = {
+        status: "checking" as const,
+        targetPort: 8080,
+        timestamp: Date.now(),
       };
 
-      // 更新 config
-      useWebSocketStore.getState().setConfig(mockConfig);
-
-      // 验证 config 和 mcpEndpoint 都被正确更新
-      const state = useWebSocketStore.getState();
-      expect(state.config).toEqual(mockConfig);
-      expect(state.mcpEndpoint).toEqual([
-        "wss://api.xiaozhi.me/mcp/endpoint-1",
-        "wss://api.xiaozhi.me/mcp/endpoint-2",
-      ]);
+      store.setPortChangeStatus(portChangeStatus);
+      expect(useWebSocketStore.getState().portChangeStatus).toEqual(portChangeStatus);
     });
+  });
 
-    it("应该在 config 为 null 时将 mcpEndpoint 重置为空字符串", () => {
-      // 先设置一个有效的 config
-      const mockConfig: AppConfig = {
-        mcpEndpoint: "wss://api.xiaozhi.me/mcp/test-endpoint",
-        mcpServers: {},
-      };
-      useWebSocketStore.getState().setConfig(mockConfig);
+  describe("向后兼容方法", () => {
+    it("setConnected 方法应该正确映射到 setConnectionState", () => {
+      const store = useWebSocketStore.getState();
 
-      // 然后设置为 null
-      useWebSocketStore.getState().setConfig(null);
+      // 测试设置为已连接
+      store.setConnected(true);
+      expect(useWebSocketStore.getState().connectionState).toBe(ConnectionState.CONNECTED);
 
-      // 验证状态被正确重置
-      const state = useWebSocketStore.getState();
-      expect(state.config).toBeNull();
-      expect(state.mcpEndpoint).toBe("");
+      // 测试设置为断开连接
+      store.setConnected(false);
+      expect(useWebSocketStore.getState().connectionState).toBe(ConnectionState.DISCONNECTED);
     });
+  });
 
-    it("store 状态应该正确反映单个 mcpEndpoint 值", () => {
-      const mockConfig: AppConfig = {
-        mcpEndpoint: "wss://api.xiaozhi.me/mcp/test-endpoint",
-        mcpServers: {},
-      };
+  describe("store 重置", () => {
+    it("应该能够重置所有状态到初始值", () => {
+      const store = useWebSocketStore.getState();
 
-      // 更新 config
-      useWebSocketStore.getState().setConfig(mockConfig);
+      // 设置一些状态
+      store.setConnectionState(ConnectionState.CONNECTED);
+      store.setWsUrl("ws://test.com");
+      store.setLastError(new Error("test error"));
 
-      // 直接从 store 获取值
+      // 重置状态
+      store.reset();
+
+      // 验证状态被重置
       const state = useWebSocketStore.getState();
-      expect(state.mcpEndpoint).toBe("wss://api.xiaozhi.me/mcp/test-endpoint");
-    });
-
-    it("store 状态应该正确反映数组类型的 mcpEndpoint 值", () => {
-      const mockConfig: AppConfig = {
-        mcpEndpoint: [
-          "wss://api.xiaozhi.me/mcp/endpoint-1",
-          "wss://api.xiaozhi.me/mcp/endpoint-2",
-        ],
-        mcpServers: {},
-      };
-
-      // 更新 config
-      useWebSocketStore.getState().setConfig(mockConfig);
-
-      // 直接从 store 获取值
-      const state = useWebSocketStore.getState();
-      expect(state.mcpEndpoint).toEqual([
-        "wss://api.xiaozhi.me/mcp/endpoint-1",
-        "wss://api.xiaozhi.me/mcp/endpoint-2",
-      ]);
-    });
-
-    it("setMcpEndpoint 方法应该能直接更新 mcpEndpoint 字段", () => {
-      const testEndpoint = "wss://api.xiaozhi.me/mcp/direct-update";
-
-      // 直接更新 mcpEndpoint
-      useWebSocketStore.getState().setMcpEndpoint(testEndpoint);
-
-      // 验证更新结果
-      const state = useWebSocketStore.getState();
-      expect(state.mcpEndpoint).toBe(testEndpoint);
-    });
-
-    it("setMcpEndpoint 方法应该支持数组类型", () => {
-      const testEndpoints = [
-        "wss://api.xiaozhi.me/mcp/endpoint-1",
-        "wss://api.xiaozhi.me/mcp/endpoint-2",
-      ];
-
-      // 直接更新 mcpEndpoint
-      useWebSocketStore.getState().setMcpEndpoint(testEndpoints);
-
-      // 验证更新结果
-      const state = useWebSocketStore.getState();
-      expect(state.mcpEndpoint).toEqual(testEndpoints);
+      expect(state.connectionState).toBe(ConnectionState.DISCONNECTED);
+      expect(state.wsUrl).toBe("");
+      expect(state.lastError).toBeNull();
     });
   });
 });

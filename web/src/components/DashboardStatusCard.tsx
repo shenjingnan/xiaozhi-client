@@ -7,12 +7,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  useMcpEndpoint,
-  useWebSocketConnected,
-  useWebSocketMcpServers,
-  useWebSocketUrl,
-} from "@/stores/websocket";
+import { useWebSocketConnected, useWebSocketUrl } from "@/stores/websocket";
+import { useMcpEndpoint, useMcpServers } from "@/stores/config";
 
 const MiniCircularProgress = ({
   showValue = true,
@@ -65,7 +61,7 @@ const MiniCircularProgress = ({
 };
 
 export function DashboardStatusCard() {
-  const mcpServers = useWebSocketMcpServers();
+  const mcpServers = useMcpServers();
   const connected = useWebSocketConnected();
   const mcpServerCount = Object.keys(mcpServers || {}).length;
   const wsUrl = useWebSocketUrl();

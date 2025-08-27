@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import { useWebSocketConfig } from "@/stores/websocket";
+import { useConfig } from "@/stores/config";
 import { TrashIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -23,7 +23,7 @@ export function RemoveMcpServerButton({
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const { updateConfig } = useWebSocket();
-  const config = useWebSocketConfig();
+  const config = useConfig();
 
   const onRemove = async () => {
     if (!config) {

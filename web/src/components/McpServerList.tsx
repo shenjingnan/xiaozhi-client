@@ -1,11 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import {
-  useWebSocketConfig,
-  useWebSocketMcpServerConfig,
-  useWebSocketMcpServers,
-} from "@/stores/websocket";
+import { useConfig, useMcpServerConfig, useMcpServers } from "@/stores/config";
 import type { MCPServerConfig } from "@/types";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
 import { CoffeeIcon, MinusIcon, PlusIcon, Wrench } from "lucide-react";
@@ -21,9 +17,9 @@ interface McpServerListProps {
 }
 
 export function McpServerList({ updateConfig }: McpServerListProps) {
-  const mcpServerConfig = useWebSocketMcpServerConfig();
-  const mcpServers = useWebSocketMcpServers();
-  const config = useWebSocketConfig();
+  const mcpServerConfig = useMcpServerConfig();
+  const mcpServers = useMcpServers();
+  const config = useConfig();
 
   const tools = useMemo(() => {
     return Object.entries(mcpServerConfig || {}).flatMap(
