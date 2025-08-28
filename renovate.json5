@@ -1,15 +1,25 @@
 {
-  $schema: "https://docs.renovatebot.com/renovate-schema.json",
-  extends: ["config:base"],
-  labels: ["dependencies"],
-  assignees: ["shenjingnan"],
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:recommended',
+  ],
+  labels: [
+    'dependencies',
+  ],
+  assignees: [
+    'shenjingnan',
+  ],
   packageRules: [
     {
-      matchUpdateTypes: ["patch", "minor"],
-      // "automerge": true
+      matchUpdateTypes: [
+        'patch',
+        'minor',
+      ],
     },
     {
-      matchUpdateTypes: ["major"],
+      matchUpdateTypes: [
+        'major',
+      ],
       dependencyDashboardApproval: true,
     },
   ],
