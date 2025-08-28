@@ -1,37 +1,63 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
-  "labels": ["dependencies"],
-  "assignees": ["shenjingnan"],
-  "timezone": "Asia/Shanghai",
-  "schedule": ["before 9am every weekday"],
-  "rangeStrategy": "bump",
-  "lockFileMaintenance": {
-    "enabled": true,
-    "schedule": ["before 9am every weekday"]
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:recommended',
+  ],
+  labels: [
+    'dependencies',
+  ],
+  assignees: [
+    'shenjingnan',
+  ],
+  timezone: 'Asia/Shanghai',
+  schedule: [
+    'before 9am every weekday',
+  ],
+  rangeStrategy: 'bump',
+  lockFileMaintenance: {
+    enabled: true,
+    schedule: [
+      'before 9am every weekday',
+    ],
   },
-  "includePaths": ["package.json", "web/package.json"],
-  "packageRules": [
+  includePaths: [
+    'package.json',
+    'web/package.json',
+  ],
+  packageRules: [
     {
-      "matchUpdateTypes": ["patch", "minor"],
-      "automerge": true,
-      "automergeType": "pr"
+      matchUpdateTypes: [
+        'patch',
+        'minor',
+      ],
+      automerge: true,
+      automergeType: 'pr',
     },
     {
-      "matchUpdateTypes": ["major"],
-      "dependencyDashboardApproval": true
+      matchUpdateTypes: [
+        'major',
+      ],
+      dependencyDashboardApproval: true,
     },
     {
-      "matchManagers": ["npm"],
-      "matchPackagePatterns": ["^@types/"],
-      "automerge": true,
-      "automergeType": "pr"
+      matchManagers: [
+        'npm',
+      ],
+      automerge: true,
+      automergeType: 'pr',
+      matchPackageNames: [
+        '/^@types//',
+      ],
     },
     {
-      "matchDepTypes": ["devDependencies"],
-      "matchUpdateTypes": ["major"],
-      "dependencyDashboardApproval": false,
-      "automerge": false
-    }
-  ]
+      matchDepTypes: [
+        'devDependencies',
+      ],
+      matchUpdateTypes: [
+        'major',
+      ],
+      dependencyDashboardApproval: false,
+      automerge: false,
+    },
+  ],
 }
