@@ -5,7 +5,7 @@
     "pushArgs": ["--follow-tags"],
     "requireCleanWorkingDir": false,
     "requireUpstream": false,
-    "commit": false,
+    "commit": true,
     "tag": true,
     "push": true
   },
@@ -19,7 +19,7 @@
     "publishArgs": ["--access", "public"]
   },
   "hooks": {
-    "before:init": ["pnpm run check:all", "pnpm run build"],
+    "before:init": ["pnpm audit --audit-level moderate", "pnpm run test", "pnpm run check:all", "pnpm run build"],
     "after:bump": "npx conventional-changelog -p conventionalcommits -i CHANGELOG.md -s",
     "after:release": "echo \"🎉 Release v${version} completed successfully!\""
   },

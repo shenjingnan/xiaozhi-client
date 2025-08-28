@@ -37,7 +37,7 @@
     "spell:check": "cspell \"src/**/*.ts\" \"*.md\" \"*.json\"",
     "duplicate:check": "jscpd src/",
     "docker:update-version": "node scripts/update-dockerfile-version.js",
-    "release": "npx tsx scripts/release.ts",
+    "release": "echo '请使用 GitHub Actions 进行发版：https://github.com/shenjingnan/xiaozhi-client/actions/workflows/npm-release.yml'",
     "publish": "npm publish",
     "publish:beta": "npx tsx scripts/publish-beta.ts",
     "example": "node --loader ts-node/esm"
