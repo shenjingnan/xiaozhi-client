@@ -284,17 +284,18 @@ deploy_from_source() {
         error_exit "Git 未安装，请先安装 Git"
     fi
     
-    # 克隆仓库
-    if [ ! -d "$work_dir" ]; then
-        info_msg "克隆项目仓库..."
-        git clone https://github.com/cfy114514/xiaozhi-client.git "$work_dir"
-    else
-        info_msg "更新项目仓库..."
-        cd "$work_dir"
-        git pull
+# 克隆仓库
+if [ ! -d "$work_dir" ]; then
+    info_msg "克隆项目仓库..."
+    git clone https://github.com/cfy114514/xiaozhi-client.git "$work_dir"
+    if [ $? -ne 0 ]; then
+        error_exit "项目克隆失败"
     fi
-    
+else
+    info_msg "更新项目仓库..."
     cd "$work_dir"
+    git pull
+fi    cd "$work_dir"
     
     # 安装依赖
     info_msg "安装项目依赖..."

@@ -83,9 +83,9 @@
 # 下载并运行一键部署脚本
 curl -fsSL https://raw.githubusercontent.com/cfy114514/xiaozhi-client/main/quick-deploy.sh | bash
 
-# 或者指定部署模式和选项
+# 或者下载后本地运行
 curl -fsSL https://raw.githubusercontent.com/cfy114514/xiaozhi-client/main/quick-deploy.sh -o quick-deploy.sh
-chmod +x quick-deploy.sh
+chmod +x quick-deploy.sh  # 添加执行权限
 
 # 本地部署（默认）
 ./quick-deploy.sh
@@ -98,6 +98,14 @@ chmod +x quick-deploy.sh
 
 # 查看帮助
 ./quick-deploy.sh --help
+```
+
+**权限问题解决：**
+如果遇到 `Permission denied` 错误：
+```bash
+chmod +x quick-deploy.sh  # 添加执行权限
+# 或直接使用 bash 运行
+bash quick-deploy.sh
 ```
 
 **Windows 用户：**
