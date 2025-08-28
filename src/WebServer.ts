@@ -21,7 +21,9 @@ import { RealtimeNotificationHandler } from "./handlers/RealtimeNotificationHand
 import { ServiceApiHandler } from "./handlers/ServiceApiHandler.js";
 import { StaticFileHandler } from "./handlers/StaticFileHandler.js";
 import { StatusApiHandler } from "./handlers/StatusApiHandler.js";
+import { AuthApiHandler } from "./handlers/AuthApiHandler.js";
 import { ConfigService } from "./services/ConfigService.js";
+import { authMiddleware, optionalAuthMiddleware } from "./middleware/AuthMiddleware.js";
 // 导入新的服务和处理器
 import {
   type EventBus,
@@ -78,6 +80,7 @@ export class WebServer {
   private statusApiHandler: StatusApiHandler;
   private serviceApiHandler: ServiceApiHandler;
   private staticFileHandler: StaticFileHandler;
+  private authApiHandler: AuthApiHandler;
 
   // WebSocket 处理器
   private realtimeNotificationHandler: RealtimeNotificationHandler;
@@ -157,6 +160,7 @@ export class WebServer {
     this.statusApiHandler = new StatusApiHandler(this.statusService);
     this.serviceApiHandler = new ServiceApiHandler(this.statusService);
     this.staticFileHandler = new StaticFileHandler();
+    this.authApiHandler = new AuthApiHandler();
 
     // 初始化 WebSocket 处理器
     this.realtimeNotificationHandler = new RealtimeNotificationHandler(
@@ -442,72 +446,79 @@ export class WebServer {
   }
 
   private setupRoutes() {
-    // 配置相关 API 路由
-    this.app?.get("/api/config", (c) => this.configApiHandler.getConfig(c));
-    this.app?.put("/api/config", (c) => this.configApiHandler.updateConfig(c));
-    this.app?.get("/api/config/mcp-endpoint", (c) =>
+    // 认证相关 API 路由（公开访问，不需要认证）
+    this.app?.post("/api/auth/login", (c) => this.authApiHandler.login(c));
+    this.app?.post("/api/auth/logout", (c) => this.authApiHandler.logout(c));
+    this.app?.get("/api/auth/status", (c) => this.authApiHandler.getAuthStatus(c));
+    this.app?.get("/api/auth/verify", (c) => this.authApiHandler.verifyToken(c));
+    this.app?.post("/api/auth/refresh", (c) => this.authApiHandler.refreshToken(c));
+
+    // 配置相关 API 路由（需要认证）
+    this.app?.get("/api/config", authMiddleware, (c) => this.configApiHandler.getConfig(c));
+    this.app?.put("/api/config", authMiddleware, (c) => this.configApiHandler.updateConfig(c));
+    this.app?.get("/api/config/mcp-endpoint", authMiddleware, (c) =>
       this.configApiHandler.getMcpEndpoint(c)
     );
-    this.app?.get("/api/config/mcp-endpoints", (c) =>
+    this.app?.get("/api/config/mcp-endpoints", authMiddleware, (c) =>
       this.configApiHandler.getMcpEndpoints(c)
     );
-    this.app?.get("/api/config/mcp-servers", (c) =>
+    this.app?.get("/api/config/mcp-servers", authMiddleware, (c) =>
       this.configApiHandler.getMcpServers(c)
     );
-    this.app?.get("/api/config/connection", (c) =>
+    this.app?.get("/api/config/connection", authMiddleware, (c) =>
       this.configApiHandler.getConnectionConfig(c)
     );
-    this.app?.post("/api/config/reload", (c) =>
+    this.app?.post("/api/config/reload", authMiddleware, (c) =>
       this.configApiHandler.reloadConfig(c)
     );
-    this.app?.get("/api/config/path", (c) =>
+    this.app?.get("/api/config/path", authMiddleware, (c) =>
       this.configApiHandler.getConfigPath(c)
     );
-    this.app?.get("/api/config/exists", (c) =>
+    this.app?.get("/api/config/exists", authMiddleware, (c) =>
       this.configApiHandler.checkConfigExists(c)
     );
 
-    // 状态相关 API 路由
-    this.app?.get("/api/status", (c) => this.statusApiHandler.getStatus(c));
-    this.app?.get("/api/status/client", (c) =>
+    // 状态相关 API 路由（需要认证）
+    this.app?.get("/api/status", authMiddleware, (c) => this.statusApiHandler.getStatus(c));
+    this.app?.get("/api/status/client", authMiddleware, (c) =>
       this.statusApiHandler.getClientStatus(c)
     );
-    this.app?.get("/api/status/restart", (c) =>
+    this.app?.get("/api/status/restart", authMiddleware, (c) =>
       this.statusApiHandler.getRestartStatus(c)
     );
-    this.app?.get("/api/status/connected", (c) =>
+    this.app?.get("/api/status/connected", authMiddleware, (c) =>
       this.statusApiHandler.checkClientConnected(c)
     );
-    this.app?.get("/api/status/heartbeat", (c) =>
+    this.app?.get("/api/status/heartbeat", authMiddleware, (c) =>
       this.statusApiHandler.getLastHeartbeat(c)
     );
-    this.app?.get("/api/status/mcp-servers", (c) =>
+    this.app?.get("/api/status/mcp-servers", authMiddleware, (c) =>
       this.statusApiHandler.getActiveMCPServers(c)
     );
-    this.app?.put("/api/status/client", (c) =>
+    this.app?.put("/api/status/client", authMiddleware, (c) =>
       this.statusApiHandler.updateClientStatus(c)
     );
-    this.app?.put("/api/status/mcp-servers", (c) =>
+    this.app?.put("/api/status/mcp-servers", authMiddleware, (c) =>
       this.statusApiHandler.setActiveMCPServers(c)
     );
-    this.app?.post("/api/status/reset", (c) =>
+    this.app?.post("/api/status/reset", authMiddleware, (c) =>
       this.statusApiHandler.resetStatus(c)
     );
 
-    // 服务相关 API 路由
-    this.app?.post("/api/services/restart", (c) =>
+    // 服务相关 API 路由（需要认证）
+    this.app?.post("/api/services/restart", authMiddleware, (c) =>
       this.serviceApiHandler.restartService(c)
     );
-    this.app?.post("/api/services/stop", (c) =>
+    this.app?.post("/api/services/stop", authMiddleware, (c) =>
       this.serviceApiHandler.stopService(c)
     );
-    this.app?.post("/api/services/start", (c) =>
+    this.app?.post("/api/services/start", authMiddleware, (c) =>
       this.serviceApiHandler.startService(c)
     );
-    this.app?.get("/api/services/status", (c) =>
+    this.app?.get("/api/services/status", authMiddleware, (c) =>
       this.serviceApiHandler.getServiceStatus(c)
     );
-    this.app?.get("/api/services/health", (c) =>
+    this.app?.get("/api/services/health", authMiddleware, (c) =>
       this.serviceApiHandler.getServiceHealth(c)
     );
 

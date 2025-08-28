@@ -65,9 +65,20 @@ export interface ModelScopeConfig {
   apiKey?: string; // ModelScope API 密钥
 }
 
+export interface AuthConfig {
+  enabled?: boolean; // 是否启用认证，默认 false
+  admin?: {
+    username: string;
+    password: string;
+  };
+  jwtSecret?: string; // JWT 密钥
+  sessionTimeout?: number; // 会话超时时间（秒），默认 86400（24小时）
+}
+
 export interface WebUIConfig {
   port?: number; // Web UI 端口号，默认 9999
   autoRestart?: boolean; // 是否在配置更新后自动重启服务，默认 true
+  auth?: AuthConfig; // 认证配置（可选）
 }
 
 export interface AppConfig {
@@ -966,6 +977,49 @@ export class ConfigManager {
     // 直接修改现有的 webUI 对象以保留注释
     Object.assign(config.webUI, webUIConfig);
     this.saveConfig(config);
+  }
+
+  /**
+   * 获取认证配置
+   */
+  public getAuthConfig(): Readonly<AuthConfig> {
+    const webUIConfig = this.getWebUIConfig();
+    return webUIConfig.auth || {};
+  }
+
+  /**
+   * 检查是否启用了认证
+   */
+  public isAuthEnabled(): boolean {
+    const authConfig = this.getAuthConfig();
+    return authConfig.enabled ?? false;
+  }
+
+  /**
+   * 获取管理员凭据
+   */
+  public getAdminCredentials(): { username: string; password: string } | null {
+    const authConfig = this.getAuthConfig();
+    if (!authConfig.admin) {
+      return null;
+    }
+    return authConfig.admin;
+  }
+
+  /**
+   * 获取JWT密钥
+   */
+  public getJwtSecret(): string {
+    const authConfig = this.getAuthConfig();
+    return authConfig.jwtSecret || 'default-secret-key-change-this';
+  }
+
+  /**
+   * 获取会话超时时间（秒）
+   */
+  public getSessionTimeout(): number {
+    const authConfig = this.getAuthConfig();
+    return authConfig.sessionTimeout ?? 86400; // 默认24小时
   }
 
   /**

@@ -4,6 +4,7 @@
  */
 
 import type { AppConfig, ClientStatus } from "../types";
+import { AuthService } from "./AuthService";
 
 /**
  * API 响应格式
@@ -93,14 +94,43 @@ export class ApiClient {
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
 
+    // 合并认证头和其他请求头
+    const authHeaders = AuthService.getAuthHeaders();
     const defaultOptions: RequestInit = {
       headers: {
         "Content-Type": "application/json",
+        ...authHeaders,
         ...options.headers,
       },
     };
 
     const response = await fetch(url, { ...defaultOptions, ...options });
+
+    // 处理认证错误
+    if (response.status === 401) {
+      // Token可能已过期，尝试刷新
+      const refreshed = await AuthService.refreshToken();
+      if (refreshed) {
+        // 刷新成功，重试请求
+        const newAuthHeaders = AuthService.getAuthHeaders();
+        const retryOptions: RequestInit = {
+          ...defaultOptions,
+          headers: {
+            ...defaultOptions.headers,
+            ...newAuthHeaders,
+          },
+        };
+        const retryResponse = await fetch(url, { ...retryOptions, ...options });
+        
+        if (retryResponse.ok) {
+          return retryResponse.json();
+        }
+      }
+      
+      // 刷新失败或重试失败，清除认证状态
+      await AuthService.logout();
+      throw new Error("认证失败，请重新登录");
+    }
 
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`;

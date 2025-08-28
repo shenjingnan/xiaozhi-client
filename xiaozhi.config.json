@@ -19,6 +19,15 @@
     "reconnectInterval": 5000
   },
   "webUI": {
-    "port": 9999
+    "port": 9999,
+    "auth": {
+      "enabled": true,
+      "admin": {
+        "username": "admin",
+        "password": "admin123"
+      },
+      "jwtSecret": "your-super-secret-jwt-key-change-this-in-production",
+      "sessionTimeout": 86400
+    }
   }
 }
