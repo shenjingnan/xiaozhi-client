@@ -103,11 +103,14 @@ cleanup_old_installation() {
         success_msg "已卸载全局xiaozhi-client"
     fi
     
-    # 清理旧目录
-    if [ -d "$HOME/xiaozhi-client" ]; then
+    # 清理旧目录（但不删除当前工作目录）
+    if [ -d "$HOME/xiaozhi-client" ] && [ "$PWD" != "$HOME/xiaozhi-client" ]; then
         rm -rf "$HOME/xiaozhi-client"
         success_msg "已删除旧的xiaozhi-client目录"
     fi
+    
+    # 确保我们在一个安全的目录中
+    cd "$HOME" || cd /tmp
 }
 
 # 克隆并构建项目
