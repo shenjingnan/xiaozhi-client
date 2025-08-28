@@ -77,7 +77,6 @@
     "@biomejs/biome": "1.9.4",
     "@codecov/vite-plugin": "^1.9.1",
     "@release-it/conventional-changelog": "^10.0.1",
-    "@types/eventsource": "^3.0.0",
     "@types/node": "^24.0.1",
     "@types/node-fetch": "^2.6.12",
     "@types/supertest": "^6.0.3",

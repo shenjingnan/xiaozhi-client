@@ -89,9 +89,6 @@ importers:
       '@release-it/conventional-changelog':
         specifier: ^10.0.1
         version: 10.0.1(conventional-commits-filter@5.0.0)(conventional-commits-parser@6.2.0)(release-it@19.0.4(@types/node@24.0.13)(magicast@0.3.5))
-      '@types/eventsource':
-        specifier: ^3.0.0
-        version: 3.0.0
       '@types/node':
         specifier: ^24.0.1
         version: 24.0.13
@@ -1677,10 +1674,6 @@ packages:
 
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
-
-  '@types/eventsource@3.0.0':
-    resolution: {integrity: sha512-yEhFj31FTD29DtNeqePu+A+lD6loRef6YOM5XfN1kUwBHyy2DySGlA3jJU+FbQSkrfmlBVluf2Dub/OyReFGKA==}
-    deprecated: This is a stub types definition. eventsource provides its own type definitions, so you do not need this installed.
 
   '@types/express-serve-static-core@5.0.7':
     resolution: {integrity: sha512-R+33OsgWw7rOhD1emjU7dzCDHucJrgJXMA5PYCzJxVil0dsyx5iBEPHqpPfiKNJQb7lZ1vxwoLR4Z87bBUpeGQ==}
@@ -5892,10 +5885,6 @@ snapshots:
   '@types/deep-eql@4.0.2': {}
 
   '@types/estree@1.0.8': {}
-
-  '@types/eventsource@3.0.0':
-    dependencies:
-      eventsource: 4.0.0
 
   '@types/express-serve-static-core@5.0.7':
     dependencies:
