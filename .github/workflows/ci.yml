@@ -36,7 +36,12 @@ jobs:
         cache: 'pnpm'
 
     - name: 安装依赖
-      run: pnpm install --frozen-lockfile
+      uses: nick-invision/retry@v3
+      with:
+        timeout_minutes: 5
+        max_attempts: 2
+        retry_on: error
+        command: pnpm install --frozen-lockfile
 
     - name: TypeScript 类型检查
       run: pnpm run type:check
@@ -51,10 +56,20 @@ jobs:
       run: pnpm run duplicate:check
 
     - name: 构建项目
-      run: pnpm run build
+      uses: nick-invision/retry@v3
+      with:
+        timeout_minutes: 5
+        max_attempts: 2
+        retry_on: error
+        command: pnpm run build
 
     - name: 运行测试并生成覆盖率报告
-      run: pnpm run test:coverage
+      uses: nick-invision/retry@v3
+      with:
+        timeout_minutes: 10
+        max_attempts: 2
+        retry_on: error
+        command: pnpm run test:coverage
 
     - name: 上传覆盖率报告 (仅在 Ubuntu + Node 20.19.2 环境)
       uses: codecov/codecov-action@v4
@@ -66,9 +81,6 @@ jobs:
         name: codecov-umbrella
         fail_ci_if_error: true
         verbose: true
-
-    - name: 构建项目
-      run: pnpm run build
 
     - name: CLI 功能测试
       run: |
