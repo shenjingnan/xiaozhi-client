@@ -1,26 +1,38 @@
 {
-  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
-  extends: [
-    'config:recommended',
-  ],
-  labels: [
-    'dependencies',
-  ],
-  assignees: [
-    'shenjingnan',
-  ],
-  packageRules: [
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:base"],
+  "labels": ["dependencies"],
+  "assignees": ["shenjingnan"],
+  "timezone": "Asia/Shanghai",
+  "schedule": ["before 6am on monday"],
+  "rangeStrategy": "bump",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"]
+  },
+  "includePaths": ["package.json", "web/package.json"],
+  "packageRules": [
     {
-      matchUpdateTypes: [
-        'patch',
-        'minor',
-      ],
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
     },
     {
-      matchUpdateTypes: [
-        'major',
-      ],
-      dependencyDashboardApproval: true,
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
     },
-  ],
+    {
+      "matchManagers": ["npm"],
+      "matchPackagePatterns": ["^@types/"],
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "automergeType": "pr"
+    }
+  ]
 }
