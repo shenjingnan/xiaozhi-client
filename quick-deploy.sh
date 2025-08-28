@@ -295,11 +295,13 @@ else
     info_msg "更新项目仓库..."
     cd "$work_dir"
     git pull
-fi    cd "$work_dir"
-    
-    # 安装依赖
-    info_msg "安装项目依赖..."
-    pnpm install
+fi
+
+cd "$work_dir"
+
+# 安装依赖
+info_msg "安装项目依赖..."
+pnpm install
     
     # 构建项目
     info_msg "构建项目..."
