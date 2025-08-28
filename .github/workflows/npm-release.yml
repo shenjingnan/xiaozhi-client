@@ -104,7 +104,7 @@ jobs:
         id: release_it
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           # 设置发版参数
           RELEASE_ARGS=""
