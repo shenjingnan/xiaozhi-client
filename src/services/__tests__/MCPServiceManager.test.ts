@@ -20,6 +20,7 @@ vi.mock("../../configManager.js", () => ({
   configManager: {
     getMcpServerConfig: vi.fn(),
     updateServerToolsConfig: vi.fn(),
+    isToolEnabled: vi.fn(),
   },
 }));
 
@@ -39,6 +40,11 @@ describe("MCPServiceManager", () => {
     // 获取模拟的 configManager 实例
     const { configManager } = await import("../../configManager.js");
     mockConfigManager = configManager;
+
+    // 设置 configManager 的默认行为
+    mockConfigManager.getMcpServerConfig.mockReturnValue({});
+    mockConfigManager.updateServerToolsConfig.mockImplementation(() => {});
+    mockConfigManager.isToolEnabled.mockReturnValue(true); // 默认所有工具都启用
 
     // 模拟 MCPService
     mockMCPService = {
@@ -806,6 +812,200 @@ describe("MCPServiceManager", () => {
           },
         }
       );
+    });
+  });
+
+  describe("工具启用状态过滤", () => {
+    beforeEach(async () => {
+      // 添加测试服务配置
+      manager.addServiceConfig("test-service", {
+        name: "test-service",
+        type: MCPTransportType.STDIO,
+        command: "node",
+        args: ["test-service.js"],
+      });
+
+      const mockTools = [
+        {
+          name: "enabled-tool",
+          description: "This tool is enabled",
+          inputSchema: {},
+        },
+        {
+          name: "disabled-tool",
+          description: "This tool is disabled",
+          inputSchema: {},
+        },
+        {
+          name: "default-tool",
+          description: "This tool uses default state",
+          inputSchema: {},
+        },
+      ];
+
+      mockMCPService.connect.mockResolvedValue(undefined);
+      mockMCPService.getTools.mockReturnValue(mockTools);
+      mockMCPService.isConnected.mockReturnValue(true);
+
+      await manager.startService("test-service");
+    });
+
+    it("应该只返回启用的工具", () => {
+      // 设置工具启用状态：enabled-tool=true, disabled-tool=false, default-tool=true(默认)
+      mockConfigManager.isToolEnabled.mockImplementation(
+        (serviceName: string, toolName: string) => {
+          if (toolName === "disabled-tool") return false;
+          return true; // enabled-tool 和 default-tool 都返回 true
+        }
+      );
+
+      const tools = manager.getAllTools();
+
+      // 应该只返回启用的工具
+      expect(tools).toHaveLength(2);
+      expect(tools.map((t) => t.originalName)).toEqual(
+        expect.arrayContaining(["enabled-tool", "default-tool"])
+      );
+      expect(tools.map((t) => t.originalName)).not.toContain("disabled-tool");
+    });
+
+    it("应该正确调用 configManager.isToolEnabled 检查每个工具", () => {
+      mockConfigManager.isToolEnabled.mockReturnValue(true);
+
+      manager.getAllTools();
+
+      // 验证为每个工具都调用了 isToolEnabled
+      expect(mockConfigManager.isToolEnabled).toHaveBeenCalledTimes(3);
+      expect(mockConfigManager.isToolEnabled).toHaveBeenCalledWith(
+        "test-service",
+        "enabled-tool"
+      );
+      expect(mockConfigManager.isToolEnabled).toHaveBeenCalledWith(
+        "test-service",
+        "disabled-tool"
+      );
+      expect(mockConfigManager.isToolEnabled).toHaveBeenCalledWith(
+        "test-service",
+        "default-tool"
+      );
+    });
+
+    it("当所有工具都被禁用时应该返回空数组", () => {
+      // 所有工具都被禁用
+      mockConfigManager.isToolEnabled.mockReturnValue(false);
+
+      const tools = manager.getAllTools();
+
+      expect(tools).toHaveLength(0);
+      expect(tools).toEqual([]);
+    });
+
+    it("应该处理 configManager.isToolEnabled 抛出异常的情况", () => {
+      // 模拟 isToolEnabled 抛出异常
+      mockConfigManager.isToolEnabled.mockImplementation(() => {
+        throw new Error("配置读取失败");
+      });
+
+      // getAllTools 应该能够处理异常，不应该崩溃
+      expect(() => manager.getAllTools()).toThrow("配置读取失败");
+    });
+
+    it("应该保持工具的原始信息不变", () => {
+      mockConfigManager.isToolEnabled.mockReturnValue(true);
+
+      const tools = manager.getAllTools();
+
+      // 验证工具信息完整性
+      const enabledTool = tools.find((t) => t.originalName === "enabled-tool");
+      expect(enabledTool).toBeDefined();
+      expect(enabledTool?.name).toBe("test-service__enabled-tool");
+      expect(enabledTool?.description).toBe("This tool is enabled");
+      expect(enabledTool?.serviceName).toBe("test-service");
+      expect(enabledTool?.originalName).toBe("enabled-tool");
+      expect(enabledTool?.inputSchema).toEqual({});
+    });
+  });
+
+  describe("多服务工具过滤", () => {
+    beforeEach(async () => {
+      // 添加第二个服务配置
+      manager.addServiceConfig("service-a", {
+        name: "service-a",
+        type: MCPTransportType.STDIO,
+        command: "node",
+        args: ["service-a.js"],
+      });
+
+      manager.addServiceConfig("service-b", {
+        name: "service-b",
+        type: MCPTransportType.STDIO,
+        command: "node",
+        args: ["service-b.js"],
+      });
+
+      // 模拟两个服务的工具
+      const mockToolsA = [
+        { name: "tool-a1", description: "Tool A1", inputSchema: {} },
+        { name: "tool-a2", description: "Tool A2", inputSchema: {} },
+      ];
+
+      const mockToolsB = [
+        { name: "tool-b1", description: "Tool B1", inputSchema: {} },
+        { name: "tool-b2", description: "Tool B2", inputSchema: {} },
+      ];
+
+      // 创建两个不同的 mock 服务实例
+      const mockServiceA = {
+        connect: vi.fn().mockResolvedValue(undefined),
+        disconnect: vi.fn(),
+        isConnected: vi.fn().mockReturnValue(true),
+        getTools: vi.fn().mockReturnValue(mockToolsA),
+        callTool: vi.fn(),
+        getStatus: vi.fn(),
+      };
+
+      const mockServiceB = {
+        connect: vi.fn().mockResolvedValue(undefined),
+        disconnect: vi.fn(),
+        isConnected: vi.fn().mockReturnValue(true),
+        getTools: vi.fn().mockReturnValue(mockToolsB),
+        callTool: vi.fn(),
+        getStatus: vi.fn(),
+      };
+
+      // 根据服务名返回不同的 mock 实例
+      vi.mocked(MCPService).mockImplementation((config: MCPServiceConfig) => {
+        if (config.name === "service-a") return mockServiceA as any;
+        if (config.name === "service-b") return mockServiceB as any;
+        return mockMCPService;
+      });
+
+      await manager.startService("service-a");
+      await manager.startService("service-b");
+    });
+
+    it("应该正确过滤多个服务的工具", () => {
+      // 设置过滤规则：service-a 的 tool-a1 禁用，service-b 的 tool-b2 禁用
+      mockConfigManager.isToolEnabled.mockImplementation(
+        (serviceName: string, toolName: string) => {
+          if (serviceName === "service-a" && toolName === "tool-a1")
+            return false;
+          if (serviceName === "service-b" && toolName === "tool-b2")
+            return false;
+          return true;
+        }
+      );
+
+      const tools = manager.getAllTools();
+
+      // 应该返回 3 个工具：tool-a2, tool-b1（tool-a1 和 tool-b2 被过滤）
+      expect(tools).toHaveLength(2);
+
+      const toolNames = tools.map((t) => t.originalName);
+      expect(toolNames).toContain("tool-a2");
+      expect(toolNames).toContain("tool-b1");
+      expect(toolNames).not.toContain("tool-a1");
+      expect(toolNames).not.toContain("tool-b2");
     });
   });
 });
