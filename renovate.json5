@@ -1,14 +1,14 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:base"],
+  "extends": ["config:recommended"],
   "labels": ["dependencies"],
   "assignees": ["shenjingnan"],
   "timezone": "Asia/Shanghai",
-  "schedule": ["before 6am on monday"],
+  "schedule": ["before 9am"],
   "rangeStrategy": "bump",
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["before 6am on monday"]
+    "schedule": ["before 9am"]
   },
   "includePaths": ["package.json", "web/package.json"],
   "packageRules": [
