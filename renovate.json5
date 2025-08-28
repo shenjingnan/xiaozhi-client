@@ -4,19 +4,18 @@
   "labels": ["dependencies"],
   "assignees": ["shenjingnan"],
   "timezone": "Asia/Shanghai",
-  "schedule": ["before 9am"],
+  "schedule": ["before 9am every weekday"],
   "rangeStrategy": "bump",
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["before 9am"]
+    "schedule": ["before 9am every weekday"]
   },
   "includePaths": ["package.json", "web/package.json"],
   "packageRules": [
     {
       "matchUpdateTypes": ["patch", "minor"],
       "automerge": true,
-      "automergeType": "pr",
-      "platformAutomerge": true
+      "automergeType": "pr"
     },
     {
       "matchUpdateTypes": ["major"],
@@ -30,9 +29,9 @@
     },
     {
       "matchDepTypes": ["devDependencies"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "automerge": true,
-      "automergeType": "pr"
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": false,
+      "automerge": false
     }
   ]
 }
