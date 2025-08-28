@@ -1,9 +1,6 @@
 name: NPM 发布
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       version:
@@ -38,51 +35,25 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 检查发版条件
-        id: check_release
+      - name: 设置发版参数
+        id: setup_release
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            # 检查最新 commit 消息是否符合 release: <version> 格式（可能包含PR编号）
-            COMMIT_MSG=$(git log -1 --pretty=%s)
-            echo "最新 commit 消息: $COMMIT_MSG"
+          echo "手动触发 NPM 发布"
+          echo "预演模式: ${{ github.event.inputs.dry_run }}"
+          echo "指定版本: ${{ github.event.inputs.version }}"
 
-            if [[ $COMMIT_MSG =~ ^(chore:\ release\ v|release:\ )[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?(\s+\(#[0-9]+\))?.*$ ]]; then
-              echo "检测到发版 commit: $COMMIT_MSG"
-              # 提取版本号：匹配 release: 或 chore: release v 后面的版本号部分
-              VERSION=$(echo "$COMMIT_MSG" | sed -E 's/^(chore: release v|release: )([0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?).*$/\2/')
-              echo "从 commit 消息提取的版本号: $VERSION"
-              echo "version=$VERSION" >> $GITHUB_OUTPUT
-              echo "is_release=true" >> $GITHUB_OUTPUT
-              echo "trigger_type=auto" >> $GITHUB_OUTPUT
-            else
-              echo "不是发版 commit，跳过发布"
-              echo "is_release=false" >> $GITHUB_OUTPUT
-            fi
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
           else
-            # 手动触发的情况
-            echo "手动触发 NPM 发布"
-            echo "预演模式: ${{ github.event.inputs.dry_run }}"
-            echo "指定版本: ${{ github.event.inputs.version }}"
-            echo "is_release=true" >> $GITHUB_OUTPUT
-            echo "trigger_type=manual" >> $GITHUB_OUTPUT
-
-            if [ -n "${{ github.event.inputs.version }}" ]; then
-              echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-            else
-              echo "version=" >> $GITHUB_OUTPUT
-            fi
+            echo "version=" >> $GITHUB_OUTPUT
           fi
 
-
-
       - name: 安装 pnpm
-        if: steps.check_release.outputs.is_release == 'true'
         uses: pnpm/action-setup@v4
         with:
           version: latest
 
       - name: 设置 Node.js
-        if: steps.check_release.outputs.is_release == 'true'
         uses: actions/setup-node@v4
         with:
           node-version-file: ".nvmrc"
@@ -90,17 +61,14 @@ jobs:
           registry-url: "https://registry.npmjs.org"
 
       - name: 安装依赖
-        if: steps.check_release.outputs.is_release == 'true'
         run: pnpm install --frozen-lockfile
 
       - name: 配置 Git 用户
-        if: steps.check_release.outputs.is_release == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: 执行发版
-        if: steps.check_release.outputs.is_release == 'true'
         id: release_it
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -116,8 +84,8 @@ jobs:
           fi
 
           # 检查是否指定了版本号
-          if [ -n "${{ steps.check_release.outputs.version }}" ]; then
-            VERSION="${{ steps.check_release.outputs.version }}"
+          if [ -n "${{ steps.setup_release.outputs.version }}" ]; then
+            VERSION="${{ steps.setup_release.outputs.version }}"
             echo "📌 使用指定版本号: $VERSION"
             RELEASE_ARGS="$RELEASE_ARGS $VERSION"
           else
@@ -139,7 +107,7 @@ jobs:
           fi
 
       - name: 获取发布版本信息
-        if: success() && steps.check_release.outputs.is_release == 'true' && github.event.inputs.dry_run != 'true' && steps.release_it.outputs.release_completed == 'true'
+        if: success() && github.event.inputs.dry_run != 'true' && steps.release_it.outputs.release_completed == 'true'
         id: get_release_info
         run: |
           # 从 package.json 获取最新版本号
