@@ -99,7 +99,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: 使用 release-it 执行发版
+      - name: 执行发版
         if: steps.check_release.outputs.is_release == 'true'
         id: release_it
         env:
@@ -132,7 +132,7 @@ jobs:
 
           # 执行 release-it
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            npx release-it $RELEASE_ARGS
+            npx release-it $RELEASE_ARGS --npm.publish=false
           else
             npx release-it $RELEASE_ARGS
             echo "release_completed=true" >> $GITHUB_OUTPUT
