@@ -77,6 +77,7 @@
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
     "@codecov/vite-plugin": "^1.9.1",
+    "@release-it/conventional-changelog": "^10.0.1",
     "@types/eventsource": "^3.0.0",
     "@types/node": "^24.0.1",
     "@types/node-fetch": "^2.6.12",
@@ -91,6 +92,7 @@
     "glob": "^11.0.3",
     "happy-dom": "^18.0.1",
     "jscpd": "^4.0.5",
+    "release-it": "^19.0.4",
     "semver": "^7.7.2",
     "supertest": "^7.1.4",
     "ts-node": "^10.9.2",
