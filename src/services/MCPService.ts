@@ -559,25 +559,70 @@ export class MCPService {
       JSON.stringify(arguments_)
     );
 
-    try {
-      const result = await this.client.callTool({
-        name,
-        arguments: arguments_ || {},
-      });
+    // 最多重试一次，避免无限循环
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const result = await this.client.callTool({
+          name,
+          arguments: arguments_ || {},
+        });
 
-      this.logger.info(
-        `工具 ${name} 调用成功，结果:`,
-        `${JSON.stringify(result).substring(0, 500)}...`
-      );
+        this.logger.info(
+          `工具 ${name} 调用成功，结果:`,
+          `${JSON.stringify(result).substring(0, 500)}...`
+        );
 
-      return result as ToolCallResult;
-    } catch (error) {
-      this.logger.error(
-        `工具 ${name} 调用失败:`,
-        error instanceof Error ? error.message : String(error)
-      );
-      throw error;
+        return result as ToolCallResult;
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+
+        // 检测会话过期错误
+        if (this.isSessionExpiredError(errorMessage) && attempt === 0) {
+          this.logger.warn(
+            `工具 ${name} 调用失败，检测到会话过期，尝试重连...`
+          );
+
+          try {
+            // 重新连接
+            await this.reconnect();
+            this.logger.info(`服务 ${this.config.name} 重连成功，重试工具调用`);
+            // 继续下一次循环重试
+            continue;
+          } catch (reconnectError) {
+            this.logger.error(
+              `服务 ${this.config.name} 重连失败:`,
+              reconnectError instanceof Error
+                ? reconnectError.message
+                : String(reconnectError)
+            );
+            // 重连失败，抛出原始错误
+            this.logger.error(`工具 ${name} 调用失败:`, errorMessage);
+            throw error;
+          }
+        }
+
+        // 非会话过期错误或重试后仍失败
+        this.logger.error(`工具 ${name} 调用失败:`, errorMessage);
+        throw error;
+      }
     }
+
+    // 这行代码理论上不会执行到，但为了类型安全添加
+    throw new Error(`工具 ${name} 调用失败：超出最大重试次数`);
+  }
+
+  /**
+   * 检测是否为会话过期错误
+   * @param errorMessage 错误消息
+   * @returns 是否为会话过期错误
+   */
+  private isSessionExpiredError(errorMessage: string): boolean {
+    return (
+      (errorMessage.includes("HTTP 401") &&
+        errorMessage.includes("SessionExpired")) ||
+      (errorMessage.includes("session") && errorMessage.includes("expired"))
+    );
   }
 
   /**
