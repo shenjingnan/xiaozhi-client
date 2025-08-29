@@ -160,17 +160,17 @@ jobs:
             echo "📈 使用自动版本号递增"
           fi
 
-          # 设置非交互模式和禁用 Git/GitHub 操作
-          RELEASE_ARGS="$RELEASE_ARGS --ci --git=false --github.release=false"
+          # 设置非交互模式
+          RELEASE_ARGS="$RELEASE_ARGS --ci"
 
           echo "🚀 开始执行预发布版本 release-it..."
           echo "参数: $RELEASE_ARGS"
 
-          # 执行 release-it（仅 NPM 发布）
+          # 执行 release-it（仅 NPM 发布，使用预发布配置）
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            npx release-it $RELEASE_ARGS --npm.publish=false
+            npx release-it $RELEASE_ARGS --config .release-it.prerelease.json --npm.publish=false
           else
-            npx release-it $RELEASE_ARGS
+            npx release-it $RELEASE_ARGS --config .release-it.prerelease.json
             echo "prerelease_completed=true" >> $GITHUB_OUTPUT
           fi
 
@@ -208,11 +208,11 @@ jobs:
           echo "🚀 开始执行正式版本 release-it..."
           echo "参数: $RELEASE_ARGS"
 
-          # 执行 release-it（完整流程）
+          # 执行 release-it（完整流程，使用正式版本配置）
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            npx release-it $RELEASE_ARGS --npm.publish=false
+            npx release-it $RELEASE_ARGS --config .release-it.release.json --npm.publish=false
           else
-            npx release-it $RELEASE_ARGS
+            npx release-it $RELEASE_ARGS --config .release-it.release.json
             echo "release_completed=true" >> $GITHUB_OUTPUT
           fi
 

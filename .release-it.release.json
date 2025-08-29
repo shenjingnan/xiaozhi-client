@@ -1,0 +1,33 @@
+{
+  "git": {
+    "commitMessage": "chore: release v${version}",
+    "tagName": "v${version}",
+    "pushArgs": ["--follow-tags"],
+    "requireCleanWorkingDir": false,
+    "requireUpstream": false,
+    "commit": true,
+    "tag": true,
+    "push": true
+  },
+  "github": {
+    "release": true,
+    "releaseName": "🚀 v${version}",
+    "releaseNotes": "npx conventional-changelog -p conventionalcommits -r 2"
+  },
+  "npm": {
+    "publish": true,
+    "publishArgs": ["--access", "public"]
+  },
+  "hooks": {
+    "before:init": ["pnpm audit --audit-level moderate"],
+    "after:bump": "npx conventional-changelog -p conventionalcommits -i CHANGELOG.md -s",
+    "after:release": "echo \"🎉 Release v${version} completed successfully!\""
+  },
+  "plugins": {
+    "@release-it/conventional-changelog": {
+      "preset": "conventionalcommits",
+      "infile": "CHANGELOG.md",
+      "header": "# Changelog\n\nAll notable changes to this project will be documented in this file. See [Conventional Commits](https://conventionalcommits.org) for commit guidelines."
+    }
+  }
+}
