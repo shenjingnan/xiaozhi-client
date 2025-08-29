@@ -426,25 +426,14 @@ class ReleaseExecutor {
     config: ReleaseConfig,
     isPrerelease: boolean
   ): ReleaseResult {
-    const releaseArgs = ["--dry-run"];
+    // 使用统一的参数构建方法，然后添加预演模式特定的参数
+    const releaseArgs = ReleaseExecutor.buildReleaseArgs(config, isPrerelease);
 
-    if (config.version) {
-      Logger.info(`使用指定版本号: ${config.version}`);
-      releaseArgs.push(config.version);
-    } else {
-      Logger.info("使用自动版本号递增");
-    }
+    // 在开头插入 --dry-run 参数
+    releaseArgs.unshift("--dry-run");
 
-    if (isPrerelease) {
-      releaseArgs.push(
-        "--ci",
-        "--git=false",
-        "--github.release=false",
-        "--npm.publish=false"
-      );
-    } else {
-      releaseArgs.push("--ci", "--npm.publish=false");
-    }
+    // 添加 --npm.publish=false 以确保预演模式不会实际发布
+    releaseArgs.push("--npm.publish=false");
 
     Logger.rocket(
       `开始执行${
@@ -472,6 +461,15 @@ class ReleaseExecutor {
   ): string[] {
     const args: string[] = [];
 
+    // 根据版本类型选择对应的配置文件
+    if (isPrerelease) {
+      Logger.info("使用预发布版本配置文件: .release-it.prerelease.json");
+      args.push("--config", ".release-it.prerelease.json");
+    } else {
+      Logger.info("使用正式版本配置文件: .release-it.json");
+      args.push("--config", ".release-it.json");
+    }
+
     if (config.version) {
       Logger.info(`使用指定版本号: ${config.version}`);
       args.push(config.version);
@@ -480,10 +478,6 @@ class ReleaseExecutor {
     }
 
     args.push("--ci");
-
-    if (isPrerelease) {
-      args.push("--git=false", "--github.release=false");
-    }
 
     return args;
   }
