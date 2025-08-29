@@ -133,6 +133,34 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+      - name: 检查版本是否已存在（预发布）
+        if: steps.detect_version_type.outputs.is_prerelease == 'true' && github.event.inputs.dry_run != 'true'
+        id: check_prerelease_version
+        run: |
+          # 确定要检查的版本号
+          if [ -n "${{ steps.setup_release.outputs.version }}" ]; then
+            VERSION="${{ steps.setup_release.outputs.version }}"
+          else
+            # 如果没有指定版本，从 package.json 获取当前版本并递增
+            CURRENT_VERSION=$(node -p "require('./package.json').version")
+            echo "当前版本: $CURRENT_VERSION"
+            # 对于预发布版本，这里需要更复杂的逻辑来确定下一个版本
+            # 暂时使用当前版本作为检查基准
+            VERSION="$CURRENT_VERSION"
+          fi
+
+          echo "检查版本: $VERSION"
+
+          # 检查 npm registry 中是否已存在该版本
+          if npm view xiaozhi-client@$VERSION version 2>/dev/null; then
+            echo "✅ 版本 $VERSION 已存在于 npm registry"
+            echo "version_exists=true" >> $GITHUB_OUTPUT
+            echo "existing_version=$VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "📦 版本 $VERSION 不存在，可以发布"
+            echo "version_exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: 执行预发布版本（仅 NPM 发布）
         if: steps.detect_version_type.outputs.is_prerelease == 'true'
         id: prerelease_npm
@@ -142,36 +170,92 @@ jobs:
           echo "🚀 执行预发布版本发布（仅 NPM）"
           echo "版本类型: ${{ steps.detect_version_type.outputs.version_type }}"
 
-          # 设置发版参数
-          RELEASE_ARGS=""
-
           # 检查是否为预演模式
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
             echo "🔍 预演模式：仅预览，不实际发布"
-            RELEASE_ARGS="$RELEASE_ARGS --dry-run"
+
+            # 设置发版参数
+            RELEASE_ARGS="--dry-run"
+
+            # 检查是否指定了版本号
+            if [ -n "${{ steps.setup_release.outputs.version }}" ]; then
+              VERSION="${{ steps.setup_release.outputs.version }}"
+              echo "📌 使用指定版本号: $VERSION"
+              RELEASE_ARGS="$RELEASE_ARGS $VERSION"
+            else
+              echo "📈 使用自动版本号递增"
+            fi
+
+            # 设置非交互模式和禁用 Git/GitHub 操作
+            RELEASE_ARGS="$RELEASE_ARGS --ci --git=false --github.release=false --npm.publish=false"
+
+            echo "🚀 开始执行预发布版本 release-it（预演模式）..."
+            echo "参数: $RELEASE_ARGS"
+            npx release-it $RELEASE_ARGS
+
+          elif [ "${{ steps.check_prerelease_version.outputs.version_exists }}" = "true" ]; then
+            # 版本已存在，跳过发布
+            echo "⚠️  版本 ${{ steps.check_prerelease_version.outputs.existing_version }} 已存在于 npm registry"
+            echo "✅ 跳过发布，标记为成功完成"
+            echo "prerelease_completed=true" >> $GITHUB_OUTPUT
+            echo "version_skipped=true" >> $GITHUB_OUTPUT
+
+          else
+            # 版本不存在，执行发布
+            echo "📦 开始发布新版本到 npm"
+
+            # 设置发版参数
+            RELEASE_ARGS=""
+
+            # 检查是否指定了版本号
+            if [ -n "${{ steps.setup_release.outputs.version }}" ]; then
+              VERSION="${{ steps.setup_release.outputs.version }}"
+              echo "📌 使用指定版本号: $VERSION"
+              RELEASE_ARGS="$RELEASE_ARGS $VERSION"
+            else
+              echo "📈 使用自动版本号递增"
+            fi
+
+            # 设置非交互模式和禁用 Git/GitHub 操作
+            RELEASE_ARGS="$RELEASE_ARGS --ci --git=false --github.release=false"
+
+            echo "🚀 开始执行预发布版本 release-it..."
+            echo "参数: $RELEASE_ARGS"
+
+            # 执行 release-it（仅 NPM 发布）
+            if npx release-it $RELEASE_ARGS; then
+              echo "prerelease_completed=true" >> $GITHUB_OUTPUT
+              echo "✅ 预发布版本发布成功"
+            else
+              echo "❌ 预发布版本发布失败"
+              exit 1
+            fi
           fi
 
-          # 检查是否指定了版本号
+      - name: 检查版本是否已存在（正式版本）
+        if: steps.detect_version_type.outputs.is_prerelease != 'true' && github.event.inputs.dry_run != 'true'
+        id: check_release_version
+        run: |
+          # 确定要检查的版本号
           if [ -n "${{ steps.setup_release.outputs.version }}" ]; then
             VERSION="${{ steps.setup_release.outputs.version }}"
-            echo "📌 使用指定版本号: $VERSION"
-            RELEASE_ARGS="$RELEASE_ARGS $VERSION"
           else
-            echo "📈 使用自动版本号递增"
+            # 如果没有指定版本，从 package.json 获取当前版本
+            CURRENT_VERSION=$(node -p "require('./package.json').version")
+            echo "当前版本: $CURRENT_VERSION"
+            VERSION="$CURRENT_VERSION"
           fi
 
-          # 设置非交互模式
-          RELEASE_ARGS="$RELEASE_ARGS --ci"
+          echo "检查版本: $VERSION"
 
-          echo "🚀 开始执行预发布版本 release-it..."
-          echo "参数: $RELEASE_ARGS"
-
-          # 执行 release-it（仅 NPM 发布，使用预发布配置）
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            npx release-it $RELEASE_ARGS --config .release-it.prerelease.json --npm.publish=false
+          # 检查 npm registry 中是否已存在该版本
+          if npm view xiaozhi-client@$VERSION version 2>/dev/null; then
+            echo "✅ 版本 $VERSION 已存在于 npm registry"
+            echo "version_exists=true" >> $GITHUB_OUTPUT
+            echo "existing_version=$VERSION" >> $GITHUB_OUTPUT
           else
-            npx release-it $RELEASE_ARGS --config .release-it.prerelease.json
-            echo "prerelease_completed=true" >> $GITHUB_OUTPUT
+            echo "📦 版本 $VERSION 不存在，可以发布"
+            echo "version_exists=false" >> $GITHUB_OUTPUT
           fi
 
       - name: 执行正式版本发布（完整流程）
@@ -184,49 +268,115 @@ jobs:
           echo "🚀 执行正式版本发布（完整流程）"
           echo "版本类型: ${{ steps.detect_version_type.outputs.version_type }}"
 
-          # 设置发版参数
-          RELEASE_ARGS=""
-
           # 检查是否为预演模式
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
             echo "🔍 预演模式：仅预览，不实际发布"
-            RELEASE_ARGS="$RELEASE_ARGS --dry-run"
-          fi
 
-          # 检查是否指定了版本号
-          if [ -n "${{ steps.setup_release.outputs.version }}" ]; then
-            VERSION="${{ steps.setup_release.outputs.version }}"
-            echo "📌 使用指定版本号: $VERSION"
-            RELEASE_ARGS="$RELEASE_ARGS $VERSION"
-          else
-            echo "📈 使用自动版本号递增"
-          fi
+            # 设置发版参数
+            RELEASE_ARGS="--dry-run"
 
-          # 设置非交互模式
-          RELEASE_ARGS="$RELEASE_ARGS --ci"
+            # 检查是否指定了版本号
+            if [ -n "${{ steps.setup_release.outputs.version }}" ]; then
+              VERSION="${{ steps.setup_release.outputs.version }}"
+              echo "📌 使用指定版本号: $VERSION"
+              RELEASE_ARGS="$RELEASE_ARGS $VERSION"
+            else
+              echo "📈 使用自动版本号递增"
+            fi
 
-          echo "🚀 开始执行正式版本 release-it..."
-          echo "参数: $RELEASE_ARGS"
+            # 设置非交互模式
+            RELEASE_ARGS="$RELEASE_ARGS --ci --npm.publish=false"
 
-          # 执行 release-it（完整流程，使用正式版本配置）
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            npx release-it $RELEASE_ARGS --config .release-it.release.json --npm.publish=false
-          else
-            npx release-it $RELEASE_ARGS --config .release-it.release.json
+            echo "🚀 开始执行正式版本 release-it（预演模式）..."
+            echo "参数: $RELEASE_ARGS"
+            npx release-it $RELEASE_ARGS
+
+          elif [ "${{ steps.check_release_version.outputs.version_exists }}" = "true" ]; then
+            # 版本已存在，跳过发布
+            echo "⚠️  版本 ${{ steps.check_release_version.outputs.existing_version }} 已存在于 npm registry"
+            echo "✅ 跳过发布，标记为成功完成"
             echo "release_completed=true" >> $GITHUB_OUTPUT
+            echo "version_skipped=true" >> $GITHUB_OUTPUT
+
+          else
+            # 版本不存在，执行发布
+            echo "📦 开始发布新版本"
+
+            # 设置发版参数
+            RELEASE_ARGS=""
+
+            # 检查是否指定了版本号
+            if [ -n "${{ steps.setup_release.outputs.version }}" ]; then
+              VERSION="${{ steps.setup_release.outputs.version }}"
+              echo "📌 使用指定版本号: $VERSION"
+              RELEASE_ARGS="$RELEASE_ARGS $VERSION"
+            else
+              echo "📈 使用自动版本号递增"
+            fi
+
+            echo "🚀 开始执行正式版本 release-it（预演模式）..."
+            echo "参数: $RELEASE_ARGS"
+            npx release-it $RELEASE_ARGS
+
+          elif [ "${{ steps.check_release_version.outputs.version_exists }}" = "true" ]; then
+            # 版本已存在，跳过发布
+            echo "⚠️  版本 ${{ steps.check_release_version.outputs.existing_version }} 已存在于 npm registry"
+            echo "✅ 跳过发布，标记为成功完成"
+            echo "release_completed=true" >> $GITHUB_OUTPUT
+            echo "version_skipped=true" >> $GITHUB_OUTPUT
+
+          else
+            # 版本不存在，执行发布
+            echo "📦 开始发布新版本"
+
+            # 设置发版参数
+            RELEASE_ARGS=""
+
+            # 检查是否指定了版本号
+            if [ -n "${{ steps.setup_release.outputs.version }}" ]; then
+              VERSION="${{ steps.setup_release.outputs.version }}"
+              echo "📌 使用指定版本号: $VERSION"
+              RELEASE_ARGS="$RELEASE_ARGS $VERSION"
+            else
+              echo "📈 使用自动版本号递增"
+            fi
+
+            # 设置非交互模式
+            RELEASE_ARGS="$RELEASE_ARGS --ci"
+
+            echo "🚀 开始执行正式版本 release-it..."
+            echo "参数: $RELEASE_ARGS"
+
+            # 执行 release-it（完整流程）
+            if npx release-it $RELEASE_ARGS; then
+              echo "release_completed=true" >> $GITHUB_OUTPUT
+              echo "✅ 正式版本发布成功"
+            else
+              echo "❌ 正式版本发布失败"
+              exit 1
+            fi
           fi
 
       - name: 获取预发布版本信息
         if: success() && github.event.inputs.dry_run != 'true' && steps.prerelease_npm.outputs.prerelease_completed == 'true'
         id: get_prerelease_info
         run: |
-          # 从 package.json 获取最新版本号
-          VERSION=$(node -p "require('./package.json').version")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "📦 预发布版本: v$VERSION"
+          # 确定版本号
+          if [ "${{ steps.prerelease_npm.outputs.version_skipped }}" = "true" ]; then
+            # 版本被跳过，使用已存在的版本号
+            VERSION="${{ steps.check_prerelease_version.outputs.existing_version }}"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "📦 预发布版本（已存在）: v$VERSION"
+            echo "ℹ️  版本 v$VERSION 已存在于 npm registry，跳过发布"
+          else
+            # 从 package.json 获取最新版本号（新发布的版本）
+            VERSION=$(node -p "require('./package.json').version")
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "📦 预发布版本（新发布）: v$VERSION"
+            echo "🎉 预发布版本发布完成！"
+          fi
 
           # 输出相关链接
-          echo "🎉 预发布版本发布完成！"
           echo "📦 NPM: https://www.npmjs.com/package/xiaozhi-client/v/$VERSION"
           echo "ℹ️  注意：预发布版本仅发布到 NPM，未创建 Git tag 和 GitHub release"
 
@@ -234,13 +384,22 @@ jobs:
         if: success() && github.event.inputs.dry_run != 'true' && steps.release_it.outputs.release_completed == 'true'
         id: get_release_info
         run: |
-          # 从 package.json 获取最新版本号
-          VERSION=$(node -p "require('./package.json').version")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "📦 正式版本: v$VERSION"
+          # 确定版本号
+          if [ "${{ steps.release_it.outputs.version_skipped }}" = "true" ]; then
+            # 版本被跳过，使用已存在的版本号
+            VERSION="${{ steps.check_release_version.outputs.existing_version }}"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "📦 正式版本（已存在）: v$VERSION"
+            echo "ℹ️  版本 v$VERSION 已存在于 npm registry，跳过发布"
+          else
+            # 从 package.json 获取最新版本号（新发布的版本）
+            VERSION=$(node -p "require('./package.json').version")
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "📦 正式版本（新发布）: v$VERSION"
+            echo "🎉 正式版本发布完成！"
+          fi
 
           # 输出相关链接
-          echo "🎉 正式版本发布完成！"
           echo "📦 NPM: https://www.npmjs.com/package/xiaozhi-client/v/$VERSION"
           echo "🏷️ GitHub Release: https://github.com/${{ github.repository }}/releases/tag/v$VERSION"
           echo "📋 Changelog: https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md"
