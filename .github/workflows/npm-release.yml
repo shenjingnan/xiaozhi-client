@@ -102,6 +102,31 @@ jobs:
       - name: 安装依赖
         run: pnpm install --frozen-lockfile
 
+      - name: 代码格式检查
+        run: pnpm run check
+
+      - name: 拼写检查
+        run: pnpm run spell:check
+
+      - name: 代码重复率检查
+        run: pnpm run duplicate:check
+
+      - name: 构建项目
+        uses: nick-invision/retry@v3
+        with:
+          timeout_minutes: 5
+          max_attempts: 2
+          retry_on: error
+          command: pnpm run build
+
+      - name: 运行测试
+        uses: nick-invision/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 2
+          retry_on: error
+          command: pnpm run test
+
       - name: 配置 Git 用户
         if: steps.detect_version_type.outputs.is_prerelease != 'true'
         run: |
