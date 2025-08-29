@@ -82,6 +82,16 @@ class Logger {
 }
 
 /**
+ * 自定义错误类型
+ */
+class VersionAlreadyExistsError extends Error {
+  constructor(version: string) {
+    super(`Version ${version} already exists in npm registry`);
+    this.name = "VersionAlreadyExistsError";
+  }
+}
+
+/**
  * 命令执行工具类
  */
 class CommandExecutor {
@@ -99,6 +109,23 @@ class CommandExecutor {
       return (result.stdout as string) || "";
     } catch (error: unknown) {
       if (error instanceof Error) {
+        // 检查是否是 npm publish 的版本已存在错误
+        if (
+          command === "npx" &&
+          args.includes("release-it") &&
+          error.message.includes(
+            "cannot publish over the previously published versions"
+          )
+        ) {
+          // 从错误信息中提取版本号
+          const versionMatch = error.message.match(
+            /versions: ([^.]+\.[^.]+\.[^.\s]+(?:-[^\s]+)?)/
+          );
+          if (versionMatch) {
+            throw new VersionAlreadyExistsError(versionMatch[1]);
+          }
+        }
+
         Logger.error(`命令执行失败: ${command} ${args.join(" ")}`);
         Logger.error(error.message);
       }
@@ -351,17 +378,45 @@ class ReleaseExecutor {
     Logger.rocket("开始执行预发布版本 release-it...");
     Logger.info(`参数: ${releaseArgs.join(" ")}`);
 
-    CommandExecutor.run("npx", ["release-it", ...releaseArgs]);
+    try {
+      CommandExecutor.run("npx", ["release-it", ...releaseArgs]);
 
-    const finalVersion = VersionDetector.getCurrentVersion();
-    Logger.success("预发布版本发布成功");
+      const finalVersion = VersionDetector.getCurrentVersion();
+      Logger.success("预发布版本发布成功");
 
-    return {
-      success: true,
-      version: finalVersion,
-      skipped: false,
-      isPrerelease: true,
-    };
+      return {
+        success: true,
+        version: finalVersion,
+        skipped: false,
+        isPrerelease: true,
+      };
+    } catch (error) {
+      // 处理版本已存在的错误
+      if (error instanceof VersionAlreadyExistsError) {
+        Logger.warning("检测到版本已存在错误，重新验证版本状态...");
+
+        // 重新检查版本是否确实存在
+        const actuallyExists =
+          await VersionChecker.checkVersionExists(versionToCheck);
+
+        if (actuallyExists) {
+          Logger.success(
+            `版本 ${versionToCheck} 确实已存在于 npm registry，标记为成功完成`
+          );
+          return {
+            success: true,
+            version: versionToCheck,
+            skipped: true,
+            isPrerelease: true,
+          };
+        }
+        Logger.error("版本检查不一致，发布失败");
+        throw error;
+      }
+
+      // 其他错误直接抛出
+      throw error;
+    }
   }
 
   /**
@@ -406,17 +461,46 @@ class ReleaseExecutor {
     Logger.rocket("开始执行正式版本 release-it...");
     Logger.info(`参数: ${releaseArgs.join(" ")}`);
 
-    CommandExecutor.run("npx", ["release-it", ...releaseArgs]);
+    try {
+      CommandExecutor.run("npx", ["release-it", ...releaseArgs]);
 
-    const finalVersion = VersionDetector.getCurrentVersion();
-    Logger.success("正式版本发布成功");
+      const finalVersion = VersionDetector.getCurrentVersion();
+      Logger.success("正式版本发布成功");
 
-    return {
-      success: true,
-      version: finalVersion,
-      skipped: false,
-      isPrerelease: false,
-    };
+      return {
+        success: true,
+        version: finalVersion,
+        skipped: false,
+        isPrerelease: false,
+      };
+    } catch (error) {
+      // 处理版本已存在的错误
+      if (error instanceof VersionAlreadyExistsError) {
+        Logger.warning("检测到版本已存在错误，重新验证版本状态...");
+
+        // 重新检查版本是否确实存在
+        const actuallyExists =
+          await VersionChecker.checkVersionExists(versionToCheck);
+
+        if (actuallyExists) {
+          Logger.success(
+            `版本 ${versionToCheck} 确实已存在于 npm registry，标记为成功完成`
+          );
+          return {
+            success: true,
+            version: versionToCheck,
+            skipped: true,
+            isPrerelease: false,
+          };
+        }
+
+        Logger.error("版本检查不一致，发布失败");
+        throw error;
+      }
+
+      // 其他错误直接抛出
+      throw error;
+    }
   }
 
   /**
