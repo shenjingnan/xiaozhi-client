@@ -250,7 +250,9 @@ class VersionChecker {
     const result = {
       version: versionToCheck,
       exists,
-      npmUrl: exists ? `https://www.npmjs.com/package/${VersionChecker.PACKAGE_NAME}/v/${versionToCheck}` : undefined,
+      npmUrl: exists
+        ? `https://www.npmjs.com/package/${VersionChecker.PACKAGE_NAME}/v/${versionToCheck}`
+        : undefined,
     };
 
     if (exists) {
@@ -328,9 +330,8 @@ class ReleaseExecutor {
     // 检查版本是否已存在
     const versionToCheck =
       config.version || VersionDetector.getCurrentVersion();
-    const versionExists = await VersionChecker.checkVersionExists(
-      versionToCheck
-    );
+    const versionExists =
+      await VersionChecker.checkVersionExists(versionToCheck);
 
     if (versionExists) {
       Logger.warning(`版本 ${versionToCheck} 已存在于 npm registry`);
@@ -384,9 +385,8 @@ class ReleaseExecutor {
     // 检查版本是否已存在
     const versionToCheck =
       config.version || VersionDetector.getCurrentVersion();
-    const versionExists = await VersionChecker.checkVersionExists(
-      versionToCheck
-    );
+    const versionExists =
+      await VersionChecker.checkVersionExists(versionToCheck);
 
     if (versionExists) {
       Logger.warning(`版本 ${versionToCheck} 已存在于 npm registry`);
@@ -654,7 +654,9 @@ async function main(): Promise<void> {
     // 如果只是检查版本，执行独立的版本检查功能
     if (config.checkVersionOnly) {
       Logger.rocket("开始版本检查");
-      const result = await VersionChecker.checkVersionStandalone(config.version);
+      const result = await VersionChecker.checkVersionStandalone(
+        config.version
+      );
 
       // 根据检查结果设置退出码（兼容原 shell 脚本的行为）
       process.exit(result.exists ? 0 : 1);
