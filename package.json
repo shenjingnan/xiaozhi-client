@@ -17,8 +17,8 @@
     "registry": "https://registry.npmjs.org"
   },
   "bin": {
-    "xiaozhi": "./dist/cli.js",
-    "xiaozhi-client": "./dist/cli.js"
+    "xiaozhi": "dist/cli.js",
+    "xiaozhi-client": "dist/cli.js"
   },
   "scripts": {
     "build": "pnpm run build:web && tsup",
