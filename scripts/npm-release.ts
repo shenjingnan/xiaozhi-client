@@ -17,6 +17,7 @@ interface ReleaseConfig {
   isDryRun: boolean;
   skipChecks: boolean;
   prereleaseOnly: boolean;
+  checkVersionOnly: boolean;
 }
 
 /**
@@ -210,6 +211,8 @@ class VersionDetector {
  * 版本检查器
  */
 class VersionChecker {
+  private static readonly PACKAGE_NAME = "xiaozhi-client";
+
   /**
    * 检查版本是否已存在于 npm registry
    */
@@ -218,7 +221,7 @@ class VersionChecker {
       Logger.info(`检查版本 ${version} 是否已存在于 npm registry`);
       CommandExecutor.runSilent("npm", [
         "view",
-        `xiaozhi-client@${version}`,
+        `${VersionChecker.PACKAGE_NAME}@${version}`,
         "version",
       ]);
       Logger.success(`版本 ${version} 已存在于 npm registry`);
@@ -227,6 +230,39 @@ class VersionChecker {
       Logger.info(`版本 ${version} 不存在，可以发布`);
       return false;
     }
+  }
+
+  /**
+   * 版本检查
+   * @param version 要检查的版本号，如果不提供则从 package.json 获取
+   * @returns 检查结果信息
+   */
+  static async checkVersionStandalone(version?: string): Promise<{
+    version: string;
+    exists: boolean;
+    npmUrl?: string;
+  }> {
+    const versionToCheck = version || VersionDetector.getCurrentVersion();
+
+    Logger.info(`🔍 检查版本: ${versionToCheck}`);
+
+    const exists = await VersionChecker.checkVersionExists(versionToCheck);
+    const result = {
+      version: versionToCheck,
+      exists,
+      npmUrl: exists ? `https://www.npmjs.com/package/${VersionChecker.PACKAGE_NAME}/v/${versionToCheck}` : undefined,
+    };
+
+    if (exists) {
+      Logger.success(`✅ 版本 ${versionToCheck} 已存在于 npm registry`);
+      if (result.npmUrl) {
+        Logger.package(`📦 NPM: ${result.npmUrl}`);
+      }
+    } else {
+      Logger.info(`📦 版本 ${versionToCheck} 不存在于 npm registry，可以发布`);
+    }
+
+    return result;
   }
 }
 
@@ -518,6 +554,7 @@ class ArgumentParser {
       isDryRun: false,
       skipChecks: false,
       prereleaseOnly: false,
+      checkVersionOnly: false,
     };
 
     // 解析参数
@@ -530,6 +567,8 @@ class ArgumentParser {
         config.skipChecks = true;
       } else if (arg === "--prerelease-only") {
         config.prereleaseOnly = true;
+      } else if (arg === "--check-version" || arg === "-c") {
+        config.checkVersionOnly = true;
       } else if (arg === "--help" || arg === "-h") {
         ArgumentParser.showHelp();
         process.exit(0);
@@ -556,6 +595,7 @@ class ArgumentParser {
   --dry-run              预演模式（仅预览，不实际发布）
   --skip-checks          跳过质量检查（格式检查、拼写检查、构建、测试等）
   --prerelease-only      仅执行预发布流程
+  --check-version, -c    仅检查版本是否存在于 npm registry
   --help, -h             显示此帮助信息
 
 示例:
@@ -564,6 +604,8 @@ class ArgumentParser {
   npm-release.ts 1.0.0-beta.1              # 发布预发布版本
   npm-release.ts patch --dry-run           # 预演模式递增补丁版本
   npm-release.ts --skip-checks             # 跳过质量检查直接发布
+  npm-release.ts --check-version           # 检查当前版本是否已存在
+  npm-release.ts 1.0.0 --check-version    # 检查指定版本是否已存在
 
 环境变量:
   NODE_AUTH_TOKEN        NPM 认证 token
@@ -608,6 +650,15 @@ async function main(): Promise<void> {
 
     // 解析命令行参数
     const config = ArgumentParser.parseArguments();
+
+    // 如果只是检查版本，执行独立的版本检查功能
+    if (config.checkVersionOnly) {
+      Logger.rocket("开始版本检查");
+      const result = await VersionChecker.checkVersionStandalone(config.version);
+
+      // 根据检查结果设置退出码（兼容原 shell 脚本的行为）
+      process.exit(result.exists ? 0 : 1);
+    }
 
     Logger.rocket("开始 NPM 发布流程");
     Logger.info(`预演模式: ${config.isDryRun}`);
