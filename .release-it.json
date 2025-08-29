@@ -21,9 +21,9 @@
   "hooks": {
     "before:init": [
       "pnpm audit --audit-level moderate",
+      "pnpm run build",
       "pnpm run test",
-      "pnpm run check:all",
-      "pnpm run build"
+      "pnpm run check:all"
     ],
     "after:bump": "npx conventional-changelog -p conventionalcommits -i CHANGELOG.md -s",
     "after:release": "echo \"🎉 Release v${version} completed successfully!\""
