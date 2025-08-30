@@ -11,11 +11,11 @@
   },
   "github": {
     "release": true,
-    "releaseName": "🚀 v${version}",
-    "releaseNotes": "npx conventional-changelog -p conventionalcommits -r 2"
+    "releaseName": "🚀 v${version}"
   },
   "npm": {
-    "publish": true
+    "publish": true,
+    "publishArgs": ["--access", "public"]
   },
   "plugins": {
     "@release-it/conventional-changelog": {
@@ -26,10 +26,8 @@
   },
   "hooks": {
     "before:init": ["pnpm audit --audit-level moderate"],
-    "after:bump": [
-      "pnpm run build",
-      "npx conventional-changelog -p conventionalcommits -i CHANGELOG.md -s"
-    ],
+    "after:bump": ["pnpm run build"],
+    "before:release": "echo \"📦 准备发布正式版本 v${version}\"",
     "after:release": "echo \"🎉 正式版本 v${version} 发布完成！\""
   }
 }
