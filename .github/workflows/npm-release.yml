@@ -83,7 +83,7 @@ jobs:
             RELEASE_CMD="$RELEASE_CMD ${{ github.event.inputs.version_increment }}"
           else
             # 预发布版
-            RELEASE_CMD="$RELEASE_CMD ${{ github.event.inputs.version_increment }} --preRelease=${{ github.event.inputs.version_type }} --config .release-it.prerelease.json"
+            RELEASE_CMD="$RELEASE_CMD --preRelease=${{ github.event.inputs.version_type }} --config .release-it.prerelease.json"
           fi
 
           # 添加预演模式
