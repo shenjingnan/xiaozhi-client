@@ -61,31 +61,43 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
+      - name: 解析发布参数
+        id: parse-release
+        run: |
+          RELEASE_TYPE="${{ github.event.inputs.release_type }}"
+
+          if [[ "$RELEASE_TYPE" == "release-"* ]]; then
+            # 正式版发布
+            VERSION_TYPE="release"
+            VERSION_INCREMENT="${RELEASE_TYPE#release-}"
+            CONFIG_FILE=".release-it.json"
+          else
+            # 预发布版
+            VERSION_TYPE="$RELEASE_TYPE"
+            VERSION_INCREMENT="release"
+            CONFIG_FILE=".release-it.prerelease.json"
+          fi
+
+          echo "version_type=$VERSION_TYPE" >> $GITHUB_OUTPUT
+          echo "version_increment=$VERSION_INCREMENT" >> $GITHUB_OUTPUT
+          echo "config_file=$CONFIG_FILE" >> $GITHUB_OUTPUT
+
       - name: 发布
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          # 构建 release-it 命令
           RELEASE_CMD="npx release-it"
 
-          # 根据版本类型选择配置和参数
-          if [ "${{ github.event.inputs.version_type }}" = "release" ]; then
-            # 正式版
-            RELEASE_CMD="$RELEASE_CMD ${{ github.event.inputs.version_increment }}"
+          if [ "${{ steps.parse-release.outputs.version_type }}" != "release" ]; then
+            RELEASE_CMD="$RELEASE_CMD --preRelease=${{ steps.parse-release.outputs.version_type }} --config ${{ steps.parse-release.outputs.config_file }}"
           else
-            # 预发布版
-            RELEASE_CMD="$RELEASE_CMD --preRelease=${{ github.event.inputs.version_type }} --config .release-it.prerelease.json"
+            RELEASE_CMD="$RELEASE_CMD ${{ steps.parse-release.outputs.version_increment }} --config ${{ steps.parse-release.outputs.config_file }}"
           fi
 
-          # 添加预演模式
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
             RELEASE_CMD="$RELEASE_CMD --dry-run"
-            echo "👀 预演模式已启用"
           fi
 
-          echo "📋 执行命令: $RELEASE_CMD"
-
-          # 执行发布命令
           eval $RELEASE_CMD
