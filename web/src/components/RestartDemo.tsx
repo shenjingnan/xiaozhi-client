@@ -192,9 +192,37 @@ export function RestartDemo() {
               <li>点击"重启服务"按钮开始重启流程</li>
               <li>按钮会显示"重连检查中..."和实时进度</li>
               <li>系统每秒检查一次连接状态</li>
-              <li>重连成功后按钮恢复正常状态</li>
-              <li>如果60秒内未重连成功，会显示超时错误</li>
+              <li>重连成功后会显示成功通知并恢复按钮状态</li>
+              <li>如果60秒内未重连成功，会显示超时错误通知</li>
+              <li>所有通知都会自动显示在页面右上角</li>
             </ol>
+          </div>
+
+          {/* 通知系统说明 */}
+          <div className="p-4 border rounded-lg bg-amber-50 dark:bg-amber-950/20">
+            <h4 className="font-medium mb-2 text-amber-900 dark:text-amber-100">
+              通知系统特性
+            </h4>
+            <ul className="text-sm space-y-1 text-amber-800 dark:text-amber-200">
+              <li>
+                • 🎉 <strong>成功通知</strong>：重连成功时显示绿色成功提示
+              </li>
+              <li>
+                • ❌ <strong>失败通知</strong>
+                ：重连失败时显示红色错误提示，包含重试按钮
+              </li>
+              <li>
+                • 🔄 <strong>智能去重</strong>：避免相同状态的重复通知
+              </li>
+              <li>
+                • ⏱️ <strong>自动消失</strong>
+                ：成功通知4秒后消失，错误通知6秒后消失
+              </li>
+              <li>
+                • 🎯 <strong>全局管理</strong>
+                ：在应用根组件中统一管理，无需重复集成
+              </li>
+            </ul>
           </div>
         </CardContent>
       </Card>
