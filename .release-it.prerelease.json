@@ -1,0 +1,19 @@
+{
+  "git": {
+    "requireCleanWorkingDir": false,
+    "requireUpstream": false,
+    "commit": false,
+    "tag": false,
+    "push": false
+  },
+  "github": {
+    "release": false
+  },
+  "npm": {
+    "publish": false
+  },
+  "hooks": {
+    "before:init": ["pnpm audit --audit-level moderate"],
+    "after:release": "echo \"🎉 预发布版本 v${version} 发布完成！\""
+  }
+}
