@@ -504,13 +504,31 @@ class ReleaseExecutor {
         "--no-git-tag-version",
       ]);
 
-      // 步骤2: 发布到 npm（使用 beta 标签）
+      // 步骤2: 等待一下，确保版本更新完成
+      Logger.info("等待版本更新完成...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // 步骤3: 再次检查版本是否已存在（防止竞态条件）
+      Logger.info("发布前最终检查版本状态...");
+      const finalCheck = await VersionChecker.checkVersionExists(versionToCheck);
+      if (finalCheck) {
+        Logger.warning("发布前检查发现版本已存在，可能是并发发布导致");
+        return {
+          success: true,
+          version: versionToCheck,
+          skipped: true,
+          isPrerelease: true,
+        };
+      }
+
+      // 步骤4: 发布到 npm（使用 beta 标签，统一使用 npm 命令）
       Logger.info("发布到 npm registry...");
-      CommandExecutor.run("pnpm", [
+      CommandExecutor.run("npm", [
         "publish",
+        "--access",
+        "public",
         "--tag",
         "beta",
-        "--no-git-checks",
       ]);
 
       // 验证版本是否成功发布到 npm registry
@@ -622,7 +640,7 @@ class ReleaseExecutor {
 
       Logger.info("预演模式 - 将要执行的命令:");
       Logger.info(`  1. npm version ${versionToCheck} --no-git-tag-version`);
-      Logger.info("  2. pnpm publish --tag beta --no-git-checks");
+      Logger.info("  2. npm publish --access public --tag beta");
       Logger.info("预演模式完成，未实际执行任何命令");
 
       return {
