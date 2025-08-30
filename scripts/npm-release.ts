@@ -907,139 +907,125 @@ class SignalHandler {
  * 主函数
  */
 async function main(): Promise<void> {
-  const config = ArgumentParser.parseArguments();
-  const versionToCheck = config.version || VersionDetector.getCurrentVersion();
-  console.log(versionToCheck);
-  const versionExists = await VersionChecker.checkVersionExists(versionToCheck);
-  execaSync("npx", [
-    "release-it",
-    "--config",
-    ".release-it.prerelease.json",
-    "--preRelease=beta",
-    "1.6.4-beta.24",
-    // "--dry-run",
-  ]);
-
-  // // 步骤2: 确定发布标签
-  // const publishTag = ReleaseExecutor.getPublishTag(config.versionType);
-  // Logger.info(`使用发布标签: ${publishTag}`);
-
-  // // 步骤3: 发布到 npm
-  // Logger.info("发布到 npm registry...");
-  // CommandExecutor.run("pnpm", [
-  //   "publish",
-  //   "--access",
-  //   "public",
-  //   "--tag",
-  //   publishTag,
-  //   "--no-git-checks",
+  // const config = ArgumentParser.parseArguments();
+  // const versionToCheck = config.version || VersionDetector.getCurrentVersion();
+  // console.log(versionToCheck);
+  // const versionExists = await VersionChecker.checkVersionExists(versionToCheck);
+  // execaSync("npx", [
+  //   "release-it",
+  //   "--config",
+  //   ".release-it.prerelease.json",
+  //   "--preRelease=beta",
+  //   "1.6.4-beta.24",
+  //   // "--dry-run",
   // ]);
-  return;
 
-  // try {
-  //   // 设置信号处理器
-  //   SignalHandler.setup();
+  try {
+    // 设置信号处理器
+    SignalHandler.setup();
 
-  //   // 解析命令行参数
-  //   const config = ArgumentParser.parseArguments();
+    // 解析命令行参数
+    const config = ArgumentParser.parseArguments();
 
-  //   // 如果只是检查版本，执行独立的版本检查功能
-  //   if (config.checkVersionOnly) {
-  //     Logger.rocket("开始版本检查");
+    // 如果只是检查版本，执行独立的版本检查功能
+    if (config.checkVersionOnly) {
+      Logger.rocket("开始版本检查");
 
-  //     let versionToCheck: string;
+      let versionToCheck: string;
 
-  //     if (config.versionType && config.versionIncrement) {
-  //       // 使用新的自动计算逻辑
-  //       Logger.info(`版本类型: ${config.versionType}`);
-  //       Logger.info(`版本增量: ${config.versionIncrement}`);
+      if (config.versionType && config.versionIncrement) {
+        // 使用新的自动计算逻辑
+        Logger.info(`版本类型: ${config.versionType}`);
+        Logger.info(`版本增量: ${config.versionIncrement}`);
 
-  //       versionToCheck = await VersionCalculator.calculateTargetVersion(
-  //         config.versionType,
-  //         config.versionIncrement
-  //       );
-  //     } else {
-  //       // 使用指定的版本号或当前版本号
-  //       versionToCheck = config.version || VersionDetector.getCurrentVersion();
-  //     }
+        versionToCheck = await VersionCalculator.calculateTargetVersion(
+          config.versionType,
+          config.versionIncrement
+        );
+      } else {
+        // 使用指定的版本号或当前版本号
+        versionToCheck = config.version || VersionDetector.getCurrentVersion();
+      }
 
-  //     const result = await VersionChecker.checkVersionStandalone(
-  //       versionToCheck
-  //     );
+      const result = await VersionChecker.checkVersionStandalone(
+        versionToCheck
+      );
 
-  //     // 根据检查结果设置退出码（兼容原 shell 脚本的行为）
-  //     process.exit(result.exists ? 0 : 1);
-  //   }
+      // 根据检查结果设置退出码（兼容原 shell 脚本的行为）
+      process.exit(result.exists ? 0 : 1);
+    }
 
-  //   Logger.rocket("开始 NPM 发布流程");
-  //   Logger.info(`预演模式: ${config.isDryRun}`);
-  //   Logger.info(`仅预发布: ${config.prereleaseOnly}`);
+    Logger.rocket("开始 NPM 发布流程");
+    Logger.info(`预演模式: ${config.isDryRun}`);
+    Logger.info(`仅预发布: ${config.prereleaseOnly}`);
 
-  //   // 确定版本号
-  //   let targetVersion: string;
+    // 确定版本号
+    let targetVersion: string;
 
-  //   if (config.versionType && config.versionIncrement) {
-  //     // 使用新的自动计算逻辑
-  //     Logger.info(`版本类型: ${config.versionType}`);
-  //     Logger.info(`版本增量: ${config.versionIncrement}`);
+    if (config.versionType && config.versionIncrement) {
+      // 使用新的自动计算逻辑
+      Logger.info(`版本类型: ${config.versionType}`);
+      Logger.info(`版本增量: ${config.versionIncrement}`);
 
-  //     targetVersion = await VersionCalculator.calculateTargetVersion(
-  //       config.versionType,
-  //       config.versionIncrement
-  //     );
+      targetVersion = await VersionCalculator.calculateTargetVersion(
+        config.versionType,
+        config.versionIncrement
+      );
 
-  //     // 更新配置中的版本号
-  //     config.version = targetVersion;
-  //   } else if (config.version) {
-  //     // 使用指定的版本号
-  //     targetVersion = config.version;
-  //     Logger.info(`指定版本: ${config.version}`);
-  //   } else {
-  //     // 使用当前版本号
-  //     targetVersion = VersionDetector.getCurrentVersion();
-  //     Logger.info(`使用当前版本: ${targetVersion}`);
-  //   }
+      // 更新配置中的版本号
+      config.version = targetVersion;
+    } else if (config.version) {
+      // 使用指定的版本号
+      targetVersion = config.version;
+      Logger.info(`指定版本: ${config.version}`);
+    } else {
+      // 使用当前版本号
+      targetVersion = VersionDetector.getCurrentVersion();
+      Logger.info(`使用当前版本: ${targetVersion}`);
+    }
 
-  //   // 确定版本信息
-  //   const versionInfo = VersionDetector.detectVersionType(targetVersion);
+    // 确定版本信息
+    const versionInfo = VersionDetector.detectVersionType(targetVersion);
 
-  //   // 设置环境变量，让配置文件知道版本类型
-  //   if (config.versionType) {
-  //     process.env.VERSION_TYPE = config.versionType;
-  //     Logger.info(`设置环境变量 VERSION_TYPE: ${config.versionType}`);
-  //   } else if (versionInfo.isPrerelease) {
-  //     process.env.VERSION_TYPE = "测试版"; // 默认预发布为测试版
-  //     Logger.info("设置环境变量 VERSION_TYPE: 测试版（默认）");
-  //   } else {
-  //     process.env.VERSION_TYPE = "正式版";
-  //     Logger.info("设置环境变量 VERSION_TYPE: 正式版");
-  //   }
+    // 设置环境变量，让配置文件知道版本类型
+    if (config.versionType) {
+      process.env.VERSION_TYPE = config.versionType;
+      Logger.info(`设置环境变量 VERSION_TYPE: ${config.versionType}`);
+    } else if (versionInfo.isPrerelease) {
+      process.env.VERSION_TYPE = "测试版"; // 默认预发布为测试版
+      Logger.info("设置环境变量 VERSION_TYPE: 测试版（默认）");
+    } else {
+      process.env.VERSION_TYPE = "正式版";
+      Logger.info("设置环境变量 VERSION_TYPE: 正式版");
+    }
 
-  //   // 执行构建
-  //   QualityChecker.runAllChecks();
+    // 执行构建
+    QualityChecker.runAllChecks();
 
-  //   // 执行发布流程
-  //   let result: ReleaseResult;
+    // 执行发布流程
+    let result: ReleaseResult;
 
-  //   if (versionInfo.isPrerelease || config.prereleaseOnly) {
-  //     result = await ReleaseExecutor.executePrerelease(config, versionInfo);
-  //   } else {
-  //     result = await ReleaseExecutor.executeRelease(config, versionInfo);
-  //   }
+    if (versionInfo.isPrerelease || config.prereleaseOnly) {
+      // result = await ReleaseExecutor.executePrerelease(config, versionInfo);
+    } else {
+      // result = await ReleaseExecutor.executeRelease(config, versionInfo);
+      console.log(config);
+      console.log(versionInfo);
+    }
 
-  //   // 输出结果
-  //   if (!config.isDryRun) {
-  //     ResultReporter.reportResult(result);
-  //   }
+    // 输出结果
+    // if (!config.isDryRun) {
+    //   ResultReporter.reportResult(result);
+    // }
 
-  //   Logger.success("NPM 发布流程完成");
-  // } catch (error: unknown) {
-  //   Logger.error("发布过程中出现错误");
-  //   if (error instanceof Error) {
-  //     Logger.error(`错误详情: ${error.message}`);
-  //   }
-  //   process.exit(1);
-  // }
+    Logger.success("NPM 发布流程完成");
+  } catch (error: unknown) {
+    Logger.error("发布过程中出现错误");
+    if (error instanceof Error) {
+      Logger.error(`错误详情: ${error.message}`);
+    }
+    process.exit(1);
+  }
 }
 
 // 运行主函数
