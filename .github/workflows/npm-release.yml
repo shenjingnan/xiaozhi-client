@@ -85,4 +85,4 @@ jobs:
 
           echo "🚀 执行发布脚本: pnpm run release$RELEASE_ARGS"
 
-          npx release-it --config .release-it.prerelease.json --preRelease=beta prepatch --dry-run
+          npx release-it --config .release-it.prerelease.json --preRelease=beta 1.6.4-beta.24 --dry-run
