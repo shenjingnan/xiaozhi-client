@@ -1,7 +1,7 @@
 {
   "git": {
-    "requireCleanWorkingDir": false,
-    "requireUpstream": false,
+    "requireCleanWorkingDir": true,
+    "requireUpstream": true,
     "commit": false,
     "tag": false,
     "push": false
