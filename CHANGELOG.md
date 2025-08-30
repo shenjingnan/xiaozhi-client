@@ -1,3 +1,9 @@
+# Changelog
+
+All notable changes to this project will be documented in this file. See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
+
+## [1.6.4](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.4-beta.33...v1.6.4) (2025-08-30)
+
 ## [1.6.3](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.2...v1.6.3) (2025-08-21)
 
 ### Features
