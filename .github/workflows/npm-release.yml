@@ -15,9 +15,9 @@ on:
           - "beta"               # Beta 预发布
           - "rc"                 # RC 预发布
       dry_run:
-        description: "预演模式（仅预览，不实际发布）"
+        description: "预演模式"
         required: true
-        default: false
+        default: true
         type: boolean
 
 permissions:
