@@ -483,7 +483,9 @@ class ReleaseExecutor {
   ): Promise<ReleaseResult> {
     Logger.rocket("执行预发布版本发布（仅 NPM）");
     Logger.info(`版本类型: ${versionInfo.versionType}`);
-    Logger.info("预发布版本策略：仅发布到 npm，不创建 git tag 和 GitHub release");
+    Logger.info(
+      "预发布版本策略：仅发布到 npm，不创建 git tag 和 GitHub release"
+    );
 
     if (config.isDryRun) {
       Logger.info("预演模式：仅预览，不实际发布");
@@ -580,7 +582,9 @@ class ReleaseExecutor {
   ): Promise<ReleaseResult> {
     Logger.rocket("执行正式版本发布（完整流程）");
     Logger.info(`版本类型: ${versionInfo.versionType}`);
-    Logger.info("正式版本策略：发布到 npm + 创建 git tag + 创建 GitHub release + 更新 CHANGELOG");
+    Logger.info(
+      "正式版本策略：发布到 npm + 创建 git tag + 创建 GitHub release + 更新 CHANGELOG"
+    );
 
     // 配置 Git 用户
     ReleaseExecutor.configureGitUser();
@@ -631,7 +635,9 @@ class ReleaseExecutor {
 
       if (publishSuccess) {
         Logger.success("正式版本发布成功");
-        Logger.info("✅ 正式版本已完成：npm 发布 + git tag + GitHub release + CHANGELOG 更新");
+        Logger.info(
+          "✅ 正式版本已完成：npm 发布 + git tag + GitHub release + CHANGELOG 更新"
+        );
         return {
           success: true,
           version: finalVersion,
@@ -663,7 +669,9 @@ class ReleaseExecutor {
 
       Logger.info("预演模式 - 预发布版本将要执行的操作:");
       Logger.info(`  1. 临时更新 package.json 版本到: ${versionToCheck}`);
-      Logger.info(`  2. 发布到 npm: pnpm publish --access public --tag ${publishTag} --no-git-checks`);
+      Logger.info(
+        `  2. 发布到 npm: pnpm publish --access public --tag ${publishTag} --no-git-checks`
+      );
       Logger.info("  3. 恢复 package.json 到原始状态");
       Logger.info("  ❌ 不会创建 git tag");
       Logger.info("  ❌ 不会创建 GitHub release");
@@ -899,16 +907,18 @@ class SignalHandler {
  * 主函数
  */
 async function main(): Promise<void> {
-
+  const versionToCheck = config.version || VersionDetector.getCurrentVersion();
+  console.log(versionToCheck);
+  const versionExists = await VersionChecker.checkVersionExists(versionToCheck);
   CommandExecutor.run("npm", [
     "version",
-    '1.6.4-beta.23',
+    versionToCheck,
     "--no-git-tag-version",
   ]);
 
-  // // 步骤2: 确定发布标签
-  // const publishTag = ReleaseExecutor.getPublishTag(config.versionType);
-  // Logger.info(`使用发布标签: ${publishTag}`);
+  // 步骤2: 确定发布标签
+  const publishTag = ReleaseExecutor.getPublishTag(config.versionType);
+  Logger.info(`使用发布标签: ${publishTag}`);
 
   // 步骤3: 发布到 npm
   Logger.info("发布到 npm registry...");
@@ -917,7 +927,7 @@ async function main(): Promise<void> {
     "--access",
     "public",
     "--tag",
-    'beta',
+    publishTag,
     "--no-git-checks",
   ]);
   return;
