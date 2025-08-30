@@ -63,6 +63,11 @@ jobs:
       - name: 安装依赖
         run: pnpm install --frozen-lockfile
 
+      - name: 配置 Git 用户
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: 执行 NPM 发布流程
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -85,6 +90,5 @@ jobs:
 
           echo "🚀 执行发布脚本: pnpm run release$RELEASE_ARGS"
 
-          # npm run release$RELEASE_ARGS
-
-          npx release-it 1.6.4-beta.25 --config .release-it.prerelease.json --preRelease=beta
+          # 使用项目的发布脚本而不是直接调用 release-it
+          npx release-it 1.6.4-beta.26 --config .release-it.prerelease.json --preRelease=beta
