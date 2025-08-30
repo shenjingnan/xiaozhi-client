@@ -95,4 +95,4 @@ jobs:
           echo "📋 执行命令: $RELEASE_CMD"
 
           # 执行发布命令
-          # eval $RELEASE_CMD
+          eval $RELEASE_CMD
