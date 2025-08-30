@@ -3,11 +3,24 @@ name: NPM 发布
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: "发布版本号 (例如: 1.0.0, 1.0.0-beta.1, patch, minor, major)"
-        required: false
-        default: ""
-        type: string
+      version_type:
+        description: "版本类型"
+        required: true
+        default: "beta"
+        type: choice
+        options:
+          - "正式版"
+          - "测试版"
+          - "候选版"
+      version_increment:
+        description: "版本增量"
+        required: true
+        default: "patch"
+        type: choice
+        options:
+          - "patch"
+          - "minor"
+          - "major"
       dry_run:
         description: "预演模式（仅预览，不实际发布）"
         required: true
@@ -47,7 +60,7 @@ jobs:
       - name: 安装依赖
         run: pnpm install --frozen-lockfile
 
-      - name: 执行 NPM 发布流程999
+      - name: 执行 NPM 发布流程
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -56,10 +69,11 @@ jobs:
           # 构建发布脚本参数
           RELEASE_ARGS=""
 
-          # 添加版本号参数
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            RELEASE_ARGS="$RELEASE_ARGS ${{ github.event.inputs.version }}"
-          fi
+          # 添加版本类型参数
+          RELEASE_ARGS="$RELEASE_ARGS --version-type=${{ github.event.inputs.version_type }}"
+
+          # 添加版本增量参数
+          RELEASE_ARGS="$RELEASE_ARGS --version-increment=${{ github.event.inputs.version_increment }}"
 
           # 添加选项参数
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then

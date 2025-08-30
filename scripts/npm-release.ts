@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { type SyncOptions, execaSync } from "execa";
+import semver from "semver";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -14,6 +15,8 @@ const rootDir = join(__dirname, "..");
  */
 interface ReleaseConfig {
   version?: string;
+  versionType?: "正式版" | "测试版" | "候选版";
+  versionIncrement?: "patch" | "minor" | "major";
   isDryRun: boolean;
   prereleaseOnly: boolean;
   checkVersionOnly: boolean;
@@ -290,6 +293,128 @@ class VersionChecker {
     }
 
     return result;
+  }
+}
+
+/**
+ * 版本计算器
+ */
+class VersionCalculator {
+  private static readonly PACKAGE_NAME = "xiaozhi-client";
+
+  /**
+   * 获取 npm 上的最新版本信息
+   */
+  static async getLatestVersions(): Promise<{
+    latest: string;
+    beta: string | null;
+    rc: string | null;
+  }> {
+    try {
+      // 获取所有版本
+      const allVersionsOutput = CommandExecutor.runSilent("npm", [
+        "view",
+        VersionCalculator.PACKAGE_NAME,
+        "versions",
+        "--json",
+      ]);
+
+      const allVersions: string[] = JSON.parse(allVersionsOutput);
+
+      // 获取最新正式版本
+      const latestOutput = CommandExecutor.runSilent("npm", [
+        "view",
+        VersionCalculator.PACKAGE_NAME,
+        "version",
+      ]);
+      const latest = latestOutput.trim();
+
+      // 找到最新的 beta 版本
+      const betaVersions = allVersions
+        .filter(v => v.includes("-beta."))
+        .sort((a, b) => semver.compare(b, a));
+      const beta = betaVersions.length > 0 ? betaVersions[0] : null;
+
+      // 找到最新的 rc 版本
+      const rcVersions = allVersions
+        .filter(v => v.includes("-rc."))
+        .sort((a, b) => semver.compare(b, a));
+      const rc = rcVersions.length > 0 ? rcVersions[0] : null;
+
+      Logger.info(`当前 npm 版本状态:`);
+      Logger.info(`  正式版: ${latest}`);
+      Logger.info(`  beta: ${beta || "无"}`);
+      Logger.info(`  rc: ${rc || "无"}`);
+
+      return { latest, beta, rc };
+    } catch (error) {
+      Logger.error("获取 npm 版本信息失败");
+      throw error;
+    }
+  }
+
+  /**
+   * 计算目标版本号
+   */
+  static async calculateTargetVersion(
+    versionType: "正式版" | "测试版" | "候选版",
+    versionIncrement: "patch" | "minor" | "major"
+  ): Promise<string> {
+    Logger.info(`计算目标版本: ${versionType} + ${versionIncrement}`);
+
+    const { latest, beta, rc } = await VersionCalculator.getLatestVersions();
+
+    let targetVersion: string;
+
+    if (versionType === "正式版") {
+      // 正式版：基于最新正式版本递增
+      targetVersion = semver.inc(latest, versionIncrement)!;
+    } else if (versionType === "测试版") {
+      // beta 版本逻辑
+      const baseVersion = semver.inc(latest, versionIncrement)!;
+
+      if (beta) {
+        const betaBase = semver.major(beta) + "." + semver.minor(beta) + "." + semver.patch(beta);
+        const targetBase = semver.major(baseVersion) + "." + semver.minor(baseVersion) + "." + semver.patch(baseVersion);
+
+        if (betaBase === targetBase) {
+          // 如果 beta 版本的基础版本号与目标版本号相同，递增 beta 序号
+          const betaMatch = beta.match(/-beta\.(\d+)$/);
+          const betaNumber = betaMatch ? parseInt(betaMatch[1]) : 0;
+          targetVersion = `${targetBase}-beta.${betaNumber + 1}`;
+        } else {
+          // 如果不同，创建新的 beta.0
+          targetVersion = `${baseVersion}-beta.0`;
+        }
+      } else {
+        // 没有 beta 版本，创建新的 beta.0
+        targetVersion = `${baseVersion}-beta.0`;
+      }
+    } else {
+      // rc 版本逻辑
+      const baseVersion = semver.inc(latest, versionIncrement)!;
+
+      if (rc) {
+        const rcBase = semver.major(rc) + "." + semver.minor(rc) + "." + semver.patch(rc);
+        const targetBase = semver.major(baseVersion) + "." + semver.minor(baseVersion) + "." + semver.patch(baseVersion);
+
+        if (rcBase === targetBase) {
+          // 如果 rc 版本的基础版本号与目标版本号相同，递增 rc 序号
+          const rcMatch = rc.match(/-rc\.(\d+)$/);
+          const rcNumber = rcMatch ? parseInt(rcMatch[1]) : 0;
+          targetVersion = `${targetBase}-rc.${rcNumber + 1}`;
+        } else {
+          // 如果不同，创建新的 rc.0
+          targetVersion = `${baseVersion}-rc.0`;
+        }
+      } else {
+        // 没有 rc 版本，创建新的 rc.0
+        targetVersion = `${baseVersion}-rc.0`;
+      }
+    }
+
+    Logger.success(`计算得到目标版本: ${targetVersion}`);
+    return targetVersion;
   }
 }
 
@@ -630,6 +755,12 @@ class ArgumentParser {
         config.prereleaseOnly = true;
       } else if (arg === "--check-version" || arg === "-c") {
         config.checkVersionOnly = true;
+      } else if (arg.startsWith("--version-type=")) {
+        const value = arg.split("=")[1] as "正式版" | "测试版" | "候选版";
+        config.versionType = value;
+      } else if (arg.startsWith("--version-increment=")) {
+        const value = arg.split("=")[1] as "patch" | "minor" | "major";
+        config.versionIncrement = value;
       } else if (arg === "--help" || arg === "-h") {
         ArgumentParser.showHelp();
         process.exit(0);
@@ -653,18 +784,20 @@ class ArgumentParser {
   version                 指定版本号 (例如: 1.0.0, 1.0.0-beta.1, patch, minor, major)
 
 选项:
+  --version-type=TYPE    版本类型 (正式版|测试版|候选版)
+  --version-increment=INC 版本增量 (patch|minor|major)
   --dry-run              预演模式（仅预览，不实际发布）
   --prerelease-only      仅执行预发布流程
   --check-version, -c    仅检查版本是否存在于 npm registry
   --help, -h             显示此帮助信息
 
 示例:
-  npm-release.ts                           # 自动递增版本号并发布
-  npm-release.ts 1.0.0                     # 发布指定版本号
-  npm-release.ts 1.0.0-beta.1              # 发布预发布版本
-  npm-release.ts patch --dry-run           # 预演模式递增补丁版本
-  npm-release.ts --check-version           # 检查当前版本是否已存在
-  npm-release.ts 1.0.0 --check-version    # 检查指定版本是否已存在
+  npm-release.ts --version-type=测试版 --version-increment=patch    # 自动计算 beta 版本
+  npm-release.ts --version-type=正式版 --version-increment=minor    # 自动计算正式版本
+  npm-release.ts 1.0.0                                           # 发布指定版本号
+  npm-release.ts 1.0.0-beta.1                                    # 发布预发布版本
+  npm-release.ts patch --dry-run                                 # 预演模式递增补丁版本
+  npm-release.ts --check-version                                 # 检查当前版本是否已存在
 
 环境变量:
   NODE_AUTH_TOKEN        NPM 认证 token
@@ -713,9 +846,24 @@ async function main(): Promise<void> {
     // 如果只是检查版本，执行独立的版本检查功能
     if (config.checkVersionOnly) {
       Logger.rocket("开始版本检查");
-      const result = await VersionChecker.checkVersionStandalone(
-        config.version
-      );
+
+      let versionToCheck: string;
+
+      if (config.versionType && config.versionIncrement) {
+        // 使用新的自动计算逻辑
+        Logger.info(`版本类型: ${config.versionType}`);
+        Logger.info(`版本增量: ${config.versionIncrement}`);
+
+        versionToCheck = await VersionCalculator.calculateTargetVersion(
+          config.versionType,
+          config.versionIncrement
+        );
+      } else {
+        // 使用指定的版本号或当前版本号
+        versionToCheck = config.version || VersionDetector.getCurrentVersion();
+      }
+
+      const result = await VersionChecker.checkVersionStandalone(versionToCheck);
 
       // 根据检查结果设置退出码（兼容原 shell 脚本的行为）
       process.exit(result.exists ? 0 : 1);
@@ -725,14 +873,33 @@ async function main(): Promise<void> {
     Logger.info(`预演模式: ${config.isDryRun}`);
     Logger.info(`仅预发布: ${config.prereleaseOnly}`);
 
-    if (config.version) {
+    // 确定版本号
+    let targetVersion: string;
+
+    if (config.versionType && config.versionIncrement) {
+      // 使用新的自动计算逻辑
+      Logger.info(`版本类型: ${config.versionType}`);
+      Logger.info(`版本增量: ${config.versionIncrement}`);
+
+      targetVersion = await VersionCalculator.calculateTargetVersion(
+        config.versionType,
+        config.versionIncrement
+      );
+
+      // 更新配置中的版本号
+      config.version = targetVersion;
+    } else if (config.version) {
+      // 使用指定的版本号
+      targetVersion = config.version;
       Logger.info(`指定版本: ${config.version}`);
+    } else {
+      // 使用当前版本号
+      targetVersion = VersionDetector.getCurrentVersion();
+      Logger.info(`使用当前版本: ${targetVersion}`);
     }
 
     // 确定版本信息
-    const versionToDetect =
-      config.version || VersionDetector.getCurrentVersion();
-    const versionInfo = VersionDetector.detectVersionType(versionToDetect);
+    const versionInfo = VersionDetector.detectVersionType(targetVersion);
 
     // 执行构建
     QualityChecker.runAllChecks();
