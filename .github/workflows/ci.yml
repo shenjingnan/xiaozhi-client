@@ -75,7 +75,7 @@ jobs:
 
     - name: 拼写检查 (Web)
       working-directory: web
-      run: npx cspell "src/**/*.{ts,tsx}" "*.md" "*.json" --config ../cspell.json
+      run: pnpm run spell:check
 
     - name: 构建项目
       uses: nick-invision/retry@v3
