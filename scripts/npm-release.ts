@@ -331,17 +331,17 @@ class VersionCalculator {
 
       // 找到最新的 beta 版本
       const betaVersions = allVersions
-        .filter(v => v.includes("-beta."))
+        .filter((v) => v.includes("-beta."))
         .sort((a, b) => semver.compare(b, a));
       const beta = betaVersions.length > 0 ? betaVersions[0] : null;
 
       // 找到最新的 rc 版本
       const rcVersions = allVersions
-        .filter(v => v.includes("-rc."))
+        .filter((v) => v.includes("-rc."))
         .sort((a, b) => semver.compare(b, a));
       const rc = rcVersions.length > 0 ? rcVersions[0] : null;
 
-      Logger.info(`当前 npm 版本状态:`);
+      Logger.info("当前 npm 版本状态:");
       Logger.info(`  正式版: ${latest}`);
       Logger.info(`  beta: ${beta || "无"}`);
       Logger.info(`  rc: ${rc || "无"}`);
@@ -374,13 +374,13 @@ class VersionCalculator {
       const baseVersion = semver.inc(latest, versionIncrement)!;
 
       if (beta) {
-        const betaBase = semver.major(beta) + "." + semver.minor(beta) + "." + semver.patch(beta);
-        const targetBase = semver.major(baseVersion) + "." + semver.minor(baseVersion) + "." + semver.patch(baseVersion);
+        const betaBase = `${semver.major(beta)}.${semver.minor(beta)}.${semver.patch(beta)}`;
+        const targetBase = `${semver.major(baseVersion)}.${semver.minor(baseVersion)}.${semver.patch(baseVersion)}`;
 
         if (betaBase === targetBase) {
           // 如果 beta 版本的基础版本号与目标版本号相同，递增 beta 序号
           const betaMatch = beta.match(/-beta\.(\d+)$/);
-          const betaNumber = betaMatch ? parseInt(betaMatch[1]) : 0;
+          const betaNumber = betaMatch ? Number.parseInt(betaMatch[1]) : 0;
           targetVersion = `${targetBase}-beta.${betaNumber + 1}`;
         } else {
           // 如果不同，创建新的 beta.0
@@ -395,13 +395,13 @@ class VersionCalculator {
       const baseVersion = semver.inc(latest, versionIncrement)!;
 
       if (rc) {
-        const rcBase = semver.major(rc) + "." + semver.minor(rc) + "." + semver.patch(rc);
-        const targetBase = semver.major(baseVersion) + "." + semver.minor(baseVersion) + "." + semver.patch(baseVersion);
+        const rcBase = `${semver.major(rc)}.${semver.minor(rc)}.${semver.patch(rc)}`;
+        const targetBase = `${semver.major(baseVersion)}.${semver.minor(baseVersion)}.${semver.patch(baseVersion)}`;
 
         if (rcBase === targetBase) {
           // 如果 rc 版本的基础版本号与目标版本号相同，递增 rc 序号
           const rcMatch = rc.match(/-rc\.(\d+)$/);
-          const rcNumber = rcMatch ? parseInt(rcMatch[1]) : 0;
+          const rcNumber = rcMatch ? Number.parseInt(rcMatch[1]) : 0;
           targetVersion = `${targetBase}-rc.${rcNumber + 1}`;
         } else {
           // 如果不同，创建新的 rc.0
@@ -505,7 +505,8 @@ class ReleaseExecutor {
       Logger.warning("release-it 执行失败，检查是否为版本冲突问题...");
 
       // 检查版本是否实际上已经发布成功
-      const actuallyExists = await VersionChecker.checkVersionExists(versionToCheck);
+      const actuallyExists =
+        await VersionChecker.checkVersionExists(versionToCheck);
 
       if (actuallyExists) {
         Logger.success(
@@ -539,9 +540,15 @@ class ReleaseExecutor {
       }
 
       // 检查错误信息是否包含版本已存在的提示
-      if (error instanceof Error &&
-          (error.message.includes("cannot publish over the previously published versions") ||
-           error.message.includes("You cannot publish over the previously published versions"))) {
+      if (
+        error instanceof Error &&
+        (error.message.includes(
+          "cannot publish over the previously published versions"
+        ) ||
+          error.message.includes(
+            "You cannot publish over the previously published versions"
+          ))
+      ) {
         Logger.warning("检测到 npm publish 版本冲突错误");
 
         if (actuallyExists) {
@@ -620,7 +627,8 @@ class ReleaseExecutor {
       Logger.warning("release-it 执行失败，检查是否为版本冲突问题...");
 
       // 检查版本是否实际上已经发布成功
-      const actuallyExists = await VersionChecker.checkVersionExists(versionToCheck);
+      const actuallyExists =
+        await VersionChecker.checkVersionExists(versionToCheck);
 
       if (actuallyExists) {
         Logger.success(
@@ -655,9 +663,15 @@ class ReleaseExecutor {
       }
 
       // 检查错误信息是否包含版本已存在的提示
-      if (error instanceof Error &&
-          (error.message.includes("cannot publish over the previously published versions") ||
-           error.message.includes("You cannot publish over the previously published versions"))) {
+      if (
+        error instanceof Error &&
+        (error.message.includes(
+          "cannot publish over the previously published versions"
+        ) ||
+          error.message.includes(
+            "You cannot publish over the previously published versions"
+          ))
+      ) {
         Logger.warning("检测到 npm publish 版本冲突错误");
 
         if (actuallyExists) {
@@ -927,7 +941,8 @@ async function main(): Promise<void> {
         versionToCheck = config.version || VersionDetector.getCurrentVersion();
       }
 
-      const result = await VersionChecker.checkVersionStandalone(versionToCheck);
+      const result =
+        await VersionChecker.checkVersionStandalone(versionToCheck);
 
       // 根据检查结果设置退出码（兼容原 shell 脚本的行为）
       process.exit(result.exists ? 0 : 1);
