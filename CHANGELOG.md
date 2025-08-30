@@ -1,8 +1,36 @@
 # Changelog
 
-All notable changes to this project will be documented in this file. See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
+## [1.6.4](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.3...v1.6.4) (2025-08-30)
 
-## [1.6.4](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.4-beta.33...v1.6.4) (2025-08-30)
+### Features
+
+* **ci:** 集成 release-it 自动化发版工具 ([#194](https://github.com/shenjingnan/xiaozhi-client/issues/194)) ([51a3ecd](https://github.com/shenjingnan/xiaozhi-client/commit/51a3ecde6134b88c7096757b046cd1322644cac4))
+* **service:** 优化服务启动体验，支持自动重启已运行服务 ([#185](https://github.com/shenjingnan/xiaozhi-client/issues/185)) ([24f5542](https://github.com/shenjingnan/xiaozhi-client/commit/24f55428a0e7a6c38d07d2e375a62f91d7f3f7cf))
+* 添加手动版本控制的发版脚本 ([#180](https://github.com/shenjingnan/xiaozhi-client/issues/180)) ([847a985](https://github.com/shenjingnan/xiaozhi-client/commit/847a985aa6fb2e73704bf1432c1a8a1e1f3e4c99))
+
+### Bug Fixes
+
+* **ci:** 增强 npm 发布流程支持预发布版本 ([#205](https://github.com/shenjingnan/xiaozhi-client/issues/205)) ([f721252](https://github.com/shenjingnan/xiaozhi-client/commit/f72125298eeab69f301eefc826ea5b0e5956b51d))
+* **ci:** 添加重试机制解决间歇性失败问题 ([#203](https://github.com/shenjingnan/xiaozhi-client/issues/203)) ([074edb2](https://github.com/shenjingnan/xiaozhi-client/commit/074edb211755efc064c884a4b19838459544f489))
+* **ci:** 简化 npm 发布流程并修复依赖问题 ([#214](https://github.com/shenjingnan/xiaozhi-client/issues/214)) ([2c26cf5](https://github.com/shenjingnan/xiaozhi-client/commit/2c26cf5190222a8489da552f4bc19daa2d8b528c))
+* **cli:** 修复CLI命令参数处理逻辑，解决--info和--version-info命令冲突问题 ([#174](https://github.com/shenjingnan/xiaozhi-client/issues/174)) ([16743ac](https://github.com/shenjingnan/xiaozhi-client/commit/16743ac9b1d52082d8dfddc0810b4b2712ce5db5))
+* **cli:** 修复守护进程模式下的启动和日志管理问题 ([#175](https://github.com/shenjingnan/xiaozhi-client/issues/175)) ([aa2ac38](https://github.com/shenjingnan/xiaozhi-client/commit/aa2ac388f4264ef635e651c4bbdb93676c6a3f96))
+* **config:** 修复配置初始化时模板文件路径问题和CLI命令参数处理 ([#173](https://github.com/shenjingnan/xiaozhi-client/issues/173)) ([35176d6](https://github.com/shenjingnan/xiaozhi-client/commit/35176d6e766b8ddf74ef4b9b61fd2a1d44b85d42))
+* **config:** 移除自动重启逻辑并添加配置清理功能 ([#186](https://github.com/shenjingnan/xiaozhi-client/issues/186)) ([5123ba2](https://github.com/shenjingnan/xiaozhi-client/commit/5123ba2ee76a03b02c2293857bf724f0181be2a9))
+* **docker:** 修复容器重启时的PID文件清理问题 ([#169](https://github.com/shenjingnan/xiaozhi-client/issues/169)) ([f5ef458](https://github.com/shenjingnan/xiaozhi-client/commit/f5ef45855f048c5065aa2fc19e2e3d30d441eeec))
+* **docker:** 增强 Docker 容器的 Python 依赖管理功能 ([#178](https://github.com/shenjingnan/xiaozhi-client/issues/178)) ([5be9518](https://github.com/shenjingnan/xiaozhi-client/commit/5be95189eacaf26397bc559cb996b0bb65407d99))
+* **mcp:** 修复MCP服务工具配置没有自动同步到配置文件的问题 ([#181](https://github.com/shenjingnan/xiaozhi-client/issues/181)) ([d6ee64b](https://github.com/shenjingnan/xiaozhi-client/commit/d6ee64b7f85caa03faa88ee8a07035b193b65c90))
+* **proxy:** 修复小智连接工具调用中的ID类型处理问题 ([#172](https://github.com/shenjingnan/xiaozhi-client/issues/172)) ([0e95b30](https://github.com/shenjingnan/xiaozhi-client/commit/0e95b30dea113972ecb84daa53fe2820688b54d2))
+* **release:** 优化 npm 发布配置和参数处理逻辑 ([#212](https://github.com/shenjingnan/xiaozhi-client/issues/212)) ([664801f](https://github.com/shenjingnan/xiaozhi-client/commit/664801f89cbb0519ed1f90ce30dc173f37712d99))
+* **release:** 优化npm发布脚本的版本冲突处理机制 ([#213](https://github.com/shenjingnan/xiaozhi-client/issues/213)) ([cf5b487](https://github.com/shenjingnan/xiaozhi-client/commit/cf5b4872537ab2eba4ce9afb2abb129ba5b0c1bb))
+* **services:** 过滤 getAllTools 方法只返回已启用的工具 ([#204](https://github.com/shenjingnan/xiaozhi-client/issues/204)) ([cc08817](https://github.com/shenjingnan/xiaozhi-client/commit/cc08817044844cfb275891006e05d5268af472ef))
+* **test:** 修复 TypeScript 类型检查和测试用例问题 ([#177](https://github.com/shenjingnan/xiaozhi-client/issues/177)) ([957dfb1](https://github.com/shenjingnan/xiaozhi-client/commit/957dfb15aff6b22fc0b97bd37f710515e3e0f6f5))
+* **tools:** 增强ProxyMCPServer工具调用功能 ([#170](https://github.com/shenjingnan/xiaozhi-client/issues/170)) ([324aa11](https://github.com/shenjingnan/xiaozhi-client/commit/324aa11c01ba93c83620f369d75d294b4115b98b))
+* **workflow:** 优化发版流程的预演模式 ([#196](https://github.com/shenjingnan/xiaozhi-client/issues/196)) ([d11f3fd](https://github.com/shenjingnan/xiaozhi-client/commit/d11f3fd370aaf99a9cd0fe05195fd16d14b6e309))
+* **workflow:** 修复 package.json 中的 bin 路径问题 ([#208](https://github.com/shenjingnan/xiaozhi-client/issues/208)) ([b0a7358](https://github.com/shenjingnan/xiaozhi-client/commit/b0a7358b88d152a15df7991b545e42c52fc49e7e))
+* **workflow:** 修复发版Action报错 ([#207](https://github.com/shenjingnan/xiaozhi-client/issues/207)) ([22cc702](https://github.com/shenjingnan/xiaozhi-client/commit/22cc70219d1e7279e1be1b554e52a68b2537b6bd))
+* **workflow:** 修复发版问题 ([#210](https://github.com/shenjingnan/xiaozhi-client/issues/210)) ([2d91df0](https://github.com/shenjingnan/xiaozhi-client/commit/2d91df0cd16a44e45dcb033e84e279101c0d4828))
+* **workflow:** 修复由于 .release-it.json 中的 before:init 执行顺序导致发版失败 ([#206](https://github.com/shenjingnan/xiaozhi-client/issues/206)) ([7ef0440](https://github.com/shenjingnan/xiaozhi-client/commit/7ef044045edde0594e23f33bda4f23d805632231))
 
 ## [1.6.3](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.2...v1.6.3) (2025-08-21)
 
@@ -21,11 +49,13 @@ All notable changes to this project will be documented in this file. See [Conven
 * **proxy:** 修复小智连接工具调用中的ID类型处理问题 ([#172](https://github.com/shenjingnan/xiaozhi-client/issues/172)) ([0e95b30](https://github.com/shenjingnan/xiaozhi-client/commit/0e95b30dea113972ecb84daa53fe2820688b54d2))
 * **test:** 修复 TypeScript 类型检查和测试用例问题 ([#177](https://github.com/shenjingnan/xiaozhi-client/issues/177)) ([957dfb1](https://github.com/shenjingnan/xiaozhi-client/commit/957dfb15aff6b22fc0b97bd37f710515e3e0f6f5))
 * **tools:** 增强ProxyMCPServer工具调用功能 ([#170](https://github.com/shenjingnan/xiaozhi-client/issues/170)) ([324aa11](https://github.com/shenjingnan/xiaozhi-client/commit/324aa11c01ba93c83620f369d75d294b4115b98b))
+
 ## [1.6.2](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.1...v1.6.2) (2025-08-17)
 
 ### Bug Fixes
 
 * resolve case sensitivity issue - rename webServer.test.ts to WebServer.test.ts ([94bab63](https://github.com/shenjingnan/xiaozhi-client/commit/94bab63302f0e75d6543712f9f8a9e1f344b5808))
+
 ## [1.6.1](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.0...v1.6.1) (2025-08-10)
 
 ### Bug Fixes

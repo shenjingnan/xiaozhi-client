@@ -11,7 +11,8 @@
   },
   "github": {
     "release": true,
-    "releaseName": "🚀 v${version}"
+    "releaseName": "🚀 v${version}",
+    "releaseNotes": "npx conventional-changelog-cli -p conventionalcommits -r 2"
   },
   "npm": {
     "publish": true,
@@ -21,7 +22,9 @@
     "@release-it/conventional-changelog": {
       "preset": "conventionalcommits",
       "infile": "CHANGELOG.md",
-      "header": "# Changelog\n\nAll notable changes to this project will be documented in this file. See [Conventional Commits](https://conventionalcommits.org) for commit guidelines."
+      "releaseCommitMessageFormat": "chore: release v${version}",
+      "ignoreRecommendedBump": false,
+      "strictSemVer": true
     }
   },
   "hooks": {
