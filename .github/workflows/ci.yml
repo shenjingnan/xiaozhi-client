@@ -43,17 +43,36 @@ jobs:
         retry_on: error
         command: pnpm install --frozen-lockfile
 
-    - name: TypeScript 类型检查
+    - name: 安装 Web 依赖
+      run: |
+        cd web
+        pnpm install --frozen-lockfile
+
+    # 根目录代码质量检查
+    - name: TypeScript 类型检查 (根目录)
       run: pnpm run type:check
 
-    - name: Biome 代码检查 (CI模式)
+    - name: Biome 代码检查 (根目录)
       run: pnpm run check
 
-    - name: 拼写检查
+    - name: 拼写检查 (根目录)
       run: pnpm run spell:check
 
-    - name: 代码重复率检查
+    - name: 代码重复率检查 (根目录)
       run: pnpm run duplicate:check
+
+    # Web 目录代码质量检查
+    - name: TypeScript 类型检查 (Web)
+      working-directory: web
+      run: pnpm run type:check
+
+    - name: Biome 代码检查 (Web)
+      working-directory: web
+      run: pnpm run check
+
+    - name: 拼写检查 (Web)
+      working-directory: web
+      run: pnpm run spell:check
 
     - name: 构建项目
       uses: nick-invision/retry@v3
@@ -63,7 +82,7 @@ jobs:
         retry_on: error
         command: pnpm run build
 
-    - name: 运行测试并生成覆盖率报告
+    - name: 运行测试并生成覆盖率报告 (根目录)
       uses: nick-invision/retry@v3
       with:
         timeout_minutes: 10
@@ -71,14 +90,30 @@ jobs:
         retry_on: error
         command: pnpm run test:coverage
 
-    - name: 上传覆盖率报告 (仅在 Ubuntu + Node 20.19.2 环境)
+    - name: 运行 Web 测试并生成覆盖率报告
+      run: |
+        cd web
+        pnpm run test:coverage
+
+    - name: 上传根目录覆盖率报告 (仅在 Ubuntu + Node 20.19.2 环境)
       uses: codecov/codecov-action@v4
       if: matrix.os == 'ubuntu-latest' && matrix.node-version == '20.19.2'
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: ./coverage/lcov.info
-        flags: unittests
-        name: codecov-umbrella
+        flags: cli-tests
+        name: codecov-cli
+        fail_ci_if_error: true
+        verbose: true
+
+    - name: 上传 Web 覆盖率报告 (仅在 Ubuntu + Node 20.19.2 环境)
+      uses: codecov/codecov-action@v4
+      if: matrix.os == 'ubuntu-latest' && matrix.node-version == '20.19.2'
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./web/coverage/lcov.info
+        flags: web-tests
+        name: codecov-web
         fail_ci_if_error: true
         verbose: true
 
@@ -239,18 +274,34 @@ jobs:
         echo "✅ Windows uvx 命令支持测试完成"
       shell: pwsh
 
-    - name: 上传覆盖率报告 (仅在 Ubuntu + Node 20.19.2 环境)
+    - name: 上传根目录覆盖率报告 (仅在 Ubuntu + Node 20.19.2 环境)
       uses: actions/upload-artifact@v4
       if: always() && matrix.os == 'ubuntu-latest' && matrix.node-version == '20.19.2'
       with:
-        name: coverage-report
+        name: coverage-report-cli
         path: coverage/
         retention-days: 30
 
-    - name: 上传构建产物
+    - name: 上传 Web 覆盖率报告 (仅在 Ubuntu + Node 20.19.2 环境)
+      uses: actions/upload-artifact@v4
+      if: always() && matrix.os == 'ubuntu-latest' && matrix.node-version == '20.19.2'
+      with:
+        name: coverage-report-web
+        path: web/coverage/
+        retention-days: 30
+
+    - name: 上传 CLI 构建产物
       uses: actions/upload-artifact@v4
       if: success()
       with:
-        name: build-artifacts-${{ matrix.os }}-node${{ matrix.node-version }}
+        name: build-artifacts-cli-${{ matrix.os }}-node${{ matrix.node-version }}
         path: dist/
+        retention-days: 7
+
+    - name: 上传 Web 构建产物
+      uses: actions/upload-artifact@v4
+      if: success()
+      with:
+        name: build-artifacts-web-${{ matrix.os }}-node${{ matrix.node-version }}
+        path: web/dist/
         retention-days: 7
