@@ -3,8 +3,8 @@
     "requireCleanWorkingDir": true,
     "requireUpstream": true,
     "commit": true,
-    "tag": true,
-    "push": true
+    "tag": false,
+    "push": false
   },
   "github": {
     "release": false
