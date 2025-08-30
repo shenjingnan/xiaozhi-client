@@ -526,12 +526,13 @@ class ReleaseExecutor {
 
       // 步骤3: 发布到 npm
       Logger.info("发布到 npm registry...");
-      CommandExecutor.run("npm", [
+      CommandExecutor.run("pnpm", [
         "publish",
         "--access",
         "public",
         "--tag",
         publishTag,
+        "--no-git-checks",
       ]);
 
       // 步骤4: 恢复 package.json（重要：预发布版本不应该修改 package.json）
@@ -661,7 +662,7 @@ class ReleaseExecutor {
 
       Logger.info("预演模式 - 预发布版本将要执行的操作:");
       Logger.info(`  1. 临时更新 package.json 版本到: ${versionToCheck}`);
-      Logger.info(`  2. 发布到 npm: npm publish --access public --tag ${publishTag}`);
+      Logger.info(`  2. 发布到 npm: pnpm publish --access public --tag ${publishTag} --no-git-checks`);
       Logger.info("  3. 恢复 package.json 到原始状态");
       Logger.info("  ❌ 不会创建 git tag");
       Logger.info("  ❌ 不会创建 GitHub release");
