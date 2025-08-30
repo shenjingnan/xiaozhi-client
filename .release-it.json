@@ -27,6 +27,7 @@
   "hooks": {
     "before:init": ["pnpm audit --audit-level moderate"],
     "after:bump": [
+      "pnpm run build",
       "npx conventional-changelog -p conventionalcommits -i CHANGELOG.md -s",
       "npm publish --access public"
     ],
