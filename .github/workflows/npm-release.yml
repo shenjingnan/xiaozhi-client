@@ -74,21 +74,31 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          # 构建发布脚本参数
-          RELEASE_ARGS=""
+          # 构建 release-it 命令
+          RELEASE_CMD="npx release-it"
 
-          # 添加版本类型参数
-          RELEASE_ARGS="$RELEASE_ARGS --version-type=${{ github.event.inputs.version_type }}"
-
-          # 添加版本增量参数
-          RELEASE_ARGS="$RELEASE_ARGS --version-increment=${{ github.event.inputs.version_increment }}"
-
-          # 添加选项参数
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            RELEASE_ARGS="$RELEASE_ARGS --dry-run"
+          # 根据版本类型选择配置和参数
+          if [ "${{ github.event.inputs.version_type }}" = "release" ]; then
+            # 正式版发布
+            RELEASE_CMD="$RELEASE_CMD ${{ github.event.inputs.version_increment }} --config .release-it.json"
+            echo "🚀 准备发布正式版 (${{ github.event.inputs.version_increment }})"
+          elif [ "${{ github.event.inputs.version_type }}" = "beta" ]; then
+            # Beta 版发布
+            RELEASE_CMD="$RELEASE_CMD ${{ github.event.inputs.version_increment }} --preRelease=beta --config .release-it.json"
+            echo "🧪 准备发布 Beta 版 (${{ github.event.inputs.version_increment }})"
+          elif [ "${{ github.event.inputs.version_type }}" = "rc" ]; then
+            # RC 版发布
+            RELEASE_CMD="$RELEASE_CMD ${{ github.event.inputs.version_increment }} --preRelease=rc --config .release-it.json"
+            echo "🔧 准备发布 RC 版 (${{ github.event.inputs.version_increment }})"
           fi
 
-          echo "🚀 执行发布脚本: pnpm run release$RELEASE_ARGS"
+          # 添加预演模式
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            RELEASE_CMD="$RELEASE_CMD --dry-run"
+            echo "👀 预演模式已启用"
+          fi
 
-          # 使用项目的发布脚本而不是直接调用 release-it
-          npx release-it --config .release-it.prerelease.json --preRelease=beta --dry-run
+          echo "📋 执行命令: $RELEASE_CMD"
+
+          # 执行发布命令
+          # eval $RELEASE_CMD
