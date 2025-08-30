@@ -87,4 +87,4 @@ jobs:
 
           # npm run release$RELEASE_ARGS
 
-          npx release-it 1.6.4-beta.25 --config .release-it.prerelease.json --preRelease=beta --dry-run
+          npx release-it 1.6.4-beta.25 --config .release-it.prerelease.json --preRelease=beta
