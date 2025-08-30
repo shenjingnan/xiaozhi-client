@@ -44,13 +44,9 @@ jobs:
         command: pnpm install --frozen-lockfile
 
     - name: 安装 Web 依赖
-      working-directory: web
-      uses: nick-invision/retry@v3
-      with:
-        timeout_minutes: 5
-        max_attempts: 2
-        retry_on: error
-        command: pnpm install --frozen-lockfile
+      run: |
+        cd web
+        pnpm install --frozen-lockfile
 
     # 根目录代码质量检查
     - name: TypeScript 类型检查 (根目录)
@@ -95,13 +91,9 @@ jobs:
         command: pnpm run test:coverage
 
     - name: 运行 Web 测试并生成覆盖率报告
-      working-directory: web
-      uses: nick-invision/retry@v3
-      with:
-        timeout_minutes: 10
-        max_attempts: 2
-        retry_on: error
-        command: pnpm run test:coverage
+      run: |
+        cd web
+        pnpm run test:coverage
 
     - name: 上传根目录覆盖率报告 (仅在 Ubuntu + Node 20.19.2 环境)
       uses: codecov/codecov-action@v4
