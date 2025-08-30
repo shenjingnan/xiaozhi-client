@@ -910,26 +910,29 @@ async function main(): Promise<void> {
   const versionToCheck = config.version || VersionDetector.getCurrentVersion();
   console.log(versionToCheck);
   const versionExists = await VersionChecker.checkVersionExists(versionToCheck);
-  CommandExecutor.run("npm", [
-    "version",
-    versionToCheck,
-    "--no-git-tag-version",
+  CommandExecutor.run("npx", [
+    "release-it",
+    '--config',
+    '.release-it.prerelease.json',
+    '--preRelease=beta',
+    '1.6.4-beta.24',
+    '--dry-run',
   ]);
 
-  // 步骤2: 确定发布标签
-  const publishTag = ReleaseExecutor.getPublishTag(config.versionType);
-  Logger.info(`使用发布标签: ${publishTag}`);
+  // // 步骤2: 确定发布标签
+  // const publishTag = ReleaseExecutor.getPublishTag(config.versionType);
+  // Logger.info(`使用发布标签: ${publishTag}`);
 
-  // 步骤3: 发布到 npm
-  Logger.info("发布到 npm registry...");
-  CommandExecutor.run("pnpm", [
-    "publish",
-    "--access",
-    "public",
-    "--tag",
-    publishTag,
-    "--no-git-checks",
-  ]);
+  // // 步骤3: 发布到 npm
+  // Logger.info("发布到 npm registry...");
+  // CommandExecutor.run("pnpm", [
+  //   "publish",
+  //   "--access",
+  //   "public",
+  //   "--tag",
+  //   publishTag,
+  //   "--no-git-checks",
+  // ]);
   return;
 
   // try {
