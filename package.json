@@ -38,7 +38,7 @@
     "duplicate:check": "jscpd src/",
     "docker:update-version": "node scripts/update-dockerfile-version.js",
     "publish": "npm publish",
-    "publish:beta": "npx tsx scripts/publish-beta.ts",
+    "publish:beta": "tsx scripts/publish-beta.ts",
     "example": "node --loader ts-node/esm"
   },
   "keywords": [
@@ -95,6 +95,7 @@
     "supertest": "^7.1.4",
     "ts-node": "^10.9.2",
     "tsup": "^8.5.0",
+    "tsx": "^4.20.5",
     "typescript": "^5.8.3",
     "vitest": "^3.2.3"
   },

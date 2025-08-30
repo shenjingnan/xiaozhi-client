@@ -13,11 +13,6 @@ on:
         required: true
         default: false
         type: boolean
-      skip_checks:
-        description: "跳过质量检查（格式检查、拼写检查、构建、测试等）"
-        required: false
-        default: false
-        type: boolean
 
 permissions:
   contents: read
@@ -71,9 +66,5 @@ jobs:
             RELEASE_ARGS="$RELEASE_ARGS --dry-run"
           fi
 
-          if [ "${{ github.event.inputs.skip_checks }}" = "true" ]; then
-            RELEASE_ARGS="$RELEASE_ARGS --skip-checks"
-          fi
-
-          echo "🚀 执行发布脚本: npx tsx scripts/npm-release.ts$RELEASE_ARGS"
-          npx tsx scripts/npm-release.ts$RELEASE_ARGS
+          echo "🚀 执行发布脚本: tsx scripts/npm-release.ts$RELEASE_ARGS"
+          tsx scripts/npm-release.ts$RELEASE_ARGS

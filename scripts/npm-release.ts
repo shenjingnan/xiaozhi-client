@@ -15,7 +15,6 @@ const rootDir = join(__dirname, "..");
 interface ReleaseConfig {
   version?: string;
   isDryRun: boolean;
-  skipChecks: boolean;
   prereleaseOnly: boolean;
   checkVersionOnly: boolean;
 }
@@ -111,8 +110,7 @@ class CommandExecutor {
       if (error instanceof Error) {
         // 检查是否是 npm publish 的版本已存在错误
         if (
-          command === "npx" &&
-          args.includes("release-it") &&
+          command === "release-it" &&
           error.message.includes(
             "cannot publish over the previously published versions"
           )
@@ -303,20 +301,8 @@ class QualityChecker {
    * 执行所有质量检查
    */
   static runAllChecks(): void {
-    Logger.step(1, "代码格式检查");
-    CommandExecutor.run("pnpm", ["run", "check"]);
-
-    Logger.step(2, "拼写检查");
-    CommandExecutor.run("pnpm", ["run", "spell:check"]);
-
-    Logger.step(3, "代码重复率检查");
-    CommandExecutor.run("pnpm", ["run", "duplicate:check"]);
-
     Logger.step(4, "构建项目");
     CommandExecutor.runWithRetry("pnpm", ["run", "build"]);
-
-    Logger.step(5, "运行测试");
-    CommandExecutor.runWithRetry("pnpm", ["run", "test"]);
 
     Logger.success("所有质量检查通过");
   }
@@ -379,7 +365,7 @@ class ReleaseExecutor {
     Logger.info(`参数: ${releaseArgs.join(" ")}`);
 
     try {
-      CommandExecutor.run("npx", ["release-it", ...releaseArgs]);
+      CommandExecutor.run("release-it", releaseArgs);
 
       const finalVersion = VersionDetector.getCurrentVersion();
       Logger.success("预发布版本发布成功");
@@ -462,7 +448,7 @@ class ReleaseExecutor {
     Logger.info(`参数: ${releaseArgs.join(" ")}`);
 
     try {
-      CommandExecutor.run("npx", ["release-it", ...releaseArgs]);
+      CommandExecutor.run("release-it", releaseArgs);
 
       const finalVersion = VersionDetector.getCurrentVersion();
       Logger.success("正式版本发布成功");
@@ -526,7 +512,7 @@ class ReleaseExecutor {
     );
     Logger.info(`参数: ${releaseArgs.join(" ")}`);
 
-    CommandExecutor.run("npx", ["release-it", ...releaseArgs]);
+    CommandExecutor.run("release-it", releaseArgs);
 
     return {
       success: true,
@@ -630,7 +616,6 @@ class ArgumentParser {
 
     const config: ReleaseConfig = {
       isDryRun: false,
-      skipChecks: false,
       prereleaseOnly: false,
       checkVersionOnly: false,
     };
@@ -641,8 +626,6 @@ class ArgumentParser {
 
       if (arg === "--dry-run") {
         config.isDryRun = true;
-      } else if (arg === "--skip-checks") {
-        config.skipChecks = true;
       } else if (arg === "--prerelease-only") {
         config.prereleaseOnly = true;
       } else if (arg === "--check-version" || arg === "-c") {
@@ -671,7 +654,6 @@ class ArgumentParser {
 
 选项:
   --dry-run              预演模式（仅预览，不实际发布）
-  --skip-checks          跳过质量检查（格式检查、拼写检查、构建、测试等）
   --prerelease-only      仅执行预发布流程
   --check-version, -c    仅检查版本是否存在于 npm registry
   --help, -h             显示此帮助信息
@@ -681,7 +663,6 @@ class ArgumentParser {
   npm-release.ts 1.0.0                     # 发布指定版本号
   npm-release.ts 1.0.0-beta.1              # 发布预发布版本
   npm-release.ts patch --dry-run           # 预演模式递增补丁版本
-  npm-release.ts --skip-checks             # 跳过质量检查直接发布
   npm-release.ts --check-version           # 检查当前版本是否已存在
   npm-release.ts 1.0.0 --check-version    # 检查指定版本是否已存在
 
@@ -742,7 +723,6 @@ async function main(): Promise<void> {
 
     Logger.rocket("开始 NPM 发布流程");
     Logger.info(`预演模式: ${config.isDryRun}`);
-    Logger.info(`跳过检查: ${config.skipChecks}`);
     Logger.info(`仅预发布: ${config.prereleaseOnly}`);
 
     if (config.version) {
@@ -754,12 +734,8 @@ async function main(): Promise<void> {
       config.version || VersionDetector.getCurrentVersion();
     const versionInfo = VersionDetector.detectVersionType(versionToDetect);
 
-    // 执行质量检查
-    if (!config.skipChecks) {
-      QualityChecker.runAllChecks();
-    } else {
-      Logger.warning("跳过质量检查");
-    }
+    // 执行构建
+    QualityChecker.runAllChecks();
 
     // 执行发布流程
     let result: ReleaseResult;

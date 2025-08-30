@@ -11,6 +11,7 @@
   },
   "npm": {
     "publish": true,
+    "timeout": 600000,
     "publishArgs": ["--access", "public", "--tag", "beta"]
   },
   "hooks": {
