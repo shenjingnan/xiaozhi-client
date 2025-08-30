@@ -459,6 +459,21 @@ class ReleaseExecutor {
   }
 
   /**
+   * 根据版本类型获取发布标签
+   */
+  static getPublishTag(versionType?: "正式版" | "测试版" | "候选版"): string {
+    switch (versionType) {
+      case "测试版":
+        return "beta";
+      case "候选版":
+        return "rc";
+      case "正式版":
+      default:
+        return "latest";
+    }
+  }
+
+  /**
    * 执行预发布版本发布（仅 NPM）
    */
   static async executePrerelease(
@@ -467,6 +482,7 @@ class ReleaseExecutor {
   ): Promise<ReleaseResult> {
     Logger.rocket("执行预发布版本发布（仅 NPM）");
     Logger.info(`版本类型: ${versionInfo.versionType}`);
+    Logger.info("预发布版本策略：仅发布到 npm，不创建 git tag 和 GitHub release");
 
     if (config.isDryRun) {
       Logger.info("预演模式：仅预览，不实际发布");
@@ -491,45 +507,36 @@ class ReleaseExecutor {
       };
     }
 
-    // 执行预发布版本发布（直接使用 npm 命令）
-    Logger.package("开始发布新版本到 npm");
+    // 执行预发布版本发布（仅 npm，不修改 package.json）
+    Logger.package("开始发布预发布版本到 npm");
     Logger.info(`目标版本: ${versionToCheck}`);
 
     try {
-      // 步骤1: 更新 package.json 版本号（不创建 Git 标签）
-      Logger.info("更新 package.json 版本号...");
+      // 步骤1: 临时更新 package.json 版本号（不提交到 git）
+      Logger.info("临时更新 package.json 版本号...");
       CommandExecutor.run("npm", [
         "version",
         versionToCheck,
         "--no-git-tag-version",
       ]);
 
-      // 步骤2: 等待一下，确保版本更新完成
-      Logger.info("等待版本更新完成...");
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // 步骤2: 确定发布标签
+      const publishTag = ReleaseExecutor.getPublishTag(config.versionType);
+      Logger.info(`使用发布标签: ${publishTag}`);
 
-      // 步骤3: 再次检查版本是否已存在（防止竞态条件）
-      Logger.info("发布前最终检查版本状态...");
-      const finalCheck = await VersionChecker.checkVersionExists(versionToCheck);
-      if (finalCheck) {
-        Logger.warning("发布前检查发现版本已存在，可能是并发发布导致");
-        return {
-          success: true,
-          version: versionToCheck,
-          skipped: true,
-          isPrerelease: true,
-        };
-      }
-
-      // 步骤4: 发布到 npm（使用 beta 标签，统一使用 npm 命令）
+      // 步骤3: 发布到 npm
       Logger.info("发布到 npm registry...");
       CommandExecutor.run("npm", [
         "publish",
         "--access",
         "public",
         "--tag",
-        "beta",
+        publishTag,
       ]);
+
+      // 步骤4: 恢复 package.json（重要：预发布版本不应该修改 package.json）
+      Logger.info("恢复 package.json 到原始状态...");
+      CommandExecutor.run("git", ["checkout", "package.json"]);
 
       // 验证版本是否成功发布到 npm registry
       Logger.info("验证版本是否成功发布到 npm registry...");
@@ -539,6 +546,7 @@ class ReleaseExecutor {
 
       if (publishSuccess) {
         Logger.success("预发布版本发布成功");
+        Logger.info("✅ 预发布版本已发布到 npm，package.json 未被修改");
         return {
           success: true,
           version: versionToCheck,
@@ -549,6 +557,13 @@ class ReleaseExecutor {
       Logger.error("版本发布失败，npm registry 中未找到该版本");
       throw new Error(`版本 ${versionToCheck} 未能成功发布到 npm registry`);
     } catch (error) {
+      // 确保在出错时也恢复 package.json
+      try {
+        Logger.info("出错时恢复 package.json...");
+        CommandExecutor.run("git", ["checkout", "package.json"]);
+      } catch (restoreError) {
+        Logger.warning("恢复 package.json 失败，请手动检查");
+      }
       Logger.error("发布过程中出现错误");
       throw error;
     }
@@ -563,6 +578,7 @@ class ReleaseExecutor {
   ): Promise<ReleaseResult> {
     Logger.rocket("执行正式版本发布（完整流程）");
     Logger.info(`版本类型: ${versionInfo.versionType}`);
+    Logger.info("正式版本策略：发布到 npm + 创建 git tag + 创建 GitHub release + 更新 CHANGELOG");
 
     // 配置 Git 用户
     ReleaseExecutor.configureGitUser();
@@ -590,8 +606,11 @@ class ReleaseExecutor {
       };
     }
 
+    // 设置环境变量，让 release-it 配置知道这是正式版
+    process.env.VERSION_TYPE = "正式版";
+
     // 执行发布
-    Logger.package("开始发布新版本");
+    Logger.package("开始发布正式版本");
     const releaseArgs = ReleaseExecutor.buildReleaseArgs(config, false);
 
     Logger.rocket("开始执行正式版本 release-it...");
@@ -610,6 +629,7 @@ class ReleaseExecutor {
 
       if (publishSuccess) {
         Logger.success("正式版本发布成功");
+        Logger.info("✅ 正式版本已完成：npm 发布 + git tag + GitHub release + CHANGELOG 更新");
         return {
           success: true,
           version: finalVersion,
@@ -637,10 +657,16 @@ class ReleaseExecutor {
       Logger.rocket("开始执行预发布版本预演模式...");
       const versionToCheck =
         config.version || VersionDetector.getCurrentVersion();
+      const publishTag = ReleaseExecutor.getPublishTag(config.versionType);
 
-      Logger.info("预演模式 - 将要执行的命令:");
-      Logger.info(`  1. npm version ${versionToCheck} --no-git-tag-version`);
-      Logger.info("  2. npm publish --access public --tag beta");
+      Logger.info("预演模式 - 预发布版本将要执行的操作:");
+      Logger.info(`  1. 临时更新 package.json 版本到: ${versionToCheck}`);
+      Logger.info(`  2. 发布到 npm: npm publish --access public --tag ${publishTag}`);
+      Logger.info("  3. 恢复 package.json 到原始状态");
+      Logger.info("  ❌ 不会创建 git tag");
+      Logger.info("  ❌ 不会创建 GitHub release");
+      Logger.info("  ❌ 不会更新 CHANGELOG.md");
+      Logger.info("  ❌ 不会永久修改 package.json");
       Logger.info("预演模式完成，未实际执行任何命令");
 
       return {
@@ -650,7 +676,11 @@ class ReleaseExecutor {
         isPrerelease: true,
       };
     }
+
     // 正式版本的预演模式：使用 release-it
+    // 设置环境变量
+    process.env.VERSION_TYPE = "正式版";
+
     const releaseArgs = ReleaseExecutor.buildReleaseArgs(config, false);
 
     // 在开头插入 --dry-run 参数
@@ -660,6 +690,12 @@ class ReleaseExecutor {
     releaseArgs.push("--npm.publish=false");
 
     Logger.rocket("开始执行正式版本 release-it（预演模式）...");
+    Logger.info("预演模式 - 正式版本将要执行的操作:");
+    Logger.info("  ✅ 更新 package.json 版本");
+    Logger.info("  ✅ 创建 git tag");
+    Logger.info("  ✅ 创建 GitHub release");
+    Logger.info("  ✅ 更新 CHANGELOG.md");
+    Logger.info("  ✅ 发布到 npm");
     Logger.info(`参数: ${releaseArgs.join(" ")}`);
 
     CommandExecutor.run("release-it", releaseArgs);
@@ -686,9 +722,9 @@ class ReleaseExecutor {
       throw new Error("预发布版本不应该使用 release-it，请检查代码逻辑");
     }
 
-    // 正式版本使用 .release-it.json 配置文件
-    Logger.info("使用正式版本配置文件: .release-it.json");
-    args.push("--config", ".release-it.json");
+    // 正式版本使用新的 TypeScript 配置文件
+    Logger.info("使用正式版本配置文件: .release-it.config.ts");
+    args.push("--config", ".release-it.config.ts");
 
     if (config.version) {
       Logger.info(`使用指定版本号: ${config.version}`);
@@ -927,6 +963,18 @@ async function main(): Promise<void> {
 
     // 确定版本信息
     const versionInfo = VersionDetector.detectVersionType(targetVersion);
+
+    // 设置环境变量，让配置文件知道版本类型
+    if (config.versionType) {
+      process.env.VERSION_TYPE = config.versionType;
+      Logger.info(`设置环境变量 VERSION_TYPE: ${config.versionType}`);
+    } else if (versionInfo.isPrerelease) {
+      process.env.VERSION_TYPE = "测试版"; // 默认预发布为测试版
+      Logger.info("设置环境变量 VERSION_TYPE: 测试版（默认）");
+    } else {
+      process.env.VERSION_TYPE = "正式版";
+      Logger.info("设置环境变量 VERSION_TYPE: 正式版");
+    }
 
     // 执行构建
     QualityChecker.runAllChecks();
