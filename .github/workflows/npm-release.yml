@@ -91,4 +91,4 @@ jobs:
           echo "🚀 执行发布脚本: pnpm run release$RELEASE_ARGS"
 
           # 使用项目的发布脚本而不是直接调用 release-it
-          npx release-it 1.6.4-beta.26 --config .release-it.prerelease.json --preRelease=beta
+          npx release-it --config .release-it.prerelease.json --preRelease=beta --dry-run
