@@ -10,7 +10,7 @@
     "release": false
   },
   "npm": {
-    "publish": true
+    "publish": false
   },
   "hooks": {
     "before:init": ["pnpm audit --audit-level moderate"],
