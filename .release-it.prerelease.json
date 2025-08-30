@@ -1,20 +1,26 @@
 {
   "git": {
+    "commitMessage": "chore: release v${version}",
+    "tagName": "v${version}",
+    "pushArgs": ["--follow-tags"],
     "requireCleanWorkingDir": true,
     "requireUpstream": true,
     "commit": true,
-    "tag": false,
+    "tag": true,
     "push": true
   },
   "github": {
-    "release": false
+    "release": false,
+    "releaseName": "🚀 v${version}"
   },
   "npm": {
-    "publish": true
+    "publish": true,
+    "publishArgs": ["--access", "public"]
   },
   "hooks": {
     "before:init": ["pnpm audit --audit-level moderate"],
     "after:bump": ["pnpm run build"],
-    "after:release": "echo \"🎉 预发布版本 v${version} 发布完成！\""
+    "before:release": "echo \"📦 准备发布正式版本 v${version}\"",
+    "after:release": "echo \"🎉 正式版本 v${version} 发布完成！\""
   }
 }
