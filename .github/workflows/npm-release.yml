@@ -66,5 +66,5 @@ jobs:
             RELEASE_ARGS="$RELEASE_ARGS --dry-run"
           fi
 
-          echo "🚀 执行发布脚本: npx tsx scripts/npm-release.ts$RELEASE_ARGS"
-          npx tsx scripts/npm-release.ts$RELEASE_ARGS
+          echo "🚀 执行发布脚本: tsx scripts/npm-release.ts$RELEASE_ARGS"
+          tsx scripts/npm-release.ts$RELEASE_ARGS

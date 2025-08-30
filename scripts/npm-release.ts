@@ -110,8 +110,7 @@ class CommandExecutor {
       if (error instanceof Error) {
         // 检查是否是 npm publish 的版本已存在错误
         if (
-          command === "npx" &&
-          args.includes("release-it") &&
+          command === "release-it" &&
           error.message.includes(
             "cannot publish over the previously published versions"
           )
@@ -366,7 +365,7 @@ class ReleaseExecutor {
     Logger.info(`参数: ${releaseArgs.join(" ")}`);
 
     try {
-      CommandExecutor.run("npx", ["release-it", ...releaseArgs]);
+      CommandExecutor.run("release-it", releaseArgs);
 
       const finalVersion = VersionDetector.getCurrentVersion();
       Logger.success("预发布版本发布成功");
@@ -449,7 +448,7 @@ class ReleaseExecutor {
     Logger.info(`参数: ${releaseArgs.join(" ")}`);
 
     try {
-      CommandExecutor.run("npx", ["release-it", ...releaseArgs]);
+      CommandExecutor.run("release-it", releaseArgs);
 
       const finalVersion = VersionDetector.getCurrentVersion();
       Logger.success("正式版本发布成功");
@@ -513,7 +512,7 @@ class ReleaseExecutor {
     );
     Logger.info(`参数: ${releaseArgs.join(" ")}`);
 
-    CommandExecutor.run("npx", ["release-it", ...releaseArgs]);
+    CommandExecutor.run("release-it", releaseArgs);
 
     return {
       success: true,
