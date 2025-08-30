@@ -37,8 +37,6 @@
     "spell:check": "cspell \"src/**/*.ts\" \"*.md\" \"*.json\"",
     "duplicate:check": "jscpd src/",
     "docker:update-version": "node scripts/update-dockerfile-version.js",
-    "publish:beta": "tsx scripts/publish-beta.ts",
-    "release": "tsx scripts/npm-release.ts",
     "example": "node --loader ts-node/esm"
   },
   "keywords": [
