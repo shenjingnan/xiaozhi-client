@@ -911,7 +911,7 @@ async function main(): Promise<void> {
   const versionToCheck = config.version || VersionDetector.getCurrentVersion();
   console.log(versionToCheck);
   const versionExists = await VersionChecker.checkVersionExists(versionToCheck);
-  CommandExecutor.run("npx", [
+  execaSync("npx", [
     "release-it",
     "--config",
     ".release-it.prerelease.json",
