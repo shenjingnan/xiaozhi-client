@@ -907,16 +907,17 @@ class SignalHandler {
  * 主函数
  */
 async function main(): Promise<void> {
+  const config = ArgumentParser.parseArguments();
   const versionToCheck = config.version || VersionDetector.getCurrentVersion();
   console.log(versionToCheck);
   const versionExists = await VersionChecker.checkVersionExists(versionToCheck);
   CommandExecutor.run("npx", [
     "release-it",
-    '--config',
-    '.release-it.prerelease.json',
-    '--preRelease=beta',
-    '1.6.4-beta.24',
-    '--dry-run',
+    "--config",
+    ".release-it.prerelease.json",
+    "--preRelease=beta",
+    "1.6.4-beta.24",
+    "--dry-run",
   ]);
 
   // // 步骤2: 确定发布标签
