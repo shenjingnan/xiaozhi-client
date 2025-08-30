@@ -10,13 +10,11 @@
     "release": false
   },
   "npm": {
-    "publish": true,
-    "timeout": 900000,
-    "skipChecks": true,
-    "publishArgs": ["--access", "public", "--tag", "beta"]
+    "publish": false
   },
   "hooks": {
     "before:init": ["pnpm audit --audit-level moderate"],
+    "after:bump": "npm publish --access public --tag beta",
     "after:release": "echo \"🎉 Prerelease v${version} published to npm successfully!\""
   }
 }

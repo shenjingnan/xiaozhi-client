@@ -374,8 +374,12 @@ class VersionCalculator {
       const baseVersion = semver.inc(latest, versionIncrement)!;
 
       if (beta) {
-        const betaBase = `${semver.major(beta)}.${semver.minor(beta)}.${semver.patch(beta)}`;
-        const targetBase = `${semver.major(baseVersion)}.${semver.minor(baseVersion)}.${semver.patch(baseVersion)}`;
+        const betaBase = `${semver.major(beta)}.${semver.minor(
+          beta
+        )}.${semver.patch(beta)}`;
+        const targetBase = `${semver.major(baseVersion)}.${semver.minor(
+          baseVersion
+        )}.${semver.patch(baseVersion)}`;
 
         if (betaBase === targetBase) {
           // 如果 beta 版本的基础版本号与目标版本号相同，递增 beta 序号
@@ -395,8 +399,12 @@ class VersionCalculator {
       const baseVersion = semver.inc(latest, versionIncrement)!;
 
       if (rc) {
-        const rcBase = `${semver.major(rc)}.${semver.minor(rc)}.${semver.patch(rc)}`;
-        const targetBase = `${semver.major(baseVersion)}.${semver.minor(baseVersion)}.${semver.patch(baseVersion)}`;
+        const rcBase = `${semver.major(rc)}.${semver.minor(rc)}.${semver.patch(
+          rc
+        )}`;
+        const targetBase = `${semver.major(baseVersion)}.${semver.minor(
+          baseVersion
+        )}.${semver.patch(baseVersion)}`;
 
         if (rcBase === targetBase) {
           // 如果 rc 版本的基础版本号与目标版本号相同，递增 rc 序号
@@ -468,8 +476,9 @@ class ReleaseExecutor {
     // 检查版本是否已存在
     const versionToCheck =
       config.version || VersionDetector.getCurrentVersion();
-    const versionExists =
-      await VersionChecker.checkVersionExists(versionToCheck);
+    const versionExists = await VersionChecker.checkVersionExists(
+      versionToCheck
+    );
 
     if (versionExists) {
       Logger.warning(`版本 ${versionToCheck} 已存在于 npm registry`);
@@ -493,78 +502,26 @@ class ReleaseExecutor {
       CommandExecutor.run("release-it", releaseArgs);
 
       const finalVersion = VersionDetector.getCurrentVersion();
-      Logger.success("预发布版本发布成功");
 
-      return {
-        success: true,
-        version: finalVersion,
-        skipped: false,
-        isPrerelease: true,
-      };
-    } catch (error) {
-      Logger.warning("release-it 执行失败，检查是否为版本冲突问题...");
+      // 验证版本是否成功发布到 npm registry
+      Logger.info("验证版本是否成功发布到 npm registry...");
+      const publishSuccess = await VersionChecker.checkVersionExists(
+        finalVersion
+      );
 
-      // 检查版本是否实际上已经发布成功
-      const actuallyExists =
-        await VersionChecker.checkVersionExists(versionToCheck);
-
-      if (actuallyExists) {
-        Logger.success(
-          `版本 ${versionToCheck} 已成功发布到 npm registry（可能是 release-it 重试导致的错误）`
-        );
+      if (publishSuccess) {
+        Logger.success("预发布版本发布成功");
         return {
           success: true,
-          version: versionToCheck,
+          version: finalVersion,
           skipped: false,
           isPrerelease: true,
         };
       }
-
-      // 处理版本已存在的错误
-      if (error instanceof VersionAlreadyExistsError) {
-        Logger.warning("检测到版本已存在错误，重新验证版本状态...");
-
-        if (actuallyExists) {
-          Logger.success(
-            `版本 ${versionToCheck} 确实已存在于 npm registry，标记为成功完成`
-          );
-          return {
-            success: true,
-            version: versionToCheck,
-            skipped: true,
-            isPrerelease: true,
-          };
-        }
-        Logger.error("版本检查不一致，发布失败");
-        throw error;
-      }
-
-      // 检查错误信息是否包含版本已存在的提示
-      if (
-        error instanceof Error &&
-        (error.message.includes(
-          "cannot publish over the previously published versions"
-        ) ||
-          error.message.includes(
-            "You cannot publish over the previously published versions"
-          ))
-      ) {
-        Logger.warning("检测到 npm publish 版本冲突错误");
-
-        if (actuallyExists) {
-          Logger.success(
-            `版本 ${versionToCheck} 已成功发布到 npm registry（忽略 release-it 的重复发布错误）`
-          );
-          return {
-            success: true,
-            version: versionToCheck,
-            skipped: false,
-            isPrerelease: true,
-          };
-        }
-      }
-
-      // 其他错误直接抛出
+      Logger.error("版本更新成功但 npm 发布失败");
+      throw new Error(`版本 ${finalVersion} 未能成功发布到 npm registry`);
+    } catch (error) {
+      Logger.error("发布过程中出现错误");
       throw error;
     }
   }
@@ -590,8 +547,9 @@ class ReleaseExecutor {
     // 检查版本是否已存在
     const versionToCheck =
       config.version || VersionDetector.getCurrentVersion();
-    const versionExists =
-      await VersionChecker.checkVersionExists(versionToCheck);
+    const versionExists = await VersionChecker.checkVersionExists(
+      versionToCheck
+    );
 
     if (versionExists) {
       Logger.warning(`版本 ${versionToCheck} 已存在于 npm registry`);
@@ -615,79 +573,26 @@ class ReleaseExecutor {
       CommandExecutor.run("release-it", releaseArgs);
 
       const finalVersion = VersionDetector.getCurrentVersion();
-      Logger.success("正式版本发布成功");
 
-      return {
-        success: true,
-        version: finalVersion,
-        skipped: false,
-        isPrerelease: false,
-      };
-    } catch (error) {
-      Logger.warning("release-it 执行失败，检查是否为版本冲突问题...");
+      // 验证版本是否成功发布到 npm registry
+      Logger.info("验证版本是否成功发布到 npm registry...");
+      const publishSuccess = await VersionChecker.checkVersionExists(
+        finalVersion
+      );
 
-      // 检查版本是否实际上已经发布成功
-      const actuallyExists =
-        await VersionChecker.checkVersionExists(versionToCheck);
-
-      if (actuallyExists) {
-        Logger.success(
-          `版本 ${versionToCheck} 已成功发布到 npm registry（可能是 release-it 重试导致的错误）`
-        );
+      if (publishSuccess) {
+        Logger.success("正式版本发布成功");
         return {
           success: true,
-          version: versionToCheck,
+          version: finalVersion,
           skipped: false,
           isPrerelease: false,
         };
       }
-
-      // 处理版本已存在的错误
-      if (error instanceof VersionAlreadyExistsError) {
-        Logger.warning("检测到版本已存在错误，重新验证版本状态...");
-
-        if (actuallyExists) {
-          Logger.success(
-            `版本 ${versionToCheck} 确实已存在于 npm registry，标记为成功完成`
-          );
-          return {
-            success: true,
-            version: versionToCheck,
-            skipped: true,
-            isPrerelease: false,
-          };
-        }
-
-        Logger.error("版本检查不一致，发布失败");
-        throw error;
-      }
-
-      // 检查错误信息是否包含版本已存在的提示
-      if (
-        error instanceof Error &&
-        (error.message.includes(
-          "cannot publish over the previously published versions"
-        ) ||
-          error.message.includes(
-            "You cannot publish over the previously published versions"
-          ))
-      ) {
-        Logger.warning("检测到 npm publish 版本冲突错误");
-
-        if (actuallyExists) {
-          Logger.success(
-            `版本 ${versionToCheck} 已成功发布到 npm registry（忽略 release-it 的重复发布错误）`
-          );
-          return {
-            success: true,
-            version: versionToCheck,
-            skipped: false,
-            isPrerelease: false,
-          };
-        }
-      }
-
-      // 其他错误直接抛出
+      Logger.error("版本更新成功但 npm 发布失败");
+      throw new Error(`版本 ${finalVersion} 未能成功发布到 npm registry`);
+    } catch (error) {
+      Logger.error("发布过程中出现错误");
       throw error;
     }
   }
@@ -941,8 +846,9 @@ async function main(): Promise<void> {
         versionToCheck = config.version || VersionDetector.getCurrentVersion();
       }
 
-      const result =
-        await VersionChecker.checkVersionStandalone(versionToCheck);
+      const result = await VersionChecker.checkVersionStandalone(
+        versionToCheck
+      );
 
       // 根据检查结果设置退出码（兼容原 shell 脚本的行为）
       process.exit(result.exists ? 0 : 1);

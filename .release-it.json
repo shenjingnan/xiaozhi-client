@@ -15,12 +15,11 @@
     "releaseNotes": "npx conventional-changelog -p conventionalcommits -r 2"
   },
   "npm": {
-    "publish": true,
-    "publishArgs": ["--access", "public"]
+    "publish": false
   },
   "hooks": {
     "before:init": ["pnpm audit --audit-level moderate"],
-    "after:bump": "npx conventional-changelog -p conventionalcommits -i CHANGELOG.md -s",
+    "after:bump": ["npx conventional-changelog -p conventionalcommits -i CHANGELOG.md -s", "npm publish --access public"],
     "after:release": "echo \"🎉 Release v${version} completed successfully!\""
   },
   "plugins": {
