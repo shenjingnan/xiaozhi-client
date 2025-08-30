@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version_type:
-        description: "版本类型"
+        description: "preRelease"
         required: true
         default: "beta"
         type: choice
@@ -93,6 +93,6 @@ jobs:
           fi
 
           echo "📋 执行命令: $RELEASE_CMD"
-         
+
           # 执行发布命令
           # eval $RELEASE_CMD

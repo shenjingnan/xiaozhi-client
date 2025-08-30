@@ -1,16 +1,16 @@
 {
   "git": {
-    "requireCleanWorkingDir": true,
-    "requireUpstream": true,
-    "commit": true,
-    "tag": true,
-    "push": true
+    "requireCleanWorkingDir": false,
+    "requireUpstream": false,
+    "commit": false,
+    "tag": false,
+    "push": false
   },
   "github": {
     "release": false
   },
   "npm": {
-    "publish": true
+    "publish": false
   },
   "hooks": {
     "before:init": ["pnpm audit --audit-level moderate"],
