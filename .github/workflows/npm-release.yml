@@ -6,7 +6,7 @@ on:
       version_type:
         description: "版本类型"
         required: true
-        default: "beta"
+        default: "测试版"
         type: choice
         options:
           - "正式版"
