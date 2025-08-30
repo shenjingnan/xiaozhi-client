@@ -4,7 +4,7 @@
     "requireUpstream": true,
     "commit": true,
     "tag": false,
-    "push": false
+    "push": true
   },
   "github": {
     "release": false
