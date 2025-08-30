@@ -15,11 +15,12 @@ vi.mock("sonner", () => ({
     success: vi.fn(),
     error: vi.fn(),
     info: vi.fn(),
+    dismiss: vi.fn(),
   },
 }));
 
 // Mock status store
-const mockRestartStatus = { current: null };
+const mockRestartStatus = { current: null as any };
 const mockRestartPollingStatus = {
   current: {
     enabled: false,
@@ -79,8 +80,7 @@ describe("useRestartNotifications", () => {
       expect(toast.success).toHaveBeenCalledWith(
         "服务重启成功！重连检查完成 (5次检查)",
         expect.objectContaining({
-          id: "restart-status",
-          duration: 4000,
+          id: "restart-status-success",
           description: "服务已恢复正常运行",
         })
       );
@@ -109,12 +109,8 @@ describe("useRestartNotifications", () => {
       expect(toast.error).toHaveBeenCalledWith(
         "连接超时",
         expect.objectContaining({
-          id: "restart-status",
-          duration: 6000,
+          id: "restart-status-failed",
           description: "重连检查超时 (60/60次)",
-          action: expect.objectContaining({
-            label: "重试",
-          }),
         })
       );
     });

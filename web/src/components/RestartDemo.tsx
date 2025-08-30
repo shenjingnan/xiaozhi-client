@@ -19,14 +19,10 @@ import {
   useConnectionStatus,
   useRestartPollingStatus,
   useRestartStatus,
-  useStatusStore,
 } from "@/stores/status";
 import { RestartButton } from "./RestartButton";
 
 export function RestartDemo() {
-  const {
-    loading: { isRestarting },
-  } = useStatusStore();
   const restartPollingStatus = useRestartPollingStatus();
   const restartStatus = useRestartStatus();
   const isConnected = useConnectionStatus();
