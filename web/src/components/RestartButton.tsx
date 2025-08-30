@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { useWebSocket } from "@/hooks/useWebSocket";
-import { useStatusStore } from "@/stores";
-import { RefreshCw } from "lucide-react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { useRestartPollingStatus, useStatusStore } from "@/stores/status";
+import clsx from "clsx";
+import {
+  LoaderCircleIcon,
+  PowerIcon,
+} from "lucide-react";
 
 /**
  * 重启状态接口
@@ -52,19 +53,55 @@ export function RestartButton({
   restartingText = "重启中...",
   defaultText = "重启服务",
 }: RestartButtonProps) {
-  const { loading: { isRestarting }, restartStatus, restartService } = useStatusStore();
+  const {
+    loading: { isRestarting },
+    restartService,
+  } = useStatusStore();
+  const restartPollingStatus = useRestartPollingStatus();
+
+  // 处理重启点击事件
+  const handleRestart = async () => {
+    try {
+      // 如果提供了 onRestart 回调，优先使用它（向后兼容）
+      if (onRestart) {
+        await onRestart();
+      } else {
+        // 否则使用新的 restartService 方法
+        await restartService();
+      }
+    } catch (error) {
+      console.error("[RestartButton] 重启失败:", error);
+    }
+  };
+
+  // 计算显示文本
+  const getDisplayText = () => {
+    if (!isRestarting) {
+      return defaultText;
+    }
+
+    // 如果重启轮询正在进行，显示进度信息
+    if (restartPollingStatus.enabled && restartPollingStatus.startTime) {
+      return "重连中...";
+    }
+
+    return restartingText;
+  };
 
   return (
     <Button
       type="button"
-      onClick={restartService}
+      onClick={handleRestart}
       variant={variant}
       disabled={isRestarting || disabled}
-      className={`flex items-center gap-2 ${className}`}
+      className={clsx("flex items-center gap-2 w-[120px]", className)}
     >
-      <RefreshCw className={`h-4 w-4 ${isRestarting ? "animate-spin" : ""}`} />
-      {JSON.stringify(restartStatus)}
-      {isRestarting ? restartingText : defaultText}
+      {!isRestarting ? (
+        <PowerIcon className="size-4" />
+      ) : (
+        <LoaderCircleIcon className="size-4 animate-spin" />
+      )}
+      {getDisplayText()}
     </Button>
   );
 }
