@@ -34,6 +34,9 @@ jobs:
   npm-release:
     name: NPM 发布
     runs-on: ubuntu-latest
+    concurrency:
+      group: npm-release-${{ github.ref }}
+      cancel-in-progress: false
     permissions:
       contents: write
       issues: write
