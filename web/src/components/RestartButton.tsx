@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useWebSocket } from "@/hooks/useWebSocket";
+import { useStatusStore } from "@/stores";
 import { RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -51,53 +52,18 @@ export function RestartButton({
   restartingText = "重启中...",
   defaultText = "重启服务",
 }: RestartButtonProps) {
-  const [isRestarting, setIsRestarting] = useState(false);
-  const { restartStatus, restartService } = useWebSocket();
-
-  // 监听重启状态变化
-  useEffect(() => {
-    if (restartStatus) {
-      if (
-        restartStatus.status === "completed" ||
-        restartStatus.status === "failed"
-      ) {
-        // 重启完成或失败时，清除 loading 状态
-        setIsRestarting(false);
-      }
-    }
-  }, [restartStatus]);
-
-  const handleRestart = async () => {
-    // if (!onRestart) return;
-    if (isRestarting) {
-      return;
-    }
-    restartService();
-
-    setIsRestarting(true);
-    try {
-      if (onRestart) {
-        await onRestart();
-      }
-      // 成功时不再立即清除 loading 状态，等待 restartStatus 更新
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "重启服务时发生错误"
-      );
-      // 错误时立即清除 loading 状态
-      setIsRestarting(false);
-    }
-  };
+  const { loading: { isRestarting }, restartStatus, restartService } = useStatusStore();
 
   return (
     <Button
       type="button"
-      onClick={handleRestart}
+      onClick={restartService}
       variant={variant}
       disabled={isRestarting || disabled}
       className={`flex items-center gap-2 ${className}`}
     >
       <RefreshCw className={`h-4 w-4 ${isRestarting ? "animate-spin" : ""}`} />
+      {JSON.stringify(restartStatus)}
       {isRestarting ? restartingText : defaultText}
     </Button>
   );
