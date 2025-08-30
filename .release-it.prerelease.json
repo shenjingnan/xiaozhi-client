@@ -1,21 +1,20 @@
 {
   "git": {
-    "commit": false,
+    "requireCleanWorkingDir": true,
+    "requireUpstream": true,
+    "commit": true,
     "tag": false,
-    "push": false,
-    "requireCleanWorkingDir": false,
-    "requireUpstream": false
+    "push": false
   },
   "github": {
     "release": false
   },
   "npm": {
-    "publish": true,
-    "timeout": 600000,
-    "publishArgs": ["--access", "public", "--tag", "beta"]
+    "publish": true
   },
   "hooks": {
     "before:init": ["pnpm audit --audit-level moderate"],
-    "after:release": "echo \"🎉 Prerelease v${version} published to npm successfully!\""
+    "after:bump": ["pnpm run build"],
+    "after:release": "echo \"🎉 预发布版本 v${version} 发布完成！\""
   }
 }

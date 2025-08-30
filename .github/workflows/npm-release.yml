@@ -3,15 +3,21 @@ name: NPM 发布
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: "发布版本号 (例如: 1.0.0, 1.0.0-beta.1, patch, minor, major)"
-        required: false
-        default: ""
-        type: string
-      dry_run:
-        description: "预演模式（仅预览，不实际发布）"
+      release_type:
+        description: "发布类型"
         required: true
-        default: false
+        default: "beta"
+        type: choice
+        options:
+          - "release-patch"      # 正式版 patch
+          - "release-minor"      # 正式版 minor
+          - "release-major"      # 正式版 major
+          - "beta"               # Beta 预发布
+          - "rc"                 # RC 预发布
+      dry_run:
+        description: "预演模式"
+        required: true
+        default: true
         type: boolean
 
 permissions:
@@ -21,6 +27,9 @@ jobs:
   npm-release:
     name: NPM 发布
     runs-on: ubuntu-latest
+    concurrency:
+      group: npm-release-${{ github.ref }}
+      cancel-in-progress: false
     permissions:
       contents: write
       issues: write
@@ -47,24 +56,48 @@ jobs:
       - name: 安装依赖
         run: pnpm install --frozen-lockfile
 
-      - name: 执行 NPM 发布流程
+      - name: 配置 Git 用户
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: 解析发布参数
+        id: parse-release
+        run: |
+          RELEASE_TYPE="${{ github.event.inputs.release_type }}"
+
+          if [[ "$RELEASE_TYPE" == "release-"* ]]; then
+            # 正式版发布
+            VERSION_TYPE="release"
+            VERSION_INCREMENT="${RELEASE_TYPE#release-}"
+            CONFIG_FILE=".release-it.json"
+          else
+            # 预发布版
+            VERSION_TYPE="$RELEASE_TYPE"
+            VERSION_INCREMENT="release"
+            CONFIG_FILE=".release-it.prerelease.json"
+          fi
+
+          echo "version_type=$VERSION_TYPE" >> $GITHUB_OUTPUT
+          echo "version_increment=$VERSION_INCREMENT" >> $GITHUB_OUTPUT
+          echo "config_file=$CONFIG_FILE" >> $GITHUB_OUTPUT
+
+      - name: 发布
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          # 构建发布脚本参数
-          RELEASE_ARGS=""
+          RELEASE_CMD="npx release-it"
 
-          # 添加版本号参数
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            RELEASE_ARGS="$RELEASE_ARGS ${{ github.event.inputs.version }}"
+          if [ "${{ steps.parse-release.outputs.version_type }}" != "release" ]; then
+            RELEASE_CMD="$RELEASE_CMD --preRelease=${{ steps.parse-release.outputs.version_type }} --config ${{ steps.parse-release.outputs.config_file }}"
+          else
+            RELEASE_CMD="$RELEASE_CMD ${{ steps.parse-release.outputs.version_increment }} --config ${{ steps.parse-release.outputs.config_file }}"
           fi
 
-          # 添加选项参数
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            RELEASE_ARGS="$RELEASE_ARGS --dry-run"
+            RELEASE_CMD="$RELEASE_CMD --dry-run"
           fi
 
-          echo "🚀 执行发布脚本: tsx scripts/npm-release.ts$RELEASE_ARGS"
-          tsx scripts/npm-release.ts$RELEASE_ARGS
+          eval $RELEASE_CMD

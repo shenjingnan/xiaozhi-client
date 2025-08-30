@@ -201,7 +201,7 @@ describe("CLI --info 和 --version-info 命令测试", () => {
       expect(result.exitCode).toBe(0);
 
       const lines = result.stdout.split("\n");
-      expect(lines[0]).toMatch(/^xiaozhi-client v\d+\.\d+\.\d+$/);
+      expect(lines[0]).toMatch(/^xiaozhi-client v\d+\.\d+\.\d+(?:-[\w.-]+)?$/);
       expect(lines[1]).toBe("小智 AI 客户端 命令行工具");
       expect(lines[2]).toMatch(/^Node\.js: v\d+\.\d+\.\d+$/);
       expect(lines[3]).toMatch(/^Platform: \w+ \w+$/);
@@ -323,7 +323,7 @@ describe("CLI --info 和 --version-info 命令测试", () => {
       // 测试 --version 仍然正常工作
       const versionResult = await runCLI(["--version"]);
       expect(versionResult.exitCode).toBe(0);
-      expect(versionResult.stdout).toMatch(/^\d+\.\d+\.\d+$/);
+      expect(versionResult.stdout).toMatch(/^\d+\.\d+\.\d+(?:-[\w.-]+)?$/);
 
       // 测试 --help 仍然正常工作
       const helpResult = await runCLI(["--help"]);
@@ -484,7 +484,7 @@ describe("CLI --info 和 --version-info 命令测试", () => {
       const output = result.stdout;
 
       // 检查版本行格式
-      expect(output).toMatch(/xiaozhi-client v\d+\.\d+\.\d+/);
+      expect(output).toMatch(/xiaozhi-client v\d+\.\d+\.\d+(?:-[\w.-]+)?/);
       expect(output).toContain("小智 AI 客户端 命令行工具");
       expect(output).toMatch(/Node\.js: v\d+\.\d+\.\d+/);
       expect(output).toMatch(/Platform: \w+ \w+/);
@@ -593,7 +593,9 @@ describe("CLI --info 和 --version-info 命令测试", () => {
 
       for (const result of results) {
         expect(result.exitCode).toBe(0);
-        expect(result.stdout).toMatch(/xiaozhi-client v\d+\.\d+\.\d+/);
+        expect(result.stdout).toMatch(
+          /xiaozhi-client v\d+\.\d+\.\d+(?:-[\w.-]+)?/
+        );
       }
     }, 30000);
   });
