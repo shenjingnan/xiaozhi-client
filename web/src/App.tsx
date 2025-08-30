@@ -18,7 +18,7 @@ function App() {
       </Routes>
 
       {/* Toast 通知容器 */}
-      <Toaster />
+      <Toaster richColors toastOptions={{}} />
     </WebSocketProvider>
   );
 }
