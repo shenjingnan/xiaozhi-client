@@ -902,7 +902,7 @@ async function main(): Promise<void> {
 
   CommandExecutor.run("npm", [
     "version",
-    versionToCheck,
+    '1.6.4-beta.23',
     "--no-git-tag-version",
   ]);
 
