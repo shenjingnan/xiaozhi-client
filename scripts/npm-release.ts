@@ -491,35 +491,45 @@ class ReleaseExecutor {
       };
     }
 
-    // 执行发布
+    // 执行预发布版本发布（直接使用 npm 命令）
     Logger.package("开始发布新版本到 npm");
-    const releaseArgs = ReleaseExecutor.buildReleaseArgs(config, true);
-
-    Logger.rocket("开始执行预发布版本 release-it...");
-    Logger.info(`参数: ${releaseArgs.join(" ")}`);
+    Logger.info(`目标版本: ${versionToCheck}`);
 
     try {
-      CommandExecutor.run("release-it", releaseArgs);
+      // 步骤1: 更新 package.json 版本号（不创建 Git 标签）
+      Logger.info("更新 package.json 版本号...");
+      CommandExecutor.run("npm", [
+        "version",
+        versionToCheck,
+        "--no-git-tag-version",
+      ]);
 
-      const finalVersion = VersionDetector.getCurrentVersion();
+      // 步骤2: 发布到 npm（使用 beta 标签）
+      Logger.info("发布到 npm registry...");
+      CommandExecutor.run("pnpm", [
+        "publish",
+        "--tag",
+        "beta",
+        "--no-git-checks",
+      ]);
 
       // 验证版本是否成功发布到 npm registry
       Logger.info("验证版本是否成功发布到 npm registry...");
       const publishSuccess = await VersionChecker.checkVersionExists(
-        finalVersion
+        versionToCheck
       );
 
       if (publishSuccess) {
         Logger.success("预发布版本发布成功");
         return {
           success: true,
-          version: finalVersion,
+          version: versionToCheck,
           skipped: false,
           isPrerelease: true,
         };
       }
-      Logger.error("版本更新成功但 npm 发布失败");
-      throw new Error(`版本 ${finalVersion} 未能成功发布到 npm registry`);
+      Logger.error("版本发布失败，npm registry 中未找到该版本");
+      throw new Error(`版本 ${versionToCheck} 未能成功发布到 npm registry`);
     } catch (error) {
       Logger.error("发布过程中出现错误");
       throw error;
@@ -604,8 +614,26 @@ class ReleaseExecutor {
     config: ReleaseConfig,
     isPrerelease: boolean
   ): ReleaseResult {
-    // 使用统一的参数构建方法，然后添加预演模式特定的参数
-    const releaseArgs = ReleaseExecutor.buildReleaseArgs(config, isPrerelease);
+    if (isPrerelease) {
+      // 预发布版本的预演模式：只显示将要执行的命令，不实际执行
+      Logger.rocket("开始执行预发布版本预演模式...");
+      const versionToCheck =
+        config.version || VersionDetector.getCurrentVersion();
+
+      Logger.info("预演模式 - 将要执行的命令:");
+      Logger.info(`  1. npm version ${versionToCheck} --no-git-tag-version`);
+      Logger.info("  2. pnpm publish --tag beta --no-git-checks");
+      Logger.info("预演模式完成，未实际执行任何命令");
+
+      return {
+        success: true,
+        version: versionToCheck,
+        skipped: false,
+        isPrerelease: true,
+      };
+    }
+    // 正式版本的预演模式：使用 release-it
+    const releaseArgs = ReleaseExecutor.buildReleaseArgs(config, false);
 
     // 在开头插入 --dry-run 参数
     releaseArgs.unshift("--dry-run");
@@ -613,11 +641,7 @@ class ReleaseExecutor {
     // 添加 --npm.publish=false 以确保预演模式不会实际发布
     releaseArgs.push("--npm.publish=false");
 
-    Logger.rocket(
-      `开始执行${
-        isPrerelease ? "预发布" : "正式"
-      }版本 release-it（预演模式）...`
-    );
+    Logger.rocket("开始执行正式版本 release-it（预演模式）...");
     Logger.info(`参数: ${releaseArgs.join(" ")}`);
 
     CommandExecutor.run("release-it", releaseArgs);
@@ -626,12 +650,12 @@ class ReleaseExecutor {
       success: true,
       version: config.version || "dry-run",
       skipped: false,
-      isPrerelease,
+      isPrerelease: false,
     };
   }
 
   /**
-   * 构建 release-it 参数
+   * 构建 release-it 参数（仅用于正式版本）
    */
   static buildReleaseArgs(
     config: ReleaseConfig,
@@ -639,14 +663,14 @@ class ReleaseExecutor {
   ): string[] {
     const args: string[] = [];
 
-    // 根据版本类型选择对应的配置文件
+    // 预发布版本不再使用 release-it
     if (isPrerelease) {
-      Logger.info("使用预发布版本配置文件: .release-it.prerelease.json");
-      args.push("--config", ".release-it.prerelease.json");
-    } else {
-      Logger.info("使用正式版本配置文件: .release-it.json");
-      args.push("--config", ".release-it.json");
+      throw new Error("预发布版本不应该使用 release-it，请检查代码逻辑");
     }
+
+    // 正式版本使用 .release-it.json 配置文件
+    Logger.info("使用正式版本配置文件: .release-it.json");
+    args.push("--config", ".release-it.json");
 
     if (config.version) {
       Logger.info(`使用指定版本号: ${config.version}`);
