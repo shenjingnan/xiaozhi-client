@@ -10,8 +10,7 @@
     "release": false
   },
   "npm": {
-    "publish": true,
-    "versionArgs": ["--no-git-tag-version"]
+    "publish": true
   },
   "hooks": {
     "before:init": ["pnpm audit --audit-level moderate"],
