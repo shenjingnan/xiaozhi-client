@@ -47,7 +47,7 @@ jobs:
       - name: 安装依赖
         run: pnpm install --frozen-lockfile
 
-      - name: 执行 NPM 发布流程
+      - name: 执行 NPM 发布流程999
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -66,5 +66,5 @@ jobs:
             RELEASE_ARGS="$RELEASE_ARGS --dry-run"
           fi
 
-          echo "🚀 执行发布脚本: tsx scripts/npm-release.ts$RELEASE_ARGS"
-          tsx scripts/npm-release.ts$RELEASE_ARGS
+          echo "🚀 执行发布脚本: pnpm run release$RELEASE_ARGS"
+          pnpm run release$RELEASE_ARGS

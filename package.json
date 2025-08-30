@@ -39,6 +39,7 @@
     "docker:update-version": "node scripts/update-dockerfile-version.js",
     "publish": "npm publish",
     "publish:beta": "tsx scripts/publish-beta.ts",
+    "release": "tsx scripts/npm-release.ts",
     "example": "node --loader ts-node/esm"
   },
   "keywords": [
