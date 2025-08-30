@@ -6,12 +6,12 @@ on:
       version_type:
         description: "版本类型"
         required: true
-        default: "测试版"
+        default: "beta"
         type: choice
         options:
-          - "正式版"
-          - "测试版"
-          - "候选版"
+          - "release"
+          - "beta"
+          - "rc"
       version_increment:
         description: "版本增量"
         required: true
@@ -85,4 +85,6 @@ jobs:
 
           echo "🚀 执行发布脚本: pnpm run release$RELEASE_ARGS"
 
-          npm run release$RELEASE_ARGS
+          # npm run release$RELEASE_ARGS
+
+          npx release-it --config .release-it.prerelease.json --preRelease=beta --dry-run

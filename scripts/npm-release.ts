@@ -16,7 +16,7 @@ const rootDir = join(__dirname, "..");
  */
 interface ReleaseConfig {
   version?: string;
-  versionType?: "正式版" | "测试版" | "候选版";
+  versionType?: "release" | "beta" | "rc";
   versionIncrement?: "patch" | "minor" | "major";
   isDryRun: boolean;
   prereleaseOnly: boolean;
@@ -358,7 +358,7 @@ class VersionCalculator {
    * 计算目标版本号
    */
   static async calculateTargetVersion(
-    versionType: "正式版" | "测试版" | "候选版",
+    versionType: "release" | "beta" | "rc",
     versionIncrement: "patch" | "minor" | "major"
   ): Promise<string> {
     Logger.info(`计算目标版本: ${versionType} + ${versionIncrement}`);
@@ -367,10 +367,10 @@ class VersionCalculator {
 
     let targetVersion: string;
 
-    if (versionType === "正式版") {
+    if (versionType === "release") {
       // 正式版：基于最新正式版本递增
       targetVersion = semver.inc(latest, versionIncrement)!;
-    } else if (versionType === "测试版") {
+    } else if (versionType === "beta") {
       // beta 版本逻辑
       const baseVersion = semver.inc(latest, versionIncrement)!;
 
@@ -395,7 +395,7 @@ class VersionCalculator {
         // 没有 beta 版本，创建新的 beta.0
         targetVersion = `${baseVersion}-beta.0`;
       }
-    } else {
+    } else if (versionType === "rc") {
       // rc 版本逻辑
       const baseVersion = semver.inc(latest, versionIncrement)!;
 
@@ -613,7 +613,7 @@ class ReleaseExecutor {
     }
 
     // 设置环境变量，让 release-it 配置知道这是正式版
-    process.env.VERSION_TYPE = "正式版";
+    process.env.VERSION_TYPE = "release";
 
     // 执行发布
     Logger.package("开始发布正式版本");
@@ -689,7 +689,7 @@ class ReleaseExecutor {
 
     // 正式版本的预演模式：使用 release-it
     // 设置环境变量
-    process.env.VERSION_TYPE = "正式版";
+    process.env.VERSION_TYPE = "release";
 
     const releaseArgs = ReleaseExecutor.buildReleaseArgs(config, false);
 
@@ -992,10 +992,10 @@ async function main(): Promise<void> {
       process.env.VERSION_TYPE = config.versionType;
       Logger.info(`设置环境变量 VERSION_TYPE: ${config.versionType}`);
     } else if (versionInfo.isPrerelease) {
-      process.env.VERSION_TYPE = "测试版"; // 默认预发布为测试版
+      process.env.VERSION_TYPE = "beta"; // 默认预发布为测试版
       Logger.info("设置环境变量 VERSION_TYPE: 测试版（默认）");
     } else {
-      process.env.VERSION_TYPE = "正式版";
+      process.env.VERSION_TYPE = "release";
       Logger.info("设置环境变量 VERSION_TYPE: 正式版");
     }
 
