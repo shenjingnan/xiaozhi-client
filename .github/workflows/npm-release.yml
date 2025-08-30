@@ -84,5 +84,5 @@ jobs:
           fi
 
           echo "🚀 执行发布脚本: pnpm run release$RELEASE_ARGS"
-          npm version 1.6.4-beta.18 --no-git-tag-version && pnpm publish --tag beta --no-git-checks && git checkout package.json
+          npm version 1.6.4-beta.19 --no-git-tag-version && pnpm publish --tag beta --no-git-checks && git checkout package.json
           # pnpm run release$RELEASE_ARGS
