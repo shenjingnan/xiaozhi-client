@@ -1,10 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useRestartPollingStatus, useStatusStore } from "@/stores/status";
 import clsx from "clsx";
-import {
-  LoaderCircleIcon,
-  PowerIcon,
-} from "lucide-react";
+import { LoaderCircleIcon, PowerIcon } from "lucide-react";
 
 /**
  * 重启状态接口
@@ -19,8 +16,6 @@ export interface RestartStatus {
  * RestartButton 组件属性接口
  */
 export interface RestartButtonProps {
-  /** 重启回调函数 */
-  onRestart?: () => Promise<void> | void;
   /** 重启状态 */
   restartStatus?: RestartStatus;
   /** 是否禁用按钮 */
@@ -46,7 +41,6 @@ export interface RestartButtonProps {
  * 基于 ConfigEditor.tsx 中的重启服务功能实现
  */
 export function RestartButton({
-  onRestart,
   disabled = false,
   variant = "outline",
   className = "",
@@ -62,13 +56,7 @@ export function RestartButton({
   // 处理重启点击事件
   const handleRestart = async () => {
     try {
-      // 如果提供了 onRestart 回调，优先使用它（向后兼容）
-      if (onRestart) {
-        await onRestart();
-      } else {
-        // 否则使用新的 restartService 方法
-        await restartService();
-      }
+      await restartService();
     } catch (error) {
       console.error("[RestartButton] 重启失败:", error);
     }
