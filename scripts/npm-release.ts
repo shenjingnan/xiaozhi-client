@@ -917,7 +917,7 @@ async function main(): Promise<void> {
     ".release-it.prerelease.json",
     "--preRelease=beta",
     "1.6.4-beta.24",
-    "--dry-run",
+    // "--dry-run",
   ]);
 
   // // 步骤2: 确定发布标签
