@@ -2,6 +2,7 @@
  * 路径处理工具
  */
 
+import { realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -191,9 +192,20 @@ export class PathUtils {
    * 获取可执行文件路径
    */
   static getExecutablePath(name: string): string {
-    // 直接基于当前执行的 CLI 脚本位置计算
-    const cliPath = process.argv[1]; // 当前执行的脚本路径
-    const distDir = path.dirname(cliPath); // 获取 dist 目录
+    // 获取当前执行的 CLI 脚本路径
+    const cliPath = process.argv[1];
+
+    // 解析符号链接，获取真实路径
+    let realCliPath: string;
+    try {
+      realCliPath = realpathSync(cliPath);
+    } catch (error) {
+      // 如果无法解析符号链接，使用原路径
+      realCliPath = cliPath;
+    }
+
+    // 获取 dist 目录
+    const distDir = path.dirname(realCliPath);
     return path.join(distDir, `${name}.js`);
   }
 
