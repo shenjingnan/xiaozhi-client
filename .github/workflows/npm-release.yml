@@ -41,6 +41,20 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: 验证
+        run: |
+          echo "当前分支: ${{ github.ref_name }}"
+          echo "发布类型: ${{ github.event.inputs.release_type }}"
+          echo "预演模式: ${{ github.event.inputs.dry_run }}"
+
+          # 检查是否在主分支
+          if [[ "${{ github.event.inputs.release_type }}" == "release-"* ]] && [ "${{ github.ref_name }}" != "main" ] && [ "${{ github.ref_name }}" != "master" ]; then
+            if [ "${{ github.event.inputs.dry_run }}" != "true" ]; then
+              echo "❌ 正式版发布必须在主分支进行"
+              exit 1
+            fi
+          fi
+
       - name: 安装 pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -70,17 +84,14 @@ jobs:
             # 正式版发布
             VERSION_TYPE="release"
             VERSION_INCREMENT="${RELEASE_TYPE#release-}"
-            CONFIG_FILE=".release-it.json"
           else
             # 预发布版
             VERSION_TYPE="$RELEASE_TYPE"
             VERSION_INCREMENT="release"
-            CONFIG_FILE=".release-it.prerelease.json"
           fi
 
           echo "version_type=$VERSION_TYPE" >> $GITHUB_OUTPUT
           echo "version_increment=$VERSION_INCREMENT" >> $GITHUB_OUTPUT
-          echo "config_file=$CONFIG_FILE" >> $GITHUB_OUTPUT
 
       - name: 发布
         env:
@@ -91,9 +102,9 @@ jobs:
           RELEASE_CMD="npx release-it"
 
           if [ "${{ steps.parse-release.outputs.version_type }}" != "release" ]; then
-            RELEASE_CMD="$RELEASE_CMD --preRelease=${{ steps.parse-release.outputs.version_type }} --config ${{ steps.parse-release.outputs.config_file }}"
+            RELEASE_CMD="$RELEASE_CMD --preRelease=${{ steps.parse-release.outputs.version_type }}"
           else
-            RELEASE_CMD="$RELEASE_CMD ${{ steps.parse-release.outputs.version_increment }} --config ${{ steps.parse-release.outputs.config_file }}"
+            RELEASE_CMD="$RELEASE_CMD ${{ steps.parse-release.outputs.version_increment }}"
           fi
 
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
