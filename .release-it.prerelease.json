@@ -10,8 +10,7 @@
     "push": true
   },
   "github": {
-    "release": false,
-    "releaseName": "🚀 v${version}"
+    "release": false
   },
   "npm": {
     "publish": true,
@@ -20,7 +19,7 @@
   "hooks": {
     "before:init": ["pnpm audit --audit-level moderate"],
     "after:bump": ["pnpm run build"],
-    "before:release": "echo \"📦 准备发布正式版本 v${version}\"",
-    "after:release": "echo \"🎉 正式版本 v${version} 发布完成！\""
+    "before:release": "echo \"📦 准备发布预发布版本 v${version}\"",
+    "after:release": "echo \"🎉 预发布版本 v${version} 发布完成！\""
   }
 }
