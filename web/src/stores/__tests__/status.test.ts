@@ -124,7 +124,9 @@ describe("Status Store", () => {
       await store.restartService();
 
       expect(apiClient.restartService).toHaveBeenCalled();
-      expect(useStatusStore.getState().loading.isRestarting).toBe(false);
+      // 新的逻辑：重启后会启动轮询，isRestarting 保持为 true 直到重连成功或失败
+      expect(useStatusStore.getState().loading.isRestarting).toBe(true);
+      expect(useStatusStore.getState().restartPolling.enabled).toBe(true);
     });
 
     it("应该正确处理 API 错误", async () => {

@@ -1,17 +1,19 @@
 # RestartButton 组件
 
-一个独立的、可复用的重启按钮组件，基于 ConfigEditor.tsx 中的重启服务功能实现。
+一个独立的、可复用的重启按钮组件，集成了完整的重启服务功能和状态管理。
 
 ## 功能特性
 
 - ✅ 点击按钮触发重启服务
 - ✅ 显示重启进度状态（loading 动画）
-- ✅ 处理重启成功/失败的状态反馈
+- ✅ 异步轮询检查重连状态
+- ✅ 智能显示重启/重连进度文本
 - ✅ 在重启过程中禁用按钮防止重复点击
-- ✅ 使用 RefreshCw 图标和 animate-spin 动画
+- ✅ 使用 PowerIcon 和 LoaderCircleIcon 图标
 - ✅ 完整的 TypeScript 类型支持
-- ✅ 可自定义文本、样式和行为
+- ✅ 可自定义文本和样式
 - ✅ 完整的测试覆盖
+- ✅ 集成 status store 状态管理
 
 ## 基本用法
 
@@ -19,44 +21,24 @@
 import { RestartButton } from "@/components/RestartButton";
 
 function MyComponent() {
-  const handleRestart = async () => {
-    // 你的重启逻辑
-    await restartService();
-  };
-
   return (
-    <RestartButton onRestart={handleRestart} />
+    <RestartButton />
   );
 }
 ```
 
-## 带状态管理的用法
+## 自定义样式用法
 
 ```tsx
-import { RestartButton, type RestartStatus } from "@/components/RestartButton";
+import { RestartButton } from "@/components/RestartButton";
 
 function MyComponent() {
-  const [restartStatus, setRestartStatus] = useState<RestartStatus>();
-
-  const handleRestart = async () => {
-    setRestartStatus({ status: "restarting", timestamp: Date.now() });
-    
-    try {
-      await restartService();
-      setRestartStatus({ status: "completed", timestamp: Date.now() });
-    } catch (error) {
-      setRestartStatus({
-        status: "failed",
-        error: error.message,
-        timestamp: Date.now(),
-      });
-    }
-  };
-
   return (
     <RestartButton
-      onRestart={handleRestart}
-      restartStatus={restartStatus}
+      variant="default"
+      className="w-full"
+      defaultText="重新启动"
+      restartingText="正在重启..."
     />
   );
 }
@@ -66,9 +48,7 @@ function MyComponent() {
 
 ```tsx
 interface RestartButtonProps {
-  /** 重启回调函数 */
-  onRestart?: () => Promise<void> | void;
-  /** 重启状态 */
+  /** 重启状态（已废弃，组件内部自动管理） */
   restartStatus?: RestartStatus;
   /** 是否禁用按钮 */
   disabled?: boolean;
@@ -95,7 +75,6 @@ interface RestartStatus {
 
 ```tsx
 <RestartButton
-  onRestart={handleRestart}
   defaultText="重新启动"
   restartingText="正在重启..."
 />
@@ -104,84 +83,109 @@ interface RestartStatus {
 ### 不同样式变体
 
 ```tsx
-<RestartButton onRestart={handleRestart} variant="default" />
-<RestartButton onRestart={handleRestart} variant="secondary" />
-<RestartButton onRestart={handleRestart} variant="outline" />
+<RestartButton variant="default" />
+<RestartButton variant="secondary" />
+<RestartButton variant="outline" />
 ```
 
 ### 自定义样式
 
 ```tsx
 <RestartButton
-  onRestart={handleRestart}
   className="w-full bg-blue-500 hover:bg-blue-600"
 />
 ```
 
-## 在 ConfigEditor 中的使用
-
-可以直接替换 ConfigEditor 中的内联重启按钮实现：
+### 禁用状态
 
 ```tsx
-// 原来的实现
-{onRestart && (
-  <Button
-    type="button"
-    onClick={handleRestart}
-    variant="outline"
-    disabled={isRestarting}
-    className="flex items-center gap-2"
-  >
-    <RefreshCw className={`h-4 w-4 ${isRestarting ? "animate-spin" : ""}`} />
-    {isRestarting ? "重启中..." : "重启服务"}
-  </Button>
-)}
-
-// 使用新组件
-{onRestart && (
-  <RestartButton
-    onRestart={onRestart}
-    restartStatus={restartStatus}
-  />
-)}
+<RestartButton disabled />
 ```
 
-## 错误处理
+## 重启行为说明
 
-组件内部会自动处理错误：
-- 显示 toast 错误消息
-- 清除 loading 状态
-- 恢复按钮可用状态
+### 重启流程
 
-## 状态管理
+1. **点击按钮**：触发 `restartService()` 方法
+2. **发送重启请求**：向服务器发送重启命令
+3. **启动轮询检查**：开始检查服务重连状态
+4. **显示进度**：按钮显示"重启中..."或"重连中..."
+5. **完成或超时**：重连成功或达到最大尝试次数后结束
 
-组件支持两种状态管理方式：
+### 状态显示逻辑
 
-1. **内部状态**：组件内部管理 `isRestarting` 状态
-2. **外部状态**：通过 `restartStatus` prop 传入外部状态
+- **默认状态**：显示"重启服务"，使用 PowerIcon
+- **重启中**：显示"重启中..."，使用旋转的 LoaderCircleIcon
+- **重连中**：显示"重连中..."，使用旋转的 LoaderCircleIcon
 
-当提供 `restartStatus` 时，组件会监听状态变化并相应地更新 UI。
+### 集成的状态管理
+
+组件完全集成了 status store，自动处理：
+
+- **重启状态**：通过 `useStatusStore` 获取 `isRestarting` 状态
+- **轮询状态**：通过 `useRestartPollingStatus` 获取重连进度
+- **错误处理**：重启失败时在控制台记录错误日志
+- **通知系统**：配合 `useRestartNotifications` 显示用户通知
+
+## 依赖的 Hooks
+
+组件内部使用以下 hooks：
+
+- `useStatusStore()` - 获取重启状态和 restartService 方法
+- `useRestartPollingStatus()` - 获取重连轮询状态
 
 ## 测试
 
 组件包含完整的测试覆盖，包括：
+
 - 基本渲染测试
-- 交互行为测试
-- 状态管理测试
-- 错误处理测试
-- 自定义属性测试
+- 交互行为测试（点击调用 restartService）
+- 状态管理测试（重启状态显示）
+- 错误处理测试（重启失败处理）
+- 自定义属性测试（文本、样式等）
 
 运行测试：
+
 ```bash
 pnpm test RestartButton.test.tsx
 ```
 
-## 文件结构
+## 相关文件
 
-```
+```text
 web/src/components/
 ├── RestartButton.tsx          # 主组件
 ├── RestartButton.test.tsx     # 测试文件
-├── RestartButton.example.tsx  # 使用示例
 └── RestartButton.md          # 文档
+
+web/src/stores/
+└── status.ts                 # 状态管理 store
+
+web/src/hooks/
+└── useRestartNotifications.ts # 重启通知 hook
 ```
+
+## 迁移指南
+
+如果你之前使用的是带 `onRestart` prop 的版本，请按以下方式迁移：
+
+### 旧版本（已废弃）
+
+```tsx
+// ❌ 旧版本 - 不再支持
+<RestartButton onRestart={handleRestart} />
+```
+
+### 新版本
+
+```tsx
+// ✅ 新版本 - 推荐使用
+<RestartButton />
+```
+
+新版本的优势：
+
+- 自动集成状态管理，无需手动处理重启逻辑
+- 支持异步重连检查和进度显示
+- 集成通知系统，提供更好的用户体验
+- 更简洁的 API，减少样板代码

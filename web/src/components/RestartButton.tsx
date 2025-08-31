@@ -1,8 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { useWebSocket } from "@/hooks/useWebSocket";
-import { RefreshCw } from "lucide-react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { useRestartPollingStatus, useStatusStore } from "@/stores/status";
+import clsx from "clsx";
+import { LoaderCircleIcon, PowerIcon } from "lucide-react";
 
 /**
  * 重启状态接口
@@ -17,8 +16,6 @@ export interface RestartStatus {
  * RestartButton 组件属性接口
  */
 export interface RestartButtonProps {
-  /** 重启回调函数 */
-  onRestart?: () => Promise<void> | void;
   /** 重启状态 */
   restartStatus?: RestartStatus;
   /** 是否禁用按钮 */
@@ -44,49 +41,39 @@ export interface RestartButtonProps {
  * 基于 ConfigEditor.tsx 中的重启服务功能实现
  */
 export function RestartButton({
-  onRestart,
   disabled = false,
   variant = "outline",
   className = "",
   restartingText = "重启中...",
   defaultText = "重启服务",
 }: RestartButtonProps) {
-  const [isRestarting, setIsRestarting] = useState(false);
-  const { restartStatus, restartService } = useWebSocket();
+  const {
+    loading: { isRestarting },
+    restartService,
+  } = useStatusStore();
+  const restartPollingStatus = useRestartPollingStatus();
 
-  // 监听重启状态变化
-  useEffect(() => {
-    if (restartStatus) {
-      if (
-        restartStatus.status === "completed" ||
-        restartStatus.status === "failed"
-      ) {
-        // 重启完成或失败时，清除 loading 状态
-        setIsRestarting(false);
-      }
-    }
-  }, [restartStatus]);
-
+  // 处理重启点击事件
   const handleRestart = async () => {
-    // if (!onRestart) return;
-    if (isRestarting) {
-      return;
-    }
-    restartService();
-
-    setIsRestarting(true);
     try {
-      if (onRestart) {
-        await onRestart();
-      }
-      // 成功时不再立即清除 loading 状态，等待 restartStatus 更新
+      await restartService();
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "重启服务时发生错误"
-      );
-      // 错误时立即清除 loading 状态
-      setIsRestarting(false);
+      console.error("[RestartButton] 重启失败:", error);
     }
+  };
+
+  // 计算显示文本
+  const getDisplayText = () => {
+    if (!isRestarting) {
+      return defaultText;
+    }
+
+    // 如果重启轮询正在进行，显示进度信息
+    if (restartPollingStatus.enabled && restartPollingStatus.startTime) {
+      return "重连中...";
+    }
+
+    return restartingText;
   };
 
   return (
@@ -95,10 +82,14 @@ export function RestartButton({
       onClick={handleRestart}
       variant={variant}
       disabled={isRestarting || disabled}
-      className={`flex items-center gap-2 ${className}`}
+      className={clsx("flex items-center gap-2 w-[120px]", className)}
     >
-      <RefreshCw className={`h-4 w-4 ${isRestarting ? "animate-spin" : ""}`} />
-      {isRestarting ? restartingText : defaultText}
+      {!isRestarting ? (
+        <PowerIcon className="size-4" />
+      ) : (
+        <LoaderCircleIcon className="size-4 animate-spin" />
+      )}
+      {getDisplayText()}
     </Button>
   );
 }

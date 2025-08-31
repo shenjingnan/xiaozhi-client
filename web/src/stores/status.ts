@@ -83,6 +83,18 @@ interface PollingConfig {
 }
 
 /**
+ * 重启轮询配置
+ */
+interface RestartPollingConfig {
+  enabled: boolean;
+  interval: number; // 毫秒，重启检查间隔
+  maxAttempts: number; // 最大检查次数
+  currentAttempts: number; // 当前检查次数
+  timeout: number; // 总超时时间（毫秒）
+  startTime: number | null; // 开始时间戳
+}
+
+/**
  * 状态 Store 状态
  */
 interface StatusState {
@@ -98,6 +110,9 @@ interface StatusState {
 
   // 轮询配置
   polling: PollingConfig;
+
+  // 重启轮询配置
+  restartPolling: RestartPollingConfig;
 
   // 状态来源追踪
   lastSource: "http" | "websocket" | "polling" | "initial" | null;
@@ -137,6 +152,11 @@ interface StatusActions {
   stopPolling: () => void;
   setPollingConfig: (config: Partial<PollingConfig>) => void;
 
+  // 重启轮询控制
+  startRestartPolling: () => void;
+  stopRestartPolling: () => void;
+  setRestartPollingConfig: (config: Partial<RestartPollingConfig>) => void;
+
   // 工具方法
   reset: () => void;
   initialize: () => Promise<void>;
@@ -169,6 +189,14 @@ const initialState: StatusState = {
     maxRetries: 3,
     currentRetries: 0,
   },
+  restartPolling: {
+    enabled: false,
+    interval: 1000, // 1秒检查间隔
+    maxAttempts: 60, // 最多检查60次（60秒）
+    currentAttempts: 0,
+    timeout: 60000, // 60秒总超时
+    startTime: null,
+  },
   lastSource: null,
 };
 
@@ -176,6 +204,11 @@ const initialState: StatusState = {
  * 轮询定时器引用
  */
 let pollingTimer: NodeJS.Timeout | null = null;
+
+/**
+ * 重启轮询定时器引用
+ */
+let restartPollingTimer: NodeJS.Timeout | null = null;
 
 /**
  * 创建状态 Store
@@ -333,7 +366,8 @@ export const useStatusStore = create<StatusStore>()(
       },
 
       restartService: async (): Promise<void> => {
-        const { setLoading, setRestartStatus, setError } = get();
+        const { setLoading, setRestartStatus, setError, startRestartPolling } =
+          get();
 
         try {
           setLoading({ isRestarting: true, lastError: null });
@@ -351,7 +385,10 @@ export const useStatusStore = create<StatusStore>()(
           // 调用重启 API
           await apiClient.restartService();
 
-          console.log("[StatusStore] 服务重启请求已发送");
+          console.log("[StatusStore] 服务重启请求已发送，开始重连检查");
+
+          // 启动重启后的重连检查轮询
+          startRestartPolling();
         } catch (error) {
           const err =
             error instanceof Error ? error : new Error("服务重启失败");
@@ -368,9 +405,8 @@ export const useStatusStore = create<StatusStore>()(
           );
 
           setError(err);
-          throw err;
-        } finally {
           setLoading({ isRestarting: false });
+          throw err;
         }
       },
 
@@ -478,13 +514,172 @@ export const useStatusStore = create<StatusStore>()(
         );
       },
 
+      // ==================== 重启轮询控制 ====================
+
+      startRestartPolling: () => {
+        const { restartPolling, refreshStatus, setRestartStatus, setLoading } =
+          get();
+
+        if (restartPolling.enabled) {
+          console.log("[StatusStore] 重启轮询已启用，跳过启动");
+          return;
+        }
+
+        console.log("[StatusStore] 启动重启后重连检查轮询");
+
+        const startTime = Date.now();
+        set(
+          (state) => ({
+            restartPolling: {
+              ...state.restartPolling,
+              enabled: true,
+              currentAttempts: 0,
+              startTime,
+            },
+          }),
+          false,
+          "startRestartPolling"
+        );
+
+        // 设置定时器进行重连检查
+        restartPollingTimer = setInterval(async () => {
+          const currentState = get();
+          const { restartPolling: currentRestartPolling } = currentState;
+
+          if (!currentRestartPolling.enabled) {
+            return;
+          }
+
+          const elapsed = Date.now() - (currentRestartPolling.startTime || 0);
+          const attempts = currentRestartPolling.currentAttempts + 1;
+
+          console.log(
+            `[StatusStore] 重启重连检查 (第 ${attempts} 次，已用时 ${Math.round(elapsed / 1000)}s)`
+          );
+
+          try {
+            // 尝试获取状态以检查服务是否重连成功
+            const status = await refreshStatus();
+
+            // 检查是否重连成功
+            const isReconnected = status.client?.status === "connected";
+
+            if (isReconnected) {
+              console.log("[StatusStore] 服务重连成功，停止重启轮询");
+
+              // 设置重启完成状态
+              setRestartStatus(
+                {
+                  status: "completed",
+                  timestamp: Date.now(),
+                },
+                "polling"
+              );
+
+              // 停止重启轮询和loading状态
+              currentState.stopRestartPolling();
+              setLoading({ isRestarting: false });
+              return;
+            }
+
+            // 更新尝试次数
+            currentState.setRestartPollingConfig({ currentAttempts: attempts });
+
+            // 检查是否超时或达到最大尝试次数
+            if (
+              elapsed >= currentRestartPolling.timeout ||
+              attempts >= currentRestartPolling.maxAttempts
+            ) {
+              console.warn("[StatusStore] 重启重连检查超时或达到最大尝试次数");
+
+              // 设置重启失败状态
+              setRestartStatus(
+                {
+                  status: "failed",
+                  error: "重连超时，服务可能未成功重启",
+                  timestamp: Date.now(),
+                },
+                "polling"
+              );
+
+              // 停止重启轮询和loading状态
+              currentState.stopRestartPolling();
+              setLoading({ isRestarting: false });
+            }
+          } catch (error) {
+            console.log(
+              `[StatusStore] 重启重连检查失败 (第 ${attempts} 次):`,
+              error
+            );
+
+            // 更新尝试次数
+            currentState.setRestartPollingConfig({ currentAttempts: attempts });
+
+            // 检查是否超时或达到最大尝试次数
+            if (
+              elapsed >= currentRestartPolling.timeout ||
+              attempts >= currentRestartPolling.maxAttempts
+            ) {
+              console.error("[StatusStore] 重启重连检查超时或达到最大尝试次数");
+
+              // 设置重启失败状态
+              setRestartStatus(
+                {
+                  status: "failed",
+                  error: "重连超时，服务可能未成功重启",
+                  timestamp: Date.now(),
+                },
+                "polling"
+              );
+
+              // 停止重启轮询和loading状态
+              currentState.stopRestartPolling();
+              setLoading({ isRestarting: false });
+            }
+          }
+        }, restartPolling.interval);
+      },
+
+      stopRestartPolling: () => {
+        console.log("[StatusStore] 停止重启轮询");
+
+        set(
+          (state) => ({
+            restartPolling: {
+              ...state.restartPolling,
+              enabled: false,
+              currentAttempts: 0,
+              startTime: null,
+            },
+          }),
+          false,
+          "stopRestartPolling"
+        );
+
+        if (restartPollingTimer) {
+          clearInterval(restartPollingTimer);
+          restartPollingTimer = null;
+        }
+      },
+
+      setRestartPollingConfig: (config: Partial<RestartPollingConfig>) => {
+        set(
+          (state) => ({
+            restartPolling: { ...state.restartPolling, ...config },
+          }),
+          false,
+          "setRestartPollingConfig"
+        );
+      },
+
       // ==================== 工具方法 ====================
 
       reset: () => {
         console.log("[StatusStore] 重置状态");
 
-        // 停止轮询
+        // 停止所有轮询
         get().stopPolling();
+        get().stopRestartPolling();
 
         // 重置状态
         set(initialState, false, "reset");
@@ -597,6 +792,12 @@ export const usePollingEnabled = () =>
   useStatusStore((state) => state.polling.enabled);
 
 /**
+ * 获取重启轮询状态
+ */
+export const useRestartPollingStatus = () =>
+  useStatusStore((state) => state.restartPolling);
+
+/**
  * 获取状态来源
  */
 export const useStatusSource = () =>
@@ -685,6 +886,9 @@ export const useStatusActions = () =>
       startPolling: state.startPolling,
       stopPolling: state.stopPolling,
       setPollingConfig: state.setPollingConfig,
+      startRestartPolling: state.startRestartPolling,
+      stopRestartPolling: state.stopRestartPolling,
+      setRestartPollingConfig: state.setRestartPollingConfig,
       reset: state.reset,
       initialize: state.initialize,
     }))

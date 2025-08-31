@@ -177,7 +177,7 @@ export class MCPServiceManager {
   }
 
   /**
-   * 获取所有可用工具
+   * 获取所有可用工具（已启用的工具）
    */
   getAllTools(): Array<{
     name: string;
@@ -195,13 +195,22 @@ export class MCPServiceManager {
     }> = [];
 
     for (const [toolKey, toolInfo] of this.tools) {
-      allTools.push({
-        name: toolKey,
-        description: toolInfo.tool.description || "",
-        inputSchema: toolInfo.tool.inputSchema,
-        serviceName: toolInfo.serviceName,
-        originalName: toolInfo.originalName,
-      });
+      // 检查工具是否启用
+      const isEnabled = configManager.isToolEnabled(
+        toolInfo.serviceName,
+        toolInfo.originalName
+      );
+
+      // 只返回启用的工具
+      if (isEnabled) {
+        allTools.push({
+          name: toolKey,
+          description: toolInfo.tool.description || "",
+          inputSchema: toolInfo.tool.inputSchema,
+          serviceName: toolInfo.serviceName,
+          originalName: toolInfo.originalName,
+        });
+      }
     }
     return allTools;
   }

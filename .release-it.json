@@ -1,0 +1,36 @@
+{
+  "git": {
+    "commitMessage": "chore: release v${version}",
+    "tagName": "v${version}",
+    "pushArgs": ["--follow-tags"],
+    "requireCleanWorkingDir": true,
+    "requireUpstream": true,
+    "commit": true,
+    "tag": true,
+    "push": true
+  },
+  "github": {
+    "release": true,
+    "releaseName": "🚀 v${version}",
+    "releaseNotes": "npx conventional-changelog-cli -p conventionalcommits"
+  },
+  "npm": {
+    "publish": true,
+    "publishArgs": ["--access", "public"]
+  },
+  "plugins": {
+    "@release-it/conventional-changelog": {
+      "preset": "conventionalcommits",
+      "infile": "CHANGELOG.md",
+      "releaseCommitMessageFormat": "chore: release v${version}",
+      "ignoreRecommendedBump": false,
+      "strictSemVer": true
+    }
+  },
+  "hooks": {
+    "before:init": ["pnpm audit --audit-level moderate"],
+    "after:bump": ["pnpm run build"],
+    "before:release": "echo \"📦 准备发布版本 v${version}\"",
+    "after:release": "echo \"🎉 版本 v${version} 发布完成！\""
+  }
+}

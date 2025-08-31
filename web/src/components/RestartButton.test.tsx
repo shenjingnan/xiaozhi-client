@@ -2,15 +2,24 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { vi } from "vitest";
 import { RestartButton, type RestartStatus } from "./RestartButton";
 
-// Mock useWebSocket hook
+// Mock status store
 const mockRestartService = vi.fn();
-const mockRestartStatus: any = undefined;
+const mockIsRestarting = { current: false };
+const mockRestartPollingStatus = {
+  current: {
+    enabled: false,
+    currentAttempts: 0,
+    maxAttempts: 60,
+    startTime: null,
+  },
+};
 
-vi.mock("@/hooks/useWebSocket", () => ({
-  useWebSocket: () => ({
+vi.mock("@/stores/status", () => ({
+  useStatusStore: () => ({
+    loading: { isRestarting: mockIsRestarting.current },
     restartService: mockRestartService,
-    restartStatus: mockRestartStatus,
   }),
+  useRestartPollingStatus: () => mockRestartPollingStatus.current,
 }));
 
 // Mock sonner toast
@@ -23,6 +32,13 @@ vi.mock("sonner", () => ({
 describe("RestartButton", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockIsRestarting.current = false;
+    mockRestartPollingStatus.current = {
+      enabled: false,
+      currentAttempts: 0,
+      maxAttempts: 60,
+      startTime: null,
+    };
   });
 
   it("should render with default props", () => {
@@ -54,58 +70,48 @@ describe("RestartButton", () => {
     expect(button).toBeDisabled();
   });
 
-  it("should call onRestart when clicked", async () => {
-    const mockOnRestart = vi.fn().mockResolvedValue(undefined);
-    render(<RestartButton onRestart={mockOnRestart} />);
+  it("should call restartService when clicked", async () => {
+    render(<RestartButton />);
 
     const button = screen.getByRole("button");
     fireEvent.click(button);
 
-    expect(mockOnRestart).toHaveBeenCalledTimes(1);
+    expect(mockRestartService).toHaveBeenCalledTimes(1);
   });
 
   it("should show loading state when restarting", async () => {
-    const mockOnRestart = vi
-      .fn()
-      .mockImplementation(
-        () => new Promise((resolve) => setTimeout(resolve, 100))
-      );
+    // 模拟重启状态
+    mockIsRestarting.current = true;
+    mockRestartService.mockImplementation(
+      () => new Promise((resolve) => setTimeout(resolve, 100))
+    );
 
-    render(<RestartButton onRestart={mockOnRestart} />);
+    render(<RestartButton />);
 
     const button = screen.getByRole("button");
-    fireEvent.click(button);
 
-    // 应该立即显示加载状态
+    // 应该显示加载状态
     expect(button).toHaveTextContent("重启中...");
     expect(button).toBeDisabled();
 
     const icon = button.querySelector("svg");
     expect(icon).toHaveClass("animate-spin");
-
-    // 等待重启完成
-    await waitFor(() => {
-      expect(mockOnRestart).toHaveBeenCalled();
-    });
   });
 
-  it("should show error toast when restart fails", async () => {
-    const mockOnRestart = vi.fn().mockRejectedValue(new Error("重启失败"));
-    render(<RestartButton onRestart={mockOnRestart} />);
+  it("should handle restart service errors", async () => {
+    mockRestartService.mockRejectedValue(new Error("重启失败"));
+    render(<RestartButton />);
 
     const button = screen.getByRole("button");
     fireEvent.click(button);
 
     await waitFor(() => {
-      expect(mockOnRestart).toHaveBeenCalled();
+      expect(mockRestartService).toHaveBeenCalled();
     });
 
-    const { toast } = await import("sonner");
-    expect(toast.error).toHaveBeenCalledWith("重启失败");
-
-    // 错误时应该清除加载状态
-    expect(button).not.toBeDisabled();
-    expect(button).toHaveTextContent("重启服务");
+    // 组件本身不显示错误 toast，错误处理由 store 和通知系统处理
+    // 按钮状态由 isRestarting 状态控制
+    expect(button).toBeInTheDocument();
   });
 
   it("should clear loading state when restartStatus becomes completed", () => {
@@ -164,7 +170,7 @@ describe("RestartButton", () => {
     expect(button).toHaveClass("bg-secondary"); // secondary variant class
   });
 
-  it("should not call onRestart if not provided", () => {
+  it("should call restartService when no onRestart prop provided", () => {
     render(<RestartButton />);
 
     const button = screen.getByRole("button");
@@ -177,29 +183,25 @@ describe("RestartButton", () => {
     expect(button).toBeInTheDocument();
   });
 
-  it("should handle async onRestart function", async () => {
-    const mockOnRestart = vi.fn().mockResolvedValue("success");
-    render(<RestartButton onRestart={mockOnRestart} />);
+  it("should handle async restart service", async () => {
+    mockRestartService.mockResolvedValue("success");
+    render(<RestartButton />);
 
     const button = screen.getByRole("button");
     fireEvent.click(button);
 
-    // 应该显示加载状态
-    expect(button).toHaveTextContent("重启中...");
-    expect(button).toBeDisabled();
-
     await waitFor(() => {
-      expect(mockOnRestart).toHaveBeenCalled();
+      expect(mockRestartService).toHaveBeenCalled();
     });
   });
 
-  it("should handle sync onRestart function", () => {
-    const mockOnRestart = vi.fn();
-    render(<RestartButton onRestart={mockOnRestart} />);
+  it("should handle sync restart service", () => {
+    mockRestartService.mockReturnValue(undefined);
+    render(<RestartButton />);
 
     const button = screen.getByRole("button");
     fireEvent.click(button);
 
-    expect(mockOnRestart).toHaveBeenCalledTimes(1);
+    expect(mockRestartService).toHaveBeenCalledTimes(1);
   });
 });
