@@ -59,6 +59,7 @@ export interface MCPServiceConfig {
   // stdio 配置
   command?: string;
   args?: string[];
+  env?: Record<string, string>; // 环境变量配置
   // 网络配置
   url?: string;
   // 认证配置

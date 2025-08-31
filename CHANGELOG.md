@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.6.9](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.8...v1.6.9) (2025-08-31)
+
+### Bug Fixes
+
+* **mcp:** 修复 MCP 服务环境变量传递问题 ([#224](https://github.com/shenjingnan/xiaozhi-client/issues/224)) ([3f1a8be](https://github.com/shenjingnan/xiaozhi-client/commit/3f1a8beeb9b913ecbdb3ec2cb22cf510dcccced2))
+* **PathUtils:** 修复 process.argv[1] 为 undefined 的问题并改进符号链接解析 ([#223](https://github.com/shenjingnan/xiaozhi-client/issues/223)) ([c2f3d0a](https://github.com/shenjingnan/xiaozhi-client/commit/c2f3d0a7ee01d5bc4b27558064395a8a04e87b7c))
+
+## [1.6.9-beta.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.8...v1.6.9-beta.0) (2025-08-31)
+
 ## [1.6.8](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.7...v1.6.8) (2025-08-31)
 
 ### Bug Fixes

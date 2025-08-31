@@ -85,6 +85,40 @@ describe("ConfigAdapter", () => {
           ConfigValidationError
         );
       });
+
+      it("应该正确传递环境变量", () => {
+        const legacyConfig: LocalMCPServerConfig = {
+          command: "npx",
+          args: ["-y", "@amap/amap-maps-mcp-server"],
+          env: {
+            AMAP_MAPS_API_KEY: "1ec31da021b2702787841ea4ee822de3",
+            NODE_ENV: "production",
+          },
+        };
+
+        const result = convertLegacyToNew("amap-maps", legacyConfig);
+
+        expect(result.name).toBe("amap-maps");
+        expect(result.type).toBe(MCPTransportType.STDIO);
+        expect(result.command).toBe("npx");
+        expect(result.args).toEqual(["-y", "@amap/amap-maps-mcp-server"]);
+        expect(result.env).toEqual({
+          AMAP_MAPS_API_KEY: "1ec31da021b2702787841ea4ee822de3",
+          NODE_ENV: "production",
+        });
+      });
+
+      it("应该处理没有环境变量的配置", () => {
+        const legacyConfig: LocalMCPServerConfig = {
+          command: "node",
+          args: ["test.js"],
+          // 没有 env 字段
+        };
+
+        const result = convertLegacyToNew("test-service", legacyConfig);
+
+        expect(result.env).toBeUndefined();
+      });
     });
 
     describe("路径解析功能", () => {

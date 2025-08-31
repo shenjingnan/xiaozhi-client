@@ -67,6 +67,7 @@ function createStdioTransport(config: MCPServiceConfig): StdioClientTransport {
   return new StdioClientTransport({
     command: config.command,
     args: config.args || [],
+    env: config.env, // 传递环境变量
   });
 }
 
