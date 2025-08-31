@@ -12,8 +12,7 @@
   "github": {
     "release": true,
     "releaseName": "🚀 v${version}",
-    "releaseNotes": "npx conventional-changelog-cli -p conventionalcommits",
-    "preRelease": "${preRelease}"
+    "releaseNotes": "npx conventional-changelog-cli -p conventionalcommits"
   },
   "npm": {
     "publish": true,
