@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.6.8](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.7...v1.6.8) (2025-08-31)
+
+### Bug Fixes
+
+* **workflow:** 修复发布正式版时 github release 报错 ([#221](https://github.com/shenjingnan/xiaozhi-client/issues/221)) ([d74fbd6](https://github.com/shenjingnan/xiaozhi-client/commit/d74fbd6b230f5a47404fc271d708a0404f548cfc))
+
 ## [1.6.7](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.6...v1.6.7) (2025-08-31)
 
 ### Bug Fixes
