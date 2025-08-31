@@ -33,4 +33,4 @@
     "before:release": "echo \"📦 准备发布正式版本 v${version}\"",
     "after:release": "echo \"🎉 正式版本 v${version} 发布完成！\""
   }
-  }
+}
