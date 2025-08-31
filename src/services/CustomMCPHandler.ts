@@ -238,18 +238,19 @@ export class CustomMCPHandler {
     tool: CustomMCPTool,
     arguments_: any
   ): Promise<ToolCallResult> {
+    const proxyHandler = tool.handler as ProxyHandlerConfig;
     this.logger.info(`[CustomMCP] 调用代理工具: ${tool.name}`, {
-      platform: tool.handler.platform,
-      config: tool.handler.config,
+      platform: proxyHandler.platform,
+      config: proxyHandler.config,
     });
 
     // 根据平台类型调用相应的代理
-    if (tool.handler.platform === "coze") {
+    if (proxyHandler.platform === "coze") {
       return await this.callCozeWorkflow(tool, arguments_);
     }
 
     // 可以在这里添加其他平台的支持
-    throw new Error(`不支持的代理平台: ${tool.handler.platform}`);
+    throw new Error(`不支持的代理平台: ${proxyHandler.platform}`);
   }
 
   /**
@@ -316,7 +317,7 @@ export class CustomMCPHandler {
     // 添加其他参数
     for (const key of Object.keys(arguments_)) {
       if (key !== "input") {
-        baseRequest[key] = arguments_[key];
+        (baseRequest as any)[key] = arguments_[key];
       }
     }
 
@@ -1053,7 +1054,7 @@ export class CustomMCPHandler {
     const timeout = handler.timeout || 30000;
     const interpreter = handler.interpreter || "node";
 
-    let scriptPath: string;
+    let scriptPath: string | undefined;
     let isTemporaryFile = false;
 
     try {
@@ -1289,7 +1290,8 @@ export class CustomMCPHandler {
             );
             results[results.length - 1] = retryResult;
 
-            if (retryResult.isError && handler.error_handling === "stop") {
+            // 重试后如果仍然失败，则停止执行
+            if (retryResult.isError) {
               break;
             }
           }
@@ -1369,7 +1371,7 @@ export class CustomMCPHandler {
     arguments_: any
   ): Promise<ToolCallResult> {
     // 检查是否是当前 CustomMCP 中的工具
-    const tool = this.tools.find((t) => t.name === toolName);
+    const tool = this.tools.get(toolName);
     if (tool) {
       return this.callTool(toolName, arguments_);
     }
