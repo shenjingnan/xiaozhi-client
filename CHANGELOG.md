@@ -1,6 +1,9 @@
-# Changelog
+## [1.6.6](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.5...v1.6.6) (2025-08-31)
 
-## [1.6.6](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.6-beta.1...v1.6.6) (2025-08-31)
+### Bug Fixes
+
+* **release:** 优化发布配置并改进预发布处理 ([#219](https://github.com/shenjingnan/xiaozhi-client/issues/219)) ([8acf625](https://github.com/shenjingnan/xiaozhi-client/commit/8acf625e2b1024d2b226d46db8a4bc7163670248))
+# Changelog
 
 ## [1.6.5](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.5-beta.0...v1.6.5) (2025-08-30)
 
