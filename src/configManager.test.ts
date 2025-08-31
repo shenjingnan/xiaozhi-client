@@ -14,6 +14,8 @@ import {
   type AppConfig,
   ConfigManager,
   type ConnectionConfig,
+  type CustomMCPConfig,
+  type CustomMCPTool,
   type MCPServerConfig,
   type MCPServerToolsConfig,
   type MCPToolConfig,
@@ -2149,6 +2151,315 @@ describe("ConfigManager", () => {
 
         // 所有服务器配置都应该被清理
         expect(savedConfig.mcpServerConfig).toEqual({});
+      });
+    });
+  });
+
+  describe("CustomMCP 配置管理", () => {
+    const mockCustomMCPTool: CustomMCPTool = {
+      name: "test_coze_workflow",
+      description: "测试coze工作流是否正常可用",
+      inputSchema: {
+        type: "object",
+        properties: {
+          input: {
+            type: "string",
+            description: "用户说话的内容",
+          },
+        },
+        required: ["input"],
+      },
+      handler: {
+        type: "proxy",
+        platform: "coze",
+        config: {
+          workflow_id: "7513776469241741352",
+        },
+      },
+    };
+
+    const mockCustomMCPConfig: CustomMCPConfig = {
+      tools: [mockCustomMCPTool],
+    };
+
+    const mockConfigWithCustomMCP: AppConfig = {
+      ...mockConfig,
+      customMCP: mockCustomMCPConfig,
+    };
+
+    beforeEach(() => {
+      mockExistsSync.mockReturnValue(true);
+      mockReadFileSync.mockReturnValue(JSON.stringify(mockConfigWithCustomMCP));
+    });
+
+    describe("getCustomMCPConfig", () => {
+      it("应该返回 customMCP 配置", () => {
+        const customMCPConfig = configManager.getCustomMCPConfig();
+        expect(customMCPConfig).toEqual(mockCustomMCPConfig);
+      });
+
+      it("当没有 customMCP 配置时应该返回 null", () => {
+        mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+        const customMCPConfig = configManager.getCustomMCPConfig();
+        expect(customMCPConfig).toBeNull();
+      });
+    });
+
+    describe("getCustomMCPTools", () => {
+      it("应该返回 customMCP 工具数组", () => {
+        const tools = configManager.getCustomMCPTools();
+        expect(tools).toEqual([mockCustomMCPTool]);
+      });
+
+      it("应该支持单个工具对象格式", () => {
+        const configWithSingleTool: AppConfig = {
+          ...mockConfig,
+          customMCP: {
+            tools: mockCustomMCPTool, // 单个对象而非数组
+          },
+        };
+        mockReadFileSync.mockReturnValue(JSON.stringify(configWithSingleTool));
+
+        const tools = configManager.getCustomMCPTools();
+        expect(tools).toEqual([mockCustomMCPTool]);
+      });
+
+      it("当没有 customMCP 配置时应该返回空数组", () => {
+        mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+        const tools = configManager.getCustomMCPTools();
+        expect(tools).toEqual([]);
+      });
+
+      it("当 tools 字段不存在时应该返回空数组", () => {
+        const configWithoutTools: AppConfig = {
+          ...mockConfig,
+          customMCP: {} as CustomMCPConfig,
+        };
+        mockReadFileSync.mockReturnValue(JSON.stringify(configWithoutTools));
+
+        const tools = configManager.getCustomMCPTools();
+        expect(tools).toEqual([]);
+      });
+    });
+
+    describe("validateCustomMCPTools", () => {
+      it("应该验证有效的工具配置", () => {
+        const isValid = configManager.validateCustomMCPTools([
+          mockCustomMCPTool,
+        ]);
+        expect(isValid).toBe(true);
+      });
+
+      it("应该拒绝非数组输入", () => {
+        const isValid = configManager.validateCustomMCPTools(
+          mockCustomMCPTool as any
+        );
+        expect(isValid).toBe(false);
+      });
+
+      it("应该拒绝缺少 name 字段的工具", () => {
+        const { name, ...invalidTool } = mockCustomMCPTool;
+
+        const isValid = configManager.validateCustomMCPTools([
+          invalidTool as any,
+        ]);
+        expect(isValid).toBe(false);
+      });
+
+      it("应该拒绝 name 字段不是字符串的工具", () => {
+        const invalidTool = { ...mockCustomMCPTool, name: 123 };
+
+        const isValid = configManager.validateCustomMCPTools([
+          invalidTool as any,
+        ]);
+        expect(isValid).toBe(false);
+      });
+
+      it("应该拒绝缺少 description 字段的工具", () => {
+        const { description, ...invalidTool } = mockCustomMCPTool;
+
+        const isValid = configManager.validateCustomMCPTools([
+          invalidTool as any,
+        ]);
+        expect(isValid).toBe(false);
+      });
+
+      it("应该拒绝 description 字段不是字符串的工具", () => {
+        const invalidTool = { ...mockCustomMCPTool, description: 123 };
+
+        const isValid = configManager.validateCustomMCPTools([
+          invalidTool as any,
+        ]);
+        expect(isValid).toBe(false);
+      });
+
+      it("应该拒绝缺少 inputSchema 字段的工具", () => {
+        const { inputSchema, ...invalidTool } = mockCustomMCPTool;
+
+        const isValid = configManager.validateCustomMCPTools([
+          invalidTool as any,
+        ]);
+        expect(isValid).toBe(false);
+      });
+
+      it("应该拒绝 inputSchema 字段不是对象的工具", () => {
+        const invalidTool = { ...mockCustomMCPTool, inputSchema: "invalid" };
+
+        const isValid = configManager.validateCustomMCPTools([
+          invalidTool as any,
+        ]);
+        expect(isValid).toBe(false);
+      });
+
+      it("应该拒绝缺少 handler 字段的工具", () => {
+        const { handler, ...invalidTool } = mockCustomMCPTool;
+
+        const isValid = configManager.validateCustomMCPTools([
+          invalidTool as any,
+        ]);
+        expect(isValid).toBe(false);
+      });
+
+      it("应该拒绝 handler 字段不是对象的工具", () => {
+        const invalidTool = { ...mockCustomMCPTool, handler: "invalid" };
+
+        const isValid = configManager.validateCustomMCPTools([
+          invalidTool as any,
+        ]);
+        expect(isValid).toBe(false);
+      });
+
+      it("应该拒绝无效的 handler.type", () => {
+        const invalidTool = {
+          ...mockCustomMCPTool,
+          handler: { ...mockCustomMCPTool.handler, type: "invalid" },
+        };
+
+        const isValid = configManager.validateCustomMCPTools([
+          invalidTool as any,
+        ]);
+        expect(isValid).toBe(false);
+      });
+
+      it("应该接受有效的 handler.type", () => {
+        const proxyTool = {
+          ...mockCustomMCPTool,
+          handler: { ...mockCustomMCPTool.handler, type: "proxy" as const },
+        };
+        const functionTool = {
+          ...mockCustomMCPTool,
+          name: "function_tool",
+          handler: { ...mockCustomMCPTool.handler, type: "function" as const },
+        };
+        const httpTool = {
+          ...mockCustomMCPTool,
+          name: "http_tool",
+          handler: { ...mockCustomMCPTool.handler, type: "http" as const },
+        };
+        const scriptTool = {
+          ...mockCustomMCPTool,
+          name: "script_tool",
+          handler: { ...mockCustomMCPTool.handler, type: "script" as const },
+        };
+        const chainTool = {
+          ...mockCustomMCPTool,
+          name: "chain_tool",
+          handler: { ...mockCustomMCPTool.handler, type: "chain" as const },
+        };
+
+        expect(configManager.validateCustomMCPTools([proxyTool])).toBe(true);
+        expect(configManager.validateCustomMCPTools([functionTool])).toBe(true);
+        expect(configManager.validateCustomMCPTools([httpTool])).toBe(true);
+        expect(configManager.validateCustomMCPTools([scriptTool])).toBe(true);
+        expect(configManager.validateCustomMCPTools([chainTool])).toBe(true);
+      });
+
+      it("应该拒绝无效的工具名称格式", () => {
+        const invalidNames = [
+          "123invalid", // 不能以数字开头
+          "invalid-name", // 不能包含连字符
+          "invalid name", // 不能包含空格
+          "invalid.name", // 不能包含点号
+          "", // 不能为空
+        ];
+
+        for (const invalidName of invalidNames) {
+          const invalidTool = { ...mockCustomMCPTool, name: invalidName };
+          const isValid = configManager.validateCustomMCPTools([invalidTool]);
+          expect(isValid).toBe(false);
+        }
+      });
+
+      it("应该接受有效的工具名称格式", () => {
+        const validNames = [
+          "valid_name",
+          "validName",
+          "valid123",
+          "a",
+          "A",
+          "tool_name_123",
+        ];
+
+        for (const validName of validNames) {
+          const validTool = { ...mockCustomMCPTool, name: validName };
+          const isValid = configManager.validateCustomMCPTools([validTool]);
+          expect(isValid).toBe(true);
+        }
+      });
+
+      it("应该验证多个工具", () => {
+        const tool1 = { ...mockCustomMCPTool, name: "tool1" };
+        const tool2 = { ...mockCustomMCPTool, name: "tool2" };
+
+        const isValid = configManager.validateCustomMCPTools([tool1, tool2]);
+        expect(isValid).toBe(true);
+      });
+
+      it("应该在任何一个工具无效时返回 false", () => {
+        const validTool = { ...mockCustomMCPTool, name: "valid_tool" };
+        const { name, ...invalidTool } = mockCustomMCPTool;
+
+        const isValid = configManager.validateCustomMCPTools([
+          validTool,
+          invalidTool as any,
+        ]);
+        expect(isValid).toBe(false);
+      });
+    });
+
+    describe("hasValidCustomMCPTools", () => {
+      it("应该在有有效 customMCP 工具时返回 true", () => {
+        const hasValid = configManager.hasValidCustomMCPTools();
+        expect(hasValid).toBe(true);
+      });
+
+      it("应该在没有 customMCP 配置时返回 false", () => {
+        mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+        const hasValid = configManager.hasValidCustomMCPTools();
+        expect(hasValid).toBe(false);
+      });
+
+      it("应该在 customMCP 工具无效时返回 false", () => {
+        const configWithInvalidTool: AppConfig = {
+          ...mockConfig,
+          customMCP: {
+            tools: [{ ...mockCustomMCPTool, name: "" }], // 无效的名称
+          },
+        };
+        mockReadFileSync.mockReturnValue(JSON.stringify(configWithInvalidTool));
+
+        const hasValid = configManager.hasValidCustomMCPTools();
+        expect(hasValid).toBe(false);
+      });
+
+      it("应该在出现异常时返回 false", () => {
+        // 模拟读取配置时出现异常
+        mockReadFileSync.mockImplementation(() => {
+          throw new Error("读取配置失败");
+        });
+
+        const hasValid = configManager.hasValidCustomMCPTools();
+        expect(hasValid).toBe(false);
       });
     });
   });

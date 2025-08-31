@@ -70,10 +70,35 @@ export interface WebUIConfig {
   autoRestart?: boolean; // 是否在配置更新后自动重启服务，默认 true
 }
 
+// CustomMCP 相关接口定义
+export interface CustomMCPTool {
+  name: string;
+  description: string;
+  inputSchema: any;
+  handler: {
+    type: "proxy" | "function" | "http" | "script" | "chain";
+    platform?: string; // for proxy type
+    function?: string; // for function type
+    module?: string; // for function type
+    url?: string; // for http type
+    method?: string; // for http type
+    headers?: Record<string, string>; // for http type
+    script?: string; // for script type
+    steps?: any[]; // for chain type
+    config?: any; // additional configuration
+    params?: any; // additional parameters
+  };
+}
+
+export interface CustomMCPConfig {
+  tools: CustomMCPTool[] | CustomMCPTool; // 支持数组格式和单对象格式
+}
+
 export interface AppConfig {
   mcpEndpoint: string | string[];
   mcpServers: Record<string, MCPServerConfig>;
   mcpServerConfig?: Record<string, MCPServerToolsConfig>;
+  customMCP?: CustomMCPConfig; // 新增 customMCP 配置支持
   connection?: ConnectionConfig; // 连接配置（可选，用于向后兼容）
   modelscope?: ModelScopeConfig; // ModelScope 配置（可选）
   webUI?: WebUIConfig; // Web UI 配置（可选）
@@ -912,6 +937,105 @@ export class ConfigManager {
       throw new Error("API Key 必须是非空字符串");
     }
     this.updateModelScopeConfig({ apiKey });
+  }
+
+  /**
+   * 获取 customMCP 配置
+   */
+  public getCustomMCPConfig(): CustomMCPConfig | null {
+    const config = this.getConfig();
+    return config.customMCP || null;
+  }
+
+  /**
+   * 获取 customMCP 工具列表
+   */
+  public getCustomMCPTools(): CustomMCPTool[] {
+    const customMCPConfig = this.getCustomMCPConfig();
+    if (!customMCPConfig || !customMCPConfig.tools) {
+      return [];
+    }
+
+    // 处理配置格式兼容性：支持数组格式和单对象格式
+    if (Array.isArray(customMCPConfig.tools)) {
+      return customMCPConfig.tools;
+    }
+
+    // 兼容单个工具对象的情况
+    return [customMCPConfig.tools as CustomMCPTool];
+  }
+
+  /**
+   * 验证 customMCP 工具配置
+   */
+  public validateCustomMCPTools(tools: CustomMCPTool[]): boolean {
+    if (!Array.isArray(tools)) {
+      return false;
+    }
+
+    for (const tool of tools) {
+      // 检查必需字段
+      if (!tool.name || typeof tool.name !== "string") {
+        logger.warn(
+          `CustomMCP 工具缺少有效的 name 字段: ${JSON.stringify(tool)}`
+        );
+        return false;
+      }
+
+      if (!tool.description || typeof tool.description !== "string") {
+        logger.warn(`CustomMCP 工具 ${tool.name} 缺少有效的 description 字段`);
+        return false;
+      }
+
+      if (!tool.inputSchema || typeof tool.inputSchema !== "object") {
+        logger.warn(`CustomMCP 工具 ${tool.name} 缺少有效的 inputSchema 字段`);
+        return false;
+      }
+
+      if (!tool.handler || typeof tool.handler !== "object") {
+        logger.warn(`CustomMCP 工具 ${tool.name} 缺少有效的 handler 字段`);
+        return false;
+      }
+
+      // 检查 handler 类型
+      if (
+        !["proxy", "function", "http", "script", "chain"].includes(
+          tool.handler.type
+        )
+      ) {
+        logger.warn(
+          `CustomMCP 工具 ${tool.name} 的 handler.type 必须是 'proxy', 'function', 'http', 'script' 或 'chain'`
+        );
+        return false;
+      }
+
+      // 检查工具名称格式（必须是有效的标识符）
+      if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(tool.name)) {
+        logger.warn(
+          `CustomMCP 工具名称 ${tool.name} 格式无效，必须以字母开头，只能包含字母、数字和下划线`
+        );
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * 检查是否配置了有效的 customMCP 工具
+   */
+  public hasValidCustomMCPTools(): boolean {
+    try {
+      const tools = this.getCustomMCPTools();
+      if (tools.length === 0) {
+        return false;
+      }
+
+      return this.validateCustomMCPTools(tools);
+    } catch (error) {
+      logger.error("检查 customMCP 工具配置时出错:", error);
+      return false;
+    }
   }
 
   /**
