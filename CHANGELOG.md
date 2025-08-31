@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.6.7](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.6...v1.6.7) (2025-08-31)
+
+### Bug Fixes
+
+* **workflow:** 统一发布配置并改进分支验证 ([#220](https://github.com/shenjingnan/xiaozhi-client/issues/220)) ([d9c16fb](https://github.com/shenjingnan/xiaozhi-client/commit/d9c16fb0bc40e1263754f3acefdae40c45d7a253))
+
 ## [1.6.7-beta.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.6...v1.6.7-beta.0) (2025-08-31)
 
 ## [1.6.6](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.5...v1.6.6) (2025-08-31)
