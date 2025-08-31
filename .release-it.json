@@ -12,11 +12,13 @@
   "github": {
     "release": true,
     "releaseName": "🚀 v${version}",
-    "releaseNotes": "npx conventional-changelog-cli -p conventionalcommits"
+    "releaseNotes": "npx conventional-changelog-cli -p conventionalcommits",
+    "preRelease": "${preRelease}"
   },
   "npm": {
     "publish": true,
-    "publishArgs": ["--access", "public"]
+    "publishArgs": ["--access", "public"],
+    "tag": "${npm.tag}"
   },
   "plugins": {
     "@release-it/conventional-changelog": {

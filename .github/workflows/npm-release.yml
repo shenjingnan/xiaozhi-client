@@ -41,6 +41,20 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: 验证
+        run: |
+          echo "当前分支: ${{ github.ref_name }}"
+          echo "发布类型: ${{ github.event.inputs.release_type }}"
+          echo "预演模式: ${{ github.event.inputs.dry_run }}"
+
+          # 检查是否在主分支
+          if [[ "${{ github.event.inputs.release_type }}" == "release-"* ]] && [ "${{ github.ref_name }}" != "main" ] && [ "${{ github.ref_name }}" != "master" ]; then
+            if [ "${{ github.event.inputs.dry_run }}" != "true" ]; then
+              echo "❌ 正式版发布必须在主分支进行"
+              exit 1
+            fi
+          fi
+
       - name: 安装 pnpm
         uses: pnpm/action-setup@v4
         with:
