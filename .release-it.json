@@ -12,7 +12,7 @@
   "github": {
     "release": true,
     "releaseName": "🚀 v${version}",
-    "releaseNotes": "npx conventional-changelog-cli -p conventionalcommits -r 1"
+    "releaseNotes": "npx conventional-changelog-cli -p conventionalcommits"
   },
   "npm": {
     "publish": true,
@@ -30,7 +30,7 @@
   "hooks": {
     "before:init": ["pnpm audit --audit-level moderate"],
     "after:bump": ["pnpm run build"],
-    "before:release": "echo \"📦 准备发布正式版本 v${version}\"",
-    "after:release": "echo \"🎉 正式版本 v${version} 发布完成！\""
+    "before:release": "echo \"📦 准备发布版本 v${version}\"",
+    "after:release": "echo \"🎉 版本 v${version} 发布完成！\""
   }
 }
