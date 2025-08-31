@@ -17,8 +17,7 @@
   },
   "npm": {
     "publish": true,
-    "publishArgs": ["--access", "public"],
-    "tag": "${npm.tag}"
+    "publishArgs": ["--access", "public"]
   },
   "plugins": {
     "@release-it/conventional-changelog": {
