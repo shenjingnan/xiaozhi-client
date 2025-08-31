@@ -48,6 +48,32 @@ describe("TransportFactory", () => {
       expect(StdioClientTransport).toHaveBeenCalledWith({
         command: "node",
         args: ["test.js"],
+        env: undefined,
+      });
+      expect(transport).toBeInstanceOf(StdioClientTransport);
+    });
+
+    it("should create stdio transport with environment variables", () => {
+      const config: MCPServiceConfig = {
+        name: "test-stdio-with-env",
+        type: MCPTransportType.STDIO,
+        command: "npx",
+        args: ["-y", "@amap/amap-maps-mcp-server"],
+        env: {
+          AMAP_MAPS_API_KEY: "test-api-key",
+          NODE_ENV: "test",
+        },
+      };
+
+      const transport = TransportFactory.create(config);
+
+      expect(StdioClientTransport).toHaveBeenCalledWith({
+        command: "npx",
+        args: ["-y", "@amap/amap-maps-mcp-server"],
+        env: {
+          AMAP_MAPS_API_KEY: "test-api-key",
+          NODE_ENV: "test",
+        },
       });
       expect(transport).toBeInstanceOf(StdioClientTransport);
     });

@@ -126,6 +126,7 @@ function convertLocalConfig(
     type: MCPTransportType.STDIO,
     command: config.command,
     args: resolvedArgs,
+    env: config.env, // 传递环境变量
     // 默认重连配置
     reconnect: {
       enabled: true,
