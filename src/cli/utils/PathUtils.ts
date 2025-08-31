@@ -195,6 +195,12 @@ export class PathUtils {
     // 获取当前执行的 CLI 脚本路径
     const cliPath = process.argv[1];
 
+    // 处理 cliPath 为 undefined 的情况
+    if (!cliPath) {
+      // 如果没有脚本路径，使用当前工作目录
+      return path.join(process.cwd(), `${name}.js`);
+    }
+
     // 解析符号链接，获取真实路径
     let realCliPath: string;
     try {
