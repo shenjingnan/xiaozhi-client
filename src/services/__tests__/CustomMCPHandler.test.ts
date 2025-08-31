@@ -270,7 +270,10 @@ describe("CustomMCPHandler", () => {
         inputSchema: { type: "object" },
         handler: {
           type: "invalid" as any,
-        },
+          // 添加必要的属性以满足 HandlerConfig 的要求
+          platform: "coze",
+          config: {},
+        } as any,
       };
 
       vi.mocked(configManager.getCustomMCPTools).mockReturnValue([invalidTool]);
@@ -299,7 +302,8 @@ describe("CustomMCPHandler", () => {
         inputSchema: { type: "object" },
         handler: {
           type: "proxy",
-          platform: "unknown_platform",
+          platform: "unknown_platform" as any,
+          config: {},
         },
       };
 

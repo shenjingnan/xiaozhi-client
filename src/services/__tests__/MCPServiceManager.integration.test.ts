@@ -72,7 +72,7 @@ describe("MCPServiceManager CustomMCP 集成测试", () => {
     },
     handler: {
       type: "proxy" as const,
-      platform: "coze",
+      platform: "coze" as const,
       config: {
         workflow_id: "7513776469241741352",
       },

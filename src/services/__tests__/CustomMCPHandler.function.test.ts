@@ -5,7 +5,7 @@
  * 测试函数工具的各种场景
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FunctionHandlerConfig } from "../../configManager.js";
 import { CustomMCPHandler } from "../CustomMCPHandler.js";
 
@@ -43,9 +43,9 @@ vi.mock("node:url", () => ({
 }));
 
 // Mock import function
-const originalImport = global.import;
+const originalImport = (global as any).import;
 const mockImport = vi.fn();
-global.import = mockImport;
+(global as any).import = mockImport;
 
 describe("CustomMCPHandler 函数处理器测试", () => {
   let handler: CustomMCPHandler;
@@ -432,6 +432,6 @@ describe("CustomMCPHandler 函数处理器测试", () => {
 
   afterAll(() => {
     // 恢复原始的 import 函数
-    global.import = originalImport;
+    (global as any).import = originalImport;
   });
 });

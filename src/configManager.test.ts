@@ -2344,27 +2344,50 @@ describe("ConfigManager", () => {
       it("应该接受有效的 handler.type", () => {
         const proxyTool = {
           ...mockCustomMCPTool,
-          handler: { ...mockCustomMCPTool.handler, type: "proxy" as const },
+          handler: {
+            type: "proxy" as const,
+            platform: "coze" as const,
+            config: {
+              workflow_id: "7513776469241741352",
+            },
+          },
         };
         const functionTool = {
           ...mockCustomMCPTool,
           name: "function_tool",
-          handler: { ...mockCustomMCPTool.handler, type: "function" as const },
+          handler: {
+            type: "function" as const,
+            module: "./test-module.js",
+            function: "testFunction",
+          },
         };
         const httpTool = {
           ...mockCustomMCPTool,
           name: "http_tool",
-          handler: { ...mockCustomMCPTool.handler, type: "http" as const },
+          handler: {
+            type: "http" as const,
+            url: "https://api.example.com/test",
+            method: "GET" as const,
+          },
         };
         const scriptTool = {
           ...mockCustomMCPTool,
           name: "script_tool",
-          handler: { ...mockCustomMCPTool.handler, type: "script" as const },
+          handler: {
+            type: "script" as const,
+            script: "console.log('test')",
+            interpreter: "node" as const,
+          },
         };
         const chainTool = {
           ...mockCustomMCPTool,
           name: "chain_tool",
-          handler: { ...mockCustomMCPTool.handler, type: "chain" as const },
+          handler: {
+            type: "chain" as const,
+            tools: ["tool1", "tool2"],
+            mode: "sequential" as const,
+            error_handling: "stop" as const,
+          },
         };
 
         expect(configManager.validateCustomMCPTools([proxyTool])).toBe(true);
