@@ -803,7 +803,13 @@ export class ConfigManager {
       // 确保工具配置存在
       if (!config.mcpServerConfig[serverName].tools[toolName]) {
         config.mcpServerConfig[serverName].tools[toolName] = {
+          name: toolName, // 必需的 name 属性
           enable: true, // 默认启用
+          inputSchema: { // 必需的 inputSchema 属性
+            type: "object",
+            properties: {},
+            additionalProperties: true
+          }
         };
       }
 
