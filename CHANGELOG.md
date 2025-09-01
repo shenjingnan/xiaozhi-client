@@ -1,5 +1,7 @@
 # Changelog
 
+## [1.6.10-beta.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.9...v1.6.10-beta.0) (2025-09-01)
+
 ## [1.6.9](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.8...v1.6.9) (2025-08-31)
 
 ### Bug Fixes
