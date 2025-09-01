@@ -157,7 +157,7 @@ importers:
         specifier: ^18.0.1
         version: 18.0.1
       postcss:
-        specifier: ^8.4.32
+        specifier: ^8.5.6
         version: 8.5.6
       rollup-plugin-visualizer:
         specifier: ^6.0.3
