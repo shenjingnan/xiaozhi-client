@@ -9,22 +9,22 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
+    - name: 检出分支
       uses: actions/checkout@v3
       with:
         fetch-depth: 0
 
-    - name: Setup SSH
+    - name: 准备
       uses: webfactory/ssh-agent@v0.7.0
       with:
         ssh-private-key: ${{ secrets.GITEE_RSA_PRIVATE_KEY }}
 
-    - name: Add Gitee remote
+    - name: 添加 Gitee 仓库
       run: |
         git remote add gitee git@gitee.com:shenjingnan/xiaozhi-client.git
         git remote -v
 
-    - name: Push to Gitee
+    - name: 推送
       run: |
         git push gitee --all --force
         git push gitee --tags --force
