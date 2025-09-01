@@ -33,8 +33,6 @@ function copyDirectory(src: string, dest: string, excludePatterns: string[] = []
 
 export default defineConfig({
   entry: [
-    "src/modelScopeMCPClient.ts",
-    "src/streamableHttpMCPClient.ts",
     "src/mcpServerProxy.ts",
     "src/cli.ts",
     "src/configManager.ts",
@@ -42,7 +40,6 @@ export default defineConfig({
     "src/Logger.ts",
     "src/WebServer.ts",
     "src/WebServerStandalone.ts",
-    "src/mcpClient.ts",
     "src/ProxyMCPServer.ts",
     "src/services/MCPServer.ts",
     "src/adapters/ConfigAdapter.ts",
