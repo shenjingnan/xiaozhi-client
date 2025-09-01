@@ -15,7 +15,7 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^1.17.1
-        version: 1.17.1(hono@4.8.10)
+        version: 1.17.1(hono@4.9.5)
       '@modelcontextprotocol/sdk':
         specifier: ^1.12.1
         version: 1.15.1
@@ -50,8 +50,8 @@ importers:
         specifier: ^5.1.0
         version: 5.1.0
       hono:
-        specifier: ^4.8.10
-        version: 4.8.10
+        specifier: ^4.9.5
+        version: 4.9.5
       json5:
         specifier: ^2.2.3
         version: 2.2.3
@@ -2728,8 +2728,8 @@ packages:
   help-me@5.0.0:
     resolution: {integrity: sha512-7xgomUX6ADmcYzFik0HzAxh/73YlKR9bmFzf51CZwR+b6YtzU2m0u49hQCqV6SvlqIqsaxovfwdvbnsw3b/zpg==}
 
-  hono@4.8.10:
-    resolution: {integrity: sha512-DRMYbR3aFk6YET1FCSAFbgF2cWYTz5j0YAFYPECx9fmrbKBDAYnWU+YCgRTpOaatxMYN6e68U/2IG39zRP4W/A==}
+  hono@4.9.5:
+    resolution: {integrity: sha512-aLAVl5/67ifNnoFVxnhR89dpmSLsgwBprw/PT671ASwUpJqmd7Ne8KPTQo37DbRZfgpHaHeZ4bPVUvbOkeedMw==}
     engines: {node: '>=16.9.0'}
 
   hosted-git-info@7.0.2:
@@ -5451,9 +5451,9 @@ snapshots:
 
   '@fastify/busboy@2.1.1': {}
 
-  '@hono/node-server@1.17.1(hono@4.8.10)':
+  '@hono/node-server@1.17.1(hono@4.9.5)':
     dependencies:
-      hono: 4.8.10
+      hono: 4.9.5
 
   '@hutson/parse-repository-url@5.0.0': {}
 
@@ -7108,7 +7108,7 @@ snapshots:
 
   help-me@5.0.0: {}
 
-  hono@4.8.10: {}
+  hono@4.9.5: {}
 
   hosted-git-info@7.0.2:
     dependencies:
