@@ -33,16 +33,15 @@ function copyDirectory(src: string, dest: string, excludePatterns: string[] = []
 
 export default defineConfig({
   entry: [
-    "src/mcpServerProxy.ts",
-    "src/cli.ts",
-    "src/configManager.ts",
-    "src/mcpCommands.ts",
-    "src/Logger.ts",
-    "src/WebServer.ts",
-    "src/WebServerStandalone.ts",
-    "src/ProxyMCPServer.ts",
-    "src/services/MCPServer.ts",
-    "src/adapters/ConfigAdapter.ts",
+    // 核心可执行文件
+    "src/cli.ts",                    // 主 CLI 入口（package.json 的 main 和 bin）
+    "src/mcpServerProxy.ts",         // MCP 服务器代理（被 PathUtils 引用）
+    "src/WebServerStandalone.ts",    // 独立 Web 服务器（有 shebang）
+
+    // 核心服务
+    "src/WebServer.ts",              // Web 服务器核心
+    "src/ProxyMCPServer.ts",         // 代理 MCP 服务器
+    "src/services/MCPServer.ts",     // MCP 服务器服务
   ],
   format: ["esm"],
   target: "node18",
