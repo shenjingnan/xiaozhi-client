@@ -57,7 +57,7 @@
     "commander": "^14.0.0",
     "comment-json": "^4.2.5",
     "dayjs": "^1.11.13",
-    "dotenv": "^16.3.1",
+    "dotenv": "^16.6.1",
     "eventsource": "^4.0.0",
     "express": "^5.1.0",
     "hono": "^4.8.10",
