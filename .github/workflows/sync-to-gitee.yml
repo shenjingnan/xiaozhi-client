@@ -14,10 +14,21 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: 准备
+    - name: 配置SSH
       uses: webfactory/ssh-agent@v0.7.0
       with:
         ssh-private-key: ${{ secrets.GITEE_RSA_PRIVATE_KEY }}
+
+    - name: 添加Gitee主机密钥
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -H gitee.com >> ~/.ssh/known_hosts
+        echo "已添加Gitee主机密钥到known_hosts"
+
+    - name: 配置Git用户信息
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
 
     - name: 添加 Gitee 仓库
       run: |
