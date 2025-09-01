@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * MCP 缓存管理器
  * 负责 MCP 服务工具列表的缓存写入功能
@@ -25,7 +23,7 @@ export interface MCPToolsCacheEntry {
 // 缓存文件接口
 export interface MCPToolsCache {
   version: string; // 缓存文件格式版本 "1.0.0"
-  servers: Record<string, MCPToolsCacheEntry>;
+  mcpServers: Record<string, MCPToolsCacheEntry>;
   metadata: {
     lastGlobalUpdate: string; // 全局最后更新时间
     totalWrites: number; // 总写入次数
@@ -93,7 +91,7 @@ export class MCPCacheManager {
     const now = new Date().toISOString();
     return {
       version: this.CACHE_VERSION,
-      servers: {},
+      mcpServers: {},
       metadata: {
         lastGlobalUpdate: now,
         totalWrites: 0,
@@ -139,7 +137,7 @@ export class MCPCacheManager {
       };
 
       // 更新缓存
-      cache.servers[serverName] = cacheEntry;
+      cache.mcpServers[serverName] = cacheEntry;
       cache.metadata.lastGlobalUpdate = new Date().toISOString();
       cache.metadata.totalWrites += 1;
 
@@ -246,7 +244,7 @@ export class MCPCacheManager {
         cache &&
         typeof cache === "object" &&
         typeof cache.version === "string" &&
-        typeof cache.servers === "object" &&
+        typeof cache.mcpServers === "object" &&
         cache.metadata &&
         typeof cache.metadata === "object" &&
         typeof cache.metadata.lastGlobalUpdate === "string" &&
@@ -267,7 +265,7 @@ export class MCPCacheManager {
       const stats: CacheStats = {
         totalWrites: cache.metadata.totalWrites,
         lastUpdate: cache.metadata.lastGlobalUpdate,
-        serverCount: Object.keys(cache.servers).length,
+        serverCount: Object.keys(cache.mcpServers).length,
         cacheFileSize: existsSync(this.cachePath)
           ? readFileSync(this.cachePath, "utf8").length
           : 0,

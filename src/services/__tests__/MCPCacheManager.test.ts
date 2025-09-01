@@ -113,7 +113,7 @@ describe("MCPCacheManager", () => {
       const cache = JSON.parse(cacheContent) as MCPToolsCache;
 
       expect(cache.version).toBe("1.0.0");
-      expect(cache.servers).toEqual({});
+      expect(cache.mcpServers).toEqual({});
       expect(cache.metadata.totalWrites).toBe(0);
       expect(cache.metadata.createdAt).toBeDefined();
     });
@@ -122,7 +122,7 @@ describe("MCPCacheManager", () => {
       // 创建一个现有的缓存文件
       const existingCache: MCPToolsCache = {
         version: "1.0.0",
-        servers: {
+        mcpServers: {
           test: {
             tools: [],
             lastUpdated: "2023-01-01T00:00:00.000Z",
@@ -146,7 +146,7 @@ describe("MCPCacheManager", () => {
       const cache = JSON.parse(cacheContent) as MCPToolsCache;
 
       expect(cache.metadata.totalWrites).toBe(5);
-      expect(cache.servers.test).toBeDefined();
+      expect(cache.mcpServers.test).toBeDefined();
     });
   });
 
@@ -159,12 +159,12 @@ describe("MCPCacheManager", () => {
       const cacheContent = readFileSync(testCachePath, "utf8");
       const cache = JSON.parse(cacheContent) as MCPToolsCache;
 
-      expect(cache.servers.calculator).toBeDefined();
-      expect(cache.servers.calculator.tools).toHaveLength(2);
-      expect(cache.servers.calculator.tools[0].name).toBe("add");
-      expect(cache.servers.calculator.tools[1].name).toBe("subtract");
-      expect(cache.servers.calculator.configHash).toBeDefined();
-      expect(cache.servers.calculator.lastUpdated).toBeDefined();
+      expect(cache.mcpServers.calculator).toBeDefined();
+      expect(cache.mcpServers.calculator.tools).toHaveLength(2);
+      expect(cache.mcpServers.calculator.tools[0].name).toBe("add");
+      expect(cache.mcpServers.calculator.tools[1].name).toBe("subtract");
+      expect(cache.mcpServers.calculator.configHash).toBeDefined();
+      expect(cache.mcpServers.calculator.lastUpdated).toBeDefined();
       expect(cache.metadata.totalWrites).toBe(1);
     });
 
@@ -190,8 +190,8 @@ describe("MCPCacheManager", () => {
       const cacheContent = readFileSync(testCachePath, "utf8");
       const cache = JSON.parse(cacheContent) as MCPToolsCache;
 
-      expect(cache.servers.calculator.tools).toHaveLength(1);
-      expect(cache.servers.calculator.tools[0].name).toBe("multiply");
+      expect(cache.mcpServers.calculator.tools).toHaveLength(1);
+      expect(cache.mcpServers.calculator.tools[0].name).toBe("multiply");
       expect(cache.metadata.totalWrites).toBe(2);
     });
 
@@ -201,7 +201,7 @@ describe("MCPCacheManager", () => {
       const cacheContent = readFileSync(testCachePath, "utf8");
       const cache = JSON.parse(cacheContent) as MCPToolsCache;
 
-      expect(cache.servers["empty-service"].tools).toHaveLength(0);
+      expect(cache.mcpServers["empty-service"].tools).toHaveLength(0);
       expect(cache.metadata.totalWrites).toBe(1);
     });
 
@@ -266,8 +266,8 @@ describe("MCPCacheManager", () => {
       const cacheContent = readFileSync(testCachePath, "utf8");
       const cache = JSON.parse(cacheContent) as MCPToolsCache;
 
-      expect(cache.servers.test1.configHash).toBe(
-        cache.servers.test2.configHash
+      expect(cache.mcpServers.test1.configHash).toBe(
+        cache.mcpServers.test2.configHash
       );
     });
 
@@ -292,8 +292,8 @@ describe("MCPCacheManager", () => {
       const cacheContent = readFileSync(testCachePath, "utf8");
       const cache = JSON.parse(cacheContent) as MCPToolsCache;
 
-      expect(cache.servers.test1.configHash).not.toBe(
-        cache.servers.test2.configHash
+      expect(cache.mcpServers.test1.configHash).not.toBe(
+        cache.mcpServers.test2.configHash
       );
     });
   });
@@ -325,7 +325,7 @@ describe("MCPCacheManager", () => {
       const cache = JSON.parse(cacheContent) as MCPToolsCache;
 
       expect(cache.version).toBe("1.0.0");
-      expect(cache.servers.calculator).toBeDefined();
+      expect(cache.mcpServers.calculator).toBeDefined();
     });
 
     it("应该处理结构无效的缓存文件", async () => {
@@ -343,7 +343,7 @@ describe("MCPCacheManager", () => {
       const cache = JSON.parse(cacheContent) as MCPToolsCache;
 
       expect(cache.metadata).toBeDefined();
-      expect(cache.servers).toBeDefined();
+      expect(cache.mcpServers).toBeDefined();
     });
   });
 });
