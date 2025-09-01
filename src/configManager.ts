@@ -7,6 +7,7 @@ import JSON5 from "json5";
 import * as json5Writer from "json5-writer";
 import { logger } from "./Logger";
 import { validateMcpServerConfig } from "./utils/mcpServerUtils";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 
 // 在 ESM 中，需要从 import.meta.url 获取当前文件目录
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -44,11 +45,10 @@ export type MCPServerConfig =
   | SSEMCPServerConfig
   | StreamableHTTPMCPServerConfig;
 
-export interface MCPToolConfig {
-  description?: string;
+export interface MCPToolConfig extends Tool {
   enable: boolean;
   usageCount?: number; // 工具使用次数
-  lastUsedTime?: string; // 最后使用时间（ISO 8601 格式）
+  lastUsedTime?: string; // 最后使用时间（YYYY-MM-DD HH:mm:ss 格式）
 }
 
 export interface MCPServerToolsConfig {

@@ -427,26 +427,31 @@ export class MCPServiceManager {
         const newToolsConfig: Record<string, MCPToolConfig> = {};
 
         for (const tool of tools) {
-          const currentToolConfig = currentToolsConfig[tool.name];
+          // 使用 originalName 作为配置键，如果不存在则使用 name
+          const toolKey = (tool as any).originalName || tool.name;
+          const currentToolConfig = currentToolsConfig[toolKey];
 
-          // 如果工具已存在，保留用户设置的 enable 状态，但更新描述
+          // 如果工具已存在，保留用户设置的 enable 状态和使用统计，但更新 MCP 规范信息
           if (currentToolConfig) {
-            newToolsConfig[tool.name] = {
-              ...currentToolConfig,
-              description:
-                tool.description || currentToolConfig.description || "",
+            newToolsConfig[toolKey] = {
+              ...tool,
+              enable: currentToolConfig.enable,
+              usageCount: currentToolConfig.usageCount,
+              lastUsedTime: currentToolConfig.lastUsedTime,
             };
           } else {
-            // 新工具，默认启用
-            newToolsConfig[tool.name] = {
-              description: tool.description || "",
+            // 新工具，默认启用，保存完整的 MCP 工具信息
+            newToolsConfig[toolKey] = {
               enable: true,
+              ...tool,
             };
           }
         }
 
         // 检查是否有工具被移除（在配置文件中存在但在当前工具列表中不存在）
-        const currentToolNames = tools.map((t) => t.name);
+        const currentToolNames = tools.map(
+          (t) => (t as any).originalName || t.name
+        );
         const configToolNames = Object.keys(currentToolsConfig);
         const removedTools = configToolNames.filter(
           (name) => !currentToolNames.includes(name)
@@ -454,7 +459,9 @@ export class MCPServiceManager {
 
         if (removedTools.length > 0) {
           this.logger.info(
-            `[MCPManager] 检测到服务 ${serviceName} 移除了 ${removedTools.length} 个工具: ${removedTools.join(", ")}`
+            `[MCPManager] 检测到服务 ${serviceName} 移除了 ${
+              removedTools.length
+            } 个工具: ${removedTools.join(", ")}`
           );
         }
 
