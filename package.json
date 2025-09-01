@@ -69,7 +69,7 @@
     "pino": "^8.0.0",
     "pino-pretty": "^10.0.0",
     "ws": "^8.14.2",
-    "zod": "^3.25.62"
+    "zod": "^4.1.5"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
