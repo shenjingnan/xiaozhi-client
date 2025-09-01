@@ -723,8 +723,8 @@ describe("CLI 命令行工具", () => {
           realFs.readFileSync(packageJsonPath, "utf8")
         );
 
-        expect(packageJson.scripts.build).toBe("pnpm run build:web && tsup");
-        expect(packageJson.scripts.dev).toBe("tsup --watch");
+        expect(packageJson.scripts.build).toBe("pnpm run build:web && NODE_ENV=production tsup");
+        expect(packageJson.scripts.dev).toBe("NODE_ENV=development tsup --watch");
       }
     });
 
