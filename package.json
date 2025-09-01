@@ -51,6 +51,7 @@
     "@hono/node-server": "^1.17.1",
     "@modelcontextprotocol/sdk": "^1.12.1",
     "@types/express": "^5.0.3",
+    "ajv": "^8.17.1",
     "chalk": "^5.4.1",
     "chokidar": "^4.0.3",
     "cli-table3": "^0.6.5",

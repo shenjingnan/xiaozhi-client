@@ -9,6 +9,7 @@
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { type Logger, logger } from "../Logger.js";
 import { type MCPToolConfig, configManager } from "../configManager.js";
+import { MCPCacheManager } from "./MCPCacheManager.js";
 import {
   MCPService,
   type MCPServiceConfig,
@@ -49,6 +50,7 @@ export class MCPServiceManager {
   private configs: Record<string, MCPServiceConfig> = {};
   private logger: Logger;
   private tools: Map<string, ToolInfo> = new Map(); // 缓存工具信息，保持向后兼容
+  private cacheManager: MCPCacheManager; // 缓存管理器
 
   /**
    * 创建 MCPServiceManager 实例
@@ -57,6 +59,7 @@ export class MCPServiceManager {
   constructor(configs?: Record<string, MCPServiceConfig>) {
     this.logger = logger;
     this.configs = configs || {};
+    this.cacheManager = new MCPCacheManager();
   }
 
   /**
@@ -161,6 +164,25 @@ export class MCPServiceManager {
     for (const [serviceName, service] of this.services) {
       if (service.isConnected()) {
         const tools = service.getTools();
+        const config = this.configs[serviceName];
+
+        // 写入缓存
+        if (config) {
+          try {
+            await this.cacheManager.writeCacheEntry(serviceName, tools, config);
+            this.logger.debug(
+              `[MCPManager] 已将 ${serviceName} 工具列表写入缓存`
+            );
+          } catch (error) {
+            this.logger.warn(
+              `[MCPManager] 写入缓存失败: ${serviceName}, 错误: ${
+                error instanceof Error ? error.message : String(error)
+              }`
+            );
+          }
+        }
+
+        // 原有逻辑保持不变
         for (const tool of tools) {
           const toolKey = `${serviceName}__${tool.name}`;
           this.tools.set(toolKey, {
