@@ -53,7 +53,7 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   dts: true,
-  minify: true,
+  minify: process.env.NODE_ENV === "production",
   splitting: false,
   bundle: true,
   keepNames: true,
