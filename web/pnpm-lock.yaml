@@ -169,7 +169,7 @@ importers:
         specifier: ^5.9.2
         version: 5.9.2
       vite:
-        specifier: ^5.0.8
+        specifier: ^5.4.19
         version: 5.4.19(@types/node@24.3.0)
       vitest:
         specifier: ^3.2.4
