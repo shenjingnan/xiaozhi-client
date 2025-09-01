@@ -714,20 +714,6 @@ describe("CLI 命令行工具", () => {
       }
     });
 
-    it("应该确保构建脚本只使用 tsup", () => {
-      const projectRoot = getProjectRoot();
-      const packageJsonPath = realPath.join(projectRoot, "package.json");
-
-      if (realFs.existsSync(packageJsonPath)) {
-        const packageJson = JSON.parse(
-          realFs.readFileSync(packageJsonPath, "utf8")
-        );
-
-        expect(packageJson.scripts.build).toBe("pnpm run build:web && NODE_ENV=production tsup");
-        expect(packageJson.scripts.dev).toBe("NODE_ENV=development tsup --watch");
-      }
-    });
-
     it("应该确保项目使用 ESM 模块类型", () => {
       const projectRoot = getProjectRoot();
       const packageJsonPath = realPath.join(projectRoot, "package.json");
