@@ -10,6 +10,7 @@ import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { type Logger, logger } from "../Logger.js";
 import { type MCPToolConfig, configManager } from "../configManager.js";
 import { CustomMCPHandler } from "./CustomMCPHandler.js";
+import { MCPCacheManager } from "./MCPCacheManager.js";
 import {
   MCPService,
   type MCPServiceConfig,
@@ -51,6 +52,7 @@ export class MCPServiceManager {
   private logger: Logger;
   private tools: Map<string, ToolInfo> = new Map(); // 缓存工具信息，保持向后兼容
   private customMCPHandler: CustomMCPHandler; // CustomMCP 工具处理器
+  private cacheManager: MCPCacheManager; // 缓存管理器
 
   /**
    * 创建 MCPServiceManager 实例
@@ -60,6 +62,7 @@ export class MCPServiceManager {
     this.logger = logger;
     this.configs = configs || {};
     this.customMCPHandler = new CustomMCPHandler();
+    this.cacheManager = new MCPCacheManager();
   }
 
   /**
@@ -174,6 +177,27 @@ export class MCPServiceManager {
     for (const [serviceName, service] of this.services) {
       if (service.isConnected()) {
         const tools = service.getTools();
+        const config = this.configs[serviceName];
+
+        // 异步写入缓存（不阻塞主流程）
+        if (config) {
+          this.cacheManager
+            .writeCacheEntry(serviceName, tools, config)
+            .then(() => {
+              this.logger.debug(
+                `[MCPManager] 已将 ${serviceName} 工具列表写入缓存`
+              );
+            })
+            .catch((error) => {
+              this.logger.warn(
+                `[MCPManager] 写入缓存失败: ${serviceName}, 错误: ${
+                  error instanceof Error ? error.message : String(error)
+                }`
+              );
+            });
+        }
+
+        // 原有逻辑保持不变
         for (const tool of tools) {
           const toolKey = `${serviceName}__${tool.name}`;
           this.tools.set(toolKey, {

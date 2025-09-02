@@ -14,6 +14,7 @@
     'before 9am every weekday',
   ],
   rangeStrategy: 'bump',
+  "minimumConfidence": "high",
   lockFileMaintenance: {
     enabled: true,
     schedule: [
@@ -32,12 +33,14 @@
       ],
       automerge: true,
       automergeType: 'pr',
+      minimumConfidence: 'high'
     },
     {
       matchUpdateTypes: [
         'major',
       ],
       dependencyDashboardApproval: true,
+      minimumConfidence: 'high'
     },
     {
       matchManagers: [
@@ -48,6 +51,7 @@
       matchPackageNames: [
         '/^@types//',
       ],
+      minimumConfidence: 'high'
     },
     {
       matchDepTypes: [
@@ -58,6 +62,7 @@
       ],
       dependencyDashboardApproval: false,
       automerge: false,
+      minimumConfidence: 'high'
     },
   ],
 }
