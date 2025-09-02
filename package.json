@@ -56,7 +56,7 @@
     "cli-table3": "^0.6.5",
     "commander": "^14.0.0",
     "comment-json": "^4.2.5",
-    "dayjs": "^1.11.13",
+    "dayjs": "^1.11.18",
     "dotenv": "^17.2.1",
     "eventsource": "^4.0.0",
     "express": "^5.1.0",
