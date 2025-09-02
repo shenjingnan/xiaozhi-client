@@ -9,9 +9,11 @@ import { ToolCallService } from "./ToolCallService.js";
 global.fetch = vi.fn();
 
 // Mock ProcessManager
+const mockGetServiceStatus = vi.fn().mockReturnValue({ running: false, pid: null });
+
 vi.mock("../cli/services/ProcessManager.js", () => ({
   ProcessManagerImpl: vi.fn().mockImplementation(() => ({
-    getServiceStatus: vi.fn().mockReturnValue({ running: false, pid: null }),
+    getServiceStatus: mockGetServiceStatus,
   })),
 }));
 
@@ -21,6 +23,8 @@ describe("ToolCallService", () => {
   beforeEach(() => {
     // Reset all mocks before each test
     vi.clearAllMocks();
+    // Reset the mock to default behavior
+    mockGetServiceStatus.mockReturnValue({ running: false, pid: null });
     toolCallService = new ToolCallService();
   });
 
@@ -123,8 +127,7 @@ describe("ToolCallService", () => {
 
     it("应该在进程运行但 Web API 不可访问时返回正确状态", async () => {
       // Mock ProcessManager to return service running for this test
-      const mockProcessManager = toolCallService.processManager;
-      vi.spyOn(mockProcessManager, "getServiceStatus").mockReturnValueOnce({
+      mockGetServiceStatus.mockReturnValueOnce({
         running: true,
         pid: 12345,
       });
@@ -139,8 +142,7 @@ describe("ToolCallService", () => {
 
     it("应该在服务完全正常时返回正确状态", async () => {
       // Mock ProcessManager to return service running for this test
-      const mockProcessManager = toolCallService.processManager;
-      vi.spyOn(mockProcessManager, "getServiceStatus").mockReturnValueOnce({
+      mockGetServiceStatus.mockReturnValueOnce({
         running: true,
         pid: 12345,
       });
@@ -163,8 +165,7 @@ describe("ToolCallService", () => {
   describe("callTool", () => {
     it("应该通过 HTTP API 成功调用工具", async () => {
       // Mock ProcessManager to return service running for this test
-      const mockProcessManager = toolCallService.processManager;
-      vi.spyOn(mockProcessManager, "getServiceStatus").mockReturnValueOnce({
+      mockGetServiceStatus.mockReturnValueOnce({
         running: true,
         pid: 12345,
       });
@@ -218,8 +219,7 @@ describe("ToolCallService", () => {
 
     it("应该在 HTTP API 调用失败时抛出错误", async () => {
       // Mock ProcessManager to return service running for this test
-      const mockProcessManager = toolCallService.processManager;
-      vi.spyOn(mockProcessManager, "getServiceStatus").mockReturnValueOnce({
+      mockGetServiceStatus.mockReturnValueOnce({
         running: true,
         pid: 12345,
       });
