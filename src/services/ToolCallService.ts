@@ -50,11 +50,6 @@ export class ToolCallService {
     toolName: string,
     args: any
   ): Promise<ToolCallResult> {
-    // this.logger.info(
-    //   `准备调用工具: ${serviceName}/${toolName}，参数:`,
-    //   JSON.stringify(args)
-    // );
-
     // 1. 检查服务状态
     await this.validateServiceStatus();
 
@@ -85,7 +80,6 @@ export class ToolCallService {
         throw new Error(responseData.error?.message || "工具调用失败");
       }
 
-      // this.logger.info(`工具调用成功: ${serviceName}/${toolName}`);
       return responseData.data;
     } catch (error) {
       this.logger.error(
