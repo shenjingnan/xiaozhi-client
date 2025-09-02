@@ -29,9 +29,9 @@
       "properties": {
         "lastGlobalUpdate": {
           "type": "string",
-          "description": "全局最后更新时间，ISO 8601 格式",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$",
-          "examples": ["2025-09-01T11:14:24.374Z"]
+          "description": "全局最后更新时间，YYYY-MM-DD HH:mm:ss 格式",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+          "examples": ["2025-09-01 11:14:24"]
         },
         "totalWrites": {
           "type": "integer",
@@ -41,9 +41,9 @@
         },
         "createdAt": {
           "type": "string",
-          "description": "缓存文件创建时间，ISO 8601 格式",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$",
-          "examples": ["2025-09-01T11:14:24.288Z"]
+          "description": "缓存文件创建时间，YYYY-MM-DD HH:mm:ss 格式",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+          "examples": ["2025-09-01 11:14:24"]
         }
       },
       "additionalProperties": false
@@ -65,9 +65,9 @@
         },
         "lastUpdated": {
           "type": "string",
-          "description": "该服务工具列表最后更新时间，ISO 8601 格式",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$",
-          "examples": ["2025-09-01T11:14:24.373Z"]
+          "description": "该服务工具列表最后更新时间，YYYY-MM-DD HH:mm:ss 格式",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+          "examples": ["2025-09-01 11:14:24"]
         },
         "serverConfig": {
           "$ref": "#/definitions/MCPServiceConfig",
@@ -333,7 +333,7 @@
               }
             }
           ],
-          "lastUpdated": "2025-09-01T11:14:24.373Z",
+          "lastUpdated": "2025-09-01 11:14:24",
           "serverConfig": {
             "name": "calculator",
             "type": "stdio",
@@ -346,9 +346,9 @@
         }
       },
       "metadata": {
-        "lastGlobalUpdate": "2025-09-01T11:14:24.374Z",
+        "lastGlobalUpdate": "2025-09-01 11:14:24",
         "totalWrites": 3,
-        "createdAt": "2025-09-01T11:14:24.288Z"
+        "createdAt": "2025-09-01 11:14:24"
       }
     }
   ]

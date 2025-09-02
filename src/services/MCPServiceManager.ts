@@ -166,20 +166,21 @@ export class MCPServiceManager {
         const tools = service.getTools();
         const config = this.configs[serviceName];
 
-        // 写入缓存
+        // 异步写入缓存（不阻塞主流程）
         if (config) {
-          try {
-            await this.cacheManager.writeCacheEntry(serviceName, tools, config);
-            this.logger.debug(
-              `[MCPManager] 已将 ${serviceName} 工具列表写入缓存`
-            );
-          } catch (error) {
-            this.logger.warn(
-              `[MCPManager] 写入缓存失败: ${serviceName}, 错误: ${
-                error instanceof Error ? error.message : String(error)
-              }`
-            );
-          }
+          this.cacheManager.writeCacheEntry(serviceName, tools, config)
+            .then(() => {
+              this.logger.debug(
+                `[MCPManager] 已将 ${serviceName} 工具列表写入缓存`
+              );
+            })
+            .catch((error) => {
+              this.logger.warn(
+                `[MCPManager] 写入缓存失败: ${serviceName}, 错误: ${
+                  error instanceof Error ? error.message : String(error)
+                }`
+              );
+            });
         }
 
         // 原有逻辑保持不变

@@ -7,6 +7,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import dayjs from "dayjs";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { type Logger, logger } from "../Logger.js";
 import type { MCPServiceConfig } from "./MCPService.js";
@@ -51,6 +52,13 @@ export class MCPCacheManager {
   }
 
   /**
+   * 格式化时间戳为 YYYY-MM-DD HH:mm:ss 格式
+   */
+  private formatTimestamp(): string {
+    return dayjs().format("YYYY-MM-DD HH:mm:ss");
+  }
+
+  /**
    * 获取缓存文件路径
    * 与 xiaozhi.config.json 同级目录
    */
@@ -88,7 +96,7 @@ export class MCPCacheManager {
    * 创建初始缓存结构
    */
   private async createInitialCache(): Promise<MCPToolsCache> {
-    const now = new Date().toISOString();
+    const now = this.formatTimestamp();
     return {
       version: this.CACHE_VERSION,
       mcpServers: {},
@@ -130,7 +138,7 @@ export class MCPCacheManager {
           description: tool.description || "",
           inputSchema: tool.inputSchema,
         })),
-        lastUpdated: new Date().toISOString(),
+        lastUpdated: this.formatTimestamp(),
         serverConfig: { ...config }, // 深拷贝配置
         configHash,
         version: this.CACHE_ENTRY_VERSION,
@@ -138,7 +146,7 @@ export class MCPCacheManager {
 
       // 更新缓存
       cache.mcpServers[serverName] = cacheEntry;
-      cache.metadata.lastGlobalUpdate = new Date().toISOString();
+      cache.metadata.lastGlobalUpdate = this.formatTimestamp();
       cache.metadata.totalWrites += 1;
 
       // 保存缓存

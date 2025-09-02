@@ -125,16 +125,16 @@ describe("MCPCacheManager", () => {
         mcpServers: {
           test: {
             tools: [],
-            lastUpdated: "2023-01-01T00:00:00.000Z",
+            lastUpdated: "2023-01-01 00:00:00",
             serverConfig: mockConfig,
             configHash: "test-hash",
             version: "1.0.0",
           },
         },
         metadata: {
-          lastGlobalUpdate: "2023-01-01T00:00:00.000Z",
+          lastGlobalUpdate: "2023-01-01 00:00:00",
           totalWrites: 5,
-          createdAt: "2023-01-01T00:00:00.000Z",
+          createdAt: "2023-01-01 00:00:00",
         },
       };
 
