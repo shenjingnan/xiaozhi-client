@@ -5,8 +5,8 @@
 
 import type { Context } from "hono";
 import { type Logger, logger } from "../Logger.js";
-import { MCPServiceManagerSingleton } from "../services/MCPServiceManagerSingleton.js";
 import { configManager } from "../configManager.js";
+import { MCPServiceManagerSingleton } from "../services/MCPServiceManagerSingleton.js";
 
 /**
  * 工具调用请求接口
@@ -115,13 +115,17 @@ export class ToolApiHandler {
     } catch (error) {
       this.logger.error("工具调用失败:", error);
 
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       let errorCode = "TOOL_CALL_ERROR";
 
       // 根据错误类型设置不同的错误码
       if (errorMessage.includes("不存在")) {
         errorCode = "SERVICE_OR_TOOL_NOT_FOUND";
-      } else if (errorMessage.includes("未启动") || errorMessage.includes("未连接")) {
+      } else if (
+        errorMessage.includes("未启动") ||
+        errorMessage.includes("未连接")
+      ) {
         errorCode = "SERVICE_NOT_AVAILABLE";
       } else if (errorMessage.includes("已被禁用")) {
         errorCode = "TOOL_DISABLED";

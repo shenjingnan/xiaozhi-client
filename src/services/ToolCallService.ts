@@ -5,8 +5,8 @@
 
 import chalk from "chalk";
 import { type Logger, logger } from "../Logger.js";
-import { configManager } from "../configManager.js";
 import { ProcessManagerImpl } from "../cli/services/ProcessManager.js";
+import { configManager } from "../configManager.js";
 
 // 工具调用结果接口
 export interface ToolCallResult {
@@ -70,7 +70,8 @@ export class ToolCallService {
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(
-          errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`
+          errorData.error?.message ||
+            `HTTP ${response.status}: ${response.statusText}`
         );
       }
 
