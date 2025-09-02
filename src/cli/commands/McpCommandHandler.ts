@@ -129,8 +129,6 @@ export class McpCommandHandler extends BaseCommandHandler {
     toolName: string,
     argsString: string
   ): Promise<void> {
-    const spinner = ora(`调用工具 ${serviceName}/${toolName}...`).start();
-
     try {
       const toolCallService = new ToolCallService();
 
@@ -144,9 +142,9 @@ export class McpCommandHandler extends BaseCommandHandler {
         args
       );
 
-      spinner.succeed(`${serviceName}/${toolName}: ${toolCallService.formatOutput(result)}`);
+      console.log(toolCallService.formatOutput(result));
     } catch (error) {
-      spinner.fail(`工具调用失败: ${serviceName}/${toolName}`);
+      console.log(`工具调用失败: ${serviceName}/${toolName}`);
       console.error(chalk.red("错误:"), (error as Error).message);
 
       // 提供有用的提示
