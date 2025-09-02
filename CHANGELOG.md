@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.6.10](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.10-beta.0...v1.6.10) (2025-09-02)
+
+### Features
+
+* **ci:** 添加 Gitee 同步工作流 ([#230](https://github.com/shenjingnan/xiaozhi-client/issues/230)) ([f6bdf83](https://github.com/shenjingnan/xiaozhi-client/commit/f6bdf83c56dda242ab59299eb63f574c3fd47ea1))
+
+### Bug Fixes
+
+* **ci:** 修复Gitee同步工作流的SSH连接问题 ([#231](https://github.com/shenjingnan/xiaozhi-client/issues/231)) ([306b804](https://github.com/shenjingnan/xiaozhi-client/commit/306b804d8b55bd50c14d6b51c11f75d5123c5286))
+* **deps:** update dependency @modelcontextprotocol/sdk to ^1.17.4 ([#254](https://github.com/shenjingnan/xiaozhi-client/issues/254)) ([5886746](https://github.com/shenjingnan/xiaozhi-client/commit/58867463bc8c97238f775b1740fda50678cad758))
+* **deps:** update dependency chalk to ^5.6.0 ([#255](https://github.com/shenjingnan/xiaozhi-client/issues/255)) ([d3e15db](https://github.com/shenjingnan/xiaozhi-client/commit/d3e15db7f611b17c1d9153d9b284fc3055fe77a4))
+* **deps:** update dependency dotenv to v17 ([#260](https://github.com/shenjingnan/xiaozhi-client/issues/260)) ([3798184](https://github.com/shenjingnan/xiaozhi-client/commit/3798184fa4d2359689bdb3345baf90de64d768fd))
+* **deps:** update dependency pino-pretty to ^10.3.1 ([#243](https://github.com/shenjingnan/xiaozhi-client/issues/243)) ([c6d7635](https://github.com/shenjingnan/xiaozhi-client/commit/c6d76351acec0a1a61727dd271c8180ab46f73f5))
+* **deps:** update dependency pino-pretty to v13 ([#263](https://github.com/shenjingnan/xiaozhi-client/issues/263)) ([36c8f16](https://github.com/shenjingnan/xiaozhi-client/commit/36c8f1646da6f7fdbd3f4104c4c3f7dc91463d69))
+* **deps:** update dependency react-hook-form to ^7.62.0 ([#258](https://github.com/shenjingnan/xiaozhi-client/issues/258)) ([a540137](https://github.com/shenjingnan/xiaozhi-client/commit/a540137408bddb0a773c5257bc43a71b7b8ad481))
+* **deps:** update dependency react-router-dom to ^7.8.2 ([#259](https://github.com/shenjingnan/xiaozhi-client/issues/259)) ([a6df086](https://github.com/shenjingnan/xiaozhi-client/commit/a6df086d2cba6837fabd749355fcc5d3d8a5d9f5))
+* **deps:** update react monorepo ([#249](https://github.com/shenjingnan/xiaozhi-client/issues/249)) ([ca19705](https://github.com/shenjingnan/xiaozhi-client/commit/ca1970521c0158559cca5a94391cd3e7c3acc032))
+
 ## [1.6.10-beta.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.9...v1.6.10-beta.0) (2025-09-01)
 
 ## [1.6.9](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.8...v1.6.9) (2025-08-31)
