@@ -9,7 +9,9 @@ import { ToolCallService } from "./ToolCallService.js";
 global.fetch = vi.fn();
 
 // Mock ProcessManager
-const mockGetServiceStatus = vi.fn().mockReturnValue({ running: false, pid: null });
+const mockGetServiceStatus = vi
+  .fn()
+  .mockReturnValue({ running: false, pid: null });
 
 vi.mock("../cli/services/ProcessManager.js", () => ({
   ProcessManagerImpl: vi.fn().mockImplementation(() => ({
