@@ -123,7 +123,7 @@ describe("ToolCallService", () => {
 
     it("应该在进程运行但 Web API 不可访问时返回正确状态", async () => {
       // Mock ProcessManager to return service running for this test
-      const mockProcessManager = toolCallService["processManager"];
+      const mockProcessManager = toolCallService.processManager;
       vi.spyOn(mockProcessManager, "getServiceStatus").mockReturnValueOnce({
         running: true,
         pid: 12345,
@@ -139,7 +139,7 @@ describe("ToolCallService", () => {
 
     it("应该在服务完全正常时返回正确状态", async () => {
       // Mock ProcessManager to return service running for this test
-      const mockProcessManager = toolCallService["processManager"];
+      const mockProcessManager = toolCallService.processManager;
       vi.spyOn(mockProcessManager, "getServiceStatus").mockReturnValueOnce({
         running: true,
         pid: 12345,
@@ -163,7 +163,7 @@ describe("ToolCallService", () => {
   describe("callTool", () => {
     it("应该通过 HTTP API 成功调用工具", async () => {
       // Mock ProcessManager to return service running for this test
-      const mockProcessManager = toolCallService["processManager"];
+      const mockProcessManager = toolCallService.processManager;
       vi.spyOn(mockProcessManager, "getServiceStatus").mockReturnValueOnce({
         running: true,
         pid: 12345,
@@ -187,9 +187,13 @@ describe("ToolCallService", () => {
           }),
         } as Response);
 
-      const result = await toolCallService.callTool("calculator", "calculator", {
-        javascript_expression: "1+2",
-      });
+      const result = await toolCallService.callTool(
+        "calculator",
+        "calculator",
+        {
+          javascript_expression: "1+2",
+        }
+      );
 
       expect(result).toEqual({
         content: [{ type: "text", text: "3" }],
@@ -214,7 +218,7 @@ describe("ToolCallService", () => {
 
     it("应该在 HTTP API 调用失败时抛出错误", async () => {
       // Mock ProcessManager to return service running for this test
-      const mockProcessManager = toolCallService["processManager"];
+      const mockProcessManager = toolCallService.processManager;
       vi.spyOn(mockProcessManager, "getServiceStatus").mockReturnValueOnce({
         running: true,
         pid: 12345,
