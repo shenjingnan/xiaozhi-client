@@ -21,6 +21,7 @@ import { RealtimeNotificationHandler } from "./handlers/RealtimeNotificationHand
 import { ServiceApiHandler } from "./handlers/ServiceApiHandler.js";
 import { StaticFileHandler } from "./handlers/StaticFileHandler.js";
 import { StatusApiHandler } from "./handlers/StatusApiHandler.js";
+import { ToolApiHandler } from "./handlers/ToolApiHandler.js";
 import { ConfigService } from "./services/ConfigService.js";
 // 导入新的服务和处理器
 import {
@@ -77,6 +78,7 @@ export class WebServer {
   private configApiHandler: ConfigApiHandler;
   private statusApiHandler: StatusApiHandler;
   private serviceApiHandler: ServiceApiHandler;
+  private toolApiHandler: ToolApiHandler;
   private staticFileHandler: StaticFileHandler;
 
   // WebSocket 处理器
@@ -156,6 +158,7 @@ export class WebServer {
     this.configApiHandler = new ConfigApiHandler();
     this.statusApiHandler = new StatusApiHandler(this.statusService);
     this.serviceApiHandler = new ServiceApiHandler(this.statusService);
+    this.toolApiHandler = new ToolApiHandler();
     this.staticFileHandler = new StaticFileHandler();
 
     // 初始化 WebSocket 处理器
@@ -510,6 +513,10 @@ export class WebServer {
     this.app?.get("/api/services/health", (c) =>
       this.serviceApiHandler.getServiceHealth(c)
     );
+
+    // 工具调用相关 API 路由
+    this.app?.post("/api/tools/call", (c) => this.toolApiHandler.callTool(c));
+    this.app?.get("/api/tools/list", (c) => this.toolApiHandler.listTools(c));
 
     // 处理未知的 API 路由
     this.app?.all("/api/*", async (c) => {
