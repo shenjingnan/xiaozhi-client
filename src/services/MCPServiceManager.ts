@@ -168,7 +168,8 @@ export class MCPServiceManager {
 
         // 异步写入缓存（不阻塞主流程）
         if (config) {
-          this.cacheManager.writeCacheEntry(serviceName, tools, config)
+          this.cacheManager
+            .writeCacheEntry(serviceName, tools, config)
             .then(() => {
               this.logger.debug(
                 `[MCPManager] 已将 ${serviceName} 工具列表写入缓存`

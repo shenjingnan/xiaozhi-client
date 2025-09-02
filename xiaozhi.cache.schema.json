@@ -54,7 +54,13 @@
     "MCPToolsCacheEntry": {
       "type": "object",
       "description": "单个 MCP 服务的缓存条目",
-      "required": ["tools", "lastUpdated", "serverConfig", "configHash", "version"],
+      "required": [
+        "tools",
+        "lastUpdated",
+        "serverConfig",
+        "configHash",
+        "version"
+      ],
       "properties": {
         "tools": {
           "type": "array",
@@ -77,7 +83,9 @@
           "type": "string",
           "description": "服务配置的 SHA256 哈希值，用于快速检测配置变更",
           "pattern": "^[a-f0-9]{64}$",
-          "examples": ["26e2388a301509d276dba45913acfeb5b4886a089186ce30663bbd16caaea6e5"]
+          "examples": [
+            "26e2388a301509d276dba45913acfeb5b4886a089186ce30663bbd16caaea6e5"
+          ]
         },
         "version": {
           "type": "string",
@@ -102,7 +110,10 @@
         "description": {
           "type": "string",
           "description": "工具功能描述",
-          "examples": ["For mathematical calculation", "Get the current time in various formats"]
+          "examples": [
+            "For mathematical calculation",
+            "Get the current time in various formats"
+          ]
         },
         "inputSchema": {
           "description": "工具输入参数的 JSON Schema 定义",
