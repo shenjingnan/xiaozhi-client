@@ -68,7 +68,7 @@ importers:
         specifier: ^8.2.0
         version: 8.2.0
       pino:
-        specifier: ^8.0.0
+        specifier: ^8.21.0
         version: 8.21.0
       pino-pretty:
         specifier: ^13.1.1
