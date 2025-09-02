@@ -74,7 +74,7 @@ importers:
         specifier: ^13.1.1
         version: 13.1.1
       ws:
-        specifier: ^8.14.2
+        specifier: ^8.18.3
         version: 8.18.3
       zod:
         specifier: ^3.25.62
