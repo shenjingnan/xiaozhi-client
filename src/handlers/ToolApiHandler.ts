@@ -109,7 +109,7 @@ export class ToolApiHandler {
       const toolKey = `${serviceName}__${toolName}`;
       const result = await serviceManager.callTool(toolKey, args || {});
 
-      this.logger.info(`工具调用成功: ${serviceName}/${toolName}`);
+      // this.logger.debug(`工具调用成功: ${serviceName}/${toolName}`);
 
       return c.json(this.createSuccessResponse(result, "工具调用成功"));
     } catch (error) {

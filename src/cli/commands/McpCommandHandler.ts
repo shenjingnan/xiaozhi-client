@@ -144,15 +144,9 @@ export class McpCommandHandler extends BaseCommandHandler {
         args
       );
 
-      spinner.succeed(`工具调用成功: ${serviceName}/${toolName}`);
-
-      // 输出原始响应
-      console.log();
-      console.log(chalk.bold("调用结果:"));
-      console.log(toolCallService.formatOutput(result));
+      spinner.succeed(`${serviceName}/${toolName}: ${toolCallService.formatOutput(result)}`);
     } catch (error) {
       spinner.fail(`工具调用失败: ${serviceName}/${toolName}`);
-      console.log();
       console.error(chalk.red("错误:"), (error as Error).message);
 
       // 提供有用的提示

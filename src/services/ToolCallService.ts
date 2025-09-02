@@ -50,10 +50,10 @@ export class ToolCallService {
     toolName: string,
     args: any
   ): Promise<ToolCallResult> {
-    this.logger.info(
-      `准备调用工具: ${serviceName}/${toolName}，参数:`,
-      JSON.stringify(args)
-    );
+    // this.logger.info(
+    //   `准备调用工具: ${serviceName}/${toolName}，参数:`,
+    //   JSON.stringify(args)
+    // );
 
     // 1. 检查服务状态
     await this.validateServiceStatus();
@@ -85,7 +85,7 @@ export class ToolCallService {
         throw new Error(responseData.error?.message || "工具调用失败");
       }
 
-      this.logger.info(`工具调用成功: ${serviceName}/${toolName}`);
+      // this.logger.info(`工具调用成功: ${serviceName}/${toolName}`);
       return responseData.data;
     } catch (error) {
       this.logger.error(
@@ -148,16 +148,13 @@ export class ToolCallService {
     }
   }
 
-
-
   /**
    * 格式化输出结果
    * @param result 工具调用结果
    * @returns 格式化后的字符串
    */
   formatOutput(result: ToolCallResult): string {
-    // 直接返回原始 JSON 格式
-    return JSON.stringify(result, null, 2);
+    return JSON.stringify(result);
   }
 
   /**
