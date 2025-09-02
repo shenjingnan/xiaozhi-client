@@ -15,7 +15,7 @@ import type { MCPServiceConfig } from "./MCPService.js";
 // 缓存条目接口
 export interface MCPToolsCacheEntry {
   tools: Tool[]; // 工具列表
-  lastUpdated: string; // 最后更新时间 (ISO 8601)
+  lastUpdated: string; // 最后更新时间 (YYYY-MM-DD HH:mm:ss)
   serverConfig: MCPServiceConfig; // 服务配置快照
   configHash: string; // 配置哈希值，用于快速变更检测
   version: string; // 缓存条目版本
@@ -26,9 +26,9 @@ export interface MCPToolsCache {
   version: string; // 缓存文件格式版本 "1.0.0"
   mcpServers: Record<string, MCPToolsCacheEntry>;
   metadata: {
-    lastGlobalUpdate: string; // 全局最后更新时间
+    lastGlobalUpdate: string; // 全局最后更新时间 (YYYY-MM-DD HH:mm:ss)
     totalWrites: number; // 总写入次数
-    createdAt: string; // 缓存文件创建时间
+    createdAt: string; // 缓存文件创建时间 (YYYY-MM-DD HH:mm:ss)
   };
 }
 

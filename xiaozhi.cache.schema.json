@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://xiaozhi.me/schemas/cache.json",
+  "$id": "https://github.com/shenjingnan/xiaozhi-client/xiaozhi.cache.schema.json",
   "title": "xiaozhi MCP 服务工具列表缓存文件",
   "description": "定义 xiaozhi.cache.json 缓存文件的数据结构，用于存储 MCP 服务的工具列表和相关元数据",
   "type": "object",

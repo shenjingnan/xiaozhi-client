@@ -245,16 +245,16 @@ export class MCPServiceManager {
   "mcpServers": {
     "服务名称": {
       "tools": [...],
-      "lastUpdated": "ISO 8601 时间戳",
+      "lastUpdated": "YYYY-MM-DD HH:mm:ss 时间戳",
       "serverConfig": {...},
       "configHash": "SHA256 哈希值",
       "version": "1.0.0"
     }
   },
   "metadata": {
-    "lastGlobalUpdate": "ISO 8601 时间戳",
+    "lastGlobalUpdate": "YYYY-MM-DD HH:mm:ss 时间戳",
     "totalWrites": 数字,
-    "createdAt": "ISO 8601 时间戳"
+    "createdAt": "YYYY-MM-DD HH:mm:ss 时间戳"
   }
 }
 ```
@@ -288,8 +288,8 @@ export class MCPServiceManager {
 #### 时间戳字段
 
 - **作用**: 记录缓存的创建和更新时间
-- **约束**: 必须符合 ISO 8601 格式
-- **示例**: `"2025-09-01T12:39:21.238Z"`
+- **约束**: 必须符合 YYYY-MM-DD HH:mm:ss 格式
+- **示例**: `"2025-09-01 12:39:21"`
 
 ### 配置哈希的生成和验证机制
 
@@ -520,8 +520,8 @@ private generateConfigHash(config: MCPServiceConfig): string {
    cd tmp/hello-world
    xiaozhi start
 
-   # 验证缓存文件
-   node ../../scripts/validate-cache.js xiaozhi.cache.json
+   # 验证缓存文件格式
+   cat xiaozhi.cache.json | jq .
    ```
 
 #### 代码规范
@@ -592,7 +592,7 @@ describe("MCPCacheManager", () => {
 
    # 验证缓存文件存在且格式正确
    ls -la xiaozhi.cache.json
-   node scripts/validate-cache.js xiaozhi.cache.json
+   cat xiaozhi.cache.json | jq .
    ```
 
 2. **缓存写入测试**
@@ -632,7 +632,7 @@ describe("MCPCacheManager", () => {
    xiaozhi start
 
    # 验证缓存文件是否被重新创建
-   node scripts/validate-cache.js xiaozhi.cache.json
+   cat xiaozhi.cache.json | jq .
    ```
 
 2. **权限问题测试**
@@ -689,7 +689,7 @@ describe("MCPCacheManager", () => {
 
 #### 问题 2: 缓存验证失败
 
-**症状**: 运行 `node scripts/validate-cache.js` 时报告验证错误
+**症状**: 缓存文件格式验证失败
 
 **排查步骤**:
 
@@ -702,7 +702,7 @@ describe("MCPCacheManager", () => {
 2. 查看具体验证错误
 
    ```bash
-   node scripts/validate-cache.js xiaozhi.cache.json
+   cat xiaozhi.cache.json | jq . || echo "JSON 格式错误"
    ```
 
 3. 检查 Schema 文件是否存在
@@ -771,7 +771,7 @@ describe("MCPCacheManager", () => {
 
 3. 查看缓存统计信息
    ```bash
-   node scripts/validate-cache.js xiaozhi.cache.json
+   cat xiaozhi.cache.json | jq '.metadata'
    ```
 
 **解决方案**:
@@ -795,16 +795,18 @@ describe("MCPCacheManager", () => {
    time xiaozhi start
    ```
 
-2. **缓存命中率监控**
+2. **缓存统计监控**
 
    ```bash
    # 查看缓存统计
-   node scripts/validate-cache.js xiaozhi.cache.json
+   cat xiaozhi.cache.json | jq '.metadata'
 
    # 输出示例：
-   # 📊 缓存文件统计:
-   #    总写入次数: 6
-   #    服务数量: 2
+   # {
+   #   "lastGlobalUpdate": "2025-09-01 12:39:21",
+   #   "totalWrites": 6,
+   #   "createdAt": "2025-09-01 12:30:15"
+   # }
    ```
 
 3. **内存使用监控**
@@ -864,7 +866,7 @@ xiaozhi 的 MCP 缓存机制通过智能的数据缓存和配置变更检测，�
 
 ### 格式验证
 
-- **时间戳**: 必须符合 ISO 8601 格式 (`YYYY-MM-DDTHH:mm:ss.sssZ`)
+- **时间戳**: 必须符合 YYYY-MM-DD HH:mm:ss 格式
 - **版本号**: 必须符合语义化版本格式 (`x.y.z`)
 - **配置哈希**: 必须是 64 位十六进制字符串 (SHA256)
 - **服务器名称**: 只能包含字母、数字、下划线和连字符
@@ -889,7 +891,6 @@ xiaozhi 的 MCP 缓存机制通过智能的数据缓存和配置变更检测，�
 ## 相关文件
 
 - `xiaozhi.cache.schema.json`: JSON Schema 定义文件
-- `scripts/validate-cache.js`: 缓存文件验证脚本
 - `src/services/MCPCacheManager.ts`: 缓存管理器实现
 - `xiaozhi.cache.json`: 实际的缓存文件
 
@@ -904,14 +905,14 @@ xiaozhi 的 MCP 缓存机制通过智能的数据缓存和配置变更检测，�
 
 ### 常见验证错误
 
-1. **时间格式错误**: 确保时间戳符合 ISO 8601 格式
+1. **时间格式错误**: 确保时间戳符合 YYYY-MM-DD HH:mm:ss 格式
 2. **缺少必需字段**: 检查所有必需字段是否存在
 3. **类型不匹配**: 确保字段类型与 Schema 定义一致
 4. **格式不符**: 检查版本号、哈希值等格式是否正确
 
 ### 修复建议
 
-1. 使用验证脚本检查具体错误信息
+1. 使用 `jq` 工具检查 JSON 格式和内容
 2. 参考示例文件修正格式问题
 3. 重新生成缓存文件（删除现有文件，重启服务）
 4. 检查 MCPCacheManager 的实现逻辑
