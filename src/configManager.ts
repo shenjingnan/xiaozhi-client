@@ -157,7 +157,7 @@ export interface CustomMCPTool {
 }
 
 export interface CustomMCPConfig {
-  tools: CustomMCPTool[] | CustomMCPTool; // 支持数组格式和单对象格式
+  tools: CustomMCPTool[];
 }
 
 export interface AppConfig {

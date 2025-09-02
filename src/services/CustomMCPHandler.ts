@@ -294,6 +294,7 @@ export class CustomMCPHandler {
 
   /**
    * 构建 Coze 请求数据
+   * TODO: 这里要看一下构建的格式是否正确
    */
   private buildCozeRequest(
     config: ProxyHandlerConfig["config"],
@@ -350,7 +351,6 @@ export class CustomMCPHandler {
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      "User-Agent": "xiaozhi-client/1.0",
       ...config.headers,
     };
 
