@@ -63,6 +63,16 @@ const validateEndpoint = (endpoint: string): string | null => {
   return null; // 验证通过
 };
 
+// 添加类型声明导入，解决TypeScript错误
+declare module "lucide-react";
+declare module "react" {
+  interface JSX {
+    IntrinsicElements: any;
+  }
+}
+declare module "sonner";
+
+
 export function McpEndpointSettingButton() {
   const [open, setOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
