@@ -204,7 +204,7 @@ describe("StaticFileHandler", () => {
 
       const response = await staticFileHandler.handleStaticFile(mockContext);
 
-      expect(mockContext.body).toHaveBeenCalledWith(binaryData, 200, {
+      expect(mockContext.body).toHaveBeenCalledWith(new Uint8Array(binaryData), 200, {
         "Content-Type": "image/png",
       });
     });
@@ -547,7 +547,7 @@ describe("StaticFileHandler", () => {
 
       await handler.serveFile(mockContext, filePath, contentType);
 
-      expect(mockContext.body).toHaveBeenCalledWith(binaryData, 200, {
+      expect(mockContext.body).toHaveBeenCalledWith(new Uint8Array(binaryData), 200, {
         "Content-Type": contentType,
       });
     });
@@ -765,7 +765,7 @@ describe("StaticFileHandler", () => {
 
       await staticFileHandler.handleStaticFile(mockContext);
 
-      expect(mockContext.body).toHaveBeenCalledWith(expect.any(Buffer), 200, {
+      expect(mockContext.body).toHaveBeenCalledWith(expect.any(Uint8Array), 200, {
         "Content-Type": "application/octet-stream",
       });
     });

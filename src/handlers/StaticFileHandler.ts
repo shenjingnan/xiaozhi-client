@@ -139,7 +139,7 @@ export class StaticFileHandler {
         return c.text(content.toString(), 200, { "Content-Type": contentType });
       }
 
-      return c.body(content, 200, { "Content-Type": contentType });
+      return c.body(new Uint8Array(content), 200, { "Content-Type": contentType });
     } catch (error) {
       this.logger.error(`读取文件失败: ${filePath}`, error);
       throw error;
