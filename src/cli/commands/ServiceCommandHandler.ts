@@ -195,13 +195,51 @@ export class ServiceCommandHandler extends BaseCommandHandler {
 
   /**
    * 启动 MCP Server 模式
+   * @deprecated 将在 v2.0.0 中移除，请使用 `xiaozhi start` 启动 WebServer
    */
   private async startMCPServerMode(
     port: number,
     daemon: boolean
   ): Promise<void> {
-    // 这里需要实现 MCP Server 模式的启动逻辑
-    // 暂时抛出错误，提醒需要实现
-    throw new Error("MCP Server 模式启动逻辑需要实现");
+    // 废弃警告
+    console.warn(
+      "[已废弃] MCP Server 模式 (-s) 将在 v2.0.0 中移除。" +
+      "\n推荐使用: xiaozhi start (WebServer 在 9999 端口提供 /mcp 端点)" +
+      "\n详情请参考迁移指南: https://github.com/your-org/xiaozhi-client/blob/main/MIGRATION.md"
+    );
+
+    // 临时实现：启动 WebServer 而非独立的 HTTPAdapter
+    console.log(`正在启动 WebServer (端口: ${port})，提供 /mcp 端点...`);
+
+    try {
+      const { WebServer } = await import("../../WebServer.js");
+      const webServer = new WebServer(port);
+
+      if (daemon) {
+        // 后台模式启动
+        console.log("后台模式暂未实现，将以前台模式启动");
+      }
+
+      await webServer.start();
+      console.log(`WebServer 已启动在端口 ${port}`);
+      console.log(`MCP 端点: http://localhost:${port}/mcp`);
+
+      // 处理退出信号
+      process.on("SIGINT", async () => {
+        console.log("\n正在停止服务...");
+        await webServer.stop();
+        process.exit(0);
+      });
+
+      process.on("SIGTERM", async () => {
+        console.log("\n正在停止服务...");
+        await webServer.stop();
+        process.exit(0);
+      });
+
+    } catch (error) {
+      console.error("启动 WebServer 失败:", error);
+      throw error;
+    }
   }
 }
