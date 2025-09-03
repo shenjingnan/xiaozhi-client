@@ -34,7 +34,7 @@ describe("MCPServiceManager", () => {
   beforeEach(async () => {
     // 设置测试环境，避免在项目目录创建缓存文件
     originalEnv = process.env.XIAOZHI_CONFIG_DIR;
-    process.env.XIAOZHI_CONFIG_DIR = "/tmp/xiaozhi-test-mcpservicemanager";
+    process.env.XIAOZHI_CONFIG_DIR = "/tmp/xiaozhi-test-mcpServiceManager";
     vi.clearAllMocks();
 
     // 获取模拟的 logger 实例
