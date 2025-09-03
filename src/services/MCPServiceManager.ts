@@ -59,7 +59,15 @@ export class MCPServiceManager {
   constructor(configs?: Record<string, MCPServiceConfig>) {
     this.logger = logger;
     this.configs = configs || {};
-    this.cacheManager = new MCPCacheManager();
+
+    // 在测试环境中使用临时目录，避免在项目根目录创建缓存文件
+    const isTestEnv =
+      process.env.NODE_ENV === "test" || process.env.VITEST === "true";
+    const cachePath = isTestEnv
+      ? `/tmp/xiaozhi-test-${Date.now()}-${Math.random().toString(36).substring(2, 11)}/xiaozhi.cache.json`
+      : undefined;
+
+    this.cacheManager = new MCPCacheManager(cachePath);
   }
 
   /**

@@ -5,8 +5,14 @@
  */
 
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  writeFileSync,
+} from "node:fs";
+import { dirname, resolve } from "node:path";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import dayjs from "dayjs";
 import { type Logger, logger } from "../Logger.js";
@@ -46,9 +52,9 @@ export class MCPCacheManager {
   private readonly CACHE_VERSION = "1.0.0";
   private readonly CACHE_ENTRY_VERSION = "1.0.0";
 
-  constructor() {
+  constructor(customCachePath?: string) {
     this.logger = logger;
-    this.cachePath = this.getCacheFilePath();
+    this.cachePath = customCachePath || this.getCacheFilePath();
   }
 
   /**
@@ -79,6 +85,13 @@ export class MCPCacheManager {
   async ensureCacheFile(): Promise<void> {
     try {
       if (!existsSync(this.cachePath)) {
+        // 确保缓存文件的目录存在
+        const cacheDir = dirname(this.cachePath);
+        if (!existsSync(cacheDir)) {
+          mkdirSync(cacheDir, { recursive: true });
+          this.logger.debug(`[CacheManager] 已创建缓存目录: ${cacheDir}`);
+        }
+
         this.logger.debug("[CacheManager] 缓存文件不存在，创建初始缓存文件");
         const initialCache = await this.createInitialCache();
         await this.saveCache(initialCache);
