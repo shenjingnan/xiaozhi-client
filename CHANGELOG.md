@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.11](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.10...v1.6.11) (2025-09-02)
+
+### Features
+
+* **cache:** 实现 MCP 服务工具列表缓存机制 ([#269](https://github.com/shenjingnan/xiaozhi-client/issues/269)) ([af674d3](https://github.com/shenjingnan/xiaozhi-client/commit/af674d349cf435ce422eb9f7f6f10a63b2be08f7))
+* **mcp:** 新增 MCP 工具命令行调用功能 ([#277](https://github.com/shenjingnan/xiaozhi-client/issues/277)) ([c2ea2c8](https://github.com/shenjingnan/xiaozhi-client/commit/c2ea2c8a3e7430a6aaf7442a89c296f0e1a03883))
+
 ## [1.6.10](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.10-beta.0...v1.6.10) (2025-09-02)
 
 ### Features
