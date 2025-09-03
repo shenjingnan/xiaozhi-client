@@ -455,6 +455,23 @@ export class MCPServiceManager {
   }
 
   /**
+   * 检查指定的 customMCP 工具是否存在
+   * @param toolName 工具名称
+   * @returns 如果工具存在返回 true，否则返回 false
+   */
+  hasCustomMCPTool(toolName: string): boolean {
+    return this.customMCPHandler.hasTool(toolName);
+  }
+
+  /**
+   * 获取所有 customMCP 工具列表
+   * @returns customMCP 工具数组
+   */
+  getCustomMCPTools(): Tool[] {
+    return this.customMCPHandler.getTools();
+  }
+
+  /**
    * 增强服务配置
    * 根据服务类型添加必要的全局配置
    */

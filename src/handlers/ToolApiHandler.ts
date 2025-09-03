@@ -105,9 +105,16 @@ export class ToolApiHandler {
       // 验证服务和工具是否存在
       await this.validateServiceAndTool(serviceManager, serviceName, toolName);
 
-      // 调用工具
-      const toolKey = `${serviceName}__${toolName}`;
-      const result = await serviceManager.callTool(toolKey, args || {});
+      // 调用工具 - 特殊处理 customMCP 服务
+      let result: any;
+      if (serviceName === 'customMCP') {
+        // 对于 customMCP 服务，直接使用 toolName 调用
+        result = await serviceManager.callTool(toolName, args || {});
+      } else {
+        // 对于标准 MCP 服务，使用 serviceName__toolName 格式
+        const toolKey = `${serviceName}__${toolName}`;
+        result = await serviceManager.callTool(toolKey, args || {});
+      }
 
       // this.logger.debug(`工具调用成功: ${serviceName}/${toolName}`);
 
@@ -205,6 +212,19 @@ export class ToolApiHandler {
     serviceName: string,
     toolName: string
   ): Promise<void> {
+    // 特殊处理 customMCP 服务
+    if (serviceName === 'customMCP') {
+      // 验证 customMCP 工具是否存在
+      if (!serviceManager.hasCustomMCPTool(toolName)) {
+        const availableTools = serviceManager.getCustomMCPTools().map((tool: any) => tool.name);
+        throw new Error(
+          `customMCP 工具 '${toolName}' 不存在。可用工具: ${availableTools.join(", ")}`
+        );
+      }
+      return;
+    }
+
+    // 标准 MCP 服务验证逻辑
     // 检查配置中是否存在该服务
     const mcpServers = configManager.getMcpServers();
     if (!mcpServers[serviceName]) {
