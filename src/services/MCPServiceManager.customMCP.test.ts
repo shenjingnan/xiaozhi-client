@@ -3,7 +3,7 @@
  * 测试新增的 hasCustomMCPTool 和 getCustomMCPTools 方法
  */
 
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import MCPServiceManager from "./MCPServiceManager.js";
 
 // Mock dependencies
@@ -167,7 +167,7 @@ describe("MCPServiceManager - customMCP 支持", () => {
       ];
 
       mockCustomMCPHandler.hasTool.mockImplementation((toolName: string) => {
-        return customTools.some(tool => tool.name === toolName);
+        return customTools.some((tool) => tool.name === toolName);
       });
       mockCustomMCPHandler.getTools.mockReturnValue(customTools);
 
@@ -207,7 +207,9 @@ describe("MCPServiceManager - customMCP 支持", () => {
 
       // Assert
       expect(result).toBe(true);
-      expect(mockCustomMCPHandler.hasTool).toHaveBeenCalledWith(specialToolName);
+      expect(mockCustomMCPHandler.hasTool).toHaveBeenCalledWith(
+        specialToolName
+      );
     });
 
     it("应该正确处理空字符串工具名称", () => {

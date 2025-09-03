@@ -86,12 +86,16 @@ export async function listMcpServers(
     if (totalServices === 0) {
       spinner.warn("未配置任何 MCP 服务或 customMCP 工具");
       console.log(
-        chalk.yellow("💡 提示: 使用 'xiaozhi config' 命令配置 MCP 服务或在 xiaozhi.config.json 中配置 customMCP 工具")
+        chalk.yellow(
+          "💡 提示: 使用 'xiaozhi config' 命令配置 MCP 服务或在 xiaozhi.config.json 中配置 customMCP 工具"
+        )
       );
       return;
     }
 
-    spinner.succeed(`找到 ${totalServices} 个 MCP 服务${hasCustomMCP ? ' (包括 customMCP)' : ''}`);
+    spinner.succeed(
+      `找到 ${totalServices} 个 MCP 服务${hasCustomMCP ? " (包括 customMCP)" : ""}`
+    );
 
     if (options.tools) {
       // 显示所有服务的工具列表
@@ -112,7 +116,7 @@ export async function listMcpServers(
 
       // 添加 customMCP 工具名称
       if (hasCustomMCP) {
-        const customToolNames = customMCPTools.map(tool => tool.name);
+        const customToolNames = customMCPTools.map((tool) => tool.name);
         allToolNames.push(...customToolNames);
       }
 
@@ -146,10 +150,7 @@ export async function listMcpServers(
       // 首先添加 customMCP 工具（如果存在）
       if (hasCustomMCP) {
         for (const customTool of customMCPTools) {
-          const description = truncateToWidth(
-            customTool.description || "",
-            32
-          );
+          const description = truncateToWidth(customTool.description || "", 32);
 
           table.push([
             "customMCP",

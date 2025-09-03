@@ -271,8 +271,6 @@ export class CustomMCPHandler {
     try {
       // 构建请求参数
       const requestData = this.buildCozeRequest(config, arguments_);
-
-      debugger;
       // 发送请求到 Coze API
       const response = await this.sendCozeRequest(config, requestData);
 

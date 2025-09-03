@@ -254,7 +254,9 @@ export class MCPServiceManager {
       }
 
       if (customTools.length > 0) {
-        this.logger.info(`[MCPManager] 添加了 ${customTools.length} 个 customMCP 工具`);
+        this.logger.info(
+          `[MCPManager] 添加了 ${customTools.length} 个 customMCP 工具`
+        );
       }
     } catch (error) {
       this.logger.error("[MCPManager] 获取 CustomMCP 工具失败:", error);
@@ -280,7 +282,9 @@ export class MCPServiceManager {
       }
     }
 
-    this.logger.info(`[MCPManager] 返回总计 ${allTools.length} 个工具 (customMCP + 标准 MCP)`);
+    this.logger.info(
+      `[MCPManager] 返回总计 ${allTools.length} 个工具 (customMCP + 标准 MCP)`
+    );
     return allTools;
   }
 
