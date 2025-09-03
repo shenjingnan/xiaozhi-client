@@ -204,8 +204,8 @@ export class ServiceCommandHandler extends BaseCommandHandler {
     // 废弃警告
     console.warn(
       "[已废弃] MCP Server 模式 (-s) 将在 v2.0.0 中移除。" +
-      "\n推荐使用: xiaozhi start (WebServer 在 9999 端口提供 /mcp 端点)" +
-      "\n详情请参考迁移指南: https://github.com/your-org/xiaozhi-client/blob/main/MIGRATION.md"
+        "\n推荐使用: xiaozhi start (WebServer 在 9999 端口提供 /mcp 端点)" +
+        "\n详情请参考迁移指南: https://github.com/your-org/xiaozhi-client/blob/main/MIGRATION.md"
     );
 
     // 临时实现：启动 WebServer 而非独立的 HTTPAdapter
@@ -236,7 +236,6 @@ export class ServiceCommandHandler extends BaseCommandHandler {
         await webServer.stop();
         process.exit(0);
       });
-
     } catch (error) {
       console.error("启动 WebServer 失败:", error);
       throw error;

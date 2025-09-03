@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MCPRouteHandler } from "../MCPRouteHandler.js";
 
 // Mock MCPServiceManagerSingleton
@@ -26,7 +26,17 @@ describe("MCPRouteHandler", () => {
   let handler: MCPRouteHandler;
 
   beforeEach(() => {
-    handler = new MCPRouteHandler();
+    handler = new MCPRouteHandler({
+      maxClients: 10,
+      connectionTimeout: 30000,
+      heartbeatInterval: 5000,
+      enableMetrics: true,
+    });
+  });
+
+  afterEach(() => {
+    // 清理资源
+    handler.destroy();
   });
 
   it("should create MCPRouteHandler instance", () => {
@@ -38,9 +48,13 @@ describe("MCPRouteHandler", () => {
     expect(status).toHaveProperty("connectedClients");
     expect(status).toHaveProperty("maxClients");
     expect(status).toHaveProperty("isInitialized");
+    expect(status).toHaveProperty("metrics");
+    expect(status).toHaveProperty("config");
     expect(status.connectedClients).toBe(0);
-    expect(status.maxClients).toBe(100);
+    expect(status.maxClients).toBe(10);
     expect(status.isInitialized).toBe(false);
+    expect(status.config.maxClients).toBe(10);
+    expect(status.config.connectionTimeout).toBe(30000);
   });
 
   it("should handle POST request with valid JSON-RPC message", async () => {
@@ -53,11 +67,13 @@ describe("MCPRouteHandler", () => {
           return undefined;
         }),
         query: vi.fn(() => undefined),
-        json: vi.fn().mockResolvedValue({
-          jsonrpc: "2.0",
-          method: "initialize",
-          id: 1,
-        }),
+        text: vi.fn().mockResolvedValue(
+          JSON.stringify({
+            jsonrpc: "2.0",
+            method: "initialize",
+            id: 1,
+          })
+        ),
       },
       json: vi.fn((data: any, status?: number, headers?: any) => {
         return new Response(JSON.stringify(data), {
@@ -76,9 +92,14 @@ describe("MCPRouteHandler", () => {
   });
 
   it("should handle GET request for SSE connection", async () => {
-    // Mock Context object
+    // Mock Context object with complete header function
     const mockContext = {
       req: {
+        header: vi.fn((name: string) => {
+          if (name === "user-agent") return "test-agent";
+          if (name === "x-forwarded-for") return "127.0.0.1";
+          return undefined;
+        }),
         raw: {
           signal: {
             addEventListener: vi.fn(),
@@ -142,7 +163,7 @@ describe("MCPRouteHandler", () => {
           return undefined;
         }),
         query: vi.fn(() => undefined),
-        json: vi.fn().mockRejectedValue(new Error("Invalid JSON")),
+        text: vi.fn().mockResolvedValue("invalid json"),
       },
     };
 
@@ -159,15 +180,55 @@ describe("MCPRouteHandler", () => {
           return undefined;
         }),
         query: vi.fn(() => undefined),
-        json: vi.fn().mockResolvedValue({
-          // Missing jsonrpc and method fields
-          id: 1,
-        }),
+        text: vi.fn().mockResolvedValue(
+          JSON.stringify({
+            // Missing jsonrpc and method fields
+            id: 1,
+          })
+        ),
       },
     };
 
     const response = await handler.handlePost(mockContext as any);
     expect(response).toBeInstanceOf(Response);
     expect(response.status).toBe(400);
+  });
+
+  it("should reject POST request that exceeds max message size", async () => {
+    const largeMessage = "x".repeat(2 * 1024 * 1024); // 2MB message
+    const mockContext = {
+      req: {
+        header: vi.fn((name: string) => {
+          if (name === "content-type") return "application/json";
+          if (name === "content-length") return (2 * 1024 * 1024).toString();
+          return undefined;
+        }),
+        query: vi.fn(() => undefined),
+        text: vi.fn().mockResolvedValue(largeMessage),
+      },
+    };
+
+    const response = await handler.handlePost(mockContext as any);
+    expect(response).toBeInstanceOf(Response);
+    expect(response.status).toBe(400);
+  });
+
+  it("should have getDetailedStatus method", () => {
+    const detailedStatus = handler.getDetailedStatus();
+    expect(detailedStatus).toHaveProperty("clients");
+    expect(detailedStatus).toHaveProperty("startTime");
+    expect(detailedStatus.clients).toEqual([]);
+    expect(typeof detailedStatus.startTime).toBe("string");
+  });
+
+  it("should handle broadcastMessage", async () => {
+    // 这个测试只验证方法存在且不抛出错误
+    await expect(
+      handler.broadcastMessage("test", { message: "hello" })
+    ).resolves.not.toThrow();
+  });
+
+  it("should handle destroy method", () => {
+    expect(() => handler.destroy()).not.toThrow();
   });
 });

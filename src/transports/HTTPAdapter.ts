@@ -62,7 +62,7 @@ export class HTTPAdapter extends TransportAdapter {
     // 废弃警告
     console.warn(
       "[已废弃] HTTPAdapter 将在 v2.0.0 中移除。请使用 WebServer 的 /mcp 端点替代。" +
-      "\n详情请参考迁移指南: https://github.com/your-org/xiaozhi-client/blob/main/MIGRATION.md"
+        "\n详情请参考迁移指南: https://github.com/your-org/xiaozhi-client/blob/main/MIGRATION.md"
     );
 
     this.port = config.port || 3000;

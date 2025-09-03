@@ -18,7 +18,14 @@ interface SSEClient {
   sessionId: string;
   response: Response;
   connectedAt: Date;
+  lastActivity: Date;
   writer?: WritableStreamDefaultWriter<Uint8Array>;
+  abortController?: AbortController;
+  heartbeatInterval?: NodeJS.Timeout;
+  isAlive: boolean;
+  messageCount: number;
+  userAgent?: string;
+  remoteAddress?: string;
 }
 
 /**
@@ -51,6 +58,29 @@ interface MCPError {
 }
 
 /**
+ * MCP 路由处理器配置接口
+ */
+interface MCPRouteHandlerConfig {
+  maxClients?: number;
+  connectionTimeout?: number;
+  heartbeatInterval?: number;
+  maxMessageSize?: number;
+  enableMetrics?: boolean;
+}
+
+/**
+ * 连接统计信息
+ */
+interface ConnectionMetrics {
+  totalConnections: number;
+  activeConnections: number;
+  totalMessages: number;
+  errorCount: number;
+  averageResponseTime: number;
+  uptime: number;
+}
+
+/**
  * MCP 路由处理器
  * 实现符合 MCP Streamable HTTP 规范的单一端点处理
  */
@@ -58,10 +88,106 @@ export class MCPRouteHandler {
   private logger: Logger;
   private mcpMessageHandler: MCPMessageHandler | null = null;
   private clients: Map<string, SSEClient> = new Map();
-  private maxClients: number = 100;
+  private config: Required<MCPRouteHandlerConfig>;
+  private metrics: ConnectionMetrics;
+  private cleanupInterval: NodeJS.Timeout | null = null;
+  private startTime: Date;
 
-  constructor() {
+  constructor(config: MCPRouteHandlerConfig = {}) {
     this.logger = logger.withTag("MCPRouteHandler");
+    this.config = {
+      maxClients: config.maxClients ?? 100,
+      connectionTimeout: config.connectionTimeout ?? 300000, // 5分钟
+      heartbeatInterval: config.heartbeatInterval ?? 30000, // 30秒
+      maxMessageSize: config.maxMessageSize ?? 1024 * 1024, // 1MB
+      enableMetrics: config.enableMetrics ?? true,
+    };
+
+    this.metrics = {
+      totalConnections: 0,
+      activeConnections: 0,
+      totalMessages: 0,
+      errorCount: 0,
+      averageResponseTime: 0,
+      uptime: 0,
+    };
+
+    this.startTime = new Date();
+
+    // 启动清理任务
+    this.startCleanupTask();
+
+    this.logger.info("MCPRouteHandler 初始化完成", {
+      maxClients: this.config.maxClients,
+      connectionTimeout: this.config.connectionTimeout,
+      heartbeatInterval: this.config.heartbeatInterval,
+    });
+  }
+
+  /**
+   * 启动清理任务
+   */
+  private startCleanupTask(): void {
+    this.cleanupInterval = setInterval(() => {
+      this.cleanupStaleConnections();
+      this.updateMetrics();
+    }, 60000); // 每分钟执行一次清理
+  }
+
+  /**
+   * 停止清理任务
+   */
+  private stopCleanupTask(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+  }
+
+  /**
+   * 清理过期连接
+   */
+  private cleanupStaleConnections(): void {
+    const now = new Date();
+    const staleClients: string[] = [];
+
+    for (const [sessionId, client] of this.clients.entries()) {
+      const timeSinceLastActivity =
+        now.getTime() - client.lastActivity.getTime();
+
+      if (
+        timeSinceLastActivity > this.config.connectionTimeout ||
+        !client.isAlive
+      ) {
+        staleClients.push(sessionId);
+      }
+    }
+
+    for (const sessionId of staleClients) {
+      this.logger.info(`清理过期连接: ${sessionId}`);
+      this.handleClientDisconnect(sessionId, "cleanup");
+    }
+
+    if (staleClients.length > 0) {
+      this.logger.info(`清理了 ${staleClients.length} 个过期连接`);
+    }
+  }
+
+  /**
+   * 更新统计信息
+   */
+  private updateMetrics(): void {
+    if (!this.config.enableMetrics) return;
+
+    this.metrics.activeConnections = this.clients.size;
+    this.metrics.uptime = Date.now() - this.startTime.getTime();
+
+    this.logger.debug("连接统计", {
+      activeConnections: this.metrics.activeConnections,
+      totalConnections: this.metrics.totalConnections,
+      totalMessages: this.metrics.totalMessages,
+      errorCount: this.metrics.errorCount,
+    });
   }
 
   /**
@@ -79,6 +205,7 @@ export class MCPRouteHandler {
       this.logger.info("MCP 消息处理器初始化成功");
     } catch (error) {
       this.logger.error("MCP 消息处理器初始化失败:", error);
+      this.metrics.errorCount++;
       throw error;
     }
   }
@@ -89,6 +216,9 @@ export class MCPRouteHandler {
    * 支持直接 JSON-RPC 调用和 SSE 消息处理
    */
   async handlePost(c: Context): Promise<Response> {
+    const startTime = Date.now();
+    let messageId: string | number | null = null;
+
     try {
       this.logger.debug("处理 MCP POST 请求");
 
@@ -98,9 +228,24 @@ export class MCPRouteHandler {
         return await this.handleSSEMessage(c, sessionId);
       }
 
+      // 验证请求大小
+      const contentLength = c.req.header("content-length");
+      if (
+        contentLength &&
+        Number.parseInt(contentLength) > this.config.maxMessageSize
+      ) {
+        this.metrics.errorCount++;
+        return this.createErrorResponse(
+          -32600,
+          `Request too large: Maximum size is ${this.config.maxMessageSize} bytes`,
+          null
+        );
+      }
+
       // 验证 Content-Type
       const contentType = c.req.header("content-type");
       if (!contentType?.includes("application/json")) {
+        this.metrics.errorCount++;
         return this.createErrorResponse(
           -32600,
           "Invalid Request: Content-Type must be application/json",
@@ -117,8 +262,19 @@ export class MCPRouteHandler {
       // 解析请求体
       let message: MCPMessage;
       try {
-        message = await c.req.json();
+        const rawBody = await c.req.text();
+        if (rawBody.length > this.config.maxMessageSize) {
+          this.metrics.errorCount++;
+          return this.createErrorResponse(
+            -32600,
+            `Message too large: Maximum size is ${this.config.maxMessageSize} bytes`,
+            null
+          );
+        }
+        message = JSON.parse(rawBody);
+        messageId = message.id || null;
       } catch (error) {
+        this.metrics.errorCount++;
         return this.createErrorResponse(
           -32700,
           "Parse error: Invalid JSON",
@@ -128,10 +284,11 @@ export class MCPRouteHandler {
 
       // 验证 JSON-RPC 格式
       if (!this.validateMessage(message)) {
+        this.metrics.errorCount++;
         return this.createErrorResponse(
           -32600,
           "Invalid Request: Message does not conform to JSON-RPC 2.0",
-          message.id || null
+          messageId
         );
       }
 
@@ -141,18 +298,44 @@ export class MCPRouteHandler {
       // 处理消息
       const response = await this.mcpMessageHandler!.handleMessage(message);
 
-      this.logger.debug("MCP POST 请求处理成功");
+      // 更新统计信息
+      this.metrics.totalMessages++;
+      const responseTime = Date.now() - startTime;
+      this.metrics.averageResponseTime =
+        (this.metrics.averageResponseTime * (this.metrics.totalMessages - 1) +
+          responseTime) /
+        this.metrics.totalMessages;
+
+      this.logger.debug("MCP POST 请求处理成功", {
+        method: message.method,
+        messageId: messageId,
+        responseTime: responseTime,
+      });
 
       // 返回 JSON-RPC 响应
       return c.json(response, 200, {
         "Content-Type": "application/json",
         "MCP-Protocol-Version": "2024-11-05",
+        "X-Response-Time": responseTime.toString(),
       });
     } catch (error) {
-      this.logger.error("处理 MCP POST 请求时出错:", error);
+      this.metrics.errorCount++;
+      const responseTime = Date.now() - startTime;
 
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      return this.createErrorResponse(-32603, `Internal error: ${errorMessage}`, null);
+      this.logger.error("处理 MCP POST 请求时出错:", {
+        error: error instanceof Error ? error.message : String(error),
+        messageId: messageId,
+        responseTime: responseTime,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      return this.createErrorResponse(
+        -32603,
+        `Internal error: ${errorMessage}`,
+        messageId
+      );
     }
   }
 
@@ -160,13 +343,20 @@ export class MCPRouteHandler {
    * 处理 SSE 消息
    * 用于处理通过 SSE 连接发送的 JSON-RPC 消息
    */
-  private async handleSSEMessage(c: Context, sessionId: string): Promise<Response> {
+  private async handleSSEMessage(
+    c: Context,
+    sessionId: string
+  ): Promise<Response> {
+    const startTime = Date.now();
+    let messageId: string | number | null = null;
+
     try {
       this.logger.debug(`处理 SSE 消息 (会话: ${sessionId})`);
 
       // 验证会话是否存在
       const client = this.clients.get(sessionId);
       if (!client) {
+        this.metrics.errorCount++;
         return this.createErrorResponse(
           -32600,
           "Invalid Request: Invalid or missing sessionId",
@@ -174,11 +364,39 @@ export class MCPRouteHandler {
         );
       }
 
+      // 更新客户端活动时间
+      client.lastActivity = new Date();
+
+      // 验证请求大小
+      const contentLength = c.req.header("content-length");
+      if (
+        contentLength &&
+        Number.parseInt(contentLength) > this.config.maxMessageSize
+      ) {
+        this.metrics.errorCount++;
+        return this.createErrorResponse(
+          -32600,
+          `Message too large: Maximum size is ${this.config.maxMessageSize} bytes`,
+          null
+        );
+      }
+
       // 解析消息
       let message: MCPMessage;
       try {
-        message = await c.req.json();
+        const rawBody = await c.req.text();
+        if (rawBody.length > this.config.maxMessageSize) {
+          this.metrics.errorCount++;
+          return this.createErrorResponse(
+            -32600,
+            `Message too large: Maximum size is ${this.config.maxMessageSize} bytes`,
+            null
+          );
+        }
+        message = JSON.parse(rawBody);
+        messageId = message.id || null;
       } catch (error) {
+        this.metrics.errorCount++;
         return this.createErrorResponse(
           -32700,
           "Parse error: Invalid JSON",
@@ -188,10 +406,11 @@ export class MCPRouteHandler {
 
       // 验证消息格式
       if (!this.validateMessage(message)) {
+        this.metrics.errorCount++;
         return this.createErrorResponse(
           -32600,
           "Invalid Request: Message does not conform to JSON-RPC 2.0",
-          message.id || null
+          messageId
         );
       }
 
@@ -201,23 +420,61 @@ export class MCPRouteHandler {
       // 处理消息
       const response = await this.mcpMessageHandler!.handleMessage(message);
 
+      // 更新客户端统计
+      client.messageCount++;
+      this.metrics.totalMessages++;
+
       // 通过 SSE 发送响应
-      if (client.writer) {
-        await this.sendSSEEvent(client.writer, "message", JSON.stringify(response));
+      if (client.writer && client.isAlive) {
+        try {
+          await this.sendSSEEvent(
+            client.writer,
+            "message",
+            JSON.stringify(response)
+          );
+        } catch (writeError) {
+          this.logger.warn(
+            `SSE 写入失败，标记客户端为不活跃: ${sessionId}`,
+            writeError
+          );
+          client.isAlive = false;
+        }
       }
+
+      const responseTime = Date.now() - startTime;
+      this.logger.debug(`SSE 消息处理完成 (会话: ${sessionId})`, {
+        method: message.method,
+        messageId: messageId,
+        responseTime: responseTime,
+        messageCount: client.messageCount,
+      });
 
       // 返回 202 Accepted 确认
       return new Response(null, {
         status: 202,
         headers: {
           "MCP-Protocol-Version": "2024-11-05",
+          "X-Response-Time": responseTime.toString(),
         },
       });
     } catch (error) {
-      this.logger.error("处理 SSE 消息时出错:", error);
+      this.metrics.errorCount++;
+      const responseTime = Date.now() - startTime;
 
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      return this.createErrorResponse(-32603, `Internal error: ${errorMessage}`, null);
+      this.logger.error(`处理 SSE 消息时出错 (会话: ${sessionId}):`, {
+        error: error instanceof Error ? error.message : String(error),
+        messageId: messageId,
+        responseTime: responseTime,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      return this.createErrorResponse(
+        -32603,
+        `Internal error: ${errorMessage}`,
+        messageId
+      );
     }
   }
 
@@ -230,14 +487,15 @@ export class MCPRouteHandler {
       this.logger.debug("处理 MCP GET 请求（SSE 连接）");
 
       // 检查客户端数量限制
-      if (this.clients.size >= this.maxClients) {
+      if (this.clients.size >= this.config.maxClients) {
+        this.metrics.errorCount++;
         return c.json(
           {
             jsonrpc: "2.0",
             error: {
               code: -32000,
               message: "Server busy: Maximum client connections reached",
-              data: { maxClients: this.maxClients },
+              data: { maxClients: this.config.maxClients },
             },
             id: null,
           },
@@ -248,26 +506,65 @@ export class MCPRouteHandler {
       // 生成客户端标识
       const clientId = Date.now().toString();
       const sessionId = randomUUID();
+      const now = new Date();
 
-      this.logger.info(`SSE 客户端连接: ${clientId} (会话: ${sessionId})`);
+      // 获取客户端信息
+      const userAgent = c.req.header("user-agent");
+      const remoteAddress =
+        c.req.header("x-forwarded-for") ||
+        c.req.header("x-real-ip") ||
+        "unknown";
+
+      this.logger.info(`SSE 客户端连接: ${clientId} (会话: ${sessionId})`, {
+        userAgent: userAgent,
+        remoteAddress: remoteAddress,
+      });
 
       // 创建 SSE 流
       const { readable, writable } = new TransformStream();
       const writer = writable.getWriter();
+
+      // 创建 AbortController 用于连接管理
+      const abortController = new AbortController();
 
       // 注册客户端
       const client: SSEClient = {
         id: clientId,
         sessionId,
         response: new Response(readable),
-        connectedAt: new Date(),
+        connectedAt: now,
+        lastActivity: now,
         writer,
+        abortController,
+        isAlive: true,
+        messageCount: 0,
+        userAgent,
+        remoteAddress,
       };
 
       this.clients.set(sessionId, client);
+      this.metrics.totalConnections++;
+      this.metrics.activeConnections = this.clients.size;
 
       // 发送 SSE 头部和初始事件
-      await this.sendSSEEvent(writer, "endpoint", `/mcp?sessionId=${sessionId}`);
+      try {
+        await this.sendSSEEvent(
+          writer,
+          "connected",
+          JSON.stringify({
+            sessionId: sessionId,
+            endpoint: `/mcp?sessionId=${sessionId}`,
+            timestamp: now.toISOString(),
+            protocolVersion: "2024-11-05",
+          })
+        );
+      } catch (writeError) {
+        this.logger.error(`初始 SSE 事件发送失败: ${sessionId}`, writeError);
+        client.isAlive = false;
+      }
+
+      // 启动心跳机制
+      this.startHeartbeat(client);
 
       // 设置响应头
       const response = new Response(readable, {
@@ -275,20 +572,30 @@ export class MCPRouteHandler {
         headers: {
           "Content-Type": "text/event-stream",
           "Cache-Control": "no-cache, no-transform",
-          "Connection": "keep-alive",
+          Connection: "keep-alive",
           "X-Accel-Buffering": "no",
           "MCP-Protocol-Version": "2024-11-05",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Content-Type, MCP-Protocol-Version",
         },
       });
 
       // 处理连接关闭
-      c.req.raw.signal?.addEventListener("abort", () => {
+      const handleDisconnect = () => {
         this.handleClientDisconnect(sessionId, clientId);
-      });
+      };
+
+      c.req.raw.signal?.addEventListener("abort", handleDisconnect);
+      abortController.signal.addEventListener("abort", handleDisconnect);
 
       return response;
     } catch (error) {
-      this.logger.error("处理 MCP GET 请求时出错:", error);
+      this.metrics.errorCount++;
+      this.logger.error("处理 MCP GET 请求时出错:", {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
       return c.json(
         {
           jsonrpc: "2.0",
@@ -300,6 +607,52 @@ export class MCPRouteHandler {
         },
         500
       );
+    }
+  }
+
+  /**
+   * 启动心跳机制
+   */
+  private startHeartbeat(client: SSEClient): void {
+    if (client.heartbeatInterval) {
+      clearInterval(client.heartbeatInterval);
+    }
+
+    client.heartbeatInterval = setInterval(async () => {
+      if (!client.isAlive || !client.writer) {
+        this.stopHeartbeat(client);
+        return;
+      }
+
+      try {
+        await this.sendSSEEvent(
+          client.writer,
+          "heartbeat",
+          JSON.stringify({
+            timestamp: new Date().toISOString(),
+            sessionId: client.sessionId,
+          })
+        );
+
+        this.logger.debug(`心跳发送成功: ${client.sessionId}`);
+      } catch (error) {
+        this.logger.warn(
+          `心跳发送失败，标记客户端为不活跃: ${client.sessionId}`,
+          error
+        );
+        client.isAlive = false;
+        this.stopHeartbeat(client);
+      }
+    }, this.config.heartbeatInterval);
+  }
+
+  /**
+   * 停止心跳机制
+   */
+  private stopHeartbeat(client: SSEClient): void {
+    if (client.heartbeatInterval) {
+      clearInterval(client.heartbeatInterval);
+      client.heartbeatInterval = undefined;
     }
   }
 
@@ -316,23 +669,49 @@ export class MCPRouteHandler {
       await writer.write(new TextEncoder().encode(eventData));
     } catch (error) {
       this.logger.error("发送 SSE 事件失败:", error);
+      throw error; // 重新抛出错误，让调用者处理
     }
   }
 
   /**
    * 处理客户端断开连接
    */
-  private handleClientDisconnect(sessionId: string, clientId: string): void {
+  private handleClientDisconnect(sessionId: string, reason: string): void {
     const client = this.clients.get(sessionId);
-    if (client) {
-      try {
-        client.writer?.close();
-      } catch (error) {
-        this.logger.debug("关闭 SSE writer 时出错:", error);
-      }
-      this.clients.delete(sessionId);
-      this.logger.info(`SSE 客户端已断开连接: ${clientId} (会话: ${sessionId})`);
+    if (!client) {
+      return;
     }
+
+    const connectionDuration = Date.now() - client.connectedAt.getTime();
+
+    this.logger.info(`SSE 客户端断开连接: ${client.id} (会话: ${sessionId})`, {
+      reason: reason,
+      duration: connectionDuration,
+      messageCount: client.messageCount,
+      userAgent: client.userAgent,
+      remoteAddress: client.remoteAddress,
+    });
+
+    // 停止心跳
+    this.stopHeartbeat(client);
+
+    // 中止连接
+    if (client.abortController) {
+      client.abortController.abort();
+    }
+
+    // 关闭写入器
+    try {
+      if (client.writer) {
+        client.writer.close();
+      }
+    } catch (error) {
+      this.logger.debug("关闭 SSE writer 时出错:", error);
+    }
+
+    // 从客户端列表中移除
+    this.clients.delete(sessionId);
+    this.metrics.activeConnections = this.clients.size;
   }
 
   /**
@@ -340,14 +719,40 @@ export class MCPRouteHandler {
    */
   private validateMessage(message: any): message is MCPMessage {
     if (!message || typeof message !== "object") {
+      this.logger.debug("消息验证失败: 不是对象");
       return false;
     }
 
     if (message.jsonrpc !== "2.0") {
+      this.logger.debug("消息验证失败: jsonrpc 版本不正确", {
+        jsonrpc: message.jsonrpc,
+      });
       return false;
     }
 
     if (!message.method || typeof message.method !== "string") {
+      this.logger.debug("消息验证失败: method 字段无效", {
+        method: message.method,
+      });
+      return false;
+    }
+
+    // 验证 id 字段（如果存在）
+    if (
+      message.id !== undefined &&
+      typeof message.id !== "string" &&
+      typeof message.id !== "number" &&
+      message.id !== null
+    ) {
+      this.logger.debug("消息验证失败: id 字段类型无效", { id: message.id });
+      return false;
+    }
+
+    // 验证 params 字段（如果存在）
+    if (message.params !== undefined && typeof message.params !== "object") {
+      this.logger.debug("消息验证失败: params 字段类型无效", {
+        params: message.params,
+      });
       return false;
     }
 
@@ -386,8 +791,88 @@ export class MCPRouteHandler {
   getStatus() {
     return {
       connectedClients: this.clients.size,
-      maxClients: this.maxClients,
+      maxClients: this.config.maxClients,
       isInitialized: this.mcpMessageHandler !== null,
+      metrics: this.config.enableMetrics ? this.metrics : undefined,
+      config: {
+        maxClients: this.config.maxClients,
+        connectionTimeout: this.config.connectionTimeout,
+        heartbeatInterval: this.config.heartbeatInterval,
+        maxMessageSize: this.config.maxMessageSize,
+      },
     };
+  }
+
+  /**
+   * 获取详细的连接信息
+   */
+  getDetailedStatus() {
+    const clients = Array.from(this.clients.values()).map((client) => ({
+      id: client.id,
+      sessionId: client.sessionId,
+      connectedAt: client.connectedAt.toISOString(),
+      lastActivity: client.lastActivity.toISOString(),
+      messageCount: client.messageCount,
+      isAlive: client.isAlive,
+      userAgent: client.userAgent,
+      remoteAddress: client.remoteAddress,
+    }));
+
+    return {
+      ...this.getStatus(),
+      clients,
+      startTime: this.startTime.toISOString(),
+    };
+  }
+
+  /**
+   * 广播消息到所有活跃客户端
+   */
+  async broadcastMessage(event: string, data: any): Promise<void> {
+    const message = JSON.stringify(data);
+    const deadClients: string[] = [];
+
+    for (const [sessionId, client] of this.clients.entries()) {
+      if (!client.isAlive || !client.writer) {
+        deadClients.push(sessionId);
+        continue;
+      }
+
+      try {
+        await this.sendSSEEvent(client.writer, event, message);
+      } catch (error) {
+        this.logger.warn(
+          `广播消息失败，标记客户端为不活跃: ${sessionId}`,
+          error
+        );
+        client.isAlive = false;
+        deadClients.push(sessionId);
+      }
+    }
+
+    // 清理死连接
+    for (const sessionId of deadClients) {
+      this.handleClientDisconnect(sessionId, "broadcast-failed");
+    }
+  }
+
+  /**
+   * 销毁处理器，清理所有资源
+   */
+  destroy(): void {
+    this.logger.info("正在销毁 MCPRouteHandler");
+
+    // 停止清理任务
+    this.stopCleanupTask();
+
+    // 断开所有客户端连接
+    for (const [sessionId] of this.clients.entries()) {
+      this.handleClientDisconnect(sessionId, "server-shutdown");
+    }
+
+    // 清理消息处理器
+    this.mcpMessageHandler = null;
+
+    this.logger.info("MCPRouteHandler 销毁完成");
   }
 }
