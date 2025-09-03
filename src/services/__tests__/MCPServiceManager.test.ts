@@ -84,7 +84,7 @@ describe("MCPServiceManager", () => {
     if (originalEnv !== undefined) {
       process.env.XIAOZHI_CONFIG_DIR = originalEnv;
     } else {
-      delete process.env.XIAOZHI_CONFIG_DIR;
+      process.env.XIAOZHI_CONFIG_DIR = undefined;
     }
 
     vi.clearAllMocks();
