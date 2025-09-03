@@ -4,6 +4,7 @@
  */
 
 import type { Context } from "hono";
+import Ajv from "ajv";
 import { type Logger, logger } from "../Logger.js";
 import { configManager } from "../configManager.js";
 import { MCPServiceManagerSingleton } from "../services/MCPServiceManagerSingleton.js";
@@ -35,9 +36,11 @@ interface ToolCallResponse {
  */
 export class ToolApiHandler {
   private logger: Logger;
+  private ajv: Ajv;
 
   constructor() {
     this.logger = logger.withTag("ToolApiHandler");
+    this.ajv = new Ajv({ allErrors: true, verbose: true });
   }
 
   /**
@@ -105,6 +108,11 @@ export class ToolApiHandler {
       // 验证服务和工具是否存在
       await this.validateServiceAndTool(serviceManager, serviceName, toolName);
 
+      // 对于 customMCP 工具，进行参数验证
+      if (serviceName === 'customMCP') {
+        await this.validateCustomMCPArguments(serviceManager, toolName, args || {});
+      }
+
       // 调用工具 - 特殊处理 customMCP 服务
       let result: any;
       if (serviceName === 'customMCP') {
@@ -136,6 +144,14 @@ export class ToolApiHandler {
         errorCode = "SERVICE_NOT_AVAILABLE";
       } else if (errorMessage.includes("已被禁用")) {
         errorCode = "TOOL_DISABLED";
+      } else if (errorMessage.includes("参数验证失败")) {
+        errorCode = "INVALID_ARGUMENTS";
+      } else if (errorMessage.includes("CustomMCP") || errorMessage.includes("customMCP")) {
+        errorCode = "CUSTOM_MCP_ERROR";
+      } else if (errorMessage.includes("工作流调用失败") || errorMessage.includes("API 请求失败")) {
+        errorCode = "EXTERNAL_API_ERROR";
+      } else if (errorMessage.includes("超时")) {
+        errorCode = "TIMEOUT_ERROR";
       }
 
       const errorResponse = this.createErrorResponse(errorCode, errorMessage);
@@ -169,12 +185,18 @@ export class ToolApiHandler {
       // 按服务分组工具
       const toolsByService: Record<string, any[]> = {};
       for (const tool of allTools) {
-        const [serviceName] = tool.name.split("__");
+        const serviceName = tool.serviceName;
+
         if (!toolsByService[serviceName]) {
           toolsByService[serviceName] = [];
         }
+
+        // 对于 customMCP 工具，直接使用工具名称
+        // 对于标准 MCP 工具，使用原始名称
+        const displayName = serviceName === "customMCP" ? tool.name : tool.originalName;
+
         toolsByService[serviceName].push({
-          name: tool.name.replace(`${serviceName}__`, ""),
+          name: displayName,
           fullName: tool.name,
           description: tool.description,
           inputSchema: tool.inputSchema,
@@ -217,10 +239,37 @@ export class ToolApiHandler {
       // 验证 customMCP 工具是否存在
       if (!serviceManager.hasCustomMCPTool(toolName)) {
         const availableTools = serviceManager.getCustomMCPTools().map((tool: any) => tool.name);
+
+        if (availableTools.length === 0) {
+          throw new Error(
+            `customMCP 工具 '${toolName}' 不存在。当前没有配置任何 customMCP 工具。请检查 xiaozhi.config.json 中的 customMCP 配置。`
+          );
+        }
+
         throw new Error(
-          `customMCP 工具 '${toolName}' 不存在。可用工具: ${availableTools.join(", ")}`
+          `customMCP 工具 '${toolName}' 不存在。可用的 customMCP 工具: ${availableTools.join(", ")}。请使用 'xiaozhi mcp list' 查看所有可用工具。`
         );
       }
+
+      // 验证 customMCP 工具配置是否有效
+      try {
+        const customTools = serviceManager.getCustomMCPTools();
+        const targetTool = customTools.find((tool: any) => tool.name === toolName);
+
+        if (targetTool && !targetTool.description) {
+          this.logger.warn(`customMCP 工具 '${toolName}' 缺少描述信息`);
+        }
+
+        if (targetTool && !targetTool.inputSchema) {
+          this.logger.warn(`customMCP 工具 '${toolName}' 缺少输入参数定义`);
+        }
+      } catch (error) {
+        this.logger.error(`验证 customMCP 工具 '${toolName}' 配置时出错:`, error);
+        throw new Error(
+          `customMCP 工具 '${toolName}' 配置验证失败。请检查配置文件中的工具定义。`
+        );
+      }
+
       return;
     }
 
@@ -265,6 +314,76 @@ export class ToolApiHandler {
       throw new Error(
         `工具 '${toolName}' 已被禁用。请使用 'xiaozhi mcp tool ${serviceName} ${toolName} enable' 启用该工具。`
       );
+    }
+  }
+
+  /**
+   * 验证 customMCP 工具的参数
+   * @private
+   */
+  private async validateCustomMCPArguments(
+    serviceManager: any,
+    toolName: string,
+    args: any
+  ): Promise<void> {
+    try {
+      // 获取工具的 inputSchema
+      const customTools = serviceManager.getCustomMCPTools();
+      const targetTool = customTools.find((tool: any) => tool.name === toolName);
+
+      if (!targetTool) {
+        throw new Error(`customMCP 工具 '${toolName}' 不存在`);
+      }
+
+      // 如果工具没有定义 inputSchema，跳过验证
+      if (!targetTool.inputSchema) {
+        this.logger.warn(`customMCP 工具 '${toolName}' 没有定义 inputSchema，跳过参数验证`);
+        return;
+      }
+
+      // 使用 AJV 验证参数
+      const validate = this.ajv.compile(targetTool.inputSchema);
+      const valid = validate(args);
+
+      if (!valid) {
+        // 构建详细的错误信息
+        const errors = validate.errors || [];
+        const errorMessages = errors.map(error => {
+          const path = error.instancePath || error.schemaPath || '';
+          const message = error.message || '未知错误';
+
+          if (error.keyword === 'required') {
+            const missingProperty = error.params?.missingProperty || '未知字段';
+            return `缺少必需参数: ${missingProperty}`;
+          }
+
+          if (error.keyword === 'type') {
+            const expectedType = error.params?.type || '未知类型';
+            return `参数 ${path} 类型错误，期望: ${expectedType}`;
+          }
+
+          if (error.keyword === 'enum') {
+            const allowedValues = error.params?.allowedValues || [];
+            return `参数 ${path} 值无效，允许的值: ${allowedValues.join(', ')}`;
+          }
+
+          return `参数 ${path} ${message}`;
+        });
+
+        const errorMessage = `参数验证失败: ${errorMessages.join('; ')}`;
+        this.logger.error(`customMCP 工具 '${toolName}' 参数验证失败:`, errorMessage);
+
+        throw new Error(errorMessage);
+      }
+
+      this.logger.debug(`customMCP 工具 '${toolName}' 参数验证通过`);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('参数验证失败')) {
+        throw error;
+      }
+
+      this.logger.error(`验证 customMCP 工具 '${toolName}' 参数时出错:`, error);
+      throw new Error(`参数验证过程中发生错误: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   }
 }

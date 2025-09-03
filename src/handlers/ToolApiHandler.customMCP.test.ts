@@ -39,13 +39,14 @@ describe("ToolApiHandler - customMCP 支持", () => {
 
   beforeEach(() => {
     toolApiHandler = new ToolApiHandler();
-    
+
     // Mock service manager
     mockServiceManager = {
       callTool: vi.fn(),
       hasCustomMCPTool: vi.fn(),
       getCustomMCPTools: vi.fn(),
       getService: vi.fn(),
+      getAllTools: vi.fn(),
     };
 
     // Mock Hono context
@@ -79,7 +80,7 @@ describe("ToolApiHandler - customMCP 支持", () => {
       };
 
       mockContext.req.json.mockResolvedValue(requestBody);
-      
+
       const { MCPServiceManagerSingleton } = await import("../services/MCPServiceManagerSingleton.js");
       MCPServiceManagerSingleton.isInitialized = vi.fn().mockReturnValue(true);
       MCPServiceManagerSingleton.getInstance = vi.fn().mockResolvedValue(mockServiceManager);
@@ -117,13 +118,13 @@ describe("ToolApiHandler - customMCP 支持", () => {
       };
 
       mockContext.req.json.mockResolvedValue(requestBody);
-      
+
       const { MCPServiceManagerSingleton } = await import("../services/MCPServiceManagerSingleton.js");
       const { configManager } = await import("../configManager.js");
-      
+
       MCPServiceManagerSingleton.isInitialized = vi.fn().mockReturnValue(true);
       MCPServiceManagerSingleton.getInstance = vi.fn().mockResolvedValue(mockServiceManager);
-      
+
       configManager.getMcpServers = vi.fn().mockReturnValue({
         calculator: { command: "node", args: ["./calculator.js"] }
       });
@@ -162,7 +163,7 @@ describe("ToolApiHandler - customMCP 支持", () => {
       };
 
       mockContext.req.json.mockResolvedValue(requestBody);
-      
+
       const { MCPServiceManagerSingleton } = await import("../services/MCPServiceManagerSingleton.js");
       MCPServiceManagerSingleton.isInitialized = vi.fn().mockReturnValue(true);
       MCPServiceManagerSingleton.getInstance = vi.fn().mockResolvedValue(mockServiceManager);
@@ -181,7 +182,7 @@ describe("ToolApiHandler - customMCP 支持", () => {
           success: false,
           error: {
             code: "SERVICE_OR_TOOL_NOT_FOUND",
-            message: "customMCP 工具 'nonexistent_tool' 不存在。可用工具: test_coze_workflow",
+            message: "customMCP 工具 'nonexistent_tool' 不存在。可用的 customMCP 工具: test_coze_workflow。请使用 'xiaozhi mcp list' 查看所有可用工具。",
           },
         },
         500
@@ -223,7 +224,7 @@ describe("ToolApiHandler - customMCP 支持", () => {
       };
 
       mockContext.req.json.mockResolvedValue(requestBody);
-      
+
       const { MCPServiceManagerSingleton } = await import("../services/MCPServiceManagerSingleton.js");
       MCPServiceManagerSingleton.isInitialized = vi.fn().mockReturnValue(false);
 
@@ -241,6 +242,357 @@ describe("ToolApiHandler - customMCP 支持", () => {
         },
         503
       );
+    });
+  });
+
+  describe("listTools - customMCP 工具列表支持", () => {
+    it("应该正确显示 customMCP 工具在工具列表中", async () => {
+      // Arrange
+      const mockCustomTools = [
+        {
+          name: "test_coze_workflow",
+          description: "测试coze工作流",
+          inputSchema: { type: "object" },
+          serviceName: "customMCP",
+          originalName: "test_coze_workflow",
+        },
+        {
+          name: "another_custom_tool",
+          description: "另一个自定义工具",
+          inputSchema: { type: "object" },
+          serviceName: "customMCP",
+          originalName: "another_custom_tool",
+        },
+      ];
+
+      const mockStandardTools = [
+        {
+          name: "calculator__calculator",
+          description: "计算器工具",
+          inputSchema: { type: "object" },
+          serviceName: "calculator",
+          originalName: "calculator",
+        },
+      ];
+
+      const allTools = [...mockCustomTools, ...mockStandardTools];
+
+      const { MCPServiceManagerSingleton } = await import("../services/MCPServiceManagerSingleton.js");
+      MCPServiceManagerSingleton.isInitialized = vi.fn().mockReturnValue(true);
+      MCPServiceManagerSingleton.getInstance = vi.fn().mockResolvedValue(mockServiceManager);
+
+      mockServiceManager.getAllTools.mockReturnValue(allTools);
+
+      // Act
+      await toolApiHandler.listTools(mockContext);
+
+      // Assert
+      expect(mockContext.json).toHaveBeenCalledWith({
+        success: true,
+        data: {
+          totalTools: 3,
+          services: {
+            customMCP: [
+              {
+                name: "test_coze_workflow",
+                fullName: "test_coze_workflow",
+                description: "测试coze工作流",
+                inputSchema: { type: "object" },
+              },
+              {
+                name: "another_custom_tool",
+                fullName: "another_custom_tool",
+                description: "另一个自定义工具",
+                inputSchema: { type: "object" },
+              },
+            ],
+            calculator: [
+              {
+                name: "calculator",
+                fullName: "calculator__calculator",
+                description: "计算器工具",
+                inputSchema: { type: "object" },
+              },
+            ],
+          },
+        },
+        message: "获取工具列表成功",
+      });
+    });
+
+    it("应该正确处理只有 customMCP 工具的情况", async () => {
+      // Arrange
+      const mockCustomTools = [
+        {
+          name: "test_tool",
+          description: "测试工具",
+          inputSchema: { type: "object" },
+          serviceName: "customMCP",
+          originalName: "test_tool",
+        },
+      ];
+
+      const { MCPServiceManagerSingleton } = await import("../services/MCPServiceManagerSingleton.js");
+      MCPServiceManagerSingleton.isInitialized = vi.fn().mockReturnValue(true);
+      MCPServiceManagerSingleton.getInstance = vi.fn().mockResolvedValue(mockServiceManager);
+
+      mockServiceManager.getAllTools.mockReturnValue(mockCustomTools);
+
+      // Act
+      await toolApiHandler.listTools(mockContext);
+
+      // Assert
+      expect(mockContext.json).toHaveBeenCalledWith({
+        success: true,
+        data: {
+          totalTools: 1,
+          services: {
+            customMCP: [
+              {
+                name: "test_tool",
+                fullName: "test_tool",
+                description: "测试工具",
+                inputSchema: { type: "object" },
+              },
+            ],
+          },
+        },
+        message: "获取工具列表成功",
+      });
+    });
+
+    it("应该正确处理没有 customMCP 工具的情况", async () => {
+      // Arrange
+      const mockStandardTools = [
+        {
+          name: "calculator__calculator",
+          description: "计算器工具",
+          inputSchema: { type: "object" },
+          serviceName: "calculator",
+          originalName: "calculator",
+        },
+      ];
+
+      const { MCPServiceManagerSingleton } = await import("../services/MCPServiceManagerSingleton.js");
+      MCPServiceManagerSingleton.isInitialized = vi.fn().mockReturnValue(true);
+      MCPServiceManagerSingleton.getInstance = vi.fn().mockResolvedValue(mockServiceManager);
+
+      mockServiceManager.getAllTools.mockReturnValue(mockStandardTools);
+
+      // Act
+      await toolApiHandler.listTools(mockContext);
+
+      // Assert
+      expect(mockContext.json).toHaveBeenCalledWith({
+        success: true,
+        data: {
+          totalTools: 1,
+          services: {
+            calculator: [
+              {
+                name: "calculator",
+                fullName: "calculator__calculator",
+                description: "计算器工具",
+                inputSchema: { type: "object" },
+              },
+            ],
+          },
+        },
+        message: "获取工具列表成功",
+      });
+    });
+  });
+
+  describe("参数验证功能", () => {
+    it("应该正确验证 customMCP 工具的必需参数", async () => {
+      // Arrange
+      const requestBody = {
+        serviceName: "customMCP",
+        toolName: "test_coze_workflow",
+        args: {}, // 缺少必需的 input 参数
+      };
+
+      mockContext.req.json.mockResolvedValue(requestBody);
+
+      const { MCPServiceManagerSingleton } = await import("../services/MCPServiceManagerSingleton.js");
+      MCPServiceManagerSingleton.isInitialized = vi.fn().mockReturnValue(true);
+      MCPServiceManagerSingleton.getInstance = vi.fn().mockResolvedValue(mockServiceManager);
+
+      mockServiceManager.hasCustomMCPTool.mockReturnValue(true);
+      mockServiceManager.getCustomMCPTools.mockReturnValue([
+        {
+          name: "test_coze_workflow",
+          description: "测试工具",
+          inputSchema: {
+            type: "object",
+            properties: {
+              input: {
+                type: "string",
+                description: "用户输入",
+              },
+            },
+            required: ["input"],
+          },
+        }
+      ]);
+
+      // Act
+      await toolApiHandler.callTool(mockContext);
+
+      // Assert
+      expect(mockContext.json).toHaveBeenCalledWith(
+        {
+          success: false,
+          error: {
+            code: "INVALID_ARGUMENTS",
+            message: expect.stringContaining("参数验证失败"),
+          },
+        },
+        500
+      );
+    });
+
+    it("应该正确验证 customMCP 工具的参数类型", async () => {
+      // Arrange
+      const requestBody = {
+        serviceName: "customMCP",
+        toolName: "test_coze_workflow",
+        args: {
+          input: 123, // 应该是 string 类型
+        },
+      };
+
+      mockContext.req.json.mockResolvedValue(requestBody);
+
+      const { MCPServiceManagerSingleton } = await import("../services/MCPServiceManagerSingleton.js");
+      MCPServiceManagerSingleton.isInitialized = vi.fn().mockReturnValue(true);
+      MCPServiceManagerSingleton.getInstance = vi.fn().mockResolvedValue(mockServiceManager);
+
+      mockServiceManager.hasCustomMCPTool.mockReturnValue(true);
+      mockServiceManager.getCustomMCPTools.mockReturnValue([
+        {
+          name: "test_coze_workflow",
+          description: "测试工具",
+          inputSchema: {
+            type: "object",
+            properties: {
+              input: {
+                type: "string",
+                description: "用户输入",
+              },
+            },
+            required: ["input"],
+          },
+        }
+      ]);
+
+      // Act
+      await toolApiHandler.callTool(mockContext);
+
+      // Assert
+      expect(mockContext.json).toHaveBeenCalledWith(
+        {
+          success: false,
+          error: {
+            code: "INVALID_ARGUMENTS",
+            message: expect.stringContaining("类型错误"),
+          },
+        },
+        500
+      );
+    });
+
+    it("应该跳过没有 inputSchema 的 customMCP 工具的参数验证", async () => {
+      // Arrange
+      const requestBody = {
+        serviceName: "customMCP",
+        toolName: "test_tool_no_schema",
+        args: { anyParam: "anyValue" },
+      };
+
+      const expectedResult = {
+        content: [{ type: "text", text: "工具调用成功" }],
+        isError: false,
+      };
+
+      mockContext.req.json.mockResolvedValue(requestBody);
+
+      const { MCPServiceManagerSingleton } = await import("../services/MCPServiceManagerSingleton.js");
+      MCPServiceManagerSingleton.isInitialized = vi.fn().mockReturnValue(true);
+      MCPServiceManagerSingleton.getInstance = vi.fn().mockResolvedValue(mockServiceManager);
+
+      mockServiceManager.hasCustomMCPTool.mockReturnValue(true);
+      mockServiceManager.getCustomMCPTools.mockReturnValue([
+        {
+          name: "test_tool_no_schema",
+          description: "没有 schema 的测试工具",
+          // 没有 inputSchema
+        }
+      ]);
+      mockServiceManager.callTool.mockResolvedValue(expectedResult);
+
+      // Act
+      await toolApiHandler.callTool(mockContext);
+
+      // Assert
+      expect(mockServiceManager.callTool).toHaveBeenCalledWith("test_tool_no_schema", { anyParam: "anyValue" });
+      expect(mockContext.json).toHaveBeenCalledWith({
+        success: true,
+        data: expectedResult,
+        message: "工具调用成功",
+      });
+    });
+
+    it("应该正确处理参数验证通过的情况", async () => {
+      // Arrange
+      const requestBody = {
+        serviceName: "customMCP",
+        toolName: "test_coze_workflow",
+        args: {
+          input: "正确的字符串参数",
+        },
+      };
+
+      const expectedResult = {
+        content: [{ type: "text", text: "工具调用成功" }],
+        isError: false,
+      };
+
+      mockContext.req.json.mockResolvedValue(requestBody);
+
+      const { MCPServiceManagerSingleton } = await import("../services/MCPServiceManagerSingleton.js");
+      MCPServiceManagerSingleton.isInitialized = vi.fn().mockReturnValue(true);
+      MCPServiceManagerSingleton.getInstance = vi.fn().mockResolvedValue(mockServiceManager);
+
+      mockServiceManager.hasCustomMCPTool.mockReturnValue(true);
+      mockServiceManager.getCustomMCPTools.mockReturnValue([
+        {
+          name: "test_coze_workflow",
+          description: "测试工具",
+          inputSchema: {
+            type: "object",
+            properties: {
+              input: {
+                type: "string",
+                description: "用户输入",
+              },
+            },
+            required: ["input"],
+          },
+        }
+      ]);
+      mockServiceManager.callTool.mockResolvedValue(expectedResult);
+
+      // Act
+      await toolApiHandler.callTool(mockContext);
+
+      // Assert
+      expect(mockServiceManager.callTool).toHaveBeenCalledWith("test_coze_workflow", { input: "正确的字符串参数" });
+      expect(mockContext.json).toHaveBeenCalledWith({
+        success: true,
+        data: expectedResult,
+        message: "工具调用成功",
+      });
     });
   });
 });
