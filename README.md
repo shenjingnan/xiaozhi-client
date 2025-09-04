@@ -764,8 +764,6 @@ xiaozhi-client 不仅可以作为小智 AI 的客户端使用，还可以作为�
 
 ### 使用方式
 
-> 如果你将 xiaozhi-client 装在 docker 中使用，可以通过 HTTP 的方式暴露给外部客户端
-
 第一步：启动 xiaozhi-client 服务：
 
 ```bash
