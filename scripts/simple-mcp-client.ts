@@ -5,16 +5,68 @@
  * 专门用于连接和测试 streamableHTTP 类型的 MCP 服务
  *
  * 使用方法：
- * node scripts/simple-mcp-client.js
+ * npx tsx scripts/simple-mcp-client.ts
  */
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 
 /**
+ * 日志级别类型
+ */
+type LogLevel = "info" | "success" | "error" | "warn" | "debug";
+
+/**
+ * MCP 服务配置接口
+ */
+interface MCPConfig {
+  name: string;
+  url: string;
+  clientInfo: {
+    name: string;
+    version: string;
+  };
+}
+
+/**
+ * 工具参数 Schema 接口
+ */
+interface ToolParameterSchema {
+  type?: string;
+  description?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * 工具输入 Schema 接口
+ */
+interface ToolInputSchema {
+  type?: string;
+  properties?: Record<string, ToolParameterSchema>;
+  required?: string[];
+  [key: string]: unknown;
+}
+
+/**
+ * MCP 工具接口
+ */
+interface MCPTool {
+  name: string;
+  description?: string;
+  inputSchema?: ToolInputSchema;
+}
+
+/**
+ * 工具列表响应接口
+ */
+interface ListToolsResponse {
+  tools: MCPTool[];
+}
+
+/**
  * MCP 服务配置（硬编码）
  */
-const MCP_CONFIG = {
+const MCP_CONFIG: MCPConfig = {
   name: "xiaozhi-client",
   url: "http://localhost:9999/mcp",
   clientInfo: {
@@ -26,18 +78,17 @@ const MCP_CONFIG = {
 /**
  * 日志工具函数
  */
-function log(level, message, data = null) {
+function log(level: LogLevel, message: string, data: unknown = null): void {
   const timestamp = new Date().toISOString();
-  const prefix =
-    {
-      info: "📡",
-      success: "✅",
-      error: "❌",
-      warn: "⚠️",
-      debug: "🔍",
-    }[level] || "📝";
+  const prefix: Record<LogLevel, string> = {
+    info: "📡",
+    success: "✅",
+    error: "❌",
+    warn: "⚠️",
+    debug: "🔍",
+  };
 
-  console.log(`${prefix} [${timestamp}] ${message}`);
+  console.log(`${prefix[level] || "📝"} [${timestamp}] ${message}`);
   if (data) {
     console.log("   数据:", JSON.stringify(data, null, 2));
   }
@@ -46,7 +97,7 @@ function log(level, message, data = null) {
 /**
  * 创建 MCP 客户端
  */
-function createMCPClient() {
+function createMCPClient(): Client {
   log("info", "创建 MCP 客户端...");
 
   // 创建客户端实例
@@ -69,7 +120,7 @@ function createMCPClient() {
 /**
  * 创建 StreamableHTTP 传输层
  */
-function createTransport() {
+function createTransport(): StreamableHTTPClientTransport {
   log("info", `创建 StreamableHTTP 传输层: ${MCP_CONFIG.url}`);
 
   try {
@@ -88,7 +139,7 @@ function createTransport() {
     log("success", "StreamableHTTP 传输层创建成功");
     return transport;
   } catch (error) {
-    log("error", "创建传输层失败", { error: error.message });
+    log("error", "创建传输层失败", { error: (error as Error).message });
     throw error;
   }
 }
@@ -96,7 +147,10 @@ function createTransport() {
 /**
  * 连接到 MCP 服务
  */
-async function connectToMCPService(client, transport) {
+async function connectToMCPService(
+  client: Client,
+  transport: StreamableHTTPClientTransport
+): Promise<boolean> {
   log("info", "正在连接到 MCP 服务...");
 
   try {
@@ -104,7 +158,7 @@ async function connectToMCPService(client, transport) {
     log("success", "成功连接到 MCP 服务");
     return true;
   } catch (error) {
-    log("error", "连接 MCP 服务失败", { error: error.message });
+    log("error", "连接 MCP 服务失败", { error: (error as Error).message });
     return false;
   }
 }
@@ -112,11 +166,11 @@ async function connectToMCPService(client, transport) {
 /**
  * 获取并显示工具列表
  */
-async function listTools(client) {
+async function listTools(client: Client): Promise<MCPTool[]> {
   log("info", "获取工具列表...");
 
   try {
-    const response = await client.listTools();
+    const response = (await client.listTools()) as ListToolsResponse;
 
     if (response?.tools) {
       log("success", `发现 ${response.tools.length} 个工具`);
@@ -124,7 +178,7 @@ async function listTools(client) {
       console.log("\n🛠️  可用工具列表:");
       console.log("=".repeat(50));
 
-      for (const [index, tool] of response.tools.entries()) {
+      response.tools.forEach((tool, index) => {
         console.log(`\n${index + 1}. ${tool.name}`);
         console.log(`   描述: ${tool.description || "无描述"}`);
 
@@ -136,12 +190,13 @@ async function listTools(client) {
             const required = tool.inputSchema.required?.includes(param)
               ? " (必需)"
               : " (可选)";
+            const typedSchema = schema as ToolParameterSchema;
             console.log(
-              `     - ${param}${required}: ${schema.description || schema.type || "未知类型"}`
+              `     - ${param}${required}: ${typedSchema.description || typedSchema.type || "未知类型"}`
             );
           }
         }
-      }
+      });
 
       console.log("=".repeat(50));
       return response.tools;
@@ -149,7 +204,7 @@ async function listTools(client) {
     log("warn", "未找到任何工具");
     return [];
   } catch (error) {
-    log("error", "获取工具列表失败", { error: error.message });
+    log("error", "获取工具列表失败", { error: (error as Error).message });
     return [];
   }
 }
@@ -157,12 +212,12 @@ async function listTools(client) {
 /**
  * 获取服务器信息
  */
-async function getServerInfo(client) {
+async function getServerInfo(client: Client): Promise<unknown> {
   log("info", "获取服务器信息...");
 
   try {
     // 尝试获取服务器信息（如果支持的话）
-    const serverInfo = client.getServerVersion?.() || null;
+    const serverInfo = (client as any).getServerVersion?.() || null;
     if (serverInfo) {
       log("success", "服务器信息获取成功", serverInfo);
     } else {
@@ -170,7 +225,7 @@ async function getServerInfo(client) {
     }
     return serverInfo;
   } catch (error) {
-    log("warn", "获取服务器信息失败", { error: error.message });
+    log("warn", "获取服务器信息失败", { error: (error as Error).message });
     return null;
   }
 }
@@ -178,7 +233,7 @@ async function getServerInfo(client) {
 /**
  * 主函数
  */
-async function main() {
+async function main(): Promise<void> {
   console.log("🚀 简单 MCP 客户端启动");
   console.log("=".repeat(60));
 
@@ -188,8 +243,8 @@ async function main() {
     type: "streamableHTTP",
   });
 
-  let client = null;
-  let transport = null;
+  let client: Client | null = null;
+  let transport: StreamableHTTPClientTransport | null = null;
 
   try {
     // 1. 创建客户端
@@ -223,7 +278,10 @@ async function main() {
 
     log("success", "MCP 客户端测试完成");
   } catch (error) {
-    log("error", "程序执行失败", { error: error.message, stack: error.stack });
+    log("error", "程序执行失败", {
+      error: (error as Error).message,
+      stack: (error as Error).stack,
+    });
     process.exit(1);
   } finally {
     // 清理资源
@@ -233,7 +291,7 @@ async function main() {
         await client.close();
         log("success", "连接已断开");
       } catch (error) {
-        log("warn", "断开连接时出现错误", { error: error.message });
+        log("warn", "断开连接时出现错误", { error: (error as Error).message });
       }
     }
   }
@@ -242,15 +300,18 @@ async function main() {
 }
 
 // 错误处理
-process.on("uncaughtException", (error) => {
+process.on("uncaughtException", (error: Error) => {
   log("error", "未捕获的异常", { error: error.message, stack: error.stack });
   process.exit(1);
 });
 
-process.on("unhandledRejection", (reason, promise) => {
-  log("error", "未处理的 Promise 拒绝", { reason, promise });
-  process.exit(1);
-});
+process.on(
+  "unhandledRejection",
+  (reason: unknown, promise: Promise<unknown>) => {
+    log("error", "未处理的 Promise 拒绝", { reason, promise });
+    process.exit(1);
+  }
+);
 
 // 优雅退出处理
 process.on("SIGINT", () => {
@@ -264,8 +325,10 @@ process.on("SIGTERM", () => {
 });
 
 // 运行主函数
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch((error) => {
+// 检查是否直接运行此脚本
+const isMainModule = process.argv[1]?.endsWith("simple-mcp-client.ts") ?? false;
+if (isMainModule) {
+  main().catch((error: Error) => {
     log("error", "主函数执行失败", { error: error.message });
     process.exit(1);
   });

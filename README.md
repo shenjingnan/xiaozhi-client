@@ -808,30 +808,36 @@ npm install -g xiaozhi-client
 
 ### 方式二：使用 HTTP Server 模式
 
-> 如果你将 xiaozhi-client 装在 docker 中使用，可以通过 http server 的方式暴露给外部客户端
+> 如果你将 xiaozhi-client 装在 docker 中使用，可以通过 HTTP 的方式暴露给外部客户端
 
-第一步：启动 xiaozhi-client 的 HTTP Server：
+第一步：启动 xiaozhi-client 服务：
 
 ```bash
-# 使用默认端口 3000
-xiaozhi start -s
+# 使用默认端口 9999
+xiaozhi start
 
 # 使用自定义端口
-xiaozhi start -s 8080
+xiaozhi start --port 8080
 
 # 后台运行
-xiaozhi start -s -d
+xiaozhi start -d
 ```
 
-第二步：在 客户端 中配置 SSE 连接：
+第二步：在客户端中配置 HTTP 连接：
 
 ```json
 {
   "mcpServers": {
     "xiaozhi-client": {
-      "type": "sse",
-      "url": "http://localhost:3000/sse"
+      "type": "streamableHttp",
+      "url": "http://localhost:9999/mcp"
     }
   }
 }
 ```
+
+**说明：**
+- 服务启动后，MCP 端点将在 `http://localhost:9999/mcp` 提供服务
+- 支持标准的 MCP over HTTP 协议
+- 可以通过 `--port` 参数自定义端口号
+- 使用 `-d` 参数可以后台运行服务
