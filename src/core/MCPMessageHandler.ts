@@ -1,6 +1,6 @@
 /**
  * 统一的 MCP 消息处理器
- * 负责处理所有 MCP 协议消息，包括 initialize、tools/list、tools/call 等
+ * 负责处理所有 MCP 协议消息，包括 initialize、tools/list、tools/call、resources/list 等
  * 这是阶段一重构的核心组件，用于消除双层代理架构
  */
 
@@ -46,6 +46,14 @@ interface ToolCallParams {
   arguments?: any;
 }
 
+// MCP 资源接口
+interface MCPResource {
+  uri: string;
+  name: string;
+  description?: string;
+  mimeType?: string;
+}
+
 export class MCPMessageHandler {
   private logger: Logger;
   private serviceManager: MCPServiceManager;
@@ -76,6 +84,8 @@ export class MCPMessageHandler {
           return await this.handleToolsList(message.id);
         case "tools/call":
           return await this.handleToolCall(message.params, message.id);
+        case "resources/list":
+          return await this.handleResourcesList(message.id);
         case "ping":
           return await this.handlePing(message.id);
         default:
@@ -234,6 +244,31 @@ export class MCPMessageHandler {
       result: {
         status: "ok",
         timestamp: new Date().toISOString(),
+      },
+      id: id !== undefined ? id : 1,
+    };
+  }
+
+  /**
+   * 处理 resources/list 请求
+   * @param id 消息ID
+   * @returns 资源列表响应
+   */
+  private async handleResourcesList(
+    id?: string | number
+  ): Promise<MCPResponse> {
+    this.logger.info("处理 resources/list 请求");
+
+    // 目前返回空的资源列表
+    // 如果将来需要提供资源功能，可以在这里扩展
+    const resources: MCPResource[] = [];
+
+    this.logger.info(`返回 ${resources.length} 个资源`);
+
+    return {
+      jsonrpc: "2.0",
+      result: {
+        resources: resources,
       },
       id: id !== undefined ? id : 1,
     };
