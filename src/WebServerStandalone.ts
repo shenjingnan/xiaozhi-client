@@ -89,9 +89,6 @@ async function openBrowserUrl(url: string): Promise<void> {
   }
 }
 
-// 导出 WebServer 类供其他模块使用
-export { WebServer } from "./WebServer.js";
-
 // 检查是否为直接执行
 if (import.meta.url === `file://${process.argv[1]}`) {
   main();

@@ -323,9 +323,10 @@ describe("服务命令集成测试", () => {
   });
 
   describe("选项解析和验证", () => {
-    it("应处理数字端口转换", async () => {
+    it("应处理传统模式启动", async () => {
       const options = {
-        server: "8080", // MCP Server 模式的端口
+        daemon: false,
+        ui: false,
       };
 
       // 获取 start 子命令并执行
@@ -336,13 +337,16 @@ describe("服务命令集成测试", () => {
 
       await startSubcommand!.execute([], options);
 
-      // 由于 MCP Server 模式会抛出 "需要实现" 错误，我们期望这个错误
-      // 这个测试主要验证端口解析逻辑
+      // 验证服务管理器的 start 方法被调用
+      expect(mockServiceManager.start).toHaveBeenCalledWith({
+        daemon: false,
+        ui: false,
+      });
     });
 
-    it("应处理无效的端口值", async () => {
+    it("应处理未知选项时使用传统模式", async () => {
       const options = {
-        server: "invalid",
+        server: "invalid", // 这个选项现在会被忽略，使用传统模式
       };
 
       // 获取 start 子命令并执行
@@ -353,8 +357,11 @@ describe("服务命令集成测试", () => {
 
       await startSubcommand!.execute([], options);
 
-      // 验证错误处理器被调用（MCP Server 模式会抛出 "需要实现" 错误）
-      expect(mockErrorHandler.handle).toHaveBeenCalled();
+      // 验证服务管理器的 start 方法被调用（传统模式）
+      expect(mockServiceManager.start).toHaveBeenCalledWith({
+        daemon: false,
+        ui: false,
+      });
     });
 
     it("应处理布尔选项的各种变体", async () => {

@@ -101,7 +101,9 @@ export class MCPMessageHandler {
       ? clientVersion
       : "2024-11-05";
 
-    this.logger.info(`协议版本协商: 客户端=${clientVersion}, 服务器响应=${responseVersion}`);
+    this.logger.info(
+      `协议版本协商: 客户端=${clientVersion}, 服务器响应=${responseVersion}`
+    );
 
     return {
       jsonrpc: "2.0",

@@ -2,7 +2,7 @@
  * 服务管理命令处理器
  */
 
-import type { CommandOption, SubCommand } from "../interfaces/Command.js";
+import type { SubCommand } from "../interfaces/Command.js";
 import { BaseCommandHandler } from "../interfaces/Command.js";
 import type { IDIContainer } from "../interfaces/Config.js";
 
@@ -20,10 +20,7 @@ export class ServiceCommandHandler extends BaseCommandHandler {
       options: [
         { flags: "-d, --daemon", description: "在后台运行服务" },
         { flags: "-u, --ui", description: "同时启动 Web UI 服务" },
-        {
-          flags: "-s, --server [port]",
-          description: "以 MCP Server 模式启动 (可选指定端口，默认 3000)",
-        },
+
         {
           flags: "--stdio",
           description: "以 stdio 模式运行 MCP Server (用于 Cursor 等客户端)",
@@ -88,13 +85,6 @@ export class ServiceCommandHandler extends BaseCommandHandler {
       if (options.stdio) {
         // stdio 模式 - 直接运行 mcpServerProxy
         await this.startStdioMode();
-      } else if (options.server) {
-        // MCP Server 模式
-        const port =
-          typeof options.server === "string"
-            ? Number.parseInt(options.server)
-            : 3000;
-        await this.startMCPServerMode(port, options.daemon);
       } else {
         // 传统模式
         await serviceManager.start({
@@ -191,53 +181,5 @@ export class ServiceCommandHandler extends BaseCommandHandler {
         XIAOZHI_CONFIG_DIR: process.env.XIAOZHI_CONFIG_DIR || process.cwd(),
       },
     });
-  }
-
-  /**
-   * 启动 MCP Server 模式
-   * @deprecated 将在 v2.0.0 中移除，请使用 `xiaozhi start` 启动 WebServer
-   */
-  private async startMCPServerMode(
-    port: number,
-    daemon: boolean
-  ): Promise<void> {
-    // 废弃警告
-    console.warn(
-      "[已废弃] MCP Server 模式 (-s) 将在 v2.0.0 中移除。" +
-        "\n推荐使用: xiaozhi start (WebServer 在 9999 端口提供 /mcp 端点)"
-    );
-
-    // 临时实现：启动 WebServer 而非独立的 HTTPAdapter
-    console.log(`正在启动 WebServer (端口: ${port})，提供 /mcp 端点...`);
-
-    try {
-      const { WebServer } = await import("../../WebServer.js");
-      const webServer = new WebServer(port);
-
-      if (daemon) {
-        // 后台模式启动
-        console.log("后台模式暂未实现，将以前台模式启动");
-      }
-
-      await webServer.start();
-      console.log(`WebServer 已启动在端口 ${port}`);
-      console.log(`MCP 端点: http://localhost:${port}/mcp`);
-
-      // 处理退出信号
-      process.on("SIGINT", async () => {
-        console.log("\n正在停止服务...");
-        await webServer.stop();
-        process.exit(0);
-      });
-
-      process.on("SIGTERM", async () => {
-        console.log("\n正在停止服务...");
-        await webServer.stop();
-        process.exit(0);
-      });
-    } catch (error) {
-      console.error("启动 WebServer 失败:", error);
-      throw error;
-    }
   }
 }
