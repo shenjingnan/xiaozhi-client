@@ -1,9 +1,15 @@
 # Xiaozhi Client
 
-[![npm version](https://badge.fury.io/js/xiaozhi-client.svg)](https://badge.fury.io/js/xiaozhi-client)
+[![npm version](https://img.shields.io/npm/v/xiaozhi-client)](https://www.npmjs.com/package/xiaozhi-client)
 [![codecov](https://codecov.io/gh/shenjingnan/xiaozhi-client/branch/main/graph/badge.svg)](https://codecov.io/gh/shenjingnan/xiaozhi-client)
 [![CI](https://github.com/shenjingnan/xiaozhi-client/workflows/Release/badge.svg)](https://github.com/shenjingnan/xiaozhi-client/actions)
+[![Docker: Ready](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat&logo=docker&logoColor=white)](https://hub.docker.com/r/shenjingnan/xiaozhi-client)
+[![Join: QQ Group](https://img.shields.io/badge/Join-QQ%20Group-5865F2?style=flat&logo=qq&logoColor=white)](https://qun.qq.com/universal-share/share?ac=1&authKey=c08PvS2zvAF1NN%2F%2BuaOi0ze1AElTIsvFBLwbWUMFc2ixjaZYxqZTUQHzipwd8Kka&busi_data=eyJncm91cENvZGUiOiIxMDU0ODg4NDczIiwidG9rZW4iOiJuSmJUN2cyUEVkNEQ5WXovM3RQbFVNcDluMGVibUNZTUQvL1RuQnFJRjBkZmRZQnRBRTdwU0szL3V2Y0dLc1ZmIiwidWluIjoiMzkxMTcyMDYwMCJ9&data=9cH6_zEC-sN3xYlwzKEWiYF71RLY9CId5taN-gy6XZo7axSlSWDpd1Ojui5hYMQKIgEJYSPw59XYgF5vH2wLog&svctype=4&tempid=h5_group_info)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![AI Code: 90%+](https://img.shields.io/badge/AI%20Code-90%25%2B-brightgreen)](https://img.shields.io/badge/AI%20Code-90%25%2B-brightgreen)
+[![Xiaozhi AI: Supported](https://img.shields.io/badge/小智AI-Supported-ff6b35?style=flat)](http://xiaozhi.me)
+[![ModelScope: Supported](https://img.shields.io/badge/ModelScope-Supported-6366f1?style=flat)](https://www.modelscope.cn/mcp)
+![MCP Client: Compatible](https://img.shields.io/badge/MCP%20Client-Compatible-00d4aa?style=flat)
 
 <img src="https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/qq-group-qrcode.jpg" alt="QQ群" width="300"/>
 
@@ -764,8 +770,6 @@ xiaozhi-client 不仅可以作为小智 AI 的客户端使用，还可以作为�
 
 ### 使用方式
 
-> 如果你将 xiaozhi-client 装在 docker 中使用，可以通过 HTTP 的方式暴露给外部客户端
-
 第一步：启动 xiaozhi-client 服务：
 
 ```bash
@@ -787,6 +791,7 @@ xiaozhi start
 ```
 
 **说明：**
+
 - 服务启动后，MCP 端点将在 `http://localhost:9999/mcp` 提供服务
 - 支持标准的 MCP over HTTP 协议
 - 可以通过 `--port` 参数自定义端口号
