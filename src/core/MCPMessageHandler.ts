@@ -1,6 +1,6 @@
 /**
  * 统一的 MCP 消息处理器
- * 负责处理所有 MCP 协议消息，包括 initialize、tools/list、tools/call、resources/list 等
+ * 负责处理所有 MCP 协议消息，包括 initialize、tools/list、tools/call、resources/list、prompts/list 等
  * 这是阶段一重构的核心组件，用于消除双层代理架构
  */
 
@@ -54,6 +54,17 @@ interface MCPResource {
   mimeType?: string;
 }
 
+// MCP 提示接口
+interface MCPPrompt {
+  name: string;
+  description?: string;
+  arguments?: Array<{
+    name: string;
+    description?: string;
+    required?: boolean;
+  }>;
+}
+
 export class MCPMessageHandler {
   private logger: Logger;
   private serviceManager: MCPServiceManager;
@@ -86,6 +97,8 @@ export class MCPMessageHandler {
           return await this.handleToolCall(message.params, message.id);
         case "resources/list":
           return await this.handleResourcesList(message.id);
+        case "prompts/list":
+          return await this.handlePromptsList(message.id);
         case "ping":
           return await this.handlePing(message.id);
         default:
@@ -269,6 +282,29 @@ export class MCPMessageHandler {
       jsonrpc: "2.0",
       result: {
         resources: resources,
+      },
+      id: id !== undefined ? id : 1,
+    };
+  }
+
+  /**
+   * 处理 prompts/list 请求
+   * @param id 消息ID
+   * @returns 提示列表响应
+   */
+  private async handlePromptsList(id?: string | number): Promise<MCPResponse> {
+    this.logger.info("处理 prompts/list 请求");
+
+    // 目前返回空的提示列表
+    // 如果将来需要提供提示模板功能，可以在这里扩展
+    const prompts: MCPPrompt[] = [];
+
+    this.logger.info(`返回 ${prompts.length} 个提示模板`);
+
+    return {
+      jsonrpc: "2.0",
+      result: {
+        prompts: prompts,
       },
       id: id !== undefined ? id : 1,
     };
