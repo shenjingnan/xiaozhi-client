@@ -753,7 +753,7 @@ xiaozhi start -u
 
 ## 作为 MCP Server 集成到其他客户端
 
-> 需升级至 `1.5.0` 及以上版本
+> 需升级至 `1.6.12` 及以上版本
 
 xiaozhi-client 不仅可以作为小智 AI 的客户端使用，还可以作为标准的 MCP Server 被 Cursor、Cherry Studio 等支持 MCP 协议的客户端集成。
 
@@ -764,49 +764,7 @@ xiaozhi-client 不仅可以作为小智 AI 的客户端使用，还可以作为�
 ![在CherryStudio中集成](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/integrate-to-cherry-studio.png)
 ![在Cursor中集成](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/integrate-to-cursor.png)
 
-### 方式一：使用 stdio 模式（推荐）
-
-第一步：确保已全局安装 xiaozhi-client：
-
-```bash
-npm install -g xiaozhi-client
-```
-
-第二步：在 客户端 的 MCP 配置中添加：
-
-```json
-{
-  "mcpServers": {
-    "xiaozhi-client": {
-      "command": "xiaozhi",
-      "args": ["start", "--stdio"]
-    }
-  }
-}
-```
-
-提示：如果需要指定配置文件位置，可以使用环境变量
-
-配置文件的查找顺序
-
-1. 当前工作目录
-2. 通过 `XIAOZHI_CONFIG_DIR` 环境变量指定的目录
-
-```json
-{
-  "mcpServers": {
-    "xiaozhi-client": {
-      "command": "xiaozhi",
-      "args": ["start", "--stdio"],
-      "env": {
-        "XIAOZHI_CONFIG_DIR": "/path/to/your/config/directory"
-      }
-    }
-  }
-}
-```
-
-### 方式二：使用 HTTP Server 模式
+### 使用方式
 
 > 如果你将 xiaozhi-client 装在 docker 中使用，可以通过 HTTP 的方式暴露给外部客户端
 
@@ -815,12 +773,6 @@ npm install -g xiaozhi-client
 ```bash
 # 使用默认端口 9999
 xiaozhi start
-
-# 使用自定义端口
-xiaozhi start --port 8080
-
-# 后台运行
-xiaozhi start -d
 ```
 
 第二步：在客户端中配置 HTTP 连接：
