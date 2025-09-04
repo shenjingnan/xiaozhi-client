@@ -58,15 +58,20 @@ export class MCPMessageHandler {
   /**
    * 处理 MCP 消息的统一入口
    * @param message MCP 消息
-   * @returns MCP 响应
+   * @returns MCP 响应（对于通知消息返回 null）
    */
-  async handleMessage(message: MCPMessage): Promise<MCPResponse> {
+  async handleMessage(message: MCPMessage): Promise<MCPResponse | null> {
     this.logger.debug(`处理 MCP 消息: ${message.method}`, message);
 
     try {
+      // 检查是否为通知消息（没有 id 字段）
+      const isNotification = message.id === undefined;
+
       switch (message.method) {
         case "initialize":
           return await this.handleInitialize(message.params, message.id);
+        case "notifications/initialized":
+          return await this.handleInitializedNotification(message.params);
         case "tools/list":
           return await this.handleToolsList(message.id);
         case "tools/call":
@@ -74,10 +79,19 @@ export class MCPMessageHandler {
         case "ping":
           return await this.handlePing(message.id);
         default:
+          if (isNotification) {
+            // 对于未知的通知消息，记录警告但不抛出错误
+            this.logger.warn(`收到未知的通知消息: ${message.method}`, message);
+            return null;
+          }
           throw new Error(`未知的方法: ${message.method}`);
       }
     } catch (error) {
       this.logger.error(`处理消息时出错: ${message.method}`, error);
+      // 通知消息不需要错误响应
+      if (message.id === undefined) {
+        return null;
+      }
       return this.createErrorResponse(error as Error, message.id);
     }
   }
@@ -120,6 +134,20 @@ export class MCPMessageHandler {
       },
       id: id !== undefined ? id : 1,
     };
+  }
+
+  /**
+   * 处理 notifications/initialized 通知
+   * @param params 通知参数
+   * @returns null（通知消息不需要响应）
+   */
+  private async handleInitializedNotification(params?: any): Promise<null> {
+    this.logger.info("收到 initialized 通知，客户端初始化完成", params);
+
+    // 可以在这里执行一些初始化完成后的逻辑
+    // 例如：记录客户端连接状态、触发事件等
+
+    return null;
   }
 
   /**

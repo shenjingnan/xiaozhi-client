@@ -98,8 +98,13 @@ export abstract class TransportAdapter {
 
       const response = await this.messageHandler.handleMessage(message);
 
-      this.logger.debug("发送响应消息:", response);
-      await this.sendMessage(response);
+      // 仅对非通知消息发送响应
+      if (response !== null) {
+        this.logger.debug("发送响应消息:", response);
+        await this.sendMessage(response);
+      } else {
+        this.logger.debug("收到通知消息，无需响应");
+      }
     } catch (error) {
       this.logger.error(`处理消息时出错: ${message.method}`, error);
 

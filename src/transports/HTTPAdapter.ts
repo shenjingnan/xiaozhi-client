@@ -288,9 +288,9 @@ export class HTTPAdapter extends TransportAdapter {
       const response = await this.messageHandler.handleMessage(message);
       this.logger.debug("SSE 消息处理响应:", response);
 
-      // 通过 SSE 发送响应
+      // 通过 SSE 发送响应（仅对非通知消息）
       const client = this.clients.get(sessionId);
-      if (client) {
+      if (client && response !== null) {
         this.sendToClient(client, response);
       }
 

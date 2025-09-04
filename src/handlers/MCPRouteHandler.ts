@@ -254,7 +254,11 @@ export class MCPRouteHandler {
       }
 
       // 验证 MCP 协议版本头（可选）
-      const protocolVersion = c.req.header("mcp-protocol-version");
+      // 支持多种大小写格式的协议版本头
+      const protocolVersion =
+        c.req.header("mcp-protocol-version") ||
+        c.req.header("MCP-Protocol-Version") ||
+        c.req.header("Mcp-Protocol-Version");
       const supportedVersions = ["2024-11-05", "2025-06-18"];
       if (protocolVersion && !supportedVersions.includes(protocolVersion)) {
         this.logger.warn(
@@ -313,7 +317,19 @@ export class MCPRouteHandler {
         method: message.method,
         messageId: messageId,
         responseTime: responseTime,
+        isNotification: response === null,
       });
+
+      // 对于通知消息，返回 204 No Content
+      if (response === null) {
+        return new Response(null, {
+          status: 204,
+          headers: {
+            "MCP-Protocol-Version": "2024-11-05",
+            "X-Response-Time": responseTime.toString(),
+          },
+        });
+      }
 
       // 返回 JSON-RPC 响应
       return c.json(response, 200, {
@@ -427,8 +443,8 @@ export class MCPRouteHandler {
       client.messageCount++;
       this.metrics.totalMessages++;
 
-      // 通过 SSE 发送响应
-      if (client.writer && client.isAlive) {
+      // 通过 SSE 发送响应（仅对非通知消息）
+      if (response !== null && client.writer && client.isAlive) {
         try {
           await this.sendSSEEvent(
             client.writer,
@@ -450,6 +466,7 @@ export class MCPRouteHandler {
         messageId: messageId,
         responseTime: responseTime,
         messageCount: client.messageCount,
+        isNotification: response === null,
       });
 
       // 返回 202 Accepted 确认
