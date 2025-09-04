@@ -2,7 +2,7 @@
  * 服务管理命令处理器
  */
 
-import type { CommandOption, SubCommand } from "../interfaces/Command.js";
+import type { SubCommand } from "../interfaces/Command.js";
 import { BaseCommandHandler } from "../interfaces/Command.js";
 import type { IDIContainer } from "../interfaces/Config.js";
 
@@ -20,10 +20,7 @@ export class ServiceCommandHandler extends BaseCommandHandler {
       options: [
         { flags: "-d, --daemon", description: "在后台运行服务" },
         { flags: "-u, --ui", description: "同时启动 Web UI 服务" },
-        {
-          flags: "-s, --server [port]",
-          description: "以 MCP Server 模式启动 (可选指定端口，默认 3000)",
-        },
+
         {
           flags: "--stdio",
           description: "以 stdio 模式运行 MCP Server (用于 Cursor 等客户端)",
@@ -88,13 +85,6 @@ export class ServiceCommandHandler extends BaseCommandHandler {
       if (options.stdio) {
         // stdio 模式 - 直接运行 mcpServerProxy
         await this.startStdioMode();
-      } else if (options.server) {
-        // MCP Server 模式
-        const port =
-          typeof options.server === "string"
-            ? Number.parseInt(options.server)
-            : 3000;
-        await this.startMCPServerMode(port, options.daemon);
       } else {
         // 传统模式
         await serviceManager.start({
@@ -191,17 +181,5 @@ export class ServiceCommandHandler extends BaseCommandHandler {
         XIAOZHI_CONFIG_DIR: process.env.XIAOZHI_CONFIG_DIR || process.cwd(),
       },
     });
-  }
-
-  /**
-   * 启动 MCP Server 模式
-   */
-  private async startMCPServerMode(
-    port: number,
-    daemon: boolean
-  ): Promise<void> {
-    // 这里需要实现 MCP Server 模式的启动逻辑
-    // 暂时抛出错误，提醒需要实现
-    throw new Error("MCP Server 模式启动逻辑需要实现");
   }
 }

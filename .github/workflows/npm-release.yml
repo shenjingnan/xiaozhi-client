@@ -6,14 +6,18 @@ on:
       release_type:
         description: "发布类型"
         required: true
-        default: "beta"
+        default: "beta-patch"
         type: choice
         options:
-          - "release-patch"      # 正式版 patch
-          - "release-minor"      # 正式版 minor
-          - "release-major"      # 正式版 major
-          - "beta"               # Beta 预发布
-          - "rc"                 # RC 预发布
+          - "release-patch" # 正式版 patch
+          - "release-minor" # 正式版 minor
+          - "release-major" # 正式版 major
+          - "beta-patch" # Beta 预发布 patch
+          - "beta-minor" # Beta 预发布 minor
+          - "beta-major" # Beta 预发布 major
+          - "rc-patch" # RC 预发布 patch
+          - "rc-minor" # RC 预发布 minor
+          - "rc-major" # RC 预发布 major
       dry_run:
         description: "预演模式"
         required: true
@@ -84,14 +88,27 @@ jobs:
             # 正式版发布
             VERSION_TYPE="release"
             VERSION_INCREMENT="${RELEASE_TYPE#release-}"
+            PRERELEASE_ID=""
+          elif [[ "$RELEASE_TYPE" == "beta-"* ]]; then
+            # Beta 预发布版
+            VERSION_TYPE="prerelease"
+            VERSION_INCREMENT="${RELEASE_TYPE#beta-}"
+            PRERELEASE_ID="beta"
+          elif [[ "$RELEASE_TYPE" == "rc-"* ]]; then
+            # RC 预发布版
+            VERSION_TYPE="prerelease"
+            VERSION_INCREMENT="${RELEASE_TYPE#rc-}"
+            PRERELEASE_ID="rc"
           else
-            # 预发布版
-            VERSION_TYPE="$RELEASE_TYPE"
-            VERSION_INCREMENT="release"
+            # 兜底处理
+            VERSION_TYPE="prerelease"
+            VERSION_INCREMENT="patch"
+            PRERELEASE_ID="beta"
           fi
 
           echo "version_type=$VERSION_TYPE" >> $GITHUB_OUTPUT
           echo "version_increment=$VERSION_INCREMENT" >> $GITHUB_OUTPUT
+          echo "prerelease_id=$PRERELEASE_ID" >> $GITHUB_OUTPUT
 
       - name: 发布
         env:
@@ -101,14 +118,17 @@ jobs:
         run: |
           RELEASE_CMD="npx release-it"
 
-          if [ "${{ steps.parse-release.outputs.version_type }}" != "release" ]; then
-            RELEASE_CMD="$RELEASE_CMD --preRelease=${{ steps.parse-release.outputs.version_type }}"
-          else
+          if [ "${{ steps.parse-release.outputs.version_type }}" = "release" ]; then
+            # 正式版发布
             RELEASE_CMD="$RELEASE_CMD ${{ steps.parse-release.outputs.version_increment }}"
+          else
+            # 预发布版发布
+            RELEASE_CMD="$RELEASE_CMD ${{ steps.parse-release.outputs.version_increment }} --preRelease=${{ steps.parse-release.outputs.prerelease_id }}"
           fi
 
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
             RELEASE_CMD="$RELEASE_CMD --dry-run"
           fi
 
+          echo "执行命令: $RELEASE_CMD"
           eval $RELEASE_CMD
