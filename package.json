@@ -61,7 +61,7 @@
     "dotenv": "^17.2.1",
     "eventsource": "^4.0.0",
     "express": "^5.1.0",
-    "hono": "^4.8.10",
+    "hono": "^4.9.6",
     "json5": "^2.2.3",
     "json5-writer": "^0.2.0",
     "jsonc-parser": "^3.3.1",
