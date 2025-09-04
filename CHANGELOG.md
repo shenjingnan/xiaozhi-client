@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.6.12-beta.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.11...v1.6.12-beta.0) (2025-09-04)
+
+### Features
+
+* **mcp:** 实现 MCP Streamable HTTP 协议支持 ([#292](https://github.com/shenjingnan/xiaozhi-client/issues/292)) ([a5aabcc](https://github.com/shenjingnan/xiaozhi-client/commit/a5aabcc9d8971a4b30c3a74e5e4f28de2b7274b1))
+
+### Bug Fixes
+
+* **cache:** 修复测试环境缓存文件污染项目目录问题 ([#288](https://github.com/shenjingnan/xiaozhi-client/issues/288)) ([e40710a](https://github.com/shenjingnan/xiaozhi-client/commit/e40710aa2bf64353084051a8dbdd37bd2dbd6b05))
+* **deps:** update dependency hono to ^4.9.6 ([#296](https://github.com/shenjingnan/xiaozhi-client/issues/296)) ([de32901](https://github.com/shenjingnan/xiaozhi-client/commit/de32901d7d6eacca3645ff4304b4512b61bb5671))
+
 ## [1.6.11](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.10...v1.6.11) (2025-09-02)
 
 ### Features
