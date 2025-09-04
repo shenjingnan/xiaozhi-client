@@ -255,8 +255,9 @@ export class MCPRouteHandler {
 
       // 验证 MCP 协议版本头（可选）
       const protocolVersion = c.req.header("mcp-protocol-version");
-      if (protocolVersion && protocolVersion !== "2024-11-05") {
-        this.logger.warn(`不支持的 MCP 协议版本: ${protocolVersion}`);
+      const supportedVersions = ["2024-11-05", "2025-06-18"];
+      if (protocolVersion && !supportedVersions.includes(protocolVersion)) {
+        this.logger.warn(`不支持的 MCP 协议版本: ${protocolVersion}，支持的版本: ${supportedVersions.join(", ")}`);
       }
 
       // 解析请求体

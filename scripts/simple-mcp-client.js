@@ -15,8 +15,8 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
  * MCP 服务配置（硬编码）
  */
 const MCP_CONFIG = {
-  name: "amap-maps-streamableHTTP",
-  url: "https://mcp.amap.com/mcp?key=1ec31da021b2702787841ea4ee822de3",
+  name: "xiaozhi-client",
+  url: "http://localhost:9999/mcp",
   clientInfo: {
     name: "xiaozhi-simple-client",
     version: "1.0.0",
@@ -75,7 +75,14 @@ function createTransport() {
   try {
     const url = new URL(MCP_CONFIG.url);
     const transport = new StreamableHTTPClientTransport(url, {
-      // 可以在这里添加额外的选项，如 headers
+      // 将头部放在 requestInit 中，这是正确的格式
+      requestInit: {
+        headers: {
+          "MCP-Protocol-Version": "2024-11-05",
+          Accept: "application/json, text/event-stream",
+          "Content-Type": "application/json",
+        },
+      },
     });
 
     log("success", "StreamableHTTP 传输层创建成功");

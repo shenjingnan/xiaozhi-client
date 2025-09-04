@@ -20,7 +20,7 @@ interface MCPResponse {
   jsonrpc: "2.0";
   result?: any;
   error?: MCPError;
-  id: string | number | null;
+  id: string | number;
 }
 
 // MCP 错误接口
@@ -94,6 +94,15 @@ export class MCPMessageHandler {
   ): Promise<MCPResponse> {
     this.logger.info("处理 initialize 请求", params);
 
+    // 支持多个协议版本，优先使用客户端请求的版本
+    const supportedVersions = ["2024-11-05", "2025-06-18"];
+    const clientVersion = params.protocolVersion;
+    const responseVersion = supportedVersions.includes(clientVersion)
+      ? clientVersion
+      : "2024-11-05";
+
+    this.logger.info(`协议版本协商: 客户端=${clientVersion}, 服务器响应=${responseVersion}`);
+
     return {
       jsonrpc: "2.0",
       result: {
@@ -105,9 +114,9 @@ export class MCPMessageHandler {
           tools: {},
           logging: {},
         },
-        protocolVersion: "2024-11-05",
+        protocolVersion: responseVersion,
       },
-      id: id || null,
+      id: id !== undefined ? id : 1,
     };
   }
 
@@ -136,7 +145,7 @@ export class MCPMessageHandler {
         result: {
           tools: mcpTools,
         },
-        id: id || null,
+        id: id !== undefined ? id : 1,
       };
     } catch (error) {
       this.logger.error("获取工具列表失败", error);
@@ -174,7 +183,7 @@ export class MCPMessageHandler {
           content: result.content,
           isError: result.isError || false,
         },
-        id: id || null,
+        id: id !== undefined ? id : 1,
       };
     } catch (error) {
       this.logger.error(`工具调用失败: ${params.name}`, error);
@@ -196,7 +205,7 @@ export class MCPMessageHandler {
         status: "ok",
         timestamp: new Date().toISOString(),
       },
-      id: id || null,
+      id: id !== undefined ? id : 1,
     };
   }
 
@@ -231,7 +240,7 @@ export class MCPMessageHandler {
           stack: error.stack,
         },
       },
-      id: id || null,
+      id: id !== undefined ? id : 1,
     };
   }
 
