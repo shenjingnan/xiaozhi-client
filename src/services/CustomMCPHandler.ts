@@ -158,7 +158,9 @@ export class CustomMCPHandler {
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
         this.logger.warn(
-          `[CustomMCP] 工具 ${tool.name} 调用失败 (尝试 ${attempt + 1}/${options.retries + 1}):`,
+          `[CustomMCP] 工具 ${tool.name} 调用失败 (尝试 ${attempt + 1}/${
+            options.retries + 1
+          }):`,
           lastError.message
         );
 
@@ -283,7 +285,9 @@ export class CustomMCPHandler {
         content: [
           {
             type: "text",
-            text: `Coze 工作流调用失败: ${error instanceof Error ? error.message : String(error)}`,
+            text: `Coze 工作流调用失败: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
           },
         ],
         isError: true,
@@ -300,26 +304,11 @@ export class CustomMCPHandler {
     arguments_: any
   ): any {
     const baseRequest = {
-      user: "xiaozhi-client",
-      query: "",
-      stream: false,
-      ...config.params,
+      workflow_id: config.workflow_id,
+      parameters: {
+        ...arguments_,
+      },
     };
-
-    // 如果参数中有 input 字段，将其作为 query
-    if (arguments_.input && typeof arguments_.input === "string") {
-      baseRequest.query = arguments_.input;
-    } else {
-      // 否则将整个参数对象序列化为查询
-      baseRequest.query = JSON.stringify(arguments_);
-    }
-
-    // 添加其他参数
-    for (const key of Object.keys(arguments_)) {
-      if (key !== "input") {
-        (baseRequest as any)[key] = arguments_[key];
-      }
-    }
 
     return baseRequest;
   }
@@ -333,6 +322,11 @@ export class CustomMCPHandler {
   ): Promise<any> {
     const baseUrl = config.base_url || "https://api.coze.cn";
     let endpoint = "";
+
+    const token = configManager.getConfig().platforms?.coze?.token;
+    if (!token) {
+      throw new Error("Coze Token 配置不存在");
+    }
 
     // 根据配置选择 API 端点
     if (config.workflow_id) {
@@ -350,18 +344,13 @@ export class CustomMCPHandler {
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
       ...config.headers,
     };
-
-    // 添加认证头
-    if (config.api_key) {
-      headers.Authorization = `Bearer ${config.api_key}`;
-    }
 
     this.logger.debug(`[CustomMCP] 发送 Coze 请求到: ${url}`, {
       headers: {
         ...headers,
-        Authorization: headers.Authorization ? "[REDACTED]" : undefined,
       },
       body: requestData,
     });
@@ -402,49 +391,26 @@ export class CustomMCPHandler {
   /**
    * 处理 Coze API 响应
    */
-  private processCozeResponse(toolName: string, response: any): ToolCallResult {
+  private processCozeResponse(
+    toolName: string,
+    response: {
+      code: number;
+      msg: string;
+      debug_url: string;
+      data: string;
+      usage: { input_count: number; output_count: number; token_count: number };
+    }
+  ): ToolCallResult {
     try {
       // 处理工作流响应
       if (response.data) {
         const data = response.data;
 
-        // 检查执行状态
-        if (data.execute_status === "success") {
-          const output = data.output || data.result || data;
-
-          return {
-            content: [
-              {
-                type: "text",
-                text:
-                  typeof output === "string"
-                    ? output
-                    : JSON.stringify(output, null, 2),
-              },
-            ],
-            isError: false,
-          };
-        }
-
-        if (data.execute_status === "failed") {
-          const errorMsg = data.error_message || "工作流执行失败";
-          return {
-            content: [
-              {
-                type: "text",
-                text: `工作流执行失败: ${errorMsg}`,
-              },
-            ],
-            isError: true,
-          };
-        }
-
-        // 执行中或其他状态
         return {
           content: [
             {
               type: "text",
-              text: `工作流状态: ${data.execute_status}`,
+              text: data,
             },
           ],
           isError: false,
@@ -452,36 +418,36 @@ export class CustomMCPHandler {
       }
 
       // 处理聊天机器人响应
-      if (response.messages && Array.isArray(response.messages)) {
-        const lastMessage = response.messages[response.messages.length - 1];
-        if (lastMessage?.content) {
-          return {
-            content: [
-              {
-                type: "text",
-                text: lastMessage.content,
-              },
-            ],
-            isError: false,
-          };
-        }
-      }
+      // if (response.messages && Array.isArray(response.messages)) {
+      //   const lastMessage = response.messages[response.messages.length - 1];
+      //   if (lastMessage?.content) {
+      //     return {
+      //       content: [
+      //         {
+      //           type: "text",
+      //           text: lastMessage.content,
+      //         },
+      //       ],
+      //       isError: false,
+      //     };
+      //   }
+      // }
 
       // 处理其他格式的响应
-      if (response.content) {
-        return {
-          content: [
-            {
-              type: "text",
-              text:
-                typeof response.content === "string"
-                  ? response.content
-                  : JSON.stringify(response.content, null, 2),
-            },
-          ],
-          isError: false,
-        };
-      }
+      // if (response.content) {
+      //   return {
+      //     content: [
+      //       {
+      //         type: "text",
+      //         text:
+      //           typeof response.content === "string"
+      //             ? response.content
+      //             : JSON.stringify(response.content, null, 2),
+      //       },
+      //     ],
+      //     isError: false,
+      //   };
+      // }
 
       // 默认处理：返回整个响应
       return {
@@ -500,7 +466,9 @@ export class CustomMCPHandler {
         content: [
           {
             type: "text",
-            text: `处理响应失败: ${error instanceof Error ? error.message : String(error)}`,
+            text: `处理响应失败: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
           },
         ],
         isError: true,
@@ -555,7 +523,9 @@ export class CustomMCPHandler {
         content: [
           {
             type: "text",
-            text: `函数工具调用失败: ${error instanceof Error ? error.message : String(error)}`,
+            text: `函数工具调用失败: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
           },
         ],
         isError: true,
@@ -584,7 +554,9 @@ export class CustomMCPHandler {
       return moduleExports;
     } catch (error) {
       throw new Error(
-        `无法加载模块 ${modulePath}: ${error instanceof Error ? error.message : String(error)}`
+        `无法加载模块 ${modulePath}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   }
@@ -695,7 +667,9 @@ export class CustomMCPHandler {
         content: [
           {
             type: "text",
-            text: `HTTP 工具调用失败: ${error instanceof Error ? error.message : String(error)}`,
+            text: `HTTP 工具调用失败: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
           },
         ],
         isError: true,
@@ -796,7 +770,9 @@ export class CustomMCPHandler {
     for (let attempt = 0; attempt <= retryCount; attempt++) {
       try {
         this.logger.debug(
-          `[CustomMCP] 发送 HTTP 请求 (尝试 ${attempt + 1}/${retryCount + 1}): ${url}`,
+          `[CustomMCP] 发送 HTTP 请求 (尝试 ${attempt + 1}/${
+            retryCount + 1
+          }): ${url}`,
           {
             method: requestOptions.method,
             headers: requestOptions.headers,
@@ -877,7 +853,11 @@ export class CustomMCPHandler {
           content: [
             {
               type: "text",
-              text: `HTTP 请求失败 (${response.status}): ${typeof responseData === "string" ? responseData : JSON.stringify(responseData)}`,
+              text: `HTTP 请求失败 (${response.status}): ${
+                typeof responseData === "string"
+                  ? responseData
+                  : JSON.stringify(responseData)
+              }`,
             },
           ],
           isError: true,
@@ -912,7 +892,9 @@ export class CustomMCPHandler {
         content: [
           {
             type: "text",
-            text: `处理响应失败: ${error instanceof Error ? error.message : String(error)}`,
+            text: `处理响应失败: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
           },
         ],
         isError: true,
@@ -1029,7 +1011,9 @@ export class CustomMCPHandler {
         content: [
           {
             type: "text",
-            text: `脚本工具调用失败: ${error instanceof Error ? error.message : String(error)}`,
+            text: `脚本工具调用失败: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
           },
         ],
         isError: true,
@@ -1226,7 +1210,9 @@ export class CustomMCPHandler {
         content: [
           {
             type: "text",
-            text: `链式工具调用失败: ${error instanceof Error ? error.message : String(error)}`,
+            text: `链式工具调用失败: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
           },
         ],
         isError: true,
@@ -1318,7 +1304,9 @@ export class CustomMCPHandler {
           content: [
             {
               type: "text",
-              text: `工具 ${toolName} 执行异常: ${error instanceof Error ? error.message : String(error)}`,
+              text: `工具 ${toolName} 执行异常: ${
+                error instanceof Error ? error.message : String(error)
+              }`,
             },
           ],
           isError: true,
@@ -1351,7 +1339,9 @@ export class CustomMCPHandler {
           content: [
             {
               type: "text",
-              text: `工具 ${toolName} 执行异常: ${error instanceof Error ? error.message : String(error)}`,
+              text: `工具 ${toolName} 执行异常: ${
+                error instanceof Error ? error.message : String(error)
+              }`,
             },
           ],
           isError: true,

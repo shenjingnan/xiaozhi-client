@@ -91,7 +91,9 @@ describe("ToolApiHandler - customMCP 支持", () => {
       mockContext.req.json.mockResolvedValue(requestBody);
 
       mockMCPServiceManagerSingleton.isInitialized.mockReturnValue(true);
-      mockMCPServiceManagerSingleton.getInstance.mockResolvedValue(mockServiceManager);
+      mockMCPServiceManagerSingleton.getInstance.mockResolvedValue(
+        mockServiceManager
+      );
 
       mockServiceManager.hasCustomMCPTool.mockReturnValue(true);
       mockServiceManager.getCustomMCPTools.mockReturnValue([
@@ -138,7 +140,9 @@ describe("ToolApiHandler - customMCP 支持", () => {
       const { configManager } = await import("../configManager.js");
 
       mockMCPServiceManagerSingleton.isInitialized.mockReturnValue(true);
-      mockMCPServiceManagerSingleton.getInstance.mockResolvedValue(mockServiceManager);
+      mockMCPServiceManagerSingleton.getInstance.mockResolvedValue(
+        mockServiceManager
+      );
 
       configManager.getMcpServers = vi.fn().mockReturnValue({
         calculator: { command: "node", args: ["./calculator.js"] },

@@ -160,6 +160,14 @@ export interface CustomMCPConfig {
   tools: CustomMCPTool[];
 }
 
+export interface PlatformsConfig {
+  [platformName: string]: PlatformConfig;
+}
+
+export interface PlatformConfig {
+  token?: string;
+}
+
 export interface AppConfig {
   mcpEndpoint: string | string[];
   mcpServers: Record<string, MCPServerConfig>;
@@ -168,6 +176,7 @@ export interface AppConfig {
   connection?: ConnectionConfig; // 连接配置（可选，用于向后兼容）
   modelscope?: ModelScopeConfig; // ModelScope 配置（可选）
   webUI?: WebUIConfig; // Web UI 配置（可选）
+  platforms?: PlatformsConfig; // 平台配置（可选）
 }
 
 /**
