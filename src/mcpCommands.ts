@@ -76,15 +76,26 @@ export async function listMcpServers(
     const mcpServers = configManager.getMcpServers();
     const serverNames = Object.keys(mcpServers);
 
-    if (serverNames.length === 0) {
-      spinner.warn("未配置任何 MCP 服务");
+    // 检查是否有 customMCP 工具
+    const customMCPTools = configManager.getCustomMCPTools();
+    const hasCustomMCP = customMCPTools.length > 0;
+
+    // 计算总服务数（包括 customMCP）
+    const totalServices = serverNames.length + (hasCustomMCP ? 1 : 0);
+
+    if (totalServices === 0) {
+      spinner.warn("未配置任何 MCP 服务或 customMCP 工具");
       console.log(
-        chalk.yellow("💡 提示: 使用 'xiaozhi config' 命令配置 MCP 服务")
+        chalk.yellow(
+          "💡 提示: 使用 'xiaozhi config' 命令配置 MCP 服务或在 xiaozhi.config.json 中配置 customMCP 工具"
+        )
       );
       return;
     }
 
-    spinner.succeed(`找到 ${serverNames.length} 个 MCP 服务`);
+    spinner.succeed(
+      `找到 ${totalServices} 个 MCP 服务${hasCustomMCP ? " (包括 customMCP)" : ""}`
+    );
 
     if (options.tools) {
       // 显示所有服务的工具列表
@@ -96,10 +107,17 @@ export async function listMcpServers(
       let maxToolNameWidth = 8; // 默认最小宽度
       const allToolNames: string[] = [];
 
+      // 添加标准 MCP 服务的工具名称
       for (const serverName of serverNames) {
         const toolsConfig = configManager.getServerToolsConfig(serverName);
         const toolNames = Object.keys(toolsConfig);
         allToolNames.push(...toolNames);
+      }
+
+      // 添加 customMCP 工具名称
+      if (hasCustomMCP) {
+        const customToolNames = customMCPTools.map((tool) => tool.name);
+        allToolNames.push(...customToolNames);
       }
 
       // 计算最长工具名称的显示宽度
@@ -129,6 +147,21 @@ export async function listMcpServers(
         },
       });
 
+      // 首先添加 customMCP 工具（如果存在）
+      if (hasCustomMCP) {
+        for (const customTool of customMCPTools) {
+          const description = truncateToWidth(customTool.description || "", 32);
+
+          table.push([
+            "customMCP",
+            customTool.name,
+            chalk.green("启用"), // customMCP 工具默认启用
+            description,
+          ]);
+        }
+      }
+
+      // 然后添加标准 MCP 服务的工具
       for (const serverName of serverNames) {
         const toolsConfig = configManager.getServerToolsConfig(serverName);
         const toolNames = Object.keys(toolsConfig);
@@ -142,7 +175,7 @@ export async function listMcpServers(
             chalk.gray("暂未识别到相关工具"),
           ]);
         } else {
-          // 添加服务分隔行
+          // 添加服务分隔行（如果表格不为空）
           if (table.length > 0) {
             table.push([{ colSpan: 4, content: "" }]);
           }
@@ -172,6 +205,20 @@ export async function listMcpServers(
       console.log(chalk.bold("MCP 服务列表:"));
       console.log();
 
+      // 首先显示 customMCP 服务（如果存在）
+      if (hasCustomMCP) {
+        console.log(`${chalk.cyan("•")} ${chalk.bold("customMCP")}`);
+        console.log(`  类型: ${chalk.gray("自定义 MCP 工具")}`);
+        console.log(`  配置: ${chalk.gray("xiaozhi.config.json")}`);
+        console.log(
+          `  工具: ${chalk.green(customMCPTools.length)} 启用 / ${chalk.yellow(
+            customMCPTools.length
+          )} 总计`
+        );
+        console.log();
+      }
+
+      // 然后显示标准 MCP 服务
       for (const serverName of serverNames) {
         const serverConfig = mcpServers[serverName];
         const toolsConfig = configManager.getServerToolsConfig(serverName);
