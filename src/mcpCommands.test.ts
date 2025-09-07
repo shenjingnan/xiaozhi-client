@@ -160,7 +160,9 @@ describe("mcpCommands", () => {
 
       await listMcpServers();
 
-      expect(mockSpinner.warn).toHaveBeenCalledWith("未配置任何 MCP 服务或 customMCP 工具");
+      expect(mockSpinner.warn).toHaveBeenCalledWith(
+        "未配置任何 MCP 服务或 customMCP 工具"
+      );
       expect(mockConsoleLog).toHaveBeenCalledWith(
         expect.stringContaining("提示: 使用 'xiaozhi config' 命令配置 MCP 服务")
       );
