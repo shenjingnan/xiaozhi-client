@@ -1031,13 +1031,7 @@ export class ConfigManager {
       return [];
     }
 
-    // 处理配置格式兼容性：支持数组格式和单对象格式
-    if (Array.isArray(customMCPConfig.tools)) {
-      return customMCPConfig.tools;
-    }
-
-    // 兼容单个工具对象的情况
-    return [customMCPConfig.tools as CustomMCPTool];
+    return customMCPConfig.tools;
   }
 
   /**

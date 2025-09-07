@@ -5,7 +5,7 @@
  * 测试 customMCP 工具与标准 MCP 工具的混合使用
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MCPServiceConfig } from "../MCPService.js";
 
 // Mock configManager

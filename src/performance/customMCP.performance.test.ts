@@ -14,6 +14,7 @@ import {
 } from "vitest";
 import { configManager } from "../configManager.js";
 import { ToolApiHandler } from "../handlers/ToolApiHandler.js";
+import type { MCPServiceManager } from "../services/MCPServiceManager.js";
 import { MCPServiceManagerSingleton } from "../services/MCPServiceManagerSingleton.js";
 
 // Mock dependencies
@@ -58,10 +59,10 @@ describe("customMCP 性能测试", () => {
       getAllTools: vi.fn(),
     };
 
-    MCPServiceManagerSingleton.isInitialized = vi.fn().mockReturnValue(true);
-    MCPServiceManagerSingleton.getInstance = vi
-      .fn()
-      .mockResolvedValue(mockServiceManager);
+    vi.spyOn(MCPServiceManagerSingleton, "isInitialized").mockReturnValue(true);
+    vi.spyOn(MCPServiceManagerSingleton, "getInstance").mockResolvedValue(
+      mockServiceManager as unknown as MCPServiceManager
+    );
 
     // Reset all mocks
     vi.clearAllMocks();

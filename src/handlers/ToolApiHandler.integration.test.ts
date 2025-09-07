@@ -14,6 +14,7 @@ import {
   vi,
 } from "vitest";
 import { configManager } from "../configManager.js";
+import type { MCPServiceManager } from "../services/MCPServiceManager.js";
 import { MCPServiceManagerSingleton } from "../services/MCPServiceManagerSingleton.js";
 import { ToolApiHandler } from "./ToolApiHandler.js";
 
@@ -112,10 +113,12 @@ describe("ToolApiHandler - 集成测试", () => {
         }),
       };
 
-      MCPServiceManagerSingleton.isInitialized = vi.fn().mockReturnValue(true);
-      MCPServiceManagerSingleton.getInstance = vi
-        .fn()
-        .mockResolvedValue(mockServiceManager);
+      vi.spyOn(MCPServiceManagerSingleton, "isInitialized").mockReturnValue(
+        true
+      );
+      vi.spyOn(MCPServiceManagerSingleton, "getInstance").mockResolvedValue(
+        mockServiceManager as unknown as MCPServiceManager
+      );
 
       // Act
       await toolApiHandler.callTool(mockContext);
@@ -183,10 +186,12 @@ describe("ToolApiHandler - 集成测试", () => {
         }),
       };
 
-      MCPServiceManagerSingleton.isInitialized = vi.fn().mockReturnValue(true);
-      MCPServiceManagerSingleton.getInstance = vi
-        .fn()
-        .mockResolvedValue(mockServiceManager);
+      vi.spyOn(MCPServiceManagerSingleton, "isInitialized").mockReturnValue(
+        true
+      );
+      vi.spyOn(MCPServiceManagerSingleton, "getInstance").mockResolvedValue(
+        mockServiceManager as unknown as MCPServiceManager
+      );
 
       // Act
       await toolApiHandler.callTool(mockContext);
@@ -251,10 +256,12 @@ describe("ToolApiHandler - 集成测试", () => {
         }),
       };
 
-      MCPServiceManagerSingleton.isInitialized = vi.fn().mockReturnValue(true);
-      MCPServiceManagerSingleton.getInstance = vi
-        .fn()
-        .mockResolvedValue(mockServiceManager);
+      vi.spyOn(MCPServiceManagerSingleton, "isInitialized").mockReturnValue(
+        true
+      );
+      vi.spyOn(MCPServiceManagerSingleton, "getInstance").mockResolvedValue(
+        mockServiceManager as unknown as MCPServiceManager
+      );
 
       // Act
       await toolApiHandler.callTool(mockContext);
@@ -338,10 +345,12 @@ describe("ToolApiHandler - 集成测试", () => {
         getCustomMCPTools: vi.fn().mockReturnValue([complexToolConfig]),
       };
 
-      MCPServiceManagerSingleton.isInitialized = vi.fn().mockReturnValue(true);
-      MCPServiceManagerSingleton.getInstance = vi
-        .fn()
-        .mockResolvedValue(mockServiceManager);
+      vi.spyOn(MCPServiceManagerSingleton, "isInitialized").mockReturnValue(
+        true
+      );
+      vi.spyOn(MCPServiceManagerSingleton, "getInstance").mockResolvedValue(
+        mockServiceManager as unknown as MCPServiceManager
+      );
 
       // Act
       await toolApiHandler.callTool(mockContext);
@@ -423,10 +432,12 @@ describe("ToolApiHandler - 集成测试", () => {
         }),
       };
 
-      MCPServiceManagerSingleton.isInitialized = vi.fn().mockReturnValue(true);
-      MCPServiceManagerSingleton.getInstance = vi
-        .fn()
-        .mockResolvedValue(mockServiceManager);
+      vi.spyOn(MCPServiceManagerSingleton, "isInitialized").mockReturnValue(
+        true
+      );
+      vi.spyOn(MCPServiceManagerSingleton, "getInstance").mockResolvedValue(
+        mockServiceManager as unknown as MCPServiceManager
+      );
 
       // Act
       await toolApiHandler.callTool(mockContext);

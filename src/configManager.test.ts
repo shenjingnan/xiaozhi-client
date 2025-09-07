@@ -2211,14 +2211,14 @@ describe("ConfigManager", () => {
         expect(tools).toEqual([mockCustomMCPTool]);
       });
 
-      it("应该支持单个工具对象格式", () => {
-        const configWithSingleTool: AppConfig = {
+      it("应该严格处理数组格式的 tools 字段", () => {
+        const configWithArrayTool: AppConfig = {
           ...mockConfig,
           customMCP: {
-            tools: mockCustomMCPTool, // 单个对象而非数组
+            tools: [mockCustomMCPTool], // 必须是数组格式
           },
         };
-        mockReadFileSync.mockReturnValue(JSON.stringify(configWithSingleTool));
+        mockReadFileSync.mockReturnValue(JSON.stringify(configWithArrayTool));
 
         const tools = configManager.getCustomMCPTools();
         expect(tools).toEqual([mockCustomMCPTool]);
