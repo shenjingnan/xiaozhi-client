@@ -37,6 +37,7 @@ vi.mock("./configManager", () => ({
     getMcpServerConfig: vi.fn(),
     getServerToolsConfig: vi.fn(),
     setToolEnabled: vi.fn(),
+    getCustomMCPTools: vi.fn(),
   },
 }));
 
@@ -111,6 +112,7 @@ describe("mcpCommands", () => {
           return (mockServerConfig as any)[serverName]?.tools || {};
         }
       );
+      (configManager.getCustomMCPTools as any).mockReturnValue([]);
     });
 
     it("应该列出不带工具选项的服务", async () => {
@@ -158,7 +160,7 @@ describe("mcpCommands", () => {
 
       await listMcpServers();
 
-      expect(mockSpinner.warn).toHaveBeenCalledWith("未配置任何 MCP 服务");
+      expect(mockSpinner.warn).toHaveBeenCalledWith("未配置任何 MCP 服务或 customMCP 工具");
       expect(mockConsoleLog).toHaveBeenCalledWith(
         expect.stringContaining("提示: 使用 'xiaozhi config' 命令配置 MCP 服务")
       );
