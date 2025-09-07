@@ -16,6 +16,7 @@ vi.mock("../../configManager.js", () => ({
     isToolEnabled: vi.fn(),
     hasValidCustomMCPTools: vi.fn(),
     validateCustomMCPTools: vi.fn(),
+    getConfig: vi.fn(),
   },
 }));
 
@@ -52,6 +53,9 @@ vi.mock("node:child_process", () => ({
 vi.mock("node:fs/promises", () => mockFs);
 vi.mock("node:path", () => mockPath);
 vi.mock("node:os", () => mockOs);
+
+// Import after mocking
+const { configManager } = await import("../../configManager.js");
 
 describe("CustomMCPHandler 脚本处理器测试", () => {
   let handler: CustomMCPHandler;
@@ -100,8 +104,18 @@ describe("CustomMCPHandler 脚本处理器测试", () => {
   };
 
   beforeEach(() => {
-    handler = new CustomMCPHandler();
     vi.clearAllMocks();
+
+    // Mock getConfig to return Coze token
+    vi.mocked(configManager.getConfig).mockReturnValue({
+      platforms: {
+        coze: {
+          token: "mock-coze-token",
+        },
+      },
+    } as any);
+
+    handler = new CustomMCPHandler();
 
     // 设置默认的 mock 返回值
     mockOs.tmpdir.mockReturnValue("/tmp");

@@ -15,6 +15,7 @@ vi.mock("../../configManager.js", () => ({
     isToolEnabled: vi.fn(),
     hasValidCustomMCPTools: vi.fn(),
     validateCustomMCPTools: vi.fn(),
+    getConfig: vi.fn(),
   },
 }));
 
@@ -95,16 +96,25 @@ describe("MCPServiceManager CustomMCP 集成测试", () => {
   };
 
   beforeEach(() => {
-    manager = new MCPServiceManager();
     vi.clearAllMocks();
 
-    // 设置默认的 mock 返回值
+    // 设置默认的 mock 返回值 - 必须在创建 MCPServiceManager 之前设置
     vi.mocked(configManager.getCustomMCPTools).mockReturnValue([
       mockCustomMCPTool,
     ]);
     vi.mocked(configManager.isToolEnabled).mockReturnValue(true);
     vi.mocked(configManager.hasValidCustomMCPTools).mockReturnValue(true);
     vi.mocked(configManager.validateCustomMCPTools).mockReturnValue(true);
+    vi.mocked(configManager.getConfig).mockReturnValue({
+      platforms: {
+        coze: {
+          token: "mock-coze-token",
+        },
+      },
+    } as any);
+
+    // 在设置好所有 mock 之后再创建 MCPServiceManager
+    manager = new MCPServiceManager();
 
     // 设置 MCPService mock
     mockMCPService.connect.mockResolvedValue(undefined);

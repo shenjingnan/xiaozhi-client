@@ -16,6 +16,7 @@ vi.mock("../../configManager.js", () => ({
     isToolEnabled: vi.fn(),
     hasValidCustomMCPTools: vi.fn(),
     validateCustomMCPTools: vi.fn(),
+    getConfig: vi.fn(),
   },
 }));
 
@@ -31,6 +32,9 @@ vi.mock("../../Logger.js", () => ({
 
 // Mock fetch
 global.fetch = vi.fn();
+
+// Import after mocking
+const { configManager } = await import("../../configManager.js");
 
 describe("CustomMCPHandler Coze 代理处理器测试", () => {
   let handler: CustomMCPHandler;
@@ -88,6 +92,15 @@ describe("CustomMCPHandler Coze 代理处理器测试", () => {
   beforeEach(() => {
     handler = new CustomMCPHandler();
     vi.clearAllMocks();
+
+    // Mock getConfig to return Coze token
+    vi.mocked(configManager.getConfig).mockReturnValue({
+      platforms: {
+        coze: {
+          token: "mock-coze-token",
+        },
+      },
+    } as any);
   });
 
   describe("Coze 工作流调用", () => {
