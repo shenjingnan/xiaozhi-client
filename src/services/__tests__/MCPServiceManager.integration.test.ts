@@ -98,6 +98,22 @@ describe("MCPServiceManager CustomMCP 集成测试", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    // Mock fetch for Coze API calls - use vi.stubGlobal for more reliable mocking
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          code: 0,
+          msg: "success",
+          debug_url: "",
+          data: "Coze 工作流调用功能正在开发中",
+          usage: { input_count: 0, output_count: 0, token_count: 0 },
+        }),
+    } as Response);
+
+    vi.stubGlobal("fetch", mockFetch);
+    global.fetch = mockFetch;
+
     // 设置默认的 mock 返回值 - 必须在创建 MCPServiceManager 之前设置
     vi.mocked(configManager.getCustomMCPTools).mockReturnValue([
       mockCustomMCPTool,
@@ -125,6 +141,10 @@ describe("MCPServiceManager CustomMCP 集成测试", () => {
       content: [{ type: "text", text: "标准工具调用结果" }],
     });
     mockMCPService.getStatus.mockReturnValue({ connected: true });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   describe("服务启动和初始化", () => {
