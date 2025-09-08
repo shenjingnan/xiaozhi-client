@@ -282,7 +282,8 @@ export class WebSocketManager {
     // 根据当前页面 URL 构建 WebSocket URL
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const hostname = window.location.hostname;
-    const port = window.location.port;
+    // TODO: 这里需要通过开发模式显式处理，否则用户如果设置5173端口，会导致强制变成9999端口
+    const port = window.location.port === '5173' ? 9999 : window.location.port;
     return `${protocol}//${hostname}${port ? `:${port}` : ""}`;
   }
 
