@@ -1,0 +1,311 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://your-domain.com/schemas/mcp-config.json",
+  "title": "MCP Configuration Schema",
+  "description": "Schema for MCP (Model Context Protocol) configuration file",
+  "type": "object",
+  "required": ["mcpEndpoint"],
+  "properties": {
+    "mcpEndpoint": {
+      "type": "string",
+      "format": "uri",
+      "description": "MCP endpoint URL",
+      "examples": ["https://api.example.com/mcp"]
+    },
+    "mcpServers": {
+      "type": "object",
+      "description": "MCP server configurations",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "Command to start the MCP server"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Arguments for the MCP server command"
+          },
+          "env": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Environment variables for the MCP server"
+          }
+        }
+      }
+    },
+    "platforms": {
+      "type": "object",
+      "description": "AI platform configurations",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["platform", "http", "custom"],
+            "description": "Platform type"
+          },
+          "token": {
+            "type": "string",
+            "description": "Authentication token"
+          },
+          "apiKey": {
+            "type": "string",
+            "description": "API key for authentication"
+          },
+          "baseUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Base URL for the platform API"
+          },
+          "timeout": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 300000,
+            "default": 30000,
+            "description": "Request timeout in milliseconds"
+          },
+          "retries": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10,
+            "default": 3,
+            "description": "Number of retry attempts"
+          },
+          "auth": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["bearer", "basic", "api-key", "custom"]
+              },
+              "token": {
+                "type": "string"
+              },
+              "username": {
+                "type": "string"
+              },
+              "password": {
+                "type": "string"
+              },
+              "headers": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": ["type"]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "type": { "const": "platform" }
+              }
+            },
+            "then": {
+              "anyOf": [{ "required": ["token"] }, { "required": ["apiKey"] }]
+            }
+          }
+        ]
+      }
+    },
+    "customMCP": {
+      "type": "object",
+      "properties": {
+        "tools": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "description", "inputSchema", "handler"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
+                "description": "Tool name (must be valid identifier)"
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500,
+                "description": "Tool description"
+              },
+              "inputSchema": {
+                "type": "object",
+                "description": "JSON Schema for tool input validation",
+                "properties": {
+                  "type": {
+                    "const": "object"
+                  },
+                  "properties": {
+                    "type": "object"
+                  },
+                  "required": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": ["type", "properties"]
+              },
+              "handler": {
+                "type": "object",
+                "required": ["type"],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["proxy", "function", "http", "script", "chain"]
+                  }
+                },
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "type": { "const": "proxy" }
+                      }
+                    },
+                    "then": {
+                      "required": ["platform"],
+                      "properties": {
+                        "platform": {
+                          "type": "string",
+                          "description": "Reference to platform in platforms section"
+                        },
+                        "config": {
+                          "type": "object",
+                          "description": "Platform-specific configuration"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "type": { "const": "function" }
+                      }
+                    },
+                    "then": {
+                      "required": ["function"],
+                      "properties": {
+                        "function": {
+                          "type": "string",
+                          "description": "Function name to execute"
+                        },
+                        "module": {
+                          "type": "string",
+                          "description": "Module path containing the function"
+                        },
+                        "params": {
+                          "type": "object",
+                          "description": "Additional parameters for the function"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "type": { "const": "http" }
+                      }
+                    },
+                    "then": {
+                      "required": ["url", "method"],
+                      "properties": {
+                        "url": {
+                          "type": "string",
+                          "format": "uri",
+                          "description": "HTTP endpoint URL"
+                        },
+                        "method": {
+                          "type": "string",
+                          "enum": ["GET", "POST", "PUT", "DELETE", "PATCH"],
+                          "description": "HTTP method"
+                        },
+                        "headers": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          },
+                          "description": "HTTP headers"
+                        },
+                        "timeout": {
+                          "type": "integer",
+                          "minimum": 1000,
+                          "maximum": 300000,
+                          "description": "Request timeout in milliseconds"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "type": { "const": "script" }
+                      }
+                    },
+                    "then": {
+                      "required": ["language", "script"],
+                      "properties": {
+                        "language": {
+                          "type": "string",
+                          "enum": [
+                            "python",
+                            "javascript",
+                            "bash",
+                            "powershell"
+                          ],
+                          "description": "Script language"
+                        },
+                        "script": {
+                          "type": "string",
+                          "description": "Script file path or inline script"
+                        },
+                        "timeout": {
+                          "type": "integer",
+                          "minimum": 1000,
+                          "maximum": 300000,
+                          "description": "Script execution timeout"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "type": { "const": "chain" }
+                      }
+                    },
+                    "then": {
+                      "required": ["steps"],
+                      "properties": {
+                        "steps": {
+                          "type": "array",
+                          "minItems": 1,
+                          "items": {
+                            "type": "object",
+                            "description": "Chain step configuration"
+                          },
+                          "description": "Chain of processing steps"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

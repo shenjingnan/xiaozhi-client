@@ -70,13 +70,113 @@ export interface WebUIConfig {
   autoRestart?: boolean; // 是否在配置更新后自动重启服务，默认 true
 }
 
+// CustomMCP 相关接口定义
+
+// 代理处理器配置
+export interface ProxyHandlerConfig {
+  type: "proxy";
+  platform: "coze" | "openai" | "anthropic" | "custom";
+  config: {
+    // Coze 平台配置
+    workflow_id?: string;
+    bot_id?: string;
+    api_key?: string;
+    base_url?: string;
+    // 通用配置
+    timeout?: number;
+    retry_count?: number;
+    retry_delay?: number;
+    headers?: Record<string, string>;
+    params?: Record<string, any>;
+  };
+}
+
+// HTTP 处理器配置
+export interface HttpHandlerConfig {
+  type: "http";
+  url: string;
+  method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+  headers?: Record<string, string>;
+  timeout?: number;
+  retry_count?: number;
+  retry_delay?: number;
+  auth?: {
+    type: "bearer" | "basic" | "api_key";
+    token?: string;
+    username?: string;
+    password?: string;
+    api_key?: string;
+    api_key_header?: string;
+  };
+  body_template?: string; // 支持模板变量替换
+  response_mapping?: {
+    success_path?: string; // JSONPath 表达式
+    error_path?: string;
+    data_path?: string;
+  };
+}
+
+// 函数处理器配置
+export interface FunctionHandlerConfig {
+  type: "function";
+  module: string; // 模块路径
+  function: string; // 函数名
+  timeout?: number;
+  context?: Record<string, any>; // 函数执行上下文
+}
+
+// 脚本处理器配置
+export interface ScriptHandlerConfig {
+  type: "script";
+  script: string; // 脚本内容或文件路径
+  interpreter?: "node" | "python" | "bash";
+  timeout?: number;
+  env?: Record<string, string>; // 环境变量
+}
+
+// 链式处理器配置
+export interface ChainHandlerConfig {
+  type: "chain";
+  tools: string[]; // 要链式调用的工具名称
+  mode: "sequential" | "parallel"; // 执行模式
+  error_handling: "stop" | "continue" | "retry"; // 错误处理策略
+}
+
+export type HandlerConfig =
+  | ProxyHandlerConfig
+  | HttpHandlerConfig
+  | FunctionHandlerConfig
+  | ScriptHandlerConfig
+  | ChainHandlerConfig;
+
+export interface CustomMCPTool {
+  name: string;
+  description: string;
+  inputSchema: any;
+  handler: HandlerConfig;
+}
+
+export interface CustomMCPConfig {
+  tools: CustomMCPTool[];
+}
+
+export interface PlatformsConfig {
+  [platformName: string]: PlatformConfig;
+}
+
+export interface PlatformConfig {
+  token?: string;
+}
+
 export interface AppConfig {
   mcpEndpoint: string | string[];
   mcpServers: Record<string, MCPServerConfig>;
   mcpServerConfig?: Record<string, MCPServerToolsConfig>;
+  customMCP?: CustomMCPConfig; // 新增 customMCP 配置支持
   connection?: ConnectionConfig; // 连接配置（可选，用于向后兼容）
   modelscope?: ModelScopeConfig; // ModelScope 配置（可选）
   webUI?: WebUIConfig; // Web UI 配置（可选）
+  platforms?: PlatformsConfig; // 平台配置（可选）
 }
 
 /**
@@ -912,6 +1012,289 @@ export class ConfigManager {
       throw new Error("API Key 必须是非空字符串");
     }
     this.updateModelScopeConfig({ apiKey });
+  }
+
+  /**
+   * 获取 customMCP 配置
+   */
+  public getCustomMCPConfig(): CustomMCPConfig | null {
+    const config = this.getConfig();
+    return config.customMCP || null;
+  }
+
+  /**
+   * 获取 customMCP 工具列表
+   */
+  public getCustomMCPTools(): CustomMCPTool[] {
+    const customMCPConfig = this.getCustomMCPConfig();
+    if (!customMCPConfig || !customMCPConfig.tools) {
+      return [];
+    }
+
+    return customMCPConfig.tools;
+  }
+
+  /**
+   * 验证 customMCP 工具配置
+   */
+  public validateCustomMCPTools(tools: CustomMCPTool[]): boolean {
+    if (!Array.isArray(tools)) {
+      return false;
+    }
+
+    for (const tool of tools) {
+      // 检查必需字段
+      if (!tool.name || typeof tool.name !== "string") {
+        logger.warn(
+          `CustomMCP 工具缺少有效的 name 字段: ${JSON.stringify(tool)}`
+        );
+        return false;
+      }
+
+      if (!tool.description || typeof tool.description !== "string") {
+        logger.warn(`CustomMCP 工具 ${tool.name} 缺少有效的 description 字段`);
+        return false;
+      }
+
+      if (!tool.inputSchema || typeof tool.inputSchema !== "object") {
+        logger.warn(`CustomMCP 工具 ${tool.name} 缺少有效的 inputSchema 字段`);
+        return false;
+      }
+
+      if (!tool.handler || typeof tool.handler !== "object") {
+        logger.warn(`CustomMCP 工具 ${tool.name} 缺少有效的 handler 字段`);
+        return false;
+      }
+
+      // 检查 handler 类型
+      if (
+        !["proxy", "function", "http", "script", "chain"].includes(
+          tool.handler.type
+        )
+      ) {
+        logger.warn(
+          `CustomMCP 工具 ${tool.name} 的 handler.type 必须是 'proxy', 'function', 'http', 'script' 或 'chain'`
+        );
+        return false;
+      }
+
+      // 根据处理器类型进行特定验证
+      if (!this.validateHandlerConfig(tool.name, tool.handler)) {
+        return false;
+      }
+
+      // 检查工具名称格式（必须是有效的标识符）
+      if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(tool.name)) {
+        logger.warn(
+          `CustomMCP 工具名称 ${tool.name} 格式无效，必须以字母开头，只能包含字母、数字和下划线`
+        );
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * 验证处理器配置
+   */
+  private validateHandlerConfig(
+    toolName: string,
+    handler: HandlerConfig
+  ): boolean {
+    switch (handler.type) {
+      case "proxy":
+        return this.validateProxyHandler(toolName, handler);
+      case "http":
+        return this.validateHttpHandler(toolName, handler);
+      case "function":
+        return this.validateFunctionHandler(toolName, handler);
+      case "script":
+        return this.validateScriptHandler(toolName, handler);
+      case "chain":
+        return this.validateChainHandler(toolName, handler);
+      default:
+        logger.warn(`CustomMCP 工具 ${toolName} 使用了未知的处理器类型`);
+        return false;
+    }
+  }
+
+  /**
+   * 验证代理处理器配置
+   */
+  private validateProxyHandler(
+    toolName: string,
+    handler: ProxyHandlerConfig
+  ): boolean {
+    if (!handler.platform) {
+      logger.warn(
+        `CustomMCP 工具 ${toolName} 的 proxy 处理器缺少 platform 字段`
+      );
+      return false;
+    }
+
+    if (!["coze", "openai", "anthropic", "custom"].includes(handler.platform)) {
+      logger.warn(
+        `CustomMCP 工具 ${toolName} 的 proxy 处理器使用了不支持的平台: ${handler.platform}`
+      );
+      return false;
+    }
+
+    if (!handler.config || typeof handler.config !== "object") {
+      logger.warn(`CustomMCP 工具 ${toolName} 的 proxy 处理器缺少 config 字段`);
+      return false;
+    }
+
+    // Coze 平台特定验证
+    if (handler.platform === "coze") {
+      if (!handler.config.workflow_id && !handler.config.bot_id) {
+        logger.warn(
+          `CustomMCP 工具 ${toolName} 的 Coze 处理器必须提供 workflow_id 或 bot_id`
+        );
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * 验证 HTTP 处理器配置
+   */
+  private validateHttpHandler(
+    toolName: string,
+    handler: HttpHandlerConfig
+  ): boolean {
+    if (!handler.url || typeof handler.url !== "string") {
+      logger.warn(
+        `CustomMCP 工具 ${toolName} 的 http 处理器缺少有效的 url 字段`
+      );
+      return false;
+    }
+
+    try {
+      new URL(handler.url);
+    } catch {
+      logger.warn(
+        `CustomMCP 工具 ${toolName} 的 http 处理器 url 格式无效: ${handler.url}`
+      );
+      return false;
+    }
+
+    if (
+      handler.method &&
+      !["GET", "POST", "PUT", "DELETE", "PATCH"].includes(handler.method)
+    ) {
+      logger.warn(
+        `CustomMCP 工具 ${toolName} 的 http 处理器使用了不支持的 HTTP 方法: ${handler.method}`
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * 验证函数处理器配置
+   */
+  private validateFunctionHandler(
+    toolName: string,
+    handler: FunctionHandlerConfig
+  ): boolean {
+    if (!handler.module || typeof handler.module !== "string") {
+      logger.warn(
+        `CustomMCP 工具 ${toolName} 的 function 处理器缺少有效的 module 字段`
+      );
+      return false;
+    }
+
+    if (!handler.function || typeof handler.function !== "string") {
+      logger.warn(
+        `CustomMCP 工具 ${toolName} 的 function 处理器缺少有效的 function 字段`
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * 验证脚本处理器配置
+   */
+  private validateScriptHandler(
+    toolName: string,
+    handler: ScriptHandlerConfig
+  ): boolean {
+    if (!handler.script || typeof handler.script !== "string") {
+      logger.warn(
+        `CustomMCP 工具 ${toolName} 的 script 处理器缺少有效的 script 字段`
+      );
+      return false;
+    }
+
+    if (
+      handler.interpreter &&
+      !["node", "python", "bash"].includes(handler.interpreter)
+    ) {
+      logger.warn(
+        `CustomMCP 工具 ${toolName} 的 script 处理器使用了不支持的解释器: ${handler.interpreter}`
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * 验证链式处理器配置
+   */
+  private validateChainHandler(
+    toolName: string,
+    handler: ChainHandlerConfig
+  ): boolean {
+    if (
+      !handler.tools ||
+      !Array.isArray(handler.tools) ||
+      handler.tools.length === 0
+    ) {
+      logger.warn(
+        `CustomMCP 工具 ${toolName} 的 chain 处理器缺少有效的 tools 数组`
+      );
+      return false;
+    }
+
+    if (!["sequential", "parallel"].includes(handler.mode)) {
+      logger.warn(
+        `CustomMCP 工具 ${toolName} 的 chain 处理器使用了不支持的执行模式: ${handler.mode}`
+      );
+      return false;
+    }
+
+    if (!["stop", "continue", "retry"].includes(handler.error_handling)) {
+      logger.warn(
+        `CustomMCP 工具 ${toolName} 的 chain 处理器使用了不支持的错误处理策略: ${handler.error_handling}`
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * 检查是否配置了有效的 customMCP 工具
+   */
+  public hasValidCustomMCPTools(): boolean {
+    try {
+      const tools = this.getCustomMCPTools();
+      if (tools.length === 0) {
+        return false;
+      }
+
+      return this.validateCustomMCPTools(tools);
+    } catch (error) {
+      logger.error("检查 customMCP 工具配置时出错:", error);
+      return false;
+    }
   }
 
   /**
