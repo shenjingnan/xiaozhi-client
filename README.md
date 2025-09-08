@@ -796,3 +796,7 @@ xiaozhi start
 - 支持标准的 MCP over HTTP 协议
 - 可以通过 `--port` 参数自定义端口号
 - 使用 `-d` 参数可以后台运行服务
+
+## 贡献者
+
+![Contributors](https://contrib.rocks/image?repo=shenjingnan/xiaozhi-client&max=100&columns=10)
