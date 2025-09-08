@@ -5,6 +5,7 @@
 import type { SubCommand } from "../interfaces/Command.js";
 import { BaseCommandHandler } from "../interfaces/Command.js";
 import type { IDIContainer } from "../interfaces/Config.js";
+import { createLogger, setGlobalLogger } from "../../Logger.js";
 
 /**
  * 服务管理命令处理器
@@ -20,7 +21,7 @@ export class ServiceCommandHandler extends BaseCommandHandler {
       options: [
         { flags: "-d, --daemon", description: "在后台运行服务" },
         { flags: "-u, --ui", description: "同时启动 Web UI 服务" },
-
+        { flags: "--debug", description: "启用调试模式 (输出DEBUG级别日志)" },
         {
           flags: "--stdio",
           description: "以 stdio 模式运行 MCP Server (用于 Cursor 等客户端)",
@@ -80,6 +81,13 @@ export class ServiceCommandHandler extends BaseCommandHandler {
    */
   private async handleStart(options: any): Promise<void> {
     try {
+      // 处理--debug参数
+      if (options.debug) {
+        // 创建debug级别的Logger实例并替换全局实例
+        const debugLogger = createLogger('debug');
+        setGlobalLogger(debugLogger);
+      }
+
       const serviceManager = this.getService<any>("serviceManager");
 
       if (options.stdio) {

@@ -2,7 +2,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import chalk from "chalk";
 import pino from "pino";
-import type { Logger as PinoLogger } from "pino";
+import type { Level, Logger as PinoLogger } from "pino";
 
 /**
  * 格式化日期时间为 YYYY-MM-DD HH:mm:ss 格式
@@ -35,15 +35,36 @@ export class Logger {
   private logFilePath: string | null = null;
   private pinoInstance: PinoLogger;
   private isDaemonMode: boolean;
+  private logLevel: Level; // 新增：动态日志级别
   private maxLogFileSize = 10 * 1024 * 1024; // 10MB 默认最大文件大小
   private maxLogFiles = 5; // 最多保留5个日志文件
 
-  constructor() {
+  constructor(level: Level = 'info') { // 修改：支持传入日志级别参数，默认info
     // 检查是否为守护进程模式
     this.isDaemonMode = process.env.XIAOZHI_DAEMON === "true";
 
+    // 设置并验证日志级别
+    this.logLevel = this.validateLogLevel(level);
+
     // 创建 pino 实例
     this.pinoInstance = this.createPinoInstance();
+  }
+
+  /**
+   * 验证日志级别
+   * @param level 日志级别
+   * @returns 验证后的日志级别
+   */
+  private validateLogLevel(level: Level): Level {
+    const validLevels = ['fatal', 'error', 'warn', 'info', 'debug', 'trace'];
+    const normalizedLevel = level.toLowerCase();
+
+    if (validLevels.includes(normalizedLevel)) {
+      return normalizedLevel as Level;
+    }
+
+    console.warn(`无效的日志级别 "${level}"，使用默认级别 "info"`);
+    return 'info';
   }
 
   private createPinoInstance(): PinoLogger {
@@ -54,7 +75,7 @@ export class Logger {
       // 使用高性能的控制台输出流
       const consoleStream = this.createOptimizedConsoleStream();
       streams.push({
-        level: "debug",
+        level: this.logLevel, // 修改：使用动态日志级别
         stream: consoleStream,
       });
     }
@@ -62,7 +83,7 @@ export class Logger {
     // 文件流 - 如果有日志文件路径，使用高性能异步写入
     if (this.logFilePath) {
       streams.push({
-        level: "debug",
+        level: this.logLevel, // 修改：使用动态日志级别
         stream: pino.destination({
           dest: this.logFilePath,
           sync: false, // 异步写入提升性能
@@ -75,14 +96,14 @@ export class Logger {
     // 如果没有流，创建一个空的流避免错误
     if (streams.length === 0) {
       streams.push({
-        level: "debug",
+        level: this.logLevel, // 修改：使用动态日志级别
         stream: pino.destination({ dest: "/dev/null" }),
       });
     }
 
     return pino(
       {
-        level: "debug",
+        level: this.logLevel, // 修改：使用动态日志级别
         // 高性能配置
         timestamp:
           pino.stdTimeFunctions?.isoTime || (() => `,"time":${Date.now()}`),
@@ -435,5 +456,36 @@ export class Logger {
   }
 }
 
-// 导出单例实例
-export const logger = new Logger();
+// 全局Logger实例管理
+let globalLogger: Logger | null = null;
+
+/**
+ * 创建Logger实例
+ * @param level 日志级别，默认为info
+ * @returns Logger实例
+ */
+export function createLogger(level: Level = 'info'): Logger {
+  return new Logger(level);
+}
+
+/**
+ * 获取全局Logger实例
+ * @returns 全局Logger实例
+ */
+export function getLogger(): Logger {
+  if (!globalLogger) {
+    globalLogger = new Logger('info'); // 默认info级别
+  }
+  return globalLogger;
+}
+
+/**
+ * 设置全局Logger实例
+ * @param logger 新的Logger实例
+ */
+export function setGlobalLogger(logger: Logger): void {
+  globalLogger = logger;
+}
+
+// 导出默认实例（向后兼容）
+export const logger = getLogger();
