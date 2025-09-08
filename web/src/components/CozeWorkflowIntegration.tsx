@@ -53,7 +53,7 @@ export function CozeWorkflowIntegration() {
     setPage,
   } = useCozeWorkflows({
     autoLoadWorkspaces: true,
-    autoLoadWorkflows: false,
+    autoLoadWorkflows: true,
   });
 
   const handleWorkspaceChange = (workspaceId: string) => {
