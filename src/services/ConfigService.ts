@@ -96,6 +96,14 @@ export class ConfigService {
         }
       }
 
+      if (newConfig?.platforms) {
+        for (const [platformName, platformConfig] of Object.entries(
+          newConfig.platforms
+        )) {
+          configManager.updatePlatformConfig(platformName, platformConfig);
+        }
+      }
+
       this.logger.info("配置更新成功");
 
       // 发射配置更新事件

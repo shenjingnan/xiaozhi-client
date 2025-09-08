@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { useWebSocketActions } from "@/providers/WebSocketProvider";
 import { useConfig } from "@/stores/config";
 import type { AppConfig } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,12 +23,12 @@ import z from "zod";
 
 const formSchema = z.object({
   modelscope: z.object({
-    apiKey: z
-      .string()
-      .min(2, {
-        message: "API Key不能为空",
-      })
-      .optional(),
+    apiKey: z.string().optional(),
+  }),
+  platforms: z.object({
+    coze: z.object({
+      token: z.string().optional(),
+    }),
   }),
   connection: z.object({
     heartbeatInterval: z.number().min(1000, {
@@ -45,11 +45,16 @@ const formSchema = z.object({
 
 export default function SettingsPage() {
   const config = useConfig();
-  const { updateConfig } = useWebSocket();
+  const { updateConfig } = useWebSocketActions();
   const [isLoading, setIsLoading] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      platforms: {
+        coze: {
+          token: config?.platforms?.coze?.token || "",
+        },
+      },
       modelscope: {
         apiKey: config?.modelscope?.apiKey || "",
       },
@@ -92,6 +97,13 @@ export default function SettingsPage() {
           heartbeatTimeout: values.connection.heartbeatTimeout,
           reconnectInterval: values.connection.reconnectInterval,
         },
+        platforms: {
+          ...(config?.platforms ?? {}),
+          coze: {
+            ...(config?.platforms?.coze ?? {}),
+            token: values.platforms.coze.token,
+          },
+        },
       };
 
       await updateConfig(newConfig);
@@ -128,6 +140,8 @@ export default function SettingsPage() {
                                 className="font-mono text-sm"
                                 type="password"
                                 disabled={isLoading}
+                                autoComplete="off"
+                                data-1p-ignore
                                 {...field}
                               />
                             </FormControl>
@@ -141,6 +155,40 @@ export default function SettingsPage() {
                               }}
                             >
                               打开魔搭社区
+                            </Button>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="platforms.coze.token"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>扣子身份凭证</FormLabel>
+                          <div className="flex gap-2">
+                            <FormControl>
+                              <Input
+                                placeholder="扣子身份凭证"
+                                className="font-mono text-sm"
+                                type="password"
+                                autoComplete="off"
+                                data-1p-ignore
+                                disabled={isLoading}
+                                {...field}
+                              />
+                            </FormControl>
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                window.open(
+                                  "https://www.coze.cn/open/oauth/sats",
+                                  "_blank"
+                                );
+                              }}
+                            >
+                              打开扣子平台
                             </Button>
                           </div>
                           <FormMessage />

@@ -45,6 +45,14 @@ export interface WebUIConfig {
   autoRestart?: boolean;
 }
 
+export interface PlatformsConfig {
+  [platformName: string]: PlatformConfig;
+}
+
+export interface PlatformConfig {
+  token?: string;
+}
+
 export interface AppConfig {
   mcpEndpoint: string | string[];
   mcpServers: Record<string, MCPServerConfig>;
@@ -52,6 +60,7 @@ export interface AppConfig {
   connection?: ConnectionConfig;
   modelscope?: ModelScopeConfig;
   webUI?: WebUIConfig;
+  platforms?: PlatformsConfig;
 }
 
 export interface ClientStatus {

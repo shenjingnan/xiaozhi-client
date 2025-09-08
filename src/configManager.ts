@@ -1360,6 +1360,16 @@ export class ConfigManager {
     }
     this.updateWebUIConfig({ port });
   }
+
+  public updatePlatformConfig(platformName: string, platformConfig: PlatformConfig): void {
+    const config = this.getMutableConfig();
+    if (!config.platforms) {
+      config.platforms = {};
+    }
+    config.platforms[platformName] = platformConfig;
+    // FIXME: 这里更新之后，web还是会变成老数据，需要修复这个问题
+    this.saveConfig(config);
+  }
 }
 
 // 导出单例实例
