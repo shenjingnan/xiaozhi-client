@@ -16,6 +16,7 @@ import type { XiaozhiConnectionManager } from "./services/XiaozhiConnectionManag
 import { XiaozhiConnectionManagerSingleton } from "./services/XiaozhiConnectionManagerSingleton.js";
 
 import { ConfigApiHandler } from "./handlers/ConfigApiHandler.js";
+import { CozeApiHandler } from "./handlers/CozeApiHandler.js";
 import { HeartbeatHandler } from "./handlers/HeartbeatHandler.js";
 import { MCPRouteHandler } from "./handlers/MCPRouteHandler.js";
 import { RealtimeNotificationHandler } from "./handlers/RealtimeNotificationHandler.js";
@@ -520,6 +521,18 @@ export class WebServer {
     // 工具调用相关 API 路由
     this.app?.post("/api/tools/call", (c) => this.toolApiHandler.callTool(c));
     this.app?.get("/api/tools/list", (c) => this.toolApiHandler.listTools(c));
+
+    // 扣子 API 相关路由
+    this.app?.get("/api/coze/workspaces", (c) =>
+      CozeApiHandler.getWorkspaces(c)
+    );
+    this.app?.get("/api/coze/workflows", (c) => CozeApiHandler.getWorkflows(c));
+    this.app?.post("/api/coze/cache/clear", (c) =>
+      CozeApiHandler.clearCache(c)
+    );
+    this.app?.get("/api/coze/cache/stats", (c) =>
+      CozeApiHandler.getCacheStats(c)
+    );
 
     // MCP 服务路由 - 符合 MCP Streamable HTTP 规范
     this.app?.post("/mcp", (c) => this.mcpRouteHandler.handlePost(c));

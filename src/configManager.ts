@@ -168,6 +168,14 @@ export interface PlatformConfig {
   token?: string;
 }
 
+/**
+ * 扣子平台配置接口
+ */
+export interface CozePlatformConfig extends PlatformConfig {
+  /** 扣子 API Token */
+  token: string;
+}
+
 export interface AppConfig {
   mcpEndpoint: string | string[];
   mcpServers: Record<string, MCPServerConfig>;
@@ -1361,7 +1369,10 @@ export class ConfigManager {
     this.updateWebUIConfig({ port });
   }
 
-  public updatePlatformConfig(platformName: string, platformConfig: PlatformConfig): void {
+  public updatePlatformConfig(
+    platformName: string,
+    platformConfig: PlatformConfig
+  ): void {
     const config = this.getMutableConfig();
     if (!config.platforms) {
       config.platforms = {};
@@ -1369,6 +1380,59 @@ export class ConfigManager {
     config.platforms[platformName] = platformConfig;
     // FIXME: 这里更新之后，web还是会变成老数据，需要修复这个问题
     this.saveConfig(config);
+  }
+
+  /**
+   * 获取扣子平台配置
+   */
+  public getCozePlatformConfig(): CozePlatformConfig | null {
+    const config = this.getConfig();
+    const cozeConfig = config.platforms?.coze;
+
+    if (!cozeConfig || !cozeConfig.token) {
+      return null;
+    }
+
+    return {
+      token: cozeConfig.token,
+    };
+  }
+
+  /**
+   * 获取扣子 API Token
+   */
+  public getCozeToken(): string | null {
+    const cozeConfig = this.getCozePlatformConfig();
+    return cozeConfig?.token || null;
+  }
+
+  /**
+   * 设置扣子平台配置
+   */
+  public setCozePlatformConfig(config: CozePlatformConfig): void {
+    if (
+      !config.token ||
+      typeof config.token !== "string" ||
+      config.token.trim() === ""
+    ) {
+      throw new Error("扣子 API Token 不能为空");
+    }
+
+    this.updatePlatformConfig("coze", {
+      token: config.token.trim(),
+    });
+  }
+
+  /**
+   * 检查扣子平台配置是否有效
+   */
+  public isCozeConfigValid(): boolean {
+    const cozeConfig = this.getCozePlatformConfig();
+    return (
+      cozeConfig !== null &&
+      typeof cozeConfig.token === "string" &&
+      cozeConfig.token.trim() !== ""
+    );
   }
 }
 

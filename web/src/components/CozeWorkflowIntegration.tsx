@@ -8,9 +8,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { ChevronLeft, ChevronRight, Plus, Workflow } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, Plus, Workflow } from "lucide-react";
 
 // Mock 数据接口
 interface CozeWorkflow {
@@ -123,13 +123,16 @@ export function CozeWorkflowIntegration() {
 
   const totalPages = Math.ceil(mockWorkflows.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const currentWorkflows = mockWorkflows.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const currentWorkflows = mockWorkflows.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE
+  );
 
   const handleAddWorkflow = async (workflow: CozeWorkflow) => {
     setIsLoading(true);
     try {
       // 模拟添加工作流的异步操作
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       toast.success(`已添加工作流 "${workflow.name}" 为 MCP 工具`);
     } catch (error) {
@@ -140,11 +143,11 @@ export function CozeWorkflowIntegration() {
   };
 
   const handlePrevPage = () => {
-    setCurrentPage(prev => Math.max(1, prev - 1));
+    setCurrentPage((prev) => Math.max(1, prev - 1));
   };
 
   const handleNextPage = () => {
-    setCurrentPage(prev => Math.min(totalPages, prev + 1));
+    setCurrentPage((prev) => Math.min(totalPages, prev + 1));
   };
 
   return (
@@ -182,7 +185,9 @@ export function CozeWorkflowIntegration() {
                 {/* 工作流信息 */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-medium text-sm truncate">{workflow.name}</h4>
+                    <h4 className="font-medium text-sm truncate">
+                      {workflow.name}
+                    </h4>
                     <Badge variant="secondary" className="text-xs">
                       工作流
                     </Badge>
@@ -211,7 +216,8 @@ export function CozeWorkflowIntegration() {
           {/* 分页控件 */}
           <div className="flex items-center justify-between pt-4 border-t flex-shrink-0">
             <div className="text-sm text-muted-foreground">
-              显示 {startIndex + 1}-{Math.min(startIndex + ITEMS_PER_PAGE, mockWorkflows.length)} 项，
+              显示 {startIndex + 1}-
+              {Math.min(startIndex + ITEMS_PER_PAGE, mockWorkflows.length)} 项，
               共 {mockWorkflows.length} 项
             </div>
 

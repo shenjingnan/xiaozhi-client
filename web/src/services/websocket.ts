@@ -283,7 +283,7 @@ export class WebSocketManager {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const hostname = window.location.hostname;
     // FIXME: 这里需要通过开发模式显式处理，否则用户如果设置5173端口，会导致强制变成9999端口
-    const port = window.location.port === '5173' ? 9999 : window.location.port;
+    const port = window.location.port === "5173" ? 9999 : window.location.port;
     return `${protocol}//${hostname}${port ? `:${port}` : ""}`;
   }
 
