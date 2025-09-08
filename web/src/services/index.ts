@@ -356,6 +356,7 @@ export const networkService = new NetworkService();
 // 导出其他服务
 export { apiClient, webSocketManager };
 export { ConnectionState } from "./websocket";
+export { cozeApiClient, CozeApiClient } from "./cozeApi";
 
 // 导出类型
 export type { ApiClient, WebSocketManager };
