@@ -2,7 +2,18 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import chalk from "chalk";
 import pino from "pino";
-import type { Level, Logger as PinoLogger } from "pino";
+import type { Logger as PinoLogger } from "pino";
+import { z } from "zod";
+
+const LogLevelSchema = z.enum([
+  "fatal",
+  "error",
+  "warn",
+  "info",
+  "debug",
+  "trace",
+]);
+type Level = z.infer<typeof LogLevelSchema>;
 
 /**
  * 格式化日期时间为 YYYY-MM-DD HH:mm:ss 格式
@@ -39,7 +50,8 @@ export class Logger {
   private maxLogFileSize = 10 * 1024 * 1024; // 10MB 默认最大文件大小
   private maxLogFiles = 5; // 最多保留5个日志文件
 
-  constructor(level: Level = 'info') { // 修改：支持传入日志级别参数，默认info
+  constructor(level: Level = "info") {
+    // 修改：支持传入日志级别参数，默认info
     // 检查是否为守护进程模式
     this.isDaemonMode = process.env.XIAOZHI_DAEMON === "true";
 
@@ -55,16 +67,15 @@ export class Logger {
    * @param level 日志级别
    * @returns 验证后的日志级别
    */
-  private validateLogLevel(level: Level): Level {
-    const validLevels = ['fatal', 'error', 'warn', 'info', 'debug', 'trace'];
+  private validateLogLevel(level: string): Level {
     const normalizedLevel = level.toLowerCase();
+    const result = LogLevelSchema.safeParse(normalizedLevel);
 
-    if (validLevels.includes(normalizedLevel)) {
-      return normalizedLevel as Level;
+    if (result.success) {
+      return result.data;
     }
 
-    console.warn(`无效的日志级别 "${level}"，使用默认级别 "info"`);
-    return 'info';
+    return "info";
   }
 
   private createPinoInstance(): PinoLogger {
@@ -464,7 +475,7 @@ let globalLogger: Logger | null = null;
  * @param level 日志级别，默认为info
  * @returns Logger实例
  */
-export function createLogger(level: Level = 'info'): Logger {
+export function createLogger(level: Level = "info"): Logger {
   return new Logger(level);
 }
 
@@ -474,7 +485,7 @@ export function createLogger(level: Level = 'info'): Logger {
  */
 export function getLogger(): Logger {
   if (!globalLogger) {
-    globalLogger = new Logger('info'); // 默认info级别
+    globalLogger = new Logger("info"); // 默认info级别
   }
   return globalLogger;
 }
