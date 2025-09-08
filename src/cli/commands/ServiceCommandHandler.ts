@@ -2,10 +2,10 @@
  * 服务管理命令处理器
  */
 
+import { createLogger, setGlobalLogger } from "../../Logger.js";
 import type { SubCommand } from "../interfaces/Command.js";
 import { BaseCommandHandler } from "../interfaces/Command.js";
 import type { IDIContainer } from "../interfaces/Config.js";
-import { createLogger, setGlobalLogger } from "../../Logger.js";
 
 /**
  * 服务管理命令处理器
@@ -84,7 +84,7 @@ export class ServiceCommandHandler extends BaseCommandHandler {
       // 处理--debug参数
       if (options.debug) {
         // 创建debug级别的Logger实例并替换全局实例
-        const debugLogger = createLogger('debug');
+        const debugLogger = createLogger("debug");
         setGlobalLogger(debugLogger);
       }
 
