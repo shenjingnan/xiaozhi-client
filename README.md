@@ -1,9 +1,15 @@
 # Xiaozhi Client
 
-[![npm version](https://badge.fury.io/js/xiaozhi-client.svg)](https://badge.fury.io/js/xiaozhi-client)
+[![npm version](https://img.shields.io/npm/v/xiaozhi-client)](https://www.npmjs.com/package/xiaozhi-client)
 [![codecov](https://codecov.io/gh/shenjingnan/xiaozhi-client/branch/main/graph/badge.svg)](https://codecov.io/gh/shenjingnan/xiaozhi-client)
 [![CI](https://github.com/shenjingnan/xiaozhi-client/workflows/Release/badge.svg)](https://github.com/shenjingnan/xiaozhi-client/actions)
+[![Docker: Ready](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat&logo=docker&logoColor=white)](https://hub.docker.com/r/shenjingnan/xiaozhi-client)
+[![Join: QQ Group](https://img.shields.io/badge/Join-QQ%20Group-5865F2?style=flat&logo=qq&logoColor=white)](https://qun.qq.com/universal-share/share?ac=1&authKey=c08PvS2zvAF1NN%2F%2BuaOi0ze1AElTIsvFBLwbWUMFc2ixjaZYxqZTUQHzipwd8Kka&busi_data=eyJncm91cENvZGUiOiIxMDU0ODg4NDczIiwidG9rZW4iOiJuSmJUN2cyUEVkNEQ5WXovM3RQbFVNcDluMGVibUNZTUQvL1RuQnFJRjBkZmRZQnRBRTdwU0szL3V2Y0dLc1ZmIiwidWluIjoiMzkxMTcyMDYwMCJ9&data=9cH6_zEC-sN3xYlwzKEWiYF71RLY9CId5taN-gy6XZo7axSlSWDpd1Ojui5hYMQKIgEJYSPw59XYgF5vH2wLog&svctype=4&tempid=h5_group_info)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![AI Code: 90%+](https://img.shields.io/badge/AI%20Code-90%25%2B-brightgreen)](https://img.shields.io/badge/AI%20Code-90%25%2B-brightgreen)
+[![Xiaozhi AI: Supported](https://img.shields.io/badge/小智AI-Supported-ff6b35?style=flat)](http://xiaozhi.me)
+[![ModelScope: Supported](https://img.shields.io/badge/ModelScope-Supported-6366f1?style=flat)](https://www.modelscope.cn/mcp)
+![MCP Client: Compatible](https://img.shields.io/badge/MCP%20Client-Compatible-00d4aa?style=flat)
 
 <img src="https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/qq-group-qrcode.jpg" alt="QQ群" width="300"/>
 
@@ -53,8 +59,6 @@
       1. [功能特性](#功能特性)
       2. [启动 Web UI](#启动-web-ui)
    9. [作为 MCP Server 集成到其他客户端](#作为-mcp-server-集成到其他客户端)
-      1. [方式一：使用 stdio 模式（推荐）](#方式一使用-stdio-模式推荐)
-      2. [方式二：使用 HTTP Server 模式](#方式二使用-http-server-模式)
 
 ## 功能特色
 
@@ -753,7 +757,7 @@ xiaozhi start -u
 
 ## 作为 MCP Server 集成到其他客户端
 
-> 需升级至 `1.5.0` 及以上版本
+> 需升级至 `1.6.12` 及以上版本
 
 xiaozhi-client 不仅可以作为小智 AI 的客户端使用，还可以作为标准的 MCP Server 被 Cursor、Cherry Studio 等支持 MCP 协议的客户端集成。
 
@@ -764,74 +768,31 @@ xiaozhi-client 不仅可以作为小智 AI 的客户端使用，还可以作为�
 ![在CherryStudio中集成](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/integrate-to-cherry-studio.png)
 ![在Cursor中集成](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/integrate-to-cursor.png)
 
-### 方式一：使用 stdio 模式（推荐）
+### 使用方式
 
-第一步：确保已全局安装 xiaozhi-client：
-
-```bash
-npm install -g xiaozhi-client
-```
-
-第二步：在 客户端 的 MCP 配置中添加：
-
-```json
-{
-  "mcpServers": {
-    "xiaozhi-client": {
-      "command": "xiaozhi",
-      "args": ["start", "--stdio"]
-    }
-  }
-}
-```
-
-提示：如果需要指定配置文件位置，可以使用环境变量
-
-配置文件的查找顺序
-
-1. 当前工作目录
-2. 通过 `XIAOZHI_CONFIG_DIR` 环境变量指定的目录
-
-```json
-{
-  "mcpServers": {
-    "xiaozhi-client": {
-      "command": "xiaozhi",
-      "args": ["start", "--stdio"],
-      "env": {
-        "XIAOZHI_CONFIG_DIR": "/path/to/your/config/directory"
-      }
-    }
-  }
-}
-```
-
-### 方式二：使用 HTTP Server 模式
-
-> 如果你将 xiaozhi-client 装在 docker 中使用，可以通过 http server 的方式暴露给外部客户端
-
-第一步：启动 xiaozhi-client 的 HTTP Server：
+第一步：启动 xiaozhi-client 服务：
 
 ```bash
-# 使用默认端口 3000
-xiaozhi start -s
-
-# 使用自定义端口
-xiaozhi start -s 8080
-
-# 后台运行
-xiaozhi start -s -d
+# 使用默认端口 9999
+xiaozhi start
 ```
 
-第二步：在 客户端 中配置 SSE 连接：
+第二步：在客户端中配置 HTTP 连接：
 
 ```json
 {
   "mcpServers": {
     "xiaozhi-client": {
-      "type": "sse",
-      "url": "http://localhost:3000/sse"
+      "type": "streamableHttp",
+      "url": "http://localhost:9999/mcp"
     }
   }
 }
 ```
+
+**说明：**
+
+- 服务启动后，MCP 端点将在 `http://localhost:9999/mcp` 提供服务
+- 支持标准的 MCP over HTTP 协议
+- 可以通过 `--port` 参数自定义端口号
+- 使用 `-d` 参数可以后台运行服务

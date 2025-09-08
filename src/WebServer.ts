@@ -17,10 +17,12 @@ import { XiaozhiConnectionManagerSingleton } from "./services/XiaozhiConnectionM
 
 import { ConfigApiHandler } from "./handlers/ConfigApiHandler.js";
 import { HeartbeatHandler } from "./handlers/HeartbeatHandler.js";
+import { MCPRouteHandler } from "./handlers/MCPRouteHandler.js";
 import { RealtimeNotificationHandler } from "./handlers/RealtimeNotificationHandler.js";
 import { ServiceApiHandler } from "./handlers/ServiceApiHandler.js";
 import { StaticFileHandler } from "./handlers/StaticFileHandler.js";
 import { StatusApiHandler } from "./handlers/StatusApiHandler.js";
+import { ToolApiHandler } from "./handlers/ToolApiHandler.js";
 import { ConfigService } from "./services/ConfigService.js";
 // 导入新的服务和处理器
 import {
@@ -77,7 +79,9 @@ export class WebServer {
   private configApiHandler: ConfigApiHandler;
   private statusApiHandler: StatusApiHandler;
   private serviceApiHandler: ServiceApiHandler;
+  private toolApiHandler: ToolApiHandler;
   private staticFileHandler: StaticFileHandler;
+  private mcpRouteHandler: MCPRouteHandler;
 
   // WebSocket 处理器
   private realtimeNotificationHandler: RealtimeNotificationHandler;
@@ -156,7 +160,9 @@ export class WebServer {
     this.configApiHandler = new ConfigApiHandler();
     this.statusApiHandler = new StatusApiHandler(this.statusService);
     this.serviceApiHandler = new ServiceApiHandler(this.statusService);
+    this.toolApiHandler = new ToolApiHandler();
     this.staticFileHandler = new StaticFileHandler();
+    this.mcpRouteHandler = new MCPRouteHandler();
 
     // 初始化 WebSocket 处理器
     this.realtimeNotificationHandler = new RealtimeNotificationHandler(
@@ -510,6 +516,14 @@ export class WebServer {
     this.app?.get("/api/services/health", (c) =>
       this.serviceApiHandler.getServiceHealth(c)
     );
+
+    // 工具调用相关 API 路由
+    this.app?.post("/api/tools/call", (c) => this.toolApiHandler.callTool(c));
+    this.app?.get("/api/tools/list", (c) => this.toolApiHandler.listTools(c));
+
+    // MCP 服务路由 - 符合 MCP Streamable HTTP 规范
+    this.app?.post("/mcp", (c) => this.mcpRouteHandler.handlePost(c));
+    this.app?.get("/mcp", (c) => this.mcpRouteHandler.handleGet(c));
 
     // 处理未知的 API 路由
     this.app?.all("/api/*", async (c) => {

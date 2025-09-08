@@ -140,3 +140,5 @@ settings.json
 .DS_Store
 config.json
 tmp
+
+xiaozhi.cache.json

@@ -1,0 +1,366 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/shenjingnan/xiaozhi-client/xiaozhi.cache.schema.json",
+  "title": "xiaozhi MCP 服务工具列表缓存文件",
+  "description": "定义 xiaozhi.cache.json 缓存文件的数据结构，用于存储 MCP 服务的工具列表和相关元数据",
+  "type": "object",
+  "required": ["version", "mcpServers", "metadata"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "缓存文件格式版本号，遵循语义化版本规范",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "examples": ["1.0.0"]
+    },
+    "mcpServers": {
+      "type": "object",
+      "description": "MCP 服务器配置和工具列表的映射，键为服务器名称",
+      "patternProperties": {
+        "^[a-zA-Z0-9_-]+$": {
+          "$ref": "#/definitions/MCPToolsCacheEntry"
+        }
+      },
+      "additionalProperties": false
+    },
+    "metadata": {
+      "type": "object",
+      "description": "缓存文件的全局元数据信息",
+      "required": ["lastGlobalUpdate", "totalWrites", "createdAt"],
+      "properties": {
+        "lastGlobalUpdate": {
+          "type": "string",
+          "description": "全局最后更新时间，YYYY-MM-DD HH:mm:ss 格式",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+          "examples": ["2025-09-01 11:14:24"]
+        },
+        "totalWrites": {
+          "type": "integer",
+          "description": "缓存文件的总写入次数",
+          "minimum": 0,
+          "examples": [3]
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "缓存文件创建时间，YYYY-MM-DD HH:mm:ss 格式",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+          "examples": ["2025-09-01 11:14:24"]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "MCPToolsCacheEntry": {
+      "type": "object",
+      "description": "单个 MCP 服务的缓存条目",
+      "required": [
+        "tools",
+        "lastUpdated",
+        "serverConfig",
+        "configHash",
+        "version"
+      ],
+      "properties": {
+        "tools": {
+          "type": "array",
+          "description": "该服务提供的工具列表",
+          "items": {
+            "$ref": "#/definitions/Tool"
+          }
+        },
+        "lastUpdated": {
+          "type": "string",
+          "description": "该服务工具列表最后更新时间，YYYY-MM-DD HH:mm:ss 格式",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+          "examples": ["2025-09-01 11:14:24"]
+        },
+        "serverConfig": {
+          "$ref": "#/definitions/MCPServiceConfig",
+          "description": "服务配置的快照，用于检测配置变更"
+        },
+        "configHash": {
+          "type": "string",
+          "description": "服务配置的 SHA256 哈希值，用于快速检测配置变更",
+          "pattern": "^[a-f0-9]{64}$",
+          "examples": [
+            "26e2388a301509d276dba45913acfeb5b4886a089186ce30663bbd16caaea6e5"
+          ]
+        },
+        "version": {
+          "type": "string",
+          "description": "缓存条目版本号",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "examples": ["1.0.0"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "Tool": {
+      "type": "object",
+      "description": "MCP 工具定义，基于 @modelcontextprotocol/sdk/types.js 的 Tool 接口",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "工具名称，必须唯一",
+          "minLength": 1,
+          "examples": ["calculator", "get_current_time"]
+        },
+        "description": {
+          "type": "string",
+          "description": "工具功能描述",
+          "examples": [
+            "For mathematical calculation",
+            "Get the current time in various formats"
+          ]
+        },
+        "inputSchema": {
+          "description": "工具输入参数的 JSON Schema 定义",
+          "oneOf": [
+            {
+              "type": "object",
+              "description": "完整的 JSON Schema 对象"
+            },
+            {
+              "type": "object",
+              "properties": {},
+              "additionalProperties": false,
+              "description": "空的 schema 对象"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "MCPServiceConfig": {
+      "type": "object",
+      "description": "MCP 服务配置，支持多种传输类型",
+      "required": ["name", "type"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "服务名称",
+          "minLength": 1,
+          "examples": ["calculator", "datetime"]
+        },
+        "type": {
+          "type": "string",
+          "description": "传输协议类型",
+          "enum": ["stdio", "sse", "streamable-http", "modelscope-sse"],
+          "examples": ["stdio"]
+        },
+        "command": {
+          "type": "string",
+          "description": "stdio 类型服务的启动命令",
+          "examples": ["node"]
+        },
+        "args": {
+          "type": "array",
+          "description": "stdio 类型服务的命令参数",
+          "items": {
+            "type": "string"
+          },
+          "examples": [["./mcpServers/calculator.js"]]
+        },
+        "env": {
+          "type": "object",
+          "description": "环境变量配置",
+          "patternProperties": {
+            "^[A-Z_][A-Z0-9_]*$": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "url": {
+          "type": "string",
+          "description": "网络服务的 URL 地址",
+          "pattern": "^https?://[^\\s/$.?#].[^\\s]*$",
+          "examples": ["https://api.example.com/mcp"]
+        },
+        "apiKey": {
+          "type": "string",
+          "description": "API 密钥"
+        },
+        "headers": {
+          "type": "object",
+          "description": "HTTP 请求头",
+          "patternProperties": {
+            "^[a-zA-Z0-9-]+$": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "modelScopeAuth": {
+          "type": "boolean",
+          "description": "是否启用 ModelScope 认证"
+        },
+        "reconnect": {
+          "$ref": "#/definitions/ReconnectOptions",
+          "description": "重连配置选项"
+        },
+        "ping": {
+          "$ref": "#/definitions/PingOptions",
+          "description": "心跳检测配置选项"
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "连接超时时间（毫秒）",
+          "minimum": 1000,
+          "maximum": 300000,
+          "examples": [30000]
+        },
+        "retryAttempts": {
+          "type": "integer",
+          "description": "重试次数",
+          "minimum": 0,
+          "maximum": 10,
+          "examples": [3]
+        }
+      },
+      "additionalProperties": false
+    },
+    "ReconnectOptions": {
+      "type": "object",
+      "description": "重连配置选项",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "是否启用自动重连",
+          "default": true
+        },
+        "maxAttempts": {
+          "type": "integer",
+          "description": "最大重连尝试次数",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 5
+        },
+        "initialInterval": {
+          "type": "integer",
+          "description": "初始重连间隔（毫秒）",
+          "minimum": 1000,
+          "maximum": 60000,
+          "default": 3000
+        },
+        "maxInterval": {
+          "type": "integer",
+          "description": "最大重连间隔（毫秒）",
+          "minimum": 5000,
+          "maximum": 300000,
+          "default": 30000
+        },
+        "backoffStrategy": {
+          "type": "string",
+          "description": "退避策略",
+          "enum": ["linear", "exponential"],
+          "default": "exponential"
+        },
+        "backoffMultiplier": {
+          "type": "number",
+          "description": "退避倍数",
+          "minimum": 1.0,
+          "maximum": 5.0,
+          "default": 1.5
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "连接超时时间（毫秒）",
+          "minimum": 1000,
+          "maximum": 60000,
+          "default": 10000
+        },
+        "jitter": {
+          "type": "boolean",
+          "description": "是否启用随机抖动",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "PingOptions": {
+      "type": "object",
+      "description": "心跳检测配置选项",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "是否启用心跳检测",
+          "default": true
+        },
+        "interval": {
+          "type": "integer",
+          "description": "心跳检测间隔（毫秒）",
+          "minimum": 5000,
+          "maximum": 300000,
+          "default": 30000
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "心跳检测超时时间（毫秒）",
+          "minimum": 1000,
+          "maximum": 30000,
+          "default": 5000
+        },
+        "maxFailures": {
+          "type": "integer",
+          "description": "最大失败次数",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 3
+        },
+        "startDelay": {
+          "type": "integer",
+          "description": "连接成功后开始心跳检测的延迟时间（毫秒）",
+          "minimum": 0,
+          "maximum": 60000,
+          "default": 5000
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "examples": [
+    {
+      "version": "1.0.0",
+      "mcpServers": {
+        "calculator": {
+          "tools": [
+            {
+              "name": "calculator",
+              "description": "For mathematical calculation, always use this tool to calculate the result of a JavaScript expression",
+              "inputSchema": {
+                "type": "object",
+                "properties": {
+                  "javascript_expression": {
+                    "type": "string",
+                    "description": "JavaScript expression to evaluate"
+                  }
+                },
+                "required": ["javascript_expression"],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+              }
+            }
+          ],
+          "lastUpdated": "2025-09-01 11:14:24",
+          "serverConfig": {
+            "name": "calculator",
+            "type": "stdio",
+            "command": "node",
+            "args": ["/path/to/calculator.js"],
+            "timeout": 30000
+          },
+          "configHash": "26e2388a301509d276dba45913acfeb5b4886a089186ce30663bbd16caaea6e5",
+          "version": "1.0.0"
+        }
+      },
+      "metadata": {
+        "lastGlobalUpdate": "2025-09-01 11:14:24",
+        "totalWrites": 3,
+        "createdAt": "2025-09-01 11:14:24"
+      }
+    }
+  ]
+}

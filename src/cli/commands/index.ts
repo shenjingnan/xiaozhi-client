@@ -71,6 +71,8 @@ export class CommandRegistry implements ICommandRegistry {
           subcommandName = "get <key>";
         } else if (subcommand.name === "set") {
           subcommandName = "set <key> <value>";
+        } else if (subcommand.name === "call") {
+          subcommandName = "call <serviceName> <toolName>";
         }
 
         const cmd = commandGroup

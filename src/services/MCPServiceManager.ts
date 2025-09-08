@@ -9,6 +9,8 @@
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { type Logger, logger } from "../Logger.js";
 import { type MCPToolConfig, configManager } from "../configManager.js";
+import { CustomMCPHandler } from "./CustomMCPHandler.js";
+import { MCPCacheManager } from "./MCPCacheManager.js";
 import {
   MCPService,
   type MCPServiceConfig,
@@ -49,6 +51,8 @@ export class MCPServiceManager {
   private configs: Record<string, MCPServiceConfig> = {};
   private logger: Logger;
   private tools: Map<string, ToolInfo> = new Map(); // 缓存工具信息，保持向后兼容
+  private customMCPHandler: CustomMCPHandler; // CustomMCP 工具处理器
+  private cacheManager: MCPCacheManager; // 缓存管理器
 
   /**
    * 创建 MCPServiceManager 实例
@@ -57,6 +61,17 @@ export class MCPServiceManager {
   constructor(configs?: Record<string, MCPServiceConfig>) {
     this.logger = logger;
     this.configs = configs || {};
+
+    // 在测试环境中使用临时目录，避免在项目根目录创建缓存文件
+    const isTestEnv =
+      process.env.NODE_ENV === "test" || process.env.VITEST === "true";
+    const cachePath = isTestEnv
+      ? `/tmp/xiaozhi-test-${Date.now()}-${Math.random().toString(36).substring(2, 11)}/xiaozhi.cache.json`
+      : undefined;
+
+    this.cacheManager = new MCPCacheManager(cachePath);
+    this.customMCPHandler = new CustomMCPHandler();
+    this.cacheManager = new MCPCacheManager();
   }
 
   /**
@@ -65,11 +80,21 @@ export class MCPServiceManager {
   async startAllServices(): Promise<void> {
     this.logger.info("[MCPManager] 正在启动所有 MCP 服务...");
 
+    // 初始化 CustomMCP 处理器
+    try {
+      this.customMCPHandler.initialize();
+      this.logger.info("[MCPManager] CustomMCP 处理器初始化完成");
+    } catch (error) {
+      this.logger.error("[MCPManager] CustomMCP 处理器初始化失败:", error);
+      // CustomMCP 初始化失败不应该阻止标准 MCP 服务启动
+    }
+
     const configEntries = Object.entries(this.configs);
     if (configEntries.length === 0) {
       this.logger.warn(
         "[MCPManager] 没有配置任何 MCP 服务，请使用 addServiceConfig() 添加服务配置"
       );
+      // 即使没有标准 MCP 服务，也可能有 CustomMCP 工具
       return;
     }
 
@@ -161,6 +186,27 @@ export class MCPServiceManager {
     for (const [serviceName, service] of this.services) {
       if (service.isConnected()) {
         const tools = service.getTools();
+        const config = this.configs[serviceName];
+
+        // 异步写入缓存（不阻塞主流程）
+        if (config) {
+          this.cacheManager
+            .writeCacheEntry(serviceName, tools, config)
+            .then(() => {
+              this.logger.debug(
+                `[MCPManager] 已将 ${serviceName} 工具列表写入缓存`
+              );
+            })
+            .catch((error) => {
+              this.logger.warn(
+                `[MCPManager] 写入缓存失败: ${serviceName}, 错误: ${
+                  error instanceof Error ? error.message : String(error)
+                }`
+              );
+            });
+        }
+
+        // 原有逻辑保持不变
         for (const tool of tools) {
           const toolKey = `${serviceName}__${tool.name}`;
           this.tools.set(toolKey, {
@@ -177,7 +223,7 @@ export class MCPServiceManager {
   }
 
   /**
-   * 获取所有可用工具（已启用的工具）
+   * 获取所有可用工具（包括 customMCP 工具和标准 MCP 工具）
    */
   getAllTools(): Array<{
     name: string;
@@ -194,6 +240,29 @@ export class MCPServiceManager {
       originalName: string;
     }> = [];
 
+    // 首先添加 customMCP 工具
+    try {
+      const customTools = this.customMCPHandler.getTools();
+      for (const tool of customTools) {
+        allTools.push({
+          name: tool.name,
+          description: tool.description || "",
+          inputSchema: tool.inputSchema,
+          serviceName: "customMCP", // 使用特殊的服务名标识
+          originalName: tool.name,
+        });
+      }
+
+      if (customTools.length > 0) {
+        this.logger.info(
+          `[MCPManager] 添加了 ${customTools.length} 个 customMCP 工具`
+        );
+      }
+    } catch (error) {
+      this.logger.error("[MCPManager] 获取 CustomMCP 工具失败:", error);
+    }
+
+    // 然后添加标准 MCP 工具
     for (const [toolKey, toolInfo] of this.tools) {
       // 检查工具是否启用
       const isEnabled = configManager.isToolEnabled(
@@ -212,15 +281,38 @@ export class MCPServiceManager {
         });
       }
     }
+
+    this.logger.info(
+      `[MCPManager] 返回总计 ${allTools.length} 个工具 (customMCP + 标准 MCP)`
+    );
     return allTools;
   }
 
   /**
-   * 调用 MCP 工具
+   * 调用 MCP 工具（支持标准 MCP 工具和 customMCP 工具）
    */
   async callTool(toolName: string, arguments_: any): Promise<ToolCallResult> {
     this.logger.info(`[MCPManager] 调用工具: ${toolName}，参数:`, arguments_);
 
+    // 首先检查是否是 customMCP 工具
+    if (this.customMCPHandler.hasTool(toolName)) {
+      try {
+        const result = await this.customMCPHandler.callTool(
+          toolName,
+          arguments_
+        );
+        this.logger.info(`[MCPManager] CustomMCP 工具 ${toolName} 调用成功`);
+        return result;
+      } catch (error) {
+        this.logger.error(
+          `[MCPManager] CustomMCP 工具 ${toolName} 调用失败:`,
+          (error as Error).message
+        );
+        throw error;
+      }
+    }
+
+    // 如果不是 customMCP 工具，则查找标准 MCP 工具
     const toolInfo = this.tools.get(toolName);
     if (!toolInfo) {
       throw new Error(`未找到工具: ${toolName}`);
@@ -253,6 +345,19 @@ export class MCPServiceManager {
   }
 
   /**
+   * 检查是否存在指定工具（包括标准 MCP 工具和 customMCP 工具）
+   */
+  hasTool(toolName: string): boolean {
+    // 检查是否是 customMCP 工具
+    if (this.customMCPHandler.hasTool(toolName)) {
+      return true;
+    }
+
+    // 检查是否是标准 MCP 工具
+    return this.tools.has(toolName);
+  }
+
+  /**
    * 停止所有服务
    */
   async stopAllServices(): Promise<void> {
@@ -271,6 +376,14 @@ export class MCPServiceManager {
       }
     }
 
+    // 清理 CustomMCP 处理器
+    try {
+      this.customMCPHandler.cleanup();
+      this.logger.info("[MCPManager] CustomMCP 处理器已清理");
+    } catch (error) {
+      this.logger.error("[MCPManager] CustomMCP 处理器清理失败:", error);
+    }
+
     this.services.clear();
     this.tools.clear();
 
@@ -281,17 +394,35 @@ export class MCPServiceManager {
    * 获取服务状态
    */
   getStatus(): ManagerStatus {
+    // 计算总工具数量（包括 customMCP 工具）
+    const customMCPToolCount = this.customMCPHandler.getToolCount();
+    const totalTools = this.tools.size + customMCPToolCount;
+
+    // 获取所有可用工具名称
+    const standardToolNames = Array.from(this.tools.keys());
+    const customToolNames = this.customMCPHandler.getToolNames();
+    const availableTools = [...standardToolNames, ...customToolNames];
+
     const status: ManagerStatus = {
       services: {},
-      totalTools: this.tools.size,
-      availableTools: Array.from(this.tools.keys()),
+      totalTools,
+      availableTools,
     };
 
+    // 添加标准 MCP 服务状态
     for (const [serviceName, service] of this.services) {
       const serviceStatus = service.getStatus();
       status.services[serviceName] = {
         connected: serviceStatus.connected,
         clientName: `xiaozhi-${serviceName}-client`,
+      };
+    }
+
+    // 添加 CustomMCP 服务状态
+    if (customMCPToolCount > 0) {
+      status.services.customMCP = {
+        connected: true, // CustomMCP 工具总是可用的
+        clientName: "xiaozhi-customMCP-handler",
       };
     }
 
@@ -310,6 +441,30 @@ export class MCPServiceManager {
    */
   getAllServices(): Map<string, MCPService> {
     return new Map(this.services);
+  }
+
+  /**
+   * 获取 CustomMCP 处理器实例
+   */
+  getCustomMCPHandler(): CustomMCPHandler {
+    return this.customMCPHandler;
+  }
+
+  /**
+   * 检查指定的 customMCP 工具是否存在
+   * @param toolName 工具名称
+   * @returns 如果工具存在返回 true，否则返回 false
+   */
+  hasCustomMCPTool(toolName: string): boolean {
+    return this.customMCPHandler.hasTool(toolName);
+  }
+
+  /**
+   * 获取所有 customMCP 工具列表
+   * @returns customMCP 工具数组
+   */
+  getCustomMCPTools(): Tool[] {
+    return this.customMCPHandler.getTools();
   }
 
   /**

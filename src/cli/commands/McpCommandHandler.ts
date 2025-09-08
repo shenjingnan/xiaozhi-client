@@ -3,6 +3,8 @@
  */
 
 import chalk from "chalk";
+import ora from "ora";
+import { ToolCallService } from "../../services/ToolCallService.js";
 import type { SubCommand } from "../interfaces/Command.js";
 import { BaseCommandHandler } from "../interfaces/Command.js";
 import type { IDIContainer } from "../interfaces/Config.js";
@@ -45,6 +47,22 @@ export class McpCommandHandler extends BaseCommandHandler {
 
         const enabled = action === "enable";
         await this.handleTool(serverName, toolName, enabled);
+      },
+    },
+    {
+      name: "call",
+      description: "调用指定服务的工具",
+      options: [
+        {
+          flags: "--args <json>",
+          description: "工具参数 (JSON 格式)",
+          defaultValue: "{}",
+        },
+      ],
+      execute: async (args: any[], options: any) => {
+        this.validateArgs(args, 2);
+        const [serviceName, toolName] = args;
+        await this.handleCall(serviceName, toolName, options.args);
       },
     },
   ];
@@ -100,6 +118,52 @@ export class McpCommandHandler extends BaseCommandHandler {
       await setToolEnabled(serverName, toolName, enabled);
     } catch (error) {
       this.handleError(error as Error);
+    }
+  }
+
+  /**
+   * 处理工具调用命令
+   */
+  private async handleCall(
+    serviceName: string,
+    toolName: string,
+    argsString: string
+  ): Promise<void> {
+    try {
+      const toolCallService = new ToolCallService();
+
+      // 解析参数
+      const args = toolCallService.parseJsonArgs(argsString);
+
+      // 调用工具
+      const result = await toolCallService.callTool(
+        serviceName,
+        toolName,
+        args
+      );
+
+      console.log(toolCallService.formatOutput(result));
+    } catch (error) {
+      console.log(`工具调用失败: ${serviceName}/${toolName}`);
+      console.error(chalk.red("错误:"), (error as Error).message);
+
+      // 提供有用的提示
+      if ((error as Error).message.includes("服务未启动")) {
+        console.log();
+        console.log(chalk.yellow("💡 请先启动服务:"));
+        console.log(chalk.gray("  xiaozhi start        # 前台启动"));
+        console.log(chalk.gray("  xiaozhi start -d     # 后台启动"));
+      } else if ((error as Error).message.includes("参数格式错误")) {
+        console.log();
+        console.log(chalk.yellow("💡 正确格式示例:"));
+        console.log(
+          chalk.gray(
+            `  xiaozhi mcp call ${serviceName} ${toolName} --args '{"param": "value"}'`
+          )
+        );
+      }
+
+      process.exit(1);
     }
   }
 }

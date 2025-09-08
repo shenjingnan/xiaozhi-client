@@ -204,9 +204,13 @@ describe("StaticFileHandler", () => {
 
       const response = await staticFileHandler.handleStaticFile(mockContext);
 
-      expect(mockContext.body).toHaveBeenCalledWith(binaryData, 200, {
-        "Content-Type": "image/png",
-      });
+      expect(mockContext.body).toHaveBeenCalledWith(
+        new Uint8Array(binaryData),
+        200,
+        {
+          "Content-Type": "image/png",
+        }
+      );
     });
 
     it("should return error page when web path is not available", async () => {
@@ -547,9 +551,13 @@ describe("StaticFileHandler", () => {
 
       await handler.serveFile(mockContext, filePath, contentType);
 
-      expect(mockContext.body).toHaveBeenCalledWith(binaryData, 200, {
-        "Content-Type": contentType,
-      });
+      expect(mockContext.body).toHaveBeenCalledWith(
+        new Uint8Array(binaryData),
+        200,
+        {
+          "Content-Type": contentType,
+        }
+      );
     });
 
     it("should handle file read errors", async () => {
@@ -765,9 +773,13 @@ describe("StaticFileHandler", () => {
 
       await staticFileHandler.handleStaticFile(mockContext);
 
-      expect(mockContext.body).toHaveBeenCalledWith(expect.any(Buffer), 200, {
-        "Content-Type": "application/octet-stream",
-      });
+      expect(mockContext.body).toHaveBeenCalledWith(
+        expect.any(Uint8Array),
+        200,
+        {
+          "Content-Type": "application/octet-stream",
+        }
+      );
     });
 
     it("should handle case-insensitive file extensions", () => {
