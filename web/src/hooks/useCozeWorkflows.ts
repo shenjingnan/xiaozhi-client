@@ -107,7 +107,7 @@ export function useCozeWorkflows(
 
     try {
       const data = await cozeApiClient.fetchWorkspaces();
-      setWorkspaces(data);
+      setWorkspaces(data.workspaces);
       setUiState((prev) => ({ ...prev, workspacesLoading: false }));
     } catch (error) {
       const errorMessage =

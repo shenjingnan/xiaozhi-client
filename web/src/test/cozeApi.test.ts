@@ -4,10 +4,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CozeApiClient } from "../services/cozeApi";
-import type {
-  CozeWorkflowsResult,
-  CozeWorkspace,
-} from "../types";
+import type { CozeWorkflowsResult, CozeWorkspace } from "../types";
 
 // Mock fetch
 const mockFetch = vi.fn();

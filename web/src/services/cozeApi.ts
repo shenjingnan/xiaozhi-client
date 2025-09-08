@@ -89,9 +89,9 @@ export class CozeApiClient {
   /**
    * 获取工作空间列表
    */
-  async fetchWorkspaces(): Promise<CozeWorkspace[]> {
+  async fetchWorkspaces(): Promise<{ workspaces: CozeWorkspace[] }> {
     try {
-      const response: ApiResponse<CozeWorkspace[]> = await this.request(
+      const response: ApiResponse<{ workspaces: CozeWorkspace[] }> = await this.request(
         "/api/coze/workspaces"
       );
 
