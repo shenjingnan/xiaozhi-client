@@ -55,11 +55,6 @@ const validateEndpoint = (endpoint: string): string | null => {
     return "接入点格式无效，请输入正确的URL格式";
   }
 
-  // 检查是否包含 token 参数
-  if (!endpoint.includes("token=")) {
-    return "接入点格式无效，缺少 token 参数";
-  }
-
   return null; // 验证通过
 };
 
@@ -329,7 +324,7 @@ export function McpEndpointSettingButton() {
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Input
-                placeholder="请输入接入点地址，例如：wss://api.xiaozhi.me/mcp/?token=... 或 ws://hostname:port/path?token=..."
+                placeholder="请输入接入点地址，例如：wss://api.xiaozhi.me/mcp/?token=... 或 ws(s)://<hostname>:<port>"
                 value={newEndpoint}
                 onChange={(e) => handleInputChange(e.target.value)}
                 disabled={isAdding}
