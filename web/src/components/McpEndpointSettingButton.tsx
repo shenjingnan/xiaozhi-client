@@ -43,29 +43,16 @@ const validateEndpoint = (endpoint: string): string | null => {
     return "请输入接入点地址";
   }
 
-  // 检查是否以正确的前缀开头
-  const expectedPrefix = "wss://api.xiaozhi.me/mcp/?token=";
-  if (!endpoint.startsWith(expectedPrefix)) {
-    return "接入点格式无效，请输入正确的小智服务端接入点地址";
+  // 检查是否是有效的 WebSocket URL
+  if (!endpoint.startsWith("ws://") && !endpoint.startsWith("wss://")) {
+    return "接入点格式无效，请输入正确的WebSocket URL (ws:// 或 wss://)";
   }
 
-  // 提取 token 部分
-  const token = endpoint.substring(expectedPrefix.length);
-  if (!token) {
-    return "接入点格式无效，缺少 token 参数";
-  }
-
-  // 验证 JWT 格式（应该有两个点分隔的三个部分）
-  const jwtParts = token.split(".");
-  if (jwtParts.length !== 3) {
-    return "接入点格式无效，token 格式不正确";
-  }
-
-  // 检查每个部分是否为有效的 base64 字符串（简单检查）
-  for (const part of jwtParts) {
-    if (!part || !/^[A-Za-z0-9_-]+$/.test(part)) {
-      return "接入点格式无效，token 格式不正确";
-    }
+  // 检查是否是有效的 URL
+  try {
+    new URL(endpoint);
+  } catch {
+    return "接入点格式无效，请输入正确的URL格式";
   }
 
   return null; // 验证通过
@@ -337,7 +324,7 @@ export function McpEndpointSettingButton() {
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Input
-                placeholder="请输入接入点地址，例如：wss://api.xiaozhi.me/mcp/?token=..."
+                placeholder="请输入接入点地址，例如：wss://api.xiaozhi.me/mcp/?token=... 或 ws(s)://<hostname>:<port>"
                 value={newEndpoint}
                 onChange={(e) => handleInputChange(e.target.value)}
                 disabled={isAdding}
