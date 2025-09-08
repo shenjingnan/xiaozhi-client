@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.6.13-beta.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.12-beta.0...v1.6.13-beta.0) (2025-09-08)
+
+### Features
+
+* **mcp:** 实现 customMCP 支持扣子工作流 ([#222](https://github.com/shenjingnan/xiaozhi-client/issues/222)) ([1817f26](https://github.com/shenjingnan/xiaozhi-client/commit/1817f2653e954165f910c93bfd5b218baa35e37d))
+
 ## [1.6.12-beta.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.11...v1.6.12-beta.0) (2025-09-04)
 
 ### Features
