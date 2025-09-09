@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.0...v1.7.1) (2025-09-08)
+
+### Features
+
+* **cli:** xiaozhi start 命令增加 --debug 参数 ([#304](https://github.com/shenjingnan/xiaozhi-client/issues/304)) ([ead36d5](https://github.com/shenjingnan/xiaozhi-client/commit/ead36d5de7f7c42861e2089b1f6a240b2a0889c1))
+* **mcp:** 放宽端点验证以支持自部署的 xiaozhi-server ([#274](https://github.com/shenjingnan/xiaozhi-client/issues/274)) ([b55a794](https://github.com/shenjingnan/xiaozhi-client/commit/b55a79408d07787edd644210f05a00049ec28d0a))
+
 ## [1.7.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.11...v1.7.0) (2025-09-08)
 
 ### Features
