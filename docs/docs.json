@@ -1,0 +1,52 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Xiaozhi Client",
+  "description": "用于聚合MCP Server的命令行工具",
+  "colors": {
+    "primary": "#3B82F6",
+    "light": "#F8FAFC",
+    "dark": "#0F172A"
+  },
+  "navigation": {
+    "pages": [
+      "getting-started/intro",
+      "getting-started/quickstart",
+      "usage/docker",
+      "usage/as-a-mcp-server",
+      "usage/add-mcp-server",
+      "usage/web-control"
+    ]
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Community",
+        "href": "https://example.com/community"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Get Started",
+      "href": "https://example.com/start"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/shenjingnan/xiaozhi-client"
+    }
+  },
+  "integrations": {
+    "telemetry": {
+      "enabled": true
+    }
+  },
+  "contextual": {
+    "options": ["copy", "view"]
+  },
+  "errors": {
+    "404": {
+      "redirect": true
+    }
+  }
+}
