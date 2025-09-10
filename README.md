@@ -17,8 +17,6 @@
 
 你可以阅读文档 [xiaozhi-client.shenjingnan.com](https://xiaozhi-client.shenjingnan.com) 快速上手！
 
-小智 AI 客户端，目前主要用于 MCP 的对接
-
 ![效果图](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/preview.png)
 
 ## 目录
