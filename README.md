@@ -21,30 +21,22 @@
 
 1. [Xiaozhi Client](#xiaozhi-client)
    1. [目录](#目录)
-   2. [功能特色](#功能特色)
-   3. [快速上手](#快速上手)
-      1. [全局安装 xiaozhi-client 命令行工具](#全局安装-xiaozhi-client-命令行工具)
-      3. [使用 Docker 运行](#使用-docker-运行)
-         1. [前置要求](#前置要求)
-         2. [快速启动](#快速启动)
-         3. [获取小智接入点地址](#获取小智接入点地址)
-         4. [配置服务](#配置服务)
-            1. [方式一：通过 Web UI 配置（推荐）](#方式一通过-web-ui-配置推荐)
-            2. [方式二：直接编辑配置文件](#方式二直接编辑配置文件)
-         5. [常用操作](#常用操作)
-         6. [故障排除](#故障排除)
-   4. [可用命令](#可用命令)
-   5. [多接入点配置](#多接入点配置)
+   2. [项目结构](#项目结构)
+   3. [功能特色](#功能特色)
+   4. [快速上手](#快速上手)
+      1. [使用 Docker 运行](#使用-docker-运行)
+   5. [可用命令](#可用命令)
+   6. [多接入点配置](#多接入点配置)
       1. [配置方式](#配置方式)
          1. [方式一：单接入点配置（字符串）](#方式一单接入点配置字符串)
          2. [方式二：多接入点配置（字符串数组）](#方式二多接入点配置字符串数组)
       2. [使用命令管理接入点](#使用命令管理接入点)
       3. [示例配置](#示例配置)
       4. [注意事项](#注意事项)
-   6. [ModelScope MCP 服务集成](#modelscope-mcp-服务集成)
-      1. [配置方式](#配置方式-1)
+   7. [ModelScope MCP 服务集成](#modelscope-mcp-服务集成)
+      1. [ModelScope 配置方式](#modelscope-配置方式)
       2. [使用前准备](#使用前准备)
-      3. [注意事项](#注意事项-1)
+      3. [ModelScope 注意事项](#modelscope-注意事项)
    8. [Web UI 配置界面](#web-ui-配置界面)
       1. [功能特性](#功能特性)
       2. [启动 Web UI](#启动-web-ui)
@@ -96,7 +88,7 @@ xiaozhi start
 #### 前置要求
 
 - 已安装 Docker
-- 已获取小智接入点地址（参见下方"[获取小智接入点地址](#获取小智接入点地址)"部分）
+- 已获取小智接入点地址（参见[小智AI配置MCP接入点的使用说明](https://ccnphfhqs21z.feishu.cn/wiki/HiPEwZ37XiitnwktX13cEM5KnSb)）
 
 #### 快速启动
 
@@ -310,7 +302,7 @@ xiaozhi config set mcpEndpoint "wss://api.xiaozhi.me/mcp/endpoint-1"
 
 xiaozhi-client 现已支持接入 [ModelScope](https://www.modelscope.cn/mcp) 托管的 MCP 服务。
 
-### 配置方式
+### ModelScope 配置方式
 
 在 `xiaozhi.config.json` 的 `mcpServers` 中添加 SSE 类型的配置：
 
@@ -356,7 +348,7 @@ xiaozhi-client 现已支持接入 [ModelScope](https://www.modelscope.cn/mcp) �
    xiaozhi start
    ```
 
-### 注意事项
+### ModelScope 注意事项
 
 - ModelScope MCP 服务需要有效的 API Token 才能使用
 - 配置文件中的 API Token 优先级高于环境变量
