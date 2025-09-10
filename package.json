@@ -37,7 +37,8 @@
     "spell:check": "cspell \"src/**/*.ts\" \"*.md\" \"*.json\"",
     "duplicate:check": "jscpd src/",
     "docker:update-version": "node scripts/update-dockerfile-version.js",
-    "example": "node --loader ts-node/esm"
+    "example": "node --loader ts-node/esm",
+    "docs:dev": "cd docs && mintlify dev"
   },
   "keywords": [
     "xiaozhi",
@@ -90,6 +91,7 @@
     "glob": "^11.0.3",
     "happy-dom": "^18.0.1",
     "jscpd": "^4.0.5",
+    "mintlify": "^4.2.107",
     "release-it": "^19.0.4",
     "semver": "^7.7.2",
     "supertest": "^7.1.4",
