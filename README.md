@@ -19,7 +19,7 @@
 
 ## 快速开始
 
-你可以阅读文档 [xiaozhi-client.shenjingnan.com](xiaozhi-client.shenjingnan.com) 快速上手！
+你可以阅读文档 [xiaozhi-client.shenjingnan.com](https://xiaozhi-client.shenjingnan.com) 快速上手！
 
 ## 目录
 
