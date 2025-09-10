@@ -75,53 +75,28 @@
 
 ## 快速上手
 
-### 全局安装 xiaozhi-client 命令行工具
+> 前置条件：请先完成 node:22(LTS) 与 pnpm 的安装
 
 ```bash
-## 安装
-npm i -g xiaozhi-client
+# 安装
+pnpm install -g xiaozhi-client
 
-## 创建项目
-xiaozhi create my-app --template hello-world
+# 创建应用
+xiaozhi create my-app
 
-## 进入项目
-cd my-app
-
-## 安装依赖（主要是示例代码中mcp服务所使用的依赖）
-pnpm install
-
-## 初始化配置
-xiaozhi config init
-
-## 设置接入点地址（需要自行前往xiaozhi.me获取）
-xiaozhi config set mcpEndpoint "your-endpoint-url"
-# 小智AI配置MCP接入点使用说明：https://ccnphfhqs21z.feishu.cn/wiki/HiPEwZ37XiitnwktX13cEM5KnSb
-
-## 运行
-xiaozhi start
-```
-
-### 通过 npx 直接运行
-
-```bash
-# 创建项目
-npx -y xiaozhi-client create my-app --template hello-world
-
-# 进入项目目录
+# 进入应用目录
 cd my-app
 
 # 安装依赖
 pnpm install
 
-# 初始化配置
-npx -y xiaozhi-client config init
-
-# 设置接入点地址（需要自行前往xiaozhi.me获取）
-npx -y xiaozhi-client config set mcpEndpoint "your-endpoint-url"
-# 小智AI配置MCP接入点使用说明：https://ccnphfhqs21z.feishu.cn/wiki/HiPEwZ37XiitnwktX13cEM5KnSb
+# 小智AI配置MCP接入点的 [使用说明](https://ccnphfhqs21z.feishu.cn/wiki/HiPEwZ37XiitnwktX13cEM5KnSb)
+xiaozhi config set mcpEndpoint "<从小智服务端获取到的接入点地址>"
 
 # 启动服务
-npx -y xiaozhi-client start
+xiaozhi start
+
+# 最后，请前往小智服务端，检查对应的接入点，刷新后是否能获取到工具列表
 ```
 
 ### 使用 Docker 运行
