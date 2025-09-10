@@ -110,18 +110,7 @@ xiaozhi start
 
 #### 快速启动
 
-**方式一：使用启动脚本（推荐）**
-
-这个脚本会自动完成以下操作：
-
-- 创建工作目录 `~/xiaozhi-client`
-- 拉取指定版本的 Docker 镜像
-- 停止并删除已存在的容器（如果有）
-- 启动新的容器并配置端口映射
-
-**基本使用：**
-
-> 下载并运行启动脚本（默认使用最新版本）
+##### 方式一：使用启动脚本（推荐）
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docker-start.sh | bash
@@ -133,41 +122,21 @@ curl -fsSL https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/doc
 curl -fsSL https://gitee.com/shenjingnan/xiaozhi-client/raw/main/docker-start.sh | bash
 ```
 
-**指定版本运行：**
+##### 方式二：使用 Docker Compose
 
-启动脚本现在支持灵活的版本指定方式：
+获取 docker-compose.yml 文件：
 
 ```bash
-# 下载脚本
-curl -fsSL https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docker-start.sh -o docker-start.sh
-
-# 下载脚本（Gitee）
-curl -fsSL https://gitee.com/shenjingnan/xiaozhi-client/raw/main/docker-start.sh | bash
-
-# 为脚本设置可执行权限
-chmod +x docker-start.sh
-
-# 使用默认版本 (latest)
-./docker-start.sh
-
-# 通过位置参数指定版本
-./docker-start.sh v1.6.0
-
-# 查看帮助信息
-./docker-start.sh --help
+curl -O https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docker-compose.yml
 ```
 
-**方式二：使用 Docker Compose**
-
-首先获取 docker-compose.yml 文件：
+> 无法访问 `Github` 可以使用 `Gitee` 替代
 
 ```bash
-# 下载 docker-compose.yml 文件
-curl -O https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docker-compose.yml
-
-# 下载 docker-compose.yml 文件（Gitee）
 curl -O https://gitee.com/shenjingnan/xiaozhi-client/raw/main/docker-compose.yml
+```
 
+```bash
 # 使用 Docker Compose 启动
 docker-compose up -d
 
@@ -177,173 +146,6 @@ docker-compose logs -f
 # 停止服务
 docker-compose down
 ```
-
-**方式三：手动启动**
-
-```bash
-# 创建工作目录（用于持久化配置文件）
-mkdir -p ~/xiaozhi-client
-
-# 拉取并运行 Docker 镜像（后台运行）
-docker run -d \
-  --name xiaozhi-client \
-  -p 9999:9999 \
-  -p 3000:3000 \
-  -v ~/xiaozhi-client:/workspaces \
-  --restart unless-stopped \
-  shenjingnan/xiaozhi-client
-```
-
-**参数说明**：
-
-- `-d`：后台运行
-- `--name xiaozhi-client`：容器名称
-- `-p 9999:9999`：Web UI 配置界面端口
-- `-p 3000:3000`：HTTP Server 模式端口（用于与其他 MCP 客户端集成）
-- `-v ~/xiaozhi-client:/workspaces`：挂载本地目录用于持久化配置文件和数据
-- `--restart unless-stopped`：容器自动重启策略
-
-#### 获取小智接入点地址
-
-在配置 xiaozhi-client 之前，您需要先获取小智接入点地址：
-
-1. 访问 [xiaozhi.me](https://xiaozhi.me) 并登录
-2. 进入 MCP 配置页面
-3. 创建新的接入点或使用现有接入点
-4. 复制接入点地址（格式类似：`wss://api.xiaozhi.me/mcp/your-endpoint-id`）
-
-详细配置说明请参考：[小智 AI 配置 MCP 接入点使用说明](https://ccnphfhqs21z.feishu.cn/wiki/HiPEwZ37XiitnwktX13cEM5KnSb)
-
-#### 配置服务
-
-容器启动后，有两种方式配置 xiaozhi-client：
-
-##### 方式一：通过 Web UI 配置（推荐）
-
-1. 打开浏览器访问：<http://localhost:9999>
-2. 在 Web UI 界面中设置你的小智接入点地址
-3. 配置其他 MCP 服务（可选）
-
-##### 方式二：直接编辑配置文件
-
-1. 首次启动后，容器会在 `~/xiaozhi-client` 目录中创建默认配置文件。如果文件不存在，可以手动创建：
-
-```bash
-# 创建配置文件
-cat > ~/xiaozhi-client/xiaozhi.config.json << 'EOF'
-{
-  "mcpEndpoint": "",
-  "mcpServers": {},
-  "modelscope": {
-    "apiKey": ""
-  },
-  "connection": {
-    "heartbeatInterval": 30000,
-    "heartbeatTimeout": 10000,
-    "reconnectInterval": 5000
-  },
-  "webUI": {
-    "port": 9999
-  }
-}
-EOF
-```
-
-2. 编辑配置文件，修改 `mcpEndpoint` 字段：
-
-```bash
-# 编辑配置文件
-vim ~/xiaozhi-client/xiaozhi.config.json
-```
-
-将 `mcpEndpoint` 修改为您的实际接入点地址：
-
-```json
-{
-  "mcpEndpoint": "wss://api.xiaozhi.me/mcp/your-actual-endpoint-id"
-}
-```
-
-3. 重启容器使配置生效：
-
-```bash
-docker restart xiaozhi-client
-```
-
-#### 常用操作
-
-```bash
-# 查看日志
-docker logs -f xiaozhi-client
-
-# 停止服务
-docker stop xiaozhi-client
-
-# 启动服务
-docker start xiaozhi-client
-
-# 重启服务
-docker restart xiaozhi-client
-
-# 删除容器（注意：配置文件会保留在 ~/xiaozhi-client 中）
-docker rm -f xiaozhi-client
-
-# 检查服务状态
-docker exec -it xiaozhi-client xiaozhi status
-
-# 列出所有mcp服务
-docker exec -it xiaozhi-client xiaozhi mcp list
-
-# 列出所有mcp所提供的tools
-docker exec -it xiaozhi-client xiaozhi mcp list --tools
-```
-
-#### 故障排除
-
-**问题 1：容器启动失败**
-
-```bash
-# 检查容器状态
-docker ps -a | grep xiaozhi-client
-
-# 查看详细错误日志
-docker logs xiaozhi-client
-```
-
-**问题 2：无法访问 Web UI (http://localhost:9999)**
-
-- 检查容器是否正在运行：`docker ps | grep xiaozhi-client`
-- 检查端口是否被占用：`lsof -i :9999` (macOS/Linux) 或 `netstat -ano | findstr :9999` (Windows)
-- 确认防火墙设置允许访问 9999 端口
-
-**问题 3：配置文件不生效**
-
-- 确认配置文件路径：`ls -la ~/xiaozhi-client/xiaozhi.config.json`
-- 检查配置文件格式是否正确（JSON 语法）
-- 重启容器：`docker restart xiaozhi-client`
-
-**问题 4：连接小智服务器失败**
-
-- 检查接入点地址是否正确
-- 确认网络连接正常
-- 查看容器日志：`docker logs -f xiaozhi-client`
-
-**问题 5：端口冲突**
-
-如果默认端口被占用，可以修改端口映射：
-
-```bash
-# 使用不同的端口启动
-docker run -d \
-  --name xiaozhi-client \
-  -p 8888:9999 \
-  -p 3001:3000 \
-  -v ~/xiaozhi-client:/workspaces \
-  --restart unless-stopped \
-  shenjingnan/xiaozhi-client
-```
-
-然后访问 <http://localhost:8888> 进行配置。
 
 ## 可用命令
 
