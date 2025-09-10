@@ -170,6 +170,88 @@ export class ToolApiHandler {
   }
 
   /**
+   * 获取自定义 MCP 工具列表
+   * GET /api/tools/custom
+   */
+  async getCustomTools(c: Context): Promise<Response> {
+    try {
+      this.logger.info("处理获取自定义 MCP 工具列表请求");
+
+      // 检查配置文件是否存在
+      if (!configManager.configExists()) {
+        const errorResponse = this.createErrorResponse(
+          "CONFIG_NOT_FOUND",
+          "配置文件不存在，请先运行 'xiaozhi init' 初始化配置"
+        );
+        return c.json(errorResponse, 404);
+      }
+
+      // 获取自定义 MCP 工具列表
+      let customTools: any[] = [];
+      let configPath = "";
+
+      try {
+        customTools = configManager.getCustomMCPTools();
+        configPath = configManager.getConfigPath();
+      } catch (error) {
+        this.logger.error("读取自定义 MCP 工具配置失败:", error);
+        const errorResponse = this.createErrorResponse(
+          "CONFIG_PARSE_ERROR",
+          `配置文件解析失败: ${error instanceof Error ? error.message : "未知错误"}`
+        );
+        return c.json(errorResponse, 500);
+      }
+
+      // 检查是否配置了自定义 MCP 工具
+      if (!customTools || customTools.length === 0) {
+        this.logger.info("未配置自定义 MCP 工具");
+        return c.json(
+          this.createSuccessResponse(
+            {
+              tools: [],
+              totalTools: 0,
+              configPath,
+            },
+            "未配置自定义 MCP 工具"
+          )
+        );
+      }
+
+      // 验证工具配置的有效性
+      const isValid = configManager.validateCustomMCPTools(customTools);
+      if (!isValid) {
+        this.logger.warn("自定义 MCP 工具配置验证失败");
+        const errorResponse = this.createErrorResponse(
+          "INVALID_TOOL_CONFIG",
+          "自定义 MCP 工具配置验证失败，请检查配置文件中的工具定义"
+        );
+        return c.json(errorResponse, 400);
+      }
+
+      this.logger.info(`获取自定义 MCP 工具列表成功，共 ${customTools.length} 个工具`);
+
+      return c.json(
+        this.createSuccessResponse(
+          {
+            tools: customTools,
+            totalTools: customTools.length,
+            configPath,
+          },
+          "获取自定义 MCP 工具列表成功"
+        )
+      );
+    } catch (error) {
+      this.logger.error("获取自定义 MCP 工具列表失败:", error);
+
+      const errorResponse = this.createErrorResponse(
+        "GET_CUSTOM_TOOLS_ERROR",
+        error instanceof Error ? error.message : "获取自定义 MCP 工具列表失败"
+      );
+      return c.json(errorResponse, 500);
+    }
+  }
+
+  /**
    * 获取可用工具列表
    * GET /api/tools/list
    */
