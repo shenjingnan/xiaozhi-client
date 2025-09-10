@@ -13,7 +13,9 @@
 
 <img src="https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/qq-group-qrcode.jpg" alt="QQ群" width="300"/>
 
-小智 AI 客户端，目前主要用于 MCP 的对接
+## 快速开始
+
+你可以阅读文档 [xiaozhi-client.shenjingnan.com](https://xiaozhi-client.shenjingnan.com) 快速上手！
 
 ![效果图](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/preview.png)
 
@@ -87,7 +89,7 @@ xiaozhi start
 #### 前置要求
 
 - 已安装 Docker
-- 已获取小智接入点地址（参见[小智AI配置MCP接入点的使用说明](https://ccnphfhqs21z.feishu.cn/wiki/HiPEwZ37XiitnwktX13cEM5KnSb)）
+- 已获取小智接入点地址（参见[小智 AI 配置 MCP 接入点的使用说明](https://ccnphfhqs21z.feishu.cn/wiki/HiPEwZ37XiitnwktX13cEM5KnSb)）
 
 #### 快速启动
 
