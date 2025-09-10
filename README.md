@@ -17,6 +17,10 @@
 
 ![效果图](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/preview.png)
 
+## 快速开始
+
+你可以阅读文档 [xiaozhi-client.shenjingnan.com](xiaozhi-client.shenjingnan.com) 快速上手！
+
 ## 目录
 
 1. [Xiaozhi Client](#xiaozhi-client)
