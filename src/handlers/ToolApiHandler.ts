@@ -7,7 +7,7 @@ import Ajv from "ajv";
 import type { Context } from "hono";
 import { type Logger, logger } from "../Logger.js";
 import { configManager } from "../configManager.js";
-import type { CustomMCPTool, HttpHandlerConfig } from "../configManager.js";
+import type { CustomMCPTool, ProxyHandlerConfig } from "../configManager.js";
 import { MCPServiceManagerSingleton } from "../services/MCPServiceManagerSingleton.js";
 import type { CozeWorkflow } from "../types/coze.js";
 
@@ -922,33 +922,15 @@ export class ToolApiHandler {
   /**
    * 创建HTTP处理器配置
    */
-  private createHttpHandler(workflow: CozeWorkflow): HttpHandlerConfig {
+  private createHttpHandler(workflow: CozeWorkflow): ProxyHandlerConfig {
     // 验证扣子API配置
     this.validateCozeApiConfig();
 
     return {
-      type: "http",
-      url: "https://api.coze.cn/v1/workflow/run",
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "User-Agent": "xiaozhi-client/1.0",
-      },
-      auth: {
-        type: "bearer",
-        token: "${COZE_TOKEN}",
-      },
-      body_template: JSON.stringify({
+      type: "proxy",
+      platform: "coze",
+      config: {
         workflow_id: workflow.workflow_id,
-        parameters: "{{args}}",
-      }),
-      timeout: 30000,
-      retry_count: 2,
-      retry_delay: 1000,
-      response_mapping: {
-        success_path: "$.code",
-        error_path: "$.msg",
-        data_path: "$.data",
       },
     };
   }
@@ -982,7 +964,7 @@ export class ToolApiHandler {
     this.validateJsonSchema(tool.inputSchema);
 
     // HTTP处理器验证
-    this.validateHttpHandler(tool.handler);
+    this.validateProxyHandler(tool.handler);
   }
 
   /**
@@ -1025,67 +1007,22 @@ export class ToolApiHandler {
   /**
    * 验证HTTP处理器配置
    */
-  private validateHttpHandler(handler: any): void {
+  private validateProxyHandler(handler: any): void {
     if (!handler || typeof handler !== "object") {
       throw new Error("HTTP处理器配置不能为空");
     }
 
     // 验证处理器类型
-    if (handler.type !== "http") {
-      throw new Error("处理器类型必须是'http'");
+    if (handler.type !== "proxy") {
+      throw new Error("处理器类型必须是'proxy'");
     }
 
-    // 验证URL
-    if (!handler.url || typeof handler.url !== "string") {
-      throw new Error("HTTP处理器必须包含有效的URL");
-    }
-
-    try {
-      new URL(handler.url);
-    } catch {
-      throw new Error("HTTP处理器URL格式无效");
-    }
-
-    // 验证HTTP方法
-    const validMethods = ["GET", "POST", "PUT", "DELETE", "PATCH"];
-    if (
-      !handler.method ||
-      !validMethods.includes(handler.method.toUpperCase())
-    ) {
-      throw new Error(`HTTP方法必须是以下之一: ${validMethods.join(", ")}`);
-    }
-
-    // 验证认证配置
-    if (handler.auth) {
-      this.validateAuthConfig(handler.auth);
-    }
-
-    // 验证请求体模板
-    if (handler.body_template) {
-      this.validateBodyTemplate(handler.body_template);
-    }
-
-    // 验证超时配置
-    if (
-      handler.timeout &&
-      (!Number.isInteger(handler.timeout) || handler.timeout <= 0)
-    ) {
-      throw new Error("超时时间必须是正整数");
-    }
-
-    // 验证重试配置
-    if (
-      handler.retry_count &&
-      (!Number.isInteger(handler.retry_count) || handler.retry_count < 0)
-    ) {
-      throw new Error("重试次数必须是非负整数");
-    }
-
-    if (
-      handler.retry_delay &&
-      (!Number.isInteger(handler.retry_delay) || handler.retry_delay < 0)
-    ) {
-      throw new Error("重试延迟必须是非负整数");
+    if (handler.platform === 'coze') {
+      if (!handler.config.workflow_id) {
+        throw new Error("Coze处理器必须包含有效的workflow_id");
+      }
+    } else {
+      throw new Error("不支持的工作流平台");
     }
   }
 
@@ -1180,22 +1117,12 @@ export class ToolApiHandler {
       properties: {
         input: {
           type: "string",
-          description: `${workflow.workflow_name}的输入参数`,
-          minLength: 1,
-          maxLength: 10000,
+          description: '输入内容'
         },
       },
       required: ["input"],
       additionalProperties: false,
     };
-
-    // 如果工作流有描述，添加到schema的描述中
-    if (workflow.description) {
-      baseSchema.properties.input.description = `${workflow.description} - 输入参数`;
-    }
-
-    // 未来可以根据工作流的具体参数定义进行扩展
-    // 例如：解析workflow的参数定义，生成对应的schema
 
     return baseSchema;
   }
