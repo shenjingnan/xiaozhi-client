@@ -169,7 +169,6 @@ export function useCozeWorkflows(
    */
   const selectWorkspace = useCallback(
     (workspaceId: string | null) => {
-      debugger;
       setSelectedWorkspaceId(workspaceId);
       setUiState((prev) => ({ ...prev, selectedWorkspaceId: workspaceId }));
 

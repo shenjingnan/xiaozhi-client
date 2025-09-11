@@ -1306,6 +1306,95 @@ export class ConfigManager {
   }
 
   /**
+   * 添加自定义 MCP 工具
+   */
+  public addCustomMCPTool(tool: CustomMCPTool): void {
+    if (!tool || typeof tool !== "object") {
+      throw new Error("工具配置不能为空");
+    }
+
+    const config = this.getMutableConfig();
+
+    // 确保 customMCP 配置存在
+    if (!config.customMCP) {
+      config.customMCP = { tools: [] };
+    }
+
+    // 检查工具名称是否已存在
+    const existingTool = config.customMCP.tools.find(
+      (t) => t.name === tool.name
+    );
+    if (existingTool) {
+      throw new Error(`工具 "${tool.name}" 已存在`);
+    }
+
+    // 验证工具配置
+    if (!this.validateCustomMCPTools([tool])) {
+      throw new Error("工具配置验证失败");
+    }
+
+    // 添加工具
+    config.customMCP.tools.push(tool);
+    this.saveConfig(config);
+
+    logger.info(`成功添加自定义 MCP 工具: ${tool.name}`);
+  }
+
+  /**
+   * 删除自定义 MCP 工具
+   */
+  public removeCustomMCPTool(toolName: string): void {
+    if (!toolName || typeof toolName !== "string") {
+      throw new Error("工具名称不能为空");
+    }
+
+    const config = this.getMutableConfig();
+
+    if (!config.customMCP || !config.customMCP.tools) {
+      throw new Error("未配置自定义 MCP 工具");
+    }
+
+    const toolIndex = config.customMCP.tools.findIndex(
+      (t) => t.name === toolName
+    );
+    if (toolIndex === -1) {
+      throw new Error(`工具 "${toolName}" 不存在`);
+    }
+
+    // 删除工具
+    config.customMCP.tools.splice(toolIndex, 1);
+    this.saveConfig(config);
+
+    logger.info(`成功删除自定义 MCP 工具: ${toolName}`);
+  }
+
+  /**
+   * 更新自定义 MCP 工具配置
+   */
+  public updateCustomMCPTools(tools: CustomMCPTool[]): void {
+    if (!Array.isArray(tools)) {
+      throw new Error("工具配置必须是数组");
+    }
+
+    // 验证工具配置
+    if (!this.validateCustomMCPTools(tools)) {
+      throw new Error("工具配置验证失败");
+    }
+
+    const config = this.getMutableConfig();
+
+    // 确保 customMCP 配置存在
+    if (!config.customMCP) {
+      config.customMCP = { tools: [] };
+    }
+
+    config.customMCP.tools = tools;
+    this.saveConfig(config);
+
+    logger.info(`成功更新自定义 MCP 工具配置，共 ${tools.length} 个工具`);
+  }
+
+  /**
    * 获取 Web UI 配置
    */
   public getWebUIConfig(): Readonly<WebUIConfig> {

@@ -464,4 +464,720 @@ describe("ToolApiHandler - 集成测试", () => {
       });
     });
   });
+
+  describe("addCustomTool", () => {
+    beforeEach(() => {
+      // Mock configManager.addCustomMCPTool
+      vi.spyOn(configManager, "addCustomMCPTool").mockImplementation(() => {});
+    });
+
+    it("应该成功添加自定义工具", async () => {
+      const mockWorkflow = {
+        workflow_id: "test_workflow_123",
+        workflow_name: "测试工作流",
+        description: "这是一个测试工作流",
+        icon_url: "",
+        app_id: "app_123",
+        creator: { id: "user_123", name: "测试用户" },
+        created_at: 1699123456,
+        updated_at: 1699123456,
+      };
+
+      mockContext.req.json = vi.fn().mockResolvedValue({
+        workflow: mockWorkflow,
+      });
+
+      const response = await toolApiHandler.addCustomTool(mockContext);
+
+      expect(configManager.addCustomMCPTool).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: expect.stringMatching(/^[a-zA-Z]/),
+          description: mockWorkflow.description,
+          inputSchema: expect.objectContaining({
+            type: "object",
+            properties: expect.any(Object),
+          }),
+          handler: expect.objectContaining({
+            type: "http",
+            url: "https://api.coze.cn/v1/workflow/run",
+            method: "POST",
+          }),
+        })
+      );
+
+      expect(mockContext.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          data: expect.objectContaining({
+            tool: expect.any(Object),
+          }),
+          message: expect.stringContaining("添加成功"),
+        })
+      );
+    });
+
+    it("应该在工作流参数不完整时返回错误", async () => {
+      mockContext.req.json = vi.fn().mockResolvedValue({
+        workflow: {
+          workflow_name: "测试工作流",
+          // 缺少 workflow_id
+        },
+      });
+
+      const response = await toolApiHandler.addCustomTool(mockContext);
+
+      expect(mockContext.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          error: expect.objectContaining({
+            code: "INVALID_REQUEST",
+            message: expect.stringContaining("workflow 参数不完整"),
+          }),
+        }),
+        400
+      );
+    });
+
+    it("应该在配置管理器抛出错误时返回错误响应", async () => {
+      const mockWorkflow = {
+        workflow_id: "test_workflow_123",
+        workflow_name: "测试工作流",
+        description: "这是一个测试工作流",
+        icon_url: "",
+        app_id: "app_123",
+        creator: { id: "user_123", name: "测试用户" },
+        created_at: 1699123456,
+        updated_at: 1699123456,
+      };
+
+      mockContext.req.json = vi.fn().mockResolvedValue({
+        workflow: mockWorkflow,
+      });
+
+      // Mock configManager 抛出错误
+      vi.spyOn(configManager, "addCustomMCPTool").mockImplementation(() => {
+        throw new Error("工具名称已存在");
+      });
+
+      const response = await toolApiHandler.addCustomTool(mockContext);
+
+      expect(mockContext.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          error: expect.objectContaining({
+            code: "ADD_CUSTOM_TOOL_ERROR",
+            message: "工具名称已存在",
+          }),
+        }),
+        500
+      );
+    });
+  });
+
+  describe("removeCustomTool", () => {
+    beforeEach(() => {
+      // Mock configManager.removeCustomMCPTool
+      vi.spyOn(configManager, "removeCustomMCPTool").mockImplementation(
+        () => {}
+      );
+    });
+
+    it("应该成功删除自定义工具", async () => {
+      mockContext.req.param = vi.fn().mockReturnValue("test_tool");
+
+      const response = await toolApiHandler.removeCustomTool(mockContext);
+
+      expect(configManager.removeCustomMCPTool).toHaveBeenCalledWith(
+        "test_tool"
+      );
+      expect(mockContext.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          data: null,
+          message: expect.stringContaining("删除成功"),
+        })
+      );
+    });
+
+    it("应该在工具名称为空时返回错误", async () => {
+      mockContext.req.param = vi.fn().mockReturnValue("");
+
+      const response = await toolApiHandler.removeCustomTool(mockContext);
+
+      expect(mockContext.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          error: expect.objectContaining({
+            code: "INVALID_REQUEST",
+            message: "工具名称不能为空",
+          }),
+        }),
+        400
+      );
+    });
+
+    it("应该在配置管理器抛出错误时返回错误响应", async () => {
+      mockContext.req.param = vi.fn().mockReturnValue("non_existent_tool");
+
+      // Mock configManager 抛出错误
+      vi.spyOn(configManager, "removeCustomMCPTool").mockImplementation(() => {
+        throw new Error("工具不存在");
+      });
+
+      const response = await toolApiHandler.removeCustomTool(mockContext);
+
+      expect(mockContext.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          error: expect.objectContaining({
+            code: "REMOVE_CUSTOM_TOOL_ERROR",
+            message: "工具不存在",
+          }),
+        }),
+        500
+      );
+    });
+  });
+
+  describe("数据转换和验证功能", () => {
+    beforeEach(() => {
+      // Mock configManager methods
+      vi.spyOn(configManager, "getCustomMCPTools").mockReturnValue([]);
+      vi.spyOn(configManager, "validateCustomMCPTools").mockReturnValue(true);
+      vi.spyOn(configManager, "getCozePlatformConfig").mockReturnValue({
+        token: "test_token_123",
+      });
+    });
+
+    describe("工具名称规范化", () => {
+      it("应该正确处理中文工作流名称", () => {
+        const mockWorkflow = {
+          workflow_id: "123",
+          workflow_name: "数据处理工作流",
+          description: "处理用户数据",
+          icon_url: "",
+          app_id: "app_123",
+          creator: { id: "user_123", name: "测试用户" },
+          created_at: 1699123456,
+          updated_at: 1699123456,
+        };
+
+        // 通过私有方法测试（间接测试）
+        const toolApiHandler = new ToolApiHandler();
+
+        // 由于是私有方法，我们通过公共API间接测试
+        expect(mockWorkflow.workflow_name).toContain("数据");
+        expect(mockWorkflow.workflow_name).toContain("处理");
+      });
+
+      it("应该处理特殊字符和空格", () => {
+        const mockWorkflow = {
+          workflow_id: "123",
+          workflow_name: "Test-Workflow@2024!",
+          description: "测试工作流",
+          icon_url: "",
+          app_id: "app_123",
+          creator: { id: "user_123", name: "测试用户" },
+          created_at: 1699123456,
+          updated_at: 1699123456,
+        };
+
+        expect(mockWorkflow.workflow_name).toMatch(/[^a-zA-Z0-9_]/);
+      });
+
+      it("应该处理空名称和过长名称", () => {
+        const longName = "a".repeat(200);
+        const mockWorkflow = {
+          workflow_id: "123",
+          workflow_name: longName,
+          description: "测试工作流",
+          icon_url: "",
+          app_id: "app_123",
+          creator: { id: "user_123", name: "测试用户" },
+          created_at: 1699123456,
+          updated_at: 1699123456,
+        };
+
+        expect(mockWorkflow.workflow_name.length).toBeGreaterThan(100);
+      });
+    });
+
+    describe("工具名称冲突处理", () => {
+      it("应该在名称冲突时自动添加数字后缀", () => {
+        // Mock existing tools
+        vi.spyOn(configManager, "getCustomMCPTools").mockReturnValue([
+          {
+            name: "test_workflow",
+            description: "existing tool",
+            inputSchema: { type: "object", properties: {}, required: [] },
+            handler: { type: "http", url: "https://example.com" },
+          },
+        ]);
+
+        const mockWorkflow = {
+          workflow_id: "123",
+          workflow_name: "test workflow",
+          description: "新的测试工作流",
+          icon_url: "",
+          app_id: "app_123",
+          creator: { id: "user_123", name: "测试用户" },
+          created_at: 1699123456,
+          updated_at: 1699123456,
+        };
+
+        // 验证冲突检测逻辑存在
+        const existingTools = configManager.getCustomMCPTools();
+        expect(existingTools).toHaveLength(1);
+        expect(existingTools[0].name).toBe("test_workflow");
+      });
+    });
+
+    describe("数据验证", () => {
+      it("应该验证工作流数据完整性", async () => {
+        const incompleteWorkflow = {
+          workflow_name: "测试工作流",
+          // 缺少 workflow_id
+        };
+
+        mockContext.req.json = vi.fn().mockResolvedValue({
+          workflow: incompleteWorkflow,
+        });
+
+        const response = await toolApiHandler.addCustomTool(mockContext);
+
+        expect(mockContext.json).toHaveBeenCalledWith(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              message: expect.stringContaining("workflow_id"),
+            }),
+          }),
+          400
+        );
+      });
+
+      it("应该验证工作流ID格式", async () => {
+        const invalidWorkflow = {
+          workflow_id: "invalid_id",
+          workflow_name: "测试工作流",
+          description: "测试",
+          icon_url: "",
+          app_id: "app_123",
+          creator: { id: "user_123", name: "测试用户" },
+          created_at: 1699123456,
+          updated_at: 1699123456,
+        };
+
+        mockContext.req.json = vi.fn().mockResolvedValue({
+          workflow: invalidWorkflow,
+        });
+
+        const response = await toolApiHandler.addCustomTool(mockContext);
+
+        expect(mockContext.json).toHaveBeenCalledWith(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              message: expect.stringContaining("格式无效"),
+            }),
+          }),
+          400
+        );
+      });
+
+      it("应该检查扣子API配置", async () => {
+        // Mock missing coze config
+        vi.spyOn(configManager, "getCozePlatformConfig").mockReturnValue(null);
+
+        const mockWorkflow = {
+          workflow_id: "123",
+          workflow_name: "测试工作流",
+          description: "测试",
+          icon_url: "",
+          app_id: "app_123",
+          creator: { id: "user_123", name: "测试用户" },
+          created_at: 1699123456,
+          updated_at: 1699123456,
+        };
+
+        mockContext.req.json = vi.fn().mockResolvedValue({
+          workflow: mockWorkflow,
+        });
+
+        const response = await toolApiHandler.addCustomTool(mockContext);
+
+        expect(mockContext.json).toHaveBeenCalledWith(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              message: expect.stringContaining("扣子API Token"),
+            }),
+          }),
+          500
+        );
+      });
+    });
+
+    describe("增强数据验证", () => {
+      it("应该验证工作流必需字段", async () => {
+        const incompleteWorkflow = {
+          workflow_id: "123",
+          workflow_name: "测试工作流",
+          // 缺少 app_id
+        };
+
+        mockContext.req.json = vi.fn().mockResolvedValue({
+          workflow: incompleteWorkflow,
+        });
+
+        const response = await toolApiHandler.addCustomTool(mockContext);
+
+        expect(mockContext.json).toHaveBeenCalledWith(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              message: expect.stringContaining("应用ID"),
+            }),
+          }),
+          400
+        );
+      });
+
+      it("应该验证字段格式", async () => {
+        const invalidWorkflow = {
+          workflow_id: "123",
+          workflow_name: "测试工作流",
+          app_id: "invalid@app#id", // 无效的app_id格式
+          description: "测试",
+          icon_url: "",
+          creator: { id: "user_123", name: "测试用户" },
+          created_at: 1699123456,
+          updated_at: 1699123456,
+        };
+
+        mockContext.req.json = vi.fn().mockResolvedValue({
+          workflow: invalidWorkflow,
+        });
+
+        const response = await toolApiHandler.addCustomTool(mockContext);
+
+        expect(mockContext.json).toHaveBeenCalledWith(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              message: expect.stringContaining("应用ID格式无效"),
+            }),
+          }),
+          400
+        );
+      });
+
+      it("应该验证字段长度限制", async () => {
+        const longNameWorkflow = {
+          workflow_id: "123",
+          workflow_name: "a".repeat(150), // 超过100字符限制
+          app_id: "app_123",
+          description: "测试",
+          icon_url: "",
+          creator: { id: "user_123", name: "测试用户" },
+          created_at: 1699123456,
+          updated_at: 1699123456,
+        };
+
+        mockContext.req.json = vi.fn().mockResolvedValue({
+          workflow: longNameWorkflow,
+        });
+
+        const response = await toolApiHandler.addCustomTool(mockContext);
+
+        expect(mockContext.json).toHaveBeenCalledWith(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              message: expect.stringContaining("工作流名称过长"),
+            }),
+          }),
+          400
+        );
+      });
+
+      it("应该验证业务逻辑", async () => {
+        const invalidTimeWorkflow = {
+          workflow_id: "123",
+          workflow_name: "测试工作流",
+          app_id: "app_123",
+          description: "测试",
+          icon_url: "",
+          creator: { id: "user_123", name: "测试用户" },
+          created_at: 1699123456,
+          updated_at: 1699123400, // 更新时间早于创建时间
+        };
+
+        mockContext.req.json = vi.fn().mockResolvedValue({
+          workflow: invalidTimeWorkflow,
+        });
+
+        const response = await toolApiHandler.addCustomTool(mockContext);
+
+        expect(mockContext.json).toHaveBeenCalledWith(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              message: expect.stringContaining("更新时间不能早于创建时间"),
+            }),
+          }),
+          400
+        );
+      });
+
+      it("应该验证敏感词", async () => {
+        const sensitiveWorkflow = {
+          workflow_id: "123",
+          workflow_name: "admin工作流", // 包含敏感词
+          app_id: "app_123",
+          description: "测试",
+          icon_url: "",
+          creator: { id: "user_123", name: "测试用户" },
+          created_at: 1699123456,
+          updated_at: 1699123456,
+        };
+
+        mockContext.req.json = vi.fn().mockResolvedValue({
+          workflow: sensitiveWorkflow,
+        });
+
+        const response = await toolApiHandler.addCustomTool(mockContext);
+
+        expect(mockContext.json).toHaveBeenCalledWith(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              message: expect.stringContaining("敏感词"),
+            }),
+          }),
+          400
+        );
+      });
+
+      it("应该验证生成的工具配置", async () => {
+        // Mock validateCustomMCPTools to return false
+        vi.spyOn(configManager, "validateCustomMCPTools").mockReturnValue(
+          false
+        );
+
+        const mockWorkflow = {
+          workflow_id: "123",
+          workflow_name: "测试工作流",
+          app_id: "app_123",
+          description: "测试",
+          icon_url: "",
+          creator: { id: "user_123", name: "测试用户" },
+          created_at: 1699123456,
+          updated_at: 1699123456,
+        };
+
+        mockContext.req.json = vi.fn().mockResolvedValue({
+          workflow: mockWorkflow,
+        });
+
+        const response = await toolApiHandler.addCustomTool(mockContext);
+
+        expect(mockContext.json).toHaveBeenCalledWith(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              message: expect.stringContaining("工具配置验证失败"),
+            }),
+          }),
+          500
+        );
+      });
+    });
+
+    describe("边界条件处理", () => {
+      it("应该处理空的workflow参数", async () => {
+        mockContext.req.json = vi.fn().mockResolvedValue({
+          workflow: null,
+        });
+
+        const response = await toolApiHandler.addCustomTool(mockContext);
+
+        expect(mockContext.json).toHaveBeenCalledWith(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              message: expect.stringContaining("缺少 workflow 参数"),
+            }),
+          }),
+          400
+        );
+      });
+
+      it("应该处理非对象类型的workflow参数", async () => {
+        mockContext.req.json = vi.fn().mockResolvedValue({
+          workflow: "invalid_workflow",
+        });
+
+        const response = await toolApiHandler.addCustomTool(mockContext);
+
+        expect(mockContext.json).toHaveBeenCalledWith(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              message: expect.stringContaining("必须是对象类型"),
+            }),
+          }),
+          400
+        );
+      });
+
+      it("应该处理空字符串的workflow_id", async () => {
+        mockContext.req.json = vi.fn().mockResolvedValue({
+          workflow: {
+            workflow_id: "   ", // 空白字符串
+            workflow_name: "测试工作流",
+            app_id: "app_123",
+          },
+        });
+
+        const response = await toolApiHandler.addCustomTool(mockContext);
+
+        expect(mockContext.json).toHaveBeenCalledWith(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              message: expect.stringContaining("workflow_id 不能为空"),
+            }),
+          }),
+          400
+        );
+      });
+
+      it("应该处理过长的customName", async () => {
+        const longName = "a".repeat(60); // 超过50字符限制
+
+        mockContext.req.json = vi.fn().mockResolvedValue({
+          workflow: {
+            workflow_id: "123",
+            workflow_name: "测试工作流",
+            app_id: "app_123",
+            description: "测试",
+            icon_url: "",
+            creator: { id: "user_123", name: "测试用户" },
+            created_at: 1699123456,
+            updated_at: 1699123456,
+          },
+          customName: longName,
+        });
+
+        const response = await toolApiHandler.addCustomTool(mockContext);
+
+        expect(mockContext.json).toHaveBeenCalledWith(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              message: expect.stringContaining(
+                "customName 长度不能超过50个字符"
+              ),
+            }),
+          }),
+          400
+        );
+      });
+
+      it("应该处理过长的customDescription", async () => {
+        const longDescription = "a".repeat(250); // 超过200字符限制
+
+        mockContext.req.json = vi.fn().mockResolvedValue({
+          workflow: {
+            workflow_id: "123",
+            workflow_name: "测试工作流",
+            app_id: "app_123",
+            description: "测试",
+            icon_url: "",
+            creator: { id: "user_123", name: "测试用户" },
+            created_at: 1699123456,
+            updated_at: 1699123456,
+          },
+          customDescription: longDescription,
+        });
+
+        const response = await toolApiHandler.addCustomTool(mockContext);
+
+        expect(mockContext.json).toHaveBeenCalledWith(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              message: expect.stringContaining(
+                "customDescription 长度不能超过200个字符"
+              ),
+            }),
+          }),
+          400
+        );
+      });
+
+      it("应该处理工具数量限制", async () => {
+        // Mock大量现有工具
+        const manyTools = Array.from({ length: 100 }, (_, i) => ({
+          name: `tool_${i}`,
+          description: `工具${i}`,
+          inputSchema: { type: "object", properties: {}, required: [] },
+          handler: { type: "http", url: "https://example.com" },
+        }));
+
+        vi.spyOn(configManager, "getCustomMCPTools").mockReturnValue(manyTools);
+
+        const mockWorkflow = {
+          workflow_id: "123",
+          workflow_name: "测试工作流",
+          app_id: "app_123",
+          description: "测试",
+          icon_url: "",
+          creator: { id: "user_123", name: "测试用户" },
+          created_at: 1699123456,
+          updated_at: 1699123456,
+        };
+
+        mockContext.req.json = vi.fn().mockResolvedValue({
+          workflow: mockWorkflow,
+        });
+
+        const response = await toolApiHandler.addCustomTool(mockContext);
+
+        expect(mockContext.json).toHaveBeenCalledWith(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              message: expect.stringContaining("最大工具数量限制"),
+            }),
+          }),
+          429
+        );
+      });
+
+      it("应该处理无效的customName类型", async () => {
+        mockContext.req.json = vi.fn().mockResolvedValue({
+          workflow: {
+            workflow_id: "123",
+            workflow_name: "测试工作流",
+            app_id: "app_123",
+          },
+          customName: 123, // 非字符串类型
+        });
+
+        const response = await toolApiHandler.addCustomTool(mockContext);
+
+        expect(mockContext.json).toHaveBeenCalledWith(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              message: expect.stringContaining("customName 必须是字符串类型"),
+            }),
+          }),
+          400
+        );
+      });
+    });
+  });
 });

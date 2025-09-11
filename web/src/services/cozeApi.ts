@@ -91,9 +91,8 @@ export class CozeApiClient {
    */
   async fetchWorkspaces(): Promise<{ workspaces: CozeWorkspace[] }> {
     try {
-      const response: ApiResponse<{ workspaces: CozeWorkspace[] }> = await this.request(
-        "/api/coze/workspaces"
-      );
+      const response: ApiResponse<{ workspaces: CozeWorkspace[] }> =
+        await this.request("/api/coze/workspaces");
 
       if (!response.success || !response.data) {
         throw new Error(response.message || "获取工作空间列表失败");

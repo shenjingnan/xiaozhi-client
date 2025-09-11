@@ -521,7 +521,16 @@ export class WebServer {
     // 工具调用相关 API 路由
     this.app?.post("/api/tools/call", (c) => this.toolApiHandler.callTool(c));
     this.app?.get("/api/tools/list", (c) => this.toolApiHandler.listTools(c));
-    this.app?.get("/api/tools/custom", (c) => this.toolApiHandler.getCustomTools(c));
+    this.app?.get("/api/tools/custom", (c) =>
+      this.toolApiHandler.getCustomTools(c)
+    );
+    // 新增工具管理路由
+    this.app?.post("/api/tools/custom", (c) =>
+      this.toolApiHandler.addCustomTool(c)
+    );
+    this.app?.delete("/api/tools/custom/:toolName", (c) =>
+      this.toolApiHandler.removeCustomTool(c)
+    );
 
     // 扣子 API 相关路由
     this.app?.get("/api/coze/workspaces", (c) =>
