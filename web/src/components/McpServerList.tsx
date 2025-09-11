@@ -105,10 +105,7 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
                 <p className="text-sm text-muted-foreground text-center mb-4">
                   添加你的第一个 MCP 服务器来开始使用强大的工具集成功能。
                 </p>
-                <div className="flex flex-col gap-2 w-full">
-                  <AddMcpServerButton />
-                  <CozeWorkflowIntegration />
-                </div>
+                <AddMcpServerButton />
               </CardContent>
             </Card>
           </div>
