@@ -1,3 +1,4 @@
+import { WorkflowParameterConfigDialog } from "@/components/common/WorkflowParameterConfigDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -23,14 +23,14 @@ import {
   SelectContent,
   SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCozeWorkflows } from "@/hooks/useCozeWorkflows";
 import { toolsApiService } from "@/services/toolsApi";
-import type { CozeWorkflow } from "@/types";
+import type { CozeWorkflow, WorkflowParameter } from "@/types";
 import {
   AlertCircle,
   ChevronLeft,
@@ -57,6 +57,10 @@ export function CozeWorkflowIntegration() {
     toolName?: string;
     action: "add" | "remove";
   }>({ open: false, action: "add" });
+  const [parameterConfigDialog, setParameterConfigDialog] = useState<{
+    open: boolean;
+    workflow?: CozeWorkflow;
+  }>({ open: false });
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [pendingOperations, setPendingOperations] = useState<Set<string>>(
     new Set()
@@ -135,12 +139,110 @@ export function CozeWorkflowIntegration() {
       return;
     }
 
-    // 显示确认对话框
-    setConfirmDialog({
+    // 显示参数配置对话框
+    setParameterConfigDialog({
       open: true,
       workflow,
-      action: "add",
     });
+  };
+
+  // 处理参数配置确认
+  const handleParameterConfigConfirm = async (
+    workflow: CozeWorkflow,
+    parameters: WorkflowParameter[]
+  ) => {
+    const operationKey = `add_${workflow.workflow_id}`;
+
+    setIsAddingWorkflow(true);
+    setPendingOperations((prev) => new Set(prev).add(operationKey));
+
+    try {
+      // 验证工作流数据完整性
+      if (
+        !workflow.workflow_id ||
+        !workflow.workflow_name ||
+        !workflow.app_id
+      ) {
+        throw new Error("工作流数据不完整，缺少必要字段");
+      }
+
+      // 再次检查网络状态
+      if (!isOnline) {
+        throw new Error("网络连接已断开，请检查网络后重试");
+      }
+
+      // 构建参数配置
+      const parameterConfig =
+        parameters.length > 0 ? { parameters } : undefined;
+
+      // 调用后端API添加工具
+      const addedTool = await toolsApiService.addCustomTool(
+        workflow,
+        undefined, // customName
+        undefined, // customDescription
+        parameterConfig
+      );
+
+      toast.success(
+        `已添加工作流 "${workflow.workflow_name}" 为 MCP 工具 "${addedTool.name}"${
+          parameters.length > 0 ? `，配置了 ${parameters.length} 个参数` : ""
+        }`
+      );
+
+      // 重新加载工具列表
+      await loadCustomTools();
+    } catch (error) {
+      console.error("添加工作流失败:", error);
+
+      // 根据错误类型显示不同的错误信息
+      let errorMessage = "添加工作流失败，请重试";
+
+      if (error instanceof Error) {
+        if (
+          error.message.includes("已存在") ||
+          error.message.includes("冲突")
+        ) {
+          errorMessage = `工作流 "${workflow.workflow_name}" 已存在，请勿重复添加`;
+        } else if (
+          error.message.includes("配置") ||
+          error.message.includes("token")
+        ) {
+          errorMessage = "系统配置错误，请检查扣子API配置";
+        } else if (
+          error.message.includes("验证失败") ||
+          error.message.includes("格式")
+        ) {
+          errorMessage = "工作流数据格式错误，请联系管理员";
+        } else if (
+          error.message.includes("网络") ||
+          error.message.includes("超时") ||
+          error.message.includes("连接")
+        ) {
+          errorMessage = "网络连接失败，请检查网络后重试";
+        } else if (error.message.includes("权限")) {
+          errorMessage = "权限不足，请检查API权限配置";
+        } else if (error.message.includes("频繁")) {
+          errorMessage = "操作过于频繁，请稍后重试";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      toast.error(errorMessage);
+    } finally {
+      setIsAddingWorkflow(false);
+      setPendingOperations((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(operationKey);
+        return newSet;
+      });
+      setParameterConfigDialog({ open: false });
+    }
+  };
+
+  // 处理参数配置取消
+  const handleParameterConfigCancel = () => {
+    setParameterConfigDialog({ open: false });
   };
 
   const handleConfirmAddWorkflow = async (workflow: CozeWorkflow) => {
@@ -482,6 +584,111 @@ export function CozeWorkflowIntegration() {
     );
   };
 
+  // 渲染已添加的工具列表
+  const renderCustomToolsList = () => {
+    if (isLoadingTools) {
+      return (
+        <div className="space-y-3">
+          {Array.from({ length: 2 }, (_, i) => i).map((index) => (
+            <div
+              key={`tool-skeleton-${index}`}
+              className="flex items-center gap-4 p-4 border rounded-lg"
+            >
+              <Skeleton className="w-10 h-10 rounded-lg" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-3 w-2/3" />
+              </div>
+              <Skeleton className="w-16 h-8" />
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (customTools.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-8 text-center">
+          <Workflow className="h-8 w-8 text-muted-foreground mb-2" />
+          <p className="text-sm text-muted-foreground">暂无已添加的工具</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-3">
+        {customTools.map((tool) => (
+          <div
+            key={tool.name}
+            className="flex items-center gap-4 p-4 border rounded-lg bg-green-50 hover:bg-green-100 transition-colors"
+          >
+            {/* 工具图标 */}
+            <div className="flex-shrink-0 w-10 h-10 bg-green-200 rounded-lg flex items-center justify-center">
+              <Workflow className="h-5 w-5 text-green-700" />
+            </div>
+
+            {/* 工具信息 */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <h4 className="font-medium text-sm truncate">{tool.name}</h4>
+                <Badge variant="default" className="text-xs bg-green-600">
+                  已添加
+                </Badge>
+                {tool.inputSchema?.properties &&
+                  Object.keys(tool.inputSchema.properties).length > 1 && (
+                    <Badge variant="outline" className="text-xs">
+                      {Object.keys(tool.inputSchema.properties).length - 1}{" "}
+                      个参数
+                    </Badge>
+                  )}
+              </div>
+              <p className="text-sm text-muted-foreground line-clamp-2">
+                {tool.description || "暂无描述"}
+              </p>
+              {/* 显示参数信息 */}
+              {tool.inputSchema?.properties &&
+                Object.keys(tool.inputSchema.properties).length > 1 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {Object.entries(tool.inputSchema.properties)
+                      .filter(([key]) => key !== "input")
+                      .slice(0, 3)
+                      .map(([key, prop]: [string, any]) => (
+                        <Badge
+                          key={key}
+                          variant="secondary"
+                          className="text-xs"
+                        >
+                          {key}: {prop.type}
+                        </Badge>
+                      ))}
+                    {Object.keys(tool.inputSchema.properties).length > 4 && (
+                      <Badge variant="secondary" className="text-xs">
+                        +{Object.keys(tool.inputSchema.properties).length - 4}{" "}
+                        更多
+                      </Badge>
+                    )}
+                  </div>
+                )}
+            </div>
+
+            {/* 删除按钮 */}
+            <div className="flex-shrink-0">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleRemoveTool(tool.name)}
+                className="hover:bg-red-500 hover:text-white hover:border-red-500"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                删除
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   // 渲染分页控件
   const renderPagination = () => {
     if (!selectedWorkspace || workflows.length === 0) {
@@ -544,28 +751,71 @@ export function CozeWorkflowIntegration() {
               <Workflow className="h-5 w-5" />
               工作流集成
             </DialogTitle>
-            {/* <DialogDescription>
-              选择要集成到MCP服务中的扣子工作流，添加后可以作为工具在对话中使用。
-            </DialogDescription> */}
           </DialogHeader>
 
-          <div className="flex flex-col gap-4 flex-1 min-h-0">
-            {/* 工作空间选择器 */}
-            {renderWorkspaceSelector()}
+          <Tabs defaultValue="add" className="flex flex-col flex-1 min-h-0">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="add">添加工作流</TabsTrigger>
+              <TabsTrigger value="manage">
+                已添加工具 ({customTools.length})
+              </TabsTrigger>
+            </TabsList>
 
-            {/* 平台选择器 */}
-            {/* {renderPlatformSelector()} */}
+            <TabsContent
+              value="add"
+              className="flex flex-col gap-4 flex-1 min-h-0 mt-4"
+            >
+              {/* 工作空间选择器 */}
+              {renderWorkspaceSelector()}
 
-            {/* 工作流列表 */}
-            <div className="flex-1 overflow-y-auto min-h-[300px] pr-2">
-              {renderWorkflowList()}
-            </div>
+              {/* 工作流列表 */}
+              <div className="flex-1 overflow-y-auto min-h-[300px] pr-2">
+                {renderWorkflowList()}
+              </div>
 
-            {/* 分页控件 */}
-            {renderPagination()}
-          </div>
+              {/* 分页控件 */}
+              {renderPagination()}
+            </TabsContent>
+
+            <TabsContent
+              value="manage"
+              className="flex flex-col gap-4 flex-1 min-h-0 mt-4"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">已添加的工具</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={loadCustomTools}
+                  disabled={isLoadingTools}
+                >
+                  <RefreshCw
+                    className={`h-4 w-4 ${isLoadingTools ? "animate-spin" : ""}`}
+                  />
+                </Button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto min-h-[300px] pr-2">
+                {renderCustomToolsList()}
+              </div>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
+
+      {/* 参数配置对话框 */}
+      {parameterConfigDialog.workflow && (
+        <WorkflowParameterConfigDialog
+          open={parameterConfigDialog.open}
+          onOpenChange={(open) =>
+            setParameterConfigDialog((prev) => ({ ...prev, open }))
+          }
+          workflow={parameterConfigDialog.workflow}
+          onConfirm={handleParameterConfigConfirm}
+          onCancel={handleParameterConfigCancel}
+          title="配置工作流参数"
+        />
+      )}
 
       {/* 确认对话框 */}
       <AlertDialog

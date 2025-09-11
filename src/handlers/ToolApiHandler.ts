@@ -9,7 +9,7 @@ import { type Logger, logger } from "../Logger.js";
 import { configManager } from "../configManager.js";
 import type { CustomMCPTool, ProxyHandlerConfig } from "../configManager.js";
 import { MCPServiceManagerSingleton } from "../services/MCPServiceManagerSingleton.js";
-import type { CozeWorkflow } from "../types/coze.js";
+import type { CozeWorkflow, WorkflowParameterConfig } from "../types/coze.js";
 
 /**
  * 工具调用请求接口
@@ -40,6 +40,7 @@ interface AddCustomToolRequest {
   workflow: CozeWorkflow;
   customName?: string;
   customDescription?: string;
+  parameterConfig?: WorkflowParameterConfig;
 }
 
 /**
@@ -518,7 +519,8 @@ export class ToolApiHandler {
       this.logger.info("处理添加自定义工具请求");
 
       const requestBody: AddCustomToolRequest = await c.req.json();
-      const { workflow, customName, customDescription } = requestBody;
+      const { workflow, customName, customDescription, parameterConfig } =
+        requestBody;
 
       // 边界条件预检查
       const preCheckResult = this.performPreChecks(
@@ -537,7 +539,8 @@ export class ToolApiHandler {
       const tool = this.convertWorkflowToTool(
         workflow,
         customName,
-        customDescription
+        customDescription,
+        parameterConfig
       );
 
       // 添加工具到配置
@@ -598,7 +601,8 @@ export class ToolApiHandler {
   private convertWorkflowToTool(
     workflow: CozeWorkflow,
     customName?: string,
-    customDescription?: string
+    customDescription?: string,
+    parameterConfig?: WorkflowParameterConfig
   ): CustomMCPTool {
     // 验证工作流数据完整性
     this.validateWorkflowData(workflow);
@@ -615,7 +619,7 @@ export class ToolApiHandler {
     );
 
     // 生成输入参数结构
-    const inputSchema = this.generateInputSchema(workflow);
+    const inputSchema = this.generateInputSchema(workflow, parameterConfig);
 
     // 配置 HTTP 处理器
     const handler = this.createHttpHandler(workflow);
@@ -1017,7 +1021,7 @@ export class ToolApiHandler {
       throw new Error("处理器类型必须是'proxy'");
     }
 
-    if (handler.platform === 'coze') {
+    if (handler.platform === "coze") {
       if (!handler.config.workflow_id) {
         throw new Error("Coze处理器必须包含有效的workflow_id");
       }
@@ -1110,14 +1114,22 @@ export class ToolApiHandler {
   /**
    * 生成输入参数结构
    */
-  private generateInputSchema(workflow: CozeWorkflow): any {
-    // 基础的参数结构
+  private generateInputSchema(
+    workflow: CozeWorkflow,
+    parameterConfig?: WorkflowParameterConfig
+  ): any {
+    // 如果提供了参数配置，使用参数配置生成schema
+    if (parameterConfig && parameterConfig.parameters.length > 0) {
+      return this.generateInputSchemaFromConfig(parameterConfig);
+    }
+
+    // 否则使用默认的基础参数结构
     const baseSchema = {
       type: "object",
       properties: {
         input: {
           type: "string",
-          description: '输入内容'
+          description: "输入内容",
         },
       },
       required: ["input"],
@@ -1125,6 +1137,34 @@ export class ToolApiHandler {
     };
 
     return baseSchema;
+  }
+
+  /**
+   * 根据参数配置生成输入参数结构
+   */
+  private generateInputSchemaFromConfig(
+    parameterConfig: WorkflowParameterConfig
+  ): any {
+    const properties: Record<string, any> = {};
+    const required: string[] = [];
+
+    for (const param of parameterConfig.parameters) {
+      properties[param.fieldName] = {
+        type: param.type,
+        description: param.description,
+      };
+
+      if (param.required) {
+        required.push(param.fieldName);
+      }
+    }
+
+    return {
+      type: "object",
+      properties,
+      required: required.length > 0 ? required : undefined,
+      additionalProperties: false,
+    };
   }
 
   /**

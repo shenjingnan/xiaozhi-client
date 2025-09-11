@@ -3,7 +3,7 @@
  * 专门处理自定义工具的添加、删除和管理操作
  */
 
-import type { CozeWorkflow } from "@/types";
+import type { CozeWorkflow, WorkflowParameterConfig } from "@/types";
 import { apiClient } from "./api";
 
 /**
@@ -13,6 +13,7 @@ export interface AddToolRequest {
   workflow: CozeWorkflow;
   customName?: string;
   customDescription?: string;
+  parameterConfig?: WorkflowParameterConfig;
 }
 
 /**
@@ -47,15 +48,22 @@ export class ToolsApiService {
   async addCustomTool(
     workflow: CozeWorkflow,
     customName?: string,
-    customDescription?: string
+    customDescription?: string,
+    parameterConfig?: WorkflowParameterConfig
   ): Promise<AddToolResponse> {
     // 请求参数验证
-    this.validateAddToolRequest(workflow, customName, customDescription);
+    this.validateAddToolRequest(
+      workflow,
+      customName,
+      customDescription,
+      parameterConfig
+    );
 
     const request: AddToolRequest = {
       workflow,
       customName,
       customDescription,
+      parameterConfig,
     };
 
     try {
@@ -63,7 +71,8 @@ export class ToolsApiService {
         return await apiClient.addCustomTool(
           workflow,
           customName,
-          customDescription
+          customDescription,
+          parameterConfig
         );
       });
 
@@ -114,7 +123,8 @@ export class ToolsApiService {
   private validateAddToolRequest(
     workflow: CozeWorkflow,
     customName?: string,
-    customDescription?: string
+    customDescription?: string,
+    parameterConfig?: WorkflowParameterConfig
   ): void {
     // 验证workflow对象
     if (!workflow || typeof workflow !== "object") {
@@ -193,6 +203,76 @@ export class ToolsApiService {
       workflow.updated_at < workflow.created_at
     ) {
       throw new Error("更新时间不能早于创建时间");
+    }
+
+    // 验证参数配置（可选）
+    if (parameterConfig !== undefined) {
+      this.validateParameterConfig(parameterConfig);
+    }
+  }
+
+  /**
+   * 验证参数配置
+   */
+  private validateParameterConfig(
+    parameterConfig: WorkflowParameterConfig
+  ): void {
+    if (!parameterConfig || typeof parameterConfig !== "object") {
+      throw new Error("参数配置必须是对象");
+    }
+
+    if (!Array.isArray(parameterConfig.parameters)) {
+      throw new Error("参数配置的parameters字段必须是数组");
+    }
+
+    // 验证每个参数
+    const fieldNames = new Set<string>();
+    for (let i = 0; i < parameterConfig.parameters.length; i++) {
+      const param = parameterConfig.parameters[i];
+
+      // 验证参数结构
+      if (!param || typeof param !== "object") {
+        throw new Error(`第${i + 1}个参数配置必须是对象`);
+      }
+
+      // 验证字段名
+      if (!param.fieldName || typeof param.fieldName !== "string") {
+        throw new Error(`第${i + 1}个参数的字段名不能为空且必须是字符串`);
+      }
+
+      // 验证字段名格式
+      if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(param.fieldName)) {
+        throw new Error(
+          `第${i + 1}个参数的字段名格式无效，必须以字母开头，只能包含字母、数字和下划线`
+        );
+      }
+
+      // 验证字段名唯一性
+      if (fieldNames.has(param.fieldName)) {
+        throw new Error(`字段名"${param.fieldName}"重复`);
+      }
+      fieldNames.add(param.fieldName);
+
+      // 验证描述
+      if (!param.description || typeof param.description !== "string") {
+        throw new Error(`第${i + 1}个参数的描述不能为空且必须是字符串`);
+      }
+
+      if (param.description.length > 200) {
+        throw new Error(`第${i + 1}个参数的描述不能超过200个字符`);
+      }
+
+      // 验证类型
+      if (!["string", "number", "boolean"].includes(param.type)) {
+        throw new Error(
+          `第${i + 1}个参数的类型必须是string、number或boolean之一`
+        );
+      }
+
+      // 验证必填标志
+      if (typeof param.required !== "boolean") {
+        throw new Error(`第${i + 1}个参数的required字段必须是布尔值`);
+      }
     }
   }
 

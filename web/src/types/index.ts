@@ -167,3 +167,27 @@ export interface CozeUIState {
   /** 工作流列表错误信息 */
   workflowsError: string | null;
 }
+
+// ==================== 工作流参数配置相关类型 ====================
+
+/**
+ * 工作流参数定义
+ */
+export interface WorkflowParameter {
+  /** 英文字段名，用作参数标识符 */
+  fieldName: string;
+  /** 中英文描述，说明参数用途 */
+  description: string;
+  /** 参数类型 */
+  type: "string" | "number" | "boolean";
+  /** 是否必填参数 */
+  required: boolean;
+}
+
+/**
+ * 工作流参数配置
+ */
+export interface WorkflowParameterConfig {
+  /** 参数列表 */
+  parameters: WorkflowParameter[];
+}

@@ -362,7 +362,8 @@ export class ApiClient {
   async addCustomTool(
     workflow: any,
     customName?: string,
-    customDescription?: string
+    customDescription?: string,
+    parameterConfig?: any
   ): Promise<any> {
     const response: ApiResponse<{ tool: any }> = await this.request(
       "/api/tools/custom",
@@ -372,6 +373,7 @@ export class ApiClient {
           workflow,
           customName,
           customDescription,
+          parameterConfig,
         }),
       }
     );
