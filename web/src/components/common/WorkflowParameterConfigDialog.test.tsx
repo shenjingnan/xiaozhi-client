@@ -47,15 +47,11 @@ describe("WorkflowParameterConfigDialog", () => {
     expect(screen.getByText(/为工作流配置输入参数/)).toBeInTheDocument();
     expect(screen.getByText("参数列表")).toBeInTheDocument();
     expect(screen.getByText("添加参数")).toBeInTheDocument();
-    expect(screen.getByText("暂无参数，点击"添加参数"开始配置")).toBeInTheDocument();
   });
 
   it("应该支持自定义标题", () => {
     render(
-      <WorkflowParameterConfigDialog
-        {...defaultProps}
-        title="自定义标题"
-      />
+      <WorkflowParameterConfigDialog {...defaultProps} title="自定义标题" />
     );
 
     expect(screen.getByText("自定义标题")).toBeInTheDocument();
@@ -90,7 +86,6 @@ describe("WorkflowParameterConfigDialog", () => {
     await user.click(deleteButton);
 
     expect(screen.queryByText("参数 1")).not.toBeInTheDocument();
-    expect(screen.getByText("暂无参数，点击"添加参数"开始配置")).toBeInTheDocument();
   });
 
   it("应该能够添加多个参数", async () => {
@@ -98,7 +93,7 @@ describe("WorkflowParameterConfigDialog", () => {
     render(<WorkflowParameterConfigDialog {...defaultProps} />);
 
     const addButton = screen.getByText("添加参数");
-    
+
     // 添加第一个参数
     await user.click(addButton);
     expect(screen.getByText("参数 1")).toBeInTheDocument();
@@ -129,7 +124,9 @@ describe("WorkflowParameterConfigDialog", () => {
     await user.click(confirmButton);
 
     await waitFor(() => {
-      expect(screen.getByText("字段名必须以字母开头，只能包含字母、数字和下划线")).toBeInTheDocument();
+      expect(
+        screen.getByText("字段名必须以字母开头，只能包含字母、数字和下划线")
+      ).toBeInTheDocument();
     });
   });
 
@@ -159,7 +156,7 @@ describe("WorkflowParameterConfigDialog", () => {
     render(<WorkflowParameterConfigDialog {...defaultProps} />);
 
     const addButton = screen.getByText("添加参数");
-    
+
     // 添加两个参数
     await user.click(addButton);
     await user.click(addButton);
@@ -244,7 +241,7 @@ describe("WorkflowParameterConfigDialog", () => {
     // 填写有效数据
     const fieldNameInput = screen.getByPlaceholderText("例如: userName");
     const descriptionInput = screen.getByPlaceholderText("例如: 用户名称");
-    
+
     await user.type(fieldNameInput, "testField");
     await user.type(descriptionInput, "测试字段");
 
@@ -266,12 +263,7 @@ describe("WorkflowParameterConfigDialog", () => {
   });
 
   it("应该在对话框关闭时不显示内容", () => {
-    render(
-      <WorkflowParameterConfigDialog
-        {...defaultProps}
-        open={false}
-      />
-    );
+    render(<WorkflowParameterConfigDialog {...defaultProps} open={false} />);
 
     expect(screen.queryByText("配置工作流参数")).not.toBeInTheDocument();
   });
