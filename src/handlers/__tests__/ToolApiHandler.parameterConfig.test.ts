@@ -36,7 +36,7 @@ describe("ToolApiHandler - 参数配置功能", () => {
 
   // 测试用的工作流数据
   const mockWorkflow: CozeWorkflow = {
-    workflow_id: "test-workflow-123",
+    workflow_id: "123456789",
     workflow_name: "测试工作流",
     description: "这是一个测试工作流",
     icon_url: "https://example.com/icon.png",
