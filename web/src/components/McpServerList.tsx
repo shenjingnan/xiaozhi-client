@@ -5,8 +5,9 @@ import { useConfig, useMcpServerConfig, useMcpServers } from "@/stores/config";
 import type { MCPServerConfig } from "@/types";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
 import { CoffeeIcon, MinusIcon, PlusIcon, Wrench } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
+import { apiClient } from "@/services/api";
 import { AddMcpServerButton } from "./AddMcpServerButton";
 import { CozeWorkflowIntegration } from "./CozeWorkflowIntegration";
 import { McpServerSettingButton } from "./McpServerSettingButton";
@@ -22,17 +23,95 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
   const mcpServers = useMcpServers();
   const config = useConfig();
 
-  const tools = useMemo(() => {
-    return Object.entries(mcpServerConfig || {}).flatMap(
-      ([serverName, value]) => {
-        return Object.entries(value?.tools || {}).map(([toolName, tool]) => ({
-          serverName,
+  // 添加工具列表状态管理
+  const [tools, setTools] = useState<
+    Array<{
+      serverName: string;
+      toolName: string;
+      enable: boolean;
+      description?: string;
+      usageCount?: number;
+      lastUsedTime?: string;
+    }>
+  >([]);
+  const [isLoadingTools, setIsLoadingTools] = useState(false);
+  const [toolsError, setToolsError] = useState<string | null>(null);
+
+  // 获取工具列表
+  const fetchTools = useCallback(async () => {
+    setIsLoadingTools(true);
+    setToolsError(null);
+
+    try {
+      const toolsList = await apiClient.getToolsList();
+
+      const formattedTools = toolsList.map((tool) => {
+        const { serviceName, toolName } = (() => {
+          if (tool.handler.type === "mcp") {
+            return {
+              serviceName: tool.handler.config.serviceName,
+              toolName: tool.handler.config.toolName,
+            };
+          }
+          if (tool.handler.type === 'proxy' && tool.handler.platform === 'coze') {
+            return {
+              serviceName: "coze",
+              toolName: tool.name,
+            };
+          }
+          return {
+            serviceName: "custom",
+            toolName: tool.name,
+          }
+        })();
+
+        // 从 mcpServerConfig 中查找工具的启用状态
+        const serverConfig = mcpServerConfig?.[serviceName];
+        const toolConfig = serverConfig?.tools?.[toolName];
+        const isEnabled = toolConfig?.enable !== false;
+
+        return {
+          serverName: serviceName,
           toolName,
-          ...(tool as any),
-        }));
+          enable: isEnabled,
+          description: tool.description,
+          usageCount: tool.stats?.usageCount,
+          lastUsedTime: tool.stats?.lastUsedTime,
+        };
+      });
+
+      setTools(formattedTools);
+    } catch (error) {
+      console.error("获取工具列表失败:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "获取工具列表失败";
+      setToolsError(errorMessage);
+      toast.error(errorMessage);
+
+      // 发生错误时回退到使用 mcpServerConfig
+      if (mcpServerConfig) {
+        const fallbackTools = Object.entries(mcpServerConfig).flatMap(
+          ([serverName, value]) => {
+            return Object.entries(value?.tools || {}).map(
+              ([toolName, tool]) => ({
+                serverName,
+                toolName,
+                ...(tool as any),
+              })
+            );
+          }
+        );
+        setTools(fallbackTools);
       }
-    );
+    } finally {
+      setIsLoadingTools(false);
+    }
   }, [mcpServerConfig]);
+
+  // 组件加载时获取工具列表
+  useEffect(() => {
+    fetchTools();
+  }, [fetchTools]);
 
   const handleToggleTool = async (
     serverName: string,
@@ -70,6 +149,9 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
 
       // 更新配置
       await updateConfig(newConfig);
+
+      // 重新获取工具列表以更新状态
+      await fetchTools();
 
       // 显示成功提示
       const action = !currentEnable ? "启用" : "禁用";
@@ -130,57 +212,83 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
               <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
                 <Wrench className="h-4 w-4" />
                 使用中的工具 ({enabledTools.length})
+                {isLoadingTools && (
+                  <span className="text-xs text-muted-foreground">
+                    (加载中...)
+                  </span>
+                )}
               </h4>
               <div className="flex-1 space-y-2">
-                {enabledTools.map((tool) => (
-                  <div
-                    key={tool.toolName}
-                    className="flex items-start justify-between p-4 bg-slate-50 rounded-md font-mono"
-                  >
-                    <div className="text-md flex flex-col gap-2">
-                      <div className="flex items-center gap-2 justify-start">
-                        <Badge variant="secondary" className="rounded-md">
-                          {tool.serverName}
-                        </Badge>
-                        <span>{tool.toolName}</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground my-2">
-                        {tool.description}
-                      </p>
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm text-muted-foreground">
-                          <span className="text-muted-foreground">
-                            使用次数:
-                          </span>{" "}
-                          <span className="text-primary font-bold">
-                            {tool.usageCount || 0}
-                          </span>
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          <span className="text-muted-foreground">
-                            最后使用:
-                          </span>{" "}
-                          <span className="text-primary font-bold">
-                            {tool.lastUsedTime || "-"}
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 ml-4">
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="size-8 hover:bg-red-500 hover:text-white"
-                        onClick={() =>
-                          handleToggleTool(tool.serverName, tool.toolName, true)
-                        }
-                      >
-                        <MinusIcon size={18} />
-                      </Button>
+                {isLoadingTools ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-sm text-muted-foreground">
+                      加载工具列表中...
                     </div>
                   </div>
-                ))}
+                ) : toolsError ? (
+                  <div className="flex flex-col items-center justify-center py-8 px-4">
+                    <div className="text-sm text-red-500 mb-2">
+                      {toolsError}
+                    </div>
+                    <Button variant="outline" size="sm" onClick={fetchTools}>
+                      重试
+                    </Button>
+                  </div>
+                ) : (
+                  enabledTools.map((tool) => (
+                    <div
+                      key={tool.toolName}
+                      className="flex items-start justify-between p-4 bg-slate-50 rounded-md font-mono"
+                    >
+                      <div className="text-md flex flex-col gap-2">
+                        <div className="flex items-center gap-2 justify-start">
+                          <Badge variant="secondary" className="rounded-md">
+                            {tool.serverName}
+                          </Badge>
+                          <span>{tool.toolName}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground my-2">
+                          {tool.description}
+                        </p>
+                        <div className="flex items-center gap-4">
+                          <span className="text-sm text-muted-foreground">
+                            <span className="text-muted-foreground">
+                              使用次数:
+                            </span>{" "}
+                            <span className="text-primary font-bold">
+                              {tool.usageCount || 0}
+                            </span>
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            <span className="text-muted-foreground">
+                              最后使用:
+                            </span>{" "}
+                            <span className="text-primary font-bold">
+                              {tool.lastUsedTime || "-"}
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 ml-4">
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="size-8 hover:bg-red-500 hover:text-white"
+                          onClick={() =>
+                            handleToggleTool(
+                              tool.serverName,
+                              tool.toolName,
+                              true
+                            )
+                          }
+                        >
+                          <MinusIcon size={18} />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </CardContent>
@@ -191,73 +299,95 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
               <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
                 <Wrench className="h-4 w-4" />
                 未使用的工具 ({disabledTools.length})
-              </h4>
-              {disabledTools.length === 0 && (
-                <div className="flex-1 flex flex-col items-center gap-4 py-20 px-4 bg-slate-50 rounded-md font-mono h-full">
-                  <CoffeeIcon
-                    strokeWidth={1.5}
-                    size={48}
-                    className="text-muted-foreground"
-                  />
-                  <span className="text-sm text-muted-foreground">
-                    全部工具都已经启用
+                {isLoadingTools && (
+                  <span className="text-xs text-muted-foreground">
+                    (加载中...)
                   </span>
-                </div>
-              )}
+                )}
+              </h4>
               <div className="flex-1 space-y-2">
-                {disabledTools.map((tool) => (
-                  <div
-                    key={tool.toolName}
-                    className="flex items-start justify-between p-4 bg-slate-50 rounded-md font-mono"
-                  >
-                    <div className="text-md flex flex-col gap-2">
-                      <div className="flex items-center gap-2 justify-start">
-                        <Badge variant="secondary" className="rounded-md">
-                          {tool.serverName}
-                        </Badge>
-                        <span>{tool.toolName}</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {tool.description}
-                      </p>
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm text-muted-foreground">
-                          <span className="text-muted-foreground">
-                            使用次数:
-                          </span>{" "}
-                          <span className="text-primary font-bold">
-                            {tool.usageCount || 0}
-                          </span>
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          <span className="text-muted-foreground">
-                            最后使用:
-                          </span>{" "}
-                          <span className="text-primary font-bold">
-                            {tool.lastUsedTime || "-"}
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 ml-4">
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="size-8 hover:bg-green-500 hover:text-white"
-                        onClick={() =>
-                          handleToggleTool(
-                            tool.serverName,
-                            tool.toolName,
-                            false
-                          )
-                        }
-                      >
-                        <PlusIcon className="h-4 w-4" />
-                      </Button>
+                {isLoadingTools ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-sm text-muted-foreground">
+                      加载工具列表中...
                     </div>
                   </div>
-                ))}
+                ) : toolsError ? (
+                  <div className="flex flex-col items-center justify-center py-8 px-4">
+                    <div className="text-sm text-red-500 mb-2">
+                      {toolsError}
+                    </div>
+                    <Button variant="outline" size="sm" onClick={fetchTools}>
+                      重试
+                    </Button>
+                  </div>
+                ) : disabledTools.length === 0 ? (
+                  // 保持原有的空状态显示
+                  <div className="flex-1 flex flex-col items-center gap-4 py-20 px-4 bg-slate-50 rounded-md font-mono h-full">
+                    <CoffeeIcon
+                      strokeWidth={1.5}
+                      size={48}
+                      className="text-muted-foreground"
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      全部工具都已经启用
+                    </span>
+                  </div>
+                ) : (
+                  disabledTools.map((tool) => (
+                    <div
+                      key={tool.toolName}
+                      className="flex items-start justify-between p-4 bg-slate-50 rounded-md font-mono"
+                    >
+                      <div className="text-md flex flex-col gap-2">
+                        <div className="flex items-center gap-2 justify-start">
+                          <Badge variant="secondary" className="rounded-md">
+                            {tool.serverName}
+                          </Badge>
+                          <span>{tool.toolName}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {tool.description}
+                        </p>
+                        <div className="flex items-center gap-4">
+                          <span className="text-sm text-muted-foreground">
+                            <span className="text-muted-foreground">
+                              使用次数:
+                            </span>{" "}
+                            <span className="text-primary font-bold">
+                              {tool.usageCount || 0}
+                            </span>
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            <span className="text-muted-foreground">
+                              最后使用:
+                            </span>{" "}
+                            <span className="text-primary font-bold">
+                              {tool.lastUsedTime || "-"}
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 ml-4">
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="size-8 hover:bg-green-500 hover:text-white"
+                          onClick={() =>
+                            handleToggleTool(
+                              tool.serverName,
+                              tool.toolName,
+                              false
+                            )
+                          }
+                        >
+                          <PlusIcon className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </CardContent>
