@@ -142,12 +142,22 @@ export interface ChainHandlerConfig {
   error_handling: "stop" | "continue" | "retry"; // 错误处理策略
 }
 
+// MCP 处理器配置（用于同步的工具）
+export interface MCPHandlerConfig {
+  type: "mcp";
+  config: {
+    serviceName: string;
+    toolName: string;
+  };
+}
+
 export type HandlerConfig =
   | ProxyHandlerConfig
   | HttpHandlerConfig
   | FunctionHandlerConfig
   | ScriptHandlerConfig
-  | ChainHandlerConfig;
+  | ChainHandlerConfig
+  | MCPHandlerConfig;
 
 export interface CustomMCPTool {
   name: string;
@@ -1076,12 +1086,12 @@ export class ConfigManager {
 
       // 检查 handler 类型
       if (
-        !["proxy", "function", "http", "script", "chain"].includes(
+        !["proxy", "function", "http", "script", "chain", "mcp"].includes(
           tool.handler.type
         )
       ) {
         logger.warn(
-          `CustomMCP 工具 ${tool.name} 的 handler.type 必须是 'proxy', 'function', 'http', 'script' 或 'chain'`
+          `CustomMCP 工具 ${tool.name} 的 handler.type 必须是 'proxy', 'function', 'http', 'script', 'chain' 或 'mcp'`
         );
         return false;
       }
@@ -1121,6 +1131,8 @@ export class ConfigManager {
         return this.validateScriptHandler(toolName, handler);
       case "chain":
         return this.validateChainHandler(toolName, handler);
+      case "mcp":
+        return this.validateMCPHandler(toolName, handler);
       default:
         logger.warn(`CustomMCP 工具 ${toolName} 使用了未知的处理器类型`);
         return false;
@@ -1289,6 +1301,41 @@ export class ConfigManager {
   }
 
   /**
+   * 验证 MCP 处理器配置
+   */
+  private validateMCPHandler(
+    toolName: string,
+    handler: MCPHandlerConfig
+  ): boolean {
+    if (!handler.config || typeof handler.config !== "object") {
+      logger.warn(`CustomMCP 工具 ${toolName} 的 mcp 处理器缺少 config 字段`);
+      return false;
+    }
+
+    if (
+      !handler.config.serviceName ||
+      typeof handler.config.serviceName !== "string"
+    ) {
+      logger.warn(
+        `CustomMCP 工具 ${toolName} 的 mcp 处理器缺少有效的 serviceName`
+      );
+      return false;
+    }
+
+    if (
+      !handler.config.toolName ||
+      typeof handler.config.toolName !== "string"
+    ) {
+      logger.warn(
+        `CustomMCP 工具 ${toolName} 的 mcp 处理器缺少有效的 toolName`
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
    * 检查是否配置了有效的 customMCP 工具
    */
   public hasValidCustomMCPTools(): boolean {
@@ -1338,6 +1385,48 @@ export class ConfigManager {
     this.saveConfig(config);
 
     logger.info(`成功添加自定义 MCP 工具: ${tool.name}`);
+  }
+
+  /**
+   * 批量添加自定义 MCP 工具
+   * @param tools 要添加的工具数组
+   */
+  public async addCustomMCPTools(tools: CustomMCPTool[]): Promise<void> {
+    if (!Array.isArray(tools)) {
+      throw new Error("工具配置必须是数组");
+    }
+
+    if (tools.length === 0) {
+      return; // 空数组，无需处理
+    }
+
+    const config = this.getMutableConfig();
+
+    // 确保 customMCP 配置存在
+    if (!config.customMCP) {
+      config.customMCP = { tools: [] };
+    }
+
+    // 添加新工具，避免重复
+    const existingNames = new Set(
+      config.customMCP.tools.map((tool) => tool.name)
+    );
+    const newTools = tools.filter((tool) => !existingNames.has(tool.name));
+
+    if (newTools.length > 0) {
+      // 验证新工具配置
+      if (!this.validateCustomMCPTools(newTools)) {
+        throw new Error("工具配置验证失败");
+      }
+
+      // 添加工具
+      config.customMCP.tools.push(...newTools);
+      this.saveConfig(config);
+
+      logger.info(
+        `成功批量添加 ${newTools.length} 个自定义 MCP 工具: ${newTools.map((t) => t.name).join(", ")}`
+      );
+    }
   }
 
   /**
