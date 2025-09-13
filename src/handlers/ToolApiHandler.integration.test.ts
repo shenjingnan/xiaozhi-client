@@ -467,13 +467,17 @@ describe("ToolApiHandler - 集成测试", () => {
 
   describe("addCustomTool", () => {
     beforeEach(() => {
-      // Mock configManager.addCustomMCPTool
       vi.spyOn(configManager, "addCustomMCPTool").mockImplementation(() => {});
+      vi.spyOn(configManager, "getCozePlatformConfig").mockReturnValue({
+        token: "test_token_123",
+      });
+      vi.spyOn(configManager, "getCustomMCPTools").mockReturnValue([]);
+      vi.spyOn(configManager, "validateCustomMCPTools").mockReturnValue(true);
     });
 
     it("应该成功添加自定义工具", async () => {
       const mockWorkflow = {
-        workflow_id: "test_workflow_123",
+        workflow_id: "123",
         workflow_name: "测试工作流",
         description: "这是一个测试工作流",
         icon_url: "",
@@ -498,9 +502,11 @@ describe("ToolApiHandler - 集成测试", () => {
             properties: expect.any(Object),
           }),
           handler: expect.objectContaining({
-            type: "http",
-            url: "https://api.coze.cn/v1/workflow/run",
-            method: "POST",
+            type: "proxy",
+            platform: "coze",
+            config: expect.objectContaining({
+              workflow_id: mockWorkflow.workflow_id,
+            }),
           }),
         })
       );
@@ -531,7 +537,7 @@ describe("ToolApiHandler - 集成测试", () => {
           success: false,
           error: expect.objectContaining({
             code: "INVALID_REQUEST",
-            message: expect.stringContaining("workflow 参数不完整"),
+            message: expect.stringContaining("workflow_id 不能为空"),
           }),
         }),
         400
@@ -540,7 +546,7 @@ describe("ToolApiHandler - 集成测试", () => {
 
     it("应该在配置管理器抛出错误时返回错误响应", async () => {
       const mockWorkflow = {
-        workflow_id: "test_workflow_123",
+        workflow_id: "123",
         workflow_name: "测试工作流",
         description: "这是一个测试工作流",
         icon_url: "",
@@ -556,7 +562,7 @@ describe("ToolApiHandler - 集成测试", () => {
 
       // Mock configManager 抛出错误
       vi.spyOn(configManager, "addCustomMCPTool").mockImplementation(() => {
-        throw new Error("工具名称已存在");
+        throw new Error("工具 \"test_workflow\" 已存在");
       });
 
       const response = await toolApiHandler.addCustomTool(mockContext);
@@ -565,11 +571,11 @@ describe("ToolApiHandler - 集成测试", () => {
         expect.objectContaining({
           success: false,
           error: expect.objectContaining({
-            code: "ADD_CUSTOM_TOOL_ERROR",
-            message: "工具名称已存在",
+            code: "TOOL_NAME_CONFLICT",
+            message: expect.stringContaining("已存在"),
           }),
         }),
-        500
+        409
       );
     });
   });
@@ -621,21 +627,16 @@ describe("ToolApiHandler - 集成测试", () => {
 
       // Mock configManager 抛出错误
       vi.spyOn(configManager, "removeCustomMCPTool").mockImplementation(() => {
-        throw new Error("工具不存在");
+        throw new Error("工具 \"non_existent_tool\" 不存在");
       });
 
       const response = await toolApiHandler.removeCustomTool(mockContext);
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: expect.objectContaining({
-            code: "REMOVE_CUSTOM_TOOL_ERROR",
-            message: "工具不存在",
-          }),
-        }),
-        500
-      );
+      const call = mockContext.json.mock.calls[0];
+      expect(call[1]).toBe(404);
+      expect(call[0].success).toBe(false);
+      expect(call[0].error.code).toBe("TOOL_NOT_FOUND");
+      expect(call[0].error.message).toContain("不存在");
     });
   });
 
@@ -778,7 +779,7 @@ describe("ToolApiHandler - 集成测试", () => {
           expect.objectContaining({
             success: false,
             error: expect.objectContaining({
-              message: expect.stringContaining("格式无效"),
+              message: expect.stringContaining("工作流ID应为数字格式"),
             }),
           }),
           400
@@ -813,7 +814,7 @@ describe("ToolApiHandler - 集成测试", () => {
               message: expect.stringContaining("扣子API Token"),
             }),
           }),
-          500
+          422
         );
       });
     });
@@ -865,7 +866,7 @@ describe("ToolApiHandler - 集成测试", () => {
           expect.objectContaining({
             success: false,
             error: expect.objectContaining({
-              message: expect.stringContaining("应用ID格式无效"),
+              message: expect.stringContaining("应用ID只能包含字母、数字、下划线和连字符"),
             }),
           }),
           400
@@ -894,7 +895,7 @@ describe("ToolApiHandler - 集成测试", () => {
           expect.objectContaining({
             success: false,
             error: expect.objectContaining({
-              message: expect.stringContaining("工作流名称过长"),
+              message: expect.stringContaining("工作流名称不能超过100个字符"),
             }),
           }),
           400
@@ -923,7 +924,7 @@ describe("ToolApiHandler - 集成测试", () => {
           expect.objectContaining({
             success: false,
             error: expect.objectContaining({
-              message: expect.stringContaining("更新时间不能早于创建时间"),
+              message: expect.stringContaining("工作流的时间信息有误"),
             }),
           }),
           400
@@ -986,10 +987,10 @@ describe("ToolApiHandler - 集成测试", () => {
           expect.objectContaining({
             success: false,
             error: expect.objectContaining({
-              message: expect.stringContaining("工具配置验证失败"),
+              message: expect.stringContaining("生成的工具配置验证失败"),
             }),
           }),
-          500
+          400
         );
       });
     });
@@ -1123,7 +1124,7 @@ describe("ToolApiHandler - 集成测试", () => {
           name: `tool_${i}`,
           description: `工具${i}`,
           inputSchema: { type: "object", properties: {}, required: [] },
-          handler: { type: "http", url: "https://example.com" },
+          handler: { type: "proxy" as const, platform: "coze" as const, config: { workflow_id: "123" } },
         }));
 
         vi.spyOn(configManager, "getCustomMCPTools").mockReturnValue(manyTools);
