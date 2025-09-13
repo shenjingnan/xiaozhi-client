@@ -1,11 +1,20 @@
 import type { AppConfig } from "@/types";
 import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { NetworkServiceProvider } from "@/providers/WebSocketProvider";
 import SettingsPage from "./SettingsPage";
 
 // Mock the hooks and components
 vi.mock("@/stores/config", () => ({
   useConfig: vi.fn(),
+}));
+
+vi.mock("@/stores", () => ({
+  initializeStores: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("@/hooks/useNetworkService", () => ({
+  useNetworkService: vi.fn(),
 }));
 
 vi.mock("@/hooks/useWebSocket", () => ({
@@ -48,24 +57,53 @@ vi.mock("sonner", () => ({
 
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useConfig } from "@/stores/config";
+import { useNetworkService } from "@/hooks/useNetworkService";
 
 const mockUseConfig = useConfig as ReturnType<typeof vi.fn>;
 const mockUseWebSocket = useWebSocket as ReturnType<typeof vi.fn>;
+const mockUseNetworkService = useNetworkService as ReturnType<typeof vi.fn>;
 
 describe("SettingsPage", () => {
   const mockUpdateConfig = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Mock useNetworkService
+    mockUseNetworkService.mockReturnValue({
+      getConfig: vi.fn(),
+      updateConfig: mockUpdateConfig,
+      getStatus: vi.fn(),
+      refreshStatus: vi.fn(),
+      restartService: vi.fn(),
+      updateConfigWithNotification: vi.fn(),
+      restartServiceWithNotification: vi.fn(),
+      setCustomWsUrl: vi.fn(),
+      getWebSocketUrl: vi.fn(),
+      changePort: vi.fn(),
+      loadInitialData: vi.fn(),
+      isWebSocketConnected: vi.fn(),
+      getWebSocketState: vi.fn(),
+    });
+
     mockUseWebSocket.mockReturnValue({
       updateConfig: mockUpdateConfig,
     });
   });
 
-  it("should display default values when config is null", () => {
+  it("should display default values when config is null", async () => {
     mockUseConfig.mockReturnValue(null);
 
-    render(<SettingsPage />);
+    render(
+      <NetworkServiceProvider>
+        <SettingsPage />
+      </NetworkServiceProvider>
+    );
+
+    // 等待初始化完成
+    await waitFor(() => {
+      expect(screen.queryByText("正在初始化应用...")).not.toBeInTheDocument();
+    });
 
     // 检查表单是否渲染
     expect(screen.getByLabelText("魔搭社区 API Key")).toBeInTheDocument();
@@ -90,7 +128,11 @@ describe("SettingsPage", () => {
 
     mockUseConfig.mockReturnValue(mockConfig);
 
-    render(<SettingsPage />);
+    render(
+      <NetworkServiceProvider>
+        <SettingsPage />
+      </NetworkServiceProvider>
+    );
 
     // 等待表单更新
     await waitFor(() => {
@@ -123,7 +165,11 @@ describe("SettingsPage", () => {
 
     mockUseConfig.mockReturnValue(mockConfig);
 
-    render(<SettingsPage />);
+    render(
+      <NetworkServiceProvider>
+        <SettingsPage />
+      </NetworkServiceProvider>
+    );
 
     // 等待表单更新
     await waitFor(() => {
@@ -152,7 +198,11 @@ describe("SettingsPage", () => {
     // 初始状态：config 为 null
     mockUseConfig.mockReturnValue(null);
 
-    const { rerender } = render(<SettingsPage />);
+    const { rerender } = render(
+      <NetworkServiceProvider>
+        <SettingsPage />
+      </NetworkServiceProvider>
+    );
 
     // 模拟 config 数据加载完成
     const mockConfig: AppConfig = {
@@ -169,7 +219,11 @@ describe("SettingsPage", () => {
     };
 
     mockUseConfig.mockReturnValue(mockConfig);
-    rerender(<SettingsPage />);
+    rerender(
+      <NetworkServiceProvider>
+        <SettingsPage />
+      </NetworkServiceProvider>
+    );
 
     // 等待表单更新
     await waitFor(() => {
