@@ -88,7 +88,7 @@ describe("ToolSyncManager", () => {
       const tools = createMockTools(["tool1", "tool2"]);
 
       vi.mocked(mockConfigManager.getServerToolsConfig).mockReturnValue(
-        undefined
+        {}
       );
 
       // Act
@@ -277,7 +277,7 @@ describe("ToolSyncManager", () => {
 
       // Assert
       expect(enabledTools).toHaveLength(2);
-      expect(enabledTools.map((t) => t.name)).toEqual(["tool1", "tool3"]);
+      expect(enabledTools.map((t: any) => t.name)).toEqual(["tool1", "tool3"]);
     });
 
     it("应该处理工具配置不存在的情况", () => {

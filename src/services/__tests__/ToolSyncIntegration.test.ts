@@ -18,10 +18,11 @@ vi.mock("../../Logger.js", () => ({
 // Mock configManager
 vi.mock("../../configManager.js", async () => {
   const actual = await vi.importActual("../../configManager.js");
+  const configManager = actual.configManager as any;
   return {
     ...actual,
     configManager: {
-      ...actual.configManager,
+      ...(configManager || {}),
       getConfig: vi.fn(),
       getMcpServers: vi.fn(),
       getServerToolsConfig: vi.fn(),
@@ -147,6 +148,7 @@ describe("工具同步集成测试", () => {
   beforeEach(() => {
     // 创建测试配置
     const testConfig = {
+      mcpEndpoint: "http://localhost:3000",
       mcpServers: {
         calculator: {
           name: "calculator",
@@ -181,7 +183,7 @@ describe("工具同步集成测试", () => {
     );
     vi.mocked(mockConfigManager.getServerToolsConfig).mockImplementation(
       (serviceName: string) => {
-        return testConfig.mcpServerConfig?.[serviceName]?.tools;
+        return (testConfig.mcpServerConfig as Record<string, any>)?.[serviceName]?.tools;
       }
     );
     vi.mocked(mockConfigManager.getCustomMCPTools).mockReturnValue([]);
@@ -196,16 +198,21 @@ describe("工具同步集成测试", () => {
     );
     vi.mocked(mockConfigManager.isToolEnabled).mockReturnValue(true);
 
-    serviceManager = new MCPServiceManager(testConfig.mcpServers);
+    serviceManager = new MCPServiceManager(testConfig.mcpServers as Record<string, any>);
   });
 
   afterEach(() => {
     vi.clearAllMocks();
     // 重置 mock 实现
-    vi.mocked(mockConfigManager.getConfig).mockReturnValue({});
+    vi.mocked(mockConfigManager.getConfig).mockReturnValue({
+      mcpEndpoint: "http://localhost:3000",
+      mcpServers: {},
+      mcpServerConfig: {},
+      customMCP: { tools: [] },
+    });
     vi.mocked(mockConfigManager.getMcpServers).mockReturnValue({});
     vi.mocked(mockConfigManager.getServerToolsConfig).mockReturnValue(
-      undefined
+      {}
     );
     vi.mocked(mockConfigManager.getCustomMCPTools).mockReturnValue([]);
     vi.mocked(mockConfigManager.addCustomMCPTools).mockResolvedValue(undefined);
@@ -306,7 +313,7 @@ describe("工具同步集成测试", () => {
     it("应该跳过没有配置的服务", async () => {
       // Arrange - 移除 calculator 的 mcpServerConfig
       vi.mocked(mockConfigManager.getServerToolsConfig).mockReturnValue(
-        undefined
+        {}
       );
 
       // Act
