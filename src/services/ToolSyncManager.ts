@@ -41,6 +41,10 @@ export class ToolSyncManager {
       this.logger.debug(`服务 ${serviceName} 正在同步中，跳过`);
       return;
     }
+    if (this.configManager.getCustomMCPConfig()) {
+      this.logger.debug("已存在 customMCP 停止同步");
+      return;
+    }
 
     const syncPromise = this.doSyncTools(serviceName, tools).finally(() => {
       this.syncLocks.delete(serviceName);
@@ -232,7 +236,9 @@ export class ToolSyncManager {
               // 更新 customMCP 工具的统计信息
               await this.updateCustomMCPToolStats(customToolName, stats);
               this.logger.debug(
-                `已同步工具 ${customToolName} 的统计信息: ${JSON.stringify(stats)}`
+                `已同步工具 ${customToolName} 的统计信息: ${JSON.stringify(
+                  stats
+                )}`
               );
             }
           }

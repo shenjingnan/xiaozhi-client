@@ -9,7 +9,9 @@ import { type Logger, logger } from "../Logger.js";
 import { configManager } from "../configManager.js";
 import type { CustomMCPTool, ProxyHandlerConfig } from "../configManager.js";
 import { MCPServiceManagerSingleton } from "../services/MCPServiceManagerSingleton.js";
+import { MCPCacheManager } from "../services/MCPCacheManager.js";
 import type { CozeWorkflow, WorkflowParameterConfig } from "../types/coze.js";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 
 /**
  * 工具调用请求接口
@@ -25,7 +27,7 @@ interface ToolCallRequest {
  */
 interface ToolCallResponse {
   success: boolean;
-  data?: any | CustomMCPTool[];
+  data?: any | CustomMCPTool[] | { list: CustomMCPTool[]; total: number };
   error?: {
     code: string;
     message: string;
@@ -267,18 +269,49 @@ export class ToolApiHandler {
 
   /**
    * 获取可用工具列表
-   * GET /api/tools/list
+   * GET /api/tools/list?status=enabled|disabled|all
    */
   async listTools(c: Context): Promise<Response> {
     try {
       this.logger.info("处理获取工具列表请求");
 
-      // 直接从配置管理器获取 customMCP 工具列表
-      const customTools = configManager.getCustomMCPTools();
+      // 获取筛选参数
+      const status =
+        (c.req.query("status") as "enabled" | "disabled" | "all") || "all";
 
-      // 直接返回工具数组
+      let tools: CustomMCPTool[] = [];
+
+      switch (status) {
+        case "enabled":
+          // 已启用工具：从 xiaozhi.config.json 的 customMCP.tools 获取
+          tools = configManager.getCustomMCPTools();
+          this.logger.info(`获取已启用工具，共 ${tools.length} 个`);
+          break;
+
+        case "disabled":
+          // 未启用工具：从缓存中获取所有工具，过滤掉已启用的
+          tools = await this.getDisabledTools();
+          this.logger.info(`获取未启用工具，共 ${tools.length} 个`);
+          break;
+
+        default:
+          // 所有工具：从 xiaozhi.config.json 的 customMCP.tools 获取
+          tools = configManager.getCustomMCPTools();
+          this.logger.info(`获取所有工具，共 ${tools.length} 个`);
+          break;
+      }
+
+      // 返回对象格式的响应
+      const responseData = {
+        list: tools,
+        total: tools.length,
+      };
+
       return c.json(
-        this.createSuccessResponse(customTools, "获取工具列表成功")
+        this.createSuccessResponse(
+          responseData,
+          `获取工具列表成功（${status}）`
+        )
       );
     } catch (error) {
       this.logger.error("获取工具列表失败:", error);
@@ -288,6 +321,54 @@ export class ToolApiHandler {
         "获取工具列表失败"
       );
       return c.json(errorResponse, 500);
+    }
+  }
+
+  /**
+   * 获取未启用工具
+   * 从缓存中获取所有工具，过滤掉已启用的工具
+   */
+  private async getDisabledTools(): Promise<CustomMCPTool[]> {
+    try {
+      // 1. 获取已启用的工具名称集合
+      const enabledTools = configManager.getCustomMCPTools();
+      const enabledToolNames = new Set(enabledTools.map((tool) => tool.name));
+
+      // 2. 从缓存中获取所有可用工具
+      const cacheManager = new MCPCacheManager();
+      const allCachedTools = await cacheManager.getAllCachedTools();
+
+      // 3. 过滤掉已启用的工具，返回未启用的工具
+      const disabledTools: CustomMCPTool[] = [];
+
+      for (const cachedTool of allCachedTools) {
+        if (!enabledToolNames.has(cachedTool.name)) {
+          // 将缓存中的 Tool 格式转换为 CustomMCPTool 格式
+          const customTool: CustomMCPTool = {
+            name: cachedTool.name,
+            description: cachedTool.description || "",
+            inputSchema: cachedTool.inputSchema || {},
+            handler: {
+              type: "mcp",
+              config: {
+                // 从工具名称中解析服务名称和工具名称
+                serviceName: cachedTool.name.split("__")[0],
+                toolName: cachedTool.name.split("__").slice(1).join("__"),
+              },
+            },
+          };
+          disabledTools.push(customTool);
+        }
+      }
+
+      this.logger.debug(
+        `从 ${allCachedTools.length} 个缓存工具中筛选出 ${disabledTools.length} 个未启用工具`
+      );
+      return disabledTools;
+    } catch (error) {
+      this.logger.error("获取未启用工具失败:", error);
+      // 如果获取失败，返回空数组而不是抛出错误
+      return [];
     }
   }
 

@@ -308,4 +308,38 @@ export class MCPCacheManager {
   getFilePath(): string {
     return this.cachePath;
   }
+
+  /**
+   * 获取所有缓存中的工具
+   * 返回所有服务中的所有工具列表
+   */
+  async getAllCachedTools(): Promise<Tool[]> {
+    try {
+      const cache = await this.loadExistingCache();
+      const allTools: Tool[] = [];
+
+      // 遍历所有服务，收集所有工具
+      for (const [serverName, cacheEntry] of Object.entries(cache.mcpServers)) {
+        for (const tool of cacheEntry.tools) {
+          // 为每个工具添加服务名称信息
+          allTools.push({
+            ...tool,
+            name: `${serverName}__${tool.name}`, // 格式: serviceName__toolName
+          });
+        }
+      }
+
+      this.logger.debug(
+        `[CacheManager] 获取到所有缓存工具，共 ${allTools.length} 个`
+      );
+      return allTools;
+    } catch (error) {
+      this.logger.warn(
+        `[CacheManager] 获取所有缓存工具失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+      return [];
+    }
+  }
 }

@@ -24,7 +24,17 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
   const config = useConfig();
 
   // 添加工具列表状态管理
-  const [tools, setTools] = useState<
+  const [enabledTools, setEnabledTools] = useState<
+    Array<{
+      serverName: string;
+      toolName: string;
+      enable: boolean;
+      description?: string;
+      usageCount?: number;
+      lastUsedTime?: string;
+    }>
+  >([]);
+  const [disabledTools, setDisabledTools] = useState<
     Array<{
       serverName: string;
       toolName: string;
@@ -37,50 +47,61 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
   const [isLoadingTools, setIsLoadingTools] = useState(false);
   const [toolsError, setToolsError] = useState<string | null>(null);
 
+  // 格式化工具信息的辅助函数
+  const formatTool = useCallback((tool: any, enable: boolean) => {
+    const { serviceName, toolName } = (() => {
+      if (tool.handler.type === "mcp") {
+        return {
+          serviceName: tool.handler.config.serviceName,
+          toolName: tool.handler.config.toolName,
+        };
+      }
+      if (tool.handler.type === "proxy" && tool.handler.platform === "coze") {
+        return {
+          serviceName: "coze",
+          toolName: tool.name,
+        };
+      }
+      return {
+        serviceName: "custom",
+        toolName: tool.name,
+      };
+    })();
+
+    return {
+      serverName: serviceName,
+      toolName,
+      enable,
+      description: tool.description,
+      usageCount: tool.stats?.usageCount,
+      lastUsedTime: tool.stats?.lastUsedTime,
+    };
+  }, []);
+
   // 获取工具列表
   const fetchTools = useCallback(async () => {
     setIsLoadingTools(true);
     setToolsError(null);
 
     try {
-      const toolsList = await apiClient.getToolsList();
+      // 并行获取已启用和未启用的工具列表
+      const [enabledToolsList, disabledToolsList] = await Promise.all([
+        apiClient.getToolsList("enabled"),
+        apiClient.getToolsList("disabled"),
+      ]);
 
-      const formattedTools = toolsList.map((tool) => {
-        const { serviceName, toolName } = (() => {
-          if (tool.handler.type === "mcp") {
-            return {
-              serviceName: tool.handler.config.serviceName,
-              toolName: tool.handler.config.toolName,
-            };
-          }
-          if (tool.handler.type === 'proxy' && tool.handler.platform === 'coze') {
-            return {
-              serviceName: "coze",
-              toolName: tool.name,
-            };
-          }
-          return {
-            serviceName: "custom",
-            toolName: tool.name,
-          }
-        })();
+      // 格式化已启用的工具
+      const formattedEnabledTools = enabledToolsList.map((tool) =>
+        formatTool(tool, true)
+      );
 
-        // 从 mcpServerConfig 中查找工具的启用状态
-        const serverConfig = mcpServerConfig?.[serviceName];
-        const toolConfig = serverConfig?.tools?.[toolName];
-        const isEnabled = toolConfig?.enable !== false;
+      // 格式化未启用的工具
+      const formattedDisabledTools = disabledToolsList.map((tool) =>
+        formatTool(tool, false)
+      );
 
-        return {
-          serverName: serviceName,
-          toolName,
-          enable: isEnabled,
-          description: tool.description,
-          usageCount: tool.stats?.usageCount,
-          lastUsedTime: tool.stats?.lastUsedTime,
-        };
-      });
-
-      setTools(formattedTools);
+      setEnabledTools(formattedEnabledTools);
+      setDisabledTools(formattedDisabledTools);
     } catch (error) {
       console.error("获取工具列表失败:", error);
       const errorMessage =
@@ -101,12 +122,43 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
             );
           }
         );
-        setTools(fallbackTools);
+
+        const enabled = fallbackTools.filter((tool) => tool.enable !== false);
+        const disabled = fallbackTools.filter((tool) => tool.enable === false);
+
+        setEnabledTools(enabled);
+        setDisabledTools(disabled);
       }
     } finally {
       setIsLoadingTools(false);
     }
-  }, [mcpServerConfig]);
+  }, [mcpServerConfig, formatTool]);
+
+  // 更新工具列表状态（用于启用/禁用后刷新）
+  const refreshToolLists = useCallback(async () => {
+    try {
+      const [enabledToolsList, disabledToolsList] = await Promise.all([
+        apiClient.getToolsList("enabled"),
+        apiClient.getToolsList("disabled"),
+      ]);
+
+      // 格式化已启用的工具
+      const formattedEnabledTools = enabledToolsList.map((tool) =>
+        formatTool(tool, true)
+      );
+
+      // 格式化未启用的工具
+      const formattedDisabledTools = disabledToolsList.map((tool) =>
+        formatTool(tool, false)
+      );
+
+      setEnabledTools(formattedEnabledTools);
+      setDisabledTools(formattedDisabledTools);
+    } catch (error) {
+      console.error("刷新工具列表失败:", error);
+      toast.error("刷新工具列表失败");
+    }
+  }, [formatTool]);
 
   // 组件加载时获取工具列表
   useEffect(() => {
@@ -151,7 +203,7 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
       await updateConfig(newConfig);
 
       // 重新获取工具列表以更新状态
-      await fetchTools();
+      await refreshToolLists();
 
       // 显示成功提示
       const action = !currentEnable ? "启用" : "禁用";
@@ -161,9 +213,6 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
       toast.error(error instanceof Error ? error.message : "切换工具状态失败");
     }
   };
-
-  const enabledTools = tools.filter((tool) => tool.enable);
-  const disabledTools = tools.filter((tool) => !tool.enable);
 
   if (!mcpServers || Object.keys(mcpServers).length === 0) {
     return (

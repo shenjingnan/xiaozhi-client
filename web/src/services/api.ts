@@ -436,15 +436,26 @@ export class ApiClient {
 
   /**
    * 获取工具列表
-   * 调用 /api/tools/list 端点，返回 CustomMCPTool[] 数组
+   * 调用 /api/tools/list 端点，返回 { list: CustomMCPTool[], total: number } 格式
+   * @param status 筛选状态：'enabled'（已启用）、'disabled'（未启用）、'all'（全部，默认）
    */
-  async getToolsList(): Promise<CustomMCPTool[]> {
-    const response: ApiResponse<CustomMCPTool[]> =
-      await this.request("/api/tools/list");
+  async getToolsList(
+    status: "enabled" | "disabled" | "all" = "all"
+  ): Promise<CustomMCPTool[]> {
+    // 构建查询参数
+    const queryParams = new URLSearchParams();
+    if (status !== "all") {
+      queryParams.append("status", status);
+    }
+
+    const url = `/api/tools/list${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+
+    const response: ApiResponse<{ list: CustomMCPTool[]; total: number }> =
+      await this.request(url);
     if (!response.success || !response.data) {
       throw new Error("获取工具列表失败");
     }
-    return response.data;
+    return response.data.list;
   }
 
   // ==================== 服务控制 API ====================
