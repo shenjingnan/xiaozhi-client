@@ -17,7 +17,8 @@
     "type:check": "tsc --noEmit",
     "spell:check": "cspell \"src/**/*.ts\" \"*.md\" \"*.json\"",
     "check": "biome check .",
-    "check:fix": "biome check --write ."
+    "check:fix": "biome check --write .",
+    "check:all": "pnpm check && pnpm type:check && pnpm spell:check"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
