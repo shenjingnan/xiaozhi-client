@@ -164,6 +164,12 @@ export interface CustomMCPTool {
   description: string;
   inputSchema: any;
   handler: HandlerConfig;
+
+  // 使用统计信息（可选）
+  stats?: {
+    usageCount?: number; // 工具使用次数
+    lastUsedTime?: string; // 最后使用时间（ISO 8601格式）
+  };
 }
 
 export interface CustomMCPConfig {
@@ -207,6 +213,11 @@ export class ConfigManager {
   private config: AppConfig | null = null;
   private currentConfigPath: string | null = null; // 跟踪当前使用的配置文件路径
   private json5Writer: any = null; // json5-writer 实例，用于保留 JSON5 注释
+
+  // 统计更新并发控制
+  private statsUpdateLocks: Map<string, Promise<void>> = new Map();
+  private statsUpdateLockTimeouts: Map<string, NodeJS.Timeout> = new Map();
+  private readonly STATS_UPDATE_TIMEOUT = 5000; // 5秒超时
 
   private constructor() {
     // 使用模板目录中的默认配置文件
@@ -895,7 +906,7 @@ export class ConfigManager {
   }
 
   /**
-   * 更新工具使用统计信息
+   * 更新工具使用统计信息（MCP 服务工具）
    * @param serverName 服务名称
    * @param toolName 工具名称
    * @param callTime 调用时间（ISO 8601 格式）
@@ -904,57 +915,96 @@ export class ConfigManager {
     serverName: string,
     toolName: string,
     callTime: string
+  ): Promise<void>;
+
+  /**
+   * 更新工具使用统计信息（CustomMCP 工具）
+   * @param toolName 工具名称（customMCP 工具名称）
+   * @param incrementUsageCount 是否增加使用计数，默认为 true
+   */
+  public async updateToolUsageStats(
+    toolName: string,
+    incrementUsageCount?: boolean
+  ): Promise<void>;
+
+  /**
+   * 更新工具使用统计信息的实现
+   */
+  public async updateToolUsageStats(
+    arg1: string,
+    arg2: string | boolean | undefined,
+    arg3?: string
   ): Promise<void> {
     try {
-      const config = this.getMutableConfig();
+      // 判断参数类型来区分不同的重载
+      if (typeof arg2 === "string" && arg3) {
+        // 三个参数的情况：updateToolUsageStats(serverName, toolName, callTime)
+        const serverName = arg1;
+        const toolName = arg2;
+        const callTime = arg3;
 
-      // 确保 mcpServerConfig 存在
-      if (!config.mcpServerConfig) {
-        config.mcpServerConfig = {};
+        // 双写机制：同时更新 mcpServerConfig 和 customMCP 中的统计信息
+        await Promise.all([
+          this._updateMCPServerToolStats(serverName, toolName, callTime),
+          this.updateCustomMCPToolStats(serverName, toolName, callTime),
+        ]);
+
+        logger.debug(`工具使用统计已更新: ${serverName}/${toolName}`);
+      } else {
+        // 两个参数的情况：updateToolUsageStats(toolName, incrementUsageCount)
+        const toolName = arg1;
+        const incrementUsageCount = arg2 as boolean;
+        const callTime = new Date().toISOString();
+
+        // 只更新 customMCP 中的统计信息
+        await this.updateCustomMCPToolStats(
+          toolName,
+          callTime,
+          incrementUsageCount
+        );
+
+        logger.debug(`CustomMCP 工具使用统计已更新: ${toolName}`);
       }
-
-      // 确保服务配置存在
-      if (!config.mcpServerConfig[serverName]) {
-        config.mcpServerConfig[serverName] = { tools: {} };
-      }
-
-      // 确保工具配置存在
-      if (!config.mcpServerConfig[serverName].tools[toolName]) {
-        config.mcpServerConfig[serverName].tools[toolName] = {
-          enable: true, // 默认启用
-        };
-      }
-
-      const toolConfig = config.mcpServerConfig[serverName].tools[toolName];
-      const currentUsageCount = toolConfig.usageCount || 0;
-      const currentLastUsedTime = toolConfig.lastUsedTime;
-
-      // 更新使用次数
-      toolConfig.usageCount = currentUsageCount + 1;
-
-      // 时间校验：只有新时间晚于现有时间才更新 lastUsedTime
-      if (
-        !currentLastUsedTime ||
-        new Date(callTime) > new Date(currentLastUsedTime)
-      ) {
-        // 使用 dayjs 格式化时间为更易读的格式
-        toolConfig.lastUsedTime = dayjs(callTime).format("YYYY-MM-DD HH:mm:ss");
-      }
-
-      // 保存配置
-      this.saveConfig(config);
-
-      logger.debug(
-        `工具使用统计已更新: ${serverName}/${toolName}, 使用次数: ${toolConfig.usageCount}`
-      );
     } catch (error) {
       // 错误不应该影响主要的工具调用流程
-      logger.error(
-        `更新工具使用统计失败 (${serverName}/${toolName}): ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
+      if (typeof arg2 === "string" && arg3) {
+        const serverName = arg1;
+        const toolName = arg2;
+        logger.error(
+          `更新工具使用统计失败 (${serverName}/${toolName}): ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+      } else {
+        const toolName = arg1;
+        logger.error(
+          `更新 CustomMCP 工具使用统计失败 (${toolName}): ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+      }
     }
+  }
+
+  /**
+   * 更新 MCP 服务工具统计信息（重载方法）
+   * @param serviceName 服务名称
+   * @param toolName 工具名称
+   * @param callTime 调用时间（ISO 8601 格式）
+   * @param incrementUsageCount 是否增加使用计数，默认为 true
+   */
+  public async updateMCPServerToolStats(
+    serviceName: string,
+    toolName: string,
+    callTime: string,
+    incrementUsageCount = true
+  ): Promise<void> {
+    await this._updateMCPServerToolStats(
+      serviceName,
+      toolName,
+      callTime,
+      incrementUsageCount
+    );
   }
 
   /**
@@ -1611,6 +1661,306 @@ export class ConfigManager {
       typeof cozeConfig.token === "string" &&
       cozeConfig.token.trim() !== ""
     );
+  }
+
+  /**
+   * 更新 mcpServerConfig 中的工具使用统计信息（内部实现）
+   * @param serverName 服务名称
+   * @param toolName 工具名称
+   * @param callTime 调用时间（ISO 8601 格式）
+   * @param incrementUsageCount 是否增加使用计数
+   * @private
+   */
+  private async _updateMCPServerToolStats(
+    serverName: string,
+    toolName: string,
+    callTime: string,
+    incrementUsageCount = true
+  ): Promise<void> {
+    const config = this.getMutableConfig();
+
+    // 确保 mcpServerConfig 存在
+    if (!config.mcpServerConfig) {
+      config.mcpServerConfig = {};
+    }
+
+    // 确保服务配置存在
+    if (!config.mcpServerConfig[serverName]) {
+      config.mcpServerConfig[serverName] = { tools: {} };
+    }
+
+    // 确保工具配置存在
+    if (!config.mcpServerConfig[serverName].tools[toolName]) {
+      config.mcpServerConfig[serverName].tools[toolName] = {
+        enable: true, // 默认启用
+      };
+    }
+
+    const toolConfig = config.mcpServerConfig[serverName].tools[toolName];
+    const currentUsageCount = toolConfig.usageCount || 0;
+    const currentLastUsedTime = toolConfig.lastUsedTime;
+
+    // 根据参数决定是否更新使用次数
+    if (incrementUsageCount) {
+      toolConfig.usageCount = currentUsageCount + 1;
+    }
+
+    // 时间校验：只有新时间晚于现有时间才更新 lastUsedTime
+    if (
+      !currentLastUsedTime ||
+      new Date(callTime) > new Date(currentLastUsedTime)
+    ) {
+      // 使用 dayjs 格式化时间为更易读的格式
+      toolConfig.lastUsedTime = dayjs(callTime).format("YYYY-MM-DD HH:mm:ss");
+    }
+
+    // 保存配置
+    this.saveConfig(config);
+  }
+
+  /**
+   * 更新 customMCP 中的工具使用统计信息（服务名+工具名版本）
+   * @param serverName 服务名称
+   * @param toolName 工具名称
+   * @param callTime 调用时间（ISO 8601 格式）
+   * @private
+   */
+  private async updateCustomMCPToolStats(
+    serverName: string,
+    toolName: string,
+    callTime: string
+  ): Promise<void>;
+
+  /**
+   * 更新 customMCP 中的工具使用统计信息（工具名版本）
+   * @param toolName 工具名称（customMCP 工具名称）
+   * @param callTime 调用时间（ISO 8601 格式）
+   * @param incrementUsageCount 是否增加使用计数，默认为 true
+   * @private
+   */
+  private async updateCustomMCPToolStats(
+    toolName: string,
+    callTime: string,
+    incrementUsageCount?: boolean
+  ): Promise<void>;
+
+  /**
+   * 更新 customMCP 工具使用统计信息的实现
+   * @private
+   */
+  private async updateCustomMCPToolStats(
+    arg1: string,
+    arg2: string,
+    arg3?: string | boolean
+  ): Promise<void> {
+    try {
+      let toolName: string;
+      let callTime: string;
+      let incrementUsageCount = true;
+      let logPrefix: string;
+
+      // 判断参数类型来区分不同的重载
+      if (typeof arg3 === "string") {
+        // 三个字符串参数的情况：updateCustomMCPToolStats(serverName, toolName, callTime)
+        const serverName = arg1;
+        toolName = `${serverName}__${arg2}`;
+        callTime = arg3;
+        logPrefix = `${serverName}/${arg2}`;
+      } else {
+        // 两个或三个参数的情况：updateCustomMCPToolStats(toolName, callTime, incrementUsageCount?)
+        toolName = arg1;
+        callTime = arg2;
+        incrementUsageCount = (arg3 as boolean) || true;
+        logPrefix = toolName;
+      }
+
+      const customTools = this.getCustomMCPTools();
+      const toolIndex = customTools.findIndex((tool) => tool.name === toolName);
+
+      if (toolIndex === -1) {
+        // 如果 customMCP 中没有对应的工具，跳过更新
+        return;
+      }
+
+      const updatedTools = [...customTools];
+      const tool = updatedTools[toolIndex];
+
+      // 确保 stats 对象存在
+      if (!tool.stats) {
+        tool.stats = {};
+      }
+
+      const currentUsageCount = tool.stats.usageCount || 0;
+      const currentLastUsedTime = tool.stats.lastUsedTime;
+
+      // 根据参数决定是否更新使用次数
+      if (incrementUsageCount) {
+        tool.stats.usageCount = currentUsageCount + 1;
+      }
+
+      // 时间校验：只有新时间晚于现有时间才更新 lastUsedTime
+      if (
+        !currentLastUsedTime ||
+        new Date(callTime) > new Date(currentLastUsedTime)
+      ) {
+        tool.stats.lastUsedTime = dayjs(callTime).format("YYYY-MM-DD HH:mm:ss");
+      }
+
+      // 保存更新后的工具配置
+      await this.updateCustomMCPTools(updatedTools);
+    } catch (error) {
+      // 根据参数类型决定错误日志的前缀
+      if (typeof arg3 === "string") {
+        const serverName = arg1;
+        const toolName = arg2;
+        logger.error(
+          `更新 customMCP 工具统计信息失败 (${serverName}/${toolName}): ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+      } else {
+        const toolName = arg1;
+        logger.error(
+          `更新 customMCP 工具统计信息失败 (${toolName}): ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+      }
+      // customMCP 统计更新失败不应该影响主要流程
+    }
+  }
+
+  /**
+   * 获取统计更新锁（确保同一工具的统计更新串行执行）
+   * @param toolKey 工具键
+   * @private
+   */
+  private async acquireStatsUpdateLock(toolKey: string): Promise<boolean> {
+    if (this.statsUpdateLocks.has(toolKey)) {
+      logger.debug(`工具 ${toolKey} 的统计更新正在进行中，跳过本次更新`);
+      return false;
+    }
+
+    const updatePromise = new Promise<void>((resolve) => {
+      // 锁定逻辑在调用者中实现
+    });
+
+    this.statsUpdateLocks.set(toolKey, updatePromise);
+
+    // 设置超时自动释放锁
+    const timeout = setTimeout(() => {
+      this.releaseStatsUpdateLock(toolKey);
+    }, this.STATS_UPDATE_TIMEOUT);
+
+    this.statsUpdateLockTimeouts.set(toolKey, timeout);
+
+    return true;
+  }
+
+  /**
+   * 释放统计更新锁
+   * @param toolKey 工具键
+   * @private
+   */
+  private releaseStatsUpdateLock(toolKey: string): void {
+    this.statsUpdateLocks.delete(toolKey);
+
+    const timeout = this.statsUpdateLockTimeouts.get(toolKey);
+    if (timeout) {
+      clearTimeout(timeout);
+      this.statsUpdateLockTimeouts.delete(toolKey);
+    }
+
+    logger.debug(`已释放工具 ${toolKey} 的统计更新锁`);
+  }
+
+  /**
+   * 带并发控制的工具统计更新（CustomMCP 工具）
+   * @param toolName 工具名称
+   * @param incrementUsageCount 是否增加使用计数
+   */
+  public async updateToolUsageStatsWithLock(
+    toolName: string,
+    incrementUsageCount = true
+  ): Promise<void> {
+    const toolKey = `custommcp_${toolName}`;
+
+    if (!(await this.acquireStatsUpdateLock(toolKey))) {
+      return; // 已有其他更新在进行
+    }
+
+    try {
+      await this.updateToolUsageStats(toolName, incrementUsageCount);
+      logger.debug(`工具 ${toolName} 统计更新完成`);
+    } catch (error) {
+      logger.error(`工具 ${toolName} 统计更新失败:`, error);
+      throw error;
+    } finally {
+      this.releaseStatsUpdateLock(toolKey);
+    }
+  }
+
+  /**
+   * 带并发控制的工具统计更新（MCP 服务工具）
+   * @param serviceName 服务名称
+   * @param toolName 工具名称
+   * @param callTime 调用时间
+   * @param incrementUsageCount 是否增加使用计数
+   */
+  public async updateMCPServerToolStatsWithLock(
+    serviceName: string,
+    toolName: string,
+    callTime: string,
+    incrementUsageCount = true
+  ): Promise<void> {
+    const toolKey = `mcpserver_${serviceName}_${toolName}`;
+
+    if (!(await this.acquireStatsUpdateLock(toolKey))) {
+      return; // 已有其他更新在进行
+    }
+
+    try {
+      await this.updateMCPServerToolStats(
+        serviceName,
+        toolName,
+        callTime,
+        incrementUsageCount
+      );
+      logger.debug(`MCP 服务工具 ${serviceName}/${toolName} 统计更新完成`);
+    } catch (error) {
+      logger.error(
+        `MCP 服务工具 ${serviceName}/${toolName} 统计更新失败:`,
+        error
+      );
+      throw error;
+    } finally {
+      this.releaseStatsUpdateLock(toolKey);
+    }
+  }
+
+  /**
+   * 清理所有统计更新锁（用于异常恢复）
+   */
+  public clearAllStatsUpdateLocks(): void {
+    const lockCount = this.statsUpdateLocks.size;
+    this.statsUpdateLocks.clear();
+
+    // 清理所有超时定时器
+    for (const timeout of this.statsUpdateLockTimeouts.values()) {
+      clearTimeout(timeout);
+    }
+    this.statsUpdateLockTimeouts.clear();
+
+    if (lockCount > 0) {
+      logger.info(`已清理 ${lockCount} 个统计更新锁`);
+    }
+  }
+
+  /**
+   * 获取统计更新锁状态（用于调试和监控）
+   */
+  public getStatsUpdateLocks(): string[] {
+    return Array.from(this.statsUpdateLocks.keys());
   }
 }
 

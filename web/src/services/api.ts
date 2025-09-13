@@ -6,6 +6,28 @@
 import type { AppConfig, ClientStatus } from "../types";
 
 /**
+ * CustomMCPTool 接口定义
+ * 对应后端的 CustomMCPTool 接口
+ */
+export interface CustomMCPTool {
+  name: string;
+  description: string;
+  inputSchema: any;
+  handler: {
+    type: "mcp" | "proxy";
+    platform?: "coze";
+    config: {
+      serviceName: string;
+      toolName: string;
+    };
+  };
+  stats?: {
+    usageCount?: number;
+    lastUsedTime?: string;
+  };
+}
+
+/**
  * API 响应格式
  */
 interface ApiResponse<T = any> {
@@ -410,6 +432,19 @@ export class ApiClient {
       throw new Error("获取自定义工具列表失败");
     }
     return response.data.tools;
+  }
+
+  /**
+   * 获取工具列表
+   * 调用 /api/tools/list 端点，返回 CustomMCPTool[] 数组
+   */
+  async getToolsList(): Promise<CustomMCPTool[]> {
+    const response: ApiResponse<CustomMCPTool[]> =
+      await this.request("/api/tools/list");
+    if (!response.success || !response.data) {
+      throw new Error("获取工具列表失败");
+    }
+    return response.data;
   }
 
   // ==================== 服务控制 API ====================

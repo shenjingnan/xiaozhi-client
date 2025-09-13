@@ -108,5 +108,6 @@
       "braces": ">=3.0.3",
       "micromatch": ">=4.0.8"
     }
-  }
+  },
+  "packageManager": "pnpm@10.13.1"
 }

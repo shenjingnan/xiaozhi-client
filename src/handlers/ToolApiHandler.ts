@@ -25,7 +25,7 @@ interface ToolCallRequest {
  */
 interface ToolCallResponse {
   success: boolean;
-  data?: any;
+  data?: any | CustomMCPTool[];
   error?: {
     code: string;
     message: string;
@@ -273,60 +273,19 @@ export class ToolApiHandler {
     try {
       this.logger.info("处理获取工具列表请求");
 
-      // 检查 MCPServiceManager 是否已初始化
-      if (!MCPServiceManagerSingleton.isInitialized()) {
-        const errorResponse = this.createErrorResponse(
-          "SERVICE_NOT_INITIALIZED",
-          "MCP 服务管理器未初始化。请检查服务状态。"
-        );
-        return c.json(errorResponse, 503);
-      }
+      // 直接从配置管理器获取 customMCP 工具列表
+      const customTools = configManager.getCustomMCPTools();
 
-      // 获取服务管理器实例
-      const serviceManager = await MCPServiceManagerSingleton.getInstance();
-
-      // 获取所有工具
-      const allTools = serviceManager.getAllTools();
-
-      // 按服务分组工具
-      const toolsByService: Record<string, any[]> = {};
-      for (const tool of allTools) {
-        const serviceName = tool.serviceName;
-
-        if (!toolsByService[serviceName]) {
-          toolsByService[serviceName] = [];
-        }
-
-        // 对于 customMCP 工具，直接使用工具名称
-        // 对于标准 MCP 工具，使用原始名称
-        const displayName =
-          serviceName === "customMCP" ? tool.name : tool.originalName;
-
-        toolsByService[serviceName].push({
-          name: displayName,
-          fullName: tool.name,
-          description: tool.description,
-          inputSchema: tool.inputSchema,
-        });
-      }
-
-      this.logger.info(`获取工具列表成功，共 ${allTools.length} 个工具`);
-
+      // 直接返回工具数组
       return c.json(
-        this.createSuccessResponse(
-          {
-            totalTools: allTools.length,
-            services: toolsByService,
-          },
-          "获取工具列表成功"
-        )
+        this.createSuccessResponse(customTools, "获取工具列表成功")
       );
     } catch (error) {
       this.logger.error("获取工具列表失败:", error);
 
       const errorResponse = this.createErrorResponse(
-        "LIST_TOOLS_ERROR",
-        error instanceof Error ? error.message : "获取工具列表失败"
+        "GET_TOOLS_FAILED",
+        "获取工具列表失败"
       );
       return c.json(errorResponse, 500);
     }
