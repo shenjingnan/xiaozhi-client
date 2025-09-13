@@ -8,30 +8,32 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ToolsApiService } from "../toolsApi";
 
 // Mock apiClient
-const mockApiClient = {
-  addCustomTool: vi.fn(),
-};
-
 vi.mock("../api", () => ({
-  apiClient: mockApiClient,
+  apiClient: {
+    addCustomTool: vi.fn(),
+    removeCustomTool: vi.fn(),
+    getCustomTools: vi.fn(),
+  },
 }));
+
+import { apiClient } from "../api";
 
 describe("ToolsApiService - 参数配置功能", () => {
   let service: ToolsApiService;
 
   // 测试用的工作流数据
   const mockWorkflow: CozeWorkflow = {
-    workflow_id: "test-workflow-123",
+    workflow_id: "7547256178678448138",
     workflow_name: "测试工作流",
     description: "这是一个测试工作流",
     icon_url: "https://example.com/icon.png",
-    app_id: "test-app-456",
+    app_id: "7547221225915809801",
     creator: {
-      id: "creator-789",
+      id: "3871811622675880",
       name: "测试创建者",
     },
-    created_at: Date.now(),
-    updated_at: Date.now(),
+    created_at: 1757232517,
+    updated_at: 1757232680,
   };
 
   // 测试用的参数配置
@@ -61,7 +63,7 @@ describe("ToolsApiService - 参数配置功能", () => {
   beforeEach(() => {
     service = new ToolsApiService();
     vi.clearAllMocks();
-    mockApiClient.addCustomTool.mockResolvedValue({
+    vi.mocked(apiClient.addCustomTool).mockResolvedValue({
       name: "test-tool",
       description: "test description",
       inputSchema: {},
@@ -73,7 +75,7 @@ describe("ToolsApiService - 参数配置功能", () => {
     it("应该支持不带参数配置的调用（向后兼容）", async () => {
       await service.addCustomTool(mockWorkflow, "自定义名称", "自定义描述");
 
-      expect(mockApiClient.addCustomTool).toHaveBeenCalledWith(
+      expect(apiClient.addCustomTool).toHaveBeenCalledWith(
         mockWorkflow,
         "自定义名称",
         "自定义描述",
@@ -89,7 +91,7 @@ describe("ToolsApiService - 参数配置功能", () => {
         mockParameterConfig
       );
 
-      expect(mockApiClient.addCustomTool).toHaveBeenCalledWith(
+      expect(apiClient.addCustomTool).toHaveBeenCalledWith(
         mockWorkflow,
         "自定义名称",
         "自定义描述",
@@ -105,7 +107,7 @@ describe("ToolsApiService - 参数配置功能", () => {
         mockParameterConfig
       );
 
-      expect(mockApiClient.addCustomTool).toHaveBeenCalledWith(
+      expect(apiClient.addCustomTool).toHaveBeenCalledWith(
         mockWorkflow,
         undefined,
         undefined,
@@ -269,7 +271,7 @@ describe("ToolsApiService - 参数配置功能", () => {
         )
       ).resolves.toBeDefined();
 
-      expect(mockApiClient.addCustomTool).toHaveBeenCalledWith(
+      expect(apiClient.addCustomTool).toHaveBeenCalledWith(
         mockWorkflow,
         undefined,
         undefined,
@@ -286,7 +288,7 @@ describe("ToolsApiService - 参数配置功能", () => {
         service.addCustomTool(mockWorkflow, undefined, undefined, emptyConfig)
       ).resolves.toBeDefined();
 
-      expect(mockApiClient.addCustomTool).toHaveBeenCalledWith(
+      expect(apiClient.addCustomTool).toHaveBeenCalledWith(
         mockWorkflow,
         undefined,
         undefined,
@@ -299,7 +301,7 @@ describe("ToolsApiService - 参数配置功能", () => {
     it("应该在不传递parameterConfig时正常工作", async () => {
       await service.addCustomTool(mockWorkflow);
 
-      expect(mockApiClient.addCustomTool).toHaveBeenCalledWith(
+      expect(apiClient.addCustomTool).toHaveBeenCalledWith(
         mockWorkflow,
         undefined,
         undefined,
@@ -310,7 +312,7 @@ describe("ToolsApiService - 参数配置功能", () => {
     it("应该在传递undefined parameterConfig时正常工作", async () => {
       await service.addCustomTool(mockWorkflow, "名称", "描述", undefined);
 
-      expect(mockApiClient.addCustomTool).toHaveBeenCalledWith(
+      expect(apiClient.addCustomTool).toHaveBeenCalledWith(
         mockWorkflow,
         "名称",
         "描述",

@@ -67,7 +67,6 @@ vi.mock("@/hooks/useCozeWorkflows", () => ({
 }));
 
 describe("CozeWorkflowIntegration - 参数配置功能", () => {
-
   const mockAddedTool = {
     name: "test_workflow_tool",
     description: "测试工作流工具",
