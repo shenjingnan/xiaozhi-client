@@ -2508,9 +2508,11 @@ describe("ConfigManager", () => {
         configManager.addCustomMCPTool(newTool);
 
         expect(mockWriteFileSync).toHaveBeenCalled();
-        const savedConfig = JSON.parse(
-          mockWriteFileSync.mock.calls[0][1] as string
-        );
+        const writtenContent = mockWriteFileSync.mock.calls[0][1] as string;
+
+        // 使用 JSON5 解析，因为保存的可能是 JSON5 格式
+        const JSON5 = require("json5");
+        const savedConfig = JSON5.parse(writtenContent);
         expect(savedConfig.customMCP.tools).toHaveLength(2);
         expect(savedConfig.customMCP.tools[1]).toEqual(newTool);
       });
@@ -2521,9 +2523,11 @@ describe("ConfigManager", () => {
         configManager.addCustomMCPTool(newTool);
 
         expect(mockWriteFileSync).toHaveBeenCalled();
-        const savedConfig = JSON.parse(
-          mockWriteFileSync.mock.calls[0][1] as string
-        );
+        const writtenContent = mockWriteFileSync.mock.calls[0][1] as string;
+
+        // 使用 JSON5 解析，因为保存的可能是 JSON5 格式
+        const JSON5 = require("json5");
+        const savedConfig = JSON5.parse(writtenContent);
         expect(savedConfig.customMCP).toBeDefined();
         expect(savedConfig.customMCP.tools).toHaveLength(1);
         expect(savedConfig.customMCP.tools[0]).toEqual(newTool);
@@ -2604,9 +2608,11 @@ describe("ConfigManager", () => {
         configManager.updateCustomMCPTools(newTools);
 
         expect(mockWriteFileSync).toHaveBeenCalled();
-        const savedConfig = JSON.parse(
-          mockWriteFileSync.mock.calls[0][1] as string
-        );
+        const writtenContent = mockWriteFileSync.mock.calls[0][1] as string;
+
+        // 使用 JSON5 解析，因为保存的可能是 JSON5 格式
+        const JSON5 = require("json5");
+        const savedConfig = JSON5.parse(writtenContent);
         expect(savedConfig.customMCP.tools).toEqual(newTools);
       });
 
@@ -2616,9 +2622,11 @@ describe("ConfigManager", () => {
         configManager.updateCustomMCPTools(newTools);
 
         expect(mockWriteFileSync).toHaveBeenCalled();
-        const savedConfig = JSON.parse(
-          mockWriteFileSync.mock.calls[0][1] as string
-        );
+        const writtenContent = mockWriteFileSync.mock.calls[0][1] as string;
+
+        // 使用 JSON5 解析，因为保存的可能是 JSON5 格式
+        const JSON5 = require("json5");
+        const savedConfig = JSON5.parse(writtenContent);
         expect(savedConfig.customMCP).toBeDefined();
         expect(savedConfig.customMCP.tools).toEqual(newTools);
       });
