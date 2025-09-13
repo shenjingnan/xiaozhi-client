@@ -273,6 +273,119 @@ export class ToolApiHandler {
     try {
       this.logger.info("处理获取工具列表请求");
 
+      // 优先从 customMCP 配置获取工具列表
+      const toolsFromConfig = await this.listToolsFromConfig();
+      if (toolsFromConfig) {
+        this.logger.info(
+          `从 customMCP 配置获取工具列表成功，共 ${toolsFromConfig.totalTools} 个工具`
+        );
+        return c.json(
+          this.createSuccessResponse(toolsFromConfig, "获取工具列表成功")
+        );
+      }
+
+      // 如果 customMCP 配置获取失败，回退到运行时服务
+      this.logger.warn("customMCP 配置获取失败，回退到运行时服务");
+      return await this.listToolsFromRuntime(c);
+    } catch (error) {
+      this.logger.error("获取工具列表失败:", error);
+
+      const errorResponse = this.createErrorResponse(
+        "LIST_TOOLS_ERROR",
+        error instanceof Error ? error.message : "获取工具列表失败"
+      );
+      return c.json(errorResponse, 500);
+    }
+  }
+
+  /**
+   * 从 customMCP 配置获取工具列表
+   * @private
+   */
+  private async listToolsFromConfig(): Promise<{
+    totalTools: number;
+    services: Record<string, any[]>;
+  } | null> {
+    try {
+      // 检查配置文件是否存在
+      if (!configManager.configExists()) {
+        this.logger.debug("配置文件不存在，无法从配置获取工具列表");
+        return null;
+      }
+
+      // 获取 customMCP 工具列表
+      const customTools = configManager.getCustomMCPTools();
+      if (!customTools || customTools.length === 0) {
+        this.logger.debug("customMCP 配置中没有工具");
+        return null;
+      }
+
+      // 按服务分组工具
+      const toolsByService: Record<string, any[]> = {};
+
+      for (const tool of customTools) {
+        let serviceName = "customMCP";
+        let displayName = tool.name;
+        let originalName = tool.name;
+
+        // 如果是 mcp 类型的工具，解析服务名称和原始工具名
+        if (tool.handler?.type === "mcp") {
+          serviceName = tool.handler.config.serviceName;
+          originalName = tool.handler.config.toolName;
+          displayName = originalName;
+
+          // 特殊处理 coze 工作流服务名称显示
+          if (serviceName === "coze-workflow") {
+            serviceName = "coze";
+          }
+        }
+
+        if (!toolsByService[serviceName]) {
+          toolsByService[serviceName] = [];
+        }
+
+        // 获取统计信息
+        const stats = tool.stats || {};
+        const usageCount = stats.usageCount || 0;
+        const lastUsedTime = stats.lastUsedTime || null;
+
+        toolsByService[serviceName].push({
+          name: displayName,
+          fullName: tool.name,
+          description: tool.description,
+          inputSchema: tool.inputSchema,
+          // 添加统计信息
+          usageCount,
+          lastUsedTime,
+        });
+      }
+
+      // 检查是否有工具
+      const totalTools = Object.values(toolsByService).reduce(
+        (sum, tools) => sum + tools.length,
+        0
+      );
+      if (totalTools === 0) {
+        this.logger.debug("从配置解析出的工具数量为0");
+        return null;
+      }
+
+      return {
+        totalTools,
+        services: toolsByService,
+      };
+    } catch (error) {
+      this.logger.error("从 customMCP 配置获取工具列表失败:", error);
+      return null;
+    }
+  }
+
+  /**
+   * 从运行时服务获取工具列表（向后兼容的回退机制）
+   * @private
+   */
+  private async listToolsFromRuntime(c: Context): Promise<Response> {
+    try {
       // 检查 MCPServiceManager 是否已初始化
       if (!MCPServiceManagerSingleton.isInitialized()) {
         const errorResponse = this.createErrorResponse(
@@ -302,15 +415,30 @@ export class ToolApiHandler {
         const displayName =
           serviceName === "customMCP" ? tool.name : tool.originalName;
 
+        // 尝试从配置获取统计信息
+        const usageCount = this.getToolUsageStats(
+          serviceName,
+          tool.originalName
+        );
+        const lastUsedTime = this.getToolLastUsedTime(
+          serviceName,
+          tool.originalName
+        );
+
         toolsByService[serviceName].push({
           name: displayName,
           fullName: tool.name,
           description: tool.description,
           inputSchema: tool.inputSchema,
+          // 添加统计信息
+          usageCount,
+          lastUsedTime,
         });
       }
 
-      this.logger.info(`获取工具列表成功，共 ${allTools.length} 个工具`);
+      this.logger.info(
+        `从运行时服务获取工具列表成功，共 ${allTools.length} 个工具`
+      );
 
       return c.json(
         this.createSuccessResponse(
@@ -322,13 +450,77 @@ export class ToolApiHandler {
         )
       );
     } catch (error) {
-      this.logger.error("获取工具列表失败:", error);
+      this.logger.error("从运行时服务获取工具列表失败:", error);
+      throw error;
+    }
+  }
 
-      const errorResponse = this.createErrorResponse(
-        "LIST_TOOLS_ERROR",
-        error instanceof Error ? error.message : "获取工具列表失败"
+  /**
+   * 获取工具使用次数统计
+   * @private
+   */
+  private getToolUsageStats(serviceName: string, toolName: string): number {
+    try {
+      // 优先从 customMCP 配置获取
+      const customTools = configManager.getCustomMCPTools();
+      const customToolName = `${serviceName}__${toolName}`;
+      const customTool = customTools.find(
+        (tool) => tool.name === customToolName
       );
-      return c.json(errorResponse, 500);
+
+      if (customTool?.stats?.usageCount !== undefined) {
+        return customTool.stats.usageCount;
+      }
+
+      // 回退到 mcpServerConfig 配置
+      const serverConfig = configManager.getServerToolsConfig(serviceName);
+      if (serverConfig?.[toolName]?.usageCount !== undefined) {
+        return serverConfig[toolName].usageCount;
+      }
+
+      return 0;
+    } catch (error) {
+      this.logger.debug(
+        `获取工具 ${serviceName}/${toolName} 使用次数失败:`,
+        error
+      );
+      return 0;
+    }
+  }
+
+  /**
+   * 获取工具最后使用时间
+   * @private
+   */
+  private getToolLastUsedTime(
+    serviceName: string,
+    toolName: string
+  ): string | null {
+    try {
+      // 优先从 customMCP 配置获取
+      const customTools = configManager.getCustomMCPTools();
+      const customToolName = `${serviceName}__${toolName}`;
+      const customTool = customTools.find(
+        (tool) => tool.name === customToolName
+      );
+
+      if (customTool?.stats?.lastUsedTime) {
+        return customTool.stats.lastUsedTime;
+      }
+
+      // 回退到 mcpServerConfig 配置
+      const serverConfig = configManager.getServerToolsConfig(serviceName);
+      if (serverConfig?.[toolName]?.lastUsedTime) {
+        return serverConfig[toolName].lastUsedTime;
+      }
+
+      return null;
+    } catch (error) {
+      this.logger.debug(
+        `获取工具 ${serviceName}/${toolName} 最后使用时间失败:`,
+        error
+      );
+      return null;
     }
   }
 

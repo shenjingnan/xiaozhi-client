@@ -318,11 +318,42 @@ export class MCPServiceManager {
       const customTool = this.customMCPHandler.getToolInfo(toolName);
       if (customTool?.handler?.type === "mcp") {
         // 对于 mcp 类型的工具，直接路由到对应的 MCP 服务
-        return await this.callMCPTool(
-          toolName,
-          customTool.handler.config,
-          arguments_
-        );
+        try {
+          const result = await this.callMCPTool(
+            toolName,
+            customTool.handler.config,
+            arguments_
+          );
+
+          // 异步更新工具调用统计（成功调用）
+          this.updateToolStats(
+            toolName,
+            customTool.handler.config.serviceName,
+            customTool.handler.config.toolName,
+            true
+          ).catch((error) => {
+            this.logger.warn(
+              `[MCPManager] 更新工具 ${toolName} 统计信息失败:`,
+              error
+            );
+          });
+
+          return result;
+        } catch (error) {
+          // 异步更新工具调用统计（失败调用）
+          this.updateToolStatsForFailedCall(
+            toolName,
+            customTool.handler.config.serviceName,
+            customTool.handler.config.toolName,
+            error
+          ).catch((updateError) => {
+            this.logger.warn(
+              `[MCPManager] 更新工具 ${toolName} 失败统计信息失败:`,
+              updateError
+            );
+          });
+          throw error;
+        }
       }
 
       // 其他类型的 customMCP 工具正常处理
@@ -331,9 +362,33 @@ export class MCPServiceManager {
           toolName,
           arguments_
         );
+
+        // 异步更新工具调用统计（成功调用）
+        this.updateToolStats(toolName, "customMCP", toolName, true).catch(
+          (error) => {
+            this.logger.warn(
+              `[MCPManager] 更新 customMCP 工具 ${toolName} 统计信息失败:`,
+              error
+            );
+          }
+        );
+
         this.logger.info(`[MCPManager] CustomMCP 工具 ${toolName} 调用成功`);
         return result;
       } catch (error) {
+        // 异步更新工具调用统计（失败调用）
+        this.updateToolStatsForFailedCall(
+          toolName,
+          "customMCP",
+          toolName,
+          error
+        ).catch((updateError) => {
+          this.logger.warn(
+            `[MCPManager] 更新 customMCP 工具 ${toolName} 失败统计信息失败:`,
+            updateError
+          );
+        });
+
         this.logger.error(
           `[MCPManager] CustomMCP 工具 ${toolName} 调用失败:`,
           (error as Error).message
@@ -363,12 +418,233 @@ export class MCPServiceManager {
         arguments_ || {}
       );
 
+      // 异步更新工具调用统计（成功调用）
+      this.updateToolStats(
+        toolName,
+        toolInfo.serviceName,
+        toolInfo.originalName,
+        true
+      ).catch((error) => {
+        this.logger.warn(
+          `[MCPManager] 更新工具 ${toolName} 统计信息失败:`,
+          error
+        );
+      });
+
       this.logger.info(`[MCPManager] 工具 ${toolName} 调用成功，结果:`, result);
       return result as ToolCallResult;
     } catch (error) {
+      // 异步更新工具调用统计（失败调用）
+      this.updateToolStatsForFailedCall(
+        toolName,
+        toolInfo.serviceName,
+        toolInfo.originalName,
+        error
+      ).catch((updateError) => {
+        this.logger.warn(
+          `[MCPManager] 更新工具 ${toolName} 失败统计信息失败:`,
+          updateError
+        );
+      });
+
       this.logger.error(
         `[MCPManager] 工具 ${toolName} 调用失败:`,
         (error as Error).message
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * 更新工具调用统计信息（成功调用）
+   * @param toolName 工具名称
+   * @param serviceName 服务名称
+   * @param originalToolName 原始工具名称
+   * @param isSuccess 是否调用成功
+   * @private
+   */
+  private async updateToolStats(
+    toolName: string,
+    serviceName: string,
+    originalToolName: string,
+    isSuccess: boolean
+  ): Promise<void> {
+    try {
+      if (!isSuccess) {
+        return; // 失败调用由 updateToolStatsForFailedCall 处理
+      }
+
+      const currentTime = new Date().toISOString();
+
+      // 更新 customMCP 配置中的统计信息
+      await this.updateCustomMCPToolStats(toolName, currentTime);
+
+      // 如果是 MCP 服务工具，同时更新 mcpServerConfig 配置（双写机制）
+      if (serviceName !== "customMCP") {
+        await this.updateMCPServerToolStats(
+          serviceName,
+          originalToolName,
+          currentTime
+        );
+      }
+
+      this.logger.debug(`[MCPManager] 已更新工具 ${toolName} 的统计信息`);
+    } catch (error) {
+      this.logger.error(
+        `[MCPManager] 更新工具 ${toolName} 统计信息失败:`,
+        error
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * 更新工具调用统计信息（失败调用）
+   * @param toolName 工具名称
+   * @param serviceName 服务名称
+   * @param originalToolName 原始工具名称
+   * @param error 调用错误
+   * @private
+   */
+  private async updateToolStatsForFailedCall(
+    toolName: string,
+    serviceName: string,
+    originalToolName: string,
+    error: unknown
+  ): Promise<void> {
+    try {
+      // 对于失败的调用，我们只更新最后使用时间，不增加使用次数
+      const currentTime = new Date().toISOString();
+
+      // 更新 customMCP 配置中的最后使用时间
+      await this.updateCustomMCPToolLastUsedTime(toolName, currentTime);
+
+      // 如果是 MCP 服务工具，同时更新 mcpServerConfig 配置（双写机制）
+      if (serviceName !== "customMCP") {
+        await this.updateMCPServerToolLastUsedTime(
+          serviceName,
+          originalToolName,
+          currentTime
+        );
+      }
+
+      this.logger.debug(
+        `[MCPManager] 已更新工具 ${toolName} 的失败调用统计信息`
+      );
+    } catch (updateError) {
+      this.logger.error(
+        `[MCPManager] 更新工具 ${toolName} 失败调用统计信息失败:`,
+        updateError
+      );
+      throw updateError;
+    }
+  }
+
+  /**
+   * 更新 customMCP 工具统计信息
+   * @param toolName 工具名称
+   * @param currentTime 当前时间
+   * @private
+   */
+  private async updateCustomMCPToolStats(
+    toolName: string,
+    currentTime: string
+  ): Promise<void> {
+    try {
+      await configManager.updateToolUsageStatsWithLock(toolName, true);
+      this.logger.debug(
+        `[MCPManager] 已更新 customMCP 工具 ${toolName} 使用统计`
+      );
+    } catch (error) {
+      this.logger.error(
+        `[MCPManager] 更新 customMCP 工具 ${toolName} 统计失败:`,
+        error
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * 更新 customMCP 工具最后使用时间
+   * @param toolName 工具名称
+   * @param currentTime 当前时间
+   * @private
+   */
+  private async updateCustomMCPToolLastUsedTime(
+    toolName: string,
+    currentTime: string
+  ): Promise<void> {
+    try {
+      await configManager.updateToolUsageStatsWithLock(toolName, false); // 只更新时间，不增加计数
+      this.logger.debug(
+        `[MCPManager] 已更新 customMCP 工具 ${toolName} 最后使用时间`
+      );
+    } catch (error) {
+      this.logger.error(
+        `[MCPManager] 更新 customMCP 工具 ${toolName} 最后使用时间失败:`,
+        error
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * 更新 MCP 服务工具统计信息
+   * @param serviceName 服务名称
+   * @param toolName 工具名称
+   * @param currentTime 当前时间
+   * @private
+   */
+  private async updateMCPServerToolStats(
+    serviceName: string,
+    toolName: string,
+    currentTime: string
+  ): Promise<void> {
+    try {
+      await configManager.updateMCPServerToolStatsWithLock(
+        serviceName,
+        toolName,
+        currentTime,
+        true
+      );
+      this.logger.debug(
+        `[MCPManager] 已更新 MCP 服务工具 ${serviceName}/${toolName} 统计`
+      );
+    } catch (error) {
+      this.logger.error(
+        `[MCPManager] 更新 MCP 服务工具 ${serviceName}/${toolName} 统计失败:`,
+        error
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * 更新 MCP 服务工具最后使用时间
+   * @param serviceName 服务名称
+   * @param toolName 工具名称
+   * @param currentTime 当前时间
+   * @private
+   */
+  private async updateMCPServerToolLastUsedTime(
+    serviceName: string,
+    toolName: string,
+    currentTime: string
+  ): Promise<void> {
+    try {
+      await configManager.updateMCPServerToolStatsWithLock(
+        serviceName,
+        toolName,
+        currentTime,
+        false
+      ); // 只更新时间，不增加计数
+      this.logger.debug(
+        `[MCPManager] 已更新 MCP 服务工具 ${serviceName}/${toolName} 最后使用时间`
+      );
+    } catch (error) {
+      this.logger.error(
+        `[MCPManager] 更新 MCP 服务工具 ${serviceName}/${toolName} 最后使用时间失败:`,
+        error
       );
       throw error;
     }
@@ -453,6 +729,14 @@ export class MCPServiceManager {
       this.logger.error("[MCPManager] CustomMCP 处理器清理失败:", error);
     }
 
+    // 清理统计更新锁
+    try {
+      configManager.clearAllStatsUpdateLocks();
+      this.logger.info("[MCPManager] 统计更新锁已清理");
+    } catch (error) {
+      this.logger.error("[MCPManager] 清理统计更新锁失败:", error);
+    }
+
     this.services.clear();
     this.tools.clear();
 
@@ -496,6 +780,28 @@ export class MCPServiceManager {
     }
 
     return status;
+  }
+
+  /**
+   * 获取统计更新监控信息
+   */
+  getStatsUpdateInfo(): {
+    activeLocks: string[];
+    totalLocks: number;
+  } {
+    try {
+      const activeLocks = configManager.getStatsUpdateLocks();
+      return {
+        activeLocks,
+        totalLocks: activeLocks.length,
+      };
+    } catch (error) {
+      this.logger.warn("[MCPManager] 获取统计更新监控信息失败:", error);
+      return {
+        activeLocks: [],
+        totalLocks: 0,
+      };
+    }
   }
 
   /**

@@ -145,6 +145,9 @@ export class ToolSyncManager {
 
     // 更新配置文件
     await this.configManager.addCustomMCPTools(customTools);
+
+    // 同步统计信息
+    await this.syncToolStats(serviceName, tools);
   }
 
   /**
@@ -174,5 +177,120 @@ export class ToolSyncManager {
   clearSyncLocks(): void {
     this.syncLocks.clear();
     this.logger.debug("已清理所有同步锁");
+  }
+
+  /**
+   * 同步工具使用统计信息
+   * 仅当 customMCP 工具没有统计信息时才从 mcpServerConfig 同步
+   * @param serviceName 服务名称
+   * @param tools 工具列表
+   */
+  private async syncToolStats(
+    serviceName: string,
+    tools: Tool[]
+  ): Promise<void> {
+    try {
+      // 获取 mcpServerConfig 中的工具配置
+      const serverConfig = this.configManager.getServerToolsConfig(serviceName);
+      if (!serverConfig) {
+        this.logger.debug(
+          `服务 ${serviceName} 无 mcpServerConfig 配置，跳过统计信息同步`
+        );
+        return;
+      }
+
+      // 获取 customMCP 中的现有工具
+      const existingCustomTools = this.configManager.getCustomMCPTools();
+      const customToolMap = new Map(
+        existingCustomTools.map((tool) => [tool.name, tool])
+      );
+
+      // 遍历工具，同步统计信息
+      for (const tool of tools) {
+        const customToolName = `${serviceName}__${tool.name}`;
+        const customTool = customToolMap.get(customToolName);
+        const serverToolConfig = serverConfig[tool.name];
+
+        if (customTool && serverToolConfig) {
+          // 仅当 customMCP 工具没有统计信息时才同步
+          if (
+            !customTool.stats ||
+            (!customTool.stats.usageCount && !customTool.stats.lastUsedTime)
+          ) {
+            // 从 mcpServerConfig 获取统计信息
+            const stats: any = {};
+
+            if (serverToolConfig.usageCount !== undefined) {
+              stats.usageCount = serverToolConfig.usageCount;
+            }
+
+            if (serverToolConfig.lastUsedTime) {
+              stats.lastUsedTime = serverToolConfig.lastUsedTime;
+            }
+
+            if (Object.keys(stats).length > 0) {
+              // 更新 customMCP 工具的统计信息
+              await this.updateCustomMCPToolStats(customToolName, stats);
+              this.logger.debug(
+                `已同步工具 ${customToolName} 的统计信息: ${JSON.stringify(stats)}`
+              );
+            }
+          }
+        }
+      }
+    } catch (error) {
+      this.logger.error(
+        `同步服务 ${serviceName} 工具统计信息失败:`,
+        error instanceof Error ? error.message : String(error)
+      );
+      // 统计信息同步失败不应该影响主要的同步流程
+    }
+  }
+
+  /**
+   * 更新 customMCP 工具的统计信息
+   * @param toolName 工具名称
+   * @param stats 统计信息
+   */
+  private async updateCustomMCPToolStats(
+    toolName: string,
+    stats: { usageCount?: number; lastUsedTime?: string }
+  ): Promise<void> {
+    try {
+      const customTools = this.configManager.getCustomMCPTools();
+      const toolIndex = customTools.findIndex((tool) => tool.name === toolName);
+
+      if (toolIndex === -1) {
+        this.logger.warn(`工具 ${toolName} 不存在于 customMCP 中`);
+        return;
+      }
+
+      // 更新工具的统计信息
+      const updatedTools = [...customTools];
+      const tool = updatedTools[toolIndex];
+
+      // 确保 stats 对象存在
+      if (!tool.stats) {
+        tool.stats = {};
+      }
+
+      // 更新统计信息
+      if (stats.usageCount !== undefined) {
+        tool.stats.usageCount = stats.usageCount;
+      }
+
+      if (stats.lastUsedTime !== undefined) {
+        tool.stats.lastUsedTime = stats.lastUsedTime;
+      }
+
+      // 保存更新后的工具配置
+      await this.configManager.updateCustomMCPTools(updatedTools);
+    } catch (error) {
+      this.logger.error(
+        `更新工具 ${toolName} 统计信息失败:`,
+        error instanceof Error ? error.message : String(error)
+      );
+      throw error;
+    }
   }
 }
