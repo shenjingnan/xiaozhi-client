@@ -92,7 +92,9 @@ export function useCozeWorkflows(
 
   // 计算选中的工作空间
   const selectedWorkspace = useMemo(() => {
-    return workspaces.find((ws) => ws.id === selectedWorkspaceId) || null;
+    return workspaces && Array.isArray(workspaces)
+      ? workspaces.find((ws) => ws.id === selectedWorkspaceId) || null
+      : null;
   }, [workspaces, selectedWorkspaceId]);
 
   /**

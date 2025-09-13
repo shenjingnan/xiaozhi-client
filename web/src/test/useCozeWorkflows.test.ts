@@ -76,7 +76,9 @@ describe("useCozeWorkflows", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     const mockClient = getMockClient();
-    mockClient.fetchWorkspaces.mockResolvedValue(mockWorkspaces);
+    mockClient.fetchWorkspaces.mockResolvedValue({
+      workspaces: mockWorkspaces,
+    });
     mockClient.fetchWorkflows.mockResolvedValue(mockWorkflowsResult);
     mockClient.clearCache.mockResolvedValue(undefined);
     mockClient.getCacheStats.mockResolvedValue({ size: 0, keys: [] });
@@ -344,7 +346,9 @@ describe("useCozeWorkflows", () => {
 
       // 清除 mock 调用记录
       vi.clearAllMocks();
-      getMockClient().fetchWorkspaces.mockResolvedValue(mockWorkspaces);
+      getMockClient().fetchWorkspaces.mockResolvedValue({
+        workspaces: mockWorkspaces,
+      });
       getMockClient().fetchWorkflows.mockResolvedValue(mockWorkflowsResult);
 
       await act(async () => {
