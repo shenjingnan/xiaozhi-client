@@ -8,6 +8,7 @@ import { CoffeeIcon, MinusIcon, PlusIcon, Wrench } from "lucide-react";
 import { useMemo } from "react";
 import { toast } from "sonner";
 import { AddMcpServerButton } from "./AddMcpServerButton";
+import { CozeWorkflowIntegration } from "./CozeWorkflowIntegration";
 import { McpServerSettingButton } from "./McpServerSettingButton";
 import { RemoveMcpServerButton } from "./RemoveMcpServerButton";
 import { RestartButton } from "./RestartButton";
@@ -262,9 +263,12 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
           </CardContent>
         </Card>
         <div className="transition-all duration-200 gap-4 flex flex-col col-span-2">
-          <div className="flex items-center gap-2">
-            <AddMcpServerButton />
-            <RestartButton />
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <AddMcpServerButton />
+              <RestartButton />
+            </div>
+            <CozeWorkflowIntegration />
           </div>
           {Object.entries(mcpServers || {}).map(
             ([mcpServerName, mcpServer]) => (

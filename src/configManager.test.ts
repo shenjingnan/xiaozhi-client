@@ -2485,5 +2485,175 @@ describe("ConfigManager", () => {
         expect(hasValid).toBe(false);
       });
     });
+
+    describe("addCustomMCPTool", () => {
+      const newTool: CustomMCPTool = {
+        name: "new_test_tool",
+        description: "新的测试工具",
+        inputSchema: {
+          type: "object",
+          properties: {
+            input: { type: "string", description: "输入参数" },
+          },
+          required: ["input"],
+        },
+        handler: {
+          type: "http",
+          url: "https://api.example.com/test",
+          method: "POST",
+        },
+      };
+
+      it("应该成功添加新的 customMCP 工具", () => {
+        configManager.addCustomMCPTool(newTool);
+
+        expect(mockWriteFileSync).toHaveBeenCalled();
+        const writtenContent = mockWriteFileSync.mock.calls[0][1] as string;
+
+        // 使用 JSON5 解析，因为保存的可能是 JSON5 格式
+        const JSON5 = require("json5");
+        const savedConfig = JSON5.parse(writtenContent);
+        expect(savedConfig.customMCP.tools).toHaveLength(2);
+        expect(savedConfig.customMCP.tools[1]).toEqual(newTool);
+      });
+
+      it("应该在配置中没有 customMCP 时创建新的配置", () => {
+        mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+
+        configManager.addCustomMCPTool(newTool);
+
+        expect(mockWriteFileSync).toHaveBeenCalled();
+        const writtenContent = mockWriteFileSync.mock.calls[0][1] as string;
+
+        // 使用 JSON5 解析，因为保存的可能是 JSON5 格式
+        const JSON5 = require("json5");
+        const savedConfig = JSON5.parse(writtenContent);
+        expect(savedConfig.customMCP).toBeDefined();
+        expect(savedConfig.customMCP.tools).toHaveLength(1);
+        expect(savedConfig.customMCP.tools[0]).toEqual(newTool);
+      });
+
+      it("应该在工具名称已存在时抛出错误", () => {
+        const duplicateTool = { ...newTool, name: mockCustomMCPTool.name };
+
+        expect(() => {
+          configManager.addCustomMCPTool(duplicateTool);
+        }).toThrow(`工具 "${mockCustomMCPTool.name}" 已存在`);
+      });
+
+      it("应该在工具配置无效时抛出错误", () => {
+        const invalidTool = { ...newTool, name: "" };
+
+        expect(() => {
+          configManager.addCustomMCPTool(invalidTool);
+        }).toThrow("工具配置验证失败");
+      });
+
+      it("应该在工具配置为空时抛出错误", () => {
+        expect(() => {
+          configManager.addCustomMCPTool(null as any);
+        }).toThrow("工具配置不能为空");
+      });
+    });
+
+    describe("removeCustomMCPTool", () => {
+      it("应该成功删除指定的 customMCP 工具", () => {
+        configManager.removeCustomMCPTool(mockCustomMCPTool.name);
+
+        expect(mockWriteFileSync).toHaveBeenCalled();
+        const savedConfig = JSON.parse(
+          mockWriteFileSync.mock.calls[0][1] as string
+        );
+        expect(savedConfig.customMCP.tools).toHaveLength(0);
+      });
+
+      it("应该在工具不存在时抛出错误", () => {
+        expect(() => {
+          configManager.removeCustomMCPTool("non_existent_tool");
+        }).toThrow('工具 "non_existent_tool" 不存在');
+      });
+
+      it("应该在没有 customMCP 配置时抛出错误", () => {
+        mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+
+        expect(() => {
+          configManager.removeCustomMCPTool("any_tool");
+        }).toThrow("未配置自定义 MCP 工具");
+      });
+
+      it("应该在工具名称为空时抛出错误", () => {
+        expect(() => {
+          configManager.removeCustomMCPTool("");
+        }).toThrow("工具名称不能为空");
+      });
+    });
+
+    describe("updateCustomMCPTools", () => {
+      const newTools: CustomMCPTool[] = [
+        {
+          name: "tool1",
+          description: "工具1",
+          inputSchema: { type: "object", properties: {}, required: [] },
+          handler: { type: "http", url: "https://api.example.com/tool1" },
+        },
+        {
+          name: "tool2",
+          description: "工具2",
+          inputSchema: { type: "object", properties: {}, required: [] },
+          handler: { type: "http", url: "https://api.example.com/tool2" },
+        },
+      ];
+
+      it("应该成功更新 customMCP 工具配置", () => {
+        configManager.updateCustomMCPTools(newTools);
+
+        expect(mockWriteFileSync).toHaveBeenCalled();
+        const writtenContent = mockWriteFileSync.mock.calls[0][1] as string;
+
+        // 使用 JSON5 解析，因为保存的可能是 JSON5 格式
+        const JSON5 = require("json5");
+        const savedConfig = JSON5.parse(writtenContent);
+        expect(savedConfig.customMCP.tools).toEqual(newTools);
+      });
+
+      it("应该在配置中没有 customMCP 时创建新的配置", () => {
+        mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+
+        configManager.updateCustomMCPTools(newTools);
+
+        expect(mockWriteFileSync).toHaveBeenCalled();
+        const writtenContent = mockWriteFileSync.mock.calls[0][1] as string;
+
+        // 使用 JSON5 解析，因为保存的可能是 JSON5 格式
+        const JSON5 = require("json5");
+        const savedConfig = JSON5.parse(writtenContent);
+        expect(savedConfig.customMCP).toBeDefined();
+        expect(savedConfig.customMCP.tools).toEqual(newTools);
+      });
+
+      it("应该支持清空工具列表", () => {
+        configManager.updateCustomMCPTools([]);
+
+        expect(mockWriteFileSync).toHaveBeenCalled();
+        const savedConfig = JSON.parse(
+          mockWriteFileSync.mock.calls[0][1] as string
+        );
+        expect(savedConfig.customMCP.tools).toEqual([]);
+      });
+
+      it("应该在工具配置不是数组时抛出错误", () => {
+        expect(() => {
+          configManager.updateCustomMCPTools("not an array" as any);
+        }).toThrow("工具配置必须是数组");
+      });
+
+      it("应该在工具配置无效时抛出错误", () => {
+        const invalidTools = [{ name: "", description: "invalid" }] as any;
+
+        expect(() => {
+          configManager.updateCustomMCPTools(invalidTools);
+        }).toThrow("工具配置验证失败");
+      });
+    });
   });
 });

@@ -354,6 +354,64 @@ export class ApiClient {
     }
   }
 
+  // ==================== 工具管理 API ====================
+
+  /**
+   * 添加自定义工具
+   */
+  async addCustomTool(
+    workflow: any,
+    customName?: string,
+    customDescription?: string,
+    parameterConfig?: any
+  ): Promise<any> {
+    const response: ApiResponse<{ tool: any }> = await this.request(
+      "/api/tools/custom",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          workflow,
+          customName,
+          customDescription,
+          parameterConfig,
+        }),
+      }
+    );
+
+    if (!response.success || !response.data) {
+      throw new Error(response.message || "添加自定义工具失败");
+    }
+    return response.data.tool;
+  }
+
+  /**
+   * 删除自定义工具
+   */
+  async removeCustomTool(toolName: string): Promise<void> {
+    const response: ApiResponse = await this.request(
+      `/api/tools/custom/${encodeURIComponent(toolName)}`,
+      {
+        method: "DELETE",
+      }
+    );
+
+    if (!response.success) {
+      throw new Error(response.message || "删除自定义工具失败");
+    }
+  }
+
+  /**
+   * 获取自定义工具列表
+   */
+  async getCustomTools(): Promise<any[]> {
+    const response: ApiResponse<{ tools: any[] }> =
+      await this.request("/api/tools/custom");
+    if (!response.success || !response.data) {
+      throw new Error("获取自定义工具列表失败");
+    }
+    return response.data.tools;
+  }
+
   // ==================== 服务控制 API ====================
 
   /**

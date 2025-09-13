@@ -168,6 +168,14 @@ export interface PlatformConfig {
   token?: string;
 }
 
+/**
+ * 扣子平台配置接口
+ */
+export interface CozePlatformConfig extends PlatformConfig {
+  /** 扣子 API Token */
+  token: string;
+}
+
 export interface AppConfig {
   mcpEndpoint: string | string[];
   mcpServers: Record<string, MCPServerConfig>;
@@ -1298,6 +1306,95 @@ export class ConfigManager {
   }
 
   /**
+   * 添加自定义 MCP 工具
+   */
+  public addCustomMCPTool(tool: CustomMCPTool): void {
+    if (!tool || typeof tool !== "object") {
+      throw new Error("工具配置不能为空");
+    }
+
+    const config = this.getMutableConfig();
+
+    // 确保 customMCP 配置存在
+    if (!config.customMCP) {
+      config.customMCP = { tools: [] };
+    }
+
+    // 检查工具名称是否已存在
+    const existingTool = config.customMCP.tools.find(
+      (t) => t.name === tool.name
+    );
+    if (existingTool) {
+      throw new Error(`工具 "${tool.name}" 已存在`);
+    }
+
+    // 验证工具配置
+    if (!this.validateCustomMCPTools([tool])) {
+      throw new Error("工具配置验证失败");
+    }
+
+    // 添加工具
+    config.customMCP.tools.push(tool);
+    this.saveConfig(config);
+
+    logger.info(`成功添加自定义 MCP 工具: ${tool.name}`);
+  }
+
+  /**
+   * 删除自定义 MCP 工具
+   */
+  public removeCustomMCPTool(toolName: string): void {
+    if (!toolName || typeof toolName !== "string") {
+      throw new Error("工具名称不能为空");
+    }
+
+    const config = this.getMutableConfig();
+
+    if (!config.customMCP || !config.customMCP.tools) {
+      throw new Error("未配置自定义 MCP 工具");
+    }
+
+    const toolIndex = config.customMCP.tools.findIndex(
+      (t) => t.name === toolName
+    );
+    if (toolIndex === -1) {
+      throw new Error(`工具 "${toolName}" 不存在`);
+    }
+
+    // 删除工具
+    config.customMCP.tools.splice(toolIndex, 1);
+    this.saveConfig(config);
+
+    logger.info(`成功删除自定义 MCP 工具: ${toolName}`);
+  }
+
+  /**
+   * 更新自定义 MCP 工具配置
+   */
+  public updateCustomMCPTools(tools: CustomMCPTool[]): void {
+    if (!Array.isArray(tools)) {
+      throw new Error("工具配置必须是数组");
+    }
+
+    // 验证工具配置
+    if (!this.validateCustomMCPTools(tools)) {
+      throw new Error("工具配置验证失败");
+    }
+
+    const config = this.getMutableConfig();
+
+    // 确保 customMCP 配置存在
+    if (!config.customMCP) {
+      config.customMCP = { tools: [] };
+    }
+
+    config.customMCP.tools = tools;
+    this.saveConfig(config);
+
+    logger.info(`成功更新自定义 MCP 工具配置，共 ${tools.length} 个工具`);
+  }
+
+  /**
    * 获取 Web UI 配置
    */
   public getWebUIConfig(): Readonly<WebUIConfig> {
@@ -1359,6 +1456,72 @@ export class ConfigManager {
       throw new Error("端口号必须是 1-65535 之间的整数");
     }
     this.updateWebUIConfig({ port });
+  }
+
+  public updatePlatformConfig(
+    platformName: string,
+    platformConfig: PlatformConfig
+  ): void {
+    const config = this.getMutableConfig();
+    if (!config.platforms) {
+      config.platforms = {};
+    }
+    config.platforms[platformName] = platformConfig;
+    // FIXME: 这里更新之后，web还是会变成老数据，需要修复这个问题
+    this.saveConfig(config);
+  }
+
+  /**
+   * 获取扣子平台配置
+   */
+  public getCozePlatformConfig(): CozePlatformConfig | null {
+    const config = this.getConfig();
+    const cozeConfig = config.platforms?.coze;
+
+    if (!cozeConfig || !cozeConfig.token) {
+      return null;
+    }
+
+    return {
+      token: cozeConfig.token,
+    };
+  }
+
+  /**
+   * 获取扣子 API Token
+   */
+  public getCozeToken(): string | null {
+    const cozeConfig = this.getCozePlatformConfig();
+    return cozeConfig?.token || null;
+  }
+
+  /**
+   * 设置扣子平台配置
+   */
+  public setCozePlatformConfig(config: CozePlatformConfig): void {
+    if (
+      !config.token ||
+      typeof config.token !== "string" ||
+      config.token.trim() === ""
+    ) {
+      throw new Error("扣子 API Token 不能为空");
+    }
+
+    this.updatePlatformConfig("coze", {
+      token: config.token.trim(),
+    });
+  }
+
+  /**
+   * 检查扣子平台配置是否有效
+   */
+  public isCozeConfigValid(): boolean {
+    const cozeConfig = this.getCozePlatformConfig();
+    return (
+      cozeConfig !== null &&
+      typeof cozeConfig.token === "string" &&
+      cozeConfig.token.trim() !== ""
+    );
   }
 }
 
