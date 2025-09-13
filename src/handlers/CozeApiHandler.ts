@@ -137,7 +137,9 @@ export class CozeApiHandler {
         createErrorResponse(
           error instanceof Error ? error.message : "获取工作空间列表失败",
           "INTERNAL_ERROR",
-          process.env.NODE_ENV === "development" && error instanceof Error ? error.stack : undefined
+          process.env.NODE_ENV === "development" && error instanceof Error
+            ? error.stack
+            : undefined
         ),
         500
       );
@@ -256,7 +258,9 @@ export class CozeApiHandler {
         createErrorResponse(
           error instanceof Error ? error.message : "获取工作流列表失败",
           "INTERNAL_ERROR",
-          process.env.NODE_ENV === "development" && error instanceof Error ? error.stack : undefined
+          process.env.NODE_ENV === "development" && error instanceof Error
+            ? error.stack
+            : undefined
         ),
         500
       );
@@ -313,7 +317,9 @@ export class CozeApiHandler {
         createErrorResponse(
           error instanceof Error ? error.message : "清除缓存失败",
           "INTERNAL_ERROR",
-          process.env.NODE_ENV === "development" && error instanceof Error ? error.stack : undefined
+          process.env.NODE_ENV === "development" && error instanceof Error
+            ? error.stack
+            : undefined
         ),
         500
       );
@@ -351,7 +357,9 @@ export class CozeApiHandler {
         createErrorResponse(
           error instanceof Error ? error.message : "获取缓存统计信息失败",
           "INTERNAL_ERROR",
-          process.env.NODE_ENV === "development" && error instanceof Error ? error.stack : undefined
+          process.env.NODE_ENV === "development" && error instanceof Error
+            ? error.stack
+            : undefined
         ),
         500
       );

@@ -1,7 +1,7 @@
+import { NetworkServiceProvider } from "@/providers/WebSocketProvider";
 import type { AppConfig } from "@/types";
 import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { NetworkServiceProvider } from "@/providers/WebSocketProvider";
 import SettingsPage from "./SettingsPage";
 
 // Mock the hooks and components
@@ -55,9 +55,9 @@ vi.mock("sonner", () => ({
   },
 }));
 
+import { useNetworkService } from "@/hooks/useNetworkService";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useConfig } from "@/stores/config";
-import { useNetworkService } from "@/hooks/useNetworkService";
 
 const mockUseConfig = useConfig as ReturnType<typeof vi.fn>;
 const mockUseWebSocket = useWebSocket as ReturnType<typeof vi.fn>;

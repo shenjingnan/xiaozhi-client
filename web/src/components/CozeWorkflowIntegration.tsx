@@ -21,7 +21,7 @@ import {
 import {
   Select,
   SelectContent,
-    SelectItem,
+  SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -401,7 +401,6 @@ export function CozeWorkflowIntegration() {
     }
   };
 
-  
   // 渲染工作空间选择器
   const renderWorkspaceSelector = () => (
     <div className="space-y-2">
