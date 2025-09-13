@@ -109,7 +109,7 @@ export class CozeApiHandler {
       logger.error("获取工作空间列表失败:", error);
 
       // 根据错误类型返回不同的响应
-      if (error.code === "AUTH_FAILED") {
+      if (error instanceof Error && (error as any).code === "AUTH_FAILED") {
         return c.json(
           createErrorResponse(
             "扣子 API 认证失败，请检查 Token 配置",
@@ -119,14 +119,14 @@ export class CozeApiHandler {
         );
       }
 
-      if (error.code === "RATE_LIMITED") {
+      if (error instanceof Error && (error as any).code === "RATE_LIMITED") {
         return c.json(
           createErrorResponse("请求过于频繁，请稍后重试", "RATE_LIMITED"),
           429
         );
       }
 
-      if (error.code === "TIMEOUT") {
+      if (error instanceof Error && (error as any).code === "TIMEOUT") {
         return c.json(
           createErrorResponse("请求超时，请稍后重试", "TIMEOUT"),
           408
@@ -135,9 +135,9 @@ export class CozeApiHandler {
 
       return c.json(
         createErrorResponse(
-          error.message || "获取工作空间列表失败",
+          error instanceof Error ? error.message : "获取工作空间列表失败",
           "INTERNAL_ERROR",
-          process.env.NODE_ENV === "development" ? error.stack : undefined
+          process.env.NODE_ENV === "development" && error instanceof Error ? error.stack : undefined
         ),
         500
       );
@@ -228,7 +228,7 @@ export class CozeApiHandler {
       logger.error("获取工作流列表失败:", error);
 
       // 根据错误类型返回不同的响应
-      if (error.code === "AUTH_FAILED") {
+      if (error instanceof Error && (error as any).code === "AUTH_FAILED") {
         return c.json(
           createErrorResponse(
             "扣子 API 认证失败，请检查 Token 配置",
@@ -238,14 +238,14 @@ export class CozeApiHandler {
         );
       }
 
-      if (error.code === "RATE_LIMITED") {
+      if (error instanceof Error && (error as any).code === "RATE_LIMITED") {
         return c.json(
           createErrorResponse("请求过于频繁，请稍后重试", "RATE_LIMITED"),
           429
         );
       }
 
-      if (error.code === "TIMEOUT") {
+      if (error instanceof Error && (error as any).code === "TIMEOUT") {
         return c.json(
           createErrorResponse("请求超时，请稍后重试", "TIMEOUT"),
           408
@@ -254,9 +254,9 @@ export class CozeApiHandler {
 
       return c.json(
         createErrorResponse(
-          error.message || "获取工作流列表失败",
+          error instanceof Error ? error.message : "获取工作流列表失败",
           "INTERNAL_ERROR",
-          process.env.NODE_ENV === "development" ? error.stack : undefined
+          process.env.NODE_ENV === "development" && error instanceof Error ? error.stack : undefined
         ),
         500
       );
@@ -311,9 +311,9 @@ export class CozeApiHandler {
 
       return c.json(
         createErrorResponse(
-          error.message || "清除缓存失败",
+          error instanceof Error ? error.message : "清除缓存失败",
           "INTERNAL_ERROR",
-          process.env.NODE_ENV === "development" ? error.stack : undefined
+          process.env.NODE_ENV === "development" && error instanceof Error ? error.stack : undefined
         ),
         500
       );
@@ -349,9 +349,9 @@ export class CozeApiHandler {
 
       return c.json(
         createErrorResponse(
-          error.message || "获取缓存统计信息失败",
+          error instanceof Error ? error.message : "获取缓存统计信息失败",
           "INTERNAL_ERROR",
-          process.env.NODE_ENV === "development" ? error.stack : undefined
+          process.env.NODE_ENV === "development" && error instanceof Error ? error.stack : undefined
         ),
         500
       );

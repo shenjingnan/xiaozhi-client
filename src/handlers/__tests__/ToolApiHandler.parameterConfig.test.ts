@@ -80,7 +80,7 @@ describe("ToolApiHandler - 参数配置功能", () => {
         json: vi.fn(),
       } as any,
       json: vi.fn(),
-    };
+    } as any;
     vi.clearAllMocks();
   });
 

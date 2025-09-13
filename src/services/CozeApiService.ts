@@ -330,7 +330,7 @@ export class CozeApiService {
       } catch (error) {
         clearTimeout(timeoutId);
 
-        if (error.name === "AbortError") {
+        if (error instanceof Error && error.name === "AbortError") {
           throw new CozeApiErrorImpl(
             `请求超时 (${this.TIMEOUT}ms)`,
             "TIMEOUT",
