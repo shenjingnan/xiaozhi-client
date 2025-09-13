@@ -16,6 +16,7 @@ import {
   type MCPServiceConfig,
   MCPTransportType,
 } from "./MCPService.js";
+import { ToolSyncManager } from "./ToolSyncManager.js";
 
 // 工具信息接口（保持向后兼容）
 interface ToolInfo {
@@ -53,6 +54,7 @@ export class MCPServiceManager {
   private tools: Map<string, ToolInfo> = new Map(); // 缓存工具信息，保持向后兼容
   private customMCPHandler: CustomMCPHandler; // CustomMCP 工具处理器
   private cacheManager: MCPCacheManager; // 缓存管理器
+  private toolSyncManager: ToolSyncManager; // 工具同步管理器
 
   /**
    * 创建 MCPServiceManager 实例
@@ -71,7 +73,7 @@ export class MCPServiceManager {
 
     this.cacheManager = new MCPCacheManager(cachePath);
     this.customMCPHandler = new CustomMCPHandler();
-    this.cacheManager = new MCPCacheManager();
+    this.toolSyncManager = new ToolSyncManager(configManager, this.logger);
   }
 
   /**
@@ -134,7 +136,12 @@ export class MCPServiceManager {
       // 更新工具缓存
       await this.refreshToolsCache();
 
+      // 获取服务工具列表
       const tools = service.getTools();
+
+      // 🆕 触发工具同步
+      await this.toolSyncManager.syncToolsAfterConnection(serviceName, tools);
+
       this.logger.info(
         `[MCPManager] ${serviceName} 服务启动成功，加载了 ${tools.length} 个工具:`,
         tools.map((t) => t.name).join(", ")
@@ -239,18 +246,23 @@ export class MCPServiceManager {
       serviceName: string;
       originalName: string;
     }> = [];
+    const toolNameSet = new Set<string>(); // 用于去重
 
-    // 首先添加 customMCP 工具
+    // 1. 首先收集 customMCP 工具（优先级高）
     try {
       const customTools = this.customMCPHandler.getTools();
       for (const tool of customTools) {
-        allTools.push({
-          name: tool.name,
-          description: tool.description || "",
-          inputSchema: tool.inputSchema,
-          serviceName: "customMCP", // 使用特殊的服务名标识
-          originalName: tool.name,
-        });
+        const toolName = tool.name;
+        if (!toolNameSet.has(toolName)) {
+          toolNameSet.add(toolName);
+          allTools.push({
+            name: toolName,
+            description: tool.description || "",
+            inputSchema: tool.inputSchema,
+            serviceName: "customMCP", // 使用特殊的服务名标识
+            originalName: tool.name,
+          });
+        }
       }
 
       if (customTools.length > 0) {
@@ -262,8 +274,13 @@ export class MCPServiceManager {
       this.logger.error("[MCPManager] 获取 CustomMCP 工具失败:", error);
     }
 
-    // 然后添加标准 MCP 工具
+    // 2. 然后收集标准 MCP 工具（跳过已在 customMCP 中存在的）
     for (const [toolKey, toolInfo] of this.tools) {
+      // 跳过已在 customMCP 中存在的工具（实现去重优先逻辑）
+      if (toolNameSet.has(toolKey)) {
+        continue;
+      }
+
       // 检查工具是否启用
       const isEnabled = configManager.isToolEnabled(
         toolInfo.serviceName,
@@ -272,6 +289,7 @@ export class MCPServiceManager {
 
       // 只返回启用的工具
       if (isEnabled) {
+        toolNameSet.add(toolKey);
         allTools.push({
           name: toolKey,
           description: toolInfo.tool.description || "",
@@ -283,7 +301,7 @@ export class MCPServiceManager {
     }
 
     this.logger.info(
-      `[MCPManager] 返回总计 ${allTools.length} 个工具 (customMCP + 标准 MCP)`
+      `[MCPManager] 返回总计 ${allTools.length} 个工具 (customMCP 优先，去重后总数)`
     );
     return allTools;
   }
@@ -294,8 +312,20 @@ export class MCPServiceManager {
   async callTool(toolName: string, arguments_: any): Promise<ToolCallResult> {
     this.logger.info(`[MCPManager] 调用工具: ${toolName}，参数:`, arguments_);
 
-    // 首先检查是否是 customMCP 工具
+    // 检查是否是 customMCP 工具
     if (this.customMCPHandler.hasTool(toolName)) {
+      // 检查是否是从 MCP 同步的工具（mcp 类型 handler）
+      const customTool = this.customMCPHandler.getToolInfo(toolName);
+      if (customTool?.handler?.type === "mcp") {
+        // 对于 mcp 类型的工具，直接路由到对应的 MCP 服务
+        return await this.callMCPTool(
+          toolName,
+          customTool.handler.config,
+          arguments_
+        );
+      }
+
+      // 其他类型的 customMCP 工具正常处理
       try {
         const result = await this.customMCPHandler.callTool(
           toolName,
@@ -338,6 +368,45 @@ export class MCPServiceManager {
     } catch (error) {
       this.logger.error(
         `[MCPManager] 工具 ${toolName} 调用失败:`,
+        (error as Error).message
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * 调用 MCP 工具（用于从 mcpServerConfig 同步的工具）
+   * @param toolName 工具名称
+   * @param config MCP handler 配置
+   * @param arguments_ 工具参数
+   */
+  private async callMCPTool(
+    toolName: string,
+    config: { serviceName: string; toolName: string },
+    arguments_: any
+  ): Promise<ToolCallResult> {
+    const { serviceName, toolName: originalToolName } = config;
+
+    this.logger.info(
+      `[MCPManager] 调用 MCP 同步工具 ${toolName} -> ${serviceName}.${originalToolName}`
+    );
+
+    const service = this.services.get(serviceName);
+    if (!service) {
+      throw new Error(`服务 ${serviceName} 不可用`);
+    }
+
+    if (!service.isConnected()) {
+      throw new Error(`服务 ${serviceName} 未连接`);
+    }
+
+    try {
+      const result = await service.callTool(originalToolName, arguments_ || {});
+      this.logger.info(`[MCPManager] MCP 同步工具 ${toolName} 调用成功`);
+      return result as ToolCallResult;
+    } catch (error) {
+      this.logger.error(
+        `[MCPManager] MCP 同步工具 ${toolName} 调用失败:`,
         (error as Error).message
       );
       throw error;

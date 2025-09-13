@@ -26,6 +26,7 @@ vi.mock("../../Logger.js", () => ({
     warn: vi.fn(),
     error: vi.fn(),
     debug: vi.fn(),
+    withTag: vi.fn().mockReturnThis(),
   },
 }));
 

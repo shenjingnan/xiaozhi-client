@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Logger } from "../../Logger.js";
+import { configManager } from "../../configManager.js";
 import { type MCPServiceConfig, MCPTransportType } from "../MCPService.js";
 import { MCPServiceManager } from "../MCPServiceManager.js";
 import { TransportFactory } from "../TransportFactory.js";
@@ -25,7 +26,15 @@ describe("Multi-Protocol Integration", () => {
     };
     vi.mocked(Logger).mockImplementation(() => mockLogger);
 
+    // Mock configManager methods
+    vi.spyOn(configManager, "getServerToolsConfig").mockReturnValue({});
+    vi.spyOn(configManager, "getCustomMCPTools").mockReturnValue([]);
+    vi.spyOn(configManager, "addCustomMCPTools").mockResolvedValue(undefined);
+
     manager = new MCPServiceManager();
+
+    // Replace ToolSyncManager's logger with mock logger to avoid real logger calls
+    (manager as any).toolSyncManager.logger = mockLogger;
 
     // Mock TransportFactory
     vi.mocked(TransportFactory).validateConfig = vi.fn();

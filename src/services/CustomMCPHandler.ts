@@ -13,6 +13,7 @@ import {
   type CustomMCPTool,
   type FunctionHandlerConfig,
   type HttpHandlerConfig,
+  type MCPHandlerConfig,
   type ProxyHandlerConfig,
   type ScriptHandlerConfig,
   configManager,
@@ -228,6 +229,15 @@ export class CustomMCPHandler {
         return await this.callScriptTool(tool, arguments_);
       case "chain":
         return await this.callChainTool(tool, arguments_);
+      case "mcp":
+        // MCP 类型的工具应该由 MCPServiceManager 直接处理，不应该到达这里
+        this.logger.error(
+          `MCP 类型工具 ${tool.name} 不应该由 CustomMCPHandler 处理`
+        );
+        return {
+          content: [{ type: "text", text: "内部错误：MCP 类型工具路由错误" }],
+          isError: true,
+        };
       default:
         throw new Error(`不支持的处理器类型: ${(tool.handler as any).type}`);
     }
