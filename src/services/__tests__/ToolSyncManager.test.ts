@@ -99,7 +99,7 @@ describe("ToolSyncManager", () => {
       expect(mockConfigManager.getCustomMCPTools).not.toHaveBeenCalled();
       expect(mockConfigManager.addCustomMCPTools).not.toHaveBeenCalled();
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        `服务 ${serviceName} 无 mcpServerConfig 配置，跳过同步`
+        `服务 ${serviceName} 无启用工具，跳过同步`
       );
     });
 
