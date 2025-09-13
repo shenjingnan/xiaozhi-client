@@ -9,6 +9,7 @@
     "build:analyze": "ANALYZE=true tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:silent": "vitest run --silent=true",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "format": "biome format --write .",
