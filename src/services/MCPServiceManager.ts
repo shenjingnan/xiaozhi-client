@@ -11,12 +11,12 @@ import { type Logger, logger } from "../Logger.js";
 import { type MCPToolConfig, configManager } from "../configManager.js";
 import { CustomMCPHandler } from "./CustomMCPHandler.js";
 import { MCPCacheManager } from "./MCPCacheManager.js";
-import { ToolSyncManager } from "./ToolSyncManager.js";
 import {
   MCPService,
   type MCPServiceConfig,
   MCPTransportType,
 } from "./MCPService.js";
+import { ToolSyncManager } from "./ToolSyncManager.js";
 
 // 工具信息接口（保持向后兼容）
 interface ToolInfo {

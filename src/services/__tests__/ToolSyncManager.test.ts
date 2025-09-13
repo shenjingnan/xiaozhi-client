@@ -1,9 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ToolSyncManager } from "../ToolSyncManager.js";
-import type { ConfigManager } from "../../configManager.js";
-import type { Logger } from "../../Logger.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { MCPToolConfig, CustomMCPTool } from "../../configManager.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Logger } from "../../Logger.js";
+import type { ConfigManager } from "../../configManager.js";
+import type { CustomMCPTool, MCPToolConfig } from "../../configManager.js";
+import { ToolSyncManager } from "../ToolSyncManager.js";
 
 // Mock ConfigManager
 const createMockConfigManager = (): ConfigManager => {
@@ -87,9 +87,7 @@ describe("ToolSyncManager", () => {
       const serviceName = "test-service";
       const tools = createMockTools(["tool1", "tool2"]);
 
-      vi.mocked(mockConfigManager.getServerToolsConfig).mockReturnValue(
-        {}
-      );
+      vi.mocked(mockConfigManager.getServerToolsConfig).mockReturnValue({});
 
       // Act
       await toolSyncManager.syncToolsAfterConnection(serviceName, tools);

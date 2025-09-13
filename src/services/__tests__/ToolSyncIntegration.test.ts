@@ -1,8 +1,8 @@
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { MCPServiceConfig } from "../MCPService.js";
 import { MCPServiceManager } from "../MCPServiceManager.js";
 import { ToolSyncManager } from "../ToolSyncManager.js";
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { MCPServiceConfig } from "../MCPService.js";
 
 // Mock logger
 vi.mock("../../Logger.js", () => ({
@@ -183,7 +183,9 @@ describe("工具同步集成测试", () => {
     );
     vi.mocked(mockConfigManager.getServerToolsConfig).mockImplementation(
       (serviceName: string) => {
-        return (testConfig.mcpServerConfig as Record<string, any>)?.[serviceName]?.tools;
+        return (testConfig.mcpServerConfig as Record<string, any>)?.[
+          serviceName
+        ]?.tools;
       }
     );
     vi.mocked(mockConfigManager.getCustomMCPTools).mockReturnValue([]);
@@ -198,7 +200,9 @@ describe("工具同步集成测试", () => {
     );
     vi.mocked(mockConfigManager.isToolEnabled).mockReturnValue(true);
 
-    serviceManager = new MCPServiceManager(testConfig.mcpServers as Record<string, any>);
+    serviceManager = new MCPServiceManager(
+      testConfig.mcpServers as Record<string, any>
+    );
   });
 
   afterEach(() => {
@@ -211,9 +215,7 @@ describe("工具同步集成测试", () => {
       customMCP: { tools: [] },
     });
     vi.mocked(mockConfigManager.getMcpServers).mockReturnValue({});
-    vi.mocked(mockConfigManager.getServerToolsConfig).mockReturnValue(
-      {}
-    );
+    vi.mocked(mockConfigManager.getServerToolsConfig).mockReturnValue({});
     vi.mocked(mockConfigManager.getCustomMCPTools).mockReturnValue([]);
     vi.mocked(mockConfigManager.addCustomMCPTools).mockResolvedValue(undefined);
   });
@@ -312,9 +314,7 @@ describe("工具同步集成测试", () => {
 
     it("应该跳过没有配置的服务", async () => {
       // Arrange - 移除 calculator 的 mcpServerConfig
-      vi.mocked(mockConfigManager.getServerToolsConfig).mockReturnValue(
-        {}
-      );
+      vi.mocked(mockConfigManager.getServerToolsConfig).mockReturnValue({});
 
       // Act
       await serviceManager.startService("calculator");
