@@ -5,8 +5,7 @@
 
 import { CozeWorkflowIntegration } from "@/components/CozeWorkflowIntegration";
 import { toolsApiService } from "@/services/toolsApi";
-import type { CozeWorkflow } from "@/types";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -68,16 +67,6 @@ vi.mock("@/hooks/useCozeWorkflows", () => ({
 }));
 
 describe("CozeWorkflowIntegration - 参数配置功能", () => {
-  const mockWorkflow: CozeWorkflow = {
-    workflow_id: "workflow-1",
-    workflow_name: "测试工作流",
-    description: "这是一个测试工作流",
-    icon_url: "https://example.com/icon.png",
-    app_id: "app-1",
-    creator: { id: "creator-1", name: "创建者" },
-    created_at: Date.now(),
-    updated_at: Date.now(),
-  };
 
   const mockAddedTool = {
     name: "test_workflow_tool",
@@ -160,8 +149,8 @@ describe("CozeWorkflowIntegration - 参数配置功能", () => {
       await user.click(addParamButton);
 
       // 填写参数信息
-      const fieldNameInput = screen.getByPlaceholderText("请输入字段名");
-      const descriptionInput = screen.getByPlaceholderText("请输入参数描述");
+      const fieldNameInput = screen.getByPlaceholderText("例如: userName");
+      const descriptionInput = screen.getByPlaceholderText("例如: 用户名称");
 
       await user.type(fieldNameInput, "userName");
       await user.type(descriptionInput, "用户名称");
@@ -171,13 +160,20 @@ describe("CozeWorkflowIntegration - 参数配置功能", () => {
       await user.click(requiredCheckbox);
 
       // 确认添加
-      const confirmButton = screen.getByText("确认添加");
+      const confirmButton = screen.getByText("确认配置");
       await user.click(confirmButton);
 
       // 验证API调用
       await waitFor(() => {
         expect(toolsApiService.addCustomTool).toHaveBeenCalledWith(
-          mockWorkflow,
+          expect.objectContaining({
+            workflow_id: "workflow-1",
+            workflow_name: "测试工作流",
+            description: "这是一个测试工作流",
+            icon_url: "https://example.com/icon.png",
+            app_id: "app-1",
+            creator: { id: "creator-1", name: "创建者" },
+          }),
           undefined,
           undefined,
           {
@@ -219,13 +215,20 @@ describe("CozeWorkflowIntegration - 参数配置功能", () => {
       });
 
       // 直接确认添加（不添加参数）
-      const confirmButton = screen.getByText("确认添加");
+      const confirmButton = screen.getByText("确认配置");
       await user.click(confirmButton);
 
       // 验证API调用（不传递参数配置）
       await waitFor(() => {
         expect(toolsApiService.addCustomTool).toHaveBeenCalledWith(
-          mockWorkflow,
+          expect.objectContaining({
+            workflow_id: "workflow-1",
+            workflow_name: "测试工作流",
+            description: "这是一个测试工作流",
+            icon_url: "https://example.com/icon.png",
+            app_id: "app-1",
+            creator: { id: "creator-1", name: "创建者" },
+          }),
           undefined,
           undefined,
           undefined
@@ -302,7 +305,7 @@ describe("CozeWorkflowIntegration - 参数配置功能", () => {
       await user.click(triggerButton);
 
       // 切换到已添加工具标签页
-      const manageTab = screen.getByText("已添加工具 (0)");
+      const manageTab = screen.getByText("已添加工具 (2)");
       await user.click(manageTab);
 
       // 等待工具列表加载
@@ -311,7 +314,7 @@ describe("CozeWorkflowIntegration - 参数配置功能", () => {
         expect(screen.getByText("test_tool_2")).toBeInTheDocument();
       });
 
-      // 验证参数信息显示
+      // 验证参数信息显示（过滤掉input字段）
       expect(screen.getByText("1 个参数")).toBeInTheDocument();
       expect(screen.getByText("userName: string")).toBeInTheDocument();
     });
@@ -342,7 +345,7 @@ describe("CozeWorkflowIntegration - 参数配置功能", () => {
       await user.click(triggerButton);
 
       // 切换到已添加工具标签页
-      const manageTab = screen.getByText("已添加工具 (0)");
+      const manageTab = screen.getByText("已添加工具 (1)");
       await user.click(manageTab);
 
       // 等待工具列表加载
