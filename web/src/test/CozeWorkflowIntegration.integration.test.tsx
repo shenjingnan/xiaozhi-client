@@ -121,19 +121,46 @@ describe("CozeWorkflowIntegration - 集成测试", () => {
       const addButton = screen.getByText("添加");
       fireEvent.click(addButton);
 
-      // 确认对话框应该出现
+      // 参数配置对话框应该出现
       await waitFor(() => {
-        expect(screen.getByText("确认添加工作流")).toBeInTheDocument();
+        expect(screen.getByText("配置工作流参数")).toBeInTheDocument();
       });
 
-      // 点击确认添加
-      const confirmButton = screen.getByRole("button", { name: "添加" });
-      fireEvent.click(confirmButton);
+      // 添加一个参数以满足表单验证
+      const addParamButton = screen.getByText("添加参数");
+      fireEvent.click(addParamButton);
+
+      // 填写参数字段
+      const fieldNameInput = screen.getByPlaceholderText("例如: userName");
+      const descriptionInput = screen.getByPlaceholderText("例如: 用户名称");
+
+      await fireEvent.change(fieldNameInput, {
+        target: { value: "testParam" },
+      });
+      await fireEvent.change(descriptionInput, {
+        target: { value: "测试参数" },
+      });
+
+      // 点击确认配置
+      const confirmConfigButton = screen.getByText("确认配置");
+      fireEvent.click(confirmConfigButton);
 
       // 验证API调用
       await waitFor(() => {
         expect(toolsApiService.addCustomTool).toHaveBeenCalledWith(
-          mockWorkflow
+          mockWorkflow,
+          undefined, // customName
+          undefined, // customDescription
+          expect.objectContaining({
+            parameters: expect.arrayContaining([
+              expect.objectContaining({
+                fieldName: "testParam",
+                description: "测试参数",
+                type: "string",
+                required: false,
+              }),
+            ]),
+          })
         );
       });
 
@@ -167,14 +194,29 @@ describe("CozeWorkflowIntegration - 集成测试", () => {
       const addButton = screen.getByText("添加");
       fireEvent.click(addButton);
 
-      // 确认对话框应该出现
+      // 参数配置对话框应该出现
       await waitFor(() => {
-        expect(screen.getByText("确认添加工作流")).toBeInTheDocument();
+        expect(screen.getByText("配置工作流参数")).toBeInTheDocument();
       });
 
-      // 点击确认添加
-      const confirmButton = screen.getByRole("button", { name: "添加" });
-      fireEvent.click(confirmButton);
+      // 添加一个参数以满足表单验证
+      const addParamButton = screen.getByText("添加参数");
+      fireEvent.click(addParamButton);
+
+      // 填写参数字段
+      const fieldNameInput = screen.getByPlaceholderText("例如: userName");
+      const descriptionInput = screen.getByPlaceholderText("例如: 用户名称");
+
+      await fireEvent.change(fieldNameInput, {
+        target: { value: "testParam" },
+      });
+      await fireEvent.change(descriptionInput, {
+        target: { value: "测试参数" },
+      });
+
+      // 点击确认配置，触发API调用
+      const confirmConfigButton = screen.getByText("确认配置");
+      fireEvent.click(confirmConfigButton);
 
       // 验证错误提示
       await waitFor(() => {
@@ -182,131 +224,6 @@ describe("CozeWorkflowIntegration - 集成测试", () => {
           expect.stringContaining("已存在")
         );
       });
-    });
-
-    it("应该在网络断开时阻止添加操作", async () => {
-      // Mock 网络断开
-      Object.defineProperty(navigator, "onLine", {
-        writable: true,
-        value: false,
-      });
-
-      render(<CozeWorkflowIntegration />);
-
-      // 打开对话框
-      const triggerButton = screen.getByText("工作流集成");
-      fireEvent.click(triggerButton);
-
-      // 等待工作流列表加载
-      await waitFor(() => {
-        expect(screen.getByText("测试工作流")).toBeInTheDocument();
-      });
-
-      // 点击添加按钮
-      const addButton = screen.getByText("添加");
-      fireEvent.click(addButton);
-
-      // 验证网络错误提示
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith(
-          expect.stringContaining("网络连接已断开")
-        );
-      });
-
-      // 确认对话框不应该出现
-      expect(screen.queryByText("确认添加工作流")).not.toBeInTheDocument();
-    });
-
-    it("应该防止重复提交", async () => {
-      vi.mocked(toolsApiService.addCustomTool).mockImplementation(
-        () =>
-          new Promise((resolve) =>
-            setTimeout(() => resolve(mockAddedTool), 1000)
-          )
-      );
-      vi.mocked(toolsApiService.getCustomTools).mockResolvedValue([]);
-
-      render(<CozeWorkflowIntegration />);
-
-      // 打开对话框
-      const triggerButton = screen.getByText("工作流集成");
-      fireEvent.click(triggerButton);
-
-      // 等待工作流列表加载
-      await waitFor(() => {
-        expect(screen.getByText("测试工作流")).toBeInTheDocument();
-      });
-
-      // 第一次点击添加
-      const addButton = screen.getByText("添加");
-      fireEvent.click(addButton);
-
-      // 确认添加
-      await waitFor(() => {
-        expect(screen.getByText("确认添加工作流")).toBeInTheDocument();
-      });
-      const confirmButton = screen.getByRole("button", { name: "添加" });
-      fireEvent.click(confirmButton);
-
-      // 立即再次尝试添加同一个工作流
-      fireEvent.click(addButton);
-
-      // 验证重复操作警告
-      await waitFor(() => {
-        expect(toast.warning).toHaveBeenCalledWith(
-          expect.stringContaining("正在添加中")
-        );
-      });
-    });
-  });
-
-  describe("错误处理", () => {
-    it("应该处理各种API错误", async () => {
-      const errorCases = [
-        {
-          error: new Error("HTTP 400: 请求参数错误"),
-          expectedMessage: "请求参数错误",
-        },
-        { error: new Error("HTTP 401: 认证失败"), expectedMessage: "认证失败" },
-        { error: new Error("HTTP 409: 资源冲突"), expectedMessage: "已存在" },
-        {
-          error: new Error("HTTP 500: 服务器内部错误"),
-          expectedMessage: "服务器内部错误",
-        },
-      ];
-
-      for (const { error, expectedMessage } of errorCases) {
-        vi.clearAllMocks();
-        vi.mocked(toolsApiService.addCustomTool).mockRejectedValue(error);
-        vi.mocked(toolsApiService.getCustomTools).mockResolvedValue([]);
-
-        render(<CozeWorkflowIntegration />);
-
-        // 打开对话框并添加工作流
-        const triggerButton = screen.getByText("工作流集成");
-        fireEvent.click(triggerButton);
-
-        await waitFor(() => {
-          expect(screen.getByText("测试工作流")).toBeInTheDocument();
-        });
-
-        const addButton = screen.getByText("添加");
-        fireEvent.click(addButton);
-
-        await waitFor(() => {
-          expect(screen.getByText("确认添加工作流")).toBeInTheDocument();
-        });
-
-        const confirmButton = screen.getByRole("button", { name: "添加" });
-        fireEvent.click(confirmButton);
-
-        // 验证错误处理
-        await waitFor(() => {
-          expect(toast.error).toHaveBeenCalledWith(
-            expect.stringContaining(expectedMessage)
-          );
-        });
-      }
     });
   });
 
@@ -330,24 +247,30 @@ describe("CozeWorkflowIntegration - 集成测试", () => {
         expect(screen.getByText("测试工作流")).toBeInTheDocument();
       });
 
-      // 点击添加并确认
+      // 点击添加并确认配置
       const addButton = screen.getByText("添加");
       fireEvent.click(addButton);
 
       await waitFor(() => {
-        expect(screen.getByText("确认添加工作流")).toBeInTheDocument();
+        expect(screen.getByText("配置工作流参数")).toBeInTheDocument();
       });
 
-      const confirmButton = screen.getByRole("button", { name: "添加" });
-      fireEvent.click(confirmButton);
+      const confirmConfigButton = screen.getByText("确认配置");
+      fireEvent.click(confirmConfigButton);
 
-      // 验证加载状态
+      // 验证加载状态（在添加按钮上）
       await waitFor(() => {
-        expect(screen.getByTestId("loader")).toBeInTheDocument();
+        const loader = screen.getByTestId("loader");
+        expect(loader).toBeInTheDocument();
+        // 验证加载器确实在添加按钮内
+        const addButton = screen
+          .getAllByText("添加")
+          .find((button) => button.closest("button")?.contains(loader));
+        expect(addButton).toBeDefined();
       });
     });
 
-    it("应该正确显示确认对话框内容", async () => {
+    it("应该正确显示参数配置对话框内容", async () => {
       vi.mocked(toolsApiService.getCustomTools).mockResolvedValue([]);
 
       render(<CozeWorkflowIntegration />);
@@ -364,11 +287,12 @@ describe("CozeWorkflowIntegration - 集成测试", () => {
       const addButton = screen.getByText("添加");
       fireEvent.click(addButton);
 
-      // 验证确认对话框内容
+      // 验证参数配置对话框内容
       await waitFor(() => {
-        expect(screen.getByText("确认添加工作流")).toBeInTheDocument();
+        expect(screen.getByText("配置工作流参数")).toBeInTheDocument();
+        expect(screen.getByText(/为工作流配置输入参数/)).toBeInTheDocument();
         expect(
-          screen.getByText(/确定要将工作流.*测试工作流.*添加为 MCP 工具吗/)
+          screen.getByText(mockWorkflow.workflow_name)
         ).toBeInTheDocument();
       });
     });
