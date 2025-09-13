@@ -2,7 +2,7 @@
  * WorkflowParameterConfigDialog 组件测试
  */
 
-import type { CozeWorkflow, WorkflowParameter } from "@/types";
+import type { CozeWorkflow } from "@/types";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";

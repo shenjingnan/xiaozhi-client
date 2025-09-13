@@ -59,13 +59,6 @@ export class ToolsApiService {
       parameterConfig
     );
 
-    const request: AddToolRequest = {
-      workflow,
-      customName,
-      customDescription,
-      parameterConfig,
-    };
-
     try {
       const result = await this.executeWithRetry(async () => {
         return await apiClient.addCustomTool(
@@ -385,6 +378,3 @@ export class ToolsApiService {
 
 // 创建默认实例
 export const toolsApiService = new ToolsApiService();
-
-// 导出类型
-export type { AddToolRequest, AddToolResponse, ApiError };

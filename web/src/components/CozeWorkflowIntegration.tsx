@@ -21,8 +21,7 @@ import {
 import {
   Select,
   SelectContent,
-  SelectGroup,
-  SelectItem,
+    SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -402,23 +401,7 @@ export function CozeWorkflowIntegration() {
     }
   };
 
-  const renderPlatformSelector = () => {
-    return (
-      <Select>
-        <SelectTrigger className="w-[140px]">
-          <SelectValue placeholder="选择平台" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            <SelectItem value="coze">coze</SelectItem>
-            <SelectItem value="dify">dify</SelectItem>
-            <SelectItem value="n8n">n8n</SelectItem>
-          </SelectGroup>
-        </SelectContent>
-      </Select>
-    );
-  };
-
+  
   // 渲染工作空间选择器
   const renderWorkspaceSelector = () => (
     <div className="space-y-2">

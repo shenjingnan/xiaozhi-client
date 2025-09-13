@@ -74,9 +74,10 @@ export function CustomTitleExample() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const handleConfirm = (
-    workflow: CozeWorkflow,
-    parameters: WorkflowParameter[]
+    _workflow: CozeWorkflow,
+    _parameters: WorkflowParameter[]
   ) => {
+    // 显示成功消息
     toast.success("参数配置完成！");
     setDialogOpen(false);
   };
