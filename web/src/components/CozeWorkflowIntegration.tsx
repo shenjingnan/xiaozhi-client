@@ -494,7 +494,7 @@ export function CozeWorkflowIntegration({
     }
 
     return (
-      <div className="space-y-3">
+      <div className="space-y-3 max-h-[500px] overflow-auto">
         {workflows.map((workflow) => (
           <div
             key={workflow.workflow_id}
@@ -599,7 +599,7 @@ export function CozeWorkflowIntegration({
             工作流集成
           </Button>
         </DialogTrigger>
-        <DialogContent className="flex flex-col">
+        <DialogContent className="flex flex-col max-w-full w-[1000px]">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Workflow className="h-5 w-5" />
@@ -611,7 +611,7 @@ export function CozeWorkflowIntegration({
           <div className="w-[120px]">{renderWorkspaceSelector()}</div>
 
           {/* 工作流列表 */}
-          <div className="flex-1 pr-2">{renderWorkflowList()}</div>
+          <div className="flex-1 pr-2 w-full">{renderWorkflowList()}</div>
 
           {/* 分页控件 */}
           {renderPagination()}
