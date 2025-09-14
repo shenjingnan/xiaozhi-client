@@ -436,20 +436,6 @@ export function CozeWorkflowIntegration() {
   // 渲染工作空间选择器
   const renderWorkspaceSelector = () => (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">选择工作空间</span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleRefreshWorkspaces}
-          disabled={workspacesLoading}
-        >
-          <RefreshCw
-            className={`h-4 w-4 ${workspacesLoading ? "animate-spin" : ""}`}
-          />
-        </Button>
-      </div>
-
       {workspacesError ? (
         <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 rounded-md">
           <AlertCircle className="h-4 w-4" />
@@ -471,9 +457,6 @@ export function CozeWorkflowIntegration() {
               <SelectItem key={workspace.id} value={workspace.id}>
                 <div className="flex items-center gap-2">
                   <span>{workspace.name}</span>
-                  <Badge variant="outline" className="text-xs">
-                    {workspace.workspace_type === "personal" ? "个人" : "团队"}
-                  </Badge>
                 </div>
               </SelectItem>
             ))}
@@ -579,15 +562,15 @@ export function CozeWorkflowIntegration() {
                 size="sm"
                 onClick={() => handleAddWorkflow(workflow)}
                 disabled={isAddingWorkflow}
-                className="hover:bg-green-500 hover:text-white"
+                className="hover:bg-green-500 hover:text-white gap-0"
               >
                 {isAddingWorkflow ? (
                   <Loader2
-                    className="h-4 w-4 mr-1 animate-spin"
+                    className="h-4 w-4 animate-spin"
                     data-testid="loader"
                   />
                 ) : (
-                  <Plus className="h-4 w-4 mr-1" />
+                  <Plus className="h-4 w-4" />
                 )}
                 添加
               </Button>
@@ -728,7 +711,7 @@ export function CozeWorkflowIntegration() {
             工作流集成
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[1000px] max-h-[90vh] h-[600px] flex flex-col">
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] h-[600px] flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Workflow className="h-5 w-5" />
@@ -737,7 +720,9 @@ export function CozeWorkflowIntegration() {
           </DialogHeader>
 
           {/* 工作空间选择器 */}
-          {renderWorkspaceSelector()}
+          <div className="w-[120px]">
+            {renderWorkspaceSelector()}
+          </div>
 
           {/* 工作流列表 */}
           <div className="flex-1 overflow-y-auto min-h-[300px] pr-2">
