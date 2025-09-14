@@ -71,7 +71,7 @@ export class ConfigApiHandler {
     try {
       this.logger.debug("处理获取配置请求");
       const config = await this.configService.getConfig();
-      this.logger.debug("获取配置成功");
+      this.logger.info("获取配置成功");
       return c.json(this.createSuccessResponse(config));
     } catch (error) {
       this.logger.error("获取配置失败:", error);
