@@ -1,3 +1,4 @@
+import { WorkflowParameterConfigDialog } from "@/components/common/WorkflowParameterConfigDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,17 +12,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { WorkflowParameterConfigDialog } from "@/components/common/WorkflowParameterConfigDialog";
 import { apiClient } from "@/services/api";
 import { useMcpServerConfig, useMcpServers } from "@/stores/config";
-import type { MCPServerConfig, CozeWorkflow, WorkflowParameter } from "@/types";
+import type { CozeWorkflow, MCPServerConfig, WorkflowParameter } from "@/types";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
 import {
   CoffeeIcon,
   MinusIcon,
   PlusIcon,
-  Wrench,
   Settings,
+  Wrench,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
