@@ -16,6 +16,10 @@ vi.mock("../../configManager.js", () => ({
     hasValidCustomMCPTools: vi.fn(),
     validateCustomMCPTools: vi.fn(),
     getConfig: vi.fn(),
+    getCustomMCPConfig: vi.fn(),
+    getServerToolsConfig: vi.fn(),
+    addCustomMCPTools: vi.fn(),
+    updateCustomMCPTools: vi.fn(),
   },
 }));
 
@@ -129,6 +133,12 @@ describe("MCPServiceManager CustomMCP 集成测试", () => {
         },
       },
     } as any);
+
+    // 为 ToolSyncManager 添加必需的 mock 方法
+    vi.mocked(configManager.getCustomMCPConfig).mockReturnValue(null);
+    vi.mocked(configManager.getServerToolsConfig).mockReturnValue({});
+    vi.mocked(configManager.addCustomMCPTools).mockResolvedValue(undefined);
+    vi.mocked(configManager.updateCustomMCPTools).mockResolvedValue(undefined);
 
     // 在设置好所有 mock 之后再创建 MCPServiceManager
     manager = new MCPServiceManager();
