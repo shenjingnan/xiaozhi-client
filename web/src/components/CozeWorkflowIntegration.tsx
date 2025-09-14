@@ -44,7 +44,13 @@ import { toast } from "sonner";
 
 const ITEMS_PER_PAGE = 5;
 
-export function CozeWorkflowIntegration() {
+interface CozeWorkflowIntegrationProps {
+  onToolAdded?: () => void;
+}
+
+export function CozeWorkflowIntegration({
+  onToolAdded,
+}: CozeWorkflowIntegrationProps) {
   const [open, setOpen] = useState(false);
   const [isAddingWorkflow, setIsAddingWorkflow] = useState(false);
   const [customTools, setCustomTools] = useState<any[]>([]);
@@ -222,6 +228,9 @@ export function CozeWorkflowIntegration() {
 
       // 重新加载工具列表
       await loadCustomTools();
+
+      // 通知父组件工具已添加，触发工具列表刷新
+      onToolAdded?.();
     } catch (error) {
       console.error("添加工作流失败:", error);
 
@@ -306,6 +315,9 @@ export function CozeWorkflowIntegration() {
 
       // 重新加载工具列表
       await loadCustomTools();
+
+      // 通知父组件工具已添加，触发工具列表刷新
+      onToolAdded?.();
     } catch (error) {
       console.error("添加工作流失败:", error);
 
@@ -720,9 +732,7 @@ export function CozeWorkflowIntegration() {
           </DialogHeader>
 
           {/* 工作空间选择器 */}
-          <div className="w-[120px]">
-            {renderWorkspaceSelector()}
-          </div>
+          <div className="w-[120px]">{renderWorkspaceSelector()}</div>
 
           {/* 工作流列表 */}
           <div className="flex-1 overflow-y-auto min-h-[300px] pr-2">

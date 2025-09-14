@@ -509,7 +509,7 @@ export function McpServerList({
               <AddMcpServerButton />
               <RestartButton />
             </div>
-            <CozeWorkflowIntegration />
+            <CozeWorkflowIntegration onToolAdded={refreshToolLists} />
           </div>
           {Object.entries(mcpServers || {}).map(
             ([mcpServerName, mcpServer]) => (
