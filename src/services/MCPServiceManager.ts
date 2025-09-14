@@ -252,7 +252,9 @@ export class MCPServiceManager {
 
     if (isNewVersion) {
       // 新版本配置处理：直接使用 customMCP.tools 中的工具列表
-      this.logger.info("[MCPManager] 检测到新版本配置，使用 customMCP 工具列表");
+      this.logger.info(
+        "[MCPManager] 检测到新版本配置，使用 customMCP 工具列表"
+      );
 
       try {
         const customTools = this.customMCPHandler.getTools();
