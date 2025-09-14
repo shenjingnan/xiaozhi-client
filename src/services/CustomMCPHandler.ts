@@ -64,8 +64,9 @@ interface TaskManager {
   taskId: string;
   status: TaskStatus;
   startTime: number;
-  endTime?: number;
+  endTime?: string; // 改为string类型以匹配toISOString()
   error?: string;
+  result?: any; // 添加result属性以支持任务结果存储
 }
 
 export class CustomMCPHandler {
