@@ -573,11 +573,13 @@ export class ToolApiHandler {
       if (this.isNewFormatRequest(requestBody)) {
         // 新格式：支持多种工具类型
         return await this.handleNewFormatAddTool(
+          c,
           requestBody as AddCustomToolRequest
         );
       }
       // 旧格式：向后兼容
       return await this.handleLegacyFormatAddTool(
+        c,
         requestBody as LegacyAddCustomToolRequest
       );
     } catch (error) {
@@ -600,6 +602,7 @@ export class ToolApiHandler {
    * 处理新格式的添加工具请求
    */
   private async handleNewFormatAddTool(
+    c: Context,
     request: AddCustomToolRequest
   ): Promise<Response> {
     const { type, data } = request;
@@ -612,16 +615,16 @@ export class ToolApiHandler {
         "INVALID_TOOL_TYPE",
         `不支持的工具类型: ${type}。支持的类型: ${Object.values(ToolType).join(", ")}`
       );
-      return new Response(JSON.stringify(errorResponse), { status: 400 });
+      return c.json(errorResponse, 400);
     }
 
     // 根据工具类型分发处理
     switch (type) {
       case ToolType.MCP:
-        return await this.handleAddMCPTool(data as MCPToolData);
+        return await this.handleAddMCPTool(c, data as MCPToolData);
 
       case ToolType.COZE:
-        return await this.handleAddCozeTool(data as CozeWorkflowData);
+        return await this.handleAddCozeTool(c, data as CozeWorkflowData);
 
       case ToolType.HTTP:
       case ToolType.FUNCTION: {
@@ -629,7 +632,7 @@ export class ToolApiHandler {
           "TOOL_TYPE_NOT_IMPLEMENTED",
           `工具类型 ${type} 暂未实现，请使用 MCP 或 Coze 类型`
         );
-        return new Response(JSON.stringify(httpErrorResponse), { status: 501 });
+        return c.json(httpErrorResponse, 501);
       }
 
       default: {
@@ -637,9 +640,7 @@ export class ToolApiHandler {
           "UNKNOWN_TOOL_TYPE",
           `未知的工具类型: ${type}`
         );
-        return new Response(JSON.stringify(defaultErrorResponse), {
-          status: 400,
-        });
+        return c.json(defaultErrorResponse, 400);
       }
     }
   }
@@ -648,6 +649,7 @@ export class ToolApiHandler {
    * 处理旧格式的添加工具请求（向后兼容）
    */
   private async handleLegacyFormatAddTool(
+    c: Context,
     request: LegacyAddCustomToolRequest
   ): Promise<Response> {
     this.logger.info("处理旧格式工具添加请求（向后兼容）");
@@ -662,9 +664,10 @@ export class ToolApiHandler {
       customDescription
     );
     if (preCheckResult) {
-      return new Response(JSON.stringify(preCheckResult.errorResponse), {
-        status: preCheckResult.statusCode,
-      });
+      return c.json(
+        preCheckResult.errorResponse,
+        preCheckResult.statusCode as any
+      );
     }
 
     // 转换工作流为工具配置
@@ -680,17 +683,18 @@ export class ToolApiHandler {
 
     this.logger.info(`成功添加自定义工具: ${tool.name}`);
 
-    return new Response(
-      JSON.stringify(
-        this.createSuccessResponse({ tool }, `工具 "${tool.name}" 添加成功`)
-      )
+    return c.json(
+      this.createSuccessResponse({ tool }, `工具 "${tool.name}" 添加成功`)
     );
   }
 
   /**
    * 处理添加 MCP 工具
    */
-  private async handleAddMCPTool(data: MCPToolData): Promise<Response> {
+  private async handleAddMCPTool(
+    c: Context,
+    data: MCPToolData
+  ): Promise<Response> {
     const { serviceName, toolName, customName, customDescription } = data;
 
     this.logger.info(`处理添加 MCP 工具: ${serviceName}/${toolName}`);
@@ -701,7 +705,7 @@ export class ToolApiHandler {
         "MISSING_REQUIRED_FIELD",
         "serviceName 和 toolName 是必需字段"
       );
-      return new Response(JSON.stringify(errorResponse), { status: 400 });
+      return c.json(errorResponse, 400);
     }
 
     // 检查 MCP 服务管理器是否已初始化
@@ -710,7 +714,7 @@ export class ToolApiHandler {
         "SERVICE_NOT_INITIALIZED",
         "MCP 服务管理器未初始化。请检查服务状态。"
       );
-      return new Response(JSON.stringify(errorResponse), { status: 503 });
+      return c.json(errorResponse, 503);
     }
 
     // 获取服务管理器实例
@@ -726,7 +730,7 @@ export class ToolApiHandler {
         "SERVICE_OR_TOOL_NOT_FOUND",
         errorMessage
       );
-      return new Response(JSON.stringify(errorResponse), { status: 404 });
+      return c.json(errorResponse, 404);
     }
 
     // 从缓存中获取工具信息
@@ -742,7 +746,7 @@ export class ToolApiHandler {
         "TOOL_NOT_FOUND",
         `在缓存中未找到工具: ${serviceName}/${toolName}`
       );
-      return new Response(JSON.stringify(errorResponse), { status: 404 });
+      return c.json(errorResponse, 404);
     }
 
     // 生成工具名称
@@ -757,7 +761,7 @@ export class ToolApiHandler {
         "TOOL_NAME_CONFLICT",
         `工具名称 "${finalToolName}" 已存在，请使用不同的自定义名称`
       );
-      return new Response(JSON.stringify(errorResponse), { status: 409 });
+      return c.json(errorResponse, 409);
     }
 
     // 创建 CustomMCPTool 配置
@@ -793,12 +797,10 @@ export class ToolApiHandler {
       addedAt: dayjs().format("YYYY-MM-DD HH:mm:ss"),
     };
 
-    return new Response(
-      JSON.stringify(
-        this.createSuccessResponse(
-          responseData,
-          `MCP 工具 "${finalToolName}" 添加成功`
-        )
+    return c.json(
+      this.createSuccessResponse(
+        responseData,
+        `MCP 工具 "${finalToolName}" 添加成功`
       )
     );
   }
@@ -806,7 +808,10 @@ export class ToolApiHandler {
   /**
    * 处理添加 Coze 工具
    */
-  private async handleAddCozeTool(data: CozeWorkflowData): Promise<Response> {
+  private async handleAddCozeTool(
+    c: Context,
+    data: CozeWorkflowData
+  ): Promise<Response> {
     const { workflow, customName, customDescription, parameterConfig } = data;
 
     this.logger.info(`处理添加 Coze 工具: ${workflow.workflow_name}`);
@@ -818,9 +823,10 @@ export class ToolApiHandler {
       customDescription
     );
     if (preCheckResult) {
-      return new Response(JSON.stringify(preCheckResult.errorResponse), {
-        status: preCheckResult.statusCode,
-      });
+      return c.json(
+        preCheckResult.errorResponse,
+        preCheckResult.statusCode as any
+      );
     }
 
     // 转换工作流为工具配置
@@ -843,12 +849,10 @@ export class ToolApiHandler {
       addedAt: dayjs().format("YYYY-MM-DD HH:mm:ss"),
     };
 
-    return new Response(
-      JSON.stringify(
-        this.createSuccessResponse(
-          responseData,
-          `Coze 工具 "${tool.name}" 添加成功`
-        )
+    return c.json(
+      this.createSuccessResponse(
+        responseData,
+        `Coze 工具 "${tool.name}" 添加成功`
       )
     );
   }
