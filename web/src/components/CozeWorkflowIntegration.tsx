@@ -26,9 +26,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCozeWorkflows } from "@/hooks/useCozeWorkflows";
-import { toolsApiService } from "@/services/toolsApi";
+import { apiClient } from "@/services/api";
 import type { CozeWorkflow, WorkflowParameter } from "@/types";
 import {
   AlertCircle,
@@ -37,19 +36,20 @@ import {
   Loader2,
   Plus,
   RefreshCw,
-  Trash2,
   Workflow,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-const ITEMS_PER_PAGE = 5;
+interface CozeWorkflowIntegrationProps {
+  onToolAdded?: () => void;
+}
 
-export function CozeWorkflowIntegration() {
+export function CozeWorkflowIntegration({
+  onToolAdded,
+}: CozeWorkflowIntegrationProps) {
   const [open, setOpen] = useState(false);
   const [isAddingWorkflow, setIsAddingWorkflow] = useState(false);
-  const [customTools, setCustomTools] = useState<any[]>([]);
-  const [isLoadingTools, setIsLoadingTools] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     workflow?: CozeWorkflow;
@@ -64,6 +64,7 @@ export function CozeWorkflowIntegration() {
   const [pendingOperations, setPendingOperations] = useState<Set<string>>(
     new Set()
   );
+  const [hasAutoSelected, setHasAutoSelected] = useState(false);
 
   // 使用 useCozeWorkflows Hook 获取数据和状态
   const {
@@ -77,27 +78,13 @@ export function CozeWorkflowIntegration() {
     hasMoreWorkflows,
     currentPage,
     selectWorkspace,
-    refreshWorkspaces,
     refreshWorkflows,
     setPage,
+    setWorkflows,
   } = useCozeWorkflows({
     autoLoadWorkspaces: true,
     autoLoadWorkflows: true,
   });
-
-  // 加载自定义工具列表
-  const loadCustomTools = useCallback(async () => {
-    setIsLoadingTools(true);
-    try {
-      const tools = await toolsApiService.getCustomTools();
-      setCustomTools(tools);
-    } catch (error) {
-      console.error("加载工具列表失败:", error);
-      // 不显示错误toast，避免干扰用户
-    } finally {
-      setIsLoadingTools(false);
-    }
-  }, []);
 
   // 监听网络状态
   useEffect(() => {
@@ -113,14 +100,37 @@ export function CozeWorkflowIntegration() {
     };
   }, []);
 
-  // 组件挂载时加载工具列表
+  // 自动选择第一个工作空间
   useEffect(() => {
-    if (open) {
-      loadCustomTools();
+    // 当工作空间加载完成且不为空，且尚未进行过自动选择时
+    if (
+      !workspacesLoading &&
+      workspaces.length > 0 &&
+      !selectedWorkspace &&
+      !hasAutoSelected
+    ) {
+      const firstWorkspace = workspaces[0];
+      console.log(`自动选择第一个工作空间: ${firstWorkspace.name}`);
+      selectWorkspace(firstWorkspace.id);
+      setHasAutoSelected(true);
     }
-  }, [open, loadCustomTools]);
+
+    // 如果工作空间列表被清空或重新加载，重置自动选择状态
+    if (workspacesLoading && hasAutoSelected) {
+      setHasAutoSelected(false);
+    }
+  }, [
+    workspaces,
+    workspacesLoading,
+    selectedWorkspace,
+    hasAutoSelected,
+    selectWorkspace,
+  ]);
 
   const handleWorkspaceChange = (workspaceId: string) => {
+    // 用户手动选择工作空间时，标记为已进行手动选择
+    // 这样自动选择逻辑就不会再次触发
+    setHasAutoSelected(true);
     selectWorkspace(workspaceId);
   };
 
@@ -174,22 +184,43 @@ export function CozeWorkflowIntegration() {
       const parameterConfig =
         parameters.length > 0 ? { parameters } : undefined;
 
-      // 调用后端API添加工具
-      const addedTool = await toolsApiService.addCustomTool(
-        workflow,
-        undefined, // customName
-        undefined, // customDescription
-        parameterConfig
-      );
+      const request = {
+        type: "coze" as const,
+        data: {
+          workflow,
+          customName: undefined,
+          customDescription: undefined,
+          parameterConfig,
+        },
+      };
+      const addedTool = await apiClient.addCustomTool(request);
 
       toast.success(
-        `已添加工作流 "${workflow.workflow_name}" 为 MCP 工具 "${addedTool.name}"${
+        `已添加工作流 "${workflow.workflow_name}" 为 MCP 工具 "${
+          addedTool.name
+        }"${
           parameters.length > 0 ? `，配置了 ${parameters.length} 个参数` : ""
         }`
       );
 
-      // 重新加载工具列表
-      await loadCustomTools();
+      // 立即更新本地工作流状态，标记为已添加
+      setWorkflows((prevWorkflows) =>
+        prevWorkflows.map((w) =>
+          w.workflow_id === workflow.workflow_id
+            ? {
+                ...w,
+                isAddedAsTool: true,
+                toolName: addedTool.name,
+              }
+            : w
+        )
+      );
+
+      // 通知父组件工具已添加，触发工具列表刷新
+      onToolAdded?.();
+
+      // 刷新工作流列表以确保状态同步
+      await refreshWorkflows();
     } catch (error) {
       console.error("添加工作流失败:", error);
 
@@ -265,15 +296,40 @@ export function CozeWorkflowIntegration() {
         throw new Error("网络连接已断开，请检查网络后重试");
       }
 
-      // 调用后端API添加工具
-      const addedTool = await toolsApiService.addCustomTool(workflow);
+      // 使用新的统一数据格式添加工具
+      const request = {
+        type: "coze" as const,
+        data: {
+          workflow,
+          customName: undefined,
+          customDescription: undefined,
+          parameterConfig: undefined,
+        },
+      };
+      const addedTool = await apiClient.addCustomTool(request);
 
       toast.success(
         `已添加工作流 "${workflow.workflow_name}" 为 MCP 工具 "${addedTool.name}"`
       );
 
-      // 重新加载工具列表
-      await loadCustomTools();
+      // 立即更新本地工作流状态，标记为已添加
+      setWorkflows((prevWorkflows) =>
+        prevWorkflows.map((w) =>
+          w.workflow_id === workflow.workflow_id
+            ? {
+                ...w,
+                isAddedAsTool: true,
+                toolName: addedTool.name,
+              }
+            : w
+        )
+      );
+
+      // 通知父组件工具已添加，触发工具列表刷新
+      onToolAdded?.();
+
+      // 刷新工作流列表以确保状态同步
+      await refreshWorkflows();
     } catch (error) {
       console.error("添加工作流失败:", error);
 
@@ -323,62 +379,6 @@ export function CozeWorkflowIntegration() {
     }
   };
 
-  const handleRemoveTool = (toolName: string) => {
-    // 显示确认对话框
-    setConfirmDialog({
-      open: true,
-      toolName,
-      action: "remove",
-    });
-  };
-
-  const handleConfirmRemoveTool = async (toolName: string) => {
-    const operationKey = `remove_${toolName}`;
-
-    setPendingOperations((prev) => new Set(prev).add(operationKey));
-
-    try {
-      // 检查网络状态
-      if (!isOnline) {
-        throw new Error("网络连接已断开，请检查网络后重试");
-      }
-
-      await toolsApiService.removeCustomTool(toolName);
-      toast.success(`已删除工具 "${toolName}"`);
-
-      // 重新加载工具列表
-      await loadCustomTools();
-    } catch (error) {
-      console.error("删除工具失败:", error);
-
-      let errorMessage = "删除工具失败，请重试";
-      if (error instanceof Error) {
-        if (error.message.includes("不存在") || error.message.includes("404")) {
-          errorMessage = `工具 "${toolName}" 不存在或已被删除`;
-        } else if (
-          error.message.includes("网络") ||
-          error.message.includes("超时") ||
-          error.message.includes("连接")
-        ) {
-          errorMessage = "网络连接失败，请检查网络后重试";
-        } else if (error.message.includes("权限")) {
-          errorMessage = "权限不足，无法删除该工具";
-        } else {
-          errorMessage = error.message;
-        }
-      }
-
-      toast.error(errorMessage);
-    } finally {
-      setPendingOperations((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(operationKey);
-        return newSet;
-      });
-      setConfirmDialog({ open: false, action: "remove" });
-    }
-  };
-
   const handlePrevPage = () => {
     if (currentPage > 1) {
       setPage(currentPage - 1);
@@ -391,10 +391,6 @@ export function CozeWorkflowIntegration() {
     }
   };
 
-  const handleRefreshWorkspaces = () => {
-    refreshWorkspaces();
-  };
-
   const handleRefreshWorkflows = () => {
     if (selectedWorkspace) {
       refreshWorkflows();
@@ -404,20 +400,6 @@ export function CozeWorkflowIntegration() {
   // 渲染工作空间选择器
   const renderWorkspaceSelector = () => (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">选择工作空间</span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleRefreshWorkspaces}
-          disabled={workspacesLoading}
-        >
-          <RefreshCw
-            className={`h-4 w-4 ${workspacesLoading ? "animate-spin" : ""}`}
-          />
-        </Button>
-      </div>
-
       {workspacesError ? (
         <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 rounded-md">
           <AlertCircle className="h-4 w-4" />
@@ -439,9 +421,6 @@ export function CozeWorkflowIntegration() {
               <SelectItem key={workspace.id} value={workspace.id}>
                 <div className="flex items-center gap-2">
                   <span>{workspace.name}</span>
-                  <Badge variant="outline" className="text-xs">
-                    {workspace.workspace_type === "personal" ? "个人" : "团队"}
-                  </Badge>
                 </div>
               </SelectItem>
             ))}
@@ -543,127 +522,30 @@ export function CozeWorkflowIntegration() {
 
             {/* 添加按钮 */}
             <div className="flex-shrink-0">
-              <Button
-                size="sm"
-                onClick={() => handleAddWorkflow(workflow)}
-                disabled={isAddingWorkflow}
-                className="hover:bg-green-500 hover:text-white"
-              >
-                {isAddingWorkflow ? (
-                  <Loader2
-                    className="h-4 w-4 mr-1 animate-spin"
-                    data-testid="loader"
-                  />
-                ) : (
-                  <Plus className="h-4 w-4 mr-1" />
-                )}
-                添加
-              </Button>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  // 渲染已添加的工具列表
-  const renderCustomToolsList = () => {
-    if (isLoadingTools) {
-      return (
-        <div className="space-y-3">
-          {Array.from({ length: 2 }, (_, i) => i).map((index) => (
-            <div
-              key={`tool-skeleton-${index}`}
-              className="flex items-center gap-4 p-4 border rounded-lg"
-            >
-              <Skeleton className="w-10 h-10 rounded-lg" />
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-4 w-1/3" />
-                <Skeleton className="h-3 w-2/3" />
-              </div>
-              <Skeleton className="w-16 h-8" />
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    if (customTools.length === 0) {
-      return (
-        <div className="flex flex-col items-center justify-center py-8 text-center">
-          <Workflow className="h-8 w-8 text-muted-foreground mb-2" />
-          <p className="text-sm text-muted-foreground">暂无已添加的工具</p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-3">
-        {customTools.map((tool) => (
-          <div
-            key={tool.name}
-            className="flex items-center gap-4 p-4 border rounded-lg bg-green-50 hover:bg-green-100 transition-colors"
-          >
-            {/* 工具图标 */}
-            <div className="flex-shrink-0 w-10 h-10 bg-green-200 rounded-lg flex items-center justify-center">
-              <Workflow className="h-5 w-5 text-green-700" />
-            </div>
-
-            {/* 工具信息 */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h4 className="font-medium text-sm truncate">{tool.name}</h4>
-                <Badge variant="default" className="text-xs bg-green-600">
+              {workflow.isAddedAsTool ? (
+                <Badge
+                  variant="secondary"
+                  className="text-xs bg-green-100 text-green-800"
+                >
                   已添加
                 </Badge>
-                {tool.inputSchema?.properties &&
-                  Object.keys(tool.inputSchema.properties).length > 1 && (
-                    <Badge variant="outline" className="text-xs">
-                      {Object.keys(tool.inputSchema.properties).length - 1}{" "}
-                      个参数
-                    </Badge>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={() => handleAddWorkflow(workflow)}
+                  disabled={isAddingWorkflow}
+                >
+                  {isAddingWorkflow ? (
+                    <Loader2
+                      className="h-4 w-4 animate-spin"
+                      data-testid="loader"
+                    />
+                  ) : (
+                    <Plus className="h-4 w-4" />
                   )}
-              </div>
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {tool.description || "暂无描述"}
-              </p>
-              {/* 显示参数信息 */}
-              {tool.inputSchema?.properties &&
-                Object.keys(tool.inputSchema.properties).length > 1 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {Object.entries(tool.inputSchema.properties)
-                      .filter(([key]) => key !== "input")
-                      .slice(0, 3)
-                      .map(([key, prop]: [string, any]) => (
-                        <Badge
-                          key={key}
-                          variant="secondary"
-                          className="text-xs"
-                        >
-                          {key}: {prop.type}
-                        </Badge>
-                      ))}
-                    {Object.keys(tool.inputSchema.properties).length > 4 && (
-                      <Badge variant="secondary" className="text-xs">
-                        +{Object.keys(tool.inputSchema.properties).length - 4}{" "}
-                        更多
-                      </Badge>
-                    )}
-                  </div>
-                )}
-            </div>
-
-            {/* 删除按钮 */}
-            <div className="flex-shrink-0">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleRemoveTool(tool.name)}
-                className="hover:bg-red-500 hover:text-white hover:border-red-500"
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
-                删除
-              </Button>
+                  添加
+                </Button>
+              )}
             </div>
           </div>
         ))}
@@ -677,40 +559,30 @@ export function CozeWorkflowIntegration() {
       return null;
     }
 
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = Math.min(
-      startIndex + ITEMS_PER_PAGE,
-      startIndex + workflows.length
-    );
-
     return (
-      <div className="flex items-center justify-between pt-4 border-t flex-shrink-0">
-        <div className="text-sm text-muted-foreground">
-          显示 {startIndex + 1}-{endIndex} 项{hasMoreWorkflows && "，还有更多"}
-        </div>
-
+      <div className="flex items-center justify-end">
         <div className="flex items-center gap-2">
           <Button
-            variant="outline"
+            variant="link"
             size="sm"
             onClick={handlePrevPage}
             disabled={currentPage === 1}
+            className="text-muted-foreground"
           >
             <ChevronLeft className="h-4 w-4" />
-            上一页
           </Button>
 
           <div className="flex items-center gap-1">
-            <span className="text-sm">第 {currentPage} 页</span>
+            <span className="text-sm">{currentPage}</span>
           </div>
 
           <Button
-            variant="outline"
+            variant="link"
             size="sm"
             onClick={handleNextPage}
             disabled={!hasMoreWorkflows}
+            className="text-muted-foreground"
           >
-            下一页
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
@@ -727,7 +599,7 @@ export function CozeWorkflowIntegration() {
             工作流集成
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[1000px] max-h-[90vh] h-[600px] flex flex-col">
+        <DialogContent className="flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Workflow className="h-5 w-5" />
@@ -735,53 +607,14 @@ export function CozeWorkflowIntegration() {
             </DialogTitle>
           </DialogHeader>
 
-          <Tabs defaultValue="add" className="flex flex-col flex-1 min-h-0">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="add">添加工作流</TabsTrigger>
-              <TabsTrigger value="manage">
-                已添加工具 ({customTools.length})
-              </TabsTrigger>
-            </TabsList>
+          {/* 工作空间选择器 */}
+          <div className="w-[120px]">{renderWorkspaceSelector()}</div>
 
-            <TabsContent
-              value="add"
-              className="flex flex-col gap-4 flex-1 min-h-0 mt-4"
-            >
-              {/* 工作空间选择器 */}
-              {renderWorkspaceSelector()}
+          {/* 工作流列表 */}
+          <div className="flex-1 pr-2">{renderWorkflowList()}</div>
 
-              {/* 工作流列表 */}
-              <div className="flex-1 overflow-y-auto min-h-[300px] pr-2">
-                {renderWorkflowList()}
-              </div>
-
-              {/* 分页控件 */}
-              {renderPagination()}
-            </TabsContent>
-
-            <TabsContent
-              value="manage"
-              className="flex flex-col gap-4 flex-1 min-h-0 mt-4"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">已添加的工具</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={loadCustomTools}
-                  disabled={isLoadingTools}
-                >
-                  <RefreshCw
-                    className={`h-4 w-4 ${isLoadingTools ? "animate-spin" : ""}`}
-                  />
-                </Button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto min-h-[300px] pr-2">
-                {renderCustomToolsList()}
-              </div>
-            </TabsContent>
-          </Tabs>
+          {/* 分页控件 */}
+          {renderPagination()}
         </DialogContent>
       </Dialog>
 
@@ -806,37 +639,22 @@ export function CozeWorkflowIntegration() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {confirmDialog.action === "add"
-                ? "确认添加工作流"
-                : "确认删除工具"}
-            </AlertDialogTitle>
+            <AlertDialogTitle>确认添加工作流</AlertDialogTitle>
             <AlertDialogDescription>
-              {confirmDialog.action === "add"
-                ? `确定要将工作流 "${confirmDialog.workflow?.workflow_name}" 添加为 MCP 工具吗？`
-                : `确定要删除工具 "${confirmDialog.toolName}" 吗？此操作不可撤销。`}
+              确定要将工作流 "{confirmDialog.workflow?.workflow_name}" 添加为
+              MCP 工具吗？
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                if (confirmDialog.action === "add" && confirmDialog.workflow) {
+                if (confirmDialog.workflow) {
                   handleConfirmAddWorkflow(confirmDialog.workflow);
-                } else if (
-                  confirmDialog.action === "remove" &&
-                  confirmDialog.toolName
-                ) {
-                  handleConfirmRemoveTool(confirmDialog.toolName);
                 }
               }}
-              className={
-                confirmDialog.action === "remove"
-                  ? "bg-red-600 hover:bg-red-700"
-                  : ""
-              }
             >
-              {confirmDialog.action === "add" ? "添加" : "删除"}
+              添加
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

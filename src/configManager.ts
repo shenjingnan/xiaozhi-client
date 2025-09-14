@@ -1431,7 +1431,7 @@ export class ConfigManager {
     }
 
     // 添加工具
-    config.customMCP.tools.push(tool);
+    config.customMCP.tools.unshift(tool);
     this.saveConfig(config);
 
     logger.info(`成功添加自定义 MCP 工具: ${tool.name}`);
@@ -1505,6 +1505,47 @@ export class ConfigManager {
     this.saveConfig(config);
 
     logger.info(`成功删除自定义 MCP 工具: ${toolName}`);
+  }
+
+  /**
+   * 更新单个自定义 MCP 工具配置
+   * @param toolName 工具名称
+   * @param updatedTool 更新后的工具配置
+   */
+  public updateCustomMCPTool(
+    toolName: string,
+    updatedTool: CustomMCPTool
+  ): void {
+    if (!toolName || typeof toolName !== "string") {
+      throw new Error("工具名称不能为空");
+    }
+    if (!updatedTool || typeof updatedTool !== "object") {
+      throw new Error("更新后的工具配置不能为空");
+    }
+
+    const config = this.getMutableConfig();
+
+    if (!config.customMCP || !config.customMCP.tools) {
+      throw new Error("未配置自定义 MCP 工具");
+    }
+
+    const toolIndex = config.customMCP.tools.findIndex(
+      (t) => t.name === toolName
+    );
+    if (toolIndex === -1) {
+      throw new Error(`工具 "${toolName}" 不存在`);
+    }
+
+    // 验证更新后的工具配置
+    if (!this.validateCustomMCPTools([updatedTool])) {
+      throw new Error("更新后的工具配置验证失败");
+    }
+
+    // 更新工具配置
+    config.customMCP.tools[toolIndex] = updatedTool;
+    this.saveConfig(config);
+
+    logger.info(`成功更新自定义 MCP 工具: ${toolName}`);
   }
 
   /**

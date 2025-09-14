@@ -103,6 +103,8 @@ describe("CozeApiClient", () => {
             },
             created_at: 1757232517,
             updated_at: 1757232680,
+            isAddedAsTool: false,
+            toolName: null,
           },
         ],
         hasMore: false,

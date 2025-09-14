@@ -4,7 +4,7 @@
  */
 
 import { CozeWorkflowIntegration } from "@/components/CozeWorkflowIntegration";
-import { toolsApiService } from "@/services/toolsApi";
+import { apiClient } from "@/services/api";
 import type { CozeWorkflow } from "@/types";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { toast } from "sonner";
@@ -19,8 +19,8 @@ vi.mock("sonner", () => ({
   },
 }));
 
-vi.mock("@/services/toolsApi", () => ({
-  toolsApiService: {
+vi.mock("@/services/api", () => ({
+  apiClient: {
     addCustomTool: vi.fn(),
     removeCustomTool: vi.fn(),
     getCustomTools: vi.fn(),
@@ -52,6 +52,7 @@ vi.mock("@/hooks/useCozeWorkflows", () => ({
     refreshWorkspaces: vi.fn(),
     refreshWorkflows: vi.fn(),
     setPage: vi.fn(),
+    setWorkflows: vi.fn(),
   }),
 }));
 
@@ -67,6 +68,8 @@ const mockWorkflow: CozeWorkflow = {
   },
   created_at: 1699123456,
   updated_at: 1699123456,
+  isAddedAsTool: false,
+  toolName: null,
 };
 
 const mockAddedTool = {
@@ -103,8 +106,8 @@ describe("CozeWorkflowIntegration - 集成测试", () => {
   describe("工作流添加功能", () => {
     it("应该成功添加工作流", async () => {
       // Mock API 成功响应
-      vi.mocked(toolsApiService.addCustomTool).mockResolvedValue(mockAddedTool);
-      vi.mocked(toolsApiService.getCustomTools).mockResolvedValue([]);
+      vi.mocked(apiClient.addCustomTool).mockResolvedValue(mockAddedTool);
+      vi.mocked(apiClient.getCustomTools).mockResolvedValue([]);
 
       render(<CozeWorkflowIntegration />);
 
@@ -147,19 +150,24 @@ describe("CozeWorkflowIntegration - 集成测试", () => {
 
       // 验证API调用
       await waitFor(() => {
-        expect(toolsApiService.addCustomTool).toHaveBeenCalledWith(
-          mockWorkflow,
-          undefined, // customName
-          undefined, // customDescription
+        expect(apiClient.addCustomTool).toHaveBeenCalledWith(
           expect.objectContaining({
-            parameters: expect.arrayContaining([
-              expect.objectContaining({
-                fieldName: "testParam",
-                description: "测试参数",
-                type: "string",
-                required: false,
+            type: "coze",
+            data: expect.objectContaining({
+              workflow: mockWorkflow,
+              customName: undefined,
+              customDescription: undefined,
+              parameterConfig: expect.objectContaining({
+                parameters: expect.arrayContaining([
+                  expect.objectContaining({
+                    fieldName: "testParam",
+                    description: "测试参数",
+                    type: "string",
+                    required: false,
+                  }),
+                ]),
               }),
-            ]),
+            }),
           })
         );
       });
@@ -174,10 +182,10 @@ describe("CozeWorkflowIntegration - 集成测试", () => {
 
     it("应该处理添加工作流失败的情况", async () => {
       // Mock API 失败响应
-      vi.mocked(toolsApiService.addCustomTool).mockRejectedValue(
+      vi.mocked(apiClient.addCustomTool).mockRejectedValue(
         new Error("工具名称已存在")
       );
-      vi.mocked(toolsApiService.getCustomTools).mockResolvedValue([]);
+      vi.mocked(apiClient.getCustomTools).mockResolvedValue([]);
 
       render(<CozeWorkflowIntegration />);
 
@@ -229,13 +237,13 @@ describe("CozeWorkflowIntegration - 集成测试", () => {
 
   describe("用户体验", () => {
     it("应该显示加载状态", async () => {
-      vi.mocked(toolsApiService.addCustomTool).mockImplementation(
+      vi.mocked(apiClient.addCustomTool).mockImplementation(
         () =>
           new Promise((resolve) =>
             setTimeout(() => resolve(mockAddedTool), 500)
           )
       );
-      vi.mocked(toolsApiService.getCustomTools).mockResolvedValue([]);
+      vi.mocked(apiClient.getCustomTools).mockResolvedValue([]);
 
       render(<CozeWorkflowIntegration />);
 
@@ -271,7 +279,7 @@ describe("CozeWorkflowIntegration - 集成测试", () => {
     });
 
     it("应该正确显示参数配置对话框内容", async () => {
-      vi.mocked(toolsApiService.getCustomTools).mockResolvedValue([]);
+      vi.mocked(apiClient.getCustomTools).mockResolvedValue([]);
 
       render(<CozeWorkflowIntegration />);
 

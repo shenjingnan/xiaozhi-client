@@ -1,3 +1,4 @@
+import { WorkflowParameterConfigDialog } from "@/components/common/WorkflowParameterConfigDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,9 +14,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { apiClient } from "@/services/api";
 import { useMcpServerConfig, useMcpServers } from "@/stores/config";
-import type { MCPServerConfig } from "@/types";
+import type { CozeWorkflow, MCPServerConfig, WorkflowParameter } from "@/types";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
-import { CoffeeIcon, MinusIcon, PlusIcon, Wrench } from "lucide-react";
+import {
+  CoffeeIcon,
+  MinusIcon,
+  PlusIcon,
+  Settings,
+  Wrench,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AddMcpServerButton } from "./AddMcpServerButton";
@@ -45,6 +52,7 @@ export function McpServerList({
       description?: string;
       usageCount?: number;
       lastUsedTime?: string;
+      inputSchema?: any;
     }>
   >([]);
   const [disabledTools, setDisabledTools] = useState<
@@ -56,6 +64,7 @@ export function McpServerList({
       description?: string;
       usageCount?: number;
       lastUsedTime?: string;
+      inputSchema?: any;
     }>
   >([]);
   const [isLoadingTools, setIsLoadingTools] = useState(false);
@@ -98,6 +107,7 @@ export function McpServerList({
       description: tool.description,
       usageCount: tool.stats?.usageCount,
       lastUsedTime: tool.stats?.lastUsedTime,
+      inputSchema: tool.inputSchema,
     };
   }, []);
 
@@ -190,6 +200,12 @@ export function McpServerList({
 
   // 添加状态来管理 Coze 工具确认对话框
   const [cozeToolToRemove, setCozeToolToRemove] = useState<string | null>(null);
+
+  // 添加状态来管理参数配置对话框
+  const [parameterConfigDialog, setParameterConfigDialog] = useState<{
+    open: boolean;
+    tool?: any;
+  }>({ open: false });
 
   const handleToggleTool = async (name: string, currentEnable: boolean) => {
     try {
@@ -286,6 +302,117 @@ export function McpServerList({
   // 取消移除 Coze 工具的处理函数
   const handleCancelRemoveCozeTool = () => {
     setCozeToolToRemove(null);
+  };
+
+  // 处理打开参数配置对话框
+  const handleConfigureTool = (tool: any) => {
+    // 检查是否为 coze 工具
+    if (tool.serverName === "coze") {
+      setParameterConfigDialog({
+        open: true,
+        tool,
+      });
+    }
+  };
+
+  // 从工具对象构建 CozeWorkflow 对象
+  const buildCozeWorkflowFromTool = (tool: any): CozeWorkflow => {
+    // 如果是 coze 工具，尝试从 handler 中提取信息
+    if (tool.serverName === "coze" && tool.handler?.type === "proxy") {
+      return {
+        workflow_id: tool.handler.config?.workflow_id || "",
+        workflow_name: tool.toolName,
+        description: tool.description || "",
+        icon_url: "",
+        app_id: tool.handler.config?.app_id || "",
+        creator: { id: "", name: "" },
+        created_at: 0,
+        updated_at: 0,
+        isAddedAsTool: true,
+        toolName: tool.name,
+        inputSchema: tool.inputSchema,
+      };
+    }
+
+    // 默认的工作流对象
+    return {
+      workflow_id: "",
+      workflow_name: tool.toolName,
+      description: tool.description || "",
+      icon_url: "",
+      app_id: "",
+      creator: { id: "", name: "" },
+      created_at: 0,
+      updated_at: 0,
+      isAddedAsTool: true,
+      toolName: tool.name,
+      inputSchema: tool.inputSchema,
+    };
+  };
+
+  // 处理参数配置确认
+  const handleParameterConfigConfirm = async (
+    workflow: CozeWorkflow,
+    parameters: WorkflowParameter[]
+  ) => {
+    if (!parameterConfigDialog.tool) return;
+
+    try {
+      // 构建参数配置
+      const parameterConfig =
+        parameters.length > 0 ? { parameters } : undefined;
+
+      // 从工具对象构建正确的 CozeWorkflow 对象，确保包含必需的字段
+      const cozeWorkflow = buildCozeWorkflowFromTool(
+        parameterConfigDialog.tool
+      );
+
+      // 更新 workflow_id 和其他必需字段（如果传入的 workflow 有这些字段的话）
+      if (workflow.workflow_id) {
+        cozeWorkflow.workflow_id = workflow.workflow_id;
+      }
+      if (workflow.app_id) {
+        cozeWorkflow.app_id = workflow.app_id;
+      }
+
+      // 构建更新请求
+      const updateRequest = {
+        type: "coze" as const,
+        data: {
+          workflow: cozeWorkflow,
+          customName: undefined,
+          customDescription: undefined,
+          parameterConfig,
+        },
+      };
+
+      // 调用API更新工具配置
+      await apiClient.updateCustomTool(
+        parameterConfigDialog.tool.name,
+        updateRequest
+      );
+
+      toast.success(`工具 "${cozeWorkflow.workflow_name}" 参数配置更新成功`);
+
+      // 刷新工具列表
+      await refreshToolLists();
+    } catch (error) {
+      console.error("更新工具参数配置失败:", error);
+
+      let errorMessage = "更新工具参数配置失败，请重试";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      toast.error(errorMessage);
+    } finally {
+      setParameterConfigDialog({ open: false });
+    }
+  };
+
+  // 处理参数配置取消
+  const handleParameterConfigCancel = () => {
+    setParameterConfigDialog({ open: false });
   };
 
   if (!mcpServers || Object.keys(mcpServers).length === 0) {
@@ -394,6 +521,17 @@ export function McpServerList({
                       </div>
 
                       <div className="flex items-center gap-2 ml-4">
+                        {tool.serverName === "coze" && (
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="size-8 hover:bg-blue-500 hover:text-white"
+                            onClick={() => handleConfigureTool(tool)}
+                            title="配置参数"
+                          >
+                            <Settings size={16} />
+                          </Button>
+                        )}
                         <Button
                           variant="secondary"
                           size="icon"
@@ -509,7 +647,7 @@ export function McpServerList({
               <AddMcpServerButton />
               <RestartButton />
             </div>
-            <CozeWorkflowIntegration />
+            <CozeWorkflowIntegration onToolAdded={refreshToolLists} />
           </div>
           {Object.entries(mcpServers || {}).map(
             ([mcpServerName, mcpServer]) => (
@@ -578,6 +716,20 @@ export function McpServerList({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 参数配置对话框 */}
+      {parameterConfigDialog.tool && (
+        <WorkflowParameterConfigDialog
+          open={parameterConfigDialog.open}
+          onOpenChange={(open) =>
+            setParameterConfigDialog((prev) => ({ ...prev, open }))
+          }
+          workflow={parameterConfigDialog.tool}
+          onConfirm={handleParameterConfigConfirm}
+          onCancel={handleParameterConfigCancel}
+          title="配置工作流参数"
+        />
+      )}
     </div>
   );
 }

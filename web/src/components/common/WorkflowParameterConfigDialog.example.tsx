@@ -23,6 +23,8 @@ const exampleWorkflow: CozeWorkflow = {
   },
   created_at: Date.now() - 86400000, // 1天前
   updated_at: Date.now() - 3600000, // 1小时前
+  isAddedAsTool: false,
+  toolName: null,
 };
 
 /**

@@ -4,10 +4,10 @@
  */
 
 import { CozeWorkflowIntegration } from "@/components/CozeWorkflowIntegration";
-import { toolsApiService } from "@/services/toolsApi";
+import * as toolsApiModule from "@/services/api";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { toast } from "sonner";
+import * as sonner from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies
@@ -19,11 +19,11 @@ vi.mock("sonner", () => ({
   },
 }));
 
-vi.mock("@/services/toolsApi", () => ({
-  toolsApiService: {
+vi.mock("@/services/api", () => ({
+  apiClient: {
+    getCustomTools: vi.fn(),
     addCustomTool: vi.fn(),
     removeCustomTool: vi.fn(),
-    getCustomTools: vi.fn(),
   },
 }));
 
@@ -63,6 +63,7 @@ vi.mock("@/hooks/useCozeWorkflows", () => ({
     refreshWorkspaces: vi.fn(),
     refreshWorkflows: vi.fn(),
     setPage: vi.fn(),
+    setWorkflows: vi.fn(),
   }),
 }));
 
@@ -78,12 +79,17 @@ describe("CozeWorkflowIntegration - 参数配置功能", () => {
       },
       required: ["userName"],
     },
-    handler: {},
+    handler: {
+      type: "mcp",
+      platform: "coze",
+      config: { serviceName: "coze", toolName: "test_workflow_tool" },
+    },
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(toolsApiService.getCustomTools).mockResolvedValue([]);
+    const mockApiClient = vi.mocked(toolsApiModule.apiClient);
+    mockApiClient.getCustomTools.mockResolvedValue([]);
 
     // Mock navigator.onLine
     Object.defineProperty(navigator, "onLine", {
@@ -126,7 +132,8 @@ describe("CozeWorkflowIntegration - 参数配置功能", () => {
 
     it("应该支持添加参数并提交", async () => {
       const user = userEvent.setup();
-      vi.mocked(toolsApiService.addCustomTool).mockResolvedValue(mockAddedTool);
+      const mockApiClient = vi.mocked(toolsApiModule.apiClient);
+      mockApiClient.addCustomTool.mockResolvedValue(mockAddedTool);
 
       render(<CozeWorkflowIntegration />);
 
@@ -164,39 +171,43 @@ describe("CozeWorkflowIntegration - 参数配置功能", () => {
 
       // 验证API调用
       await waitFor(() => {
-        expect(toolsApiService.addCustomTool).toHaveBeenCalledWith(
-          expect.objectContaining({
-            workflow_id: "workflow-1",
-            workflow_name: "测试工作流",
-            description: "这是一个测试工作流",
-            icon_url: "https://example.com/icon.png",
-            app_id: "app-1",
-            creator: { id: "creator-1", name: "创建者" },
-          }),
-          undefined,
-          undefined,
-          {
-            parameters: [
-              {
-                fieldName: "userName",
-                description: "用户名称",
-                type: "string",
-                required: true,
-              },
-            ],
-          }
-        );
+        expect(mockApiClient.addCustomTool).toHaveBeenCalledWith({
+          type: "coze",
+          data: {
+            workflow: expect.objectContaining({
+              workflow_id: "workflow-1",
+              workflow_name: "测试工作流",
+              description: "这是一个测试工作流",
+              icon_url: "https://example.com/icon.png",
+              app_id: "app-1",
+              creator: { id: "creator-1", name: "创建者" },
+            }),
+            customName: undefined,
+            customDescription: undefined,
+            parameterConfig: {
+              parameters: [
+                {
+                  fieldName: "userName",
+                  description: "用户名称",
+                  type: "string",
+                  required: true,
+                },
+              ],
+            },
+          },
+        });
       });
 
       // 验证成功提示
-      expect(toast.success).toHaveBeenCalledWith(
+      expect(sonner.toast.success).toHaveBeenCalledWith(
         expect.stringContaining("已添加工作流")
       );
     });
 
     it("应该支持不配置参数直接添加", async () => {
       const user = userEvent.setup();
-      vi.mocked(toolsApiService.addCustomTool).mockResolvedValue(mockAddedTool);
+      const mockApiClient = vi.mocked(toolsApiModule.apiClient);
+      mockApiClient.addCustomTool.mockResolvedValue(mockAddedTool);
 
       render(<CozeWorkflowIntegration />);
 
@@ -219,24 +230,28 @@ describe("CozeWorkflowIntegration - 参数配置功能", () => {
 
       // 验证API调用（不传递参数配置）
       await waitFor(() => {
-        expect(toolsApiService.addCustomTool).toHaveBeenCalledWith(
-          expect.objectContaining({
-            workflow_id: "workflow-1",
-            workflow_name: "测试工作流",
-            description: "这是一个测试工作流",
-            icon_url: "https://example.com/icon.png",
-            app_id: "app-1",
-            creator: { id: "creator-1", name: "创建者" },
-          }),
-          undefined,
-          undefined,
-          undefined
-        );
+        expect(mockApiClient.addCustomTool).toHaveBeenCalledWith({
+          type: "coze",
+          data: {
+            workflow: expect.objectContaining({
+              workflow_id: "workflow-1",
+              workflow_name: "测试工作流",
+              description: "这是一个测试工作流",
+              icon_url: "https://example.com/icon.png",
+              app_id: "app-1",
+              creator: { id: "creator-1", name: "创建者" },
+            }),
+            customName: undefined,
+            customDescription: undefined,
+            parameterConfig: undefined,
+          },
+        });
       });
     });
 
     it("应该支持取消参数配置", async () => {
       const user = userEvent.setup();
+      const mockApiClient = vi.mocked(toolsApiModule.apiClient);
       render(<CozeWorkflowIntegration />);
 
       // 打开工作流集成对话框
@@ -262,118 +277,7 @@ describe("CozeWorkflowIntegration - 参数配置功能", () => {
       });
 
       // API不应该被调用
-      expect(toolsApiService.addCustomTool).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("已添加工具列表", () => {
-    it("应该显示已添加的工具列表", async () => {
-      const user = userEvent.setup();
-      const mockTools = [
-        {
-          name: "test_tool_1",
-          description: "测试工具1",
-          inputSchema: {
-            type: "object",
-            properties: {
-              input: { type: "string", description: "输入内容" },
-              userName: { type: "string", description: "用户名称" },
-            },
-            required: ["input", "userName"],
-          },
-        },
-        {
-          name: "test_tool_2",
-          description: "测试工具2",
-          inputSchema: {
-            type: "object",
-            properties: {
-              input: { type: "string", description: "输入内容" },
-            },
-            required: ["input"],
-          },
-        },
-      ];
-
-      vi.mocked(toolsApiService.getCustomTools).mockResolvedValue(mockTools);
-
-      render(<CozeWorkflowIntegration />);
-
-      // 打开工作流集成对话框
-      const triggerButton = screen.getByText("工作流集成");
-      await user.click(triggerButton);
-
-      // 切换到已添加工具标签页
-      const manageTab = screen.getByText("已添加工具 (2)");
-      await user.click(manageTab);
-
-      // 等待工具列表加载
-      await waitFor(() => {
-        expect(screen.getByText("test_tool_1")).toBeInTheDocument();
-        expect(screen.getByText("test_tool_2")).toBeInTheDocument();
-      });
-
-      // 验证参数信息显示（过滤掉input字段）
-      expect(screen.getByText("1 个参数")).toBeInTheDocument();
-      expect(screen.getByText("userName: string")).toBeInTheDocument();
-    });
-
-    it("应该支持删除已添加的工具", async () => {
-      const user = userEvent.setup();
-      const mockTools = [
-        {
-          name: "test_tool_1",
-          description: "测试工具1",
-          inputSchema: {
-            type: "object",
-            properties: {
-              input: { type: "string", description: "输入内容" },
-            },
-            required: ["input"],
-          },
-        },
-      ];
-
-      vi.mocked(toolsApiService.getCustomTools).mockResolvedValue(mockTools);
-      vi.mocked(toolsApiService.removeCustomTool).mockResolvedValue(undefined);
-
-      render(<CozeWorkflowIntegration />);
-
-      // 打开工作流集成对话框
-      const triggerButton = screen.getByText("工作流集成");
-      await user.click(triggerButton);
-
-      // 切换到已添加工具标签页
-      const manageTab = screen.getByText("已添加工具 (1)");
-      await user.click(manageTab);
-
-      // 等待工具列表加载
-      await waitFor(() => {
-        expect(screen.getByText("test_tool_1")).toBeInTheDocument();
-      });
-
-      // 点击删除按钮
-      const deleteButton = screen.getByText("删除");
-      await user.click(deleteButton);
-
-      // 确认删除对话框应该出现
-      await waitFor(() => {
-        expect(screen.getByText("确认删除工具")).toBeInTheDocument();
-      });
-
-      // 确认删除
-      const confirmDeleteButton = screen.getByRole("button", { name: "删除" });
-      await user.click(confirmDeleteButton);
-
-      // 验证API调用
-      await waitFor(() => {
-        expect(toolsApiService.removeCustomTool).toHaveBeenCalledWith(
-          "test_tool_1"
-        );
-      });
-
-      // 验证成功提示
-      expect(toast.success).toHaveBeenCalledWith('已删除工具 "test_tool_1"');
+      expect(mockApiClient.addCustomTool).not.toHaveBeenCalled();
     });
   });
 });

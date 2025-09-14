@@ -34,6 +34,9 @@ export interface UseCozeWorkflowsReturn {
   refreshWorkspaces: () => Promise<void>;
   refreshWorkflows: () => Promise<void>;
   clearCache: () => Promise<void>;
+  setWorkflows: (
+    workflows: CozeWorkflow[] | ((prev: CozeWorkflow[]) => CozeWorkflow[])
+  ) => void;
 
   // 分页相关
   currentPage: number;
@@ -326,6 +329,7 @@ export function useCozeWorkflows(
     refreshWorkspaces,
     refreshWorkflows,
     clearCache,
+    setWorkflows,
 
     // 分页相关
     currentPage,

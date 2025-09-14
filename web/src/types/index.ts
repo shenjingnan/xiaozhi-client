@@ -128,6 +128,11 @@ export interface CozeWorkflow {
   created_at: number;
   /** 更新时间（Unix时间戳） */
   updated_at: number;
+  /** 是否已添加为MCP工具 */
+  isAddedAsTool: boolean;
+  /** 如果已添加为工具，对应的工具名称 */
+  toolName: string | null;
+  inputSchema?: any;
 }
 
 /**

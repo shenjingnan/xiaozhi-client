@@ -217,9 +217,33 @@ export class CozeApiHandler {
         `成功获取工作空间 ${workspace_id} 的 ${result.items.length} 个工作流`
       );
 
+      // 获取已添加的自定义工具列表，检查工作流是否已被添加为工具
+      const customMCPTools = configManager.getCustomMCPTools();
+
+      // 为每个工作流添加工具状态信息
+      const enhancedItems = result.items.map((item) => {
+        // 查找对应的自定义工具
+        const addedTool = customMCPTools.find(
+          (tool) =>
+            tool.handler.type === "proxy" &&
+            tool.handler.platform === "coze" &&
+            tool.handler.config.workflow_id === item.workflow_id
+        );
+
+        return {
+          ...item,
+          isAddedAsTool: !!addedTool,
+          toolName: addedTool?.name || null,
+        };
+      });
+
+      logger.info(
+        `工作流工具状态检查完成，共 ${enhancedItems.filter((item) => item.isAddedAsTool).length} 个工作流已添加为工具`
+      );
+
       return c.json(
         createSuccessResponse({
-          items: result.items,
+          items: enhancedItems,
           has_more: result.hasMore,
           page_num,
           page_size,

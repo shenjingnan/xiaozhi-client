@@ -858,6 +858,277 @@ export class ToolApiHandler {
   }
 
   /**
+   * 更新自定义 MCP 工具配置
+   * PUT /api/tools/custom/:toolName
+   */
+  async updateCustomTool(c: Context): Promise<Response> {
+    try {
+      const toolName = c.req.param("toolName");
+
+      if (!toolName) {
+        const errorResponse = this.createErrorResponse(
+          "INVALID_REQUEST",
+          "工具名称不能为空"
+        );
+        return c.json(errorResponse, 400);
+      }
+
+      this.logger.info(`处理更新自定义工具配置请求: ${toolName}`);
+
+      const requestBody = await c.req.json();
+
+      // 验证请求体
+      if (!requestBody || typeof requestBody !== "object") {
+        const errorResponse = this.createErrorResponse(
+          "INVALID_REQUEST",
+          "请求体必须是有效对象"
+        );
+        return c.json(errorResponse, 400);
+      }
+
+      // 检查是否为新格式的请求
+      if (this.isNewFormatRequest(requestBody)) {
+        // 新格式：支持多种工具类型
+        return await this.handleNewFormatUpdateTool(
+          c,
+          toolName,
+          requestBody as AddCustomToolRequest
+        );
+      }
+
+      // 旧格式不支持更新操作
+      const errorResponse = this.createErrorResponse(
+        "INVALID_REQUEST",
+        "更新操作只支持新格式的请求"
+      );
+      return c.json(errorResponse, 400);
+    } catch (error) {
+      this.logger.error("更新自定义工具配置失败:", error);
+
+      // 根据错误类型返回不同的HTTP状态码和错误信息
+      const { statusCode, errorResponse } = this.handleUpdateToolError(error);
+      return c.json(errorResponse, statusCode as any);
+    }
+  }
+
+  /**
+   * 处理新格式的更新工具请求
+   */
+  private async handleNewFormatUpdateTool(
+    c: Context,
+    toolName: string,
+    request: AddCustomToolRequest
+  ): Promise<Response> {
+    const { type, data } = request;
+
+    this.logger.info(`处理新格式工具更新请求，类型: ${type}`);
+
+    // 验证工具类型
+    if (!Object.values(ToolType).includes(type)) {
+      const errorResponse = this.createErrorResponse(
+        "INVALID_TOOL_TYPE",
+        `不支持的工具类型: ${type}。支持的类型: ${Object.values(ToolType).join(", ")}`
+      );
+      return c.json(errorResponse, 400);
+    }
+
+    // 根据工具类型分发处理
+    switch (type) {
+      case ToolType.COZE:
+        return await this.handleUpdateCozeTool(
+          c,
+          toolName,
+          data as CozeWorkflowData
+        );
+
+      case ToolType.MCP:
+      case ToolType.HTTP:
+      case ToolType.FUNCTION: {
+        const errorResponse = this.createErrorResponse(
+          "TOOL_TYPE_NOT_IMPLEMENTED",
+          `工具类型 ${type} 暂不支持更新操作，目前仅支持 Coze 类型`
+        );
+        return c.json(errorResponse, 501);
+      }
+
+      default: {
+        const errorResponse = this.createErrorResponse(
+          "UNKNOWN_TOOL_TYPE",
+          `未知的工具类型: ${type}`
+        );
+        return c.json(errorResponse, 400);
+      }
+    }
+  }
+
+  /**
+   * 处理更新 Coze 工具
+   */
+  private async handleUpdateCozeTool(
+    c: Context,
+    toolName: string,
+    data: CozeWorkflowData
+  ): Promise<Response> {
+    const { workflow, customName, customDescription, parameterConfig } = data;
+
+    this.logger.info(`处理更新 Coze 工具: ${toolName}`);
+
+    // 验证工具是否存在
+    const existingTools = configManager.getCustomMCPTools();
+    const existingTool = existingTools.find((tool) => tool.name === toolName);
+
+    if (!existingTool) {
+      const errorResponse = this.createErrorResponse(
+        "TOOL_NOT_FOUND",
+        `工具 "${toolName}" 不存在`
+      );
+      return c.json(errorResponse, 404);
+    }
+
+    // 验证是否为 Coze 工具
+    if (
+      existingTool.handler.type !== "proxy" ||
+      existingTool.handler.platform !== "coze"
+    ) {
+      const errorResponse = this.createErrorResponse(
+        "INVALID_TOOL_TYPE",
+        `工具 "${toolName}" 不是 Coze 工作流工具，不支持参数配置更新`
+      );
+      return c.json(errorResponse, 400);
+    }
+
+    // 如果前端提供的 workflow 中没有 workflow_id，尝试从现有工具中获取
+    if (!workflow.workflow_id && existingTool.handler?.config?.workflow_id) {
+      workflow.workflow_id = existingTool.handler.config.workflow_id;
+    }
+
+    // 如果还没有 workflow_id，尝试从其他字段获取
+    if (!workflow.workflow_id && workflow.app_id) {
+      // 对于某些场景，app_id 可以作为替代标识
+      // 但我们仍然需要 workflow_id 用于 Coze API 调用
+      this.logger.warn(
+        `工作流 ${toolName} 缺少 workflow_id，这可能会影响某些功能`
+      );
+    }
+
+    // 验证工作流数据完整性
+    this.validateWorkflowUpdateData(workflow);
+
+    // 更新工具的 inputSchema
+    const updatedInputSchema = this.generateInputSchema(
+      workflow,
+      parameterConfig
+    );
+
+    // 构建更新后的工具配置
+    const updatedTool: CustomMCPTool = {
+      ...existingTool,
+      description: customDescription || existingTool.description,
+      inputSchema: updatedInputSchema,
+    };
+
+    // 更新工具配置
+    configManager.updateCustomMCPTool(toolName, updatedTool);
+
+    this.logger.info(`成功更新 Coze 工具: ${toolName}`);
+
+    const responseData = {
+      tool: updatedTool,
+      toolName: toolName,
+      toolType: ToolType.COZE,
+      updatedAt: dayjs().format("YYYY-MM-DD HH:mm:ss"),
+    };
+
+    return c.json(
+      this.createSuccessResponse(
+        responseData,
+        `Coze 工具 "${toolName}" 配置更新成功`
+      )
+    );
+  }
+
+  /**
+   * 处理更新工具时的错误
+   */
+  private handleUpdateToolError(error: unknown): {
+    statusCode: number;
+    errorResponse: any;
+  } {
+    const errorMessage =
+      error instanceof Error ? error.message : "更新自定义工具配置失败";
+
+    // 工具不存在错误 (404)
+    if (errorMessage.includes("不存在") || errorMessage.includes("未找到")) {
+      return {
+        statusCode: 404,
+        errorResponse: this.createErrorResponse(
+          "TOOL_NOT_FOUND",
+          `${errorMessage}。请检查工具名称是否正确`
+        ),
+      };
+    }
+
+    // 工具类型错误 (400)
+    if (
+      errorMessage.includes("工具类型") ||
+      errorMessage.includes("INVALID_TOOL_TYPE")
+    ) {
+      return {
+        statusCode: 400,
+        errorResponse: this.createErrorResponse(
+          "INVALID_TOOL_TYPE",
+          errorMessage
+        ),
+      };
+    }
+
+    // 参数错误 (400)
+    if (errorMessage.includes("不能为空") || errorMessage.includes("无效")) {
+      return {
+        statusCode: 400,
+        errorResponse: this.createErrorResponse(
+          "INVALID_REQUEST",
+          `${errorMessage}。请提供有效的工具配置数据`
+        ),
+      };
+    }
+
+    // 配置错误 (422)
+    if (errorMessage.includes("配置") || errorMessage.includes("权限")) {
+      return {
+        statusCode: 422,
+        errorResponse: this.createErrorResponse(
+          "CONFIGURATION_ERROR",
+          `${errorMessage}。请检查配置文件权限和格式是否正确`
+        ),
+      };
+    }
+
+    // 未实现功能错误 (501)
+    if (
+      errorMessage.includes("未实现") ||
+      errorMessage.includes("NOT_IMPLEMENTED")
+    ) {
+      return {
+        statusCode: 501,
+        errorResponse: this.createErrorResponse(
+          "TOOL_TYPE_NOT_IMPLEMENTED",
+          errorMessage
+        ),
+      };
+    }
+
+    // 系统错误 (500)
+    return {
+      statusCode: 500,
+      errorResponse: this.createErrorResponse(
+        "UPDATE_CUSTOM_TOOL_ERROR",
+        `更新工具配置失败：${errorMessage}。请稍后重试，如问题持续存在请联系管理员`
+      ),
+    };
+  }
+
+  /**
    * 删除自定义 MCP 工具
    * DELETE /api/tools/custom/:toolName
    */
@@ -1060,6 +1331,73 @@ export class ToolApiHandler {
 
     // 验证业务逻辑
     this.validateBusinessLogic(workflow);
+  }
+
+  /**
+   * 验证工作流更新数据完整性
+   * 用于更新场景，只验证关键字段
+   */
+  private validateWorkflowUpdateData(workflow: any): void {
+    if (!workflow) {
+      throw new Error("工作流数据不能为空");
+    }
+
+    // 对于更新操作，我们采用更灵活的验证策略
+    // 因为这可能是参数配置更新，而不是工作流本身更新
+
+    // 如果提供了 workflow_id，验证其格式
+    if (workflow.workflow_id) {
+      if (
+        typeof workflow.workflow_id !== "string" ||
+        workflow.workflow_id.trim() === ""
+      ) {
+        throw new Error("工作流ID必须是非空字符串");
+      }
+
+      // 验证工作流ID格式（数字字符串）
+      if (!/^\d+$/.test(workflow.workflow_id)) {
+        throw new Error("工作流ID格式无效，应为数字字符串");
+      }
+    }
+
+    // 如果存在 workflow_name，验证其格式
+    if (workflow.workflow_name) {
+      if (
+        typeof workflow.workflow_name !== "string" ||
+        workflow.workflow_name.trim() === ""
+      ) {
+        throw new Error("工作流名称必须是非空字符串");
+      }
+
+      // 验证工作流名称长度
+      if (workflow.workflow_name.length > 100) {
+        throw new Error("工作流名称过长，不能超过100个字符");
+      }
+    }
+
+    // 如果存在 app_id，验证其格式
+    if (workflow.app_id) {
+      if (
+        typeof workflow.app_id !== "string" ||
+        workflow.app_id.trim() === ""
+      ) {
+        throw new Error("应用ID必须是非空字符串");
+      }
+
+      // 验证应用ID格式
+      if (!/^[a-zA-Z0-9_-]+$/.test(workflow.app_id)) {
+        throw new Error("应用ID格式无效，只能包含字母、数字、下划线和连字符");
+      }
+
+      // 验证应用ID长度
+      if (workflow.app_id.length > 50) {
+        throw new Error("应用ID过长，不能超过50个字符");
+      }
+    }
+
+    // 对于参数配置更新，workflow_id 可能不是必需的
+    // 因为实际的工作流ID已经存储在工具配置中
+    // 我们主要验证存在字段的格式，而不是强制要求所有字段都存在
   }
 
   /**

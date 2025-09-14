@@ -528,6 +528,9 @@ export class WebServer {
     this.app?.post("/api/tools/custom", (c) =>
       this.toolApiHandler.addCustomTool(c)
     );
+    this.app?.put("/api/tools/custom/:toolName", (c) =>
+      this.toolApiHandler.updateCustomTool(c)
+    );
     this.app?.delete("/api/tools/custom/:toolName", (c) =>
       this.toolApiHandler.removeCustomTool(c)
     );
