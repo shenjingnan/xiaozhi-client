@@ -652,7 +652,7 @@ export class ProxyMCPServer {
       case "tools/list": {
         const toolsList = this.getTools();
         this.sendResponse(request.id, { tools: toolsList });
-        this.logger.info(`MCP 工具列表已发送 (${toolsList.length}个工具)`);
+        this.logger.debug(`MCP 工具列表已发送 (${toolsList.length}个工具)`);
         break;
       }
 

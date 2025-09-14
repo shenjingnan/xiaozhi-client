@@ -424,7 +424,7 @@ export class CustomMCPHandler {
     }
 
     const url = `${baseUrl}${endpoint}`;
-    const timeout = config.timeout || 30000;
+    const timeout = config.timeout || 300000;
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -447,7 +447,6 @@ export class CustomMCPHandler {
         method: "POST",
         headers,
         body: JSON.stringify(requestData),
-        // signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
