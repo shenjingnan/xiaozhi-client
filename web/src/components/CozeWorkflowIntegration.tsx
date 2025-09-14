@@ -26,7 +26,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCozeWorkflows } from "@/hooks/useCozeWorkflows";
 import { toolsApiService } from "@/services/toolsApi";
 import type { CozeWorkflow, WorkflowParameter } from "@/types";
@@ -64,6 +63,7 @@ export function CozeWorkflowIntegration() {
   const [pendingOperations, setPendingOperations] = useState<Set<string>>(
     new Set()
   );
+  const [hasAutoSelected, setHasAutoSelected] = useState(false);
 
   // 使用 useCozeWorkflows Hook 获取数据和状态
   const {
@@ -120,7 +120,37 @@ export function CozeWorkflowIntegration() {
     }
   }, [open, loadCustomTools]);
 
+  // 自动选择第一个工作空间
+  useEffect(() => {
+    // 当工作空间加载完成且不为空，且尚未进行过自动选择时
+    if (
+      !workspacesLoading &&
+      workspaces.length > 0 &&
+      !selectedWorkspace &&
+      !hasAutoSelected
+    ) {
+      const firstWorkspace = workspaces[0];
+      console.log(`自动选择第一个工作空间: ${firstWorkspace.name}`);
+      selectWorkspace(firstWorkspace.id);
+      setHasAutoSelected(true);
+    }
+
+    // 如果工作空间列表被清空或重新加载，重置自动选择状态
+    if (workspacesLoading && hasAutoSelected) {
+      setHasAutoSelected(false);
+    }
+  }, [
+    workspaces,
+    workspacesLoading,
+    selectedWorkspace,
+    hasAutoSelected,
+    selectWorkspace,
+  ]);
+
   const handleWorkspaceChange = (workspaceId: string) => {
+    // 用户手动选择工作空间时，标记为已进行手动选择
+    // 这样自动选择逻辑就不会再次触发
+    setHasAutoSelected(true);
     selectWorkspace(workspaceId);
   };
 
@@ -183,7 +213,9 @@ export function CozeWorkflowIntegration() {
       );
 
       toast.success(
-        `已添加工作流 "${workflow.workflow_name}" 为 MCP 工具 "${addedTool.name}"${
+        `已添加工作流 "${workflow.workflow_name}" 为 MCP 工具 "${
+          addedTool.name
+        }"${
           parameters.length > 0 ? `，配置了 ${parameters.length} 个参数` : ""
         }`
       );
@@ -616,41 +648,10 @@ export function CozeWorkflowIntegration() {
                 <Badge variant="default" className="text-xs bg-green-600">
                   已添加
                 </Badge>
-                {tool.inputSchema?.properties &&
-                  Object.keys(tool.inputSchema.properties).length > 1 && (
-                    <Badge variant="outline" className="text-xs">
-                      {Object.keys(tool.inputSchema.properties).length - 1}{" "}
-                      个参数
-                    </Badge>
-                  )}
               </div>
               <p className="text-sm text-muted-foreground line-clamp-2">
                 {tool.description || "暂无描述"}
               </p>
-              {/* 显示参数信息 */}
-              {tool.inputSchema?.properties &&
-                Object.keys(tool.inputSchema.properties).length > 1 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {Object.entries(tool.inputSchema.properties)
-                      .filter(([key]) => key !== "input")
-                      .slice(0, 3)
-                      .map(([key, prop]: [string, any]) => (
-                        <Badge
-                          key={key}
-                          variant="secondary"
-                          className="text-xs"
-                        >
-                          {key}: {prop.type}
-                        </Badge>
-                      ))}
-                    {Object.keys(tool.inputSchema.properties).length > 4 && (
-                      <Badge variant="secondary" className="text-xs">
-                        +{Object.keys(tool.inputSchema.properties).length - 4}{" "}
-                        更多
-                      </Badge>
-                    )}
-                  </div>
-                )}
             </div>
 
             {/* 删除按钮 */}
@@ -735,53 +736,16 @@ export function CozeWorkflowIntegration() {
             </DialogTitle>
           </DialogHeader>
 
-          <Tabs defaultValue="add" className="flex flex-col flex-1 min-h-0">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="add">添加工作流</TabsTrigger>
-              <TabsTrigger value="manage">
-                已添加工具 ({customTools.length})
-              </TabsTrigger>
-            </TabsList>
+          {/* 工作空间选择器 */}
+          {renderWorkspaceSelector()}
 
-            <TabsContent
-              value="add"
-              className="flex flex-col gap-4 flex-1 min-h-0 mt-4"
-            >
-              {/* 工作空间选择器 */}
-              {renderWorkspaceSelector()}
+          {/* 工作流列表 */}
+          <div className="flex-1 overflow-y-auto min-h-[300px] pr-2">
+            {renderWorkflowList()}
+          </div>
 
-              {/* 工作流列表 */}
-              <div className="flex-1 overflow-y-auto min-h-[300px] pr-2">
-                {renderWorkflowList()}
-              </div>
-
-              {/* 分页控件 */}
-              {renderPagination()}
-            </TabsContent>
-
-            <TabsContent
-              value="manage"
-              className="flex flex-col gap-4 flex-1 min-h-0 mt-4"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">已添加的工具</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={loadCustomTools}
-                  disabled={isLoadingTools}
-                >
-                  <RefreshCw
-                    className={`h-4 w-4 ${isLoadingTools ? "animate-spin" : ""}`}
-                  />
-                </Button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto min-h-[300px] pr-2">
-                {renderCustomToolsList()}
-              </div>
-            </TabsContent>
-          </Tabs>
+          {/* 分页控件 */}
+          {renderPagination()}
         </DialogContent>
       </Dialog>
 
