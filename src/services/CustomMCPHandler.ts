@@ -19,6 +19,8 @@ import {
   type ScriptHandlerConfig,
   configManager,
 } from "../configManager.js";
+import { CacheLifecycleManager } from "../managers/CacheLifecycleManager.js";
+import { TaskStateManager } from "../managers/TaskStateManager.js";
 import {
   type CacheConfig,
   type CacheStatistics,
@@ -38,8 +40,6 @@ import {
   isTimeoutResponse,
 } from "../types/timeout.js";
 import { MCPCacheManager } from "./MCPCacheManager.js";
-import { CacheLifecycleManager } from "../managers/CacheLifecycleManager.js";
-import { TaskStateManager } from "../managers/TaskStateManager.js";
 
 // 工具调用结果接口（与 MCPServiceManager 保持一致）
 export interface ToolCallResult {

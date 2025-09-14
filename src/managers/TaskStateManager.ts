@@ -6,9 +6,9 @@
 
 import type { Logger } from "../Logger.js";
 import type {
-  TaskStatus,
-  TaskInfo,
   CacheStateTransition,
+  TaskInfo,
+  TaskStatus,
 } from "../types/mcp.js";
 
 /**
@@ -433,11 +433,11 @@ export class TaskStateManager {
       }
 
       // 验证时间戳格式
-      if (isNaN(new Date(task.startTime).getTime())) {
+      if (Number.isNaN(new Date(task.startTime).getTime())) {
         issues.push(`无效的开始时间: ${taskId}`);
       }
 
-      if (task.endTime && isNaN(new Date(task.endTime).getTime())) {
+      if (task.endTime && Number.isNaN(new Date(task.endTime).getTime())) {
         issues.push(`无效的结束时间: ${taskId}`);
       }
 

@@ -6,17 +6,17 @@
 
 import type { Logger } from "../Logger.js";
 import type {
+  CacheStateTransition,
+  CacheStatistics,
   EnhancedToolResultCache,
   ExtendedMCPToolsCache,
   TaskStatus,
-  CacheStateTransition,
-  CacheStatistics,
 } from "../types/mcp.js";
 import {
+  DEFAULT_CONFIG,
   generateCacheKey,
   isCacheExpired,
   shouldCleanupCache,
-  DEFAULT_CONFIG,
 } from "../types/mcp.js";
 
 /**
@@ -391,7 +391,7 @@ export class CacheLifecycleManager {
       }
 
       // 验证时间戳格式
-      if (isNaN(new Date(cacheEntry.timestamp).getTime())) {
+      if (Number.isNaN(new Date(cacheEntry.timestamp).getTime())) {
         issues.push(`无效的时间戳格式: ${cacheKey}`);
       }
 
