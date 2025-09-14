@@ -21,6 +21,8 @@ const mockWorkflow: CozeWorkflow = {
   },
   created_at: Date.now(),
   updated_at: Date.now(),
+  isAddedAsTool: false,
+  toolName: null,
 };
 
 describe("WorkflowParameterConfigDialog", () => {

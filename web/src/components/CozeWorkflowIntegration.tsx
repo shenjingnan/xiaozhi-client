@@ -82,6 +82,7 @@ export function CozeWorkflowIntegration({
     selectWorkspace,
     refreshWorkflows,
     setPage,
+    setWorkflows,
   } = useCozeWorkflows({
     autoLoadWorkspaces: true,
     autoLoadWorkflows: true,
@@ -204,8 +205,24 @@ export function CozeWorkflowIntegration({
         }`
       );
 
+      // 立即更新本地工作流状态，标记为已添加
+      setWorkflows((prevWorkflows) =>
+        prevWorkflows.map((w) =>
+          w.workflow_id === workflow.workflow_id
+            ? {
+                ...w,
+                isAddedAsTool: true,
+                toolName: addedTool.name,
+              }
+            : w
+        )
+      );
+
       // 通知父组件工具已添加，触发工具列表刷新
       onToolAdded?.();
+
+      // 刷新工作流列表以确保状态同步
+      await refreshWorkflows();
     } catch (error) {
       console.error("添加工作流失败:", error);
 
@@ -297,8 +314,24 @@ export function CozeWorkflowIntegration({
         `已添加工作流 "${workflow.workflow_name}" 为 MCP 工具 "${addedTool.name}"`
       );
 
+      // 立即更新本地工作流状态，标记为已添加
+      setWorkflows((prevWorkflows) =>
+        prevWorkflows.map((w) =>
+          w.workflow_id === workflow.workflow_id
+            ? {
+                ...w,
+                isAddedAsTool: true,
+                toolName: addedTool.name,
+              }
+            : w
+        )
+      );
+
       // 通知父组件工具已添加，触发工具列表刷新
       onToolAdded?.();
+
+      // 刷新工作流列表以确保状态同步
+      await refreshWorkflows();
     } catch (error) {
       console.error("添加工作流失败:", error);
 
@@ -491,22 +524,31 @@ export function CozeWorkflowIntegration({
 
             {/* 添加按钮 */}
             <div className="flex-shrink-0">
-              <Button
-                size="sm"
-                onClick={() => handleAddWorkflow(workflow)}
-                disabled={isAddingWorkflow}
-                className="hover:bg-green-500 hover:text-white gap-0"
-              >
-                {isAddingWorkflow ? (
-                  <Loader2
-                    className="h-4 w-4 animate-spin"
-                    data-testid="loader"
-                  />
-                ) : (
-                  <Plus className="h-4 w-4" />
-                )}
-                添加
-              </Button>
+              {workflow.isAddedAsTool ? (
+                <Badge
+                  variant="secondary"
+                  className="text-xs bg-green-100 text-green-800"
+                >
+                  已添加
+                </Badge>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={() => handleAddWorkflow(workflow)}
+                  disabled={isAddingWorkflow}
+                  className="hover:bg-green-500 hover:text-white gap-0"
+                >
+                  {isAddingWorkflow ? (
+                    <Loader2
+                      className="h-4 w-4 animate-spin"
+                      data-testid="loader"
+                    />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                  添加
+                </Button>
+              )}
             </div>
           </div>
         ))}
@@ -520,40 +562,30 @@ export function CozeWorkflowIntegration({
       return null;
     }
 
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = Math.min(
-      startIndex + ITEMS_PER_PAGE,
-      startIndex + workflows.length
-    );
-
     return (
-      <div className="flex items-center justify-between pt-4 border-t flex-shrink-0">
-        <div className="text-sm text-muted-foreground">
-          显示 {startIndex + 1}-{endIndex} 项{hasMoreWorkflows && "，还有更多"}
-        </div>
-
+      <div className="flex items-center justify-end">
         <div className="flex items-center gap-2">
           <Button
-            variant="outline"
+            variant="link"
             size="sm"
             onClick={handlePrevPage}
             disabled={currentPage === 1}
+            className="text-muted-foreground"
           >
             <ChevronLeft className="h-4 w-4" />
-            上一页
           </Button>
 
           <div className="flex items-center gap-1">
-            <span className="text-sm">第 {currentPage} 页</span>
+            <span className="text-sm">{currentPage}</span>
           </div>
 
           <Button
-            variant="outline"
+            variant="link"
             size="sm"
             onClick={handleNextPage}
             disabled={!hasMoreWorkflows}
+            className="text-muted-foreground"
           >
-            下一页
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
@@ -570,7 +602,7 @@ export function CozeWorkflowIntegration({
             工作流集成
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[800px] max-h-[90vh] h-[600px] flex flex-col">
+        <DialogContent className="sm:max-w-[800px] flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Workflow className="h-5 w-5" />
@@ -582,7 +614,7 @@ export function CozeWorkflowIntegration({
           <div className="w-[120px]">{renderWorkspaceSelector()}</div>
 
           {/* 工作流列表 */}
-          <div className="flex-1 overflow-y-auto min-h-[300px] pr-2">
+          <div className="flex-1 pr-2">
             {renderWorkflowList()}
           </div>
 

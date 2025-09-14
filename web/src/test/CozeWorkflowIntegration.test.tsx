@@ -70,6 +70,8 @@ describe("CozeWorkflowIntegration", () => {
       creator: { id: "user-1", name: "测试用户1" },
       created_at: 1699123456,
       updated_at: 1699123456,
+      isAddedAsTool: false,
+      toolName: null,
     },
     {
       workflow_id: "7513770152291254327",
@@ -80,6 +82,8 @@ describe("CozeWorkflowIntegration", () => {
       creator: { id: "user-2", name: "测试用户2" },
       created_at: 1699123456,
       updated_at: 1699123456,
+      isAddedAsTool: false,
+      toolName: null,
     },
   ];
 
@@ -100,6 +104,7 @@ describe("CozeWorkflowIntegration", () => {
     refreshWorkflows: vi.fn(),
     setPage: vi.fn(),
     setPageSize: vi.fn(),
+    setWorkflows: vi.fn(),
     clearCache: vi.fn(),
   };
 

@@ -34,6 +34,8 @@ describe("ToolsApiService - 参数配置功能", () => {
     },
     created_at: 1757232517,
     updated_at: 1757232680,
+    isAddedAsTool: false,
+    toolName: null,
   };
 
   // 测试用的参数配置

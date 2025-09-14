@@ -52,6 +52,7 @@ vi.mock("@/hooks/useCozeWorkflows", () => ({
     refreshWorkspaces: vi.fn(),
     refreshWorkflows: vi.fn(),
     setPage: vi.fn(),
+    setWorkflows: vi.fn(),
   }),
 }));
 
@@ -67,6 +68,8 @@ const mockWorkflow: CozeWorkflow = {
   },
   created_at: 1699123456,
   updated_at: 1699123456,
+  isAddedAsTool: false,
+  toolName: null,
 };
 
 const mockAddedTool = {
