@@ -1431,7 +1431,7 @@ export class ConfigManager {
     }
 
     // 添加工具
-    config.customMCP.tools.push(tool);
+    config.customMCP.tools.unshift(tool);
     this.saveConfig(config);
 
     logger.info(`成功添加自定义 MCP 工具: ${tool.name}`);
