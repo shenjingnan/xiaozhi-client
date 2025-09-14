@@ -167,7 +167,7 @@ export function WorkflowParameterConfigDialog({
             onSubmit={form.handleSubmit(handleSubmit)}
             className="space-y-6"
           >
-            <div className="space-y-4">
+            <div className="space-y-4 mb-10">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-medium">参数列表</h3>
                 <Button
@@ -189,95 +189,90 @@ export function WorkflowParameterConfigDialog({
               )}
 
               {fields.map((field, index) => (
-                <div key={field.id} className="space-y-4 p-4 border rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium">参数 {index + 1}</h4>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveParameter(index)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                <div key={field.id} className="flex gap-2">
+                  <FormField
+                    control={form.control}
+                    name={`parameters.${index}.fieldName`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>字段名</FormLabel>
+                        <FormControl>
+                          <Input placeholder="例如: userName" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name={`parameters.${index}.fieldName`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>字段名 *</FormLabel>
+                  <FormField
+                    control={form.control}
+                    name={`parameters.${index}.description`}
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel>描述</FormLabel>
+                        <FormControl>
+                          <Input placeholder="例如: 用户名称" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name={`parameters.${index}.type`}
+                    render={({ field }) => (
+                      <FormItem className="w-[140px]">
+                        <FormLabel>参数类型</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
-                            <Input placeholder="例如: userName" {...field} />
+                            <SelectTrigger>
+                              <SelectValue placeholder="选择参数类型" />
+                            </SelectTrigger>
                           </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                          <SelectContent>
+                            <SelectItem value="string">string</SelectItem>
+                            <SelectItem value="number">number</SelectItem>
+                            <SelectItem value="boolean">boolean</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                    <FormField
-                      control={form.control}
-                      name={`parameters.${index}.description`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>描述 *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="例如: 用户名称" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`parameters.${index}.type`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>类型</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="选择参数类型" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="string">字符串</SelectItem>
-                              <SelectItem value="number">数字</SelectItem>
-                              <SelectItem value="boolean">布尔值</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`parameters.${index}.required`}
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                          <FormControl>
+                  <FormField
+                    control={form.control}
+                    name={`parameters.${index}.required`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>是否必填</FormLabel>
+                        <FormControl>
+                          <div className="flex items-center justify-center h-[40px]">
                             <Checkbox
                               checked={field.value}
                               onCheckedChange={field.onChange}
                             />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>必填参数</FormLabel>
                           </div>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
 
-                  {index < fields.length - 1 && <Separator />}
+                  <div className="flex flex-col h-[72px] justify-end">
+                    <Button
+                      type="button"
+                      variant="link"
+                      size="sm"
+                      onClick={() => handleRemoveParameter(index)}
+                      className="text-destructive mb-[4px]"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
