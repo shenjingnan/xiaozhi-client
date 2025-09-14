@@ -285,6 +285,9 @@ export class CustomMCPHandler {
       const requestData = this.buildCozeRequest(config, arguments_);
       // 发送请求到 Coze API
       const response = await this.sendCozeRequest(config, requestData);
+      this.logger.info(`[CustomMCP] Coze 工作流调用成功: ${tool.name}`, {
+        response,
+      });
 
       // 处理响应
       return this.processCozeResponse(tool.name, response);
@@ -373,7 +376,7 @@ export class CustomMCPHandler {
         method: "POST",
         headers,
         body: JSON.stringify(requestData),
-        signal: controller.signal,
+        // signal: controller.signal,
       });
 
       clearTimeout(timeoutId);

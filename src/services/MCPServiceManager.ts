@@ -230,7 +230,7 @@ export class MCPServiceManager {
   }
 
   /**
-   * 获取所有可用工具（包括 customMCP 工具和标准 MCP 工具）
+   * 获取所有可用工具（根据配置版本选择不同的处理逻辑）
    */
   getAllTools(): Array<{
     name: string;
@@ -246,64 +246,110 @@ export class MCPServiceManager {
       serviceName: string;
       originalName: string;
     }> = [];
-    const toolNameSet = new Set<string>(); // 用于去重
 
-    // 1. 首先收集 customMCP 工具（优先级高）
-    try {
-      const customTools = this.customMCPHandler.getTools();
-      for (const tool of customTools) {
-        const toolName = tool.name;
-        if (!toolNameSet.has(toolName)) {
-          toolNameSet.add(toolName);
+    // 检查配置文件版本
+    const isNewVersion = configManager.getCustomMCPConfig() !== null;
+
+    if (isNewVersion) {
+      // 新版本配置处理：直接使用 customMCP.tools 中的工具列表
+      this.logger.info("[MCPManager] 检测到新版本配置，使用 customMCP 工具列表");
+
+      try {
+        const customTools = this.customMCPHandler.getTools();
+        for (const tool of customTools) {
           allTools.push({
-            name: toolName,
+            name: tool.name,
             description: tool.description || "",
             inputSchema: tool.inputSchema,
-            serviceName: "customMCP", // 使用特殊的服务名标识
+            serviceName: this.getServiceNameForTool(tool),
             originalName: tool.name,
+          });
+        }
+
+        this.logger.info(
+          `[MCPManager] 新版本配置返回 ${allTools.length} 个工具 (仅来自 customMCP.tools)`
+        );
+      } catch (error) {
+        this.logger.error("[MCPManager] 获取 customMCP 工具失败:", error);
+        // 如果 customMCP 工具获取失败，返回空列表而不是回退到老版本逻辑
+      }
+    } else {
+      // 老版本配置处理：保持现有逻辑
+      this.logger.info("[MCPManager] 检测到老版本配置，使用兼容模式处理");
+
+      const toolNameSet = new Set<string>(); // 用于去重
+
+      // 1. 首先收集 customMCP 工具（优先级高）
+      try {
+        const customTools = this.customMCPHandler.getTools();
+        for (const tool of customTools) {
+          const toolName = tool.name;
+          if (!toolNameSet.has(toolName)) {
+            toolNameSet.add(toolName);
+            allTools.push({
+              name: toolName,
+              description: tool.description || "",
+              inputSchema: tool.inputSchema,
+              serviceName: "customMCP", // 使用特殊的服务名标识
+              originalName: tool.name,
+            });
+          }
+        }
+
+        if (customTools.length > 0) {
+          this.logger.info(
+            `[MCPManager] 添加了 ${customTools.length} 个 customMCP 工具`
+          );
+        }
+      } catch (error) {
+        this.logger.error("[MCPManager] 获取 CustomMCP 工具失败:", error);
+      }
+
+      // 2. 然后收集标准 MCP 工具（跳过已在 customMCP 中存在的）
+      for (const [toolKey, toolInfo] of this.tools) {
+        // 跳过已在 customMCP 中存在的工具（实现去重优先逻辑）
+        if (toolNameSet.has(toolKey)) {
+          continue;
+        }
+
+        // 检查工具是否启用
+        const isEnabled = configManager.isToolEnabled(
+          toolInfo.serviceName,
+          toolInfo.originalName
+        );
+
+        // 只返回启用的工具
+        if (isEnabled) {
+          toolNameSet.add(toolKey);
+          allTools.push({
+            name: toolKey,
+            description: toolInfo.tool.description || "",
+            inputSchema: toolInfo.tool.inputSchema,
+            serviceName: toolInfo.serviceName,
+            originalName: toolInfo.originalName,
           });
         }
       }
 
-      if (customTools.length > 0) {
-        this.logger.info(
-          `[MCPManager] 添加了 ${customTools.length} 个 customMCP 工具`
-        );
-      }
-    } catch (error) {
-      this.logger.error("[MCPManager] 获取 CustomMCP 工具失败:", error);
-    }
-
-    // 2. 然后收集标准 MCP 工具（跳过已在 customMCP 中存在的）
-    for (const [toolKey, toolInfo] of this.tools) {
-      // 跳过已在 customMCP 中存在的工具（实现去重优先逻辑）
-      if (toolNameSet.has(toolKey)) {
-        continue;
-      }
-
-      // 检查工具是否启用
-      const isEnabled = configManager.isToolEnabled(
-        toolInfo.serviceName,
-        toolInfo.originalName
+      this.logger.info(
+        `[MCPManager] 老版本配置返回总计 ${allTools.length} 个工具 (customMCP 优先，去重后总数)`
       );
-
-      // 只返回启用的工具
-      if (isEnabled) {
-        toolNameSet.add(toolKey);
-        allTools.push({
-          name: toolKey,
-          description: toolInfo.tool.description || "",
-          inputSchema: toolInfo.tool.inputSchema,
-          serviceName: toolInfo.serviceName,
-          originalName: toolInfo.originalName,
-        });
-      }
     }
 
-    this.logger.info(
-      `[MCPManager] 返回总计 ${allTools.length} 个工具 (customMCP 优先，去重后总数)`
-    );
     return allTools;
+  }
+
+  /**
+   * 根据工具配置确定服务名称
+   * @param tool 工具对象
+   * @returns 服务名称
+   */
+  private getServiceNameForTool(tool: any): string {
+    if (tool.handler?.type === "mcp") {
+      // 如果是从 MCP 同步的工具，返回原始服务名称
+      return tool.handler.config.serviceName;
+    }
+    return "customMCP";
   }
 
   /**
