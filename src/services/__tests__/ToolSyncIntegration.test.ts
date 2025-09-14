@@ -28,6 +28,8 @@ vi.mock("../../configManager.js", async () => {
       getServerToolsConfig: vi.fn(),
       getCustomMCPTools: vi.fn(),
       addCustomMCPTools: vi.fn(),
+      getCustomMCPConfig: vi.fn(),
+      updateCustomMCPTools: vi.fn(),
       isToolEnabled: vi.fn(),
     },
   };
@@ -189,6 +191,8 @@ describe("工具同步集成测试", () => {
       }
     );
     vi.mocked(mockConfigManager.getCustomMCPTools).mockReturnValue([]);
+    vi.mocked(mockConfigManager.getCustomMCPConfig).mockReturnValue(null);
+    vi.mocked(mockConfigManager.updateCustomMCPTools).mockResolvedValue(undefined);
     vi.mocked(mockConfigManager.addCustomMCPTools).mockImplementation(
       async (tools) => {
         // 模拟添加到 customMCP
@@ -217,6 +221,8 @@ describe("工具同步集成测试", () => {
     vi.mocked(mockConfigManager.getMcpServers).mockReturnValue({});
     vi.mocked(mockConfigManager.getServerToolsConfig).mockReturnValue({});
     vi.mocked(mockConfigManager.getCustomMCPTools).mockReturnValue([]);
+    vi.mocked(mockConfigManager.getCustomMCPConfig).mockReturnValue(null);
+    vi.mocked(mockConfigManager.updateCustomMCPTools).mockResolvedValue(undefined);
     vi.mocked(mockConfigManager.addCustomMCPTools).mockResolvedValue(undefined);
   });
 
