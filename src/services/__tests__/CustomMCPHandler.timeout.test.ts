@@ -26,6 +26,16 @@ const mockLogger = {
 const mockCacheManager = {
   loadExistingCache: vi.fn(),
   saveCache: vi.fn(),
+  cleanup: vi.fn(),
+  getCustomMCPStatistics: vi.fn(),
+  cleanupCustomMCPResults: vi.fn(),
+  writeCustomMCPResult: vi.fn(),
+  readCustomMCPResult: vi.fn(),
+  updateCustomMCPStatus: vi.fn(),
+  markCustomMCPAsConsumed: vi.fn(),
+  deleteCustomMCPResult: vi.fn(),
+  loadExtendedCache: vi.fn(),
+  saveExtendedCache: vi.fn(),
 };
 
 describe("CustomMCPHandler 超时响应测试", () => {
@@ -36,6 +46,18 @@ describe("CustomMCPHandler 超时响应测试", () => {
   beforeEach(() => {
     // 重置所有 mock
     vi.clearAllMocks();
+
+    // 设置 mock 返回值
+    mockCacheManager.getCustomMCPStatistics.mockReturnValue({
+      totalEntries: 0,
+      pendingTasks: 0,
+      completedTasks: 0,
+      failedTasks: 0,
+      consumedEntries: 0,
+      cacheHitRate: 0,
+      lastCleanupTime: new Date().toISOString(),
+      memoryUsage: 0,
+    });
 
     // 创建 CustomMCPHandler 实例
     customMCPHandler = new CustomMCPHandler(mockCacheManager as any);
@@ -370,8 +392,8 @@ describe("CustomMCPHandler 超时响应测试", () => {
   });
 
   describe("性能和统计测试", () => {
-    it("应该提供正确的缓存统计信息", () => {
-      const stats = customMCPHandler.getCacheStatistics();
+    it("应该提供正确的缓存统计信息", async () => {
+      const stats = await customMCPHandler.getCacheStatistics();
 
       expect(stats).toBeDefined();
       expect(typeof stats.totalEntries).toBe("number");

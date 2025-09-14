@@ -17,6 +17,13 @@ import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import dayjs from "dayjs";
 import { type Logger, logger } from "../Logger.js";
 import type { MCPServiceConfig } from "./MCPService.js";
+import type {
+  ExtendedMCPToolsCache,
+  EnhancedToolResultCache,
+  TaskStatus,
+  CacheStatistics,
+} from "../types/mcp.js";
+import { generateCacheKey, shouldCleanupCache } from "../types/mcp.js";
 
 // 缓存条目接口
 export interface MCPToolsCacheEntry {
@@ -51,10 +58,13 @@ export class MCPCacheManager {
   private logger: Logger;
   private readonly CACHE_VERSION = "1.0.0";
   private readonly CACHE_ENTRY_VERSION = "1.0.0";
+  private cleanupInterval?: NodeJS.Timeout;
+  private readonly CLEANUP_INTERVAL = 60000; // 1分钟清理间隔
 
   constructor(customCachePath?: string) {
     this.logger = logger;
     this.cachePath = customCachePath || this.getCacheFilePath();
+    this.startCleanupTimer();
   }
 
   /**
@@ -181,7 +191,7 @@ export class MCPCacheManager {
   /**
    * 加载现有缓存
    */
-  private async loadExistingCache(): Promise<MCPToolsCache> {
+  public async loadExistingCache(): Promise<MCPToolsCache> {
     try {
       if (!existsSync(this.cachePath)) {
         return await this.createInitialCache();
@@ -210,7 +220,7 @@ export class MCPCacheManager {
   /**
    * 保存缓存到文件（原子写入）
    */
-  private async saveCache(cache: MCPToolsCache): Promise<void> {
+  public async saveCache(cache: MCPToolsCache): Promise<void> {
     const cacheContent = JSON.stringify(cache, null, 2);
     await this.atomicWrite(this.cachePath, cacheContent);
   }
@@ -341,5 +351,385 @@ export class MCPCacheManager {
       );
       return [];
     }
+  }
+
+  // ==================== CustomMCP 结果缓存管理方法 ====================
+
+  /**
+   * 写入 CustomMCP 工具执行结果缓存
+   */
+  async writeCustomMCPResult(
+    toolName: string,
+    arguments_: any,
+    result: any,
+    status: TaskStatus = "completed",
+    taskId?: string,
+    ttl = 300000
+  ): Promise<void> {
+    try {
+      const cache = await this.loadExtendedCache();
+      const cacheKey = generateCacheKey(toolName, arguments_);
+
+      // 创建缓存条目
+      const cacheEntry: EnhancedToolResultCache = {
+        result,
+        timestamp: new Date().toISOString(),
+        ttl,
+        status,
+        consumed: false,
+        taskId,
+        retryCount: 0,
+      };
+
+      // 确保customMCPResults存在
+      if (!cache.customMCPResults) {
+        cache.customMCPResults = {};
+      }
+
+      cache.customMCPResults[cacheKey] = cacheEntry;
+      await this.saveExtendedCache(cache);
+
+      this.logger.debug(
+        `[CacheManager] 写入CustomMCP结果缓存: ${toolName}, 状态: ${status}`
+      );
+    } catch (error) {
+      this.logger.warn(
+        `[CacheManager] 写入CustomMCP结果缓存失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  /**
+   * 读取 CustomMCP 工具执行结果缓存
+   */
+  async readCustomMCPResult(
+    toolName: string,
+    arguments_: any
+  ): Promise<EnhancedToolResultCache | null> {
+    try {
+      const cache = await this.loadExtendedCache();
+      const cacheKey = generateCacheKey(toolName, arguments_);
+
+      if (!cache.customMCPResults || !cache.customMCPResults[cacheKey]) {
+        return null;
+      }
+
+      const cacheEntry = cache.customMCPResults[cacheKey];
+
+      // 检查是否过期
+      const now = Date.now();
+      const cachedTime = new Date(cacheEntry.timestamp).getTime();
+      if (now - cachedTime > cacheEntry.ttl) {
+        this.logger.debug(`[CacheManager] 缓存已过期: ${toolName}`);
+        return null;
+      }
+
+      return cacheEntry;
+    } catch (error) {
+      this.logger.warn(
+        `[CacheManager] 读取CustomMCP结果缓存失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+      return null;
+    }
+  }
+
+  /**
+   * 更新 CustomMCP 缓存状态
+   */
+  async updateCustomMCPStatus(
+    toolName: string,
+    arguments_: any,
+    newStatus: TaskStatus,
+    result?: any,
+    error?: string
+  ): Promise<boolean> {
+    try {
+      const cache = await this.loadExtendedCache();
+      const cacheKey = generateCacheKey(toolName, arguments_);
+
+      if (!cache.customMCPResults || !cache.customMCPResults[cacheKey]) {
+        return false;
+      }
+
+      const cacheEntry = cache.customMCPResults[cacheKey];
+      const oldStatus = cacheEntry.status;
+
+      // 更新状态
+      cacheEntry.status = newStatus;
+      cacheEntry.timestamp = new Date().toISOString();
+
+      // 更新结果或错误信息
+      if (result) {
+        cacheEntry.result = result;
+      }
+
+      if (error && newStatus === "failed") {
+        cacheEntry.result = {
+          content: [{ type: "text", text: `任务失败: ${error}` }],
+        };
+        cacheEntry.consumed = true; // 失败的任务自动标记为已消费
+      }
+
+      // 特殊状态处理
+      if (newStatus === "completed") {
+        cacheEntry.consumed = false; // 完成的任务初始状态为未消费
+      }
+
+      await this.saveExtendedCache(cache);
+
+      this.logger.debug(
+        `[CacheManager] 更新缓存状态: ${toolName} ${oldStatus} -> ${newStatus}`
+      );
+      return true;
+    } catch (error) {
+      this.logger.warn(
+        `[CacheManager] 更新CustomMCP缓存状态失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+      return false;
+    }
+  }
+
+  /**
+   * 标记 CustomMCP 缓存为已消费
+   */
+  async markCustomMCPAsConsumed(
+    toolName: string,
+    arguments_: any
+  ): Promise<boolean> {
+    try {
+      const cache = await this.loadExtendedCache();
+      const cacheKey = generateCacheKey(toolName, arguments_);
+
+      if (!cache.customMCPResults || !cache.customMCPResults[cacheKey]) {
+        return false;
+      }
+
+      const cacheEntry = cache.customMCPResults[cacheKey];
+      if (cacheEntry.consumed) {
+        return true;
+      }
+
+      cacheEntry.consumed = true;
+      cacheEntry.timestamp = new Date().toISOString();
+
+      await this.saveExtendedCache(cache);
+
+      this.logger.debug(`[CacheManager] 标记缓存为已消费: ${toolName}`);
+      return true;
+    } catch (error) {
+      this.logger.warn(
+        `[CacheManager] 标记CustomMCP缓存为已消费失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+      return false;
+    }
+  }
+
+  /**
+   * 删除 CustomMCP 缓存条目
+   */
+  async deleteCustomMCPResult(
+    toolName: string,
+    arguments_: any
+  ): Promise<boolean> {
+    try {
+      const cache = await this.loadExtendedCache();
+      const cacheKey = generateCacheKey(toolName, arguments_);
+
+      if (!cache.customMCPResults || !cache.customMCPResults[cacheKey]) {
+        return false;
+      }
+
+      delete cache.customMCPResults[cacheKey];
+      await this.saveExtendedCache(cache);
+
+      this.logger.debug(`[CacheManager] 删除缓存条目: ${toolName}`);
+      return true;
+    } catch (error) {
+      this.logger.warn(
+        `[CacheManager] 删除CustomMCP缓存条目失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+      return false;
+    }
+  }
+
+  /**
+   * 批量清理 CustomMCP 缓存
+   */
+  async cleanupCustomMCPResults(): Promise<{ cleaned: number; total: number }> {
+    try {
+      const cache = await this.loadExtendedCache();
+
+      if (!cache.customMCPResults) {
+        return { cleaned: 0, total: 0 };
+      }
+
+      const entries = Object.entries(cache.customMCPResults);
+      let cleanedCount = 0;
+
+      for (const [cacheKey, cacheEntry] of entries) {
+        if (shouldCleanupCache(cacheEntry)) {
+          delete cache.customMCPResults[cacheKey];
+          cleanedCount++;
+        }
+      }
+
+      if (cleanedCount > 0) {
+        await this.saveExtendedCache(cache);
+        this.logger.info(
+          `[CacheManager] 清理CustomMCP缓存: ${cleanedCount}/${entries.length}`
+        );
+      }
+
+      return { cleaned: cleanedCount, total: entries.length };
+    } catch (error) {
+      this.logger.warn(
+        `[CacheManager] 清理CustomMCP缓存失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+      return { cleaned: 0, total: 0 };
+    }
+  }
+
+  /**
+   * 获取 CustomMCP 缓存统计信息
+   */
+  async getCustomMCPStatistics(): Promise<CacheStatistics> {
+    try {
+      const cache = await this.loadExtendedCache();
+
+      if (!cache.customMCPResults) {
+        return {
+          totalEntries: 0,
+          pendingTasks: 0,
+          completedTasks: 0,
+          failedTasks: 0,
+          consumedEntries: 0,
+          cacheHitRate: 0,
+          lastCleanupTime: new Date().toISOString(),
+          memoryUsage: 0,
+        };
+      }
+
+      const entries = Object.values(cache.customMCPResults);
+      const totalEntries = entries.length;
+      const pendingTasks = entries.filter((e) => e.status === "pending").length;
+      const completedTasks = entries.filter(
+        (e) => e.status === "completed"
+      ).length;
+      const failedTasks = entries.filter((e) => e.status === "failed").length;
+      const consumedEntries = entries.filter((e) => e.consumed).length;
+
+      // 计算缓存命中率
+      const cacheHitRate =
+        completedTasks > 0 ? (consumedEntries / completedTasks) * 100 : 0;
+
+      // 估算内存使用
+      const memoryUsage = JSON.stringify(cache.customMCPResults).length;
+
+      return {
+        totalEntries,
+        pendingTasks,
+        completedTasks,
+        failedTasks,
+        consumedEntries,
+        cacheHitRate,
+        lastCleanupTime: new Date().toISOString(),
+        memoryUsage,
+      };
+    } catch (error) {
+      this.logger.warn(
+        `[CacheManager] 获取CustomMCP缓存统计失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+      return {
+        totalEntries: 0,
+        pendingTasks: 0,
+        completedTasks: 0,
+        failedTasks: 0,
+        consumedEntries: 0,
+        cacheHitRate: 0,
+        lastCleanupTime: new Date().toISOString(),
+        memoryUsage: 0,
+      };
+    }
+  }
+
+  /**
+   * 加载扩展缓存（包含 CustomMCP 结果）
+   */
+  async loadExtendedCache(): Promise<ExtendedMCPToolsCache> {
+    try {
+      const cache = await this.loadExistingCache();
+      return cache as ExtendedMCPToolsCache;
+    } catch (error) {
+      this.logger.warn(
+        `[CacheManager] 加载扩展缓存失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+      return {
+        version: this.CACHE_VERSION,
+        mcpServers: {},
+        metadata: {
+          lastGlobalUpdate: this.formatTimestamp(),
+          totalWrites: 0,
+          createdAt: this.formatTimestamp(),
+        },
+        customMCPResults: {},
+      };
+    }
+  }
+
+  /**
+   * 保存扩展缓存（包含 CustomMCP 结果）
+   */
+  async saveExtendedCache(cache: ExtendedMCPToolsCache): Promise<void> {
+    await this.saveCache(cache as any);
+  }
+
+  /**
+   * 启动清理定时器
+   */
+  private startCleanupTimer(): void {
+    this.cleanupInterval = setInterval(() => {
+      this.cleanupCustomMCPResults().catch((error) => {
+        this.logger.warn(`[CacheManager] 自动清理失败: ${error}`);
+      });
+    }, this.CLEANUP_INTERVAL);
+
+    this.logger.debug(
+      `[CacheManager] 启动清理定时器，间隔: ${this.CLEANUP_INTERVAL}ms`
+    );
+  }
+
+  /**
+   * 停止清理定时器
+   */
+  public stopCleanupTimer(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = undefined;
+      this.logger.debug("[CacheManager] 停止清理定时器");
+    }
+  }
+
+  /**
+   * 清理资源
+   */
+  public cleanup(): void {
+    this.stopCleanupTimer();
+    this.logger.debug("[CacheManager] 清理资源完成");
   }
 }

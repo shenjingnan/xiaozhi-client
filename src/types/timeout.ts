@@ -108,7 +108,7 @@ function getDefaultTimeoutMessage(taskId: string): string {
  * 验证是否为超时响应
  */
 export function isTimeoutResponse(response: any): response is TimeoutResponse {
-  return (
+  return !!(
     response &&
     response.status === "timeout" &&
     typeof response.taskId === "string" &&
@@ -122,7 +122,9 @@ export function isTimeoutResponse(response: any): response is TimeoutResponse {
  * 验证是否为超时错误
  */
 export function isTimeoutError(error: any): error is TimeoutError {
-  return (
-    error && error.name === "TimeoutError" && error instanceof TimeoutError
+  return !!(
+    error &&
+    error.name === "TimeoutError" &&
+    error instanceof TimeoutError
   );
 }

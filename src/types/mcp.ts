@@ -2,6 +2,7 @@
  * MCP 相关类型定义
  */
 
+import { createHash } from "node:crypto";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { ToolCallResult } from "../services/CustomMCPHandler.js";
 import type { MCPToolsCache } from "../services/MCPCacheManager.js";
@@ -23,7 +24,7 @@ export interface EnhancedToolResultCache {
   result: ToolCallResult;
   timestamp: string; // ISO 8601 格式时间戳
   ttl: number; // 过期时间（毫秒）
-  status: "completed" | "pending" | "failed"; // 任务状态
+  status: TaskStatus; // 任务状态
   consumed: boolean; // 是否已被消费（一次性缓存机制）
   taskId?: string; // 任务ID，用于查询
   retryCount: number; // 重试次数
@@ -136,7 +137,7 @@ export function isEnhancedToolResultCache(
     cache &&
     typeof cache.timestamp === "string" &&
     typeof cache.ttl === "number" &&
-    ["completed", "pending", "failed"].includes(cache.status) &&
+    ["completed", "pending", "failed", "consumed"].includes(cache.status) &&
     typeof cache.consumed === "boolean" &&
     typeof cache.retryCount === "number"
   );
@@ -160,9 +161,7 @@ export function isExtendedMCPToolsCache(
  * 生成缓存键的工具函数
  */
 export function generateCacheKey(toolName: string, arguments_: any): string {
-  const crypto = require("node:crypto");
-  const argsHash = crypto
-    .createHash("md5")
+  const argsHash = createHash("md5")
     .update(JSON.stringify(arguments_ || {}))
     .digest("hex");
   return `${toolName}_${argsHash}`;

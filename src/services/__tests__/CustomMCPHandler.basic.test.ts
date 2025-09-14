@@ -430,7 +430,7 @@ describe("CustomMCPHandler 基础功能回归测试", () => {
         name: "unsupported_type",
         description: "不支持的类型",
         inputSchema: {},
-        handler: { type: "unsupported" as any, config: {} },
+        handler: { type: "unsupported" as any, config: {} as any },
       };
 
       customMCPHandler.initialize([unsupportedTool]);
@@ -445,7 +445,10 @@ describe("CustomMCPHandler 基础功能回归测试", () => {
         name: "mcp_tool",
         description: "MCP 工具",
         inputSchema: {},
-        handler: { type: "mcp", config: {} },
+        handler: {
+          type: "mcp",
+          config: { serviceName: "test-service", toolName: "test-tool" },
+        },
       };
 
       customMCPHandler.initialize([mcpTool]);

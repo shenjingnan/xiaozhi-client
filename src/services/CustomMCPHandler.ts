@@ -21,6 +21,7 @@ import {
 } from "../configManager.js";
 import {
   type CacheConfig,
+  type CacheStatistics,
   DEFAULT_CONFIG,
   type EnhancedToolResultCache,
   type ExtendedMCPToolsCache,
@@ -37,6 +38,8 @@ import {
   isTimeoutResponse,
 } from "../types/timeout.js";
 import { MCPCacheManager } from "./MCPCacheManager.js";
+import { CacheLifecycleManager } from "../managers/CacheLifecycleManager.js";
+import { TaskStateManager } from "../managers/TaskStateManager.js";
 
 // 工具调用结果接口（与 MCPServiceManager 保持一致）
 export interface ToolCallResult {
@@ -69,6 +72,8 @@ export class CustomMCPHandler {
   private logger: Logger;
   private tools: Map<string, CustomMCPTool> = new Map();
   private cacheManager: MCPCacheManager;
+  private cacheLifecycleManager: CacheLifecycleManager;
+  private taskStateManager: TaskStateManager;
   private readonly TIMEOUT = DEFAULT_CONFIG.TIMEOUT; // 统一8秒超时
   private readonly CACHE_TTL = DEFAULT_CONFIG.CACHE_TTL; // 5分钟缓存过期
   private readonly CLEANUP_INTERVAL = DEFAULT_CONFIG.CLEANUP_INTERVAL; // 1分钟清理间隔
@@ -78,8 +83,11 @@ export class CustomMCPHandler {
   constructor(cacheManager?: MCPCacheManager) {
     this.logger = logger;
     this.cacheManager = cacheManager || new MCPCacheManager();
+    this.cacheLifecycleManager = new CacheLifecycleManager(this.logger);
+    this.taskStateManager = new TaskStateManager(this.logger);
     // 启动缓存清理定时器
     this.startCleanupTimer();
+    this.cacheLifecycleManager.startAutoCleanup();
   }
 
   /**
@@ -1476,9 +1484,7 @@ export class CustomMCPHandler {
     toolName: string,
     arguments_: any
   ): Promise<string> {
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substr(2, 9);
-    return `${toolName}_${timestamp}_${random}`;
+    return this.taskStateManager.generateTaskId(toolName, arguments_);
   }
 
   /**
@@ -1503,7 +1509,10 @@ export class CustomMCPHandler {
 
       await this.updateCacheWithResult(cacheKey, cacheData);
 
-      // 添加到活动任务列表
+      // 使用TaskStateManager管理任务状态
+      this.taskStateManager.markTaskAsPending(taskId, toolName, arguments_);
+
+      // 同时维护原有的活动任务列表（兼容性）
       this.activeTasks.set(taskId, {
         taskId,
         status: "pending",
@@ -1541,7 +1550,10 @@ export class CustomMCPHandler {
 
       await this.saveCache(cache);
 
-      // 更新活动任务状态
+      // 使用TaskStateManager管理任务状态
+      this.taskStateManager.markTaskAsCompleted(taskId, result);
+
+      // 同时维护原有的活动任务列表（兼容性）
       const task = this.activeTasks.get(taskId);
       if (task) {
         task.status = "completed";
@@ -1578,7 +1590,10 @@ export class CustomMCPHandler {
 
       await this.saveCache(cache);
 
-      // 更新活动任务状态
+      // 使用TaskStateManager管理任务状态
+      this.taskStateManager.markTaskAsFailed(taskId, error.message);
+
+      // 同时维护原有的活动任务列表（兼容性）
       const task = this.activeTasks.get(taskId);
       if (task) {
         task.status = "failed";
@@ -1620,7 +1635,8 @@ export class CustomMCPHandler {
         cache.customMCPResults || {}
       )) {
         if (shouldCleanupCache(cached)) {
-          delete cache.customMCPResults[cacheKey];
+          cache.customMCPResults?.[cacheKey] &&
+            delete cache.customMCPResults[cacheKey];
           hasChanges = true;
           cleanedCount++;
 
@@ -1731,42 +1747,6 @@ export class CustomMCPHandler {
   }
 
   /**
-   * 获取缓存统计信息
-   */
-  public getCacheStatistics(): CacheStatistics {
-    const now = Date.now();
-    let pendingTasks = 0;
-    let completedTasks = 0;
-    let failedTasks = 0;
-    const consumedEntries = 0;
-
-    for (const task of this.activeTasks.values()) {
-      switch (task.status) {
-        case "pending":
-          pendingTasks++;
-          break;
-        case "completed":
-          completedTasks++;
-          break;
-        case "failed":
-          failedTasks++;
-          break;
-      }
-    }
-
-    return {
-      totalEntries: this.activeTasks.size,
-      pendingTasks,
-      completedTasks,
-      failedTasks,
-      consumedEntries,
-      cacheHitRate: 0, // TODO: 实现缓存命中率计算
-      lastCleanupTime: new Date().toISOString(),
-      memoryUsage: process.memoryUsage().heapUsed,
-    };
-  }
-
-  /**
    * 停止清理定时器
    */
   public stopCleanupTimer(): void {
@@ -1783,7 +1763,92 @@ export class CustomMCPHandler {
   public cleanup(): void {
     this.logger.info("[CustomMCP] 清理 CustomMCP 处理器资源");
     this.stopCleanupTimer();
+    this.cacheLifecycleManager.stopAutoCleanup();
+    this.cacheLifecycleManager.cleanup();
+    this.taskStateManager.cleanup();
+    this.cacheManager.cleanup();
     this.tools.clear();
     this.activeTasks.clear();
+  }
+
+  // ==================== 新增的管理器集成方法 ====================
+
+  /**
+   * 获取缓存生命周期管理器
+   */
+  public getCacheLifecycleManager(): CacheLifecycleManager {
+    return this.cacheLifecycleManager;
+  }
+
+  /**
+   * 获取任务状态管理器
+   */
+  public getTaskStateManager(): TaskStateManager {
+    return this.taskStateManager;
+  }
+
+  /**
+   * 获取缓存统计信息
+   */
+  public async getCacheStatistics(): Promise<CacheStatistics> {
+    return this.cacheManager.getCustomMCPStatistics();
+  }
+
+  /**
+   * 获取任务统计信息
+   */
+  public getTaskStatistics() {
+    return this.taskStateManager.getTaskStatistics();
+  }
+
+  /**
+   * 获取任务状态
+   */
+  public getTaskStatus(taskId: string): string | null {
+    return this.taskStateManager.getTaskStatus(taskId);
+  }
+
+  /**
+   * 验证任务ID
+   */
+  public validateTaskId(taskId: string): boolean {
+    return this.taskStateManager.validateTaskId(taskId);
+  }
+
+  /**
+   * 重启停滞任务
+   */
+  public restartStalledTasks(timeoutMs = 30000): number {
+    return this.taskStateManager.restartStalledTasks(timeoutMs);
+  }
+
+  /**
+   * 手动清理过期缓存
+   */
+  public async manualCleanupCache(): Promise<{
+    cleaned: number;
+    total: number;
+  }> {
+    return this.cacheManager.cleanupCustomMCPResults();
+  }
+
+  /**
+   * 验证系统完整性
+   */
+  public async validateSystemIntegrity(): Promise<{
+    cacheValid: boolean;
+    taskValid: boolean;
+    issues: string[];
+  }> {
+    const cache = await this.cacheManager.loadExtendedCache();
+    const cacheValidation =
+      this.cacheLifecycleManager.validateCacheIntegrity(cache);
+    const taskValidation = this.taskStateManager.validateTaskIntegrity();
+
+    return {
+      cacheValid: cacheValidation.isValid,
+      taskValid: taskValidation.isValid,
+      issues: [...cacheValidation.issues, ...taskValidation.issues],
+    };
   }
 }
