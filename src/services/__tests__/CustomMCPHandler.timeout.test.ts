@@ -241,7 +241,11 @@ describe("CustomMCPHandler 超时响应测试", () => {
       const error = new Error("测试错误");
 
       // 首先创建任务
-      await (customMCPHandler as any).markTaskAsPending(taskId, "test_tool", {});
+      await (customMCPHandler as any).markTaskAsPending(
+        taskId,
+        "test_tool",
+        {}
+      );
 
       // 确认任务已创建
       let task = (customMCPHandler as any).activeTasks.get(taskId);
@@ -249,7 +253,9 @@ describe("CustomMCPHandler 超时响应测试", () => {
       expect(task.status).toBe("pending");
 
       // 直接在activeTasks中更新任务状态（模拟markTaskAsFailed的核心逻辑）
-      const taskInActiveTasks = (customMCPHandler as any).activeTasks.get(taskId);
+      const taskInActiveTasks = (customMCPHandler as any).activeTasks.get(
+        taskId
+      );
       if (taskInActiveTasks) {
         taskInActiveTasks.status = "failed";
         taskInActiveTasks.endTime = new Date().toISOString();
@@ -332,7 +338,10 @@ describe("CustomMCPHandler 超时响应测试", () => {
 
     it("应该清理已消费的缓存", async () => {
       // 生成正确的缓存键
-      const cacheKey = (customMCPHandler as any).generateCacheKey("test_tool", {});
+      const cacheKey = (customMCPHandler as any).generateCacheKey(
+        "test_tool",
+        {}
+      );
       const consumedCache = {
         result: { content: [{ type: "text", text: "test" }] },
         timestamp: new Date().toISOString(),

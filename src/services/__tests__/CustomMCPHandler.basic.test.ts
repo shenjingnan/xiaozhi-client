@@ -509,7 +509,11 @@ describe("CustomMCPHandler 基础功能回归测试", () => {
         name: "legacy_test",
         description: "兼容性测试",
         inputSchema: {},
-        handler: { type: "function", module: "./test-legacy.js", function: "legacy" },
+        handler: {
+          type: "function",
+          module: "./test-legacy.js",
+          function: "legacy",
+        },
       };
 
       customMCPHandler.initialize([testTool]);
