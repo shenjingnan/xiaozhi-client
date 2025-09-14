@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.7.2](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.1...v1.7.2) (2025-09-14)
+
+### Features
+
+* **cache:** 重构CustomMCPHandler缓存机制和任务状态管理 ([#317](https://github.com/shenjingnan/xiaozhi-client/issues/317)) ([6a55dec](https://github.com/shenjingnan/xiaozhi-client/commit/6a55dec21ee02ec514dfd178ee2c1b209efada2c))
+* **mcp:** 实现工具配置统一管理机制 ([#313](https://github.com/shenjingnan/xiaozhi-client/issues/313)) ([d5b989b](https://github.com/shenjingnan/xiaozhi-client/commit/d5b989be46bdaa7fb07ef0f14cfe311404ef85ae))
+* **platform:** 新增扣子平台集成和工作流管理功能 ([#303](https://github.com/shenjingnan/xiaozhi-client/issues/303)) ([c4d68a4](https://github.com/shenjingnan/xiaozhi-client/commit/c4d68a472cbc48a4f285e8589db9295ec4fb2baf))
+* **tool-api:** 重构工具API系统支持多种工具类型 ([#314](https://github.com/shenjingnan/xiaozhi-client/issues/314)) ([ece18ca](https://github.com/shenjingnan/xiaozhi-client/commit/ece18cacedc49d1adb5beeea7d429ac4fb73e6df))
+* **web:** 添加 Coze 工作流参数配置功能 ([#315](https://github.com/shenjingnan/xiaozhi-client/issues/315)) ([cc42b82](https://github.com/shenjingnan/xiaozhi-client/commit/cc42b829371946683c31dd73e895c4923758985d))
+
+### Bug Fixes
+
+* **security:** 修复安全漏洞并增强GitHub Actions安全审计 ([#320](https://github.com/shenjingnan/xiaozhi-client/issues/320)) ([165d6ed](https://github.com/shenjingnan/xiaozhi-client/commit/165d6ed8a0d7658a834631e771b0c777f39dfb4a))
+* **ui:** 优化工作流集成对话框的宽度和高度限制 ([#318](https://github.com/shenjingnan/xiaozhi-client/issues/318)) ([494fdd6](https://github.com/shenjingnan/xiaozhi-client/commit/494fdd6504dac7e0a24cb21584c577ad0ef8fb95))
+* **workflows:** 统一 pnpm 版本配置并升级 GitHub Actions ([#319](https://github.com/shenjingnan/xiaozhi-client/issues/319)) ([fa8da77](https://github.com/shenjingnan/xiaozhi-client/commit/fa8da77e8738b9669a19459a08975458706ec152))
+
 ## [1.7.1](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.0...v1.7.1) (2025-09-08)
 
 ### Features
