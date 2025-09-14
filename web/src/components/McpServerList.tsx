@@ -71,7 +71,7 @@ export function McpServerList({
           toolName: tool?.name || "unknown",
         };
       }
-      
+
       if (tool.handler.type === "mcp") {
         return {
           serviceName: tool.handler.config?.serviceName || "unknown",
