@@ -3,12 +3,12 @@
  * 测试第三阶段新增的参数配置功能集成
  */
 
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CozeWorkflowIntegration } from "@/components/CozeWorkflowIntegration";
 import * as toolsApiModule from "@/services/api";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import * as sonner from "sonner";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies
 vi.mock("sonner", () => ({
