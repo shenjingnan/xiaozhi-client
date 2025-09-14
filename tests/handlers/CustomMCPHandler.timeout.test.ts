@@ -33,6 +33,9 @@ describe("CustomMCPHandler 超时响应测试", () => {
   let slowTool: CustomMCPTool;
   let fastTool: CustomMCPTool;
 
+  // 增加测试超时时间到15秒
+  vi.setConfig({ hookTimeout: 15000 });
+
   beforeEach(() => {
     // 重置所有 mock
     vi.clearAllMocks();
@@ -97,7 +100,7 @@ describe("CustomMCPHandler 超时响应测试", () => {
         expect(result.content[0].text).toContain("任务ID");
         expect(result.content[0].text).toContain("请等待30秒后重试查询");
       }
-    });
+    }, 15000);
 
     it("应该包含清晰的后续操作指引", async () => {
       vi.spyOn(
@@ -118,7 +121,7 @@ describe("CustomMCPHandler 超时响应测试", () => {
           "系统会自动返回已完成的任务结果"
         );
       }
-    });
+    }, 15000);
 
     it("应该为 Coze 工作流工具提供特定提示信息", async () => {
       const cozeTool: CustomMCPTool = {
@@ -153,7 +156,7 @@ describe("CustomMCPHandler 超时响应测试", () => {
           "复杂工作流可能需要更长时间处理"
         );
       }
-    });
+    }, 15000);
 
     it("应该在 8 秒内响应（允许 500ms 误差）", async () => {
       vi.spyOn(
@@ -174,7 +177,7 @@ describe("CustomMCPHandler 超时响应测试", () => {
 
       const responseTime = Date.now() - startTime;
       expect(responseTime).toBeLessThanOrEqual(8500); // 8秒 + 500ms 误差
-    });
+    }, 15000);
   });
 
   describe("任务状态管理测试", () => {

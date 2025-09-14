@@ -1469,7 +1469,9 @@ export class CustomMCPHandler {
           delete cache.customMCPResults[cacheKey];
         }
 
+        // 保存缓存更改
         await this.saveCache(cache);
+        this.logger.debug(`[CustomMCP] 清理已消费缓存: ${cacheKey}`);
       }
     } catch (error) {
       this.logger.warn(`[CustomMCP] 清理缓存失败: ${error}`);
@@ -1532,6 +1534,14 @@ export class CustomMCPHandler {
     result: ToolCallResult
   ): Promise<void> {
     try {
+      // 首先更新activeTasks中的状态
+      const task = this.activeTasks.get(taskId);
+      if (task) {
+        task.status = "completed";
+        task.endTime = new Date().toISOString();
+        task.result = result;
+      }
+
       const cache = await this.loadExtendedCache();
 
       // 查找对应的任务并更新状态
@@ -1551,13 +1561,6 @@ export class CustomMCPHandler {
 
       // 使用TaskStateManager管理任务状态
       this.taskStateManager.markTaskAsCompleted(taskId, result);
-
-      // 同时维护原有的活动任务列表（兼容性）
-      const task = this.activeTasks.get(taskId);
-      if (task) {
-        task.status = "completed";
-        task.endTime = Date.now();
-      }
 
       this.logger.debug(`[CustomMCP] 标记任务为已完成: ${taskId}`);
     } catch (error) {
@@ -1596,13 +1599,13 @@ export class CustomMCPHandler {
       const task = this.activeTasks.get(taskId);
       if (task) {
         task.status = "failed";
-        task.endTime = Date.now();
+        task.endTime = new Date().toISOString();
         task.error = error.message;
       }
 
       this.logger.debug(`[CustomMCP] 标记任务为失败: ${taskId}`);
-    } catch (error) {
-      this.logger.warn(`[CustomMCP] 更新任务状态失败: ${error}`);
+    } catch (err) {
+      this.logger.warn(`[CustomMCP] 更新任务状态失败: ${err}`);
     }
   }
 

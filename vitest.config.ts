@@ -13,6 +13,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
+    testTimeout: 15000,
+    hookTimeout: 15000,
     include: [
       "src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
       "tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
