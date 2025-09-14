@@ -2514,7 +2514,7 @@ describe("ConfigManager", () => {
         const JSON5 = require("json5");
         const savedConfig = JSON5.parse(writtenContent);
         expect(savedConfig.customMCP.tools).toHaveLength(2);
-        expect(savedConfig.customMCP.tools[1]).toEqual(newTool);
+        expect(savedConfig.customMCP.tools[0]).toEqual(newTool);
       });
 
       it("应该在配置中没有 customMCP 时创建新的配置", () => {
