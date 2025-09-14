@@ -63,7 +63,7 @@
     "dotenv": "^17.2.1",
     "eventsource": "^4.0.0",
     "express": "^5.1.0",
-    "hono": "^4.9.6",
+    "hono": "^4.9.7",
     "json5": "^2.2.3",
     "json5-writer": "^0.2.0",
     "jsonc-parser": "^3.3.1",
@@ -106,7 +106,8 @@
     "overrides": {
       "form-data": "^4.0.4",
       "braces": ">=3.0.3",
-      "micromatch": ">=4.0.8"
+      "micromatch": ">=4.0.8",
+      "axios": ">=1.12.0"
     }
   },
   "packageManager": "pnpm@10.13.1"
