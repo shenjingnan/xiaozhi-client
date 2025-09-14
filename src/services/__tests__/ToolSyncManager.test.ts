@@ -11,6 +11,8 @@ const createMockConfigManager = (): ConfigManager => {
     getServerToolsConfig: vi.fn(),
     getCustomMCPTools: vi.fn(),
     addCustomMCPTools: vi.fn(),
+    getCustomMCPConfig: vi.fn(),
+    updateCustomMCPTools: vi.fn(),
   } as unknown as ConfigManager;
 };
 
