@@ -534,7 +534,6 @@ export function CozeWorkflowIntegration({
                   size="sm"
                   onClick={() => handleAddWorkflow(workflow)}
                   disabled={isAddingWorkflow}
-                  className="hover:bg-green-500 hover:text-white gap-0"
                 >
                   {isAddingWorkflow ? (
                     <Loader2
