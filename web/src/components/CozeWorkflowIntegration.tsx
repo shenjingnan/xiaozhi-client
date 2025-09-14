@@ -611,9 +611,7 @@ export function CozeWorkflowIntegration({
           <div className="w-[120px]">{renderWorkspaceSelector()}</div>
 
           {/* 工作流列表 */}
-          <div className="flex-1 pr-2">
-            {renderWorkflowList()}
-          </div>
+          <div className="flex-1 pr-2">{renderWorkflowList()}</div>
 
           {/* 分页控件 */}
           {renderPagination()}

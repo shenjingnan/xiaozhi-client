@@ -442,6 +442,32 @@ export class ApiClient {
   }
 
   /**
+   * 更新自定义工具配置
+   * @param toolName 工具名称
+   * @param updateRequest 更新请求
+   */
+  async updateCustomTool(
+    toolName: string,
+    updateRequest: {
+      type: "mcp" | "coze" | "http" | "function";
+      data: any;
+    }
+  ): Promise<any> {
+    const response: ApiResponse<{ tool: any }> = await this.request(
+      `/api/tools/custom/${encodeURIComponent(toolName)}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(updateRequest),
+      }
+    );
+
+    if (!response.success || !response.data) {
+      throw new Error(response.message || "更新自定义工具失败");
+    }
+    return response.data.tool;
+  }
+
+  /**
    * 删除自定义工具
    */
   async removeCustomTool(toolName: string): Promise<void> {

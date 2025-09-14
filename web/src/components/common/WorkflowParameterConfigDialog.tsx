@@ -27,6 +27,7 @@ import {
 import type { CozeWorkflow, WorkflowParameter } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
+import { useEffect } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -85,6 +86,37 @@ export interface WorkflowParameterConfigDialogProps {
 }
 
 /**
+ * 从 inputSchema 提取现有参数配置
+ */
+function extractParametersFromSchema(inputSchema: any): FormData["parameters"] {
+  if (!inputSchema || !inputSchema.properties) {
+    return [];
+  }
+
+  const properties = inputSchema.properties;
+  const required = inputSchema.required || [];
+
+  return Object.entries(properties).map(
+    ([fieldName, schema]: [string, any]) => {
+      let type: "string" | "number" | "boolean" = "string";
+
+      if (schema.type === "integer" || schema.type === "number") {
+        type = "number";
+      } else if (schema.type === "boolean") {
+        type = "boolean";
+      }
+
+      return {
+        fieldName,
+        description: schema.description || "",
+        type,
+        required: required.includes(fieldName),
+      };
+    }
+  );
+}
+
+/**
  * 工作流参数配置对话框组件
  *
  * 提供通用的工作流参数配置界面，支持：
@@ -107,6 +139,14 @@ export function WorkflowParameterConfigDialog({
       parameters: [],
     },
   });
+
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        parameters: extractParametersFromSchema(workflow.inputSchema),
+      });
+    }
+  }, [open, workflow, form.reset]);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,

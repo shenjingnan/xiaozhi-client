@@ -132,6 +132,7 @@ export interface CozeWorkflow {
   isAddedAsTool: boolean;
   /** 如果已添加为工具，对应的工具名称 */
   toolName: string | null;
+  inputSchema?: any;
 }
 
 /**
