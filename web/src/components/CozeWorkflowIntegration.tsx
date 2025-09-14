@@ -41,8 +41,6 @@ import {
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-const ITEMS_PER_PAGE = 5;
-
 interface CozeWorkflowIntegrationProps {
   onToolAdded?: () => void;
 }
