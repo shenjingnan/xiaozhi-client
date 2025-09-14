@@ -3,7 +3,6 @@
  * 确保重构后的 CustomMCPHandler 仍然保持原有功能的向后兼容性
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
   CustomMCPTool,
   FunctionHandlerConfig,
@@ -12,6 +11,7 @@ import type {
 } from "@/configManager.js";
 import { CustomMCPHandler } from "@/services/CustomMCPHandler.js";
 import { MCPCacheManager } from "@/services/MCPCacheManager.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock Logger
 const mockLogger = {

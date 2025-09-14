@@ -3,7 +3,6 @@
  * 测试超时友好响应机制和任务状态管理
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomMCPTool } from "@/configManager.js";
 import { CustomMCPHandler } from "@/services/CustomMCPHandler.js";
 import { MCPCacheManager } from "@/services/MCPCacheManager.js";
@@ -13,6 +12,7 @@ import {
   isTimeoutError,
   isTimeoutResponse,
 } from "@/types/timeout.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock Logger
 const mockLogger = {
