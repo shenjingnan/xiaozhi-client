@@ -66,13 +66,13 @@ describe("WorkflowParameterConfigDialog", () => {
     const addButton = screen.getByText("添加参数");
     await user.click(addButton);
 
-    expect(screen.getByText("参数 1")).toBeInTheDocument();
+    // 检查添加参数后是否显示了表单字段
     expect(screen.getByPlaceholderText("例如: userName")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("例如: 用户名称")).toBeInTheDocument();
-    // 检查类型选择器是否存在 - 通过label和combobox角色
-    expect(screen.getByText("类型")).toBeInTheDocument();
+    // 检查类型选择器是否存在
+    expect(screen.getByText("参数类型")).toBeInTheDocument();
     expect(screen.getByRole("combobox")).toBeInTheDocument();
-    expect(screen.getByText("必填参数")).toBeInTheDocument();
+    expect(screen.getByText("是否必填")).toBeInTheDocument();
   });
 
   it("应该能够删除参数", async () => {
@@ -83,13 +83,32 @@ describe("WorkflowParameterConfigDialog", () => {
     const addButton = screen.getByText("添加参数");
     await user.click(addButton);
 
-    expect(screen.getByText("参数 1")).toBeInTheDocument();
+    // 验证参数表单字段存在
+    expect(screen.getByPlaceholderText("例如: userName")).toBeInTheDocument();
 
-    // 删除参数
-    const deleteButton = screen.getByRole("button", { name: "" }); // Trash2 icon button
-    await user.click(deleteButton);
+    // 删除参数 - 通过查找包含垃圾桶图标的按钮
+    const deleteButtons = screen
+      .getAllByRole("button")
+      .filter(
+        (button) =>
+          button.querySelector('svg[data-lucide="trash-2"]') ||
+          button.querySelector("svg.lucide-trash2") ||
+          button.className.includes("text-destructive")
+      );
+    const deleteButton = deleteButtons.find(
+      (button) =>
+        button !== screen.getByText("添加参数") &&
+        button !== screen.getByText("取消") &&
+        button !== screen.getByText("确认配置")
+    );
 
-    expect(screen.queryByText("参数 1")).not.toBeInTheDocument();
+    expect(deleteButton).toBeDefined();
+    await user.click(deleteButton!);
+
+    // 验证参数表单字段已被删除
+    expect(
+      screen.queryByPlaceholderText("例如: userName")
+    ).not.toBeInTheDocument();
   });
 
   it("应该能够添加多个参数", async () => {
@@ -100,15 +119,17 @@ describe("WorkflowParameterConfigDialog", () => {
 
     // 添加第一个参数
     await user.click(addButton);
-    expect(screen.getByText("参数 1")).toBeInTheDocument();
+    const firstInputs = screen.getAllByPlaceholderText("例如: userName");
+    expect(firstInputs).toHaveLength(1);
 
     // 添加第二个参数
     await user.click(addButton);
-    expect(screen.getByText("参数 2")).toBeInTheDocument();
+    const secondInputs = screen.getAllByPlaceholderText("例如: userName");
+    expect(secondInputs).toHaveLength(2);
 
-    // 两个参数都应该存在
-    expect(screen.getByText("参数 1")).toBeInTheDocument();
-    expect(screen.getByText("参数 2")).toBeInTheDocument();
+    // 两个参数的表单字段都应该存在
+    expect(screen.getAllByPlaceholderText("例如: userName")).toHaveLength(2);
+    expect(screen.getAllByPlaceholderText("例如: 用户名称")).toHaveLength(2);
   });
 
   it("应该验证字段名格式", async () => {
@@ -184,10 +205,9 @@ describe("WorkflowParameterConfigDialog", () => {
       expect(mockOnConfirm).not.toHaveBeenCalled();
     });
 
-    // 检查是否有错误消息（通过调试信息）
-    // 由于错误消息可能以不同的方式显示，我们主要验证逻辑正确性
-    expect(screen.getByText("参数 1")).toBeInTheDocument();
-    expect(screen.getByText("参数 2")).toBeInTheDocument();
+    // 验证两个参数的表单字段仍然存在
+    expect(screen.getAllByPlaceholderText("例如: userName")).toHaveLength(2);
+    expect(screen.getAllByPlaceholderText("例如: 用户名称")).toHaveLength(2);
   });
 
   it("应该能够选择参数类型", async () => {

@@ -7,7 +7,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CozeWorkflowIntegration } from "../components/CozeWorkflowIntegration";
 import * as useCozeWorkflowsModule from "../hooks/useCozeWorkflows";
-import * as toolsApiModule from "../services/toolsApi";
+import * as toolsApiModule from "../services/api";
 import type { CozeWorkflow, CozeWorkspace } from "../types";
 
 // Mock toast
@@ -23,9 +23,9 @@ vi.mock("../hooks/useCozeWorkflows", () => ({
   useCozeWorkflows: vi.fn(),
 }));
 
-// Mock toolsApiService
-vi.mock("../services/toolsApi", () => ({
-  toolsApiService: {
+// Mock apiClient
+vi.mock("../services/api", () => ({
+  apiClient: {
     getCustomTools: vi.fn(),
     addCustomTool: vi.fn(),
     removeCustomTool: vi.fn(),
@@ -97,15 +97,15 @@ describe("CozeWorkflowIntegration", () => {
     workflowsError: null,
     hasMoreWorkflows: false,
     currentPage: 1,
-    pageSize: 5,
+    pageSize: 20,
     selectWorkspace: vi.fn(),
     loadWorkflows: vi.fn(),
     refreshWorkspaces: vi.fn(),
     refreshWorkflows: vi.fn(),
+    clearCache: vi.fn(),
+    setWorkflows: vi.fn(),
     setPage: vi.fn(),
     setPageSize: vi.fn(),
-    setWorkflows: vi.fn(),
-    clearCache: vi.fn(),
   };
 
   beforeEach(() => {
@@ -115,16 +115,20 @@ describe("CozeWorkflowIntegration", () => {
     );
     mockUseCozeWorkflows.mockReturnValue(defaultHookReturn);
 
-    // Mock toolsApiService
-    const mockToolsApiService = vi.mocked(toolsApiModule.toolsApiService);
-    mockToolsApiService.getCustomTools.mockResolvedValue([]);
-    mockToolsApiService.addCustomTool.mockResolvedValue({
+    // Mock apiClient
+    const mockApiClient = vi.mocked(toolsApiModule.apiClient);
+    mockApiClient.getCustomTools.mockResolvedValue([]);
+    mockApiClient.addCustomTool.mockResolvedValue({
       name: "test-tool",
       description: "Test tool",
       inputSchema: { type: "object", properties: {} },
-      handler: { type: "http", url: "http://example.com", method: "POST" },
+      handler: {
+        type: "mcp",
+        platform: "coze",
+        config: { serviceName: "coze", toolName: "test-tool" },
+      },
     });
-    mockToolsApiService.removeCustomTool.mockResolvedValue(undefined);
+    mockApiClient.removeCustomTool.mockResolvedValue(undefined);
   });
 
   describe("初始渲染", () => {
@@ -163,7 +167,7 @@ describe("CozeWorkflowIntegration", () => {
       });
       await user.click(triggerButton);
 
-      expect(screen.getByText("选择工作空间")).toBeInTheDocument();
+      expect(screen.getByText("请选择工作空间")).toBeInTheDocument();
       expect(screen.getByRole("combobox")).toBeInTheDocument();
     });
 
@@ -341,13 +345,21 @@ describe("CozeWorkflowIntegration", () => {
       });
       await user.click(triggerButton);
 
-      expect(screen.getByText("第 1 页")).toBeInTheDocument();
-      expect(
-        screen.getByRole("button", { name: /上一页/ })
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole("button", { name: /下一页/ })
-      ).toBeInTheDocument();
+      expect(screen.getByText("1")).toBeInTheDocument();
+      // 分页按钮使用ChevronLeft和ChevronRight图标
+      // 查找所有包含图标的按钮
+      const allButtons = screen.getAllByRole("button");
+      const buttonsWithSvg = allButtons.filter((button) =>
+        button.querySelector(
+          "svg.lucide-chevron-left, svg.lucide-chevron-right"
+        )
+      );
+
+      // 应该至少有两个分页按钮（上一页和下一页）
+      expect(buttonsWithSvg.length).toBeGreaterThanOrEqual(2);
+
+      // 验证分页区域存在（包含页码显示）
+      expect(screen.getByText("1")).toBeInTheDocument();
     });
 
     it("should handle page navigation", async () => {
@@ -370,8 +382,15 @@ describe("CozeWorkflowIntegration", () => {
       });
       await user.click(triggerButton);
 
-      const nextButton = screen.getByRole("button", { name: /下一页/ });
-      await user.click(nextButton);
+      // 分页按钮使用ChevronRight图标
+      // 查找包含chevron-right图标的按钮
+      const allButtons = screen.getAllByRole("button");
+      const nextButton = allButtons.find((button) =>
+        button.querySelector("svg.lucide-chevron-right")
+      );
+
+      expect(nextButton).toBeInTheDocument();
+      await user.click(nextButton!);
 
       expect(mockSetPage).toHaveBeenCalledWith(2);
     });
