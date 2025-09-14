@@ -1,5 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { toast } from "sonner";
+import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { McpServerList } from "./McpServerList";
 
@@ -280,9 +279,7 @@ describe("McpServerList", () => {
 
     // Since we can't easily click buttons in this complex component,
     // let's test the state management by simulating the function call
-    const { result } = render(() => (
-      <McpServerList updateConfig={mockUpdateConfig} />
-    ));
+    render(<McpServerList updateConfig={mockUpdateConfig} />);
 
     // Test Coze tool detection logic by manually calling the toggle function
     // This tests the core logic without dealing with complex DOM interactions
@@ -294,8 +291,6 @@ describe("McpServerList", () => {
   });
 
   it("should not show confirmation for non-Coze tools", async () => {
-    const apiModule = await import("@/services/api");
-
     // Test with normal MCP tools
     const mcpTool = mockEnabledTools[0]; // tool1 from server1
     expect(mcpTool.handler.config.serviceName).toBe("server1");
