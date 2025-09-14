@@ -111,39 +111,8 @@ jobs:
           echo "prerelease_id=$PRERELEASE_ID" >> $GITHUB_OUTPUT
 
       - name: 🔒 安全审计检查
-        id: security-audit
         run: |
-          echo "🔍 开始执行安全审计检查..."
-          
-          # 执行安全审计
-          SECURITY_OUTPUT=$(pnpm audit --audit-level moderate --json)
-          SECURITY_EXIT_CODE=$?
-          
-          echo "安全审计退出码: $SECURITY_EXIT_CODE"
-          echo "安全审计输出:"
-          echo "$SECURITY_OUTPUT"
-          
-          if [ $SECURITY_EXIT_CODE -eq 0 ]; then
-            echo "✅ 安全审计通过：未发现中危及以上级别的安全漏洞"
-            echo "security_audit_passed=true" >> $GITHUB_OUTPUT
-          else
-            echo "⚠️  安全审计未通过：发现中危及以上级别的安全漏洞"
-            echo "security_audit_passed=false" >> $GITHUB_OUTPUT
-            
-            # 如果是预演模式，显示详细信息但继续执行
-            if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-              echo "📋 预演模式：发现安全问题但继续执行发布流程"
-              echo "⚠️  请在正式发布前修复以下安全问题："
-              pnpm audit --audit-level moderate
-              echo "security_audit_passed=true" >> $GITHUB_OUTPUT  # 预演模式下标记为通过以继续
-            else
-              echo "❌ 正式发布模式：存在安全问题，停止发布流程"
-              echo "🔧 请运行以下命令修复安全问题后重试："
-              echo "   pnpm audit fix"
-              echo "   pnpm audit --audit-level moderate"
-              exit 1
-            fi
-          fi
+          pnpm audit --audit-level moderate
 
       - name: 发布
         env:
