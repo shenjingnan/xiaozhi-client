@@ -281,7 +281,7 @@ export class ToolApiHandler {
    */
   async listTools(c: Context): Promise<Response> {
     try {
-      this.logger.info("处理获取工具列表请求");
+      this.logger.debug("处理获取工具列表请求");
 
       // 获取筛选参数
       const status =
@@ -293,19 +293,19 @@ export class ToolApiHandler {
         case "enabled":
           // 已启用工具：从 xiaozhi.config.json 的 customMCP.tools 获取
           tools = configManager.getCustomMCPTools();
-          this.logger.info(`获取已启用工具，共 ${tools.length} 个`);
+          this.logger.debug(`获取已启用工具，共 ${tools.length} 个`);
           break;
 
         case "disabled":
           // 未启用工具：从缓存中获取所有工具，过滤掉已启用的
           tools = await this.getDisabledTools();
-          this.logger.info(`获取未启用工具，共 ${tools.length} 个`);
+          this.logger.debug(`获取未启用工具，共 ${tools.length} 个`);
           break;
 
         default:
           // 所有工具：从 xiaozhi.config.json 的 customMCP.tools 获取
           tools = configManager.getCustomMCPTools();
-          this.logger.info(`获取所有工具，共 ${tools.length} 个`);
+          this.logger.debug(`获取所有工具，共 ${tools.length} 个`);
           break;
       }
 

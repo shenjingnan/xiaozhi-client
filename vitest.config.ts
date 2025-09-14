@@ -13,7 +13,12 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
+    testTimeout: 15000,
+    hookTimeout: 15000,
+    include: [
+      "src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
+      "tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
+    ],
     exclude: ["node_modules", "dist", "templates/**/*"],
     coverage: {
       enabled: true,
@@ -29,7 +34,7 @@ export default defineConfig({
         "coverage/**",
         "**/*.example.ts",
       ],
-      include: ["src/**/*.ts"],
+      include: ["src/**/*.ts", "tests/**/*.ts"],
       all: true,
       thresholds: {
         global: {

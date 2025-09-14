@@ -6,6 +6,7 @@
  * 支持多种 handler 类型：proxy、function、http、script、chain
  */
 
+import { createHash } from "node:crypto";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { type Logger, logger } from "../Logger.js";
 import {
@@ -18,6 +19,27 @@ import {
   type ScriptHandlerConfig,
   configManager,
 } from "../configManager.js";
+import { CacheLifecycleManager } from "../managers/CacheLifecycleManager.js";
+import { TaskStateManager } from "../managers/TaskStateManager.js";
+import {
+  type CacheConfig,
+  type CacheStatistics,
+  DEFAULT_CONFIG,
+  type EnhancedToolResultCache,
+  type ExtendedMCPToolsCache,
+  type TaskStatus,
+  type TimeoutConfig,
+  type ToolCallResponse,
+  generateCacheKey,
+  isCacheExpired,
+  shouldCleanupCache,
+} from "../types/mcp.js";
+import {
+  TimeoutError,
+  createTimeoutResponse,
+  isTimeoutResponse,
+} from "../types/timeout.js";
+import { MCPCacheManager } from "./MCPCacheManager.js";
 
 // 工具调用结果接口（与 MCPServiceManager 保持一致）
 export interface ToolCallResult {
@@ -28,22 +50,45 @@ export interface ToolCallResult {
   isError?: boolean;
 }
 
-// 工具调用选项
+// 扩展的工具调用选项
 interface ToolCallOptions {
   timeout?: number; // 超时时间（毫秒）
-  retries?: number; // 重试次数
+  retries?: number; // 重试次数（已弃用，移除重试机制）
   retryDelay?: number; // 重试延迟（毫秒）
+  enableCache?: boolean; // 是否启用缓存
+  taskId?: string; // 任务ID
+}
+
+// 任务状态管理接口
+interface TaskManager {
+  taskId: string;
+  status: TaskStatus;
+  startTime: number;
+  endTime?: string; // 改为string类型以匹配toISOString()
+  error?: string;
+  result?: any; // 添加result属性以支持任务结果存储
 }
 
 export class CustomMCPHandler {
   private logger: Logger;
   private tools: Map<string, CustomMCPTool> = new Map();
-  private defaultTimeout = 30000; // 30秒默认超时
-  private defaultRetries = 2; // 默认重试2次
-  private defaultRetryDelay = 1000; // 默认重试延迟1秒
+  private cacheManager: MCPCacheManager;
+  private cacheLifecycleManager: CacheLifecycleManager;
+  private taskStateManager: TaskStateManager;
+  private readonly TIMEOUT = DEFAULT_CONFIG.TIMEOUT; // 统一8秒超时
+  private readonly CACHE_TTL = DEFAULT_CONFIG.CACHE_TTL; // 5分钟缓存过期
+  private readonly CLEANUP_INTERVAL = DEFAULT_CONFIG.CLEANUP_INTERVAL; // 1分钟清理间隔
+  private cleanupTimer?: NodeJS.Timeout;
+  private activeTasks: Map<string, TaskManager> = new Map();
 
-  constructor() {
+  constructor(cacheManager?: MCPCacheManager) {
     this.logger = logger;
+    this.cacheManager = cacheManager || new MCPCacheManager();
+    this.cacheLifecycleManager = new CacheLifecycleManager(this.logger);
+    this.taskStateManager = new TaskStateManager(this.logger);
+    // 启动缓存清理定时器
+    this.startCleanupTimer();
+    this.cacheLifecycleManager.startAutoCleanup();
   }
 
   /**
@@ -110,13 +155,13 @@ export class CustomMCPHandler {
   }
 
   /**
-   * 调用工具
+   * 调用工具（支持超时友好响应和缓存管理）
    */
   public async callTool(
     toolName: string,
     arguments_: any,
     options?: ToolCallOptions
-  ): Promise<ToolCallResult> {
+  ): Promise<ToolCallResponse> {
     const tool = this.tools.get(toolName);
     if (!tool) {
       throw new Error(`未找到工具: ${toolName}`);
@@ -127,92 +172,119 @@ export class CustomMCPHandler {
       arguments: arguments_,
     });
 
-    const callOptions: Required<ToolCallOptions> = {
-      timeout: options?.timeout ?? this.defaultTimeout,
-      retries: options?.retries ?? this.defaultRetries,
-      retryDelay: options?.retryDelay ?? this.defaultRetryDelay,
-    };
+    // 首先检查是否有已完成的任务结果（一次性缓存）
+    const completedResult = await this.getCompletedResult(toolName, arguments_);
+    if (completedResult) {
+      this.logger.debug(`[CustomMCP] 返回已完成的任务结果: ${toolName}`);
+      // 立即清理已消费的缓存
+      await this.clearConsumedCache(toolName, arguments_);
+      return completedResult;
+    }
 
-    return await this.executeWithRetry(tool, arguments_, callOptions);
+    try {
+      // 使用 Promise.race 实现超时控制
+      const result = await Promise.race([
+        this.executeToolWithBackgroundProcessing(toolName, arguments_),
+        this.createTimeoutPromise(toolName, arguments_),
+      ]);
+
+      // 缓存结果（标记为未消费）
+      await this.cacheResult(toolName, arguments_, result);
+
+      return result;
+    } catch (error) {
+      // 如果是超时错误，返回友好提示
+      if (error instanceof TimeoutError) {
+        const taskId = await this.generateTaskId(toolName, arguments_);
+        this.logger.info(
+          `[CustomMCP] 工具超时，返回友好提示: ${toolName}, taskId: ${taskId}`
+        );
+        return createTimeoutResponse(taskId, toolName);
+      }
+
+      throw error;
+    }
   }
 
   /**
-   * 带重试机制的工具执行
+   * 执行工具（支持后台处理）
    */
-  private async executeWithRetry(
-    tool: CustomMCPTool,
-    arguments_: any,
-    options: Required<ToolCallOptions>
+  private async executeToolWithBackgroundProcessing(
+    toolName: string,
+    arguments_: any
   ): Promise<ToolCallResult> {
-    let lastError: Error | null = null;
+    const tool = this.tools.get(toolName);
+    if (!tool) {
+      throw new Error(`工具不存在: ${toolName}`);
+    }
 
-    for (let attempt = 0; attempt <= options.retries; attempt++) {
-      try {
-        if (attempt > 0) {
-          this.logger.info(
-            `[CustomMCP] 重试调用工具 ${tool.name}，第 ${attempt} 次重试`
-          );
-          await this.delay(options.retryDelay);
-        }
+    // 标记任务为处理中状态
+    const taskId = await this.generateTaskId(toolName, arguments_);
+    await this.markTaskAsPending(taskId, toolName, arguments_);
 
-        return await this.executeToolCall(tool, arguments_, options.timeout);
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error(String(error));
-        this.logger.warn(
-          `[CustomMCP] 工具 ${tool.name} 调用失败 (尝试 ${attempt + 1}/${
-            options.retries + 1
-          }):`,
-          lastError.message
-        );
+    try {
+      // 直接调用，移除重试逻辑
+      const result = await this.callToolByType(tool, arguments_);
 
-        // 如果是最后一次尝试，不再重试
-        if (attempt === options.retries) {
-          break;
+      // 更新任务状态为完成
+      await this.markTaskAsCompleted(taskId, result);
+
+      return result;
+    } catch (error) {
+      // 更新任务状态为失败
+      await this.markTaskAsFailed(taskId, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 创建超时 Promise（带任务跟踪）
+   */
+  private async createTimeoutPromise(
+    toolName: string,
+    arguments_: any
+  ): Promise<never> {
+    return new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new TimeoutError(`工具调用超时: ${toolName}`));
+      }, this.TIMEOUT);
+    });
+  }
+
+  /**
+   * 获取已完成的任务结果（一次性缓存）
+   */
+  private async getCompletedResult(
+    toolName: string,
+    arguments_: any
+  ): Promise<ToolCallResult | null> {
+    try {
+      const cacheKey = this.generateCacheKey(toolName, arguments_);
+      const cache = await this.loadExtendedCache();
+
+      if (!cache.customMCPResults || !cache.customMCPResults[cacheKey]) {
+        return null;
+      }
+
+      const cached = cache.customMCPResults[cacheKey];
+
+      // 只返回已完成且未消费的结果
+      if (cached.status === "completed" && !cached.consumed) {
+        // 检查是否过期
+        if (!isCacheExpired(cached.timestamp, cached.ttl)) {
+          return cached.result;
         }
       }
-    }
 
-    // 所有重试都失败了
-    this.logger.error(`[CustomMCP] 工具 ${tool.name} 调用最终失败:`, lastError);
-    return {
-      content: [
-        {
-          type: "text",
-          text: `工具调用失败: ${lastError?.message || "未知错误"}`,
-        },
-      ],
-      isError: true,
-    };
-  }
-
-  /**
-   * 执行具体的工具调用
-   */
-  private async executeToolCall(
-    tool: CustomMCPTool,
-    arguments_: any,
-    timeout: number
-  ): Promise<ToolCallResult> {
-    // 创建超时 Promise
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => {
-        reject(new Error(`工具调用超时 (${timeout}ms)`));
-      }, timeout);
-    });
-
-    // 创建实际调用 Promise
-    const callPromise = this.callToolByType(tool, arguments_);
-
-    // 使用 Promise.race 实现超时控制
-    try {
-      return await Promise.race([callPromise, timeoutPromise]);
+      return null;
     } catch (error) {
-      throw error instanceof Error ? error : new Error(String(error));
+      this.logger.warn(`[CustomMCP] 获取缓存失败: ${error}`);
+      return null;
     }
   }
 
   /**
-   * 根据 handler 类型调用相应的工具
+   * 根据工具类型调用相应的处理方法
    */
   private async callToolByType(
     tool: CustomMCPTool,
@@ -353,7 +425,7 @@ export class CustomMCPHandler {
     }
 
     const url = `${baseUrl}${endpoint}`;
-    const timeout = config.timeout || 30000;
+    const timeout = config.timeout || 300000;
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -376,7 +448,6 @@ export class CustomMCPHandler {
         method: "POST",
         headers,
         body: JSON.stringify(requestData),
-        // signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
@@ -1248,14 +1319,6 @@ export class CustomMCPHandler {
   }
 
   /**
-   * 清理资源
-   */
-  public cleanup(): void {
-    this.logger.info("[CustomMCP] 清理 CustomMCP 处理器资源");
-    this.tools.clear();
-  }
-
-  /**
    * 顺序执行链式工具
    */
   private async executeSequentialChain(
@@ -1384,5 +1447,411 @@ export class CustomMCPHandler {
     throw new Error(
       `链式工具中引用的工具 ${toolName} 不存在于当前 CustomMCP 工具集中`
     );
+  }
+
+  /**
+   * 清理已消费的缓存
+   */
+  private async clearConsumedCache(
+    toolName: string,
+    arguments_: any
+  ): Promise<void> {
+    try {
+      const cacheKey = this.generateCacheKey(toolName, arguments_);
+      const cache = await this.loadExtendedCache();
+
+      if (cache.customMCPResults?.[cacheKey]) {
+        // 标记为已消费
+        cache.customMCPResults[cacheKey].consumed = true;
+
+        // 如果已消费且已过期，直接删除
+        const cached = cache.customMCPResults[cacheKey];
+        if (shouldCleanupCache(cached)) {
+          delete cache.customMCPResults[cacheKey];
+        }
+
+        // 保存缓存更改
+        await this.saveCache(cache);
+        this.logger.debug(`[CustomMCP] 清理已消费缓存: ${cacheKey}`);
+      }
+    } catch (error) {
+      this.logger.warn(`[CustomMCP] 清理缓存失败: ${error}`);
+    }
+  }
+
+  /**
+   * 生成任务ID
+   */
+  private async generateTaskId(
+    toolName: string,
+    arguments_: any
+  ): Promise<string> {
+    return this.taskStateManager.generateTaskId(toolName, arguments_);
+  }
+
+  /**
+   * 标记任务为处理中
+   */
+  private async markTaskAsPending(
+    taskId: string,
+    toolName: string,
+    arguments_: any
+  ): Promise<void> {
+    try {
+      const cacheKey = this.generateCacheKey(toolName, arguments_);
+      const cacheData: EnhancedToolResultCache = {
+        result: { content: [{ type: "text", text: "处理中..." }] },
+        timestamp: new Date().toISOString(),
+        ttl: this.CACHE_TTL,
+        status: "pending",
+        consumed: false,
+        taskId,
+        retryCount: 0,
+      };
+
+      await this.updateCacheWithResult(cacheKey, cacheData);
+
+      // 使用TaskStateManager管理任务状态
+      this.taskStateManager.markTaskAsPending(taskId, toolName, arguments_);
+
+      // 同时维护原有的活动任务列表（兼容性）
+      this.activeTasks.set(taskId, {
+        taskId,
+        status: "pending",
+        startTime: Date.now(),
+      });
+
+      this.logger.debug(`[CustomMCP] 标记任务为处理中: ${taskId}`);
+    } catch (error) {
+      this.logger.warn(`[CustomMCP] 标记任务状态失败: ${error}`);
+    }
+  }
+
+  /**
+   * 标记任务为已完成
+   */
+  private async markTaskAsCompleted(
+    taskId: string,
+    result: ToolCallResult
+  ): Promise<void> {
+    try {
+      // 首先更新activeTasks中的状态
+      const task = this.activeTasks.get(taskId);
+      if (task) {
+        task.status = "completed";
+        task.endTime = new Date().toISOString();
+        task.result = result;
+      }
+
+      const cache = await this.loadExtendedCache();
+
+      // 查找对应的任务并更新状态
+      for (const [cacheKey, cached] of Object.entries(
+        cache.customMCPResults || {}
+      )) {
+        if (cached.taskId === taskId) {
+          cached.status = "completed";
+          cached.result = result;
+          cached.timestamp = new Date().toISOString();
+          cached.consumed = false;
+          break;
+        }
+      }
+
+      await this.saveCache(cache);
+
+      // 使用TaskStateManager管理任务状态
+      this.taskStateManager.markTaskAsCompleted(taskId, result);
+
+      this.logger.debug(`[CustomMCP] 标记任务为已完成: ${taskId}`);
+    } catch (error) {
+      this.logger.warn(`[CustomMCP] 更新任务状态失败: ${error}`);
+    }
+  }
+
+  /**
+   * 标记任务为失败
+   */
+  private async markTaskAsFailed(taskId: string, error: any): Promise<void> {
+    try {
+      const cache = await this.loadExtendedCache();
+
+      // 查找对应的任务并更新状态
+      for (const [cacheKey, cached] of Object.entries(
+        cache.customMCPResults || {}
+      )) {
+        if (cached.taskId === taskId) {
+          cached.status = "failed";
+          cached.result = {
+            content: [{ type: "text", text: `任务失败: ${error.message}` }],
+          };
+          cached.timestamp = new Date().toISOString();
+          cached.consumed = true; // 失败的任务自动标记为已消费
+          break;
+        }
+      }
+
+      await this.saveCache(cache);
+
+      // 使用TaskStateManager管理任务状态
+      this.taskStateManager.markTaskAsFailed(taskId, error.message);
+
+      // 同时维护原有的活动任务列表（兼容性）
+      const task = this.activeTasks.get(taskId);
+      if (task) {
+        task.status = "failed";
+        task.endTime = new Date().toISOString();
+        task.error = error.message;
+      }
+
+      this.logger.debug(`[CustomMCP] 标记任务为失败: ${taskId}`);
+    } catch (err) {
+      this.logger.warn(`[CustomMCP] 更新任务状态失败: ${err}`);
+    }
+  }
+
+  /**
+   * 启动缓存清理定时器
+   */
+  private startCleanupTimer(): void {
+    this.cleanupTimer = setInterval(() => {
+      this.cleanupExpiredCache().catch((error) => {
+        this.logger.warn(`[CustomMCP] 缓存清理失败: ${error}`);
+      });
+    }, this.CLEANUP_INTERVAL);
+
+    this.logger.info(
+      `[CustomMCP] 启动缓存清理定时器，间隔: ${this.CLEANUP_INTERVAL}ms`
+    );
+  }
+
+  /**
+   * 清理过期缓存
+   */
+  private async cleanupExpiredCache(): Promise<void> {
+    try {
+      const cache = await this.loadExtendedCache();
+      let hasChanges = false;
+      let cleanedCount = 0;
+
+      for (const [cacheKey, cached] of Object.entries(
+        cache.customMCPResults || {}
+      )) {
+        if (shouldCleanupCache(cached)) {
+          cache.customMCPResults?.[cacheKey] &&
+            delete cache.customMCPResults[cacheKey];
+          hasChanges = true;
+          cleanedCount++;
+
+          // 从活动任务中移除
+          if (cached.taskId) {
+            this.activeTasks.delete(cached.taskId);
+          }
+        }
+      }
+
+      if (hasChanges) {
+        await this.saveCache(cache);
+        this.logger.debug(
+          `[CustomMCP] 清理过期缓存完成，清理了 ${cleanedCount} 个条目`
+        );
+      }
+    } catch (error) {
+      this.logger.warn(`[CustomMCP] 清理过期缓存失败: ${error}`);
+    }
+  }
+
+  /**
+   * 生成缓存键
+   */
+  private generateCacheKey(toolName: string, arguments_: any): string {
+    return generateCacheKey(toolName, arguments_);
+  }
+
+  /**
+   * 加载扩展缓存
+   */
+  private async loadExtendedCache(): Promise<ExtendedMCPToolsCache> {
+    try {
+      const cacheData = await this.cacheManager.loadExistingCache();
+      return cacheData as ExtendedMCPToolsCache;
+    } catch (error) {
+      return {
+        version: "1.0.0",
+        mcpServers: {},
+        metadata: {
+          lastGlobalUpdate: new Date().toISOString(),
+          totalWrites: 0,
+          createdAt: new Date().toISOString(),
+        },
+        customMCPResults: {},
+      };
+    }
+  }
+
+  /**
+   * 更新缓存结果
+   */
+  private async updateCacheWithResult(
+    cacheKey: string,
+    cacheData: EnhancedToolResultCache
+  ): Promise<void> {
+    try {
+      const cache = await this.loadExtendedCache();
+
+      if (!cache.customMCPResults) {
+        cache.customMCPResults = {};
+      }
+
+      cache.customMCPResults[cacheKey] = cacheData;
+
+      // 使用 MCPCacheManager 的保存方法
+      await this.saveCache(cache);
+    } catch (error) {
+      this.logger.warn(`[CustomMCP] 更新缓存失败: ${error}`);
+    }
+  }
+
+  /**
+   * 缓存结果
+   */
+  private async cacheResult(
+    toolName: string,
+    arguments_: any,
+    result: ToolCallResult
+  ): Promise<void> {
+    try {
+      const cacheKey = this.generateCacheKey(toolName, arguments_);
+      const cacheData: EnhancedToolResultCache = {
+        result,
+        timestamp: new Date().toISOString(),
+        ttl: this.CACHE_TTL,
+        status: "completed",
+        consumed: false, // 初始状态为未消费
+        retryCount: 0,
+      };
+
+      await this.updateCacheWithResult(cacheKey, cacheData);
+      this.logger.debug(`[CustomMCP] 缓存工具结果: ${toolName}`);
+    } catch (error) {
+      this.logger.warn(`[CustomMCP] 缓存结果失败: ${error}`);
+    }
+  }
+
+  /**
+   * 保存缓存
+   */
+  private async saveCache(cache: ExtendedMCPToolsCache): Promise<void> {
+    try {
+      await this.cacheManager.saveCache(cache);
+    } catch (error) {
+      this.logger.warn(`[CustomMCP] 保存缓存失败: ${error}`);
+    }
+  }
+
+  /**
+   * 停止清理定时器
+   */
+  public stopCleanupTimer(): void {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = undefined;
+      this.logger.info("[CustomMCP] 停止缓存清理定时器");
+    }
+  }
+
+  /**
+   * 清理资源
+   */
+  public cleanup(): void {
+    this.logger.info("[CustomMCP] 清理 CustomMCP 处理器资源");
+    this.stopCleanupTimer();
+    this.cacheLifecycleManager.stopAutoCleanup();
+    this.cacheLifecycleManager.cleanup();
+    this.taskStateManager.cleanup();
+    this.cacheManager.cleanup();
+    this.tools.clear();
+    this.activeTasks.clear();
+  }
+
+  // ==================== 新增的管理器集成方法 ====================
+
+  /**
+   * 获取缓存生命周期管理器
+   */
+  public getCacheLifecycleManager(): CacheLifecycleManager {
+    return this.cacheLifecycleManager;
+  }
+
+  /**
+   * 获取任务状态管理器
+   */
+  public getTaskStateManager(): TaskStateManager {
+    return this.taskStateManager;
+  }
+
+  /**
+   * 获取缓存统计信息
+   */
+  public async getCacheStatistics(): Promise<CacheStatistics> {
+    return this.cacheManager.getCustomMCPStatistics();
+  }
+
+  /**
+   * 获取任务统计信息
+   */
+  public getTaskStatistics() {
+    return this.taskStateManager.getTaskStatistics();
+  }
+
+  /**
+   * 获取任务状态
+   */
+  public getTaskStatus(taskId: string): string | null {
+    return this.taskStateManager.getTaskStatus(taskId);
+  }
+
+  /**
+   * 验证任务ID
+   */
+  public validateTaskId(taskId: string): boolean {
+    return this.taskStateManager.validateTaskId(taskId);
+  }
+
+  /**
+   * 重启停滞任务
+   */
+  public restartStalledTasks(timeoutMs = 30000): number {
+    return this.taskStateManager.restartStalledTasks(timeoutMs);
+  }
+
+  /**
+   * 手动清理过期缓存
+   */
+  public async manualCleanupCache(): Promise<{
+    cleaned: number;
+    total: number;
+  }> {
+    return this.cacheManager.cleanupCustomMCPResults();
+  }
+
+  /**
+   * 验证系统完整性
+   */
+  public async validateSystemIntegrity(): Promise<{
+    cacheValid: boolean;
+    taskValid: boolean;
+    issues: string[];
+  }> {
+    const cache = await this.cacheManager.loadExtendedCache();
+    const cacheValidation =
+      this.cacheLifecycleManager.validateCacheIntegrity(cache);
+    const taskValidation = this.taskStateManager.validateTaskIntegrity();
+
+    return {
+      cacheValid: cacheValidation.isValid,
+      taskValid: taskValidation.isValid,
+      issues: [...cacheValidation.issues, ...taskValidation.issues],
+    };
   }
 }
