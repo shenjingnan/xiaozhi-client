@@ -22,6 +22,10 @@ vi.mock("../../configManager.js", () => ({
     getMcpServerConfig: vi.fn(),
     updateServerToolsConfig: vi.fn(),
     isToolEnabled: vi.fn(),
+    getCustomMCPConfig: vi.fn(),
+    getCustomMCPTools: vi.fn(),
+    addCustomMCPTools: vi.fn(),
+    updateCustomMCPTools: vi.fn(),
   },
 }));
 
@@ -51,6 +55,10 @@ describe("MCPServiceManager", () => {
     mockConfigManager.getMcpServerConfig.mockReturnValue({});
     mockConfigManager.updateServerToolsConfig.mockImplementation(() => {});
     mockConfigManager.isToolEnabled.mockReturnValue(true); // 默认所有工具都启用
+    mockConfigManager.getCustomMCPConfig.mockReturnValue(null); // 默认没有 customMCP 配置
+    mockConfigManager.getCustomMCPTools.mockReturnValue([]); // 默认没有 customMCP 工具
+    mockConfigManager.addCustomMCPTools.mockResolvedValue(undefined); // 添加工具成功
+    mockConfigManager.updateCustomMCPTools.mockResolvedValue(undefined); // 更新工具成功
 
     // 模拟 MCPService
     mockMCPService = {

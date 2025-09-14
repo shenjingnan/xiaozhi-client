@@ -1,11 +1,22 @@
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { useConfig, useMcpServerConfig, useMcpServers } from "@/stores/config";
+import { apiClient } from "@/services/api";
+import { useMcpServerConfig, useMcpServers } from "@/stores/config";
 import type { MCPServerConfig } from "@/types";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
 import { CoffeeIcon, MinusIcon, PlusIcon, Wrench } from "lucide-react";
-import { useMemo } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AddMcpServerButton } from "./AddMcpServerButton";
 import { CozeWorkflowIntegration } from "./CozeWorkflowIntegration";
@@ -17,71 +28,265 @@ interface McpServerListProps {
   updateConfig?: (config: any) => Promise<void>;
 }
 
-export function McpServerList({ updateConfig }: McpServerListProps) {
+export function McpServerList({
+  updateConfig: _updateConfig,
+}: McpServerListProps) {
   const mcpServerConfig = useMcpServerConfig();
   const mcpServers = useMcpServers();
-  const config = useConfig();
+  // const config = useConfig(); // 不再使用配置更新，改为使用 API
 
-  const tools = useMemo(() => {
-    return Object.entries(mcpServerConfig || {}).flatMap(
-      ([serverName, value]) => {
-        return Object.entries(value?.tools || {}).map(([toolName, tool]) => ({
-          serverName,
-          toolName,
-          ...(tool as any),
-        }));
+  // 添加工具列表状态管理
+  const [enabledTools, setEnabledTools] = useState<
+    Array<{
+      name: string;
+      serverName: string;
+      toolName: string;
+      enable: boolean;
+      description?: string;
+      usageCount?: number;
+      lastUsedTime?: string;
+    }>
+  >([]);
+  const [disabledTools, setDisabledTools] = useState<
+    Array<{
+      name: string;
+      serverName: string;
+      toolName: string;
+      enable: boolean;
+      description?: string;
+      usageCount?: number;
+      lastUsedTime?: string;
+    }>
+  >([]);
+  const [isLoadingTools, setIsLoadingTools] = useState(false);
+  const [toolsError, setToolsError] = useState<string | null>(null);
+
+  // 格式化工具信息的辅助函数
+  const formatTool = useCallback((tool: any, enable: boolean) => {
+    const { serviceName, toolName } = (() => {
+      // 安全检查：确保 handler 存在
+      if (!tool || !tool.handler) {
+        return {
+          serviceName: "unknown",
+          toolName: tool?.name || "unknown",
+        };
       }
-    );
-  }, [mcpServerConfig]);
 
-  const handleToggleTool = async (
-    serverName: string,
-    toolName: string,
-    currentEnable: boolean
-  ) => {
-    if (!updateConfig) {
-      toast.error("updateConfig 方法未提供");
-      return;
-    }
+      if (tool.handler.type === "mcp") {
+        return {
+          serviceName: tool.handler.config?.serviceName || "unknown",
+          toolName: tool.handler.config?.toolName || tool.name,
+        };
+      }
+      if (tool.handler.type === "proxy" && tool.handler.platform === "coze") {
+        return {
+          serviceName: "coze",
+          toolName: tool.name,
+        };
+      }
+      return {
+        serviceName: "custom",
+        toolName: tool.name,
+      };
+    })();
 
-    if (!config) {
-      toast.error("配置未加载");
-      return;
-    }
+    return {
+      serverName: serviceName,
+      toolName,
+      enable,
+      name: tool.name,
+      description: tool.description,
+      usageCount: tool.stats?.usageCount,
+      lastUsedTime: tool.stats?.lastUsedTime,
+    };
+  }, []);
+
+  // 获取工具列表
+  const fetchTools = useCallback(async () => {
+    setIsLoadingTools(true);
+    setToolsError(null);
 
     try {
-      // 创建新的配置对象
-      const newConfig = {
-        ...config,
-        mcpServerConfig: {
-          ...config.mcpServerConfig,
-          [serverName]: {
-            ...config.mcpServerConfig?.[serverName],
-            tools: {
-              ...config.mcpServerConfig?.[serverName]?.tools,
-              [toolName]: {
-                ...config.mcpServerConfig?.[serverName]?.tools?.[toolName],
-                enable: !currentEnable,
-              },
+      // 并行获取已启用和未启用的工具列表
+      const [enabledToolsList, disabledToolsList] = await Promise.all([
+        apiClient.getToolsList("enabled"),
+        apiClient.getToolsList("disabled"),
+      ]);
+
+      // 格式化已启用的工具
+      const formattedEnabledTools = enabledToolsList.map((tool) =>
+        formatTool(tool, true)
+      );
+
+      // 格式化未启用的工具
+      const formattedDisabledTools = disabledToolsList.map((tool) =>
+        formatTool(tool, false)
+      );
+
+      setEnabledTools(formattedEnabledTools);
+      setDisabledTools(formattedDisabledTools);
+    } catch (error) {
+      console.error("获取工具列表失败:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "获取工具列表失败";
+      setToolsError(errorMessage);
+      toast.error(errorMessage);
+
+      // 发生错误时回退到使用 mcpServerConfig
+      if (mcpServerConfig) {
+        const fallbackTools = Object.entries(mcpServerConfig).flatMap(
+          ([serverName, value]) => {
+            return Object.entries(value?.tools || {}).map(
+              ([toolName, tool]) => ({
+                serverName,
+                toolName,
+                ...(tool as any),
+              })
+            );
+          }
+        );
+
+        const enabled = fallbackTools.filter((tool) => tool.enable !== false);
+        const disabled = fallbackTools.filter((tool) => tool.enable === false);
+
+        setEnabledTools(enabled);
+        setDisabledTools(disabled);
+      }
+    } finally {
+      setIsLoadingTools(false);
+    }
+  }, [mcpServerConfig, formatTool]);
+
+  // 更新工具列表状态（用于启用/禁用后刷新）
+  const refreshToolLists = useCallback(async () => {
+    try {
+      const [enabledToolsList, disabledToolsList] = await Promise.all([
+        apiClient.getToolsList("enabled"),
+        apiClient.getToolsList("disabled"),
+      ]);
+
+      // 格式化已启用的工具
+      const formattedEnabledTools = enabledToolsList.map((tool) =>
+        formatTool(tool, true)
+      );
+
+      // 格式化未启用的工具
+      const formattedDisabledTools = disabledToolsList.map((tool) =>
+        formatTool(tool, false)
+      );
+
+      setEnabledTools(formattedEnabledTools);
+      setDisabledTools(formattedDisabledTools);
+    } catch (error) {
+      console.error("刷新工具列表失败:", error);
+      toast.error("刷新工具列表失败");
+    }
+  }, [formatTool]);
+
+  // 组件加载时获取工具列表
+  useEffect(() => {
+    fetchTools();
+  }, [fetchTools]);
+
+  // 添加状态来管理 Coze 工具确认对话框
+  const [cozeToolToRemove, setCozeToolToRemove] = useState<string | null>(null);
+
+  const handleToggleTool = async (name: string, currentEnable: boolean) => {
+    try {
+      if (currentEnable) {
+        // 从使用中的工具移除（删除工具）
+        // 首先找到对应的原始工具信息
+        const originalTool = [...enabledTools, ...disabledTools].find(
+          (tool) => tool.name === name
+        );
+
+        if (!originalTool) {
+          toast.error("找不到对应的工具信息");
+          return;
+        }
+
+        // 检查是否为 Coze 工作流工具
+        if (originalTool.serverName === "coze") {
+          // Coze 工作流工具需要确认对话框
+          setCozeToolToRemove(name);
+          return; // 等待用户确认
+        }
+
+        // 执行移除操作（普通 MCP 工具）
+        await apiClient.removeCustomTool(name);
+        toast.success(`删除工具 ${name} 成功`);
+      } else {
+        // 添加到使用中的工具（启用工具）
+        // 首先找到对应的原始工具信息来构建添加工具的请求
+        const originalTool = [...enabledTools, ...disabledTools].find(
+          (tool) => tool.name === name
+        );
+
+        if (!originalTool) {
+          toast.error("找不到对应的工具信息");
+          return;
+        }
+
+        // 根据工具类型构建对应的请求格式
+        if (originalTool.serverName === "coze") {
+          // Coze 工作流工具 - 使用旧的向后兼容格式
+          await apiClient.addCustomTool(
+            {
+              workflow_id: "", // Coze 工具不需要 workflow_id
+              workflow_name: name,
+              description: originalTool.description || "",
+              icon_url: "",
+              app_id: "",
             },
-          },
-        },
-      };
+            name,
+            originalTool.description || ""
+          );
+        } else {
+          // MCP 工具 - 使用新的类型化格式
+          await apiClient.addCustomTool({
+            type: "mcp",
+            data: {
+              serviceName: originalTool.serverName,
+              toolName: originalTool.toolName,
+              customName: name,
+              customDescription: originalTool.description || "",
+            },
+          });
+        }
 
-      // 更新配置
-      await updateConfig(newConfig);
+        toast.success(`添加工具 ${name} 成功`);
+      }
 
-      // 显示成功提示
-      const action = !currentEnable ? "启用" : "禁用";
-      toast.success(`${action}工具 ${toolName} 成功`);
+      // 重新获取工具列表以更新状态
+      await refreshToolLists();
     } catch (error) {
       console.error("切换工具状态失败:", error);
       toast.error(error instanceof Error ? error.message : "切换工具状态失败");
     }
   };
 
-  const enabledTools = tools.filter((tool) => tool.enable);
-  const disabledTools = tools.filter((tool) => !tool.enable);
+  // 确认移除 Coze 工具的处理函数
+  const handleConfirmRemoveCozeTool = async () => {
+    if (!cozeToolToRemove) return;
+
+    try {
+      await apiClient.removeCustomTool(cozeToolToRemove);
+      toast.success(`删除工具 ${cozeToolToRemove} 成功`);
+      await refreshToolLists();
+    } catch (error) {
+      console.error("删除 Coze 工具失败:", error);
+      toast.error(
+        error instanceof Error ? error.message : "删除 Coze 工具失败"
+      );
+    } finally {
+      setCozeToolToRemove(null);
+    }
+  };
+
+  // 取消移除 Coze 工具的处理函数
+  const handleCancelRemoveCozeTool = () => {
+    setCozeToolToRemove(null);
+  };
 
   if (!mcpServers || Object.keys(mcpServers).length === 0) {
     return (
@@ -130,57 +335,77 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
               <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
                 <Wrench className="h-4 w-4" />
                 使用中的工具 ({enabledTools.length})
+                {isLoadingTools && (
+                  <span className="text-xs text-muted-foreground">
+                    (加载中...)
+                  </span>
+                )}
               </h4>
               <div className="flex-1 space-y-2">
-                {enabledTools.map((tool) => (
-                  <div
-                    key={tool.toolName}
-                    className="flex items-start justify-between p-4 bg-slate-50 rounded-md font-mono"
-                  >
-                    <div className="text-md flex flex-col gap-2">
-                      <div className="flex items-center gap-2 justify-start">
-                        <Badge variant="secondary" className="rounded-md">
-                          {tool.serverName}
-                        </Badge>
-                        <span>{tool.toolName}</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground my-2">
-                        {tool.description}
-                      </p>
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm text-muted-foreground">
-                          <span className="text-muted-foreground">
-                            使用次数:
-                          </span>{" "}
-                          <span className="text-primary font-bold">
-                            {tool.usageCount || 0}
-                          </span>
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          <span className="text-muted-foreground">
-                            最后使用:
-                          </span>{" "}
-                          <span className="text-primary font-bold">
-                            {tool.lastUsedTime || "-"}
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 ml-4">
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="size-8 hover:bg-red-500 hover:text-white"
-                        onClick={() =>
-                          handleToggleTool(tool.serverName, tool.toolName, true)
-                        }
-                      >
-                        <MinusIcon size={18} />
-                      </Button>
+                {isLoadingTools ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-sm text-muted-foreground">
+                      加载工具列表中...
                     </div>
                   </div>
-                ))}
+                ) : toolsError ? (
+                  <div className="flex flex-col items-center justify-center py-8 px-4">
+                    <div className="text-sm text-red-500 mb-2">
+                      {toolsError}
+                    </div>
+                    <Button variant="outline" size="sm" onClick={fetchTools}>
+                      重试
+                    </Button>
+                  </div>
+                ) : (
+                  enabledTools.map((tool) => (
+                    <div
+                      key={tool.toolName}
+                      className="flex items-start justify-between p-4 bg-slate-50 rounded-md font-mono"
+                    >
+                      <div className="text-md flex flex-col gap-2">
+                        <div className="flex items-center gap-2 justify-start">
+                          <Badge variant="secondary" className="rounded-md">
+                            {tool.serverName}
+                          </Badge>
+                          <span>{tool.toolName}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground my-2">
+                          {tool.description}
+                        </p>
+                        <div className="flex items-center gap-4">
+                          <span className="text-sm text-muted-foreground">
+                            <span className="text-muted-foreground">
+                              使用次数:
+                            </span>{" "}
+                            <span className="text-primary font-bold">
+                              {tool.usageCount || 0}
+                            </span>
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            <span className="text-muted-foreground">
+                              最后使用:
+                            </span>{" "}
+                            <span className="text-primary font-bold">
+                              {tool.lastUsedTime || "-"}
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 ml-4">
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="size-8 hover:bg-red-500 hover:text-white"
+                          onClick={() => handleToggleTool(tool.name, true)}
+                        >
+                          <MinusIcon size={18} />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </CardContent>
@@ -191,73 +416,89 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
               <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
                 <Wrench className="h-4 w-4" />
                 未使用的工具 ({disabledTools.length})
-              </h4>
-              {disabledTools.length === 0 && (
-                <div className="flex-1 flex flex-col items-center gap-4 py-20 px-4 bg-slate-50 rounded-md font-mono h-full">
-                  <CoffeeIcon
-                    strokeWidth={1.5}
-                    size={48}
-                    className="text-muted-foreground"
-                  />
-                  <span className="text-sm text-muted-foreground">
-                    全部工具都已经启用
+                {isLoadingTools && (
+                  <span className="text-xs text-muted-foreground">
+                    (加载中...)
                   </span>
-                </div>
-              )}
+                )}
+              </h4>
               <div className="flex-1 space-y-2">
-                {disabledTools.map((tool) => (
-                  <div
-                    key={tool.toolName}
-                    className="flex items-start justify-between p-4 bg-slate-50 rounded-md font-mono"
-                  >
-                    <div className="text-md flex flex-col gap-2">
-                      <div className="flex items-center gap-2 justify-start">
-                        <Badge variant="secondary" className="rounded-md">
-                          {tool.serverName}
-                        </Badge>
-                        <span>{tool.toolName}</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {tool.description}
-                      </p>
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm text-muted-foreground">
-                          <span className="text-muted-foreground">
-                            使用次数:
-                          </span>{" "}
-                          <span className="text-primary font-bold">
-                            {tool.usageCount || 0}
-                          </span>
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          <span className="text-muted-foreground">
-                            最后使用:
-                          </span>{" "}
-                          <span className="text-primary font-bold">
-                            {tool.lastUsedTime || "-"}
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 ml-4">
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="size-8 hover:bg-green-500 hover:text-white"
-                        onClick={() =>
-                          handleToggleTool(
-                            tool.serverName,
-                            tool.toolName,
-                            false
-                          )
-                        }
-                      >
-                        <PlusIcon className="h-4 w-4" />
-                      </Button>
+                {isLoadingTools ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-sm text-muted-foreground">
+                      加载工具列表中...
                     </div>
                   </div>
-                ))}
+                ) : toolsError ? (
+                  <div className="flex flex-col items-center justify-center py-8 px-4">
+                    <div className="text-sm text-red-500 mb-2">
+                      {toolsError}
+                    </div>
+                    <Button variant="outline" size="sm" onClick={fetchTools}>
+                      重试
+                    </Button>
+                  </div>
+                ) : disabledTools.length === 0 ? (
+                  // 保持原有的空状态显示
+                  <div className="flex-1 flex flex-col items-center gap-4 py-20 px-4 bg-slate-50 rounded-md font-mono h-full">
+                    <CoffeeIcon
+                      strokeWidth={1.5}
+                      size={48}
+                      className="text-muted-foreground"
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      全部工具都已经启用
+                    </span>
+                  </div>
+                ) : (
+                  disabledTools.map((tool) => (
+                    <div
+                      key={tool.toolName}
+                      className="flex items-start justify-between p-4 bg-slate-50 rounded-md font-mono"
+                    >
+                      <div className="text-md flex flex-col gap-2">
+                        <div className="flex items-center gap-2 justify-start">
+                          <Badge variant="secondary" className="rounded-md">
+                            {tool.serverName}
+                          </Badge>
+                          <span>{tool.toolName}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {tool.description}
+                        </p>
+                        <div className="flex items-center gap-4">
+                          <span className="text-sm text-muted-foreground">
+                            <span className="text-muted-foreground">
+                              使用次数:
+                            </span>{" "}
+                            <span className="text-primary font-bold">
+                              {tool.usageCount || 0}
+                            </span>
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            <span className="text-muted-foreground">
+                              最后使用:
+                            </span>{" "}
+                            <span className="text-primary font-bold">
+                              {tool.lastUsedTime || "-"}
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 ml-4">
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="size-8 hover:bg-green-500 hover:text-white"
+                          onClick={() => handleToggleTool(tool.name, false)}
+                        >
+                          <PlusIcon className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </CardContent>
@@ -310,6 +551,33 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
           )}
         </div>
       </div>
+
+      {/* Coze 工具移除确认对话框 */}
+      <AlertDialog
+        open={cozeToolToRemove !== null}
+        onOpenChange={(open) => !open && setCozeToolToRemove(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认移除 Coze 工作流工具</AlertDialogTitle>
+            <AlertDialogDescription>
+              移除后需要通过【工作流集成】重新添加并配置入参，确定要移除工具 "
+              {cozeToolToRemove}" 吗？
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelRemoveCozeTool}>
+              取消
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmRemoveCozeTool}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              确认移除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -6,6 +6,28 @@
 import type { AppConfig, ClientStatus } from "../types";
 
 /**
+ * CustomMCPTool 接口定义
+ * 对应后端的 CustomMCPTool 接口
+ */
+export interface CustomMCPTool {
+  name: string;
+  description: string;
+  inputSchema: any;
+  handler: {
+    type: "mcp" | "proxy";
+    platform?: "coze";
+    config: {
+      serviceName: string;
+      toolName: string;
+    };
+  };
+  stats?: {
+    usageCount?: number;
+    lastUsedTime?: string;
+  };
+}
+
+/**
  * API 响应格式
  */
 interface ApiResponse<T = any> {
@@ -358,13 +380,48 @@ export class ApiClient {
 
   /**
    * 添加自定义工具
+   * 支持新的类型化格式和向后兼容的旧格式
    */
   async addCustomTool(
     workflow: any,
     customName?: string,
     customDescription?: string,
     parameterConfig?: any
+  ): Promise<any>;
+
+  /**
+   * 添加自定义工具（新格式）
+   * 支持多种工具类型：MCP 工具、Coze 工作流等
+   */
+  async addCustomTool(request: {
+    type: "mcp" | "coze" | "http" | "function";
+    data: any;
+  }): Promise<any>;
+
+  async addCustomTool(
+    param1: any,
+    customName?: string,
+    customDescription?: string,
+    parameterConfig?: any
   ): Promise<any> {
+    // 判断是否为新格式调用
+    if (typeof param1 === "object" && "type" in param1 && "data" in param1) {
+      // 新格式：类型化请求
+      const response: ApiResponse<{ tool: any }> = await this.request(
+        "/api/tools/custom",
+        {
+          method: "POST",
+          body: JSON.stringify(param1),
+        }
+      );
+
+      if (!response.success || !response.data) {
+        throw new Error(response.message || "添加自定义工具失败");
+      }
+      return response.data.tool;
+    }
+    // 旧格式：向后兼容
+    const workflow = param1;
     const response: ApiResponse<{ tool: any }> = await this.request(
       "/api/tools/custom",
       {
@@ -410,6 +467,30 @@ export class ApiClient {
       throw new Error("获取自定义工具列表失败");
     }
     return response.data.tools;
+  }
+
+  /**
+   * 获取工具列表
+   * 调用 /api/tools/list 端点，返回 { list: CustomMCPTool[], total: number } 格式
+   * @param status 筛选状态：'enabled'（已启用）、'disabled'（未启用）、'all'（全部，默认）
+   */
+  async getToolsList(
+    status: "enabled" | "disabled" | "all" = "all"
+  ): Promise<CustomMCPTool[]> {
+    // 构建查询参数
+    const queryParams = new URLSearchParams();
+    if (status !== "all") {
+      queryParams.append("status", status);
+    }
+
+    const url = `/api/tools/list${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+
+    const response: ApiResponse<{ list: CustomMCPTool[]; total: number }> =
+      await this.request(url);
+    if (!response.success || !response.data) {
+      throw new Error("获取工具列表失败");
+    }
+    return response.data.list;
   }
 
   // ==================== 服务控制 API ====================
