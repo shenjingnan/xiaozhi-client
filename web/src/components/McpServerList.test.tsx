@@ -154,36 +154,57 @@ describe("McpServerList", () => {
   const mockEnabledTools = [
     {
       name: "tool1",
-      serverName: "server1",
-      toolName: "tool1",
-      enable: true,
       description: "Tool 1 description",
+      inputSchema: {},
+      handler: {
+        type: "mcp" as const,
+        config: {
+          serviceName: "server1",
+          toolName: "tool1",
+        },
+      },
     },
     {
       name: "tool3",
-      serverName: "server2",
-      toolName: "tool3",
-      enable: true,
       description: "Tool 3 description",
+      inputSchema: {},
+      handler: {
+        type: "mcp" as const,
+        config: {
+          serviceName: "server2",
+          toolName: "tool3",
+        },
+      },
     },
   ];
 
   const mockDisabledTools = [
     {
       name: "tool2",
-      serverName: "server1",
-      toolName: "tool2",
-      enable: false,
       description: "Tool 2 description",
+      inputSchema: {},
+      handler: {
+        type: "mcp" as const,
+        config: {
+          serviceName: "server1",
+          toolName: "tool2",
+        },
+      },
     },
   ];
 
   const mockCozeTool = {
     name: "coze_tool",
-    serverName: "coze",
-    toolName: "coze_tool",
-    enable: true,
     description: "Coze workflow tool",
+    inputSchema: {},
+    handler: {
+      type: "proxy" as const,
+      platform: "coze" as const,
+      config: {
+        serviceName: "coze",
+        toolName: "coze_tool",
+      },
+    },
   };
 
   beforeEach(async () => {
@@ -266,10 +287,10 @@ describe("McpServerList", () => {
     // Test Coze tool detection logic by manually calling the toggle function
     // This tests the core logic without dealing with complex DOM interactions
     const cozeTool = mockCozeEnabledTools.find(
-      (tool) => tool.serverName === "coze"
+      (tool) => tool.handler.config.serviceName === "coze"
     );
     expect(cozeTool).toBeDefined();
-    expect(cozeTool?.serverName).toBe("coze");
+    expect(cozeTool?.handler.config.serviceName).toBe("coze");
   });
 
   it("should not show confirmation for non-Coze tools", async () => {
@@ -277,7 +298,7 @@ describe("McpServerList", () => {
 
     // Test with normal MCP tools
     const mcpTool = mockEnabledTools[0]; // tool1 from server1
-    expect(mcpTool.serverName).toBe("server1");
-    expect(mcpTool.serverName).not.toBe("coze");
+    expect(mcpTool.handler.config.serviceName).toBe("server1");
+    expect(mcpTool.handler.config.serviceName).not.toBe("coze");
   });
 });

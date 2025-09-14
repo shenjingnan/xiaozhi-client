@@ -64,10 +64,18 @@ export function McpServerList({
   // 格式化工具信息的辅助函数
   const formatTool = useCallback((tool: any, enable: boolean) => {
     const { serviceName, toolName } = (() => {
+      // 安全检查：确保 handler 存在
+      if (!tool || !tool.handler) {
+        return {
+          serviceName: "unknown",
+          toolName: tool?.name || "unknown",
+        };
+      }
+      
       if (tool.handler.type === "mcp") {
         return {
-          serviceName: tool.handler.config.serviceName,
-          toolName: tool.handler.config.toolName,
+          serviceName: tool.handler.config?.serviceName || "unknown",
+          toolName: tool.handler.config?.toolName || tool.name,
         };
       }
       if (tool.handler.type === "proxy" && tool.handler.platform === "coze") {
