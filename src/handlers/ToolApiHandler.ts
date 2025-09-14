@@ -3,7 +3,6 @@
  * 处理通过 HTTP API 调用 MCP 工具的请求
  */
 
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import Ajv from "ajv";
 import type { Context } from "hono";
 import { type Logger, logger } from "../Logger.js";
@@ -18,9 +17,8 @@ import {
   type CozeWorkflowData,
   type MCPToolData,
   ToolType,
-  ToolValidationError,
-  ToolValidationErrorDetail,
 } from "../types/toolApi.js";
+import dayjs from "dayjs";
 
 /**
  * 工具调用请求接口
@@ -779,7 +777,7 @@ export class ToolApiHandler {
       },
       stats: {
         usageCount: 0,
-        lastUsedTime: new Date().toISOString(),
+        lastUsedTime: dayjs().format("YYYY-MM-DD HH:mm:ss"),
       },
     };
 
@@ -792,7 +790,7 @@ export class ToolApiHandler {
       tool,
       toolName: finalToolName,
       toolType: ToolType.MCP,
-      addedAt: new Date().toISOString(),
+      addedAt: dayjs().format("YYYY-MM-DD HH:mm:ss"),
     };
 
     return new Response(
@@ -842,7 +840,7 @@ export class ToolApiHandler {
       tool,
       toolName: tool.name,
       toolType: ToolType.COZE,
-      addedAt: new Date().toISOString(),
+      addedAt: dayjs().format("YYYY-MM-DD HH:mm:ss"),
     };
 
     return new Response(
