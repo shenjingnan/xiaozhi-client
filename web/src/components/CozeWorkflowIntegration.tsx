@@ -600,7 +600,7 @@ export function CozeWorkflowIntegration({
             工作流集成
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[800px] flex flex-col">
+        <DialogContent className="flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Workflow className="h-5 w-5" />
