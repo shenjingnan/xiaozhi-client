@@ -191,7 +191,7 @@ export function CozeWorkflowIntegration({
           workflow,
           customName: undefined,
           customDescription: undefined,
-          parameterConfig
+          parameterConfig,
         },
       };
       const addedTool = await apiClient.addCustomTool(request);
@@ -347,8 +347,6 @@ export function CozeWorkflowIntegration({
       setConfirmDialog({ open: false, action: "add" });
     }
   };
-
-
 
   const handlePrevPage = () => {
     if (currentPage > 1) {
@@ -614,11 +612,10 @@ export function CozeWorkflowIntegration({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              确认添加工作流
-            </AlertDialogTitle>
+            <AlertDialogTitle>确认添加工作流</AlertDialogTitle>
             <AlertDialogDescription>
-              确定要将工作流 "{confirmDialog.workflow?.workflow_name}" 添加为 MCP 工具吗？
+              确定要将工作流 "{confirmDialog.workflow?.workflow_name}" 添加为
+              MCP 工具吗？
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
