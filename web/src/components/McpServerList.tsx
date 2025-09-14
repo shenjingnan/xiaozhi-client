@@ -1,13 +1,23 @@
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { useConfig, useMcpServerConfig, useMcpServers } from "@/stores/config";
+import { apiClient } from "@/services/api";
+import { useMcpServerConfig, useMcpServers } from "@/stores/config";
 import type { MCPServerConfig } from "@/types";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
 import { CoffeeIcon, MinusIcon, PlusIcon, Wrench } from "lucide-react";
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { apiClient } from "@/services/api";
 import { AddMcpServerButton } from "./AddMcpServerButton";
 import { CozeWorkflowIntegration } from "./CozeWorkflowIntegration";
 import { McpServerSettingButton } from "./McpServerSettingButton";
@@ -18,14 +28,17 @@ interface McpServerListProps {
   updateConfig?: (config: any) => Promise<void>;
 }
 
-export function McpServerList({ updateConfig }: McpServerListProps) {
+export function McpServerList({
+  updateConfig: _updateConfig,
+}: McpServerListProps) {
   const mcpServerConfig = useMcpServerConfig();
   const mcpServers = useMcpServers();
-  const config = useConfig();
+  // const config = useConfig(); // 不再使用配置更新，改为使用 API
 
   // 添加工具列表状态管理
   const [enabledTools, setEnabledTools] = useState<
     Array<{
+      name: string;
       serverName: string;
       toolName: string;
       enable: boolean;
@@ -36,6 +49,7 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
   >([]);
   const [disabledTools, setDisabledTools] = useState<
     Array<{
+      name: string;
       serverName: string;
       toolName: string;
       enable: boolean;
@@ -72,6 +86,7 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
       serverName: serviceName,
       toolName,
       enable,
+      name: tool.name,
       description: tool.description,
       usageCount: tool.stats?.usageCount,
       lastUsedTime: tool.stats?.lastUsedTime,
@@ -165,53 +180,104 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
     fetchTools();
   }, [fetchTools]);
 
-  const handleToggleTool = async (
-    serverName: string,
-    toolName: string,
-    currentEnable: boolean
-  ) => {
-    if (!updateConfig) {
-      toast.error("updateConfig 方法未提供");
-      return;
-    }
+  // 添加状态来管理 Coze 工具确认对话框
+  const [cozeToolToRemove, setCozeToolToRemove] = useState<string | null>(null);
 
-    if (!config) {
-      toast.error("配置未加载");
-      return;
-    }
-
+  const handleToggleTool = async (name: string, currentEnable: boolean) => {
     try {
-      // 创建新的配置对象
-      const newConfig = {
-        ...config,
-        mcpServerConfig: {
-          ...config.mcpServerConfig,
-          [serverName]: {
-            ...config.mcpServerConfig?.[serverName],
-            tools: {
-              ...config.mcpServerConfig?.[serverName]?.tools,
-              [toolName]: {
-                ...config.mcpServerConfig?.[serverName]?.tools?.[toolName],
-                enable: !currentEnable,
-              },
-            },
-          },
-        },
-      };
+      if (currentEnable) {
+        // 从使用中的工具移除（删除工具）
+        // 首先找到对应的原始工具信息
+        const originalTool = [...enabledTools, ...disabledTools].find(
+          (tool) => tool.name === name
+        );
 
-      // 更新配置
-      await updateConfig(newConfig);
+        if (!originalTool) {
+          toast.error("找不到对应的工具信息");
+          return;
+        }
+
+        // 检查是否为 Coze 工作流工具
+        if (originalTool.serverName === "coze") {
+          // Coze 工作流工具需要确认对话框
+          setCozeToolToRemove(name);
+          return; // 等待用户确认
+        }
+
+        // 执行移除操作（普通 MCP 工具）
+        await apiClient.removeCustomTool(name);
+        toast.success(`删除工具 ${name} 成功`);
+      } else {
+        // 添加到使用中的工具（启用工具）
+        // 首先找到对应的原始工具信息来构建添加工具的请求
+        const originalTool = [...enabledTools, ...disabledTools].find(
+          (tool) => tool.name === name
+        );
+
+        if (!originalTool) {
+          toast.error("找不到对应的工具信息");
+          return;
+        }
+
+        // 根据工具类型构建对应的请求格式
+        if (originalTool.serverName === "coze") {
+          // Coze 工作流工具 - 使用旧的向后兼容格式
+          await apiClient.addCustomTool(
+            {
+              workflow_id: "", // Coze 工具不需要 workflow_id
+              workflow_name: name,
+              description: originalTool.description || "",
+              icon_url: "",
+              app_id: "",
+            },
+            name,
+            originalTool.description || ""
+          );
+        } else {
+          // MCP 工具 - 使用新的类型化格式
+          await apiClient.addCustomTool({
+            type: "mcp",
+            data: {
+              serviceName: originalTool.serverName,
+              toolName: originalTool.toolName,
+              customName: name,
+              customDescription: originalTool.description || "",
+            },
+          });
+        }
+
+        toast.success(`添加工具 ${name} 成功`);
+      }
 
       // 重新获取工具列表以更新状态
       await refreshToolLists();
-
-      // 显示成功提示
-      const action = !currentEnable ? "启用" : "禁用";
-      toast.success(`${action}工具 ${toolName} 成功`);
     } catch (error) {
       console.error("切换工具状态失败:", error);
       toast.error(error instanceof Error ? error.message : "切换工具状态失败");
     }
+  };
+
+  // 确认移除 Coze 工具的处理函数
+  const handleConfirmRemoveCozeTool = async () => {
+    if (!cozeToolToRemove) return;
+
+    try {
+      await apiClient.removeCustomTool(cozeToolToRemove);
+      toast.success(`删除工具 ${cozeToolToRemove} 成功`);
+      await refreshToolLists();
+    } catch (error) {
+      console.error("删除 Coze 工具失败:", error);
+      toast.error(
+        error instanceof Error ? error.message : "删除 Coze 工具失败"
+      );
+    } finally {
+      setCozeToolToRemove(null);
+    }
+  };
+
+  // 取消移除 Coze 工具的处理函数
+  const handleCancelRemoveCozeTool = () => {
+    setCozeToolToRemove(null);
   };
 
   if (!mcpServers || Object.keys(mcpServers).length === 0) {
@@ -324,13 +390,7 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
                           variant="secondary"
                           size="icon"
                           className="size-8 hover:bg-red-500 hover:text-white"
-                          onClick={() =>
-                            handleToggleTool(
-                              tool.serverName,
-                              tool.toolName,
-                              true
-                            )
-                          }
+                          onClick={() => handleToggleTool(tool.name, true)}
                         >
                           <MinusIcon size={18} />
                         </Button>
@@ -423,13 +483,7 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
                           variant="secondary"
                           size="icon"
                           className="size-8 hover:bg-green-500 hover:text-white"
-                          onClick={() =>
-                            handleToggleTool(
-                              tool.serverName,
-                              tool.toolName,
-                              false
-                            )
-                          }
+                          onClick={() => handleToggleTool(tool.name, false)}
                         >
                           <PlusIcon className="h-4 w-4" />
                         </Button>
@@ -489,6 +543,33 @@ export function McpServerList({ updateConfig }: McpServerListProps) {
           )}
         </div>
       </div>
+
+      {/* Coze 工具移除确认对话框 */}
+      <AlertDialog
+        open={cozeToolToRemove !== null}
+        onOpenChange={(open) => !open && setCozeToolToRemove(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认移除 Coze 工作流工具</AlertDialogTitle>
+            <AlertDialogDescription>
+              移除后需要通过【工作流集成】重新添加并配置入参，确定要移除工具 "
+              {cozeToolToRemove}" 吗？
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelRemoveCozeTool}>
+              取消
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmRemoveCozeTool}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              确认移除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

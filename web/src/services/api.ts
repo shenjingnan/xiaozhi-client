@@ -380,13 +380,48 @@ export class ApiClient {
 
   /**
    * 添加自定义工具
+   * 支持新的类型化格式和向后兼容的旧格式
    */
   async addCustomTool(
     workflow: any,
     customName?: string,
     customDescription?: string,
     parameterConfig?: any
+  ): Promise<any>;
+
+  /**
+   * 添加自定义工具（新格式）
+   * 支持多种工具类型：MCP 工具、Coze 工作流等
+   */
+  async addCustomTool(request: {
+    type: "mcp" | "coze" | "http" | "function";
+    data: any;
+  }): Promise<any>;
+
+  async addCustomTool(
+    param1: any,
+    customName?: string,
+    customDescription?: string,
+    parameterConfig?: any
   ): Promise<any> {
+    // 判断是否为新格式调用
+    if (typeof param1 === "object" && "type" in param1 && "data" in param1) {
+      // 新格式：类型化请求
+      const response: ApiResponse<{ tool: any }> = await this.request(
+        "/api/tools/custom",
+        {
+          method: "POST",
+          body: JSON.stringify(param1),
+        }
+      );
+
+      if (!response.success || !response.data) {
+        throw new Error(response.message || "添加自定义工具失败");
+      }
+      return response.data.tool;
+    }
+    // 旧格式：向后兼容
+    const workflow = param1;
     const response: ApiResponse<{ tool: any }> = await this.request(
       "/api/tools/custom",
       {

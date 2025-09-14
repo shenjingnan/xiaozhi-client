@@ -3,15 +3,24 @@
  * 处理通过 HTTP API 调用 MCP 工具的请求
  */
 
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import Ajv from "ajv";
 import type { Context } from "hono";
 import { type Logger, logger } from "../Logger.js";
 import { configManager } from "../configManager.js";
 import type { CustomMCPTool, ProxyHandlerConfig } from "../configManager.js";
-import { MCPServiceManagerSingleton } from "../services/MCPServiceManagerSingleton.js";
 import { MCPCacheManager } from "../services/MCPCacheManager.js";
+import { MCPServiceManagerSingleton } from "../services/MCPServiceManagerSingleton.js";
 import type { CozeWorkflow, WorkflowParameterConfig } from "../types/coze.js";
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import {
+  type AddCustomToolRequest,
+  type AddToolResponse,
+  type CozeWorkflowData,
+  type MCPToolData,
+  ToolType,
+  ToolValidationError,
+  ToolValidationErrorDetail,
+} from "../types/toolApi.js";
 
 /**
  * 工具调用请求接口
@@ -36,9 +45,10 @@ interface ToolCallResponse {
 }
 
 /**
- * 添加自定义工具请求接口
+ * 添加自定义工具请求接口（向后兼容）
+ * @deprecated 使用新的 AddCustomToolRequest 类型定义
  */
-interface AddCustomToolRequest {
+interface LegacyAddCustomToolRequest {
   workflow: CozeWorkflow;
   customName?: string;
   customDescription?: string;
@@ -553,43 +563,24 @@ export class ToolApiHandler {
   /**
    * 添加自定义 MCP 工具
    * POST /api/tools/custom
+   * 支持多种工具类型：MCP 工具、Coze 工作流等
    */
   async addCustomTool(c: Context): Promise<Response> {
     try {
       this.logger.info("处理添加自定义工具请求");
 
-      const requestBody: AddCustomToolRequest = await c.req.json();
-      const { workflow, customName, customDescription, parameterConfig } =
-        requestBody;
+      const requestBody = await c.req.json();
 
-      // 边界条件预检查
-      const preCheckResult = this.performPreChecks(
-        workflow,
-        customName,
-        customDescription
-      );
-      if (preCheckResult) {
-        return c.json(
-          preCheckResult.errorResponse,
-          preCheckResult.statusCode as any
+      // 检查是否为新格式的请求
+      if (this.isNewFormatRequest(requestBody)) {
+        // 新格式：支持多种工具类型
+        return await this.handleNewFormatAddTool(
+          requestBody as AddCustomToolRequest
         );
       }
-
-      // 转换工作流为工具配置
-      const tool = this.convertWorkflowToTool(
-        workflow,
-        customName,
-        customDescription,
-        parameterConfig
-      );
-
-      // 添加工具到配置
-      configManager.addCustomMCPTool(tool);
-
-      this.logger.info(`成功添加自定义工具: ${tool.name}`);
-
-      return c.json(
-        this.createSuccessResponse({ tool }, `工具 "${tool.name}" 添加成功`)
+      // 旧格式：向后兼容
+      return await this.handleLegacyFormatAddTool(
+        requestBody as LegacyAddCustomToolRequest
       );
     } catch (error) {
       this.logger.error("添加自定义工具失败:", error);
@@ -598,6 +589,270 @@ export class ToolApiHandler {
       const { statusCode, errorResponse } = this.handleAddToolError(error);
       return c.json(errorResponse, statusCode as any);
     }
+  }
+
+  /**
+   * 判断是否为新格式的请求
+   */
+  private isNewFormatRequest(body: any): body is AddCustomToolRequest {
+    return body && typeof body === "object" && "type" in body && "data" in body;
+  }
+
+  /**
+   * 处理新格式的添加工具请求
+   */
+  private async handleNewFormatAddTool(
+    request: AddCustomToolRequest
+  ): Promise<Response> {
+    const { type, data } = request;
+
+    this.logger.info(`处理新格式工具添加请求，类型: ${type}`);
+
+    // 验证工具类型
+    if (!Object.values(ToolType).includes(type)) {
+      const errorResponse = this.createErrorResponse(
+        "INVALID_TOOL_TYPE",
+        `不支持的工具类型: ${type}。支持的类型: ${Object.values(ToolType).join(", ")}`
+      );
+      return new Response(JSON.stringify(errorResponse), { status: 400 });
+    }
+
+    // 根据工具类型分发处理
+    switch (type) {
+      case ToolType.MCP:
+        return await this.handleAddMCPTool(data as MCPToolData);
+
+      case ToolType.COZE:
+        return await this.handleAddCozeTool(data as CozeWorkflowData);
+
+      case ToolType.HTTP:
+      case ToolType.FUNCTION: {
+        const httpErrorResponse = this.createErrorResponse(
+          "TOOL_TYPE_NOT_IMPLEMENTED",
+          `工具类型 ${type} 暂未实现，请使用 MCP 或 Coze 类型`
+        );
+        return new Response(JSON.stringify(httpErrorResponse), { status: 501 });
+      }
+
+      default: {
+        const defaultErrorResponse = this.createErrorResponse(
+          "UNKNOWN_TOOL_TYPE",
+          `未知的工具类型: ${type}`
+        );
+        return new Response(JSON.stringify(defaultErrorResponse), {
+          status: 400,
+        });
+      }
+    }
+  }
+
+  /**
+   * 处理旧格式的添加工具请求（向后兼容）
+   */
+  private async handleLegacyFormatAddTool(
+    request: LegacyAddCustomToolRequest
+  ): Promise<Response> {
+    this.logger.info("处理旧格式工具添加请求（向后兼容）");
+
+    const { workflow, customName, customDescription, parameterConfig } =
+      request;
+
+    // 边界条件预检查
+    const preCheckResult = this.performPreChecks(
+      workflow,
+      customName,
+      customDescription
+    );
+    if (preCheckResult) {
+      return new Response(JSON.stringify(preCheckResult.errorResponse), {
+        status: preCheckResult.statusCode,
+      });
+    }
+
+    // 转换工作流为工具配置
+    const tool = this.convertWorkflowToTool(
+      workflow,
+      customName,
+      customDescription,
+      parameterConfig
+    );
+
+    // 添加工具到配置
+    configManager.addCustomMCPTool(tool);
+
+    this.logger.info(`成功添加自定义工具: ${tool.name}`);
+
+    return new Response(
+      JSON.stringify(
+        this.createSuccessResponse({ tool }, `工具 "${tool.name}" 添加成功`)
+      )
+    );
+  }
+
+  /**
+   * 处理添加 MCP 工具
+   */
+  private async handleAddMCPTool(data: MCPToolData): Promise<Response> {
+    const { serviceName, toolName, customName, customDescription } = data;
+
+    this.logger.info(`处理添加 MCP 工具: ${serviceName}/${toolName}`);
+
+    // 验证必需字段
+    if (!serviceName || !toolName) {
+      const errorResponse = this.createErrorResponse(
+        "MISSING_REQUIRED_FIELD",
+        "serviceName 和 toolName 是必需字段"
+      );
+      return new Response(JSON.stringify(errorResponse), { status: 400 });
+    }
+
+    // 检查 MCP 服务管理器是否已初始化
+    if (!MCPServiceManagerSingleton.isInitialized()) {
+      const errorResponse = this.createErrorResponse(
+        "SERVICE_NOT_INITIALIZED",
+        "MCP 服务管理器未初始化。请检查服务状态。"
+      );
+      return new Response(JSON.stringify(errorResponse), { status: 503 });
+    }
+
+    // 获取服务管理器实例
+    const serviceManager = await MCPServiceManagerSingleton.getInstance();
+
+    // 验证服务和工具是否存在
+    try {
+      await this.validateServiceAndTool(serviceManager, serviceName, toolName);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorResponse = this.createErrorResponse(
+        "SERVICE_OR_TOOL_NOT_FOUND",
+        errorMessage
+      );
+      return new Response(JSON.stringify(errorResponse), { status: 404 });
+    }
+
+    // 从缓存中获取工具信息
+    const cacheManager = new MCPCacheManager();
+    const cachedTools = await cacheManager.getAllCachedTools();
+
+    // 查找对应的工具
+    const fullToolName = `${serviceName}__${toolName}`;
+    const cachedTool = cachedTools.find((tool) => tool.name === fullToolName);
+
+    if (!cachedTool) {
+      const errorResponse = this.createErrorResponse(
+        "TOOL_NOT_FOUND",
+        `在缓存中未找到工具: ${serviceName}/${toolName}`
+      );
+      return new Response(JSON.stringify(errorResponse), { status: 404 });
+    }
+
+    // 生成工具名称
+    const finalToolName = customName || fullToolName;
+
+    // 检查工具名称是否已存在
+    const existingTools = configManager.getCustomMCPTools();
+    const existingNames = new Set(existingTools.map((tool) => tool.name));
+
+    if (existingNames.has(finalToolName)) {
+      const errorResponse = this.createErrorResponse(
+        "TOOL_NAME_CONFLICT",
+        `工具名称 "${finalToolName}" 已存在，请使用不同的自定义名称`
+      );
+      return new Response(JSON.stringify(errorResponse), { status: 409 });
+    }
+
+    // 创建 CustomMCPTool 配置
+    const tool: CustomMCPTool = {
+      name: finalToolName,
+      description:
+        customDescription ||
+        cachedTool.description ||
+        `MCP 工具: ${serviceName}/${toolName}`,
+      inputSchema: cachedTool.inputSchema || {},
+      handler: {
+        type: "mcp",
+        config: {
+          serviceName,
+          toolName,
+        },
+      },
+      stats: {
+        usageCount: 0,
+        lastUsedTime: new Date().toISOString(),
+      },
+    };
+
+    // 添加工具到配置
+    configManager.addCustomMCPTool(tool);
+
+    this.logger.info(`成功添加 MCP 工具: ${finalToolName}`);
+
+    const responseData: AddToolResponse = {
+      tool,
+      toolName: finalToolName,
+      toolType: ToolType.MCP,
+      addedAt: new Date().toISOString(),
+    };
+
+    return new Response(
+      JSON.stringify(
+        this.createSuccessResponse(
+          responseData,
+          `MCP 工具 "${finalToolName}" 添加成功`
+        )
+      )
+    );
+  }
+
+  /**
+   * 处理添加 Coze 工具
+   */
+  private async handleAddCozeTool(data: CozeWorkflowData): Promise<Response> {
+    const { workflow, customName, customDescription, parameterConfig } = data;
+
+    this.logger.info(`处理添加 Coze 工具: ${workflow.workflow_name}`);
+
+    // 边界条件预检查
+    const preCheckResult = this.performPreChecks(
+      workflow,
+      customName,
+      customDescription
+    );
+    if (preCheckResult) {
+      return new Response(JSON.stringify(preCheckResult.errorResponse), {
+        status: preCheckResult.statusCode,
+      });
+    }
+
+    // 转换工作流为工具配置
+    const tool = this.convertWorkflowToTool(
+      workflow,
+      customName,
+      customDescription,
+      parameterConfig
+    );
+
+    // 添加工具到配置
+    configManager.addCustomMCPTool(tool);
+
+    this.logger.info(`成功添加 Coze 工具: ${tool.name}`);
+
+    const responseData: AddToolResponse = {
+      tool,
+      toolName: tool.name,
+      toolType: ToolType.COZE,
+      addedAt: new Date().toISOString(),
+    };
+
+    return new Response(
+      JSON.stringify(
+        this.createSuccessResponse(
+          responseData,
+          `Coze 工具 "${tool.name}" 添加成功`
+        )
+      )
+    );
   }
 
   /**
@@ -1217,6 +1472,78 @@ export class ToolApiHandler {
     const errorMessage =
       error instanceof Error ? error.message : "添加自定义工具失败";
 
+    // 工具类型错误 (400)
+    if (
+      errorMessage.includes("工具类型") ||
+      errorMessage.includes("TOOL_TYPE")
+    ) {
+      return {
+        statusCode: 400,
+        errorResponse: this.createErrorResponse(
+          "INVALID_TOOL_TYPE",
+          errorMessage
+        ),
+      };
+    }
+
+    // 缺少必需字段错误 (400)
+    if (
+      errorMessage.includes("必需字段") ||
+      errorMessage.includes("MISSING_REQUIRED_FIELD")
+    ) {
+      return {
+        statusCode: 400,
+        errorResponse: this.createErrorResponse(
+          "MISSING_REQUIRED_FIELD",
+          errorMessage
+        ),
+      };
+    }
+
+    // 工具或服务不存在错误 (404)
+    if (
+      errorMessage.includes("不存在") ||
+      errorMessage.includes("NOT_FOUND") ||
+      errorMessage.includes("未找到")
+    ) {
+      return {
+        statusCode: 404,
+        errorResponse: this.createErrorResponse(
+          "SERVICE_OR_TOOL_NOT_FOUND",
+          errorMessage
+        ),
+      };
+    }
+
+    // 服务未初始化错误 (503)
+    if (
+      errorMessage.includes("未初始化") ||
+      errorMessage.includes("SERVICE_NOT_INITIALIZED")
+    ) {
+      return {
+        statusCode: 503,
+        errorResponse: this.createErrorResponse(
+          "SERVICE_NOT_INITIALIZED",
+          errorMessage
+        ),
+      };
+    }
+
+    // 工具名称冲突错误 (409)
+    if (
+      errorMessage.includes("已存在") ||
+      errorMessage.includes("冲突") ||
+      errorMessage.includes("TOOL_NAME_CONFLICT")
+    ) {
+      return {
+        statusCode: 409,
+        errorResponse: this.createErrorResponse(
+          "TOOL_NAME_CONFLICT",
+          `${errorMessage}。建议：1) 使用自定义名称；2) 删除现有同名工具后重试`
+        ),
+      };
+    }
+
     // 数据验证错误 (400)
     if (this.isValidationError(errorMessage)) {
       return {
@@ -1228,28 +1555,46 @@ export class ToolApiHandler {
       };
     }
 
-    // 工具名称冲突错误 (409)
-    if (errorMessage.includes("已存在") || errorMessage.includes("冲突")) {
-      return {
-        statusCode: 409,
-        errorResponse: this.createErrorResponse(
-          "TOOL_NAME_CONFLICT",
-          `${errorMessage}。建议：1) 修改工作流名称；2) 使用自定义名称；3) 删除现有同名工具后重试`
-        ),
-      };
-    }
-
     // 配置错误 (422)
     if (
       errorMessage.includes("配置") ||
       errorMessage.includes("token") ||
-      errorMessage.includes("API")
+      errorMessage.includes("API") ||
+      errorMessage.includes("CONFIGURATION_ERROR")
     ) {
       return {
         statusCode: 422,
         errorResponse: this.createErrorResponse(
           "CONFIGURATION_ERROR",
-          `${errorMessage}。请检查：1) 扣子API Token是否正确配置；2) 网络连接是否正常；3) 配置文件权限是否正确`
+          `${errorMessage}。请检查：1) 相关配置是否正确；2) 网络连接是否正常；3) 配置文件权限是否正确`
+        ),
+      };
+    }
+
+    // 资源限制错误 (429)
+    if (
+      errorMessage.includes("资源限制") ||
+      errorMessage.includes("RESOURCE_LIMIT_EXCEEDED")
+    ) {
+      return {
+        statusCode: 429,
+        errorResponse: this.createErrorResponse(
+          "RESOURCE_LIMIT_EXCEEDED",
+          errorMessage
+        ),
+      };
+    }
+
+    // 未实现功能错误 (501)
+    if (
+      errorMessage.includes("未实现") ||
+      errorMessage.includes("NOT_IMPLEMENTED")
+    ) {
+      return {
+        statusCode: 501,
+        errorResponse: this.createErrorResponse(
+          "TOOL_TYPE_NOT_IMPLEMENTED",
+          errorMessage
         ),
       };
     }
