@@ -1150,14 +1150,6 @@ export class ConfigManager {
       if (!this.validateHandlerConfig(tool.name, tool.handler)) {
         return false;
       }
-
-      // 检查工具名称格式（必须是有效的标识符）
-      if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(tool.name)) {
-        logger.warn(
-          `CustomMCP 工具名称 ${tool.name} 格式无效，必须以字母开头，只能包含字母、数字和下划线`
-        );
-        return false;
-      }
     }
 
     return true;
