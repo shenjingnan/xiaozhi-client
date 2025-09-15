@@ -257,6 +257,38 @@ describe("ToolSyncManager", () => {
         `服务 ${serviceName} 正在同步中，跳过`
       );
     });
+
+    it("应该允许多个服务的工具同步即使 customMCP 已存在", async () => {
+      // Arrange
+      const serviceName1 = "calculator";
+      const serviceName2 = "datetime";
+      const tools1 = createMockTools(["calculator"]);
+      const tools2 = createMockTools(["get_current_time", "get_current_date"]);
+      
+      const serverConfig1 = createMockToolConfigs(["calculator"], true);
+      const serverConfig2 = createMockToolConfigs(["get_current_time", "get_current_date"], true);
+      
+      // 模拟 customMCP 配置已存在
+      vi.mocked(mockConfigManager.getCustomMCPConfig).mockReturnValue({
+        tools: []
+      });
+      
+      vi.mocked(mockConfigManager.getServerToolsConfig).mockImplementation((serviceName) => {
+        if (serviceName === serviceName1) return serverConfig1;
+        if (serviceName === serviceName2) return serverConfig2;
+        return {};
+      });
+      
+      vi.mocked(mockConfigManager.getCustomMCPTools).mockReturnValue([]);
+
+      // Act - 依次调用两个服务的同步
+      await toolSyncManager.syncToolsAfterConnection(serviceName1, tools1);
+      await toolSyncManager.syncToolsAfterConnection(serviceName2, tools2);
+
+      // Assert
+      expect(mockConfigManager.addCustomMCPTools).toHaveBeenCalledTimes(2);
+      expect(mockLogger.debug).not.toHaveBeenCalledWith("已存在 customMCP 停止同步");
+    });
   });
 
   describe("getEnabledTools", () => {
