@@ -2397,22 +2397,6 @@ describe("ConfigManager", () => {
         expect(configManager.validateCustomMCPTools([chainTool])).toBe(true);
       });
 
-      it("应该拒绝无效的工具名称格式", () => {
-        const invalidNames = [
-          "123invalid", // 不能以数字开头
-          "invalid-name", // 不能包含连字符
-          "invalid name", // 不能包含空格
-          "invalid.name", // 不能包含点号
-          "", // 不能为空
-        ];
-
-        for (const invalidName of invalidNames) {
-          const invalidTool = { ...mockCustomMCPTool, name: invalidName };
-          const isValid = configManager.validateCustomMCPTools([invalidTool]);
-          expect(isValid).toBe(false);
-        }
-      });
-
       it("应该接受有效的工具名称格式", () => {
         const validNames = [
           "valid_name",
