@@ -226,7 +226,7 @@ export function McpEndpointSettingButton() {
           <SettingsIcon className="size-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="w-auto max-w-fit">
         <DialogHeader className="mb-4">
           <DialogTitle>配置小智服务端接入点</DialogTitle>
           <DialogDescription>
@@ -237,7 +237,7 @@ export function McpEndpointSettingButton() {
           {mcpEndpoints.map((item) => (
             <div
               key={item}
-              className="flex items-center justify-between p-4 bg-slate-50 rounded-md font-mono"
+              className="flex items-center justify-between p-4 bg-slate-50 rounded-md font-mono gap-2"
             >
               <span className="flex-1 text-ellipsis overflow-hidden whitespace-nowrap">
                 {sliceEndpoint(item)}
