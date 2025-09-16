@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.7.3](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.2...v1.7.3) (2025-09-15)
+
+### Bug Fixes
+
+* **mcp:** 放宽自定义MCP工具名称验证规则 ([#323](https://github.com/shenjingnan/xiaozhi-client/issues/323)) ([551ce4e](https://github.com/shenjingnan/xiaozhi-client/commit/551ce4ed2c615c07cd85c58cec934c14676e4ed4))
+* **tool-sync:** 修复多服务工具同步逻辑错误 ([#322](https://github.com/shenjingnan/xiaozhi-client/issues/322)) ([0556bf9](https://github.com/shenjingnan/xiaozhi-client/commit/0556bf96b23f643fe6380f4035355cc75760e0f9))
+* **workflow:** 修复 docker 发布失败的问题 ([#321](https://github.com/shenjingnan/xiaozhi-client/issues/321)) ([ab30beb](https://github.com/shenjingnan/xiaozhi-client/commit/ab30beb32aad5b9f0d966e0423321f82ec68505a))
+
 ## [1.7.2](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.1...v1.7.2) (2025-09-14)
 
 ### Features

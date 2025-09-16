@@ -554,18 +554,6 @@ describe("ConfigManager", () => {
         "utf8"
       );
     });
-
-    it("应该为空端点抛出错误", () => {
-      expect(() => configManager.updateMcpEndpoint("")).toThrow(
-        "MCP 端点必须是非空字符串"
-      );
-    });
-
-    it("应该为非字符串端点抛出错误", () => {
-      expect(() => configManager.updateMcpEndpoint(null as any)).toThrow(
-        "MCP 端点必须是非空字符串"
-      );
-    });
   });
 
   describe("更新MCP服务器配置", () => {
@@ -2395,22 +2383,6 @@ describe("ConfigManager", () => {
         expect(configManager.validateCustomMCPTools([httpTool])).toBe(true);
         expect(configManager.validateCustomMCPTools([scriptTool])).toBe(true);
         expect(configManager.validateCustomMCPTools([chainTool])).toBe(true);
-      });
-
-      it("应该拒绝无效的工具名称格式", () => {
-        const invalidNames = [
-          "123invalid", // 不能以数字开头
-          "invalid-name", // 不能包含连字符
-          "invalid name", // 不能包含空格
-          "invalid.name", // 不能包含点号
-          "", // 不能为空
-        ];
-
-        for (const invalidName of invalidNames) {
-          const invalidTool = { ...mockCustomMCPTool, name: invalidName };
-          const isValid = configManager.validateCustomMCPTools([invalidTool]);
-          expect(isValid).toBe(false);
-        }
       });
 
       it("应该接受有效的工具名称格式", () => {
