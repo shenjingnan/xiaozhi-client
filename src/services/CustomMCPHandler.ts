@@ -41,6 +41,7 @@ import {
   isTimeoutResponse,
 } from "../types/timeout.js";
 import { MCPCacheManager } from "./MCPCacheManager.js";
+import type { MCPServiceManager } from "./MCPServiceManager.js";
 
 // 工具调用结果接口（与 MCPServiceManager 保持一致）
 export interface ToolCallResult {
@@ -76,6 +77,7 @@ export class CustomMCPHandler {
   private cacheManager: MCPCacheManager;
   private cacheLifecycleManager: CacheLifecycleManager;
   private taskStateManager: TaskStateManager;
+  private mcpServiceManager?: MCPServiceManager;
   private readonly TIMEOUT = DEFAULT_CONFIG.TIMEOUT; // 统一8秒超时
   private readonly CACHE_TTL = DEFAULT_CONFIG.CACHE_TTL; // 5分钟缓存过期
   private readonly CLEANUP_INTERVAL = DEFAULT_CONFIG.CLEANUP_INTERVAL; // 1分钟清理间隔
@@ -83,9 +85,13 @@ export class CustomMCPHandler {
   private activeTasks: Map<string, TaskManager> = new Map();
   private eventBus = getEventBus();
 
-  constructor(cacheManager?: MCPCacheManager) {
+  constructor(
+    cacheManager?: MCPCacheManager,
+    mcpServiceManager?: MCPServiceManager
+  ) {
     this.logger = logger;
     this.cacheManager = cacheManager || new MCPCacheManager();
+    this.mcpServiceManager = mcpServiceManager;
     this.cacheLifecycleManager = new CacheLifecycleManager(this.logger);
     this.taskStateManager = new TaskStateManager(this.logger);
     // 启动缓存清理定时器
@@ -371,16 +377,60 @@ export class CustomMCPHandler {
       case "chain":
         return await this.callChainTool(tool, arguments_);
       case "mcp":
-        // MCP 类型的工具应该由 MCPServiceManager 直接处理，不应该到达这里
-        this.logger.error(
-          `MCP 类型工具 ${tool.name} 不应该由 CustomMCPHandler 处理`
-        );
-        return {
-          content: [{ type: "text", text: "内部错误：MCP 类型工具路由错误" }],
-          isError: true,
-        };
+        // MCP 类型的工具转发给 MCPServiceManager 处理
+        return await this.forwardToMCPServiceManager(tool, arguments_);
       default:
         throw new Error(`不支持的处理器类型: ${(tool.handler as any).type}`);
+    }
+  }
+
+  /**
+   * 转发MCP工具调用到MCPServiceManager
+   */
+  private async forwardToMCPServiceManager(
+    tool: CustomMCPTool,
+    arguments_: any
+  ): Promise<ToolCallResult> {
+    if (!this.mcpServiceManager) {
+      this.logger.error(
+        `[CustomMCP] MCPServiceManager 未初始化，无法转发工具 ${tool.name} 的调用`
+      );
+      return {
+        content: [
+          { type: "text", text: "内部错误：MCPServiceManager 未初始化" },
+        ],
+        isError: true,
+      };
+    }
+
+    const mcpHandler = tool.handler as MCPHandlerConfig;
+    this.logger.info(`[CustomMCP] 转发MCP工具调用: ${tool.name}`, {
+      serviceName: mcpHandler.config.serviceName,
+      toolName: mcpHandler.config.toolName,
+    });
+
+    try {
+      // 通过MCPServiceManager调用工具
+      const result = await this.mcpServiceManager.callTool(
+        mcpHandler.config.toolName,
+        arguments_
+      );
+
+      this.logger.info(`[CustomMCP] MCP工具转发成功: ${tool.name}`);
+      return result;
+    } catch (error) {
+      this.logger.error(`[CustomMCP] MCP工具转发失败: ${tool.name}`, error);
+      return {
+        content: [
+          {
+            type: "text",
+            text: `MCP工具调用失败: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          },
+        ],
+        isError: true,
+      };
     }
   }
 
