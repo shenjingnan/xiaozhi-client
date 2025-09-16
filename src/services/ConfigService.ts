@@ -189,7 +189,7 @@ export class ConfigService {
       throw new Error("配置必须是有效的对象");
     }
 
-    if (!config.mcpEndpoint) {
+    if (!config.mcpEndpoint && config.mcpEndpoint !== "") {
       throw new Error("配置必须包含 mcpEndpoint");
     }
 

@@ -530,10 +530,6 @@ export class ConfigManager {
           throw new Error("MCP 端点数组中的每个元素必须是非空字符串");
         }
       }
-    } else {
-      if (!endpoint || typeof endpoint !== "string") {
-        throw new Error("MCP 端点必须是非空字符串");
-      }
     }
 
     const config = this.getMutableConfig();

@@ -560,17 +560,6 @@ describe("ConfigService", () => {
       );
     });
 
-    it("should reject config with empty mcpEndpoint", async () => {
-      const invalidConfig = {
-        mcpEndpoint: "",
-        mcpServers: {},
-      } as AppConfig;
-
-      await expect(configService.updateConfig(invalidConfig)).rejects.toThrow(
-        "配置必须包含 mcpEndpoint"
-      );
-    });
-
     it("should reject config without mcpServers", async () => {
       const invalidConfig = {
         mcpEndpoint: "ws://localhost:3000",
