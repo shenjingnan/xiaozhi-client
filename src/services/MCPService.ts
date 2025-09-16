@@ -1,6 +1,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { type Logger, logger } from "../Logger.js";
+import { getEventBus } from "./EventBus.js";
 import { TransportFactory } from "./TransportFactory.js";
 
 // 通信方式枚举
@@ -133,6 +134,7 @@ export class MCPService {
   private logger: Logger;
   private connectionTimeout: NodeJS.Timeout | null = null;
   private initialized = false;
+  private eventBus = getEventBus();
 
   // Ping相关属性
   private pingOptions: PingOptions;
@@ -267,6 +269,13 @@ export class MCPService {
             // 获取工具列表
             await this.refreshTools();
 
+            // 发射连接成功事件（包含工具列表）
+            this.eventBus.emitEvent("mcp:service:connected", {
+              serviceName: this.config.name,
+              tools: this.getTools(),
+              connectionTime: new Date(),
+            });
+
             resolve();
           })
           .catch((error) => {
@@ -311,17 +320,27 @@ export class MCPService {
    * 处理连接错误
    */
   private handleConnectionError(error: Error): void {
+    this.connectionState = ConnectionState.DISCONNECTED;
+    this.initialized = false;
+
+    this.reconnectState.lastError = error;
+    this.logger.error(`MCP 服务 ${this.config.name} 连接错误:`, error.message);
+
     // 清理连接超时定时器
     if (this.connectionTimeout) {
       clearTimeout(this.connectionTimeout);
       this.connectionTimeout = null;
     }
 
-    this.reconnectState.lastError = error;
-    this.logger.error(`MCP 服务 ${this.config.name} 连接错误:`, error.message);
-
     // 清理当前连接
     this.cleanupConnection();
+
+    // 发射连接失败事件
+    this.eventBus.emitEvent("mcp:service:connection:failed", {
+      serviceName: this.config.name,
+      error,
+      attempt: this.reconnectState.attempts,
+    });
 
     // 检查是否需要重连
     if (this.shouldReconnect()) {
@@ -513,6 +532,13 @@ export class MCPService {
 
     // 设置状态为已断开
     this.connectionState = ConnectionState.DISCONNECTED;
+
+    // 发射断开连接事件
+    this.eventBus.emitEvent("mcp:service:disconnected", {
+      serviceName: this.config.name,
+      reason: "手动断开",
+      disconnectionTime: new Date(),
+    });
   }
 
   /**

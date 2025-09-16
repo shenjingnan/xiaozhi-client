@@ -1,4 +1,5 @@
 import { EventEmitter } from "node:events";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { type Logger, logger } from "../Logger.js";
 
 /**
@@ -27,6 +28,23 @@ export interface EventBusEvents {
   // 通知相关事件
   "notification:broadcast": { type: string; data: any; target?: string };
   "notification:error": { error: Error; type: string };
+
+  // MCP服务相关事件
+  "mcp:service:connected": {
+    serviceName: string;
+    tools: Tool[];
+    connectionTime: Date;
+  };
+  "mcp:service:disconnected": {
+    serviceName: string;
+    reason?: string;
+    disconnectionTime: Date;
+  };
+  "mcp:service:connection:failed": {
+    serviceName: string;
+    error: Error;
+    attempt: number;
+  };
 }
 
 /**

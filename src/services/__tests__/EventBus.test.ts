@@ -194,6 +194,69 @@ describe("EventBus", () => {
       });
     });
 
+    it("should emit MCP service events successfully", () => {
+      const listeners = {
+        connected: vi.fn(),
+        disconnected: vi.fn(),
+        connectionFailed: vi.fn(),
+      };
+
+      eventBus.onEvent("mcp:service:connected", listeners.connected);
+      eventBus.onEvent("mcp:service:disconnected", listeners.disconnected);
+      eventBus.onEvent(
+        "mcp:service:connection:failed",
+        listeners.connectionFailed
+      );
+
+      // 模拟工具数据
+      const mockTools = [
+        {
+          name: "test-tool",
+          description: "Test tool",
+          inputSchema: { type: "object", properties: {} },
+        },
+      ];
+
+      const connectionTime = new Date();
+      const disconnectionTime = new Date();
+
+      eventBus.emitEvent("mcp:service:connected", {
+        serviceName: "test-service",
+        tools: mockTools,
+        connectionTime,
+      });
+
+      eventBus.emitEvent("mcp:service:disconnected", {
+        serviceName: "test-service",
+        reason: "手动断开",
+        disconnectionTime,
+      });
+
+      eventBus.emitEvent("mcp:service:connection:failed", {
+        serviceName: "test-service",
+        error: new Error("Connection failed"),
+        attempt: 3,
+      });
+
+      expect(listeners.connected).toHaveBeenCalledWith({
+        serviceName: "test-service",
+        tools: mockTools,
+        connectionTime,
+      });
+
+      expect(listeners.disconnected).toHaveBeenCalledWith({
+        serviceName: "test-service",
+        reason: "手动断开",
+        disconnectionTime,
+      });
+
+      expect(listeners.connectionFailed).toHaveBeenCalledWith({
+        serviceName: "test-service",
+        error: expect.any(Error),
+        attempt: 3,
+      });
+    });
+
     it("should update event statistics", () => {
       const eventData = { config: { test: true }, source: "test" };
 
