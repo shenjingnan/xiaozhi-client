@@ -19,7 +19,6 @@ import {
   type ScriptHandlerConfig,
   configManager,
 } from "../configManager.js";
-import { getEventBus } from "./EventBus.js";
 import { CacheLifecycleManager } from "../managers/CacheLifecycleManager.js";
 import { TaskStateManager } from "../managers/TaskStateManager.js";
 import {
@@ -40,6 +39,7 @@ import {
   createTimeoutResponse,
   isTimeoutResponse,
 } from "../types/timeout.js";
+import { getEventBus } from "./EventBus.js";
 import { MCPCacheManager } from "./MCPCacheManager.js";
 import type { MCPServiceManager } from "./MCPServiceManager.js";
 

@@ -1,9 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { MCPServiceManager } from "../MCPServiceManager.js";
-import type { ToolSyncManager } from "../ToolSyncManager.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomMCPHandler } from "../CustomMCPHandler.js";
 import { type EventBus, destroyEventBus, getEventBus } from "../EventBus.js";
+import { MCPServiceManager } from "../MCPServiceManager.js";
+import type { ToolSyncManager } from "../ToolSyncManager.js";
 
 // Mock dependencies
 vi.mock("../../Logger.js", () => ({

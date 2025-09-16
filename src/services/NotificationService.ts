@@ -1,5 +1,5 @@
 import { type Logger, logger } from "../Logger.js";
-import { configManager, type AppConfig } from "../configManager.js";
+import { type AppConfig, configManager } from "../configManager.js";
 import { type EventBus, getEventBus } from "./EventBus.js";
 import type { ClientInfo, RestartStatus } from "./StatusService.js";
 

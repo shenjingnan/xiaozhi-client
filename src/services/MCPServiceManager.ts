@@ -10,6 +10,7 @@ import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { type Logger, logger } from "../Logger.js";
 import { type MCPToolConfig, configManager } from "../configManager.js";
 import { CustomMCPHandler } from "./CustomMCPHandler.js";
+import { getEventBus } from "./EventBus.js";
 import { MCPCacheManager } from "./MCPCacheManager.js";
 import {
   MCPService,
@@ -17,7 +18,6 @@ import {
   MCPTransportType,
 } from "./MCPService.js";
 import { ToolSyncManager } from "./ToolSyncManager.js";
-import { getEventBus } from "./EventBus.js";
 
 // 工具信息接口（保持向后兼容）
 interface ToolInfo {
