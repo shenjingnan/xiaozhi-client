@@ -1,5 +1,5 @@
 import { type Logger, logger } from "../Logger.js";
-import type { AppConfig } from "../configManager.js";
+import { configManager, type AppConfig } from "../configManager.js";
 import { type EventBus, getEventBus } from "./EventBus.js";
 import type { ClientInfo, RestartStatus } from "./StatusService.js";
 
@@ -44,7 +44,9 @@ export class NotificationService {
   private setupEventListeners(): void {
     // 监听配置更新事件
     this.eventBus.onEvent("config:updated", (data) => {
-      this.broadcastConfigUpdate(data.config);
+      // 获取最新的配置
+      const config = configManager.getConfig();
+      this.broadcastConfigUpdate(config);
     });
 
     // 监听状态更新事件

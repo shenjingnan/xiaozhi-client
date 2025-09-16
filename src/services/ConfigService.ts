@@ -108,8 +108,8 @@ export class ConfigService {
 
       // 发射配置更新事件
       this.eventBus.emitEvent("config:updated", {
-        config: newConfig,
-        source,
+        type: "config",
+        timestamp: new Date(),
       });
     } catch (error) {
       this.logger.error("配置更新失败:", error);
@@ -215,8 +215,8 @@ export class ConfigService {
       const config = await this.getConfig();
 
       this.eventBus.emitEvent("config:updated", {
-        config,
-        source: "reload",
+        type: "config",
+        timestamp: new Date(),
       });
 
       return config;

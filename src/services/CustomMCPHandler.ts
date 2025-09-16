@@ -19,6 +19,7 @@ import {
   type ScriptHandlerConfig,
   configManager,
 } from "../configManager.js";
+import { getEventBus } from "./EventBus.js";
 import { CacheLifecycleManager } from "../managers/CacheLifecycleManager.js";
 import { TaskStateManager } from "../managers/TaskStateManager.js";
 import {
@@ -80,6 +81,7 @@ export class CustomMCPHandler {
   private readonly CLEANUP_INTERVAL = DEFAULT_CONFIG.CLEANUP_INTERVAL; // 1分钟清理间隔
   private cleanupTimer?: NodeJS.Timeout;
   private activeTasks: Map<string, TaskManager> = new Map();
+  private eventBus = getEventBus();
 
   constructor(cacheManager?: MCPCacheManager) {
     this.logger = logger;
@@ -89,6 +91,73 @@ export class CustomMCPHandler {
     // 启动缓存清理定时器
     this.startCleanupTimer();
     this.cacheLifecycleManager.startAutoCleanup();
+    // 设置事件监听器
+    this.setupEventListeners();
+  }
+
+  /**
+   * 设置事件监听器
+   */
+  private setupEventListeners(): void {
+    // 监听配置更新事件
+    this.eventBus.onEvent("config:updated", async (data) => {
+      await this.handleConfigUpdated(data);
+    });
+  }
+
+  /**
+   * 处理配置更新事件
+   */
+  private async handleConfigUpdated(data: {
+    type: string;
+    serviceName?: string;
+    timestamp: Date;
+  }): Promise<void> {
+    this.logger.info("[CustomMCP] 检测到配置更新，检查是否需要重新初始化");
+
+    try {
+      // 如果是 customMCP 配置更新，需要重新初始化
+      if (data.type === "customMCP") {
+        this.logger.info("[CustomMCP] customMCP 配置已更新，重新初始化处理器");
+        await this.reinitialize();
+      } else if (data.type === "serverTools") {
+        // 如果是 serverTools 配置更新，可能影响 MCP 类型的工具
+        this.logger.info(
+          "[CustomMCP] serverTools 配置已更新，重新初始化处理器"
+        );
+        await this.reinitialize();
+      }
+    } catch (error) {
+      this.logger.error("[CustomMCP] 配置更新处理失败:", error);
+    }
+  }
+
+  /**
+   * 重新初始化处理器
+   */
+  public async reinitialize(): Promise<void> {
+    try {
+      this.logger.info("[CustomMCP] 开始重新初始化处理器");
+
+      // 清理现有工具
+      this.tools.clear();
+
+      // 重新加载工具
+      const customTools = configManager.getCustomMCPTools();
+      for (const tool of customTools) {
+        this.tools.set(tool.name, tool);
+        this.logger.info(
+          `[CustomMCP] 重新加载工具: ${tool.name} (${tool.handler.type})`
+        );
+      }
+
+      this.logger.info(
+        `[CustomMCP] 重新初始化完成，共加载 ${this.tools.size} 个工具`
+      );
+    } catch (error) {
+      this.logger.error("[CustomMCP] 重新初始化失败:", error);
+      throw error;
+    }
   }
 
   /**

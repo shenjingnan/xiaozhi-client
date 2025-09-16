@@ -7,7 +7,11 @@ import { type Logger, logger } from "../Logger.js";
  */
 export interface EventBusEvents {
   // 配置相关事件
-  "config:updated": { config: any; source: string };
+  "config:updated": {
+    type: string;
+    serviceName?: string;
+    timestamp: Date;
+  };
   "config:error": { error: Error; operation: string };
 
   // 状态相关事件
@@ -44,6 +48,15 @@ export interface EventBusEvents {
     serviceName: string;
     error: Error;
     attempt: number;
+  };
+
+  // 工具同步相关事件
+  "tool-sync:server-tools-updated": {
+    serviceName: string;
+    timestamp: Date;
+  };
+  "tool-sync:general-config-updated": {
+    timestamp: Date;
   };
 }
 

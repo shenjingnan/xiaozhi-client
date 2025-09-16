@@ -12,6 +12,7 @@ import type {
   CustomMCPTool,
   MCPToolConfig,
 } from "../configManager.js";
+import { getEventBus } from "./EventBus.js";
 
 /**
  * 工具同步管理器
@@ -21,10 +22,86 @@ export class ToolSyncManager {
   private configManager: ConfigManager;
   private logger: Logger;
   private syncLocks: Map<string, Promise<void>> = new Map();
+  private eventBus = getEventBus();
 
   constructor(configManager: ConfigManager, customLogger: Logger = logger) {
     this.configManager = configManager;
     this.logger = customLogger.withTag("ToolSync");
+
+    // 设置事件监听器
+    this.setupEventListeners();
+  }
+
+  /**
+   * 设置事件监听器
+   */
+  private setupEventListeners(): void {
+    // 监听配置更新事件
+    this.eventBus.onEvent("config:updated", async (data) => {
+      await this.handleConfigUpdated(data);
+    });
+  }
+
+  /**
+   * 处理配置更新事件
+   */
+  private async handleConfigUpdated(data: {
+    type: string;
+    serviceName?: string;
+    timestamp: Date;
+  }): Promise<void> {
+    this.logger.info("检测到配置更新，检查工具同步状态");
+
+    try {
+      // 根据更新类型处理不同的同步逻辑
+      if (data.type === "customMCP") {
+        // customMCP配置更新，通常不需要额外处理，因为CustomMCPHandler会自己处理
+        this.logger.debug("customMCP配置已更新，CustomMCPHandler将自动处理");
+      } else if (data.type === "serverTools" && data.serviceName) {
+        // 特定服务的serverTools配置更新
+        await this.handleServerToolsConfigUpdated(data.serviceName);
+      } else {
+        // 通用配置更新，检查所有已连接的服务
+        await this.handleGeneralConfigUpdated();
+      }
+    } catch (error) {
+      this.logger.error("配置更新后的工具同步失败:", error);
+    }
+  }
+
+  /**
+   * 处理serverTools配置更新
+   */
+  private async handleServerToolsConfigUpdated(
+    serviceName: string
+  ): Promise<void> {
+    this.logger.info(`处理服务 ${serviceName} 的serverTools配置更新`);
+
+    try {
+      // 发射事件，让MCPServiceManager处理特定服务的同步检查
+      this.eventBus.emitEvent("tool-sync:server-tools-updated", {
+        serviceName,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      this.logger.error(`处理服务 ${serviceName} 配置更新失败:`, error);
+    }
+  }
+
+  /**
+   * 处理通用配置更新
+   */
+  private async handleGeneralConfigUpdated(): Promise<void> {
+    this.logger.info("处理通用配置更新，检查所有服务同步状态");
+
+    try {
+      // 发射事件，让MCPServiceManager处理所有服务的同步检查
+      this.eventBus.emitEvent("tool-sync:general-config-updated", {
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      this.logger.error("处理通用配置更新失败:", error);
+    }
   }
 
   /**
