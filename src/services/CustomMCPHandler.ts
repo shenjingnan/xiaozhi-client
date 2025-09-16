@@ -378,7 +378,23 @@ export class CustomMCPHandler {
         return await this.callChainTool(tool, arguments_);
       case "mcp":
         // MCP 类型的工具转发给 MCPServiceManager 处理
-        return await this.forwardToMCPServiceManager(tool, arguments_);
+        try {
+          return await this.forwardToMCPServiceManager(tool, arguments_);
+        } catch (error) {
+          this.logger.error(
+            `[CustomMCP] MCP 类型工具路由失败: ${tool.name}`,
+            error
+          );
+          return {
+            content: [
+              {
+                type: "text",
+                text: "内部错误：MCP 类型工具路由错误",
+              },
+            ],
+            isError: true,
+          };
+        }
       default:
         throw new Error(`不支持的处理器类型: ${(tool.handler as any).type}`);
     }
@@ -395,12 +411,7 @@ export class CustomMCPHandler {
       this.logger.error(
         `[CustomMCP] MCPServiceManager 未初始化，无法转发工具 ${tool.name} 的调用`
       );
-      return {
-        content: [
-          { type: "text", text: "内部错误：MCPServiceManager 未初始化" },
-        ],
-        isError: true,
-      };
+      throw new Error("MCPServiceManager 未初始化");
     }
 
     const mcpHandler = tool.handler as MCPHandlerConfig;
