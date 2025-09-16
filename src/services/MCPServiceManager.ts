@@ -140,7 +140,7 @@ export class MCPServiceManager {
         this.logger.info(`服务 ${data.serviceName} 工具同步完成`);
       }
     } catch (error) {
-      this.logger.error(`服务 ${data.serviceName} 工具同步失败:`, error);
+      this.logger.error(`同步服务 ${data.serviceName} 工具失败:`, error);
     }
   }
 
