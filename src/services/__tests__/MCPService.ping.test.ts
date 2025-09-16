@@ -15,11 +15,19 @@ vi.mock("../TransportFactory.js", () => ({
 
 vi.mock("../../Logger.js", () => ({
   Logger: vi.fn(() => ({
+    info: vi.fn(),
+    debug: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    success: vi.fn(),
+    log: vi.fn(),
     withTag: vi.fn(() => ({
       info: vi.fn(),
       debug: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
+      success: vi.fn(),
+      log: vi.fn(),
     })),
   })),
   logger: {
@@ -27,6 +35,16 @@ vi.mock("../../Logger.js", () => ({
     debug: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
+    success: vi.fn(),
+    log: vi.fn(),
+    withTag: vi.fn(() => ({
+      info: vi.fn(),
+      debug: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      success: vi.fn(),
+      log: vi.fn(),
+    })),
   },
 }));
 
