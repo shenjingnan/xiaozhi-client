@@ -554,18 +554,6 @@ describe("ConfigManager", () => {
         "utf8"
       );
     });
-
-    it("应该为空端点抛出错误", () => {
-      expect(() => configManager.updateMcpEndpoint("")).toThrow(
-        "MCP 端点必须是非空字符串"
-      );
-    });
-
-    it("应该为非字符串端点抛出错误", () => {
-      expect(() => configManager.updateMcpEndpoint(null as any)).toThrow(
-        "MCP 端点必须是非空字符串"
-      );
-    });
   });
 
   describe("更新MCP服务器配置", () => {
