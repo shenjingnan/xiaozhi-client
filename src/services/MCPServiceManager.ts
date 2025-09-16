@@ -407,7 +407,7 @@ export class MCPServiceManager {
   }
 
   /**
-   * 获取所有可用工具（优化版本，移除阻塞逻辑）
+   * 获取所有可用工具（优化版本，移除阻塞逻辑，添加工具启用状态过滤）
    */
   getAllTools(): Array<{
     name: string;
@@ -424,43 +424,44 @@ export class MCPServiceManager {
       originalName: string;
     }> = [];
 
-    try {
-      // 1. 收集所有已连接服务的工具
-      for (const [serviceName, service] of this.services) {
-        if (service.isConnected()) {
-          const serviceTools = service.getTools();
-          for (const tool of serviceTools) {
-            const toolKey = `${serviceName}__${tool.name}`;
-            allTools.push({
-              name: toolKey,
-              description: tool.description || "",
-              inputSchema: tool.inputSchema,
-              serviceName,
-              originalName: tool.name,
-            });
+    // 1. 收集所有已连接服务的工具（包含启用状态过滤）
+    for (const [serviceName, service] of this.services) {
+      if (service.isConnected()) {
+        const serviceTools = service.getTools();
+        for (const tool of serviceTools) {
+          // 检查工具启用状态 - 这个调用可能会抛出异常
+          const isEnabled = configManager.isToolEnabled(serviceName, tool.name);
+          if (!isEnabled) {
+            continue; // 跳过禁用的工具
           }
+
+          const toolKey = `${serviceName}__${tool.name}`;
+          allTools.push({
+            name: toolKey,
+            description: tool.description || "",
+            inputSchema: tool.inputSchema,
+            serviceName,
+            originalName: tool.name,
+          });
         }
       }
-
-      // 2. 添加CustomMCP工具
-      const customTools = this.customMCPHandler.getTools();
-      for (const tool of customTools) {
-        allTools.push({
-          name: tool.name,
-          description: tool.description || "",
-          inputSchema: tool.inputSchema,
-          serviceName: this.getServiceNameForTool(tool),
-          originalName: tool.name,
-        });
-      }
-
-      this.logger.info(
-        `[MCPManager] 返回 ${allTools.length} 个工具 (服务工具: ${allTools.length - customTools.length}, customMCP工具: ${customTools.length})`
-      );
-    } catch (error) {
-      this.logger.error("[MCPManager] 获取工具列表失败:", error);
-      // 出错时返回空列表，避免影响系统运行
     }
+
+    // 2. 添加CustomMCP工具
+    const customTools = this.customMCPHandler.getTools();
+    for (const tool of customTools) {
+      allTools.push({
+        name: tool.name,
+        description: tool.description || "",
+        inputSchema: tool.inputSchema,
+        serviceName: this.getServiceNameForTool(tool),
+        originalName: tool.name,
+      });
+    }
+
+    this.logger.info(
+      `[MCPManager] 返回 ${allTools.length} 个工具 (服务工具: ${allTools.length - customTools.length}, customMCP工具: ${customTools.length})`
+    );
 
     return allTools;
   }
