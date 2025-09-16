@@ -62,7 +62,9 @@ describe("第二阶段：工具同步优化集成测试", () => {
     toolSyncManager = new ToolSyncManager(mockConfigManager, mockLogger);
 
     // 获取实际的 CustomMCPHandler 实例（绕过 mock）
-    const { CustomMCPHandler: ActualCustomMCPHandler } = await import("../CustomMCPHandler.js");
+    const { CustomMCPHandler: ActualCustomMCPHandler } = await import(
+      "../CustomMCPHandler.js"
+    );
     customMCPHandler = new ActualCustomMCPHandler();
     customMCPHandler.initialize([]);
 
@@ -187,8 +189,14 @@ describe("第二阶段：工具同步优化集成测试", () => {
       ];
 
       // 快速连续调用两次相同服务的同步方法
-      const promise1 = toolSyncManager.syncToolsAfterConnection("test-service", mockTools);
-      const promise2 = toolSyncManager.syncToolsAfterConnection("test-service", mockTools);
+      const promise1 = toolSyncManager.syncToolsAfterConnection(
+        "test-service",
+        mockTools
+      );
+      const promise2 = toolSyncManager.syncToolsAfterConnection(
+        "test-service",
+        mockTools
+      );
 
       await Promise.all([promise1, promise2]);
 

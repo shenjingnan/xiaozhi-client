@@ -260,7 +260,7 @@ describe("工具同步集成测试", () => {
           },
         },
       ];
-      
+
       eventBus.emitEvent("mcp:service:connected", {
         serviceName: "calculator",
         tools: mockTools,

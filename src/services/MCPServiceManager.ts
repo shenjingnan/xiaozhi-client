@@ -447,8 +447,22 @@ export class MCPServiceManager {
       }
     }
 
-    // 2. 添加CustomMCP工具
-    const customTools = this.customMCPHandler.getTools();
+    // 2. 添加CustomMCP工具（添加异常处理确保优雅降级）
+    let customTools: any[] = [];
+    try {
+      customTools = this.customMCPHandler.getTools();
+      this.logger.debug(
+        `[MCPManager] 成功获取 ${customTools.length} 个 customMCP 工具`
+      );
+    } catch (error) {
+      this.logger.warn(
+        "[MCPManager] 获取 CustomMCP 工具失败，将只返回标准 MCP 工具:",
+        error
+      );
+      // 根据技术方案要求，CustomMCP 工具获取失败时不应该影响标准 MCP 工具的返回
+      customTools = [];
+    }
+
     for (const tool of customTools) {
       allTools.push({
         name: tool.name,
@@ -920,13 +934,30 @@ export class MCPServiceManager {
    * 获取服务状态
    */
   getStatus(): ManagerStatus {
-    // 计算总工具数量（包括 customMCP 工具）
-    const customMCPToolCount = this.customMCPHandler.getToolCount();
+    // 计算总工具数量（包括 customMCP 工具，添加异常处理）
+    let customMCPToolCount = 0;
+    let customToolNames: string[] = [];
+
+    try {
+      customMCPToolCount = this.customMCPHandler.getToolCount();
+      customToolNames = this.customMCPHandler.getToolNames();
+      this.logger.debug(
+        `[MCPManager] 成功获取 customMCP 状态: ${customMCPToolCount} 个工具`
+      );
+    } catch (error) {
+      this.logger.warn(
+        "[MCPManager] 获取 CustomMCP 状态失败，将只包含标准 MCP 工具:",
+        error
+      );
+      // 异常情况下，customMCP 工具数量为0，不影响标准 MCP 工具
+      customMCPToolCount = 0;
+      customToolNames = [];
+    }
+
     const totalTools = this.tools.size + customMCPToolCount;
 
     // 获取所有可用工具名称
     const standardToolNames = Array.from(this.tools.keys());
-    const customToolNames = this.customMCPHandler.getToolNames();
     const availableTools = [...standardToolNames, ...customToolNames];
 
     const status: ManagerStatus = {
@@ -1038,7 +1069,16 @@ export class MCPServiceManager {
    * @returns 如果工具存在返回 true，否则返回 false
    */
   hasCustomMCPTool(toolName: string): boolean {
-    return this.customMCPHandler.hasTool(toolName);
+    try {
+      return this.customMCPHandler.hasTool(toolName);
+    } catch (error) {
+      this.logger.warn(
+        `[MCPManager] 检查 CustomMCP 工具 ${toolName} 是否存在失败:`,
+        error
+      );
+      // 异常情况下返回 false，表示工具不存在
+      return false;
+    }
   }
 
   /**
@@ -1046,7 +1086,16 @@ export class MCPServiceManager {
    * @returns customMCP 工具数组
    */
   getCustomMCPTools(): Tool[] {
-    return this.customMCPHandler.getTools();
+    try {
+      return this.customMCPHandler.getTools();
+    } catch (error) {
+      this.logger.warn(
+        "[MCPManager] 获取 CustomMCP 工具列表失败，返回空数组:",
+        error
+      );
+      // 异常情况下返回空数组，避免影响调用方
+      return [];
+    }
   }
 
   /**
