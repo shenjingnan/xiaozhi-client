@@ -34,6 +34,7 @@ vi.mock("../Logger", () => ({
     debug: vi.fn(),
     error: vi.fn(),
     warn: vi.fn(),
+    withTag: vi.fn().mockReturnThis(),
   },
 }));
 

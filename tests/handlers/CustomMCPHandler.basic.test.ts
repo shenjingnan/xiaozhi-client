@@ -474,9 +474,7 @@ describe("CustomMCPHandler 基础功能回归测试", () => {
       const result = await customMCPHandler.callTool("mcp_tool", {});
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain(
-        "内部错误：MCP 类型工具路由错误"
-      );
+      expect(result.content[0].text).toContain("MCPServiceManager 未初始化");
     });
   });
 

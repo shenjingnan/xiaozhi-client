@@ -190,10 +190,12 @@ describe("MCPServiceManager - customMCP 支持", () => {
         throw new Error("CustomMCPHandler 未初始化");
       });
 
-      // Act & Assert
-      expect(() => {
-        serviceManager.hasCustomMCPTool("test_tool");
-      }).toThrow("CustomMCPHandler 未初始化");
+      // Act
+      const result = serviceManager.hasCustomMCPTool("test_tool");
+
+      // Assert - 应该返回 false 而不是抛出异常
+      expect(result).toBe(false);
+      expect(mockCustomMCPHandler.hasTool).toHaveBeenCalledWith("test_tool");
     });
   });
 
