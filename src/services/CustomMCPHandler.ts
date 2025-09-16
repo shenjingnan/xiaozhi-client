@@ -385,11 +385,16 @@ export class CustomMCPHandler {
             `[CustomMCP] MCP 类型工具路由失败: ${tool.name}`,
             error
           );
+          // 保留原始错误信息，特别是 MCPServiceManager 未初始化的情况
+          const errorMessage =
+            error instanceof Error ? error.message : "MCP 类型工具路由错误";
           return {
             content: [
               {
                 type: "text",
-                text: "内部错误：MCP 类型工具路由错误",
+                text: errorMessage.includes("MCPServiceManager 未初始化")
+                  ? errorMessage
+                  : "内部错误：MCP 类型工具路由错误",
               },
             ],
             isError: true,
