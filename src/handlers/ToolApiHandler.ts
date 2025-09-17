@@ -434,49 +434,6 @@ export class ToolApiHandler {
 
       return;
     }
-
-    // 标准 MCP 服务验证逻辑
-    // 检查配置中是否存在该服务
-    const mcpServers = configManager.getMcpServers();
-    if (!mcpServers[serviceName]) {
-      const availableServices = Object.keys(mcpServers);
-      throw new Error(
-        `服务 '${serviceName}' 不存在。可用服务: ${availableServices.join(", ")}`
-      );
-    }
-
-    // 检查服务是否已启动并连接
-    const serviceInstance = serviceManager.getService(serviceName);
-    if (!serviceInstance) {
-      throw new Error(
-        `服务 '${serviceName}' 未启动。请检查服务配置或重新启动 xiaozhi 服务。`
-      );
-    }
-
-    if (!serviceInstance.isConnected()) {
-      throw new Error(
-        `服务 '${serviceName}' 未连接。请检查服务状态或重新启动 xiaozhi 服务。`
-      );
-    }
-
-    // 检查工具是否存在
-    const tools = serviceInstance.getTools();
-    const toolExists = tools.some((tool: any) => tool.name === toolName);
-    if (!toolExists) {
-      const availableTools = tools.map((tool: any) => tool.name);
-      throw new Error(
-        `工具 '${toolName}' 在服务 '${serviceName}' 中不存在。可用工具: ${availableTools.join(", ")}`
-      );
-    }
-
-    // 检查工具是否已启用
-    const toolsConfig = configManager.getServerToolsConfig(serviceName);
-    const toolConfig = toolsConfig[toolName];
-    if (toolConfig && !toolConfig.enable) {
-      throw new Error(
-        `工具 '${toolName}' 已被禁用。请使用 'xiaozhi mcp tool ${serviceName} ${toolName} enable' 启用该工具。`
-      );
-    }
   }
 
   /**
@@ -787,6 +744,26 @@ export class ToolApiHandler {
 
     // 添加工具到配置
     configManager.addCustomMCPTool(tool);
+
+    // 对于 MCP 工具，需要在 mcpServerConfig 中同步启用
+    this.logger.info(
+      `检测到 MCP 工具添加，同步启用 mcpServerConfig 中的工具: ${serviceName}/${toolName}`
+    );
+
+    // 获取当前的服务工具配置
+    const serverToolsConfig = configManager.getServerToolsConfig(serviceName);
+
+    if (serverToolsConfig?.toolName) {
+      // 更新配置，启用该工具
+      serverToolsConfig[toolName].enable = true;
+
+      // 保存更新后的配置
+      configManager.updateServerToolsConfig(serviceName, serverToolsConfig);
+
+      this.logger.info(
+        `已同步启用 mcpServerConfig 中的工具: ${serviceName}/${toolName}`
+      );
+    }
 
     this.logger.info(`成功添加 MCP 工具: ${finalToolName}`);
 
@@ -1145,6 +1122,35 @@ export class ToolApiHandler {
       }
 
       this.logger.info(`处理删除自定义工具请求: ${toolName}`);
+
+      // 在删除之前，检查是否为 MCP 工具，如果是则需要在 mcpServerConfig 中同步禁用
+      const existingTools = configManager.getCustomMCPTools();
+      const toolToDelete = existingTools.find((tool) => tool.name === toolName);
+
+      if (toolToDelete && toolToDelete.handler.type === "mcp") {
+        // 这是 MCP 工具，需要在 mcpServerConfig 中同步禁用
+        const mcpConfig = toolToDelete.handler.config;
+        if (mcpConfig.serviceName && mcpConfig.toolName) {
+          this.logger.info(
+            `检测到 MCP 工具删除，同步禁用 mcpServerConfig 中的工具: ${mcpConfig.serviceName}/${mcpConfig.toolName}`
+          );
+
+          // 获取当前的服务工具配置
+          const serverToolsConfig = configManager.getServerToolsConfig(mcpConfig.serviceName);
+
+          if (serverToolsConfig && serverToolsConfig[mcpConfig.toolName]) {
+            // 更新配置，禁用该工具
+            serverToolsConfig[mcpConfig.toolName].enable = false;
+
+            // 保存更新后的配置
+            configManager.updateServerToolsConfig(mcpConfig.serviceName, serverToolsConfig);
+
+            this.logger.info(
+              `已同步禁用 mcpServerConfig 中的工具: ${mcpConfig.serviceName}/${mcpConfig.toolName}`
+            );
+          }
+        }
+      }
 
       // 从配置中删除工具
       configManager.removeCustomMCPTool(toolName);
