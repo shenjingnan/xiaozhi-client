@@ -1136,14 +1136,19 @@ export class ToolApiHandler {
           );
 
           // 获取当前的服务工具配置
-          const serverToolsConfig = configManager.getServerToolsConfig(mcpConfig.serviceName);
+          const serverToolsConfig = configManager.getServerToolsConfig(
+            mcpConfig.serviceName
+          );
 
-          if (serverToolsConfig && serverToolsConfig[mcpConfig.toolName]) {
+          if (serverToolsConfig?.[mcpConfig.toolName]) {
             // 更新配置，禁用该工具
             serverToolsConfig[mcpConfig.toolName].enable = false;
 
             // 保存更新后的配置
-            configManager.updateServerToolsConfig(mcpConfig.serviceName, serverToolsConfig);
+            configManager.updateServerToolsConfig(
+              mcpConfig.serviceName,
+              serverToolsConfig
+            );
 
             this.logger.info(
               `已同步禁用 mcpServerConfig 中的工具: ${mcpConfig.serviceName}/${mcpConfig.toolName}`
