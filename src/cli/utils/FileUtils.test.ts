@@ -604,7 +604,7 @@ describe("FileUtils", () => {
       const result = FileUtils.getFileInfo(testFile);
 
       expect(result).toEqual({
-        size: 1024,
+        size: 1024n,
         isFile: true,
         isDirectory: false,
         mtime: mockStats.mtime,
