@@ -49,7 +49,7 @@ describe("FileUtils", () => {
   describe("ensureDir", () => {
     it("should create directory when it does not exist", () => {
       mockedFs.existsSync.mockReturnValue(false);
-      mockedFs.mkdirSync.mockImplementation(() => {});
+      mockedFs.mkdirSync.mockImplementation(() => undefined);
 
       FileUtils.ensureDir(testDir);
 
@@ -150,7 +150,7 @@ describe("FileUtils", () => {
 
     it("should write file successfully when file does not exist", () => {
       mockedFs.existsSync.mockReturnValue(false);
-      mockedFs.mkdirSync.mockImplementation(() => {});
+      mockedFs.mkdirSync.mockImplementation(() => undefined);
       mockedFs.writeFileSync.mockImplementation(() => {});
 
       FileUtils.writeFile(testFile, testContent);
@@ -177,7 +177,7 @@ describe("FileUtils", () => {
 
     it("should throw FileError when write fails", () => {
       mockedFs.existsSync.mockReturnValue(false);
-      mockedFs.mkdirSync.mockImplementation(() => {});
+      mockedFs.mkdirSync.mockImplementation(() => undefined);
       mockedFs.writeFileSync.mockImplementation(() => {
         throw new Error("Write error");
       });
@@ -192,7 +192,7 @@ describe("FileUtils", () => {
 
     it("should use default overwrite option as false", () => {
       mockedFs.existsSync.mockReturnValue(false);
-      mockedFs.mkdirSync.mockImplementation(() => {});
+      mockedFs.mkdirSync.mockImplementation(() => undefined);
       mockedFs.writeFileSync.mockImplementation(() => {});
 
       FileUtils.writeFile(testFile, testContent);
@@ -222,7 +222,7 @@ describe("FileUtils", () => {
 
     it("should copy file successfully when destination does not exist", () => {
       mockedFs.existsSync.mockReturnValueOnce(true).mockReturnValueOnce(false);
-      mockedFs.mkdirSync.mockImplementation(() => {});
+      mockedFs.mkdirSync.mockImplementation(() => undefined);
       mockedFs.copyFileSync.mockImplementation(() => {});
 
       FileUtils.copyFile(testFile, destFile);
@@ -257,7 +257,7 @@ describe("FileUtils", () => {
         if (filePath === destFile) return false; // Destination doesn't exist
         return false; // Other files don't exist
       });
-      mockedFs.mkdirSync.mockImplementation(() => {});
+      mockedFs.mkdirSync.mockImplementation(() => undefined);
       mockedFs.copyFileSync.mockImplementation(() => {
         throw new Error("Copy error");
       });
@@ -306,6 +306,33 @@ describe("FileUtils", () => {
     const mockStats = {
       isDirectory: () => false,
       isFile: () => true,
+      isBlockDevice: () => false,
+      isCharacterDevice: () => false,
+      isSymbolicLink: () => false,
+      isFIFO: () => false,
+      isSocket: () => false,
+      dev: 0n,
+      ino: 0n,
+      mode: 0n,
+      nlink: 0n,
+      uid: 0n,
+      gid: 0n,
+      rdev: 0n,
+      size: 0n,
+      blksize: 0n,
+      blocks: 0n,
+      atimeMs: 0n,
+      mtimeMs: 0n,
+      ctimeMs: 0n,
+      birthtimeMs: 0n,
+      atimeNs: 0n,
+      mtimeNs: 0n,
+      ctimeNs: 0n,
+      birthtimeNs: 0n,
+      atime: new Date(),
+      mtime: new Date(),
+      ctime: new Date(),
+      birthtime: new Date()
     };
 
     beforeEach(() => {
@@ -330,8 +357,8 @@ describe("FileUtils", () => {
         if (filePath === sourceFile2) return true; // Source file2 exists
         return false; // Destination files don't exist
       });
-      mockedFs.mkdirSync.mockImplementation(() => {});
-      mockedFs.readdirSync.mockReturnValue(["file1.txt", "file2.txt"]);
+      mockedFs.mkdirSync.mockImplementation(() => undefined);
+      mockedFs.readdirSync.mockReturnValue(["file1.txt", "file2.txt"] as any);
       mockedFs.statSync.mockReturnValue(mockStats);
       mockedFs.copyFileSync.mockImplementation(() => {});
 
@@ -365,12 +392,12 @@ describe("FileUtils", () => {
         if (filePath === sourceFile2) return true; // Source file2 exists
         return false; // Destination files don't exist
       });
-      mockedFs.mkdirSync.mockImplementation(() => {});
+      mockedFs.mkdirSync.mockImplementation(() => undefined);
       mockedFs.readdirSync.mockReturnValue([
         "file1.txt",
         "node_modules",
         "file2.txt",
-      ]);
+      ] as any);
       mockedFs.statSync.mockReturnValue(mockStats);
       mockedFs.copyFileSync.mockImplementation(() => {});
 
@@ -392,12 +419,42 @@ describe("FileUtils", () => {
         if (filePath === sourceFile) return true; // Source file exists
         return false; // Other files don't exist
       });
-      mockedFs.mkdirSync.mockImplementation(() => {});
+      mockedFs.mkdirSync.mockImplementation(() => undefined);
       mockedFs.readdirSync
-        .mockReturnValueOnce(["subdir"])
-        .mockReturnValueOnce(["file1.txt"]);
+        .mockReturnValueOnce(["subdir"] as any)
+        .mockReturnValueOnce(["file1.txt"] as any);
       mockedFs.statSync
-        .mockReturnValueOnce({ isDirectory: () => true })
+        .mockReturnValueOnce({
+          isDirectory: () => true,
+          isFile: () => false,
+          isBlockDevice: () => false,
+          isCharacterDevice: () => false,
+          isSymbolicLink: () => false,
+          isFIFO: () => false,
+          isSocket: () => false,
+          dev: 0n,
+          ino: 0n,
+          mode: 0n,
+          nlink: 0n,
+          uid: 0n,
+          gid: 0n,
+          rdev: 0n,
+          size: 0n,
+          blksize: 0n,
+          blocks: 0n,
+          atimeMs: 0n,
+          mtimeMs: 0n,
+          ctimeMs: 0n,
+          birthtimeMs: 0n,
+          atimeNs: 0n,
+          mtimeNs: 0n,
+          ctimeNs: 0n,
+          birthtimeNs: 0n,
+          atime: new Date(),
+          mtime: new Date(),
+          ctime: new Date(),
+          birthtime: new Date()
+        })
         .mockReturnValueOnce(mockStats);
       mockedFs.copyFileSync.mockImplementation(() => {});
 
@@ -418,10 +475,40 @@ describe("FileUtils", () => {
         if (filePath === sourceFile) return true; // Source file exists
         return false; // Other files don't exist
       });
-      mockedFs.mkdirSync.mockImplementation(() => {});
-      mockedFs.readdirSync.mockReturnValue(["subdir", "file1.txt"]);
+      mockedFs.mkdirSync.mockImplementation(() => undefined);
+      mockedFs.readdirSync.mockReturnValue(["subdir", "file1.txt"] as any);
       mockedFs.statSync
-        .mockReturnValueOnce({ isDirectory: () => true })
+        .mockReturnValueOnce({
+          isDirectory: () => true,
+          isFile: () => false,
+          isBlockDevice: () => false,
+          isCharacterDevice: () => false,
+          isSymbolicLink: () => false,
+          isFIFO: () => false,
+          isSocket: () => false,
+          dev: 0n,
+          ino: 0n,
+          mode: 0n,
+          nlink: 0n,
+          uid: 0n,
+          gid: 0n,
+          rdev: 0n,
+          size: 0n,
+          blksize: 0n,
+          blocks: 0n,
+          atimeMs: 0n,
+          mtimeMs: 0n,
+          ctimeMs: 0n,
+          birthtimeMs: 0n,
+          atimeNs: 0n,
+          mtimeNs: 0n,
+          ctimeNs: 0n,
+          birthtimeNs: 0n,
+          atime: new Date(),
+          mtime: new Date(),
+          ctime: new Date(),
+          birthtime: new Date()
+        })
         .mockReturnValueOnce(mockStats);
       mockedFs.copyFileSync.mockImplementation(() => {});
 
@@ -479,11 +566,35 @@ describe("FileUtils", () => {
 
   describe("getFileInfo", () => {
     const mockStats = {
-      size: 1024,
+      size: 1024n,
       isFile: () => true,
       isDirectory: () => false,
+      isBlockDevice: () => false,
+      isCharacterDevice: () => false,
+      isSymbolicLink: () => false,
+      isFIFO: () => false,
+      isSocket: () => false,
       mtime: new Date("2023-01-01"),
       ctime: new Date("2023-01-01"),
+      dev: 0n,
+      ino: 0n,
+      mode: 0n,
+      nlink: 0n,
+      uid: 0n,
+      gid: 0n,
+      rdev: 0n,
+      blksize: 0n,
+      blocks: 0n,
+      atimeMs: 0n,
+      mtimeMs: 0n,
+      ctimeMs: 0n,
+      birthtimeMs: 0n,
+      atimeNs: 0n,
+      mtimeNs: 0n,
+      ctimeNs: 0n,
+      birthtimeNs: 0n,
+      atime: new Date(),
+      birthtime: new Date()
     };
 
     it("should get file info successfully", () => {
@@ -522,11 +633,39 @@ describe("FileUtils", () => {
   describe("listDirectory", () => {
     const mockStats = {
       isDirectory: () => false,
+      isFile: () => true,
+      isBlockDevice: () => false,
+      isCharacterDevice: () => false,
+      isSymbolicLink: () => false,
+      isFIFO: () => false,
+      isSocket: () => false,
+      dev: 0n,
+      ino: 0n,
+      mode: 0n,
+      nlink: 0n,
+      uid: 0n,
+      gid: 0n,
+      rdev: 0n,
+      size: 0n,
+      blksize: 0n,
+      blocks: 0n,
+      atimeMs: 0n,
+      mtimeMs: 0n,
+      ctimeMs: 0n,
+      birthtimeMs: 0n,
+      atimeNs: 0n,
+      mtimeNs: 0n,
+      ctimeNs: 0n,
+      birthtimeNs: 0n,
+      atime: new Date(),
+      mtime: new Date(),
+      ctime: new Date(),
+      birthtime: new Date()
     };
 
     it("should list directory contents successfully", () => {
       mockedFs.existsSync.mockReturnValue(true);
-      mockedFs.readdirSync.mockReturnValue(["file1.txt", "file2.txt"]);
+      mockedFs.readdirSync.mockReturnValue(["file1.txt", "file2.txt"] as any);
       mockedFs.statSync.mockReturnValue(mockStats);
 
       const result = FileUtils.listDirectory(testDir);
@@ -549,7 +688,7 @@ describe("FileUtils", () => {
         "file1.txt",
         ".hidden",
         "file2.txt",
-      ]);
+      ] as any);
       mockedFs.statSync.mockReturnValue(mockStats);
 
       const result = FileUtils.listDirectory(testDir);
@@ -564,7 +703,7 @@ describe("FileUtils", () => {
         "file1.txt",
         ".hidden",
         "file2.txt",
-      ]);
+      ] as any);
       mockedFs.statSync.mockReturnValue(mockStats);
 
       const result = FileUtils.listDirectory(testDir, { includeHidden: true });
@@ -579,12 +718,102 @@ describe("FileUtils", () => {
 
       mockedFs.existsSync.mockReturnValue(true);
       mockedFs.readdirSync
-        .mockReturnValueOnce(["file1.txt", "subdir"])
-        .mockReturnValueOnce(["subfile.txt"]);
+        .mockReturnValueOnce(["file1.txt", "subdir"] as any)
+        .mockReturnValueOnce(["subfile.txt"] as any);
       mockedFs.statSync
-        .mockReturnValueOnce({ isDirectory: () => false })
-        .mockReturnValueOnce({ isDirectory: () => true })
-        .mockReturnValueOnce({ isDirectory: () => false });
+        .mockReturnValueOnce({
+          isDirectory: () => false,
+          isFile: () => true,
+          isBlockDevice: () => false,
+          isCharacterDevice: () => false,
+          isSymbolicLink: () => false,
+          isFIFO: () => false,
+          isSocket: () => false,
+          dev: 0n,
+          ino: 0n,
+          mode: 0n,
+          nlink: 0n,
+          uid: 0n,
+          gid: 0n,
+          rdev: 0n,
+          size: 0n,
+          blksize: 0n,
+          blocks: 0n,
+          atimeMs: 0n,
+          mtimeMs: 0n,
+          ctimeMs: 0n,
+          birthtimeMs: 0n,
+          atimeNs: 0n,
+          mtimeNs: 0n,
+          ctimeNs: 0n,
+          birthtimeNs: 0n,
+          atime: new Date(),
+          mtime: new Date(),
+          ctime: new Date(),
+          birthtime: new Date()
+        })
+        .mockReturnValueOnce({
+          isDirectory: () => true,
+          isFile: () => false,
+          isBlockDevice: () => false,
+          isCharacterDevice: () => false,
+          isSymbolicLink: () => false,
+          isFIFO: () => false,
+          isSocket: () => false,
+          dev: 0n,
+          ino: 0n,
+          mode: 0n,
+          nlink: 0n,
+          uid: 0n,
+          gid: 0n,
+          rdev: 0n,
+          size: 0n,
+          blksize: 0n,
+          blocks: 0n,
+          atimeMs: 0n,
+          mtimeMs: 0n,
+          ctimeMs: 0n,
+          birthtimeMs: 0n,
+          atimeNs: 0n,
+          mtimeNs: 0n,
+          ctimeNs: 0n,
+          birthtimeNs: 0n,
+          atime: new Date(),
+          mtime: new Date(),
+          ctime: new Date(),
+          birthtime: new Date()
+        })
+        .mockReturnValueOnce({
+          isDirectory: () => false,
+          isFile: () => true,
+          isBlockDevice: () => false,
+          isCharacterDevice: () => false,
+          isSymbolicLink: () => false,
+          isFIFO: () => false,
+          isSocket: () => false,
+          dev: 0n,
+          ino: 0n,
+          mode: 0n,
+          nlink: 0n,
+          uid: 0n,
+          gid: 0n,
+          rdev: 0n,
+          size: 0n,
+          blksize: 0n,
+          blocks: 0n,
+          atimeMs: 0n,
+          mtimeMs: 0n,
+          ctimeMs: 0n,
+          birthtimeMs: 0n,
+          atimeNs: 0n,
+          mtimeNs: 0n,
+          ctimeNs: 0n,
+          birthtimeNs: 0n,
+          atime: new Date(),
+          mtime: new Date(),
+          ctime: new Date(),
+          birthtime: new Date()
+        });
 
       const result = FileUtils.listDirectory(testDir, { recursive: true });
 

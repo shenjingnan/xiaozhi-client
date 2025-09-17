@@ -510,10 +510,10 @@ describe("Validation", () => {
   describe("validateEnum", () => {
     it("should accept valid enum values", () => {
       const validValues = ["option1", "option2", "option3"] as const;
-      expect(Validation.validateEnum("option1", validValues, "field")).toBe(
+      expect(Validation.validateEnum("option1", [...validValues] as const, "field")).toBe(
         "option1"
       );
-      expect(Validation.validateEnum("option2", validValues, "field")).toBe(
+      expect(Validation.validateEnum("option2", [...validValues] as const, "field")).toBe(
         "option2"
       );
     });
@@ -521,14 +521,14 @@ describe("Validation", () => {
     it("should reject invalid enum values", () => {
       const validValues = ["option1", "option2", "option3"] as const;
       expect(() =>
-        Validation.validateEnum("invalid", validValues, "field")
+        Validation.validateEnum("invalid", [...validValues] as const, "field")
       ).toThrow(ValidationError);
     });
 
     it("should throw ValidationError with correct message", () => {
       const validValues = ["option1", "option2", "option3"] as const;
       expect(() =>
-        Validation.validateEnum("invalid", validValues, "field")
+        Validation.validateEnum("invalid", [...validValues] as const, "field")
       ).toThrow("无效的值: invalid，有效值: option1, option2, option3");
     });
   });

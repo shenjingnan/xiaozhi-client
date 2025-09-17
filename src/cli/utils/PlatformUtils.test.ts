@@ -175,7 +175,7 @@ describe("PlatformUtils", () => {
 
     beforeEach(() => {
       // Mock process.kill
-      vi.spyOn(process, "kill").mockImplementation(() => {});
+      vi.spyOn(process, "kill").mockImplementation(() => true);
     });
 
     afterEach(() => {
@@ -352,7 +352,7 @@ describe("PlatformUtils", () => {
 
     beforeEach(() => {
       vi.useFakeTimers();
-      vi.spyOn(process, "kill").mockImplementation(() => {});
+      vi.spyOn(process, "kill").mockImplementation(() => true);
     });
 
     afterEach(() => {
@@ -363,7 +363,7 @@ describe("PlatformUtils", () => {
     it("should kill process successfully with SIGTERM", async () => {
       // First call succeeds, second call fails (process stopped)
       vi.spyOn(process, "kill")
-        .mockImplementationOnce(() => {})
+        .mockImplementationOnce(() => true)
         .mockImplementationOnce(() => {
           throw new Error("Process not found");
         });
@@ -387,24 +387,25 @@ describe("PlatformUtils", () => {
 
         // 第一次调用：发送 SIGTERM
         if (callCount === 1) {
-          return;
+          return true;
         }
 
         // 第2-32次调用：检查进程是否还在（信号 0）
         // 让进程在31次检查后仍然"存活"（30次循环检查 + 1次SIGKILL前的检查）
         if (signal === 0 && callCount <= 32) {
-          return; // 进程仍然存活
+          return true; // 进程仍然存活
         }
 
         // 第33次调用：发送 SIGKILL
         if (signal === "SIGKILL") {
-          return;
+          return true;
         }
 
         // SIGKILL 后的检查，进程已经停止（如果有）
         if (signal === 0 && callCount > 32) {
           throw new Error("Process not found");
         }
+        return true;
       });
 
       const promise = PlatformUtils.killProcess(testPid, "SIGTERM");
@@ -421,7 +422,7 @@ describe("PlatformUtils", () => {
 
     it("should use default signal SIGTERM when not specified", async () => {
       vi.spyOn(process, "kill")
-        .mockImplementationOnce(() => {})
+        .mockImplementationOnce(() => true)
         .mockImplementationOnce(() => {
           throw new Error("Process not found");
         });
@@ -451,7 +452,7 @@ describe("PlatformUtils", () => {
 
     it("should handle SIGKILL failure gracefully", async () => {
       // Process stops responding to SIGKILL
-      vi.spyOn(process, "kill").mockImplementation(() => {});
+      vi.spyOn(process, "kill").mockImplementation(() => true);
 
       const promise = PlatformUtils.killProcess(testPid, "SIGTERM");
 
@@ -469,7 +470,7 @@ describe("PlatformUtils", () => {
     const testPid = 1234;
 
     beforeEach(() => {
-      vi.spyOn(process, "kill").mockImplementation(() => {});
+      vi.spyOn(process, "kill").mockImplementation(() => true);
     });
 
     afterEach(() => {
