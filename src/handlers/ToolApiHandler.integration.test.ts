@@ -546,13 +546,6 @@ describe("ToolApiHandler - 集成测试", () => {
   });
 
   describe("removeCustomTool", () => {
-    beforeEach(() => {
-      // Mock configManager.removeCustomMCPTool
-      vi.spyOn(configManager, "removeCustomMCPTool").mockImplementation(
-        () => {}
-      );
-    });
-
     it("应该在工具名称为空时返回错误", async () => {
       mockContext.req.param = vi.fn().mockReturnValue("");
 
@@ -572,6 +565,9 @@ describe("ToolApiHandler - 集成测试", () => {
 
     it("应该在配置管理器抛出错误时返回错误响应", async () => {
       mockContext.req.param = vi.fn().mockReturnValue("non_existent_tool");
+
+      // Mock configManager.getCustomMCPTools 返回空数组，确保不会找到要删除的工具
+      vi.spyOn(configManager, "getCustomMCPTools").mockReturnValue([]);
 
       // Mock configManager 抛出错误
       vi.spyOn(configManager, "removeCustomMCPTool").mockImplementation(() => {
