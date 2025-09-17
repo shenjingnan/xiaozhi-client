@@ -1,4 +1,5 @@
 import { EventEmitter } from "node:events";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { type Logger, logger } from "../Logger.js";
 
 /**
@@ -6,7 +7,11 @@ import { type Logger, logger } from "../Logger.js";
  */
 export interface EventBusEvents {
   // 配置相关事件
-  "config:updated": { config: any; source: string };
+  "config:updated": {
+    type: string;
+    serviceName?: string;
+    timestamp: Date;
+  };
   "config:error": { error: Error; operation: string };
 
   // 状态相关事件
@@ -27,6 +32,32 @@ export interface EventBusEvents {
   // 通知相关事件
   "notification:broadcast": { type: string; data: any; target?: string };
   "notification:error": { error: Error; type: string };
+
+  // MCP服务相关事件
+  "mcp:service:connected": {
+    serviceName: string;
+    tools: Tool[];
+    connectionTime: Date;
+  };
+  "mcp:service:disconnected": {
+    serviceName: string;
+    reason?: string;
+    disconnectionTime: Date;
+  };
+  "mcp:service:connection:failed": {
+    serviceName: string;
+    error: Error;
+    attempt: number;
+  };
+
+  // 工具同步相关事件
+  "tool-sync:server-tools-updated": {
+    serviceName: string;
+    timestamp: Date;
+  };
+  "tool-sync:general-config-updated": {
+    timestamp: Date;
+  };
 }
 
 /**

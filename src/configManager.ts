@@ -6,6 +6,7 @@ import dayjs from "dayjs";
 import JSON5 from "json5";
 import * as json5Writer from "json5-writer";
 import { logger } from "./Logger";
+import { getEventBus } from "./services/EventBus.js";
 import { validateMcpServerConfig } from "./utils/mcpServerUtils";
 
 // 在 ESM 中，需要从 import.meta.url 获取当前文件目录
@@ -213,6 +214,7 @@ export class ConfigManager {
   private config: AppConfig | null = null;
   private currentConfigPath: string | null = null; // 跟踪当前使用的配置文件路径
   private json5Writer: any = null; // json5-writer 实例，用于保留 JSON5 注释
+  private eventBus = getEventBus(); // 事件总线
 
   // 统计更新并发控制
   private statsUpdateLocks: Map<string, Promise<void>> = new Map();
@@ -655,6 +657,13 @@ export class ConfigManager {
     }
 
     this.saveConfig(config);
+
+    // 发射配置更新事件
+    this.eventBus.emitEvent("config:updated", {
+      type: "serverTools",
+      serviceName: serverName,
+      timestamp: new Date(),
+    });
   }
 
   /**
@@ -1461,6 +1470,12 @@ export class ConfigManager {
       config.customMCP.tools.push(...newTools);
       this.saveConfig(config);
 
+      // 发射配置更新事件
+      this.eventBus.emitEvent("config:updated", {
+        type: "customMCP",
+        timestamp: new Date(),
+      });
+
       logger.info(
         `成功批量添加 ${newTools.length} 个自定义 MCP 工具: ${newTools.map((t) => t.name).join(", ")}`
       );
@@ -1558,6 +1573,12 @@ export class ConfigManager {
 
     config.customMCP.tools = tools;
     this.saveConfig(config);
+
+    // 发射配置更新事件
+    this.eventBus.emitEvent("config:updated", {
+      type: "customMCP",
+      timestamp: new Date(),
+    });
 
     logger.info(`成功更新自定义 MCP 工具配置，共 ${tools.length} 个工具`);
   }

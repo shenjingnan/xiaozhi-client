@@ -16,11 +16,16 @@ vi.mock("@modelcontextprotocol/sdk/client/index.js");
 vi.mock("@modelcontextprotocol/sdk/client/stdio.js");
 vi.mock("../../Logger.js");
 vi.mock("../TransportFactory.js");
+import { getEventBus } from "../EventBus.js";
+vi.mock("../EventBus.js", () => ({
+  getEventBus: vi.fn(),
+}));
 
 describe("MCPService", () => {
   let mockClient: any;
   let mockTransport: any;
   let mockLogger: any;
+  let mockEventBus: any;
   let service: MCPService;
   let config: MCPServiceConfig;
 
@@ -53,6 +58,15 @@ describe("MCPService", () => {
       withTag: vi.fn().mockReturnThis(),
     };
     vi.mocked(Logger).mockImplementation(() => mockLogger);
+
+    // Mock EventBus
+    mockEventBus = {
+      emitEvent: vi.fn(),
+      onEvent: vi.fn(),
+      offEvent: vi.fn(),
+      onceEvent: vi.fn(),
+    };
+    vi.mocked(getEventBus).mockReturnValue(mockEventBus);
 
     // Test configuration
     config = {
@@ -150,6 +164,32 @@ describe("MCPService", () => {
       expect(service.isConnected()).toBe(true);
     });
 
+    it("should emit connected event on successful connection", async () => {
+      const mockTools = [
+        {
+          name: "test-tool",
+          description: "Test tool",
+          inputSchema: { type: "object", properties: {} },
+        },
+      ];
+
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: mockTools });
+
+      await service.connect();
+
+      const callArgs = mockEventBus.emitEvent.mock.calls.find(
+        (call: any[]) => call[0] === "mcp:service:connected"
+      );
+
+      expect(callArgs).toBeDefined();
+      expect(callArgs![1]).toMatchObject({
+        serviceName: "test-service",
+        tools: mockTools,
+      });
+      expect(callArgs![1].connectionTime).toBeInstanceOf(Date);
+    });
+
     it("should handle connection timeout", async () => {
       vi.useFakeTimers();
 
@@ -172,6 +212,24 @@ describe("MCPService", () => {
 
       await expect(service.connect()).rejects.toThrow("Connection failed");
       expect(service.isConnected()).toBe(false);
+    });
+
+    it("should emit connection failed event on connection error", async () => {
+      const error = new Error("Connection failed");
+      mockClient.connect.mockRejectedValue(error);
+
+      await expect(service.connect()).rejects.toThrow("Connection failed");
+
+      const callArgs = mockEventBus.emitEvent.mock.calls.find(
+        (call: any[]) => call[0] === "mcp:service:connection:failed"
+      );
+
+      expect(callArgs).toBeDefined();
+      expect(callArgs![1]).toMatchObject({
+        serviceName: "test-service",
+        error,
+        attempt: 0,
+      });
     });
 
     it("should throw error if already connecting", async () => {
@@ -201,6 +259,26 @@ describe("MCPService", () => {
       expect(service.getStatus().connectionState).toBe(
         ConnectionState.DISCONNECTED
       );
+    });
+
+    it("should emit disconnected event on manual disconnect", async () => {
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [] });
+      mockClient.close.mockResolvedValue(undefined);
+
+      await service.connect();
+      await service.disconnect();
+
+      const callArgs = mockEventBus.emitEvent.mock.calls.find(
+        (call: any[]) => call[0] === "mcp:service:disconnected"
+      );
+
+      expect(callArgs).toBeDefined();
+      expect(callArgs![1]).toMatchObject({
+        serviceName: "test-service",
+        reason: "手动断开",
+      });
+      expect(callArgs![1].disconnectionTime).toBeInstanceOf(Date);
     });
   });
 

@@ -58,7 +58,7 @@ describe("EventBus", () => {
 
   describe("emitEvent", () => {
     it("should emit config:updated event successfully", () => {
-      const eventData = { config: { test: true }, source: "test" };
+      const eventData = { type: "customMCP", timestamp: new Date() };
       const listener = vi.fn();
 
       eventBus.onEvent("config:updated", listener);
@@ -194,8 +194,71 @@ describe("EventBus", () => {
       });
     });
 
+    it("should emit MCP service events successfully", () => {
+      const listeners = {
+        connected: vi.fn(),
+        disconnected: vi.fn(),
+        connectionFailed: vi.fn(),
+      };
+
+      eventBus.onEvent("mcp:service:connected", listeners.connected);
+      eventBus.onEvent("mcp:service:disconnected", listeners.disconnected);
+      eventBus.onEvent(
+        "mcp:service:connection:failed",
+        listeners.connectionFailed
+      );
+
+      // 模拟工具数据
+      const mockTools = [
+        {
+          name: "test-tool",
+          description: "Test tool",
+          inputSchema: { type: "object" as const, properties: {} },
+        },
+      ];
+
+      const connectionTime = new Date();
+      const disconnectionTime = new Date();
+
+      eventBus.emitEvent("mcp:service:connected", {
+        serviceName: "test-service",
+        tools: mockTools,
+        connectionTime,
+      });
+
+      eventBus.emitEvent("mcp:service:disconnected", {
+        serviceName: "test-service",
+        reason: "手动断开",
+        disconnectionTime,
+      });
+
+      eventBus.emitEvent("mcp:service:connection:failed", {
+        serviceName: "test-service",
+        error: new Error("Connection failed"),
+        attempt: 3,
+      });
+
+      expect(listeners.connected).toHaveBeenCalledWith({
+        serviceName: "test-service",
+        tools: mockTools,
+        connectionTime,
+      });
+
+      expect(listeners.disconnected).toHaveBeenCalledWith({
+        serviceName: "test-service",
+        reason: "手动断开",
+        disconnectionTime,
+      });
+
+      expect(listeners.connectionFailed).toHaveBeenCalledWith({
+        serviceName: "test-service",
+        error: expect.any(Error),
+        attempt: 3,
+      });
+    });
+
     it("should update event statistics", () => {
-      const eventData = { config: { test: true }, source: "test" };
+      const eventData = { type: "customMCP", timestamp: new Date() };
 
       eventBus.emitEvent("config:updated", eventData);
       eventBus.emitEvent("config:updated", eventData);
@@ -214,8 +277,8 @@ describe("EventBus", () => {
       });
 
       const result = eventBus.emitEvent("config:updated", {
-        config: {},
-        source: "test",
+        type: "customMCP",
+        timestamp: new Date(),
       });
 
       expect(result).toBe(false);
@@ -230,8 +293,8 @@ describe("EventBus", () => {
 
     it("should return false when no listeners", () => {
       const result = eventBus.emitEvent("config:updated", {
-        config: {},
-        source: "test",
+        type: "customMCP",
+        timestamp: new Date(),
       });
 
       expect(result).toBe(false);
@@ -259,7 +322,10 @@ describe("EventBus", () => {
 
       expect(eventBus.listenerCount("config:updated")).toBe(2);
 
-      eventBus.emitEvent("config:updated", { config: {}, source: "test" });
+      eventBus.emitEvent("config:updated", {
+        type: "customMCP",
+        timestamp: new Date(),
+      });
 
       expect(listener1).toHaveBeenCalled();
       expect(listener2).toHaveBeenCalled();
@@ -275,8 +341,8 @@ describe("EventBus", () => {
 
       // Should be able to emit events to all listeners
       const result = eventBus.emitEvent("config:updated", {
-        config: {},
-        source: "test",
+        type: "customMCP",
+        timestamp: new Date(),
       });
       expect(result).toBe(true);
     });
@@ -300,12 +366,18 @@ describe("EventBus", () => {
       eventBus.onceEvent("config:updated", listener);
 
       // First emit should trigger listener
-      eventBus.emitEvent("config:updated", { config: {}, source: "test" });
+      eventBus.emitEvent("config:updated", {
+        type: "customMCP",
+        timestamp: new Date(),
+      });
       expect(listener).toHaveBeenCalledTimes(1);
       expect(eventBus.listenerCount("config:updated")).toBe(0);
 
       // Second emit should not trigger listener
-      eventBus.emitEvent("config:updated", { config: {}, source: "test" });
+      eventBus.emitEvent("config:updated", {
+        type: "customMCP",
+        timestamp: new Date(),
+      });
       expect(listener).toHaveBeenCalledTimes(1);
     });
 
@@ -318,7 +390,10 @@ describe("EventBus", () => {
 
       expect(eventBus.listenerCount("config:updated")).toBe(2);
 
-      eventBus.emitEvent("config:updated", { config: {}, source: "test" });
+      eventBus.emitEvent("config:updated", {
+        type: "customMCP",
+        timestamp: new Date(),
+      });
 
       expect(listener1).toHaveBeenCalledTimes(1);
       expect(listener2).toHaveBeenCalledTimes(1);
@@ -351,7 +426,10 @@ describe("EventBus", () => {
       eventBus.offEvent("config:updated", listener1);
       expect(eventBus.listenerCount("config:updated")).toBe(1);
 
-      eventBus.emitEvent("config:updated", { config: {}, source: "test" });
+      eventBus.emitEvent("config:updated", {
+        type: "customMCP",
+        timestamp: new Date(),
+      });
       expect(listener1).not.toHaveBeenCalled();
       expect(listener2).toHaveBeenCalled();
     });
@@ -371,7 +449,7 @@ describe("EventBus", () => {
     });
 
     it("should return correct event statistics", () => {
-      const eventData = { config: {}, source: "test" };
+      const eventData = { type: "customMCP", timestamp: new Date() };
 
       eventBus.emitEvent("config:updated", eventData);
       eventBus.emitEvent("config:updated", eventData);
@@ -389,7 +467,7 @@ describe("EventBus", () => {
     });
 
     it("should return deep copy of stats", () => {
-      const eventData = { config: {}, source: "test" };
+      const eventData = { type: "customMCP", timestamp: new Date() };
       eventBus.emitEvent("config:updated", eventData);
 
       const stats1 = eventBus.getEventStats();
@@ -424,7 +502,7 @@ describe("EventBus", () => {
 
   describe("clearEventStats", () => {
     it("should clear all event statistics", () => {
-      const eventData = { config: {}, source: "test" };
+      const eventData = { type: "customMCP", timestamp: new Date() };
       eventBus.emitEvent("config:updated", eventData);
       eventBus.emitEvent("status:updated", { status: {}, source: "test" });
 
@@ -447,7 +525,10 @@ describe("EventBus", () => {
       eventBus.onEvent("config:updated", listener1);
       eventBus.onEvent("status:updated", listener2);
 
-      eventBus.emitEvent("config:updated", { config: {}, source: "test" });
+      eventBus.emitEvent("config:updated", {
+        type: "customMCP",
+        timestamp: new Date(),
+      });
       eventBus.emitEvent("status:updated", { status: {}, source: "test" });
 
       const status = eventBus.getStatus();
@@ -473,7 +554,10 @@ describe("EventBus", () => {
     it("should remove all listeners and clear stats", () => {
       const listener = vi.fn();
       eventBus.onEvent("config:updated", listener);
-      eventBus.emitEvent("config:updated", { config: {}, source: "test" });
+      eventBus.emitEvent("config:updated", {
+        type: "customMCP",
+        timestamp: new Date(),
+      });
 
       expect(eventBus.listenerCount("config:updated")).toBe(1);
       expect(Object.keys(eventBus.getEventStats())).toHaveLength(1);
@@ -509,7 +593,10 @@ describe("EventBus", () => {
 
       // Should not throw, but continue with other listeners
       expect(() => {
-        eventBus.emitEvent("config:updated", { config: {}, source: "test" });
+        eventBus.emitEvent("config:updated", {
+          type: "customMCP",
+          timestamp: new Date(),
+        });
       }).not.toThrow();
 
       expect(errorListener).toHaveBeenCalled();
@@ -527,8 +614,8 @@ describe("EventBus", () => {
 
       // Should still be able to emit events
       const result = eventBus.emitEvent("config:updated", {
-        config: {},
-        source: "test",
+        type: "customMCP",
+        timestamp: new Date(),
       });
       expect(result).toBe(true);
     });
@@ -542,7 +629,10 @@ describe("EventBus", () => {
       });
 
       eventBus.onEvent("config:updated", asyncListener);
-      eventBus.emitEvent("config:updated", { config: {}, source: "test" });
+      eventBus.emitEvent("config:updated", {
+        type: "customMCP",
+        timestamp: new Date(),
+      });
 
       // Wait for async listener to complete
       await new Promise((resolve) => setTimeout(resolve, 20));
@@ -560,7 +650,10 @@ describe("EventBus", () => {
 
       // Should not throw
       expect(() => {
-        eventBus.emitEvent("config:updated", { config: {}, source: "test" });
+        eventBus.emitEvent("config:updated", {
+          type: "customMCP",
+          timestamp: new Date(),
+        });
       }).not.toThrow();
 
       // Wait for async listener to complete
@@ -578,8 +671,8 @@ describe("EventBus", () => {
       const startTime = Date.now();
       for (let i = 0; i < 1000; i++) {
         eventBus.emitEvent("config:updated", {
-          config: { id: i },
-          source: "test",
+          type: "customMCP",
+          timestamp: new Date(),
         });
       }
       const endTime = Date.now();
@@ -596,7 +689,10 @@ describe("EventBus", () => {
         eventBus.onEvent("config:updated", listener);
       }
 
-      eventBus.emitEvent("config:updated", { config: {}, source: "test" });
+      eventBus.emitEvent("config:updated", {
+        type: "customMCP",
+        timestamp: new Date(),
+      });
 
       for (const listener of listeners) {
         expect(listener).toHaveBeenCalledTimes(1);
@@ -621,7 +717,10 @@ describe("EventBus", () => {
 
       expect(eventBus.listenerCount("config:updated")).toBe(5);
 
-      eventBus.emitEvent("config:updated", { config: {}, source: "test" });
+      eventBus.emitEvent("config:updated", {
+        type: "customMCP",
+        timestamp: new Date(),
+      });
 
       // Only remaining listeners should be called
       for (const listener of listeners.slice(0, 5)) {

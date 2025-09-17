@@ -39,7 +39,9 @@ import {
   createTimeoutResponse,
   isTimeoutResponse,
 } from "../types/timeout.js";
+import { getEventBus } from "./EventBus.js";
 import { MCPCacheManager } from "./MCPCacheManager.js";
+import type { MCPServiceManager } from "./MCPServiceManager.js";
 
 // 工具调用结果接口（与 MCPServiceManager 保持一致）
 export interface ToolCallResult {
@@ -75,20 +77,93 @@ export class CustomMCPHandler {
   private cacheManager: MCPCacheManager;
   private cacheLifecycleManager: CacheLifecycleManager;
   private taskStateManager: TaskStateManager;
+  private mcpServiceManager?: MCPServiceManager;
   private readonly TIMEOUT = DEFAULT_CONFIG.TIMEOUT; // 统一8秒超时
   private readonly CACHE_TTL = DEFAULT_CONFIG.CACHE_TTL; // 5分钟缓存过期
   private readonly CLEANUP_INTERVAL = DEFAULT_CONFIG.CLEANUP_INTERVAL; // 1分钟清理间隔
   private cleanupTimer?: NodeJS.Timeout;
   private activeTasks: Map<string, TaskManager> = new Map();
+  private eventBus = getEventBus();
 
-  constructor(cacheManager?: MCPCacheManager) {
+  constructor(
+    cacheManager?: MCPCacheManager,
+    mcpServiceManager?: MCPServiceManager
+  ) {
     this.logger = logger;
     this.cacheManager = cacheManager || new MCPCacheManager();
+    this.mcpServiceManager = mcpServiceManager;
     this.cacheLifecycleManager = new CacheLifecycleManager(this.logger);
     this.taskStateManager = new TaskStateManager(this.logger);
     // 启动缓存清理定时器
     this.startCleanupTimer();
     this.cacheLifecycleManager.startAutoCleanup();
+    // 设置事件监听器
+    this.setupEventListeners();
+  }
+
+  /**
+   * 设置事件监听器
+   */
+  private setupEventListeners(): void {
+    // 监听配置更新事件
+    this.eventBus.onEvent("config:updated", async (data) => {
+      await this.handleConfigUpdated(data);
+    });
+  }
+
+  /**
+   * 处理配置更新事件
+   */
+  private async handleConfigUpdated(data: {
+    type: string;
+    serviceName?: string;
+    timestamp: Date;
+  }): Promise<void> {
+    this.logger.info("[CustomMCP] 检测到配置更新，检查是否需要重新初始化");
+
+    try {
+      // 如果是 customMCP 配置更新，需要重新初始化
+      if (data.type === "customMCP") {
+        this.logger.info("[CustomMCP] customMCP 配置已更新，重新初始化处理器");
+        await this.reinitialize();
+      } else if (data.type === "serverTools") {
+        // 如果是 serverTools 配置更新，可能影响 MCP 类型的工具
+        this.logger.info(
+          "[CustomMCP] serverTools 配置已更新，重新初始化处理器"
+        );
+        await this.reinitialize();
+      }
+    } catch (error) {
+      this.logger.error("[CustomMCP] 配置更新处理失败:", error);
+    }
+  }
+
+  /**
+   * 重新初始化处理器
+   */
+  public async reinitialize(): Promise<void> {
+    try {
+      this.logger.info("[CustomMCP] 开始重新初始化处理器");
+
+      // 清理现有工具
+      this.tools.clear();
+
+      // 重新加载工具
+      const customTools = configManager.getCustomMCPTools();
+      for (const tool of customTools) {
+        this.tools.set(tool.name, tool);
+        this.logger.info(
+          `[CustomMCP] 重新加载工具: ${tool.name} (${tool.handler.type})`
+        );
+      }
+
+      this.logger.info(
+        `[CustomMCP] 重新初始化完成，共加载 ${this.tools.size} 个工具`
+      );
+    } catch (error) {
+      this.logger.error("[CustomMCP] 重新初始化失败:", error);
+      throw error;
+    }
   }
 
   /**
@@ -302,16 +377,76 @@ export class CustomMCPHandler {
       case "chain":
         return await this.callChainTool(tool, arguments_);
       case "mcp":
-        // MCP 类型的工具应该由 MCPServiceManager 直接处理，不应该到达这里
-        this.logger.error(
-          `MCP 类型工具 ${tool.name} 不应该由 CustomMCPHandler 处理`
-        );
-        return {
-          content: [{ type: "text", text: "内部错误：MCP 类型工具路由错误" }],
-          isError: true,
-        };
+        // MCP 类型的工具转发给 MCPServiceManager 处理
+        try {
+          return await this.forwardToMCPServiceManager(tool, arguments_);
+        } catch (error) {
+          this.logger.error(
+            `[CustomMCP] MCP 类型工具路由失败: ${tool.name}`,
+            error
+          );
+          // 保留原始错误信息，特别是 MCPServiceManager 未初始化的情况
+          const errorMessage =
+            error instanceof Error ? error.message : "MCP 类型工具路由错误";
+          return {
+            content: [
+              {
+                type: "text",
+                text: errorMessage.includes("MCPServiceManager 未初始化")
+                  ? errorMessage
+                  : "内部错误：MCP 类型工具路由错误",
+              },
+            ],
+            isError: true,
+          };
+        }
       default:
         throw new Error(`不支持的处理器类型: ${(tool.handler as any).type}`);
+    }
+  }
+
+  /**
+   * 转发MCP工具调用到MCPServiceManager
+   */
+  private async forwardToMCPServiceManager(
+    tool: CustomMCPTool,
+    arguments_: any
+  ): Promise<ToolCallResult> {
+    if (!this.mcpServiceManager) {
+      this.logger.error(
+        `[CustomMCP] MCPServiceManager 未初始化，无法转发工具 ${tool.name} 的调用`
+      );
+      throw new Error("MCPServiceManager 未初始化");
+    }
+
+    const mcpHandler = tool.handler as MCPHandlerConfig;
+    this.logger.info(`[CustomMCP] 转发MCP工具调用: ${tool.name}`, {
+      serviceName: mcpHandler.config.serviceName,
+      toolName: mcpHandler.config.toolName,
+    });
+
+    try {
+      // 通过MCPServiceManager调用工具
+      const result = await this.mcpServiceManager.callTool(
+        mcpHandler.config.toolName,
+        arguments_
+      );
+
+      this.logger.info(`[CustomMCP] MCP工具转发成功: ${tool.name}`);
+      return result;
+    } catch (error) {
+      this.logger.error(`[CustomMCP] MCP工具转发失败: ${tool.name}`, error);
+      return {
+        content: [
+          {
+            type: "text",
+            text: `MCP工具调用失败: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          },
+        ],
+        isError: true,
+      };
     }
   }
 

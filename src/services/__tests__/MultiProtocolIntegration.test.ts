@@ -8,7 +8,15 @@ import { TransportFactory } from "../TransportFactory.js";
 // Mock dependencies
 vi.mock("../MCPService.js");
 vi.mock("../TransportFactory.js");
-vi.mock("../../Logger.js");
+vi.mock("../../Logger.js", () => ({
+  logger: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+    withTag: vi.fn().mockReturnThis(),
+  },
+}));
 
 describe("Multi-Protocol Integration", () => {
   let manager: MCPServiceManager;
@@ -22,9 +30,9 @@ describe("Multi-Protocol Integration", () => {
       info: vi.fn(),
       error: vi.fn(),
       warn: vi.fn(),
+      debug: vi.fn(),
       withTag: vi.fn().mockReturnThis(),
     };
-    vi.mocked(Logger).mockImplementation(() => mockLogger);
 
     // Mock configManager methods
     vi.spyOn(configManager, "getServerToolsConfig").mockReturnValue({});

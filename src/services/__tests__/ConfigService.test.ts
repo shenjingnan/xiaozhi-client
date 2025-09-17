@@ -180,8 +180,8 @@ describe("ConfigService", () => {
       );
       expect(mockLogger.info).toHaveBeenCalledWith("配置更新成功");
       expect(mockEventBus.emitEvent).toHaveBeenCalledWith("config:updated", {
-        config: mockConfig,
-        source: "test-source",
+        type: "config",
+        timestamp: expect.any(Date),
       });
     });
 
@@ -192,8 +192,8 @@ describe("ConfigService", () => {
         "开始更新配置，来源: unknown"
       );
       expect(mockEventBus.emitEvent).toHaveBeenCalledWith("config:updated", {
-        config: mockConfig,
-        source: "unknown",
+        type: "config",
+        timestamp: expect.any(Date),
       });
     });
 
@@ -612,8 +612,8 @@ describe("ConfigService", () => {
       expect(mockConfigManager.reloadConfig).toHaveBeenCalledTimes(1);
       expect(mockConfigManager.getConfig).toHaveBeenCalledTimes(1);
       expect(mockEventBus.emitEvent).toHaveBeenCalledWith("config:updated", {
-        config: mockConfig,
-        source: "reload",
+        type: "config",
+        timestamp: expect.any(Date),
       });
       expect(result).toEqual(mockConfig);
     });
