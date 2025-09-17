@@ -229,7 +229,11 @@ describe("第二阶段：工具同步优化集成测试", () => {
           name: "test-tool",
           description: "Test tool",
           inputSchema: { type: "object" as const },
-          handler: { type: "proxy" as const, platform: "custom" as const, config: {} },
+          handler: {
+            type: "proxy" as const,
+            platform: "custom" as const,
+            config: {},
+          },
         },
       ];
 
@@ -340,7 +344,11 @@ describe("第二阶段：工具同步优化集成测试", () => {
           name: "test-tool",
           description: "Test tool",
           inputSchema: { type: "object" as const },
-          handler: { type: "proxy" as const, platform: "custom" as const, config: {} },
+          handler: {
+            type: "proxy" as const,
+            platform: "custom" as const,
+            config: {},
+          },
         },
       ];
 

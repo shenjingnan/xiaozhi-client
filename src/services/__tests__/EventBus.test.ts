@@ -322,7 +322,10 @@ describe("EventBus", () => {
 
       expect(eventBus.listenerCount("config:updated")).toBe(2);
 
-      eventBus.emitEvent("config:updated", { type: "customMCP", timestamp: new Date() });
+      eventBus.emitEvent("config:updated", {
+        type: "customMCP",
+        timestamp: new Date(),
+      });
 
       expect(listener1).toHaveBeenCalled();
       expect(listener2).toHaveBeenCalled();
@@ -363,12 +366,18 @@ describe("EventBus", () => {
       eventBus.onceEvent("config:updated", listener);
 
       // First emit should trigger listener
-      eventBus.emitEvent("config:updated", { type: "customMCP", timestamp: new Date() });
+      eventBus.emitEvent("config:updated", {
+        type: "customMCP",
+        timestamp: new Date(),
+      });
       expect(listener).toHaveBeenCalledTimes(1);
       expect(eventBus.listenerCount("config:updated")).toBe(0);
 
       // Second emit should not trigger listener
-      eventBus.emitEvent("config:updated", { type: "customMCP", timestamp: new Date() });
+      eventBus.emitEvent("config:updated", {
+        type: "customMCP",
+        timestamp: new Date(),
+      });
       expect(listener).toHaveBeenCalledTimes(1);
     });
 
@@ -381,7 +390,10 @@ describe("EventBus", () => {
 
       expect(eventBus.listenerCount("config:updated")).toBe(2);
 
-      eventBus.emitEvent("config:updated", { type: "customMCP", timestamp: new Date() });
+      eventBus.emitEvent("config:updated", {
+        type: "customMCP",
+        timestamp: new Date(),
+      });
 
       expect(listener1).toHaveBeenCalledTimes(1);
       expect(listener2).toHaveBeenCalledTimes(1);
@@ -414,7 +426,10 @@ describe("EventBus", () => {
       eventBus.offEvent("config:updated", listener1);
       expect(eventBus.listenerCount("config:updated")).toBe(1);
 
-      eventBus.emitEvent("config:updated", { type: "customMCP", timestamp: new Date() });
+      eventBus.emitEvent("config:updated", {
+        type: "customMCP",
+        timestamp: new Date(),
+      });
       expect(listener1).not.toHaveBeenCalled();
       expect(listener2).toHaveBeenCalled();
     });
@@ -510,7 +525,10 @@ describe("EventBus", () => {
       eventBus.onEvent("config:updated", listener1);
       eventBus.onEvent("status:updated", listener2);
 
-      eventBus.emitEvent("config:updated", { type: "customMCP", timestamp: new Date() });
+      eventBus.emitEvent("config:updated", {
+        type: "customMCP",
+        timestamp: new Date(),
+      });
       eventBus.emitEvent("status:updated", { status: {}, source: "test" });
 
       const status = eventBus.getStatus();
@@ -536,7 +554,10 @@ describe("EventBus", () => {
     it("should remove all listeners and clear stats", () => {
       const listener = vi.fn();
       eventBus.onEvent("config:updated", listener);
-      eventBus.emitEvent("config:updated", { type: "customMCP", timestamp: new Date() });
+      eventBus.emitEvent("config:updated", {
+        type: "customMCP",
+        timestamp: new Date(),
+      });
 
       expect(eventBus.listenerCount("config:updated")).toBe(1);
       expect(Object.keys(eventBus.getEventStats())).toHaveLength(1);
@@ -572,7 +593,10 @@ describe("EventBus", () => {
 
       // Should not throw, but continue with other listeners
       expect(() => {
-        eventBus.emitEvent("config:updated", { type: "customMCP", timestamp: new Date() });
+        eventBus.emitEvent("config:updated", {
+          type: "customMCP",
+          timestamp: new Date(),
+        });
       }).not.toThrow();
 
       expect(errorListener).toHaveBeenCalled();
@@ -605,7 +629,10 @@ describe("EventBus", () => {
       });
 
       eventBus.onEvent("config:updated", asyncListener);
-      eventBus.emitEvent("config:updated", { type: "customMCP", timestamp: new Date() });
+      eventBus.emitEvent("config:updated", {
+        type: "customMCP",
+        timestamp: new Date(),
+      });
 
       // Wait for async listener to complete
       await new Promise((resolve) => setTimeout(resolve, 20));
@@ -623,7 +650,10 @@ describe("EventBus", () => {
 
       // Should not throw
       expect(() => {
-        eventBus.emitEvent("config:updated", { type: "customMCP", timestamp: new Date() });
+        eventBus.emitEvent("config:updated", {
+          type: "customMCP",
+          timestamp: new Date(),
+        });
       }).not.toThrow();
 
       // Wait for async listener to complete
@@ -659,7 +689,10 @@ describe("EventBus", () => {
         eventBus.onEvent("config:updated", listener);
       }
 
-      eventBus.emitEvent("config:updated", { type: "customMCP", timestamp: new Date() });
+      eventBus.emitEvent("config:updated", {
+        type: "customMCP",
+        timestamp: new Date(),
+      });
 
       for (const listener of listeners) {
         expect(listener).toHaveBeenCalledTimes(1);
@@ -684,7 +717,10 @@ describe("EventBus", () => {
 
       expect(eventBus.listenerCount("config:updated")).toBe(5);
 
-      eventBus.emitEvent("config:updated", { type: "customMCP", timestamp: new Date() });
+      eventBus.emitEvent("config:updated", {
+        type: "customMCP",
+        timestamp: new Date(),
+      });
 
       // Only remaining listeners should be called
       for (const listener of listeners.slice(0, 5)) {
