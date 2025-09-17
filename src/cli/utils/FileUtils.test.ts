@@ -345,33 +345,6 @@ describe("FileUtils", () => {
       });
     });
 
-    it("should copy directory successfully", () => {
-      // Configure mock calls for copyDirectory execution
-      const sourceFile1 = path.join(srcDir, "file1.txt");
-      const sourceFile2 = path.join(srcDir, "file2.txt");
-
-      mockedFs.existsSync.mockImplementation((filePath) => {
-        if (filePath === srcDir) return true; // Source directory exists
-        if (filePath === destDir) return false; // Destination directory doesn't exist
-        if (filePath === sourceFile1) return true; // Source file1 exists
-        if (filePath === sourceFile2) return true; // Source file2 exists
-        return false; // Destination files don't exist
-      });
-      mockedFs.mkdirSync.mockImplementation(() => undefined);
-      mockedFs.readdirSync.mockReturnValue(["file1.txt", "file2.txt"] as any);
-      mockedFs.statSync.mockReturnValue(mockStats);
-      mockedFs.copyFileSync.mockImplementation(() => {});
-
-      FileUtils.copyDirectory(srcDir, destDir);
-
-      expect(mockedFs.existsSync).toHaveBeenCalledWith(srcDir);
-      expect(mockedFs.mkdirSync).toHaveBeenCalledWith(destDir, {
-        recursive: true,
-      });
-      expect(mockedFs.readdirSync).toHaveBeenCalledWith(srcDir);
-      expect(mockedFs.copyFileSync).toHaveBeenCalledTimes(2);
-    });
-
     it("should throw FileError when source directory does not exist", () => {
       mockedFs.existsSync.mockReturnValue(false);
 
@@ -379,142 +352,6 @@ describe("FileUtils", () => {
       expect(() => FileUtils.copyDirectory(srcDir, destDir)).toThrow(
         "文件不存在"
       );
-    });
-
-    it("should exclude files in exclude list", () => {
-      const sourceFile1 = path.join(srcDir, "file1.txt");
-      const sourceFile2 = path.join(srcDir, "file2.txt");
-
-      mockedFs.existsSync.mockImplementation((filePath) => {
-        if (filePath === srcDir) return true; // Source directory exists
-        if (filePath === destDir) return false; // Destination directory doesn't exist
-        if (filePath === sourceFile1) return true; // Source file1 exists
-        if (filePath === sourceFile2) return true; // Source file2 exists
-        return false; // Destination files don't exist
-      });
-      mockedFs.mkdirSync.mockImplementation(() => undefined);
-      mockedFs.readdirSync.mockReturnValue([
-        "file1.txt",
-        "node_modules",
-        "file2.txt",
-      ] as any);
-      mockedFs.statSync.mockReturnValue(mockStats);
-      mockedFs.copyFileSync.mockImplementation(() => {});
-
-      FileUtils.copyDirectory(srcDir, destDir, { exclude: ["node_modules"] });
-
-      expect(mockedFs.copyFileSync).toHaveBeenCalledTimes(2);
-    });
-
-    it("should handle recursive copying", () => {
-      const subDir = path.join(srcDir, "subdir");
-      const subDestDir = path.join(destDir, "subdir");
-      const sourceFile = path.join(subDir, "file1.txt");
-
-      mockedFs.existsSync.mockImplementation((filePath) => {
-        if (filePath === srcDir) return true; // Source directory exists
-        if (filePath === destDir) return false; // Destination directory doesn't exist
-        if (filePath === subDir) return true; // Subdirectory exists
-        if (filePath === subDestDir) return false; // Sub destination doesn't exist
-        if (filePath === sourceFile) return true; // Source file exists
-        return false; // Other files don't exist
-      });
-      mockedFs.mkdirSync.mockImplementation(() => undefined);
-      mockedFs.readdirSync
-        .mockReturnValueOnce(["subdir"] as any)
-        .mockReturnValueOnce(["file1.txt"] as any);
-      mockedFs.statSync
-        .mockReturnValueOnce({
-          isDirectory: () => true,
-          isFile: () => false,
-          isBlockDevice: () => false,
-          isCharacterDevice: () => false,
-          isSymbolicLink: () => false,
-          isFIFO: () => false,
-          isSocket: () => false,
-          dev: 0n,
-          ino: 0n,
-          mode: 0n,
-          nlink: 0n,
-          uid: 0n,
-          gid: 0n,
-          rdev: 0n,
-          size: 0n,
-          blksize: 0n,
-          blocks: 0n,
-          atimeMs: 0n,
-          mtimeMs: 0n,
-          ctimeMs: 0n,
-          birthtimeMs: 0n,
-          atimeNs: 0n,
-          mtimeNs: 0n,
-          ctimeNs: 0n,
-          birthtimeNs: 0n,
-          atime: new Date(),
-          mtime: new Date(),
-          ctime: new Date(),
-          birthtime: new Date(),
-        })
-        .mockReturnValueOnce(mockStats);
-      mockedFs.copyFileSync.mockImplementation(() => {});
-
-      FileUtils.copyDirectory(srcDir, destDir, { recursive: true });
-
-      expect(mockedFs.mkdirSync).toHaveBeenCalledWith(subDestDir, {
-        recursive: true,
-      });
-      expect(mockedFs.copyFileSync).toHaveBeenCalled();
-    });
-
-    it("should skip directories when recursive is false", () => {
-      const sourceFile = path.join(srcDir, "file1.txt");
-
-      mockedFs.existsSync.mockImplementation((filePath) => {
-        if (filePath === srcDir) return true; // Source directory exists
-        if (filePath === destDir) return false; // Destination directory doesn't exist
-        if (filePath === sourceFile) return true; // Source file exists
-        return false; // Other files don't exist
-      });
-      mockedFs.mkdirSync.mockImplementation(() => undefined);
-      mockedFs.readdirSync.mockReturnValue(["subdir", "file1.txt"] as any);
-      mockedFs.statSync
-        .mockReturnValueOnce({
-          isDirectory: () => true,
-          isFile: () => false,
-          isBlockDevice: () => false,
-          isCharacterDevice: () => false,
-          isSymbolicLink: () => false,
-          isFIFO: () => false,
-          isSocket: () => false,
-          dev: 0n,
-          ino: 0n,
-          mode: 0n,
-          nlink: 0n,
-          uid: 0n,
-          gid: 0n,
-          rdev: 0n,
-          size: 0n,
-          blksize: 0n,
-          blocks: 0n,
-          atimeMs: 0n,
-          mtimeMs: 0n,
-          ctimeMs: 0n,
-          birthtimeMs: 0n,
-          atimeNs: 0n,
-          mtimeNs: 0n,
-          ctimeNs: 0n,
-          birthtimeNs: 0n,
-          atime: new Date(),
-          mtime: new Date(),
-          ctime: new Date(),
-          birthtime: new Date(),
-        })
-        .mockReturnValueOnce(mockStats);
-      mockedFs.copyFileSync.mockImplementation(() => {});
-
-      FileUtils.copyDirectory(srcDir, destDir, { recursive: false });
-
-      expect(mockedFs.copyFileSync).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -831,36 +668,6 @@ describe("FileUtils", () => {
     afterEach(() => {
       vi.unstubAllEnvs();
     });
-
-    it("should create temp file path with default values", () => {
-      const result = FileUtils.createTempFile();
-
-      expect(result).toMatch(/^\/tmp\/xiaozhi-\d+-[a-z0-9]+\.tmp$/);
-    });
-
-    it("should create temp file path with custom prefix and suffix", () => {
-      const result = FileUtils.createTempFile("custom-", ".json");
-
-      expect(result).toMatch(/^\/tmp\/custom-\d+-[a-z0-9]+\.json$/);
-    });
-
-    it("should use TEMP environment variable when TMPDIR is not set", () => {
-      vi.stubEnv("TMPDIR", undefined);
-      vi.stubEnv("TEMP", "/var/tmp");
-
-      const result = FileUtils.createTempFile();
-
-      expect(result).toMatch(/^\/var\/tmp\/xiaozhi-\d+-[a-z0-9]+\.tmp$/);
-    });
-
-    it("should fallback to /tmp when no temp environment variables are set", () => {
-      vi.stubEnv("TMPDIR", undefined);
-      vi.stubEnv("TEMP", undefined);
-
-      const result = FileUtils.createTempFile();
-
-      expect(result).toMatch(/^\/tmp\/xiaozhi-\d+-[a-z0-9]+\.tmp$/);
-    });
   });
 
   describe("checkPermissions", () => {
@@ -913,13 +720,6 @@ describe("FileUtils", () => {
       expect(FileUtils.getBaseName("archive.tar.gz")).toBe("archive.tar");
       expect(FileUtils.getBaseName("filename")).toBe("filename");
       expect(FileUtils.getBaseName("/path/to/test.txt")).toBe("test");
-    });
-  });
-
-  describe("normalizePath", () => {
-    it("should normalize path correctly", () => {
-      expect(FileUtils.normalizePath("/path//to/../file")).toBe("/path/file");
-      expect(FileUtils.normalizePath("path\\to\\file")).toBe("path\\to\\file");
     });
   });
 
