@@ -56,7 +56,7 @@ vi.mock("../MCPService.js", () => {
           name: "calculator",
           description: "Math calculation tool",
           inputSchema: {
-            type: "object",
+            type: "object" as const,
             properties: {
               expression: { type: "string" },
             },
@@ -66,7 +66,7 @@ vi.mock("../MCPService.js", () => {
           name: "datetime",
           description: "Date and time tool",
           inputSchema: {
-            type: "object",
+            type: "object" as const,
             properties: {
               format: { type: "string" },
             },
@@ -243,7 +243,7 @@ describe("工具同步集成测试", () => {
           name: "calculator",
           description: "Math calculation tool",
           inputSchema: {
-            type: "object",
+            type: "object" as const,
             properties: {
               expression: { type: "string" },
             },
@@ -253,7 +253,7 @@ describe("工具同步集成测试", () => {
           name: "datetime",
           description: "Date and time tool",
           inputSchema: {
-            type: "object",
+            type: "object" as const,
             properties: {
               format: { type: "string" },
             },
@@ -308,7 +308,7 @@ describe("工具同步集成测试", () => {
             name: "calculator",
             description: "Math calculation tool",
             inputSchema: {
-              type: "object",
+              type: "object" as const,
               properties: {
                 expression: { type: "string" },
               },
@@ -385,7 +385,7 @@ describe("工具同步集成测试", () => {
             name: "calculator",
             description: "Math calculation tool",
             inputSchema: {
-              type: "object",
+              type: "object" as const,
               properties: {
                 expression: { type: "string" },
               },
@@ -439,7 +439,7 @@ describe("工具同步集成测试", () => {
           name: "calculator",
           description: "Math calculation tool",
           inputSchema: {
-            type: "object",
+            type: "object" as const,
             properties: {
               expression: { type: "string" },
             },

@@ -114,7 +114,7 @@ describe("第二阶段：工具同步优化集成测试", () => {
         {
           name: "test-tool",
           description: "Test tool",
-          inputSchema: { type: "object" },
+          inputSchema: { type: "object" as const },
         },
       ];
 
@@ -184,7 +184,7 @@ describe("第二阶段：工具同步优化集成测试", () => {
         {
           name: "test-tool",
           description: "Test tool",
-          inputSchema: { type: "object" },
+          inputSchema: { type: "object" as const },
         },
       ];
 
@@ -228,8 +228,8 @@ describe("第二阶段：工具同步优化集成测试", () => {
         {
           name: "test-tool",
           description: "Test tool",
-          inputSchema: { type: "object" },
-          handler: { type: "proxy" as const, config: {} },
+          inputSchema: { type: "object" as const },
+          handler: { type: "proxy" as const, platform: "custom" as const, config: {} },
         },
       ];
 
@@ -290,7 +290,7 @@ describe("第二阶段：工具同步优化集成测试", () => {
         {
           name: "test-tool",
           description: "Test tool",
-          inputSchema: { type: "object" },
+          inputSchema: { type: "object" as const },
         },
       ];
 
@@ -339,8 +339,8 @@ describe("第二阶段：工具同步优化集成测试", () => {
         {
           name: "test-tool",
           description: "Test tool",
-          inputSchema: { type: "object" },
-          handler: { type: "proxy" as const, config: {} },
+          inputSchema: { type: "object" as const },
+          handler: { type: "proxy" as const, platform: "custom" as const, config: {} },
         },
       ];
 

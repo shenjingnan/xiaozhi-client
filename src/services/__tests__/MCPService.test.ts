@@ -179,7 +179,7 @@ describe("MCPService", () => {
       await service.connect();
 
       const callArgs = mockEventBus.emitEvent.mock.calls.find(
-        (call) => call[0] === "mcp:service:connected"
+        (call: any[]) => call[0] === "mcp:service:connected"
       );
 
       expect(callArgs).toBeDefined();
@@ -221,7 +221,7 @@ describe("MCPService", () => {
       await expect(service.connect()).rejects.toThrow("Connection failed");
 
       const callArgs = mockEventBus.emitEvent.mock.calls.find(
-        (call) => call[0] === "mcp:service:connection:failed"
+        (call: any[]) => call[0] === "mcp:service:connection:failed"
       );
 
       expect(callArgs).toBeDefined();
@@ -270,7 +270,7 @@ describe("MCPService", () => {
       await service.disconnect();
 
       const callArgs = mockEventBus.emitEvent.mock.calls.find(
-        (call) => call[0] === "mcp:service:disconnected"
+        (call: any[]) => call[0] === "mcp:service:disconnected"
       );
 
       expect(callArgs).toBeDefined();

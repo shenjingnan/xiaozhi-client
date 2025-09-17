@@ -29,7 +29,7 @@ describe("EventBus 基本功能测试", () => {
     // 发送事件
     const eventData = {
       serviceName: "test-service",
-      tools: [{ name: "test-tool", description: "Test", inputSchema: {} }],
+      tools: [{ name: "test-tool", description: "Test", inputSchema: { type: "object" as const } }],
       connectionTime: new Date(),
     };
 
