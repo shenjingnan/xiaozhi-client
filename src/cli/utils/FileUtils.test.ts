@@ -332,7 +332,7 @@ describe("FileUtils", () => {
       atime: new Date(),
       mtime: new Date(),
       ctime: new Date(),
-      birthtime: new Date()
+      birthtime: new Date(),
     };
 
     beforeEach(() => {
@@ -453,7 +453,7 @@ describe("FileUtils", () => {
           atime: new Date(),
           mtime: new Date(),
           ctime: new Date(),
-          birthtime: new Date()
+          birthtime: new Date(),
         })
         .mockReturnValueOnce(mockStats);
       mockedFs.copyFileSync.mockImplementation(() => {});
@@ -507,7 +507,7 @@ describe("FileUtils", () => {
           atime: new Date(),
           mtime: new Date(),
           ctime: new Date(),
-          birthtime: new Date()
+          birthtime: new Date(),
         })
         .mockReturnValueOnce(mockStats);
       mockedFs.copyFileSync.mockImplementation(() => {});
@@ -594,7 +594,7 @@ describe("FileUtils", () => {
       ctimeNs: 0n,
       birthtimeNs: 0n,
       atime: new Date(),
-      birthtime: new Date()
+      birthtime: new Date(),
     };
 
     it("should get file info successfully", () => {
@@ -660,7 +660,7 @@ describe("FileUtils", () => {
       atime: new Date(),
       mtime: new Date(),
       ctime: new Date(),
-      birthtime: new Date()
+      birthtime: new Date(),
     };
 
     it("should list directory contents successfully", () => {
@@ -750,7 +750,7 @@ describe("FileUtils", () => {
           atime: new Date(),
           mtime: new Date(),
           ctime: new Date(),
-          birthtime: new Date()
+          birthtime: new Date(),
         })
         .mockReturnValueOnce({
           isDirectory: () => true,
@@ -781,7 +781,7 @@ describe("FileUtils", () => {
           atime: new Date(),
           mtime: new Date(),
           ctime: new Date(),
-          birthtime: new Date()
+          birthtime: new Date(),
         })
         .mockReturnValueOnce({
           isDirectory: () => false,
@@ -812,7 +812,7 @@ describe("FileUtils", () => {
           atime: new Date(),
           mtime: new Date(),
           ctime: new Date(),
-          birthtime: new Date()
+          birthtime: new Date(),
         });
 
       const result = FileUtils.listDirectory(testDir, { recursive: true });

@@ -510,12 +510,12 @@ describe("Validation", () => {
   describe("validateEnum", () => {
     it("should accept valid enum values", () => {
       const validValues = ["option1", "option2", "option3"] as const;
-      expect(Validation.validateEnum("option1", [...validValues] as const, "field")).toBe(
-        "option1"
-      );
-      expect(Validation.validateEnum("option2", [...validValues] as const, "field")).toBe(
-        "option2"
-      );
+      expect(
+        Validation.validateEnum("option1", [...validValues] as const, "field")
+      ).toBe("option1");
+      expect(
+        Validation.validateEnum("option2", [...validValues] as const, "field")
+      ).toBe("option2");
     });
 
     it("should reject invalid enum values", () => {
