@@ -659,17 +659,6 @@ describe("FileUtils", () => {
     });
   });
 
-  describe("创建临时文件", () => {
-    beforeEach(() => {
-      vi.stubEnv("TMPDIR", "/tmp");
-      vi.stubEnv("TEMP", undefined);
-    });
-
-    afterEach(() => {
-      vi.unstubAllEnvs();
-    });
-  });
-
   describe("检查权限", () => {
     it("权限足够时应返回 true", () => {
       mockedFs.accessSync.mockImplementation(() => {});
