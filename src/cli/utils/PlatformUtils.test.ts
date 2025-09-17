@@ -23,8 +23,8 @@ describe("PlatformUtils", () => {
     vi.unstubAllEnvs();
   });
 
-  describe("getCurrentPlatform", () => {
-    it("should return current platform", () => {
+  describe("获取当前平台", () => {
+    it("应返回当前平台", () => {
       // Since we can't easily change process.platform, we just test it returns a string
       const result = PlatformUtils.getCurrentPlatform();
       expect(typeof result).toBe("string");
@@ -40,8 +40,8 @@ describe("PlatformUtils", () => {
     });
   });
 
-  describe("isWindows", () => {
-    it("should return true on Windows", () => {
+  describe("是否为Windows系统", () => {
+    it("在Windows上应返回 true", () => {
       // Mock process.platform
       const originalPlatform = process.platform;
       Object.defineProperty(process, "platform", {
@@ -58,7 +58,7 @@ describe("PlatformUtils", () => {
       });
     });
 
-    it("should return false on non-Windows platforms", () => {
+    it("在非Windows平台上应返回 false", () => {
       const originalPlatform = process.platform;
       Object.defineProperty(process, "platform", {
         value: "darwin",
@@ -74,8 +74,8 @@ describe("PlatformUtils", () => {
     });
   });
 
-  describe("isMacOS", () => {
-    it("should return true on macOS", () => {
+  describe("是否为macOS系统", () => {
+    it("在macOS上应返回 true", () => {
       const originalPlatform = process.platform;
       Object.defineProperty(process, "platform", {
         value: "darwin",
@@ -90,7 +90,7 @@ describe("PlatformUtils", () => {
       });
     });
 
-    it("should return false on non-macOS platforms", () => {
+    it("在非macOS平台上应返回 false", () => {
       const originalPlatform = process.platform;
       Object.defineProperty(process, "platform", {
         value: "linux",
@@ -106,8 +106,8 @@ describe("PlatformUtils", () => {
     });
   });
 
-  describe("isLinux", () => {
-    it("should return true on Linux", () => {
+  describe("是否为Linux系统", () => {
+    it("在Linux上应返回 true", () => {
       const originalPlatform = process.platform;
       Object.defineProperty(process, "platform", {
         value: "linux",
@@ -122,7 +122,7 @@ describe("PlatformUtils", () => {
       });
     });
 
-    it("should return false on non-Linux platforms", () => {
+    it("在非Linux平台上应返回 false", () => {
       const originalPlatform = process.platform;
       Object.defineProperty(process, "platform", {
         value: "win32",
@@ -138,8 +138,8 @@ describe("PlatformUtils", () => {
     });
   });
 
-  describe("isUnixLike", () => {
-    it("should return true on Unix-like systems", () => {
+  describe("是否为类Unix系统", () => {
+    it("在类Unix系统上应返回 true", () => {
       const originalPlatform = process.platform;
       Object.defineProperty(process, "platform", {
         value: "darwin",
@@ -154,7 +154,7 @@ describe("PlatformUtils", () => {
       });
     });
 
-    it("should return false on Windows", () => {
+    it("在Windows上应返回 false", () => {
       const originalPlatform = process.platform;
       Object.defineProperty(process, "platform", {
         value: "win32",
@@ -170,7 +170,7 @@ describe("PlatformUtils", () => {
     });
   });
 
-  describe("isXiaozhiProcess", () => {
+  describe("是否为小智进程", () => {
     const testPid = 1234;
 
     beforeEach(() => {
@@ -182,7 +182,7 @@ describe("PlatformUtils", () => {
       vi.restoreAllMocks();
     });
 
-    it("should return true in container environment when process exists", () => {
+    it("在容器环境中进程存在时应返回 true", () => {
       vi.stubEnv("XIAOZHI_CONTAINER", "true");
 
       const result = PlatformUtils.isXiaozhiProcess(testPid);
@@ -191,7 +191,7 @@ describe("PlatformUtils", () => {
       expect(process.kill).toHaveBeenCalledWith(testPid, 0);
     });
 
-    it("should return true in test environment when process exists", () => {
+    it("在测试环境中进程存在时应返回 true", () => {
       vi.stubEnv("NODE_ENV", "test");
       vi.stubEnv("XIAOZHI_CONTAINER", "false");
 
@@ -201,7 +201,7 @@ describe("PlatformUtils", () => {
       expect(process.kill).toHaveBeenCalledWith(testPid, 0);
     });
 
-    it("should return false in container environment when process does not exist", () => {
+    it("在容器环境中进程不存在时应返回 false", () => {
       vi.stubEnv("XIAOZHI_CONTAINER", "true");
       vi.spyOn(process, "kill").mockImplementation(() => {
         throw new Error("Process not found");
@@ -212,7 +212,7 @@ describe("PlatformUtils", () => {
       expect(result).toBe(false);
     });
 
-    it("should check process command line on Windows", () => {
+    it("应在Windows上检查进程命令行", () => {
       const originalPlatform = process.platform;
       Object.defineProperty(process, "platform", {
         value: "win32",
@@ -240,7 +240,7 @@ describe("PlatformUtils", () => {
       });
     });
 
-    it("should check process command line on Unix-like systems", () => {
+    it("应在类Unix系统上检查进程命令行", () => {
       const originalPlatform = process.platform;
       Object.defineProperty(process, "platform", {
         value: "linux",
@@ -265,7 +265,7 @@ describe("PlatformUtils", () => {
       });
     });
 
-    it("should fallback to simple PID check when command line check fails", () => {
+    it("命令行检查失败时应回退到简单PID检查", () => {
       const originalPlatform = process.platform;
       Object.defineProperty(process, "platform", {
         value: "linux",
@@ -289,7 +289,7 @@ describe("PlatformUtils", () => {
       });
     });
 
-    it("should return false when process does not exist", () => {
+    it("进程不存在时应返回 false", () => {
       vi.stubEnv("XIAOZHI_CONTAINER", "false");
       vi.stubEnv("NODE_ENV", "production");
       vi.spyOn(process, "kill").mockImplementation(() => {
@@ -304,7 +304,7 @@ describe("PlatformUtils", () => {
       expect(result).toBe(false);
     });
 
-    it("should detect xiaozhi in process name", () => {
+    it("应在进程名中检测到小智", () => {
       const originalPlatform = process.platform;
       Object.defineProperty(process, "platform", {
         value: "linux",
@@ -325,7 +325,7 @@ describe("PlatformUtils", () => {
       });
     });
 
-    it("should return false for non-xiaozhi processes", () => {
+    it("对于非小智进程应返回 false", () => {
       const originalPlatform = process.platform;
       Object.defineProperty(process, "platform", {
         value: "linux",
@@ -347,7 +347,7 @@ describe("PlatformUtils", () => {
     });
   });
 
-  describe("killProcess", () => {
+  describe("终止进程", () => {
     const testPid = 1234;
 
     beforeEach(() => {
@@ -360,7 +360,7 @@ describe("PlatformUtils", () => {
       vi.restoreAllMocks();
     });
 
-    it("should kill process successfully with SIGTERM", async () => {
+    it("应使用SIGTERM成功终止进程", async () => {
       // First call succeeds, second call fails (process stopped)
       vi.spyOn(process, "kill")
         .mockImplementationOnce(() => true)
@@ -379,7 +379,7 @@ describe("PlatformUtils", () => {
       expect(process.kill).toHaveBeenCalledWith(testPid, 0);
     }, 1000);
 
-    it("should force kill with SIGKILL if process doesn't stop", async () => {
+    it("如果进程不停止应使用SIGKILL强制终止", async () => {
       // Process keeps running for all 30 checks, then gets SIGKILLed
       let callCount = 0;
       vi.spyOn(process, "kill").mockImplementation((pid, signal) => {
@@ -420,7 +420,7 @@ describe("PlatformUtils", () => {
       expect(process.kill).toHaveBeenCalledWith(testPid, "SIGKILL");
     }, 1000);
 
-    it("should use default signal SIGTERM when not specified", async () => {
+    it("未指定时应使用默认信号SIGTERM", async () => {
       vi.spyOn(process, "kill")
         .mockImplementationOnce(() => true)
         .mockImplementationOnce(() => {
@@ -437,7 +437,7 @@ describe("PlatformUtils", () => {
       expect(process.kill).toHaveBeenCalledWith(testPid, "SIGTERM");
     }, 1000);
 
-    it("should throw ProcessError when killing fails", async () => {
+    it("终止失败时应抛出进程错误", async () => {
       vi.spyOn(process, "kill").mockImplementation(() => {
         throw new Error("Permission denied");
       });
@@ -450,7 +450,7 @@ describe("PlatformUtils", () => {
       );
     }, 1000);
 
-    it("should handle SIGKILL failure gracefully", async () => {
+    it("应优雅处理SIGKILL失败", async () => {
       // Process stops responding to SIGKILL
       vi.spyOn(process, "kill").mockImplementation(() => true);
 
@@ -466,7 +466,7 @@ describe("PlatformUtils", () => {
     }, 1000);
   });
 
-  describe("processExists", () => {
+  describe("进程是否存在", () => {
     const testPid = 1234;
 
     beforeEach(() => {
@@ -477,14 +477,14 @@ describe("PlatformUtils", () => {
       vi.restoreAllMocks();
     });
 
-    it("should return true when process exists", () => {
+    it("进程存在时应返回 true", () => {
       const result = PlatformUtils.processExists(testPid);
 
       expect(result).toBe(true);
       expect(process.kill).toHaveBeenCalledWith(testPid, 0);
     });
 
-    it("should return false when process does not exist", () => {
+    it("进程不存在时应返回 false", () => {
       vi.spyOn(process, "kill").mockImplementation(() => {
         throw new Error("Process not found");
       });
@@ -495,7 +495,7 @@ describe("PlatformUtils", () => {
     });
   });
 
-  describe("getSystemInfo", () => {
+  describe("获取系统信息", () => {
     beforeEach(() => {
       // Mock platform, arch, and version
       const originalPlatform = process.platform;
@@ -531,7 +531,7 @@ describe("PlatformUtils", () => {
       };
     });
 
-    it("should return correct system info", () => {
+    it("应返回正确的系统信息", () => {
       vi.stubEnv("XIAOZHI_CONTAINER", "true");
 
       const result = PlatformUtils.getSystemInfo();
@@ -544,7 +544,7 @@ describe("PlatformUtils", () => {
       });
     });
 
-    it("should detect non-container environment", () => {
+    it("应检测非容器环境", () => {
       vi.stubEnv("XIAOZHI_CONTAINER", "false");
 
       const result = PlatformUtils.getSystemInfo();
@@ -552,7 +552,7 @@ describe("PlatformUtils", () => {
       expect(result.isContainer).toBe(false);
     });
 
-    it("should handle missing container environment variable", () => {
+    it("应处理缺失的容器环境变量", () => {
       vi.stubEnv("XIAOZHI_CONTAINER", undefined);
 
       const result = PlatformUtils.getSystemInfo();
@@ -561,7 +561,7 @@ describe("PlatformUtils", () => {
     });
   });
 
-  describe("getEnvVar", () => {
+  describe("获取环境变量", () => {
     beforeEach(() => {
       vi.stubEnv("TEST_VAR", "test-value");
     });
@@ -570,99 +570,99 @@ describe("PlatformUtils", () => {
       vi.unstubAllEnvs();
     });
 
-    it("should return environment variable value", () => {
+    it("应返回环境变量值", () => {
       const result = PlatformUtils.getEnvVar("TEST_VAR");
       expect(result).toBe("test-value");
     });
 
-    it("should return undefined when environment variable does not exist", () => {
+    it("环境变量不存在时应返回 undefined", () => {
       const result = PlatformUtils.getEnvVar("NONEXISTENT_VAR");
       expect(result).toBeUndefined();
     });
 
-    it("should return default value when environment variable does not exist", () => {
+    it("环境变量不存在时应返回默认值", () => {
       const result = PlatformUtils.getEnvVar("NONEXISTENT_VAR", "default");
       expect(result).toBe("default");
     });
 
-    it("should return actual value when environment variable exists even with default", () => {
+    it("即使有默认值，环境变量存在时也应返回实际值", () => {
       const result = PlatformUtils.getEnvVar("TEST_VAR", "default");
       expect(result).toBe("test-value");
     });
   });
 
-  describe("setEnvVar", () => {
+  describe("设置环境变量", () => {
     afterEach(() => {
       vi.unstubAllEnvs();
     });
 
-    it("should set environment variable", () => {
+    it("应设置环境变量", () => {
       PlatformUtils.setEnvVar("TEST_VAR", "new-value");
       expect(process.env.TEST_VAR).toBe("new-value");
     });
 
-    it("should overwrite existing environment variable", () => {
+    it("应覆盖现有环境变量", () => {
       vi.stubEnv("TEST_VAR", "old-value");
       PlatformUtils.setEnvVar("TEST_VAR", "new-value");
       expect(process.env.TEST_VAR).toBe("new-value");
     });
   });
 
-  describe("isContainerEnvironment", () => {
-    it("should return true in container environment", () => {
+  describe("是否为容器环境", () => {
+    it("在容器环境中应返回 true", () => {
       vi.stubEnv("XIAOZHI_CONTAINER", "true");
       expect(PlatformUtils.isContainerEnvironment()).toBe(true);
     });
 
-    it("should return false when not in container environment", () => {
+    it("不在容器环境中时应返回 false", () => {
       vi.stubEnv("XIAOZHI_CONTAINER", "false");
       expect(PlatformUtils.isContainerEnvironment()).toBe(false);
     });
 
-    it("should return false when container environment variable is not set", () => {
+    it("未设置容器环境变量时应返回 false", () => {
       vi.stubEnv("XIAOZHI_CONTAINER", undefined);
       expect(PlatformUtils.isContainerEnvironment()).toBe(false);
     });
   });
 
-  describe("isTestEnvironment", () => {
-    it("should return true in test environment", () => {
+  describe("是否为测试环境", () => {
+    it("在测试环境中应返回 true", () => {
       vi.stubEnv("NODE_ENV", "test");
       expect(PlatformUtils.isTestEnvironment()).toBe(true);
     });
 
-    it("should return false when not in test environment", () => {
+    it("不在测试环境中时应返回 false", () => {
       vi.stubEnv("NODE_ENV", "development");
       expect(PlatformUtils.isTestEnvironment()).toBe(false);
     });
 
-    it("should return false when NODE_ENV is not set", () => {
+    it("测试环境未设置NODE_ENV时应返回 false", () => {
       vi.stubEnv("NODE_ENV", undefined);
       expect(PlatformUtils.isTestEnvironment()).toBe(false);
     });
   });
 
-  describe("isDevelopmentEnvironment", () => {
-    it("should return true in development environment", () => {
+  describe("是否为开发环境", () => {
+    it("在开发环境中应返回 true", () => {
       vi.stubEnv("NODE_ENV", "development");
       expect(PlatformUtils.isDevelopmentEnvironment()).toBe(true);
     });
 
-    it("should return false when not in development environment", () => {
+    it("不在开发环境中时应返回 false", () => {
       vi.stubEnv("NODE_ENV", "production");
       expect(PlatformUtils.isDevelopmentEnvironment()).toBe(false);
     });
 
-    it("should return false when NODE_ENV is not set", () => {
+    it("开发环境未设置NODE_ENV时应返回 false", () => {
       vi.stubEnv("NODE_ENV", undefined);
       expect(PlatformUtils.isDevelopmentEnvironment()).toBe(false);
     });
   });
 
-  describe("getTailCommand", () => {
+  describe("获取tail命令", () => {
     const testFile = "/path/to/log.txt";
 
-    it("should return powershell command on Windows", () => {
+    it("在Windows上应返回powershell命令", () => {
       const originalPlatform = process.platform;
       Object.defineProperty(process, "platform", {
         value: "win32",
@@ -682,7 +682,7 @@ describe("PlatformUtils", () => {
       });
     });
 
-    it("should return tail command on Unix-like systems", () => {
+    it("在类Unix系统上应返回tail命令", () => {
       const originalPlatform = process.platform;
       Object.defineProperty(process, "platform", {
         value: "darwin",
@@ -702,7 +702,7 @@ describe("PlatformUtils", () => {
       });
     });
 
-    it("should handle special characters in file path", () => {
+    it("应处理文件路径中的特殊字符", () => {
       const originalPlatform = process.platform;
       Object.defineProperty(process, "platform", {
         value: "win32",

@@ -32,8 +32,8 @@ describe("VersionUtils", () => {
     vi.restoreAllMocks();
   });
 
-  describe("getVersion", () => {
-    it("should return cached version when available", () => {
+  describe("获取版本号", () => {
+    it("缓存可用时应返回缓存的版本号", () => {
       // Set cache directly
       VersionUtils.clearCache();
       (VersionUtils as any).cachedVersion = "1.0.0";
@@ -44,7 +44,7 @@ describe("VersionUtils", () => {
       expect(mockedFs.existsSync).not.toHaveBeenCalled();
     });
 
-    it("should read version from package.json in dist directory", () => {
+    it("应从dist目录中的package.json读取版本号", () => {
       const mockPackageJson = { version: "1.2.3", name: "test-package" };
 
       // Mock fileURLToPath
@@ -75,7 +75,7 @@ describe("VersionUtils", () => {
       );
     });
 
-    it("should read version from parent package.json when not found in current directory", () => {
+    it("当前目录中未找到时应从父级package.json读取版本号", () => {
       const mockPackageJson = { version: "2.0.0", name: "test-package" };
 
       mockedFileURLToPath.mockReturnValue("/dist/cli/utils/VersionUtils.js");
@@ -103,7 +103,7 @@ describe("VersionUtils", () => {
       );
     });
 
-    it("should return 'unknown' when no package.json is found", () => {
+    it("未找到package.json时应返回 'unknown'", () => {
       mockedFileURLToPath.mockReturnValue("/dist/cli/utils/VersionUtils.js");
 
       mockedPath.dirname.mockReturnValue("/dist/cli/utils");
@@ -120,7 +120,7 @@ describe("VersionUtils", () => {
       expect(result).toBe("unknown");
     });
 
-    it("should return 'unknown' when package.json has no version", () => {
+    it("package.json没有版本字段时应返回 'unknown'", () => {
       const mockPackageJson = { name: "test-package" };
 
       mockedFileURLToPath.mockReturnValue("/dist/cli/utils/VersionUtils.js");
@@ -136,7 +136,7 @@ describe("VersionUtils", () => {
       expect(result).toBe("unknown");
     });
 
-    it("should return 'unknown' when reading package.json fails", () => {
+    it("读取package.json失败时应返回 'unknown'", () => {
       mockedFileURLToPath.mockReturnValue("/dist/cli/utils/VersionUtils.js");
 
       mockedPath.dirname.mockReturnValue("/dist/cli/utils");
@@ -152,7 +152,7 @@ describe("VersionUtils", () => {
       expect(result).toBe("unknown");
     });
 
-    it("should cache the version after first successful read", () => {
+    it("首次成功读取后应缓存版本号", () => {
       const mockPackageJson = { version: "1.0.0", name: "test-package" };
 
       mockedFileURLToPath.mockReturnValue("/dist/cli/utils/VersionUtils.js");
@@ -175,8 +175,8 @@ describe("VersionUtils", () => {
     });
   });
 
-  describe("getVersionInfo", () => {
-    it("should return complete version info from package.json", () => {
+  describe("获取版本信息", () => {
+    it("应从package.json返回完整的版本信息", () => {
       const mockPackageJson = {
         version: "1.2.3",
         name: "xiaozhi-client",
@@ -206,7 +206,7 @@ describe("VersionUtils", () => {
       });
     });
 
-    it("should handle package.json with minimal information", () => {
+    it("应处理信息最少的package.json", () => {
       const mockPackageJson = { version: "1.0.0" };
 
       mockedFileURLToPath.mockReturnValue("/dist/cli/utils/VersionUtils.js");
@@ -227,7 +227,7 @@ describe("VersionUtils", () => {
       });
     });
 
-    it("should return default version info when no package.json is found", () => {
+    it("未找到package.json时应返回默认版本信息", () => {
       mockedFileURLToPath.mockReturnValue("/dist/cli/utils/VersionUtils.js");
 
       mockedPath.dirname.mockReturnValue("/dist/cli/utils");
@@ -244,7 +244,7 @@ describe("VersionUtils", () => {
       expect(result).toEqual({ version: "unknown" });
     });
 
-    it("should throw FileError when reading fails", () => {
+    it("读取失败时应抛出文件错误", () => {
       mockedFileURLToPath.mockReturnValue("/dist/cli/utils/VersionUtils.js");
 
       mockedPath.dirname.mockReturnValue("/dist/cli/utils");
@@ -260,38 +260,38 @@ describe("VersionUtils", () => {
     });
   });
 
-  describe("compareVersions", () => {
-    it("should return 1 when version1 is greater than version2", () => {
+  describe("比较版本号", () => {
+    it("当version1大于version2时应返回1", () => {
       expect(VersionUtils.compareVersions("2.0.0", "1.0.0")).toBe(1);
       expect(VersionUtils.compareVersions("1.1.0", "1.0.0")).toBe(1);
       expect(VersionUtils.compareVersions("1.0.1", "1.0.0")).toBe(1);
     });
 
-    it("should return -1 when version1 is less than version2", () => {
+    it("当version1小于version2时应返回-1", () => {
       expect(VersionUtils.compareVersions("1.0.0", "2.0.0")).toBe(-1);
       expect(VersionUtils.compareVersions("1.0.0", "1.1.0")).toBe(-1);
       expect(VersionUtils.compareVersions("1.0.0", "1.0.1")).toBe(-1);
     });
 
-    it("should return 0 when versions are equal", () => {
+    it("版本号相等时应返回0", () => {
       expect(VersionUtils.compareVersions("1.0.0", "1.0.0")).toBe(0);
       expect(VersionUtils.compareVersions("2.1.3", "2.1.3")).toBe(0);
     });
 
-    it("should handle versions with different number of parts", () => {
+    it("应处理不同部分数量的版本号", () => {
       expect(VersionUtils.compareVersions("1.0", "1.0.0")).toBe(0);
       expect(VersionUtils.compareVersions("1.0.0", "1.0")).toBe(0);
       expect(VersionUtils.compareVersions("1.0.0.1", "1.0.0")).toBe(1);
       expect(VersionUtils.compareVersions("1.0.0", "1.0.0.1")).toBe(-1);
     });
 
-    it("should handle versions with pre-release identifiers", () => {
+    it("应处理带预发布标识符的版本号", () => {
       // The current implementation ignores pre-release identifiers and just compares numeric parts
       expect(VersionUtils.compareVersions("1.0.0-alpha", "1.0.0")).toBe(0);
       expect(VersionUtils.compareVersions("1.0.0", "1.0.0-alpha")).toBe(0);
     });
 
-    it("should handle versions with build metadata", () => {
+    it("应处理带构建元数据的版本号", () => {
       // The current implementation doesn't properly handle build metadata
       // "1.0.0+build.1" becomes ["1", "0", "0+build", "1"] and "0+build" becomes NaN
       expect(VersionUtils.compareVersions("1.0.0+build.1", "1.0.0")).toBe(1);
@@ -299,8 +299,8 @@ describe("VersionUtils", () => {
     });
   });
 
-  describe("isValidVersion", () => {
-    it("should accept valid semantic versions", () => {
+  describe("验证版本号有效性", () => {
+    it("应接受有效的语义化版本号", () => {
       expect(VersionUtils.isValidVersion("1.0.0")).toBe(true);
       expect(VersionUtils.isValidVersion("0.0.1")).toBe(true);
       expect(VersionUtils.isValidVersion("10.20.30")).toBe(true);
@@ -316,7 +316,7 @@ describe("VersionUtils", () => {
       );
     });
 
-    it("should reject invalid semantic versions", () => {
+    it("应拒绝无效的语义化版本号", () => {
       expect(VersionUtils.isValidVersion("1")).toBe(false);
       expect(VersionUtils.isValidVersion("1.0")).toBe(false);
       expect(VersionUtils.isValidVersion("1.0.0.0")).toBe(false);
@@ -332,8 +332,8 @@ describe("VersionUtils", () => {
     });
   });
 
-  describe("clearCache", () => {
-    it("should clear the cached version", () => {
+  describe("清除缓存", () => {
+    it("应清除缓存的版本号", () => {
       // Set cache first
       (VersionUtils as any).cachedVersion = "1.0.0";
 
@@ -342,7 +342,7 @@ describe("VersionUtils", () => {
       expect((VersionUtils as any).cachedVersion).toBeNull();
     });
 
-    it("should handle null cache", () => {
+    it("应处理null缓存", () => {
       // Ensure cache is null
       VersionUtils.clearCache();
 
@@ -353,8 +353,8 @@ describe("VersionUtils", () => {
     });
   });
 
-  describe("integration tests", () => {
-    it("should work correctly after clearing cache", () => {
+  describe("集成测试", () => {
+    it("清除缓存后应正常工作", () => {
       const mockPackageJson = { version: "1.0.0" };
 
       mockedFileURLToPath.mockReturnValue("/dist/cli/utils/VersionUtils.js");
@@ -378,7 +378,7 @@ describe("VersionUtils", () => {
       expect(mockedFs.readFileSync).toHaveBeenCalledTimes(2);
     });
 
-    it("should handle multiple path attempts correctly", () => {
+    it("应正确处理多次路径尝试", () => {
       const mockPackageJson = { version: "2.0.0" };
 
       mockedFileURLToPath.mockReturnValue("/dist/cli/utils/VersionUtils.js");

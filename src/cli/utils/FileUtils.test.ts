@@ -25,20 +25,20 @@ describe("FileUtils", () => {
     vi.restoreAllMocks();
   });
 
-  describe("exists", () => {
-    it("should return true when file exists", () => {
+  describe("文件存在性检查", () => {
+    it("当文件存在时应返回 true", () => {
       mockedFs.existsSync.mockReturnValue(true);
       expect(FileUtils.exists(testFile)).toBe(true);
       expect(mockedFs.existsSync).toHaveBeenCalledWith(testFile);
     });
 
-    it("should return false when file does not exist", () => {
+    it("当文件不存在时应返回 false", () => {
       mockedFs.existsSync.mockReturnValue(false);
       expect(FileUtils.exists(testFile)).toBe(false);
       expect(mockedFs.existsSync).toHaveBeenCalledWith(testFile);
     });
 
-    it("should return false when exception occurs", () => {
+    it("发生异常时应返回 false", () => {
       mockedFs.existsSync.mockImplementation(() => {
         throw new Error("Permission denied");
       });
@@ -46,8 +46,8 @@ describe("FileUtils", () => {
     });
   });
 
-  describe("ensureDir", () => {
-    it("should create directory when it does not exist", () => {
+  describe("确保目录存在", () => {
+    it("当目录不存在时应创建目录", () => {
       mockedFs.existsSync.mockReturnValue(false);
       mockedFs.mkdirSync.mockImplementation(() => undefined);
 
@@ -59,7 +59,7 @@ describe("FileUtils", () => {
       });
     });
 
-    it("should not create directory when it already exists", () => {
+    it("当目录已存在时不应创建目录", () => {
       mockedFs.existsSync.mockReturnValue(true);
 
       FileUtils.ensureDir(testDir);
@@ -68,7 +68,7 @@ describe("FileUtils", () => {
       expect(mockedFs.mkdirSync).not.toHaveBeenCalled();
     });
 
-    it("should throw FileError when directory creation fails", () => {
+    it("目录创建失败时应抛出文件错误", () => {
       mockedFs.existsSync.mockReturnValue(false);
       mockedFs.mkdirSync.mockImplementation(() => {
         throw new Error("Permission denied");
@@ -79,8 +79,8 @@ describe("FileUtils", () => {
     });
   });
 
-  describe("readFile", () => {
-    it("should read file content successfully", () => {
+  describe("读取文件", () => {
+    it("应成功读取文件内容", () => {
       mockedFs.existsSync.mockReturnValue(true);
       mockedFs.readFileSync.mockReturnValue(testContent);
 
@@ -91,14 +91,14 @@ describe("FileUtils", () => {
       expect(mockedFs.readFileSync).toHaveBeenCalledWith(testFile, "utf8");
     });
 
-    it("should throw FileError when file does not exist", () => {
+    it("文件不存在时应抛出文件错误", () => {
       mockedFs.existsSync.mockReturnValue(false);
 
       expect(() => FileUtils.readFile(testFile)).toThrow(FileError);
       expect(() => FileUtils.readFile(testFile)).toThrow("文件不存在");
     });
 
-    it("should throw FileError when file read fails", () => {
+    it("文件读取失败时应抛出文件错误", () => {
       mockedFs.existsSync.mockReturnValue(true);
       mockedFs.readFileSync.mockImplementation(() => {
         throw new Error("Read error");
@@ -108,7 +108,7 @@ describe("FileUtils", () => {
       expect(() => FileUtils.readFile(testFile)).toThrow("无法读取文件");
     });
 
-    it("should use custom encoding", () => {
+    it("应使用自定义编码", () => {
       mockedFs.existsSync.mockReturnValue(true);
       mockedFs.readFileSync.mockReturnValue(testContent);
 
@@ -118,7 +118,7 @@ describe("FileUtils", () => {
     });
   });
 
-  describe("writeFile", () => {
+  describe("写入文件", () => {
     beforeEach(() => {
       // Mock path.dirname to return correct directory for test file
       vi.spyOn(path, "dirname").mockImplementation((filePath) => {
@@ -129,7 +129,7 @@ describe("FileUtils", () => {
       });
     });
 
-    it("should write file successfully when overwrite is true", () => {
+    it("当覆盖为 true 时应成功写入文件", () => {
       mockedFs.existsSync.mockReturnValue(true);
       mockedFs.writeFileSync.mockImplementation(() => {});
 
@@ -148,7 +148,7 @@ describe("FileUtils", () => {
       );
     });
 
-    it("should write file successfully when file does not exist", () => {
+    it("文件不存在时应成功写入文件", () => {
       mockedFs.existsSync.mockReturnValue(false);
       mockedFs.mkdirSync.mockImplementation(() => undefined);
       mockedFs.writeFileSync.mockImplementation(() => {});
@@ -164,7 +164,7 @@ describe("FileUtils", () => {
       );
     });
 
-    it("should throw FileError when file exists and overwrite is false", () => {
+    it("当文件存在且覆盖为 false 时应抛出文件错误", () => {
       mockedFs.existsSync.mockReturnValue(true);
 
       expect(() => FileUtils.writeFile(testFile, testContent)).toThrow(
@@ -175,7 +175,7 @@ describe("FileUtils", () => {
       );
     });
 
-    it("should throw FileError when write fails", () => {
+    it("写入失败时应抛出文件错误", () => {
       mockedFs.existsSync.mockReturnValue(false);
       mockedFs.mkdirSync.mockImplementation(() => undefined);
       mockedFs.writeFileSync.mockImplementation(() => {
@@ -190,7 +190,7 @@ describe("FileUtils", () => {
       );
     });
 
-    it("should use default overwrite option as false", () => {
+    it("应使用默认覆盖选项 false", () => {
       mockedFs.existsSync.mockReturnValue(false);
       mockedFs.mkdirSync.mockImplementation(() => undefined);
       mockedFs.writeFileSync.mockImplementation(() => {});
@@ -201,7 +201,7 @@ describe("FileUtils", () => {
     });
   });
 
-  describe("copyFile", () => {
+  describe("复制文件", () => {
     const destFile = path.join(testDir, "copy.txt");
 
     beforeEach(() => {
@@ -209,7 +209,7 @@ describe("FileUtils", () => {
       vi.spyOn(path, "dirname").mockReturnValue(testDir);
     });
 
-    it("should copy file successfully when overwrite is true", () => {
+    it("当覆盖为 true 时应成功复制文件", () => {
       // Configure mocks for copyFile execution
       mockedFs.existsSync.mockReturnValue(true); // All files and directories exist
       mockedFs.copyFileSync.mockImplementation(() => {});
@@ -220,7 +220,7 @@ describe("FileUtils", () => {
       expect(mockedFs.copyFileSync).toHaveBeenCalledWith(testFile, destFile);
     });
 
-    it("should copy file successfully when destination does not exist", () => {
+    it("目标文件不存在时应成功复制文件", () => {
       mockedFs.existsSync.mockReturnValueOnce(true).mockReturnValueOnce(false);
       mockedFs.mkdirSync.mockImplementation(() => undefined);
       mockedFs.copyFileSync.mockImplementation(() => {});
@@ -233,7 +233,7 @@ describe("FileUtils", () => {
       expect(mockedFs.copyFileSync).toHaveBeenCalledWith(testFile, destFile);
     });
 
-    it("should throw FileError when source file does not exist", () => {
+    it("源文件不存在时应抛出文件错误", () => {
       mockedFs.existsSync.mockReturnValue(false);
 
       expect(() => FileUtils.copyFile(testFile, destFile)).toThrow(FileError);
@@ -242,7 +242,7 @@ describe("FileUtils", () => {
       );
     });
 
-    it("should throw FileError when destination exists and overwrite is false", () => {
+    it("目标文件存在且覆盖为 false 时应抛出文件错误", () => {
       mockedFs.existsSync.mockReturnValue(true);
 
       expect(() => FileUtils.copyFile(testFile, destFile)).toThrow(FileError);
@@ -251,7 +251,7 @@ describe("FileUtils", () => {
       );
     });
 
-    it("should throw FileError when copy fails", () => {
+    it("复制失败时应抛出文件错误", () => {
       mockedFs.existsSync.mockImplementation((filePath) => {
         if (filePath === testFile) return true; // Source file exists
         if (filePath === destFile) return false; // Destination doesn't exist
@@ -269,8 +269,8 @@ describe("FileUtils", () => {
     });
   });
 
-  describe("deleteFile", () => {
-    it("should delete file when it exists", () => {
+  describe("删除文件", () => {
+    it("文件存在时应删除文件", () => {
       mockedFs.existsSync.mockReturnValue(true);
       mockedFs.unlinkSync.mockImplementation(() => {});
 
@@ -280,7 +280,7 @@ describe("FileUtils", () => {
       expect(mockedFs.unlinkSync).toHaveBeenCalledWith(testFile);
     });
 
-    it("should not attempt to delete when file does not exist", () => {
+    it("文件不存在时不应尝试删除", () => {
       mockedFs.existsSync.mockReturnValue(false);
 
       FileUtils.deleteFile(testFile);
@@ -289,7 +289,7 @@ describe("FileUtils", () => {
       expect(mockedFs.unlinkSync).not.toHaveBeenCalled();
     });
 
-    it("should throw FileError when deletion fails", () => {
+    it("文件删除失败时应抛出文件错误", () => {
       mockedFs.existsSync.mockReturnValue(true);
       mockedFs.unlinkSync.mockImplementation(() => {
         throw new Error("Delete error");
@@ -300,7 +300,7 @@ describe("FileUtils", () => {
     });
   });
 
-  describe("copyDirectory", () => {
+  describe("复制目录", () => {
     const srcDir = "/tmp/source";
     const destDir = "/tmp/destination";
     const mockStats = {
@@ -345,7 +345,7 @@ describe("FileUtils", () => {
       });
     });
 
-    it("should throw FileError when source directory does not exist", () => {
+    it("源目录不存在时应抛出文件错误", () => {
       mockedFs.existsSync.mockReturnValue(false);
 
       expect(() => FileUtils.copyDirectory(srcDir, destDir)).toThrow(FileError);
@@ -355,8 +355,8 @@ describe("FileUtils", () => {
     });
   });
 
-  describe("deleteDirectory", () => {
-    it("should delete directory when it exists", () => {
+  describe("删除目录", () => {
+    it("目录存在时应删除目录", () => {
       mockedFs.existsSync.mockReturnValue(true);
       mockedFs.rmSync.mockImplementation(() => {});
 
@@ -369,7 +369,7 @@ describe("FileUtils", () => {
       });
     });
 
-    it("should not attempt to delete when directory does not exist", () => {
+    it("目录不存在时不应尝试删除", () => {
       mockedFs.existsSync.mockReturnValue(false);
 
       FileUtils.deleteDirectory(testDir);
@@ -378,7 +378,7 @@ describe("FileUtils", () => {
       expect(mockedFs.rmSync).not.toHaveBeenCalled();
     });
 
-    it("should use custom recursive option", () => {
+    it("应使用自定义递归选项", () => {
       mockedFs.existsSync.mockReturnValue(true);
       mockedFs.rmSync.mockImplementation(() => {});
 
@@ -390,7 +390,7 @@ describe("FileUtils", () => {
       });
     });
 
-    it("should throw FileError when deletion fails", () => {
+    it("目录删除失败时应抛出文件错误", () => {
       mockedFs.existsSync.mockReturnValue(true);
       mockedFs.rmSync.mockImplementation(() => {
         throw new Error("Delete error");
@@ -401,7 +401,7 @@ describe("FileUtils", () => {
     });
   });
 
-  describe("getFileInfo", () => {
+  describe("获取文件信息", () => {
     const mockStats = {
       size: 1024n,
       isFile: () => true,
@@ -434,7 +434,7 @@ describe("FileUtils", () => {
       birthtime: new Date(),
     };
 
-    it("should get file info successfully", () => {
+    it("应成功获取文件信息", () => {
       mockedFs.existsSync.mockReturnValue(true);
       mockedFs.statSync.mockReturnValue(mockStats);
 
@@ -449,14 +449,14 @@ describe("FileUtils", () => {
       });
     });
 
-    it("should throw FileError when file does not exist", () => {
+    it("文件不存在时应抛出文件错误", () => {
       mockedFs.existsSync.mockReturnValue(false);
 
       expect(() => FileUtils.getFileInfo(testFile)).toThrow(FileError);
       expect(() => FileUtils.getFileInfo(testFile)).toThrow("文件不存在");
     });
 
-    it("should throw FileError when stat fails", () => {
+    it("获取状态失败时应抛出文件错误", () => {
       mockedFs.existsSync.mockReturnValue(true);
       mockedFs.statSync.mockImplementation(() => {
         throw new Error("Stat error");
@@ -467,7 +467,7 @@ describe("FileUtils", () => {
     });
   });
 
-  describe("listDirectory", () => {
+  describe("列出目录内容", () => {
     const mockStats = {
       isDirectory: () => false,
       isFile: () => true,
@@ -500,7 +500,7 @@ describe("FileUtils", () => {
       birthtime: new Date(),
     };
 
-    it("should list directory contents successfully", () => {
+    it("应成功列出目录内容", () => {
       mockedFs.existsSync.mockReturnValue(true);
       mockedFs.readdirSync.mockReturnValue(["file1.txt", "file2.txt"] as any);
       mockedFs.statSync.mockReturnValue(mockStats);
@@ -512,14 +512,14 @@ describe("FileUtils", () => {
       expect(result[1]).toBe(path.join(testDir, "file2.txt"));
     });
 
-    it("should throw FileError when directory does not exist", () => {
+    it("目录不存在时应抛出文件错误", () => {
       mockedFs.existsSync.mockReturnValue(false);
 
       expect(() => FileUtils.listDirectory(testDir)).toThrow(FileError);
       expect(() => FileUtils.listDirectory(testDir)).toThrow("文件不存在");
     });
 
-    it("should skip hidden files by default", () => {
+    it("默认情况下应跳过隐藏文件", () => {
       mockedFs.existsSync.mockReturnValue(true);
       mockedFs.readdirSync.mockReturnValue([
         "file1.txt",
@@ -534,7 +534,7 @@ describe("FileUtils", () => {
       expect(result.some((item) => item.includes(".hidden"))).toBe(false);
     });
 
-    it("should include hidden files when specified", () => {
+    it("指定时应包含隐藏文件", () => {
       mockedFs.existsSync.mockReturnValue(true);
       mockedFs.readdirSync.mockReturnValue([
         "file1.txt",
@@ -549,7 +549,7 @@ describe("FileUtils", () => {
       expect(result.some((item) => item.includes(".hidden"))).toBe(true);
     });
 
-    it("should handle recursive listing", () => {
+    it("应处理递归列出", () => {
       const subDir = path.join(testDir, "subdir");
       const subFile = path.join(subDir, "subfile.txt");
 
@@ -659,7 +659,7 @@ describe("FileUtils", () => {
     });
   });
 
-  describe("createTempFile", () => {
+  describe("创建临时文件", () => {
     beforeEach(() => {
       vi.stubEnv("TMPDIR", "/tmp");
       vi.stubEnv("TEMP", undefined);
@@ -670,8 +670,8 @@ describe("FileUtils", () => {
     });
   });
 
-  describe("checkPermissions", () => {
-    it("should return true when permissions are sufficient", () => {
+  describe("检查权限", () => {
+    it("权限足够时应返回 true", () => {
       mockedFs.accessSync.mockImplementation(() => {});
 
       const result = FileUtils.checkPermissions(testFile);
@@ -683,7 +683,7 @@ describe("FileUtils", () => {
       );
     });
 
-    it("should return false when permissions are insufficient", () => {
+    it("权限不足时应返回 false", () => {
       mockedFs.accessSync.mockImplementation(() => {
         throw new Error("Permission denied");
       });
@@ -693,7 +693,7 @@ describe("FileUtils", () => {
       expect(result).toBe(false);
     });
 
-    it("should use custom permission mode", () => {
+    it("应使用自定义权限模式", () => {
       mockedFs.accessSync.mockImplementation(() => {});
 
       FileUtils.checkPermissions(testFile, fs.constants.R_OK);
@@ -705,8 +705,8 @@ describe("FileUtils", () => {
     });
   });
 
-  describe("getExtension", () => {
-    it("should return file extension in lowercase", () => {
+  describe("获取文件扩展名", () => {
+    it("应返回小写的文件扩展名", () => {
       expect(FileUtils.getExtension("test.TXT")).toBe(".txt");
       expect(FileUtils.getExtension("archive.tar.gz")).toBe(".gz");
       expect(FileUtils.getExtension("filename")).toBe("");
@@ -714,8 +714,8 @@ describe("FileUtils", () => {
     });
   });
 
-  describe("getBaseName", () => {
-    it("should return filename without extension", () => {
+  describe("获取文件基本名称", () => {
+    it("应返回不带扩展名的文件名", () => {
       expect(FileUtils.getBaseName("test.txt")).toBe("test");
       expect(FileUtils.getBaseName("archive.tar.gz")).toBe("archive.tar");
       expect(FileUtils.getBaseName("filename")).toBe("filename");
@@ -723,14 +723,14 @@ describe("FileUtils", () => {
     });
   });
 
-  describe("resolvePath", () => {
-    it("should resolve relative path to absolute path", () => {
+  describe("解析路径", () => {
+    it("应将相对路径解析为绝对路径", () => {
       const result = FileUtils.resolvePath("relative/path", "/base");
 
       expect(result).toBe(path.resolve("/base", "relative/path"));
     });
 
-    it("should resolve path without base", () => {
+    it("应解析不带基路径的路径", () => {
       const result = FileUtils.resolvePath("relative/path");
 
       expect(result).toBe(path.resolve("relative/path"));
