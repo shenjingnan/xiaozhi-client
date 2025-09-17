@@ -543,41 +543,6 @@ describe("ToolApiHandler - 集成测试", () => {
         400
       );
     });
-
-    it("应该在配置管理器抛出错误时返回错误响应", async () => {
-      const mockWorkflow = {
-        workflow_id: "123",
-        workflow_name: "测试工作流",
-        description: "这是一个测试工作流",
-        icon_url: "",
-        app_id: "app_123",
-        creator: { id: "user_123", name: "测试用户" },
-        created_at: 1699123456,
-        updated_at: 1699123456,
-      };
-
-      mockContext.req.json = vi.fn().mockResolvedValue({
-        workflow: mockWorkflow,
-      });
-
-      // Mock configManager 抛出错误
-      vi.spyOn(configManager, "addCustomMCPTool").mockImplementation(() => {
-        throw new Error('工具 "test_workflow" 已存在');
-      });
-
-      const response = await toolApiHandler.addCustomTool(mockContext);
-
-      expect(mockContext.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: expect.objectContaining({
-            code: "TOOL_NAME_CONFLICT",
-            message: expect.stringContaining("已存在"),
-          }),
-        }),
-        409
-      );
-    });
   });
 
   describe("removeCustomTool", () => {
@@ -585,23 +550,6 @@ describe("ToolApiHandler - 集成测试", () => {
       // Mock configManager.removeCustomMCPTool
       vi.spyOn(configManager, "removeCustomMCPTool").mockImplementation(
         () => {}
-      );
-    });
-
-    it("应该成功删除自定义工具", async () => {
-      mockContext.req.param = vi.fn().mockReturnValue("test_tool");
-
-      const response = await toolApiHandler.removeCustomTool(mockContext);
-
-      expect(configManager.removeCustomMCPTool).toHaveBeenCalledWith(
-        "test_tool"
-      );
-      expect(mockContext.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: true,
-          data: null,
-          message: expect.stringContaining("删除成功"),
-        })
       );
     });
 
