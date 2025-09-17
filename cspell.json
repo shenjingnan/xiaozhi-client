@@ -50,6 +50,7 @@
     "postbuild",
     "pyenv",
     "pypi",
+    "reinit",
     "releaserc",
     "retryable",
     "Segoe",
