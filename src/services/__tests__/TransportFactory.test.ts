@@ -292,7 +292,7 @@ describe("TransportFactory", () => {
       } as any;
 
       expect(() => TransportFactory.validateConfig(config)).toThrow(
-        "配置必须包含 type 字段"
+        "传输类型未设置，这应该在 inferTransportType 中处理"
       );
     });
 

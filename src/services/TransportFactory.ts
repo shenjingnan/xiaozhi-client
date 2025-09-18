@@ -195,8 +195,16 @@ export function validateConfig(config: MCPServiceConfig): void {
     throw new Error("配置必须包含有效的 name 字段");
   }
 
+  // type 字段现在是可选的，由 MCPService 自动推断
+  // 这里我们只验证如果 type 存在，必须是有效的类型
+  if (config.type && !Object.values(MCPTransportType).includes(config.type)) {
+    throw new Error(`不支持的传输类型: ${config.type}`);
+  }
+
+  // 注意：这个验证方法在 MCPService.inferTransportType 之后调用
+  // 此时 config.type 应该已经被推断或显式设置
   if (!config.type) {
-    throw new Error("配置必须包含 type 字段");
+    throw new Error("传输类型未设置，这应该在 inferTransportType 中处理");
   }
 
   switch (config.type) {
