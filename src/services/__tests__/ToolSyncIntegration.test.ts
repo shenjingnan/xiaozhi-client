@@ -96,7 +96,6 @@ vi.mock("../MCPService.js", () => {
       STDIO: "stdio",
       SSE: "sse",
       STREAMABLE_HTTP: "streamable-http",
-      MODELSCOPE_SSE: "modelscope-sse",
     },
   };
 });

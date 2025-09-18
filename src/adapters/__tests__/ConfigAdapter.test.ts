@@ -245,7 +245,7 @@ describe("ConfigAdapter", () => {
 
         const result = convertLegacyToNew("modelscope", legacyConfig);
 
-        expect(result.type).toBe(MCPTransportType.MODELSCOPE_SSE);
+        expect(result.type).toBe(MCPTransportType.SSE);
         expect(result.modelScopeAuth).toBe(true);
         expect(result.url).toBe(
           "https://mcp.api-inference.modelscope.net/search/sse"
@@ -260,13 +260,14 @@ describe("ConfigAdapter", () => {
 
         const result = convertLegacyToNew("modelscope-cn", legacyConfig);
 
-        expect(result.type).toBe(MCPTransportType.MODELSCOPE_SSE);
+        expect(result.type).toBe(MCPTransportType.SSE);
         expect(result.modelScopeAuth).toBe(true);
       });
 
-      it("应该在缺少 url 时抛出错误", () => {
+      it("应该在 url 为 undefined 或 null 时抛出错误", () => {
         const legacyConfig = {
           type: "sse",
+          url: undefined,
         } as any;
 
         expect(() => convertLegacyToNew("test", legacyConfig)).toThrow(
@@ -310,7 +311,7 @@ describe("ConfigAdapter", () => {
       });
 
       it("应该正确转换隐式 streamable-http 配置（只有 url）", () => {
-        const legacyConfig: StreamableHTTPMCPServerConfig = {
+        const legacyConfig: MCPServerConfig = {
           url: "https://api.example.com/mcp",
         };
 
@@ -321,9 +322,10 @@ describe("ConfigAdapter", () => {
         expect(result.ping?.enabled).toBe(false); // HTTP 连接默认不启用 ping
       });
 
-      it("应该在缺少 url 时抛出错误", () => {
+      it("应该在 url 为 undefined 或 null 时抛出错误", () => {
         const legacyConfig = {
           type: "streamable-http",
+          url: undefined,
         } as any;
 
         expect(() => convertLegacyToNew("test", legacyConfig)).toThrow(
@@ -358,6 +360,337 @@ describe("ConfigAdapter", () => {
         expect(() => convertLegacyToNew("test", invalidConfig)).toThrow(
           ConfigValidationError
         );
+      });
+
+      describe("基于URL路径的类型推断", () => {
+        // SSE 类型推断测试
+        describe("SSE 类型推断", () => {
+          it("应该正确推断 SSE 类型 - 简单路径", () => {
+            const legacyConfig: MCPServerConfig = {
+              url: "https://example.com/sse",
+            };
+
+            const result = convertLegacyToNew("sse-test", legacyConfig);
+            expect(result.type).toBe(MCPTransportType.SSE);
+          });
+
+          it("应该正确推断 SSE 类型 - 复杂路径", () => {
+            const legacyConfig: MCPServerConfig = {
+              url: "https://mcp.api-inference.modelscope.net/f0fed2f733514b/sse",
+            };
+
+            const result = convertLegacyToNew("modelscope-sse", legacyConfig);
+            expect(result.type).toBe(MCPTransportType.SSE);
+          });
+
+          it("应该正确推断 SSE 类型 - 带查询参数", () => {
+            const legacyConfig: MCPServerConfig = {
+              url: "https://example.com/sse?token=abc123&timeout=5000",
+            };
+
+            const result = convertLegacyToNew("sse-with-params", legacyConfig);
+            expect(result.type).toBe(MCPTransportType.SSE);
+          });
+
+          it("应该正确推断 SSE 类型 - modelscope.cn 域名", () => {
+            const legacyConfig: MCPServerConfig = {
+              url: "https://api.modelscope.cn/mcp/sse",
+            };
+
+            const result = convertLegacyToNew(
+              "modelscope-cn-sse",
+              legacyConfig
+            );
+            expect(result.type).toBe(MCPTransportType.SSE);
+          });
+
+          it("应该正确推断 SSE 类型 - 带哈希的路径", () => {
+            const legacyConfig: MCPServerConfig = {
+              url: "https://example.com/sse#section",
+            };
+
+            const result = convertLegacyToNew("sse-with-hash", legacyConfig);
+            expect(result.type).toBe(MCPTransportType.SSE);
+          });
+
+          it("应该正确处理高德地图 SSE 服务", () => {
+            const legacyConfig: MCPServerConfig = {
+              url: "https://mcp.amap.com/sse?key=1ec31da021b2702787841ea4ee822de3",
+            };
+
+            const result = convertLegacyToNew("amap-amap-sse", legacyConfig);
+            expect(result.type).toBe(MCPTransportType.SSE);
+          });
+
+          it("应该正确推断 SSE 类型 - 嵌套路径", () => {
+            const testCases = [
+              "https://api.example.com/v1/sse",
+              "https://api.example.com/v1/v2/sse",
+              "https://api.example.com/v1/v2/v3/sse",
+              "https://api.example.com/service/v1/sse",
+            ];
+
+            for (const url of testCases) {
+              const legacyConfig: MCPServerConfig = { url };
+              const result = convertLegacyToNew("nested-sse", legacyConfig);
+              expect(result.type).toBe(MCPTransportType.SSE);
+            }
+          });
+
+          it("应该正确推断 SSE 类型 - 端口和子域名", () => {
+            const testCases = [
+              "https://api.example.com:8080/sse",
+              "https://mcp.dev.example.com/sse",
+              "https://test.example.com:8443/sse",
+            ];
+
+            for (const url of testCases) {
+              const legacyConfig: MCPServerConfig = { url };
+              const result = convertLegacyToNew(
+                "port-subdomain-sse",
+                legacyConfig
+              );
+              expect(result.type).toBe(MCPTransportType.SSE);
+            }
+          });
+        });
+
+        // STREAMABLE_HTTP 类型推断测试
+        describe("STREAMABLE_HTTP 类型推断", () => {
+          it("应该正确推断 STREAMABLE_HTTP 类型 - 简单路径", () => {
+            const legacyConfig: MCPServerConfig = {
+              url: "https://example.com/mcp",
+            };
+
+            const result = convertLegacyToNew("mcp-test", legacyConfig);
+            expect(result.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+          });
+
+          it("应该正确推断 STREAMABLE_HTTP 类型 - 复杂路径", () => {
+            const legacyConfig: MCPServerConfig = {
+              url: "https://mcp.api-inference.modelscope.net/8928ccc99fa34b/mcp",
+            };
+
+            const result = convertLegacyToNew("modelscope-mcp", legacyConfig);
+            expect(result.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+          });
+
+          it("应该正确推断 STREAMABLE_HTTP 类型 - 带查询参数", () => {
+            const legacyConfig: MCPServerConfig = {
+              url: "https://example.com/mcp?version=1.0&format=json",
+            };
+
+            const result = convertLegacyToNew("mcp-with-params", legacyConfig);
+            expect(result.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+          });
+
+          it("应该正确推断 STREAMABLE_HTTP 类型 - 嵌套路径", () => {
+            const testCases = [
+              "https://api.example.com/v1/mcp",
+              "https://api.example.com/v1/v2/mcp",
+              "https://api.example.com/service/v1/mcp",
+            ];
+
+            for (const url of testCases) {
+              const legacyConfig: MCPServerConfig = { url };
+              const result = convertLegacyToNew("nested-mcp", legacyConfig);
+              expect(result.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+            }
+          });
+        });
+
+        // 默认类型推断测试
+        describe("默认类型推断", () => {
+          it("应该默认推断 STREAMABLE_HTTP 类型 - API 路径", () => {
+            const legacyConfig: MCPServerConfig = {
+              url: "https://example.com/api",
+            };
+
+            const result = convertLegacyToNew("api-test", legacyConfig);
+            expect(result.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+          });
+
+          it("应该默认推断 STREAMABLE_HTTP 类型 - 根路径", () => {
+            const legacyConfig: MCPServerConfig = {
+              url: "https://example.com/",
+            };
+
+            const result = convertLegacyToNew("root-test", legacyConfig);
+            expect(result.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+          });
+
+          it("应该默认推断 STREAMABLE_HTTP 类型 - 其他路径", () => {
+            const testCases = [
+              "https://example.com/tools",
+              "https://example.com/v1/tools",
+              "https://example.com/service",
+              "https://example.com/endpoint",
+              "https://example.com/webhook",
+            ];
+
+            for (const url of testCases) {
+              const legacyConfig: MCPServerConfig = { url };
+              const result = convertLegacyToNew("default-type", legacyConfig);
+              expect(result.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+            }
+          });
+        });
+
+        // 边界情况和异常处理测试
+        describe("边界情况和异常处理", () => {
+          it("应该处理 URL 解析错误", () => {
+            const legacyConfig: MCPServerConfig = {
+              url: "invalid-url",
+            };
+
+            const result = convertLegacyToNew("invalid-test", legacyConfig);
+            expect(result.type).toBe(MCPTransportType.STREAMABLE_HTTP); // 默认值
+          });
+
+          it("应该处理空 URL", () => {
+            const legacyConfig: MCPServerConfig = {
+              url: "",
+            };
+
+            const result = convertLegacyToNew("empty-url", legacyConfig);
+            expect(result.type).toBe(MCPTransportType.STREAMABLE_HTTP); // 默认值
+          });
+
+          it("应该处理只有协议的 URL", () => {
+            const legacyConfig: MCPServerConfig = {
+              url: "https://",
+            };
+
+            const result = convertLegacyToNew("protocol-only", legacyConfig);
+            expect(result.type).toBe(MCPTransportType.STREAMABLE_HTTP); // 默认值
+          });
+
+          it("应该处理特殊字符 URL", () => {
+            const legacyConfig: MCPServerConfig = {
+              url: "https://example.com/sse?q=test%20value&param=1+2",
+            };
+
+            const result = convertLegacyToNew("special-chars", legacyConfig);
+            expect(result.type).toBe(MCPTransportType.SSE);
+          });
+
+          it("应该处理大小写敏感的路径", () => {
+            const testCases = [
+              {
+                url: "https://example.com/SSE",
+                expected: MCPTransportType.STREAMABLE_HTTP,
+              },
+              {
+                url: "https://example.com/sse",
+                expected: MCPTransportType.SSE,
+              },
+              {
+                url: "https://example.com/MCP",
+                expected: MCPTransportType.STREAMABLE_HTTP,
+              },
+              {
+                url: "https://example.com/mcp",
+                expected: MCPTransportType.STREAMABLE_HTTP,
+              },
+            ];
+
+            for (const { url, expected } of testCases) {
+              const legacyConfig: MCPServerConfig = { url };
+              const result = convertLegacyToNew("case-sensitive", legacyConfig);
+              expect(result.type).toBe(expected);
+            }
+          });
+
+          it("应该处理带有尾部斜杠的路径", () => {
+            const testCases = [
+              {
+                url: "https://example.com/sse/",
+                expected: MCPTransportType.STREAMABLE_HTTP,
+              },
+              {
+                url: "https://example.com/sse",
+                expected: MCPTransportType.SSE,
+              },
+              {
+                url: "https://example.com/mcp/",
+                expected: MCPTransportType.STREAMABLE_HTTP,
+              },
+              {
+                url: "https://example.com/mcp",
+                expected: MCPTransportType.STREAMABLE_HTTP,
+              },
+            ];
+
+            for (const { url, expected } of testCases) {
+              const legacyConfig: MCPServerConfig = { url };
+              const result = convertLegacyToNew("trailing-slash", legacyConfig);
+              expect(result.type).toBe(expected);
+            }
+          });
+
+          it("应该处理包含 sse 或 mcp 子字符串的路径", () => {
+            const testCases = [
+              {
+                url: "https://example.com/assess",
+                expected: MCPTransportType.STREAMABLE_HTTP,
+              },
+              {
+                url: "https://example.com/mcprefix",
+                expected: MCPTransportType.STREAMABLE_HTTP,
+              },
+              {
+                url: "https://example.com/ssendpoint",
+                expected: MCPTransportType.STREAMABLE_HTTP,
+              },
+              {
+                url: "https://example.com/mcprefix/sse",
+                expected: MCPTransportType.SSE,
+              },
+            ];
+
+            for (const { url, expected } of testCases) {
+              const legacyConfig: MCPServerConfig = { url };
+              const result = convertLegacyToNew(
+                "substring-match",
+                legacyConfig
+              );
+              expect(result.type).toBe(expected);
+            }
+          });
+        });
+
+        // 显式类型配置优先级测试
+        describe("显式类型配置优先级", () => {
+          it("应该优先使用显式指定的 sse 类型", () => {
+            const legacyConfig: SSEMCPServerConfig = {
+              type: "sse",
+              url: "https://example.com/mcp", // 这个 URL 应该推断为 mcp
+            };
+
+            const result = convertLegacyToNew("explicit-sse", legacyConfig);
+            expect(result.type).toBe(MCPTransportType.SSE);
+          });
+
+          it("应该优先使用显式指定的 streamable-http 类型", () => {
+            const legacyConfig: StreamableHTTPMCPServerConfig = {
+              type: "streamable-http",
+              url: "https://example.com/sse", // 这个 URL 应该推断为 sse
+            };
+
+            const result = convertLegacyToNew("explicit-http", legacyConfig);
+            expect(result.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+          });
+
+          it("应该正确处理显式类型与 URL 推断的一致性", () => {
+            const legacyConfig: SSEMCPServerConfig = {
+              type: "sse",
+              url: "https://example.com/sse", // URL 推断与显式类型一致
+            };
+
+            const result = convertLegacyToNew("consistent-type", legacyConfig);
+            expect(result.type).toBe(MCPTransportType.SSE);
+          });
+        });
       });
     });
   });

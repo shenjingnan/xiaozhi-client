@@ -9,7 +9,6 @@ export enum MCPTransportType {
   STDIO = "stdio",
   SSE = "sse",
   STREAMABLE_HTTP = "streamable-http",
-  MODELSCOPE_SSE = "modelscope-sse",
 }
 
 // 连接状态枚举
@@ -56,7 +55,7 @@ export interface ModelScopeSSEOptions {
 // MCPService 配置接口
 export interface MCPServiceConfig {
   name: string;
-  type: MCPTransportType;
+  type?: MCPTransportType; // 现在是可选的，支持自动推断
   // stdio 配置
   command?: string;
   args?: string[];
@@ -144,8 +143,11 @@ export class MCPService {
   private isPinging = false;
 
   constructor(config: MCPServiceConfig, options?: MCPServiceOptions) {
-    this.config = config;
     this.logger = logger;
+
+    // 自动推断服务类型（如果没有显式指定）
+    const configWithInferredType = this.inferTransportType(config);
+    this.config = configWithInferredType;
 
     // 验证配置
     this.validateConfig();
@@ -194,6 +196,81 @@ export class MCPService {
   ): void {
     const taggedMessage = `[MCP-${this.config.name}] ${message}`;
     this.logger[level](taggedMessage, ...args);
+  }
+
+  /**
+   * 自动推断传输类型
+   */
+  private inferTransportType(config: MCPServiceConfig): MCPServiceConfig {
+    // 如果已经显式指定了类型，直接返回原配置
+    if (config.type) {
+      return config;
+    }
+
+    this.logger.debug(`[MCP-${config.name}] 自动推断传输类型...`);
+
+    // 根据配置特征推断类型
+    let inferredType: MCPTransportType;
+
+    if (config.command) {
+      // 包含 command 字段 → stdio 类型
+      inferredType = MCPTransportType.STDIO;
+      this.logger.debug(
+        `[MCP-${config.name}] 检测到 command 字段，推断为 stdio 类型`
+      );
+    } else if (config.url !== undefined && config.url !== null) {
+      // 包含 url 字段，使用统一的 URL 路径推断逻辑
+      inferredType = this.inferTransportTypeFromUrl(config.url, config.name);
+    } else {
+      // 无法推断，抛出错误
+      throw new Error(
+        `无法为服务 ${config.name} 推断传输类型。请显式指定 type 字段，或提供 command/url 配置`
+      );
+    }
+
+    // 返回包含推断类型的新配置对象
+    return {
+      type: inferredType,
+      ...config,
+    };
+  }
+
+  /**
+   * 根据 URL 路径推断传输类型（与 ConfigAdapter 保持一致）
+   * 基于路径末尾推断，支持包含多个 / 的复杂路径
+   */
+  private inferTransportTypeFromUrl(
+    url: string,
+    serviceName: string
+  ): MCPTransportType {
+    try {
+      const parsedUrl = new URL(url);
+      const pathname = parsedUrl.pathname;
+
+      // 检查路径末尾
+      if (pathname.endsWith("/sse")) {
+        this.logger.info(
+          `[MCP-${serviceName}] 检测到 URL 路径以 /sse 结尾，推断为 sse 类型`
+        );
+        return MCPTransportType.SSE;
+      }
+      if (pathname.endsWith("/mcp")) {
+        this.logger.info(
+          `[MCP-${serviceName}] 检测到 URL 路径以 /mcp 结尾，推断为 streamable-http 类型`
+        );
+        return MCPTransportType.STREAMABLE_HTTP;
+      }
+      this.logger.info(
+        `[MCP-${serviceName}] URL 路径 ${pathname} 不匹配特定规则，默认推断为 streamable-http 类型`
+      );
+      return MCPTransportType.STREAMABLE_HTTP;
+    } catch (error) {
+      this.logger.warn(
+        `[MCP-${serviceName}] URL 解析失败，默认推断为 streamable-http 类型`,
+        error
+      );
+      return MCPTransportType.STREAMABLE_HTTP;
+    }
   }
 
   /**
@@ -622,7 +699,7 @@ export class MCPService {
       name: this.config.name,
       connected: this.connectionState === ConnectionState.CONNECTED,
       initialized: this.initialized,
-      transportType: this.config.type,
+      transportType: this.config.type!,
       toolCount: this.tools.size,
       lastError: this.reconnectState.lastError?.message,
       reconnectAttempts: this.reconnectState.attempts,

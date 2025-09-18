@@ -17,7 +17,7 @@ async function main() {
   // 配置 MCP 服务
   const config: MCPServiceConfig = {
     name: "modelscope-test",
-    type: MCPTransportType.MODELSCOPE_SSE,
+    type: MCPTransportType.SSE,
     url: "https://mcp.api-inference.modelscope.net/xxx/sse",
     apiKey: "<请填写apiKey>",
   };

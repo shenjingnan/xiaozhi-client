@@ -51,7 +51,6 @@ vi.mock("../MCPService.js", () => ({
   MCPTransportType: {
     STDIO: "stdio",
     SSE: "sse",
-    MODELSCOPE_SSE: "modelscope-sse",
     STREAMABLE_HTTP: "streamable-http",
   },
 }));

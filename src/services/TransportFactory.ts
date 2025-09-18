@@ -45,9 +45,6 @@ export function createTransport(config: MCPServiceConfig): any {
     case MCPTransportType.SSE:
       return createSSETransport(config);
 
-    case MCPTransportType.MODELSCOPE_SSE:
-      return createModelScopeSSETransport(config);
-
     case MCPTransportType.STREAMABLE_HTTP:
       return createStreamableHTTPTransport(config);
 
@@ -195,8 +192,16 @@ export function validateConfig(config: MCPServiceConfig): void {
     throw new Error("配置必须包含有效的 name 字段");
   }
 
+  // type 字段现在是可选的，由 MCPService 自动推断
+  // 这里我们只验证如果 type 存在，必须是有效的类型
+  if (config.type && !Object.values(MCPTransportType).includes(config.type)) {
+    throw new Error(`不支持的传输类型: ${config.type}`);
+  }
+
+  // 注意：这个验证方法在 MCPService.inferTransportType 之后调用
+  // 此时 config.type 应该已经被推断或显式设置
   if (!config.type) {
-    throw new Error("配置必须包含 type 字段");
+    throw new Error("传输类型未设置，这应该在 inferTransportType 中处理");
   }
 
   switch (config.type) {
@@ -207,20 +212,14 @@ export function validateConfig(config: MCPServiceConfig): void {
       break;
 
     case MCPTransportType.SSE:
-    case MCPTransportType.STREAMABLE_HTTP:
-      if (!config.url) {
+      if (config.url === undefined || config.url === null) {
         throw new Error(`${config.type} 类型需要 url 字段`);
       }
       break;
-
-    case MCPTransportType.MODELSCOPE_SSE:
-      if (!config.url) {
-        throw new Error("modelscope-sse 类型需要 url 字段");
-      }
-      if (!config.apiKey) {
-        throw new Error(
-          "modelscope-sse 类型需要 apiKey 字段。请在配置文件中设置 modelscope.apiKey 或确保服务配置包含 apiKey"
-        );
+    case MCPTransportType.STREAMABLE_HTTP:
+      // STREAMABLE_HTTP 允许空 URL，会在后续处理中设置默认值
+      if (config.url === undefined || config.url === null) {
+        throw new Error(`${config.type} 类型需要 url 字段`);
       }
       break;
 
@@ -236,7 +235,6 @@ export function getSupportedTypes(): MCPTransportType[] {
   return [
     MCPTransportType.STDIO,
     MCPTransportType.SSE,
-    MCPTransportType.MODELSCOPE_SSE,
     MCPTransportType.STREAMABLE_HTTP,
   ];
 }
