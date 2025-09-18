@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.7.4](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.3...v1.7.4) (2025-09-18)
+
+### Features
+
+* **mcp:** 实现MCP工具配置双向同步机制 ([#326](https://github.com/shenjingnan/xiaozhi-client/issues/326)) ([d1b4be1](https://github.com/shenjingnan/xiaozhi-client/commit/d1b4be18fee96a787cb0cbd3267be95cb2ffff42))
+* **mcp:** 实现MCP服务类型推断系统 ([#329](https://github.com/shenjingnan/xiaozhi-client/issues/329)) ([b907c6c](https://github.com/shenjingnan/xiaozhi-client/commit/b907c6ca1c788ff89aa5893a238423526a5c89ae))
+
+### Bug Fixes
+
+* **web:** 修复只有一个接入点时，无法移除的问题 ([#325](https://github.com/shenjingnan/xiaozhi-client/issues/325)) ([aabf938](https://github.com/shenjingnan/xiaozhi-client/commit/aabf938797f0d5b59b574644cf8ab507e4947ab3))
+
 ## [1.7.3](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.2...v1.7.3) (2025-09-15)
 
 ### Bug Fixes
