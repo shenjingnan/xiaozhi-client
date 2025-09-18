@@ -45,7 +45,6 @@ export function createTransport(config: MCPServiceConfig): any {
     case MCPTransportType.SSE:
       return createSSETransport(config);
 
-  
     case MCPTransportType.STREAMABLE_HTTP:
       return createStreamableHTTPTransport(config);
 
