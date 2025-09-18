@@ -45,9 +45,7 @@ export function createTransport(config: MCPServiceConfig): any {
     case MCPTransportType.SSE:
       return createSSETransport(config);
 
-    case MCPTransportType.MODELSCOPE_SSE:
-      return createModelScopeSSETransport(config);
-
+  
     case MCPTransportType.STREAMABLE_HTTP:
       return createStreamableHTTPTransport(config);
 
@@ -215,20 +213,14 @@ export function validateConfig(config: MCPServiceConfig): void {
       break;
 
     case MCPTransportType.SSE:
-    case MCPTransportType.STREAMABLE_HTTP:
-      if (!config.url) {
+      if (config.url === undefined || config.url === null) {
         throw new Error(`${config.type} 类型需要 url 字段`);
       }
       break;
-
-    case MCPTransportType.MODELSCOPE_SSE:
-      if (!config.url) {
-        throw new Error("modelscope-sse 类型需要 url 字段");
-      }
-      if (!config.apiKey) {
-        throw new Error(
-          "modelscope-sse 类型需要 apiKey 字段。请在配置文件中设置 modelscope.apiKey 或确保服务配置包含 apiKey"
-        );
+    case MCPTransportType.STREAMABLE_HTTP:
+      // STREAMABLE_HTTP 允许空 URL，会在后续处理中设置默认值
+      if (config.url === undefined || config.url === null) {
+        throw new Error(`${config.type} 类型需要 url 字段`);
       }
       break;
 
@@ -244,7 +236,6 @@ export function getSupportedTypes(): MCPTransportType[] {
   return [
     MCPTransportType.STDIO,
     MCPTransportType.SSE,
-    MCPTransportType.MODELSCOPE_SSE,
     MCPTransportType.STREAMABLE_HTTP,
   ];
 }

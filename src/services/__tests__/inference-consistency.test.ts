@@ -91,7 +91,7 @@ describe("MCPService 和 ConfigAdapter 推断逻辑一致性测试", () => {
     };
 
     // ConfigAdapter 处理显式类型
-    const legacyConfig = { url: explicitConfig.url, type: "streamable-http" };
+    const legacyConfig = { url: explicitConfig.url, type: "streamable-http" as const };
     const configAdapterResult = convertLegacyToNew(
       "explicit-service",
       legacyConfig

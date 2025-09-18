@@ -56,7 +56,7 @@ describe("适配器集成测试", () => {
       const result = convertLegacyToNew("modelscope", legacyConfig);
 
       expect(result.name).toBe("modelscope");
-      expect(result.type).toBe(MCPTransportType.MODELSCOPE_SSE);
+      expect(result.type).toBe(MCPTransportType.SSE);
       expect(result.url).toBe("https://api.modelscope.net/mcp/sse");
       expect(result.modelScopeAuth).toBe(true);
     });

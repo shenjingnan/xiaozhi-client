@@ -218,7 +218,7 @@ export class MCPService {
       this.logger.debug(
         `[MCP-${config.name}] 检测到 command 字段，推断为 stdio 类型`
       );
-    } else if (config.url) {
+    } else if (config.url !== undefined && config.url !== null) {
       // 包含 url 字段，使用统一的 URL 路径推断逻辑
       inferredType = this.inferTransportTypeFromUrl(config.url, config.name);
     } else {

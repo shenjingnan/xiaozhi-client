@@ -1107,7 +1107,7 @@ export class MCPServiceManager {
 
     try {
       // 处理 ModelScope SSE 服务
-      if (config.type === MCPTransportType.MODELSCOPE_SSE) {
+      if (config.type === MCPTransportType.SSE && config.url && config.url.includes("modelscope")) {
         const modelScopeApiKey = configManager.getModelScopeApiKey();
         if (modelScopeApiKey) {
           enhancedConfig.apiKey = modelScopeApiKey;
