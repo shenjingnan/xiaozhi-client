@@ -9,20 +9,21 @@ import type {
 import { CacheLifecycleManager } from "../CacheLifecycleManager.js";
 
 // Mock Logger - 使用 unknown 转换避免类型检查问题
-const createMockLogger = (): Logger => ({
-  debug: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-  log: vi.fn(),
-  success: vi.fn(),
-  initLogFile: vi.fn(),
-  enableFileLogging: vi.fn(),
-  close: vi.fn(),
-  setLogFileOptions: vi.fn(),
-  cleanupOldLogs: vi.fn(),
-  withTag: vi.fn().mockReturnThis(),
-} as unknown as Logger);
+const createMockLogger = (): Logger =>
+  ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    log: vi.fn(),
+    success: vi.fn(),
+    initLogFile: vi.fn(),
+    enableFileLogging: vi.fn(),
+    close: vi.fn(),
+    setLogFileOptions: vi.fn(),
+    cleanupOldLogs: vi.fn(),
+    withTag: vi.fn().mockReturnThis(),
+  }) as unknown as Logger;
 
 // Mock cache data
 const createMockCache = (): ExtendedMCPToolsCache => ({

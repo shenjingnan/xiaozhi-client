@@ -878,7 +878,9 @@ describe("TaskStateManager", () => {
       manager.updateTaskStatus(taskId, "completed");
 
       const history = manager.getTaskHistory(taskId);
-      const unknownTransition = history.find((h) => h.from === "unknown" as TaskStatus);
+      const unknownTransition = history.find(
+        (h) => h.from === ("unknown" as TaskStatus)
+      );
 
       expect(unknownTransition?.reason).toBe("状态更新");
     });
