@@ -1,0 +1,71 @@
+---
+title: 集成扣子工作流
+sidebarTitle: 集成扣子工作流
+---
+
+<Note>
+  **前期准备**: 请先将 xiaozhi-client 升级到 1.7.4 及以上版本
+</Note>
+
+<Steps>
+  <Step title="获取扣子空间授权凭证">
+  打开 [扣子空间-API管理](https://www.coze.cn/open/oauth/sats) - 服务身份及凭证 - 添加
+
+  xiaozhi-client 所需的最小权限如下
+  <Note>如果你觉得一个个授权太麻烦，或者并没有特别敏感的数据，可以直接勾选所有权限</Note>
+
+| 权限 | 原因 | API文档 | client 版本 |
+| -------- | ------------------------------------- | --- | --- |
+| 团队空间管理 - listWorkspace | 在获取工作流列表时使用 | [/v1/workspaces](https://www.coze.cn/open/docs/developer_guides/list_workspace) | `>=1.7.2` |
+| 工作流 - listWorkflow | 在获取工作流列表时使用 | [/v1/workflows](https://www.coze.cn/open/docs/developer_guides/get_workflow_list) | `>=1.7.2` |
+| 工作流 - run | 在执行工作流时使用 | [/v1/workflow/run](https://www.coze.cn/open/docs/developer_guides/workflow_run) | `>=1.7.2` |
+  </Step>
+
+  <Step title="配置扣子凭证">
+  请在 `xiaozhi.config.json` 中添加你的扣子凭证
+  ```json xiaozhi.config.json
+  {
+    "platforms": {
+      "coze": {
+        "token": "<请在此处添加你的扣子凭证>"
+      }
+    },
+  }
+  ```
+  </Step>
+
+  <Step title="启动服务">
+    ```bash
+    xiaozhi start
+    ```
+  </Step>
+
+  <Step title="集成一个工作流">
+  请在浏览器中访问 `http://localhost:9999`
+  <Note>如果你安装在另一台设备上，请访问 `http://<你的IP地址>:9999`</Note>
+  <Frame caption="第一步：点击右侧 工作流集成 按钮">
+  <img src="/images/coze-workflow/config-workflow-step-1.png" alt="第一步：点击右侧 **工作流集成** 按钮" />
+</Frame>
+  <Frame caption="第二步：在指定的工作流中点击 添加 按钮">
+  <img src="/images/coze-workflow/config-workflow-step-2.png" alt="第二步：在指定的工作流中点击 添加 按钮" />
+</Frame>
+  <Frame caption="第三步：在 配置工作流参数 弹窗中配置此工作流的参数">
+  <img src="/images/coze-workflow/config-workflow-step-3.png" alt="第三步：在 配置工作流参数 弹窗中配置此工作流的参数" />
+</Frame>
+  </Step>
+
+    <Step title="测试效果">
+    使用你的硬件设备测试是否成功
+    <Note>
+    需要注意的是，由于扣子工作流通常比较耗时，因此 xiaozhi-client 超过8秒未响应后会自动返回友好的等待处理内容给服务端
+    不过不需要担心，xiaozhi-client 会在工作流正确响应后缓存响应数据，等到下次你询问 `是否有结果了？` 时，会自动返回缓存的结果
+    </Note>
+    </Step>
+</Steps>
+
+## FAQ
+
+### Q: 如果获取工作流入参？
+在 xiaozhi-client 配置的参数即为工作流开始节点所配置的输入字段
+可以在扣子中找到对应工作流，点击详情查看，将对应的参数配置到 xiaozhi-client 即可
+![获取工作流参数](/images/coze-workflow/get-parameter.png)

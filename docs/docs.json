@@ -13,6 +13,7 @@
       "getting-started/intro",
       "getting-started/quickstart",
       "usage/docker",
+      "usage/coze-workflow",
       "reference/command"
     ]
   },
