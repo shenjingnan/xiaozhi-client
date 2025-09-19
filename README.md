@@ -9,6 +9,7 @@
 [![AI Code: 90%+](https://img.shields.io/badge/AI%20Code-90%25%2B-brightgreen)](https://img.shields.io/badge/AI%20Code-90%25%2B-brightgreen)
 [![Xiaozhi AI: Supported](https://img.shields.io/badge/小智AI-Supported-ff6b35?style=flat)](http://xiaozhi.me)
 [![ModelScope: Supported](https://img.shields.io/badge/ModelScope-Supported-6366f1?style=flat)](https://www.modelscope.cn/mcp)
+[![Coze: Supported](https://img.shields.io/badge/Coze-Supported-6366f1?style=flat)](https://www.coze.cn/)
 ![MCP Client: Compatible](https://img.shields.io/badge/MCP%20Client-Compatible-00d4aa?style=flat)
 
 <img src="https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/qq-group-qrcode.jpg" alt="QQ群" width="300"/>
