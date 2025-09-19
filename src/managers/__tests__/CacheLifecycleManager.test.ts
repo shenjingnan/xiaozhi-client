@@ -8,13 +8,21 @@ import type {
 } from "../../types/mcp.js";
 import { CacheLifecycleManager } from "../CacheLifecycleManager.js";
 
-// Mock Logger
+// Mock Logger - 使用 unknown 转换避免类型检查问题
 const createMockLogger = (): Logger => ({
   debug: vi.fn(),
   info: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
-});
+  log: vi.fn(),
+  success: vi.fn(),
+  initLogFile: vi.fn(),
+  enableFileLogging: vi.fn(),
+  close: vi.fn(),
+  setLogFileOptions: vi.fn(),
+  cleanupOldLogs: vi.fn(),
+  withTag: vi.fn().mockReturnThis(),
+} as unknown as Logger);
 
 // Mock cache data
 const createMockCache = (): ExtendedMCPToolsCache => ({
@@ -218,8 +226,8 @@ describe("CacheLifecycleManager", () => {
       );
 
       expect(result).toBe(true);
-      expect(mockCache.customMCPResults.test_key.status).toBe("completed");
-      expect(mockCache.customMCPResults.test_key.consumed).toBe(false);
+      expect(mockCache.customMCPResults!.test_key.status).toBe("completed");
+      expect(mockCache.customMCPResults!.test_key.consumed).toBe(false);
       expect(mockLogger.debug).toHaveBeenCalledWith(
         "[CacheLifecycle] 更新缓存状态: test_key pending -> completed"
       );
@@ -248,7 +256,7 @@ describe("CacheLifecycleManager", () => {
       );
 
       expect(result).toBe(true);
-      expect(mockCache.customMCPResults.test_key.result).toEqual(newResult);
+      expect(mockCache.customMCPResults!.test_key.result).toEqual(newResult);
     });
 
     it("应该处理失败状态并自动标记为已消费", () => {
@@ -261,8 +269,8 @@ describe("CacheLifecycleManager", () => {
       );
 
       expect(result).toBe(true);
-      expect(mockCache.customMCPResults.test_key.consumed).toBe(true);
-      expect(mockCache.customMCPResults.test_key.result).toEqual({
+      expect(mockCache.customMCPResults!.test_key.consumed).toBe(true);
+      expect(mockCache.customMCPResults!.test_key.result).toEqual({
         content: [{ type: "text", text: "任务失败: test error" }],
       });
     });
@@ -302,14 +310,14 @@ describe("CacheLifecycleManager", () => {
       const result = manager.markAsConsumed(mockCache, "test_key");
 
       expect(result).toBe(true);
-      expect(mockCache.customMCPResults.test_key.consumed).toBe(true);
+      expect(mockCache.customMCPResults!.test_key.consumed).toBe(true);
       expect(mockLogger.debug).toHaveBeenCalledWith(
         "[CacheLifecycle] 标记缓存为已消费: test_key"
       );
     });
 
     it("不应该重复标记已消费的缓存", () => {
-      mockCache.customMCPResults.test_key.consumed = true;
+      mockCache.customMCPResults!.test_key.consumed = true;
 
       const result = manager.markAsConsumed(mockCache, "test_key");
 
@@ -438,8 +446,8 @@ describe("CacheLifecycleManager", () => {
       const result = manager.cleanupCacheEntries(mockCache, ["cleanup_key"]);
 
       expect(result).toEqual({ cleaned: 1, total: 1 });
-      expect(mockCache.customMCPResults.cleanup_key).toBeUndefined();
-      expect(mockCache.customMCPResults.keep_key).toBeDefined();
+      expect(mockCache.customMCPResults!.cleanup_key).toBeUndefined();
+      expect(mockCache.customMCPResults!.keep_key).toBeDefined();
     });
 
     it("应该清理所有缓存条目", () => {
@@ -496,8 +504,8 @@ describe("CacheLifecycleManager", () => {
 
       expect(result.cleaned).toBe(1);
       expect(result.total).toBe(2);
-      expect(mockCache.customMCPResults.expired_key).toBeUndefined();
-      expect(mockCache.customMCPResults.fresh_key).toBeDefined();
+      expect(mockCache.customMCPResults!.expired_key).toBeUndefined();
+      expect(mockCache.customMCPResults!.fresh_key).toBeDefined();
     });
 
     it("应该处理没有过期缓存的情况", () => {
@@ -559,8 +567,8 @@ describe("CacheLifecycleManager", () => {
 
       expect(result.cleaned).toBe(1);
       expect(result.total).toBe(3);
-      expect(mockCache.customMCPResults.old_consumed_key).toBeUndefined();
-      expect(mockCache.customMCPResults.new_consumed_key).toBeDefined();
+      expect(mockCache.customMCPResults!.old_consumed_key).toBeUndefined();
+      expect(mockCache.customMCPResults!.new_consumed_key).toBeDefined();
     });
 
     it("应该处理没有需要清理的缓存", () => {

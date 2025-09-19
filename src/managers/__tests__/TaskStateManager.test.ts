@@ -4,6 +4,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Logger } from "../../Logger.js";
+import type { TaskStatus } from "../../types/mcp.js";
 import { TaskStateManager } from "../TaskStateManager.js";
 
 // Mock logger
@@ -26,7 +27,15 @@ describe("TaskStateManager", () => {
       info: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    };
+      log: vi.fn(),
+      success: vi.fn(),
+      initLogFile: vi.fn(),
+      enableFileLogging: vi.fn(),
+      close: vi.fn(),
+      setLogFileOptions: vi.fn(),
+      cleanupOldLogs: vi.fn(),
+      withTag: vi.fn().mockReturnThis(),
+    } as unknown as Logger;
     manager = new TaskStateManager(mockLogger);
     vi.clearAllMocks();
     vi.useFakeTimers();
@@ -869,7 +878,7 @@ describe("TaskStateManager", () => {
       manager.updateTaskStatus(taskId, "completed");
 
       const history = manager.getTaskHistory(taskId);
-      const unknownTransition = history.find((h) => h.from === "unknown");
+      const unknownTransition = history.find((h) => h.from === "unknown" as TaskStatus);
 
       expect(unknownTransition?.reason).toBe("状态更新");
     });
