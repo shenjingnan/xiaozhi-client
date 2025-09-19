@@ -27,10 +27,6 @@
    2. [功能特色](#功能特色)
    3. [快速上手](#快速上手)
       1. [使用 Docker 运行](#使用-docker-运行)
-   6. [ModelScope MCP 服务集成](#modelscope-mcp-服务集成)
-      1. [ModelScope 配置方式](#modelscope-配置方式)
-      2. [使用前准备](#使用前准备)
-      3. [ModelScope 注意事项](#modelscope-注意事项)
    7. [Web UI 配置界面](#web-ui-配置界面)
       1. [功能特性](#功能特性)
       2. [启动 Web UI](#启动-web-ui)
@@ -122,63 +118,6 @@ docker-compose logs -f
 # 停止服务
 docker-compose down
 ```
-
-## ModelScope MCP 服务集成
-
-xiaozhi-client 现已支持接入 [ModelScope](https://www.modelscope.cn/mcp) 托管的 MCP 服务。
-
-### ModelScope 配置方式
-
-在 `xiaozhi.config.json` 的 `mcpServers` 中添加 SSE 类型的配置：
-
-```json
-{
-  "mcpServers": {
-    "amap-maps": {
-      "type": "sse",
-      "url": "https://mcp.api-inference.modelscope.net/caa0bd914d9b44/sse"
-    }
-  }
-}
-```
-
-### 使用前准备
-
-1. 获取 ModelScope API Token：
-
-   - 访问 [ModelScope](https://www.modelscope.cn) 并登录
-   - 在个人中心获取 API Token
-
-2. 配置 API Token（两种方式任选其一）：
-
-   **方式一：在配置文件中设置（推荐）**
-
-   ```json
-   {
-     "modelscope": {
-       "apiKey": "你的API Token"
-     }
-   }
-   ```
-
-   **方式二：设置环境变量**
-
-   ```bash
-   export MODELSCOPE_API_TOKEN="你的API Token"
-   ```
-
-3. 启动服务：
-
-   ```bash
-   xiaozhi start
-   ```
-
-### ModelScope 注意事项
-
-- ModelScope MCP 服务需要有效的 API Token 才能使用
-- 配置文件中的 API Token 优先级高于环境变量
-- 确保网络能够访问 ModelScope 的服务端点
-- SSE 类型的服务会自动识别并使用相应的连接方式
 
 ## Web UI 配置界面
 
