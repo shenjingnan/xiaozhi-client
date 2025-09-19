@@ -3,4 +3,72 @@ title: 使用 魔搭社区 MCP
 sidebarTitle: 使用 魔搭社区 MCP
 ---
 
-使用 魔搭社区 MCP
+由于 sse / streamable-http MCP 服务需要启动服务才能使用，但我们一般不太可能为每个 MCP 都启动一个 Docker。<br />
+魔搭社区很好的解决了这个问题，其提供的 MCP 服务托管能力，可以帮助我们简化管理 sse / streamable-http MCP 服务的成本。
+
+## 方法一：使用 Web 界面添加（推荐）
+<Note>如果你使用 docker 推荐使用此方法，Web 界面通过友好的 UI 交互能更简单的进行操作</Note>
+
+<Steps>
+  <Step title="启动服务">
+    <Note>在你安装好 xiaozhi-client 并创建好应用后，即可启动服务</Note>
+
+    ```bash
+    xiaozhi start
+    ```
+  </Step>
+
+  <Step title="配置魔搭社区访问令牌">
+  请在浏览器中访问 `http://localhost:9999`
+  <Note>如果你安装在另一台设备上，请访问 `http://<你的IP地址>:9999`</Note>
+
+  <Frame caption="第一步：点击左侧 全局配置 菜单">
+  <img src="/images/modelscope/step-1.png" alt="第一步：点击 全局配置 菜单" />
+</Frame>
+<br />
+
+  <Frame caption="第二步：点击 打开魔搭社区 按钮 获取访问令牌">
+  <img src="/images/modelscope/step-2.png" alt="第二步：点击 打开魔搭社区 按钮 获取访问令牌" />
+</Frame>
+<br />
+
+<Note>如果还没有访问令牌，可以点击左下角的 新建访问令牌 按钮</Note>
+  <Frame caption="第三步：复制访问令牌">
+  <img src="/images/modelscope/step-3.png" alt="第三步：复制访问令牌" />
+</Frame>
+
+<Note>配置完成后，需要重启服务才会生效喔~</Note>
+  <Frame caption="第四步：填入访问令牌，并点击 保存 按钮">
+  <img src="/images/modelscope/step-4.png" alt="第四步：填入访问令牌，并点击 保存 按钮" />
+</Frame>
+  </Step>
+
+  <Step title="添加魔搭社区 MCP">
+  打开 [魔搭社区 MCP 广场](https://www.modelscope.cn/mcp) - 选择任意MCP - 添加到 xiaozhi-client 中
+
+  重启服务即可使用了
+  </Step>
+</Steps>
+
+## 方法二：编辑配置文件手动添加
+
+你也可以选择直接修改配置文件
+
+<Steps>
+  <Step title="编辑配置文件">
+  打开 `xiaozhi.config.json` 文件
+  ```json xiaozhi.config.json
+  {
+    "modelscope": {
+      "apiKey": "<填写魔搭社区的访问令牌>"
+    }
+  }
+  ```
+  </Step>
+
+  <Step title="重新启动服务">
+    ```bash
+    xiaozhi start
+    ```
+  </Step>
+</Steps>
