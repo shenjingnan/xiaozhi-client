@@ -1,0 +1,78 @@
+---
+title: 配置多个小智接入点
+sidebarTitle: 配置多个小智接入点
+---
+
+## 方法一：使用 Web 界面添加(推荐)
+<Note>如果你使用 docker 推荐使用此方法，Web 界面通过友好的 UI 交互能更简单的进行操作</Note>
+
+<Steps>
+  <Step title="启动服务">
+    <Note>在你安装好 xiaozhi-client 并创建好应用后，即可启动服务</Note>
+
+    ```bash
+    xiaozhi start
+    ```
+  </Step>
+
+  <Step title="添加一个接入点">
+  请在浏览器中访问 `http://localhost:9999`
+  <Note>如果你安装在另一台设备上，请访问 `http://<你的IP地址>:9999`</Note>
+
+  <Frame caption="第一步：点击 小智接入点 状态卡片右下角的 配置 按钮">
+  <img src="/images/use-multi-xiaozhi-mcp-endpoints/step-1.png" alt="第一步：点击 小智接入点 状态卡片右下角的 配置 按钮" />
+</Frame>
+
+<Note>获取小智官方服务端的接入点可以直接点击右侧的 `打开小智服务端` 按钮</Note>
+  <Frame caption="第二步：点击 添加小智服务端接入点 按钮">
+  <img src="/images/use-multi-xiaozhi-mcp-endpoints/step-2.png" alt="第二步：点击 添加小智服务端接入点 按钮" />
+</Frame>
+<br />
+
+  <Frame caption="第三步：在 添加接入点 弹窗中填入接入点，并点击 确定 按钮">
+  <img src="/images/use-multi-xiaozhi-mcp-endpoints/step-3.png" alt="第三步：在 添加接入点 弹窗中填入接入点，并点击 确定 按钮" />
+</Frame>
+
+<Note>新增的接入点，需要重启后才会生效喔~</Note>
+  <Frame caption="第四步：点击页面右侧的 重启服务 按钮">
+  <img src="/images/use-multi-xiaozhi-mcp-endpoints/step-4.png" alt="第四步：点击页面右侧的 重启服务 按钮" />
+</Frame>
+  </Step>
+
+  <Step title="测试效果">
+  打开 [小智服务端](https://xiaozhi.me/console/agents) - 找到对应设备 - 刷新接入点弹窗
+
+  检查小智服务端是否正确获取到启用的工具列表
+
+  <Frame caption="检查是否已经正确获取到有效工具了">
+  <img src="/images/use-multi-xiaozhi-mcp-endpoints/step-5.png" alt="检查是否已经正确获取到有效工具了" />
+</Frame>
+  </Step>
+</Steps>
+
+
+
+## 方法二：编辑配置文件手动添加
+
+你也可以选择直接修改配置文件实现接入点配置
+
+<Steps>
+  <Step title="编辑配置文件">
+  打开 `xiaozhi.config.json` 文件
+  ```json xiaozhi.config.json
+  {
+    "mcpEndpoint": [
+      "wss://api.xiaozhi.me/mcp/endpoint-1",
+      "wss://api.xiaozhi.me/mcp/endpoint-2",
+      "wss://api.xiaozhi.me/mcp/endpoint-3"
+    ]
+  }
+  ```
+  </Step>
+
+  <Step title="重新启动服务">
+    ```bash
+    xiaozhi start
+    ```
+  </Step>
+</Steps>
