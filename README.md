@@ -6,11 +6,12 @@
 [![Docker: Ready](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat&logo=docker&logoColor=white)](https://hub.docker.com/r/shenjingnan/xiaozhi-client)
 [![Join: QQ Group](https://img.shields.io/badge/Join-QQ%20Group-5865F2?style=flat&logo=qq&logoColor=white)](https://qun.qq.com/universal-share/share?ac=1&authKey=c08PvS2zvAF1NN%2F%2BuaOi0ze1AElTIsvFBLwbWUMFc2ixjaZYxqZTUQHzipwd8Kka&busi_data=eyJncm91cENvZGUiOiIxMDU0ODg4NDczIiwidG9rZW4iOiJuSmJUN2cyUEVkNEQ5WXovM3RQbFVNcDluMGVibUNZTUQvL1RuQnFJRjBkZmRZQnRBRTdwU0szL3V2Y0dLc1ZmIiwidWluIjoiMzkxMTcyMDYwMCJ9&data=9cH6_zEC-sN3xYlwzKEWiYF71RLY9CId5taN-gy6XZo7axSlSWDpd1Ojui5hYMQKIgEJYSPw59XYgF5vH2wLog&svctype=4&tempid=h5_group_info)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![AI Code: 90%+](https://img.shields.io/badge/AI%20Code-90%25%2B-brightgreen)](https://img.shields.io/badge/AI%20Code-90%25%2B-brightgreen)
-[![Xiaozhi AI: Supported](https://img.shields.io/badge/小智AI-Supported-brightgreen?style=flat)](http://xiaozhi.me)
-[![ModelScope: Supported](https://img.shields.io/badge/ModelScope-Supported-brightgreen?style=flat)](https://www.modelscope.cn/mcp)
-[![Coze: Supported](https://img.shields.io/badge/Coze-Supported-brightgreen?style=flat)](https://www.coze.cn/)
-![MCP Client: Compatible](https://img.shields.io/badge/MCP%20Client-Compatible-brightgreen?style=flat)
+[![AI Code: 80%](https://img.shields.io/badge/AI%20Code-90%25%2B-84cc16)](https://img.shields.io/badge/AI%20Code-90%25%2B-84cc16)
+<br />
+[![Xiaozhi AI: Supported](https://img.shields.io/badge/小智AI-Supported-84cc16?style=flat)](http://xiaozhi.me)
+[![ModelScope: Supported](https://img.shields.io/badge/ModelScope-Supported-84cc16?style=flat)](https://www.modelscope.cn/mcp)
+[![Coze: Supported](https://img.shields.io/badge/Coze-Supported-84cc16?style=flat)](https://www.coze.cn/)
+![MCP Client: Supported](https://img.shields.io/badge/MCP%20Client-Supported-84cc16?style=flat)
 
 <img src="https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/qq-group-qrcode.jpg" alt="QQ群" width="300"/>
 
@@ -30,7 +31,6 @@
    7. [Web UI 配置界面](#web-ui-配置界面)
       1. [功能特性](#功能特性)
       2. [启动 Web UI](#启动-web-ui)
-   8. [作为 MCP Server 集成到其他客户端](#作为-mcp-server-集成到其他客户端)
 
 ## 功能特色
 
@@ -149,48 +149,6 @@ xiaozhi start -u
 ```
 
 启动后访问 <http://localhost:9999> 进行可视化配置。
-
-## 作为 MCP Server 集成到其他客户端
-
-> 需升级至 `1.6.12` 及以上版本
-
-xiaozhi-client 不仅可以作为小智 AI 的客户端使用，还可以作为标准的 MCP Server 被 Cursor、Cherry Studio 等支持 MCP 协议的客户端集成。
-
-这样做的好处是你无需在多个客户端中重复配置 MCP Server，只需要在 xiaozhi.config.json 中配置一遍 MCP 服务，即可在任意客户端集成。
-
-并且，由于 xiaozhi-client 允许你自定义暴露哪些 MCP Server tools 因此你可以选择性的定制自己的工具集。
-
-![在CherryStudio中集成](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/integrate-to-cherry-studio.png)
-![在Cursor中集成](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/integrate-to-cursor.png)
-
-### 使用方式
-
-第一步：启动 xiaozhi-client 服务：
-
-```bash
-# 使用默认端口 9999
-xiaozhi start
-```
-
-第二步：在客户端中配置 HTTP 连接：
-
-```json
-{
-  "mcpServers": {
-    "xiaozhi-client": {
-      "type": "streamableHttp",
-      "url": "http://localhost:9999/mcp"
-    }
-  }
-}
-```
-
-**说明：**
-
-- 服务启动后，MCP 端点将在 `http://localhost:9999/mcp` 提供服务
-- 支持标准的 MCP over HTTP 协议
-- 可以通过 `--port` 参数自定义端口号
-- 使用 `-d` 参数可以后台运行服务
 
 ## 贡献者
 

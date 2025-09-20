@@ -16,6 +16,7 @@
       "usage/modelscope",
       "usage/coze-workflow",
       "usage/use-multi-xiaozhi-mcp-endpoints",
+      "usage/as-a-mcp-server",
       "reference/command"
     ]
   },
