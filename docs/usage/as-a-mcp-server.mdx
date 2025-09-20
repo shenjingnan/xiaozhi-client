@@ -1,6 +1,76 @@
 ---
-title: 作为普通 MCP 服务
-sidebarTitle: 作为普通 MCP 服务
+title: 接入到 MCP 客户端
+sidebarTitle: 接入到 MCP 客户端
 ---
 
-作为普通 MCP 服务
+<Note>
+xiaozhi-client 不仅可以连接小智服务端接入点，还可以作为普通 MCP 服务被其他客户端集成。
+</Note>
+
+## 准备工作
+
+首先，你需要先启动服务
+
+```bash
+xiaozhi start
+```
+
+<Note>服务启动后，你可以使用以下配置添加到你的MCP客户端中</Note>
+
+```json mcpServer
+{
+  "mcpServers": {
+    "xiaozhi-client": {
+      "type": "streamableHttp",
+      "url": "http://localhost:9999/mcp"
+    }
+  }
+}
+```
+
+## 接入到 Cherry Studio 中
+
+<Steps>
+  <Step title="配置 MCP 服务">
+    <Frame caption="第一步：打开 cherry-studio 中的 添加 MCP 服务弹窗">
+      <img src="/images/add-to-cherry-studio/step-1.png" alt="第一步：打开 cherry-studio 中的 添加 MCP 服务弹窗" />
+    </Frame>
+    <br />
+    <Frame caption="第二步：添加 MCP 并点击 确定 按钮">
+  <img src="/images/add-to-cherry-studio/step-2.png" alt="第二步：添加 MCP 并点击 确定 按钮" />
+</Frame>
+<br />
+    <Frame caption="添加成功后 xiaozhi-client 会出现在 MCP 列表中">
+  <img src="/images/add-to-cherry-studio/step-3.png" alt="添加成功后 xiaozhi-client 会出现在 MCP 列表中" />
+</Frame>
+</Step>
+
+  <Step title="测试效果">
+    <Frame caption="第一步：在 cherry-studio 的聊天界面添加 xiaozhi-client MCP">
+      <img src="/images/add-to-cherry-studio/step-4.png" alt="第一步：在 cherry-studio 的聊天界面添加 xiaozhi-client MCP" />
+    </Frame>
+    <br />
+    <Frame caption="第二步：在聊天界面输入问题，并点击 发送 按钮">
+      <img src="/images/add-to-cherry-studio/step-5.png" alt="第二步：在聊天界面输入问题，并点击 发送 按钮" />
+    </Frame>
+  </Step>
+</Steps>
+
+## 接入到 Cursor 中
+<Steps>
+  <Step title="配置 MCP 服务">
+    <Frame caption="第一步：打开 cursor 的 MCP 配置界面">
+      <img src="/images/add-to-cursor/step-1.png" alt="第一步：打开 cursor 的 MCP 配置界面" />
+    </Frame>
+    <br />
+    <Frame caption="第二步：添加 xiaozhi-client MCP">
+      <img src="/images/add-to-cursor/step-2.png" alt="第二步：添加 xiaozhi-client MCP" />
+    </Frame>
+  </Step>
+
+  <Step title="测试效果">
+    <Frame caption="在 cursor 的聊天界面输入问题，并点击 发送 按钮">
+      <img src="/images/add-to-cursor/step-3.png" alt="在 cursor 的聊天界面输入问题，并点击 发送 按钮" />
+    </Frame>
+  </Step>
+</Steps>

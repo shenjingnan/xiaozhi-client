@@ -30,7 +30,6 @@
    7. [Web UI 配置界面](#web-ui-配置界面)
       1. [功能特性](#功能特性)
       2. [启动 Web UI](#启动-web-ui)
-   8. [作为 MCP Server 集成到其他客户端](#作为-mcp-server-集成到其他客户端)
 
 ## 功能特色
 
@@ -149,48 +148,6 @@ xiaozhi start -u
 ```
 
 启动后访问 <http://localhost:9999> 进行可视化配置。
-
-## 作为 MCP Server 集成到其他客户端
-
-> 需升级至 `1.6.12` 及以上版本
-
-xiaozhi-client 不仅可以作为小智 AI 的客户端使用，还可以作为标准的 MCP Server 被 Cursor、Cherry Studio 等支持 MCP 协议的客户端集成。
-
-这样做的好处是你无需在多个客户端中重复配置 MCP Server，只需要在 xiaozhi.config.json 中配置一遍 MCP 服务，即可在任意客户端集成。
-
-并且，由于 xiaozhi-client 允许你自定义暴露哪些 MCP Server tools 因此你可以选择性的定制自己的工具集。
-
-![在CherryStudio中集成](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/integrate-to-cherry-studio.png)
-![在Cursor中集成](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/integrate-to-cursor.png)
-
-### 使用方式
-
-第一步：启动 xiaozhi-client 服务：
-
-```bash
-# 使用默认端口 9999
-xiaozhi start
-```
-
-第二步：在客户端中配置 HTTP 连接：
-
-```json
-{
-  "mcpServers": {
-    "xiaozhi-client": {
-      "type": "streamableHttp",
-      "url": "http://localhost:9999/mcp"
-    }
-  }
-}
-```
-
-**说明：**
-
-- 服务启动后，MCP 端点将在 `http://localhost:9999/mcp` 提供服务
-- 支持标准的 MCP over HTTP 协议
-- 可以通过 `--port` 参数自定义端口号
-- 使用 `-d` 参数可以后台运行服务
 
 ## 贡献者
 
