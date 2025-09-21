@@ -334,7 +334,7 @@ export class ToolApiHandler {
 
   /**
    * 获取未启用工具
-   * 从缓存中获取所有工具，过滤掉已启用的工具
+   * 从缓存中获取所有工具，过滤掉已启用的工具和已删除的 MCP 服务
    */
   private async getDisabledTools(): Promise<CustomMCPTool[]> {
     try {
@@ -346,27 +346,45 @@ export class ToolApiHandler {
       const cacheManager = new MCPCacheManager();
       const allCachedTools = await cacheManager.getAllCachedTools();
 
-      // 3. 过滤掉已启用的工具，返回未启用的工具
+      // 3. 获取当前配置的 MCP 服务列表
+      const config = configManager.getConfig();
+      const configuredServers = new Set(Object.keys(config.mcpServers || {}));
+
+      // 4. 过滤掉已启用的工具和已删除 MCP 服务的工具
       const disabledTools: CustomMCPTool[] = [];
 
       for (const cachedTool of allCachedTools) {
-        if (!enabledToolNames.has(cachedTool.name)) {
-          // 将缓存中的 Tool 格式转换为 CustomMCPTool 格式
-          const customTool: CustomMCPTool = {
-            name: cachedTool.name,
-            description: cachedTool.description || "",
-            inputSchema: cachedTool.inputSchema || {},
-            handler: {
-              type: "mcp",
-              config: {
-                // 从工具名称中解析服务名称和工具名称
-                serviceName: cachedTool.name.split("__")[0],
-                toolName: cachedTool.name.split("__").slice(1).join("__"),
-              },
-            },
-          };
-          disabledTools.push(customTool);
+        // 如果工具已在启用列表中，跳过
+        if (enabledToolNames.has(cachedTool.name)) {
+          continue;
         }
+
+        // 从工具名称中解析服务名称
+        const serviceName = cachedTool.name.split("__")[0];
+        
+        // 检查该 MCP 服务是否仍在配置中
+        if (!configuredServers.has(serviceName)) {
+          // 该 MCP 服务已从配置中删除，不显示为"未启用工具"
+          this.logger.debug(
+            `工具 ${cachedTool.name} 对应的 MCP 服务 ${serviceName} 已删除，跳过显示`
+          );
+          continue;
+        }
+
+        // 将缓存中的 Tool 格式转换为 CustomMCPTool 格式
+        const customTool: CustomMCPTool = {
+          name: cachedTool.name,
+          description: cachedTool.description || "",
+          inputSchema: cachedTool.inputSchema || {},
+          handler: {
+            type: "mcp",
+            config: {
+              serviceName: serviceName,
+              toolName: cachedTool.name.split("__").slice(1).join("__"),
+            },
+          },
+        };
+        disabledTools.push(customTool);
       }
 
       this.logger.debug(
