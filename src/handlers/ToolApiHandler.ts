@@ -361,7 +361,7 @@ export class ToolApiHandler {
 
         // 从工具名称中解析服务名称
         const serviceName = cachedTool.name.split("__")[0];
-        
+
         // 检查该 MCP 服务是否仍在配置中
         if (!configuredServers.has(serviceName)) {
           // 该 MCP 服务已从配置中删除，不显示为"未启用工具"
