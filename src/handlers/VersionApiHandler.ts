@@ -1,6 +1,6 @@
 import type { Context } from "hono";
 import { type Logger, logger } from "../Logger.js";
-import { VersionUtils, type VersionInfo } from "../cli/utils/VersionUtils.js";
+import { type VersionInfo, VersionUtils } from "../cli/utils/VersionUtils.js";
 
 /**
  * 统一响应格式接口

@@ -8,7 +8,7 @@ import {
 import type { VersionInfo } from "@/services/api";
 import { apiClient } from "@/services/api";
 import { CopyIcon, InfoIcon } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 interface VersionDisplayProps {
   className?: string;
