@@ -3,6 +3,7 @@ import type React from "react";
 import { Link } from "react-router-dom";
 
 import { AppSidebarNav } from "@/components/AppSidebarNav";
+import { VersionDisplay } from "@/components/VersionDisplay";
 import {
   Sidebar,
   SidebarContent,
@@ -57,8 +58,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <Link to="/">
+              <Link to="/" className="flex items-center gap-2">
                 <span className="text-base font-semibold">Xiaozhi Client</span>
+                <VersionDisplay className="text-xs" />
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
