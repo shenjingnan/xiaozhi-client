@@ -24,6 +24,7 @@ import { ServiceApiHandler } from "./handlers/ServiceApiHandler.js";
 import { StaticFileHandler } from "./handlers/StaticFileHandler.js";
 import { StatusApiHandler } from "./handlers/StatusApiHandler.js";
 import { ToolApiHandler } from "./handlers/ToolApiHandler.js";
+import { VersionApiHandler } from "./handlers/VersionApiHandler.js";
 import { ConfigService } from "./services/ConfigService.js";
 // 导入新的服务和处理器
 import {
@@ -81,6 +82,7 @@ export class WebServer {
   private statusApiHandler: StatusApiHandler;
   private serviceApiHandler: ServiceApiHandler;
   private toolApiHandler: ToolApiHandler;
+  private versionApiHandler: VersionApiHandler;
   private staticFileHandler: StaticFileHandler;
   private mcpRouteHandler: MCPRouteHandler;
 
@@ -162,6 +164,7 @@ export class WebServer {
     this.statusApiHandler = new StatusApiHandler(this.statusService);
     this.serviceApiHandler = new ServiceApiHandler(this.statusService);
     this.toolApiHandler = new ToolApiHandler();
+    this.versionApiHandler = new VersionApiHandler();
     this.staticFileHandler = new StaticFileHandler();
     this.mcpRouteHandler = new MCPRouteHandler();
 
@@ -472,6 +475,15 @@ export class WebServer {
     );
     this.app?.get("/api/config/exists", (c) =>
       this.configApiHandler.checkConfigExists(c)
+    );
+
+    // 版本信息 API 路由
+    this.app?.get("/api/version", (c) => this.versionApiHandler.getVersion(c));
+    this.app?.get("/api/version/simple", (c) =>
+      this.versionApiHandler.getVersionSimple(c)
+    );
+    this.app?.post("/api/version/cache/clear", (c) =>
+      this.versionApiHandler.clearVersionCache(c)
     );
 
     // 状态相关 API 路由

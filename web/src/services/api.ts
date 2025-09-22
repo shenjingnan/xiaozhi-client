@@ -71,6 +71,16 @@ interface ServiceHealth {
 }
 
 /**
+ * 版本信息接口
+ */
+interface VersionInfo {
+  name: string;
+  version: string;
+  description: string;
+  author: string;
+}
+
+/**
  * 重启状态接口
  */
 interface RestartStatus {
@@ -585,6 +595,48 @@ export class ApiClient {
     }
     return response.data;
   }
+
+  // ==================== 版本信息 API ====================
+
+  /**
+   * 获取版本信息
+   */
+  async getVersion(): Promise<VersionInfo> {
+    const response: ApiResponse<VersionInfo> =
+      await this.request("/api/version");
+    if (!response.success || !response.data) {
+      throw new Error("获取版本信息失败");
+    }
+    return response.data;
+  }
+
+  /**
+   * 获取版本号（简化接口）
+   */
+  async getVersionSimple(): Promise<{ version: string }> {
+    const response: ApiResponse<{ version: string }> = await this.request(
+      "/api/version/simple"
+    );
+    if (!response.success || !response.data) {
+      throw new Error("获取版本号失败");
+    }
+    return response.data;
+  }
+
+  /**
+   * 清除版本缓存
+   */
+  async clearVersionCache(): Promise<void> {
+    const response: ApiResponse = await this.request(
+      "/api/version/cache/clear",
+      {
+        method: "POST",
+      }
+    );
+    if (!response.success) {
+      throw new Error(response.message || "清除版本缓存失败");
+    }
+  }
 }
 
 // 创建默认的 API 客户端实例
@@ -598,4 +650,5 @@ export type {
   ServiceHealth,
   RestartStatus,
   FullStatus,
+  VersionInfo,
 };
