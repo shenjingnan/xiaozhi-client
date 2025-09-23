@@ -27,7 +27,7 @@
 
 ## 架构概览
 
-这是一个基于 TypeScript 的 MCP（Model Context Protocol）客户端，用于连接小智 AI 服务。项目采用模块化架构，具有清晰的关注点分离。
+这是一个基于 TypeScript 的 MCP（Model Context Protocol）客户端，用于连接小智 AI 服务。项目采用模块化架构，具有清晰的关注点分离，最新版本采用独立多接入点架构。
 
 ### 核心组件
 
@@ -46,16 +46,31 @@
    - `HTTPAdapter.ts` - HTTP 通信
    - `StdioAdapter.ts` - 标准 I/O 通信
 
-4. **工具层** (`src/utils/`) - 共享工具和辅助函数
+4. **服务层** (`src/services/`) - 连接和服务管理
+   - `IndependentXiaozhiConnectionManager.ts` - 独立多接入点连接管理器
+   - `MCPServiceManager.ts` - MCP 服务管理器
+   - `XiaozhiConnectionManagerSingleton.ts` - 全局单例管理器
+
+5. **工具层** (`src/utils/`) - 共享工具和辅助函数
 
 ### 主要功能
 
-- **多端点支持**：可同时连接多个小智 AI 端点
+- **独立多端点支持**：每个端点完全独立管理，无负载均衡，无故障转移
 - **MCP 服务器聚合**：可聚合多个 MCP 服务器
 - **Web UI**：提供基于 Web 的配置界面
 - **Docker 支持**：完整的容器化，支持 Docker Compose
 - **多种传输协议**：WebSocket、HTTP 和 Stdio
 - **ModelScope 集成**：支持 ModelScope 托管的 MCP 服务
+- **固定间隔重连**：连接失败时采用固定间隔重连策略
+- **直接端点访问**：应用程序可以直接访问任何端点，无需路由
+
+### 独立架构特点
+
+- **完全独立**：每个端点拥有独立的连接和状态管理
+- **无负载均衡**：移除所有负载均衡逻辑和算法
+- **无故障转移**：端点失败时不自动切换到其他端点
+- **简单重连**：固定间隔重连，避免指数退避复杂性
+- **直接访问**：应用程序可以直接指定和访问特定端点
 
 ### 配置
 

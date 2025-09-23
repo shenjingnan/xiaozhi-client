@@ -8,8 +8,6 @@ import {
   type XiaozhiConnectionOptions,
 } from "./XiaozhiConnectionManager.js";
 
-// 重新导出相关类型，便于外部使用
-export type { Tool } from "@modelcontextprotocol/sdk/types.js";
 export type {
   XiaozhiConnectionOptions,
   ConnectionStatus,

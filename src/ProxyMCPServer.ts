@@ -265,7 +265,6 @@ export class ProxyMCPServer {
     this.validateTool(name, tool);
     this.tools.set(name, tool);
     this.logger.debug(`工具 '${name}' 已添加`);
-    // TODO: 未来可以使用 options 参数来设置工具的启用状态、元数据等
     return this;
   }
 

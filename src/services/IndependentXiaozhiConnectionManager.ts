@@ -40,6 +40,12 @@ export interface IndependentConnectionOptions {
   reconnectInterval?: number; // 重连间隔（毫秒），默认 5000
   maxReconnectAttempts?: number; // 最大重连次数，默认 3
   connectionTimeout?: number; // 连接超时时间（毫秒），默认 10000
+  maxConnections?: number; // 最大连接数，默认 50
+  connectionPoolSize?: number; // 连接池大小，默认 10
+  connectionIdleTimeout?: number; // 连接空闲超时（毫秒），默认 300000 (5分钟)
+  errorRecoveryEnabled?: boolean; // 启用错误恢复，默认 true
+  errorRecoveryThreshold?: number; // 错误恢复阈值，默认 5
+  errorNotificationEnabled?: boolean; // 启用错误通知，默认 true
 }
 
 // 连接状态接口
@@ -88,6 +94,12 @@ const DEFAULT_OPTIONS: Required<IndependentConnectionOptions> = {
   reconnectInterval: 5000,
   maxReconnectAttempts: 3,
   connectionTimeout: 10000,
+  maxConnections: 50,
+  connectionPoolSize: 10,
+  connectionIdleTimeout: 300000,
+  errorRecoveryEnabled: true,
+  errorRecoveryThreshold: 5,
+  errorNotificationEnabled: true,
 };
 
 /**
@@ -114,7 +126,13 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   private healthCheckInterval: NodeJS.Timeout | null = null;
   private reconnectTimers: Map<string, NodeJS.Timeout> = new Map();
 
-  // 性能监控
+  // 连接池管理
+  private connectionPool: Map<string, ProxyMCPServer[]> = new Map();
+  private connectionUsage: Map<string, number> = new Map();
+  private connectionLastUsed: Map<string, Date> = new Map();
+  private idleCleanupInterval: NodeJS.Timeout | null = null;
+
+  // 性能监控 - 优化内存使用
   private performanceMetrics = {
     connectionStartTime: 0,
     totalConnectionTime: 0,
@@ -126,6 +144,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       peak: 0,
     },
     prewarmedConnections: new Set<string>(),
+    lastCleanupTime: Date.now(),
   };
 
   constructor(options?: IndependentConnectionOptions) {
@@ -134,7 +153,10 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     this.options = { ...DEFAULT_OPTIONS, ...options };
 
     this.logger.info("[IndependentXiaozhiConnectionManager] 实例已创建");
-    this.logger.debug("[IndependentXiaozhiConnectionManager] 配置选项:", this.options);
+    this.logger.debug(
+      "[IndependentXiaozhiConnectionManager] 配置选项:",
+      this.options
+    );
   }
 
   /**
@@ -144,7 +166,9 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    */
   async initialize(endpoints: string[], tools: Tool[]): Promise<void> {
     if (this.isInitialized) {
-      this.logger.warn("IndependentXiaozhiConnectionManager 已经初始化，跳过重复初始化");
+      this.logger.warn(
+        "IndependentXiaozhiConnectionManager 已经初始化，跳过重复初始化"
+      );
       return;
     }
 
@@ -174,11 +198,17 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       this.performanceMetrics.memoryUsage.peak =
         this.performanceMetrics.memoryUsage.initial;
 
+      // 启动空闲连接清理定时器
+      this.startIdleCleanupTimer();
+
       this.logger.info(
         `IndependentXiaozhiConnectionManager 初始化完成，管理 ${this.connections.size} 个连接`
       );
     } catch (error) {
-      this.logger.error("IndependentXiaozhiConnectionManager 初始化失败:", error);
+      this.logger.error(
+        "IndependentXiaozhiConnectionManager 初始化失败:",
+        error
+      );
       await this.cleanup(); // 清理部分创建的连接
       throw error;
     }
@@ -364,7 +394,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     if (this.connections.has(endpoint)) {
       return;
     }
-    
+
     // 创建初始状态
     const status: ConnectionStatus = {
       endpoint,
@@ -372,8 +402,18 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       initialized: false,
       lastConnected: undefined,
       lastError: undefined,
+      reconnectAttempts: 0,
+      healthScore: 50,
+      consecutiveFailures: 0,
+      totalRequests: 0,
+      successfulRequests: 0,
+      healthCheckEnabled: true,
+      isReconnecting: false,
+      reconnectDelay: this.options.reconnectInterval,
+      reconnectHistory: [],
+      state: XiaozhiConnectionState.DISCONNECTED,
     };
-    
+
     this.connectionStates.set(endpoint, status);
   }
 
@@ -389,7 +429,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     }
 
     this.logger.info(`断开端点连接: ${endpoint}`);
-    
+
     try {
       await this.disconnectSingleEndpoint(endpoint, proxyServer);
     } catch (error) {
@@ -403,13 +443,13 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    */
   async clearEndpoints(): Promise<void> {
     this.logger.info("清除所有端点");
-    
+
     // 断开所有连接
-    const disconnectPromises = Array.from(this.connections.keys()).map(endpoint =>
-      this.removeEndpoint(endpoint)
+    const disconnectPromises = Array.from(this.connections.keys()).map(
+      (endpoint) => this.removeEndpoint(endpoint)
     );
     await Promise.allSettled(disconnectPromises);
-    
+
     this.logger.info("所有端点已清除");
   }
 
@@ -423,13 +463,13 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     if (!proxyServer) {
       throw new Error("端点不存在");
     }
-    
+
     // 简化连接状态检查
     const status = this.connectionStates.get(endpoint);
     if (!status || !status.connected) {
       throw new Error("端点未连接");
     }
-    
+
     try {
       // 使用简化的发送方法
       await proxyServer.send(message);
@@ -912,6 +952,203 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     if (currentMemory > this.performanceMetrics.memoryUsage.peak) {
       this.performanceMetrics.memoryUsage.peak = currentMemory;
     }
+
+    // 定期清理内存和优化数据结构
+    this.performMemoryOptimization();
+  }
+
+  /**
+   * 执行内存优化
+   * 清理不需要的数据和优化数据结构
+   */
+  private performMemoryOptimization(): void {
+    const now = Date.now();
+    const cleanupInterval = 5 * 60 * 1000; // 5分钟清理一次
+
+    if (now - this.performanceMetrics.lastCleanupTime > cleanupInterval) {
+      this.logger.debug("[IndependentXiaozhiConnectionManager] 执行内存优化");
+
+      // 清理重连历史记录，保留最近10条
+      for (const [endpoint, status] of this.connectionStates.entries()) {
+        if (status.reconnectHistory.length > 10) {
+          status.reconnectHistory = status.reconnectHistory.slice(-10);
+        }
+      }
+
+      // 清理无效的重连定时器
+      for (const [endpoint, timer] of this.reconnectTimers.entries()) {
+        if (!this.connections.has(endpoint)) {
+          clearTimeout(timer);
+          this.reconnectTimers.delete(endpoint);
+        }
+      }
+
+      // 清理无效的连接状态
+      const validEndpoints = new Set(this.connections.keys());
+      for (const endpoint of this.connectionStates.keys()) {
+        if (!validEndpoints.has(endpoint)) {
+          this.connectionStates.delete(endpoint);
+        }
+      }
+
+      // 清理预连接缓存（保留活跃的端点）
+      const activeEndpoints = new Set(this.connections.keys());
+      for (const endpoint of this.performanceMetrics.prewarmedConnections) {
+        if (!activeEndpoints.has(endpoint)) {
+          this.performanceMetrics.prewarmedConnections.delete(endpoint);
+        }
+      }
+
+      // 清理连接池中的空闲连接
+      this.cleanupIdleConnections();
+
+      // 强制垃圾回收（如果可用）
+      if (global.gc) {
+        try {
+          global.gc();
+          this.logger.debug(
+            "[IndependentXiaozhiConnectionManager] 手动垃圾回收完成"
+          );
+        } catch (error) {
+          this.logger.debug(
+            "[IndependentXiaozhiConnectionManager] 手动垃圾回收失败",
+            error
+          );
+        }
+      }
+
+      this.performanceMetrics.lastCleanupTime = now;
+      this.logger.debug("[IndependentXiaozhiConnectionManager] 内存优化完成");
+    }
+  }
+
+  /**
+   * 清理空闲连接
+   */
+  private cleanupIdleConnections(): void {
+    const now = Date.now();
+    const idleTimeout = this.options.connectionIdleTimeout;
+
+    for (const [endpoint, connections] of this.connectionPool.entries()) {
+      const activeConnections: ProxyMCPServer[] = [];
+
+      for (const connection of connections) {
+        const lastUsed =
+          this.connectionLastUsed.get(`${endpoint}-${connection.id}`) ||
+          new Date(0);
+        const idleTime = now - lastUsed.getTime();
+
+        if (idleTime > idleTimeout) {
+          this.logger.debug(
+            `[IndependentXiaozhiConnectionManager] 清理空闲连接: ${endpoint}`
+          );
+          try {
+            connection.close();
+          } catch (error) {
+            this.logger.debug(
+              `[IndependentXiaozhiConnectionManager] 关闭空闲连接失败: ${error}`
+            );
+          }
+        } else {
+          activeConnections.push(connection);
+        }
+      }
+
+      this.connectionPool.set(endpoint, activeConnections);
+    }
+
+    // 清理使用记录
+    for (const [key, lastUsed] of this.connectionLastUsed.entries()) {
+      if (now - lastUsed.getTime() > idleTimeout) {
+        this.connectionLastUsed.delete(key);
+        this.connectionUsage.delete(key);
+      }
+    }
+  }
+
+  /**
+   * 获取连接池中的连接
+   */
+  private getConnectionFromPool(endpoint: string): ProxyMCPServer | null {
+    const connections = this.connectionPool.get(endpoint) || [];
+
+    if (connections.length > 0) {
+      const connection = connections[0];
+      connections.shift(); // 移除第一个连接
+
+      // 更新使用记录
+      const connectionKey = `${endpoint}-${connection.id}`;
+      this.connectionLastUsed.set(connectionKey, new Date());
+      this.connectionUsage.set(
+        connectionKey,
+        (this.connectionUsage.get(connectionKey) || 0) + 1
+      );
+
+      this.logger.debug(
+        `[IndependentXiaozhiConnectionManager] 从连接池获取连接: ${endpoint}`
+      );
+      return connection;
+    }
+
+    return null;
+  }
+
+  /**
+   * 将连接返回到连接池
+   */
+  private returnConnectionToPool(
+    endpoint: string,
+    connection: ProxyMCPServer
+  ): void {
+    const connections = this.connectionPool.get(endpoint) || [];
+    const maxPoolSize = this.options.connectionPoolSize;
+
+    if (connections.length < maxPoolSize) {
+      connections.push(connection);
+      this.connectionPool.set(endpoint, connections);
+
+      const connectionKey = `${endpoint}-${connection.id}`;
+      this.connectionLastUsed.set(connectionKey, new Date());
+
+      this.logger.debug(
+        `[IndependentXiaozhiConnectionManager] 连接返回到连接池: ${endpoint}`
+      );
+    } else {
+      // 连接池已满，关闭连接
+      this.logger.debug(
+        `[IndependentXiaozhiConnectionManager] 连接池已满，关闭连接: ${endpoint}`
+      );
+      try {
+        connection.close();
+      } catch (error) {
+        this.logger.debug(
+          `[IndependentXiaozhiConnectionManager] 关闭连接失败: ${error}`
+        );
+      }
+    }
+  }
+
+  /**
+   * 启动空闲连接清理定时器
+   */
+  private startIdleCleanupTimer(): void {
+    if (this.idleCleanupInterval) {
+      clearInterval(this.idleCleanupInterval);
+    }
+
+    this.idleCleanupInterval = setInterval(() => {
+      this.cleanupIdleConnections();
+    }, this.options.connectionIdleTimeout);
+  }
+
+  /**
+   * 停止空闲连接清理定时器
+   */
+  private stopIdleCleanupTimer(): void {
+    if (this.idleCleanupInterval) {
+      clearInterval(this.idleCleanupInterval);
+      this.idleCleanupInterval = null;
+    }
   }
 
   /**
@@ -944,9 +1181,9 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         ? (memoryGrowth / this.performanceMetrics.memoryUsage.initial) * 100
         : 0;
 
-    const healthyConnections = Array.from(this.connectionStates.values()).filter(
-      (status) => status.connected && status.healthScore > 50
-    ).length;
+    const healthyConnections = Array.from(
+      this.connectionStates.values()
+    ).filter((status) => status.connected && status.healthScore > 50).length;
 
     return {
       connectionTime: {
@@ -1009,6 +1246,25 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       // 断开所有连接
       await this.disconnect();
 
+      // 停止空闲连接清理定时器
+      this.stopIdleCleanupTimer();
+
+      // 清理连接池
+      for (const [endpoint, connections] of this.connectionPool.entries()) {
+        for (const connection of connections) {
+          try {
+            connection.close();
+          } catch (error) {
+            this.logger.debug(
+              `[IndependentXiaozhiConnectionManager] 关闭连接池连接失败: ${error}`
+            );
+          }
+        }
+      }
+      this.connectionPool.clear();
+      this.connectionUsage.clear();
+      this.connectionLastUsed.clear();
+
       // 清理连接实例
       this.connections.clear();
       this.connectionStates.clear();
@@ -1019,7 +1275,10 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
 
       this.logger.info("IndependentXiaozhiConnectionManager 资源清理完成");
     } catch (error) {
-      this.logger.error("IndependentXiaozhiConnectionManager 资源清理失败:", error);
+      this.logger.error(
+        "IndependentXiaozhiConnectionManager 资源清理失败:",
+        error
+      );
       throw error;
     }
   }
@@ -1345,20 +1604,90 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     status.responseTime = responseTime;
     status.lastError = error.message;
 
+    // 分类错误类型
+    status.errorType = this.classifyConnectionError(error);
+
     // 更新健康度评分
     this.updateHealthScore(status, false, responseTime);
+
+    // 记录错误到重连历史
+    status.reconnectHistory.push({
+      timestamp: new Date(),
+      success: false,
+      error: error.message,
+      delay: status.reconnectDelay,
+    });
+
+    // 限制重连历史长度
+    if (status.reconnectHistory.length > 10) {
+      status.reconnectHistory = status.reconnectHistory.slice(-10);
+    }
 
     this.logger.warn(
       `健康检查失败: ${status.endpoint}, 错误: ${error.message}, 连续失败: ${status.consecutiveFailures}, 健康度: ${status.healthScore}`
     );
 
+    // 发送错误事件
+    this.emit("connectionError", {
+      endpoint: status.endpoint,
+      error: error,
+      errorType: status.errorType,
+      consecutiveFailures: status.consecutiveFailures,
+      timestamp: new Date(),
+    });
+
+    // 根据错误类型处理
+    if (status.errorType === ConnectionErrorType.AUTHENTICATION_ERROR) {
+      this.logger.error(`认证失败 ${status.endpoint}，停止重连:`, error);
+      status.connected = false;
+
+      // 发送认证失败事件
+      this.emit("authenticationError", {
+        endpoint: status.endpoint,
+        error: error,
+        timestamp: new Date(),
+      });
+
+      return;
+    }
+
     // 如果连续失败次数过多，考虑触发重连
     if (status.consecutiveFailures >= 3 && status.connected) {
       this.logger.warn(
-        `端点 ${status.endpoint} 连续失败 ${status.consecutiveFailures} 次，可能需要重连`
+        `端点 ${status.endpoint} 连续失败 ${status.consecutiveFailures} 次，触发重连`
       );
-      // 这里可以触发重连逻辑
+      this.scheduleReconnect(status.endpoint);
     }
+  }
+
+  /**
+   * 错误恢复机制
+   */
+  private handleConnectionRecovery(endpoint: string): void {
+    const status = this.connectionStates.get(endpoint);
+    if (!status) return;
+
+    // 重置失败计数
+    status.consecutiveFailures = 0;
+    status.lastError = undefined;
+    status.errorType = undefined;
+    status.reconnectDelay = 0;
+
+    // 记录恢复成功
+    status.reconnectHistory.push({
+      timestamp: new Date(),
+      success: true,
+      delay: 0,
+    });
+
+    this.logger.info(`端点 ${endpoint} 连接已恢复`);
+
+    // 发送恢复事件
+    this.emit("connectionRecovered", {
+      endpoint,
+      timestamp: new Date(),
+      consecutiveFailuresBeforeRecovery: status.consecutiveFailures,
+    });
   }
 
   /**

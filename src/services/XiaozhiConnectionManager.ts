@@ -131,7 +131,6 @@ export class XiaozhiConnectionManager extends EventEmitter {
   private healthCheckInterval: NodeJS.Timeout | null = null;
   private reconnectTimers: Map<string, NodeJS.Timeout> = new Map();
 
-  
   // 性能监控
   private performanceMetrics = {
     connectionStartTime: 0,
@@ -152,7 +151,13 @@ export class XiaozhiConnectionManager extends EventEmitter {
     // 合并配置，保持向后兼容
     const mergedOptions = { ...DEFAULT_OPTIONS, ...options };
     // 添加废弃的配置项（如果有提供）
-    if (options?.loadBalanceStrategy || options?.reconnectStrategy || options?.maxReconnectDelay || options?.reconnectBackoffMultiplier || options?.jitterEnabled) {
+    if (
+      options?.loadBalanceStrategy ||
+      options?.reconnectStrategy ||
+      options?.maxReconnectDelay ||
+      options?.reconnectBackoffMultiplier ||
+      options?.jitterEnabled
+    ) {
       this.logger.warn("检测到已废弃的负载均衡相关配置项，这些配置将被忽略");
     }
     this.options = mergedOptions as Required<XiaozhiConnectionOptions>;
@@ -676,7 +681,6 @@ export class XiaozhiConnectionManager extends EventEmitter {
       }
     }
 
-    
     if (options.reconnectStrategy !== undefined) {
       const validStrategies = Object.values(ReconnectStrategy);
       if (!validStrategies.includes(options.reconnectStrategy)) {
@@ -842,7 +846,6 @@ export class XiaozhiConnectionManager extends EventEmitter {
     }
   }
 
-  
   /**
    * 根据连接实例获取端点地址
    */
@@ -855,7 +858,6 @@ export class XiaozhiConnectionManager extends EventEmitter {
     return null;
   }
 
-  
   /**
    * 连接预热机制
    * @param endpoints 要预热的端点列表
@@ -1446,7 +1448,6 @@ export class XiaozhiConnectionManager extends EventEmitter {
     return ConnectionErrorType.UNKNOWN_ERROR;
   }
 
-  
   /**
    * 检查是否应该重连
    */

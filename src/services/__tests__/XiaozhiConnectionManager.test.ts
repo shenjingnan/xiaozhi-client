@@ -587,7 +587,6 @@ describe("XiaozhiConnectionManager", () => {
     });
   });
 
-
   describe("error handling and edge cases", () => {
     beforeEach(() => {
       manager = new XiaozhiConnectionManager();
