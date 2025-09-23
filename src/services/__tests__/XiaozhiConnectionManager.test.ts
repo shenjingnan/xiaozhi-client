@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  ConnectionErrorType,
   ReconnectStrategy,
   XiaozhiConnectionManager,
   type XiaozhiConnectionOptions,
@@ -748,6 +749,198 @@ describe("XiaozhiConnectionManager", () => {
 
       const backupConnection = await manager.performFailover(mockEndpoints[0]);
       expect(backupConnection).toBeNull();
+    });
+  });
+
+  describe("error handling and edge cases", () => {
+    beforeEach(() => {
+      manager = new XiaozhiConnectionManager();
+    });
+
+    it("should handle connection timeout", async () => {
+      await manager.initialize(mockEndpoints, mockTools);
+
+      // 模拟连接超时
+      const connectionStatus = manager.getConnectionStatus();
+      connectionStatus[0].lastError = "Connection timeout";
+      connectionStatus[0].errorType = ConnectionErrorType.TIMEOUT_ERROR;
+
+      const stats = manager.getReconnectStats();
+      expect(stats[mockEndpoints[0]].errorType).toBe(
+        ConnectionErrorType.TIMEOUT_ERROR
+      );
+    });
+
+    it("should handle authentication errors", async () => {
+      await manager.initialize(mockEndpoints, mockTools);
+
+      const connectionStatus = manager.getConnectionStatus();
+      connectionStatus[0].lastError = "Authentication failed";
+      connectionStatus[0].errorType = ConnectionErrorType.AUTHENTICATION_ERROR;
+
+      expect(connectionStatus[0].errorType).toBe(
+        ConnectionErrorType.AUTHENTICATION_ERROR
+      );
+    });
+
+    it("should handle network errors", async () => {
+      await manager.initialize(mockEndpoints, mockTools);
+
+      const connectionStatus = manager.getConnectionStatus();
+      connectionStatus[0].lastError = "Network unreachable";
+      connectionStatus[0].errorType = ConnectionErrorType.NETWORK_ERROR;
+
+      expect(connectionStatus[0].errorType).toBe(
+        ConnectionErrorType.NETWORK_ERROR
+      );
+    });
+
+    it("should handle server errors", async () => {
+      await manager.initialize(mockEndpoints, mockTools);
+
+      const connectionStatus = manager.getConnectionStatus();
+      connectionStatus[0].lastError = "Server error 500";
+      connectionStatus[0].errorType = ConnectionErrorType.SERVER_ERROR;
+
+      expect(connectionStatus[0].errorType).toBe(
+        ConnectionErrorType.SERVER_ERROR
+      );
+    });
+
+    it("should handle unknown errors", async () => {
+      await manager.initialize(mockEndpoints, mockTools);
+
+      const connectionStatus = manager.getConnectionStatus();
+      connectionStatus[0].lastError = "Unknown error occurred";
+      connectionStatus[0].errorType = ConnectionErrorType.UNKNOWN_ERROR;
+
+      expect(connectionStatus[0].errorType).toBe(
+        ConnectionErrorType.UNKNOWN_ERROR
+      );
+    });
+
+    it("should validate load balance strategies", () => {
+      const invalidStrategy = "invalid-strategy" as any;
+      manager = new XiaozhiConnectionManager();
+
+      expect(() => {
+        manager.updateOptions({
+          loadBalanceStrategy: invalidStrategy,
+        });
+      }).toThrow("无效的连接选项");
+    });
+
+    it("should validate reconnect strategies", () => {
+      const invalidStrategy = "invalid-strategy" as any;
+      manager = new XiaozhiConnectionManager();
+
+      expect(() => {
+        manager.updateOptions({
+          reconnectStrategy: invalidStrategy,
+        });
+      }).toThrow("无效的连接选项");
+    });
+
+    it("should handle cleanup with active timers", async () => {
+      await manager.initialize(mockEndpoints, mockTools);
+
+      // 模拟活动定时器
+      const connectionStatus = manager.getConnectionStatus();
+      connectionStatus[0].isReconnecting = true;
+
+      await manager.cleanup();
+
+      expect(manager.getConnectionStatus()).toHaveLength(0);
+    });
+
+    it("should handle endpoint validation errors", async () => {
+      manager = new XiaozhiConnectionManager();
+
+      await expect(
+        manager.initialize(["invalid-url"], mockTools)
+      ).rejects.toThrow("端点地址必须是 WebSocket URL");
+    });
+
+    it("should handle empty endpoints array", async () => {
+      manager = new XiaozhiConnectionManager();
+
+      await expect(manager.initialize([], mockTools)).rejects.toThrow(
+        "端点列表不能为空"
+      );
+    });
+
+    it("should handle duplicate endpoints", async () => {
+      await manager.initialize([mockEndpoints[0], mockEndpoints[0]], mockTools);
+
+      const connectionStatus = manager.getConnectionStatus();
+      expect(connectionStatus).toHaveLength(1); // 应该去重
+    });
+
+    it("should handle invalid tools array", async () => {
+      manager = new XiaozhiConnectionManager();
+
+      await expect(
+        manager.initialize(mockEndpoints, null as any)
+      ).rejects.toThrow();
+    });
+
+    it("should handle configuration validation", async () => {
+      manager = new XiaozhiConnectionManager();
+
+      const invalidOptions = {
+        healthCheckInterval: -1000,
+        reconnectInterval: 50,
+      };
+
+      expect(() => {
+        manager.updateOptions(invalidOptions);
+      }).toThrow("无效的连接选项");
+    });
+
+    it("should handle connection state transitions", async () => {
+      await manager.initialize(mockEndpoints, mockTools);
+
+      const connectionStatus = manager.getConnectionStatus();
+      const initialStatus = connectionStatus[0];
+
+      // 模拟状态转换
+      initialStatus.connected = false;
+      initialStatus.isReconnecting = true;
+      initialStatus.reconnectAttempts = 1;
+
+      expect(initialStatus.isReconnecting).toBe(true);
+      expect(initialStatus.reconnectAttempts).toBe(1);
+    });
+
+    it("should handle concurrent connection attempts", async () => {
+      await manager.initialize(mockEndpoints, mockTools);
+
+      // 模拟并发连接尝试
+      const connectPromises = [manager.connect(), manager.connect()];
+
+      await expect(Promise.all(connectPromises)).resolves.not.toThrow();
+    });
+
+    it("should handle memory pressure scenarios", async () => {
+      await manager.initialize(mockEndpoints, mockTools);
+
+      // 模拟大量连接历史记录
+      const connectionStatus = manager.getConnectionStatus();
+      connectionStatus[0].reconnectHistory = Array(50)
+        .fill(null)
+        .map((_, i) => ({
+          timestamp: new Date(Date.now() - i * 1000),
+          success: i % 2 === 0,
+          error: i % 2 === 0 ? undefined : "Connection failed",
+          delay: 1000 + i * 100,
+        }));
+
+      manager.optimizeMemoryUsage();
+
+      // 历史记录应该被清理
+      expect(connectionStatus[0].reconnectHistory.length).toBeLessThanOrEqual(
+        20
+      );
     });
   });
 

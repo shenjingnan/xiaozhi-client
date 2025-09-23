@@ -293,8 +293,7 @@ export class WebServer {
         await XiaozhiConnectionManagerSingleton.getInstance({
           healthCheckInterval: 30000,
           reconnectInterval: 5000,
-          maxReconnectAttempts: 10,
-          loadBalanceStrategy: "round-robin",
+          maxReconnectAttempts: 3,
           connectionTimeout: 10000,
         });
 
@@ -362,7 +361,6 @@ export class WebServer {
             this.xiaozhiConnectionManager.getHealthyConnections().length,
           totalConnections:
             this.xiaozhiConnectionManager.getConnectionStatus().length,
-          loadBalanceStats: this.xiaozhiConnectionManager.getLoadBalanceStats(),
           healthCheckStats: this.xiaozhiConnectionManager.getHealthCheckStats(),
           reconnectStats: this.xiaozhiConnectionManager.getReconnectStats(),
         },
