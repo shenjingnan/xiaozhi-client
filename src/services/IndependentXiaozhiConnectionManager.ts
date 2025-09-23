@@ -347,6 +347,99 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   }
 
   /**
+   * 获取所有端点
+   */
+  getEndpoints(): string[] {
+    // 同时返回connections和connectionStates中的端点
+    const connectionEndpoints = Array.from(this.connections.keys());
+    const stateEndpoints = Array.from(this.connectionStates.keys());
+    return Array.from(new Set([...connectionEndpoints, ...stateEndpoints]));
+  }
+
+  /**
+   * 添加端点（简化版本，用于测试）
+   * @param endpoint 端点地址
+   */
+  addEndpointSimple(endpoint: string): void {
+    if (this.connections.has(endpoint)) {
+      return;
+    }
+    
+    // 创建初始状态
+    const status: ConnectionStatus = {
+      endpoint,
+      connected: false,
+      initialized: false,
+      lastConnected: undefined,
+      lastError: undefined,
+    };
+    
+    this.connectionStates.set(endpoint, status);
+  }
+
+  /**
+   * 断开指定端点连接
+   * @param endpoint 要断开的端点
+   */
+  async disconnectEndpoint(endpoint: string): Promise<void> {
+    const proxyServer = this.connections.get(endpoint);
+    if (!proxyServer) {
+      this.logger.warn(`端点 ${endpoint} 不存在，跳过断开`);
+      return;
+    }
+
+    this.logger.info(`断开端点连接: ${endpoint}`);
+    
+    try {
+      await this.disconnectSingleEndpoint(endpoint, proxyServer);
+    } catch (error) {
+      this.logger.error(`断开端点 ${endpoint} 失败:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 清除所有端点
+   */
+  async clearEndpoints(): Promise<void> {
+    this.logger.info("清除所有端点");
+    
+    // 断开所有连接
+    const disconnectPromises = Array.from(this.connections.keys()).map(endpoint =>
+      this.removeEndpoint(endpoint)
+    );
+    await Promise.allSettled(disconnectPromises);
+    
+    this.logger.info("所有端点已清除");
+  }
+
+  /**
+   * 发送消息到指定端点
+   * @param endpoint 目标端点
+   * @param message 消息内容
+   */
+  async sendMessage(endpoint: string, message: any): Promise<void> {
+    const proxyServer = this.connections.get(endpoint);
+    if (!proxyServer) {
+      throw new Error("端点不存在");
+    }
+    
+    // 简化连接状态检查
+    const status = this.connectionStates.get(endpoint);
+    if (!status || !status.connected) {
+      throw new Error("端点未连接");
+    }
+    
+    try {
+      // 使用简化的发送方法
+      await proxyServer.send(message);
+    } catch (error) {
+      this.logger.error(`发送消息到端点 ${endpoint} 失败:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * 获取所有连接状态
    */
   getConnectionStatus(): ConnectionStatus[] {
