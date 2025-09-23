@@ -587,6 +587,170 @@ describe("XiaozhiConnectionManager", () => {
     });
   });
 
+  describe("load balancing functionality", () => {
+    beforeEach(() => {
+      manager = new XiaozhiConnectionManager({
+        loadBalanceStrategy: "round-robin",
+      });
+    });
+
+    it("should select best connection with round-robin strategy", async () => {
+      await manager.initialize(mockEndpoints, mockTools);
+
+      // 模拟健康连接
+      const connectionStatus = manager.getConnectionStatus();
+      for (const status of connectionStatus) {
+        status.connected = true;
+        status.healthScore = 80;
+      }
+
+      const connection1 = manager.selectBestConnection();
+      const connection2 = manager.selectBestConnection();
+
+      expect(connection1).toBeDefined();
+      expect(connection2).toBeDefined();
+      // 轮询策略应该选择不同的连接
+      expect(connection1).not.toBe(connection2);
+    });
+
+    it("should select best connection with random strategy", async () => {
+      manager = new XiaozhiConnectionManager({
+        loadBalanceStrategy: "random",
+      });
+
+      await manager.initialize(mockEndpoints, mockTools);
+
+      // 模拟健康连接
+      const connectionStatus = manager.getConnectionStatus();
+      for (const status of connectionStatus) {
+        status.connected = true;
+        status.healthScore = 80;
+      }
+
+      const connection = manager.selectBestConnection();
+      expect(connection).toBeDefined();
+    });
+
+    it("should select best connection with health-based strategy", async () => {
+      manager = new XiaozhiConnectionManager({
+        loadBalanceStrategy: "health-based",
+      });
+
+      await manager.initialize(mockEndpoints, mockTools);
+
+      // 模拟不同健康度的连接
+      const connectionStatus = manager.getConnectionStatus();
+      connectionStatus[0].connected = true;
+      connectionStatus[0].healthScore = 90;
+      connectionStatus[0].totalRequests = 10;
+      connectionStatus[0].successfulRequests = 9;
+
+      connectionStatus[1].connected = true;
+      connectionStatus[1].healthScore = 60;
+      connectionStatus[1].totalRequests = 10;
+      connectionStatus[1].successfulRequests = 6;
+
+      const connection = manager.selectBestConnection();
+      expect(connection).toBeDefined();
+    });
+
+    it("should return null when no healthy connections available", async () => {
+      await manager.initialize(mockEndpoints, mockTools);
+
+      // 所有连接都不健康
+      const connectionStatus = manager.getConnectionStatus();
+      for (const status of connectionStatus) {
+        status.connected = false;
+        status.healthScore = 10; // 低于阈值
+      }
+
+      const connection = manager.selectBestConnection();
+      expect(connection).toBeNull();
+    });
+
+    it("should exclude specified endpoints", async () => {
+      await manager.initialize(mockEndpoints, mockTools);
+
+      // 模拟健康连接
+      const connectionStatus = manager.getConnectionStatus();
+      for (const status of connectionStatus) {
+        status.connected = true;
+        status.healthScore = 80;
+      }
+
+      // 排除第一个端点
+      const connection = manager.selectBestConnection([mockEndpoints[0]]);
+      const selectedEndpoint =
+        manager.getLoadBalanceStats().lastSelectedEndpoint;
+
+      expect(connection).toBeDefined();
+      expect(selectedEndpoint).not.toBe(mockEndpoints[0]);
+    });
+
+    it("should get load balance statistics", async () => {
+      await manager.initialize(mockEndpoints, mockTools);
+
+      const stats = manager.getLoadBalanceStats();
+
+      expect(stats).toMatchObject({
+        strategy: "round-robin",
+        totalConnections: 2,
+        healthyConnections: expect.any(Number),
+        lastSelectedEndpoint: null,
+        roundRobinIndex: 0,
+        connectionWeights: expect.any(Object),
+      });
+    });
+
+    it("should switch load balance strategy", () => {
+      const eventPromise = new Promise((resolve) => {
+        manager.once("configChange", resolve);
+      });
+
+      manager.setLoadBalanceStrategy("health-based");
+
+      const stats = manager.getLoadBalanceStats();
+      expect(stats.strategy).toBe("health-based");
+      expect(stats.roundRobinIndex).toBe(0); // 应该重置
+
+      return eventPromise.then((event) => {
+        expect(event).toMatchObject({
+          type: "options_updated",
+          timestamp: expect.any(Date),
+        });
+      });
+    });
+
+    it("should perform failover", async () => {
+      await manager.initialize(mockEndpoints, mockTools);
+
+      // 模拟健康连接
+      const connectionStatus = manager.getConnectionStatus();
+      for (const status of connectionStatus) {
+        status.connected = true;
+        status.healthScore = 80;
+      }
+
+      const backupConnection = await manager.performFailover(mockEndpoints[0]);
+      expect(backupConnection).toBeDefined();
+
+      const selectedEndpoint =
+        manager.getLoadBalanceStats().lastSelectedEndpoint;
+      expect(selectedEndpoint).not.toBe(mockEndpoints[0]);
+    });
+
+    it("should return null when no backup connections available for failover", async () => {
+      await manager.initialize([mockEndpoints[0]], mockTools);
+
+      // 只有一个连接，且不健康
+      const connectionStatus = manager.getConnectionStatus();
+      connectionStatus[0].connected = false;
+      connectionStatus[0].healthScore = 10;
+
+      const backupConnection = await manager.performFailover(mockEndpoints[0]);
+      expect(backupConnection).toBeNull();
+    });
+  });
 
   describe("error handling and edge cases", () => {
     beforeEach(() => {

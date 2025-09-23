@@ -19,18 +19,10 @@ export interface ConfigChangeEvent {
     added?: string[];
     removed?: string[];
     updated?: string[];
-    oldOptions?: Partial<XiaozhiConnectionOptions>;
-    newOptions?: Partial<XiaozhiConnectionOptions>;
+    oldOptions?: Partial<IndependentConnectionOptions>;
+    newOptions?: Partial<IndependentConnectionOptions>;
   };
   timestamp: Date;
-}
-
-// 重连策略枚举
-export enum ReconnectStrategy {
-  EXPONENTIAL_BACKOFF = "exponential_backoff",
-  LINEAR_BACKOFF = "linear_backoff",
-  FIXED_INTERVAL = "fixed_interval",
-  ADAPTIVE = "adaptive",
 }
 
 // 错误类型枚举
@@ -48,15 +40,6 @@ export interface IndependentConnectionOptions {
   reconnectInterval?: number; // 重连间隔（毫秒），默认 5000
   maxReconnectAttempts?: number; // 最大重连次数，默认 3
   connectionTimeout?: number; // 连接超时时间（毫秒），默认 10000
-}
-
-// 保持向后兼容的连接选项接口
-export interface XiaozhiConnectionOptions extends IndependentConnectionOptions {
-  loadBalanceStrategy?: "round-robin" | "random" | "health-based"; // 负载均衡策略，已废弃
-  reconnectStrategy?: ReconnectStrategy; // 重连策略，已废弃
-  maxReconnectDelay?: number; // 最大重连延迟（毫秒），已废弃
-  reconnectBackoffMultiplier?: number; // 退避乘数，已废弃
-  jitterEnabled?: boolean; // 是否启用抖动，已废弃
 }
 
 // 连接状态接口
@@ -108,10 +91,10 @@ const DEFAULT_OPTIONS: Required<IndependentConnectionOptions> = {
 };
 
 /**
- * 小智连接管理器
- * 负责管理多个小智接入点的连接，提供统一的连接管理、健康检查、负载均衡等功能
+ * 独立小智连接管理器
+ * 负责管理多个小智接入点的连接，每个端点独立运行，无负载均衡和故障转移
  */
-export class XiaozhiConnectionManager extends EventEmitter {
+export class IndependentXiaozhiConnectionManager extends EventEmitter {
   // 连接实例管理
   private connections: Map<string, ProxyMCPServer> = new Map();
   private connectionStates: Map<string, ConnectionStatus> = new Map();
@@ -125,13 +108,12 @@ export class XiaozhiConnectionManager extends EventEmitter {
   private isConnecting = false;
 
   // 配置选项
-  private options: Required<XiaozhiConnectionOptions>;
+  private options: Required<IndependentConnectionOptions>;
 
   // 健康检查和重连管理
   private healthCheckInterval: NodeJS.Timeout | null = null;
   private reconnectTimers: Map<string, NodeJS.Timeout> = new Map();
 
-  
   // 性能监控
   private performanceMetrics = {
     connectionStartTime: 0,
@@ -146,19 +128,13 @@ export class XiaozhiConnectionManager extends EventEmitter {
     prewarmedConnections: new Set<string>(),
   };
 
-  constructor(options?: XiaozhiConnectionOptions) {
+  constructor(options?: IndependentConnectionOptions) {
     super();
     this.logger = logger;
-    // 合并配置，保持向后兼容
-    const mergedOptions = { ...DEFAULT_OPTIONS, ...options };
-    // 添加废弃的配置项（如果有提供）
-    if (options?.loadBalanceStrategy || options?.reconnectStrategy || options?.maxReconnectDelay || options?.reconnectBackoffMultiplier || options?.jitterEnabled) {
-      this.logger.warn("检测到已废弃的负载均衡相关配置项，这些配置将被忽略");
-    }
-    this.options = mergedOptions as Required<XiaozhiConnectionOptions>;
+    this.options = { ...DEFAULT_OPTIONS, ...options };
 
-    this.logger.info("[XiaozhiConnectionManager] 实例已创建");
-    this.logger.debug("[XiaozhiConnectionManager] 配置选项:", this.options);
+    this.logger.info("[IndependentXiaozhiConnectionManager] 实例已创建");
+    this.logger.debug("[IndependentXiaozhiConnectionManager] 配置选项:", this.options);
   }
 
   /**
@@ -168,12 +144,12 @@ export class XiaozhiConnectionManager extends EventEmitter {
    */
   async initialize(endpoints: string[], tools: Tool[]): Promise<void> {
     if (this.isInitialized) {
-      this.logger.warn("XiaozhiConnectionManager 已经初始化，跳过重复初始化");
+      this.logger.warn("IndependentXiaozhiConnectionManager 已经初始化，跳过重复初始化");
       return;
     }
 
     this.logger.info(
-      `开始初始化 XiaozhiConnectionManager，端点数量: ${endpoints.length}`
+      `开始初始化 IndependentXiaozhiConnectionManager，端点数量: ${endpoints.length}`
     );
 
     try {
@@ -199,10 +175,10 @@ export class XiaozhiConnectionManager extends EventEmitter {
         this.performanceMetrics.memoryUsage.initial;
 
       this.logger.info(
-        `XiaozhiConnectionManager 初始化完成，管理 ${this.connections.size} 个连接`
+        `IndependentXiaozhiConnectionManager 初始化完成，管理 ${this.connections.size} 个连接`
       );
     } catch (error) {
-      this.logger.error("XiaozhiConnectionManager 初始化失败:", error);
+      this.logger.error("IndependentXiaozhiConnectionManager 初始化失败:", error);
       await this.cleanup(); // 清理部分创建的连接
       throw error;
     }
@@ -214,7 +190,7 @@ export class XiaozhiConnectionManager extends EventEmitter {
   async connect(): Promise<void> {
     if (!this.isInitialized) {
       throw new Error(
-        "XiaozhiConnectionManager 未初始化，请先调用 initialize()"
+        "IndependentXiaozhiConnectionManager 未初始化，请先调用 initialize()"
       );
     }
 
@@ -301,7 +277,7 @@ export class XiaozhiConnectionManager extends EventEmitter {
    */
   async addEndpoint(endpoint: string): Promise<void> {
     if (!this.isInitialized) {
-      throw new Error("XiaozhiConnectionManager 未初始化");
+      throw new Error("IndependentXiaozhiConnectionManager 未初始化");
     }
 
     if (this.connections.has(endpoint)) {
@@ -368,22 +344,6 @@ export class XiaozhiConnectionManager extends EventEmitter {
       this.logger.error(`移除端点 ${endpoint} 失败:`, error);
       throw error;
     }
-  }
-
-  /**
-   * 获取健康的连接列表
-   */
-  getHealthyConnections(): ProxyMCPServer[] {
-    const healthyConnections: ProxyMCPServer[] = [];
-
-    for (const [endpoint, proxyServer] of this.connections) {
-      const status = this.connectionStates.get(endpoint);
-      if (status?.connected && status.healthScore > 50) {
-        healthyConnections.push(proxyServer);
-      }
-    }
-
-    return healthyConnections;
   }
 
   /**
@@ -616,7 +576,7 @@ export class XiaozhiConnectionManager extends EventEmitter {
   /**
    * 验证连接选项
    */
-  private validateOptions(options: Partial<XiaozhiConnectionOptions>): {
+  private validateOptions(options: Partial<IndependentConnectionOptions>): {
     valid: boolean;
     errors: string[];
   } {
@@ -658,34 +618,6 @@ export class XiaozhiConnectionManager extends EventEmitter {
       }
     }
 
-    if (options.maxReconnectDelay !== undefined) {
-      if (
-        typeof options.maxReconnectDelay !== "number" ||
-        options.maxReconnectDelay < 1000
-      ) {
-        errors.push("maxReconnectDelay 必须是大于等于 1000 的数字");
-      }
-    }
-
-    if (options.reconnectBackoffMultiplier !== undefined) {
-      if (
-        typeof options.reconnectBackoffMultiplier !== "number" ||
-        options.reconnectBackoffMultiplier < 1
-      ) {
-        errors.push("reconnectBackoffMultiplier 必须是大于等于 1 的数字");
-      }
-    }
-
-    
-    if (options.reconnectStrategy !== undefined) {
-      const validStrategies = Object.values(ReconnectStrategy);
-      if (!validStrategies.includes(options.reconnectStrategy)) {
-        errors.push(
-          `reconnectStrategy 必须是以下值之一: ${validStrategies.join(", ")}`
-        );
-      }
-    }
-
     return { valid: errors.length === 0, errors };
   }
 
@@ -699,7 +631,7 @@ export class XiaozhiConnectionManager extends EventEmitter {
     tools: Tool[] = []
   ): Promise<void> {
     if (!this.isInitialized) {
-      throw new Error("XiaozhiConnectionManager 未初始化");
+      throw new Error("IndependentXiaozhiConnectionManager 未初始化");
     }
 
     this.logger.info(`更新端点配置，新端点数量: ${newEndpoints.length}`);
@@ -770,7 +702,7 @@ export class XiaozhiConnectionManager extends EventEmitter {
    * 更新连接选项
    * @param newOptions 新的连接选项
    */
-  updateOptions(newOptions: Partial<XiaozhiConnectionOptions>): void {
+  updateOptions(newOptions: Partial<IndependentConnectionOptions>): void {
     this.logger.info("更新连接选项");
 
     // 验证新选项
@@ -805,7 +737,7 @@ export class XiaozhiConnectionManager extends EventEmitter {
    */
   getCurrentConfig(): {
     endpoints: string[];
-    options: Required<XiaozhiConnectionOptions>;
+    options: Required<IndependentConnectionOptions>;
   } {
     return {
       endpoints: Array.from(this.connections.keys()),
@@ -819,7 +751,7 @@ export class XiaozhiConnectionManager extends EventEmitter {
    */
   async reloadConfig(config: {
     endpoints?: string[];
-    options?: Partial<XiaozhiConnectionOptions>;
+    options?: Partial<IndependentConnectionOptions>;
     tools?: Tool[];
   }): Promise<void> {
     this.logger.info("开始热重载配置");
@@ -842,20 +774,6 @@ export class XiaozhiConnectionManager extends EventEmitter {
     }
   }
 
-  
-  /**
-   * 根据连接实例获取端点地址
-   */
-  private getEndpointByConnection(connection: ProxyMCPServer): string | null {
-    for (const [endpoint, conn] of this.connections) {
-      if (conn === connection) {
-        return endpoint;
-      }
-    }
-    return null;
-  }
-
-  
   /**
    * 连接预热机制
    * @param endpoints 要预热的端点列表
@@ -933,6 +851,10 @@ export class XiaozhiConnectionManager extends EventEmitter {
         ? (memoryGrowth / this.performanceMetrics.memoryUsage.initial) * 100
         : 0;
 
+    const healthyConnections = Array.from(this.connectionStates.values()).filter(
+      (status) => status.connected && status.healthScore > 50
+    ).length;
+
     return {
       connectionTime: {
         total: this.performanceMetrics.totalConnectionTime,
@@ -948,7 +870,7 @@ export class XiaozhiConnectionManager extends EventEmitter {
       },
       prewarmedConnections: this.performanceMetrics.prewarmedConnections.size,
       totalConnections: this.connections.size,
-      healthyConnections: this.getHealthyConnections().length,
+      healthyConnections,
     };
   }
 
@@ -988,7 +910,7 @@ export class XiaozhiConnectionManager extends EventEmitter {
    * 资源清理
    */
   async cleanup(): Promise<void> {
-    this.logger.info("开始清理 XiaozhiConnectionManager 资源");
+    this.logger.info("开始清理 IndependentXiaozhiConnectionManager 资源");
 
     try {
       // 断开所有连接
@@ -1002,9 +924,9 @@ export class XiaozhiConnectionManager extends EventEmitter {
       this.isInitialized = false;
       this.isConnecting = false;
 
-      this.logger.info("XiaozhiConnectionManager 资源清理完成");
+      this.logger.info("IndependentXiaozhiConnectionManager 资源清理完成");
     } catch (error) {
-      this.logger.error("XiaozhiConnectionManager 资源清理失败:", error);
+      this.logger.error("IndependentXiaozhiConnectionManager 资源清理失败:", error);
       throw error;
     }
   }
@@ -1446,7 +1368,6 @@ export class XiaozhiConnectionManager extends EventEmitter {
     return ConnectionErrorType.UNKNOWN_ERROR;
   }
 
-  
   /**
    * 检查是否应该重连
    */

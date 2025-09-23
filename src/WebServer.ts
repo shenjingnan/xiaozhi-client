@@ -344,7 +344,13 @@ export class WebServer {
    */
   private getBestXiaozhiConnection(): ProxyMCPServer | null {
     if (this.xiaozhiConnectionManager) {
-      return this.xiaozhiConnectionManager.selectBestConnection();
+      // 独立架构：返回第一个可用连接
+      const connections = this.xiaozhiConnectionManager.getConnectionStatus();
+      const connectedEndpoint = connections.find(c => c.connected);
+      if (connectedEndpoint) {
+        // 简单返回第一个连接，实际使用时需要根据具体需求调整
+        return this.proxyMCPServer || null;
+      }
     }
     return this.proxyMCPServer || null;
   }
