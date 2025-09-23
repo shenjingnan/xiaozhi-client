@@ -19,6 +19,7 @@ import { ConfigApiHandler } from "./handlers/ConfigApiHandler.js";
 import { CozeApiHandler } from "./handlers/CozeApiHandler.js";
 import { HeartbeatHandler } from "./handlers/HeartbeatHandler.js";
 import { MCPRouteHandler } from "./handlers/MCPRouteHandler.js";
+import { MCPServerApiHandler } from "./handlers/MCPServerApiHandler.js";
 import { RealtimeNotificationHandler } from "./handlers/RealtimeNotificationHandler.js";
 import { ServiceApiHandler } from "./handlers/ServiceApiHandler.js";
 import { StaticFileHandler } from "./handlers/StaticFileHandler.js";
@@ -79,6 +80,7 @@ export class WebServer {
 
   // HTTP API 处理器
   private configApiHandler: ConfigApiHandler;
+  private mcpServerApiHandler: MCPServerApiHandler;
   private statusApiHandler: StatusApiHandler;
   private serviceApiHandler: ServiceApiHandler;
   private toolApiHandler: ToolApiHandler;
@@ -161,6 +163,7 @@ export class WebServer {
 
     // 初始化 HTTP API 处理器
     this.configApiHandler = new ConfigApiHandler();
+    this.mcpServerApiHandler = new MCPServerApiHandler();
     this.statusApiHandler = new StatusApiHandler(this.statusService);
     this.serviceApiHandler = new ServiceApiHandler(this.statusService);
     this.toolApiHandler = new ToolApiHandler();
@@ -545,6 +548,26 @@ export class WebServer {
     );
     this.app?.delete("/api/tools/custom/:toolName", (c) =>
       this.toolApiHandler.removeCustomTool(c)
+    );
+
+    // MCP 服务管理 API 路由 (新增)
+    this.app?.post("/api/mcp-servers/add", (c) =>
+      this.mcpServerApiHandler.addMCPServer(c)
+    );
+    this.app?.post("/api/mcp-servers/remove", (c) =>
+      this.mcpServerApiHandler.removeMCPServer(c)
+    );
+    this.app?.post("/api/mcp-servers/test-connection", (c) =>
+      this.mcpServerApiHandler.testConnection(c)
+    );
+    this.app?.get("/api/mcp-servers/:serviceName/status", (c) =>
+      this.mcpServerApiHandler.getServiceStatus(c)
+    );
+    this.app?.get("/api/mcp-servers/:serviceName/tools", (c) =>
+      this.mcpServerApiHandler.getServiceTools(c)
+    );
+    this.app?.put("/api/mcp-servers/:serviceName/config", (c) =>
+      this.mcpServerApiHandler.updateServiceConfig(c)
     );
 
     // 扣子 API 相关路由

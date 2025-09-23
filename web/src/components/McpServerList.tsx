@@ -12,7 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { apiClient } from "@/services/api";
+import { type MCPServerStatus, apiClient } from "@/services/api";
 import { useMcpServerConfig, useMcpServers } from "@/stores/config";
 import type { CozeWorkflow, MCPServerConfig, WorkflowParameter } from "@/types";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
@@ -206,6 +206,12 @@ export function McpServerList({
     open: boolean;
     tool?: any;
   }>({ open: false });
+
+  // 添加服务器状态管理
+  const [serverStatuses, setServerStatuses] = useState<
+    Record<string, MCPServerStatus>
+  >({});
+  const [isLoadingStatus, setIsLoadingStatus] = useState(false);
 
   const handleToggleTool = async (name: string, currentEnable: boolean) => {
     try {
@@ -414,6 +420,51 @@ export function McpServerList({
   const handleParameterConfigCancel = () => {
     setParameterConfigDialog({ open: false });
   };
+
+  // 获取服务器状态
+  const fetchServerStatus = useCallback(async (serverName: string) => {
+    try {
+      const status = await apiClient.getServerStatus(serverName);
+      setServerStatuses((prev) => ({
+        ...prev,
+        [serverName]: status,
+      }));
+    } catch (error) {
+      console.error(`获取服务器 ${serverName} 状态失败:`, error);
+      // 设置错误状态
+      setServerStatuses((prev) => ({
+        ...prev,
+        [serverName]: {
+          status: "error",
+          error: error instanceof Error ? error.message : "未知错误",
+        },
+      }));
+    }
+  }, []);
+
+  // 获取所有服务器状态
+  const fetchAllServerStatuses = useCallback(async () => {
+    if (!mcpServers) return;
+
+    setIsLoadingStatus(true);
+    try {
+      const statusPromises = Object.keys(mcpServers).map((serverName) =>
+        fetchServerStatus(serverName)
+      );
+      await Promise.all(statusPromises);
+    } catch (error) {
+      console.error("获取服务器状态失败:", error);
+    } finally {
+      setIsLoadingStatus(false);
+    }
+  }, [mcpServers, fetchServerStatus]);
+
+  // 组件加载时获取服务器状态
+  useEffect(() => {
+    if (mcpServers && Object.keys(mcpServers).length > 0) {
+      fetchAllServerStatuses();
+    }
+  }, [mcpServers, fetchAllServerStatuses]);
 
   if (!mcpServers || Object.keys(mcpServers).length === 0) {
     return (
@@ -665,7 +716,46 @@ export function McpServerList({
                             <h3 className="text-lg font-semibold">
                               {mcpServerName}
                             </h3>
+                            {serverStatuses[mcpServerName] && (
+                              <Badge
+                                variant={
+                                  serverStatuses[mcpServerName].status ===
+                                  "connected"
+                                    ? "default"
+                                    : serverStatuses[mcpServerName].status ===
+                                        "error"
+                                      ? "destructive"
+                                      : "secondary"
+                                }
+                                className="text-xs"
+                              >
+                                {serverStatuses[mcpServerName].status ===
+                                "connected"
+                                  ? "已连接"
+                                  : serverStatuses[mcpServerName].status ===
+                                      "error"
+                                    ? "错误"
+                                    : serverStatuses[mcpServerName].status ===
+                                        "connecting"
+                                      ? "连接中"
+                                      : "未连接"}
+                              </Badge>
+                            )}
                           </div>
+                          {serverStatuses[mcpServerName]?.error && (
+                            <p className="text-sm text-red-500 mb-2">
+                              {serverStatuses[mcpServerName].error}
+                            </p>
+                          )}
+                          {serverStatuses[mcpServerName]?.tools && (
+                            <p className="text-sm text-muted-foreground mb-2">
+                              工具:{" "}
+                              {serverStatuses[mcpServerName].tools?.enabled ||
+                                0}
+                              /{serverStatuses[mcpServerName].tools?.total || 0}{" "}
+                              已启用
+                            </p>
+                          )}
                         </div>
                       </div>
 

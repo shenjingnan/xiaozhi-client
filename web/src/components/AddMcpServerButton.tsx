@@ -16,9 +16,8 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { type MCPServerConfig, apiClient } from "@/services/api";
 import { useConfig } from "@/stores/config";
-import type { MCPServerConfig } from "@/types";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PlusIcon } from "lucide-react";
@@ -37,7 +36,6 @@ const formSchema = z.object({
 export function AddMcpServerButton() {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { updateConfig } = useWebSocket();
   const config = useConfig();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -184,11 +182,6 @@ export function AddMcpServerButton() {
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!config) {
-      toast.error("配置数据未加载，请稍后重试");
-      return;
-    }
-
     setIsLoading(true);
     try {
       // 验证用户输入的配置
@@ -202,26 +195,50 @@ export function AddMcpServerButton() {
       const parsedServers = validation.data!;
 
       // 检查是否有重名的服务
-      const existingNames = Object.keys(parsedServers).filter(
-        (name) => name in (config.mcpServers || {})
-      );
-      if (existingNames.length > 0) {
-        toast.error(
-          `服务名称冲突: 以下服务已存在: ${existingNames.join(", ")}`
+      if (config?.mcpServers) {
+        const existingNames = Object.keys(parsedServers).filter(
+          (name) => name in config.mcpServers
         );
-        return;
+        if (existingNames.length > 0) {
+          toast.error(
+            `服务名称冲突: 以下服务已存在: ${existingNames.join(", ")}`
+          );
+          return;
+        }
       }
 
-      // 更新配置
-      const updatedConfig = {
-        ...config,
-        mcpServers: {
-          ...parsedServers,
-          ...config.mcpServers,
-        },
-      };
+      // 测试连接
+      const serverConfigs = Object.values(parsedServers);
+      for (const serverConfig of serverConfigs) {
+        try {
+          const testResult = await apiClient.testConnection(serverConfig);
+          if (!testResult.success) {
+            toast.error(`连接测试失败: ${testResult.message}`);
+            return;
+          }
+        } catch (error) {
+          toast.error(
+            `连接测试失败: ${error instanceof Error ? error.message : "未知错误"}`
+          );
+          return;
+        }
+      }
 
-      await updateConfig(updatedConfig);
+      // 添加所有服务器
+      for (const [serverName, serverConfig] of Object.entries(parsedServers)) {
+        try {
+          await apiClient.addMCPServer({
+            ...serverConfig,
+            // 添加服务器名称到配置中
+            serviceName: serverName,
+          });
+        } catch (error) {
+          toast.error(
+            `添加服务器 "${serverName}" 失败: ${error instanceof Error ? error.message : "未知错误"}`
+          );
+          return;
+        }
+      }
 
       // 成功反馈
       const addedCount = Object.keys(parsedServers).length;
@@ -234,9 +251,14 @@ export function AddMcpServerButton() {
       // 重置表单并关闭对话框
       form.reset();
       setOpen(false);
+
+      // 刷新页面以更新状态
+      window.location.reload();
     } catch (error) {
-      console.error("更新配置失败:", error);
-      toast.error(error instanceof Error ? error.message : "更新配置失败");
+      console.error("添加 MCP 服务器失败:", error);
+      toast.error(
+        error instanceof Error ? error.message : "添加 MCP 服务器失败"
+      );
     } finally {
       setIsLoading(false);
     }

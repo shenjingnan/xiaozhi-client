@@ -81,6 +81,54 @@ interface VersionInfo {
 }
 
 /**
+ * MCP 服务器配置接口
+ */
+interface MCPServerConfig {
+  command?: string;
+  args?: string[];
+  url?: string;
+  type?: "stdio" | "sse" | "streamable-http";
+  env?: Record<string, string>;
+  [key: string]: any;
+}
+
+/**
+ * 连接测试结果接口
+ */
+interface ConnectionTestResult {
+  success: boolean;
+  message: string;
+  details?: {
+    connectionType?: string;
+    responseTime?: number;
+    tools?: Array<{
+      name: string;
+      description: string;
+    }>;
+    error?: string;
+  };
+}
+
+/**
+ * MCP 服务器状态接口
+ */
+interface MCPServerStatus {
+  status: "connected" | "disconnected" | "connecting" | "error";
+  lastConnected?: string;
+  error?: string;
+  tools?: {
+    available: number;
+    enabled: number;
+    total: number;
+  };
+  metadata?: {
+    connectionType: string;
+    uptime?: number;
+    [key: string]: any;
+  };
+}
+
+/**
  * 重启状态接口
  */
 interface RestartStatus {
@@ -637,6 +685,72 @@ export class ApiClient {
       throw new Error(response.message || "清除版本缓存失败");
     }
   }
+
+  // ==================== MCP 服务器管理 API ====================
+
+  /**
+   * 添加 MCP 服务器
+   */
+  async addMCPServer(config: MCPServerConfig): Promise<ApiResponse> {
+    const response: ApiResponse = await this.request("/api/mcp-servers/add", {
+      method: "POST",
+      body: JSON.stringify({
+        config,
+        serviceName: config.serviceName,
+      }),
+    });
+    if (!response.success) {
+      throw new Error(response.message || "添加 MCP 服务器失败");
+    }
+    return response;
+  }
+
+  /**
+   * 移除 MCP 服务器
+   */
+  async removeMCPServer(serviceName: string): Promise<ApiResponse> {
+    const response: ApiResponse = await this.request(
+      "/api/mcp-servers/remove",
+      {
+        method: "POST",
+        body: JSON.stringify({ serviceName }),
+      }
+    );
+    if (!response.success) {
+      throw new Error(response.message || "移除 MCP 服务器失败");
+    }
+    return response;
+  }
+
+  /**
+   * 测试 MCP 服务器连接
+   */
+  async testConnection(config: MCPServerConfig): Promise<ConnectionTestResult> {
+    const response: ApiResponse<ConnectionTestResult> = await this.request(
+      "/api/mcp-servers/test-connection",
+      {
+        method: "POST",
+        body: JSON.stringify(config),
+      }
+    );
+    if (!response.success || !response.data) {
+      throw new Error(response.message || "连接测试失败");
+    }
+    return response.data;
+  }
+
+  /**
+   * 获取 MCP 服务器状态
+   */
+  async getServerStatus(serviceName: string): Promise<MCPServerStatus> {
+    const response: ApiResponse<MCPServerStatus> = await this.request(
+      `/api/mcp-servers/${encodeURIComponent(serviceName)}/status`
+    );
+    if (!response.success || !response.data) {
+      throw new Error(response.message || "获取服务器状态失败");
+    }
+    return response.data;
+  }
 }
 
 // 创建默认的 API 客户端实例
@@ -651,4 +765,7 @@ export type {
   RestartStatus,
   FullStatus,
   VersionInfo,
+  MCPServerConfig,
+  ConnectionTestResult,
+  MCPServerStatus,
 };

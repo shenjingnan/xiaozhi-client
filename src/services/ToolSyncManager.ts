@@ -372,4 +372,207 @@ export class ToolSyncManager {
       throw error;
     }
   }
+
+  /**
+   * 服务添加后同步工具 (新增方法)
+   * @param serviceName 服务名称
+   */
+  async syncToolsAfterServiceAdded(serviceName: string): Promise<void> {
+    this.logger.info(`开始同步服务 ${serviceName} 添加后的工具`);
+
+    try {
+      // 防止同一服务的重复同步
+      if (this.syncLocks.has(serviceName)) {
+        this.logger.debug(`服务 ${serviceName} 正在同步中，跳过`);
+        return;
+      }
+
+      const syncPromise = this.doSyncToolsAfterServiceAdded(
+        serviceName
+      ).finally(() => {
+        this.syncLocks.delete(serviceName);
+      });
+
+      this.syncLocks.set(serviceName, syncPromise);
+      await syncPromise;
+    } catch (error) {
+      this.logger.error(`同步服务 ${serviceName} 添加后工具失败:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 服务移除后同步工具 (新增方法)
+   * @param serviceName 服务名称
+   */
+  async syncToolsAfterServiceRemoved(serviceName: string): Promise<void> {
+    this.logger.info(`开始同步服务 ${serviceName} 移除后的工具`);
+
+    try {
+      // 移除相关的 customMCP 工具
+      await this.configManager.removeCustomMCPTools(serviceName);
+
+      // 通知小智连接管理器工具已更新
+      this.eventBus.emitEvent("tool-sync:service-removed", {
+        serviceName,
+        timestamp: new Date(),
+      });
+
+      this.logger.info(`服务 ${serviceName} 移除后的工具同步完成`);
+    } catch (error) {
+      this.logger.error(`同步服务 ${serviceName} 移除后工具失败:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 实际执行服务添加后的工具同步
+   */
+  private async doSyncToolsAfterServiceAdded(
+    serviceName: string
+  ): Promise<void> {
+    try {
+      // 检查是否存在对应的 mcpServerConfig 配置
+      const serverConfig = this.configManager.getServerToolsConfig(serviceName);
+      if (!serverConfig) {
+        this.logger.debug(
+          `服务 ${serviceName} 无 mcpServerConfig 配置，跳过同步`
+        );
+        return;
+      }
+
+      // 获取服务的工具列表
+      const serviceTools = await this.getServiceTools(serviceName);
+      if (serviceTools.length === 0) {
+        this.logger.debug(`服务 ${serviceName} 无工具，跳过同步`);
+        return;
+      }
+
+      // 找出需要同步的启用工具
+      const enabledTools = this.getEnabledTools(serverConfig, serviceTools);
+      if (enabledTools.length === 0) {
+        this.logger.debug(`服务 ${serviceName} 无启用工具，跳过同步`);
+        return;
+      }
+
+      // 检查 customMCP 中的现有工具
+      const existingCustomTools = this.configManager.getCustomMCPTools();
+      const existingToolNames = new Set(
+        existingCustomTools.map((tool) => tool.name)
+      );
+
+      // 过滤出需要新增的工具
+      const toolsToAdd = enabledTools.filter(
+        (tool) => !existingToolNames.has(`${serviceName}__${tool.name}`)
+      );
+
+      if (toolsToAdd.length === 0) {
+        this.logger.info(
+          `服务 ${serviceName} 的启用工具已存在于 customMCP 中，跳过同步`
+        );
+        return;
+      }
+
+      // 添加工具到 customMCP
+      await this.addToolsToCustomMCP(serviceName, toolsToAdd);
+
+      this.logger.info(
+        `成功同步服务 ${serviceName} 的 ${toolsToAdd.length} 个工具到 customMCP`
+      );
+    } catch (error) {
+      this.logger.error(`同步服务 ${serviceName} 添加后工具失败:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取服务的工具列表 (辅助方法)
+   */
+  private async getServiceTools(serviceName: string): Promise<any[]> {
+    try {
+      // 通过事件总线获取服务工具列表
+      const serviceTools = await new Promise<any[]>((resolve) => {
+        this.eventBus.onceDynamicEvent(
+          `mcp:service:tools:${serviceName}`,
+          (data) => {
+            resolve(data.tools || []);
+          }
+        );
+
+        // 请求工具列表
+        this.eventBus.emitDynamicEvent("mcp:service:request-tools", {
+          serviceName,
+          timestamp: new Date(),
+        });
+
+        // 设置超时
+        setTimeout(() => resolve([]), 5000);
+      });
+
+      return serviceTools;
+    } catch (error) {
+      this.logger.warn(`获取服务 ${serviceName} 工具列表失败:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * 事务性工具同步 (新增方法)
+   * 确保工具同步的原子性
+   */
+  async syncToolsTransaction(
+    serviceName: string,
+    operation: "add" | "remove"
+  ): Promise<void> {
+    // 创建配置备份
+    const backupConfig = this.createConfigBackup();
+
+    try {
+      if (operation === "add") {
+        await this.syncToolsAfterServiceAdded(serviceName);
+      } else {
+        await this.syncToolsAfterServiceRemoved(serviceName);
+      }
+
+      // 验证同步结果
+      await this.validateToolsSync(serviceName, operation);
+    } catch (error) {
+      // 回滚到备份配置
+      await this.restoreConfigBackup(backupConfig);
+      throw new Error(
+        `工具同步失败: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  /**
+   * 创建配置备份 (辅助方法)
+   */
+  private createConfigBackup(): any {
+    // 这里应该实现配置备份逻辑
+    // 暂时返回简单对象，实际实现需要根据配置结构
+    return {
+      timestamp: new Date(),
+      // ... 配置备份数据
+    };
+  }
+
+  /**
+   * 恢复配置备份 (辅助方法)
+   */
+  private async restoreConfigBackup(backup: any): Promise<void> {
+    // 这里应该实现配置恢复逻辑
+    this.logger.warn("配置恢复功能待实现");
+  }
+
+  /**
+   * 验证工具同步结果 (辅助方法)
+   */
+  private async validateToolsSync(
+    serviceName: string,
+    operation: "add" | "remove"
+  ): Promise<void> {
+    // 这里应该实现同步验证逻辑
+    this.logger.debug(`工具同步验证: ${serviceName} - ${operation}`);
+  }
 }

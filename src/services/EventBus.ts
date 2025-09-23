@@ -58,6 +58,22 @@ export interface EventBusEvents {
   "tool-sync:general-config-updated": {
     timestamp: Date;
   };
+  "tool-sync:service-removed": {
+    serviceName: string;
+    timestamp: Date;
+  };
+
+  // MCP 服务管理相关事件
+  "mcp:services:updated": {
+    timestamp: Date;
+  };
+  "mcp:service:tools:*": {
+    tools: any[];
+  };
+  "mcp:service:request-tools": {
+    serviceName: string;
+    timestamp: Date;
+  };
 }
 
 /**
@@ -143,6 +159,39 @@ export class EventBus extends EventEmitter {
   ): this {
     this.logger.debug(`移除事件监听器: ${eventName}`);
     return this.off(eventName, listener);
+  }
+
+  /**
+   * 发射动态事件（绕过类型检查）
+   * 用于需要动态事件名的情况
+   */
+  emitDynamicEvent(eventName: string, data: any): boolean {
+    try {
+      this.updateEventStats(eventName);
+      this.logger.debug(`发射动态事件: ${eventName}`, data);
+      return this.emit(eventName, data);
+    } catch (error) {
+      this.logger.error(`发射动态事件失败: ${eventName}`, error);
+      return false;
+    }
+  }
+
+  /**
+   * 监听动态事件（绕过类型检查）
+   * 用于需要动态事件名的情况
+   */
+  onDynamicEvent(eventName: string, listener: (data: any) => void): this {
+    this.logger.debug(`添加动态事件监听器: ${eventName}`);
+    return this.on(eventName, listener);
+  }
+
+  /**
+   * 一次性监听动态事件（绕过类型检查）
+   * 用于需要动态事件名的情况
+   */
+  onceDynamicEvent(eventName: string, listener: (data: any) => void): this {
+    this.logger.debug(`添加一次性动态事件监听器: ${eventName}`);
+    return this.once(eventName, listener);
   }
 
   /**

@@ -308,8 +308,23 @@ vi.mock("./services/MCPServiceManagerSingleton", () => ({
   MCPServiceManagerSingleton: {
     getInstance: vi.fn().mockResolvedValue({
       addServiceConfig: vi.fn(),
+      removeServiceConfig: vi.fn(),
       startAllServices: vi.fn(),
+      stopAllServices: vi.fn(),
       getAllTools: vi.fn(() => []),
+      addAndStartService: vi.fn(),
+      removeService: vi.fn(),
+      testServiceConnection: vi.fn(),
+      getServiceStatus: vi.fn(),
+      getServiceTools: vi.fn(),
+      updateServiceConfig: vi.fn(),
+      startService: vi.fn(),
+      stopService: vi.fn(),
+      getServiceConfig: vi.fn(),
+      setCustomMCPHandler: vi.fn(),
+      setCacheManager: vi.fn(),
+      setToolSyncManager: vi.fn(),
+      reconnectXiaozhiEndpoints: vi.fn(),
     }),
   },
 }));

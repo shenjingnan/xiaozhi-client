@@ -1511,6 +1511,37 @@ export class ConfigManager {
   }
 
   /**
+   * 批量删除指定服务的自定义 MCP 工具
+   * @param serviceName 服务名称
+   */
+  public removeCustomMCPTools(serviceName: string): void {
+    if (!serviceName || typeof serviceName !== "string") {
+      throw new Error("服务名称不能为空");
+    }
+
+    const config = this.getMutableConfig();
+
+    if (!config.customMCP || !config.customMCP.tools) {
+      return; // 没有自定义工具，直接返回
+    }
+
+    // 筛选出需要保留的工具（不属于指定服务的工具）
+    const originalCount = config.customMCP.tools.length;
+    config.customMCP.tools = config.customMCP.tools.filter(
+      (tool) => !tool.name.startsWith(`${serviceName}__`)
+    );
+
+    const removedCount = originalCount - config.customMCP.tools.length;
+
+    if (removedCount > 0) {
+      this.saveConfig(config);
+      logger.info(
+        `成功删除服务 ${serviceName} 的 ${removedCount} 个自定义 MCP 工具`
+      );
+    }
+  }
+
+  /**
    * 更新单个自定义 MCP 工具配置
    * @param toolName 工具名称
    * @param updatedTool 更新后的工具配置

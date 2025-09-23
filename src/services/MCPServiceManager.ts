@@ -58,6 +58,10 @@ export class MCPServiceManager {
   private toolSyncManager: ToolSyncManager; // 工具同步管理器
   private eventBus = getEventBus(); // 事件总线
 
+  // 防抖相关属性
+  private reconnectDebounceTimer: NodeJS.Timeout | null = null;
+  private isReconnecting = false;
+
   /**
    * 创建 MCPServiceManager 实例
    * @param configs 可选的初始服务配置
@@ -136,6 +140,9 @@ export class MCPServiceManager {
 
         // 重新初始化CustomMCPHandler
         await this.refreshCustomMCPHandlerPublic();
+
+        // 触发小智接入点重连，确保新服务的工具能被正确获取
+        await this.scheduleReconnect();
 
         this.logger.info(`服务 ${data.serviceName} 工具同步完成`);
       }
@@ -924,6 +931,13 @@ export class MCPServiceManager {
       this.logger.error("[MCPManager] 清理统计更新锁失败:", error);
     }
 
+    // 清理防抖定时器
+    if (this.reconnectDebounceTimer) {
+      clearTimeout(this.reconnectDebounceTimer);
+      this.reconnectDebounceTimer = null;
+      this.logger.info("[MCPManager] 防抖定时器已清理");
+    }
+
     this.services.clear();
     this.tools.clear();
 
@@ -1168,23 +1182,257 @@ export class MCPServiceManager {
   }
 
   /**
-   * 更新服务配置
-   */
-  updateServiceConfig(name: string, config: MCPServiceConfig): void {
-    // 增强配置
-    const enhancedConfig = this.enhanceServiceConfig(config);
-
-    // 存储增强后的配置
-    this.configs[name] = enhancedConfig;
-    this.logger.info(`[MCPManager] 已更新并增强服务配置: ${name}`);
-  }
-
-  /**
    * 移除服务配置
    */
   removeServiceConfig(name: string): void {
     delete this.configs[name];
     this.logger.info(`[MCPManager] 已移除服务配置: ${name}`);
+  }
+
+  /**
+   * 添加并启动服务 (新增方法)
+   * 动态添加服务配置并立即启动服务
+   */
+  async addAndStartService(
+    serviceName: string,
+    config: MCPServiceConfig
+  ): Promise<void> {
+    this.logger.info(`[MCPManager] 添加并启动服务: ${serviceName}`);
+
+    // 添加服务配置
+    this.addServiceConfig(serviceName, config);
+
+    try {
+      // 启动服务
+      await this.startService(serviceName);
+      this.logger.info(`[MCPManager] 服务 ${serviceName} 添加并启动成功`);
+    } catch (error) {
+      // 启动失败，清理配置
+      this.removeServiceConfig(serviceName);
+      throw error;
+    }
+  }
+
+  /**
+   * 移除服务 (新增方法)
+   * 完整移除服务，包括配置清理和工具同步
+   */
+  async removeService(
+    serviceName: string,
+    graceful = true,
+    cleanupConfig = true
+  ): Promise<void> {
+    this.logger.info(`[MCPManager] 移除服务: ${serviceName}`);
+
+    try {
+      // 1. 停止服务
+      if (this.services.has(serviceName)) {
+        await this.stopService(serviceName);
+      }
+
+      // 2. 清理缓存
+      await this.cacheManager.clearServiceCache(serviceName);
+
+      // 3. 移除工具配置
+      await configManager.removeServerToolsConfig(serviceName);
+
+      // 4. 移除 customMCP 工具
+      await configManager.removeCustomMCPTools(serviceName);
+
+      // 5. 移除 mcpServers 配置
+      if (cleanupConfig) {
+        await configManager.removeMcpServer(serviceName);
+        this.removeServiceConfig(serviceName);
+      }
+
+      // 6. 重新建立连接
+      await this.scheduleReconnect();
+
+      this.logger.info(`[MCPManager] 服务 ${serviceName} 移除成功`);
+    } catch (error) {
+      this.logger.error(`[MCPManager] 移除服务 ${serviceName} 失败:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 测试服务连接 (新增方法)
+   * 测试服务配置是否可以正常连接
+   */
+  async testServiceConnection(config: MCPServiceConfig): Promise<any> {
+    this.logger.info("[MCPManager] 测试服务连接");
+
+    try {
+      // 创建临时服务实例进行连接测试
+      const tempService = new MCPService(config);
+      const startTime = Date.now();
+
+      await tempService.connect();
+      const responseTime = Date.now() - startTime;
+
+      // 测试成功，断开连接
+      await tempService.disconnect();
+
+      return {
+        success: true,
+        message: "连接测试成功",
+        responseTime,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: "连接测试失败",
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  /**
+   * 获取服务状态 (新增方法)
+   * 获取服务的详细状态信息
+   */
+  async getServiceStatus(serviceName: string): Promise<any> {
+    const service = this.services.get(serviceName);
+    const config = this.configs[serviceName];
+
+    if (!config) {
+      return {
+        serviceName,
+        status: "unknown",
+      };
+    }
+
+    if (!service) {
+      return {
+        serviceName,
+        status: "stopped",
+        configExists: true,
+      };
+    }
+
+    try {
+      const isConnected = service.isConnected();
+      const tools = service.getTools();
+
+      return {
+        serviceName,
+        status: isConnected ? "running" : "connecting",
+        toolsCount: tools.length,
+        memoryUsage: process.memoryUsage
+          ? process.memoryUsage().heapUsed
+          : undefined,
+        lastConnected: isConnected ? new Date().toISOString() : undefined,
+      };
+    } catch (error) {
+      return {
+        serviceName,
+        status: "error",
+        lastError: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  /**
+   * 获取服务工具列表 (新增方法)
+   * 获取指定服务的工具列表
+   */
+  async getServiceTools(serviceName: string): Promise<any[]> {
+    const service = this.services.get(serviceName);
+
+    if (!service || !service.isConnected()) {
+      return [];
+    }
+
+    try {
+      return service.getTools();
+    } catch (error) {
+      this.logger.error(
+        `[MCPManager] 获取服务 ${serviceName} 工具列表失败:`,
+        error
+      );
+      return [];
+    }
+  }
+
+  /**
+   * 更新服务配置 (新增方法)
+   * 更新服务配置并重启服务
+   */
+  async updateServiceConfig(
+    serviceName: string,
+    config: MCPServiceConfig
+  ): Promise<void> {
+    this.logger.info(`[MCPManager] 更新服务配置: ${serviceName}`);
+
+    const wasRunning = this.services.has(serviceName);
+
+    // 如果服务正在运行，先停止
+    if (wasRunning) {
+      await this.stopService(serviceName);
+    }
+
+    // 更新配置
+    this.configs[serviceName] = config;
+    this.logger.info(`[MCPManager] 服务 ${serviceName} 配置已更新`);
+
+    // 如果之前在运行，重新启动
+    if (wasRunning) {
+      await this.startService(serviceName);
+    }
+  }
+
+  /**
+   * 获取服务配置 (新增方法)
+   * 获取指定服务的配置
+   */
+  getServiceConfig(serviceName: string): MCPServiceConfig | undefined {
+    return this.configs[serviceName];
+  }
+
+  /**
+   * 重新建立小智端点连接 (新增方法)
+   * 在服务变更后重新建立连接
+   */
+  private async reconnectXiaozhiEndpoints(): Promise<void> {
+    if (this.isReconnecting) {
+      this.logger.debug("小智接入点正在重连中，跳过本次请求");
+      return;
+    }
+
+    this.isReconnecting = true;
+    try {
+      // 发射事件，通知小智连接管理器重新建立连接
+      this.eventBus.emitEvent("mcp:services:updated", {
+        timestamp: new Date(),
+      });
+      this.logger.info("已触发小智接入点重连事件");
+    } catch (error) {
+      this.logger.warn("[MCPManager] 重新建立小智端点连接失败:", error);
+    } finally {
+      this.isReconnecting = false;
+    }
+  }
+
+  /**
+   * 安排重连（防抖机制）
+   * 避免频繁添加/移除服务时导致的重连风暴
+   */
+  private async scheduleReconnect(): Promise<void> {
+    if (this.reconnectDebounceTimer) {
+      clearTimeout(this.reconnectDebounceTimer);
+    }
+
+    this.logger.debug("安排小智接入点重连（1秒防抖延迟）");
+
+    this.reconnectDebounceTimer = setTimeout(async () => {
+      try {
+        await this.reconnectXiaozhiEndpoints();
+      } catch (error) {
+        this.logger.error("防抖重连执行失败:", error);
+      } finally {
+        this.reconnectDebounceTimer = null;
+      }
+    }, 1000); // 1秒防抖延迟
   }
 
   /**

@@ -726,6 +726,27 @@ export class MCPCacheManager {
   }
 
   /**
+   * 清理指定服务的缓存
+   * @param serviceName 服务名称
+   */
+  public async clearServiceCache(serviceName: string): Promise<void> {
+    try {
+      this.logger.debug(`清理服务 ${serviceName} 的缓存`);
+
+      const cache = await this.loadExtendedCache();
+
+      if (cache.mcpServers[serviceName]) {
+        delete cache.mcpServers[serviceName];
+        await this.saveExtendedCache(cache);
+        this.logger.info(`已清理服务 ${serviceName} 的缓存`);
+      }
+    } catch (error) {
+      this.logger.error(`清理服务 ${serviceName} 缓存失败:`, error);
+      // 缓存清理失败不应该影响主要的清理流程
+    }
+  }
+
+  /**
    * 清理资源
    */
   public cleanup(): void {
