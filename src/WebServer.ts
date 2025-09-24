@@ -95,7 +95,9 @@ export class WebServer {
 
   // 向后兼容的属性
   private proxyMCPServer: ProxyMCPServer | undefined;
-  private xiaozhiConnectionManager: IndependentXiaozhiConnectionManager | undefined;
+  private xiaozhiConnectionManager:
+    | IndependentXiaozhiConnectionManager
+    | undefined;
   private mcpServiceManager: MCPServiceManager | undefined;
 
   /**

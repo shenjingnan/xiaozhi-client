@@ -57,17 +57,21 @@ async function createInstance(
   // 检查并警告废弃的配置项
   if (options) {
     const deprecatedOptions = [
-      'loadBalanceStrategy',
-      'reconnectStrategy', 
-      'maxReconnectDelay',
-      'reconnectBackoffMultiplier',
-      'jitterEnabled'
+      "loadBalanceStrategy",
+      "reconnectStrategy",
+      "maxReconnectDelay",
+      "reconnectBackoffMultiplier",
+      "jitterEnabled",
     ];
-    
-    const usedDeprecatedOptions = deprecatedOptions.filter(opt => opt in options);
-    
+
+    const usedDeprecatedOptions = deprecatedOptions.filter(
+      (opt) => opt in options
+    );
+
     if (usedDeprecatedOptions.length > 0) {
-      console.warn(`⚠️  检测到废弃的配置选项: ${usedDeprecatedOptions.join(', ')}`);
+      console.warn(
+        `⚠️  检测到废弃的配置选项: ${usedDeprecatedOptions.join(", ")}`
+      );
       console.warn("这些配置项在独立架构中已被忽略，建议从配置中移除");
     }
   }
@@ -136,7 +140,9 @@ async function getInstance(
  */
 async function cleanup(): Promise<void> {
   if (state === SingletonState.CLEANUP) {
-    console.log("⚠️  IndependentXiaozhiConnectionManager 单例已在清理中，跳过重复清理");
+    console.log(
+      "⚠️  IndependentXiaozhiConnectionManager 单例已在清理中，跳过重复清理"
+    );
     return;
   }
 
@@ -293,7 +299,9 @@ export default XiaozhiConnectionManagerSingleton;
 // 进程退出时自动清理资源
 process.on("exit", () => {
   if (XiaozhiConnectionManagerSingleton.isInitialized()) {
-    console.log("🔄 进程退出，正在清理 IndependentXiaozhiConnectionManager 单例...");
+    console.log(
+      "🔄 进程退出，正在清理 IndependentXiaozhiConnectionManager 单例..."
+    );
     // 注意：这里不能使用 await，因为 exit 事件是同步的
     XiaozhiConnectionManagerSingleton.reset();
   }
@@ -301,7 +309,10 @@ process.on("exit", () => {
 
 // 处理未捕获的异常
 process.on("uncaughtException", async (error) => {
-  console.error("💥 未捕获的异常，清理 IndependentXiaozhiConnectionManager 单例:", error);
+  console.error(
+    "💥 未捕获的异常，清理 IndependentXiaozhiConnectionManager 单例:",
+    error
+  );
   try {
     await XiaozhiConnectionManagerSingleton.cleanup();
   } catch (cleanupError) {

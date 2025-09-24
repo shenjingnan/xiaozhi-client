@@ -471,7 +471,9 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
 
     try {
       // 简化消息发送 - 在独立架构中此方法功能受限
-      this.logger.warn("sendMessage 方法在独立架构中功能受限，建议使用工具调用");
+      this.logger.warn(
+        "sendMessage 方法在独立架构中功能受限，建议使用工具调用"
+      );
     } catch (error) {
       this.logger.error(`发送消息到端点 ${endpoint} 失败:`, error);
       throw error;
@@ -490,7 +492,9 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    * @deprecated 此方法为兼容性保留，新代码应使用 getConnectionStatus()
    */
   getHealthyConnections(): ProxyMCPServer[] {
-    console.warn("⚠️ getHealthyConnections() 方法已废弃，在独立架构中不再支持负载均衡");
+    console.warn(
+      "⚠️ getHealthyConnections() 方法已废弃，在独立架构中不再支持负载均衡"
+    );
     const healthyConnections: ProxyMCPServer[] = [];
     for (const [endpoint, proxyServer] of this.connections) {
       const status = this.connectionStates.get(endpoint);
@@ -1062,7 +1066,9 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       // 简化连接池管理 - 暂时禁用空闲连接清理
       // 在独立架构中，连接池功能被简化
       activeConnections.push(...connections);
-      this.logger.debug("[IndependentXiaozhiConnectionManager] 连接池管理已简化");
+      this.logger.debug(
+        "[IndependentXiaozhiConnectionManager] 连接池管理已简化"
+      );
 
       this.connectionPool.set(endpoint, activeConnections);
     }
@@ -1118,10 +1124,14 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     if (connections.length < maxPoolSize) {
       connections.push(connection);
       this.connectionPool.set(endpoint, connections);
-      this.logger.debug(`[IndependentXiaozhiConnectionManager] 连接返回到连接池: ${endpoint}`);
+      this.logger.debug(
+        `[IndependentXiaozhiConnectionManager] 连接返回到连接池: ${endpoint}`
+      );
     } else {
       // 连接池已满，简化处理
-      this.logger.debug(`[IndependentXiaozhiConnectionManager] 连接池已满: ${endpoint}`);
+      this.logger.debug(
+        `[IndependentXiaozhiConnectionManager] 连接池已满: ${endpoint}`
+      );
     }
   }
 
