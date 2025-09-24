@@ -12,7 +12,7 @@ import type { AppConfig, MCPServerConfig } from "./configManager.js";
 // MCPTransportType 已移除，不再需要导入
 import type { MCPServiceManager } from "./services/MCPServiceManager.js";
 import { MCPServiceManagerSingleton } from "./services/MCPServiceManagerSingleton.js";
-import type { XiaozhiConnectionManager } from "./services/XiaozhiConnectionManager.js";
+import type { IndependentXiaozhiConnectionManager } from "./services/IndependentXiaozhiConnectionManager.js";
 import { XiaozhiConnectionManagerSingleton } from "./services/XiaozhiConnectionManagerSingleton.js";
 
 import { ConfigApiHandler } from "./handlers/ConfigApiHandler.js";
@@ -95,7 +95,7 @@ export class WebServer {
 
   // 向后兼容的属性
   private proxyMCPServer: ProxyMCPServer | undefined;
-  private xiaozhiConnectionManager: XiaozhiConnectionManager | undefined;
+  private xiaozhiConnectionManager: IndependentXiaozhiConnectionManager | undefined;
   private mcpServiceManager: MCPServiceManager | undefined;
 
   /**
@@ -298,20 +298,22 @@ export class WebServer {
         });
 
       // 设置 MCP 服务管理器
-      if (this.mcpServiceManager) {
+      if (this.mcpServiceManager && this.xiaozhiConnectionManager) {
         this.xiaozhiConnectionManager.setServiceManager(this.mcpServiceManager);
       }
 
       // 初始化连接管理器
-      await this.xiaozhiConnectionManager.initialize(validEndpoints, tools);
+      if (this.xiaozhiConnectionManager) {
+        await this.xiaozhiConnectionManager.initialize(validEndpoints, tools);
 
-      // 连接所有端点
-      await this.xiaozhiConnectionManager.connect();
+        // 连接所有端点
+        await this.xiaozhiConnectionManager.connect();
 
-      // 设置配置变更监听器
-      this.xiaozhiConnectionManager.on("configChange", (event: any) => {
-        this.logger.info(`小智连接配置变更: ${event.type}`, event.data);
-      });
+        // 设置配置变更监听器
+        this.xiaozhiConnectionManager.on("configChange", (event: any) => {
+          this.logger.info(`小智连接配置变更: ${event.type}`, event.data);
+        });
+      }
 
       this.logger.info(
         `小智接入点连接管理器初始化完成，管理 ${validEndpoints.length} 个端点`
