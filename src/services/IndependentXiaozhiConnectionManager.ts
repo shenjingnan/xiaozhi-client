@@ -102,9 +102,11 @@ const DEFAULT_OPTIONS: Required<IndependentConnectionOptions> = {
   errorNotificationEnabled: true,
 };
 
+const sliceEndpoint = (endpoint: string) => `${endpoint.slice(0, 30)}...${endpoint.slice(-10)}`;
+
 /**
  * 独立小智连接管理器
- * 负责管理多个小智接入点的连接，每个端点独立运行，无负载均衡和故障转移
+ * 负责管理多个小智接入点的连接，每个小智接入点独立运行，无负载均衡和故障转移
  */
 export class IndependentXiaozhiConnectionManager extends EventEmitter {
   // 连接实例管理
@@ -165,15 +167,10 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    * @param tools 工具列表
    */
   async initialize(endpoints: string[], tools: Tool[]): Promise<void> {
-    if (this.isInitialized) {
-      this.logger.warn(
-        "IndependentXiaozhiConnectionManager 已经初始化，跳过重复初始化"
-      );
-      return;
-    }
+    if (this.isInitialized) return;
 
-    this.logger.info(
-      `开始初始化 IndependentXiaozhiConnectionManager，端点数量: ${endpoints.length}`
+    this.logger.debug(
+      `开始初始化 IndependentXiaozhiConnectionManager，小智接入点数量: ${endpoints.length}`
     );
 
     try {
@@ -183,7 +180,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       // 清理现有连接（如果有）
       await this.cleanup();
 
-      // 为每个端点创建连接实例
+      // 为每个小智接入点创建连接实例
       for (const endpoint of endpoints) {
         await this.createConnection(endpoint, tools);
       }
@@ -201,7 +198,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       // 启动空闲连接清理定时器
       this.startIdleCleanupTimer();
 
-      this.logger.info(
+      this.logger.debug(
         `IndependentXiaozhiConnectionManager 初始化完成，管理 ${this.connections.size} 个连接`
       );
     } catch (error) {
@@ -215,7 +212,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   }
 
   /**
-   * 连接所有端点
+   * 连接所有小智接入点
    */
   async connect(): Promise<void> {
     if (!this.isInitialized) {
@@ -224,19 +221,16 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       );
     }
 
-    if (this.isConnecting) {
-      this.logger.warn("连接操作正在进行中，请等待完成");
-      return;
-    }
+    if (this.isConnecting) return;
 
     this.isConnecting = true;
     this.performanceMetrics.connectionStartTime = Date.now();
-    this.logger.info(`开始连接所有端点，总数: ${this.connections.size}`);
+    this.logger.debug(`开始连接所有小智接入点，总数: ${this.connections.size}`);
 
     try {
       const connectionPromises: Promise<void>[] = [];
 
-      // 并发连接所有端点
+      // 并发连接所有小智接入点
       for (const [endpoint, proxyServer] of this.connections) {
         connectionPromises.push(
           this.connectSingleEndpoint(endpoint, proxyServer)
@@ -262,7 +256,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         this.performanceMetrics.connectionCount;
 
       this.logger.info(
-        `连接完成 - 成功: ${successCount}, 失败: ${failureCount}, 耗时: ${connectionTime}ms`
+        `小智接入点连接完成 - 成功: ${successCount}, 失败: ${failureCount}, 耗时: ${connectionTime}ms`
       );
 
       // 如果所有连接都失败，抛出错误
@@ -281,7 +275,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    * 断开所有连接
    */
   async disconnect(): Promise<void> {
-    this.logger.info("开始断开所有连接");
+    this.logger.debug("开始断开所有连接");
 
     // 停止健康检查
     this.stopHealthCheck();
@@ -298,12 +292,12 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     }
 
     await Promise.allSettled(disconnectPromises);
-    this.logger.info("所有连接已断开");
+    this.logger.info("所有小智接入点已断开连接");
   }
 
   /**
-   * 动态添加端点
-   * @param endpoint 端点地址
+   * 动态添加小智接入点
+   * @param endpoint 小智接入点地址
    */
   async addEndpoint(endpoint: string): Promise<void> {
     if (!this.isInitialized) {
@@ -311,11 +305,11 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     }
 
     if (this.connections.has(endpoint)) {
-      this.logger.warn(`端点 ${endpoint} 已存在，跳过添加`);
+      this.logger.debug(`小智接入点 ${sliceEndpoint(endpoint)} 已存在，跳过添加`);
       return;
     }
 
-    this.logger.info(`动态添加端点: ${endpoint}`);
+    this.logger.debug(`动态添加小智接入点: ${sliceEndpoint(endpoint)}`);
 
     try {
       // 获取当前工具列表
@@ -324,15 +318,15 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       // 创建新连接
       await this.createConnection(endpoint, tools);
 
-      // 如果管理器已连接，则连接新端点
+      // 如果管理器已连接，则连接新小智接入点
       if (this.isAnyConnected()) {
         const proxyServer = this.connections.get(endpoint)!;
         await this.connectSingleEndpoint(endpoint, proxyServer);
       }
 
-      this.logger.info(`端点 ${endpoint} 添加成功`);
+      this.logger.info(`添加接入点成功： ${sliceEndpoint(endpoint)}`);
     } catch (error) {
-      this.logger.error(`添加端点 ${endpoint} 失败:`, error);
+      this.logger.error(`添加小智接入点失败： ${sliceEndpoint(endpoint)}`, error);
       // 清理失败的连接
       this.connections.delete(endpoint);
       this.connectionStates.delete(endpoint);
@@ -341,16 +335,16 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   }
 
   /**
-   * 动态移除端点
-   * @param endpoint 端点地址
+   * 动态移除小智接入点
+   * @param endpoint 小智接入点地址
    */
   async removeEndpoint(endpoint: string): Promise<void> {
     if (!this.connections.has(endpoint)) {
-      this.logger.warn(`端点 ${endpoint} 不存在，跳过移除`);
+      this.logger.debug(`小智接入点 ${sliceEndpoint(endpoint)} 不存在，跳过移除`);
       return;
     }
 
-    this.logger.info(`动态移除端点: ${endpoint}`);
+    this.logger.debug(`动态移除小智接入点: ${sliceEndpoint(endpoint)}`);
 
     try {
       const proxyServer = this.connections.get(endpoint)!;
@@ -369,49 +363,49 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         this.reconnectTimers.delete(endpoint);
       }
 
-      this.logger.info(`端点 ${endpoint} 移除成功`);
+      this.logger.info(`移除小智接入点成功：${sliceEndpoint(endpoint)}`);
     } catch (error) {
-      this.logger.error(`移除端点 ${endpoint} 失败:`, error);
+      this.logger.error(`移除小智接入点失败： ${sliceEndpoint(endpoint)}`, error);
       throw error;
     }
   }
 
   /**
-   * 获取所有端点
+   * 获取所有小智接入点
    */
   getEndpoints(): string[] {
-    // 同时返回connections和connectionStates中的端点
+    // 同时返回connections和connectionStates中的小智接入点
     const connectionEndpoints = Array.from(this.connections.keys());
     const stateEndpoints = Array.from(this.connectionStates.keys());
     return Array.from(new Set([...connectionEndpoints, ...stateEndpoints]));
   }
 
   /**
-   * 断开指定端点连接
-   * @param endpoint 要断开的端点
+   * 断开指定小智接入点连接
+   * @param endpoint 要断开的小智接入点
    */
   async disconnectEndpoint(endpoint: string): Promise<void> {
     const proxyServer = this.connections.get(endpoint);
     if (!proxyServer) {
-      this.logger.warn(`端点 ${endpoint} 不存在，跳过断开`);
+      this.logger.debug(`接入点不存在，跳过断开: ${sliceEndpoint(endpoint)}`);
       return;
     }
 
-    this.logger.info(`断开端点连接: ${endpoint}`);
+    this.logger.info(`断开连接接入点: ${sliceEndpoint(endpoint)}`);
 
     try {
       await this.disconnectSingleEndpoint(endpoint, proxyServer);
     } catch (error) {
-      this.logger.error(`断开端点 ${endpoint} 失败:`, error);
+      this.logger.error(`断开连接接入点失败： ${sliceEndpoint(endpoint)}`, error);
       throw error;
     }
   }
 
   /**
-   * 清除所有端点
+   * 清除所有小智接入点
    */
   async clearEndpoints(): Promise<void> {
-    this.logger.info("清除所有端点");
+    this.logger.debug("清除所有接入点");
 
     // 断开所有连接
     const disconnectPromises = Array.from(this.connections.keys()).map(
@@ -419,24 +413,24 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     );
     await Promise.allSettled(disconnectPromises);
 
-    this.logger.info("所有端点已清除");
+    this.logger.info("所有接入点已清除");
   }
 
   /**
-   * 发送消息到指定端点
-   * @param endpoint 目标端点
+   * 发送消息到指定小智接入点
+   * @param endpoint 目标小智接入点
    * @param message 消息内容
    */
   async sendMessage(endpoint: string, message: any): Promise<void> {
     const proxyServer = this.connections.get(endpoint);
     if (!proxyServer) {
-      throw new Error("端点不存在");
+      throw new Error("接入点不存在");
     }
 
     // 简化连接状态检查
     const status = this.connectionStates.get(endpoint);
     if (!status || !status.connected) {
-      throw new Error("端点未连接");
+      throw new Error("接入点未连接");
     }
 
     try {
@@ -445,7 +439,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         "sendMessage 方法在独立架构中功能受限，建议使用工具调用"
       );
     } catch (error) {
-      this.logger.error(`发送消息到端点 ${endpoint} 失败:`, error);
+      this.logger.error(`发送消息到接入点失败： ${sliceEndpoint(endpoint)}`, error);
       throw error;
     }
   }
@@ -476,18 +470,6 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   }
 
   /**
-   * 根据连接实例获取端点地址（兼容性方法）
-   */
-  private getEndpointByConnection(connection: ProxyMCPServer): string | null {
-    for (const [endpoint, conn] of this.connections) {
-      if (conn === connection) {
-        return endpoint;
-      }
-    }
-    return null;
-  }
-
-  /**
    * 检查是否有任何连接处于连接状态
    */
   isAnyConnected(): boolean {
@@ -505,7 +487,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    */
   setServiceManager(manager: IMCPServiceManager): void {
     this.mcpServiceManager = manager;
-    this.logger.info("已设置 MCPServiceManager");
+    this.logger.debug("已设置 MCPServiceManager");
 
     // 如果已有连接，同步工具到所有连接
     if (this.connections.size > 0) {
@@ -514,19 +496,19 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   }
 
   /**
-   * 启用/禁用指定端点的健康检查
-   * @param endpoint 端点地址
+   * 启用/禁用指定小智接入点的健康检查
+   * @param endpoint 小智接入点地址
    * @param enabled 是否启用
    */
   setHealthCheckEnabled(endpoint: string, enabled: boolean): void {
     const status = this.connectionStates.get(endpoint);
     if (status) {
       status.healthCheckEnabled = enabled;
-      this.logger.info(
-        `端点 ${endpoint} 健康检查已${enabled ? "启用" : "禁用"}`
+      this.logger.debug(
+        `小智接入点 ${sliceEndpoint(endpoint)} 健康检查已${enabled ? "启用" : "禁用"}`
       );
     } else {
-      this.logger.warn(`端点 ${endpoint} 不存在，无法设置健康检查状态`);
+      this.logger.debug(`小智接入点 ${sliceEndpoint(endpoint)} 不存在，无法设置健康检查状态`);
     }
   }
 
@@ -576,21 +558,21 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   }
 
   /**
-   * 手动触发指定端点的重连
-   * @param endpoint 端点地址
+   * 手动触发指定小智接入点的重连
+   * @param endpoint 小智接入点地址
    */
   async triggerReconnect(endpoint: string): Promise<void> {
     const status = this.connectionStates.get(endpoint);
     if (!status) {
-      throw new Error(`端点 ${endpoint} 不存在`);
+      throw new Error(`小智接入点 ${endpoint} 不存在`);
     }
 
     if (status.connected) {
-      this.logger.warn(`端点 ${endpoint} 已连接，无需重连`);
+      this.logger.warn(`小智接入点 ${sliceEndpoint(endpoint)} 已连接，无需重连`);
       return;
     }
 
-    this.logger.info(`手动触发重连: ${endpoint}`);
+    this.logger.info(`手动触发重连: ${sliceEndpoint(endpoint)}`);
 
     // 清理现有的重连定时器
     const existingTimer = this.reconnectTimers.get(endpoint);
@@ -604,13 +586,13 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   }
 
   /**
-   * 停止指定端点的重连
-   * @param endpoint 端点地址
+   * 停止指定小智接入点的重连
+   * @param endpoint 小智接入点地址
    */
   stopReconnect(endpoint: string): void {
     const status = this.connectionStates.get(endpoint);
     if (!status) {
-      this.logger.warn(`端点 ${endpoint} 不存在`);
+      this.logger.warn(`小智接入点 ${sliceEndpoint(endpoint)} 不存在`);
       return;
     }
 
@@ -620,15 +602,15 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       this.reconnectTimers.delete(endpoint);
       status.isReconnecting = false;
       status.nextReconnectTime = undefined;
-      this.logger.info(`已停止端点 ${endpoint} 的重连`);
+      this.logger.info(`已停止小智接入点 ${sliceEndpoint(endpoint)} 的重连`);
     }
   }
 
   /**
-   * 停止所有端点的重连
+   * 停止所有小智接入点的重连
    */
   stopAllReconnects(): void {
-    this.logger.info("停止所有端点的重连");
+    this.logger.info("停止所有小智接入点的重连");
 
     for (const [endpoint] of this.reconnectTimers) {
       this.stopReconnect(endpoint);
@@ -675,7 +657,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   }
 
   /**
-   * 验证端点配置
+   * 验证小智接入点配置
    */
   private validateEndpoints(endpoints: string[]): {
     valid: string[];
@@ -756,8 +738,8 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   }
 
   /**
-   * 更新端点配置
-   * @param newEndpoints 新的端点列表
+   * 更新小智接入点配置
+   * @param newEndpoints 新的小智接入点列表
    * @param tools 工具列表
    */
   async updateEndpoints(
@@ -768,18 +750,18 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       throw new Error("IndependentXiaozhiConnectionManager 未初始化");
     }
 
-    this.logger.info(`更新端点配置，新端点数量: ${newEndpoints.length}`);
+    this.logger.info(`更新小智接入点配置，新小智接入点数量: ${newEndpoints.length}`);
 
-    // 验证新端点
+    // 验证新小智接入点
     const { valid: validEndpoints, invalid: invalidEndpoints } =
       this.validateEndpoints(newEndpoints);
 
     if (invalidEndpoints.length > 0) {
-      this.logger.warn(`发现无效端点: ${invalidEndpoints.join(", ")}`);
+      this.logger.warn(`发现无效小智接入点: ${invalidEndpoints.join(", ")}`);
     }
 
     if (validEndpoints.length === 0) {
-      throw new Error("没有有效的端点");
+      throw new Error("没有有效的小智接入点");
     }
 
     // 计算变更
@@ -791,16 +773,16 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     const toKeep = currentEndpoints.filter((ep) => validEndpoints.includes(ep));
 
     this.logger.info(
-      `端点变更 - 添加: ${toAdd.length}, 移除: ${toRemove.length}, 保持: ${toKeep.length}`
+      `小智接入点变更 - 添加: ${toAdd.length}, 移除: ${toRemove.length}, 保持: ${toKeep.length}`
     );
 
     try {
-      // 移除不需要的端点
+      // 移除不需要的小智接入点
       for (const endpoint of toRemove) {
         await this.removeEndpoint(endpoint);
       }
 
-      // 添加新端点
+      // 添加新小智接入点
       for (const endpoint of toAdd) {
         await this.addEndpoint(endpoint);
       }
@@ -811,8 +793,8 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
           toAdd.length > 0 && toRemove.length > 0
             ? "endpoints_updated"
             : toAdd.length > 0
-              ? "endpoints_added"
-              : "endpoints_removed",
+            ? "endpoints_added"
+            : "endpoints_removed",
         data: {
           added: toAdd.length > 0 ? toAdd : undefined,
           removed: toRemove.length > 0 ? toRemove : undefined,
@@ -825,9 +807,9 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       };
 
       this.emit("configChange", changeEvent);
-      this.logger.info("端点配置更新完成");
+      this.logger.info("小智接入点配置更新完成");
     } catch (error) {
-      this.logger.error("端点配置更新失败:", error);
+      this.logger.error("小智接入点配置更新失败:", error);
       throw error;
     }
   }
@@ -896,7 +878,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         this.updateOptions(config.options);
       }
 
-      // 更新端点（如果提供）
+      // 更新小智接入点（如果提供）
       if (config.endpoints) {
         await this.updateEndpoints(config.endpoints, config.tools || []);
       }
@@ -910,17 +892,17 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
 
   /**
    * 连接预热机制
-   * @param endpoints 要预热的端点列表
+   * @param endpoints 要预热的小智接入点列表
    */
   async prewarmConnections(endpoints: string[] = []): Promise<void> {
     const targetEndpoints =
       endpoints.length > 0 ? endpoints : Array.from(this.connections.keys());
 
-    this.logger.info(`开始预热连接，端点数量: ${targetEndpoints.length}`);
+    this.logger.info(`开始预热连接，小智接入点数量: ${targetEndpoints.length}`);
 
     const prewarmPromises = targetEndpoints.map(async (endpoint) => {
       if (this.performanceMetrics.prewarmedConnections.has(endpoint)) {
-        this.logger.debug(`端点 ${endpoint} 已预热，跳过`);
+        this.logger.debug(`小智接入点 ${sliceEndpoint(endpoint)} 已预热，跳过`);
         return;
       }
 
@@ -930,16 +912,16 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
           // 执行预热操作（例如建立连接、验证状态等）
           await this.performHealthCheck();
           this.performanceMetrics.prewarmedConnections.add(endpoint);
-          this.logger.debug(`端点 ${endpoint} 预热完成`);
+          this.logger.debug(`小智接入点 ${sliceEndpoint(endpoint)} 预热完成`);
         }
       } catch (error) {
-        this.logger.warn(`端点 ${endpoint} 预热失败:`, error);
+        this.logger.warn(`小智接入点 ${sliceEndpoint(endpoint)} 预热失败:`, error);
       }
     });
 
     await Promise.all(prewarmPromises);
     this.logger.info(
-      `连接预热完成，成功预热 ${this.performanceMetrics.prewarmedConnections.size} 个端点`
+      `连接预热完成，成功预热 ${this.performanceMetrics.prewarmedConnections.size} 个小智接入点`
     );
   }
 
@@ -992,7 +974,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         }
       }
 
-      // 清理预连接缓存（保留活跃的端点）
+      // 清理预连接缓存（保留活跃的小智接入点）
       const activeEndpoints = new Set(this.connections.keys());
       for (const endpoint of this.performanceMetrics.prewarmedConnections) {
         if (!activeEndpoints.has(endpoint)) {
@@ -1257,21 +1239,21 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    */
   private validateInitializeParams(endpoints: string[], tools: Tool[]): void {
     if (!Array.isArray(endpoints) || endpoints.length === 0) {
-      throw new Error("端点列表不能为空");
+      throw new Error("小智接入点列表不能为空");
     }
 
     if (!Array.isArray(tools)) {
       throw new Error("工具列表必须是数组");
     }
 
-    // 验证端点格式
+    // 验证小智接入点格式
     for (const endpoint of endpoints) {
       if (!endpoint || typeof endpoint !== "string") {
-        throw new Error(`无效的端点地址: ${endpoint}`);
+        throw new Error(`无效的小智接入点地址: ${endpoint}`);
       }
 
       if (!endpoint.startsWith("ws://") && !endpoint.startsWith("wss://")) {
-        throw new Error(`端点地址必须是 WebSocket URL: ${endpoint}`);
+        throw new Error(`小智接入点地址必须是 WebSocket URL: ${endpoint}`);
       }
     }
   }
@@ -1283,7 +1265,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     endpoint: string,
     tools: Tool[]
   ): Promise<void> {
-    this.logger.debug(`创建连接实例: ${endpoint}`);
+    this.logger.debug(`创建连接实例: ${sliceEndpoint(endpoint)}`);
 
     try {
       // 创建 ProxyMCPServer 实例
@@ -1313,15 +1295,15 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         reconnectHistory: [],
       });
 
-      this.logger.debug(`连接实例创建成功: ${endpoint}`);
+      this.logger.debug(`连接实例创建成功: ${sliceEndpoint(endpoint)}`);
     } catch (error) {
-      this.logger.error(`创建连接实例失败 ${endpoint}:`, error);
+      this.logger.error(`创建连接实例失败 ${sliceEndpoint(endpoint)}:`, error);
       throw error;
     }
   }
 
   /**
-   * 连接单个端点
+   * 连接单个小智接入点
    */
   private async connectSingleEndpoint(
     endpoint: string,
@@ -1329,10 +1311,10 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   ): Promise<void> {
     const status = this.connectionStates.get(endpoint);
     if (!status) {
-      throw new Error(`端点状态不存在: ${endpoint}`);
+      throw new Error(`小智接入点状态不存在: ${sliceEndpoint(endpoint)}`);
     }
 
-    this.logger.debug(`连接端点: ${endpoint}`);
+    this.logger.debug(`连接小智接入点: ${sliceEndpoint(endpoint)}`);
 
     try {
       // 更新状态为连接中
@@ -1350,7 +1332,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       status.reconnectAttempts = 0;
       status.healthScore = 100;
 
-      this.logger.info(`端点连接成功: ${endpoint}`);
+      this.logger.info(`小智接入点连接成功: ${sliceEndpoint(endpoint)}`);
     } catch (error) {
       // 更新连接失败状态
       status.connected = false;
@@ -1359,7 +1341,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       status.reconnectAttempts++;
       status.healthScore = Math.max(0, status.healthScore - 20);
 
-      this.logger.error(`端点连接失败 ${endpoint}:`, error);
+      this.logger.error(`小智接入点连接失败 ${sliceEndpoint(endpoint)}:`, error);
 
       // 启动重连（如果未超过最大重连次数）
       this.scheduleReconnect(endpoint);
@@ -1369,7 +1351,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   }
 
   /**
-   * 断开单个端点
+   * 断开单个小智接入点
    */
   private async disconnectSingleEndpoint(
     endpoint: string,
@@ -1380,7 +1362,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       return;
     }
 
-    this.logger.debug(`断开端点: ${endpoint}`);
+    this.logger.debug(`断开小智接入点: ${sliceEndpoint(endpoint)}`);
 
     try {
       // 执行断开连接（ProxyMCPServer.disconnect 是同步方法）
@@ -1390,9 +1372,9 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       status.connected = false;
       status.initialized = false;
 
-      this.logger.debug(`端点断开成功: ${endpoint}`);
+      this.logger.debug(`小智接入点断开成功: ${sliceEndpoint(endpoint)}`);
     } catch (error) {
-      this.logger.error(`端点断开失败 ${endpoint}:`, error);
+      this.logger.error(`小智接入点断开失败 ${sliceEndpoint(endpoint)}:`, error);
       // 即使断开失败，也要更新状态
       status.connected = false;
       status.initialized = false;
@@ -1428,9 +1410,9 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     for (const [endpoint, proxyServer] of this.connections) {
       try {
         proxyServer.setServiceManager(this.mcpServiceManager);
-        this.logger.debug(`工具同步成功: ${endpoint}`);
+        this.logger.debug(`工具同步成功: ${sliceEndpoint(endpoint)}`);
       } catch (error) {
-        this.logger.error(`工具同步失败 ${endpoint}:`, error);
+        this.logger.error(`工具同步失败 ${sliceEndpoint(endpoint)}:`, error);
       }
     }
   }
@@ -1484,7 +1466,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   }
 
   /**
-   * 执行单个端点的健康检查
+   * 执行单个小智接入点的健康检查
    */
   private async performSingleHealthCheck(
     endpoint: string,
@@ -1497,7 +1479,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     try {
       const proxyServer = this.connections.get(endpoint);
       if (!proxyServer) {
-        throw new Error(`连接实例不存在: ${endpoint}`);
+        throw new Error(`连接实例不存在: ${sliceEndpoint(endpoint)}`);
       }
 
       // 执行健康检查（这里使用简单的连接状态检查）
@@ -1621,40 +1603,10 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     // 如果连续失败次数过多，考虑触发重连
     if (status.consecutiveFailures >= 3 && status.connected) {
       this.logger.warn(
-        `端点 ${status.endpoint} 连续失败 ${status.consecutiveFailures} 次，触发重连`
+        `小智接入点 ${status.endpoint} 连续失败 ${status.consecutiveFailures} 次，触发重连`
       );
       this.scheduleReconnect(status.endpoint);
     }
-  }
-
-  /**
-   * 错误恢复机制
-   */
-  private handleConnectionRecovery(endpoint: string): void {
-    const status = this.connectionStates.get(endpoint);
-    if (!status) return;
-
-    // 重置失败计数
-    status.consecutiveFailures = 0;
-    status.lastError = undefined;
-    status.errorType = undefined;
-    status.reconnectDelay = 0;
-
-    // 记录恢复成功
-    status.reconnectHistory.push({
-      timestamp: new Date(),
-      success: true,
-      delay: 0,
-    });
-
-    this.logger.info(`端点 ${endpoint} 连接已恢复`);
-
-    // 发送恢复事件
-    this.emit("connectionRecovered", {
-      endpoint,
-      timestamp: new Date(),
-      consecutiveFailuresBeforeRecovery: status.consecutiveFailures,
-    });
   }
 
   /**
@@ -1764,7 +1716,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     // 检查重连次数限制
     if (status.reconnectAttempts >= this.options.maxReconnectAttempts) {
       this.logger.warn(
-        `端点 ${status.endpoint} 已达到最大重连次数 ${this.options.maxReconnectAttempts}`
+        `小智接入点 ${status.endpoint} 已达到最大重连次数 ${this.options.maxReconnectAttempts}`
       );
       return false;
     }
@@ -1773,14 +1725,14 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     if (status.errorType === ConnectionErrorType.AUTHENTICATION_ERROR) {
       // 认证错误通常不应该重连太多次
       if (status.reconnectAttempts >= 3) {
-        this.logger.warn(`端点 ${status.endpoint} 认证错误，停止重连`);
+        this.logger.warn(`小智接入点 ${status.endpoint} 认证错误，停止重连`);
         return false;
       }
     }
 
     // 检查连续失败次数
     if (status.consecutiveFailures >= 10) {
-      this.logger.warn(`端点 ${status.endpoint} 连续失败次数过多，停止重连`);
+      this.logger.warn(`小智接入点 ${status.endpoint} 连续失败次数过多，停止重连`);
       return false;
     }
 
@@ -1822,7 +1774,9 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     status.nextReconnectTime = new Date(Date.now() + delay);
 
     this.logger.info(
-      `安排重连 ${endpoint}，延迟: ${delay}ms，尝试次数: ${status.reconnectAttempts + 1}，错误类型: ${status.errorType}`
+      `安排重连 ${sliceEndpoint(endpoint)}，延迟: ${delay}ms，尝试次数: ${
+        status.reconnectAttempts + 1
+      }，错误类型: ${status.errorType}`
     );
 
     const timer = setTimeout(async () => {
@@ -1848,7 +1802,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     status.isReconnecting = true;
 
     this.logger.info(
-      `开始重连 ${endpoint}，第 ${status.reconnectAttempts + 1} 次尝试`
+      `开始重连 ${sliceEndpoint(endpoint)}，第 ${status.reconnectAttempts + 1} 次尝试`
     );
 
     try {
@@ -1862,7 +1816,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         delay: status.reconnectDelay,
       });
 
-      this.logger.info(`重连成功 ${endpoint}`);
+      this.logger.info(`重连成功 ${sliceEndpoint(endpoint)}`);
     } catch (error) {
       // 重连失败
       status.isReconnecting = false;
@@ -1873,7 +1827,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         delay: status.reconnectDelay,
       });
 
-      this.logger.error(`重连失败 ${endpoint}:`, error);
+      this.logger.error(`重连失败 ${sliceEndpoint(endpoint)}:`, error);
 
       // 继续安排下次重连
       this.scheduleReconnect(endpoint);
