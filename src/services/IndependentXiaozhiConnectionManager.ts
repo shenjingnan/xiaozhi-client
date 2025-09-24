@@ -2,6 +2,7 @@ import { EventEmitter } from "node:events";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { type Logger, logger } from "../Logger.js";
 import { ProxyMCPServer } from "../ProxyMCPServer.js";
+import { sliceEndpoint } from "../utils/mcpServerUtils.js";
 
 // 使用接口定义避免循环依赖
 interface IMCPServiceManager {
@@ -26,7 +27,7 @@ export interface ConfigChangeEvent {
 }
 
 // 错误类型枚举
-// 独立连接选项接口（简化版本）
+// 独立连接选项接口
 export interface IndependentConnectionOptions {
   healthCheckInterval?: number; // 健康检查间隔（毫秒），默认 60000
   reconnectInterval?: number; // 重连间隔（毫秒），默认 5000
@@ -54,6 +55,7 @@ export interface SimpleConnectionStatus {
 
 // 保持向后兼容的连接状态接口
 export interface ConnectionStatus extends SimpleConnectionStatus {
+  nextReconnectTime: undefined;
   // 保留必要字段用于向后兼容
   lastConnected?: Date;
   lastError?: string;
@@ -69,7 +71,7 @@ export enum XiaozhiConnectionState {
   FAILED = "failed",
 }
 
-// 默认配置（简化版本）
+// 默认配置
 const DEFAULT_OPTIONS: Required<IndependentConnectionOptions> = {
   healthCheckInterval: 60000, // 60秒健康检查间隔
   reconnectInterval: 5000,
@@ -79,13 +81,10 @@ const DEFAULT_OPTIONS: Required<IndependentConnectionOptions> = {
   errorNotificationEnabled: true,
 };
 
-const sliceEndpoint = (endpoint: string) =>
-  `${endpoint.slice(0, 30)}...${endpoint.slice(-10)}`;
-
 /**
- * 独立小智连接管理器（简化版本）
+ * 独立小智连接管理器
  * 负责管理多个小智接入点的连接，每个小智接入点独立运行，无负载均衡和故障转移
- * 
+ *
  * 简化特性：
  * - 移除复杂的健康度评分系统
  * - 简化错误处理，不再分类错误类型
@@ -113,7 +112,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   private healthCheckInterval: NodeJS.Timeout | null = null;
   private reconnectTimers: Map<string, NodeJS.Timeout> = new Map();
 
-  // 连接池管理（简化版本）
+  // 连接池管理
   private idleCleanupInterval: NodeJS.Timeout | null = null;
 
   // 性能监控 - 简化版本
@@ -160,10 +159,6 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       }
 
       this.isInitialized = true;
-
-      // 简化性能指标初始化
-
-      // 简化版本，不启动空闲连接清理定时器
 
       this.logger.debug(
         `IndependentXiaozhiConnectionManager 初始化完成，管理 ${this.connections.size} 个连接`
@@ -494,7 +489,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     }
   }
 
-  
+
   /**
    * 手动触发健康检查
    */
@@ -530,7 +525,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     }
 
     // 立即执行重连
-    await this.performSimpleReconnect(endpoint);
+    await this.performReconnect(endpoint);
   }
 
   /**
@@ -841,7 +836,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   }
 
   /**
-   * 连接预热机制（简化版本）
+   * 连接预热机制
    * @param endpoints 要预热的小智接入点列表
    */
   async prewarmConnections(endpoints: string[] = []): Promise<void> {
@@ -867,20 +862,20 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     });
 
     await Promise.all(prewarmPromises);
-    this.logger.info(`连接预热完成`);
+    this.logger.info('连接预热完成');
   }
 
   /**
-   * 更新性能指标（简化版本）
+   * 更新性能指标
    */
   private updatePerformanceMetrics(): void {
     // 简化版本，不进行复杂的内存跟踪
   }
 
-  
-  
+
+
   /**
-   * 获取性能指标（简化版本）
+   * 获取性能指标
    */
   getPerformanceMetrics(): {
     connectionTime: {
@@ -906,7 +901,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     };
   }
 
-  
+
   /**
    * 资源清理
    */
@@ -919,7 +914,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
 
       // 简化版本，不需要停止空闲连接清理定时器
 
-  
+
       // 清理连接实例
       this.connections.clear();
       this.connectionStates.clear();
@@ -997,8 +992,8 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         isReconnecting: false,
         lastReconnectAttempt: undefined,
         reconnectDelay: this.options.reconnectInterval,
-        // 保留向后兼容字段
         reconnectAttempts: 0,
+        nextReconnectTime: undefined
       });
 
       this.logger.debug(`连接实例创建成功: ${sliceEndpoint(endpoint)}`);
@@ -1051,7 +1046,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       );
 
       // 启动重连（如果未超过最大重连次数）
-      this.scheduleSimpleReconnect(endpoint);
+      this.scheduleReconnect(endpoint);
 
       throw error;
     }
@@ -1156,8 +1151,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   }
 
   /**
-   * 执行健康检查（简化版本）
-   * 仅进行基本的连接检查，不计算复杂的健康度评分
+   * 执行健康检查
    */
   private async performHealthCheck(): Promise<void> {
     this.logger.debug("执行简化健康检查");
@@ -1174,7 +1168,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   }
 
   /**
-   * 执行单个小智接入点的健康检查（简化版本）
+   * 执行单个小智接入点的健康检查
    */
   private async performSingleHealthCheck(
     endpoint: string,
@@ -1187,7 +1181,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       }
 
       // 简单的连接检查
-      await this.checkSimpleConnectionHealth(proxyServer);
+      await this.checkConnectionHealth(proxyServer);
 
       // 简化状态更新
       status.isHealthy = true;
@@ -1200,9 +1194,9 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   }
 
   /**
-   * 检查连接健康状态（简化版本）
+   * 检查连接健康状态
    */
-  private async checkSimpleConnectionHealth(proxyServer: any): Promise<void> {
+  private async checkConnectionHealth(proxyServer: any): Promise<void> {
     // 仅检查连接是否存活，不计算响应时间
     if (!proxyServer) {
       throw new Error("连接实例不存在");
@@ -1219,7 +1213,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   /**
    * 安排简化的重连
    */
-  private scheduleSimpleReconnect(endpoint: string): void {
+  private scheduleReconnect(endpoint: string): void {
     const status = this.connectionStates.get(endpoint);
     if (!status) return;
 
@@ -1235,7 +1229,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
 
     const timer = setTimeout(() => {
       this.reconnectTimers.delete(endpoint);
-      this.performSimpleReconnect(endpoint);
+      this.performReconnect(endpoint);
     }, delay);
 
     this.reconnectTimers.set(endpoint, timer);
@@ -1244,33 +1238,62 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   /**
    * 执行简化的重连
    */
-  private async performSimpleReconnect(endpoint: string): Promise<void> {
+  private async performReconnect(endpoint: string): Promise<void> {
     const status = this.connectionStates.get(endpoint);
     if (!status) return;
-    
+
+    const proxyServer = this.connections.get(endpoint);
+    if (!proxyServer) {
+      this.logger.warn(`重连时找不到代理服务器: ${sliceEndpoint(endpoint)}`);
+      return;
+    }
+
     try {
       status.isReconnecting = true;
       status.lastReconnectAttempt = new Date();
-      
-      // 简单的重连逻辑
-      await this.connectToEndpoint(endpoint);
-      
+
+      // 重连：先断开现有连接，然后重新连接
+      try {
+        await proxyServer.disconnect();
+      } catch (error) {
+        // 断开连接失败不影响重连，继续尝试连接
+        this.logger.debug(`断开连接失败（继续重连）: ${sliceEndpoint(endpoint)}:`, error);
+      }
+
+      // 重新连接
+      await proxyServer.connect();
+
+      // 更新连接成功状态
+      status.connected = true;
+      status.initialized = true;
+      status.lastConnected = new Date();
+      status.lastError = undefined;
+      status.reconnectAttempts = 0;
       status.isHealthy = true;
       status.consecutiveFailures = 0;
       status.isReconnecting = false;
-      
+
       this.logger.info(`重连成功 ${sliceEndpoint(endpoint)}`);
     } catch (error) {
+      // 更新连接失败状态
+      status.connected = false;
+      status.initialized = false;
+      status.lastError = error instanceof Error ? error.message : String(error);
+      status.reconnectAttempts++;
       status.isHealthy = false;
+      status.consecutiveFailures = (status.consecutiveFailures || 0) + 1;
       status.isReconnecting = false;
-      
+
       this.logger.error(`重连失败 ${sliceEndpoint(endpoint)}:`, error);
+
+      // 继续启动重连（如果未超过最大重连次数）
+      this.scheduleReconnect(endpoint);
     }
   }
 
-  
+
   /**
-   * 统一处理健康检查错误（简化版本）
+   * 统一处理健康检查错误
    * 不再区分错误类型，统一处理所有连接错误
    */
   private handleHealthCheckError(
@@ -1283,9 +1306,9 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     status.consecutiveFailures++;
     status.lastHealthCheck = new Date();
     status.lastError = (error as Error).message;
-    
+
     this.logger.warn(`健康检查失败 ${sliceEndpoint(endpoint)}: ${(error as Error).message}`);
-    
+
     // 发送错误事件（简化版本，不区分错误类型）
     this.emit("connectionError", {
       endpoint: endpoint,
@@ -1293,10 +1316,10 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       consecutiveFailures: status.consecutiveFailures,
       timestamp: new Date(),
     });
-    
+
     // 简单重连触发
     if (status.consecutiveFailures >= 3) {
-      this.scheduleSimpleReconnect(endpoint);
+      this.scheduleReconnect(endpoint);
     }
   }
 
