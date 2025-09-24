@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach, afterEach } from "vitest";
-import { XiaozhiConnectionManagerSingleton } from "../XiaozhiConnectionManagerSingleton.js";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import type { IndependentXiaozhiConnectionManager } from "../IndependentXiaozhiConnectionManager.js";
+import { XiaozhiConnectionManagerSingleton } from "../XiaozhiConnectionManagerSingleton.js";
 
 describe("XiaozhiConnectionManagerSingleton", () => {
   let originalConsoleWarn: typeof console.warn;

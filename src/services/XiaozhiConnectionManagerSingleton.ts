@@ -4,9 +4,9 @@
  */
 
 import {
-  IndependentXiaozhiConnectionManager,
-  type IndependentConnectionOptions,
   type ConnectionStatus,
+  type IndependentConnectionOptions,
+  IndependentXiaozhiConnectionManager,
 } from "./IndependentXiaozhiConnectionManager.js";
 
 // 类型兼容性导出

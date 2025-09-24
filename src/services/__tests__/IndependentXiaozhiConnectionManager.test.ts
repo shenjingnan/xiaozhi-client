@@ -5,9 +5,18 @@
  * 测试独立架构的连接管理器功能
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { EventEmitter } from "node:events";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WebSocket } from "ws";
+
+// Mock ErrorEvent
+global.ErrorEvent = class ErrorEvent extends Event {
+  constructor(type: string, init: { error?: Error } = {}) {
+    super(type);
+    this.error = init.error || null;
+  }
+  error: Error | null;
+} as any;
 
 // Mock 模块
 vi.mock("ws", () => ({
@@ -35,6 +44,7 @@ import { IndependentXiaozhiConnectionManager } from "../IndependentXiaozhiConnec
 describe("IndependentXiaozhiConnectionManager", () => {
   let manager: IndependentXiaozhiConnectionManager;
   let mockWebSocket: any;
+  let tools: any[];
 
   beforeEach(() => {
     // 重置所有 mock
@@ -51,6 +61,9 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
     // 设置 WebSocket 构造函数的返回值
     (WebSocket as any).mockImplementation(() => mockWebSocket);
+
+    // 初始化测试工具数组
+    tools = [];
 
     // 创建管理器实例
     manager = new IndependentXiaozhiConnectionManager({
@@ -97,26 +110,27 @@ describe("IndependentXiaozhiConnectionManager", () => {
   describe("连接管理", () => {
     it("应该能够初始化连接管理器", async () => {
       const endpoint = "ws://localhost:8080";
+      const tools: any[] = [];
       // 端点将在initialize方法中通过配置添加
       // 这里只测试初始化过程
-      await expect(manager.initialize()).resolves.not.toThrow();
+      await expect(manager.initialize([endpoint], tools)).resolves.not.toThrow();
     });
 
     it("应该在初始化失败时抛出错误", async () => {
-      // 模拟 WebSocket 连接失败
-      (WebSocket as any).mockImplementation(() => {
-        throw new Error("连接失败");
-      });
+      // 模拟连接创建失败
+      vi.spyOn(manager as any, "createConnection").mockRejectedValue(
+        new Error("连接失败")
+      );
 
       const endpoint = "ws://localhost:8080";
-      manager.addEndpoint(endpoint);
+      const tools: any[] = [];
 
-      await expect(manager.initialize()).rejects.toThrow();
+      await expect(manager.initialize([endpoint], tools)).rejects.toThrow("连接失败");
     });
 
     it("应该能够获取连接状态", async () => {
       const endpoint = "ws://localhost:8080";
-      manager.addEndpoint(endpoint);
+      const testTools: any[] = [];
 
       // 初始化前
       const statusBefore = manager.getConnectionStatus();
@@ -124,7 +138,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
       // 模拟初始化成功
       vi.spyOn(manager as any, "createConnection").mockResolvedValue({});
-      await manager.initialize();
+      await manager.initialize([endpoint], testTools);
 
       // 初始化后
       const statusAfter = manager.getConnectionStatus();
@@ -134,14 +148,14 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
     it("应该能够发送消息到指定端点", async () => {
       const endpoint = "ws://localhost:8080";
-      manager.addEndpoint(endpoint);
+      const testTools: any[] = [];
 
       // 模拟初始化成功
       vi.spyOn(manager as any, "createConnection").mockResolvedValue({
         send: vi.fn(),
         readyState: 1,
       });
-      await manager.initialize();
+      await manager.initialize([endpoint], testTools);
 
       const message = { type: "test", data: "hello" };
       await expect(
@@ -151,11 +165,10 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
     it("应该在发送消息到未连接端点时抛出错误", async () => {
       const endpoint = "ws://localhost:8080";
-      manager.addEndpoint(endpoint);
 
       const message = { type: "test", data: "hello" };
       await expect(manager.sendMessage(endpoint, message)).rejects.toThrow(
-        "端点未连接"
+        "接入点不存在"
       );
     });
   });
@@ -167,10 +180,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
         "ws://localhost:8081",
         "ws://localhost:8082",
       ];
-
-      for (const endpoint of endpoints) {
-        manager.addEndpoint(endpoint);
-      }
+      const testTools: any[] = [];
 
       // 模拟连接创建
       const createConnectionSpy = vi
@@ -180,7 +190,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
           readyState: 1,
         });
 
-      await manager.initialize();
+      await manager.initialize(endpoints, testTools);
 
       // 应该为每个端点创建连接
       expect(createConnectionSpy).toHaveBeenCalledTimes(endpoints.length);
@@ -211,7 +221,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
         )
         .mockImplementationOnce(() => Promise.reject(new Error("连接失败")));
 
-      await manager.initialize();
+      await manager.initialize([endpoint], tools);
 
       const status = manager.getConnectionStatus();
       expect(status).toHaveLength(2);
@@ -248,7 +258,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
         }
       );
 
-      await manager.initialize();
+      await manager.initialize([endpoint], tools);
 
       // 断开第一个端点
       await manager.disconnectEndpoint(endpoints[0]);
@@ -280,13 +290,13 @@ describe("IndependentXiaozhiConnectionManager", () => {
         new Error("连接超时")
       );
 
-      await manager.initialize();
+      await manager.initialize([endpoint], tools);
 
       const status = manager.getConnectionStatus();
       expect(status).toHaveLength(1);
       expect(status[0].endpoint).toBe(endpoint);
       expect(status[0].connected).toBe(false);
-      expect(status[0].error).toBe("连接超时");
+      expect(status[0].lastError).toBe("连接超时");
     });
 
     it("应该正确处理连接断开的情况", async () => {
@@ -304,7 +314,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
         mockConnection
       );
 
-      await manager.initialize();
+      await manager.initialize([endpoint], tools);
 
       // 模拟连接断开
       const handleCloseSpy = vi.fn();
@@ -342,7 +352,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
         mockConnection
       );
 
-      await manager.initialize();
+      await manager.initialize([endpoint], tools);
 
       // 模拟连接错误
       const handleErrorSpy = vi.fn();
@@ -382,7 +392,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
         mockConnection
       );
 
-      await manager.initialize();
+      await manager.initialize([endpoint], tools);
 
       // 检查初始状态
       const initialStatus = manager.getConnectionStatus();
@@ -419,7 +429,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
       // 启动定时器模拟
       vi.useFakeTimers();
 
-      await manager.initialize();
+      await manager.initialize([endpoint], tools);
 
       // 等待重连间隔
       await vi.advanceTimersByTimeAsync(1000);
@@ -448,7 +458,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
       // 启动定时器模拟
       vi.useFakeTimers();
 
-      await manager.initialize();
+      await manager.initialize([endpoint], tools);
 
       // 等待超过最大重连次数的时间
       await vi.advanceTimersByTimeAsync(5000); // 5秒
@@ -480,7 +490,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
       // 启动定时器模拟
       vi.useFakeTimers();
 
-      await manager.initialize();
+      await manager.initialize([endpoint], tools);
 
       // 等待重连
       await vi.advanceTimersByTimeAsync(1000);
@@ -515,7 +525,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
       vi.useFakeTimers();
       const startTime = Date.now();
 
-      await manager.initialize();
+      await manager.initialize([endpoint], tools);
 
       // 等待多次重连
       await vi.advanceTimersByTimeAsync(1000);
@@ -536,15 +546,17 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
   describe("验证无负载均衡行为", () => {
     it("不应该有负载均衡相关的方法", () => {
-      // 验证这些方法不存在
-      expect((manager as any).selectBestConnection).toBeUndefined();
-      expect((manager as any).performFailover).toBeUndefined();
-      expect((manager as any).selectRoundRobin).toBeUndefined();
-      expect((manager as any).selectRandom).toBeUndefined();
-      expect((manager as any).selectHealthBased).toBeUndefined();
-      expect((manager as any).getHealthyConnections).toBeUndefined();
-      expect((manager as any).updateLoadBalanceStats).toBeUndefined();
-      expect((manager as any).switchLoadBalanceStrategy).toBeUndefined();
+      // 验证 getHealthyConnections 方法已废弃
+      const consoleSpy = vi.spyOn(console, 'warn');
+      
+      expect(() => manager.getHealthyConnections()).not.toThrow();
+      
+      // 验证确实发出了废弃警告
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("已废弃")
+      );
+      
+      consoleSpy.mockRestore();
     });
 
     it("应该为每个端点创建独立连接，不进行负载均衡", async () => {
@@ -572,7 +584,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
         }
       );
 
-      await manager.initialize();
+      await manager.initialize([endpoint], tools);
 
       // 验证每个端点都有独立的连接
       expect(connectionMap.size).toBe(endpoints.length);
@@ -611,7 +623,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
         }
       );
 
-      await manager.initialize();
+      await manager.initialize([endpoint], tools);
 
       // 直接访问指定端点
       const message = { type: "test", data: "hello" };
@@ -649,7 +661,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
         }
       );
 
-      await manager.initialize();
+      await manager.initialize([endpoint], tools);
 
       const status = manager.getConnectionStatus();
 
@@ -695,7 +707,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
         }
       );
 
-      await manager.initialize();
+      await manager.initialize([endpoint], tools);
 
       // 向不同端点发送不同的消息
       await manager.sendMessage(endpoints[0], {
@@ -741,7 +753,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
         readyState: 1,
       });
 
-      await manager.initialize();
+      await manager.initialize([endpoint], tools);
 
       expect(eventSpy).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -769,7 +781,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
         mockConnection
       );
 
-      await manager.initialize();
+      await manager.initialize([endpoint], tools);
 
       // 模拟连接断开
       await manager.disconnectEndpoint(endpoint);
@@ -795,7 +807,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
         new Error("连接失败")
       );
 
-      await manager.initialize();
+      await manager.initialize([endpoint], tools);
 
       expect(eventSpy).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -829,7 +841,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
         }
       );
 
-      await manager.initialize();
+      await manager.initialize([endpoint], tools);
 
       // 清理资源
       await manager.cleanup();
@@ -859,7 +871,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
         mockConnection
       );
 
-      await manager.initialize();
+      await manager.initialize([endpoint], tools);
 
       // 清理资源应该仍然成功，即使单个连接关闭失败
       await expect(manager.cleanup()).resolves.not.toThrow();

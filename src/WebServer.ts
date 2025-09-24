@@ -9,10 +9,10 @@ import { convertLegacyToNew } from "./adapters/ConfigAdapter.js";
 import { createContainer } from "./cli/Container.js";
 import { configManager } from "./configManager.js";
 import type { AppConfig, MCPServerConfig } from "./configManager.js";
+import type { IndependentXiaozhiConnectionManager } from "./services/IndependentXiaozhiConnectionManager.js";
 // MCPTransportType 已移除，不再需要导入
 import type { MCPServiceManager } from "./services/MCPServiceManager.js";
 import { MCPServiceManagerSingleton } from "./services/MCPServiceManagerSingleton.js";
-import type { IndependentXiaozhiConnectionManager } from "./services/IndependentXiaozhiConnectionManager.js";
 import { XiaozhiConnectionManagerSingleton } from "./services/XiaozhiConnectionManagerSingleton.js";
 
 import { ConfigApiHandler } from "./handlers/ConfigApiHandler.js";
