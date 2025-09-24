@@ -387,36 +387,6 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   }
 
   /**
-   * 添加端点（简化版本，用于测试）
-   * @param endpoint 端点地址
-   */
-  addEndpointSimple(endpoint: string): void {
-    if (this.connections.has(endpoint)) {
-      return;
-    }
-
-    // 创建初始状态
-    const status: ConnectionStatus = {
-      endpoint,
-      connected: false,
-      initialized: false,
-      lastConnected: undefined,
-      lastError: undefined,
-      reconnectAttempts: 0,
-      healthScore: 50,
-      consecutiveFailures: 0,
-      totalRequests: 0,
-      successfulRequests: 0,
-      healthCheckEnabled: true,
-      isReconnecting: false,
-      reconnectDelay: this.options.reconnectInterval,
-      reconnectHistory: [],
-    };
-
-    this.connectionStates.set(endpoint, status);
-  }
-
-  /**
    * 断开指定端点连接
    * @param endpoint 要断开的端点
    */

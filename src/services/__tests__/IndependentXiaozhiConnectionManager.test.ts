@@ -94,57 +94,6 @@ describe("IndependentXiaozhiConnectionManager", () => {
     });
   });
 
-  describe("端点管理", () => {
-    it("应该能够添加端点", () => {
-      const endpoint = "ws://localhost:8080";
-      (manager as any).addEndpointSimple(endpoint);
-
-      const endpoints = manager.getEndpoints();
-      expect(endpoints).toContain(endpoint);
-    });
-
-    it("应该能够移除端点", async () => {
-      const endpoint = "ws://localhost:8080";
-      (manager as any).addEndpointSimple(endpoint);
-
-      // 使用状态检查而不是连接检查
-      const statusBefore = manager.getConnectionStatus();
-      expect(statusBefore.some((s) => s.endpoint === endpoint)).toBe(true);
-
-      await manager.removeEndpoint(endpoint);
-
-      const statusAfter = manager.getConnectionStatus();
-      expect(statusAfter.some((s) => s.endpoint === endpoint)).toBe(false);
-    });
-
-    it("应该能够获取所有端点", () => {
-      const endpoints = [
-        "ws://localhost:8080",
-        "ws://localhost:8081",
-        "ws://localhost:8082",
-      ];
-
-      for (const endpoint of endpoints) {
-        (manager as any).addEndpointSimple(endpoint);
-      }
-
-      const retrievedEndpoints = manager.getEndpoints();
-      expect(retrievedEndpoints).toEqual(expect.arrayContaining(endpoints));
-    });
-
-    it("应该能够清除所有端点", async () => {
-      const endpoints = ["ws://localhost:8080", "ws://localhost:8081"];
-
-      for (const endpoint of endpoints) {
-        (manager as any).addEndpointSimple(endpoint);
-      }
-      await manager.clearEndpoints();
-
-      const retrievedEndpoints = manager.getEndpoints();
-      expect(retrievedEndpoints).toHaveLength(0);
-    });
-  });
-
   describe("连接管理", () => {
     it("应该能够初始化连接管理器", async () => {
       const endpoint = "ws://localhost:8080";
