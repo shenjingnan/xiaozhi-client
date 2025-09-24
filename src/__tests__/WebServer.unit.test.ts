@@ -283,11 +283,4 @@ describe("WebServer Unit Tests", () => {
       expect(customWebServer).toBeDefined();
     });
   });
-
-  describe("Integration with Connection Manager", () => {
-    it("should have getBestXiaozhiConnection method", () => {
-      // 这个方法是私有的，但我们可以验证它存在
-      expect(webServer.getBestXiaozhiConnection).toBeDefined();
-    });
-  });
 });

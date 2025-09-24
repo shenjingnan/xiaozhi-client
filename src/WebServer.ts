@@ -344,22 +344,6 @@ export class WebServer {
   }
 
   /**
-   * 获取最佳的小智连接（用于向后兼容）
-   */
-  private getBestXiaozhiConnection(): ProxyMCPServer | null {
-    if (this.xiaozhiConnectionManager) {
-      // 独立架构：返回第一个可用连接
-      const connections = this.xiaozhiConnectionManager.getConnectionStatus();
-      const connectedEndpoint = connections.find((c) => c.connected);
-      if (connectedEndpoint) {
-        // 简单返回第一个连接，实际使用时需要根据具体需求调整
-        return this.proxyMCPServer || null;
-      }
-    }
-    return this.proxyMCPServer || null;
-  }
-
-  /**
    * 获取小智连接状态信息
    */
   getXiaozhiConnectionStatus(): any {
