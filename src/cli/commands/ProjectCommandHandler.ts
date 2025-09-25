@@ -40,7 +40,10 @@ export class ProjectCommandHandler extends BaseCommandHandler {
   /**
    * 处理创建项目命令
    */
-  private async handleCreate(projectName: string, options: any): Promise<void> {
+  protected async handleCreate(
+    projectName: string,
+    options: any
+  ): Promise<void> {
     const spinner = ora("初始化项目...").start();
 
     try {

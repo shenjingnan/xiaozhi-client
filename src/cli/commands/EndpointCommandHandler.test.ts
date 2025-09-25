@@ -6,6 +6,32 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IDIContainer } from "../interfaces/Config.js";
 import { EndpointCommandHandler } from "./EndpointCommandHandler.js";
 
+/**
+ * 测试用的 EndpointCommandHandler 子类，用于访问受保护的方法
+ */
+class TestableEndpointCommandHandler extends EndpointCommandHandler {
+  // 暴露受保护的方法供测试使用
+  public async testHandleList(): Promise<void> {
+    return this.handleList();
+  }
+
+  public async testHandleAdd(url: string): Promise<void> {
+    return this.handleAdd(url);
+  }
+
+  public async testHandleRemove(url: string): Promise<void> {
+    return this.handleRemove(url);
+  }
+
+  public async testHandleSet(urls: string[]): Promise<void> {
+    return this.handleSet(urls);
+  }
+
+  public testValidateArgs(args: any[], expectedCount: number): void {
+    this.validateArgs(args, expectedCount);
+  }
+}
+
 // Mock ora
 vi.mock("ora", () => ({
   default: vi.fn().mockImplementation((text) => ({
@@ -58,11 +84,11 @@ const mockContainer = {
 } as unknown as IDIContainer;
 
 describe("EndpointCommandHandler", () => {
-  let handler: EndpointCommandHandler;
+  let handler: TestableEndpointCommandHandler;
   let consoleSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    handler = new EndpointCommandHandler(mockContainer);
+    handler = new TestableEndpointCommandHandler(mockContainer);
     consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     vi.clearAllMocks();
     mockErrorHandler.handle.mockReset();
@@ -85,7 +111,7 @@ describe("EndpointCommandHandler", () => {
     it("应该显示空端点列表", async () => {
       mockConfigManager.getMcpEndpoints.mockReturnValue([]);
 
-      await handler.handleList();
+      await handler.testHandleList();
 
       expect(consoleSpy).toHaveBeenCalledWith("未配置任何 MCP 端点");
     });
@@ -94,7 +120,7 @@ describe("EndpointCommandHandler", () => {
       const endpoints = ["http://localhost:3000", "http://localhost:3001"];
       mockConfigManager.getMcpEndpoints.mockReturnValue(endpoints);
 
-      await handler.handleList();
+      await handler.testHandleList();
 
       expect(consoleSpy).toHaveBeenCalledWith("共 2 个端点:");
       expect(consoleSpy).toHaveBeenCalledWith("  1. http://localhost:3000");
@@ -107,7 +133,7 @@ describe("EndpointCommandHandler", () => {
         throw error;
       });
 
-      await handler.handleList();
+      await handler.testHandleList();
 
       expect(mockErrorHandler.handle).toHaveBeenCalledWith(error);
     });
@@ -119,7 +145,7 @@ describe("EndpointCommandHandler", () => {
       mockConfigManager.addMcpEndpoint.mockImplementation(() => {});
       mockConfigManager.getMcpEndpoints.mockReturnValue([url]);
 
-      await handler.handleAdd(url);
+      await handler.testHandleAdd(url);
 
       expect(mockConfigManager.addMcpEndpoint).toHaveBeenCalledWith(url);
       expect(consoleSpy).toHaveBeenCalledWith("当前共 1 个端点");
@@ -132,7 +158,7 @@ describe("EndpointCommandHandler", () => {
         throw error;
       });
 
-      await handler.handleAdd(url);
+      await handler.testHandleAdd(url);
 
       expect(mockErrorHandler.handle).toHaveBeenCalledWith(error);
     });
@@ -144,7 +170,7 @@ describe("EndpointCommandHandler", () => {
       mockConfigManager.removeMcpEndpoint.mockImplementation(() => {});
       mockConfigManager.getMcpEndpoints.mockReturnValue([]);
 
-      await handler.handleRemove(url);
+      await handler.testHandleRemove(url);
 
       expect(mockConfigManager.removeMcpEndpoint).toHaveBeenCalledWith(url);
       expect(consoleSpy).toHaveBeenCalledWith("当前剩余 0 个端点");
@@ -157,7 +183,7 @@ describe("EndpointCommandHandler", () => {
         throw error;
       });
 
-      await handler.handleRemove(url);
+      await handler.testHandleRemove(url);
 
       expect(mockErrorHandler.handle).toHaveBeenCalledWith(error);
     });
@@ -168,7 +194,7 @@ describe("EndpointCommandHandler", () => {
       const urls = ["http://localhost:3000"];
       mockConfigManager.updateMcpEndpoint.mockImplementation(() => {});
 
-      await handler.handleSet(urls);
+      await handler.testHandleSet(urls);
 
       expect(mockConfigManager.updateMcpEndpoint).toHaveBeenCalledWith(urls[0]);
     });
@@ -177,7 +203,7 @@ describe("EndpointCommandHandler", () => {
       const urls = ["http://localhost:3000", "http://localhost:3001"];
       mockConfigManager.updateMcpEndpoint.mockImplementation(() => {});
 
-      await handler.handleSet(urls);
+      await handler.testHandleSet(urls);
 
       expect(mockConfigManager.updateMcpEndpoint).toHaveBeenCalledWith(urls);
       expect(consoleSpy).toHaveBeenCalledWith("  1. http://localhost:3000");
@@ -191,7 +217,7 @@ describe("EndpointCommandHandler", () => {
         throw error;
       });
 
-      await handler.handleSet(urls);
+      await handler.testHandleSet(urls);
 
       expect(mockErrorHandler.handle).toHaveBeenCalledWith(error);
     });
@@ -200,19 +226,19 @@ describe("EndpointCommandHandler", () => {
   describe("子命令参数验证", () => {
     it("add 命令应该验证参数数量", () => {
       expect(() => {
-        handler.validateArgs([], 1);
+        handler.testValidateArgs([], 1);
       }).toThrow();
     });
 
     it("remove 命令应该验证参数数量", () => {
       expect(() => {
-        handler.validateArgs([], 1);
+        handler.testValidateArgs([], 1);
       }).toThrow();
     });
 
     it("set 命令应该验证参数数量", () => {
       expect(() => {
-        handler.validateArgs([], 1);
+        handler.testValidateArgs([], 1);
       }).toThrow();
     });
   });
@@ -225,7 +251,7 @@ describe("EndpointCommandHandler", () => {
       );
       mockConfigManager.getMcpEndpoints.mockReturnValue(endpoints);
 
-      await handler.handleList();
+      await handler.testHandleList();
 
       expect(consoleSpy).toHaveBeenCalledWith("共 100 个端点:");
       expect(consoleSpy).toHaveBeenCalledWith("  1. http://localhost:3000");
@@ -239,7 +265,7 @@ describe("EndpointCommandHandler", () => {
         throw error;
       });
 
-      await handler.handleAdd(emptyUrl);
+      await handler.testHandleAdd(emptyUrl);
 
       expect(mockErrorHandler.handle).toHaveBeenCalledWith(error);
     });
@@ -249,7 +275,7 @@ describe("EndpointCommandHandler", () => {
       mockConfigManager.addMcpEndpoint.mockImplementation(() => {});
       mockConfigManager.getMcpEndpoints.mockReturnValue([specialUrl]);
 
-      await handler.handleAdd(specialUrl);
+      await handler.testHandleAdd(specialUrl);
 
       expect(mockConfigManager.addMcpEndpoint).toHaveBeenCalledWith(specialUrl);
     });
@@ -261,7 +287,7 @@ describe("EndpointCommandHandler", () => {
         throw error;
       });
 
-      await handler.handleSet(emptyUrls);
+      await handler.testHandleSet(emptyUrls);
 
       expect(mockErrorHandler.handle).toHaveBeenCalledWith(error);
     });
@@ -359,7 +385,7 @@ describe("EndpointCommandHandler", () => {
       // 添加端点
       mockConfigManager.addMcpEndpoint.mockImplementation(() => {});
       mockConfigManager.getMcpEndpoints.mockReturnValue([url]);
-      await handler.handleAdd(url);
+      await handler.testHandleAdd(url);
 
       // 验证添加成功
       expect(mockConfigManager.addMcpEndpoint).toHaveBeenCalledWith(url);
@@ -367,7 +393,7 @@ describe("EndpointCommandHandler", () => {
 
       // 列出端点
       mockConfigManager.getMcpEndpoints.mockReturnValue([url]);
-      await handler.handleList();
+      await handler.testHandleList();
 
       // 验证列表显示
       expect(consoleSpy).toHaveBeenCalledWith("共 1 个端点:");
@@ -379,7 +405,7 @@ describe("EndpointCommandHandler", () => {
 
       // 设置端点
       mockConfigManager.updateMcpEndpoint.mockImplementation(() => {});
-      await handler.handleSet(urls);
+      await handler.testHandleSet(urls);
 
       // 验证设置成功
       expect(mockConfigManager.updateMcpEndpoint).toHaveBeenCalledWith(urls);
@@ -390,7 +416,7 @@ describe("EndpointCommandHandler", () => {
       // 移除端点
       mockConfigManager.removeMcpEndpoint.mockImplementation(() => {});
       mockConfigManager.getMcpEndpoints.mockReturnValue([urls[1]]);
-      await handler.handleRemove(urls[0]);
+      await handler.testHandleRemove(urls[0]);
 
       // 验证移除成功
       expect(mockConfigManager.removeMcpEndpoint).toHaveBeenCalledWith(urls[0]);

@@ -63,7 +63,7 @@ export class EndpointCommandHandler extends BaseCommandHandler {
   /**
    * 处理列出端点命令
    */
-  private async handleList(): Promise<void> {
+  protected async handleList(): Promise<void> {
     const spinner = ora("读取端点配置...").start();
 
     try {
@@ -90,7 +90,7 @@ export class EndpointCommandHandler extends BaseCommandHandler {
   /**
    * 处理添加端点命令
    */
-  private async handleAdd(url: string): Promise<void> {
+  protected async handleAdd(url: string): Promise<void> {
     const spinner = ora("添加端点...").start();
 
     try {
@@ -111,7 +111,7 @@ export class EndpointCommandHandler extends BaseCommandHandler {
   /**
    * 处理移除端点命令
    */
-  private async handleRemove(url: string): Promise<void> {
+  protected async handleRemove(url: string): Promise<void> {
     const spinner = ora("移除端点...").start();
 
     try {
@@ -132,7 +132,7 @@ export class EndpointCommandHandler extends BaseCommandHandler {
   /**
    * 处理设置端点命令
    */
-  private async handleSet(urls: string[]): Promise<void> {
+  protected async handleSet(urls: string[]): Promise<void> {
     const spinner = ora("设置端点...").start();
 
     try {
