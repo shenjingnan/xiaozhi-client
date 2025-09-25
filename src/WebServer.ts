@@ -6,11 +6,9 @@ import { WebSocketServer } from "ws";
 import { type Logger, logger } from "./Logger.js";
 import { ProxyMCPServer, type Tool } from "./ProxyMCPServer.js";
 import { convertLegacyToNew } from "./adapters/ConfigAdapter.js";
-import { createContainer } from "./cli/Container.js";
 import { configManager } from "./configManager.js";
-import type { AppConfig, MCPServerConfig } from "./configManager.js";
+import type { MCPServerConfig } from "./configManager.js";
 import type { IndependentXiaozhiConnectionManager } from "./services/IndependentXiaozhiConnectionManager.js";
-// MCPTransportType 已移除，不再需要导入
 import type { MCPServiceManager } from "./services/MCPServiceManager.js";
 import { MCPServiceManagerSingleton } from "./services/MCPServiceManagerSingleton.js";
 import { XiaozhiConnectionManagerSingleton } from "./services/XiaozhiConnectionManagerSingleton.js";
