@@ -1656,7 +1656,7 @@ export class ConfigManager {
       config.platforms = {};
     }
     config.platforms[platformName] = platformConfig;
-    // FIXME: 这里更新之后，web还是会变成老数据，需要修复这个问题
+    // 注意：Web UI 可能需要刷新才能看到更新后的数据
     this.saveConfig(config);
   }
 

@@ -53,7 +53,7 @@ describe("ProxyMCPServer 集成测试", () => {
 
     // 设置模拟的 WebSocket 连接
     (proxyServer as any).ws = mockWs;
-    (proxyServer as any).isConnected = true;
+    (proxyServer as any).connectionStatus = true;
   });
 
   describe("端到端工具调用流程", () => {

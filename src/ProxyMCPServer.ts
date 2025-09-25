@@ -1,6 +1,7 @@
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import WebSocket from "ws";
 import { type Logger, logger } from "./Logger.js";
+import { sliceEndpoint } from "./utils/mcpServerUtils.js";
 
 export type { Tool };
 
@@ -124,7 +125,7 @@ export class ProxyMCPServer {
   private endpointUrl: string;
   private ws: WebSocket | null = null;
   private logger: Logger;
-  private isConnected = false;
+  private connectionStatus = false;
   private serverInitialized = false;
 
   // 工具管理
@@ -265,7 +266,6 @@ export class ProxyMCPServer {
     this.validateTool(name, tool);
     this.tools.set(name, tool);
     this.logger.debug(`工具 '${name}' 已添加`);
-    // TODO: 未来可以使用 options 参数来设置工具的启用状态、元数据等
     return this;
   }
 
@@ -359,7 +359,7 @@ export class ProxyMCPServer {
   }
 
   /**
-   * 连接 MCP 接入点
+   * 连接小智接入点
    * @returns 连接成功后的 Promise
    */
   public async connect(): Promise<void> {
@@ -389,7 +389,7 @@ export class ProxyMCPServer {
   private async attemptConnection(): Promise<void> {
     this.connectionState = ConnectionState.CONNECTING;
     this.logger.info(
-      `正在连接 MCP 接入点: ${this.endpointUrl} (尝试 ${
+      `正在连接小智接入点: ${sliceEndpoint(this.endpointUrl)} (尝试 ${
         this.reconnectState.attempts + 1
       }/${this.reconnectOptions.maxAttempts})`
     );
@@ -441,7 +441,7 @@ export class ProxyMCPServer {
       this.connectionTimeout = null;
     }
 
-    this.isConnected = true;
+    this.connectionStatus = true;
     this.connectionState = ConnectionState.CONNECTED;
 
     // 重置重连状态
@@ -473,9 +473,9 @@ export class ProxyMCPServer {
    * 处理连接关闭
    */
   private handleConnectionClose(code: number, reason: string): void {
-    this.isConnected = false;
+    this.connectionStatus = false;
     this.serverInitialized = false;
-    this.logger.info(`MCP 连接已关闭 (代码: ${code}, 原因: ${reason})`);
+    this.logger.info(`小智连接已关闭 (代码: ${code}, 原因: ${reason})`);
 
     // 如果是手动断开，不进行重连
     if (this.reconnectState.isManualDisconnect) {
@@ -516,7 +516,7 @@ export class ProxyMCPServer {
     this.calculateNextInterval();
 
     this.logger.info(
-      `将在 ${this.reconnectState.nextInterval}ms 后进行第 ${this.reconnectState.attempts} 次重连`
+      `将在 ${Math.floor(this.reconnectState.nextInterval)}ms 后进行第 ${this.reconnectState.attempts} 次重连`
     );
 
     // 清理之前的重连定时器
@@ -608,7 +608,7 @@ export class ProxyMCPServer {
     }
 
     // 重置连接状态
-    this.isConnected = false;
+    this.connectionStatus = false;
     this.serverInitialized = false;
   }
 
@@ -676,10 +676,10 @@ export class ProxyMCPServer {
 
   private sendResponse(id: number | string | undefined, result: any): void {
     this.logger.debug(
-      `尝试发送响应: id=${id}, isConnected=${this.isConnected}, wsReadyState=${this.ws?.readyState}`
+      `尝试发送响应: id=${id}, isConnected=${this.connectionStatus}, wsReadyState=${this.ws?.readyState}`
     );
 
-    if (this.isConnected && this.ws?.readyState === WebSocket.OPEN) {
+    if (this.connectionStatus && this.ws?.readyState === WebSocket.OPEN) {
       const response: MCPMessage = {
         jsonrpc: "2.0",
         id,
@@ -696,7 +696,7 @@ export class ProxyMCPServer {
       }
     } else {
       this.logger.error(`无法发送响应: id=${id}, 连接状态检查失败`, {
-        isConnected: this.isConnected,
+        isConnected: this.connectionStatus,
         wsReadyState: this.ws?.readyState,
         wsReadyStateText:
           this.ws?.readyState === WebSocket.OPEN
@@ -711,7 +711,7 @@ export class ProxyMCPServer {
       });
 
       // 尝试重新连接并发送响应
-      if (!this.isConnected || this.ws?.readyState !== WebSocket.OPEN) {
+      if (!this.connectionStatus || this.ws?.readyState !== WebSocket.OPEN) {
         this.logger.warn(`尝试重新连接以发送响应: id=${id}`);
         this.scheduleReconnect();
       }
@@ -719,12 +719,12 @@ export class ProxyMCPServer {
   }
 
   /**
-   * 获取 MCP 服务器状态
+   * 获取服务器状态
    * @returns 服务器状态
    */
   public getStatus(): ProxyMCPServerStatus {
     return {
-      connected: this.isConnected,
+      connected: this.connectionStatus,
       initialized: this.serverInitialized,
       url: this.endpointUrl,
       availableTools: this.tools.size,
@@ -735,10 +735,18 @@ export class ProxyMCPServer {
   }
 
   /**
-   * 主动断开 MCP 连接
+   * 检查连接状态
+   * @returns 是否已连接
+   */
+  public isConnected(): boolean {
+    return this.connectionStatus;
+  }
+
+  /**
+   * 主动断开 小智连接
    */
   public disconnect(): void {
-    this.logger.info("主动断开 MCP 连接");
+    this.logger.info("主动断开 小智连接");
 
     // 标记为手动断开，阻止自动重连
     this.reconnectState.isManualDisconnect = true;
@@ -754,10 +762,10 @@ export class ProxyMCPServer {
   }
 
   /**
-   * 手动重连 MCP 接入点
+   * 手动重连小智接入点
    */
   public async reconnect(): Promise<void> {
-    this.logger.info("手动重连 MCP 接入点");
+    this.logger.info("手动重连小智接入点");
 
     // 停止自动重连
     this.stopReconnect();
@@ -1118,7 +1126,7 @@ export class ProxyMCPServer {
     id: string | number | undefined,
     error: { code: number; message: string; data?: any }
   ): void {
-    if (this.isConnected && this.ws?.readyState === WebSocket.OPEN) {
+    if (this.connectionStatus && this.ws?.readyState === WebSocket.OPEN) {
       const response = {
         jsonrpc: "2.0",
         id,
@@ -1288,7 +1296,7 @@ export class ProxyMCPServer {
     };
   } {
     return {
-      connected: this.isConnected,
+      connected: this.connectionStatus,
       initialized: this.serverInitialized,
       url: this.endpointUrl,
       availableTools: this.tools.size,

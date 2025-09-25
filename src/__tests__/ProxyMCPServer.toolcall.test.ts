@@ -27,7 +27,7 @@ describe("ProxyMCPServer 工具调用功能", () => {
 
     // 设置模拟的 WebSocket 连接
     (proxyServer as any).ws = mockWs;
-    (proxyServer as any).isConnected = true;
+    (proxyServer as any).connectionStatus = true;
   });
 
   describe("参数验证", () => {
