@@ -475,7 +475,7 @@ export class ProxyMCPServer {
   private handleConnectionClose(code: number, reason: string): void {
     this.connectionStatus = false;
     this.serverInitialized = false;
-    this.logger.info(`MCP 连接已关闭 (代码: ${code}, 原因: ${reason})`);
+    this.logger.info(`小智连接已关闭 (代码: ${code}, 原因: ${reason})`);
 
     // 如果是手动断开，不进行重连
     if (this.reconnectState.isManualDisconnect) {
@@ -743,10 +743,10 @@ export class ProxyMCPServer {
   }
 
   /**
-   * 主动断开 MCP 连接
+   * 主动断开 小智连接
    */
   public disconnect(): void {
-    this.logger.info("主动断开 MCP 连接");
+    this.logger.info("主动断开 小智连接");
 
     // 标记为手动断开，阻止自动重连
     this.reconnectState.isManualDisconnect = true;

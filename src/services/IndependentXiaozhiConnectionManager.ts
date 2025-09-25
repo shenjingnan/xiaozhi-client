@@ -3,6 +3,7 @@ import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { type Logger, logger } from "../Logger.js";
 import { ProxyMCPServer } from "../ProxyMCPServer.js";
 import { sliceEndpoint } from "../utils/mcpServerUtils.js";
+import { z } from "zod";
 
 // 使用接口定义避免循环依赖
 interface IMCPServiceManager {
@@ -73,13 +74,23 @@ export enum XiaozhiConnectionState {
 
 // 默认配置
 const DEFAULT_OPTIONS: Required<IndependentConnectionOptions> = {
-  healthCheckInterval: 60000, // 60秒健康检查间隔
+  healthCheckInterval: 5000, // 60秒健康检查间隔
   reconnectInterval: 5000,
   maxReconnectAttempts: 3,
   connectionTimeout: 10000,
   errorRecoveryEnabled: true,
   errorNotificationEnabled: true,
 };
+
+// zod 验证 schema
+const IndependentConnectionOptionsSchema = z.object({
+  healthCheckInterval: z.number().min(1000, "healthCheckInterval 必须是大于等于 1000 的数字").optional(),
+  reconnectInterval: z.number().min(100, "reconnectInterval 必须是大于等于 100 的数字").optional(),
+  maxReconnectAttempts: z.number().min(0, "maxReconnectAttempts 必须是大于等于 0 的数字").optional(),
+  connectionTimeout: z.number().min(1000, "connectionTimeout 必须是大于等于 1000 的数字").optional(),
+  errorRecoveryEnabled: z.boolean().optional(),
+  errorNotificationEnabled: z.boolean().optional(),
+}).strict();
 
 /**
  * 独立小智连接管理器
@@ -633,51 +644,20 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   }
 
   /**
-   * 验证连接选项
+   * 验证连接选项 (使用 zod 实现)
    */
   private validateOptions(options: Partial<IndependentConnectionOptions>): {
     valid: boolean;
     errors: string[];
   } {
-    const errors: string[] = [];
+    const result = IndependentConnectionOptionsSchema.safeParse(options);
 
-    if (options.healthCheckInterval !== undefined) {
-      if (
-        typeof options.healthCheckInterval !== "number" ||
-        options.healthCheckInterval < 1000
-      ) {
-        errors.push("healthCheckInterval 必须是大于等于 1000 的数字");
-      }
+    if (result.success) {
+      return { valid: true, errors: [] };
     }
 
-    if (options.reconnectInterval !== undefined) {
-      if (
-        typeof options.reconnectInterval !== "number" ||
-        options.reconnectInterval < 100
-      ) {
-        errors.push("reconnectInterval 必须是大于等于 100 的数字");
-      }
-    }
-
-    if (options.maxReconnectAttempts !== undefined) {
-      if (
-        typeof options.maxReconnectAttempts !== "number" ||
-        options.maxReconnectAttempts < 0
-      ) {
-        errors.push("maxReconnectAttempts 必须是大于等于 0 的数字");
-      }
-    }
-
-    if (options.connectionTimeout !== undefined) {
-      if (
-        typeof options.connectionTimeout !== "number" ||
-        options.connectionTimeout < 1000
-      ) {
-        errors.push("connectionTimeout 必须是大于等于 1000 的数字");
-      }
-    }
-
-    return { valid: errors.length === 0, errors };
+    const errors = result.error.errors.map(err => err.message);
+    return { valid: false, errors };
   }
 
   /**
@@ -1154,17 +1134,19 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    * 执行健康检查
    */
   private async performHealthCheck(): Promise<void> {
-    this.logger.debug("执行简化健康检查");
-    const healthCheckPromises: Promise<void>[] = [];
+    // TODO: 暂停健康检查
+    // NOTE: 后续通过 https://api.xiaozhi.me/mcp/endpoints/list?endpoint_ids=agent_<agent_id> 进行检查
+    // this.logger.debug("执行简化健康检查");
+    // const healthCheckPromises: Promise<void>[] = [];
 
-    for (const [endpoint, proxyServer] of this.connections) {
-      const status = this.connectionStates.get(endpoint);
-      if (!status || !status.healthCheckEnabled) continue;
+    // for (const [endpoint, proxyServer] of this.connections) {
+    //   const status = this.connectionStates.get(endpoint);
+    //   if (!status || !status.healthCheckEnabled) continue;
 
-      healthCheckPromises.push(this.performSingleHealthCheck(endpoint, status));
-    }
+    //   healthCheckPromises.push(this.performSingleHealthCheck(endpoint, status));
+    // }
 
-    await Promise.allSettled(healthCheckPromises);
+    // await Promise.allSettled(healthCheckPromises);
   }
 
   /**
@@ -1223,14 +1205,10 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       return;
     }
 
-    // 固定60秒重连间隔
-    const delay = 60000;
-    this.logger.info(`计划重连 ${sliceEndpoint(endpoint)}，延迟 ${delay}ms`);
-
     const timer = setTimeout(() => {
       this.reconnectTimers.delete(endpoint);
       this.performReconnect(endpoint);
-    }, delay);
+    }, this.options.healthCheckInterval);
 
     this.reconnectTimers.set(endpoint, timer);
   }
