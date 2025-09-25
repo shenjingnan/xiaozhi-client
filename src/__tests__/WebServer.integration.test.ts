@@ -275,9 +275,8 @@ describe("WebServer 集成测试", () => {
       expect(connectionStatus).toMatchObject({
         type: "multi-endpoint",
         manager: {
-          healthyConnections: expect.any(Number),
+          connectedConnections: expect.any(Number),
           totalConnections: expect.any(Number),
-          loadBalanceStats: expect.any(Object),
           healthCheckStats: expect.any(Object),
           reconnectStats: expect.any(Object),
         },
