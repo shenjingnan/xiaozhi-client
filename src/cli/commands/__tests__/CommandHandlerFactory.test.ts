@@ -130,7 +130,7 @@ describe("CommandHandlerFactory", () => {
       }
     });
 
-    it("应该错误信息的一致性", () => {
+    it("应该保证错误信息的一致性", () => {
       try {
         factory.createHandler("test");
       } catch (error1) {
