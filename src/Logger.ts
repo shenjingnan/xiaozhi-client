@@ -51,7 +51,6 @@ export class Logger {
   private maxLogFiles = 5; // 最多保留5个日志文件
 
   constructor(level: Level = "info") {
-    // 修改：支持传入日志级别参数，默认info
     // 检查是否为守护进程模式
     this.isDaemonMode = process.env.XIAOZHI_DAEMON === "true";
 
@@ -465,18 +464,39 @@ export class Logger {
     // pino 实例会自动处理流的关闭
     // 这里保持方法兼容性
   }
+
+  /**
+   * 动态设置日志级别
+   * @param level 新的日志级别
+   * @description 动态更新Logger实例的日志级别
+   */
+  setLevel(level: Level): void {
+    this.logLevel = this.validateLogLevel(level);
+
+    // 重新创建pino实例以应用新的日志级别
+    this.pinoInstance = this.createPinoInstance();
+  }
+
+  /**
+   * 获取当前日志级别
+   * @returns 当前日志级别
+   */
+  getLevel(): Level {
+    return this.logLevel;
+  }
 }
 
 // 全局Logger实例管理
 let globalLogger: Logger | null = null;
+let globalLogLevel: Level = "info"; // 全局日志级别
 
 /**
  * 创建Logger实例
- * @param level 日志级别，默认为info
+ * @param level 日志级别，默认为全局级别
  * @returns Logger实例
  */
-export function createLogger(level: Level = "info"): Logger {
-  return new Logger(level);
+export function createLogger(level?: Level): Logger {
+  return new Logger(level || globalLogLevel);
 }
 
 /**
@@ -485,7 +505,7 @@ export function createLogger(level: Level = "info"): Logger {
  */
 export function getLogger(): Logger {
   if (!globalLogger) {
-    globalLogger = new Logger("info"); // 默认info级别
+    globalLogger = new Logger(globalLogLevel); // 使用全局级别
   }
   return globalLogger;
 }
@@ -496,6 +516,28 @@ export function getLogger(): Logger {
  */
 export function setGlobalLogger(logger: Logger): void {
   globalLogger = logger;
+}
+
+/**
+ * 设置全局日志级别
+ * @param level 新的日志级别
+ * @description 更新全局日志级别，并影响现有和未来的Logger实例
+ */
+export function setGlobalLogLevel(level: Level): void {
+  globalLogLevel = level;
+
+  // 如果已存在全局Logger实例，更新其级别
+  if (globalLogger) {
+    globalLogger.setLevel(level);
+  }
+}
+
+/**
+ * 获取当前全局日志级别
+ * @returns 当前日志级别
+ */
+export function getGlobalLogLevel(): Level {
+  return globalLogLevel;
 }
 
 // 导出默认实例（向后兼容）
