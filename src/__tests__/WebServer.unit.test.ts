@@ -136,7 +136,6 @@ describe("WebServer Unit Tests", () => {
         reconnectTimers: new Map(),
         roundRobinIndex: 0,
         lastSelectedEndpoint: null,
-        performanceMetrics: {},
 
         // 方法
         initialize: vi.fn().mockResolvedValue(undefined),
@@ -214,7 +213,6 @@ describe("WebServer Unit Tests", () => {
         reconnectOptions: {},
         reconnectState: {},
         connectionTimeout: null,
-        performanceMetrics: {},
         callRecords: [],
         maxCallRecords: 100,
         retryConfig: {},

@@ -118,13 +118,6 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   // 重连管理
   private reconnectTimers: Map<string, NodeJS.Timeout> = new Map();
 
-  // 性能监控
-  private performanceMetrics = {
-    connectionStartTime: 0,
-    totalConnectionTime: 0,
-    connectionCount: 0,
-  };
-
   constructor(options?: IndependentConnectionOptions) {
     super();
     this.logger = logger;
@@ -189,7 +182,6 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     if (this.isConnecting) return;
 
     this.isConnecting = true;
-    this.performanceMetrics.connectionStartTime = Date.now();
     this.logger.debug(`开始连接所有小智接入点，总数: ${this.connections.size}`);
 
     try {
@@ -211,14 +203,8 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       ).length;
       const failureCount = results.length - successCount;
 
-      // 更新性能指标
-      const connectionTime =
-        Date.now() - this.performanceMetrics.connectionStartTime;
-      this.performanceMetrics.totalConnectionTime += connectionTime;
-      this.performanceMetrics.connectionCount++;
-
       this.logger.info(
-        `小智接入点连接完成 - 成功: ${successCount}, 失败: ${failureCount}, 耗时: ${connectionTime}ms`
+        `小智接入点连接完成 - 成功: ${successCount}, 失败: ${failureCount}`
       );
 
       // 如果所有连接都失败，抛出错误
@@ -751,31 +737,6 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
 
     await Promise.all(prewarmPromises);
     this.logger.info("连接预热完成");
-  }
-
-  /**
-   * 获取性能指标
-   */
-  getPerformanceMetrics(): {
-    connectionTime: {
-      total: number;
-      count: number;
-    };
-    totalConnections: number;
-    healthyConnections: number;
-  } {
-    const healthyConnections = Array.from(
-      this.connectionStates.values()
-    ).filter((status) => status.connected).length;
-
-    return {
-      connectionTime: {
-        total: this.performanceMetrics.totalConnectionTime,
-        count: this.performanceMetrics.connectionCount,
-      },
-      totalConnections: this.connections.size,
-      healthyConnections,
-    };
   }
 
   /**
