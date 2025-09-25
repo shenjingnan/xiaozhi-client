@@ -291,7 +291,6 @@ export class WebServer {
       // 获取小智连接管理器单例
       this.xiaozhiConnectionManager =
         await XiaozhiConnectionManagerSingleton.getInstance({
-          healthCheckInterval: 30000,
           reconnectInterval: 5000,
           maxReconnectAttempts: 3,
           connectionTimeout: 10000,

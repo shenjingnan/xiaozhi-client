@@ -113,7 +113,9 @@ describe("IndependentXiaozhiConnectionManager", () => {
       const tools: any[] = [];
       // 端点将在initialize方法中通过配置添加
       // 这里只测试初始化过程
-      await expect(manager.initialize([endpoint], tools)).resolves.not.toThrow();
+      await expect(
+        manager.initialize([endpoint], tools)
+      ).resolves.not.toThrow();
     });
 
     it("应该在初始化失败时抛出错误", async () => {
@@ -125,7 +127,9 @@ describe("IndependentXiaozhiConnectionManager", () => {
       const endpoint = "ws://localhost:8080";
       const tools: any[] = [];
 
-      await expect(manager.initialize([endpoint], tools)).rejects.toThrow("连接失败");
+      await expect(manager.initialize([endpoint], tools)).rejects.toThrow(
+        "连接失败"
+      );
     });
 
     it("应该能够获取连接状态", async () => {
@@ -547,15 +551,15 @@ describe("IndependentXiaozhiConnectionManager", () => {
   describe("验证无负载均衡行为", () => {
     it("不应该有负载均衡相关的方法", () => {
       // 验证 getHealthyConnections 方法已废弃
-      const consoleSpy = vi.spyOn(console, 'warn');
-      
+      const consoleSpy = vi.spyOn(console, "warn");
+
       expect(() => manager.getHealthyConnections()).not.toThrow();
-      
+
       // 验证确实发出了废弃警告
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining("已废弃")
       );
-      
+
       consoleSpy.mockRestore();
     });
 
