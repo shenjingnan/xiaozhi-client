@@ -1,10 +1,9 @@
 /**
  * 小智连接管理器单例
- * 提供全局唯一的 XiaozhiConnectionManager 实例，解决多实例资源冲突问题
+ * 提供全局唯一的 XiaozhiConnectionManager 实例
  */
 
 import {
-  type ConnectionStatus,
   type IndependentConnectionOptions,
   IndependentXiaozhiConnectionManager,
 } from "./IndependentXiaozhiConnectionManager.js";
