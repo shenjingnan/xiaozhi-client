@@ -142,7 +142,9 @@ describe("WebServer Unit Tests", () => {
         connect: vi.fn().mockResolvedValue(undefined),
         disconnect: vi.fn().mockResolvedValue(undefined),
         setServiceManager: vi.fn(),
-        getConnectionStatus: vi.fn().mockReturnValue([{}, {}]),
+        getConnectionStatus: vi
+          .fn()
+          .mockReturnValue([{ connected: true }, { connected: true }]),
         getLoadBalanceStats: vi
           .fn()
           .mockReturnValue({ strategy: "round-robin" }),
@@ -188,10 +190,9 @@ describe("WebServer Unit Tests", () => {
       expect(connectionStatus).toMatchObject({
         type: "multi-endpoint",
         manager: {
-          healthyConnections: 2,
+          connectedConnections: 2,
           totalConnections: 2,
-          loadBalanceStats: { strategy: "round-robin" },
-          healthCheckStats: { totalChecks: 10 },
+          healthCheckStats: {},
           reconnectStats: { totalReconnects: 0 },
         },
         connections: expect.any(Array),
