@@ -85,7 +85,7 @@ export class CozeApiHandler {
 
       // 检查扣子配置
       if (!configManager.isCozeConfigValid()) {
-        logger.warn("扣子配置无效");
+        logger.debug("扣子配置无效");
         return c.json(
           createErrorResponse(
             "扣子配置无效，请检查 platforms.coze.token 配置",
@@ -156,7 +156,7 @@ export class CozeApiHandler {
 
       // 检查扣子配置
       if (!configManager.isCozeConfigValid()) {
-        logger.warn("扣子配置无效");
+        logger.debug("扣子配置无效");
         return c.json(
           createErrorResponse(
             "扣子配置无效，请检查 platforms.coze.token 配置",
@@ -301,7 +301,7 @@ export class CozeApiHandler {
 
       // 检查扣子配置
       if (!configManager.isCozeConfigValid()) {
-        logger.warn("扣子配置无效");
+        logger.debug("扣子配置无效");
         return c.json(
           createErrorResponse(
             "扣子配置无效，请检查 platforms.coze.token 配置",
@@ -360,7 +360,7 @@ export class CozeApiHandler {
 
       // 检查扣子配置
       if (!configManager.isCozeConfigValid()) {
-        logger.warn("扣子配置无效");
+        logger.debug("扣子配置无效");
         return c.json(
           createErrorResponse(
             "扣子配置无效，请检查 platforms.coze.token 配置",

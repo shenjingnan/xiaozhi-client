@@ -43,7 +43,6 @@ vi.mock("../services/XiaozhiConnectionManagerSingleton.js", () => ({
       initialize: vi.fn().mockResolvedValue(undefined),
       connect: vi.fn().mockResolvedValue(undefined),
       setServiceManager: vi.fn(),
-      getHealthyConnections: vi.fn().mockReturnValue([]),
       getConnectionStatus: vi.fn().mockReturnValue([]),
       getLoadBalanceStats: vi.fn().mockReturnValue({}),
       getHealthCheckStats: vi.fn().mockReturnValue({}),
@@ -137,15 +136,15 @@ describe("WebServer Unit Tests", () => {
         reconnectTimers: new Map(),
         roundRobinIndex: 0,
         lastSelectedEndpoint: null,
-        performanceMetrics: {},
 
         // 方法
         initialize: vi.fn().mockResolvedValue(undefined),
         connect: vi.fn().mockResolvedValue(undefined),
         disconnect: vi.fn().mockResolvedValue(undefined),
         setServiceManager: vi.fn(),
-        getHealthyConnections: vi.fn().mockReturnValue([{}, {}]),
-        getConnectionStatus: vi.fn().mockReturnValue([{}, {}]),
+        getConnectionStatus: vi
+          .fn()
+          .mockReturnValue([{ connected: true }, { connected: true }]),
         getLoadBalanceStats: vi
           .fn()
           .mockReturnValue({ strategy: "round-robin" }),
@@ -191,10 +190,9 @@ describe("WebServer Unit Tests", () => {
       expect(connectionStatus).toMatchObject({
         type: "multi-endpoint",
         manager: {
-          healthyConnections: 2,
+          connectedConnections: 2,
           totalConnections: 2,
-          loadBalanceStats: { strategy: "round-robin" },
-          healthCheckStats: { totalChecks: 10 },
+          healthCheckStats: {},
           reconnectStats: { totalReconnects: 0 },
         },
         connections: expect.any(Array),
@@ -216,7 +214,6 @@ describe("WebServer Unit Tests", () => {
         reconnectOptions: {},
         reconnectState: {},
         connectionTimeout: null,
-        performanceMetrics: {},
         callRecords: [],
         maxCallRecords: 100,
         retryConfig: {},
@@ -281,13 +278,6 @@ describe("WebServer Unit Tests", () => {
       const customPort = 4000;
       const customWebServer = new WebServer(customPort);
       expect(customWebServer).toBeDefined();
-    });
-  });
-
-  describe("Integration with Connection Manager", () => {
-    it("should have getBestXiaozhiConnection method", () => {
-      // 这个方法是私有的，但我们可以验证它存在
-      expect(webServer.getBestXiaozhiConnection).toBeDefined();
     });
   });
 });

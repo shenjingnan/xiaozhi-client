@@ -37,7 +37,7 @@ describe("ProxyMCPServer ID 类型处理回归测试", () => {
 
     // Set up the WebSocket connection manually for testing
     (proxyServer as any).ws = mockWebSocket;
-    (proxyServer as any).isConnected = true;
+    (proxyServer as any).connectionStatus = true;
   });
 
   describe("ID 类型保持测试", () => {

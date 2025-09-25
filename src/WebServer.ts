@@ -6,13 +6,11 @@ import { WebSocketServer } from "ws";
 import { type Logger, logger } from "./Logger.js";
 import { ProxyMCPServer, type Tool } from "./ProxyMCPServer.js";
 import { convertLegacyToNew } from "./adapters/ConfigAdapter.js";
-import { createContainer } from "./cli/Container.js";
 import { configManager } from "./configManager.js";
-import type { AppConfig, MCPServerConfig } from "./configManager.js";
-// MCPTransportType 已移除，不再需要导入
+import type { MCPServerConfig } from "./configManager.js";
+import type { IndependentXiaozhiConnectionManager } from "./services/IndependentXiaozhiConnectionManager.js";
 import type { MCPServiceManager } from "./services/MCPServiceManager.js";
 import { MCPServiceManagerSingleton } from "./services/MCPServiceManagerSingleton.js";
-import type { XiaozhiConnectionManager } from "./services/XiaozhiConnectionManager.js";
 import { XiaozhiConnectionManagerSingleton } from "./services/XiaozhiConnectionManagerSingleton.js";
 
 import { ConfigApiHandler } from "./handlers/ConfigApiHandler.js";
@@ -95,7 +93,9 @@ export class WebServer {
 
   // 向后兼容的属性
   private proxyMCPServer: ProxyMCPServer | undefined;
-  private xiaozhiConnectionManager: XiaozhiConnectionManager | undefined;
+  private xiaozhiConnectionManager:
+    | IndependentXiaozhiConnectionManager
+    | undefined;
   private mcpServiceManager: MCPServiceManager | undefined;
 
   /**
@@ -291,28 +291,28 @@ export class WebServer {
       // 获取小智连接管理器单例
       this.xiaozhiConnectionManager =
         await XiaozhiConnectionManagerSingleton.getInstance({
-          healthCheckInterval: 30000,
           reconnectInterval: 5000,
-          maxReconnectAttempts: 10,
-          loadBalanceStrategy: "round-robin",
+          maxReconnectAttempts: 3,
           connectionTimeout: 10000,
         });
 
       // 设置 MCP 服务管理器
-      if (this.mcpServiceManager) {
+      if (this.mcpServiceManager && this.xiaozhiConnectionManager) {
         this.xiaozhiConnectionManager.setServiceManager(this.mcpServiceManager);
       }
 
       // 初始化连接管理器
-      await this.xiaozhiConnectionManager.initialize(validEndpoints, tools);
+      if (this.xiaozhiConnectionManager) {
+        await this.xiaozhiConnectionManager.initialize(validEndpoints, tools);
 
-      // 连接所有端点
-      await this.xiaozhiConnectionManager.connect();
+        // 连接所有端点
+        await this.xiaozhiConnectionManager.connect();
 
-      // 设置配置变更监听器
-      this.xiaozhiConnectionManager.on("configChange", (event: any) => {
-        this.logger.info(`小智连接配置变更: ${event.type}`, event.data);
-      });
+        // 设置配置变更监听器
+        this.xiaozhiConnectionManager.on("configChange", (event: any) => {
+          this.logger.info(`小智连接配置变更: ${event.type}`, event.data);
+        });
+      }
 
       this.logger.info(
         `小智接入点连接管理器初始化完成，管理 ${validEndpoints.length} 个端点`
@@ -341,16 +341,6 @@ export class WebServer {
   }
 
   /**
-   * 获取最佳的小智连接（用于向后兼容）
-   */
-  private getBestXiaozhiConnection(): ProxyMCPServer | null {
-    if (this.xiaozhiConnectionManager) {
-      return this.xiaozhiConnectionManager.selectBestConnection();
-    }
-    return this.proxyMCPServer || null;
-  }
-
-  /**
    * 获取小智连接状态信息
    */
   getXiaozhiConnectionStatus(): any {
@@ -358,12 +348,12 @@ export class WebServer {
       return {
         type: "multi-endpoint",
         manager: {
-          healthyConnections:
-            this.xiaozhiConnectionManager.getHealthyConnections().length,
+          connectedConnections: this.xiaozhiConnectionManager
+            .getConnectionStatus()
+            .filter((status) => status.connected).length,
           totalConnections:
             this.xiaozhiConnectionManager.getConnectionStatus().length,
-          loadBalanceStats: this.xiaozhiConnectionManager.getLoadBalanceStats(),
-          healthCheckStats: this.xiaozhiConnectionManager.getHealthCheckStats(),
+          healthCheckStats: {}, // 简化后不再提供复杂的健康检查统计
           reconnectStats: this.xiaozhiConnectionManager.getReconnectStats(),
         },
         connections: this.xiaozhiConnectionManager.getConnectionStatus(),
@@ -687,7 +677,6 @@ export class WebServer {
     // 2. 初始化所有连接（配置驱动）
     try {
       await this.initializeConnections();
-      this.logger.info("所有连接初始化完成");
     } catch (error) {
       this.logger.error("连接初始化失败，但 Web 服务器继续运行:", error);
       // 连接失败不影响 Web 服务器启动，用户可以通过界面查看错误信息

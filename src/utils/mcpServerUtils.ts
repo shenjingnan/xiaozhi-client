@@ -229,3 +229,7 @@ export function validateMcpServerConfig(
     };
   }
 }
+
+export function sliceEndpoint(endpoint: string) {
+  return `${endpoint.slice(0, 30)}...${endpoint.slice(-10)}`;
+}

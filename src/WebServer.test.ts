@@ -321,7 +321,6 @@ vi.mock("./services/XiaozhiConnectionManagerSingleton", () => ({
       initialize: vi.fn(),
       connect: vi.fn(),
       on: vi.fn(),
-      getHealthyConnections: vi.fn(() => []),
       getConnectionStatus: vi.fn(() => []),
       getLoadBalanceStats: vi.fn(() => ({})),
       getHealthCheckStats: vi.fn(() => ({})),

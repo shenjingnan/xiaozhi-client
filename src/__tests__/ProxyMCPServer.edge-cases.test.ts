@@ -25,7 +25,7 @@ describe("ProxyMCPServer 边界条件和异常场景测试", () => {
     proxyServer = new ProxyMCPServer("ws://test-endpoint");
     proxyServer.setServiceManager(mockServiceManager);
     (proxyServer as any).ws = mockWs;
-    (proxyServer as any).isConnected = true;
+    (proxyServer as any).connectionStatus = true;
   });
 
   describe("参数验证边界测试", () => {
@@ -211,7 +211,7 @@ describe("ProxyMCPServer 边界条件和异常场景测试", () => {
 
   describe("WebSocket 连接异常测试", () => {
     it("应该处理 WebSocket 未连接状态", () => {
-      (proxyServer as any).isConnected = false;
+      (proxyServer as any).connectionStatus = false;
 
       (proxyServer as any).sendErrorResponse("test-id", {
         code: -32000,
