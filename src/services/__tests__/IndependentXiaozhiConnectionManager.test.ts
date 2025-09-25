@@ -549,20 +549,6 @@ describe("IndependentXiaozhiConnectionManager", () => {
   });
 
   describe("验证无负载均衡行为", () => {
-    it("不应该有负载均衡相关的方法", () => {
-      // 验证 getHealthyConnections 方法已废弃
-      const consoleSpy = vi.spyOn(console, "warn");
-
-      expect(() => manager.getHealthyConnections()).not.toThrow();
-
-      // 验证确实发出了废弃警告
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining("已废弃")
-      );
-
-      consoleSpy.mockRestore();
-    });
-
     it("应该为每个端点创建独立连接，不进行负载均衡", async () => {
       const endpoints = [
         "ws://localhost:8080",

@@ -43,7 +43,6 @@ vi.mock("../services/XiaozhiConnectionManagerSingleton.js", () => ({
       initialize: vi.fn().mockResolvedValue(undefined),
       connect: vi.fn().mockResolvedValue(undefined),
       setServiceManager: vi.fn(),
-      getHealthyConnections: vi.fn().mockReturnValue([]),
       getConnectionStatus: vi.fn().mockReturnValue([]),
       getLoadBalanceStats: vi.fn().mockReturnValue({}),
       getHealthCheckStats: vi.fn().mockReturnValue({}),
@@ -144,7 +143,6 @@ describe("WebServer Unit Tests", () => {
         connect: vi.fn().mockResolvedValue(undefined),
         disconnect: vi.fn().mockResolvedValue(undefined),
         setServiceManager: vi.fn(),
-        getHealthyConnections: vi.fn().mockReturnValue([{}, {}]),
         getConnectionStatus: vi.fn().mockReturnValue([{}, {}]),
         getLoadBalanceStats: vi
           .fn()

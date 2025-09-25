@@ -1,9 +1,9 @@
 import { EventEmitter } from "node:events";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import { z } from "zod";
 import { type Logger, logger } from "../Logger.js";
 import { ProxyMCPServer } from "../ProxyMCPServer.js";
 import { sliceEndpoint } from "../utils/mcpServerUtils.js";
-import { z } from "zod";
 
 // 使用接口定义避免循环依赖
 interface IMCPServiceManager {
@@ -390,24 +390,6 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    */
   getConnectionStatus(): ConnectionStatus[] {
     return Array.from(this.connectionStates.values());
-  }
-
-  /**
-   * 获取健康的连接列表（兼容性方法）
-   * @deprecated 此方法为兼容性保留，新代码应使用 getConnectionStatus()
-   */
-  getHealthyConnections(): ProxyMCPServer[] {
-    console.warn(
-      "⚠️ getHealthyConnections() 方法已废弃，在独立架构中不再支持负载均衡"
-    );
-    const healthyConnections: ProxyMCPServer[] = [];
-    for (const [endpoint, proxyServer] of this.connections) {
-      const status = this.connectionStates.get(endpoint);
-      if (status?.connected) {
-        healthyConnections.push(proxyServer);
-      }
-    }
-    return healthyConnections;
   }
 
   /**

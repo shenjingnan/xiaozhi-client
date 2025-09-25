@@ -348,8 +348,9 @@ export class WebServer {
       return {
         type: "multi-endpoint",
         manager: {
-          healthyConnections:
-            this.xiaozhiConnectionManager.getHealthyConnections().length,
+          connectedConnections: this.xiaozhiConnectionManager
+            .getConnectionStatus()
+            .filter((status) => status.connected).length,
           totalConnections:
             this.xiaozhiConnectionManager.getConnectionStatus().length,
           healthCheckStats: {}, // 简化后不再提供复杂的健康检查统计
