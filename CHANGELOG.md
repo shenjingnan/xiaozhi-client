@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.7.7-beta.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.4...v1.7.7-beta.0) (2025-09-26)
+
+### Features
+
+* **docs:** 添加扣子工作流集成文档 ([#331](https://github.com/shenjingnan/xiaozhi-client/issues/331)) ([0944a71](https://github.com/shenjingnan/xiaozhi-client/commit/0944a71b1da625890f6b462fff82e61ddd2a6206))
+* **web:** 实现 Web 管理界面版本号显示功能 ([#338](https://github.com/shenjingnan/xiaozhi-client/issues/338)) ([3f55043](https://github.com/shenjingnan/xiaozhi-client/commit/3f55043ea96a39397d9845127ce7f82633055667))
+
+### Bug Fixes
+
+* **deps:** update radix-ui-primitives monorepo ([#291](https://github.com/shenjingnan/xiaozhi-client/issues/291)) ([55c0ce2](https://github.com/shenjingnan/xiaozhi-client/commit/55c0ce20c05d0af76c1cc4a26fb3638b07e7a2ce))
+* **logging:** 修复 --debug 参数时序问题，确保所有模块正确输出 DEBUG 日志 ([#342](https://github.com/shenjingnan/xiaozhi-client/issues/342)) ([48affe4](https://github.com/shenjingnan/xiaozhi-client/commit/48affe4cbbc1174b2f5a6c4fdfeb5021834a7adc))
+* **security:** 修复 @conventional-changelog/git-client 参数注入安全漏洞 ([#343](https://github.com/shenjingnan/xiaozhi-client/issues/343)) ([bc10ad2](https://github.com/shenjingnan/xiaozhi-client/commit/bc10ad2a66c7b5f2e4929f5cf66ac4d0d3bb8fb3))
+* **tool-api:** 修复 Web 界面显示已删除 MCP 工具的问题 ([#336](https://github.com/shenjingnan/xiaozhi-client/issues/336)) ([cec315b](https://github.com/shenjingnan/xiaozhi-client/commit/cec315b0b356d5316ac04a7761ff1b8ce544887b))
+* upgrade version ([e0346a5](https://github.com/shenjingnan/xiaozhi-client/commit/e0346a5b8fbc42659ce0fa0fbfd38a59f144c444))
+* **workflow:** add codeql ([b739d7b](https://github.com/shenjingnan/xiaozhi-client/commit/b739d7b89390d5edfb84447a1418426dd8abf942))
+
 ## [1.7.4](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.3...v1.7.4) (2025-09-18)
 
 ### Features
