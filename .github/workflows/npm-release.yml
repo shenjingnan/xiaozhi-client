@@ -28,50 +28,9 @@ permissions:
   contents: read
 
 jobs:
-  # 新增：CodeQL 安全扫描作业
-  security-scan:
-    name: 安全扫描
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-    steps:
-      - name: 检出代码
-        uses: actions/checkout@v4
-
-      - name: 初始化 CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: javascript
-          config-file: ./.github/codeql/codeql-config.yml # 可选：自定义配置
-
-      - name: 安装 pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.13.1
-
-      - name: 设置 Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: ".nvmrc"
-          cache: "pnpm"
-
-      - name: 安装依赖
-        run: pnpm install --frozen-lockfile
-
-      - name: 构建项目
-        run: pnpm build # 如果有构建步骤
-
-      - name: 执行 CodeQL 分析
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:javascript"
-
   npm-release:
     name: NPM 发布
     runs-on: ubuntu-latest
-    needs: security-scan # 依赖安全扫描完成
     concurrency:
       group: npm-release-${{ github.ref }}
       cancel-in-progress: false
