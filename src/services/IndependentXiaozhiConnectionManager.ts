@@ -3,6 +3,7 @@ import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { type Logger, logger } from "../Logger.js";
 import { ProxyMCPServer } from "../ProxyMCPServer.js";
+import { type EventBus, getEventBus } from "../services/EventBus.js";
 import { sliceEndpoint } from "../utils/mcpServerUtils.js";
 
 // 使用接口定义避免循环依赖
@@ -107,6 +108,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   // 核心依赖
   private mcpServiceManager: IMCPServiceManager | null = null;
   private logger: Logger;
+  private eventBus: EventBus;
 
   // 状态管理
   private isInitialized = false;
@@ -121,6 +123,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   constructor(options?: IndependentConnectionOptions) {
     super();
     this.logger = logger;
+    this.eventBus = getEventBus();
     this.options = { ...DEFAULT_OPTIONS, ...options };
 
     this.logger.debug("[IndependentXiaozhiConnectionManager] 实例已创建");
@@ -464,6 +467,28 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     for (const [endpoint] of this.reconnectTimers) {
       this.stopReconnect(endpoint);
     }
+  }
+
+  /**
+   * 发射接入点状态变更事件
+   */
+  private emitEndpointStatusChanged(
+    endpoint: string,
+    connected: boolean,
+    operation: "connect" | "disconnect" | "reconnect",
+    success: boolean,
+    message?: string,
+    source = "connection-manager"
+  ): void {
+    this.eventBus.emitEvent("endpoint:status:changed", {
+      endpoint,
+      connected,
+      operation,
+      success,
+      message,
+      timestamp: Date.now(),
+      source,
+    });
   }
 
   /**
@@ -862,6 +887,16 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       status.lastError = undefined;
       status.reconnectAttempts = 0;
 
+      // 发射连接成功事件
+      this.emitEndpointStatusChanged(
+        endpoint,
+        true,
+        "connect",
+        true,
+        "接入点连接成功",
+        "connection-manager"
+      );
+
       this.logger.info(`小智接入点连接成功: ${sliceEndpoint(endpoint)}`);
     } catch (error) {
       // 更新连接失败状态
@@ -869,6 +904,16 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       status.initialized = false;
       status.lastError = error instanceof Error ? error.message : String(error);
       status.reconnectAttempts++;
+
+      // 发射连接失败事件
+      this.emitEndpointStatusChanged(
+        endpoint,
+        false,
+        "connect",
+        false,
+        error instanceof Error ? error.message : "连接失败",
+        "connection-manager"
+      );
 
       this.logger.error(
         `小智接入点连接失败 ${sliceEndpoint(endpoint)}:`,
@@ -904,6 +949,16 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       status.connected = false;
       status.initialized = false;
 
+      // 发射断开连接成功事件
+      this.emitEndpointStatusChanged(
+        endpoint,
+        false,
+        "disconnect",
+        true,
+        "接入点断开成功",
+        "connection-manager"
+      );
+
       this.logger.debug(`小智接入点断开成功: ${sliceEndpoint(endpoint)}`);
     } catch (error) {
       this.logger.error(
@@ -913,6 +968,16 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       // 即使断开失败，也要更新状态
       status.connected = false;
       status.initialized = false;
+
+      // 发射断开连接失败事件
+      this.emitEndpointStatusChanged(
+        endpoint,
+        false,
+        "disconnect",
+        false,
+        error instanceof Error ? error.message : "断开失败",
+        "connection-manager"
+      );
     }
   }
 
@@ -1012,6 +1077,16 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       status.reconnectAttempts = 0;
       status.isReconnecting = false;
 
+      // 发射重连成功事件
+      this.emitEndpointStatusChanged(
+        endpoint,
+        true,
+        "reconnect",
+        true,
+        "接入点重连成功",
+        "connection-manager"
+      );
+
       this.logger.info(`重连成功 ${sliceEndpoint(endpoint)}`);
     } catch (error) {
       // 更新连接失败状态
@@ -1020,6 +1095,16 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       status.lastError = error instanceof Error ? error.message : String(error);
       status.reconnectAttempts++;
       status.isReconnecting = false;
+
+      // 发射重连失败事件
+      this.emitEndpointStatusChanged(
+        endpoint,
+        false,
+        "reconnect",
+        false,
+        error instanceof Error ? error.message : "重连失败",
+        "connection-manager"
+      );
 
       this.logger.error(`重连失败 ${sliceEndpoint(endpoint)}:`, error);
 

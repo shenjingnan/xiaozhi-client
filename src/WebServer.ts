@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 import { serve } from "@hono/node-server";
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { WebSocketServer } from "ws";
 import { type Logger, logger } from "./Logger.js";
@@ -16,6 +16,7 @@ import { XiaozhiConnectionManagerSingleton } from "./services/XiaozhiConnectionM
 import { ConfigApiHandler } from "./handlers/ConfigApiHandler.js";
 import { CozeApiHandler } from "./handlers/CozeApiHandler.js";
 import { HeartbeatHandler } from "./handlers/HeartbeatHandler.js";
+import { MCPEndpointApiHandler } from "./handlers/MCPEndpointApiHandler.js";
 import { MCPRouteHandler } from "./handlers/MCPRouteHandler.js";
 import { RealtimeNotificationHandler } from "./handlers/RealtimeNotificationHandler.js";
 import { ServiceApiHandler } from "./handlers/ServiceApiHandler.js";
@@ -184,6 +185,9 @@ export class WebServer {
     this.setupRoutes();
 
     this.logger.info("WebServer 架构重构完成 - 第二阶段：模块化拆分");
+
+    // 监听接入点状态变更事件
+    this.setupEndpointStatusListener();
 
     // HTTP 服务器和 WebSocket 服务器将在 start() 方法中初始化
   }
@@ -375,6 +379,78 @@ export class WebServer {
   }
 
   /**
+   * 处理获取接入点状态请求
+   */
+  private async handleEndpointStatus(c: Context): Promise<Response> {
+    if (!this.xiaozhiConnectionManager) {
+      const errorResponse = this.createErrorResponse(
+        "CONNECTION_MANAGER_NOT_AVAILABLE",
+        "连接管理器未初始化"
+      );
+      return c.json(errorResponse, 503);
+    }
+
+    const mcpEndpointApiHandler = new MCPEndpointApiHandler(
+      this.xiaozhiConnectionManager
+    );
+    return mcpEndpointApiHandler.getEndpointStatus(c);
+  }
+
+  /**
+   * 处理接入点连接请求
+   */
+  private async handleEndpointConnect(c: Context): Promise<Response> {
+    if (!this.xiaozhiConnectionManager) {
+      const errorResponse = this.createErrorResponse(
+        "CONNECTION_MANAGER_NOT_AVAILABLE",
+        "连接管理器未初始化"
+      );
+      return c.json(errorResponse, 503);
+    }
+
+    const mcpEndpointApiHandler = new MCPEndpointApiHandler(
+      this.xiaozhiConnectionManager
+    );
+    return mcpEndpointApiHandler.connectEndpoint(c);
+  }
+
+  /**
+   * 处理接入点断开请求
+   */
+  private async handleEndpointDisconnect(c: Context): Promise<Response> {
+    if (!this.xiaozhiConnectionManager) {
+      const errorResponse = this.createErrorResponse(
+        "CONNECTION_MANAGER_NOT_AVAILABLE",
+        "连接管理器未初始化"
+      );
+      return c.json(errorResponse, 503);
+    }
+
+    const mcpEndpointApiHandler = new MCPEndpointApiHandler(
+      this.xiaozhiConnectionManager
+    );
+    return mcpEndpointApiHandler.disconnectEndpoint(c);
+  }
+
+  /**
+   * 处理接入点重连请求
+   */
+  private async handleEndpointReconnect(c: Context): Promise<Response> {
+    if (!this.xiaozhiConnectionManager) {
+      const errorResponse = this.createErrorResponse(
+        "CONNECTION_MANAGER_NOT_AVAILABLE",
+        "连接管理器未初始化"
+      );
+      return c.json(errorResponse, 503);
+    }
+
+    const mcpEndpointApiHandler = new MCPEndpointApiHandler(
+      this.xiaozhiConnectionManager
+    );
+    return mcpEndpointApiHandler.reconnectEndpoint(c);
+  }
+
+  /**
    * 带重试的连接方法
    */
   private async connectWithRetry<T>(
@@ -549,6 +625,20 @@ export class WebServer {
       CozeApiHandler.getCacheStats(c)
     );
 
+    // MCP 端点管理相关路由 - 动态处理
+    this.app?.get("/api/endpoints/:endpoint/status", (c) =>
+      this.handleEndpointStatus(c)
+    );
+    this.app?.post("/api/endpoints/:endpoint/connect", (c) =>
+      this.handleEndpointConnect(c)
+    );
+    this.app?.post("/api/endpoints/:endpoint/disconnect", (c) =>
+      this.handleEndpointDisconnect(c)
+    );
+    this.app?.post("/api/endpoints/:endpoint/reconnect", (c) =>
+      this.handleEndpointReconnect(c)
+    );
+
     // MCP 服务路由 - 符合 MCP Streamable HTTP 规范
     this.app?.post("/mcp", (c) => this.mcpRouteHandler.handlePost(c));
     this.app?.get("/mcp", (c) => this.mcpRouteHandler.handleGet(c));
@@ -627,6 +717,31 @@ export class WebServer {
 
       // 发送初始数据
       this.realtimeNotificationHandler.sendInitialData(ws, clientId);
+    });
+  }
+
+  /**
+   * 设置接入点状态变更事件监听
+   */
+  private setupEndpointStatusListener(): void {
+    this.eventBus.onEvent("endpoint:status:changed", (eventData) => {
+      // 向所有连接的 WebSocket 客户端广播接入点状态变更事件
+      const message = {
+        type: "endpoint_status_changed",
+        data: {
+          endpoint: eventData.endpoint,
+          connected: eventData.connected,
+          operation: eventData.operation,
+          success: eventData.success,
+          message: eventData.message,
+          timestamp: eventData.timestamp,
+        },
+      };
+
+      this.notificationService.broadcast("endpoint_status_changed", message);
+      this.logger.debug(
+        `广播接入点状态变更事件: ${eventData.endpoint} - ${eventData.operation}`
+      );
     });
   }
 
