@@ -22,7 +22,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { useWebSocket } from "@/hooks/useWebSocket";
 import { apiClient } from "@/services/api";
 import { webSocketManager } from "@/services/websocket";
 import { useConfig, useMcpEndpoint } from "@/stores/config";
@@ -31,7 +30,6 @@ import {
   CopyIcon,
   Loader2Icon,
   PlusIcon,
-  RefreshCwIcon,
   SettingsIcon,
   TrashIcon,
   WifiIcon,
@@ -105,7 +103,6 @@ export function McpEndpointSettingButton() {
 
   const config = useConfig();
   const mcpEndpoint = useMcpEndpoint();
-  const { updateConfig } = useWebSocket();
 
   // 获取接入点状态
   const fetchEndpointStatus = useCallback(
@@ -242,37 +239,6 @@ export function McpEndpointSettingButton() {
     }
   };
 
-  // 重连接入点
-  const handleReconnect = async (endpoint: string) => {
-    updateEndpointState(endpoint, { isOperating: true });
-
-    try {
-      await apiClient.reconnectEndpoint(endpoint);
-      updateEndpointState(endpoint, {
-        connected: true,
-        isOperating: false,
-        lastOperation: {
-          type: "reconnect",
-          success: true,
-          message: "重连成功",
-          timestamp: Date.now(),
-        },
-      });
-      toast.success("接入点重连成功");
-    } catch (error) {
-      updateEndpointState(endpoint, {
-        isOperating: false,
-        lastOperation: {
-          type: "reconnect",
-          success: false,
-          message: error instanceof Error ? error.message : "重连失败",
-          timestamp: Date.now(),
-        },
-      });
-      toast.error(error instanceof Error ? error.message : "接入点重连失败");
-    }
-  };
-
   // 复制接入点地址到剪贴板
   const handleCopy = async (endpoint: string) => {
     try {
@@ -303,34 +269,23 @@ export function McpEndpointSettingButton() {
 
   // 删除接入点
   const handleDeleteEndpoint = async () => {
-    if (!config || !endpointToDelete) {
-      toast.error("配置数据未加载或未选择要删除的接入点");
+    if (!endpointToDelete) {
+      toast.error("未选择要删除的接入点");
       return;
     }
 
     setIsDeleting(true);
     try {
-      const currentEndpoints = Array.isArray(mcpEndpoint)
-        ? mcpEndpoint
-        : [mcpEndpoint];
-      const updatedEndpoints = currentEndpoints.filter(
-        (ep) => ep !== endpointToDelete && ep !== undefined
-      ) as string[];
+      // 调用后端 API 删除接入点
+      await apiClient.removeEndpoint(endpointToDelete);
 
-      // 如果删除后没有接入点了，设置为空字符串
-      const newMcpEndpoint =
-        updatedEndpoints.length > 0
-          ? updatedEndpoints.length === 1
-            ? updatedEndpoints[0]
-            : updatedEndpoints
-          : "";
+      // 从本地状态中移除该接入点
+      setEndpointStates((prev) => {
+        const newStates = { ...prev };
+        delete newStates[endpointToDelete];
+        return newStates;
+      });
 
-      const updatedConfig = {
-        ...config,
-        mcpEndpoint: newMcpEndpoint,
-      };
-
-      await updateConfig(updatedConfig);
       toast.success("接入点已删除");
       setDeleteConfirmOpen(false);
       setEndpointToDelete("");
@@ -366,18 +321,24 @@ export function McpEndpointSettingButton() {
 
     setIsAdding(true);
     try {
-      // 将新接入点添加到数组的第一位
-      const updatedEndpoints = [
-        newEndpoint,
-        ...currentEndpoints.filter((ep) => ep !== undefined && ep !== ""),
-      ] as string[];
+      // 调用后端 API 添加接入点
+      const endpointStatus = await apiClient.addEndpoint(newEndpoint);
 
-      const updatedConfig = {
-        ...config,
-        mcpEndpoint: updatedEndpoints,
-      };
+      // 初始化新接入点的状态
+      setEndpointStates((prev) => ({
+        ...prev,
+        [newEndpoint]: {
+          connected: endpointStatus.connected,
+          isOperating: false,
+          lastOperation: {
+            type: null,
+            success: false,
+            message: "",
+            timestamp: 0,
+          },
+        },
+      }));
 
-      await updateConfig(updatedConfig);
       toast.success("接入点添加成功");
       setAddDialogOpen(false);
       setNewEndpoint("");
@@ -570,21 +531,6 @@ export function McpEndpointSettingButton() {
                       )}
                     </Button>
                   )}
-                  {/* 重连按钮 */}
-                  {/* <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleReconnect(item)}
-                    title="重新连接"
-                    disabled={isOperating}
-                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-all duration-200 hover:scale-105 disabled:scale-100 disabled:opacity-50"
-                  >
-                    {isOperating ? (
-                      <Loader2Icon className="size-4 animate-spin" />
-                    ) : (
-                      <RefreshCwIcon className="size-4" />
-                    )}
-                  </Button> */}
                   <Button
                     variant="outline"
                     size="icon"

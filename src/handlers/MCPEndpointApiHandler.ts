@@ -1,5 +1,6 @@
 import type { Context } from "hono";
 import { type Logger, logger } from "../Logger.js";
+import type { ConfigManager } from "../configManager.js";
 import { type EventBus, getEventBus } from "../services/EventBus.js";
 import type { IndependentXiaozhiConnectionManager } from "../services/IndependentXiaozhiConnectionManager.js";
 import type { ConnectionStatus } from "../services/IndependentXiaozhiConnectionManager.js";
@@ -34,9 +35,11 @@ interface EndpointOperationRequest {
 interface EndpointOperationResponse {
   success: boolean;
   message: string;
-  endpoint: string;
-  status: ConnectionStatus;
-  operation: "connect" | "disconnect" | "reconnect" | "add" | "remove";
+  data: {
+    endpoint: string;
+    status: ConnectionStatus;
+    operation: "connect" | "disconnect" | "reconnect" | "add" | "remove";
+  };
 }
 
 /**
@@ -56,11 +59,16 @@ interface EndpointOperationError {
 export class MCPEndpointApiHandler {
   private logger: Logger;
   private xiaozhiConnectionManager: IndependentXiaozhiConnectionManager;
+  private configManager: ConfigManager;
   private eventBus: EventBus;
 
-  constructor(xiaozhiConnectionManager: IndependentXiaozhiConnectionManager) {
+  constructor(
+    xiaozhiConnectionManager: IndependentXiaozhiConnectionManager,
+    configManager: ConfigManager
+  ) {
     this.logger = logger.withTag("MCPEndpointApiHandler");
     this.xiaozhiConnectionManager = xiaozhiConnectionManager;
+    this.configManager = configManager;
     this.eventBus = getEventBus();
   }
 
@@ -108,9 +116,11 @@ export class MCPEndpointApiHandler {
     return {
       success: true,
       message: message || `端点 ${operation} 操作成功`,
-      endpoint,
-      status,
-      operation,
+      data: {
+        endpoint,
+        status,
+        operation,
+      },
     };
   }
 
@@ -449,6 +459,7 @@ export class MCPEndpointApiHandler {
     try {
       const body = await c.req.json();
       const endpoint = body.endpoint;
+      debugger;
 
       // 验证端点参数
       if (!endpoint || typeof endpoint !== "string") {
@@ -516,12 +527,32 @@ export class MCPEndpointApiHandler {
       return c.json(response);
     } catch (error) {
       this.logger.error("接入点添加失败:", error);
+      let errorCode = "ENDPOINT_ADD_ERROR";
+      let httpStatus = 500;
+
+      // 处理特定错误类型
+      if (error instanceof Error) {
+        if (error.message.includes("已存在于配置文件中")) {
+          errorCode = "ENDPOINT_ALREADY_IN_CONFIG";
+          httpStatus = 409;
+        } else if (error.message.includes("已存在")) {
+          errorCode = "ENDPOINT_ALREADY_EXISTS";
+          httpStatus = 409;
+        } else if (error.message.includes("端点必须是非空字符串")) {
+          errorCode = "INVALID_ENDPOINT";
+          httpStatus = 400;
+        } else if (error.message.includes("不能删除最后一个")) {
+          errorCode = "LAST_ENDPOINT_CANNOT_REMOVE";
+          httpStatus = 400;
+        }
+      }
+
       const errorResponse = this.createErrorResponse(
-        "ENDPOINT_ADD_ERROR",
+        errorCode,
         error instanceof Error ? error.message : "接入点添加失败",
         undefined
       );
-      return c.json(errorResponse, 500);
+      return c.json(errorResponse, httpStatus as any);
     }
   }
 
@@ -590,12 +621,29 @@ export class MCPEndpointApiHandler {
     } catch (error) {
       this.logger.error("接入点移除失败:", error);
       const endpoint = c.req.param("endpoint");
+      let errorCode = "ENDPOINT_REMOVE_ERROR";
+      let httpStatus = 500;
+
+      // 处理特定错误类型
+      if (error instanceof Error) {
+        if (error.message.includes("不存在")) {
+          errorCode = "ENDPOINT_NOT_FOUND";
+          httpStatus = 404;
+        } else if (error.message.includes("不能删除最后一个")) {
+          errorCode = "LAST_ENDPOINT_CANNOT_REMOVE";
+          httpStatus = 400;
+        } else if (error.message.includes("端点必须是非空字符串")) {
+          errorCode = "INVALID_ENDPOINT";
+          httpStatus = 400;
+        }
+      }
+
       const errorResponse = this.createErrorResponse(
-        "ENDPOINT_REMOVE_ERROR",
+        errorCode,
         error instanceof Error ? error.message : "接入点移除失败",
         endpoint
       );
-      return c.json(errorResponse, 500);
+      return c.json(errorResponse, httpStatus as any);
     }
   }
 }

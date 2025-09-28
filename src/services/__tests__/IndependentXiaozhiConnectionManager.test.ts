@@ -20,6 +20,14 @@ vi.mock("../../Logger.js", () => ({
   },
 }));
 
+vi.mock("../../configManager.js", () => ({
+  configManager: {
+    getMcpEndpoints: vi.fn().mockReturnValue([]),
+    addMcpEndpoint: vi.fn(),
+    removeMcpEndpoint: vi.fn(),
+  },
+}));
+
 vi.mock("../../ProxyMCPServer.js", () => ({
   ProxyMCPServer: vi.fn().mockImplementation(() => ({
     connect: vi.fn(),
@@ -89,7 +97,8 @@ describe("IndependentXiaozhiConnectionManager", () => {
     const { getEventBus } = await import("../../services/EventBus.js");
     vi.mocked(getEventBus).mockReturnValue(mockEventBus);
 
-    manager = new IndependentXiaozhiConnectionManager();
+    const { configManager } = await import("../../configManager.js");
+    manager = new IndependentXiaozhiConnectionManager(configManager);
     await manager.initialize(["ws://localhost:9999"], mockTools); // 使用虚拟端点和工具数组初始化
   });
 
@@ -191,7 +200,8 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
     test("应该在未初始化时抛出错误", async () => {
       // 创建未初始化的管理器
-      const uninitializedManager = new IndependentXiaozhiConnectionManager();
+      const { configManager: testConfigManager1 } = await import("../../configManager.js");
+      const uninitializedManager = new IndependentXiaozhiConnectionManager(testConfigManager1);
       const endpoint = "ws://localhost:8080";
 
       await expect(
@@ -389,7 +399,8 @@ describe("IndependentXiaozhiConnectionManager", () => {
     });
 
     test("应该正确处理空端点列表初始化", async () => {
-      const emptyManager = new IndependentXiaozhiConnectionManager();
+      const { configManager: testConfigManager2 } = await import("../../configManager.js");
+      const emptyManager = new IndependentXiaozhiConnectionManager(testConfigManager2);
 
       // 空端点列表初始化应该抛出错误
       await expect(emptyManager.initialize([], [])).rejects.toThrow(

@@ -22,6 +22,14 @@ vi.mock("../../services/EventBus.js", () => ({
   }),
 }));
 
+vi.mock("../../configManager.js", () => ({
+  configManager: {
+    getMcpEndpoints: vi.fn(),
+    addMcpEndpoint: vi.fn(),
+    removeMcpEndpoint: vi.fn(),
+  },
+}));
+
 // Mock IndependentXiaozhiConnectionManager
 const mockConnectionManager = {
   getConnectionStatus: vi.fn(),
@@ -47,12 +55,13 @@ describe("MCPEndpointApiHandler", () => {
     reconnectDelay: 0,
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Reset all mocks
     vi.clearAllMocks();
 
     // Create handler instance
-    handler = new MCPEndpointApiHandler(mockConnectionManager as any);
+    const { configManager } = await import("../../configManager.js");
+    handler = new MCPEndpointApiHandler(mockConnectionManager as any, configManager);
 
     // Create mock context - 修复 mock 配置，返回真实的 Response 对象
     mockContext = {

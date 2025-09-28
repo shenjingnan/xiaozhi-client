@@ -7,6 +7,7 @@ import {
   type IndependentConnectionOptions,
   IndependentXiaozhiConnectionManager,
 } from "./IndependentXiaozhiConnectionManager.js";
+import { configManager } from "../configManager.js";
 
 // 类型兼容性导出
 export type {
@@ -75,7 +76,7 @@ async function createInstance(
     }
   }
 
-  const manager = new IndependentXiaozhiConnectionManager(options);
+  const manager = new IndependentXiaozhiConnectionManager(configManager, options);
 
   return manager;
 }

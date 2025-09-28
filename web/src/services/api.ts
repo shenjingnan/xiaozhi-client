@@ -704,6 +704,36 @@ export class ApiClient {
       throw new Error(response.message || "重连接入点失败");
     }
   }
+
+  /**
+   * 添加新接入点
+   */
+  async addEndpoint(endpoint: string): Promise<EndpointStatusResponse> {
+    const response: ApiResponse<EndpointStatusResponse> = await this.request(
+      "/api/endpoints/add",
+      {
+        method: "POST",
+        body: JSON.stringify({ endpoint }),
+      }
+    );
+    if (!response.success || !response.data) {
+      throw new Error(response.message || "添加接入点失败");
+    }
+    return response.data;
+  }
+
+  /**
+   * 移除接入点
+   */
+  async removeEndpoint(endpoint: string): Promise<void> {
+    const response: ApiResponse = await this.request(
+      `/api/endpoints/${encodeURIComponent(endpoint)}`,
+      { method: "DELETE" }
+    );
+    if (!response.success) {
+      throw new Error(response.message || "移除接入点失败");
+    }
+  }
 }
 
 // 创建默认的 API 客户端实例

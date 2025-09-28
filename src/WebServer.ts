@@ -391,7 +391,8 @@ export class WebServer {
     }
 
     const mcpEndpointApiHandler = new MCPEndpointApiHandler(
-      this.xiaozhiConnectionManager
+      this.xiaozhiConnectionManager,
+      configManager
     );
     return mcpEndpointApiHandler.getEndpointStatus(c);
   }
@@ -409,7 +410,8 @@ export class WebServer {
     }
 
     const mcpEndpointApiHandler = new MCPEndpointApiHandler(
-      this.xiaozhiConnectionManager
+      this.xiaozhiConnectionManager,
+      configManager
     );
     return mcpEndpointApiHandler.connectEndpoint(c);
   }
@@ -427,7 +429,8 @@ export class WebServer {
     }
 
     const mcpEndpointApiHandler = new MCPEndpointApiHandler(
-      this.xiaozhiConnectionManager
+      this.xiaozhiConnectionManager,
+      configManager
     );
     return mcpEndpointApiHandler.disconnectEndpoint(c);
   }
@@ -445,7 +448,8 @@ export class WebServer {
     }
 
     const mcpEndpointApiHandler = new MCPEndpointApiHandler(
-      this.xiaozhiConnectionManager
+      this.xiaozhiConnectionManager,
+      configManager
     );
     return mcpEndpointApiHandler.reconnectEndpoint(c);
   }
@@ -463,9 +467,10 @@ export class WebServer {
     }
 
     const mcpEndpointApiHandler = new MCPEndpointApiHandler(
-      this.xiaozhiConnectionManager
+      this.xiaozhiConnectionManager,
+      configManager
     );
-    return mcpEndpointApiHandler.addEndpoint(c);
+    return await mcpEndpointApiHandler.addEndpoint(c);
   }
 
   /**
@@ -481,7 +486,8 @@ export class WebServer {
     }
 
     const mcpEndpointApiHandler = new MCPEndpointApiHandler(
-      this.xiaozhiConnectionManager
+      this.xiaozhiConnectionManager,
+      configManager
     );
     return mcpEndpointApiHandler.removeEndpoint(c);
   }

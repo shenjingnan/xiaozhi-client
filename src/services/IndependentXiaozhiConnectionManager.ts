@@ -3,6 +3,7 @@ import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { type Logger, logger } from "../Logger.js";
 import { ProxyMCPServer } from "../ProxyMCPServer.js";
+import type { ConfigManager } from "../configManager.js";
 import { type EventBus, getEventBus } from "../services/EventBus.js";
 import { sliceEndpoint } from "../utils/mcpServerUtils.js";
 
@@ -107,6 +108,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
 
   // 核心依赖
   private mcpServiceManager: IMCPServiceManager | null = null;
+  private configManager: ConfigManager;
   private logger: Logger;
   private eventBus: EventBus;
 
@@ -120,8 +122,12 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   // 重连管理
   private reconnectTimers: Map<string, NodeJS.Timeout> = new Map();
 
-  constructor(options?: IndependentConnectionOptions) {
+  constructor(
+    configManager: ConfigManager,
+    options?: IndependentConnectionOptions
+  ) {
     super();
+    this.configManager = configManager;
     this.logger = logger;
     this.eventBus = getEventBus();
     this.options = { ...DEFAULT_OPTIONS, ...options };
@@ -249,37 +255,66 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       throw new Error("IndependentXiaozhiConnectionManager 未初始化");
     }
 
+    // 检查连接管理器中的重复性
     if (this.connections.has(endpoint)) {
       this.logger.debug(
-        `小智接入点 ${sliceEndpoint(endpoint)} 已存在，跳过添加`
+        `小智接入点 ${sliceEndpoint(endpoint)} 已存在于连接管理器中，跳过添加`
       );
       return;
+    }
+
+    // 检查配置文件中的重复性
+    if (this.checkConfigDuplicate(endpoint)) {
+      throw new Error(`接入点 ${sliceEndpoint(endpoint)} 已存在于配置文件中`);
     }
 
     this.logger.debug(`动态添加小智接入点: ${sliceEndpoint(endpoint)}`);
 
     try {
-      // 获取当前工具列表
-      const tools = this.getCurrentTools();
+      // 先更新配置文件
+      this.configManager.addMcpEndpoint(endpoint);
 
-      // 创建新连接
-      await this.createConnection(endpoint, tools);
+      try {
+        // 获取当前工具列表
+        const tools = this.getCurrentTools();
 
-      // 如果管理器已连接，则连接新小智接入点
-      if (this.isAnyConnected()) {
-        const proxyServer = this.connections.get(endpoint)!;
-        await this.connectSingleEndpoint(endpoint, proxyServer);
+        // 创建新连接
+        await this.createConnection(endpoint, tools);
+
+        // 如果管理器已连接，则连接新小智接入点
+        if (this.isAnyConnected()) {
+          const proxyServer = this.connections.get(endpoint)!;
+          await this.connectSingleEndpoint(endpoint, proxyServer);
+        }
+
+        this.logger.info(`添加接入点成功： ${sliceEndpoint(endpoint)}`);
+      } catch (error) {
+        // 回滚配置文件更改
+        try {
+          this.configManager.removeMcpEndpoint(endpoint);
+          this.logger.debug(`配置文件回滚成功: ${sliceEndpoint(endpoint)}`);
+        } catch (rollbackError) {
+          this.logger.error(
+            `配置文件回滚失败: ${sliceEndpoint(endpoint)}`,
+            rollbackError
+          );
+        }
+
+        // 清理失败的连接
+        this.connections.delete(endpoint);
+        this.connectionStates.delete(endpoint);
+
+        this.logger.error(
+          `添加小智接入点失败： ${sliceEndpoint(endpoint)}`,
+          error
+        );
+        throw error;
       }
-
-      this.logger.info(`添加接入点成功： ${sliceEndpoint(endpoint)}`);
     } catch (error) {
       this.logger.error(
-        `添加小智接入点失败： ${sliceEndpoint(endpoint)}`,
+        `添加小智接入点失败（配置文件操作）： ${sliceEndpoint(endpoint)}`,
         error
       );
-      // 清理失败的连接
-      this.connections.delete(endpoint);
-      this.connectionStates.delete(endpoint);
       throw error;
     }
   }
@@ -291,7 +326,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   async removeEndpoint(endpoint: string): Promise<void> {
     if (!this.connections.has(endpoint)) {
       this.logger.debug(
-        `小智接入点 ${sliceEndpoint(endpoint)} 不存在，跳过移除`
+        `小智接入点 ${sliceEndpoint(endpoint)} 不存在于连接管理器中，跳过移除`
       );
       return;
     }
@@ -301,24 +336,46 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     try {
       const proxyServer = this.connections.get(endpoint)!;
 
-      // 断开连接
-      await this.disconnectSingleEndpoint(endpoint, proxyServer);
+      // 先更新配置文件
+      this.configManager.removeMcpEndpoint(endpoint);
 
-      // 清理资源
-      this.connections.delete(endpoint);
-      this.connectionStates.delete(endpoint);
+      try {
+        // 断开连接
+        await this.disconnectSingleEndpoint(endpoint, proxyServer);
 
-      // 清理重连定时器
-      const timer = this.reconnectTimers.get(endpoint);
-      if (timer) {
-        clearTimeout(timer);
-        this.reconnectTimers.delete(endpoint);
+        // 清理资源
+        this.connections.delete(endpoint);
+        this.connectionStates.delete(endpoint);
+
+        // 清理重连定时器
+        const timer = this.reconnectTimers.get(endpoint);
+        if (timer) {
+          clearTimeout(timer);
+          this.reconnectTimers.delete(endpoint);
+        }
+
+        this.logger.info(`移除小智接入点成功：${sliceEndpoint(endpoint)}`);
+      } catch (error) {
+        // 回滚配置文件更改
+        try {
+          this.configManager.addMcpEndpoint(endpoint);
+          this.logger.debug(`配置文件回滚成功: ${sliceEndpoint(endpoint)}`);
+        } catch (rollbackError) {
+          this.logger.error(
+            `配置文件回滚失败: ${sliceEndpoint(endpoint)}`,
+            rollbackError
+          );
+        }
+
+        this.logger.error(
+          `移除小智接入点失败： ${sliceEndpoint(endpoint)}`,
+          error
+        );
+        throw error;
       }
-
-      this.logger.info(`移除小智接入点成功：${sliceEndpoint(endpoint)}`);
     } catch (error) {
       this.logger.error(
-        `移除小智接入点失败： ${sliceEndpoint(endpoint)}`,
+        `移除小智接入点失败（配置文件操作）： ${sliceEndpoint(endpoint)}`,
         error
       );
       throw error;
@@ -828,6 +885,22 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   }
 
   // ==================== 私有方法 ====================
+
+  /**
+   * 检查配置文件中的重复接入点
+   * @param endpoint 要检查的接入点地址
+   * @returns 如果接入点已存在于配置文件中，返回 true
+   */
+  private checkConfigDuplicate(endpoint: string): boolean {
+    try {
+      const configEndpoints = this.configManager.getMcpEndpoints();
+      return configEndpoints.includes(endpoint);
+    } catch (error) {
+      this.logger.error(`检查配置文件重复性失败: ${error}`);
+      // 如果配置文件读取失败，保守起见认为接入点已存在
+      return true;
+    }
+  }
 
   /**
    * 验证初始化参数
