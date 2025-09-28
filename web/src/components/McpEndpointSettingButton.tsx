@@ -24,7 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { apiClient } from "@/services/api";
 import { webSocketManager } from "@/services/websocket";
-import { useConfig, useMcpEndpoint } from "@/stores/config";
+import { useConfig, useConfigActions, useMcpEndpoint } from "@/stores/config";
 import {
   BadgeInfoIcon,
   CopyIcon,
@@ -103,13 +103,13 @@ export function McpEndpointSettingButton() {
 
   const config = useConfig();
   const mcpEndpoint = useMcpEndpoint();
+  const { refreshConfig } = useConfigActions();
 
   // 获取接入点状态
   const fetchEndpointStatus = useCallback(
     async (endpoint: string): Promise<EndpointStatusResponse> => {
       try {
-        const response = await apiClient.getEndpointStatus(endpoint);
-        return response;
+        return await apiClient.getEndpointStatus(endpoint);
       } catch (error) {
         console.error(`获取接入点状态失败: ${endpoint}`, error);
         // 返回默认状态
@@ -279,6 +279,9 @@ export function McpEndpointSettingButton() {
       // 调用后端 API 删除接入点
       await apiClient.removeEndpoint(endpointToDelete);
 
+      // 刷新配置数据以更新 mcpEndpoints 列表
+      await refreshConfig();
+
       // 从本地状态中移除该接入点
       setEndpointStates((prev) => {
         const newStates = { ...prev };
@@ -319,10 +322,14 @@ export function McpEndpointSettingButton() {
       return;
     }
 
+
     setIsAdding(true);
     try {
       // 调用后端 API 添加接入点
       const endpointStatus = await apiClient.addEndpoint(newEndpoint);
+
+      // 刷新配置数据以更新 mcpEndpoints 列表
+      await refreshConfig();
 
       // 初始化新接入点的状态
       setEndpointStates((prev) => ({

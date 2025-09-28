@@ -105,26 +105,6 @@ export class MCPEndpointApiHandler {
   }
 
   /**
-   * 创建端点操作响应
-   */
-  private createEndpointOperationResponse(
-    endpoint: string,
-    status: ConnectionStatus,
-    operation: "connect" | "disconnect" | "reconnect" | "add" | "remove",
-    message?: string
-  ): EndpointOperationResponse {
-    return {
-      success: true,
-      message: message || `端点 ${operation} 操作成功`,
-      data: {
-        endpoint,
-        status,
-        operation,
-      },
-    };
-  }
-
-  /**
    * 获取接入点状态
    * GET /api/endpoints/:endpoint/status
    */
@@ -248,12 +228,7 @@ export class MCPEndpointApiHandler {
       });
 
       this.logger.info(`接入点连接成功: ${endpoint}`);
-      const response = this.createEndpointOperationResponse(
-        endpoint,
-        endpointStatus,
-        "connect",
-        "接入点连接成功"
-      );
+      const response = this.createSuccessResponse(endpointStatus);
       return c.json(response);
     } catch (error) {
       this.logger.error("接入点连接失败:", error);
@@ -342,11 +317,8 @@ export class MCPEndpointApiHandler {
         nextReconnectTime: undefined,
         reconnectDelay: 0,
       };
-      const response = this.createEndpointOperationResponse(
-        endpoint,
-        endpointStatus || fallbackStatus,
-        "disconnect",
-        "接入点断开成功"
+      const response = this.createSuccessResponse(
+        endpointStatus || fallbackStatus
       );
       return c.json(response);
     } catch (error) {
@@ -432,12 +404,7 @@ export class MCPEndpointApiHandler {
       });
 
       this.logger.info(`接入点重连成功: ${endpoint}`);
-      const response = this.createEndpointOperationResponse(
-        endpoint,
-        endpointStatus,
-        "reconnect",
-        "接入点重连成功"
-      );
+      const response = this.createSuccessResponse(endpointStatus);
       return c.json(response);
     } catch (error) {
       this.logger.error("接入点重连失败:", error);
@@ -459,7 +426,6 @@ export class MCPEndpointApiHandler {
     try {
       const body = await c.req.json();
       const endpoint = body.endpoint;
-      debugger;
 
       // 验证端点参数
       if (!endpoint || typeof endpoint !== "string") {
@@ -518,12 +484,7 @@ export class MCPEndpointApiHandler {
       });
 
       this.logger.info(`接入点添加成功: ${endpoint}`);
-      const response = this.createEndpointOperationResponse(
-        endpoint,
-        endpointStatus,
-        "add",
-        "接入点添加成功"
-      );
+      const response = this.createSuccessResponse(endpointStatus);
       return c.json(response);
     } catch (error) {
       this.logger.error("接入点添加失败:", error);
