@@ -3,19 +3,10 @@
  * 用于订阅和处理端点连接状态的实时变更
  */
 import { useCallback, useEffect, useState } from "react";
-import { webSocketManager } from "../services/websocket";
-
-/**
- * 端点状态变更事件数据
- */
-export interface EndpointStatusChangedEvent {
-  endpoint: string;
-  connected: boolean;
-  operation: "connect" | "disconnect" | "reconnect";
-  success: boolean;
-  message?: string;
-  timestamp: number;
-}
+import {
+  type EndpointStatusChangedEvent,
+  webSocketManager,
+} from "../services/websocket";
 
 /**
  * 端点状态回调函数类型

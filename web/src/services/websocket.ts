@@ -35,7 +35,7 @@ interface RestartStatus {
 /**
  * 接入点状态变更事件数据
  */
-interface EndpointStatusChangedEvent {
+export interface EndpointStatusChangedEvent {
   endpoint: string;
   connected: boolean;
   operation: "connect" | "disconnect" | "reconnect";
