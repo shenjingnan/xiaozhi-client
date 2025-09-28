@@ -512,11 +512,10 @@ export function McpEndpointSettingButton() {
                   </span>
                   {/* 连接状态显示 */}
                   <Badge
-                    variant={isConnected ? "default" : "secondary"}
                     className={`flex items-center gap-1 transition-all duration-200 text-xs sm:text-sm ${
                       isConnected
-                        ? "bg-green-100 text-green-800 border-green-200"
-                        : "bg-gray-100 text-gray-600 border-gray-200"
+                        ? "bg-green-100 text-green-800 border-green-200 hover:text-green-800 hover:border-green-200 hover:bg-green-100"
+                        : "bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-100 hover:text-gray-600 hover:border-gray-200"
                     }`}
                   >
                     {isOperating ? (
@@ -572,7 +571,7 @@ export function McpEndpointSettingButton() {
                     </Button>
                   )}
                   {/* 重连按钮 */}
-                  <Button
+                  {/* <Button
                     variant="outline"
                     size="icon"
                     onClick={() => handleReconnect(item)}
@@ -585,7 +584,7 @@ export function McpEndpointSettingButton() {
                     ) : (
                       <RefreshCwIcon className="size-4" />
                     )}
-                  </Button>
+                  </Button> */}
                   <Button
                     variant="outline"
                     size="icon"

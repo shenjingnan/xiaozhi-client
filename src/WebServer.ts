@@ -451,6 +451,42 @@ export class WebServer {
   }
 
   /**
+   * 处理添加接入点请求
+   */
+  private async handleEndpointAdd(c: Context): Promise<Response> {
+    if (!this.xiaozhiConnectionManager) {
+      const errorResponse = this.createErrorResponse(
+        "CONNECTION_MANAGER_NOT_AVAILABLE",
+        "连接管理器未初始化"
+      );
+      return c.json(errorResponse, 503);
+    }
+
+    const mcpEndpointApiHandler = new MCPEndpointApiHandler(
+      this.xiaozhiConnectionManager
+    );
+    return mcpEndpointApiHandler.addEndpoint(c);
+  }
+
+  /**
+   * 处理移除接入点请求
+   */
+  private async handleEndpointRemove(c: Context): Promise<Response> {
+    if (!this.xiaozhiConnectionManager) {
+      const errorResponse = this.createErrorResponse(
+        "CONNECTION_MANAGER_NOT_AVAILABLE",
+        "连接管理器未初始化"
+      );
+      return c.json(errorResponse, 503);
+    }
+
+    const mcpEndpointApiHandler = new MCPEndpointApiHandler(
+      this.xiaozhiConnectionManager
+    );
+    return mcpEndpointApiHandler.removeEndpoint(c);
+  }
+
+  /**
    * 带重试的连接方法
    */
   private async connectWithRetry<T>(
@@ -637,6 +673,11 @@ export class WebServer {
     );
     this.app?.post("/api/endpoints/:endpoint/reconnect", (c) =>
       this.handleEndpointReconnect(c)
+    );
+    // 新增的接入点管理路由
+    this.app?.post("/api/endpoints/add", (c) => this.handleEndpointAdd(c));
+    this.app?.delete("/api/endpoints/:endpoint", (c) =>
+      this.handleEndpointRemove(c)
     );
 
     // MCP 服务路由 - 符合 MCP Streamable HTTP 规范

@@ -492,6 +492,41 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   }
 
   /**
+   * 连接已存在的接入点（不创建新实例）
+   * @param endpoint 要连接的接入点地址
+   * @throws Error 如果接入点不存在或已连接
+   */
+  async connectExistingEndpoint(endpoint: string): Promise<void> {
+    if (!this.isInitialized) {
+      throw new Error("IndependentXiaozhiConnectionManager 未初始化");
+    }
+
+    const proxyServer = this.connections.get(endpoint);
+    if (!proxyServer) {
+      throw new Error(
+        `接入点 ${sliceEndpoint(endpoint)} 不存在，请先添加接入点`
+      );
+    }
+
+    const currentState = this.connectionStates.get(endpoint);
+    if (currentState?.connected) {
+      this.logger.debug(`接入点 ${sliceEndpoint(endpoint)} 已连接，跳过连接`);
+      return;
+    }
+
+    this.logger.info(`连接已存在的接入点: ${sliceEndpoint(endpoint)}`);
+    await this.connectSingleEndpoint(endpoint, proxyServer);
+  }
+
+  /**
+   * 等待指定时间（用于状态同步）
+   * @param ms 等待时间（毫秒）
+   */
+  private async sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /**
    * 获取重连统计信息
    */
   getReconnectStats(): Record<

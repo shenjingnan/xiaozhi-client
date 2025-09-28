@@ -22,7 +22,7 @@ export interface EventBusEvents {
   "endpoint:status:changed": {
     endpoint: string;
     connected: boolean;
-    operation: "connect" | "disconnect" | "reconnect";
+    operation: "connect" | "disconnect" | "reconnect" | "add" | "remove";
     success: boolean;
     message?: string;
     timestamp: number;
