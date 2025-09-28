@@ -3,11 +3,11 @@
  * 提供全局唯一的 XiaozhiConnectionManager 实例
  */
 
+import { configManager } from "../configManager.js";
 import {
   type IndependentConnectionOptions,
   IndependentXiaozhiConnectionManager,
 } from "./IndependentXiaozhiConnectionManager.js";
-import { configManager } from "../configManager.js";
 
 // 类型兼容性导出
 export type {
@@ -76,7 +76,10 @@ async function createInstance(
     }
   }
 
-  const manager = new IndependentXiaozhiConnectionManager(configManager, options);
+  const manager = new IndependentXiaozhiConnectionManager(
+    configManager,
+    options
+  );
 
   return manager;
 }

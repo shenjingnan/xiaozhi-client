@@ -200,8 +200,12 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
     test("应该在未初始化时抛出错误", async () => {
       // 创建未初始化的管理器
-      const { configManager: testConfigManager1 } = await import("../../configManager.js");
-      const uninitializedManager = new IndependentXiaozhiConnectionManager(testConfigManager1);
+      const { configManager: testConfigManager1 } = await import(
+        "../../configManager.js"
+      );
+      const uninitializedManager = new IndependentXiaozhiConnectionManager(
+        testConfigManager1
+      );
       const endpoint = "ws://localhost:8080";
 
       await expect(
@@ -399,8 +403,12 @@ describe("IndependentXiaozhiConnectionManager", () => {
     });
 
     test("应该正确处理空端点列表初始化", async () => {
-      const { configManager: testConfigManager2 } = await import("../../configManager.js");
-      const emptyManager = new IndependentXiaozhiConnectionManager(testConfigManager2);
+      const { configManager: testConfigManager2 } = await import(
+        "../../configManager.js"
+      );
+      const emptyManager = new IndependentXiaozhiConnectionManager(
+        testConfigManager2
+      );
 
       // 空端点列表初始化应该抛出错误
       await expect(emptyManager.initialize([], [])).rejects.toThrow(

@@ -259,9 +259,8 @@ export class ApiClient {
    * 获取配置文件路径
    */
   async getConfigPath(): Promise<string> {
-    const response: ApiResponse<{ path: string }> = await this.request(
-      "/api/config/path"
-    );
+    const response: ApiResponse<{ path: string }> =
+      await this.request("/api/config/path");
     if (!response.success || !response.data) {
       throw new Error("获取配置文件路径失败");
     }
@@ -272,9 +271,8 @@ export class ApiClient {
    * 检查配置是否存在
    */
   async checkConfigExists(): Promise<boolean> {
-    const response: ApiResponse<{ exists: boolean }> = await this.request(
-      "/api/config/exists"
-    );
+    const response: ApiResponse<{ exists: boolean }> =
+      await this.request("/api/config/exists");
     if (!response.success || response.data?.exists === undefined) {
       throw new Error("检查配置是否存在失败");
     }
@@ -298,9 +296,8 @@ export class ApiClient {
    * 获取客户端状态
    */
   async getClientStatus(): Promise<ClientStatus> {
-    const response: ApiResponse<ClientStatus> = await this.request(
-      "/api/status/client"
-    );
+    const response: ApiResponse<ClientStatus> =
+      await this.request("/api/status/client");
     if (!response.success || !response.data) {
       throw new Error("获取客户端状态失败");
     }
@@ -513,9 +510,8 @@ export class ApiClient {
    * 获取自定义工具列表
    */
   async getCustomTools(): Promise<any[]> {
-    const response: ApiResponse<{ tools: any[] }> = await this.request(
-      "/api/tools/custom"
-    );
+    const response: ApiResponse<{ tools: any[] }> =
+      await this.request("/api/tools/custom");
     if (!response.success || !response.data) {
       throw new Error("获取自定义工具列表失败");
     }
@@ -621,9 +617,8 @@ export class ApiClient {
    * 获取版本信息
    */
   async getVersion(): Promise<VersionInfo> {
-    const response: ApiResponse<VersionInfo> = await this.request(
-      "/api/version"
-    );
+    const response: ApiResponse<VersionInfo> =
+      await this.request("/api/version");
     if (!response.success || !response.data) {
       throw new Error("获取版本信息失败");
     }

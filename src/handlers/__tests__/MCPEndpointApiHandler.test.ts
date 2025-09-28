@@ -61,7 +61,10 @@ describe("MCPEndpointApiHandler", () => {
 
     // Create handler instance
     const { configManager } = await import("../../configManager.js");
-    handler = new MCPEndpointApiHandler(mockConnectionManager as any, configManager);
+    handler = new MCPEndpointApiHandler(
+      mockConnectionManager as any,
+      configManager
+    );
 
     // Create mock context - 修复 mock 配置，返回真实的 Response 对象
     mockContext = {

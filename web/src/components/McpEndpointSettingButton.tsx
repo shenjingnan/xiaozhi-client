@@ -322,7 +322,6 @@ export function McpEndpointSettingButton() {
       return;
     }
 
-
     setIsAdding(true);
     try {
       // 调用后端 API 添加接入点
