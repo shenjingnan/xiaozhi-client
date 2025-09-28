@@ -22,7 +22,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { apiClient, type EndpointStatusResponse } from "@/services/api";
+import { type EndpointStatusResponse, apiClient } from "@/services/api";
 import { webSocketManager } from "@/services/websocket";
 import { useConfig, useConfigActions, useMcpEndpoint } from "@/stores/config";
 import {
