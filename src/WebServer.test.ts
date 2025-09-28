@@ -1803,26 +1803,28 @@ describe("WebServer", () => {
 
       // 获取事件总线并触发事件
       const { getEventBus } = await import("./services/EventBus.js");
-      const mockEventBus = getEventBus();
+      const mockEventBus = getEventBus() as any;
 
-      // 模拟事件回调
-      const eventCallback = mockEventBus.onEvent.mock.calls.find(
-        ([event]) => event === "endpoint:status:changed"
+      // 模拟事件回调 - 使用 vi.mocked 来访问 mock 属性
+      const mockOnEvent = vi.mocked(mockEventBus.onEvent);
+      const eventCallback = mockOnEvent.mock.calls.find(
+        ([event]: [string, (data: any) => void]) =>
+          event === "endpoint:status:changed"
       )?.[1];
 
       if (eventCallback) {
-        // 获取通知服务
+        // 获取通知服务实例
         const { NotificationService } = await import(
           "./services/NotificationService.js"
         );
-        const mockNotificationService =
-          NotificationService.mock.results[0].value;
+        const mockNotificationService = vi.mocked(NotificationService);
+        const mockInstance = mockNotificationService.mock.results[0]?.value;
 
         // 触发事件
         const eventData = {
           endpoint: "ws://localhost:9999",
           connected: true,
-          operation: "connect",
+          operation: "connect" as const,
           success: true,
           message: "连接成功",
           timestamp: Date.now(),
@@ -1831,7 +1833,7 @@ describe("WebServer", () => {
         eventCallback(eventData);
 
         // 验证广播被调用
-        expect(mockNotificationService.broadcast).toHaveBeenCalledWith(
+        expect(mockInstance?.broadcast).toHaveBeenCalledWith(
           "endpoint_status_changed",
           {
             type: "endpoint_status_changed",

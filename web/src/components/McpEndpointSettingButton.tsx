@@ -258,11 +258,6 @@ export function McpEndpointSettingButton() {
 
   // 删除接入点
   const handleDeleteEndpoint = async () => {
-    if (!endpointToDelete) {
-      toast.error("未选择要删除的接入点");
-      return;
-    }
-
     setIsDeleting(true);
     try {
       // 调用后端 API 删除接入点
