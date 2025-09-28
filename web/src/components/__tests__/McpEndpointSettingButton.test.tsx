@@ -1,6 +1,7 @@
 import * as api from "@/services/api";
 import * as websocket from "@/services/websocket";
 import * as stores from "@/stores/config";
+import type { AppConfig } from "@/types";
 import {
   act,
   fireEvent,
@@ -39,8 +40,9 @@ describe("McpEndpointSettingButton", () => {
     "ws://localhost:8080/mcp",
   ];
 
-  const mockConfig = {
+  const mockConfig: AppConfig = {
     mcpEndpoint: mockEndpoints,
+    mcpServers: {},
   };
 
   beforeEach(() => {
@@ -50,7 +52,17 @@ describe("McpEndpointSettingButton", () => {
     vi.mocked(stores.useConfig).mockReturnValue(mockConfig);
     vi.mocked(stores.useMcpEndpoint).mockReturnValue(mockEndpoints);
     vi.mocked(stores.useConfigActions).mockReturnValue({
-      refreshConfig: vi.fn().mockResolvedValue(undefined),
+      getConfig: vi.fn().mockResolvedValue(mockConfig),
+      updateConfig: vi.fn().mockResolvedValue(undefined),
+      refreshConfig: vi.fn().mockResolvedValue(mockConfig),
+      reloadConfig: vi.fn().mockResolvedValue(mockConfig),
+      updateMcpEndpoint: vi.fn().mockResolvedValue(undefined),
+      updateMcpServers: vi.fn().mockResolvedValue(undefined),
+      updateConnectionConfig: vi.fn().mockResolvedValue(undefined),
+      updateModelScopeConfig: vi.fn().mockResolvedValue(undefined),
+      updateWebUIConfig: vi.fn().mockResolvedValue(undefined),
+      reset: vi.fn(),
+      initialize: vi.fn().mockResolvedValue(undefined),
     });
 
     vi.mocked(api.apiClient.getEndpointStatus).mockResolvedValue({
@@ -953,7 +965,7 @@ describe("McpEndpointSettingButton", () => {
       let eventHandler: any;
 
       vi.mocked(websocket.webSocketManager.subscribe).mockImplementation(
-        (event, handler) => {
+        (_event, handler) => {
           eventHandler = handler;
           return mockUnsubscribe;
         }
@@ -989,7 +1001,7 @@ describe("McpEndpointSettingButton", () => {
       let eventHandler: any;
 
       vi.mocked(websocket.webSocketManager.subscribe).mockImplementation(
-        (event, handler) => {
+        (_event, handler) => {
           eventHandler = handler;
           return mockUnsubscribe;
         }
@@ -1025,7 +1037,7 @@ describe("McpEndpointSettingButton", () => {
       let eventHandler: any;
 
       vi.mocked(websocket.webSocketManager.subscribe).mockImplementation(
-        (event, handler) => {
+        (_event, handler) => {
           eventHandler = handler;
           return mockUnsubscribe;
         }
@@ -1061,7 +1073,7 @@ describe("McpEndpointSettingButton", () => {
       let eventHandler: any;
 
       vi.mocked(websocket.webSocketManager.subscribe).mockImplementation(
-        (event, handler) => {
+        (_event, handler) => {
           eventHandler = handler;
           return mockUnsubscribe;
         }
@@ -1097,7 +1109,7 @@ describe("McpEndpointSettingButton", () => {
       let eventHandler: any;
 
       vi.mocked(websocket.webSocketManager.subscribe).mockImplementation(
-        (event, handler) => {
+        (_event, handler) => {
           eventHandler = handler;
           return mockUnsubscribe;
         }
