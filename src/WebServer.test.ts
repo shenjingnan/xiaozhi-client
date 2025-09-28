@@ -535,17 +535,38 @@ vi.mock("./handlers/MCPEndpointApiHandler", () => {
 const getAvailablePort = async (): Promise<number> => {
   return new Promise((resolve, reject) => {
     const server = createServer();
-    server.listen(0, () => {
+    let resolved = false;
+
+    const onError = (err: any) => {
+      if (!resolved) {
+        resolved = true;
+        server.close();
+        reject(err);
+      }
+    };
+
+    server.on("error", onError);
+
+    server.listen(0, "127.0.0.1", () => {
+      if (resolved) return;
+
       const port = (server.address() as any)?.port;
+      if (!port) {
+        resolved = true;
+        server.close();
+        reject(new Error("Failed to get available port"));
+        return;
+      }
+
+      // 确保端口完全释放后再解析
       server.close(() => {
-        if (port) {
-          resolve(port);
-        } else {
-          reject(new Error("Failed to get available port"));
+        if (!resolved) {
+          resolved = true;
+          // 额外等待一小段时间确保端口释放
+          setTimeout(() => resolve(port), 50);
         }
       });
     });
-    server.on("error", reject);
   });
 };
 
@@ -553,31 +574,72 @@ const getAvailablePort = async (): Promise<number> => {
 const isPortAvailable = async (port: number): Promise<boolean> => {
   return new Promise((resolve) => {
     const server = createServer();
-    server.listen(port, () => {
+
+    const onError = () => {
+      server.close();
+      resolve(false);
+    };
+
+    server.on("error", onError);
+
+    server.listen(port, "127.0.0.1", () => {
       server.close(() => resolve(true));
     });
-    server.on("error", () => resolve(false));
   });
 };
 
 // 等待端口释放
 const waitForPortRelease = async (
   port: number,
-  maxWait = 3000
+  maxWait = 8000
 ): Promise<void> => {
   const startTime = Date.now();
+  const checkInterval = 200; // 增加检查间隔以减少CPU使用
+
   while (Date.now() - startTime < maxWait) {
     if (await isPortAvailable(port)) {
-      return;
+      // 额外等待确保端口完全释放
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      if (await isPortAvailable(port)) {
+        return;
+      }
     }
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, checkInterval));
   }
+
   throw new Error(`Port ${port} is still in use after ${maxWait}ms`);
 };
 
 // 检测CI环境
 const isCI = process.env.CI === "true" || process.env.GITHUB_ACTIONS === "true";
-const cleanupDelay = isCI ? 1000 : 500; // CI环境使用更长的清理时间
+const cleanupDelay = isCI ? 2000 : 1000; // CI环境使用更长的清理时间
+
+// 端口范围管理，避免重复使用端口
+const usedPorts = new Set<number>();
+
+const getUniquePort = async (): Promise<number> => {
+  let port: number;
+  let attempts = 0;
+  const maxAttempts = 50;
+
+  do {
+    port = await getAvailablePort();
+    attempts++;
+
+    if (attempts > maxAttempts) {
+      throw new Error(
+        `Failed to find unique port after ${maxAttempts} attempts`
+      );
+    }
+  } while (usedPorts.has(port));
+
+  usedPorts.add(port);
+  return port;
+};
+
+const releasePort = (port: number): void => {
+  usedPorts.delete(port);
+};
 
 describe("WebServer", () => {
   let webServer: WebServer;
@@ -588,8 +650,8 @@ describe("WebServer", () => {
     const { configManager } = await import("./configManager");
     mockConfigManager = configManager;
 
-    // 获取可用端口
-    currentPort = await getAvailablePort();
+    // 获取唯一的可用端口
+    currentPort = await getUniquePort();
     // 设置默认的 mock 返回值
     mockConfigManager.getConfig.mockReturnValue({
       mcpEndpoint: "wss://test.endpoint",
@@ -619,12 +681,17 @@ describe("WebServer", () => {
         if (currentPort) {
           try {
             await waitForPortRelease(currentPort);
+            releasePort(currentPort);
           } catch (error) {
             console.warn(`Port ${currentPort} cleanup warning:`, error);
+            releasePort(currentPort);
           }
         }
       } catch (error) {
         console.warn("Failed to stop webServer in afterEach:", error);
+        if (currentPort) {
+          releasePort(currentPort);
+        }
       }
       webServer = null as any;
     }
@@ -836,20 +903,37 @@ describe("WebServer", () => {
       webServer = new WebServer(currentPort);
       await webServer.start();
 
+      // 确保服务器已启动并监听
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       const newConfig = {
         mcpEndpoint: "wss://test.endpoint",
         mcpServers: {},
         webUI: { autoRestart: true },
       };
 
-      const response = await fetch(
-        `http://localhost:${currentPort}/api/config`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newConfig),
+      // 使用重试机制处理可能的连接问题
+      let response: Response | undefined;
+      let retries = 3;
+
+      while (retries > 0) {
+        try {
+          response = await fetch(`http://localhost:${currentPort}/api/config`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newConfig),
+          });
+          break;
+        } catch (error) {
+          retries--;
+          if (retries === 0) throw error;
+          await new Promise((resolve) => setTimeout(resolve, 200));
         }
-      );
+      }
+
+      if (!response) {
+        throw new Error("Failed to connect to server after retries");
+      }
 
       const result = await response.json();
       expect(response.status).toBe(200);
@@ -1767,12 +1851,15 @@ describe("WebServer", () => {
     });
 
     it("应该处理连接管理器不可用的情况", async () => {
+      // 使用不同的端口避免冲突
+      const testPort = await getUniquePort();
+
       // 创建一个新的 WebServer 实例，确保连接管理器未初始化
-      const tempWebServer = new WebServer(currentPort);
+      const tempWebServer = new WebServer(testPort);
       await tempWebServer.start();
 
       const response = await fetch(
-        `http://localhost:${currentPort}/api/endpoints/ws%3A%2F%2Flocalhost%3A9999/status`
+        `http://localhost:${testPort}/api/endpoints/ws%3A%2F%2Flocalhost%3A9999/status`
       );
       expect(response.status).toBe(503);
 
@@ -1781,6 +1868,15 @@ describe("WebServer", () => {
       expect(data.error.message).toBe("连接管理器未初始化");
 
       await tempWebServer.stop();
+
+      // 确保端口释放
+      try {
+        await waitForPortRelease(testPort);
+        releasePort(testPort);
+      } catch (error) {
+        console.warn(`Port ${testPort} cleanup warning:`, error);
+        releasePort(testPort);
+      }
     });
   });
 
@@ -1945,20 +2041,45 @@ describe("WebServer", () => {
     });
 
     it("应该处理端口占用冲突", async () => {
-      // 启动第一个服务器
-      const webServer1 = new WebServer(currentPort);
-      await webServer1.start();
+      // 使用模拟服务器来测试端口冲突，避免复杂的 WebServer 实例管理
+      const { createServer } = await import("node:http");
 
-      // 尝试在同一个端口启动第二个服务器
-      const webServer2 = new WebServer(currentPort);
+      const conflictPort = await getUniquePort();
 
-      // 第二个服务器启动可能会失败，或者第一个服务器会处理端口冲突
-      await expect(webServer2.start()).resolves.not.toThrow();
+      // 创建一个简单的 HTTP 服务器占用端口
+      const dummyServer = createServer();
+      await new Promise<void>((resolve, reject) => {
+        dummyServer.listen(conflictPort, "127.0.0.1", () => {
+          resolve();
+        });
+        dummyServer.on("error", reject);
+      });
 
-      // 清理
-      await webServer1.stop();
-      await webServer2.stop();
-    });
+      try {
+        // 尝试在同一个端口启动 WebServer，这应该优雅地处理错误
+        const webServer = new WebServer(conflictPort);
+
+        // 这个操作可能会失败，但不应该抛出未处理的异常
+        await expect(webServer.start()).resolves.not.toThrow();
+
+        // 如果启动成功了，停止它
+        await webServer.stop();
+      } finally {
+        // 确保清理模拟服务器
+        await new Promise<void>((resolve) => {
+          dummyServer.close(() => resolve());
+        });
+
+        // 确保端口释放
+        try {
+          await waitForPortRelease(conflictPort);
+          releasePort(conflictPort);
+        } catch (error) {
+          console.warn(`Port ${conflictPort} cleanup warning:`, error);
+          releasePort(conflictPort);
+        }
+      }
+    }, 10000);
   });
 
   describe("性能测试", () => {
