@@ -22,7 +22,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { apiClient } from "@/services/api";
+import { apiClient, type EndpointStatusResponse } from "@/services/api";
 import { webSocketManager } from "@/services/websocket";
 import { useConfig, useConfigActions, useMcpEndpoint } from "@/stores/config";
 import {
@@ -48,17 +48,6 @@ interface EndpointState {
     message: string;
     timestamp: number;
   };
-}
-
-// 获取接入点状态的响应接口
-interface EndpointStatusResponse {
-  endpoint: string;
-  connected: boolean;
-  initialized: boolean;
-  isReconnecting: boolean;
-  reconnectAttempts: number;
-  nextReconnectTime?: number;
-  reconnectDelay: number;
 }
 
 const sliceEndpoint = (endpoint: string) => {
