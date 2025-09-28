@@ -488,7 +488,7 @@ export function McpEndpointSettingButton() {
           <SettingsIcon className="size-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="min-w-[600px] max-w-[90vw] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="min-w-[600px] max-w-[800px] max-h-[80vh] overflow-y-auto">
         <DialogHeader className="mb-4">
           <DialogTitle>配置小智服务端接入点</DialogTitle>
           <DialogDescription>
