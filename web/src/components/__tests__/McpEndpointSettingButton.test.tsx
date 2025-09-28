@@ -1,16 +1,16 @@
-import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-  act,
-} from "@testing-library/react";
-import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
-import { McpEndpointSettingButton } from "../McpEndpointSettingButton";
-import * as stores from "@/stores/config";
 import * as api from "@/services/api";
 import * as websocket from "@/services/websocket";
+import * as stores from "@/stores/config";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { toast } from "sonner";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { McpEndpointSettingButton } from "../McpEndpointSettingButton";
 
 // Mock modules
 vi.mock("@/stores/config");
