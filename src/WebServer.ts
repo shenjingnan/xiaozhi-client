@@ -703,6 +703,12 @@ export class WebServer {
         this.mcpServerApiHandler?.addMCPServer(c) ||
         c.json({ error: "MCP Server API Handler not initialized" }, 500)
     );
+    this.app?.delete(
+      "/api/mcp-servers/:serverName",
+      (c) =>
+        this.mcpServerApiHandler?.removeMCPServer(c) ||
+        c.json({ error: "MCP Server API Handler not initialized" }, 500)
+    );
 
     // MCP 服务路由 - 符合 MCP Streamable HTTP 规范
     this.app?.post("/mcp", (c) => this.mcpRouteHandler.handlePost(c));

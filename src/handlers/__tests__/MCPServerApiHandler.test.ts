@@ -22,11 +22,14 @@ const createMockConfigManager = (): Partial<ConfigManager> => ({
     },
   }),
   updateMcpServer: vi.fn(),
+  removeMcpServer: vi.fn(),
 });
 
 const createMockMCPServiceManager = (): Partial<MCPServiceManager> => ({
   addServiceConfig: vi.fn(),
   startService: vi.fn(),
+  stopService: vi.fn(),
+  removeServiceConfig: vi.fn(),
   // MCPServiceManager 的其他模拟方法将在后续里程碑中添加
 });
 
@@ -354,6 +357,237 @@ describe("addMCPServer", () => {
     expect(responseData.data.status).toBe("disconnected");
     expect(responseData.data.connected).toBe(false);
     expect(responseData.data.tools).toEqual([]);
+  });
+});
+
+describe("removeMCPServer", () => {
+  let handler: MCPServerApiHandler;
+  let mockConfigManager: Partial<ConfigManager>;
+  let mockMCPServiceManager: Partial<MCPServiceManager>;
+  let mockEventBus: Partial<EventBus>;
+  let mockContext: Partial<Context>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    mockConfigManager = createMockConfigManager();
+    mockMCPServiceManager = createMockMCPServiceManager();
+    mockEventBus = createMockEventBus();
+
+    handler = new MCPServerApiHandler(
+      mockMCPServiceManager as MCPServiceManager,
+      mockConfigManager as ConfigManager
+    );
+
+    // 创建模拟 Context
+    mockContext = {
+      json: vi.fn().mockImplementation((data: any, status?: number) => {
+        return new Response(JSON.stringify(data), {
+          status: status || 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+      param: vi.fn(),
+      req: {
+        param: vi.fn(),
+      },
+      raw: new Request("http://localhost"),
+      routeIndex: 0,
+      path: "",
+      bodyCache: new Map(),
+      query: vi.fn(),
+      header: vi.fn(),
+      headerValues: vi.fn(),
+    } as any;
+  });
+
+  it("应该成功移除存在的 MCP 服务", async () => {
+    const serverName = "existingService";
+    (mockContext as any).req = { param: vi.fn().mockReturnValue(serverName) };
+
+    // 模拟服务存在且有工具
+    const mockService = {
+      isConnected: vi.fn().mockReturnValue(true),
+      getTools: vi.fn().mockReturnValue([{ name: "tool1" }, { name: "tool2" }]),
+    };
+    (mockMCPServiceManager as any).services = new Map([
+      [serverName, mockService],
+    ]);
+
+    const response = await handler.removeMCPServer(mockContext as Context);
+
+    // 验证调用
+    expect(mockMCPServiceManager.stopService).toHaveBeenCalledWith(serverName);
+    expect(mockMCPServiceManager.removeServiceConfig).toHaveBeenCalledWith(
+      serverName
+    );
+    expect(mockConfigManager.removeMcpServer).toHaveBeenCalledWith(serverName);
+
+    // 验证响应
+    expect(response.status).toBe(200);
+    const responseData = await response.json();
+    expect(responseData.success).toBe(true);
+    expect(responseData.data.name).toBe(serverName);
+    expect(responseData.data.operation).toBe("removed");
+    expect(responseData.data.affectedTools).toEqual(["tool1", "tool2"]);
+  });
+
+  it("应该拒绝无效的服务名称", async () => {
+    const invalidServerName = "invalid@name";
+    (mockContext as any).req = { param: vi.fn().mockReturnValue(invalidServerName) };
+
+    const response = await handler.removeMCPServer(mockContext as Context);
+
+    expect(response.status).toBe(400);
+    const responseData = await response.json();
+    expect(responseData.error.code).toBe("INVALID_SERVICE_NAME");
+    expect(responseData.error.message).toContain(
+      "服务名称只能包含字母、数字、下划线和连字符"
+    );
+  });
+
+  it("应该拒绝移除不存在的服务", async () => {
+    const nonExistentServer = "nonExistentService";
+    (mockContext as any).req = { param: vi.fn().mockReturnValue(nonExistentServer) };
+
+    const response = await handler.removeMCPServer(mockContext as Context);
+
+    expect(response.status).toBe(404);
+    const responseData = await response.json();
+    expect(responseData.error.code).toBe("SERVER_NOT_FOUND");
+    expect(responseData.error.message).toBe("MCP 服务不存在");
+  });
+
+  it("应该处理服务停止失败的情况", async () => {
+    const serverName = "failingService";
+    (mockContext as any).req = { param: vi.fn().mockReturnValue(serverName) };
+
+    // 修改 mockConfigManager 让它认为这个服务存在
+    const originalGetConfig = mockConfigManager.getConfig;
+    mockConfigManager.getConfig = vi.fn().mockReturnValue({
+      mcpServers: {
+        [serverName]: {
+          command: "node",
+          args: ["server.js"],
+        },
+      },
+    });
+
+    // 模拟服务存在且有工具
+    const mockService = {
+      isConnected: vi.fn().mockReturnValue(true),
+      getTools: vi.fn().mockReturnValue([{ name: "tool1" }]),
+    };
+    (mockMCPServiceManager as any).services = new Map([
+      [serverName, mockService],
+    ]);
+
+    // 模拟服务停止失败
+    mockMCPServiceManager.stopService = vi
+      .fn()
+      .mockRejectedValue(new Error("停止服务失败"));
+
+    const response = await handler.removeMCPServer(mockContext as Context);
+
+    // 即使停止失败，也应该继续执行配置移除
+    expect(mockMCPServiceManager.removeServiceConfig).toHaveBeenCalledWith(
+      serverName
+    );
+    expect(mockConfigManager.removeMcpServer).toHaveBeenCalledWith(serverName);
+
+    expect(response.status).toBe(200);
+    const responseData = await response.json();
+    expect(responseData.success).toBe(true);
+    expect(responseData.data.name).toBe(serverName);
+
+    // 恢复原始 mock
+    mockConfigManager.getConfig = originalGetConfig;
+  });
+
+  it("应该处理配置移除失败的情况", async () => {
+    const serverName = "configFailService";
+    (mockContext as any).req = { param: vi.fn().mockReturnValue(serverName) };
+
+    // 模拟服务存在
+    const mockService = {
+      isConnected: vi.fn().mockReturnValue(true),
+      getTools: vi.fn().mockReturnValue([{ name: "tool1" }]),
+    };
+    (mockMCPServiceManager as any).services = new Map([
+      [serverName, mockService],
+    ]);
+
+    // 修改配置管理器让它认为这个服务存在
+    const originalGetConfig = mockConfigManager.getConfig;
+    mockConfigManager.getConfig = vi.fn().mockReturnValue({
+      mcpServers: {
+        [serverName]: {
+          command: "node",
+          args: ["server.js"],
+        },
+      },
+    });
+
+    // 模拟配置移除失败
+    mockConfigManager.removeMcpServer = vi.fn().mockImplementation(() => {
+      throw new Error("配置更新失败");
+    });
+
+    const response = await handler.removeMCPServer(mockContext as Context);
+
+    expect(response.status).toBe(500);
+    const responseData = await response.json();
+    expect(responseData.error.code).toBe("CONFIG_UPDATE_FAILED");
+    expect(responseData.error.message).toBe("配置更新失败");
+
+    // 恢复原始 getConfig
+    mockConfigManager.getConfig = originalGetConfig;
+  });
+
+  it("应该正确处理断开连接的服务", async () => {
+    const serverName = "disconnectedService";
+    (mockContext as any).req = { param: vi.fn().mockReturnValue(serverName) };
+
+    // 修改 mockConfigManager 让它认为这个服务存在
+    const originalGetConfig = mockConfigManager.getConfig;
+    mockConfigManager.getConfig = vi.fn().mockReturnValue({
+      mcpServers: {
+        [serverName]: {
+          command: "node",
+          args: ["server.js"],
+        },
+      },
+    });
+
+    // 模拟断开连接的服务
+    const mockService = {
+      isConnected: vi.fn().mockReturnValue(false),
+      getTools: vi.fn().mockReturnValue([]),
+    };
+    (mockMCPServiceManager as any).services = new Map([
+      [serverName, mockService],
+    ]);
+
+    const response = await handler.removeMCPServer(mockContext as Context);
+
+    expect(response.status).toBe(200);
+    const responseData = await response.json();
+    expect(responseData.success).toBe(true);
+    expect(responseData.data.name).toBe(serverName);
+    expect(responseData.data.affectedTools).toEqual([]);
+
+    // 恢复原始 mock
+    mockConfigManager.getConfig = originalGetConfig;
+  });
+
+  it("应该验证路径参数获取的正确性", async () => {
+    const serverName = "testService";
+    (mockContext as any).req = { param: vi.fn().mockReturnValue(serverName) };
+
+    await handler.removeMCPServer(mockContext as Context);
+
+    // 验证正确获取了路径参数
+    expect((mockContext as any).req.param).toHaveBeenCalledWith("serverName");
   });
 });
 

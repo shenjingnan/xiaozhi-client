@@ -315,13 +315,102 @@ export class MCPServerApiHandler {
    * DELETE /api/mcp-servers/:serverName
    */
   async removeMCPServer(c: Context): Promise<Response> {
-    // 基础框架，在里程碑三中实现完整功能
-    this.logger.info("移除 MCP 服务功能待实现");
-    const errorResponse = this.createErrorResponse(
-      MCPErrorCode.INTERNAL_ERROR,
-      "移除 MCP 服务功能待实现"
-    );
-    return c.json(errorResponse, 501);
+    try {
+      // 1. 从路径参数获取服务名称
+      const serverName = c.req.param("serverName");
+
+      // 2. 验证服务名称
+      const nameValidation =
+        MCPServerConfigValidator.validateServiceName(serverName);
+      if (!nameValidation.isValid) {
+        const errorResponse = this.createErrorResponse(
+          MCPErrorCode.INVALID_SERVICE_NAME,
+          nameValidation.errors.join(", "),
+          serverName
+        );
+        return c.json(errorResponse, 400);
+      }
+
+      // 3. 检查服务是否存在
+      if (
+        !MCPServerConfigValidator.checkServiceExists(
+          serverName,
+          this.configManager
+        )
+      ) {
+        const errorResponse = this.createErrorResponse(
+          MCPErrorCode.SERVER_NOT_FOUND,
+          "MCP 服务不存在",
+          serverName
+        );
+        return c.json(errorResponse, 404);
+      }
+
+      // 4. 获取服务当前的工具列表（用于事件通知）
+      const currentTools = this.getServiceTools(serverName).map(
+        (tool) => tool.name
+      );
+
+      // 5. 停止服务并清理资源
+      try {
+        await this.mcpServiceManager.stopService(serverName);
+      } catch (error) {
+        this.logger.warn(`停止服务 ${serverName} 失败:`, error);
+        // 即使停止失败，也继续执行配置移除
+      }
+
+      // 6. 移除服务配置
+      this.mcpServiceManager.removeServiceConfig(serverName);
+      this.configManager.removeMcpServer(serverName);
+
+      // 7. 发送事件通知
+      getEventBus().emitEvent("mcp:server:removed", {
+        serverName,
+        affectedTools: currentTools,
+        timestamp: new Date(),
+      });
+
+      // 8. 返回成功响应
+      const successResponse = this.createSuccessResponse(
+        {
+          name: serverName,
+          operation: "removed",
+          affectedTools: currentTools,
+        },
+        "MCP 服务移除成功"
+      );
+      return c.json(successResponse, 200);
+    } catch (error) {
+      this.logger.error("移除 MCP 服务失败:", error);
+
+      // 处理不同类型的错误
+      if (error instanceof Error) {
+        if (error.message.includes("服务不存在")) {
+          const errorResponse = this.createErrorResponse(
+            MCPErrorCode.SERVER_NOT_FOUND,
+            error.message
+          );
+          return c.json(errorResponse, 404);
+        }
+
+        if (error.message.includes("配置更新")) {
+          const errorResponse = this.createErrorResponse(
+            MCPErrorCode.CONFIG_UPDATE_FAILED,
+            error.message
+          );
+          return c.json(errorResponse, 500);
+        }
+      }
+
+      // 其他未知错误
+      const errorResponse = this.createErrorResponse(
+        MCPErrorCode.REMOVE_FAILED,
+        "移除 MCP 服务时发生错误",
+        undefined,
+        { error: error instanceof Error ? error.message : String(error) }
+      );
+      return c.json(errorResponse, 500);
+    }
   }
 
   /**

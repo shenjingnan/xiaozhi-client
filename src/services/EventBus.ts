@@ -66,6 +66,11 @@ export interface EventBusEvents {
     tools: string[];
     timestamp: Date;
   };
+  "mcp:server:removed": {
+    serverName: string;
+    affectedTools: string[];
+    timestamp: Date;
+  };
 
   // 工具同步相关事件
   "tool-sync:server-tools-updated": {
