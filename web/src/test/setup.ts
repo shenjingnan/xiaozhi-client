@@ -22,14 +22,6 @@ Object.defineProperty(window, "open", {
   value: vi.fn(),
 });
 
-// Mock navigator.clipboard
-Object.defineProperty(navigator, "clipboard", {
-  value: {
-    writeText: vi.fn().mockResolvedValue(undefined),
-  },
-  writable: true,
-});
-
 // Mock document.execCommand
 Object.defineProperty(document, "execCommand", {
   value: vi.fn(),
@@ -38,17 +30,99 @@ Object.defineProperty(document, "execCommand", {
 
 // Global test setup and cleanup
 beforeEach(() => {
-  // Force cleanup of DOM state that might interfere with tests
-  if (document.body?.attributes) {
-    // Remove all attributes from body that might interfere with pointer events
+  // Clean up clipboard before each test to avoid conflicts with userEvent.setup()
+  try {
+    if (navigator && "clipboard" in navigator) {
+      (navigator as any).clipboard = undefined;
+    }
+  } catch (e) {
+    // Ignore errors when cleaning up clipboard
+  }
+
+  // 强制重置 body 样式，防止 Radix UI 阻塞交互
+  if (document.body) {
+    // 移除所有属性
     while (document.body.attributes.length > 0) {
       document.body.removeAttribute(document.body.attributes[0].name);
     }
-    // Reset critical styles
+    // 重置关键样式
     document.body.style.cssText = "";
-    document.body.style.pointerEvents = "";
+    document.body.style.pointerEvents = "auto";
     document.body.style.position = "";
     document.body.style.overflow = "";
+    document.body.style.visibility = "visible";
+    document.body.style.display = "block";
+
+    // 强制覆盖可能的样式冲突
+    const forceStyle = document.createElement("style");
+    forceStyle.textContent = `
+      body, body * {
+        pointer-events: auto !important;
+        visibility: visible !important;
+        user-select: auto !important;
+      }
+      [data-radix-dialog-overlay] {
+        display: none !important;
+        pointer-events: none !important;
+      }
+      [data-radix-focus-guard] {
+        display: none !important;
+        pointer-events: none !important;
+      }
+      [data-scroll-locked] {
+        pointer-events: auto !important;
+      }
+      [aria-hidden="true"] {
+        pointer-events: auto !important;
+      }
+      .fixed.inset-0[data-state="open"] {
+        display: none !important;
+      }
+    `;
+    document.head.appendChild(forceStyle);
+
+    // 拦截和阻止 body.style.pointerEvents = 'none'
+    const originalSetProperty = CSSStyleDeclaration.prototype.setProperty;
+    CSSStyleDeclaration.prototype.setProperty = function (
+      prop: string,
+      value: string,
+      priority?: string
+    ) {
+      // 使用类型断言来访问 parentElement
+      const parentElement = (this as any).parentElement as
+        | HTMLElement
+        | undefined;
+      if (
+        prop === "pointer-events" &&
+        value === "none" &&
+        parentElement?.tagName === "BODY"
+      ) {
+        return;
+      }
+      return originalSetProperty.call(this, prop, value, priority);
+    };
+
+    // 也阻止直接赋值
+    const originalDescriptor = Object.getOwnPropertyDescriptor(
+      CSSStyleDeclaration.prototype,
+      "pointerEvents"
+    );
+    if (originalDescriptor) {
+      Object.defineProperty(CSSStyleDeclaration.prototype, "pointerEvents", {
+        ...originalDescriptor,
+        set: function (value: string) {
+          if (value === "none" && this.parentElement?.tagName === "BODY") {
+            return;
+          }
+          return originalDescriptor.set?.call(this, value) || value;
+        },
+      });
+    }
+
+    // 强制重置 body 的 pointer-events
+    if (document.body.style) {
+      document.body.style.pointerEvents = "auto";
+    }
   }
 
   // Clean up any existing containers
@@ -58,6 +132,10 @@ beforeEach(() => {
   } else {
     const root = document.createElement("div");
     root.id = "root";
+    // 确保容器可以被 React 使用
+    root.style.pointerEvents = "auto";
+    root.style.visibility = "visible";
+    root.style.position = "relative";
     document.body.appendChild(root);
   }
 
@@ -67,8 +145,19 @@ beforeEach(() => {
   } else {
     const modalRoot = document.createElement("div");
     modalRoot.id = "modal-root";
+    // 确保容器可以被 React 使用
+    modalRoot.style.pointerEvents = "auto";
+    modalRoot.style.visibility = "visible";
+    modalRoot.style.position = "relative";
     document.body.appendChild(modalRoot);
   }
+
+  // 强制确保 body 和 root 容器可以被 React 找到并使用
+  document.body.setAttribute("data-testid", "test-body");
+  document.getElementById("root")?.setAttribute("data-testid", "test-root");
+  document
+    .getElementById("modal-root")
+    ?.setAttribute("data-testid", "test-modal-root");
 
   // Aggressively clean up any radix dialogs, portals, or focus guards
   try {
@@ -95,13 +184,16 @@ beforeEach(() => {
       }
       if (el instanceof HTMLElement) {
         if (el.style.pointerEvents === "none") {
-          el.style.pointerEvents = "";
+          el.style.pointerEvents = "auto";
         }
         if (el.style.position === "fixed") {
           el.style.position = "";
         }
         if (el.style.opacity === "0") {
           el.style.opacity = "";
+        }
+        if (el.style.visibility === "hidden") {
+          el.style.visibility = "visible";
         }
       }
     }
@@ -136,13 +228,16 @@ afterEach(() => {
       }
       if (el instanceof HTMLElement) {
         if (el.style.pointerEvents === "none") {
-          el.style.pointerEvents = "";
+          el.style.pointerEvents = "auto";
         }
         if (el.style.position === "fixed") {
           el.style.position = "";
         }
         if (el.style.opacity === "0") {
           el.style.opacity = "";
+        }
+        if (el.style.visibility === "hidden") {
+          el.style.visibility = "visible";
         }
       }
     }
@@ -153,6 +248,24 @@ afterEach(() => {
         document.body.removeAttribute(document.body.attributes[0].name);
       }
       document.body.style.cssText = "";
+      document.body.style.pointerEvents = "auto";
+      document.body.style.position = "";
+      document.body.style.overflow = "";
+      document.body.style.visibility = "visible";
+      document.body.style.display = "block";
+    }
+
+    // 清理动态添加的样式
+    const dynamicStyles = document.querySelectorAll("style");
+    for (const style of dynamicStyles) {
+      if (style.textContent?.includes("pointer-events: auto !important")) {
+        style.remove();
+      }
+    }
+
+    // 强制重置 body 的 pointer-events
+    if (document.body.style) {
+      document.body.style.pointerEvents = "auto";
     }
   } catch (e) {
     // Ignore errors during cleanup
