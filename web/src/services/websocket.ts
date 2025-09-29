@@ -33,6 +33,18 @@ interface RestartStatus {
 }
 
 /**
+ * 接入点状态变更事件数据
+ */
+export interface EndpointStatusChangedEvent {
+  endpoint: string;
+  connected: boolean;
+  operation: "connect" | "disconnect" | "reconnect";
+  success: boolean;
+  message?: string;
+  timestamp: number;
+}
+
+/**
  * 事件总线事件类型
  */
 interface EventBusEvents {
@@ -47,6 +59,9 @@ interface EventBusEvents {
   "data:configUpdate": AppConfig;
   "data:statusUpdate": ClientStatus;
   "data:restartStatus": RestartStatus;
+
+  // 接入点状态事件
+  "data:endpointStatusChanged": EndpointStatusChangedEvent;
 
   // 系统事件
   "system:heartbeat": { timestamp: number };
@@ -521,6 +536,12 @@ export class WebSocketManager {
         case "restartStatus":
           if (message.data) {
             this.eventBus.emit("data:restartStatus", message.data);
+          }
+          break;
+
+        case "endpoint_status_changed":
+          if (message.data) {
+            this.eventBus.emit("data:endpointStatusChanged", message.data);
           }
           break;
 

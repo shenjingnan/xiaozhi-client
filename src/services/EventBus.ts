@@ -18,6 +18,17 @@ export interface EventBusEvents {
   "status:updated": { status: any; source: string };
   "status:error": { error: Error; operation: string };
 
+  // 接入点状态变更事件
+  "endpoint:status:changed": {
+    endpoint: string;
+    connected: boolean;
+    operation: "connect" | "disconnect" | "reconnect" | "add" | "remove";
+    success: boolean;
+    message?: string;
+    timestamp: number;
+    source: string;
+  };
+
   // 服务相关事件
   "service:restart:requested": { source: string };
   "service:restart:started": { timestamp: number };

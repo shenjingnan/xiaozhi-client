@@ -90,6 +90,19 @@ interface RestartStatus {
 }
 
 /**
+ * 接入点状态响应接口
+ */
+interface EndpointStatusResponse {
+  endpoint: string;
+  connected: boolean;
+  initialized: boolean;
+  isReconnecting: boolean;
+  reconnectAttempts: number;
+  nextReconnectTime?: number;
+  reconnectDelay: number;
+}
+
+/**
  * 完整状态接口
  */
 interface FullStatus {
@@ -519,7 +532,9 @@ export class ApiClient {
       queryParams.append("status", status);
     }
 
-    const url = `/api/tools/list${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+    const url = `/api/tools/list${
+      queryParams.toString() ? `?${queryParams.toString()}` : ""
+    }`;
 
     const response: ApiResponse<{ list: CustomMCPTool[]; total: number }> =
       await this.request(url);
@@ -637,6 +652,90 @@ export class ApiClient {
       throw new Error(response.message || "清除版本缓存失败");
     }
   }
+
+  // ==================== 端点管理 API ====================
+
+  /**
+   * 获取接入点状态
+   */
+  async getEndpointStatus(endpoint: string): Promise<EndpointStatusResponse> {
+    const response: ApiResponse<EndpointStatusResponse> = await this.request(
+      `/api/endpoints/${encodeURIComponent(endpoint)}/status`
+    );
+    if (!response.success || !response.data) {
+      throw new Error("获取接入点状态失败");
+    }
+    return response.data;
+  }
+
+  /**
+   * 连接接入点
+   */
+  async connectEndpoint(endpoint: string): Promise<void> {
+    const response: ApiResponse = await this.request(
+      `/api/endpoints/${encodeURIComponent(endpoint)}/connect`,
+      { method: "POST" }
+    );
+    if (!response.success) {
+      throw new Error(response.message || "连接接入点失败");
+    }
+  }
+
+  /**
+   * 断开接入点
+   */
+  async disconnectEndpoint(endpoint: string): Promise<void> {
+    const response: ApiResponse = await this.request(
+      `/api/endpoints/${encodeURIComponent(endpoint)}/disconnect`,
+      { method: "POST" }
+    );
+    if (!response.success) {
+      throw new Error(response.message || "断开接入点失败");
+    }
+  }
+
+  /**
+   * 重连接入点
+   */
+  async reconnectEndpoint(endpoint: string): Promise<void> {
+    const response: ApiResponse = await this.request(
+      `/api/endpoints/${encodeURIComponent(endpoint)}/reconnect`,
+      { method: "POST" }
+    );
+    if (!response.success) {
+      throw new Error(response.message || "重连接入点失败");
+    }
+  }
+
+  /**
+   * 添加新接入点
+   */
+  async addEndpoint(endpoint: string): Promise<EndpointStatusResponse> {
+    const response: ApiResponse<EndpointStatusResponse> = await this.request(
+      "/api/endpoints/add",
+      {
+        method: "POST",
+        body: JSON.stringify({ endpoint }),
+      }
+    );
+    if (!response.success || !response.data) {
+      throw new Error(response.message || "添加接入点失败");
+    }
+    return response.data;
+  }
+
+  /**
+   * 移除接入点
+   */
+  async removeEndpoint(endpoint: string): Promise<void> {
+    const response: ApiResponse = await this.request(
+      `/api/endpoints/${encodeURIComponent(endpoint)}`,
+      { method: "DELETE" }
+    );
+    if (!response.success) {
+      throw new Error(response.message || "移除接入点失败");
+    }
+  }
 }
 
 // 创建默认的 API 客户端实例
@@ -651,4 +750,5 @@ export type {
   RestartStatus,
   FullStatus,
   VersionInfo,
+  EndpointStatusResponse,
 };
