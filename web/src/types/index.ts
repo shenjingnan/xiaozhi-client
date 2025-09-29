@@ -196,3 +196,110 @@ export interface WorkflowParameterConfig {
   /** 参数列表 */
   parameters: WorkflowParameter[];
 }
+
+// ==================== MCP 服务器管理 API 相关类型 ====================
+
+/**
+ * MCP 服务添加请求接口（单服务格式）
+ */
+export interface MCPServerAddRequest {
+  name: string;
+  config: MCPServerConfig;
+}
+
+/**
+ * MCP 服务批量添加请求接口（mcpServers 格式）
+ */
+export interface MCPServerBatchAddRequest {
+  mcpServers: Record<string, MCPServerConfig>;
+}
+
+/**
+ * MCP 服务添加操作结果
+ */
+export interface MCPServerAddResult {
+  name: string;
+  success: boolean;
+  error?: string;
+  config?: MCPServerConfig;
+  tools?: string[];
+  status?: string;
+}
+
+/**
+ * MCP 服务批量添加响应
+ */
+export interface MCPServerBatchAddResponse {
+  success: boolean;
+  message: string;
+  results: MCPServerAddResult[];
+  addedCount: number;
+  failedCount: number;
+}
+
+/**
+ * MCP 服务状态接口
+ */
+export interface MCPServerStatus {
+  name: string;
+  status: "connected" | "disconnected" | "connecting" | "error";
+  connected: boolean;
+  tools: string[];
+  lastUpdated?: string;
+  config: MCPServerConfig;
+}
+
+/**
+ * MCP 服务列表响应接口
+ */
+export interface MCPServerListResponse {
+  servers: MCPServerStatus[];
+  total: number;
+}
+
+/**
+ * API 统一响应格式接口
+ */
+export interface ApiSuccessResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+}
+
+export interface ApiErrorResponse {
+  error: {
+    code: string;
+    message: string;
+    details?: {
+      serverName?: string;
+      config?: any;
+      tools?: string[];
+      timestamp: string;
+    };
+  };
+}
+
+/**
+ * API 错误码枚举
+ */
+export enum MCPErrorCode {
+  // 服务相关错误
+  SERVER_NOT_FOUND = "SERVER_NOT_FOUND",
+  SERVER_ALREADY_EXISTS = "SERVER_ALREADY_EXISTS",
+  INVALID_SERVICE_NAME = "INVALID_SERVICE_NAME",
+
+  // 配置相关错误
+  INVALID_CONFIG = "INVALID_CONFIG",
+  CONFIG_UPDATE_FAILED = "CONFIG_UPDATE_FAILED",
+
+  // 连接相关错误
+  CONNECTION_FAILED = "CONNECTION_FAILED",
+
+  // 操作相关错误
+  ADD_FAILED = "ADD_FAILED",
+  REMOVE_FAILED = "REMOVE_FAILED",
+
+  // 系统错误
+  INTERNAL_ERROR = "INTERNAL_ERROR",
+  VALIDATION_ERROR = "VALIDATION_ERROR",
+}

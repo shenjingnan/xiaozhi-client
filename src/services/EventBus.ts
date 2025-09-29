@@ -30,10 +30,43 @@ export interface EventBusEvents {
   };
 
   // 服务相关事件
-  "service:restart:requested": { source: string };
-  "service:restart:started": { timestamp: number };
-  "service:restart:completed": { timestamp: number };
-  "service:restart:failed": { error: Error; timestamp: number };
+  "service:restart:requested": {
+    serviceName: string;
+    reason?: string;
+    delay: number;
+    attempt: number;
+    timestamp: number;
+  };
+  "service:restart:started": {
+    serviceName: string;
+    reason?: string;
+    attempt: number;
+    timestamp: number;
+  };
+  "service:restart:completed": {
+    serviceName: string;
+    reason?: string;
+    attempt: number;
+    timestamp: number;
+  };
+  "service:restart:failed": {
+    serviceName: string;
+    error: Error;
+    attempt: number;
+    timestamp: number;
+  };
+  "service:restart:execute": {
+    serviceName: string;
+    reason?: string;
+    attempt: number;
+    timestamp: number;
+  };
+  "service:health:changed": {
+    serviceName: string;
+    oldStatus: string;
+    newStatus: string;
+    timestamp: number;
+  };
 
   // WebSocket 相关事件
   "websocket:client:connected": { clientId: string; timestamp: number };
@@ -71,6 +104,38 @@ export interface EventBusEvents {
     affectedTools: string[];
     timestamp: Date;
   };
+  "mcp:server:status_changed": {
+    serverName: string;
+    oldStatus: "connected" | "disconnected" | "connecting" | "error";
+    newStatus: "connected" | "disconnected" | "connecting" | "error";
+    timestamp: Date;
+    reason?: string;
+  };
+  "mcp:server:connection:attempt": {
+    serverName: string;
+    attempt: number;
+    maxAttempts: number;
+    timestamp: Date;
+  };
+  "mcp:server:tools:updated": {
+    serverName: string;
+    tools: string[];
+    addedTools: string[];
+    removedTools: string[];
+    timestamp: Date;
+  };
+  "mcp:server:batch_added": {
+    totalServers: number;
+    addedCount: number;
+    failedCount: number;
+    successfullyAddedServers: string[];
+    results: any[];
+    timestamp: Date;
+  };
+  "mcp:server:rollback": {
+    serverName: string;
+    timestamp: Date;
+  };
 
   // 工具同步相关事件
   "tool-sync:server-tools-updated": {
@@ -78,6 +143,15 @@ export interface EventBusEvents {
     timestamp: Date;
   };
   "tool-sync:general-config-updated": {
+    timestamp: Date;
+  };
+  "tool-sync:request-service-tools": {
+    serviceName: string;
+    timestamp: Date;
+  };
+  "tool-sync:service-tools-removed": {
+    serviceName: string;
+    removedCount: number;
     timestamp: Date;
   };
 }

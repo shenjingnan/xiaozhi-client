@@ -2,11 +2,11 @@ import type { Context } from "hono";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConfigManager } from "../../configManager.js";
 import type { MCPServerConfig } from "../../configManager.js";
+import { MCPErrorCode } from "../../errors/MCPErrors.js";
 import type { EventBus } from "../../services/EventBus.js";
 import { getEventBus } from "../../services/EventBus.js";
 import type { MCPServiceManager } from "../../services/MCPServiceManager.js";
 import {
-  MCPErrorCode,
   MCPServerApiHandler,
   MCPServerConfigValidator,
 } from "../MCPServerApiHandler.js";
@@ -210,10 +210,13 @@ describe("addMCPServer", () => {
       "new-service",
       requestData.config
     );
-    expect(mockMCPServiceManager.addServiceConfig).toHaveBeenCalledWith(
-      "new-service",
-      requestData.config
-    );
+    expect(mockMCPServiceManager.addServiceConfig).toHaveBeenCalledWith({
+      name: "new-service",
+      type: "stdio",
+      command: "node",
+      args: ["server.js"],
+      env: {},
+    });
     expect(mockMCPServiceManager.startService).toHaveBeenCalledWith(
       "new-service"
     );
@@ -298,7 +301,7 @@ describe("addMCPServer", () => {
     (mockContext.req as any).json = vi.fn().mockResolvedValue(requestData);
     mockMCPServiceManager.startService = vi
       .fn()
-      .mockRejectedValue(new Error("连接失败"));
+      .mockRejectedValue(new Error("服务连接失败"));
 
     const response = await handler.addMCPServer(mockContext as Context);
 

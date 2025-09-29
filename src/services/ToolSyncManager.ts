@@ -40,6 +40,16 @@ export class ToolSyncManager {
     this.eventBus.onEvent("config:updated", async (data) => {
       await this.handleConfigUpdated(data);
     });
+
+    // 监听MCP服务添加事件
+    this.eventBus.onEvent("mcp:server:added", async (data) => {
+      await this.handleMCPServerAdded(data);
+    });
+
+    // 监听MCP服务移除事件
+    this.eventBus.onEvent("mcp:server:removed", async (data) => {
+      await this.handleMCPServerRemoved(data);
+    });
   }
 
   /**
@@ -101,6 +111,112 @@ export class ToolSyncManager {
       });
     } catch (error) {
       this.logger.error("处理通用配置更新失败:", error);
+    }
+  }
+
+  /**
+   * 处理MCP服务添加事件
+   */
+  private async handleMCPServerAdded(data: {
+    serverName: string;
+    config: any;
+    tools: string[];
+    timestamp: Date;
+  }): Promise<void> {
+    this.logger.info(`处理MCP服务添加事件: ${data.serverName}`);
+
+    try {
+      // 等待服务完全启动并获取工具列表
+      setTimeout(async () => {
+        await this.triggerServiceToolSync(data.serverName);
+      }, 1000); // 给服务1秒时间启动
+    } catch (error) {
+      this.logger.error(`处理服务 ${data.serverName} 添加事件失败:`, error);
+    }
+  }
+
+  /**
+   * 处理MCP服务移除事件
+   */
+  private async handleMCPServerRemoved(data: {
+    serverName: string;
+    affectedTools: string[];
+    timestamp: Date;
+  }): Promise<void> {
+    this.logger.info(`处理MCP服务移除事件: ${data.serverName}`);
+
+    try {
+      // 从customMCP中移除该服务的所有工具
+      await this.removeServiceToolsFromCustomMCP(
+        data.serverName,
+        data.affectedTools
+      );
+    } catch (error) {
+      this.logger.error(`处理服务 ${data.serverName} 移除事件失败:`, error);
+    }
+  }
+
+  /**
+   * 触发服务工具同步（用于事件驱动的同步）
+   * @param serviceName 服务名称
+   */
+  private async triggerServiceToolSync(serviceName: string): Promise<void> {
+    this.logger.info(`触发服务 ${serviceName} 的工具同步`);
+
+    try {
+      // 发射事件，请求MCPServiceManager提供该服务的工具列表
+      this.eventBus.emitEvent("tool-sync:request-service-tools", {
+        serviceName,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      this.logger.error(`触发服务 ${serviceName} 工具同步失败:`, error);
+    }
+  }
+
+  /**
+   * 从customMCP中移除指定服务的工具
+   * @param serviceName 服务名称
+   * @param affectedTools 受影响的工具列表
+   */
+  private async removeServiceToolsFromCustomMCP(
+    serviceName: string,
+    affectedTools: string[]
+  ): Promise<void> {
+    this.logger.info(`从customMCP中移除服务 ${serviceName} 的工具`);
+
+    try {
+      const existingCustomTools = this.configManager.getCustomMCPTools();
+
+      // 过滤出需要保留的工具（不属于该服务的工具）
+      const toolsToKeep = existingCustomTools.filter((tool) => {
+        return !tool.name.startsWith(`${serviceName}__`);
+      });
+
+      if (toolsToKeep.length === existingCustomTools.length) {
+        this.logger.debug(
+          `服务 ${serviceName} 的工具不在customMCP中，无需移除`
+        );
+        return;
+      }
+
+      // 更新配置文件
+      await this.configManager.updateCustomMCPTools(toolsToKeep);
+
+      const removedCount = existingCustomTools.length - toolsToKeep.length;
+      this.logger.info(
+        `成功从customMCP中移除服务 ${serviceName} 的 ${removedCount} 个工具`
+      );
+
+      // 发射工具移除完成事件
+      this.eventBus.emitEvent("tool-sync:service-tools-removed", {
+        serviceName,
+        removedCount,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      this.logger.error(`移除服务 ${serviceName} 工具失败:`, error);
+      throw error;
     }
   }
 

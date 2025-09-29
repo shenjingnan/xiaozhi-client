@@ -110,17 +110,23 @@ export class StatusService {
       switch (status) {
         case "restarting":
           this.eventBus.emitEvent("service:restart:started", {
+            serviceName: this.restartStatus.serviceName,
+            attempt: this.restartStatus.attempt,
             timestamp: this.restartStatus.timestamp,
           });
           break;
         case "completed":
           this.eventBus.emitEvent("service:restart:completed", {
+            serviceName: this.restartStatus.serviceName,
+            attempt: this.restartStatus.attempt,
             timestamp: this.restartStatus.timestamp,
           });
           break;
         case "failed":
           this.eventBus.emitEvent("service:restart:failed", {
+            serviceName: this.restartStatus.serviceName,
             error: new Error(error || "重启失败"),
+            attempt: this.restartStatus.attempt,
             timestamp: this.restartStatus.timestamp,
           });
           break;
