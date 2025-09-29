@@ -614,8 +614,8 @@ const waitForPortRelease = async (
 // 检测CI环境和平台
 const isCI = process.env.CI === "true" || process.env.GITHUB_ACTIONS === "true";
 const isUbuntu = process.platform === "linux";
-const cleanupDelay = isCI ? (isUbuntu ? 5000 : 2000) : (isUbuntu ? 2000 : 1000); // Ubuntu和CI环境使用更长的清理时间
-const maxWaitTime = isCI ? (isUbuntu ? 15000 : 12000) : (isUbuntu ? 10000 : 8000); // Ubuntu环境使用更长的等待时间
+const cleanupDelay = isCI ? (isUbuntu ? 5000 : 2000) : isUbuntu ? 2000 : 1000; // Ubuntu和CI环境使用更长的清理时间
+const maxWaitTime = isCI ? (isUbuntu ? 15000 : 12000) : isUbuntu ? 10000 : 8000; // Ubuntu环境使用更长的等待时间
 
 // 端口范围管理，避免重复使用端口
 const usedPorts = new Set<number>();
@@ -626,12 +626,12 @@ const getPortRange = (): { min: number; max: number } => {
     // CI Ubuntu环境使用更大的端口范围
     return { min: 30000, max: 50000 };
   }
-  
+
   if (isCI) {
     // 其他CI环境
     return { min: 20000, max: 40000 };
   }
-  
+
   // 本地开发环境
   return { min: 10000, max: 30000 };
 };
@@ -648,7 +648,9 @@ const getUniquePort = async (): Promise<number> => {
 
     // 在Ubuntu CI环境中，使用随机端口而不是顺序端口
     if (isCI && isUbuntu) {
-      port = Math.floor(Math.random() * (portRange.max - portRange.min + 1)) + portRange.min;
+      port =
+        Math.floor(Math.random() * (portRange.max - portRange.min + 1)) +
+        portRange.min;
     } else {
       port = await getAvailablePort();
     }
@@ -660,9 +662,9 @@ const getUniquePort = async (): Promise<number> => {
     }
 
     // 验证端口是否真的可用（特别是在Ubuntu环境下）
-    if (!usedPorts.has(port) && await isPortAvailable(port)) {
+    if (!usedPorts.has(port) && (await isPortAvailable(port))) {
       // 额外验证一次，确保端口真的可用
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
       if (await isPortAvailable(port)) {
         usedPorts.add(port);
         return port;
@@ -734,7 +736,7 @@ describe("WebServer", () => {
                 // 忽略错误，这只是为了清理端口
               }
             }
-            
+
             await waitForPortRelease(currentPort);
             releasePort(currentPort);
           } catch (error) {
@@ -1928,7 +1930,7 @@ describe("WebServer", () => {
       try {
         // 在Ubuntu环境下，使用额外的清理策略
         if (isUbuntu) {
-          await new Promise(resolve => setTimeout(resolve, 2000)); // 额外等待
+          await new Promise((resolve) => setTimeout(resolve, 2000)); // 额外等待
         }
         await waitForPortRelease(testPort);
         releasePort(testPort);
@@ -2133,7 +2135,7 @@ describe("WebServer", () => {
         try {
           // 在Ubuntu环境下，使用额外的清理策略
           if (isUbuntu) {
-            await new Promise(resolve => setTimeout(resolve, 2000)); // 额外等待
+            await new Promise((resolve) => setTimeout(resolve, 2000)); // 额外等待
           }
           await waitForPortRelease(conflictPort);
           releasePort(conflictPort);
