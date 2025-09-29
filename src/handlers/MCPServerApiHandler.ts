@@ -1,8 +1,9 @@
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Context } from "hono";
 import { type Logger, logger } from "../Logger.js";
 import type { ConfigManager } from "../configManager.js";
 import type { MCPServerConfig } from "../configManager.js";
-import { type EventBus, getEventBus } from "../services/EventBus.js";
+import { getEventBus } from "../services/EventBus.js";
 import type { MCPServiceManager } from "../services/MCPServiceManager.js";
 
 /**
@@ -95,7 +96,6 @@ export class MCPServerApiHandler {
   protected logger: Logger;
   private mcpServiceManager: MCPServiceManager;
   private configManager: ConfigManager;
-  private eventBus: EventBus;
 
   constructor(
     mcpServiceManager: MCPServiceManager,
@@ -104,7 +104,6 @@ export class MCPServerApiHandler {
     this.logger = logger.withTag("MCPServerApiHandler");
     this.mcpServiceManager = mcpServiceManager;
     this.configManager = configManager;
-    this.eventBus = getEventBus();
   }
 
   /**
@@ -144,13 +143,171 @@ export class MCPServerApiHandler {
    * POST /api/mcp-servers
    */
   async addMCPServer(c: Context): Promise<Response> {
-    // 基础框架，在里程碑二中实现完整功能
-    this.logger.info("添加 MCP 服务功能待实现");
-    const errorResponse = this.createErrorResponse(
-      MCPErrorCode.INTERNAL_ERROR,
-      "添加 MCP 服务功能待实现"
-    );
-    return c.json(errorResponse, 501);
+    try {
+      // 1. 解析和验证请求数据
+      const requestData = await c.req.json();
+      const { name, config } = requestData;
+
+      // 2. 验证服务名称
+      const nameValidation = MCPServerConfigValidator.validateServiceName(name);
+      if (!nameValidation.isValid) {
+        const errorResponse = this.createErrorResponse(
+          MCPErrorCode.INVALID_SERVICE_NAME,
+          nameValidation.errors.join(", "),
+          name
+        );
+        return c.json(errorResponse, 400);
+      }
+
+      // 3. 检查服务是否已存在
+      if (
+        MCPServerConfigValidator.checkServiceExists(name, this.configManager)
+      ) {
+        const errorResponse = this.createErrorResponse(
+          MCPErrorCode.SERVER_ALREADY_EXISTS,
+          "MCP 服务已存在",
+          name
+        );
+        return c.json(errorResponse, 409);
+      }
+
+      // 4. 验证服务配置
+      const configValidation = MCPServerConfigValidator.validateConfig(config);
+      if (!configValidation.isValid) {
+        const errorResponse = this.createErrorResponse(
+          MCPErrorCode.INVALID_CONFIG,
+          configValidation.errors.join(", "),
+          name,
+          { config }
+        );
+        return c.json(errorResponse, 400);
+      }
+
+      // 5. 添加服务到配置管理器
+      this.configManager.updateMcpServer(name, config);
+
+      // 6. 添加服务到 MCPServiceManager 并启动服务
+      this.mcpServiceManager.addServiceConfig(name, config);
+      await this.mcpServiceManager.startService(name);
+
+      // 7. 获取服务状态和工具列表
+      const serviceStatus = this.getServiceStatus(name);
+      const tools = this.getServiceTools(name);
+
+      // 8. 发送事件通知
+      getEventBus().emitEvent("mcp:server:added", {
+        serverName: name,
+        config,
+        tools: tools.map((tool) => tool.name),
+        timestamp: new Date(),
+      });
+
+      // 9. 返回成功响应
+      const successResponse = this.createSuccessResponse(
+        {
+          name,
+          status: serviceStatus.status,
+          connected: serviceStatus.connected,
+          tools: tools.map((tool) => tool.name),
+          config,
+        },
+        "MCP 服务添加成功"
+      );
+      return c.json(successResponse, 201);
+    } catch (error) {
+      this.logger.error("添加 MCP 服务失败:", error);
+
+      // 处理不同类型的错误
+      if (error instanceof Error) {
+        if (error.message.includes("服务配置验证失败")) {
+          const errorResponse = this.createErrorResponse(
+            MCPErrorCode.INVALID_CONFIG,
+            error.message
+          );
+          return c.json(errorResponse, 400);
+        }
+
+        if (error.message.includes("启动") || error.message.includes("连接")) {
+          const errorResponse = this.createErrorResponse(
+            MCPErrorCode.CONNECTION_FAILED,
+            `服务连接失败: ${error.message}`
+          );
+          return c.json(errorResponse, 500);
+        }
+      }
+
+      // 其他未知错误
+      const errorResponse = this.createErrorResponse(
+        MCPErrorCode.INTERNAL_ERROR,
+        "添加 MCP 服务时发生内部错误",
+        undefined,
+        { error: error instanceof Error ? error.message : String(error) }
+      );
+      return c.json(errorResponse, 500);
+    }
+  }
+
+  /**
+   * 获取服务状态信息
+   */
+  private getServiceStatus(serverName: string): MCPServerStatus {
+    const config = this.configManager.getConfig();
+    const serverConfig = config.mcpServers[serverName];
+
+    if (!serverConfig) {
+      return {
+        name: serverName,
+        status: "disconnected",
+        connected: false,
+        tools: [],
+        config: {} as MCPServerConfig,
+      };
+    }
+
+    // 尝试从 MCPServiceManager 获取实际状态
+    try {
+      const services = (this.mcpServiceManager as any).services;
+      const service = services.get(serverName);
+
+      if (service?.isConnected?.()) {
+        return {
+          name: serverName,
+          status: "connected",
+          connected: true,
+          tools: service.getTools().map((tool: Tool) => tool.name),
+          lastUpdated: new Date().toISOString(),
+          config: serverConfig,
+        };
+      }
+    } catch (error) {
+      this.logger.debug(`获取服务 ${serverName} 状态时出错:`, error);
+    }
+
+    return {
+      name: serverName,
+      status: "disconnected",
+      connected: false,
+      tools: [],
+      config: serverConfig,
+    };
+  }
+
+  /**
+   * 获取服务工具列表
+   */
+  private getServiceTools(serverName: string): Tool[] {
+    try {
+      const services = (this.mcpServiceManager as any).services;
+      const service = services.get(serverName);
+
+      if (service?.getTools) {
+        return service.getTools();
+      }
+    } catch (error) {
+      this.logger.debug(`获取服务 ${serverName} 工具列表时出错:`, error);
+    }
+
+    return [];
   }
 
   /**

@@ -18,6 +18,7 @@ import { CozeApiHandler } from "./handlers/CozeApiHandler.js";
 import { HeartbeatHandler } from "./handlers/HeartbeatHandler.js";
 import { MCPEndpointApiHandler } from "./handlers/MCPEndpointApiHandler.js";
 import { MCPRouteHandler } from "./handlers/MCPRouteHandler.js";
+import { MCPServerApiHandler } from "./handlers/MCPServerApiHandler.js";
 import { RealtimeNotificationHandler } from "./handlers/RealtimeNotificationHandler.js";
 import { ServiceApiHandler } from "./handlers/ServiceApiHandler.js";
 import { StaticFileHandler } from "./handlers/StaticFileHandler.js";
@@ -84,6 +85,7 @@ export class WebServer {
   private versionApiHandler: VersionApiHandler;
   private staticFileHandler: StaticFileHandler;
   private mcpRouteHandler: MCPRouteHandler;
+  private mcpServerApiHandler?: MCPServerApiHandler;
 
   // WebSocket 处理器
   private realtimeNotificationHandler: RealtimeNotificationHandler;
@@ -169,6 +171,8 @@ export class WebServer {
     this.staticFileHandler = new StaticFileHandler();
     this.mcpRouteHandler = new MCPRouteHandler();
 
+    // MCPServerApiHandler 将在 start() 方法中初始化，因为它需要 mcpServiceManager
+
     // 初始化 WebSocket 处理器
     this.realtimeNotificationHandler = new RealtimeNotificationHandler(
       this.notificationService,
@@ -204,6 +208,12 @@ export class WebServer {
 
       // 2. 初始化 MCP 服务管理器
       this.mcpServiceManager = await MCPServiceManagerSingleton.getInstance();
+
+      // 2.1. 初始化 MCP 服务器 API 处理器
+      this.mcpServerApiHandler = new MCPServerApiHandler(
+        this.mcpServiceManager,
+        configManager
+      );
 
       // 3. 从配置加载 MCP 服务
       await this.loadMCPServicesFromConfig(config.mcpServers);
@@ -684,6 +694,14 @@ export class WebServer {
     this.app?.post("/api/endpoints/add", (c) => this.handleEndpointAdd(c));
     this.app?.delete("/api/endpoints/:endpoint", (c) =>
       this.handleEndpointRemove(c)
+    );
+
+    // MCP 服务器管理路由
+    this.app?.post(
+      "/api/mcp-servers",
+      (c) =>
+        this.mcpServerApiHandler?.addMCPServer(c) ||
+        c.json({ error: "MCP Server API Handler not initialized" }, 500)
     );
 
     // MCP 服务路由 - 符合 MCP Streamable HTTP 规范

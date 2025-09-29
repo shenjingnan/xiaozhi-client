@@ -60,6 +60,12 @@ export interface EventBusEvents {
     error: Error;
     attempt: number;
   };
+  "mcp:server:added": {
+    serverName: string;
+    config: any;
+    tools: string[];
+    timestamp: Date;
+  };
 
   // 工具同步相关事件
   "tool-sync:server-tools-updated": {
