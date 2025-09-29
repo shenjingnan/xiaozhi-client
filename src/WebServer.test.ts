@@ -715,7 +715,6 @@ describe("WebServer", () => {
         // 等待端口完全释放
         if (currentPort) {
           try {
-
             await waitForPortRelease(currentPort);
             releasePort(currentPort);
           } catch (error) {
