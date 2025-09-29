@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.7.8](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.7...v1.7.8) (2025-09-29)
+
+### Features
+
+* **web:** 支持 Web 界面动态控制小智接入点添加/删除/连接/断开连接功能 ([#349](https://github.com/shenjingnan/xiaozhi-client/issues/349)) ([621041c](https://github.com/shenjingnan/xiaozhi-client/commit/621041cb310ba78a567aafffe6b16ea401f84ea1))
+
 ## [1.7.7](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.7-beta.0...v1.7.7) (2025-09-26)
 
 ## [1.7.7-beta.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.4...v1.7.7-beta.0) (2025-09-26)
