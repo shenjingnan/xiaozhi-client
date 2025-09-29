@@ -911,6 +911,9 @@ describe("IndependentXiaozhiConnectionManager", () => {
         connectionTimeout: 10000,
         errorRecoveryEnabled: true,
         errorNotificationEnabled: true,
+        serviceAddedDelayMs: 2000,
+        serviceRemovedDelayMs: 0,
+        batchAddedDelayMs: 3000,
       });
     });
   });
