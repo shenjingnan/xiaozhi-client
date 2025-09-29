@@ -594,12 +594,11 @@ const waitForPortRelease = async (
   maxWait = maxWaitTime
 ): Promise<void> => {
   const startTime = Date.now();
-  const checkInterval = isUbuntu ? 500 : 200; // Ubuntu使用更长的检查间隔
+  const checkInterval = 200;
 
   while (Date.now() - startTime < maxWait) {
     if (await isPortAvailable(port)) {
-      // Ubuntu环境下需要更长的额外等待时间
-      const extraWait = isUbuntu ? 500 : 100;
+      const extraWait = 100;
       await new Promise((resolve) => setTimeout(resolve, extraWait));
       if (await isPortAvailable(port)) {
         return;
@@ -613,17 +612,15 @@ const waitForPortRelease = async (
 
 // 检测CI环境和平台
 const isCI = process.env.CI === "true" || process.env.GITHUB_ACTIONS === "true";
-const isUbuntu = process.platform === "linux";
-const cleanupDelay = isCI ? (isUbuntu ? 5000 : 2000) : isUbuntu ? 2000 : 1000; // Ubuntu和CI环境使用更长的清理时间
-const maxWaitTime = isCI ? (isUbuntu ? 15000 : 12000) : isUbuntu ? 10000 : 8000; // Ubuntu环境使用更长的等待时间
+const cleanupDelay = isCI ? 2000 : 1000;
+const maxWaitTime = isCI ? 12000 : 8000;
 
 // 端口范围管理，避免重复使用端口
 const usedPorts = new Set<number>();
 
-// 获取端口范围的函数，避免在Ubuntu上使用端口池耗尽的问题
+// 获取端口范围的函数
 const getPortRange = (): { min: number; max: number } => {
-  if (isCI && isUbuntu) {
-    // CI Ubuntu环境使用更大的端口范围
+  if (isCI) {
     return { min: 30000, max: 50000 };
   }
 
@@ -639,15 +636,15 @@ const getPortRange = (): { min: number; max: number } => {
 const getUniquePort = async (): Promise<number> => {
   let port: number;
   let attempts = 0;
-  const maxAttempts = isCI ? (isUbuntu ? 100 : 50) : 30; // Ubuntu CI环境使用更多尝试次数
+  const maxAttempts = isCI ? 50 : 30;
   const portRange = getPortRange();
 
   // 无限循环直到找到可用端口
   while (attempts <= maxAttempts) {
     attempts++;
 
-    // 在Ubuntu CI环境中，使用随机端口而不是顺序端口
-    if (isCI && isUbuntu) {
+    // 在CI环境中，使用随机端口而不是顺序端口
+    if (isCI) {
       port =
         Math.floor(Math.random() * (portRange.max - portRange.min + 1)) +
         portRange.min;
@@ -661,7 +658,7 @@ const getUniquePort = async (): Promise<number> => {
       );
     }
 
-    // 验证端口是否真的可用（特别是在Ubuntu环境下）
+    // 验证端口是否真的可用
     if (!usedPorts.has(port) && (await isPortAvailable(port))) {
       // 额外验证一次，确保端口真的可用
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -677,12 +674,6 @@ const getUniquePort = async (): Promise<number> => {
 
 const releasePort = (port: number): void => {
   usedPorts.delete(port);
-  // 在Ubuntu环境中，额外强制清除端口状态
-  if (isUbuntu) {
-    setTimeout(() => {
-      usedPorts.delete(port); // 再次删除防止残留
-    }, cleanupDelay);
-  }
 };
 
 describe("WebServer", () => {
@@ -718,24 +709,12 @@ describe("WebServer", () => {
     if (webServer) {
       try {
         await webServer.stop();
-        // 在CI环境中使用更长的清理时间，Ubuntu需要更长时间
+        // 在CI环境中使用更长的清理时间
         await new Promise((resolve) => setTimeout(resolve, cleanupDelay));
 
         // 等待端口完全释放
         if (currentPort) {
           try {
-            // 在Ubuntu环境下，尝试强制关闭可能残留的连接
-            if (isUbuntu) {
-              const { createServer } = await import("node:http");
-              const forceServer = createServer();
-              try {
-                forceServer.listen(currentPort, "127.0.0.1", () => {
-                  forceServer.close();
-                });
-              } catch {
-                // 忽略错误，这只是为了清理端口
-              }
-            }
 
             await waitForPortRelease(currentPort);
             releasePort(currentPort);
@@ -893,7 +872,7 @@ describe("WebServer", () => {
       });
 
       // 这个测试验证配置读取失败时服务器能正常启动
-      // 由于我们不能假设默认端口9999在CI环境中可用，
+      // 由于我们不能假设默认端口9999在CI环境中可用
       // 我们主要验证WebServer构造函数不会抛出异常，并且服务器能启动
       webServer = new WebServer();
 
@@ -1928,10 +1907,6 @@ describe("WebServer", () => {
 
       // 确保端口释放
       try {
-        // 在Ubuntu环境下，使用额外的清理策略
-        if (isUbuntu) {
-          await new Promise((resolve) => setTimeout(resolve, 2000)); // 额外等待
-        }
         await waitForPortRelease(testPort);
         releasePort(testPort);
       } catch (error) {
