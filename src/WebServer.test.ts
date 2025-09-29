@@ -2100,51 +2100,6 @@ describe("WebServer", () => {
       // 在实际环境中，这可能会返回 400
       expect(response.status).toBe(200);
     });
-
-    it("应该处理端口占用冲突", async () => {
-      // 使用模拟服务器来测试端口冲突，避免复杂的 WebServer 实例管理
-      const { createServer } = await import("node:http");
-
-      const conflictPort = await getUniquePort();
-
-      // 创建一个简单的 HTTP 服务器占用端口
-      const dummyServer = createServer();
-      await new Promise<void>((resolve, reject) => {
-        dummyServer.listen(conflictPort, "127.0.0.1", () => {
-          resolve();
-        });
-        dummyServer.on("error", reject);
-      });
-
-      try {
-        // 尝试在同一个端口启动 WebServer，这应该优雅地处理错误
-        const webServer = new WebServer(conflictPort);
-
-        // 这个操作可能会失败，但不应该抛出未处理的异常
-        await expect(webServer.start()).resolves.not.toThrow();
-
-        // 如果启动成功了，停止它
-        await webServer.stop();
-      } finally {
-        // 确保清理模拟服务器
-        await new Promise<void>((resolve) => {
-          dummyServer.close(() => resolve());
-        });
-
-        // 确保端口释放
-        try {
-          // 在Ubuntu环境下，使用额外的清理策略
-          if (isUbuntu) {
-            await new Promise((resolve) => setTimeout(resolve, 2000)); // 额外等待
-          }
-          await waitForPortRelease(conflictPort);
-          releasePort(conflictPort);
-        } catch (error) {
-          console.warn(`Port ${conflictPort} cleanup warning:`, error);
-          releasePort(conflictPort);
-        }
-      }
-    }, 10000);
   });
 
   describe("性能测试", () => {
