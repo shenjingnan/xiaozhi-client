@@ -418,13 +418,69 @@ export class MCPServerApiHandler {
    * GET /api/mcp-servers/:serverName/status
    */
   async getMCPServerStatus(c: Context): Promise<Response> {
-    // 基础框架，在里程碑四中实现完整功能
-    this.logger.info("获取 MCP 服务状态功能待实现");
-    const errorResponse = this.createErrorResponse(
-      MCPErrorCode.INTERNAL_ERROR,
-      "获取 MCP 服务状态功能待实现"
-    );
-    return c.json(errorResponse, 501);
+    try {
+      // 1. 从路径参数获取服务名称
+      const serverName = c.req.param("serverName");
+
+      // 2. 验证服务名称
+      const nameValidation =
+        MCPServerConfigValidator.validateServiceName(serverName);
+      if (!nameValidation.isValid) {
+        const errorResponse = this.createErrorResponse(
+          MCPErrorCode.INVALID_SERVICE_NAME,
+          nameValidation.errors.join(", "),
+          serverName
+        );
+        return c.json(errorResponse, 400);
+      }
+
+      // 3. 检查服务是否存在
+      if (
+        !MCPServerConfigValidator.checkServiceExists(
+          serverName,
+          this.configManager
+        )
+      ) {
+        const errorResponse = this.createErrorResponse(
+          MCPErrorCode.SERVER_NOT_FOUND,
+          "MCP 服务不存在",
+          serverName
+        );
+        return c.json(errorResponse, 404);
+      }
+
+      // 4. 获取服务状态
+      const serviceStatus = this.getServiceStatus(serverName);
+
+      // 5. 返回成功响应
+      const successResponse = this.createSuccessResponse(
+        serviceStatus,
+        "MCP 服务状态获取成功"
+      );
+      return c.json(successResponse, 200);
+    } catch (error) {
+      this.logger.error("获取 MCP 服务状态失败:", error);
+
+      // 处理不同类型的错误
+      if (error instanceof Error) {
+        if (error.message.includes("服务不存在")) {
+          const errorResponse = this.createErrorResponse(
+            MCPErrorCode.SERVER_NOT_FOUND,
+            error.message
+          );
+          return c.json(errorResponse, 404);
+        }
+      }
+
+      // 其他未知错误
+      const errorResponse = this.createErrorResponse(
+        MCPErrorCode.INTERNAL_ERROR,
+        "获取 MCP 服务状态时发生内部错误",
+        undefined,
+        { error: error instanceof Error ? error.message : String(error) }
+      );
+      return c.json(errorResponse, 500);
+    }
   }
 
   /**
@@ -432,13 +488,43 @@ export class MCPServerApiHandler {
    * GET /api/mcp-servers
    */
   async listMCPServers(c: Context): Promise<Response> {
-    // 基础框架，在里程碑四中实现完整功能
-    this.logger.info("列出 MCP 服务功能待实现");
-    const errorResponse = this.createErrorResponse(
-      MCPErrorCode.INTERNAL_ERROR,
-      "列出 MCP 服务功能待实现"
-    );
-    return c.json(errorResponse, 501);
+    try {
+      // 1. 获取所有配置的 MCP 服务
+      const config = this.configManager.getConfig();
+      const mcpServers = config.mcpServers || {};
+
+      // 2. 构建服务列表
+      const servers: MCPServerStatus[] = [];
+
+      for (const [serverName, serverConfig] of Object.entries(mcpServers)) {
+        const serviceStatus = this.getServiceStatus(serverName);
+        servers.push(serviceStatus);
+      }
+
+      // 3. 构建响应数据
+      const listResponse: MCPServerListResponse = {
+        servers,
+        total: servers.length,
+      };
+
+      // 4. 返回成功响应
+      const successResponse = this.createSuccessResponse(
+        listResponse,
+        "MCP 服务列表获取成功"
+      );
+      return c.json(successResponse, 200);
+    } catch (error) {
+      this.logger.error("列出 MCP 服务失败:", error);
+
+      // 其他未知错误
+      const errorResponse = this.createErrorResponse(
+        MCPErrorCode.INTERNAL_ERROR,
+        "列出 MCP 服务时发生内部错误",
+        undefined,
+        { error: error instanceof Error ? error.message : String(error) }
+      );
+      return c.json(errorResponse, 500);
+    }
   }
 }
 
