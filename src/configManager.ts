@@ -660,6 +660,12 @@ export class ConfigManager {
     // 4. 保存配置（单次原子性操作）
     this.saveConfig(config);
 
+    // 5. 发射配置更新事件，通知 CustomMCPHandler 重新初始化
+    this.eventBus.emitEvent("config:updated", {
+      type: "customMCP",
+      timestamp: new Date(),
+    });
+
     // 记录清理结果
     logger.info(`成功移除 MCP 服务 ${serverName} 及其相关配置`);
   }
