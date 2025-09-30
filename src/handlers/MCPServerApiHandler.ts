@@ -3,13 +3,7 @@ import type { Context } from "hono";
 import { type Logger, logger } from "../Logger.js";
 import type { ConfigManager } from "../configManager.js";
 import type { MCPServerConfig } from "../configManager.js";
-import {
-  ErrorCategory,
-  ErrorSeverity,
-  MCPError,
-  MCPErrorCode,
-} from "../errors/MCPErrors.js";
-import { createMCPLogger } from "../logging/MCPLogger.js";
+import { ErrorCategory, MCPError, MCPErrorCode } from "../errors/MCPErrors.js";
 import { getEventBus } from "../services/EventBus.js";
 import type { MCPServiceManager } from "../services/MCPServiceManager.js";
 
@@ -106,7 +100,6 @@ export interface ValidationResult {
  */
 export class MCPServerApiHandler {
   protected logger: Logger;
-  private mcpLogger;
   private mcpServiceManager: MCPServiceManager;
   private configManager: ConfigManager;
 
@@ -115,7 +108,6 @@ export class MCPServerApiHandler {
     configManager: ConfigManager
   ) {
     this.logger = logger.withTag("MCPServerApiHandler");
-    this.mcpLogger = createMCPLogger("MCPServerApiHandler");
     this.mcpServiceManager = mcpServiceManager;
     this.configManager = configManager;
   }
@@ -147,7 +139,7 @@ export class MCPServerApiHandler {
     context?: any
   ): MCPError {
     if (error instanceof MCPError) {
-      this.mcpLogger.logMCPError(error, { operation, ...context });
+      this.logger.error("MCPError", { error, operation, context });
       return error;
     }
 
@@ -199,7 +191,7 @@ export class MCPServerApiHandler {
         );
       }
 
-      this.mcpLogger.logMCPError(mcpError, { operation, ...context });
+      this.logger.error("MCPError", { error: mcpError, operation, context });
       return mcpError;
     }
 
@@ -209,7 +201,7 @@ export class MCPServerApiHandler {
       String(error),
       { operation, context }
     );
-    this.mcpLogger.logMCPError(mcpError, { operation, ...context });
+    this.logger.error("MCPError", { error: mcpError, operation, context });
     return mcpError;
   }
 
@@ -272,7 +264,7 @@ export class MCPServerApiHandler {
     const startTime = Date.now();
     const requestData = await c.req.json();
 
-    this.mcpLogger.logOperationStart("addMCPServer", {
+    this.logger.info("addMCPServer", {
       requestData,
       method: "POST",
       path: "/api/mcp-servers",
@@ -286,15 +278,12 @@ export class MCPServerApiHandler {
         const result = await this.addMCPServersBatch(batchRequest);
 
         const duration = Date.now() - startTime;
-        this.mcpLogger.logOperationSuccess(
-          "addMCPServer",
-          {
-            batch: true,
-            addedCount: result.addedCount,
-            failedCount: result.failedCount,
-          },
-          { duration }
-        );
+        this.logger.info("addMCPServer", {
+          batch: true,
+          addedCount: result.addedCount,
+          failedCount: result.failedCount,
+          duration,
+        });
 
         return c.json(this.createSuccessResponse(result, result.message), 201);
       }
@@ -305,14 +294,12 @@ export class MCPServerApiHandler {
       const result = await this.addMCPServerSingle(name, config);
 
       const duration = Date.now() - startTime;
-      this.mcpLogger.logOperationSuccess(
-        "addMCPServer",
-        {
-          serverName: name,
-          toolsCount: result.tools?.length || 0,
-        },
-        { duration, status: result.status }
-      );
+      this.logger.info("addMCPServer", {
+        serverName: name,
+        toolsCount: result.tools?.length || 0,
+        duration,
+        status: result.status,
+      });
 
       const successResponse = this.createSuccessResponse(
         result,
@@ -356,7 +343,7 @@ export class MCPServerApiHandler {
     name: string,
     config: MCPServerConfig
   ): Promise<MCPServerStatus> {
-    this.mcpLogger.logOperationStart("addMCPServerSingle", {
+    this.logger.info("addMCPServerSingle", {
       serverName: name,
     });
 
@@ -369,14 +356,11 @@ export class MCPServerApiHandler {
           nameValidation.errors.join(", "),
           { serverName: name, errors: nameValidation.errors }
         );
-        this.mcpLogger.logOperationFailure(
-          "addMCPServerSingle",
+        this.logger.error("addMCPServerSingle", {
           validationError,
-          {
-            serverName: name,
-            phase: "name_validation",
-          }
-        );
+          serverName: name,
+          phase: "name_validation",
+        });
         throw validationError;
       }
 
@@ -389,7 +373,8 @@ export class MCPServerApiHandler {
           "MCP 服务已存在",
           { serverName: name }
         );
-        this.mcpLogger.logOperationFailure("addMCPServerSingle", existsError, {
+        this.logger.error("addMCPServerSingle", {
+          existsError,
           serverName: name,
           phase: "existence_check",
         });
@@ -404,7 +389,8 @@ export class MCPServerApiHandler {
           configValidation.errors.join(", "),
           { serverName: name, config, errors: configValidation.errors }
         );
-        this.mcpLogger.logOperationFailure("addMCPServerSingle", configError, {
+        this.logger.error("addMCPServerSingle", {
+          configError,
           serverName: name,
           phase: "config_validation",
         });
@@ -413,13 +399,13 @@ export class MCPServerApiHandler {
 
       // 4. 添加服务到配置管理器
       this.configManager.updateMcpServer(name, config);
-      this.mcpLogger.debug("服务配置已添加到配置管理器", { serverName: name });
+      this.logger.debug("服务配置已添加到配置管理器", { serverName: name });
 
       // 5. 添加服务到 MCPServiceManager 并启动服务
       const mcpServiceConfig = this.createMCPServiceConfig(name, config);
       this.mcpServiceManager.addServiceConfig(mcpServiceConfig);
       await this.mcpServiceManager.startService(name);
-      this.mcpLogger.debug("服务已启动", { serverName: name });
+      this.logger.debug("服务已启动", { serverName: name });
 
       // 6. 获取服务状态和工具列表
       const serviceStatus = this.getServiceStatus(name);
@@ -442,7 +428,8 @@ export class MCPServerApiHandler {
         serverName: name,
         config,
       });
-      this.mcpLogger.logOperationFailure("addMCPServerSingle", mcpError, {
+      this.logger.error("addMCPServerSingle", {
+        mcpError,
         serverName: name,
       });
       throw mcpError;
@@ -821,7 +808,7 @@ export class MCPServerApiHandler {
     const { mcpServers } = batchRequest;
     const serverNames = Object.keys(mcpServers);
 
-    this.mcpLogger.logOperationStart("addMCPServersBatch", {
+    this.logger.info("addMCPServersBatch", {
       serverCount: serverNames.length,
       serverNames,
     });
@@ -864,7 +851,7 @@ export class MCPServerApiHandler {
 
           successfullyAddedServers.push(serverName);
 
-          this.mcpLogger.debug("批量添加：服务添加成功", {
+          this.logger.debug("批量添加：服务添加成功", {
             serverName,
             toolsCount: result.tools?.length || 0,
           });
@@ -881,7 +868,7 @@ export class MCPServerApiHandler {
             config: serverConfig,
           });
 
-          this.mcpLogger.warn("批量添加：服务添加失败", {
+          this.logger.warn("批量添加：服务添加失败", {
             serverName,
             error: mcpError.message,
           });
@@ -921,7 +908,7 @@ export class MCPServerApiHandler {
         failedCount,
       };
 
-      this.mcpLogger.logOperationSuccess("addMCPServersBatch", {
+      this.logger.info("addMCPServersBatch", {
         totalServers: serverNames.length,
         addedCount,
         failedCount,
@@ -939,7 +926,9 @@ export class MCPServerApiHandler {
       }
       throw MCPError.systemError(
         MCPErrorCode.INTERNAL_ERROR,
-        `批量添加过程中发生错误: ${error instanceof Error ? error.message : String(error)}`
+        `批量添加过程中发生错误: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   }
@@ -1008,7 +997,7 @@ export class MCPServerApiHandler {
    * 回滚批量添加的服务
    */
   private async rollbackBatchAdd(serverNames: string[]): Promise<void> {
-    this.mcpLogger.info("开始回滚批量添加的服务", { serverNames });
+    this.logger.info("开始回滚批量添加的服务", { serverNames });
 
     const rollbackResults: string[] = [];
     const rollbackFailures: string[] = [];

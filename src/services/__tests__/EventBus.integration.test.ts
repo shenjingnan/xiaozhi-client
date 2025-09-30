@@ -8,7 +8,7 @@
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigManager } from "../../configManager.js";
-import { createMCPLogger } from "../../logging/MCPLogger.js";
+import { logger } from "../../Logger.js";
 import { getEventBus } from "../../services/EventBus.js";
 import { ToolSyncManager } from "../../services/ToolSyncManager.js";
 import { globalServiceRestartManager } from "../../utils/ServiceRestartManager.js";
@@ -53,7 +53,7 @@ describe("事件系统集成测试", () => {
 
     eventBus = getEventBus();
     configManager = createMockConfigManager();
-    logger = createMCPLogger("EventIntegrationTest");
+    logger = logger.withTag("EventIntegrationTest");
 
     toolSyncManager = new ToolSyncManager(configManager, logger);
 

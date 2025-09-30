@@ -5,14 +5,7 @@
  * 管理MCP服务的重启逻辑，包括智能重试和降级策略
  */
 
-import { type Logger, logger } from "../Logger.js";
-import {
-  ErrorCategory,
-  ErrorSeverity,
-  MCPError,
-  MCPErrorCode,
-} from "../errors/MCPErrors.js";
-import { createMCPLogger } from "../logging/MCPLogger.js";
+import { logger } from "../Logger.js";
 import { getEventBus } from "../services/EventBus.js";
 import {
   OperationPriority,
@@ -93,7 +86,7 @@ export class ServiceRestartManager {
       ...config,
     };
 
-    this.logger = createMCPLogger("ServiceRestartManager");
+    this.logger = logger.withTag("ServiceRestartManager");
     this.setupEventListeners();
   }
 

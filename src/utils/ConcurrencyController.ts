@@ -5,14 +5,13 @@
  * 用于管理MCP服务的并发操作，防止竞态条件和资源冲突
  */
 
-import { type Logger, logger } from "../Logger.js";
+import { logger } from "../Logger.js";
 import {
   ErrorCategory,
   ErrorSeverity,
   MCPError,
   MCPErrorCode,
 } from "../errors/MCPErrors.js";
-import { createMCPLogger } from "../logging/MCPLogger.js";
 
 /**
  * 操作类型枚举
@@ -103,8 +102,7 @@ export class ConcurrencyController {
       retryDelay: 1000,
       ...config,
     };
-
-    this.logger = createMCPLogger("ConcurrencyController");
+    this.logger = logger.withTag("ConcurrencyController");
     this.startProcessing();
   }
 
@@ -295,10 +293,11 @@ export class ConcurrencyController {
       operation.error =
         error instanceof Error ? error : new Error(String(error));
 
-      this.logger.logMCPError(
-        error instanceof MCPError ? error : MCPError.fromError(error as Error),
+      this.logger.error(
+        "操作执行失败",
         {
           operationId: operation.id,
+          error: error instanceof MCPError ? error : MCPError.fromError(error as Error),
           type: operation.type,
           target: operation.target,
           phase: "execution",
