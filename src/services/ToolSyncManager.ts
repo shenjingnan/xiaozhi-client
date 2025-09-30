@@ -45,11 +45,6 @@ export class ToolSyncManager {
     this.eventBus.onEvent("mcp:server:added", async (data) => {
       await this.handleMCPServerAdded(data);
     });
-
-    // 监听MCP服务移除事件
-    this.eventBus.onEvent("mcp:server:removed", async (data) => {
-      await this.handleMCPServerRemoved(data);
-    });
   }
 
   /**
@@ -132,27 +127,6 @@ export class ToolSyncManager {
       }, 1000); // 给服务1秒时间启动
     } catch (error) {
       this.logger.error(`处理服务 ${data.serverName} 添加事件失败:`, error);
-    }
-  }
-
-  /**
-   * 处理MCP服务移除事件
-   */
-  private async handleMCPServerRemoved(data: {
-    serverName: string;
-    affectedTools: string[];
-    timestamp: Date;
-  }): Promise<void> {
-    this.logger.info(`处理MCP服务移除事件: ${data.serverName}`);
-
-    try {
-      // 从customMCP中移除该服务的所有工具
-      await this.removeServiceToolsFromCustomMCP(
-        data.serverName,
-        data.affectedTools
-      );
-    } catch (error) {
-      this.logger.error(`处理服务 ${data.serverName} 移除事件失败:`, error);
     }
   }
 
