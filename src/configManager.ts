@@ -617,19 +617,57 @@ export class ConfigManager {
       throw new Error("服务名称必须是非空字符串");
     }
 
-    const config = this.getConfig();
+    const config = this.getMutableConfig();
+
+    // 检查服务是否存在
     if (!config.mcpServers[serverName]) {
       throw new Error(`服务 ${serverName} 不存在`);
     }
 
-    const newMcpServers = { ...config.mcpServers };
-    delete newMcpServers[serverName];
+    // 1. 清理 mcpServers 字段（现有逻辑）
+    delete config.mcpServers[serverName];
 
-    const newConfig = {
-      ...config,
-      mcpServers: newMcpServers,
-    };
-    this.saveConfig(newConfig);
+    // 2. 清理 mcpServerConfig 字段（复用现有方法）
+    if (config.mcpServerConfig?.[serverName]) {
+      delete config.mcpServerConfig[serverName];
+    }
+
+    // 3. 清理 customMCP 字段中相关的工具定义
+    if (config.customMCP?.tools) {
+      // 查找与该服务相关的 CustomMCP 工具
+      const relatedTools = config.customMCP.tools.filter(
+        (tool) =>
+          tool.handler?.type === "mcp" &&
+          tool.handler.config?.serviceName === serverName
+      );
+
+      // 移除相关工具
+      for (const tool of relatedTools) {
+        const toolIndex = config.customMCP.tools.findIndex(
+          (t) => t.name === tool.name
+        );
+        if (toolIndex !== -1) {
+          config.customMCP.tools.splice(toolIndex, 1);
+        }
+      }
+
+      // 如果没有工具了，可以清理整个 customMCP 对象
+      if (config.customMCP.tools.length === 0) {
+        config.customMCP = undefined;
+      }
+    }
+
+    // 4. 保存配置（单次原子性操作）
+    this.saveConfig(config);
+
+    // 5. 发射配置更新事件，通知 CustomMCPHandler 重新初始化
+    this.eventBus.emitEvent("config:updated", {
+      type: "customMCP",
+      timestamp: new Date(),
+    });
+
+    // 记录清理结果
+    logger.info(`成功移除 MCP 服务 ${serverName} 及其相关配置`);
   }
 
   /**

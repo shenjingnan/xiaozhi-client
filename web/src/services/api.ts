@@ -3,7 +3,17 @@
  * 负责所有的配置管理、状态查询和服务控制操作
  */
 
-import type { AppConfig, ClientStatus } from "../types";
+import type {
+  ApiErrorResponse,
+  ApiSuccessResponse,
+  AppConfig,
+  ClientStatus,
+  MCPErrorCode,
+  MCPServerAddRequest,
+  MCPServerConfig,
+  MCPServerListResponse,
+  MCPServerStatus,
+} from "../types";
 
 /**
  * CustomMCPTool 接口定义
@@ -34,14 +44,6 @@ interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   message?: string;
-}
-
-interface ApiErrorResponse {
-  error: {
-    code: string;
-    message: string;
-    details?: any;
-  };
 }
 
 /**
@@ -736,10 +738,221 @@ export class ApiClient {
       throw new Error(response.message || "移除接入点失败");
     }
   }
+
+  // ==================== MCP 服务器管理 API ====================
+
+  /**
+   * 添加 MCP 服务器
+   * POST /api/mcp-servers
+   */
+  async addMCPServer(
+    name: string,
+    config: MCPServerConfig
+  ): Promise<MCPServerStatus> {
+    const requestData: MCPServerAddRequest = { name, config };
+
+    const response: ApiSuccessResponse<MCPServerStatus> = await this.request(
+      "/api/mcp-servers",
+      {
+        method: "POST",
+        body: JSON.stringify(requestData),
+      }
+    );
+
+    if (!response.success || !response.data) {
+      throw new Error(response.message || "添加 MCP 服务器失败");
+    }
+
+    return response.data;
+  }
+
+  /**
+   * 删除 MCP 服务器
+   * DELETE /api/mcp-servers/:serverName
+   */
+  async removeMCPServer(
+    serverName: string
+  ): Promise<{ name: string; operation: string; affectedTools: string[] }> {
+    const response: ApiSuccessResponse<{
+      name: string;
+      operation: string;
+      affectedTools: string[];
+    }> = await this.request(
+      `/api/mcp-servers/${encodeURIComponent(serverName)}`,
+      {
+        method: "DELETE",
+      }
+    );
+
+    if (!response.success || !response.data) {
+      throw new Error(response.message || "删除 MCP 服务器失败");
+    }
+
+    return response.data;
+  }
+
+  /**
+   * 获取 MCP 服务器状态
+   * GET /api/mcp-servers/:serverName/status
+   */
+  async getMCPServerStatus(serverName: string): Promise<MCPServerStatus> {
+    const response: ApiSuccessResponse<MCPServerStatus> = await this.request(
+      `/api/mcp-servers/${encodeURIComponent(serverName)}/status`
+    );
+
+    if (!response.success || !response.data) {
+      throw new Error(response.message || "获取 MCP 服务器状态失败");
+    }
+
+    return response.data;
+  }
+
+  /**
+   * 获取所有 MCP 服务器列表
+   * GET /api/mcp-servers
+   */
+  async listMCPServers(): Promise<MCPServerListResponse> {
+    const response: ApiSuccessResponse<MCPServerListResponse> =
+      await this.request("/api/mcp-servers");
+
+    if (!response.success || !response.data) {
+      throw new Error(response.message || "获取 MCP 服务器列表失败");
+    }
+
+    return response.data;
+  }
+
+  /**
+   * 检查 MCP 服务器是否存在
+   * GET /api/mcp-servers/:serverName/exists
+   */
+  async checkMCPServerExists(serverName: string): Promise<boolean> {
+    try {
+      const response: ApiSuccessResponse<{ exists: boolean }> =
+        await this.request(
+          `/api/mcp-servers/${encodeURIComponent(serverName)}/exists`
+        );
+
+      return response.success ? response.data?.exists || false : false;
+    } catch (error) {
+      // 如果返回 404，说明服务器不存在
+      if (error instanceof Error && error.message.includes("404")) {
+        return false;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 更新 MCP 服务器配置
+   * PUT /api/mcp-servers/:serverName
+   */
+  async updateMCPServer(
+    serverName: string,
+    config: MCPServerConfig
+  ): Promise<MCPServerStatus> {
+    const response: ApiSuccessResponse<MCPServerStatus> = await this.request(
+      `/api/mcp-servers/${encodeURIComponent(serverName)}`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ config }),
+      }
+    );
+
+    if (!response.success || !response.data) {
+      throw new Error(response.message || "更新 MCP 服务器配置失败");
+    }
+
+    return response.data;
+  }
+
+  /**
+   * 重启 MCP 服务器
+   * POST /api/mcp-servers/:serverName/restart
+   */
+  async restartMCPServer(serverName: string): Promise<MCPServerStatus> {
+    const response: ApiSuccessResponse<MCPServerStatus> = await this.request(
+      `/api/mcp-servers/${encodeURIComponent(serverName)}/restart`,
+      {
+        method: "POST",
+      }
+    );
+
+    if (!response.success || !response.data) {
+      throw new Error(response.message || "重启 MCP 服务器失败");
+    }
+
+    return response.data;
+  }
 }
 
 // 创建默认的 API 客户端实例
 export const apiClient = new ApiClient();
+
+// ==================== MCP 服务器 API 专用接口 ====================
+
+/**
+ * MCP 服务器管理 API 接口
+ * 提供简化的 MCP 服务器操作方法
+ */
+export const mcpServerApi = {
+  /**
+   * 添加 MCP 服务器
+   */
+  addServer: async (
+    name: string,
+    config: MCPServerConfig
+  ): Promise<MCPServerStatus> => {
+    return await apiClient.addMCPServer(name, config);
+  },
+
+  /**
+   * 删除 MCP 服务器
+   */
+  removeServer: async (
+    serverName: string
+  ): Promise<{ name: string; operation: string; affectedTools: string[] }> => {
+    return await apiClient.removeMCPServer(serverName);
+  },
+
+  /**
+   * 获取服务器列表
+   */
+  listServers: async (): Promise<MCPServerListResponse> => {
+    return await apiClient.listMCPServers();
+  },
+
+  /**
+   * 获取服务器状态
+   */
+  getServerStatus: async (serverName: string): Promise<MCPServerStatus> => {
+    return await apiClient.getMCPServerStatus(serverName);
+  },
+
+  /**
+   * 检查服务器是否存在
+   */
+  serverExists: async (serverName: string): Promise<boolean> => {
+    return await apiClient.checkMCPServerExists(serverName);
+  },
+
+  /**
+   * 更新服务器配置
+   */
+  updateServer: async (
+    serverName: string,
+    config: MCPServerConfig
+  ): Promise<MCPServerStatus> => {
+    return await apiClient.updateMCPServer(serverName, config);
+  },
+
+  /**
+   * 重启服务器
+   */
+  restartServer: async (serverName: string): Promise<MCPServerStatus> => {
+    return await apiClient.restartMCPServer(serverName);
+  },
+};
 
 // 导出类型
 export type {
@@ -751,4 +964,9 @@ export type {
   FullStatus,
   VersionInfo,
   EndpointStatusResponse,
+  MCPServerAddRequest,
+  MCPServerStatus,
+  MCPServerListResponse,
+  ApiSuccessResponse,
+  MCPErrorCode,
 };

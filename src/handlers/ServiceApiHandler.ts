@@ -77,7 +77,11 @@ export class ServiceApiHandler {
 
       // 发射重启请求事件
       this.eventBus.emitEvent("service:restart:requested", {
+        serviceName: "unknown", // 由于是HTTP API触发的，服务名未知
         source: "http-api",
+        delay: 0,
+        attempt: 1,
+        timestamp: Date.now(),
       });
 
       // 更新重启状态

@@ -30,10 +30,44 @@ export interface EventBusEvents {
   };
 
   // 服务相关事件
-  "service:restart:requested": { source: string };
-  "service:restart:started": { timestamp: number };
-  "service:restart:completed": { timestamp: number };
-  "service:restart:failed": { error: Error; timestamp: number };
+  "service:restart:requested": {
+    serviceName: string;
+    reason?: string;
+    delay: number;
+    attempt: number;
+    timestamp: number;
+    source?: string;
+  };
+  "service:restart:started": {
+    serviceName: string;
+    reason?: string;
+    attempt: number;
+    timestamp: number;
+  };
+  "service:restart:completed": {
+    serviceName: string;
+    reason?: string;
+    attempt: number;
+    timestamp: number;
+  };
+  "service:restart:failed": {
+    serviceName: string;
+    error: Error;
+    attempt: number;
+    timestamp: number;
+  };
+  "service:restart:execute": {
+    serviceName: string;
+    reason?: string;
+    attempt: number;
+    timestamp: number;
+  };
+  "service:health:changed": {
+    serviceName: string;
+    oldStatus: string;
+    newStatus: string;
+    timestamp: number;
+  };
 
   // WebSocket 相关事件
   "websocket:client:connected": { clientId: string; timestamp: number };
@@ -60,6 +94,56 @@ export interface EventBusEvents {
     error: Error;
     attempt: number;
   };
+  "mcp:server:added": {
+    serverName: string;
+    config: any;
+    tools: string[];
+    timestamp: Date;
+  };
+  "mcp:server:removed": {
+    serverName: string;
+    affectedTools: string[];
+    timestamp: Date;
+  };
+  "mcp:server:status_changed": {
+    serverName: string;
+    oldStatus: "connected" | "disconnected" | "connecting" | "error";
+    newStatus: "connected" | "disconnected" | "connecting" | "error";
+    timestamp: Date;
+    reason?: string;
+  };
+  "mcp:server:connection:attempt": {
+    serverName: string;
+    attempt: number;
+    maxAttempts: number;
+    timestamp: Date;
+  };
+  "mcp:server:tools:updated": {
+    serverName: string;
+    tools: string[];
+    addedTools: string[];
+    removedTools: string[];
+    timestamp: Date;
+  };
+  "mcp:server:batch_added": {
+    totalServers: number;
+    addedCount: number;
+    failedCount: number;
+    successfullyAddedServers: string[];
+    results: any[];
+    timestamp: Date;
+  };
+  "mcp:server:rollback": {
+    serverName: string;
+    timestamp: Date;
+  };
+
+  // 连接相关事件
+  "connection:reconnect:completed": {
+    success: boolean;
+    reason: string;
+    timestamp: Date;
+  };
 
   // 工具同步相关事件
   "tool-sync:server-tools-updated": {
@@ -68,6 +152,77 @@ export interface EventBusEvents {
   };
   "tool-sync:general-config-updated": {
     timestamp: Date;
+  };
+  "tool-sync:request-service-tools": {
+    serviceName: string;
+    timestamp: Date;
+  };
+  "tool-sync:service-tools-removed": {
+    serviceName: string;
+    removedCount: number;
+    timestamp: Date;
+  };
+
+  // 测试相关事件（仅用于测试）
+  "high-frequency": {
+    id: number;
+    timestamp: number;
+  };
+  "bulk-test": {
+    id: number;
+    timestamp: number;
+  };
+  "error-test": {
+    error: string;
+    timestamp: number;
+  };
+  "large-data-test": {
+    data: any;
+    timestamp: number;
+  };
+  "destroy-test": {
+    message: string;
+    timestamp: number;
+  };
+  "chain-event-1": {
+    value: number;
+    timestamp: number;
+  };
+  "chain-event-2": {
+    value: number;
+    timestamp: number;
+  };
+  "chain-event-3": {
+    value: number;
+    timestamp: number;
+  };
+  "performance-test": {
+    data: any;
+    timestamp: number;
+  };
+  "test:performance": {
+    id: number;
+    timestamp: number;
+  };
+  "chain:start": {
+    value: number;
+    timestamp: number;
+  };
+  "chain:middle": {
+    value: number;
+    timestamp: number;
+  };
+  "chain:end": {
+    value: number;
+    timestamp: number;
+  };
+  "test:error": {
+    error: boolean;
+    timestamp: number;
+  };
+  "test:remove": {
+    id: number;
+    timestamp: number;
   };
 }
 
@@ -116,9 +271,15 @@ export class EventBus extends EventEmitter {
     try {
       this.updateEventStats(eventName as string);
       this.logger.debug(`发射事件: ${eventName}`, data);
-      return this.emit(eventName, data);
+
+      // 使用原始emit方法，保持EventEmitter的所有特性
+      return super.emit(eventName, data);
     } catch (error) {
       this.logger.error(`发射事件失败: ${eventName}`, error);
+      // 将监听器错误发射到error事件
+      if (error instanceof Error) {
+        this.emit("error", error);
+      }
       return false;
     }
   }
@@ -142,7 +303,22 @@ export class EventBus extends EventEmitter {
     listener: (data: EventBusEvents[K]) => void
   ): this {
     this.logger.debug(`添加一次性事件监听器: ${eventName}`);
-    return this.once(eventName, listener);
+
+    // 创建包装器来实现一次性监听
+    const onceListener = (data: EventBusEvents[K]) => {
+      try {
+        listener(data);
+      } catch (error) {
+        // 监听器抛出错误，发射到错误事件
+        this.emit("error", error);
+        throw error;
+      } finally {
+        // 在任何情况下都移除监听器
+        this.offEvent(eventName, onceListener);
+      }
+    };
+
+    return this.on(eventName, onceListener);
   }
 
   /**

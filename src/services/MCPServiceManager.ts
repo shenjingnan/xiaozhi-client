@@ -463,6 +463,7 @@ export class MCPServiceManager {
       customTools = [];
     }
 
+  
     for (const tool of customTools) {
       allTools.push({
         name: tool.name,

@@ -869,6 +869,149 @@ describe("ConfigManager", () => {
       expect(savedConfig.mcpServers).not.toHaveProperty("test-server");
     });
 
+    it("应该清理 mcpServerConfig 字段中的服务工具配置", () => {
+      // 创建配置的深拷贝，避免影响其他测试
+      const testConfig = JSON.parse(JSON.stringify(mockConfig));
+      // 确保 testConfig 包含 mcpServerConfig
+      testConfig.mcpServerConfig = {
+        "test-server": {
+          tools: {
+            tool1: { enable: true },
+            tool2: { enable: false },
+          },
+        },
+      };
+      mockReadFileSync.mockReturnValue(JSON.stringify(testConfig));
+
+      configManager.removeMcpServer("test-server");
+
+      const savedConfig = JSON.parse(
+        mockWriteFileSync.mock.calls[0][1] as string
+      );
+      expect(savedConfig.mcpServerConfig).not.toHaveProperty("test-server");
+    });
+
+    it("应该清理 customMCP 字段中相关的工具定义", () => {
+      // 创建配置的深拷贝，避免影响其他测试
+      const testConfig = JSON.parse(JSON.stringify(mockConfig));
+      // 设置包含 CustomMCP 工具的配置
+      testConfig.customMCP = {
+        tools: [
+          {
+            name: "test-tool-1",
+            description: "测试工具1",
+            inputSchema: {},
+            handler: {
+              type: "mcp" as const,
+              config: {
+                serviceName: "test-server",
+                toolName: "tool1",
+              },
+            },
+          },
+          {
+            name: "test-tool-2",
+            description: "测试工具2",
+            inputSchema: {},
+            handler: {
+              type: "proxy" as const,
+              config: {
+                endpoint: "http://example.com",
+              },
+            },
+          },
+          {
+            name: "test-tool-3",
+            description: "测试工具3",
+            inputSchema: {},
+            handler: {
+              type: "mcp" as const,
+              config: {
+                serviceName: "test-server",
+                toolName: "tool2",
+              },
+            },
+          },
+        ],
+      };
+      mockReadFileSync.mockReturnValue(JSON.stringify(testConfig));
+
+      configManager.removeMcpServer("test-server");
+
+      const savedConfig = JSON.parse(
+        mockWriteFileSync.mock.calls[0][1] as string
+      );
+
+      // 应该只剩下非 mcp 类型的工具
+      expect(savedConfig.customMCP.tools).toHaveLength(1);
+      expect(savedConfig.customMCP.tools[0].name).toBe("test-tool-2");
+      expect(savedConfig.customMCP.tools[0].handler.type).toBe("proxy");
+    });
+
+    it("当没有相关 CustomMCP 工具时不应影响其他工具", () => {
+      // 创建配置的深拷贝，避免影响其他测试
+      const testConfig = JSON.parse(JSON.stringify(mockConfig));
+      // 设置只包含非 mcp 类型工具的配置
+      testConfig.customMCP = {
+        tools: [
+          {
+            name: "proxy-tool",
+            description: "代理工具",
+            inputSchema: {},
+            handler: {
+              type: "proxy" as const,
+              config: {
+                endpoint: "http://example.com",
+              },
+            },
+          },
+        ],
+      };
+      mockReadFileSync.mockReturnValue(JSON.stringify(testConfig));
+
+      configManager.removeMcpServer("test-server");
+
+      const savedConfig = JSON.parse(
+        mockWriteFileSync.mock.calls[0][1] as string
+      );
+
+      // 非相关的工具应该保持不变
+      expect(savedConfig.customMCP.tools).toHaveLength(1);
+      expect(savedConfig.customMCP.tools[0].name).toBe("proxy-tool");
+    });
+
+    it("当移除所有 CustomMCP 工具后应清理整个 customMCP 对象", () => {
+      // 创建配置的深拷贝，避免影响其他测试
+      const testConfig = JSON.parse(JSON.stringify(mockConfig));
+      // 设置只包含与 test-server 相关的 CustomMCP 工具
+      testConfig.customMCP = {
+        tools: [
+          {
+            name: "mcp-tool-1",
+            description: "MCP工具1",
+            inputSchema: {},
+            handler: {
+              type: "mcp" as const,
+              config: {
+                serviceName: "test-server",
+                toolName: "tool1",
+              },
+            },
+          },
+        ],
+      };
+      mockReadFileSync.mockReturnValue(JSON.stringify(testConfig));
+
+      configManager.removeMcpServer("test-server");
+
+      const savedConfig = JSON.parse(
+        mockWriteFileSync.mock.calls[0][1] as string
+      );
+
+      // customMCP 对象应该被完全清理
+      expect(savedConfig.customMCP).toBeUndefined();
+    });
+
     it("应该为空服务器名称抛出错误", () => {
       expect(() => configManager.removeMcpServer("")).toThrow(
         "服务名称必须是非空字符串"
@@ -879,6 +1022,268 @@ describe("ConfigManager", () => {
       expect(() => configManager.removeMcpServer("non-existent")).toThrow(
         "服务 non-existent 不存在"
       );
+    });
+  });
+
+  describe("removeMcpServer 边界情况和错误处理", () => {
+    beforeEach(() => {
+      // 只让 JSON 文件存在，确保使用正确的文件格式
+      mockExistsSync.mockImplementation((path: PathLike) => {
+        if (path.toString().includes("xiaozhi.config.json5")) return false;
+        if (path.toString().includes("xiaozhi.config.jsonc")) return false;
+        if (path.toString().includes("xiaozhi.config.json")) return true;
+        return false;
+      });
+      mockReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
+    });
+
+    it("应该处理缺少 mcpServerConfig 字段的情况", () => {
+      // 创建配置的深拷贝，避免影响其他测试
+      const testConfig = JSON.parse(JSON.stringify(mockConfig));
+      // 移除 mcpServerConfig 字段
+      testConfig.mcpServerConfig = undefined;
+      mockReadFileSync.mockReturnValue(JSON.stringify(testConfig));
+
+      expect(() => configManager.removeMcpServer("test-server")).not.toThrow();
+
+      const savedConfig = JSON.parse(
+        mockWriteFileSync.mock.calls[0][1] as string
+      );
+      expect(savedConfig.mcpServers).not.toHaveProperty("test-server");
+    });
+
+    it("应该处理 mcpServerConfig 为空的情况", () => {
+      // 创建配置的深拷贝，避免影响其他测试
+      const testConfig = JSON.parse(JSON.stringify(mockConfig));
+      // 设置 mcpServerConfig 为空对象
+      testConfig.mcpServerConfig = {};
+      mockReadFileSync.mockReturnValue(JSON.stringify(testConfig));
+
+      expect(() => configManager.removeMcpServer("test-server")).not.toThrow();
+
+      const savedConfig = JSON.parse(
+        mockWriteFileSync.mock.calls[0][1] as string
+      );
+      expect(savedConfig.mcpServers).not.toHaveProperty("test-server");
+    });
+
+    it("应该处理缺少 customMCP 字段的情况", () => {
+      // 创建配置的深拷贝，避免影响其他测试
+      const testConfig = JSON.parse(JSON.stringify(mockConfig));
+      // 移除 customMCP 字段
+      testConfig.customMCP = undefined;
+      mockReadFileSync.mockReturnValue(JSON.stringify(testConfig));
+
+      expect(() => configManager.removeMcpServer("test-server")).not.toThrow();
+
+      const savedConfig = JSON.parse(
+        mockWriteFileSync.mock.calls[0][1] as string
+      );
+      expect(savedConfig.mcpServers).not.toHaveProperty("test-server");
+    });
+
+    it("应该处理 customMCP.tools 为空的情况", () => {
+      // 创建配置的深拷贝，避免影响其他测试
+      const testConfig = JSON.parse(JSON.stringify(mockConfig));
+      // 设置 customMCP.tools 为空数组
+      testConfig.customMCP = { tools: [] };
+      mockReadFileSync.mockReturnValue(JSON.stringify(testConfig));
+
+      expect(() => configManager.removeMcpServer("test-server")).not.toThrow();
+
+      const savedConfig = JSON.parse(
+        mockWriteFileSync.mock.calls[0][1] as string
+      );
+      expect(savedConfig.mcpServers).not.toHaveProperty("test-server");
+    });
+
+    it("应该处理 CustomMCP 工具缺少 handler 的情况", () => {
+      // 创建配置的深拷贝，避免影响其他测试
+      const testConfig = JSON.parse(JSON.stringify(mockConfig));
+      // 设置包含缺少 handler 的工具
+      testConfig.customMCP = {
+        tools: [
+          {
+            name: "incomplete-tool",
+            description: "不完整的工具",
+            inputSchema: {},
+            // 缺少 handler 字段
+          } as any,
+        ],
+      };
+      mockReadFileSync.mockReturnValue(JSON.stringify(testConfig));
+
+      expect(() => configManager.removeMcpServer("test-server")).not.toThrow();
+
+      const savedConfig = JSON.parse(
+        mockWriteFileSync.mock.calls[0][1] as string
+      );
+      expect(savedConfig.mcpServers).not.toHaveProperty("test-server");
+      // 不完整的工具应该保持不变
+      expect(savedConfig.customMCP.tools).toHaveLength(1);
+    });
+
+    it("应该处理 CustomMCP 工具 handler.type 不是 mcp 的情况", () => {
+      // 创建配置的深拷贝，避免影响其他测试
+      const testConfig = JSON.parse(JSON.stringify(mockConfig));
+      // 设置包含非 mcp 类型工具
+      testConfig.customMCP = {
+        tools: [
+          {
+            name: "function-tool",
+            description: "函数工具",
+            inputSchema: {},
+            handler: {
+              type: "function" as const,
+              config: {
+                functionName: "testFunction",
+              },
+            },
+          },
+        ],
+      };
+      mockReadFileSync.mockReturnValue(JSON.stringify(testConfig));
+
+      expect(() => configManager.removeMcpServer("test-server")).not.toThrow();
+
+      const savedConfig = JSON.parse(
+        mockWriteFileSync.mock.calls[0][1] as string
+      );
+      expect(savedConfig.mcpServers).not.toHaveProperty("test-server");
+      // 非相关的工具应该保持不变
+      expect(savedConfig.customMCP.tools).toHaveLength(1);
+    });
+
+    it("应该处理 CustomMCP 工具 handler.config 缺少 serviceName 的情况", () => {
+      // 创建配置的深拷贝，避免影响其他测试
+      const testConfig = JSON.parse(JSON.stringify(mockConfig));
+      // 设置包含 mcp 类型但缺少 serviceName 的工具
+      testConfig.customMCP = {
+        tools: [
+          {
+            name: "mcp-tool-no-service",
+            description: "缺少服务名的MCP工具",
+            inputSchema: {},
+            handler: {
+              type: "mcp" as const,
+              config: {
+                toolName: "tool1",
+                // 缺少 serviceName
+              },
+            },
+          },
+        ],
+      };
+      mockReadFileSync.mockReturnValue(JSON.stringify(testConfig));
+
+      expect(() => configManager.removeMcpServer("test-server")).not.toThrow();
+
+      const savedConfig = JSON.parse(
+        mockWriteFileSync.mock.calls[0][1] as string
+      );
+      expect(savedConfig.mcpServers).not.toHaveProperty("test-server");
+      // 缺少 serviceName 的工具应该保持不变
+      expect(savedConfig.customMCP.tools).toHaveLength(1);
+    });
+
+    it("应该只移除与指定服务名称相关的 CustomMCP 工具", () => {
+      // 创建配置的深拷贝，避免影响其他测试
+      const testConfig = JSON.parse(JSON.stringify(mockConfig));
+      // 设置包含多个服务器相关工具的配置
+      testConfig.customMCP = {
+        tools: [
+          {
+            name: "server1-tool",
+            description: "服务器1的工具",
+            inputSchema: {},
+            handler: {
+              type: "mcp" as const,
+              config: {
+                serviceName: "test-server",
+                toolName: "tool1",
+              },
+            },
+          },
+          {
+            name: "server2-tool",
+            description: "服务器2的工具",
+            inputSchema: {},
+            handler: {
+              type: "mcp" as const,
+              config: {
+                serviceName: "other-server",
+                toolName: "tool1",
+              },
+            },
+          },
+        ],
+      };
+      // 添加另一个服务器
+      testConfig.mcpServers["other-server"] = {
+        command: "echo",
+        args: ["other"],
+      };
+      mockReadFileSync.mockReturnValue(JSON.stringify(testConfig));
+
+      configManager.removeMcpServer("test-server");
+
+      const savedConfig = JSON.parse(
+        mockWriteFileSync.mock.calls[0][1] as string
+      );
+
+      // 只移除了 test-server 相关的工具
+      expect(savedConfig.customMCP.tools).toHaveLength(1);
+      expect(savedConfig.customMCP.tools[0].name).toBe("server2-tool");
+      expect(savedConfig.customMCP.tools[0].handler.config?.serviceName).toBe(
+        "other-server"
+      );
+    });
+
+    it("应该确保所有配置更改在单次保存中完成", () => {
+      // 创建配置的深拷贝，避免影响其他测试
+      const testConfig = JSON.parse(JSON.stringify(mockConfig));
+      // 设置包含各种配置的完整场景
+      testConfig.mcpServerConfig = {
+        "test-server": {
+          tools: {
+            tool1: { enable: true },
+          },
+        },
+      };
+      testConfig.customMCP = {
+        tools: [
+          {
+            name: "mcp-tool",
+            description: "MCP工具",
+            inputSchema: {},
+            handler: {
+              type: "mcp" as const,
+              config: {
+                serviceName: "test-server",
+                toolName: "tool1",
+              },
+            },
+          },
+        ],
+      };
+      mockReadFileSync.mockReturnValue(JSON.stringify(testConfig));
+
+      // 重置 mock 调用计数
+      mockWriteFileSync.mockClear();
+
+      configManager.removeMcpServer("test-server");
+
+      // 确保只调用了一次 saveConfig
+      expect(mockWriteFileSync).toHaveBeenCalledTimes(1);
+
+      const savedConfig = JSON.parse(
+        mockWriteFileSync.mock.calls[0][1] as string
+      );
+
+      // 验证所有相关配置都被清理
+      expect(savedConfig.mcpServers).not.toHaveProperty("test-server");
+      expect(savedConfig.mcpServerConfig).not.toHaveProperty("test-server");
+      expect(savedConfig.customMCP).toBeUndefined();
     });
   });
 

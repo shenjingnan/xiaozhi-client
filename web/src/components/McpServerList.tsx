@@ -13,7 +13,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { apiClient } from "@/services/api";
-import { useMcpServerConfig, useMcpServers } from "@/stores/config";
+import {
+  useConfigActions,
+  useMcpServerConfig,
+  useMcpServers,
+} from "@/stores/config";
 import type { CozeWorkflow, MCPServerConfig, WorkflowParameter } from "@/types";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
 import {
@@ -40,6 +44,7 @@ export function McpServerList({
 }: McpServerListProps) {
   const mcpServerConfig = useMcpServerConfig();
   const mcpServers = useMcpServers();
+  const { refreshConfig } = useConfigActions();
   // const config = useConfig(); // 不再使用配置更新，改为使用 API
 
   // 添加工具列表状态管理
@@ -166,6 +171,25 @@ export function McpServerList({
       setIsLoadingTools(false);
     }
   }, [mcpServerConfig, formatTool]);
+
+  // 添加刷新状态管理
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // 数据刷新处理函数 - 用于删除MCP服务后的状态同步
+  const handleRefreshData = useCallback(async () => {
+    if (isRefreshing) return; // 防止重复刷新
+
+    try {
+      setIsRefreshing(true);
+      // 并行刷新配置数据和工具列表
+      await Promise.all([refreshConfig(), fetchTools()]);
+    } catch (error) {
+      console.error("刷新数据失败:", error);
+      toast.error("刷新数据失败");
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refreshConfig, fetchTools, isRefreshing]);
 
   // 更新工具列表状态（用于启用/禁用后刷新）
   const refreshToolLists = useCallback(async () => {
@@ -448,12 +472,21 @@ export function McpServerList({
 
   return (
     <div className="flex flex-col gap-4 px-4 lg:px-6">
-      <h2 className="text-2xl font-bold">你的聚合 MCP 服务</h2>
-      <p className="text-sm text-muted-foreground">
-        你可以在这里管理你的 MCP
-        服务，包括启用/禁用工具，以及查看工具的详细信息。
-        最终暴露给小智服务端和其他MCP客户端的是这里聚合MCP
-      </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">你的聚合 MCP 服务</h2>
+          <p className="text-sm text-muted-foreground">
+            你可以在这里管理你的 MCP
+            服务，包括启用/禁用工具，以及查看工具的详细信息。
+          </p>
+        </div>
+        {isRefreshing && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
+            刷新中...
+          </div>
+        )}
+      </div>
       <div className="*:data-[slot=card]:shadow-xs @xl/main:grid-cols-8 @5xl/main:grid-cols-8 grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card">
         {/* <div>{JSON.stringify(enabledTools, null, 2)}</div> */}
         <Card className="transition-all duration-200 col-span-3">
@@ -674,7 +707,11 @@ export function McpServerList({
                           mcpServerName={mcpServerName}
                           mcpServer={mcpServer as MCPServerConfig}
                         />
-                        <RemoveMcpServerButton mcpServerName={mcpServerName} />
+                        <RemoveMcpServerButton
+                          mcpServerName={mcpServerName}
+                          onRemoveSuccess={handleRefreshData}
+                          disabled={isRefreshing}
+                        />
                       </div>
                     </div>
                   </div>
