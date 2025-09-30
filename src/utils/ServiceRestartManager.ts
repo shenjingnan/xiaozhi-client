@@ -7,11 +7,6 @@
 
 import { logger } from "../Logger.js";
 import { getEventBus } from "../services/EventBus.js";
-import {
-  OperationPriority,
-  OperationType,
-  globalConcurrencyController,
-} from "./ConcurrencyController.js";
 
 /**
  * 重启策略枚举
@@ -301,29 +296,8 @@ export class ServiceRestartManager {
     });
 
     try {
-      // 使用并发控制器执行重启操作
-      await globalConcurrencyController.addOperation(
-        OperationType.START_SERVICE,
-        serviceName,
-        async () => {
-          // 这里需要调用MCPServiceManager的重启方法
-          // 由于我们无法直接访问，这里发射事件让其他组件处理
-          getEventBus().emitEvent("service:restart:execute", {
-            serviceName,
-            reason,
-            attempt,
-            timestamp: Date.now(),
-          });
-
-          // 返回模拟结果，实际应该等待真正的重启完成
-          return { success: true, serviceName };
-        },
-        {
-          priority: OperationPriority.HIGH,
-          timeout: this.config.maxDelay,
-          context: { reason, attempt, operationType: "restart" },
-        }
-      );
+      // 直接执行重启操作（移除并发控制器）
+      await this.executeRestartOperation(serviceName, reason, attempt);
 
       // 发射重启完成事件
       getEventBus().emitEvent("service:restart:completed", {
@@ -365,6 +339,47 @@ export class ServiceRestartManager {
         );
       }
     }
+  }
+
+  /**
+   * 执行重启操作的直接实现
+   */
+  private async executeRestartOperation(
+    serviceName: string,
+    reason?: string,
+    attempt = 1
+  ): Promise<void> {
+    // 发射重启执行事件
+    getEventBus().emitEvent("service:restart:execute", {
+      serviceName,
+      reason,
+      attempt,
+      timestamp: Date.now(),
+    });
+
+    // 等待重启完成（通过事件监听）
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error(`Service restart timeout for ${serviceName}`));
+      }, this.config.maxDelay);
+
+      const handler = (data: any) => {
+        if (data.serviceName === serviceName) {
+          clearTimeout(timeout);
+          getEventBus().offEvent("service:restart:completed", handler);
+          getEventBus().offEvent("service:restart:failed", handler);
+
+          if (data.success) {
+            resolve(data);
+          } else {
+            reject(new Error(data.error || "Service restart failed"));
+          }
+        }
+      };
+
+      getEventBus().onEvent("service:restart:completed", handler);
+      getEventBus().onEvent("service:restart:failed", handler);
+    });
   }
 
   /**

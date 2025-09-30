@@ -1397,8 +1397,8 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
 
     // 发射重连完成事件
     this.eventBus.emitEvent("connection:reconnect:completed", {
+      success: true,
       reason: options.reason,
-      endpointCount: connectedEndpoints.length,
       timestamp: new Date(),
     });
   }

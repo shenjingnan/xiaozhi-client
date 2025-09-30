@@ -9,11 +9,10 @@ import type { Context } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigManager } from "../../configManager.js";
 import { MCPErrorCode } from "../../errors/MCPErrors.js";
-import { createMCPLogger } from "../../logging/MCPLogger.js";
+// import { createMCPLogger } from "../../logging/MCPLogger.js";
 import { getEventBus } from "../../services/EventBus.js";
 import { MCPServiceManager } from "../../services/MCPServiceManager.js";
 import { ToolSyncManager } from "../../services/ToolSyncManager.js";
-import { globalConcurrencyController } from "../../utils/ConcurrencyController.js";
 import { globalServiceRestartManager } from "../../utils/ServiceRestartManager.js";
 import { MCPServerApiHandler } from "../MCPServerApiHandler.js";
 
@@ -115,14 +114,12 @@ describe("MCP服务管理集成测试", () => {
     toolSyncManager = new ToolSyncManager(configManager);
 
     // 清理状态
-    globalConcurrencyController.destroy();
     globalServiceRestartManager.destroy();
   });
 
   afterEach(() => {
     // 清理
     eventBus.removeAllListeners();
-    globalConcurrencyController.destroy();
     globalServiceRestartManager.destroy();
   });
 
@@ -191,7 +188,7 @@ describe("MCP服务管理集成测试", () => {
 
       // 验证响应
       expect(response.status).toBe(200);
-      expect(response.data.success).toBe(true);
+      expect((response as any).data.success).toBe(true);
 
       // 验证工具移除事件是否被发射
       expect(removeSpy).toHaveBeenCalled();
@@ -237,62 +234,77 @@ describe("MCP服务管理集成测试", () => {
     });
   });
 
-  describe("并发控制集成测试", () => {
-    it("应该正确处理并发操作", async () => {
+  describe("服务重启集成测试", () => {
+    it("应该正确处理服务重启操作", async () => {
       const serverConfig = {
         command: "node",
         args: ["test-server.js"],
       };
 
-      // 同时启动多个操作
-      const operations = [
-        apiHandler.addMCPServer(
-          createMockContext({ name: "server1", config: serverConfig })
-        ),
-        apiHandler.addMCPServer(
-          createMockContext({ name: "server2", config: serverConfig })
-        ),
-        apiHandler.addMCPServer(
-          createMockContext({ name: "server3", config: serverConfig })
-        ),
-      ];
+      // 添加服务
+      await apiHandler.addMCPServer(
+        createMockContext({ name: "test-server", config: serverConfig })
+      );
 
-      // 等待所有操作完成
-      const results = await Promise.all(operations);
+      // 模拟重启执行事件处理
+      const mockRestartHandler = vi.fn().mockImplementation(() => {
+        // 模拟重启完成
+        setTimeout(() => {
+          eventBus.emitEvent("service:restart:completed", {
+            serviceName: "test-server",
+            success: true,
+            attempt: 1,
+            timestamp: Date.now(),
+          });
+        }, 50);
+      });
+      eventBus.onEvent("service:restart:execute", mockRestartHandler);
 
-      // 验证所有操作都成功
-      for (const result of results) {
-        expect(result.status).toBe(201);
-      }
+      // 触发重启
+      await globalServiceRestartManager.triggerManualRestart(
+        "test-server",
+        "测试重启"
+      );
 
-      // 验证并发控制状态
-      const status = globalConcurrencyController.getStatus();
-      expect(status.runningOperations).toBe(0);
+      // 验证重启执行事件被触发
+      expect(mockRestartHandler).toHaveBeenCalled();
+
+      // 验证服务重启管理器状态
+      const healthStatus =
+        globalServiceRestartManager.getServiceHealth("test-server");
+      expect(healthStatus).toBeDefined();
     });
 
-    it("应该限制同一目标的并发操作", async () => {
-      const serverConfig = {
-        command: "node",
-        args: ["test-server.js"],
-      };
+    it("应该处理重启失败的重试逻辑", async () => {
+      // 模拟重启失败场景
+      const mockErrorHandler = vi.fn();
+      eventBus.onEvent("service:restart:failed", mockErrorHandler);
 
-      // 尝试对同一服务器进行多次操作
-      const operation1 = apiHandler.addMCPServer(
-        createMockContext({ name: "same-server", config: serverConfig })
+      // 模拟重启执行事件，然后触发失败
+      const mockRestartHandler = vi.fn().mockImplementation(() => {
+        // 模拟重启失败
+        setTimeout(() => {
+          eventBus.emitEvent("service:restart:failed", {
+            serviceName: "non-existent-server",
+            error: new Error("Service not found"),
+            attempt: 1,
+            timestamp: Date.now(),
+          });
+        }, 100);
+      });
+      eventBus.onEvent("service:restart:execute", mockRestartHandler);
+
+      // 触发一个可能失败的重启
+      await globalServiceRestartManager.triggerManualRestart(
+        "non-existent-server",
+        "测试失败"
       );
 
-      // 等待一小段时间让第一个操作开始
-      await new Promise((resolve) => setTimeout(resolve, 5));
+      // 等待异步操作完成
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
-      const operation2 = apiHandler.removeMCPServer(
-        createMockContext(undefined, { serverName: "same-server" })
-      );
-
-      // 两个操作都应该能够完成
-      const [result1, result2] = await Promise.all([operation1, operation2]);
-
-      expect(result1.status).toBe(201);
-      expect(result2.status).toBe(200);
+      // 验证错误处理
+      expect(mockErrorHandler).toHaveBeenCalled();
     });
   });
 
@@ -308,8 +320,10 @@ describe("MCP服务管理集成测试", () => {
 
       // 验证错误响应
       expect(response.status).toBe(400);
-      expect(response.data.error).toBeDefined();
-      expect(response.data.error.code).toBe(MCPErrorCode.INVALID_CONFIG);
+      expect((response as any).data.error).toBeDefined();
+      expect((response as any).data.error.code).toBe(
+        MCPErrorCode.INVALID_CONFIG
+      );
     });
 
     it("应该正确处理服务不存在的情况", async () => {
@@ -321,8 +335,10 @@ describe("MCP服务管理集成测试", () => {
 
       // 验证错误响应
       expect(response.status).toBe(404);
-      expect(response.data.error).toBeDefined();
-      expect(response.data.error.code).toBe(MCPErrorCode.SERVER_NOT_FOUND);
+      expect((response as any).data.error).toBeDefined();
+      expect((response as any).data.error.code).toBe(
+        MCPErrorCode.SERVER_NOT_FOUND
+      );
     });
 
     it("应该正确处理重复服务名称", async () => {
@@ -349,8 +365,10 @@ describe("MCP服务管理集成测试", () => {
 
       // 验证错误响应
       expect(response.status).toBe(409);
-      expect(response.data.error).toBeDefined();
-      expect(response.data.error.code).toBe(MCPErrorCode.SERVER_ALREADY_EXISTS);
+      expect((response as any).data.error).toBeDefined();
+      expect((response as any).data.error.code).toBe(
+        MCPErrorCode.SERVER_ALREADY_EXISTS
+      );
     });
   });
 
@@ -370,7 +388,7 @@ describe("MCP服务管理集成测试", () => {
       );
 
       expect(addResponse.status).toBe(201);
-      expect(addResponse.data.success).toBe(true);
+      expect((addResponse as any).data.success).toBe(true);
 
       // 2. 查询服务状态
       const statusResponse = await apiHandler.getMCPServerStatus(
@@ -378,16 +396,18 @@ describe("MCP服务管理集成测试", () => {
       );
 
       expect(statusResponse.status).toBe(200);
-      expect(statusResponse.data.success).toBe(true);
-      expect(statusResponse.data.data.name).toBe("e2e-server");
+      expect((statusResponse as any).data.success).toBe(true);
+      expect((statusResponse as any).data.data.name).toBe("e2e-server");
 
       // 3. 查询服务列表
       const listResponse = await apiHandler.listMCPServers(createMockContext());
 
       expect(listResponse.status).toBe(200);
-      expect(listResponse.data.success).toBe(true);
-      expect(listResponse.data.data.servers).toHaveLength(1);
-      expect(listResponse.data.data.servers[0].name).toBe("e2e-server");
+      expect((listResponse as any).data.success).toBe(true);
+      expect((listResponse as any).data.data.servers).toHaveLength(1);
+      expect((listResponse as any).data.data.servers[0].name).toBe(
+        "e2e-server"
+      );
 
       // 4. 移除服务
       const removeResponse = await apiHandler.removeMCPServer(
@@ -395,7 +415,7 @@ describe("MCP服务管理集成测试", () => {
       );
 
       expect(removeResponse.status).toBe(200);
-      expect(removeResponse.data.success).toBe(true);
+      expect((removeResponse as any).data.success).toBe(true);
 
       // 5. 验证服务已被移除
       const finalStatusResponse = await apiHandler.getMCPServerStatus(
@@ -430,12 +450,14 @@ describe("MCP服务管理集成测试", () => {
       // 验证所有请求都成功
       for (const [index, result] of results.entries()) {
         expect(result.status).toBe(201);
-        expect(result.data.data.name).toBe(`concurrent-server-${index}`);
+        expect((result as any).data.data.name).toBe(
+          `concurrent-server-${index}`
+        );
       }
 
       // 验证服务列表
       const listResponse = await apiHandler.listMCPServers(createMockContext());
-      expect(listResponse.data.data.servers).toHaveLength(10);
+      expect((listResponse as any).data.data.servers).toHaveLength(10);
     });
   });
 });

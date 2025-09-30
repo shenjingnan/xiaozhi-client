@@ -36,6 +36,7 @@ export interface EventBusEvents {
     delay: number;
     attempt: number;
     timestamp: number;
+    source?: string;
   };
   "service:restart:started": {
     serviceName: string;
@@ -137,6 +138,13 @@ export interface EventBusEvents {
     timestamp: Date;
   };
 
+  // 连接相关事件
+  "connection:reconnect:completed": {
+    success: boolean;
+    reason: string;
+    timestamp: Date;
+  };
+
   // 工具同步相关事件
   "tool-sync:server-tools-updated": {
     serviceName: string;
@@ -153,6 +161,68 @@ export interface EventBusEvents {
     serviceName: string;
     removedCount: number;
     timestamp: Date;
+  };
+
+  // 测试相关事件（仅用于测试）
+  "high-frequency": {
+    id: number;
+    timestamp: number;
+  };
+  "bulk-test": {
+    id: number;
+    timestamp: number;
+  };
+  "error-test": {
+    error: string;
+    timestamp: number;
+  };
+  "large-data-test": {
+    data: any;
+    timestamp: number;
+  };
+  "destroy-test": {
+    message: string;
+    timestamp: number;
+  };
+  "chain-event-1": {
+    value: number;
+    timestamp: number;
+  };
+  "chain-event-2": {
+    value: number;
+    timestamp: number;
+  };
+  "chain-event-3": {
+    value: number;
+    timestamp: number;
+  };
+  "performance-test": {
+    data: any;
+    timestamp: number;
+  };
+  "test:performance": {
+    id: number;
+    timestamp: number;
+  };
+  "chain:start": {
+    value: number;
+    timestamp: number;
+  };
+  "chain:middle": {
+    value: number;
+    timestamp: number;
+  };
+  "chain:end": {
+    value: number;
+    timestamp: number;
+  };
+  "test:error": {
+    error: boolean;
+    timestamp: number;
+  };
+  "test:remove": {
+    id: number;
+    timestamp: number;
   };
 }
 
