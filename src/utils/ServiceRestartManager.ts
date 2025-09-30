@@ -555,6 +555,15 @@ export class ServiceRestartManager {
 
     this.logger.info("服务重启管理器已销毁");
   }
+
+  /**
+   * 重新初始化重启管理器
+   */
+  reinitialize(): void {
+    this.destroy();
+    this.setupEventListeners();
+    this.logger.info("服务重启管理器已重新初始化");
+  }
 }
 
 /**

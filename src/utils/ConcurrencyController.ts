@@ -293,16 +293,16 @@ export class ConcurrencyController {
       operation.error =
         error instanceof Error ? error : new Error(String(error));
 
-      this.logger.error(
-        "操作执行失败",
-        {
-          operationId: operation.id,
-          error: error instanceof MCPError ? error : MCPError.fromError(error as Error),
-          type: operation.type,
-          target: operation.target,
-          phase: "execution",
-        }
-      );
+      this.logger.error("操作执行失败", {
+        operationId: operation.id,
+        error:
+          error instanceof MCPError
+            ? error
+            : MCPError.fromError(error as Error),
+        type: operation.type,
+        target: operation.target,
+        phase: "execution",
+      });
 
       // 如果启用了重试且还有重试次数
       if (this.config.enableRetry && this.shouldRetry(operation)) {

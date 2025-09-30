@@ -7,8 +7,8 @@
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ConfigManager } from "../../configManager.js";
 import { logger } from "../../Logger.js";
+import { ConfigManager } from "../../configManager.js";
 import { getEventBus } from "../../services/EventBus.js";
 import { ToolSyncManager } from "../../services/ToolSyncManager.js";
 import { globalServiceRestartManager } from "../../utils/ServiceRestartManager.js";
@@ -45,7 +45,7 @@ describe("事件系统集成测试", () => {
   let eventBus: any;
   let configManager: any;
   let toolSyncManager: ToolSyncManager;
-  let logger: any;
+  let testLogger: any;
 
   beforeEach(() => {
     // 重置单例
@@ -53,12 +53,12 @@ describe("事件系统集成测试", () => {
 
     eventBus = getEventBus();
     configManager = createMockConfigManager();
-    logger = logger.withTag("EventIntegrationTest");
+    testLogger = logger; // 直接使用导入的logger实例
 
-    toolSyncManager = new ToolSyncManager(configManager, logger);
+    toolSyncManager = new ToolSyncManager(configManager, testLogger);
 
     // 重置服务重启管理器
-    globalServiceRestartManager.destroy();
+    globalServiceRestartManager.reinitialize();
   });
 
   afterEach(() => {
@@ -281,16 +281,16 @@ describe("事件系统集成测试", () => {
         syncEvents.push({ type: "general-config-updated" });
       });
 
-      // 模拟配置更新
-      eventBus.emitEvent("config:updated", {
-        type: "customMCP",
-        timestamp: new Date(),
-      });
-
       // 模拟服务器工具配置更新
       eventBus.emitEvent("config:updated", {
         type: "serverTools",
         serviceName: "test-server",
+        timestamp: new Date(),
+      });
+
+      // 模拟通用配置更新（非customMCP或serverTools类型）
+      eventBus.emitEvent("config:updated", {
+        type: "general",
         timestamp: new Date(),
       });
 

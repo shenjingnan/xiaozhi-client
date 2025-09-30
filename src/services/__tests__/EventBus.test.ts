@@ -300,10 +300,10 @@ describe("EventBus", () => {
     });
 
     it("should handle emit errors gracefully", () => {
-      // Mock emit to throw an error
-      const originalEmit = eventBus.emit;
-      eventBus.emit = vi.fn().mockImplementation(() => {
-        throw new Error("Emit failed");
+      // 测试 updateEventStats 方法抛出错误的情况
+      const originalUpdateStats = (eventBus as any).updateEventStats;
+      (eventBus as any).updateEventStats = vi.fn().mockImplementation(() => {
+        throw new Error("Update stats failed");
       });
 
       const result = eventBus.emitEvent("config:updated", {
@@ -317,8 +317,8 @@ describe("EventBus", () => {
         expect.any(Error)
       );
 
-      // Restore original emit
-      eventBus.emit = originalEmit;
+      // Restore original method
+      (eventBus as any).updateEventStats = originalUpdateStats;
     });
 
     it("should return false when no listeners", () => {

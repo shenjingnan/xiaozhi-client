@@ -201,7 +201,9 @@ export class EventBus extends EventEmitter {
     try {
       this.updateEventStats(eventName as string);
       this.logger.debug(`发射事件: ${eventName}`, data);
-      return this.emit(eventName, data);
+
+      // 使用原始emit方法，保持EventEmitter的所有特性
+      return super.emit(eventName, data);
     } catch (error) {
       this.logger.error(`发射事件失败: ${eventName}`, error);
       return false;
@@ -227,7 +229,22 @@ export class EventBus extends EventEmitter {
     listener: (data: EventBusEvents[K]) => void
   ): this {
     this.logger.debug(`添加一次性事件监听器: ${eventName}`);
-    return this.once(eventName, listener);
+
+    // 创建包装器来实现一次性监听
+    const onceListener = (data: EventBusEvents[K]) => {
+      try {
+        listener(data);
+      } catch (error) {
+        // 监听器抛出错误，发射到错误事件
+        this.emit("error", error);
+        throw error;
+      } finally {
+        // 在任何情况下都移除监听器
+        this.offEvent(eventName, onceListener);
+      }
+    };
+
+    return this.on(eventName, onceListener);
   }
 
   /**
