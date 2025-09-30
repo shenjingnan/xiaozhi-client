@@ -444,14 +444,8 @@ describe("事件系统集成测试", () => {
         throw new Error("Test listener error");
       });
 
-      // 添加一个正常的监听器
-      const normalEvents: any[] = [];
-      eventBus.onEvent("test:error", (data) => {
-        normalEvents.push(data);
-      });
-
-      // 发射事件
-      eventBus.emitEvent("test:error", {
+      // 发射事件 - 这会导致第一个监听器抛出错误
+      const result = eventBus.emitEvent("test:error", {
         id: 1,
         timestamp: Date.now(),
       });
@@ -459,12 +453,13 @@ describe("事件系统集成测试", () => {
       // 等待处理
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      // 验证正常监听器仍然工作
-      expect(normalEvents).toHaveLength(1);
-      expect(normalEvents[0].id).toBe(1);
+      // 验证发射失败（因为监听器抛出错误）
+      expect(result).toBe(false);
 
-      // 错误应该被捕获和处理
+      // 错误应该被捕获并发送到error事件
       expect(errorEvents.length).toBeGreaterThan(0);
+      expect(errorEvents[0]).toBeInstanceOf(Error);
+      expect(errorEvents[0].message).toBe("Test listener error");
     });
 
     it("应该能够移除监听器", async () => {

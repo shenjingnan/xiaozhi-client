@@ -206,6 +206,10 @@ export class EventBus extends EventEmitter {
       return super.emit(eventName, data);
     } catch (error) {
       this.logger.error(`发射事件失败: ${eventName}`, error);
+      // 将监听器错误发射到error事件
+      if (error instanceof Error) {
+        this.emit("error", error);
+      }
       return false;
     }
   }
