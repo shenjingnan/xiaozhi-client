@@ -1362,11 +1362,11 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     const connectedEndpoints = Array.from(this.connections.keys());
 
     if (connectedEndpoints.length === 0) {
-      this.logger.info("没有已连接的接入点需要重连");
+      this.logger.debug("没有已连接的接入点需要重连");
       return;
     }
 
-    this.logger.info(
+    this.logger.debug(
       `找到 ${connectedEndpoints.length} 个已连接的接入点需要重连`
     );
 
@@ -1461,9 +1461,6 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     this.logger.debug(`连接接入点: ${sliceEndpoint(endpoint)}`);
 
     try {
-      // 获取当前工具列表
-      const tools = this.getCurrentTools();
-
       // 创建新的 ProxyMCPServer 实例
       const proxyServer = new ProxyMCPServer(endpoint);
 

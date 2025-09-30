@@ -17,8 +17,12 @@ import {
 
 export function RemoveMcpServerButton({
   mcpServerName,
+  onRemoveSuccess,
+  disabled = false,
 }: {
   mcpServerName: string;
+  onRemoveSuccess?: () => Promise<void>;
+  disabled?: boolean;
 }) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -34,6 +38,11 @@ export function RemoveMcpServerButton({
       }
 
       toast.success(`MCP 服务 "${mcpServerName}" 已删除`);
+
+      // 调用成功回调
+      if (onRemoveSuccess) {
+        await onRemoveSuccess();
+      }
     } catch (error) {
       console.error("删除 MCP 服务失败:", error);
       toast.error(
@@ -47,7 +56,12 @@ export function RemoveMcpServerButton({
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant="destructive" size="icon" className="size-8">
+        <Button
+          variant="destructive"
+          size="icon"
+          className="size-8"
+          disabled={disabled || isLoading}
+        >
           <TrashIcon className="h-4 w-4" />
         </Button>
       </AlertDialogTrigger>
@@ -64,7 +78,7 @@ export function RemoveMcpServerButton({
           <AlertDialogCancel>取消</AlertDialogCancel>
           <AlertDialogAction
             onClick={onRemove}
-            disabled={isLoading}
+            disabled={disabled || isLoading}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             {isLoading ? "删除中..." : "确定"}
