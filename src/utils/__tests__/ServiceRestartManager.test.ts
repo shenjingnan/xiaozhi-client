@@ -41,7 +41,6 @@ describe("ServiceRestartManager 功能验证", () => {
   });
 
   describe("基本功能测试", () => {
-
     it("应该正确获取服务健康状态", () => {
       const health = serviceRestartManager.getServiceHealth("test-service");
       expect(health).toBe(ServiceHealthStatus.UNKNOWN);
@@ -52,9 +51,6 @@ describe("ServiceRestartManager 功能验证", () => {
       expect(allHealth).toEqual({});
     });
   });
-
-
-
 
   describe("事件监听测试", () => {
     it("应该监听服务断开连接事件", async () => {
@@ -191,7 +187,6 @@ describe("ServiceRestartManager 功能验证", () => {
   });
 
   describe("重启统计测试", () => {
-
     it("应该正确处理空统计", () => {
       const stats = serviceRestartManager.getRestartStats(
         "non-existent-service"
@@ -243,7 +238,6 @@ describe("ServiceRestartManager 功能验证", () => {
         limitedManager.destroy();
       }
     });
-
   });
 
   describe("并发控制移除验证测试", () => {
