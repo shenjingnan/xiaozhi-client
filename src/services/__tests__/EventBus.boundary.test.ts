@@ -8,6 +8,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Mock } from "vitest";
 import { EventBus } from "../EventBus.js";
 
 describe("事件系统边界情况测试", () => {
@@ -45,7 +46,7 @@ describe("事件系统边界情况测试", () => {
     });
 
     it("应该处理大量监听器注册", () => {
-      const handlers: Array<vi.Mock> = [];
+      const handlers: Array<Mock> = [];
 
       // 注册60个监听器（低于最大监听器数量）
       for (let i = 0; i < 60; i++) {
@@ -55,7 +56,10 @@ describe("事件系统边界情况测试", () => {
       }
 
       // 发送一个事件
-      eventBus.emitEvent("bulk-test", { data: "test" });
+      eventBus.emitEvent("bulk-test", {
+        id: 1,
+        timestamp: Date.now(),
+      });
 
       // 所有监听器都应该被调用
       for (const handler of handlers) {
@@ -75,7 +79,10 @@ describe("事件系统边界情况测试", () => {
       eventBus.onEvent("error-test", normalHandler);
 
       // 发送事件（EventBus.emitEvent会在监听器抛出异常时返回false）
-      const result = eventBus.emitEvent("error-test", { data: "test" });
+      const result = eventBus.emitEvent("error-test", {
+        error: "test error",
+        timestamp: Date.now(),
+      });
       expect(result).toBe(false); // 事件发送失败，因为监听器抛出异常
 
       // 当监听器抛出异常时，EventEmitter会停止调用后续监听器
@@ -105,12 +112,18 @@ describe("事件系统边界情况测试", () => {
       };
 
       expect(() => {
-        eventBus.emitEvent("large-data-test", largeData);
+        eventBus.emitEvent("large-data-test", {
+          data: largeData,
+          timestamp: Date.now(),
+        });
       }).not.toThrow();
 
       // 验证handler被调用，并且传入了正确的参数
       expect(handler).toHaveBeenCalled();
-      expect(handler).toHaveBeenCalledWith(largeData);
+      expect(handler).toHaveBeenCalledWith({
+        data: largeData,
+        timestamp: expect.any(Number),
+      });
     });
   });
 
@@ -121,12 +134,15 @@ describe("事件系统边界情况测试", () => {
       eventBus.destroy();
 
       // 销毁后发送事件应该不会调用监听器
-      eventBus.emitEvent("destroy-test", { data: "test" });
+      eventBus.emitEvent("destroy-test", {
+        message: "test",
+        timestamp: Date.now(),
+      });
       expect(handler).not.toHaveBeenCalled();
 
       // 销毁后应该可以正常添加监听器（EventBus的destroy方法只是清理监听器和状态，不会阻止后续操作）
       expect(() => {
-        eventBus.onEvent("destroy-test-2", vi.fn());
+        eventBus.onEvent("test:remove", vi.fn());
       }).not.toThrow();
     });
 
@@ -135,24 +151,33 @@ describe("事件系统边界情况测试", () => {
 
       const handler1 = vi.fn().mockImplementation(() => {
         executionOrder.push("handler1");
-        eventBus.emitEvent("chain-event-2", { from: "handler1" });
+        eventBus.emitEvent("chain-event-2", {
+          value: 2,
+          timestamp: Date.now(),
+        });
       });
 
       const handler2 = vi.fn().mockImplementation(() => {
         executionOrder.push("handler2");
-        eventBus.emitEvent("chain-event-3", { from: "handler2" });
+        eventBus.emitEvent("chain-event-3", {
+          value: 3,
+          timestamp: Date.now(),
+        });
       });
 
       const handler3 = vi.fn().mockImplementation(() => {
         executionOrder.push("handler3");
       });
 
-      eventBus.onEvent("chain-event-1", handler1);
+      eventBus.onEvent("chain:start", handler1);
       eventBus.onEvent("chain-event-2", handler2);
       eventBus.onEvent("chain-event-3", handler3);
 
       // 触发事件链
-      eventBus.emitEvent("chain-event-1", { start: true });
+      eventBus.emitEvent("chain:start", {
+        value: 1,
+        timestamp: Date.now(),
+      });
 
       expect(executionOrder).toEqual(["handler1", "handler2", "handler3"]);
     });
@@ -167,7 +192,10 @@ describe("事件系统边界情况测试", () => {
       const startTime = performance.now();
 
       for (let i = 0; i < iterations; i++) {
-        eventBus.emitEvent("performance-test", { id: i });
+        eventBus.emitEvent("test:performance", {
+          id: i,
+          timestamp: Date.now(),
+        });
       }
 
       const endTime = performance.now();

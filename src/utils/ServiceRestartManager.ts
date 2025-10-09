@@ -505,7 +505,7 @@ export class ServiceRestartManager {
       return this.calculateStats(records);
     }
 
-    const allStats: Record<string, any> = {};
+    const allStats: Record<string, ReturnType<typeof this.calculateStats>> = {};
     for (const [name, records] of this.restartRecords) {
       allStats[name] = this.calculateStats(records);
     }

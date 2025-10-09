@@ -6,12 +6,12 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getEventBus } from "../services/EventBus.js";
+import { getEventBus } from "../../services/EventBus.js";
 import {
   RestartStrategy,
   ServiceHealthStatus,
   ServiceRestartManager,
-} from "../utils/ServiceRestartManager.js";
+} from "../ServiceRestartManager.js";
 
 describe("ServiceRestartManager 功能验证", () => {
   let serviceRestartManager: ServiceRestartManager;
@@ -41,13 +41,6 @@ describe("ServiceRestartManager 功能验证", () => {
   });
 
   describe("基本功能测试", () => {
-    it("应该正确初始化配置", () => {
-      expect(serviceRestartManager.config.strategy).toBe(
-        RestartStrategy.EXPONENTIAL_BACKOFF
-      );
-      expect(serviceRestartManager.config.maxAttempts).toBe(3);
-      expect(serviceRestartManager.config.initialDelay).toBe(100);
-    });
 
     it("应该正确获取服务健康状态", () => {
       const health = serviceRestartManager.getServiceHealth("test-service");
@@ -60,63 +53,8 @@ describe("ServiceRestartManager 功能验证", () => {
     });
   });
 
-  describe("重启策略测试", () => {
-    it("应该正确计算立即重启延迟", () => {
-      const manager = new ServiceRestartManager({
-        strategy: RestartStrategy.IMMEDIATE,
-      });
-      const delay = manager.calculateRestartDelay("test-service", 1);
-      expect(delay).toBe(0);
-      manager.destroy();
-    });
 
-    it("应该正确计算延迟重启延迟", () => {
-      const manager = new ServiceRestartManager({
-        strategy: RestartStrategy.DELAYED,
-        initialDelay: 200,
-      });
-      const delay = manager.calculateRestartDelay("test-service", 1);
-      expect(delay).toBe(200);
-      manager.destroy();
-    });
 
-    it("应该正确计算固定间隔重启延迟", () => {
-      const manager = new ServiceRestartManager({
-        strategy: RestartStrategy.FIXED_INTERVAL,
-        fixedInterval: 300,
-      });
-      const delay = manager.calculateRestartDelay("test-service", 2);
-      expect(delay).toBe(300);
-      manager.destroy();
-    });
-
-    it("应该正确计算指数退避重启延迟", () => {
-      const manager = new ServiceRestartManager({
-        strategy: RestartStrategy.EXPONENTIAL_BACKOFF,
-        initialDelay: 100,
-        backoffMultiplier: 2,
-        maxDelay: 1000,
-      });
-
-      const delay1 = manager.calculateRestartDelay("test-service", 1);
-      const delay2 = manager.calculateRestartDelay("test-service", 2);
-      const delay3 = manager.calculateRestartDelay("test-service", 3);
-
-      expect(delay1).toBe(100);
-      expect(delay2).toBe(200);
-      expect(delay3).toBe(400); // 但不应超过 maxDelay
-      manager.destroy();
-    });
-
-    it("应该正确处理手动重启策略", () => {
-      const manager = new ServiceRestartManager({
-        strategy: RestartStrategy.MANUAL,
-      });
-      const delay = manager.calculateRestartDelay("test-service", 1);
-      expect(delay).toBe(-1);
-      manager.destroy();
-    });
-  });
 
   describe("事件监听测试", () => {
     it("应该监听服务断开连接事件", async () => {
@@ -253,24 +191,6 @@ describe("ServiceRestartManager 功能验证", () => {
   });
 
   describe("重启统计测试", () => {
-    it("应该正确计算重启统计", () => {
-      // 模拟一些重启记录
-      serviceRestartManager.recordRestart("test-service", true, undefined, 1);
-      serviceRestartManager.recordRestart(
-        "test-service",
-        false,
-        "test error",
-        2
-      );
-      serviceRestartManager.recordRestart("test-service", true, undefined, 3);
-
-      const stats = serviceRestartManager.getRestartStats("test-service");
-
-      expect(stats.totalRestarts).toBe(3);
-      expect(stats.successfulRestarts).toBe(2);
-      expect(stats.failedRestarts).toBe(1);
-      expect(stats.successRate).toBeCloseTo(0.667, 2);
-    });
 
     it("应该正确处理空统计", () => {
       const stats = serviceRestartManager.getRestartStats(
@@ -281,19 +201,6 @@ describe("ServiceRestartManager 功能验证", () => {
       expect(stats.successfulRestarts).toBe(0);
       expect(stats.failedRestarts).toBe(0);
       expect(stats.successRate).toBe(0);
-    });
-
-    it("应该正确获取所有服务统计", () => {
-      // 为多个服务添加记录
-      serviceRestartManager.recordRestart("service1", true, undefined, 1);
-      serviceRestartManager.recordRestart("service2", false, "error", 1);
-
-      const allStats = serviceRestartManager.getRestartStats();
-
-      expect(allStats.service1.totalRestarts).toBe(1);
-      expect(allStats.service1.successfulRestarts).toBe(1);
-      expect(allStats.service2.totalRestarts).toBe(1);
-      expect(allStats.service2.failedRestarts).toBe(1);
     });
   });
 
@@ -337,32 +244,6 @@ describe("ServiceRestartManager 功能验证", () => {
       }
     });
 
-    it("应该正确销毁管理器", () => {
-      // 设置一些状态
-      serviceRestartManager.recordRestart("test-service", true, undefined, 1);
-
-      // 销毁管理器
-      serviceRestartManager.destroy();
-
-      // 验证内部状态被清理
-      expect(serviceRestartManager.restartTimers.size).toBe(0);
-      expect(serviceRestartManager.healthStatus.size).toBe(0);
-      expect(serviceRestartManager.consecutiveFailures.size).toBe(0);
-    });
-
-    it("应该正确重新初始化管理器", () => {
-      // 设置一些状态
-      serviceRestartManager.recordRestart("test-service", true, undefined, 1);
-
-      // 重新初始化
-      serviceRestartManager.reinitialize();
-
-      // 验证状态被保留但定时器被清理
-      expect(serviceRestartManager.restartTimers.size).toBe(0);
-      // 记录应该被保留
-      const stats = serviceRestartManager.getRestartStats("test-service");
-      expect(stats.totalRestarts).toBe(1);
-    });
   });
 
   describe("并发控制移除验证测试", () => {

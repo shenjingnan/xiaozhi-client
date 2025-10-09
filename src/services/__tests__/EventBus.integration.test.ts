@@ -5,17 +5,16 @@
  * 测试EventBus、ToolSyncManager、ServiceRestartManager等组件的事件交互
  */
 
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { logger } from "../../Logger.js";
-import { ConfigManager } from "../../configManager.js";
+import type { EventBusEvents } from "../../services/EventBus.js";
 import { getEventBus } from "../../services/EventBus.js";
 import { ToolSyncManager } from "../../services/ToolSyncManager.js";
 import { globalServiceRestartManager } from "../../utils/ServiceRestartManager.js";
 
 // 模拟ConfigManager
 const createMockConfigManager = () => {
-  const config = {
+  const config: Record<string, any> = {
     mcpServers: {},
     customMCP: [],
   };
@@ -72,13 +71,19 @@ describe("事件系统集成测试", () => {
       // 设置监听器
       const eventLog: string[] = [];
 
-      eventBus.onEvent("mcp:server:added", (data) => {
-        eventLog.push(`server_added:${data.serverName}`);
-      });
+      eventBus.onEvent(
+        "mcp:server:added",
+        (data: EventBusEvents["mcp:server:added"]) => {
+          eventLog.push(`server_added:${data.serverName}`);
+        }
+      );
 
-      eventBus.onEvent("tool-sync:request-service-tools", (data) => {
-        eventLog.push(`sync_requested:${data.serviceName}`);
-      });
+      eventBus.onEvent(
+        "tool-sync:request-service-tools",
+        (data: EventBusEvents["tool-sync:request-service-tools"]) => {
+          eventLog.push(`sync_requested:${data.serviceName}`);
+        }
+      );
 
       // 模拟服务添加事件
       eventBus.emitEvent("mcp:server:added", {
@@ -112,13 +117,21 @@ describe("事件系统集成测试", () => {
       // 设置监听器
       const eventLog: string[] = [];
 
-      eventBus.onEvent("mcp:server:removed", (data) => {
-        eventLog.push(`server_removed:${data.serverName}`);
-      });
+      eventBus.onEvent(
+        "mcp:server:removed",
+        (data: EventBusEvents["mcp:server:removed"]) => {
+          eventLog.push(`server_removed:${data.serverName}`);
+        }
+      );
 
-      eventBus.onEvent("tool-sync:service-tools-removed", (data) => {
-        eventLog.push(`tools_removed:${data.serverName}:${data.removedCount}`);
-      });
+      eventBus.onEvent(
+        "tool-sync:service-tools-removed",
+        (data: EventBusEvents["tool-sync:service-tools-removed"]) => {
+          eventLog.push(
+            `tools_removed:${data.serviceName}:${data.removedCount}`
+          );
+        }
+      );
 
       // 模拟服务移除事件
       eventBus.emitEvent("mcp:server:removed", {
@@ -141,13 +154,16 @@ describe("事件系统集成测试", () => {
         newStatus: string;
       }> = [];
 
-      eventBus.onEvent("mcp:server:status_changed", (data) => {
-        statusChanges.push({
-          serverName: data.serverName,
-          oldStatus: data.oldStatus,
-          newStatus: data.newStatus,
-        });
-      });
+      eventBus.onEvent(
+        "mcp:server:status_changed",
+        (data: EventBusEvents["mcp:server:status_changed"]) => {
+          statusChanges.push({
+            serverName: data.serverName,
+            oldStatus: data.oldStatus,
+            newStatus: data.newStatus,
+          });
+        }
+      );
 
       // 模拟状态变化
       eventBus.emitEvent("mcp:server:status_changed", {
@@ -183,29 +199,38 @@ describe("事件系统集成测试", () => {
       }> = [];
 
       // 监听所有重启相关事件
-      eventBus.onEvent("service:restart:requested", (data) => {
-        restartEvents.push({
-          type: "requested",
-          serviceName: data.serviceName,
-          attempt: data.attempt,
-        });
-      });
+      eventBus.onEvent(
+        "service:restart:requested",
+        (data: EventBusEvents["service:restart:requested"]) => {
+          restartEvents.push({
+            type: "requested",
+            serviceName: data.serviceName,
+            attempt: data.attempt,
+          });
+        }
+      );
 
-      eventBus.onEvent("service:restart:started", (data) => {
-        restartEvents.push({
-          type: "started",
-          serviceName: data.serviceName,
-          attempt: data.attempt,
-        });
-      });
+      eventBus.onEvent(
+        "service:restart:started",
+        (data: EventBusEvents["service:restart:started"]) => {
+          restartEvents.push({
+            type: "started",
+            serviceName: data.serviceName,
+            attempt: data.attempt,
+          });
+        }
+      );
 
-      eventBus.onEvent("service:restart:completed", (data) => {
-        restartEvents.push({
-          type: "completed",
-          serviceName: data.serviceName,
-          attempt: data.attempt,
-        });
-      });
+      eventBus.onEvent(
+        "service:restart:completed",
+        (data: EventBusEvents["service:restart:completed"]) => {
+          restartEvents.push({
+            type: "completed",
+            serviceName: data.serviceName,
+            attempt: data.attempt,
+          });
+        }
+      );
 
       // 模拟服务断开连接，触发重启
       eventBus.emitEvent("mcp:service:disconnected", {
@@ -232,13 +257,16 @@ describe("事件系统集成测试", () => {
         newStatus: string;
       }> = [];
 
-      eventBus.onEvent("service:health:changed", (data) => {
-        healthChanges.push({
-          serviceName: data.serviceName,
-          oldStatus: data.oldStatus,
-          newStatus: data.newStatus,
-        });
-      });
+      eventBus.onEvent(
+        "service:health:changed",
+        (data: EventBusEvents["service:health:changed"]) => {
+          healthChanges.push({
+            serviceName: data.serviceName,
+            oldStatus: data.oldStatus,
+            newStatus: data.newStatus,
+          });
+        }
+      );
 
       // 模拟健康状态变化
       eventBus.emitEvent("service:health:changed", {
@@ -270,16 +298,22 @@ describe("事件系统集成测试", () => {
         serviceName?: string;
       }> = [];
 
-      eventBus.onEvent("tool-sync:server-tools-updated", (data) => {
-        syncEvents.push({
-          type: "server-tools-updated",
-          serviceName: data.serviceName,
-        });
-      });
+      eventBus.onEvent(
+        "tool-sync:server-tools-updated",
+        (data: EventBusEvents["tool-sync:server-tools-updated"]) => {
+          syncEvents.push({
+            type: "server-tools-updated",
+            serviceName: data.serviceName,
+          });
+        }
+      );
 
-      eventBus.onEvent("tool-sync:general-config-updated", (data) => {
-        syncEvents.push({ type: "general-config-updated" });
-      });
+      eventBus.onEvent(
+        "tool-sync:general-config-updated",
+        (data: EventBusEvents["tool-sync:general-config-updated"]) => {
+          syncEvents.push({ type: "general-config-updated" });
+        }
+      );
 
       // 模拟服务器工具配置更新
       eventBus.emitEvent("config:updated", {
@@ -312,13 +346,16 @@ describe("事件系统集成测试", () => {
         toolCount?: number;
       }> = [];
 
-      eventBus.onEvent("tool-sync:service-tools-removed", (data) => {
-        toolSyncEvents.push({
-          type: "service-tools-removed",
-          serviceName: data.serviceName,
-          toolCount: data.removedCount,
-        });
-      });
+      eventBus.onEvent(
+        "tool-sync:service-tools-removed",
+        (data: EventBusEvents["tool-sync:service-tools-removed"]) => {
+          toolSyncEvents.push({
+            type: "service-tools-removed",
+            serviceName: data.serviceName,
+            toolCount: data.removedCount,
+          });
+        }
+      );
 
       // 模拟工具移除
       eventBus.emitEvent("tool-sync:service-tools-removed", {
@@ -344,9 +381,12 @@ describe("事件系统集成测试", () => {
       const eventCount = 1000;
       const receivedEvents: number[] = [];
 
-      eventBus.onEvent("test:performance", (data) => {
-        receivedEvents.push(data.id);
-      });
+      eventBus.onEvent(
+        "test:performance",
+        (data: EventBusEvents["test:performance"]) => {
+          receivedEvents.push(data.id);
+        }
+      );
 
       // 发送大量事件
       const startTime = Date.now();
@@ -381,30 +421,31 @@ describe("事件系统集成测试", () => {
       const complexEvents: string[] = [];
 
       // 设置复杂的事件链
-      eventBus.onEvent("chain:start", (data) => {
-        complexEvents.push(`start:${data.id}`);
+      eventBus.onEvent("chain:start", (data: EventBusEvents["chain:start"]) => {
+        complexEvents.push(`start:${data.value}`);
 
         // 触发下一个事件
         eventBus.emitEvent("chain:middle", {
-          id: data.id,
-          step: 2,
+          value: data.value + 1,
           timestamp: Date.now(),
         });
       });
 
-      eventBus.onEvent("chain:middle", (data) => {
-        complexEvents.push(`middle:${data.id}:${data.step}`);
+      eventBus.onEvent(
+        "chain:middle",
+        (data: EventBusEvents["chain:middle"]) => {
+          complexEvents.push(`middle:${data.value}`);
 
-        // 触发最终事件
-        eventBus.emitEvent("chain:end", {
-          id: data.id,
-          step: 3,
-          timestamp: Date.now(),
-        });
-      });
+          // 触发最终事件
+          eventBus.emitEvent("chain:end", {
+            value: data.value + 1,
+            timestamp: Date.now(),
+          });
+        }
+      );
 
-      eventBus.onEvent("chain:end", (data) => {
-        complexEvents.push(`end:${data.id}:${data.step}`);
+      eventBus.onEvent("chain:end", (data: EventBusEvents["chain:end"]) => {
+        complexEvents.push(`end:${data.value}`);
       });
 
       // 启动多个事件链
@@ -424,8 +465,8 @@ describe("事件系统集成测试", () => {
       // 验证每个完整的链
       for (let i = 0; i < 10; i++) {
         expect(complexEvents).toContain(`start:${i}`);
-        expect(complexEvents).toContain(`middle:${i}:2`);
-        expect(complexEvents).toContain(`end:${i}:3`);
+        expect(complexEvents).toContain(`middle:${i + 1}`);
+        expect(complexEvents).toContain(`end:${i + 2}`);
       }
     });
   });
@@ -435,12 +476,12 @@ describe("事件系统集成测试", () => {
       const errorEvents: any[] = [];
 
       // 监听EventBus错误
-      eventBus.on("error", (error) => {
+      eventBus.on("error", (error: Error) => {
         errorEvents.push(error);
       });
 
       // 添加一个会抛出错误的监听器
-      eventBus.onEvent("test:error", () => {
+      eventBus.onEvent("test:error", (data: EventBusEvents["test:error"]) => {
         throw new Error("Test listener error");
       });
 
@@ -465,7 +506,7 @@ describe("事件系统集成测试", () => {
     it("应该能够移除监听器", async () => {
       const events: any[] = [];
 
-      const listener = (data: any) => {
+      const listener = (data: EventBusEvents["test:remove"]) => {
         events.push(data);
       };
 
