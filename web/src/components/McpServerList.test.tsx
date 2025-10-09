@@ -222,7 +222,17 @@ describe("McpServerList", () => {
     vi.mocked(configModule.useMcpServers).mockReturnValue(mockMcpServers);
     vi.mocked(configModule.useConfig).mockReturnValue(mockConfig);
     vi.mocked(configModule.useConfigActions).mockReturnValue({
-      refreshConfig: vi.fn().mockResolvedValue(undefined),
+      getConfig: vi.fn().mockResolvedValue(mockConfig),
+      updateConfig: vi.fn().mockResolvedValue(undefined),
+      refreshConfig: vi.fn().mockResolvedValue(mockConfig),
+      reloadConfig: vi.fn().mockResolvedValue(mockConfig),
+      updateMcpEndpoint: vi.fn().mockResolvedValue(undefined),
+      updateMcpServers: vi.fn().mockResolvedValue(undefined),
+      updateConnectionConfig: vi.fn().mockResolvedValue(undefined),
+      updateModelScopeConfig: vi.fn().mockResolvedValue(undefined),
+      updateWebUIConfig: vi.fn().mockResolvedValue(undefined),
+      reset: vi.fn(),
+      initialize: vi.fn().mockResolvedValue(undefined),
     });
     vi.mocked(useWebSocketModule.useWebSocket).mockReturnValue({
       updateConfig: mockUpdateConfig,

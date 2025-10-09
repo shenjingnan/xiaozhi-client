@@ -98,21 +98,11 @@ describe("McpServerList", () => {
 
   // Get mock functions from the API client
   let mockGetToolsList: any;
-  let mockRemoveCustomTool: any;
-  let mockAddCustomTool: any;
-  let mockUpdateCustomTool: any;
-  let mockToast: any;
 
   beforeEach(async () => {
     // Get the mock functions
     const { apiClient } = await import("@/services/api");
     mockGetToolsList = apiClient.getToolsList;
-    mockRemoveCustomTool = apiClient.removeCustomTool;
-    mockAddCustomTool = apiClient.addCustomTool;
-    mockUpdateCustomTool = apiClient.updateCustomTool;
-
-    const { toast } = await import("sonner");
-    mockToast = toast;
 
     vi.clearAllMocks();
     mockMcpServerConfig.mockReturnValue(serverConfig);
