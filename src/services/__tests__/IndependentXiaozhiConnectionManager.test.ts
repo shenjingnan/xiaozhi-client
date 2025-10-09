@@ -912,7 +912,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
         errorRecoveryEnabled: true,
         errorNotificationEnabled: true,
         serviceAddedDelayMs: 2000,
-        serviceRemovedDelayMs: 0,
+        serviceRemovedDelayMs: 2000,
         batchAddedDelayMs: 3000,
       });
     });
