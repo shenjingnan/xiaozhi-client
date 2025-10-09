@@ -7,6 +7,7 @@ vi.mock("@/stores/config", () => ({
   useMcpServerConfig: vi.fn(),
   useMcpServers: vi.fn(),
   useConfig: vi.fn(),
+  useConfigActions: vi.fn(),
 }));
 
 vi.mock("@/hooks/useWebSocket", () => ({
@@ -26,6 +27,7 @@ vi.mock("@/services/api", () => ({
     getToolsList: vi.fn(),
     removeCustomTool: vi.fn(),
     addCustomTool: vi.fn(),
+    updateCustomTool: vi.fn(),
   },
 }));
 
@@ -219,6 +221,9 @@ describe("McpServerList", () => {
     );
     vi.mocked(configModule.useMcpServers).mockReturnValue(mockMcpServers);
     vi.mocked(configModule.useConfig).mockReturnValue(mockConfig);
+    vi.mocked(configModule.useConfigActions).mockReturnValue({
+      refreshConfig: vi.fn().mockResolvedValue(undefined),
+    });
     vi.mocked(useWebSocketModule.useWebSocket).mockReturnValue({
       updateConfig: mockUpdateConfig,
       restartService: vi.fn(),
@@ -243,10 +248,11 @@ describe("McpServerList", () => {
       undefined
     );
     vi.mocked(apiModule.apiClient.addCustomTool).mockResolvedValue({});
+    vi.mocked(apiModule.apiClient.updateCustomTool).mockResolvedValue({});
   });
 
   it("should render enabled and disabled tools correctly", async () => {
-    render(<McpServerList updateConfig={mockUpdateConfig} />);
+    render(<McpServerList />);
 
     // Wait for API calls to complete
     await waitFor(() => {
@@ -270,7 +276,7 @@ describe("McpServerList", () => {
       }
     );
 
-    render(<McpServerList updateConfig={mockUpdateConfig} />);
+    render(<McpServerList />);
 
     // Wait for the component to load
     await waitFor(() => {
@@ -279,7 +285,7 @@ describe("McpServerList", () => {
 
     // Since we can't easily click buttons in this complex component,
     // let's test the state management by simulating the function call
-    render(<McpServerList updateConfig={mockUpdateConfig} />);
+    render(<McpServerList />);
 
     // Test Coze tool detection logic by manually calling the toggle function
     // This tests the core logic without dealing with complex DOM interactions
