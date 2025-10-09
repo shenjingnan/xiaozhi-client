@@ -131,7 +131,7 @@ describe("ServiceRestartManager 功能验证", () => {
       eventBus.onEvent("service:restart:started", eventSpy);
 
       // 监听重启执行事件并立即发送完成事件以避免超时重试
-      eventBus.onEvent("service:restart:execute", (data) => {
+      eventBus.onEvent("service:restart:execute", (data: any) => {
         // 立即发送完成事件来模拟重启成功
         eventBus.emitEvent("service:restart:completed", {
           serviceName: data.serviceName,
@@ -155,7 +155,7 @@ describe("ServiceRestartManager 功能验证", () => {
 
     it("应该在手动重启时更新健康状态", async () => {
       // 监听重启执行事件并立即发送完成事件以避免超时重试
-      eventBus.onEvent("service:restart:execute", (data) => {
+      eventBus.onEvent("service:restart:execute", (data: any) => {
         // 立即发送完成事件来模拟重启成功
         eventBus.emitEvent("service:restart:completed", {
           serviceName: data.serviceName,
@@ -297,7 +297,7 @@ describe("ServiceRestartManager 功能验证", () => {
       const executeSpy = vi.fn();
 
       // 监听重启执行事件并立即发送完成事件以避免超时重试
-      eventBus.onEvent("service:restart:execute", (data) => {
+      eventBus.onEvent("service:restart:execute", (data: any) => {
         executeSpy(data);
         // 立即发送完成事件来模拟重启成功
         eventBus.emitEvent("service:restart:completed", {

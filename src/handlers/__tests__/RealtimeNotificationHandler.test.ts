@@ -238,9 +238,13 @@ describe("RealtimeNotificationHandler", () => {
       );
       expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
         "service:restart:requested",
-        {
+        expect.objectContaining({
+          serviceName: "unknown",
           source: `websocket-${clientId}`,
-        }
+          delay: 0,
+          attempt: 1,
+          timestamp: expect.any(Number),
+        })
       );
       expect(mockStatusService.updateRestartStatus).toHaveBeenCalledWith(
         "restarting"
@@ -462,9 +466,13 @@ describe("RealtimeNotificationHandler", () => {
       );
       expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
         "service:restart:requested",
-        {
+        expect.objectContaining({
+          serviceName: "unknown",
           source: `websocket-${clientId}`,
-        }
+          delay: 0,
+          attempt: 1,
+          timestamp: expect.any(Number),
+        })
       );
       expect(mockStatusService.updateRestartStatus).toHaveBeenCalledWith(
         "restarting"
@@ -675,7 +683,13 @@ describe("RealtimeNotificationHandler", () => {
       );
       expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
         "service:restart:requested",
-        { source: `websocket-${clientId}` }
+        expect.objectContaining({
+          serviceName: "unknown",
+          source: `websocket-${clientId}`,
+          delay: 0,
+          attempt: 1,
+          timestamp: expect.any(Number),
+        })
       );
     });
 
