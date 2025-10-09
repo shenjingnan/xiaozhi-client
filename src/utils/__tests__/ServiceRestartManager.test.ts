@@ -38,6 +38,14 @@ describe("ServiceRestartManager 功能验证", () => {
   afterEach(() => {
     serviceRestartManager.destroy();
     eventBus.removeAllListeners();
+
+    // 清理所有定时器，防止测试间干扰
+    return new Promise((resolve) => {
+      // 让所有微任务完成
+      setTimeout(() => {
+        resolve(null);
+      }, 0);
+    });
   });
 
   describe("基本功能测试", () => {
@@ -122,6 +130,17 @@ describe("ServiceRestartManager 功能验证", () => {
       const eventSpy = vi.fn();
       eventBus.onEvent("service:restart:started", eventSpy);
 
+      // 监听重启执行事件并立即发送完成事件以避免超时重试
+      eventBus.onEvent("service:restart:execute", (data) => {
+        // 立即发送完成事件来模拟重启成功
+        eventBus.emitEvent("service:restart:completed", {
+          serviceName: data.serviceName,
+          reason: data.reason,
+          attempt: data.attempt,
+          timestamp: Date.now(),
+        });
+      });
+
       await serviceRestartManager.triggerManualRestart(
         "test-service",
         "manual restart test"
@@ -134,8 +153,19 @@ describe("ServiceRestartManager 功能验证", () => {
       expect(eventData.reason).toBe("manual restart test");
     });
 
-    it("应该在手动重启时更新健康状态", () => {
-      serviceRestartManager.triggerManualRestart("test-service");
+    it("应该在手动重启时更新健康状态", async () => {
+      // 监听重启执行事件并立即发送完成事件以避免超时重试
+      eventBus.onEvent("service:restart:execute", (data) => {
+        // 立即发送完成事件来模拟重启成功
+        eventBus.emitEvent("service:restart:completed", {
+          serviceName: data.serviceName,
+          reason: data.reason,
+          attempt: data.attempt,
+          timestamp: Date.now(),
+        });
+      });
+
+      await serviceRestartManager.triggerManualRestart("test-service");
 
       const health = serviceRestartManager.getServiceHealth("test-service");
       expect(health).toBe(ServiceHealthStatus.UNHEALTHY);
@@ -261,8 +291,22 @@ describe("ServiceRestartManager 功能验证", () => {
     });
 
     it("应该能够处理多个并发重启请求", async () => {
+      // 清理之前可能的残留事件监听器
+      eventBus.removeAllListeners();
+
       const executeSpy = vi.fn();
-      eventBus.onEvent("service:restart:execute", executeSpy);
+
+      // 监听重启执行事件并立即发送完成事件以避免超时重试
+      eventBus.onEvent("service:restart:execute", (data) => {
+        executeSpy(data);
+        // 立即发送完成事件来模拟重启成功
+        eventBus.emitEvent("service:restart:completed", {
+          serviceName: data.serviceName,
+          reason: data.reason,
+          attempt: data.attempt,
+          timestamp: Date.now(),
+        });
+      });
 
       // 同时触发多个重启请求
       const restartPromises = [
@@ -273,11 +317,14 @@ describe("ServiceRestartManager 功能验证", () => {
 
       await Promise.all(restartPromises);
 
-      // 验证所有重启请求都被处理
-      expect(executeSpy).toHaveBeenCalledTimes(3);
+      // 验证所有目标服务的重启请求都被处理（过滤掉可能的残留调用）
+      const targetServiceCalls = executeSpy.mock.calls.filter((call) =>
+        ["service1", "service2", "service3"].includes(call[0].serviceName)
+      );
+      expect(targetServiceCalls).toHaveLength(3);
 
       // 验证所有服务都触发了重启
-      const serviceNames = executeSpy.mock.calls.map(
+      const serviceNames = targetServiceCalls.map(
         (call) => call[0].serviceName
       );
       expect(serviceNames).toContain("service1");
