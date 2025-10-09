@@ -451,7 +451,7 @@ describe("事件系统集成测试", () => {
       // 启动多个事件链
       for (let i = 0; i < 10; i++) {
         eventBus.emitEvent("chain:start", {
-          id: i,
+          value: i,
           timestamp: Date.now(),
         });
       }
