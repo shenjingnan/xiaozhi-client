@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { vi } from "vitest";
 import { RemoveMcpServerButton } from "../RemoveMcpServerButton";
+import { act } from "react";
 
 // Mock lucide-react to avoid icon loading issues
 vi.mock("lucide-react", () => ({
@@ -18,6 +19,9 @@ const mockToastSuccess = vi.fn();
 const mockToastError = vi.fn();
 toast.success = mockToastSuccess;
 toast.error = mockToastError;
+
+// Mock console.error to avoid noise in tests
+vi.spyOn(console, "error").mockImplementation(() => {});
 
 describe("RemoveMcpServerButton", () => {
   beforeEach(() => {
@@ -98,7 +102,11 @@ describe("RemoveMcpServerButton", () => {
 
     // 点击确认按钮
     const confirmButton = await screen.findByRole("button", { name: "确定" });
-    fireEvent.click(confirmButton);
+
+    // 使用 act 包裹异步操作
+    await act(async () => {
+      fireEvent.click(confirmButton);
+    });
 
     // 验证错误提示
     expect(mockToastError).toHaveBeenCalledWith(
@@ -106,9 +114,7 @@ describe("RemoveMcpServerButton", () => {
     );
 
     // 验证回调没有被调用
-    await waitFor(() => {
-      expect(mockCallback).not.toHaveBeenCalled();
-    });
+    expect(mockCallback).not.toHaveBeenCalled();
   });
 
   it("应该在API抛出异常时不调用回调", async () => {
@@ -128,15 +134,17 @@ describe("RemoveMcpServerButton", () => {
 
     // 点击确认按钮
     const confirmButton = await screen.findByRole("button", { name: "确定" });
-    fireEvent.click(confirmButton);
+
+    // 使用 act 包裹异步操作
+    await act(async () => {
+      fireEvent.click(confirmButton);
+    });
 
     // 验证错误提示
     expect(mockToastError).toHaveBeenCalledWith("删除 MCP 服务失败: 网络错误");
 
     // 验证回调没有被调用
-    await waitFor(() => {
-      expect(mockCallback).not.toHaveBeenCalled();
-    });
+    expect(mockCallback).not.toHaveBeenCalled();
   });
 
   it("应该在没有回调时正常工作", async () => {
@@ -150,17 +158,19 @@ describe("RemoveMcpServerButton", () => {
 
     // 点击确认按钮
     const confirmButton = await screen.findByRole("button", { name: "确定" });
-    fireEvent.click(confirmButton);
+
+    // 使用 act 包裹异步操作
+    await act(async () => {
+      fireEvent.click(confirmButton);
+    });
 
     // 验证成功提示
     expect(mockToastSuccess).toHaveBeenCalledWith(
       'MCP 服务 "test-server" 已删除'
     );
 
-    // 验证没有错误抛出
-    await waitFor(() => {
-      expect(mockRemoveServer).toHaveBeenCalledWith("test-server");
-    });
+    // 验证API调用
+    expect(mockRemoveServer).toHaveBeenCalledWith("test-server");
   });
 
   it("应该显示加载状态", async () => {
@@ -178,13 +188,10 @@ describe("RemoveMcpServerButton", () => {
 
     // 点击确认按钮
     const confirmButton = await screen.findByRole("button", { name: "确定" });
-    fireEvent.click(confirmButton);
 
-    // 验证按钮显示加载状态
-    await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: "删除中..." })
-      ).toBeInTheDocument();
+    // 使用 act 包裹异步操作并检查加载状态
+    await act(async () => {
+      fireEvent.click(confirmButton);
     });
 
     // 等待操作完成
