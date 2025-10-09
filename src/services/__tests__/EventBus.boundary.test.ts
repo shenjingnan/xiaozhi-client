@@ -186,7 +186,7 @@ describe("事件系统边界情况测试", () => {
   describe("性能边界测试", () => {
     it("应该测量事件发送性能", () => {
       const handler = vi.fn();
-      eventBus.onEvent("performance-test", handler);
+      eventBus.onEvent("test:performance", handler);
 
       const iterations = 1000;
       const startTime = performance.now();
