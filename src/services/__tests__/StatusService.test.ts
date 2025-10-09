@@ -267,6 +267,8 @@ describe("StatusService", () => {
       expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
         "service:restart:started",
         {
+          serviceName: "",
+          attempt: 1,
           timestamp: mockTimestamp,
         }
       );
@@ -291,6 +293,8 @@ describe("StatusService", () => {
       expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
         "service:restart:completed",
         {
+          serviceName: "",
+          attempt: 1,
           timestamp: mockTimestamp,
         }
       );
@@ -317,7 +321,9 @@ describe("StatusService", () => {
       expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
         "service:restart:failed",
         {
+          serviceName: "",
           error: new Error(errorMessage),
+          attempt: 1,
           timestamp: mockTimestamp,
         }
       );
@@ -338,7 +344,9 @@ describe("StatusService", () => {
       expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
         "service:restart:failed",
         {
+          serviceName: "",
           error: new Error("重启失败"),
+          attempt: 1,
           timestamp: mockTimestamp,
         }
       );
@@ -757,7 +765,11 @@ describe("StatusService", () => {
       expect(statusService.getRestartStatus()?.status).toBe("restarting");
       expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
         "service:restart:started",
-        { timestamp: mockTimestamp }
+        {
+          serviceName: "",
+          attempt: 1,
+          timestamp: mockTimestamp,
+        }
       );
 
       // Complete restart
@@ -765,7 +777,11 @@ describe("StatusService", () => {
       expect(statusService.getRestartStatus()?.status).toBe("completed");
       expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
         "service:restart:completed",
-        { timestamp: mockTimestamp }
+        {
+          serviceName: "",
+          attempt: 1,
+          timestamp: mockTimestamp,
+        }
       );
 
       // Full status should include restart info
