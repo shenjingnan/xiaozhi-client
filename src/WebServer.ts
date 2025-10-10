@@ -188,8 +188,6 @@ export class WebServer {
     this.setupMiddleware();
     this.setupRoutes();
 
-    this.logger.info("WebServer 架构重构完成 - 第二阶段：模块化拆分");
-
     // 监听接入点状态变更事件
     this.setupEndpointStatusListener();
 
@@ -201,7 +199,7 @@ export class WebServer {
    */
   private async initializeConnections(): Promise<void> {
     try {
-      this.logger.info("开始初始化连接...");
+      this.logger.debug("开始初始化连接...");
 
       // 1. 读取配置
       const config = await this.loadConfiguration();
@@ -280,11 +278,6 @@ export class WebServer {
 
   /**
    * 初始化小智接入点连接
-   *
-   * 修改说明：分离连接管理器初始化与实际连接操作
-   * - 无论是否有有效端点，始终初始化连接管理器
-   * - 只有在有有效端点时才进行实际连接操作
-   * - 解决空配置场景下"连接管理器未初始化"的问题
    */
   private async initializeXiaozhiConnection(
     mcpEndpoint: string | string[],
@@ -296,8 +289,8 @@ export class WebServer {
       (ep) => ep && !ep.includes("<请填写")
     );
 
-    // 1. 始终初始化连接管理器（无论是否有有效端点）
-    this.logger.info(
+    // 1. 初始化连接管理器
+    this.logger.debug(
       `初始化小智接入点连接管理器，端点数量: ${validEndpoints.length}`
     );
 
@@ -315,9 +308,9 @@ export class WebServer {
         this.xiaozhiConnectionManager.setServiceManager(this.mcpServiceManager);
       }
 
-      this.logger.debug("连接管理器初始化完成");
+      this.logger.info("✅ 连接管理器初始化完成");
     } catch (error) {
-      this.logger.error("连接管理器初始化失败:", error);
+      this.logger.error("❌ 连接管理器初始化失败:", error);
       // 连接管理器初始化失败时，继续后续流程，允许延迟初始化
       return;
     }
@@ -335,10 +328,10 @@ export class WebServer {
 
         // 设置配置变更监听器
         this.xiaozhiConnectionManager!.on("configChange", (event: any) => {
-          this.logger.info(`小智连接配置变更: ${event.type}`, event.data);
+          this.logger.debug(`小智连接配置变更: ${event.type}`, event.data);
         });
 
-        this.logger.info(
+        this.logger.debug(
           `小智接入点连接管理器初始化完成，管理 ${validEndpoints.length} 个端点`
         );
       } catch (error) {
@@ -348,7 +341,7 @@ export class WebServer {
         this.logger.warn("回退到单连接模式");
         const validEndpoint = validEndpoints[0];
 
-        this.logger.info(`初始化单个小智接入点连接: ${validEndpoint}`);
+        this.logger.debug(`初始化单个小智接入点连接: ${validEndpoint}`);
         this.proxyMCPServer = new ProxyMCPServer(validEndpoint);
 
         if (this.mcpServiceManager) {
@@ -360,22 +353,17 @@ export class WebServer {
           () => this.proxyMCPServer!.connect(),
           "小智接入点连接"
         );
-        this.logger.info("小智接入点连接成功（单连接模式）");
+        this.logger.debug("小智接入点连接成功");
       }
     } else {
-      this.logger.warn(
-        "未配置有效的小智接入点，连接管理器已初始化但未连接任何端点"
-      );
-
-      // 即使没有有效端点，也需要初始化连接管理器以支持后续动态添加端点
       try {
         if (this.xiaozhiConnectionManager) {
           // 初始化为空管理器，允许后续动态添加端点
           await this.xiaozhiConnectionManager.initialize([], tools);
-          this.logger.info("连接管理器已初始化为空管理器，支持动态添加端点");
+          this.logger.debug("连接管理器已初始化为空管理器，支持动态添加端点");
         }
       } catch (error) {
-        this.logger.error("空连接管理器初始化失败:", error);
+        this.logger.error("❌ 空连接管理器初始化失败:", error);
         // 不抛出错误，允许系统继续运行
       }
     }
@@ -773,7 +761,7 @@ export class WebServer {
       // 生成客户端 ID
       const clientId = `client-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-      this.logger.info(`WebSocket 客户端已连接: ${clientId}`);
+      this.logger.debug(`WebSocket 客户端已连接: ${clientId}`);
       this.logger.debug(
         `当前 WebSocket 连接数: ${this.wss?.clients.size || 0}`
       );
@@ -811,7 +799,7 @@ export class WebServer {
       });
 
       ws.on("close", () => {
-        this.logger.info(`WebSocket 客户端已断开连接: ${clientId}`);
+        this.logger.debug(`WebSocket 客户端已断开连接: ${clientId}`);
         this.logger.debug(
           `剩余 WebSocket 连接数: ${this.wss?.clients.size || 0}`
         );
@@ -884,20 +872,20 @@ export class WebServer {
     this.logger.info(`Web server listening on http://0.0.0.0:${this.port}`);
     this.logger.info(`Local access: http://localhost:${this.port}`);
 
-    // 输出架构重构信息
-    this.logger.info("=== 通信架构重构信息 - 第二阶段完成 ===");
-    this.logger.info("✅ 模块化拆分: HTTP/WebSocket 处理器独立");
-    this.logger.info(
-      "✅ 服务层抽象: ConfigService, StatusService, NotificationService"
-    );
-    this.logger.info("✅ 事件驱动机制: EventBus 实现模块间解耦通信");
-    this.logger.info("✅ HTTP API 职责: 配置管理、状态查询、服务控制");
-    this.logger.info("✅ WebSocket 职责: 实时通知、心跳检测、事件广播");
-    this.logger.info(
-      "⚠️  已废弃的 WebSocket 消息: getConfig, updateConfig, getStatus, restartService"
-    );
-    this.logger.info("📖 推荐使用对应的 HTTP API 替代废弃的 WebSocket 消息");
-    this.logger.info("================================================");
+    // // 输出架构重构信息
+    // this.logger.info("=== 通信架构重构信息 - 第二阶段完成 ===");
+    // this.logger.info("✅ 模块化拆分: HTTP/WebSocket 处理器独立");
+    // this.logger.info(
+    //   "✅ 服务层抽象: ConfigService, StatusService, NotificationService"
+    // );
+    // this.logger.info("✅ 事件驱动机制: EventBus 实现模块间解耦通信");
+    // this.logger.info("✅ HTTP API 职责: 配置管理、状态查询、服务控制");
+    // this.logger.info("✅ WebSocket 职责: 实时通知、心跳检测、事件广播");
+    // this.logger.info(
+    //   "⚠️  已废弃的 WebSocket 消息: getConfig, updateConfig, getStatus, restartService"
+    // );
+    // this.logger.info("📖 推荐使用对应的 HTTP API 替代废弃的 WebSocket 消息");
+    // this.logger.info("================================================");
 
     // 2. 初始化所有连接（配置驱动）
     try {
@@ -941,22 +929,22 @@ export class WebServer {
           // 强制关闭 HTTP 服务器，不等待现有连接
           if (this.httpServer) {
             this.httpServer.close(() => {
-              this.logger.info("Web server stopped");
+              this.logger.info("Web 服务器已停止");
               doResolve();
             });
           } else {
-            this.logger.info("Web server stopped");
+            this.logger.info("Web 服务器已停止");
             doResolve();
           }
 
           // 设置超时，如果 2 秒内没有关闭则强制退出
           setTimeout(() => {
-            this.logger.info("Web server force stopped");
+            this.logger.info("Web 服务器已强制停止");
             doResolve();
           }, 2000);
         });
       } else {
-        this.logger.info("Web server stopped");
+        this.logger.info("Web 服务器已停止");
         doResolve();
       }
     });
@@ -966,7 +954,7 @@ export class WebServer {
    * 销毁 WebServer 实例，清理所有资源
    */
   public destroy(): void {
-    this.logger.info("销毁 WebServer 实例");
+    this.logger.debug("销毁 WebServer 实例");
 
     // 停止心跳监控
     if (this.heartbeatMonitorInterval) {
@@ -986,6 +974,6 @@ export class WebServer {
     // 断开 MCP 连接
     this.proxyMCPServer?.disconnect();
 
-    this.logger.info("WebServer 实例已销毁");
+    this.logger.debug("WebServer 实例已销毁");
   }
 }
