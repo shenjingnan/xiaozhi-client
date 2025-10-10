@@ -930,11 +930,6 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       throw new Error("小智接入点列表必须是数组");
     }
 
-    // 允许空端点列表以支持零配置启动
-    // if (endpoints.length === 0) {
-    //   throw new Error("小智接入点列表不能为空");
-    // }
-
     if (!Array.isArray(tools)) {
       throw new Error("工具列表必须是数组");
     }
