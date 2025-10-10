@@ -388,7 +388,7 @@ export class ProxyMCPServer {
    */
   private async attemptConnection(): Promise<void> {
     this.connectionState = ConnectionState.CONNECTING;
-    this.logger.info(
+    this.logger.debug(
       `正在连接小智接入点: ${sliceEndpoint(this.endpointUrl)} (尝试 ${
         this.reconnectState.attempts + 1
       }/${this.reconnectOptions.maxAttempts})`

@@ -107,20 +107,50 @@ describe("EventBus", () => {
       eventBus.onEvent("service:restart:completed", listeners.completed);
       eventBus.onEvent("service:restart:failed", listeners.failed);
 
-      eventBus.emitEvent("service:restart:requested", { source: "test" });
-      eventBus.emitEvent("service:restart:started", { timestamp: 123456 });
-      eventBus.emitEvent("service:restart:completed", { timestamp: 123457 });
-      eventBus.emitEvent("service:restart:failed", {
-        error: new Error("Restart failed"),
+      eventBus.emitEvent("service:restart:requested", {
+        serviceName: "test-service",
+        delay: 1000,
+        attempt: 1,
+        timestamp: 123456,
+      });
+      eventBus.emitEvent("service:restart:started", {
+        serviceName: "test-service",
+        attempt: 1,
+        timestamp: 123457,
+      });
+      eventBus.emitEvent("service:restart:completed", {
+        serviceName: "test-service",
+        attempt: 1,
         timestamp: 123458,
       });
+      eventBus.emitEvent("service:restart:failed", {
+        serviceName: "test-service",
+        error: new Error("Restart failed"),
+        attempt: 1,
+        timestamp: 123459,
+      });
 
-      expect(listeners.requested).toHaveBeenCalledWith({ source: "test" });
-      expect(listeners.started).toHaveBeenCalledWith({ timestamp: 123456 });
-      expect(listeners.completed).toHaveBeenCalledWith({ timestamp: 123457 });
-      expect(listeners.failed).toHaveBeenCalledWith({
-        error: expect.any(Error),
+      expect(listeners.requested).toHaveBeenCalledWith({
+        serviceName: "test-service",
+        delay: 1000,
+        attempt: 1,
+        timestamp: 123456,
+      });
+      expect(listeners.started).toHaveBeenCalledWith({
+        serviceName: "test-service",
+        attempt: 1,
+        timestamp: 123457,
+      });
+      expect(listeners.completed).toHaveBeenCalledWith({
+        serviceName: "test-service",
+        attempt: 1,
         timestamp: 123458,
+      });
+      expect(listeners.failed).toHaveBeenCalledWith({
+        serviceName: "test-service",
+        error: expect.any(Error),
+        attempt: 1,
+        timestamp: 123459,
       });
     });
 
@@ -270,10 +300,10 @@ describe("EventBus", () => {
     });
 
     it("should handle emit errors gracefully", () => {
-      // Mock emit to throw an error
-      const originalEmit = eventBus.emit;
-      eventBus.emit = vi.fn().mockImplementation(() => {
-        throw new Error("Emit failed");
+      // 测试 updateEventStats 方法抛出错误的情况
+      const originalUpdateStats = (eventBus as any).updateEventStats;
+      (eventBus as any).updateEventStats = vi.fn().mockImplementation(() => {
+        throw new Error("Update stats failed");
       });
 
       const result = eventBus.emitEvent("config:updated", {
@@ -287,8 +317,8 @@ describe("EventBus", () => {
         expect.any(Error)
       );
 
-      // Restore original emit
-      eventBus.emit = originalEmit;
+      // Restore original method
+      (eventBus as any).updateEventStats = originalUpdateStats;
     });
 
     it("should return false when no listeners", () => {

@@ -16,7 +16,7 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { mcpServerApi } from "@/services/api";
 import { useConfig } from "@/stores/config";
 import type { MCPServerConfig } from "@/types";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
@@ -37,7 +37,6 @@ const formSchema = z.object({
 export function AddMcpServerButton() {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { updateConfig } = useWebSocket();
   const config = useConfig();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -201,9 +200,10 @@ export function AddMcpServerButton() {
 
       const parsedServers = validation.data!;
 
-      // 检查是否有重名的服务
-      const existingNames = Object.keys(parsedServers).filter(
-        (name) => name in (config.mcpServers || {})
+      // 检查重名 - 需要调用API获取当前服务器列表
+      const existingServers = await mcpServerApi.listServers();
+      const existingNames = Object.keys(parsedServers).filter((name) =>
+        existingServers.servers.some((server) => server.name === name)
       );
       if (existingNames.length > 0) {
         toast.error(
@@ -212,16 +212,13 @@ export function AddMcpServerButton() {
         return;
       }
 
-      // 更新配置
-      const updatedConfig = {
-        ...config,
-        mcpServers: {
-          ...parsedServers,
-          ...config.mcpServers,
-        },
-      };
-
-      await updateConfig(updatedConfig);
+      // 调用API添加服务器
+      for (const [serverName, serverConfig] of Object.entries(parsedServers)) {
+        const result = await mcpServerApi.addServer(serverName, serverConfig);
+        if (!result) {
+          throw new Error("添加服务器失败");
+        }
+      }
 
       // 成功反馈
       const addedCount = Object.keys(parsedServers).length;
