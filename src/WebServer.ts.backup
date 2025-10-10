@@ -280,11 +280,6 @@ export class WebServer {
 
   /**
    * 初始化小智接入点连接
-   *
-   * 修改说明：分离连接管理器初始化与实际连接操作
-   * - 无论是否有有效端点，始终初始化连接管理器
-   * - 只有在有有效端点时才进行实际连接操作
-   * - 解决空配置场景下"连接管理器未初始化"的问题
    */
   private async initializeXiaozhiConnection(
     mcpEndpoint: string | string[],
@@ -296,10 +291,15 @@ export class WebServer {
       (ep) => ep && !ep.includes("<请填写")
     );
 
-    // 1. 始终初始化连接管理器（无论是否有有效端点）
+    if (validEndpoints.length === 0) {
+      this.logger.warn("未配置有效的小智接入点，跳过连接");
+      return;
+    }
+
     this.logger.info(
       `初始化小智接入点连接管理器，端点数量: ${validEndpoints.length}`
     );
+    this.logger.debug("有效端点列表:", validEndpoints);
 
     try {
       // 获取小智连接管理器单例
@@ -315,69 +315,42 @@ export class WebServer {
         this.xiaozhiConnectionManager.setServiceManager(this.mcpServiceManager);
       }
 
-      this.logger.debug("连接管理器初始化完成");
-    } catch (error) {
-      this.logger.error("连接管理器初始化失败:", error);
-      // 连接管理器初始化失败时，继续后续流程，允许延迟初始化
-      return;
-    }
-
-    // 2. 只有在有有效端点时才进行连接和初始化
-    if (validEndpoints.length > 0) {
-      this.logger.debug("有效端点列表:", validEndpoints);
-
-      try {
-        // 初始化连接管理器（传入端点列表）
-        await this.xiaozhiConnectionManager!.initialize(validEndpoints, tools);
+      // 初始化连接管理器
+      if (this.xiaozhiConnectionManager) {
+        await this.xiaozhiConnectionManager.initialize(validEndpoints, tools);
 
         // 连接所有端点
-        await this.xiaozhiConnectionManager!.connect();
+        await this.xiaozhiConnectionManager.connect();
 
         // 设置配置变更监听器
-        this.xiaozhiConnectionManager!.on("configChange", (event: any) => {
+        this.xiaozhiConnectionManager.on("configChange", (event: any) => {
           this.logger.info(`小智连接配置变更: ${event.type}`, event.data);
         });
-
-        this.logger.info(
-          `小智接入点连接管理器初始化完成，管理 ${validEndpoints.length} 个端点`
-        );
-      } catch (error) {
-        this.logger.error("小智接入点连接管理器初始化失败:", error);
-
-        // 如果新的连接管理器失败，回退到原有的单连接模式（向后兼容）
-        this.logger.warn("回退到单连接模式");
-        const validEndpoint = validEndpoints[0];
-
-        this.logger.info(`初始化单个小智接入点连接: ${validEndpoint}`);
-        this.proxyMCPServer = new ProxyMCPServer(validEndpoint);
-
-        if (this.mcpServiceManager) {
-          this.proxyMCPServer.setServiceManager(this.mcpServiceManager);
-        }
-
-        // 使用重连机制连接到小智接入点
-        await this.connectWithRetry(
-          () => this.proxyMCPServer!.connect(),
-          "小智接入点连接"
-        );
-        this.logger.info("小智接入点连接成功（单连接模式）");
       }
-    } else {
-      this.logger.warn(
-        "未配置有效的小智接入点，连接管理器已初始化但未连接任何端点"
+
+      this.logger.info(
+        `小智接入点连接管理器初始化完成，管理 ${validEndpoints.length} 个端点`
       );
+    } catch (error) {
+      this.logger.error("小智接入点连接管理器初始化失败:", error);
 
-      // 即使没有有效端点，也需要初始化连接管理器以支持后续动态添加端点
-      try {
-        if (this.xiaozhiConnectionManager) {
-          // 初始化为空管理器，允许后续动态添加端点
-          await this.xiaozhiConnectionManager.initialize([], tools);
-          this.logger.info("连接管理器已初始化为空管理器，支持动态添加端点");
-        }
-      } catch (error) {
-        this.logger.error("空连接管理器初始化失败:", error);
-        // 不抛出错误，允许系统继续运行
+      // 如果新的连接管理器失败，回退到原有的单连接模式（向后兼容）
+      this.logger.warn("回退到单连接模式");
+      const validEndpoint = validEndpoints[0];
+
+      this.logger.info(`初始化单个小智接入点连接: ${validEndpoint}`);
+      this.proxyMCPServer = new ProxyMCPServer(validEndpoint);
+
+      if (this.mcpServiceManager) {
+        this.proxyMCPServer.setServiceManager(this.mcpServiceManager);
       }
+
+      // 使用重连机制连接到小智接入点
+      await this.connectWithRetry(
+        () => this.proxyMCPServer!.connect(),
+        "小智接入点连接"
+      );
+      this.logger.info("小智接入点连接成功（单连接模式）");
     }
   }
 

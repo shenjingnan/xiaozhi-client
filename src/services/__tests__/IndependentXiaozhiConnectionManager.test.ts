@@ -120,8 +120,11 @@ describe("IndependentXiaozhiConnectionManager", () => {
     test("应该成功连接已存在的未连接接入点", async () => {
       const endpoint = "ws://localhost:8080";
 
-      // 先添加接入点
+      // 先添加接入点（现在会自动连接）
       await manager.addEndpoint(endpoint);
+
+      // 断开连接以便测试连接功能
+      await manager.disconnectEndpoint(endpoint);
 
       // 确保处于未连接状态
       const statusBefore = manager.getConnectionStatus();
@@ -187,6 +190,9 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
       // 添加接入点
       await manager.addEndpoint(endpoint);
+
+      // 断开连接以便测试连接失败情况
+      await manager.disconnectEndpoint(endpoint);
 
       // 模拟连接失败
       const proxyServer = (manager as any).connections.get(endpoint);
@@ -265,15 +271,16 @@ describe("IndependentXiaozhiConnectionManager", () => {
     test("应该正确识别已添加但未连接的接入点", async () => {
       const endpoint = "ws://localhost:8080";
 
-      // 添加接入点但不连接
+      // 添加接入点后立即断开连接（因为新添加的接入点会自动连接）
       await manager.addEndpoint(endpoint);
+      await manager.disconnectEndpoint(endpoint);
 
       const status = manager.getConnectionStatus();
       const endpointStatus = status.find((s) => s.endpoint === endpoint);
 
       expect(endpointStatus).toBeDefined();
       expect(endpointStatus?.connected).toBe(false);
-      expect(endpointStatus?.initialized).toBe(false); // 初始状态是未初始化的
+      expect(endpointStatus?.initialized).toBe(false); // 断开后状态是未初始化的
     });
 
     test("应该正确识别已添加且已连接的接入点", async () => {
@@ -321,14 +328,15 @@ describe("IndependentXiaozhiConnectionManager", () => {
     test("应该正确处理未初始化的接入点", async () => {
       const endpoint = "ws://localhost:8080";
 
-      // 添加接入点（默认就是未初始化状态）
+      // 添加接入点后立即断开连接（因为新添加的接入点会自动连接并初始化）
       await manager.addEndpoint(endpoint);
+      await manager.disconnectEndpoint(endpoint);
 
       const status = manager.getConnectionStatus();
       const endpointStatus = status.find((s) => s.endpoint === endpoint);
 
       expect(endpointStatus).toBeDefined();
-      expect(endpointStatus?.initialized).toBe(false); // 新添加的接入点默认是未初始化状态
+      expect(endpointStatus?.initialized).toBe(false); // 断开后状态是未初始化的
     });
   });
 
@@ -415,10 +423,16 @@ describe("IndependentXiaozhiConnectionManager", () => {
         testConfigManager2
       );
 
-      // 空端点列表初始化应该抛出错误
-      await expect(emptyManager.initialize([], [])).rejects.toThrow(
-        "小智接入点列表不能为空"
-      );
+      // 空端点列表初始化现在应该成功（支持零配置启动）
+      await expect(emptyManager.initialize([], [])).resolves.toBeUndefined();
+
+      // 验证管理器已初始化但没有任何端点
+      expect(emptyManager.getConnectionStatus().length).toBe(0);
+
+      // 通过尝试添加端点来验证管理器已初始化（如果未初始化会抛出错误）
+      await expect(
+        emptyManager.addEndpoint("ws://localhost:8080")
+      ).resolves.toBeUndefined();
     });
 
     test("应该正确处理大量接入点", async () => {
@@ -580,19 +594,29 @@ describe("IndependentXiaozhiConnectionManager", () => {
       const { configManager: testConfigManager } = await import(
         "../../configManager.js"
       );
-      const testManager = new IndependentXiaozhiConnectionManager(
+
+      // 测试1: 空端点列表现在允许初始化（支持零配置启动）
+      const testManager1 = new IndependentXiaozhiConnectionManager(
         testConfigManager
       );
+      await expect(
+        testManager1.initialize([], mockTools)
+      ).resolves.toBeUndefined();
 
-      await expect(testManager.initialize([], mockTools)).rejects.toThrow(
-        "小智接入点列表不能为空"
+      // 测试2: 无效 URL 验证 - 使用新实例
+      const testManager2 = new IndependentXiaozhiConnectionManager(
+        testConfigManager
       );
       await expect(
-        testManager.initialize(["invalid-url"], mockTools)
+        testManager2.initialize(["invalid-url"], mockTools)
       ).rejects.toThrow("小智接入点地址必须是 WebSocket URL");
-      // 注意：第三个测试需要传入非数组的tools参数
+
+      // 测试3: 非数组工具参数验证 - 使用新实例
+      const testManager3 = new IndependentXiaozhiConnectionManager(
+        testConfigManager
+      );
       await expect(
-        testManager.initialize(["ws://test"], "not-an-array" as any)
+        testManager3.initialize(["ws://test"], "not-an-array" as any)
       ).rejects.toThrow("工具列表必须是数组");
     });
 
