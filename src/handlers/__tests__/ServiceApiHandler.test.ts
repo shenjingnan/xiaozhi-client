@@ -417,7 +417,13 @@ describe("ServiceApiHandler", () => {
 
       expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
         "service:restart:requested",
-        { source: "http-api" }
+        expect.objectContaining({
+          source: "http-api",
+          serviceName: "unknown",
+          delay: 0,
+          attempt: 1,
+          timestamp: expect.any(Number),
+        })
       );
 
       expect(mockStatusService.updateRestartStatus).toHaveBeenCalledWith(
