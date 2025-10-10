@@ -120,7 +120,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
     test("应该成功连接已存在的未连接接入点", async () => {
       const endpoint = "ws://localhost:8080";
 
-      // 先添加接入点（现在会自动连接）
+      // 先添加接入点
       await manager.addEndpoint(endpoint);
 
       // 断开连接以便测试连接功能
@@ -271,7 +271,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
     test("应该正确识别已添加但未连接的接入点", async () => {
       const endpoint = "ws://localhost:8080";
 
-      // 添加接入点后立即断开连接（因为新添加的接入点会自动连接）
+      // 添加接入点后立即断开连接
       await manager.addEndpoint(endpoint);
       await manager.disconnectEndpoint(endpoint);
 
@@ -328,7 +328,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
     test("应该正确处理未初始化的接入点", async () => {
       const endpoint = "ws://localhost:8080";
 
-      // 添加接入点后立即断开连接（因为新添加的接入点会自动连接并初始化）
+      // 添加接入点后立即断开连接
       await manager.addEndpoint(endpoint);
       await manager.disconnectEndpoint(endpoint);
 
