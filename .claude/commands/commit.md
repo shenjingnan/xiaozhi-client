@@ -25,7 +25,7 @@ description: 生成 commit 信息
 - 不要考虑当前的分支名称，当前分支名不具有参考价值
 - 不要帮我提交代码，只需要告诉我你觉得合理的 commit 标题和详细内容即可
 - type 有以下类型
-  feat： 新增 feature
+  feat: 新增 feature
   fix: 修复 bug
   docs: 仅仅修改了文档，比如 README, CHANGELOG, CONTRIBUTE 等等
   style: 仅仅修改了空格、格式缩进、逗号等等，不改变代码逻辑
