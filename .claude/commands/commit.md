@@ -17,7 +17,7 @@ description: 生成 commit 信息
 5. 请记住，你执行命令的时候，尽量避免出现需要交互的操作，因为你无法交互，如果出现了交互的操作，就需要用户干预，你的命令应该尽量执行之后就不要交互就可以读取到信息
    比如你不应该直接用 `git diff origin/main HEAD <filePath>` 因为这个命令一旦使用，你需要用户手动点击 q 才能退出
    比如你可以添加 `--no-pager` 选项 `git --no-pager diff origin/main HEAD <filePath>`
-6. 还有我发现你你使用 `git --no-pager diff origin/main HEAD <filePath>` 往往获取不到具体的改动，但是你用 `git --no-pager diff origin/main <filePath>` 就能获取到具体的改动内容，你可以思考一下为什么加上 `HEAD` 就会获取不到改动内容，避免这种问题发生
+6. 还有我发现你使用 `git --no-pager diff origin/main HEAD <filePath>` 往往获取不到具体的改动，但是你用 `git --no-pager diff origin/main <filePath>` 就能获取到具体的改动内容，你可以思考一下为什么加上 `HEAD` 就会获取不到改动内容，避免这种问题发生
 
 ### 我的要求
 
