@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.7.9](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.8...v1.7.9) (2025-10-11)
+
+### Features
+
+* **cli:** 新增Claude命令系统支持commit和fix-test功能 ([#357](https://github.com/shenjingnan/xiaozhi-client/issues/357)) ([443097b](https://github.com/shenjingnan/xiaozhi-client/commit/443097b9da6e1ec295e4d33443b832a171899497))
+* **mcp:** 支持通过web界面动态添加移除MCP ([#350](https://github.com/shenjingnan/xiaozhi-client/issues/350)) ([44d3922](https://github.com/shenjingnan/xiaozhi-client/commit/44d3922142e910e360a927ffd16e9128b6aaec25))
+
+### Bug Fixes
+
+* **security:** 修复 happy-dom 关键安全漏洞 ([#358](https://github.com/shenjingnan/xiaozhi-client/issues/358)) ([74c22cf](https://github.com/shenjingnan/xiaozhi-client/commit/74c22cf18bcfbe6ab0cea0176140f2fffb9c1703))
+* **webserver:** 修复连接管理器初始化逻辑并优化日志输出 ([#355](https://github.com/shenjingnan/xiaozhi-client/issues/355)) ([fd96893](https://github.com/shenjingnan/xiaozhi-client/commit/fd968930e1efd777694a48e90a00141881bcd262))
+
 ## [1.7.8](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.7...v1.7.8) (2025-09-29)
 
 ### Features
