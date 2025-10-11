@@ -10,7 +10,7 @@ description: 生成 commit 信息
 
 ### 一些提示信息
 
-1. 你可以通过命令：git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@' 知道当前仓库的主分支名称
+1. 你可以通过命令：git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@' 知道当前仓库的主分支名称。注意：如果 `refs/remotes/origin/HEAD` 不存在，该命令会失败。这种情况下，你可以用 `git remote show origin` 查看远端的主分支，或者尝试 `git branch -r` 查看远端分支列表，通常主分支名称为 `main` 或 `master`。
 2. 注意，你知道主分支之后，需要和 远端主分支进行对比，因为本地主分支代码可能落后
 3. 当前本地的 origin 可能不是最新的，你应该尝试跑一次 git fetch origin
 4. 你应该优先检查没有 git add 的改动
