@@ -214,15 +214,18 @@ describe("ToolApiHandler - 核心功能测试", () => {
         "../../services/MCPCacheManager.js"
       );
       const mockMCPCacheManager = vi.mocked(MCPCacheManager);
-      mockMCPCacheManager.mockImplementation(() => ({
-        getAllCachedTools: vi.fn().mockResolvedValue([
-          {
-            name: "test-service__test-tool",
-            description: "测试工具",
-            inputSchema: { type: "object", properties: {} },
-          },
-        ]),
-      }) as any);
+      mockMCPCacheManager.mockImplementation(
+        () =>
+          ({
+            getAllCachedTools: vi.fn().mockResolvedValue([
+              {
+                name: "test-service__test-tool",
+                description: "测试工具",
+                inputSchema: { type: "object", properties: {} },
+              },
+            ]),
+          }) as any
+      );
 
       await handler.addCustomTool(mockContext as Context);
 
