@@ -303,11 +303,9 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         // 创建新连接
         await this.createConnection(endpoint, tools);
 
-        // 如果管理器已连接，则连接新小智接入点
-        if (this.isAnyConnected()) {
-          const proxyServer = this.connections.get(endpoint)!;
-          await this.connectSingleEndpoint(endpoint, proxyServer);
-        }
+        // 自动连接新添加的接入点
+        const proxyServer = this.connections.get(endpoint)!;
+        await this.connectSingleEndpoint(endpoint, proxyServer);
 
         this.logger.info(`添加接入点成功： ${sliceEndpoint(endpoint)}`);
       } catch (error) {
@@ -928,8 +926,8 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    * 验证初始化参数
    */
   private validateInitializeParams(endpoints: string[], tools: Tool[]): void {
-    if (!Array.isArray(endpoints) || endpoints.length === 0) {
-      throw new Error("小智接入点列表不能为空");
+    if (!Array.isArray(endpoints)) {
+      throw new Error("小智接入点列表必须是数组");
     }
 
     if (!Array.isArray(tools)) {

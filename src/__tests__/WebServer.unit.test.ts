@@ -37,6 +37,11 @@ vi.mock("../services/MCPServiceManagerSingleton.js", () => ({
   },
 }));
 
+import { ProxyMCPServer } from "../ProxyMCPServer.js";
+// Import the mocked modules for use in tests
+import { MCPServiceManagerSingleton } from "../services/MCPServiceManagerSingleton.js";
+import { XiaozhiConnectionManagerSingleton } from "../services/XiaozhiConnectionManagerSingleton.js";
+
 vi.mock("../services/XiaozhiConnectionManagerSingleton.js", () => ({
   XiaozhiConnectionManagerSingleton: {
     getInstance: vi.fn().mockResolvedValue({
@@ -264,6 +269,416 @@ describe("WebServer Unit Tests", () => {
         type: "single-endpoint",
         connected: true,
         endpoint: "unknown",
+      });
+    });
+  });
+
+  describe("initializeXiaozhiConnection 方法", () => {
+    let mockConnectionManager: any;
+    let mockServiceManager: any;
+
+    beforeEach(() => {
+      // 创建完整的 mock 连接管理器
+      mockConnectionManager = {
+        initialize: vi.fn().mockResolvedValue(undefined),
+        connect: vi.fn().mockResolvedValue(undefined),
+        setServiceManager: vi.fn(),
+        getConnectionStatus: vi.fn().mockReturnValue([]),
+        getReconnectStats: vi.fn().mockReturnValue({}),
+        on: vi.fn(),
+        isInitialized: true,
+      };
+
+      mockServiceManager = {
+        getAllTools: vi.fn().mockReturnValue([
+          { name: "test-tool1", description: "Test tool 1" },
+          { name: "test-tool2", description: "Test tool 2" },
+        ]),
+      };
+
+      // 重置 MCP 服务管理器的 mock
+      vi.mocked(MCPServiceManagerSingleton.getInstance).mockResolvedValue(
+        mockServiceManager
+      );
+    });
+
+    describe("空配置场景测试", () => {
+      it("应该在空端点配置时始终初始化连接管理器", async () => {
+        // Mock 连接管理器单例
+        vi.mocked(
+          XiaozhiConnectionManagerSingleton.getInstance
+        ).mockResolvedValue(mockConnectionManager);
+
+        // 设置 mcpServiceManager
+        webServer.mcpServiceManager = mockServiceManager;
+
+        // 调用被测试的方法 - 空配置
+        await (webServer as any).initializeXiaozhiConnection("", []);
+
+        // 验证连接管理器被初始化
+        expect(
+          XiaozhiConnectionManagerSingleton.getInstance
+        ).toHaveBeenCalledWith({
+          reconnectInterval: 5000,
+          maxReconnectAttempts: 3,
+          connectionTimeout: 10000,
+        });
+
+        // 验证连接管理器已设置
+        expect(webServer.xiaozhiConnectionManager).toBeDefined();
+        expect(webServer.xiaozhiConnectionManager).toBe(mockConnectionManager);
+
+        // 验证设置了服务管理器
+        expect(mockConnectionManager.setServiceManager).toHaveBeenCalledWith(
+          mockServiceManager
+        );
+
+        // 验证连接管理器被初始化为空管理器（修复后应该调用 initialize）
+        expect(mockConnectionManager.initialize).toHaveBeenCalledWith([], []);
+        expect(mockConnectionManager.connect).not.toHaveBeenCalled();
+      });
+
+      it("应该在无效端点配置时始终初始化连接管理器", async () => {
+        vi.mocked(
+          XiaozhiConnectionManagerSingleton.getInstance
+        ).mockResolvedValue(mockConnectionManager);
+
+        webServer.mcpServiceManager = mockServiceManager;
+
+        // 调用被测试的方法 - 无效端点
+        await (webServer as any).initializeXiaozhiConnection(
+          ["<请填写小智接入点>", ""],
+          []
+        );
+
+        // 验证连接管理器仍然被初始化
+        expect(
+          XiaozhiConnectionManagerSingleton.getInstance
+        ).toHaveBeenCalled();
+        expect(webServer.xiaozhiConnectionManager).toBeDefined();
+
+        // 验证连接管理器被初始化为空管理器（修复后应该调用 initialize）
+        expect(mockConnectionManager.initialize).toHaveBeenCalledWith([], []);
+        expect(mockConnectionManager.connect).not.toHaveBeenCalled();
+      });
+
+      it("应该在连接管理器初始化失败时继续执行", async () => {
+        const error = new Error("Connection manager initialization failed");
+        vi.mocked(
+          XiaozhiConnectionManagerSingleton.getInstance
+        ).mockRejectedValue(error);
+
+        webServer.mcpServiceManager = mockServiceManager;
+
+        // 调用被测试的方法 - 不应该抛出异常
+        await expect(
+          (webServer as any).initializeXiaozhiConnection("", [])
+        ).resolves.not.toThrow();
+
+        // 验证连接管理器仍然为 undefined
+        expect(webServer.xiaozhiConnectionManager).toBeUndefined();
+      });
+    });
+
+    describe("单端点配置测试", () => {
+      it("应该在有效单端点时初始化并连接", async () => {
+        vi.mocked(
+          XiaozhiConnectionManagerSingleton.getInstance
+        ).mockResolvedValue(mockConnectionManager);
+
+        webServer.mcpServiceManager = mockServiceManager;
+
+        const tools = [{ name: "test-tool", description: "Test tool" }];
+        const endpoint = "ws://localhost:8080";
+
+        // 调用被测试的方法
+        await (webServer as any).initializeXiaozhiConnection(endpoint, tools);
+
+        // 验证连接管理器被初始化
+        expect(
+          XiaozhiConnectionManagerSingleton.getInstance
+        ).toHaveBeenCalledWith({
+          reconnectInterval: 5000,
+          maxReconnectAttempts: 3,
+          connectionTimeout: 10000,
+        });
+
+        // 验证设置了服务管理器
+        expect(mockConnectionManager.setServiceManager).toHaveBeenCalledWith(
+          mockServiceManager
+        );
+
+        // 验证连接管理器被初始化和连接
+        expect(mockConnectionManager.initialize).toHaveBeenCalledWith(
+          [endpoint],
+          tools
+        );
+        expect(mockConnectionManager.connect).toHaveBeenCalled();
+
+        // 验证配置变更监听器被设置
+        expect(mockConnectionManager.on).toHaveBeenCalledWith(
+          "configChange",
+          expect.any(Function)
+        );
+      });
+    });
+
+    describe("多端点配置测试", () => {
+      it("应该在多个有效端点时正确处理", async () => {
+        vi.mocked(
+          XiaozhiConnectionManagerSingleton.getInstance
+        ).mockResolvedValue(mockConnectionManager);
+
+        webServer.mcpServiceManager = mockServiceManager;
+
+        const tools = [{ name: "test-tool", description: "Test tool" }];
+        const endpoints = [
+          "ws://localhost:8080",
+          "wss://secure.example.com",
+          "ws://192.168.1.100:3000",
+        ];
+
+        // 调用被测试的方法
+        await (webServer as any).initializeXiaozhiConnection(endpoints, tools);
+
+        // 验证连接管理器被初始化
+        expect(
+          XiaozhiConnectionManagerSingleton.getInstance
+        ).toHaveBeenCalled();
+
+        // 验证所有端点都被传递给连接管理器
+        expect(mockConnectionManager.initialize).toHaveBeenCalledWith(
+          endpoints,
+          tools
+        );
+        expect(mockConnectionManager.connect).toHaveBeenCalled();
+
+        // 验证设置了服务管理器
+        expect(mockConnectionManager.setServiceManager).toHaveBeenCalledWith(
+          mockServiceManager
+        );
+      });
+    });
+
+    describe("混合端点测试", () => {
+      it("应该过滤掉无效端点只连接有效端点", async () => {
+        vi.mocked(
+          XiaozhiConnectionManagerSingleton.getInstance
+        ).mockResolvedValue(mockConnectionManager);
+
+        webServer.mcpServiceManager = mockServiceManager;
+
+        const tools = [{ name: "test-tool", description: "Test tool" }];
+        const endpoints = [
+          "<请填写小智接入点>", // 无效
+          "", // 无效
+          "ws://valid.example.com", // 有效
+          "wss://secure.example.com", // 有效
+          "invalid-url", // 有效（不会被过滤，因为只过滤包含 <请填写 的端点）
+        ];
+
+        const expectedValidEndpoints = [
+          "ws://valid.example.com",
+          "wss://secure.example.com",
+          "invalid-url",
+        ];
+
+        // 调用被测试的方法
+        await (webServer as any).initializeXiaozhiConnection(endpoints, tools);
+
+        // 验证只传递有效端点
+        expect(mockConnectionManager.initialize).toHaveBeenCalledWith(
+          expectedValidEndpoints,
+          tools
+        );
+        expect(mockConnectionManager.connect).toHaveBeenCalled();
+      });
+
+      it("应该在所有端点都无效时只初始化不连接", async () => {
+        vi.mocked(
+          XiaozhiConnectionManagerSingleton.getInstance
+        ).mockResolvedValue(mockConnectionManager);
+
+        webServer.mcpServiceManager = mockServiceManager;
+
+        const tools = [{ name: "test-tool", description: "Test tool" }];
+        const endpoints = ["<请填写小智接入点>", ""];
+
+        // 调用被测试的方法
+        await (webServer as any).initializeXiaozhiConnection(endpoints, tools);
+
+        // 验证连接管理器被初始化
+        expect(
+          XiaozhiConnectionManagerSingleton.getInstance
+        ).toHaveBeenCalled();
+        expect(webServer.xiaozhiConnectionManager).toBeDefined();
+
+        // 验证连接管理器被初始化为空管理器（修复后应该调用 initialize）
+        expect(mockConnectionManager.initialize).toHaveBeenCalledWith(
+          [],
+          tools
+        );
+        expect(mockConnectionManager.connect).not.toHaveBeenCalled();
+      });
+    });
+
+    describe("异常回退测试", () => {
+      it("应该在连接管理器连接失败时回退到单连接模式", async () => {
+        // Mock 连接管理器初始化成功但连接失败
+        vi.mocked(
+          XiaozhiConnectionManagerSingleton.getInstance
+        ).mockResolvedValue(mockConnectionManager);
+
+        // 模拟连接失败
+        mockConnectionManager.initialize.mockRejectedValue(
+          new Error("Connection failed")
+        );
+
+        // Mock ProxyMCPServer
+        const mockProxyServer = {
+          connect: vi.fn().mockResolvedValue(undefined),
+          setServiceManager: vi.fn(),
+        };
+        vi.mocked(ProxyMCPServer).mockImplementation(
+          () => mockProxyServer as any
+        );
+
+        webServer.mcpServiceManager = mockServiceManager;
+
+        const tools = [{ name: "test-tool", description: "Test tool" }];
+        const endpoint = "ws://localhost:8080";
+
+        // 调用被测试的方法
+        await (webServer as any).initializeXiaozhiConnection(endpoint, tools);
+
+        // 验证尝试了连接管理器初始化
+        expect(
+          XiaozhiConnectionManagerSingleton.getInstance
+        ).toHaveBeenCalled();
+
+        // 验证回退到单连接模式
+        expect(ProxyMCPServer).toHaveBeenCalledWith(endpoint);
+        expect(mockProxyServer.setServiceManager).toHaveBeenCalledWith(
+          mockServiceManager
+        );
+        expect(mockProxyServer.connect).toHaveBeenCalled();
+
+        // 验证 proxyMCPServer 被设置
+        expect(webServer.proxyMCPServer).toBeDefined();
+      });
+
+      it("应该在单连接模式连接失败时抛出异常", async () => {
+        // Mock 连接管理器失败
+        vi.mocked(
+          XiaozhiConnectionManagerSingleton.getInstance
+        ).mockResolvedValue(mockConnectionManager);
+        mockConnectionManager.initialize.mockRejectedValue(
+          new Error("Connection manager failed")
+        );
+
+        // Mock ProxyMCPServer 也失败
+        const mockProxyServer = {
+          connect: vi
+            .fn()
+            .mockRejectedValue(new Error("Proxy connection failed")),
+          setServiceManager: vi.fn(),
+        };
+        vi.mocked(ProxyMCPServer).mockImplementation(
+          () => mockProxyServer as any
+        );
+
+        webServer.mcpServiceManager = mockServiceManager;
+
+        const tools = [{ name: "test-tool", description: "Test tool" }];
+        const endpoint = "ws://localhost:8080";
+
+        // Mock connectWithRetry 方法避免真实等待
+        vi.spyOn(webServer as any, "connectWithRetry").mockRejectedValue(
+          new Error(
+            "小智接入点连接 - 连接失败，已达到最大重试次数: Proxy connection failed"
+          )
+        );
+
+        // 调用被测试的方法 - 应该抛出异常
+        await expect(
+          (webServer as any).initializeXiaozhiConnection(endpoint, tools)
+        ).rejects.toThrow();
+
+        // 验证尝试了两种连接方式
+        expect(mockConnectionManager.initialize).toHaveBeenCalled();
+        expect(ProxyMCPServer).toHaveBeenCalledWith(endpoint);
+      }, 10000); // 设置 10 秒超时
+    });
+
+    describe("边界条件测试", () => {
+      it("应该处理 null/undefined 端点配置", async () => {
+        vi.mocked(
+          XiaozhiConnectionManagerSingleton.getInstance
+        ).mockResolvedValue(mockConnectionManager);
+
+        webServer.mcpServiceManager = mockServiceManager;
+
+        // 测试 null
+        await (webServer as any).initializeXiaozhiConnection(null as any, []);
+        expect(
+          XiaozhiConnectionManagerSingleton.getInstance
+        ).toHaveBeenCalled();
+
+        // 重置 mock
+        vi.clearAllMocks();
+        vi.mocked(
+          XiaozhiConnectionManagerSingleton.getInstance
+        ).mockResolvedValue(mockConnectionManager);
+
+        // 测试 undefined
+        await (webServer as any).initializeXiaozhiConnection(
+          undefined as any,
+          []
+        );
+        expect(
+          XiaozhiConnectionManagerSingleton.getInstance
+        ).toHaveBeenCalled();
+      });
+
+      it("应该处理空数组端点配置", async () => {
+        vi.mocked(
+          XiaozhiConnectionManagerSingleton.getInstance
+        ).mockResolvedValue(mockConnectionManager);
+
+        webServer.mcpServiceManager = mockServiceManager;
+
+        await (webServer as any).initializeXiaozhiConnection([], []);
+
+        // 验证连接管理器仍然被初始化
+        expect(
+          XiaozhiConnectionManagerSingleton.getInstance
+        ).toHaveBeenCalled();
+        expect(webServer.xiaozhiConnectionManager).toBeDefined();
+
+        // 验证连接管理器被初始化为空管理器（修复后应该调用 initialize）
+        expect(mockConnectionManager.initialize).toHaveBeenCalledWith([], []);
+        expect(mockConnectionManager.connect).not.toHaveBeenCalled();
+      });
+
+      it("应该处理 mcpServiceManager 为 undefined 的情况", async () => {
+        vi.mocked(
+          XiaozhiConnectionManagerSingleton.getInstance
+        ).mockResolvedValue(mockConnectionManager);
+
+        // 不设置 mcpServiceManager
+
+        await (webServer as any).initializeXiaozhiConnection(
+          "ws://localhost:8080",
+          []
+        );
+
+        // 验证连接管理器仍然被初始化
+        expect(
+          XiaozhiConnectionManagerSingleton.getInstance
+        ).toHaveBeenCalled();
+
+        // 验证没有调用 setServiceManager
+        expect(mockConnectionManager.setServiceManager).not.toHaveBeenCalled();
       });
     });
   });
