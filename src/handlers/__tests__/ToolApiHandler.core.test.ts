@@ -15,13 +15,15 @@ import { ToolApiHandler } from "../ToolApiHandler.js";
 vi.mock("../../configManager.js", () => ({
   configManager: {
     addCustomMCPTool: vi.fn(),
-    getCustomMCPTools: vi.fn(),
+    getCustomMCPTools: vi.fn(() => []),
     getCozePlatformConfig: vi.fn(() => ({ token: "test-token" })),
     validateCustomMCPTools: vi.fn(() => true),
     configExists: vi.fn(() => true),
     getConfigPath: vi.fn(() => "/test/config.json"),
     updateCustomMCPTool: vi.fn(),
     removeCustomMCPTool: vi.fn(),
+    getServerToolsConfig: vi.fn(),
+    updateServerToolsConfig: vi.fn(),
   },
 }));
 
@@ -29,8 +31,20 @@ vi.mock("../../configManager.js", () => ({
 vi.mock("../../services/MCPServiceManagerSingleton.js", () => ({
   MCPServiceManagerSingleton: {
     isInitialized: vi.fn(() => true),
-    getInstance: vi.fn(() => Promise.resolve({})),
+    getInstance: vi.fn(() =>
+      Promise.resolve({
+        hasCustomMCPTool: vi.fn(() => false),
+        getCustomMCPTools: vi.fn(() => []),
+      })
+    ),
   },
+}));
+
+// Mock MCPCacheManager
+vi.mock("../../services/MCPCacheManager.js", () => ({
+  MCPCacheManager: vi.fn().mockImplementation(() => ({
+    getAllCachedTools: vi.fn().mockResolvedValue([]),
+  })) as any,
 }));
 
 describe("ToolApiHandler - 核心功能测试", () => {
@@ -195,14 +209,30 @@ describe("ToolApiHandler - 核心功能测试", () => {
         () => {}
       );
 
+      // Mock MCPCacheManager
+      const { MCPCacheManager } = await import(
+        "../../services/MCPCacheManager.js"
+      );
+      const mockMCPCacheManager = vi.mocked(MCPCacheManager);
+      mockMCPCacheManager.mockImplementation(() => ({
+        getAllCachedTools: vi.fn().mockResolvedValue([
+          {
+            name: "test-service__test-tool",
+            description: "测试工具",
+            inputSchema: { type: "object", properties: {} },
+          },
+        ]),
+      }) as any);
+
       await handler.addCustomTool(mockContext as Context);
 
       // Verify the request was processed correctly by checking the json response
       expect(mockContext.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          success: false, // Will fail due to missing mocks, but we verify the flow
-          error: expect.objectContaining({
-            code: expect.any(String),
+          success: true, // Should succeed with proper mocks
+          data: expect.objectContaining({
+            toolName: "test-service__test-tool",
+            toolType: "mcp",
           }),
         })
       );
@@ -213,7 +243,7 @@ describe("ToolApiHandler - 核心功能测试", () => {
         type: ToolType.COZE,
         data: {
           workflow: {
-            workflow_id: "test-workflow-id",
+            workflow_id: "123456789",
             workflow_name: "测试工作流",
             app_id: "test-app-id",
           },
@@ -230,9 +260,10 @@ describe("ToolApiHandler - 核心功能测试", () => {
       // Verify the request was processed correctly by checking the json response
       expect(mockContext.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          success: false, // Will fail due to missing token in Coze config, but we verify the flow
-          error: expect.objectContaining({
-            code: expect.any(String),
+          success: true, // Should succeed with proper test data
+          data: expect.objectContaining({
+            toolName: expect.any(String),
+            toolType: "coze",
           }),
         })
       );
