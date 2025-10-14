@@ -24,6 +24,7 @@ import { ServiceApiHandler } from "./handlers/ServiceApiHandler.js";
 import { StaticFileHandler } from "./handlers/StaticFileHandler.js";
 import { StatusApiHandler } from "./handlers/StatusApiHandler.js";
 import { ToolApiHandler } from "./handlers/ToolApiHandler.js";
+import { UpdateApiHandler } from "./handlers/UpdateApiHandler.js";
 import { VersionApiHandler } from "./handlers/VersionApiHandler.js";
 import { ConfigService } from "./services/ConfigService.js";
 // 导入新的服务和处理器
@@ -618,6 +619,10 @@ export class WebServer {
     this.app?.post("/api/version/cache/clear", (c) =>
       this.versionApiHandler.clearVersionCache(c)
     );
+
+    // 更新相关 API 路由
+    const updateApiHandler = new UpdateApiHandler();
+    this.app?.post("/api/update", (c) => updateApiHandler.performUpdate(c));
 
     // 状态相关 API 路由
     this.app?.get("/api/status", (c) => this.statusApiHandler.getStatus(c));
