@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import { z } from "zod";
 import { logger } from "../Logger.js";
 import { NPMManager } from "../services/NPMManager.js";
+import { getEventBus } from "../services/EventBus.js";
 
 // 版本号请求格式验证
 const UpdateRequestSchema = z.object({
@@ -11,9 +12,11 @@ const UpdateRequestSchema = z.object({
 export class UpdateApiHandler {
   private npmManager: NPMManager;
   private logger = logger.withTag("UpdateApiHandler");
+  private eventBus = getEventBus();
+  private activeInstalls: Map<string, boolean> = new Map();
 
   constructor() {
-    this.npmManager = new NPMManager();
+    this.npmManager = new NPMManager(this.eventBus);
   }
 
   /**
@@ -46,26 +49,42 @@ export class UpdateApiHandler {
 
       const { version } = parseResult.data;
 
-      // 直接执行安装
-      this.logger.info(`开始安装 xiaozhi-client@${version}`);
-      await this.npmManager.installVersion(version);
+      // 检查是否有正在进行的安装
+      const hasActiveInstall = Array.from(this.activeInstalls.values()).some(v => v);
+      if (hasActiveInstall) {
+        return c.json(
+          {
+            success: false,
+            error: {
+              code: "INSTALL_IN_PROGRESS",
+              message: "已有安装进程正在进行，请等待完成后再试",
+            },
+          },
+          409
+        );
+      }
+
+      // 立即返回响应，安装过程通过 WebSocket 推送
+      this.npmManager.installVersion(version).catch((error) => {
+        this.logger.error("安装过程失败:", error);
+      });
 
       return c.json({
         success: true,
         data: {
           version: version,
-          message: `成功安装 xiaozhi-client@${version}`,
+          message: "安装已启动，请查看实时日志",
         },
-        message: "安装完成",
+        message: "安装请求已接受",
       });
     } catch (error) {
-      this.logger.error("安装失败:", error);
+      this.logger.error("处理安装请求失败:", error);
       return c.json(
         {
           success: false,
           error: {
-            code: "INSTALL_FAILED",
-            message: error instanceof Error ? error.message : "安装失败",
+            code: "REQUEST_FAILED",
+            message: error instanceof Error ? error.message : "请求处理失败",
           },
         },
         500
