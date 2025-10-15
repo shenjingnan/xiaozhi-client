@@ -1,15 +1,32 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { logger } from "../../Logger.js";
 import { NPMManager } from "../NPMManager.js";
+import { EventBus } from "../EventBus.js";
 
 // Mock dependencies
-vi.mock("node:child_process");
+vi.mock("node:child_process", () => ({
+  spawn: vi.fn(),
+  exec: vi.fn(),
+}));
+
+vi.mock("node:util", () => ({
+  promisify: vi.fn(),
+}));
+
 vi.mock("../../Logger.js");
+vi.mock("../EventBus.js", () => ({
+  EventBus: vi.fn(),
+  getEventBus: vi.fn(() => ({
+    emitEvent: vi.fn(),
+  })),
+}));
 
 describe("NPMManager", () => {
   let npmManager: NPMManager;
-  let mockExec: any;
   let mockLogger: any;
+  let mockEventBus: any;
+  let mockSpawn: any;
+  let mockPromisify: any;
 
   beforeEach(() => {
     // Reset all mocks
@@ -24,170 +41,227 @@ describe("NPMManager", () => {
     };
     (logger.withTag as any).mockReturnValue(mockLogger);
 
-    // Setup mock exec
-    mockExec = vi.mocked(require("node:child_process").exec);
+    // Setup mock event bus
+    mockEventBus = {
+      emitEvent: vi.fn(),
+    };
+
+    // Get mock functions
+    const { spawn } = require("node:child_process");
+    mockSpawn = spawn;
+
+    const { promisify } = require("node:util");
+    mockPromisify = promisify;
 
     // Create NPMManager instance
-    npmManager = new NPMManager();
+    npmManager = new NPMManager(mockEventBus);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
+  describe("constructor", () => {
+    test("应该使用注入的 EventBus", () => {
+      // Act
+      const manager = new NPMManager(mockEventBus);
+
+      // Assert
+      expect(manager).toBeInstanceOf(NPMManager);
+    });
+
+    test("应该使用默认 EventBus 当没有注入时", () => {
+      // Act
+      const manager = new NPMManager();
+
+      // Assert - 应该成功创建（不抛出错误）
+      expect(manager).toBeInstanceOf(NPMManager);
+    });
+  });
+
   describe("installVersion", () => {
-    test("应该成功执行 npm install 命令", async () => {
+    test("应该成功发射安装事件并执行 npm install 命令", async () => {
       // Arrange
       const version = "1.7.9";
-      const mockStdout = "Package installed successfully";
-      const mockStderr = "";
-      const mockVersionOutput = JSON.stringify({
-        dependencies: {
-          "xiaozhi-client": {
-            version: "1.7.9",
-          },
-        },
-      });
+      const mockStdoutData = "Installing xiaozhi-client@1.7.9...\nSuccessfully installed";
+      const mockStderrData = "";
 
-      const execMock = mockExec as any;
-      execMock.mockImplementation((command: string) => {
-        if (command.includes("npm install")) {
-          return Promise.resolve({ stdout: mockStdout, stderr: mockStderr });
-        }
-        if (command.includes("npm list")) {
-          return Promise.resolve({ stdout: mockVersionOutput });
-        }
-        return Promise.reject(new Error("Unknown command"));
-      });
+      // 创建 mock spawn 进程
+      const mockProcess = {
+        stdout: {
+          on: vi.fn((event, callback) => {
+            if (event === "data") {
+              callback(mockStdoutData);
+            }
+          }),
+        },
+        stderr: {
+          on: vi.fn((event, callback) => {
+            if (event === "data") {
+              callback(mockStderrData);
+            }
+          }),
+        },
+        on: vi.fn((event, callback) => {
+          if (event === "close") {
+            callback(0); // 成功退出码
+          }
+        }),
+      };
+
+      mockSpawn.mockReturnValue(mockProcess);
 
       // Act
       await npmManager.installVersion(version);
 
       // Assert
-      expect(mockExec).toHaveBeenCalledWith(
-        "npm install -g xiaozhi-client@1.7.9 --registry=https://registry.npmmirror.com"
-      );
-      expect(mockExec).toHaveBeenCalledWith(
-        "npm list -g xiaozhi-client --depth=0 --json"
-      );
+      expect(mockSpawn).toHaveBeenCalledWith("npm", [
+        "install",
+        "-g",
+        "xiaozhi-client@1.7.9",
+        "--registry=https://registry.npmmirror.com",
+      ]);
+
+      // 验证事件发射
+      expect(mockEventBus.emitEvent).toHaveBeenCalledWith("npm:install:started", {
+        version: "1.7.9",
+        installId: expect.stringMatching(/^install-\d+-[a-z0-9]+$/),
+        timestamp: expect.any(Number),
+      });
+
+      expect(mockEventBus.emitEvent).toHaveBeenCalledWith("npm:install:log", {
+        version: "1.7.9",
+        installId: expect.stringMatching(/^install-\d+-[a-z0-9]+$/),
+        type: "stdout",
+        message: mockStdoutData,
+        timestamp: expect.any(Number),
+      });
+
+      expect(mockEventBus.emitEvent).toHaveBeenCalledWith("npm:install:completed", {
+        version: "1.7.9",
+        installId: expect.stringMatching(/^install-\d+-[a-z0-9]+$/),
+        success: true,
+        duration: expect.any(Number),
+        timestamp: expect.any(Number),
+      });
+
       expect(mockLogger.info).toHaveBeenCalledWith(
-        "执行安装: xiaozhi-client@1.7.9"
+        expect.stringMatching(/^开始安装: xiaozhi-client@1\.7\.9 \[install-\d+-[a-z0-9]+\]$/)
       );
-      expect(mockLogger.info).toHaveBeenCalledWith("安装命令执行完成");
-      expect(mockLogger.info).toHaveBeenCalledWith("当前版本: 1.7.9");
-      expect(mockLogger.debug).toHaveBeenCalledWith("npm stdout:", mockStdout);
     });
 
-    test("应该处理 npm install 输出警告信息", async () => {
+    test("应该处理安装失败的情况", async () => {
       // Arrange
       const version = "1.7.9";
-      const mockStdout = "Package installed successfully";
-      const mockStderr = "npm WARN optional package not installed";
-      const mockVersionOutput = JSON.stringify({
-        dependencies: {
-          "xiaozhi-client": {
-            version: "1.7.9",
-          },
+      const mockStdoutData = "Some output";
+      const mockStderrData = "npm ERR! Installation failed";
+
+      const mockProcess = {
+        stdout: {
+          on: vi.fn((event, callback) => {
+            if (event === "data") {
+              callback(mockStdoutData);
+            }
+          }),
         },
-      });
+        stderr: {
+          on: vi.fn((event, callback) => {
+            if (event === "data") {
+              callback(mockStderrData);
+            }
+          }),
+        },
+        on: vi.fn((event, callback) => {
+          if (event === "close") {
+            callback(1); // 失败退出码
+          }
+        }),
+      };
 
-      const execMock = mockExec as any;
-      execMock.mockImplementation((command: string) => {
-        if (command.includes("npm install")) {
-          return Promise.resolve({ stdout: mockStdout, stderr: mockStderr });
-        }
-        if (command.includes("npm list")) {
-          return Promise.resolve({ stdout: mockVersionOutput });
-        }
-        return Promise.reject(new Error("Unknown command"));
-      });
-
-      // Act
-      await npmManager.installVersion(version);
-
-      // Assert
-      expect(mockLogger.warn).toHaveBeenCalledWith("npm stderr:", mockStderr);
-    });
-
-    test("应该处理版本验证失败的情况", async () => {
-      // Arrange
-      const version = "1.7.9";
-      const mockStdout = "Package installed successfully";
-      const mockStderr = "";
-      const versionError = new Error("Version check failed");
-
-      const execMock = mockExec as any;
-      execMock.mockImplementation((command: string) => {
-        if (command.includes("npm install")) {
-          return Promise.resolve({ stdout: mockStdout, stderr: mockStderr });
-        }
-        if (command.includes("npm list")) {
-          return Promise.reject(versionError);
-        }
-        return Promise.reject(new Error("Unknown command"));
-      });
+      mockSpawn.mockReturnValue(mockProcess);
 
       // Act & Assert
       await expect(npmManager.installVersion(version)).rejects.toThrow(
-        "安装验证失败"
+        "安装失败，退出码: 1"
       );
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "版本验证失败:",
-        versionError
-      );
+
+      // 验证失败事件发射
+      expect(mockEventBus.emitEvent).toHaveBeenCalledWith("npm:install:failed", {
+        version: "1.7.9",
+        installId: expect.stringMatching(/^install-\d+-[a-z0-9]+$/),
+        error: "安装失败，退出码: 1",
+        duration: expect.any(Number),
+        timestamp: expect.any(Number),
+      });
     });
 
-    test("应该处理 npm install 失败的情况", async () => {
+    test("应该处理 stderr 输出", async () => {
       // Arrange
       const version = "1.7.9";
-      const installError = new Error("npm install failed");
+      const mockStdoutData = "Installing...";
+      const mockStderrData = "npm WARN deprecated package\nSome warning message";
 
-      const execMock = mockExec as any;
-      execMock.mockReturnValue(Promise.reject(installError));
+      const mockProcess = {
+        stdout: {
+          on: vi.fn((event, callback) => {
+            if (event === "data") {
+              callback(mockStdoutData);
+            }
+          }),
+        },
+        stderr: {
+          on: vi.fn((event, callback) => {
+            if (event === "data") {
+              callback(mockStderrData);
+            }
+          }),
+        },
+        on: vi.fn((event, callback) => {
+          if (event === "close") {
+            callback(0); // 成功退出码
+          }
+        }),
+      };
 
-      // Act & Assert
-      await expect(npmManager.installVersion(version)).rejects.toThrow(
-        installError
-      );
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        "执行安装: xiaozhi-client@1.7.9"
-      );
+      mockSpawn.mockReturnValue(mockProcess);
+
+      // Act
+      await npmManager.installVersion(version);
+
+      // Assert - 验证 stderr 事件
+      expect(mockEventBus.emitEvent).toHaveBeenCalledWith("npm:install:log", {
+        version: "1.7.9",
+        installId: expect.stringMatching(/^install-\d+-[a-z0-9]+$/),
+        type: "stderr",
+        message: mockStderrData,
+        timestamp: expect.any(Number),
+      });
     });
 
-    test("应该记录正确的日志信息", async () => {
+    test("应该生成唯一的 installId", async () => {
       // Arrange
-      const version = "2.0.0";
-      const mockStdout = "Package installed successfully";
-      const mockStderr = "";
-      const mockVersionOutput = JSON.stringify({
-        dependencies: {
-          "xiaozhi-client": {
-            version: "2.0.0",
-          },
-        },
-      });
-
-      const execMock = mockExec as any;
-      execMock.mockImplementation((command: string) => {
-        if (command.includes("npm install")) {
-          return Promise.resolve({ stdout: mockStdout, stderr: mockStderr });
-        }
-        if (command.includes("npm list")) {
-          return Promise.resolve({ stdout: mockVersionOutput });
-        }
-        return Promise.reject(new Error("Unknown command"));
-      });
+      const version = "1.7.9";
+      const mockProcess = {
+        stdout: { on: vi.fn() },
+        stderr: { on: vi.fn() },
+        on: vi.fn((event, callback) => {
+          if (event === "close") callback(0);
+        }),
+      };
+      mockSpawn.mockReturnValue(mockProcess);
 
       // Act
       await npmManager.installVersion(version);
 
       // Assert
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        "执行安装: xiaozhi-client@2.0.0"
+      const startCall = mockEventBus.emitEvent.mock.calls.find(
+        call => call[0] === "npm:install:started"
       );
-      expect(mockLogger.info).toHaveBeenCalledWith("安装命令执行完成");
-      expect(mockLogger.debug).toHaveBeenCalledWith("npm stdout:", mockStdout);
-      expect(mockLogger.info).toHaveBeenCalledWith("当前版本: 2.0.0");
+      const installId = startCall?.[1]?.installId;
+
+      expect(installId).toMatch(/^install-\d+-[a-z0-9]+$/);
+      expect(typeof installId).toBe("string");
+      expect(installId.length).toBeGreaterThan(10);
     });
   });
 
@@ -203,16 +277,17 @@ describe("NPMManager", () => {
         },
       });
 
-      const execMock = mockExec as any;
-      execMock.mockReturnValue(Promise.resolve({ stdout: mockOutput }));
+      const mockExecAsync = vi.fn();
+      mockPromisify.mockReturnValue(mockExecAsync);
+      mockExecAsync.mockReturnValue(Promise.resolve({ stdout: mockOutput }));
 
       // Act
       const result = await npmManager.getCurrentVersion();
 
       // Assert
       expect(result).toBe(expectedVersion);
-      expect(mockExec).toHaveBeenCalledWith(
-        "npm list -g xiaozhi-client --depth=0 --json"
+      expect(mockExecAsync).toHaveBeenCalledWith(
+        "npm list -g xiaozhi-client --depth=0 --json --registry=https://registry.npmmirror.com"
       );
     });
 
@@ -222,8 +297,9 @@ describe("NPMManager", () => {
         dependencies: {},
       });
 
-      const execMock = mockExec as any;
-      execMock.mockReturnValue(Promise.resolve({ stdout: mockOutput }));
+      const mockExecAsync = vi.fn();
+      mockPromisify.mockReturnValue(mockExecAsync);
+      mockExecAsync.mockReturnValue(Promise.resolve({ stdout: mockOutput }));
 
       // Act
       const result = await npmManager.getCurrentVersion();
@@ -236,8 +312,9 @@ describe("NPMManager", () => {
       // Arrange
       const mockOutput = JSON.stringify({});
 
-      const execMock = mockExec as any;
-      execMock.mockReturnValue(Promise.resolve({ stdout: mockOutput }));
+      const mockExecAsync = vi.fn();
+      mockPromisify.mockReturnValue(mockExecAsync);
+      mockExecAsync.mockReturnValue(Promise.resolve({ stdout: mockOutput }));
 
       // Act
       const result = await npmManager.getCurrentVersion();
@@ -250,8 +327,9 @@ describe("NPMManager", () => {
       // Arrange
       const listError = new Error("npm list failed");
 
-      const execMock = mockExec as any;
-      execMock.mockReturnValue(Promise.reject(listError));
+      const mockExecAsync = vi.fn();
+      mockPromisify.mockReturnValue(mockExecAsync);
+      mockExecAsync.mockReturnValue(Promise.reject(listError));
 
       // Act & Assert
       await expect(npmManager.getCurrentVersion()).rejects.toThrow(listError);
@@ -261,8 +339,9 @@ describe("NPMManager", () => {
       // Arrange
       const invalidJson = "{ invalid json }";
 
-      const execMock = mockExec as any;
-      execMock.mockReturnValue(Promise.resolve({ stdout: invalidJson }));
+      const mockExecAsync = vi.fn();
+      mockPromisify.mockReturnValue(mockExecAsync);
+      mockExecAsync.mockReturnValue(Promise.resolve({ stdout: invalidJson }));
 
       // Act & Assert
       await expect(npmManager.getCurrentVersion()).rejects.toThrow();

@@ -1,19 +1,34 @@
 import { exec, spawn } from "node:child_process";
 import { promisify } from "node:util";
 import { logger } from "../Logger.js";
+import { type EventBus, getEventBus } from "./EventBus.js";
 
 const execAsync = promisify(exec);
 
 export class NPMManager {
   private logger = logger.withTag("NPMManager");
+  private eventBus: EventBus;
+
+  constructor(eventBus?: EventBus) {
+    this.eventBus = eventBus || getEventBus();
+  }
 
   /**
    * 安装指定版本 - 这是核心功能
    */
   async installVersion(version: string): Promise<void> {
-    this.logger.info(`执行安装: xiaozhi-client@${version}`);
+    const installId = `install-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const startTime = Date.now();
 
-    // 执行安装命令
+    this.logger.info(`开始安装: xiaozhi-client@${version} [${installId}]`);
+
+    // 发射安装开始事件
+    this.eventBus.emitEvent("npm:install:started", {
+      version,
+      installId,
+      timestamp: Date.now(),
+    });
+
     const npmProcess = spawn("npm", [
       "install",
       "-g",
@@ -21,57 +36,68 @@ export class NPMManager {
       "--registry=https://registry.npmmirror.com",
     ]);
 
-    // 监听标准输出
-    npmProcess.stdout.on("data", (data) => {
-      console.log(data.toString());
-      // sendEvent('log', {
-      //   type: 'stdout',
-      //   message: data.toString()
-      // });
+    return new Promise((resolve, reject) => {
+      npmProcess.stdout.on("data", (data) => {
+        const message = data.toString();
+        console.log(message);
+
+        // 发射日志事件
+        this.eventBus.emitEvent("npm:install:log", {
+          version,
+          installId,
+          type: "stdout",
+          message,
+          timestamp: Date.now(),
+        });
+      });
+
+      npmProcess.stderr.on("data", (data) => {
+        const message = data.toString();
+        console.log(message);
+
+        // 发射日志事件
+        this.eventBus.emitEvent("npm:install:log", {
+          version,
+          installId,
+          type: "stderr",
+          message,
+          timestamp: Date.now(),
+        });
+      });
+
+      npmProcess.on("close", (code) => {
+        const duration = Date.now() - startTime;
+
+        if (code === 0) {
+          console.log("安装完成！");
+
+          // 发射安装完成事件
+          this.eventBus.emitEvent("npm:install:completed", {
+            version,
+            installId,
+            success: true,
+            duration,
+            timestamp: Date.now(),
+          });
+
+          resolve();
+        } else {
+          const error = `安装失败，退出码: ${code}`;
+          console.log(error);
+
+          // 发射安装失败事件
+          this.eventBus.emitEvent("npm:install:failed", {
+            version,
+            installId,
+            error,
+            duration,
+            timestamp: Date.now(),
+          });
+
+          reject(new Error(error));
+        }
+      });
     });
-
-    // 监听错误输出
-    npmProcess.stderr.on("data", (data) => {
-      console.log(data.toString());
-      // sendEvent('log', {
-      //   type: 'stderr',
-      //   message: data.toString()
-      // });
-    });
-
-    // 监听进程结束
-    npmProcess.on("close", (code) => {
-      if (code === 0) {
-        console.log("安装完成！");
-        // sendEvent('success', {
-        //   message: '安装完成！',
-        //   code
-        // });
-      } else {
-        console.log("安装失败");
-        // sendEvent('error', {
-        //   message: '安装失败',
-        //   code
-        // });
-      }
-      // res.end();
-    });
-
-    // this.logger.info("安装命令执行完成");
-    // this.logger.debug("npm stdout:", stdout);
-
-    // if (stderr) {
-    //   this.logger.warn("npm stderr:", stderr);
-    // }
-
-    // 验证安装是否成功（简单验证）
-    try {
-      const currentVersion = await this.getCurrentVersion();
-      this.logger.info(`当前版本: ${currentVersion}`);
-    } catch (verifyError) {
-      this.logger.error("版本验证失败:", verifyError);
-      throw new Error("安装验证失败");
-    }
   }
 
   /**
