@@ -1,10 +1,9 @@
-import { execa } from "execa";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { logger } from "../../Logger.js";
 import { NPMManager } from "../NPMManager.js";
 
 // Mock dependencies
-vi.mock("execa");
+vi.mock("node:child_process");
 vi.mock("../../Logger.js");
 
 describe("NPMManager", () => {
@@ -26,7 +25,7 @@ describe("NPMManager", () => {
     (logger.withTag as any).mockReturnValue(mockLogger);
 
     // Setup mock exec
-    mockExec = vi.mocked(execa);
+    mockExec = vi.mocked(require("node:child_process").exec);
 
     // Create NPMManager instance
     npmManager = new NPMManager();
