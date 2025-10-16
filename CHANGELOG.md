@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.7.10-beta.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.9...v1.7.10-beta.0) (2025-10-16)
+
+### Bug Fixes
+
+* **security:** 修复 happy-dom 关键安全漏洞 CVE GHSA-qpm2-6cq5-7pq5 ([#363](https://github.com/shenjingnan/xiaozhi-client/issues/363)) ([d743254](https://github.com/shenjingnan/xiaozhi-client/commit/d74325498ee7f1ce7eacb906d6fcddbbd0e9c60e))
+
 ## [1.7.9](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.8...v1.7.9) (2025-10-11)
 
 ### Features
