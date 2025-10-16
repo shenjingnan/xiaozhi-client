@@ -53,6 +53,7 @@
     "postbuild",
     "pyenv",
     "pypi",
+    "rcompare",
     "reinit",
     "releaserc",
     "retryable",

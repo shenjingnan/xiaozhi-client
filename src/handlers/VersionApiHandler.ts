@@ -137,18 +137,35 @@ export class VersionApiHandler {
 
   /**
    * 获取可用版本列表
-   * GET /api/version/available
+   * GET /api/version/available?type=stable|rc|beta|all
    */
   async getAvailableVersions(c: Context): Promise<Response> {
     try {
       this.logger.debug("处理获取可用版本列表请求");
 
+      // 获取查询参数
+      const type = c.req.query('type') as any || 'stable';
+
+      // 验证版本类型参数
+      const validTypes = ['stable', 'rc', 'beta', 'all'];
+      if (!validTypes.includes(type)) {
+        const errorResponse = this.createErrorResponse(
+          "INVALID_VERSION_TYPE",
+          `无效的版本类型: ${type}。支持的类型: ${validTypes.join(', ')}`
+        );
+        return c.json(errorResponse, 400);
+      }
+
       const npmManager = new NPMManager();
-      const versions = await npmManager.getAvailableVersions();
+      const versions = await npmManager.getAvailableVersions(type);
 
-      this.logger.debug(`获取到 ${versions.length} 个可用版本`);
+      this.logger.debug(`获取到 ${versions.length} 个可用版本 (类型: ${type})`);
 
-      return c.json(this.createSuccessResponse({ versions }));
+      return c.json(this.createSuccessResponse({
+        versions,
+        type,
+        total: versions.length
+      }));
     } catch (error) {
       this.logger.error("获取可用版本列表失败:", error);
 

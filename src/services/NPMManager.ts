@@ -1,5 +1,6 @@
 import { exec, spawn } from "node:child_process";
 import { promisify } from "node:util";
+import semver from "semver";
 import { logger } from "../Logger.js";
 import { type EventBus, getEventBus } from "./EventBus.js";
 
@@ -112,9 +113,19 @@ export class NPMManager {
   }
 
   /**
+   * 版本类型枚举
+   */
+  static readonly VERSION_TYPES = {
+    STABLE: 'stable',
+    RC: 'rc',
+    BETA: 'beta',
+    ALL: 'all'
+  } as const;
+
+  /**
    * 获取可用版本列表
    */
-  async getAvailableVersions(): Promise<string[]> {
+  async getAvailableVersions(type = 'stable'): Promise<string[]> {
     try {
       const { stdout } = await execAsync(
         "npm view xiaozhi-client versions --json --registry=https://registry.npmmirror.com"
@@ -122,29 +133,41 @@ export class NPMManager {
 
       const versions = JSON.parse(stdout) as string[];
 
-      // 过滤掉预发布版本（如果需要的话），这里我们保留所有版本
-      // 按版本号降序排列（最新的在前）
-      return versions
-        .filter(version => version && typeof version === 'string')
-        .sort((a, b) => {
-          // 简单的版本号比较，将版本号按点分割后比较
-          const aParts = a.split('.').map(Number);
-          const bParts = b.split('.').map(Number);
+      // 使用 semver 验证并过滤有效版本
+      let filteredVersions = versions.filter(version => {
+        return version && typeof version === 'string' && semver.valid(version);
+      });
 
-          for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
-            const aPart = aParts[i] || 0;
-            const bPart = bParts[i] || 0;
+      // 根据类型过滤版本
+      if (type !== 'all') {
+        filteredVersions = filteredVersions.filter(version => {
+          const prerelease = semver.prerelease(version);
 
-            if (aPart !== bPart) {
-              return bPart - aPart; // 降序排列
-            }
+          if (type === 'stable') {
+            // 正式版：没有预发布标识符的版本 (x.y.z)
+            return prerelease === null;
           }
-          return 0;
+
+          if (type === 'rc') {
+            // 预览版：预发布标识符以 rc 开头
+            return prerelease !== null && prerelease[0]?.toString()?.toLowerCase()?.startsWith('rc') === true;
+          }
+
+          if (type === 'beta') {
+            // 测试版：预发布标识符以 beta 开头
+            return prerelease !== null && prerelease[0]?.toString()?.toLowerCase()?.startsWith('beta') === true;
+          }
+
+          return true;
         });
+      }
+
+      // 进行降序排列（最新的在前）
+      return filteredVersions.sort((a, b) => semver.rcompare(a, b));
     } catch (error) {
       this.logger.error("获取版本列表失败:", error);
       // 如果获取失败，返回一些默认版本
-      return ["1.7.8", "1.7.7"];
+      return [];
     }
   }
 }
