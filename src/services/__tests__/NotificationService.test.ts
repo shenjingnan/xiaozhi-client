@@ -102,7 +102,7 @@ describe("NotificationService", () => {
   describe("constructor", () => {
     it("should initialize with correct dependencies", () => {
       expect(notificationService).toBeInstanceOf(NotificationService);
-      expect(mockEventBus.onEvent).toHaveBeenCalledTimes(6); // 6 event listeners
+      expect(mockEventBus.onEvent).toHaveBeenCalledTimes(10); // 10 event listeners
     });
 
     it("should set up event listeners correctly", () => {

@@ -1,9 +1,9 @@
-import * as React from "react"
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
+import * as React from "react";
 
 interface ProgressProps extends React.HTMLAttributes<HTMLDivElement> {
-  value?: number
-  status?: "installing" | "completed" | "failed" | "idle"
+  value?: number;
+  status?: "installing" | "completed" | "failed" | "idle";
 }
 
 const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
@@ -40,7 +40,7 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
       </div>
     );
   }
-)
-Progress.displayName = "Progress"
+);
+Progress.displayName = "Progress";
 
-export { Progress }
+export { Progress };
