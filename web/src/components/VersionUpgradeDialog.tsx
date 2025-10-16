@@ -25,8 +25,9 @@ import {
 } from "@/components/ui/select";
 import { useNPMInstall } from "@/hooks/useNPMInstall";
 import { Download } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { InstallLogDialog } from "./InstallLogDialog";
+import { apiClient } from "@/services/api";
 
 interface VersionUpgradeDialogProps {
   children?: React.ReactNode;
@@ -36,14 +37,39 @@ export function VersionUpgradeDialog({ children }: VersionUpgradeDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<string>("");
   const [showInstallDialog, setShowInstallDialog] = useState(false);
+  const [availableVersions, setAvailableVersions] = useState<{ value: string; label: string }[]>([]);
+  const [isLoadingVersions, setIsLoadingVersions] = useState(false);
 
   const { startInstall } = useNPMInstall();
 
-  // 可选版本列表
-  const availableVersions = [
-    { value: "1.7.8", label: "v1.7.8" },
-    { value: "1.7.7", label: "v1.7.7" },
-  ];
+  // 获取可用版本列表
+  const fetchAvailableVersions = async () => {
+    try {
+      setIsLoadingVersions(true);
+      const response = await apiClient.getAvailableVersions();
+      const versions = response.versions.map(version => ({
+        value: version,
+        label: `v${version}`
+      }));
+      setAvailableVersions(versions);
+    } catch (error) {
+      console.error("[VersionUpgradeDialog] 获取版本列表失败:", error);
+      // 如果获取失败，使用默认版本列表
+      setAvailableVersions([
+        { value: "1.7.8", label: "v1.7.8" },
+        { value: "1.7.7", label: "v1.7.7" },
+      ]);
+    } finally {
+      setIsLoadingVersions(false);
+    }
+  };
+
+  // 当对话框打开时获取版本列表
+  useEffect(() => {
+    if (isOpen) {
+      fetchAvailableVersions();
+    }
+  }, [isOpen]);
 
   // 处理版本选择
   const handleVersionSelect = (value: string) => {
@@ -115,18 +141,28 @@ export function VersionUpgradeDialog({ children }: VersionUpgradeDialogProps) {
               <Select
                 value={selectedVersion}
                 onValueChange={handleVersionSelect}
+                disabled={isLoadingVersions}
               >
                 <SelectTrigger id="version-select">
-                  <SelectValue placeholder="请选择版本" />
+                  <SelectValue placeholder={isLoadingVersions ? "正在获取版本列表..." : "请选择版本"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableVersions.map((version) => (
-                    <SelectItem key={version.value} value={version.value}>
-                      {version.label}
+                  {isLoadingVersions ? (
+                    <SelectItem value="loading" disabled>
+                      正在获取版本列表...
                     </SelectItem>
-                  ))}
+                  ) : (
+                    availableVersions.map((version) => (
+                      <SelectItem key={version.value} value={version.value}>
+                        {version.label}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
+              {isLoadingVersions && (
+                <p className="text-xs text-muted-foreground">正在从 NPM 获取最新版本列表...</p>
+              )}
             </div>
           </div>
 
@@ -134,8 +170,8 @@ export function VersionUpgradeDialog({ children }: VersionUpgradeDialogProps) {
             <Button variant="outline" onClick={() => setIsOpen(false)}>
               取消
             </Button>
-            <Button onClick={handleConfirmInstall} disabled={!selectedVersion}>
-              确定安装
+            <Button onClick={handleConfirmInstall} disabled={!selectedVersion || isLoadingVersions}>
+              {isLoadingVersions ? "获取版本中..." : "确定安装"}
             </Button>
           </div>
         </DialogContent>

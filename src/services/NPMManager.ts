@@ -110,4 +110,41 @@ export class NPMManager {
     const info = JSON.parse(stdout);
     return info.dependencies?.["xiaozhi-client"]?.version || "unknown";
   }
+
+  /**
+   * 获取可用版本列表
+   */
+  async getAvailableVersions(): Promise<string[]> {
+    try {
+      const { stdout } = await execAsync(
+        "npm view xiaozhi-client versions --json --registry=https://registry.npmmirror.com"
+      );
+
+      const versions = JSON.parse(stdout) as string[];
+
+      // 过滤掉预发布版本（如果需要的话），这里我们保留所有版本
+      // 按版本号降序排列（最新的在前）
+      return versions
+        .filter(version => version && typeof version === 'string')
+        .sort((a, b) => {
+          // 简单的版本号比较，将版本号按点分割后比较
+          const aParts = a.split('.').map(Number);
+          const bParts = b.split('.').map(Number);
+
+          for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+            const aPart = aParts[i] || 0;
+            const bPart = bParts[i] || 0;
+
+            if (aPart !== bPart) {
+              return bPart - aPart; // 降序排列
+            }
+          }
+          return 0;
+        });
+    } catch (error) {
+      this.logger.error("获取版本列表失败:", error);
+      // 如果获取失败，返回一些默认版本
+      return ["1.7.8", "1.7.7"];
+    }
+  }
 }

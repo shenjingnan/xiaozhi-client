@@ -1,6 +1,7 @@
 import type { Context } from "hono";
 import { type Logger, logger } from "../Logger.js";
 import { type VersionInfo, VersionUtils } from "../cli/utils/VersionUtils.js";
+import { NPMManager } from "../services/NPMManager.js";
 
 /**
  * 统一响应格式接口
@@ -128,6 +129,32 @@ export class VersionApiHandler {
       const errorResponse = this.createErrorResponse(
         "CACHE_CLEAR_ERROR",
         error instanceof Error ? error.message : "清除版本缓存失败"
+      );
+
+      return c.json(errorResponse, 500);
+    }
+  }
+
+  /**
+   * 获取可用版本列表
+   * GET /api/version/available
+   */
+  async getAvailableVersions(c: Context): Promise<Response> {
+    try {
+      this.logger.debug("处理获取可用版本列表请求");
+
+      const npmManager = new NPMManager();
+      const versions = await npmManager.getAvailableVersions();
+
+      this.logger.debug(`获取到 ${versions.length} 个可用版本`);
+
+      return c.json(this.createSuccessResponse({ versions }));
+    } catch (error) {
+      this.logger.error("获取可用版本列表失败:", error);
+
+      const errorResponse = this.createErrorResponse(
+        "VERSIONS_FETCH_ERROR",
+        error instanceof Error ? error.message : "获取可用版本列表失败"
       );
 
       return c.json(errorResponse, 500);

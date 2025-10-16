@@ -616,6 +616,9 @@ export class WebServer {
     this.app?.get("/api/version/simple", (c) =>
       this.versionApiHandler.getVersionSimple(c)
     );
+    this.app?.get("/api/version/available", (c) =>
+      this.versionApiHandler.getAvailableVersions(c)
+    );
     this.app?.post("/api/version/cache/clear", (c) =>
       this.versionApiHandler.clearVersionCache(c)
     );

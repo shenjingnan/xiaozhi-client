@@ -641,6 +641,19 @@ export class ApiClient {
   }
 
   /**
+   * 获取可用版本列表
+   */
+  async getAvailableVersions(): Promise<{ versions: string[] }> {
+    const response: ApiResponse<{ versions: string[] }> = await this.request(
+      "/api/version/available"
+    );
+    if (!response.success || !response.data) {
+      throw new Error("获取可用版本列表失败");
+    }
+    return response.data;
+  }
+
+  /**
    * 清除版本缓存
    */
   async clearVersionCache(): Promise<void> {
