@@ -655,6 +655,22 @@ export class ApiClient {
     }
   }
 
+  /**
+   * 更新版本
+   */
+  async updateVersion(version: string): Promise<any> {
+    const response: ApiResponse = await this.request("/api/update", {
+      method: "POST",
+      body: JSON.stringify({ version }),
+    });
+
+    if (!response.success) {
+      throw new Error(response.message || "版本更新失败");
+    }
+
+    return response.data;
+  }
+
   // ==================== 端点管理 API ====================
 
   /**
