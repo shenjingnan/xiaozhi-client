@@ -90,7 +90,7 @@
     "esbuild": "^0.25.9",
     "execa": "^9.6.0",
     "glob": "^11.0.3",
-    "happy-dom": "^20.0.0",
+    "happy-dom": "^20.0.2",
     "jscpd": "^4.0.5",
     "mintlify": "^4.2.107",
     "release-it": "^19.0.4",
