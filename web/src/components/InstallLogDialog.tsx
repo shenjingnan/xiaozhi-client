@@ -8,9 +8,16 @@
  * - 安装完成后提供操作选项
  */
 
-import { CheckCircle, Clock, Terminal, X, XCircle } from "lucide-react";
+import {
+  CheckCircle,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  Terminal,
+  X,
+  XCircle,
+} from "lucide-react";
 import type React from "react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNPMInstall } from "../hooks/useNPMInstall";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -21,7 +28,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
+import { Progress } from "./ui/progress";
 import { ScrollArea } from "./ui/scroll-area";
+import { Alert, AlertDescription } from "./ui/alert";
 
 interface InstallLogDialogProps {
   isOpen: boolean;
@@ -38,13 +47,12 @@ export function InstallLogDialog({
     installStatus,
     startInstall,
     clearStatus,
-    getStatusText,
-    getStatusColor,
     isInstalling,
     canCloseDialog,
   } = useNPMInstall();
 
   const logContainerRef = useRef<HTMLDivElement>(null);
+  const [showDetails, setShowDetails] = useState(false);
 
   // 对话框打开时开始安装
   useEffect(() => {
@@ -67,6 +75,37 @@ export function InstallLogDialog({
     }, 100);
     return () => clearTimeout(timer);
   });
+
+  // 计算进度条进度
+  const getProgressValue = () => {
+    switch (installStatus.status) {
+      case "idle":
+        return 0;
+      case "installing":
+        // 基于日志数量估算进度，最多到90%
+        return Math.min(90, installStatus.logs.length * 2);
+      case "completed":
+        return 100;
+      case "failed":
+        return 100;
+      default:
+        return 0;
+    }
+  };
+
+  // 获取简洁的状态描述
+  const getSimpleStatusText = () => {
+    switch (installStatus.status) {
+      case "installing":
+        return "正在安装...";
+      case "completed":
+        return "安装完成";
+      case "failed":
+        return "安装失败";
+      default:
+        return "准备安装";
+    }
+  };
 
   // 获取状态图标
   const getStatusIcon = () => {
@@ -151,16 +190,21 @@ export function InstallLogDialog({
     }
   };
 
+  // 切换详情显示
+  const toggleDetails = () => {
+    setShowDetails(!showDetails);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent
-        className="max-w-4xl max-h-[80vh] flex flex-col"
+        className="max-w-2xl max-h-[80vh] flex flex-col"
         onKeyDown={handleKeyDown}
       >
         <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div className="flex items-center gap-3">
             <DialogTitle className="text-lg font-semibold">
-              安装日志
+              正在安装 xiaozhi-client
             </DialogTitle>
             {installStatus.status !== "idle" && (
               <Badge
@@ -168,7 +212,7 @@ export function InstallLogDialog({
                 className="flex items-center gap-1"
               >
                 {getStatusIcon()}
-                {getStatusText()}
+                {getSimpleStatusText()}
               </Badge>
             )}
           </div>
@@ -183,79 +227,95 @@ export function InstallLogDialog({
           </Button>
         </DialogHeader>
 
-        {/* 状态信息栏 */}
-        {installStatus.status !== "idle" && (
-          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-md border">
-            <div className="flex items-center gap-2">
-              <span className={`font-medium ${getStatusColor()}`}>
-                {getStatusText()}
-              </span>
+        {/* 简洁的进度显示 */}
+        <div className="space-y-4">
+          {/* 进度条 */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium">安装进度</span>
               {installStatus.version && (
                 <Badge variant="outline" className="text-xs">
                   v{installStatus.version}
                 </Badge>
               )}
             </div>
-
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <Progress
+              value={getProgressValue()}
+              status={installStatus.status}
+              className="w-full h-2"
+            />
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{getSimpleStatusText()}</span>
               {installStatus.duration && (
-                <div className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  <span>
-                    耗时: {(installStatus.duration / 1000).toFixed(1)}s
-                  </span>
-                </div>
+                <span>耗时: {(installStatus.duration / 1000).toFixed(1)}s</span>
               )}
-              <div className="flex items-center gap-1">
-                <Terminal className="h-3 w-3" />
-                <span>日志: {installStatus.logs.length} 条</span>
-              </div>
             </div>
           </div>
-        )}
 
-        {/* 日志显示区域 */}
-        <div className="flex-1 min-h-0">
-          <ScrollArea
-            ref={logContainerRef}
-            className="h-[400px] w-full rounded-md border bg-background"
-          >
-            <div className="p-4 font-mono text-sm">
-              {installStatus.logs.length === 0 ? (
-                <div className="text-muted-foreground flex items-center gap-2">
-                  <Terminal className="h-4 w-4 animate-pulse" />
-                  {installStatus.status === "installing"
-                    ? "正在启动安装..."
-                    : "等待安装开始..."}
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  {installStatus.logs.map((log) => (
-                    <div
-                      key={`${log.timestamp}-${log.message.slice(0, 50)}`}
-                      className={`${
-                        log.type === "stderr"
-                          ? "text-red-600"
-                          : "text-foreground"
-                      } break-words`}
-                    >
-                      {formatLogMessage(log.message)}
+          {/* 状态描述 */}
+          {installStatus.status === "failed" && (
+            <Alert variant="destructive">
+              <AlertDescription>
+                安装失败，请查看详细日志了解具体原因。
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* 详细日志区域（可折叠） */}
+          <div>
+            <button
+              type="button"
+              onClick={toggleDetails}
+              className="flex w-full items-center justify-between h-auto p-0 gap-0 hover:bg-none bg-none text-sm mb-2"
+            >
+              <h4 className="font-medium">安装日志</h4>
+              <div className="flex items-center gap-1">
+                {showDetails ? (
+                  <>
+                    收起 <ChevronUpIcon className="h-4 w-4" />
+                  </>
+                ) : (
+                  <>
+                    展开 <ChevronDownIcon className="h-4 w-4" />
+                  </>
+                )}
+              </div>
+            </button>
+            {showDetails && (
+              <ScrollArea
+                ref={logContainerRef}
+                className="h-[300px] w-full rounded-md border bg-background"
+              >
+                <div className="p-4 font-mono text-xs">
+                  {installStatus.logs.length === 0 ? (
+                    <div className="text-muted-foreground flex items-center gap-2">
+                      <Terminal className="h-4 w-4 animate-pulse" />
+                      等待日志输出...
                     </div>
-                  ))}
+                  ) : (
+                    <div className="space-y-1">
+                      {installStatus.logs.map((log) => (
+                        <div
+                          key={`${log.timestamp}-${log.message.slice(0, 50)}`}
+                          className={`${
+                            log.type === "stderr"
+                              ? "text-orange-600"
+                              : "text-foreground"
+                          } break-words`}
+                        >
+                          {formatLogMessage(log.message)}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </ScrollArea>
+              </ScrollArea>
+            )}
+          </div>
         </div>
 
         {/* 底部操作栏 */}
         <DialogFooter className="flex items-center justify-between pt-4 border-t">
-          <div className="text-sm text-muted-foreground">
-            {installStatus.installId && (
-              <span>安装ID: {installStatus.installId}</span>
-            )}
-          </div>
-
           <div className="flex gap-2">
             {installStatus.status === "completed" && (
               <Button

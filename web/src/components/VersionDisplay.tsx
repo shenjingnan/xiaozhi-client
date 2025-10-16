@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { VersionInfo } from "@/services/api";
 import { apiClient } from "@/services/api";
-import { CopyIcon, InfoIcon, RocketIcon, RefreshCwIcon } from "lucide-react";
+import { CopyIcon, InfoIcon, RocketIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { VersionUpgradeDialog } from "./VersionUpgradeDialog";
