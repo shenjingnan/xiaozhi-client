@@ -667,6 +667,30 @@ export class ApiClient {
   }
 
   /**
+   * 检查最新版本
+   * 返回当前版本、最新版本以及是否有更新
+   */
+  async getLatestVersion(): Promise<{
+    currentVersion: string;
+    latestVersion: string | null;
+    hasUpdate: boolean;
+    error?: string;
+  }> {
+    const response: ApiResponse<{
+      currentVersion: string;
+      latestVersion: string | null;
+      hasUpdate: boolean;
+      error?: string;
+    }> = await this.request("/api/version/latest");
+
+    if (!response.success || !response.data) {
+      throw new Error("检查最新版本失败");
+    }
+
+    return response.data;
+  }
+
+  /**
    * 清除版本缓存
    */
   async clearVersionCache(): Promise<void> {
