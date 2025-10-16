@@ -177,4 +177,44 @@ export class VersionApiHandler {
       return c.json(errorResponse, 500);
     }
   }
+
+  /**
+   * 检查最新版本
+   * GET /api/version/latest
+   */
+  async checkLatestVersion(c: Context): Promise<Response> {
+    try {
+      this.logger.debug("处理检查最新版本请求");
+
+      const npmManager = new NPMManager();
+      const result = await npmManager.checkForLatestVersion();
+
+      this.logger.debug("版本检查结果:", result);
+
+      if (result.error) {
+        // 如果有错误，但仍返回部分信息
+        return c.json(this.createSuccessResponse({
+          currentVersion: result.currentVersion,
+          latestVersion: result.latestVersion,
+          hasUpdate: result.hasUpdate,
+          error: result.error
+        }));
+      }
+
+      return c.json(this.createSuccessResponse({
+        currentVersion: result.currentVersion,
+        latestVersion: result.latestVersion,
+        hasUpdate: result.hasUpdate
+      }));
+    } catch (error) {
+      this.logger.error("检查最新版本失败:", error);
+
+      const errorResponse = this.createErrorResponse(
+        "LATEST_VERSION_CHECK_ERROR",
+        error instanceof Error ? error.message : "检查最新版本失败"
+      );
+
+      return c.json(errorResponse, 500);
+    }
+  }
 }

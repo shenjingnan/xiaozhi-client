@@ -170,4 +170,72 @@ export class NPMManager {
       return [];
     }
   }
+
+  /**
+   * 检查是否有最新版本
+   * 返回当前版本、最新版本以及是否有更新
+   */
+  async checkForLatestVersion(): Promise<{
+    currentVersion: string;
+    latestVersion: string | null;
+    hasUpdate: boolean;
+    error?: string;
+  }> {
+    try {
+      // 获取当前版本
+      const currentVersion = await this.getCurrentVersion();
+
+      // 如果无法获取当前版本，返回错误
+      if (!currentVersion || currentVersion === 'unknown') {
+        return {
+          currentVersion: 'unknown',
+          latestVersion: null,
+          hasUpdate: false,
+          error: '无法获取当前版本信息'
+        };
+      }
+
+      // 获取最新的正式版本
+      const stableVersions = await this.getAvailableVersions('stable');
+
+      if (stableVersions.length === 0) {
+        return {
+          currentVersion,
+          latestVersion: null,
+          hasUpdate: false,
+          error: '无法获取可用版本列表'
+        };
+      }
+
+      // 获取最新的正式版本（第一个元素）
+      const latestVersion = stableVersions[0];
+
+      // 比较版本
+      let hasUpdate = false;
+      try {
+        // 使用 semver 比较版本
+        hasUpdate = semver.gt(latestVersion, currentVersion);
+      } catch (error) {
+        this.logger.warn('版本比较失败:', error);
+        // 如果比较失败，尝试字符串比较
+        hasUpdate = latestVersion !== currentVersion;
+      }
+
+      this.logger.info(`版本检查完成: 当前版本 ${currentVersion}, 最新版本 ${latestVersion}, 有更新: ${hasUpdate}`);
+
+      return {
+        currentVersion,
+        latestVersion,
+        hasUpdate
+      };
+    } catch (error) {
+      this.logger.error('检查最新版本失败:', error);
+      return {
+        currentVersion: 'unknown',
+        latestVersion: null,
+        hasUpdate: false,
+        error: error instanceof Error ? error.message : '检查更新时发生未知错误'
+      };
+    }
+  }
 }
