@@ -1,8 +1,8 @@
 import type { Context } from "hono";
 import { z } from "zod";
 import { logger } from "../Logger.js";
-import { NPMManager } from "../services/NPMManager.js";
 import { getEventBus } from "../services/EventBus.js";
+import { NPMManager } from "../services/NPMManager.js";
 
 // 版本号请求格式验证
 const UpdateRequestSchema = z.object({
@@ -50,7 +50,9 @@ export class UpdateApiHandler {
       const { version } = parseResult.data;
 
       // 检查是否有正在进行的安装
-      const hasActiveInstall = Array.from(this.activeInstalls.values()).some(v => v);
+      const hasActiveInstall = Array.from(this.activeInstalls.values()).some(
+        (v) => v
+      );
       if (hasActiveInstall) {
         return c.json(
           {

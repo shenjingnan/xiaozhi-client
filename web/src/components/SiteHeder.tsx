@@ -1,6 +1,6 @@
+import { GithubIcon, QQIcon } from "@/components/icons";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { GithubIcon, QQIcon } from "@/components/icons";
 import { VersionDisplay } from "./VersionDisplay";
 
 export function SiteHeader({ title }: { title: string }) {
@@ -21,11 +21,7 @@ export function SiteHeader({ title }: { title: string }) {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <QQIcon
-            size={24}
-            className="text-slate-800"
-            fill="currentColor"
-          />
+          <QQIcon size={24} className="text-slate-800" fill="currentColor" />
         </a>
         <a
           href="https://github.com/shenjingnan/xiaozhi-client"

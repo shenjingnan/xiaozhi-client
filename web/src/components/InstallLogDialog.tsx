@@ -19,6 +19,7 @@ import {
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useNPMInstall } from "../hooks/useNPMInstall";
+import { Alert, AlertDescription } from "./ui/alert";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import {

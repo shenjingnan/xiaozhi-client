@@ -24,11 +24,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useNPMInstall } from "@/hooks/useNPMInstall";
-import { DownloadIcon, ShieldAlertIcon } from "lucide-react";
-import semver from "semver";
-import { useState, useEffect } from "react";
-import { InstallLogDialog } from "./InstallLogDialog";
 import { apiClient } from "@/services/api";
+import { DownloadIcon, ShieldAlertIcon } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import semver from "semver";
+import { InstallLogDialog } from "./InstallLogDialog";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 
 interface VersionUpgradeDialogProps {
@@ -46,7 +46,10 @@ const VERSION_TYPES = [
 
 type VersionType = (typeof VERSION_TYPES)[number]["value"];
 
-export function VersionUpgradeDialog({ children, defaultSelectedVersion }: VersionUpgradeDialogProps) {
+export function VersionUpgradeDialog({
+  children,
+  defaultSelectedVersion,
+}: VersionUpgradeDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<string>("");
   const [selectedVersionType, setSelectedVersionType] =
@@ -60,37 +63,43 @@ export function VersionUpgradeDialog({ children, defaultSelectedVersion }: Versi
   const { startInstall } = useNPMInstall();
 
   // 获取可用版本列表
-  const fetchAvailableVersions = async (type: VersionType) => {
-    try {
-      setIsLoadingVersions(true);
-      const response = await apiClient.getAvailableVersions(type);
-      const versions = response.versions.map((version) => ({
-        value: version,
-        label: `v${version}`,
-      }));
-      setAvailableVersions(versions);
-      console.log(
-        `[VersionUpgradeDialog] 获取到 ${response.total} 个${type}版本`
-      );
-      if (defaultSelectedVersion && response.versions.includes(defaultSelectedVersion || "")) {
-        setSelectedVersion(defaultSelectedVersion || "");
+  const fetchAvailableVersions = useCallback(
+    async (type: VersionType) => {
+      try {
+        setIsLoadingVersions(true);
+        const response = await apiClient.getAvailableVersions(type);
+        const versions = response.versions.map((version) => ({
+          value: version,
+          label: `v${version}`,
+        }));
+        setAvailableVersions(versions);
+        console.log(
+          `[VersionUpgradeDialog] 获取到 ${response.total} 个${type}版本`
+        );
+        if (
+          defaultSelectedVersion &&
+          response.versions.includes(defaultSelectedVersion || "")
+        ) {
+          setSelectedVersion(defaultSelectedVersion || "");
+        }
+      } catch (error) {
+        console.error("[VersionUpgradeDialog] 获取版本列表失败:", error);
+        // 如果获取失败，使用默认版本列表
+        const defaultVersions = [] as { value: string; label: string }[];
+        setAvailableVersions(defaultVersions);
+      } finally {
+        setIsLoadingVersions(false);
       }
-    } catch (error) {
-      console.error("[VersionUpgradeDialog] 获取版本列表失败:", error);
-      // 如果获取失败，使用默认版本列表
-      const defaultVersions = [] as { value: string; label: string }[];
-      setAvailableVersions(defaultVersions);
-    } finally {
-      setIsLoadingVersions(false);
-    }
-  };
+    },
+    [defaultSelectedVersion]
+  );
 
   // 当对话框打开时获取版本列表
   useEffect(() => {
     if (isOpen) {
       fetchAvailableVersions(selectedVersionType);
     }
-  }, [isOpen, selectedVersionType]);
+  }, [isOpen, selectedVersionType, fetchAvailableVersions]);
 
   // 处理版本类型选择
   const handleVersionTypeSelect = (value: VersionType) => {

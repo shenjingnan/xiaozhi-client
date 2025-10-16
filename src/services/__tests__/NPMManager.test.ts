@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { logger } from "../../Logger.js";
-import { NPMManager } from "../NPMManager.js";
 import { EventBus } from "../EventBus.js";
+import { NPMManager } from "../NPMManager.js";
 
 // Mock dependencies
 vi.mock("node:child_process", () => ({
@@ -83,7 +83,8 @@ describe("NPMManager", () => {
     test("应该成功发射安装事件并执行 npm install 命令", async () => {
       // Arrange
       const version = "1.7.9";
-      const mockStdoutData = "Installing xiaozhi-client@1.7.9...\nSuccessfully installed";
+      const mockStdoutData =
+        "Installing xiaozhi-client@1.7.9...\nSuccessfully installed";
       const mockStderrData = "";
 
       // 创建 mock spawn 进程
@@ -123,11 +124,14 @@ describe("NPMManager", () => {
       ]);
 
       // 验证事件发射
-      expect(mockEventBus.emitEvent).toHaveBeenCalledWith("npm:install:started", {
-        version: "1.7.9",
-        installId: expect.stringMatching(/^install-\d+-[a-z0-9]+$/),
-        timestamp: expect.any(Number),
-      });
+      expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
+        "npm:install:started",
+        {
+          version: "1.7.9",
+          installId: expect.stringMatching(/^install-\d+-[a-z0-9]+$/),
+          timestamp: expect.any(Number),
+        }
+      );
 
       expect(mockEventBus.emitEvent).toHaveBeenCalledWith("npm:install:log", {
         version: "1.7.9",
@@ -137,16 +141,21 @@ describe("NPMManager", () => {
         timestamp: expect.any(Number),
       });
 
-      expect(mockEventBus.emitEvent).toHaveBeenCalledWith("npm:install:completed", {
-        version: "1.7.9",
-        installId: expect.stringMatching(/^install-\d+-[a-z0-9]+$/),
-        success: true,
-        duration: expect.any(Number),
-        timestamp: expect.any(Number),
-      });
+      expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
+        "npm:install:completed",
+        {
+          version: "1.7.9",
+          installId: expect.stringMatching(/^install-\d+-[a-z0-9]+$/),
+          success: true,
+          duration: expect.any(Number),
+          timestamp: expect.any(Number),
+        }
+      );
 
       expect(mockLogger.info).toHaveBeenCalledWith(
-        expect.stringMatching(/^开始安装: xiaozhi-client@1\.7\.9 \[install-\d+-[a-z0-9]+\]$/)
+        expect.stringMatching(
+          /^开始安装: xiaozhi-client@1\.7\.9 \[install-\d+-[a-z0-9]+\]$/
+        )
       );
     });
 
@@ -186,20 +195,24 @@ describe("NPMManager", () => {
       );
 
       // 验证失败事件发射
-      expect(mockEventBus.emitEvent).toHaveBeenCalledWith("npm:install:failed", {
-        version: "1.7.9",
-        installId: expect.stringMatching(/^install-\d+-[a-z0-9]+$/),
-        error: "安装失败，退出码: 1",
-        duration: expect.any(Number),
-        timestamp: expect.any(Number),
-      });
+      expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
+        "npm:install:failed",
+        {
+          version: "1.7.9",
+          installId: expect.stringMatching(/^install-\d+-[a-z0-9]+$/),
+          error: "安装失败，退出码: 1",
+          duration: expect.any(Number),
+          timestamp: expect.any(Number),
+        }
+      );
     });
 
     test("应该处理 stderr 输出", async () => {
       // Arrange
       const version = "1.7.9";
       const mockStdoutData = "Installing...";
-      const mockStderrData = "npm WARN deprecated package\nSome warning message";
+      const mockStderrData =
+        "npm WARN deprecated package\nSome warning message";
 
       const mockProcess = {
         stdout: {
@@ -255,7 +268,7 @@ describe("NPMManager", () => {
 
       // Assert
       const startCall = mockEventBus.emitEvent.mock.calls.find(
-        call => call[0] === "npm:install:started"
+        (call: [string, unknown]) => call[0] === "npm:install:started"
       );
       const installId = startCall?.[1]?.installId;
 

@@ -9,8 +9,8 @@ import type { VersionInfo } from "@/services/api";
 import { apiClient } from "@/services/api";
 import { CopyIcon, InfoIcon, RocketIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Button } from "./ui/button";
 import { VersionUpgradeDialog } from "./VersionUpgradeDialog";
+import { Button } from "./ui/button";
 
 interface VersionDisplayProps {
   className?: string;
@@ -23,11 +23,10 @@ interface LatestVersionInfo {
   error?: string;
 }
 
-export function VersionDisplay({
-  className,
-}: VersionDisplayProps) {
+export function VersionDisplay({ className }: VersionDisplayProps) {
   const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null);
-  const [latestVersionInfo, setLatestVersionInfo] = useState<LatestVersionInfo | null>(null);
+  const [latestVersionInfo, setLatestVersionInfo] =
+    useState<LatestVersionInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkingUpdate, setCheckingUpdate] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,10 +60,10 @@ export function VersionDisplay({
         console.error("检查更新失败:", err);
         // 设置默认值，不显示错误给用户
         setLatestVersionInfo({
-          currentVersion: versionInfo?.version || 'unknown',
+          currentVersion: versionInfo?.version || "unknown",
           latestVersion: null,
           hasUpdate: false,
-          error: err instanceof Error ? err.message : "检查更新失败"
+          error: err instanceof Error ? err.message : "检查更新失败",
         });
       } finally {
         setCheckingUpdate(false);
@@ -121,11 +120,16 @@ export function VersionDisplay({
         {latestVersionInfo && (
           <>
             <div>
-              <strong>最新版本:</strong> {latestVersionInfo.latestVersion || '未知'}
+              <strong>最新版本:</strong>{" "}
+              {latestVersionInfo.latestVersion || "未知"}
             </div>
             <div>
               <strong>状态:</strong>
-              {checkingUpdate ? '检查中...' : latestVersionInfo.hasUpdate ? '有新版本' : '已是最新'}
+              {checkingUpdate
+                ? "检查中..."
+                : latestVersionInfo.hasUpdate
+                  ? "有新版本"
+                  : "已是最新"}
             </div>
           </>
         )}
@@ -155,7 +159,9 @@ export function VersionDisplay({
 
     if (latestVersionInfo?.hasUpdate && latestVersionInfo.latestVersion) {
       return (
-        <VersionUpgradeDialog defaultSelectedVersion={latestVersionInfo.latestVersion}>
+        <VersionUpgradeDialog
+          defaultSelectedVersion={latestVersionInfo.latestVersion}
+        >
           <Button variant="link" className="p-0 gap-1">
             <RocketIcon />
             升级版本
@@ -181,9 +187,7 @@ export function VersionDisplay({
           <TooltipTrigger asChild>
             <span className="text-sm cursor-help">v{versionInfo.version}</span>
           </TooltipTrigger>
-          <TooltipContent>
-            {tooltipContent}
-          </TooltipContent>
+          <TooltipContent>{tooltipContent}</TooltipContent>
         </Tooltip>
       </div>
     </TooltipProvider>

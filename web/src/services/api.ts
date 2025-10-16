@@ -644,22 +644,28 @@ export class ApiClient {
    * 获取可用版本列表
    * @param type 版本类型：'stable'（正式版）、'rc'（预览版）、'beta'（测试版）、'all'（全部）
    */
-  async getAvailableVersions(type: 'stable' | 'rc' | 'beta' | 'all' = 'stable'): Promise<{
+  async getAvailableVersions(
+    type: "stable" | "rc" | "beta" | "all" = "stable"
+  ): Promise<{
     versions: string[];
     type: string;
     total: number;
   }> {
     // 构建查询参数
     const queryParams = new URLSearchParams();
-    if (type !== 'stable') {
-      queryParams.append('type', type);
+    if (type !== "stable") {
+      queryParams.append("type", type);
     }
 
     const url = `/api/version/available${
-      queryParams.toString() ? `?${queryParams.toString()}` : ''
+      queryParams.toString() ? `?${queryParams.toString()}` : ""
     }`;
 
-    const response: ApiResponse<{ versions: string[]; type: string; total: number }> = await this.request(url);
+    const response: ApiResponse<{
+      versions: string[];
+      type: string;
+      total: number;
+    }> = await this.request(url);
     if (!response.success || !response.data) {
       throw new Error("获取可用版本列表失败");
     }
