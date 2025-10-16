@@ -222,10 +222,9 @@ export function VersionUpgradeDialog({ children, defaultSelectedVersion }: Versi
               {selectedVersion && semver.lt(selectedVersion, "1.8.0") && (
                 <Alert variant="destructive">
                   <ShieldAlertIcon size={18} />
-                  <AlertTitle>重要提示!</AlertTitle>
+                  <AlertTitle>重要提醒</AlertTitle>
                   <AlertDescription>
-                    本次安装版本为 {selectedVersion}
-                    ，低于1.8.0的版本安装后无法再使用Web界面重装其他版本，需要手动通过命令操作，请谨慎操作
+                    指定版本低于1.8.0，安装后无法再使用Web界面重装，需手动通过命令操作，请谨慎操作！
                   </AlertDescription>
                 </Alert>
               )}
