@@ -24,31 +24,37 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useNPMInstall } from "@/hooks/useNPMInstall";
-import { Download } from "lucide-react";
+import { DownloadIcon, ShieldAlertIcon } from "lucide-react";
+import semver from "semver";
 import { useState, useEffect } from "react";
 import { InstallLogDialog } from "./InstallLogDialog";
 import { apiClient } from "@/services/api";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 
 interface VersionUpgradeDialogProps {
   children?: React.ReactNode;
+  defaultSelectedVersion?: string;
 }
 
 // 版本类型选项
 const VERSION_TYPES = [
-  { value: 'stable', label: '正式版' },
-  { value: 'rc', label: '预览版' },
-  { value: 'beta', label: '测试版' },
-  { value: 'all', label: '全部版本' }
+  { value: "stable", label: "正式版" },
+  { value: "rc", label: "预览版" },
+  { value: "beta", label: "测试版" },
+  { value: "all", label: "全部版本" },
 ] as const;
 
-type VersionType = typeof VERSION_TYPES[number]['value'];
+type VersionType = (typeof VERSION_TYPES)[number]["value"];
 
-export function VersionUpgradeDialog({ children }: VersionUpgradeDialogProps) {
+export function VersionUpgradeDialog({ children, defaultSelectedVersion }: VersionUpgradeDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<string>("");
-  const [selectedVersionType, setSelectedVersionType] = useState<VersionType>('stable');
+  const [selectedVersionType, setSelectedVersionType] =
+    useState<VersionType>("stable");
   const [showInstallDialog, setShowInstallDialog] = useState(false);
-  const [availableVersions, setAvailableVersions] = useState<{ value: string; label: string }[]>([]);
+  const [availableVersions, setAvailableVersions] = useState<
+    { value: string; label: string }[]
+  >([]);
   const [isLoadingVersions, setIsLoadingVersions] = useState(false);
 
   const { startInstall } = useNPMInstall();
@@ -58,12 +64,17 @@ export function VersionUpgradeDialog({ children }: VersionUpgradeDialogProps) {
     try {
       setIsLoadingVersions(true);
       const response = await apiClient.getAvailableVersions(type);
-      const versions = response.versions.map(version => ({
+      const versions = response.versions.map((version) => ({
         value: version,
-        label: `v${version}`
+        label: `v${version}`,
       }));
       setAvailableVersions(versions);
-      console.log(`[VersionUpgradeDialog] 获取到 ${response.total} 个${type}版本`);
+      console.log(
+        `[VersionUpgradeDialog] 获取到 ${response.total} 个${type}版本`
+      );
+      if (defaultSelectedVersion && response.versions.includes(defaultSelectedVersion || "")) {
+        setSelectedVersion(defaultSelectedVersion || "");
+      }
     } catch (error) {
       console.error("[VersionUpgradeDialog] 获取版本列表失败:", error);
       // 如果获取失败，使用默认版本列表
@@ -126,7 +137,7 @@ export function VersionUpgradeDialog({ children }: VersionUpgradeDialogProps) {
   const handleDialogClose = (open: boolean) => {
     if (!open) {
       setSelectedVersion("");
-      setSelectedVersionType('stable'); // 重置为默认选择
+      setSelectedVersionType("stable"); // 重置为默认选择
     }
     setIsOpen(open);
   };
@@ -137,7 +148,7 @@ export function VersionUpgradeDialog({ children }: VersionUpgradeDialogProps) {
         <DialogTrigger asChild>
           {children || (
             <Button className="flex items-center gap-2">
-              <Download className="h-4 w-4" />
+              <DownloadIcon className="h-4 w-4" />
               升级版本
             </Button>
           )}
@@ -157,57 +168,66 @@ export function VersionUpgradeDialog({ children }: VersionUpgradeDialogProps) {
                 版本选择
               </label>
               <div className="flex items-center gap-2">
-              <Select
-                value={selectedVersionType}
-                onValueChange={handleVersionTypeSelect}
-              >
-                <SelectTrigger id="version-type-select" className="w-[150px]">
-                  <SelectValue placeholder="请选择版本类型" />
-                </SelectTrigger>
-                <SelectContent>
-                  {VERSION_TYPES.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={selectedVersion}
-                onValueChange={handleVersionSelect}
-                disabled={isLoadingVersions}
-              >
-                <SelectTrigger id="version-select">
-                  <SelectValue placeholder={isLoadingVersions ? "正在获取版本列表..." : "请选择版本"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {isLoadingVersions ? (
-                    <SelectItem value="loading" disabled>
-                      正在获取版本列表...
-                    </SelectItem>
-                  ) : availableVersions.length === 0 ? (
-                    <SelectItem value="empty" disabled>
-                      暂无可用版本
-                    </SelectItem>
-                  ) : (
-                    availableVersions.map((version) => (
-                      <SelectItem key={version.value} value={version.value}>
-                        {version.label}
+                <Select
+                  value={selectedVersionType}
+                  onValueChange={handleVersionTypeSelect}
+                >
+                  <SelectTrigger id="version-type-select" className="w-[150px]">
+                    <SelectValue placeholder="请选择版本类型" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VERSION_TYPES.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
                       </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={selectedVersion}
+                  onValueChange={handleVersionSelect}
+                  disabled={isLoadingVersions}
+                >
+                  <SelectTrigger id="version-select">
+                    <SelectValue
+                      placeholder={
+                        isLoadingVersions ? "正在获取版本列表..." : "请选择版本"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoadingVersions ? (
+                      <SelectItem value="loading" disabled>
+                        正在获取版本列表...
+                      </SelectItem>
+                    ) : availableVersions.length === 0 ? (
+                      <SelectItem value="empty" disabled>
+                        暂无可用版本
+                      </SelectItem>
+                    ) : (
+                      availableVersions.map((version) => (
+                        <SelectItem key={version.value} value={version.value}>
+                          {version.label}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
-              {/* {isLoadingVersions && (
-                <p className="text-xs text-muted-foreground">
-                  正在从 NPM 获取{VERSION_TYPES.find(t => t.value === selectedVersionType)?.label}列表...
-                </p>
-              )} */}
               {!isLoadingVersions && availableVersions.length === 0 && (
                 <p className="text-xs text-muted-foreground">
                   当前版本类型暂无可用版本
                 </p>
+              )}
+              {selectedVersion && semver.lt(selectedVersion, "1.8.0") && (
+                <Alert variant="destructive">
+                  <ShieldAlertIcon size={18} />
+                  <AlertTitle>重要提示!</AlertTitle>
+                  <AlertDescription>
+                    本次安装版本为 {selectedVersion}
+                    ，低于1.8.0的版本安装后无法再使用Web界面重装其他版本，需要手动通过命令操作，请谨慎操作
+                  </AlertDescription>
+                </Alert>
               )}
             </div>
           </div>
@@ -216,7 +236,10 @@ export function VersionUpgradeDialog({ children }: VersionUpgradeDialogProps) {
             <Button variant="outline" onClick={() => setIsOpen(false)}>
               取消
             </Button>
-            <Button onClick={handleConfirmInstall} disabled={!selectedVersion || isLoadingVersions}>
+            <Button
+              onClick={handleConfirmInstall}
+              disabled={!selectedVersion || isLoadingVersions}
+            >
               确定安装
             </Button>
           </div>

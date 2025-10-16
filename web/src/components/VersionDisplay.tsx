@@ -7,8 +7,10 @@ import {
 } from "@/components/ui/tooltip";
 import type { VersionInfo } from "@/services/api";
 import { apiClient } from "@/services/api";
-import { CopyIcon, InfoIcon } from "lucide-react";
+import { CopyIcon, InfoIcon, RocketIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Button } from "./ui/button";
+import { VersionUpgradeDialog } from "./VersionUpgradeDialog";
 
 interface VersionDisplayProps {
   className?: string;
@@ -106,30 +108,14 @@ export function VersionDisplay({
   );
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className="flex items-center gap-2">
-            <Badge
-              variant={variant}
-              className={`cursor-help hover:bg-secondary/80 transition-colors ${className}`}
-              onClick={handleCopyVersion}
-            >
-              <span className="text-xs font-medium">
-                v{versionInfo.version}
-              </span>
-            </Badge>
-            {showDetails && (
-              <Badge variant="outline" className="text-xs">
-                {versionInfo.name}
-              </Badge>
-            )}
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="right" align="start" className="max-w-xs">
-          {tooltipContent}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <div className="flex items-center gap-2">
+      <VersionUpgradeDialog defaultSelectedVersion="1.7.5">
+        <Button variant="link" className="p-0 gap-1">
+          <RocketIcon />
+          立即升级
+        </Button>
+      </VersionUpgradeDialog>
+      <span className="text-sm">v{versionInfo.version}</span>
+    </div>
   );
 }

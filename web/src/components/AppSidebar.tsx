@@ -60,7 +60,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             >
               <Link to="/" className="flex items-center gap-2">
                 <span className="text-base font-semibold">Xiaozhi Client</span>
-                <VersionDisplay className="text-xs" />
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
