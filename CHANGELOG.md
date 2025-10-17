@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.7.12-beta.4](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.12-beta.3...v1.7.12-beta.4) (2025-10-17)
+
+### Bug Fixes
+
+* **ci:** 修复NPM正式版本发布失败问题 ([28d84b8](https://github.com/shenjingnan/xiaozhi-client/commit/28d84b835fb833fe3e2a46516064f5fd9de9e10c))
+
 ## [1.7.12-beta.3](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.9...v1.7.12-beta.3) (2025-10-17)
 
 ### Features
