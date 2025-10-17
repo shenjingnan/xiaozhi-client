@@ -18,8 +18,7 @@
   "npm": {
     "publish": true,
     "publishArgs": ["--access", "public"],
-    "skipChecks": true,
-    "allowVersionBump": true
+    "skipChecks": true
   },
   "plugins": {
     "@release-it/conventional-changelog": {
