@@ -154,7 +154,7 @@ jobs:
 
           # 执行发布命令
           echo "🚀 执行发布命令..."
-          eval $RELEASE_CMD
+          eval "$RELEASE_CMD"
 
           # 检查执行结果
           if [ $? -eq 0 ]; then
