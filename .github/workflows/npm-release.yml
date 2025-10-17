@@ -3,21 +3,10 @@ name: NPM 发布
 on:
   workflow_dispatch:
     inputs:
-      release_type:
-        description: "发布类型"
+      target_version:
+        description: "目标版本号 (例如: 1.0.0, 1.0.0-beta.0, 1.0.0-rc.0)"
         required: true
-        default: "beta-patch"
-        type: choice
-        options:
-          - "release-patch" # 正式版 patch
-          - "release-minor" # 正式版 minor
-          - "release-major" # 正式版 major
-          - "beta-patch" # Beta 预发布 patch
-          - "beta-minor" # Beta 预发布 minor
-          - "beta-major" # Beta 预发布 major
-          - "rc-patch" # RC 预发布 patch
-          - "rc-minor" # RC 预发布 minor
-          - "rc-major" # RC 预发布 major
+        type: string
       dry_run:
         description: "预演模式"
         required: true
@@ -48,11 +37,21 @@ jobs:
       - name: 验证
         run: |
           echo "当前分支: ${{ github.ref_name }}"
-          echo "发布类型: ${{ github.event.inputs.release_type }}"
+          echo "目标版本: ${{ github.event.inputs.target_version }}"
           echo "预演模式: ${{ github.event.inputs.dry_run }}"
 
-          # 检查是否在主分支
-          if [[ "${{ github.event.inputs.release_type }}" == "release-"* ]] && [ "${{ github.ref_name }}" != "main" ] && [ "${{ github.ref_name }}" != "master" ]; then
+          # 验证版本号格式
+          TARGET_VERSION="${{ github.event.inputs.target_version }}"
+          if [[ ! "$TARGET_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-(beta|rc)\.[0-9]+)?$ ]]; then
+            echo "❌ 版本号格式无效，请使用以下格式之一："
+            echo "   - 正式版: 1.0.0"
+            echo "   - Beta版: 1.0.0-beta.0"
+            echo "   - RC版: 1.0.0-rc.0"
+            exit 1
+          fi
+
+          # 检查是否在主分支（仅正式版需要检查）
+          if [[ "$TARGET_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] && [ "${{ github.ref_name }}" != "main" ] && [ "${{ github.ref_name }}" != "master" ]; then
             if [ "${{ github.event.inputs.dry_run }}" != "true" ]; then
               echo "❌ 正式版发布必须在主分支进行"
               exit 1
@@ -79,35 +78,33 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: 解析发布参数
-        id: parse-release
+      - name: 解析版本号参数
+        id: parse-version
         run: |
-          RELEASE_TYPE="${{ github.event.inputs.release_type }}"
+          TARGET_VERSION="${{ github.event.inputs.target_version }}"
 
-          if [[ "$RELEASE_TYPE" == "release-"* ]]; then
-            # 正式版发布
+          if [[ "$TARGET_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            # 正式版: 1.0.0
             VERSION_TYPE="release"
-            VERSION_INCREMENT="${RELEASE_TYPE#release-}"
             PRERELEASE_ID=""
-          elif [[ "$RELEASE_TYPE" == "beta-"* ]]; then
-            # Beta 预发布版
+            echo "检测到正式版版本号: $TARGET_VERSION"
+          elif [[ "$TARGET_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$ ]]; then
+            # Beta 版: 1.0.0-beta.0
             VERSION_TYPE="prerelease"
-            VERSION_INCREMENT="${RELEASE_TYPE#beta-}"
             PRERELEASE_ID="beta"
-          elif [[ "$RELEASE_TYPE" == "rc-"* ]]; then
-            # RC 预发布版
+            echo "检测到Beta版本号: $TARGET_VERSION"
+          elif [[ "$TARGET_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$ ]]; then
+            # RC 版: 1.0.0-rc.0
             VERSION_TYPE="prerelease"
-            VERSION_INCREMENT="${RELEASE_TYPE#rc-}"
             PRERELEASE_ID="rc"
+            echo "检测到RC版本号: $TARGET_VERSION"
           else
-            # 兜底处理
-            VERSION_TYPE="prerelease"
-            VERSION_INCREMENT="patch"
-            PRERELEASE_ID="beta"
+            echo "❌ 版本号格式无法识别"
+            exit 1
           fi
 
           echo "version_type=$VERSION_TYPE" >> $GITHUB_OUTPUT
-          echo "version_increment=$VERSION_INCREMENT" >> $GITHUB_OUTPUT
+          echo "target_version=$TARGET_VERSION" >> $GITHUB_OUTPUT
           echo "prerelease_id=$PRERELEASE_ID" >> $GITHUB_OUTPUT
 
       - name: 🔒 安全审计检查
@@ -120,14 +117,15 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
+          TARGET_VERSION="${{ steps.parse-version.outputs.target_version }}"
           RELEASE_CMD="npx release-it"
 
-          if [ "${{ steps.parse-release.outputs.version_type }}" = "release" ]; then
+          if [ "${{ steps.parse-version.outputs.version_type }}" = "release" ]; then
             # 正式版发布
-            RELEASE_CMD="$RELEASE_CMD ${{ steps.parse-release.outputs.version_increment }}"
+            RELEASE_CMD="$RELEASE_CMD --release-version=$TARGET_VERSION"
           else
             # 预发布版发布
-            RELEASE_CMD="$RELEASE_CMD ${{ steps.parse-release.outputs.version_increment }} --preRelease=${{ steps.parse-release.outputs.prerelease_id }}"
+            RELEASE_CMD="$RELEASE_CMD $TARGET_VERSION --preRelease=${{ steps.parse-version.outputs.prerelease_id }}"
           fi
 
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then

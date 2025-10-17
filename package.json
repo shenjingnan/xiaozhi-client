@@ -47,7 +47,7 @@
     "websocket",
     "ai"
   ],
-  "author": "shenjingnan(sjn.code@gmail.com)",
+  "author": "shenjingnan <sjn.code@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "@hono/node-server": "^1.17.1",
