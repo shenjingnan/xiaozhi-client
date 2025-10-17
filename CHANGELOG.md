@@ -1,28 +1,35 @@
 # Changelog
 
-## [1.8.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.12-beta.3...v1.8.0) (2025-10-17)
+## [1.8.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.9...v1.8.0) (2025-10-17)
 
 ### Bug Fixes
 
-* **ci:** 修复NPM正式版本发布失败问题 ([#368](https://github.com/shenjingnan/xiaozhi-client/issues/368)) ([f79ae4d](https://github.com/shenjingnan/xiaozhi-client/commit/f79ae4deb880f1a84cc61e5965befc0d91f74598))
+- **ci:** 修复 NPM 正式版本发布失败问题 ([#368](https://github.com/shenjingnan/xiaozhi-client/issues/368)) ([f79ae4d](https://github.com/shenjingnan/xiaozhi-client/commit/f79ae4deb880f1a84cc61e5965befc0d91f74598))
+- **security:** 修复 happy-dom 关键安全漏洞 CVE GHSA-qpm2-6cq5-7pq5 ([#363](https://github.com/shenjingnan/xiaozhi-client/issues/363)) ([d743254](https://github.com/shenjingnan/xiaozhi-client/commit/d74325498ee7f1ce7eacb906d6fcddbbd0e9c60e))
+
+### Features
+
+- **api:** 实现 Docker 容器版本更新 API 功能 ([#361](https://github.com/shenjingnan/xiaozhi-client/issues/361)) ([0ff76ec](https://github.com/shenjingnan/xiaozhi-client/commit/0ff76ec2c29bdee212d4ea58c50bc32134669084))
+- **ci:** 为 NPM 发布流程添加 GitHub Token 环境变量配置 ([#367](https://github.com/shenjingnan/xiaozhi-client/issues/367)) ([d6aba6b](https://github.com/shenjingnan/xiaozhi-client/commit/d6aba6bdf2b0d43ba803c1ce2bdca8c63c0a2aad))
+- **ci:** 优化 NPM 发布工作流支持自定义版本号 ([#365](https://github.com/shenjingnan/xiaozhi-client/issues/365)) ([0a9fa0b](https://github.com/shenjingnan/xiaozhi-client/commit/0a9fa0b1bb863a4d169decff40d04e03686369c2))
 
 ## [1.7.9](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.8...v1.7.9) (2025-10-11)
 
 ### Features
 
-* **cli:** 新增Claude命令系统支持commit和fix-test功能 ([#357](https://github.com/shenjingnan/xiaozhi-client/issues/357)) ([443097b](https://github.com/shenjingnan/xiaozhi-client/commit/443097b9da6e1ec295e4d33443b832a171899497))
-* **mcp:** 支持通过web界面动态添加移除MCP ([#350](https://github.com/shenjingnan/xiaozhi-client/issues/350)) ([44d3922](https://github.com/shenjingnan/xiaozhi-client/commit/44d3922142e910e360a927ffd16e9128b6aaec25))
+- **cli:** 新增 Claude 命令系统支持 commit 和 fix-test 功能 ([#357](https://github.com/shenjingnan/xiaozhi-client/issues/357)) ([443097b](https://github.com/shenjingnan/xiaozhi-client/commit/443097b9da6e1ec295e4d33443b832a171899497))
+- **mcp:** 支持通过 web 界面动态添加移除 MCP ([#350](https://github.com/shenjingnan/xiaozhi-client/issues/350)) ([44d3922](https://github.com/shenjingnan/xiaozhi-client/commit/44d3922142e910e360a927ffd16e9128b6aaec25))
 
 ### Bug Fixes
 
-* **security:** 修复 happy-dom 关键安全漏洞 ([#358](https://github.com/shenjingnan/xiaozhi-client/issues/358)) ([74c22cf](https://github.com/shenjingnan/xiaozhi-client/commit/74c22cf18bcfbe6ab0cea0176140f2fffb9c1703))
-* **webserver:** 修复连接管理器初始化逻辑并优化日志输出 ([#355](https://github.com/shenjingnan/xiaozhi-client/issues/355)) ([fd96893](https://github.com/shenjingnan/xiaozhi-client/commit/fd968930e1efd777694a48e90a00141881bcd262))
+- **security:** 修复 happy-dom 关键安全漏洞 ([#358](https://github.com/shenjingnan/xiaozhi-client/issues/358)) ([74c22cf](https://github.com/shenjingnan/xiaozhi-client/commit/74c22cf18bcfbe6ab0cea0176140f2fffb9c1703))
+- **webserver:** 修复连接管理器初始化逻辑并优化日志输出 ([#355](https://github.com/shenjingnan/xiaozhi-client/issues/355)) ([fd96893](https://github.com/shenjingnan/xiaozhi-client/commit/fd968930e1efd777694a48e90a00141881bcd262))
 
 ## [1.7.8](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.7...v1.7.8) (2025-09-29)
 
 ### Features
 
-* **web:** 支持 Web 界面动态控制小智接入点添加/删除/连接/断开连接功能 ([#349](https://github.com/shenjingnan/xiaozhi-client/issues/349)) ([621041c](https://github.com/shenjingnan/xiaozhi-client/commit/621041cb310ba78a567aafffe6b16ea401f84ea1))
+- **web:** 支持 Web 界面动态控制小智接入点添加/删除/连接/断开连接功能 ([#349](https://github.com/shenjingnan/xiaozhi-client/issues/349)) ([621041c](https://github.com/shenjingnan/xiaozhi-client/commit/621041cb310ba78a567aafffe6b16ea401f84ea1))
 
 ## [1.7.7](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.7-beta.0...v1.7.7) (2025-09-26)
 
@@ -30,59 +37,59 @@
 
 ### Features
 
-* **docs:** 添加扣子工作流集成文档 ([#331](https://github.com/shenjingnan/xiaozhi-client/issues/331)) ([0944a71](https://github.com/shenjingnan/xiaozhi-client/commit/0944a71b1da625890f6b462fff82e61ddd2a6206))
-* **web:** 实现 Web 管理界面版本号显示功能 ([#338](https://github.com/shenjingnan/xiaozhi-client/issues/338)) ([3f55043](https://github.com/shenjingnan/xiaozhi-client/commit/3f55043ea96a39397d9845127ce7f82633055667))
+- **docs:** 添加扣子工作流集成文档 ([#331](https://github.com/shenjingnan/xiaozhi-client/issues/331)) ([0944a71](https://github.com/shenjingnan/xiaozhi-client/commit/0944a71b1da625890f6b462fff82e61ddd2a6206))
+- **web:** 实现 Web 管理界面版本号显示功能 ([#338](https://github.com/shenjingnan/xiaozhi-client/issues/338)) ([3f55043](https://github.com/shenjingnan/xiaozhi-client/commit/3f55043ea96a39397d9845127ce7f82633055667))
 
 ### Bug Fixes
 
-* **deps:** update radix-ui-primitives monorepo ([#291](https://github.com/shenjingnan/xiaozhi-client/issues/291)) ([55c0ce2](https://github.com/shenjingnan/xiaozhi-client/commit/55c0ce20c05d0af76c1cc4a26fb3638b07e7a2ce))
-* **logging:** 修复 --debug 参数时序问题，确保所有模块正确输出 DEBUG 日志 ([#342](https://github.com/shenjingnan/xiaozhi-client/issues/342)) ([48affe4](https://github.com/shenjingnan/xiaozhi-client/commit/48affe4cbbc1174b2f5a6c4fdfeb5021834a7adc))
-* **security:** 修复 @conventional-changelog/git-client 参数注入安全漏洞 ([#343](https://github.com/shenjingnan/xiaozhi-client/issues/343)) ([bc10ad2](https://github.com/shenjingnan/xiaozhi-client/commit/bc10ad2a66c7b5f2e4929f5cf66ac4d0d3bb8fb3))
-* **tool-api:** 修复 Web 界面显示已删除 MCP 工具的问题 ([#336](https://github.com/shenjingnan/xiaozhi-client/issues/336)) ([cec315b](https://github.com/shenjingnan/xiaozhi-client/commit/cec315b0b356d5316ac04a7761ff1b8ce544887b))
-* upgrade version ([e0346a5](https://github.com/shenjingnan/xiaozhi-client/commit/e0346a5b8fbc42659ce0fa0fbfd38a59f144c444))
-* **workflow:** add codeql ([b739d7b](https://github.com/shenjingnan/xiaozhi-client/commit/b739d7b89390d5edfb84447a1418426dd8abf942))
+- **deps:** update radix-ui-primitives monorepo ([#291](https://github.com/shenjingnan/xiaozhi-client/issues/291)) ([55c0ce2](https://github.com/shenjingnan/xiaozhi-client/commit/55c0ce20c05d0af76c1cc4a26fb3638b07e7a2ce))
+- **logging:** 修复 --debug 参数时序问题，确保所有模块正确输出 DEBUG 日志 ([#342](https://github.com/shenjingnan/xiaozhi-client/issues/342)) ([48affe4](https://github.com/shenjingnan/xiaozhi-client/commit/48affe4cbbc1174b2f5a6c4fdfeb5021834a7adc))
+- **security:** 修复 @conventional-changelog/git-client 参数注入安全漏洞 ([#343](https://github.com/shenjingnan/xiaozhi-client/issues/343)) ([bc10ad2](https://github.com/shenjingnan/xiaozhi-client/commit/bc10ad2a66c7b5f2e4929f5cf66ac4d0d3bb8fb3))
+- **tool-api:** 修复 Web 界面显示已删除 MCP 工具的问题 ([#336](https://github.com/shenjingnan/xiaozhi-client/issues/336)) ([cec315b](https://github.com/shenjingnan/xiaozhi-client/commit/cec315b0b356d5316ac04a7761ff1b8ce544887b))
+- upgrade version ([e0346a5](https://github.com/shenjingnan/xiaozhi-client/commit/e0346a5b8fbc42659ce0fa0fbfd38a59f144c444))
+- **workflow:** add codeql ([b739d7b](https://github.com/shenjingnan/xiaozhi-client/commit/b739d7b89390d5edfb84447a1418426dd8abf942))
 
 ## [1.7.4](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.3...v1.7.4) (2025-09-18)
 
 ### Features
 
-* **mcp:** 实现MCP工具配置双向同步机制 ([#326](https://github.com/shenjingnan/xiaozhi-client/issues/326)) ([d1b4be1](https://github.com/shenjingnan/xiaozhi-client/commit/d1b4be18fee96a787cb0cbd3267be95cb2ffff42))
-* **mcp:** 实现MCP服务类型推断系统 ([#329](https://github.com/shenjingnan/xiaozhi-client/issues/329)) ([b907c6c](https://github.com/shenjingnan/xiaozhi-client/commit/b907c6ca1c788ff89aa5893a238423526a5c89ae))
+- **mcp:** 实现 MCP 工具配置双向同步机制 ([#326](https://github.com/shenjingnan/xiaozhi-client/issues/326)) ([d1b4be1](https://github.com/shenjingnan/xiaozhi-client/commit/d1b4be18fee96a787cb0cbd3267be95cb2ffff42))
+- **mcp:** 实现 MCP 服务类型推断系统 ([#329](https://github.com/shenjingnan/xiaozhi-client/issues/329)) ([b907c6c](https://github.com/shenjingnan/xiaozhi-client/commit/b907c6ca1c788ff89aa5893a238423526a5c89ae))
 
 ### Bug Fixes
 
-* **web:** 修复只有一个接入点时，无法移除的问题 ([#325](https://github.com/shenjingnan/xiaozhi-client/issues/325)) ([aabf938](https://github.com/shenjingnan/xiaozhi-client/commit/aabf938797f0d5b59b574644cf8ab507e4947ab3))
+- **web:** 修复只有一个接入点时，无法移除的问题 ([#325](https://github.com/shenjingnan/xiaozhi-client/issues/325)) ([aabf938](https://github.com/shenjingnan/xiaozhi-client/commit/aabf938797f0d5b59b574644cf8ab507e4947ab3))
 
 ## [1.7.3](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.2...v1.7.3) (2025-09-15)
 
 ### Bug Fixes
 
-* **mcp:** 放宽自定义MCP工具名称验证规则 ([#323](https://github.com/shenjingnan/xiaozhi-client/issues/323)) ([551ce4e](https://github.com/shenjingnan/xiaozhi-client/commit/551ce4ed2c615c07cd85c58cec934c14676e4ed4))
-* **tool-sync:** 修复多服务工具同步逻辑错误 ([#322](https://github.com/shenjingnan/xiaozhi-client/issues/322)) ([0556bf9](https://github.com/shenjingnan/xiaozhi-client/commit/0556bf96b23f643fe6380f4035355cc75760e0f9))
-* **workflow:** 修复 docker 发布失败的问题 ([#321](https://github.com/shenjingnan/xiaozhi-client/issues/321)) ([ab30beb](https://github.com/shenjingnan/xiaozhi-client/commit/ab30beb32aad5b9f0d966e0423321f82ec68505a))
+- **mcp:** 放宽自定义 MCP 工具名称验证规则 ([#323](https://github.com/shenjingnan/xiaozhi-client/issues/323)) ([551ce4e](https://github.com/shenjingnan/xiaozhi-client/commit/551ce4ed2c615c07cd85c58cec934c14676e4ed4))
+- **tool-sync:** 修复多服务工具同步逻辑错误 ([#322](https://github.com/shenjingnan/xiaozhi-client/issues/322)) ([0556bf9](https://github.com/shenjingnan/xiaozhi-client/commit/0556bf96b23f643fe6380f4035355cc75760e0f9))
+- **workflow:** 修复 docker 发布失败的问题 ([#321](https://github.com/shenjingnan/xiaozhi-client/issues/321)) ([ab30beb](https://github.com/shenjingnan/xiaozhi-client/commit/ab30beb32aad5b9f0d966e0423321f82ec68505a))
 
 ## [1.7.2](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.1...v1.7.2) (2025-09-14)
 
 ### Features
 
-* **cache:** 重构CustomMCPHandler缓存机制和任务状态管理 ([#317](https://github.com/shenjingnan/xiaozhi-client/issues/317)) ([6a55dec](https://github.com/shenjingnan/xiaozhi-client/commit/6a55dec21ee02ec514dfd178ee2c1b209efada2c))
-* **mcp:** 实现工具配置统一管理机制 ([#313](https://github.com/shenjingnan/xiaozhi-client/issues/313)) ([d5b989b](https://github.com/shenjingnan/xiaozhi-client/commit/d5b989be46bdaa7fb07ef0f14cfe311404ef85ae))
-* **platform:** 新增扣子平台集成和工作流管理功能 ([#303](https://github.com/shenjingnan/xiaozhi-client/issues/303)) ([c4d68a4](https://github.com/shenjingnan/xiaozhi-client/commit/c4d68a472cbc48a4f285e8589db9295ec4fb2baf))
-* **tool-api:** 重构工具API系统支持多种工具类型 ([#314](https://github.com/shenjingnan/xiaozhi-client/issues/314)) ([ece18ca](https://github.com/shenjingnan/xiaozhi-client/commit/ece18cacedc49d1adb5beeea7d429ac4fb73e6df))
-* **web:** 添加 Coze 工作流参数配置功能 ([#315](https://github.com/shenjingnan/xiaozhi-client/issues/315)) ([cc42b82](https://github.com/shenjingnan/xiaozhi-client/commit/cc42b829371946683c31dd73e895c4923758985d))
+- **cache:** 重构 CustomMCPHandler 缓存机制和任务状态管理 ([#317](https://github.com/shenjingnan/xiaozhi-client/issues/317)) ([6a55dec](https://github.com/shenjingnan/xiaozhi-client/commit/6a55dec21ee02ec514dfd178ee2c1b209efada2c))
+- **mcp:** 实现工具配置统一管理机制 ([#313](https://github.com/shenjingnan/xiaozhi-client/issues/313)) ([d5b989b](https://github.com/shenjingnan/xiaozhi-client/commit/d5b989be46bdaa7fb07ef0f14cfe311404ef85ae))
+- **platform:** 新增扣子平台集成和工作流管理功能 ([#303](https://github.com/shenjingnan/xiaozhi-client/issues/303)) ([c4d68a4](https://github.com/shenjingnan/xiaozhi-client/commit/c4d68a472cbc48a4f285e8589db9295ec4fb2baf))
+- **tool-api:** 重构工具 API 系统支持多种工具类型 ([#314](https://github.com/shenjingnan/xiaozhi-client/issues/314)) ([ece18ca](https://github.com/shenjingnan/xiaozhi-client/commit/ece18cacedc49d1adb5beeea7d429ac4fb73e6df))
+- **web:** 添加 Coze 工作流参数配置功能 ([#315](https://github.com/shenjingnan/xiaozhi-client/issues/315)) ([cc42b82](https://github.com/shenjingnan/xiaozhi-client/commit/cc42b829371946683c31dd73e895c4923758985d))
 
 ### Bug Fixes
 
-* **security:** 修复安全漏洞并增强GitHub Actions安全审计 ([#320](https://github.com/shenjingnan/xiaozhi-client/issues/320)) ([165d6ed](https://github.com/shenjingnan/xiaozhi-client/commit/165d6ed8a0d7658a834631e771b0c777f39dfb4a))
-* **ui:** 优化工作流集成对话框的宽度和高度限制 ([#318](https://github.com/shenjingnan/xiaozhi-client/issues/318)) ([494fdd6](https://github.com/shenjingnan/xiaozhi-client/commit/494fdd6504dac7e0a24cb21584c577ad0ef8fb95))
-* **workflows:** 统一 pnpm 版本配置并升级 GitHub Actions ([#319](https://github.com/shenjingnan/xiaozhi-client/issues/319)) ([fa8da77](https://github.com/shenjingnan/xiaozhi-client/commit/fa8da77e8738b9669a19459a08975458706ec152))
+- **security:** 修复安全漏洞并增强 GitHub Actions 安全审计 ([#320](https://github.com/shenjingnan/xiaozhi-client/issues/320)) ([165d6ed](https://github.com/shenjingnan/xiaozhi-client/commit/165d6ed8a0d7658a834631e771b0c777f39dfb4a))
+- **ui:** 优化工作流集成对话框的宽度和高度限制 ([#318](https://github.com/shenjingnan/xiaozhi-client/issues/318)) ([494fdd6](https://github.com/shenjingnan/xiaozhi-client/commit/494fdd6504dac7e0a24cb21584c577ad0ef8fb95))
+- **workflows:** 统一 pnpm 版本配置并升级 GitHub Actions ([#319](https://github.com/shenjingnan/xiaozhi-client/issues/319)) ([fa8da77](https://github.com/shenjingnan/xiaozhi-client/commit/fa8da77e8738b9669a19459a08975458706ec152))
 
 ## [1.7.1](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.0...v1.7.1) (2025-09-08)
 
 ### Features
 
-* **cli:** xiaozhi start 命令增加 --debug 参数 ([#304](https://github.com/shenjingnan/xiaozhi-client/issues/304)) ([ead36d5](https://github.com/shenjingnan/xiaozhi-client/commit/ead36d5de7f7c42861e2089b1f6a240b2a0889c1))
-* **mcp:** 放宽端点验证以支持自部署的 xiaozhi-server ([#274](https://github.com/shenjingnan/xiaozhi-client/issues/274)) ([b55a794](https://github.com/shenjingnan/xiaozhi-client/commit/b55a79408d07787edd644210f05a00049ec28d0a))
+- **cli:** xiaozhi start 命令增加 --debug 参数 ([#304](https://github.com/shenjingnan/xiaozhi-client/issues/304)) ([ead36d5](https://github.com/shenjingnan/xiaozhi-client/commit/ead36d5de7f7c42861e2089b1f6a240b2a0889c1))
+- **mcp:** 放宽端点验证以支持自部署的 xiaozhi-server ([#274](https://github.com/shenjingnan/xiaozhi-client/issues/274)) ([b55a794](https://github.com/shenjingnan/xiaozhi-client/commit/b55a79408d07787edd644210f05a00049ec28d0a))
 
 ## [1.7.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.6.11...v1.7.0) (2025-09-08)
 
