@@ -1,6 +1,6 @@
 {
   "name": "xiaozhi-client",
-  "version": "1.7.9",
+  "version": "1.7.12-beta.1",
   "description": "小智 AI 客户端 命令行工具",
   "type": "module",
   "main": "dist/cli.js",
@@ -47,7 +47,7 @@
     "websocket",
     "ai"
   ],
-  "author": "shenjingnan(sjn.code@gmail.com)",
+  "author": "shenjingnan <sjn.code@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "@hono/node-server": "^1.17.1",
