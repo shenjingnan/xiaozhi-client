@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.8.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.12-beta.3...v1.8.0) (2025-10-17)
+
+### Bug Fixes
+
+* **ci:** 修复NPM正式版本发布失败问题 ([#368](https://github.com/shenjingnan/xiaozhi-client/issues/368)) ([f79ae4d](https://github.com/shenjingnan/xiaozhi-client/commit/f79ae4deb880f1a84cc61e5965befc0d91f74598))
+
 ## [1.7.9](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.8...v1.7.9) (2025-10-11)
 
 ### Features
