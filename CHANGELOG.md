@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.7.12-beta.2](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.9...v1.7.12-beta.2) (2025-10-17)
+
+### Features
+
+* **api:** 实现Docker容器版本更新API功能 ([#361](https://github.com/shenjingnan/xiaozhi-client/issues/361)) ([0ff76ec](https://github.com/shenjingnan/xiaozhi-client/commit/0ff76ec2c29bdee212d4ea58c50bc32134669084))
+* **ci:** 优化 NPM 发布工作流支持自定义版本号 ([#365](https://github.com/shenjingnan/xiaozhi-client/issues/365)) ([0a9fa0b](https://github.com/shenjingnan/xiaozhi-client/commit/0a9fa0b1bb863a4d169decff40d04e03686369c2))
+
+### Bug Fixes
+
+* **security:** 修复 happy-dom 关键安全漏洞 CVE GHSA-qpm2-6cq5-7pq5 ([#363](https://github.com/shenjingnan/xiaozhi-client/issues/363)) ([d743254](https://github.com/shenjingnan/xiaozhi-client/commit/d74325498ee7f1ce7eacb906d6fcddbbd0e9c60e))
+
 ## [1.7.12-beta.1](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.9...v1.7.12-beta.1) (2025-10-17)
 
 ### Features
