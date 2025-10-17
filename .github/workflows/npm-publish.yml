@@ -158,9 +158,10 @@ jobs:
 
           # 检查执行结果
           if [ $? -eq 0 ]; then
+          exit_code=$?
+
+          # 检查执行结果
+          if [ $exit_code -eq 0 ]; then
             echo "✅ 发布命令执行成功"
           else
-            echo "❌ 发布命令执行失败，错误码: $?"
-            echo "💡 请检查上述日志以了解失败原因"
-            exit 1
-          fi
+            echo "❌ 发布命令执行失败，错误码: $exit_code"
