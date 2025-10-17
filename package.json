@@ -4,7 +4,7 @@
   "description": "小智 AI 客户端 命令行工具",
   "repository": {
     "type": "git",
-    "url": "https://github.com/shenjingnan/home-mcp.git"
+    "url": "https://github.com/shenjingnan/xiaozhi-client.git"
   },
   "author": "shenjingnan <sjn.code@gmail.com>",
   "license": "MIT",
