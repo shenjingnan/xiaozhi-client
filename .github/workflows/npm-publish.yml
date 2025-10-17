@@ -115,6 +115,9 @@ jobs:
           pnpm audit --audit-level moderate
 
       - name: 发布
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           TARGET_VERSION="${{ steps.parse-version.outputs.target_version }}"
           RELEASE_CMD="npx release-it --ci"
