@@ -1,23 +1,5 @@
 # Changelog
 
-## [1.7.12-beta.4](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.12-beta.3...v1.7.12-beta.4) (2025-10-17)
-
-### Bug Fixes
-
-* **ci:** 修复NPM正式版本发布失败问题 ([28d84b8](https://github.com/shenjingnan/xiaozhi-client/commit/28d84b835fb833fe3e2a46516064f5fd9de9e10c))
-
-## [1.7.12-beta.3](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.9...v1.7.12-beta.3) (2025-10-17)
-
-### Features
-
-* **api:** 实现Docker容器版本更新API功能 ([#361](https://github.com/shenjingnan/xiaozhi-client/issues/361)) ([0ff76ec](https://github.com/shenjingnan/xiaozhi-client/commit/0ff76ec2c29bdee212d4ea58c50bc32134669084))
-* **ci:** 为NPM发布流程添加GitHub Token环境变量配置 ([#367](https://github.com/shenjingnan/xiaozhi-client/issues/367)) ([d6aba6b](https://github.com/shenjingnan/xiaozhi-client/commit/d6aba6bdf2b0d43ba803c1ce2bdca8c63c0a2aad))
-* **ci:** 优化 NPM 发布工作流支持自定义版本号 ([#365](https://github.com/shenjingnan/xiaozhi-client/issues/365)) ([0a9fa0b](https://github.com/shenjingnan/xiaozhi-client/commit/0a9fa0b1bb863a4d169decff40d04e03686369c2))
-
-### Bug Fixes
-
-* **security:** 修复 happy-dom 关键安全漏洞 CVE GHSA-qpm2-6cq5-7pq5 ([#363](https://github.com/shenjingnan/xiaozhi-client/issues/363)) ([d743254](https://github.com/shenjingnan/xiaozhi-client/commit/d74325498ee7f1ce7eacb906d6fcddbbd0e9c60e))
-
 ## [1.7.9](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.8...v1.7.9) (2025-10-11)
 
 ### Features
