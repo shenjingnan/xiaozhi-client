@@ -53,11 +53,8 @@ jobs:
 
           # 检查分支权限（允许在feature分支进行测试发布）
           if [[ "$TARGET_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] && [ "${{ github.event.inputs.dry_run }}" != "true" ]; then
-            if [[ "${{ github.ref_name }}" =~ ^feature/.* ]] || [[ "${{ github.ref_name }}" =~ ^fix/.* ]]; then
-              echo "⚠️ 警告：正在feature分支发布正式版本，建议在主分支进行"
-              echo "🔍 继续发布流程（仅允许在开发分支进行测试发布）..."
-            elif [ "${{ github.ref_name }}" != "main" ] && [ "${{ github.ref_name }}" != "master" ]; then
-              echo "❌ 正式版发布必须在主分支或feature分支进行"
+            if [ "${{ github.ref_name }}" != "main" ]; then
+              echo "❌ 正式版发布必须在主分支进行"
               exit 1
             fi
           fi
