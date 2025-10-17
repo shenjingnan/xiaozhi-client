@@ -97,6 +97,7 @@ vi.mock("./cli", () => ({
 
 // Mock child_process
 vi.mock("node:child_process", () => ({
+  exec: vi.fn(),
   spawn: vi.fn(() => ({
     unref: vi.fn(),
   })),
