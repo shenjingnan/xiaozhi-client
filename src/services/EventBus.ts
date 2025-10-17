@@ -163,6 +163,34 @@ export interface EventBusEvents {
     timestamp: Date;
   };
 
+  // NPM 安装相关事件
+  "npm:install:started": {
+    version: string;
+    installId: string;
+    timestamp: number;
+  };
+  "npm:install:log": {
+    version: string;
+    installId: string;
+    type: "stdout" | "stderr";
+    message: string;
+    timestamp: number;
+  };
+  "npm:install:completed": {
+    version: string;
+    installId: string;
+    success: boolean;
+    duration: number;
+    timestamp: number;
+  };
+  "npm:install:failed": {
+    version: string;
+    installId: string;
+    error: string;
+    duration: number;
+    timestamp: number;
+  };
+
   // 测试相关事件（仅用于测试）
   "high-frequency": {
     id: number;

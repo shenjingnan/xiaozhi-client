@@ -1,6 +1,6 @@
 {
   "name": "xiaozhi-client",
-  "version": "1.7.9",
+  "version": "1.7.12-beta.0",
   "description": "小智 AI 客户端 命令行工具",
   "type": "module",
   "main": "dist/cli.js",
@@ -80,6 +80,7 @@
     "@release-it/conventional-changelog": "^10.0.1",
     "@types/node": "^24.3.0",
     "@types/node-fetch": "^2.6.12",
+    "@types/semver": "^7.7.1",
     "@types/supertest": "^6.0.3",
     "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "^3.2.4",

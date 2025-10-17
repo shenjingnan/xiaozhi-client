@@ -67,6 +67,23 @@ export class NotificationService {
       this.broadcastRestartStatus("failed", data.error.message, data.timestamp);
     });
 
+    // 监听 NPM 安装事件
+    this.eventBus.onEvent("npm:install:started", (data) => {
+      this.broadcast("npm:install:started", data);
+    });
+
+    this.eventBus.onEvent("npm:install:log", (data) => {
+      this.broadcast("npm:install:log", data);
+    });
+
+    this.eventBus.onEvent("npm:install:completed", (data) => {
+      this.broadcast("npm:install:completed", data);
+    });
+
+    this.eventBus.onEvent("npm:install:failed", (data) => {
+      this.broadcast("npm:install:failed", data);
+    });
+
     // 监听通知广播事件
     this.eventBus.onEvent("notification:broadcast", (data) => {
       if (data.target) {

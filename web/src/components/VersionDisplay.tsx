@@ -7,22 +7,28 @@ import {
 } from "@/components/ui/tooltip";
 import type { VersionInfo } from "@/services/api";
 import { apiClient } from "@/services/api";
-import { CopyIcon, InfoIcon } from "lucide-react";
+import { CopyIcon, InfoIcon, RocketIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { VersionUpgradeDialog } from "./VersionUpgradeDialog";
+import { Button } from "./ui/button";
 
 interface VersionDisplayProps {
   className?: string;
-  showDetails?: boolean;
-  variant?: "default" | "secondary" | "outline";
 }
 
-export function VersionDisplay({
-  className,
-  showDetails = false,
-  variant = "secondary",
-}: VersionDisplayProps) {
+interface LatestVersionInfo {
+  currentVersion: string;
+  latestVersion: string | null;
+  hasUpdate: boolean;
+  error?: string;
+}
+
+export function VersionDisplay({ className }: VersionDisplayProps) {
   const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null);
+  const [latestVersionInfo, setLatestVersionInfo] =
+    useState<LatestVersionInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [checkingUpdate, setCheckingUpdate] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -43,6 +49,32 @@ export function VersionDisplay({
 
     fetchVersion();
   }, []);
+
+  useEffect(() => {
+    const checkForUpdates = async () => {
+      try {
+        setCheckingUpdate(true);
+        const updateInfo = await apiClient.getLatestVersion();
+        setLatestVersionInfo(updateInfo);
+      } catch (err) {
+        console.error("检查更新失败:", err);
+        // 设置默认值，不显示错误给用户
+        setLatestVersionInfo({
+          currentVersion: versionInfo?.version || "unknown",
+          latestVersion: null,
+          hasUpdate: false,
+          error: err instanceof Error ? err.message : "检查更新失败",
+        });
+      } finally {
+        setCheckingUpdate(false);
+      }
+    };
+
+    // 只有在获取到版本信息后才检查更新
+    if (versionInfo) {
+      checkForUpdates();
+    }
+  }, [versionInfo]);
 
   const handleCopyVersion = async () => {
     if (versionInfo?.version) {
@@ -85,6 +117,22 @@ export function VersionDisplay({
         <div>
           <strong>版本:</strong> {versionInfo.version}
         </div>
+        {latestVersionInfo && (
+          <>
+            <div>
+              <strong>最新版本:</strong>{" "}
+              {latestVersionInfo.latestVersion || "未知"}
+            </div>
+            <div>
+              <strong>状态:</strong>
+              {checkingUpdate
+                ? "检查中..."
+                : latestVersionInfo.hasUpdate
+                  ? "有新版本"
+                  : "已是最新"}
+            </div>
+          </>
+        )}
         <div>
           <strong>描述:</strong> {versionInfo.description}
         </div>
@@ -105,31 +153,43 @@ export function VersionDisplay({
     </div>
   );
 
+  // 决定显示的按钮文案和图标
+  const getUpgradeButton = () => {
+    if (checkingUpdate) return null;
+
+    if (latestVersionInfo?.hasUpdate && latestVersionInfo.latestVersion) {
+      return (
+        <VersionUpgradeDialog
+          defaultSelectedVersion={latestVersionInfo.latestVersion}
+        >
+          <Button variant="link" className="p-0 gap-1">
+            <RocketIcon />
+            升级版本
+          </Button>
+        </VersionUpgradeDialog>
+      );
+    }
+
+    return (
+      <VersionUpgradeDialog defaultSelectedVersion={versionInfo.version}>
+        <Button variant="link" className="p-0 gap-1">
+          切换版本
+        </Button>
+      </VersionUpgradeDialog>
+    );
+  };
+
   return (
     <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className="flex items-center gap-2">
-            <Badge
-              variant={variant}
-              className={`cursor-help hover:bg-secondary/80 transition-colors ${className}`}
-              onClick={handleCopyVersion}
-            >
-              <span className="text-xs font-medium">
-                v{versionInfo.version}
-              </span>
-            </Badge>
-            {showDetails && (
-              <Badge variant="outline" className="text-xs">
-                {versionInfo.name}
-              </Badge>
-            )}
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="right" align="start" className="max-w-xs">
-          {tooltipContent}
-        </TooltipContent>
-      </Tooltip>
+      <div className="flex items-center gap-2">
+        {getUpgradeButton()}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="text-sm cursor-help">v{versionInfo.version}</span>
+          </TooltipTrigger>
+          <TooltipContent>{tooltipContent}</TooltipContent>
+        </Tooltip>
+      </div>
     </TooltipProvider>
   );
 }

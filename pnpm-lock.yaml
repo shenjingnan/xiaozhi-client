@@ -100,6 +100,9 @@ importers:
       '@types/node-fetch':
         specifier: ^2.6.12
         version: 2.6.13
+      '@types/semver':
+        specifier: ^7.7.1
+        version: 7.7.1
       '@types/supertest':
         specifier: ^6.0.3
         version: 6.0.3
@@ -2355,6 +2358,9 @@ packages:
 
   '@types/sarif@2.1.7':
     resolution: {integrity: sha512-kRz0VEkJqWLf1LLVN4pT1cg1Z9wAuvI6L97V3m2f5B76Tg8d413ddvLBPTEHAZJlnn4XSvu0FkZtViCQGVyrXQ==}
+
+  '@types/semver@7.7.1':
+    resolution: {integrity: sha512-FmgJfu+MOcQ370SD0ev7EI8TlCAfKYU+B4m5T3yXc1CiRN94g/SZPtsCkk506aUDtlMnFZvasDwHHUcZUEaYuA==}
 
   '@types/send@0.17.5':
     resolution: {integrity: sha512-z6F2D3cOStZvuk2SaP6YrwkNO65iTZcwA2ZkSABegdkAh/lf+Aa/YQndZVfmEXT5vgAp6zv06VQ3ejSVjAny4w==}
@@ -9440,6 +9446,8 @@ snapshots:
       csstype: 3.1.3
 
   '@types/sarif@2.1.7': {}
+
+  '@types/semver@7.7.1': {}
 
   '@types/send@0.17.5':
     dependencies:

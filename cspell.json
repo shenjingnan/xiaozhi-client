@@ -53,6 +53,7 @@
     "postbuild",
     "pyenv",
     "pypi",
+    "rcompare",
     "reinit",
     "releaserc",
     "retryable",
@@ -86,7 +87,8 @@
     "coverage/**",
     ".git/**",
     "*.log",
-    "pnpm-lock.yaml"
+    "pnpm-lock.yaml",
+    "CHANGELOG.md"
   ],
   "ignoreWords": [],
   "flagWords": []
