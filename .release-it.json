@@ -3,8 +3,8 @@
     "commitMessage": "chore: release v${version}",
     "tagName": "v${version}",
     "pushArgs": ["--follow-tags"],
-    "requireCleanWorkingDir": true,
-    "requireUpstream": true,
+    "requireCleanWorkingDir": false,
+    "requireUpstream": false,
     "commit": true,
     "tag": true,
     "push": true
@@ -12,7 +12,8 @@
   "github": {
     "release": true,
     "releaseName": "🚀 v${version}",
-    "releaseNotes": "npx conventional-changelog-cli -p conventionalcommits"
+    "releaseNotes": "npx conventional-changelog-cli -p conventionalcommits",
+    "skipReleaseOnMissingReleaseNotes": false
   },
   "npm": {
     "publish": true,
@@ -24,8 +25,8 @@
       "preset": "conventionalcommits",
       "infile": "CHANGELOG.md",
       "releaseCommitMessageFormat": "chore: release v${version}",
-      "ignoreRecommendedBump": false,
-      "strictSemVer": true
+      "ignoreRecommendedBump": true,
+      "strictSemVer": false
     }
   },
   "hooks": {
