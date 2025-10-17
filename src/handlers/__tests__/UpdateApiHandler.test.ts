@@ -6,13 +6,15 @@ import { UpdateApiHandler } from "../UpdateApiHandler.js";
 // Mock dependencies
 vi.mock("../../services/NPMManager.js");
 vi.mock("../../Logger.js");
+vi.mock("../../services/EventBus.js");
 
 describe("UpdateApiHandler", () => {
   let updateApiHandler: UpdateApiHandler;
   let mockNPMManager: any;
   let mockLogger: any;
+  let mockEventBus: any;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Reset all mocks
     vi.clearAllMocks();
 
@@ -24,6 +26,14 @@ describe("UpdateApiHandler", () => {
       debug: vi.fn(),
     };
     (logger.withTag as any).mockReturnValue(mockLogger);
+
+    // Setup mock event bus
+    mockEventBus = {
+      emitEvent: vi.fn(),
+      onEvent: vi.fn(),
+    };
+    const { getEventBus } = await import("../../services/EventBus.js");
+    vi.mocked(getEventBus).mockReturnValue(mockEventBus);
 
     // Setup mock NPMManager
     mockNPMManager = {
@@ -56,16 +66,13 @@ describe("UpdateApiHandler", () => {
 
       // Assert
       expect(mockNPMManager.installVersion).toHaveBeenCalledWith("1.7.9");
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        "开始安装 xiaozhi-client@1.7.9"
-      );
       expect(mockContext.json).toHaveBeenCalledWith({
         success: true,
         data: {
           version: "1.7.9",
-          message: "成功安装 xiaozhi-client@1.7.9",
+          message: "安装已启动，请查看实时日志",
         },
-        message: "安装完成",
+        message: "安装请求已接受",
       });
     });
 
@@ -180,18 +187,23 @@ describe("UpdateApiHandler", () => {
       // Act
       await updateApiHandler.performUpdate(mockContext as any);
 
+      // 等待一下，让异步错误处理执行
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
       // Assert
-      expect(mockLogger.error).toHaveBeenCalledWith("安装失败:", installError);
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          success: false,
-          error: {
-            code: "INSTALL_FAILED",
-            message: "npm 安装失败",
-          },
-        },
-        500
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        "安装过程失败:",
+        installError
       );
+      // 由于安装是异步的，响应应该仍然是成功的
+      expect(mockContext.json).toHaveBeenCalledWith({
+        success: true,
+        data: {
+          version: "1.7.9",
+          message: "安装已启动，请查看实时日志",
+        },
+        message: "安装请求已接受",
+      });
     });
 
     test("应该处理 JSON 解析错误", async () => {
@@ -208,12 +220,15 @@ describe("UpdateApiHandler", () => {
       await updateApiHandler.performUpdate(mockContext as any);
 
       // Assert
-      expect(mockLogger.error).toHaveBeenCalledWith("安装失败:", jsonError);
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        "处理安装请求失败:",
+        jsonError
+      );
       expect(mockContext.json).toHaveBeenCalledWith(
         {
           success: false,
           error: {
-            code: "INSTALL_FAILED",
+            code: "REQUEST_FAILED",
             message: "Invalid JSON",
           },
         },
@@ -236,18 +251,23 @@ describe("UpdateApiHandler", () => {
       // Act
       await updateApiHandler.performUpdate(mockContext as any);
 
+      // 等待一下，让异步错误处理执行
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
       // Assert
-      expect(mockLogger.error).toHaveBeenCalledWith("安装失败:", installError);
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          success: false,
-          error: {
-            code: "INSTALL_FAILED",
-            message: "安装失败",
-          },
-        },
-        500
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        "安装过程失败:",
+        installError
       );
+      // 由于安装是异步的，响应应该仍然是成功的
+      expect(mockContext.json).toHaveBeenCalledWith({
+        success: true,
+        data: {
+          version: "1.7.9",
+          message: "安装已启动，请查看实时日志",
+        },
+        message: "安装请求已接受",
+      });
     });
   });
 });
