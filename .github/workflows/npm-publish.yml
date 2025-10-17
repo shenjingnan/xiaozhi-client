@@ -51,10 +51,13 @@ jobs:
             exit 1
           fi
 
-          # 检查是否在主分支（仅正式版需要检查）
-          if [[ "$TARGET_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] && [ "${{ github.ref_name }}" != "main" ] && [ "${{ github.ref_name }}" != "master" ]; then
-            if [ "${{ github.event.inputs.dry_run }}" != "true" ]; then
-              echo "❌ 正式版发布必须在主分支进行"
+          # 检查分支权限（允许在feature分支进行测试发布）
+          if [[ "$TARGET_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] && [ "${{ github.event.inputs.dry_run }}" != "true" ]; then
+            if [[ "${{ github.ref_name }}" =~ ^feature/.* ]] || [[ "${{ github.ref_name }}" =~ ^fix/.* ]]; then
+              echo "⚠️ 警告：正在feature分支发布正式版本，建议在主分支进行"
+              echo "🔍 继续发布流程（仅允许在开发分支进行测试发布）..."
+            elif [ "${{ github.ref_name }}" != "main" ] && [ "${{ github.ref_name }}" != "master" ]; then
+              echo "❌ 正式版发布必须在主分支或feature分支进行"
               exit 1
             fi
           fi
@@ -123,7 +126,7 @@ jobs:
 
           if [ "${{ steps.parse-version.outputs.version_type }}" = "release" ]; then
             # 正式版发布
-            RELEASE_CMD="$RELEASE_CMD --release-version=$TARGET_VERSION"
+            RELEASE_CMD="$RELEASE_CMD -i $TARGET_VERSION"
           else
             # 预发布版发布
             RELEASE_CMD="$RELEASE_CMD $TARGET_VERSION --preRelease=${{ steps.parse-version.outputs.prerelease_id }}"
@@ -133,5 +136,34 @@ jobs:
             RELEASE_CMD="$RELEASE_CMD --dry-run"
           fi
 
-          echo "执行命令: $RELEASE_CMD"
+          echo "📦 开始发布流程..."
+          echo "📋 版本信息："
+          echo "   - 目标版本: $TARGET_VERSION"
+          echo "   - 版本类型: ${{ steps.parse-version.outputs.version_type }}"
+          echo "   - 预发布ID: ${{ steps.parse-version.outputs.prerelease_id }}"
+          echo "   - 当前分支: ${{ github.ref_name }}"
+          echo "   - 预演模式: ${{ github.event.inputs.dry_run }}"
+          echo "   - 执行命令: $RELEASE_CMD"
+          echo ""
+
+          # 检查环境
+          echo "🔍 环境检查："
+          echo "   - Node版本: $(node --version)"
+          echo "   - pnpm版本: $(pnpm --version)"
+          echo "   - Git状态: $(git status --porcelain | wc -l) 个文件有修改"
+          echo "   - 当前分支: $(git branch --show-current)"
+          echo "   - 最新标签: $(git describe --tags --match='v*' --abbrev=0 || echo '无标签')"
+          echo ""
+
+          # 执行发布命令
+          echo "🚀 执行发布命令..."
           eval $RELEASE_CMD
+
+          # 检查执行结果
+          if [ $? -eq 0 ]; then
+            echo "✅ 发布命令执行成功"
+          else
+            echo "❌ 发布命令执行失败，错误码: $?"
+            echo "💡 请检查上述日志以了解失败原因"
+            exit 1
+          fi
