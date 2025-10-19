@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.8.1](https://github.com/shenjingnan/xiaozhi-client/compare/v1.8.0...v1.8.1) (2025-10-19)
+
+### Features
+
+* **ux:** 优化配置模板的默认接入点设置 ([#369](https://github.com/shenjingnan/xiaozhi-client/issues/369)) ([40b10aa](https://github.com/shenjingnan/xiaozhi-client/commit/40b10aa4ad630ae35051aac7437bb5718d8200e8))
+
+### Bug Fixes
+
+* **ui:** 修复网站头部 QQ 群链接错误 ([#370](https://github.com/shenjingnan/xiaozhi-client/issues/370)) ([cb6c86d](https://github.com/shenjingnan/xiaozhi-client/commit/cb6c86dbfd208bdf34875343142d3e19595b592f))
+
 ## [1.8.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.7.9...v1.8.0) (2025-10-17)
 
 ### Bug Fixes
