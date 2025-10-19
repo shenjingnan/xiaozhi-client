@@ -4,7 +4,7 @@
 
   // MCP 接入点地址
   // 请访问 xiaozhi.me 获取你的专属接入点地址
-  "mcpEndpoint": "<请填写你的接入点地址（获取地址在 xiaozhi.me）>",
+  "mcpEndpoint": "",
 
   // MCP 服务配置
   "mcpServers": {

@@ -1,5 +1,5 @@
 {
-  "mcpEndpoint": "<请填写你的接入点地址（获取地址在 xiaozhi.me）>",
+  "mcpEndpoint": "",
   "mcpServers": {
     "calculator": {
       "command": "node",
