@@ -704,9 +704,7 @@ export class WebServer {
     );
 
     // MCP 端点管理相关路由 - 动态处理
-    this.app?.post("/api/endpoint/status", (c) =>
-      this.handleEndpointStatus(c)
-    );
+    this.app?.post("/api/endpoint/status", (c) => this.handleEndpointStatus(c));
     this.app?.post("/api/endpoint/connect", (c) =>
       this.handleEndpointConnect(c)
     );

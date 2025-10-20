@@ -1757,8 +1757,14 @@ describe("WebServer", () => {
     });
 
     it("应该处理获取端点状态请求", async () => {
+      const endpointRequest = { endpoint: "ws://localhost:9999" };
       const response = await fetch(
-        `http://localhost:${currentPort}/api/endpoints/ws%3A%2F%2Flocalhost%3A9999/status`
+        `http://localhost:${currentPort}/api/endpoint/status`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(endpointRequest),
+        }
       );
       // 由于连接管理器可能未初始化，期望 503 或 200
       expect([200, 503]).toContain(response.status);
@@ -1776,10 +1782,13 @@ describe("WebServer", () => {
     });
 
     it("应该处理连接端点请求", async () => {
+      const endpointRequest = { endpoint: "ws://localhost:9999" };
       const response = await fetch(
-        `http://localhost:${currentPort}/api/endpoints/ws%3A%2F%2Flocalhost%3A9999/connect`,
+        `http://localhost:${currentPort}/api/endpoint/connect`,
         {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(endpointRequest),
         }
       );
       // 由于连接管理器可能未初始化，期望 503 或 200
@@ -1797,10 +1806,13 @@ describe("WebServer", () => {
     });
 
     it("应该处理断开端点请求", async () => {
+      const endpointRequest = { endpoint: "ws://localhost:9999" };
       const response = await fetch(
-        `http://localhost:${currentPort}/api/endpoints/ws%3A%2F%2Flocalhost%3A9999/disconnect`,
+        `http://localhost:${currentPort}/api/endpoint/disconnect`,
         {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(endpointRequest),
         }
       );
       // 由于连接管理器可能未初始化，期望 503 或 200
@@ -1818,10 +1830,13 @@ describe("WebServer", () => {
     });
 
     it("应该处理重连端点请求", async () => {
+      const endpointRequest = { endpoint: "ws://localhost:9999" };
       const response = await fetch(
-        `http://localhost:${currentPort}/api/endpoints/ws%3A%2F%2Flocalhost%3A9999/reconnect`,
+        `http://localhost:${currentPort}/api/endpoint/reconnect`,
         {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(endpointRequest),
         }
       );
       // 由于连接管理器可能未初始化，期望 503 或 200
@@ -1844,7 +1859,7 @@ describe("WebServer", () => {
       };
 
       const response = await fetch(
-        `http://localhost:${currentPort}/api/endpoints/add`,
+        `http://localhost:${currentPort}/api/endpoint/add`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1866,10 +1881,13 @@ describe("WebServer", () => {
     });
 
     it("应该处理移除端点请求", async () => {
+      const endpointRequest = { endpoint: "ws://old.endpoint" };
       const response = await fetch(
-        `http://localhost:${currentPort}/api/endpoints/ws%3A%2F%2Fold.endpoint`,
+        `http://localhost:${currentPort}/api/endpoint/remove`,
         {
           method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(endpointRequest),
         }
       );
       // 由于连接管理器可能未初始化，期望 503 或 200
@@ -1894,8 +1912,14 @@ describe("WebServer", () => {
       const tempWebServer = new WebServer(testPort);
       await tempWebServer.start();
 
+      const endpointRequest = { endpoint: "ws://localhost:9999" };
       const response = await fetch(
-        `http://localhost:${testPort}/api/endpoints/ws%3A%2F%2Flocalhost%3A9999/status`
+        `http://localhost:${testPort}/api/endpoint/status`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(endpointRequest),
+        }
       );
       expect(response.status).toBe(503);
 
