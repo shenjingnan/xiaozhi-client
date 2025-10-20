@@ -23,13 +23,6 @@ interface ApiSuccessResponse<T = any> {
 }
 
 /**
- * 端点操作请求接口
- */
-interface EndpointOperationRequest {
-  endpoint: string;
-}
-
-/**
  * 端点操作成功响应接口
  */
 interface EndpointOperationResponse {
@@ -39,17 +32,6 @@ interface EndpointOperationResponse {
     endpoint: string;
     status: ConnectionStatus;
     operation: "connect" | "disconnect" | "reconnect" | "add" | "remove";
-  };
-}
-
-/**
- * 端点操作错误响应接口
- */
-interface EndpointOperationError {
-  error: {
-    code: string;
-    message: string;
-    details?: any;
   };
 }
 
@@ -106,23 +88,24 @@ export class MCPEndpointApiHandler {
 
   /**
    * 获取接入点状态
-   * GET /api/endpoints/:endpoint/status
+   * POST /api/endpoint/status
    */
   async getEndpointStatus(c: Context): Promise<Response> {
+    const body = await c.req.json();
+    const endpoint = body.endpoint;
+
+    this.logger.debug(`处理获取接入点状态请求: ${endpoint}`);
+
+    // 验证端点参数
+    if (!endpoint || typeof endpoint !== "string") {
+      const errorResponse = this.createErrorResponse(
+        "INVALID_ENDPOINT",
+        "端点参数无效",
+        endpoint
+      );
+      return c.json(errorResponse, 400);
+    }
     try {
-      const endpoint = decodeURIComponent(c.req.param("endpoint"));
-      this.logger.debug(`处理获取接入点状态请求: ${endpoint}`);
-
-      // 验证端点参数
-      if (!endpoint || typeof endpoint !== "string") {
-        const errorResponse = this.createErrorResponse(
-          "INVALID_ENDPOINT",
-          "端点参数无效",
-          endpoint
-        );
-        return c.json(errorResponse, 400);
-      }
-
       // 获取连接状态
       const connectionStatus =
         this.xiaozhiConnectionManager.getConnectionStatus();
@@ -143,7 +126,6 @@ export class MCPEndpointApiHandler {
       return c.json(this.createSuccessResponse(endpointStatus));
     } catch (error) {
       this.logger.error("获取接入点状态失败:", error);
-      const endpoint = c.req.param("endpoint");
       const errorResponse = this.createErrorResponse(
         "ENDPOINT_STATUS_READ_ERROR",
         error instanceof Error ? error.message : "获取接入点状态失败",
@@ -155,23 +137,23 @@ export class MCPEndpointApiHandler {
 
   /**
    * 连接指定接入点
-   * POST /api/endpoints/:endpoint/connect
+   * POST /api/endpoint/connect
    */
   async connectEndpoint(c: Context): Promise<Response> {
+    const body = await c.req.json();
+    const endpoint = body.endpoint;
+    this.logger.info(`处理接入点连接请求: ${endpoint}`);
+
+    // 验证端点参数
+    if (!endpoint || typeof endpoint !== "string") {
+      const errorResponse = this.createErrorResponse(
+        "INVALID_ENDPOINT",
+        "端点参数无效",
+        endpoint
+      );
+      return c.json(errorResponse, 400);
+    }
     try {
-      const endpoint = decodeURIComponent(c.req.param("endpoint"));
-      this.logger.info(`处理接入点连接请求: ${endpoint}`);
-
-      // 验证端点参数
-      if (!endpoint || typeof endpoint !== "string") {
-        const errorResponse = this.createErrorResponse(
-          "INVALID_ENDPOINT",
-          "端点参数无效",
-          endpoint
-        );
-        return c.json(errorResponse, 400);
-      }
-
       // 检查端点是否存在
       const connectionStatus =
         this.xiaozhiConnectionManager.getConnectionStatus();
@@ -232,7 +214,6 @@ export class MCPEndpointApiHandler {
       return c.json(response);
     } catch (error) {
       this.logger.error("接入点连接失败:", error);
-      const endpoint = c.req.param("endpoint");
       const errorResponse = this.createErrorResponse(
         "ENDPOINT_CONNECT_ERROR",
         error instanceof Error ? error.message : "接入点连接失败",
@@ -244,23 +225,23 @@ export class MCPEndpointApiHandler {
 
   /**
    * 断开指定接入点
-   * POST /api/endpoints/:endpoint/disconnect
+   * POST /api/endpoint/disconnect
    */
   async disconnectEndpoint(c: Context): Promise<Response> {
+    const body = await c.req.json();
+    const endpoint = body.endpoint;
+    this.logger.info(`处理接入点断开请求: ${endpoint}`);
+
+    // 验证端点参数
+    if (!endpoint || typeof endpoint !== "string") {
+      const errorResponse = this.createErrorResponse(
+        "INVALID_ENDPOINT",
+        "端点参数无效",
+        endpoint
+      );
+      return c.json(errorResponse, 400);
+    }
     try {
-      const endpoint = decodeURIComponent(c.req.param("endpoint"));
-      this.logger.info(`处理接入点断开请求: ${endpoint}`);
-
-      // 验证端点参数
-      if (!endpoint || typeof endpoint !== "string") {
-        const errorResponse = this.createErrorResponse(
-          "INVALID_ENDPOINT",
-          "端点参数无效",
-          endpoint
-        );
-        return c.json(errorResponse, 400);
-      }
-
       // 检查端点是否存在且已连接
       const connectionStatus =
         this.xiaozhiConnectionManager.getConnectionStatus();
@@ -323,7 +304,6 @@ export class MCPEndpointApiHandler {
       return c.json(response);
     } catch (error) {
       this.logger.error("接入点断开失败:", error);
-      const endpoint = c.req.param("endpoint");
       const errorResponse = this.createErrorResponse(
         "ENDPOINT_DISCONNECT_ERROR",
         error instanceof Error ? error.message : "接入点断开失败",
@@ -335,23 +315,24 @@ export class MCPEndpointApiHandler {
 
   /**
    * 重连指定接入点
-   * POST /api/endpoints/:endpoint/reconnect
+   * POST /api/endpoint/reconnect
    */
   async reconnectEndpoint(c: Context): Promise<Response> {
+    const body = await c.req.json();
+    const endpoint = body.endpoint;
+    this.logger.info(`处理接入点重连请求: ${endpoint}`);
+
+    // 验证端点参数
+    if (!endpoint || typeof endpoint !== "string") {
+      const errorResponse = this.createErrorResponse(
+        "INVALID_ENDPOINT",
+        "端点参数无效",
+        endpoint
+      );
+      return c.json(errorResponse, 400);
+    }
+
     try {
-      const endpoint = decodeURIComponent(c.req.param("endpoint"));
-      this.logger.info(`处理接入点重连请求: ${endpoint}`);
-
-      // 验证端点参数
-      if (!endpoint || typeof endpoint !== "string") {
-        const errorResponse = this.createErrorResponse(
-          "INVALID_ENDPOINT",
-          "端点参数无效",
-          endpoint
-        );
-        return c.json(errorResponse, 400);
-      }
-
       // 检查端点是否存在
       const connectionStatus =
         this.xiaozhiConnectionManager.getConnectionStatus();
@@ -408,7 +389,6 @@ export class MCPEndpointApiHandler {
       return c.json(response);
     } catch (error) {
       this.logger.error("接入点重连失败:", error);
-      const endpoint = c.req.param("endpoint");
       const errorResponse = this.createErrorResponse(
         "ENDPOINT_RECONNECT_ERROR",
         error instanceof Error ? error.message : "接入点重连失败",
@@ -420,23 +400,22 @@ export class MCPEndpointApiHandler {
 
   /**
    * 添加新接入点
-   * POST /api/endpoints/add
+   * POST /api/endpoint/add
    */
   async addEndpoint(c: Context): Promise<Response> {
+    const body = await c.req.json();
+    const endpoint = body.endpoint;
+
+    // 验证端点参数
+    if (!endpoint || typeof endpoint !== "string") {
+      const errorResponse = this.createErrorResponse(
+        "INVALID_ENDPOINT",
+        "端点参数无效",
+        endpoint
+      );
+      return c.json(errorResponse, 400);
+    }
     try {
-      const body = await c.req.json();
-      const endpoint = body.endpoint;
-
-      // 验证端点参数
-      if (!endpoint || typeof endpoint !== "string") {
-        const errorResponse = this.createErrorResponse(
-          "INVALID_ENDPOINT",
-          "端点参数无效",
-          endpoint
-        );
-        return c.json(errorResponse, 400);
-      }
-
       // 检查端点是否已存在
       const connectionStatus =
         this.xiaozhiConnectionManager.getConnectionStatus();
@@ -502,9 +481,6 @@ export class MCPEndpointApiHandler {
         } else if (error.message.includes("端点必须是非空字符串")) {
           errorCode = "INVALID_ENDPOINT";
           httpStatus = 400;
-        } else if (error.message.includes("不能删除最后一个")) {
-          errorCode = "LAST_ENDPOINT_CANNOT_REMOVE";
-          httpStatus = 400;
         }
       }
 
@@ -519,22 +495,23 @@ export class MCPEndpointApiHandler {
 
   /**
    * 移除接入点
-   * DELETE /api/endpoints/:endpoint
+   * DELETE /api/endpoint/remove
    */
   async removeEndpoint(c: Context): Promise<Response> {
-    try {
-      const endpoint = decodeURIComponent(c.req.param("endpoint"));
-      this.logger.info(`处理接入点移除请求: ${endpoint}`);
+    const body = await c.req.json();
+    const endpoint = body.endpoint;
+    this.logger.info(`处理接入点移除请求: ${endpoint}`);
 
-      // 验证端点参数
-      if (!endpoint || typeof endpoint !== "string") {
-        const errorResponse = this.createErrorResponse(
-          "INVALID_ENDPOINT",
-          "端点参数无效",
-          endpoint
-        );
-        return c.json(errorResponse, 400);
-      }
+    // 验证端点参数
+    if (!endpoint || typeof endpoint !== "string") {
+      const errorResponse = this.createErrorResponse(
+        "INVALID_ENDPOINT",
+        "端点参数无效",
+        endpoint
+      );
+      return c.json(errorResponse, 400);
+    }
+    try {
 
       // 检查端点是否存在
       const connectionStatus =
@@ -581,7 +558,6 @@ export class MCPEndpointApiHandler {
       return c.json(response);
     } catch (error) {
       this.logger.error("接入点移除失败:", error);
-      const endpoint = c.req.param("endpoint");
       let errorCode = "ENDPOINT_REMOVE_ERROR";
       let httpStatus = 500;
 
@@ -590,9 +566,6 @@ export class MCPEndpointApiHandler {
         if (error.message.includes("不存在")) {
           errorCode = "ENDPOINT_NOT_FOUND";
           httpStatus = 404;
-        } else if (error.message.includes("不能删除最后一个")) {
-          errorCode = "LAST_ENDPOINT_CANNOT_REMOVE";
-          httpStatus = 400;
         } else if (error.message.includes("端点必须是非空字符串")) {
           errorCode = "INVALID_ENDPOINT";
           httpStatus = 400;

@@ -793,26 +793,6 @@ describe("MCPEndpointApiHandler", () => {
       expect(responseData.error.code).toBe("INVALID_ENDPOINT");
     });
 
-    it("应该返回400当不能删除最后一个端点时", async () => {
-      // Arrange
-      const endpoint = "ws://localhost:3000";
-      mockContext.req.param.mockReturnValue(endpoint);
-      mockConnectionManager.getConnectionStatus.mockReturnValue([
-        mockEndpointStatus,
-      ]);
-      mockConnectionManager.removeEndpoint.mockRejectedValue(
-        new Error("不能删除最后一个端点")
-      );
-
-      // Act
-      const response = await handler.removeEndpoint(mockContext);
-
-      // Assert
-      expect(response.status).toBe(400);
-      const responseData = await response.json();
-      expect(responseData.error.code).toBe("LAST_ENDPOINT_CANNOT_REMOVE");
-    });
-
     it("应该返回404当端点不存在错误时", async () => {
       // Arrange
       const endpoint = "ws://nonexistent:3000";
