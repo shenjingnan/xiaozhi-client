@@ -113,7 +113,8 @@
       "braces": ">=3.0.3",
       "micromatch": ">=4.0.8",
       "axios": ">=1.12.0",
-      "@conventional-changelog/git-client": ">=2.0.0"
+      "@conventional-changelog/git-client": ">=2.0.0",
+      "vite@>=7.1.0 <=7.1.10": ">=7.1.11"
     }
   },
   "packageManager": "pnpm@10.13.1"
