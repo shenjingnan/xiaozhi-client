@@ -550,7 +550,7 @@ export class MCPEndpointApiHandler {
 
   /**
    * 移除接入点
-   * DELETE /api/endpoint/remove
+   * POST /api/endpoint/remove
    */
   async removeEndpoint(c: Context): Promise<Response> {
     let body: { endpoint: string };

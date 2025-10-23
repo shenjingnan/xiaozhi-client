@@ -803,7 +803,7 @@ export class ApiClient {
    */
   async removeEndpoint(endpoint: string): Promise<void> {
     const response: ApiResponse = await this.request("/api/endpoint/remove", {
-      method: "DELETE",
+      method: "POST",
       body: JSON.stringify({ endpoint }),
     });
     if (!response.success) {

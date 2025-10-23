@@ -1885,7 +1885,7 @@ describe("WebServer", () => {
       const response = await fetch(
         `http://localhost:${currentPort}/api/endpoint/remove`,
         {
-          method: "DELETE",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(endpointRequest),
         }
