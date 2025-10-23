@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.2](https://github.com/shenjingnan/xiaozhi-client/compare/v1.8.1...v1.8.2) (2025-10-23)
+
+### Bug Fixes
+
+* **deps:** 修复 Vite 安全漏洞 CVE-2025-62522 ([#374](https://github.com/shenjingnan/xiaozhi-client/issues/374)) ([cb6fd6b](https://github.com/shenjingnan/xiaozhi-client/commit/cb6fd6b2a0d0a463ea4e8a611d93cbecb56186c0))
+* **security:** 修复 Hono 框架未授权访问安全漏洞 (CVE-2025-62522) ([#376](https://github.com/shenjingnan/xiaozhi-client/issues/376)) ([0181be9](https://github.com/shenjingnan/xiaozhi-client/commit/0181be977778ffa5e447b073e0b10a2a026b0675))
+
 ## [1.8.1](https://github.com/shenjingnan/xiaozhi-client/compare/v1.8.0...v1.8.1) (2025-10-19)
 
 ### Features
