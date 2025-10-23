@@ -87,25 +87,30 @@ export class MCPEndpointApiHandler {
   }
 
   /**
-   * 获取接入点状态
-   * POST /api/endpoint/status
+   * 从请求体中解析端点参数
+   * @param c Hono 上下文
+   * @param errorErrorCode 错误码，用于区分不同操作的错误
+   * @returns 解析结果，成功时包含 endpoint，失败时包含可直接返回的 Response
    */
-  async getEndpointStatus(c: Context): Promise<Response> {
+  private async parseEndpointFromBody(
+    c: Context,
+    errorErrorCode: string
+  ): Promise<
+    { ok: true; endpoint: string } | { ok: false; response: Response }
+  > {
     let body: { endpoint: string };
     try {
       body = await c.req.json();
     } catch (error) {
       this.logger.error("JSON解析失败:", error);
       const errorResponse = this.createErrorResponse(
-        "ENDPOINT_STATUS_READ_ERROR",
+        errorErrorCode,
         error instanceof Error ? error.message : "JSON解析失败"
       );
-      return c.json(errorResponse, 500);
+      return { ok: false, response: c.json(errorResponse, 500) };
     }
 
     const endpoint = body.endpoint;
-
-    this.logger.debug(`处理获取接入点状态请求: ${endpoint}`);
 
     // 验证端点参数
     if (!endpoint || typeof endpoint !== "string") {
@@ -114,8 +119,27 @@ export class MCPEndpointApiHandler {
         "端点参数无效",
         endpoint
       );
-      return c.json(errorResponse, 400);
+      return { ok: false, response: c.json(errorResponse, 400) };
     }
+
+    return { ok: true, endpoint };
+  }
+
+  /**
+   * 获取接入点状态
+   * POST /api/endpoint/status
+   */
+  async getEndpointStatus(c: Context): Promise<Response> {
+    const parseResult = await this.parseEndpointFromBody(
+      c,
+      "ENDPOINT_STATUS_READ_ERROR"
+    );
+    if (!parseResult.ok) {
+      return parseResult.response;
+    }
+
+    const endpoint = parseResult.endpoint;
+    this.logger.debug(`处理获取接入点状态请求: ${endpoint}`);
     try {
       // 获取连接状态
       const connectionStatus =
@@ -151,30 +175,16 @@ export class MCPEndpointApiHandler {
    * POST /api/endpoint/connect
    */
   async connectEndpoint(c: Context): Promise<Response> {
-    let body: { endpoint: string };
-    try {
-      body = await c.req.json();
-    } catch (error) {
-      this.logger.error("JSON解析失败:", error);
-      const errorResponse = this.createErrorResponse(
-        "ENDPOINT_CONNECT_ERROR",
-        error instanceof Error ? error.message : "JSON解析失败"
-      );
-      return c.json(errorResponse, 500);
+    const parseResult = await this.parseEndpointFromBody(
+      c,
+      "ENDPOINT_CONNECT_ERROR"
+    );
+    if (!parseResult.ok) {
+      return parseResult.response;
     }
 
-    const endpoint = body.endpoint;
+    const endpoint = parseResult.endpoint;
     this.logger.info(`处理接入点连接请求: ${endpoint}`);
-
-    // 验证端点参数
-    if (!endpoint || typeof endpoint !== "string") {
-      const errorResponse = this.createErrorResponse(
-        "INVALID_ENDPOINT",
-        "端点参数无效",
-        endpoint
-      );
-      return c.json(errorResponse, 400);
-    }
     try {
       // 检查端点是否存在
       const connectionStatus =
@@ -250,30 +260,16 @@ export class MCPEndpointApiHandler {
    * POST /api/endpoint/disconnect
    */
   async disconnectEndpoint(c: Context): Promise<Response> {
-    let body: { endpoint: string };
-    try {
-      body = await c.req.json();
-    } catch (error) {
-      this.logger.error("JSON解析失败:", error);
-      const errorResponse = this.createErrorResponse(
-        "ENDPOINT_DISCONNECT_ERROR",
-        error instanceof Error ? error.message : "JSON解析失败"
-      );
-      return c.json(errorResponse, 500);
+    const parseResult = await this.parseEndpointFromBody(
+      c,
+      "ENDPOINT_DISCONNECT_ERROR"
+    );
+    if (!parseResult.ok) {
+      return parseResult.response;
     }
 
-    const endpoint = body.endpoint;
+    const endpoint = parseResult.endpoint;
     this.logger.info(`处理接入点断开请求: ${endpoint}`);
-
-    // 验证端点参数
-    if (!endpoint || typeof endpoint !== "string") {
-      const errorResponse = this.createErrorResponse(
-        "INVALID_ENDPOINT",
-        "端点参数无效",
-        endpoint
-      );
-      return c.json(errorResponse, 400);
-    }
     try {
       // 检查端点是否存在且已连接
       const connectionStatus =
@@ -351,30 +347,16 @@ export class MCPEndpointApiHandler {
    * POST /api/endpoint/reconnect
    */
   async reconnectEndpoint(c: Context): Promise<Response> {
-    let body: { endpoint: string };
-    try {
-      body = await c.req.json();
-    } catch (error) {
-      this.logger.error("JSON解析失败:", error);
-      const errorResponse = this.createErrorResponse(
-        "ENDPOINT_RECONNECT_ERROR",
-        error instanceof Error ? error.message : "JSON解析失败"
-      );
-      return c.json(errorResponse, 500);
+    const parseResult = await this.parseEndpointFromBody(
+      c,
+      "ENDPOINT_RECONNECT_ERROR"
+    );
+    if (!parseResult.ok) {
+      return parseResult.response;
     }
 
-    const endpoint = body.endpoint;
+    const endpoint = parseResult.endpoint;
     this.logger.info(`处理接入点重连请求: ${endpoint}`);
-
-    // 验证端点参数
-    if (!endpoint || typeof endpoint !== "string") {
-      const errorResponse = this.createErrorResponse(
-        "INVALID_ENDPOINT",
-        "端点参数无效",
-        endpoint
-      );
-      return c.json(errorResponse, 400);
-    }
 
     try {
       // 检查端点是否存在
@@ -447,29 +429,15 @@ export class MCPEndpointApiHandler {
    * POST /api/endpoint/add
    */
   async addEndpoint(c: Context): Promise<Response> {
-    let body: { endpoint: string };
-    try {
-      body = await c.req.json();
-    } catch (error) {
-      this.logger.error("JSON解析失败:", error);
-      const errorResponse = this.createErrorResponse(
-        "ENDPOINT_ADD_ERROR",
-        error instanceof Error ? error.message : "JSON解析失败"
-      );
-      return c.json(errorResponse, 500);
+    const parseResult = await this.parseEndpointFromBody(
+      c,
+      "ENDPOINT_ADD_ERROR"
+    );
+    if (!parseResult.ok) {
+      return parseResult.response;
     }
 
-    const endpoint = body.endpoint;
-
-    // 验证端点参数
-    if (!endpoint || typeof endpoint !== "string") {
-      const errorResponse = this.createErrorResponse(
-        "INVALID_ENDPOINT",
-        "端点参数无效",
-        endpoint
-      );
-      return c.json(errorResponse, 400);
-    }
+    const endpoint = parseResult.endpoint;
     try {
       // 检查端点是否已存在
       const connectionStatus =
@@ -553,30 +521,16 @@ export class MCPEndpointApiHandler {
    * POST /api/endpoint/remove
    */
   async removeEndpoint(c: Context): Promise<Response> {
-    let body: { endpoint: string };
-    try {
-      body = await c.req.json();
-    } catch (error) {
-      this.logger.error("JSON解析失败:", error);
-      const errorResponse = this.createErrorResponse(
-        "ENDPOINT_REMOVE_ERROR",
-        error instanceof Error ? error.message : "JSON解析失败"
-      );
-      return c.json(errorResponse, 500);
+    const parseResult = await this.parseEndpointFromBody(
+      c,
+      "ENDPOINT_REMOVE_ERROR"
+    );
+    if (!parseResult.ok) {
+      return parseResult.response;
     }
 
-    const endpoint = body.endpoint;
+    const endpoint = parseResult.endpoint;
     this.logger.info(`处理接入点移除请求: ${endpoint}`);
-
-    // 验证端点参数
-    if (!endpoint || typeof endpoint !== "string") {
-      const errorResponse = this.createErrorResponse(
-        "INVALID_ENDPOINT",
-        "端点参数无效",
-        endpoint
-      );
-      return c.json(errorResponse, 400);
-    }
     try {
       // 检查端点是否存在
       const connectionStatus =
