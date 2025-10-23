@@ -716,9 +716,7 @@ export class WebServer {
     );
     // 新增的接入点管理路由
     this.app?.post("/api/endpoint/add", (c) => this.handleEndpointAdd(c));
-    this.app?.post("/api/endpoint/remove", (c) =>
-      this.handleEndpointRemove(c)
-    );
+    this.app?.post("/api/endpoint/remove", (c) => this.handleEndpointRemove(c));
 
     // MCP 服务器管理路由
     this.app?.post(
