@@ -746,10 +746,10 @@ export class ApiClient {
    * 连接接入点
    */
   async connectEndpoint(endpoint: string): Promise<void> {
-    const response: ApiResponse = await this.request(
-      `/api/endpoints/${encodeURIComponent(endpoint)}/connect`,
-      { method: "POST" }
-    );
+    const response: ApiResponse = await this.request("/api/endpoint/connect", {
+      method: "POST",
+      body: JSON.stringify({ endpoint }),
+    });
     if (!response.success) {
       throw new Error(response.message || "连接接入点失败");
     }
@@ -760,8 +760,8 @@ export class ApiClient {
    */
   async disconnectEndpoint(endpoint: string): Promise<void> {
     const response: ApiResponse = await this.request(
-      `/api/endpoints/${encodeURIComponent(endpoint)}/disconnect`,
-      { method: "POST" }
+      "/api/endpoint/disconnect",
+      { method: "POST", body: JSON.stringify({ endpoint }) }
     );
     if (!response.success) {
       throw new Error(response.message || "断开接入点失败");
@@ -773,8 +773,8 @@ export class ApiClient {
    */
   async reconnectEndpoint(endpoint: string): Promise<void> {
     const response: ApiResponse = await this.request(
-      `/api/endpoints/${encodeURIComponent(endpoint)}/reconnect`,
-      { method: "POST" }
+      "/api/endpoint/reconnect",
+      { method: "POST", body: JSON.stringify({ endpoint }) }
     );
     if (!response.success) {
       throw new Error(response.message || "重连接入点失败");
@@ -786,7 +786,7 @@ export class ApiClient {
    */
   async addEndpoint(endpoint: string): Promise<EndpointStatusResponse> {
     const response: ApiResponse<EndpointStatusResponse> = await this.request(
-      "/api/endpoints/add",
+      "/api/endpoint/add",
       {
         method: "POST",
         body: JSON.stringify({ endpoint }),
@@ -802,10 +802,10 @@ export class ApiClient {
    * 移除接入点
    */
   async removeEndpoint(endpoint: string): Promise<void> {
-    const response: ApiResponse = await this.request(
-      `/api/endpoints/${encodeURIComponent(endpoint)}`,
-      { method: "DELETE" }
-    );
+    const response: ApiResponse = await this.request("/api/endpoint/remove", {
+      method: "POST",
+      body: JSON.stringify({ endpoint }),
+    });
     if (!response.success) {
       throw new Error(response.message || "移除接入点失败");
     }

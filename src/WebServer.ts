@@ -704,23 +704,19 @@ export class WebServer {
     );
 
     // MCP 端点管理相关路由 - 动态处理
-    this.app?.get("/api/endpoints/:endpoint/status", (c) =>
-      this.handleEndpointStatus(c)
-    );
-    this.app?.post("/api/endpoints/:endpoint/connect", (c) =>
+    this.app?.post("/api/endpoint/status", (c) => this.handleEndpointStatus(c));
+    this.app?.post("/api/endpoint/connect", (c) =>
       this.handleEndpointConnect(c)
     );
-    this.app?.post("/api/endpoints/:endpoint/disconnect", (c) =>
+    this.app?.post("/api/endpoint/disconnect", (c) =>
       this.handleEndpointDisconnect(c)
     );
-    this.app?.post("/api/endpoints/:endpoint/reconnect", (c) =>
+    this.app?.post("/api/endpoint/reconnect", (c) =>
       this.handleEndpointReconnect(c)
     );
     // 新增的接入点管理路由
-    this.app?.post("/api/endpoints/add", (c) => this.handleEndpointAdd(c));
-    this.app?.delete("/api/endpoints/:endpoint", (c) =>
-      this.handleEndpointRemove(c)
-    );
+    this.app?.post("/api/endpoint/add", (c) => this.handleEndpointAdd(c));
+    this.app?.post("/api/endpoint/remove", (c) => this.handleEndpointRemove(c));
 
     // MCP 服务器管理路由
     this.app?.post(

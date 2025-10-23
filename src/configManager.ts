@@ -407,9 +407,6 @@ export class ConfigManager {
     if (typeof configObj.mcpEndpoint === "string") {
       // 空字符串是允许的，getMcpEndpoints 会返回空数组
     } else if (Array.isArray(configObj.mcpEndpoint)) {
-      if (configObj.mcpEndpoint.length === 0) {
-        throw new Error("配置文件格式错误：mcpEndpoint 数组不能为空");
-      }
       for (const endpoint of configObj.mcpEndpoint) {
         if (typeof endpoint !== "string" || endpoint.trim() === "") {
           throw new Error(
@@ -524,9 +521,6 @@ export class ConfigManager {
    */
   public updateMcpEndpoint(endpoint: string | string[]): void {
     if (Array.isArray(endpoint)) {
-      if (endpoint.length === 0) {
-        throw new Error("MCP 端点数组不能为空");
-      }
       for (const ep of endpoint) {
         if (!ep || typeof ep !== "string") {
           throw new Error("MCP 端点数组中的每个元素必须是非空字符串");
@@ -575,11 +569,6 @@ export class ConfigManager {
     const index = currentEndpoints.indexOf(endpoint);
     if (index === -1) {
       throw new Error(`MCP 端点 ${endpoint} 不存在`);
-    }
-
-    // 不允许删除最后一个端点
-    if (currentEndpoints.length === 1) {
-      throw new Error("不能删除最后一个 MCP 端点");
     }
 
     const newEndpoints = currentEndpoints.filter((ep) => ep !== endpoint);

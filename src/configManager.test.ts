@@ -1995,18 +1995,6 @@ describe("ConfigManager", () => {
         expect(() => configManager.getConfig()).not.toThrow();
       });
 
-      it("应该拒绝空的 mcpEndpoint 数组", () => {
-        const invalidConfig = {
-          mcpEndpoint: [],
-          mcpServers: {},
-        };
-        mockReadFileSync.mockReturnValue(JSON.stringify(invalidConfig));
-
-        expect(() => configManager.getConfig()).toThrow(
-          "配置文件格式错误：mcpEndpoint 数组不能为空"
-        );
-      });
-
       it("应该拒绝包含空字符串的 mcpEndpoint 数组", () => {
         const invalidConfig = {
           mcpEndpoint: [
@@ -2126,12 +2114,6 @@ describe("ConfigManager", () => {
         );
 
         expect(writtenConfig.mcpEndpoint).toEqual(newEndpoints);
-      });
-
-      it("应该拒绝空数组", () => {
-        expect(() => configManager.updateMcpEndpoint([])).toThrow(
-          "MCP 端点数组不能为空"
-        );
       });
 
       it("应该拒绝数组中的无效元素", () => {
