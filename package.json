@@ -114,7 +114,8 @@
       "micromatch": ">=4.0.8",
       "axios": ">=1.12.0",
       "@conventional-changelog/git-client": ">=2.0.0",
-      "vite@>=7.1.0 <=7.1.10": ">=7.1.11"
+      "vite@>=7.1.0 <=7.1.10": ">=7.1.11",
+      "hono@>=1.1.0 <4.10.2": ">=4.10.2"
     }
   },
   "packageManager": "pnpm@10.13.1"

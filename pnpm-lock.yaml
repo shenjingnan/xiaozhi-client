@@ -11,6 +11,7 @@ overrides:
   axios: '>=1.12.0'
   '@conventional-changelog/git-client': '>=2.0.0'
   vite@>=7.1.0 <=7.1.10: '>=7.1.11'
+  hono@>=1.1.0 <4.10.2: '>=4.10.2'
 
 importers:
 
@@ -18,7 +19,7 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^1.17.1
-        version: 1.19.5(hono@4.9.11)
+        version: 1.19.5(hono@4.10.2)
       '@modelcontextprotocol/sdk':
         specifier: ^1.17.4
         version: 1.20.0
@@ -56,8 +57,8 @@ importers:
         specifier: ^5.1.0
         version: 5.1.0
       hono:
-        specifier: ^4.9.7
-        version: 4.9.11
+        specifier: '>=4.10.2'
+        version: 4.10.2
       json5:
         specifier: ^2.2.3
         version: 2.2.3
@@ -1273,7 +1274,7 @@ packages:
     resolution: {integrity: sha512-iBuhh+uaaggeAuf+TftcjZyWh2GEgZcVGXkNtskLVoWaXhnJtC5HLHrU8W1KHDoucqO1MswwglmkWLFyiDn4WQ==}
     engines: {node: '>=18.14.1'}
     peerDependencies:
-      hono: ^4
+      hono: '>=4.10.2'
 
   '@hutson/parse-repository-url@5.0.0':
     resolution: {integrity: sha512-e5+YUKENATs1JgYHMzTr2MW/NDcXGfYFAuOQU8gJgF/kEh4EqKgfGrfLI67bMD4tbhZVlkigz/9YYwWcbOFthg==}
@@ -4057,8 +4058,8 @@ packages:
     resolution: {integrity: sha512-NQO+lgVUCtHxZ792FodgW0zflK+ozS9X9dwGp9XvvmPlH7pyxd588cn24TD3rmPm/N0AIRXF10Otah8yKqGw4w==}
     engines: {node: '>=12'}
 
-  hono@4.9.11:
-    resolution: {integrity: sha512-MyJ4xop3boTyXl8bJBh4i20AAZTLM3AXUJphyrUb0CpgTKYb1N703z53XiKUKchGUpcPqiiYkiLOXA3kqK3icA==}
+  hono@4.10.2:
+    resolution: {integrity: sha512-p6fyzl+mQo6uhESLxbF5WlBOAJMDh36PljwlKtP5V1v09NxlqGru3ShK+4wKhSuhuYf8qxMmrivHOa/M7q0sMg==}
     engines: {node: '>=16.9.0'}
 
   hosted-git-info@7.0.2:
@@ -8047,9 +8048,9 @@ snapshots:
 
   '@floating-ui/utils@0.2.10': {}
 
-  '@hono/node-server@1.19.5(hono@4.9.11)':
+  '@hono/node-server@1.19.5(hono@4.10.2)':
     dependencies:
-      hono: 4.9.11
+      hono: 4.10.2
 
   '@hutson/parse-repository-url@5.0.0': {}
 
@@ -11515,7 +11516,7 @@ snapshots:
 
   hex-rgb@5.0.0: {}
 
-  hono@4.9.11: {}
+  hono@4.10.2: {}
 
   hosted-git-info@7.0.2:
     dependencies:
