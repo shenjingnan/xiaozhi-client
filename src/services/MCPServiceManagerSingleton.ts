@@ -37,10 +37,7 @@ let instanceId: string | null = null;
  * 创建 MCPServiceManager 实例（私有函数）
  */
 async function createInstance(): Promise<MCPServiceManager> {
-  console.log("🚀 正在初始化 MCPServiceManager 单例...");
-
   const manager = new MCPServiceManager();
-
   return manager;
 }
 
@@ -76,7 +73,6 @@ async function getInstance(): Promise<MCPServiceManager> {
     instanceId = `mcp-manager-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     lastError = null;
 
-    console.log(`✅ MCPServiceManager 单例初始化成功，实例ID: ${instanceId}`);
     return instance;
   } catch (error) {
     state = SingletonState.FAILED;

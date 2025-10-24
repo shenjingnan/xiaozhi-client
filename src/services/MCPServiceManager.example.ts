@@ -15,8 +15,6 @@ async function main() {
   const manager = new MCPServiceManager();
 
   try {
-    console.log("📡 正在启动所有 MCP 服务...");
-
     // 启动所有服务
     await manager.startAllServices();
     console.log("✅ 所有服务启动成功！");

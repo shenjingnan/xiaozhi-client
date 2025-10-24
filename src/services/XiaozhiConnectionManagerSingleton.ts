@@ -52,8 +52,6 @@ let instanceId: string | null = null;
 async function createInstance(
   options?: ConnectionOptionsType
 ): Promise<ConnectionManagerType> {
-  console.log("🚀 正在初始化 IndependentXiaozhiConnectionManager 单例...");
-
   // 检查并警告废弃的配置项
   if (options) {
     const deprecatedOptions = [
@@ -119,9 +117,6 @@ async function getInstance(
     instanceId = `xiaozhi-connection-manager-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     lastError = null;
 
-    console.log(
-      `✅ IndependentXiaozhiConnectionManager 单例初始化成功，实例ID: ${instanceId}`
-    );
     return instance;
   } catch (error) {
     state = SingletonState.FAILED;
@@ -143,13 +138,9 @@ async function getInstance(
  */
 async function cleanup(): Promise<void> {
   if (state === SingletonState.CLEANUP) {
-    console.log(
-      "⚠️  IndependentXiaozhiConnectionManager 单例已在清理中，跳过重复清理"
-    );
     return;
   }
 
-  console.log("🧹 正在清理 IndependentXiaozhiConnectionManager 单例资源...");
   state = SingletonState.CLEANUP;
 
   try {
@@ -174,7 +165,6 @@ async function cleanup(): Promise<void> {
     lastError = null;
     instanceId = null;
 
-    console.log("✅ IndependentXiaozhiConnectionManager 单例资源清理完成");
   } catch (error) {
     console.error(
       "❌ IndependentXiaozhiConnectionManager 单例清理失败:",
@@ -193,8 +183,6 @@ async function cleanup(): Promise<void> {
  * 主要用于错误恢复和测试场景
  */
 function reset(): void {
-  console.log("🔄 重置 IndependentXiaozhiConnectionManager 单例状态...");
-
   // 清理定时器（如果有）
   if (initPromise) {
     initPromise = null;
@@ -205,8 +193,6 @@ function reset(): void {
   state = SingletonState.NOT_INITIALIZED;
   lastError = null;
   instanceId = null;
-
-  console.log("✅ IndependentXiaozhiConnectionManager 单例状态已重置");
 }
 
 /**
@@ -243,8 +229,6 @@ function getStatus(): SingletonStatus {
 async function forceReinitialize(
   options?: ConnectionOptionsType
 ): Promise<ConnectionManagerType> {
-  console.log("🔄 强制重新初始化 IndependentXiaozhiConnectionManager 单例...");
-
   await cleanup();
   return getInstance(options);
 }
@@ -302,9 +286,6 @@ export default XiaozhiConnectionManagerSingleton;
 // 进程退出时自动清理资源
 process.on("exit", () => {
   if (XiaozhiConnectionManagerSingleton.isInitialized()) {
-    console.log(
-      "🔄 进程退出，正在清理 IndependentXiaozhiConnectionManager 单例..."
-    );
     // 注意：这里不能使用 await，因为 exit 事件是同步的
     XiaozhiConnectionManagerSingleton.reset();
   }

@@ -133,7 +133,7 @@ export class HeartbeatHandler {
   startHeartbeatMonitoring(): NodeJS.Timeout {
     const MONITOR_INTERVAL = 10000; // 10 seconds
 
-    this.logger.info("启动心跳监控");
+    this.logger.debug("启动心跳监控");
 
     return setInterval(() => {
       this.checkHeartbeatTimeout();

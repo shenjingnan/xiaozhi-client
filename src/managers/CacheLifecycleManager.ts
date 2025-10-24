@@ -65,7 +65,7 @@ export class CacheLifecycleManager {
       });
     }, DEFAULT_CONFIG.CLEANUP_INTERVAL);
 
-    this.logger.info(
+    this.logger.debug(
       `[CacheLifecycle] 启动自动清理定时器，间隔: ${DEFAULT_CONFIG.CLEANUP_INTERVAL}ms`
     );
   }

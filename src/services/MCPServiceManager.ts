@@ -118,7 +118,7 @@ export class MCPServiceManager {
     tools: Tool[];
     connectionTime: Date;
   }): Promise<void> {
-    this.logger.info(`服务 ${data.serviceName} 连接成功，开始工具同步`);
+    this.logger.debug(`服务 ${data.serviceName} 连接成功，开始工具同步`);
 
     try {
       // 获取最新的工具列表
@@ -258,12 +258,12 @@ export class MCPServiceManager {
    * 启动所有 MCP 服务
    */
   async startAllServices(): Promise<void> {
-    this.logger.info("[MCPManager] 正在启动所有 MCP 服务...");
+    this.logger.debug("[MCPManager] 正在启动所有 MCP 服务...");
 
     // 初始化 CustomMCP 处理器
     try {
       this.customMCPHandler.initialize();
-      this.logger.info("[MCPManager] CustomMCP 处理器初始化完成");
+      this.logger.debug("[MCPManager] CustomMCP 处理器初始化完成");
     } catch (error) {
       this.logger.error("[MCPManager] CustomMCP 处理器初始化失败:", error);
       // CustomMCP 初始化失败不应该阻止标准 MCP 服务启动
@@ -289,7 +289,7 @@ export class MCPServiceManager {
    * 启动单个 MCP 服务
    */
   async startService(serviceName: string): Promise<void> {
-    this.logger.info(`[MCPManager] 启动 MCP 服务: ${serviceName}`);
+    this.logger.debug(`[MCPManager] 启动 MCP 服务: ${serviceName}`);
 
     const config = this.configs[serviceName];
     if (!config) {
@@ -319,7 +319,7 @@ export class MCPServiceManager {
       // 事件监听器会自动触发工具同步和CustomMCPHandler刷新
 
       const tools = service.getTools();
-      this.logger.info(
+      this.logger.debug(
         `[MCPManager] ${serviceName} 服务启动成功，加载了 ${tools.length} 个工具:`,
         tools.map((t) => t.name).join(", ")
       );
@@ -1033,9 +1033,9 @@ export class MCPServiceManager {
    */
   private async refreshCustomMCPHandler(): Promise<void> {
     try {
-      this.logger.info("重新初始化CustomMCPHandler");
+      this.logger.debug("重新初始化CustomMCPHandler");
       await this.customMCPHandler.reinitialize();
-      this.logger.info("CustomMCPHandler重新初始化完成");
+      this.logger.debug("CustomMCPHandler重新初始化完成");
     } catch (error) {
       this.logger.error("CustomMCPHandler重新初始化失败:", error);
       throw error;
@@ -1164,7 +1164,7 @@ export class MCPServiceManager {
 
     // 存储增强后的配置
     this.configs[serviceName] = enhancedConfig;
-    this.logger.info(`[MCPManager] 已添加服务配置: ${serviceName}`);
+    this.logger.debug(`[MCPManager] 已添加服务配置: ${serviceName}`);
   }
 
   /**
@@ -1176,7 +1176,7 @@ export class MCPServiceManager {
 
     // 存储增强后的配置
     this.configs[name] = enhancedConfig;
-    this.logger.info(`[MCPManager] 已更新并增强服务配置: ${name}`);
+    this.logger.debug(`[MCPManager] 已更新并增强服务配置: ${name}`);
   }
 
   /**
@@ -1184,7 +1184,7 @@ export class MCPServiceManager {
    */
   removeServiceConfig(name: string): void {
     delete this.configs[name];
-    this.logger.info(`[MCPManager] 已移除服务配置: ${name}`);
+    this.logger.debug(`[MCPManager] 已移除服务配置: ${name}`);
   }
 
   /**
@@ -1267,17 +1267,17 @@ export class MCPServiceManager {
             return current && current.description !== updated.description;
           });
 
-          this.logger.info(
+          this.logger.debug(
             `[MCPManager] 已同步服务 ${serviceName} 的工具配置:`
           );
           if (addedTools.length > 0) {
-            this.logger.info(`  - 新增工具: ${addedTools.join(", ")}`);
+            this.logger.debug(`  - 新增工具: ${addedTools.join(", ")}`);
           }
           if (updatedTools.length > 0) {
-            this.logger.info(`  - 更新工具: ${updatedTools.join(", ")}`);
+            this.logger.debug(`  - 更新工具: ${updatedTools.join(", ")}`);
           }
           if (removedTools.length > 0) {
-            this.logger.info(`  - 移除工具: ${removedTools.join(", ")}`);
+            this.logger.debug(`  - 移除工具: ${removedTools.join(", ")}`);
           }
         }
       }

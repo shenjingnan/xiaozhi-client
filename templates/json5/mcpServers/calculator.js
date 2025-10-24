@@ -81,7 +81,7 @@ server.tool(
 
 // Start the server if this file is run directly
 async function main() {
-	logger.info("Starting MCP Calculator server with SDK");
+
 
 	const transport = new StdioServerTransport();
 	await server.connect(transport);
