@@ -164,7 +164,6 @@ async function cleanup(): Promise<void> {
     state = SingletonState.NOT_INITIALIZED;
     lastError = null;
     instanceId = null;
-
   } catch (error) {
     console.error(
       "❌ IndependentXiaozhiConnectionManager 单例清理失败:",

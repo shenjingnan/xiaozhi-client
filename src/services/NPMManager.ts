@@ -68,7 +68,6 @@ export class NPMManager {
         const duration = Date.now() - startTime;
 
         if (code === 0) {
-
           // 发射安装完成事件
           this.eventBus.emitEvent("npm:install:completed", {
             version,
