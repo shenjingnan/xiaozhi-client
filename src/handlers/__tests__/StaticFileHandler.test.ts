@@ -115,7 +115,7 @@ describe("StaticFileHandler", () => {
 
       staticFileHandler = new StaticFileHandler();
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         expect.stringContaining("静态文件服务路径:")
       );
     });

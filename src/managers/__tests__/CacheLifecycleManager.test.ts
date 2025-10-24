@@ -106,7 +106,7 @@ describe("CacheLifecycleManager", () => {
     it("应该启动自动清理定时器", () => {
       manager.startAutoCleanup();
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         expect.stringContaining("启动自动清理定时器")
       );
     });
@@ -118,7 +118,7 @@ describe("CacheLifecycleManager", () => {
       expect(mockLogger.warn).toHaveBeenCalledWith(
         "[CacheLifecycle] 自动清理定时器已经在运行"
       );
-      expect(mockLogger.info).toHaveBeenCalledTimes(1);
+      expect(mockLogger.debug).toHaveBeenCalledTimes(1);
     });
 
     it("应该停止自动清理定时器", () => {
