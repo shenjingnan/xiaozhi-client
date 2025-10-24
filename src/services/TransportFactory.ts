@@ -34,7 +34,7 @@ function getLogger(): Logger {
  */
 export function createTransport(config: MCPServiceConfig): any {
   const logger = getLogger();
-  logger.info(
+  logger.debug(
     `[TransportFactory] 创建 ${config.type} transport for ${config.name}`
   );
 

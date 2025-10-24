@@ -40,7 +40,6 @@ export class NPMManager {
     return new Promise((resolve, reject) => {
       npmProcess.stdout.on("data", (data) => {
         const message = data.toString();
-        console.log(message);
 
         // 发射日志事件
         this.eventBus.emitEvent("npm:install:log", {
@@ -54,7 +53,6 @@ export class NPMManager {
 
       npmProcess.stderr.on("data", (data) => {
         const message = data.toString();
-        console.log(message);
 
         // 发射日志事件
         this.eventBus.emitEvent("npm:install:log", {
@@ -70,8 +68,6 @@ export class NPMManager {
         const duration = Date.now() - startTime;
 
         if (code === 0) {
-          console.log("安装完成！");
-
           // 发射安装完成事件
           this.eventBus.emitEvent("npm:install:completed", {
             version,

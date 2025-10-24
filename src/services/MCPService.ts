@@ -305,7 +305,7 @@ export class MCPService {
   private async attemptConnection(): Promise<void> {
     this.connectionState = ConnectionState.CONNECTING;
     this.logWithTag(
-      "info",
+      "debug",
       `正在连接 MCP 服务: ${this.config.name} (尝试 ${
         this.reconnectState.attempts + 1
       }/${this.reconnectOptions.maxAttempts})`
@@ -575,7 +575,7 @@ export class MCPService {
         this.tools.set(tool.name, tool);
       }
 
-      this.logger.info(
+      this.logger.debug(
         `${this.config.name} 服务加载了 ${tools.length} 个工具: ${tools
           .map((t) => t.name)
           .join(", ")}`
@@ -772,7 +772,7 @@ export class MCPService {
       return;
     }
 
-    this.logger.info(
+    this.logger.debug(
       `${this.config.name} 启动ping监控，间隔: ${this.pingOptions.interval}ms`
     );
 

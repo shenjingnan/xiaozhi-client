@@ -128,7 +128,7 @@ describe("MCPServiceManager", () => {
 
       await emptyManager.startAllServices();
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         "[MCPManager] 正在启动所有 MCP 服务..."
       );
       expect(mockLogger.warn).toHaveBeenCalledWith(
@@ -143,7 +143,7 @@ describe("MCPServiceManager", () => {
 
       await manager.startAllServices();
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         "[MCPManager] 正在启动所有 MCP 服务..."
       );
       expect(mockLogger.info).toHaveBeenCalledWith(
@@ -178,7 +178,7 @@ describe("MCPServiceManager", () => {
         })
       );
       expect(mockMCPService.connect).toHaveBeenCalled();
-      expect(mockLogger.info).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         "[MCPManager] 启动 MCP 服务: calculator"
       );
     });
@@ -390,7 +390,7 @@ describe("MCPServiceManager", () => {
 
       manager.addServiceConfig("new-service", config);
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         "[MCPManager] 已添加服务配置: new-service"
       );
     });
@@ -398,7 +398,7 @@ describe("MCPServiceManager", () => {
     it("应该移除服务配置", () => {
       manager.removeServiceConfig("calculator");
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         "[MCPManager] 已移除服务配置: calculator"
       );
     });

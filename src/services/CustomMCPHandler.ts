@@ -143,7 +143,7 @@ export class CustomMCPHandler {
    */
   public async reinitialize(): Promise<void> {
     try {
-      this.logger.info("[CustomMCP] 开始重新初始化处理器");
+      this.logger.debug("[CustomMCP] 开始重新初始化处理器");
 
       // 清理现有工具
       this.tools.clear();
@@ -152,12 +152,12 @@ export class CustomMCPHandler {
       const customTools = configManager.getCustomMCPTools();
       for (const tool of customTools) {
         this.tools.set(tool.name, tool);
-        this.logger.info(
+        this.logger.debug(
           `[CustomMCP] 重新加载工具: ${tool.name} (${tool.handler.type})`
         );
       }
 
-      this.logger.info(
+      this.logger.debug(
         `[CustomMCP] 重新初始化完成，共加载 ${this.tools.size} 个工具`
       );
     } catch (error) {
@@ -172,7 +172,7 @@ export class CustomMCPHandler {
    * @param tools 可选的工具数组，如果提供则使用该数组，否则从配置管理器获取
    */
   public initialize(tools?: CustomMCPTool[]): void {
-    this.logger.info("[CustomMCP] 初始化 CustomMCP 处理器...");
+    this.logger.debug("[CustomMCP] 初始化 CustomMCP 处理器...");
 
     try {
       const customTools = tools || configManager.getCustomMCPTools();
@@ -183,12 +183,12 @@ export class CustomMCPHandler {
       // 加载工具
       for (const tool of customTools) {
         this.tools.set(tool.name, tool);
-        this.logger.info(
+        this.logger.debug(
           `[CustomMCP] 已加载工具: ${tool.name} (${tool.handler.type})`
         );
       }
 
-      this.logger.info(
+      this.logger.debug(
         `[CustomMCP] 初始化完成，共加载 ${this.tools.size} 个工具`
       );
     } catch (error) {
@@ -1755,7 +1755,7 @@ export class CustomMCPHandler {
       });
     }, this.CLEANUP_INTERVAL);
 
-    this.logger.info(
+    this.logger.debug(
       `[CustomMCP] 启动缓存清理定时器，间隔: ${this.CLEANUP_INTERVAL}ms`
     );
   }

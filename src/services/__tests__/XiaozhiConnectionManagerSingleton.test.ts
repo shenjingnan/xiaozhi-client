@@ -73,9 +73,6 @@ describe("XiaozhiConnectionManagerSingleton", () => {
     const instance2 = await XiaozhiConnectionManagerSingleton.getInstance();
 
     expect(instance1).toBe(instance2);
-    expect(logMessages.some((msg) => msg.includes("单例初始化成功"))).toBe(
-      true
-    );
   });
 
   test("应该支持资源清理", async () => {

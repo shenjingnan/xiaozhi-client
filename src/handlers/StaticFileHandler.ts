@@ -55,7 +55,7 @@ export class StaticFileHandler {
         }) || null;
 
       if (this.webPath) {
-        this.logger.info(`静态文件服务路径: ${this.webPath}`);
+        this.logger.debug(`静态文件服务路径: ${this.webPath}`);
       } else {
         this.logger.warn("未找到静态文件目录");
         this.logger.debug("尝试的路径:", possibleWebPaths);

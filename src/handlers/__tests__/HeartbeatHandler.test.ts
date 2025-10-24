@@ -364,7 +364,7 @@ describe("HeartbeatHandler", () => {
 
       const intervalId = heartbeatHandler.startHeartbeatMonitoring();
 
-      expect(mockLogger.info).toHaveBeenCalledWith("启动心跳监控");
+      expect(mockLogger.debug).toHaveBeenCalledWith("启动心跳监控");
       expect(setIntervalSpy).toHaveBeenCalledWith(
         expect.any(Function),
         10000 // 10 seconds
@@ -681,7 +681,7 @@ describe("HeartbeatHandler", () => {
     it("should handle monitoring workflow", () => {
       // Start monitoring
       const intervalId = heartbeatHandler.startHeartbeatMonitoring();
-      expect(mockLogger.info).toHaveBeenCalledWith("启动心跳监控");
+      expect(mockLogger.debug).toHaveBeenCalledWith("启动心跳监控");
 
       // Simulate monitoring cycle
       mockStatusService.getLastHeartbeat.mockReturnValue(1234567890 - 40000);

@@ -108,8 +108,6 @@ export class MCPServer extends EventEmitter {
     }
 
     try {
-      logger.info("启动 MCP 服务器");
-
       // 初始化统一服务器
       await this.initializeUnifiedServer();
 

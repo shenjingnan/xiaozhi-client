@@ -175,7 +175,7 @@ export class MCPCacheManager {
       // 保存缓存
       await this.saveCache(cache);
 
-      this.logger.info(
+      this.logger.debug(
         `[CacheManager] 缓存写入成功: ${serverName}, 工具数量: ${tools.length}`
       );
     } catch (error) {

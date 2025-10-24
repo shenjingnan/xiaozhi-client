@@ -117,7 +117,7 @@ export class MCPRouteHandler {
     // 启动清理任务
     this.startCleanupTask();
 
-    this.logger.info("MCPRouteHandler 初始化完成", {
+    this.logger.debug("MCPRouteHandler 初始化完成", {
       maxClients: this.config.maxClients,
       connectionTimeout: this.config.connectionTimeout,
       heartbeatInterval: this.config.heartbeatInterval,

@@ -79,7 +79,7 @@ export function convertLegacyToNew(
     // 验证转换后的配置
     validateNewConfig(newConfig);
 
-    logger.info(`配置转换成功: ${serviceName} -> ${newConfig.type}`);
+    logger.debug(`配置转换成功: ${serviceName} -> ${newConfig.type}`);
     return newConfig;
   } catch (error) {
     logger.error(`配置转换失败: ${serviceName}`, error);
