@@ -227,7 +227,6 @@ export class WebServer {
       this.logger.info("所有连接初始化完成");
     } catch (error) {
       this.logger.error("连接初始化失败:", error);
-      throw error;
     }
   }
 
@@ -895,12 +894,7 @@ export class WebServer {
     // this.logger.info("================================================");
 
     // 2. 初始化所有连接（配置驱动）
-    try {
-      await this.initializeConnections();
-    } catch (error) {
-      this.logger.error("连接初始化失败，但 Web 服务器继续运行:", error);
-      // 连接失败不影响 Web 服务器启动，用户可以通过界面查看错误信息
-    }
+    await this.initializeConnections();
   }
 
   public stop(): Promise<void> {
