@@ -609,7 +609,10 @@ export class MCPServiceManager {
         );
       });
 
-      this.logger.debug(`[MCPManager] 工具 ${toolName} 调用成功，结果:`, result);
+      this.logger.debug(
+        `[MCPManager] 工具 ${toolName} 调用成功，结果:`,
+        result
+      );
       return result as ToolCallResult;
     } catch (error) {
       // 异步更新工具调用统计（失败调用）
