@@ -129,7 +129,7 @@ export class MCPMessageHandler {
     params: InitializeParams,
     id?: string | number
   ): Promise<MCPResponse> {
-    this.logger.info("处理 initialize 请求", params);
+    this.logger.debug("处理 initialize 请求", params);
 
     // 支持多个协议版本，优先使用客户端请求的版本
     const supportedVersions = ["2024-11-05", "2025-06-18"];
@@ -138,7 +138,7 @@ export class MCPMessageHandler {
       ? clientVersion
       : "2024-11-05";
 
-    this.logger.info(
+    this.logger.debug(
       `协议版本协商: 客户端=${clientVersion}, 服务器响应=${responseVersion}`
     );
 
@@ -165,7 +165,7 @@ export class MCPMessageHandler {
    * @returns null（通知消息不需要响应）
    */
   private async handleInitializedNotification(params?: any): Promise<null> {
-    this.logger.info("收到 initialized 通知，客户端初始化完成", params);
+    this.logger.debug("收到 initialized 通知，客户端初始化完成", params);
 
     // 可以在这里执行一些初始化完成后的逻辑
     // 例如：记录客户端连接状态、触发事件等
@@ -179,7 +179,7 @@ export class MCPMessageHandler {
    * @returns 工具列表响应
    */
   private async handleToolsList(id?: string | number): Promise<MCPResponse> {
-    this.logger.info("处理 tools/list 请求");
+    this.logger.debug("处理 tools/list 请求");
 
     try {
       const tools = this.serviceManager.getAllTools();
@@ -190,8 +190,6 @@ export class MCPMessageHandler {
         description: tool.description,
         inputSchema: tool.inputSchema,
       }));
-
-      this.logger.info(`返回 ${mcpTools.length} 个工具`);
 
       return {
         jsonrpc: "2.0",
@@ -216,7 +214,7 @@ export class MCPMessageHandler {
     params: ToolCallParams,
     id?: string | number
   ): Promise<MCPResponse> {
-    this.logger.info(`处理 tools/call 请求: ${params.name}`, params);
+    const callToolLogTitle = `调用MCP工具: ${params.name}`;
 
     try {
       if (!params.name) {
@@ -228,7 +226,12 @@ export class MCPMessageHandler {
         params.arguments || {}
       );
 
-      this.logger.info(`工具 ${params.name} 调用成功`);
+      this.logger.info(
+        callToolLogTitle,
+        "调用参数:",
+        JSON.stringify(params.arguments)
+      );
+      this.logger.info(callToolLogTitle, "响应结果:", JSON.stringify(result));
 
       return {
         jsonrpc: "2.0",
@@ -239,7 +242,12 @@ export class MCPMessageHandler {
         id: id !== undefined ? id : 1,
       };
     } catch (error) {
-      this.logger.error(`工具调用失败: ${params.name}`, error);
+      this.logger.info(
+        callToolLogTitle,
+        "调用参数:",
+        JSON.stringify(params.arguments)
+      );
+      this.logger.error(callToolLogTitle, "调用失败:", error);
       throw error;
     }
   }
@@ -270,13 +278,13 @@ export class MCPMessageHandler {
   private async handleResourcesList(
     id?: string | number
   ): Promise<MCPResponse> {
-    this.logger.info("处理 resources/list 请求");
+    this.logger.debug("处理 resources/list 请求");
 
     // 目前返回空的资源列表
     // 如果将来需要提供资源功能，可以在这里扩展
     const resources: MCPResource[] = [];
 
-    this.logger.info(`返回 ${resources.length} 个资源`);
+    this.logger.debug(`返回 ${resources.length} 个资源`);
 
     return {
       jsonrpc: "2.0",
@@ -293,13 +301,13 @@ export class MCPMessageHandler {
    * @returns 提示列表响应
    */
   private async handlePromptsList(id?: string | number): Promise<MCPResponse> {
-    this.logger.info("处理 prompts/list 请求");
+    this.logger.debug("处理 prompts/list 请求");
 
     // 目前返回空的提示列表
     // 如果将来需要提供提示模板功能，可以在这里扩展
     const prompts: MCPPrompt[] = [];
 
-    this.logger.info(`返回 ${prompts.length} 个提示模板`);
+    this.logger.debug(`返回 ${prompts.length} 个提示模板`);
 
     return {
       jsonrpc: "2.0",

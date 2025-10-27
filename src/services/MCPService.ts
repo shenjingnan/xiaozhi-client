@@ -401,7 +401,7 @@ export class MCPService {
     this.initialized = false;
 
     this.reconnectState.lastError = error;
-    this.logger.error(`MCP 服务 ${this.config.name} 连接错误:`, error.message);
+    this.logger.debug(`MCP 服务 ${this.config.name} 连接错误:`, error.message);
 
     // 清理连接超时定时器
     if (this.connectionTimeout) {
@@ -451,7 +451,7 @@ export class MCPService {
     // 计算下次重连间隔
     this.calculateNextInterval();
 
-    this.logger.info(
+    this.logger.debug(
       `${this.config.name} 将在 ${this.reconnectState.nextInterval}ms 后进行第 ${this.reconnectState.attempts} 次重连`
     );
 
@@ -658,7 +658,7 @@ export class MCPService {
       throw new Error(`工具 ${name} 在服务 ${this.config.name} 中不存在`);
     }
 
-    this.logger.info(
+    this.logger.debug(
       `调用 ${this.config.name} 服务的工具 ${name}，参数:`,
       JSON.stringify(arguments_)
     );
@@ -669,7 +669,7 @@ export class MCPService {
         arguments: arguments_ || {},
       });
 
-      this.logger.info(
+      this.logger.debug(
         `工具 ${name} 调用成功，结果:`,
         `${JSON.stringify(result).substring(0, 500)}...`
       );
