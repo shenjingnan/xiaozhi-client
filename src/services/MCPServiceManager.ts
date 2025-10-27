@@ -177,11 +177,6 @@ export class MCPServiceManager {
     error: Error;
     attempt: number;
   }): Promise<void> {
-    this.logger.warn(
-      `服务 ${data.serviceName} 连接失败 (尝试 ${data.attempt})，错误: ${data.error.message}`
-    );
-
-    // 连接失败时，确保CustomMCPHandler仍然使用最新的可用工具
     try {
       await this.refreshCustomMCPHandlerPublic();
     } catch (error) {
