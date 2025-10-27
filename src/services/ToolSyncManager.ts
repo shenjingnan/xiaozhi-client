@@ -60,7 +60,7 @@ export class ToolSyncManager {
     serviceName?: string;
     timestamp: Date;
   }): Promise<void> {
-    this.logger.info("检测到配置更新，检查工具同步状态");
+    this.logger.debug("检测到配置更新，检查工具同步状态");
 
     try {
       // 根据更新类型处理不同的同步逻辑

@@ -515,7 +515,7 @@ export class ProxyMCPServer {
     // 计算下次重连间隔
     this.calculateNextInterval();
 
-    this.logger.info(
+    this.logger.debug(
       `将在 ${Math.floor(this.reconnectState.nextInterval)}ms 后进行第 ${this.reconnectState.attempts} 次重连`
     );
 

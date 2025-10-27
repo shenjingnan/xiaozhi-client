@@ -202,7 +202,7 @@ export class MCPRouteHandler {
       // 获取 MCP 服务管理器实例
       const serviceManager = await MCPServiceManagerSingleton.getInstance();
       this.mcpMessageHandler = new MCPMessageHandler(serviceManager);
-      this.logger.info("MCP 消息处理器初始化成功");
+      this.logger.debug("MCP 消息处理器初始化成功");
     } catch (error) {
       this.logger.error("MCP 消息处理器初始化失败:", error);
       this.metrics.errorCount++;

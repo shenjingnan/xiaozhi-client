@@ -119,16 +119,16 @@ export class CustomMCPHandler {
     serviceName?: string;
     timestamp: Date;
   }): Promise<void> {
-    this.logger.info("[CustomMCP] 检测到配置更新，检查是否需要重新初始化");
+    this.logger.debug("[CustomMCP] 检测到配置更新，检查是否需要重新初始化");
 
     try {
       // 如果是 customMCP 配置更新，需要重新初始化
       if (data.type === "customMCP") {
-        this.logger.info("[CustomMCP] customMCP 配置已更新，重新初始化处理器");
+        this.logger.debug("[CustomMCP] customMCP 配置已更新，重新初始化处理器");
         await this.reinitialize();
       } else if (data.type === "serverTools") {
         // 如果是 serverTools 配置更新，可能影响 MCP 类型的工具
-        this.logger.info(
+        this.logger.debug(
           "[CustomMCP] serverTools 配置已更新，重新初始化处理器"
         );
         await this.reinitialize();
@@ -242,10 +242,10 @@ export class CustomMCPHandler {
       throw new Error(`未找到工具: ${toolName}`);
     }
 
-    this.logger.info(`[CustomMCP] 调用工具: ${toolName}`, {
-      handler: tool.handler.type,
-      arguments: arguments_,
-    });
+    // this.logger.info(`[CustomMCP] 调用工具: ${toolName}`, {
+    //   handler: tool.handler.type,
+    //   arguments: arguments_,
+    // });
 
     // 首先检查是否有已完成的任务结果（一次性缓存）
     const completedResult = await this.getCompletedResult(toolName, arguments_);

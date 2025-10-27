@@ -1575,7 +1575,7 @@ export class ConfigManager {
     config.customMCP.tools[toolIndex] = updatedTool;
     this.saveConfig(config);
 
-    logger.info(`成功更新自定义 MCP 工具: ${toolName}`);
+    logger.debug(`成功更新自定义 MCP 工具: ${toolName}`);
   }
 
   /**
@@ -1607,7 +1607,7 @@ export class ConfigManager {
       timestamp: new Date(),
     });
 
-    logger.info(`成功更新自定义 MCP 工具配置，共 ${tools.length} 个工具`);
+    logger.debug(`成功更新自定义 MCP 工具配置，共 ${tools.length} 个工具`);
   }
 
   /**

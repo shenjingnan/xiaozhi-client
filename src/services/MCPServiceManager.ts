@@ -468,10 +468,6 @@ export class MCPServiceManager {
       });
     }
 
-    this.logger.info(
-      `[MCPManager] 返回 ${allTools.length} 个工具 (服务工具: ${allTools.length - customTools.length}, customMCP工具: ${customTools.length})`
-    );
-
     return allTools;
   }
 
@@ -492,7 +488,7 @@ export class MCPServiceManager {
    * 调用 MCP 工具（支持标准 MCP 工具和 customMCP 工具）
    */
   async callTool(toolName: string, arguments_: any): Promise<ToolCallResult> {
-    this.logger.info(`[MCPManager] 调用工具: ${toolName}，参数:`, arguments_);
+    // this.logger.info(`[MCPManager] 调用工具: ${toolName}，参数:`, arguments_);
 
     // 检查是否是 customMCP 工具
     if (this.customMCPHandler.hasTool(toolName)) {
@@ -613,7 +609,10 @@ export class MCPServiceManager {
         );
       });
 
-      this.logger.info(`[MCPManager] 工具 ${toolName} 调用成功，结果:`, result);
+      this.logger.debug(
+        `[MCPManager] 工具 ${toolName} 调用成功，结果:`,
+        result
+      );
       return result as ToolCallResult;
     } catch (error) {
       // 异步更新工具调用统计（失败调用）
@@ -845,7 +844,7 @@ export class MCPServiceManager {
   ): Promise<ToolCallResult> {
     const { serviceName, toolName: originalToolName } = config;
 
-    this.logger.info(
+    this.logger.debug(
       `[MCPManager] 调用 MCP 同步工具 ${toolName} -> ${serviceName}.${originalToolName}`
     );
 
@@ -860,7 +859,7 @@ export class MCPServiceManager {
 
     try {
       const result = await service.callTool(originalToolName, arguments_ || {});
-      this.logger.info(`[MCPManager] MCP 同步工具 ${toolName} 调用成功`);
+      this.logger.debug(`[MCPManager] MCP 同步工具 ${toolName} 调用成功`);
       return result as ToolCallResult;
     } catch (error) {
       this.logger.error(
