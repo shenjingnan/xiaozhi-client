@@ -298,7 +298,7 @@ export class Logger {
         // 改进错误处理 - 特殊处理 Error 对象
         const errorArgs = args.map((arg) => {
           if (arg instanceof Error) {
-            if (arg.message) return arg.message;
+            if (this.pinoInstance.level === 'debug') return arg.message;
             return {
               message: arg.message,
               stack: arg.stack,
