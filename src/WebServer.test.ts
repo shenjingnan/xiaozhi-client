@@ -571,29 +571,6 @@ const getAvailablePort = async (): Promise<number> => {
   });
 };
 
-// 检查端口是否可用
-const isPortAvailable = async (port: number): Promise<boolean> => {
-  return new Promise((resolve) => {
-    const server = createServer();
-
-    const onError = () => {
-      server.close();
-      resolve(false);
-    };
-
-    server.on("error", onError);
-
-    server.listen(port, "127.0.0.1", () => {
-      server.close(() => resolve(true));
-    });
-  });
-};
-
-// 简化的端口获取函数
-const getUniquePort = async (): Promise<number> => {
-  return await getAvailablePort();
-};
-
 describe("WebServer", () => {
   let webServer: WebServer;
   let mockConfigManager: any;
@@ -604,7 +581,7 @@ describe("WebServer", () => {
     mockConfigManager = configManager;
 
     // 获取唯一的可用端口
-    currentPort = await getUniquePort();
+    currentPort = await getAvailablePort();
     // 设置默认的 mock 返回值
     mockConfigManager.getConfig.mockReturnValue({
       mcpEndpoint: "wss://test.endpoint",
@@ -1797,7 +1774,7 @@ describe("WebServer", () => {
 
     it("应该处理连接管理器不可用的情况", async () => {
       // 使用不同的端口避免冲突
-      const testPort = await getUniquePort();
+      const testPort = await getAvailablePort();
 
       // 创建一个新的 WebServer 实例，确保连接管理器未初始化
       const tempWebServer = new WebServer(testPort);
