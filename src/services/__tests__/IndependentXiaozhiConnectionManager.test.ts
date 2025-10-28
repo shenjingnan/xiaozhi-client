@@ -649,7 +649,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
       await manager.cleanup();
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         expect.stringContaining(
           "IndependentXiaozhiConnectionManager 资源清理完成"
         )
@@ -719,7 +719,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
       await manager.connect();
 
       expect(mockLogger.info).toHaveBeenCalledWith(
-        expect.stringContaining("小智接入点连接完成 - 成功: 1, 失败: 1")
+        expect.stringContaining("小智接入点连接成功: ws://localhost:8080")
       );
     });
 
