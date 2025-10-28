@@ -734,7 +734,11 @@ export class ApiClient {
    */
   async getEndpointStatus(endpoint: string): Promise<EndpointStatusResponse> {
     const response: ApiResponse<EndpointStatusResponse> = await this.request(
-      `/api/endpoints/${encodeURIComponent(endpoint)}/status`
+      "/api/endpoint/status",
+      {
+        method: "POST",
+        body: JSON.stringify({ endpoint }),
+      }
     );
     if (!response.success || !response.data) {
       throw new Error("获取接入点状态失败");
