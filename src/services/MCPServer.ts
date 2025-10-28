@@ -53,7 +53,7 @@ export class MCPServer extends EventEmitter {
         this.emit("connectionRegistered", connection);
       });
 
-      logger.info("统一 MCP 服务器初始化完成");
+      logger.debug("统一 MCP 服务器初始化完成");
     } catch (error) {
       logger.error("初始化统一 MCP 服务器失败", error);
       throw error;
@@ -89,9 +89,9 @@ export class MCPServer extends EventEmitter {
         }
 
         await this.proxyMCPServer.connect();
-        logger.info("小智接入点连接成功");
+        logger.debug("小智接入点连接成功");
       } else {
-        logger.info("未配置有效的小智接入点，跳过连接");
+        logger.debug("未配置有效的小智接入点，跳过连接");
       }
     } catch (error) {
       logger.error("初始化小智接入点连接失败:", error);

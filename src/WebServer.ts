@@ -219,12 +219,12 @@ export class WebServer {
 
       // 4. 获取工具列表
       const tools = this.mcpServiceManager.getAllTools();
-      this.logger.info(`已加载 ${tools.length} 个工具`);
+      this.logger.debug(`已加载 ${tools.length} 个工具`);
 
       // 5. 初始化小智接入点连接
       await this.initializeXiaozhiConnection(config.mcpEndpoint, tools);
 
-      this.logger.info("所有连接初始化完成");
+      this.logger.debug("所有连接初始化完成");
     } catch (error) {
       this.logger.error("连接初始化失败:", error);
     }
@@ -308,7 +308,7 @@ export class WebServer {
         this.xiaozhiConnectionManager.setServiceManager(this.mcpServiceManager);
       }
 
-      this.logger.info("✅ 连接管理器初始化完成");
+      this.logger.debug("✅ 连接管理器初始化完成");
     } catch (error) {
       this.logger.error("❌ 连接管理器初始化失败:", error);
       // 连接管理器初始化失败时，继续后续流程，允许延迟初始化
