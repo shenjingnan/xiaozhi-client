@@ -1503,7 +1503,7 @@ export class ConfigManager {
         timestamp: new Date(),
       });
 
-      logger.info(
+      logger.debug(
         `成功批量添加 ${newTools.length} 个自定义 MCP 工具: ${newTools.map((t) => t.name).join(", ")}`
       );
     }

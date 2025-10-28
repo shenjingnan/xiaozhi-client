@@ -889,7 +889,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       this.isInitialized = false;
       this.isConnecting = false;
 
-      this.logger.info("IndependentXiaozhiConnectionManager 资源清理完成");
+      this.logger.debug("IndependentXiaozhiConnectionManager 资源清理完成");
     } catch (error) {
       this.logger.error(
         "IndependentXiaozhiConnectionManager 资源清理失败:",

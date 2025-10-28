@@ -273,7 +273,6 @@ export class WebServer {
     }
 
     await this.mcpServiceManager.startAllServices();
-    this.logger.info("所有 MCP 服务已启动");
   }
 
   /**
