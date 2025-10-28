@@ -232,11 +232,6 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       const successCount = results.filter(
         (result) => result.status === "fulfilled"
       ).length;
-      const failureCount = results.length - successCount;
-
-      this.logger.info(
-        `小智接入点连接完成 - 成功: ${successCount}, 失败: ${failureCount}`
-      );
 
       // 如果所有连接都失败，抛出错误
       if (successCount === 0) {
@@ -265,7 +260,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     }
 
     await Promise.allSettled(disconnectPromises);
-    this.logger.info("所有小智接入点已断开连接");
+    this.logger.debug("所有小智接入点已断开连接");
   }
 
   /**
@@ -880,7 +875,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    * 资源清理
    */
   async cleanup(): Promise<void> {
-    this.logger.info("开始清理 IndependentXiaozhiConnectionManager 资源");
+    this.logger.debug("开始清理 IndependentXiaozhiConnectionManager 资源");
 
     try {
       // 断开所有连接
@@ -894,7 +889,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       this.isInitialized = false;
       this.isConnecting = false;
 
-      this.logger.info("IndependentXiaozhiConnectionManager 资源清理完成");
+      this.logger.debug("IndependentXiaozhiConnectionManager 资源清理完成");
     } catch (error) {
       this.logger.error(
         "IndependentXiaozhiConnectionManager 资源清理失败:",

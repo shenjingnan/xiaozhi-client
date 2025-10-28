@@ -449,7 +449,7 @@ export class ProxyMCPServer {
     this.reconnectState.nextInterval = this.reconnectOptions.initialInterval;
     this.reconnectState.lastError = null;
 
-    this.logger.info("MCP WebSocket 连接已建立");
+    this.logger.debug("MCP WebSocket 连接已建立");
   }
 
   /**
@@ -646,7 +646,7 @@ export class ProxyMCPServer {
           },
         });
         this.serverInitialized = true;
-        this.logger.info("MCP 服务器初始化完成");
+        this.logger.debug("MCP 服务器初始化完成");
         break;
 
       case "tools/list": {
@@ -688,7 +688,7 @@ export class ProxyMCPServer {
 
       try {
         this.ws.send(JSON.stringify(response));
-        this.logger.info(`响应已发送: id=${id}`, {
+        this.logger.debug(`响应已发送: id=${id}`, {
           responseSize: JSON.stringify(response).length,
         });
       } catch (error) {

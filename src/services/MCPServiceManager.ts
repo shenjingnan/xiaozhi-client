@@ -191,7 +191,7 @@ export class MCPServiceManager {
     serviceName: string;
     timestamp: Date;
   }): Promise<void> {
-    this.logger.info(`处理服务 ${data.serviceName} 的serverTools配置更新`);
+    this.logger.debug(`处理服务 ${data.serviceName} 的serverTools配置更新`);
 
     try {
       const service = this.services.get(data.serviceName);
@@ -276,8 +276,6 @@ export class MCPServiceManager {
     for (const [serviceName] of configEntries) {
       await this.startService(serviceName);
     }
-
-    this.logger.info("[MCPManager] 所有 MCP 服务启动完成");
   }
 
   /**

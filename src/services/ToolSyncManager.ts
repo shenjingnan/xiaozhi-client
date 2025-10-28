@@ -85,7 +85,7 @@ export class ToolSyncManager {
   private async handleServerToolsConfigUpdated(
     serviceName: string
   ): Promise<void> {
-    this.logger.info(`处理服务 ${serviceName} 的serverTools配置更新`);
+    this.logger.debug(`处理服务 ${serviceName} 的serverTools配置更新`);
 
     try {
       // 发射事件，让MCPServiceManager处理特定服务的同步检查

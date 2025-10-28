@@ -122,8 +122,6 @@ async function cleanup(): Promise<void> {
     state = SingletonState.NOT_INITIALIZED;
     lastError = null;
     instanceId = null;
-
-    console.log("✅ MCPServiceManager 单例资源清理完成");
   } catch (error) {
     console.error(
       "❌ MCPServiceManager 单例清理失败:",

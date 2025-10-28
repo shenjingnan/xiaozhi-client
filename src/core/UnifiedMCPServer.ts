@@ -268,7 +268,7 @@ export class UnifiedMCPServer extends EventEmitter {
       await this.toolRegistry.initialize();
       await this.connectionManager.initialize();
 
-      this.logger.info("统一 MCP 服务器初始化完成");
+      this.logger.debug("统一 MCP 服务器初始化完成");
       this.emit("initialized");
     } catch (error) {
       this.logger.error("统一 MCP 服务器初始化失败", error);

@@ -143,12 +143,6 @@ describe("MCPServiceManager", () => {
 
       await manager.startAllServices();
 
-      expect(mockLogger.debug).toHaveBeenCalledWith(
-        "[MCPManager] 正在启动所有 MCP 服务..."
-      );
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        "[MCPManager] 所有 MCP 服务启动完成"
-      );
       expect(MCPService).toHaveBeenCalledTimes(2); // calculator 和 datetime
     });
 
