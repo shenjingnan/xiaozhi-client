@@ -734,7 +734,7 @@ export class ApiClient {
    */
   async getEndpointStatus(endpoint: string): Promise<EndpointStatusResponse> {
     const response: ApiResponse<EndpointStatusResponse> = await this.request(
-      '/api/endpoint/status',
+      "/api/endpoint/status",
       {
         method: "POST",
         body: JSON.stringify({ endpoint }),
