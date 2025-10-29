@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.8.3](https://github.com/shenjingnan/xiaozhi-client/compare/v1.8.2...v1.8.3) (2025-10-29)
+
+### Features
+
+* **api:** 接入点状态查询接口改为POST请求 ([#386](https://github.com/shenjingnan/xiaozhi-client/issues/386)) ([b0d458a](https://github.com/shenjingnan/xiaozhi-client/commit/b0d458a953ec83766f204f3c76823df2c76c001b))
+* **logging:** 优化MCP工具调用日志记录和错误处理 ([#384](https://github.com/shenjingnan/xiaozhi-client/issues/384)) ([4a09252](https://github.com/shenjingnan/xiaozhi-client/commit/4a0925234edb79e70021948d5c993b7d5bc87cea))
+* **logging:** 优化错误日志记录和连接失败处理 ([#383](https://github.com/shenjingnan/xiaozhi-client/issues/383)) ([a9d9ad4](https://github.com/shenjingnan/xiaozhi-client/commit/a9d9ad460f2c3075ab67f3f30b3ce8908c9a4c77))
+
+### Bug Fixes
+
+* **deps:** 升级 Hono 版本修复 Vary Header 注入漏洞 ([#389](https://github.com/shenjingnan/xiaozhi-client/issues/389)) ([4ad735d](https://github.com/shenjingnan/xiaozhi-client/commit/4ad735d5ad62ed8887973f0fc426b3738b405eaf))
+
+### Performance Improvements
+
+* **test:** 优化 WebServer.test.ts 执行效率 ([#388](https://github.com/shenjingnan/xiaozhi-client/issues/388)) ([d48b879](https://github.com/shenjingnan/xiaozhi-client/commit/d48b87945cbcd5e31813e7ef54b2545fc96854d4))
+
 ## [1.8.2](https://github.com/shenjingnan/xiaozhi-client/compare/v1.8.1...v1.8.2) (2025-10-23)
 
 ### Bug Fixes
