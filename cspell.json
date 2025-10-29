@@ -79,7 +79,8 @@
     "Xiaozhi",
     "XIAOZHI",
     "XVCJ",
-    "xzcli"
+    "xzcli",
+    "AUTOINCREMENT"
   ],
   "ignorePaths": [
     "node_modules/**",

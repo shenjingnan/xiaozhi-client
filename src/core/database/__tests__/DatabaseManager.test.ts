@@ -2,7 +2,8 @@
  * DatabaseManager 单元测试
  */
 
-import { promises as fs } from "node:fs";
+import * as fs from "node:fs";
+import { promises as fsPromises } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -15,7 +16,7 @@ describe("DatabaseManager", () => {
 
   beforeEach(async () => {
     // 创建临时测试目录
-    testDir = await fs.mkdtemp(path.join(tmpdir(), "xiaozhi-test-"));
+    testDir = await fsPromises.mkdtemp(path.join(tmpdir(), "xiaozhi-test-"));
     dbManager = new DatabaseManager(testDir);
   });
 
@@ -25,7 +26,7 @@ describe("DatabaseManager", () => {
 
     // 删除测试目录和文件
     try {
-      fs.rm(testDir, { recursive: true, force: true });
+      fsPromises.rm(testDir, { recursive: true, force: true });
     } catch (error) {
       // 忽略清理错误
     }
@@ -355,10 +356,10 @@ describe("DatabaseManager", () => {
       expect(stats.logsByLevel.error).toBe(1);
       expect(stats.logsByLevel.warn).toBe(1);
       expect(stats.logsByLevel.debug).toBe(1);
-      expect(stats.logsByLevel.mcp_tool).toBe(1);
-      expect(stats.logsByLevel.system).toBe(2);
-      expect(stats.logsByLevel.connection).toBe(1);
-      expect(stats.logsByLevel.general).toBe(1);
+      expect(stats.logsByCategory.mcp_tool).toBe(1);
+      expect(stats.logsByCategory.system).toBe(2);
+      expect(stats.logsByCategory.connection).toBe(1);
+      expect(stats.logsByCategory.general).toBe(1);
       expect(stats.oldestLog).toBeInstanceOf(Date);
       expect(stats.newestLog).toBeInstanceOf(Date);
     });

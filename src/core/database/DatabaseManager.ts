@@ -3,7 +3,7 @@
  * 负责数据库初始化、连接管理和日志存储
  */
 
-import { promises as fs } from "node:fs";
+import * as fs from "node:fs";
 import path from "node:path";
 import Database from "better-sqlite3";
 import { type Logger, logger } from "../../Logger.js";
@@ -36,7 +36,7 @@ export class DatabaseManager {
       foreignKeys: true,
       walMode: true,
     };
-    this.logger = logger.child({ component: "DatabaseManager" });
+    this.logger = logger.withTag("DatabaseManager");
   }
 
   /**

@@ -990,7 +990,7 @@ export class WebServer {
       const container = await createContainer();
       const databaseManager = container.get("databaseManager");
 
-      if (databaseManager?.isAvailable()) {
+      if (databaseManager && (databaseManager as any).isAvailable && (databaseManager as any).isAvailable()) {
         this.logger.info("✅ 数据库服务可用");
       } else {
         this.logger.info("ℹ️  数据库服务不可用，将在内存模式下运行");
