@@ -24,6 +24,11 @@ export class ServiceManagerImpl implements IServiceManager {
   ) {}
 
   /**
+   * 数据库管理器实例（延迟初始化）
+   */
+  private databaseManager: any = null;
+
+  /**
    * 启动服务
    */
   async start(options: ServiceStartOptions): Promise<void> {
@@ -61,6 +66,9 @@ export class ServiceManagerImpl implements IServiceManager {
 
       // 检查环境配置
       this.checkEnvironment();
+
+      // 初始化数据库
+      await this.initializeDatabase();
 
       // 根据模式启动服务
       switch (options.mode) {
@@ -377,5 +385,37 @@ export class ServiceManagerImpl implements IServiceManager {
     } catch (error) {
       console.log(`⚠️  自动打开浏览器失败，请手动访问: ${url}`);
     }
+  }
+
+  /**
+   * 初始化数据库服务
+   */
+  private async initializeDatabase(): Promise<void> {
+    try {
+      // 从全局容器获取数据库管理器
+      const { createContainer } = await import("../Container.js");
+      const container = await createContainer();
+
+      this.databaseManager = container.get("databaseManager");
+
+      if (this.databaseManager) {
+        console.log("✅ 数据库服务初始化成功");
+      } else {
+        console.log("ℹ️  数据库服务不可用，将在内存模式下运行");
+      }
+    } catch (error) {
+      console.warn(
+        "⚠️  数据库服务初始化失败:",
+        error instanceof Error ? error.message : String(error)
+      );
+      this.databaseManager = null;
+    }
+  }
+
+  /**
+   * 获取数据库管理器实例
+   */
+  getDatabaseManager(): any {
+    return this.databaseManager;
   }
 }

@@ -202,6 +202,9 @@ export class WebServer {
     try {
       this.logger.debug("开始初始化连接...");
 
+      // 0. 检查数据库服务状态
+      await this.checkDatabaseService();
+
       // 1. 读取配置
       const config = await this.loadConfiguration();
 
@@ -975,5 +978,28 @@ export class WebServer {
     this.proxyMCPServer?.disconnect();
 
     this.logger.debug("WebServer 实例已销毁");
+  }
+
+  /**
+   * 检查数据库服务状态
+   */
+  private async checkDatabaseService(): Promise<void> {
+    try {
+      // 从容器获取数据库管理器
+      const { createContainer } = await import("./cli/Container.js");
+      const container = await createContainer();
+      const databaseManager = container.get("databaseManager");
+
+      if (databaseManager?.isAvailable()) {
+        this.logger.info("✅ 数据库服务可用");
+      } else {
+        this.logger.info("ℹ️  数据库服务不可用，将在内存模式下运行");
+      }
+    } catch (error) {
+      this.logger.warn(
+        "⚠️  数据库服务检查失败:",
+        error instanceof Error ? error.message : String(error)
+      );
+    }
   }
 }

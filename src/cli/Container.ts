@@ -144,6 +144,35 @@ export class DIContainer implements IDIContainer {
       return ErrorHandler;
     });
 
+    // 注册数据库管理器（单例）
+    container.registerSingleton("databaseManager", () => {
+      try {
+        const {
+          DatabaseManager,
+        } = require("../core/database/DatabaseManager.js");
+        const pathUtils = container.get("pathUtils") as any;
+        const dbManager = new DatabaseManager(pathUtils.getConfigDir());
+
+        // 尝试初始化数据库
+        const initResult = dbManager.initialize();
+        if (initResult.success) {
+          console.log("✅ 数据库初始化成功");
+          return dbManager;
+        }
+        console.warn(
+          "⚠️  数据库初始化失败，将使用内存模式运行:",
+          initResult.error
+        );
+        return null;
+      } catch (error) {
+        console.warn(
+          "⚠️  数据库管理器创建失败，将使用内存模式运行:",
+          error instanceof Error ? error.message : String(error)
+        );
+        return null;
+      }
+    });
+
     // 注册服务层
     container.registerSingleton("processManager", () => {
       const ProcessManagerModule = require("./services/ProcessManager.js");
