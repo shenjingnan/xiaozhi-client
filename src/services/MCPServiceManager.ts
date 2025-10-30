@@ -7,7 +7,6 @@
  */
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import dayjs from "dayjs";
 import { type Logger, logger } from "../Logger.js";
 import { type MCPToolConfig, configManager } from "../configManager.js";
 import { ToolCallLogger } from "../utils/ToolCallLogger.js";
