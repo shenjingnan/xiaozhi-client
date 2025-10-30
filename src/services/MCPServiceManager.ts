@@ -18,6 +18,7 @@ import {
   MCPTransportType,
 } from "./MCPService.js";
 import { ToolSyncManager } from "./ToolSyncManager.js";
+import { ToolCallLogger } from "../utils/ToolCallLogger.js";
 
 // 工具信息接口（保持向后兼容）
 interface ToolInfo {
@@ -57,6 +58,7 @@ export class MCPServiceManager {
   private cacheManager: MCPCacheManager; // 缓存管理器
   private toolSyncManager: ToolSyncManager; // 工具同步管理器
   private eventBus = getEventBus(); // 事件总线
+  private toolCallLogger: ToolCallLogger; // 工具调用记录器
 
   /**
    * 创建 MCPServiceManager 实例
@@ -76,6 +78,11 @@ export class MCPServiceManager {
     this.cacheManager = new MCPCacheManager(cachePath);
     this.customMCPHandler = new CustomMCPHandler();
     this.toolSyncManager = new ToolSyncManager(configManager, this.logger);
+
+    // 初始化工具调用记录器
+    const toolCallLogConfig = configManager.getToolCallLogConfig();
+    const configDir = configManager.getConfigDir();
+    this.toolCallLogger = new ToolCallLogger(toolCallLogConfig, configDir);
 
     // 设置事件监听器
     this.setupEventListeners();
@@ -486,8 +493,44 @@ export class MCPServiceManager {
    * 调用 MCP 工具（支持标准 MCP 工具和 customMCP 工具）
    */
   async callTool(toolName: string, arguments_: any): Promise<ToolCallResult> {
-    // this.logger.info(`[MCPManager] 调用工具: ${toolName}，参数:`, arguments_);
+    const startTime = Date.now();
+    const timestamp = new Date().toISOString();
 
+    // 使用 try-finally 确保无论成功还是失败都会记录日志
+    try {
+      const result = await this.executeToolCall(toolName, arguments_);
+
+      // 记录成功的工具调用（异步执行，不阻塞主流程）
+      this.toolCallLogger.recordToolCall({
+        timestamp,
+        toolName,
+        arguments: arguments_,
+        result: result,
+        success: !result.isError,
+        duration: Date.now() - startTime,
+      }).catch(() => {});
+
+      return result;
+    } catch (error) {
+      // 记录失败的工具调用（异步执行，不阻塞主流程）
+      this.toolCallLogger.recordToolCall({
+        timestamp,
+        toolName,
+        arguments: arguments_,
+        result: null,
+        success: false,
+        duration: Date.now() - startTime,
+        error: error instanceof Error ? error.message : String(error),
+      }).catch(() => {});
+
+      throw error;
+    }
+  }
+
+  /**
+   * 执行工具调用的实际逻辑
+   */
+  private async executeToolCall(toolName: string, arguments_: any): Promise<ToolCallResult> {
     // 检查是否是 customMCP 工具
     if (this.customMCPHandler.hasTool(toolName)) {
       // 检查是否是从 MCP 同步的工具（mcp 类型 handler）
