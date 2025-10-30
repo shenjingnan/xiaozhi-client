@@ -625,7 +625,7 @@ export class MCPServiceManager {
         serverName: logServerName,
         arguments: arguments_,
         result: result,
-        success: !result.isError,
+        success: result.isError !== true,
         duration: Date.now() - startTime,
       });
 
