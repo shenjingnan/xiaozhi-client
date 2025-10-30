@@ -5,6 +5,7 @@
 
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { configManager } from "../../configManager.js";
 import { MCPMessageHandler } from "../../core/MCPMessageHandler.js";
 import { MCPServiceManager } from "../../services/MCPServiceManager.js";
 import { HTTPAdapter } from "../HTTPAdapter.js";
@@ -34,6 +35,7 @@ const mockProcess = {
   on: vi.fn(),
   exit: vi.fn(),
   uptime: vi.fn(() => 123.456), // Mock uptime 方法
+  cwd: vi.fn(() => "/test/mock/directory"), // Mock cwd 方法，ConfigManager 需要用到
   env: {
     XIAOZHI_DAEMON: "false", // 设置默认值避免 Logger 初始化失败
     NODE_ENV: "test",
@@ -48,11 +50,36 @@ describe("传输层抽象验收测试", () => {
   let messageHandler: MCPMessageHandler;
 
   beforeEach(() => {
+    // Mock ConfigManager 方法以避免依赖真实配置文件
+    vi.spyOn(configManager, "configExists").mockReturnValue(true);
+    vi.spyOn(configManager, "getConfig").mockReturnValue({
+      mcpEndpoint: "ws://localhost:8080",
+      mcpServers: {},
+      connection: {
+        heartbeatInterval: 30000,
+        heartbeatTimeout: 10000,
+        reconnectInterval: 5000,
+      },
+      toolCallLog: {
+        enabled: false,
+        maxRecords: 100,
+      },
+    } as any);
+    vi.spyOn(configManager, "getToolCallLogConfig").mockReturnValue({
+      enabled: false,
+      maxRecords: 100,
+    });
+
     serviceManager = new MCPServiceManager();
     messageHandler = new MCPMessageHandler(serviceManager);
 
     // 清除所有 mock 调用
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    // 恢复所有 mock
+    vi.restoreAllMocks();
   });
 
   describe("TransportAdapter 抽象基类", () => {

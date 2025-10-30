@@ -214,7 +214,6 @@ export class MCPMessageHandler {
     params: ToolCallParams,
     id?: string | number
   ): Promise<MCPResponse> {
-
     try {
       if (!params.name) {
         throw new Error("工具名称不能为空");

@@ -69,7 +69,9 @@ describe("MCPServiceManager", () => {
     mockConfigManager.getToolCallLogConfig.mockReturnValue({}); // 默认工具调用日志配置
     mockConfigManager.getConfigDir.mockReturnValue("/tmp/test"); // 默认配置目录
     mockConfigManager.updateToolUsageStatsWithLock.mockResolvedValue(undefined); // 统计更新成功
-    mockConfigManager.updateMCPServerToolStatsWithLock.mockResolvedValue(undefined); // MCP服务统计更新成功
+    mockConfigManager.updateMCPServerToolStatsWithLock.mockResolvedValue(
+      undefined
+    ); // MCP服务统计更新成功
     mockConfigManager.clearAllStatsUpdateLocks.mockImplementation(() => {}); // 清理锁
     mockConfigManager.getStatsUpdateLocks.mockReturnValue([]); // 无活跃锁
     mockConfigManager.getModelScopeApiKey.mockReturnValue(null); // 无 ModelScope API Key

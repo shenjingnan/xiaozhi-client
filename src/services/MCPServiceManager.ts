@@ -7,8 +7,10 @@
  */
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import dayjs from "dayjs";
 import { type Logger, logger } from "../Logger.js";
 import { type MCPToolConfig, configManager } from "../configManager.js";
+import { ToolCallLogger } from "../utils/ToolCallLogger.js";
 import { CustomMCPHandler } from "./CustomMCPHandler.js";
 import { getEventBus } from "./EventBus.js";
 import { MCPCacheManager } from "./MCPCacheManager.js";
@@ -18,8 +20,6 @@ import {
   MCPTransportType,
 } from "./MCPService.js";
 import { ToolSyncManager } from "./ToolSyncManager.js";
-import { ToolCallLogger } from "../utils/ToolCallLogger.js";
-import dayjs from "dayjs";
 
 // 工具信息接口（保持向后兼容）
 interface ToolInfo {
@@ -603,8 +603,14 @@ export class MCPServiceManager {
           throw new Error(`服务 ${toolInfo.serviceName} 未连接`);
         }
 
-        result = await service.callTool(toolInfo.originalName, arguments_ || {});
-        this.logger.debug(`[MCPManager] 工具 ${toolName} 调用成功，结果:`, result);
+        result = await service.callTool(
+          toolInfo.originalName,
+          arguments_ || {}
+        );
+        this.logger.debug(
+          `[MCPManager] 工具 ${toolName} 调用成功，结果:`,
+          result
+        );
 
         // 异步更新工具调用统计（成功调用）
         this.updateToolStatsSafe(
@@ -674,7 +680,6 @@ export class MCPServiceManager {
       throw error;
     }
   }
-
 
   /**
    * 更新工具调用统计信息的通用方法
@@ -748,7 +753,12 @@ export class MCPServiceManager {
     isSuccess: boolean
   ): Promise<void> {
     try {
-      await this.updateToolStats(toolName, serviceName, originalToolName, isSuccess);
+      await this.updateToolStats(
+        toolName,
+        serviceName,
+        originalToolName,
+        isSuccess
+      );
     } catch (error) {
       const action = isSuccess ? "统计信息" : "失败统计信息";
       this.logger.warn(
