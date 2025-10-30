@@ -543,7 +543,6 @@ export class MCPServiceManager {
    */
   async callTool(toolName: string, arguments_: any): Promise<ToolCallResult> {
     const startTime = Date.now();
-    const timestamp = new Date().toISOString();
 
     // 初始化日志信息
     let logServerName = "unknown";
