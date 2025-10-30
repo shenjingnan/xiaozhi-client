@@ -11,8 +11,9 @@ import { logger } from "../Logger.js";
 
 // 工具调用记录接口
 export interface ToolCallRecord {
-  timestamp: string; // ISO 8601 格式时间戳
   toolName: string; // 工具名称
+  originalToolName?: string; // 原始工具名称（未格式化的）
+  serverName?: string; // 服务器名称（coze、dify、n8n、custom等）
   arguments?: any; // 调用参数
   result?: any; // 响应结果
   success: boolean; // 是否成功
@@ -140,10 +141,7 @@ export class ToolCallLogger {
     try {
       // 直接使用 Pino 记录日志，自动处理并发和文件写入
       this.pinoLogger.info(record, record.toolName);
-    } catch (error) {
-      // 记录失败不应该影响主功能，只记录错误日志
-      logger.error("保存工具调用记录失败:", error);
-    }
+    } catch (error) {}
   }
 
   /**

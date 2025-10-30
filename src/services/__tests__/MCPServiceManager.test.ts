@@ -26,6 +26,13 @@ vi.mock("../../configManager.js", () => ({
     getCustomMCPTools: vi.fn(),
     addCustomMCPTools: vi.fn(),
     updateCustomMCPTools: vi.fn(),
+    getToolCallLogConfig: vi.fn(),
+    getConfigDir: vi.fn(),
+    updateToolUsageStatsWithLock: vi.fn(),
+    updateMCPServerToolStatsWithLock: vi.fn(),
+    clearAllStatsUpdateLocks: vi.fn(),
+    getStatsUpdateLocks: vi.fn(),
+    getModelScopeApiKey: vi.fn(),
   },
 }));
 
@@ -59,6 +66,13 @@ describe("MCPServiceManager", () => {
     mockConfigManager.getCustomMCPTools.mockReturnValue([]); // 默认没有 customMCP 工具
     mockConfigManager.addCustomMCPTools.mockResolvedValue(undefined); // 添加工具成功
     mockConfigManager.updateCustomMCPTools.mockResolvedValue(undefined); // 更新工具成功
+    mockConfigManager.getToolCallLogConfig.mockReturnValue({}); // 默认工具调用日志配置
+    mockConfigManager.getConfigDir.mockReturnValue("/tmp/test"); // 默认配置目录
+    mockConfigManager.updateToolUsageStatsWithLock.mockResolvedValue(undefined); // 统计更新成功
+    mockConfigManager.updateMCPServerToolStatsWithLock.mockResolvedValue(undefined); // MCP服务统计更新成功
+    mockConfigManager.clearAllStatsUpdateLocks.mockImplementation(() => {}); // 清理锁
+    mockConfigManager.getStatsUpdateLocks.mockReturnValue([]); // 无活跃锁
+    mockConfigManager.getModelScopeApiKey.mockReturnValue(null); // 无 ModelScope API Key
 
     // 模拟 MCPService
     mockMCPService = {
