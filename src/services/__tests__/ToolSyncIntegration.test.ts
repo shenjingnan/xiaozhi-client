@@ -31,6 +31,8 @@ vi.mock("../../configManager.js", async () => {
       getCustomMCPConfig: vi.fn(),
       updateCustomMCPTools: vi.fn(),
       isToolEnabled: vi.fn(),
+      getToolCallLogConfig: vi.fn(),
+      getConfigDir: vi.fn(),
     },
   };
 });
@@ -204,6 +206,8 @@ describe("工具同步集成测试", () => {
       }
     );
     vi.mocked(mockConfigManager.isToolEnabled).mockReturnValue(true);
+    vi.mocked(mockConfigManager.getToolCallLogConfig).mockReturnValue({});
+    vi.mocked(mockConfigManager.getConfigDir).mockReturnValue("/tmp/test");
 
     serviceManager = new MCPServiceManager(
       testConfig.mcpServers as Record<string, any>
@@ -227,6 +231,8 @@ describe("工具同步集成测试", () => {
       undefined
     );
     vi.mocked(mockConfigManager.addCustomMCPTools).mockResolvedValue(undefined);
+    vi.mocked(mockConfigManager.getToolCallLogConfig).mockReturnValue({});
+    vi.mocked(mockConfigManager.getConfigDir).mockReturnValue("/tmp/test");
   });
 
   describe("端到端工具同步流程", () => {

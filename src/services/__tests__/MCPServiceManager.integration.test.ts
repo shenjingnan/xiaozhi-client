@@ -20,6 +20,8 @@ vi.mock("../../configManager.js", () => ({
     getServerToolsConfig: vi.fn(),
     addCustomMCPTools: vi.fn(),
     updateCustomMCPTools: vi.fn(),
+    getToolCallLogConfig: vi.fn().mockReturnValue({}),
+    getConfigDir: vi.fn().mockReturnValue(process.cwd()),
   },
 }));
 
