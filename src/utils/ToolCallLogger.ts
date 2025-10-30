@@ -141,7 +141,9 @@ export class ToolCallLogger {
     try {
       // 直接使用 Pino 记录日志，自动处理并发和文件写入
       this.pinoLogger.info(record, record.toolName);
-    } catch (error) {}
+    } catch (error) {
+      logger.warn("记录工具调用失败:", error);
+    }
   }
 
   /**
