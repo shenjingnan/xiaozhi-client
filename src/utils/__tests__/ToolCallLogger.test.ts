@@ -4,6 +4,7 @@
 
 import { existsSync } from "node:fs";
 import * as fs from "node:fs/promises";
+import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type ToolCallLogConfig, ToolCallLogger } from "../ToolCallLogger.js";
@@ -19,7 +20,10 @@ vi.mock("../../Logger.js", () => ({
 }));
 
 describe("ToolCallLogger", () => {
-  const testDir = path.join(process.cwd(), "tool-call-logger");
+  // 在 CI 环境使用系统临时目录，避免权限问题
+  const testDir = process.env.CI
+    ? path.join(os.tmpdir(), "xiaozhi-test-logger")
+    : path.join(process.cwd(), "tool-call-logger");
   const logFilePath = path.join(testDir, "tool-calls.log.json");
 
   let toolCallLogger: ToolCallLogger;
