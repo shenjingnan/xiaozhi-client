@@ -71,6 +71,13 @@ export interface WebUIConfig {
   autoRestart?: boolean; // 是否在配置更新后自动重启服务，默认 true
 }
 
+// 工具调用日志配置接口
+export interface ToolCallLogConfig {
+  enabled?: boolean; // 是否启用工具调用记录，默认 false
+  maxRecords?: number; // 最大记录条数，默认 100
+  logFilePath?: string; // 自定义日志文件路径（可选）
+}
+
 // CustomMCP 相关接口定义
 
 // 代理处理器配置
@@ -202,6 +209,7 @@ export interface AppConfig {
   modelscope?: ModelScopeConfig; // ModelScope 配置（可选）
   webUI?: WebUIConfig; // Web UI 配置（可选）
   platforms?: PlatformsConfig; // 平台配置（可选）
+  toolCallLog?: ToolCallLogConfig; // 工具调用日志配置（可选）
 }
 
 /**
@@ -2038,6 +2046,40 @@ export class ConfigManager {
    */
   public getStatsUpdateLocks(): string[] {
     return Array.from(this.statsUpdateLocks.keys());
+  }
+
+  /**
+   * 获取工具调用日志配置
+   */
+  public getToolCallLogConfig(): Readonly<ToolCallLogConfig> {
+    const config = this.getConfig();
+    return config.toolCallLog || {};
+  }
+
+  /**
+   * 更新工具调用日志配置
+   */
+  public updateToolCallLogConfig(
+    toolCallLogConfig: Partial<ToolCallLogConfig>
+  ): void {
+    const config = this.getMutableConfig();
+
+    // 确保 toolCallLog 对象存在
+    if (!config.toolCallLog) {
+      config.toolCallLog = {};
+    }
+
+    // 直接修改现有的 toolCallLog 对象以保留注释
+    Object.assign(config.toolCallLog, toolCallLogConfig);
+    this.saveConfig(config);
+  }
+
+  /**
+   * 获取配置目录路径（与配置文件同级目录）
+   */
+  public getConfigDir(): string {
+    // 配置文件路径 - 优先使用环境变量指定的目录，否则使用当前工作目录
+    return process.env.XIAOZHI_CONFIG_DIR || process.cwd();
   }
 }
 

@@ -5,7 +5,9 @@
  */
 
 import { type Logger, logger } from "../Logger.js";
+import { configManager } from "../configManager.js";
 import type { MCPServiceManager } from "../services/MCPServiceManager.js";
+import { ToolCallLogger } from "../utils/ToolCallLogger.js";
 
 // MCP 消息接口
 interface MCPMessage {
@@ -68,10 +70,16 @@ interface MCPPrompt {
 export class MCPMessageHandler {
   private logger: Logger;
   private serviceManager: MCPServiceManager;
+  private toolCallLogger: ToolCallLogger;
 
   constructor(serviceManager: MCPServiceManager) {
     this.serviceManager = serviceManager;
     this.logger = logger;
+
+    // 初始化工具调用记录器
+    const toolCallLogConfig = configManager.getToolCallLogConfig();
+    const configDir = configManager.getConfigDir();
+    this.toolCallLogger = new ToolCallLogger(toolCallLogConfig, configDir);
   }
 
   /**
@@ -215,6 +223,8 @@ export class MCPMessageHandler {
     id?: string | number
   ): Promise<MCPResponse> {
     const callToolLogTitle = `调用MCP工具: ${params.name}`;
+    const startTime = Date.now();
+    const timestamp = new Date().toISOString();
 
     try {
       if (!params.name) {
@@ -226,12 +236,26 @@ export class MCPMessageHandler {
         params.arguments || {}
       );
 
+      const duration = Date.now() - startTime;
+
       this.logger.info(
         callToolLogTitle,
         "调用参数:",
         JSON.stringify(params.arguments)
       );
       this.logger.info(callToolLogTitle, "响应结果:", JSON.stringify(result));
+
+      // 记录工具调用（异步执行，不阻塞主流程）
+      this.toolCallLogger
+        .recordToolCall({
+          timestamp,
+          toolName: params.name,
+          arguments: params.arguments,
+          result: result,
+          success: !result.isError,
+          duration: duration,
+        })
+        .catch(() => {});
 
       return {
         jsonrpc: "2.0",
@@ -242,12 +266,28 @@ export class MCPMessageHandler {
         id: id !== undefined ? id : 1,
       };
     } catch (error) {
+      const duration = Date.now() - startTime;
+
       this.logger.info(
         callToolLogTitle,
         "调用参数:",
         JSON.stringify(params.arguments)
       );
       this.logger.error(callToolLogTitle, "调用失败:", error);
+
+      // 记录失败的工具调用（异步执行，不阻塞主流程）
+      this.toolCallLogger
+        .recordToolCall({
+          timestamp,
+          toolName: params.name,
+          arguments: params.arguments,
+          result: null,
+          success: false,
+          duration: duration,
+          error: error instanceof Error ? error.message : String(error),
+        })
+        .catch(() => {});
+
       throw error;
     }
   }
