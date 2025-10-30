@@ -85,7 +85,6 @@ describe("ToolCallLogger", () => {
       // 调用记录方法应该不会抛出错误
       await expect(
         disabledLogger.recordToolCall({
-          timestamp: new Date().toISOString(),
           toolName: "test_tool",
           success: true,
         })
