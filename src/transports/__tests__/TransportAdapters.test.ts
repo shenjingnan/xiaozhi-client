@@ -61,12 +61,10 @@ describe("传输层抽象验收测试", () => {
         reconnectInterval: 5000,
       },
       toolCallLog: {
-        enabled: false,
         maxRecords: 100,
       },
     } as any);
     vi.spyOn(configManager, "getToolCallLogConfig").mockReturnValue({
-      enabled: false,
       maxRecords: 100,
     });
 

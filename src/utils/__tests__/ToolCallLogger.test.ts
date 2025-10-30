@@ -35,7 +35,6 @@ describe("ToolCallLogger", () => {
     }
 
     config = {
-      enabled: true,
       maxRecords: 5,
       logFilePath: logFilePath,
     };
@@ -57,42 +56,31 @@ describe("ToolCallLogger", () => {
 
   describe("constructor", () => {
     it("should initialize with correct configuration", () => {
-      expect(toolCallLogger.isEnabled()).toBe(true);
       expect(toolCallLogger.getMaxRecords()).toBe(5);
       expect(toolCallLogger.getLogFilePath()).toBe(logFilePath);
     });
 
     it("should use default values when config is not provided", () => {
       const defaultLogger = new ToolCallLogger({}, testDir);
-      expect(defaultLogger.isEnabled()).toBe(false);
       expect(defaultLogger.getMaxRecords()).toBe(100);
     });
 
     it("should generate default log file path when not provided", () => {
-      const defaultLogger = new ToolCallLogger({ enabled: true }, testDir);
+      const defaultLogger = new ToolCallLogger({}, testDir);
       const expectedPath = path.join(testDir, "tool-calls.log.json");
       expect(defaultLogger.getLogFilePath()).toBe(expectedPath);
     });
   });
 
   describe("recordToolCall", () => {
-    it("should not record when disabled", async () => {
-      const disabledLogger = new ToolCallLogger({ enabled: false }, testDir);
-
-      // 验证 logger 确实是禁用状态
-      expect(disabledLogger.isEnabled()).toBe(false);
-
+    it("should record tool call successfully", async () => {
       // 调用记录方法应该不会抛出错误
       await expect(
-        disabledLogger.recordToolCall({
+        toolCallLogger.recordToolCall({
           toolName: "test_tool",
           success: true,
         })
       ).resolves.toBeUndefined();
-
-      // 禁用的 logger 调用记录方法后，指定的日志文件不应该存在
-      // 注意：如果之前的测试创建了文件，这里可能会存在，所以我们跳过这个检查
-      // 重要的是功能上不会记录日志
     });
 
     it("should create log file and record first tool call", async () => {
@@ -164,7 +152,6 @@ describe("ToolCallLogger", () => {
       // Create a logger with invalid file path to simulate error
       const invalidLogger = new ToolCallLogger(
         {
-          enabled: true,
           maxRecords: 5,
           logFilePath: "/invalid/path/file.json",
         },
@@ -206,6 +193,69 @@ describe("ToolCallLogger", () => {
       expect(logData.success).toBe(false);
       expect(logData.error).toBe("Something went wrong");
       expect(logData.duration).toBe(123);
+    });
+
+    it("should enforce maxRecords limit by removing old records", async () => {
+      const limitedLogger = new ToolCallLogger(
+        { maxRecords: 3, logFilePath: logFilePath },
+        testDir
+      );
+
+      // Record 5 tool calls (exceeding the limit of 3)
+      for (let i = 1; i <= 5; i++) {
+        await limitedLogger.recordToolCall({
+          toolName: `tool_${i}`,
+          success: true,
+          duration: i * 10,
+        });
+      }
+
+      const fileContent = await fs.readFile(logFilePath, "utf8");
+      const logLines = fileContent
+        .trim()
+        .split("\n")
+        .filter((line) => line.trim() !== "");
+
+      // Should only have the latest 3 records
+      expect(logLines).toHaveLength(3);
+
+      // Check that the oldest records (tool_1, tool_2) are removed
+      const remainingToolNames = logLines.map(
+        (line) => JSON.parse(line).toolName
+      );
+      expect(remainingToolNames).toEqual(["tool_3", "tool_4", "tool_5"]);
+    });
+
+    it("should keep exactly maxRecords when reaching limit", async () => {
+      const limitedLogger = new ToolCallLogger(
+        { maxRecords: 2, logFilePath: logFilePath },
+        testDir
+      );
+
+      // Record exactly 2 tool calls (matching the limit)
+      await limitedLogger.recordToolCall({
+        toolName: "first_tool",
+        success: true,
+        duration: 50,
+      });
+
+      await limitedLogger.recordToolCall({
+        toolName: "second_tool",
+        success: true,
+        duration: 60,
+      });
+
+      const fileContent = await fs.readFile(logFilePath, "utf8");
+      const logLines = fileContent
+        .trim()
+        .split("\n")
+        .filter((line) => line.trim() !== "");
+
+      // Should have exactly 2 records
+      expect(logLines).toHaveLength(2);
+
+      const toolNames = logLines.map((line) => JSON.parse(line).toolName);
+      expect(toolNames).toEqual(["first_tool", "second_tool"]);
     });
   });
 

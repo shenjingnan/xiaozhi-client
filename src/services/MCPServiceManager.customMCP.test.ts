@@ -22,7 +22,6 @@ vi.mock("../configManager.js", () => ({
     getCustomMCPTools: vi.fn(),
     getMcpServers: vi.fn(),
     getToolCallLogConfig: vi.fn().mockReturnValue({
-      enabled: false,
       maxRecords: 100,
     }),
     getConfigDir: vi.fn().mockReturnValue("/tmp"),
@@ -48,7 +47,6 @@ vi.mock("./MCPCacheManager.js", () => ({
 vi.mock("../utils/ToolCallLogger.js", () => ({
   ToolCallLogger: vi.fn().mockImplementation(() => ({
     recordToolCall: vi.fn().mockResolvedValue(undefined),
-    isEnabled: vi.fn().mockReturnValue(false),
     getLogFilePath: vi.fn().mockReturnValue("/tmp/tool-calls.log.json"),
     getMaxRecords: vi.fn().mockReturnValue(100),
   })),

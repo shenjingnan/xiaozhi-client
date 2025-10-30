@@ -73,7 +73,6 @@ export interface WebUIConfig {
 
 // 工具调用日志配置接口
 export interface ToolCallLogConfig {
-  enabled?: boolean; // 是否启用工具调用记录，默认 false
   maxRecords?: number; // 最大记录条数，默认 100
   logFilePath?: string; // 自定义日志文件路径（可选）
 }

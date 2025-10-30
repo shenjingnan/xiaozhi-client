@@ -23,7 +23,6 @@ export interface ToolCallRecord {
 
 // 工具调用日志配置接口
 export interface ToolCallLogConfig {
-  enabled?: boolean; // 是否启用工具调用记录，默认 false
   maxRecords?: number; // 最大记录条数，默认 100
   logFilePath?: string; // 自定义日志文件路径（可选）
 }
@@ -34,12 +33,10 @@ export interface ToolCallLogConfig {
  */
 export class ToolCallLogger {
   private pinoLogger: PinoLogger;
-  private enabled: boolean;
   private maxRecords: number;
   private logFilePath: string;
 
   constructor(config: ToolCallLogConfig, configDir: string) {
-    this.enabled = config.enabled ?? false;
     this.maxRecords = config.maxRecords ?? 100;
 
     // 确定日志文件路径
@@ -50,7 +47,7 @@ export class ToolCallLogger {
     this.pinoLogger = this.createPinoLogger(this.logFilePath);
 
     logger.debug(
-      `ToolCallLogger 初始化: enabled=${this.enabled}, maxRecords=${this.maxRecords}, path=${this.logFilePath}`
+      `ToolCallLogger 初始化: maxRecords=${this.maxRecords}, path=${this.logFilePath}`
     );
   }
 
@@ -60,46 +57,36 @@ export class ToolCallLogger {
   private createPinoLogger(logFilePath: string): PinoLogger {
     const streams: pino.StreamEntry[] = [];
 
-    if (this.enabled) {
-      // 控制台流 - 使用彩色输出
-      streams.push({
-        level: "info",
-        stream: {
-          write: (chunk: string) => {
-            try {
-              const logObj = JSON.parse(chunk);
-              const message = this.formatConsoleMessage(logObj);
-              logger.info(`[工具调用] ${message}`);
-            } catch (error) {
-              logger.info(`[工具调用] ${chunk.trim()}`);
-            }
-          },
+    // 控制台流 - 使用彩色输出
+    streams.push({
+      level: "info",
+      stream: {
+        write: (chunk: string) => {
+          try {
+            const logObj = JSON.parse(chunk);
+            const message = this.formatConsoleMessage(logObj);
+            logger.info(`[工具调用] ${message}`);
+          } catch (error) {
+            logger.info(`[工具调用] ${chunk.trim()}`);
+          }
         },
-      });
+      },
+    });
 
-      // 文件流 - JSON 格式，带错误处理
-      try {
-        streams.push({
-          level: "info",
-          stream: pino.destination({
-            dest: logFilePath,
-            sync: true, // 同步写入确保测试可靠性
-            append: true,
-            mkdir: true,
-          }),
-        });
-      } catch (error) {
-        // 如果文件路径无效，记录错误但不抛出异常
-        logger.error("无法创建工具调用日志文件:", error);
-      }
-    }
-
-    // 如果没有可用的流，创建一个空的流
-    if (streams.length === 0) {
+    // 文件流 - JSON 格式，带错误处理
+    try {
       streams.push({
         level: "info",
-        stream: pino.destination({ dest: "/dev/null" }),
+        stream: pino.destination({
+          dest: logFilePath,
+          sync: true, // 同步写入确保测试可靠性
+          append: true,
+          mkdir: true,
+        }),
       });
+    } catch (error) {
+      // 如果文件路径无效，记录错误但不抛出异常
+      logger.error("无法创建工具调用日志文件:", error);
     }
 
     return pino(
@@ -129,28 +116,61 @@ export class ToolCallLogger {
   }
 
   /**
-   * 记录工具调用
-   * @param record 工具调用记录
+   * 清理旧的日志记录，确保不超过最大记录数量
    */
-  async recordToolCall(record: ToolCallRecord): Promise<void> {
-    // 如果未启用，直接返回
-    if (!this.enabled) {
-      return;
-    }
-
+  private async cleanupOldRecords(): Promise<void> {
     try {
-      // 直接使用 Pino 记录日志，自动处理并发和文件写入
-      this.pinoLogger.info(record, record.toolName);
+      // 检查日志文件是否存在
+      if (!fs.existsSync(this.logFilePath)) {
+        return;
+      }
+
+      // 读取文件内容
+      const content = fs.readFileSync(this.logFilePath, "utf8");
+      const lines = content
+        .trim()
+        .split("\n")
+        .filter((line) => line.trim() !== "");
+
+      // 如果记录数量未超过限制，直接返回
+      if (lines.length <= this.maxRecords) {
+        return;
+      }
+
+      // 计算需要删除的记录数量
+      const recordsToRemove = lines.length - this.maxRecords + 1; // +1 为即将写入的新记录预留空间
+
+      // 删除最旧的记录（从文件开头删除）
+      const linesToKeep = lines.slice(recordsToRemove);
+
+      // 重新写入文件
+      const newContent =
+        linesToKeep.join("\n") + (linesToKeep.length > 0 ? "\n" : "");
+      fs.writeFileSync(this.logFilePath, newContent, "utf8");
+
+      logger.debug(
+        `已清理 ${recordsToRemove} 条旧的工具调用记录，保留最新 ${this.maxRecords} 条`
+      );
     } catch (error) {
-      logger.warn("记录工具调用失败:", error);
+      logger.error("清理旧工具调用记录失败:", error);
     }
   }
 
   /**
-   * 检查是否启用
+   * 记录工具调用
+   * @param record 工具调用记录
    */
-  isEnabled(): boolean {
-    return this.enabled;
+  async recordToolCall(record: ToolCallRecord): Promise<void> {
+    try {
+      // 在写入新记录前，先清理旧记录以确保不超过最大记录数量
+      await this.cleanupOldRecords();
+
+      // 使用 Pino 记录日志，自动处理并发和文件写入
+      this.pinoLogger.info(record, record.toolName);
+    } catch (error) {
+      // 记录失败不应该影响主流程，只记录错误日志
+      logger.error("记录工具调用失败:", error);
+    }
   }
 
   /**
