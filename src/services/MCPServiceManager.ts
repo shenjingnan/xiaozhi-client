@@ -57,6 +57,8 @@ export class MCPServiceManager {
   private cacheManager: MCPCacheManager; // 缓存管理器
   private toolSyncManager: ToolSyncManager; // 工具同步管理器
   private eventBus = getEventBus(); // 事件总线
+  private retryTimers: Map<string, NodeJS.Timeout> = new Map(); // 重试定时器
+  private failedServices: Set<string> = new Set(); // 失败的服务集合
 
   /**
    * 创建 MCPServiceManager 实例
@@ -273,8 +275,68 @@ export class MCPServiceManager {
       return;
     }
 
-    for (const [serviceName] of configEntries) {
-      await this.startService(serviceName);
+    // 记录启动开始
+    this.logger.info(
+      `[MCPManager] 开始并行启动 ${configEntries.length} 个 MCP 服务`
+    );
+
+    // 并行启动所有服务，实现服务隔离
+    const startPromises = configEntries.map(async ([serviceName]) => {
+      try {
+        await this.startService(serviceName);
+        return { serviceName, success: true, error: null };
+      } catch (error) {
+        return {
+          serviceName,
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+    });
+
+    // 等待所有服务启动完成
+    const results = await Promise.allSettled(startPromises);
+
+    // 统计启动结果
+    let successCount = 0;
+    let failureCount = 0;
+    const failedServices: string[] = [];
+
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        if (result.value.success) {
+          successCount++;
+        } else {
+          failureCount++;
+          failedServices.push(result.value.serviceName);
+        }
+      } else {
+        failureCount++;
+      }
+    }
+
+    // 记录启动完成统计
+    this.logger.info(
+      `[MCPManager] 服务启动完成 - 成功: ${successCount}, 失败: ${failureCount}`
+    );
+
+    // 记录失败的服务列表
+    if (failedServices.length > 0) {
+      this.logger.warn(
+        `[MCPManager] 以下服务启动失败: ${failedServices.join(", ")}`
+      );
+
+      // 如果所有服务都失败了，发出警告但系统继续运行以便重试
+      if (failureCount === configEntries.length) {
+        this.logger.warn(
+          "[MCPManager] 所有 MCP 服务启动失败，但系统将继续运行以便重试"
+        );
+      }
+    }
+
+    // 启动失败服务重试机制
+    if (failedServices.length > 0) {
+      this.scheduleFailedServicesRetry(failedServices);
     }
   }
 
@@ -282,8 +344,6 @@ export class MCPServiceManager {
    * 启动单个 MCP 服务
    */
   async startService(serviceName: string): Promise<void> {
-    this.logger.debug(`[MCPManager] 启动 MCP 服务: ${serviceName}`);
-
     const config = this.configs[serviceName];
     if (!config) {
       throw new Error(`未找到服务配置: ${serviceName}`);
@@ -321,6 +381,8 @@ export class MCPServiceManager {
         `[MCPManager] 启动 ${serviceName} 服务失败:`,
         (error as Error).message
       );
+      // 清理可能的部分状态
+      this.services.delete(serviceName);
       throw error;
     }
   }
@@ -419,24 +481,41 @@ export class MCPServiceManager {
 
     // 1. 收集所有已连接服务的工具（包含启用状态过滤）
     for (const [serviceName, service] of this.services) {
-      if (service.isConnected()) {
-        const serviceTools = service.getTools();
-        for (const tool of serviceTools) {
-          // 检查工具启用状态 - 这个调用可能会抛出异常
-          const isEnabled = configManager.isToolEnabled(serviceName, tool.name);
-          if (!isEnabled) {
-            continue; // 跳过禁用的工具
-          }
+      try {
+        if (service.isConnected()) {
+          const serviceTools = service.getTools();
+          for (const tool of serviceTools) {
+            try {
+              // 检查工具启用状态 - 这个调用可能会抛出异常
+              const isEnabled = configManager.isToolEnabled(
+                serviceName,
+                tool.name
+              );
+              if (!isEnabled) {
+                continue; // 跳过禁用的工具
+              }
 
-          const toolKey = `${serviceName}__${tool.name}`;
-          allTools.push({
-            name: toolKey,
-            description: tool.description || "",
-            inputSchema: tool.inputSchema,
-            serviceName,
-            originalName: tool.name,
-          });
+              const toolKey = `${serviceName}__${tool.name}`;
+              allTools.push({
+                name: toolKey,
+                description: tool.description || "",
+                inputSchema: tool.inputSchema,
+                serviceName,
+                originalName: tool.name,
+              });
+            } catch (toolError) {
+              this.logger.warn(
+                `[MCPManager] 检查工具 ${serviceName}.${tool.name} 启用状态失败，跳过该工具:`,
+                toolError
+              );
+            }
+          }
         }
+      } catch (serviceError) {
+        this.logger.warn(
+          `[MCPManager] 获取服务 ${serviceName} 的工具失败，跳过该服务:`,
+          serviceError
+        );
       }
     }
 
@@ -457,15 +536,23 @@ export class MCPServiceManager {
     }
 
     for (const tool of customTools) {
-      allTools.push({
-        name: tool.name,
-        description: tool.description || "",
-        inputSchema: tool.inputSchema,
-        serviceName: this.getServiceNameForTool(tool),
-        originalName: tool.name,
-      });
+      try {
+        allTools.push({
+          name: tool.name,
+          description: tool.description || "",
+          inputSchema: tool.inputSchema,
+          serviceName: this.getServiceNameForTool(tool),
+          originalName: tool.name,
+        });
+      } catch (toolError) {
+        this.logger.warn(
+          `[MCPManager] 处理 CustomMCP 工具 ${tool.name} 失败，跳过该工具:`,
+          toolError
+        );
+      }
     }
 
+    this.logger.debug(`[MCPManager] 成功获取 ${allTools.length} 个可用工具`);
     return allTools;
   }
 
@@ -886,6 +973,9 @@ export class MCPServiceManager {
    */
   async stopAllServices(): Promise<void> {
     this.logger.info("[MCPManager] 正在停止所有 MCP 服务...");
+
+    // 停止所有服务重试
+    this.stopAllServiceRetries();
 
     // 停止所有服务实例
     for (const [serviceName, service] of this.services) {
@@ -1315,6 +1405,170 @@ export class MCPServiceManager {
     }
 
     return false;
+  }
+
+  /**
+   * 安排失败服务的重试
+   * @param failedServices 失败的服务列表
+   */
+  private scheduleFailedServicesRetry(failedServices: string[]): void {
+    if (failedServices.length === 0) return;
+
+    // 记录重试安排
+    this.logger.info(
+      `[MCPManager] 安排 ${failedServices.length} 个失败服务的重试`
+    );
+
+    // 初始重试延迟：30秒
+    const initialDelay = 30000;
+
+    for (const serviceName of failedServices) {
+      this.failedServices.add(serviceName);
+      this.scheduleServiceRetry(serviceName, initialDelay);
+    }
+  }
+
+  /**
+   * 安排单个服务的重试
+   * @param serviceName 服务名称
+   * @param delay 延迟时间（毫秒）
+   */
+  private scheduleServiceRetry(serviceName: string, delay: number): void {
+    // 清除现有定时器
+    const existingTimer = this.retryTimers.get(serviceName);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+      this.retryTimers.delete(serviceName);
+    }
+
+    this.logger.debug(
+      `[MCPManager] 安排服务 ${serviceName} 在 ${delay}ms 后重试`
+    );
+
+    const timer = setTimeout(async () => {
+      this.retryTimers.delete(serviceName);
+      await this.retryFailedService(serviceName);
+    }, delay);
+
+    this.retryTimers.set(serviceName, timer);
+  }
+
+  /**
+   * 重试失败的服务
+   * @param serviceName 服务名称
+   */
+  private async retryFailedService(serviceName: string): Promise<void> {
+    if (!this.failedServices.has(serviceName)) {
+      return; // 服务已经成功启动或不再需要重试
+    }
+
+    try {
+      await this.startService(serviceName);
+
+      // 重试成功
+      this.failedServices.delete(serviceName);
+      this.logger.info(`[MCPManager] 服务 ${serviceName} 重试启动成功`);
+
+      // 重新初始化CustomMCPHandler以包含新启动的服务工具
+      try {
+        await this.refreshCustomMCPHandlerPublic();
+      } catch (error) {
+        this.logger.error("[MCPManager] 刷新CustomMCPHandler失败:", error);
+      }
+    } catch (error) {
+      this.logger.error(
+        `[MCPManager] 服务 ${serviceName} 重试启动失败:`,
+        (error as Error).message
+      );
+
+      // 指数退避重试策略：延迟时间翻倍，最大不超过5分钟
+      const currentDelay = this.getRetryDelay(serviceName);
+      const nextDelay = Math.min(currentDelay * 2, 300000); // 最大5分钟
+
+      this.logger.debug(
+        `[MCPManager] 服务 ${serviceName} 下次重试将在 ${nextDelay}ms 后进行`
+      );
+
+      this.scheduleServiceRetry(serviceName, nextDelay);
+    }
+  }
+
+  /**
+   * 获取当前重试延迟时间
+   * @param serviceName 服务名称
+   * @returns 当前延迟时间
+   */
+  private getRetryDelay(serviceName: string): number {
+    // 这里可以实现更复杂的状态跟踪来计算准确的延迟
+    // 简化实现：返回一个基于服务名称的哈希值的初始延迟
+    const hash = serviceName
+      .split("")
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return 30000 + (hash % 60000); // 30-90秒之间的初始延迟
+  }
+
+  /**
+   * 停止指定服务的重试
+   * @param serviceName 服务名称
+   */
+  public stopServiceRetry(serviceName: string): void {
+    const timer = this.retryTimers.get(serviceName);
+    if (timer) {
+      clearTimeout(timer);
+      this.retryTimers.delete(serviceName);
+      this.logger.debug(`[MCPManager] 已停止服务 ${serviceName} 的重试`);
+    }
+    this.failedServices.delete(serviceName);
+  }
+
+  /**
+   * 停止所有服务的重试
+   */
+  public stopAllServiceRetries(): void {
+    this.logger.info("[MCPManager] 停止所有服务重试");
+
+    for (const [serviceName, timer] of this.retryTimers) {
+      clearTimeout(timer);
+      this.logger.debug(`[MCPManager] 已停止服务 ${serviceName} 的重试`);
+    }
+
+    this.retryTimers.clear();
+    this.failedServices.clear();
+  }
+
+  /**
+   * 获取失败服务列表
+   * @returns 失败的服务名称数组
+   */
+  public getFailedServices(): string[] {
+    return Array.from(this.failedServices);
+  }
+
+  /**
+   * 检查服务是否失败
+   * @param serviceName 服务名称
+   * @returns 如果服务失败返回true
+   */
+  public isServiceFailed(serviceName: string): boolean {
+    return this.failedServices.has(serviceName);
+  }
+
+  /**
+   * 获取重试统计信息
+   * @returns 重试统计信息
+   */
+  public getRetryStats(): {
+    failedServices: string[];
+    activeRetries: string[];
+    totalFailed: number;
+    totalActiveRetries: number;
+  } {
+    return {
+      failedServices: Array.from(this.failedServices),
+      activeRetries: Array.from(this.retryTimers.keys()),
+      totalFailed: this.failedServices.size,
+      totalActiveRetries: this.retryTimers.size,
+    };
   }
 }
 

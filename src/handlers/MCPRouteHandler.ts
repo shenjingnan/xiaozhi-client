@@ -704,7 +704,7 @@ export class MCPRouteHandler {
 
     const connectionDuration = Date.now() - client.connectedAt.getTime();
 
-    this.logger.info(`SSE 客户端断开连接: ${client.id} (会话: ${sessionId})`, {
+    this.logger.debug(`SSE 客户端断开连接: ${client.id} (会话: ${sessionId})`, {
       reason: reason,
       duration: connectionDuration,
       messageCount: client.messageCount,
