@@ -150,9 +150,39 @@ describe("MCPServiceManager", () => {
       const error = new Error("Service start failed");
       mockMCPService.connect.mockRejectedValue(error);
 
-      await expect(manager.startAllServices()).rejects.toThrow(
+      // 使用假定时器来避免重试定时器影响测试
+      vi.useFakeTimers();
+
+      // 现在startAllServices不会抛出异常，而是记录日志并启动重试机制
+      await manager.startAllServices();
+
+      // 验证错误日志被记录
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        "[MCPManager] 启动服务 calculator 失败:",
         "Service start failed"
       );
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        "[MCPManager] 启动服务 datetime 失败:",
+        "Service start failed"
+      );
+
+      // 验证启动统计信息
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        "[MCPManager] 服务启动完成 - 成功: 0, 失败: 2"
+      );
+
+      // 验证失败服务列表
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        "[MCPManager] 以下服务启动失败: calculator, datetime"
+      );
+
+      // 验证重试机制被启动
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        "[MCPManager] 安排 2 个失败服务的重试"
+      );
+
+      // 恢复真实定时器
+      vi.useRealTimers();
     });
   });
 
@@ -461,11 +491,25 @@ describe("MCPServiceManager", () => {
       ]);
       mockMCPService.isConnected.mockReturnValue(true);
 
+      // 使用假定时器来避免重试定时器影响测试
+      vi.useFakeTimers();
+
       // 启动所有服务
       await manager.startAllServices();
 
-      // 应该启动了 4 个服务（calculator, datetime, sse-service, http-service）
+      // 验证启动日志
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        "[MCPManager] 开始并行启动 4 个 MCP 服务"
+      );
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        "[MCPManager] 服务启动完成 - 成功: 4, 失败: 0"
+      );
+
+      // 验证所有4个服务都被创建
       expect(MCPService).toHaveBeenCalledTimes(4);
+
+      // 恢复真实定时器
+      vi.useRealTimers();
     });
 
     it("应该聚合不同协议的工具", async () => {
@@ -921,8 +965,17 @@ describe("MCPServiceManager", () => {
         throw new Error("配置读取失败");
       });
 
-      // getAllTools 应该能够处理异常，不应该崩溃
-      expect(() => manager.getAllTools()).toThrow("配置读取失败");
+      // 获取工具时应该处理异常并记录警告日志
+      const tools = manager.getAllTools();
+
+      // 验证异常被处理，返回空数组
+      expect(tools).toEqual([]);
+
+      // 验证警告日志被记录
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        "[MCPManager] 检查工具 test-service.enabled-tool 启用状态失败，跳过该工具:",
+        expect.any(Error)
+      );
     });
 
     it("应该保持工具的原始信息不变", () => {
@@ -1021,6 +1074,343 @@ describe("MCPServiceManager", () => {
       expect(toolNames).toContain("tool-b1");
       expect(toolNames).not.toContain("tool-a1");
       expect(toolNames).not.toContain("tool-b2");
+    });
+  });
+
+  describe("重试机制", () => {
+    beforeEach(() => {
+      // 使用假定时器控制重试行为
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      // 恢复真实定时器
+      vi.useRealTimers();
+    });
+
+    it("应该在服务启动失败时启动重试机制", async () => {
+      const error = new Error("Service connection failed");
+      mockMCPService.connect.mockRejectedValue(error);
+
+      // 启动所有服务（应该失败并启动重试）
+      await manager.startAllServices();
+
+      // 验证失败服务被记录
+      const failedServices = manager.getFailedServices();
+      expect(failedServices).toContain("calculator");
+      expect(failedServices).toContain("datetime");
+
+      // 验证重试统计信息
+      const retryStats = manager.getRetryStats();
+      expect(retryStats.totalFailed).toBe(2);
+      expect(retryStats.totalActiveRetries).toBe(2);
+      expect(retryStats.failedServices).toContain("calculator");
+      expect(retryStats.failedServices).toContain("datetime");
+      expect(retryStats.activeRetries).toContain("calculator");
+      expect(retryStats.activeRetries).toContain("datetime");
+
+      // 验证日志
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        "[MCPManager] 安排 2 个失败服务的重试"
+      );
+    });
+
+    it("应该在重试成功时清理失败状态", async () => {
+      // 为每个服务创建独立的 mock 实例
+      const serviceMocks = new Map();
+
+      vi.mocked(MCPService).mockImplementation((config: MCPServiceConfig) => {
+        if (!serviceMocks.has(config.name)) {
+          const error = new Error("Initial connection failed");
+          const serviceMock = {
+            connect: vi
+              .fn()
+              .mockRejectedValueOnce(error) // 第一次失败
+              .mockResolvedValue(undefined), // 第二次成功
+            disconnect: vi.fn().mockResolvedValue(undefined),
+            isConnected: vi.fn().mockReturnValue(true),
+            getTools: vi.fn().mockReturnValue([]),
+            callTool: vi.fn(),
+            getStatus: vi.fn(),
+          };
+          serviceMocks.set(config.name, serviceMock);
+        }
+        return serviceMocks.get(config.name);
+      });
+
+      // 启动服务（第一次失败）
+      await manager.startAllServices();
+
+      // 验证服务被标记为失败
+      expect(manager.isServiceFailed("calculator")).toBe(true);
+
+      // 快进时间，触发重试
+      vi.advanceTimersByTime(30000);
+
+      // 等待重试完成，但限制运行的定时器数量避免无限循环
+      await vi.runOnlyPendingTimersAsync();
+
+      // 验证服务不再失败
+      expect(manager.isServiceFailed("calculator")).toBe(false);
+
+      // 验证成功日志
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        expect.stringContaining("重试启动成功")
+      );
+    });
+
+    it("应该在重试失败时安排下次重试", async () => {
+      const error = new Error("Connection failed");
+      mockMCPService.connect.mockRejectedValue(error); // 始终失败
+
+      // 启动服务（第一次失败）
+      await manager.startAllServices();
+
+      // 验证初始重试
+      expect(manager.getRetryStats().totalActiveRetries).toBe(2);
+
+      // 快进时间，触发第一次重试
+      vi.advanceTimersByTime(30000);
+      await vi.runOnlyPendingTimersAsync();
+
+      // 验证重试仍在继续（指数退避）
+      expect(manager.getRetryStats().totalActiveRetries).toBe(2);
+
+      // 验证重试失败日志
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.stringContaining("重试启动失败"),
+        "Connection failed"
+      );
+
+      // 快进更多时间，触发第二次重试
+      vi.advanceTimersByTime(60000); // 60秒（30*2）
+      await vi.runOnlyPendingTimersAsync();
+
+      // 验证重试仍然继续
+      expect(manager.getRetryStats().totalActiveRetries).toBe(2);
+    });
+
+    it("应该能够停止指定服务的重试", async () => {
+      const error = new Error("Connection failed");
+      mockMCPService.connect.mockRejectedValue(error);
+
+      // 启动服务（失败）
+      await manager.startAllServices();
+
+      // 验证重试正在进行
+      expect(manager.isServiceFailed("calculator")).toBe(true);
+
+      // 停止特定服务的重试
+      manager.stopServiceRetry("calculator");
+
+      // 验证重试被停止
+      expect(manager.isServiceFailed("calculator")).toBe(false);
+      expect(manager.getRetryStats().failedServices).not.toContain(
+        "calculator"
+      );
+      expect(manager.getRetryStats().activeRetries).not.toContain("calculator");
+
+      // 验证日志
+      expect(mockLogger.debug).toHaveBeenCalledWith(
+        "[MCPManager] 已停止服务 calculator 的重试"
+      );
+    });
+
+    it("应该能够停止所有服务的重试", async () => {
+      const error = new Error("Connection failed");
+      mockMCPService.connect.mockRejectedValue(error);
+
+      // 启动服务（失败）
+      await manager.startAllServices();
+
+      // 验证重试正在进行
+      expect(manager.getRetryStats().totalFailed).toBe(2);
+      expect(manager.getRetryStats().totalActiveRetries).toBe(2);
+
+      // 停止所有重试
+      manager.stopAllServiceRetries();
+
+      // 验证所有重试被停止
+      expect(manager.getRetryStats().totalFailed).toBe(0);
+      expect(manager.getRetryStats().totalActiveRetries).toBe(0);
+
+      // 验证日志
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        "[MCPManager] 停止所有服务重试"
+      );
+    });
+  });
+
+  describe("失败服务管理", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("应该正确跟踪失败服务状态", async () => {
+      const error = new Error("Service failed");
+      mockMCPService.connect.mockRejectedValue(error);
+
+      // 启动服务
+      await manager.startAllServices();
+
+      // 验证失败服务列表
+      const failedServices = manager.getFailedServices();
+      expect(failedServices).toHaveLength(2);
+      expect(failedServices).toContain("calculator");
+      expect(failedServices).toContain("datetime");
+
+      // 验证单个服务检查
+      expect(manager.isServiceFailed("calculator")).toBe(true);
+      expect(manager.isServiceFailed("datetime")).toBe(true);
+      expect(manager.isServiceFailed("non-existent")).toBe(false);
+    });
+
+    it("应该提供准确的重试统计信息", async () => {
+      const error = new Error("Service failed");
+      mockMCPService.connect.mockRejectedValue(error);
+
+      // 启动服务
+      await manager.startAllServices();
+
+      // 获取重试统计
+      const stats = manager.getRetryStats();
+
+      // 验证统计信息
+      expect(stats).toEqual({
+        failedServices: ["calculator", "datetime"],
+        activeRetries: ["calculator", "datetime"],
+        totalFailed: 2,
+        totalActiveRetries: 2,
+      });
+    });
+
+    it("应该在服务成功后更新失败状态", async () => {
+      // 为每个服务创建独立的 mock 实例
+      const serviceMocks = new Map();
+
+      vi.mocked(MCPService).mockImplementation((config: MCPServiceConfig) => {
+        if (!serviceMocks.has(config.name)) {
+          const serviceMock = {
+            connect: vi
+              .fn()
+              .mockRejectedValueOnce(new Error("Initial failure")) // 第一次失败
+              .mockResolvedValue(undefined), // 第二次成功
+            disconnect: vi.fn().mockResolvedValue(undefined),
+            isConnected: vi.fn().mockReturnValue(true),
+            getTools: vi.fn().mockReturnValue([]),
+            callTool: vi.fn(),
+            getStatus: vi.fn(),
+          };
+          serviceMocks.set(config.name, serviceMock);
+        }
+        return serviceMocks.get(config.name);
+      });
+
+      // 启动服务（失败）
+      await manager.startAllServices();
+
+      // 验证失败状态
+      expect(manager.isServiceFailed("calculator")).toBe(true);
+
+      // 触发重试
+      vi.advanceTimersByTime(30000);
+      await vi.runOnlyPendingTimersAsync();
+
+      // 验证状态已更新
+      expect(manager.isServiceFailed("calculator")).toBe(false);
+      // 由于两个服务都设置了相同的mock行为，都会成功重试，所以失败数量为0
+      expect(manager.getRetryStats().totalFailed).toBe(0);
+    });
+  });
+
+  describe("并行启动场景", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("应该处理部分成功部分失败的场景", async () => {
+      // 设置不同服务的连接行为
+      vi.mocked(MCPService).mockImplementation((config: MCPServiceConfig) => {
+        const serviceMock = {
+          connect: vi.fn(),
+          disconnect: vi.fn(),
+          isConnected: vi.fn().mockReturnValue(true),
+          getTools: vi.fn().mockReturnValue([]),
+          callTool: vi.fn(),
+          getStatus: vi.fn(),
+        };
+
+        if (config.name === "calculator") {
+          serviceMock.connect.mockResolvedValue(undefined); // 成功
+        } else {
+          serviceMock.connect.mockRejectedValue(new Error("Failed to connect")); // 失败
+        }
+
+        return serviceMock as any;
+      });
+
+      // 启动所有服务
+      await manager.startAllServices();
+
+      // 验证启动统计
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        "[MCPManager] 服务启动完成 - 成功: 1, 失败: 1"
+      );
+
+      // 验证失败服务列表
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        "[MCPManager] 以下服务启动失败: datetime"
+      );
+
+      // 验证成功服务可正常使用
+      expect(manager.getService("calculator")).toBeDefined();
+      expect(manager.getService("datetime")).toBeUndefined();
+
+      // 验证重试机制仅对失败服务启动
+      expect(manager.getRetryStats().totalFailed).toBe(1);
+      expect(manager.getRetryStats().failedServices).toEqual(["datetime"]);
+    });
+
+    it("应该正确记录启动过程的详细日志", async () => {
+      const error = new Error("Connection timeout");
+      mockMCPService.connect.mockRejectedValue(error);
+
+      // 启动所有服务
+      await manager.startAllServices();
+
+      // 验证详细的启动日志
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        "[MCPManager] 开始并行启动 2 个 MCP 服务"
+      );
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        "[MCPManager] 启动服务 calculator 失败:",
+        "Connection timeout"
+      );
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        "[MCPManager] 启动服务 datetime 失败:",
+        "Connection timeout"
+      );
+
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        "[MCPManager] 服务启动完成 - 成功: 0, 失败: 2"
+      );
+
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        "[MCPManager] 以下服务启动失败: calculator, datetime"
+      );
+
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        "[MCPManager] 所有 MCP 服务启动失败，但系统将继续运行以便重试"
+      );
     });
   });
 });
