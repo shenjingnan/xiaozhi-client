@@ -276,7 +276,9 @@ export class MCPServiceManager {
     }
 
     // 并行启动所有服务，实现服务隔离
-    this.logger.info(`[MCPManager] 开始并行启动 ${configEntries.length} 个 MCP 服务`);
+    this.logger.info(
+      `[MCPManager] 开始并行启动 ${configEntries.length} 个 MCP 服务`
+    );
     const startPromises = configEntries.map(async ([serviceName]) => {
       try {
         await this.startService(serviceName);
@@ -289,7 +291,7 @@ export class MCPServiceManager {
         return {
           serviceName,
           success: false,
-          error: error instanceof Error ? error.message : String(error)
+          error: error instanceof Error ? error.message : String(error),
         };
       }
     });
@@ -303,7 +305,7 @@ export class MCPServiceManager {
     const failedServices: string[] = [];
 
     for (const result of results) {
-      if (result.status === 'fulfilled') {
+      if (result.status === "fulfilled") {
         if (result.value.success) {
           successCount++;
         } else {
@@ -312,7 +314,10 @@ export class MCPServiceManager {
         }
       } else {
         failureCount++;
-        this.logger.error("[MCPManager] 服务启动过程中发生意外错误:", result.reason);
+        this.logger.error(
+          "[MCPManager] 服务启动过程中发生意外错误:",
+          result.reason
+        );
       }
     }
 
@@ -322,7 +327,7 @@ export class MCPServiceManager {
 
     if (failureCount > 0) {
       this.logger.warn(
-        `[MCPManager] 以下服务启动失败: ${failedServices.join(', ')}`
+        `[MCPManager] 以下服务启动失败: ${failedServices.join(", ")}`
       );
     }
 
@@ -488,7 +493,10 @@ export class MCPServiceManager {
           for (const tool of serviceTools) {
             try {
               // 检查工具启用状态 - 这个调用可能会抛出异常
-              const isEnabled = configManager.isToolEnabled(serviceName, tool.name);
+              const isEnabled = configManager.isToolEnabled(
+                serviceName,
+                tool.name
+              );
               if (!isEnabled) {
                 continue; // 跳过禁用的工具
               }
@@ -506,8 +514,6 @@ export class MCPServiceManager {
                 `[MCPManager] 检查工具 ${serviceName}.${tool.name} 启用状态失败，跳过该工具:`,
                 toolError
               );
-              // 单个工具状态检查失败不影响其他工具
-              continue;
             }
           }
         }
@@ -516,8 +522,6 @@ export class MCPServiceManager {
           `[MCPManager] 获取服务 ${serviceName} 的工具失败，跳过该服务:`,
           serviceError
         );
-        // 单个服务的工具获取失败不影响其他服务
-        continue;
       }
     }
 
@@ -551,14 +555,10 @@ export class MCPServiceManager {
           `[MCPManager] 处理 CustomMCP 工具 ${tool.name} 失败，跳过该工具:`,
           toolError
         );
-        // 单个 CustomMCP 工具处理失败不影响其他工具
-        continue;
       }
     }
 
-    this.logger.debug(
-      `[MCPManager] 成功获取 ${allTools.length} 个可用工具`
-    );
+    this.logger.debug(`[MCPManager] 成功获取 ${allTools.length} 个可用工具`);
     return allTools;
   }
 
@@ -1420,7 +1420,9 @@ export class MCPServiceManager {
   private scheduleFailedServicesRetry(failedServices: string[]): void {
     if (failedServices.length === 0) return;
 
-    this.logger.info(`[MCPManager] 安排 ${failedServices.length} 个失败服务的重试`);
+    this.logger.info(
+      `[MCPManager] 安排 ${failedServices.length} 个失败服务的重试`
+    );
 
     // 初始重试延迟：30秒
     const initialDelay = 30000;
@@ -1477,14 +1479,12 @@ export class MCPServiceManager {
       // 重新初始化CustomMCPHandler以包含新启动的服务工具
       try {
         await this.refreshCustomMCPHandlerPublic();
-        this.logger.info(`[MCPManager] 已更新工具列表，包含 ${serviceName} 的工具`);
-      } catch (error) {
-        this.logger.error(
-          `[MCPManager] 刷新CustomMCPHandler失败:`,
-          error
+        this.logger.info(
+          `[MCPManager] 已更新工具列表，包含 ${serviceName} 的工具`
         );
+      } catch (error) {
+        this.logger.error("[MCPManager] 刷新CustomMCPHandler失败:", error);
       }
-
     } catch (error) {
       this.logger.error(
         `[MCPManager] 服务 ${serviceName} 重试启动失败:`,
@@ -1511,7 +1511,9 @@ export class MCPServiceManager {
   private getRetryDelay(serviceName: string): number {
     // 这里可以实现更复杂的状态跟踪来计算准确的延迟
     // 简化实现：返回一个基于服务名称的哈希值的初始延迟
-    const hash = serviceName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const hash = serviceName
+      .split("")
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return 30000 + (hash % 60000); // 30-90秒之间的初始延迟
   }
 
