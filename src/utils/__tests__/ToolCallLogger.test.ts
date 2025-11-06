@@ -24,7 +24,7 @@ describe("ToolCallLogger", () => {
   const testDir = process.env.CI
     ? path.join(os.tmpdir(), "xiaozhi-test-logger")
     : path.join(process.cwd(), "tool-call-logger");
-  const logFilePath = path.join(testDir, "tool-calls.log.json");
+  const logFilePath = path.join(testDir, "tool-calls.jsonl");
 
   let toolCallLogger: ToolCallLogger;
   let config: ToolCallLogConfig;
@@ -71,7 +71,7 @@ describe("ToolCallLogger", () => {
 
     it("should generate default log file path when not provided", () => {
       const defaultLogger = new ToolCallLogger({}, testDir);
-      const expectedPath = path.join(testDir, "tool-calls.log.json");
+      const expectedPath = path.join(testDir, "tool-calls.jsonl");
       expect(defaultLogger.getLogFilePath()).toBe(expectedPath);
     });
   });

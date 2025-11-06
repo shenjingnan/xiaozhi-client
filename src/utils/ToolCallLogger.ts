@@ -1,6 +1,6 @@
 /**
  * MCP 工具调用记录模块
- * 负责将 MCP 工具调用记录单独保存为 JSON 文件
+ * 负责将 MCP 工具调用记录单独保存为 JSONL 文件
  */
 
 import * as fs from "node:fs";
@@ -29,7 +29,7 @@ export interface ToolCallLogConfig {
 
 /**
  * MCP 工具调用记录器
- * 提供工具调用的 JSON 格式记录功能
+ * 提供工具调用的 JSONL 格式记录功能
  */
 export class ToolCallLogger {
   private pinoLogger: PinoLogger;
@@ -41,7 +41,7 @@ export class ToolCallLogger {
 
     // 确定日志文件路径
     this.logFilePath =
-      config.logFilePath || path.join(configDir, "tool-calls.log.json");
+      config.logFilePath || path.join(configDir, "tool-calls.jsonl");
 
     // 创建 Pino 实例
     this.pinoLogger = this.createPinoLogger(this.logFilePath);
@@ -73,7 +73,7 @@ export class ToolCallLogger {
       },
     });
 
-    // 文件流 - JSON 格式，带错误处理
+    // 文件流 - JSONL 格式，带错误处理
     try {
       streams.push({
         level: "info",

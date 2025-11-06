@@ -47,7 +47,7 @@ vi.mock("./MCPCacheManager.js", () => ({
 vi.mock("../utils/ToolCallLogger.js", () => ({
   ToolCallLogger: vi.fn().mockImplementation(() => ({
     recordToolCall: vi.fn().mockResolvedValue(undefined),
-    getLogFilePath: vi.fn().mockReturnValue("/tmp/tool-calls.log.json"),
+    getLogFilePath: vi.fn().mockReturnValue("/tmp/tool-calls.jsonl"),
     getMaxRecords: vi.fn().mockReturnValue(100),
   })),
 }));
