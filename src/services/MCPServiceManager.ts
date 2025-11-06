@@ -320,8 +320,6 @@ export class MCPServiceManager {
    * 启动单个 MCP 服务
    */
   async startService(serviceName: string): Promise<void> {
-    this.logger.debug(`[MCPManager] 启动 MCP 服务: ${serviceName}`);
-
     const config = this.configs[serviceName];
     if (!config) {
       throw new Error(`未找到服务配置: ${serviceName}`);
@@ -1435,21 +1433,15 @@ export class MCPServiceManager {
       return; // 服务已经成功启动或不再需要重试
     }
 
-    this.logger.info(`[MCPManager] 重试启动服务: ${serviceName}`);
-
     try {
       await this.startService(serviceName);
 
       // 重试成功
       this.failedServices.delete(serviceName);
-      this.logger.info(`[MCPManager] 服务 ${serviceName} 重试启动成功`);
 
       // 重新初始化CustomMCPHandler以包含新启动的服务工具
       try {
         await this.refreshCustomMCPHandlerPublic();
-        this.logger.info(
-          `[MCPManager] 已更新工具列表，包含 ${serviceName} 的工具`
-        );
       } catch (error) {
         this.logger.error("[MCPManager] 刷新CustomMCPHandler失败:", error);
       }
