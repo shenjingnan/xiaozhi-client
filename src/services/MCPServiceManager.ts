@@ -276,18 +276,11 @@ export class MCPServiceManager {
     }
 
     // 并行启动所有服务，实现服务隔离
-    this.logger.info(
-      `[MCPManager] 开始并行启动 ${configEntries.length} 个 MCP 服务`
-    );
     const startPromises = configEntries.map(async ([serviceName]) => {
       try {
         await this.startService(serviceName);
         return { serviceName, success: true, error: null };
       } catch (error) {
-        this.logger.error(
-          `[MCPManager] 启动服务 ${serviceName} 失败:`,
-          (error as Error).message
-        );
         return {
           serviceName,
           success: false,
@@ -314,28 +307,7 @@ export class MCPServiceManager {
         }
       } else {
         failureCount++;
-        this.logger.error(
-          "[MCPManager] 服务启动过程中发生意外错误:",
-          result.reason
-        );
       }
-    }
-
-    this.logger.info(
-      `[MCPManager] 服务启动完成 - 成功: ${successCount}, 失败: ${failureCount}`
-    );
-
-    if (failureCount > 0) {
-      this.logger.warn(
-        `[MCPManager] 以下服务启动失败: ${failedServices.join(", ")}`
-      );
-    }
-
-    // 如果所有服务都失败，发出警告但不抛出异常
-    if (successCount === 0 && failureCount > 0) {
-      this.logger.warn(
-        "[MCPManager] 所有 MCP 服务启动失败，但系统将继续运行以便重试"
-      );
     }
 
     // 启动失败服务重试机制
