@@ -97,7 +97,6 @@ describe("CustomMCPHandler 超时响应测试", () => {
     customMCPHandler.cleanup();
   });
 
-  
   describe("任务状态管理测试", () => {
     it("应该正确生成任务ID", async () => {
       const taskId = await (customMCPHandler as any).generateTaskId(

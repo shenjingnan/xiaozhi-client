@@ -112,13 +112,21 @@ describe("CLI --info 和 --version-info 命令测试", () => {
       mockShowDetailedInfo(container);
 
       // 检查关键的输出内容
-      expect(mockConsoleLog).toHaveBeenCalledWith("🤖 小智 MCP 客户端 - 详细信息");
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        "🤖 小智 MCP 客户端 - 详细信息"
+      );
       expect(mockConsoleLog).toHaveBeenCalledWith("版本信息:");
       expect(mockConsoleLog).toHaveBeenCalledWith("  名称: xiaozhi-client");
-      expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringMatching(/^  版本: \d+\.\d+\.\d+/));
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        expect.stringMatching(/^ {2}版本: \d+\.\d+\.\d+/)
+      );
       expect(mockConsoleLog).toHaveBeenCalledWith("系统信息:");
-      expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringMatching(/^  Node\.js: v\d+\.\d+\.\d+$/));
-      expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringMatching(/^  平台: \w+ \w+$/));
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        expect.stringMatching(/^ {2}Node\.js: v\d+\.\d+\.\d+$/)
+      );
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        expect.stringMatching(/^ {2}平台: \w+ \w+$/)
+      );
       expect(mockConsoleLog).toHaveBeenCalledWith("配置信息:");
     });
 
@@ -131,11 +139,19 @@ describe("CLI --info 和 --version-info 命令测试", () => {
 
       expect(messages[0]).toBe("🤖 小智 MCP 客户端 - 详细信息");
       expect(messages[1]).toBe("版本信息:");
-      expect(messages.some((msg: string) => msg && msg.startsWith("  名称:"))).toBe(true);
-      expect(messages.some((msg: string) => msg && msg.startsWith("  版本:"))).toBe(true);
+      expect(messages.some((msg: string) => msg?.startsWith("  名称:"))).toBe(
+        true
+      );
+      expect(messages.some((msg: string) => msg?.startsWith("  版本:"))).toBe(
+        true
+      );
       expect(messages.some((msg: string) => msg === "系统信息:")).toBe(true);
-      expect(messages.some((msg: string) => msg && msg.startsWith("  Node.js:"))).toBe(true);
-      expect(messages.some((msg: string) => msg && msg.startsWith("  平台:"))).toBe(true);
+      expect(
+        messages.some((msg: string) => msg?.startsWith("  Node.js:"))
+      ).toBe(true);
+      expect(messages.some((msg: string) => msg?.startsWith("  平台:"))).toBe(
+        true
+      );
       expect(messages.some((msg: string) => msg === "配置信息:")).toBe(true);
     });
 
@@ -147,7 +163,9 @@ describe("CLI --info 和 --version-info 命令测试", () => {
       mockShowDetailedInfo(container);
 
       expect(mockConsoleLog).toHaveBeenCalledWith("  配置文件: 未初始化");
-      expect(mockConsoleLog).not.toHaveBeenCalledWith(expect.stringMatching(/^  MCP 端点:/));
+      expect(mockConsoleLog).not.toHaveBeenCalledWith(
+        expect.stringMatching(/^ {2}MCP 端点:/)
+      );
     });
   });
 
@@ -155,10 +173,16 @@ describe("CLI --info 和 --version-info 命令测试", () => {
     it("应该正确显示简化版本信息", async () => {
       mockShowVersionInfo(container);
 
-      expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringMatching(/^xiaozhi-client v\d+\.\d+\.\d+/));
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        expect.stringMatching(/^xiaozhi-client v\d+\.\d+\.\d+/)
+      );
       expect(mockConsoleLog).toHaveBeenCalledWith(expect.any(String)); // 描述
-      expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringMatching(/^Node\.js: v\d+\.\d+\.\d+$/));
-      expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringMatching(/^Platform: \w+ \w+$/));
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        expect.stringMatching(/^Node\.js: v\d+\.\d+\.\d+$/)
+      );
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        expect.stringMatching(/^Platform: \w+ \w+$/)
+      );
     });
 
     it("应该显示正确的输出格式", async () => {
@@ -167,7 +191,9 @@ describe("CLI --info 和 --version-info 命令测试", () => {
       const calls = mockConsoleLog.mock.calls;
       const messages = calls.map((call: any) => call[0]);
 
-      expect(messages[0]).toMatch(/^xiaozhi-client v\d+\.\d+\.\d+(?:-[\w.-]+)?$/);
+      expect(messages[0]).toMatch(
+        /^xiaozhi-client v\d+\.\d+\.\d+(?:-[\w.-]+)?$/
+      );
       expect(messages[1]).toMatch(/小智 AI 客户端 命令行工具/);
       expect(messages[2]).toMatch(/^Node\.js: v\d+\.\d+\.\d+$/);
       expect(messages[3]).toMatch(/^Platform: \w+ \w+$/);

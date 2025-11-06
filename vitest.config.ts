@@ -14,7 +14,7 @@ export default defineConfig({
     globals: true,
     environment: "node",
     testTimeout: 10000, // 减少默认测试超时时间
-    hookTimeout: 10000,  // 减少默认 hook 超时时间
+    hookTimeout: 10000, // 减少默认 hook 超时时间
     include: [
       "src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
       "tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
