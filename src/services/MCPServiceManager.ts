@@ -275,6 +275,11 @@ export class MCPServiceManager {
       return;
     }
 
+    // 记录启动开始
+    this.logger.info(
+      `[MCPManager] 开始并行启动 ${configEntries.length} 个 MCP 服务`
+    );
+
     // 并行启动所有服务，实现服务隔离
     const startPromises = configEntries.map(async ([serviceName]) => {
       try {
@@ -307,6 +312,25 @@ export class MCPServiceManager {
         }
       } else {
         failureCount++;
+      }
+    }
+
+    // 记录启动完成统计
+    this.logger.info(
+      `[MCPManager] 服务启动完成 - 成功: ${successCount}, 失败: ${failureCount}`
+    );
+
+    // 记录失败的服务列表
+    if (failedServices.length > 0) {
+      this.logger.warn(
+        `[MCPManager] 以下服务启动失败: ${failedServices.join(", ")}`
+      );
+
+      // 如果所有服务都失败了，发出警告但系统继续运行以便重试
+      if (failureCount === configEntries.length) {
+        this.logger.warn(
+          "[MCPManager] 所有 MCP 服务启动失败，但系统将继续运行以便重试"
+        );
       }
     }
 
@@ -1390,6 +1414,11 @@ export class MCPServiceManager {
   private scheduleFailedServicesRetry(failedServices: string[]): void {
     if (failedServices.length === 0) return;
 
+    // 记录重试安排
+    this.logger.info(
+      `[MCPManager] 安排 ${failedServices.length} 个失败服务的重试`
+    );
+
     // 初始重试延迟：30秒
     const initialDelay = 30000;
 
@@ -1438,6 +1467,7 @@ export class MCPServiceManager {
 
       // 重试成功
       this.failedServices.delete(serviceName);
+      this.logger.info(`[MCPManager] 服务 ${serviceName} 重试启动成功`);
 
       // 重新初始化CustomMCPHandler以包含新启动的服务工具
       try {
