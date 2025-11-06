@@ -1392,10 +1392,6 @@ export class MCPServiceManager {
   private scheduleFailedServicesRetry(failedServices: string[]): void {
     if (failedServices.length === 0) return;
 
-    this.logger.info(
-      `[MCPManager] 安排 ${failedServices.length} 个失败服务的重试`
-    );
-
     // 初始重试延迟：30秒
     const initialDelay = 30000;
 
