@@ -21,6 +21,10 @@ vi.mock("../configManager.js", () => ({
   configManager: {
     getCustomMCPTools: vi.fn(),
     getMcpServers: vi.fn(),
+    getToolCallLogConfig: vi.fn().mockReturnValue({
+      maxRecords: 100,
+    }),
+    getConfigDir: vi.fn().mockReturnValue("/tmp"),
   },
 }));
 
@@ -37,6 +41,14 @@ vi.mock("./MCPCacheManager.js", () => ({
   MCPCacheManager: vi.fn().mockImplementation(() => ({
     loadCache: vi.fn(),
     saveCache: vi.fn(),
+  })),
+}));
+
+vi.mock("../utils/ToolCallLogger.js", () => ({
+  ToolCallLogger: vi.fn().mockImplementation(() => ({
+    recordToolCall: vi.fn().mockResolvedValue(undefined),
+    getLogFilePath: vi.fn().mockReturnValue("/tmp/tool-calls.jsonl"),
+    getMaxRecords: vi.fn().mockReturnValue(100),
   })),
 }));
 

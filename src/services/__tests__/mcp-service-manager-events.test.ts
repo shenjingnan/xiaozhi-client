@@ -26,6 +26,8 @@ vi.mock("../../configManager.js", () => ({
     getServerToolsConfig: vi.fn(),
     saveConfig: vi.fn(),
     getConfig: vi.fn(),
+    getToolCallLogConfig: vi.fn().mockReturnValue({}),
+    getConfigDir: vi.fn().mockReturnValue("/tmp/test"),
   },
 }));
 

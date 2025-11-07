@@ -214,8 +214,6 @@ export class MCPMessageHandler {
     params: ToolCallParams,
     id?: string | number
   ): Promise<MCPResponse> {
-    const callToolLogTitle = `调用MCP工具: ${params.name}`;
-
     try {
       if (!params.name) {
         throw new Error("工具名称不能为空");
@@ -226,13 +224,6 @@ export class MCPMessageHandler {
         params.arguments || {}
       );
 
-      this.logger.info(
-        callToolLogTitle,
-        "调用参数:",
-        JSON.stringify(params.arguments)
-      );
-      this.logger.info(callToolLogTitle, "响应结果:", JSON.stringify(result));
-
       return {
         jsonrpc: "2.0",
         result: {
@@ -242,12 +233,7 @@ export class MCPMessageHandler {
         id: id !== undefined ? id : 1,
       };
     } catch (error) {
-      this.logger.info(
-        callToolLogTitle,
-        "调用参数:",
-        JSON.stringify(params.arguments)
-      );
-      this.logger.error(callToolLogTitle, "调用失败:", error);
+      this.logger.error(`工具调用失败: ${params.name}`, error);
       throw error;
     }
   }
