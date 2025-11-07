@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.4](https://github.com/shenjingnan/xiaozhi-client/compare/v1.8.3...v1.8.4) (2025-11-07)
+
+### Features
+
+* **mcp:** 增强 MCP 服务管理器的容错和重试机制 ([#391](https://github.com/shenjingnan/xiaozhi-client/issues/391)) ([48b8897](https://github.com/shenjingnan/xiaozhi-client/commit/48b88976563a6db9c836ae0626108e230a77dd22))
+* **mcp:** 新增MCP工具调用JSON日志记录功能 ([#390](https://github.com/shenjingnan/xiaozhi-client/issues/390)) ([7c6c2b7](https://github.com/shenjingnan/xiaozhi-client/commit/7c6c2b7ae5c178747bf597a0207f530b3d1ee08a))
+* **test:** 优化测试执行效率和结构 ([#393](https://github.com/shenjingnan/xiaozhi-client/issues/393)) ([fa514cc](https://github.com/shenjingnan/xiaozhi-client/commit/fa514cc06670042d732b34cb1092d6073d2bb2bb))
+
 ## [1.8.3](https://github.com/shenjingnan/xiaozhi-client/compare/v1.8.2...v1.8.3) (2025-10-29)
 
 ### Features
