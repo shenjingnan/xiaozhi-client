@@ -8,6 +8,7 @@ import * as path from "node:path";
 import pino from "pino";
 import type { Logger as PinoLogger } from "pino";
 import { logger } from "../Logger.js";
+import { PathUtils } from "../cli/utils/PathUtils.js";
 
 // 工具调用记录接口
 export interface ToolCallRecord {
@@ -39,9 +40,14 @@ export class ToolCallLogger {
   constructor(config: ToolCallLogConfig, configDir: string) {
     this.maxRecords = config.maxRecords ?? 100;
 
-    // 确定日志文件路径
-    this.logFilePath =
-      config.logFilePath || path.join(configDir, "tool-calls.jsonl");
+    // 确定日志文件路径 - 使用更健壮的路径处理
+    if (config.logFilePath) {
+      this.logFilePath = path.resolve(path.normalize(config.logFilePath));
+    } else {
+      // 使用 PathUtils 的跨平台临时目录处理
+      const baseDir = configDir || PathUtils.getTempDir();
+      this.logFilePath = path.join(path.normalize(baseDir), "tool-calls.jsonl");
+    }
 
     // 创建 Pino 实例
     this.pinoLogger = this.createPinoLogger(this.logFilePath);
