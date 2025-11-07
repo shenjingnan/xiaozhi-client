@@ -20,6 +20,7 @@ export interface ToolCallRecord {
   success: boolean; // 是否成功
   duration?: number; // 调用耗时（毫秒）
   error?: string; // 错误信息（如果有）
+  timestamp?: number; // 时间戳（毫秒）
 }
 
 // 工具调用日志配置接口
