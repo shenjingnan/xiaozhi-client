@@ -142,3 +142,4 @@ config.json
 tmp
 
 xiaozhi.cache.json
+tool-calls.jsonl
