@@ -2,7 +2,7 @@
 # 基于 Node.js 20 的预配置容器，用于快速运行 xiaozhi-client
 # 针对中国国内网络环境优化，包含 Python3 支持
 
-FROM node:20
+FROM crpi-j2nqhcceb7oaxlji.cn-beijing.personal.cr.aliyuncs.com/pelucoola/node:20
 
 # 定义 xiaozhi-client 版本号
 # 默认使用当前项目版本，可在构建时通过 --build-arg 覆盖
