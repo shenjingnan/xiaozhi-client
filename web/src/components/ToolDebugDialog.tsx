@@ -21,6 +21,12 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { apiClient } from "@/services/api";
 import {
   AlertCircle,
@@ -389,12 +395,19 @@ export function ToolDebugDialog({
           >
             {schema.type}
           </Badge>
-          {/* TODO: 我希望，鼠标移动到这个 InfoIcon 时，才展示 schema.description */}
-          <InfoIcon />
           {schema.description && (
-            <span className="text-xs text-muted-foreground">
-              ({schema.description})
-            </span>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <InfoIcon className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs whitespace-pre-wrap">
+                    {schema.description}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
         {renderField()}
@@ -756,7 +769,7 @@ export function ToolDebugDialog({
 
               {/* 结果显示 */}
               <div className="w-1/2 flex flex-col gap-2">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between h-[40px]">
                   <h3 className="text-sm font-medium">调用结果</h3>
                   {(result || error) && (
                     <Button variant="outline" size="sm" onClick={handleCopy}>
