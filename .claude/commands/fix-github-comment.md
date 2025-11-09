@@ -1,7 +1,6 @@
 ---
-allowed-tools: Bash(gh pr view:*), Bash(git diff:*), Bash(git log:*), Bash(git fetch:*), Read, Write, Edit, Task, ExitPlanMode, TodoWrite
-argument-hint: [pr-number]
 description: 获取GitHub PR的Copilot评论并分析修复问题
+argument-hint: [pr-number]
 ---
 
 # GitHub PR Copilot 评论分析和修复
@@ -31,21 +30,7 @@ description: 获取GitHub PR的Copilot评论并分析修复问题
 
 ### 1. 获取 PR 信息和 Copilot 评论
 
-首先获取 PR 的基本信息和 Copilot 评论：
-
-**当前 PR 状态**: !`gh pr view $1 --json state,title,author --jq '"状态: " + .state + ", 标题: " + .title + ", 作者: " + .author.login'`
-
-**获取 PR 详细评论**:
-!`gh pr view $1 --comments --json comments --jq '.comments[] | select(.user.login == "copilot-pull-request-reviewer") | "评论时间: " + .created_at + "\n" + .body + "\n---"'`
-
-**获取变更文件列表**:
-!`gh pr view $1 --json files --jq '.files | length as $total | "共 " + ($total | tostring) + " 个文件变更:\n" + (.[] | "- " + .filename)'`
-
-**获取代码变更统计**:
-!`gh pr view $1 --json additions,deletsions,changedFiles --jq '"代码变更统计: \n+ " + (.additions | tostring) + " 行新增\n- " + (.deletions | tostring) + " 行删除\n📁 " + (.changedFiles | tostring) + " 个文件变更"'`
-
-**获取分支信息**:
-!`gh pr view $1 --json headRefName,baseRefName --jq '"分支信息: " + .headRefName + " → " + .baseRefName'`
+首先获取 PR 的基本信息和 Copilot 评论
 
 ### 2. 分析 Copilot 评论
 
@@ -72,7 +57,6 @@ description: 获取GitHub PR的Copilot评论并分析修复问题
 根据 Copilot 提到的问题，进行代码审查：
 
 **获取具体文件变更**:
-!`gh pr diff $1 --name-only`
 
 **分析关键文件**:
 使用 `@文件路径` 引用具体文件进行深入分析
