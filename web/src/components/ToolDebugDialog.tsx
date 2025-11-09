@@ -311,15 +311,15 @@ const FormRenderer = memo(function FormRenderer({
                           fieldSchema.type === "string"
                             ? "bg-blue-100 text-blue-800"
                             : fieldSchema.type === "number" ||
-                              fieldSchema.type === "integer"
-                            ? "bg-green-100 text-green-800"
-                            : fieldSchema.type === "boolean"
-                            ? "bg-purple-100 text-purple-800"
-                            : fieldSchema.type === "array"
-                            ? "bg-orange-100 text-orange-800"
-                            : fieldSchema.type === "object"
-                            ? "bg-gray-100 text-gray-800"
-                            : "bg-gray-100 text-gray-800"
+                                fieldSchema.type === "integer"
+                              ? "bg-green-100 text-green-800"
+                              : fieldSchema.type === "boolean"
+                                ? "bg-purple-100 text-purple-800"
+                                : fieldSchema.type === "array"
+                                  ? "bg-orange-100 text-orange-800"
+                                  : fieldSchema.type === "object"
+                                    ? "bg-gray-100 text-gray-800"
+                                    : "bg-gray-100 text-gray-800"
                         }`}
                       >
                         {fieldSchema.type}
