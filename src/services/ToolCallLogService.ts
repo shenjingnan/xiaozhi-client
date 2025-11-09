@@ -74,9 +74,9 @@ export class ToolCallLogService {
           if (record.time) {
             record.timestamp = new Date(record.time).getTime();
           }
-          // 如果没有时间戳，使用当前时间
+          // 如果没有时间戳，记录警告信息提示数据质量问题
           if (!record.timestamp) {
-            record.timestamp = Date.now();
+            this.logger.warn("日志记录缺少时间戳, 已保持为 undefined:", line);
           }
           records.push(record);
         } catch (error) {
