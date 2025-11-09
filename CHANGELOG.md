@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.9.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.8.4...v1.9.0) (2025-11-09)
+
+### Features
+
+* **api:** 新增工具调用日志查询和统计 API ([#396](https://github.com/shenjingnan/xiaozhi-client/issues/396)) ([8a53941](https://github.com/shenjingnan/xiaozhi-client/commit/8a539413d63e17ac033279643c06ba7387bee99e))
+* **cli:** 重构 Claude Code 命令文件标准化 ([#395](https://github.com/shenjingnan/xiaozhi-client/issues/395)) ([71f0e55](https://github.com/shenjingnan/xiaozhi-client/commit/71f0e557dfd3c092506b46a5d812f1cb1652a11c))
+* **dashboard:** 新增MCP工具调用日志查看功能 ([#398](https://github.com/shenjingnan/xiaozhi-client/issues/398)) ([549cc50](https://github.com/shenjingnan/xiaozhi-client/commit/549cc5043869eff7c455ef95e475f33d75a6847a))
+* **web:** 新增MCP工具调试功能 ([#399](https://github.com/shenjingnan/xiaozhi-client/issues/399)) ([0bf50c7](https://github.com/shenjingnan/xiaozhi-client/commit/0bf50c761b8778b177effd35a9585ef702b1bfbe))
+
 ## [1.8.4](https://github.com/shenjingnan/xiaozhi-client/compare/v1.8.3...v1.8.4) (2025-11-07)
 
 ### Features
