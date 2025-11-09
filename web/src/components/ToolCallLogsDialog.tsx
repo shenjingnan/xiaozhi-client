@@ -23,6 +23,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   CheckCircle,
+  CheckIcon,
   Clock,
   Code,
   CopyIcon,
@@ -270,6 +271,46 @@ export function ToolCallLogsDialog() {
   );
 }
 
+// 复制按钮组件
+interface CopyButtonProps {
+  size?: "sm" | "default" | "lg";
+  copyContent: string;
+  className?: string;
+}
+
+function CopyButton({
+  size = "sm",
+  copyContent,
+  className = "",
+}: CopyButtonProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(copyContent);
+      setCopied(true);
+
+      // 3秒后自动恢复状态
+      setTimeout(() => {
+        setCopied(false);
+      }, 3000);
+    } catch (error) {
+      console.error("复制失败:", error);
+    }
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      size={size}
+      className={`${className} ${copied ? "text-green-600 hover:text-green-700" : ""}`}
+      onClick={handleCopy}
+    >
+      {copied ? <CheckIcon /> : <CopyIcon />}
+    </Button>
+  );
+}
+
 // 详情展示组件
 interface CallLogDetailProps {
   log: ToolCallRecord;
@@ -283,10 +324,6 @@ function CallLogDetail({ log }: CallLogDetailProps) {
     } catch (error) {
       return String(data);
     }
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
   };
 
   const formatTimestamp = (timestamp?: number) => {
@@ -328,16 +365,10 @@ function CallLogDetail({ log }: CallLogDetailProps) {
                     <pre className="text-xs bg-muted p-3 rounded-md overflow-x-auto text-wrap break-words">
                       {formatJson(log.arguments)}
                     </pre>
-                    <Button
-                      variant="ghost"
-                      size="sm"
+                    <CopyButton
+                      copyContent={formatJson(log.arguments) || ""}
                       className="absolute top-2 right-2 hover:bg-slate-200 w-[30px] h-[30px]"
-                      onClick={() =>
-                        copyToClipboard(formatJson(log.arguments) || "")
-                      }
-                    >
-                      <CopyIcon />
-                    </Button>
+                    />
                   </div>
                 ) : (
                   <div className="text-center text-muted-foreground py-8">
@@ -359,16 +390,10 @@ function CallLogDetail({ log }: CallLogDetailProps) {
                       <pre className="text-xs bg-muted p-3 rounded-md overflow-x-auto text-wrap break-words">
                         {formatJson(log.result)}
                       </pre>
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <CopyButton
+                        copyContent={formatJson(log.result) || ""}
                         className="absolute top-2 right-2 hover:bg-slate-200 w-[30px] h-[30px]"
-                        onClick={() =>
-                          copyToClipboard(formatJson(log.result) || "")
-                        }
-                      >
-                        <CopyIcon />
-                      </Button>
+                      />
                     </div>
                   ) : (
                     <div className="text-center text-muted-foreground py-8">
@@ -392,14 +417,10 @@ function CallLogDetail({ log }: CallLogDetailProps) {
                       )}
                     </div>
                     {log.error && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <CopyButton
+                        copyContent={log.error || ""}
                         className="absolute top-2 right-2"
-                        onClick={() => copyToClipboard(log.error || "")}
-                      >
-                        复制
-                      </Button>
+                      />
                     )}
                   </div>
                 )}
