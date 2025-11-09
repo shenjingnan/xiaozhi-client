@@ -1,16 +1,27 @@
 import { DashboardStatusCard } from "@/components/DashboardStatusCard";
 import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock stores
+// Mock stores with hoisted mocks
+const mockUseMcpEndpoint = vi.hoisted(() =>
+  vi.fn(() => ["http://localhost:3000"])
+);
+const mockUseMcpServers = vi.hoisted(() =>
+  vi.fn(() => ({ server1: { command: "test" } }))
+);
+const mockUseWebSocketConnected = vi.hoisted(() => vi.fn(() => true));
+const mockUseWebSocketUrl = vi.hoisted(() =>
+  vi.fn(() => "ws://localhost:3000")
+);
+
 vi.mock("@/stores/config", () => ({
-  useMcpEndpoint: vi.fn(() => ["http://localhost:3000"]),
-  useMcpServers: vi.fn(() => ({ server1: { command: "test" } })),
+  useMcpEndpoint: mockUseMcpEndpoint,
+  useMcpServers: mockUseMcpServers,
 }));
 
 vi.mock("@/stores/websocket", () => ({
-  useWebSocketConnected: vi.fn(() => true),
-  useWebSocketUrl: vi.fn(() => "ws://localhost:3000"),
+  useWebSocketConnected: mockUseWebSocketConnected,
+  useWebSocketUrl: mockUseWebSocketUrl,
 }));
 
 // Mock child components
@@ -31,6 +42,11 @@ vi.mock("@/components/ToolCallLogsDialog", () => ({
 describe("DashboardStatusCard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // 恢复默认mock值
+    mockUseMcpEndpoint.mockReturnValue(["http://localhost:3000"]);
+    mockUseMcpServers.mockReturnValue({ server1: { command: "test" } });
+    mockUseWebSocketConnected.mockReturnValue(true);
+    mockUseWebSocketUrl.mockReturnValue("ws://localhost:3000");
   });
 
   it("应该正确渲染所有状态卡片", () => {
@@ -38,7 +54,9 @@ describe("DashboardStatusCard", () => {
 
     // 检查小智接入点卡片
     expect(screen.getByText("小智接入点")).toBeInTheDocument();
-    expect(screen.getByText("1")).toBeInTheDocument();
+    // 通过getAllByText来找到所有的"1"，我们期望至少有2个（端点数和服务数）
+    const allOnes = screen.getAllByText("1");
+    expect(allOnes.length).toBeGreaterThanOrEqual(2);
 
     // 检查Xiaozhi Client卡片
     expect(screen.getByText("Xiaozhi Client")).toBeInTheDocument();
@@ -46,7 +64,6 @@ describe("DashboardStatusCard", () => {
 
     // 检查MCP服务卡片
     expect(screen.getByText("MCP服务")).toBeInTheDocument();
-    expect(screen.getByText("1")).toBeInTheDocument();
     expect(screen.getByText("共 1 个服务")).toBeInTheDocument();
   });
 
@@ -68,8 +85,7 @@ describe("DashboardStatusCard", () => {
 
   it("应该正确渲染多个MCP端点", () => {
     // Mock多个端点
-    const { useMcpEndpoint } = require("@/stores/config");
-    useMcpEndpoint.mockReturnValue([
+    mockUseMcpEndpoint.mockReturnValue([
       "http://localhost:3000",
       "http://localhost:3001",
       "http://localhost:3002",
@@ -77,13 +93,14 @@ describe("DashboardStatusCard", () => {
 
     render(<DashboardStatusCard />);
 
-    expect(screen.getByText("3")).toBeInTheDocument();
+    // 使用getAllByText来获取所有的"3"，确保至少存在一个
+    const endpointCounts = screen.getAllByText("3");
+    expect(endpointCounts.length).toBeGreaterThanOrEqual(1);
   });
 
   it("应该正确处理未连接状态", () => {
     // Mock未连接状态
-    const { useWebSocketConnected } = require("@/stores/websocket");
-    useWebSocketConnected.mockReturnValue(false);
+    mockUseWebSocketConnected.mockReturnValue(false);
 
     render(<DashboardStatusCard />);
 
@@ -92,8 +109,7 @@ describe("DashboardStatusCard", () => {
 
   it("应该正确处理空MCP服务器", () => {
     // Mock空服务器
-    const { useMcpServers } = require("@/stores/config");
-    useMcpServers.mockReturnValue({});
+    (mockUseMcpServers as any).mockReturnValue({});
 
     render(<DashboardStatusCard />);
 
@@ -103,8 +119,7 @@ describe("DashboardStatusCard", () => {
 
   it("应该正确处理空MCP端点", () => {
     // Mock空端点
-    const { useMcpEndpoint } = require("@/stores/config");
-    useMcpEndpoint.mockReturnValue([]);
+    mockUseMcpEndpoint.mockReturnValue([]);
 
     render(<DashboardStatusCard />);
 

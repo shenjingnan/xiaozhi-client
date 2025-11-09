@@ -23,7 +23,11 @@ const MiniCircularProgress = ({
   const radius = (size - 6) / 2;
   const circumference = radius * 2 * Math.PI;
   const strokeDasharray = circumference;
-  const strokeDashoffset = circumference - (value / maxValue) * circumference;
+  // 防止除零错误，当maxValue为0时，将strokeDashoffset设为circumference（显示为空）
+  const strokeDashoffset =
+    maxValue === 0
+      ? circumference
+      : circumference - (value / maxValue) * circumference;
 
   return (
     <div className="relative inline-flex items-center justify-center">
@@ -137,7 +141,7 @@ export function DashboardStatusCard() {
             <MiniCircularProgress
               showValue={false}
               value={mcpServerCount}
-              maxValue={mcpServerCount}
+              maxValue={Math.max(mcpServerCount, 1)}
               activeColor="#16a34a"
               inactiveColor="#f87171"
               size={30}
