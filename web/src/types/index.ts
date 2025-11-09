@@ -303,3 +303,54 @@ export enum MCPErrorCode {
   INTERNAL_ERROR = "INTERNAL_ERROR",
   VALIDATION_ERROR = "VALIDATION_ERROR",
 }
+
+// ==================== 工具调用日志相关类型 ====================
+
+/**
+ * 工具调用记录
+ */
+export interface ToolCallRecord {
+  /** 工具名称 */
+  toolName: string;
+  /** 原始工具名称（如果有的话） */
+  originalToolName?: string;
+  /** 服务器名称 */
+  serverName?: string;
+  /** 调用参数 */
+  arguments?: any;
+  /** 调用结果 */
+  result?: any;
+  /** 是否成功 */
+  success: boolean;
+  /** 调用耗时（毫秒） */
+  duration?: number;
+  /** 错误信息 */
+  error?: string;
+  /** 时间戳 */
+  timestamp?: number;
+}
+
+/**
+ * 工具调用日志响应
+ */
+export interface ToolCallLogsResponse {
+  /** 日志记录列表 */
+  records: ToolCallRecord[];
+  /** 总数量 */
+  total: number;
+  /** 是否有更多数据 */
+  hasMore: boolean;
+}
+
+/**
+ * API通用响应格式
+ */
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+}

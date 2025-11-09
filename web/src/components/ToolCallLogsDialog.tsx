@@ -21,6 +21,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type {
+  ApiResponse,
+  ToolCallLogsResponse,
+  ToolCallRecord,
+} from "@/types";
+import {
+  formatDuration,
+  formatJson,
+  formatTimestamp,
+  generateStableKey,
+} from "@/utils/formatUtils";
 import {
   CheckCircle,
   CheckIcon,
@@ -29,66 +40,54 @@ import {
   CopyIcon,
   FileText,
   Loader2,
+  RefreshCw,
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-
-interface ToolCallRecord {
-  toolName: string;
-  originalToolName?: string;
-  serverName?: string;
-  arguments?: any;
-  result?: any;
-  success: boolean;
-  duration?: number;
-  error?: string;
-  timestamp?: number;
-}
-
-interface ToolCallLogsResponse {
-  records: ToolCallRecord[];
-  total: number;
-  hasMore: boolean;
-}
-
-interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: {
-    code: string;
-    message: string;
-    details?: any;
-  };
-}
 
 export function ToolCallLogsDialog() {
   const [open, setOpen] = useState(false);
   const [logs, setLogs] = useState<ToolCallRecord[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedLog, setSelectedLog] = useState<ToolCallRecord | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [limit] = useState(50);
+  const [total, setTotal] = useState(0);
 
-  const fetchLogs = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch("/api/tool-calls/logs?limit=50");
-      const data: ApiResponse<ToolCallLogsResponse> = await response.json();
-
-      if (data.success && data.data) {
-        setLogs(data.data.records);
+  const fetchLogs = useCallback(
+    async (isRefresh = false) => {
+      if (isRefresh) {
+        setRefreshing(true);
       } else {
-        setError(data.error?.message || "获取日志失败");
+        setLoading(true);
       }
-    } catch (err) {
-      setError("网络请求失败");
-      console.error("Failed to fetch tool call logs:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      setError(null);
+
+      try {
+        const response = await fetch(`/api/tool-calls/logs?limit=${limit}`);
+        const data: ApiResponse<ToolCallLogsResponse> = await response.json();
+
+        if (data.success && data.data) {
+          setLogs(data.data.records);
+          setTotal(data.data.total);
+        } else {
+          setError(data.error?.message || "获取日志失败");
+        }
+      } catch (err) {
+        setError("网络请求失败");
+        console.error("Failed to fetch tool call logs:", err);
+      } finally {
+        if (isRefresh) {
+          setRefreshing(false);
+        } else {
+          setLoading(false);
+        }
+      }
+    },
+    [limit]
+  );
 
   useEffect(() => {
     if (open) {
@@ -99,24 +98,6 @@ export function ToolCallLogsDialog() {
       setHoveredIndex(null);
     }
   }, [open, fetchLogs]);
-
-  const formatTimestamp = (timestamp?: number) => {
-    if (!timestamp) return "未知时间";
-    return new Date(timestamp).toLocaleString("zh-CN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-  };
-
-  const formatDuration = (duration?: number) => {
-    if (!duration) return "-";
-    if (duration < 1000) return `${duration}ms`;
-    return `${(duration / 1000).toFixed(1)}s`;
-  };
 
   // 处理数据行悬停
   const handleRowMouseEnter = (log: ToolCallRecord, index: number) => {
@@ -152,38 +133,100 @@ export function ToolCallLogsDialog() {
         onMouseLeave={handleDialogMouseLeave}
       >
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            MCP 工具调用日志
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              MCP 工具调用日志
+              {total > 0 && (
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  (共 {total} 条记录)
+                </span>
+              )}
+            </DialogTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fetchLogs(true)}
+              disabled={refreshing}
+              className="gap-2"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+              />
+              刷新
+            </Button>
+          </div>
         </DialogHeader>
 
         <div className="flex-1 flex gap-4">
           {/* 左侧表格区域 */}
           <div className="flex-1">
             {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                <span className="ml-2 text-muted-foreground">加载中...</span>
+              <div className="flex flex-col items-center justify-center py-8">
+                <div className="relative">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <FileText className="h-4 w-4 text-muted-foreground/50" />
+                  </div>
+                </div>
+                <div className="mt-4 text-center">
+                  <p className="text-muted-foreground font-medium">
+                    正在加载日志数据
+                  </p>
+                  <p className="text-muted-foreground/70 text-sm mt-1">
+                    请稍候片刻...
+                  </p>
+                </div>
               </div>
             ) : error ? (
               <div className="text-center py-8">
-                <XCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-                <p className="text-destructive font-medium">加载失败</p>
-                <p className="text-muted-foreground text-sm mt-1">{error}</p>
-                <Button
-                  onClick={fetchLogs}
-                  variant="outline"
-                  size="sm"
-                  className="mt-4"
-                >
-                  重试
-                </Button>
+                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-6 max-w-md mx-auto">
+                  <XCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+                  <h3 className="text-destructive font-semibold text-lg mb-2">
+                    加载失败
+                  </h3>
+                  <p className="text-muted-foreground text-sm mb-4 leading-relaxed">
+                    {error}
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      onClick={() => fetchLogs()}
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      重试加载
+                    </Button>
+                    <Button
+                      onClick={() => fetchLogs(true)}
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs"
+                    >
+                      强制刷新
+                    </Button>
+                  </div>
+                </div>
               </div>
             ) : logs.length === 0 ? (
               <div className="text-center py-8">
-                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">暂无工具调用记录</p>
+                <div className="bg-muted/30 border border-muted rounded-lg p-6 max-w-md mx-auto">
+                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="font-medium text-lg mb-2">暂无工具调用记录</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed mb-4">
+                    当前还没有任何工具调用记录。当您开始使用工具时，相关的调用信息会在这里显示。
+                  </p>
+                  <Button
+                    onClick={() => fetchLogs(true)}
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    检查更新
+                  </Button>
+                </div>
               </div>
             ) : (
               <ScrollArea className="h-[60vh]">
@@ -200,9 +243,7 @@ export function ToolCallLogsDialog() {
                   <TableBody>
                     {logs.map((log, index) => (
                       <TableRow
-                        key={`${log.toolName}-${
-                          log.timestamp || index
-                        }-${index}`}
+                        key={generateStableKey(log, index)}
                         className={`cursor-pointer transition-colors ${
                           hoveredIndex === index
                             ? "bg-muted/50"
@@ -314,39 +355,12 @@ interface CallLogDetailProps {
 }
 
 function CallLogDetail({ log }: CallLogDetailProps) {
-  const formatJson = (data: any) => {
-    if (!data) return null;
-    try {
-      return JSON.stringify(data, null, 2);
-    } catch (error) {
-      return String(data);
-    }
-  };
-
   const formatRawData = (log: ToolCallRecord) => {
     try {
       return JSON.stringify(log, null, 2);
     } catch (error) {
       return String(log);
     }
-  };
-
-  const formatTimestamp = (timestamp?: number) => {
-    if (!timestamp) return "未知时间";
-    return new Date(timestamp).toLocaleString("zh-CN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-  };
-
-  const formatDuration = (duration?: number) => {
-    if (!duration) return "-";
-    if (duration < 1000) return `${duration}ms`;
-    return `${(duration / 1000).toFixed(1)}s`;
   };
 
   return (
