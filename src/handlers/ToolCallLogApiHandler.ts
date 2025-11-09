@@ -4,6 +4,7 @@
  */
 
 import type { Context } from "hono";
+import { z } from "zod";
 import { logger } from "../Logger.js";
 import {
   ToolCallLogService,
@@ -22,6 +23,69 @@ interface ApiResponse<T = any> {
     details?: any;
   };
 }
+
+/**
+ * 工具调用查询参数 Zod Schema
+ */
+const ToolCallQuerySchema = z
+  .object({
+    limit: z
+      .string()
+      .optional()
+      .transform((val) => (val ? Number.parseInt(val, 10) : undefined))
+      .refine((val) => val === undefined || (val >= 1 && val <= 200), {
+        message: "limit 参数必须是 1-200 之间的数字",
+      }),
+    offset: z
+      .string()
+      .optional()
+      .transform((val) => (val ? Number.parseInt(val, 10) : undefined))
+      .refine((val) => val === undefined || val >= 0, {
+        message: "offset 参数必须是非负数",
+      }),
+    toolName: z.string().optional(),
+    serverName: z.string().optional(),
+    success: z
+      .string()
+      .optional()
+      .transform((val) => (val ? val.toLowerCase() === "true" : undefined)),
+    startDate: z
+      .string()
+      .optional()
+      .refine(
+        (val) => {
+          if (!val) return true;
+          const date = Date.parse(val);
+          return !Number.isNaN(date);
+        },
+        {
+          message: "startDate 参数格式无效",
+        }
+      ),
+    endDate: z
+      .string()
+      .optional()
+      .refine(
+        (val) => {
+          if (!val) return true;
+          const date = Date.parse(val);
+          return !Number.isNaN(date);
+        },
+        {
+          message: "endDate 参数格式无效",
+        }
+      ),
+  })
+  .refine(
+    (data) => {
+      if (!data.startDate || !data.endDate) return true;
+      return new Date(data.startDate) <= new Date(data.endDate);
+    },
+    {
+      message: "startDate 不能晚于 endDate",
+      path: ["startDate"],
+    }
+  );
 
 /**
  * 工具调用日志 API 处理器
@@ -80,72 +144,30 @@ export class ToolCallLogApiHandler {
   }
 
   /**
-   * 验证查询参数
+   * 解析和验证查询参数
    */
-  private validateQueryParams(query: any): {
-    isValid: boolean;
-    error?: string;
+  private parseAndValidateQueryParams(c: Context): {
+    success: boolean;
+    data?: ToolCallQuery;
+    error?: any;
   } {
-    if (
-      query.limit &&
-      (Number.isNaN(query.limit) || query.limit < 1 || query.limit > 200)
-    ) {
-      return { isValid: false, error: "limit 参数必须是 1-200 之间的数字" };
-    }
-
-    if (query.offset && (Number.isNaN(query.offset) || query.offset < 0)) {
-      return { isValid: false, error: "offset 参数必须是非负数" };
-    }
-
-    if (query.startDate && Number.isNaN(Date.parse(query.startDate))) {
-      return { isValid: false, error: "startDate 参数格式无效" };
-    }
-
-    if (query.endDate && Number.isNaN(Date.parse(query.endDate))) {
-      return { isValid: false, error: "endDate 参数格式无效" };
-    }
-
-    if (
-      query.startDate &&
-      query.endDate &&
-      new Date(query.startDate) > new Date(query.endDate)
-    ) {
-      return { isValid: false, error: "startDate 不能晚于 endDate" };
-    }
-
-    return { isValid: true };
-  }
-
-  /**
-   * 从查询字符串中解析查询参数
-   */
-  private parseQueryParams(c: Context): ToolCallQuery {
     const query = c.req.query();
-    const params: ToolCallQuery = {};
+    const result = ToolCallQuerySchema.safeParse(query);
 
-    if (query.limit) {
-      params.limit = Number.parseInt(query.limit, 10);
-    }
-    if (query.offset) {
-      params.offset = Number.parseInt(query.offset, 10);
-    }
-    if (query.toolName) {
-      params.toolName = query.toolName;
-    }
-    if (query.serverName) {
-      params.serverName = query.serverName;
-    }
-    if (query.success) {
-      params.success = query.success.toLowerCase() === "true";
-    }
-    if (query.startDate) {
-      params.startDate = query.startDate;
-    }
-    if (query.endDate) {
-      params.endDate = query.endDate;
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error.errors.map((err) => ({
+          field: err.path.join("."),
+          message: err.message,
+        })),
+      };
     }
 
-    return params;
+    return {
+      success: true,
+      data: result.data as ToolCallQuery,
+    };
   }
 
   /**
@@ -153,17 +175,19 @@ export class ToolCallLogApiHandler {
    */
   async getToolCallLogs(c: Context): Promise<Response> {
     try {
-      const queryParams = this.parseQueryParams(c);
-      const validation = this.validateQueryParams(queryParams);
+      const validation = this.parseAndValidateQueryParams(c);
 
-      if (!validation.isValid) {
+      if (!validation.success) {
         return this.createErrorResponse(
           "INVALID_QUERY_PARAMETERS",
-          validation.error!
+          "查询参数格式错误",
+          validation.error
         );
       }
 
-      const result = await this.toolCallLogService.getToolCallLogs(queryParams);
+      const result = await this.toolCallLogService.getToolCallLogs(
+        validation.data!
+      );
 
       logger.debug(`API: 返回 ${result.records.length} 条工具调用日志记录`);
       return this.createSuccessResponse(result);

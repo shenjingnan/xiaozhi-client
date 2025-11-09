@@ -45,24 +45,11 @@ describe("ToolCallLogApiHandler - 基本功能测试", () => {
     expect(getHttpStatusCode("INTERNAL_ERROR")).toBe(500);
   });
 
-  it("应该能够验证查询参数", () => {
+  it("应该能够解析和验证查询参数", () => {
     const handler = new ToolCallLogApiHandler();
-    const validateQueryParams = (handler as any).validateQueryParams.bind(
-      handler
-    );
-
-    // 测试有效参数
-    expect(validateQueryParams({ limit: 10 }).isValid).toBe(true);
-
-    // 测试无效参数
-    const result = validateQueryParams({ limit: 300 });
-    expect(result.isValid).toBe(false);
-    expect(result.error).toContain("limit 参数必须是 1-200 之间的数字");
-  });
-
-  it("应该能够解析查询参数", () => {
-    const handler = new ToolCallLogApiHandler();
-    const parseQueryParams = (handler as any).parseQueryParams.bind(handler);
+    const parseAndValidateQueryParams = (
+      handler as any
+    ).parseAndValidateQueryParams.bind(handler);
 
     const mockContext = {
       req: {
@@ -74,11 +61,30 @@ describe("ToolCallLogApiHandler - 基本功能测试", () => {
       },
     };
 
-    const result = parseQueryParams(mockContext);
-    expect(result).toEqual({
+    // 测试有效参数
+    const validResult = parseAndValidateQueryParams(mockContext);
+    expect(validResult.success).toBe(true);
+    expect(validResult.data).toEqual({
       limit: 10,
       toolName: "test_tool",
       success: true,
     });
+
+    // 测试无效参数
+    const invalidContext = {
+      req: {
+        query: () => ({
+          limit: "300", // 超出范围
+        }),
+      },
+    };
+
+    const invalidResult = parseAndValidateQueryParams(invalidContext);
+    expect(invalidResult.success).toBe(false);
+    expect(invalidResult.error).toBeDefined();
+    expect(Array.isArray(invalidResult.error)).toBe(true);
+    expect(invalidResult.error[0].message).toContain(
+      "limit 参数必须是 1-200 之间的数字"
+    );
   });
 });
