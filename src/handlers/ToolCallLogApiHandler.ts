@@ -6,7 +6,6 @@
 import type { Context } from "hono";
 import { logger } from "../Logger.js";
 import {
-  ExportFormat,
   ToolCallLogService,
   type ToolCallQuery,
 } from "../services/ToolCallLogService.js";
@@ -70,12 +69,10 @@ export class ToolCallLogApiHandler {
   private getHttpStatusCode(code: string): number {
     switch (code) {
       case "INVALID_QUERY_PARAMETERS":
-      case "INVALID_EXPORT_FORMAT":
         return 400;
       case "LOG_FILE_NOT_FOUND":
         return 404;
       case "LOG_FILE_READ_ERROR":
-      case "EXPORT_ERROR":
         return 500;
       default:
         return 500;
@@ -184,159 +181,6 @@ export class ToolCallLogApiHandler {
       return this.createErrorResponse(
         "INTERNAL_ERROR",
         "获取工具调用日志失败",
-        {
-          details: message,
-        }
-      );
-    }
-  }
-
-  /**
-   * 获取工具调用统计数据
-   */
-  async getToolCallStats(c: Context): Promise<Response> {
-    try {
-      const stats = await this.toolCallLogService.getToolCallStats();
-
-      logger.debug("API: 返回工具调用统计数据");
-      return this.createSuccessResponse(stats);
-    } catch (error) {
-      logger.error("获取工具调用统计失败:", error);
-
-      const message = error instanceof Error ? error.message : "未知错误";
-      if (message.includes("不存在")) {
-        return this.createErrorResponse("LOG_FILE_NOT_FOUND", message);
-      }
-      if (message.includes("无法读取")) {
-        return this.createErrorResponse("LOG_FILE_READ_ERROR", message);
-      }
-
-      return this.createErrorResponse(
-        "INTERNAL_ERROR",
-        "获取工具调用统计失败",
-        {
-          details: message,
-        }
-      );
-    }
-  }
-
-  /**
-   * 导出工具调用日志
-   */
-  async exportToolCallLogs(c: Context): Promise<Response> {
-    try {
-      const queryParams = this.parseQueryParams(c);
-      const format =
-        (c.req.query("format") as ExportFormat) || ExportFormat.JSON;
-
-      if (!Object.values(ExportFormat).includes(format)) {
-        return this.createErrorResponse(
-          "INVALID_EXPORT_FORMAT",
-          `不支持的导出格式: ${format}。支持的格式: ${Object.values(ExportFormat).join(", ")}`
-        );
-      }
-
-      const validation = this.validateQueryParams(queryParams);
-      if (!validation.isValid) {
-        return this.createErrorResponse(
-          "INVALID_QUERY_PARAMETERS",
-          validation.error!
-        );
-      }
-
-      const exportData = await this.toolCallLogService.exportToolCallLogs(
-        queryParams,
-        format
-      );
-
-      // 设置响应头
-      const headers = new Headers();
-      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-      const filename = `tool-calls-${timestamp}.${format}`;
-
-      headers.set(
-        "Content-Type",
-        format === ExportFormat.CSV ? "text/csv" : "application/json"
-      );
-      headers.set("Content-Disposition", `attachment; filename="${filename}"`);
-
-      logger.debug(`API: 导出工具调用日志 (${format} 格式)`);
-      return new Response(exportData, {
-        status: 200,
-        headers,
-      });
-    } catch (error) {
-      logger.error("导出工具调用日志失败:", error);
-
-      const message = error instanceof Error ? error.message : "未知错误";
-      if (message.includes("不存在")) {
-        return this.createErrorResponse("LOG_FILE_NOT_FOUND", message);
-      }
-      if (message.includes("无法读取") || message.includes("无法导出")) {
-        return this.createErrorResponse("EXPORT_ERROR", message);
-      }
-
-      return this.createErrorResponse(
-        "INTERNAL_ERROR",
-        "导出工具调用日志失败",
-        {
-          details: message,
-        }
-      );
-    }
-  }
-
-  /**
-   * 清空工具调用日志
-   */
-  async clearToolCallLogs(c: Context): Promise<Response> {
-    try {
-      await this.toolCallLogService.clearToolCallLogs();
-
-      logger.info("API: 工具调用日志已清空");
-      return this.createSuccessResponse({ message: "工具调用日志已清空" });
-    } catch (error) {
-      logger.error("清空工具调用日志失败:", error);
-
-      const message = error instanceof Error ? error.message : "未知错误";
-      if (message.includes("不存在")) {
-        return this.createErrorResponse("LOG_FILE_NOT_FOUND", message);
-      }
-      if (message.includes("无法清空")) {
-        return this.createErrorResponse("CLEAR_ERROR", message);
-      }
-
-      return this.createErrorResponse(
-        "INTERNAL_ERROR",
-        "清空工具调用日志失败",
-        {
-          details: message,
-        }
-      );
-    }
-  }
-
-  /**
-   * 获取日志文件信息
-   */
-  async getLogFileInfo(c: Context): Promise<Response> {
-    try {
-      const fileInfo = await this.toolCallLogService.getLogFileInfo();
-
-      logger.debug("API: 返回日志文件信息");
-      return this.createSuccessResponse(fileInfo);
-    } catch (error) {
-      logger.error("获取日志文件信息失败:", error);
-
-      const message = error instanceof Error ? error.message : "未知错误";
-      if (message.includes("无法获取")) {
-        return this.createErrorResponse("FILE_INFO_ERROR", message);
-      }
-
-      return this.createErrorResponse(
-        "INTERNAL_ERROR",
-        "获取日志文件信息失败",
         {
           details: message,
         }

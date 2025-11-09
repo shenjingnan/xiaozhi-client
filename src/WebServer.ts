@@ -696,18 +696,6 @@ export class WebServer {
     this.app?.get("/api/tool-calls/logs", (c) =>
       this.toolCallLogApiHandler.getToolCallLogs(c)
     );
-    this.app?.get("/api/tool-calls/stats", (c) =>
-      this.toolCallLogApiHandler.getToolCallStats(c)
-    );
-    this.app?.get("/api/tool-calls/export", (c) =>
-      this.toolCallLogApiHandler.exportToolCallLogs(c)
-    );
-    this.app?.delete("/api/tool-calls/logs", (c) =>
-      this.toolCallLogApiHandler.clearToolCallLogs(c)
-    );
-    this.app?.get("/api/tool-calls/info", (c) =>
-      this.toolCallLogApiHandler.getLogFileInfo(c)
-    );
 
     // 扣子 API 相关路由
     this.app?.get("/api/coze/workspaces", (c) =>
