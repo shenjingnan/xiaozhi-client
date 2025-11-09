@@ -228,14 +228,13 @@ export function ToolCallLogsDialog() {
                         </TableCell>
                         <TableCell>
                           <Badge
-                            variant={log.success ? "default" : "destructive"}
-                            className="gap-1"
+                            variant={log.success ? undefined : "destructive"}
+                            className={`gap-1 ${
+                              log.success
+                                ? "bg-green-600"
+                                : "bg-red-600"
+                            }`}
                           >
-                            {log.success ? (
-                              <CheckCircle className="h-3 w-3" />
-                            ) : (
-                              <XCircle className="h-3 w-3" />
-                            )}
                             {log.success ? "成功" : "失败"}
                           </Badge>
                         </TableCell>
