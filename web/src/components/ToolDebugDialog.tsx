@@ -10,6 +10,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -27,7 +36,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  createDefaultValues,
+  createZodSchemaFromJsonSchema,
+} from "@/lib/schema-utils";
 import { apiClient } from "@/services/api";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AlertCircle,
   CheckIcon,
@@ -41,8 +55,10 @@ import {
   Trash2,
   Zap,
 } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod";
 
 interface ToolDebugDialogProps {
   open: boolean;
@@ -61,108 +77,82 @@ export function ToolDebugDialog({
   onOpenChange,
   tool,
 }: ToolDebugDialogProps) {
-  const [inputParams, setInputParams] = useState<string>("{\n  \n}");
-  const [formData, setFormData] = useState<Record<string, any>>({});
   const [inputMode, setInputMode] = useState<"form" | "json">("form");
+  const [jsonInput, setJsonInput] = useState<string>("{\n  \n}");
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // 初始化表单数据
-  const initializeFormData = useCallback((schema: any) => {
-    if (!schema || !schema.properties) return {};
+  // 创建动态 schema
+  const formSchema = useMemo(() => {
+    if (!tool?.inputSchema) return z.object({});
+    return createZodSchemaFromJsonSchema(tool.inputSchema);
+  }, [tool?.inputSchema]);
 
-    const initValue = (schema: any, key: string): any => {
-      const prop = schema.properties[key];
-      if (!prop) return undefined;
+  // 创建默认值
+  const defaultValues = useMemo(() => {
+    if (!tool?.inputSchema) return {};
+    return createDefaultValues(tool.inputSchema);
+  }, [tool?.inputSchema]);
 
-      if (schema.required?.includes(key)) {
-        // 根据类型设置默认值
-        switch (prop.type) {
-          case "string":
-            return prop.enum ? prop.enum[0] : "";
-          case "number":
-          case "integer":
-            return 0;
-          case "boolean":
-            return false;
-          case "array":
-            return [];
-          case "object":
-            return {};
-          default:
-            return "";
-        }
+  // 初始化表单
+  const form = useForm({
+    resolver: zodResolver(formSchema as any),
+    defaultValues,
+    mode: "onChange",
+  });
+
+  // 当工具变化时重置表单
+  useEffect(() => {
+    if (tool?.inputSchema) {
+      form.reset(defaultValues);
+      try {
+        setJsonInput(JSON.stringify(defaultValues, null, 2));
+      } catch {
+        setJsonInput("{\n  \n}");
       }
-      return undefined;
-    };
-
-    const data: Record<string, any> = {};
-    for (const key of Object.keys(schema.properties)) {
-      const value = initValue(schema, key);
-      if (value !== undefined) {
-        data[key] = value;
-      }
+    } else {
+      form.reset({});
+      setJsonInput("{\n  \n}");
     }
-
-    return data;
-  }, []);
+  }, [tool?.inputSchema, defaultValues, form]);
 
   // 重置状态
   const resetState = useCallback(() => {
-    setInputParams("{\n  \n}");
-    setFormData({});
     setInputMode("form");
+    setJsonInput("{\n  \n}");
     setResult(null);
     setError(null);
     setCopied(false);
-  }, []);
-
-  // 表单数据转JSON字符串
-  const formDataToJson = useCallback((data: Record<string, any>): string => {
-    try {
-      return JSON.stringify(data, null, 2);
-    } catch {
-      return "{}";
+    if (tool?.inputSchema) {
+      form.reset(defaultValues);
     }
-  }, []);
-
-  // JSON字符串转表单数据
-  const jsonToFormData = useCallback(
-    (jsonString: string): Record<string, any> => {
-      try {
-        return JSON.parse(jsonString);
-      } catch {
-        return {};
-      }
-    },
-    []
-  );
-
-  // 当工具变化时初始化表单数据
-  useMemo(() => {
-    if (tool?.inputSchema && inputMode === "form") {
-      const initialData = initializeFormData(tool.inputSchema);
-      setFormData(initialData);
-      setInputParams(formDataToJson(initialData));
-    }
-  }, [tool, inputMode, initializeFormData, formDataToJson]);
+  }, [tool?.inputSchema, defaultValues, form]);
 
   // 处理Tab切换
   const handleModeChange = useCallback(
     (newMode: "form" | "json") => {
       if (newMode === "json" && inputMode === "form") {
         // 从表单模式切换到JSON模式时，同步数据
-        setInputParams(formDataToJson(formData));
+        const currentValues = form.getValues();
+        try {
+          setJsonInput(JSON.stringify(currentValues, null, 2));
+        } catch {
+          setJsonInput("{\n  \n}");
+        }
       } else if (newMode === "form" && inputMode === "json") {
         // 从JSON模式切换到表单模式时，同步数据
-        const parsedData = jsonToFormData(inputParams);
-        setFormData(parsedData);
+        try {
+          const parsedData = JSON.parse(jsonInput);
+          form.reset(parsedData);
+        } catch {
+          // JSON 解析失败，保持表单数据不变
+        }
       }
       setInputMode(newMode);
     },
-    [inputMode, formData, inputParams, formDataToJson, jsonToFormData]
+    [inputMode, jsonInput, form]
   );
 
   // 当弹窗关闭时重置状态
@@ -193,14 +183,20 @@ export function ToolDebugDialog({
     let args: any;
 
     if (inputMode === "form") {
-      args = formData;
+      const values = form.getValues();
+      const isValid = await form.trigger();
+      if (!isValid) {
+        toast.error("请检查表单中的错误");
+        return;
+      }
+      args = values;
     } else {
       // 验证JSON格式
-      if (!validateJSON(inputParams)) {
+      if (!validateJSON(jsonInput)) {
         toast.error("输入参数不是有效的JSON格式");
         return;
       }
-      args = JSON.parse(inputParams);
+      args = JSON.parse(jsonInput);
     }
 
     setLoading(true);
@@ -223,7 +219,7 @@ export function ToolDebugDialog({
     } finally {
       setLoading(false);
     }
-  }, [tool, inputMode, formData, inputParams, validateJSON]);
+  }, [tool, inputMode, form, jsonInput, validateJSON]);
 
   // 复制结果
   const handleCopy = useCallback(async () => {
@@ -241,196 +237,136 @@ export function ToolDebugDialog({
   // 清空输入
   const handleClear = useCallback(() => {
     if (inputMode === "form" && tool?.inputSchema) {
-      const initialData = initializeFormData(tool.inputSchema);
-      setFormData(initialData);
-      setInputParams(formDataToJson(initialData));
+      form.reset(defaultValues);
+      try {
+        setJsonInput(JSON.stringify(defaultValues, null, 2));
+      } catch {
+        setJsonInput("{\n  \n}");
+      }
     } else {
-      setInputParams("{\n  \n}");
-      setFormData({});
+      setJsonInput("{\n  \n}");
+      form.reset({});
     }
     setResult(null);
     setError(null);
-  }, [inputMode, tool, initializeFormData, formDataToJson]);
+  }, [inputMode, tool?.inputSchema, defaultValues, form]);
 
-  // 动态表单字段渲染器
-  interface FormFieldProps {
-    name: string;
-    schema: any;
-    value: any;
-    onChange: (value: any) => void;
-    required?: boolean;
-    level?: number;
-  }
-
-  function FormField({
-    name,
-    schema,
-    value,
-    onChange,
-    required = false,
-    level = 0,
-  }: FormFieldProps) {
-    const renderField = () => {
-      switch (schema.type) {
-        case "string":
-          if (schema.enum) {
-            return (
-              <Select value={value} onValueChange={onChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder={`选择${name}`} />
-                </SelectTrigger>
-                <SelectContent>
-                  {schema.enum.map((option: string) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            );
-          }
-          return (
-            <Input
-              value={value || ""}
-              onChange={(e) => onChange(e.target.value)}
-              placeholder={`输入${name}`}
-              type={schema.format === "password" ? "password" : "text"}
-            />
-          );
-
-        case "number":
-        case "integer":
-          return (
-            <Input
-              type="number"
-              value={value || ""}
-              onChange={(e) =>
-                onChange(
-                  schema.type === "integer"
-                    ? Number.parseInt(e.target.value) || 0
-                    : Number.parseFloat(e.target.value) || 0
-                )
-              }
-              placeholder={`输入${name}`}
-              step={schema.type === "integer" ? "1" : "0.1"}
-            />
-          );
-
-        case "boolean":
+  // 渲染表单字段的辅助函数
+  const renderFormField = (fieldName: string, fieldSchema: any) => {
+    switch (fieldSchema.type) {
+      case "string":
+        if (fieldSchema.enum) {
           return (
             <Select
-              value={value?.toString()}
-              onValueChange={(val) => onChange(val === "true")}
+              value={form.watch(fieldName) as string}
+              onValueChange={(value) => form.setValue(fieldName as any, value)}
             >
-              <SelectTrigger>
-                <SelectValue placeholder={`选择${name}`} />
-              </SelectTrigger>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder={`选择${fieldName}`} />
+                </SelectTrigger>
+              </FormControl>
               <SelectContent>
-                <SelectItem value="true">true</SelectItem>
-                <SelectItem value="false">false</SelectItem>
+                {fieldSchema.enum.map((option: string) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           );
-
-        case "array":
-          return (
-            <ArrayField
-              name={name}
-              schema={schema}
-              value={value || []}
-              onChange={onChange}
-              level={level}
-            />
-          );
-
-        case "object":
-          return (
-            <ObjectField
-              name={name}
-              schema={schema}
-              value={value || {}}
-              onChange={onChange}
-              level={level}
-            />
-          );
-
-        default:
-          return (
+        }
+        return (
+          <FormControl>
             <Input
-              value={value || ""}
-              onChange={(e) => onChange(e.target.value)}
-              placeholder={`输入${name}`}
+              {...form.register(fieldName as any)}
+              placeholder={`输入${fieldName}`}
+              type={fieldSchema.format === "password" ? "password" : "text"}
             />
-          );
-      }
-    };
+          </FormControl>
+        );
 
-    const getTypeBadge = (type: string) => {
-      const colors: Record<string, string> = {
-        string: "bg-blue-100 text-blue-800",
-        number: "bg-green-100 text-green-800",
-        integer: "bg-green-100 text-green-800",
-        boolean: "bg-purple-100 text-purple-800",
-        array: "bg-orange-100 text-orange-800",
-        object: "bg-gray-100 text-gray-800",
-      };
+      case "number":
+      case "integer":
+        return (
+          <FormControl>
+            <Input
+              type="number"
+              placeholder={`输入${fieldName}`}
+              step={fieldSchema.type === "integer" ? "1" : "0.1"}
+              {...form.register(fieldName as any, {
+                valueAsNumber: true,
+              })}
+            />
+          </FormControl>
+        );
 
-      return colors[type] || "bg-gray-100 text-gray-800";
-    };
-
-    return (
-      <div
-        className={`space-y-2 ${
-          level > 0 ? "ml-6 border-l-2 border-muted pl-4" : ""
-        }`}
-      >
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">
-            {required && <span className="text-red-500 mr-1">*</span>}
-            {name}
-          </span>
-          <Badge
-            variant="secondary"
-            className={`text-xs ${getTypeBadge(schema.type)}`}
+      case "boolean":
+        return (
+          <Select
+            value={form.watch(fieldName)?.toString()}
+            onValueChange={(value) =>
+              form.setValue(fieldName as any, value === "true")
+            }
           >
-            {schema.type}
-          </Badge>
-          {schema.description && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger>
-                  <InfoIcon className="h-4 w-4 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="max-w-xs whitespace-pre-wrap">
-                    {schema.description}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-        </div>
-        {renderField()}
-      </div>
-    );
-  }
+            <FormControl>
+              <SelectTrigger>
+                <SelectValue placeholder={`选择${fieldName}`} />
+              </SelectTrigger>
+            </FormControl>
+            <SelectContent>
+              <SelectItem value="true">true</SelectItem>
+              <SelectItem value="false">false</SelectItem>
+            </SelectContent>
+          </Select>
+        );
+
+      case "array":
+        return <ArrayField name={fieldName} schema={fieldSchema} form={form} />;
+
+      case "object":
+        return (
+          <ObjectField name={fieldName} schema={fieldSchema} form={form} />
+        );
+
+      default:
+        return (
+          <FormControl>
+            <Input
+              {...form.register(fieldName as any)}
+              placeholder={`输入${fieldName}`}
+            />
+          </FormControl>
+        );
+    }
+  };
+
+  const getTypeBadge = (type: string) => {
+    const colors: Record<string, string> = {
+      string: "bg-blue-100 text-blue-800",
+      number: "bg-green-100 text-green-800",
+      integer: "bg-green-100 text-green-800",
+      boolean: "bg-purple-100 text-purple-800",
+      array: "bg-orange-100 text-orange-800",
+      object: "bg-gray-100 text-gray-800",
+    };
+
+    return colors[type] || "bg-gray-100 text-gray-800";
+  };
 
   // 数组字段渲染器
   interface ArrayFieldProps {
     name: string;
     schema: any;
-    value: any[];
-    onChange: (value: any[]) => void;
-    level: number;
+    form: any;
   }
 
-  function ArrayField({
-    name,
-    schema,
-    value,
-    onChange,
-    level,
-  }: ArrayFieldProps) {
+  function ArrayField({ name, schema, form }: ArrayFieldProps) {
+    const { fields, append, remove } = useFieldArray({
+      control: form.control,
+      name: name as any,
+    });
+
     const addItem = () => {
       const itemSchema = schema.items;
       let newItem: any;
@@ -456,17 +392,7 @@ export function ToolDebugDialog({
           newItem = "";
       }
 
-      onChange([...value, newItem]);
-    };
-
-    const removeItem = (index: number) => {
-      onChange(value.filter((_, i) => i !== index));
-    };
-
-    const updateItem = (index: number, itemValue: any) => {
-      const newValue = [...value];
-      newValue[index] = itemValue;
-      onChange(newValue);
+      append(newItem);
     };
 
     return (
@@ -486,15 +412,15 @@ export function ToolDebugDialog({
             添加
           </Button>
         </div>
-        {value.length === 0 ? (
+        {fields.length === 0 ? (
           <div className="text-center py-4 border border-dashed rounded-md">
             <span className="text-sm text-muted-foreground">暂无数组项目</span>
           </div>
         ) : (
           <div className="space-y-3">
-            {value.map((item, index) => (
+            {fields.map((field, index) => (
               <div
-                key={`${name}-${index}-${JSON.stringify(item)}`}
+                key={field.id}
                 className="relative p-3 border rounded-md bg-muted/20"
               >
                 <div className="absolute top-2 right-2">
@@ -502,7 +428,7 @@ export function ToolDebugDialog({
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => removeItem(index)}
+                    onClick={() => remove(index)}
                     className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
                   >
                     <Trash2 className="h-3 w-3" />
@@ -512,24 +438,23 @@ export function ToolDebugDialog({
                   <span className="text-xs font-medium text-muted-foreground mb-2 block">
                     项目 {index + 1}
                   </span>
-                  {schema.items?.type === "object" ||
-                  schema.items?.type === "array" ? (
-                    <FormField
-                      name={`${name}[${index}]`}
-                      schema={schema.items}
-                      value={item}
-                      onChange={(newValue) => updateItem(index, newValue)}
-                      level={level + 1}
-                    />
-                  ) : (
-                    <FormField
-                      name={`${name}[${index}]`}
-                      schema={schema.items}
-                      value={item}
-                      onChange={(newValue) => updateItem(index, newValue)}
-                      level={0}
-                    />
-                  )}
+                  <FormField
+                    control={form.control}
+                    name={`${name}.${index}` as any}
+                    render={() => {
+                      if (
+                        schema.items?.type === "object" ||
+                        schema.items?.type === "array"
+                      ) {
+                        return (
+                          <div className="ml-6 border-l-2 border-muted pl-4">
+                            {renderFormField(`${name}.${index}`, schema.items)}
+                          </div>
+                        );
+                      }
+                      return renderFormField(`${name}.${index}`, schema.items);
+                    }}
+                  />
                 </div>
               </div>
             ))}
@@ -543,19 +468,10 @@ export function ToolDebugDialog({
   interface ObjectFieldProps {
     name: string;
     schema: any;
-    value: Record<string, any>;
-    onChange: (value: Record<string, any>) => void;
-    level: number;
+    form: any;
   }
 
-  function ObjectField({ schema, value, onChange, level }: ObjectFieldProps) {
-    const updateField = (fieldName: string, fieldValue: any) => {
-      onChange({
-        ...value,
-        [fieldName]: fieldValue,
-      });
-    };
-
+  function ObjectField({ name, schema, form }: ObjectFieldProps) {
     if (!schema.properties || Object.keys(schema.properties).length === 0) {
       return (
         <div className="text-center py-4 border border-dashed rounded-md">
@@ -569,15 +485,49 @@ export function ToolDebugDialog({
         <span className="text-sm font-medium">对象字段</span>
         {Object.entries(schema.properties).map(
           ([fieldName, fieldSchema]: [string, any]) => (
-            <FormField
-              key={fieldName}
-              name={fieldName}
-              schema={fieldSchema}
-              value={value[fieldName]}
-              onChange={(fieldValue) => updateField(fieldName, fieldValue)}
-              required={schema.required?.includes(fieldName)}
-              level={level + 1}
-            />
+            <div key={fieldName} className="ml-6 border-l-2 border-muted pl-4">
+              <FormField
+                control={form.control}
+                name={`${name}.${fieldName}` as any}
+                render={() => (
+                  <FormItem>
+                    <div className="flex items-center gap-2">
+                      <FormLabel>
+                        {schema.required?.includes(fieldName) && (
+                          <span className="text-red-500 mr-1">*</span>
+                        )}
+                        {fieldName}
+                      </FormLabel>
+                      <Badge
+                        variant="secondary"
+                        className={`text-xs ${getTypeBadge(fieldSchema.type)}`}
+                      >
+                        {fieldSchema.type}
+                      </Badge>
+                      {fieldSchema.description && (
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <InfoIcon className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs whitespace-pre-wrap">
+                              {fieldSchema.description}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
+                    {renderFormField(`${name}.${fieldName}`, fieldSchema)}
+                    {fieldSchema.description && (
+                      <FormDescription>
+                        {fieldSchema.description}
+                      </FormDescription>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           )
         )}
       </div>
@@ -587,13 +537,8 @@ export function ToolDebugDialog({
   // 表单渲染器
   function FormRenderer({
     tool,
-    formData,
-    setFormData,
-  }: {
-    tool: ToolDebugDialogProps["tool"];
-    formData: Record<string, any>;
-    setFormData: (data: Record<string, any>) => void;
-  }) {
+    form,
+  }: { tool: ToolDebugDialogProps["tool"]; form: any }) {
     if (!tool?.inputSchema?.properties) {
       return (
         <div className="text-center py-8">
@@ -603,30 +548,59 @@ export function ToolDebugDialog({
       );
     }
 
-    const updateField = (fieldName: string, value: any) => {
-      setFormData({
-        ...formData,
-        [fieldName]: value,
-      });
-    };
-
     return (
-      <ScrollArea className="h-full">
-        <div className="space-y-4 p-2">
-          {Object.entries(tool.inputSchema.properties).map(
-            ([fieldName, fieldSchema]: [string, any]) => (
-              <FormField
-                key={fieldName}
-                name={fieldName}
-                schema={fieldSchema}
-                value={formData[fieldName]}
-                onChange={(value) => updateField(fieldName, value)}
-                required={tool.inputSchema.required?.includes(fieldName)}
-              />
-            )
-          )}
-        </div>
-      </ScrollArea>
+      <Form {...form}>
+        <ScrollArea className="h-full">
+          <div className="space-y-4 p-2">
+            {Object.entries(tool.inputSchema.properties).map(
+              ([fieldName, fieldSchema]: [string, any]) => (
+                <FormField
+                  key={fieldName}
+                  control={form.control}
+                  name={fieldName as any}
+                  render={() => (
+                    <FormItem>
+                      <div className="flex items-center gap-2">
+                        <FormLabel>
+                          {tool.inputSchema.required?.includes(fieldName) && (
+                            <span className="text-red-500 mr-1">*</span>
+                          )}
+                          {fieldName}
+                        </FormLabel>
+                        <Badge
+                          variant="secondary"
+                          className={`text-xs ${getTypeBadge(fieldSchema.type)}`}
+                        >
+                          {fieldSchema.type}
+                        </Badge>
+                        {fieldSchema.description && (
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <InfoIcon className="h-4 w-4 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs whitespace-pre-wrap">
+                                {fieldSchema.description}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </div>
+                      {renderFormField(fieldName, fieldSchema)}
+                      {fieldSchema.description && (
+                        <FormDescription>
+                          {fieldSchema.description}
+                        </FormDescription>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )
+            )}
+          </div>
+        </ScrollArea>
+      </Form>
     );
   }
 
@@ -641,222 +615,220 @@ export function ToolDebugDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5" />
-            工具调试
-          </DialogTitle>
-        </DialogHeader>
+      <TooltipProvider>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Zap className="h-5 w-5" />
+              工具调试
+            </DialogTitle>
+          </DialogHeader>
 
-        {tool && (
-          <div className="flex flex-col gap-4 h-[80vh]">
-            {/* 工具信息 */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Code className="h-4 w-4" />
-                  {tool.name}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">服务器:</span>
-                  <Badge variant="secondary">{tool.serverName}</Badge>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">工具:</span>
-                  <Badge variant="outline">{tool.toolName}</Badge>
-                </div>
-                {tool.description && (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {tool.description}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+          {tool && (
+            <div className="flex flex-col gap-4 h-[80vh]">
+              {/* 工具信息 */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Code className="h-4 w-4" />
+                    {tool.name}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">服务器:</span>
+                    <Badge variant="secondary">{tool.serverName}</Badge>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">工具:</span>
+                    <Badge variant="outline">{tool.toolName}</Badge>
+                  </div>
+                  {tool.description && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {tool.description}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
 
-            {/* 输入参数 */}
-            <div className="flex-1 flex gap-4 min-h-0">
-              <div className="w-1/2 flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium">输入参数</h3>
-                  {tool?.inputSchema?.properties &&
-                    Object.keys(tool.inputSchema.properties).length > 0 && (
+              {/* 输入参数 */}
+              <div className="flex-1 flex gap-4 min-h-0">
+                <div className="w-1/2 flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium">输入参数</h3>
+                    {tool?.inputSchema?.properties &&
+                      Object.keys(tool.inputSchema.properties).length > 0 && (
+                        <Tabs
+                          value={inputMode}
+                          onValueChange={(value) =>
+                            handleModeChange(value as "form" | "json")
+                          }
+                        >
+                          <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="form" className="text-xs">
+                              表单模式
+                            </TabsTrigger>
+                            <TabsTrigger value="json" className="text-xs">
+                              高级模式
+                            </TabsTrigger>
+                          </TabsList>
+                        </Tabs>
+                      )}
+                  </div>
+                  <div className="flex-1 min-h-0">
+                    {tool?.inputSchema?.properties &&
+                    Object.keys(tool.inputSchema.properties).length > 0 ? (
                       <Tabs
                         value={inputMode}
                         onValueChange={(value) =>
                           handleModeChange(value as "form" | "json")
                         }
+                        className="h-full flex flex-col"
                       >
-                        <TabsList className="grid w-full grid-cols-2">
-                          <TabsTrigger value="form" className="text-xs">
-                            表单模式
-                          </TabsTrigger>
-                          <TabsTrigger value="json" className="text-xs">
-                            高级模式
-                          </TabsTrigger>
-                        </TabsList>
+                        <TabsContent
+                          value="form"
+                          className="flex-1 data-[state=active]:flex data-[state=active]:flex-col mt-0"
+                        >
+                          <FormRenderer tool={tool} form={form} />
+                        </TabsContent>
+                        <TabsContent
+                          value="json"
+                          className="flex-1 data-[state=active]:flex data-[state=active]:flex-col mt-0"
+                        >
+                          <div className="flex-1 flex flex-col">
+                            <Textarea
+                              value={jsonInput}
+                              onChange={(e) => setJsonInput(e.target.value)}
+                              placeholder="请输入JSON格式的参数..."
+                              className="flex-1 font-mono text-sm resize-none min-h-[200px]"
+                              disabled={loading}
+                            />
+                            {!validateJSON(jsonInput) &&
+                              jsonInput.trim() !== "{\n  \n}" && (
+                                <Alert className="mt-2">
+                                  <AlertCircle className="h-4 w-4" />
+                                  <AlertDescription>
+                                    JSON格式错误，请检查输入
+                                  </AlertDescription>
+                                </Alert>
+                              )}
+                          </div>
+                        </TabsContent>
                       </Tabs>
-                    )}
-                </div>
-                <div className="flex-1 min-h-0">
-                  {tool?.inputSchema?.properties &&
-                  Object.keys(tool.inputSchema.properties).length > 0 ? (
-                    <Tabs
-                      value={inputMode}
-                      onValueChange={(value) =>
-                        handleModeChange(value as "form" | "json")
-                      }
-                      className="h-full flex flex-col"
-                    >
-                      <TabsContent
-                        value="form"
-                        className="flex-1 data-[state=active]:flex data-[state=active]:flex-col mt-0"
-                      >
-                        <FormRenderer
-                          tool={tool}
-                          formData={formData}
-                          setFormData={setFormData}
+                    ) : (
+                      <div className="flex-1 flex flex-col">
+                        <Textarea
+                          value={jsonInput}
+                          onChange={(e) => setJsonInput(e.target.value)}
+                          placeholder="请输入JSON格式的参数..."
+                          className="flex-1 font-mono text-sm resize-none"
+                          disabled={loading}
                         />
-                      </TabsContent>
-                      <TabsContent
-                        value="json"
-                        className="flex-1 data-[state=active]:flex data-[state=active]:flex-col mt-0"
-                      >
-                        <div className="flex-1 flex flex-col">
-                          <Textarea
-                            value={inputParams}
-                            onChange={(e) => setInputParams(e.target.value)}
-                            placeholder="请输入JSON格式的参数..."
-                            className="flex-1 font-mono text-sm resize-none min-h-[200px]"
-                            disabled={loading}
-                          />
-                          {!validateJSON(inputParams) &&
-                            inputParams.trim() !== "{\n  \n}" && (
-                              <Alert className="mt-2">
-                                <AlertCircle className="h-4 w-4" />
-                                <AlertDescription>
-                                  JSON格式错误，请检查输入
-                                </AlertDescription>
-                              </Alert>
-                            )}
-                        </div>
-                      </TabsContent>
-                    </Tabs>
-                  ) : (
-                    <div className="flex-1 flex flex-col">
-                      <Textarea
-                        value={inputParams}
-                        onChange={(e) => setInputParams(e.target.value)}
-                        placeholder="请输入JSON格式的参数..."
-                        className="flex-1 font-mono text-sm resize-none"
-                        disabled={loading}
-                      />
-                      {!validateJSON(inputParams) &&
-                        inputParams.trim() !== "{\n  \n}" && (
-                          <Alert className="mt-2">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertDescription>
-                              JSON格式错误，请检查输入
-                            </AlertDescription>
-                          </Alert>
+                        {!validateJSON(jsonInput) &&
+                          jsonInput.trim() !== "{\n  \n}" && (
+                            <Alert className="mt-2">
+                              <AlertCircle className="h-4 w-4" />
+                              <AlertDescription>
+                                JSON格式错误，请检查输入
+                              </AlertDescription>
+                            </Alert>
+                          )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 结果显示 */}
+                <div className="w-1/2 flex flex-col gap-2">
+                  <div className="flex items-center justify-between h-[40px]">
+                    <h3 className="text-sm font-medium">调用结果</h3>
+                    {(result || error) && (
+                      <Button variant="outline" size="sm" onClick={handleCopy}>
+                        {copied ? (
+                          <>
+                            <CheckIcon className="h-4 w-4 mr-1" />
+                            已复制
+                          </>
+                        ) : (
+                          <>
+                            <CopyIcon className="h-4 w-4 mr-1" />
+                            复制
+                          </>
                         )}
-                    </div>
-                  )}
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex-1 min-h-0">
+                    {loading ? (
+                      <div className="h-full flex items-center justify-center border rounded-md">
+                        <div className="flex flex-col items-center gap-2">
+                          <Loader2 className="h-8 w-8 animate-spin" />
+                          <span className="text-sm text-muted-foreground">
+                            正在调用工具...
+                          </span>
+                        </div>
+                      </div>
+                    ) : error ? (
+                      <div className="h-full">
+                        <Alert variant="destructive" className="h-full">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription className="font-mono text-sm">
+                            {error}
+                          </AlertDescription>
+                        </Alert>
+                      </div>
+                    ) : result ? (
+                      <ScrollArea className="h-full border rounded-md">
+                        <pre className="p-3 text-sm font-mono whitespace-pre-wrap break-words">
+                          {formatResult(result)}
+                        </pre>
+                      </ScrollArea>
+                    ) : (
+                      <div className="h-full flex items-center justify-center border rounded-md">
+                        <div className="text-center text-muted-foreground">
+                          <Code className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p>等待调用工具...</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* 结果显示 */}
-              <div className="w-1/2 flex flex-col gap-2">
-                <div className="flex items-center justify-between h-[40px]">
-                  <h3 className="text-sm font-medium">调用结果</h3>
-                  {(result || error) && (
-                    <Button variant="outline" size="sm" onClick={handleCopy}>
-                      {copied ? (
-                        <>
-                          <CheckIcon className="h-4 w-4 mr-1" />
-                          已复制
-                        </>
-                      ) : (
-                        <>
-                          <CopyIcon className="h-4 w-4 mr-1" />
-                          复制
-                        </>
-                      )}
-                    </Button>
-                  )}
-                </div>
-                <div className="flex-1 min-h-0">
+              {/* 底部操作按钮 */}
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={handleClear}
+                  disabled={loading}
+                >
+                  <RotateCcwIcon className="h-4 w-4 mr-2" />
+                  清空
+                </Button>
+                <Button
+                  onClick={handleCallTool}
+                  disabled={
+                    loading ||
+                    (inputMode === "json" && !validateJSON(jsonInput))
+                  }
+                >
                   {loading ? (
-                    <div className="h-full flex items-center justify-center border rounded-md">
-                      <div className="flex flex-col items-center gap-2">
-                        <Loader2 className="h-8 w-8 animate-spin" />
-                        <span className="text-sm text-muted-foreground">
-                          正在调用工具...
-                        </span>
-                      </div>
-                    </div>
-                  ) : error ? (
-                    <div className="h-full">
-                      <Alert variant="destructive" className="h-full">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription className="font-mono text-sm">
-                          {error}
-                        </AlertDescription>
-                      </Alert>
-                    </div>
-                  ) : result ? (
-                    <ScrollArea className="h-full border rounded-md">
-                      <pre className="p-3 text-sm font-mono whitespace-pre-wrap break-words">
-                        {formatResult(result)}
-                      </pre>
-                    </ScrollArea>
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      调用中...
+                    </>
                   ) : (
-                    <div className="h-full flex items-center justify-center border rounded-md">
-                      <div className="text-center text-muted-foreground">
-                        <Code className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        <p>等待调用工具...</p>
-                      </div>
-                    </div>
+                    <>
+                      <PlayIcon className="h-4 w-4 mr-2" />
+                      调用工具
+                    </>
                   )}
-                </div>
+                </Button>
               </div>
             </div>
-
-            {/* 底部操作按钮 */}
-            <div className="flex justify-end gap-2 pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={handleClear}
-                disabled={loading}
-              >
-                <RotateCcwIcon className="h-4 w-4 mr-2" />
-                清空
-              </Button>
-              <Button
-                onClick={handleCallTool}
-                disabled={
-                  loading ||
-                  (inputMode === "json" && !validateJSON(inputParams))
-                }
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    调用中...
-                  </>
-                ) : (
-                  <>
-                    <PlayIcon className="h-4 w-4 mr-2" />
-                    调用工具
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        )}
-      </DialogContent>
+          )}
+        </DialogContent>
+      </TooltipProvider>
     </Dialog>
   );
 }
