@@ -1,4 +1,5 @@
 import { McpEndpointSettingButton } from "@/components/McpEndpointSettingButton";
+import { ToolCallLogsDialog } from "@/components/ToolCallLogsDialog";
 import { WebUrlSettingButton } from "@/components/WebUrlSettingButton";
 import {
   Card,
@@ -22,7 +23,11 @@ const MiniCircularProgress = ({
   const radius = (size - 6) / 2;
   const circumference = radius * 2 * Math.PI;
   const strokeDasharray = circumference;
-  const strokeDashoffset = circumference - (value / maxValue) * circumference;
+  // 防止除零错误，当maxValue为0时，将strokeDashoffset设为circumference（显示为空）
+  const strokeDashoffset =
+    maxValue === 0
+      ? circumference
+      : circumference - (value / maxValue) * circumference;
 
   return (
     <div className="relative inline-flex items-center justify-center">
@@ -136,7 +141,7 @@ export function DashboardStatusCard() {
             <MiniCircularProgress
               showValue={false}
               value={mcpServerCount}
-              maxValue={mcpServerCount}
+              maxValue={Math.max(mcpServerCount, 1)}
               activeColor="#16a34a"
               inactiveColor="#f87171"
               size={30}
@@ -144,6 +149,12 @@ export function DashboardStatusCard() {
             />
           </div>
         </CardHeader>
+        <CardFooter className="flex items-center justify-between gap-1 text-sm">
+          <div className="text-muted-foreground">
+            共 {mcpServerCount} 个服务
+          </div>
+          <ToolCallLogsDialog />
+        </CardFooter>
       </Card>
     </div>
   );
