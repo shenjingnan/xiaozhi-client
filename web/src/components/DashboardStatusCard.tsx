@@ -1,4 +1,5 @@
 import { McpEndpointSettingButton } from "@/components/McpEndpointSettingButton";
+import { ToolCallLogsDialog } from "@/components/ToolCallLogsDialog";
 import { WebUrlSettingButton } from "@/components/WebUrlSettingButton";
 import {
   Card,
@@ -144,6 +145,12 @@ export function DashboardStatusCard() {
             />
           </div>
         </CardHeader>
+        <CardFooter className="flex items-center justify-between gap-1 text-sm">
+          <div className="text-muted-foreground">
+            共 {mcpServerCount} 个服务
+          </div>
+          <ToolCallLogsDialog />
+        </CardFooter>
       </Card>
     </div>
   );
