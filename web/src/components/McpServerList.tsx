@@ -27,6 +27,7 @@ import {
   PlusIcon,
   Settings,
   Wrench,
+  ZapIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -600,7 +601,7 @@ export function McpServerList({
                           onClick={() => handleDebugTool(tool)}
                           title="调试工具"
                         >
-                          <FlaskConicalIcon size={18} />
+                          <ZapIcon size={18} />
                         </Button>
                         <Button
                           variant="secondary"

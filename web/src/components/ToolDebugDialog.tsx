@@ -177,6 +177,7 @@ export function ToolDebugDialog({
               </CardContent>
             </Card>
 
+{JSON.stringify(tool)}
             {/* 输入参数 */}
             <div className="flex-1 flex gap-4 min-h-0">
               <div className="w-1/2 flex flex-col gap-2">
