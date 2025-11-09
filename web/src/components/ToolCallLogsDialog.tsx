@@ -199,7 +199,9 @@ export function ToolCallLogsDialog() {
                   <TableBody>
                     {logs.map((log, index) => (
                       <TableRow
-                        key={`${log.toolName}-${log.timestamp || index}-${index}`}
+                        key={`${log.toolName}-${
+                          log.timestamp || index
+                        }-${index}`}
                         className={`cursor-pointer transition-colors ${
                           hoveredIndex === index
                             ? "bg-muted/50"
@@ -309,97 +311,105 @@ function CallLogDetail({ log }: CallLogDetailProps) {
     <Card className="h-[60vh]">
       <div className="p-4 h-full flex flex-col">
         {/* 详情内容 */}
-        <Tabs defaultValue="arguments" className="flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs defaultValue="arguments" className="flex-1 flex flex-col min-h-0">
+          <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
             <TabsTrigger value="arguments">入参</TabsTrigger>
             <TabsTrigger value="result">出参</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="arguments" className="flex-1 mt-4">
-            <ScrollArea className="h-full">
-              {log.arguments ? (
-                <div className="relative">
-                  <pre className="text-xs bg-muted p-3 rounded-md overflow-x-auto text-wrap break-words">
-                    {formatJson(log.arguments)}
-                  </pre>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="absolute top-2 right-2 hover:bg-slate-200 w-[30px] h-[30px]"
-                    onClick={() =>
-                      copyToClipboard(formatJson(log.arguments) || "")
-                    }
-                  >
-                    <CopyIcon />
-                  </Button>
-                </div>
-              ) : (
-                <div className="text-center text-muted-foreground py-8">
-                  <Code className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>无入参</p>
-                </div>
-              )}
-            </ScrollArea>
-          </TabsContent>
-
-          <TabsContent value="result" className="flex-1 mt-4">
-            <ScrollArea>
-              {log.success ? (
-                log.result ? (
+          <div className="flex-1 min-h-0 mt-4">
+            <TabsContent
+              value="arguments"
+              className="h-full data-[state=active]:flex data-[state=active]:flex-col"
+            >
+              <ScrollArea className="h-full">
+                {log.arguments ? (
                   <div className="relative">
                     <pre className="text-xs bg-muted p-3 rounded-md overflow-x-auto text-wrap break-words">
-                      {formatJson(log.result)}
+                      {formatJson(log.arguments)}
                     </pre>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="absolute top-2 right-2"
+                      className="absolute top-2 right-2 hover:bg-slate-200 w-[30px] h-[30px]"
                       onClick={() =>
-                        copyToClipboard(formatJson(log.result) || "")
+                        copyToClipboard(formatJson(log.arguments) || "")
                       }
                     >
-                      复制
+                      <CopyIcon />
                     </Button>
                   </div>
                 ) : (
                   <div className="text-center text-muted-foreground py-8">
-                    <CheckCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>无出参</p>
+                    <Code className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>无入参</p>
                   </div>
-                )
-              ) : (
-                <div className="relative">
-                  <div className="bg-destructive/10 border border-destructive/20 p-3 rounded-md">
-                    <div className="flex items-center gap-2 mb-2">
-                      <XCircle className="h-4 w-4 text-destructive" />
-                      <span className="font-medium text-destructive">
-                        调用失败
-                      </span>
+                )}
+              </ScrollArea>
+            </TabsContent>
+
+            <TabsContent
+              value="result"
+              className="h-full data-[state=active]:flex data-[state=active]:flex-col"
+            >
+              <ScrollArea className="h-full">
+                {log.success ? (
+                  log.result ? (
+                    <div className="relative">
+                      <pre className="text-xs bg-muted p-3 rounded-md overflow-x-auto text-wrap break-words">
+                        {formatJson(log.result)}
+                      </pre>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-2 right-2 hover:bg-slate-200 w-[30px] h-[30px]"
+                        onClick={() =>
+                          copyToClipboard(formatJson(log.result) || "")
+                        }
+                      >
+                        <CopyIcon />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="text-center text-muted-foreground py-8">
+                      <CheckCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p>无出参</p>
+                    </div>
+                  )
+                ) : (
+                  <div className="relative">
+                    <div className="bg-destructive/10 border border-destructive/20 p-3 rounded-md">
+                      <div className="flex items-center gap-2 mb-2">
+                        <XCircle className="h-4 w-4 text-destructive" />
+                        <span className="font-medium text-destructive">
+                          调用失败
+                        </span>
+                      </div>
+                      {log.error && (
+                        <pre className="text-xs text-destructive/80 whitespace-pre-wrap">
+                          {log.error}
+                        </pre>
+                      )}
                     </div>
                     {log.error && (
-                      <pre className="text-xs text-destructive/80 whitespace-pre-wrap">
-                        {log.error}
-                      </pre>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={() => copyToClipboard(log.error || "")}
+                      >
+                        复制
+                      </Button>
                     )}
                   </div>
-                  {log.error && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="absolute top-2 right-2"
-                      onClick={() => copyToClipboard(log.error || "")}
-                    >
-                      复制
-                    </Button>
-                  )}
-                </div>
-              )}
-            </ScrollArea>
-          </TabsContent>
+                )}
+              </ScrollArea>
+            </TabsContent>
+          </div>
         </Tabs>
 
-        <Separator className="my-4" />
-        <div className="text-xs text-muted-foreground flex justify-between">
+        <Separator className="my-4 flex-shrink-0" />
+        <div className="text-xs text-muted-foreground flex justify-between flex-shrink-0">
           <span>耗时: {formatDuration(log.duration)}</span>
           <span>{formatTimestamp(log.timestamp)}</span>
         </div>
