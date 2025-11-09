@@ -5,6 +5,7 @@
 
 import * as fs from "node:fs";
 import { type Logger, logger } from "../Logger.js";
+import { PAGINATION_CONSTANTS } from "../cli/Constants.js";
 import { PathUtils } from "../cli/utils/PathUtils.js";
 import {
   ToolCallLogger,
@@ -157,7 +158,10 @@ export class ToolCallLogService {
     const total = filtered.length;
 
     // 分页处理
-    const limit = Math.min(query.limit || 50, 200); // 限制最大返回数量
+    const limit = Math.min(
+      query.limit || PAGINATION_CONSTANTS.DEFAULT_LIMIT,
+      PAGINATION_CONSTANTS.MAX_LIMIT
+    );
     const offset = query.offset || 0;
     const paginated = filtered.slice(offset, offset + limit);
     const hasMore = offset + limit < total;

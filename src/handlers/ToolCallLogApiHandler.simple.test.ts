@@ -4,6 +4,7 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { PAGINATION_CONSTANTS } from "../cli/Constants.js";
 import { ToolCallLogApiHandler } from "./ToolCallLogApiHandler.js";
 
 describe("ToolCallLogApiHandler - 基本功能测试", () => {
@@ -84,7 +85,7 @@ describe("ToolCallLogApiHandler - 基本功能测试", () => {
     expect(invalidResult.error).toBeDefined();
     expect(Array.isArray(invalidResult.error)).toBe(true);
     expect(invalidResult.error[0].message).toContain(
-      "limit 参数必须是 1-200 之间的数字"
+      `limit 参数必须是 1-${PAGINATION_CONSTANTS.MAX_LIMIT} 之间的数字`
     );
   });
 });

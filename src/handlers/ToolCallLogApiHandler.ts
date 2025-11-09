@@ -6,6 +6,7 @@
 import type { Context } from "hono";
 import { z } from "zod";
 import { logger } from "../Logger.js";
+import { PAGINATION_CONSTANTS } from "../cli/Constants.js";
 import {
   ToolCallLogService,
   type ToolCallQuery,
@@ -33,9 +34,14 @@ const ToolCallQuerySchema = z
       .string()
       .optional()
       .transform((val) => (val ? Number.parseInt(val, 10) : undefined))
-      .refine((val) => val === undefined || (val >= 1 && val <= 200), {
-        message: "limit 参数必须是 1-200 之间的数字",
-      }),
+      .refine(
+        (val) =>
+          val === undefined ||
+          (val >= 1 && val <= PAGINATION_CONSTANTS.MAX_LIMIT),
+        {
+          message: `limit 参数必须是 1-${PAGINATION_CONSTANTS.MAX_LIMIT} 之间的数字`,
+        }
+      ),
     offset: z
       .string()
       .optional()
