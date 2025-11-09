@@ -20,7 +20,7 @@ describe("ToolCallLogsDialog", () => {
   const mockLogs: ToolCallRecord[] = [
     {
       toolName: "test_tool",
-      serverName: "test_server",
+      serverName: "test_server_1",
       success: true,
       duration: 100,
       timestamp: 1704067200000,
@@ -29,7 +29,7 @@ describe("ToolCallLogsDialog", () => {
     },
     {
       toolName: "failed_tool",
-      serverName: "test_server",
+      serverName: "test_server_2",
       success: false,
       duration: 200,
       timestamp: 1704067260000,
@@ -117,7 +117,7 @@ describe("ToolCallLogsDialog", () => {
 
     await waitFor(() => {
       expect(screen.getByText("test_tool")).toBeInTheDocument();
-      expect(screen.getByText("test_server")).toBeInTheDocument();
+      expect(screen.getByText("test_server_1")).toBeInTheDocument();
       expect(screen.getByText("成功")).toBeInTheDocument();
     });
   });
