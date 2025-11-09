@@ -22,7 +22,6 @@ import type { CozeWorkflow, MCPServerConfig, WorkflowParameter } from "@/types";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
 import {
   CoffeeIcon,
-  FlaskConicalIcon,
   MinusIcon,
   PlusIcon,
   Settings,

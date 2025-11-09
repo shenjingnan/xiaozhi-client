@@ -177,40 +177,10 @@ export function ToolDebugDialog({
               </CardContent>
             </Card>
 
-{JSON.stringify(tool)}
             {/* 输入参数 */}
             <div className="flex-1 flex gap-4 min-h-0">
               <div className="w-1/2 flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium">输入参数 (JSON)</h3>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleClear}
-                      disabled={loading}
-                    >
-                      <RotateCcwIcon className="h-4 w-4 mr-1" />
-                      清空
-                    </Button>
-                    <Button
-                      onClick={handleCallTool}
-                      disabled={loading || !validateJSON(inputParams)}
-                    >
-                      {loading ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                          调用中...
-                        </>
-                      ) : (
-                        <>
-                          <PlayIcon className="h-4 w-4 mr-1" />
-                          调用工具
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
+                <h3 className="text-sm font-medium">输入参数 (JSON)</h3>
                 <div className="flex-1 min-h-0">
                   <Textarea
                     value={inputParams}
@@ -286,6 +256,34 @@ export function ToolDebugDialog({
                   )}
                 </div>
               </div>
+            </div>
+
+            {/* 底部操作按钮 */}
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={handleClear}
+                disabled={loading}
+              >
+                <RotateCcwIcon className="h-4 w-4 mr-2" />
+                清空
+              </Button>
+              <Button
+                onClick={handleCallTool}
+                disabled={loading || !validateJSON(inputParams)}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    调用中...
+                  </>
+                ) : (
+                  <>
+                    <PlayIcon className="h-4 w-4 mr-2" />
+                    调用工具
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         )}
