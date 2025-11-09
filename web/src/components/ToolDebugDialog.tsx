@@ -311,15 +311,15 @@ const FormRenderer = memo(function FormRenderer({
                           fieldSchema.type === "string"
                             ? "bg-blue-100 text-blue-800"
                             : fieldSchema.type === "number" ||
-                                fieldSchema.type === "integer"
-                              ? "bg-green-100 text-green-800"
-                              : fieldSchema.type === "boolean"
-                                ? "bg-purple-100 text-purple-800"
-                                : fieldSchema.type === "array"
-                                  ? "bg-orange-100 text-orange-800"
-                                  : fieldSchema.type === "object"
-                                    ? "bg-gray-100 text-gray-800"
-                                    : "bg-gray-100 text-gray-800"
+                              fieldSchema.type === "integer"
+                            ? "bg-green-100 text-green-800"
+                            : fieldSchema.type === "boolean"
+                            ? "bg-purple-100 text-purple-800"
+                            : fieldSchema.type === "array"
+                            ? "bg-orange-100 text-orange-800"
+                            : fieldSchema.type === "object"
+                            ? "bg-gray-100 text-gray-800"
+                            : "bg-gray-100 text-gray-800"
                         }`}
                       >
                         {fieldSchema.type}
@@ -753,7 +753,7 @@ export function ToolDebugDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <TooltipProvider>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Zap className="h-5 w-5" />
@@ -765,21 +765,13 @@ export function ToolDebugDialog({
             <div className="flex flex-col gap-4 h-[80vh]">
               {/* 工具信息 */}
               <Card>
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-0">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <Code className="h-4 w-4" />
-                    {tool.name}
+                    <Badge variant="secondary">{tool.serverName}</Badge>
+                    {tool.toolName}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">服务器:</span>
-                    <Badge variant="secondary">{tool.serverName}</Badge>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">工具:</span>
-                    <Badge variant="outline">{tool.toolName}</Badge>
-                  </div>
+                <CardContent>
                   {tool.description && (
                     <p className="text-sm text-muted-foreground mt-2">
                       {tool.description}
@@ -789,8 +781,8 @@ export function ToolDebugDialog({
               </Card>
 
               {/* 输入参数 */}
-              <div className="flex-1 flex gap-4 min-h-0">
-                <div className="w-1/2 flex flex-col gap-2">
+              <div className="flex-1 flex min-h-0 w-full overflow-hidden">
+                <div className="w-1/2 flex flex-col gap-2 flex-shrink-0 overflow-hidden pr-0.5">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-medium">输入参数</h3>
                     {tool?.inputSchema?.properties &&
@@ -880,7 +872,7 @@ export function ToolDebugDialog({
                 </div>
 
                 {/* 结果显示 */}
-                <div className="w-1/2 flex flex-col gap-2">
+                <div className="w-1/2 flex flex-col gap-2 flex-shrink-0 overflow-hidden pl-0.5">
                   <div className="flex items-center justify-between h-[40px]">
                     <h3 className="text-sm font-medium">调用结果</h3>
                     {(result || error) && (
@@ -925,7 +917,7 @@ export function ToolDebugDialog({
                       </div>
                     ) : result ? (
                       <ScrollArea className="h-full border rounded-md">
-                        <pre className="p-3 text-sm font-mono whitespace-pre-wrap break-words">
+                        <pre className="p-3 text-sm font-mono whitespace-pre-wrap break-words min-w-0">
                           {formatResult(result)}
                         </pre>
                       </ScrollArea>
