@@ -41,6 +41,7 @@ import {
   FileText,
   Loader2,
   RefreshCw,
+  RotateCwIcon,
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -66,6 +67,7 @@ export function ToolCallLogsDialog() {
       setError(null);
 
       try {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         const response = await fetch(`/api/tool-calls/logs?limit=${limit}`);
         const data: ApiResponse<ToolCallLogsResponse> = await response.json();
 
@@ -142,19 +144,18 @@ export function ToolCallLogsDialog() {
                   (共 {total} 条记录)
                 </span>
               )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => fetchLogs(true)}
+                disabled={refreshing}
+              >
+                <RotateCwIcon
+                  className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+                />
+                刷新
+              </Button>
             </DialogTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => fetchLogs(true)}
-              disabled={refreshing}
-              className="gap-2"
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
-              />
-              刷新
-            </Button>
           </div>
         </DialogHeader>
 
@@ -341,7 +342,9 @@ function CopyButton({
     <Button
       variant="ghost"
       size={size}
-      className={`${className} ${copied ? "text-green-600 hover:text-green-700" : ""}`}
+      className={`${className} ${
+        copied ? "text-green-600 hover:text-green-700" : ""
+      }`}
       onClick={handleCopy}
     >
       {copied ? <CheckIcon /> : <CopyIcon />}
