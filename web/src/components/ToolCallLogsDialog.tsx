@@ -230,9 +230,7 @@ export function ToolCallLogsDialog() {
                           <Badge
                             variant={log.success ? undefined : "destructive"}
                             className={`gap-1 ${
-                              log.success
-                                ? "bg-green-600"
-                                : "bg-red-600"
+                              log.success ? "bg-green-600" : "bg-red-600"
                             }`}
                           >
                             {log.success ? "成功" : "失败"}
