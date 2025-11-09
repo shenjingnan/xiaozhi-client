@@ -52,7 +52,7 @@ import {
   Loader2,
   PlayIcon,
   Plus,
-    Trash2,
+  Trash2,
   Zap,
 } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
@@ -162,11 +162,17 @@ const ArrayField = memo(function ArrayField({
                         ) {
                           return (
                             <div className="ml-6 border-l-2 border-muted pl-4">
-                              {renderFormField(`${name}.${index}`, schema.items)}
+                              {renderFormField(
+                                `${name}.${index}`,
+                                schema.items
+                              )}
                             </div>
                           );
                         }
-                        return renderFormField(`${name}.${index}`, schema.items);
+                        return renderFormField(
+                          `${name}.${index}`,
+                          schema.items
+                        );
                       })()}
                     </FormItem>
                   )}
@@ -246,9 +252,7 @@ const ObjectField = memo(function ObjectField({
                   </div>
                   {renderFormField(`${name}.${fieldName}`, fieldSchema)}
                   {fieldSchema.description && (
-                    <FormDescription>
-                      {fieldSchema.description}
-                    </FormDescription>
+                    <FormDescription>{fieldSchema.description}</FormDescription>
                   )}
                   <FormMessage />
                 </FormItem>
@@ -307,15 +311,15 @@ const FormRenderer = memo(function FormRenderer({
                           fieldSchema.type === "string"
                             ? "bg-blue-100 text-blue-800"
                             : fieldSchema.type === "number" ||
-                              fieldSchema.type === "integer"
-                            ? "bg-green-100 text-green-800"
-                            : fieldSchema.type === "boolean"
-                            ? "bg-purple-100 text-purple-800"
-                            : fieldSchema.type === "array"
-                            ? "bg-orange-100 text-orange-800"
-                            : fieldSchema.type === "object"
-                            ? "bg-gray-100 text-gray-800"
-                            : "bg-gray-100 text-gray-800"
+                                fieldSchema.type === "integer"
+                              ? "bg-green-100 text-green-800"
+                              : fieldSchema.type === "boolean"
+                                ? "bg-purple-100 text-purple-800"
+                                : fieldSchema.type === "array"
+                                  ? "bg-orange-100 text-orange-800"
+                                  : fieldSchema.type === "object"
+                                    ? "bg-gray-100 text-gray-800"
+                                    : "bg-gray-100 text-gray-800"
                         }`}
                       >
                         {fieldSchema.type}
@@ -574,10 +578,7 @@ export function ToolDebugDialog({
                 name={fieldName as any}
                 control={form.control}
                 render={({ field }) => (
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                  >
+                  <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={`选择${fieldName}`} />
@@ -604,7 +605,9 @@ export function ToolDebugDialog({
                   <Input
                     {...field}
                     placeholder={`输入${fieldName}`}
-                    type={fieldSchema.format === "password" ? "password" : "text"}
+                    type={
+                      fieldSchema.format === "password" ? "password" : "text"
+                    }
                   />
                 </FormControl>
               )}
@@ -659,7 +662,14 @@ export function ToolDebugDialog({
           );
 
         case "array":
-          return <ArrayField name={fieldName} schema={fieldSchema} form={form} renderFormField={renderFormField} />;
+          return (
+            <ArrayField
+              name={fieldName}
+              schema={fieldSchema}
+              form={form}
+              renderFormField={renderFormField}
+            />
+          );
 
         case "object":
           return (
@@ -679,10 +689,7 @@ export function ToolDebugDialog({
               control={form.control}
               render={({ field }) => (
                 <FormControl>
-                  <Input
-                    {...field}
-                    placeholder={`输入${fieldName}`}
-                  />
+                  <Input {...field} placeholder={`输入${fieldName}`} />
                 </FormControl>
               )}
             />
@@ -691,7 +698,6 @@ export function ToolDebugDialog({
     };
   }, [form]);
 
-  
   // 格式化结果显示
   const formatResult = useCallback((data: any) => {
     try {
@@ -700,6 +706,49 @@ export function ToolDebugDialog({
       return String(data);
     }
   }, []);
+
+  // 检测操作系统并获取快捷键文本
+  const getShortcutText = useCallback(() => {
+    if (typeof window === "undefined") return "⌘+Enter";
+    const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+    return isMac ? "⌘+Enter" : "Ctrl+Enter";
+  }, []);
+
+  // 处理键盘事件
+  const handleKeyDown = useCallback(
+    async (event: KeyboardEvent) => {
+      // 检查是否是 Command+Enter (Mac) 或 Ctrl+Enter (Windows/Linux)
+      const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+      const isShortcutKey = isMac
+        ? event.metaKey && event.key === "Enter"
+        : event.ctrlKey && event.key === "Enter";
+
+      if (isShortcutKey && open && !loading) {
+        // 阻止默认行为
+        event.preventDefault();
+
+        // 检查是否可以调用工具
+        if (inputMode === "json" && !validateJSON(jsonInput)) {
+          toast.error("输入参数不是有效的JSON格式");
+          return;
+        }
+
+        // 调用工具
+        await handleCallTool();
+      }
+    },
+    [open, loading, inputMode, jsonInput, validateJSON, handleCallTool]
+  );
+
+  // 添加键盘事件监听器
+  useEffect(() => {
+    if (open) {
+      window.addEventListener("keydown", handleKeyDown);
+      return () => {
+        window.removeEventListener("keydown", handleKeyDown);
+      };
+    }
+  }, [open, handleKeyDown]);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -777,7 +826,11 @@ export function ToolDebugDialog({
                           value="form"
                           className="flex-1 data-[state=active]:flex data-[state=active]:flex-col mt-0"
                         >
-                          <FormRenderer tool={tool} form={form} renderFormField={renderFormField} />
+                          <FormRenderer
+                            tool={tool}
+                            form={form}
+                            renderFormField={renderFormField}
+                          />
                         </TabsContent>
                         <TabsContent
                           value="json"
@@ -913,7 +966,7 @@ export function ToolDebugDialog({
                   ) : (
                     <>
                       <PlayIcon className="h-4 w-4" />
-                      调用工具
+                      调用工具 ({getShortcutText()})
                     </>
                   )}
                 </Button>
