@@ -4,7 +4,6 @@
  */
 
 import * as fs from "node:fs";
-import * as path from "node:path";
 import { type Logger, logger } from "../Logger.js";
 import { PathUtils } from "../cli/utils/PathUtils.js";
 import {
