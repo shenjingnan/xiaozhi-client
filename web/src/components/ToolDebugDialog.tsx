@@ -44,6 +44,7 @@ import { apiClient } from "@/services/api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AlertCircle,
+  BrushCleaningIcon,
   CheckIcon,
   Code,
   CopyIcon,
@@ -743,7 +744,7 @@ export function ToolDebugDialog({
                   <div className="flex items-center justify-between h-[40px]">
                     <h3 className="text-sm font-medium">调用结果</h3>
                     {(result || error) && (
-                      <Button variant="outline" size="sm" onClick={handleCopy}>
+                      <Button variant="outline" size="sm" onClick={handleCopy} className="gap-0">
                         {copied ? (
                           <>
                             <CheckIcon className="h-4 w-4 mr-1" />
@@ -752,7 +753,7 @@ export function ToolDebugDialog({
                         ) : (
                           <>
                             <CopyIcon className="h-4 w-4 mr-1" />
-                            复制
+                            复制结果
                           </>
                         )}
                       </Button>
@@ -802,7 +803,7 @@ export function ToolDebugDialog({
                   onClick={handleClear}
                   disabled={loading}
                 >
-                  <RotateCcwIcon className="h-4 w-4 mr-2" />
+                  <BrushCleaningIcon className="h-4 w-4" />
                   清空
                 </Button>
                 <Button
@@ -819,7 +820,7 @@ export function ToolDebugDialog({
                     </>
                   ) : (
                     <>
-                      <PlayIcon className="h-4 w-4 mr-2" />
+                      <PlayIcon className="h-4 w-4" />
                       调用工具
                     </>
                   )}
