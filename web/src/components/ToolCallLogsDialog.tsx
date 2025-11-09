@@ -308,24 +308,6 @@ function CallLogDetail({ log }: CallLogDetailProps) {
   return (
     <Card className="h-[60vh]">
       <div className="p-4 h-full flex flex-col">
-        {/* 标题区域 */}
-        <div className="mb-4">
-          <h3 className="font-semibold text-md flex items-center gap-2">
-            调用详情
-          </h3>
-          <div className="text-sm text-muted-foreground mt-1">
-            {log.toolName}
-            {log.serverName && (
-              <>
-                <span className="mx-1">·</span>
-                <span>{log.serverName}</span>
-              </>
-            )}
-          </div>
-        </div>
-
-        <Separator className="my-4" />
-
         {/* 详情内容 */}
         <Tabs defaultValue="arguments" className="flex-1 flex flex-col">
           <TabsList className="grid w-full grid-cols-2">
@@ -361,11 +343,11 @@ function CallLogDetail({ log }: CallLogDetailProps) {
           </TabsContent>
 
           <TabsContent value="result" className="flex-1 mt-4">
-            <ScrollArea className="h-full">
+            <ScrollArea>
               {log.success ? (
                 log.result ? (
                   <div className="relative">
-                    <pre className="text-xs bg-muted p-3 rounded-md overflow-x-auto">
+                    <pre className="text-xs bg-muted p-3 rounded-md overflow-x-auto text-wrap break-words">
                       {formatJson(log.result)}
                     </pre>
                     <Button
@@ -416,7 +398,6 @@ function CallLogDetail({ log }: CallLogDetailProps) {
           </TabsContent>
         </Tabs>
 
-        {/* 底部信息 */}
         <Separator className="my-4" />
         <div className="text-xs text-muted-foreground flex justify-between">
           <span>耗时: {formatDuration(log.duration)}</span>
