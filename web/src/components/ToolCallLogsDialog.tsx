@@ -326,6 +326,14 @@ function CallLogDetail({ log }: CallLogDetailProps) {
     }
   };
 
+  const formatRawData = (log: ToolCallRecord) => {
+    try {
+      return JSON.stringify(log, null, 2);
+    } catch (error) {
+      return String(log);
+    }
+  };
+
   const formatTimestamp = (timestamp?: number) => {
     if (!timestamp) return "未知时间";
     return new Date(timestamp).toLocaleString("zh-CN", {
@@ -349,12 +357,13 @@ function CallLogDetail({ log }: CallLogDetailProps) {
       <div className="p-4 h-full flex flex-col">
         {/* 详情内容 */}
         <Tabs defaultValue="arguments" className="flex-1 flex flex-col min-h-0">
-          <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
+          <TabsList className="grid w-full grid-cols-3 flex-shrink-0">
             <TabsTrigger value="arguments">入参</TabsTrigger>
             <TabsTrigger value="result">出参</TabsTrigger>
+            <TabsTrigger value="raw">原始数据</TabsTrigger>
           </TabsList>
 
-          <div className="flex-1 min-h-0 mt-4">
+          <div className="flex-1 min-h-0">
             <TabsContent
               value="arguments"
               className="h-full data-[state=active]:flex data-[state=active]:flex-col"
@@ -424,6 +433,23 @@ function CallLogDetail({ log }: CallLogDetailProps) {
                     )}
                   </div>
                 )}
+              </ScrollArea>
+            </TabsContent>
+
+            <TabsContent
+              value="raw"
+              className="h-full data-[state=active]:flex data-[state=active]:flex-col"
+            >
+              <ScrollArea className="h-full">
+                <div className="relative">
+                  <pre className="text-xs bg-muted p-3 rounded-md overflow-x-auto text-wrap break-words">
+                    {formatRawData(log)}
+                  </pre>
+                  <CopyButton
+                    copyContent={formatRawData(log)}
+                    className="absolute top-2 right-2 hover:bg-slate-200 w-[30px] h-[30px]"
+                  />
+                </div>
               </ScrollArea>
             </TabsContent>
           </div>
