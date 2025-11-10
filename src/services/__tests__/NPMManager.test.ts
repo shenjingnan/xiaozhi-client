@@ -6,6 +6,8 @@ vi.mock("node:util");
 vi.mock("semver");
 vi.mock("../../Logger.js");
 vi.mock("../EventBus.js");
+vi.mock("cross-spawn");
+vi.mock("../../cli/utils/PlatformUtils.js");
 
 // Import after mocking
 import { NPMManager } from "../NPMManager.js";
@@ -16,6 +18,60 @@ describe("NPMManager", () => {
   let mockEventBus: any;
   let mockSpawn: any;
   let mockExecAsync: any;
+  let mockCrossSpawn: any;
+  let mockPlatformUtils: any;
+
+  /**
+   * 创建标准的 mock 进程
+   */
+  const createMockProcess = (
+    stdoutData: string,
+    stderrData: string,
+    exitCode: number
+  ) => {
+    return {
+      stdout: {
+        on: vi.fn((event, callback) => {
+          if (event === "data") {
+            callback(stdoutData);
+          }
+        }),
+      },
+      stderr: {
+        on: vi.fn((event, callback) => {
+          if (event === "data") {
+            callback(stderrData);
+          }
+        }),
+      },
+      on: vi.fn((event, callback) => {
+        if (event === "close") {
+          callback(exitCode);
+        }
+      }),
+    };
+  };
+
+  /**
+   * 创建 mock 的 crossSpawn 进程，用于 checkNpmAvailable 测试
+   */
+  const createMockCrossSpawnWithCheckNpm = (installProcess: any) => {
+    return mockCrossSpawn.mockImplementation(
+      (command: string, args: string[]) => {
+        if (command === "npm" && args?.[0] === "--version") {
+          // Mock npm --version command for checkNpmAvailable
+          const versionProcess = {
+            on: vi.fn((event, callback) => {
+              if (event === "close") callback(0);
+            }),
+          };
+          return versionProcess;
+        }
+        // Mock npm install command
+        return installProcess;
+      }
+    );
+  };
 
   beforeEach(async () => {
     // Reset all mocks
@@ -40,6 +96,21 @@ describe("NPMManager", () => {
     // Setup mock execAsync
     mockExecAsync = vi.fn();
 
+    // Setup mock crossSpawn
+    mockCrossSpawn = vi.fn();
+
+    // Setup mock PlatformUtils
+    mockPlatformUtils = {
+      getCurrentPlatform: vi.fn().mockReturnValue("win32"),
+      getSystemInfo: vi.fn().mockReturnValue({
+        platform: "win32",
+        arch: "x64",
+        nodeVersion: "v18.19.0",
+        isContainer: false,
+      }),
+      isWindows: vi.fn().mockReturnValue(true),
+    };
+
     // Mock the imports
     const { logger } = await import("../../Logger.js");
     vi.mocked(logger.withTag).mockReturnValue(mockLogger);
@@ -52,6 +123,20 @@ describe("NPMManager", () => {
 
     const { promisify } = await import("node:util");
     vi.mocked(promisify).mockReturnValue(mockExecAsync);
+
+    const crossSpawn = await import("cross-spawn");
+    vi.mocked(crossSpawn.default).mockImplementation(mockCrossSpawn);
+
+    const { PlatformUtils } = await import("../../cli/utils/PlatformUtils.js");
+    vi.mocked(PlatformUtils.getCurrentPlatform).mockImplementation(
+      mockPlatformUtils.getCurrentPlatform
+    );
+    vi.mocked(PlatformUtils.getSystemInfo).mockImplementation(
+      mockPlatformUtils.getSystemInfo
+    );
+    vi.mocked(PlatformUtils.isWindows).mockImplementation(
+      mockPlatformUtils.isWindows
+    );
 
     // Create NPMManager instance
     npmManager = new NPMManager(mockEventBus);
@@ -87,41 +172,29 @@ describe("NPMManager", () => {
         "Installing xiaozhi-client@1.7.9...\nSuccessfully installed";
       const mockStderrData = "";
 
-      // 创建 mock spawn 进程
-      const mockProcess = {
-        stdout: {
-          on: vi.fn((event, callback) => {
-            if (event === "data") {
-              callback(mockStdoutData);
-            }
-          }),
-        },
-        stderr: {
-          on: vi.fn((event, callback) => {
-            if (event === "data") {
-              callback(mockStderrData);
-            }
-          }),
-        },
-        on: vi.fn((event, callback) => {
-          if (event === "close") {
-            callback(0); // 成功退出码
-          }
-        }),
-      };
+      // 创建 mock crossSpawn 进程
+      const mockProcess = createMockProcess(mockStdoutData, mockStderrData, 0);
 
-      mockSpawn.mockReturnValue(mockProcess);
+      // Mock checkNpmAvailable to return true
+      createMockCrossSpawnWithCheckNpm(mockProcess);
 
       // Act
       await npmManager.installVersion(version);
 
       // Assert
-      expect(mockSpawn).toHaveBeenCalledWith("npm", [
-        "install",
-        "-g",
-        "xiaozhi-client@1.7.9",
-        "--registry=https://registry.npmmirror.com",
-      ]);
+      expect(mockCrossSpawn).toHaveBeenCalledWith(
+        "npm",
+        [
+          "install",
+          "-g",
+          "xiaozhi-client@1.7.9",
+          "--registry=https://registry.npmmirror.com",
+        ],
+        {
+          stdio: ["ignore", "pipe", "pipe"],
+          shell: false,
+        }
+      );
 
       // 验证事件发射
       expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
@@ -165,29 +238,10 @@ describe("NPMManager", () => {
       const mockStdoutData = "Some output";
       const mockStderrData = "npm ERR! Installation failed";
 
-      const mockProcess = {
-        stdout: {
-          on: vi.fn((event, callback) => {
-            if (event === "data") {
-              callback(mockStdoutData);
-            }
-          }),
-        },
-        stderr: {
-          on: vi.fn((event, callback) => {
-            if (event === "data") {
-              callback(mockStderrData);
-            }
-          }),
-        },
-        on: vi.fn((event, callback) => {
-          if (event === "close") {
-            callback(1); // 失败退出码
-          }
-        }),
-      };
+      const mockProcess = createMockProcess(mockStdoutData, mockStderrData, 1);
 
-      mockSpawn.mockReturnValue(mockProcess);
+      // Mock checkNpmAvailable to return true
+      createMockCrossSpawnWithCheckNpm(mockProcess);
 
       // Act & Assert
       await expect(npmManager.installVersion(version)).rejects.toThrow(
@@ -214,29 +268,10 @@ describe("NPMManager", () => {
       const mockStderrData =
         "npm WARN deprecated package\nSome warning message";
 
-      const mockProcess = {
-        stdout: {
-          on: vi.fn((event, callback) => {
-            if (event === "data") {
-              callback(mockStdoutData);
-            }
-          }),
-        },
-        stderr: {
-          on: vi.fn((event, callback) => {
-            if (event === "data") {
-              callback(mockStderrData);
-            }
-          }),
-        },
-        on: vi.fn((event, callback) => {
-          if (event === "close") {
-            callback(0); // 成功退出码
-          }
-        }),
-      };
+      const mockProcess = createMockProcess(mockStdoutData, mockStderrData, 0);
 
-      mockSpawn.mockReturnValue(mockProcess);
+      // Mock checkNpmAvailable to return true
+      createMockCrossSpawnWithCheckNpm(mockProcess);
 
       // Act
       await npmManager.installVersion(version);
@@ -254,14 +289,10 @@ describe("NPMManager", () => {
     test("应该生成唯一的 installId", async () => {
       // Arrange
       const version = "1.7.9";
-      const mockProcess = {
-        stdout: { on: vi.fn() },
-        stderr: { on: vi.fn() },
-        on: vi.fn((event, callback) => {
-          if (event === "close") callback(0);
-        }),
-      };
-      mockSpawn.mockReturnValue(mockProcess);
+      const mockProcess = createMockProcess("", "", 0);
+
+      // Mock checkNpmAvailable to return true
+      createMockCrossSpawnWithCheckNpm(mockProcess);
 
       // Act
       await npmManager.installVersion(version);

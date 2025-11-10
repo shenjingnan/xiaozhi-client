@@ -97,38 +97,46 @@ export class StatusService {
    */
   updateRestartStatus(
     status: "restarting" | "completed" | "failed",
-    error?: string
+    error?: string,
+    serviceName?: string,
+    attempt?: number
   ): void {
     try {
       this.restartStatus = {
         status,
         error,
+        serviceName,
+        attempt,
         timestamp: Date.now(),
       };
 
-      this.logger.info(`重启状态更新: ${status}`, { error });
+      this.logger.info(`重启状态更新: ${status}`, {
+        error,
+        serviceName,
+        attempt,
+      });
 
       // 根据状态发射不同的事件
       switch (status) {
         case "restarting":
           this.eventBus.emitEvent("service:restart:started", {
-            serviceName: this.restartStatus.serviceName || "",
-            attempt: this.restartStatus.attempt || 1,
+            serviceName: serviceName || "",
+            attempt: attempt || 1,
             timestamp: this.restartStatus.timestamp,
           });
           break;
         case "completed":
           this.eventBus.emitEvent("service:restart:completed", {
-            serviceName: this.restartStatus.serviceName || "",
-            attempt: this.restartStatus.attempt || 1,
+            serviceName: serviceName || "",
+            attempt: attempt || 1,
             timestamp: this.restartStatus.timestamp,
           });
           break;
         case "failed":
           this.eventBus.emitEvent("service:restart:failed", {
-            serviceName: this.restartStatus.serviceName || "",
+            serviceName: serviceName || "",
             error: new Error(error || "重启失败"),
-            attempt: this.restartStatus.attempt || 1,
+            attempt: attempt || 1,
             timestamp: this.restartStatus.timestamp,
           });
           break;
