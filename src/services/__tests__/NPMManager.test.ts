@@ -153,25 +153,28 @@ describe("NPMManager", () => {
             }),
           };
           return versionProcess;
-        } else {
-          // Mock npm install command
-          return mockProcess;
         }
+        // Mock npm install command
+        return mockProcess;
       });
 
       // Act
       await npmManager.installVersion(version);
 
       // Assert
-      expect(mockCrossSpawn).toHaveBeenCalledWith("npm", [
-        "install",
-        "-g",
-        "xiaozhi-client@1.7.9",
-        "--registry=https://registry.npmmirror.com",
-      ], {
-        stdio: ["ignore", "pipe", "pipe"],
-        shell: false,
-      });
+      expect(mockCrossSpawn).toHaveBeenCalledWith(
+        "npm",
+        [
+          "install",
+          "-g",
+          "xiaozhi-client@1.7.9",
+          "--registry=https://registry.npmmirror.com",
+        ],
+        {
+          stdio: ["ignore", "pipe", "pipe"],
+          shell: false,
+        }
+      );
 
       // 验证事件发射
       expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
@@ -246,9 +249,8 @@ describe("NPMManager", () => {
             }),
           };
           return versionProcess;
-        } else {
-          return mockProcess;
         }
+        return mockProcess;
       });
 
       // Act & Assert
@@ -307,9 +309,8 @@ describe("NPMManager", () => {
             }),
           };
           return versionProcess;
-        } else {
-          return mockProcess;
         }
+        return mockProcess;
       });
 
       // Act
@@ -345,9 +346,8 @@ describe("NPMManager", () => {
             }),
           };
           return versionProcess;
-        } else {
-          return mockProcess;
         }
+        return mockProcess;
       });
 
       // Act
