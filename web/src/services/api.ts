@@ -943,6 +943,31 @@ export class ApiClient {
   }
 
   /**
+   * 调用 MCP 工具
+   * POST /api/tools/call
+   */
+  async callTool(
+    serviceName: string,
+    toolName: string,
+    args: any = {}
+  ): Promise<any> {
+    const response: ApiResponse = await this.request("/api/tools/call", {
+      method: "POST",
+      body: JSON.stringify({
+        serviceName,
+        toolName,
+        args,
+      }),
+    });
+
+    if (!response.success) {
+      throw new Error(response.message || "调用工具失败");
+    }
+
+    return response.data;
+  }
+
+  /**
    * 重启 MCP 服务器
    * POST /api/mcp-servers/:serverName/restart
    */

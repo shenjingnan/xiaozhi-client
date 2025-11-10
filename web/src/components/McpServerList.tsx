@@ -26,6 +26,7 @@ import {
   PlusIcon,
   Settings,
   Wrench,
+  ZapIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -34,6 +35,7 @@ import { CozeWorkflowIntegration } from "./CozeWorkflowIntegration";
 import { McpServerSettingButton } from "./McpServerSettingButton";
 import { RemoveMcpServerButton } from "./RemoveMcpServerButton";
 import { RestartButton } from "./RestartButton";
+import { ToolDebugDialog } from "./ToolDebugDialog";
 
 interface McpServerListProps {
   updateConfig?: (config: any) => Promise<void>;
@@ -231,6 +233,18 @@ export function McpServerList({
     tool?: any;
   }>({ open: false });
 
+  // 添加状态来管理工具调试对话框
+  const [debugDialog, setDebugDialog] = useState<{
+    open: boolean;
+    tool?: {
+      name: string;
+      serverName: string;
+      toolName: string;
+      description?: string;
+      inputSchema?: any;
+    };
+  }>({ open: false });
+
   const handleToggleTool = async (name: string, currentEnable: boolean) => {
     try {
       if (currentEnable) {
@@ -337,6 +351,20 @@ export function McpServerList({
         tool,
       });
     }
+  };
+
+  // 处理打开工具调试对话框
+  const handleDebugTool = (tool: any) => {
+    setDebugDialog({
+      open: true,
+      tool: {
+        name: tool.name,
+        serverName: tool.serverName,
+        toolName: tool.toolName,
+        description: tool.description,
+        inputSchema: tool.inputSchema,
+      },
+    });
   };
 
   // 从工具对象构建 CozeWorkflow 对象
@@ -568,6 +596,15 @@ export function McpServerList({
                         <Button
                           variant="secondary"
                           size="icon"
+                          className="size-8 hover:bg-blue-500 hover:text-white"
+                          onClick={() => handleDebugTool(tool)}
+                          title="调试工具"
+                        >
+                          <ZapIcon size={18} />
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="icon"
                           className="size-8 hover:bg-red-500 hover:text-white"
                           onClick={() => handleToggleTool(tool.name, true)}
                         >
@@ -767,6 +804,13 @@ export function McpServerList({
           title="配置工作流参数"
         />
       )}
+
+      {/* 工具调试对话框 */}
+      <ToolDebugDialog
+        open={debugDialog.open}
+        onOpenChange={(open) => setDebugDialog((prev) => ({ ...prev, open }))}
+        tool={debugDialog.tool || null}
+      />
     </div>
   );
 }

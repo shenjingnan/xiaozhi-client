@@ -130,7 +130,7 @@ describe("ToolCallLogger", () => {
 
     it("should create log file and record first tool call", async () => {
       const record = {
-        timestamp: "2025-10-29T10:00:00.000Z",
+        timestamp: Date.now(),
         toolName: "calculator_add",
         arguments: { a: 5, b: 3 },
         result: { content: [{ type: "text", text: "8" }] },
@@ -182,7 +182,7 @@ describe("ToolCallLogger", () => {
 
     it("should append multiple records", async () => {
       const record1 = {
-        timestamp: "2025-10-29T10:00:00.000Z",
+        timestamp: Date.now(),
         toolName: "calculator_add",
         arguments: { a: 5, b: 3 },
         success: true,
@@ -190,7 +190,7 @@ describe("ToolCallLogger", () => {
       };
 
       const record2 = {
-        timestamp: "2025-10-29T10:01:00.000Z",
+        timestamp: Date.now() + 60000,
         toolName: "calculator_multiply",
         arguments: { a: 4, b: 6 },
         success: true,
@@ -247,7 +247,7 @@ describe("ToolCallLogger", () => {
       );
 
       const record = {
-        timestamp: "2025-10-29T10:00:00.000Z",
+        timestamp: Date.now(),
         toolName: "test_tool",
         success: true,
       };
@@ -260,7 +260,7 @@ describe("ToolCallLogger", () => {
 
     it("should record failed tool calls", async () => {
       const failedRecord = {
-        timestamp: "2025-10-29T10:00:00.000Z",
+        timestamp: Date.now(),
         toolName: "failing_tool",
         arguments: { input: "test" },
         result: null,
@@ -420,7 +420,7 @@ describe("ToolCallLogger", () => {
   describe("console output", () => {
     it("should output formatted messages to console", async () => {
       const record = {
-        timestamp: "2025-10-29T10:00:00.000Z",
+        timestamp: Date.now(),
         toolName: "test_tool",
         success: true,
         duration: 50,
@@ -439,7 +439,7 @@ describe("ToolCallLogger", () => {
 
     it("should show failure emoji for failed calls", async () => {
       const record = {
-        timestamp: "2025-10-29T10:00:00.000Z",
+        timestamp: Date.now(),
         toolName: "failing_tool",
         success: false,
         duration: 30,
@@ -460,7 +460,7 @@ describe("ToolCallLogger", () => {
   describe("file format", () => {
     it("should output valid JSON format", async () => {
       const record = {
-        timestamp: "2025-10-29T10:00:00.000Z",
+        timestamp: Date.now(),
         toolName: "test_tool",
         arguments: { param1: "value1", param2: 42 },
         result: { output: "success" },
@@ -492,10 +492,8 @@ describe("ToolCallLogger", () => {
               expect(logData).toHaveProperty("toolName", "test_tool");
               expect(logData).toHaveProperty("success", true);
               expect(logData).toHaveProperty("duration", 100);
-              expect(logData).toHaveProperty(
-                "timestamp",
-                "2025-10-29T10:00:00.000Z"
-              );
+              expect(logData).toHaveProperty("timestamp");
+              expect(typeof logData.timestamp).toBe("number");
               expect(logData).toHaveProperty("arguments");
               expect(logData).toHaveProperty("result");
               expect(logData.arguments).toEqual({

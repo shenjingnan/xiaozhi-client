@@ -24,6 +24,7 @@ import { ServiceApiHandler } from "./handlers/ServiceApiHandler.js";
 import { StaticFileHandler } from "./handlers/StaticFileHandler.js";
 import { StatusApiHandler } from "./handlers/StatusApiHandler.js";
 import { ToolApiHandler } from "./handlers/ToolApiHandler.js";
+import { ToolCallLogApiHandler } from "./handlers/ToolCallLogApiHandler.js";
 import { UpdateApiHandler } from "./handlers/UpdateApiHandler.js";
 import { VersionApiHandler } from "./handlers/VersionApiHandler.js";
 import { ConfigService } from "./services/ConfigService.js";
@@ -83,6 +84,7 @@ export class WebServer {
   private statusApiHandler: StatusApiHandler;
   private serviceApiHandler: ServiceApiHandler;
   private toolApiHandler: ToolApiHandler;
+  private toolCallLogApiHandler: ToolCallLogApiHandler;
   private versionApiHandler: VersionApiHandler;
   private staticFileHandler: StaticFileHandler;
   private mcpRouteHandler: MCPRouteHandler;
@@ -168,6 +170,7 @@ export class WebServer {
     this.statusApiHandler = new StatusApiHandler(this.statusService);
     this.serviceApiHandler = new ServiceApiHandler(this.statusService);
     this.toolApiHandler = new ToolApiHandler();
+    this.toolCallLogApiHandler = new ToolCallLogApiHandler();
     this.versionApiHandler = new VersionApiHandler();
     this.staticFileHandler = new StaticFileHandler();
     this.mcpRouteHandler = new MCPRouteHandler();
@@ -687,6 +690,11 @@ export class WebServer {
     );
     this.app?.delete("/api/tools/custom/:toolName", (c) =>
       this.toolApiHandler.removeCustomTool(c)
+    );
+
+    // 工具调用日志相关 API 路由
+    this.app?.get("/api/tool-calls/logs", (c) =>
+      this.toolCallLogApiHandler.getToolCallLogs(c)
     );
 
     // 扣子 API 相关路由
