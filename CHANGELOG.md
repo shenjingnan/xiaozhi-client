@@ -1,15 +1,5 @@
 # Changelog
 
-## [1.9.1-beta.2](https://github.com/shenjingnan/xiaozhi-client/compare/v1.9.1-beta.1...v1.9.1-beta.2) (2025-11-10)
-
-## [1.9.1-beta.1](https://github.com/shenjingnan/xiaozhi-client/compare/v1.9.1-beta.0...v1.9.1-beta.1) (2025-11-10)
-
-## [1.9.1-beta.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.9.0...v1.9.1-beta.0) (2025-11-10)
-
-### Bug Fixes
-
-* **core:** 修复Web界面重启服务功能失效问题 ([436c873](https://github.com/shenjingnan/xiaozhi-client/commit/436c8734773275119bbd03592e0bf42807cc3e1c))
-
 ## [1.9.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.8.4...v1.9.0) (2025-11-09)
 
 ### Features
