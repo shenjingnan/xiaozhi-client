@@ -20,13 +20,10 @@ argument-hint: [pr-number]
 在开始分析之前，先检查环境状态：
 
 **检查 Git 状态**:
-!`git status --porcelain`
 
 **检查当前分支**:
-!`git branch --show-current`
 
 **确保有最新的 PR 信息**:
-!`git fetch origin`
 
 ### 1. 获取 PR 信息和 Copilot 评论
 
@@ -95,16 +92,16 @@ argument-hint: [pr-number]
 修复完成后的验证步骤：
 
 **代码质量检查**:
-!`pnpm check:fix`
+`pnpm check:fix`
 
 **类型检查**:
-!`pnpm type:check`
+`pnpm type:check`
 
 **构建验证**:
-!`pnpm build`
+`pnpm build`
 
 **测试验证**:
-!`pnpm test`
+`pnpm test`
 
 ## 使用示例
 
