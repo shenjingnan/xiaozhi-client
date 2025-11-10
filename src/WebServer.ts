@@ -915,10 +915,9 @@ export class WebServer {
         }
       };
 
-      // 停止 MCP 客户端
-      this.proxyMCPServer?.disconnect();
+      this.logger.info("正在停止 Web 服务器...");
 
-      // 停止心跳监控
+      // 1. 停止心跳监控
       if (this.heartbeatMonitorInterval) {
         this.heartbeatHandler.stopHeartbeatMonitoring(
           this.heartbeatMonitorInterval
@@ -926,36 +925,138 @@ export class WebServer {
         this.heartbeatMonitorInterval = undefined;
       }
 
-      // 强制断开所有 WebSocket 客户端连接
+      // 2. 停止 MCP 客户端和连接
+      this.stopMCPConnections();
+
+      // 3. 清理单例资源
+      this.cleanupSingletons();
+
+      // 4. 停止服务层
+      this.stopServices();
+
+      // 5. 强制断开所有 WebSocket 客户端连接
       if (this.wss) {
+        this.logger.debug(
+          `正在断开 ${this.wss.clients.size} 个 WebSocket 连接`
+        );
         for (const client of this.wss.clients) {
-          client.terminate();
+          try {
+            client.terminate();
+          } catch (error) {
+            this.logger.warn("断开 WebSocket 连接时出错:", error);
+          }
         }
 
         // 关闭 WebSocket 服务器
         this.wss.close(() => {
-          // 强制关闭 HTTP 服务器，不等待现有连接
-          if (this.httpServer) {
-            this.httpServer.close(() => {
-              this.logger.info("Web 服务器已停止");
-              doResolve();
-            });
-          } else {
-            this.logger.info("Web 服务器已停止");
-            doResolve();
-          }
-
-          // 设置超时，如果 2 秒内没有关闭则强制退出
-          setTimeout(() => {
-            this.logger.info("Web 服务器已强制停止");
-            doResolve();
-          }, 2000);
+          this.logger.debug("WebSocket 服务器已关闭");
+          this.stopHTTPServer(doResolve);
         });
       } else {
-        this.logger.info("Web 服务器已停止");
-        doResolve();
+        this.stopHTTPServer(doResolve);
       }
     });
+  }
+
+  /**
+   * 停止 MCP 连接
+   */
+  private stopMCPConnections(): void {
+    try {
+      // 停止代理 MCP 服务器
+      this.proxyMCPServer?.disconnect();
+      this.proxyMCPServer = undefined;
+
+      // 停止小智连接管理器
+      if (this.xiaozhiConnectionManager) {
+        this.xiaozhiConnectionManager.disconnect();
+        this.xiaozhiConnectionManager = undefined;
+      }
+
+      // 停止 MCP 服务管理器
+      if (this.mcpServiceManager) {
+        this.mcpServiceManager.stopAllServices();
+        this.mcpServiceManager = undefined;
+      }
+
+      this.logger.debug("MCP 连接已停止");
+    } catch (error) {
+      this.logger.warn("停止 MCP 连接时出错:", error);
+    }
+  }
+
+  /**
+   * 清理全局单例
+   */
+  private cleanupSingletons(): void {
+    try {
+      // 清理 MCP 服务管理器单例
+      if (this.mcpServiceManager) {
+        this.mcpServiceManager.stopAllServices();
+      }
+
+      // 清理小智连接管理器单例
+      if (this.xiaozhiConnectionManager) {
+        this.xiaozhiConnectionManager.disconnect?.();
+      }
+
+      // 销毁事件总线
+      if (this.eventBus) {
+        destroyEventBus();
+      }
+
+      this.logger.debug("全局单例清理完成");
+    } catch (error) {
+      this.logger.warn("清理全局单例时出错:", error);
+    }
+  }
+
+  /**
+   * 停止服务层
+   */
+  private stopServices(): void {
+    try {
+      // 销毁服务层
+      this.statusService?.destroy();
+      this.notificationService?.destroy();
+      this.configService?.destroy?.();
+
+      this.logger.debug("服务层已停止");
+    } catch (error) {
+      this.logger.warn("停止服务层时出错:", error);
+    }
+  }
+
+  /**
+   * 停止 HTTP 服务器
+   */
+  private stopHTTPServer(doResolve: () => void): void {
+    // 强制关闭 HTTP 服务器，不等待现有连接
+    if (this.httpServer) {
+      // 设置超时，如果 5 秒内没有关闭则强制退出
+      const forceExitTimeout = setTimeout(() => {
+        this.logger.warn("HTTP 服务器关闭超时，强制退出");
+        doResolve();
+      }, 5000);
+
+      this.httpServer.close(() => {
+        clearTimeout(forceExitTimeout);
+        this.logger.info("Web 服务器已完全停止");
+        doResolve();
+      });
+
+      // 立即尝试关闭所有连接
+      try {
+        if (this.httpServer.closeAllConnections) {
+          this.httpServer.closeAllConnections();
+        }
+      } catch (error) {
+        this.logger.debug("关闭所有连接时出错:", error);
+      }
+    } else {
+      this.logger.info("Web 服务器已停止");
+      doResolve();
+    }
   }
 
   /**

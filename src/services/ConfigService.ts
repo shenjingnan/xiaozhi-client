@@ -236,4 +236,12 @@ export class ConfigService {
   getConfigPath(): string {
     return configManager.getConfigPath();
   }
+
+  /**
+   * 销毁配置服务
+   */
+  destroy(): void {
+    this.logger.info("ConfigService 已销毁");
+    // ConfigService 主要依赖全局的 configManager，不需要特别清理
+  }
 }
