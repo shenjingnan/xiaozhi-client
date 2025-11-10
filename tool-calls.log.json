@@ -1,0 +1,3 @@
+{"level":30,"time":"2025-10-30T12:07:40.474Z","toolName":"test_coze_workflow","serverName":"custom","arguments":{"input":"测试输入"},"result":{"content":[{"type":"text","text":"Coze 工作流调用功能正在开发中"}],"isError":false},"success":true,"duration":55,"msg":"test_coze_workflow"}
+{"level":30,"time":"2025-10-30T12:07:40.505Z","toolName":"standard_tool","serverName":"test-service","arguments":{"query":"测试查询"},"result":{"content":[{"type":"text","text":"标准工具调用结果"}]},"success":true,"duration":0,"msg":"standard_tool"}
+{"level":30,"time":"2025-10-30T12:07:40.526Z","toolName":"nonexistent_tool","serverName":"unknown","arguments":{},"result":null,"success":false,"duration":0,"error":"未找到工具: nonexistent_tool","msg":"nonexistent_tool"}
