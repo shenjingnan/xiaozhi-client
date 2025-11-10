@@ -79,6 +79,22 @@ export class WebServer {
   private statusService: StatusService;
   private notificationService: NotificationService;
 
+  // 清理状态跟踪
+  private isCleaningUp = false;
+  private cleanupState: {
+    heartbeatStopped: boolean;
+    mcpConnectionsStopped: boolean;
+    singletonsCleaned: boolean;
+    servicesStopped: boolean;
+    webSocketsClosed: boolean;
+  } = {
+    heartbeatStopped: false,
+    mcpConnectionsStopped: false,
+    singletonsCleaned: false,
+    servicesStopped: false,
+    webSocketsClosed: false,
+  };
+
   // HTTP API 处理器
   private configApiHandler: ConfigApiHandler;
   private statusApiHandler: StatusApiHandler;
@@ -906,6 +922,14 @@ export class WebServer {
 
   public stop(): Promise<void> {
     return new Promise((resolve) => {
+      // 防止重复清理
+      if (this.isCleaningUp) {
+        this.logger.warn("WebServer 已在清理过程中，跳过重复调用");
+        resolve();
+        return;
+      }
+
+      this.isCleaningUp = true;
       let resolved = false;
 
       const doResolve = () => {
@@ -918,14 +942,9 @@ export class WebServer {
       this.logger.info("正在停止 Web 服务器...");
 
       // 1. 停止心跳监控
-      if (this.heartbeatMonitorInterval) {
-        this.heartbeatHandler.stopHeartbeatMonitoring(
-          this.heartbeatMonitorInterval
-        );
-        this.heartbeatMonitorInterval = undefined;
-      }
+      this.stopHeartbeatMonitoring();
 
-      // 2. 停止 MCP 客户端和连接
+      // 2. 停止 MCP 连接（但不清理单例）
       this.stopMCPConnections();
 
       // 3. 清理单例资源
@@ -950,18 +969,49 @@ export class WebServer {
         // 关闭 WebSocket 服务器
         this.wss.close(() => {
           this.logger.debug("WebSocket 服务器已关闭");
+          this.cleanupState.webSocketsClosed = true;
           this.stopHTTPServer(doResolve);
         });
       } else {
+        this.cleanupState.webSocketsClosed = true;
         this.stopHTTPServer(doResolve);
       }
     });
   }
 
   /**
+   * 停止心跳监控
+   */
+  private stopHeartbeatMonitoring(): void {
+    if (this.cleanupState.heartbeatStopped) {
+      this.logger.debug("心跳监控已停止，跳过");
+      return;
+    }
+
+    try {
+      if (this.heartbeatMonitorInterval) {
+        this.heartbeatHandler.stopHeartbeatMonitoring(
+          this.heartbeatMonitorInterval
+        );
+        this.heartbeatMonitorInterval = undefined;
+      }
+      this.cleanupState.heartbeatStopped = true;
+      this.logger.debug("心跳监控已停止");
+    } catch (error) {
+      this.logger.warn("停止心跳监控时出错:", error);
+      this.cleanupState.heartbeatStopped = true; // 标记为已处理，避免重复尝试
+    }
+  }
+
+  /**
    * 停止 MCP 连接
    */
   private stopMCPConnections(): void {
+    if (this.cleanupState.mcpConnectionsStopped) {
+      this.logger.debug("MCP 连接已停止，跳过");
+      return;
+    }
+
     try {
       // 停止代理 MCP 服务器
       this.proxyMCPServer?.disconnect();
@@ -970,18 +1020,20 @@ export class WebServer {
       // 停止小智连接管理器
       if (this.xiaozhiConnectionManager) {
         this.xiaozhiConnectionManager.disconnect();
-        this.xiaozhiConnectionManager = undefined;
+        // 注意：这里不将 xiaozhiConnectionManager 设为 undefined，因为 cleanupSingletons 可能还需要使用
       }
 
       // 停止 MCP 服务管理器
       if (this.mcpServiceManager) {
         this.mcpServiceManager.stopAllServices();
-        this.mcpServiceManager = undefined;
+        // 注意：这里不将 mcpServiceManager 设为 undefined，因为 cleanupSingletons 可能还需要使用
       }
 
+      this.cleanupState.mcpConnectionsStopped = true;
       this.logger.debug("MCP 连接已停止");
     } catch (error) {
       this.logger.warn("停止 MCP 连接时出错:", error);
+      this.cleanupState.mcpConnectionsStopped = true; // 标记为已处理，避免重复尝试
     }
   }
 
@@ -989,15 +1041,16 @@ export class WebServer {
    * 清理全局单例
    */
   private cleanupSingletons(): void {
-    try {
-      // 清理 MCP 服务管理器单例
-      if (this.mcpServiceManager) {
-        this.mcpServiceManager.stopAllServices();
-      }
+    if (this.cleanupState.singletonsCleaned) {
+      this.logger.debug("全局单例已清理，跳过");
+      return;
+    }
 
+    try {
       // 清理小智连接管理器单例
       if (this.xiaozhiConnectionManager) {
         this.xiaozhiConnectionManager.disconnect?.();
+        this.xiaozhiConnectionManager = undefined;
       }
 
       // 销毁事件总线
@@ -1005,9 +1058,11 @@ export class WebServer {
         destroyEventBus();
       }
 
+      this.cleanupState.singletonsCleaned = true;
       this.logger.debug("全局单例清理完成");
     } catch (error) {
       this.logger.warn("清理全局单例时出错:", error);
+      this.cleanupState.singletonsCleaned = true; // 标记为已处理，避免重复尝试
     }
   }
 
@@ -1015,15 +1070,22 @@ export class WebServer {
    * 停止服务层
    */
   private stopServices(): void {
+    if (this.cleanupState.servicesStopped) {
+      this.logger.debug("服务层已停止，跳过");
+      return;
+    }
+
     try {
       // 销毁服务层
       this.statusService?.destroy();
       this.notificationService?.destroy();
       this.configService?.destroy?.();
 
+      this.cleanupState.servicesStopped = true;
       this.logger.debug("服务层已停止");
     } catch (error) {
       this.logger.warn("停止服务层时出错:", error);
+      this.cleanupState.servicesStopped = true; // 标记为已处理，避免重复尝试
     }
   }
 
@@ -1065,23 +1127,24 @@ export class WebServer {
   public destroy(): void {
     this.logger.debug("销毁 WebServer 实例");
 
-    // 停止心跳监控
-    if (this.heartbeatMonitorInterval) {
-      this.heartbeatHandler.stopHeartbeatMonitoring(
-        this.heartbeatMonitorInterval
-      );
-      this.heartbeatMonitorInterval = undefined;
+    // 如果已经在清理中，直接调用 stop()
+    if (this.isCleaningUp) {
+      this.logger.debug("WebServer 已在清理中，执行完整停止流程");
+      this.stop()
+        .then(() => {
+          this.logger.debug("WebServer 销毁完成");
+        })
+        .catch((error) => {
+          this.logger.warn("WebServer 销毁过程中出错:", error);
+        });
+      return;
     }
 
-    // 销毁服务层
-    this.statusService.destroy();
-    this.notificationService.destroy();
-
-    // 销毁事件总线
-    destroyEventBus();
-
-    // 断开 MCP 连接
-    this.proxyMCPServer?.disconnect();
+    // 使用现有的清理方法，避免重复逻辑
+    this.stopHeartbeatMonitoring();
+    this.stopMCPConnections();
+    this.cleanupSingletons();
+    this.stopServices();
 
     this.logger.debug("WebServer 实例已销毁");
   }

@@ -164,10 +164,7 @@ export class ServiceApiHandler {
           timestamp: Date.now(),
         });
 
-        // 延迟更新状态，给新进程启动时间
-        setTimeout(() => {
-          this.statusService.updateRestartStatus("completed");
-        }, 3000);
+        // 注意：状态更新将在 startNewProcess 中处理，避免重复更新
 
         return;
       } catch (error) {
@@ -368,13 +365,16 @@ export class ServiceApiHandler {
 
           if (status.running) {
             this.logger.info("新进程启动成功");
+            // 统一的重启状态更新 - 成功
             this.statusService.updateRestartStatus("completed");
           } else {
             this.logger.error("新进程启动失败");
+            // 统一的重启状态更新 - 失败
             this.statusService.updateRestartStatus("failed", "新进程启动失败");
           }
         } catch (error) {
           this.logger.error("验证新进程状态时出错:", error);
+          // 统一的重启状态更新 - 错误
           this.statusService.updateRestartStatus(
             "failed",
             error instanceof Error ? error.message : "验证新进程状态失败"
