@@ -1,5 +1,7 @@
 # Changelog
 
+## [1.9.1-beta.1](https://github.com/shenjingnan/xiaozhi-client/compare/v1.9.1-beta.0...v1.9.1-beta.1) (2025-11-10)
+
 ## [1.9.1-beta.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.9.0...v1.9.1-beta.0) (2025-11-10)
 
 ### Bug Fixes
