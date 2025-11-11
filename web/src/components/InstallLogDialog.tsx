@@ -31,6 +31,7 @@ import {
 } from "./ui/dialog";
 import { Progress } from "./ui/progress";
 import { ScrollArea } from "./ui/scroll-area";
+import { toast } from "sonner";
 
 interface InstallLogDialogProps {
   isOpen: boolean;
@@ -180,6 +181,8 @@ export function InstallLogDialog({
     if (canCloseDialog()) {
       clearStatus();
       onClose();
+    } else {
+      toast.error("安装过程中无法关闭对话框，请等待安装完成");
     }
   };
 
@@ -204,7 +207,7 @@ export function InstallLogDialog({
         <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div className="flex items-center gap-3">
             <DialogTitle className="text-lg font-semibold">
-              正在安装 xiaozhi-client
+              正在安装
             </DialogTitle>
             {installStatus.status !== "idle" && (
               <Badge
@@ -216,15 +219,6 @@ export function InstallLogDialog({
               </Badge>
             )}
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleClose}
-            disabled={!canCloseDialog()}
-            className="h-6 w-6"
-          >
-            <X className="h-4 w-4" />
-          </Button>
         </DialogHeader>
 
         {/* 简洁的进度显示 */}
