@@ -265,6 +265,31 @@ const ObjectField = memo(function ObjectField({
   );
 });
 
+// 无参数提示组件
+const NoParamsMessage = memo(function NoParamsMessage({
+  tool,
+}: {
+  tool: ToolDebugDialogProps["tool"];
+}) {
+  return (
+    <div className="h-full flex items-center justify-center">
+      <div className="text-center space-y-4 max-w-sm mx-auto p-6">
+        <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+          <CheckIcon className="h-8 w-8 text-green-600" />
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold text-foreground">
+            无需输入参数
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            点击"调用工具"按钮执行，无需输入任何参数。
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+});
+
 // 表单渲染器组件
 interface FormRendererProps {
   tool: ToolDebugDialogProps["tool"];
@@ -477,7 +502,15 @@ export function ToolDebugDialog({
 
     let args: any;
 
-    if (inputMode === "form") {
+    // 检查是否无参数工具
+    const hasNoParams =
+      !tool?.inputSchema?.properties ||
+      Object.keys(tool.inputSchema.properties).length === 0;
+
+    if (hasNoParams) {
+      // 无参数工具使用空对象
+      args = {};
+    } else if (inputMode === "form") {
       const values = form.getValues();
       const isValid = await form.trigger();
       if (!isValid) {
@@ -727,8 +760,11 @@ export function ToolDebugDialog({
         // 阻止默认行为
         event.preventDefault();
 
-        // 检查是否可以调用工具
-        if (inputMode === "json" && !validateJSON(jsonInput)) {
+        // 检查是否无参数工具，或者是有参数工具且JSON模式时验证格式
+        const hasNoParams =
+          !tool?.inputSchema?.properties ||
+          Object.keys(tool.inputSchema.properties).length === 0;
+        if (!hasNoParams && inputMode === "json" && !validateJSON(jsonInput)) {
           toast.error("输入参数不是有效的JSON格式");
           return;
         }
@@ -737,7 +773,15 @@ export function ToolDebugDialog({
         await handleCallTool();
       }
     },
-    [open, loading, inputMode, jsonInput, validateJSON, handleCallTool]
+    [
+      open,
+      loading,
+      inputMode,
+      jsonInput,
+      validateJSON,
+      handleCallTool,
+      tool?.inputSchema?.properties,
+    ]
   );
 
   // 添加键盘事件监听器
@@ -783,7 +827,7 @@ export function ToolDebugDialog({
               {/* 输入参数 */}
               <div className="flex-1 flex min-h-0 w-full overflow-hidden">
                 <div className="w-1/2 flex flex-col gap-2 flex-shrink-0 overflow-hidden pr-0.5">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between h-[40px]">
                     <h3 className="text-sm font-medium">输入参数</h3>
                     {tool?.inputSchema?.properties &&
                       Object.keys(tool.inputSchema.properties).length > 0 && (
@@ -849,24 +893,7 @@ export function ToolDebugDialog({
                         </TabsContent>
                       </Tabs>
                     ) : (
-                      <div className="flex-1 flex flex-col">
-                        <Textarea
-                          value={jsonInput}
-                          onChange={(e) => setJsonInput(e.target.value)}
-                          placeholder="请输入JSON格式的参数..."
-                          className="flex-1 font-mono text-sm resize-none"
-                          disabled={loading}
-                        />
-                        {!validateJSON(jsonInput) &&
-                          jsonInput.trim() !== "{\n  \n}" && (
-                            <Alert className="mt-2">
-                              <AlertCircle className="h-4 w-4" />
-                              <AlertDescription>
-                                JSON格式错误，请检查输入
-                              </AlertDescription>
-                            </Alert>
-                          )}
-                      </div>
+                      <NoParamsMessage tool={tool} />
                     )}
                   </div>
                 </div>
@@ -909,8 +936,7 @@ export function ToolDebugDialog({
                     ) : error ? (
                       <div className="h-full">
                         <Alert variant="destructive" className="h-full">
-                          <AlertCircle className="h-4 w-4" />
-                          <AlertDescription className="font-mono text-sm">
+                          <AlertDescription className="font-mono text-sm whitespace-pre-wrap break-words">
                             {error}
                           </AlertDescription>
                         </Alert>
@@ -947,7 +973,17 @@ export function ToolDebugDialog({
                   onClick={handleCallTool}
                   disabled={
                     loading ||
-                    (inputMode === "json" && !validateJSON(jsonInput))
+                    // 只有有参数工具且在JSON模式时才检查JSON格式
+                    (() => {
+                      const hasNoParams =
+                        !tool?.inputSchema?.properties ||
+                        Object.keys(tool.inputSchema.properties).length === 0;
+                      return (
+                        !hasNoParams &&
+                        inputMode === "json" &&
+                        !validateJSON(jsonInput)
+                      );
+                    })()
                   }
                 >
                   {loading ? (
@@ -958,7 +994,12 @@ export function ToolDebugDialog({
                   ) : (
                     <>
                       <PlayIcon className="h-4 w-4" />
-                      调用工具 ({getShortcutText()})
+                      {(() => {
+                        const hasNoParams =
+                          !tool?.inputSchema?.properties ||
+                          Object.keys(tool.inputSchema.properties).length === 0;
+                        return hasNoParams ? "直接调用" : "调用工具";
+                      })()} ({getShortcutText()})
                     </>
                   )}
                 </Button>
