@@ -347,6 +347,9 @@ export class MCPServerApiHandler {
       serverName: name,
     });
 
+    // 标准化type字段格式（在try块外声明，确保catch块中可以访问）
+    const normalizedConfig = TypeFieldNormalizer.normalizeTypeField(config);
+
     try {
       // 1. 验证服务名称
       const nameValidation = MCPServerConfigValidator.validateServiceName(name);
@@ -382,12 +385,17 @@ export class MCPServerApiHandler {
       }
 
       // 3. 验证服务配置
-      const configValidation = MCPServerConfigValidator.validateConfig(config);
+      const configValidation =
+        MCPServerConfigValidator.validateConfig(normalizedConfig);
       if (!configValidation.isValid) {
         const configError = MCPError.configError(
           MCPErrorCode.INVALID_CONFIG,
           configValidation.errors.join(", "),
-          { serverName: name, config, errors: configValidation.errors }
+          {
+            serverName: name,
+            config: normalizedConfig,
+            errors: configValidation.errors,
+          }
         );
         this.logger.error("addMCPServerSingle", {
           configError,
@@ -397,12 +405,15 @@ export class MCPServerApiHandler {
         throw configError;
       }
 
-      // 4. 添加服务到配置管理器
-      this.configManager.updateMcpServer(name, config);
+      // 5. 添加服务到配置管理器
+      this.configManager.updateMcpServer(name, normalizedConfig);
       this.logger.debug("服务配置已添加到配置管理器", { serverName: name });
 
-      // 5. 添加服务到 MCPServiceManager 并启动服务
-      const mcpServiceConfig = this.createMCPServiceConfig(name, config);
+      // 6. 添加服务到 MCPServiceManager 并启动服务
+      const mcpServiceConfig = this.createMCPServiceConfig(
+        name,
+        normalizedConfig
+      );
       this.mcpServiceManager.addServiceConfig(mcpServiceConfig);
       await this.mcpServiceManager.startService(name);
       this.logger.debug("服务已启动", { serverName: name });
@@ -414,7 +425,7 @@ export class MCPServerApiHandler {
       // 7. 发送事件通知
       getEventBus().emitEvent("mcp:server:added", {
         serverName: name,
-        config,
+        config: normalizedConfig,
         tools: tools.map((tool) => tool.name),
         timestamp: new Date(),
       });
@@ -426,7 +437,7 @@ export class MCPServerApiHandler {
     } catch (error) {
       const mcpError = this.handleError(error, "addMCPServerSingle", {
         serverName: name,
-        config,
+        config: normalizedConfig,
       });
       this.logger.error("addMCPServerSingle", {
         mcpError,
@@ -835,16 +846,20 @@ export class MCPServerApiHandler {
     try {
       // 第二阶段：逐个添加服务，记录成功和失败
       for (const [serverName, serverConfig] of Object.entries(mcpServers)) {
+        // 标准化type字段格式（在try块外声明，确保catch块中可以访问）
+        const normalizedServerConfig =
+          TypeFieldNormalizer.normalizeTypeField(serverConfig);
+
         try {
           const result = await this.addMCPServerSingle(
             serverName,
-            serverConfig
+            normalizedServerConfig
           );
 
           results.push({
             name: serverName,
             success: true,
-            config: serverConfig,
+            config: normalizedServerConfig,
             tools: result.tools,
             status: result.status,
           });
@@ -858,14 +873,14 @@ export class MCPServerApiHandler {
         } catch (error) {
           const mcpError = this.handleError(error, "addMCPServersBatch", {
             serverName,
-            serverConfig,
+            serverConfig: normalizedServerConfig,
           });
 
           results.push({
             name: serverName,
             success: false,
             error: mcpError.message,
-            config: serverConfig,
+            config: normalizedServerConfig,
           });
 
           this.logger.warn("批量添加：服务添加失败", {
@@ -980,9 +995,14 @@ export class MCPServerApiHandler {
         continue;
       }
 
+      // 标准化type字段格式
+      const normalizedServerConfig =
+        TypeFieldNormalizer.normalizeTypeField(serverConfig);
+
       // 验证配置
-      const configValidation =
-        MCPServerConfigValidator.validateConfig(serverConfig);
+      const configValidation = MCPServerConfigValidator.validateConfig(
+        normalizedServerConfig
+      );
       if (!configValidation.isValid) {
         errors.push(
           `服务 "${serverName}" 配置无效: ${configValidation.errors.join(", ")}`
@@ -1045,6 +1065,72 @@ export class MCPServerApiHandler {
         rollbackedCount: rollbackResults.length,
       });
     }
+  }
+}
+
+/**
+ * type字段格式标准化工具函数
+ */
+export class TypeFieldNormalizer {
+  /**
+   * 标准化type字段格式
+   * 支持将各种格式转换为标准的中划线格式
+   */
+  static normalizeTypeField(config: any): any {
+    if (!config || typeof config !== "object") {
+      return config;
+    }
+
+    // 创建配置的深拷贝以避免修改原始对象
+    const normalizedConfig = JSON.parse(JSON.stringify(config));
+
+    // 如果配置中没有type字段，直接返回
+    if (!("type" in normalizedConfig)) {
+      return normalizedConfig;
+    }
+
+    const originalType = normalizedConfig.type;
+
+    // 如果已经是标准格式，直接返回
+    if (originalType === "sse" || originalType === "streamable-http") {
+      return normalizedConfig;
+    }
+
+    // 转换为标准格式
+    let normalizedType: string;
+
+    if (
+      originalType === "streamableHttp" ||
+      originalType === "streamable_http"
+    ) {
+      normalizedType = "streamable-http";
+    } else if (originalType === "s_se" || originalType === "s-se") {
+      normalizedType = "sse";
+    } else {
+      // 对于其他格式，尝试智能转换
+      normalizedType = TypeFieldNormalizer.convertToKebabCase(originalType);
+    }
+
+    // 验证转换后的类型是否有效
+    if (normalizedType === "sse" || normalizedType === "streamable-http") {
+      normalizedConfig.type = normalizedType;
+      // 记录转换日志（如果有的话）
+      if (originalType !== normalizedType) {
+        // 可以在需要时添加日志记录
+      }
+    }
+
+    return normalizedConfig;
+  }
+
+  /**
+   * 将字符串转换为kebab-case格式
+   */
+  private static convertToKebabCase(str: string): string {
+    return str
+      .replace(/([a-z])([A-Z])/g, "$1-$2") // 驼峰转中划线
+      .replace(/_/g, "-") // 下划线转中划线
+      .toLowerCase(); // 转小写
   }
 }
 
