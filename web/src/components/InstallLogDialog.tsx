@@ -9,15 +9,15 @@
  */
 
 import {
-  CheckCircle,
+  CheckCircleIcon,
   ChevronDownIcon,
   ChevronUpIcon,
-  Terminal,
-  X,
-  XCircle,
+  TerminalIcon,
+  XCircleIcon,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { useNPMInstall } from "../hooks/useNPMInstall";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Badge } from "./ui/badge";
@@ -111,11 +111,11 @@ export function InstallLogDialog({
   const getStatusIcon = () => {
     switch (installStatus.status) {
       case "installing":
-        return <Terminal className="h-4 w-4 animate-pulse" />;
+        return <TerminalIcon className="h-4 w-4 animate-pulse" />;
       case "completed":
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
+        return <CheckCircleIcon className="h-4 w-4 text-green-600" />;
       case "failed":
-        return <XCircle className="h-4 w-4 text-red-600" />;
+        return <XCircleIcon className="h-4 w-4 text-red-600" />;
       default:
         return null;
     }
@@ -180,6 +180,8 @@ export function InstallLogDialog({
     if (canCloseDialog()) {
       clearStatus();
       onClose();
+    } else {
+      toast.error("安装过程中无法关闭对话框，请等待安装完成");
     }
   };
 
@@ -204,7 +206,7 @@ export function InstallLogDialog({
         <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div className="flex items-center gap-3">
             <DialogTitle className="text-lg font-semibold">
-              正在安装 xiaozhi-client
+              正在安装
             </DialogTitle>
             {installStatus.status !== "idle" && (
               <Badge
@@ -216,15 +218,6 @@ export function InstallLogDialog({
               </Badge>
             )}
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleClose}
-            disabled={!canCloseDialog()}
-            className="h-6 w-6"
-          >
-            <X className="h-4 w-4" />
-          </Button>
         </DialogHeader>
 
         {/* 简洁的进度显示 */}
@@ -289,7 +282,7 @@ export function InstallLogDialog({
                 <div className="p-4 font-mono text-xs">
                   {installStatus.logs.length === 0 ? (
                     <div className="text-muted-foreground flex items-center gap-2">
-                      <Terminal className="h-4 w-4 animate-pulse" />
+                      <TerminalIcon className="h-4 w-4 animate-pulse" />
                       等待日志输出...
                     </div>
                   ) : (
@@ -323,7 +316,7 @@ export function InstallLogDialog({
                 onClick={() => window.location.reload()}
                 className="flex items-center gap-2"
               >
-                <CheckCircle className="h-4 w-4" />
+                <CheckCircleIcon className="h-4 w-4" />
                 重启应用
               </Button>
             )}
