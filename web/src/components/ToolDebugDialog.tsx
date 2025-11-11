@@ -266,11 +266,7 @@ const ObjectField = memo(function ObjectField({
 });
 
 // 无参数提示组件
-const NoParamsMessage = memo(function NoParamsMessage({
-  tool,
-}: {
-  tool: ToolDebugDialogProps["tool"];
-}) {
+const NoParamsMessage = memo(function NoParamsMessage() {
   return (
     <div className="h-full flex items-center justify-center">
       <div className="text-center space-y-4 max-w-sm mx-auto p-6">
@@ -893,7 +889,7 @@ export function ToolDebugDialog({
                         </TabsContent>
                       </Tabs>
                     ) : (
-                      <NoParamsMessage tool={tool} />
+                      <NoParamsMessage />
                     )}
                   </div>
                 </div>
