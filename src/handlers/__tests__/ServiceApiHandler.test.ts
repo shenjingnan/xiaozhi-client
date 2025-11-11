@@ -45,7 +45,6 @@ describe("ServiceApiHandler", () => {
     // Mock StatusService
     mockStatusService = {
       updateRestartStatus: vi.fn(),
-      getRestartStatus: vi.fn().mockReturnValue(undefined),
     } as any;
 
     // Mock ServiceManager
@@ -420,7 +419,7 @@ describe("ServiceApiHandler", () => {
         "service:restart:requested",
         expect.objectContaining({
           source: "http-api",
-          serviceName: "xiaozhi-client",
+          serviceName: "unknown",
           delay: 0,
           attempt: 1,
           timestamp: expect.any(Number),
@@ -428,19 +427,12 @@ describe("ServiceApiHandler", () => {
       );
 
       expect(mockStatusService.updateRestartStatus).toHaveBeenCalledWith(
-        "restarting",
-        undefined,
-        "xiaozhi-client",
-        1
+        "restarting"
       );
 
       expect(mockContext.json).toHaveBeenCalledWith({
         success: true,
-        data: {
-          message: "重启请求已接收",
-          estimatedDuration: "10-15秒",
-          status: "restarting",
-        },
+        data: null,
         message: "重启请求已接收",
       });
     });
@@ -491,38 +483,25 @@ describe("ServiceApiHandler", () => {
 
       await handler.restartService(mockContext);
 
-      // The main restart request should have been processed
-      expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
-        "service:restart:requested",
-        expect.objectContaining({
-          serviceName: "xiaozhi-client",
-          source: "http-api",
-        })
-      );
+      // Fast-forward the initial timeout to trigger executeRestart
+      await vi.advanceTimersByTimeAsync(500);
 
-      expect(mockStatusService.updateRestartStatus).toHaveBeenCalledWith(
-        "restarting",
-        undefined,
-        "xiaozhi-client",
-        1
-      );
-
-      // The async execution should start after a short delay
-      await vi.advanceTimersByTimeAsync(100);
-
-      // Should emit restart:execute event
-      expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
-        "service:restart:execute",
-        expect.objectContaining({
-          serviceName: "xiaozhi-client",
-          attempt: 1,
-          timestamp: expect.any(Number),
-        })
-      );
-
-      // The restart process should have been initiated
       expect(mockCreateContainer).toHaveBeenCalled();
       expect(mockServiceManager.getStatus).toHaveBeenCalled();
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "xiaozhi",
+        ["restart", "--daemon"],
+        expect.objectContaining({
+          detached: true,
+          stdio: "ignore",
+        })
+      );
+
+      // Fast-forward the success status timeout
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(mockStatusService.updateRestartStatus).toHaveBeenCalledWith(
+        "completed"
+      );
     });
 
     it("should start service when not running during restart", async () => {
@@ -534,30 +513,17 @@ describe("ServiceApiHandler", () => {
 
       await handler.restartService(mockContext);
 
-      // The main restart request should have been processed
-      expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
-        "service:restart:requested",
+      // Fast-forward the initial timeout to trigger executeRestart
+      await vi.advanceTimersByTimeAsync(500);
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "xiaozhi",
+        ["start", "--daemon"],
         expect.objectContaining({
-          serviceName: "xiaozhi-client",
-          source: "http-api",
+          detached: true,
+          stdio: "ignore",
         })
       );
-
-      // The async execution should start after a short delay
-      await vi.advanceTimersByTimeAsync(100);
-
-      // Should emit restart:execute event
-      expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
-        "service:restart:execute",
-        expect.objectContaining({
-          serviceName: "xiaozhi-client",
-          attempt: 1,
-          timestamp: expect.any(Number),
-        })
-      );
-
-      // The restart process should have been initiated
-      expect(mockCreateContainer).toHaveBeenCalled();
     });
 
     it("should handle restart execution error", async () => {
@@ -565,30 +531,16 @@ describe("ServiceApiHandler", () => {
 
       await handler.restartService(mockContext);
 
-      // The main restart request should have been processed
-      expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
-        "service:restart:requested",
-        expect.objectContaining({
-          serviceName: "xiaozhi-client",
-          source: "http-api",
-        })
-      );
+      // Fast-forward the initial timeout to trigger executeRestart
+      await vi.advanceTimersByTimeAsync(500);
 
-      // The async execution should start after a short delay
+      // Allow async error handling to complete
       await vi.advanceTimersByTimeAsync(100);
 
-      // Should emit restart:execute event even though it fails
-      expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
-        "service:restart:execute",
-        expect.objectContaining({
-          serviceName: "xiaozhi-client",
-          attempt: 1,
-          timestamp: expect.any(Number),
-        })
+      expect(mockStatusService.updateRestartStatus).toHaveBeenCalledWith(
+        "failed",
+        "Container error"
       );
-
-      // The async error will be handled, but we can't easily test the final state
-      // in this test environment without complex mocking
     });
 
     it("should handle non-daemon mode restart", async () => {
@@ -600,30 +552,17 @@ describe("ServiceApiHandler", () => {
 
       await handler.restartService(mockContext);
 
-      // The main restart request should have been processed
-      expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
-        "service:restart:requested",
+      // Fast-forward the initial timeout to trigger executeRestart
+      await vi.advanceTimersByTimeAsync(500);
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "xiaozhi",
+        ["restart"],
         expect.objectContaining({
-          serviceName: "xiaozhi-client",
-          source: "http-api",
+          detached: true,
+          stdio: "ignore",
         })
       );
-
-      // The async execution should start after a short delay
-      await vi.advanceTimersByTimeAsync(100);
-
-      // Should emit restart:execute event
-      expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
-        "service:restart:execute",
-        expect.objectContaining({
-          serviceName: "xiaozhi-client",
-          attempt: 1,
-          timestamp: expect.any(Number),
-        })
-      );
-
-      // The restart process should have been initiated
-      expect(mockCreateContainer).toHaveBeenCalled();
     });
   });
 
@@ -773,8 +712,7 @@ describe("ServiceApiHandler", () => {
 
       await Promise.all([promise1, promise2]);
 
-      // Each restart now emits 3 events: requested, started, execute (completed/failed happens later)
-      expect(mockEventBus.emitEvent).toHaveBeenCalledTimes(6);
+      expect(mockEventBus.emitEvent).toHaveBeenCalledTimes(2);
       expect(mockStatusService.updateRestartStatus).toHaveBeenCalledTimes(2);
       expect(mockContext.json).toHaveBeenCalledTimes(2);
     });
@@ -784,21 +722,11 @@ describe("ServiceApiHandler", () => {
 
       await handler.restartService(mockContext);
 
-      // Fast-forward timers to trigger executeRestartWithMonitoring
-      await vi.advanceTimersByTimeAsync(100);
+      // Fast-forward the initial timeout
+      vi.advanceTimersByTime(500);
 
       // Should still attempt to execute restart
       expect(mockCreateContainer).toHaveBeenCalled();
-
-      // Should emit restart:execute event
-      expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
-        "service:restart:execute",
-        expect.objectContaining({
-          serviceName: "xiaozhi-client",
-          attempt: 1,
-          timestamp: expect.any(Number),
-        })
-      );
     });
   });
 });

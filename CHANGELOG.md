@@ -1,7 +1,5 @@
 # Changelog
 
-## [1.9.1-beta.3](https://github.com/shenjingnan/xiaozhi-client/compare/v1.9.1-beta.2...v1.9.1-beta.3) (2025-11-10)
-
 ## [1.9.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.8.4...v1.9.0) (2025-11-09)
 
 ### Features
