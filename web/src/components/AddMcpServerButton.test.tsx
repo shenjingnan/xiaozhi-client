@@ -41,7 +41,7 @@ vi.mock("@/stores/config", () => ({
   }),
 }));
 
-describe("AddMcpServerButton", () => {
+describe("添加MCP服务器按钮", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockListServers.mockClear();
@@ -66,14 +66,14 @@ describe("AddMcpServerButton", () => {
     (mcpServerApi.addServer as any) = mockAddServer;
   });
 
-  it("should render the add button", () => {
+  it("应该渲染添加按钮", () => {
     render(<AddMcpServerButton />);
 
     const addButton = screen.getByRole("button", { name: /添加MCP服务/ });
     expect(addButton).toBeInTheDocument();
   });
 
-  it("should open dialog when button is clicked", async () => {
+  it("点击按钮时应该打开对话框", async () => {
     render(<AddMcpServerButton />);
 
     const addButton = screen.getByRole("button", { name: /添加MCP服务/ });
@@ -87,7 +87,7 @@ describe("AddMcpServerButton", () => {
     });
   });
 
-  it("should show error for invalid JSON", async () => {
+  it("对于无效JSON应该显示错误", async () => {
     render(<AddMcpServerButton />);
 
     const addButton = screen.getByRole("button", { name: /添加MCP服务/ });
@@ -108,7 +108,7 @@ describe("AddMcpServerButton", () => {
     });
   });
 
-  it("should show error for duplicate server names", async () => {
+  it("对于重复的服务器名称应该显示错误", async () => {
     render(<AddMcpServerButton />);
 
     const addButton = screen.getByRole("button", { name: /添加MCP服务/ });
@@ -140,7 +140,7 @@ describe("AddMcpServerButton", () => {
     });
   });
 
-  it("should successfully add a new stdio server", async () => {
+  it("应该成功添加新的stdio服务器", async () => {
     render(<AddMcpServerButton />);
 
     const addButton = screen.getByRole("button", { name: /添加MCP服务/ });
@@ -177,7 +177,7 @@ describe("AddMcpServerButton", () => {
     });
   });
 
-  it("should successfully add a new SSE server", async () => {
+  it("应该成功添加新的SSE服务器", async () => {
     render(<AddMcpServerButton />);
 
     const addButton = screen.getByRole("button", { name: /添加MCP服务/ });
@@ -214,7 +214,7 @@ describe("AddMcpServerButton", () => {
     });
   });
 
-  it("should successfully add a new streamable-http server with type", async () => {
+  it("应该成功添加带有类型的新streamable-http服务器", async () => {
     render(<AddMcpServerButton />);
 
     const addButton = screen.getByRole("button", { name: /添加MCP服务/ });
@@ -227,7 +227,6 @@ describe("AddMcpServerButton", () => {
           value: JSON.stringify({
             mcpServers: {
               "http-server": {
-                type: "streamable-http",
                 url: "https://example.com/mcp",
               },
             },
@@ -242,7 +241,6 @@ describe("AddMcpServerButton", () => {
     await waitFor(() => {
       expect(mockListServers).toHaveBeenCalled();
       expect(mockAddServer).toHaveBeenCalledWith("http-server", {
-        type: "streamable-http",
         url: "https://example.com/mcp",
       });
       expect(toast.success).toHaveBeenCalledWith(
@@ -251,7 +249,7 @@ describe("AddMcpServerButton", () => {
     });
   });
 
-  it("should successfully add a new streamable-http server without type", async () => {
+  it("应该成功添加没有类型的新streamable-http服务器", async () => {
     render(<AddMcpServerButton />);
 
     const addButton = screen.getByRole("button", { name: /添加MCP服务/ });
@@ -286,8 +284,8 @@ describe("AddMcpServerButton", () => {
     });
   });
 
-  describe("Field validation", () => {
-    it("should show error for stdio server missing command", async () => {
+  describe("字段验证", () => {
+    it("对于缺少命令的stdio服务器应该显示错误", async () => {
       render(<AddMcpServerButton />);
 
       const addButton = screen.getByRole("button", { name: /添加MCP服务/ });
@@ -320,7 +318,7 @@ describe("AddMcpServerButton", () => {
       });
     });
 
-    it("should show error for stdio server with invalid args", async () => {
+    it("对于参数无效的stdio服务器应该显示错误", async () => {
       render(<AddMcpServerButton />);
 
       const addButton = screen.getByRole("button", { name: /添加MCP服务/ });
@@ -352,7 +350,7 @@ describe("AddMcpServerButton", () => {
       });
     });
 
-    it("should show error for SSE server missing url", async () => {
+    it("对于缺少URL的SSE服务器应该显示错误", async () => {
       render(<AddMcpServerButton />);
 
       const addButton = screen.getByRole("button", { name: /添加MCP服务/ });
@@ -383,7 +381,7 @@ describe("AddMcpServerButton", () => {
       });
     });
 
-    it("should handle single server config without mcpServers wrapper", async () => {
+    it("应该处理没有mcpServers包装器的单服务器配置", async () => {
       render(<AddMcpServerButton />);
 
       const addButton = screen.getByRole("button", { name: /添加MCP服务/ });
