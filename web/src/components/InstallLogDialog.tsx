@@ -9,12 +9,11 @@
  */
 
 import {
-  CheckCircle,
+  CheckCircleIcon,
   ChevronDownIcon,
   ChevronUpIcon,
-  Terminal,
-  X,
-  XCircle,
+  TerminalIcon,
+  XCircleIcon,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
@@ -112,11 +111,11 @@ export function InstallLogDialog({
   const getStatusIcon = () => {
     switch (installStatus.status) {
       case "installing":
-        return <Terminal className="h-4 w-4 animate-pulse" />;
+        return <TerminalIcon className="h-4 w-4 animate-pulse" />;
       case "completed":
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
+        return <CheckCircleIcon className="h-4 w-4 text-green-600" />;
       case "failed":
-        return <XCircle className="h-4 w-4 text-red-600" />;
+        return <XCircleIcon className="h-4 w-4 text-red-600" />;
       default:
         return null;
     }
@@ -283,7 +282,7 @@ export function InstallLogDialog({
                 <div className="p-4 font-mono text-xs">
                   {installStatus.logs.length === 0 ? (
                     <div className="text-muted-foreground flex items-center gap-2">
-                      <Terminal className="h-4 w-4 animate-pulse" />
+                      <TerminalIcon className="h-4 w-4 animate-pulse" />
                       等待日志输出...
                     </div>
                   ) : (
@@ -317,7 +316,7 @@ export function InstallLogDialog({
                 onClick={() => window.location.reload()}
                 className="flex items-center gap-2"
               >
-                <CheckCircle className="h-4 w-4" />
+                <CheckCircleIcon className="h-4 w-4" />
                 重启应用
               </Button>
             )}
