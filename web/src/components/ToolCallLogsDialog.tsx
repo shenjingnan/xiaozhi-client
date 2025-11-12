@@ -279,10 +279,7 @@ export function ToolCallLogsDialog() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3 text-muted-foreground" />
-                            {formatDuration(log.duration)}
-                          </div>
+                          {formatDuration(log.duration)}
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm">
                           {formatTimestamp(log.timestamp)}
