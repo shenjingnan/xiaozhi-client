@@ -35,7 +35,6 @@ import {
 import {
   CheckCircle,
   CheckIcon,
-  Clock,
   Code,
   CopyIcon,
   FileText,
@@ -271,19 +270,16 @@ export function ToolCallLogsDialog() {
                         <TableCell>
                           <Badge
                             variant={log.success ? undefined : "destructive"}
-                            className={`gap-1 ${
-                              log.success ? "bg-green-600" : "bg-red-600"
+                            className={`gap-1 w-[50px] text-center ${
+                              log.success
+                                ? "bg-green-600 hover:bg-green-600"
+                                : "bg-red-600 hover:bg-red-600"
                             }`}
                           >
                             {log.success ? "成功" : "失败"}
                           </Badge>
                         </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3 text-muted-foreground" />
-                            {formatDuration(log.duration)}
-                          </div>
-                        </TableCell>
+                        <TableCell>{formatDuration(log.duration)}</TableCell>
                         <TableCell className="text-muted-foreground text-sm">
                           {formatTimestamp(log.timestamp)}
                         </TableCell>
