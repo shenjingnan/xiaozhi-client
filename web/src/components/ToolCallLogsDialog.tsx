@@ -272,15 +272,15 @@ export function ToolCallLogsDialog() {
                           <Badge
                             variant={log.success ? undefined : "destructive"}
                             className={`gap-1 w-[50px] text-center ${
-                              log.success ? "bg-green-600 hover:bg-green-600" : "bg-red-600 hover:bg-red-600"
+                              log.success
+                                ? "bg-green-600 hover:bg-green-600"
+                                : "bg-red-600 hover:bg-red-600"
                             }`}
                           >
                             {log.success ? "成功" : "失败"}
                           </Badge>
                         </TableCell>
-                        <TableCell>
-                          {formatDuration(log.duration)}
-                        </TableCell>
+                        <TableCell>{formatDuration(log.duration)}</TableCell>
                         <TableCell className="text-muted-foreground text-sm">
                           {formatTimestamp(log.timestamp)}
                         </TableCell>
