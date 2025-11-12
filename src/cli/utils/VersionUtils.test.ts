@@ -5,10 +5,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { FileError } from "@cli/errors/index.js";
+import type { VersionInfo } from "@cli/utils/VersionUtils.js";
+import { VersionUtils } from "@cli/utils/VersionUtils.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { FileError } from "../errors/index.js";
-import type { VersionInfo } from "./VersionUtils.js";
-import { VersionUtils } from "./VersionUtils.js";
 
 // Mock fileURLToPath
 vi.mock("node:url");

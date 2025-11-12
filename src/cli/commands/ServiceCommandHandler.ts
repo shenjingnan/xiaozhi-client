@@ -2,10 +2,10 @@
  * 服务管理命令处理器
  */
 
-import { setGlobalLogLevel } from "../../Logger.js";
-import type { SubCommand } from "../interfaces/Command.js";
-import { BaseCommandHandler } from "../interfaces/Command.js";
-import type { IDIContainer } from "../interfaces/Config.js";
+import type { SubCommand } from "@cli/interfaces/Command.js";
+import { BaseCommandHandler } from "@cli/interfaces/Command.js";
+import type { IDIContainer } from "@cli/interfaces/Config.js";
+import { setGlobalLogLevel } from "@root/Logger.js";
 
 /**
  * 服务管理命令处理器

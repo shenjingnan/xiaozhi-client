@@ -7,9 +7,9 @@
 
 // 动态导入避免 CLI 代码执行
 async function importModules() {
-  const webServerModule = await import("./WebServer.js");
-  const configModule = await import("./configManager.js");
-  const loggerModule = await import("./Logger.js");
+  const webServerModule = await import("@root/WebServer.js");
+  const configModule = await import("@root/configManager.js");
+  const loggerModule = await import("@root/Logger.js");
   return {
     WebServer: webServerModule.WebServer,
     configManager: configModule.configManager,

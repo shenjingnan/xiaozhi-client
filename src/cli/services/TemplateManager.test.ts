@@ -2,20 +2,20 @@
  * 模板管理服务单元测试
  */
 
+import { FileError, ValidationError } from "@cli/errors/index.js";
+import type { TemplateCreateOptions } from "@cli/services/TemplateManager.js";
+import { TemplateManagerImpl } from "@cli/services/TemplateManager.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { FileError, ValidationError } from "../errors/index.js";
-import type { TemplateCreateOptions } from "./TemplateManager.js";
-import { TemplateManagerImpl } from "./TemplateManager.js";
 
 // Mock 依赖
-vi.mock("../utils/PathUtils.js", () => ({
+vi.mock("@cli/utils/PathUtils.js", () => ({
   PathUtils: {
     findTemplatesDir: vi.fn(),
     getTemplatePath: vi.fn(),
   },
 }));
 
-vi.mock("../utils/FileUtils.js", () => ({
+vi.mock("@cli/utils/FileUtils.js", () => ({
   FileUtils: {
     exists: vi.fn(),
     readFile: vi.fn(),
@@ -26,7 +26,7 @@ vi.mock("../utils/FileUtils.js", () => ({
   },
 }));
 
-vi.mock("../utils/Validation.js", () => ({
+vi.mock("@cli/utils/Validation.js", () => ({
   Validation: {
     validateTemplateName: vi.fn(),
     validateRequired: vi.fn(),
@@ -48,9 +48,9 @@ vi.mock("node:path", () => ({
   },
 }));
 
-const { PathUtils } = await import("../utils/PathUtils.js");
-const { FileUtils } = await import("../utils/FileUtils.js");
-const { Validation } = await import("../utils/Validation.js");
+const { PathUtils } = await import("@cli/utils/PathUtils.js");
+const { FileUtils } = await import("@cli/utils/FileUtils.js");
+const { Validation } = await import("@cli/utils/Validation.js");
 const fs = await import("node:fs");
 
 describe("TemplateManagerImpl", () => {

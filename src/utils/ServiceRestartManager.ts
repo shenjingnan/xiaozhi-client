@@ -5,8 +5,8 @@
  * 管理MCP服务的重启逻辑，包括智能重试和降级策略
  */
 
-import { logger } from "../Logger.js";
-import { getEventBus } from "../services/EventBus.js";
+import { logger } from "@root/Logger.js";
+import { getEventBus } from "@services/EventBus.js";
 
 /**
  * 重启策略枚举

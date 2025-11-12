@@ -4,9 +4,9 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { FileError } from "@cli/errors/index.js";
+import { FileUtils } from "@cli/utils/FileUtils.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { FileError } from "../errors/index.js";
-import { FileUtils } from "./FileUtils.js";
 
 // Mock fs module
 vi.mock("node:fs");

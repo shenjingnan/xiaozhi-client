@@ -1,7 +1,7 @@
+import type { Logger } from "@root/Logger.js";
+import { logger } from "@root/Logger.js";
+import type { StatusService } from "@services/StatusService.js";
 import type { Context } from "hono";
-import type { Logger } from "../Logger.js";
-import { logger } from "../Logger.js";
-import type { StatusService } from "../services/StatusService.js";
 
 /**
  * 统一响应格式接口

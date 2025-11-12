@@ -1,11 +1,11 @@
+import type { Logger } from "@root/Logger.js";
+import { logger } from "@root/Logger.js";
+import type { ConfigManager } from "@root/configManager.js";
+import type { EventBus } from "@services/EventBus.js";
+import { getEventBus } from "@services/EventBus.js";
+import type { IndependentXiaozhiConnectionManager } from "@services/IndependentXiaozhiConnectionManager.js";
+import type { ConnectionStatus } from "@services/IndependentXiaozhiConnectionManager.js";
 import type { Context } from "hono";
-import type { Logger } from "../Logger.js";
-import { logger } from "../Logger.js";
-import type { ConfigManager } from "../configManager.js";
-import type { EventBus } from "../services/EventBus.js";
-import { getEventBus } from "../services/EventBus.js";
-import type { IndependentXiaozhiConnectionManager } from "../services/IndependentXiaozhiConnectionManager.js";
-import type { ConnectionStatus } from "../services/IndependentXiaozhiConnectionManager.js";
 
 /**
  * 统一响应格式接口

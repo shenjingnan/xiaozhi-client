@@ -2,7 +2,6 @@
  * MCP 服务工具函数测试 - 服务端版本
  */
 
-import { describe, expect, it } from "vitest";
 import {
   getMcpServerCommunicationType,
   getMcpServerTypeDisplayName,
@@ -10,7 +9,8 @@ import {
   isStdioMcpServer,
   isStreamableHTTPMcpServer,
   validateMcpServerConfig,
-} from "./mcpServerUtils";
+} from "@utils/mcpServerUtils";
+import { describe, expect, it } from "vitest";
 
 describe("MCP Server Utils - Server Side", () => {
   describe("getMcpServerCommunicationType", () => {

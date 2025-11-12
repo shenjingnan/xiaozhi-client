@@ -55,6 +55,12 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": resolve(__dirname, "src"),
+      "@cli": resolve(__dirname, "src/cli"),
+      "@cli/commands": resolve(__dirname, "src/cli/commands"),
+      "@cli/services": resolve(__dirname, "src/cli/services"),
+      "@cli/utils": resolve(__dirname, "src/cli/utils"),
+      "@cli/errors": resolve(__dirname, "src/cli/errors"),
+      "@cli/interfaces": resolve(__dirname, "src/cli/interfaces"),
       "@handlers": resolve(__dirname, "src/handlers"),
       "@services": resolve(__dirname, "src/services"),
       "@utils": resolve(__dirname, "src/utils"),

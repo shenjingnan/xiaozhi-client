@@ -9,17 +9,17 @@
  * 4. 提供便捷的服务器创建方法
  */
 
-import { logger } from "../Logger.js";
-import type { HTTPConfig } from "../transports/HTTPAdapter.js";
-import { HTTPAdapter } from "../transports/HTTPAdapter.js";
-import type { StdioConfig } from "../transports/StdioAdapter.js";
-import { StdioAdapter } from "../transports/StdioAdapter.js";
-import { TransportAdapter } from "../transports/TransportAdapter.js";
-import type { WebSocketConfig } from "../transports/WebSocketAdapter.js";
-import { WebSocketAdapter } from "../transports/WebSocketAdapter.js";
-import type { MCPMessageHandler } from "./MCPMessageHandler.js";
-import type { UnifiedServerConfig } from "./UnifiedMCPServer.js";
-import { UnifiedMCPServer } from "./UnifiedMCPServer.js";
+import type { MCPMessageHandler } from "@core/MCPMessageHandler.js";
+import type { UnifiedServerConfig } from "@core/UnifiedMCPServer.js";
+import { UnifiedMCPServer } from "@core/UnifiedMCPServer.js";
+import { logger } from "@root/Logger.js";
+import type { HTTPConfig } from "@transports/HTTPAdapter.js";
+import { HTTPAdapter } from "@transports/HTTPAdapter.js";
+import type { StdioConfig } from "@transports/StdioAdapter.js";
+import { StdioAdapter } from "@transports/StdioAdapter.js";
+import { TransportAdapter } from "@transports/TransportAdapter.js";
+import type { WebSocketConfig } from "@transports/WebSocketAdapter.js";
+import { WebSocketAdapter } from "@transports/WebSocketAdapter.js";
 
 /**
  * 服务器模式枚举

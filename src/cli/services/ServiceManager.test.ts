@@ -2,13 +2,13 @@
  * 服务管理服务单元测试
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ConfigError, ServiceError } from "../errors/index.js";
+import { ConfigError, ServiceError } from "@cli/errors/index.js";
 import type {
   ProcessManager,
   ServiceStartOptions,
-} from "../interfaces/Service.js";
-import { ServiceManagerImpl } from "./ServiceManager.js";
+} from "@cli/interfaces/Service.js";
+import { ServiceManagerImpl } from "@cli/services/ServiceManager.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock 依赖
 const mockProcessManager: ProcessManager = {
@@ -65,7 +65,7 @@ vi.mock("../../services/MCPServer.js", () => ({
 }));
 
 // Mock PathUtils
-vi.mock("../utils/PathUtils.js", () => ({
+vi.mock("@cli/utils/PathUtils.js", () => ({
   PathUtils: {
     getWebServerStandalonePath: vi
       .fn()
@@ -109,7 +109,7 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
     mockProcessExit.mockClear();
 
     // Reset PathUtils mocks
-    const { PathUtils } = await import("../utils/PathUtils.js");
+    const { PathUtils } = await import("@cli/utils/PathUtils.js");
     vi.mocked(PathUtils.getWebServerStandalonePath).mockReturnValue(
       "/mock/path/WebServerStandalone.js"
     );

@@ -7,9 +7,11 @@
  */
 
 import { createHash } from "node:crypto";
+import { CacheLifecycleManager } from "@managers/CacheLifecycleManager.js";
+import { TaskStateManager } from "@managers/TaskStateManager.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { Logger } from "../Logger.js";
-import { logger } from "../Logger.js";
+import type { Logger } from "@root/Logger.js";
+import { logger } from "@root/Logger.js";
 import type {
   ChainHandlerConfig,
   CustomMCPTool,
@@ -18,10 +20,11 @@ import type {
   MCPHandlerConfig,
   ProxyHandlerConfig,
   ScriptHandlerConfig,
-} from "../configManager.js";
-import { configManager } from "../configManager.js";
-import { CacheLifecycleManager } from "../managers/CacheLifecycleManager.js";
-import { TaskStateManager } from "../managers/TaskStateManager.js";
+} from "@root/configManager.js";
+import { configManager } from "@root/configManager.js";
+import { getEventBus } from "@services/EventBus.js";
+import { MCPCacheManager } from "@services/MCPCacheManager.js";
+import type { MCPServiceManager } from "@services/MCPServiceManager.js";
 import type {
   CacheConfig,
   CacheStatistics,
@@ -42,9 +45,6 @@ import {
   createTimeoutResponse,
   isTimeoutResponse,
 } from "../types/timeout.js";
-import { getEventBus } from "./EventBus.js";
-import { MCPCacheManager } from "./MCPCacheManager.js";
-import type { MCPServiceManager } from "./MCPServiceManager.js";
 
 // 工具调用结果接口（与 MCPServiceManager 保持一致）
 export interface ToolCallResult {

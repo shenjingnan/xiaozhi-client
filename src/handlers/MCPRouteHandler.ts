@@ -5,11 +5,11 @@
  */
 
 import { randomUUID } from "node:crypto";
+import { MCPMessageHandler } from "@core/MCPMessageHandler.js";
+import type { Logger } from "@root/Logger.js";
+import { logger } from "@root/Logger.js";
+import { MCPServiceManagerSingleton } from "@services/MCPServiceManagerSingleton.js";
 import type { Context } from "hono";
-import type { Logger } from "../Logger.js";
-import { logger } from "../Logger.js";
-import { MCPMessageHandler } from "../core/MCPMessageHandler.js";
-import { MCPServiceManagerSingleton } from "../services/MCPServiceManagerSingleton.js";
 
 /**
  * SSE 客户端接口

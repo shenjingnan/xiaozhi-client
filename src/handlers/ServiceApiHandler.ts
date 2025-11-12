@@ -1,11 +1,11 @@
 import { spawn } from "node:child_process";
+import { createContainer } from "@cli/Container.js";
+import type { Logger } from "@root/Logger.js";
+import { logger } from "@root/Logger.js";
+import type { EventBus } from "@services/EventBus.js";
+import { getEventBus } from "@services/EventBus.js";
+import type { StatusService } from "@services/StatusService.js";
 import type { Context } from "hono";
-import type { Logger } from "../Logger.js";
-import { logger } from "../Logger.js";
-import { createContainer } from "../cli/Container.js";
-import type { EventBus } from "../services/EventBus.js";
-import { getEventBus } from "../services/EventBus.js";
-import type { StatusService } from "../services/StatusService.js";
 
 /**
  * 统一响应格式接口

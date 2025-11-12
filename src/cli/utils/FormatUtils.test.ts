@@ -2,8 +2,8 @@
  * 格式化工具单元测试
  */
 
+import { FormatUtils } from "@cli/utils/FormatUtils.js";
 import { describe, expect, it } from "vitest";
-import { FormatUtils } from "./FormatUtils.js";
 
 describe("FormatUtils", () => {
   describe("formatUptime", () => {

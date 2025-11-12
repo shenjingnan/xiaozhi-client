@@ -2,9 +2,9 @@
  * EndpointCommandHandler 测试
  */
 
+import { EndpointCommandHandler } from "@cli/commands/EndpointCommandHandler.js";
+import type { IDIContainer } from "@cli/interfaces/Config.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { IDIContainer } from "../interfaces/Config.js";
-import { EndpointCommandHandler } from "./EndpointCommandHandler.js";
 
 /**
  * 测试用的 EndpointCommandHandler 子类，用于访问受保护的方法

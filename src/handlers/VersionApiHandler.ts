@@ -1,9 +1,9 @@
+import type { VersionInfo } from "@cli/utils/VersionUtils.js";
+import { VersionUtils } from "@cli/utils/VersionUtils.js";
+import type { Logger } from "@root/Logger.js";
+import { logger } from "@root/Logger.js";
+import { NPMManager } from "@services/NPMManager.js";
 import type { Context } from "hono";
-import type { Logger } from "../Logger.js";
-import { logger } from "../Logger.js";
-import type { VersionInfo } from "../cli/utils/VersionUtils.js";
-import { VersionUtils } from "../cli/utils/VersionUtils.js";
-import { NPMManager } from "../services/NPMManager.js";
 
 /**
  * 统一响应格式接口

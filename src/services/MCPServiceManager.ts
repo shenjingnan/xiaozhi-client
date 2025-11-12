@@ -7,17 +7,17 @@
  */
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { Logger } from "../Logger.js";
-import { logger } from "../Logger.js";
-import type { MCPToolConfig } from "../configManager.js";
-import { configManager } from "../configManager.js";
-import { ToolCallLogger } from "../utils/ToolCallLogger.js";
-import { CustomMCPHandler } from "./CustomMCPHandler.js";
-import { getEventBus } from "./EventBus.js";
-import { MCPCacheManager } from "./MCPCacheManager.js";
-import type { MCPServiceConfig } from "./MCPService.js";
-import { MCPService, MCPTransportType } from "./MCPService.js";
-import { ToolSyncManager } from "./ToolSyncManager.js";
+import type { Logger } from "@root/Logger.js";
+import { logger } from "@root/Logger.js";
+import type { MCPToolConfig } from "@root/configManager.js";
+import { configManager } from "@root/configManager.js";
+import { CustomMCPHandler } from "@services/CustomMCPHandler.js";
+import { getEventBus } from "@services/EventBus.js";
+import { MCPCacheManager } from "@services/MCPCacheManager.js";
+import type { MCPServiceConfig } from "@services/MCPService.js";
+import { MCPService, MCPTransportType } from "@services/MCPService.js";
+import { ToolSyncManager } from "@services/ToolSyncManager.js";
+import { ToolCallLogger } from "@utils/ToolCallLogger.js";
 
 // 工具信息接口（保持向后兼容）
 interface ToolInfo {

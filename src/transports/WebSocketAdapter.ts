@@ -9,14 +9,17 @@
  * 4. 消息压缩和批量处理
  */
 
-import WebSocket, { WebSocketServer } from "ws";
-import type { MCPMessageHandler } from "../core/MCPMessageHandler.js";
-import { ConnectionState, TransportAdapter } from "./TransportAdapter.js";
+import type { MCPMessageHandler } from "@core/MCPMessageHandler.js";
+import {
+  ConnectionState,
+  TransportAdapter,
+} from "@transports/TransportAdapter.js";
 import type {
   MCPMessage,
   MCPResponse,
   TransportConfig,
-} from "./TransportAdapter.js";
+} from "@transports/TransportAdapter.js";
+import WebSocket, { WebSocketServer } from "ws";
 
 /**
  * WebSocket 连接状态枚举

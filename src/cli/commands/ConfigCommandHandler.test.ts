@@ -2,9 +2,9 @@
  * ConfigCommandHandler 测试
  */
 
+import { ConfigCommandHandler } from "@cli/commands/ConfigCommandHandler.js";
+import type { IDIContainer } from "@cli/interfaces/Config.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { IDIContainer } from "../interfaces/Config.js";
-import { ConfigCommandHandler } from "./ConfigCommandHandler.js";
 
 // Mock ora
 vi.mock("ora", () => ({

@@ -14,9 +14,10 @@ import {
 } from "node:fs";
 import { dirname, resolve } from "node:path";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type { Logger } from "@root/Logger.js";
+import { logger } from "@root/Logger.js";
+import type { MCPServiceConfig } from "@services/MCPService.js";
 import dayjs from "dayjs";
-import type { Logger } from "../Logger.js";
-import { logger } from "../Logger.js";
 import type {
   CacheStatistics,
   EnhancedToolResultCache,
@@ -24,7 +25,6 @@ import type {
   TaskStatus,
 } from "../types/mcp.js";
 import { generateCacheKey, shouldCleanupCache } from "../types/mcp.js";
-import type { MCPServiceConfig } from "./MCPService.js";
 
 // 缓存条目接口
 export interface MCPToolsCacheEntry {

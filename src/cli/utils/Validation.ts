@@ -2,8 +2,8 @@
  * 输入验证工具
  */
 
-import type { ConfigFormat } from "../Types.js";
-import { ValidationError } from "../errors/index.js";
+import type { ConfigFormat } from "@cli/Types.js";
+import { ValidationError } from "@cli/errors/index.js";
 
 /**
  * 验证工具类

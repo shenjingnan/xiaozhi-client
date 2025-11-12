@@ -1,9 +1,9 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { Logger } from "../Logger.js";
-import { logger } from "../Logger.js";
-import { getEventBus } from "./EventBus.js";
-import { TransportFactory } from "./TransportFactory.js";
+import type { Logger } from "@root/Logger.js";
+import { logger } from "@root/Logger.js";
+import { getEventBus } from "@services/EventBus.js";
+import { TransportFactory } from "@services/TransportFactory.js";
 
 // 通信方式枚举
 export enum MCPTransportType {

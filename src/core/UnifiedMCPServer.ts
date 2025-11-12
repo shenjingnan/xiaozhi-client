@@ -10,16 +10,13 @@
  */
 
 import { EventEmitter } from "node:events";
-import type { Logger } from "../Logger.js";
-import { logger } from "../Logger.js";
-import { MCPServiceManager } from "../services/MCPServiceManager.js";
-import type { TransportAdapter } from "../transports/TransportAdapter.js";
-import { ConnectionState } from "../transports/TransportAdapter.js";
-import type {
-  MCPMessage,
-  MCPResponse,
-} from "../transports/TransportAdapter.js";
-import { MCPMessageHandler } from "./MCPMessageHandler.js";
+import { MCPMessageHandler } from "@core/MCPMessageHandler.js";
+import type { Logger } from "@root/Logger.js";
+import { logger } from "@root/Logger.js";
+import { MCPServiceManager } from "@services/MCPServiceManager.js";
+import type { TransportAdapter } from "@transports/TransportAdapter.js";
+import { ConnectionState } from "@transports/TransportAdapter.js";
+import type { MCPMessage, MCPResponse } from "@transports/TransportAdapter.js";
 
 /**
  * 工具信息接口

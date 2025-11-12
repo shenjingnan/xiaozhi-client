@@ -3,23 +3,26 @@
  * 处理通过 HTTP API 调用 MCP 工具的请求
  */
 
-import Ajv from "ajv";
-import dayjs from "dayjs";
-import type { Context } from "hono";
-import type { Logger } from "../Logger.js";
-import { logger } from "../Logger.js";
-import { configManager } from "../configManager.js";
-import type { CustomMCPTool, ProxyHandlerConfig } from "../configManager.js";
-import { MCPCacheManager } from "../services/MCPCacheManager.js";
-import { MCPServiceManagerSingleton } from "../services/MCPServiceManagerSingleton.js";
-import type { CozeWorkflow, WorkflowParameterConfig } from "../types/coze.js";
+import type { Logger } from "@root/Logger.js";
+import { logger } from "@root/Logger.js";
+import { configManager } from "@root/configManager.js";
+import type { CustomMCPTool, ProxyHandlerConfig } from "@root/configManager.js";
+import type {
+  CozeWorkflow,
+  WorkflowParameterConfig,
+} from "@root/types/coze.js";
 import type {
   AddCustomToolRequest,
   AddToolResponse,
   CozeWorkflowData,
   MCPToolData,
-} from "../types/toolApi.js";
-import { ToolType } from "../types/toolApi.js";
+} from "@root/types/toolApi.js";
+import { ToolType } from "@root/types/toolApi.js";
+import { MCPCacheManager } from "@services/MCPCacheManager.js";
+import { MCPServiceManagerSingleton } from "@services/MCPServiceManagerSingleton.js";
+import Ajv from "ajv";
+import dayjs from "dayjs";
+import type { Context } from "hono";
 
 /**
  * 工具调用请求接口
