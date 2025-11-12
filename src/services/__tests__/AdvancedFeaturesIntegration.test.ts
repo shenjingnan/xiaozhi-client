@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Logger } from "../../Logger.js";
-import { ConfigChangeType, ConfigWatcherClass } from "../ConfigWatcher.js";
+import { ConfigWatcherClass } from "../ConfigWatcher.js";
 import {
   ErrorCategory,
   categorizeError,
@@ -11,12 +11,8 @@ import {
   getErrorStatistics,
   shouldAlert,
 } from "../ErrorHandler.js";
-import type { HealthCheckConfig } from "../HealthChecker.js";
-import { HealthCheckerClass } from "../HealthChecker.js";
-import type { MCPService } from "../MCPService.js";
 import type { MCPServiceConfig } from "../MCPService.js";
 import { MCPTransportType } from "../MCPService.js";
-import type { MCPServiceManager } from "../MCPServiceManager.js";
 import {
   OperationType,
   PerformanceMonitorClass,
