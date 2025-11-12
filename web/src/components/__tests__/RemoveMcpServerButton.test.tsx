@@ -1,7 +1,7 @@
+import { RemoveMcpServerButton } from "@components/RemoveMcpServerButton";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { act } from "react";
 import { vi } from "vitest";
-import { RemoveMcpServerButton } from "../RemoveMcpServerButton";
 
 // Mock lucide-react to avoid icon loading issues
 vi.mock("lucide-react", () => ({

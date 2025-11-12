@@ -1,7 +1,8 @@
 import * as api from "@/services/api";
 import * as websocket from "@/services/websocket";
 import * as stores from "@/stores/config";
-import type { AppConfig } from "@/types";
+import type { AppConfig } from "@/types/index";
+import { McpEndpointSettingButton } from "@components/McpEndpointSettingButton";
 import {
   act,
   fireEvent,
@@ -11,7 +12,6 @@ import {
 } from "@testing-library/react";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { McpEndpointSettingButton } from "../McpEndpointSettingButton";
 
 // Mock modules
 vi.mock("@/stores/config");

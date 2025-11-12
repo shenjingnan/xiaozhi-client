@@ -3,7 +3,7 @@
  * 整合 HTTP API 客户端和 WebSocket 管理器
  */
 
-import type { AppConfig, ClientStatus } from "../types";
+import type { AppConfig, ClientStatus } from "@/types/index";
 import { type ApiClient, apiClient } from "./api";
 import {
   type ConnectionState,

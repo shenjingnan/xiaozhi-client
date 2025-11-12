@@ -1,7 +1,7 @@
+import App from "@/App";
 import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import App from "../App";
 
 // Mock WebSocket
 class MockWebSocket {
@@ -67,9 +67,9 @@ describe("App Routing", () => {
 
     // Reset stores using dynamic imports
     try {
-      const { useConfigStore } = await import("../stores/config");
-      const { useStatusStore } = await import("../stores/status");
-      const { useWebSocketStore } = await import("../stores/websocket");
+      const { useConfigStore } = await import("@stores/config");
+      const { useStatusStore } = await import("@stores/status");
+      const { useWebSocketStore } = await import("@stores/websocket");
 
       useConfigStore.getState().reset();
       useStatusStore.getState().reset();

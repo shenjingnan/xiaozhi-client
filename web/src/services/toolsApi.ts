@@ -3,7 +3,7 @@
  * 专门处理自定义工具的添加、删除和管理操作
  */
 
-import type { CozeWorkflow, WorkflowParameterConfig } from "@/types";
+import type { CozeWorkflow, WorkflowParameterConfig } from "@/types/index";
 import { apiClient } from "./api";
 
 /**

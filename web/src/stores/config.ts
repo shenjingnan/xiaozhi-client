@@ -9,18 +9,18 @@
  * - 集成 WebSocket 事件监听
  */
 
-import { create } from "zustand";
-import { devtools } from "zustand/middleware";
-import { useShallow } from "zustand/react/shallow";
-import { apiClient } from "../services/api";
-import { webSocketManager } from "../services/websocket";
 import type {
   AppConfig,
   ConnectionConfig,
   MCPServerConfig,
   ModelScopeConfig,
   WebUIConfig,
-} from "../types";
+} from "@/types/index";
+import { apiClient } from "@services/api";
+import { webSocketManager } from "@services/websocket";
+import { create } from "zustand";
+import { devtools } from "zustand/middleware";
+import { useShallow } from "zustand/react/shallow";
 
 /**
  * 配置加载状态

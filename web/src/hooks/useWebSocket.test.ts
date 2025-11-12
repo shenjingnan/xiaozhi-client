@@ -1,25 +1,25 @@
+import type { AppConfig, ClientStatus } from "@/types/index";
+import { useWebSocket } from "@hooks/useWebSocket";
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { AppConfig, ClientStatus } from "../types";
-import { useWebSocket } from "./useWebSocket";
 
 // Mock the stores and services
-vi.mock("../stores/websocket", () => ({
+vi.mock("@stores/websocket", () => ({
   useWebSocketActions: vi.fn(),
 }));
 
-vi.mock("../stores/config", () => ({
+vi.mock("@stores/config", () => ({
   useConfigActions: vi.fn(),
   useConfig: vi.fn(),
 }));
 
-vi.mock("../stores/status", () => ({
+vi.mock("@stores/status", () => ({
   useStatusActions: vi.fn(),
   useClientStatus: vi.fn(),
   useRestartStatus: vi.fn(),
 }));
 
-vi.mock("../services/websocket", () => ({
+vi.mock("@services/websocket", () => ({
   webSocketManager: {
     connect: vi.fn(),
     disconnect: vi.fn(),
@@ -31,7 +31,7 @@ vi.mock("../services/websocket", () => ({
   },
 }));
 
-vi.mock("../utils/portUtils", () => ({
+vi.mock("@utils/portUtils", () => ({
   buildWebSocketUrl: vi.fn(),
   checkPortAvailability: vi.fn(),
   extractPortFromUrl: vi.fn(),
@@ -41,16 +41,16 @@ vi.mock("../utils/portUtils", () => ({
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
-import { webSocketManager } from "../services/websocket";
-import { useConfig, useConfigActions } from "../stores/config";
+import { webSocketManager } from "@services/websocket";
+import { useConfig, useConfigActions } from "@stores/config";
 import {
   useClientStatus,
   useRestartStatus,
   useStatusActions,
-} from "../stores/status";
+} from "@stores/status";
 // Import the mocked modules
-import { useWebSocketActions } from "../stores/websocket";
-import { buildWebSocketUrl } from "../utils/portUtils";
+import { useWebSocketActions } from "@stores/websocket";
+import { buildWebSocketUrl } from "@utils/portUtils";
 
 const mockUseWebSocketActions = useWebSocketActions as ReturnType<typeof vi.fn>;
 const mockUseConfigActions = useConfigActions as ReturnType<typeof vi.fn>;

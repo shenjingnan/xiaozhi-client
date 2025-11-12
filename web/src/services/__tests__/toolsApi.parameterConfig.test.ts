@@ -3,12 +3,12 @@
  * 测试第二阶段新增的参数配置功能
  */
 
-import type { CozeWorkflow, WorkflowParameterConfig } from "@/types";
+import type { CozeWorkflow, WorkflowParameterConfig } from "@/types/index";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ToolsApiService } from "../toolsApi";
 
 // Mock apiClient
-vi.mock("../api", () => ({
+vi.mock("@services/api", () => ({
   apiClient: {
     addCustomTool: vi.fn(),
     removeCustomTool: vi.fn(),
@@ -16,7 +16,7 @@ vi.mock("../api", () => ({
   },
 }));
 
-import { apiClient } from "../api";
+import { apiClient } from "@services/api";
 
 describe("ToolsApiService - 参数配置功能", () => {
   let service: ToolsApiService;

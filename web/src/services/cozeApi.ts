@@ -7,7 +7,7 @@ import type {
   CozeWorkflowsParams,
   CozeWorkflowsResult,
   CozeWorkspace,
-} from "../types";
+} from "@/types/index";
 
 /**
  * API 响应格式

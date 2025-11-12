@@ -2,9 +2,9 @@
  * 扣子 API 前端服务层集成测试
  */
 
+import type { CozeWorkflowsResult, CozeWorkspace } from "@/types/index";
+import { CozeApiClient } from "@services/cozeApi";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { CozeApiClient } from "../services/cozeApi";
-import type { CozeWorkflowsResult, CozeWorkspace } from "../types";
 
 // Mock fetch
 const mockFetch = vi.fn();

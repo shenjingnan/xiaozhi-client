@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/form";
 import { mcpServerApi } from "@/services/api";
 import { useConfig } from "@/stores/config";
-import type { MCPServerConfig } from "@/types";
+import type { MCPServerConfig } from "@/types/index";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PlusIcon } from "lucide-react";

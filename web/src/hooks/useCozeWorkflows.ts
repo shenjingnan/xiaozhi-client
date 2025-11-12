@@ -3,14 +3,14 @@
  * 提供工作空间和工作流数据的状态管理
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { cozeApiClient } from "../services/cozeApi";
 import type {
   CozeUIState,
   CozeWorkflow,
   CozeWorkflowsParams,
   CozeWorkspace,
-} from "../types";
+} from "@/types/index";
+import { cozeApiClient } from "@services/cozeApi";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 /**
  * Hook 返回值类型

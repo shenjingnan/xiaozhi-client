@@ -18,7 +18,11 @@ import {
   useMcpServerConfig,
   useMcpServers,
 } from "@/stores/config";
-import type { CozeWorkflow, MCPServerConfig, WorkflowParameter } from "@/types";
+import type {
+  CozeWorkflow,
+  MCPServerConfig,
+  WorkflowParameter,
+} from "@/types/index";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
 import {
   CoffeeIcon,
