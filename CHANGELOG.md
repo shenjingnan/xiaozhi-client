@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.9.1](https://github.com/shenjingnan/xiaozhi-client/compare/v1.9.0...v1.9.1) (2025-11-12)
+
+### Features
+
+* **core:** 实现 MCP 服务类型字段自动格式转换 ([#404](https://github.com/shenjingnan/xiaozhi-client/issues/404)) ([7b40b0e](https://github.com/shenjingnan/xiaozhi-client/commit/7b40b0ed84070f449e221a10ab2921627fa6b965))
+* **web:** 优化安装对话框交互体验 ([#403](https://github.com/shenjingnan/xiaozhi-client/issues/403)) ([d97df23](https://github.com/shenjingnan/xiaozhi-client/commit/d97df23a564f0bb7dfb9c6ee5ac333a3318ed6be))
+* **web:** 优化工具调用状态徽章的显示效果 ([#408](https://github.com/shenjingnan/xiaozhi-client/issues/408)) ([594dd22](https://github.com/shenjingnan/xiaozhi-client/commit/594dd22a17c66bc9b387cc45f9ff43c8a8d96b9b))
+* **web:** 优化无参数工具的用户界面体验 ([#406](https://github.com/shenjingnan/xiaozhi-client/issues/406)) ([d2f3812](https://github.com/shenjingnan/xiaozhi-client/commit/d2f38127264783d90f63c269668c41a018557903))
+
+### Bug Fixes
+
+* **core:** 修复Web界面重启服务功能失效问题 ([#402](https://github.com/shenjingnan/xiaozhi-client/issues/402)) ([5097450](https://github.com/shenjingnan/xiaozhi-client/commit/5097450def5f0947adc9c427672b487d50948908))
+
+### Reverts
+
+* Revert "fix(core): 修复Web界面重启服务功能失效问题 (#402)" (#405) ([d4ae98b](https://github.com/shenjingnan/xiaozhi-client/commit/d4ae98b668e4a43317405de9656e48b3230f47cf)), closes [#402](https://github.com/shenjingnan/xiaozhi-client/issues/402) [#405](https://github.com/shenjingnan/xiaozhi-client/issues/405)
+
 ## [1.9.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.8.4...v1.9.0) (2025-11-09)
 
 ### Features
