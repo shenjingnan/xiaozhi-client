@@ -4,10 +4,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FileError, ValidationError } from "../errors/index.js";
-import {
-  type TemplateCreateOptions,
-  TemplateManagerImpl,
-} from "./TemplateManager.js";
+import type { TemplateCreateOptions } from "./TemplateManager.js";
+import { TemplateManagerImpl } from "./TemplateManager.js";
 
 // Mock 依赖
 vi.mock("../utils/PathUtils.js", () => ({

@@ -6,7 +6,8 @@
  */
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { type Logger, logger } from "../Logger.js";
+import type { Logger } from "../Logger.js";
+import { logger } from "../Logger.js";
 import type {
   ConfigManager,
   CustomMCPTool,

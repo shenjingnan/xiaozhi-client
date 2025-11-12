@@ -8,28 +8,31 @@
 
 import { createHash } from "node:crypto";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { type Logger, logger } from "../Logger.js";
-import {
-  type ChainHandlerConfig,
-  type CustomMCPTool,
-  type FunctionHandlerConfig,
-  type HttpHandlerConfig,
-  type MCPHandlerConfig,
-  type ProxyHandlerConfig,
-  type ScriptHandlerConfig,
-  configManager,
+import type { Logger } from "../Logger.js";
+import { logger } from "../Logger.js";
+import type {
+  ChainHandlerConfig,
+  CustomMCPTool,
+  FunctionHandlerConfig,
+  HttpHandlerConfig,
+  MCPHandlerConfig,
+  ProxyHandlerConfig,
+  ScriptHandlerConfig,
 } from "../configManager.js";
+import { configManager } from "../configManager.js";
 import { CacheLifecycleManager } from "../managers/CacheLifecycleManager.js";
 import { TaskStateManager } from "../managers/TaskStateManager.js";
+import type {
+  CacheConfig,
+  CacheStatistics,
+  EnhancedToolResultCache,
+  ExtendedMCPToolsCache,
+  TaskStatus,
+  TimeoutConfig,
+  ToolCallResponse,
+} from "../types/mcp.js";
 import {
-  type CacheConfig,
-  type CacheStatistics,
   DEFAULT_CONFIG,
-  type EnhancedToolResultCache,
-  type ExtendedMCPToolsCache,
-  type TaskStatus,
-  type TimeoutConfig,
-  type ToolCallResponse,
   generateCacheKey,
   isCacheExpired,
   shouldCleanupCache,

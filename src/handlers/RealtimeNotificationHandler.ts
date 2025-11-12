@@ -1,6 +1,8 @@
-import { type Logger, logger } from "../Logger.js";
+import type { Logger } from "../Logger.js";
+import { logger } from "../Logger.js";
 import { ConfigService } from "../services/ConfigService.js";
-import { type EventBus, getEventBus } from "../services/EventBus.js";
+import type { EventBus } from "../services/EventBus.js";
+import { getEventBus } from "../services/EventBus.js";
 import type { NotificationService } from "../services/NotificationService.js";
 import type { StatusService } from "../services/StatusService.js";
 

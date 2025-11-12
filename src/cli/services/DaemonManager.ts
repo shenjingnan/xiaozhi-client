@@ -2,7 +2,8 @@
  * 守护进程管理服务
  */
 
-import { type ChildProcess, spawn } from "node:child_process";
+import type { ChildProcess } from "node:child_process";
+import { spawn } from "node:child_process";
 import fs from "node:fs";
 import { ProcessError, ServiceError } from "../errors/index.js";
 import type {

@@ -1,9 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  MCPService,
-  type MCPServiceConfig,
-  MCPTransportType,
-} from "../MCPService.js";
+import type { MCPServiceConfig } from "../MCPService.js";
+import { MCPService, MCPTransportType } from "../MCPService.js";
 import { MCPServiceManager } from "../MCPServiceManager.js";
 
 // 模拟依赖项

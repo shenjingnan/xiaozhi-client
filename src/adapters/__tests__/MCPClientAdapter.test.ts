@@ -5,11 +5,8 @@
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  MCPService,
-  type MCPServiceConfig,
-  MCPTransportType,
-} from "../../services/MCPService.js";
+import type { MCPServiceConfig } from "../../services/MCPService.js";
+import { MCPService, MCPTransportType } from "../../services/MCPService.js";
 import { MCPClientAdapter } from "../MCPClientAdapter.js";
 
 // Mock MCPService

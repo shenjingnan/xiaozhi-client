@@ -7,11 +7,8 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { MCPMessageHandler } from "../../core/MCPMessageHandler.js";
 import { MCPServiceManager } from "../../services/MCPServiceManager.js";
 import { ConnectionState } from "../TransportAdapter.js";
-import {
-  WebSocketAdapter,
-  type WebSocketConfig,
-  WebSocketState,
-} from "../WebSocketAdapter.js";
+import type { WebSocketConfig } from "../WebSocketAdapter.js";
+import { WebSocketAdapter, WebSocketState } from "../WebSocketAdapter.js";
 
 describe("WebSocket 适配器测试", () => {
   let serviceManager: MCPServiceManager;

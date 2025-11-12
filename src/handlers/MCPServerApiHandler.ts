@@ -1,6 +1,7 @@
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Context } from "hono";
-import { type Logger, logger } from "../Logger.js";
+import type { Logger } from "../Logger.js";
+import { logger } from "../Logger.js";
 import type { ConfigManager } from "../configManager.js";
 import type { MCPServerConfig } from "../configManager.js";
 import { ErrorCategory, MCPError, MCPErrorCode } from "../errors/MCPErrors.js";

@@ -4,10 +4,8 @@
  */
 
 import { configManager } from "../configManager.js";
-import {
-  type IndependentConnectionOptions,
-  IndependentXiaozhiConnectionManager,
-} from "./IndependentXiaozhiConnectionManager.js";
+import type { IndependentConnectionOptions } from "./IndependentXiaozhiConnectionManager.js";
+import { IndependentXiaozhiConnectionManager } from "./IndependentXiaozhiConnectionManager.js";
 
 // 类型兼容性导出
 export type {

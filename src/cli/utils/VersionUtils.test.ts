@@ -7,7 +7,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FileError } from "../errors/index.js";
-import { type VersionInfo, VersionUtils } from "./VersionUtils.js";
+import type { VersionInfo } from "./VersionUtils.js";
+import { VersionUtils } from "./VersionUtils.js";
 
 // Mock fileURLToPath
 vi.mock("node:url");

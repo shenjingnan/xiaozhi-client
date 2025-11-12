@@ -17,15 +17,19 @@ import {
   VersionApiHandler,
 } from "@handlers/index.js";
 import { serve } from "@hono/node-server";
-import { type Logger, logger } from "@root/Logger.js";
-import { ProxyMCPServer, type Tool } from "@root/ProxyMCPServer.js";
+import type { Logger } from "@root/Logger.js";
+import { logger } from "@root/Logger.js";
+import type { Tool } from "@root/ProxyMCPServer.js";
+import { ProxyMCPServer } from "@root/ProxyMCPServer.js";
 import { configManager } from "@root/configManager.js";
 import type { MCPServerConfig } from "@root/configManager.js";
+import type {
+  EventBus,
+  IndependentXiaozhiConnectionManager,
+  MCPServiceManager,
+} from "@services/index.js";
 import {
   ConfigService,
-  type EventBus,
-  type IndependentXiaozhiConnectionManager,
-  type MCPServiceManager,
   MCPServiceManagerSingleton,
   NotificationService,
   StatusService,
@@ -33,7 +37,8 @@ import {
   destroyEventBus,
   getEventBus,
 } from "@services/index.js";
-import { type Context, Hono } from "hono";
+import type { Context } from "hono";
+import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { WebSocketServer } from "ws";
 

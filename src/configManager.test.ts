@@ -1,26 +1,21 @@
-import {
-  type PathLike,
-  copyFileSync,
-  existsSync,
-  readFileSync,
-  writeFileSync,
-} from "node:fs";
+import type { PathLike } from "node:fs";
+import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import dayjs from "dayjs";
 import JSON5 from "json5";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  type AppConfig,
-  ConfigManager,
-  type ConnectionConfig,
-  type CustomMCPConfig,
-  type CustomMCPTool,
-  type MCPServerConfig,
-  type MCPServerToolsConfig,
-  type MCPToolConfig,
-  type WebUIConfig,
+import type {
+  AppConfig,
+  ConnectionConfig,
+  CustomMCPConfig,
+  CustomMCPTool,
+  MCPServerConfig,
+  MCPServerToolsConfig,
+  MCPToolConfig,
+  WebUIConfig,
 } from "./configManager";
+import { ConfigManager } from "./configManager";
 
 // Mock fs module
 vi.mock("node:fs", () => ({

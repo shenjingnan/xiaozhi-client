@@ -11,10 +11,8 @@ import {
   getErrorStatistics,
   shouldAlert,
 } from "../ErrorHandler.js";
-import {
-  type HealthCheckConfig,
-  HealthCheckerClass,
-} from "../HealthChecker.js";
+import type { HealthCheckConfig } from "../HealthChecker.js";
+import { HealthCheckerClass } from "../HealthChecker.js";
 import type { MCPService } from "../MCPService.js";
 import type { MCPServiceConfig } from "../MCPService.js";
 import { MCPTransportType } from "../MCPService.js";

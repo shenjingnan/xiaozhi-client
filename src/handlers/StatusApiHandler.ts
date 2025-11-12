@@ -1,5 +1,6 @@
 import type { Context } from "hono";
-import { type Logger, logger } from "../Logger.js";
+import type { Logger } from "../Logger.js";
+import { logger } from "../Logger.js";
 import type { StatusService } from "../services/StatusService.js";
 
 /**

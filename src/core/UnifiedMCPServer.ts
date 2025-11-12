@@ -10,12 +10,11 @@
  */
 
 import { EventEmitter } from "node:events";
-import { type Logger, logger } from "../Logger.js";
+import type { Logger } from "../Logger.js";
+import { logger } from "../Logger.js";
 import { MCPServiceManager } from "../services/MCPServiceManager.js";
-import {
-  ConnectionState,
-  type TransportAdapter,
-} from "../transports/TransportAdapter.js";
+import type { TransportAdapter } from "../transports/TransportAdapter.js";
+import { ConnectionState } from "../transports/TransportAdapter.js";
 import type {
   MCPMessage,
   MCPResponse,

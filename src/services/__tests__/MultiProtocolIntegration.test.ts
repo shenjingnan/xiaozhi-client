@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Logger } from "../../Logger.js";
 import { configManager } from "../../configManager.js";
-import { type MCPServiceConfig, MCPTransportType } from "../MCPService.js";
+import type { MCPServiceConfig } from "../MCPService.js";
+import { MCPTransportType } from "../MCPService.js";
 import { MCPServiceManager } from "../MCPServiceManager.js";
 import { TransportFactory } from "../TransportFactory.js";
 
