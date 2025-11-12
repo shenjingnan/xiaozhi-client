@@ -48,6 +48,17 @@ export default defineConfig({
   bundle: true,
   keepNames: true,
   platform: "node",
+  alias: {
+    "@handlers": "./src/handlers",
+    "@services": "./src/services",
+    "@utils": "./src/utils",
+    "@core": "./src/core",
+    "@transports": "./src/transports",
+    "@adapters": "./src/adapters",
+    "@managers": "./src/managers",
+    "@types": "./src/types",
+    "@root": "./src"
+  },
   outExtension() {
     return {
       js: ".js",
