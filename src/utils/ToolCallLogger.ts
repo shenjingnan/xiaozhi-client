@@ -5,10 +5,10 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { PathUtils } from "@cli/utils/PathUtils.js";
+import { logger } from "@root/Logger.js";
 import pino from "pino";
 import type { Logger as PinoLogger } from "pino";
-import { logger } from "../Logger.js";
-import { PathUtils } from "../cli/utils/PathUtils.js";
 
 // 工具调用记录接口
 export interface ToolCallRecord {

@@ -1,13 +1,13 @@
 import { EventEmitter } from "node:events";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type { Logger } from "@root/Logger.js";
+import { logger } from "@root/Logger.js";
+import { ProxyMCPServer } from "@root/ProxyMCPServer.js";
+import type { ConfigManager } from "@root/configManager.js";
+import type { EventBus } from "@services/EventBus.js";
+import { getEventBus } from "@services/EventBus.js";
+import { sliceEndpoint } from "@utils/mcpServerUtils.js";
 import { z } from "zod";
-import type { Logger } from "../Logger.js";
-import { logger } from "../Logger.js";
-import { ProxyMCPServer } from "../ProxyMCPServer.js";
-import type { ConfigManager } from "../configManager.js";
-import type { EventBus } from "../services/EventBus.js";
-import { getEventBus } from "../services/EventBus.js";
-import { sliceEndpoint } from "../utils/mcpServerUtils.js";
 
 // 使用接口定义避免循环依赖
 interface IMCPServiceManager {

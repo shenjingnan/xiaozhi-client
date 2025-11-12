@@ -5,8 +5,8 @@
 import type {
   CommandHandler,
   ICommandHandlerFactory,
-} from "../interfaces/Command.js";
-import type { IDIContainer } from "../interfaces/Config.js";
+} from "@cli/interfaces/Command.js";
+import type { IDIContainer } from "@cli/interfaces/Config.js";
 
 /**
  * 命令处理器工厂实现
@@ -55,7 +55,9 @@ export class CommandHandlerFactory implements ICommandHandlerFactory {
    */
   private createServiceCommandHandler(): CommandHandler {
     // 动态导入以避免循环依赖
-    const { ServiceCommandHandler } = require("./ServiceCommandHandler.js");
+    const {
+      ServiceCommandHandler,
+    } = require("@cli/commands/ServiceCommandHandler.js");
     return new ServiceCommandHandler(this.container);
   }
 
@@ -63,7 +65,9 @@ export class CommandHandlerFactory implements ICommandHandlerFactory {
    * 创建配置命令处理器
    */
   private createConfigCommandHandler(): CommandHandler {
-    const { ConfigCommandHandler } = require("./ConfigCommandHandler.js");
+    const {
+      ConfigCommandHandler,
+    } = require("@cli/commands/ConfigCommandHandler.js");
     return new ConfigCommandHandler(this.container);
   }
 
@@ -71,7 +75,9 @@ export class CommandHandlerFactory implements ICommandHandlerFactory {
    * 创建项目命令处理器
    */
   private createProjectCommandHandler(): CommandHandler {
-    const { ProjectCommandHandler } = require("./ProjectCommandHandler.js");
+    const {
+      ProjectCommandHandler,
+    } = require("@cli/commands/ProjectCommandHandler.js");
     return new ProjectCommandHandler(this.container);
   }
 
@@ -79,7 +85,7 @@ export class CommandHandlerFactory implements ICommandHandlerFactory {
    * 创建MCP命令处理器
    */
   private createMcpCommandHandler(): CommandHandler {
-    const { McpCommandHandler } = require("./McpCommandHandler.js");
+    const { McpCommandHandler } = require("@cli/commands/McpCommandHandler.js");
     return new McpCommandHandler(this.container);
   }
 
@@ -87,7 +93,9 @@ export class CommandHandlerFactory implements ICommandHandlerFactory {
    * 创建端点命令处理器
    */
   private createEndpointCommandHandler(): CommandHandler {
-    const { EndpointCommandHandler } = require("./EndpointCommandHandler.js");
+    const {
+      EndpointCommandHandler,
+    } = require("@cli/commands/EndpointCommandHandler.js");
     return new EndpointCommandHandler(this.container);
   }
 
@@ -95,7 +103,7 @@ export class CommandHandlerFactory implements ICommandHandlerFactory {
    * 创建UI命令处理器
    */
   private createUICommandHandler(): CommandHandler {
-    const { UICommandHandler } = require("./UICommandHandler.js");
+    const { UICommandHandler } = require("@cli/commands/UICommandHandler.js");
     return new UICommandHandler(this.container);
   }
 }

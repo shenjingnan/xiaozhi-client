@@ -4,9 +4,9 @@
  * 这是阶段一重构的核心组件，用于消除双层代理架构
  */
 
-import type { Logger } from "../Logger.js";
-import { logger } from "../Logger.js";
-import type { MCPServiceManager } from "../services/MCPServiceManager.js";
+import type { Logger } from "@root/Logger.js";
+import { logger } from "@root/Logger.js";
+import type { MCPServiceManager } from "@services/MCPServiceManager.js";
 
 // MCP 消息接口
 interface MCPMessage {

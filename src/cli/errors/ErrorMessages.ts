@@ -2,7 +2,7 @@
  * 错误消息管理
  */
 
-import { ERROR_CODES } from "../Constants.js";
+import { ERROR_CODES } from "@cli/Constants.js";
 
 /**
  * 错误消息映射

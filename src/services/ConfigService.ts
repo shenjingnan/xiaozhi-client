@@ -1,9 +1,9 @@
-import type { Logger } from "../Logger.js";
-import { logger } from "../Logger.js";
-import type { AppConfig } from "../configManager.js";
-import { configManager } from "../configManager.js";
-import type { EventBus } from "./EventBus.js";
-import { getEventBus } from "./EventBus.js";
+import type { Logger } from "@root/Logger.js";
+import { logger } from "@root/Logger.js";
+import type { AppConfig } from "@root/configManager.js";
+import { configManager } from "@root/configManager.js";
+import type { EventBus } from "@services/EventBus.js";
+import { getEventBus } from "@services/EventBus.js";
 
 /**
  * 配置服务 - 统一的配置管理服务

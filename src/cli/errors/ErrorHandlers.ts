@@ -2,9 +2,9 @@
  * 错误处理器
  */
 
+import { ERROR_MESSAGES } from "@cli/errors/ErrorMessages.js";
+import { CLIError } from "@cli/errors/index.js";
 import chalk from "chalk";
-import { ERROR_MESSAGES } from "./ErrorMessages.js";
-import { CLIError } from "./index.js";
 
 /**
  * 错误处理器类

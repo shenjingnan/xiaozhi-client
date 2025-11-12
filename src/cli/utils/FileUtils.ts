@@ -4,8 +4,8 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import type { FileOperationOptions } from "../Types.js";
-import { FileError } from "../errors/index.js";
+import type { FileOperationOptions } from "@cli/Types.js";
+import { FileError } from "@cli/errors/index.js";
 
 /**
  * 文件工具类

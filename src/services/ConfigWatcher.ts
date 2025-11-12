@@ -1,10 +1,10 @@
 import { existsSync, readFileSync } from "node:fs";
+import type { Logger } from "@root/Logger.js";
+import { logger } from "@root/Logger.js";
+import { categorizeError, shouldAlert } from "@services/ErrorHandler.js";
+import type { MCPServiceConfig } from "@services/MCPService.js";
 import type { FSWatcher } from "chokidar";
 import { watch } from "chokidar";
-import type { Logger } from "../Logger.js";
-import { logger } from "../Logger.js";
-import { categorizeError, shouldAlert } from "./ErrorHandler.js";
-import type { MCPServiceConfig } from "./MCPService.js";
 
 /**
  * 配置变更事件类型

@@ -2,9 +2,9 @@
  * 输入验证工具单元测试
  */
 
+import { ValidationError } from "@cli/errors/index.js";
+import { Validation } from "@cli/utils/Validation.js";
 import { describe, expect, it } from "vitest";
-import { ValidationError } from "../errors/index.js";
-import { Validation } from "./Validation.js";
 
 describe("Validation", () => {
   describe("验证端口号", () => {

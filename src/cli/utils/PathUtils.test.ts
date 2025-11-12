@@ -2,11 +2,11 @@ import { realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { PathUtils } from "@cli/utils/PathUtils.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { PathUtils } from "./PathUtils.js";
 
 // Mock dependencies
-vi.mock("./FileUtils.js", () => ({
+vi.mock("@cli/utils/FileUtils.js", () => ({
   FileUtils: {
     exists: vi.fn(),
   },
@@ -38,7 +38,7 @@ describe("PathUtils 路径工具", () => {
     vi.clearAllMocks();
 
     // Setup mocks
-    const { FileUtils } = await import("./FileUtils.js");
+    const { FileUtils } = await import("@cli/utils/FileUtils.js");
     mockFileExists = vi.mocked(FileUtils.exists);
     mockTmpdir = vi.mocked(tmpdir);
     mockFileURLToPath = vi.mocked(fileURLToPath);

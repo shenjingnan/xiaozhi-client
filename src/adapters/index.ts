@@ -1,2 +1,2 @@
-export * from "./ConfigAdapter";
-export * from "./MCPClientAdapter";
+export * from "@adapters/ConfigAdapter";
+export * from "@adapters/MCPClientAdapter";

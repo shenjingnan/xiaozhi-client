@@ -1,8 +1,8 @@
-import type { Logger } from "../Logger.js";
-import { logger } from "../Logger.js";
-import { ConfigService } from "../services/ConfigService.js";
-import type { NotificationService } from "../services/NotificationService.js";
-import type { StatusService } from "../services/StatusService.js";
+import type { Logger } from "@root/Logger.js";
+import { logger } from "@root/Logger.js";
+import { ConfigService } from "@services/ConfigService.js";
+import type { NotificationService } from "@services/NotificationService.js";
+import type { StatusService } from "@services/StatusService.js";
 
 /**
  * 心跳消息接口

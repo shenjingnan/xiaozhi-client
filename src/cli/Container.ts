@@ -2,16 +2,16 @@
  * 依赖注入容器
  */
 
-import { logger } from "../Logger.js";
-import { configManager } from "../configManager.js";
-import { ErrorHandler } from "./errors/ErrorHandlers.js";
-import type { IDIContainer } from "./interfaces/Config.js";
-import { FileUtils } from "./utils/FileUtils.js";
-import { FormatUtils } from "./utils/FormatUtils.js";
-import { PathUtils } from "./utils/PathUtils.js";
-import { PlatformUtils } from "./utils/PlatformUtils.js";
-import { Validation } from "./utils/Validation.js";
-import { VersionUtils } from "./utils/VersionUtils.js";
+import { ErrorHandler } from "@cli/errors/ErrorHandlers.js";
+import type { IDIContainer } from "@cli/interfaces/Config.js";
+import { FileUtils } from "@cli/utils/FileUtils.js";
+import { FormatUtils } from "@cli/utils/FormatUtils.js";
+import { PathUtils } from "@cli/utils/PathUtils.js";
+import { PlatformUtils } from "@cli/utils/PlatformUtils.js";
+import { Validation } from "@cli/utils/Validation.js";
+import { VersionUtils } from "@cli/utils/VersionUtils.js";
+import { logger } from "@root/Logger.js";
+import { configManager } from "@root/configManager.js";
 
 /**
  * 依赖注入容器实现
@@ -146,19 +146,19 @@ export class DIContainer implements IDIContainer {
 
     // 注册服务层
     container.registerSingleton("processManager", () => {
-      const ProcessManagerModule = require("./services/ProcessManager.js");
+      const ProcessManagerModule = require("@cli/services/ProcessManager.js");
       return new ProcessManagerModule.ProcessManagerImpl();
     });
 
     container.registerSingleton("daemonManager", () => {
-      const DaemonManagerModule = require("./services/DaemonManager.js");
+      const DaemonManagerModule = require("@cli/services/DaemonManager.js");
       const processManager = container.get("processManager") as any;
       const logger = container.get("logger") as any;
       return new DaemonManagerModule.DaemonManagerImpl(processManager, logger);
     });
 
     container.registerSingleton("serviceManager", () => {
-      const ServiceManagerModule = require("./services/ServiceManager.js");
+      const ServiceManagerModule = require("@cli/services/ServiceManager.js");
       const processManager = container.get("processManager") as any;
       const configManager = container.get("configManager") as any;
       const logger = container.get("logger") as any;
@@ -171,7 +171,7 @@ export class DIContainer implements IDIContainer {
 
     container.registerSingleton("templateManager", () => {
       // 使用动态导入的同步版本
-      const TemplateManagerModule = require("./services/TemplateManager.js");
+      const TemplateManagerModule = require("@cli/services/TemplateManager.js");
       return new TemplateManagerModule.TemplateManagerImpl();
     });
 

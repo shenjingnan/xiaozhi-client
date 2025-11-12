@@ -11,11 +11,11 @@ export {
   type MCPResponse,
   type MCPError,
   type TransportConfig,
-} from "./TransportAdapter.js";
+} from "@transports/TransportAdapter.js";
 
 // 具体实现
-export { StdioAdapter, type StdioConfig } from "./StdioAdapter.js";
-export { HTTPAdapter, type HTTPConfig } from "./HTTPAdapter.js";
+export { StdioAdapter, type StdioConfig } from "@transports/StdioAdapter.js";
+export { HTTPAdapter, type HTTPConfig } from "@transports/HTTPAdapter.js";
 
 /**
  * 传输层抽象使用指南

@@ -2,11 +2,11 @@
  * 端点管理命令处理器
  */
 
+import type { SubCommand } from "@cli/interfaces/Command.js";
+import { BaseCommandHandler } from "@cli/interfaces/Command.js";
+import type { IDIContainer } from "@cli/interfaces/Config.js";
 import chalk from "chalk";
 import ora from "ora";
-import type { SubCommand } from "../interfaces/Command.js";
-import { BaseCommandHandler } from "../interfaces/Command.js";
-import type { IDIContainer } from "../interfaces/Config.js";
 
 /**
  * 端点管理命令处理器

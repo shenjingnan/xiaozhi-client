@@ -4,9 +4,9 @@
  * 这是阶段二重构的核心组件，用于抽象不同的传输层实现
  */
 
-import type { Logger } from "../Logger.js";
-import { logger } from "../Logger.js";
-import type { MCPMessageHandler } from "../core/MCPMessageHandler.js";
+import type { MCPMessageHandler } from "@core/MCPMessageHandler.js";
+import type { Logger } from "@root/Logger.js";
+import { logger } from "@root/Logger.js";
 
 // MCP 消息接口
 export interface MCPMessage {

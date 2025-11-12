@@ -2,8 +2,7 @@
  * 错误处理系统单元测试
  */
 
-import { describe, expect, it } from "vitest";
-import { ERROR_CODES } from "../Constants.js";
+import { ERROR_CODES } from "@cli/Constants.js";
 import {
   CLIError,
   ConfigError,
@@ -11,7 +10,8 @@ import {
   ProcessError,
   ServiceError,
   ValidationError,
-} from "./index.js";
+} from "@cli/errors/index.js";
+import { describe, expect, it } from "vitest";
 
 describe("CLIError", () => {
   it("should create basic CLI error", () => {

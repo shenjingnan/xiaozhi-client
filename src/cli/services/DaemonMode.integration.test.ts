@@ -1,8 +1,8 @@
+import type { ServiceStartOptions } from "@cli/interfaces/Service.js";
+import { ProcessManagerImpl } from "@cli/services/ProcessManager.js";
+import { ServiceManagerImpl } from "@cli/services/ServiceManager.js";
+import { PathUtils } from "@cli/utils/PathUtils.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ServiceStartOptions } from "../interfaces/Service.js";
-import { PathUtils } from "../utils/PathUtils.js";
-import { ProcessManagerImpl } from "./ProcessManager.js";
-import { ServiceManagerImpl } from "./ServiceManager.js";
 
 // Mock external dependencies
 vi.mock("node:child_process", () => ({
@@ -20,7 +20,7 @@ vi.mock("node:fs", () => ({
   mkdirSync: vi.fn(),
 }));
 
-vi.mock("../utils/PathUtils.js", () => ({
+vi.mock("@cli/utils/PathUtils.js", () => ({
   PathUtils: {
     getWebServerStandalonePath: vi.fn(),
     getExecutablePath: vi.fn(),

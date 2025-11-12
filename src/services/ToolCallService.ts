@@ -3,11 +3,11 @@
  * 负责处理手动工具调用的核心逻辑
  */
 
+import { ProcessManagerImpl } from "@cli/services/ProcessManager.js";
+import type { Logger } from "@root/Logger.js";
+import { logger } from "@root/Logger.js";
+import { configManager } from "@root/configManager.js";
 import chalk from "chalk";
-import type { Logger } from "../Logger.js";
-import { logger } from "../Logger.js";
-import { ProcessManagerImpl } from "../cli/services/ProcessManager.js";
-import { configManager } from "../configManager.js";
 
 // 工具调用结果接口
 export interface ToolCallResult {

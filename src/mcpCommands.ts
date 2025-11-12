@@ -1,7 +1,7 @@
+import { configManager } from "@root/configManager.js";
 import chalk from "chalk";
 import Table from "cli-table3";
 import ora from "ora";
-import { configManager } from "./configManager";
 
 /**
  * MCP 相关的命令行功能

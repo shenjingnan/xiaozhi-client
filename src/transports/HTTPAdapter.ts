@@ -6,15 +6,18 @@
 
 import { randomUUID } from "node:crypto";
 import type { Server } from "node:http";
-import express from "express";
-import type { Request, Response } from "express";
-import type { MCPMessageHandler } from "../core/MCPMessageHandler.js";
-import { ConnectionState, TransportAdapter } from "./TransportAdapter.js";
+import type { MCPMessageHandler } from "@core/MCPMessageHandler.js";
+import {
+  ConnectionState,
+  TransportAdapter,
+} from "@transports/TransportAdapter.js";
 import type {
   MCPMessage,
   MCPResponse,
   TransportConfig,
-} from "./TransportAdapter.js";
+} from "@transports/TransportAdapter.js";
+import express from "express";
+import type { Request, Response } from "express";
 
 /**
  * SSE 客户端接口

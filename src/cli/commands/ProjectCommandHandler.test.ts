@@ -2,9 +2,9 @@
  * ProjectCommandHandler 测试
  */
 
+import { ProjectCommandHandler } from "@cli/commands/ProjectCommandHandler.js";
+import type { IDIContainer } from "@cli/interfaces/Config.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { IDIContainer } from "../interfaces/Config.js";
-import { ProjectCommandHandler } from "./ProjectCommandHandler.js";
 
 /**
  * 测试用的 ProjectCommandHandler 子类，用于访问受保护的方法

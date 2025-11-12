@@ -3,11 +3,11 @@
  * 提供扣子工作空间和工作流相关的 RESTful API 接口
  */
 
+import { logger } from "@root/Logger";
+import { configManager } from "@root/configManager";
+import type { CozeWorkflowsParams } from "@root/types/coze";
+import { CozeApiService } from "@services/CozeApiService";
 import type { Context } from "hono";
-import { logger } from "../Logger";
-import { configManager } from "../configManager";
-import { CozeApiService } from "../services/CozeApiService";
-import type { CozeWorkflowsParams } from "../types/coze";
 
 /**
  * 统一的 API 响应格式

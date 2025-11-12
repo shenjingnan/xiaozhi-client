@@ -5,10 +5,10 @@
  * 负责初始化依赖注入容器和启动命令处理器
  */
 
+import { DIContainer } from "@cli/Container.js";
+import { CommandRegistry } from "@cli/commands/index.js";
+import { ErrorHandler } from "@cli/errors/ErrorHandlers.js";
 import { Command } from "commander";
-import { DIContainer } from "./Container.js";
-import { CommandRegistry } from "./commands/index.js";
-import { ErrorHandler } from "./errors/ErrorHandlers.js";
 
 const program = new Command();
 

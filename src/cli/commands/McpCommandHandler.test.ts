@@ -2,9 +2,9 @@
  * McpCommandHandler 测试
  */
 
+import { McpCommandHandler } from "@cli/commands/McpCommandHandler.js";
+import type { IDIContainer } from "@cli/interfaces/Config.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { IDIContainer } from "../interfaces/Config.js";
-import { McpCommandHandler } from "./McpCommandHandler.js";
 
 // 设置 vitest 配置以允许 process.exit
 vi.setConfig({

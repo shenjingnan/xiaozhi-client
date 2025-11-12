@@ -1,7 +1,7 @@
+import { CommandRegistry } from "@cli/commands/index.js";
+import type { IDIContainer } from "@cli/interfaces/Config.js";
 import { Command } from "commander";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { IDIContainer } from "../interfaces/Config.js";
-import { CommandRegistry } from "./index.js";
 
 // Mock ServiceCommandHandler
 const mockServiceCommandHandler = {

@@ -2,15 +2,15 @@
  * 命令注册器
  */
 
-import type { Command } from "commander";
-import { ErrorHandler } from "../errors/ErrorHandlers.js";
+import { CommandHandlerFactory } from "@cli/commands/CommandHandlerFactory.js";
+import { ErrorHandler } from "@cli/errors/ErrorHandlers.js";
 import type {
   CommandHandler,
   ICommandHandlerFactory,
   ICommandRegistry,
-} from "../interfaces/Command.js";
-import type { IDIContainer } from "../interfaces/Config.js";
-import { CommandHandlerFactory } from "./CommandHandlerFactory.js";
+} from "@cli/interfaces/Command.js";
+import type { IDIContainer } from "@cli/interfaces/Config.js";
+import type { Command } from "commander";
 
 /**
  * 命令注册器实现

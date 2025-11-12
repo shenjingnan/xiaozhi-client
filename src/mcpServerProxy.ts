@@ -9,9 +9,9 @@
 import { dirname } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-import { logger } from "./Logger";
-import { configManager } from "./configManager";
-import { ServerMode, createServer } from "./core/ServerFactory";
+import { ServerMode, createServer } from "@core/ServerFactory.js";
+import { logger } from "@root/Logger.js";
+import { configManager } from "@root/configManager.js";
 
 // ESM 兼容的 __dirname
 const __dirname = dirname(fileURLToPath(import.meta.url));

@@ -3,11 +3,11 @@
  * 提供全局唯一的 MCPServiceManager 实例，解决多实例资源冲突问题
  */
 
-import MCPServiceManager from "./MCPServiceManager.js";
+import MCPServiceManager from "@services/MCPServiceManager.js";
 
 // 重新导出相关类型，便于外部使用
 export type { Tool } from "@modelcontextprotocol/sdk/types.js";
-export type { LocalMCPServerConfig } from "../configManager.js";
+export type { LocalMCPServerConfig } from "@root/configManager.js";
 
 // 单例状态枚举
 enum SingletonState {
