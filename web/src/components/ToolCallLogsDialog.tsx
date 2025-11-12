@@ -271,8 +271,8 @@ export function ToolCallLogsDialog() {
                         <TableCell>
                           <Badge
                             variant={log.success ? undefined : "destructive"}
-                            className={`gap-1 ${
-                              log.success ? "bg-green-600" : "bg-red-600"
+                            className={`gap-1 w-[50px] text-center ${
+                              log.success ? "bg-green-600 hover:bg-green-600" : "bg-red-600 hover:bg-red-600"
                             }`}
                           >
                             {log.success ? "成功" : "失败"}
