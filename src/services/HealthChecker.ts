@@ -1,7 +1,5 @@
 import type { Logger } from "../Logger.js";
 import { logger } from "../Logger.js";
-import type { MCPError } from "./ErrorHandler.js";
-import { categorizeError, shouldAlert } from "./ErrorHandler.js";
 import type { MCPService } from "./MCPService.js";
 import type { MCPServiceManager } from "./MCPServiceManager.js";
 import { PerformanceMonitor } from "./PerformanceMonitor.js";
