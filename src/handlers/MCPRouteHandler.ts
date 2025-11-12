@@ -6,7 +6,8 @@
 
 import { randomUUID } from "node:crypto";
 import type { Context } from "hono";
-import { type Logger, logger } from "../Logger.js";
+import type { Logger } from "../Logger.js";
+import { logger } from "../Logger.js";
 import { MCPMessageHandler } from "../core/MCPMessageHandler.js";
 import { MCPServiceManagerSingleton } from "../services/MCPServiceManagerSingleton.js";
 

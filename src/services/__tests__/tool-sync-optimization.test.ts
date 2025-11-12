@@ -1,7 +1,8 @@
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomMCPHandler } from "../CustomMCPHandler.js";
-import { type EventBus, destroyEventBus, getEventBus } from "../EventBus.js";
+import type { EventBus } from "../EventBus.js";
+import { destroyEventBus, getEventBus } from "../EventBus.js";
 import type { MCPServiceManager } from "../MCPServiceManager.js";
 import { ToolSyncManager } from "../ToolSyncManager.js";
 

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { type EventBus, getEventBus } from "../EventBus.js";
+import type { EventBus } from "../EventBus.js";
+import { getEventBus } from "../EventBus.js";
 
 // Mock Logger
 vi.mock("../../Logger.js", () => ({

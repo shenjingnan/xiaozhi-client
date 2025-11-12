@@ -10,18 +10,16 @@
  */
 
 import { logger } from "../Logger.js";
-import { HTTPAdapter, type HTTPConfig } from "../transports/HTTPAdapter.js";
-import { StdioAdapter, type StdioConfig } from "../transports/StdioAdapter.js";
+import type { HTTPConfig } from "../transports/HTTPAdapter.js";
+import { HTTPAdapter } from "../transports/HTTPAdapter.js";
+import type { StdioConfig } from "../transports/StdioAdapter.js";
+import { StdioAdapter } from "../transports/StdioAdapter.js";
 import { TransportAdapter } from "../transports/TransportAdapter.js";
-import {
-  WebSocketAdapter,
-  type WebSocketConfig,
-} from "../transports/WebSocketAdapter.js";
+import type { WebSocketConfig } from "../transports/WebSocketAdapter.js";
+import { WebSocketAdapter } from "../transports/WebSocketAdapter.js";
 import type { MCPMessageHandler } from "./MCPMessageHandler.js";
-import {
-  UnifiedMCPServer,
-  type UnifiedServerConfig,
-} from "./UnifiedMCPServer.js";
+import type { UnifiedServerConfig } from "./UnifiedMCPServer.js";
+import { UnifiedMCPServer } from "./UnifiedMCPServer.js";
 
 /**
  * 服务器模式枚举

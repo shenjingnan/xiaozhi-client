@@ -7,17 +7,16 @@
  */
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { type Logger, logger } from "../Logger.js";
-import { type MCPToolConfig, configManager } from "../configManager.js";
+import type { Logger } from "../Logger.js";
+import { logger } from "../Logger.js";
+import type { MCPToolConfig } from "../configManager.js";
+import { configManager } from "../configManager.js";
 import { ToolCallLogger } from "../utils/ToolCallLogger.js";
 import { CustomMCPHandler } from "./CustomMCPHandler.js";
 import { getEventBus } from "./EventBus.js";
 import { MCPCacheManager } from "./MCPCacheManager.js";
-import {
-  MCPService,
-  type MCPServiceConfig,
-  MCPTransportType,
-} from "./MCPService.js";
+import type { MCPServiceConfig } from "./MCPService.js";
+import { MCPService, MCPTransportType } from "./MCPService.js";
 import { ToolSyncManager } from "./ToolSyncManager.js";
 
 // 工具信息接口（保持向后兼容）

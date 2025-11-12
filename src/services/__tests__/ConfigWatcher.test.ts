@@ -2,12 +2,14 @@ import { existsSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type {
+  ConfigChangeEvent,
+  ConfigWatcherOptions,
+} from "../ConfigWatcher.js";
 import {
-  type ConfigChangeEvent,
   ConfigChangeType,
   ConfigWatcher,
   ConfigWatcherClass,
-  type ConfigWatcherOptions,
 } from "../ConfigWatcher.js";
 import type { MCPServiceConfig } from "../MCPService.js";
 import { MCPTransportType } from "../MCPService.js";

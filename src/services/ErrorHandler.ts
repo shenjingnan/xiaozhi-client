@@ -1,4 +1,5 @@
-import { type Logger, logger } from "../Logger.js";
+import type { Logger } from "../Logger.js";
+import { logger } from "../Logger.js";
 
 /**
  * 错误分类枚举

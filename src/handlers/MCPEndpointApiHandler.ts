@@ -1,7 +1,9 @@
 import type { Context } from "hono";
-import { type Logger, logger } from "../Logger.js";
+import type { Logger } from "../Logger.js";
+import { logger } from "../Logger.js";
 import type { ConfigManager } from "../configManager.js";
-import { type EventBus, getEventBus } from "../services/EventBus.js";
+import type { EventBus } from "../services/EventBus.js";
+import { getEventBus } from "../services/EventBus.js";
 import type { IndependentXiaozhiConnectionManager } from "../services/IndependentXiaozhiConnectionManager.js";
 import type { ConnectionStatus } from "../services/IndependentXiaozhiConnectionManager.js";
 

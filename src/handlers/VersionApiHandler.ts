@@ -1,6 +1,8 @@
 import type { Context } from "hono";
-import { type Logger, logger } from "../Logger.js";
-import { type VersionInfo, VersionUtils } from "../cli/utils/VersionUtils.js";
+import type { Logger } from "../Logger.js";
+import { logger } from "../Logger.js";
+import type { VersionInfo } from "../cli/utils/VersionUtils.js";
+import { VersionUtils } from "../cli/utils/VersionUtils.js";
 import { NPMManager } from "../services/NPMManager.js";
 
 /**

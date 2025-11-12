@@ -6,19 +6,20 @@
 import Ajv from "ajv";
 import dayjs from "dayjs";
 import type { Context } from "hono";
-import { type Logger, logger } from "../Logger.js";
+import type { Logger } from "../Logger.js";
+import { logger } from "../Logger.js";
 import { configManager } from "../configManager.js";
 import type { CustomMCPTool, ProxyHandlerConfig } from "../configManager.js";
 import { MCPCacheManager } from "../services/MCPCacheManager.js";
 import { MCPServiceManagerSingleton } from "../services/MCPServiceManagerSingleton.js";
 import type { CozeWorkflow, WorkflowParameterConfig } from "../types/coze.js";
-import {
-  type AddCustomToolRequest,
-  type AddToolResponse,
-  type CozeWorkflowData,
-  type MCPToolData,
-  ToolType,
+import type {
+  AddCustomToolRequest,
+  AddToolResponse,
+  CozeWorkflowData,
+  MCPToolData,
 } from "../types/toolApi.js";
+import { ToolType } from "../types/toolApi.js";
 
 /**
  * 工具调用请求接口

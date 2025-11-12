@@ -1,6 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
-import { type FSWatcher, watch } from "chokidar";
-import { type Logger, logger } from "../Logger.js";
+import type { FSWatcher } from "chokidar";
+import { watch } from "chokidar";
+import type { Logger } from "../Logger.js";
+import { logger } from "../Logger.js";
 import { categorizeError, shouldAlert } from "./ErrorHandler.js";
 import type { MCPServiceConfig } from "./MCPService.js";
 

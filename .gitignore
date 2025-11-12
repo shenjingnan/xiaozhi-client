@@ -136,7 +136,7 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-settings.json
+.vscode/settings.json
 .DS_Store
 config.json
 tmp

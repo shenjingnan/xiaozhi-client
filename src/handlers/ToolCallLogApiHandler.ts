@@ -7,10 +7,8 @@ import type { Context } from "hono";
 import { z } from "zod";
 import { logger } from "../Logger.js";
 import { PAGINATION_CONSTANTS } from "../cli/Constants.js";
-import {
-  ToolCallLogService,
-  type ToolCallQuery,
-} from "../services/ToolCallLogService.js";
+import type { ToolCallQuery } from "../services/ToolCallLogService.js";
+import { ToolCallLogService } from "../services/ToolCallLogService.js";
 
 /**
  * 统一响应接口

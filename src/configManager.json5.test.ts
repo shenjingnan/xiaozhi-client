@@ -1,21 +1,17 @@
-import {
-  type PathLike,
-  existsSync,
-  readFileSync,
-  writeFileSync,
-} from "node:fs";
+import type { PathLike } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import JSON5 from "json5";
 import * as json5Writer from "json5-writer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  type AppConfig,
-  ConfigManager,
-  type ConnectionConfig,
-  type MCPServerConfig,
-  type ModelScopeConfig,
-  type WebUIConfig,
+import type {
+  AppConfig,
+  ConnectionConfig,
+  MCPServerConfig,
+  ModelScopeConfig,
+  WebUIConfig,
 } from "./configManager";
+import { ConfigManager } from "./configManager";
 
 // Mock fs module
 vi.mock("node:fs", () => ({

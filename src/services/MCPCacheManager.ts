@@ -15,7 +15,8 @@ import {
 import { dirname, resolve } from "node:path";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import dayjs from "dayjs";
-import { type Logger, logger } from "../Logger.js";
+import type { Logger } from "../Logger.js";
+import { logger } from "../Logger.js";
 import type {
   CacheStatistics,
   EnhancedToolResultCache,

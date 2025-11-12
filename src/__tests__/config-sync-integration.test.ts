@@ -6,7 +6,8 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { type AppConfig, ConfigManager } from "../configManager";
+import type { AppConfig } from "../configManager";
+import { ConfigManager } from "../configManager";
 
 // Mock fs module
 vi.mock("node:fs", () => ({

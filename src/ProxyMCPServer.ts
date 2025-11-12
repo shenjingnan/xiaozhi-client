@@ -1,6 +1,7 @@
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import WebSocket from "ws";
-import { type Logger, logger } from "./Logger.js";
+import type { Logger } from "./Logger.js";
+import { logger } from "./Logger.js";
 import { sliceEndpoint } from "./utils/mcpServerUtils.js";
 
 export type { Tool };

@@ -4,7 +4,8 @@
  */
 
 import chalk from "chalk";
-import { type Logger, logger } from "../Logger.js";
+import type { Logger } from "../Logger.js";
+import { logger } from "../Logger.js";
 import { ProcessManagerImpl } from "../cli/services/ProcessManager.js";
 import { configManager } from "../configManager.js";
 

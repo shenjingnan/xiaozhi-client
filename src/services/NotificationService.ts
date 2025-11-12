@@ -1,6 +1,9 @@
-import { type Logger, logger } from "../Logger.js";
-import { type AppConfig, configManager } from "../configManager.js";
-import { type EventBus, getEventBus } from "./EventBus.js";
+import type { Logger } from "../Logger.js";
+import { logger } from "../Logger.js";
+import type { AppConfig } from "../configManager.js";
+import { configManager } from "../configManager.js";
+import type { EventBus } from "./EventBus.js";
+import { getEventBus } from "./EventBus.js";
 import type { ClientInfo, RestartStatus } from "./StatusService.js";
 
 /**
