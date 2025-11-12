@@ -17,7 +17,7 @@
       "WebSearch",
       "Bash(find:*)"
     ],
-    "deny": ["git commit:*", "git push:*"],
+    "deny": ["Bash(git commit:*)", "Bash(git push:*)"],
     "ask": []
   }
 }
