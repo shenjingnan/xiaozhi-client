@@ -21,13 +21,11 @@ import { type Logger, logger } from "@root/Logger.js";
 import { ProxyMCPServer, type Tool } from "@root/ProxyMCPServer.js";
 import { configManager } from "@root/configManager.js";
 import type { MCPServerConfig } from "@root/configManager.js";
-import type {
-  EventBus,
-  IndependentXiaozhiConnectionManager,
-  MCPServiceManager,
-} from "@services/index.js";
 import {
   ConfigService,
+  type EventBus,
+  type IndependentXiaozhiConnectionManager,
+  type MCPServiceManager,
   MCPServiceManagerSingleton,
   NotificationService,
   StatusService,
