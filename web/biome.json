@@ -9,7 +9,17 @@
       "a11y": {
         "useValidAnchor": "off",
         "noSvgWithoutTitle": "off"
+      },
+      "style": {
+        "useImportType": "error"
       }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "es5"
     }
   }
 }

@@ -2,9 +2,9 @@
  * VersionManager 组件测试
  */
 
+import { VersionManager } from "@components/VersionManager";
 import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { VersionManager } from "../VersionManager";
 
 // Mock API client
 vi.mock("../../services/api", () => ({

@@ -14,21 +14,21 @@
  * - WebSocketStore: 纯连接状态管理
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { webSocketManager } from "../services/websocket";
-import { useConfig, useConfigActions } from "../stores/config";
+import type { AppConfig, ClientStatus } from "@/types/index";
+import { webSocketManager } from "@services/websocket";
+import { useConfig, useConfigActions } from "@stores/config";
 import {
   useClientStatus,
   useRestartStatus,
   useStatusActions,
-} from "../stores/status";
-import { useWebSocketActions } from "../stores/websocket";
-import type { AppConfig, ClientStatus } from "../types";
+} from "@stores/status";
+import { useWebSocketActions } from "@stores/websocket";
 import {
   buildWebSocketUrl,
   checkPortAvailability,
   extractPortFromUrl,
-} from "../utils/portUtils";
+} from "@utils/portUtils";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * 向后兼容的状态接口

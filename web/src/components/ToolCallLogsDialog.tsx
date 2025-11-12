@@ -25,7 +25,7 @@ import type {
   ApiResponse,
   ToolCallLogsResponse,
   ToolCallRecord,
-} from "@/types";
+} from "@/types/index";
 import {
   formatDuration,
   formatJson,

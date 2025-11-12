@@ -8,6 +8,7 @@
  * - 安装完成后提供操作选项
  */
 
+import { useNPMInstall } from "@hooks/useNPMInstall";
 import {
   CheckCircleIcon,
   ChevronDownIcon,
@@ -18,7 +19,6 @@ import {
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useNPMInstall } from "../hooks/useNPMInstall";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";

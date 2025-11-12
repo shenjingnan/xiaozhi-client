@@ -12,10 +12,10 @@
  * - 状态数据管理已迁移到 stores/status.ts
  */
 
+import { ConnectionState, webSocketManager } from "@services/websocket";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
-import { ConnectionState, webSocketManager } from "../services/websocket";
 
 /**
  * 端口变更状态接口（保留用于端口切换功能）

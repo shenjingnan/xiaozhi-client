@@ -8,6 +8,7 @@
  * - 显示实时安装日志
  */
 
+import { apiClient } from "@services/api";
 import {
   AlertCircle,
   Calendar,
@@ -18,7 +19,6 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { apiClient } from "../services/api";
 import { InstallLogDialog } from "./InstallLogDialog";
 import { VersionDisplay } from "./VersionDisplay";
 import { Badge } from "./ui/badge";

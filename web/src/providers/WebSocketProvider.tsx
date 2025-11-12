@@ -1,3 +1,6 @@
+import type { AppConfig } from "@/types/index";
+import { useNetworkService } from "@hooks/useNetworkService";
+import { initializeStores } from "@stores/index";
 import {
   type ReactNode,
   createContext,
@@ -5,9 +8,6 @@ import {
   useEffect,
   useState,
 } from "react";
-import { useNetworkService } from "../hooks/useNetworkService";
-import { initializeStores } from "../stores";
-import type { AppConfig } from "../types";
 
 interface NetworkServiceContextType {
   // HTTP API 方法

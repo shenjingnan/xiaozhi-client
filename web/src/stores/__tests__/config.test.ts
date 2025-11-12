@@ -1,10 +1,10 @@
+import type { AppConfig } from "@/types/index";
+import { apiClient } from "@services/api";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { apiClient } from "../../services/api";
-import type { AppConfig } from "../../types";
 import { useConfigStore } from "../config";
 
 // Mock API client
-vi.mock("../../services/api", () => ({
+vi.mock("@services/api", () => ({
   apiClient: {
     getConfig: vi.fn(),
     updateConfig: vi.fn(),

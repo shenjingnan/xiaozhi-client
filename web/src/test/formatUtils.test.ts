@@ -1,4 +1,4 @@
-import type { ToolCallRecord } from "@/types";
+import type { ToolCallRecord } from "@/types/index";
 import {
   formatDuration,
   formatError,

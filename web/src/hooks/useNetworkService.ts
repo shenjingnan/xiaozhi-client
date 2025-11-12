@@ -3,12 +3,12 @@
  * 使用统一的网络服务管理器，实现 HTTP 和 WebSocket 的协调使用
  */
 
+import type { AppConfig, ClientStatus } from "@/types/index";
+import { ConnectionState, networkService } from "@services/index";
+import { useConfigStore } from "@stores/config";
+import { useStatusStore } from "@stores/status";
+import { useWebSocketActions } from "@stores/websocket";
 import { useCallback, useEffect, useRef } from "react";
-import { ConnectionState, networkService } from "../services";
-import { useConfigStore } from "../stores/config";
-import { useStatusStore } from "../stores/status";
-import { useWebSocketActions } from "../stores/websocket";
-import type { AppConfig, ClientStatus } from "../types";
 
 /**
  * 网络服务 Hook

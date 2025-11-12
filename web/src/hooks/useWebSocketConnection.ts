@@ -5,8 +5,7 @@
  * 返回连接状态、错误信息、连接控制方法
  */
 
-import { useCallback } from "react";
-import { ConnectionState, webSocketManager } from "../services/websocket";
+import { ConnectionState, webSocketManager } from "@services/websocket";
 import {
   useWebSocketActions,
   useWebSocketConnected,
@@ -14,7 +13,8 @@ import {
   useWebSocketConnectionStats,
   useWebSocketLastError,
   useWebSocketUrl,
-} from "../stores/websocket";
+} from "@stores/websocket";
+import { useCallback } from "react";
 
 /**
  * WebSocket 连接相关的 hook

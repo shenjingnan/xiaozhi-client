@@ -1,7 +1,7 @@
+import { McpServerList } from "@components/McpServerList";
 import { render, screen } from "@testing-library/react";
 import { act } from "react";
 import { vi } from "vitest";
-import { McpServerList } from "../McpServerList";
 
 // Mock sonner toast
 vi.mock("sonner", () => ({
@@ -37,7 +37,7 @@ vi.mock("@/services/api", () => ({
 }));
 
 // Mock other components
-vi.mock("../AddMcpServerButton", () => ({
+vi.mock("@components/AddMcpServerButton", () => ({
   AddMcpServerButton: () => (
     <button type="button" data-testid="add-server">
       Add Server
@@ -45,7 +45,7 @@ vi.mock("../AddMcpServerButton", () => ({
   ),
 }));
 
-vi.mock("../RemoveMcpServerButton", () => ({
+vi.mock("@components/RemoveMcpServerButton", () => ({
   RemoveMcpServerButton: ({ mcpServerName, onRemoveSuccess }: any) => (
     <button
       type="button"
@@ -57,15 +57,15 @@ vi.mock("../RemoveMcpServerButton", () => ({
   ),
 }));
 
-vi.mock("../McpServerSettingButton", () => ({
+vi.mock("@components/McpServerSettingButton", () => ({
   McpServerSettingButton: () => <div>Settings</div>,
 }));
 
-vi.mock("../RestartButton", () => ({
+vi.mock("@components/RestartButton", () => ({
   RestartButton: () => <div>Restart</div>,
 }));
 
-vi.mock("../CozeWorkflowIntegration", () => ({
+vi.mock("@components/CozeWorkflowIntegration", () => ({
   CozeWorkflowIntegration: () => <div>Coze Integration</div>,
 }));
 

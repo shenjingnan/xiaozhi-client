@@ -5,7 +5,13 @@
  * 返回配置数据、加载状态、更新方法
  */
 
-import { useCallback } from "react";
+import type {
+  AppConfig,
+  ConnectionConfig,
+  MCPServerConfig,
+  ModelScopeConfig,
+  WebUIConfig,
+} from "@/types/index";
 import {
   useConfig,
   useConfigActions,
@@ -23,14 +29,8 @@ import {
   useModelScopeConfig,
   useSystemConfig,
   useWebUIConfig,
-} from "../stores/config";
-import type {
-  AppConfig,
-  ConnectionConfig,
-  MCPServerConfig,
-  ModelScopeConfig,
-  WebUIConfig,
-} from "../types";
+} from "@stores/config";
+import { useCallback } from "react";
 
 /**
  * 配置数据相关的 hook

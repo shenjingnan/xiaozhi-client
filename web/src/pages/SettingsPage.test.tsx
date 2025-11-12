@@ -1,5 +1,5 @@
 import { NetworkServiceProvider } from "@/providers/WebSocketProvider";
-import type { AppConfig } from "@/types";
+import type { AppConfig } from "@/types/index";
 import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import SettingsPage from "./SettingsPage";

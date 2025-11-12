@@ -28,7 +28,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCozeWorkflows } from "@/hooks/useCozeWorkflows";
 import { apiClient } from "@/services/api";
-import type { CozeWorkflow, WorkflowParameter } from "@/types";
+import type { CozeWorkflow, WorkflowParameter } from "@/types/index";
 import {
   AlertCircle,
   ChevronLeft,
