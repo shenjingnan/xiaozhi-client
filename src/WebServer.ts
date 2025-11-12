@@ -1,17 +1,17 @@
 import { createServer } from "node:http";
+import { convertLegacyToNew } from "@adapters/ConfigAdapter.js";
 import { serve } from "@hono/node-server";
-import { type Context, Hono } from "hono";
-import { cors } from "hono/cors";
-import { WebSocketServer } from "ws";
 import { type Logger, logger } from "@root/Logger.js";
 import { ProxyMCPServer, type Tool } from "@root/ProxyMCPServer.js";
-import { convertLegacyToNew } from "@adapters/ConfigAdapter.js";
 import { configManager } from "@root/configManager.js";
 import type { MCPServerConfig } from "@root/configManager.js";
 import type { IndependentXiaozhiConnectionManager } from "@services/IndependentXiaozhiConnectionManager.js";
 import type { MCPServiceManager } from "@services/MCPServiceManager.js";
 import { MCPServiceManagerSingleton } from "@services/MCPServiceManagerSingleton.js";
 import { XiaozhiConnectionManagerSingleton } from "@services/XiaozhiConnectionManagerSingleton.js";
+import { type Context, Hono } from "hono";
+import { cors } from "hono/cors";
+import { WebSocketServer } from "ws";
 
 import { ConfigApiHandler } from "@handlers/ConfigApiHandler.js";
 import { CozeApiHandler } from "@handlers/CozeApiHandler.js";

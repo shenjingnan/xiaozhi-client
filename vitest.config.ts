@@ -1,7 +1,7 @@
+import { resolve } from "node:path";
 import { codecovVitePlugin } from "@codecov/vite-plugin";
-import { defineConfig } from "vitest/config";
 import tsconfigPaths from "vite-tsconfig-paths";
-import { resolve } from "path";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [
@@ -63,7 +63,7 @@ export default defineConfig({
       "@adapters": resolve(__dirname, "src/adapters"),
       "@managers": resolve(__dirname, "src/managers"),
       "@types": resolve(__dirname, "src/types"),
-      "@root": resolve(__dirname, "src")
+      "@root": resolve(__dirname, "src"),
     },
   },
 });
