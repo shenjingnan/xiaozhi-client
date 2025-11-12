@@ -1,5 +1,7 @@
 import { codecovVitePlugin } from "@codecov/vite-plugin";
 import { defineConfig } from "vitest/config";
+import tsconfigPaths from "vite-tsconfig-paths";
+import { resolve } from "path";
 
 export default defineConfig({
   plugins: [
@@ -9,6 +11,8 @@ export default defineConfig({
       bundleName: "xiaozhi-client",
       uploadToken: process.env.CODECOV_TOKEN,
     }),
+    // 添加 tsconfig 路径解析插件
+    tsconfigPaths(),
   ],
   test: {
     globals: true,
@@ -50,7 +54,16 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": "/src",
+      "@": resolve(__dirname, "src"),
+      "@handlers": resolve(__dirname, "src/handlers"),
+      "@services": resolve(__dirname, "src/services"),
+      "@utils": resolve(__dirname, "src/utils"),
+      "@core": resolve(__dirname, "src/core"),
+      "@transports": resolve(__dirname, "src/transports"),
+      "@adapters": resolve(__dirname, "src/adapters"),
+      "@managers": resolve(__dirname, "src/managers"),
+      "@types": resolve(__dirname, "src/types"),
+      "@root": resolve(__dirname, "src")
     },
   },
 });

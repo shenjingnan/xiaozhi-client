@@ -3,39 +3,39 @@ import { serve } from "@hono/node-server";
 import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { WebSocketServer } from "ws";
-import { type Logger, logger } from "./Logger.js";
-import { ProxyMCPServer, type Tool } from "./ProxyMCPServer.js";
-import { convertLegacyToNew } from "./adapters/ConfigAdapter.js";
-import { configManager } from "./configManager.js";
-import type { MCPServerConfig } from "./configManager.js";
-import type { IndependentXiaozhiConnectionManager } from "./services/IndependentXiaozhiConnectionManager.js";
-import type { MCPServiceManager } from "./services/MCPServiceManager.js";
-import { MCPServiceManagerSingleton } from "./services/MCPServiceManagerSingleton.js";
-import { XiaozhiConnectionManagerSingleton } from "./services/XiaozhiConnectionManagerSingleton.js";
+import { type Logger, logger } from "@root/Logger.js";
+import { ProxyMCPServer, type Tool } from "@root/ProxyMCPServer.js";
+import { convertLegacyToNew } from "@adapters/ConfigAdapter.js";
+import { configManager } from "@root/configManager.js";
+import type { MCPServerConfig } from "@root/configManager.js";
+import type { IndependentXiaozhiConnectionManager } from "@services/IndependentXiaozhiConnectionManager.js";
+import type { MCPServiceManager } from "@services/MCPServiceManager.js";
+import { MCPServiceManagerSingleton } from "@services/MCPServiceManagerSingleton.js";
+import { XiaozhiConnectionManagerSingleton } from "@services/XiaozhiConnectionManagerSingleton.js";
 
-import { ConfigApiHandler } from "./handlers/ConfigApiHandler.js";
-import { CozeApiHandler } from "./handlers/CozeApiHandler.js";
-import { HeartbeatHandler } from "./handlers/HeartbeatHandler.js";
-import { MCPEndpointApiHandler } from "./handlers/MCPEndpointApiHandler.js";
-import { MCPRouteHandler } from "./handlers/MCPRouteHandler.js";
-import { MCPServerApiHandler } from "./handlers/MCPServerApiHandler.js";
-import { RealtimeNotificationHandler } from "./handlers/RealtimeNotificationHandler.js";
-import { ServiceApiHandler } from "./handlers/ServiceApiHandler.js";
-import { StaticFileHandler } from "./handlers/StaticFileHandler.js";
-import { StatusApiHandler } from "./handlers/StatusApiHandler.js";
-import { ToolApiHandler } from "./handlers/ToolApiHandler.js";
-import { ToolCallLogApiHandler } from "./handlers/ToolCallLogApiHandler.js";
-import { UpdateApiHandler } from "./handlers/UpdateApiHandler.js";
-import { VersionApiHandler } from "./handlers/VersionApiHandler.js";
-import { ConfigService } from "./services/ConfigService.js";
+import { ConfigApiHandler } from "@handlers/ConfigApiHandler.js";
+import { CozeApiHandler } from "@handlers/CozeApiHandler.js";
+import { HeartbeatHandler } from "@handlers/HeartbeatHandler.js";
+import { MCPEndpointApiHandler } from "@handlers/MCPEndpointApiHandler.js";
+import { MCPRouteHandler } from "@handlers/MCPRouteHandler.js";
+import { MCPServerApiHandler } from "@handlers/MCPServerApiHandler.js";
+import { RealtimeNotificationHandler } from "@handlers/RealtimeNotificationHandler.js";
+import { ServiceApiHandler } from "@handlers/ServiceApiHandler.js";
+import { StaticFileHandler } from "@handlers/StaticFileHandler.js";
+import { StatusApiHandler } from "@handlers/StatusApiHandler.js";
+import { ToolApiHandler } from "@handlers/ToolApiHandler.js";
+import { ToolCallLogApiHandler } from "@handlers/ToolCallLogApiHandler.js";
+import { UpdateApiHandler } from "@handlers/UpdateApiHandler.js";
+import { VersionApiHandler } from "@handlers/VersionApiHandler.js";
+import { ConfigService } from "@services/ConfigService.js";
 // 导入新的服务和处理器
 import {
   type EventBus,
   destroyEventBus,
   getEventBus,
-} from "./services/EventBus.js";
-import { NotificationService } from "./services/NotificationService.js";
-import { StatusService } from "./services/StatusService.js";
+} from "@services/EventBus.js";
+import { NotificationService } from "@services/NotificationService.js";
+import { StatusService } from "@services/StatusService.js";
 
 // 统一错误响应格式
 interface ApiErrorResponse {

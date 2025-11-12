@@ -16,7 +16,16 @@
       "@cli/services/*": ["src/cli/services/*"],
       "@cli/utils/*": ["src/cli/utils/*"],
       "@cli/errors/*": ["src/cli/errors/*"],
-      "@cli/interfaces/*": ["src/cli/interfaces/*"]
+      "@cli/interfaces/*": ["src/cli/interfaces/*"],
+      "@handlers/*": ["src/handlers/*"],
+      "@services/*": ["src/services/*"],
+      "@utils/*": ["src/utils/*"],
+      "@core/*": ["src/core/*"],
+      "@transports/*": ["src/transports/*"],
+      "@adapters/*": ["src/adapters/*"],
+      "@managers/*": ["src/managers/*"],
+      "@types/*": ["src/types/*"],
+      "@root/*": ["src/*"]
     },
     "strict": true,
     "noImplicitAny": true,
