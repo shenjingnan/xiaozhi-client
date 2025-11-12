@@ -35,7 +35,6 @@ import {
 import {
   CheckCircle,
   CheckIcon,
-  Clock,
   Code,
   CopyIcon,
   FileText,
