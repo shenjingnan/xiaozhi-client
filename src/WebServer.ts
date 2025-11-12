@@ -1,41 +1,43 @@
 import { createServer } from "node:http";
-import { convertLegacyToNew } from "@adapters/ConfigAdapter.js";
+import { convertLegacyToNew } from "@adapters/index.js";
+import {
+  ConfigApiHandler,
+  CozeApiHandler,
+  HeartbeatHandler,
+  MCPEndpointApiHandler,
+  MCPRouteHandler,
+  MCPServerApiHandler,
+  RealtimeNotificationHandler,
+  ServiceApiHandler,
+  StaticFileHandler,
+  StatusApiHandler,
+  ToolApiHandler,
+  ToolCallLogApiHandler,
+  UpdateApiHandler,
+  VersionApiHandler,
+} from "@handlers/index.js";
 import { serve } from "@hono/node-server";
 import { type Logger, logger } from "@root/Logger.js";
 import { ProxyMCPServer, type Tool } from "@root/ProxyMCPServer.js";
 import { configManager } from "@root/configManager.js";
 import type { MCPServerConfig } from "@root/configManager.js";
-import type { IndependentXiaozhiConnectionManager } from "@services/IndependentXiaozhiConnectionManager.js";
-import type { MCPServiceManager } from "@services/MCPServiceManager.js";
-import { MCPServiceManagerSingleton } from "@services/MCPServiceManagerSingleton.js";
-import { XiaozhiConnectionManagerSingleton } from "@services/XiaozhiConnectionManagerSingleton.js";
+import type {
+  EventBus,
+  IndependentXiaozhiConnectionManager,
+  MCPServiceManager,
+} from "@services/index.js";
+import {
+  ConfigService,
+  MCPServiceManagerSingleton,
+  NotificationService,
+  StatusService,
+  XiaozhiConnectionManagerSingleton,
+  destroyEventBus,
+  getEventBus,
+} from "@services/index.js";
 import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { WebSocketServer } from "ws";
-
-import { ConfigApiHandler } from "@handlers/ConfigApiHandler.js";
-import { CozeApiHandler } from "@handlers/CozeApiHandler.js";
-import { HeartbeatHandler } from "@handlers/HeartbeatHandler.js";
-import { MCPEndpointApiHandler } from "@handlers/MCPEndpointApiHandler.js";
-import { MCPRouteHandler } from "@handlers/MCPRouteHandler.js";
-import { MCPServerApiHandler } from "@handlers/MCPServerApiHandler.js";
-import { RealtimeNotificationHandler } from "@handlers/RealtimeNotificationHandler.js";
-import { ServiceApiHandler } from "@handlers/ServiceApiHandler.js";
-import { StaticFileHandler } from "@handlers/StaticFileHandler.js";
-import { StatusApiHandler } from "@handlers/StatusApiHandler.js";
-import { ToolApiHandler } from "@handlers/ToolApiHandler.js";
-import { ToolCallLogApiHandler } from "@handlers/ToolCallLogApiHandler.js";
-import { UpdateApiHandler } from "@handlers/UpdateApiHandler.js";
-import { VersionApiHandler } from "@handlers/VersionApiHandler.js";
-import { ConfigService } from "@services/ConfigService.js";
-// 导入新的服务和处理器
-import {
-  type EventBus,
-  destroyEventBus,
-  getEventBus,
-} from "@services/EventBus.js";
-import { NotificationService } from "@services/NotificationService.js";
-import { StatusService } from "@services/StatusService.js";
 
 // 统一错误响应格式
 interface ApiErrorResponse {
@@ -772,7 +774,9 @@ export class WebServer {
 
     this.wss.on("connection", (ws) => {
       // 生成客户端 ID
-      const clientId = `client-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const clientId = `client-${Date.now()}-${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
 
       this.logger.debug(`WebSocket 客户端已连接: ${clientId}`);
       this.logger.debug(
