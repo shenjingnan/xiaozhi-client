@@ -3,9 +3,9 @@
  * 验证 UnifiedMCPServer、ServerFactory 和重构后的服务器功能
  */
 
+import { MCPServer } from "@services/MCPServer.js";
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { MCPServer } from "../../services/MCPServer.js";
 import {
   ServerMode,
   createHTTPServer,

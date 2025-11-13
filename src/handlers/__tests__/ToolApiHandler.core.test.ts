@@ -3,10 +3,10 @@
  * 测试核心业务逻辑和边界条件处理
  */
 
+import { MCPServiceManagerSingleton } from "@services/MCPServiceManagerSingleton.js";
 import type { Context } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { configManager } from "../../configManager.js";
-import { MCPServiceManagerSingleton } from "../../services/MCPServiceManagerSingleton.js";
 import type { CozeWorkflow } from "../../types/coze.js";
 import { ToolType } from "../../types/toolApi.js";
 import { ToolApiHandler } from "../ToolApiHandler.js";
@@ -28,7 +28,7 @@ vi.mock("../../configManager.js", () => ({
 }));
 
 // Mock MCPServiceManagerSingleton
-vi.mock("../../services/MCPServiceManagerSingleton.js", () => ({
+vi.mock("@services/MCPServiceManagerSingleton.js", () => ({
   MCPServiceManagerSingleton: {
     isInitialized: vi.fn(() => true),
     getInstance: vi.fn(() =>
@@ -41,7 +41,7 @@ vi.mock("../../services/MCPServiceManagerSingleton.js", () => ({
 }));
 
 // Mock MCPCacheManager
-vi.mock("../../services/MCPCacheManager.js", () => ({
+vi.mock("@services/MCPCacheManager.js", () => ({
   MCPCacheManager: vi.fn().mockImplementation(() => ({
     getAllCachedTools: vi.fn().mockResolvedValue([]),
   })) as any,
@@ -210,9 +210,7 @@ describe("ToolApiHandler - 核心功能测试", () => {
       );
 
       // Mock MCPCacheManager
-      const { MCPCacheManager } = await import(
-        "../../services/MCPCacheManager.js"
-      );
+      const { MCPCacheManager } = await import("@services/MCPCacheManager.js");
       const mockMCPCacheManager = vi.mocked(MCPCacheManager);
       mockMCPCacheManager.mockImplementation(
         () =>

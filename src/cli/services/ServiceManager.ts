@@ -241,7 +241,7 @@ export class ServiceManagerImpl implements IServiceManager {
       process.exit(0);
     } else {
       // 前台模式 - 直接启动 MCP Server
-      const { MCPServer } = await import("../../services/MCPServer.js");
+      const { MCPServer } = await import("@services/MCPServer.js");
       const server = new MCPServer(port);
 
       // 处理退出信号

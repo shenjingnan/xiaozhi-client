@@ -23,7 +23,7 @@ vi.mock("../../configManager.js", () => ({
 }));
 
 // Mock MCPServiceManagerSingleton
-vi.mock("../../services/MCPServiceManagerSingleton.js", () => ({
+vi.mock("@services/MCPServiceManagerSingleton.js", () => ({
   MCPServiceManagerSingleton: {
     isInitialized: vi.fn(() => true),
     getInstance: vi.fn(() => Promise.resolve({})),

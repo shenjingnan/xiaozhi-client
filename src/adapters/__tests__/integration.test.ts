@@ -3,12 +3,12 @@
  * 验证适配器的基本功能和兼容性
  */
 
+import { MCPTransportType } from "@services/MCPService.js";
 import { describe, expect, it } from "vitest";
 import type {
   LocalMCPServerConfig,
   SSEMCPServerConfig,
 } from "../../configManager.js";
-import { MCPTransportType } from "../../services/MCPService.js";
 import {
   convertLegacyToNew,
   getConfigTypeDescription,

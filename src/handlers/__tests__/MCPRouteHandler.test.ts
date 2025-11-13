@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MCPRouteHandler } from "../MCPRouteHandler.js";
 
 // Mock MCPServiceManagerSingleton
-vi.mock("../../services/MCPServiceManagerSingleton.js", () => ({
+vi.mock("@services/MCPServiceManagerSingleton.js", () => ({
   MCPServiceManagerSingleton: {
     getInstance: vi.fn().mockResolvedValue({
       // Mock service manager

@@ -5,8 +5,8 @@
  * 测试MCPServerApiHandler、ToolSyncManager、EventBus等组件的端到端集成
  */
 
-import { MCPServerApiHandler } from "@handlers/MCPServerApiHandler.js";
 import { MCPErrorCode } from "@errors/index.js";
+import { MCPServerApiHandler } from "@handlers/MCPServerApiHandler.js";
 import { getEventBus } from "@services/EventBus.js";
 import { ToolSyncManager } from "@services/ToolSyncManager.js";
 import { globalServiceRestartManager } from "@utils/ServiceRestartManager.js";

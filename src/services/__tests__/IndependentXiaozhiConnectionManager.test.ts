@@ -46,7 +46,7 @@ vi.mock("../../ProxyMCPServer.js", () => ({
   })),
 }));
 
-vi.mock("../../services/EventBus.js", () => ({
+vi.mock("@services/EventBus.js", () => ({
   getEventBus: vi.fn().mockReturnValue({
     emitEvent: vi.fn(),
     onEvent: vi.fn(),
@@ -99,7 +99,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
       onEvent: vi.fn(),
       offEvent: vi.fn(),
     };
-    const { getEventBus } = await import("../../services/EventBus.js");
+    const { getEventBus } = await import("@services/EventBus.js");
     vi.mocked(getEventBus).mockReturnValue(mockEventBus);
 
     const { configManager } = await import("../../configManager.js");

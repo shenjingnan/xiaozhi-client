@@ -14,14 +14,14 @@ vi.mock("../../Logger.js", () => ({
   },
 }));
 
-vi.mock("../../services/ConfigService.js", () => ({
+vi.mock("@services/ConfigService.js", () => ({
   ConfigService: vi.fn().mockImplementation(() => ({
     getConfig: vi.fn(),
     updateConfig: vi.fn(),
   })),
 }));
 
-vi.mock("../../services/EventBus.js", () => ({
+vi.mock("@services/EventBus.js", () => ({
   getEventBus: vi.fn().mockReturnValue({
     emitEvent: vi.fn(),
     onEvent: vi.fn(),
@@ -86,7 +86,7 @@ describe("RealtimeNotificationHandler", () => {
       getConfig: vi.fn(),
       updateConfig: vi.fn(),
     };
-    const { ConfigService } = await import("../../services/ConfigService.js");
+    const { ConfigService } = await import("@services/ConfigService.js");
     vi.mocked(ConfigService).mockImplementation(() => mockConfigService);
 
     // Mock EventBus
@@ -94,7 +94,7 @@ describe("RealtimeNotificationHandler", () => {
       emitEvent: vi.fn(),
       onEvent: vi.fn(),
     };
-    const { getEventBus } = await import("../../services/EventBus.js");
+    const { getEventBus } = await import("@services/EventBus.js");
     vi.mocked(getEventBus).mockReturnValue(mockEventBus);
 
     // Mock NotificationService

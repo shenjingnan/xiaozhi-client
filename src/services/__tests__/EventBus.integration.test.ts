@@ -5,11 +5,11 @@
  * 测试EventBus、ToolSyncManager、ServiceRestartManager等组件的事件交互
  */
 
+import type { EventBusEvents } from "@services/EventBus.js";
+import { getEventBus } from "@services/EventBus.js";
+import { ToolSyncManager } from "@services/ToolSyncManager.js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { logger } from "../../Logger.js";
-import type { EventBusEvents } from "../../services/EventBus.js";
-import { getEventBus } from "../../services/EventBus.js";
-import { ToolSyncManager } from "../../services/ToolSyncManager.js";
 import { globalServiceRestartManager } from "../../utils/ServiceRestartManager.js";
 
 // 模拟ConfigManager

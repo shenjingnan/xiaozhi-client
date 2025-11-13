@@ -4,6 +4,7 @@
  */
 
 import { isAbsolute } from "node:path";
+import { MCPTransportType } from "@services/MCPService.js";
 import { describe, expect, it } from "vitest";
 import type {
   LocalMCPServerConfig,
@@ -11,7 +12,6 @@ import type {
   SSEMCPServerConfig,
   StreamableHTTPMCPServerConfig,
 } from "../../configManager.js";
-import { MCPTransportType } from "../../services/MCPService.js";
 import {
   ConfigValidationError,
   convertLegacyConfigBatch,

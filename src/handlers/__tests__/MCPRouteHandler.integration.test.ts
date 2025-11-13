@@ -11,7 +11,7 @@ import {
 import { WebServer } from "../../WebServer.js";
 
 // Mock MCPServiceManagerSingleton
-vi.mock("../../services/MCPServiceManagerSingleton.js", () => ({
+vi.mock("@services/MCPServiceManagerSingleton.js", () => ({
   MCPServiceManagerSingleton: {
     getInstance: vi.fn().mockResolvedValue({
       // Mock service manager

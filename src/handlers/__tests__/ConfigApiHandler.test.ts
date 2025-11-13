@@ -14,7 +14,7 @@ vi.mock("../../Logger.js", () => ({
   },
 }));
 
-vi.mock("../../services/ConfigService.js", () => ({
+vi.mock("@services/ConfigService.js", () => ({
   ConfigService: vi.fn().mockImplementation(() => ({
     getConfig: vi.fn(),
     updateConfig: vi.fn(),
@@ -81,7 +81,7 @@ describe("ConfigApiHandler", () => {
       getConfigPath: vi.fn(),
       configExists: vi.fn(),
     };
-    const { ConfigService } = await import("../../services/ConfigService.js");
+    const { ConfigService } = await import("@services/ConfigService.js");
     vi.mocked(ConfigService).mockImplementation(() => mockConfigService);
 
     // Mock Hono Context

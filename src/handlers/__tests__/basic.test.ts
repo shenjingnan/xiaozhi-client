@@ -22,7 +22,7 @@ describe("Handlers Basic Tests", () => {
     const { StaticFileHandler } = await import("../StaticFileHandler.js");
     const { ServiceApiHandler } = await import("../ServiceApiHandler.js");
     const { StatusApiHandler } = await import("../StatusApiHandler.js");
-    const { StatusService } = await import("../../services/StatusService.js");
+    const { StatusService } = await import("@services/StatusService.js");
 
     const mockStatusService = new StatusService();
 
