@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock CLI to prevent process.exit
-vi.mock("../cli.js", () => ({}));
+vi.mock("@cli.js", () => ({}));
 
 // Mock all dependencies
 vi.mock("../configManager.js", () => ({

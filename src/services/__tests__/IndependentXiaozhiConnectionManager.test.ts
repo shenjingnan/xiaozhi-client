@@ -54,11 +54,11 @@ vi.mock("@services/EventBus.js", () => ({
   }),
 }));
 
-vi.mock("../../utils/sliceEndpoint.js", () => ({
+vi.mock("@utils/sliceEndpoint.js", () => ({
   sliceEndpoint: vi.fn((endpoint: string) => endpoint),
 }));
 
-vi.mock("../../utils/mcpServerUtils.js", () => ({
+vi.mock("@utils/mcpServerUtils.js", () => ({
   sliceEndpoint: vi.fn((endpoint: string) => endpoint),
 }));
 

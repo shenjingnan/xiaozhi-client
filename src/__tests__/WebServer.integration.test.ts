@@ -12,7 +12,7 @@ import {
 import { configManager } from "../configManager.js";
 
 // Mock CLI to prevent process.exit
-vi.mock("../cli.js", () => ({}));
+vi.mock("@cli.js", () => ({}));
 
 // 动态导入 WebServer 以避免 CLI 模块的副作用
 let WebServer: any;

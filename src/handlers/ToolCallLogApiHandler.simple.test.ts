@@ -3,8 +3,8 @@
  * 专注于基本功能验证
  */
 
+import { PAGINATION_CONSTANTS } from "@cli/Constants.js";
 import { describe, expect, it } from "vitest";
-import { PAGINATION_CONSTANTS } from "../cli/Constants.js";
 import { ToolCallLogApiHandler } from "./ToolCallLogApiHandler.js";
 
 describe("ToolCallLogApiHandler - 基本功能测试", () => {
