@@ -100,7 +100,7 @@ describe("StaticFileHandler", () => {
   });
 
   describe("constructor", () => {
-    it("should initialize with correct dependencies", () => {
+    it("应该使用正确的依赖项初始化", () => {
       // Mock existsSync to return true for the first path
       mockExistsSync.mockReturnValueOnce(true);
 
@@ -110,7 +110,7 @@ describe("StaticFileHandler", () => {
       expect(mockLogger.debug).toHaveBeenCalled();
     });
 
-    it("should find web path successfully", () => {
+    it("应该成功找到 web 路径", () => {
       mockExistsSync.mockReturnValueOnce(true);
 
       staticFileHandler = new StaticFileHandler();
@@ -120,7 +120,7 @@ describe("StaticFileHandler", () => {
       );
     });
 
-    it("should handle no web path found", () => {
+    it("应该处理未找到 web 路径的情况", () => {
       mockExistsSync.mockReturnValue(false);
 
       staticFileHandler = new StaticFileHandler();
@@ -132,7 +132,7 @@ describe("StaticFileHandler", () => {
       );
     });
 
-    it("should handle initialization error", () => {
+    it("应该处理初始化错误", () => {
       mockFileURLToPath.mockImplementation(() => {
         throw new Error("URL parsing failed");
       });
@@ -152,7 +152,7 @@ describe("StaticFileHandler", () => {
       staticFileHandler = new StaticFileHandler();
     });
 
-    it("should serve index.html for root path", async () => {
+    it("应该为根路径提供 index.html", async () => {
       mockContext.req.url = "http://localhost:3000/";
       mockExistsSync.mockReturnValue(true);
       mockReadFile.mockResolvedValue(Buffer.from("<html>Index</html>"));
@@ -168,7 +168,7 @@ describe("StaticFileHandler", () => {
       });
     });
 
-    it("should serve CSS file with correct content type", async () => {
+    it("应该以正确的内容类型提供 CSS 文件", async () => {
       mockContext.req.url = "http://localhost:3000/styles.css";
       mockExistsSync.mockReturnValue(true);
       mockReadFile.mockResolvedValue(Buffer.from("body { color: red; }"));
@@ -182,7 +182,7 @@ describe("StaticFileHandler", () => {
       );
     });
 
-    it("should serve JavaScript file with correct content type", async () => {
+    it("应该以正确的内容类型提供 JavaScript 文件", async () => {
       mockContext.req.url = "http://localhost:3000/app.js";
       mockExistsSync.mockReturnValue(true);
       mockReadFile.mockResolvedValue(Buffer.from("console.log('hello');"));
@@ -196,7 +196,7 @@ describe("StaticFileHandler", () => {
       );
     });
 
-    it("should serve binary file with correct content type", async () => {
+    it("应该以正确的内容类型提供二进制文件", async () => {
       mockContext.req.url = "http://localhost:3000/image.png";
       mockExistsSync.mockReturnValue(true);
       const binaryData = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
@@ -213,7 +213,7 @@ describe("StaticFileHandler", () => {
       );
     });
 
-    it("should return error page when web path is not available", async () => {
+    it("当 web 路径不可用时应该返回错误页面", async () => {
       mockExistsSync.mockReturnValue(false); // No web path found
       staticFileHandler = new StaticFileHandler();
 
@@ -224,7 +224,7 @@ describe("StaticFileHandler", () => {
       );
     });
 
-    it("should fallback to index.html for SPA routes", async () => {
+    it("应该为 SPA 路由回退到 index.html", async () => {
       mockContext.req.url = "http://localhost:3000/app/dashboard";
       mockExistsSync
         .mockReturnValueOnce(false) // File doesn't exist
@@ -241,7 +241,7 @@ describe("StaticFileHandler", () => {
       });
     });
 
-    it("should return 404 when file and index.html don't exist", async () => {
+    it("当文件和 index.html 都不存在时应该返回 404", async () => {
       mockContext.req.url = "http://localhost:3000/nonexistent.html";
       mockExistsSync.mockReturnValue(false);
 
@@ -253,7 +253,7 @@ describe("StaticFileHandler", () => {
       expect(mockContext.text).toHaveBeenCalledWith("Not Found", 404);
     });
 
-    it("should handle URL parsing errors", async () => {
+    it("应该处理 URL 解析错误", async () => {
       // URL parsing error happens before try-catch, so we need to test differently
       // The error will be thrown and caught by the outer try-catch
       mockContext.req.url = "invalid-url";
@@ -273,7 +273,7 @@ describe("StaticFileHandler", () => {
       staticFileHandler = new StaticFileHandler();
     });
 
-    it("should return correct content type for HTML files", () => {
+    it("应该为 HTML 文件返回正确的内容类型", () => {
       // Access private method through type assertion for testing
       const handler = staticFileHandler as any;
 
@@ -281,7 +281,7 @@ describe("StaticFileHandler", () => {
       expect(handler.getContentType("page.htm")).toBe("text/html");
     });
 
-    it("should return correct content type for JavaScript files", () => {
+    it("应该为 JavaScript 文件返回正确的内容类型", () => {
       const handler = staticFileHandler as any;
 
       expect(handler.getContentType("app.js")).toBe("application/javascript");
@@ -290,13 +290,13 @@ describe("StaticFileHandler", () => {
       );
     });
 
-    it("should return correct content type for CSS files", () => {
+    it("应该为 CSS 文件返回正确的内容类型", () => {
       const handler = staticFileHandler as any;
 
       expect(handler.getContentType("styles.css")).toBe("text/css");
     });
 
-    it("should return correct content type for image files", () => {
+    it("应该为图片文件返回正确的内容类型", () => {
       const handler = staticFileHandler as any;
 
       expect(handler.getContentType("image.png")).toBe("image/png");
@@ -307,7 +307,7 @@ describe("StaticFileHandler", () => {
       expect(handler.getContentType("favicon.ico")).toBe("image/x-icon");
     });
 
-    it("should return correct content type for font files", () => {
+    it("应该为字体文件返回正确的内容类型", () => {
       const handler = staticFileHandler as any;
 
       expect(handler.getContentType("font.woff")).toBe("font/woff");
@@ -318,7 +318,7 @@ describe("StaticFileHandler", () => {
       );
     });
 
-    it("should return correct content type for document files", () => {
+    it("应该为文档文件返回正确的内容类型", () => {
       const handler = staticFileHandler as any;
 
       expect(handler.getContentType("document.pdf")).toBe("application/pdf");
@@ -327,7 +327,7 @@ describe("StaticFileHandler", () => {
       expect(handler.getContentType("config.xml")).toBe("application/xml");
     });
 
-    it("should return correct content type for archive files", () => {
+    it("应该为归档文件返回正确的内容类型", () => {
       const handler = staticFileHandler as any;
 
       expect(handler.getContentType("archive.zip")).toBe("application/zip");
@@ -335,7 +335,7 @@ describe("StaticFileHandler", () => {
       expect(handler.getContentType("compressed.gz")).toBe("application/gzip");
     });
 
-    it("should return default content type for unknown extensions", () => {
+    it("应该为未知扩展名返回默认内容类型", () => {
       const handler = staticFileHandler as any;
 
       expect(handler.getContentType("file.unknown")).toBe(
@@ -345,7 +345,7 @@ describe("StaticFileHandler", () => {
       expect(handler.getContentType("")).toBe("application/octet-stream");
     });
 
-    it("should handle files with multiple dots", () => {
+    it("应该处理包含多个点的文件名", () => {
       const handler = staticFileHandler as any;
 
       expect(handler.getContentType("jquery.min.js")).toBe(
@@ -357,7 +357,7 @@ describe("StaticFileHandler", () => {
       );
     });
 
-    it("should handle uppercase extensions", () => {
+    it("应该处理大写扩展名", () => {
       const handler = staticFileHandler as any;
 
       expect(handler.getContentType("IMAGE.PNG")).toBe("image/png");
@@ -374,7 +374,7 @@ describe("StaticFileHandler", () => {
       staticFileHandler = new StaticFileHandler();
     });
 
-    it("should create error page with custom message", () => {
+    it("应该使用自定义消息创建错误页面", () => {
       const handler = staticFileHandler as any;
       const message = "Custom error message";
 
@@ -393,7 +393,7 @@ describe("StaticFileHandler", () => {
       );
     });
 
-    it("should create error page with HTML structure", () => {
+    it("应该创建具有 HTML 结构的错误页面", () => {
       const handler = staticFileHandler as any;
       const message = "Test error";
 
@@ -407,7 +407,7 @@ describe("StaticFileHandler", () => {
       expect(htmlContent).toContain("</html>");
     });
 
-    it("should include CSS styles in error page", () => {
+    it("应该在错误页面中包含 CSS 样式", () => {
       const handler = staticFileHandler as any;
       const message = "Test error";
 
@@ -422,7 +422,7 @@ describe("StaticFileHandler", () => {
   });
 
   describe("isWebPathAvailable", () => {
-    it("should return true when web path exists", () => {
+    it("当 web 路径存在时应该返回 true", () => {
       mockExistsSync.mockReturnValue(true);
       staticFileHandler = new StaticFileHandler();
 
@@ -431,7 +431,7 @@ describe("StaticFileHandler", () => {
       expect(result).toBe(true);
     });
 
-    it("should return false when web path is null", () => {
+    it("当 web 路径为 null 时应该返回 false", () => {
       mockExistsSync.mockReturnValue(false);
       staticFileHandler = new StaticFileHandler();
 
@@ -440,7 +440,7 @@ describe("StaticFileHandler", () => {
       expect(result).toBe(false);
     });
 
-    it("should return false when web path doesn't exist on filesystem", () => {
+    it("当 web 路径在文件系统中不存在时应该返回 false", () => {
       mockExistsSync
         .mockReturnValueOnce(true) // For constructor
         .mockReturnValueOnce(false); // For isWebPathAvailable check
@@ -453,16 +453,16 @@ describe("StaticFileHandler", () => {
   });
 
   describe("getWebPath", () => {
-    it("should return web path when available", () => {
+    it("当可用时应该返回 web 路径", () => {
       mockExistsSync.mockReturnValue(true);
       staticFileHandler = new StaticFileHandler();
 
       const result = staticFileHandler.getWebPath();
 
-      expect(result).toBe("/project/dist/handlers/../../web/dist");
+      expect(result).toBe("/project/dist/handlers/../../apps/frontend/dist");
     });
 
-    it("should return null when web path is not available", () => {
+    it("当 web 路径不可用时应该返回 null", () => {
       mockExistsSync.mockReturnValue(false);
       staticFileHandler = new StaticFileHandler();
 
@@ -473,7 +473,7 @@ describe("StaticFileHandler", () => {
   });
 
   describe("reinitializeWebPath", () => {
-    it("should reinitialize web path", () => {
+    it("应该重新初始化 web 路径", () => {
       mockExistsSync.mockReturnValue(false);
       staticFileHandler = new StaticFileHandler();
 
@@ -497,7 +497,7 @@ describe("StaticFileHandler", () => {
       staticFileHandler = new StaticFileHandler();
     });
 
-    it("should serve text file as string", async () => {
+    it("应该以字符串形式提供文本文件", async () => {
       const handler = staticFileHandler as any;
       const filePath = "/path/to/file.txt";
       const contentType = "text/plain";
@@ -513,7 +513,7 @@ describe("StaticFileHandler", () => {
       });
     });
 
-    it("should serve JavaScript file as string", async () => {
+    it("应该以字符串形式提供 JavaScript 文件", async () => {
       const handler = staticFileHandler as any;
       const filePath = "/path/to/app.js";
       const contentType = "application/javascript";
@@ -528,7 +528,7 @@ describe("StaticFileHandler", () => {
       });
     });
 
-    it("should serve JSON file as string", async () => {
+    it("应该以字符串形式提供 JSON 文件", async () => {
       const handler = staticFileHandler as any;
       const filePath = "/path/to/data.json";
       const contentType = "application/json";
@@ -543,7 +543,7 @@ describe("StaticFileHandler", () => {
       });
     });
 
-    it("should serve binary file as buffer", async () => {
+    it("应该以 buffer 形式提供二进制文件", async () => {
       const handler = staticFileHandler as any;
       const filePath = "/path/to/image.png";
       const contentType = "image/png";
@@ -562,7 +562,7 @@ describe("StaticFileHandler", () => {
       );
     });
 
-    it("should handle file read errors", async () => {
+    it("应该处理文件读取错误", async () => {
       const handler = staticFileHandler as any;
       const filePath = "/path/to/error.txt";
       const contentType = "text/plain";
@@ -587,7 +587,7 @@ describe("StaticFileHandler", () => {
       staticFileHandler = new StaticFileHandler();
     });
 
-    it("should handle complete static file serving workflow", async () => {
+    it("应该处理完整的静态文件服务工作流程", async () => {
       // Test serving different file types
       const testCases = [
         {
@@ -620,7 +620,7 @@ describe("StaticFileHandler", () => {
       }
     });
 
-    it("should handle SPA routing workflow", async () => {
+    it("应该处理 SPA 路由工作流程", async () => {
       const spaRoutes = [
         "/app/dashboard",
         "/user/profile",
@@ -642,7 +642,7 @@ describe("StaticFileHandler", () => {
       }
     });
 
-    it("should handle error scenarios gracefully", async () => {
+    it("应该优雅地处理错误场景", async () => {
       // Test various error conditions
       const errorCases = [
         {
@@ -674,7 +674,7 @@ describe("StaticFileHandler", () => {
       staticFileHandler = new StaticFileHandler();
     });
 
-    it("should handle empty files", async () => {
+    it("应该处理空文件", async () => {
       mockContext.req.url = "http://localhost:3000/empty.txt";
       mockExistsSync.mockReturnValue(true);
       mockReadFile.mockResolvedValue(Buffer.from(""));
@@ -686,7 +686,7 @@ describe("StaticFileHandler", () => {
       });
     });
 
-    it("should handle files with special characters in names", async () => {
+    it("应该处理文件名中包含特殊字符的文件", async () => {
       const specialFiles = [
         "文件名中文.html",
         "file with spaces.js",
@@ -706,7 +706,7 @@ describe("StaticFileHandler", () => {
       }
     });
 
-    it("should handle very long file paths", async () => {
+    it("应该处理很长的文件路径", async () => {
       const longPath = `/very/long/path/to/file/${"a".repeat(100)}.html`;
       mockContext.req.url = `http://localhost:3000${longPath}`;
       mockExistsSync.mockReturnValue(true);
@@ -721,7 +721,7 @@ describe("StaticFileHandler", () => {
       );
     });
 
-    it("should handle malformed URLs gracefully", async () => {
+    it("应该优雅地处理格式错误的 URL", async () => {
       const malformedUrls = [
         "not-a-url",
         "http://",
@@ -739,7 +739,7 @@ describe("StaticFileHandler", () => {
       }
     });
 
-    it("should handle concurrent requests", async () => {
+    it("应该处理并发请求", async () => {
       const requests = Array.from({ length: 10 }, (_, i) => ({
         url: `http://localhost:3000/file${i}.html`,
         content: `<html>File ${i}</html>`,
@@ -758,7 +758,7 @@ describe("StaticFileHandler", () => {
       expect(mockReadFile).toHaveBeenCalledTimes(10);
     });
 
-    it("should handle different path separators", () => {
+    it("应该处理不同的路径分隔符", () => {
       const handler = staticFileHandler as any;
 
       // Test with different path formats
@@ -768,7 +768,7 @@ describe("StaticFileHandler", () => {
       expect(handler.getContentType("path/to/file.css")).toBe("text/css");
     });
 
-    it("should handle files without extensions", async () => {
+    it("应该处理没有扩展名的文件", async () => {
       mockContext.req.url = "http://localhost:3000/README";
       mockExistsSync.mockReturnValue(true);
       mockReadFile.mockResolvedValue(Buffer.from("README content"));
@@ -784,7 +784,7 @@ describe("StaticFileHandler", () => {
       );
     });
 
-    it("should handle case-insensitive file extensions", () => {
+    it("应该处理不区分大小写的文件扩展名", () => {
       const handler = staticFileHandler as any;
 
       expect(handler.getContentType("FILE.HTML")).toBe("text/html");
@@ -794,7 +794,7 @@ describe("StaticFileHandler", () => {
       expect(handler.getContentType("Style.CSS")).toBe("text/css");
     });
 
-    it("should handle path traversal detection", () => {
+    it("应该处理路径遍历检测", () => {
       // Test the path traversal detection logic directly
       const handler = staticFileHandler as any;
 
