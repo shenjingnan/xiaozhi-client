@@ -2,9 +2,7 @@ import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import WebSocket from "ws";
 import type { Logger } from "./Logger.js";
 import { logger } from "./Logger.js";
-import { sliceEndpoint } from "./utils/mcpServerUtils.js";
-
-export type { Tool };
+import { sliceEndpoint } from "@utils/mcpServerUtils.js";
 
 // MCP 消息接口
 interface MCPMessage {
