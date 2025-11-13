@@ -13,9 +13,17 @@
       "Bash(node:*)",
       "Bash(git --no-pager diff:*)",
       "Bash(pnpm add:*)",
+      "Bash(find:*)",
+      "Bash(pnpm check:all:*)",
+      "Bash(tree:*)",
+      "Bash(xargs sed:*)",
+      "Bash(nr:*)",
+      "Bash(pnpm format:*)",
+      "Bash(pnpm biome check:*)",
+      "Bash(pnpm biome lint:*)",
+      "Bash(pnpm duplicate:check:*)",
       "WebFetch",
-      "WebSearch",
-      "Bash(find:*)"
+      "WebSearch"
     ],
     "deny": ["Bash(git commit:*)", "Bash(git push:*)"],
     "ask": []
