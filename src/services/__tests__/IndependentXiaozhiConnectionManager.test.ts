@@ -1,8 +1,6 @@
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { ProxyMCPServer } from "../../ProxyMCPServer.js";
 import { IndependentXiaozhiConnectionManager } from "../IndependentXiaozhiConnectionManager.js";
-import type { ConnectionStatus } from "../IndependentXiaozhiConnectionManager.js";
 
 // Mock dependencies
 vi.mock("../../Logger.js", () => ({

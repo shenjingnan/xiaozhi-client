@@ -1,13 +1,4 @@
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { WebServer } from "../../WebServer.js";
 
 // Mock MCPServiceManagerSingleton

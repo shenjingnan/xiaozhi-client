@@ -1,5 +1,4 @@
 import { ServiceCommandHandler } from "@cli/commands/ServiceCommandHandler.js";
-import type { ServiceStartOptions } from "@cli/interfaces/Service.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock ServiceManager

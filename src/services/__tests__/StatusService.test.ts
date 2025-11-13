@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ClientInfo, RestartStatus } from "../StatusService.js";
+import type { ClientInfo } from "../StatusService.js";
 import { StatusService } from "../StatusService.js";
 
 // Mock dependencies

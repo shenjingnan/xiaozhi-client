@@ -1,12 +1,4 @@
 #!/usr/bin/env node
-
-/**
- * CustomMCP 工具处理器
- * 负责解析和调用 customMCP 配置中定义的工具
- * 支持多种 handler 类型：proxy、function、http、script、chain
- */
-
-import { createHash } from "node:crypto";
 import { CacheLifecycleManager } from "@managers/CacheLifecycleManager.js";
 import { TaskStateManager } from "@managers/TaskStateManager.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
@@ -23,12 +15,10 @@ import type {
 } from "@root/configManager.js";
 import { configManager } from "@root/configManager.js";
 import type {
-  CacheConfig,
   CacheStatistics,
   EnhancedToolResultCache,
   ExtendedMCPToolsCache,
   TaskStatus,
-  TimeoutConfig,
   ToolCallResponse,
 } from "@root/types/mcp.js";
 import {
@@ -37,11 +27,7 @@ import {
   isCacheExpired,
   shouldCleanupCache,
 } from "@root/types/mcp.js";
-import {
-  TimeoutError,
-  createTimeoutResponse,
-  isTimeoutResponse,
-} from "@root/types/timeout.js";
+import { TimeoutError, createTimeoutResponse } from "@root/types/timeout.js";
 import { getEventBus } from "@services/EventBus.js";
 import { MCPCacheManager } from "@services/MCPCacheManager.js";
 import type { MCPServiceManager } from "@services/MCPServiceManager.js";

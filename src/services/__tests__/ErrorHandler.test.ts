@@ -7,7 +7,6 @@ import {
   categorizeError,
   clearErrorHistory,
   formatUserFriendlyMessage,
-  getAllErrorStatistics,
   getErrorStatistics,
   shouldAlert,
 } from "../ErrorHandler.js";

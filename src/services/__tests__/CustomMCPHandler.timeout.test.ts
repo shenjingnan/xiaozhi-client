@@ -10,7 +10,6 @@ import {
   isTimeoutResponse,
 } from "@root/types/timeout.js";
 import { CustomMCPHandler } from "@services/CustomMCPHandler.js";
-import { MCPCacheManager } from "@services/MCPCacheManager.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomMCPTool } from "../../configManager.js";
 

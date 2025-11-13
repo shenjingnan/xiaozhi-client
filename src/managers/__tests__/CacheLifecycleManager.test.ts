@@ -1,5 +1,4 @@
 import type {
-  CacheStatistics,
   EnhancedToolResultCache,
   ExtendedMCPToolsCache,
   TaskStatus,

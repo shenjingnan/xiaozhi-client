@@ -1,4 +1,3 @@
-import chalk from "chalk";
 import ora from "ora";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { configManager } from "./configManager";
