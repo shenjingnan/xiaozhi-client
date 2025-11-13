@@ -4,8 +4,8 @@
 
 import { createHash } from "node:crypto";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { ToolCallResult } from "../services/CustomMCPHandler.js";
-import type { MCPToolsCache } from "../services/MCPCacheManager.js";
+import type { ToolCallResult } from "@services/CustomMCPHandler.js";
+import type { MCPToolsCache } from "@services/MCPCacheManager.js";
 import type { TimeoutResponse } from "./timeout.js";
 
 /**

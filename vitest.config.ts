@@ -63,6 +63,7 @@ export default defineConfig({
       "@cli/interfaces": resolve(__dirname, "src/cli/interfaces"),
       "@handlers": resolve(__dirname, "src/handlers"),
       "@services": resolve(__dirname, "src/services"),
+      "@errors": resolve(__dirname, "src/errors"),
       "@utils": resolve(__dirname, "src/utils"),
       "@core": resolve(__dirname, "src/core"),
       "@transports": resolve(__dirname, "src/transports"),

@@ -21,12 +21,12 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import { useConfig } from "@/stores/config";
 import type { MCPServerConfig } from "@/types/index";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Textarea } from "@ui/textarea";
 import { SettingsIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
-import { Textarea } from "./ui/textarea";
 
 const formSchema = z.object({
   config: z.string().min(2, {

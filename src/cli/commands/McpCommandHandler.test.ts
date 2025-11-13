@@ -52,7 +52,7 @@ const mockParseJsonArgs = vi.fn();
 const mockCallTool = vi.fn();
 const mockFormatOutput = vi.fn();
 
-vi.mock("../../services/ToolCallService.js", () => ({
+vi.mock("@services/ToolCallService.js", () => ({
   ToolCallService: vi.fn().mockImplementation(() => ({
     parseJsonArgs: mockParseJsonArgs,
     callTool: mockCallTool,

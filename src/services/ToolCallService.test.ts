@@ -13,7 +13,7 @@ const mockGetServiceStatus = vi
   .fn()
   .mockReturnValue({ running: false, pid: null });
 
-vi.mock("../cli/services/ProcessManager.js", () => ({
+vi.mock("@cli/services/ProcessManager.js", () => ({
   ProcessManagerImpl: vi.fn().mockImplementation(() => ({
     getServiceStatus: mockGetServiceStatus,
   })),

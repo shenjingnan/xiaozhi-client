@@ -13,7 +13,7 @@ import type {
   MCPServerConfig,
   MCPServerListResponse,
   MCPServerStatus,
-} from "@/types/index";
+} from "@/types";
 
 /**
  * CustomMCPTool 接口定义

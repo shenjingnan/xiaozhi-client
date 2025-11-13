@@ -60,7 +60,7 @@ vi.mock("node:child_process", () => ({
   }),
 }));
 
-vi.mock("../../services/MCPServer.js", () => ({
+vi.mock("@services/MCPServer.js", () => ({
   MCPServer: vi.fn().mockImplementation(() => mockMCPServerInstance),
 }));
 

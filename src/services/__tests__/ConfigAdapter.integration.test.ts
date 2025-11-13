@@ -3,12 +3,12 @@
  * 验证两个组件的协同工作和类型推断一致性
  */
 
-import { describe, expect, it } from "vitest";
 import {
   convertLegacyConfigBatch,
   convertLegacyToNew,
   getConfigTypeDescription,
-} from "../../adapters/ConfigAdapter.js";
+} from "@adapters/ConfigAdapter.js";
+import { describe, expect, it } from "vitest";
 import type {
   LocalMCPServerConfig,
   MCPServerConfig,

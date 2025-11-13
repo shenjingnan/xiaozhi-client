@@ -4,20 +4,20 @@
  * 实现一次性缓存机制和自动清理策略
  */
 
-import type { Logger } from "../Logger.js";
 import type {
   CacheStateTransition,
   CacheStatistics,
   EnhancedToolResultCache,
   ExtendedMCPToolsCache,
   TaskStatus,
-} from "../types/mcp.js";
+} from "@root/types/mcp.js";
 import {
   DEFAULT_CONFIG,
   generateCacheKey,
   isCacheExpired,
   shouldCleanupCache,
-} from "../types/mcp.js";
+} from "@root/types/mcp.js";
+import type { Logger } from "../Logger.js";
 
 /**
  * 缓存生命周期管理器

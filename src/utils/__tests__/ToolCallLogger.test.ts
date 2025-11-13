@@ -4,10 +4,9 @@
 
 import { existsSync } from "node:fs";
 import * as fs from "node:fs/promises";
-import * as os from "node:os";
 import * as path from "node:path";
+import { PathUtils } from "@cli/utils/PathUtils.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { PathUtils } from "../../cli/utils/PathUtils.js";
 import type { ToolCallLogConfig } from "../ToolCallLogger.js";
 import { ToolCallLogger } from "../ToolCallLogger.js";
 

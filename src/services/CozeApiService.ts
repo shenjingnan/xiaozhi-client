@@ -3,7 +3,6 @@
  * 负责与扣子 API 的交互，包括工作空间和工作流的获取
  */
 
-import { logger } from "../Logger";
 import type {
   CacheItem,
   CozeApiError,
@@ -12,7 +11,8 @@ import type {
   CozeWorkflowsResponse,
   CozeWorkspace,
   CozeWorkspacesResponse,
-} from "../types/coze";
+} from "@root/types/coze";
+import { logger } from "../Logger";
 
 /**
  * 缓存管理类

@@ -3,6 +3,8 @@
  * 测试 customMCP 工具调用的完整集成场景
  */
 
+import type { MCPServiceManager } from "@services/MCPServiceManager.js";
+import { MCPServiceManagerSingleton } from "@services/MCPServiceManagerSingleton.js";
 import {
   afterAll,
   afterEach,
@@ -14,8 +16,6 @@ import {
   vi,
 } from "vitest";
 import { configManager } from "../configManager.js";
-import type { MCPServiceManager } from "../services/MCPServiceManager.js";
-import { MCPServiceManagerSingleton } from "../services/MCPServiceManagerSingleton.js";
 import { ToolApiHandler } from "./ToolApiHandler.js";
 
 // Mock dependencies

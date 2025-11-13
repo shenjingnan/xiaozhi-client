@@ -7,10 +7,10 @@ import {
 } from "@/components/ui/tooltip";
 import type { VersionInfo } from "@/services/api";
 import { apiClient } from "@/services/api";
+import { Button } from "@ui/button";
 import { CopyIcon, InfoIcon, RocketIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { VersionUpgradeDialog } from "./VersionUpgradeDialog";
-import { Button } from "./ui/button";
 
 interface VersionDisplayProps {
   className?: string;

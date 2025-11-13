@@ -3,6 +3,9 @@
  * 对比 customMCP 工具调用与标准 MCP 工具调用的性能
  */
 
+import { ToolApiHandler } from "@handlers/ToolApiHandler.js";
+import type { MCPServiceManager } from "@services/MCPServiceManager.js";
+import { MCPServiceManagerSingleton } from "@services/MCPServiceManagerSingleton.js";
 import {
   afterEach,
   beforeAll,
@@ -13,9 +16,6 @@ import {
   vi,
 } from "vitest";
 import { configManager } from "../configManager.js";
-import { ToolApiHandler } from "../handlers/ToolApiHandler.js";
-import type { MCPServiceManager } from "../services/MCPServiceManager.js";
-import { MCPServiceManagerSingleton } from "../services/MCPServiceManagerSingleton.js";
 
 // Mock dependencies
 vi.mock("../Logger.js", () => ({

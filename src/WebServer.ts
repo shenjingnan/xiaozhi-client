@@ -17,9 +17,9 @@ import {
   VersionApiHandler,
 } from "@handlers/index.js";
 import { serve } from "@hono/node-server";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
-import type { Tool } from "@root/ProxyMCPServer.js";
 import { ProxyMCPServer } from "@root/ProxyMCPServer.js";
 import { configManager } from "@root/configManager.js";
 import type { MCPServerConfig } from "@root/configManager.js";

@@ -19,6 +19,7 @@
       "@cli/interfaces/*": ["src/cli/interfaces/*"],
       "@handlers/*": ["src/handlers/*"],
       "@services/*": ["src/services/*"],
+      "@errors/*": ["src/errors/*"],
       "@utils/*": ["src/utils/*"],
       "@core/*": ["src/core/*"],
       "@transports/*": ["src/transports/*"],

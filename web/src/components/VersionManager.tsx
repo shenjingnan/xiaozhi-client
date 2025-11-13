@@ -9,6 +9,15 @@
  */
 
 import { apiClient } from "@services/api";
+import { Badge } from "@ui/badge";
+import { Button } from "@ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@ui/card";
 import {
   AlertCircle,
   Calendar,
@@ -21,15 +30,6 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { InstallLogDialog } from "./InstallLogDialog";
 import { VersionDisplay } from "./VersionDisplay";
-import { Badge } from "./ui/badge";
-import { Button } from "./ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "./ui/card";
 
 interface VersionInfo {
   name: string;

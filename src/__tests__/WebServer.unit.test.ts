@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock CLI to prevent process.exit
-vi.mock("../cli.js", () => ({}));
+vi.mock("@cli.js", () => ({}));
 
 // Mock all dependencies
 vi.mock("../configManager.js", () => ({
@@ -27,7 +27,7 @@ vi.mock("../ProxyMCPServer.js", () => ({
   })),
 }));
 
-vi.mock("../services/MCPServiceManagerSingleton.js", () => ({
+vi.mock("@services/MCPServiceManagerSingleton.js", () => ({
   MCPServiceManagerSingleton: {
     getInstance: vi.fn().mockResolvedValue({
       startAllServices: vi.fn().mockResolvedValue(undefined),
@@ -37,12 +37,12 @@ vi.mock("../services/MCPServiceManagerSingleton.js", () => ({
   },
 }));
 
-import { ProxyMCPServer } from "../ProxyMCPServer.js";
 // Import the mocked modules for use in tests
-import { MCPServiceManagerSingleton } from "../services/MCPServiceManagerSingleton.js";
-import { XiaozhiConnectionManagerSingleton } from "../services/XiaozhiConnectionManagerSingleton.js";
+import { MCPServiceManagerSingleton } from "@services/MCPServiceManagerSingleton.js";
+import { XiaozhiConnectionManagerSingleton } from "@services/XiaozhiConnectionManagerSingleton.js";
+import { ProxyMCPServer } from "../ProxyMCPServer.js";
 
-vi.mock("../services/XiaozhiConnectionManagerSingleton.js", () => ({
+vi.mock("@services/XiaozhiConnectionManagerSingleton.js", () => ({
   XiaozhiConnectionManagerSingleton: {
     getInstance: vi.fn().mockResolvedValue({
       initialize: vi.fn().mockResolvedValue(undefined),
@@ -124,7 +124,7 @@ describe("WebServer Unit Tests", () => {
     it("should handle multi-endpoint configuration", async () => {
       // Mock 成功的连接管理器
       const { XiaozhiConnectionManagerSingleton } = await import(
-        "../services/XiaozhiConnectionManagerSingleton.js"
+        "@services/XiaozhiConnectionManagerSingleton.js"
       );
       const mockManager = {
         // 基本属性

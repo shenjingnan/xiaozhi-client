@@ -11,7 +11,7 @@ const mockServiceManager = {
   attach: vi.fn(),
 };
 
-vi.mock("../services/ServiceManager.js", () => ({
+vi.mock("@services/ServiceManager.js", () => ({
   ServiceManager: vi.fn().mockImplementation(() => mockServiceManager),
 }));
 
@@ -24,7 +24,7 @@ const mockProcessManager = {
   stopService: vi.fn(),
 };
 
-vi.mock("../services/ProcessManager.js", () => ({
+vi.mock("@services/ProcessManager.js", () => ({
   ProcessManager: vi.fn().mockImplementation(() => mockProcessManager),
 }));
 
@@ -33,7 +33,7 @@ const mockDaemonManager = {
   attachToLogs: vi.fn(),
 };
 
-vi.mock("../services/DaemonManager.js", () => ({
+vi.mock("@services/DaemonManager.js", () => ({
   DaemonManager: vi.fn().mockImplementation(() => mockDaemonManager),
 }));
 
@@ -42,7 +42,7 @@ const mockErrorHandler = {
   handle: vi.fn(),
 };
 
-vi.mock("../utils/ErrorHandler.js", () => ({
+vi.mock("@utils/ErrorHandler.js", () => ({
   ErrorHandler: mockErrorHandler,
 }));
 

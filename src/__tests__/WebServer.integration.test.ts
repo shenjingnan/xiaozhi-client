@@ -1,3 +1,4 @@
+import { XiaozhiConnectionManagerSingleton } from "@services/XiaozhiConnectionManagerSingleton.js";
 import {
   afterAll,
   afterEach,
@@ -9,10 +10,9 @@ import {
   vi,
 } from "vitest";
 import { configManager } from "../configManager.js";
-import { XiaozhiConnectionManagerSingleton } from "../services/XiaozhiConnectionManagerSingleton.js";
 
 // Mock CLI to prevent process.exit
-vi.mock("../cli.js", () => ({}));
+vi.mock("@cli.js", () => ({}));
 
 // 动态导入 WebServer 以避免 CLI 模块的副作用
 let WebServer: any;
@@ -43,7 +43,7 @@ vi.mock("../ProxyMCPServer.js", () => ({
   })),
 }));
 
-vi.mock("../services/MCPServiceManagerSingleton.js", () => ({
+vi.mock("@services/MCPServiceManagerSingleton.js", () => ({
   MCPServiceManagerSingleton: {
     getInstance: vi.fn().mockResolvedValue({
       startAllServices: vi.fn().mockResolvedValue(undefined),
@@ -54,7 +54,7 @@ vi.mock("../services/MCPServiceManagerSingleton.js", () => ({
   },
 }));
 
-vi.mock("../services/XiaozhiConnectionManagerSingleton.js", () => ({
+vi.mock("@services/XiaozhiConnectionManagerSingleton.js", () => ({
   XiaozhiConnectionManagerSingleton: {
     getInstance: vi.fn().mockResolvedValue({
       initialize: vi.fn().mockResolvedValue(undefined),
@@ -192,7 +192,7 @@ describe("WebServer 集成测试", () => {
 
       // 为空端点配置特定的Mock行为
       const { XiaozhiConnectionManagerSingleton } = await import(
-        "../services/XiaozhiConnectionManagerSingleton.js"
+        "@services/XiaozhiConnectionManagerSingleton.js"
       );
       vi.mocked(
         XiaozhiConnectionManagerSingleton.getInstance
@@ -241,7 +241,7 @@ describe("WebServer 集成测试", () => {
 
       // 为这个测试设置特定的 mock 行为，模拟只有一个有效连接
       const { XiaozhiConnectionManagerSingleton } = await import(
-        "../services/XiaozhiConnectionManagerSingleton.js"
+        "@services/XiaozhiConnectionManagerSingleton.js"
       );
       vi.mocked(
         XiaozhiConnectionManagerSingleton.getInstance
@@ -367,7 +367,7 @@ describe("WebServer 集成测试", () => {
 
       // 为无连接场景配置特定的Mock行为
       const { XiaozhiConnectionManagerSingleton } = await import(
-        "../services/XiaozhiConnectionManagerSingleton.js"
+        "@services/XiaozhiConnectionManagerSingleton.js"
       );
       vi.mocked(
         XiaozhiConnectionManagerSingleton.getInstance
@@ -443,7 +443,7 @@ describe("WebServer 集成测试", () => {
     it("应该能够处理服务管理器初始化错误", async () => {
       // Mock 服务管理器错误
       const { MCPServiceManagerSingleton } = await import(
-        "../services/MCPServiceManagerSingleton.js"
+        "@services/MCPServiceManagerSingleton.js"
       );
       vi.mocked(MCPServiceManagerSingleton.getInstance).mockRejectedValue(
         new Error("Service manager error")

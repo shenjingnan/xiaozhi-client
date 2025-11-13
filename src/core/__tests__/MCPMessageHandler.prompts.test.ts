@@ -2,8 +2,8 @@
  * MCPMessageHandler prompts/list 功能测试
  */
 
+import type { MCPServiceManager } from "@services/MCPServiceManager.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { MCPServiceManager } from "../../services/MCPServiceManager.js";
 import { MCPMessageHandler } from "../MCPMessageHandler.js";
 
 // Mock MCPServiceManager

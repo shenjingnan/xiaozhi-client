@@ -1,6 +1,6 @@
+import type { StatusService } from "@services/StatusService.js";
 import type { Context } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { StatusService } from "../../services/StatusService.js";
 import { ServiceApiHandler } from "../ServiceApiHandler.js";
 
 // Mock dependencies
@@ -19,11 +19,11 @@ vi.mock("node:child_process", () => ({
   spawn: vi.fn(),
 }));
 
-vi.mock("../../cli/Container.js", () => ({
+vi.mock("@cli/Container.js", () => ({
   createContainer: vi.fn(),
 }));
 
-vi.mock("../../services/EventBus.js", () => ({
+vi.mock("@services/EventBus.js", () => ({
   getEventBus: vi.fn().mockReturnValue({
     emitEvent: vi.fn(),
   }),
@@ -75,14 +75,14 @@ describe("ServiceApiHandler", () => {
     mockCreateContainer = vi.fn().mockResolvedValue({
       get: vi.fn().mockReturnValue(mockServiceManager),
     });
-    const { createContainer } = await import("../../cli/Container.js");
+    const { createContainer } = await import("@cli/Container.js");
     vi.mocked(createContainer).mockImplementation(mockCreateContainer);
 
     // Mock EventBus
     mockEventBus = {
       emitEvent: vi.fn(),
     };
-    const { getEventBus } = await import("../../services/EventBus.js");
+    const { getEventBus } = await import("@services/EventBus.js");
     vi.mocked(getEventBus).mockReturnValue(mockEventBus);
 
     handler = new ServiceApiHandler(mockStatusService);

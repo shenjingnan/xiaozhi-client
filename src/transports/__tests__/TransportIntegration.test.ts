@@ -3,10 +3,10 @@
  * 专注于核心功能验证，避免复杂的 mock 和超时问题
  */
 
+import { MCPMessageHandler } from "@core/MCPMessageHandler.js";
+import { MCPServiceManager } from "@services/MCPServiceManager.js";
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { MCPMessageHandler } from "../../core/MCPMessageHandler.js";
-import { MCPServiceManager } from "../../services/MCPServiceManager.js";
 import { HTTPAdapter } from "../HTTPAdapter.js";
 import { ConnectionState, TransportAdapter } from "../TransportAdapter.js";
 

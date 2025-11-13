@@ -3,9 +3,9 @@
  * 阶段四：WebSocket 集成和性能测试
  */
 
+import { MCPMessageHandler } from "@core/MCPMessageHandler.js";
+import { MCPServiceManager } from "@services/MCPServiceManager.js";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { MCPMessageHandler } from "../../core/MCPMessageHandler.js";
-import { MCPServiceManager } from "../../services/MCPServiceManager.js";
 import { ConnectionState } from "../TransportAdapter.js";
 import type { WebSocketConfig } from "../WebSocketAdapter.js";
 import { WebSocketAdapter, WebSocketState } from "../WebSocketAdapter.js";

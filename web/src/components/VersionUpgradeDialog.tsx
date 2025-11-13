@@ -25,11 +25,11 @@ import {
 } from "@/components/ui/select";
 import { useNPMInstall } from "@/hooks/useNPMInstall";
 import { apiClient } from "@/services/api";
+import { Alert, AlertDescription, AlertTitle } from "@ui/alert";
 import { DownloadIcon, ShieldAlertIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import semver from "semver";
 import { InstallLogDialog } from "./InstallLogDialog";
-import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 
 interface VersionUpgradeDialogProps {
   children?: React.ReactNode;

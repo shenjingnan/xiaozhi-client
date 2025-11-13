@@ -44,7 +44,7 @@ vi.mock("./Logger", () => {
 });
 
 // Mock EventBus 服务
-vi.mock("./services/EventBus", () => {
+vi.mock("@services/EventBus", () => {
   const mockEventBus = {
     onEvent: vi.fn(),
     emit: vi.fn(),
@@ -71,13 +71,13 @@ const mockConfigServiceInstance = {
   updateMcpEndpoint: vi.fn().mockResolvedValue(undefined),
 };
 
-vi.mock("./services/ConfigService", () => {
+vi.mock("@services/ConfigService", () => {
   return {
     ConfigService: vi.fn(() => mockConfigServiceInstance),
   };
 });
 
-vi.mock("./services/StatusService", () => {
+vi.mock("@services/StatusService", () => {
   const mockStatusService = {
     getStatus: vi.fn(() => ({
       client: {
@@ -99,7 +99,7 @@ vi.mock("./services/StatusService", () => {
   };
 });
 
-vi.mock("./services/NotificationService", () => {
+vi.mock("@services/NotificationService", () => {
   const mockNotificationService = {
     registerClient: vi.fn(),
     unregisterClient: vi.fn(),
@@ -249,7 +249,7 @@ vi.mock("./handlers/ServiceApiHandler", () => {
     ServiceApiHandler: vi.fn(() => mockServiceApiHandler),
   };
 });
-vi.mock("./cli/Container", () => ({
+vi.mock("@cli/Container", () => ({
   createContainer: vi.fn(() => ({
     get: vi.fn((serviceName) => {
       if (serviceName === "serviceManager") {
@@ -309,7 +309,7 @@ vi.mock("./handlers/HeartbeatHandler", () => {
 });
 
 // Mock MCP 相关服务
-vi.mock("./services/MCPServiceManagerSingleton", () => ({
+vi.mock("@services/MCPServiceManagerSingleton", () => ({
   MCPServiceManagerSingleton: {
     getInstance: vi.fn().mockResolvedValue({
       addServiceConfig: vi.fn(),
@@ -319,7 +319,7 @@ vi.mock("./services/MCPServiceManagerSingleton", () => ({
   },
 }));
 
-vi.mock("./services/XiaozhiConnectionManagerSingleton", () => ({
+vi.mock("@services/XiaozhiConnectionManagerSingleton", () => ({
   XiaozhiConnectionManagerSingleton: {
     getInstance: vi.fn().mockResolvedValue({
       setServiceManager: vi.fn(),
@@ -794,7 +794,7 @@ describe("WebServer", () => {
     let mockSpawn: any;
 
     beforeEach(async () => {
-      const { createContainer } = await import("./cli/Container");
+      const { createContainer } = await import("@cli/Container");
       const { spawn } = await import("node:child_process");
       const mockContainer = vi.mocked(createContainer);
       mockServiceManager = {
@@ -979,7 +979,7 @@ describe("WebServer", () => {
       webServer = new WebServer(currentPort);
 
       // 验证事件总线被正确获取
-      const { getEventBus } = await import("./services/EventBus");
+      const { getEventBus } = await import("@services/EventBus");
       expect(getEventBus).toHaveBeenCalled();
     });
   });
@@ -1279,7 +1279,7 @@ describe("WebServer", () => {
 
     it("应该处理 MCP 服务管理器初始化失败", async () => {
       const { MCPServiceManagerSingleton } = await import(
-        "./services/MCPServiceManagerSingleton"
+        "@services/MCPServiceManagerSingleton"
       );
       vi.mocked(MCPServiceManagerSingleton.getInstance).mockRejectedValue(
         new Error("MCP Service Manager initialization failed")
@@ -1293,7 +1293,7 @@ describe("WebServer", () => {
 
     it("应该处理小智连接管理器初始化失败", async () => {
       const { XiaozhiConnectionManagerSingleton } = await import(
-        "./services/XiaozhiConnectionManagerSingleton"
+        "@services/XiaozhiConnectionManagerSingleton"
       );
       vi.mocked(
         XiaozhiConnectionManagerSingleton.getInstance
@@ -1804,7 +1804,7 @@ describe("WebServer", () => {
       webServer = new WebServer(currentPort);
 
       // 验证事件总线 onEvent 方法被调用
-      const { getEventBus } = await import("./services/EventBus.js");
+      const { getEventBus } = await import("@services/EventBus.js");
       const mockEventBus = getEventBus();
       expect(mockEventBus.onEvent).toHaveBeenCalledWith(
         "endpoint:status:changed",
@@ -1817,7 +1817,7 @@ describe("WebServer", () => {
       await webServer.start();
 
       // 获取事件总线并触发事件
-      const { getEventBus } = await import("./services/EventBus.js");
+      const { getEventBus } = await import("@services/EventBus.js");
       const mockEventBus = getEventBus() as any;
 
       // 模拟事件回调 - 使用 vi.mocked 来访问 mock 属性
@@ -1830,7 +1830,7 @@ describe("WebServer", () => {
       if (eventCallback) {
         // 获取通知服务实例
         const { NotificationService } = await import(
-          "./services/NotificationService.js"
+          "@services/NotificationService.js"
         );
         const mockNotificationService = vi.mocked(NotificationService);
         const mockInstance = mockNotificationService.mock.results[0]?.value;

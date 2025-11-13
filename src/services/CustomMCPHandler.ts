@@ -22,9 +22,6 @@ import type {
   ScriptHandlerConfig,
 } from "@root/configManager.js";
 import { configManager } from "@root/configManager.js";
-import { getEventBus } from "@services/EventBus.js";
-import { MCPCacheManager } from "@services/MCPCacheManager.js";
-import type { MCPServiceManager } from "@services/MCPServiceManager.js";
 import type {
   CacheConfig,
   CacheStatistics,
@@ -33,18 +30,21 @@ import type {
   TaskStatus,
   TimeoutConfig,
   ToolCallResponse,
-} from "../types/mcp.js";
+} from "@root/types/mcp.js";
 import {
   DEFAULT_CONFIG,
   generateCacheKey,
   isCacheExpired,
   shouldCleanupCache,
-} from "../types/mcp.js";
+} from "@root/types/mcp.js";
 import {
   TimeoutError,
   createTimeoutResponse,
   isTimeoutResponse,
-} from "../types/timeout.js";
+} from "@root/types/timeout.js";
+import { getEventBus } from "@services/EventBus.js";
+import { MCPCacheManager } from "@services/MCPCacheManager.js";
+import type { MCPServiceManager } from "@services/MCPServiceManager.js";
 
 // 工具调用结果接口（与 MCPServiceManager 保持一致）
 export interface ToolCallResult {

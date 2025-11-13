@@ -5,7 +5,11 @@ import { defineConfig } from "tsup";
 /**
  * 递归复制目录 - 跨平台实现
  */
-function copyDirectory(src: string, dest: string, excludePatterns: string[] = []): void {
+function copyDirectory(
+  src: string,
+  dest: string,
+  excludePatterns: string[] = []
+): void {
   // 创建目标目录
   if (!existsSync(dest)) {
     mkdirSync(dest, { recursive: true });
@@ -32,11 +36,7 @@ function copyDirectory(src: string, dest: string, excludePatterns: string[] = []
 }
 
 export default defineConfig({
-  entry: [
-    "src/cli.ts",
-    "src/mcpServerProxy.ts",
-    "src/WebServerStandalone.ts",
-  ],
+  entry: ["src/cli.ts", "src/mcpServerProxy.ts", "src/WebServerStandalone.ts"],
   format: ["esm"],
   target: "node18",
   outDir: "dist",
@@ -48,17 +48,6 @@ export default defineConfig({
   bundle: true,
   keepNames: true,
   platform: "node",
-  alias: {
-    "@handlers": "./src/handlers",
-    "@services": "./src/services",
-    "@utils": "./src/utils",
-    "@core": "./src/core",
-    "@transports": "./src/transports",
-    "@adapters": "./src/adapters",
-    "@managers": "./src/managers",
-    "@types": "./src/types",
-    "@root": "./src"
-  },
   outExtension() {
     return {
       js: ".js",

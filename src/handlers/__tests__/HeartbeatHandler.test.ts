@@ -13,7 +13,7 @@ vi.mock("../../Logger.js", () => ({
   },
 }));
 
-vi.mock("../../services/ConfigService.js", () => ({
+vi.mock("@services/ConfigService.js", () => ({
   ConfigService: vi.fn().mockImplementation(() => ({
     getConfig: vi.fn(),
   })),
@@ -73,7 +73,7 @@ describe("HeartbeatHandler", () => {
     mockConfigService = {
       getConfig: vi.fn(),
     };
-    const { ConfigService } = await import("../../services/ConfigService.js");
+    const { ConfigService } = await import("@services/ConfigService.js");
     vi.mocked(ConfigService).mockImplementation(() => mockConfigService);
 
     // Mock StatusService

@@ -1,12 +1,12 @@
+import { NPMManager } from "@services/NPMManager.js";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { logger } from "../../Logger.js";
-import { NPMManager } from "../../services/NPMManager.js";
 import { UpdateApiHandler } from "../UpdateApiHandler.js";
 
 // Mock dependencies
-vi.mock("../../services/NPMManager.js");
+vi.mock("@services/NPMManager.js");
 vi.mock("../../Logger.js");
-vi.mock("../../services/EventBus.js");
+vi.mock("@services/EventBus.js");
 
 describe("UpdateApiHandler", () => {
   let updateApiHandler: UpdateApiHandler;
@@ -32,7 +32,7 @@ describe("UpdateApiHandler", () => {
       emitEvent: vi.fn(),
       onEvent: vi.fn(),
     };
-    const { getEventBus } = await import("../../services/EventBus.js");
+    const { getEventBus } = await import("@services/EventBus.js");
     vi.mocked(getEventBus).mockReturnValue(mockEventBus);
 
     // Setup mock NPMManager

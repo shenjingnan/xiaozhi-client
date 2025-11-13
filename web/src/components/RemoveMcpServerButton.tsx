@@ -1,8 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { mcpServerApi } from "@/services/api";
-import { TrashIcon } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,7 +10,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "./ui/alert-dialog";
+} from "@ui/alert-dialog";
+import { TrashIcon } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export function RemoveMcpServerButton({
   mcpServerName,

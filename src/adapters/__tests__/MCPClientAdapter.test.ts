@@ -4,13 +4,13 @@
  */
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type { MCPServiceConfig } from "@services/MCPService.js";
+import { MCPService, MCPTransportType } from "@services/MCPService.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { MCPServiceConfig } from "../../services/MCPService.js";
-import { MCPService, MCPTransportType } from "../../services/MCPService.js";
 import { MCPClientAdapter } from "../MCPClientAdapter.js";
 
 // Mock MCPService
-vi.mock("../../services/MCPService.js", async (importOriginal) => {
+vi.mock("@services/MCPService.js", async (importOriginal) => {
   const actual = (await importOriginal()) as any;
   return {
     ...actual,
