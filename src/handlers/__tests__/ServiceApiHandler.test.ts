@@ -19,7 +19,7 @@ vi.mock("node:child_process", () => ({
   spawn: vi.fn(),
 }));
 
-vi.mock("../../cli/Container.js", () => ({
+vi.mock("@cli/Container.js", () => ({
   createContainer: vi.fn(),
 }));
 
@@ -75,7 +75,7 @@ describe("ServiceApiHandler", () => {
     mockCreateContainer = vi.fn().mockResolvedValue({
       get: vi.fn().mockReturnValue(mockServiceManager),
     });
-    const { createContainer } = await import("../../cli/Container.js");
+    const { createContainer } = await import("@cli/Container.js");
     vi.mocked(createContainer).mockImplementation(mockCreateContainer);
 
     // Mock EventBus

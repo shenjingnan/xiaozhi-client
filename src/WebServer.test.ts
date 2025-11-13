@@ -249,7 +249,7 @@ vi.mock("./handlers/ServiceApiHandler", () => {
     ServiceApiHandler: vi.fn(() => mockServiceApiHandler),
   };
 });
-vi.mock("./cli/Container", () => ({
+vi.mock("@cli/Container", () => ({
   createContainer: vi.fn(() => ({
     get: vi.fn((serviceName) => {
       if (serviceName === "serviceManager") {
@@ -794,7 +794,7 @@ describe("WebServer", () => {
     let mockSpawn: any;
 
     beforeEach(async () => {
-      const { createContainer } = await import("./cli/Container");
+      const { createContainer } = await import("@cli/Container");
       const { spawn } = await import("node:child_process");
       const mockContainer = vi.mocked(createContainer);
       mockServiceManager = {

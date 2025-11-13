@@ -10,6 +10,7 @@
     "ignore": [
       "node_modules/**",
       "dist/**",
+      "web/**",
       "*.cjs",
       "*.d.ts",
       "pnpm-lock.yaml",

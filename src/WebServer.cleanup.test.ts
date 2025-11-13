@@ -91,7 +91,7 @@ vi.mock("./services/NotificationService", () => {
 });
 
 // Mock CLI
-vi.mock("./cli", () => ({
+vi.mock("@cli", () => ({
   getServiceStatus: vi.fn(),
 }));
 

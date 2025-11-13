@@ -3,6 +3,7 @@
  * 专门测试修复后的命令行参数处理逻辑
  */
 
+import { createContainer } from "@cli/Container.js";
 import {
   afterAll,
   afterEach,
@@ -13,7 +14,6 @@ import {
   it,
   vi,
 } from "vitest";
-import { createContainer } from "./cli/Container.js";
 
 // 模拟 CLI 核心函数
 /**

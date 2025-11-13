@@ -4,10 +4,10 @@
  * 小智客户端 CLI 入口文件（重构版）
  */
 
+import { createContainer } from "@cli/Container.js";
+import { CommandRegistry } from "@cli/commands/index.js";
 import chalk from "chalk";
 import { Command } from "commander";
-import { createContainer } from "./cli/Container.js";
-import { CommandRegistry } from "./cli/commands/index.js";
 
 const program = new Command();
 
