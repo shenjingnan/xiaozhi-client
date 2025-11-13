@@ -11,9 +11,7 @@ import type {
   CustomMCPConfig,
   CustomMCPTool,
   MCPServerConfig,
-  MCPServerToolsConfig,
   MCPToolConfig,
-  WebUIConfig,
 } from "./configManager";
 import { ConfigManager } from "./configManager";
 

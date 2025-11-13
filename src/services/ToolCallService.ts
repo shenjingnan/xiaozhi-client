@@ -7,7 +7,6 @@ import { ProcessManagerImpl } from "@cli/services/ProcessManager.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import { configManager } from "@root/configManager.js";
-import chalk from "chalk";
 
 // 工具调用结果接口
 export interface ToolCallResult {

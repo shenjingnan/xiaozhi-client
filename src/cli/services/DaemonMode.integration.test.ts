@@ -1,5 +1,4 @@
 import type { ServiceStartOptions } from "@cli/interfaces/Service.js";
-import { ProcessManagerImpl } from "@cli/services/ProcessManager.js";
 import { ServiceManagerImpl } from "@cli/services/ServiceManager.js";
 import { PathUtils } from "@cli/utils/PathUtils.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

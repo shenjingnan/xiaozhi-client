@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import type { IndependentXiaozhiConnectionManager } from "../IndependentXiaozhiConnectionManager.js";
 import { XiaozhiConnectionManagerSingleton } from "../XiaozhiConnectionManagerSingleton.js";
 
 describe("XiaozhiConnectionManagerSingleton", () => {

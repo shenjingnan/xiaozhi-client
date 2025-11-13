@@ -1,5 +1,4 @@
 import type { StatusService } from "@services/StatusService.js";
-import type { Context } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ServiceApiHandler } from "../ServiceApiHandler.js";
 

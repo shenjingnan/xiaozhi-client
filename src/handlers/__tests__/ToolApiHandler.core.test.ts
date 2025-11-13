@@ -5,7 +5,6 @@
 
 import type { CozeWorkflow } from "@root/types/coze.js";
 import { ToolType } from "@root/types/toolApi.js";
-import { MCPServiceManagerSingleton } from "@services/MCPServiceManagerSingleton.js";
 import type { Context } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { configManager } from "../../configManager.js";

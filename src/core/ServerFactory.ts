@@ -17,7 +17,6 @@ import type { HTTPConfig } from "@transports/HTTPAdapter.js";
 import { HTTPAdapter } from "@transports/HTTPAdapter.js";
 import type { StdioConfig } from "@transports/StdioAdapter.js";
 import { StdioAdapter } from "@transports/StdioAdapter.js";
-import { TransportAdapter } from "@transports/TransportAdapter.js";
 import type { WebSocketConfig } from "@transports/WebSocketAdapter.js";
 import { WebSocketAdapter } from "@transports/WebSocketAdapter.js";
 

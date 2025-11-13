@@ -1,10 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppConfig } from "../../configManager.js";
 import { NotificationService } from "../NotificationService.js";
-import type {
-  NotificationMessage,
-  WebSocketClient,
-} from "../NotificationService.js";
+import type { WebSocketClient } from "../NotificationService.js";
 import type { ClientInfo } from "../StatusService.js";
 
 // Mock dependencies

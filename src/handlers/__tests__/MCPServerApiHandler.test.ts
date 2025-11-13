@@ -1,6 +1,5 @@
 import { MCPErrorCode } from "@errors/MCPErrors.js";
 import type { EventBus } from "@services/EventBus.js";
-import { getEventBus } from "@services/EventBus.js";
 import type { MCPServiceManager } from "@services/MCPServiceManager.js";
 import type { Context } from "hono";
 import { beforeEach, describe, expect, it, vi } from "vitest";

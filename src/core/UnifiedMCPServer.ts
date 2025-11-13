@@ -16,7 +16,6 @@ import { logger } from "@root/Logger.js";
 import { MCPServiceManager } from "@services/MCPServiceManager.js";
 import type { TransportAdapter } from "@transports/TransportAdapter.js";
 import { ConnectionState } from "@transports/TransportAdapter.js";
-import type { MCPMessage, MCPResponse } from "@transports/TransportAdapter.js";
 
 /**
  * 工具信息接口

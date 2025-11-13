@@ -6,7 +6,7 @@
 import { MCPMessageHandler } from "@core/MCPMessageHandler.js";
 import { MCPServiceManager } from "@services/MCPServiceManager.js";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import WebSocket, { WebSocketServer } from "ws";
+import { WebSocketServer } from "ws";
 import type { WebSocketConfig } from "../WebSocketAdapter.js";
 import { WebSocketAdapter } from "../WebSocketAdapter.js";
 

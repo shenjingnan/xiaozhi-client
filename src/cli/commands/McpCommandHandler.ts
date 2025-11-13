@@ -7,7 +7,6 @@ import { BaseCommandHandler } from "@cli/interfaces/Command.js";
 import type { IDIContainer } from "@cli/interfaces/Config.js";
 import { ToolCallService } from "@services/ToolCallService.js";
 import chalk from "chalk";
-import ora from "ora";
 
 /**
  * MCP管理命令处理器

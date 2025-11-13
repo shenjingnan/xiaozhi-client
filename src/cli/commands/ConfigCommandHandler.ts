@@ -3,7 +3,7 @@
  */
 
 import path from "node:path";
-import type { CommandOption, SubCommand } from "@cli/interfaces/Command.js";
+import type { SubCommand } from "@cli/interfaces/Command.js";
 import { BaseCommandHandler } from "@cli/interfaces/Command.js";
 import type { IDIContainer } from "@cli/interfaces/Config.js";
 import chalk from "chalk";

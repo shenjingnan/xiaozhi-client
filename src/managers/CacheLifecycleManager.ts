@@ -13,7 +13,6 @@ import type {
 } from "@root/types/mcp.js";
 import {
   DEFAULT_CONFIG,
-  generateCacheKey,
   isCacheExpired,
   shouldCleanupCache,
 } from "@root/types/mcp.js";
