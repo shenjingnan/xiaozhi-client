@@ -387,7 +387,7 @@ describe("StaticFileHandler", () => {
         expect.stringContaining("小智配置管理")
       );
       expect(mockContext.html).toHaveBeenCalledWith(
-        expect.stringContaining("cd web && pnpm install && pnpm build")
+        expect.stringContaining("cd apps/frontend && pnpm install && pnpm build")
       );
     });
 

@@ -32,17 +32,29 @@ export class StaticFileHandler {
       // 无论是全局安装还是直接执行，实际运行的都是 dist/cli.js 或 dist/handlers/StaticFileHandler.js
       // 因此静态文件应该位于相对于 dist 目录的 ../web/dist 路径
       const possibleWebPaths = [
-        // 主要路径：从 dist 目录向上查找 web/dist
+        // 新的主要路径：从 dist 目录向上查找 apps/frontend/dist
+        // 对于 dist/handlers/StaticFileHandler.js -> ../../apps/frontend/dist
+        // 对于 dist/cli.js -> ../apps/frontend/dist
+        join(__dirname, "..", "..", "apps", "frontend", "dist"),
+        join(__dirname, "..", "apps", "frontend", "dist"),
+
+        // 备用路径：查找未构建的 apps/frontend 目录（开发模式）
+        join(__dirname, "..", "..", "apps", "frontend"),
+        join(__dirname, "..", "apps", "frontend"),
+
+        // 兼容路径：保持对旧 web 目录的支持（向后兼容）
         // 对于 dist/handlers/StaticFileHandler.js -> ../../web/dist
         // 对于 dist/cli.js -> ../web/dist
         join(__dirname, "..", "..", "web", "dist"),
         join(__dirname, "..", "web", "dist"),
 
-        // 备用路径：查找未构建的 web 目录（开发模式）
+        // 备用兼容路径：查找未构建的 web 目录（开发模式）
         join(__dirname, "..", "..", "web"),
         join(__dirname, "..", "web"),
 
         // 兜底路径：从源码目录查找（开发模式下的源码执行）
+        join(__dirname, "..", "..", "..", "apps", "frontend", "dist"),
+        join(__dirname, "..", "..", "..", "apps", "frontend"),
         join(__dirname, "..", "..", "..", "web", "dist"),
         join(__dirname, "..", "..", "..", "web"),
       ];
@@ -237,6 +249,8 @@ export class StaticFileHandler {
         <div class="info">
           <p><strong>解决方案：</strong></p>
           <p>请先构建前端项目：</p>
+          <pre>cd apps/frontend && pnpm install && pnpm build</pre>
+          <p><em>如果上面的路径不存在，可以尝试旧路径：</em></p>
           <pre>cd web && pnpm install && pnpm build</pre>
           <p>然后重新启动服务器。</p>
         </div>
