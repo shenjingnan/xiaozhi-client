@@ -2,16 +2,16 @@
  * 服务管理服务
  */
 
-import { ConfigError, ServiceError } from "@cli/errors/index.js";
+import { ConfigError, ServiceError } from "../errors/index.js";
 import type {
   ServiceManager as IServiceManager,
   ProcessManager,
   ServiceStartOptions,
   ServiceStatus,
-} from "@cli/interfaces/Service.js";
-import { PathUtils } from "@cli/utils/PathUtils.js";
-import { PlatformUtils } from "@cli/utils/PlatformUtils.js";
-import { Validation } from "@cli/utils/Validation.js";
+} from "../interfaces/Service.js";
+import { PathUtils } from "../utils";
+import { PlatformUtils } from "../utils";
+import { Validation } from "../utils";
 
 /**
  * 服务管理器实现

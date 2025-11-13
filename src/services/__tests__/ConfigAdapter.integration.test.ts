@@ -14,7 +14,7 @@ import type {
   MCPServerConfig,
   SSEMCPServerConfig,
   StreamableHTTPMCPServerConfig,
-} from "../../configManager.js";
+} from "../../configManager";
 import { MCPService, MCPTransportType } from "../MCPService.js";
 
 describe("ConfigAdapter 和 MCPService 集成测试", () => {

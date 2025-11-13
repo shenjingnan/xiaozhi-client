@@ -5,7 +5,7 @@
 
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { MCPServer } from "../../services/MCPServer.js";
+import { MCPServer } from "../../services";
 import {
   ServerMode,
   createHTTPServer,

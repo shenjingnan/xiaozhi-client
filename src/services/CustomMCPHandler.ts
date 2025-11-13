@@ -10,8 +10,8 @@ import { createHash } from "node:crypto";
 import { CacheLifecycleManager } from "@managers/CacheLifecycleManager.js";
 import { TaskStateManager } from "@managers/TaskStateManager.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
+import type { Logger } from "@root/Logger";
+import { logger } from "@root/Logger";
 import type {
   ChainHandlerConfig,
   CustomMCPTool,
@@ -20,11 +20,8 @@ import type {
   MCPHandlerConfig,
   ProxyHandlerConfig,
   ScriptHandlerConfig,
-} from "@root/configManager.js";
-import { configManager } from "@root/configManager.js";
-import { getEventBus } from "@services/EventBus.js";
-import { MCPCacheManager } from "@services/MCPCacheManager.js";
-import type { MCPServiceManager } from "@services/MCPServiceManager.js";
+} from "@root/configManager";
+import { configManager } from "@root/configManager";
 import type {
   CacheConfig,
   CacheStatistics,
@@ -33,18 +30,21 @@ import type {
   TaskStatus,
   TimeoutConfig,
   ToolCallResponse,
-} from "../types/mcp.js";
+} from "../types";
 import {
   DEFAULT_CONFIG,
   generateCacheKey,
   isCacheExpired,
   shouldCleanupCache,
-} from "../types/mcp.js";
+} from "../types";
 import {
   TimeoutError,
   createTimeoutResponse,
   isTimeoutResponse,
-} from "../types/timeout.js";
+} from "../types";
+import { getEventBus } from "./index";
+import { MCPCacheManager } from "./index";
+import type { MCPServiceManager } from "./index";
 
 // 工具调用结果接口（与 MCPServiceManager 保持一致）
 export interface ToolCallResult {

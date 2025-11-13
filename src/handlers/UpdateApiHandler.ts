@@ -1,8 +1,8 @@
-import { logger } from "@root/Logger.js";
-import { getEventBus } from "@services/EventBus.js";
-import { NPMManager } from "@services/NPMManager.js";
+import { logger } from "@root/Logger";
 import type { Context } from "hono";
 import { z } from "zod";
+import { getEventBus } from "../services";
+import { NPMManager } from "../services";
 
 // 版本号请求格式验证
 const UpdateRequestSchema = z.object({

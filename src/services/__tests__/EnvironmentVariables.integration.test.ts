@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from "vitest";
 import { convertLegacyToNew } from "../../adapters/ConfigAdapter.js";
-import type { LocalMCPServerConfig } from "../../configManager.js";
+import type { LocalMCPServerConfig } from "../../configManager";
 import { MCPTransportType } from "../MCPService.js";
 
 describe("环境变量传递集成测试", () => {

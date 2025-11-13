@@ -4,11 +4,11 @@
  */
 
 import { PAGINATION_CONSTANTS } from "@cli/Constants.js";
-import { logger } from "@root/Logger.js";
-import type { ToolCallQuery } from "@services/ToolCallLogService.js";
-import { ToolCallLogService } from "@services/ToolCallLogService.js";
+import { logger } from "@root/Logger";
 import type { Context } from "hono";
 import { z } from "zod";
+import type { ToolCallQuery } from "../services";
+import { ToolCallLogService } from "../services";
 
 /**
  * 统一响应接口

@@ -4,15 +4,15 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { CustomMCPTool } from "../../configManager.js";
-import { CustomMCPHandler } from "../../services/CustomMCPHandler.js";
-import { MCPCacheManager } from "../../services/MCPCacheManager.js";
+import type { CustomMCPTool } from "../../configManager";
+import { CustomMCPHandler } from "../../services";
+import { MCPCacheManager } from "../../services";
 import {
   TimeoutError,
   createTimeoutResponse,
   isTimeoutError,
   isTimeoutResponse,
-} from "../../types/timeout.js";
+} from "../../types";
 
 // Mock Logger
 const mockLogger = {

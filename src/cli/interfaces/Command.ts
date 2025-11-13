@@ -2,8 +2,8 @@
  * 命令接口定义
  */
 
-import type { IDIContainer } from "@cli/interfaces/Config.js";
 import type { Command } from "commander";
+import type { IDIContainer } from "../interfaces/Config.js";
 
 /**
  * 命令处理器接口

@@ -7,7 +7,7 @@ import type {
   ProcessManager,
   ServiceStartOptions,
 } from "@cli/interfaces/Service.js";
-import { ServiceManagerImpl } from "@cli/services/ServiceManager.js";
+import { ServiceManagerImpl } from "@cli/services";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock 依赖

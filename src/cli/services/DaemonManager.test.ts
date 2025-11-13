@@ -4,8 +4,8 @@
 
 import { ServiceError } from "@cli/errors/index.js";
 import type { ProcessManager } from "@cli/interfaces/Service.js";
-import type { DaemonOptions } from "@cli/services/DaemonManager.js";
-import { DaemonManagerImpl } from "@cli/services/DaemonManager.js";
+import type { DaemonOptions } from "@cli/services";
+import { DaemonManagerImpl } from "@cli/services";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock 依赖

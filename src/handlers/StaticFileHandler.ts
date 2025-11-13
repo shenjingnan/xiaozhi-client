@@ -2,8 +2,8 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
+import type { Logger } from "@root/Logger";
+import { logger } from "@root/Logger";
 import type { Context } from "hono";
 
 /**

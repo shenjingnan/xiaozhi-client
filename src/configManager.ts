@@ -6,7 +6,7 @@ import dayjs from "dayjs";
 import JSON5 from "json5";
 import * as json5Writer from "json5-writer";
 import { logger } from "./Logger";
-import { getEventBus } from "./services/EventBus.js";
+import { getEventBus } from "./services";
 import { validateMcpServerConfig } from "./utils/mcpServerUtils";
 
 // 在 ESM 中，需要从 import.meta.url 获取当前文件目录

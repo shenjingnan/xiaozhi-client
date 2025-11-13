@@ -13,9 +13,9 @@ import {
   it,
   vi,
 } from "vitest";
-import { configManager } from "../configManager.js";
-import type { MCPServiceManager } from "../services/MCPServiceManager.js";
-import { MCPServiceManagerSingleton } from "../services/MCPServiceManagerSingleton.js";
+import { configManager } from "../configManager";
+import type { MCPServiceManager } from "../services";
+import { MCPServiceManagerSingleton } from "../services";
 import { ToolApiHandler } from "./ToolApiHandler.js";
 
 // Mock dependencies

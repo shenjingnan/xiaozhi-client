@@ -5,8 +5,8 @@
 import type {
   CommandHandler,
   ICommandHandlerFactory,
-} from "@cli/interfaces/Command.js";
-import type { IDIContainer } from "@cli/interfaces/Config.js";
+} from "../interfaces/Command.js";
+import type { IDIContainer } from "../interfaces/Config.js";
 
 /**
  * 命令处理器工厂实现

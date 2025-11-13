@@ -1,8 +1,8 @@
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Logger } from "../../Logger.js";
-import type { ConfigManager } from "../../configManager.js";
-import type { CustomMCPTool, MCPToolConfig } from "../../configManager.js";
+import type { Logger } from "../../Logger";
+import type { ConfigManager } from "../../configManager";
+import type { CustomMCPTool, MCPToolConfig } from "../../configManager";
 import { ToolSyncManager } from "../ToolSyncManager.js";
 
 // Mock ConfigManager

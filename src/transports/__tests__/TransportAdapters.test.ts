@@ -5,9 +5,9 @@
 
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { configManager } from "../../configManager.js";
+import { configManager } from "../../configManager";
 import { MCPMessageHandler } from "../../core/MCPMessageHandler.js";
-import { MCPServiceManager } from "../../services/MCPServiceManager.js";
+import { MCPServiceManager } from "../../services";
 import { HTTPAdapter } from "../HTTPAdapter.js";
 import { StdioAdapter } from "../StdioAdapter.js";
 import { ConnectionState, TransportAdapter } from "../TransportAdapter.js";

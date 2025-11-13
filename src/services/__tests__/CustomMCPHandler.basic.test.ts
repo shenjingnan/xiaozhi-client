@@ -9,9 +9,9 @@ import type {
   FunctionHandlerConfig,
   HttpHandlerConfig,
   ProxyHandlerConfig,
-} from "../../configManager.js";
-import { CustomMCPHandler } from "../../services/CustomMCPHandler.js";
-import { MCPCacheManager } from "../../services/MCPCacheManager.js";
+} from "../../configManager";
+import { CustomMCPHandler } from "../../services";
+import { MCPCacheManager } from "../../services";
 
 // Mock Logger
 const mockLogger = {

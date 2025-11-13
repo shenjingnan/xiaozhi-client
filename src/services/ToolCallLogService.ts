@@ -5,11 +5,11 @@
 
 import * as fs from "node:fs";
 import { PAGINATION_CONSTANTS } from "@cli/Constants.js";
-import { PathUtils } from "@cli/utils/PathUtils.js";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
-import type { ToolCallRecord } from "@utils/ToolCallLogger.js";
-import { ToolCallLogger } from "@utils/ToolCallLogger.js";
+import { PathUtils } from "@cli/utils";
+import type { Logger } from "@root/Logger";
+import { logger } from "@root/Logger";
+import type { ToolCallRecord } from "../utils/ToolCallLogger";
+import { ToolCallLogger } from "../utils/ToolCallLogger";
 
 // 查询参数接口
 export interface ToolCallQuery {

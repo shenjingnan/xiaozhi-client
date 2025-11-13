@@ -6,7 +6,7 @@
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { MCPMessageHandler } from "../../core/MCPMessageHandler.js";
-import { MCPServiceManager } from "../../services/MCPServiceManager.js";
+import { MCPServiceManager } from "../../services";
 import { HTTPAdapter } from "../HTTPAdapter.js";
 import { ConnectionState, TransportAdapter } from "../TransportAdapter.js";
 

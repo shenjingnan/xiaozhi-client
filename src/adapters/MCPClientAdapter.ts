@@ -4,9 +4,9 @@
  */
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { logger as globalLogger } from "@root/Logger.js";
-import type { MCPServiceConfig, ToolCallResult } from "@services/MCPService.js";
-import { MCPService } from "@services/MCPService.js";
+import { logger as globalLogger } from "@root/Logger";
+import type { MCPServiceConfig, ToolCallResult } from "../services";
+import { MCPService } from "../services";
 
 /**
  * MCP 客户端接口

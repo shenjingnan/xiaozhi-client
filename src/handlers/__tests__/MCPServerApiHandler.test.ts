@@ -1,11 +1,11 @@
 import type { Context } from "hono";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ConfigManager } from "../../configManager.js";
-import type { MCPServerConfig } from "../../configManager.js";
+import type { ConfigManager } from "../../configManager";
+import type { MCPServerConfig } from "../../configManager";
 import { MCPErrorCode } from "../../errors/MCPErrors.js";
-import type { EventBus } from "../../services/EventBus.js";
-import { getEventBus } from "../../services/EventBus.js";
-import type { MCPServiceManager } from "../../services/MCPServiceManager.js";
+import type { EventBus } from "../../services";
+import { getEventBus } from "../../services";
+import type { MCPServiceManager } from "../../services";
 import {
   MCPServerApiHandler,
   MCPServerConfigValidator,

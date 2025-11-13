@@ -3,14 +3,14 @@
  */
 
 import { CommandHandlerFactory } from "@cli/commands/CommandHandlerFactory.js";
-import { ErrorHandler } from "@cli/errors/ErrorHandlers.js";
+import type { Command } from "commander";
+import { ErrorHandler } from "../errors/ErrorHandlers.js";
 import type {
   CommandHandler,
   ICommandHandlerFactory,
   ICommandRegistry,
-} from "@cli/interfaces/Command.js";
-import type { IDIContainer } from "@cli/interfaces/Config.js";
-import type { Command } from "commander";
+} from "../interfaces/Command.js";
+import type { IDIContainer } from "../interfaces/Config.js";
 
 /**
  * 命令注册器实现

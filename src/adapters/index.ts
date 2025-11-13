@@ -1,2 +1,2 @@
-export * from "@adapters/ConfigAdapter";
-export * from "@adapters/MCPClientAdapter";
+export * from "./ConfigAdapter.js";
+export * from "./MCPClientAdapter.js";

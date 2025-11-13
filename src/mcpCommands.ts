@@ -1,4 +1,4 @@
-import { configManager } from "@root/configManager.js";
+import { configManager } from "@root/configManager";
 import chalk from "chalk";
 import Table from "cli-table3";
 import ora from "ora";

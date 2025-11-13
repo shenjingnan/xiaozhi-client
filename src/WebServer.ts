@@ -1,5 +1,16 @@
 import { createServer } from "node:http";
 import { convertLegacyToNew } from "@adapters/index.js";
+import { serve } from "@hono/node-server";
+import type { Logger } from "@root/Logger";
+import { logger } from "@root/Logger";
+import type { Tool } from "@root/ProxyMCPServer";
+import { ProxyMCPServer } from "@root/ProxyMCPServer";
+import { configManager } from "@root/configManager";
+import type { MCPServerConfig } from "@root/configManager";
+import type { Context } from "hono";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { WebSocketServer } from "ws";
 import {
   ConfigApiHandler,
   CozeApiHandler,
@@ -15,19 +26,12 @@ import {
   ToolCallLogApiHandler,
   UpdateApiHandler,
   VersionApiHandler,
-} from "@handlers/index.js";
-import { serve } from "@hono/node-server";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
-import type { Tool } from "@root/ProxyMCPServer.js";
-import { ProxyMCPServer } from "@root/ProxyMCPServer.js";
-import { configManager } from "@root/configManager.js";
-import type { MCPServerConfig } from "@root/configManager.js";
+} from "./handlers";
 import type {
   EventBus,
   IndependentXiaozhiConnectionManager,
   MCPServiceManager,
-} from "@services/index.js";
+} from "./services";
 import {
   ConfigService,
   MCPServiceManagerSingleton,
@@ -36,11 +40,7 @@ import {
   XiaozhiConnectionManagerSingleton,
   destroyEventBus,
   getEventBus,
-} from "@services/index.js";
-import type { Context } from "hono";
-import { Hono } from "hono";
-import { cors } from "hono/cors";
-import { WebSocketServer } from "ws";
+} from "./services";
 
 // 统一错误响应格式
 interface ApiErrorResponse {

@@ -4,11 +4,11 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { FileError, ValidationError } from "@cli/errors/index.js";
-import type { TemplateManager as ITemplateManager } from "@cli/interfaces/Service.js";
-import { FileUtils } from "@cli/utils/FileUtils.js";
-import { PathUtils } from "@cli/utils/PathUtils.js";
-import { Validation } from "@cli/utils/Validation.js";
+import { FileError, ValidationError } from "../errors/index.js";
+import type { TemplateManager as ITemplateManager } from "../interfaces/Service.js";
+import { FileUtils } from "../utils";
+import { PathUtils } from "../utils";
+import { Validation } from "../utils";
 
 /**
  * 模板信息接口

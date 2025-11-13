@@ -1,16 +1,16 @@
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
-import type { ConfigManager } from "@root/configManager.js";
-import type { MCPServerConfig } from "@root/configManager.js";
+import type { Logger } from "@root/Logger";
+import { logger } from "@root/Logger";
+import type { ConfigManager } from "@root/configManager";
+import type { MCPServerConfig } from "@root/configManager";
 import {
   ErrorCategory,
   MCPError,
   MCPErrorCode,
 } from "@root/errors/MCPErrors.js";
-import { getEventBus } from "@services/EventBus.js";
-import type { MCPServiceManager } from "@services/MCPServiceManager.js";
 import type { Context } from "hono";
+import { getEventBus } from "../services";
+import type { MCPServiceManager } from "../services";
 
 /**
  * MCP 服务添加请求接口（单服务格式）

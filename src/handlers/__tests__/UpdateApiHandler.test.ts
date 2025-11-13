@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { logger } from "../../Logger.js";
-import { NPMManager } from "../../services/NPMManager.js";
+import { logger } from "../../Logger";
+import { NPMManager } from "../../services";
 import { UpdateApiHandler } from "../UpdateApiHandler.js";
 
 // Mock dependencies

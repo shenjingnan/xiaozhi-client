@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import type { Context } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ConnectionStatus } from "../../services/IndependentXiaozhiConnectionManager.js";
+import type { ConnectionStatus } from "../../services";
 import { MCPEndpointApiHandler } from "../MCPEndpointApiHandler.js";
 
 // Mock dependencies

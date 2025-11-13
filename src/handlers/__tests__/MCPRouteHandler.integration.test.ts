@@ -8,7 +8,7 @@ import {
   it,
   vi,
 } from "vitest";
-import { WebServer } from "../../WebServer.js";
+import { WebServer } from "../../WebServer";
 
 // Mock MCPServiceManagerSingleton
 vi.mock("../../services/MCPServiceManagerSingleton.js", () => ({

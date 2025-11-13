@@ -12,7 +12,7 @@
 import type { MCPMessageHandler } from "@core/MCPMessageHandler.js";
 import type { UnifiedServerConfig } from "@core/UnifiedMCPServer.js";
 import { UnifiedMCPServer } from "@core/UnifiedMCPServer.js";
-import { logger } from "@root/Logger.js";
+import { logger } from "@root/Logger";
 import type { HTTPConfig } from "@transports/HTTPAdapter.js";
 import { HTTPAdapter } from "@transports/HTTPAdapter.js";
 import type { StdioConfig } from "@transports/StdioAdapter.js";

@@ -2,7 +2,7 @@ import { realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { PathUtils } from "@cli/utils/PathUtils.js";
+import { PathUtils } from "@cli/utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies

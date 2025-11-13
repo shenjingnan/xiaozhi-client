@@ -6,14 +6,14 @@
  */
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
+import type { Logger } from "@root/Logger";
+import { logger } from "@root/Logger";
 import type {
   ConfigManager,
   CustomMCPTool,
   MCPToolConfig,
-} from "@root/configManager.js";
-import { getEventBus } from "@services/EventBus.js";
+} from "@root/configManager";
+import { getEventBus } from "./index";
 
 /**
  * 工具同步管理器

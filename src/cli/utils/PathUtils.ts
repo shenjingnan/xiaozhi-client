@@ -10,8 +10,8 @@ import {
   CONFIG_CONSTANTS,
   PATH_CONSTANTS,
   SERVICE_CONSTANTS,
-} from "@cli/Constants.js";
-import { FileUtils } from "@cli/utils/FileUtils.js";
+} from "../Constants.js";
+import { FileUtils } from "../utils";
 
 /**
  * 路径工具类

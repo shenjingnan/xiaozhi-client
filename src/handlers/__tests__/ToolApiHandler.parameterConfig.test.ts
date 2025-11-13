@@ -5,11 +5,8 @@
 
 import type { Context } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { configManager } from "../../configManager.js";
-import type {
-  CozeWorkflow,
-  WorkflowParameterConfig,
-} from "../../types/coze.js";
+import { configManager } from "../../configManager";
+import type { CozeWorkflow, WorkflowParameterConfig } from "../../types";
 import { ToolApiHandler } from "../ToolApiHandler.js";
 
 // Mock configManager

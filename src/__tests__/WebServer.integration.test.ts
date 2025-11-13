@@ -8,8 +8,8 @@ import {
   it,
   vi,
 } from "vitest";
-import { configManager } from "../configManager.js";
-import { XiaozhiConnectionManagerSingleton } from "../services/XiaozhiConnectionManagerSingleton.js";
+import { configManager } from "../configManager";
+import { XiaozhiConnectionManagerSingleton } from "../services";
 
 // Mock CLI to prevent process.exit
 vi.mock("../cli.js", () => ({}));

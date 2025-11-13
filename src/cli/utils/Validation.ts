@@ -3,7 +3,7 @@
  */
 
 import type { ConfigFormat } from "@cli/Types.js";
-import { ValidationError } from "@cli/errors/index.js";
+import { ValidationError } from "../errors/index.js";
 
 /**
  * 验证工具类

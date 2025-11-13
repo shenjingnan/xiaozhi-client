@@ -37,10 +37,10 @@ vi.mock("../services/MCPServiceManagerSingleton.js", () => ({
   },
 }));
 
-import { ProxyMCPServer } from "../ProxyMCPServer.js";
+import { ProxyMCPServer } from "../ProxyMCPServer";
 // Import the mocked modules for use in tests
-import { MCPServiceManagerSingleton } from "../services/MCPServiceManagerSingleton.js";
-import { XiaozhiConnectionManagerSingleton } from "../services/XiaozhiConnectionManagerSingleton.js";
+import { MCPServiceManagerSingleton } from "../services";
+import { XiaozhiConnectionManagerSingleton } from "../services";
 
 vi.mock("../services/XiaozhiConnectionManagerSingleton.js", () => ({
   XiaozhiConnectionManagerSingleton: {

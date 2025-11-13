@@ -2,7 +2,7 @@ import { existsSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Logger } from "../../Logger.js";
+import { Logger } from "../../Logger";
 import { ConfigWatcherClass } from "../ConfigWatcher.js";
 import {
   ErrorCategory,

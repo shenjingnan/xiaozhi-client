@@ -3,8 +3,8 @@
  */
 
 import { FileError, ValidationError } from "@cli/errors/index.js";
-import type { TemplateCreateOptions } from "@cli/services/TemplateManager.js";
-import { TemplateManagerImpl } from "@cli/services/TemplateManager.js";
+import type { TemplateCreateOptions } from "@cli/services";
+import { TemplateManagerImpl } from "@cli/services";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock 依赖

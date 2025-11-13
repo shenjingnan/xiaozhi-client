@@ -3,14 +3,11 @@
  * 处理通过 HTTP API 调用 MCP 工具的请求
  */
 
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
-import { configManager } from "@root/configManager.js";
-import type { CustomMCPTool, ProxyHandlerConfig } from "@root/configManager.js";
-import type {
-  CozeWorkflow,
-  WorkflowParameterConfig,
-} from "@root/types/coze.js";
+import type { Logger } from "@root/Logger";
+import { logger } from "@root/Logger";
+import { configManager } from "@root/configManager";
+import type { CustomMCPTool, ProxyHandlerConfig } from "@root/configManager";
+import type { CozeWorkflow, WorkflowParameterConfig } from "@root/types";
 import type {
   AddCustomToolRequest,
   AddToolResponse,
@@ -18,11 +15,11 @@ import type {
   MCPToolData,
 } from "@root/types/toolApi.js";
 import { ToolType } from "@root/types/toolApi.js";
-import { MCPCacheManager } from "@services/MCPCacheManager.js";
-import { MCPServiceManagerSingleton } from "@services/MCPServiceManagerSingleton.js";
 import Ajv from "ajv";
 import dayjs from "dayjs";
 import type { Context } from "hono";
+import { MCPCacheManager } from "../services";
+import { MCPServiceManagerSingleton } from "../services";
 
 /**
  * 工具调用请求接口

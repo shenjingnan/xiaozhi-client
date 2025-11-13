@@ -6,8 +6,8 @@
 import { logger } from "@root/Logger";
 import { configManager } from "@root/configManager";
 import type { CozeWorkflowsParams } from "@root/types/coze";
-import { CozeApiService } from "@services/CozeApiService";
 import type { Context } from "hono";
+import { CozeApiService } from "../services/CozeApiService";
 
 /**
  * 统一的 API 响应格式

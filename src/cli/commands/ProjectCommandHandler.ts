@@ -3,11 +3,11 @@
  */
 
 import path from "node:path";
-import type { CommandOption } from "@cli/interfaces/Command.js";
-import { BaseCommandHandler } from "@cli/interfaces/Command.js";
-import type { IDIContainer } from "@cli/interfaces/Config.js";
 import chalk from "chalk";
 import ora from "ora";
+import type { CommandOption } from "../interfaces/Command.js";
+import { BaseCommandHandler } from "../interfaces/Command.js";
+import type { IDIContainer } from "../interfaces/Config.js";
 
 /**
  * 项目管理命令处理器

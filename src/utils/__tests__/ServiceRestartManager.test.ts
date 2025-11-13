@@ -6,7 +6,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getEventBus } from "../../services/EventBus.js";
+import { getEventBus } from "../../services";
 import {
   RestartStrategy,
   ServiceHealthStatus,

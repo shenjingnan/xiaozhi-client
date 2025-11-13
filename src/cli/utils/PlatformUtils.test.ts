@@ -4,7 +4,7 @@
 
 import { execSync } from "node:child_process";
 import { ProcessError } from "@cli/errors/index.js";
-import { PlatformUtils } from "@cli/utils/PlatformUtils.js";
+import { PlatformUtils } from "@cli/utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock child_process module

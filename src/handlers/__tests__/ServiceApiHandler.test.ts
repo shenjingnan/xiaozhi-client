@@ -1,6 +1,6 @@
 import type { Context } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { StatusService } from "../../services/StatusService.js";
+import type { StatusService } from "../../services";
 import { ServiceApiHandler } from "../ServiceApiHandler.js";
 
 // Mock dependencies

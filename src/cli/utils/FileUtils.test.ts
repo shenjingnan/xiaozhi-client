@@ -5,7 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { FileError } from "@cli/errors/index.js";
-import { FileUtils } from "@cli/utils/FileUtils.js";
+import { FileUtils } from "@cli/utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock fs module

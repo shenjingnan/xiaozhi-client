@@ -1,9 +1,9 @@
 import { exec, spawn } from "node:child_process";
 import { promisify } from "node:util";
-import { logger } from "@root/Logger.js";
-import type { EventBus } from "@services/EventBus.js";
-import { getEventBus } from "@services/EventBus.js";
+import { logger } from "@root/Logger";
 import semver from "semver";
+import type { EventBus } from "./index";
+import { getEventBus } from "./index";
 
 const execAsync = promisify(exec);
 

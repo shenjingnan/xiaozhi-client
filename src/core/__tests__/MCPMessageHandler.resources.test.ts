@@ -3,7 +3,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { MCPServiceManager } from "../../services/MCPServiceManager.js";
+import type { MCPServiceManager } from "../../services";
 import { MCPMessageHandler } from "../MCPMessageHandler.js";
 
 // Mock MCPServiceManager

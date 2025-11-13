@@ -1,8 +1,8 @@
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
-import type { AppConfig } from "@root/configManager.js";
-import { ConfigService } from "@services/ConfigService.js";
+import type { Logger } from "@root/Logger";
+import { logger } from "@root/Logger";
+import type { AppConfig } from "@root/configManager";
 import type { Context } from "hono";
+import { ConfigService } from "../services";
 
 /**
  * 统一响应格式接口

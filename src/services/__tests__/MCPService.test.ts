@@ -1,7 +1,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Logger } from "../../Logger.js";
+import { Logger } from "../../Logger";
 import type { MCPServiceConfig, ReconnectOptions } from "../MCPService.js";
 import {
   ConnectionState,

@@ -3,7 +3,7 @@
  */
 
 import { ValidationError } from "@cli/errors/index.js";
-import { Validation } from "@cli/utils/Validation.js";
+import { Validation } from "@cli/utils";
 import { describe, expect, it } from "vitest";
 
 describe("Validation", () => {

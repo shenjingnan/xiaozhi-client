@@ -1,8 +1,8 @@
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
-import type { MCPService } from "@services/MCPService.js";
-import type { MCPServiceManager } from "@services/MCPServiceManager.js";
-import { PerformanceMonitor } from "@services/PerformanceMonitor.js";
+import type { Logger } from "@root/Logger";
+import { logger } from "@root/Logger";
+import type { MCPService } from "./index";
+import type { MCPServiceManager } from "./index";
+import { PerformanceMonitor } from "./index";
 
 /**
  * 健康状态接口

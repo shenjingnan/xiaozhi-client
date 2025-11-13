@@ -3,9 +3,9 @@
  */
 
 import { execSync } from "node:child_process";
-import { TIMEOUT_CONSTANTS } from "@cli/Constants.js";
 import type { Platform } from "@cli/Types.js";
-import { ProcessError } from "@cli/errors/index.js";
+import { TIMEOUT_CONSTANTS } from "../Constants.js";
+import { ProcessError } from "../errors/index.js";
 
 /**
  * 平台工具类

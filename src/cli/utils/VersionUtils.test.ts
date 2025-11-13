@@ -6,8 +6,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { FileError } from "@cli/errors/index.js";
-import type { VersionInfo } from "@cli/utils/VersionUtils.js";
-import { VersionUtils } from "@cli/utils/VersionUtils.js";
+import type { VersionInfo } from "@cli/utils";
+import { VersionUtils } from "@cli/utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock fileURLToPath

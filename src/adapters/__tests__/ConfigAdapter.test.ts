@@ -10,8 +10,8 @@ import type {
   MCPServerConfig,
   SSEMCPServerConfig,
   StreamableHTTPMCPServerConfig,
-} from "../../configManager.js";
-import { MCPTransportType } from "../../services/MCPService.js";
+} from "../../configManager";
+import { MCPTransportType } from "../../services";
 import {
   ConfigValidationError,
   convertLegacyConfigBatch,

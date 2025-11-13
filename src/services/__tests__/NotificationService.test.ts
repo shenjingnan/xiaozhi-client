@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { AppConfig } from "../../configManager.js";
+import type { AppConfig } from "../../configManager";
 import { NotificationService } from "../NotificationService.js";
 import type {
   NotificationMessage,

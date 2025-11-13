@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Logger } from "../../Logger.js";
+import { Logger } from "../../Logger";
 import type { PerformanceMetrics } from "../PerformanceMonitor.js";
 import {
   OperationType,

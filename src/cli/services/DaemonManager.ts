@@ -5,13 +5,13 @@
 import type { ChildProcess } from "node:child_process";
 import { spawn } from "node:child_process";
 import fs from "node:fs";
-import { ProcessError, ServiceError } from "@cli/errors/index.js";
+import { ProcessError, ServiceError } from "../errors/index.js";
 import type {
   DaemonManager as IDaemonManager,
   ProcessManager,
-} from "@cli/interfaces/Service.js";
-import { PathUtils } from "@cli/utils/PathUtils.js";
-import { PlatformUtils } from "@cli/utils/PlatformUtils.js";
+} from "../interfaces/Service.js";
+import { PathUtils } from "../utils";
+import { PlatformUtils } from "../utils";
 
 /**
  * 守护进程选项

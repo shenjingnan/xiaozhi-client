@@ -3,8 +3,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Logger } from "../../Logger.js";
-import type { TaskStatus } from "../../types/mcp.js";
+import type { Logger } from "../../Logger";
+import type { TaskStatus } from "../../types";
 import { TaskStateManager } from "../TaskStateManager.js";
 
 // Mock logger

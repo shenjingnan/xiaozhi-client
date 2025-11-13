@@ -1,10 +1,10 @@
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
-import type { AppConfig } from "@root/configManager.js";
-import { configManager } from "@root/configManager.js";
-import type { EventBus } from "@services/EventBus.js";
-import { getEventBus } from "@services/EventBus.js";
-import type { ClientInfo, RestartStatus } from "@services/StatusService.js";
+import type { Logger } from "@root/Logger";
+import { logger } from "@root/Logger";
+import type { AppConfig } from "@root/configManager";
+import { configManager } from "@root/configManager";
+import type { EventBus } from "./EventBus.js";
+import { getEventBus } from "./index.js";
+import type { ClientInfo, RestartStatus } from "./index.js";
 
 /**
  * WebSocket 客户端接口

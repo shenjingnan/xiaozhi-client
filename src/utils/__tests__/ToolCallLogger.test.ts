@@ -7,9 +7,9 @@ import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { PathUtils } from "../../cli/utils/PathUtils.js";
-import type { ToolCallLogConfig } from "../ToolCallLogger.js";
-import { ToolCallLogger } from "../ToolCallLogger.js";
+import { PathUtils } from "../../cli/utils";
+import type { ToolCallLogConfig } from "../ToolCallLogger";
+import { ToolCallLogger } from "../ToolCallLogger";
 
 // Mock logger
 vi.mock("../../Logger.js", () => ({

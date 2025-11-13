@@ -6,11 +6,11 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { logger } from "../../Logger.js";
-import type { EventBusEvents } from "../../services/EventBus.js";
-import { getEventBus } from "../../services/EventBus.js";
-import { ToolSyncManager } from "../../services/ToolSyncManager.js";
-import { globalServiceRestartManager } from "../../utils/ServiceRestartManager.js";
+import { logger } from "../../Logger";
+import type { EventBusEvents } from "../../services";
+import { getEventBus } from "../../services";
+import { ToolSyncManager } from "../../services";
+import { globalServiceRestartManager } from "../../utils";
 
 // 模拟ConfigManager
 const createMockConfigManager = () => {

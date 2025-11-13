@@ -5,9 +5,9 @@
 
 import type { Context } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { configManager } from "../../configManager.js";
-import { MCPServiceManagerSingleton } from "../../services/MCPServiceManagerSingleton.js";
-import type { CozeWorkflow } from "../../types/coze.js";
+import { configManager } from "../../configManager";
+import { MCPServiceManagerSingleton } from "../../services";
+import type { CozeWorkflow } from "../../types";
 import { ToolType } from "../../types/toolApi.js";
 import { ToolApiHandler } from "../ToolApiHandler.js";
 

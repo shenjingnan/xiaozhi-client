@@ -14,17 +14,17 @@ import {
 } from "node:fs";
 import { dirname, resolve } from "node:path";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
-import type { MCPServiceConfig } from "@services/MCPService.js";
+import type { Logger } from "@root/Logger";
+import { logger } from "@root/Logger";
 import dayjs from "dayjs";
 import type {
   CacheStatistics,
   EnhancedToolResultCache,
   ExtendedMCPToolsCache,
   TaskStatus,
-} from "../types/mcp.js";
-import { generateCacheKey, shouldCleanupCache } from "../types/mcp.js";
+} from "../types";
+import { generateCacheKey, shouldCleanupCache } from "../types";
+import type { MCPServiceConfig } from "./index";
 
 // 缓存条目接口
 export interface MCPToolsCacheEntry {

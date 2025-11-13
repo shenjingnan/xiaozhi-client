@@ -2,10 +2,10 @@
  * UI命令处理器
  */
 
-import { BaseCommandHandler } from "@cli/interfaces/Command.js";
-import type { IDIContainer } from "@cli/interfaces/Config.js";
 import chalk from "chalk";
 import ora from "ora";
+import { BaseCommandHandler } from "../interfaces/Command.js";
+import type { IDIContainer } from "../interfaces/Config.js";
 
 /**
  * UI命令处理器

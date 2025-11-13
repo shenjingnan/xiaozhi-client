@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Logger } from "../../Logger.js";
+import { Logger } from "../../Logger";
 import type { MCPError } from "../ErrorHandler.js";
 import {
   ErrorCategory,

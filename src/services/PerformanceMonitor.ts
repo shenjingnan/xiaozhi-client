@@ -1,5 +1,5 @@
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
+import type { Logger } from "@root/Logger";
+import { logger } from "@root/Logger";
 
 /**
  * 性能指标接口

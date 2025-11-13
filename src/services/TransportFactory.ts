@@ -3,11 +3,11 @@ import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import type { StreamableHTTPClientTransportOptions } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
-import type { MCPServiceConfig } from "@services/MCPService.js";
-import { MCPTransportType } from "@services/MCPService.js";
+import type { Logger } from "@root/Logger";
+import { logger } from "@root/Logger";
 import { EventSource } from "eventsource";
+import type { MCPServiceConfig } from "./index";
+import { MCPTransportType } from "./index";
 
 // 全局 polyfill EventSource（用于 SSE）
 if (typeof global !== "undefined" && !global.EventSource) {

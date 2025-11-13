@@ -12,10 +12,10 @@ import {
   it,
   vi,
 } from "vitest";
-import { configManager } from "../configManager.js";
-import { ToolApiHandler } from "../handlers/ToolApiHandler.js";
-import type { MCPServiceManager } from "../services/MCPServiceManager.js";
-import { MCPServiceManagerSingleton } from "../services/MCPServiceManagerSingleton.js";
+import { configManager } from "../configManager";
+import { ToolApiHandler } from "../handlers";
+import type { MCPServiceManager } from "../services";
+import { MCPServiceManagerSingleton } from "../services";
 
 // Mock dependencies
 vi.mock("../Logger.js", () => ({

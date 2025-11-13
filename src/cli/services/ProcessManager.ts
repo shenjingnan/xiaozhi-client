@@ -3,16 +3,16 @@
  */
 
 import fs from "node:fs";
-import { SERVICE_CONSTANTS } from "@cli/Constants.js";
-import { FileError, ProcessError } from "@cli/errors/index.js";
+import { SERVICE_CONSTANTS } from "../Constants.js";
+import { FileError, ProcessError } from "../errors/index.js";
 import type {
   ProcessManager as IProcessManager,
   ServiceStatus,
-} from "@cli/interfaces/Service.js";
-import { FileUtils } from "@cli/utils/FileUtils.js";
-import { FormatUtils } from "@cli/utils/FormatUtils.js";
-import { PathUtils } from "@cli/utils/PathUtils.js";
-import { PlatformUtils } from "@cli/utils/PlatformUtils.js";
+} from "../interfaces/Service.js";
+import { FileUtils } from "../utils";
+import { FormatUtils } from "../utils";
+import { PathUtils } from "../utils";
+import { PlatformUtils } from "../utils";
 
 /**
  * PID 文件信息接口

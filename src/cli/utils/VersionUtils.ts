@@ -5,7 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { FileError } from "@cli/errors/index.js";
+import { FileError } from "../errors/index.js";
 
 /**
  * 版本信息接口
