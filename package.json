@@ -1,6 +1,6 @@
 {
   "name": "xiaozhi-client",
-  "version": "1.9.1",
+  "version": "1.9.2-beta.0",
   "description": "小智 AI 客户端 命令行工具",
   "repository": {
     "type": "git",
@@ -20,7 +20,7 @@
     "dist",
     "docs",
     "templates",
-    "web/dist",
+    "apps/frontend/dist",
     "README.md",
     "LICENSE"
   ],
@@ -34,7 +34,7 @@
   },
   "scripts": {
     "build": "pnpm run build:web && cross-env NODE_ENV=production tsup",
-    "build:web": "cd web && pnpm install && pnpm run build",
+    "build:web": "cd apps/frontend && pnpm install && pnpm run build",
     "dev": "cross-env NODE_ENV=development tsup --watch",
     "test": "vitest run",
     "test:silent": "vitest run --silent=true",
