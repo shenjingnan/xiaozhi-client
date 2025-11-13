@@ -2,9 +2,9 @@
  * TaskStateManager 单元测试
  */
 
+import type { TaskStatus } from "@root/types/mcp.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Logger } from "../../Logger.js";
-import type { TaskStatus } from "../../types/mcp.js";
 import { TaskStateManager } from "../TaskStateManager.js";
 
 // Mock logger

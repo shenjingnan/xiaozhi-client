@@ -4,12 +4,12 @@
  * 实现任务ID生成、验证和状态管理功能
  */
 
-import type { Logger } from "../Logger.js";
 import type {
   CacheStateTransition,
   TaskInfo,
   TaskStatus,
-} from "../types/mcp.js";
+} from "@root/types/mcp.js";
+import type { Logger } from "../Logger.js";
 
 /**
  * 扩展的缓存状态转换接口，包含任务ID

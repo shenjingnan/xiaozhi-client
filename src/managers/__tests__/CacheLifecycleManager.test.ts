@@ -1,11 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Logger } from "../../Logger.js";
 import type {
   CacheStatistics,
   EnhancedToolResultCache,
   ExtendedMCPToolsCache,
   TaskStatus,
-} from "../../types/mcp.js";
+} from "@root/types/mcp.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Logger } from "../../Logger.js";
 import { CacheLifecycleManager } from "../CacheLifecycleManager.js";
 
 // Mock Logger - 使用 unknown 转换避免类型检查问题

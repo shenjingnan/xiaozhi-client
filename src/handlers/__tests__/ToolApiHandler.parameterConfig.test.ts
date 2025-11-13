@@ -3,13 +3,13 @@
  * 测试第二阶段新增的参数配置功能
  */
 
-import type { Context } from "hono";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { configManager } from "../../configManager.js";
 import type {
   CozeWorkflow,
   WorkflowParameterConfig,
-} from "../../types/coze.js";
+} from "@root/types/coze.js";
+import type { Context } from "hono";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { configManager } from "../../configManager.js";
 import { ToolApiHandler } from "../ToolApiHandler.js";
 
 // Mock configManager
