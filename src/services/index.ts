@@ -46,6 +46,7 @@ export * from "./CozeApiService.js";
 
 // 缓存和日志管理服务
 export { MCPCacheManager } from "./MCPCacheManager.js";
+export type { MCPToolsCache, MCPToolsCacheEntry } from "./MCPCacheManager.js";
 export * from "./ToolCallLogService.js";
 
 // 其他服务模块

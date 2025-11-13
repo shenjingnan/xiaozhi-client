@@ -7,8 +7,8 @@
 
 import { DIContainer } from "@cli/Container.js";
 import { CommandRegistry } from "@cli/commands/index.js";
+import { ErrorHandler } from "@cli/errors/ErrorHandlers.js";
 import { Command } from "commander";
-import { ErrorHandler } from "../errors/ErrorHandlers.js";
 
 const program = new Command();
 

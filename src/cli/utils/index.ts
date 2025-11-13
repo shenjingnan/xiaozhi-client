@@ -8,3 +8,4 @@ export { FormatUtils } from "./FormatUtils.js";
 export { PlatformUtils } from "./PlatformUtils.js";
 export { Validation } from "./Validation.js";
 export { VersionUtils } from "./VersionUtils.js";
+export type { VersionInfo } from "./VersionUtils.js";

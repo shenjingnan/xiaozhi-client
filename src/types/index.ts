@@ -15,6 +15,3 @@ export * from "./timeout.js";
 
 // Tool API types
 export * from "./toolApi.js";
-
-// Type definitions
-export * from "./json5-writer.d.ts";
