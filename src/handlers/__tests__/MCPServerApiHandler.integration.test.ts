@@ -5,16 +5,12 @@
  * 测试MCPServerApiHandler、ToolSyncManager、EventBus等组件的端到端集成
  */
 
-import type { Context } from "hono";
+import { MCPServerApiHandler } from "@handlers/MCPServerApiHandler.js";
+import { MCPErrorCode } from "@root/errors/MCPErrors.js";
+import { getEventBus } from "@services/EventBus.js";
+import { ToolSyncManager } from "@services/ToolSyncManager.js";
+import { globalServiceRestartManager } from "@utils/ServiceRestartManager.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ConfigManager } from "../../configManager.js";
-import { MCPErrorCode } from "../../errors/MCPErrors.js";
-// import { createMCPLogger } from "../../logging/MCPLogger.js";
-import { getEventBus } from "../../services/EventBus.js";
-import { MCPServiceManager } from "../../services/MCPServiceManager.js";
-import { ToolSyncManager } from "../../services/ToolSyncManager.js";
-import { globalServiceRestartManager } from "../../utils/ServiceRestartManager.js";
-import { MCPServerApiHandler } from "../MCPServerApiHandler.js";
 
 // 模拟Context
 interface MockResponse {
