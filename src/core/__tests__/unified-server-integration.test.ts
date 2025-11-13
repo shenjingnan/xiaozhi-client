@@ -10,7 +10,6 @@ import {
   ServerMode,
   createHTTPServer,
   createHybridServer,
-  createServer,
   createWebSocketServer,
   getRecommendedConfig,
   validateConfig,

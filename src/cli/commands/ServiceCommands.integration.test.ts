@@ -42,7 +42,7 @@ const mockErrorHandler = {
   handle: vi.fn(),
 };
 
-vi.mock("../utils/ErrorHandler.js", () => ({
+vi.mock("@utils/ErrorHandler.js", () => ({
   ErrorHandler: mockErrorHandler,
 }));
 

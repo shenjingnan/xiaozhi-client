@@ -5,8 +5,8 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import type { ToolCallRecord } from "@utils/ToolCallLogger.js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { ToolCallRecord } from "../utils/ToolCallLogger.js";
 import { ToolCallLogService } from "./ToolCallLogService.js";
 
 describe("ToolCallLogService", () => {
