@@ -6,7 +6,7 @@
  */
 
 import { MCPServerApiHandler } from "@handlers/MCPServerApiHandler.js";
-import { MCPErrorCode } from "@root/errors/MCPErrors.js";
+import { MCPErrorCode } from "@errors/index.js";
 import { getEventBus } from "@services/EventBus.js";
 import { ToolSyncManager } from "@services/ToolSyncManager.js";
 import { globalServiceRestartManager } from "@utils/ServiceRestartManager.js";
