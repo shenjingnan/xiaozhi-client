@@ -1,5 +1,5 @@
 import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from "fs";
-import { join } from "path";
+import { join, resolve } from "path";
 import { defineConfig } from "tsup";
 
 /**
@@ -42,12 +42,16 @@ export default defineConfig({
   outDir: "dist",
   clean: true,
   sourcemap: true,
-  dts: true,
+  dts: {
+    only: false,
+    resolve: true,
+  },
   minify: process.env.NODE_ENV === "production",
   splitting: false,
   bundle: true,
   keepNames: true,
   platform: "node",
+  tsconfig: resolve(__dirname, "./tsconfig.json"),
   outExtension() {
     return {
       js: ".js",
