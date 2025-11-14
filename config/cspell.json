@@ -1,7 +1,24 @@
 {
   "version": "0.2",
   "language": "en",
+  "globRoot": "../",
   "words": [
+    "Elipssis",
+    "iotop",
+    "mytool",
+    "matplotlib",
+    "fastapi",
+    "uvicorn",
+    "sqlalchemy",
+    "fastapi",
+    "aiofiles",
+    "iostat",
+    "pydantic",
+    "httpx",
+    "infile",
+    "npmjs",
+    "unsubscribers",
+    "addre",
     "1",
     "24",
     "addgroup",
@@ -83,12 +100,15 @@
   ],
   "ignorePaths": [
     "node_modules/**",
+    "**/dist/**",
     "dist/**",
-    "coverage/**",
+    "**/coverage/**",
     ".git/**",
     "*.log",
+    "**/tmp/**",
     "pnpm-lock.yaml",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "config/**"
   ],
   "ignoreWords": [],
   "flagWords": []
