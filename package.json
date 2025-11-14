@@ -47,7 +47,7 @@
     "check": "biome check --config-path=config/biome.json .",
     "check:fix": "biome check --write --unsafe --config-path=config/biome.json .",
     "check:all": "pnpm check && pnpm type:check && pnpm spell:check && pnpm duplicate:check",
-    "spell:check": "cspell --config config/cspell.json \"src/**/*.ts\" \"*.md\" \"*.json\"",
+    "spell:check": "cspell --config config/cspell.json .",
     "duplicate:check": "jscpd src/",
     "docker:update-version": "node scripts/update-dockerfile-version.js",
     "example": "node --loader ts-node/esm",
