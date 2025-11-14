@@ -5,6 +5,7 @@
 ## 开发命令
 
 ### 构建和测试
+
 - `pnpm build` - 构建项目（包括 Web 构建和 TypeScript 编译）
 - `pnpm dev` - 开发模式（带监视功能）
 - `pnpm test` - 运行一次测试
@@ -13,6 +14,7 @@
 - `pnpm test:silent` - 静默运行测试（用于 CI）
 
 ### 代码质量
+
 - `pnpm lint` - 运行 Biome linter 并自动修复
 - `pnpm format` - 使用 Biome 格式化代码
 - `pnpm type:check` - 运行 TypeScript 类型检查
@@ -21,6 +23,7 @@
 - `pnpm check:all` - 运行所有质量检查（lint、typecheck、spellcheck、duplicate check）
 
 ### 其他质量工具
+
 - `pnpm spell:check` - 使用 cspell 检查拼写
 - `pnpm duplicate:check` - 使用 jscpd 检查重复代码
 - `pnpm docs:dev` - 启动文档开发服务器
@@ -32,21 +35,25 @@
 ### 核心组件
 
 1. **CLI 层** (`src/cli/`) - 使用 Commander.js 的命令行界面
+
    - 入口点：`src/cli/index.ts`
    - 依赖注入容器：`src/cli/Container.ts`
    - 命令注册和处理
 
 2. **核心 MCP 层** (`src/core/`) - MCP 协议实现
+
    - `UnifiedMCPServer.ts` - 主要 MCP 服务器实现
    - `ServerFactory.ts` - 用于创建不同服务器类型的工厂
    - `MCPMessageHandler.ts` - 消息处理和路由
 
 3. **传输层** (`src/transports/`) - 通信适配器
+
    - `WebSocketAdapter.ts` - WebSocket 通信
    - `HTTPAdapter.ts` - HTTP 通信
    - `StdioAdapter.ts` - 标准 I/O 通信
 
 4. **服务层** (`src/services/`) - 连接和服务管理
+
    - `IndependentXiaozhiConnectionManager.ts` - 独立多接入点连接管理器
    - `MCPServiceManager.ts` - MCP 服务管理器
    - `XiaozhiConnectionManagerSingleton.ts` - 全局单例管理器
@@ -75,6 +82,7 @@
 ### 配置
 
 主配置文件是 `xiaozhi.config.json`，支持：
+
 - `mcpEndpoint` - 单个端点字符串或端点数组
 - `mcpServers` - MCP 服务器配置对象
 - `modelscope` - ModelScope API 配置
@@ -84,6 +92,7 @@
 ### 入口点
 
 项目构建三个主要入口点：
+
 - `dist/cli.js` - CLI 工具（主入口点）
 - `dist/mcpServerProxy.js` - MCP 服务器代理，用于集成到其他客户端
 - `dist/WebServerStandalone.js` - 独立 Web 服务器
@@ -109,6 +118,14 @@
 - 双引号、分号、ES5 尾随逗号
 - 2 空格缩进
 - 行结尾：LF
+
+### 本地化规范
+
+- **注释信息**：请使用中文编写所有代码注释
+- **测试用例描述**：`describe` 和 `it` 函数的参数请使用中文描述
+- **文档和说明**：README、技术文档等说明性内容优先使用中文
+- **变量和函数名**：继续使用英文命名（符合编程惯例）
+- **目的**：有助于中国开发团队的持续维护和代码理解，降低沟通成本
 
 ### 重要说明
 
