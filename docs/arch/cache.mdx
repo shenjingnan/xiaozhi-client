@@ -1,3 +1,11 @@
+---
+title: MCP 缓存机制开发者指南
+description: 详细介绍了 xiaozhi-client 项目中 MCP 服务工具列表的缓存机制
+sidebar_position: 5
+---
+
+import { Mermaid } from '@theme/Mermaid';
+
 # MCP 缓存机制开发者指南
 
 ## 概述
@@ -36,7 +44,7 @@
 
 ### 缓存数据的生命周期管理
 
-```mermaid
+<Mermaid chart={`
 graph TD
     A[服务启动] --> B{缓存文件存在?}
     B -->|否| C[创建初始缓存]
@@ -53,7 +61,7 @@ graph TD
     G --> M[服务就绪]
     L --> M
     J --> N[降级处理]
-```
+`} />
 
 ## 工作流程说明
 
@@ -61,7 +69,7 @@ graph TD
 
 从 MCP 服务启动到缓存写入的完整流程：
 
-```mermaid
+<Mermaid chart={`
 sequenceDiagram
     participant U as 用户
     participant SM as MCPServiceManager
@@ -84,7 +92,7 @@ sequenceDiagram
     end
 
     SM->>U: 所有服务启动完成
-```
+`} />
 
 ### 缓存文件的创建、更新、验证过程
 
@@ -105,7 +113,7 @@ sequenceDiagram
 
 #### 验证过程
 
-1. **格式验证**: 使用 JSON Schema 验证缓存文件结构
+1. **格式验证**: 使用 TypeScript 类型检查验证缓存文件结构
 2. **数据完整性检查**: 验证必要字段的存在和类型
 3. **版本兼容性**: 检查缓存文件版本与当前代码的兼容性
 4. **哈希验证**: 比较配置哈希以检测配置变更
@@ -235,9 +243,9 @@ export class MCPServiceManager {
 
 ## 数据结构详解
 
-### JSON Schema 完整结构
+### 缓存文件结构
 
-缓存文件遵循以下 JSON Schema 结构：
+缓存文件遵循以下 TypeScript 接口定义的结构：
 
 ```json
 {
@@ -351,16 +359,21 @@ private generateConfigHash(config: MCPServiceConfig): string {
    }
    ```
 
-2. **更新 JSON Schema**
+2. **更新验证函数**
 
-   ```json
-   {
-     "properties": {
-       "newField": {
-         "type": "string",
-         "description": "新字段的描述"
-       }
-     }
+   ```typescript
+   private validateCacheStructure(cache: any): cache is MCPToolsCache {
+     return (
+       cache &&
+       typeof cache === "object" &&
+       typeof cache.version === "string" &&
+       typeof cache.mcpServers === "object" &&
+       cache.metadata &&
+       typeof cache.metadata === "object" &&
+       typeof cache.metadata.lastGlobalUpdate === "string" &&
+       typeof cache.metadata.totalWrites === "number" &&
+       typeof cache.metadata.createdAt === "string"
+     );
    }
    ```
 
@@ -390,17 +403,6 @@ private generateConfigHash(config: MCPServiceConfig): string {
    }
    ```
 
-2. **更新 Schema 验证规则**
-   ```json
-   {
-     "newField": {
-       "type": "string",
-       "minLength": 1,
-       "pattern": "^[a-zA-Z0-9_-]+$"
-     }
-   }
-   ```
-
 ### 修改缓存结构的步骤和注意事项
 
 #### 步骤清单
@@ -424,22 +426,7 @@ private generateConfigHash(config: MCPServiceConfig): string {
    private readonly CACHE_VERSION = "2.0.0";
    ```
 
-3. **更新 JSON Schema**
-
-   ```json
-   {
-     "version": "2.0.0",
-     "properties": {
-       "newField": {
-         "type": "string",
-         "description": "新字段描述"
-       }
-     },
-     "required": ["existingFields", "newField"]
-   }
-   ```
-
-4. **实现向后兼容**
+3. **实现向后兼容**
 
    ```typescript
    private migrateCache(cache: any): MCPToolsCache {
@@ -454,7 +441,7 @@ private generateConfigHash(config: MCPServiceConfig): string {
    }
    ```
 
-5. **更新测试用例**
+4. **更新测试用例**
 
    ```typescript
    it("应该支持新字段", async () => {
@@ -477,7 +464,7 @@ private generateConfigHash(config: MCPServiceConfig): string {
 - **版本兼容性**: 主版本号变更表示不兼容的结构变更
 - **数据迁移**: 提供从旧版本到新版本的迁移逻辑
 - **测试覆盖**: 确保新功能有完整的测试覆盖
-- **文档更新**: 同步更新 Schema 文档和使用说明
+- **文档更新**: 同步更新接口文档和使用说明
 
 ### 代码贡献的最佳实践
 
@@ -705,16 +692,11 @@ describe("MCPCacheManager", () => {
    cat xiaozhi.cache.json | jq . || echo "JSON 格式错误"
    ```
 
-3. 检查 Schema 文件是否存在
-   ```bash
-   ls -la xiaozhi.cache.schema.json
-   ```
-
 **解决方案**:
 
 - 删除损坏的缓存文件，重新生成
-- 更新 Schema 文件到最新版本
 - 检查缓存文件中的时间戳格式
+- 确保所有必需字段都存在
 
 #### 问题 3: 配置变更未检测到
 
@@ -880,7 +862,7 @@ xiaozhi 的 MCP 缓存机制通过智能的数据缓存和配置变更检测，�
 
 ## 版本兼容性
 
-当前 Schema 版本: `1.0.0`
+当前缓存文件格式版本: `1.0.0`
 
 ### 版本升级策略
 
@@ -890,9 +872,8 @@ xiaozhi 的 MCP 缓存机制通过智能的数据缓存和配置变更检测，�
 
 ## 相关文件
 
-- `xiaozhi.cache.schema.json`: JSON Schema 定义文件
 - `src/services/MCPCacheManager.ts`: 缓存管理器实现
-- `xiaozhi.cache.json`: 实际的缓存文件
+- `xiaozhi.cache.json`: 实际的缓存文件（运行时生成）
 
 ## 注意事项
 
@@ -907,12 +888,12 @@ xiaozhi 的 MCP 缓存机制通过智能的数据缓存和配置变更检测，�
 
 1. **时间格式错误**: 确保时间戳符合 YYYY-MM-DD HH:mm:ss 格式
 2. **缺少必需字段**: 检查所有必需字段是否存在
-3. **类型不匹配**: 确保字段类型与 Schema 定义一致
+3. **类型不匹配**: 确保字段类型与接口定义一致
 4. **格式不符**: 检查版本号、哈希值等格式是否正确
 
 ### 修复建议
 
 1. 使用 `jq` 工具检查 JSON 格式和内容
-2. 参考示例文件修正格式问题
+2. 参考接口定义修正格式问题
 3. 重新生成缓存文件（删除现有文件，重启服务）
 4. 检查 MCPCacheManager 的实现逻辑
