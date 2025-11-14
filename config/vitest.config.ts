@@ -12,9 +12,7 @@ export default defineConfig({
       uploadToken: process.env.CODECOV_TOKEN,
     }),
     // 添加 tsconfig 路径解析插件
-    tsconfigPaths({
-      projects: [resolve(__dirname, "./tsconfig.json")],
-    }),
+    tsconfigPaths(),
   ],
   test: {
     globals: true,
