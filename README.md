@@ -15,6 +15,8 @@
 
 <img src="https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/qq-group-qrcode.jpg" alt="QQ群" width="300"/>
 
+![Web UI 配置界面](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/web-ui-preview.png)
+
 ## 快速开始
 
 你可以阅读文档 [xiaozhi-client.shenjingnan.com](https://xiaozhi-client.shenjingnan.com) 快速上手！
@@ -28,7 +30,7 @@
    2. [功能特色](#功能特色)
    3. [快速上手](#快速上手)
       1. [使用 Docker 运行](#使用-docker-运行)
-   7. [Web UI 配置界面](#web-ui-配置界面)
+   4. [Web UI 配置界面](#web-ui-配置界面)
       1. [功能特性](#功能特性)
       2. [启动 Web UI](#启动-web-ui)
 
@@ -68,7 +70,7 @@ xiaozhi config set mcpEndpoint "<从小智服务端获取到的接入点地址>"
 # 启动服务
 xiaozhi start
 
-# 最后，请前往小智服务端，检查对应的接入点，刷新后是否能获取到工具列表
+# 浏览器打开 http://localhost:9999 如果你使用的是NAS部署请使用 http://<部署设备的IP地址>:9999
 ```
 
 ### 使用 Docker 运行
@@ -118,37 +120,6 @@ docker-compose logs -f
 # 停止服务
 docker-compose down
 ```
-
-## Web UI 配置界面
-
-xiaozhi-client 提供了一个现代化的 Web UI 界面，让配置 MCP 服务更加直观和便捷。
-
-![Web UI 配置界面](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/web-ui-preview.png)
-
-### 功能特性
-
-- 🎨 **现代化界面**：基于 React + TypeScript + Tailwind CSS 构建
-- 🔧 **可视化配置**：直观的界面操作，无需手动编辑 JSON 文件
-- 🚀 **实时连接状态**：实时显示与小智服务器的连接状态
-- 📦 **MCP 服务管理**：
-  - 添加/编辑/删除 MCP 服务
-  - 支持本地服务和 SSE 服务
-  - 支持批量导入配置
-- ⚙️ **配置管理**：
-  - 编辑连接参数（心跳间隔、超时时间等）
-  - 管理 ModelScope API Key
-
-### 启动 Web UI
-
-```bash
-# 启动 Web 配置界面
-xiaozhi ui
-
-# 或者在启动服务时同时启动 Web UI
-xiaozhi start -u
-```
-
-启动后访问 <http://localhost:9999> 进行可视化配置。
 
 ## 贡献者
 
