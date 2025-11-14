@@ -88,7 +88,8 @@
     ".git/**",
     "*.log",
     "pnpm-lock.yaml",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "config/**"
   ],
   "ignoreWords": [],
   "flagWords": []
