@@ -76,13 +76,13 @@ xiaozhi start
 ##### 方式一：使用启动脚本（推荐）
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docker-start.sh | bash
+curl -fsSL https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docker/scripts/start.sh | bash
 ```
 
 > 无法访问 `Github` 可以使用 `Gitee` 替代
 
 ```bash
-curl -fsSL https://gitee.com/shenjingnan/xiaozhi-client/raw/main/docker-start.sh | bash
+curl -fsSL https://gitee.com/shenjingnan/xiaozhi-client/raw/main/docker/scripts/start.sh | bash
 ```
 
 ##### 方式二：使用 Docker Compose
@@ -90,13 +90,13 @@ curl -fsSL https://gitee.com/shenjingnan/xiaozhi-client/raw/main/docker-start.sh
 获取 docker-compose.yml 文件：
 
 ```bash
-curl -O https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docker-compose.yml
+curl -O https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docker/docker-compose.yml
 ```
 
 > 无法访问 `Github` 可以使用 `Gitee` 替代
 
 ```bash
-curl -O https://gitee.com/shenjingnan/xiaozhi-client/raw/main/docker-compose.yml
+curl -O https://gitee.com/shenjingnan/xiaozhi-client/raw/main/docker/docker-compose.yml
 ```
 
 ```bash

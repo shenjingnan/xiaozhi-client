@@ -17,7 +17,8 @@
       "usage/coze-workflow",
       "usage/use-multi-xiaozhi-mcp-endpoints",
       "usage/as-a-mcp-server",
-      "reference/command"
+      "reference/command",
+      "development/docker-build"
     ]
   },
   "navbar": {

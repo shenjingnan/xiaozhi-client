@@ -26,7 +26,7 @@ docker restart xiaozhi-client
 ### 依赖安装优先级
 
 1. **用户自定义** (`~/xiaozhi-client/requirements.txt`) - 最高优先级
-2. **默认模板** (`templates/docker/requirements.txt`) - 仅在用户未自定义时使用
+2. **默认模板** (`docker/templates/requirements.txt`) - 仅在用户未自定义时使用
 
 ### 安装流程
 
@@ -177,7 +177,7 @@ pip install package_name
 - `python-dotenv` - 环境变量管理
 - `aiofiles` - 异步文件操作
 
-完整列表请查看 `templates/docker/requirements.txt`。
+完整列表请查看 `docker/templates/requirements.txt`。
 
 ## 🔄 更新依赖
 

@@ -62,10 +62,10 @@ RUN npx --version && echo "✓ npx is available" \
 WORKDIR /workspaces
 
 # 复制模板到备份目录（避免被卷挂载覆盖）
-COPY templates/docker/ /templates-backup/
+COPY templates/ /templates-backup/
 
 # 复制初始化脚本并设置权限
-COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY scripts/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
 # 安装模板项目的依赖到备份目录（用于初始化时复制）
 # 使用国内镜像源安装依赖
