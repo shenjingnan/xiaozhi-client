@@ -117,4 +117,11 @@ fi
 find /workspaces -name "*.pid" -type f -delete 2>/dev/null || true
 
 log "启动 xiaozhi-client..."
-exec "$@"
+# 如果没有提供参数或者第一个参数是选项，则使用默认命令
+if [ $# -eq 0 ] || [[ "$1" == -* ]]; then
+    # 没有参数或第一个参数是选项，使用默认的xiaozhi命令
+    exec xiaozhi "$@"
+else
+    # 有参数且第一个参数不是选项，直接执行
+    exec "$@"
+fi

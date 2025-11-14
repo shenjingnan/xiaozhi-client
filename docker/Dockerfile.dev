@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /workspaces
 
 # 复制模板作为初始项目结构
-COPY templates/docker/ ./
+COPY templates/ ./
 
 # 安装模板项目的依赖
 RUN npm install
