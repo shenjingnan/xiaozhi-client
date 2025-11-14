@@ -23,17 +23,6 @@
 
 ![效果图](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/preview.png)
 
-## 目录
-
-1. [Xiaozhi Client](#xiaozhi-client)
-   1. [目录](#目录)
-   2. [功能特色](#功能特色)
-   3. [快速上手](#快速上手)
-      1. [使用 Docker 运行](#使用-docker-运行)
-   4. [Web UI 配置界面](#web-ui-配置界面)
-      1. [功能特性](#功能特性)
-      2. [启动 Web UI](#启动-web-ui)
-
 ## 功能特色
 
 - 支持 小智(xiaozhi.me) 官方服务器接入点
