@@ -7,9 +7,9 @@
     "esModuleInterop": true,
     "allowJs": true,
     "checkJs": false,
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "baseUrl": ".",
+    "outDir": "../dist",
+    "rootDir": "../src",
+    "baseUrl": "..",
     "paths": {
       "@cli/*": ["src/cli/*"],
       "@cli/commands/*": ["src/cli/commands/*"],
@@ -46,6 +46,13 @@
     "skipLibCheck": true,
     "resolveJsonModule": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "scripts/**/*", "templates/**/*"]
+  "include": ["../src/**/*"],
+  "exclude": [
+    "../node_modules",
+    "../dist",
+    "../scripts/**/*",
+    "../templates/**/*",
+    "node_modules",
+    "dist"
+  ]
 }

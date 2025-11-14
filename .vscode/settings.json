@@ -1,12 +1,6 @@
 {
-  "cSpell.words": [
-    "amap",
-    "conventionalcommits",
-    "modelcontextprotocol",
-    "modelscope",
-    "nvmrc",
-    "postbuild",
-    "Xiaozhi",
-    "xzcli"
-  ]
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "typescript.suggest.autoImports": true,
+  "typescript.workspaceSymbols.scope": "allOpenProjects"
 }

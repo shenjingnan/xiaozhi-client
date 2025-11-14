@@ -33,9 +33,9 @@
     "xiaozhi-client": "dist/cli.js"
   },
   "scripts": {
-    "build": "pnpm run build:web && cross-env NODE_ENV=production tsup --config config/tsup.config.ts",
+    "build": "pnpm run build:web && cross-env NODE_ENV=production TS_NODE_PROJECT=config/tsconfig.json tsup --config config/tsup.config.ts",
     "build:web": "cd apps/frontend && pnpm install && pnpm run build",
-    "dev": "cross-env NODE_ENV=development tsup --config config/tsup.config.ts --watch",
+    "dev": "cross-env NODE_ENV=development TS_NODE_PROJECT=config/tsconfig.json tsup --config config/tsup.config.ts --watch",
     "test": "vitest run --config config/vitest.config.ts",
     "test:silent": "vitest run --silent=true --config config/vitest.config.ts",
     "test:watch": "vitest --config config/vitest.config.ts",
