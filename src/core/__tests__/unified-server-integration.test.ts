@@ -5,7 +5,8 @@
 
 import { MCPServer } from "@services/MCPServer.js";
 import request from "supertest";
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import type { AppConfig } from "../../configManager.js";
 import {
   ServerMode,
   createHTTPServer,
@@ -16,11 +17,112 @@ import {
 } from "../ServerFactory.js";
 import { UnifiedMCPServer } from "../UnifiedMCPServer.js";
 
+// Mock logger
+vi.mock("../../Logger.js", () => {
+  const mockLogger = {
+    info: vi.fn(),
+    debug: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    trace: vi.fn(),
+    fatal: vi.fn(),
+    withTag: vi.fn().mockReturnThis(),
+    child: vi.fn().mockReturnThis(),
+  };
+
+  return {
+    Logger: vi.fn().mockImplementation(() => mockLogger),
+    logger: mockLogger,
+    createLogger: vi.fn(() => mockLogger),
+    getLogger: vi.fn(() => mockLogger),
+    setGlobalLogger: vi.fn(),
+    setGlobalLogLevel: vi.fn(),
+    getGlobalLogLevel: vi.fn(() => "info"),
+  };
+});
+
+// Mock configManager
+vi.mock("../../configManager.js", async () => {
+  const actual = await vi.importActual("../../configManager.js");
+  return {
+    ...actual,
+    configManager: {
+      getConfig: vi.fn(),
+      getMcpServers: vi.fn(),
+      getServerToolsConfig: vi.fn(),
+      getCustomMCPTools: vi.fn(),
+      addCustomMCPTools: vi.fn(),
+      getCustomMCPConfig: vi.fn(),
+      updateCustomMCPTools: vi.fn(),
+      isToolEnabled: vi.fn(),
+      getToolCallLogConfig: vi.fn(),
+      getConfigDir: vi.fn(),
+      configExists: vi.fn().mockReturnValue(true),
+    },
+  };
+});
+
+// 获取被 mock 的 configManager
+const { configManager: mockConfigManager } = await import(
+  "../../configManager.js"
+);
+
+// 测试用的配置数据
+const testConfig: AppConfig = {
+  mcpEndpoint: "http://localhost:3000",
+  mcpServers: {
+    "test-server": {
+      command: "node",
+      args: ["test.js"],
+      env: { TEST_VAR: "test_value" },
+    },
+  },
+  mcpServerConfig: {
+    "test-server": {
+      tools: {
+        "test-tool": {
+          description: "Test tool description",
+          enable: true,
+        },
+      },
+    },
+  },
+  connection: {
+    heartbeatInterval: 30000,
+    heartbeatTimeout: 10000,
+    reconnectInterval: 5000,
+  },
+  webUI: {
+    port: 3001,
+    autoRestart: true,
+  },
+};
+
 describe("阶段三统一 MCP 服务器集成测试", () => {
   describe("UnifiedMCPServer 核心功能", () => {
     let server: UnifiedMCPServer;
 
     beforeEach(async () => {
+      // 设置 configManager mock 返回值
+      vi.mocked(mockConfigManager.getConfig).mockReturnValue(testConfig);
+      vi.mocked(mockConfigManager.getMcpServers).mockReturnValue(
+        testConfig.mcpServers
+      );
+      vi.mocked(mockConfigManager.getServerToolsConfig).mockReturnValue(
+        testConfig.mcpServerConfig?.["test-server"]?.tools || {}
+      );
+      vi.mocked(mockConfigManager.getCustomMCPTools).mockReturnValue([]);
+      vi.mocked(mockConfigManager.getCustomMCPConfig).mockReturnValue(null);
+      vi.mocked(mockConfigManager.updateCustomMCPTools).mockResolvedValue(
+        undefined
+      );
+      vi.mocked(mockConfigManager.addCustomMCPTools).mockResolvedValue(
+        undefined
+      );
+      vi.mocked(mockConfigManager.isToolEnabled).mockReturnValue(true);
+      vi.mocked(mockConfigManager.getToolCallLogConfig).mockReturnValue({});
+      vi.mocked(mockConfigManager.getConfigDir).mockReturnValue("/tmp/test");
+
       server = new UnifiedMCPServer({
         name: "test-unified-server",
       });

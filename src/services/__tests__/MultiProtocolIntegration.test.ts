@@ -38,6 +38,8 @@ describe("Multi-Protocol Integration", () => {
     vi.spyOn(configManager, "getServerToolsConfig").mockReturnValue({});
     vi.spyOn(configManager, "getCustomMCPTools").mockReturnValue([]);
     vi.spyOn(configManager, "addCustomMCPTools").mockResolvedValue(undefined);
+    vi.spyOn(configManager, "getToolCallLogConfig").mockReturnValue({});
+    vi.spyOn(configManager, "getConfigDir").mockReturnValue("/tmp/test-config");
 
     manager = new MCPServiceManager();
 

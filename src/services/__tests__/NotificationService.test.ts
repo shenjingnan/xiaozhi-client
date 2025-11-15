@@ -23,6 +23,28 @@ vi.mock("../EventBus.js", () => ({
   }),
 }));
 
+vi.mock("../../configManager.js", () => ({
+  configManager: {
+    getConfig: vi.fn().mockReturnValue({
+      mcpEndpoint: "ws://localhost:3000",
+      mcpServers: {
+        calculator: {
+          command: "node",
+          args: ["calculator.js"],
+        },
+      },
+      connection: {
+        heartbeatInterval: 30000,
+        heartbeatTimeout: 35000,
+        reconnectInterval: 5000,
+      },
+      webUI: {
+        port: 3001,
+      },
+    }),
+  },
+}));
+
 describe("NotificationService", () => {
   let notificationService: NotificationService;
   let mockEventBus: any;
@@ -75,6 +97,10 @@ describe("NotificationService", () => {
     };
     const { logger } = await import("../../Logger.js");
     vi.mocked(logger.withTag).mockReturnValue(mockLogger);
+
+    // Mock ConfigManager
+    const { configManager } = await import("../../configManager.js");
+    vi.mocked(configManager.getConfig).mockReturnValue(mockConfig);
 
     // Mock WebSocket
     mockWebSocket = {

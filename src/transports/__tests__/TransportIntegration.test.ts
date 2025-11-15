@@ -3,20 +3,81 @@
  * 专注于核心功能验证，避免复杂的 mock 和超时问题
  */
 
-import { MCPMessageHandler } from "@core/MCPMessageHandler.js";
-import { MCPServiceManager } from "@services/MCPServiceManager.js";
 import request from "supertest";
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { HTTPAdapter } from "../HTTPAdapter.js";
 import { ConnectionState, TransportAdapter } from "../TransportAdapter.js";
+
+// Mock ConfigManager 模块
+vi.mock("../../configManager.js", () => ({
+  configManager: {
+    configExists: vi.fn().mockReturnValue(true),
+    getConfig: vi.fn().mockReturnValue({
+      mcpEndpoint: "ws://localhost:8080",
+      mcpServers: {},
+      connection: {
+        heartbeatInterval: 30000,
+        heartbeatTimeout: 10000,
+        reconnectInterval: 5000,
+      },
+      toolCallLog: {
+        maxRecords: 100,
+      },
+    } as any),
+    getToolCallLogConfig: vi.fn().mockReturnValue({ maxRecords: 100 }),
+    getConfigDir: vi
+      .fn()
+      .mockReturnValue("/tmp/xiaozhi-test-transport-integration"),
+    // 防止其他未mock的方法调用导致问题
+    getMcpServerConfig: vi.fn().mockReturnValue({}),
+    updateServerToolsConfig: vi.fn(),
+    isToolEnabled: vi.fn().mockReturnValue(true),
+    getCustomMCPConfig: vi.fn().mockReturnValue(null),
+    getCustomMCPTools: vi.fn().mockReturnValue([]),
+    addCustomMCPTools: vi.fn().mockResolvedValue(undefined),
+    updateCustomMCPTools: vi.fn().mockResolvedValue(undefined),
+    updateToolUsageStatsWithLock: vi.fn().mockResolvedValue(undefined),
+    updateMCPServerToolStatsWithLock: vi.fn().mockResolvedValue(undefined),
+    clearAllStatsUpdateLocks: vi.fn(),
+    getStatsUpdateLocks: vi.fn().mockReturnValue([]),
+    getModelScopeApiKey: vi.fn().mockReturnValue(null),
+  },
+}));
+
+// Mock Logger 模块
+vi.mock("../../Logger.js", () => ({
+  logger: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+    withTag: vi.fn().mockReturnThis(),
+  },
+}));
+
+// 动态导入被 mock 的模块
+import { MCPMessageHandler } from "@core/MCPMessageHandler.js";
+import { MCPServiceManager } from "@services/MCPServiceManager.js";
 
 describe("传输层抽象集成测试", () => {
   let serviceManager: MCPServiceManager;
   let messageHandler: MCPMessageHandler;
 
   beforeEach(() => {
+    // 设置测试环境变量
+    process.env.XIAOZHI_CONFIG_DIR = "/tmp/xiaozhi-test-transport-integration";
+    process.env.NODE_ENV = "test";
+
     serviceManager = new MCPServiceManager();
     messageHandler = new MCPMessageHandler(serviceManager);
+  });
+
+  afterEach(() => {
+    // 清理环境变量
+    process.env.XIAOZHI_CONFIG_DIR = undefined;
+
+    // 清理 mock 调用记录
+    vi.clearAllMocks();
   });
 
   describe("TransportAdapter 抽象基类核心功能", () => {

@@ -4,14 +4,62 @@
  */
 
 import request from "supertest";
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { MCPServer } from "../MCPServer.js";
+
+// 模拟依赖项
+vi.mock("../../configManager.js", () => ({
+  configManager: {
+    getToolCallLogConfig: vi.fn().mockReturnValue({}),
+    getMcpEndpoints: vi.fn().mockReturnValue([]),
+    configExists: vi.fn().mockReturnValue(false),
+    getConfigDir: vi.fn().mockReturnValue("/tmp/test"),
+    updateToolUsageStatsWithLock: vi.fn().mockResolvedValue(undefined),
+    updateMCPServerToolStatsWithLock: vi.fn().mockResolvedValue(undefined),
+    clearAllStatsUpdateLocks: vi.fn().mockImplementation(() => {}),
+    getStatsUpdateLocks: vi.fn().mockReturnValue([]),
+    getModelScopeApiKey: vi.fn().mockReturnValue(null),
+  },
+}));
+
+vi.mock("../../Logger.js", () => ({
+  Logger: vi.fn().mockImplementation(() => ({
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+    withTag: vi.fn().mockReturnThis(),
+  })),
+  logger: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+    withTag: vi.fn().mockReturnThis(),
+  },
+  getLogger: vi.fn().mockReturnValue({
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+    withTag: vi.fn().mockReturnThis(),
+  }),
+  setGlobalLogLevel: vi.fn(),
+  getGlobalLogLevel: vi.fn().mockReturnValue("info"),
+}));
 
 describe("MCPServer 阶段一重构验收测试", () => {
   let server: MCPServer;
   let port: number;
+  let originalEnv: string | undefined;
 
   beforeEach(async () => {
+    // 设置测试环境变量，防止在项目根目录创建配置文件
+    originalEnv = process.env.XIAOZHI_CONFIG_DIR;
+    process.env.XIAOZHI_CONFIG_DIR = "/tmp/xiaozhi-test-mcp-server";
+
+    vi.clearAllMocks();
+
     // 使用随机端口避免冲突
     port = 3000 + Math.floor(Math.random() * 1000);
     server = new MCPServer(port);
@@ -20,6 +68,13 @@ describe("MCPServer 阶段一重构验收测试", () => {
   afterEach(async () => {
     if (server) {
       await server.stop();
+    }
+
+    // 恢复环境变量
+    if (originalEnv !== undefined) {
+      process.env.XIAOZHI_CONFIG_DIR = originalEnv;
+    } else {
+      process.env.XIAOZHI_CONFIG_DIR = undefined;
     }
   });
 
