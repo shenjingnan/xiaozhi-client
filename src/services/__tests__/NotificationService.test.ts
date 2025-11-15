@@ -4,23 +4,48 @@ import { NotificationService } from "../NotificationService.js";
 import type { WebSocketClient } from "../NotificationService.js";
 import type { ClientInfo } from "../StatusService.js";
 
-// Mock dependencies
-vi.mock("../../Logger.js", () => ({
-  logger: {
-    withTag: vi.fn().mockReturnValue({
-      debug: vi.fn(),
-      info: vi.fn(),
-      error: vi.fn(),
-      warn: vi.fn(),
-    }),
-  },
-}));
-
+// Mock EventBus
 vi.mock("../EventBus.js", () => ({
   getEventBus: vi.fn().mockReturnValue({
     onEvent: vi.fn(),
     emitEvent: vi.fn(),
   }),
+}));
+
+// Mock Logger
+vi.mock("@root/Logger.js", () => ({
+  logger: {
+    withTag: vi.fn().mockReturnValue({
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      success: vi.fn(),
+    }),
+  },
+}));
+
+// Mock ConfigManager
+vi.mock("@root/configManager.js", () => ({
+  configManager: {
+    getConfig: vi.fn().mockReturnValue({
+      mcpEndpoint: "ws://localhost:3000",
+      mcpServers: {
+        calculator: {
+          command: "node",
+          args: ["calculator.js"],
+        },
+      },
+      connection: {
+        heartbeatInterval: 30000,
+        heartbeatTimeout: 35000,
+        reconnectInterval: 5000,
+      },
+      webUI: {
+        port: 3001,
+      },
+    }),
+  },
 }));
 
 describe("NotificationService", () => {
@@ -64,7 +89,7 @@ describe("NotificationService", () => {
       emitEvent: vi.fn(),
     };
     const { getEventBus } = await import("../EventBus.js");
-    vi.mocked(getEventBus).mockReturnValue(mockEventBus);
+    (getEventBus as any).mockReturnValue(mockEventBus);
 
     // Mock Logger
     mockLogger = {
@@ -72,9 +97,14 @@ describe("NotificationService", () => {
       info: vi.fn(),
       error: vi.fn(),
       warn: vi.fn(),
+      success: vi.fn(),
     };
     const { logger } = await import("../../Logger.js");
-    vi.mocked(logger.withTag).mockReturnValue(mockLogger);
+    (logger.withTag as any).mockReturnValue(mockLogger);
+
+    // Mock ConfigManager
+    const { configManager } = await import("../../configManager.js");
+    (configManager.getConfig as any).mockReturnValue(mockConfig);
 
     // Mock WebSocket
     mockWebSocket = {

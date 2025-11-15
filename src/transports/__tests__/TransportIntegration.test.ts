@@ -3,20 +3,65 @@
  * 专注于核心功能验证，避免复杂的 mock 和超时问题
  */
 
-import { MCPMessageHandler } from "@core/MCPMessageHandler.js";
-import { MCPServiceManager } from "@services/MCPServiceManager.js";
 import request from "supertest";
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import {
+  createMockConfigManager,
+  createMockLogger,
+} from "../../__tests__/index.js";
 import { HTTPAdapter } from "../HTTPAdapter.js";
 import { ConnectionState, TransportAdapter } from "../TransportAdapter.js";
+
+// 直接在文件顶部设置 mock，避免 Vitest 变量提升问题
+vi.mock("@root/Logger.js", () => ({
+  logger: createMockLogger(),
+}));
+
+vi.mock("../../configManager.js", () => ({
+  configManager: createMockConfigManager({
+    // 配置管理器的特定覆盖
+    getToolCallLogConfig: vi.fn().mockReturnValue({ maxRecords: 100 }),
+    getConfigDir: vi
+      .fn()
+      .mockReturnValue("/tmp/xiaozhi-test-transport-integration"),
+    getMcpServerConfig: vi.fn().mockReturnValue({}),
+    updateServerToolsConfig: vi.fn(),
+    isToolEnabled: vi.fn().mockReturnValue(true),
+    getCustomMCPConfig: vi.fn().mockReturnValue(null),
+    getCustomMCPTools: vi.fn().mockReturnValue([]),
+    addCustomMCPTools: vi.fn().mockResolvedValue(undefined),
+    updateCustomMCPTools: vi.fn().mockResolvedValue(undefined),
+    updateToolUsageStatsWithLock: vi.fn().mockResolvedValue(undefined),
+    updateMCPServerToolStatsWithLock: vi.fn().mockResolvedValue(undefined),
+    clearAllStatsUpdateLocks: vi.fn(),
+    getStatsUpdateLocks: vi.fn().mockReturnValue([]),
+    getModelScopeApiKey: vi.fn().mockReturnValue(null),
+  }),
+}));
+
+// 动态导入被 mock 的模块
+import { MCPMessageHandler } from "@core/MCPMessageHandler.js";
+import { MCPServiceManager } from "@services/MCPServiceManager.js";
 
 describe("传输层抽象集成测试", () => {
   let serviceManager: MCPServiceManager;
   let messageHandler: MCPMessageHandler;
 
   beforeEach(() => {
+    // 设置测试环境变量
+    process.env.XIAOZHI_CONFIG_DIR = "/tmp/xiaozhi-test-transport-integration";
+    process.env.NODE_ENV = "test";
+
     serviceManager = new MCPServiceManager();
     messageHandler = new MCPMessageHandler(serviceManager);
+  });
+
+  afterEach(() => {
+    // 清理环境变量
+    process.env.XIAOZHI_CONFIG_DIR = undefined;
+
+    // 清理 mock 调用记录
+    vi.clearAllMocks();
   });
 
   describe("TransportAdapter 抽象基类核心功能", () => {
