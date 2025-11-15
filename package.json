@@ -51,7 +51,9 @@
     "duplicate:check": "jscpd apps/backend/",
     "docker:update-version": "node docker/scripts/update-version.js",
     "example": "node --loader ts-node/esm",
-    "docs:dev": "cd docs && mintlify dev"
+    "docs:dev": "cd docs && mintlify dev",
+    "release": "npx release-it --config config/release-it.json",
+    "release:dry": "npx release-it --config config/release-it.json --dry-run"
   },
   "dependencies": {
     "@hono/node-server": "^1.17.1",
