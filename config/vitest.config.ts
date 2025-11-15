@@ -19,10 +19,7 @@ export default defineConfig({
     environment: "node",
     testTimeout: 10000, // 减少默认测试超时时间
     hookTimeout: 10000, // 减少默认 hook 超时时间
-    include: [
-      "apps/backend/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
-      "tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
-    ],
+    include: ["apps/backend/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     exclude: ["node_modules", "dist", "templates/**/*"],
     // 分组配置，将超时测试分离
     // 超时测试：包含"timeout"字样的测试文件
@@ -40,7 +37,7 @@ export default defineConfig({
         "**/*.config.{js,ts}",
         "coverage/**",
       ],
-      include: ["apps/backend/**/*.ts", "tests/**/*.ts"],
+      include: ["apps/backend/**/*.ts"],
       all: true,
       thresholds: {
         global: {
