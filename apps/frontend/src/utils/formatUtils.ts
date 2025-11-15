@@ -2,7 +2,7 @@
  * 格式化工具函数
  */
 
-import type { ToolCallRecord } from "@/types/index";
+import type { ToolCallRecord } from "@xiaozhi/shared-types";
 
 /**
  * 格式化时间戳为本地化字符串

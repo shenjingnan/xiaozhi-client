@@ -1,0 +1,62 @@
+{
+  "name": "@xiaozhi/shared-types",
+  "version": "1.0.0",
+  "description": "小智项目的共享类型定义",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./mcp": {
+      "types": "./dist/mcp/index.d.ts",
+      "import": "./dist/mcp/index.js"
+    },
+    "./coze": {
+      "types": "./dist/coze/index.d.ts",
+      "import": "./dist/coze/index.js"
+    },
+    "./api": {
+      "types": "./dist/api/index.d.ts",
+      "import": "./dist/api/index.js"
+    },
+    "./config": {
+      "types": "./dist/config/index.d.ts",
+      "import": "./dist/config/index.js"
+    },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "import": "./dist/utils/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "type:check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shenjingnan/xiaozhi-client.git",
+    "directory": "packages/shared-types"
+  },
+  "keywords": [
+    "typescript",
+    "types",
+    "xiaozhi",
+    "mcp"
+  ],
+  "author": "Shen Jingnan",
+  "license": "MIT"
+}

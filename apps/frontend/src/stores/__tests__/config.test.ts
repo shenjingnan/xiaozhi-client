@@ -1,5 +1,5 @@
-import type { AppConfig } from "@/types/index";
 import { apiClient } from "@services/api";
+import type { AppConfig } from "@xiaozhi/shared-types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useConfigStore } from "../config";
 

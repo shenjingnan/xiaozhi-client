@@ -3,6 +3,8 @@
   "language": "en",
   "globRoot": "../",
   "words": [
+    "Jingnan",
+    "Shen",
     "Elipssis",
     "iotop",
     "mytool",
@@ -109,7 +111,8 @@
     "**/tmp/**",
     "pnpm-lock.yaml",
     "docs/changelog.mdx",
-    "config/**"
+    "config/**",
+    "**/*.tsbuildinfo"
   ],
   "ignoreWords": [],
   "flagWords": []

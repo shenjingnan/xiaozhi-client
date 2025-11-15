@@ -9,15 +9,15 @@
  * - 集成 WebSocket 事件监听
  */
 
+import { apiClient } from "@services/api";
+import { webSocketManager } from "@services/websocket";
 import type {
   AppConfig,
   ConnectionConfig,
   MCPServerConfig,
   ModelScopeConfig,
   WebUIConfig,
-} from "@/types/index";
-import { apiClient } from "@services/api";
-import { webSocketManager } from "@services/websocket";
+} from "@xiaozhi/shared-types";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";

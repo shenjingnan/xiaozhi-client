@@ -5,13 +5,6 @@
  * 返回配置数据、加载状态、更新方法
  */
 
-import type {
-  AppConfig,
-  ConnectionConfig,
-  MCPServerConfig,
-  ModelScopeConfig,
-  WebUIConfig,
-} from "@/types/index";
 import {
   useConfig,
   useConfigActions,
@@ -30,6 +23,13 @@ import {
   useSystemConfig,
   useWebUIConfig,
 } from "@stores/config";
+import type {
+  AppConfig,
+  ConnectionConfig,
+  MCPServerConfig,
+  ModelScopeConfig,
+  WebUIConfig,
+} from "@xiaozhi/shared-types";
 import { useCallback } from "react";
 
 /**

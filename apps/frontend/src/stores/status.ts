@@ -10,9 +10,9 @@
  * - 集成 WebSocket 事件监听
  */
 
-import type { ClientStatus } from "@/types/index";
 import { apiClient } from "@services/api";
 import { webSocketManager } from "@services/websocket";
+import type { ClientStatus } from "@xiaozhi/shared-types";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";

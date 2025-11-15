@@ -2,12 +2,12 @@
  * CozeWorkflowIntegration 组件测试
  */
 
-import type { CozeWorkflow, CozeWorkspace } from "@/types/index";
 import { CozeWorkflowIntegration } from "@components/CozeWorkflowIntegration";
 import * as useCozeWorkflowsModule from "@hooks/useCozeWorkflows";
 import * as toolsApiModule from "@services/api";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { CozeWorkflow, CozeWorkspace } from "@xiaozhi/shared-types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock toast
@@ -40,7 +40,7 @@ describe("CozeWorkflowIntegration", () => {
       description: "Personal Space",
       workspace_type: "personal",
       enterprise_id: "",
-      admin_UIDs: [],
+      admin_uids: [],
       icon_url: "https://example.com/icon.png",
       role_type: "owner",
       joined_status: "joined",
@@ -52,7 +52,7 @@ describe("CozeWorkflowIntegration", () => {
       description: "Team Space",
       workspace_type: "team",
       enterprise_id: "ent123",
-      admin_UIDs: ["3871811622675880"],
+      admin_uids: ["3871811622675880"],
       icon_url: "https://example.com/team-icon.png",
       role_type: "admin",
       joined_status: "joined",
