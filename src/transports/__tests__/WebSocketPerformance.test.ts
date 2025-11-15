@@ -5,55 +5,30 @@
 
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { WebSocketServer } from "ws";
+import { setupCommonMocks } from "../../__tests__/index.js";
 import type { WebSocketConfig } from "../WebSocketAdapter.js";
 import { WebSocketAdapter } from "../WebSocketAdapter.js";
 
-// Mock ConfigManager 模块
-vi.mock("../../configManager.js", () => ({
-  configManager: {
-    configExists: vi.fn().mockReturnValue(true),
-    getConfig: vi.fn().mockReturnValue({
-      mcpEndpoint: "ws://localhost:8080",
-      mcpServers: {},
-      connection: {
-        heartbeatInterval: 30000,
-        heartbeatTimeout: 10000,
-        reconnectInterval: 5000,
-      },
-      toolCallLog: {
-        maxRecords: 100,
-      },
-    } as any),
-    getToolCallLogConfig: vi.fn().mockReturnValue({ maxRecords: 100 }),
-    getConfigDir: vi
-      .fn()
-      .mockReturnValue("/tmp/xiaozhi-test-websocket-performance"),
-    // 防止其他未mock的方法调用导致问题
-    getMcpServerConfig: vi.fn().mockReturnValue({}),
-    updateServerToolsConfig: vi.fn(),
-    isToolEnabled: vi.fn().mockReturnValue(true),
-    getCustomMCPConfig: vi.fn().mockReturnValue(null),
-    getCustomMCPTools: vi.fn().mockReturnValue([]),
-    addCustomMCPTools: vi.fn().mockResolvedValue(undefined),
-    updateCustomMCPTools: vi.fn().mockResolvedValue(undefined),
-    updateToolUsageStatsWithLock: vi.fn().mockResolvedValue(undefined),
-    updateMCPServerToolStatsWithLock: vi.fn().mockResolvedValue(undefined),
-    clearAllStatsUpdateLocks: vi.fn(),
-    getStatsUpdateLocks: vi.fn().mockReturnValue([]),
-    getModelScopeApiKey: vi.fn().mockReturnValue(null),
-  },
-}));
-
-// Mock Logger 模块
-vi.mock("../../Logger.js", () => ({
-  logger: {
-    info: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-    debug: vi.fn(),
-    withTag: vi.fn().mockReturnThis(),
-  },
-}));
+// 设置统一的mock配置
+setupCommonMocks({
+  // 配置管理器的特定覆盖
+  getToolCallLogConfig: vi.fn().mockReturnValue({ maxRecords: 100 }),
+  getConfigDir: vi
+    .fn()
+    .mockReturnValue("/tmp/xiaozhi-test-websocket-performance"),
+  getMcpServerConfig: vi.fn().mockReturnValue({}),
+  updateServerToolsConfig: vi.fn(),
+  isToolEnabled: vi.fn().mockReturnValue(true),
+  getCustomMCPConfig: vi.fn().mockReturnValue(null),
+  getCustomMCPTools: vi.fn().mockReturnValue([]),
+  addCustomMCPTools: vi.fn().mockResolvedValue(undefined),
+  updateCustomMCPTools: vi.fn().mockResolvedValue(undefined),
+  updateToolUsageStatsWithLock: vi.fn().mockResolvedValue(undefined),
+  updateMCPServerToolStatsWithLock: vi.fn().mockResolvedValue(undefined),
+  clearAllStatsUpdateLocks: vi.fn(),
+  getStatsUpdateLocks: vi.fn().mockReturnValue([]),
+  getModelScopeApiKey: vi.fn().mockReturnValue(null),
+});
 
 // 动态导入被 mock 的模块
 import { MCPMessageHandler } from "@core/MCPMessageHandler.js";

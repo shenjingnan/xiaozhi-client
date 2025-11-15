@@ -1,21 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { setupCommonMocks } from "../../__tests__/index.js";
 import type { AppConfig } from "../../configManager.js";
 import { NotificationService } from "../NotificationService.js";
 import type { WebSocketClient } from "../NotificationService.js";
 import type { ClientInfo } from "../StatusService.js";
 
-// Mock dependencies
-vi.mock("../../Logger.js", () => ({
-  logger: {
-    withTag: vi.fn().mockReturnValue({
-      debug: vi.fn(),
-      info: vi.fn(),
-      error: vi.fn(),
-      warn: vi.fn(),
-    }),
-  },
-}));
-
+// Mock EventBus
 vi.mock("../EventBus.js", () => ({
   getEventBus: vi.fn().mockReturnValue({
     onEvent: vi.fn(),
@@ -23,27 +13,26 @@ vi.mock("../EventBus.js", () => ({
   }),
 }));
 
-vi.mock("../../configManager.js", () => ({
-  configManager: {
-    getConfig: vi.fn().mockReturnValue({
-      mcpEndpoint: "ws://localhost:3000",
-      mcpServers: {
-        calculator: {
-          command: "node",
-          args: ["calculator.js"],
-        },
+// 设置统一的mock配置，覆盖默认配置以匹配NotificationService的需求
+setupCommonMocks({
+  getConfig: vi.fn().mockReturnValue({
+    mcpEndpoint: "ws://localhost:3000",
+    mcpServers: {
+      calculator: {
+        command: "node",
+        args: ["calculator.js"],
       },
-      connection: {
-        heartbeatInterval: 30000,
-        heartbeatTimeout: 35000,
-        reconnectInterval: 5000,
-      },
-      webUI: {
-        port: 3001,
-      },
-    }),
-  },
-}));
+    },
+    connection: {
+      heartbeatInterval: 30000,
+      heartbeatTimeout: 35000,
+      reconnectInterval: 5000,
+    },
+    webUI: {
+      port: 3001,
+    },
+  }),
+});
 
 describe("NotificationService", () => {
   let notificationService: NotificationService;

@@ -5,23 +5,23 @@
 
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { setupCommonMocks } from "../../__tests__/index.js";
 import { MCPServer } from "../MCPServer.js";
 
-// 模拟依赖项
-vi.mock("../../configManager.js", () => ({
-  configManager: {
-    getToolCallLogConfig: vi.fn().mockReturnValue({}),
-    getMcpEndpoints: vi.fn().mockReturnValue([]),
-    configExists: vi.fn().mockReturnValue(false),
-    getConfigDir: vi.fn().mockReturnValue("/tmp/test"),
-    updateToolUsageStatsWithLock: vi.fn().mockResolvedValue(undefined),
-    updateMCPServerToolStatsWithLock: vi.fn().mockResolvedValue(undefined),
-    clearAllStatsUpdateLocks: vi.fn().mockImplementation(() => {}),
-    getStatsUpdateLocks: vi.fn().mockReturnValue([]),
-    getModelScopeApiKey: vi.fn().mockReturnValue(null),
-  },
-}));
+// 设置统一的mock配置，并覆盖特定方法
+setupCommonMocks({
+  getToolCallLogConfig: vi.fn().mockReturnValue({}),
+  getMcpEndpoints: vi.fn().mockReturnValue([]),
+  configExists: vi.fn().mockReturnValue(false),
+  getConfigDir: vi.fn().mockReturnValue("/tmp/test"),
+  updateToolUsageStatsWithLock: vi.fn().mockResolvedValue(undefined),
+  updateMCPServerToolStatsWithLock: vi.fn().mockResolvedValue(undefined),
+  clearAllStatsUpdateLocks: vi.fn().mockImplementation(() => {}),
+  getStatsUpdateLocks: vi.fn().mockReturnValue([]),
+  getModelScopeApiKey: vi.fn().mockReturnValue(null),
+});
 
+// Mock Logger 类和相关函数
 vi.mock("../../Logger.js", () => ({
   Logger: vi.fn().mockImplementation(() => ({
     info: vi.fn(),
@@ -30,13 +30,6 @@ vi.mock("../../Logger.js", () => ({
     debug: vi.fn(),
     withTag: vi.fn().mockReturnThis(),
   })),
-  logger: {
-    info: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-    debug: vi.fn(),
-    withTag: vi.fn().mockReturnThis(),
-  },
   getLogger: vi.fn().mockReturnValue({
     info: vi.fn(),
     error: vi.fn(),

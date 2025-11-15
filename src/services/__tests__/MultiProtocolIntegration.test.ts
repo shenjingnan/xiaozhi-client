@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { setupCommonMocks } from "../../__tests__/index.js";
 import { configManager } from "../../configManager.js";
 import type { MCPServiceConfig } from "../MCPService.js";
 import { MCPTransportType } from "../MCPService.js";
@@ -8,15 +9,9 @@ import { TransportFactory } from "../TransportFactory.js";
 // Mock dependencies
 vi.mock("../MCPService.js");
 vi.mock("../TransportFactory.js");
-vi.mock("../../Logger.js", () => ({
-  logger: {
-    info: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-    debug: vi.fn(),
-    withTag: vi.fn().mockReturnThis(),
-  },
-}));
+
+// 设置统一的mock配置
+setupCommonMocks();
 
 describe("Multi-Protocol Integration", () => {
   let manager: MCPServiceManager;

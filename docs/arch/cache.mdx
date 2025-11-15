@@ -44,24 +44,7 @@ import { Mermaid } from '@theme/Mermaid';
 
 ### 缓存数据的生命周期管理
 
-<Mermaid chart={`
-graph TD
-    A[服务启动] --> B{缓存文件存在?}
-    B -->|否| C[创建初始缓存]
-    B -->|是| D[加载现有缓存]
-    C --> E[连接 MCP 服务]
-    D --> F{缓存有效?}
-    F -->|是| G[使用缓存数据]
-    F -->|否| E
-    E --> H{连接成功?}
-    H -->|是| I[获取工具列表]
-    H -->|否| J[记录错误日志]
-    I --> K[写入缓存]
-    K --> L[更新元数据]
-    G --> M[服务就绪]
-    L --> M
-    J --> N[降级处理]
-`} />
+<Mermaid chart={`graph TD A[服务启动] --> B{缓存文件存在?} B -->|否| C[创建初始缓存] B -->|是| D[加载现有缓存] C --> E[连接 MCP 服务] D --> F{缓存有效?} F -->|是| G[使用缓存数据] F -->|否| E E --> H{连接成功?} H -->|是| I[获取工具列表] H -->|否| J[记录错误日志] I --> K[写入缓存] K --> L[更新元数据] G --> M[服务就绪] L --> M J --> N[降级处理]`} />
 
 ## 工作流程说明
 
@@ -69,30 +52,7 @@ graph TD
 
 从 MCP 服务启动到缓存写入的完整流程：
 
-<Mermaid chart={`
-sequenceDiagram
-    participant U as 用户
-    participant SM as MCPServiceManager
-    participant CM as MCPCacheManager
-    participant MS as MCPService
-    participant CF as 缓存文件
-
-    U->>SM: xiaozhi start
-    SM->>CM: 初始化缓存管理器
-    CM->>CF: 检查缓存文件存在性
-
-    loop 每个 MCP 服务
-        SM->>MS: 启动服务
-        MS->>MS: 连接 MCP 服务
-        MS->>MS: 获取工具列表
-        MS->>SM: 返回工具列表
-        SM->>CM: writeCacheEntry()
-        CM->>CF: 原子写入缓存数据
-        CM->>SM: 写入完成确认
-    end
-
-    SM->>U: 所有服务启动完成
-`} />
+<Mermaid chart={`sequenceDiagram participant U as 用户 participant SM as MCPServiceManager participant CM as MCPCacheManager participant MS as MCPService participant CF as 缓存文件 U->>SM: xiaozhi start SM->>CM: 初始化缓存管理器 CM->>CF: 检查缓存文件存在性 loop 每个 MCP 服务 SM->>MS: 启动服务 MS->>MS: 连接 MCP 服务 MS->>MS: 获取工具列表 MS->>SM: 返回工具列表 SM->>CM: writeCacheEntry() CM->>CF: 原子写入缓存数据 CM->>SM: 写入完成确认 end SM->>U: 所有服务启动完成`} />
 
 ### 缓存文件的创建、更新、验证过程
 
@@ -245,7 +205,7 @@ export class MCPServiceManager {
 
 ### 缓存文件结构
 
-缓存文件遵循以下 TypeScript 接口定义的结构：
+缓存文件遵循以下 JSON 结构：
 
 ```json
 {
@@ -264,6 +224,32 @@ export class MCPServiceManager {
     "totalWrites": 数字,
     "createdAt": "YYYY-MM-DD HH:mm:ss 时间戳"
   }
+}
+```
+
+对应的 TypeScript 接口定义如下：
+
+```typescript
+interface MCPToolsCache {
+  version: string;
+  mcpServers: {
+    [serverName: string]: MCPToolsCacheEntry;
+  };
+  metadata: CacheMetadata;
+}
+
+interface MCPToolsCacheEntry {
+  tools: Tool[];
+  lastUpdated: string;
+  serverConfig: MCPServiceConfig;
+  configHash: string;
+  version: string;
+}
+
+interface CacheMetadata {
+  lastGlobalUpdate: string;
+  totalWrites: number;
+  createdAt: string;
 }
 ```
 

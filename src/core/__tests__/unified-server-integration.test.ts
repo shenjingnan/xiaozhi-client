@@ -6,6 +6,7 @@
 import { MCPServer } from "@services/MCPServer.js";
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { setupCommonMocks } from "../../__tests__/index.js";
 import type { AppConfig } from "../../configManager.js";
 import {
   ServerMode,
@@ -17,7 +18,7 @@ import {
 } from "../ServerFactory.js";
 import { UnifiedMCPServer } from "../UnifiedMCPServer.js";
 
-// Mock logger
+// Mock logger with extended methods needed for this test
 vi.mock("../../Logger.js", () => {
   const mockLogger = {
     info: vi.fn(),
@@ -41,25 +42,18 @@ vi.mock("../../Logger.js", () => {
   };
 });
 
-// Mock configManager
-vi.mock("../../configManager.js", async () => {
-  const actual = await vi.importActual("../../configManager.js");
-  return {
-    ...actual,
-    configManager: {
-      getConfig: vi.fn(),
-      getMcpServers: vi.fn(),
-      getServerToolsConfig: vi.fn(),
-      getCustomMCPTools: vi.fn(),
-      addCustomMCPTools: vi.fn(),
-      getCustomMCPConfig: vi.fn(),
-      updateCustomMCPTools: vi.fn(),
-      isToolEnabled: vi.fn(),
-      getToolCallLogConfig: vi.fn(),
-      getConfigDir: vi.fn(),
-      configExists: vi.fn().mockReturnValue(true),
-    },
-  };
+// 设置统一的mock配置，并覆盖特定方法
+setupCommonMocks({
+  getMcpServers: vi.fn(),
+  getServerToolsConfig: vi.fn(),
+  getCustomMCPTools: vi.fn(),
+  addCustomMCPTools: vi.fn(),
+  getCustomMCPConfig: vi.fn(),
+  updateCustomMCPTools: vi.fn(),
+  isToolEnabled: vi.fn(),
+  getToolCallLogConfig: vi.fn(),
+  getConfigDir: vi.fn(),
+  configExists: vi.fn().mockReturnValue(true),
 });
 
 // 获取被 mock 的 configManager

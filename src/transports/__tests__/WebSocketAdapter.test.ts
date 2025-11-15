@@ -26,7 +26,6 @@ vi.mock("../../configManager.js", () => ({
     } as any),
     getToolCallLogConfig: vi.fn().mockReturnValue({ maxRecords: 100 }),
     getConfigDir: vi.fn().mockReturnValue("/tmp/xiaozhi-test-websocket"),
-    // 防止其他未mock的方法调用导致问题
     getMcpServerConfig: vi.fn().mockReturnValue({}),
     updateServerToolsConfig: vi.fn(),
     isToolEnabled: vi.fn().mockReturnValue(true),
