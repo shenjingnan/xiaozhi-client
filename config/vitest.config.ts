@@ -20,7 +20,7 @@ export default defineConfig({
     testTimeout: 10000, // 减少默认测试超时时间
     hookTimeout: 10000, // 减少默认 hook 超时时间
     include: [
-      "src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
+      "apps/backend/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
       "tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
     ],
     exclude: ["node_modules", "dist", "templates/**/*"],
@@ -40,7 +40,7 @@ export default defineConfig({
         "**/*.config.{js,ts}",
         "coverage/**",
       ],
-      include: ["src/**/*.ts", "tests/**/*.ts"],
+      include: ["apps/backend/**/*.ts", "tests/**/*.ts"],
       all: true,
       thresholds: {
         global: {
@@ -54,23 +54,23 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": resolve(__dirname, "../src"),
-      "@cli": resolve(__dirname, "../src/cli"),
-      "@cli/commands": resolve(__dirname, "../src/cli/commands"),
-      "@cli/services": resolve(__dirname, "../src/cli/services"),
-      "@cli/utils": resolve(__dirname, "../src/cli/utils"),
-      "@cli/errors": resolve(__dirname, "../src/cli/errors"),
-      "@cli/interfaces": resolve(__dirname, "../src/cli/interfaces"),
-      "@handlers": resolve(__dirname, "../src/handlers"),
-      "@services": resolve(__dirname, "../src/services"),
-      "@errors": resolve(__dirname, "../src/errors"),
-      "@utils": resolve(__dirname, "../src/utils"),
-      "@core": resolve(__dirname, "../src/core"),
-      "@transports": resolve(__dirname, "../src/transports"),
-      "@adapters": resolve(__dirname, "../src/adapters"),
-      "@managers": resolve(__dirname, "../src/managers"),
-      "@types": resolve(__dirname, "../src/types"),
-      "@root": resolve(__dirname, "../src"),
+      "@": resolve(__dirname, "../apps/backend"),
+      "@cli": resolve(__dirname, "../apps/backend/cli"),
+      "@cli/commands": resolve(__dirname, "../apps/backend/cli/commands"),
+      "@cli/services": resolve(__dirname, "../apps/backend/cli/services"),
+      "@cli/utils": resolve(__dirname, "../apps/backend/cli/utils"),
+      "@cli/errors": resolve(__dirname, "../apps/backend/cli/errors"),
+      "@cli/interfaces": resolve(__dirname, "../apps/backend/cli/interfaces"),
+      "@handlers": resolve(__dirname, "../apps/backend/handlers"),
+      "@services": resolve(__dirname, "../apps/backend/services"),
+      "@errors": resolve(__dirname, "../apps/backend/errors"),
+      "@utils": resolve(__dirname, "../apps/backend/utils"),
+      "@core": resolve(__dirname, "../apps/backend/core"),
+      "@transports": resolve(__dirname, "../apps/backend/transports"),
+      "@adapters": resolve(__dirname, "../apps/backend/adapters"),
+      "@managers": resolve(__dirname, "../apps/backend/managers"),
+      "@types": resolve(__dirname, "../apps/backend/types"),
+      "@root": resolve(__dirname, "../apps/backend"),
     },
   },
 });
