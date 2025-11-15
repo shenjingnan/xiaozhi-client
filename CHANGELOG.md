@@ -1,3 +1,11 @@
+# 更新日志
+
+## [1.9.3-beta.0](https://github.com/shenjingnan/xiaozhi-client/compare/v1.9.2...v1.9.3-beta.0) (2025-11-15)
+
+### Reverts
+
+* Revert "refactor(config): 重构TypeScript配置文件组织结构 (#423)" (#424) ([a775c79](https://github.com/shenjingnan/xiaozhi-client/commit/a775c7959df7c19aa0a43fa2e43a8e2fe2154f44)), closes [#423](https://github.com/shenjingnan/xiaozhi-client/issues/423) [#424](https://github.com/shenjingnan/xiaozhi-client/issues/424)
+
 # Changelog
 
 ## [1.9.2](https://github.com/shenjingnan/xiaozhi-client/compare/v1.9.1...v1.9.2) (2025-11-14)
