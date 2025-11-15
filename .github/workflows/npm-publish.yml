@@ -113,9 +113,10 @@ jobs:
       - name: 发布
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           TARGET_VERSION="${{ steps.parse-version.outputs.target_version }}"
-          RELEASE_CMD="npx release-it --ci"
+          RELEASE_CMD="npx release-it --ci --config config/release-it.json"
 
           if [ "${{ steps.parse-version.outputs.version_type }}" = "release" ]; then
             # 正式版发布
