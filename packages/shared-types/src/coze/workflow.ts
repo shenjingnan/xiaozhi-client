@@ -32,6 +32,12 @@ export interface CozeWorkflow {
   created_at: number;
   /** 更新时间戳 */
   updated_at: number;
+  /** 是否已添加为工具（前端运行时属性） */
+  isAddedAsTool?: boolean;
+  /** 输入参数Schema（前端运行时属性） */
+  inputSchema?: any;
+  /** 工具名称（前端运行时属性） */
+  toolName?: string | null;
 }
 
 /**

@@ -1,4 +1,4 @@
-import type { ClientStatus } from "@/types/index";
+import type { ClientStatus } from "@xiaozhi/shared-types";
 import { apiClient } from "@services/api";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useStatusStore } from "../status";

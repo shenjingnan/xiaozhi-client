@@ -22,7 +22,7 @@ import type {
   CozeWorkflow,
   MCPServerConfig,
   WorkflowParameter,
-} from "@/types/index";
+} from "@xiaozhi/shared-types";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
 import {
   CoffeeIcon,

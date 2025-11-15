@@ -19,7 +19,7 @@ import {
 
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useConfig } from "@/stores/config";
-import type { MCPServerConfig } from "@/types/index";
+import type { MCPServerConfig } from "@xiaozhi/shared-types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Textarea } from "@ui/textarea";
 import { SettingsIcon } from "lucide-react";

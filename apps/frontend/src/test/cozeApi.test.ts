@@ -2,7 +2,7 @@
  * 扣子 API 前端服务层集成测试
  */
 
-import type { CozeWorkflowsResult, CozeWorkspace } from "@/types/index";
+import type { CozeWorkflowsResult, CozeWorkspace } from "@xiaozhi/shared-types";
 import { CozeApiClient } from "@services/cozeApi";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -31,7 +31,7 @@ describe("CozeApiClient", () => {
           description: "Personal Space",
           workspace_type: "personal",
           enterprise_id: "",
-          admin_UIDs: [],
+          admin_uids: [],
           icon_url: "https://example.com/icon.png",
           role_type: "owner",
           joined_status: "joined",

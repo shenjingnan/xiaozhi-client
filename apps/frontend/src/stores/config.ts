@@ -15,7 +15,7 @@ import type {
   MCPServerConfig,
   ModelScopeConfig,
   WebUIConfig,
-} from "@/types/index";
+} from "@xiaozhi/shared-types";
 import { apiClient } from "@services/api";
 import { webSocketManager } from "@services/websocket";
 import { create } from "zustand";

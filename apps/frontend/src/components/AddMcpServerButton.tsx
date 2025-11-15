@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/form";
 import { mcpServerApi } from "@/services/api";
 import { useConfig } from "@/stores/config";
-import type { MCPServerConfig } from "@/types/index";
+import type { MCPServerConfig } from "@xiaozhi/shared-types";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Textarea } from "@ui/textarea";

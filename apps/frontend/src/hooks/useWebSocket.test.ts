@@ -1,4 +1,4 @@
-import type { AppConfig, ClientStatus } from "@/types/index";
+import type { AppConfig, ClientStatus } from "@xiaozhi/shared-types";
 import { useWebSocket } from "@hooks/useWebSocket";
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";

@@ -16,7 +16,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useWebSocketActions } from "@/providers/WebSocketProvider";
 import { useConfig } from "@/stores/config";
-import type { AppConfig } from "@/types/index";
+import type { AppConfig } from "@xiaozhi/shared-types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";

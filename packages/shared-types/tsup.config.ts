@@ -5,11 +5,7 @@ export default defineConfig({
     'index': 'src/index.ts',
   },
   format: ['esm'],
-  dts: {
-    entry: {
-      'index': 'src/index.ts',
-    },
-  },
+  dts: false, // 暂时禁用DTS生成，稍后解决
   clean: true,
   sourcemap: true,
   minify: false,

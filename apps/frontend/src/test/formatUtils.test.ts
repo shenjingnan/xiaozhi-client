@@ -1,4 +1,4 @@
-import type { ToolCallRecord } from "@/types/index";
+import type { ToolCallRecord } from "@xiaozhi/shared-types";
 import {
   formatDuration,
   formatError,

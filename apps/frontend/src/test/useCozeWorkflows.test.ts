@@ -2,7 +2,7 @@
  * useCozeWorkflows Hook 测试
  */
 
-import type { CozeWorkflowsResult, CozeWorkspace } from "@/types/index";
+import type { CozeWorkflowsResult, CozeWorkspace } from "@xiaozhi/shared-types";
 import { useCozeWorkflows } from "@hooks/useCozeWorkflows";
 import { cozeApiClient } from "@services/cozeApi";
 import { act, renderHook, waitFor } from "@testing-library/react";
@@ -34,7 +34,7 @@ describe("useCozeWorkflows", () => {
       description: "Personal Space",
       workspace_type: "personal",
       enterprise_id: "",
-      admin_UIDs: [],
+      admin_uids: [],
       icon_url: "https://example.com/icon.png",
       role_type: "owner",
       joined_status: "joined",
@@ -46,7 +46,7 @@ describe("useCozeWorkflows", () => {
       description: "Team Space",
       workspace_type: "team",
       enterprise_id: "ent123",
-      admin_UIDs: ["3871811622675880"],
+      admin_uids: ["3871811622675880"],
       icon_url: "https://example.com/team-icon.png",
       role_type: "admin",
       joined_status: "joined",

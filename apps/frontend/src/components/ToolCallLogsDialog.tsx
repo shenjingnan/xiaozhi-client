@@ -25,7 +25,7 @@ import type {
   ApiResponse,
   ToolCallLogsResponse,
   ToolCallRecord,
-} from "@/types/index";
+} from "@xiaozhi/shared-types";
 import {
   formatDuration,
   formatJson,

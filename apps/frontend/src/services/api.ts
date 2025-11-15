@@ -13,7 +13,7 @@ import type {
   MCPServerConfig,
   MCPServerListResponse,
   MCPServerStatus,
-} from "@/types";
+} from "@xiaozhi/shared-types";
 
 /**
  * CustomMCPTool 接口定义

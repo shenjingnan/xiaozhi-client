@@ -11,7 +11,7 @@ import type {
   MCPServerConfig,
   ModelScopeConfig,
   WebUIConfig,
-} from "@/types/index";
+} from "@xiaozhi/shared-types";
 import {
   useConfig,
   useConfigActions,

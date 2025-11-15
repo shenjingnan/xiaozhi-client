@@ -1,5 +1,5 @@
 import { ToolCallLogsDialog } from "@/components/ToolCallLogsDialog";
-import type { ToolCallRecord } from "@/types/index";
+import type { ToolCallRecord } from "@xiaozhi/shared-types";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 

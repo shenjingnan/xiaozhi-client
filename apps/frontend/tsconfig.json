@@ -30,7 +30,8 @@
       "@lib/*": ["./src/lib/*"],
       "@pages/*": ["./src/pages/*"],
       "@providers/*": ["./src/providers/*"],
-      "@ui/*": ["./src/components/ui/*"]
+      "@ui/*": ["./src/components/ui/*"],
+      "@xiaozhi/shared-types": ["../../packages/shared-types/src"]
     }
   },
   "include": ["src"],

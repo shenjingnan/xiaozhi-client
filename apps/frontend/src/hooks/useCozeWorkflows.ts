@@ -8,7 +8,7 @@ import type {
   CozeWorkflow,
   CozeWorkflowsParams,
   CozeWorkspace,
-} from "@/types/index";
+} from "@xiaozhi/shared-types";
 import { cozeApiClient } from "@services/cozeApi";
 import { useCallback, useEffect, useMemo, useState } from "react";
 

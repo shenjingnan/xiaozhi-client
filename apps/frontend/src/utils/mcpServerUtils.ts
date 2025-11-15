@@ -3,30 +3,15 @@
  * 用于判断 MCP 服务的通信类型和其他相关操作
  */
 
+import type {
+  MCPServerConfig,
+  LocalMCPServerConfig,
+  SSEMCPServerConfig,
+  StreamableHTTPMCPServerConfig,
+} from "@xiaozhi/shared-types";
+
 // 定义通信类型
 export type MCPCommunicationType = "stdio" | "sse" | "streamable-http";
-
-// 定义 MCP 服务配置类型（与服务端保持一致）
-export interface LocalMCPServerConfig {
-  command: string;
-  args: string[];
-  env?: Record<string, string>;
-}
-
-export interface SSEMCPServerConfig {
-  type: "sse";
-  url: string;
-}
-
-export interface StreamableHTTPMCPServerConfig {
-  type?: "streamable-http"; // 可选，因为默认就是 streamable-http
-  url: string;
-}
-
-export type MCPServerConfig =
-  | LocalMCPServerConfig
-  | SSEMCPServerConfig
-  | StreamableHTTPMCPServerConfig;
 
 /**
  * 判断 MCP 服务的通信类型
