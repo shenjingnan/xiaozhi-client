@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { setupCommonMocks } from "../../__tests__/index.js";
 import type { AppConfig } from "../../configManager.js";
 import { NotificationService } from "../NotificationService.js";
 import type { WebSocketClient } from "../NotificationService.js";
@@ -13,26 +12,41 @@ vi.mock("../EventBus.js", () => ({
   }),
 }));
 
-// 设置统一的mock配置，覆盖默认配置以匹配NotificationService的需求
-setupCommonMocks({
-  getConfig: vi.fn().mockReturnValue({
-    mcpEndpoint: "ws://localhost:3000",
-    mcpServers: {
-      calculator: {
-        command: "node",
-        args: ["calculator.js"],
+// Mock Logger
+vi.mock("@root/Logger.js", () => ({
+  logger: {
+    withTag: vi.fn().mockReturnValue({
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      success: vi.fn(),
+    }),
+  },
+}));
+
+// Mock ConfigManager
+vi.mock("@root/configManager.js", () => ({
+  configManager: {
+    getConfig: vi.fn().mockReturnValue({
+      mcpEndpoint: "ws://localhost:3000",
+      mcpServers: {
+        calculator: {
+          command: "node",
+          args: ["calculator.js"],
+        },
       },
-    },
-    connection: {
-      heartbeatInterval: 30000,
-      heartbeatTimeout: 35000,
-      reconnectInterval: 5000,
-    },
-    webUI: {
-      port: 3001,
-    },
-  }),
-});
+      connection: {
+        heartbeatInterval: 30000,
+        heartbeatTimeout: 35000,
+        reconnectInterval: 5000,
+      },
+      webUI: {
+        port: 3001,
+      },
+    }),
+  },
+}));
 
 describe("NotificationService", () => {
   let notificationService: NotificationService;
@@ -75,7 +89,7 @@ describe("NotificationService", () => {
       emitEvent: vi.fn(),
     };
     const { getEventBus } = await import("../EventBus.js");
-    vi.mocked(getEventBus).mockReturnValue(mockEventBus);
+    (getEventBus as any).mockReturnValue(mockEventBus);
 
     // Mock Logger
     mockLogger = {
@@ -83,13 +97,14 @@ describe("NotificationService", () => {
       info: vi.fn(),
       error: vi.fn(),
       warn: vi.fn(),
+      success: vi.fn(),
     };
     const { logger } = await import("../../Logger.js");
-    vi.mocked(logger.withTag).mockReturnValue(mockLogger);
+    (logger.withTag as any).mockReturnValue(mockLogger);
 
     // Mock ConfigManager
     const { configManager } = await import("../../configManager.js");
-    vi.mocked(configManager.getConfig).mockReturnValue(mockConfig);
+    (configManager.getConfig as any).mockReturnValue(mockConfig);
 
     // Mock WebSocket
     mockWebSocket = {

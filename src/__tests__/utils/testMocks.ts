@@ -60,14 +60,22 @@ export const createMockConfigManager = (overrides = {}) => {
  * 创建logger的mock对象
  */
 export const createMockLogger = (overrides = {}) => {
-  return {
+  const mockLogger = {
     debug: vi.fn(),
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
     success: vi.fn(),
+    withTag: vi.fn().mockReturnValue({
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      success: vi.fn(),
+    }),
     ...overrides,
   };
+  return mockLogger;
 };
 
 /**
@@ -86,38 +94,33 @@ export const mockLogger = {
 
 /**
  * 为测试文件设置configManager mock
+ * 注意：由于 Vitest 的限制，需要在测试文件中手动设置
  */
 export const setupConfigManagerMock = (overrides = {}) => {
-  const config = createMockConfigManager(overrides);
-  vi.mock("../../configManager.js", () => ({
-    configManager: config,
-  }));
+  // 需要在测试文件中手动设置：
+  // vi.mock("../../configManager.js", () => ({ configManager: createMockConfigManager(overrides) }));
 };
 
 /**
  * 为测试文件设置logger mock
+ * 注意：由于 Vitest 的限制，需要在测试文件中手动设置
  */
 export const setupLoggerMock = (overrides = {}) => {
-  vi.mock("../../Logger.js", () => ({
-    logger: createMockLogger({}),
-  }));
+  // 需要在测试文件中手动设置：
+  // vi.mock("../../Logger.js", () => ({ logger: createMockLogger(overrides) }));
 };
 
 /**
  * 为测试文件同时设置configManager和logger mock
+ * 注意：由于 Vitest 的限制，需要在测试文件顶部直接使用 vi.mock
  */
 export const setupCommonMocks = (
   configOverrides = {},
   loggerOverrides = {}
 ) => {
-  const config = createMockConfigManager(configOverrides);
-  const logger = createMockLogger(loggerOverrides);
-
-  vi.mock("../../configManager.js", () => ({
-    configManager: config,
-  }));
-
-  vi.mock("../../Logger.js", () => ({
-    logger: logger,
-  }));
+  // 这些 mock 需要在测试文件中手动设置，因为 Vitest 的限制
+  // 使用示例：
+  // import { setupCommonMocks, createMockConfigManager, createMockLogger } from "./utils/index.js";
+  // vi.mock("@root/Logger.js", () => ({ logger: createMockLogger(loggerOverrides) }));
+  // vi.mock("../../configManager.js", () => ({ configManager: createMockConfigManager(configOverrides) }));
 };

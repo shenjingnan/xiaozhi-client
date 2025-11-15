@@ -5,30 +5,40 @@
 
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { WebSocketServer } from "ws";
-import { setupCommonMocks } from "../../__tests__/index.js";
+import {
+  createMockConfigManager,
+  createMockLogger,
+} from "../../__tests__/index.js";
 import type { WebSocketConfig } from "../WebSocketAdapter.js";
 import { WebSocketAdapter } from "../WebSocketAdapter.js";
 
-// 设置统一的mock配置
-setupCommonMocks({
-  // 配置管理器的特定覆盖
-  getToolCallLogConfig: vi.fn().mockReturnValue({ maxRecords: 100 }),
-  getConfigDir: vi
-    .fn()
-    .mockReturnValue("/tmp/xiaozhi-test-websocket-performance"),
-  getMcpServerConfig: vi.fn().mockReturnValue({}),
-  updateServerToolsConfig: vi.fn(),
-  isToolEnabled: vi.fn().mockReturnValue(true),
-  getCustomMCPConfig: vi.fn().mockReturnValue(null),
-  getCustomMCPTools: vi.fn().mockReturnValue([]),
-  addCustomMCPTools: vi.fn().mockResolvedValue(undefined),
-  updateCustomMCPTools: vi.fn().mockResolvedValue(undefined),
-  updateToolUsageStatsWithLock: vi.fn().mockResolvedValue(undefined),
-  updateMCPServerToolStatsWithLock: vi.fn().mockResolvedValue(undefined),
-  clearAllStatsUpdateLocks: vi.fn(),
-  getStatsUpdateLocks: vi.fn().mockReturnValue([]),
-  getModelScopeApiKey: vi.fn().mockReturnValue(null),
-});
+// Mock 配置管理器和日志模块
+vi.mock("@root/Logger.js", () => ({
+  logger: createMockLogger(),
+}));
+
+vi.mock("../../configManager.js", () => ({
+  configManager: createMockConfigManager({
+    // 配置管理器的特定覆盖
+    getToolCallLogConfig: vi.fn().mockReturnValue({ maxRecords: 100 }),
+    getConfigDir: vi
+      .fn()
+      .mockReturnValue("/tmp/xiaozhi-test-websocket-performance"),
+    getMcpServerConfig: vi.fn().mockReturnValue({}),
+    updateServerToolsConfig: vi.fn(),
+    isToolEnabled: vi.fn().mockReturnValue(true),
+    getCustomMCPConfig: vi.fn().mockReturnValue(null),
+    getCustomMCPTools: vi.fn().mockReturnValue([]),
+    addCustomMCPTools: vi.fn().mockResolvedValue(undefined),
+    updateCustomMCPTools: vi.fn().mockResolvedValue(undefined),
+    updateToolUsageStatsWithLock: vi.fn().mockResolvedValue(undefined),
+    updateMCPServerToolStatsWithLock: vi.fn().mockResolvedValue(undefined),
+    clearAllStatsUpdateLocks: vi.fn(),
+    getStatsUpdateLocks: vi.fn().mockReturnValue([]),
+    getModelScopeApiKey: vi.fn().mockReturnValue(null),
+    configExists: vi.fn().mockReturnValue(true), // 确保配置文件存在
+  }),
+}));
 
 // 动态导入被 mock 的模块
 import { MCPMessageHandler } from "@core/MCPMessageHandler.js";

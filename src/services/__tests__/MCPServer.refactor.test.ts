@@ -21,6 +21,38 @@ setupCommonMocks({
   getModelScopeApiKey: vi.fn().mockReturnValue(null),
 });
 
+// Mock configManager
+vi.mock("@root/configManager.js", () => ({
+  configManager: {
+    configExists: vi.fn().mockReturnValue(true),
+    getConfig: vi.fn().mockReturnValue({
+      mcpEndpoint: "ws://localhost:8080",
+      mcpServers: {},
+      modelscope: {
+        apiKey: "test-api-key",
+        baseUrl: "https://test.modelscope.com",
+      },
+      connection: {
+        heartbeat: { enabled: true, interval: 1000, timeout: 5000 },
+        retry: { maxAttempts: 3, delay: 1000 },
+      },
+      webUI: { enabled: true, port: 3000 },
+    }),
+    getToolCallLogConfig: vi.fn().mockReturnValue({}),
+    getMcpEndpoints: vi.fn().mockReturnValue([]),
+    updateToolUsageStatsWithLock: vi.fn().mockResolvedValue(undefined),
+    updateMCPServerToolStatsWithLock: vi.fn().mockResolvedValue(undefined),
+    clearAllStatsUpdateLocks: vi.fn().mockImplementation(() => {}),
+    getStatsUpdateLocks: vi.fn().mockReturnValue([]),
+    getModelScopeApiKey: vi.fn().mockReturnValue(null),
+    setConfig: vi.fn().mockResolvedValue(undefined),
+    validateConfig: vi.fn().mockReturnValue({ valid: true }),
+    getServiceConfig: vi.fn().mockReturnValue(undefined),
+    watchConfig: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+    getConfigDir: vi.fn().mockReturnValue("/tmp/test"),
+  },
+}));
+
 // Mock Logger 类和相关函数
 vi.mock("../../Logger.js", () => ({
   Logger: vi.fn().mockImplementation(() => ({
@@ -39,6 +71,13 @@ vi.mock("../../Logger.js", () => ({
   }),
   setGlobalLogLevel: vi.fn(),
   getGlobalLogLevel: vi.fn().mockReturnValue("info"),
+  logger: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+    withTag: vi.fn().mockReturnThis(),
+  },
 }));
 
 describe("MCPServer 阶段一重构验收测试", () => {

@@ -6,7 +6,6 @@
 import { MCPServer } from "@services/MCPServer.js";
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { setupCommonMocks } from "../../__tests__/index.js";
 import type { AppConfig } from "../../configManager.js";
 import {
   ServerMode,
@@ -42,18 +41,28 @@ vi.mock("../../Logger.js", () => {
   };
 });
 
-// 设置统一的mock配置，并覆盖特定方法
-setupCommonMocks({
-  getMcpServers: vi.fn(),
-  getServerToolsConfig: vi.fn(),
-  getCustomMCPTools: vi.fn(),
-  addCustomMCPTools: vi.fn(),
-  getCustomMCPConfig: vi.fn(),
-  updateCustomMCPTools: vi.fn(),
-  isToolEnabled: vi.fn(),
-  getToolCallLogConfig: vi.fn(),
-  getConfigDir: vi.fn(),
-  configExists: vi.fn().mockReturnValue(true),
+// Mock configManager 模块
+vi.mock("../../configManager.js", () => {
+  const mockInstance = {
+    configExists: vi.fn().mockReturnValue(true),
+    getConfig: vi.fn(),
+    getMcpServers: vi.fn(),
+    getServerToolsConfig: vi.fn(),
+    getCustomMCPTools: vi.fn(),
+    addCustomMCPTools: vi.fn(),
+    getCustomMCPConfig: vi.fn(),
+    updateCustomMCPTools: vi.fn(),
+    isToolEnabled: vi.fn(),
+    getToolCallLogConfig: vi.fn(),
+    getConfigDir: vi.fn(),
+  };
+
+  return {
+    ConfigManager: {
+      getInstance: () => mockInstance,
+    },
+    configManager: mockInstance,
+  };
 });
 
 // 获取被 mock 的 configManager
@@ -98,24 +107,38 @@ describe("阶段三统一 MCP 服务器集成测试", () => {
 
     beforeEach(async () => {
       // 设置 configManager mock 返回值
-      vi.mocked(mockConfigManager.getConfig).mockReturnValue(testConfig);
-      vi.mocked(mockConfigManager.getMcpServers).mockReturnValue(
-        testConfig.mcpServers
+      (mockConfigManager.getConfig as ReturnType<typeof vi.fn>).mockReturnValue(
+        testConfig
       );
-      vi.mocked(mockConfigManager.getServerToolsConfig).mockReturnValue(
+      (
+        mockConfigManager.getMcpServers as ReturnType<typeof vi.fn>
+      ).mockReturnValue(testConfig.mcpServers);
+      (
+        mockConfigManager.getServerToolsConfig as ReturnType<typeof vi.fn>
+      ).mockReturnValue(
         testConfig.mcpServerConfig?.["test-server"]?.tools || {}
       );
-      vi.mocked(mockConfigManager.getCustomMCPTools).mockReturnValue([]);
-      vi.mocked(mockConfigManager.getCustomMCPConfig).mockReturnValue(null);
-      vi.mocked(mockConfigManager.updateCustomMCPTools).mockResolvedValue(
-        undefined
-      );
-      vi.mocked(mockConfigManager.addCustomMCPTools).mockResolvedValue(
-        undefined
-      );
-      vi.mocked(mockConfigManager.isToolEnabled).mockReturnValue(true);
-      vi.mocked(mockConfigManager.getToolCallLogConfig).mockReturnValue({});
-      vi.mocked(mockConfigManager.getConfigDir).mockReturnValue("/tmp/test");
+      (
+        mockConfigManager.getCustomMCPTools as ReturnType<typeof vi.fn>
+      ).mockReturnValue([]);
+      (
+        mockConfigManager.getCustomMCPConfig as ReturnType<typeof vi.fn>
+      ).mockReturnValue(null);
+      (
+        mockConfigManager.updateCustomMCPTools as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(undefined);
+      (
+        mockConfigManager.addCustomMCPTools as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(undefined);
+      (
+        mockConfigManager.isToolEnabled as ReturnType<typeof vi.fn>
+      ).mockReturnValue(true);
+      (
+        mockConfigManager.getToolCallLogConfig as ReturnType<typeof vi.fn>
+      ).mockReturnValue({});
+      (
+        mockConfigManager.getConfigDir as ReturnType<typeof vi.fn>
+      ).mockReturnValue("/tmp/test");
 
       server = new UnifiedMCPServer({
         name: "test-unified-server",
