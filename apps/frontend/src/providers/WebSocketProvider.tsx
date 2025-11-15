@@ -1,6 +1,6 @@
-import type { AppConfig } from "@xiaozhi/shared-types";
 import { useNetworkService } from "@hooks/useNetworkService";
 import { initializeStores } from "@stores/index";
+import type { AppConfig } from "@xiaozhi/shared-types";
 import {
   type ReactNode,
   createContext,

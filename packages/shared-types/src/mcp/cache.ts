@@ -2,7 +2,7 @@
  * MCP 缓存相关类型定义
  */
 
-import type { TaskStatus } from './task'
+import type { TaskStatus } from "./task";
 
 /**
  * 工具调用结果接口（简化版）

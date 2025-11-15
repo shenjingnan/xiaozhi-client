@@ -2,8 +2,8 @@
  * 扣子 API 前端服务层集成测试
  */
 
-import type { CozeWorkflowsResult, CozeWorkspace } from "@xiaozhi/shared-types";
 import { CozeApiClient } from "@services/cozeApi";
+import type { CozeWorkflowsResult, CozeWorkspace } from "@xiaozhi/shared-types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock fetch

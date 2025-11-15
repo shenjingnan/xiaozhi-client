@@ -1,7 +1,6 @@
 import * as api from "@/services/api";
 import * as websocket from "@/services/websocket";
 import * as stores from "@/stores/config";
-import type { AppConfig } from "@xiaozhi/shared-types";
 import { McpEndpointSettingButton } from "@components/McpEndpointSettingButton";
 import {
   act,
@@ -10,6 +9,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import type { AppConfig } from "@xiaozhi/shared-types";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 

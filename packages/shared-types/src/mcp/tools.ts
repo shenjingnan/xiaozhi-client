@@ -2,7 +2,7 @@
  * MCP 工具相关类型定义
  */
 
-import type { ToolCallResult } from './cache'
+import type { ToolCallResult } from "./cache";
 
 /**
  * 工具调用结果联合类型

@@ -21,17 +21,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type {
-  ApiResponse,
-  ToolCallLogsResponse,
-  ToolCallRecord,
-} from "@xiaozhi/shared-types";
 import {
   formatDuration,
   formatJson,
   formatTimestamp,
   generateStableKey,
 } from "@/utils/formatUtils";
+import type {
+  ApiResponse,
+  ToolCallLogsResponse,
+  ToolCallRecord,
+} from "@xiaozhi/shared-types";
 import {
   CheckCircle,
   CheckIcon,

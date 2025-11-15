@@ -24,8 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { CozeWorkflow, WorkflowParameter } from "@xiaozhi/shared-types";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { CozeWorkflow, WorkflowParameter } from "@xiaozhi/shared-types";
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect } from "react";
 import { useFieldArray, useForm } from "react-hook-form";

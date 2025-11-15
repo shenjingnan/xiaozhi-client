@@ -4,8 +4,8 @@
  */
 
 import type {
-  MCPServerConfig,
   LocalMCPServerConfig,
+  MCPServerConfig,
   SSEMCPServerConfig,
   StreamableHTTPMCPServerConfig,
 } from "@xiaozhi/shared-types";

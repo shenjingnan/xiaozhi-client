@@ -3,17 +3,28 @@
  */
 
 // 扣子平台相关类型
-export type { CozeWorkspace } from './coze/workspace'
-export type { CozeApiResponse } from './coze/api'
-export type { CozeWorkflow, CozeWorkflowCreator, WorkflowParameter, WorkflowParameterConfig, CozeWorkflowsParams } from './coze/workflow'
+export type {
+  CozeWorkspace,
+  CozeApiResponse,
+  CozeWorkflow,
+  CozeWorkflowCreator,
+  WorkflowParameter,
+  WorkflowParameterConfig,
+  CozeWorkflowsParams,
+} from "./coze";
 
 // MCP 相关类型
-export type { ExtendedMCPToolsCache, EnhancedToolResultCache } from './mcp/cache'
-export type { TaskStatus } from './mcp/task'
-export type { MCPMessage, MCPResponse, MCPError } from './mcp/message'
+export type {
+  ExtendedMCPToolsCache,
+  EnhancedToolResultCache,
+  TaskStatus,
+  MCPMessage,
+  MCPResponse,
+  MCPError,
+} from "./mcp";
 
 // 工具API相关类型
-export type { ToolType, MCPToolData } from './api/toolApi'
+export type { ToolType, MCPToolData } from "./api";
 
 // 配置相关类型
 export type {
@@ -28,11 +39,11 @@ export type {
   PlatformConfig,
   MCPServerConfig,
   SSEMCPServerConfig,
-  StreamableHTTPMCPServerConfig
-} from './config/app'
+  StreamableHTTPMCPServerConfig,
+} from "./config";
 
 // 前端相关类型
-export * from './frontend'
+export * from "./frontend";
 
 // 工具类型
-export { TimeoutError } from './utils/timeout'
+export { TimeoutError } from "./utils";

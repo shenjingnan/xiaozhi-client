@@ -29,12 +29,12 @@ export interface ToolCallLogConfig {
  * 日志级别枚举
  */
 export enum LogLevel {
-  TRACE = 'trace',
-  DEBUG = 'debug',
-  INFO = 'info',
-  WARN = 'warn',
-  ERROR = 'error',
-  FATAL = 'fatal'
+  TRACE = "trace",
+  DEBUG = "debug",
+  INFO = "info",
+  WARN = "warn",
+  ERROR = "error",
+  FATAL = "fatal",
 }
 
 /**
@@ -48,7 +48,7 @@ export interface LogConfig {
   /** 是否启用时间戳 */
   timestamp?: boolean;
   /** 日志格式 */
-  format?: 'json' | 'pretty';
+  format?: "json" | "pretty";
   /** 日志输出路径 */
   outputPath?: string;
   /** 是否同时输出到文件和控制台 */

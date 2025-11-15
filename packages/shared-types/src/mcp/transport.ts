@@ -2,7 +2,7 @@
  * MCP 传输层类型定义
  */
 
-import type { TransportConfig } from './message'
+import type { TransportConfig } from "./message";
 
 /**
  * 扩展的传输配置接口
@@ -10,7 +10,7 @@ import type { TransportConfig } from './message'
  */
 export interface ExtendedTransportConfig extends TransportConfig {
   /** 传输协议类型 */
-  protocol?: 'stdio' | 'http' | 'websocket' | 'sse';
+  protocol?: "stdio" | "http" | "websocket" | "sse";
 
   /** WebSocket 特定配置 */
   websocket?: {

@@ -1,6 +1,6 @@
-import type { AppConfig, ClientStatus } from "@xiaozhi/shared-types";
 import { useWebSocket } from "@hooks/useWebSocket";
 import { renderHook } from "@testing-library/react";
+import type { AppConfig, ClientStatus } from "@xiaozhi/shared-types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the stores and services

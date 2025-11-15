@@ -1,6 +1,6 @@
 import { ToolCallLogsDialog } from "@/components/ToolCallLogsDialog";
-import type { ToolCallRecord } from "@xiaozhi/shared-types";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { ToolCallRecord } from "@xiaozhi/shared-types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock fetch

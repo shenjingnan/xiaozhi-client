@@ -5,8 +5,8 @@
 
 import { CozeWorkflowIntegration } from "@/components/CozeWorkflowIntegration";
 import { apiClient } from "@/services/api";
-import type { CozeWorkflow } from "@xiaozhi/shared-types";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { CozeWorkflow } from "@xiaozhi/shared-types";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 

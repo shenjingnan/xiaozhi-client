@@ -3,8 +3,8 @@
  * 支持多种工具类型的添加，包括 MCP 工具、Coze 工作流等
  */
 
-import type { CozeWorkflow } from '../coze/workflow'
-import type { WorkflowParameterConfig } from '../coze/workflow'
+import type { CozeWorkflow } from "../coze";
+import type { WorkflowParameterConfig } from "../coze";
 
 /**
  * 工具类型枚举

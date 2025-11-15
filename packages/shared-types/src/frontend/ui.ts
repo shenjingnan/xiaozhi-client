@@ -2,16 +2,16 @@
  * 前端UI状态相关类型定义
  */
 
-import type { CozeWorkflow } from '../coze/workflow'
+import type { CozeWorkflow } from "../coze";
 
 /**
  * 扣子工作流列表响应
  */
 export interface CozeWorkflowsResult {
   /** 工作流列表 */
-  items: CozeWorkflow[]
+  items: CozeWorkflow[];
   /** 是否有更多数据 */
-  hasMore: boolean
+  hasMore: boolean;
 }
 
 /**
@@ -19,23 +19,23 @@ export interface CozeWorkflowsResult {
  */
 export interface CozeUIState {
   /** 当前选中的工作空间ID */
-  selectedWorkspaceId: string | null
+  selectedWorkspaceId: string | null;
   /** 工作空间列表加载状态 */
-  workspacesLoading: boolean
+  workspacesLoading: boolean;
   /** 工作流列表加载状态 */
-  workflowsLoading: boolean
+  workflowsLoading: boolean;
   /** 工作空间列表错误信息 */
-  workspacesError: string | null
+  workspacesError: string | null;
   /** 工作流列表错误信息 */
-  workflowsError: string | null
+  workflowsError: string | null;
 }
 
 /**
  * 客户端状态
  */
 export interface ClientStatus {
-  status: 'connected' | 'disconnected'
-  mcpEndpoint: string
-  activeMCPServers: string[]
-  lastHeartbeat?: number
+  status: "connected" | "disconnected";
+  mcpEndpoint: string;
+  activeMCPServers: string[];
+  lastHeartbeat?: number;
 }

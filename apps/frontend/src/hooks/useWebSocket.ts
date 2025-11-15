@@ -14,7 +14,6 @@
  * - WebSocketStore: 纯连接状态管理
  */
 
-import type { AppConfig, ClientStatus } from "@xiaozhi/shared-types";
 import { webSocketManager } from "@services/websocket";
 import { useConfig, useConfigActions } from "@stores/config";
 import {
@@ -28,6 +27,7 @@ import {
   checkPortAvailability,
   extractPortFromUrl,
 } from "@utils/portUtils";
+import type { AppConfig, ClientStatus } from "@xiaozhi/shared-types";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 /**

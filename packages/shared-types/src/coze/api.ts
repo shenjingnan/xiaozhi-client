@@ -27,12 +27,14 @@ export interface CozeApiResponse<T = any> {
 /**
  * 获取工作空间列表的完整响应
  */
-export interface CozeWorkspacesResponse extends CozeApiResponse<CozeWorkspacesData> {}
+export interface CozeWorkspacesResponse
+  extends CozeApiResponse<CozeWorkspacesData> {}
 
 /**
  * 获取工作流列表的完整响应
  */
-export interface CozeWorkflowsResponse extends CozeApiResponse<CozeWorkflowsData> {}
+export interface CozeWorkflowsResponse
+  extends CozeApiResponse<CozeWorkflowsData> {}
 
 /**
  * 扣子 API 错误响应
@@ -58,9 +60,9 @@ export interface CacheItem<T = any> {
   ttl: number;
 }
 
+import type { CozeWorkflowsData, CozeWorkflowsParams } from "./workflow";
 // 导入其他类型，避免循环依赖
-import type { CozeWorkspacesData } from './workspace'
-import type { CozeWorkflowsParams, CozeWorkflowsData } from './workflow'
+import type { CozeWorkspacesData } from "./workspace";
 
 // 重新导出这些类型，便于外部使用
-export type { CozeWorkspacesData, CozeWorkflowsParams, CozeWorkflowsData }
+export type { CozeWorkspacesData, CozeWorkflowsParams, CozeWorkflowsData };
