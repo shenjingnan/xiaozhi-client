@@ -30,7 +30,7 @@
   "plugins": {
     "@release-it/conventional-changelog": {
       "preset": "conventionalcommits",
-      "infile": "CHANGELOG.md",
+      "infile": "docs/changelog.mdx",
       "header": "# 更新日志",
       "releaseCommitMessageFormat": "chore: release v${version}",
       "ignoreRecommendedBump": true,
