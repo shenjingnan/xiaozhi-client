@@ -18,7 +18,11 @@
       "usage/use-multi-xiaozhi-mcp-endpoints",
       "usage/as-a-mcp-server",
       "reference/command",
-      "development/docker-build"
+      "development/docker-build",
+      {
+        "group": "开发",
+        "pages": ["changelog"]
+      }
     ]
   },
   "navbar": {

@@ -108,7 +108,7 @@
     "*.log",
     "**/tmp/**",
     "pnpm-lock.yaml",
-    "CHANGELOG.md",
+    "docs/changelog.mdx",
     "config/**"
   ],
   "ignoreWords": [],

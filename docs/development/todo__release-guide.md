@@ -278,13 +278,13 @@ docs: 更新 API 使用文档
 1. **代码检查**：运行 `pnpm run check:all`
 2. **项目构建**：运行 `pnpm run build`
 3. **版本更新**：更新 package.json 版本号
-4. **生成变更日志**：基于 commit 历史生成 CHANGELOG.md
+4. **生成变更日志**：基于 commit 历史生成更新日志
 5. **NPM 发布**：发布到 npm registry
 6. **创建 Git 标签**：创建并推送版本标签
 7. **GitHub Release**：创建 GitHub Release 页面
 
 ### 自动生成内容
-- **CHANGELOG.md**：标准化的变更日志
+- **更新日志**：标准化的变更日志，位于 docs/changelog.mdx
 - **Git 标签**：格式为 `v1.0.0`
 - **GitHub Release**：包含变更日志和下载链接
 
@@ -312,7 +312,7 @@ docs: 更新 API 使用文档
   "plugins": {
     "@release-it/conventional-changelog": {
       "preset": "conventionalcommits",
-      "infile": "CHANGELOG.md"
+      "infile": "docs/changelog.mdx"
     }
   }
 }
@@ -366,7 +366,7 @@ docs: 更新 API 使用文档
 - [ ] **下载链接**：确认源码下载链接可用
 
 #### ✅ 文档更新验证
-- [ ] **CHANGELOG.md**：确认变更日志已更新并包含新版本
+- [ ] **更新日志**：确认变更日志已更新并包含新版本（位于 docs/changelog.mdx）
 - [ ] **变更内容**：检查变更日志内容是否准确反映了实际变更
 - [ ] **链接有效性**：确认 commit 和 PR 链接可正常访问
 
@@ -478,7 +478,7 @@ Empty release notes
 1. **检查 Commit 格式**：确保 commit 遵循 Conventional Commits 规范
 2. **手动生成**：
    ```bash
-   npx conventional-changelog -p conventionalcommits -i CHANGELOG.md -s
+   npx conventional-changelog -p conventionalcommits -i docs/changelog.mdx -s
    ```
 3. **检查配置**：确认 `.release-it.json` 配置正确
 
