@@ -1,6 +1,6 @@
 declare module "json5-writer" {
   interface Json5Writer {
-    write(value: any): void;
+    write(value: unknown): void;
     toSource(options?: {
       quote?: "single" | "double";
       trailingComma?: boolean;
@@ -11,7 +11,7 @@ declare module "json5-writer" {
       trailingComma?: boolean;
       quoteKeys?: boolean | undefined;
     }): string;
-    ast: any;
+    ast: unknown;
   }
 
   export function load(jsonStr: string): Json5Writer;

@@ -1,7 +1,17 @@
 import { createServer } from "node:http";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { AddressInfo } from "node:net";
+import {
+  type Mock,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import { WebServer } from "./WebServer";
 import { configManager } from "./configManager";
+import type { MockConfigManager } from "./types";
 
 // Mock configManager
 vi.mock("./configManager", () => ({
@@ -136,7 +146,8 @@ function getAvailablePort(): Promise<number> {
   return new Promise((resolve, reject) => {
     const server = createServer();
     server.listen(0, () => {
-      const port = (server.address() as any)?.port;
+      const address = server.address() as AddressInfo;
+      const port = address?.port;
       server.close(() => {
         if (port) {
           resolve(port);
@@ -149,7 +160,7 @@ function getAvailablePort(): Promise<number> {
 }
 
 describe("WebServer 配置清理功能", () => {
-  let mockConfigManager: any;
+  let mockConfigManager: MockConfigManager;
   let webServer: WebServer;
   let currentPort: number;
 
@@ -159,21 +170,24 @@ describe("WebServer 配置清理功能", () => {
     // 获取可用端口
     currentPort = await getAvailablePort();
 
-    mockConfigManager = vi.mocked(configManager);
+    // 直接使用 vi.mocked 并指定类型
+    mockConfigManager = configManager as unknown as MockConfigManager;
 
     // 设置默认的 mock 返回值
-    mockConfigManager.configExists.mockReturnValue(true);
-    mockConfigManager.getConfig.mockReturnValue({
+    (mockConfigManager.configExists as Mock).mockReturnValue(true);
+    (mockConfigManager.getConfig as Mock).mockReturnValue({
       mcpEndpoint: "wss://test.endpoint",
       mcpServers: {
         test: { command: "node", args: ["test.js"] },
       },
     });
-    mockConfigManager.getMcpEndpoint.mockReturnValue("wss://test.endpoint");
-    mockConfigManager.getMcpServers.mockReturnValue({
+    (mockConfigManager.getMcpEndpoint as Mock).mockReturnValue(
+      "wss://test.endpoint"
+    );
+    (mockConfigManager.getMcpServers as Mock).mockReturnValue({
       test: { command: "node", args: ["test.js"] },
     });
-    mockConfigManager.getWebUIPort.mockReturnValue(currentPort);
+    (mockConfigManager.getWebUIPort as Mock).mockReturnValue(currentPort);
   });
 
   afterEach(async () => {
@@ -223,7 +237,7 @@ describe("WebServer 配置清理功能", () => {
 
   it("应该只清理被删除的服务配置", async () => {
     // 模拟当前有两个服务
-    mockConfigManager.getMcpServers.mockReturnValue({
+    (mockConfigManager.getMcpServers as Mock).mockReturnValue({
       calculator: { command: "node", args: ["calculator.js"] },
       datetime: { command: "node", args: ["datetime.js"] },
     });
@@ -314,7 +328,7 @@ describe("WebServer 配置清理功能", () => {
     });
 
     it("应该在配置文件不存在时抛出错误而不调用清理方法", async () => {
-      mockConfigManager.configExists.mockReturnValue(false);
+      (mockConfigManager.configExists as Mock).mockReturnValue(false);
 
       webServer = new WebServer(currentPort);
 
@@ -339,7 +353,7 @@ describe("WebServer 配置清理功能", () => {
         webUI: { port: currentPort },
       };
 
-      mockConfigManager.getConfig.mockReturnValue(expectedConfig);
+      (mockConfigManager.getConfig as Mock).mockReturnValue(expectedConfig);
 
       webServer = new WebServer(currentPort);
 

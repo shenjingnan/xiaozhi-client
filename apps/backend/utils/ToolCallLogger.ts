@@ -15,8 +15,8 @@ export interface ToolCallRecord {
   toolName: string; // 工具名称
   originalToolName?: string; // 原始工具名称（未格式化的）
   serverName?: string; // 服务器名称（coze、dify、n8n、custom等）
-  arguments?: any; // 调用参数
-  result?: any; // 响应结果
+  arguments?: Record<string, unknown>; // 调用参数
+  result?: Record<string, unknown>; // 响应结果
   success: boolean; // 是否成功
   duration?: number; // 调用耗时（毫秒）
   error?: string; // 错误信息（如果有）
@@ -93,7 +93,7 @@ export class ToolCallLogger {
       });
     } catch (error) {
       // 如果文件路径无效，记录错误但不抛出异常
-      logger.error("无法创建工具调用日志文件:", error);
+      logger.error("无法创建工具调用日志文件:", error as Error);
     }
 
     return pino(
@@ -113,8 +113,8 @@ export class ToolCallLogger {
   /**
    * 格式化控制台消息
    */
-  private formatConsoleMessage(logObj: any): string {
-    const toolName = logObj.toolName || "未知工具";
+  private formatConsoleMessage(logObj: Record<string, unknown>): string {
+    const toolName = (logObj.toolName as string) || "未知工具";
     const success = logObj.success !== false;
     const duration = logObj.duration ? ` (${logObj.duration}ms)` : "";
     const status = success ? "✅" : "❌";
@@ -159,7 +159,7 @@ export class ToolCallLogger {
         `已清理 ${recordsToRemove} 条旧的工具调用记录，保留最新 ${this.maxRecords} 条`
       );
     } catch (error) {
-      logger.error("清理旧工具调用记录失败:", error);
+      logger.error("清理旧工具调用记录失败:", error as Error);
     }
   }
 
@@ -176,7 +176,7 @@ export class ToolCallLogger {
       this.pinoLogger.info(record, record.toolName);
     } catch (error) {
       // 记录失败不应该影响主流程，只记录错误日志
-      logger.error("记录工具调用失败:", error);
+      logger.error("记录工具调用失败:", error as Error);
     }
   }
 

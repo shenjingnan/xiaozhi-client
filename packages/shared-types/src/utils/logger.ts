@@ -9,8 +9,8 @@ export interface ToolCallRecord {
   toolName: string; // 工具名称
   originalToolName?: string; // 原始工具名称（未格式化的）
   serverName?: string; // 服务器名称（coze、dify、n8n、custom等）
-  arguments?: any; // 调用参数
-  result?: any; // 响应结果
+  arguments?: Record<string, unknown>; // 调用参数
+  result?: unknown; // 响应结果
   success: boolean; // 是否成功
   duration?: number; // 调用耗时（毫秒）
   error?: string; // 错误信息（如果有）

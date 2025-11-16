@@ -1,6 +1,18 @@
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type { EventBus } from "@services/EventBus.js";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { IndependentXiaozhiConnectionManager } from "../IndependentXiaozhiConnectionManager.js";
+import type { ProxyMCPServer } from "../../ProxyMCPServer.js";
+import type { ConfigManager } from "../../configManager.js";
+import type { MockEventBus, MockLogger } from "../../types/test-mocks.js";
+import {
+  type ConnectionStatus,
+  IndependentXiaozhiConnectionManager,
+} from "../IndependentXiaozhiConnectionManager.js";
+
+// 定义 IMCPServiceManager 接口用于测试
+interface IMCPServiceManager {
+  getAllTools(): Tool[];
+}
 
 // Mock dependencies
 vi.mock("../../Logger.js", () => ({
@@ -62,9 +74,13 @@ vi.mock("@utils/mcpServerUtils.js", () => ({
 
 describe("IndependentXiaozhiConnectionManager", () => {
   let manager: IndependentXiaozhiConnectionManager;
-  let mockEventBus: any;
-  let mockLogger: any;
-  let mockConfigManager: any;
+  let mockEventBus: MockEventBus;
+  let mockLogger: MockLogger;
+  let mockConfigManager: {
+    getMcpEndpoints: ReturnType<typeof vi.fn>;
+    addMcpEndpoint: ReturnType<typeof vi.fn>;
+    removeMcpEndpoint: ReturnType<typeof vi.fn>;
+  };
 
   // 创建虚拟工具数组
   const mockTools: Tool[] = [
@@ -89,7 +105,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
     // Get the mocked logger instance
     const { logger } = await import("../../Logger.js");
-    mockLogger = logger;
+    mockLogger = logger as unknown as MockLogger;
 
     // Mock EventBus
     mockEventBus = {
@@ -98,11 +114,13 @@ describe("IndependentXiaozhiConnectionManager", () => {
       offEvent: vi.fn(),
     };
     const { getEventBus } = await import("@services/EventBus.js");
-    vi.mocked(getEventBus).mockReturnValue(mockEventBus);
+    vi.mocked(getEventBus).mockReturnValue(mockEventBus as unknown as EventBus);
 
     const { configManager } = await import("../../configManager.js");
-    mockConfigManager = configManager;
-    manager = new IndependentXiaozhiConnectionManager(configManager);
+    mockConfigManager = configManager as unknown as typeof mockConfigManager;
+    manager = new IndependentXiaozhiConnectionManager(
+      configManager as unknown as ConfigManager
+    );
   });
 
   afterEach(() => {
@@ -193,7 +211,12 @@ describe("IndependentXiaozhiConnectionManager", () => {
       await manager.disconnectEndpoint(endpoint);
 
       // 模拟连接失败
-      const proxyServer = (manager as any).connections.get(endpoint);
+      const proxyServer = (
+        manager as unknown as { connections: Map<string, ProxyMCPServer> }
+      ).connections.get(endpoint);
+      if (!proxyServer) {
+        throw new Error("ProxyServer not found");
+      }
       vi.mocked(proxyServer.connect).mockRejectedValue(new Error("连接失败"));
 
       await expect(manager.connectExistingEndpoint(endpoint)).rejects.toThrow(
@@ -229,14 +252,18 @@ describe("IndependentXiaozhiConnectionManager", () => {
       await manager.addEndpoint(endpoint);
 
       // 模拟正在重连的状态
-      const connectionStates = (manager as any).connectionStates;
+      const connectionStates = (
+        manager as unknown as {
+          connectionStates: Map<string, ConnectionStatus>;
+        }
+      ).connectionStates;
       connectionStates.set(endpoint, {
         endpoint,
         connected: false,
         initialized: false,
         isReconnecting: true,
         reconnectAttempts: 2,
-        nextReconnectTime: Date.now() + 5000,
+        nextReconnectTime: undefined,
         reconnectDelay: 5000,
         lastError: "测试错误",
         lastReconnectAttempt: new Date(),
@@ -303,14 +330,18 @@ describe("IndependentXiaozhiConnectionManager", () => {
       await manager.addEndpoint(endpoint);
 
       // 手动设置重连状态
-      const connectionStates = (manager as any).connectionStates;
+      const connectionStates = (
+        manager as unknown as {
+          connectionStates: Map<string, ConnectionStatus>;
+        }
+      ).connectionStates;
       connectionStates.set(endpoint, {
         endpoint,
         connected: false,
         initialized: false,
         isReconnecting: true,
         reconnectAttempts: 1,
-        nextReconnectTime: Date.now() + 3000,
+        nextReconnectTime: undefined,
         reconnectDelay: 3000,
         lastReconnectAttempt: new Date(),
       });
@@ -555,15 +586,19 @@ describe("IndependentXiaozhiConnectionManager", () => {
       await manager.connectExistingEndpoint(endpoint);
 
       // 验证内部状态和外部状态的一致性
-      const internalStates = (manager as any).connectionStates;
+      const internalStates = (
+        manager as unknown as {
+          connectionStates: Map<string, ConnectionStatus>;
+        }
+      ).connectionStates;
       const externalStatus = manager.getConnectionStatus();
 
       const internalState = internalStates.get(endpoint);
       const externalState = externalStatus.find((s) => s.endpoint === endpoint);
 
-      expect(internalState.connected).toBe(externalState?.connected);
-      expect(internalState.initialized).toBe(externalState?.initialized);
-      expect(internalState.isReconnecting).toBe(externalState?.isReconnecting);
+      expect(internalState?.connected).toBe(externalState?.connected);
+      expect(internalState?.initialized).toBe(externalState?.initialized);
+      expect(internalState?.isReconnecting).toBe(externalState?.isReconnecting);
     });
   });
 
@@ -614,7 +649,10 @@ describe("IndependentXiaozhiConnectionManager", () => {
         testConfigManager
       );
       await expect(
-        testManager3.initialize(["ws://test"], "not-an-array" as any)
+        testManager3.initialize(
+          ["ws://test"],
+          "not-an-array" as unknown as Tool[]
+        )
       ).rejects.toThrow("工具列表必须是数组");
     });
 
@@ -627,9 +665,10 @@ describe("IndependentXiaozhiConnectionManager", () => {
       );
 
       // 模拟创建连接失败
-      vi.spyOn(testManager as any, "createConnection").mockRejectedValue(
-        new Error("创建失败")
-      );
+      vi.spyOn(
+        testManager as unknown as { createConnection: () => void },
+        "createConnection"
+      ).mockRejectedValue(new Error("创建失败"));
 
       await expect(
         testManager.initialize(["ws://localhost:8080"], mockTools)
@@ -663,9 +702,10 @@ describe("IndependentXiaozhiConnectionManager", () => {
       );
 
       // 模拟断开连接失败
-      vi.spyOn(testManager as any, "disconnect").mockRejectedValue(
-        new Error("断开失败")
-      );
+      vi.spyOn(
+        testManager as unknown as { disconnect: () => void },
+        "disconnect"
+      ).mockRejectedValue(new Error("断开失败"));
 
       await expect(testManager.cleanup()).rejects.toThrow("断开失败");
     });
@@ -688,7 +728,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
       await manager.initialize(["ws://localhost:8080"], mockTools);
 
       // 设置正在连接状态
-      (manager as any).isConnecting = true;
+      (manager as unknown as { isConnecting: boolean }).isConnecting = true;
 
       await manager.connect();
 
@@ -705,9 +745,15 @@ describe("IndependentXiaozhiConnectionManager", () => {
       );
 
       // 模拟一个连接成功，一个失败
-      const connections = (manager as any).connections;
+      const connections = (
+        manager as unknown as { connections: Map<string, ProxyMCPServer> }
+      ).connections;
       const mockConnection1 = connections.get("ws://localhost:8080");
       const mockConnection2 = connections.get("ws://localhost:8081");
+
+      if (!mockConnection1 || !mockConnection2) {
+        throw new Error("连接对象未找到");
+      }
 
       vi.mocked(mockConnection1.connect).mockResolvedValue(undefined);
       vi.mocked(mockConnection2.connect).mockRejectedValue(
@@ -725,8 +771,15 @@ describe("IndependentXiaozhiConnectionManager", () => {
       await manager.initialize(["ws://localhost:8080"], mockTools);
 
       // 模拟所有连接失败
-      const connections = (manager as any).connections;
+      const connections = (
+        manager as unknown as { connections: Map<string, ProxyMCPServer> }
+      ).connections;
       const mockConnection = connections.get("ws://localhost:8080");
+
+      if (!mockConnection) {
+        throw new Error("连接对象未找到");
+      }
+
       vi.mocked(mockConnection.connect).mockRejectedValue(
         new Error("连接失败")
       );
@@ -762,11 +815,16 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
       // 添加一个重连定时器
       const timer = setTimeout(() => {}, 5000);
-      (manager as any).reconnectTimers.set("ws://localhost:8080", timer);
+      (
+        manager as unknown as { reconnectTimers: Map<string, NodeJS.Timeout> }
+      ).reconnectTimers.set("ws://localhost:8080", timer);
 
       await manager.disconnect();
 
-      expect((manager as any).reconnectTimers.size).toBe(0);
+      expect(
+        (manager as unknown as { reconnectTimers: Map<string, NodeJS.Timeout> })
+          .reconnectTimers.size
+      ).toBe(0);
     });
   });
 
@@ -845,7 +903,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
     test("应该成功清除所有端点", async () => {
       // 重置 mock 状态以避免冲突
       vi.mocked(mockConfigManager.getMcpEndpoints).mockReturnValue([]);
-      vi.mocked(mockConfigManager.addMcpEndpoint).mockResolvedValue();
+      vi.mocked(mockConfigManager.addMcpEndpoint).mockResolvedValue(undefined);
 
       await manager.addEndpoint("ws://localhost:8081");
 
@@ -871,7 +929,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
     test("应该正确返回所有端点", async () => {
       // 重置 mock 状态以避免冲突
       vi.mocked(mockConfigManager.getMcpEndpoints).mockReturnValue([]);
-      vi.mocked(mockConfigManager.addMcpEndpoint).mockResolvedValue();
+      vi.mocked(mockConfigManager.addMcpEndpoint).mockResolvedValue(undefined);
 
       await manager.addEndpoint("ws://localhost:8081");
 
@@ -900,11 +958,18 @@ describe("IndependentXiaozhiConnectionManager", () => {
       expect(manager.isAnyConnected()).toBe(false);
 
       // 模拟一个连接
-      const connectionStates = (manager as any).connectionStates;
-      connectionStates.set("ws://localhost:8080", {
-        ...connectionStates.get("ws://localhost:8080"),
-        connected: true,
-      });
+      const connectionStates = (
+        manager as unknown as {
+          connectionStates: Map<string, ConnectionStatus>;
+        }
+      ).connectionStates;
+      const existingState = connectionStates.get("ws://localhost:8080");
+      if (existingState) {
+        connectionStates.set("ws://localhost:8080", {
+          ...existingState,
+          connected: true,
+        });
+      }
 
       expect(manager.isAnyConnected()).toBe(true);
     });
@@ -949,7 +1014,11 @@ describe("IndependentXiaozhiConnectionManager", () => {
       const endpoint = "ws://localhost:8080";
 
       // 模拟连接失败状态
-      const connectionStates = (manager as any).connectionStates;
+      const connectionStates = (
+        manager as unknown as {
+          connectionStates: Map<string, ConnectionStatus>;
+        }
+      ).connectionStates;
       connectionStates.set(endpoint, {
         endpoint,
         connected: false,
@@ -972,18 +1041,28 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
       // 添加一个重连定时器
       const timer = setTimeout(() => {}, 5000);
-      (manager as any).reconnectTimers.set(endpoint, timer);
+      (
+        manager as unknown as { reconnectTimers: Map<string, NodeJS.Timeout> }
+      ).reconnectTimers.set(endpoint, timer);
 
       await manager.triggerReconnect(endpoint);
 
-      expect((manager as any).reconnectTimers.has(endpoint)).toBe(false);
+      expect(
+        (
+          manager as unknown as { reconnectTimers: Map<string, NodeJS.Timeout> }
+        ).reconnectTimers.has(endpoint)
+      ).toBe(false);
     });
 
     test("重连已连接的端点应该跳过", async () => {
       const endpoint = "ws://localhost:8080";
 
       // 模拟已连接状态
-      const connectionStates = (manager as any).connectionStates;
+      const connectionStates = (
+        manager as unknown as {
+          connectionStates: Map<string, ConnectionStatus>;
+        }
+      ).connectionStates;
       connectionStates.set(endpoint, {
         endpoint,
         connected: true,
@@ -1012,14 +1091,20 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
       // 添加一个重连定时器
       const timer = setTimeout(() => {}, 5000);
-      (manager as any).reconnectTimers.set(endpoint, timer);
+      (
+        manager as unknown as { reconnectTimers: Map<string, NodeJS.Timeout> }
+      ).reconnectTimers.set(endpoint, timer);
 
       // 清理日志记录以便检查
       vi.clearAllMocks();
 
       manager.stopReconnect(endpoint);
 
-      expect((manager as any).reconnectTimers.has(endpoint)).toBe(false);
+      expect(
+        (
+          manager as unknown as { reconnectTimers: Map<string, NodeJS.Timeout> }
+        ).reconnectTimers.has(endpoint)
+      ).toBe(false);
       expect(mockLogger.info).toHaveBeenCalledWith(
         expect.stringContaining("已停止小智接入点 ws://localhost:8080 的重连")
       );
@@ -1036,7 +1121,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
     test("应该成功停止所有重连", async () => {
       // 重置 mock 状态以避免冲突
       vi.mocked(mockConfigManager.getMcpEndpoints).mockReturnValue([]);
-      vi.mocked(mockConfigManager.addMcpEndpoint).mockResolvedValue();
+      vi.mocked(mockConfigManager.addMcpEndpoint).mockResolvedValue(undefined);
 
       // 先添加一个端点
       await manager.addEndpoint("ws://localhost:8081");
@@ -1044,15 +1129,22 @@ describe("IndependentXiaozhiConnectionManager", () => {
       // 添加多个重连定时器
       const timer1 = setTimeout(() => {}, 5000);
       const timer2 = setTimeout(() => {}, 5000);
-      (manager as any).reconnectTimers.set("ws://localhost:8080", timer1);
-      (manager as any).reconnectTimers.set("ws://localhost:8081", timer2);
+      (
+        manager as unknown as { reconnectTimers: Map<string, NodeJS.Timeout> }
+      ).reconnectTimers.set("ws://localhost:8080", timer1);
+      (
+        manager as unknown as { reconnectTimers: Map<string, NodeJS.Timeout> }
+      ).reconnectTimers.set("ws://localhost:8081", timer2);
 
       // 清理日志记录以便检查
       vi.clearAllMocks();
 
       manager.stopAllReconnects();
 
-      expect((manager as any).reconnectTimers.size).toBe(0);
+      expect(
+        (manager as unknown as { reconnectTimers: Map<string, NodeJS.Timeout> })
+          .reconnectTimers.size
+      ).toBe(0);
       expect(mockLogger.info).toHaveBeenCalledWith(
         expect.stringContaining("停止所有小智接入点的重连")
       );
@@ -1063,8 +1155,10 @@ describe("IndependentXiaozhiConnectionManager", () => {
     beforeEach(async () => {
       // 重置配置管理器的 mock 状态
       vi.mocked(mockConfigManager.getMcpEndpoints).mockReturnValue([]);
-      vi.mocked(mockConfigManager.addMcpEndpoint).mockResolvedValue();
-      vi.mocked(mockConfigManager.removeMcpEndpoint).mockResolvedValue();
+      vi.mocked(mockConfigManager.addMcpEndpoint).mockResolvedValue(undefined);
+      vi.mocked(mockConfigManager.removeMcpEndpoint).mockResolvedValue(
+        undefined
+      );
 
       await manager.initialize(["ws://localhost:8080"], mockTools);
     });
@@ -1200,7 +1294,10 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
       manager.setServiceManager(mockServiceManager);
 
-      expect((manager as any).mcpServiceManager).toBe(mockServiceManager);
+      expect(
+        (manager as unknown as { mcpServiceManager: IMCPServiceManager | null })
+          .mcpServiceManager
+      ).toBe(mockServiceManager);
       expect(mockLogger.debug).toHaveBeenCalledWith("已设置 MCPServiceManager");
     });
 
@@ -1210,7 +1307,9 @@ describe("IndependentXiaozhiConnectionManager", () => {
       };
 
       // 模拟现有连接 - 需要先获取实际的连接对象
-      const connections = (manager as any).connections;
+      const connections = (
+        manager as unknown as { connections: Map<string, ProxyMCPServer> }
+      ).connections;
       const mockConnection = connections.get("ws://localhost:8080");
 
       // 确保 setServiceManager 方法是一个 spy
@@ -1292,8 +1391,15 @@ describe("IndependentXiaozhiConnectionManager", () => {
       const endpoint = "ws://localhost:8080";
 
       // 模拟连接失败
-      const connections = (manager as any).connections;
+      const connections = (
+        manager as unknown as { connections: Map<string, ProxyMCPServer> }
+      ).connections;
       const mockConnection = connections.get(endpoint);
+
+      if (!mockConnection) {
+        throw new Error("连接对象未找到");
+      }
+
       vi.mocked(mockConnection.connect).mockRejectedValue(
         new Error("连接失败")
       );
@@ -1357,7 +1463,9 @@ describe("IndependentXiaozhiConnectionManager", () => {
       };
 
       // 模拟工具同步失败
-      const connections = (manager as any).connections;
+      const connections = (
+        manager as unknown as { connections: Map<string, ProxyMCPServer> }
+      ).connections;
       const mockConnection = connections.get("ws://localhost:8080");
 
       if (mockConnection?.setServiceManager) {
@@ -1377,7 +1485,11 @@ describe("IndependentXiaozhiConnectionManager", () => {
       const endpoint = "ws://localhost:8080";
 
       // 设置重连次数达到最大值
-      const connectionStates = (manager as any).connectionStates;
+      const connectionStates = (
+        manager as unknown as {
+          connectionStates: Map<string, ConnectionStatus>;
+        }
+      ).connectionStates;
       connectionStates.set(endpoint, {
         endpoint,
         connected: false,
@@ -1389,7 +1501,9 @@ describe("IndependentXiaozhiConnectionManager", () => {
       });
 
       // 调用私有方法安排重连
-      (manager as any).scheduleReconnect(endpoint);
+      (
+        manager as unknown as { scheduleReconnect: (endpoint: string) => void }
+      ).scheduleReconnect(endpoint);
 
       expect(mockLogger.warn).toHaveBeenCalledWith(
         expect.stringContaining("停止重连")
@@ -1400,11 +1514,17 @@ describe("IndependentXiaozhiConnectionManager", () => {
       const endpoint = "ws://localhost:8080";
 
       // 模拟重连时找不到连接
-      const connections = (manager as any).connections;
+      const connections = (
+        manager as unknown as { connections: Map<string, ProxyMCPServer> }
+      ).connections;
       connections.delete(endpoint);
 
       // 调用私有方法执行重连
-      await (manager as any).performReconnect(endpoint);
+      await (
+        manager as unknown as {
+          performReconnect: (endpoint: string) => Promise<void>;
+        }
+      ).performReconnect(endpoint);
 
       expect(mockLogger.warn).toHaveBeenCalledWith(
         expect.stringContaining("重连时找不到代理服务器")
@@ -1415,7 +1535,9 @@ describe("IndependentXiaozhiConnectionManager", () => {
       const endpoint = "ws://localhost:8080";
 
       // 模拟断开连接失败
-      const connections = (manager as any).connections;
+      const connections = (
+        manager as unknown as { connections: Map<string, ProxyMCPServer> }
+      ).connections;
       const mockConnection = connections.get(endpoint);
 
       if (mockConnection?.disconnect) {
@@ -1437,15 +1559,16 @@ describe("IndependentXiaozhiConnectionManager", () => {
       vi.mocked(mockConfigManager.getMcpEndpoints).mockReturnValue([]);
 
       // 让 addMcpEndpoint 先成功，然后 createConnection 失败，这样才会触发回滚
-      vi.mocked(mockConfigManager.addMcpEndpoint).mockResolvedValue();
+      vi.mocked(mockConfigManager.addMcpEndpoint).mockResolvedValue(undefined);
       vi.mocked(mockConfigManager.removeMcpEndpoint).mockImplementation(() => {
         throw new Error("回滚失败");
       });
 
       // 模拟 createConnection 失败
-      vi.spyOn(manager as any, "createConnection").mockRejectedValue(
-        new Error("创建连接失败")
-      );
+      vi.spyOn(
+        manager as unknown as { createConnection: () => void },
+        "createConnection"
+      ).mockRejectedValue(new Error("创建连接失败"));
 
       try {
         await manager.addEndpoint("ws://localhost:8081");
@@ -1464,8 +1587,10 @@ describe("IndependentXiaozhiConnectionManager", () => {
     beforeEach(async () => {
       // 重置配置管理器的 mock 状态
       vi.mocked(mockConfigManager.getMcpEndpoints).mockReturnValue([]);
-      vi.mocked(mockConfigManager.addMcpEndpoint).mockResolvedValue();
-      vi.mocked(mockConfigManager.removeMcpEndpoint).mockResolvedValue();
+      vi.mocked(mockConfigManager.addMcpEndpoint).mockResolvedValue(undefined);
+      vi.mocked(mockConfigManager.removeMcpEndpoint).mockResolvedValue(
+        undefined
+      );
 
       await manager.initialize(["ws://localhost:8080"], mockTools);
     });
@@ -1507,7 +1632,11 @@ describe("IndependentXiaozhiConnectionManager", () => {
       const endpoint = "ws://localhost:8080";
 
       // 模拟连接失败状态
-      const connectionStates = (manager as any).connectionStates;
+      const connectionStates = (
+        manager as unknown as {
+          connectionStates: Map<string, ConnectionStatus>;
+        }
+      ).connectionStates;
       connectionStates.set(endpoint, {
         endpoint,
         connected: false,
@@ -1574,8 +1703,10 @@ describe("IndependentXiaozhiConnectionManager", () => {
     beforeEach(async () => {
       // 重置配置管理器的 mock 状态
       vi.mocked(mockConfigManager.getMcpEndpoints).mockReturnValue([]);
-      vi.mocked(mockConfigManager.addMcpEndpoint).mockResolvedValue();
-      vi.mocked(mockConfigManager.removeMcpEndpoint).mockResolvedValue();
+      vi.mocked(mockConfigManager.addMcpEndpoint).mockResolvedValue(undefined);
+      vi.mocked(mockConfigManager.removeMcpEndpoint).mockResolvedValue(
+        undefined
+      );
 
       await manager.initialize(["ws://localhost:8080"], mockTools);
     });
@@ -1638,9 +1769,21 @@ describe("IndependentXiaozhiConnectionManager", () => {
       await manager.clearEndpoints();
 
       // 验证内存清理
-      expect((manager as any).connections.size).toBe(0);
-      expect((manager as any).connectionStates.size).toBe(0);
-      expect((manager as any).reconnectTimers.size).toBe(0);
+      expect(
+        (manager as unknown as { connections: Map<string, ProxyMCPServer> })
+          .connections.size
+      ).toBe(0);
+      expect(
+        (
+          manager as unknown as {
+            connectionStates: Map<string, ConnectionStatus>;
+          }
+        ).connectionStates.size
+      ).toBe(0);
+      expect(
+        (manager as unknown as { reconnectTimers: Map<string, NodeJS.Timeout> })
+          .reconnectTimers.size
+      ).toBe(0);
     });
   });
 });

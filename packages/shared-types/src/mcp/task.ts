@@ -28,12 +28,12 @@ export interface CacheStateTransition {
 export interface TaskInfo {
   taskId: string;
   toolName: string;
-  arguments: any;
+  arguments: Record<string, unknown>;
   status: TaskStatus;
   startTime: string;
   endTime?: string;
   error?: string;
-  result?: any;
+  result?: unknown;
 }
 
 /**

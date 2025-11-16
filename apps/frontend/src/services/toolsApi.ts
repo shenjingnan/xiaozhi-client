@@ -7,6 +7,7 @@ import type {
   CozeWorkflow,
   WorkflowParameterConfig,
 } from "@xiaozhi/shared-types";
+import type { CustomMCPTool } from "./api";
 import { apiClient } from "./api";
 
 /**
@@ -25,8 +26,8 @@ export interface AddToolRequest {
 export interface AddToolResponse {
   name: string;
   description: string;
-  inputSchema: any;
-  handler: any;
+  inputSchema: Record<string, unknown>;
+  handler: Record<string, unknown>;
 }
 
 /**
@@ -35,7 +36,7 @@ export interface AddToolResponse {
 export interface ApiError {
   code: string;
   message: string;
-  details?: any;
+  details?: Record<string, unknown>;
 }
 
 /**
@@ -101,7 +102,7 @@ export class ToolsApiService {
   /**
    * 获取自定义工具列表
    */
-  async getCustomTools(): Promise<any[]> {
+  async getCustomTools(): Promise<CustomMCPTool[]> {
     try {
       const tools = await this.executeWithRetry(async () => {
         return await apiClient.getCustomTools();
@@ -279,7 +280,7 @@ export class ToolsApiService {
     operation: () => Promise<T>,
     retries: number = this.MAX_RETRIES
   ): Promise<T> {
-    let lastError: Error;
+    let lastError: Error | undefined;
 
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
@@ -303,7 +304,7 @@ export class ToolsApiService {
       }
     }
 
-    throw lastError!;
+    throw lastError || new Error("未知错误");
   }
 
   /**

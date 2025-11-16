@@ -5,7 +5,7 @@
 /**
  * 通用 API 响应接口
  */
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   /** 响应状态码，0表示成功 */
   code: number;
   /** 响应数据 */
@@ -19,7 +19,7 @@ export interface ApiResponse<T = any> {
 /**
  * 成功响应接口
  */
-export interface ApiSuccessResponse<T = any> {
+export interface ApiSuccessResponse<T = unknown> {
   /** 响应状态码，固定为0 */
   code: 0;
   /** 响应数据 */

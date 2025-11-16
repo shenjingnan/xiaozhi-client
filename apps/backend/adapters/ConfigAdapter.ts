@@ -36,7 +36,10 @@ function inferTransportTypeFromUrl(url: string): MCPTransportType {
     }
     return MCPTransportType.STREAMABLE_HTTP; // 默认
   } catch (error) {
-    logger.warn(`URL 解析失败，默认推断为 streamable-http 类型: ${url}`, error);
+    logger.warn(
+      `URL 解析失败，默认推断为 streamable-http 类型: ${url}`,
+      error as Error
+    );
     return MCPTransportType.STREAMABLE_HTTP; // URL 解析失败时的默认值
   }
 }
@@ -82,7 +85,7 @@ export function convertLegacyToNew(
     logger.debug(`配置转换成功: ${serviceName} -> ${newConfig.type}`);
     return newConfig;
   } catch (error) {
-    logger.error(`配置转换失败: ${serviceName}`, error);
+    logger.error(`配置转换失败: ${serviceName}`, error as Error);
     throw error instanceof ConfigValidationError
       ? error
       : new ConfigValidationError(

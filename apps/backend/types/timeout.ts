@@ -69,7 +69,7 @@ function getToolSpecificTimeoutMessage(
 ): string {
   const toolMessages: Record<string, string> = {
     coze_workflow: `⏱️ 扣子工作流执行超时，正在后台处理中...
-    
+
 📋 任务信息：
 - 任务ID: ${taskId}
 - 工具类型: 扣子工作流
@@ -92,7 +92,7 @@ function getToolSpecificTimeoutMessage(
  */
 function getDefaultTimeoutMessage(taskId: string): string {
   return `⏱️ 工具调用超时，正在后台处理中...
-    
+
 📋 任务信息：
 - 任务ID: ${taskId}
 - 状态: 处理中
@@ -107,11 +107,17 @@ function getDefaultTimeoutMessage(taskId: string): string {
 /**
  * 验证是否为超时响应
  */
-export function isTimeoutResponse(response: any): response is TimeoutResponse {
+export function isTimeoutResponse(
+  response: unknown
+): response is TimeoutResponse {
   return !!(
     response &&
+    typeof response === "object" &&
+    "status" in response &&
     response.status === "timeout" &&
+    "taskId" in response &&
     typeof response.taskId === "string" &&
+    "content" in response &&
     Array.isArray(response.content) &&
     response.content.length > 0 &&
     response.content[0].type === "text"
@@ -121,10 +127,6 @@ export function isTimeoutResponse(response: any): response is TimeoutResponse {
 /**
  * 验证是否为超时错误
  */
-export function isTimeoutError(error: any): error is TimeoutError {
-  return !!(
-    error &&
-    error.name === "TimeoutError" &&
-    error instanceof TimeoutError
-  );
+export function isTimeoutError(error: unknown): error is TimeoutError {
+  return error instanceof TimeoutError;
 }

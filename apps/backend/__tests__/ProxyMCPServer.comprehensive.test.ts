@@ -1,11 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import WebSocket from "ws";
 import { ProxyMCPServer } from "../ProxyMCPServer.js";
+import type {
+  MCPMessage,
+  MockServiceManager,
+  MockWebSocket,
+  TestableProxyMCPServer,
+} from "../types";
 
 describe("ProxyMCPServer 全面测试", () => {
   let proxyServer: ProxyMCPServer;
-  let mockServiceManager: any;
-  let mockWs: any;
+  let mockServiceManager: MockServiceManager;
+  let mockWs: MockWebSocket;
 
   beforeEach(() => {
     // 模拟 WebSocket
@@ -31,8 +37,9 @@ describe("ProxyMCPServer 全面测试", () => {
     proxyServer.setServiceManager(mockServiceManager);
 
     // 设置模拟的 WebSocket 连接
-    (proxyServer as any).ws = mockWs;
-    (proxyServer as any).connectionStatus = true;
+    const testableServer = proxyServer as unknown as TestableProxyMCPServer;
+    testableServer.ws = mockWs;
+    testableServer.connectionStatus = true;
   });
 
   describe("连接管理", () => {
@@ -77,28 +84,31 @@ describe("ProxyMCPServer 全面测试", () => {
 
   describe("工具同步", () => {
     it("应该能够同步工具列表", async () => {
-      await (proxyServer as any).syncToolsFromServiceManager();
+      const testableServer = proxyServer as unknown as TestableProxyMCPServer;
+      await testableServer.syncToolsFromServiceManager();
 
       expect(mockServiceManager.getAllTools).toHaveBeenCalled();
-      expect((proxyServer as any).tools.size).toBe(2);
+      expect(testableServer.tools.size).toBe(2);
     });
 
     it("应该处理空工具列表", async () => {
       mockServiceManager.getAllTools.mockReturnValue([]);
+      const testableServer = proxyServer as unknown as TestableProxyMCPServer;
 
-      await (proxyServer as any).syncToolsFromServiceManager();
+      await testableServer.syncToolsFromServiceManager();
 
-      expect((proxyServer as any).tools.size).toBe(0);
+      expect(testableServer.tools.size).toBe(0);
     });
 
     it("应该处理工具同步错误", async () => {
       mockServiceManager.getAllTools.mockImplementation(() => {
         throw new Error("同步失败");
       });
+      const testableServer = proxyServer as unknown as TestableProxyMCPServer;
 
       // 应该不抛出异常
       try {
-        await (proxyServer as any).syncToolsFromServiceManager();
+        await testableServer.syncToolsFromServiceManager();
       } catch (error) {
         // 预期会有错误日志，但不应该抛出异常
       }
@@ -107,13 +117,14 @@ describe("ProxyMCPServer 全面测试", () => {
 
   describe("消息处理", () => {
     it("应该处理 ping 消息", async () => {
-      const pingMessage = {
+      const pingMessage: MCPMessage = {
         jsonrpc: "2.0",
         id: "ping-1",
         method: "ping",
       };
 
-      await (proxyServer as any).handleServerRequest(pingMessage);
+      const testableServer = proxyServer as unknown as TestableProxyMCPServer;
+      await testableServer.handleServerRequest(pingMessage);
 
       expect(mockWs.send).toHaveBeenCalledWith(
         expect.stringContaining('"result"')
@@ -121,13 +132,14 @@ describe("ProxyMCPServer 全面测试", () => {
     });
 
     it("应该处理 tools/list 消息", async () => {
-      const toolsListMessage = {
+      const toolsListMessage: MCPMessage = {
         jsonrpc: "2.0",
         id: "tools-1",
         method: "tools/list",
       };
 
-      await (proxyServer as any).handleServerRequest(toolsListMessage);
+      const testableServer2 = proxyServer as unknown as TestableProxyMCPServer;
+      await testableServer2.handleServerRequest(toolsListMessage);
 
       expect(mockWs.send).toHaveBeenCalledWith(
         expect.stringContaining('"tools"')
@@ -135,13 +147,14 @@ describe("ProxyMCPServer 全面测试", () => {
     });
 
     it("应该处理未知消息类型", async () => {
-      const unknownMessage = {
+      const unknownMessage: MCPMessage = {
         jsonrpc: "2.0",
         id: "unknown-1",
         method: "unknown/method",
       };
 
-      await (proxyServer as any).handleServerRequest(unknownMessage);
+      const testableServer3 = proxyServer as unknown as TestableProxyMCPServer;
+      await testableServer3.handleServerRequest(unknownMessage);
 
       // 未知消息类型不会发送响应，只会记录日志
       // expect(mockWs.send).toHaveBeenCalledWith(
@@ -150,14 +163,17 @@ describe("ProxyMCPServer 全面测试", () => {
     });
 
     it("应该处理无效的消息格式", async () => {
+      // 故意创建一个无效的消息对象（缺少 jsonrpc 字段）
       const invalidMessage = {
         // 缺少必需字段
         method: "ping",
-      };
+      } as MCPMessage;
 
       // 应该不抛出异常
       try {
-        await (proxyServer as any).handleServerRequest(invalidMessage);
+        const testableServer4 =
+          proxyServer as unknown as TestableProxyMCPServer;
+        await testableServer4.handleServerRequest(invalidMessage);
       } catch (error) {
         // 预期可能会有错误，但不应该抛出异常
       }
@@ -168,7 +184,8 @@ describe("ProxyMCPServer 全面测试", () => {
     it("应该处理普通 Error 对象", () => {
       const error = new Error("普通错误");
 
-      (proxyServer as any).handleToolCallError(error, "test-id", 100);
+      const testableServer = proxyServer as unknown as TestableProxyMCPServer;
+      testableServer.handleToolCallError(error, "test-id", 100);
 
       expect(mockWs.send).toHaveBeenCalledWith(
         expect.stringContaining('"code":-32000')
@@ -176,7 +193,8 @@ describe("ProxyMCPServer 全面测试", () => {
     });
 
     it("应该处理 null 错误", () => {
-      (proxyServer as any).handleToolCallError(null, "test-id", 100);
+      const testableServer2 = proxyServer as unknown as TestableProxyMCPServer;
+      testableServer2.handleToolCallError(null, "test-id", 100);
 
       expect(mockWs.send).toHaveBeenCalledWith(
         expect.stringContaining('"error"')
@@ -194,14 +212,15 @@ describe("ProxyMCPServer 全面测试", () => {
         content: [{ type: "text", text: "fast" }],
       });
 
-      const request = {
+      const request: MCPMessage = {
         jsonrpc: "2.0",
         id: "fast-test",
         method: "tools/call",
         params: { name: "fast-tool", arguments: {} },
       };
 
-      await (proxyServer as any).handleToolCall(request);
+      const testableServer = proxyServer as unknown as TestableProxyMCPServer;
+      await testableServer.handleToolCall(request);
 
       const metrics = proxyServer.getPerformanceMetrics();
       expect(metrics.minResponseTime).toBeGreaterThanOrEqual(0);
@@ -221,14 +240,15 @@ describe("ProxyMCPServer 全面测试", () => {
 
       // 执行 105 次调用（超过默认的 100 条限制）
       for (let i = 0; i < 105; i++) {
-        const request = {
+        const request: MCPMessage = {
           jsonrpc: "2.0",
           id: `test-${i}`,
           method: "tools/call",
           params: { name: "test-tool", arguments: {} },
         };
 
-        await (proxyServer as any).handleToolCall(request);
+        const testableServer = proxyServer as unknown as TestableProxyMCPServer;
+        await testableServer.handleToolCall(request);
       }
 
       const records = proxyServer.getCallRecords();
@@ -253,14 +273,15 @@ describe("ProxyMCPServer 全面测试", () => {
 
       // 执行 5 次调用
       for (let i = 0; i < 5; i++) {
-        const request = {
+        const request: MCPMessage = {
           jsonrpc: "2.0",
           id: `test-${i}`,
           method: "tools/call",
           params: { name: "test-tool", arguments: {} },
         };
 
-        await (proxyServer as any).handleToolCall(request);
+        const testableServer = proxyServer as unknown as TestableProxyMCPServer;
+        await testableServer.handleToolCall(request);
       }
 
       const metrics = proxyServer.getPerformanceMetrics();

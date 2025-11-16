@@ -42,7 +42,7 @@
         "noUselessConstructor": "off"
       },
       "suspicious": {
-        "noExplicitAny": "off"
+        "noExplicitAny": "error"
       },
       "style": {
         "useConst": "error",

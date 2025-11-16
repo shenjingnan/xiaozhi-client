@@ -9,7 +9,7 @@ export interface ValidationRule {
   /** 规则名称 */
   name: string;
   /** 验证函数 */
-  validate: (value: any) => boolean | string;
+  validate: (value: unknown) => boolean | string;
   /** 错误消息模板 */
   message: string;
   /** 是否必填 */
@@ -49,7 +49,7 @@ export interface ValidationError {
   /** 验证规则名称 */
   rule: string;
   /** 原始值 */
-  value: any;
+  value: unknown;
 }
 
 /**
