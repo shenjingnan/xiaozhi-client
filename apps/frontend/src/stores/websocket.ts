@@ -84,7 +84,7 @@ interface WebSocketActions {
   connect: () => Promise<void>;
   disconnect: () => void;
   reconnect: () => Promise<void>;
-  send: (message: any) => boolean;
+  send: (message: Record<string, unknown>) => boolean;
 
   // URL 管理
   updateUrl: (url: string) => void;
@@ -221,7 +221,7 @@ export const useWebSocketStore = create<WebSocketStore>()(
         }
       },
 
-      send: (message: any): boolean => {
+      send: (message: unknown): boolean => {
         try {
           return webSocketManager.send(message);
         } catch (error) {

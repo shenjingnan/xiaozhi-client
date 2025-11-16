@@ -29,25 +29,34 @@ export interface TimeoutResponse {
 /**
  * 验证是否为工具调用结果
  */
-export function isToolCallResult(response: any): response is ToolCallResult {
+export function isToolCallResult(
+  response: unknown
+): response is ToolCallResult {
   return (
-    response &&
-    Array.isArray(response.content) &&
-    response.content.length > 0 &&
-    response.content[0].type === "text" &&
-    typeof response.content[0].text === "string"
+    typeof response === "object" &&
+    response !== null &&
+    "content" in response &&
+    Array.isArray((response as ToolCallResult).content) &&
+    (response as ToolCallResult).content.length > 0 &&
+    (response as ToolCallResult).content[0].type === "text" &&
+    typeof (response as ToolCallResult).content[0].text === "string"
   );
 }
 
 /**
  * 验证是否为超时响应
  */
-export function isTimeoutResponse(response: any): response is TimeoutResponse {
+export function isTimeoutResponse(
+  response: unknown
+): response is TimeoutResponse {
   return (
-    response &&
     typeof response === "object" &&
-    response.isTimeout === true &&
-    typeof response.timeoutMs === "number" &&
-    typeof response.message === "string"
+    response !== null &&
+    "isTimeout" in response &&
+    (response as TimeoutResponse).isTimeout === true &&
+    "timeoutMs" in response &&
+    typeof (response as TimeoutResponse).timeoutMs === "number" &&
+    "message" in response &&
+    typeof (response as TimeoutResponse).message === "string"
   );
 }

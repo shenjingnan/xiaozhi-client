@@ -12,14 +12,14 @@ import { logger } from "@root/Logger.js";
 export interface MCPMessage {
   jsonrpc: "2.0";
   method: string;
-  params?: any;
+  params?: Record<string, unknown>;
   id?: string | number;
 }
 
 // MCP 响应接口
 export interface MCPResponse {
   jsonrpc: "2.0";
-  result?: any;
+  result?: Record<string, unknown>;
   error?: MCPError;
   id: string | number | null;
 }
@@ -28,7 +28,7 @@ export interface MCPResponse {
 export interface MCPError {
   code: number;
   message: string;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 // 连接状态枚举
@@ -102,12 +102,12 @@ export abstract class TransportAdapter {
       // 仅对非通知消息发送响应
       if (response !== null) {
         this.logger.debug("发送响应消息:", response);
-        await this.sendMessage(response);
+        await this.sendMessage(response as MCPResponse);
       } else {
         this.logger.debug("收到通知消息，无需响应");
       }
     } catch (error) {
-      this.logger.error(`处理消息时出错: ${message.method}`, error);
+      this.logger.error(`处理消息时出错: ${message.method}`, { error: (error as Error).message });
 
       const errorResponse = this.createErrorResponse(
         error as Error,
@@ -259,7 +259,7 @@ export abstract class TransportAdapter {
    * 验证消息格式
    * 验证消息是否符合 MCP 协议规范
    */
-  protected validateMessage(message: any): boolean {
+  protected validateMessage(message: Record<string, unknown>): boolean {
     if (!message || typeof message !== "object") {
       return false;
     }

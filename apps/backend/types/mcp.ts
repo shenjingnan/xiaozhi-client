@@ -85,7 +85,7 @@ export interface TimeoutConfig {
 export interface TaskInfo {
   taskId: string;
   toolName: string;
-  arguments: any;
+  arguments: Record<string, unknown>;
   status: TaskStatus;
   startTime: string;
   endTime?: string;
@@ -116,13 +116,27 @@ export type ToolCallResponse = ToolCallResult | TimeoutResponse;
 /**
  * 验证是否为工具调用结果
  */
-export function isToolCallResult(response: any): response is ToolCallResult {
+export function isToolCallResult(response: unknown): response is ToolCallResult {
+  if (!response || typeof response !== "object") {
+    return false;
+  }
+
+  if (!("content" in response) || !Array.isArray(response.content)) {
+    return false;
+  }
+
+  if (response.content.length === 0) {
+    return false;
+  }
+
+  const firstItem = response.content[0];
   return (
-    response &&
-    Array.isArray(response.content) &&
-    response.content.length > 0 &&
-    response.content[0].type === "text" &&
-    typeof response.content[0].text === "string"
+    firstItem &&
+    typeof firstItem === "object" &&
+    "type" in firstItem &&
+    firstItem.type === "text" &&
+    "text" in firstItem &&
+    typeof firstItem.text === "string"
   );
 }
 
@@ -130,36 +144,64 @@ export function isToolCallResult(response: any): response is ToolCallResult {
  * 验证是否为增强的工具结果缓存
  */
 export function isEnhancedToolResultCache(
-  cache: any
+  cache: unknown
 ): cache is EnhancedToolResultCache {
-  return (
-    cache &&
-    typeof cache.timestamp === "string" &&
-    typeof cache.ttl === "number" &&
-    ["completed", "pending", "failed", "consumed"].includes(cache.status) &&
-    typeof cache.consumed === "boolean" &&
-    typeof cache.retryCount === "number"
-  );
+  if (!cache || typeof cache !== "object") {
+    return false;
+  }
+
+  if (!("timestamp" in cache) || typeof cache.timestamp !== "string") {
+    return false;
+  }
+
+  if (!("ttl" in cache) || typeof cache.ttl !== "number") {
+    return false;
+  }
+
+  if (!("status" in cache) || !["completed", "pending", "failed", "consumed"].includes(cache.status as string)) {
+    return false;
+  }
+
+  if (!("consumed" in cache) || typeof cache.consumed !== "boolean") {
+    return false;
+  }
+
+  if (!("retryCount" in cache) || typeof cache.retryCount !== "number") {
+    return false;
+  }
+
+  return true;
 }
 
 /**
  * 验证是否为扩展的 MCP 工具缓存
  */
 export function isExtendedMCPToolsCache(
-  cache: any
+  cache: unknown
 ): cache is ExtendedMCPToolsCache {
-  return (
-    cache &&
-    typeof cache.version === "string" &&
-    typeof cache.mcpServers === "object" &&
-    typeof cache.metadata === "object"
-  );
+  if (!cache || typeof cache !== "object") {
+    return false;
+  }
+
+  if (!("version" in cache) || typeof cache.version !== "string") {
+    return false;
+  }
+
+  if (!("mcpServers" in cache) || typeof cache.mcpServers !== "object") {
+    return false;
+  }
+
+  if (!("metadata" in cache) || typeof cache.metadata !== "object") {
+    return false;
+  }
+
+  return true;
 }
 
 /**
  * 生成缓存键的工具函数
  */
-export function generateCacheKey(toolName: string, arguments_: any): string {
+export function generateCacheKey(toolName: string, arguments_: Record<string, unknown>): string {
   const argsHash = createHash("md5")
     .update(JSON.stringify(arguments_ || {}))
     .digest("hex");

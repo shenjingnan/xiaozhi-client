@@ -48,7 +48,7 @@ export type MCPCommunicationType = "stdio" | "sse" | "streamable-http";
  * ```
  */
 export function getMcpServerCommunicationType(
-  serverConfig: MCPServerConfig | Record<string, any>
+  serverConfig: MCPServerConfig | Record<string, unknown>
 ): MCPCommunicationType {
   // 参数验证
   if (!serverConfig || typeof serverConfig !== "object") {
@@ -80,7 +80,7 @@ export function getMcpServerCommunicationType(
  * 检查 MCP 服务配置是否为 stdio 类型
  */
 export function isStdioMcpServer(
-  serverConfig: MCPServerConfig | Record<string, any>
+  serverConfig: MCPServerConfig | Record<string, unknown>
 ): serverConfig is LocalMCPServerConfig {
   return getMcpServerCommunicationType(serverConfig) === "stdio";
 }
@@ -89,7 +89,7 @@ export function isStdioMcpServer(
  * 检查 MCP 服务配置是否为 sse 类型
  */
 export function isSSEMcpServer(
-  serverConfig: MCPServerConfig | Record<string, any>
+  serverConfig: MCPServerConfig | Record<string, unknown>
 ): serverConfig is SSEMCPServerConfig {
   return getMcpServerCommunicationType(serverConfig) === "sse";
 }
@@ -98,7 +98,7 @@ export function isSSEMcpServer(
  * 检查 MCP 服务配置是否为 streamable-http 类型
  */
 export function isStreamableHTTPMcpServer(
-  serverConfig: MCPServerConfig | Record<string, any>
+  serverConfig: MCPServerConfig | Record<string, unknown>
 ): serverConfig is StreamableHTTPMCPServerConfig {
   return getMcpServerCommunicationType(serverConfig) === "streamable-http";
 }
@@ -108,7 +108,7 @@ export function isStreamableHTTPMcpServer(
  * 用于在 UI 中显示更友好的通信类型名称
  */
 export function getMcpServerTypeDisplayName(
-  serverConfig: MCPServerConfig | Record<string, any>
+  serverConfig: MCPServerConfig | Record<string, unknown>
 ): string {
   const type = getMcpServerCommunicationType(serverConfig);
 

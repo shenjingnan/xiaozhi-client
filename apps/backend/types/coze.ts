@@ -72,7 +72,7 @@ export interface CozeApiDetail {
 /**
  * 扣子 API 基础响应接口
  */
-export interface CozeApiResponse<T = any> {
+export interface CozeApiResponse<T = unknown> {
   /** 响应状态码，0表示成功 */
   code: number;
   /** 响应数据 */
@@ -138,7 +138,7 @@ export interface CozeApiError extends Error {
   /** HTTP 状态码 */
   statusCode?: number;
   /** 原始响应数据 */
-  response?: any;
+  response?: Record<string, unknown>;
 }
 
 /**
@@ -152,7 +152,7 @@ export interface CozePlatformConfig {
 /**
  * 缓存项接口
  */
-export interface CacheItem<T = any> {
+export interface CacheItem<T = Record<string, unknown>> {
   /** 缓存数据 */
   data: T;
   /** 缓存时间戳 */

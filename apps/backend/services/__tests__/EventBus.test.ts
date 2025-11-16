@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Logger } from "../../Logger.js";
 import { EventBus, destroyEventBus, getEventBus } from "../EventBus.js";
 
 // Mock dependencies
@@ -15,7 +16,12 @@ vi.mock("../../Logger.js", () => ({
 
 describe("EventBus", () => {
   let eventBus: EventBus;
-  let mockLogger: any;
+  let mockLogger: Partial<Logger> & {
+    debug: ReturnType<typeof vi.fn>;
+    info: ReturnType<typeof vi.fn>;
+    error: ReturnType<typeof vi.fn>;
+    warn: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -28,7 +34,7 @@ describe("EventBus", () => {
       warn: vi.fn(),
     };
     const { logger } = await import("../../Logger.js");
-    vi.mocked(logger.withTag).mockReturnValue(mockLogger);
+    vi.mocked(logger.withTag).mockReturnValue(mockLogger as unknown as Logger);
 
     eventBus = new EventBus();
   });
@@ -301,8 +307,8 @@ describe("EventBus", () => {
 
     it("should handle emit errors gracefully", () => {
       // 测试 updateEventStats 方法抛出错误的情况
-      const originalUpdateStats = (eventBus as any).updateEventStats;
-      (eventBus as any).updateEventStats = vi.fn().mockImplementation(() => {
+      const originalUpdateStats = (eventBus as unknown as { updateEventStats: () => void }).updateEventStats;
+      (eventBus as unknown as { updateEventStats: () => void }).updateEventStats = vi.fn().mockImplementation(() => {
         throw new Error("Update stats failed");
       });
 
@@ -318,7 +324,7 @@ describe("EventBus", () => {
       );
 
       // Restore original method
-      (eventBus as any).updateEventStats = originalUpdateStats;
+      (eventBus as unknown as { updateEventStats: () => void }).updateEventStats = originalUpdateStats;
     });
 
     it("should return false when no listeners", () => {
@@ -764,7 +770,12 @@ describe("EventBus", () => {
 });
 
 describe("EventBus singleton functions", () => {
-  let mockLogger: any;
+  let mockLogger: Partial<Logger> & {
+    debug: ReturnType<typeof vi.fn>;
+    info: ReturnType<typeof vi.fn>;
+    error: ReturnType<typeof vi.fn>;
+    warn: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -777,7 +788,7 @@ describe("EventBus singleton functions", () => {
       warn: vi.fn(),
     };
     const { logger } = await import("../../Logger.js");
-    vi.mocked(logger.withTag).mockReturnValue(mockLogger);
+    vi.mocked(logger.withTag).mockReturnValue(mockLogger as unknown as Logger);
 
     // Ensure clean state
     destroyEventBus();

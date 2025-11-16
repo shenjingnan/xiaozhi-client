@@ -363,16 +363,21 @@ export class ServiceRestartManager {
         reject(new Error(`Service restart timeout for ${serviceName}`));
       }, this.config.maxDelay);
 
-      const handler = (data: any) => {
+      const handler = (data: {
+        serviceName?: string;
+        success?: boolean;
+        error?: string | Error;
+      }) => {
         if (data.serviceName === serviceName) {
           clearTimeout(timeout);
           getEventBus().offEvent("service:restart:completed", handler);
           getEventBus().offEvent("service:restart:failed", handler);
 
           if (data.success) {
-            resolve(data);
+            resolve();
           } else {
-            reject(new Error(data.error || "Service restart failed"));
+            const errorMessage = data.error instanceof Error ? data.error.message : (data.error || "Service restart failed");
+            reject(new Error(errorMessage));
           }
         }
       };

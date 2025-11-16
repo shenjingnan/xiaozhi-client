@@ -15,7 +15,13 @@ import {
 vi.mock("../../Logger.js");
 
 describe("ErrorHandler", () => {
-  let mockLogger: any;
+  let mockLogger: {
+    info: ReturnType<typeof vi.fn>;
+    error: ReturnType<typeof vi.fn>;
+    warn: ReturnType<typeof vi.fn>;
+    debug: ReturnType<typeof vi.fn>;
+    withTag: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -28,7 +34,7 @@ describe("ErrorHandler", () => {
       debug: vi.fn(),
       withTag: vi.fn().mockReturnThis(),
     };
-    vi.mocked(Logger).mockImplementation(() => mockLogger);
+    vi.mocked(Logger).mockImplementation(() => mockLogger as unknown as Logger);
 
     // Clear error history
     clearErrorHistory();
@@ -234,8 +240,9 @@ describe("ErrorHandler", () => {
         categorizeError(error, "test-service");
       }
 
-      const lastError = getErrorStatistics("test-service").lastError!;
-      expect(shouldAlert(lastError)).toBe(true);
+      const stats = getErrorStatistics("test-service");
+      expect(stats.lastError).toBeDefined();
+      expect(shouldAlert(stats.lastError as MCPError)).toBe(true);
     });
 
     it("should alert for non-recoverable errors", () => {

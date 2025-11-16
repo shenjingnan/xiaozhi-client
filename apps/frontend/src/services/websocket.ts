@@ -14,7 +14,7 @@ import type { AppConfig, ClientStatus } from "@xiaozhi/shared-types";
  */
 interface WebSocketMessage {
   type: string;
-  data?: any;
+  data?: Record<string, unknown>;
   timestamp?: number;
   error?: {
     code: string;
@@ -120,7 +120,7 @@ interface EventBusEvents {
 /**
  * 事件监听器类型
  */
-type EventListener<T = any> = (data: T) => void;
+type EventListener<T = unknown> = (data: T) => void;
 
 /**
  * WebSocket 事件监听器类型（向后兼容）
@@ -159,7 +159,7 @@ interface WebSocketManagerConfig {
  * 事件总线类 - 支持多个订阅者
  */
 class EventBus {
-  private listeners: Map<string, Set<EventListener>> = new Map();
+  private listeners: Map<string, Set<EventListener<unknown>>> = new Map();
 
   /**
    * 订阅事件
@@ -171,7 +171,7 @@ class EventBus {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());
     }
-    this.listeners.get(event)!.add(listener);
+    this.listeners.get(event)?.add(listener as EventListener<unknown>);
 
     // 返回取消订阅函数
     return () => {
@@ -188,7 +188,7 @@ class EventBus {
   ): void {
     const eventListeners = this.listeners.get(event);
     if (eventListeners) {
-      eventListeners.delete(listener);
+      eventListeners.delete(listener as EventListener<unknown>);
       if (eventListeners.size === 0) {
         this.listeners.delete(event);
       }
@@ -478,7 +478,7 @@ export class WebSocketManager {
   /**
    * 发送消息
    */
-  send(message: any): boolean {
+  send(message: unknown): boolean {
     if (!this.isConnected()) {
       console.warn("[WebSocket] 连接未建立，无法发送消息");
       return false;
@@ -487,7 +487,9 @@ export class WebSocketManager {
     try {
       const messageStr =
         typeof message === "string" ? message : JSON.stringify(message);
-      this.ws!.send(messageStr);
+      if (this.ws) {
+        this.ws.send(messageStr);
+      }
       return true;
     } catch (error) {
       console.error("[WebSocket] 发送消息失败:", error);
@@ -570,50 +572,50 @@ export class WebSocketManager {
         case "configUpdate":
         case "config":
           if (message.data) {
-            this.eventBus.emit("data:configUpdate", message.data);
+            this.eventBus.emit("data:configUpdate", message.data as unknown as AppConfig);
           }
           break;
 
         case "statusUpdate":
         case "status":
           if (message.data) {
-            this.eventBus.emit("data:statusUpdate", message.data);
+            this.eventBus.emit("data:statusUpdate", message.data as unknown as ClientStatus);
           }
           break;
 
         case "restartStatus":
           if (message.data) {
-            this.eventBus.emit("data:restartStatus", message.data);
+            this.eventBus.emit("data:restartStatus", message.data as unknown as RestartStatus);
           }
           break;
 
         case "endpoint_status_changed":
           if (message.data) {
-            this.eventBus.emit("data:endpointStatusChanged", message.data);
+            this.eventBus.emit("data:endpointStatusChanged", message.data as unknown as EndpointStatusChangedEvent);
           }
           break;
 
         case "npm:install:started":
           if (message.data) {
-            this.eventBus.emit("data:npmInstallStarted", message.data);
+            this.eventBus.emit("data:npmInstallStarted", message.data as unknown as NPMInstallStartedEvent);
           }
           break;
 
         case "npm:install:log":
           if (message.data) {
-            this.eventBus.emit("data:npmInstallLog", message.data);
+            this.eventBus.emit("data:npmInstallLog", message.data as unknown as NPMInstallLogEvent);
           }
           break;
 
         case "npm:install:completed":
           if (message.data) {
-            this.eventBus.emit("data:npmInstallCompleted", message.data);
+            this.eventBus.emit("data:npmInstallCompleted", message.data as unknown as NPMInstallCompletedEvent);
           }
           break;
 
         case "npm:install:failed":
           if (message.data) {
-            this.eventBus.emit("data:npmInstallFailed", message.data);
+            this.eventBus.emit("data:npmInstallFailed", message.data as unknown as NPMInstallFailedEvent);
           }
           break;
 
