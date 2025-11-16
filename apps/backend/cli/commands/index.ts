@@ -166,9 +166,8 @@ export class CommandRegistry implements ICommandRegistry {
       `
 示例:
   xiaozhi init                     # 初始化配置文件
-  xiaozhi start                    # 启动服务
+  xiaozhi start                    # 启动服务（包含 Web UI）
   xiaozhi start -d                 # 后台启动服务
-  xiaozhi start -u                 # 启动服务并打开 Web UI
   xiaozhi start -s 3000            # 以 MCP Server 模式启动
   xiaozhi stop                     # 停止服务
   xiaozhi status                   # 检查服务状态

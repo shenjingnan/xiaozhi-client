@@ -20,7 +20,6 @@ export class ServiceCommandHandler extends BaseCommandHandler {
       description: "启动服务",
       options: [
         { flags: "-d, --daemon", description: "在后台运行服务" },
-        { flags: "-u, --ui", description: "同时启动 Web UI 服务" },
         { flags: "--debug", description: "启用调试模式 (输出DEBUG级别日志)" },
         {
           flags: "--stdio",
@@ -48,10 +47,7 @@ export class ServiceCommandHandler extends BaseCommandHandler {
     {
       name: "restart",
       description: "重启服务",
-      options: [
-        { flags: "-d, --daemon", description: "在后台运行服务" },
-        { flags: "-u, --ui", description: "同时启动 Web UI 服务" },
-      ],
+      options: [{ flags: "-d, --daemon", description: "在后台运行服务" }],
       execute: async (args: any[], options: any) => {
         await this.handleRestart(options);
       },
@@ -96,7 +92,6 @@ export class ServiceCommandHandler extends BaseCommandHandler {
         // 传统模式
         await serviceManager.start({
           daemon: options.daemon || false,
-          ui: options.ui || false,
         });
       }
     } catch (error) {
@@ -148,7 +143,6 @@ export class ServiceCommandHandler extends BaseCommandHandler {
       const serviceManager = this.getService<any>("serviceManager");
       await serviceManager.restart({
         daemon: options.daemon || false,
-        ui: options.ui || false,
       });
     } catch (error) {
       this.handleError(error as Error);

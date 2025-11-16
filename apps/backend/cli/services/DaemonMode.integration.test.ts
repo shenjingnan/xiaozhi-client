@@ -124,7 +124,6 @@ describe("Daemon 模式集成测试", () => {
 
       const options: ServiceStartOptions = {
         daemon: true,
-        ui: false,
         mode: "normal",
         port: 3000,
       };
@@ -159,7 +158,7 @@ describe("Daemon 模式集成测试", () => {
       expect(mockProcessExit).toHaveBeenCalledWith(0);
     });
 
-    it("应处理带浏览器选项的 daemon 启动", async () => {
+    it("应处理默认 daemon 启动", async () => {
       const { spawn } = await import("node:child_process");
       const mockSpawn = vi.mocked(spawn);
 
@@ -171,7 +170,6 @@ describe("Daemon 模式集成测试", () => {
 
       const options: ServiceStartOptions = {
         daemon: true,
-        ui: true,
         mode: "normal",
         port: 3000,
       };
@@ -182,7 +180,7 @@ describe("Daemon 模式集成测试", () => {
 
       expect(mockSpawn).toHaveBeenCalledWith(
         "node",
-        ["/test/WebServerStandalone.js", "--open-browser"],
+        ["/test/WebServerStandalone.js"],
         {
           detached: true,
           stdio: ["ignore", "ignore", "ignore"],

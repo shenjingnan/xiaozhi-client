@@ -60,13 +60,6 @@ const mockEndpointCommandHandler = {
   subcommands: [],
 };
 
-const mockUICommandHandler = {
-  name: "ui",
-  description: "UI 管理命令",
-  execute: vi.fn(),
-  subcommands: [],
-};
-
 // Mock CommandHandlerFactory
 vi.mock("./CommandHandlerFactory.js", () => ({
   CommandHandlerFactory: vi.fn().mockImplementation(() => ({
@@ -78,7 +71,6 @@ vi.mock("./CommandHandlerFactory.js", () => ({
         mockProjectCommandHandler,
         mockMcpCommandHandler,
         mockEndpointCommandHandler,
-        mockUICommandHandler,
       ]),
   })),
 }));
