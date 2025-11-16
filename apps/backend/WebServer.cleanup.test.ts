@@ -11,7 +11,7 @@ import {
 } from "vitest";
 import { WebServer } from "./WebServer";
 import { configManager } from "./configManager";
-import type { MockConfigManager } from "./types/test.js";
+import type { MockConfigManager } from "./types";
 
 // Mock configManager
 vi.mock("./configManager", () => ({

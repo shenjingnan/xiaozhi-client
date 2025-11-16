@@ -13,4 +13,11 @@ export type {
 } from "./logger.js";
 
 // 测试相关类型
-export type { ServerAddress, MockConfigManager } from "./test.js";
+export type {
+  ServerAddress,
+  MockConfigManager,
+  MockWebSocket,
+  MockServiceManager,
+  TestableProxyMCPServer,
+  MCPMessage,
+} from "./test.js";
