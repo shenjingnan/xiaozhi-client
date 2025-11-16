@@ -8,6 +8,7 @@ import dayjs from "dayjs";
 import JSON5 from "json5";
 import * as json5Writer from "json5-writer";
 import { logger } from "./Logger";
+import type { Json5Writer } from "json5-writer";
 
 // 在 ESM 中，需要从 import.meta.url 获取当前文件目录
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -94,7 +95,7 @@ export interface ProxyHandlerConfig {
     retry_count?: number;
     retry_delay?: number;
     headers?: Record<string, string>;
-    params?: Record<string, any>;
+    params?: Record<string, unknown>;
   };
 }
 
@@ -129,7 +130,7 @@ export interface FunctionHandlerConfig {
   module: string; // 模块路径
   function: string; // 函数名
   timeout?: number;
-  context?: Record<string, any>; // 函数执行上下文
+  context?: Record<string, unknown>; // 函数执行上下文
 }
 
 // 脚本处理器配置
@@ -169,7 +170,7 @@ export type HandlerConfig =
 export interface CustomMCPTool {
   name: string;
   description: string;
-  inputSchema: any;
+  inputSchema: unknown;
   handler: HandlerConfig;
 
   // 使用统计信息（可选）
@@ -220,7 +221,7 @@ export class ConfigManager {
   private defaultConfigPath: string;
   private config: AppConfig | null = null;
   private currentConfigPath: string | null = null; // 跟踪当前使用的配置文件路径
-  private json5Writer: any = null; // json5-writer 实例，用于保留 JSON5 注释
+  private json5Writer: unknown = null; // json5-writer 实例，用于保留 JSON5 注释
   private eventBus = getEventBus(); // 事件总线
 
   // 统计更新并发控制
@@ -809,8 +810,8 @@ export class ConfigManager {
           try {
             if (this.json5Writer) {
               // 使用 json5-writer 更新配置并保留注释
-              this.json5Writer.write(config);
-              configContent = this.json5Writer.toSource();
+              (this.json5Writer as Json5Writer).write(config);
+              configContent = (this.json5Writer as Json5Writer).toSource();
             } else {
               // 如果没有 json5Writer 实例，回退到标准 JSON5
               console.warn("没有 json5Writer 实例，回退到标准 JSON5 格式");
@@ -1428,7 +1429,7 @@ export class ConfigManager {
 
       return this.validateCustomMCPTools(tools);
     } catch (error) {
-      logger.error("检查 customMCP 工具配置时出错:", error);
+      logger.error("检查 customMCP 工具配置时出错:", error as Error);
       return false;
     }
   }
@@ -1640,7 +1641,7 @@ export class ConfigManager {
   private notifyConfigUpdate(config: AppConfig): void {
     try {
       // 检查是否有全局的 webServer 实例（当使用 --ui 参数启动时会设置）
-      const webServer = (global as any).__webServer;
+      const webServer = (global as unknown as { __webServer?: { broadcastConfigUpdate?: (config: AppConfig) => void } }).__webServer;
       if (webServer && typeof webServer.broadcastConfigUpdate === "function") {
         // 调用 webServer 的 broadcastConfigUpdate 方法来通知所有连接的客户端
         webServer.broadcastConfigUpdate(config);
@@ -1977,7 +1978,7 @@ export class ConfigManager {
       await this.updateToolUsageStats(toolName, incrementUsageCount);
       logger.debug(`工具 ${toolName} 统计更新完成`);
     } catch (error) {
-      logger.error(`工具 ${toolName} 统计更新失败:`, error);
+      logger.error(`工具 ${toolName} 统计更新失败:`, error as Error);
       throw error;
     } finally {
       this.releaseStatsUpdateLock(toolKey);
@@ -2014,7 +2015,7 @@ export class ConfigManager {
     } catch (error) {
       logger.error(
         `MCP 服务工具 ${serviceName}/${toolName} 统计更新失败:`,
-        error
+        error as Error
       );
       throw error;
     } finally {
