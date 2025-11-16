@@ -200,3 +200,26 @@ export interface WorkflowParameterConfig {
   /** 参数列表 */
   parameters: WorkflowParameter[];
 }
+
+/**
+ * 扣子工作流运行响应数据
+ */
+export interface CozeWorkflowRunResponse {
+  /** 响应状态码，0表示成功 */
+  code: number;
+  /** 响应消息 */
+  msg: string;
+  /** 调试URL */
+  debug_url: string;
+  /** 响应数据，通常为JSON字符串 */
+  data: string;
+  /** 使用量统计 */
+  usage: {
+    /** 输入token数量 */
+    input_count: number;
+    /** 输出token数量 */
+    output_count: number;
+    /** 总token数量 */
+    token_count: number;
+  };
+}
