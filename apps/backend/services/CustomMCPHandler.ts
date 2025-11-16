@@ -57,7 +57,7 @@ interface TaskManager {
   startTime: number;
   endTime?: string; // 改为string类型以匹配toISOString()
   error?: string;
-  result?: any; // 添加result属性以支持任务结果存储
+  result?: Record<string, unknown>; // 添加result属性以支持任务结果存储
 }
 
 export class CustomMCPHandler {
@@ -123,7 +123,7 @@ export class CustomMCPHandler {
         await this.reinitialize();
       }
     } catch (error) {
-      this.logger.error("[CustomMCP] 配置更新处理失败:", error);
+      this.logger.error("[CustomMCP] 配置更新处理失败:", { error: (error as Error).message });
     }
   }
 
@@ -150,7 +150,7 @@ export class CustomMCPHandler {
         `[CustomMCP] 重新初始化完成，共加载 ${this.tools.size} 个工具`
       );
     } catch (error) {
-      this.logger.error("[CustomMCP] 重新初始化失败:", error);
+      this.logger.error("[CustomMCP] 重新初始化失败:", { error: (error as Error).message });
       throw error;
     }
   }
@@ -181,7 +181,7 @@ export class CustomMCPHandler {
         `[CustomMCP] 初始化完成，共加载 ${this.tools.size} 个工具`
       );
     } catch (error) {
-      this.logger.error("[CustomMCP] 初始化失败:", error);
+      this.logger.error("[CustomMCP] 初始化失败:", { error: (error as Error).message });
       throw error;
     }
   }
@@ -192,9 +192,17 @@ export class CustomMCPHandler {
   public getTools(): Tool[] {
     return Array.from(this.tools.values()).map((tool) => ({
       name: tool.name,
-      description: tool.description,
-      inputSchema: tool.inputSchema,
+      description: tool.description || "",
+      inputSchema: tool.inputSchema as Tool["inputSchema"],
     }));
+  }
+
+  /**
+   * 获取所有原始工具（包含完整的 handler 信息）
+   * @returns 包含完整 handler 信息的 CustomMCPTool 数组
+   */
+  public getRawTools(): CustomMCPTool[] {
+    return Array.from(this.tools.values());
   }
 
   /**
@@ -223,7 +231,7 @@ export class CustomMCPHandler {
    */
   public async callTool(
     toolName: string,
-    arguments_: any,
+    arguments_: Record<string, unknown>,
     options?: ToolCallOptions
   ): Promise<ToolCallResponse> {
     const tool = this.tools.get(toolName);
@@ -275,7 +283,7 @@ export class CustomMCPHandler {
    */
   private async executeToolWithBackgroundProcessing(
     toolName: string,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<ToolCallResult> {
     const tool = this.tools.get(toolName);
     if (!tool) {
@@ -296,7 +304,7 @@ export class CustomMCPHandler {
       return result;
     } catch (error) {
       // 更新任务状态为失败
-      await this.markTaskAsFailed(taskId, error);
+      await this.markTaskAsFailed(taskId, error as Error);
       throw error;
     }
   }
@@ -306,7 +314,7 @@ export class CustomMCPHandler {
    */
   private async createTimeoutPromise(
     toolName: string,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<never> {
     return new Promise((_, reject) => {
       setTimeout(() => {
@@ -320,7 +328,7 @@ export class CustomMCPHandler {
    */
   private async getCompletedResult(
     toolName: string,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<ToolCallResult | null> {
     try {
       const cacheKey = this.generateCacheKey(toolName, arguments_);
@@ -352,7 +360,7 @@ export class CustomMCPHandler {
    */
   private async callToolByType(
     tool: CustomMCPTool,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<ToolCallResult> {
     switch (tool.handler.type) {
       case "proxy":
@@ -372,7 +380,7 @@ export class CustomMCPHandler {
         } catch (error) {
           this.logger.error(
             `[CustomMCP] MCP 类型工具路由失败: ${tool.name}`,
-            error
+            { error: (error as Error).message }
           );
           // 保留原始错误信息，特别是 MCPServiceManager 未初始化的情况
           const errorMessage =
@@ -390,7 +398,7 @@ export class CustomMCPHandler {
           };
         }
       default:
-        throw new Error(`不支持的处理器类型: ${(tool.handler as any).type}`);
+        throw new Error(`不支持的处理器类型: ${(tool.handler as MCPHandlerConfig).type}`);
     }
   }
 
@@ -399,7 +407,7 @@ export class CustomMCPHandler {
    */
   private async forwardToMCPServiceManager(
     tool: CustomMCPTool,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<ToolCallResult> {
     if (!this.mcpServiceManager) {
       this.logger.error(
@@ -424,7 +432,7 @@ export class CustomMCPHandler {
       this.logger.info(`[CustomMCP] MCP工具转发成功: ${tool.name}`);
       return result;
     } catch (error) {
-      this.logger.error(`[CustomMCP] MCP工具转发失败: ${tool.name}`, error);
+      this.logger.error(`[CustomMCP] MCP工具转发失败: ${tool.name}`, { error: (error as Error).message });
       return {
         content: [
           {
@@ -444,7 +452,7 @@ export class CustomMCPHandler {
    */
   private async callProxyTool(
     tool: CustomMCPTool,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<ToolCallResult> {
     const proxyHandler = tool.handler as ProxyHandlerConfig;
     this.logger.info(`[CustomMCP] 调用代理工具: ${tool.name}`, {
@@ -466,7 +474,7 @@ export class CustomMCPHandler {
    */
   private async callCozeWorkflow(
     tool: CustomMCPTool,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<ToolCallResult> {
     const handler = tool.handler as ProxyHandlerConfig;
     const config = handler.config;
@@ -486,9 +494,15 @@ export class CustomMCPHandler {
       });
 
       // 处理响应
-      return this.processCozeResponse(tool.name, response);
+      return this.processCozeResponse(tool.name, response as {
+        code: number;
+        msg: string;
+        debug_url: string;
+        data: string;
+        usage: { input_count: number; output_count: number; token_count: number };
+      });
     } catch (error) {
-      this.logger.error(`[CustomMCP] Coze 工作流调用失败: ${tool.name}`, error);
+      this.logger.error(`[CustomMCP] Coze 工作流调用失败: ${tool.name}`, { error: (error as Error).message });
 
       return {
         content: [
@@ -510,8 +524,8 @@ export class CustomMCPHandler {
    */
   private buildCozeRequest(
     config: ProxyHandlerConfig["config"],
-    arguments_: any
-  ): any {
+    arguments_: Record<string, unknown>
+  ): Record<string, unknown> {
     const baseRequest = {
       workflow_id: config.workflow_id,
       parameters: {
@@ -527,8 +541,8 @@ export class CustomMCPHandler {
    */
   private async sendCozeRequest(
     config: ProxyHandlerConfig["config"],
-    requestData: any
-  ): Promise<any> {
+    requestData: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
     const baseUrl = config.base_url || "https://api.coze.cn";
     let endpoint = "";
 
@@ -668,7 +682,7 @@ export class CustomMCPHandler {
         isError: false,
       };
     } catch (error) {
-      this.logger.error(`[CustomMCP] 处理 Coze 响应失败: ${toolName}`, error);
+      this.logger.error(`[CustomMCP] 处理 Coze 响应失败: ${toolName}`, { error: (error as Error).message });
 
       return {
         content: [
@@ -689,7 +703,7 @@ export class CustomMCPHandler {
    */
   private async callFunctionTool(
     tool: CustomMCPTool,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<ToolCallResult> {
     const handler = tool.handler as FunctionHandlerConfig;
 
@@ -725,7 +739,7 @@ export class CustomMCPHandler {
         isError: false,
       };
     } catch (error) {
-      this.logger.error(`[CustomMCP] 函数工具调用失败: ${tool.name}`, error);
+      this.logger.error(`[CustomMCP] 函数工具调用失败: ${tool.name}`, { error: (error as Error).message });
 
       return {
         content: [
@@ -744,7 +758,7 @@ export class CustomMCPHandler {
   /**
    * 动态加载模块
    */
-  private async loadModule(modulePath: string): Promise<any> {
+  private async loadModule(modulePath: string): Promise<Record<string, unknown>> {
     try {
       // 支持相对路径和绝对路径
       let resolvedPath = modulePath;
@@ -773,20 +787,24 @@ export class CustomMCPHandler {
    * 获取函数
    */
   private getFunction(
-    moduleExports: any,
+    moduleExports: Record<string, unknown>,
     functionName: string
-  ): (...args: any[]) => any {
-    let targetFunction: any;
+  ): (...args: Record<string, unknown>[]) => Record<string, unknown> {
+    let targetFunction: ((...args: Record<string, unknown>[]) => Record<string, unknown>) | undefined;
 
     // 尝试从默认导出获取函数
     if (moduleExports.default && typeof moduleExports.default === "function") {
       if (functionName === "default") {
-        targetFunction = moduleExports.default;
-      } else if (
-        moduleExports.default[functionName] &&
-        typeof moduleExports.default[functionName] === "function"
-      ) {
-        targetFunction = moduleExports.default[functionName];
+        targetFunction = moduleExports.default as (...args: Record<string, unknown>[]) => Record<string, unknown>;
+      } else {
+        // 将 default 视为可索引的对象来访问其属性
+        const defaultAsObject = moduleExports.default as unknown as Record<string, unknown>;
+        if (
+          defaultAsObject[functionName] &&
+          typeof defaultAsObject[functionName] === "function"
+        ) {
+          targetFunction = defaultAsObject[functionName] as (...args: Record<string, unknown>[]) => Record<string, unknown>;
+        }
       }
     }
 
@@ -796,7 +814,7 @@ export class CustomMCPHandler {
       moduleExports[functionName] &&
       typeof moduleExports[functionName] === "function"
     ) {
-      targetFunction = moduleExports[functionName];
+      targetFunction = moduleExports[functionName] as (...args: Record<string, unknown>[]) => Record<string, unknown>;
     }
 
     if (!targetFunction) {
@@ -810,10 +828,10 @@ export class CustomMCPHandler {
    * 执行函数
    */
   private async executeFunction(
-    targetFunction: (...args: any[]) => any,
-    arguments_: any,
+    targetFunction: (...args: Record<string, unknown>[]) => Record<string, unknown>,
+    arguments_: Record<string, unknown>,
     handler: FunctionHandlerConfig
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const timeout = handler.timeout || 30000;
 
     // 创建执行上下文
@@ -839,7 +857,7 @@ export class CustomMCPHandler {
       );
     });
 
-    return Promise.race([executePromise, timeoutPromise]);
+    return Promise.race([executePromise, timeoutPromise]) as Promise<Record<string, unknown>>;
   }
 
   /**
@@ -847,7 +865,7 @@ export class CustomMCPHandler {
    */
   private async callHttpTool(
     tool: CustomMCPTool,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<ToolCallResult> {
     const handler = tool.handler as HttpHandlerConfig;
 
@@ -869,7 +887,7 @@ export class CustomMCPHandler {
       // 处理响应
       return this.processHttpResponse(tool.name, response, handler);
     } catch (error) {
-      this.logger.error(`[CustomMCP] HTTP 工具调用失败: ${tool.name}`, error);
+      this.logger.error(`[CustomMCP] HTTP 工具调用失败: ${tool.name}`, { error: (error as Error).message });
 
       return {
         content: [
@@ -890,7 +908,7 @@ export class CustomMCPHandler {
    */
   private buildHttpRequest(
     handler: HttpHandlerConfig,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): {
     url: string;
     requestOptions: RequestInit;
@@ -1046,7 +1064,7 @@ export class CustomMCPHandler {
   ): Promise<ToolCallResult> {
     try {
       const contentType = response.headers.get("content-type") || "";
-      let responseData: any;
+      let responseData: Record<string, unknown> | string;
 
       // 根据内容类型解析响应
       if (contentType.includes("application/json")) {
@@ -1094,7 +1112,7 @@ export class CustomMCPHandler {
         isError: false,
       };
     } catch (error) {
-      this.logger.error(`[CustomMCP] 处理 HTTP 响应失败: ${toolName}`, error);
+      this.logger.error(`[CustomMCP] 处理 HTTP 响应失败: ${toolName}`, { error: (error as Error).message });
 
       return {
         content: [
@@ -1115,7 +1133,7 @@ export class CustomMCPHandler {
    */
   private replaceTemplateVariables(
     template: string,
-    variables: Record<string, any>
+    variables: Record<string, unknown>
   ): string {
     let result = template;
 
@@ -1136,36 +1154,38 @@ export class CustomMCPHandler {
    * 从响应中提取数据
    */
   private extractResponseData(
-    responseData: any,
+    responseData: Record<string, unknown> | string,
     mapping: HttpHandlerConfig["response_mapping"]
-  ): any {
+  ): Record<string, unknown> | string {
     if (!mapping) return responseData;
 
     // 简单的 JSONPath 实现
-    const extractByPath = (data: any, path: string): any => {
+    const extractByPath = (data: Record<string, unknown> | string, path: string): Record<string, unknown> | string | undefined => {
       if (!path) return data;
 
       const parts = path.split(".");
-      let current = data;
+      let current: Record<string, unknown> | string | unknown = data;
 
       for (const part of parts) {
         if (current && typeof current === "object" && part in current) {
-          current = current[part];
+          current = (current as Record<string, unknown>)[part];
         } else {
           return undefined;
         }
       }
 
-      return current;
+      return current as Record<string, unknown> | string | undefined;
     };
 
     // 提取成功数据
     if (mapping.success_path) {
       const successData = extractByPath(responseData, mapping.success_path);
       if (successData !== undefined) {
-        return mapping.data_path
-          ? extractByPath(successData, mapping.data_path)
-          : successData;
+        if (mapping.data_path) {
+          const result = extractByPath(successData, mapping.data_path);
+          return result !== undefined ? result : successData;
+        }
+        return successData;
       }
     }
 
@@ -1185,7 +1205,7 @@ export class CustomMCPHandler {
    */
   private async callScriptTool(
     tool: CustomMCPTool,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<ToolCallResult> {
     const handler = tool.handler as ScriptHandlerConfig;
 
@@ -1213,7 +1233,7 @@ export class CustomMCPHandler {
         isError: false,
       };
     } catch (error) {
-      this.logger.error(`[CustomMCP] 脚本工具调用失败: ${tool.name}`, error);
+      this.logger.error(`[CustomMCP] 脚本工具调用失败: ${tool.name}`, { error: (error as Error).message });
 
       return {
         content: [
@@ -1234,7 +1254,7 @@ export class CustomMCPHandler {
    */
   private async executeScript(
     handler: ScriptHandlerConfig,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<string> {
     const { spawn } = await import("node:child_process");
     const { promisify } = await import("node:util");
@@ -1384,7 +1404,7 @@ export class CustomMCPHandler {
    */
   private async callChainTool(
     tool: CustomMCPTool,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<ToolCallResult> {
     const handler = tool.handler as ChainHandlerConfig;
 
@@ -1412,7 +1432,7 @@ export class CustomMCPHandler {
         isError: hasError,
       };
     } catch (error) {
-      this.logger.error(`[CustomMCP] 链式工具调用失败: ${tool.name}`, error);
+      this.logger.error(`[CustomMCP] 链式工具调用失败: ${tool.name}`, { error: (error as Error).message });
 
       return {
         content: [
@@ -1447,7 +1467,7 @@ export class CustomMCPHandler {
    */
   private async executeSequentialChain(
     handler: ChainHandlerConfig,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<ToolCallResult[]> {
     const results: ToolCallResult[] = [];
     let currentArguments = arguments_;
@@ -1528,7 +1548,7 @@ export class CustomMCPHandler {
    */
   private async executeParallelChain(
     handler: ChainHandlerConfig,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<ToolCallResult[]> {
     const promises = handler.tools.map(async (toolName) => {
       try {
@@ -1557,7 +1577,7 @@ export class CustomMCPHandler {
    */
   private async callToolRecursive(
     toolName: string,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<ToolCallResult> {
     // 检查是否是当前 CustomMCP 中的工具
     const tool = this.tools.get(toolName);
@@ -1578,7 +1598,7 @@ export class CustomMCPHandler {
    */
   private async clearConsumedCache(
     toolName: string,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<void> {
     try {
       const cacheKey = this.generateCacheKey(toolName, arguments_);
@@ -1608,7 +1628,7 @@ export class CustomMCPHandler {
    */
   private async generateTaskId(
     toolName: string,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<string> {
     return this.taskStateManager.generateTaskId(toolName, arguments_);
   }
@@ -1619,7 +1639,7 @@ export class CustomMCPHandler {
   private async markTaskAsPending(
     taskId: string,
     toolName: string,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<void> {
     try {
       const cacheKey = this.generateCacheKey(toolName, arguments_);
@@ -1664,7 +1684,7 @@ export class CustomMCPHandler {
       if (task) {
         task.status = "completed";
         task.endTime = new Date().toISOString();
-        task.result = result;
+        task.result = result as unknown as Record<string, unknown>;
       }
 
       const cache = await this.loadExtendedCache();
@@ -1696,7 +1716,7 @@ export class CustomMCPHandler {
   /**
    * 标记任务为失败
    */
-  private async markTaskAsFailed(taskId: string, error: any): Promise<void> {
+  private async markTaskAsFailed(taskId: string, error: Error): Promise<void> {
     try {
       const cache = await this.loadExtendedCache();
 
@@ -1788,7 +1808,7 @@ export class CustomMCPHandler {
   /**
    * 生成缓存键
    */
-  private generateCacheKey(toolName: string, arguments_: any): string {
+  private generateCacheKey(toolName: string, arguments_: Record<string, unknown>): string {
     return generateCacheKey(toolName, arguments_);
   }
 
@@ -1841,7 +1861,7 @@ export class CustomMCPHandler {
    */
   private async cacheResult(
     toolName: string,
-    arguments_: any,
+    arguments_: Record<string, unknown>,
     result: ToolCallResult
   ): Promise<void> {
     try {
