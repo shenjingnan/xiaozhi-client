@@ -56,57 +56,11 @@ export class UICommandHandler extends BaseCommandHandler {
       console.log(chalk.green(`   本地访问: http://localhost:${port}`));
       console.log(chalk.green(`   网络访问: http://<你的IP地址>:${port}`));
       console.log(chalk.yellow("💡 提示: 按 Ctrl+C 停止服务"));
-
-      // 自动打开浏览器
-      await this.openBrowser(`http://localhost:${port}`);
     } catch (error) {
       spinner.fail(
         `启动 UI 服务失败: ${error instanceof Error ? error.message : String(error)}`
       );
       this.handleError(error as Error);
-    }
-  }
-
-  /**
-   * 打开浏览器
-   */
-  private async openBrowser(url: string): Promise<void> {
-    try {
-      const { spawn } = await import("node:child_process");
-
-      let browserProcess: ReturnType<typeof spawn>;
-
-      if (process.platform === "darwin") {
-        browserProcess = spawn("open", [url], {
-          detached: true,
-          stdio: "ignore",
-        });
-      } else if (process.platform === "win32") {
-        browserProcess = spawn("cmd", ["/c", "start", url], {
-          detached: true,
-          stdio: "ignore",
-        });
-      } else {
-        browserProcess = spawn("xdg-open", [url], {
-          detached: true,
-          stdio: "ignore",
-        });
-      }
-
-      // 处理spawn错误，避免程序崩溃
-      browserProcess.on("error", () => {
-        // 静默处理浏览器启动错误，不影响主程序
-        console.log(
-          chalk.gray(`💡 提示: 无法自动打开浏览器，请手动访问: ${url}`)
-        );
-      });
-
-      browserProcess.unref();
-    } catch (error) {
-      // 忽略打开浏览器的错误
-      console.log(
-        chalk.gray(`💡 提示: 无法自动打开浏览器，请手动访问: ${url}`)
-      );
     }
   }
 }
