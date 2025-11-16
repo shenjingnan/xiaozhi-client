@@ -22,7 +22,7 @@ import type {
 export interface CustomMCPTool {
   name: string;
   description: string;
-  inputSchema: any;
+  inputSchema: Record<string, unknown>;
   handler: {
     type: "mcp" | "proxy";
     platform?: "coze";
@@ -40,7 +40,7 @@ export interface CustomMCPTool {
 /**
  * API 响应格式
  */
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;

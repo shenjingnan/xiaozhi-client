@@ -53,7 +53,7 @@ export const generateStableKey = (
  * @param data 要格式化的数据
  * @returns 格式化后的JSON字符串
  */
-export const formatJson = (data: any): string | null => {
+export const formatJson = (data: unknown): string | null => {
   if (!data) return null;
   try {
     return JSON.stringify(data, null, 2);
@@ -67,7 +67,7 @@ export const formatJson = (data: any): string | null => {
  * @param error 错误对象
  * @returns 错误字符串
  */
-export const formatError = (error: any): string => {
+export const formatError = (error: unknown): string => {
   if (typeof error === "string") return error;
   if (error instanceof Error) return error.message;
   return String(error);

@@ -89,7 +89,7 @@ export interface FunctionToolData {
   /** 函数描述 */
   description: string;
   /** 函数执行上下文 */
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   /** 超时时间 */
   timeout?: number;
   /** 可选的自定义名称 */
@@ -139,7 +139,7 @@ export interface ToolValidationErrorDetail {
   /** 错误消息 */
   message: string;
   /** 错误详情 */
-  details?: any;
+  details?: Record<string, unknown>;
   /** 建议的解决方案 */
   suggestions?: string[];
 }
@@ -149,7 +149,7 @@ export interface ToolValidationErrorDetail {
  */
 export interface AddToolResponse {
   /** 成功添加的工具 */
-  tool: any;
+  tool: Record<string, unknown>;
   /** 工具名称 */
   toolName: string;
   /** 工具类型 */
@@ -203,8 +203,8 @@ export interface ExtendedCustomMCPTool {
   /** 基础工具配置 */
   name: string;
   description: string;
-  inputSchema: any;
-  handler: any;
+  inputSchema: Record<string, unknown>;
+  handler: unknown;
   /** 使用统计信息 */
   stats?: {
     usageCount?: number;

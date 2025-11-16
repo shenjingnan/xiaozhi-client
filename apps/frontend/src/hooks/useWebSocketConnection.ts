@@ -60,7 +60,7 @@ export function useWebSocketConnection() {
   }, [reconnect]);
 
   const sendMessage = useCallback(
-    (message: any) => {
+    (message: Record<string, unknown>) => {
       try {
         return send(message);
       } catch (error) {

@@ -217,7 +217,10 @@ async function getServerInfo(client: Client): Promise<unknown> {
 
   try {
     // 尝试获取服务器信息（如果支持的话）
-    const serverInfo = (client as any).getServerVersion?.() || null;
+    const clientWithVersionInfo = client as unknown as {
+      getServerVersion?: () => unknown;
+    };
+    const serverInfo = clientWithVersionInfo.getServerVersion?.() || null;
     if (serverInfo) {
       log("success", "服务器信息获取成功", serverInfo);
     } else {

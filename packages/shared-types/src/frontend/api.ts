@@ -65,7 +65,7 @@ export interface MCPServerListResponse {
 /**
  * API 统一响应格式接口
  */
-export interface ApiSuccessResponse<T = any> {
+export interface ApiSuccessResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
@@ -77,7 +77,7 @@ export interface ApiErrorResponse {
     message: string;
     details?: {
       serverName?: string;
-      config?: any;
+      config?: Record<string, unknown>;
       tools?: string[];
       timestamp: string;
     };
@@ -120,9 +120,9 @@ export interface ToolCallRecord {
   /** 服务器名称 */
   serverName?: string;
   /** 调用参数 */
-  arguments?: any;
+  arguments?: Record<string, unknown>;
   /** 调用结果 */
-  result?: any;
+  result?: unknown;
   /** 是否成功 */
   success: boolean;
   /** 调用耗时（毫秒） */
@@ -148,12 +148,12 @@ export interface ToolCallLogsResponse {
 /**
  * API通用响应格式
  */
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: {
     code: string;
     message: string;
-    details?: any;
+    details?: unknown;
   };
 }
