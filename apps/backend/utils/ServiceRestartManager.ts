@@ -376,7 +376,10 @@ export class ServiceRestartManager {
           if (data.success) {
             resolve();
           } else {
-            const errorMessage = data.error instanceof Error ? data.error.message : (data.error || "Service restart failed");
+            const errorMessage =
+              data.error instanceof Error
+                ? data.error.message
+                : data.error || "Service restart failed";
             reject(new Error(errorMessage));
           }
         }

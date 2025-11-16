@@ -265,7 +265,7 @@ export class Logger {
       }
     } else {
       // 结构化日志支持
-      this.pinoInstance.info(messageOrObj, args[0] as string || "");
+      this.pinoInstance.info(messageOrObj, (args[0] as string) || "");
     }
   }
 
@@ -283,7 +283,7 @@ export class Logger {
         this.pinoInstance.info({ args }, messageOrObj);
       }
     } else {
-      this.pinoInstance.info(messageOrObj, args[0] as string || "");
+      this.pinoInstance.info(messageOrObj, (args[0] as string) || "");
     }
   }
 
@@ -300,7 +300,7 @@ export class Logger {
         this.pinoInstance.warn({ args }, messageOrObj);
       }
     } else {
-      this.pinoInstance.warn(messageOrObj, args[0] as string || "");
+      this.pinoInstance.warn(messageOrObj, (args[0] as string) || "");
     }
   }
 
@@ -332,7 +332,7 @@ export class Logger {
     } else {
       // 结构化错误日志，自动提取错误信息
       const enhancedObj = this.enhanceErrorObject(messageOrObj);
-      this.pinoInstance.error(enhancedObj, args[0] as string || "");
+      this.pinoInstance.error(enhancedObj, (args[0] as string) || "");
     }
   }
 
@@ -349,7 +349,7 @@ export class Logger {
         this.pinoInstance.debug({ args }, messageOrObj);
       }
     } else {
-      this.pinoInstance.debug(messageOrObj, args[0] as string || "");
+      this.pinoInstance.debug(messageOrObj, (args[0] as string) || "");
     }
   }
 
@@ -367,7 +367,7 @@ export class Logger {
         this.pinoInstance.info({ args }, messageOrObj);
       }
     } else {
-      this.pinoInstance.info(messageOrObj, args[0] as string || "");
+      this.pinoInstance.info(messageOrObj, (args[0] as string) || "");
     }
   }
 

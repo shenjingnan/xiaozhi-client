@@ -7,8 +7,8 @@ import * as commentJson from "comment-json";
 import dayjs from "dayjs";
 import JSON5 from "json5";
 import * as json5Writer from "json5-writer";
-import { logger } from "./Logger";
 import type { Json5Writer } from "json5-writer";
+import { logger } from "./Logger";
 
 // 在 ESM 中，需要从 import.meta.url 获取当前文件目录
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -1641,7 +1641,11 @@ export class ConfigManager {
   private notifyConfigUpdate(config: AppConfig): void {
     try {
       // 检查是否有全局的 webServer 实例（当使用 --ui 参数启动时会设置）
-      const webServer = (global as unknown as { __webServer?: { broadcastConfigUpdate?: (config: AppConfig) => void } }).__webServer;
+      const webServer = (
+        global as unknown as {
+          __webServer?: { broadcastConfigUpdate?: (config: AppConfig) => void };
+        }
+      ).__webServer;
       if (webServer && typeof webServer.broadcastConfigUpdate === "function") {
         // 调用 webServer 的 broadcastConfigUpdate 方法来通知所有连接的客户端
         webServer.broadcastConfigUpdate(config);

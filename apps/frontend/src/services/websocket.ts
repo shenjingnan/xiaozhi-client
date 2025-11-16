@@ -572,50 +572,74 @@ export class WebSocketManager {
         case "configUpdate":
         case "config":
           if (message.data) {
-            this.eventBus.emit("data:configUpdate", message.data as unknown as AppConfig);
+            this.eventBus.emit(
+              "data:configUpdate",
+              message.data as unknown as AppConfig
+            );
           }
           break;
 
         case "statusUpdate":
         case "status":
           if (message.data) {
-            this.eventBus.emit("data:statusUpdate", message.data as unknown as ClientStatus);
+            this.eventBus.emit(
+              "data:statusUpdate",
+              message.data as unknown as ClientStatus
+            );
           }
           break;
 
         case "restartStatus":
           if (message.data) {
-            this.eventBus.emit("data:restartStatus", message.data as unknown as RestartStatus);
+            this.eventBus.emit(
+              "data:restartStatus",
+              message.data as unknown as RestartStatus
+            );
           }
           break;
 
         case "endpoint_status_changed":
           if (message.data) {
-            this.eventBus.emit("data:endpointStatusChanged", message.data as unknown as EndpointStatusChangedEvent);
+            this.eventBus.emit(
+              "data:endpointStatusChanged",
+              message.data as unknown as EndpointStatusChangedEvent
+            );
           }
           break;
 
         case "npm:install:started":
           if (message.data) {
-            this.eventBus.emit("data:npmInstallStarted", message.data as unknown as NPMInstallStartedEvent);
+            this.eventBus.emit(
+              "data:npmInstallStarted",
+              message.data as unknown as NPMInstallStartedEvent
+            );
           }
           break;
 
         case "npm:install:log":
           if (message.data) {
-            this.eventBus.emit("data:npmInstallLog", message.data as unknown as NPMInstallLogEvent);
+            this.eventBus.emit(
+              "data:npmInstallLog",
+              message.data as unknown as NPMInstallLogEvent
+            );
           }
           break;
 
         case "npm:install:completed":
           if (message.data) {
-            this.eventBus.emit("data:npmInstallCompleted", message.data as unknown as NPMInstallCompletedEvent);
+            this.eventBus.emit(
+              "data:npmInstallCompleted",
+              message.data as unknown as NPMInstallCompletedEvent
+            );
           }
           break;
 
         case "npm:install:failed":
           if (message.data) {
-            this.eventBus.emit("data:npmInstallFailed", message.data as unknown as NPMInstallFailedEvent);
+            this.eventBus.emit(
+              "data:npmInstallFailed",
+              message.data as unknown as NPMInstallFailedEvent
+            );
           }
           break;
 

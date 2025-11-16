@@ -1,6 +1,14 @@
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
-import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
+import {
+  type Mock,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import { WebServer } from "./WebServer";
 import { configManager } from "./configManager";
 import type { MockConfigManager } from "./types/test.js";
@@ -173,7 +181,9 @@ describe("WebServer 配置清理功能", () => {
         test: { command: "node", args: ["test.js"] },
       },
     });
-    (mockConfigManager.getMcpEndpoint as Mock).mockReturnValue("wss://test.endpoint");
+    (mockConfigManager.getMcpEndpoint as Mock).mockReturnValue(
+      "wss://test.endpoint"
+    );
     (mockConfigManager.getMcpServers as Mock).mockReturnValue({
       test: { command: "node", args: ["test.js"] },
     });

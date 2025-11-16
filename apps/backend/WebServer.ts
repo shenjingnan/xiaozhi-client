@@ -336,9 +336,12 @@ export class WebServer {
         await this.xiaozhiConnectionManager?.connect();
 
         // 设置配置变更监听器
-        this.xiaozhiConnectionManager?.on("configChange", (event: EndpointConfigChangeEvent) => {
-          this.logger.debug(`小智连接配置变更: ${event.type}`, event.data);
-        });
+        this.xiaozhiConnectionManager?.on(
+          "configChange",
+          (event: EndpointConfigChangeEvent) => {
+            this.logger.debug(`小智连接配置变更: ${event.type}`, event.data);
+          }
+        );
 
         this.logger.debug(
           `小智接入点连接管理器初始化完成，管理 ${validEndpoints.length} 个端点`

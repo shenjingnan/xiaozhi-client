@@ -123,7 +123,9 @@ export class CustomMCPHandler {
         await this.reinitialize();
       }
     } catch (error) {
-      this.logger.error("[CustomMCP] 配置更新处理失败:", { error: (error as Error).message });
+      this.logger.error("[CustomMCP] 配置更新处理失败:", {
+        error: (error as Error).message,
+      });
     }
   }
 
@@ -150,7 +152,9 @@ export class CustomMCPHandler {
         `[CustomMCP] 重新初始化完成，共加载 ${this.tools.size} 个工具`
       );
     } catch (error) {
-      this.logger.error("[CustomMCP] 重新初始化失败:", { error: (error as Error).message });
+      this.logger.error("[CustomMCP] 重新初始化失败:", {
+        error: (error as Error).message,
+      });
       throw error;
     }
   }
@@ -181,7 +185,9 @@ export class CustomMCPHandler {
         `[CustomMCP] 初始化完成，共加载 ${this.tools.size} 个工具`
       );
     } catch (error) {
-      this.logger.error("[CustomMCP] 初始化失败:", { error: (error as Error).message });
+      this.logger.error("[CustomMCP] 初始化失败:", {
+        error: (error as Error).message,
+      });
       throw error;
     }
   }
@@ -378,10 +384,9 @@ export class CustomMCPHandler {
         try {
           return await this.forwardToMCPServiceManager(tool, arguments_);
         } catch (error) {
-          this.logger.error(
-            `[CustomMCP] MCP 类型工具路由失败: ${tool.name}`,
-            { error: (error as Error).message }
-          );
+          this.logger.error(`[CustomMCP] MCP 类型工具路由失败: ${tool.name}`, {
+            error: (error as Error).message,
+          });
           // 保留原始错误信息，特别是 MCPServiceManager 未初始化的情况
           const errorMessage =
             error instanceof Error ? error.message : "MCP 类型工具路由错误";
@@ -398,7 +403,9 @@ export class CustomMCPHandler {
           };
         }
       default:
-        throw new Error(`不支持的处理器类型: ${(tool.handler as MCPHandlerConfig).type}`);
+        throw new Error(
+          `不支持的处理器类型: ${(tool.handler as MCPHandlerConfig).type}`
+        );
     }
   }
 
@@ -432,7 +439,9 @@ export class CustomMCPHandler {
       this.logger.info(`[CustomMCP] MCP工具转发成功: ${tool.name}`);
       return result;
     } catch (error) {
-      this.logger.error(`[CustomMCP] MCP工具转发失败: ${tool.name}`, { error: (error as Error).message });
+      this.logger.error(`[CustomMCP] MCP工具转发失败: ${tool.name}`, {
+        error: (error as Error).message,
+      });
       return {
         content: [
           {
@@ -494,15 +503,24 @@ export class CustomMCPHandler {
       });
 
       // 处理响应
-      return this.processCozeResponse(tool.name, response as {
-        code: number;
-        msg: string;
-        debug_url: string;
-        data: string;
-        usage: { input_count: number; output_count: number; token_count: number };
-      });
+      return this.processCozeResponse(
+        tool.name,
+        response as {
+          code: number;
+          msg: string;
+          debug_url: string;
+          data: string;
+          usage: {
+            input_count: number;
+            output_count: number;
+            token_count: number;
+          };
+        }
+      );
     } catch (error) {
-      this.logger.error(`[CustomMCP] Coze 工作流调用失败: ${tool.name}`, { error: (error as Error).message });
+      this.logger.error(`[CustomMCP] Coze 工作流调用失败: ${tool.name}`, {
+        error: (error as Error).message,
+      });
 
       return {
         content: [
@@ -682,7 +700,9 @@ export class CustomMCPHandler {
         isError: false,
       };
     } catch (error) {
-      this.logger.error(`[CustomMCP] 处理 Coze 响应失败: ${toolName}`, { error: (error as Error).message });
+      this.logger.error(`[CustomMCP] 处理 Coze 响应失败: ${toolName}`, {
+        error: (error as Error).message,
+      });
 
       return {
         content: [
@@ -739,7 +759,9 @@ export class CustomMCPHandler {
         isError: false,
       };
     } catch (error) {
-      this.logger.error(`[CustomMCP] 函数工具调用失败: ${tool.name}`, { error: (error as Error).message });
+      this.logger.error(`[CustomMCP] 函数工具调用失败: ${tool.name}`, {
+        error: (error as Error).message,
+      });
 
       return {
         content: [
@@ -758,7 +780,9 @@ export class CustomMCPHandler {
   /**
    * 动态加载模块
    */
-  private async loadModule(modulePath: string): Promise<Record<string, unknown>> {
+  private async loadModule(
+    modulePath: string
+  ): Promise<Record<string, unknown>> {
     try {
       // 支持相对路径和绝对路径
       let resolvedPath = modulePath;
@@ -790,20 +814,29 @@ export class CustomMCPHandler {
     moduleExports: Record<string, unknown>,
     functionName: string
   ): (...args: Record<string, unknown>[]) => Record<string, unknown> {
-    let targetFunction: ((...args: Record<string, unknown>[]) => Record<string, unknown>) | undefined;
+    let targetFunction:
+      | ((...args: Record<string, unknown>[]) => Record<string, unknown>)
+      | undefined;
 
     // 尝试从默认导出获取函数
     if (moduleExports.default && typeof moduleExports.default === "function") {
       if (functionName === "default") {
-        targetFunction = moduleExports.default as (...args: Record<string, unknown>[]) => Record<string, unknown>;
+        targetFunction = moduleExports.default as (
+          ...args: Record<string, unknown>[]
+        ) => Record<string, unknown>;
       } else {
         // 将 default 视为可索引的对象来访问其属性
-        const defaultAsObject = moduleExports.default as unknown as Record<string, unknown>;
+        const defaultAsObject = moduleExports.default as unknown as Record<
+          string,
+          unknown
+        >;
         if (
           defaultAsObject[functionName] &&
           typeof defaultAsObject[functionName] === "function"
         ) {
-          targetFunction = defaultAsObject[functionName] as (...args: Record<string, unknown>[]) => Record<string, unknown>;
+          targetFunction = defaultAsObject[functionName] as (
+            ...args: Record<string, unknown>[]
+          ) => Record<string, unknown>;
         }
       }
     }
@@ -814,7 +847,9 @@ export class CustomMCPHandler {
       moduleExports[functionName] &&
       typeof moduleExports[functionName] === "function"
     ) {
-      targetFunction = moduleExports[functionName] as (...args: Record<string, unknown>[]) => Record<string, unknown>;
+      targetFunction = moduleExports[functionName] as (
+        ...args: Record<string, unknown>[]
+      ) => Record<string, unknown>;
     }
 
     if (!targetFunction) {
@@ -828,7 +863,9 @@ export class CustomMCPHandler {
    * 执行函数
    */
   private async executeFunction(
-    targetFunction: (...args: Record<string, unknown>[]) => Record<string, unknown>,
+    targetFunction: (
+      ...args: Record<string, unknown>[]
+    ) => Record<string, unknown>,
     arguments_: Record<string, unknown>,
     handler: FunctionHandlerConfig
   ): Promise<Record<string, unknown>> {
@@ -857,7 +894,9 @@ export class CustomMCPHandler {
       );
     });
 
-    return Promise.race([executePromise, timeoutPromise]) as Promise<Record<string, unknown>>;
+    return Promise.race([executePromise, timeoutPromise]) as Promise<
+      Record<string, unknown>
+    >;
   }
 
   /**
@@ -887,7 +926,9 @@ export class CustomMCPHandler {
       // 处理响应
       return this.processHttpResponse(tool.name, response, handler);
     } catch (error) {
-      this.logger.error(`[CustomMCP] HTTP 工具调用失败: ${tool.name}`, { error: (error as Error).message });
+      this.logger.error(`[CustomMCP] HTTP 工具调用失败: ${tool.name}`, {
+        error: (error as Error).message,
+      });
 
       return {
         content: [
@@ -1112,7 +1153,9 @@ export class CustomMCPHandler {
         isError: false,
       };
     } catch (error) {
-      this.logger.error(`[CustomMCP] 处理 HTTP 响应失败: ${toolName}`, { error: (error as Error).message });
+      this.logger.error(`[CustomMCP] 处理 HTTP 响应失败: ${toolName}`, {
+        error: (error as Error).message,
+      });
 
       return {
         content: [
@@ -1160,7 +1203,10 @@ export class CustomMCPHandler {
     if (!mapping) return responseData;
 
     // 简单的 JSONPath 实现
-    const extractByPath = (data: Record<string, unknown> | string, path: string): Record<string, unknown> | string | undefined => {
+    const extractByPath = (
+      data: Record<string, unknown> | string,
+      path: string
+    ): Record<string, unknown> | string | undefined => {
       if (!path) return data;
 
       const parts = path.split(".");
@@ -1233,7 +1279,9 @@ export class CustomMCPHandler {
         isError: false,
       };
     } catch (error) {
-      this.logger.error(`[CustomMCP] 脚本工具调用失败: ${tool.name}`, { error: (error as Error).message });
+      this.logger.error(`[CustomMCP] 脚本工具调用失败: ${tool.name}`, {
+        error: (error as Error).message,
+      });
 
       return {
         content: [
@@ -1432,7 +1480,9 @@ export class CustomMCPHandler {
         isError: hasError,
       };
     } catch (error) {
-      this.logger.error(`[CustomMCP] 链式工具调用失败: ${tool.name}`, { error: (error as Error).message });
+      this.logger.error(`[CustomMCP] 链式工具调用失败: ${tool.name}`, {
+        error: (error as Error).message,
+      });
 
       return {
         content: [
@@ -1808,7 +1858,10 @@ export class CustomMCPHandler {
   /**
    * 生成缓存键
    */
-  private generateCacheKey(toolName: string, arguments_: Record<string, unknown>): string {
+  private generateCacheKey(
+    toolName: string,
+    arguments_: Record<string, unknown>
+  ): string {
     return generateCacheKey(toolName, arguments_);
   }
 

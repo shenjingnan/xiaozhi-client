@@ -107,7 +107,9 @@ export abstract class TransportAdapter {
         this.logger.debug("收到通知消息，无需响应");
       }
     } catch (error) {
-      this.logger.error(`处理消息时出错: ${message.method}`, { error: (error as Error).message });
+      this.logger.error(`处理消息时出错: ${message.method}`, {
+        error: (error as Error).message,
+      });
 
       const errorResponse = this.createErrorResponse(
         error as Error,

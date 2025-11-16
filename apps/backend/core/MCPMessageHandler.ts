@@ -89,13 +89,19 @@ export class MCPMessageHandler {
 
       switch (message.method) {
         case "initialize":
-          return await this.handleInitialize(message.params as InitializeParams, message.id);
+          return await this.handleInitialize(
+            message.params as InitializeParams,
+            message.id
+          );
         case "notifications/initialized":
           return await this.handleInitializedNotification(message.params);
         case "tools/list":
           return await this.handleToolsList(message.id);
         case "tools/call":
-          return await this.handleToolCall(message.params as ToolCallParams, message.id);
+          return await this.handleToolCall(
+            message.params as ToolCallParams,
+            message.id
+          );
         case "resources/list":
           return await this.handleResourcesList(message.id);
         case "prompts/list":

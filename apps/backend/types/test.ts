@@ -31,13 +31,21 @@ export interface MockConfigManager {
   getMcpEndpoint: Mock<() => string>;
   getMcpServers: Mock<() => Readonly<Record<string, MCPServerConfig>>>;
   updateMcpEndpoint: Mock<(endpoint: string | string[]) => void>;
-  updateMcpServer: Mock<(serverName: string, serverConfig: MCPServerConfig) => void>;
+  updateMcpServer: Mock<
+    (serverName: string, serverConfig: MCPServerConfig) => void
+  >;
   removeMcpServer: Mock<(serverName: string) => void>;
-  updateConnectionConfig: Mock<(connectionConfig: Partial<ConnectionConfig>) => void>;
-  updateModelScopeConfig: Mock<(modelScopeConfig: Partial<ModelScopeConfig>) => void>;
+  updateConnectionConfig: Mock<
+    (connectionConfig: Partial<ConnectionConfig>) => void
+  >;
+  updateModelScopeConfig: Mock<
+    (modelScopeConfig: Partial<ModelScopeConfig>) => void
+  >;
   updateWebUIConfig: Mock<(webUIConfig: Partial<WebUIConfig>) => void>;
   getWebUIPort: Mock<() => number>;
-  setToolEnabled: Mock<(serverName: string, toolName: string, enabled: boolean) => void>;
+  setToolEnabled: Mock<
+    (serverName: string, toolName: string, enabled: boolean) => void
+  >;
   removeServerToolsConfig: Mock<(serverName: string) => void>;
   cleanupInvalidServerToolsConfig: Mock<() => void>;
 }

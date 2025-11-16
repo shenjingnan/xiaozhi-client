@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Logger } from "../../Logger.js";
 import type { AppConfig } from "../../configManager.js";
+import type { EventBus } from "../EventBus.js";
 import { NotificationService } from "../NotificationService.js";
 import type { WebSocketClient } from "../NotificationService.js";
 import type { ClientInfo } from "../StatusService.js";
-import type { Logger } from "../../Logger.js";
-import type { EventBus } from "../EventBus.js";
 
 // Mock EventBus
 vi.mock("../EventBus.js", () => ({
@@ -318,7 +318,11 @@ describe("NotificationService", () => {
       });
 
       // Replace the clients map with our mock
-      (notificationService as unknown as { clients: Map<string, WebSocketClient> }).clients = mockClients;
+      (
+        notificationService as unknown as {
+          clients: Map<string, WebSocketClient>;
+        }
+      ).clients = mockClients;
 
       notificationService.unregisterClient("test-client");
 
@@ -540,7 +544,9 @@ describe("NotificationService", () => {
       if (!configUpdatedCall) {
         throw new Error("config:updated listener not found");
       }
-      const configUpdatedListener = configUpdatedCall[1] as (event: unknown) => void;
+      const configUpdatedListener = configUpdatedCall[1] as (
+        event: unknown
+      ) => void;
 
       // Trigger the event
       configUpdatedListener({ config: mockConfig });
@@ -560,7 +566,9 @@ describe("NotificationService", () => {
       if (!statusUpdatedCall) {
         throw new Error("status:updated listener not found");
       }
-      const statusUpdatedListener = statusUpdatedCall[1] as (event: unknown) => void;
+      const statusUpdatedListener = statusUpdatedCall[1] as (
+        event: unknown
+      ) => void;
 
       // Trigger the event
       statusUpdatedListener({ status: mockClientInfo });
@@ -575,12 +583,15 @@ describe("NotificationService", () => {
 
       // Get the service:restart:started listener
       const restartStartedCall = mockEventBus.onEvent.mock.calls.find(
-        (call: unknown[]) => Array.isArray(call) && call[0] === "service:restart:started"
+        (call: unknown[]) =>
+          Array.isArray(call) && call[0] === "service:restart:started"
       );
       if (!restartStartedCall) {
         throw new Error("service:restart:started listener not found");
       }
-      const restartStartedListener = restartStartedCall[1] as (event: unknown) => void;
+      const restartStartedListener = restartStartedCall[1] as (
+        event: unknown
+      ) => void;
 
       // Trigger the event
       const timestamp = Date.now();
@@ -600,12 +611,15 @@ describe("NotificationService", () => {
 
       // Get the service:restart:completed listener
       const restartCompletedCall = mockEventBus.onEvent.mock.calls.find(
-        (call: unknown[]) => Array.isArray(call) && call[0] === "service:restart:completed"
+        (call: unknown[]) =>
+          Array.isArray(call) && call[0] === "service:restart:completed"
       );
       if (!restartCompletedCall) {
         throw new Error("service:restart:completed listener not found");
       }
-      const restartCompletedListener = restartCompletedCall[1] as (event: unknown) => void;
+      const restartCompletedListener = restartCompletedCall[1] as (
+        event: unknown
+      ) => void;
 
       // Trigger the event
       const timestamp = Date.now();
@@ -621,12 +635,15 @@ describe("NotificationService", () => {
 
       // Get the service:restart:failed listener
       const restartFailedCall = mockEventBus.onEvent.mock.calls.find(
-        (call: unknown[]) => Array.isArray(call) && call[0] === "service:restart:failed"
+        (call: unknown[]) =>
+          Array.isArray(call) && call[0] === "service:restart:failed"
       );
       if (!restartFailedCall) {
         throw new Error("service:restart:failed listener not found");
       }
-      const restartFailedListener = restartFailedCall[1] as (event: unknown) => void;
+      const restartFailedListener = restartFailedCall[1] as (
+        event: unknown
+      ) => void;
 
       // Trigger the event
       const timestamp = Date.now();
@@ -650,7 +667,8 @@ describe("NotificationService", () => {
 
       // Get the notification:broadcast listener
       const broadcastCall = mockEventBus.onEvent.mock.calls.find(
-        (call: unknown[]) => Array.isArray(call) && call[0] === "notification:broadcast"
+        (call: unknown[]) =>
+          Array.isArray(call) && call[0] === "notification:broadcast"
       );
       if (!broadcastCall) {
         throw new Error("notification:broadcast listener not found");
@@ -676,7 +694,8 @@ describe("NotificationService", () => {
 
       // Get the notification:broadcast listener
       const broadcastCall = mockEventBus.onEvent.mock.calls.find(
-        (call: unknown[]) => Array.isArray(call) && call[0] === "notification:broadcast"
+        (call: unknown[]) =>
+          Array.isArray(call) && call[0] === "notification:broadcast"
       );
       if (!broadcastCall) {
         throw new Error("notification:broadcast listener not found");
@@ -1001,7 +1020,9 @@ describe("NotificationService", () => {
       if (!configUpdatedCall) {
         throw new Error("config:updated listener not found");
       }
-      const configUpdatedListener = configUpdatedCall[1] as (event: unknown) => void;
+      const configUpdatedListener = configUpdatedCall[1] as (
+        event: unknown
+      ) => void;
       configUpdatedListener({ config: mockConfig });
 
       // Simulate status update event
@@ -1011,7 +1032,9 @@ describe("NotificationService", () => {
       if (!statusUpdatedCall) {
         throw new Error("status:updated listener not found");
       }
-      const statusUpdatedListener = statusUpdatedCall[1] as (event: unknown) => void;
+      const statusUpdatedListener = statusUpdatedCall[1] as (
+        event: unknown
+      ) => void;
       statusUpdatedListener({ status: mockClientInfo });
 
       // Should have sent both notifications

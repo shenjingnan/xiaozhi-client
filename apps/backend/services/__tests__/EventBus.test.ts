@@ -307,8 +307,12 @@ describe("EventBus", () => {
 
     it("should handle emit errors gracefully", () => {
       // 测试 updateEventStats 方法抛出错误的情况
-      const originalUpdateStats = (eventBus as unknown as { updateEventStats: () => void }).updateEventStats;
-      (eventBus as unknown as { updateEventStats: () => void }).updateEventStats = vi.fn().mockImplementation(() => {
+      const originalUpdateStats = (
+        eventBus as unknown as { updateEventStats: () => void }
+      ).updateEventStats;
+      (
+        eventBus as unknown as { updateEventStats: () => void }
+      ).updateEventStats = vi.fn().mockImplementation(() => {
         throw new Error("Update stats failed");
       });
 
@@ -324,7 +328,9 @@ describe("EventBus", () => {
       );
 
       // Restore original method
-      (eventBus as unknown as { updateEventStats: () => void }).updateEventStats = originalUpdateStats;
+      (
+        eventBus as unknown as { updateEventStats: () => void }
+      ).updateEventStats = originalUpdateStats;
     });
 
     it("should return false when no listeners", () => {
