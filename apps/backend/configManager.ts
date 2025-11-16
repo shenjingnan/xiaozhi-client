@@ -95,7 +95,7 @@ export interface ProxyHandlerConfig {
     retry_count?: number;
     retry_delay?: number;
     headers?: Record<string, string>;
-    params?: Record<string, string>;
+    params?: Record<string, unknown>;
   };
 }
 
@@ -212,6 +212,13 @@ export interface AppConfig {
   toolCallLog?: ToolCallLogConfig; // 工具调用日志配置（可选）
 }
 
+// 全局 Web 服务器类型定义
+interface GlobalWithWebServer {
+  __webServer?: {
+    broadcastConfigUpdate?: (config: AppConfig) => void;
+  };
+}
+
 /**
  * 配置管理类
  * 负责管理应用配置，提供只读访问和安全的配置更新功能
@@ -221,7 +228,7 @@ export class ConfigManager {
   private defaultConfigPath: string;
   private config: AppConfig | null = null;
   private currentConfigPath: string | null = null; // 跟踪当前使用的配置文件路径
-  private json5Writer: unknown = null; // json5-writer 实例，用于保留 JSON5 注释
+  private json5Writer: Json5Writer | null = null; // json5-writer 实例，用于保留 JSON5 注释
   private eventBus = getEventBus(); // 事件总线
 
   // 统计更新并发控制
@@ -810,8 +817,8 @@ export class ConfigManager {
           try {
             if (this.json5Writer) {
               // 使用 json5-writer 更新配置并保留注释
-              (this.json5Writer as Json5Writer).write(config);
-              configContent = (this.json5Writer as Json5Writer).toSource();
+              this.json5Writer.write(config);
+              configContent = this.json5Writer.toSource();
             } else {
               // 如果没有 json5Writer 实例，回退到标准 JSON5
               console.warn("没有 json5Writer 实例，回退到标准 JSON5 格式");
@@ -1641,11 +1648,7 @@ export class ConfigManager {
   private notifyConfigUpdate(config: AppConfig): void {
     try {
       // 检查是否有全局的 webServer 实例（当使用 --ui 参数启动时会设置）
-      const webServer = (
-        global as unknown as {
-          __webServer?: { broadcastConfigUpdate?: (config: AppConfig) => void };
-        }
-      ).__webServer;
+      const webServer = (global as unknown as GlobalWithWebServer).__webServer;
       if (webServer && typeof webServer.broadcastConfigUpdate === "function") {
         // 调用 webServer 的 broadcastConfigUpdate 方法来通知所有连接的客户端
         webServer.broadcastConfigUpdate(config);

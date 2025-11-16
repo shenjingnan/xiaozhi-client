@@ -14,6 +14,7 @@ import type {
   ScriptHandlerConfig,
 } from "@root/configManager.js";
 import { configManager } from "@root/configManager.js";
+import type { CozeWorkflowRunResponse } from "@root/types/coze.js";
 import type {
   CacheStatistics,
   EnhancedToolResultCache,
@@ -490,17 +491,7 @@ export class CustomMCPHandler {
       // 处理响应
       return this.processCozeResponse(
         tool.name,
-        response as {
-          code: number;
-          msg: string;
-          debug_url: string;
-          data: string;
-          usage: {
-            input_count: number;
-            output_count: number;
-            token_count: number;
-          };
-        }
+        response as CozeWorkflowRunResponse
       );
     } catch (error) {
       this.logger.error(`[CustomMCP] Coze 工作流调用失败: ${tool.name}`, error);
@@ -797,15 +788,21 @@ export class CustomMCPHandler {
     const exports = moduleExports as Record<string, unknown>;
 
     // 尝试从默认导出获取函数
-    if (exports.default && typeof exports.default === "function") {
-      if (functionName === "default") {
-        targetFunction = exports.default;
-      } else if (
+    if (exports.default) {
+      // 如果默认导出是一个函数
+      if (typeof exports.default === "function") {
+        if (functionName === "default") {
+          targetFunction = exports.default;
+        }
+      }
+      // 如果默认导出是一个对象（包含多个函数）
+      else if (
         typeof exports.default === "object" &&
         exports.default !== null
       ) {
         const defaultExport = exports.default as Record<string, unknown>;
         if (
+          functionName !== "default" &&
           defaultExport[functionName] &&
           typeof defaultExport[functionName] === "function"
         ) {
