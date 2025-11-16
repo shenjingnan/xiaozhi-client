@@ -17,11 +17,8 @@ async function importModules() {
   };
 }
 
-import { spawn } from "node:child_process";
-
 async function main() {
   const args = process.argv.slice(2);
-  const openBrowser = args.includes("--open-browser");
 
   try {
     // 动态导入模块
@@ -39,13 +36,6 @@ async function main() {
 
     logger.info("[WEBSERVER_STANDALONE] WebServer 启动成功");
 
-    // 自动打开浏览器
-    if (openBrowser) {
-      const port = configManager.getWebUIPort();
-      const url = `http://localhost:${port}`;
-      await openBrowserUrl(url);
-    }
-
     // 处理退出信号
     const cleanup = async () => {
       logger.info("[WEBSERVER_STANDALONE] 正在停止 WebServer...");
@@ -58,34 +48,6 @@ async function main() {
   } catch (error) {
     console.error("WebServer 启动失败:", error);
     process.exit(1);
-  }
-}
-
-/**
- * 打开浏览器URL
- */
-async function openBrowserUrl(url: string): Promise<void> {
-  try {
-    const platform = process.platform;
-
-    let command: string;
-    let args: string[];
-
-    if (platform === "darwin") {
-      command = "open";
-      args = [url];
-    } else if (platform === "win32") {
-      command = "start";
-      args = ["", url];
-    } else {
-      command = "xdg-open";
-      args = [url];
-    }
-
-    spawn(command, args, { detached: true, stdio: "ignore" });
-    console.log(`已尝试打开浏览器: ${url}`);
-  } catch (error) {
-    console.warn("自动打开浏览器失败:", error);
   }
 }
 
