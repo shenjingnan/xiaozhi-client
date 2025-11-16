@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import type { Server as HttpServer } from "node:http";
 import { convertLegacyToNew } from "@adapters/index.js";
 import {
   ConfigApiHandler,
@@ -16,7 +17,7 @@ import {
   UpdateApiHandler,
   VersionApiHandler,
 } from "@handlers/index.js";
-import { serve } from "@hono/node-server";
+import { type ServerType, serve } from "@hono/node-server";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
@@ -24,6 +25,7 @@ import { ProxyMCPServer } from "@root/ProxyMCPServer.js";
 import { configManager } from "@root/configManager.js";
 import type { MCPServerConfig } from "@root/configManager.js";
 import type {
+  EndpointConfigChangeEvent,
   EventBus,
   IndependentXiaozhiConnectionManager,
   MCPServiceManager,
@@ -47,12 +49,12 @@ interface ApiErrorResponse {
   error: {
     code: string;
     message: string;
-    details?: any;
+    details?: unknown;
   };
 }
 
 // 统一成功响应格式
-interface ApiSuccessResponse<T = any> {
+interface ApiSuccessResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
@@ -71,7 +73,7 @@ interface ClientInfo {
  */
 export class WebServer {
   private app: Hono;
-  private httpServer: any = null;
+  private httpServer: ServerType | null = null;
   private wss: WebSocketServer | null = null;
   private logger: Logger;
   private port: number;
@@ -116,7 +118,7 @@ export class WebServer {
   private createErrorResponse(
     code: string,
     message: string,
-    details?: any
+    details?: unknown
   ): ApiErrorResponse {
     return {
       error: {
@@ -234,7 +236,7 @@ export class WebServer {
 
       this.logger.debug("所有连接初始化完成");
     } catch (error) {
-      this.logger.error("连接初始化失败:", error);
+      this.logger.error("连接初始化失败:", error as Error);
     }
   }
 
@@ -317,7 +319,7 @@ export class WebServer {
 
       this.logger.debug("✅ 连接管理器初始化完成");
     } catch (error) {
-      this.logger.error("❌ 连接管理器初始化失败:", error);
+      this.logger.error("❌ 连接管理器初始化失败:", error as Error);
       // 连接管理器初始化失败时，继续后续流程，允许延迟初始化
       return;
     }
@@ -328,13 +330,13 @@ export class WebServer {
 
       try {
         // 初始化连接管理器（传入端点列表）
-        await this.xiaozhiConnectionManager!.initialize(validEndpoints, tools);
+        await this.xiaozhiConnectionManager?.initialize(validEndpoints, tools);
 
         // 连接所有端点
-        await this.xiaozhiConnectionManager!.connect();
+        await this.xiaozhiConnectionManager?.connect();
 
         // 设置配置变更监听器
-        this.xiaozhiConnectionManager!.on("configChange", (event: any) => {
+        this.xiaozhiConnectionManager?.on("configChange", (event: EndpointConfigChangeEvent) => {
           this.logger.debug(`小智连接配置变更: ${event.type}`, event.data);
         });
 
@@ -342,7 +344,7 @@ export class WebServer {
           `小智接入点连接管理器初始化完成，管理 ${validEndpoints.length} 个端点`
         );
       } catch (error) {
-        this.logger.error("小智接入点连接管理器初始化失败:", error);
+        this.logger.error("小智接入点连接管理器初始化失败:", error as Error);
 
         // 如果新的连接管理器失败，回退到原有的单连接模式（向后兼容）
         this.logger.warn("回退到单连接模式");
@@ -357,7 +359,7 @@ export class WebServer {
 
         // 使用重连机制连接到小智接入点
         await this.connectWithRetry(
-          () => this.proxyMCPServer!.connect(),
+          () => this.proxyMCPServer?.connect() as Promise<void>,
           "小智接入点连接"
         );
         this.logger.debug("小智接入点连接成功");
@@ -370,7 +372,7 @@ export class WebServer {
           this.logger.debug("连接管理器已初始化为空管理器，支持动态添加端点");
         }
       } catch (error) {
-        this.logger.error("❌ 空连接管理器初始化失败:", error);
+        this.logger.error("❌ 空连接管理器初始化失败:", error as Error);
         // 不抛出错误，允许系统继续运行
       }
     }
@@ -379,7 +381,7 @@ export class WebServer {
   /**
    * 获取小智连接状态信息
    */
-  getXiaozhiConnectionStatus(): any {
+  getXiaozhiConnectionStatus(): unknown {
     if (this.xiaozhiConnectionManager) {
       return {
         type: "multi-endpoint",
@@ -543,7 +545,7 @@ export class WebServer {
         return await connectionFn();
       } catch (error) {
         lastError = error as Error;
-        this.logger.warn(`${context} - 连接失败:`, error);
+        this.logger.warn(`${context} - 连接失败:`, error as Error);
 
         if (attempt < maxAttempts) {
           const delay = Math.min(
@@ -581,7 +583,7 @@ export class WebServer {
 
     // 错误处理中间件
     this.app?.onError((err, c) => {
-      this.logger.error("HTTP request error:", err);
+      this.logger.error("HTTP request error:", err as Error);
       const errorResponse = this.createErrorResponse(
         "INTERNAL_SERVER_ERROR",
         "服务器内部错误",
@@ -805,7 +807,7 @@ export class WebServer {
             );
           }
         } catch (error) {
-          this.logger.error("WebSocket message error:", error);
+          this.logger.error("WebSocket message error:", error as Error);
           const errorResponse = {
             type: "error",
             error: {
@@ -830,7 +832,7 @@ export class WebServer {
       });
 
       ws.on("error", (error) => {
-        this.logger.error(`WebSocket 连接错误 (${clientId}):`, error);
+        this.logger.error(`WebSocket 连接错误 (${clientId}):`, error as Error);
       });
 
       // 发送初始数据
@@ -882,7 +884,7 @@ export class WebServer {
     this.httpServer = server;
 
     // 设置 WebSocket 服务器
-    this.wss = new WebSocketServer({ server: this.httpServer });
+    this.wss = new WebSocketServer({ server: this.httpServer as HttpServer });
     this.setupWebSocket();
 
     // 启动心跳监控
@@ -943,7 +945,7 @@ export class WebServer {
         this.wss.close(() => {
           // 强制关闭 HTTP 服务器，不等待现有连接
           if (this.httpServer) {
-            this.httpServer.close(() => {
+            (this.httpServer as HttpServer).close(() => {
               this.logger.info("Web 服务器已停止");
               doResolve();
             });
