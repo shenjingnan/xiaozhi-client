@@ -12,14 +12,14 @@ import type { MCPServiceManager } from "@services/MCPServiceManager.js";
 interface MCPMessage {
   jsonrpc: "2.0";
   method: string;
-  params?: any;
+  params?: unknown;
   id?: string | number;
 }
 
 // MCP 响应接口
 interface MCPResponse {
   jsonrpc: "2.0";
-  result?: any;
+  result?: unknown;
   error?: MCPError;
   id: string | number;
 }
@@ -28,13 +28,13 @@ interface MCPResponse {
 interface MCPError {
   code: number;
   message: string;
-  data?: any;
+  data?: unknown;
 }
 
 // 初始化参数接口
 interface InitializeParams {
   protocolVersion: string;
-  capabilities: any;
+  capabilities: unknown;
   clientInfo: {
     name: string;
     version: string;
@@ -44,7 +44,7 @@ interface InitializeParams {
 // 工具调用参数接口
 interface ToolCallParams {
   name: string;
-  arguments?: any;
+  arguments?: unknown;
 }
 
 // MCP 资源接口
@@ -89,13 +89,13 @@ export class MCPMessageHandler {
 
       switch (message.method) {
         case "initialize":
-          return await this.handleInitialize(message.params, message.id);
+          return await this.handleInitialize(message.params as InitializeParams, message.id);
         case "notifications/initialized":
           return await this.handleInitializedNotification(message.params);
         case "tools/list":
           return await this.handleToolsList(message.id);
         case "tools/call":
-          return await this.handleToolCall(message.params, message.id);
+          return await this.handleToolCall(message.params as ToolCallParams, message.id);
         case "resources/list":
           return await this.handleResourcesList(message.id);
         case "prompts/list":
@@ -111,7 +111,7 @@ export class MCPMessageHandler {
           throw new Error(`未知的方法: ${message.method}`);
       }
     } catch (error) {
-      this.logger.error(`处理消息时出错: ${message.method}`, error);
+      this.logger.error(`处理消息时出错: ${message.method}`, error as Error);
       // 通知消息不需要错误响应
       if (message.id === undefined) {
         return null;
@@ -165,8 +165,8 @@ export class MCPMessageHandler {
    * @param params 通知参数
    * @returns null（通知消息不需要响应）
    */
-  private async handleInitializedNotification(params?: any): Promise<null> {
-    this.logger.debug("收到 initialized 通知，客户端初始化完成", params);
+  private async handleInitializedNotification(params?: unknown): Promise<null> {
+    this.logger.debug("收到 initialized 通知，客户端初始化完成", { params });
 
     // 可以在这里执行一些初始化完成后的逻辑
     // 例如：记录客户端连接状态、触发事件等
@@ -200,7 +200,7 @@ export class MCPMessageHandler {
         id: id !== undefined ? id : 1,
       };
     } catch (error) {
-      this.logger.error("获取工具列表失败", error);
+      this.logger.error("获取工具列表失败", error as Error);
       throw error;
     }
   }
@@ -234,7 +234,7 @@ export class MCPMessageHandler {
         id: id !== undefined ? id : 1,
       };
     } catch (error) {
-      this.logger.error(`工具调用失败: ${params.name}`, error);
+      this.logger.error(`工具调用失败: ${params.name}`, error as Error);
       throw error;
     }
   }

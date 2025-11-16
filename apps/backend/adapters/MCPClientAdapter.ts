@@ -19,7 +19,7 @@ export interface IMCPClient {
 
   start(): Promise<void>;
   refreshTools(): Promise<void>;
-  callTool(toolName: string, arguments_: any): Promise<any>;
+  callTool(toolName: string, arguments_: unknown): Promise<unknown>;
   stop(): Promise<void>;
   getOriginalToolName(prefixedToolName: string): string | null;
 }
@@ -86,7 +86,7 @@ export class MCPClientAdapter implements IMCPClient {
         `MCP 服务 ${this.serviceName} 启动成功，共 ${this._tools.length} 个工具`
       );
     } catch (error) {
-      logger.error(`启动 MCP 服务 ${this.serviceName} 失败:`, error);
+      logger.error(`启动 MCP 服务 ${this.serviceName} 失败:`, error as Error);
       throw error;
     }
   }
@@ -114,7 +114,7 @@ export class MCPClientAdapter implements IMCPClient {
         `${this.serviceName} 工具列表已刷新，共 ${this._tools.length} 个工具`
       );
     } catch (error) {
-      logger.error(`刷新 ${this.serviceName} 工具列表失败:`, error);
+      logger.error(`刷新 ${this.serviceName} 工具列表失败:`, error as Error);
       throw error;
     }
   }
@@ -122,7 +122,7 @@ export class MCPClientAdapter implements IMCPClient {
   /**
    * 调用工具
    */
-  async callTool(toolName: string, arguments_: any): Promise<any> {
+  async callTool(toolName: string, arguments_: unknown): Promise<unknown> {
     try {
       // 将前缀工具名转换为原始工具名
       const originalName = this.getOriginalToolName(toolName);
@@ -147,7 +147,7 @@ export class MCPClientAdapter implements IMCPClient {
       logger.info(`工具 ${originalName} 调用成功`);
       return compatibleResult;
     } catch (error) {
-      logger.error(`调用工具 ${toolName} 失败:`, error);
+      logger.error(`调用工具 ${toolName} 失败:`, error as Error);
       throw error;
     }
   }
@@ -164,7 +164,7 @@ export class MCPClientAdapter implements IMCPClient {
       this._originalTools = [];
       logger.info(`MCP 服务 ${this.serviceName} 已停止`);
     } catch (error) {
-      logger.error(`停止 MCP 服务 ${this.serviceName} 失败:`, error);
+      logger.error(`停止 MCP 服务 ${this.serviceName} 失败:`, error as Error);
       throw error;
     }
   }
@@ -195,7 +195,7 @@ export class MCPClientAdapter implements IMCPClient {
   /**
    * 转换工具调用结果格式以保持兼容性
    */
-  private convertToolCallResult(result: ToolCallResult): any {
+  private convertToolCallResult(result: ToolCallResult): unknown {
     // 如果结果是错误，直接抛出异常
     if (result.isError) {
       const errorMessage = result.content
