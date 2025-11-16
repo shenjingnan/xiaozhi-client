@@ -390,7 +390,9 @@ export class CustomMCPHandler {
           };
         }
       default:
-        throw new Error(`不支持的处理器类型: ${(tool.handler as { type: string }).type}`);
+        throw new Error(
+          `不支持的处理器类型: ${(tool.handler as { type: string }).type}`
+        );
     }
   }
 
@@ -486,7 +488,20 @@ export class CustomMCPHandler {
       });
 
       // 处理响应
-      return this.processCozeResponse(tool.name, response as { code: number; msg: string; debug_url: string; data: string; usage: { input_count: number; output_count: number; token_count: number } });
+      return this.processCozeResponse(
+        tool.name,
+        response as {
+          code: number;
+          msg: string;
+          debug_url: string;
+          data: string;
+          usage: {
+            input_count: number;
+            output_count: number;
+            token_count: number;
+          };
+        }
+      );
     } catch (error) {
       this.logger.error(`[CustomMCP] Coze 工作流调用失败: ${tool.name}`, error);
 
@@ -790,7 +805,10 @@ export class CustomMCPHandler {
         exports.default !== null
       ) {
         const defaultExport = exports.default as Record<string, unknown>;
-        if (defaultExport[functionName] && typeof defaultExport[functionName] === "function") {
+        if (
+          defaultExport[functionName] &&
+          typeof defaultExport[functionName] === "function"
+        ) {
           targetFunction = defaultExport[functionName];
         }
       }
@@ -939,7 +957,10 @@ export class CustomMCPHandler {
     if (method !== "GET") {
       if (handler.body_template) {
         // 使用模板替换变量
-        body = this.replaceTemplateVariables(handler.body_template, arguments_ as Record<string, unknown>);
+        body = this.replaceTemplateVariables(
+          handler.body_template,
+          arguments_ as Record<string, unknown>
+        );
       } else {
         // 直接使用参数作为请求体
         body = JSON.stringify(arguments_);
@@ -947,7 +968,9 @@ export class CustomMCPHandler {
     } else {
       // GET 请求将参数添加到 URL 查询字符串
       const searchParams = new URLSearchParams();
-      for (const [key, value] of Object.entries(arguments_ as Record<string, unknown>)) {
+      for (const [key, value] of Object.entries(
+        arguments_ as Record<string, unknown>
+      )) {
         if (value !== undefined && value !== null) {
           searchParams.append(key, String(value));
         }
@@ -1501,7 +1524,10 @@ export class CustomMCPHandler {
               // 尝试解析为 JSON，如果失败则作为字符串传递
               currentArguments = JSON.parse(textContent);
             } catch {
-              currentArguments = { input: textContent, ...(arguments_ as Record<string, unknown>) };
+              currentArguments = {
+                input: textContent,
+                ...(arguments_ as Record<string, unknown>),
+              };
             }
           }
         }
@@ -1702,12 +1728,16 @@ export class CustomMCPHandler {
   /**
    * 标记任务为失败
    */
-  private async markTaskAsFailed(taskId: string, error: unknown): Promise<void> {
+  private async markTaskAsFailed(
+    taskId: string,
+    error: unknown
+  ): Promise<void> {
     try {
       const cache = await this.loadExtendedCache();
 
       // 安全地获取错误消息
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
 
       // 查找对应的任务并更新状态
       for (const [cacheKey, cached] of Object.entries(
