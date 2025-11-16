@@ -95,5 +95,4 @@ export class CommandHandlerFactory implements ICommandHandlerFactory {
     } = require("@cli/commands/EndpointCommandHandler.js");
     return new EndpointCommandHandler(this.container);
   }
-
-  }
+}

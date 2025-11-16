@@ -60,7 +60,6 @@ const mockEndpointCommandHandler = {
   subcommands: [],
 };
 
-
 // Mock CommandHandlerFactory
 vi.mock("./CommandHandlerFactory.js", () => ({
   CommandHandlerFactory: vi.fn().mockImplementation(() => ({

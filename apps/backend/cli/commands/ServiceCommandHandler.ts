@@ -47,9 +47,7 @@ export class ServiceCommandHandler extends BaseCommandHandler {
     {
       name: "restart",
       description: "重启服务",
-      options: [
-        { flags: "-d, --daemon", description: "在后台运行服务" },
-      ],
+      options: [{ flags: "-d, --daemon", description: "在后台运行服务" }],
       execute: async (args: any[], options: any) => {
         await this.handleRestart(options);
       },
