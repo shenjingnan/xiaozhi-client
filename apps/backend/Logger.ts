@@ -4,6 +4,13 @@ import chalk from "chalk";
 import pino from "pino";
 import type { Logger as PinoLogger } from "pino";
 import { z } from "zod";
+import type {
+  ErrorLike,
+  LevelInfo,
+  LogArgument,
+  LogObject,
+  StructuredLogObject,
+} from "./types";
 
 const LogLevelSchema = z.enum([
   "fatal",
@@ -125,7 +132,7 @@ export class Logger {
         base: null, // 不包含 pid 和 hostname
         serializers: {
           // 优化错误序列化，在测试环境中安全处理
-          err: pino.stdSerializers?.err || ((err: any) => err),
+          err: pino.stdSerializers?.err || ((err: ErrorLike) => err),
         },
       },
       pino.multistream(streams, { dedupe: true })
@@ -174,8 +181,8 @@ export class Logger {
   }
 
   private formatConsoleMessageOptimized(
-    logObj: any,
-    levelMap: Map<number, { name: string; color: (text: string) => string }>
+    logObj: LogObject,
+    levelMap: Map<number, LevelInfo>
   ): string {
     const timestamp = formatDateTime(new Date());
 
@@ -189,7 +196,7 @@ export class Logger {
     let message = logObj.msg;
     if (logObj.args && Array.isArray(logObj.args)) {
       const argsStr = logObj.args
-        .map((arg: any) =>
+        .map((arg: unknown) =>
           typeof arg === "object" ? JSON.stringify(arg) : String(arg)
         )
         .join(" ");
@@ -239,14 +246,17 @@ export class Logger {
    * logger.info('用户登录', 'userId', 12345);
    * logger.info({ userId: 12345, action: 'login' }, '用户登录');
    */
-  info(message: string, ...args: any[]): void;
+  info(message: string, ...args: LogArgument[]): void;
   /**
    * 记录结构化信息级别日志
    * @param obj 结构化日志对象
    * @param message 可选的日志消息
    */
-  info(obj: object, message?: string): void;
-  info(messageOrObj: string | object, ...args: any[]): void {
+  info(obj: StructuredLogObject, message?: string): void;
+  info(
+    messageOrObj: string | StructuredLogObject,
+    ...args: LogArgument[]
+  ): void {
     if (typeof messageOrObj === "string") {
       if (args.length === 0) {
         this.pinoInstance.info(messageOrObj);
@@ -255,13 +265,16 @@ export class Logger {
       }
     } else {
       // 结构化日志支持
-      this.pinoInstance.info(messageOrObj, args[0] || "");
+      this.pinoInstance.info(messageOrObj, args[0] as string || "");
     }
   }
 
-  success(message: string, ...args: any[]): void;
-  success(obj: object, message?: string): void;
-  success(messageOrObj: string | object, ...args: any[]): void {
+  success(message: string, ...args: LogArgument[]): void;
+  success(obj: StructuredLogObject, message?: string): void;
+  success(
+    messageOrObj: string | StructuredLogObject,
+    ...args: LogArgument[]
+  ): void {
     // success 映射为 info 级别，保持 API 兼容性
     if (typeof messageOrObj === "string") {
       if (args.length === 0) {
@@ -270,13 +283,16 @@ export class Logger {
         this.pinoInstance.info({ args }, messageOrObj);
       }
     } else {
-      this.pinoInstance.info(messageOrObj, args[0] || "");
+      this.pinoInstance.info(messageOrObj, args[0] as string || "");
     }
   }
 
-  warn(message: string, ...args: any[]): void;
-  warn(obj: object, message?: string): void;
-  warn(messageOrObj: string | object, ...args: any[]): void {
+  warn(message: string, ...args: LogArgument[]): void;
+  warn(obj: StructuredLogObject, message?: string): void;
+  warn(
+    messageOrObj: string | StructuredLogObject,
+    ...args: LogArgument[]
+  ): void {
     if (typeof messageOrObj === "string") {
       if (args.length === 0) {
         this.pinoInstance.warn(messageOrObj);
@@ -284,13 +300,16 @@ export class Logger {
         this.pinoInstance.warn({ args }, messageOrObj);
       }
     } else {
-      this.pinoInstance.warn(messageOrObj, args[0] || "");
+      this.pinoInstance.warn(messageOrObj, args[0] as string || "");
     }
   }
 
-  error(message: string, ...args: any[]): void;
-  error(obj: object, message?: string): void;
-  error(messageOrObj: string | object, ...args: any[]): void {
+  error(message: string, ...args: LogArgument[]): void;
+  error(obj: StructuredLogObject, message?: string): void;
+  error(
+    messageOrObj: string | StructuredLogObject,
+    ...args: LogArgument[]
+  ): void {
     if (typeof messageOrObj === "string") {
       if (args.length === 0) {
         this.pinoInstance.error(messageOrObj);
@@ -313,13 +332,16 @@ export class Logger {
     } else {
       // 结构化错误日志，自动提取错误信息
       const enhancedObj = this.enhanceErrorObject(messageOrObj);
-      this.pinoInstance.error(enhancedObj, args[0] || "");
+      this.pinoInstance.error(enhancedObj, args[0] as string || "");
     }
   }
 
-  debug(message: string, ...args: any[]): void;
-  debug(obj: object, message?: string): void;
-  debug(messageOrObj: string | object, ...args: any[]): void {
+  debug(message: string, ...args: LogArgument[]): void;
+  debug(obj: StructuredLogObject, message?: string): void;
+  debug(
+    messageOrObj: string | StructuredLogObject,
+    ...args: LogArgument[]
+  ): void {
     if (typeof messageOrObj === "string") {
       if (args.length === 0) {
         this.pinoInstance.debug(messageOrObj);
@@ -327,13 +349,16 @@ export class Logger {
         this.pinoInstance.debug({ args }, messageOrObj);
       }
     } else {
-      this.pinoInstance.debug(messageOrObj, args[0] || "");
+      this.pinoInstance.debug(messageOrObj, args[0] as string || "");
     }
   }
 
-  log(message: string, ...args: any[]): void;
-  log(obj: object, message?: string): void;
-  log(messageOrObj: string | object, ...args: any[]): void {
+  log(message: string, ...args: LogArgument[]): void;
+  log(obj: StructuredLogObject, message?: string): void;
+  log(
+    messageOrObj: string | StructuredLogObject,
+    ...args: LogArgument[]
+  ): void {
     // log 方法使用 info 级别
     if (typeof messageOrObj === "string") {
       if (args.length === 0) {
@@ -342,14 +367,14 @@ export class Logger {
         this.pinoInstance.info({ args }, messageOrObj);
       }
     } else {
-      this.pinoInstance.info(messageOrObj, args[0] || "");
+      this.pinoInstance.info(messageOrObj, args[0] as string || "");
     }
   }
 
   /**
    * 增强错误对象，提取更多错误信息
    */
-  private enhanceErrorObject(obj: any): any {
+  private enhanceErrorObject(obj: StructuredLogObject): StructuredLogObject {
     const enhanced = { ...obj };
 
     // 遍历对象属性，查找 Error 实例
