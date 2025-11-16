@@ -350,7 +350,7 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
         // mockProcessExit 在测试中抛出异常，所以不直接检查调用
       });
 
-      it("应以 daemon 模式启动 WebServer 并支持浏览器选项", async () => {
+      it("应以 daemon 模式启动 WebServer", async () => {
         // Ensure file exists
         const fs = await import("node:fs");
         vi.mocked(fs.default.existsSync).mockReturnValue(true);
@@ -366,7 +366,6 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
         const daemonOptions: ServiceStartOptions = {
           ...defaultOptions,
           daemon: true,
-          ui: true,
         };
 
         await expect(serviceManager.start(daemonOptions)).rejects.toThrow(
@@ -375,7 +374,7 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
 
         expect(mockSpawn).toHaveBeenCalledWith(
           "node",
-          ["/mock/path/WebServerStandalone.js", "--open-browser"],
+          ["/mock/path/WebServerStandalone.js"],
           {
             detached: true,
             stdio: ["ignore", "ignore", "ignore"],

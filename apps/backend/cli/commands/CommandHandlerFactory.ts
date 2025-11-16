@@ -24,7 +24,6 @@ export class CommandHandlerFactory implements ICommandHandlerFactory {
       this.createHandler("project"),
       this.createHandler("mcp"),
       this.createHandler("endpoint"),
-      this.createHandler("ui"),
     ];
   }
 
@@ -43,8 +42,6 @@ export class CommandHandlerFactory implements ICommandHandlerFactory {
         return this.createMcpCommandHandler();
       case "endpoint":
         return this.createEndpointCommandHandler();
-      case "ui":
-        return this.createUICommandHandler();
       default:
         throw new Error(`未知的命令处理器类型: ${type}`);
     }
@@ -99,11 +96,4 @@ export class CommandHandlerFactory implements ICommandHandlerFactory {
     return new EndpointCommandHandler(this.container);
   }
 
-  /**
-   * 创建UI命令处理器
-   */
-  private createUICommandHandler(): CommandHandler {
-    const { UICommandHandler } = require("@cli/commands/UICommandHandler.js");
-    return new UICommandHandler(this.container);
   }
-}

@@ -30,8 +30,7 @@ function showHelp(): void {
   console.log();
   console.log(chalk.yellow("快速开始:"));
   console.log("  xiaozhi config init          # 初始化配置");
-  console.log("  xiaozhi start                # 启动服务");
-  console.log("  xiaozhi ui                   # 启动 Web UI");
+  console.log("  xiaozhi start                # 启动服务（包含 Web UI）");
   console.log();
   console.log("使用 'xiaozhi --help' 查看所有可用命令");
 }
@@ -132,9 +131,8 @@ async function main(): Promise<void> {
       `
 示例:
   xiaozhi config init              # 初始化配置文件
-  xiaozhi start                    # 启动服务
+  xiaozhi start                    # 启动服务（包含 Web UI）
   xiaozhi start -d                 # 后台启动服务
-  xiaozhi start -u                 # 启动服务并打开 Web UI
   xiaozhi start -s 3000            # 以 MCP Server 模式启动
   xiaozhi stop                     # 停止服务
   xiaozhi status                   # 检查服务状态
@@ -143,7 +141,6 @@ async function main(): Promise<void> {
   xiaozhi create my-project        # 创建项目
   xiaozhi mcp list                 # 列出 MCP 服务
   xiaozhi endpoint list            # 列出 MCP 端点
-  xiaozhi ui                       # 启动 Web UI
 
 更多信息请访问: https://github.com/your-org/xiaozhi-client
 `

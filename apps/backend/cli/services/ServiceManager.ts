@@ -190,11 +190,11 @@ export class ServiceManagerImpl implements IServiceManager {
     const { spawn } = await import("node:child_process");
 
     if (options.daemon) {
-      // 后台模式
-      await this.startWebServerInDaemon(options.ui || false);
+      // 后台模式 - 默认启动 WebUI
+      await this.startWebServerInDaemon();
     } else {
-      // 前台模式
-      await this.startWebServerInForeground(options.ui || false);
+      // 前台模式 - 默认启动 WebUI
+      await this.startWebServerInForeground();
     }
   }
 
@@ -280,7 +280,7 @@ export class ServiceManagerImpl implements IServiceManager {
   /**
    * 后台模式启动 WebServer
    */
-  private async startWebServerInDaemon(openBrowser: boolean): Promise<void> {
+  private async startWebServerInDaemon(): Promise<void> {
     const { spawn } = await import("node:child_process");
     const webServerPath = PathUtils.getWebServerStandalonePath();
 
@@ -290,9 +290,6 @@ export class ServiceManagerImpl implements IServiceManager {
     }
 
     const args = [webServerPath];
-    if (openBrowser) {
-      args.push("--open-browser");
-    }
 
     const child = spawn("node", args, {
       detached: true,
@@ -322,9 +319,7 @@ export class ServiceManagerImpl implements IServiceManager {
   /**
    * 前台模式启动 WebServer
    */
-  private async startWebServerInForeground(
-    openBrowser: boolean
-  ): Promise<void> {
+  private async startWebServerInForeground(): Promise<void> {
     const { WebServer } = await import("../../WebServer.js");
     const server = new WebServer();
 
@@ -342,12 +337,6 @@ export class ServiceManagerImpl implements IServiceManager {
     this.processManager.savePidInfo(process.pid, "foreground");
 
     await server.start();
-
-    if (openBrowser) {
-      const config = this.configManager.getConfig();
-      const port = config?.webServer?.port || 9999;
-      await this.openBrowserUrl(`http://localhost:${port}`);
-    }
   }
 
   /**

@@ -207,7 +207,6 @@ describe("CommandHandlerFactory", () => {
         "project",
         "mcp",
         "endpoint",
-        "ui",
       ];
 
       for (const type of supportedTypes) {
@@ -221,7 +220,7 @@ describe("CommandHandlerFactory", () => {
   describe("工厂模式的核心逻辑", () => {
     it("应该有正确的类型判断逻辑", () => {
       // 测试 switch 语句的逻辑
-      const types = ["service", "config", "project", "mcp", "endpoint", "ui"];
+      const types = ["service", "config", "project", "mcp", "endpoint"];
 
       for (const type of types) {
         // 这些应该尝试加载模块（会失败，但不会在 switch 语句中抛出错误）
@@ -245,7 +244,6 @@ describe("CommandHandlerFactory", () => {
         { type: "project", module: "ProjectCommandHandler.js" },
         { type: "mcp", module: "McpCommandHandler.js" },
         { type: "endpoint", module: "EndpointCommandHandler.js" },
-        { type: "ui", module: "UICommandHandler.js" },
       ];
 
       for (const { type, module } of knownTypes) {

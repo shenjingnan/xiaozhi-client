@@ -93,15 +93,13 @@ describe("服务命令集成测试", () => {
       expect(mockServiceManager.start).toHaveBeenCalledWith(
         expect.objectContaining({
           daemon: true,
-          ui: false,
         })
       );
     });
 
-    it("应执行带 daemon 和 ui 选项的 start 命令", async () => {
+    it("应执行带 daemon 选项的 start 命令", async () => {
       const options = {
         daemon: true,
-        ui: true,
       };
 
       // 获取 start 子命令并执行
@@ -115,7 +113,6 @@ describe("服务命令集成测试", () => {
       expect(mockServiceManager.start).toHaveBeenCalledWith(
         expect.objectContaining({
           daemon: true,
-          ui: true,
         })
       );
     });
@@ -136,15 +133,12 @@ describe("服务命令集成测试", () => {
       expect(mockServiceManager.start).toHaveBeenCalledWith(
         expect.objectContaining({
           daemon: true,
-          ui: false,
         })
       );
     });
 
     it("应处理缺失 daemon 选项的情况（前台模式）", async () => {
-      const options = {
-        ui: true,
-      };
+      const options = {};
 
       // 获取 start 子命令并执行
       const startSubcommand = serviceCommandHandler.subcommands?.find(
@@ -157,7 +151,6 @@ describe("服务命令集成测试", () => {
       expect(mockServiceManager.start).toHaveBeenCalledWith(
         expect.objectContaining({
           daemon: false,
-          ui: true,
         })
       );
     });
@@ -260,15 +253,13 @@ describe("服务命令集成测试", () => {
       expect(mockServiceManager.restart).toHaveBeenCalledWith(
         expect.objectContaining({
           daemon: true,
-          ui: false,
-        })
+                  })
       );
     });
 
     it("应执行不带 daemon 选项的 restart 命令", async () => {
       const options = {
-        ui: true,
-      };
+              };
 
       mockServiceManager.restart.mockResolvedValue(undefined);
 
@@ -283,8 +274,7 @@ describe("服务命令集成测试", () => {
       expect(mockServiceManager.restart).toHaveBeenCalledWith(
         expect.objectContaining({
           daemon: false,
-          ui: true,
-        })
+                  })
       );
     });
   });
@@ -325,8 +315,7 @@ describe("服务命令集成测试", () => {
     it("应处理传统模式启动", async () => {
       const options = {
         daemon: false,
-        ui: false,
-      };
+              };
 
       // 获取 start 子命令并执行
       const startSubcommand = serviceCommandHandler.subcommands?.find(
@@ -339,8 +328,7 @@ describe("服务命令集成测试", () => {
       // 验证服务管理器的 start 方法被调用
       expect(mockServiceManager.start).toHaveBeenCalledWith({
         daemon: false,
-        ui: false,
-      });
+              });
     });
 
     it("应处理未知选项时使用传统模式", async () => {
@@ -359,8 +347,7 @@ describe("服务命令集成测试", () => {
       // 验证服务管理器的 start 方法被调用（传统模式）
       expect(mockServiceManager.start).toHaveBeenCalledWith({
         daemon: false,
-        ui: false,
-      });
+              });
     });
 
     it("应处理布尔选项的各种变体", async () => {
@@ -379,7 +366,6 @@ describe("服务命令集成测试", () => {
       expect(mockServiceManager.start).toHaveBeenCalledWith(
         expect.objectContaining({
           daemon: true,
-          ui: false,
         })
       );
     });
