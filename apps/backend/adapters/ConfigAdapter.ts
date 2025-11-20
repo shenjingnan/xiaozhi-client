@@ -179,23 +179,10 @@ function convertLocalConfig(
     command: config.command,
     args: resolvedArgs,
     env: config.env, // 传递环境变量
-    // 默认重连配置
-    reconnect: {
-      enabled: true,
-      maxAttempts: 5,
-      initialInterval: 3000,
-      maxInterval: 30000,
-      backoffStrategy: "exponential" as const,
-      backoffMultiplier: 1.5,
-      timeout: 10000,
-      jitter: true,
-    },
     // 默认 ping 配置
     ping: {
       enabled: true,
-      interval: 30000,
-      timeout: 5000,
-      maxFailures: 3,
+      interval: 60000,
       startDelay: 5000,
     },
     timeout: 30000,
@@ -224,32 +211,17 @@ function convertSSEConfig(
     name: serviceName,
     type: inferredType,
     url: config.url,
-    // 默认重连配置
-    reconnect: {
-      enabled: true,
-      maxAttempts: 10,
-      initialInterval: 3000,
-      maxInterval: 30000,
-      backoffStrategy: "exponential" as const,
-      backoffMultiplier: 1.5,
-      timeout: 15000,
-      jitter: true,
-    },
     // 根据推断类型设置 ping 配置
     ping:
       inferredType === MCPTransportType.SSE
         ? {
             enabled: true,
-            interval: 30000,
-            timeout: 5000,
-            maxFailures: 3,
+            interval: 60000,
             startDelay: 5000,
           }
         : {
             enabled: false, // STREAMABLE_HTTP 默认不启用 ping
             interval: 60000,
-            timeout: 10000,
-            maxFailures: 3,
             startDelay: 10000,
           },
     timeout: 30000,
@@ -288,23 +260,10 @@ function convertStreamableHTTPConfig(
     name: serviceName,
     type: MCPTransportType.STREAMABLE_HTTP,
     url,
-    // 默认重连配置
-    reconnect: {
-      enabled: true,
-      maxAttempts: 5,
-      initialInterval: 3000,
-      maxInterval: 30000,
-      backoffStrategy: "exponential" as const,
-      backoffMultiplier: 1.5,
-      timeout: 15000,
-      jitter: true,
-    },
     // 默认 ping 配置
     ping: {
       enabled: false, // HTTP 连接通常不需要 ping
       interval: 60000,
-      timeout: 10000,
-      maxFailures: 3,
       startDelay: 10000,
     },
     timeout: 30000,
