@@ -239,11 +239,11 @@ export class NetworkService {
   /**
    * 监听 WebSocket 事件
    */
-  onWebSocketEvent<
-    K extends keyof import("./websocket").EventBusEvents,
-  >(
+  onWebSocketEvent<K extends keyof import("./websocket").EventBusEvents>(
     event: K,
-    listener: import("./websocket").EventListener<import("./websocket").EventBusEvents[K]>
+    listener: import("./websocket").EventListener<
+      import("./websocket").EventBusEvents[K]
+    >
   ): () => void {
     return this.webSocketManager.subscribe(event, listener);
   }
@@ -251,11 +251,11 @@ export class NetworkService {
   /**
    * 移除 WebSocket 事件监听器
    */
-  offWebSocketEvent<
-    K extends keyof import("./websocket").EventBusEvents,
-  >(
+  offWebSocketEvent<K extends keyof import("./websocket").EventBusEvents>(
     event: K,
-    listener: import("./websocket").EventListener<import("./websocket").EventBusEvents[K]>
+    listener: import("./websocket").EventListener<
+      import("./websocket").EventBusEvents[K]
+    >
   ): void {
     this.webSocketManager.unsubscribe(event, listener);
   }
@@ -301,10 +301,13 @@ export class NetworkService {
   ): Promise<void> {
     // 设置 WebSocket 监听器等待配置更新通知
     return new Promise((resolve, reject) => {
-      const unsubscribe = this.webSocketManager.subscribe("data:configUpdate", () => {
-        clearTimeout(timeoutId);
-        resolve();
-      });
+      const unsubscribe = this.webSocketManager.subscribe(
+        "data:configUpdate",
+        () => {
+          clearTimeout(timeoutId);
+          resolve();
+        }
+      );
 
       const timeoutId = setTimeout(() => {
         unsubscribe();
@@ -325,15 +328,18 @@ export class NetworkService {
    */
   async restartServiceWithNotification(timeout = 30000): Promise<void> {
     return new Promise((resolve, reject) => {
-      const unsubscribe = this.webSocketManager.subscribe("data:restartStatus", (status) => {
-        if (status.status === "completed") {
-          clearTimeout(timeoutId);
-          resolve();
-        } else if (status.status === "failed") {
-          clearTimeout(timeoutId);
-          reject(new Error(status.error || "服务重启失败"));
+      const unsubscribe = this.webSocketManager.subscribe(
+        "data:restartStatus",
+        (status) => {
+          if (status.status === "completed") {
+            clearTimeout(timeoutId);
+            resolve();
+          } else if (status.status === "failed") {
+            clearTimeout(timeoutId);
+            reject(new Error(status.error || "服务重启失败"));
+          }
         }
-      });
+      );
 
       const timeoutId = setTimeout(() => {
         unsubscribe();

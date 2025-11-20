@@ -122,7 +122,6 @@ interface EventBusEvents {
  */
 type EventListener<T = any> = (data: T) => void;
 
-
 /**
  * WebSocket 连接状态
  */
@@ -286,7 +285,6 @@ export class WebSocketManager {
     }
   }
 
-  
   /**
    * 获取默认的 WebSocket URL
    */
@@ -374,7 +372,6 @@ export class WebSocketManager {
     return this.eventBus;
   }
 
-  
   /**
    * 获取连接状态
    */
@@ -705,8 +702,4 @@ export const webSocketManager = WebSocketManager.getInstance();
 
 // 导出类型和枚举
 export { ConnectionState };
-export type {
-  WebSocketMessage,
-  RestartStatus,
-  WebSocketManagerConfig,
-};
+export type { WebSocketMessage, RestartStatus, WebSocketManagerConfig };
