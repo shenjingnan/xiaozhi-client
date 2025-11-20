@@ -63,9 +63,17 @@ vi.mock("@/components/ui/card", () => ({
   }: React.HTMLAttributes<HTMLDivElement>) => <div {...props}>{children}</div>,
 }));
 
+// 定义 AlertDialog Root 组件的 props 类型
+interface AlertDialogRootProps {
+  children?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  defaultOpen?: boolean;
+}
+
 // Mock AlertDialog components
 vi.mock("@/components/ui/alert-dialog", () => ({
-  AlertDialog: ({ children, open, onOpenChange }: unknown) => (
+  AlertDialog: ({ children, open, onOpenChange }: AlertDialogRootProps) => (
     <div data-open={open} data-on-open-change={onOpenChange}>
       {children}
     </div>
@@ -114,15 +122,24 @@ vi.mock("@/components/ui/alert-dialog", () => ({
   }: React.HTMLAttributes<HTMLDivElement>) => <div {...props}>{children}</div>,
 }));
 
-// Mock Lucide React icons with a generic approach
+// Mock Lucide React icons with proper type filtering
 vi.mock("lucide-react", async (importOriginal) => {
-  const actual = (await importOriginal()) as unknown;
-  // Create a generic icon component
-  const MockIcon = ({ className, ...props }: React.SVGProps<SVGSVGElement>) => (
-    <span className={className} {...props}>
-      Icon
-    </span>
-  );
+  const actual = (await importOriginal()) as Record<string, unknown>;
+
+  // Create a generic icon component with proper type filtering
+  const MockIcon = ({ className, ...props }: React.SVGProps<SVGSVGElement>) => {
+    // 过滤掉 SVG 特有的属性，只保留通用的 HTML 属性
+    const { viewBox, xmlns, version, width, height, fill, ...htmlProps } =
+      props;
+    return (
+      <span
+        className={className}
+        {...(htmlProps as React.HTMLAttributes<HTMLSpanElement>)}
+      >
+        Icon
+      </span>
+    );
+  };
 
   // Return all actual exports but override with mock icons
   return {

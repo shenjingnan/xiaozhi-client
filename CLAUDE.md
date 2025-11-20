@@ -173,6 +173,10 @@
 - [ ] 测试覆盖率达到 80% 要求
 - [ ] 代码注释使用中文
 - [ ] 错误处理完善且有意义
+- [ ] **执行开发流程检查**：修改代码后必须运行相应的检查命令
+  - 前端代码：`nr type:check && nr lint && nr test`
+  - 后端代码：`pnpm type:check && pnpm lint && pnpm test`
+  - 全面检查：`pnpm check:all`
 
 ### 本地化规范
 
@@ -259,6 +263,7 @@ import { helperFunction } from "./helpers";
 - **类型验证器** - TypeScript 严格模式检查和修复
 - **CI 验证器** - 完整代码质量检查和 CI 标准验证
 - **API 文档生成器** - 从源码自动生成 Mintlify 格式文档
+- **开发流程检查器** - 确保代码修改后执行必要的质量检查命令
 
 ### 重要说明
 
