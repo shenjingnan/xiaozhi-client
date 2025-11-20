@@ -14,6 +14,7 @@ import {
   vi,
 } from "vitest";
 import { NetworkService } from "../index";
+import type { EventListener } from "../websocket";
 
 // Mock 模块
 vi.mock("../api", () => ({
@@ -83,7 +84,15 @@ describe("NetworkService", () => {
     vi.clearAllMocks();
     // 重置 mock 的默认行为
     mockWebSocketManager.connect.mockImplementation(() => {});
-    mockApiClient.getConfig.mockResolvedValue({ version: "1.0.0" });
+    mockApiClient.getConfig.mockResolvedValue({
+      mcpEndpoint: "ws://localhost:9999",
+      mcpServers: {
+        "test-server": {
+          command: "node",
+          args: ["server.js"],
+        },
+      },
+    });
     networkService = new NetworkService();
   });
 
@@ -138,7 +147,15 @@ describe("NetworkService", () => {
     });
 
     it("应该调用 API 客户端的方法", async () => {
-      const testConfig: AppConfig = { version: "1.0.0" };
+      const testConfig: AppConfig = {
+        mcpEndpoint: "ws://localhost:9999",
+        mcpServers: {
+          "test-server": {
+            command: "node",
+            args: ["server.js"],
+          },
+        },
+      };
       mockApiClient.getConfig.mockResolvedValue(testConfig);
 
       const result = await networkService.getConfig();
@@ -148,7 +165,15 @@ describe("NetworkService", () => {
     });
 
     it("应该更新配置", async () => {
-      const testConfig: AppConfig = { version: "2.0.0" };
+      const testConfig: AppConfig = {
+        mcpEndpoint: "ws://localhost:8888",
+        mcpServers: {
+          "test-server-2": {
+            command: "node",
+            args: ["server2.js"],
+          },
+        },
+      };
       mockApiClient.updateConfig.mockResolvedValue(undefined);
 
       await networkService.updateConfig(testConfig);
@@ -167,7 +192,11 @@ describe("NetworkService", () => {
     });
 
     it("应该获取客户端状态", async () => {
-      const testClientStatus: ClientStatus = { status: "connected" };
+      const testClientStatus: ClientStatus = {
+        status: "connected",
+        mcpEndpoint: "ws://localhost:9999",
+        activeMCPServers: ["test-server"],
+      };
       mockApiClient.getClientStatus.mockResolvedValue(testClientStatus);
 
       const result = await networkService.getClientStatus();
@@ -329,16 +358,26 @@ describe("NetworkService", () => {
 
     describe("updateConfigWithNotification", () => {
       it("应该等待配置更新通知", async () => {
-        const testConfig: AppConfig = { version: "3.0.0" };
+        const testConfig: AppConfig = {
+          mcpEndpoint: "ws://localhost:7777",
+          mcpServers: {
+            "test-server-3": {
+              command: "node",
+              args: ["server3.js"],
+            },
+          },
+        };
         const unsubscribe = vi.fn();
 
-        mockWebSocketManager.subscribe.mockImplementation((event, listener) => {
-          if (event === "data:configUpdate") {
-            // 模拟立即收到通知
-            setTimeout(() => listener(testConfig), 10);
+        mockWebSocketManager.subscribe.mockImplementation(
+          (event: string, listener: EventListener) => {
+            if (event === "data:configUpdate") {
+              // 模拟立即收到通知
+              setTimeout(() => listener(testConfig), 10);
+            }
+            return unsubscribe;
           }
-          return unsubscribe;
-        });
+        );
 
         mockApiClient.updateConfig.mockResolvedValue(undefined);
 
@@ -353,7 +392,15 @@ describe("NetworkService", () => {
       });
 
       it("应该在超时时拒绝 Promise", async () => {
-        const testConfig: AppConfig = { version: "3.0.0" };
+        const testConfig: AppConfig = {
+          mcpEndpoint: "ws://localhost:6666",
+          mcpServers: {
+            "test-server-4": {
+              command: "node",
+              args: ["server4.js"],
+            },
+          },
+        };
         const unsubscribe = vi.fn();
 
         mockWebSocketManager.subscribe.mockReturnValue(unsubscribe);
@@ -374,7 +421,15 @@ describe("NetworkService", () => {
       });
 
       it("应该在 API 调用失败时清理订阅", async () => {
-        const testConfig: AppConfig = { version: "3.0.0" };
+        const testConfig: AppConfig = {
+          mcpEndpoint: "ws://localhost:5555",
+          mcpServers: {
+            "test-server-5": {
+              command: "node",
+              args: ["server5.js"],
+            },
+          },
+        };
         const unsubscribe = vi.fn();
         const apiError = new Error("API 调用失败");
 
@@ -393,12 +448,14 @@ describe("NetworkService", () => {
         const unsubscribe = vi.fn();
         const completedStatus = { status: "completed", timestamp: Date.now() };
 
-        mockWebSocketManager.subscribe.mockImplementation((event, listener) => {
-          if (event === "data:restartStatus") {
-            setTimeout(() => listener(completedStatus), 10);
+        mockWebSocketManager.subscribe.mockImplementation(
+          (event: string, listener: EventListener) => {
+            if (event === "data:restartStatus") {
+              setTimeout(() => listener(completedStatus), 10);
+            }
+            return unsubscribe;
           }
-          return unsubscribe;
-        });
+        );
 
         mockApiClient.restartService.mockResolvedValue(undefined);
 
@@ -420,12 +477,14 @@ describe("NetworkService", () => {
           timestamp: Date.now(),
         };
 
-        mockWebSocketManager.subscribe.mockImplementation((event, listener) => {
-          if (event === "data:restartStatus") {
-            setTimeout(() => listener(failedStatus), 10);
+        mockWebSocketManager.subscribe.mockImplementation(
+          (event: string, listener: EventListener) => {
+            if (event === "data:restartStatus") {
+              setTimeout(() => listener(failedStatus), 10);
+            }
+            return unsubscribe;
           }
-          return unsubscribe;
-        });
+        );
 
         mockApiClient.restartService.mockResolvedValue(undefined);
 
@@ -460,7 +519,15 @@ describe("NetworkService", () => {
     });
 
     it("应该获取完整应用状态", async () => {
-      const testConfig: AppConfig = { version: "1.0.0" };
+      const testConfig: AppConfig = {
+        mcpEndpoint: "ws://localhost:9999",
+        mcpServers: {
+          "test-server": {
+            command: "node",
+            args: ["server.js"],
+          },
+        },
+      };
       const testStatus = { server: { status: "running" } };
       mockWebSocketManager.isConnected.mockReturnValue(true);
 
@@ -477,7 +544,15 @@ describe("NetworkService", () => {
     });
 
     it("应该并行获取配置和状态", async () => {
-      const testConfig: AppConfig = { version: "1.0.0" };
+      const testConfig: AppConfig = {
+        mcpEndpoint: "ws://localhost:9999",
+        mcpServers: {
+          "test-server": {
+            command: "node",
+            args: ["server.js"],
+          },
+        },
+      };
       const testStatus = { server: { status: "running" } };
 
       const getConfigPromise = new Promise((resolve) =>
@@ -547,13 +622,15 @@ describe("NetworkService", () => {
     });
 
     it("应该处理空的配置更新", async () => {
-      const emptyConfig = {};
+      const emptyConfig: Partial<AppConfig> = {};
       mockApiClient.updateConfig.mockResolvedValue(undefined);
 
       await expect(
-        networkService.updateConfig(emptyConfig)
+        networkService.updateConfig(emptyConfig as AppConfig)
       ).resolves.not.toThrow();
-      expect(mockApiClient.updateConfig).toHaveBeenCalledWith(emptyConfig);
+      expect(mockApiClient.updateConfig).toHaveBeenCalledWith(
+        emptyConfig as AppConfig
+      );
     });
 
     it("应该处理 WebSocket 未连接时的消息发送", () => {

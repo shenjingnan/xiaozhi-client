@@ -270,6 +270,13 @@ export class NetworkService {
     }, 1000);
   }
 
+  /**
+   * 通过 WebSocket 发送消息
+   */
+  send(message: any): boolean {
+    return this.webSocketManager.send(message);
+  }
+
   // ==================== 便捷方法 ====================
 
   /**
@@ -305,6 +312,7 @@ export class NetworkService {
         "data:configUpdate",
         () => {
           clearTimeout(timeoutId);
+          unsubscribe();
           resolve();
         }
       );
@@ -333,9 +341,11 @@ export class NetworkService {
         (status) => {
           if (status.status === "completed") {
             clearTimeout(timeoutId);
+            unsubscribe();
             resolve();
           } else if (status.status === "failed") {
             clearTimeout(timeoutId);
+            unsubscribe();
             reject(new Error(status.error || "服务重启失败"));
           }
         }

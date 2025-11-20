@@ -3,6 +3,7 @@
  * 测试重构后的事件系统和连接管理功能
  */
 
+import type { ClientStatus } from "@xiaozhi/shared-types";
 import {
   afterEach,
   beforeAll,
@@ -29,7 +30,7 @@ class MockWebSocket {
 
   constructor(public url: string) {}
 
-  send(data: string): void {
+  send(_data: string): void {
     if (this.readyState !== MockWebSocket.OPEN) {
       throw new Error("WebSocket is not open");
     }
@@ -293,8 +294,20 @@ describe("WebSocketManager", () => {
       manager.subscribe("data:statusUpdate", statusListener);
       manager.subscribe("system:error", errorListener);
 
-      const testConfig = { version: "1.0.0" };
-      const testStatus = { client: { status: "connected" } };
+      const testConfig = {
+        mcpEndpoint: "ws://localhost:9999",
+        mcpServers: {
+          "test-server": {
+            command: "node",
+            args: ["server.js"],
+          },
+        },
+      };
+      const testStatus: ClientStatus = {
+        status: "connected",
+        mcpEndpoint: "ws://localhost:9999",
+        activeMCPServers: ["test-server"],
+      };
       const testError = {
         error: new Error("test error"),
         message: { type: "error" },
@@ -349,12 +362,20 @@ describe("WebSocketManager", () => {
 
       const testMessage = {
         type: "configUpdate",
-        data: { version: "2.0.0" },
+        data: {
+          mcpEndpoint: "ws://localhost:8888",
+          mcpServers: {
+            "test-server-2": {
+              command: "node",
+              args: ["server2.js"],
+            },
+          },
+        },
       };
 
       (manager as any).ws.mockMessage(testMessage);
 
-      expect(configListener).toHaveBeenCalledWith({ version: "2.0.0" });
+      expect(configListener).toHaveBeenCalledWith(testMessage.data);
     });
 
     it("应该处理状态更新消息", () => {
@@ -363,14 +384,16 @@ describe("WebSocketManager", () => {
 
       const testMessage = {
         type: "statusUpdate",
-        data: { client: { status: "connected" } },
+        data: {
+          status: "connected",
+          mcpEndpoint: "ws://localhost:9999",
+          activeMCPServers: ["test-server"],
+        },
       };
 
       (manager as any).ws.mockMessage(testMessage);
 
-      expect(statusListener).toHaveBeenCalledWith({
-        client: { status: "connected" },
-      });
+      expect(statusListener).toHaveBeenCalledWith(testMessage.data);
     });
 
     it("应该处理重启状态消息", () => {
