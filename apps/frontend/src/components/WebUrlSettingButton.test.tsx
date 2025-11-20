@@ -1,8 +1,9 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WebUrlSettingButton } from "./WebUrlSettingButton";
 
-// Mock react-hook-form
+// 模拟 react-hook-form
 vi.mock("react-hook-form", () => ({
   useForm: () => ({
     control: {},
@@ -11,15 +12,44 @@ vi.mock("react-hook-form", () => ({
     formState: { errors: {} },
   }),
   FormProvider: ({ children }: { children: React.ReactNode }) => children,
-  Controller: ({ render }: { render: any }) =>
-    render({ field: {}, fieldState: {}, formState: {} }),
+  Controller: ({
+    render,
+  }: {
+    render: (props: {
+      field: {
+        onChange: () => void;
+        onBlur: () => void;
+        value: string;
+        name: string;
+        ref: () => void;
+      };
+      fieldState: {
+        invalid: boolean;
+        isTouched: boolean;
+        isDirty: boolean;
+        error?: { message?: string };
+      };
+      formState: { errors: Record<string, unknown> };
+    }) => ReactElement;
+  }) =>
+    render({
+      field: {
+        onChange: vi.fn(),
+        onBlur: vi.fn(),
+        value: "",
+        name: "test",
+        ref: vi.fn(),
+      },
+      fieldState: { invalid: false, isTouched: false, isDirty: false },
+      formState: { errors: {} },
+    }),
   useFormContext: () => ({
     getFieldState: vi.fn(() => ({})),
     formState: { errors: {} },
   }),
 }));
 
-// Mock the hooks
+// 模拟 hooks
 vi.mock("@/providers/WebSocketProvider", () => ({
   useNetworkServiceActions: () => ({
     updateConfig: vi.fn(),
@@ -40,7 +70,7 @@ vi.mock("@/stores/websocket", () => ({
   useWebSocketPortChangeStatus: vi.fn(() => undefined),
 }));
 
-// Mock sonner toast
+// 模拟 sonner toast 组件
 vi.mock("sonner", () => ({
   toast: {
     success: vi.fn(),
@@ -54,14 +84,14 @@ describe("WebUrlSettingButton", () => {
     vi.clearAllMocks();
   });
 
-  it("renders the settings button", () => {
+  it("渲染设置按钮", () => {
     render(<WebUrlSettingButton />);
 
     const button = screen.getByRole("button");
     expect(button).toBeInTheDocument();
   });
 
-  it("opens dialog when button is clicked", async () => {
+  it("点击按钮时打开对话框", async () => {
     render(<WebUrlSettingButton />);
 
     const button = screen.getByRole("button");
@@ -72,7 +102,7 @@ describe("WebUrlSettingButton", () => {
     });
   });
 
-  it("displays dialog title and description", async () => {
+  it("显示对话框标题和描述", async () => {
     render(<WebUrlSettingButton />);
 
     const button = screen.getByRole("button");
