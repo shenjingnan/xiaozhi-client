@@ -4,6 +4,7 @@
  */
 
 import { ConnectionState, networkService } from "@services/index";
+import type { RestartStatus } from "@services/websocket";
 import { useConfigStore } from "@stores/config";
 import { useStatusStore } from "@stores/status";
 import { useWebSocketActions } from "@stores/websocket";
@@ -31,42 +32,89 @@ export function useNetworkService() {
       console.error("[NetworkService] 初始化失败:", error);
     });
 
-    // 设置 WebSocket 事件监听器
-    networkService.onWebSocketEvent("connected", () => {
-      console.log("[NetworkService] WebSocket 已连接");
-      webSocketActions.setConnectionState(ConnectionState.CONNECTED);
+    // 保存所有事件监听器的取消订阅函数
+    const unsubscribers = [
+      // 连接状态事件
+      networkService.onWebSocketEvent("connection:connected", () => {
+        console.log("[NetworkService] WebSocket 已连接");
+        webSocketActions.setConnectionState(ConnectionState.CONNECTED);
 
-      // 连接成功后立即获取初始数据
-      loadInitialData();
-    });
+        // 连接成功后立即获取初始数据
+        loadInitialData();
+      }),
 
-    networkService.onWebSocketEvent("disconnected", () => {
-      console.log("[NetworkService] WebSocket 已断开");
-      webSocketActions.setConnectionState(ConnectionState.DISCONNECTED);
-    });
+      networkService.onWebSocketEvent("connection:disconnected", () => {
+        console.log("[NetworkService] WebSocket 已断开");
+        webSocketActions.setConnectionState(ConnectionState.DISCONNECTED);
+      }),
 
-    networkService.onWebSocketEvent("configUpdate", (config: AppConfig) => {
-      console.log("[NetworkService] 收到配置更新通知");
-      useConfigStore.getState().setConfig(config, "websocket");
-    });
+      // 数据更新事件
+      networkService.onWebSocketEvent(
+        "data:configUpdate",
+        (config: AppConfig) => {
+          console.log("[NetworkService] 收到配置更新通知");
+          useConfigStore.getState().setConfig(config, "websocket");
+        }
+      ),
 
-    networkService.onWebSocketEvent("statusUpdate", (status: ClientStatus) => {
-      console.log("[NetworkService] 收到状态更新通知");
-      useStatusStore.getState().setClientStatus(status, "websocket");
-    });
+      networkService.onWebSocketEvent(
+        "data:statusUpdate",
+        (status: ClientStatus) => {
+          console.log("[NetworkService] 收到状态更新通知");
+          useStatusStore.getState().setClientStatus(status, "websocket");
+        }
+      ),
 
-    networkService.onWebSocketEvent("restartStatus", (restartStatus) => {
-      console.log("[NetworkService] 收到重启状态通知:", restartStatus);
-      useStatusStore.getState().setRestartStatus(restartStatus, "websocket");
-    });
+      networkService.onWebSocketEvent(
+        "data:restartStatus",
+        (restartStatus: RestartStatus) => {
+          console.log("[NetworkService] 收到重启状态通知:", restartStatus);
+          useStatusStore
+            .getState()
+            .setRestartStatus(restartStatus, "websocket");
+        }
+      ),
 
-    networkService.onWebSocketEvent("error", (error: Error) => {
-      console.error("[NetworkService] WebSocket 错误:", error);
-    });
+      // 系统事件
+      networkService.onWebSocketEvent(
+        "system:error",
+        ({ error }: { error: Error }) => {
+          console.error("[NetworkService] WebSocket 错误:", error);
+
+          // 将错误信息存储到状态管理中，供 UI 展示
+          const errorMessage = `WebSocket 连接错误: ${error.message}`;
+          useStatusStore.getState().setError(new Error(errorMessage));
+
+          // 根据错误类型进行分类处理
+          if (
+            error.message.includes("ECONNREFUSED") ||
+            error.message.includes("连接被拒绝")
+          ) {
+            console.warn("[NetworkService] 连接被拒绝，可能是服务未启动");
+            // 可以在这里添加用户友好的提示逻辑
+          } else if (
+            error.message.includes("timeout") ||
+            error.message.includes("超时")
+          ) {
+            console.warn("[NetworkService] 连接超时，请检查网络连接");
+          } else {
+            console.warn("[NetworkService] 未知的 WebSocket 错误:", error);
+          }
+        }
+      ),
+    ];
 
     // 清理函数
     return () => {
       console.log("[NetworkService] 清理网络服务");
+      // 清理所有事件监听器，防止内存泄漏
+      for (const unsubscribe of unsubscribers) {
+        try {
+          unsubscribe?.();
+        } catch (error) {
+          console.error("[NetworkService] 清理事件监听器失败:", error);
+        }
+      }
       networkService.destroy();
       initializationRef.current = false;
     };

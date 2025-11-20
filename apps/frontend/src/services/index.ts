@@ -8,6 +8,7 @@ import { type ApiClient, apiClient } from "./api";
 import {
   type ConnectionState,
   type WebSocketManager,
+  type WebSocketMessage,
   webSocketManager,
 } from "./websocket";
 
@@ -238,23 +239,15 @@ export class NetworkService {
 
   /**
    * 监听 WebSocket 事件
+   * @returns 取消订阅的函数
    */
-  onWebSocketEvent<
-    K extends keyof import("./websocket").WebSocketEventListeners,
-  >(
+  onWebSocketEvent<K extends keyof import("./websocket").EventBusEvents>(
     event: K,
-    listener: import("./websocket").WebSocketEventListeners[K]
-  ): void {
-    this.webSocketManager.on(event, listener);
-  }
-
-  /**
-   * 移除 WebSocket 事件监听器
-   */
-  offWebSocketEvent<
-    K extends keyof import("./websocket").WebSocketEventListeners,
-  >(event: K): void {
-    this.webSocketManager.off(event);
+    listener: import("./websocket").EventListener<
+      import("./websocket").EventBusEvents[K]
+    >
+  ): () => void {
+    return this.webSocketManager.subscribe(event, listener);
   }
 
   /**
@@ -265,6 +258,13 @@ export class NetworkService {
     setTimeout(() => {
       this.webSocketManager.connect();
     }, 1000);
+  }
+
+  /**
+   * 通过 WebSocket 发送消息
+   */
+  send(message: WebSocketMessage): boolean {
+    return this.webSocketManager.send(message);
   }
 
   // ==================== 便捷方法 ====================
@@ -298,21 +298,24 @@ export class NetworkService {
   ): Promise<void> {
     // 设置 WebSocket 监听器等待配置更新通知
     return new Promise((resolve, reject) => {
+      const unsubscribe = this.webSocketManager.subscribe(
+        "data:configUpdate",
+        () => {
+          clearTimeout(timeoutId);
+          unsubscribe();
+          resolve();
+        }
+      );
+
       const timeoutId = setTimeout(() => {
-        this.webSocketManager.off("configUpdate");
+        unsubscribe();
         reject(new Error("等待配置更新通知超时"));
       }, timeout);
-
-      this.webSocketManager.on("configUpdate", () => {
-        clearTimeout(timeoutId);
-        this.webSocketManager.off("configUpdate");
-        resolve();
-      });
 
       // 通过 HTTP API 更新配置
       this.updateConfig(config).catch((error) => {
         clearTimeout(timeoutId);
-        this.webSocketManager.off("configUpdate");
+        unsubscribe?.();
         reject(error);
       });
     });
@@ -323,27 +326,30 @@ export class NetworkService {
    */
   async restartServiceWithNotification(timeout = 30000): Promise<void> {
     return new Promise((resolve, reject) => {
+      const unsubscribe = this.webSocketManager.subscribe(
+        "data:restartStatus",
+        (status) => {
+          if (status.status === "completed") {
+            clearTimeout(timeoutId);
+            unsubscribe();
+            resolve();
+          } else if (status.status === "failed") {
+            clearTimeout(timeoutId);
+            unsubscribe();
+            reject(new Error(status.error || "服务重启失败"));
+          }
+        }
+      );
+
       const timeoutId = setTimeout(() => {
-        this.webSocketManager.off("restartStatus");
+        unsubscribe();
         reject(new Error("等待重启状态通知超时"));
       }, timeout);
-
-      this.webSocketManager.on("restartStatus", (status) => {
-        if (status.status === "completed") {
-          clearTimeout(timeoutId);
-          this.webSocketManager.off("restartStatus");
-          resolve();
-        } else if (status.status === "failed") {
-          clearTimeout(timeoutId);
-          this.webSocketManager.off("restartStatus");
-          reject(new Error(status.error || "服务重启失败"));
-        }
-      });
 
       // 通过 HTTP API 重启服务
       this.restartService().catch((error) => {
         clearTimeout(timeoutId);
-        this.webSocketManager.off("restartStatus");
+        unsubscribe?.();
         reject(error);
       });
     });

@@ -123,18 +123,6 @@ interface EventBusEvents {
 type EventListener<T = any> = (data: T) => void;
 
 /**
- * WebSocket 事件监听器类型（向后兼容）
- */
-interface WebSocketEventListeners {
-  connected: () => void;
-  disconnected: () => void;
-  configUpdate: (config: AppConfig) => void;
-  statusUpdate: (status: ClientStatus) => void;
-  restartStatus: (status: RestartStatus) => void;
-  error: (error: Error) => void;
-}
-
-/**
  * WebSocket 连接状态
  */
 enum ConnectionState {
@@ -246,7 +234,6 @@ export class WebSocketManager {
   private url: string;
   private state: ConnectionState = ConnectionState.DISCONNECTED;
   private eventBus: EventBus = new EventBus();
-  private legacyListeners: Partial<WebSocketEventListeners> = {};
   private reconnectAttempts = 0;
   private maxReconnectAttempts: number;
   private reconnectInterval: number;
@@ -262,9 +249,6 @@ export class WebSocketManager {
     this.reconnectInterval = config.reconnectInterval || 3000;
     this.heartbeatInterval = config.heartbeatInterval || 30000; // 30秒
     this.heartbeatTimeout = config.heartbeatTimeout || 35000; // 35秒
-
-    // 设置向后兼容的事件桥接
-    this.setupLegacyEventBridge();
   }
 
   /**
@@ -299,37 +283,6 @@ export class WebSocketManager {
       WebSocketManager.instance = null;
       console.log("[WebSocketManager] 单例实例已重置");
     }
-  }
-
-  /**
-   * 设置向后兼容的事件桥接
-   */
-  private setupLegacyEventBridge(): void {
-    // 连接状态事件桥接
-    this.eventBus.on("connection:connected", () => {
-      this.legacyListeners.connected?.();
-    });
-
-    this.eventBus.on("connection:disconnected", () => {
-      this.legacyListeners.disconnected?.();
-    });
-
-    this.eventBus.on("connection:error", ({ error }) => {
-      this.legacyListeners.error?.(error);
-    });
-
-    // 数据更新事件桥接
-    this.eventBus.on("data:configUpdate", (config) => {
-      this.legacyListeners.configUpdate?.(config);
-    });
-
-    this.eventBus.on("data:statusUpdate", (status) => {
-      this.legacyListeners.statusUpdate?.(status);
-    });
-
-    this.eventBus.on("data:restartStatus", (status) => {
-      this.legacyListeners.restartStatus?.(status);
-    });
   }
 
   /**
@@ -417,29 +370,6 @@ export class WebSocketManager {
    */
   getEventBus(): EventBus {
     return this.eventBus;
-  }
-
-  /**
-   * 设置事件监听器（向后兼容）
-   * @deprecated 使用 subscribe 方法替代
-   */
-  on<K extends keyof WebSocketEventListeners>(
-    event: K,
-    listener: WebSocketEventListeners[K]
-  ): void {
-    console.warn("[WebSocketManager] on() 方法已废弃，请使用 subscribe() 方法");
-    this.legacyListeners[event] = listener;
-  }
-
-  /**
-   * 移除事件监听器（向后兼容）
-   * @deprecated 使用 unsubscribe 方法替代
-   */
-  off<K extends keyof WebSocketEventListeners>(event: K): void {
-    console.warn(
-      "[WebSocketManager] off() 方法已废弃，请使用 unsubscribe() 方法"
-    );
-    delete this.legacyListeners[event];
   }
 
   /**
@@ -775,6 +705,7 @@ export { ConnectionState };
 export type {
   WebSocketMessage,
   RestartStatus,
-  WebSocketEventListeners,
   WebSocketManagerConfig,
+  EventBusEvents,
+  EventListener,
 };
