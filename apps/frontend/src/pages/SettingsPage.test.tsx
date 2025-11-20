@@ -17,10 +17,6 @@ vi.mock("@/hooks/useNetworkService", () => ({
   useNetworkService: vi.fn(),
 }));
 
-vi.mock("@/hooks/useWebSocket", () => ({
-  useWebSocket: vi.fn(),
-}));
-
 vi.mock("@/components/AppSidebar", () => ({
   AppSidebar: () => <div data-testid="app-sidebar">AppSidebar</div>,
 }));
@@ -56,11 +52,9 @@ vi.mock("sonner", () => ({
 }));
 
 import { useNetworkService } from "@/hooks/useNetworkService";
-import { useWebSocket } from "@/hooks/useWebSocket";
 import { useConfig } from "@/stores/config";
 
 const mockUseConfig = useConfig as ReturnType<typeof vi.fn>;
-const mockUseWebSocket = useWebSocket as ReturnType<typeof vi.fn>;
 const mockUseNetworkService = useNetworkService as ReturnType<typeof vi.fn>;
 
 describe("SettingsPage", () => {
@@ -84,10 +78,6 @@ describe("SettingsPage", () => {
       loadInitialData: vi.fn(),
       isWebSocketConnected: vi.fn(),
       getWebSocketState: vi.fn(),
-    });
-
-    mockUseWebSocket.mockReturnValue({
-      updateConfig: mockUpdateConfig,
     });
   });
 
