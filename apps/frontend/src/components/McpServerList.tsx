@@ -41,6 +41,11 @@ import { RemoveMcpServerButton } from "./RemoveMcpServerButton";
 import { RestartButton } from "./RestartButton";
 import { ToolDebugDialog } from "./ToolDebugDialog";
 
+// 服务名称常量
+const UNKNOWN_SERVICE_NAME = "未知服务";
+const CUSTOM_SERVICE_NAME = "自定义服务";
+const COZE_SERVICE_NAME = "coze"; // 保持原样，作为技术标识符
+
 interface McpServerListProps {
   updateConfig?: (config: any) => Promise<void>;
 }
@@ -87,25 +92,25 @@ export function McpServerList({
       // 安全检查：确保 handler 存在
       if (!tool || !tool.handler) {
         return {
-          serviceName: "unknown",
-          toolName: tool?.name || "unknown",
+          serviceName: UNKNOWN_SERVICE_NAME,
+          toolName: tool?.name || UNKNOWN_SERVICE_NAME,
         };
       }
 
       if (tool.handler.type === "mcp") {
         return {
-          serviceName: tool.handler.config?.serviceName || "unknown",
+          serviceName: tool.handler.config?.serviceName || UNKNOWN_SERVICE_NAME,
           toolName: tool.handler.config?.toolName || tool.name,
         };
       }
       if (tool.handler.type === "proxy" && tool.handler.platform === "coze") {
         return {
-          serviceName: "coze",
+          serviceName: COZE_SERVICE_NAME,
           toolName: tool.name,
         };
       }
       return {
-        serviceName: "custom",
+        serviceName: CUSTOM_SERVICE_NAME,
         toolName: tool.name,
       };
     })();
