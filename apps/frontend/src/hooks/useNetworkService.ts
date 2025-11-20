@@ -80,6 +80,26 @@ export function useNetworkService() {
         "system:error",
         ({ error }: { error: Error }) => {
           console.error("[NetworkService] WebSocket 错误:", error);
+
+          // 将错误信息存储到状态管理中，供 UI 展示
+          const errorMessage = `WebSocket 连接错误: ${error.message}`;
+          useStatusStore.getState().setError(new Error(errorMessage));
+
+          // 根据错误类型进行分类处理
+          if (
+            error.message.includes("ECONNREFUSED") ||
+            error.message.includes("连接被拒绝")
+          ) {
+            console.warn("[NetworkService] 连接被拒绝，可能是服务未启动");
+            // 可以在这里添加用户友好的提示逻辑
+          } else if (
+            error.message.includes("timeout") ||
+            error.message.includes("超时")
+          ) {
+            console.warn("[NetworkService] 连接超时，请检查网络连接");
+          } else {
+            console.warn("[NetworkService] 未知的 WebSocket 错误:", error);
+          }
         }
       ),
     ];

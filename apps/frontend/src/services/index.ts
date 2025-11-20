@@ -8,6 +8,7 @@ import { type ApiClient, apiClient } from "./api";
 import {
   type ConnectionState,
   type WebSocketManager,
+  type WebSocketMessage,
   webSocketManager,
 } from "./websocket";
 
@@ -238,6 +239,7 @@ export class NetworkService {
 
   /**
    * 监听 WebSocket 事件
+   * @returns 取消订阅的函数
    */
   onWebSocketEvent<K extends keyof import("./websocket").EventBusEvents>(
     event: K,
@@ -246,18 +248,6 @@ export class NetworkService {
     >
   ): () => void {
     return this.webSocketManager.subscribe(event, listener);
-  }
-
-  /**
-   * 移除 WebSocket 事件监听器
-   */
-  offWebSocketEvent<K extends keyof import("./websocket").EventBusEvents>(
-    event: K,
-    listener: import("./websocket").EventListener<
-      import("./websocket").EventBusEvents[K]
-    >
-  ): void {
-    this.webSocketManager.unsubscribe(event, listener);
   }
 
   /**
@@ -273,7 +263,7 @@ export class NetworkService {
   /**
    * 通过 WebSocket 发送消息
    */
-  send(message: any): boolean {
+  send(message: WebSocketMessage): boolean {
     return this.webSocketManager.send(message);
   }
 

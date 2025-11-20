@@ -301,15 +301,25 @@ describe("NetworkService", () => {
       expect(result).toBe(unsubscribe);
     });
 
-    it("应该取消订阅 WebSocket 事件", () => {
+    it("应该通过返回的函数取消订阅 WebSocket 事件", () => {
       const listener = vi.fn();
+      const unsubscribe = vi.fn();
 
-      networkService.offWebSocketEvent("connection:connected", listener);
+      mockWebSocketManager.subscribe.mockReturnValue(unsubscribe);
 
-      expect(mockWebSocketManager.unsubscribe).toHaveBeenCalledWith(
+      const unsubscribeFn = networkService.onWebSocketEvent(
         "connection:connected",
         listener
       );
+
+      // 调用返回的取消订阅函数
+      unsubscribeFn();
+
+      expect(mockWebSocketManager.subscribe).toHaveBeenCalledWith(
+        "connection:connected",
+        listener
+      );
+      expect(unsubscribe).toHaveBeenCalled();
     });
 
     it("应该支持不同类型的事件", () => {
@@ -595,16 +605,22 @@ describe("NetworkService", () => {
       }).toThrow(error);
     });
 
-    it("应该正确处理 WebSocket 取消订阅错误", () => {
+    it("应该正确处理取消订阅函数执行错误", () => {
       const listener = vi.fn();
       const error = new Error("取消订阅失败");
-
-      mockWebSocketManager.unsubscribe.mockImplementation(() => {
+      const unsubscribe = vi.fn(() => {
         throw error;
       });
 
+      mockWebSocketManager.subscribe.mockReturnValue(unsubscribe);
+
+      const unsubscribeFn = networkService.onWebSocketEvent(
+        "connection:connected",
+        listener
+      );
+
       expect(() => {
-        networkService.offWebSocketEvent("connection:connected", listener);
+        unsubscribeFn();
       }).toThrow(error);
     });
 
