@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { act } from "react";
 import { vi } from "vitest";
 
-// Mock sonner toast
+// 模拟 sonner toast
 vi.mock("sonner", () => ({
   toast: {
     success: vi.fn(),
@@ -11,7 +11,7 @@ vi.mock("sonner", () => ({
   },
 }));
 
-// Mock the config store
+// 模拟配置存储
 const mockMcpServerConfig = vi.fn();
 const mockMcpServers = vi.fn();
 const mockRefreshConfig = vi.fn();
@@ -26,7 +26,7 @@ vi.mock("@/stores/config", () => ({
   }),
 }));
 
-// Mock the API client
+// 模拟 API 客户端
 vi.mock("@/services/api", () => ({
   apiClient: {
     getToolsList: vi.fn(),
@@ -36,7 +36,7 @@ vi.mock("@/services/api", () => ({
   },
 }));
 
-// Mock other components
+// 模拟其他组件
 vi.mock("@components/AddMcpServerButton", () => ({
   AddMcpServerButton: () => (
     <button type="button" data-testid="add-server">
@@ -77,7 +77,7 @@ vi.mock("@/utils/mcpServerUtils", () => ({
   getMcpServerCommunicationType: () => "stdio",
 }));
 
-describe("McpServerList", () => {
+describe("McpServerList 组件", () => {
   const serverConfig = {
     "test-server": {
       name: "test-server",
@@ -96,11 +96,11 @@ describe("McpServerList", () => {
     },
   };
 
-  // Get mock functions from the API client
+  // 从 API 客户端获取模拟函数
   let mockGetToolsList: any;
 
   beforeEach(async () => {
-    // Get the mock functions
+    // 获取模拟函数
     const { apiClient } = await import("@/services/api");
     mockGetToolsList = apiClient.getToolsList;
 
@@ -108,7 +108,7 @@ describe("McpServerList", () => {
     mockMcpServerConfig.mockReturnValue(serverConfig);
     mockMcpServers.mockReturnValue(servers);
 
-    // Mock API responses
+    // 模拟 API 响应
     mockGetToolsList.mockImplementation((type: string) => {
       if (type === "enabled") {
         return Promise.resolve([
@@ -122,7 +122,7 @@ describe("McpServerList", () => {
       return Promise.resolve([]);
     });
 
-    // Mock refresh config to return a promise
+    // 模拟刷新配置以返回 promise
     mockRefreshConfig.mockResolvedValue({});
   });
 
@@ -131,7 +131,7 @@ describe("McpServerList", () => {
       render(<McpServerList updateConfig={mockUpdateConfig} />);
     });
 
-    // Wait for tools to load
+    // 等待工具加载
     await vi.waitFor(() => {
       expect(screen.getByText("test-server")).toBeInTheDocument();
     });
@@ -171,7 +171,7 @@ describe("McpServerList", () => {
       render(<McpServerList updateConfig={mockUpdateConfig} />);
     });
 
-    // Wait for component to render
+    // 等待组件渲染
     await vi.waitFor(() => {
       expect(screen.getByText("server1")).toBeInTheDocument();
       expect(screen.getByText("server2")).toBeInTheDocument();
@@ -183,7 +183,7 @@ describe("McpServerList", () => {
       render(<McpServerList updateConfig={mockUpdateConfig} />);
     });
 
-    // Component should render without error
+    // 组件应该能正常渲染
     await vi.waitFor(() => {
       expect(screen.getByText("test-server")).toBeInTheDocument();
     });

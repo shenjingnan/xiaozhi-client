@@ -5,7 +5,7 @@ import type * as React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { McpServerList } from "./McpServerList";
 
-// Mock the hooks
+// 模拟 hooks
 vi.mock("@/stores/config", () => ({
   useMcpServerConfig: vi.fn(),
   useMcpServers: vi.fn(),
@@ -24,7 +24,7 @@ vi.mock("sonner", () => ({
   },
 }));
 
-// Mock API client
+// 模拟 API 客户端
 vi.mock("@/services/api", () => ({
   apiClient: {
     getToolsList: vi.fn(),
@@ -34,7 +34,7 @@ vi.mock("@/services/api", () => ({
   },
 }));
 
-// Mock UI components
+// 模拟 UI 组件
 vi.mock("@/components/ui/badge", () => ({
   Badge: ({ children, ...props }: BadgeProps) => (
     <span {...props}>{children}</span>
@@ -71,7 +71,7 @@ interface AlertDialogRootProps {
   defaultOpen?: boolean;
 }
 
-// Mock AlertDialog components
+// 模拟 AlertDialog 组件
 vi.mock("@/components/ui/alert-dialog", () => ({
   AlertDialog: ({ children, open, onOpenChange }: AlertDialogRootProps) => (
     <div data-open={open} data-on-open-change={onOpenChange}>
@@ -122,11 +122,11 @@ vi.mock("@/components/ui/alert-dialog", () => ({
   }: React.HTMLAttributes<HTMLDivElement>) => <div {...props}>{children}</div>,
 }));
 
-// Mock Lucide React icons with proper type filtering
+// 模拟 Lucide React 图标，并进行适当的类型过滤
 vi.mock("lucide-react", async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>;
 
-  // Create a generic icon component with proper type filtering
+  // 创建通用图标组件，并进行适当的类型过滤
   const MockIcon = ({ className, ...props }: React.SVGProps<SVGSVGElement>) => {
     // 过滤掉 SVG 特有的属性，只保留通用的 HTML 属性
     const { viewBox, xmlns, version, width, height, fill, ...htmlProps } =
@@ -141,7 +141,7 @@ vi.mock("lucide-react", async (importOriginal) => {
     );
   };
 
-  // Return all actual exports but override with mock icons
+  // 返回所有实际导出，但用模拟图标覆盖
   return {
     ...actual,
     CoffeeIcon: MockIcon,
@@ -154,14 +154,14 @@ vi.mock("lucide-react", async (importOriginal) => {
     RefreshCw: MockIcon,
     Trash2: MockIcon,
     Edit: MockIcon,
-    // Add any other icons that might be needed
+    // 添加任何其他可能需要的图标
     Check: MockIcon,
     AlertCircle: MockIcon,
     Info: MockIcon,
   };
 });
 
-describe("McpServerList", () => {
+describe("McpServerList 组件", () => {
   const mockUpdateConfig = vi.fn();
 
   const mockMcpServerConfig = {
@@ -193,7 +193,7 @@ describe("McpServerList", () => {
     },
   };
 
-  // Mock enabled and disabled tools
+  // 模拟已启用和未启用的工具
   const mockEnabledTools = [
     {
       name: "tool1",
@@ -253,7 +253,7 @@ describe("McpServerList", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
 
-    // Setup mocks using dynamic imports
+    // 使用动态导入设置模拟
     const configModule = await import("@/stores/config");
     const webSocketProviderModule = await import(
       "@/providers/WebSocketProvider"
@@ -296,7 +296,7 @@ describe("McpServerList", () => {
       }
     );
 
-    // Mock API calls
+    // 模拟 API 调用
     vi.mocked(apiModule.apiClient.getToolsList).mockImplementation(
       async (status) => {
         if (status === "enabled") return mockEnabledTools;
@@ -311,21 +311,21 @@ describe("McpServerList", () => {
     vi.mocked(apiModule.apiClient.updateCustomTool).mockResolvedValue({});
   });
 
-  it("should render enabled and disabled tools correctly", async () => {
+  it("应该正确渲染已启用和未启用的工具", async () => {
     render(<McpServerList />);
 
-    // Wait for API calls to complete
+    // 等待 API 调用完成
     await waitFor(() => {
-      // Check if enabled tools section shows correct count
+      // 检查已启用工具部分是否显示正确计数
       expect(screen.getByText(/使用中的工具 \(2\)/)).toBeInTheDocument();
     });
 
-    // Check if disabled tools section shows correct count
+    // 检查未启用工具部分是否显示正确计数
     expect(screen.getByText(/未使用的工具 \(1\)/)).toBeInTheDocument();
   });
 
-  it("should show confirmation dialog for Coze tool removal", async () => {
-    // Add a Coze tool to enabled tools
+  it("应该在移除 Coze 工具时显示确认对话框", async () => {
+    // 向已启用工具添加一个 Coze 工具
     const mockCozeEnabledTools = [...mockEnabledTools, mockCozeTool];
     const apiModule = await import("@/services/api");
     vi.mocked(apiModule.apiClient.getToolsList).mockImplementation(
@@ -338,17 +338,17 @@ describe("McpServerList", () => {
 
     render(<McpServerList />);
 
-    // Wait for the component to load
+    // 等待组件加载完成
     await waitFor(() => {
       expect(screen.getByText(/使用中的工具 \(3\)/)).toBeInTheDocument();
     });
 
-    // Since we can't easily click buttons in this complex component,
-    // let's test the state management by simulating the function call
+    // 由于在这个复杂组件中不易点击按钮，
+    // 我们通过模拟函数调用来测试状态管理
     render(<McpServerList />);
 
-    // Test Coze tool detection logic by manually calling the toggle function
-    // This tests the core logic without dealing with complex DOM interactions
+    // 通过手动调用切换函数来测试 Coze 工具检测逻辑
+    // 这样可以在不处理复杂 DOM 交互的情况下测试核心逻辑
     const cozeTool = mockCozeEnabledTools.find(
       (tool) => tool.handler.config.serviceName === "coze"
     );
@@ -356,9 +356,9 @@ describe("McpServerList", () => {
     expect(cozeTool?.handler.config.serviceName).toBe("coze");
   });
 
-  it("should not show confirmation for non-Coze tools", async () => {
-    // Test with normal MCP tools
-    const mcpTool = mockEnabledTools[0]; // tool1 from server1
+  it("不应该为非 Coze 工具显示确认对话框", async () => {
+    // 测试普通 MCP 工具
+    const mcpTool = mockEnabledTools[0]; // 来自 server1 的 tool1
     expect(mcpTool.handler.config.serviceName).toBe("server1");
     expect(mcpTool.handler.config.serviceName).not.toBe("coze");
   });
