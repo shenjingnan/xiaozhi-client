@@ -489,10 +489,6 @@ describe("MCPService 自动类型推断测试", () => {
         name: "complete-service",
         url: "https://example.com/mcp",
         timeout: 60000,
-        reconnect: {
-          enabled: true,
-          maxAttempts: 3,
-        },
       };
 
       const originalConfigCopy = { ...originalConfig };
@@ -503,7 +499,6 @@ describe("MCPService 自动类型推断测试", () => {
       const serviceConfig = service.getConfig();
       expect(serviceConfig.type).toBe(MCPTransportType.STREAMABLE_HTTP);
       expect(serviceConfig.timeout).toBe(60000);
-      expect(serviceConfig.reconnect).toBeDefined();
     });
   });
 

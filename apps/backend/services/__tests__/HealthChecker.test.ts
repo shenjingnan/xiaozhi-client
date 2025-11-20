@@ -54,7 +54,8 @@ describe("HealthChecker", () => {
         { name: "tool1", description: "Test tool 1" },
         { name: "tool2", description: "Test tool 2" },
       ]),
-      reconnect: vi.fn().mockResolvedValue(undefined),
+      connect: vi.fn().mockResolvedValue(undefined),
+      disconnect: vi.fn().mockResolvedValue(undefined),
     } as any;
 
     // Mock MCPServiceManager
@@ -201,7 +202,7 @@ describe("HealthChecker", () => {
 
       await healthChecker.checkAllServices(mockManager);
 
-      expect(mockService.reconnect).toHaveBeenCalled();
+      expect(mockService.connect).toHaveBeenCalled();
     });
   });
 

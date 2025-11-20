@@ -350,7 +350,11 @@ class HealthCheckerClass {
       // 如果服务未连接，尝试重新连接
       if (!service.isConnected()) {
         this.logger.info(`[HealthChecker] 尝试重新连接服务: ${serviceName}`);
-        await service.reconnect();
+        // 先断开现有连接，然后重新连接
+        if (service.isConnected()) {
+          await service.disconnect();
+        }
+        await service.connect();
 
         // 等待一段时间让连接稳定
         await new Promise((resolve) => setTimeout(resolve, 1000));

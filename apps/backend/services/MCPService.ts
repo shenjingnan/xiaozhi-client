@@ -21,7 +21,6 @@ export enum ConnectionState {
   FAILED = "failed",
 }
 
-
 // Ping配置接口
 export interface PingOptions {
   enabled: boolean;
@@ -78,8 +77,6 @@ export interface MCPServiceStatus {
   lastPingTime?: Date;
   isPinging: boolean;
 }
-
-
 
 // 工具调用结果接口
 export interface ToolCallResult {
@@ -237,7 +234,6 @@ export class MCPService {
     // 清理之前的连接
     this.cleanupConnection();
 
-    
     return this.attemptConnection();
   }
 
@@ -246,17 +242,12 @@ export class MCPService {
    */
   private async attemptConnection(): Promise<void> {
     this.connectionState = ConnectionState.CONNECTING;
-    this.logWithTag(
-      "debug",
-      `正在连接 MCP 服务: ${this.config.name}`
-    );
+    this.logWithTag("debug", `正在连接 MCP 服务: ${this.config.name}`);
 
     return new Promise((resolve, reject) => {
       // 设置连接超时
       this.connectionTimeout = setTimeout(() => {
-        const error = new Error(
-          `连接超时 (${this.config.timeout || 10000}ms)`
-        );
+        const error = new Error(`连接超时 (${this.config.timeout || 10000}ms)`);
         this.handleConnectionError(error);
         reject(error);
       }, this.config.timeout || 10000);
@@ -355,7 +346,6 @@ export class MCPService {
     });
   }
 
-  
   /**
    * 清理连接资源
    */
@@ -524,7 +514,6 @@ export class MCPService {
     );
   }
 
-  
   /**
    * 启动ping监控
    */
