@@ -1,4 +1,7 @@
+import type { BadgeProps } from "@/components/ui/badge";
+import type { ButtonProps } from "@/components/ui/button";
 import { render, screen, waitFor } from "@testing-library/react";
+import type * as React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { McpServerList } from "./McpServerList";
 
@@ -33,11 +36,13 @@ vi.mock("@/services/api", () => ({
 
 // Mock UI components
 vi.mock("@/components/ui/badge", () => ({
-  Badge: ({ children, ...props }: any) => <span {...props}>{children}</span>,
+  Badge: ({ children, ...props }: BadgeProps) => (
+    <span {...props}>{children}</span>
+  ),
 }));
 
 vi.mock("@/components/ui/button", () => ({
-  Button: ({ children, onClick, ...props }: any) => (
+  Button: ({ children, onClick, ...props }: ButtonProps) => (
     <button onClick={onClick} {...props}>
       {children}
     </button>
@@ -45,55 +50,75 @@ vi.mock("@/components/ui/button", () => ({
 }));
 
 vi.mock("@/components/ui/card", () => ({
-  Card: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-  CardContent: ({ children, ...props }: any) => (
+  Card: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
     <div {...props}>{children}</div>
   ),
-  CardFooter: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+  CardContent: ({
+    children,
+    ...props
+  }: React.HTMLAttributes<HTMLDivElement>) => <div {...props}>{children}</div>,
+  CardFooter: ({
+    children,
+    ...props
+  }: React.HTMLAttributes<HTMLDivElement>) => <div {...props}>{children}</div>,
 }));
 
 // Mock AlertDialog components
 vi.mock("@/components/ui/alert-dialog", () => ({
-  AlertDialog: ({ children, open, onOpenChange }: any) => (
+  AlertDialog: ({ children, open, onOpenChange }: unknown) => (
     <div data-open={open} data-on-open-change={onOpenChange}>
       {children}
     </div>
   ),
-  AlertDialogAction: ({ children, onClick, ...props }: any) => (
+  AlertDialogAction: ({
+    children,
+    onClick,
+    ...props
+  }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
     <button onClick={onClick} {...props}>
       {children}
     </button>
   ),
-  AlertDialogCancel: ({ children, onClick, ...props }: any) => (
+  AlertDialogCancel: ({
+    children,
+    onClick,
+    ...props
+  }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
     <button onClick={onClick} {...props}>
       {children}
     </button>
   ),
-  AlertDialogContent: ({ children, ...props }: any) => (
-    <div {...props}>{children}</div>
-  ),
-  AlertDialogDescription: ({ children, ...props }: any) => (
-    <div {...props}>{children}</div>
-  ),
-  AlertDialogFooter: ({ children, ...props }: any) => (
-    <div {...props}>{children}</div>
-  ),
-  AlertDialogHeader: ({ children, ...props }: any) => (
-    <div {...props}>{children}</div>
-  ),
-  AlertDialogTitle: ({ children, ...props }: any) => (
-    <div {...props}>{children}</div>
-  ),
-  AlertDialogTrigger: ({ children, ...props }: any) => (
-    <div {...props}>{children}</div>
-  ),
+  AlertDialogContent: ({
+    children,
+    ...props
+  }: React.HTMLAttributes<HTMLDivElement>) => <div {...props}>{children}</div>,
+  AlertDialogDescription: ({
+    children,
+    ...props
+  }: React.HTMLAttributes<HTMLDivElement>) => <div {...props}>{children}</div>,
+  AlertDialogFooter: ({
+    children,
+    ...props
+  }: React.HTMLAttributes<HTMLDivElement>) => <div {...props}>{children}</div>,
+  AlertDialogHeader: ({
+    children,
+    ...props
+  }: React.HTMLAttributes<HTMLDivElement>) => <div {...props}>{children}</div>,
+  AlertDialogTitle: ({
+    children,
+    ...props
+  }: React.HTMLAttributes<HTMLDivElement>) => <div {...props}>{children}</div>,
+  AlertDialogTrigger: ({
+    children,
+    ...props
+  }: React.HTMLAttributes<HTMLDivElement>) => <div {...props}>{children}</div>,
 }));
 
 // Mock Lucide React icons with a generic approach
 vi.mock("lucide-react", async (importOriginal) => {
-  const actual = (await importOriginal()) as any;
+  const actual = (await importOriginal()) as unknown;
   // Create a generic icon component
-  const MockIcon = ({ className, ...props }: any) => (
+  const MockIcon = ({ className, ...props }: React.SVGProps<SVGSVGElement>) => (
     <span className={className} {...props}>
       Icon
     </span>
