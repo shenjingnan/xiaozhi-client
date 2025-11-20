@@ -28,37 +28,63 @@
 - `pnpm duplicate:check` - 使用 jscpd 检查重复代码
 - `pnpm docs:dev` - 启动文档开发服务器
 
+### 文档开发
+
+- **文档系统**：使用 Mintlify，支持 MDX 格式
+- **文档创建**：使用 `/docs-create [document-type] [document-title]` 命令
+- **文档更新**：使用 `/docs-update [scope] [target]` 批量更新
+- **文档验证**：
+  - 本地运行 `pnpm docs:dev` 验证文档渲染
+  - 执行代码示例测试确保可运行性
+  - 检查路径别名使用是否正确
+- **支持文档类型**：
+  - `mcp-tool` - MCP 工具文档
+  - `arch-doc` - 架构设计文档
+  - `api-doc` - API 参考文档
+  - `user-guide` - 用户指南
+  - `dev-guide` - 开发指南
+
 ## 架构概览
 
 这是一个基于 TypeScript 的 MCP（Model Context Protocol）客户端，用于连接小智 AI 服务。项目采用模块化架构，具有清晰的关注点分离，最新版本采用独立多接入点架构。
 
 ### 核心组件
 
-1. **CLI 层** (`src/cli/`) - 使用 Commander.js 的命令行界面
+1. **CLI 层** (`apps/backend/cli/`) - 使用 Commander.js 的命令行界面
 
-   - 入口点：`src/cli/index.ts`
-   - 依赖注入容器：`src/cli/Container.ts`
+   - 入口点：`apps/backend/cli/index.ts`
+   - 依赖注入容器：`apps/backend/cli/Container.ts`
    - 命令注册和处理
 
-2. **核心 MCP 层** (`src/core/`) - MCP 协议实现
+2. **核心 MCP 层** (`apps/backend/core/`) - MCP 协议实现
 
    - `UnifiedMCPServer.ts` - 主要 MCP 服务器实现
    - `ServerFactory.ts` - 用于创建不同服务器类型的工厂
    - `MCPMessageHandler.ts` - 消息处理和路由
 
-3. **传输层** (`src/transports/`) - 通信适配器
+3. **传输层** (`apps/backend/transports/`) - 通信适配器
 
    - `WebSocketAdapter.ts` - WebSocket 通信
    - `HTTPAdapter.ts` - HTTP 通信
    - `StdioAdapter.ts` - 标准 I/O 通信
 
-4. **服务层** (`src/services/`) - 连接和服务管理
+4. **服务层** (`apps/backend/services/`) - 连接和服务管理
 
    - `IndependentXiaozhiConnectionManager.ts` - 独立多接入点连接管理器
    - `MCPServiceManager.ts` - MCP 服务管理器
    - `XiaozhiConnectionManagerSingleton.ts` - 全局单例管理器
 
-5. **工具层** (`src/utils/`) - 共享工具和辅助函数
+5. **工具层** (`apps/backend/utils/`) - 共享工具和辅助函数
+
+6. **类型定义** (`apps/backend/types/`) - TypeScript 类型定义
+
+7. **错误处理** (`apps/backend/errors/`) - 统一错误定义和处理
+
+8. **管理器服务** (`apps/backend/managers/`) - 各种管理器实现
+
+9. **适配器模式** (`apps/backend/adapters/`) - 适配器实现
+
+10. **处理器层** (`apps/backend/handlers/`) - 请求处理器
 
 ### 主要功能
 
@@ -102,7 +128,14 @@
 - 使用 Vitest 进行测试
 - 覆盖率目标：分支、函数、行、语句均达到 80%
 - 测试文件位于源文件旁的 `__tests__` 目录中
+- 支持多种测试类型：
+  - **单元测试** (`unit`) - 独立函数和类的测试
+  - **集成测试** (`integration`) - 多模块协作测试
+  - **CLI 命令测试** (`cli-command`) - 命令行功能测试
+  - **传输层测试** (`transport`) - 适配器通信测试
+  - **核心功能测试** (`mcp-core`) - MCP 协议实现测试
 - 传输适配器和服务器功能的集成测试
+- 使用 `/test-create` 命令快速生成测试用例
 
 ### 构建过程
 
@@ -119,6 +152,26 @@
 - 2 空格缩进
 - 行结尾：LF
 
+### 代码质量要求
+
+- **零容忍**：不允许 `any` 类型使用，必须使用具体类型或 `unknown`
+- **类型安全**：所有外部输入必须进行运行时验证（推荐使用 Zod）
+- **路径别名**：跨目录导入必须使用正确的路径别名，避免相对路径
+- **导入顺序**：严格按照最佳实践顺序进行导入（Node.js 内置 → 外部依赖 → 项目别名 → 相对路径）
+- **类型导入**：仅导入类型时使用 `import type` 语法
+- **错误处理**：所有可能失败的异步操作必须有适当的错误处理
+
+### 代码审查检查清单
+
+在提交代码前，请确保：
+- [ ] 所有路径别名使用正确
+- [ ] 没有 `any` 类型（除非有充分理由并通过审查）
+- [ ] 所有导入语句符合最佳实践
+- [ ] 代码能通过 `pnpm check:all` 检查
+- [ ] 测试覆盖率达到 80% 要求
+- [ ] 代码注释使用中文
+- [ ] 错误处理完善且有意义
+
 ### 本地化规范
 
 - **注释信息**：请使用中文编写所有代码注释
@@ -127,10 +180,89 @@
 - **变量和函数名**：继续使用英文命名（符合编程惯例）
 - **目的**：有助于中国开发团队的持续维护和代码理解，降低沟通成本
 
+### 路径别名系统
+
+项目使用复杂的路径别名系统以实现清晰的模块导入和代码组织：
+
+#### 完整别名映射
+```json
+{
+  "@/*": ["apps/backend/*"],                    // 后端根目录快速访问
+  "@cli/*": ["apps/backend/cli/*"],             // CLI 相关代码
+  "@cli/commands/*": ["apps/backend/cli/commands/*"],  // CLI 命令
+  "@cli/services/*": ["apps/backend/cli/services/*"],  // CLI 服务
+  "@cli/utils/*": ["apps/backend/cli/utils/*"],        // CLI 工具
+  "@cli/errors/*": ["apps/backend/cli/errors/*"],      // CLI 错误处理
+  "@cli/interfaces/*": ["apps/backend/cli/interfaces/*"], // CLI 接口
+  "@handlers/*": ["apps/backend/handlers/*"],     // 请求处理器
+  "@services/*": ["apps/backend/services/*"],     // 业务服务
+  "@errors/*": ["apps/backend/errors/*"],         // 错误定义
+  "@utils/*": ["apps/backend/utils/*"],           // 工具函数
+  "@core/*": ["apps/backend/core/*"],             // 核心 MCP 功能
+  "@transports/*": ["apps/backend/transports/*"], // 传输层适配器
+  "@adapters/*": ["apps/backend/adapters/*"],     // 适配器模式
+  "@managers/*": ["apps/backend/managers/*"],     // 管理器服务
+  "@types/*": ["apps/backend/types/*"],           // 类型定义
+  "@root/*": ["apps/backend/*"]                   // 根目录别名
+}
+```
+
+#### 导入顺序最佳实践
+```typescript
+// 1. Node.js 内置模块
+import { fs } from "node:fs";
+import { path } from "node:path";
+
+// 2. 外部依赖
+import express from "express";
+import { Command } from "commander";
+
+// 3. xiaozhi-client 路径别名导入（按分组排序）
+// 核心模块
+import { UnifiedMCPServer } from "@core";
+import type { MCPMessage } from "@types";
+
+// 传输和适配器
+import { WebSocketAdapter } from "@transports";
+import { HTTPAdapter } from "@adapters";
+
+// 管理器和服务
+import { ConnectionManager } from "@managers";
+import { ConfigService } from "@/services";
+
+// CLI相关
+import { StartCommand } from "@cli/commands";
+import { Container } from "@cli";
+
+// 工具和错误
+import { formatConfig } from "@/utils";
+import { ConfigError } from "@errors";
+
+// 4. 相对路径（仅在必要时）
+import { helperFunction } from "./helpers";
+```
+
+## Claude Code 技能和命令
+
+项目配置了专门的 Claude Code 技能和斜杠命令来提升开发效率：
+
+### 斜杠命令
+- `/docs-create [document-type] [document-title]` - 标准化文档创建流程
+- `/docs-update [scope] [target]` - 文档批量更新和路径别名修复
+- `/test-create [test-type] [target-file-or-module]` - 测试用例生成流程
+- `/tool-create [tool-name] [tool-description]` - MCP工具开发流程
+
+### Claude 技能
+- **路径别名验证器** - 检查和修复路径别名使用问题
+- **类型验证器** - TypeScript 严格模式检查和修复
+- **CI 验证器** - 完整代码质量检查和 CI 标准验证
+- **API 文档生成器** - 从源码自动生成 Mintlify 格式文档
+
 ### 重要说明
 
 - 项目完全使用 ESM 模块
-- 配置了路径别名以实现更清晰的导入（`@cli/*` 等）
+- 使用复杂的路径别名系统（见上表）进行模块导入
 - 外部依赖不打包（ws、express、commander 等）
 - 模板目录复制到 dist 用于项目脚手架
 - Web UI 在 `web/` 目录中单独构建
+- 文档系统使用 Mintlify，支持 MDX 格式
