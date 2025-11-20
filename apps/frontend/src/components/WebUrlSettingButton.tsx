@@ -17,7 +17,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { useNetworkServiceActions } from "@/providers/WebSocketProvider";
 import { useConfig } from "@/stores/config";
 import {
   useWebSocketConnected,
@@ -51,7 +51,7 @@ export function WebUrlSettingButton() {
   const config = useConfig();
   const connected = useWebSocketConnected();
   const portChangeStatus = useWebSocketPortChangeStatus();
-  const { changePort } = useWebSocket();
+  const { changePort } = useNetworkServiceActions();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

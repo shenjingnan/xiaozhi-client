@@ -10,8 +10,8 @@ vi.mock("@/stores/config", () => ({
   useConfigActions: vi.fn(),
 }));
 
-vi.mock("@/hooks/useWebSocket", () => ({
-  useWebSocket: vi.fn(),
+vi.mock("@/providers/WebSocketProvider", () => ({
+  useNetworkServiceActions: vi.fn(),
 }));
 
 vi.mock("sonner", () => ({
@@ -213,7 +213,9 @@ describe("McpServerList", () => {
 
     // Setup mocks using dynamic imports
     const configModule = await import("@/stores/config");
-    const useWebSocketModule = await import("@/hooks/useWebSocket");
+    const webSocketProviderModule = await import(
+      "@/providers/WebSocketProvider"
+    );
     const apiModule = await import("@/services/api");
 
     vi.mocked(configModule.useMcpServerConfig).mockReturnValue(
@@ -234,17 +236,23 @@ describe("McpServerList", () => {
       reset: vi.fn(),
       initialize: vi.fn().mockResolvedValue(undefined),
     });
-    vi.mocked(useWebSocketModule.useWebSocket).mockReturnValue({
-      updateConfig: mockUpdateConfig,
-      restartService: vi.fn(),
-      refreshStatus: vi.fn(),
-      wsUrl: "ws://localhost:9999",
-      setCustomWsUrl: vi.fn(),
-      changePort: vi.fn(),
-      connected: false,
-      config: null,
-      status: null,
-    });
+    vi.mocked(webSocketProviderModule.useNetworkServiceActions).mockReturnValue(
+      {
+        getConfig: vi.fn(),
+        updateConfig: mockUpdateConfig,
+        restartService: vi.fn(),
+        refreshStatus: vi.fn(),
+        getStatus: vi.fn(),
+        updateConfigWithNotification: vi.fn(),
+        restartServiceWithNotification: vi.fn(),
+        setCustomWsUrl: vi.fn(),
+        getWebSocketUrl: vi.fn(),
+        changePort: vi.fn(),
+        loadInitialData: vi.fn(),
+        isWebSocketConnected: vi.fn(),
+        getWebSocketState: vi.fn(),
+      }
+    );
 
     // Mock API calls
     vi.mocked(apiModule.apiClient.getToolsList).mockImplementation(
