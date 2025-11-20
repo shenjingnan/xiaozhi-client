@@ -35,21 +35,9 @@ describe("ConfigAdapter", () => {
           type: MCPTransportType.STDIO,
           command: "node",
           args: [expect.stringContaining("calculator.js")], // 路径解析后会变成绝对路径
-          reconnect: {
-            enabled: true,
-            maxAttempts: 5,
-            initialInterval: 3000,
-            maxInterval: 30000,
-            backoffStrategy: "exponential",
-            backoffMultiplier: 1.5,
-            timeout: 10000,
-            jitter: true,
-          },
           ping: {
             enabled: true,
-            interval: 30000,
-            timeout: 5000,
-            maxFailures: 3,
+            interval: 60000,
             startDelay: 5000,
           },
           timeout: 30000,
@@ -78,6 +66,7 @@ describe("ConfigAdapter", () => {
 
       it("应该在缺少 command 时抛出错误", () => {
         const legacyConfig = {
+          command: "",
           args: ["test.js"],
         } as any;
 
@@ -216,21 +205,9 @@ describe("ConfigAdapter", () => {
           name: "sse-service",
           type: MCPTransportType.SSE,
           url: "https://example.com/sse",
-          reconnect: {
-            enabled: true,
-            maxAttempts: 10,
-            initialInterval: 3000,
-            maxInterval: 30000,
-            backoffStrategy: "exponential",
-            backoffMultiplier: 1.5,
-            timeout: 15000,
-            jitter: true,
-          },
           ping: {
             enabled: true,
-            interval: 30000,
-            timeout: 5000,
-            maxFailures: 3,
+            interval: 60000,
             startDelay: 5000,
           },
           timeout: 30000,
@@ -289,21 +266,9 @@ describe("ConfigAdapter", () => {
           name: "http-service",
           type: MCPTransportType.STREAMABLE_HTTP,
           url: "https://api.example.com/mcp",
-          reconnect: {
-            enabled: true,
-            maxAttempts: 5,
-            initialInterval: 3000,
-            maxInterval: 30000,
-            backoffStrategy: "exponential",
-            backoffMultiplier: 1.5,
-            timeout: 15000,
-            jitter: true,
-          },
           ping: {
             enabled: false,
             interval: 60000,
-            timeout: 10000,
-            maxFailures: 3,
             startDelay: 10000,
           },
           timeout: 30000,
