@@ -702,4 +702,10 @@ export const webSocketManager = WebSocketManager.getInstance();
 
 // 导出类型和枚举
 export { ConnectionState };
-export type { WebSocketMessage, RestartStatus, WebSocketManagerConfig };
+export type {
+  WebSocketMessage,
+  RestartStatus,
+  WebSocketManagerConfig,
+  EventBusEvents,
+  EventListener,
+};

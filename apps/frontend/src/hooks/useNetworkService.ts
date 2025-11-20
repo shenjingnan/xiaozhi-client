@@ -4,6 +4,7 @@
  */
 
 import { ConnectionState, networkService } from "@services/index";
+import type { RestartStatus } from "@services/websocket";
 import { useConfigStore } from "@stores/config";
 import { useStatusStore } from "@stores/status";
 import { useWebSocketActions } from "@stores/websocket";
@@ -32,7 +33,7 @@ export function useNetworkService() {
     });
 
     // 设置 WebSocket 事件监听器
-    networkService.onWebSocketEvent("connected", () => {
+    networkService.onWebSocketEvent("connection:connected", () => {
       console.log("[NetworkService] WebSocket 已连接");
       webSocketActions.setConnectionState(ConnectionState.CONNECTED);
 
@@ -40,29 +41,41 @@ export function useNetworkService() {
       loadInitialData();
     });
 
-    networkService.onWebSocketEvent("disconnected", () => {
+    networkService.onWebSocketEvent("connection:disconnected", () => {
       console.log("[NetworkService] WebSocket 已断开");
       webSocketActions.setConnectionState(ConnectionState.DISCONNECTED);
     });
 
-    networkService.onWebSocketEvent("configUpdate", (config: AppConfig) => {
-      console.log("[NetworkService] 收到配置更新通知");
-      useConfigStore.getState().setConfig(config, "websocket");
-    });
+    networkService.onWebSocketEvent(
+      "data:configUpdate",
+      (config: AppConfig) => {
+        console.log("[NetworkService] 收到配置更新通知");
+        useConfigStore.getState().setConfig(config, "websocket");
+      }
+    );
 
-    networkService.onWebSocketEvent("statusUpdate", (status: ClientStatus) => {
-      console.log("[NetworkService] 收到状态更新通知");
-      useStatusStore.getState().setClientStatus(status, "websocket");
-    });
+    networkService.onWebSocketEvent(
+      "data:statusUpdate",
+      (status: ClientStatus) => {
+        console.log("[NetworkService] 收到状态更新通知");
+        useStatusStore.getState().setClientStatus(status, "websocket");
+      }
+    );
 
-    networkService.onWebSocketEvent("restartStatus", (restartStatus) => {
-      console.log("[NetworkService] 收到重启状态通知:", restartStatus);
-      useStatusStore.getState().setRestartStatus(restartStatus, "websocket");
-    });
+    networkService.onWebSocketEvent(
+      "data:restartStatus",
+      (restartStatus: RestartStatus) => {
+        console.log("[NetworkService] 收到重启状态通知:", restartStatus);
+        useStatusStore.getState().setRestartStatus(restartStatus, "websocket");
+      }
+    );
 
-    networkService.onWebSocketEvent("error", (error: Error) => {
-      console.error("[NetworkService] WebSocket 错误:", error);
-    });
+    networkService.onWebSocketEvent(
+      "system:error",
+      ({ error }: { error: Error }) => {
+        console.error("[NetworkService] WebSocket 错误:", error);
+      }
+    );
 
     // 清理函数
     return () => {
