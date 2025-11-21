@@ -240,22 +240,24 @@ export abstract class TransportAdapter {
    * 验证消息格式
    * 验证消息是否符合 MCP 协议规范
    */
-  protected validateMessage(message: any): boolean {
+  protected validateMessage(message: unknown): boolean {
     if (!message || typeof message !== "object") {
       return false;
     }
 
-    if (message.jsonrpc !== "2.0") {
+    const messageObj = message as Record<string, unknown>;
+
+    if (messageObj.jsonrpc !== "2.0") {
       return false;
     }
 
     // 请求消息必须有 method 字段
-    if (message.method && typeof message.method !== "string") {
+    if (messageObj.method && typeof messageObj.method !== "string") {
       return false;
     }
 
     // 响应消息必须有 result 或 error 字段
-    if (!message.method && !message.result && !message.error) {
+    if (!messageObj.method && !messageObj.result && !messageObj.error) {
       return false;
     }
 
