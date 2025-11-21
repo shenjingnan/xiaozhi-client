@@ -296,11 +296,19 @@ async function registerTransportsForMode(
 
   switch (mode) {
     case ServerMode.STDIO:
-      await registerStdioTransport(serviceManager, messageHandler, config.stdioConfig);
+      await registerStdioTransport(
+        serviceManager,
+        messageHandler,
+        config.stdioConfig
+      );
       break;
 
     case ServerMode.HTTP:
-      await registerHTTPTransport(serviceManager, messageHandler, config.httpConfig);
+      await registerHTTPTransport(
+        serviceManager,
+        messageHandler,
+        config.httpConfig
+      );
       break;
 
     case ServerMode.WEBSOCKET:
@@ -312,8 +320,16 @@ async function registerTransportsForMode(
       break;
 
     case ServerMode.HYBRID:
-      await registerStdioTransport(serviceManager, messageHandler, config.stdioConfig);
-      await registerHTTPTransport(serviceManager, messageHandler, config.httpConfig);
+      await registerStdioTransport(
+        serviceManager,
+        messageHandler,
+        config.stdioConfig
+      );
+      await registerHTTPTransport(
+        serviceManager,
+        messageHandler,
+        config.httpConfig
+      );
       if (config.websocketConfig) {
         await registerWebSocketTransport(
           serviceManager,

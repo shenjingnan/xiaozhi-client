@@ -102,12 +102,14 @@ export class MCPServiceManager extends EventEmitter {
    * 创建 MCPServiceManager 实例
    * @param configs 可选的初始服务配置或服务器配置
    */
-  constructor(configs?: Record<string, MCPServiceConfig> | UnifiedServerConfig) {
+  constructor(
+    configs?: Record<string, MCPServiceConfig> | UnifiedServerConfig
+  ) {
     super();
     this.logger = logger;
 
     // 处理参数，支持 UnifiedServerConfig 格式
-    if (configs && 'configs' in configs) {
+    if (configs && "configs" in configs) {
       // UnifiedServerConfig 格式
       this.config = {
         name: "MCPServiceManager",
@@ -115,7 +117,8 @@ export class MCPServiceManager extends EventEmitter {
         logLevel: "info",
         ...configs,
       };
-      this.configs = (configs.configs as Record<string, MCPServiceConfig>) || {};
+      this.configs =
+        (configs.configs as Record<string, MCPServiceConfig>) || {};
     } else {
       // 原有的 configs 格式
       this.config = {
