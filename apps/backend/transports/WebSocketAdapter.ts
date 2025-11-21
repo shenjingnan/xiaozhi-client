@@ -440,10 +440,18 @@ export class WebSocketAdapter extends TransportAdapter {
 
       if (message) {
         // 检查是否是批处理消息
-        if (message.method === "batch" && message.params?.messages) {
+        if (
+          message.method === "batch" &&
+          message.params &&
+          typeof message.params === "object" &&
+          "messages" in message.params &&
+          Array.isArray((message.params as { messages: unknown[] }).messages)
+        ) {
           // 处理批处理消息
-          for (const batchedMessage of message.params.messages) {
-            await this.handleIncomingMessage(batchedMessage);
+          const batchMessages = (message.params as { messages: unknown[] })
+            .messages;
+          for (const batchedMessage of batchMessages) {
+            await this.handleIncomingMessage(batchedMessage as MCPMessage);
           }
         } else {
           await this.handleIncomingMessage(message);

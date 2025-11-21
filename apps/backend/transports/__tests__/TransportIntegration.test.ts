@@ -91,7 +91,7 @@ describe("传输层抽象集成测试", () => {
         return this.serializeMessage(message);
       }
 
-      public testCreateErrorResponse(error: Error, id?: string | number) {
+      public testCreateErrorResponse(error: Error, id: string | number) {
         return this.createErrorResponse(error, id);
       }
     }

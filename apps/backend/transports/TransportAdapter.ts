@@ -7,29 +7,10 @@
 import type { MCPMessageHandler } from "@core/MCPMessageHandler.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
+import type { MCPError, MCPMessage, MCPResponse } from "@root/types/mcp.js";
 
-// MCP 消息接口
-export interface MCPMessage {
-  jsonrpc: "2.0";
-  method: string;
-  params?: any;
-  id?: string | number;
-}
-
-// MCP 响应接口
-export interface MCPResponse {
-  jsonrpc: "2.0";
-  result?: any;
-  error?: MCPError;
-  id: string | number | null;
-}
-
-// MCP 错误接口
-export interface MCPError {
-  code: number;
-  message: string;
-  data?: any;
-}
+// 重新导出接口以保持向后兼容
+export type { MCPMessage, MCPResponse, MCPError };
 
 // 连接状态枚举
 export enum ConnectionState {
@@ -123,7 +104,7 @@ export abstract class TransportAdapter {
    */
   protected createErrorResponse(
     error: Error,
-    id?: string | number
+    id: string | number
   ): MCPResponse {
     // 根据错误类型确定错误代码
     let errorCode = -32603; // Internal error
@@ -149,7 +130,7 @@ export abstract class TransportAdapter {
           stack: error.stack,
         },
       },
-      id: id || null,
+      id,
     };
   }
 
@@ -259,22 +240,24 @@ export abstract class TransportAdapter {
    * 验证消息格式
    * 验证消息是否符合 MCP 协议规范
    */
-  protected validateMessage(message: any): boolean {
+  protected validateMessage(message: unknown): boolean {
     if (!message || typeof message !== "object") {
       return false;
     }
 
-    if (message.jsonrpc !== "2.0") {
+    const messageObj = message as Record<string, unknown>;
+
+    if (messageObj.jsonrpc !== "2.0") {
       return false;
     }
 
     // 请求消息必须有 method 字段
-    if (message.method && typeof message.method !== "string") {
+    if (messageObj.method && typeof messageObj.method !== "string") {
       return false;
     }
 
     // 响应消息必须有 result 或 error 字段
-    if (!message.method && !message.result && !message.error) {
+    if (!messageObj.method && !messageObj.result && !messageObj.error) {
       return false;
     }
 

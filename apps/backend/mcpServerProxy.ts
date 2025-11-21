@@ -2,7 +2,7 @@
 
 /**
  * MCP Server Proxy - 重构版
- * 现在基于 UnifiedMCPServer 和传输层抽象实现
+ * 现在基于 MCPServiceManager 和传输层抽象实现
  * 提供 Stdio 模式的 MCP 服务器，主要用于 Cursor 等客户端
  */
 
@@ -34,8 +34,8 @@ async function main(): Promise<void> {
     // 加载配置
     await loadConfiguration();
 
-    // 创建 Stdio 模式的统一服务器
-    const server = await createServer({
+    // 创建 Stdio 模式的服务管理器
+    const serviceManager = await createServer({
       mode: ServerMode.STDIO,
       stdioConfig: {
         name: "mcp-proxy",
@@ -43,21 +43,20 @@ async function main(): Promise<void> {
       },
     });
 
-    // 启动服务器
-    await server.start();
+    // 服务管理器已经在 createServer 中启动，无需再次启动
 
     logger.info("MCP 服务器代理启动成功");
 
     // 处理进程退出信号
     process.on("SIGINT", async () => {
-      logger.info("收到 SIGINT 信号，正在关闭服务器");
-      await server.stop();
+      logger.info("收到 SIGINT 信号，正在关闭服务管理器");
+      await serviceManager.stop();
       process.exit(0);
     });
 
     process.on("SIGTERM", async () => {
-      logger.info("收到 SIGTERM 信号，正在关闭服务器");
-      await server.stop();
+      logger.info("收到 SIGTERM 信号，正在关闭服务管理器");
+      await serviceManager.stop();
       process.exit(0);
     });
   } catch (error) {

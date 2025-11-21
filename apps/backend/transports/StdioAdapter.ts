@@ -203,6 +203,21 @@ export class StdioAdapter extends TransportAdapter {
     } catch (error) {
       this.logger.error(`处理消息行失败: ${line.substring(0, 100)}...`, error);
 
+      // 尝试从原始消息中提取ID，如果失败则生成默认ID
+      let messageId: string | number = `parse-error-${Date.now()}`;
+      try {
+        const parsedMessage = JSON.parse(line.trim());
+        if (
+          parsedMessage &&
+          (typeof parsedMessage.id === "string" ||
+            typeof parsedMessage.id === "number")
+        ) {
+          messageId = parsedMessage.id;
+        }
+      } catch {
+        // 如果无法解析消息，使用生成的默认ID
+      }
+
       // 发送错误响应
       const errorResponse: MCPResponse = {
         jsonrpc: "2.0",
@@ -211,7 +226,7 @@ export class StdioAdapter extends TransportAdapter {
           message: "解析错误",
           data: { originalLine: line.substring(0, 100) },
         },
-        id: null,
+        id: messageId,
       };
 
       await this.sendMessage(errorResponse);

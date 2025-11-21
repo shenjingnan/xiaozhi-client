@@ -7,6 +7,29 @@ import type { ToolCallResult } from "@services/CustomMCPHandler.js";
 import type { MCPToolsCache } from "@services/MCPCacheManager.js";
 import type { TimeoutResponse } from "./timeout.js";
 
+// MCP 消息接口 - 定义 JSON-RPC 2.0 标准消息格式
+export interface MCPMessage {
+  jsonrpc: "2.0";
+  method: string;
+  params?: unknown;
+  id: string | number;
+}
+
+// MCP 响应接口 - 定义 JSON-RPC 2.0 标准响应格式
+export interface MCPResponse {
+  jsonrpc: "2.0";
+  id: string | number;
+  result?: unknown;
+  error?: MCPError;
+}
+
+// MCP 错误接口 - 定义 JSON-RPC 2.0 标准错误格式
+export interface MCPError {
+  code: number;
+  message: string;
+  data?: unknown;
+}
+
 /**
  * 扩展的 MCP 工具缓存接口
  * 增加对 CustomMCP 执行结果的支持
@@ -85,7 +108,7 @@ export interface TimeoutConfig {
 export interface TaskInfo {
   taskId: string;
   toolName: string;
-  arguments: any;
+  arguments: Record<string, unknown>;
   status: TaskStatus;
   startTime: string;
   endTime?: string;
@@ -116,13 +139,18 @@ export type ToolCallResponse = ToolCallResult | TimeoutResponse;
 /**
  * 验证是否为工具调用结果
  */
-export function isToolCallResult(response: any): response is ToolCallResult {
+export function isToolCallResult(
+  response: unknown
+): response is ToolCallResult {
   return (
-    response &&
-    Array.isArray(response.content) &&
-    response.content.length > 0 &&
-    response.content[0].type === "text" &&
-    typeof response.content[0].text === "string"
+    !!response &&
+    typeof response === "object" &&
+    response !== null &&
+    "content" in response &&
+    Array.isArray((response as ToolCallResult).content) &&
+    (response as ToolCallResult).content.length > 0 &&
+    (response as ToolCallResult).content[0]?.type === "text" &&
+    typeof (response as ToolCallResult).content[0]?.text === "string"
   );
 }
 
@@ -130,15 +158,19 @@ export function isToolCallResult(response: any): response is ToolCallResult {
  * 验证是否为增强的工具结果缓存
  */
 export function isEnhancedToolResultCache(
-  cache: any
+  cache: unknown
 ): cache is EnhancedToolResultCache {
+  const cacheObj = cache as EnhancedToolResultCache;
   return (
-    cache &&
-    typeof cache.timestamp === "string" &&
-    typeof cache.ttl === "number" &&
-    ["completed", "pending", "failed", "consumed"].includes(cache.status) &&
-    typeof cache.consumed === "boolean" &&
-    typeof cache.retryCount === "number"
+    !!cache &&
+    typeof cache === "object" &&
+    cache !== null &&
+    typeof cacheObj.timestamp === "string" &&
+    typeof cacheObj.ttl === "number" &&
+    typeof cacheObj.status === "string" &&
+    ["completed", "pending", "failed", "consumed"].includes(cacheObj.status) &&
+    typeof cacheObj.consumed === "boolean" &&
+    typeof cacheObj.retryCount === "number"
   );
 }
 
@@ -146,20 +178,28 @@ export function isEnhancedToolResultCache(
  * 验证是否为扩展的 MCP 工具缓存
  */
 export function isExtendedMCPToolsCache(
-  cache: any
+  cache: unknown
 ): cache is ExtendedMCPToolsCache {
+  const cacheObj = cache as ExtendedMCPToolsCache;
   return (
-    cache &&
-    typeof cache.version === "string" &&
-    typeof cache.mcpServers === "object" &&
-    typeof cache.metadata === "object"
+    !!cache &&
+    typeof cache === "object" &&
+    cache !== null &&
+    typeof cacheObj.version === "string" &&
+    typeof cacheObj.mcpServers === "object" &&
+    cacheObj.mcpServers !== null &&
+    typeof cacheObj.metadata === "object" &&
+    cacheObj.metadata !== null
   );
 }
 
 /**
  * 生成缓存键的工具函数
  */
-export function generateCacheKey(toolName: string, arguments_: any): string {
+export function generateCacheKey(
+  toolName: string,
+  arguments_: Record<string, unknown>
+): string {
   const argsHash = createHash("md5")
     .update(JSON.stringify(arguments_ || {}))
     .digest("hex");

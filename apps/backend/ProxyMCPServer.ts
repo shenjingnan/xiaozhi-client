@@ -3,14 +3,43 @@ import { sliceEndpoint } from "@utils/mcpServerUtils.js";
 import WebSocket from "ws";
 import type { Logger } from "./Logger.js";
 import { logger } from "./Logger.js";
+import type { MCPMessage } from "./types/index.js";
 
-// MCP 消息接口
-interface MCPMessage {
-  jsonrpc: string;
-  id?: number | string;
-  method?: string;
-  params?: any;
-  result?: any;
+// JSON Schema 类型定义（与 MCPServiceManager 保持一致）
+type JSONSchema = Record<string, unknown> & {
+  type: "object";
+  properties?: Record<string, unknown>;
+  required?: string[];
+  additionalProperties?: boolean;
+};
+
+// 工具调用结果接口（与 MCPServiceManager 保持一致）
+interface ToolCallResult {
+  content: Array<{
+    type: string;
+    text: string;
+  }>;
+  isError?: boolean;
+}
+
+// MCPServiceManager 接口定义
+interface IMCPServiceManager {
+  getAllTools(): Array<{
+    name: string;
+    description?: string;
+    inputSchema: JSONSchema;
+  }>;
+  callTool(
+    toolName: string,
+    arguments_: Record<string, unknown>
+  ): Promise<ToolCallResult>;
+}
+
+// 扩展的 MCP 消息接口，用于响应消息
+interface ExtendedMCPMessage {
+  jsonrpc: "2.0";
+  id: string | number;
+  result?: unknown;
 }
 
 // 连接状态枚举
@@ -36,7 +65,7 @@ export class ToolCallError extends Error {
   constructor(
     public code: ToolCallErrorCode,
     message: string,
-    public data?: any
+    public data?: unknown
   ) {
     super(message);
     this.name = "ToolCallError";
@@ -126,6 +155,7 @@ export class ProxyMCPServer {
   private logger: Logger;
   private connectionStatus = false;
   private serverInitialized = false;
+  private serviceManager: IMCPServiceManager | null = null;
 
   // 工具管理
   private tools: Map<string, Tool> = new Map();
@@ -207,9 +237,8 @@ export class ProxyMCPServer {
    * 设置 MCPServiceManager 实例
    * @param serviceManager MCPServiceManager 实例
    */
-  setServiceManager(serviceManager: any): void {
-    // 临时存储在一个变量中，避免类型检查问题
-    (this as any).serviceManager = serviceManager;
+  setServiceManager(serviceManager: IMCPServiceManager): void {
+    this.serviceManager = serviceManager;
     this.logger.info("已设置 MCPServiceManager");
 
     // 立即同步工具
@@ -221,15 +250,14 @@ export class ProxyMCPServer {
    * 优化版本：支持增量同步和错误恢复
    */
   syncToolsFromServiceManager(): void {
-    const serviceManager = (this as any).serviceManager;
-    if (!serviceManager) {
+    if (!this.serviceManager) {
       this.logger.debug("MCPServiceManager 未设置，跳过工具同步");
       return;
     }
 
     try {
       // 从 MCPServiceManager 获取所有工具
-      const allTools = serviceManager.getAllTools();
+      const allTools = this.serviceManager.getAllTools();
 
       // 原子性更新：先构建新的工具映射，再替换
       const newTools = new Map<string, Tool>();
@@ -673,13 +701,13 @@ export class ProxyMCPServer {
     }
   }
 
-  private sendResponse(id: number | string | undefined, result: any): void {
+  private sendResponse(id: number | string, result: unknown): void {
     this.logger.debug(
       `尝试发送响应: id=${id}, isConnected=${this.connectionStatus}, wsReadyState=${this.ws?.readyState}`
     );
 
     if (this.connectionStatus && this.ws?.readyState === WebSocket.OPEN) {
-      const response: MCPMessage = {
+      const response: ExtendedMCPMessage = {
         jsonrpc: "2.0",
         id,
         result,
@@ -854,8 +882,7 @@ export class ProxyMCPServer {
       });
 
       // 3. 检查服务管理器是否可用
-      const serviceManager = (this as any).serviceManager;
-      if (!serviceManager) {
+      if (!this.serviceManager) {
         throw new ToolCallError(
           ToolCallErrorCode.SERVICE_UNAVAILABLE,
           "MCPServiceManager 未设置"
@@ -864,7 +891,6 @@ export class ProxyMCPServer {
 
       // 4. 执行工具调用（带重试机制）
       const result = await this.executeToolWithRetry(
-        serviceManager,
         params.name,
         params.arguments || {}
       );
@@ -905,9 +931,9 @@ export class ProxyMCPServer {
   /**
    * 验证工具调用参数
    */
-  private validateToolCallParams(params: any): {
+  private validateToolCallParams(params: unknown): {
     name: string;
-    arguments?: any;
+    arguments?: Record<string, unknown>;
   } {
     if (!params || typeof params !== "object") {
       throw new ToolCallError(
@@ -916,7 +942,9 @@ export class ProxyMCPServer {
       );
     }
 
-    if (!params.name || typeof params.name !== "string") {
+    const paramsObj = params as Record<string, unknown>;
+
+    if (!paramsObj.name || typeof paramsObj.name !== "string") {
       throw new ToolCallError(
         ToolCallErrorCode.INVALID_PARAMS,
         "工具名称必须是非空字符串"
@@ -924,8 +952,9 @@ export class ProxyMCPServer {
     }
 
     if (
-      params.arguments !== undefined &&
-      (typeof params.arguments !== "object" || Array.isArray(params.arguments))
+      paramsObj.arguments !== undefined &&
+      (typeof paramsObj.arguments !== "object" ||
+        Array.isArray(paramsObj.arguments))
     ) {
       throw new ToolCallError(
         ToolCallErrorCode.INVALID_PARAMS,
@@ -934,8 +963,8 @@ export class ProxyMCPServer {
     }
 
     return {
-      name: params.name,
-      arguments: params.arguments,
+      name: paramsObj.name,
+      arguments: paramsObj.arguments as Record<string, unknown>,
     };
   }
 
@@ -943,16 +972,14 @@ export class ProxyMCPServer {
    * 带重试机制的工具执行
    */
   private async executeToolWithRetry(
-    serviceManager: any,
     toolName: string,
-    arguments_: any
-  ): Promise<any> {
+    arguments_: Record<string, unknown>
+  ): Promise<ToolCallResult> {
     let lastError: ToolCallError | null = null;
 
     for (let attempt = 1; attempt <= this.retryConfig.maxAttempts; attempt++) {
       try {
         return await this.executeToolWithTimeout(
-          serviceManager,
           toolName,
           arguments_,
           this.toolCallConfig.timeout
@@ -1009,11 +1036,10 @@ export class ProxyMCPServer {
    * 带超时控制的工具执行
    */
   private async executeToolWithTimeout(
-    serviceManager: any,
     toolName: string,
-    arguments_: any,
+    arguments_: Record<string, unknown>,
     timeoutMs = 30000
-  ): Promise<any> {
+  ): Promise<ToolCallResult> {
     return new Promise((resolve, reject) => {
       // 设置超时定时器
       const timeoutId = setTimeout(() => {
@@ -1025,18 +1051,33 @@ export class ProxyMCPServer {
         );
       }, timeoutMs);
 
+      // 检查 serviceManager 是否可用
+      if (!this.serviceManager) {
+        clearTimeout(timeoutId);
+        reject(
+          new ToolCallError(
+            ToolCallErrorCode.SERVICE_UNAVAILABLE,
+            "MCPServiceManager 未设置"
+          )
+        );
+        return;
+      }
+
       // 执行工具调用
-      serviceManager
+      this.serviceManager
         .callTool(toolName, arguments_)
-        .then((result: any) => {
+        .then((result: ToolCallResult) => {
           clearTimeout(timeoutId);
           resolve(result);
         })
-        .catch((error: any) => {
+        .catch((error: unknown) => {
           clearTimeout(timeoutId);
 
           // 将内部错误转换为工具调用错误
-          if (error.message?.includes("未找到工具")) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+
+          if (errorMessage.includes("未找到工具")) {
             reject(
               new ToolCallError(
                 ToolCallErrorCode.TOOL_NOT_FOUND,
@@ -1044,36 +1085,36 @@ export class ProxyMCPServer {
               )
             );
           } else if (
-            error.message?.includes("服务") &&
-            error.message?.includes("不可用")
+            errorMessage.includes("服务") &&
+            errorMessage.includes("不可用")
           ) {
             reject(
               new ToolCallError(
                 ToolCallErrorCode.SERVICE_UNAVAILABLE,
-                error.message
+                errorMessage
               )
             );
-          } else if (error.message?.includes("暂时不可用")) {
+          } else if (errorMessage.includes("暂时不可用")) {
             // 处理临时性错误，标记为服务不可用（可重试）
             reject(
               new ToolCallError(
                 ToolCallErrorCode.SERVICE_UNAVAILABLE,
-                error.message
+                errorMessage
               )
             );
-          } else if (error.message?.includes("持续不可用")) {
+          } else if (errorMessage.includes("持续不可用")) {
             // 处理持续性错误，也标记为服务不可用（可重试）
             reject(
               new ToolCallError(
                 ToolCallErrorCode.SERVICE_UNAVAILABLE,
-                error.message
+                errorMessage
               )
             );
           } else {
             reject(
               new ToolCallError(
                 ToolCallErrorCode.TOOL_EXECUTION_ERROR,
-                `工具执行失败: ${error.message}`
+                `工具执行失败: ${errorMessage}`
               )
             );
           }
@@ -1085,11 +1126,15 @@ export class ProxyMCPServer {
    * 处理工具调用错误
    */
   private handleToolCallError(
-    error: any,
+    error: unknown,
     requestId: string | number | undefined,
     duration: number
   ): void {
-    let errorResponse: any;
+    let errorResponse: {
+      code: number;
+      message: string;
+      data?: unknown;
+    };
 
     if (error instanceof ToolCallError) {
       // 标准工具调用错误
@@ -1100,10 +1145,11 @@ export class ProxyMCPServer {
       };
     } else {
       // 未知错误
+      const errorMessage = error instanceof Error ? error.message : "未知错误";
       errorResponse = {
         code: ToolCallErrorCode.TOOL_EXECUTION_ERROR,
-        message: error?.message || "未知错误",
-        data: { originalError: error?.toString() || "null" },
+        message: errorMessage,
+        data: { originalError: String(error) || "null" },
       };
     }
 
@@ -1123,7 +1169,7 @@ export class ProxyMCPServer {
    */
   private sendErrorResponse(
     id: string | number | undefined,
-    error: { code: number; message: string; data?: any }
+    error: { code: number; message: string; data?: unknown }
   ): void {
     if (this.connectionStatus && this.ws?.readyState === WebSocket.OPEN) {
       const response = {

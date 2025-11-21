@@ -6,17 +6,41 @@
  * 专注于实例管理、工具聚合和路由调用
  */
 
+import { EventEmitter } from "node:events";
+import { MCPMessageHandler } from "@core/MCPMessageHandler.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+
+// JSON Schema 类型定义（兼容 MCP SDK）
+type JSONSchema = Record<string, unknown> & {
+  type: "object";
+  properties?: Record<string, unknown>;
+  required?: string[];
+  additionalProperties?: boolean;
+};
+
+// CustomMCP 工具类型定义
+interface CustomMCPTool {
+  name: string;
+  description?: string;
+  inputSchema: JSONSchema;
+  handler?: {
+    type: string;
+    config?: Record<string, unknown>;
+  };
+}
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type { MCPToolConfig } from "@root/configManager.js";
 import { configManager } from "@root/configManager.js";
+import type { MCPMessage } from "@root/types/mcp.js";
 import { CustomMCPHandler } from "@services/CustomMCPHandler.js";
 import { getEventBus } from "@services/EventBus.js";
 import { MCPCacheManager } from "@services/MCPCacheManager.js";
 import type { MCPServiceConfig } from "@services/MCPService.js";
 import { MCPService, MCPTransportType } from "@services/MCPService.js";
 import { ToolSyncManager } from "@services/ToolSyncManager.js";
+import type { TransportAdapter } from "@transports/TransportAdapter.js";
+import { ConnectionState } from "@transports/TransportAdapter.js";
 import { ToolCallLogger } from "@utils/ToolCallLogger.js";
 
 // 工具信息接口（保持向后兼容）
@@ -27,13 +51,13 @@ interface ToolInfo {
 }
 
 // 服务状态接口（保持向后兼容）
-interface ServiceStatus {
+export interface ServiceStatus {
   connected: boolean;
   clientName: string;
 }
 
 // 管理器状态接口（保持向后兼容）
-interface ManagerStatus {
+export interface ManagerStatus {
   services: Record<string, ServiceStatus>;
   totalTools: number;
   availableTools: string[];
@@ -48,7 +72,32 @@ interface ToolCallResult {
   isError?: boolean;
 }
 
-export class MCPServiceManager {
+/**
+ * 服务器配置接口（从 UnifiedMCPServer 移入）
+ */
+export interface UnifiedServerConfig {
+  name?: string;
+  enableLogging?: boolean;
+  logLevel?: string;
+  configs?: Record<string, MCPServiceConfig>; // MCPService 配置
+}
+
+/**
+ * 服务器状态接口（从 UnifiedMCPServer 移入）
+ */
+export interface UnifiedServerStatus {
+  isRunning: boolean;
+  serviceStatus: ManagerStatus;
+  transportCount: number;
+  activeConnections: number;
+  config: UnifiedServerConfig;
+  // 添加对 serviceStatus 的便捷访问属性
+  services?: Record<string, ServiceStatus>;
+  totalTools?: number;
+  availableTools?: string[];
+}
+
+export class MCPServiceManager extends EventEmitter {
   private services: Map<string, MCPService> = new Map();
   private configs: Record<string, MCPServiceConfig> = {};
   private logger: Logger;
@@ -61,13 +110,43 @@ export class MCPServiceManager {
   private retryTimers: Map<string, NodeJS.Timeout> = new Map(); // 重试定时器
   private failedServices: Set<string> = new Set(); // 失败的服务集合
 
+  // 新增：传输适配器管理
+  private transportAdapters: Map<string, TransportAdapter> = new Map();
+  private messageHandler: MCPMessageHandler;
+
+  // 新增：服务器状态管理（从 UnifiedMCPServer 移入）
+  private isRunning = false;
+  private config: UnifiedServerConfig;
+
   /**
    * 创建 MCPServiceManager 实例
-   * @param configs 可选的初始服务配置
+   * @param configs 可选的初始服务配置或服务器配置
    */
-  constructor(configs?: Record<string, MCPServiceConfig>) {
+  constructor(
+    configs?: Record<string, MCPServiceConfig> | UnifiedServerConfig
+  ) {
+    super();
     this.logger = logger;
-    this.configs = configs || {};
+
+    // 处理参数，支持 UnifiedServerConfig 格式
+    if (configs && this.isUnifiedServerConfig(configs)) {
+      // UnifiedServerConfig 格式
+      this.config = {
+        name: "MCPServiceManager",
+        enableLogging: true,
+        logLevel: "info",
+        ...configs,
+      };
+      this.configs = configs.configs || {};
+    } else {
+      // 原有的 configs 格式
+      this.config = {
+        name: "MCPServiceManager",
+        enableLogging: true,
+        logLevel: "info",
+      };
+      this.configs = configs || {};
+    }
 
     // 在测试环境中使用临时目录，避免在项目根目录创建缓存文件
     const isTestEnv =
@@ -87,6 +166,9 @@ export class MCPServiceManager {
 
     // 设置事件监听器
     this.setupEventListeners();
+
+    // 初始化消息处理器（确保在其他组件初始化完成后）
+    this.messageHandler = new MCPMessageHandler(this);
   }
 
   /**
@@ -473,14 +555,14 @@ export class MCPServiceManager {
   getAllTools(): Array<{
     name: string;
     description: string;
-    inputSchema: any;
+    inputSchema: JSONSchema;
     serviceName: string;
     originalName: string;
   }> {
     const allTools: Array<{
       name: string;
       description: string;
-      inputSchema: any;
+      inputSchema: JSONSchema;
       serviceName: string;
       originalName: string;
     }> = [];
@@ -526,7 +608,7 @@ export class MCPServiceManager {
     }
 
     // 2. 添加CustomMCP工具（添加异常处理确保优雅降级）
-    let customTools: any[] = [];
+    let customTools: Tool[] = [];
     try {
       customTools = this.customMCPHandler.getTools();
       this.logger.debug(
@@ -567,10 +649,13 @@ export class MCPServiceManager {
    * @param tool 工具对象
    * @returns 服务名称
    */
-  private getServiceNameForTool(tool: any): string {
+  private getServiceNameForTool(tool: CustomMCPTool): string {
     if (tool.handler?.type === "mcp") {
       // 如果是从 MCP 同步的工具，返回原始服务名称
-      return tool.handler.config.serviceName;
+      const config = tool.handler.config as
+        | { serviceName?: string; toolName?: string }
+        | undefined;
+      return config?.serviceName || "customMCP";
     }
     return "customMCP";
   }
@@ -580,14 +665,18 @@ export class MCPServiceManager {
    * @param customTool CustomMCP 工具信息
    * @returns 用于日志记录的服务名称
    */
-  private getLogServerName(customTool: any): string {
+  private getLogServerName(customTool: CustomMCPTool): string {
     if (!customTool?.handler) {
       return "custom";
     }
 
     switch (customTool.handler.type) {
-      case "mcp":
-        return customTool.handler.config.serviceName;
+      case "mcp": {
+        const config = customTool.handler.config as
+          | { serviceName?: string; toolName?: string }
+          | undefined;
+        return config?.serviceName || "customMCP";
+      }
       case "coze":
         return "coze";
       case "dify":
@@ -608,13 +697,16 @@ export class MCPServiceManager {
    */
   private getOriginalToolName(
     toolName: string,
-    customTool: any,
+    customTool: CustomMCPTool | undefined,
     toolInfo?: ToolInfo
   ): string {
     if (customTool) {
       // CustomMCP 工具
       if (customTool.handler?.type === "mcp") {
-        return customTool.handler.config.toolName;
+        const config = customTool.handler.config as
+          | { serviceName?: string; toolName?: string }
+          | undefined;
+        return config?.toolName || toolName;
       }
       return toolName;
     }
@@ -626,7 +718,10 @@ export class MCPServiceManager {
   /**
    * 调用 MCP 工具（支持标准 MCP 工具和 customMCP 工具）
    */
-  async callTool(toolName: string, arguments_: any): Promise<ToolCallResult> {
+  async callTool(
+    toolName: string,
+    arguments_: Record<string, unknown>
+  ): Promise<ToolCallResult> {
     const startTime = Date.now();
 
     // 初始化日志信息
@@ -640,9 +735,11 @@ export class MCPServiceManager {
       if (this.customMCPHandler.hasTool(toolName)) {
         const customTool = this.customMCPHandler.getToolInfo(toolName);
 
-        // 设置日志信息
-        logServerName = this.getLogServerName(customTool);
-        originalToolName = this.getOriginalToolName(toolName, customTool);
+        // 设置日志信息（添加空值检查）
+        if (customTool) {
+          logServerName = this.getLogServerName(customTool);
+          originalToolName = this.getOriginalToolName(toolName, customTool);
+        }
 
         if (customTool?.handler?.type === "mcp") {
           // 对于 mcp 类型的工具，直接路由到对应的 MCP 服务
@@ -972,7 +1069,7 @@ export class MCPServiceManager {
   private async callMCPTool(
     toolName: string,
     config: { serviceName: string; toolName: string },
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<ToolCallResult> {
     const { serviceName, toolName: originalToolName } = config;
 
@@ -1060,59 +1157,10 @@ export class MCPServiceManager {
   }
 
   /**
-   * 获取服务状态
+   * 获取服务器状态（兼容 UnifiedServerStatus 格式）
    */
-  getStatus(): ManagerStatus {
-    // 计算总工具数量（包括 customMCP 工具，添加异常处理）
-    let customMCPToolCount = 0;
-    let customToolNames: string[] = [];
-
-    try {
-      customMCPToolCount = this.customMCPHandler.getToolCount();
-      customToolNames = this.customMCPHandler.getToolNames();
-      this.logger.debug(
-        `[MCPManager] 成功获取 customMCP 状态: ${customMCPToolCount} 个工具`
-      );
-    } catch (error) {
-      this.logger.warn(
-        "[MCPManager] 获取 CustomMCP 状态失败，将只包含标准 MCP 工具:",
-        error
-      );
-      // 异常情况下，customMCP 工具数量为0，不影响标准 MCP 工具
-      customMCPToolCount = 0;
-      customToolNames = [];
-    }
-
-    const totalTools = this.tools.size + customMCPToolCount;
-
-    // 获取所有可用工具名称
-    const standardToolNames = Array.from(this.tools.keys());
-    const availableTools = [...standardToolNames, ...customToolNames];
-
-    const status: ManagerStatus = {
-      services: {},
-      totalTools,
-      availableTools,
-    };
-
-    // 添加标准 MCP 服务状态
-    for (const [serviceName, service] of this.services) {
-      const serviceStatus = service.getStatus();
-      status.services[serviceName] = {
-        connected: serviceStatus.connected,
-        clientName: `xiaozhi-${serviceName}-client`,
-      };
-    }
-
-    // 添加 CustomMCP 服务状态
-    if (customMCPToolCount > 0) {
-      status.services.customMCP = {
-        connected: true, // CustomMCP 工具总是可用的
-        clientName: "xiaozhi-customMCP-handler",
-      };
-    }
-
-    return status;
+  getStatus(): UnifiedServerStatus {
+    return this.getUnifiedStatus();
   }
 
   /**
@@ -1616,6 +1664,355 @@ export class MCPServiceManager {
       totalFailed: this.failedServices.size,
       totalActiveRetries: this.retryTimers.size,
     };
+  }
+
+  // ===== 传输适配器管理方法（从 UnifiedMCPServer 移入） =====
+
+  /**
+   * 注册传输适配器
+   * @param name 传输适配器名称
+   * @param adapter 传输适配器实例
+   */
+  public async registerTransport(
+    name: string,
+    adapter: TransportAdapter
+  ): Promise<void> {
+    if (this.transportAdapters.has(name)) {
+      throw new Error(`传输适配器 ${name} 已存在`);
+    }
+
+    this.logger.info(`注册传输适配器: ${name}`);
+
+    try {
+      await adapter.initialize();
+      this.transportAdapters.set(name, adapter);
+
+      this.logger.info(`传输适配器 ${name} 注册成功`);
+      this.emit("transportRegistered", { name, adapter });
+    } catch (error) {
+      this.logger.error(`注册传输适配器 ${name} 失败`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 启动所有传输适配器
+   *
+   * 改进的错误处理策略：
+   * - 单个适配器启动失败不会中断其他适配器的启动
+   * - 记录失败的适配器，但继续启动其他适配器
+   * - 如果所有适配器都失败，则抛出错误
+   * - 如果部分适配器成功，则记录警告但继续运行
+   */
+  public async startTransports(): Promise<void> {
+    this.logger.info("启动所有传输适配器");
+
+    const successfulAdapters: string[] = [];
+    const failedAdapters: string[] = [];
+
+    for (const [name, adapter] of this.transportAdapters) {
+      try {
+        await adapter.start();
+        successfulAdapters.push(name);
+        this.logger.info(`传输适配器 ${name} 启动成功`);
+      } catch (error) {
+        failedAdapters.push(name);
+        this.logger.error(`传输适配器 ${name} 启动失败`, error);
+        // 不立即抛出错误，继续尝试启动其他适配器
+      }
+    }
+
+    // 评估启动结果
+    if (successfulAdapters.length === 0 && failedAdapters.length > 0) {
+      // 所有适配器都失败了
+      const errorMessage = `所有传输适配器启动失败，失败的适配器: ${failedAdapters.join(", ")}`;
+      this.logger.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+
+    if (failedAdapters.length > 0) {
+      // 部分适配器失败
+      this.logger.warn(
+        `部分传输适配器启动失败，成功: ${successfulAdapters.join(", ")}, 失败: ${failedAdapters.join(", ")}`
+      );
+      // 继续运行，因为至少有一个适配器成功
+    }
+
+    this.logger.info(
+      `传输适配器启动完成，成功: ${successfulAdapters.length}, 失败: ${failedAdapters.length}`
+    );
+  }
+
+  /**
+   * 停止所有传输适配器
+   */
+  public async stopTransports(): Promise<void> {
+    this.logger.info("停止所有传输适配器");
+
+    try {
+      for (const [name, adapter] of this.transportAdapters) {
+        try {
+          await adapter.stop();
+          this.logger.info(`传输适配器 ${name} 停止成功`);
+        } catch (error) {
+          this.logger.error(`传输适配器 ${name} 停止失败`, error);
+        }
+      }
+    } catch (error) {
+      this.logger.error("传输适配器停止失败", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取所有传输适配器
+   * @returns 传输适配器映射表
+   */
+  public getTransportAdapters(): Map<string, TransportAdapter> {
+    return new Map(this.transportAdapters);
+  }
+
+  /**
+   * 获取消息处理器（供外部使用）
+   * @returns 消息处理器实例
+   */
+  public getMessageHandler(): MCPMessageHandler {
+    return this.messageHandler;
+  }
+
+  /**
+   * 启动管理器（包含服务和传输）
+   */
+  public async start(): Promise<void> {
+    if (this.isRunning) {
+      throw new Error("服务器已在运行");
+    }
+
+    this.logger.info("启动 MCP 服务管理器");
+
+    try {
+      await this.startAllServices();
+      await this.startTransports();
+      this.isRunning = true;
+
+      this.logger.info("MCP 服务管理器启动成功");
+      this.emit("started");
+    } catch (error) {
+      this.logger.error("MCP 服务管理器启动失败", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 停止管理器（包含传输和服务）
+   */
+  public async stop(): Promise<void> {
+    if (!this.isRunning) {
+      return;
+    }
+
+    this.logger.info("停止 MCP 服务管理器");
+
+    try {
+      await this.stopTransports();
+      await this.stopAllServices();
+      this.isRunning = false;
+
+      this.logger.info("MCP 服务管理器停止成功");
+      this.emit("stopped");
+    } catch (error) {
+      this.logger.error("MCP 服务管理器停止失败", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取所有连接信息
+   * @returns 连接信息列表
+   */
+  public getAllConnections(): Array<{
+    id: string;
+    name: string;
+    state: ConnectionState;
+  }> {
+    const connections: Array<{
+      id: string;
+      name: string;
+      state: ConnectionState;
+    }> = [];
+
+    // 收集服务连接
+    for (const [serviceName, service] of this.services) {
+      if (service.isConnected()) {
+        connections.push({
+          id: `service-${serviceName}`,
+          name: serviceName,
+          state: ConnectionState.CONNECTED,
+        });
+      }
+    }
+
+    // 收集传输适配器连接
+    for (const [adapterName, adapter] of this.transportAdapters) {
+      connections.push({
+        id: adapter.getConnectionId(),
+        name: adapterName,
+        state: adapter.getState(),
+      });
+    }
+
+    return connections;
+  }
+
+  /**
+   * 获取活跃连接数
+   * @returns 活跃连接数量
+   */
+  public getActiveConnectionCount(): number {
+    return this.getAllConnections().filter(
+      (conn) => conn.state === ConnectionState.CONNECTED
+    ).length;
+  }
+
+  // ===== 从 UnifiedMCPServer 移入的方法 =====
+
+  /**
+   * 获取服务器状态（从 UnifiedMCPServer 移入）
+   */
+  getUnifiedStatus(): UnifiedServerStatus {
+    const serviceStatus = this.getServiceManagerStatus();
+    return {
+      isRunning: this.isRunning,
+      serviceStatus,
+      transportCount: this.getTransportAdapters().size,
+      activeConnections: this.getActiveConnectionCount(),
+      config: this.config,
+      // 便捷访问属性
+      services: serviceStatus.services,
+      totalTools: serviceStatus.totalTools,
+      availableTools: serviceStatus.availableTools,
+    };
+  }
+
+  /**
+   * 获取管理器状态（原有的 getStatus 方法重命名）
+   */
+  getServiceManagerStatus(): ManagerStatus {
+    // 计算总工具数量（包括 customMCP 工具，添加异常处理）
+    let customMCPToolCount = 0;
+    let customToolNames: string[] = [];
+
+    try {
+      customMCPToolCount = this.customMCPHandler.getToolCount();
+      customToolNames = this.customMCPHandler.getToolNames();
+      this.logger.debug(
+        `[MCPManager] 成功获取 customMCP 状态: ${customMCPToolCount} 个工具`
+      );
+    } catch (error) {
+      this.logger.warn(
+        "[MCPManager] 获取 CustomMCP 状态失败，将只包含标准 MCP 工具:",
+        error
+      );
+      // 异常情况下，customMCP 工具数量为0，不影响标准 MCP 工具
+      customMCPToolCount = 0;
+      customToolNames = [];
+    }
+
+    const totalTools = this.tools.size + customMCPToolCount;
+
+    // 获取所有可用工具名称
+    const standardToolNames = Array.from(this.tools.keys());
+    const availableTools = [...standardToolNames, ...customToolNames];
+
+    const status: ManagerStatus = {
+      services: {},
+      totalTools,
+      availableTools,
+    };
+
+    // 添加标准 MCP 服务状态
+    for (const [serviceName, service] of this.services) {
+      const serviceStatus = service.getStatus();
+      status.services[serviceName] = {
+        connected: serviceStatus.connected,
+        clientName: `xiaozhi-${serviceName}-client`,
+      };
+    }
+
+    // 添加 CustomMCP 服务状态
+    if (customMCPToolCount > 0) {
+      status.services.customMCP = {
+        connected: true, // CustomMCP 工具总是可用的
+        clientName: "xiaozhi-customMCP-handler",
+      };
+    }
+
+    return status;
+  }
+
+  /**
+   * 检查服务器是否正在运行（从 UnifiedMCPServer 移入）
+   */
+  isServerRunning(): boolean {
+    return this.isRunning;
+  }
+
+  /**
+   * 类型守卫：检查是否为 UnifiedServerConfig
+   */
+  private isUnifiedServerConfig(
+    configs: unknown
+  ): configs is UnifiedServerConfig {
+    return (
+      configs !== null && typeof configs === "object" && "configs" in configs
+    );
+  }
+
+  /**
+   * 消息路由核心功能（从 UnifiedMCPServer 移入）
+   */
+  async routeMessage(message: MCPMessage): Promise<MCPMessage | null> {
+    const response = await this.messageHandler.handleMessage(message);
+    // 如果响应是 null，直接返回
+    if (response === null) {
+      return null;
+    }
+    // 将 MCPResponse 转换为 MCPMessage 格式
+    return {
+      jsonrpc: "2.0",
+      method: "response", // 标识这是一个响应消息
+      params: response,
+      id: response.id, // 使用响应中的ID
+    };
+  }
+
+  // ===== 向后兼容方法 =====
+
+  /**
+   * 初始化方法（向后兼容，实际调用 start）
+   *
+   * 注意：此方法仅为向后兼容而保留
+   * 实际功能：调用 start() 方法并设置 isRunning 状态
+   * 建议新代码直接使用 start() 方法
+   */
+  async initialize(): Promise<void> {
+    // 为了向后兼容，初始化时调用 start
+    // 会设置 isRunning 状态为 true
+    await this.start();
+  }
+
+  /**
+   * 获取工具注册表（向后兼容，返回自身）
+   */
+  getToolRegistry(): MCPServiceManager {
+    return this;
+  }
+
+  /**
+   * 获取连接管理器（向后兼容，返回自身）
+   */
+  getConnectionManager(): MCPServiceManager {
+    return this;
   }
 }
 

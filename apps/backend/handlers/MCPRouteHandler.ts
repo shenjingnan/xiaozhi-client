@@ -8,6 +8,7 @@ import { randomUUID } from "node:crypto";
 import { MCPMessageHandler } from "@core/MCPMessageHandler.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
+import type { MCPMessage, MCPResponse } from "@root/types/mcp.js";
 import { MCPServiceManagerSingleton } from "@services/MCPServiceManagerSingleton.js";
 import type { Context } from "hono";
 
@@ -27,35 +28,6 @@ interface SSEClient {
   messageCount: number;
   userAgent?: string;
   remoteAddress?: string;
-}
-
-/**
- * MCP 消息接口
- */
-interface MCPMessage {
-  jsonrpc: "2.0";
-  method: string;
-  params?: any;
-  id?: string | number;
-}
-
-/**
- * MCP 响应接口
- */
-interface MCPResponse {
-  jsonrpc: "2.0";
-  result?: any;
-  error?: MCPError;
-  id: string | number | null;
-}
-
-/**
- * MCP 错误接口
- */
-interface MCPError {
-  code: number;
-  message: string;
-  data?: any;
 }
 
 /**
@@ -238,8 +210,7 @@ export class MCPRouteHandler {
         this.metrics.errorCount++;
         return this.createErrorResponse(
           -32600,
-          `Request too large: Maximum size is ${this.config.maxMessageSize} bytes`,
-          null
+          `Request too large: Maximum size is ${this.config.maxMessageSize} bytes`
         );
       }
 
@@ -249,8 +220,7 @@ export class MCPRouteHandler {
         this.metrics.errorCount++;
         return this.createErrorResponse(
           -32600,
-          "Invalid Request: Content-Type must be application/json",
-          null
+          "Invalid Request: Content-Type must be application/json"
         );
       }
 
@@ -283,11 +253,7 @@ export class MCPRouteHandler {
         messageId = message.id || null;
       } catch (error) {
         this.metrics.errorCount++;
-        return this.createErrorResponse(
-          -32700,
-          "Parse error: Invalid JSON",
-          null
-        );
+        return this.createErrorResponse(-32700, "Parse error: Invalid JSON");
       }
 
       // 验证 JSON-RPC 格式
@@ -304,7 +270,10 @@ export class MCPRouteHandler {
       await this.initializeMessageHandler();
 
       // 处理消息
-      const response = await this.mcpMessageHandler!.handleMessage(message);
+      if (!this.mcpMessageHandler) {
+        throw new Error("消息处理器初始化失败");
+      }
+      const response = await this.mcpMessageHandler.handleMessage(message);
 
       // 更新统计信息
       this.metrics.totalMessages++;
@@ -396,8 +365,7 @@ export class MCPRouteHandler {
         this.metrics.errorCount++;
         return this.createErrorResponse(
           -32600,
-          `Message too large: Maximum size is ${this.config.maxMessageSize} bytes`,
-          null
+          `Message too large: Maximum size is ${this.config.maxMessageSize} bytes`
         );
       }
 
@@ -417,11 +385,7 @@ export class MCPRouteHandler {
         messageId = message.id || null;
       } catch (error) {
         this.metrics.errorCount++;
-        return this.createErrorResponse(
-          -32700,
-          "Parse error: Invalid JSON",
-          null
-        );
+        return this.createErrorResponse(-32700, "Parse error: Invalid JSON");
       }
 
       // 验证消息格式
@@ -438,7 +402,10 @@ export class MCPRouteHandler {
       await this.initializeMessageHandler();
 
       // 处理消息
-      const response = await this.mcpMessageHandler!.handleMessage(message);
+      if (!this.mcpMessageHandler) {
+        throw new Error("消息处理器初始化失败");
+      }
+      const response = await this.mcpMessageHandler.handleMessage(message);
 
       // 更新客户端统计
       client.messageCount++;
@@ -738,41 +705,44 @@ export class MCPRouteHandler {
   /**
    * 验证 JSON-RPC 消息格式
    */
-  private validateMessage(message: any): message is MCPMessage {
+  private validateMessage(message: unknown): message is MCPMessage {
     if (!message || typeof message !== "object") {
       this.logger.debug("消息验证失败: 不是对象");
       return false;
     }
 
-    if (message.jsonrpc !== "2.0") {
+    // 类型守卫：确保 message 是对象类型
+    const msg = message as Record<string, unknown>;
+
+    if (msg.jsonrpc !== "2.0") {
       this.logger.debug("消息验证失败: jsonrpc 版本不正确", {
-        jsonrpc: message.jsonrpc,
+        jsonrpc: msg.jsonrpc,
       });
       return false;
     }
 
-    if (!message.method || typeof message.method !== "string") {
+    if (!msg.method || typeof msg.method !== "string") {
       this.logger.debug("消息验证失败: method 字段无效", {
-        method: message.method,
+        method: msg.method,
       });
       return false;
     }
 
     // 验证 id 字段（如果存在）
     if (
-      message.id !== undefined &&
-      typeof message.id !== "string" &&
-      typeof message.id !== "number" &&
-      message.id !== null
+      msg.id !== undefined &&
+      typeof msg.id !== "string" &&
+      typeof msg.id !== "number" &&
+      msg.id !== null
     ) {
-      this.logger.debug("消息验证失败: id 字段类型无效", { id: message.id });
+      this.logger.debug("消息验证失败: id 字段类型无效", { id: msg.id });
       return false;
     }
 
     // 验证 params 字段（如果存在）
-    if (message.params !== undefined && typeof message.params !== "object") {
+    if (msg.params !== undefined && typeof msg.params !== "object") {
       this.logger.debug("消息验证失败: params 字段类型无效", {
-        params: message.params,
+        params: msg.params,
       });
       return false;
     }
@@ -786,15 +756,18 @@ export class MCPRouteHandler {
   private createErrorResponse(
     code: number,
     message: string,
-    id: string | number | null
+    id?: string | number | null
   ): Response {
+    // 确保ID不为空，如果为空或未提供则生成默认ID
+    const responseId = id ?? `error-${Date.now()}`;
+
     const errorResponse: MCPResponse = {
       jsonrpc: "2.0",
       error: {
         code,
         message,
       },
-      id,
+      id: responseId,
     };
 
     return new Response(JSON.stringify(errorResponse), {
@@ -849,8 +822,21 @@ export class MCPRouteHandler {
   /**
    * 广播消息到所有活跃客户端
    */
-  async broadcastMessage(event: string, data: any): Promise<void> {
-    const message = JSON.stringify(data);
+  async broadcastMessage(event: string, data: unknown): Promise<void> {
+    let message: string;
+    try {
+      // 验证数据是否可以序列化
+      message = JSON.stringify(data);
+    } catch (error) {
+      this.logger.error("广播消息序列化失败:", {
+        error: error instanceof Error ? error.message : String(error),
+        data,
+      });
+      throw new Error(
+        `广播消息无法序列化: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+
     const deadClients: string[] = [];
 
     for (const [sessionId, client] of this.clients.entries()) {

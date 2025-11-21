@@ -63,6 +63,7 @@ describe("MCPMessageHandler - prompts/list", () => {
       jsonrpc: "2.0" as const,
       method: "prompts/list",
       params: {},
+      id: "test-prompts-list" as const,
     };
 
     const response = await handler.handleMessage(message);
@@ -72,7 +73,7 @@ describe("MCPMessageHandler - prompts/list", () => {
       result: {
         prompts: [],
       },
-      id: 1, // 默认 id
+      id: "test-prompts-list", // 与请求中的ID匹配
     });
   });
 
@@ -88,9 +89,12 @@ describe("MCPMessageHandler - prompts/list", () => {
 
     expect(response).not.toBeNull();
     expect(response?.result).toBeDefined();
-    expect(response?.result.prompts).toBeDefined();
-    expect(Array.isArray(response?.result.prompts)).toBe(true);
-    expect(response?.result.prompts).toHaveLength(0);
+
+    // 类型断言：prompts/list响应
+    const promptsResult = response?.result as { prompts: unknown[] };
+    expect(promptsResult.prompts).toBeDefined();
+    expect(Array.isArray(promptsResult.prompts)).toBe(true);
+    expect(promptsResult.prompts).toHaveLength(0);
   });
 
   it("should not interfere with other methods", async () => {
@@ -123,7 +127,8 @@ describe("MCPMessageHandler - prompts/list", () => {
     };
 
     const promptsResponse = await handler.handleMessage(promptsMessage);
-    expect(promptsResponse?.result.prompts).toEqual([]);
+    const promptsResult = promptsResponse?.result as { prompts: unknown[] };
+    expect(promptsResult.prompts).toEqual([]);
 
     // 再调用 resources/list
     const resourcesMessage = {
@@ -134,7 +139,10 @@ describe("MCPMessageHandler - prompts/list", () => {
     };
 
     const resourcesResponse = await handler.handleMessage(resourcesMessage);
-    expect(resourcesResponse?.result.resources).toEqual([]);
+    const resourcesResult = resourcesResponse?.result as {
+      resources: unknown[];
+    };
+    expect(resourcesResult.resources).toEqual([]);
   });
 
   it("should handle prompts/list with resources/list", async () => {
@@ -156,7 +164,12 @@ describe("MCPMessageHandler - prompts/list", () => {
     const promptsResponse = await handler.handleMessage(promptsMessage);
     const resourcesResponse = await handler.handleMessage(resourcesMessage);
 
-    expect(promptsResponse?.result.prompts).toEqual([]);
-    expect(resourcesResponse?.result.resources).toEqual([]);
+    const promptsResult = promptsResponse?.result as { prompts: unknown[] };
+    const resourcesResult = resourcesResponse?.result as {
+      resources: unknown[];
+    };
+
+    expect(promptsResult.prompts).toEqual([]);
+    expect(resourcesResult.resources).toEqual([]);
   });
 });

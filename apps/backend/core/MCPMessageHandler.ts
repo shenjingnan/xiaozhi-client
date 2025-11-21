@@ -4,37 +4,19 @@
  * 这是阶段一重构的核心组件，用于消除双层代理架构
  */
 
+import type {
+  ClientCapabilities,
+  InitializedNotification,
+} from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
+import type { MCPMessage, MCPResponse } from "@root/types/mcp.js";
 import type { MCPServiceManager } from "@services/MCPServiceManager.js";
-
-// MCP 消息接口
-interface MCPMessage {
-  jsonrpc: "2.0";
-  method: string;
-  params?: any;
-  id?: string | number;
-}
-
-// MCP 响应接口
-interface MCPResponse {
-  jsonrpc: "2.0";
-  result?: any;
-  error?: MCPError;
-  id: string | number;
-}
-
-// MCP 错误接口
-interface MCPError {
-  code: number;
-  message: string;
-  data?: any;
-}
 
 // 初始化参数接口
 interface InitializeParams {
   protocolVersion: string;
-  capabilities: any;
+  capabilities: ClientCapabilities;
   clientInfo: {
     name: string;
     version: string;
@@ -44,7 +26,7 @@ interface InitializeParams {
 // 工具调用参数接口
 interface ToolCallParams {
   name: string;
-  arguments?: any;
+  arguments?: Record<string, unknown>;
 }
 
 // MCP 资源接口
@@ -89,13 +71,21 @@ export class MCPMessageHandler {
 
       switch (message.method) {
         case "initialize":
-          return await this.handleInitialize(message.params, message.id);
+          return await this.handleInitialize(
+            message.params as InitializeParams,
+            message.id
+          );
         case "notifications/initialized":
-          return await this.handleInitializedNotification(message.params);
+          return await this.handleInitializedNotification(
+            message.params as InitializedNotification["params"]
+          );
         case "tools/list":
           return await this.handleToolsList(message.id);
         case "tools/call":
-          return await this.handleToolCall(message.params, message.id);
+          return await this.handleToolCall(
+            message.params as ToolCallParams,
+            message.id
+          );
         case "resources/list":
           return await this.handleResourcesList(message.id);
         case "prompts/list":
@@ -165,7 +155,9 @@ export class MCPMessageHandler {
    * @param params 通知参数
    * @returns null（通知消息不需要响应）
    */
-  private async handleInitializedNotification(params?: any): Promise<null> {
+  private async handleInitializedNotification(
+    params?: InitializedNotification["params"]
+  ): Promise<null> {
     this.logger.debug("收到 initialized 通知，客户端初始化完成", params);
 
     // 可以在这里执行一些初始化完成后的逻辑
