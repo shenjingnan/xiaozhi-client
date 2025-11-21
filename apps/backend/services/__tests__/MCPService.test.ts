@@ -379,13 +379,10 @@ describe("MCPService", () => {
         initialized: false,
         transportType: MCPTransportType.STDIO,
         toolCount: 0,
-        lastError: undefined,
-        reconnectAttempts: 0,
         connectionState: ConnectionState.DISCONNECTED,
         // ping状态
-        pingEnabled: false,
+        pingEnabled: true,
         lastPingTime: undefined,
-        pingFailureCount: 0,
         isPinging: false,
       });
     });
@@ -426,7 +423,7 @@ describe("MCPService", () => {
       expect(status.connected).toBe(false);
       expect(status.connectionState).toBe(ConnectionState.DISCONNECTED);
       expect(status.toolCount).toBe(0);
-      expect(status.pingEnabled).toBe(false);
+      expect(status.pingEnabled).toBe(true);
     });
 
     it("should update service status after connection", async () => {
@@ -451,7 +448,7 @@ describe("MCPService", () => {
       vi.useRealTimers();
     });
 
-    it("should set failed state on connection failure", async () => {
+    it("should set disconnected state on connection failure", async () => {
       // 创建一个禁用 ping 的服务实例，避免定时器无限循环
       const testConfig = { ...config, ping: { enabled: false } };
       const testService = new MCPService(testConfig);
@@ -463,7 +460,7 @@ describe("MCPService", () => {
       await connectPromise;
 
       expect(testService.getStatus().connectionState).toBe(
-        ConnectionState.FAILED
+        ConnectionState.DISCONNECTED
       );
     });
 
@@ -478,7 +475,7 @@ describe("MCPService", () => {
       await expect(testService.connect()).rejects.toThrow("Connection failed");
 
       expect(testService.getStatus().connectionState).toBe(
-        ConnectionState.FAILED
+        ConnectionState.DISCONNECTED
       );
       expect(testService.isConnected()).toBe(false);
     });
@@ -558,7 +555,7 @@ describe("MCPService", () => {
       await expect(testService.connect()).rejects.toThrow();
 
       expect(testService.getStatus().connectionState).toBe(
-        ConnectionState.FAILED
+        ConnectionState.DISCONNECTED
       );
     });
 
@@ -591,7 +588,7 @@ describe("MCPService", () => {
       await expect(testService.connect()).rejects.toThrow();
 
       expect(testService.getStatus().connectionState).toBe(
-        ConnectionState.FAILED
+        ConnectionState.DISCONNECTED
       );
 
       // Reset and try again
