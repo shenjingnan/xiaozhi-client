@@ -146,12 +146,14 @@ export async function createWebSocketServer(
   logger.info("创建 WebSocket 模式服务器");
 
   const serviceManager = new MCPServiceManager();
-  await serviceManager.start();
 
   const messageHandler = serviceManager.getMessageHandler();
   const wsAdapter = new WebSocketAdapter(messageHandler, config);
 
   await serviceManager.registerTransport("websocket", wsAdapter);
+
+  // 在注册传输适配器后再启动服务管理器
+  await serviceManager.start();
 
   logger.info("WebSocket 模式服务器创建成功");
   return serviceManager;

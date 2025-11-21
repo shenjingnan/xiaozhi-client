@@ -3,6 +3,29 @@
  */
 
 import { createHash } from "node:crypto";
+
+// MCP 消息接口
+export interface MCPMessage {
+  jsonrpc: "2.0";
+  method: string;
+  params?: any;
+  id?: string | number;
+}
+
+// MCP 响应接口
+export interface MCPResponse {
+  jsonrpc: "2.0";
+  result?: any;
+  error?: MCPError;
+  id: string | number;
+}
+
+// MCP 错误接口
+export interface MCPError {
+  code: number;
+  message: string;
+  data?: any;
+}
 import type { ToolCallResult } from "@services/CustomMCPHandler.js";
 import type { MCPToolsCache } from "@services/MCPCacheManager.js";
 import type { TimeoutResponse } from "./timeout.js";

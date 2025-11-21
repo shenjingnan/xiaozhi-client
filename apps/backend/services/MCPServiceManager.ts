@@ -23,6 +23,14 @@ import type { TransportAdapter } from "@transports/TransportAdapter.js";
 import { ConnectionState } from "@transports/TransportAdapter.js";
 import { ToolCallLogger } from "@utils/ToolCallLogger.js";
 
+// MCP 消息接口
+interface MCPMessage {
+  jsonrpc: "2.0";
+  method: string;
+  params?: any;
+  id?: string | number;
+}
+
 // 工具信息接口（保持向后兼容）
 interface ToolInfo {
   serviceName: string;
@@ -145,11 +153,11 @@ export class MCPServiceManager extends EventEmitter {
     const configDir = configManager.getConfigDir();
     this.toolCallLogger = new ToolCallLogger(toolCallLogConfig, configDir);
 
-    // 新增：初始化消息处理器
-    this.messageHandler = new MCPMessageHandler(this);
-
     // 设置事件监听器
     this.setupEventListeners();
+
+    // 初始化消息处理器（确保在其他组件初始化完成后）
+    this.messageHandler = new MCPMessageHandler(this);
   }
 
   /**
@@ -1900,7 +1908,7 @@ export class MCPServiceManager extends EventEmitter {
   /**
    * 消息路由核心功能（从 UnifiedMCPServer 移入）
    */
-  async routeMessage(message: any): Promise<any> {
+  async routeMessage(message: MCPMessage): Promise<MCPMessage | null> {
     const response = await this.messageHandler.handleMessage(message);
     // 如果响应是 null，直接返回
     if (response === null) {

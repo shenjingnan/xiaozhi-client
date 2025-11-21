@@ -8,27 +8,24 @@ import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type { MCPServiceManager } from "@services/MCPServiceManager.js";
 
+// MCP 响应接口
+interface MCPResponse {
+  jsonrpc: "2.0";
+  result?: any;
+  error?: {
+    code: number;
+    message: string;
+    data?: any;
+  };
+  id: string | number;
+}
+
 // MCP 消息接口
 interface MCPMessage {
   jsonrpc: "2.0";
   method: string;
   params?: any;
   id?: string | number;
-}
-
-// MCP 响应接口
-interface MCPResponse {
-  jsonrpc: "2.0";
-  result?: any;
-  error?: MCPError;
-  id: string | number;
-}
-
-// MCP 错误接口
-interface MCPError {
-  code: number;
-  message: string;
-  data?: any;
 }
 
 // 初始化参数接口
