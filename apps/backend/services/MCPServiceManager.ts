@@ -13,6 +13,7 @@ import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type { MCPToolConfig } from "@root/configManager.js";
 import { configManager } from "@root/configManager.js";
+import type { MCPMessage } from "@root/types/mcp.js";
 import { CustomMCPHandler } from "@services/CustomMCPHandler.js";
 import { getEventBus } from "@services/EventBus.js";
 import { MCPCacheManager } from "@services/MCPCacheManager.js";
@@ -22,14 +23,6 @@ import { ToolSyncManager } from "@services/ToolSyncManager.js";
 import type { TransportAdapter } from "@transports/TransportAdapter.js";
 import { ConnectionState } from "@transports/TransportAdapter.js";
 import { ToolCallLogger } from "@utils/ToolCallLogger.js";
-
-// MCP 消息接口
-interface MCPMessage {
-  jsonrpc: "2.0";
-  method: string;
-  params?: any;
-  id?: string | number;
-}
 
 // 工具信息接口（保持向后兼容）
 interface ToolInfo {
@@ -117,7 +110,7 @@ export class MCPServiceManager extends EventEmitter {
     this.logger = logger;
 
     // 处理参数，支持 UnifiedServerConfig 格式
-    if (configs && "configs" in configs) {
+    if (configs && this.isUnifiedServerConfig(configs)) {
       // UnifiedServerConfig 格式
       this.config = {
         name: "MCPServiceManager",
@@ -125,8 +118,7 @@ export class MCPServiceManager extends EventEmitter {
         logLevel: "info",
         ...configs,
       };
-      this.configs =
-        (configs.configs as Record<string, MCPServiceConfig>) || {};
+      this.configs = configs.configs || {};
     } else {
       // 原有的 configs 格式
       this.config = {
@@ -134,7 +126,7 @@ export class MCPServiceManager extends EventEmitter {
         enableLogging: true,
         logLevel: "info",
       };
-      this.configs = (configs as Record<string, MCPServiceConfig>) || {};
+      this.configs = configs || {};
     }
 
     // 在测试环境中使用临时目录，避免在项目根目录创建缓存文件
@@ -1671,24 +1663,50 @@ export class MCPServiceManager extends EventEmitter {
 
   /**
    * 启动所有传输适配器
+   *
+   * 改进的错误处理策略：
+   * - 单个适配器启动失败不会中断其他适配器的启动
+   * - 记录失败的适配器，但继续启动其他适配器
+   * - 如果所有适配器都失败，则抛出错误
+   * - 如果部分适配器成功，则记录警告但继续运行
    */
   public async startTransports(): Promise<void> {
     this.logger.info("启动所有传输适配器");
 
-    try {
-      for (const [name, adapter] of this.transportAdapters) {
-        try {
-          await adapter.start();
-          this.logger.info(`传输适配器 ${name} 启动成功`);
-        } catch (error) {
-          this.logger.error(`传输适配器 ${name} 启动失败`, error);
-          throw error;
-        }
+    const successfulAdapters: string[] = [];
+    const failedAdapters: string[] = [];
+
+    for (const [name, adapter] of this.transportAdapters) {
+      try {
+        await adapter.start();
+        successfulAdapters.push(name);
+        this.logger.info(`传输适配器 ${name} 启动成功`);
+      } catch (error) {
+        failedAdapters.push(name);
+        this.logger.error(`传输适配器 ${name} 启动失败`, error);
+        // 不立即抛出错误，继续尝试启动其他适配器
       }
-    } catch (error) {
-      this.logger.error("传输适配器启动失败", error);
-      throw error;
     }
+
+    // 评估启动结果
+    if (successfulAdapters.length === 0 && failedAdapters.length > 0) {
+      // 所有适配器都失败了
+      const errorMessage = `所有传输适配器启动失败，失败的适配器: ${failedAdapters.join(", ")}`;
+      this.logger.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+
+    if (failedAdapters.length > 0) {
+      // 部分适配器失败
+      this.logger.warn(
+        `部分传输适配器启动失败，成功: ${successfulAdapters.join(", ")}, 失败: ${failedAdapters.join(", ")}`
+      );
+      // 继续运行，因为至少有一个适配器成功
+    }
+
+    this.logger.info(
+      `传输适配器启动完成，成功: ${successfulAdapters.length}, 失败: ${failedAdapters.length}`
+    );
   }
 
   /**
@@ -1906,6 +1924,13 @@ export class MCPServiceManager extends EventEmitter {
   }
 
   /**
+   * 类型守卫：检查是否为 UnifiedServerConfig
+   */
+  private isUnifiedServerConfig(configs: any): configs is UnifiedServerConfig {
+    return configs && typeof configs === "object" && "configs" in configs;
+  }
+
+  /**
    * 消息路由核心功能（从 UnifiedMCPServer 移入）
    */
   async routeMessage(message: MCPMessage): Promise<MCPMessage | null> {
@@ -1919,6 +1944,7 @@ export class MCPServiceManager extends EventEmitter {
       jsonrpc: "2.0",
       method: "response", // 标识这是一个响应消息
       params: response,
+      id: response.id, // 使用响应中的ID
     };
   }
 
@@ -1926,10 +1952,14 @@ export class MCPServiceManager extends EventEmitter {
 
   /**
    * 初始化方法（向后兼容，实际调用 start）
+   *
+   * 注意：此方法仅为向后兼容而保留
+   * 实际功能：调用 start() 方法并设置 isRunning 状态
+   * 建议新代码直接使用 start() 方法
    */
   async initialize(): Promise<void> {
     // 为了向后兼容，初始化时调用 start
-    // 但不设置 isRunning 状态，保持原有逻辑
+    // 会设置 isRunning 状态为 true
     await this.start();
   }
 

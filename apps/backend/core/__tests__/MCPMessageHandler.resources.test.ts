@@ -63,6 +63,7 @@ describe("MCPMessageHandler - resources/list", () => {
       jsonrpc: "2.0" as const,
       method: "resources/list",
       params: {},
+      id: "test-resources-list" as const,
     };
 
     const response = await handler.handleMessage(message);
@@ -72,7 +73,7 @@ describe("MCPMessageHandler - resources/list", () => {
       result: {
         resources: [],
       },
-      id: 1, // 默认 id
+      id: "test-resources-list", // 与请求中的ID匹配
     });
   });
 

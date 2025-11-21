@@ -8,6 +8,7 @@ import { randomUUID } from "node:crypto";
 import { MCPMessageHandler } from "@core/MCPMessageHandler.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
+import type { MCPMessage, MCPResponse } from "@root/types/mcp.js";
 import { MCPServiceManagerSingleton } from "@services/MCPServiceManagerSingleton.js";
 import type { Context } from "hono";
 
@@ -27,26 +28,6 @@ interface SSEClient {
   messageCount: number;
   userAgent?: string;
   remoteAddress?: string;
-}
-
-/**
- * MCP 消息接口
- */
-interface MCPMessage {
-  jsonrpc: "2.0";
-  method: string;
-  params?: any;
-  id?: string | number;
-}
-
-/**
- * MCP 响应接口
- */
-interface MCPResponse {
-  jsonrpc: "2.0";
-  result?: any;
-  error?: MCPError;
-  id: string | number | null;
 }
 
 /**
@@ -238,8 +219,7 @@ export class MCPRouteHandler {
         this.metrics.errorCount++;
         return this.createErrorResponse(
           -32600,
-          `Request too large: Maximum size is ${this.config.maxMessageSize} bytes`,
-          null
+          `Request too large: Maximum size is ${this.config.maxMessageSize} bytes`
         );
       }
 
@@ -249,8 +229,7 @@ export class MCPRouteHandler {
         this.metrics.errorCount++;
         return this.createErrorResponse(
           -32600,
-          "Invalid Request: Content-Type must be application/json",
-          null
+          "Invalid Request: Content-Type must be application/json"
         );
       }
 
@@ -283,11 +262,7 @@ export class MCPRouteHandler {
         messageId = message.id || null;
       } catch (error) {
         this.metrics.errorCount++;
-        return this.createErrorResponse(
-          -32700,
-          "Parse error: Invalid JSON",
-          null
-        );
+        return this.createErrorResponse(-32700, "Parse error: Invalid JSON");
       }
 
       // 验证 JSON-RPC 格式
@@ -396,8 +371,7 @@ export class MCPRouteHandler {
         this.metrics.errorCount++;
         return this.createErrorResponse(
           -32600,
-          `Message too large: Maximum size is ${this.config.maxMessageSize} bytes`,
-          null
+          `Message too large: Maximum size is ${this.config.maxMessageSize} bytes`
         );
       }
 
@@ -417,11 +391,7 @@ export class MCPRouteHandler {
         messageId = message.id || null;
       } catch (error) {
         this.metrics.errorCount++;
-        return this.createErrorResponse(
-          -32700,
-          "Parse error: Invalid JSON",
-          null
-        );
+        return this.createErrorResponse(-32700, "Parse error: Invalid JSON");
       }
 
       // 验证消息格式
@@ -786,15 +756,18 @@ export class MCPRouteHandler {
   private createErrorResponse(
     code: number,
     message: string,
-    id: string | number | null
+    id?: string | number | null
   ): Response {
+    // 确保ID不为空，如果为空或未提供则生成默认ID
+    const responseId = id ?? `error-${Date.now()}`;
+
     const errorResponse: MCPResponse = {
       jsonrpc: "2.0",
       error: {
         code,
         message,
       },
-      id,
+      id: responseId,
     };
 
     return new Response(JSON.stringify(errorResponse), {

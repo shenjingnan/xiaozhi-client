@@ -9,7 +9,7 @@ export interface MCPMessage {
   jsonrpc: "2.0";
   method: string;
   params?: any;
-  id?: string | number;
+  id: string | number;
 }
 
 // MCP 响应接口

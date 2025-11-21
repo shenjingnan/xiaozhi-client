@@ -3,13 +3,12 @@ import { sliceEndpoint } from "@utils/mcpServerUtils.js";
 import WebSocket from "ws";
 import type { Logger } from "./Logger.js";
 import { logger } from "./Logger.js";
+import type { MCPMessage } from "./types/index.js";
 
-// MCP 消息接口
-interface MCPMessage {
-  jsonrpc: string;
-  id?: number | string;
-  method?: string;
-  params?: any;
+// 扩展的 MCP 消息接口，用于响应消息
+interface ExtendedMCPMessage {
+  jsonrpc: "2.0";
+  id: string | number;
   result?: any;
 }
 
@@ -679,7 +678,7 @@ export class ProxyMCPServer {
     );
 
     if (this.connectionStatus && this.ws?.readyState === WebSocket.OPEN) {
-      const response: MCPMessage = {
+      const response: ExtendedMCPMessage = {
         jsonrpc: "2.0",
         id,
         result,

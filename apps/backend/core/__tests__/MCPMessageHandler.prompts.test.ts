@@ -63,6 +63,7 @@ describe("MCPMessageHandler - prompts/list", () => {
       jsonrpc: "2.0" as const,
       method: "prompts/list",
       params: {},
+      id: "test-prompts-list" as const,
     };
 
     const response = await handler.handleMessage(message);
@@ -72,7 +73,7 @@ describe("MCPMessageHandler - prompts/list", () => {
       result: {
         prompts: [],
       },
-      id: 1, // 默认 id
+      id: "test-prompts-list", // 与请求中的ID匹配
     });
   });
 

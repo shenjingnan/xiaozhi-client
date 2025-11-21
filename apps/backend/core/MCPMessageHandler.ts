@@ -6,27 +6,8 @@
 
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
+import type { MCPMessage, MCPResponse } from "@root/types/mcp.js";
 import type { MCPServiceManager } from "@services/MCPServiceManager.js";
-
-// MCP 响应接口
-interface MCPResponse {
-  jsonrpc: "2.0";
-  result?: any;
-  error?: {
-    code: number;
-    message: string;
-    data?: any;
-  };
-  id: string | number;
-}
-
-// MCP 消息接口
-interface MCPMessage {
-  jsonrpc: "2.0";
-  method: string;
-  params?: any;
-  id?: string | number;
-}
 
 // 初始化参数接口
 interface InitializeParams {
