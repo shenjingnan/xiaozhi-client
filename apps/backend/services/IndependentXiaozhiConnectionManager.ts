@@ -1,9 +1,10 @@
 import { EventEmitter } from "node:events";
+import type { MCPServerAddResult } from "@handlers/MCPServerApiHandler.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import { ProxyMCPServer } from "@root/ProxyMCPServer.js";
-import type { ConfigManager } from "@root/configManager.js";
+import type { ConfigManager, MCPServerConfig } from "@root/configManager.js";
 import type { ToolCallResult } from "@services/CustomMCPHandler.js";
 import type { EventBus } from "@services/EventBus.js";
 import { getEventBus } from "@services/EventBus.js";
@@ -306,7 +307,10 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         await this.createConnection(endpoint, tools);
 
         // 自动连接新添加的接入点
-        const proxyServer = this.connections.get(endpoint)!;
+        const proxyServer = this.connections.get(endpoint);
+        if (!proxyServer) {
+          throw new Error(`无法获取接入点连接: ${endpoint}`);
+        }
         await this.connectSingleEndpoint(endpoint, proxyServer);
 
         this.logger.info(`添加接入点成功： ${sliceEndpoint(endpoint)}`);
@@ -356,7 +360,10 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     this.logger.debug(`动态移除小智接入点: ${sliceEndpoint(endpoint)}`);
 
     try {
-      const proxyServer = this.connections.get(endpoint)!;
+      const proxyServer = this.connections.get(endpoint);
+      if (!proxyServer) {
+        throw new Error(`无法获取接入点连接: ${endpoint}`);
+      }
 
       // 先更新配置文件
       this.configManager.removeMcpEndpoint(endpoint);
@@ -626,7 +633,23 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       }>;
     }
   > {
-    const stats: Record<string, any> = {};
+    const stats: Record<
+      string,
+      {
+        endpoint: string;
+        reconnectAttempts: number;
+        isReconnecting: boolean;
+        nextReconnectTime?: Date;
+        lastReconnectAttempt?: Date;
+        reconnectDelay: number;
+        recentReconnectHistory: Array<{
+          timestamp: Date;
+          success: boolean;
+          error?: string;
+          delay: number;
+        }>;
+      }
+    > = {};
 
     for (const [endpoint, status] of this.connectionStates) {
       stats[endpoint] = {
@@ -637,7 +660,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         lastReconnectAttempt: status.lastReconnectAttempt,
         reconnectDelay: status.reconnectDelay,
         // errorType: status.errorType, // 错误类型已移除
-        // recentReconnectHistory: status.reconnectHistory.slice(-5), // 重连历史记录已移除
+        recentReconnectHistory: [], // 重连历史记录已移除，使用空数组
       };
     }
 
@@ -1280,7 +1303,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    */
   private async handleMCPServerAdded(data: {
     serverName: string;
-    config: any;
+    config: MCPServerConfig;
     tools: string[];
     timestamp: Date;
   }): Promise<void> {
@@ -1328,7 +1351,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     addedCount: number;
     failedCount: number;
     successfullyAddedServers: string[];
-    results: any[];
+    results: MCPServerAddResult[];
     timestamp: Date;
   }): Promise<void> {
     this.logger.info(
