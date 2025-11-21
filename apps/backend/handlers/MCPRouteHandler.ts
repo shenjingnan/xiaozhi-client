@@ -270,7 +270,10 @@ export class MCPRouteHandler {
       await this.initializeMessageHandler();
 
       // 处理消息
-      const response = await this.mcpMessageHandler!.handleMessage(message);
+      if (!this.mcpMessageHandler) {
+        throw new Error("消息处理器初始化失败");
+      }
+      const response = await this.mcpMessageHandler.handleMessage(message);
 
       // 更新统计信息
       this.metrics.totalMessages++;
@@ -399,7 +402,10 @@ export class MCPRouteHandler {
       await this.initializeMessageHandler();
 
       // 处理消息
-      const response = await this.mcpMessageHandler!.handleMessage(message);
+      if (!this.mcpMessageHandler) {
+        throw new Error("消息处理器初始化失败");
+      }
+      const response = await this.mcpMessageHandler.handleMessage(message);
 
       // 更新客户端统计
       client.messageCount++;
