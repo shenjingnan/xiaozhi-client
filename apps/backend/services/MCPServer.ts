@@ -1,4 +1,5 @@
 import { EventEmitter } from "node:events";
+import type { WebServer } from "@root/WebServer.js";
 import type { MCPServiceManager } from "@services/MCPServiceManager.js";
 import { Logger } from "../Logger.js";
 import { ProxyMCPServer } from "../ProxyMCPServer.js";
@@ -14,7 +15,7 @@ const logger = new Logger();
 export class MCPServer extends EventEmitter {
   private serviceManager: MCPServiceManager | null = null;
   private proxyMCPServer: ProxyMCPServer | null = null;
-  private webServer: any = null;
+  private webServer: WebServer | null = null;
   private port: number;
   private isStarted = false;
 
