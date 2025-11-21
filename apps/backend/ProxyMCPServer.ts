@@ -672,7 +672,7 @@ export class ProxyMCPServer {
     }
   }
 
-  private sendResponse(id: number | string | undefined, result: any): void {
+  private sendResponse(id: number | string, result: any): void {
     this.logger.debug(
       `尝试发送响应: id=${id}, isConnected=${this.connectionStatus}, wsReadyState=${this.ws?.readyState}`
     );
