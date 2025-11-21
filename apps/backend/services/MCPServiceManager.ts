@@ -6,6 +6,8 @@
  * 专注于实例管理、工具聚合和路由调用
  */
 
+import { EventEmitter } from "node:events";
+import { MCPMessageHandler } from "@core/MCPMessageHandler.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
@@ -17,6 +19,8 @@ import { MCPCacheManager } from "@services/MCPCacheManager.js";
 import type { MCPServiceConfig } from "@services/MCPService.js";
 import { MCPService, MCPTransportType } from "@services/MCPService.js";
 import { ToolSyncManager } from "@services/ToolSyncManager.js";
+import type { TransportAdapter } from "@transports/TransportAdapter.js";
+import { ConnectionState } from "@transports/TransportAdapter.js";
 import { ToolCallLogger } from "@utils/ToolCallLogger.js";
 
 // 工具信息接口（保持向后兼容）
@@ -48,7 +52,7 @@ interface ToolCallResult {
   isError?: boolean;
 }
 
-export class MCPServiceManager {
+export class MCPServiceManager extends EventEmitter {
   private services: Map<string, MCPService> = new Map();
   private configs: Record<string, MCPServiceConfig> = {};
   private logger: Logger;
@@ -61,11 +65,16 @@ export class MCPServiceManager {
   private retryTimers: Map<string, NodeJS.Timeout> = new Map(); // 重试定时器
   private failedServices: Set<string> = new Set(); // 失败的服务集合
 
+  // 新增：传输适配器管理
+  private transportAdapters: Map<string, TransportAdapter> = new Map();
+  private messageHandler: MCPMessageHandler;
+
   /**
    * 创建 MCPServiceManager 实例
    * @param configs 可选的初始服务配置
    */
   constructor(configs?: Record<string, MCPServiceConfig>) {
+    super();
     this.logger = logger;
     this.configs = configs || {};
 
@@ -84,6 +93,9 @@ export class MCPServiceManager {
     const toolCallLogConfig = configManager.getToolCallLogConfig();
     const configDir = configManager.getConfigDir();
     this.toolCallLogger = new ToolCallLogger(toolCallLogConfig, configDir);
+
+    // 新增：初始化消息处理器
+    this.messageHandler = new MCPMessageHandler(this);
 
     // 设置事件监听器
     this.setupEventListeners();
@@ -1616,6 +1628,158 @@ export class MCPServiceManager {
       totalFailed: this.failedServices.size,
       totalActiveRetries: this.retryTimers.size,
     };
+  }
+
+  // ===== 传输适配器管理方法（从 UnifiedMCPServer 移入） =====
+
+  /**
+   * 注册传输适配器
+   * @param name 传输适配器名称
+   * @param adapter 传输适配器实例
+   */
+  public async registerTransport(
+    name: string,
+    adapter: TransportAdapter
+  ): Promise<void> {
+    if (this.transportAdapters.has(name)) {
+      throw new Error(`传输适配器 ${name} 已存在`);
+    }
+
+    this.logger.info(`注册传输适配器: ${name}`);
+
+    try {
+      await adapter.initialize();
+      this.transportAdapters.set(name, adapter);
+
+      this.logger.info(`传输适配器 ${name} 注册成功`);
+      this.emit("transportRegistered", { name, adapter });
+    } catch (error) {
+      this.logger.error(`注册传输适配器 ${name} 失败`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 启动所有传输适配器
+   */
+  public async startTransports(): Promise<void> {
+    this.logger.info("启动所有传输适配器");
+
+    try {
+      for (const [name, adapter] of this.transportAdapters) {
+        try {
+          await adapter.start();
+          this.logger.info(`传输适配器 ${name} 启动成功`);
+        } catch (error) {
+          this.logger.error(`传输适配器 ${name} 启动失败`, error);
+          throw error;
+        }
+      }
+    } catch (error) {
+      this.logger.error("传输适配器启动失败", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 停止所有传输适配器
+   */
+  public async stopTransports(): Promise<void> {
+    this.logger.info("停止所有传输适配器");
+
+    try {
+      for (const [name, adapter] of this.transportAdapters) {
+        try {
+          await adapter.stop();
+          this.logger.info(`传输适配器 ${name} 停止成功`);
+        } catch (error) {
+          this.logger.error(`传输适配器 ${name} 停止失败`, error);
+        }
+      }
+    } catch (error) {
+      this.logger.error("传输适配器停止失败", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取所有传输适配器
+   * @returns 传输适配器映射表
+   */
+  public getTransportAdapters(): Map<string, TransportAdapter> {
+    return new Map(this.transportAdapters);
+  }
+
+  /**
+   * 获取消息处理器（供外部使用）
+   * @returns 消息处理器实例
+   */
+  public getMessageHandler(): MCPMessageHandler {
+    return this.messageHandler;
+  }
+
+  /**
+   * 启动管理器（包含服务和传输）
+   */
+  public async start(): Promise<void> {
+    await this.startAllServices();
+    await this.startTransports();
+  }
+
+  /**
+   * 停止管理器（包含传输和服务）
+   */
+  public async stop(): Promise<void> {
+    await this.stopTransports();
+    await this.stopAllServices();
+  }
+
+  /**
+   * 获取所有连接信息
+   * @returns 连接信息列表
+   */
+  public getAllConnections(): Array<{
+    id: string;
+    name: string;
+    state: ConnectionState;
+  }> {
+    const connections: Array<{
+      id: string;
+      name: string;
+      state: ConnectionState;
+    }> = [];
+
+    // 收集服务连接
+    for (const [serviceName, service] of this.services) {
+      if (service.isConnected()) {
+        connections.push({
+          id: `service-${serviceName}`,
+          name: serviceName,
+          state: ConnectionState.CONNECTED,
+        });
+      }
+    }
+
+    // 收集传输适配器连接
+    for (const [adapterName, adapter] of this.transportAdapters) {
+      connections.push({
+        id: adapter.getConnectionId(),
+        name: adapterName,
+        state: adapter.getState(),
+      });
+    }
+
+    return connections;
+  }
+
+  /**
+   * 获取活跃连接数
+   * @returns 活跃连接数量
+   */
+  public getActiveConnectionCount(): number {
+    return this.getAllConnections().filter(
+      (conn) => conn.state === ConnectionState.CONNECTED
+    ).length;
   }
 }
 

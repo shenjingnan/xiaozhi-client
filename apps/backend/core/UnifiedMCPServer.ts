@@ -1,201 +1,39 @@
 /**
- * 统一 MCP 服务器
- * 阶段三重构：整合所有传输协议和服务管理的统一服务器实现
+ * 统一 MCP 服务器 - 重构版本
+ * 职责：纯粹的消息路由器和协议转换器
  *
- * 这是整个 MCP 系统的核心类，负责：
- * 1. 管理多种传输适配器（HTTP、Stdio、WebSocket等）
- * 2. 统一的工具注册和管理
- * 3. 连接生命周期管理
- * 4. 消息路由和处理
+ * 重构后功能：
+ * 1. 管理并委托给 MCPServiceManager
+ * 2. 提供简化的对外接口
+ * 3. 消息路由和协议转换
+ * 4. 事件转发
  */
 
 import { EventEmitter } from "node:events";
-import { MCPMessageHandler } from "@core/MCPMessageHandler.js";
+import type { MCPMessageHandler } from "@core/MCPMessageHandler.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import { MCPServiceManager } from "@services/MCPServiceManager.js";
 import type { TransportAdapter } from "@transports/TransportAdapter.js";
-import { ConnectionState } from "@transports/TransportAdapter.js";
+import type { MCPMessage } from "@transports/TransportAdapter.js";
 
 /**
- * 工具信息接口
- */
-export interface ToolInfo {
-  name: string;
-  description?: string;
-  inputSchema?: any;
-  serviceName: string;
-  originalName: string;
-}
-
-/**
- * 连接信息接口
- */
-export interface ConnectionInfo {
-  id: string;
-  transportName: string;
-  state: ConnectionState;
-  connectedAt: Date;
-  lastActivity: Date;
-}
-
-/**
- * 服务器配置接口
+ * 服务器配置接口（简化版）
  */
 export interface UnifiedServerConfig {
   name?: string;
   enableLogging?: boolean;
   logLevel?: string;
-  maxConnections?: number;
-  connectionTimeout?: number;
+  configs?: Record<string, any>; // MCPService 配置
 }
 
 /**
- * 简化的工具注册表
- * 基于现有的 MCPServiceManager 提供统一的工具管理接口
- */
-export class ToolRegistry {
-  private serviceManager: MCPServiceManager;
-  private logger: Logger;
-
-  constructor(serviceManager: MCPServiceManager) {
-    this.serviceManager = serviceManager;
-    this.logger = logger;
-  }
-
-  async initialize(): Promise<void> {
-    this.logger.info("初始化工具注册表");
-    // 工具注册表的初始化由 MCPServiceManager 处理
-  }
-
-  /**
-   * 获取所有工具
-   */
-  getAllTools(): ToolInfo[] {
-    return this.serviceManager.getAllTools().map((tool) => ({
-      name: tool.name,
-      description: tool.description,
-      inputSchema: tool.inputSchema,
-      serviceName: tool.serviceName,
-      originalName: tool.originalName,
-    }));
-  }
-
-  /**
-   * 查找工具
-   */
-  findTool(toolName: string): ToolInfo | null {
-    const tools = this.getAllTools();
-    return tools.find((tool) => tool.name === toolName) || null;
-  }
-
-  /**
-   * 检查工具是否存在
-   */
-  hasTool(toolName: string): boolean {
-    return this.findTool(toolName) !== null;
-  }
-}
-
-/**
- * 简化的连接管理器
- * 管理传输适配器的连接状态和生命周期
- */
-export class ConnectionManager extends EventEmitter {
-  private connections: Map<string, ConnectionInfo> = new Map();
-  private logger: Logger;
-
-  constructor() {
-    super();
-    this.logger = logger;
-  }
-
-  async initialize(): Promise<void> {
-    this.logger.info("初始化连接管理器");
-  }
-
-  /**
-   * 注册连接
-   */
-  registerConnection(
-    id: string,
-    transportName: string,
-    state: ConnectionState
-  ): void {
-    const connectionInfo: ConnectionInfo = {
-      id,
-      transportName,
-      state,
-      connectedAt: new Date(),
-      lastActivity: new Date(),
-    };
-
-    this.connections.set(id, connectionInfo);
-    this.emit("connectionRegistered", connectionInfo);
-    this.logger.debug(`连接已注册: ${id} (${transportName})`);
-  }
-
-  /**
-   * 更新连接状态
-   */
-  updateConnectionState(id: string, state: ConnectionState): void {
-    const connection = this.connections.get(id);
-    if (connection) {
-      connection.state = state;
-      connection.lastActivity = new Date();
-      this.emit("connectionStateChanged", connection);
-      this.logger.debug(`连接状态更新: ${id} -> ${state}`);
-    }
-  }
-
-  /**
-   * 移除连接
-   */
-  removeConnection(id: string): void {
-    const connection = this.connections.get(id);
-    if (connection) {
-      this.connections.delete(id);
-      this.emit("connectionRemoved", connection);
-      this.logger.debug(`连接已移除: ${id}`);
-    }
-  }
-
-  /**
-   * 获取所有连接
-   */
-  getAllConnections(): ConnectionInfo[] {
-    return Array.from(this.connections.values());
-  }
-
-  /**
-   * 获取活跃连接数
-   */
-  getActiveConnectionCount(): number {
-    return Array.from(this.connections.values()).filter(
-      (conn) => conn.state === ConnectionState.CONNECTED
-    ).length;
-  }
-
-  /**
-   * 关闭所有连接
-   */
-  async closeAllConnections(): Promise<void> {
-    this.logger.info("关闭所有连接");
-    this.connections.clear();
-    this.emit("allConnectionsClosed");
-  }
-}
-
-/**
- * 统一 MCP 服务器
- * 整合所有传输协议和服务管理的核心服务器类
+ * 统一 MCP 服务器 - 简化版本
+ * 职责：纯粹的消息路由器和协议转换器
  */
 export class UnifiedMCPServer extends EventEmitter {
   private serviceManager: MCPServiceManager;
   private messageHandler: MCPMessageHandler;
-  private transportAdapters: Map<string, TransportAdapter> = new Map();
-  private toolRegistry: ToolRegistry;
-  private connectionManager: ConnectionManager;
   private isRunning = false;
   private logger: Logger;
   private config: UnifiedServerConfig;
@@ -207,107 +45,53 @@ export class UnifiedMCPServer extends EventEmitter {
       name: "UnifiedMCPServer",
       enableLogging: true,
       logLevel: "info",
-      maxConnections: 100,
-      connectionTimeout: 30000,
       ...config,
     };
 
     this.logger = logger;
 
-    // 初始化核心组件
-    this.serviceManager = new MCPServiceManager();
-    this.messageHandler = new MCPMessageHandler(this.serviceManager);
-    this.toolRegistry = new ToolRegistry(this.serviceManager);
-    this.connectionManager = new ConnectionManager();
+    // 直接创建并管理服务管理器
+    this.serviceManager = new MCPServiceManager(config.configs);
+    this.messageHandler = this.serviceManager.getMessageHandler();
 
-    // 设置事件监听
-    this.setupEventListeners();
+    // 转发服务管理器的事件
+    this.setupEventForwarding();
   }
 
   /**
-   * 设置事件监听器
+   * 设置事件转发
    */
-  private setupEventListeners(): void {
-    // 监听连接管理器事件
-    this.connectionManager.on(
-      "connectionRegistered",
-      (connection: ConnectionInfo) => {
-        this.emit("connectionRegistered", connection);
-      }
-    );
+  private setupEventForwarding(): void {
+    // 转发服务管理器的所有重要事件
+    this.serviceManager.on("mcp:service:connected", (data) => {
+      this.emit("mcp:service:connected", data);
+    });
 
-    this.connectionManager.on(
-      "connectionStateChanged",
-      (connection: ConnectionInfo) => {
-        this.emit("connectionStateChanged", connection);
-      }
-    );
+    this.serviceManager.on("mcp:service:disconnected", (data) => {
+      this.emit("mcp:service:disconnected", data);
+    });
 
-    this.connectionManager.on(
-      "connectionRemoved",
-      (connection: ConnectionInfo) => {
-        this.emit("connectionRemoved", connection);
-      }
-    );
+    this.serviceManager.on("mcp:service:connection:failed", (data) => {
+      this.emit("mcp:service:connection:failed", data);
+    });
+
+    this.serviceManager.on("transportRegistered", (data) => {
+      this.emit("transportRegistered", data);
+    });
   }
 
   /**
-   * 初始化服务器
-   */
-  async initialize(): Promise<void> {
-    this.logger.info("初始化统一 MCP 服务器");
-
-    try {
-      // 初始化核心组件
-      await this.serviceManager.startAllServices();
-      await this.toolRegistry.initialize();
-      await this.connectionManager.initialize();
-
-      this.logger.debug("统一 MCP 服务器初始化完成");
-      this.emit("initialized");
-    } catch (error) {
-      this.logger.error("统一 MCP 服务器初始化失败", error);
-      throw error;
-    }
-  }
-
-  /**
-   * 注册传输适配器
+   * 注册传输适配器（委托给服务管理器）
    */
   async registerTransport(
     name: string,
     adapter: TransportAdapter
   ): Promise<void> {
-    if (this.transportAdapters.has(name)) {
-      throw new Error(`传输适配器 ${name} 已存在`);
-    }
-
-    this.logger.info(`注册传输适配器: ${name}`);
-
-    try {
-      // 初始化适配器
-      await adapter.initialize();
-
-      // 注册适配器
-      this.transportAdapters.set(name, adapter);
-
-      // 注册连接到连接管理器
-      this.connectionManager.registerConnection(
-        adapter.getConnectionId(),
-        name,
-        adapter.getState()
-      );
-
-      this.logger.info(`传输适配器 ${name} 注册成功`);
-      this.emit("transportRegistered", { name, adapter });
-    } catch (error) {
-      this.logger.error(`注册传输适配器 ${name} 失败`, error);
-      throw error;
-    }
+    return this.serviceManager.registerTransport(name, adapter);
   }
 
   /**
-   * 启动服务器
+   * 启动服务器（委托给服务管理器）
    */
   async start(): Promise<void> {
     if (this.isRunning) {
@@ -317,25 +101,9 @@ export class UnifiedMCPServer extends EventEmitter {
     this.logger.info("启动统一 MCP 服务器");
 
     try {
-      // 启动所有传输适配器
-      for (const [name, adapter] of this.transportAdapters) {
-        try {
-          await adapter.start();
-
-          // 更新连接状态
-          this.connectionManager.updateConnectionState(
-            adapter.getConnectionId(),
-            adapter.getState()
-          );
-
-          this.logger.info(`传输适配器 ${name} 启动成功`);
-        } catch (error) {
-          this.logger.error(`传输适配器 ${name} 启动失败`, error);
-          throw error;
-        }
-      }
-
+      await this.serviceManager.start();
       this.isRunning = true;
+
       this.logger.info("统一 MCP 服务器启动成功");
       this.emit("started");
     } catch (error) {
@@ -345,7 +113,7 @@ export class UnifiedMCPServer extends EventEmitter {
   }
 
   /**
-   * 停止服务器
+   * 停止服务器（委托给服务管理器）
    */
   async stop(): Promise<void> {
     if (!this.isRunning) {
@@ -355,30 +123,9 @@ export class UnifiedMCPServer extends EventEmitter {
     this.logger.info("停止统一 MCP 服务器");
 
     try {
-      // 停止所有传输适配器
-      for (const [name, adapter] of this.transportAdapters) {
-        try {
-          await adapter.stop();
-
-          // 更新连接状态
-          this.connectionManager.updateConnectionState(
-            adapter.getConnectionId(),
-            adapter.getState()
-          );
-
-          this.logger.info(`传输适配器 ${name} 停止成功`);
-        } catch (error) {
-          this.logger.error(`传输适配器 ${name} 停止失败`, error);
-        }
-      }
-
-      // 关闭所有连接
-      await this.connectionManager.closeAllConnections();
-
-      // 停止服务管理器
-      await this.serviceManager.stopAllServices();
-
+      await this.serviceManager.stop();
       this.isRunning = false;
+
       this.logger.info("统一 MCP 服务器停止成功");
       this.emit("stopped");
     } catch (error) {
@@ -388,24 +135,27 @@ export class UnifiedMCPServer extends EventEmitter {
   }
 
   /**
-   * 获取服务管理器
+   * 消息路由核心功能
+   */
+  async routeMessage(message: MCPMessage): Promise<MCPMessage | null> {
+    const response = await this.messageHandler.handleMessage(message);
+    // 如果响应是 null，直接返回
+    if (response === null) {
+      return null;
+    }
+    // 将 MCPResponse 转换为 MCPMessage 格式
+    return {
+      jsonrpc: "2.0",
+      method: "response", // 标识这是一个响应消息
+      params: response,
+    };
+  }
+
+  /**
+   * 获取服务管理器（主要外部接口）
    */
   getServiceManager(): MCPServiceManager {
     return this.serviceManager;
-  }
-
-  /**
-   * 获取工具注册表
-   */
-  getToolRegistry(): ToolRegistry {
-    return this.toolRegistry;
-  }
-
-  /**
-   * 获取连接管理器
-   */
-  getConnectionManager(): ConnectionManager {
-    return this.connectionManager;
   }
 
   /**
@@ -420,25 +170,38 @@ export class UnifiedMCPServer extends EventEmitter {
    */
   getStatus(): {
     isRunning: boolean;
+    serviceStatus: any;
     transportCount: number;
     activeConnections: number;
-    toolCount: number;
     config: UnifiedServerConfig;
   } {
     return {
       isRunning: this.isRunning,
-      transportCount: this.transportAdapters.size,
-      activeConnections: this.connectionManager.getActiveConnectionCount(),
-      toolCount: this.toolRegistry.getAllTools().length,
+      serviceStatus: this.serviceManager.getStatus(),
+      transportCount: this.serviceManager.getTransportAdapters().size,
+      activeConnections: this.serviceManager.getActiveConnectionCount(),
       config: this.config,
     };
   }
 
   /**
-   * 获取所有传输适配器
+   * 获取所有工具（委托给服务管理器）
    */
-  getTransportAdapters(): Map<string, TransportAdapter> {
-    return new Map(this.transportAdapters);
+  getAllTools(): Array<{
+    name: string;
+    description?: string;
+    inputSchema?: any;
+    serviceName: string;
+    originalName: string;
+  }> {
+    return this.serviceManager.getAllTools();
+  }
+
+  /**
+   * 调用工具（委托给服务管理器）
+   */
+  async callTool(toolName: string, arguments_: any): Promise<any> {
+    return this.serviceManager.callTool(toolName, arguments_);
   }
 
   /**
@@ -447,4 +210,46 @@ export class UnifiedMCPServer extends EventEmitter {
   isServerRunning(): boolean {
     return this.isRunning;
   }
+
+  /**
+   * 获取活跃连接数（委托给服务管理器）
+   */
+  getActiveConnectionCount(): number {
+    return this.serviceManager.getActiveConnectionCount();
+  }
+
+  /**
+   * 获取传输适配器（委托给服务管理器）
+   */
+  getTransportAdapters(): Map<string, TransportAdapter> {
+    return this.serviceManager.getTransportAdapters();
+  }
+
+  // ===== 向后兼容方法 =====
+
+  /**
+   * 初始化方法（向后兼容，实际调用 start）
+   */
+  async initialize(): Promise<void> {
+    // 为了向后兼容，初始化时调用 start
+    // 但不设置 isRunning 状态，保持原有逻辑
+    await this.serviceManager.start();
+  }
+
+  /**
+   * 获取工具注册表（向后兼容，返回服务管理器）
+   */
+  getToolRegistry(): MCPServiceManager {
+    return this.serviceManager;
+  }
+
+  /**
+   * 获取连接管理器（向后兼容，返回服务管理器）
+   */
+  getConnectionManager(): MCPServiceManager {
+    return this.serviceManager;
+  }
 }
+
+// 保持向后兼容的默认导出
+export default UnifiedMCPServer;

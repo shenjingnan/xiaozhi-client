@@ -174,8 +174,15 @@ describe("阶段三统一 MCP 服务器集成测试", () => {
 
       expect(messageHandler).toBeDefined();
       expect(server.getServiceManager()).toBeDefined();
-      expect(server.getToolRegistry()).toBeDefined();
-      expect(server.getConnectionManager()).toBeDefined();
+
+      // 向后兼容性检查：getToolRegistry 和 getConnectionManager 现在返回 MCPServiceManager
+      const toolRegistry = server.getToolRegistry();
+      const connectionManager = server.getConnectionManager();
+      expect(toolRegistry).toBeDefined();
+      expect(connectionManager).toBeDefined();
+      // 验证它们都返回相同的服务管理器实例
+      expect(toolRegistry).toBe(server.getServiceManager());
+      expect(connectionManager).toBe(server.getServiceManager());
     });
 
     test("应该正确处理事件", async () => {
