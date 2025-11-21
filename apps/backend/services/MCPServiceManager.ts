@@ -126,7 +126,7 @@ export class MCPServiceManager extends EventEmitter {
         enableLogging: true,
         logLevel: "info",
       };
-      this.configs = {};
+      this.configs = (configs as Record<string, MCPServiceConfig>) || {};
     }
 
     // 在测试环境中使用临时目录，避免在项目根目录创建缓存文件

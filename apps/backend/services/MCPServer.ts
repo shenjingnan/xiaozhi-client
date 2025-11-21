@@ -35,6 +35,12 @@ export class MCPServer extends EventEmitter {
     logger.info("初始化 MCP 服务管理器");
 
     try {
+      // 清除可能存在的环境变量端口配置，确保使用测试指定的端口
+      const originalPort = process.env.PORT;
+      const originalMcpPort = process.env.MCP_PORT;
+      process.env.PORT = undefined;
+      process.env.MCP_PORT = undefined;
+
       // 创建 HTTP 模式的服务管理器
       const httpConfig: HTTPConfig = {
         name: "http",
@@ -44,7 +50,17 @@ export class MCPServer extends EventEmitter {
         enableRPC: true,
       };
 
-      this.serviceManager = await createHTTPServer(httpConfig);
+      try {
+        this.serviceManager = await createHTTPServer(httpConfig);
+      } finally {
+        // 恢复环境变量
+        if (originalPort !== undefined) {
+          process.env.PORT = originalPort;
+        }
+        if (originalMcpPort !== undefined) {
+          process.env.MCP_PORT = originalMcpPort;
+        }
+      }
 
       // 转发服务管理器的事件
       this.serviceManager.on("started", () => this.emit("started"));
@@ -109,8 +125,6 @@ export class MCPServer extends EventEmitter {
       // 初始化服务管理器
       await this.initializeServiceManager();
 
-      // 服务管理器已经在 createHTTPServer 中启动，无需再次启动
-
       // 初始化小智接入点连接（不阻塞服务器启动）
       this.initializeMCPClient().catch((error) => {
         logger.error("初始化小智接入点连接失败:", error);
@@ -118,7 +132,7 @@ export class MCPServer extends EventEmitter {
 
       this.isStarted = true;
       this.emit("started");
-      logger.info("MCP 服务器启动成功");
+      logger.info(`MCP 服务器启动成功，端口: ${this.port}`);
     } catch (error) {
       logger.error("启动 MCP 服务器失败:", error);
       throw error;

@@ -90,6 +90,11 @@ describe("MCPServer 阶段一重构验收测试", () => {
     originalEnv = process.env.XIAOZHI_CONFIG_DIR;
     process.env.XIAOZHI_CONFIG_DIR = "/tmp/xiaozhi-test-mcp-server";
 
+    // 清除可能影响端口配置的环境变量
+    process.env.PORT = undefined;
+    process.env.MCP_PORT = undefined;
+    process.env.MCP_SERVER_MODE = undefined;
+
     vi.clearAllMocks();
 
     // 使用随机端口避免冲突
@@ -119,6 +124,9 @@ describe("MCPServer 阶段一重构验收测试", () => {
   test("应该正确处理 initialize 请求", async () => {
     await server.start();
 
+    // 添加一些等待时间确保服务器完全启动
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
     const response = await request(`http://localhost:${port}`)
       .post("/rpc")
       .send({
@@ -147,6 +155,9 @@ describe("MCPServer 阶段一重构验收测试", () => {
   test("应该正确处理 tools/list 请求", async () => {
     await server.start();
 
+    // 添加等待时间确保服务器完全启动
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
     const response = await request(`http://localhost:${port}`)
       .post("/rpc")
       .send({
@@ -165,6 +176,9 @@ describe("MCPServer 阶段一重构验收测试", () => {
 
   test("应该正确处理 ping 请求", async () => {
     await server.start();
+
+    // 添加等待时间确保服务器完全启动
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     const response = await request(`http://localhost:${port}`)
       .post("/rpc")
@@ -185,6 +199,9 @@ describe("MCPServer 阶段一重构验收测试", () => {
   test("应该正确处理未知方法请求", async () => {
     await server.start();
 
+    // 添加等待时间确保服务器完全启动
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
     const response = await request(`http://localhost:${port}`)
       .post("/rpc")
       .send({
@@ -204,6 +221,9 @@ describe("MCPServer 阶段一重构验收测试", () => {
   test("应该正确处理状态端点", async () => {
     await server.start();
 
+    // 添加等待时间确保服务器完全启动
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
     const response = await request(`http://localhost:${port}`).get("/status");
 
     expect(response.status).toBe(200);
@@ -217,6 +237,9 @@ describe("MCPServer 阶段一重构验收测试", () => {
   test("应该正确处理健康检查端点", async () => {
     await server.start();
 
+    // 添加等待时间确保服务器完全启动
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
     const response = await request(`http://localhost:${port}`).get("/health");
 
     expect(response.status).toBe(200);
@@ -226,6 +249,9 @@ describe("MCPServer 阶段一重构验收测试", () => {
 
   test("SSE 端点应该正确设置响应头", async () => {
     await server.start();
+
+    // 添加等待时间确保服务器完全启动
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     // 只测试 SSE 端点的响应头，不等待数据流
     const response = await request(`http://localhost:${port}`)
@@ -242,6 +268,9 @@ describe("MCPServer 阶段一重构验收测试", () => {
 
   test("性能测试：响应时间应该有显著改善", async () => {
     await server.start();
+
+    // 添加等待时间确保服务器完全启动
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     const startTime = Date.now();
 

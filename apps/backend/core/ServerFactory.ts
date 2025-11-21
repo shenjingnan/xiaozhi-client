@@ -120,12 +120,14 @@ export async function createHTTPServer(
   logger.info("创建 HTTP 模式服务器");
 
   const serviceManager = new MCPServiceManager();
-  await serviceManager.start();
 
   const messageHandler = serviceManager.getMessageHandler();
   const httpAdapter = new HTTPAdapter(messageHandler, config);
 
   await serviceManager.registerTransport("http", httpAdapter);
+
+  // 在注册传输适配器后再启动服务管理器
+  await serviceManager.start();
 
   logger.info("HTTP 模式服务器创建成功");
   return serviceManager;
