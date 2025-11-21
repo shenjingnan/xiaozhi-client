@@ -369,19 +369,28 @@ async function registerHTTPTransport(
   messageHandler: MCPMessageHandler,
   config: HTTPConfig = { name: "http" }
 ): Promise<void> {
-  // 设置默认端口
-  const httpConfig: HTTPConfig = {
-    port: 3000,
-    host: "0.0.0.0",
-    ...config,
-  };
-
-  // 从环境变量获取端口
-  if (process.env.PORT) {
-    httpConfig.port = Number.parseInt(process.env.PORT, 10);
+  // 确定端口配置：优先使用传入的配置，其次使用环境变量，最后使用默认值
+  let port: number;
+  if (config.port) {
+    // 配置中明确指定了端口，使用配置的端口
+    port = config.port;
+  } else if (process.env.PORT) {
+    // 从环境变量获取端口
+    port = Number.parseInt(process.env.PORT, 10);
   } else if (process.env.MCP_PORT) {
-    httpConfig.port = Number.parseInt(process.env.MCP_PORT, 10);
+    // 从 MCP 环境变量获取端口
+    port = Number.parseInt(process.env.MCP_PORT, 10);
+  } else {
+    // 使用默认端口
+    port = 3000;
   }
+
+  // 创建最终的配置对象
+  const httpConfig: HTTPConfig = {
+    ...config,
+    port,
+    host: config.host || "0.0.0.0",
+  };
 
   const httpAdapter = new HTTPAdapter(messageHandler, httpConfig);
   await serviceManager.registerTransport("http", httpAdapter);

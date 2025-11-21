@@ -1,7 +1,5 @@
 import { EventEmitter } from "node:events";
-import { createHTTPServer } from "@core/ServerFactory.js";
 import type { MCPServiceManager } from "@services/MCPServiceManager.js";
-import type { HTTPConfig } from "@transports/HTTPAdapter.js";
 import { Logger } from "../Logger.js";
 import { ProxyMCPServer } from "../ProxyMCPServer.js";
 import { configManager } from "../configManager.js";
@@ -10,12 +8,13 @@ const logger = new Logger();
 
 /**
  * MCP 服务器类（重构版）
- * 现在基于 MCPServiceManager 和传输层抽象实现
- * 保持向后兼容的 API，但内部使用新的服务管理器架构
+ * 现在直接使用 WebServer 实现实例化的 HTTP 服务器
+ * 保持向后兼容的 API，但内部使用新的 WebServer 架构
  */
 export class MCPServer extends EventEmitter {
   private serviceManager: MCPServiceManager | null = null;
   private proxyMCPServer: ProxyMCPServer | null = null;
+  private webServer: any = null;
   private port: number;
   private isStarted = false;
 
@@ -35,32 +34,14 @@ export class MCPServer extends EventEmitter {
     logger.info("初始化 MCP 服务管理器");
 
     try {
-      // 清除可能存在的环境变量端口配置，确保使用测试指定的端口
-      const originalPort = process.env.PORT;
-      const originalMcpPort = process.env.MCP_PORT;
-      process.env.PORT = undefined;
-      process.env.MCP_PORT = undefined;
+      // 创建服务管理器实例
+      const { MCPServiceManager } = await import(
+        "@services/MCPServiceManager.js"
+      );
+      this.serviceManager = new MCPServiceManager();
+      await this.serviceManager.start();
 
-      // 创建 HTTP 模式的服务管理器
-      const httpConfig: HTTPConfig = {
-        name: "http",
-        port: this.port,
-        host: "0.0.0.0",
-        enableSSE: true,
-        enableRPC: true,
-      };
-
-      try {
-        this.serviceManager = await createHTTPServer(httpConfig);
-      } finally {
-        // 恢复环境变量
-        if (originalPort !== undefined) {
-          process.env.PORT = originalPort;
-        }
-        if (originalMcpPort !== undefined) {
-          process.env.MCP_PORT = originalMcpPort;
-        }
-      }
+      logger.info(`MCP 服务管理器创建成功，端口: ${this.port}`);
 
       // 转发服务管理器的事件
       this.serviceManager.on("started", () => this.emit("started"));
@@ -72,6 +53,33 @@ export class MCPServer extends EventEmitter {
       logger.debug("MCP 服务管理器初始化完成");
     } catch (error) {
       logger.error("初始化 MCP 服务管理器失败", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 初始化 Web 服务器
+   */
+  private async initializeWebServer(): Promise<void> {
+    if (this.webServer) {
+      return;
+    }
+
+    logger.info("初始化 Web 服务器");
+
+    try {
+      // 动态导入 WebServer 以避免循环依赖
+      const { WebServer } = await import("../WebServer.js");
+
+      // 创建 WebServer 实例（WebServer 构造函数只接受端口参数）
+      this.webServer = new WebServer(this.port);
+
+      // 启动 Web 服务器
+      await this.webServer.start();
+
+      logger.info(`Web 服务器启动成功，端口: ${this.port}`);
+    } catch (error) {
+      logger.error("初始化 Web 服务器失败", error);
       throw error;
     }
   }
@@ -125,6 +133,9 @@ export class MCPServer extends EventEmitter {
       // 初始化服务管理器
       await this.initializeServiceManager();
 
+      // 初始化 Web 服务器
+      await this.initializeWebServer();
+
       // 初始化小智接入点连接（不阻塞服务器启动）
       this.initializeMCPClient().catch((error) => {
         logger.error("初始化小智接入点连接失败:", error);
@@ -150,6 +161,12 @@ export class MCPServer extends EventEmitter {
 
     try {
       logger.info("停止 MCP 服务器");
+
+      // 停止 Web 服务器
+      if (this.webServer) {
+        await this.webServer.stop();
+        this.webServer = null;
+      }
 
       // 停止服务管理器
       if (this.serviceManager) {
@@ -210,6 +227,10 @@ export class MCPServer extends EventEmitter {
    * 检查服务器是否正在运行
    */
   isRunning(): boolean {
-    return this.isStarted && (this.serviceManager?.isServerRunning() || false);
+    return (
+      this.isStarted &&
+      (this.serviceManager?.isServerRunning() || false) &&
+      this.webServer !== null
+    );
   }
 }
