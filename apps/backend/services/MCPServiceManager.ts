@@ -9,6 +9,25 @@
 import { EventEmitter } from "node:events";
 import { MCPMessageHandler } from "@core/MCPMessageHandler.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+
+// JSON Schema 类型定义（兼容 MCP SDK）
+type JSONSchema = Record<string, unknown> & {
+  type: "object";
+  properties?: Record<string, unknown>;
+  required?: string[];
+  additionalProperties?: boolean;
+};
+
+// CustomMCP 工具类型定义
+interface CustomMCPTool {
+  name: string;
+  description?: string;
+  inputSchema: JSONSchema;
+  handler?: {
+    type: string;
+    config?: Record<string, unknown>;
+  };
+}
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type { MCPToolConfig } from "@root/configManager.js";
@@ -60,7 +79,7 @@ export interface UnifiedServerConfig {
   name?: string;
   enableLogging?: boolean;
   logLevel?: string;
-  configs?: Record<string, any>; // MCPService 配置
+  configs?: Record<string, MCPServiceConfig>; // MCPService 配置
 }
 
 /**
@@ -536,14 +555,14 @@ export class MCPServiceManager extends EventEmitter {
   getAllTools(): Array<{
     name: string;
     description: string;
-    inputSchema: any;
+    inputSchema: JSONSchema;
     serviceName: string;
     originalName: string;
   }> {
     const allTools: Array<{
       name: string;
       description: string;
-      inputSchema: any;
+      inputSchema: JSONSchema;
       serviceName: string;
       originalName: string;
     }> = [];
@@ -589,7 +608,7 @@ export class MCPServiceManager extends EventEmitter {
     }
 
     // 2. 添加CustomMCP工具（添加异常处理确保优雅降级）
-    let customTools: any[] = [];
+    let customTools: Tool[] = [];
     try {
       customTools = this.customMCPHandler.getTools();
       this.logger.debug(
@@ -630,10 +649,13 @@ export class MCPServiceManager extends EventEmitter {
    * @param tool 工具对象
    * @returns 服务名称
    */
-  private getServiceNameForTool(tool: any): string {
+  private getServiceNameForTool(tool: CustomMCPTool): string {
     if (tool.handler?.type === "mcp") {
       // 如果是从 MCP 同步的工具，返回原始服务名称
-      return tool.handler.config.serviceName;
+      const config = tool.handler.config as
+        | { serviceName?: string; toolName?: string }
+        | undefined;
+      return config?.serviceName || "customMCP";
     }
     return "customMCP";
   }
@@ -643,14 +665,18 @@ export class MCPServiceManager extends EventEmitter {
    * @param customTool CustomMCP 工具信息
    * @returns 用于日志记录的服务名称
    */
-  private getLogServerName(customTool: any): string {
+  private getLogServerName(customTool: CustomMCPTool): string {
     if (!customTool?.handler) {
       return "custom";
     }
 
     switch (customTool.handler.type) {
-      case "mcp":
-        return customTool.handler.config.serviceName;
+      case "mcp": {
+        const config = customTool.handler.config as
+          | { serviceName?: string; toolName?: string }
+          | undefined;
+        return config?.serviceName || "customMCP";
+      }
       case "coze":
         return "coze";
       case "dify":
@@ -671,13 +697,16 @@ export class MCPServiceManager extends EventEmitter {
    */
   private getOriginalToolName(
     toolName: string,
-    customTool: any,
+    customTool: CustomMCPTool | undefined,
     toolInfo?: ToolInfo
   ): string {
     if (customTool) {
       // CustomMCP 工具
       if (customTool.handler?.type === "mcp") {
-        return customTool.handler.config.toolName;
+        const config = customTool.handler.config as
+          | { serviceName?: string; toolName?: string }
+          | undefined;
+        return config?.toolName || toolName;
       }
       return toolName;
     }
@@ -689,7 +718,10 @@ export class MCPServiceManager extends EventEmitter {
   /**
    * 调用 MCP 工具（支持标准 MCP 工具和 customMCP 工具）
    */
-  async callTool(toolName: string, arguments_: any): Promise<ToolCallResult> {
+  async callTool(
+    toolName: string,
+    arguments_: Record<string, unknown>
+  ): Promise<ToolCallResult> {
     const startTime = Date.now();
 
     // 初始化日志信息
@@ -703,9 +735,11 @@ export class MCPServiceManager extends EventEmitter {
       if (this.customMCPHandler.hasTool(toolName)) {
         const customTool = this.customMCPHandler.getToolInfo(toolName);
 
-        // 设置日志信息
-        logServerName = this.getLogServerName(customTool);
-        originalToolName = this.getOriginalToolName(toolName, customTool);
+        // 设置日志信息（添加空值检查）
+        if (customTool) {
+          logServerName = this.getLogServerName(customTool);
+          originalToolName = this.getOriginalToolName(toolName, customTool);
+        }
 
         if (customTool?.handler?.type === "mcp") {
           // 对于 mcp 类型的工具，直接路由到对应的 MCP 服务
@@ -1035,7 +1069,7 @@ export class MCPServiceManager extends EventEmitter {
   private async callMCPTool(
     toolName: string,
     config: { serviceName: string; toolName: string },
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<ToolCallResult> {
     const { serviceName, toolName: originalToolName } = config;
 
@@ -1926,8 +1960,12 @@ export class MCPServiceManager extends EventEmitter {
   /**
    * 类型守卫：检查是否为 UnifiedServerConfig
    */
-  private isUnifiedServerConfig(configs: any): configs is UnifiedServerConfig {
-    return configs && typeof configs === "object" && "configs" in configs;
+  private isUnifiedServerConfig(
+    configs: unknown
+  ): configs is UnifiedServerConfig {
+    return (
+      configs !== null && typeof configs === "object" && "configs" in configs
+    );
   }
 
   /**
