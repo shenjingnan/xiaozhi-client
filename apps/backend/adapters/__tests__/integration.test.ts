@@ -28,7 +28,6 @@ describe("适配器集成测试", () => {
       expect(result.type).toBe(MCPTransportType.STDIO);
       expect(result.command).toBe("python");
       expect(result.args).toEqual(["-m", "calculator"]);
-      expect(result.reconnect?.enabled).toBe(true);
       expect(result.ping?.enabled).toBe(true);
     });
 
@@ -43,7 +42,6 @@ describe("适配器集成测试", () => {
       expect(result.name).toBe("sse-service");
       expect(result.type).toBe(MCPTransportType.SSE);
       expect(result.url).toBe("https://example.com/sse");
-      expect(result.reconnect?.enabled).toBe(true);
       expect(result.ping?.enabled).toBe(true);
     });
 
@@ -71,7 +69,6 @@ describe("适配器集成测试", () => {
       expect(result.name).toBe("http-service");
       expect(result.type).toBe(MCPTransportType.STREAMABLE_HTTP);
       expect(result.url).toBe("https://api.example.com/mcp");
-      expect(result.reconnect?.enabled).toBe(true);
       expect(result.ping?.enabled).toBe(false); // HTTP 默认不启用 ping
     });
   });

@@ -2,7 +2,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Logger } from "../../Logger.js";
-import type { MCPServiceConfig, ReconnectOptions } from "../MCPService.js";
+import type { MCPServiceConfig } from "../MCPService.js";
 import {
   ConnectionState,
   MCPService,
@@ -124,19 +124,13 @@ describe("MCPService", () => {
       );
     });
 
-    it("should merge reconnect options correctly", () => {
-      const customReconnectOptions: Partial<ReconnectOptions> = {
-        maxAttempts: 5,
-        initialInterval: 2000,
-      };
-      const serviceWithOptions = new MCPService(config, {
-        reconnect: customReconnectOptions,
-      });
-      const reconnectOptions = serviceWithOptions.getReconnectOptions();
+    it("should create service with basic config", () => {
+      const serviceWithOptions = new MCPService(config);
+      const status = serviceWithOptions.getStatus();
 
-      expect(reconnectOptions.maxAttempts).toBe(5);
-      expect(reconnectOptions.initialInterval).toBe(2000);
-      expect(reconnectOptions.enabled).toBe(true); // default value
+      expect(status.name).toBe("test-service");
+      expect(status.connected).toBe(false);
+      expect(status.connectionState).toBe(ConnectionState.DISCONNECTED);
     });
   });
 
@@ -281,15 +275,26 @@ describe("MCPService", () => {
     });
   });
 
-  describe("reconnect", () => {
-    it("should reconnect successfully", async () => {
+  describe("disconnect and connect", () => {
+    it("should disconnect and connect successfully", async () => {
       mockClient.connect.mockResolvedValue(undefined);
       mockClient.listTools.mockResolvedValue({ tools: [] });
+      mockClient.close.mockResolvedValue(undefined);
 
-      await service.reconnect();
-
+      // 先连接
+      await service.connect();
       expect(service.isConnected()).toBe(true);
-      expect(service.getStatus().reconnectAttempts).toBe(0);
+
+      // 然后断开连接
+      await service.disconnect();
+      expect(service.isConnected()).toBe(false);
+
+      // 重新连接
+      await service.connect();
+      expect(service.isConnected()).toBe(true);
+      expect(service.getStatus().connectionState).toBe(
+        ConnectionState.CONNECTED
+      );
     });
   });
 
@@ -374,13 +379,10 @@ describe("MCPService", () => {
         initialized: false,
         transportType: MCPTransportType.STDIO,
         toolCount: 0,
-        lastError: undefined,
-        reconnectAttempts: 0,
         connectionState: ConnectionState.DISCONNECTED,
         // ping状态
         pingEnabled: true,
         lastPingTime: undefined,
-        pingFailureCount: 0,
         isPinging: false,
       });
     });
@@ -413,34 +415,27 @@ describe("MCPService", () => {
     });
   });
 
-  describe("reconnect options management", () => {
-    it("should enable reconnect", () => {
-      service.enableReconnect();
-      expect(service.getReconnectOptions().enabled).toBe(true);
-    });
-
-    it("should disable reconnect", () => {
-      service.disableReconnect();
-      expect(service.getReconnectOptions().enabled).toBe(false);
-    });
-
-    it("should update reconnect options", () => {
-      const newOptions: Partial<ReconnectOptions> = {
-        maxAttempts: 15,
-        initialInterval: 5000,
-      };
-
-      service.updateReconnectOptions(newOptions);
-      const options = service.getReconnectOptions();
-
-      expect(options.maxAttempts).toBe(15);
-      expect(options.initialInterval).toBe(5000);
-    });
-
-    it("should reset reconnect state", () => {
-      service.resetReconnectState();
+  describe("connection management", () => {
+    it("should get correct service status", () => {
       const status = service.getStatus();
-      expect(status.reconnectAttempts).toBe(0);
+
+      expect(status.name).toBe("test-service");
+      expect(status.connected).toBe(false);
+      expect(status.connectionState).toBe(ConnectionState.DISCONNECTED);
+      expect(status.toolCount).toBe(0);
+      expect(status.pingEnabled).toBe(true);
+    });
+
+    it("should update service status after connection", async () => {
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [] });
+
+      await service.connect();
+
+      const status = service.getStatus();
+      expect(status.connected).toBe(true);
+      expect(status.connectionState).toBe(ConnectionState.CONNECTED);
+      expect(status.initialized).toBe(true);
     });
   });
 
@@ -453,56 +448,36 @@ describe("MCPService", () => {
       vi.useRealTimers();
     });
 
-    it("should attempt reconnection on connection failure", async () => {
+    it("should set disconnected state on connection failure", async () => {
       // 创建一个禁用 ping 的服务实例，避免定时器无限循环
       const testConfig = { ...config, ping: { enabled: false } };
       const testService = new MCPService(testConfig);
 
-      let connectAttempts = 0;
-      mockClient.connect.mockImplementation(() => {
-        connectAttempts++;
-        if (connectAttempts === 1) {
-          return Promise.reject(new Error("First attempt failed"));
-        }
-        return Promise.resolve();
-      });
-      mockClient.listTools.mockResolvedValue({ tools: [] });
+      mockClient.connect.mockRejectedValue(new Error("Connection failed"));
 
       // Start connection (will fail)
       const connectPromise = testService.connect().catch(() => {});
       await connectPromise;
 
       expect(testService.getStatus().connectionState).toBe(
-        ConnectionState.RECONNECTING
+        ConnectionState.DISCONNECTED
       );
-
-      // Fast-forward to trigger reconnection
-      vi.advanceTimersByTime(3000);
-      await vi.runAllTimersAsync();
-
-      expect(connectAttempts).toBe(2);
     });
 
-    it("should stop reconnecting after max attempts", async () => {
-      // Configure service with low max attempts for testing
+    it("should fail connection when connect fails", async () => {
+      // Configure service for testing
       const testConfig = { ...config };
-      const testService = new MCPService(testConfig, {
-        reconnect: { maxAttempts: 2, initialInterval: 1000 },
-      });
+      const testService = new MCPService(testConfig);
 
       mockClient.connect.mockRejectedValue(new Error("Connection failed"));
 
       // Start connection (will fail)
-      await testService.connect().catch(() => {});
-
-      // Fast-forward through all reconnection attempts
-      vi.advanceTimersByTime(10000);
-      await vi.runAllTimersAsync();
+      await expect(testService.connect()).rejects.toThrow("Connection failed");
 
       expect(testService.getStatus().connectionState).toBe(
-        ConnectionState.FAILED
+        ConnectionState.DISCONNECTED
       );
-      expect(testService.getStatus().reconnectAttempts).toBe(2);
+      expect(testService.isConnected()).toBe(false);
     });
 
     it("should not reconnect when manually disconnected", async () => {
@@ -571,63 +546,59 @@ describe("MCPService", () => {
       vi.useRealTimers();
     });
 
-    it("should use exponential backoff by default", async () => {
-      const testService = new MCPService(config, {
-        reconnect: {
-          maxAttempts: 3,
-          initialInterval: 1000,
-          backoffStrategy: "exponential",
-          backoffMultiplier: 2,
-        },
-      });
+    it("should handle connection failure gracefully", async () => {
+      const testService = new MCPService(config);
 
       mockClient.connect.mockRejectedValue(new Error("Connection failed"));
 
-      // Start connection (will fail and trigger reconnection)
-      await testService.connect().catch(() => {});
+      // Start connection (will fail)
+      await expect(testService.connect()).rejects.toThrow();
 
-      // Check that reconnection is scheduled
       expect(testService.getStatus().connectionState).toBe(
-        ConnectionState.RECONNECTING
+        ConnectionState.DISCONNECTED
       );
     });
 
-    it("should use linear backoff when configured", async () => {
-      const testService = new MCPService(config, {
-        reconnect: {
-          maxAttempts: 3,
-          initialInterval: 1000,
-          backoffStrategy: "linear",
-          backoffMultiplier: 1,
-        },
-      });
+    it("should show correct connection status", async () => {
+      const testService = new MCPService(config);
 
-      mockClient.connect.mockRejectedValue(new Error("Connection failed"));
-
-      // Start connection (will fail and trigger reconnection)
-      await testService.connect().catch(() => {});
-
+      // Initially disconnected
+      expect(testService.isConnected()).toBe(false);
       expect(testService.getStatus().connectionState).toBe(
-        ConnectionState.RECONNECTING
+        ConnectionState.DISCONNECTED
+      );
+
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [] });
+
+      // Connect successfully
+      await testService.connect();
+      expect(testService.isConnected()).toBe(true);
+      expect(testService.getStatus().connectionState).toBe(
+        ConnectionState.CONNECTED
       );
     });
 
-    it("should use fixed backoff when configured", async () => {
-      const testService = new MCPService(config, {
-        reconnect: {
-          maxAttempts: 3,
-          initialInterval: 1000,
-          backoffStrategy: "fixed",
-        },
-      });
+    it("should handle multiple connection attempts properly", async () => {
+      const testService = new MCPService(config);
 
       mockClient.connect.mockRejectedValue(new Error("Connection failed"));
 
-      // Start connection (will fail and trigger reconnection)
-      await testService.connect().catch(() => {});
+      // Try to connect (will fail)
+      await expect(testService.connect()).rejects.toThrow();
 
       expect(testService.getStatus().connectionState).toBe(
-        ConnectionState.RECONNECTING
+        ConnectionState.DISCONNECTED
+      );
+
+      // Reset and try again
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [] });
+
+      await testService.connect();
+      expect(testService.isConnected()).toBe(true);
+      expect(testService.getStatus().connectionState).toBe(
+        ConnectionState.CONNECTED
       );
     });
   });

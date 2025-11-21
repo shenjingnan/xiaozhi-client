@@ -66,8 +66,6 @@ describe("MCPService Ping功能", () => {
       ping: {
         enabled: true,
         interval: 1000, // 1秒用于测试
-        timeout: 500,
-        maxFailures: 2,
         startDelay: 100, // 100ms用于测试
       },
     };
@@ -84,8 +82,6 @@ describe("MCPService Ping功能", () => {
       const pingOptions = service.getPingOptions();
       expect(pingOptions.enabled).toBe(true);
       expect(pingOptions.interval).toBe(1000);
-      expect(pingOptions.timeout).toBe(500);
-      expect(pingOptions.maxFailures).toBe(2);
       expect(pingOptions.startDelay).toBe(100);
     });
 
@@ -100,21 +96,17 @@ describe("MCPService Ping功能", () => {
       const pingOptions = defaultService.getPingOptions();
 
       expect(pingOptions.enabled).toBe(true); // 默认启用
-      expect(pingOptions.interval).toBe(30000); // 30秒
-      expect(pingOptions.timeout).toBe(5000); // 5秒
-      expect(pingOptions.maxFailures).toBe(3); // 3次
+      expect(pingOptions.interval).toBe(60000); // 60秒
       expect(pingOptions.startDelay).toBe(5000); // 5秒
     });
 
     it("应该能够更新ping配置", () => {
       service.updatePingOptions({
         interval: 2000,
-        maxFailures: 5,
       });
 
       const pingOptions = service.getPingOptions();
       expect(pingOptions.interval).toBe(2000);
-      expect(pingOptions.maxFailures).toBe(5);
       expect(pingOptions.enabled).toBe(true); // 其他配置保持不变
     });
 
@@ -132,7 +124,6 @@ describe("MCPService Ping功能", () => {
       const status = service.getStatus();
 
       expect(status.pingEnabled).toBe(true);
-      expect(status.pingFailureCount).toBe(0);
       expect(status.isPinging).toBe(false);
       expect(status.lastPingTime).toBeUndefined();
     });
@@ -161,7 +152,6 @@ describe("MCPService Ping功能", () => {
 
       // 验证ping状态被重置
       const status = service.getStatus();
-      expect(status.pingFailureCount).toBe(0);
       expect(status.isPinging).toBe(false);
     });
 
@@ -187,8 +177,6 @@ describe("MCPService Ping功能", () => {
         ping: {
           enabled: true,
           interval: 10000,
-          timeout: 3000,
-          maxFailures: 5,
           startDelay: 2000,
         },
       };

@@ -29,12 +29,11 @@ export * from "./PerformanceMonitor.js";
 export {
   type MCPTransportType,
   ConnectionState,
-  type ReconnectOptions,
   type PingOptions,
   type ModelScopeSSEOptions,
   type MCPServiceConfig,
   type MCPServiceStatus,
-  type MCPServiceOptions,
+  type ToolCallResult,
   MCPService,
 } from "./MCPService.js";
 export { TransportFactory } from "./TransportFactory.js";
