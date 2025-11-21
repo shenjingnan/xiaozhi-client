@@ -31,15 +31,6 @@ interface SSEClient {
 }
 
 /**
- * MCP 错误接口
- */
-interface MCPError {
-  code: number;
-  message: string;
-  data?: any;
-}
-
-/**
  * MCP 路由处理器配置接口
  */
 interface MCPRouteHandlerConfig {
@@ -708,41 +699,44 @@ export class MCPRouteHandler {
   /**
    * 验证 JSON-RPC 消息格式
    */
-  private validateMessage(message: any): message is MCPMessage {
+  private validateMessage(message: unknown): message is MCPMessage {
     if (!message || typeof message !== "object") {
       this.logger.debug("消息验证失败: 不是对象");
       return false;
     }
 
-    if (message.jsonrpc !== "2.0") {
+    // 类型守卫：确保 message 是对象类型
+    const msg = message as Record<string, unknown>;
+
+    if (msg.jsonrpc !== "2.0") {
       this.logger.debug("消息验证失败: jsonrpc 版本不正确", {
-        jsonrpc: message.jsonrpc,
+        jsonrpc: msg.jsonrpc,
       });
       return false;
     }
 
-    if (!message.method || typeof message.method !== "string") {
+    if (!msg.method || typeof msg.method !== "string") {
       this.logger.debug("消息验证失败: method 字段无效", {
-        method: message.method,
+        method: msg.method,
       });
       return false;
     }
 
     // 验证 id 字段（如果存在）
     if (
-      message.id !== undefined &&
-      typeof message.id !== "string" &&
-      typeof message.id !== "number" &&
-      message.id !== null
+      msg.id !== undefined &&
+      typeof msg.id !== "string" &&
+      typeof msg.id !== "number" &&
+      msg.id !== null
     ) {
-      this.logger.debug("消息验证失败: id 字段类型无效", { id: message.id });
+      this.logger.debug("消息验证失败: id 字段类型无效", { id: msg.id });
       return false;
     }
 
     // 验证 params 字段（如果存在）
-    if (message.params !== undefined && typeof message.params !== "object") {
+    if (msg.params !== undefined && typeof msg.params !== "object") {
       this.logger.debug("消息验证失败: params 字段类型无效", {
-        params: message.params,
+        params: msg.params,
       });
       return false;
     }
@@ -822,8 +816,21 @@ export class MCPRouteHandler {
   /**
    * 广播消息到所有活跃客户端
    */
-  async broadcastMessage(event: string, data: any): Promise<void> {
-    const message = JSON.stringify(data);
+  async broadcastMessage(event: string, data: unknown): Promise<void> {
+    let message: string;
+    try {
+      // 验证数据是否可以序列化
+      message = JSON.stringify(data);
+    } catch (error) {
+      this.logger.error("广播消息序列化失败:", {
+        error: error instanceof Error ? error.message : String(error),
+        data,
+      });
+      throw new Error(
+        `广播消息无法序列化: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+
     const deadClients: string[] = [];
 
     for (const [sessionId, client] of this.clients.entries()) {
