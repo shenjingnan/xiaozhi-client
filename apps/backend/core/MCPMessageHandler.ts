@@ -4,6 +4,10 @@
  * 这是阶段一重构的核心组件，用于消除双层代理架构
  */
 
+import type {
+  ClientCapabilities,
+  InitializedNotification,
+} from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type { MCPMessage, MCPResponse } from "@root/types/mcp.js";
@@ -12,7 +16,7 @@ import type { MCPServiceManager } from "@services/MCPServiceManager.js";
 // 初始化参数接口
 interface InitializeParams {
   protocolVersion: string;
-  capabilities: any;
+  capabilities: ClientCapabilities;
   clientInfo: {
     name: string;
     version: string;
@@ -22,7 +26,7 @@ interface InitializeParams {
 // 工具调用参数接口
 interface ToolCallParams {
   name: string;
-  arguments?: any;
+  arguments?: Record<string, unknown>;
 }
 
 // MCP 资源接口
@@ -143,7 +147,9 @@ export class MCPMessageHandler {
    * @param params 通知参数
    * @returns null（通知消息不需要响应）
    */
-  private async handleInitializedNotification(params?: any): Promise<null> {
+  private async handleInitializedNotification(
+    params?: InitializedNotification["params"]
+  ): Promise<null> {
     this.logger.debug("收到 initialized 通知，客户端初始化完成", params);
 
     // 可以在这里执行一些初始化完成后的逻辑
