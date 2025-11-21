@@ -56,22 +56,26 @@
    - 依赖注入容器：`apps/backend/cli/Container.ts`
    - 命令注册和处理
 
-2. **核心 MCP 层** (`apps/backend/core/`) - MCP 协议实现
+2. **服务层** (`apps/backend/services/`) - 连接和服务管理
 
-   - `UnifiedMCPServer.ts` - 主要 MCP 服务器实现
+   - `MCPServiceManager.ts` - **核心 MCP 服务管理器**，统一管理所有 MCP 服务
+   - `MCPService.ts` - MCP 服务实现
+   - `MCPServer.ts` - 兼容性包装器，提供向后兼容的 API
+
+3. **核心 MCP 层** (`apps/backend/core/`) - MCP 协议实现
+
    - `ServerFactory.ts` - 用于创建不同服务器类型的工厂
    - `MCPMessageHandler.ts` - 消息处理和路由
 
-3. **传输层** (`apps/backend/transports/`) - 通信适配器
+4. **传输层** (`apps/backend/transports/`) - 通信适配器
 
    - `WebSocketAdapter.ts` - WebSocket 通信
    - `HTTPAdapter.ts` - HTTP 通信
    - `StdioAdapter.ts` - 标准 I/O 通信
 
-4. **服务层** (`apps/backend/services/`) - 连接和服务管理
+5. **连接管理器** (`apps/backend/services/`) - 连接管理
 
    - `IndependentXiaozhiConnectionManager.ts` - 独立多接入点连接管理器
-   - `MCPServiceManager.ts` - MCP 服务管理器
    - `XiaozhiConnectionManagerSingleton.ts` - 全局单例管理器
 
 5. **工具层** (`apps/backend/utils/`) - 共享工具和辅助函数

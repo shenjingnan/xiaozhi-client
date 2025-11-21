@@ -10,9 +10,9 @@
  */
 
 import type { MCPMessageHandler } from "@core/MCPMessageHandler.js";
-import type { UnifiedServerConfig } from "@core/UnifiedMCPServer.js";
-import { UnifiedMCPServer } from "@core/UnifiedMCPServer.js";
 import { logger } from "@root/Logger.js";
+import type { UnifiedServerConfig } from "@services/MCPServiceManager.js";
+import { MCPServiceManager } from "@services/MCPServiceManager.js";
 import type { HTTPConfig } from "@transports/HTTPAdapter.js";
 import { HTTPAdapter } from "@transports/HTTPAdapter.js";
 import type { StdioConfig } from "@transports/StdioAdapter.js";
@@ -66,7 +66,7 @@ interface EnvironmentDetection {
  */
 export async function createServer(
   config: ServerFactoryConfig = {}
-): Promise<UnifiedMCPServer> {
+): Promise<MCPServiceManager> {
   logger.info("[ServerFactory] 开始创建 MCP 服务器", config);
 
   try {
@@ -74,17 +74,17 @@ export async function createServer(
     const mode = await determineServerMode(config);
     logger.info(`[ServerFactory] 确定服务器模式: ${mode}`);
 
-    // 创建统一服务器实例
-    const server = new UnifiedMCPServer(config.serverConfig);
-    await server.initialize();
+    // 创建 MCP 服务管理器实例
+    const serviceManager = new MCPServiceManager(config.serverConfig);
+    await serviceManager.start();
 
     // 根据模式注册传输适配器
-    await registerTransportsForMode(server, mode, config);
+    await registerTransportsForMode(serviceManager, mode, config);
 
-    logger.info("[ServerFactory] MCP 服务器创建成功");
-    return server;
+    logger.info("[ServerFactory] MCP 服务管理器创建成功");
+    return serviceManager;
   } catch (error) {
-    logger.error("[ServerFactory] 创建 MCP 服务器失败", error);
+    logger.error("[ServerFactory] 创建 MCP 服务管理器失败", error);
     throw error;
   }
 }
@@ -95,19 +95,19 @@ export async function createServer(
  */
 export async function createStdioServer(
   config: StdioConfig = { name: "stdio" }
-): Promise<UnifiedMCPServer> {
+): Promise<MCPServiceManager> {
   logger.info("[ServerFactory] 创建 Stdio 模式服务器");
 
-  const server = new UnifiedMCPServer();
-  await server.initialize();
+  const serviceManager = new MCPServiceManager();
+  await serviceManager.start();
 
-  const messageHandler = server.getMessageHandler();
+  const messageHandler = serviceManager.getMessageHandler();
   const stdioAdapter = new StdioAdapter(messageHandler, config);
 
-  await server.registerTransport("stdio", stdioAdapter);
+  await serviceManager.registerTransport("stdio", stdioAdapter);
 
   logger.info("[ServerFactory] Stdio 模式服务器创建成功");
-  return server;
+  return serviceManager;
 }
 
 /**
@@ -116,19 +116,19 @@ export async function createStdioServer(
  */
 export async function createHTTPServer(
   config: HTTPConfig = { name: "http" }
-): Promise<UnifiedMCPServer> {
+): Promise<MCPServiceManager> {
   logger.info("创建 HTTP 模式服务器");
 
-  const server = new UnifiedMCPServer();
-  await server.initialize();
+  const serviceManager = new MCPServiceManager();
+  await serviceManager.start();
 
-  const messageHandler = server.getMessageHandler();
+  const messageHandler = serviceManager.getMessageHandler();
   const httpAdapter = new HTTPAdapter(messageHandler, config);
 
-  await server.registerTransport("http", httpAdapter);
+  await serviceManager.registerTransport("http", httpAdapter);
 
   logger.info("HTTP 模式服务器创建成功");
-  return server;
+  return serviceManager;
 }
 
 /**
@@ -140,19 +140,19 @@ export async function createWebSocketServer(
     name: "websocket",
     endpointUrl: "ws://localhost:8080",
   }
-): Promise<UnifiedMCPServer> {
+): Promise<MCPServiceManager> {
   logger.info("创建 WebSocket 模式服务器");
 
-  const server = new UnifiedMCPServer();
-  await server.initialize();
+  const serviceManager = new MCPServiceManager();
+  await serviceManager.start();
 
-  const messageHandler = server.getMessageHandler();
+  const messageHandler = serviceManager.getMessageHandler();
   const wsAdapter = new WebSocketAdapter(messageHandler, config);
 
-  await server.registerTransport("websocket", wsAdapter);
+  await serviceManager.registerTransport("websocket", wsAdapter);
 
   logger.info("WebSocket 模式服务器创建成功");
-  return server;
+  return serviceManager;
 }
 
 /**
@@ -163,30 +163,30 @@ export async function createHybridServer(
   stdioConfig: StdioConfig = { name: "stdio" },
   httpConfig: HTTPConfig = { name: "http" },
   websocketConfig?: WebSocketConfig
-): Promise<UnifiedMCPServer> {
+): Promise<MCPServiceManager> {
   logger.info("创建混合模式服务器");
 
-  const server = new UnifiedMCPServer();
-  await server.initialize();
+  const serviceManager = new MCPServiceManager();
+  await serviceManager.start();
 
-  const messageHandler = server.getMessageHandler();
+  const messageHandler = serviceManager.getMessageHandler();
 
   // 注册 Stdio 适配器
   const stdioAdapter = new StdioAdapter(messageHandler, stdioConfig);
-  await server.registerTransport("stdio", stdioAdapter);
+  await serviceManager.registerTransport("stdio", stdioAdapter);
 
   // 注册 HTTP 适配器
   const httpAdapter = new HTTPAdapter(messageHandler, httpConfig);
-  await server.registerTransport("http", httpAdapter);
+  await serviceManager.registerTransport("http", httpAdapter);
 
   // 可选注册 WebSocket 适配器
   if (websocketConfig) {
     const wsAdapter = new WebSocketAdapter(messageHandler, websocketConfig);
-    await server.registerTransport("websocket", wsAdapter);
+    await serviceManager.registerTransport("websocket", wsAdapter);
   }
 
   logger.info("混合模式服务器创建成功");
-  return server;
+  return serviceManager;
 }
 
 /**
@@ -288,35 +288,35 @@ async function detectEnvironment(
  * 为指定模式注册传输适配器
  */
 async function registerTransportsForMode(
-  server: UnifiedMCPServer,
+  serviceManager: MCPServiceManager,
   mode: ServerMode,
   config: ServerFactoryConfig
 ): Promise<void> {
-  const messageHandler = server.getMessageHandler();
+  const messageHandler = serviceManager.getMessageHandler();
 
   switch (mode) {
     case ServerMode.STDIO:
-      await registerStdioTransport(server, messageHandler, config.stdioConfig);
+      await registerStdioTransport(serviceManager, messageHandler, config.stdioConfig);
       break;
 
     case ServerMode.HTTP:
-      await registerHTTPTransport(server, messageHandler, config.httpConfig);
+      await registerHTTPTransport(serviceManager, messageHandler, config.httpConfig);
       break;
 
     case ServerMode.WEBSOCKET:
       await registerWebSocketTransport(
-        server,
+        serviceManager,
         messageHandler,
         config.websocketConfig
       );
       break;
 
     case ServerMode.HYBRID:
-      await registerStdioTransport(server, messageHandler, config.stdioConfig);
-      await registerHTTPTransport(server, messageHandler, config.httpConfig);
+      await registerStdioTransport(serviceManager, messageHandler, config.stdioConfig);
+      await registerHTTPTransport(serviceManager, messageHandler, config.httpConfig);
       if (config.websocketConfig) {
         await registerWebSocketTransport(
-          server,
+          serviceManager,
           messageHandler,
           config.websocketConfig
         );
@@ -332,12 +332,12 @@ async function registerTransportsForMode(
  * 注册 Stdio 传输适配器
  */
 async function registerStdioTransport(
-  server: UnifiedMCPServer,
+  serviceManager: MCPServiceManager,
   messageHandler: MCPMessageHandler,
   config: StdioConfig = { name: "stdio" }
 ): Promise<void> {
   const stdioAdapter = new StdioAdapter(messageHandler, config);
-  await server.registerTransport("stdio", stdioAdapter);
+  await serviceManager.registerTransport("stdio", stdioAdapter);
   logger.info("Stdio 传输适配器注册成功");
 }
 
@@ -345,7 +345,7 @@ async function registerStdioTransport(
  * 注册 HTTP 传输适配器
  */
 async function registerHTTPTransport(
-  server: UnifiedMCPServer,
+  serviceManager: MCPServiceManager,
   messageHandler: MCPMessageHandler,
   config: HTTPConfig = { name: "http" }
 ): Promise<void> {
@@ -364,7 +364,7 @@ async function registerHTTPTransport(
   }
 
   const httpAdapter = new HTTPAdapter(messageHandler, httpConfig);
-  await server.registerTransport("http", httpAdapter);
+  await serviceManager.registerTransport("http", httpAdapter);
   logger.info(`HTTP 传输适配器注册成功 (端口: ${httpConfig.port})`);
 }
 
@@ -372,7 +372,7 @@ async function registerHTTPTransport(
  * 注册 WebSocket 传输适配器
  */
 async function registerWebSocketTransport(
-  server: UnifiedMCPServer,
+  serviceManager: MCPServiceManager,
   messageHandler: MCPMessageHandler,
   config: WebSocketConfig = {
     name: "websocket",
@@ -397,7 +397,7 @@ async function registerWebSocketTransport(
   }
 
   const wsAdapter = new WebSocketAdapter(messageHandler, wsConfig);
-  await server.registerTransport("websocket", wsAdapter);
+  await serviceManager.registerTransport("websocket", wsAdapter);
   logger.info(`WebSocket 传输适配器注册成功 (端点: ${wsConfig.endpointUrl})`);
 }
 

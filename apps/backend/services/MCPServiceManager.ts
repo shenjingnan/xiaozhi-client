@@ -31,13 +31,13 @@ interface ToolInfo {
 }
 
 // 服务状态接口（保持向后兼容）
-interface ServiceStatus {
+export interface ServiceStatus {
   connected: boolean;
   clientName: string;
 }
 
 // 管理器状态接口（保持向后兼容）
-interface ManagerStatus {
+export interface ManagerStatus {
   services: Record<string, ServiceStatus>;
   totalTools: number;
   availableTools: string[];
@@ -50,6 +50,31 @@ interface ToolCallResult {
     text: string;
   }>;
   isError?: boolean;
+}
+
+/**
+ * 服务器配置接口（从 UnifiedMCPServer 移入）
+ */
+export interface UnifiedServerConfig {
+  name?: string;
+  enableLogging?: boolean;
+  logLevel?: string;
+  configs?: Record<string, any>; // MCPService 配置
+}
+
+/**
+ * 服务器状态接口（从 UnifiedMCPServer 移入）
+ */
+export interface UnifiedServerStatus {
+  isRunning: boolean;
+  serviceStatus: ManagerStatus;
+  transportCount: number;
+  activeConnections: number;
+  config: UnifiedServerConfig;
+  // 添加对 serviceStatus 的便捷访问属性
+  services?: Record<string, ServiceStatus>;
+  totalTools?: number;
+  availableTools?: string[];
 }
 
 export class MCPServiceManager extends EventEmitter {
@@ -69,14 +94,37 @@ export class MCPServiceManager extends EventEmitter {
   private transportAdapters: Map<string, TransportAdapter> = new Map();
   private messageHandler: MCPMessageHandler;
 
+  // 新增：服务器状态管理（从 UnifiedMCPServer 移入）
+  private isRunning = false;
+  private config: UnifiedServerConfig;
+
   /**
    * 创建 MCPServiceManager 实例
-   * @param configs 可选的初始服务配置
+   * @param configs 可选的初始服务配置或服务器配置
    */
-  constructor(configs?: Record<string, MCPServiceConfig>) {
+  constructor(configs?: Record<string, MCPServiceConfig> | UnifiedServerConfig) {
     super();
     this.logger = logger;
-    this.configs = configs || {};
+
+    // 处理参数，支持 UnifiedServerConfig 格式
+    if (configs && 'configs' in configs) {
+      // UnifiedServerConfig 格式
+      this.config = {
+        name: "MCPServiceManager",
+        enableLogging: true,
+        logLevel: "info",
+        ...configs,
+      };
+      this.configs = (configs.configs as Record<string, MCPServiceConfig>) || {};
+    } else {
+      // 原有的 configs 格式
+      this.config = {
+        name: "MCPServiceManager",
+        enableLogging: true,
+        logLevel: "info",
+      };
+      this.configs = {};
+    }
 
     // 在测试环境中使用临时目录，避免在项目根目录创建缓存文件
     const isTestEnv =
@@ -1072,59 +1120,10 @@ export class MCPServiceManager extends EventEmitter {
   }
 
   /**
-   * 获取服务状态
+   * 获取服务器状态（兼容 UnifiedServerStatus 格式）
    */
-  getStatus(): ManagerStatus {
-    // 计算总工具数量（包括 customMCP 工具，添加异常处理）
-    let customMCPToolCount = 0;
-    let customToolNames: string[] = [];
-
-    try {
-      customMCPToolCount = this.customMCPHandler.getToolCount();
-      customToolNames = this.customMCPHandler.getToolNames();
-      this.logger.debug(
-        `[MCPManager] 成功获取 customMCP 状态: ${customMCPToolCount} 个工具`
-      );
-    } catch (error) {
-      this.logger.warn(
-        "[MCPManager] 获取 CustomMCP 状态失败，将只包含标准 MCP 工具:",
-        error
-      );
-      // 异常情况下，customMCP 工具数量为0，不影响标准 MCP 工具
-      customMCPToolCount = 0;
-      customToolNames = [];
-    }
-
-    const totalTools = this.tools.size + customMCPToolCount;
-
-    // 获取所有可用工具名称
-    const standardToolNames = Array.from(this.tools.keys());
-    const availableTools = [...standardToolNames, ...customToolNames];
-
-    const status: ManagerStatus = {
-      services: {},
-      totalTools,
-      availableTools,
-    };
-
-    // 添加标准 MCP 服务状态
-    for (const [serviceName, service] of this.services) {
-      const serviceStatus = service.getStatus();
-      status.services[serviceName] = {
-        connected: serviceStatus.connected,
-        clientName: `xiaozhi-${serviceName}-client`,
-      };
-    }
-
-    // 添加 CustomMCP 服务状态
-    if (customMCPToolCount > 0) {
-      status.services.customMCP = {
-        connected: true, // CustomMCP 工具总是可用的
-        clientName: "xiaozhi-customMCP-handler",
-      };
-    }
-
-    return status;
+  getStatus(): UnifiedServerStatus {
+    return this.getUnifiedStatus();
   }
 
   /**
@@ -1722,16 +1721,46 @@ export class MCPServiceManager extends EventEmitter {
    * 启动管理器（包含服务和传输）
    */
   public async start(): Promise<void> {
-    await this.startAllServices();
-    await this.startTransports();
+    if (this.isRunning) {
+      throw new Error("服务器已在运行");
+    }
+
+    this.logger.info("启动 MCP 服务管理器");
+
+    try {
+      await this.startAllServices();
+      await this.startTransports();
+      this.isRunning = true;
+
+      this.logger.info("MCP 服务管理器启动成功");
+      this.emit("started");
+    } catch (error) {
+      this.logger.error("MCP 服务管理器启动失败", error);
+      throw error;
+    }
   }
 
   /**
    * 停止管理器（包含传输和服务）
    */
   public async stop(): Promise<void> {
-    await this.stopTransports();
-    await this.stopAllServices();
+    if (!this.isRunning) {
+      return;
+    }
+
+    this.logger.info("停止 MCP 服务管理器");
+
+    try {
+      await this.stopTransports();
+      await this.stopAllServices();
+      this.isRunning = false;
+
+      this.logger.info("MCP 服务管理器停止成功");
+      this.emit("stopped");
+    } catch (error) {
+      this.logger.error("MCP 服务管理器停止失败", error);
+      throw error;
+    }
   }
 
   /**
@@ -1780,6 +1809,131 @@ export class MCPServiceManager extends EventEmitter {
     return this.getAllConnections().filter(
       (conn) => conn.state === ConnectionState.CONNECTED
     ).length;
+  }
+
+  // ===== 从 UnifiedMCPServer 移入的方法 =====
+
+  /**
+   * 获取服务器状态（从 UnifiedMCPServer 移入）
+   */
+  getUnifiedStatus(): UnifiedServerStatus {
+    const serviceStatus = this.getServiceManagerStatus();
+    return {
+      isRunning: this.isRunning,
+      serviceStatus,
+      transportCount: this.getTransportAdapters().size,
+      activeConnections: this.getActiveConnectionCount(),
+      config: this.config,
+      // 便捷访问属性
+      services: serviceStatus.services,
+      totalTools: serviceStatus.totalTools,
+      availableTools: serviceStatus.availableTools,
+    };
+  }
+
+  /**
+   * 获取管理器状态（原有的 getStatus 方法重命名）
+   */
+  getServiceManagerStatus(): ManagerStatus {
+    // 计算总工具数量（包括 customMCP 工具，添加异常处理）
+    let customMCPToolCount = 0;
+    let customToolNames: string[] = [];
+
+    try {
+      customMCPToolCount = this.customMCPHandler.getToolCount();
+      customToolNames = this.customMCPHandler.getToolNames();
+      this.logger.debug(
+        `[MCPManager] 成功获取 customMCP 状态: ${customMCPToolCount} 个工具`
+      );
+    } catch (error) {
+      this.logger.warn(
+        "[MCPManager] 获取 CustomMCP 状态失败，将只包含标准 MCP 工具:",
+        error
+      );
+      // 异常情况下，customMCP 工具数量为0，不影响标准 MCP 工具
+      customMCPToolCount = 0;
+      customToolNames = [];
+    }
+
+    const totalTools = this.tools.size + customMCPToolCount;
+
+    // 获取所有可用工具名称
+    const standardToolNames = Array.from(this.tools.keys());
+    const availableTools = [...standardToolNames, ...customToolNames];
+
+    const status: ManagerStatus = {
+      services: {},
+      totalTools,
+      availableTools,
+    };
+
+    // 添加标准 MCP 服务状态
+    for (const [serviceName, service] of this.services) {
+      const serviceStatus = service.getStatus();
+      status.services[serviceName] = {
+        connected: serviceStatus.connected,
+        clientName: `xiaozhi-${serviceName}-client`,
+      };
+    }
+
+    // 添加 CustomMCP 服务状态
+    if (customMCPToolCount > 0) {
+      status.services.customMCP = {
+        connected: true, // CustomMCP 工具总是可用的
+        clientName: "xiaozhi-customMCP-handler",
+      };
+    }
+
+    return status;
+  }
+
+  /**
+   * 检查服务器是否正在运行（从 UnifiedMCPServer 移入）
+   */
+  isServerRunning(): boolean {
+    return this.isRunning;
+  }
+
+  /**
+   * 消息路由核心功能（从 UnifiedMCPServer 移入）
+   */
+  async routeMessage(message: any): Promise<any> {
+    const response = await this.messageHandler.handleMessage(message);
+    // 如果响应是 null，直接返回
+    if (response === null) {
+      return null;
+    }
+    // 将 MCPResponse 转换为 MCPMessage 格式
+    return {
+      jsonrpc: "2.0",
+      method: "response", // 标识这是一个响应消息
+      params: response,
+    };
+  }
+
+  // ===== 向后兼容方法 =====
+
+  /**
+   * 初始化方法（向后兼容，实际调用 start）
+   */
+  async initialize(): Promise<void> {
+    // 为了向后兼容，初始化时调用 start
+    // 但不设置 isRunning 状态，保持原有逻辑
+    await this.start();
+  }
+
+  /**
+   * 获取工具注册表（向后兼容，返回自身）
+   */
+  getToolRegistry(): MCPServiceManager {
+    return this;
+  }
+
+  /**
+   * 获取连接管理器（向后兼容，返回自身）
+   */
+  getConnectionManager(): MCPServiceManager {
+    return this;
   }
 }
 

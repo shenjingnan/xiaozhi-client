@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
 import { createHTTPServer } from "@core/ServerFactory.js";
-import type { UnifiedMCPServer } from "@core/UnifiedMCPServer.js";
+import type { MCPServiceManager } from "@services/MCPServiceManager.js";
 import type { HTTPConfig } from "@transports/HTTPAdapter.js";
 import { Logger } from "../Logger.js";
 import { ProxyMCPServer } from "../ProxyMCPServer.js";
@@ -10,11 +10,11 @@ const logger = new Logger();
 
 /**
  * MCP 服务器类（重构版）
- * 现在基于 UnifiedMCPServer 和传输层抽象实现
- * 保持向后兼容的 API，但内部使用新的统一架构
+ * 现在基于 MCPServiceManager 和传输层抽象实现
+ * 保持向后兼容的 API，但内部使用新的服务管理器架构
  */
 export class MCPServer extends EventEmitter {
-  private unifiedServer: UnifiedMCPServer | null = null;
+  private serviceManager: MCPServiceManager | null = null;
   private proxyMCPServer: ProxyMCPServer | null = null;
   private port: number;
   private isStarted = false;
@@ -25,17 +25,17 @@ export class MCPServer extends EventEmitter {
   }
 
   /**
-   * 初始化统一服务器
+   * 初始化服务管理器
    */
-  private async initializeUnifiedServer(): Promise<void> {
-    if (this.unifiedServer) {
+  private async initializeServiceManager(): Promise<void> {
+    if (this.serviceManager) {
       return;
     }
 
-    logger.info("初始化统一 MCP 服务器");
+    logger.info("初始化 MCP 服务管理器");
 
     try {
-      // 创建 HTTP 模式的统一服务器
+      // 创建 HTTP 模式的服务管理器
       const httpConfig: HTTPConfig = {
         name: "http",
         port: this.port,
@@ -44,18 +44,18 @@ export class MCPServer extends EventEmitter {
         enableRPC: true,
       };
 
-      this.unifiedServer = await createHTTPServer(httpConfig);
+      this.serviceManager = await createHTTPServer(httpConfig);
 
-      // 转发统一服务器的事件
-      this.unifiedServer.on("started", () => this.emit("started"));
-      this.unifiedServer.on("stopped", () => this.emit("stopped"));
-      this.unifiedServer.on("connectionRegistered", (connection) => {
-        this.emit("connectionRegistered", connection);
+      // 转发服务管理器的事件
+      this.serviceManager.on("started", () => this.emit("started"));
+      this.serviceManager.on("stopped", () => this.emit("stopped"));
+      this.serviceManager.on("transportRegistered", (data) => {
+        this.emit("connectionRegistered", data);
       });
 
-      logger.debug("统一 MCP 服务器初始化完成");
+      logger.debug("MCP 服务管理器初始化完成");
     } catch (error) {
-      logger.error("初始化统一 MCP 服务器失败", error);
+      logger.error("初始化 MCP 服务管理器失败", error);
       throw error;
     }
   }
@@ -82,10 +82,8 @@ export class MCPServer extends EventEmitter {
         this.proxyMCPServer = new ProxyMCPServer(mcpEndpoint);
 
         // 设置服务管理器
-        if (this.unifiedServer) {
-          this.proxyMCPServer.setServiceManager(
-            this.unifiedServer.getServiceManager()
-          );
+        if (this.serviceManager) {
+          this.proxyMCPServer.setServiceManager(this.serviceManager);
         }
 
         await this.proxyMCPServer.connect();
@@ -108,13 +106,10 @@ export class MCPServer extends EventEmitter {
     }
 
     try {
-      // 初始化统一服务器
-      await this.initializeUnifiedServer();
+      // 初始化服务管理器
+      await this.initializeServiceManager();
 
-      // 启动统一服务器
-      if (this.unifiedServer) {
-        await this.unifiedServer.start();
-      }
+      // 服务管理器已经在 createHTTPServer 中启动，无需再次启动
 
       // 初始化小智接入点连接（不阻塞服务器启动）
       this.initializeMCPClient().catch((error) => {
@@ -142,9 +137,9 @@ export class MCPServer extends EventEmitter {
     try {
       logger.info("停止 MCP 服务器");
 
-      // 停止统一服务器
-      if (this.unifiedServer) {
-        await this.unifiedServer.stop();
+      // 停止服务管理器
+      if (this.serviceManager) {
+        await this.serviceManager.stop();
       }
 
       // 停止小智接入点连接
@@ -166,21 +161,21 @@ export class MCPServer extends EventEmitter {
    * 获取服务管理器（向后兼容）
    */
   getServiceManager() {
-    return this.unifiedServer?.getServiceManager() || null;
+    return this.serviceManager || null;
   }
 
   /**
    * 获取消息处理器（向后兼容）
    */
   getMessageHandler() {
-    return this.unifiedServer?.getMessageHandler() || null;
+    return this.serviceManager?.getMessageHandler() || null;
   }
 
   /**
    * 获取服务器状态
    */
   getStatus() {
-    if (!this.unifiedServer) {
+    if (!this.serviceManager) {
       return {
         isRunning: false,
         port: this.port,
@@ -188,7 +183,7 @@ export class MCPServer extends EventEmitter {
       };
     }
 
-    const status = this.unifiedServer.getStatus();
+    const status = this.serviceManager.getStatus();
     return {
       ...status,
       port: this.port,
@@ -201,6 +196,6 @@ export class MCPServer extends EventEmitter {
    * 检查服务器是否正在运行
    */
   isRunning(): boolean {
-    return this.isStarted && (this.unifiedServer?.isServerRunning() || false);
+    return this.isStarted && (this.serviceManager?.isServerRunning() || false);
   }
 }
