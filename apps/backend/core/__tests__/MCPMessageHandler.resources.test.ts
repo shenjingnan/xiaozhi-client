@@ -89,9 +89,12 @@ describe("MCPMessageHandler - resources/list", () => {
 
     expect(response).not.toBeNull();
     expect(response?.result).toBeDefined();
-    expect(response?.result.resources).toBeDefined();
-    expect(Array.isArray(response?.result.resources)).toBe(true);
-    expect(response?.result.resources).toHaveLength(0);
+
+    // 类型断言：resources/list响应
+    const resourcesResult = response?.result as { resources: unknown[] };
+    expect(resourcesResult.resources).toBeDefined();
+    expect(Array.isArray(resourcesResult.resources)).toBe(true);
+    expect(resourcesResult.resources).toHaveLength(0);
   });
 
   it("should not interfere with other methods", async () => {
@@ -124,7 +127,10 @@ describe("MCPMessageHandler - resources/list", () => {
     };
 
     const resourcesResponse = await handler.handleMessage(resourcesMessage);
-    expect(resourcesResponse?.result.resources).toEqual([]);
+    const resourcesResult = resourcesResponse?.result as {
+      resources: unknown[];
+    };
+    expect(resourcesResult.resources).toEqual([]);
 
     // 再调用 ping
     const pingMessage = {
@@ -134,6 +140,7 @@ describe("MCPMessageHandler - resources/list", () => {
     };
 
     const pingResponse = await handler.handleMessage(pingMessage);
-    expect(pingResponse?.result.status).toBe("ok");
+    const pingResult = pingResponse?.result as { status: string };
+    expect(pingResult.status).toBe("ok");
   });
 });

@@ -139,7 +139,9 @@ export type ToolCallResponse = ToolCallResult | TimeoutResponse;
 /**
  * 验证是否为工具调用结果
  */
-export function isToolCallResult(response: unknown): response is ToolCallResult {
+export function isToolCallResult(
+  response: unknown
+): response is ToolCallResult {
   return (
     !!response &&
     typeof response === "object" &&
@@ -194,7 +196,10 @@ export function isExtendedMCPToolsCache(
 /**
  * 生成缓存键的工具函数
  */
-export function generateCacheKey(toolName: string, arguments_: Record<string, unknown>): string {
+export function generateCacheKey(
+  toolName: string,
+  arguments_: Record<string, unknown>
+): string {
   const argsHash = createHash("md5")
     .update(JSON.stringify(arguments_ || {}))
     .digest("hex");

@@ -4,6 +4,7 @@ import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import { ProxyMCPServer } from "@root/ProxyMCPServer.js";
 import type { ConfigManager } from "@root/configManager.js";
+import type { ToolCallResult } from "@services/CustomMCPHandler.js";
 import type { EventBus } from "@services/EventBus.js";
 import { getEventBus } from "@services/EventBus.js";
 import { sliceEndpoint } from "@utils/mcpServerUtils.js";
@@ -12,6 +13,10 @@ import { z } from "zod";
 // 使用接口定义避免循环依赖
 interface IMCPServiceManager {
   getAllTools(): Tool[];
+  callTool(
+    toolName: string,
+    arguments_: Record<string, unknown>
+  ): Promise<ToolCallResult>;
 }
 
 // 配置变更事件类型

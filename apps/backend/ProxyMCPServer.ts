@@ -26,10 +26,13 @@ interface ToolCallResult {
 interface IMCPServiceManager {
   getAllTools(): Array<{
     name: string;
-    description: string;
+    description?: string;
     inputSchema: JSONSchema;
   }>;
-  callTool(toolName: string, arguments_: Record<string, unknown>): Promise<ToolCallResult>;
+  callTool(
+    toolName: string,
+    arguments_: Record<string, unknown>
+  ): Promise<ToolCallResult>;
 }
 
 // 扩展的 MCP 消息接口，用于响应消息
@@ -950,7 +953,8 @@ export class ProxyMCPServer {
 
     if (
       paramsObj.arguments !== undefined &&
-      (typeof paramsObj.arguments !== "object" || Array.isArray(paramsObj.arguments))
+      (typeof paramsObj.arguments !== "object" ||
+        Array.isArray(paramsObj.arguments))
     ) {
       throw new ToolCallError(
         ToolCallErrorCode.INVALID_PARAMS,
@@ -1070,7 +1074,8 @@ export class ProxyMCPServer {
           clearTimeout(timeoutId);
 
           // 将内部错误转换为工具调用错误
-          const errorMessage = error instanceof Error ? error.message : String(error);
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
 
           if (errorMessage.includes("未找到工具")) {
             reject(

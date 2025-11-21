@@ -1196,6 +1196,9 @@ describe("IndependentXiaozhiConnectionManager", () => {
     test("应该成功设置服务管理器", async () => {
       const mockServiceManager = {
         getAllTools: vi.fn().mockReturnValue(mockTools),
+        callTool: vi
+          .fn()
+          .mockResolvedValue({ content: [{ type: "text", text: "test" }] }),
       };
 
       manager.setServiceManager(mockServiceManager);
@@ -1207,6 +1210,9 @@ describe("IndependentXiaozhiConnectionManager", () => {
     test("设置服务管理器时应该同步工具到所有连接", async () => {
       const mockServiceManager = {
         getAllTools: vi.fn().mockReturnValue(mockTools),
+        callTool: vi
+          .fn()
+          .mockResolvedValue({ content: [{ type: "text", text: "test" }] }),
       };
 
       // 模拟现有连接 - 需要先获取实际的连接对象
@@ -1354,6 +1360,9 @@ describe("IndependentXiaozhiConnectionManager", () => {
     test("应该正确处理工具同步失败", async () => {
       const mockServiceManager = {
         getAllTools: vi.fn().mockReturnValue(mockTools),
+        callTool: vi
+          .fn()
+          .mockResolvedValue({ content: [{ type: "text", text: "test" }] }),
       };
 
       // 模拟工具同步失败
