@@ -16,7 +16,14 @@ import {
   UpdateApiHandler,
   VersionApiHandler,
 } from "@handlers/index.js";
+import type { ServerType } from "@hono/node-server";
 import { serve } from "@hono/node-server";
+import {
+  corsMiddleware,
+  createErrorResponse,
+  errorHandlerMiddleware,
+  loggerMiddleware,
+} from "@middlewares/index.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
@@ -24,9 +31,12 @@ import { ProxyMCPServer } from "@root/ProxyMCPServer.js";
 import { configManager } from "@root/configManager.js";
 import type { MCPServerConfig } from "@root/configManager.js";
 import type {
+  EndpointConfigChangeEvent,
   EventBus,
+  EventBusEvents,
   IndependentXiaozhiConnectionManager,
   MCPServiceManager,
+  SimpleConnectionStatus,
 } from "@services/index.js";
 import {
   ConfigService,
@@ -39,23 +49,27 @@ import {
 } from "@services/index.js";
 import type { Context } from "hono";
 import { Hono } from "hono";
-import { cors } from "hono/cors";
 import { WebSocketServer } from "ws";
 
-// 统一错误响应格式
-interface ApiErrorResponse {
-  error: {
-    code: string;
-    message: string;
-    details?: any;
-  };
-}
-
 // 统一成功响应格式
-interface ApiSuccessResponse<T = any> {
+interface ApiSuccessResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
+}
+
+// 小智连接状态响应格式
+interface XiaozhiConnectionStatusResponse {
+  type: "multi-endpoint" | "single-endpoint" | "none";
+  connected?: boolean;
+  endpoint?: string;
+  manager?: {
+    connectedConnections: number;
+    totalConnections: number;
+    healthCheckStats: Record<string, unknown>;
+    reconnectStats: Record<string, unknown>;
+  };
+  connections?: SimpleConnectionStatus[];
 }
 
 // 硬编码常量已移除，改为配置驱动
@@ -71,7 +85,7 @@ interface ClientInfo {
  */
 export class WebServer {
   private app: Hono;
-  private httpServer: any = null;
+  private httpServer: ServerType | null = null;
   private wss: WebSocketServer | null = null;
   private logger: Logger;
   private port: number;
@@ -108,24 +122,6 @@ export class WebServer {
     | IndependentXiaozhiConnectionManager
     | undefined;
   private mcpServiceManager: MCPServiceManager | undefined;
-
-  /**
-   * 创建统一的错误响应
-   * @deprecated 使用处理器中的方法替代
-   */
-  private createErrorResponse(
-    code: string,
-    message: string,
-    details?: any
-  ): ApiErrorResponse {
-    return {
-      error: {
-        code,
-        message,
-        details,
-      },
-    };
-  }
 
   /**
    * 创建统一的成功响应
@@ -328,15 +324,18 @@ export class WebServer {
 
       try {
         // 初始化连接管理器（传入端点列表）
-        await this.xiaozhiConnectionManager!.initialize(validEndpoints, tools);
+        await this.xiaozhiConnectionManager.initialize(validEndpoints, tools);
 
         // 连接所有端点
-        await this.xiaozhiConnectionManager!.connect();
+        await this.xiaozhiConnectionManager.connect();
 
         // 设置配置变更监听器
-        this.xiaozhiConnectionManager!.on("configChange", (event: any) => {
-          this.logger.debug(`小智连接配置变更: ${event.type}`, event.data);
-        });
+        this.xiaozhiConnectionManager.on(
+          "configChange",
+          (event: EndpointConfigChangeEvent) => {
+            this.logger.debug(`小智连接配置变更: ${event.type}`, event.data);
+          }
+        );
 
         this.logger.debug(
           `小智接入点连接管理器初始化完成，管理 ${validEndpoints.length} 个端点`
@@ -356,8 +355,9 @@ export class WebServer {
         }
 
         // 使用重连机制连接到小智接入点
+        const proxyServer = this.proxyMCPServer;
         await this.connectWithRetry(
-          () => this.proxyMCPServer!.connect(),
+          () => proxyServer.connect(),
           "小智接入点连接"
         );
         this.logger.debug("小智接入点连接成功");
@@ -379,7 +379,7 @@ export class WebServer {
   /**
    * 获取小智连接状态信息
    */
-  getXiaozhiConnectionStatus(): any {
+  getXiaozhiConnectionStatus(): XiaozhiConnectionStatusResponse {
     if (this.xiaozhiConnectionManager) {
       return {
         type: "multi-endpoint",
@@ -415,7 +415,7 @@ export class WebServer {
    */
   private async handleEndpointStatus(c: Context): Promise<Response> {
     if (!this.xiaozhiConnectionManager) {
-      const errorResponse = this.createErrorResponse(
+      const errorResponse = createErrorResponse(
         "CONNECTION_MANAGER_NOT_AVAILABLE",
         "连接管理器未初始化"
       );
@@ -434,7 +434,7 @@ export class WebServer {
    */
   private async handleEndpointConnect(c: Context): Promise<Response> {
     if (!this.xiaozhiConnectionManager) {
-      const errorResponse = this.createErrorResponse(
+      const errorResponse = createErrorResponse(
         "CONNECTION_MANAGER_NOT_AVAILABLE",
         "连接管理器未初始化"
       );
@@ -453,7 +453,7 @@ export class WebServer {
    */
   private async handleEndpointDisconnect(c: Context): Promise<Response> {
     if (!this.xiaozhiConnectionManager) {
-      const errorResponse = this.createErrorResponse(
+      const errorResponse = createErrorResponse(
         "CONNECTION_MANAGER_NOT_AVAILABLE",
         "连接管理器未初始化"
       );
@@ -472,7 +472,7 @@ export class WebServer {
    */
   private async handleEndpointReconnect(c: Context): Promise<Response> {
     if (!this.xiaozhiConnectionManager) {
-      const errorResponse = this.createErrorResponse(
+      const errorResponse = createErrorResponse(
         "CONNECTION_MANAGER_NOT_AVAILABLE",
         "连接管理器未初始化"
       );
@@ -491,7 +491,7 @@ export class WebServer {
    */
   private async handleEndpointAdd(c: Context): Promise<Response> {
     if (!this.xiaozhiConnectionManager) {
-      const errorResponse = this.createErrorResponse(
+      const errorResponse = createErrorResponse(
         "CONNECTION_MANAGER_NOT_AVAILABLE",
         "连接管理器未初始化"
       );
@@ -510,7 +510,7 @@ export class WebServer {
    */
   private async handleEndpointRemove(c: Context): Promise<Response> {
     if (!this.xiaozhiConnectionManager) {
-      const errorResponse = this.createErrorResponse(
+      const errorResponse = createErrorResponse(
         "CONNECTION_MANAGER_NOT_AVAILABLE",
         "连接管理器未初始化"
       );
@@ -569,26 +569,14 @@ export class WebServer {
   }
 
   private setupMiddleware() {
+    // Logger 中间件 - 必须在最前面
+    this.app?.use("*", loggerMiddleware);
+
     // CORS 中间件
-    this.app?.use(
-      "*",
-      cors({
-        origin: "*",
-        allowMethods: ["GET", "POST", "PUT", "OPTIONS"],
-        allowHeaders: ["Content-Type"],
-      })
-    );
+    this.app?.use("*", corsMiddleware);
 
     // 错误处理中间件
-    this.app?.onError((err, c) => {
-      this.logger.error("HTTP request error:", err);
-      const errorResponse = this.createErrorResponse(
-        "INTERNAL_SERVER_ERROR",
-        "服务器内部错误",
-        process.env.NODE_ENV === "development" ? err.stack : undefined
-      );
-      return c.json(errorResponse, 500);
-    });
+    this.app?.onError(errorHandlerMiddleware);
   }
 
   private setupRoutes() {
@@ -761,7 +749,7 @@ export class WebServer {
 
     // 处理未知的 API 路由
     this.app?.all("/api/*", async (c) => {
-      const errorResponse = this.createErrorResponse(
+      const errorResponse = createErrorResponse(
         "API_NOT_FOUND",
         `API 端点不存在: ${c.req.path}`
       );
@@ -842,25 +830,28 @@ export class WebServer {
    * 设置接入点状态变更事件监听
    */
   private setupEndpointStatusListener(): void {
-    this.eventBus.onEvent("endpoint:status:changed", (eventData) => {
-      // 向所有连接的 WebSocket 客户端广播接入点状态变更事件
-      const message = {
-        type: "endpoint_status_changed",
-        data: {
-          endpoint: eventData.endpoint,
-          connected: eventData.connected,
-          operation: eventData.operation,
-          success: eventData.success,
-          message: eventData.message,
-          timestamp: eventData.timestamp,
-        },
-      };
+    this.eventBus.onEvent(
+      "endpoint:status:changed",
+      (eventData: EventBusEvents["endpoint:status:changed"]) => {
+        // 向所有连接的 WebSocket 客户端广播接入点状态变更事件
+        const message = {
+          type: "endpoint_status_changed",
+          data: {
+            endpoint: eventData.endpoint,
+            connected: eventData.connected,
+            operation: eventData.operation,
+            success: eventData.success,
+            message: eventData.message,
+            timestamp: eventData.timestamp,
+          },
+        };
 
-      this.notificationService.broadcast("endpoint_status_changed", message);
-      this.logger.debug(
-        `广播接入点状态变更事件: ${eventData.endpoint} - ${eventData.operation}`
-      );
-    });
+        this.notificationService.broadcast("endpoint_status_changed", message);
+        this.logger.debug(
+          `广播接入点状态变更事件: ${eventData.endpoint} - ${eventData.operation}`
+        );
+      }
+    );
   }
 
   public async start(): Promise<void> {
@@ -882,7 +873,7 @@ export class WebServer {
     this.httpServer = server;
 
     // 设置 WebSocket 服务器
-    this.wss = new WebSocketServer({ server: this.httpServer });
+    this.wss = new WebSocketServer({ server: this.httpServer as any });
     this.setupWebSocket();
 
     // 启动心跳监控

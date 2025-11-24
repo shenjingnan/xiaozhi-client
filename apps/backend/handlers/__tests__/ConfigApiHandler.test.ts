@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppConfig } from "../../configManager.js";
+import { createErrorResponse, createSuccessResponse } from "../../middlewares";
 import { ConfigApiHandler } from "../ConfigApiHandler.js";
 
-// Mock dependencies
+// 模拟依赖项
 vi.mock("../../Logger.js", () => ({
   logger: {
     withTag: vi.fn().mockReturnValue({
@@ -84,12 +85,18 @@ describe("ConfigApiHandler", () => {
     const { ConfigService } = await import("@services/ConfigService.js");
     vi.mocked(ConfigService).mockImplementation(() => mockConfigService);
 
-    // Mock Hono Context
+    // 模拟 Hono 上下文
     mockContext = {
       json: vi.fn().mockReturnValue(new Response()),
       req: {
         json: vi.fn(),
       },
+      get: vi.fn().mockImplementation((key: string) => {
+        if (key === "logger") {
+          return mockLogger;
+        }
+        return undefined;
+      }),
     };
 
     configApiHandler = new ConfigApiHandler();
@@ -715,11 +722,9 @@ describe("ConfigApiHandler", () => {
     });
   });
 
-  describe("helper methods", () => {
-    it("should create error response correctly", () => {
-      // Access private method through type assertion for testing
-      const handler = configApiHandler as any;
-      const errorResponse = handler.createErrorResponse(
+  describe("响应辅助函数", () => {
+    it("应该正确创建错误响应", () => {
+      const errorResponse = createErrorResponse(
         "TEST_ERROR",
         "Test error message",
         { detail: "test detail" }
@@ -734,9 +739,8 @@ describe("ConfigApiHandler", () => {
       });
     });
 
-    it("should create error response without details", () => {
-      const handler = configApiHandler as any;
-      const errorResponse = handler.createErrorResponse(
+    it("应该创建不带详细信息的错误响应", () => {
+      const errorResponse = createErrorResponse(
         "TEST_ERROR",
         "Test error message"
       );
@@ -750,9 +754,8 @@ describe("ConfigApiHandler", () => {
       });
     });
 
-    it("should create success response with data and message", () => {
-      const handler = configApiHandler as any;
-      const successResponse = handler.createSuccessResponse(
+    it("应该创建包含数据和消息的成功响应", () => {
+      const successResponse = createSuccessResponse(
         { test: "data" },
         "Success message"
       );
@@ -764,9 +767,8 @@ describe("ConfigApiHandler", () => {
       });
     });
 
-    it("should create success response with only data", () => {
-      const handler = configApiHandler as any;
-      const successResponse = handler.createSuccessResponse({ test: "data" });
+    it("应该创建只包含数据的成功响应", () => {
+      const successResponse = createSuccessResponse({ test: "data" });
 
       expect(successResponse).toEqual({
         success: true,
@@ -775,9 +777,8 @@ describe("ConfigApiHandler", () => {
       });
     });
 
-    it("should create success response with only message", () => {
-      const handler = configApiHandler as any;
-      const successResponse = handler.createSuccessResponse(
+    it("应该创建只包含消息的成功响应", () => {
+      const successResponse = createSuccessResponse(
         undefined,
         "Success message"
       );
@@ -789,9 +790,8 @@ describe("ConfigApiHandler", () => {
       });
     });
 
-    it("should create success response with no parameters", () => {
-      const handler = configApiHandler as any;
-      const successResponse = handler.createSuccessResponse();
+    it("应该创建不带参数的成功响应", () => {
+      const successResponse = createSuccessResponse();
 
       expect(successResponse).toEqual({
         success: true,
@@ -801,13 +801,13 @@ describe("ConfigApiHandler", () => {
     });
   });
 
-  describe("integration scenarios", () => {
-    it("should handle complete config workflow", async () => {
-      // Get config
+  describe("集成测试场景", () => {
+    it("应该处理完整的配置工作流", async () => {
+      // 获取配置
       mockConfigService.getConfig.mockResolvedValue(mockConfig);
       await configApiHandler.getConfig(mockContext);
 
-      // Update config
+      // 更新配置
       const updatedConfig = {
         ...mockConfig,
         mcpEndpoint: "ws://localhost:4000",
@@ -816,7 +816,7 @@ describe("ConfigApiHandler", () => {
       mockConfigService.updateConfig.mockResolvedValue(undefined);
       await configApiHandler.updateConfig(mockContext);
 
-      // Reload config
+      // 重新加载配置
       mockConfigService.reloadConfig.mockResolvedValue(updatedConfig);
       await configApiHandler.reloadConfig(mockContext);
 
@@ -828,7 +828,7 @@ describe("ConfigApiHandler", () => {
       expect(mockConfigService.reloadConfig).toHaveBeenCalledTimes(1);
     });
 
-    it("should handle multiple endpoint requests", async () => {
+    it("应该处理多个端点请求", async () => {
       const endpoint = "ws://localhost:3000";
       const endpoints = ["ws://localhost:3000", "ws://localhost:3001"];
 
@@ -842,7 +842,7 @@ describe("ConfigApiHandler", () => {
       expect(mockConfigService.getMcpEndpoints).toHaveBeenCalledTimes(1);
     });
 
-    it("should handle config existence check and path retrieval", async () => {
+    it("应该处理配置存在检查和路径获取", async () => {
       const configPath = "/path/to/config.json";
 
       mockConfigService.configExists.mockReturnValue(true);
