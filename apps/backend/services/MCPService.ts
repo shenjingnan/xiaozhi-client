@@ -1,9 +1,18 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import type { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
+import type { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import type { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import { getEventBus } from "@services/EventBus.js";
 import { TransportFactory } from "@services/TransportFactory.js";
+
+// MCP 传输层联合类型定义
+export type MCPServerTransport =
+  | StdioClientTransport
+  | SSEClientTransport
+  | StreamableHTTPClientTransport;
 
 // 通信方式枚举
 export enum MCPTransportType {
@@ -94,7 +103,7 @@ export interface ToolCallResult {
 export class MCPService {
   private config: MCPServiceConfig;
   private client: Client | null = null;
-  private transport: any = null;
+  private transport: MCPServerTransport | null = null;
   private tools: Map<string, Tool> = new Map();
   private connectionState: ConnectionState = ConnectionState.DISCONNECTED;
   private logger: Logger;
@@ -133,7 +142,7 @@ export class MCPService {
   private logWithTag(
     level: "info" | "error" | "warn" | "debug",
     message: string,
-    ...args: any[]
+    ...args: unknown[]
   ): void {
     const taggedMessage = `[MCP-${this.config.name}] ${message}`;
     this.logger[level](taggedMessage, ...args);
@@ -270,7 +279,7 @@ export class MCPService {
 
         // 连接到 MCP 服务
         this.client
-          .connect(this.transport)
+          .connect(this.transport as MCPServerTransport)
           .then(async () => {
             this.handleConnectionSuccess();
 
@@ -445,7 +454,10 @@ export class MCPService {
   /**
    * 调用工具
    */
-  async callTool(name: string, arguments_: any): Promise<ToolCallResult> {
+  async callTool(
+    name: string,
+    arguments_: Record<string, unknown>
+  ): Promise<ToolCallResult> {
     if (!this.client) {
       throw new Error(`服务 ${this.config.name} 未连接`);
     }
@@ -495,7 +507,7 @@ export class MCPService {
       name: this.config.name,
       connected: this.connectionState === ConnectionState.CONNECTED,
       initialized: this.initialized,
-      transportType: this.config.type!,
+      transportType: this.config.type || MCPTransportType.STREAMABLE_HTTP,
       toolCount: this.tools.size,
       connectionState: this.connectionState,
       // ping状态
