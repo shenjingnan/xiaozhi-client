@@ -90,6 +90,12 @@ describe("ConfigApiHandler", () => {
       req: {
         json: vi.fn(),
       },
+      get: vi.fn().mockImplementation((key: string) => {
+        if (key === "logger") {
+          return mockLogger;
+        }
+        return undefined;
+      }),
     };
 
     configApiHandler = new ConfigApiHandler();
