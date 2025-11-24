@@ -44,7 +44,6 @@ import { ToolDebugDialog } from "./ToolDebugDialog";
 // 服务名称常量
 const UNKNOWN_SERVICE_NAME = "未知服务";
 const CUSTOM_SERVICE_NAME = "自定义服务";
-const COZE_SERVICE_NAME = "coze"; // 保持原样，作为技术标识符
 
 interface McpServerListProps {
   updateConfig?: (config: any) => Promise<void>;
@@ -63,6 +62,10 @@ export function McpServerList({
     Array<{
       name: string;
       serverName: string;
+      handler?: {
+        type: string;
+        platform: string;
+      }
       toolName: string;
       enable: boolean;
       description?: string;
@@ -105,7 +108,7 @@ export function McpServerList({
       }
       if (tool.handler.type === "proxy" && tool.handler.platform === "coze") {
         return {
-          serviceName: COZE_SERVICE_NAME,
+          serviceName: 'customMCP',
           toolName: tool.name,
         };
       }
@@ -591,7 +594,7 @@ export function McpServerList({
                       </div>
 
                       <div className="flex items-center gap-2 ml-4">
-                        {tool.serverName === "coze" && (
+                        {tool.serverName === "customMCP" && (
                           <Button
                             variant="secondary"
                             size="icon"
