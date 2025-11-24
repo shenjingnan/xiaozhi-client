@@ -99,7 +99,8 @@
     "Xiaozhi",
     "XIAOZHI",
     "XVCJ",
-    "xzcli"
+    "xzcli",
+    "dotenv"
   ],
   "ignorePaths": [
     "node_modules/**",

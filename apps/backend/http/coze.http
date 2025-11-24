@@ -1,0 +1,13 @@
+@token = {{$dotenv COZE_TOKEN}}
+
+### 调用工作流
+POST https://api.coze.cn/v1/workflow/run
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "workflow_id": "7547256178678448138",
+  "parameters": {
+    "city": "杭州"
+  }
+}

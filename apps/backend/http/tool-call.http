@@ -1,0 +1,11 @@
+### 调用 Coze 工具
+POST http://localhost:9999/api/tools/call
+Content-Type: application/json
+
+{
+  "serviceName": "coze",
+  "toolName": "today",
+  "args": {
+    "city": "杭州"
+  }
+}
