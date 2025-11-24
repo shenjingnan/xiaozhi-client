@@ -65,7 +65,7 @@ export function McpServerList({
       handler?: {
         type: string;
         platform: string;
-      }
+      };
       toolName: string;
       enable: boolean;
       description?: string;
@@ -108,7 +108,7 @@ export function McpServerList({
       }
       if (tool.handler.type === "proxy" && tool.handler.platform === "coze") {
         return {
-          serviceName: 'customMCP',
+          serviceName: "customMCP",
           toolName: tool.name,
         };
       }
