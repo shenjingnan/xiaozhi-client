@@ -1,5 +1,4 @@
 import { createServer } from "node:http";
-import type { Server as NodeServer } from "node:http";
 import { convertLegacyToNew } from "@adapters/index.js";
 import {
   ConfigApiHandler,
@@ -17,6 +16,7 @@ import {
   UpdateApiHandler,
   VersionApiHandler,
 } from "@handlers/index.js";
+import type { ServerType } from "@hono/node-server";
 import { serve } from "@hono/node-server";
 import {
   corsMiddleware,
@@ -85,7 +85,7 @@ interface ClientInfo {
  */
 export class WebServer {
   private app: Hono;
-  private httpServer: unknown | null = null;
+  private httpServer: ServerType | null = null;
   private wss: WebSocketServer | null = null;
   private logger: Logger;
   private port: number;
@@ -873,7 +873,7 @@ export class WebServer {
     this.httpServer = server;
 
     // 设置 WebSocket 服务器
-    this.wss = new WebSocketServer({ server: this.httpServer as NodeServer });
+    this.wss = new WebSocketServer({ server: this.httpServer as any });
     this.setupWebSocket();
 
     // 启动心跳监控
@@ -934,7 +934,7 @@ export class WebServer {
         this.wss.close(() => {
           // 强制关闭 HTTP 服务器，不等待现有连接
           if (this.httpServer) {
-            (this.httpServer as NodeServer).close(() => {
+            this.httpServer.close(() => {
               this.logger.info("Web 服务器已停止");
               doResolve();
             });

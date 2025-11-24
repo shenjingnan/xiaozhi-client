@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppConfig } from "../../configManager.js";
+import {
+  createErrorResponse,
+  createSuccessResponse,
+} from "../../middlewares/error.middleware.js";
 import { ConfigApiHandler } from "../ConfigApiHandler.js";
 
 // Mock dependencies
@@ -721,11 +725,9 @@ describe("ConfigApiHandler", () => {
     });
   });
 
-  describe("helper methods", () => {
+  describe("response helper functions", () => {
     it("should create error response correctly", () => {
-      // Access private method through type assertion for testing
-      const handler = configApiHandler as any;
-      const errorResponse = handler.createErrorResponse(
+      const errorResponse = createErrorResponse(
         "TEST_ERROR",
         "Test error message",
         { detail: "test detail" }
@@ -741,8 +743,7 @@ describe("ConfigApiHandler", () => {
     });
 
     it("should create error response without details", () => {
-      const handler = configApiHandler as any;
-      const errorResponse = handler.createErrorResponse(
+      const errorResponse = createErrorResponse(
         "TEST_ERROR",
         "Test error message"
       );
@@ -757,8 +758,7 @@ describe("ConfigApiHandler", () => {
     });
 
     it("should create success response with data and message", () => {
-      const handler = configApiHandler as any;
-      const successResponse = handler.createSuccessResponse(
+      const successResponse = createSuccessResponse(
         { test: "data" },
         "Success message"
       );
@@ -771,8 +771,7 @@ describe("ConfigApiHandler", () => {
     });
 
     it("should create success response with only data", () => {
-      const handler = configApiHandler as any;
-      const successResponse = handler.createSuccessResponse({ test: "data" });
+      const successResponse = createSuccessResponse({ test: "data" });
 
       expect(successResponse).toEqual({
         success: true,
@@ -782,8 +781,7 @@ describe("ConfigApiHandler", () => {
     });
 
     it("should create success response with only message", () => {
-      const handler = configApiHandler as any;
-      const successResponse = handler.createSuccessResponse(
+      const successResponse = createSuccessResponse(
         undefined,
         "Success message"
       );
@@ -796,8 +794,7 @@ describe("ConfigApiHandler", () => {
     });
 
     it("should create success response with no parameters", () => {
-      const handler = configApiHandler as any;
-      const successResponse = handler.createSuccessResponse();
+      const successResponse = createSuccessResponse();
 
       expect(successResponse).toEqual({
         success: true,
