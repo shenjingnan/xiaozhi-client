@@ -10,11 +10,11 @@ interface ApiErrorResponse {
   error: {
     code: string;
     message: string;
-    details?: any;
+    details?: unknown;
   };
 }
 
-interface ApiSuccessResponse<T = any> {
+interface ApiSuccessResponse<T> {
   success: boolean;
   data?: T;
   message?: string;
@@ -37,7 +37,7 @@ export class ConfigApiHandler extends AbstractApiHandler {
   private createErrorResponse(
     code: string,
     message: string,
-    details?: any
+    details?: unknown
   ): ApiErrorResponse {
     return {
       error: {

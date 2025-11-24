@@ -6,7 +6,7 @@ interface ApiErrorResponse {
   error: {
     code: string;
     message: string;
-    details?: any;
+    details?: unknown;
   };
 }
 
@@ -16,7 +16,7 @@ interface ApiErrorResponse {
 export const createErrorResponse = (
   code: string,
   message: string,
-  details?: any
+  details?: unknown
 ): ApiErrorResponse => {
   return {
     error: {

@@ -18,6 +18,12 @@ import {
   VersionApiHandler,
 } from "@handlers/index.js";
 import { serve } from "@hono/node-server";
+import {
+  corsMiddleware,
+  createErrorResponse,
+  errorHandlerMiddleware,
+  loggerMiddleware,
+} from "@middlewares/index.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
@@ -25,12 +31,12 @@ import { ProxyMCPServer } from "@root/ProxyMCPServer.js";
 import { configManager } from "@root/configManager.js";
 import type { MCPServerConfig } from "@root/configManager.js";
 import type {
+  EndpointConfigChangeEvent,
   EventBus,
+  EventBusEvents,
   IndependentXiaozhiConnectionManager,
   MCPServiceManager,
-  EndpointConfigChangeEvent,
   SimpleConnectionStatus,
-  EventBusEvents,
 } from "@services/index.js";
 import {
   ConfigService,
@@ -44,12 +50,6 @@ import {
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { WebSocketServer } from "ws";
-import {
-  corsMiddleware,
-  errorHandlerMiddleware,
-  loggerMiddleware,
-  createErrorResponse
-} from "@middlewares/index.js";
 
 // 统一成功响应格式
 interface ApiSuccessResponse<T = unknown> {
@@ -330,9 +330,12 @@ export class WebServer {
         await this.xiaozhiConnectionManager.connect();
 
         // 设置配置变更监听器
-        this.xiaozhiConnectionManager.on("configChange", (event: EndpointConfigChangeEvent) => {
-          this.logger.debug(`小智连接配置变更: ${event.type}`, event.data);
-        });
+        this.xiaozhiConnectionManager.on(
+          "configChange",
+          (event: EndpointConfigChangeEvent) => {
+            this.logger.debug(`小智连接配置变更: ${event.type}`, event.data);
+          }
+        );
 
         this.logger.debug(
           `小智接入点连接管理器初始化完成，管理 ${validEndpoints.length} 个端点`
@@ -352,8 +355,9 @@ export class WebServer {
         }
 
         // 使用重连机制连接到小智接入点
+        const proxyServer = this.proxyMCPServer;
         await this.connectWithRetry(
-          () => this.proxyMCPServer!.connect(),
+          () => proxyServer.connect(),
           "小智接入点连接"
         );
         this.logger.debug("小智接入点连接成功");
@@ -826,25 +830,28 @@ export class WebServer {
    * 设置接入点状态变更事件监听
    */
   private setupEndpointStatusListener(): void {
-    this.eventBus.onEvent("endpoint:status:changed", (eventData: EventBusEvents["endpoint:status:changed"]) => {
-      // 向所有连接的 WebSocket 客户端广播接入点状态变更事件
-      const message = {
-        type: "endpoint_status_changed",
-        data: {
-          endpoint: eventData.endpoint,
-          connected: eventData.connected,
-          operation: eventData.operation,
-          success: eventData.success,
-          message: eventData.message,
-          timestamp: eventData.timestamp,
-        },
-      };
+    this.eventBus.onEvent(
+      "endpoint:status:changed",
+      (eventData: EventBusEvents["endpoint:status:changed"]) => {
+        // 向所有连接的 WebSocket 客户端广播接入点状态变更事件
+        const message = {
+          type: "endpoint_status_changed",
+          data: {
+            endpoint: eventData.endpoint,
+            connected: eventData.connected,
+            operation: eventData.operation,
+            success: eventData.success,
+            message: eventData.message,
+            timestamp: eventData.timestamp,
+          },
+        };
 
-      this.notificationService.broadcast("endpoint_status_changed", message);
-      this.logger.debug(
-        `广播接入点状态变更事件: ${eventData.endpoint} - ${eventData.operation}`
-      );
-    });
+        this.notificationService.broadcast("endpoint_status_changed", message);
+        this.logger.debug(
+          `广播接入点状态变更事件: ${eventData.endpoint} - ${eventData.operation}`
+        );
+      }
+    );
   }
 
   public async start(): Promise<void> {
