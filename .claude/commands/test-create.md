@@ -9,73 +9,81 @@ argument-hint: [test-type] [target-file-or-module]
 我需要为 xiaozhi-client 项目中的代码创建测试用例。请帮我生成完整的测试文件：
 
 ## 1. 分析测试需求
+
 基于我提供的测试类型 `<test-type>` 和目标文件/模块 `<target-file-or-module>`：
 
 - **确定测试范围**：分析目标代码的功能和接口
 - **识别测试场景**：正常流程、边界条件、错误处理
-- **设计Mock策略**：需要模拟的外部依赖和数据
+- **设计 Mock 策略**：需要模拟的外部依赖和数据
 
 ## 2. 支持的测试类型
 
-### mcp-tool - MCP工具测试
-- **目标**：MCP工具服务类的完整测试
+### mcp-tool - MCP 工具测试
+
+- **目标**：MCP 工具服务类的完整测试
 - **测试重点**：
   - 参数验证（Zod schema）
-  - Home Assistant API调用
+  - Home Assistant API 调用
   - 设备查找和过滤逻辑
   - 错误处理和用户友好的错误消息
-- **Mock对象**：HassService、设备状态数据
+- **Mock 对象**：HassService、设备状态数据
 
 ### service - 服务类测试
+
 - **目标**：业务逻辑服务类的单元测试
 - **测试重点**：
   - 业务逻辑正确性
   - 数据转换和处理
   - 异常处理流程
   - 性能和边界条件
-- **Mock对象**：外部API、数据库连接
+- **Mock 对象**：外部 API、数据库连接
 
 ### utility - 工具函数测试
+
 - **目标**：纯函数和工具方法的测试
 - **测试重点**：
   - 输入输出正确性
   - 边界值处理
   - 类型安全性
   - 算法效率
-- **Mock对象**：通常无需Mock，纯函数测试
+- **Mock 对象**：通常无需 Mock，纯函数测试
 
 ### type - 类型定义测试
-- **目标**：TypeScript类型和接口的测试
+
+- **目标**：TypeScript 类型和接口的测试
 - **测试重点**：
   - 类型构造函数
   - 类型守卫函数
   - 错误类型定义
   - 常量和配置对象
-- **Mock对象**：根据具体需求定
+- **Mock 对象**：根据具体需求定
 
-### cli-command - CLI命令测试
-- **目标**：CLI命令处理函数的测试
+### cli-command - CLI 命令测试
+
+- **目标**：CLI 命令处理函数的测试
 - **测试重点**：
   - 命令参数解析
   - 配置文件加载
   - 错误消息输出
   - 帮助信息显示
-- **Mock对象**：process.argv、console.log、文件系统
+- **Mock 对象**：process.argv、console.log、文件系统
 
 ### transport - 传输层适配器测试
-- **目标**：WebSocket、HTTP、Stdio传输适配器的测试
+
+- **目标**：WebSocket、HTTP、Stdio 传输适配器的测试
 - **测试重点**：
   - 连接建立和断开
   - 消息发送和接收
   - 错误处理和重连
   - 协议兼容性
-- **Mock对象**：WebSocket、HTTP服务器、标准输入输出
+- **Mock 对象**：WebSocket、HTTP 服务器、标准输入输出
 
 ## 3. 测试文件结构模板
 
 基于 xiaozhi-client 项目的 Vitest 配置和现有测试模式：
 
 ### 3.1 基础结构
+
 ```typescript
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 // 导入要测试的模块（使用项目路径别名）
@@ -111,7 +119,8 @@ describe("{测试描述}", () => {
 });
 ```
 
-### 3.2 Mock设置模式
+### 3.2 Mock 设置模式
+
 ```typescript
 // Mock外部依赖（使用路径别名）
 vi.mock("{dependency-alias}/{dependency-module}", () => ({
@@ -131,12 +140,14 @@ const createMock{TargetType} = (overrides: Partial<{TargetType}> = {}): {TargetT
 基于 xiaozhi-client 项目覆盖率目标（80%分支、函数、行、语句）：
 
 ### 4.1 必须覆盖的场景
+
 - **正常流程**：所有主要功能路径
 - **边界条件**：最小值、最大值、空值、null/undefined
 - **错误处理**：所有异常分支和错误码
-- **异步操作**：Promise、async/await的各种状态
+- **异步操作**：Promise、async/await 的各种状态
 
 ### 4.2 测试数据设计
+
 - **有效数据**：符合预期的正常输入
 - **无效数据**：各种格式错误的输入
 - **边界数据**：临界值和极值
@@ -144,7 +155,8 @@ const createMock{TargetType} = (overrides: Partial<{TargetType}> = {}): {TargetT
 
 ## 5. 不同测试类型的实现策略
 
-### 5.1 MCP工具测试
+### 5.1 MCP 工具测试
+
 ```typescript
 describe("{ToolName}Service", () => {
   let mockHassService: any;
@@ -154,7 +166,10 @@ describe("{ToolName}Service", () => {
       getStates: vi.fn(),
       callServices: vi.fn(),
     };
-    {ToolName}Service.setHassService(mockHassService);
+    {
+      ToolName;
+    }
+    Service.setHassService(mockHassService);
   });
 
   describe("{ToolName}", () => {
@@ -174,6 +189,7 @@ describe("{ToolName}Service", () => {
 ```
 
 ### 5.2 工具函数测试
+
 ```typescript
 describe("{UtilityFunction}", () => {
   describe("参数验证", () => {
@@ -199,11 +215,12 @@ describe("{UtilityFunction}", () => {
 ```
 
 ### 5.3 类型定义测试
+
 ```typescript
 describe("{Type} Types", () => {
   describe("{ErrorType}", () => {
     it("应该创建正确的错误实例", () => {
-      const error = new {ErrorType}("message", "CODE");
+      const error = new { ErrorType }("message", "CODE");
       expect(error).toBeInstanceOf(Error);
       expect(error.name).toBe("{ErrorType}");
     });
@@ -217,11 +234,14 @@ describe("{Type} Types", () => {
 });
 ```
 
-## 6. Mock数据生成
+## 6. Mock 数据生成
 
-### 6.1 Home Assistant状态数据
+### 6.1 Home Assistant 状态数据
+
 ```typescript
-const createMockHassState = (overrides: Partial<HassState> = {}): HassState => ({
+const createMockHassState = (
+  overrides: Partial<HassState> = {}
+): HassState => ({
   entity_id: "light.test_light",
   state: "off",
   attributes: {
@@ -235,6 +255,7 @@ const createMockHassState = (overrides: Partial<HassState> = {}): HassState => (
 ```
 
 ### 6.2 设备列表数据
+
 ```typescript
 const createMockDeviceList = (count: number = 3): HassState[] =>
   Array.from({ length: count }, (_, i) =>
@@ -248,6 +269,7 @@ const createMockDeviceList = (count: number = 3): HassState[] =>
 ## 7. 测试执行命令
 
 ### 7.1 运行测试
+
 ```bash
 # 运行所有测试
 pnpm test
@@ -269,6 +291,7 @@ pnpm test:ui
 ```
 
 ### 7.2 覆盖率检查
+
 ```bash
 # 生成覆盖率报告
 pnpm test:coverage
@@ -282,6 +305,7 @@ coverage thresholds: 80% branches, functions, lines, statements
 测试文件生成后，请执行以下检查：
 
 ### 8.1 代码质量
+
 ```bash
 pnpm type:check      # TypeScript类型检查
 pnpm check:fix       # 代码规范和格式检查（Biome）
@@ -290,8 +314,9 @@ pnpm check:all       # 运行所有质量检查
 ```
 
 ### 8.2 测试质量
+
 - 所有测试用例应该独立且可重复执行
-- Mock数据应该真实且有意义
+- Mock 数据应该真实且有意义
 - 测试描述应该清晰易懂
 - 断言应该具体且有意义
 
@@ -320,18 +345,21 @@ pnpm check:all       # 运行所有质量检查
 ## 10. 测试最佳实践
 
 ### 10.1 测试命名
+
 - 使用描述性的测试名称
 - 采用"应该...当..."的命名模式
 - 包含测试的具体场景和预期结果
 
 ### 10.2 测试结构
-- 使用AAA模式：Arrange（准备）、Act（执行）、Assert（断言）
+
+- 使用 AAA 模式：Arrange（准备）、Act（执行）、Assert（断言）
 - 每个测试用例只验证一个行为
 - 使用有意义的测试数据
 
-### 10.3 Mock使用
-- 只Mock外部依赖，不测试实现细节
-- Mock行为应该真实且一致
-- 在测试后清理Mock状态
+### 10.3 Mock 使用
+
+- 只 Mock 外部依赖，不测试实现细节
+- Mock 行为应该真实且一致
+- 在测试后清理 Mock 状态
 
 请根据我提供的测试类型和目标，生成符合项目标准的完整测试文件。
