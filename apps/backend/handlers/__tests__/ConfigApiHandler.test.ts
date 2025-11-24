@@ -1,9 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppConfig } from "../../configManager.js";
-import {
-  createErrorResponse,
-  createSuccessResponse,
-} from "../../middlewares/error.middleware.js";
+import { createErrorResponse, createSuccessResponse } from "../../middlewares";
 import { ConfigApiHandler } from "../ConfigApiHandler.js";
 
 // Mock dependencies
