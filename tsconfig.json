@@ -18,6 +18,7 @@
       "@cli/errors/*": ["apps/backend/cli/errors/*"],
       "@cli/interfaces/*": ["apps/backend/cli/interfaces/*"],
       "@handlers/*": ["apps/backend/handlers/*"],
+      "@middlewares/*": ["apps/backend/middlewares/*"],
       "@services/*": ["apps/backend/services/*"],
       "@errors/*": ["apps/backend/errors/*"],
       "@utils/*": ["apps/backend/utils/*"],
