@@ -1,7 +1,7 @@
 import {
   createErrorResponse,
   createSuccessResponse,
-} from "@middlewares/error.middleware.js";
+} from "@middlewares/index.js";
 import type { AppConfig } from "@root/configManager.js";
 import { ConfigService } from "@services/ConfigService.js";
 import type { Context } from "hono";
