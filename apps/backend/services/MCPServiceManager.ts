@@ -109,7 +109,6 @@ export class MCPServiceManager extends EventEmitter {
   private toolCallLogger: ToolCallLogger; // 工具调用记录器
   private retryTimers: Map<string, NodeJS.Timeout> = new Map(); // 重试定时器
   private failedServices: Set<string> = new Set(); // 失败的服务集合
-  private injectedLogger: Logger | null = null; // 记录注入的 logger 实例
 
   // 新增：传输适配器管理
   private transportAdapters: Map<string, TransportAdapter> = new Map();
@@ -130,7 +129,6 @@ export class MCPServiceManager extends EventEmitter {
   ) {
     super();
     this.logger = injectedLogger || logger.withTag("MCPServiceManager");
-    this.injectedLogger = injectedLogger || null;
 
     // 处理参数，支持 UnifiedServerConfig 格式
     if (configs && this.isUnifiedServerConfig(configs)) {
@@ -2025,7 +2023,6 @@ export class MCPServiceManager extends EventEmitter {
    * @param logger 新的 logger 实例
    */
   setLogger(logger: Logger): void {
-    this.injectedLogger = logger;
     this.logger = logger;
   }
 
@@ -2035,14 +2032,6 @@ export class MCPServiceManager extends EventEmitter {
    */
   getLogger(): Logger {
     return this.logger;
-  }
-
-  /**
-   * 检查是否使用了注入的 logger 实例
-   * @returns 如果使用注入的 logger 返回 true，否则返回 false
-   */
-  hasInjectedLogger(): boolean {
-    return this.injectedLogger !== null;
   }
 }
 
