@@ -80,7 +80,7 @@ describe("MCPRouteHandler", () => {
         });
       }),
       get: vi.fn((key: string) => {
-        if (key === 'mcpServiceManager') {
+        if (key === "mcpServiceManager") {
           return mockServiceManager;
         }
         return undefined;
@@ -116,7 +116,7 @@ describe("MCPRouteHandler", () => {
         });
       }),
       get: vi.fn((key: string) => {
-        if (key === 'mcpServiceManager') {
+        if (key === "mcpServiceManager") {
           return mockServiceManager;
         }
         return undefined;
@@ -156,7 +156,7 @@ describe("MCPRouteHandler", () => {
         query: vi.fn(() => undefined),
       },
       get: vi.fn((key: string) => {
-        if (key === 'mcpServiceManager') {
+        if (key === "mcpServiceManager") {
           return mockServiceManager;
         }
         return undefined;
@@ -179,7 +179,7 @@ describe("MCPRouteHandler", () => {
         text: vi.fn().mockResolvedValue("invalid json"),
       },
       get: vi.fn((key: string) => {
-        if (key === 'mcpServiceManager') {
+        if (key === "mcpServiceManager") {
           return mockServiceManager;
         }
         return undefined;
@@ -207,7 +207,7 @@ describe("MCPRouteHandler", () => {
         ),
       },
       get: vi.fn((key: string) => {
-        if (key === 'mcpServiceManager') {
+        if (key === "mcpServiceManager") {
           return mockServiceManager;
         }
         return undefined;
@@ -232,7 +232,7 @@ describe("MCPRouteHandler", () => {
         text: vi.fn().mockResolvedValue(largeMessage),
       },
       get: vi.fn((key: string) => {
-        if (key === 'mcpServiceManager') {
+        if (key === "mcpServiceManager") {
           return mockServiceManager;
         }
         return undefined;

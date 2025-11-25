@@ -65,7 +65,7 @@ describe("ToolApiHandler - 核心功能测试", () => {
       } as any,
       json: vi.fn(),
       get: vi.fn((key: string) => {
-        if (key === 'mcpServiceManager') {
+        if (key === "mcpServiceManager") {
           return mockServiceManager;
         }
         return undefined;

@@ -674,8 +674,12 @@ export class WebServer {
     );
 
     // 工具调用相关 API 路由
-    this.app?.post("/api/tools/call", (c: Context) => this.toolApiHandler.callTool(c));
-    this.app?.get("/api/tools/list", (c: Context) => this.toolApiHandler.listTools(c));
+    this.app?.post("/api/tools/call", (c: Context) =>
+      this.toolApiHandler.callTool(c)
+    );
+    this.app?.get("/api/tools/list", (c: Context) =>
+      this.toolApiHandler.listTools(c)
+    );
     this.app?.get("/api/tools/custom", (c: Context) =>
       this.toolApiHandler.getCustomTools(c)
     );
@@ -699,7 +703,9 @@ export class WebServer {
     this.app?.get("/api/coze/workspaces", (c: Context) =>
       CozeApiHandler.getWorkspaces(c)
     );
-    this.app?.get("/api/coze/workflows", (c: Context) => CozeApiHandler.getWorkflows(c));
+    this.app?.get("/api/coze/workflows", (c: Context) =>
+      CozeApiHandler.getWorkflows(c)
+    );
     this.app?.post("/api/coze/cache/clear", (c: Context) =>
       CozeApiHandler.clearCache(c)
     );
@@ -708,7 +714,9 @@ export class WebServer {
     );
 
     // MCP 端点管理相关路由 - 动态处理
-    this.app?.post("/api/endpoint/status", (c: Context) => this.handleEndpointStatus(c));
+    this.app?.post("/api/endpoint/status", (c: Context) =>
+      this.handleEndpointStatus(c)
+    );
     this.app?.post("/api/endpoint/connect", (c: Context) =>
       this.handleEndpointConnect(c)
     );
@@ -719,8 +727,12 @@ export class WebServer {
       this.handleEndpointReconnect(c)
     );
     // 新增的接入点管理路由
-    this.app?.post("/api/endpoint/add", (c: Context) => this.handleEndpointAdd(c));
-    this.app?.post("/api/endpoint/remove", (c: Context) => this.handleEndpointRemove(c));
+    this.app?.post("/api/endpoint/add", (c: Context) =>
+      this.handleEndpointAdd(c)
+    );
+    this.app?.post("/api/endpoint/remove", (c: Context) =>
+      this.handleEndpointRemove(c)
+    );
 
     // MCP 服务器管理路由
     this.app?.post(
@@ -753,21 +765,17 @@ export class WebServer {
     this.app?.get("/mcp", (c: Context) => this.mcpRouteHandler.handleGet(c));
 
     // Context 模式示例路由 - 展示新的依赖注入方式
-    this.app?.get(
-      "/api/example/tools",
-      (c: Context) => mcpContextExampleHandler.getTools(c)
+    this.app?.get("/api/example/tools", (c: Context) =>
+      mcpContextExampleHandler.getTools(c)
     );
-    this.app?.post(
-      "/api/example/tools/call",
-      (c: Context) => mcpContextExampleHandler.callTool(c)
+    this.app?.post("/api/example/tools/call", (c: Context) =>
+      mcpContextExampleHandler.callTool(c)
     );
-    this.app?.get(
-      "/api/example/services/status",
-      (c: Context) => mcpContextExampleHandler.getServiceStatus(c)
+    this.app?.get("/api/example/services/status", (c: Context) =>
+      mcpContextExampleHandler.getServiceStatus(c)
     );
-    this.app?.post(
-      "/api/example/services/restart",
-      (c: Context) => mcpContextExampleHandler.restartService(c)
+    this.app?.post("/api/example/services/restart", (c: Context) =>
+      mcpContextExampleHandler.restartService(c)
     );
 
     // 处理未知的 API 路由
@@ -780,7 +788,9 @@ export class WebServer {
     });
 
     // 静态文件服务 - 放在最后作为回退
-    this.app.get("*", (c: Context) => this.staticFileHandler.handleStaticFile(c));
+    this.app.get("*", (c: Context) =>
+      this.staticFileHandler.handleStaticFile(c)
+    );
   }
 
   private setupWebSocket() {

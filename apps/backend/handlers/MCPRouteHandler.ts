@@ -9,7 +9,6 @@ import { MCPMessageHandler } from "@core/MCPMessageHandler.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type { MCPMessage, MCPResponse } from "@root/types/mcp.js";
-import type { AppContext } from "@root/types/hono.context.js";
 import type { Context } from "hono";
 
 /**
@@ -175,7 +174,9 @@ export class MCPRouteHandler {
       // 从 Context 中获取 MCP 服务管理器实例
       const serviceManager = c.get("mcpServiceManager");
       if (!serviceManager) {
-        throw new Error("MCPServiceManager 未在 Context 中找到，请检查中间件配置");
+        throw new Error(
+          "MCPServiceManager 未在 Context 中找到，请检查中间件配置"
+        );
       }
 
       this.mcpMessageHandler = new MCPMessageHandler(serviceManager);

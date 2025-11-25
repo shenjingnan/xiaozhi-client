@@ -4,10 +4,10 @@
  * 提供统一的依赖注入模式，替代直接使用 Singleton
  */
 
-import type { Context, Next } from "hono";
+import { logger } from "@root/Logger.js";
 import type { MCPServiceManager } from "@services/MCPServiceManager.js";
 import { MCPServiceManagerSingleton } from "@services/MCPServiceManagerSingleton.js";
-import { logger } from "@root/Logger.js";
+import type { Context, Next } from "hono";
 
 /**
  * MCP Service Manager 中间件
@@ -36,13 +36,12 @@ export const mcpServiceManagerMiddleware = async (
       // 将实例注入到 Context
       c.set("mcpServiceManager", serviceManager);
 
-      logger.debug("[MCPMiddleware] MCPServiceManager 实例已成功注入到 Context");
+      logger.debug(
+        "[MCPMiddleware] MCPServiceManager 实例已成功注入到 Context"
+      );
     } catch (error) {
       // 记录错误但不阻断请求处理
-      logger.error(
-        "[MCPMiddleware] 初始化 MCPServiceManager 失败:",
-        error
-      );
+      logger.error("[MCPMiddleware] 初始化 MCPServiceManager 失败:", error);
 
       // 不设置实例，Handler 中需要处理未初始化的情况
       // 这样可以确保应用其他功能仍然可用
@@ -82,9 +81,7 @@ export const getMCPServiceManager = (
  * @returns MCPServiceManager 实例
  * @throws Error 如果实例不存在
  */
-export const requireMCPServiceManager = (
-  c: Context
-): MCPServiceManager => {
+export const requireMCPServiceManager = (c: Context): MCPServiceManager => {
   const serviceManager = c.get("mcpServiceManager");
 
   if (!serviceManager) {

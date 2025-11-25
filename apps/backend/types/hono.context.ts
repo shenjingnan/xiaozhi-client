@@ -3,9 +3,9 @@
  * 为 Hono Context 添加项目特定的变量类型定义
  */
 
-import { Hono } from "hono";
 import type { Logger } from "@root/Logger.js";
 import type { MCPServiceManager } from "@services/MCPServiceManager.js";
+import { Hono } from "hono";
 
 /**
  * 扩展 Hono Context 的 Variables 类型
@@ -44,7 +44,9 @@ export const createApp = (): Hono<AppContext> => {
 /**
  * 从 Context 中获取日志记录器的类型安全方法
  */
-export const getLogger = (c: import("hono").Context<AppContext>): Logger | undefined => {
+export const getLogger = (
+  c: import("hono").Context<AppContext>
+): Logger | undefined => {
   return c.get("logger");
 };
 
