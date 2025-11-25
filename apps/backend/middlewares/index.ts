@@ -8,6 +8,10 @@ export {
 export {
   mcpServiceManagerMiddleware,
   hasMCPServiceManager,
+} from "./mcpServiceManager.middleware.js";
+
+// 重新导出 context 相关函数
+export {
   getMCPServiceManager,
   requireMCPServiceManager,
-} from "./mcpServiceManager.middleware.js";
+} from "../types/hono.context.js";

@@ -5,9 +5,9 @@
  */
 
 import { logger } from "@root/Logger.js";
-import type { MCPServiceManager } from "@services/MCPServiceManager.js";
 import { MCPServiceManagerSingleton } from "@services/MCPServiceManagerSingleton.js";
 import type { Context, Next } from "hono";
+import { getMCPServiceManager } from "../types/hono.context.js";
 
 /**
  * MCP Service Manager 中间件
@@ -58,37 +58,5 @@ export const mcpServiceManagerMiddleware = async (
  * @returns 是否存在 MCPServiceManager 实例
  */
 export const hasMCPServiceManager = (c: Context): boolean => {
-  return c.get("mcpServiceManager") !== undefined;
-};
-
-/**
- * 从 Context 中获取 MCPServiceManager 实例
- *
- * @param c Hono Context
- * @returns MCPServiceManager 实例或 undefined
- */
-export const getMCPServiceManager = (
-  c: Context
-): MCPServiceManager | undefined => {
-  return c.get("mcpServiceManager");
-};
-
-/**
- * 从 Context 中安全获取 MCPServiceManager 实例
- * 如果实例不存在，抛出错误
- *
- * @param c Hono Context
- * @returns MCPServiceManager 实例
- * @throws Error 如果实例不存在
- */
-export const requireMCPServiceManager = (c: Context): MCPServiceManager => {
-  const serviceManager = c.get("mcpServiceManager");
-
-  if (!serviceManager) {
-    throw new Error(
-      "MCPServiceManager 未初始化，请检查 mcpServiceManagerMiddleware 是否正确配置"
-    );
-  }
-
-  return serviceManager;
+  return getMCPServiceManager(c) !== undefined;
 };
