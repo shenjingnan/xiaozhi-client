@@ -12,3 +12,6 @@ export * from "./ToolApiHandler.js";
 export * from "./ToolCallLogApiHandler.js";
 export * from "./UpdateApiHandler.js";
 export * from "./VersionApiHandler.js";
+
+// 示例 Handler - 展示 Context 模式使用
+export * from "./examples/MCPContextExampleHandler.js";

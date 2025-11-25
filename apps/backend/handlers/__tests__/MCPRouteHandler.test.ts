@@ -1,15 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MCPRouteHandler } from "../MCPRouteHandler.js";
 
-// Mock MCPServiceManagerSingleton
-vi.mock("@services/MCPServiceManagerSingleton.js", () => ({
-  MCPServiceManagerSingleton: {
-    getInstance: vi.fn().mockResolvedValue({
-      // Mock service manager
-    }),
-    isInitialized: vi.fn().mockReturnValue(true),
-  },
-}));
+// Mock MCPServiceManager - 在 Context 中提供
+const mockServiceManager = {
+  // Mock service manager
+};
 
 // Mock MCPMessageHandler
 vi.mock("@core/MCPMessageHandler.js", () => ({
@@ -84,6 +79,12 @@ describe("MCPRouteHandler", () => {
           },
         });
       }),
+      get: vi.fn((key: string) => {
+        if (key === 'mcpServiceManager') {
+          return mockServiceManager;
+        }
+        return undefined;
+      }),
     };
 
     const response = await handler.handlePost(mockContext as any);
@@ -113,6 +114,12 @@ describe("MCPRouteHandler", () => {
             "Content-Type": "application/json",
           },
         });
+      }),
+      get: vi.fn((key: string) => {
+        if (key === 'mcpServiceManager') {
+          return mockServiceManager;
+        }
+        return undefined;
       }),
     };
 
@@ -148,6 +155,12 @@ describe("MCPRouteHandler", () => {
         header: vi.fn(() => "text/plain"),
         query: vi.fn(() => undefined),
       },
+      get: vi.fn((key: string) => {
+        if (key === 'mcpServiceManager') {
+          return mockServiceManager;
+        }
+        return undefined;
+      }),
     };
 
     const response = await handler.handlePost(mockContext as any);
@@ -165,6 +178,12 @@ describe("MCPRouteHandler", () => {
         query: vi.fn(() => undefined),
         text: vi.fn().mockResolvedValue("invalid json"),
       },
+      get: vi.fn((key: string) => {
+        if (key === 'mcpServiceManager') {
+          return mockServiceManager;
+        }
+        return undefined;
+      }),
     };
 
     const response = await handler.handlePost(mockContext as any);
@@ -187,6 +206,12 @@ describe("MCPRouteHandler", () => {
           })
         ),
       },
+      get: vi.fn((key: string) => {
+        if (key === 'mcpServiceManager') {
+          return mockServiceManager;
+        }
+        return undefined;
+      }),
     };
 
     const response = await handler.handlePost(mockContext as any);
@@ -206,6 +231,12 @@ describe("MCPRouteHandler", () => {
         query: vi.fn(() => undefined),
         text: vi.fn().mockResolvedValue(largeMessage),
       },
+      get: vi.fn((key: string) => {
+        if (key === 'mcpServiceManager') {
+          return mockServiceManager;
+        }
+        return undefined;
+      }),
     };
 
     const response = await handler.handlePost(mockContext as any);

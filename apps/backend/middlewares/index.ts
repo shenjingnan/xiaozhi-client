@@ -5,3 +5,9 @@ export {
   createErrorResponse,
   createSuccessResponse,
 } from "./error.middleware.js";
+export {
+  mcpServiceManagerMiddleware,
+  hasMCPServiceManager,
+  getMCPServiceManager,
+  requireMCPServiceManager,
+} from "./mcpServiceManager.middleware.js";
