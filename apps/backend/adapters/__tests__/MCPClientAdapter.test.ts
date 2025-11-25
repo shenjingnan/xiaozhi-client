@@ -3,8 +3,9 @@
  * 验证适配器的功能和兼容性
  */
 
-import type { MCPServiceConfig } from "@/lib/mcp";
-import { MCPService, MCPTransportType } from "@/lib/mcp";
+import { MCPService } from "@/lib/mcp";
+import type { MCPServiceConfig } from "@/lib/mcp/types";
+import { MCPTransportType } from "@/lib/mcp/types";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MCPClientAdapter } from "../MCPClientAdapter.js";

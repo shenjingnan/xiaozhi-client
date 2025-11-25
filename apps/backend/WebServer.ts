@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
+import type { MCPServiceManager } from "@/lib/mcp";
 import { convertLegacyToNew } from "@adapters/index.js";
 import {
   ConfigApiHandler,
@@ -39,7 +40,6 @@ import type {
   EventBus,
   EventBusEvents,
   IndependentXiaozhiConnectionManager,
-  MCPServiceManager,
   SimpleConnectionStatus,
 } from "@services/index.js";
 import {

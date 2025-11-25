@@ -4,7 +4,7 @@
  */
 
 import { isAbsolute } from "node:path";
-import { MCPTransportType } from "@/lib/mcp";
+import { MCPTransportType } from "@/lib/mcp/types";
 import { describe, expect, it } from "vitest";
 import type {
   LocalMCPServerConfig,

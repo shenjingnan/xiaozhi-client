@@ -7,8 +7,18 @@
  */
 
 import { EventEmitter } from "node:events";
-import type { MCPServiceConfig } from "@/lib/mcp";
-import { MCPService, MCPTransportType } from "@/lib/mcp";
+import { MCPService } from "@/lib/mcp";
+import type {
+  CustomMCPTool,
+  JSONSchema,
+  MCPServiceConfig,
+  ManagerStatus,
+  ToolCallResult,
+  ToolInfo,
+  UnifiedServerConfig,
+  UnifiedServerStatus,
+} from "@/lib/mcp/types";
+import { MCPTransportType } from "@/lib/mcp/types";
 import { MCPMessageHandler } from "@core/MCPMessageHandler.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
@@ -23,79 +33,6 @@ import type { MCPMessage } from "@root/types/mcp.js";
 import type { TransportAdapter } from "@transports/TransportAdapter.js";
 import { ConnectionState } from "@transports/TransportAdapter.js";
 import { ToolCallLogger } from "@utils/ToolCallLogger.js";
-
-// JSON Schema 类型定义（兼容 MCP SDK）
-type JSONSchema = Record<string, unknown> & {
-  type: "object";
-  properties?: Record<string, unknown>;
-  required?: string[];
-  additionalProperties?: boolean;
-};
-
-// CustomMCP 工具类型定义
-interface CustomMCPTool {
-  name: string;
-  description?: string;
-  inputSchema: JSONSchema;
-  handler?: {
-    type: string;
-    config?: Record<string, unknown>;
-  };
-}
-
-// 工具信息接口（保持向后兼容）
-interface ToolInfo {
-  serviceName: string;
-  originalName: string;
-  tool: Tool;
-}
-
-// 服务状态接口（保持向后兼容）
-export interface ServiceStatus {
-  connected: boolean;
-  clientName: string;
-}
-
-// 管理器状态接口（保持向后兼容）
-export interface ManagerStatus {
-  services: Record<string, ServiceStatus>;
-  totalTools: number;
-  availableTools: string[];
-}
-
-// 工具调用结果接口（保持向后兼容）
-interface ToolCallResult {
-  content: Array<{
-    type: string;
-    text: string;
-  }>;
-  isError?: boolean;
-}
-
-/**
- * 服务器配置接口（从 UnifiedMCPServer 移入）
- */
-export interface UnifiedServerConfig {
-  name?: string;
-  enableLogging?: boolean;
-  logLevel?: string;
-  configs?: Record<string, MCPServiceConfig>; // MCPService 配置
-}
-
-/**
- * 服务器状态接口（从 UnifiedMCPServer 移入）
- */
-export interface UnifiedServerStatus {
-  isRunning: boolean;
-  serviceStatus: ManagerStatus;
-  transportCount: number;
-  activeConnections: number;
-  config: UnifiedServerConfig;
-  // 添加对 serviceStatus 的便捷访问属性
-  services?: Record<string, ServiceStatus>;
-  totalTools?: number;
-  availableTools?: string[];
-}
 
 export class MCPServiceManager extends EventEmitter {
   private services: Map<string, MCPService> = new Map();

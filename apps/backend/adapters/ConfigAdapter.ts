@@ -4,8 +4,8 @@
  */
 
 import { isAbsolute, resolve } from "node:path";
-import type { MCPServiceConfig } from "@/lib/mcp";
-import { MCPTransportType } from "@/lib/mcp";
+import type { MCPServiceConfig } from "@/lib/mcp/types";
+import { MCPTransportType } from "@/lib/mcp/types";
 import { logger as globalLogger } from "@root/Logger.js";
 import type {
   LocalMCPServerConfig,

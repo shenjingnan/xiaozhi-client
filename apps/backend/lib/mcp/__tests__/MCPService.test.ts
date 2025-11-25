@@ -1,10 +1,11 @@
-import type { MCPServiceConfig } from "@/lib/mcp";
-import { ConnectionState, MCPService, MCPTransportType } from "@/lib/mcp";
+import { ConnectionState, MCPTransportType } from "@/lib/mcp";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { Logger } from "@root/Logger.js";
 import { TransportFactory } from "@root/services/TransportFactory.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MCPService } from "../connection";
+import type { MCPServiceConfig } from "../types";
 
 // Mock dependencies
 vi.mock("@modelcontextprotocol/sdk/client/index.js");

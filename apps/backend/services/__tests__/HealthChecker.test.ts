@@ -1,8 +1,8 @@
+import type { MCPServiceManager } from "@/lib/mcp";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { HealthCheckConfig, HealthStatus } from "../HealthChecker.js";
 import { HealthChecker, HealthCheckerClass } from "../HealthChecker.js";
 import type { MCPService } from "../MCPService.js";
-import type { MCPServiceManager } from "../MCPServiceManager.js";
 import { PerformanceMonitor } from "../PerformanceMonitor.js";
 
 // Mock dependencies

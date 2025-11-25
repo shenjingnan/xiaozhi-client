@@ -3,7 +3,7 @@
  * 提供全局唯一的 MCPServiceManager 实例，简化实现以满足项目实际需求
  */
 
-import MCPServiceManager from "@/lib/mcp";
+import { MCPServiceManager } from "@/lib/mcp";
 import type { Logger } from "@root/Logger.js";
 import { logger as globalLogger } from "@root/Logger.js";
 

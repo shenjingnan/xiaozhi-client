@@ -3,8 +3,8 @@
  * 测试新增的 hasCustomMCPTool 和 getCustomMCPTools 方法
  */
 
+import { MCPServiceManager } from "@/lib/mcp";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import MCPServiceManager from "./MCPServiceManager.js";
 
 // Mock dependencies
 vi.mock("../Logger.js", () => ({

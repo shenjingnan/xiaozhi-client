@@ -3,8 +3,8 @@
  * 为 Hono Context 添加项目特定的变量类型定义
  */
 
+import type { MCPServiceManager } from "@/lib/mcp";
 import type { Logger } from "@root/Logger.js";
-import type { MCPServiceManager } from "@services/MCPServiceManager.js";
 import type { Context } from "hono";
 import { Hono } from "hono";
 

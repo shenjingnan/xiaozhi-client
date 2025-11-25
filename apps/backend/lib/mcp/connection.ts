@@ -1,100 +1,17 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import type { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
-import type { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import type { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import { getEventBus } from "@root/services/EventBus.js";
 import { TransportFactory } from "@root/services/TransportFactory.js";
-
-// MCP 传输层联合类型定义
-export type MCPServerTransport =
-  | StdioClientTransport
-  | SSEClientTransport
-  | StreamableHTTPClientTransport;
-
-// 通信方式枚举
-export enum MCPTransportType {
-  STDIO = "stdio",
-  SSE = "sse",
-  STREAMABLE_HTTP = "streamable-http",
-}
-
-// 连接状态枚举
-export enum ConnectionState {
-  DISCONNECTED = "disconnected",
-  CONNECTING = "connecting",
-  CONNECTED = "connected",
-  RECONNECTING = "reconnecting",
-  FAILED = "failed",
-}
-
-// Ping配置接口
-export interface PingOptions {
-  enabled: boolean;
-  interval: number; // ping间隔（毫秒）
-  startDelay: number; // 连接成功后开始ping的延迟（毫秒）
-}
-
-// ModelScope SSE 自定义选项接口
-export interface ModelScopeSSEOptions {
-  eventSourceInit?: {
-    fetch?: (
-      url: string | URL | Request,
-      init?: RequestInit
-    ) => Promise<Response>;
-  };
-  requestInit?: RequestInit;
-}
-
-// MCPService 配置接口
-export interface MCPServiceConfig {
-  name: string;
-  type?: MCPTransportType; // 现在是可选的，支持自动推断
-  // stdio 配置
-  command?: string;
-  args?: string[];
-  env?: Record<string, string>; // 环境变量配置
-  // 网络配置
-  url?: string;
-  // 认证配置
-  apiKey?: string;
-  headers?: Record<string, string>;
-  // ModelScope 特有配置
-  modelScopeAuth?: boolean;
-  customSSEOptions?: ModelScopeSSEOptions;
-  // ping配置
-  ping?: Partial<PingOptions>;
-  // 超时配置
-  timeout?: number;
-  // 重试配置
-  retryAttempts?: number;
-}
-
-// MCPService 状态接口
-export interface MCPServiceStatus {
-  name: string;
-  connected: boolean;
-  initialized: boolean;
-  transportType: MCPTransportType;
-  toolCount: number;
-  lastError?: string;
-  connectionState: ConnectionState;
-  // ping状态
-  pingEnabled: boolean;
-  lastPingTime?: Date;
-  isPinging: boolean;
-}
-
-// 工具调用结果接口
-export interface ToolCallResult {
-  content: Array<{
-    type: string;
-    text: string;
-  }>;
-  isError?: boolean;
-}
+import type {
+  MCPServerTransport,
+  MCPServiceConfig,
+  MCPServiceStatus,
+  PingOptions,
+  ToolCallResult,
+} from "./types.js";
+import { ConnectionState, MCPTransportType } from "./types.js";
 
 /**
  * MCP 服务类

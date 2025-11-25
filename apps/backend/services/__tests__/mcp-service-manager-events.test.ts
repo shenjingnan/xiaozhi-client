@@ -1,7 +1,7 @@
+import { MCPServiceManager } from "@/lib/mcp";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getEventBus } from "../EventBus.js";
-import { MCPServiceManager } from "../MCPServiceManager.js";
 
 // Mock dependencies
 vi.mock("../../Logger.js", () => ({

@@ -3,8 +3,8 @@
  * 对比 customMCP 工具调用与标准 MCP 工具调用的性能
  */
 
+import type { MCPServiceManager } from "@/lib/mcp";
 import { ToolApiHandler } from "@handlers/ToolApiHandler.js";
-import type { MCPServiceManager } from "@services/MCPServiceManager.js";
 import { MCPServiceManagerSingleton } from "@services/MCPServiceManagerSingleton.js";
 import {
   afterEach,

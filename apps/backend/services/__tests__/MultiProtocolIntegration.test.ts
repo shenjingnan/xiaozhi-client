@@ -1,9 +1,9 @@
+import { MCPServiceManager } from "@/lib/mcp";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setupCommonMocks } from "../../__tests__/index.js";
 import { configManager } from "../../configManager.js";
 import type { MCPServiceConfig } from "../MCPService.js";
 import { MCPTransportType } from "../MCPService.js";
-import { MCPServiceManager } from "../MCPServiceManager.js";
 import { TransportFactory } from "../TransportFactory.js";
 
 // Mock dependencies

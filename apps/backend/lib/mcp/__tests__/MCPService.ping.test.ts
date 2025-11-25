@@ -1,5 +1,6 @@
-import type { MCPServiceConfig } from "@/lib/mcp";
-import { MCPService, MCPTransportType } from "@/lib/mcp";
+import { MCPService } from "@/lib/mcp";
+import type { MCPServiceConfig } from "@/lib/mcp/types";
+import { MCPTransportType } from "@/lib/mcp/types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the dependencies

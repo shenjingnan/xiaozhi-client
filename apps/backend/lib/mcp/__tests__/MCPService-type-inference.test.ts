@@ -1,4 +1,5 @@
-import { MCPService, MCPTransportType } from "@/lib/mcp";
+import { MCPService } from "@/lib/mcp";
+import { MCPTransportType } from "@/lib/mcp/types";
 import { describe, expect, it } from "vitest";
 
 describe("MCPService 自动类型推断测试", () => {
