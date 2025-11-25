@@ -3,6 +3,7 @@
  * 提供全局唯一的 MCPServiceManager 实例，解决多实例资源冲突问题
  */
 
+import type { Logger } from "@root/Logger.js";
 import MCPServiceManager from "@services/MCPServiceManager.js";
 
 // 重新导出相关类型，便于外部使用
@@ -36,26 +37,36 @@ let instanceId: string | null = null;
 /**
  * 创建 MCPServiceManager 实例（私有函数）
  */
-async function createInstance(): Promise<MCPServiceManager> {
-  const manager = new MCPServiceManager();
+async function createInstance(logger?: Logger): Promise<MCPServiceManager> {
+  const manager = new MCPServiceManager(undefined, logger);
   return manager;
 }
 
 /**
  * 获取 MCPServiceManager 单例实例
  *
+ * @param logger 可选的 logger 实例，用于统一的日志配置和管理
  * @returns Promise<MCPServiceManager> 管理器实例
  * @throws Error 如果初始化失败
  */
-async function getInstance(): Promise<MCPServiceManager> {
+async function getInstance(logger?: Logger): Promise<MCPServiceManager> {
   // 如果已经初始化完成，直接返回实例
   if (instance && state === SingletonState.INITIALIZED) {
+    // 如果传入了新的 logger，更新现有实例的 logger
+    if (logger) {
+      instance.setLogger(logger);
+    }
     return instance;
   }
 
   // 如果正在初始化中，等待同一个初始化Promise
   if (initPromise && state === SingletonState.INITIALIZING) {
-    return initPromise;
+    const result = await initPromise;
+    // 如果传入了新的 logger，更新实例的 logger
+    if (logger) {
+      result.setLogger(logger);
+    }
+    return result;
   }
 
   // 如果之前初始化失败，重置状态准备重试
@@ -65,7 +76,7 @@ async function getInstance(): Promise<MCPServiceManager> {
 
   // 开始新的初始化过程
   state = SingletonState.INITIALIZING;
-  initPromise = createInstance();
+  initPromise = createInstance(logger);
 
   try {
     instance = await initPromise;
@@ -218,6 +229,25 @@ async function waitForInitialization(): Promise<boolean> {
 }
 
 /**
+ * 更新现有实例的 logger
+ *
+ * @param logger 新的 logger 实例
+ * @returns Promise<boolean> 是否成功更新
+ */
+async function updateInstanceLogger(logger: Logger): Promise<boolean> {
+  if (instance && state === SingletonState.INITIALIZED) {
+    try {
+      instance.setLogger(logger);
+      return true;
+    } catch (error) {
+      console.error("更新实例 logger 失败:", error);
+      return false;
+    }
+  }
+  return false;
+}
+
+/**
  * MCPServiceManager 全局单例管理器
  *
  * 使用对象包装模块级函数，保持原有API接口不变
@@ -231,6 +261,7 @@ export const MCPServiceManagerSingleton = {
   forceReinitialize,
   getCurrentInstance,
   waitForInitialization,
+  updateInstanceLogger,
 } as const;
 
 // 导出默认实例（便于使用）

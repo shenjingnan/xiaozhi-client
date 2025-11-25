@@ -213,8 +213,10 @@ export class WebServer {
       // 1. 读取配置
       const config = await this.loadConfiguration();
 
-      // 2. 初始化 MCP 服务管理器
-      this.mcpServiceManager = await MCPServiceManagerSingleton.getInstance();
+      // 2. 初始化 MCP 服务管理器，传入 WebServer 的 logger 实现统一的日志配置
+      this.mcpServiceManager = await MCPServiceManagerSingleton.getInstance(
+        this.logger
+      );
 
       // 2.1. 初始化 MCP 服务器 API 处理器
       this.mcpServerApiHandler = new MCPServerApiHandler(

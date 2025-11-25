@@ -13,7 +13,12 @@ vi.mock("../Logger.js", () => ({
     error: vi.fn(),
     debug: vi.fn(),
     warn: vi.fn(),
-    withTag: vi.fn().mockReturnThis(),
+    withTag: vi.fn().mockReturnValue({
+      info: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+      warn: vi.fn(),
+    }),
   },
 }));
 
@@ -26,6 +31,12 @@ vi.mock("../configManager.js", () => ({
     }),
     getConfigDir: vi.fn().mockReturnValue("/tmp"),
   },
+}));
+
+vi.mock("./ToolSyncManager.js", () => ({
+  ToolSyncManager: vi.fn().mockImplementation(() => ({
+    syncToolsAfterConnection: vi.fn(),
+  })),
 }));
 
 vi.mock("./CustomMCPHandler.js", () => ({
@@ -263,6 +274,93 @@ describe("MCPServiceManager - customMCP 支持", () => {
       // Assert
       expect(result).toEqual(incompleteTools);
       expect(result).toHaveLength(2);
+    });
+  });
+});
+
+describe("MCPServiceManager - Logger 注入功能", () => {
+  let serviceManager: MCPServiceManager;
+  let mockLogger: any;
+
+  beforeEach(() => {
+    // Reset all mocks first
+    vi.clearAllMocks();
+
+    // 创建简单的 mock logger 实例
+    mockLogger = {
+      info: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+      warn: vi.fn(),
+      withTag: vi.fn().mockReturnThis(),
+    };
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  describe("基本功能测试", () => {
+    it("应该支持构造函数注入 logger", () => {
+      // Act & Assert - 不应该抛出异常
+      expect(() => {
+        serviceManager = new MCPServiceManager(undefined, mockLogger);
+      }).not.toThrow();
+    });
+
+    it("应该支持不传 logger 的构造函数调用", () => {
+      // Act & Assert - 不应该抛出异常
+      expect(() => {
+        serviceManager = new MCPServiceManager();
+      }).not.toThrow();
+    });
+
+    it("应该支持 setLogger 方法", () => {
+      // Arrange
+      serviceManager = new MCPServiceManager();
+
+      // Act & Assert - 不应该抛出异常
+      expect(() => {
+        serviceManager.setLogger(mockLogger);
+      }).not.toThrow();
+    });
+
+    it("应该支持 getLogger 方法", () => {
+      // Arrange
+      serviceManager = new MCPServiceManager(undefined, mockLogger);
+
+      // Act & Assert - 不应该抛出异常
+      expect(() => {
+        const logger = serviceManager.getLogger();
+        expect(logger).toBeDefined();
+      }).not.toThrow();
+    });
+
+    it("应该支持 hasInjectedLogger 方法", () => {
+      // Arrange
+      serviceManager = new MCPServiceManager(undefined, mockLogger);
+
+      // Act & Assert - 不应该抛出异常
+      expect(() => {
+        const hasInjected = serviceManager.hasInjectedLogger();
+        expect(typeof hasInjected).toBe("boolean");
+      }).not.toThrow();
+    });
+  });
+
+  describe("向后兼容性测试", () => {
+    it("应该与现有的 API 完全兼容", () => {
+      // Act - 使用原有的构造函数方式
+      serviceManager = new MCPServiceManager();
+
+      // Assert - 所有现有方法应该正常工作
+      expect(() => {
+        serviceManager.getAllTools();
+        serviceManager.hasTool("test_tool");
+        serviceManager.hasCustomMCPTool("test_custom_tool");
+        serviceManager.getCustomMCPTools();
+        serviceManager.getServiceManagerStatus();
+      }).not.toThrow();
     });
   });
 });
