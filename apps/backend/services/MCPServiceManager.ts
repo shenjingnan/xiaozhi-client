@@ -128,7 +128,7 @@ export class MCPServiceManager extends EventEmitter {
     injectedLogger?: Logger
   ) {
     super();
-    this.logger = injectedLogger || logger.withTag("MCPServiceManager");
+    this.logger = injectedLogger || logger;
 
     // 处理参数，支持 UnifiedServerConfig 格式
     if (configs && this.isUnifiedServerConfig(configs)) {
