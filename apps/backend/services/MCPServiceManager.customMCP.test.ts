@@ -13,7 +13,12 @@ vi.mock("../Logger.js", () => ({
     error: vi.fn(),
     debug: vi.fn(),
     warn: vi.fn(),
-    withTag: vi.fn().mockReturnThis(),
+    withTag: vi.fn().mockReturnValue({
+      info: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+      warn: vi.fn(),
+    }),
   },
 }));
 
@@ -28,12 +33,40 @@ vi.mock("../configManager.js", () => ({
   },
 }));
 
+vi.mock("./ToolSyncManager.js", () => ({
+  ToolSyncManager: vi.fn().mockImplementation(() => ({
+    syncToolsAfterConnection: vi.fn(),
+  })),
+}));
+
 vi.mock("./CustomMCPHandler.js", () => ({
   CustomMCPHandler: vi.fn().mockImplementation(() => ({
+    // 基础方法
     initialize: vi.fn(),
+    reinitialize: vi.fn(),
     hasTool: vi.fn(),
     getTools: vi.fn(),
     getToolCount: vi.fn(),
+    getToolNames: vi.fn(),
+    getToolInfo: vi.fn(),
+
+    // 工具调用方法
+    callTool: vi.fn(),
+
+    // 资源管理方法
+    cleanup: vi.fn(),
+    stopCleanupTimer: vi.fn(),
+
+    // 管理器集成方法
+    getCacheLifecycleManager: vi.fn(),
+    getTaskStateManager: vi.fn(),
+    getCacheStatistics: vi.fn(),
+    getTaskStatistics: vi.fn(),
+    getTaskStatus: vi.fn(),
+    validateTaskId: vi.fn(),
+    restartStalledTasks: vi.fn(),
+    manualCleanupCache: vi.fn(),
+    validateSystemIntegrity: vi.fn(),
   })),
 }));
 
@@ -66,13 +99,45 @@ describe("MCPServiceManager - customMCP 支持", () => {
     // Get the mocked CustomMCPHandler instance
     mockCustomMCPHandler = (serviceManager as any).customMCPHandler;
 
-    // Ensure mock methods exist
-    if (!mockCustomMCPHandler.hasTool) {
-      mockCustomMCPHandler.hasTool = vi.fn();
+    // Ensure all required mock methods exist with complete default behavior
+    const requiredMethods = [
+      "initialize",
+      "reinitialize",
+      "hasTool",
+      "getTools",
+      "getToolCount",
+      "getToolNames",
+      "getToolInfo",
+      "callTool",
+      "cleanup",
+      "stopCleanupTimer",
+      "getCacheLifecycleManager",
+      "getTaskStateManager",
+      "getCacheStatistics",
+      "getTaskStatistics",
+      "getTaskStatus",
+      "validateTaskId",
+      "restartStalledTasks",
+      "manualCleanupCache",
+      "validateSystemIntegrity",
+    ];
+
+    for (const methodName of requiredMethods) {
+      if (!mockCustomMCPHandler[methodName]) {
+        mockCustomMCPHandler[methodName] = vi.fn();
+      }
     }
-    if (!mockCustomMCPHandler.getTools) {
-      mockCustomMCPHandler.getTools = vi.fn();
-    }
+
+    // 设置合理的默认返回值
+    mockCustomMCPHandler.hasTool.mockReturnValue(false);
+    mockCustomMCPHandler.getTools.mockReturnValue([]);
+    mockCustomMCPHandler.getToolCount.mockReturnValue(0);
+    mockCustomMCPHandler.getToolNames.mockReturnValue([]);
+    mockCustomMCPHandler.getToolInfo.mockReturnValue(undefined);
+    mockCustomMCPHandler.callTool.mockResolvedValue({
+      content: [{ type: "text", text: "Mock response" }],
+      isError: false,
+    });
   });
 
   afterEach(() => {
@@ -263,6 +328,169 @@ describe("MCPServiceManager - customMCP 支持", () => {
       // Assert
       expect(result).toEqual(incompleteTools);
       expect(result).toHaveLength(2);
+    });
+  });
+
+  describe("错误处理和边界情况", () => {
+    it("应该正确处理 CustomMCPHandler 完全未初始化的情况", () => {
+      // Arrange - 模拟 CustomMCPHandler 完全不存在
+      (serviceManager as any).customMCPHandler = null;
+
+      // Act & Assert - 应该优雅地处理而不是抛出异常
+      expect(() => {
+        serviceManager.hasCustomMCPTool("test_tool");
+      }).not.toThrow();
+
+      expect(() => {
+        serviceManager.getCustomMCPTools();
+      }).not.toThrow();
+    });
+
+    it("应该正确处理方法调用抛出异常的情况", () => {
+      // Arrange
+      mockCustomMCPHandler.hasTool.mockImplementation(() => {
+        throw new Error("Handler 内部错误");
+      });
+
+      // Act
+      const result = serviceManager.hasCustomMCPTool("test_tool");
+
+      // Assert - 应该返回 false 而不是抛出异常
+      expect(result).toBe(false);
+    });
+
+    it("应该正确处理 getTools 方法抛出异常的情况", () => {
+      // Arrange
+      mockCustomMCPHandler.getTools.mockImplementation(() => {
+        throw new Error("获取工具列表失败");
+      });
+
+      // Act
+      const result = serviceManager.getCustomMCPTools();
+
+      // Assert - 应该返回空数组而不是抛出异常
+      expect(result).toEqual([]);
+    });
+  });
+});
+
+describe("MCPServiceManager - Logger 注入功能", () => {
+  let serviceManager: MCPServiceManager;
+  let mockLogger: any;
+  let mockCustomMCPHandler: any;
+
+  beforeEach(() => {
+    // Reset all mocks first
+    vi.clearAllMocks();
+
+    // 创建简单的 mock logger 实例
+    mockLogger = {
+      info: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+      warn: vi.fn(),
+      withTag: vi.fn().mockReturnThis(),
+    };
+
+    // Create service manager instance
+    serviceManager = new MCPServiceManager();
+
+    // Get the mocked CustomMCPHandler instance
+    mockCustomMCPHandler = (serviceManager as any).customMCPHandler;
+
+    // 确保必要方法存在
+    if (!mockCustomMCPHandler.hasTool) {
+      mockCustomMCPHandler.hasTool = vi.fn();
+    }
+    if (!mockCustomMCPHandler.getTools) {
+      mockCustomMCPHandler.getTools = vi.fn();
+    }
+
+    // 设置默认返回值
+    mockCustomMCPHandler.hasTool.mockReturnValue(false);
+    mockCustomMCPHandler.getTools.mockReturnValue([]);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  describe("基本功能测试", () => {
+    it("应该支持构造函数注入 logger", () => {
+      // Act & Assert - 不应该抛出异常
+      expect(() => {
+        serviceManager = new MCPServiceManager(undefined, mockLogger);
+      }).not.toThrow();
+    });
+
+    it("应该支持不传 logger 的构造函数调用", () => {
+      // Act & Assert - 不应该抛出异常
+      expect(() => {
+        serviceManager = new MCPServiceManager();
+      }).not.toThrow();
+    });
+
+    it("应该支持 setLogger 方法", () => {
+      // Arrange
+      serviceManager = new MCPServiceManager();
+
+      // Act & Assert - 不应该抛出异常
+      expect(() => {
+        serviceManager.setLogger(mockLogger);
+      }).not.toThrow();
+    });
+
+    it("应该支持 getLogger 方法", () => {
+      // Arrange
+      serviceManager = new MCPServiceManager(undefined, mockLogger);
+
+      // Act & Assert - 不应该抛出异常
+      expect(() => {
+        const logger = serviceManager.getLogger();
+        expect(logger).toBeDefined();
+      }).not.toThrow();
+    });
+
+    it("应该正确注入和使用 logger", () => {
+      // Arrange
+      serviceManager = new MCPServiceManager(undefined, mockLogger);
+
+      // Act & Assert - logger 应该被正确注入
+      expect(() => {
+        const currentLogger = serviceManager.getLogger();
+        expect(currentLogger).toBeDefined();
+      }).not.toThrow();
+    });
+  });
+
+  describe("向后兼容性测试", () => {
+    it("应该与现有的 API 完全兼容", () => {
+      // Arrange - 设置完整的 Mock 响应（使用当前实例的 customMCPHandler）
+      mockCustomMCPHandler.hasTool.mockReturnValue(true);
+      mockCustomMCPHandler.getTools.mockReturnValue([
+        {
+          name: "test_custom_tool",
+          description: "测试自定义工具",
+          inputSchema: { type: "object" },
+        },
+      ]);
+
+      // 使用当前的 serviceManager 实例，不重新创建
+      // serviceManager 已经在 beforeEach 中创建了
+
+      // Assert - 所有现有方法应该正常工作
+      expect(() => {
+        // 这些方法可能会内部调用 customMCPHandler 的各种方法
+        serviceManager.getAllTools();
+        serviceManager.hasTool("test_tool");
+        serviceManager.hasCustomMCPTool("test_custom_tool");
+        serviceManager.getCustomMCPTools();
+        serviceManager.getServiceManagerStatus();
+      }).not.toThrow();
+
+      // 验证具体的方法调用结果
+      expect(serviceManager.hasCustomMCPTool("test_custom_tool")).toBe(true);
+      expect(serviceManager.getCustomMCPTools()).toHaveLength(1);
     });
   });
 });

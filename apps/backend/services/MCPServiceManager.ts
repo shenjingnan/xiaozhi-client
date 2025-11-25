@@ -121,12 +121,14 @@ export class MCPServiceManager extends EventEmitter {
   /**
    * 创建 MCPServiceManager 实例
    * @param configs 可选的初始服务配置或服务器配置
+   * @param injectedLogger 可选的 logger 实例，用于统一的日志配置和管理
    */
   constructor(
-    configs?: Record<string, MCPServiceConfig> | UnifiedServerConfig
+    configs?: Record<string, MCPServiceConfig> | UnifiedServerConfig,
+    injectedLogger?: Logger
   ) {
     super();
-    this.logger = logger;
+    this.logger = injectedLogger || logger;
 
     // 处理参数，支持 UnifiedServerConfig 格式
     if (configs && this.isUnifiedServerConfig(configs)) {
@@ -2013,6 +2015,23 @@ export class MCPServiceManager extends EventEmitter {
    */
   getConnectionManager(): MCPServiceManager {
     return this;
+  }
+
+  /**
+   * 设置新的 logger 实例
+   * 用于统一的日志配置和管理
+   * @param logger 新的 logger 实例
+   */
+  setLogger(logger: Logger): void {
+    this.logger = logger;
+  }
+
+  /**
+   * 获取当前使用的 logger 实例
+   * @returns 当前 logger 实例
+   */
+  getLogger(): Logger {
+    return this.logger;
   }
 }
 
