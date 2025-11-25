@@ -19,7 +19,6 @@ import type {
 } from "@root/types/toolApi.js";
 import { ToolType } from "@root/types/toolApi.js";
 import { MCPCacheManager } from "@services/MCPCacheManager.js";
-import { MCPServiceManagerSingleton } from "@services/MCPServiceManagerSingleton.js";
 import Ajv from "ajv";
 import dayjs from "dayjs";
 import type { Context } from "hono";
@@ -119,17 +118,15 @@ export class ToolApiHandler {
         JSON.stringify(args)
       );
 
-      // 检查 MCPServiceManager 是否已初始化
-      if (!MCPServiceManagerSingleton.isInitialized()) {
+      // 从 Context 中获取 MCPServiceManager 实例
+      const serviceManager = c.get("mcpServiceManager");
+      if (!serviceManager) {
         const errorResponse = this.createErrorResponse(
           "SERVICE_NOT_INITIALIZED",
           "MCP 服务管理器未初始化。请检查服务状态。"
         );
         return c.json(errorResponse, 503);
       }
-
-      // 获取服务管理器实例
-      const serviceManager = await MCPServiceManagerSingleton.getInstance();
 
       // 验证服务和工具是否存在
       await this.validateServiceAndTool(serviceManager, serviceName, toolName);
@@ -687,17 +684,15 @@ export class ToolApiHandler {
       return c.json(errorResponse, 400);
     }
 
-    // 检查 MCP 服务管理器是否已初始化
-    if (!MCPServiceManagerSingleton.isInitialized()) {
+    // 从 Context 中获取 MCPServiceManager 实例
+    const serviceManager = c.get("mcpServiceManager");
+    if (!serviceManager) {
       const errorResponse = this.createErrorResponse(
         "SERVICE_NOT_INITIALIZED",
         "MCP 服务管理器未初始化。请检查服务状态。"
       );
       return c.json(errorResponse, 503);
     }
-
-    // 获取服务管理器实例
-    const serviceManager = await MCPServiceManagerSingleton.getInstance();
 
     // 验证服务和工具是否存在
     try {

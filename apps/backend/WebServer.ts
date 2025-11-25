@@ -24,6 +24,7 @@ import {
   errorHandlerMiddleware,
   loggerMiddleware,
 } from "@middlewares/index.js";
+import { mcpServiceManagerMiddleware } from "@middlewares/mcpServiceManager.middleware.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
@@ -571,6 +572,9 @@ export class WebServer {
   private setupMiddleware() {
     // Logger 中间件 - 必须在最前面
     this.app?.use("*", loggerMiddleware);
+
+    // MCP Service Manager 中间件 - 在 Logger 之后，CORS 之前
+    this.app?.use("*", mcpServiceManagerMiddleware);
 
     // CORS 中间件
     this.app?.use("*", corsMiddleware);

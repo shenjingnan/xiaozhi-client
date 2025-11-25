@@ -9,7 +9,6 @@ import { MCPMessageHandler } from "@core/MCPMessageHandler.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type { MCPMessage, MCPResponse } from "@root/types/mcp.js";
-import { MCPServiceManagerSingleton } from "@services/MCPServiceManagerSingleton.js";
 import type { Context } from "hono";
 
 /**
@@ -166,14 +165,20 @@ export class MCPRouteHandler {
   /**
    * 初始化 MCP 消息处理器
    */
-  private async initializeMessageHandler(): Promise<void> {
+  private async initializeMessageHandler(c: Context): Promise<void> {
     if (this.mcpMessageHandler) {
       return;
     }
 
     try {
-      // 获取 MCP 服务管理器实例
-      const serviceManager = await MCPServiceManagerSingleton.getInstance();
+      // 从 Context 中获取 MCP 服务管理器实例
+      const serviceManager = c.get("mcpServiceManager");
+      if (!serviceManager) {
+        throw new Error(
+          "MCPServiceManager 未在 Context 中找到，请检查中间件配置"
+        );
+      }
+
       this.mcpMessageHandler = new MCPMessageHandler(serviceManager);
       this.logger.debug("MCP 消息处理器初始化成功");
     } catch (error) {
@@ -267,7 +272,7 @@ export class MCPRouteHandler {
       }
 
       // 初始化消息处理器
-      await this.initializeMessageHandler();
+      await this.initializeMessageHandler(c);
 
       // 处理消息
       if (!this.mcpMessageHandler) {
@@ -399,7 +404,7 @@ export class MCPRouteHandler {
       }
 
       // 初始化消息处理器
-      await this.initializeMessageHandler();
+      await this.initializeMessageHandler(c);
 
       // 处理消息
       if (!this.mcpMessageHandler) {

@@ -26,18 +26,23 @@ vi.mock("../../configManager.js", () => ({
   },
 }));
 
-// Mock MCPServiceManagerSingleton
-vi.mock("@services/MCPServiceManagerSingleton.js", () => ({
-  MCPServiceManagerSingleton: {
-    isInitialized: vi.fn(() => true),
-    getInstance: vi.fn(() =>
-      Promise.resolve({
-        hasCustomMCPTool: vi.fn(() => false),
-        getCustomMCPTools: vi.fn(() => []),
-      })
-    ),
-  },
-}));
+// Mock MCPServiceManager - 在 Context 中提供
+const mockServiceManager = {
+  hasTool: vi.fn(() => false),
+  hasCustomMCPTool: vi.fn(() => false),
+  getCustomMCPTools: vi.fn(() => []),
+  getAllTools: vi.fn(() => []),
+  callTool: vi.fn(),
+  getStatus: vi.fn(() => ({
+    isRunning: true,
+    totalTools: 0,
+    availableTools: 0,
+    services: {},
+  })),
+  getConnectedServices: vi.fn(() => []),
+  stopService: vi.fn(),
+  startService: vi.fn(),
+};
 
 // Mock MCPCacheManager
 vi.mock("@services/MCPCacheManager.js", () => ({
@@ -59,6 +64,12 @@ describe("ToolApiHandler - 核心功能测试", () => {
         param: vi.fn(),
       } as any,
       json: vi.fn(),
+      get: vi.fn((key: string) => {
+        if (key === "mcpServiceManager") {
+          return mockServiceManager;
+        }
+        return undefined;
+      }),
     } as any;
     vi.clearAllMocks();
   });
