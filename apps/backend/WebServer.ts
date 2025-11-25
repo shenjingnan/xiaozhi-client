@@ -15,7 +15,6 @@ import {
   ToolCallLogApiHandler,
   UpdateApiHandler,
   VersionApiHandler,
-  mcpContextExampleHandler,
 } from "@handlers/index.js";
 import type { ServerType } from "@hono/node-server";
 import { serve } from "@hono/node-server";
@@ -586,90 +585,90 @@ export class WebServer {
 
   private setupRoutes() {
     // 配置相关 API 路由
-    this.app?.get("/api/config", (c) => this.configApiHandler.getConfig(c));
-    this.app?.put("/api/config", (c) => this.configApiHandler.updateConfig(c));
-    this.app?.get("/api/config/mcp-endpoint", (c) =>
+    this.app?.get("/api/config", (c: Context) => this.configApiHandler.getConfig(c));
+    this.app?.put("/api/config", (c: Context) => this.configApiHandler.updateConfig(c));
+    this.app?.get("/api/config/mcp-endpoint", (c: Context) =>
       this.configApiHandler.getMcpEndpoint(c)
     );
-    this.app?.get("/api/config/mcp-endpoints", (c) =>
+    this.app?.get("/api/config/mcp-endpoints", (c: Context) =>
       this.configApiHandler.getMcpEndpoints(c)
     );
-    this.app?.get("/api/config/mcp-servers", (c) =>
+    this.app?.get("/api/config/mcp-servers", (c: Context) =>
       this.configApiHandler.getMcpServers(c)
     );
-    this.app?.get("/api/config/connection", (c) =>
+    this.app?.get("/api/config/connection", (c: Context) =>
       this.configApiHandler.getConnectionConfig(c)
     );
-    this.app?.post("/api/config/reload", (c) =>
+    this.app?.post("/api/config/reload", (c: Context) =>
       this.configApiHandler.reloadConfig(c)
     );
-    this.app?.get("/api/config/path", (c) =>
+    this.app?.get("/api/config/path", (c: Context) =>
       this.configApiHandler.getConfigPath(c)
     );
-    this.app?.get("/api/config/exists", (c) =>
+    this.app?.get("/api/config/exists", (c: Context) =>
       this.configApiHandler.checkConfigExists(c)
     );
 
     // 版本信息 API 路由
-    this.app?.get("/api/version", (c) => this.versionApiHandler.getVersion(c));
-    this.app?.get("/api/version/simple", (c) =>
+    this.app?.get("/api/version", (c: Context) => this.versionApiHandler.getVersion(c));
+    this.app?.get("/api/version/simple", (c: Context) =>
       this.versionApiHandler.getVersionSimple(c)
     );
-    this.app?.get("/api/version/available", (c) =>
+    this.app?.get("/api/version/available", (c: Context) =>
       this.versionApiHandler.getAvailableVersions(c)
     );
-    this.app?.get("/api/version/latest", (c) =>
+    this.app?.get("/api/version/latest", (c: Context) =>
       this.versionApiHandler.checkLatestVersion(c)
     );
-    this.app?.post("/api/version/cache/clear", (c) =>
+    this.app?.post("/api/version/cache/clear", (c: Context) =>
       this.versionApiHandler.clearVersionCache(c)
     );
 
     // 更新相关 API 路由
     const updateApiHandler = new UpdateApiHandler();
-    this.app?.post("/api/update", (c) => updateApiHandler.performUpdate(c));
+    this.app?.post("/api/update", (c: Context) => updateApiHandler.performUpdate(c));
 
     // 状态相关 API 路由
-    this.app?.get("/api/status", (c) => this.statusApiHandler.getStatus(c));
-    this.app?.get("/api/status/client", (c) =>
+    this.app?.get("/api/status", (c: Context) => this.statusApiHandler.getStatus(c));
+    this.app?.get("/api/status/client", (c: Context) =>
       this.statusApiHandler.getClientStatus(c)
     );
-    this.app?.get("/api/status/restart", (c) =>
+    this.app?.get("/api/status/restart", (c: Context) =>
       this.statusApiHandler.getRestartStatus(c)
     );
-    this.app?.get("/api/status/connected", (c) =>
+    this.app?.get("/api/status/connected", (c: Context) =>
       this.statusApiHandler.checkClientConnected(c)
     );
-    this.app?.get("/api/status/heartbeat", (c) =>
+    this.app?.get("/api/status/heartbeat", (c: Context) =>
       this.statusApiHandler.getLastHeartbeat(c)
     );
-    this.app?.get("/api/status/mcp-servers", (c) =>
+    this.app?.get("/api/status/mcp-servers", (c: Context) =>
       this.statusApiHandler.getActiveMCPServers(c)
     );
-    this.app?.put("/api/status/client", (c) =>
+    this.app?.put("/api/status/client", (c: Context) =>
       this.statusApiHandler.updateClientStatus(c)
     );
-    this.app?.put("/api/status/mcp-servers", (c) =>
+    this.app?.put("/api/status/mcp-servers", (c: Context) =>
       this.statusApiHandler.setActiveMCPServers(c)
     );
-    this.app?.post("/api/status/reset", (c) =>
+    this.app?.post("/api/status/reset", (c: Context) =>
       this.statusApiHandler.resetStatus(c)
     );
 
     // 服务相关 API 路由
-    this.app?.post("/api/services/restart", (c) =>
+    this.app?.post("/api/services/restart", (c: Context) =>
       this.serviceApiHandler.restartService(c)
     );
-    this.app?.post("/api/services/stop", (c) =>
+    this.app?.post("/api/services/stop", (c: Context) =>
       this.serviceApiHandler.stopService(c)
     );
-    this.app?.post("/api/services/start", (c) =>
+    this.app?.post("/api/services/start", (c: Context) =>
       this.serviceApiHandler.startService(c)
     );
-    this.app?.get("/api/services/status", (c) =>
+    this.app?.get("/api/services/status", (c: Context) =>
       this.serviceApiHandler.getServiceStatus(c)
     );
-    this.app?.get("/api/services/health", (c) =>
+    this.app?.get("/api/services/health", (c: Context) =>
       this.serviceApiHandler.getServiceHealth(c)
     );
 
@@ -763,20 +762,6 @@ export class WebServer {
     // MCP 服务路由 - 符合 MCP Streamable HTTP 规范
     this.app?.post("/mcp", (c: Context) => this.mcpRouteHandler.handlePost(c));
     this.app?.get("/mcp", (c: Context) => this.mcpRouteHandler.handleGet(c));
-
-    // Context 模式示例路由 - 展示新的依赖注入方式
-    this.app?.get("/api/example/tools", (c: Context) =>
-      mcpContextExampleHandler.getTools(c)
-    );
-    this.app?.post("/api/example/tools/call", (c: Context) =>
-      mcpContextExampleHandler.callTool(c)
-    );
-    this.app?.get("/api/example/services/status", (c: Context) =>
-      mcpContextExampleHandler.getServiceStatus(c)
-    );
-    this.app?.post("/api/example/services/restart", (c: Context) =>
-      mcpContextExampleHandler.restartService(c)
-    );
 
     // 处理未知的 API 路由
     this.app?.all("/api/*", async (c: Context) => {
