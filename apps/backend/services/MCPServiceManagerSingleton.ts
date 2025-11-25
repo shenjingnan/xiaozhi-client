@@ -2,7 +2,6 @@
  * MCP 服务管理器单例
  * 提供全局唯一的 MCPServiceManager 实例，解决多实例资源冲突问题
  */
-// TODO: 找到export MCPServiceManagerSingleton 的地方重新加回去，要用到单例文件
 
 import MCPServiceManager from "@services/MCPServiceManager.js";
 
