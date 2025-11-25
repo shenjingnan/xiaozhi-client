@@ -1,3 +1,4 @@
+import type { MCPServiceManager } from "@/lib/mcp";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
@@ -9,7 +10,6 @@ import {
   MCPErrorCode,
 } from "@root/errors/MCPErrors.js";
 import { getEventBus } from "@services/EventBus.js";
-import type { MCPServiceManager } from "@services/MCPServiceManager.js";
 import type { Context } from "hono";
 
 /**

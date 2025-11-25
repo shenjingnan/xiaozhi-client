@@ -3,10 +3,10 @@
  * 将新的 MCPService 适配到旧的 IMCPClient 接口，确保向后兼容性
  */
 
+import type { MCPServiceConfig, ToolCallResult } from "@/lib/mcp";
+import { MCPService } from "@/lib/mcp";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { logger as globalLogger } from "@root/Logger.js";
-import type { MCPServiceConfig, ToolCallResult } from "@services/MCPService.js";
-import { MCPService } from "@services/MCPService.js";
 
 /**
  * MCP 客户端接口

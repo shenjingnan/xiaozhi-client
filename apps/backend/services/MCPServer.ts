@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
+import type { MCPServiceManager } from "@/lib/mcp";
 import type { WebServer } from "@root/WebServer.js";
-import type { MCPServiceManager } from "@services/MCPServiceManager.js";
 import { Logger } from "../Logger.js";
 import { ProxyMCPServer } from "../ProxyMCPServer.js";
 import { configManager } from "../configManager.js";
@@ -36,9 +36,7 @@ export class MCPServer extends EventEmitter {
 
     try {
       // 创建服务管理器实例
-      const { MCPServiceManager } = await import(
-        "@services/MCPServiceManager.js"
-      );
+      const { MCPServiceManager } = await import("@/lib/mcp");
       this.serviceManager = new MCPServiceManager();
       await this.serviceManager.start();
 

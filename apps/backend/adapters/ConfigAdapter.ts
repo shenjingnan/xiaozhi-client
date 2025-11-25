@@ -4,6 +4,8 @@
  */
 
 import { isAbsolute, resolve } from "node:path";
+import type { MCPServiceConfig } from "@/lib/mcp";
+import { MCPTransportType } from "@/lib/mcp";
 import { logger as globalLogger } from "@root/Logger.js";
 import type {
   LocalMCPServerConfig,
@@ -11,8 +13,6 @@ import type {
   SSEMCPServerConfig,
   StreamableHTTPMCPServerConfig,
 } from "@root/configManager.js";
-import type { MCPServiceConfig } from "@services/MCPService.js";
-import { MCPTransportType } from "@services/MCPService.js";
 
 // 为配置适配器创建带标签的 logger
 const logger = globalLogger.withTag("ConfigAdapter");

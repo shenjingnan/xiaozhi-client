@@ -3,7 +3,7 @@
  * 验证适配器的基本功能和兼容性
  */
 
-import { MCPTransportType } from "@services/MCPService.js";
+import { MCPTransportType } from "@/lib/mcp";
 import { describe, expect, it } from "vitest";
 import type {
   LocalMCPServerConfig,

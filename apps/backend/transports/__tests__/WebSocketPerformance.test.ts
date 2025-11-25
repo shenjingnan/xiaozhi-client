@@ -40,9 +40,9 @@ vi.mock("../../configManager.js", () => ({
   }),
 }));
 
+import { MCPServiceManager } from "@/lib/mcp";
 // 动态导入被 mock 的模块
 import { MCPMessageHandler } from "@core/MCPMessageHandler.js";
-import { MCPServiceManager } from "@services/MCPServiceManager.js";
 
 describe("WebSocket 性能测试", () => {
   let serviceManager: MCPServiceManager;

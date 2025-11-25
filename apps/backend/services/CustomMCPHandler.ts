@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import type { MCPServiceManager } from "@/lib/mcp";
 import { CacheLifecycleManager } from "@managers/CacheLifecycleManager.js";
 import { TaskStateManager } from "@managers/TaskStateManager.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
@@ -30,7 +31,6 @@ import {
 import { TimeoutError, createTimeoutResponse } from "@root/types/timeout.js";
 import { getEventBus } from "@services/EventBus.js";
 import { MCPCacheManager } from "@services/MCPCacheManager.js";
-import type { MCPServiceManager } from "@services/MCPServiceManager.js";
 
 // 工具调用结果接口（与 MCPServiceManager 保持一致）
 export interface ToolCallResult {

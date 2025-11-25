@@ -4,6 +4,7 @@
  * 这是阶段一重构的核心组件，用于消除双层代理架构
  */
 
+import type { MCPServiceManager } from "@/lib/mcp";
 import type {
   ClientCapabilities,
   InitializedNotification,
@@ -11,7 +12,6 @@ import type {
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type { MCPMessage, MCPResponse } from "@root/types/mcp.js";
-import type { MCPServiceManager } from "@services/MCPServiceManager.js";
 
 // 初始化参数接口
 interface InitializeParams {
