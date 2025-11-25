@@ -5,6 +5,7 @@
 
 import type { Logger } from "@root/Logger.js";
 import type { MCPServiceManager } from "@services/MCPServiceManager.js";
+import type { Context } from "hono";
 import { Hono } from "hono";
 
 /**
@@ -44,9 +45,7 @@ export const createApp = (): Hono<AppContext> => {
 /**
  * 从 Context 中获取日志记录器的类型安全方法
  */
-export const getLogger = (
-  c: import("hono").Context<AppContext>
-): Logger | undefined => {
+export const getLogger = (c: Context<AppContext>): Logger | undefined => {
   return c.get("logger");
 };
 
@@ -54,7 +53,7 @@ export const getLogger = (
  * 从 Context 中获取 MCPServiceManager 的类型安全方法
  */
 export const getMCPServiceManager = (
-  c: import("hono").Context<AppContext>
+  c: Context<AppContext>
 ): MCPServiceManager | undefined => {
   return c.get("mcpServiceManager");
 };
@@ -63,7 +62,7 @@ export const getMCPServiceManager = (
  * 要求必须存在 MCPServiceManager 的类型安全方法
  */
 export const requireMCPServiceManager = (
-  c: import("hono").Context<AppContext>
+  c: Context<AppContext>
 ): MCPServiceManager => {
   const serviceManager = c.get("mcpServiceManager");
 

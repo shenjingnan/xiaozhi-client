@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import { convertLegacyToNew } from "@adapters/index.js";
 import {
   ConfigApiHandler,
@@ -31,6 +32,8 @@ import { logger } from "@root/Logger.js";
 import { ProxyMCPServer } from "@root/ProxyMCPServer.js";
 import { configManager } from "@root/configManager.js";
 import type { MCPServerConfig } from "@root/configManager.js";
+import type { AppContext } from "@root/types/index.js";
+import { createApp } from "@root/types/index.js";
 import type {
   EndpointConfigChangeEvent,
   EventBus,
@@ -49,7 +52,7 @@ import {
   getEventBus,
 } from "@services/index.js";
 import type { Context } from "hono";
-import { Hono } from "hono";
+import type { Hono } from "hono";
 import { WebSocketServer } from "ws";
 
 // 统一成功响应格式
@@ -85,7 +88,7 @@ interface ClientInfo {
  * WebServer - 主控制器，协调各个服务和处理器
  */
 export class WebServer {
-  private app: Hono;
+  private app: Hono<AppContext>;
   private httpServer: ServerType | null = null;
   private wss: WebSocketServer | null = null;
   private logger: Logger;
@@ -190,7 +193,7 @@ export class WebServer {
     );
 
     // 初始化 Hono 应用
-    this.app = new Hono();
+    this.app = createApp();
     this.setupMiddleware();
     this.setupRoutes();
 
@@ -877,7 +880,15 @@ export class WebServer {
     this.httpServer = server;
 
     // 设置 WebSocket 服务器
-    this.wss = new WebSocketServer({ server: this.httpServer as any });
+    if (!this.httpServer) {
+      throw new Error("HTTP server 未初始化");
+    }
+    this.wss = new WebSocketServer({
+      server: this.httpServer as Server<
+        typeof IncomingMessage,
+        typeof ServerResponse
+      >,
+    });
     this.setupWebSocket();
 
     // 启动心跳监控
