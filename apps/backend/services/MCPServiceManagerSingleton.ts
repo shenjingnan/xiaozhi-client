@@ -1,6 +1,6 @@
 /**
  * MCP 服务管理器单例
- * 提供全局唯一的 MCPServiceManager 实例，解决多实例资源冲突问题
+ * 提供全局唯一的 MCPServiceManager 实例，简化实现以满足项目实际需求
  */
 
 import type { Logger } from "@root/Logger.js";
@@ -11,128 +11,37 @@ import MCPServiceManager from "@services/MCPServiceManager.js";
 export type { Tool } from "@modelcontextprotocol/sdk/types.js";
 export type { LocalMCPServerConfig } from "@root/configManager.js";
 
-// 单例状态枚举
-enum SingletonState {
-  NOT_INITIALIZED = "not_initialized",
-  INITIALIZING = "initializing",
-  INITIALIZED = "initialized",
-  FAILED = "failed",
-  CLEANUP = "cleanup",
-}
-
-// 单例状态接口
-interface SingletonStatus {
-  state: SingletonState;
-  initializationTime?: Date;
-  lastError?: Error;
-  instanceId?: string;
-}
-
-// 单例状态管理变量
+// 简单的实例缓存
 let instance: MCPServiceManager | null = null;
-let initPromise: Promise<MCPServiceManager> | null = null;
-let state: SingletonState = SingletonState.NOT_INITIALIZED;
-let lastError: Error | null = null;
-let instanceId: string | null = null;
-
-// 并发控制：互斥锁保护关键操作
-let loggerUpdateMutex: Promise<void> = Promise.resolve();
-
-/**
- * 创建 MCPServiceManager 实例（私有函数）
- */
-async function createInstance(logger?: Logger): Promise<MCPServiceManager> {
-  const manager = new MCPServiceManager(undefined, logger);
-  return manager;
-}
-
-/**
- * 原子性地更新实例的 Logger
- * 使用互斥锁防止并发更新冲突
- */
-async function atomicUpdateLogger(logger: Logger): Promise<boolean> {
-  // 在等待之前就创建新的 Promise 并更新互斥锁引用，防止竞态条件
-  let resolver: () => void;
-  const newMutex = new Promise<void>((resolve) => {
-    resolver = resolve;
-  });
-  const oldMutex = loggerUpdateMutex;
-  loggerUpdateMutex = newMutex;
-
-  await oldMutex;
-
-  try {
-    if (instance && state === SingletonState.INITIALIZED) {
-      instance.setLogger(logger);
-      return true;
-    }
-    return false;
-  } catch (error) {
-    globalLogger.error("更新实例 logger 失败:", error);
-    return false;
-  } finally {
-    resolver!();
-  }
-}
+let currentLogger: Logger | undefined;
 
 /**
  * 获取 MCPServiceManager 单例实例
  *
- * @param logger 可选的 logger 实例，用于统一的日志配置和管理
+ * @param logger 可选的 logger 实例，用于注入到服务管理器中
  * @returns Promise<MCPServiceManager> 管理器实例
- * @throws Error 如果初始化失败
  */
 async function getInstance(logger?: Logger): Promise<MCPServiceManager> {
-  // 如果已经初始化完成，直接返回实例
-  if (instance && state === SingletonState.INITIALIZED) {
-    // 如果传入了新的 logger，原子性地更新现有实例的 logger
-    if (logger) {
-      const currentLogger = instance.getLogger();
-      // 检查当前是否使用了注入的 logger（非默认 logger）
-      if (currentLogger !== logger) {
-        logger.warn("⚠️ MCPServiceManager 单例已初始化，正在更新为新的 logger");
-      }
-      await atomicUpdateLogger(logger);
-    }
-    return instance;
-  }
-
-  // 如果正在初始化中，等待同一个初始化Promise
-  if (initPromise && state === SingletonState.INITIALIZING) {
-    const result = await initPromise;
-    // 如果传入了新的 logger，原子性地更新实例的 logger
-    if (logger) {
-      await atomicUpdateLogger(logger);
-    }
-    return result;
-  }
-
-  // 如果之前初始化失败，重置状态准备重试
-  if (state === SingletonState.FAILED) {
-    reset();
-  }
-
-  // 开始新的初始化过程
-  state = SingletonState.INITIALIZING;
-  initPromise = createInstance(logger);
-
   try {
-    instance = await initPromise;
-    state = SingletonState.INITIALIZED;
-    instanceId = `mcp-manager-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-    lastError = null;
+    if (!instance) {
+      instance = new MCPServiceManager(undefined, logger);
+      currentLogger = logger;
+    } else if (logger && logger !== currentLogger) {
+      // 简单的 Logger 更新，无需互斥锁
+      await instance.setLogger(logger);
+      currentLogger = logger;
+    }
 
     return instance;
   } catch (error) {
-    state = SingletonState.FAILED;
-    lastError = error as Error;
-    initPromise = null;
-
+    // 简化的错误处理：重新创建实例
     globalLogger.error(
-      "❌ MCPServiceManager 单例初始化失败:",
-      (error as Error).message
+      "创建或更新 MCPServiceManager 实例失败，正在重试:",
+      error
     );
-    throw error;
+    instance = new MCPServiceManager(undefined, logger);
+    currentLogger = logger;
+    return instance;
   }
 }
 
@@ -142,63 +51,36 @@ async function getInstance(logger?: Logger): Promise<MCPServiceManager> {
  * @returns Promise<void>
  */
 async function cleanup(): Promise<void> {
-  if (state === SingletonState.CLEANUP) {
-    console.log("⚠️  MCPServiceManager 单例已在清理中，跳过重复清理");
-    return;
-  }
-
   console.log("🧹 正在清理 MCPServiceManager 单例资源...");
-  state = SingletonState.CLEANUP;
 
   try {
-    // 清理初始化Promise
-    if (initPromise) {
-      try {
-        const instanceFromPromise = await initPromise;
-        await instanceFromPromise.stopAllServices();
-      } catch (error) {
-        globalLogger.error("清理初始化中的实例失败:", (error as Error).message);
-      }
-      initPromise = null;
-    }
-
-    // 清理已初始化的实例
     if (instance) {
       await instance.stopAllServices();
       instance = null;
+      currentLogger = undefined;
     }
-
-    state = SingletonState.NOT_INITIALIZED;
-    lastError = null;
-    instanceId = null;
   } catch (error) {
     globalLogger.error(
       "❌ MCPServiceManager 单例清理失败:",
       (error as Error).message
     );
-    // 即使清理失败，也要重置状态，避免永久锁定
-    reset();
+    // 即使清理失败，也要重置状态
+    instance = null;
+    currentLogger = undefined;
     throw error;
   }
 }
 
 /**
- * 重置单例状态（用于错误恢复）
+ * 重置单例状态（用于错误恢复和测试）
  *
  * 注意：这个方法不会清理资源，只是重置状态
  * 如果需要清理资源，请使用 cleanup() 方法
  */
 function reset(): void {
   console.log("🔄 重置 MCPServiceManager 单例状态");
-
   instance = null;
-  initPromise = null;
-  state = SingletonState.NOT_INITIALIZED;
-  lastError = null;
-  instanceId = null;
-
-  // 重置互斥锁
-  loggerUpdateMutex = Promise.resolve();
+  currentLogger = undefined;
 }
 
 /**
@@ -207,35 +89,7 @@ function reset(): void {
  * @returns boolean 是否已初始化
  */
 function isInitialized(): boolean {
-  return state === SingletonState.INITIALIZED && instance !== null;
-}
-
-/**
- * 获取单例状态信息
- *
- * @returns SingletonStatus 状态信息
- */
-function getStatus(): SingletonStatus {
-  return {
-    state: state,
-    initializationTime: instanceId ? new Date() : undefined,
-    lastError: lastError || undefined,
-    instanceId: instanceId || undefined,
-  };
-}
-
-/**
- * 强制重新初始化单例
- *
- * 这个方法会先清理现有资源，然后重新初始化
- *
- * @returns Promise<MCPServiceManager> 新的管理器实例
- */
-async function forceReinitialize(): Promise<MCPServiceManager> {
-  console.log("🔄 强制重新初始化 MCPServiceManager 单例...");
-
-  await cleanup();
-  return getInstance();
+  return instance !== null;
 }
 
 /**
@@ -248,74 +102,22 @@ function getCurrentInstance(): MCPServiceManager | null {
 }
 
 /**
- * 等待初始化完成（如果正在初始化中）
- *
- * @returns Promise<boolean> 是否成功初始化
- */
-async function waitForInitialization(): Promise<boolean> {
-  if (state === SingletonState.INITIALIZED) {
-    return true;
-  }
-
-  if (state === SingletonState.INITIALIZING && initPromise) {
-    try {
-      await initPromise;
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  return false;
-}
-
-/**
- * 更新现有实例的 logger
- * 使用原子性更新确保并发安全
- *
- * 注意：
- * - 仅在实例已初始化时才能更新
- * - 如果实例未初始化或处于其他状态，将返回 false
- * - 更新操作是同步的，但为了与其他 API 保持一致性返回 Promise
- * - 使用互斥锁确保并发安全，避免竞态条件
- *
- * @param logger 新的 logger 实例
- * @returns Promise<boolean> 是否成功更新。返回 true 表示更新成功，false 表示实例未初始化或更新失败
- */
-async function updateInstanceLogger(logger: Logger): Promise<boolean> {
-  return await atomicUpdateLogger(logger);
-}
-
-/**
  * MCPServiceManager 全局单例管理器
  *
- * 使用对象包装模块级函数，保持原有API接口不变
+ * 简化实现，保持核心功能和API兼容性
  */
 export const MCPServiceManagerSingleton = {
   getInstance,
   cleanup,
   reset,
   isInitialized,
-  getStatus,
-  forceReinitialize,
   getCurrentInstance,
-  waitForInitialization,
-  updateInstanceLogger,
 } as const;
 
 // 导出默认实例（便于使用）
 export default MCPServiceManagerSingleton;
 
-// 进程退出时自动清理资源
-process.on("exit", () => {
-  if (MCPServiceManagerSingleton.isInitialized()) {
-    console.log("🔄 进程退出，正在清理 MCPServiceManager 单例...");
-    // 注意：这里不能使用 await，因为 exit 事件是同步的
-    MCPServiceManagerSingleton.reset();
-  }
-});
-
-// 处理未捕获的异常
+// 处理未捕获的异常，简化清理逻辑
 process.on("uncaughtException", async (error) => {
   globalLogger.error("💥 未捕获的异常，清理 MCPServiceManager 单例:", error);
   try {
