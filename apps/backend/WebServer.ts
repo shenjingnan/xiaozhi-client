@@ -585,8 +585,12 @@ export class WebServer {
 
   private setupRoutes() {
     // 配置相关 API 路由
-    this.app?.get("/api/config", (c: Context) => this.configApiHandler.getConfig(c));
-    this.app?.put("/api/config", (c: Context) => this.configApiHandler.updateConfig(c));
+    this.app?.get("/api/config", (c: Context) =>
+      this.configApiHandler.getConfig(c)
+    );
+    this.app?.put("/api/config", (c: Context) =>
+      this.configApiHandler.updateConfig(c)
+    );
     this.app?.get("/api/config/mcp-endpoint", (c: Context) =>
       this.configApiHandler.getMcpEndpoint(c)
     );
@@ -610,7 +614,9 @@ export class WebServer {
     );
 
     // 版本信息 API 路由
-    this.app?.get("/api/version", (c: Context) => this.versionApiHandler.getVersion(c));
+    this.app?.get("/api/version", (c: Context) =>
+      this.versionApiHandler.getVersion(c)
+    );
     this.app?.get("/api/version/simple", (c: Context) =>
       this.versionApiHandler.getVersionSimple(c)
     );
@@ -626,10 +632,14 @@ export class WebServer {
 
     // 更新相关 API 路由
     const updateApiHandler = new UpdateApiHandler();
-    this.app?.post("/api/update", (c: Context) => updateApiHandler.performUpdate(c));
+    this.app?.post("/api/update", (c: Context) =>
+      updateApiHandler.performUpdate(c)
+    );
 
     // 状态相关 API 路由
-    this.app?.get("/api/status", (c: Context) => this.statusApiHandler.getStatus(c));
+    this.app?.get("/api/status", (c: Context) =>
+      this.statusApiHandler.getStatus(c)
+    );
     this.app?.get("/api/status/client", (c: Context) =>
       this.statusApiHandler.getClientStatus(c)
     );
