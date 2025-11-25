@@ -4,6 +4,7 @@
  */
 
 import type { Logger } from "@root/Logger.js";
+import { logger as globalLogger } from "@root/Logger.js";
 import MCPServiceManager from "@services/MCPServiceManager.js";
 
 // 重新导出相关类型，便于外部使用
@@ -50,34 +51,27 @@ async function createInstance(logger?: Logger): Promise<MCPServiceManager> {
  * 使用互斥锁防止并发更新冲突
  */
 async function atomicUpdateLogger(logger: Logger): Promise<boolean> {
-  // 等待之前的 Logger 更新操作完成
-  await loggerUpdateMutex;
+  // 在等待之前就创建新的 Promise 并更新互斥锁引用，防止竞态条件
+  let resolver: () => void;
+  const newMutex = new Promise<void>((resolve) => {
+    resolver = resolve;
+  });
+  const oldMutex = loggerUpdateMutex;
+  loggerUpdateMutex = newMutex;
 
-  // 开始新的互斥锁操作
-  const updatePromise = (async () => {
-    if (instance && state === SingletonState.INITIALIZED) {
-      try {
-        instance.setLogger(logger);
-        return true;
-      } catch (error) {
-        console.error("更新实例 logger 失败:", error);
-        return false;
-      }
-    }
-    return false;
-  })();
-
-  // 更新互斥锁引用
-  loggerUpdateMutex = updatePromise.then(
-    () => {},
-    () => {}
-  ); // 忽略错误，继续后续操作
+  await oldMutex;
 
   try {
-    return await updatePromise;
-  } catch (error) {
-    console.error("Logger 更新过程中发生异常:", error);
+    if (instance && state === SingletonState.INITIALIZED) {
+      instance.setLogger(logger);
+      return true;
+    }
     return false;
+  } catch (error) {
+    globalLogger.error("更新实例 logger 失败:", error);
+    return false;
+  } finally {
+    resolver!();
   }
 }
 
@@ -93,6 +87,11 @@ async function getInstance(logger?: Logger): Promise<MCPServiceManager> {
   if (instance && state === SingletonState.INITIALIZED) {
     // 如果传入了新的 logger，原子性地更新现有实例的 logger
     if (logger) {
+      const currentLogger = instance.getLogger();
+      // 检查当前是否使用了注入的 logger（非默认 logger）
+      if (currentLogger !== logger) {
+        logger.warn("⚠️ MCPServiceManager 单例已初始化，正在更新为新的 logger");
+      }
       await atomicUpdateLogger(logger);
     }
     return instance;
@@ -129,7 +128,7 @@ async function getInstance(logger?: Logger): Promise<MCPServiceManager> {
     lastError = error as Error;
     initPromise = null;
 
-    console.error(
+    globalLogger.error(
       "❌ MCPServiceManager 单例初始化失败:",
       (error as Error).message
     );
@@ -158,7 +157,7 @@ async function cleanup(): Promise<void> {
         const instanceFromPromise = await initPromise;
         await instanceFromPromise.stopAllServices();
       } catch (error) {
-        console.error("清理初始化中的实例失败:", (error as Error).message);
+        globalLogger.error("清理初始化中的实例失败:", (error as Error).message);
       }
       initPromise = null;
     }
@@ -173,7 +172,7 @@ async function cleanup(): Promise<void> {
     lastError = null;
     instanceId = null;
   } catch (error) {
-    console.error(
+    globalLogger.error(
       "❌ MCPServiceManager 单例清理失败:",
       (error as Error).message
     );
@@ -274,8 +273,14 @@ async function waitForInitialization(): Promise<boolean> {
  * 更新现有实例的 logger
  * 使用原子性更新确保并发安全
  *
+ * 注意：
+ * - 仅在实例已初始化时才能更新
+ * - 如果实例未初始化或处于其他状态，将返回 false
+ * - 更新操作是同步的，但为了与其他 API 保持一致性返回 Promise
+ * - 使用互斥锁确保并发安全，避免竞态条件
+ *
  * @param logger 新的 logger 实例
- * @returns Promise<boolean> 是否成功更新
+ * @returns Promise<boolean> 是否成功更新。返回 true 表示更新成功，false 表示实例未初始化或更新失败
  */
 async function updateInstanceLogger(logger: Logger): Promise<boolean> {
   return await atomicUpdateLogger(logger);
@@ -312,20 +317,23 @@ process.on("exit", () => {
 
 // 处理未捕获的异常
 process.on("uncaughtException", async (error) => {
-  console.error("💥 未捕获的异常，清理 MCPServiceManager 单例:", error);
+  globalLogger.error("💥 未捕获的异常，清理 MCPServiceManager 单例:", error);
   try {
     await MCPServiceManagerSingleton.cleanup();
   } catch (cleanupError) {
-    console.error("清理过程中发生错误:", cleanupError);
+    globalLogger.error("清理过程中发生错误:", cleanupError);
   }
 });
 
 // 处理未处理的Promise拒绝
 process.on("unhandledRejection", async (reason) => {
-  console.error("💥 未处理的Promise拒绝，清理 MCPServiceManager 单例:", reason);
+  globalLogger.error(
+    "💥 未处理的Promise拒绝，清理 MCPServiceManager 单例:",
+    reason
+  );
   try {
     await MCPServiceManagerSingleton.cleanup();
   } catch (cleanupError) {
-    console.error("清理过程中发生错误:", cleanupError);
+    globalLogger.error("清理过程中发生错误:", cleanupError);
   }
 });
