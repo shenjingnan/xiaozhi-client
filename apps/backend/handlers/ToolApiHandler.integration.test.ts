@@ -1,10 +1,3 @@
-/**
- * ToolApiHandler 集成测试
- * 测试 customMCP 工具调用的完整集成场景
- */
-
-import type { MCPServiceManager } from "@services/MCPServiceManager.js";
-import { MCPServiceManagerSingleton } from "@services/MCPServiceManagerSingleton.js";
 import {
   afterAll,
   afterEach,
@@ -33,6 +26,7 @@ vi.mock("../Logger.js", () => ({
 describe("ToolApiHandler - 集成测试", () => {
   let toolApiHandler: ToolApiHandler;
   let mockContext: any;
+  let mockServiceManager: any;
   let originalConfig: any;
 
   beforeAll(() => {
@@ -51,12 +45,34 @@ describe("ToolApiHandler - 集成测试", () => {
   beforeEach(() => {
     toolApiHandler = new ToolApiHandler();
 
-    // Mock Hono context
+    // 初始化 Mock ServiceManager
+    mockServiceManager = {
+      hasCustomMCPTool: vi.fn(),
+      getCustomMCPTools: vi.fn(),
+      callTool: vi.fn().mockResolvedValue({
+        content: [{ type: "text", text: "工具调用成功" }],
+        isError: false,
+      }),
+      getAllTools: vi.fn(),
+    };
+
+    // Mock Hono context with dependency injection support
     mockContext = {
       req: {
         json: vi.fn(),
       },
       json: vi.fn(),
+      // 添加依赖注入支持
+      get: vi.fn((key: string) => {
+        if (key === "mcpServiceManager") {
+          return mockServiceManager;
+        }
+        return undefined;
+      }),
+      // 添加其他可能需要的 Hono Context 方法
+      set: vi.fn(),
+      has: vi.fn(),
+      status: vi.fn(),
     };
 
     // Reset all mocks
@@ -103,22 +119,13 @@ describe("ToolApiHandler - 集成测试", () => {
         .mockReturnValue([proxyToolConfig]);
       configManager.hasValidCustomMCPTools = vi.fn().mockReturnValue(true);
 
-      // Mock MCPServiceManager
-      const mockServiceManager = {
-        hasCustomMCPTool: vi.fn().mockReturnValue(true),
-        getCustomMCPTools: vi.fn().mockReturnValue([proxyToolConfig]),
-        callTool: vi.fn().mockResolvedValue({
-          content: [{ type: "text", text: "代理工具调用成功" }],
-          isError: false,
-        }),
-      };
-
-      vi.spyOn(MCPServiceManagerSingleton, "isInitialized").mockReturnValue(
-        true
-      );
-      vi.spyOn(MCPServiceManagerSingleton, "getInstance").mockResolvedValue(
-        mockServiceManager as unknown as MCPServiceManager
-      );
+      // 配置当前测试的 ServiceManager Mock
+      mockServiceManager.hasCustomMCPTool.mockReturnValue(true);
+      mockServiceManager.getCustomMCPTools.mockReturnValue([proxyToolConfig]);
+      mockServiceManager.callTool.mockResolvedValue({
+        content: [{ type: "text", text: "代理工具调用成功" }],
+        isError: false,
+      });
 
       // Act
       await toolApiHandler.callTool(mockContext);
@@ -176,22 +183,13 @@ describe("ToolApiHandler - 集成测试", () => {
         .fn()
         .mockReturnValue([httpToolConfig]);
 
-      // Mock MCPServiceManager
-      const mockServiceManager = {
-        hasCustomMCPTool: vi.fn().mockReturnValue(true),
-        getCustomMCPTools: vi.fn().mockReturnValue([httpToolConfig]),
-        callTool: vi.fn().mockResolvedValue({
-          content: [{ type: "text", text: "HTTP工具调用成功" }],
-          isError: false,
-        }),
-      };
-
-      vi.spyOn(MCPServiceManagerSingleton, "isInitialized").mockReturnValue(
-        true
-      );
-      vi.spyOn(MCPServiceManagerSingleton, "getInstance").mockResolvedValue(
-        mockServiceManager as unknown as MCPServiceManager
-      );
+      // 配置当前测试的 ServiceManager Mock
+      mockServiceManager.hasCustomMCPTool.mockReturnValue(true);
+      mockServiceManager.getCustomMCPTools.mockReturnValue([httpToolConfig]);
+      mockServiceManager.callTool.mockResolvedValue({
+        content: [{ type: "text", text: "HTTP工具调用成功" }],
+        isError: false,
+      });
 
       // Act
       await toolApiHandler.callTool(mockContext);
@@ -246,22 +244,15 @@ describe("ToolApiHandler - 集成测试", () => {
         .fn()
         .mockReturnValue([functionToolConfig]);
 
-      // Mock MCPServiceManager
-      const mockServiceManager = {
-        hasCustomMCPTool: vi.fn().mockReturnValue(true),
-        getCustomMCPTools: vi.fn().mockReturnValue([functionToolConfig]),
-        callTool: vi.fn().mockResolvedValue({
-          content: [{ type: "text", text: "8" }],
-          isError: false,
-        }),
-      };
-
-      vi.spyOn(MCPServiceManagerSingleton, "isInitialized").mockReturnValue(
-        true
-      );
-      vi.spyOn(MCPServiceManagerSingleton, "getInstance").mockResolvedValue(
-        mockServiceManager as unknown as MCPServiceManager
-      );
+      // 配置当前测试的 ServiceManager Mock
+      mockServiceManager.hasCustomMCPTool.mockReturnValue(true);
+      mockServiceManager.getCustomMCPTools.mockReturnValue([
+        functionToolConfig,
+      ]);
+      mockServiceManager.callTool.mockResolvedValue({
+        content: [{ type: "text", text: "8" }],
+        isError: false,
+      });
 
       // Act
       await toolApiHandler.callTool(mockContext);
@@ -339,18 +330,9 @@ describe("ToolApiHandler - 集成测试", () => {
         .fn()
         .mockReturnValue([complexToolConfig]);
 
-      // Mock MCPServiceManager
-      const mockServiceManager = {
-        hasCustomMCPTool: vi.fn().mockReturnValue(true),
-        getCustomMCPTools: vi.fn().mockReturnValue([complexToolConfig]),
-      };
-
-      vi.spyOn(MCPServiceManagerSingleton, "isInitialized").mockReturnValue(
-        true
-      );
-      vi.spyOn(MCPServiceManagerSingleton, "getInstance").mockResolvedValue(
-        mockServiceManager as unknown as MCPServiceManager
-      );
+      // 配置当前测试的 ServiceManager Mock
+      mockServiceManager.hasCustomMCPTool.mockReturnValue(true);
+      mockServiceManager.getCustomMCPTools.mockReturnValue([complexToolConfig]);
 
       // Act
       await toolApiHandler.callTool(mockContext);
@@ -422,22 +404,13 @@ describe("ToolApiHandler - 集成测试", () => {
         .fn()
         .mockReturnValue([nestedToolConfig]);
 
-      // Mock MCPServiceManager
-      const mockServiceManager = {
-        hasCustomMCPTool: vi.fn().mockReturnValue(true),
-        getCustomMCPTools: vi.fn().mockReturnValue([nestedToolConfig]),
-        callTool: vi.fn().mockResolvedValue({
-          content: [{ type: "text", text: "connected" }],
-          isError: false,
-        }),
-      };
-
-      vi.spyOn(MCPServiceManagerSingleton, "isInitialized").mockReturnValue(
-        true
-      );
-      vi.spyOn(MCPServiceManagerSingleton, "getInstance").mockResolvedValue(
-        mockServiceManager as unknown as MCPServiceManager
-      );
+      // 配置当前测试的 ServiceManager Mock
+      mockServiceManager.hasCustomMCPTool.mockReturnValue(true);
+      mockServiceManager.getCustomMCPTools.mockReturnValue([nestedToolConfig]);
+      mockServiceManager.callTool.mockResolvedValue({
+        content: [{ type: "text", text: "connected" }],
+        isError: false,
+      });
 
       // Act
       await toolApiHandler.callTool(mockContext);
