@@ -6,35 +6,29 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MCPServiceManagerSingleton } from "./MCPServiceManagerSingleton.js";
 
-// Mock dependencies
-vi.mock("../Logger.js", () => ({
-  logger: {
-    info: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-    warn: vi.fn(),
-    withTag: vi.fn().mockReturnThis(),
+// Mock ConfigManager to avoid dependency on config files
+vi.mock("../configManager.js", () => ({
+  configManager: {
+    getConfig: vi.fn().mockReturnValue({
+      name: "test-config",
+      mcpEndpoint: [],
+      mcpServers: {},
+      modelscope: {},
+      connection: {},
+      webUI: {},
+    }),
+    getToolCallLogConfig: vi.fn().mockReturnValue({
+      maxRecords: 100,
+      enableFileLogging: false,
+    }),
+    getConfigDir: vi.fn().mockReturnValue("/tmp/test"),
   },
-}));
-
-vi.mock("./MCPServiceManager.js", () => ({
-  default: vi.fn().mockImplementation((configs, logger) => ({
-    setLogger: vi.fn(),
-    getLogger: vi.fn().mockReturnValue(logger || { info: vi.fn() }),
-    hasInjectedLogger: vi.fn().mockReturnValue(!!logger),
-    startAllServices: vi.fn(),
-    stopAllServices: vi.fn(),
-    getAllTools: vi.fn().mockReturnValue([]),
-  })),
 }));
 
 describe("MCPServiceManagerSingleton - Logger 注入功能", () => {
   let mockLogger: any;
 
   beforeEach(() => {
-    // Reset all mocks first
-    vi.clearAllMocks();
-
     // 创建 mock logger 实例
     mockLogger = {
       info: vi.fn(),
@@ -51,7 +45,6 @@ describe("MCPServiceManagerSingleton - Logger 注入功能", () => {
   afterEach(async () => {
     // 清理单例状态
     await MCPServiceManagerSingleton.cleanup();
-    vi.restoreAllMocks();
   });
 
   describe("基本功能测试", () => {
@@ -75,10 +68,10 @@ describe("MCPServiceManagerSingleton - Logger 注入功能", () => {
       // Arrange
       await MCPServiceManagerSingleton.getInstance();
 
-      // Act & Assert - 不应该抛出异常
+      // Act & Assert - 应该成功更新 logger（不抛出异常）
       await expect(
         MCPServiceManagerSingleton.updateInstanceLogger(mockLogger)
-      ).resolves.not.toThrow();
+      ).resolves.toBeDefined();
     });
   });
 

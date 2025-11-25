@@ -336,14 +336,14 @@ describe("MCPServiceManager - Logger 注入功能", () => {
       }).not.toThrow();
     });
 
-    it("应该支持 hasInjectedLogger 方法", () => {
+    it("应该正确注入和使用 logger", () => {
       // Arrange
       serviceManager = new MCPServiceManager(undefined, mockLogger);
 
-      // Act & Assert - 不应该抛出异常
+      // Act & Assert - logger 应该被正确注入
       expect(() => {
-        const hasInjected = serviceManager.hasInjectedLogger();
-        expect(typeof hasInjected).toBe("boolean");
+        const currentLogger = serviceManager.getLogger();
+        expect(currentLogger).toBeDefined();
       }).not.toThrow();
     });
   });

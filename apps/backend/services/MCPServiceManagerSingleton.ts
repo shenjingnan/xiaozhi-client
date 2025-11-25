@@ -34,12 +34,51 @@ let state: SingletonState = SingletonState.NOT_INITIALIZED;
 let lastError: Error | null = null;
 let instanceId: string | null = null;
 
+// 并发控制：互斥锁保护关键操作
+let loggerUpdateMutex: Promise<void> = Promise.resolve();
+
 /**
  * 创建 MCPServiceManager 实例（私有函数）
  */
 async function createInstance(logger?: Logger): Promise<MCPServiceManager> {
   const manager = new MCPServiceManager(undefined, logger);
   return manager;
+}
+
+/**
+ * 原子性地更新实例的 Logger
+ * 使用互斥锁防止并发更新冲突
+ */
+async function atomicUpdateLogger(logger: Logger): Promise<boolean> {
+  // 等待之前的 Logger 更新操作完成
+  await loggerUpdateMutex;
+
+  // 开始新的互斥锁操作
+  const updatePromise = (async () => {
+    if (instance && state === SingletonState.INITIALIZED) {
+      try {
+        instance.setLogger(logger);
+        return true;
+      } catch (error) {
+        console.error("更新实例 logger 失败:", error);
+        return false;
+      }
+    }
+    return false;
+  })();
+
+  // 更新互斥锁引用
+  loggerUpdateMutex = updatePromise.then(
+    () => {},
+    () => {}
+  ); // 忽略错误，继续后续操作
+
+  try {
+    return await updatePromise;
+  } catch (error) {
+    console.error("Logger 更新过程中发生异常:", error);
+    return false;
+  }
 }
 
 /**
@@ -52,9 +91,9 @@ async function createInstance(logger?: Logger): Promise<MCPServiceManager> {
 async function getInstance(logger?: Logger): Promise<MCPServiceManager> {
   // 如果已经初始化完成，直接返回实例
   if (instance && state === SingletonState.INITIALIZED) {
-    // 如果传入了新的 logger，更新现有实例的 logger
+    // 如果传入了新的 logger，原子性地更新现有实例的 logger
     if (logger) {
-      instance.setLogger(logger);
+      await atomicUpdateLogger(logger);
     }
     return instance;
   }
@@ -62,9 +101,9 @@ async function getInstance(logger?: Logger): Promise<MCPServiceManager> {
   // 如果正在初始化中，等待同一个初始化Promise
   if (initPromise && state === SingletonState.INITIALIZING) {
     const result = await initPromise;
-    // 如果传入了新的 logger，更新实例的 logger
+    // 如果传入了新的 logger，原子性地更新实例的 logger
     if (logger) {
-      result.setLogger(logger);
+      await atomicUpdateLogger(logger);
     }
     return result;
   }
@@ -158,6 +197,9 @@ function reset(): void {
   state = SingletonState.NOT_INITIALIZED;
   lastError = null;
   instanceId = null;
+
+  // 重置互斥锁
+  loggerUpdateMutex = Promise.resolve();
 }
 
 /**
@@ -230,21 +272,13 @@ async function waitForInitialization(): Promise<boolean> {
 
 /**
  * 更新现有实例的 logger
+ * 使用原子性更新确保并发安全
  *
  * @param logger 新的 logger 实例
  * @returns Promise<boolean> 是否成功更新
  */
 async function updateInstanceLogger(logger: Logger): Promise<boolean> {
-  if (instance && state === SingletonState.INITIALIZED) {
-    try {
-      instance.setLogger(logger);
-      return true;
-    } catch (error) {
-      console.error("更新实例 logger 失败:", error);
-      return false;
-    }
-  }
-  return false;
+  return await atomicUpdateLogger(logger);
 }
 
 /**
