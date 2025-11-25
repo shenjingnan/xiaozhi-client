@@ -85,7 +85,7 @@ interface ClientInfo {
  * WebServer - 主控制器，协调各个服务和处理器
  */
 export class WebServer {
-  private app: any;
+  private app: Hono;
   private httpServer: ServerType | null = null;
   private wss: WebSocketServer | null = null;
   private logger: Logger;
@@ -585,196 +585,174 @@ export class WebServer {
 
   private setupRoutes() {
     // 配置相关 API 路由
-    this.app?.get("/api/config", (c: Context) =>
-      this.configApiHandler.getConfig(c)
-    );
-    this.app?.put("/api/config", (c: Context) =>
-      this.configApiHandler.updateConfig(c)
-    );
-    this.app?.get("/api/config/mcp-endpoint", (c: Context) =>
+    this.app?.get("/api/config", (c) => this.configApiHandler.getConfig(c));
+    this.app?.put("/api/config", (c) => this.configApiHandler.updateConfig(c));
+    this.app?.get("/api/config/mcp-endpoint", (c) =>
       this.configApiHandler.getMcpEndpoint(c)
     );
-    this.app?.get("/api/config/mcp-endpoints", (c: Context) =>
+    this.app?.get("/api/config/mcp-endpoints", (c) =>
       this.configApiHandler.getMcpEndpoints(c)
     );
-    this.app?.get("/api/config/mcp-servers", (c: Context) =>
+    this.app?.get("/api/config/mcp-servers", (c) =>
       this.configApiHandler.getMcpServers(c)
     );
-    this.app?.get("/api/config/connection", (c: Context) =>
+    this.app?.get("/api/config/connection", (c) =>
       this.configApiHandler.getConnectionConfig(c)
     );
-    this.app?.post("/api/config/reload", (c: Context) =>
+    this.app?.post("/api/config/reload", (c) =>
       this.configApiHandler.reloadConfig(c)
     );
-    this.app?.get("/api/config/path", (c: Context) =>
+    this.app?.get("/api/config/path", (c) =>
       this.configApiHandler.getConfigPath(c)
     );
-    this.app?.get("/api/config/exists", (c: Context) =>
+    this.app?.get("/api/config/exists", (c) =>
       this.configApiHandler.checkConfigExists(c)
     );
 
     // 版本信息 API 路由
-    this.app?.get("/api/version", (c: Context) =>
-      this.versionApiHandler.getVersion(c)
-    );
-    this.app?.get("/api/version/simple", (c: Context) =>
+    this.app?.get("/api/version", (c) => this.versionApiHandler.getVersion(c));
+    this.app?.get("/api/version/simple", (c) =>
       this.versionApiHandler.getVersionSimple(c)
     );
-    this.app?.get("/api/version/available", (c: Context) =>
+    this.app?.get("/api/version/available", (c) =>
       this.versionApiHandler.getAvailableVersions(c)
     );
-    this.app?.get("/api/version/latest", (c: Context) =>
+    this.app?.get("/api/version/latest", (c) =>
       this.versionApiHandler.checkLatestVersion(c)
     );
-    this.app?.post("/api/version/cache/clear", (c: Context) =>
+    this.app?.post("/api/version/cache/clear", (c) =>
       this.versionApiHandler.clearVersionCache(c)
     );
 
     // 更新相关 API 路由
     const updateApiHandler = new UpdateApiHandler();
-    this.app?.post("/api/update", (c: Context) =>
-      updateApiHandler.performUpdate(c)
-    );
+    this.app?.post("/api/update", (c) => updateApiHandler.performUpdate(c));
 
     // 状态相关 API 路由
-    this.app?.get("/api/status", (c: Context) =>
-      this.statusApiHandler.getStatus(c)
-    );
-    this.app?.get("/api/status/client", (c: Context) =>
+    this.app?.get("/api/status", (c) => this.statusApiHandler.getStatus(c));
+    this.app?.get("/api/status/client", (c) =>
       this.statusApiHandler.getClientStatus(c)
     );
-    this.app?.get("/api/status/restart", (c: Context) =>
+    this.app?.get("/api/status/restart", (c) =>
       this.statusApiHandler.getRestartStatus(c)
     );
-    this.app?.get("/api/status/connected", (c: Context) =>
+    this.app?.get("/api/status/connected", (c) =>
       this.statusApiHandler.checkClientConnected(c)
     );
-    this.app?.get("/api/status/heartbeat", (c: Context) =>
+    this.app?.get("/api/status/heartbeat", (c) =>
       this.statusApiHandler.getLastHeartbeat(c)
     );
-    this.app?.get("/api/status/mcp-servers", (c: Context) =>
+    this.app?.get("/api/status/mcp-servers", (c) =>
       this.statusApiHandler.getActiveMCPServers(c)
     );
-    this.app?.put("/api/status/client", (c: Context) =>
+    this.app?.put("/api/status/client", (c) =>
       this.statusApiHandler.updateClientStatus(c)
     );
-    this.app?.put("/api/status/mcp-servers", (c: Context) =>
+    this.app?.put("/api/status/mcp-servers", (c) =>
       this.statusApiHandler.setActiveMCPServers(c)
     );
-    this.app?.post("/api/status/reset", (c: Context) =>
+    this.app?.post("/api/status/reset", (c) =>
       this.statusApiHandler.resetStatus(c)
     );
 
     // 服务相关 API 路由
-    this.app?.post("/api/services/restart", (c: Context) =>
+    this.app?.post("/api/services/restart", (c) =>
       this.serviceApiHandler.restartService(c)
     );
-    this.app?.post("/api/services/stop", (c: Context) =>
+    this.app?.post("/api/services/stop", (c) =>
       this.serviceApiHandler.stopService(c)
     );
-    this.app?.post("/api/services/start", (c: Context) =>
+    this.app?.post("/api/services/start", (c) =>
       this.serviceApiHandler.startService(c)
     );
-    this.app?.get("/api/services/status", (c: Context) =>
+    this.app?.get("/api/services/status", (c) =>
       this.serviceApiHandler.getServiceStatus(c)
     );
-    this.app?.get("/api/services/health", (c: Context) =>
+    this.app?.get("/api/services/health", (c) =>
       this.serviceApiHandler.getServiceHealth(c)
     );
 
     // 工具调用相关 API 路由
-    this.app?.post("/api/tools/call", (c: Context) =>
-      this.toolApiHandler.callTool(c)
-    );
-    this.app?.get("/api/tools/list", (c: Context) =>
-      this.toolApiHandler.listTools(c)
-    );
-    this.app?.get("/api/tools/custom", (c: Context) =>
+    this.app?.post("/api/tools/call", (c) => this.toolApiHandler.callTool(c));
+    this.app?.get("/api/tools/list", (c) => this.toolApiHandler.listTools(c));
+    this.app?.get("/api/tools/custom", (c) =>
       this.toolApiHandler.getCustomTools(c)
     );
     // 新增工具管理路由
-    this.app?.post("/api/tools/custom", (c: Context) =>
+    this.app?.post("/api/tools/custom", (c) =>
       this.toolApiHandler.addCustomTool(c)
     );
-    this.app?.put("/api/tools/custom/:toolName", (c: Context) =>
+    this.app?.put("/api/tools/custom/:toolName", (c) =>
       this.toolApiHandler.updateCustomTool(c)
     );
-    this.app?.delete("/api/tools/custom/:toolName", (c: Context) =>
+    this.app?.delete("/api/tools/custom/:toolName", (c) =>
       this.toolApiHandler.removeCustomTool(c)
     );
 
     // 工具调用日志相关 API 路由
-    this.app?.get("/api/tool-calls/logs", (c: Context) =>
+    this.app?.get("/api/tool-calls/logs", (c) =>
       this.toolCallLogApiHandler.getToolCallLogs(c)
     );
 
     // 扣子 API 相关路由
-    this.app?.get("/api/coze/workspaces", (c: Context) =>
+    this.app?.get("/api/coze/workspaces", (c) =>
       CozeApiHandler.getWorkspaces(c)
     );
-    this.app?.get("/api/coze/workflows", (c: Context) =>
-      CozeApiHandler.getWorkflows(c)
-    );
-    this.app?.post("/api/coze/cache/clear", (c: Context) =>
+    this.app?.get("/api/coze/workflows", (c) => CozeApiHandler.getWorkflows(c));
+    this.app?.post("/api/coze/cache/clear", (c) =>
       CozeApiHandler.clearCache(c)
     );
-    this.app?.get("/api/coze/cache/stats", (c: Context) =>
+    this.app?.get("/api/coze/cache/stats", (c) =>
       CozeApiHandler.getCacheStats(c)
     );
 
     // MCP 端点管理相关路由 - 动态处理
-    this.app?.post("/api/endpoint/status", (c: Context) =>
-      this.handleEndpointStatus(c)
-    );
-    this.app?.post("/api/endpoint/connect", (c: Context) =>
+    this.app?.post("/api/endpoint/status", (c) => this.handleEndpointStatus(c));
+    this.app?.post("/api/endpoint/connect", (c) =>
       this.handleEndpointConnect(c)
     );
-    this.app?.post("/api/endpoint/disconnect", (c: Context) =>
+    this.app?.post("/api/endpoint/disconnect", (c) =>
       this.handleEndpointDisconnect(c)
     );
-    this.app?.post("/api/endpoint/reconnect", (c: Context) =>
+    this.app?.post("/api/endpoint/reconnect", (c) =>
       this.handleEndpointReconnect(c)
     );
     // 新增的接入点管理路由
-    this.app?.post("/api/endpoint/add", (c: Context) =>
-      this.handleEndpointAdd(c)
-    );
-    this.app?.post("/api/endpoint/remove", (c: Context) =>
-      this.handleEndpointRemove(c)
-    );
+    this.app?.post("/api/endpoint/add", (c) => this.handleEndpointAdd(c));
+    this.app?.post("/api/endpoint/remove", (c) => this.handleEndpointRemove(c));
 
     // MCP 服务器管理路由
     this.app?.post(
       "/api/mcp-servers",
-      (c: Context) =>
+      (c) =>
         this.mcpServerApiHandler?.addMCPServer(c) ||
         c.json({ error: "MCP Server API Handler not initialized" }, 500)
     );
     this.app?.delete(
       "/api/mcp-servers/:serverName",
-      (c: Context) =>
+      (c) =>
         this.mcpServerApiHandler?.removeMCPServer(c) ||
         c.json({ error: "MCP Server API Handler not initialized" }, 500)
     );
     this.app?.get(
       "/api/mcp-servers/:serverName/status",
-      (c: Context) =>
+      (c) =>
         this.mcpServerApiHandler?.getMCPServerStatus(c) ||
         c.json({ error: "MCP Server API Handler not initialized" }, 500)
     );
     this.app?.get(
       "/api/mcp-servers",
-      (c: Context) =>
+      (c) =>
         this.mcpServerApiHandler?.listMCPServers(c) ||
         c.json({ error: "MCP Server API Handler not initialized" }, 500)
     );
 
     // MCP 服务路由 - 符合 MCP Streamable HTTP 规范
-    this.app?.post("/mcp", (c: Context) => this.mcpRouteHandler.handlePost(c));
-    this.app?.get("/mcp", (c: Context) => this.mcpRouteHandler.handleGet(c));
+    this.app?.post("/mcp", (c) => this.mcpRouteHandler.handlePost(c));
+    this.app?.get("/mcp", (c) => this.mcpRouteHandler.handleGet(c));
 
     // 处理未知的 API 路由
-    this.app?.all("/api/*", async (c: Context) => {
+    this.app?.all("/api/*", async (c) => {
       const errorResponse = createErrorResponse(
         "API_NOT_FOUND",
         `API 端点不存在: ${c.req.path}`
@@ -783,9 +761,7 @@ export class WebServer {
     });
 
     // 静态文件服务 - 放在最后作为回退
-    this.app.get("*", (c: Context) =>
-      this.staticFileHandler.handleStaticFile(c)
-    );
+    this.app.get("*", (c) => this.staticFileHandler.handleStaticFile(c));
   }
 
   private setupWebSocket() {
@@ -891,7 +867,7 @@ export class WebServer {
 
     // 1. 启动 HTTP 服务器
     const server = serve({
-      fetch: this.app?.fetch,
+      fetch: this.app.fetch,
       port: this.port,
       hostname: "0.0.0.0", // 绑定到所有网络接口，支持 Docker 部署
       createServer,
