@@ -62,18 +62,6 @@ export class MCPService {
   }
 
   /**
-   * 带标签的日志方法
-   */
-  private logWithTag(
-    level: "info" | "error" | "warn" | "debug",
-    message: string,
-    ...args: unknown[]
-  ): void {
-    const taggedMessage = `[MCP-${this.config.name}] ${message}`;
-    this.logger[level](taggedMessage, ...args);
-  }
-
-  /**
    * 根据 URL 路径推断传输类型（与 ConfigAdapter 保持一致）
    * 基于路径末尾推断，支持包含多个 / 的复杂路径
    */
@@ -87,15 +75,9 @@ export class MCPService {
 
       // 检查路径末尾
       if (pathname.endsWith("/sse")) {
-        this.logger.info(
-          `[MCP-${serviceName}] 检测到 URL 路径以 /sse 结尾，推断为 sse 类型`
-        );
         return MCPTransportType.SSE;
       }
       if (pathname.endsWith("/mcp")) {
-        this.logger.info(
-          `[MCP-${serviceName}] 检测到 URL 路径以 /mcp 结尾，推断为 streamable-http 类型`
-        );
         return MCPTransportType.STREAMABLE_HTTP;
       }
       this.logger.info(
@@ -139,7 +121,9 @@ export class MCPService {
    */
   private async attemptConnection(): Promise<void> {
     this.connectionState = ConnectionState.CONNECTING;
-    this.logWithTag("debug", `正在连接 MCP 服务: ${this.config.name}`);
+    this.logger.debug(
+      `[MCP-${this.config.name}] 正在连接 MCP 服务: ${this.config.name}`
+    );
 
     return new Promise((resolve, reject) => {
       // 设置连接超时
@@ -207,7 +191,9 @@ export class MCPService {
     this.connectionState = ConnectionState.CONNECTED;
     this.initialized = true;
 
-    this.logWithTag("info", `MCP 服务 ${this.config.name} 连接已建立`);
+    this.logger.info(
+      `[MCP-${this.config.name}] MCP 服务 ${this.config.name} 连接已建立`
+    );
   }
 
   /**
