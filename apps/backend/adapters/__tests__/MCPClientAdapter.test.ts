@@ -31,9 +31,6 @@ vi.mock("@/lib/mcp", async (importOriginal) => {
         toolCount: 0,
         reconnectAttempts: 0,
         connectionState: "connected",
-        pingEnabled: true,
-        pingFailureCount: 0,
-        isPinging: false,
       }),
       isConnected: vi.fn().mockReturnValue(true),
     })),
@@ -81,9 +78,6 @@ describe("MCPClientAdapter", () => {
         toolCount: 0,
         reconnectAttempts: 0,
         connectionState: "connected",
-        pingEnabled: true,
-        pingFailureCount: 0,
-        isPinging: false,
       });
     }
     if (!mockMCPService.isConnected?.mockReturnValue) {

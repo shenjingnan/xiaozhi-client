@@ -34,7 +34,6 @@ describe("环境变量传递集成测试", () => {
           AMAP_MAPS_API_KEY: "1ec31da021b2702787841ea4ee822de3",
           NODE_ENV: "production",
         },
-        ping: expect.any(Object),
         timeout: 30000,
       });
     });
@@ -127,7 +126,6 @@ describe("环境变量传递集成测试", () => {
         env: {
           AMAP_MAPS_API_KEY: "1ec31da021b2702787841ea4ee822de3",
         },
-        ping: expect.any(Object),
         timeout: 30000,
       });
     });

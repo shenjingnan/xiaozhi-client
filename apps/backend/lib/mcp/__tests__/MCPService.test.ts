@@ -377,10 +377,6 @@ describe("MCPService", () => {
         transportType: MCPTransportType.STDIO,
         toolCount: 0,
         connectionState: ConnectionState.DISCONNECTED,
-        // ping状态
-        pingEnabled: true,
-        lastPingTime: undefined,
-        isPinging: false,
       });
     });
 

@@ -380,10 +380,6 @@ describe("MCPService", () => {
         transportType: MCPTransportType.STDIO,
         toolCount: 0,
         connectionState: ConnectionState.DISCONNECTED,
-        // ping状态
-        pingEnabled: true,
-        lastPingTime: undefined,
-        isPinging: false,
       });
     });
 
@@ -448,8 +444,8 @@ describe("MCPService", () => {
     });
 
     it("should set disconnected state on connection failure", async () => {
-      // 创建一个禁用 ping 的服务实例，避免定时器无限循环
-      const testConfig = { ...config, ping: { enabled: false } };
+      // 创建一个测试服务实例
+      const testConfig = { ...config };
       const testService = new MCPService(testConfig, mockLogger);
 
       mockClient.connect.mockRejectedValue(new Error("Connection failed"));

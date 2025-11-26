@@ -35,11 +35,6 @@ describe("ConfigAdapter", () => {
           type: MCPTransportType.STDIO,
           command: "node",
           args: [expect.stringContaining("calculator.js")], // 路径解析后会变成绝对路径
-          ping: {
-            enabled: true,
-            interval: 60000,
-            startDelay: 5000,
-          },
           timeout: 30000,
         });
 
@@ -205,11 +200,6 @@ describe("ConfigAdapter", () => {
           name: "sse-service",
           type: MCPTransportType.SSE,
           url: "https://example.com/sse",
-          ping: {
-            enabled: true,
-            interval: 60000,
-            startDelay: 5000,
-          },
           timeout: 30000,
         });
       });
@@ -266,11 +256,6 @@ describe("ConfigAdapter", () => {
           name: "http-service",
           type: MCPTransportType.STREAMABLE_HTTP,
           url: "https://api.example.com/mcp",
-          ping: {
-            enabled: false,
-            interval: 60000,
-            startDelay: 10000,
-          },
           timeout: 30000,
         });
       });
