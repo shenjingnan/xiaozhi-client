@@ -179,12 +179,6 @@ function convertLocalConfig(
     command: config.command,
     args: resolvedArgs,
     env: config.env, // 传递环境变量
-    // 默认 ping 配置
-    ping: {
-      enabled: true,
-      interval: 60000,
-      startDelay: 5000,
-    },
     timeout: 30000,
   };
 }
@@ -211,19 +205,6 @@ function convertSSEConfig(
     name: serviceName,
     type: inferredType,
     url: config.url,
-    // 根据推断类型设置 ping 配置
-    ping:
-      inferredType === MCPTransportType.SSE
-        ? {
-            enabled: true,
-            interval: 60000,
-            startDelay: 5000,
-          }
-        : {
-            enabled: false, // STREAMABLE_HTTP 默认不启用 ping
-            interval: 60000,
-            startDelay: 10000,
-          },
     timeout: 30000,
   };
 
@@ -260,12 +241,6 @@ function convertStreamableHTTPConfig(
     name: serviceName,
     type: MCPTransportType.STREAMABLE_HTTP,
     url,
-    // 默认 ping 配置
-    ping: {
-      enabled: false, // HTTP 连接通常不需要 ping
-      interval: 60000,
-      startDelay: 10000,
-    },
     timeout: 30000,
   };
 }

@@ -31,9 +31,6 @@ vi.mock("@/lib/mcp", async (importOriginal) => {
         toolCount: 0,
         reconnectAttempts: 0,
         connectionState: "connected",
-        pingEnabled: true,
-        pingFailureCount: 0,
-        isPinging: false,
       }),
       isConnected: vi.fn().mockReturnValue(true),
     })),
@@ -81,9 +78,6 @@ describe("MCPClientAdapter", () => {
         toolCount: 0,
         reconnectAttempts: 0,
         connectionState: "connected",
-        pingEnabled: true,
-        pingFailureCount: 0,
-        isPinging: false,
       });
     }
     if (!mockMCPService.isConnected?.mockReturnValue) {
@@ -104,10 +98,13 @@ describe("MCPClientAdapter", () => {
     });
 
     it("应该使用正确的配置创建 MCPService", () => {
-      expect(MCPService).toHaveBeenCalledWith({
-        ...testConfig,
-        name: "test-service",
-      });
+      expect(MCPService).toHaveBeenCalledWith(
+        {
+          ...testConfig,
+          name: "test-service",
+        },
+        expect.any(Object) // 匹配 logger 参数
+      );
     });
   });
 

@@ -75,7 +75,7 @@ describe("MCPService", () => {
       args: ["test-server.js"],
     };
 
-    service = new MCPService(config);
+    service = new MCPService(config, mockLogger);
   });
 
   afterEach(() => {
@@ -95,7 +95,7 @@ describe("MCPService", () => {
         throw error;
       });
 
-      expect(() => new MCPService(invalidConfig)).toThrow(
+      expect(() => new MCPService(invalidConfig, mockLogger)).toThrow(
         "配置必须包含有效的 name 字段"
       );
     });
@@ -107,7 +107,7 @@ describe("MCPService", () => {
         throw error;
       });
 
-      expect(() => new MCPService(invalidConfig)).toThrow(
+      expect(() => new MCPService(invalidConfig, mockLogger)).toThrow(
         "sse 类型需要 url 字段"
       );
     });
@@ -119,13 +119,13 @@ describe("MCPService", () => {
         throw error;
       });
 
-      expect(() => new MCPService(invalidConfig)).toThrow(
+      expect(() => new MCPService(invalidConfig, mockLogger)).toThrow(
         "stdio 类型需要 command 字段"
       );
     });
 
     it("should create service with basic config", () => {
-      const serviceWithOptions = new MCPService(config);
+      const serviceWithOptions = new MCPService(config, mockLogger);
       const status = serviceWithOptions.getStatus();
 
       expect(status.name).toBe("test-service");
@@ -380,10 +380,6 @@ describe("MCPService", () => {
         transportType: MCPTransportType.STDIO,
         toolCount: 0,
         connectionState: ConnectionState.DISCONNECTED,
-        // ping状态
-        pingEnabled: true,
-        lastPingTime: undefined,
-        isPinging: false,
       });
     });
 
@@ -423,7 +419,6 @@ describe("MCPService", () => {
       expect(status.connected).toBe(false);
       expect(status.connectionState).toBe(ConnectionState.DISCONNECTED);
       expect(status.toolCount).toBe(0);
-      expect(status.pingEnabled).toBe(true);
     });
 
     it("should update service status after connection", async () => {
@@ -449,9 +444,9 @@ describe("MCPService", () => {
     });
 
     it("should set disconnected state on connection failure", async () => {
-      // 创建一个禁用 ping 的服务实例，避免定时器无限循环
-      const testConfig = { ...config, ping: { enabled: false } };
-      const testService = new MCPService(testConfig);
+      // 创建一个测试服务实例
+      const testConfig = { ...config };
+      const testService = new MCPService(testConfig, mockLogger);
 
       mockClient.connect.mockRejectedValue(new Error("Connection failed"));
 
@@ -467,7 +462,7 @@ describe("MCPService", () => {
     it("should fail connection when connect fails", async () => {
       // Configure service for testing
       const testConfig = { ...config };
-      const testService = new MCPService(testConfig);
+      const testService = new MCPService(testConfig, mockLogger);
 
       mockClient.connect.mockRejectedValue(new Error("Connection failed"));
 
@@ -547,7 +542,7 @@ describe("MCPService", () => {
     });
 
     it("should handle connection failure gracefully", async () => {
-      const testService = new MCPService(config);
+      const testService = new MCPService(config, mockLogger);
 
       mockClient.connect.mockRejectedValue(new Error("Connection failed"));
 
@@ -560,7 +555,7 @@ describe("MCPService", () => {
     });
 
     it("should show correct connection status", async () => {
-      const testService = new MCPService(config);
+      const testService = new MCPService(config, mockLogger);
 
       // Initially disconnected
       expect(testService.isConnected()).toBe(false);
@@ -580,7 +575,7 @@ describe("MCPService", () => {
     });
 
     it("should handle multiple connection attempts properly", async () => {
-      const testService = new MCPService(config);
+      const testService = new MCPService(config, mockLogger);
 
       mockClient.connect.mockRejectedValue(new Error("Connection failed"));
 
@@ -612,7 +607,7 @@ describe("MCPService", () => {
         apiKey: "test-key",
       };
 
-      const sseService = new MCPService(sseConfig);
+      const sseService = new MCPService(sseConfig, mockLogger);
       mockClient.connect.mockResolvedValue(undefined);
       mockClient.listTools.mockResolvedValue({ tools: [] });
 
@@ -631,7 +626,7 @@ describe("MCPService", () => {
         headers: { "Custom-Header": "value" },
       };
 
-      const httpService = new MCPService(httpConfig);
+      const httpService = new MCPService(httpConfig, mockLogger);
       mockClient.connect.mockResolvedValue(undefined);
       mockClient.listTools.mockResolvedValue({ tools: [] });
 
@@ -667,7 +662,7 @@ describe("MCPService", () => {
       ];
 
       for (const cfg of configs) {
-        expect(() => new MCPService(cfg)).not.toThrow();
+        expect(() => new MCPService(cfg, mockLogger)).not.toThrow();
         expect(TransportFactory.validateConfig).toHaveBeenCalledWith(cfg);
       }
     });

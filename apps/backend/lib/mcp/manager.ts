@@ -384,8 +384,8 @@ export class MCPServiceManager extends EventEmitter {
         await this.stopService(serviceName);
       }
 
-      // 创建 MCPService 实例
-      const service = new MCPService(config);
+      // 创建 MCPService 实例，注入logger
+      const service = new MCPService(config, this.logger);
 
       // 连接到服务
       await service.connect();

@@ -44,8 +44,6 @@ vi.mock("@/lib/mcp", () => {
         transportType: this.config.type,
         toolCount: this.tools.length,
         connectionState: this.connected ? "connected" : "disconnected",
-        pingEnabled: false,
-        isPinging: false,
       };
     }
   }
