@@ -19,7 +19,10 @@ export interface IMCPClient {
 
   start(): Promise<void>;
   refreshTools(): Promise<void>;
-  callTool(toolName: string, arguments_: any): Promise<any>;
+  callTool(
+    toolName: string,
+    arguments_: Record<string, unknown>
+  ): Promise<unknown>;
   stop(): Promise<void>;
   getOriginalToolName(prefixedToolName: string): string | null;
 }
@@ -122,7 +125,10 @@ export class MCPClientAdapter implements IMCPClient {
   /**
    * 调用工具
    */
-  async callTool(toolName: string, arguments_: any): Promise<any> {
+  async callTool(
+    toolName: string,
+    arguments_: Record<string, unknown>
+  ): Promise<unknown> {
     try {
       // 将前缀工具名转换为原始工具名
       const originalName = this.getOriginalToolName(toolName);
@@ -195,7 +201,7 @@ export class MCPClientAdapter implements IMCPClient {
   /**
    * 转换工具调用结果格式以保持兼容性
    */
-  private convertToolCallResult(result: ToolCallResult): any {
+  private convertToolCallResult(result: ToolCallResult): unknown {
     // 如果结果是错误，直接抛出异常
     if (result.isError) {
       const errorMessage = result.content
