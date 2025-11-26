@@ -33,44 +33,49 @@ vi.mock("@root/configManager.js", () => ({
   },
 }));
 
-vi.mock("./ToolSyncManager.js", () => ({
+vi.mock("@root/services/ToolSyncManager.js", () => ({
   ToolSyncManager: vi.fn().mockImplementation(() => ({
     syncToolsAfterConnection: vi.fn(),
   })),
 }));
 
-vi.mock("./CustomMCPHandler.js", () => ({
-  CustomMCPHandler: vi.fn().mockImplementation(() => ({
-    // 基础方法
-    initialize: vi.fn(),
-    reinitialize: vi.fn(),
-    hasTool: vi.fn(),
-    getTools: vi.fn(),
-    getToolCount: vi.fn(),
-    getToolNames: vi.fn(),
-    getToolInfo: vi.fn(),
+vi.mock("@root/services/CustomMCPHandler.js", () => ({
+  CustomMCPHandler: vi.fn().mockImplementation(() => {
+    // 创建所有需要的Mock方法
+    const mockMethods = {
+      // 基础方法
+      initialize: vi.fn(),
+      reinitialize: vi.fn(),
+      hasTool: vi.fn(),
+      getTools: vi.fn(),
+      getToolCount: vi.fn(),
+      getToolNames: vi.fn(),
+      getToolInfo: vi.fn(),
 
-    // 工具调用方法
-    callTool: vi.fn(),
+      // 工具调用方法
+      callTool: vi.fn(),
 
-    // 资源管理方法
-    cleanup: vi.fn(),
-    stopCleanupTimer: vi.fn(),
+      // 资源管理方法
+      cleanup: vi.fn(),
+      stopCleanupTimer: vi.fn(),
 
-    // 管理器集成方法
-    getCacheLifecycleManager: vi.fn(),
-    getTaskStateManager: vi.fn(),
-    getCacheStatistics: vi.fn(),
-    getTaskStatistics: vi.fn(),
-    getTaskStatus: vi.fn(),
-    validateTaskId: vi.fn(),
-    restartStalledTasks: vi.fn(),
-    manualCleanupCache: vi.fn(),
-    validateSystemIntegrity: vi.fn(),
-  })),
+      // 管理器集成方法
+      getCacheLifecycleManager: vi.fn(),
+      getTaskStateManager: vi.fn(),
+      getCacheStatistics: vi.fn(),
+      getTaskStatistics: vi.fn(),
+      getTaskStatus: vi.fn(),
+      validateTaskId: vi.fn(),
+      restartStalledTasks: vi.fn(),
+      manualCleanupCache: vi.fn(),
+      validateSystemIntegrity: vi.fn(),
+    };
+
+    return mockMethods;
+  }),
 }));
 
-vi.mock("./MCPCacheManager.js", () => ({
+vi.mock("@root/services/MCPCacheManager.js", () => ({
   MCPCacheManager: vi.fn().mockImplementation(() => ({
     loadCache: vi.fn(),
     saveCache: vi.fn(),

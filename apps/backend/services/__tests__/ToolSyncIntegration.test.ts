@@ -55,7 +55,8 @@ vi.mock("../MCPService.js", () => {
       this.tools = [
         {
           name: "calculator",
-          description: "Math calculation tool",
+          description:
+            "For mathematical calculation, always use this tool to calculate the result of a JavaScript expression. Math object and basic operations are available.",
           inputSchema: {
             type: "object" as const,
             properties: {
@@ -245,7 +246,8 @@ describe("工具同步集成测试", () => {
       const mockTools = [
         {
           name: "calculator",
-          description: "Math calculation tool",
+          description:
+            "For mathematical calculation, always use this tool to calculate the result of a JavaScript expression. Math object and basic operations are available.",
           inputSchema: {
             type: "object" as const,
             properties: {
@@ -310,7 +312,8 @@ describe("工具同步集成测试", () => {
         tools: [
           {
             name: "calculator",
-            description: "Math calculation tool",
+            description:
+              "For mathematical calculation, always use this tool to calculate the result of a JavaScript expression. Math object and basic operations are available.",
             inputSchema: {
               type: "object" as const,
               properties: {
@@ -387,7 +390,8 @@ describe("工具同步集成测试", () => {
         tools: [
           {
             name: "calculator",
-            description: "Math calculation tool",
+            description:
+              "For mathematical calculation, always use this tool to calculate the result of a JavaScript expression. Math object and basic operations are available.",
             inputSchema: {
               type: "object" as const,
               properties: {
@@ -441,7 +445,8 @@ describe("工具同步集成测试", () => {
       const mockTools = [
         {
           name: "calculator",
-          description: "Math calculation tool",
+          description:
+            "For mathematical calculation, always use this tool to calculate the result of a JavaScript expression. Math object and basic operations are available.",
           inputSchema: {
             type: "object" as const,
             properties: {
