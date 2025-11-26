@@ -92,9 +92,9 @@ describe("MCPService", () => {
         throw error;
       });
 
-      expect(() => new MCPService(invalidConfig, mockLogger, mockLogger)).toThrow(
-        "配置必须包含有效的 name 字段"
-      );
+      expect(
+        () => new MCPService(invalidConfig, mockLogger, mockLogger)
+      ).toThrow("配置必须包含有效的 name 字段");
     });
 
     it("should throw error for SSE without URL", () => {
@@ -104,9 +104,9 @@ describe("MCPService", () => {
         throw error;
       });
 
-      expect(() => new MCPService(invalidConfig, mockLogger, mockLogger)).toThrow(
-        "sse 类型需要 url 字段"
-      );
+      expect(
+        () => new MCPService(invalidConfig, mockLogger, mockLogger)
+      ).toThrow("sse 类型需要 url 字段");
     });
 
     it("should throw error for missing command", () => {
@@ -116,9 +116,9 @@ describe("MCPService", () => {
         throw error;
       });
 
-      expect(() => new MCPService(invalidConfig, mockLogger, mockLogger)).toThrow(
-        "stdio 类型需要 command 字段"
-      );
+      expect(
+        () => new MCPService(invalidConfig, mockLogger, mockLogger)
+      ).toThrow("stdio 类型需要 command 字段");
     });
 
     it("should create service with basic config", () => {

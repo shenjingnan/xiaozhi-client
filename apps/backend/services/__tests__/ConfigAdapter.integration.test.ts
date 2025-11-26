@@ -354,7 +354,11 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
 
       // MCPService 应该抛出错误
       expect(
-        () => new MCPService({ name: "", url: "https://example.com/sse" }, mockLogger)
+        () =>
+          new MCPService(
+            { name: "", url: "https://example.com/sse" },
+            mockLogger
+          )
       ).toThrow();
     });
   });

@@ -1,14 +1,12 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
 import { getEventBus } from "@root/services/EventBus.js";
 import { TransportFactory } from "@root/services/TransportFactory.js";
 import type {
   MCPServerTransport,
   MCPServiceConfig,
   MCPServiceStatus,
-  PingOptions,
   ToolCallResult,
 } from "./types.js";
 import { ConnectionState, MCPTransportType } from "./types.js";
