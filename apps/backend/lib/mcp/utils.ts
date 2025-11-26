@@ -1,4 +1,3 @@
-import type { Logger } from "@root/Logger.js";
 import { MCPTransportType } from "./types.js";
 import type { MCPServiceConfig } from "./types.js";
 
@@ -13,7 +12,6 @@ import type { MCPServiceConfig } from "./types.js";
 export function inferTransportTypeFromUrl(
   url: string,
   options?: {
-    logger?: Logger;
     serviceName?: string;
   }
 ): MCPTransportType {
@@ -29,16 +27,16 @@ export function inferTransportTypeFromUrl(
       return MCPTransportType.STREAMABLE_HTTP;
     }
 
-    // 默认类型
-    if (options?.logger && options?.serviceName) {
-      options.logger.info(
+    // 默认类型 - 使用 console 输出
+    if (options?.serviceName) {
+      console.info(
         `[MCP-${options.serviceName}] URL 路径 ${pathname} 不匹配特定规则，默认推断为 streamable-http 类型`
       );
     }
     return MCPTransportType.STREAMABLE_HTTP;
   } catch (error) {
-    if (options?.logger && options?.serviceName) {
-      options.logger.warn(
+    if (options?.serviceName) {
+      console.warn(
         `[MCP-${options.serviceName}] URL 解析失败，默认推断为 streamable-http 类型`,
         error
       );
@@ -51,12 +49,10 @@ export function inferTransportTypeFromUrl(
  * 完整的配置类型推断（包括 command 字段）
  *
  * @param config - MCP 服务配置
- * @param logger - 日志记录器
  * @returns 完整的配置对象，包含推断出的类型
  */
 export function inferTransportTypeFromConfig(
-  config: MCPServiceConfig,
-  logger?: Logger
+  config: MCPServiceConfig
 ): MCPServiceConfig {
   // 如果已显式指定类型，直接返回
   if (config.type) {
@@ -74,7 +70,6 @@ export function inferTransportTypeFromConfig(
   // 基于 URL 字段推断（排除 null 和 undefined）
   if (config.url !== undefined && config.url !== null) {
     const inferredType = inferTransportTypeFromUrl(config.url, {
-      logger,
       serviceName: config.name,
     });
     return {

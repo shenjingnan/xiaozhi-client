@@ -1,5 +1,5 @@
-import { Logger } from "@root/Logger.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { Mock } from "vitest";
 import { MCPTransportType } from "../types.js";
 import type { MCPServiceConfig } from "../types.js";
 import {
@@ -7,22 +7,26 @@ import {
   inferTransportTypeFromUrl,
 } from "../utils.js";
 
-// Mock Logger
-vi.mock("@root/Logger.js");
-
-// 统一的 mockLogger 定义
-let mockLogger: any;
+// Mock console 方法
+let mockConsoleInfo: Mock;
+let mockConsoleWarn: Mock;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockLogger = {
-    info: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-    debug: vi.fn(),
-    withTag: vi.fn().mockReturnThis(),
+  mockConsoleInfo = vi.fn();
+  mockConsoleWarn = vi.fn();
+
+  // Mock console 方法
+  const originalConsoleInfo = console.info;
+  const originalConsoleWarn = console.warn;
+  console.info = mockConsoleInfo;
+  console.warn = mockConsoleWarn;
+
+  // 恢复原始方法（在测试结束时）
+  return () => {
+    console.info = originalConsoleInfo;
+    console.warn = originalConsoleWarn;
   };
-  vi.mocked(Logger).mockImplementation(() => mockLogger);
 });
 
 describe("MCP 传输类型推断工具", () => {
@@ -283,11 +287,10 @@ describe("MCP 传输类型推断工具", () => {
         const serviceName = "test-service";
 
         inferTransportTypeFromUrl(url, {
-          logger: mockLogger,
           serviceName,
         });
 
-        expect(mockLogger.info).toHaveBeenCalledWith(
+        expect(mockConsoleInfo).toHaveBeenCalledWith(
           `[MCP-${serviceName}] URL 路径 /api/v1/tools 不匹配特定规则，默认推断为 streamable-http 类型`
         );
       });
@@ -297,11 +300,10 @@ describe("MCP 传输类型推断工具", () => {
         const serviceName = "test-service";
 
         inferTransportTypeFromUrl(url, {
-          logger: mockLogger,
           serviceName,
         });
 
-        expect(mockLogger.warn).toHaveBeenCalledWith(
+        expect(mockConsoleWarn).toHaveBeenCalledWith(
           `[MCP-${serviceName}] URL 解析失败，默认推断为 streamable-http 类型`,
           expect.any(Error)
         );
@@ -312,17 +314,15 @@ describe("MCP 传输类型推断工具", () => {
         const mcpUrl = "https://example.com/mcp";
 
         inferTransportTypeFromUrl(sseUrl, {
-          logger: mockLogger,
           serviceName: "test-service",
         });
 
         inferTransportTypeFromUrl(mcpUrl, {
-          logger: mockLogger,
           serviceName: "test-service",
         });
 
-        expect(mockLogger.info).not.toHaveBeenCalled();
-        expect(mockLogger.warn).not.toHaveBeenCalled();
+        expect(mockConsoleInfo).not.toHaveBeenCalled();
+        expect(mockConsoleWarn).not.toHaveBeenCalled();
       });
     });
   });
@@ -336,7 +336,7 @@ describe("MCP 传输类型推断工具", () => {
           url: "https://example.com/sse",
         };
 
-        const result = inferTransportTypeFromConfig(config, mockLogger);
+        const result = inferTransportTypeFromConfig(config);
         expect(result.type).toBe(MCPTransportType.SSE);
       });
 
@@ -347,7 +347,7 @@ describe("MCP 传输类型推断工具", () => {
           url: "https://example.com/sse", // 这个URL会推断为SSE，但显式指定为STREAMABLE_HTTP
         };
 
-        const result = inferTransportTypeFromConfig(config, mockLogger);
+        const result = inferTransportTypeFromConfig(config);
         expect(result.type).toBe(MCPTransportType.STREAMABLE_HTTP);
       });
 
@@ -372,7 +372,7 @@ describe("MCP 传输类型推断工具", () => {
 
         for (const { type, name, config } of testCases) {
           const fullConfig = { name, type, ...config };
-          const result = inferTransportTypeFromConfig(fullConfig, mockLogger);
+          const result = inferTransportTypeFromConfig(fullConfig);
           expect(result.type).toBe(type);
         }
       });
@@ -386,7 +386,7 @@ describe("MCP 传输类型推断工具", () => {
           args: ["server.js"],
         };
 
-        const result = inferTransportTypeFromConfig(config, mockLogger);
+        const result = inferTransportTypeFromConfig(config);
         expect(result.type).toBe(MCPTransportType.STDIO);
       });
 
@@ -398,7 +398,7 @@ describe("MCP 传输类型推断工具", () => {
           url: "https://example.com/sse",
         };
 
-        const result = inferTransportTypeFromConfig(config, mockLogger);
+        const result = inferTransportTypeFromConfig(config);
         expect(result.type).toBe(MCPTransportType.STDIO);
       });
 
@@ -408,7 +408,7 @@ describe("MCP 传输类型推断工具", () => {
           command: "python",
         };
 
-        const result = inferTransportTypeFromConfig(config, mockLogger);
+        const result = inferTransportTypeFromConfig(config);
         expect(result.type).toBe(MCPTransportType.STDIO);
       });
 
@@ -419,7 +419,7 @@ describe("MCP 传输类型推断工具", () => {
           args: [],
         };
 
-        const result = inferTransportTypeFromConfig(config, mockLogger);
+        const result = inferTransportTypeFromConfig(config);
         expect(result.type).toBe(MCPTransportType.STDIO);
       });
     });
@@ -431,7 +431,7 @@ describe("MCP 传输类型推断工具", () => {
           url: "https://example.com/sse",
         };
 
-        const result = inferTransportTypeFromConfig(config, mockLogger);
+        const result = inferTransportTypeFromConfig(config);
         expect(result.type).toBe(MCPTransportType.SSE);
       });
 
@@ -441,10 +441,10 @@ describe("MCP 传输类型推断工具", () => {
           url: "not-a-valid-url",
         };
 
-        inferTransportTypeFromConfig(config, mockLogger);
+        inferTransportTypeFromConfig(config);
 
         // 验证是否用正确的参数调用了日志记录
-        expect(mockLogger.warn).toHaveBeenCalledWith(
+        expect(mockConsoleWarn).toHaveBeenCalledWith(
           `[MCP-${config.name}] URL 解析失败，默认推断为 streamable-http 类型`,
           expect.any(Error)
         );
@@ -457,7 +457,7 @@ describe("MCP 传输类型推断工具", () => {
         } as unknown as MCPServiceConfig;
 
         expect(() => {
-          inferTransportTypeFromConfig(config, mockLogger);
+          inferTransportTypeFromConfig(config);
         }).toThrow("无法为服务 null-url-service 推断传输类型");
       });
 
@@ -468,7 +468,7 @@ describe("MCP 传输类型推断工具", () => {
         };
 
         expect(() => {
-          inferTransportTypeFromConfig(config, mockLogger);
+          inferTransportTypeFromConfig(config);
         }).toThrow("无法为服务 undefined-url-service 推断传输类型");
       });
 
@@ -478,7 +478,7 @@ describe("MCP 传输类型推断工具", () => {
           url: "",
         };
 
-        const result = inferTransportTypeFromConfig(config, mockLogger);
+        const result = inferTransportTypeFromConfig(config);
         expect(result.type).toBe(MCPTransportType.STREAMABLE_HTTP);
       });
     });
@@ -491,7 +491,7 @@ describe("MCP 传输类型推断工具", () => {
         };
 
         expect(() => {
-          inferTransportTypeFromConfig(config, mockLogger);
+          inferTransportTypeFromConfig(config);
         }).toThrow("无法为服务 invalid-service 推断传输类型");
       });
 
@@ -502,7 +502,7 @@ describe("MCP 传输类型推断工具", () => {
         };
 
         expect(() => {
-          inferTransportTypeFromConfig(config, mockLogger);
+          inferTransportTypeFromConfig(config);
         }).toThrow(
           "无法为服务 another-invalid-service 推断传输类型。请显式指定 type 字段，或提供 command/url 配置"
         );
@@ -517,7 +517,7 @@ describe("MCP 传输类型推断工具", () => {
         };
 
         const originalConfigCopy = { ...originalConfig };
-        const result = inferTransportTypeFromConfig(originalConfig, mockLogger);
+        const result = inferTransportTypeFromConfig(originalConfig);
 
         // 原始配置应该保持不变
         expect(originalConfig).toEqual(originalConfigCopy);
@@ -537,7 +537,7 @@ describe("MCP 传输类型推断工具", () => {
         };
 
         const originalConfigCopy = { ...originalConfig };
-        const result = inferTransportTypeFromConfig(originalConfig, mockLogger);
+        const result = inferTransportTypeFromConfig(originalConfig);
 
         expect(originalConfig).toEqual(originalConfigCopy);
 
@@ -560,10 +560,7 @@ describe("MCP 传输类型推断工具", () => {
           url: "https://example.com/mcp", // URL 推断为 MCP 但显式类型为 SSE
         };
 
-        const explicitResult = inferTransportTypeFromConfig(
-          explicitConfig,
-          mockLogger
-        );
+        const explicitResult = inferTransportTypeFromConfig(explicitConfig);
         expect(explicitResult.type).toBe(MCPTransportType.SSE);
 
         // 2. command 优先级高于 URL
@@ -573,10 +570,7 @@ describe("MCP 传输类型推断工具", () => {
           url: "https://example.com/sse", // URL 推断为 SSE 但 command 优先
         };
 
-        const commandResult = inferTransportTypeFromConfig(
-          commandConfig,
-          mockLogger
-        );
+        const commandResult = inferTransportTypeFromConfig(commandConfig);
         expect(commandResult.type).toBe(MCPTransportType.STDIO);
 
         // 3. 只有 URL 时进行推断
@@ -585,7 +579,7 @@ describe("MCP 传输类型推断工具", () => {
           url: "https://example.com/sse", // 推断为 SSE
         };
 
-        const urlResult = inferTransportTypeFromConfig(urlConfig, mockLogger);
+        const urlResult = inferTransportTypeFromConfig(urlConfig);
         expect(urlResult.type).toBe(MCPTransportType.SSE);
       });
     });

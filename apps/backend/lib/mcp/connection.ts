@@ -31,7 +31,7 @@ export class MCPService {
     this.logger = logger;
 
     // 使用工具方法推断服务类型
-    this.config = inferTransportTypeFromConfig(config, logger);
+    this.config = inferTransportTypeFromConfig(config);
 
     // 验证配置
     this.validateConfig();

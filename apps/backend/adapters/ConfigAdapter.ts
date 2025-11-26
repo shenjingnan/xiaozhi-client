@@ -107,9 +107,7 @@ function convertByConfigType(
     }
 
     // 先推断类型，然后根据推断的类型选择正确的转换函数
-    const inferredType = inferTransportTypeFromUrl(legacyConfig.url || "", {
-      logger,
-    });
+    const inferredType = inferTransportTypeFromUrl(legacyConfig.url || "");
 
     if (inferredType === MCPTransportType.SSE) {
       // 为SSE类型添加显式type字段
@@ -177,7 +175,7 @@ function convertSSEConfig(
   const inferredType =
     config.type === "sse"
       ? MCPTransportType.SSE
-      : inferTransportTypeFromUrl(config.url || "", { logger });
+      : inferTransportTypeFromUrl(config.url || "");
   const isModelScope = config.url ? isModelScopeURL(config.url) : false;
 
   const baseConfig: MCPServiceConfig = {
@@ -383,7 +381,7 @@ export function getConfigTypeDescription(config: MCPServerConfig): string {
     }
 
     // 对于只有 url 的配置，根据路径推断类型
-    const inferredType = inferTransportTypeFromUrl(config.url, { logger });
+    const inferredType = inferTransportTypeFromUrl(config.url);
     const isModelScope = isModelScopeURL(config.url);
 
     if (inferredType === MCPTransportType.SSE) {
