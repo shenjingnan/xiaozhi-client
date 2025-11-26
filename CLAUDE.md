@@ -79,11 +79,19 @@ xiaozhi-client 是一个务实的开源 MCP 客户端：
    - 依赖注入容器：`apps/backend/cli/Container.ts`
    - 命令注册和处理
 
-2. **服务层** (`apps/backend/services/`) - 连接和服务管理
+2. **MCP 核心库** (`apps/backend/lib/mcp/`) - MCP 协议核心实现
 
-   - `MCPServiceManager.ts` - **核心 MCP 服务管理器**，统一管理所有 MCP 服务
-   - `MCPService.ts` - MCP 服务实现
+   - `connection.ts` - **MCP 服务连接管理**，负责单个 MCP 服务的连接和工具管理
+   - `manager.ts` - **MCP 服务管理器**，统一管理多个 MCP 服务
+   - `types.ts` - MCP 相关类型定义
+   - `index.ts` - 统一导出接口
+
+3. **服务层** (`apps/backend/services/`) - 业务服务和工具
+
+   - `MCPServiceManager.ts` - **重新导出**，指向 `@/lib/mcp/manager.js`（向后兼容）
+   - `MCPService.ts` - **重新导出**，指向 `@/lib/mcp/connection.js`（向后兼容）
    - `MCPServer.ts` - 兼容性包装器，提供向后兼容的 API
+   - 其他业务服务和工具类
 
 3. **核心 MCP 层** (`apps/backend/core/`) - MCP 协议实现
 
@@ -282,9 +290,10 @@ xiaozhi-client 是一个务实的开源 MCP 客户端：
   "@cli/errors/*": ["apps/backend/cli/errors/*"],      // CLI 错误处理
   "@cli/interfaces/*": ["apps/backend/cli/interfaces/*"], // CLI 接口
   "@handlers/*": ["apps/backend/handlers/*"],     // 请求处理器
-  "@services/*": ["apps/backend/services/*"],     // 业务服务
+  "@services/*": ["apps/backend/services/*"],     // 业务服务（重新导出层）
   "@errors/*": ["apps/backend/errors/*"],         // 错误定义
   "@utils/*": ["apps/backend/utils/*"],           // 工具函数
+  "@/lib/*": ["apps/backend/lib/*"],             // 核心库模块（新增）
   "@core/*": ["apps/backend/core/*"],             // 核心 MCP 功能
   "@transports/*": ["apps/backend/transports/*"], // 传输层适配器
   "@adapters/*": ["apps/backend/adapters/*"],     // 适配器模式
@@ -292,6 +301,25 @@ xiaozhi-client 是一个务实的开源 MCP 客户端：
   "@types/*": ["apps/backend/types/*"],           // 类型定义
   "@root/*": ["apps/backend/*"]                   // 根目录别名
 }
+```
+
+#### 新架构说明（2024年11月迁移）
+
+**MCP 核心库迁移**：
+- `MCPService` 已迁移至 `@/lib/mcp/connection.js`
+- `MCPServiceManager` 已迁移至 `@/lib/mcp/manager.js`
+- 原路径通过重新导出保持向后兼容
+- 建议新代码直接使用 `@/lib/mcp/*` 路径
+
+**推荐导入方式**：
+```typescript
+// ✅ 新代码推荐方式
+import { MCPService } from "@/lib/mcp";
+import { MCPServiceManager } from "@/lib/mcp";
+
+// ✅ 向后兼容方式（仍然支持）
+import { MCPService } from "@services/MCPService.js";
+import { MCPServiceManager } from "@services/MCPServiceManager.js";
 ```
 
 #### 导入顺序最佳实践

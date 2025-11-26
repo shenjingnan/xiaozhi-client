@@ -7,95 +7,32 @@
  */
 
 import { EventEmitter } from "node:events";
+import { MCPService } from "@/lib/mcp";
+import type {
+  CustomMCPTool,
+  JSONSchema,
+  MCPServiceConfig,
+  ManagerStatus,
+  ToolCallResult,
+  ToolInfo,
+  UnifiedServerConfig,
+  UnifiedServerStatus,
+} from "@/lib/mcp/types";
+import { MCPTransportType } from "@/lib/mcp/types";
 import { MCPMessageHandler } from "@core/MCPMessageHandler.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-
-// JSON Schema 类型定义（兼容 MCP SDK）
-type JSONSchema = Record<string, unknown> & {
-  type: "object";
-  properties?: Record<string, unknown>;
-  required?: string[];
-  additionalProperties?: boolean;
-};
-
-// CustomMCP 工具类型定义
-interface CustomMCPTool {
-  name: string;
-  description?: string;
-  inputSchema: JSONSchema;
-  handler?: {
-    type: string;
-    config?: Record<string, unknown>;
-  };
-}
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type { MCPToolConfig } from "@root/configManager.js";
 import { configManager } from "@root/configManager.js";
+import { CustomMCPHandler } from "@root/services/CustomMCPHandler.js";
+import { getEventBus } from "@root/services/EventBus.js";
+import { MCPCacheManager } from "@root/services/MCPCacheManager.js";
+import { ToolSyncManager } from "@root/services/ToolSyncManager.js";
 import type { MCPMessage } from "@root/types/mcp.js";
-import { CustomMCPHandler } from "@services/CustomMCPHandler.js";
-import { getEventBus } from "@services/EventBus.js";
-import { MCPCacheManager } from "@services/MCPCacheManager.js";
-import type { MCPServiceConfig } from "@services/MCPService.js";
-import { MCPService, MCPTransportType } from "@services/MCPService.js";
-import { ToolSyncManager } from "@services/ToolSyncManager.js";
 import type { TransportAdapter } from "@transports/TransportAdapter.js";
 import { ConnectionState } from "@transports/TransportAdapter.js";
 import { ToolCallLogger } from "@utils/ToolCallLogger.js";
-
-// 工具信息接口（保持向后兼容）
-interface ToolInfo {
-  serviceName: string;
-  originalName: string;
-  tool: Tool;
-}
-
-// 服务状态接口（保持向后兼容）
-export interface ServiceStatus {
-  connected: boolean;
-  clientName: string;
-}
-
-// 管理器状态接口（保持向后兼容）
-export interface ManagerStatus {
-  services: Record<string, ServiceStatus>;
-  totalTools: number;
-  availableTools: string[];
-}
-
-// 工具调用结果接口（保持向后兼容）
-interface ToolCallResult {
-  content: Array<{
-    type: string;
-    text: string;
-  }>;
-  isError?: boolean;
-}
-
-/**
- * 服务器配置接口（从 UnifiedMCPServer 移入）
- */
-export interface UnifiedServerConfig {
-  name?: string;
-  enableLogging?: boolean;
-  logLevel?: string;
-  configs?: Record<string, MCPServiceConfig>; // MCPService 配置
-}
-
-/**
- * 服务器状态接口（从 UnifiedMCPServer 移入）
- */
-export interface UnifiedServerStatus {
-  isRunning: boolean;
-  serviceStatus: ManagerStatus;
-  transportCount: number;
-  activeConnections: number;
-  config: UnifiedServerConfig;
-  // 添加对 serviceStatus 的便捷访问属性
-  services?: Record<string, ServiceStatus>;
-  totalTools?: number;
-  availableTools?: string[];
-}
 
 export class MCPServiceManager extends EventEmitter {
   private services: Map<string, MCPService> = new Map();
@@ -154,7 +91,9 @@ export class MCPServiceManager extends EventEmitter {
     const isTestEnv =
       process.env.NODE_ENV === "test" || process.env.VITEST === "true";
     const cachePath = isTestEnv
-      ? `/tmp/xiaozhi-test-${Date.now()}-${Math.random().toString(36).substring(2, 11)}/xiaozhi.cache.json`
+      ? `/tmp/xiaozhi-test-${Date.now()}-${Math.random()
+          .toString(36)
+          .substring(2, 11)}/xiaozhi.cache.json`
       : undefined;
 
     this.cacheManager = new MCPCacheManager(cachePath);
@@ -1423,7 +1362,9 @@ export class MCPServiceManager extends EventEmitter {
 
         if (removedTools.length > 0) {
           this.logger.info(
-            `[MCPManager] 检测到服务 ${serviceName} 移除了 ${removedTools.length} 个工具: ${removedTools.join(", ")}`
+            `[MCPManager] 检测到服务 ${serviceName} 移除了 ${
+              removedTools.length
+            } 个工具: ${removedTools.join(", ")}`
           );
         }
 
@@ -1727,7 +1668,9 @@ export class MCPServiceManager extends EventEmitter {
     // 评估启动结果
     if (successfulAdapters.length === 0 && failedAdapters.length > 0) {
       // 所有适配器都失败了
-      const errorMessage = `所有传输适配器启动失败，失败的适配器: ${failedAdapters.join(", ")}`;
+      const errorMessage = `所有传输适配器启动失败，失败的适配器: ${failedAdapters.join(
+        ", "
+      )}`;
       this.logger.error(errorMessage);
       throw new Error(errorMessage);
     }
@@ -1735,7 +1678,9 @@ export class MCPServiceManager extends EventEmitter {
     if (failedAdapters.length > 0) {
       // 部分适配器失败
       this.logger.warn(
-        `部分传输适配器启动失败，成功: ${successfulAdapters.join(", ")}, 失败: ${failedAdapters.join(", ")}`
+        `部分传输适配器启动失败，成功: ${successfulAdapters.join(
+          ", "
+        )}, 失败: ${failedAdapters.join(", ")}`
       );
       // 继续运行，因为至少有一个适配器成功
     }

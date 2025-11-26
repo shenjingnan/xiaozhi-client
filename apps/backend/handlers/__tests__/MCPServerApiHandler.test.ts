@@ -1,6 +1,6 @@
+import type { MCPServiceManager } from "@/lib/mcp";
 import { MCPErrorCode } from "@errors/MCPErrors.js";
 import type { EventBus } from "@services/EventBus.js";
-import type { MCPServiceManager } from "@services/MCPServiceManager.js";
 import type { Context } from "hono";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConfigManager } from "../../configManager.js";
@@ -969,8 +969,19 @@ describe("listMCPServers", () => {
 // 测试 TypeFieldNormalizer
 describe("TypeFieldNormalizer", () => {
   describe("normalizeTypeField", () => {
+    // 测试用接口，包含可选的 type 字段和嵌套对象支持
+    interface TestConfig {
+      type?: string;
+      url: string;
+      nested?: {
+        value: string;
+        [key: string]: any;
+      };
+      [key: string]: any;
+    }
+
     it("应该将 streamableHttp 转换为 streamable-http", () => {
-      const config = {
+      const config: TestConfig = {
         type: "streamableHttp",
         url: "https://example.com/mcp",
       };
@@ -982,7 +993,7 @@ describe("TypeFieldNormalizer", () => {
     });
 
     it("应该将 streamable_http 转换为 streamable-http", () => {
-      const config = {
+      const config: TestConfig = {
         type: "streamable_http",
         url: "https://example.com/mcp",
       };
@@ -994,7 +1005,7 @@ describe("TypeFieldNormalizer", () => {
     });
 
     it("应该保持 streamable-http 格式不变", () => {
-      const config = {
+      const config: TestConfig = {
         type: "streamable-http",
         url: "https://example.com/mcp",
       };
@@ -1006,7 +1017,7 @@ describe("TypeFieldNormalizer", () => {
     });
 
     it("应该保持 sse 格式不变", () => {
-      const config = {
+      const config: TestConfig = {
         type: "sse",
         url: "https://example.com/sse",
       };
@@ -1018,7 +1029,7 @@ describe("TypeFieldNormalizer", () => {
     });
 
     it("应该处理没有 type 字段的配置", () => {
-      const config = {
+      const config: TestConfig = {
         url: "https://example.com/mcp",
       };
 
@@ -1029,7 +1040,7 @@ describe("TypeFieldNormalizer", () => {
     });
 
     it("应该处理无效的 type 字段（保持原样）", () => {
-      const config = {
+      const config: TestConfig = {
         type: "invalid-type",
         url: "https://example.com/mcp",
       };
@@ -1050,7 +1061,7 @@ describe("TypeFieldNormalizer", () => {
     });
 
     it("应该创建深拷贝而不修改原始对象", () => {
-      const originalConfig = {
+      const originalConfig: TestConfig = {
         type: "streamableHttp",
         url: "https://example.com/mcp",
         nested: {
@@ -1066,7 +1077,7 @@ describe("TypeFieldNormalizer", () => {
       // 验证原始对象未被修改
       expect(originalConfig.type).toBe("streamableHttp");
       // 验证嵌套对象被正确拷贝
-      expect(normalizedConfig.nested.value).toBe("test");
+      expect(normalizedConfig.nested!.value).toBe("test");
       expect(normalizedConfig.nested).not.toBe(originalConfig.nested);
     });
 

@@ -27,6 +27,7 @@
       "@adapters/*": ["apps/backend/adapters/*"],
       "@managers/*": ["apps/backend/managers/*"],
       "@types/*": ["apps/backend/types/*"],
+      "@/lib/*": ["apps/backend/lib/*"],
       "@root/*": ["apps/backend/*"]
     },
     "strict": true,

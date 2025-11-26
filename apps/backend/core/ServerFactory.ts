@@ -9,10 +9,10 @@
  * 4. 提供便捷的服务器创建方法
  */
 
+import { MCPServiceManager } from "@/lib/mcp";
+import type { UnifiedServerConfig } from "@/lib/mcp/types";
 import type { MCPMessageHandler } from "@core/MCPMessageHandler.js";
 import { logger } from "@root/Logger.js";
-import type { UnifiedServerConfig } from "@services/MCPServiceManager.js";
-import { MCPServiceManager } from "@services/MCPServiceManager.js";
 import type { HTTPConfig } from "@transports/HTTPAdapter.js";
 import { HTTPAdapter } from "@transports/HTTPAdapter.js";
 import type { StdioConfig } from "@transports/StdioAdapter.js";

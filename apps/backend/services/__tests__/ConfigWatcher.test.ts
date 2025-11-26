@@ -15,6 +15,12 @@ vi.mock("../../Logger.js", () => ({
     error: vi.fn(),
     warn: vi.fn(),
     debug: vi.fn(),
+    withTag: vi.fn().mockReturnValue({
+      info: vi.fn(),
+      error: vi.fn(),
+      warn: vi.fn(),
+      debug: vi.fn(),
+    }),
   },
 }));
 vi.mock("../ErrorHandler.js", () => ({

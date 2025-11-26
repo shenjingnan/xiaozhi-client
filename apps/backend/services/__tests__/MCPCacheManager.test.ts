@@ -20,6 +20,12 @@ vi.mock("../../Logger.js", () => ({
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
+    withTag: vi.fn().mockReturnValue({
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }),
   },
 }));
 

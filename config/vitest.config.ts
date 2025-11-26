@@ -67,6 +67,7 @@ export default defineConfig({
       "@adapters": resolve(__dirname, "../apps/backend/adapters"),
       "@managers": resolve(__dirname, "../apps/backend/managers"),
       "@types": resolve(__dirname, "../apps/backend/types"),
+      "@/lib": resolve(__dirname, "../apps/backend/lib"),
       "@root": resolve(__dirname, "../apps/backend"),
     },
   },

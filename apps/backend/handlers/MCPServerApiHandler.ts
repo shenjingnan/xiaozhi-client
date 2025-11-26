@@ -1,16 +1,43 @@
+import type { MCPServiceManager } from "@/lib/mcp";
+import type { MCPService } from "@/lib/mcp";
+import type { MCPServiceConfig, MCPTransportType } from "@/lib/mcp/types";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
-import type { ConfigManager } from "@root/configManager.js";
-import type { MCPServerConfig } from "@root/configManager.js";
+import type { ConfigManager, MCPServerConfig } from "@root/configManager.js";
 import {
   ErrorCategory,
   MCPError,
   MCPErrorCode,
 } from "@root/errors/MCPErrors.js";
 import { getEventBus } from "@services/EventBus.js";
-import type { MCPServiceManager } from "@services/MCPServiceManager.js";
 import type { Context } from "hono";
+
+/**
+ * MCPServiceManager 扩展接口，用于访问私有属性
+ * 这个接口定义了我们需要访问但实际上是私有的属性
+ */
+interface MCPServiceManagerAccess {
+  services: Map<string, MCPService>;
+}
+
+/**
+ * MCPServerApiHandler 扩展接口，用于动态状态缓存
+ */
+interface MCPServerApiHandlerWithCache {
+  statusCache?: Map<string, MCPServerStatus>;
+}
+
+/**
+ * 配置详情接口，包含时间戳
+ */
+interface ConfigDetails {
+  serverName?: string;
+  config?: MCPServerConfig;
+  tools?: string[];
+  timestamp?: string;
+  [key: string]: unknown; // 允许额外的属性
+}
 
 /**
  * MCP 服务添加请求接口（单服务格式）
@@ -79,14 +106,15 @@ export interface ApiErrorResponse {
     message: string;
     details?: {
       serverName?: string;
-      config?: any;
+      config?: MCPServerConfig;
       tools?: string[];
-      timestamp: string;
+      timestamp?: string;
+      [key: string]: unknown;
     };
   };
 }
 
-export interface ApiSuccessResponse<T = any> {
+export interface ApiSuccessResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
@@ -124,7 +152,7 @@ export class MCPServerApiHandler {
     code: MCPErrorCode,
     message: string,
     serverName?: string,
-    details?: any
+    details?: Record<string, unknown>
   ): ApiErrorResponse {
     return {
       error: {
@@ -141,7 +169,7 @@ export class MCPServerApiHandler {
   protected handleError(
     error: unknown,
     operation: string,
-    context?: any
+    context?: Record<string, unknown>
   ): MCPError {
     if (error instanceof MCPError) {
       this.logger.error("MCPError", { error, operation, context });
@@ -227,13 +255,16 @@ export class MCPServerApiHandler {
   /**
    * 创建 MCPServiceConfig 对象
    */
-  private createMCPServiceConfig(name: string, config: MCPServerConfig): any {
+  private createMCPServiceConfig(
+    name: string,
+    config: MCPServerConfig
+  ): MCPServiceConfig {
     // 根据配置类型创建 MCPServiceConfig
     if ("command" in config) {
       // LocalMCPServerConfig
       return {
         name,
-        type: "stdio" as const,
+        type: "stdio" as MCPTransportType,
         command: config.command,
         args: config.args || [],
         env: config.env || {},
@@ -243,7 +274,7 @@ export class MCPServerApiHandler {
       // SSEMCPServerConfig
       return {
         name,
-        type: "sse" as const,
+        type: "sse" as MCPTransportType,
         url: config.url,
       };
     }
@@ -251,7 +282,7 @@ export class MCPServerApiHandler {
       // StreamableHTTPMCPServerConfig
       return {
         name,
-        type: "streamable-http" as const,
+        type: "streamable-http" as MCPTransportType,
         url: config.url,
       };
     }
@@ -337,7 +368,7 @@ export class MCPServerApiHandler {
         statusCode = 500; // 测试期望连接失败返回500而不是503
       }
 
-      return c.json(errorResponse, statusCode as any);
+      return c.json(errorResponse, statusCode as 400 | 404 | 409 | 500);
     }
   }
 
@@ -353,7 +384,9 @@ export class MCPServerApiHandler {
     });
 
     // 标准化type字段格式（在try块外声明，确保catch块中可以访问）
-    const normalizedConfig = TypeFieldNormalizer.normalizeTypeField(config);
+    const normalizedConfig = TypeFieldNormalizer.normalizeTypeField(
+      config
+    ) as MCPServerConfig;
 
     try {
       // 1. 验证服务名称
@@ -471,8 +504,9 @@ export class MCPServerApiHandler {
 
     // 尝试从 MCPServiceManager 获取实际状态
     try {
-      const services = (this.mcpServiceManager as any).services;
-      const service = services.get(serverName);
+      const managerAccess = this
+        .mcpServiceManager as unknown as MCPServiceManagerAccess;
+      const service = managerAccess.services.get(serverName);
 
       if (service?.isConnected?.()) {
         const currentTools = service.getTools().map((tool: Tool) => tool.name);
@@ -564,20 +598,22 @@ export class MCPServerApiHandler {
   private getPreviousStatus(serverName: string): MCPServerStatus | null {
     // 这里使用一个简单的Map来缓存状态
     // 在实际生产环境中，可能需要更持久化的缓存方案
-    if (!(this as any).statusCache) {
-      (this as any).statusCache = new Map();
+    const handlerWithCache = this as MCPServerApiHandlerWithCache;
+    if (!handlerWithCache.statusCache) {
+      handlerWithCache.statusCache = new Map();
     }
-    return (this as any).statusCache.get(serverName) || null;
+    return handlerWithCache.statusCache.get(serverName) || null;
   }
 
   /**
    * 更新状态缓存
    */
   private updateStatusCache(serverName: string, status: MCPServerStatus): void {
-    if (!(this as any).statusCache) {
-      (this as any).statusCache = new Map();
+    const handlerWithCache = this as MCPServerApiHandlerWithCache;
+    if (!handlerWithCache.statusCache) {
+      handlerWithCache.statusCache = new Map();
     }
-    (this as any).statusCache.set(serverName, status);
+    handlerWithCache.statusCache.set(serverName, status);
   }
 
   /**
@@ -585,8 +621,9 @@ export class MCPServerApiHandler {
    */
   private getServiceTools(serverName: string): Tool[] {
     try {
-      const services = (this.mcpServiceManager as any).services;
-      const service = services.get(serverName);
+      const managerAccess = this
+        .mcpServiceManager as unknown as MCPServiceManagerAccess;
+      const service = managerAccess.services.get(serverName);
 
       if (service?.getTools) {
         return service.getTools();
@@ -852,8 +889,9 @@ export class MCPServerApiHandler {
       // 第二阶段：逐个添加服务，记录成功和失败
       for (const [serverName, serverConfig] of Object.entries(mcpServers)) {
         // 标准化type字段格式（在try块外声明，确保catch块中可以访问）
-        const normalizedServerConfig =
-          TypeFieldNormalizer.normalizeTypeField(serverConfig);
+        const normalizedServerConfig = TypeFieldNormalizer.normalizeTypeField(
+          serverConfig
+        ) as MCPServerConfig;
 
         try {
           const result = await this.addMCPServerSingle(
@@ -1001,8 +1039,9 @@ export class MCPServerApiHandler {
       }
 
       // 标准化type字段格式
-      const normalizedServerConfig =
-        TypeFieldNormalizer.normalizeTypeField(serverConfig);
+      const normalizedServerConfig = TypeFieldNormalizer.normalizeTypeField(
+        serverConfig
+      ) as MCPServerConfig;
 
       // 验证配置
       const configValidation = MCPServerConfigValidator.validateConfig(
@@ -1081,7 +1120,16 @@ export class TypeFieldNormalizer {
    * 标准化type字段格式
    * 支持将各种格式转换为标准的中划线格式
    */
-  static normalizeTypeField(config: any): any {
+  // 函数重载：泛型版本，用于类型安全的调用
+  static normalizeTypeField<T extends Record<string, any>>(config: T): T;
+
+  // 函数重载：向后兼容版本，用于 unknown 类型输入
+  static normalizeTypeField(config: unknown): unknown;
+
+  // 统一实现
+  static normalizeTypeField<T extends Record<string, any>>(
+    config: T | unknown
+  ): T | unknown {
     if (!config || typeof config !== "object") {
       return config;
     }

@@ -3,8 +3,8 @@
  * 验证 TransportAdapter、StdioAdapter 和 HTTPAdapter 的功能
  */
 
+import { MCPServiceManager } from "@/lib/mcp";
 import { MCPMessageHandler } from "@core/MCPMessageHandler.js";
-import { MCPServiceManager } from "@services/MCPServiceManager.js";
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { configManager } from "../../configManager.js";

@@ -3,14 +3,15 @@
  * 验证适配器的功能和兼容性
  */
 
+import { MCPService } from "@/lib/mcp";
+import type { MCPServiceConfig } from "@/lib/mcp/types";
+import { MCPTransportType } from "@/lib/mcp/types";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { MCPServiceConfig } from "@services/MCPService.js";
-import { MCPService, MCPTransportType } from "@services/MCPService.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MCPClientAdapter } from "../MCPClientAdapter.js";
 
 // Mock MCPService
-vi.mock("@services/MCPService.js", async (importOriginal) => {
+vi.mock("@/lib/mcp", async (importOriginal) => {
   const actual = (await importOriginal()) as any;
   return {
     ...actual,

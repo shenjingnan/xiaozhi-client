@@ -1,7 +1,7 @@
+import type { MCPService } from "@/lib/mcp";
+import type { MCPServiceManager } from "@/lib/mcp";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
-import type { MCPService } from "@services/MCPService.js";
-import type { MCPServiceManager } from "@services/MCPServiceManager.js";
 import { PerformanceMonitor } from "@services/PerformanceMonitor.js";
 
 /**
