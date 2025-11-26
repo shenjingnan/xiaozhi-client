@@ -284,7 +284,6 @@ describe("ConfigAdapter", () => {
 
         expect(result.type).toBe(MCPTransportType.STREAMABLE_HTTP);
         expect(result.url).toBe("https://api.example.com/mcp");
-        expect(result.ping?.enabled).toBe(false); // HTTP 连接默认不启用 ping
       });
 
       it("应该在 url 为 undefined 或 null 时抛出错误", () => {

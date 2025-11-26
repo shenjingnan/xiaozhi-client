@@ -8,7 +8,7 @@ import {
   convertLegacyToNew,
   getConfigTypeDescription,
 } from "@adapters/ConfigAdapter.js";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
   LocalMCPServerConfig,
   MCPServerConfig,
@@ -16,6 +16,20 @@ import type {
   StreamableHTTPMCPServerConfig,
 } from "../../configManager.js";
 import { MCPService, MCPTransportType } from "../MCPService.js";
+
+// 统一的mockLogger定义
+let mockLogger: any;
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mockLogger = {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+    withTag: vi.fn().mockReturnThis(),
+  };
+});
 
 describe("ConfigAdapter 和 MCPService 集成测试", () => {
   describe("类型推断一致性测试", () => {
@@ -559,10 +573,13 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
       expect(adapterResult.type).toBe(MCPTransportType.SSE);
 
       // MCPService 应该能处理
-      const service = new MCPService({
-        name: "long-url-service",
-        url: longUrl,
-      });
+      const service = new MCPService(
+        {
+          name: "long-url-service",
+          url: longUrl,
+        },
+        mockLogger
+      );
       const serviceResult = service.getConfig();
       expect(serviceResult.type).toBe(MCPTransportType.SSE);
     });

@@ -1,5 +1,19 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { MCPService, MCPTransportType } from "../MCPService.js";
+
+// 统一的mockLogger定义
+let mockLogger: any;
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mockLogger = {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+    withTag: vi.fn().mockReturnThis(),
+  };
+});
 
 describe("MCPService 自动类型推断测试", () => {
   describe("显式指定类型的情况", () => {
