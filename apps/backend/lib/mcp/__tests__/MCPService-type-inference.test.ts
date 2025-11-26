@@ -1,7 +1,7 @@
 import { MCPService } from "@/lib/mcp";
 import { MCPTransportType } from "@/lib/mcp/types";
 import { Logger } from "@root/Logger.js";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock Logger
 vi.mock("@root/Logger.js");

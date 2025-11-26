@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MCPService, MCPTransportType } from "../MCPService.js";
 
 // 统一的mockLogger定义
