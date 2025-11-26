@@ -100,7 +100,7 @@ vi.mock("@/lib/mcp", () => {
     async startService(serviceName: string): Promise<void> {
       const config = {
         name: serviceName,
-        type: "stdio",
+        type: "stdio" as any, // 使用字符串类型，在 mock 中这是兼容的
         command: "node",
         args: ["./test-calculator.js"],
       };
@@ -191,9 +191,9 @@ vi.mock("@/lib/mcp", () => {
     MCPServiceManager: MockMCPServiceManager,
     MCPService: MockMCPService,
     MCPTransportType: {
-      STDIO: "stdio",
-      SSE: "sse",
-      STREAMABLE_HTTP: "streamable-http",
+      STDIO: "stdio" as const,
+      SSE: "sse" as const,
+      STREAMABLE_HTTP: "streamable-http" as const,
     },
   };
 });
