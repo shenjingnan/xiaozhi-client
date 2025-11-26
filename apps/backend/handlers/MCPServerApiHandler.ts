@@ -1120,7 +1120,16 @@ export class TypeFieldNormalizer {
    * 标准化type字段格式
    * 支持将各种格式转换为标准的中划线格式
    */
-  static normalizeTypeField(config: unknown): unknown {
+  // 函数重载：泛型版本，用于类型安全的调用
+  static normalizeTypeField<T extends Record<string, any>>(config: T): T;
+
+  // 函数重载：向后兼容版本，用于 unknown 类型输入
+  static normalizeTypeField(config: unknown): unknown;
+
+  // 统一实现
+  static normalizeTypeField<T extends Record<string, any>>(
+    config: T | unknown
+  ): T | unknown {
     if (!config || typeof config !== "object") {
       return config;
     }
