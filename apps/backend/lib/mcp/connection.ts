@@ -28,29 +28,39 @@ export class MCPService {
   private initialized = false;
   private eventBus = getEventBus();
 
-  // Ping相关属性
-  private pingOptions: PingOptions;
-  private pingTimer: NodeJS.Timeout | null = null;
-  private lastPingTime: Date | null = null;
-  private isPinging = false;
-
-  constructor(config: MCPServiceConfig) {
+  constructor(config: MCPServiceConfig, logger: Logger) {
     this.logger = logger;
 
     // 自动推断服务类型（如果没有显式指定）
-    const configWithInferredType = this.inferTransportType(config);
-    this.config = configWithInferredType;
+    if (!config.type) {
+      if (config.command) {
+        // 包含 command 字段 → stdio 类型
+        this.config = {
+          ...config,
+          type: MCPTransportType.STDIO,
+        };
+      } else if (config.url !== undefined && config.url !== null) {
+        // 包含 url 字段，使用统一的 URL 路径推断逻辑
+        const inferredType = this.inferTransportTypeFromUrl(
+          config.url,
+          config.name
+        );
+        this.config = {
+          ...config,
+          type: inferredType,
+        };
+      } else {
+        // 无法推断，抛出错误
+        throw new Error(
+          `无法为服务 ${config.name} 推断传输类型。请显式指定 type 字段，或提供 command/url 配置`
+        );
+      }
+    } else {
+      this.config = config;
+    }
 
     // 验证配置
     this.validateConfig();
-
-    // 初始化ping配置
-    this.pingOptions = {
-      enabled: true, // 默认启用
-      interval: 60000, // 60秒
-      startDelay: 5000, // 连接成功后5秒开始ping
-      ...config.ping,
-    };
   }
 
   /**
@@ -63,43 +73,6 @@ export class MCPService {
   ): void {
     const taggedMessage = `[MCP-${this.config.name}] ${message}`;
     this.logger[level](taggedMessage, ...args);
-  }
-
-  /**
-   * 自动推断传输类型
-   */
-  private inferTransportType(config: MCPServiceConfig): MCPServiceConfig {
-    // 如果已经显式指定了类型，直接返回原配置
-    if (config.type) {
-      return config;
-    }
-
-    this.logger.debug(`[MCP-${config.name}] 自动推断传输类型...`);
-
-    // 根据配置特征推断类型
-    let inferredType: MCPTransportType;
-
-    if (config.command) {
-      // 包含 command 字段 → stdio 类型
-      inferredType = MCPTransportType.STDIO;
-      this.logger.debug(
-        `[MCP-${config.name}] 检测到 command 字段，推断为 stdio 类型`
-      );
-    } else if (config.url !== undefined && config.url !== null) {
-      // 包含 url 字段，使用统一的 URL 路径推断逻辑
-      inferredType = this.inferTransportTypeFromUrl(config.url, config.name);
-    } else {
-      // 无法推断，抛出错误
-      throw new Error(
-        `无法为服务 ${config.name} 推断传输类型。请显式指定 type 字段，或提供 command/url 配置`
-      );
-    }
-
-    // 返回包含推断类型的新配置对象
-    return {
-      type: inferredType,
-      ...config,
-    };
   }
 
   /**
@@ -236,14 +209,7 @@ export class MCPService {
     this.connectionState = ConnectionState.CONNECTED;
     this.initialized = true;
 
-    // 重置ping状态
-    this.lastPingTime = null;
-    this.isPinging = false;
-
     this.logWithTag("info", `MCP 服务 ${this.config.name} 连接已建立`);
-
-    // 启动ping监控
-    this.startPingMonitoring();
   }
 
   /**
@@ -276,9 +242,6 @@ export class MCPService {
    * 清理连接资源
    */
   private cleanupConnection(): void {
-    // 停止ping监控
-    this.stopPingMonitoring();
-
     // 清理客户端
     if (this.client) {
       try {
@@ -343,9 +306,6 @@ export class MCPService {
    */
   async disconnect(): Promise<void> {
     this.logger.info(`主动断开 MCP 服务 ${this.config.name} 连接`);
-
-    // 停止ping监控
-    this.stopPingMonitoring();
 
     // 清理连接资源
     this.cleanupConnection();
@@ -427,10 +387,6 @@ export class MCPService {
       transportType: this.config.type || MCPTransportType.STREAMABLE_HTTP,
       toolCount: this.tools.size,
       connectionState: this.connectionState,
-      // ping状态
-      pingEnabled: this.pingOptions.enabled,
-      lastPingTime: this.lastPingTime || undefined,
-      isPinging: this.isPinging,
     };
   }
 
@@ -441,114 +397,5 @@ export class MCPService {
     return (
       this.connectionState === ConnectionState.CONNECTED && this.initialized
     );
-  }
-
-  /**
-   * 启动ping监控
-   */
-  private startPingMonitoring(): void {
-    if (!this.pingOptions.enabled || this.pingTimer || !this.isConnected()) {
-      return;
-    }
-
-    this.logger.debug(
-      `${this.config.name} 启动ping监控，间隔: ${this.pingOptions.interval}ms`
-    );
-
-    // 延迟启动ping，让连接稳定
-    setTimeout(() => {
-      if (this.isConnected() && !this.pingTimer) {
-        this.pingTimer = setInterval(() => {
-          this.performPing();
-        }, this.pingOptions.interval);
-      }
-    }, this.pingOptions.startDelay);
-  }
-
-  /**
-   * 停止ping监控
-   */
-  private stopPingMonitoring(): void {
-    if (this.pingTimer) {
-      clearInterval(this.pingTimer);
-      this.pingTimer = null;
-      this.logger.debug(`${this.config.name} 停止ping监控`);
-    }
-  }
-
-  /**
-   * 执行ping检查
-   */
-  private async performPing(): Promise<void> {
-    if (!this.client || this.isPinging || !this.isConnected()) {
-      return;
-    }
-
-    this.isPinging = true;
-    const startTime = performance.now();
-
-    try {
-      await this.client.listTools();
-      const duration = performance.now() - startTime;
-      this.lastPingTime = new Date();
-      this.logger.debug(
-        `${this.config.name} ping成功，延迟: ${duration.toFixed(2)}ms`
-      );
-    } catch (error) {
-      this.logger.debug(
-        `${this.config.name} ping失败: ${error instanceof Error ? error.message : String(error)}`
-      );
-      // 只记录日志，不做任何其他操作
-    } finally {
-      this.isPinging = false;
-    }
-  }
-
-  /**
-   * 启用ping监控
-   */
-  enablePing(): void {
-    this.pingOptions.enabled = true;
-    this.logger.info(`${this.config.name} ping监控已启用`);
-
-    // 如果当前已连接，立即启动ping监控
-    if (this.isConnected()) {
-      this.startPingMonitoring();
-    }
-  }
-
-  /**
-   * 禁用ping监控
-   */
-  disablePing(): void {
-    this.pingOptions.enabled = false;
-    this.stopPingMonitoring();
-    this.logger.info(`${this.config.name} ping监控已禁用`);
-  }
-
-  /**
-   * 更新ping配置
-   */
-  updatePingOptions(options: Partial<PingOptions>): void {
-    const wasEnabled = this.pingOptions.enabled;
-    this.pingOptions = { ...this.pingOptions, ...options };
-
-    this.logger.info(`${this.config.name} ping配置已更新`, options);
-
-    // 如果启用状态发生变化，相应地启动或停止监控
-    if (wasEnabled !== this.pingOptions.enabled) {
-      if (this.pingOptions.enabled && this.isConnected()) {
-        this.startPingMonitoring();
-      } else if (!this.pingOptions.enabled) {
-        this.stopPingMonitoring();
-      }
-    }
-  }
-
-  /**
-   * 获取ping配置
-   */
-  getPingOptions(): PingOptions {
-    return { ...this.pingOptions };
   }
 }

@@ -35,15 +35,6 @@ export enum MCPTransportType {
 // 2. 配置接口类型
 // =========================
 
-/**
- * Ping 配置接口
- * 用于配置连接健康检查相关参数
- */
-export interface PingOptions {
-  enabled: boolean;
-  interval: number; // ping 间隔（毫秒）
-  startDelay: number; // 连接成功后开始 ping 的延迟（毫秒）
-}
 
 /**
  * ModelScope SSE 自定义选项接口
@@ -78,8 +69,6 @@ export interface MCPServiceConfig {
   // ModelScope 特有配置
   modelScopeAuth?: boolean;
   customSSEOptions?: ModelScopeSSEOptions;
-  // ping 配置
-  ping?: Partial<PingOptions>;
   // 超时配置
   timeout?: number;
   // 重试配置
@@ -115,10 +104,6 @@ export interface MCPServiceStatus {
   toolCount: number;
   lastError?: string;
   connectionState: ConnectionState;
-  // ping 状态
-  pingEnabled: boolean;
-  lastPingTime?: Date;
-  isPinging: boolean;
 }
 
 // =========================

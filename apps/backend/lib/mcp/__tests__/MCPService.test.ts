@@ -72,7 +72,7 @@ describe("MCPService", () => {
       args: ["test-server.js"],
     };
 
-    service = new MCPService(config);
+    service = new MCPService(config, mockLogger, mockLogger);
   });
 
   afterEach(() => {
@@ -92,7 +92,7 @@ describe("MCPService", () => {
         throw error;
       });
 
-      expect(() => new MCPService(invalidConfig)).toThrow(
+      expect(() => new MCPService(invalidConfig, mockLogger, mockLogger)).toThrow(
         "配置必须包含有效的 name 字段"
       );
     });
@@ -104,7 +104,7 @@ describe("MCPService", () => {
         throw error;
       });
 
-      expect(() => new MCPService(invalidConfig)).toThrow(
+      expect(() => new MCPService(invalidConfig, mockLogger, mockLogger)).toThrow(
         "sse 类型需要 url 字段"
       );
     });
@@ -116,13 +116,13 @@ describe("MCPService", () => {
         throw error;
       });
 
-      expect(() => new MCPService(invalidConfig)).toThrow(
+      expect(() => new MCPService(invalidConfig, mockLogger, mockLogger)).toThrow(
         "stdio 类型需要 command 字段"
       );
     });
 
     it("should create service with basic config", () => {
-      const serviceWithOptions = new MCPService(config);
+      const serviceWithOptions = new MCPService(config, mockLogger, mockLogger);
       const status = serviceWithOptions.getStatus();
 
       expect(status.name).toBe("test-service");
@@ -446,9 +446,8 @@ describe("MCPService", () => {
     });
 
     it("should set disconnected state on connection failure", async () => {
-      // 创建一个禁用 ping 的服务实例，避免定时器无限循环
-      const testConfig = { ...config, ping: { enabled: false } };
-      const testService = new MCPService(testConfig);
+      // 创建服务实例用于测试
+      const testService = new MCPService(config, mockLogger, mockLogger);
 
       mockClient.connect.mockRejectedValue(new Error("Connection failed"));
 
@@ -464,7 +463,7 @@ describe("MCPService", () => {
     it("should fail connection when connect fails", async () => {
       // Configure service for testing
       const testConfig = { ...config };
-      const testService = new MCPService(testConfig);
+      const testService = new MCPService(testConfig, mockLogger, mockLogger);
 
       mockClient.connect.mockRejectedValue(new Error("Connection failed"));
 
@@ -544,7 +543,7 @@ describe("MCPService", () => {
     });
 
     it("should handle connection failure gracefully", async () => {
-      const testService = new MCPService(config);
+      const testService = new MCPService(config, mockLogger, mockLogger);
 
       mockClient.connect.mockRejectedValue(new Error("Connection failed"));
 
@@ -557,7 +556,7 @@ describe("MCPService", () => {
     });
 
     it("should show correct connection status", async () => {
-      const testService = new MCPService(config);
+      const testService = new MCPService(config, mockLogger, mockLogger);
 
       // Initially disconnected
       expect(testService.isConnected()).toBe(false);
@@ -577,7 +576,7 @@ describe("MCPService", () => {
     });
 
     it("should handle multiple connection attempts properly", async () => {
-      const testService = new MCPService(config);
+      const testService = new MCPService(config, mockLogger, mockLogger);
 
       mockClient.connect.mockRejectedValue(new Error("Connection failed"));
 
@@ -609,7 +608,7 @@ describe("MCPService", () => {
         apiKey: "test-key",
       };
 
-      const sseService = new MCPService(sseConfig);
+      const sseService = new MCPService(sseConfig, mockLogger, mockLogger);
       mockClient.connect.mockResolvedValue(undefined);
       mockClient.listTools.mockResolvedValue({ tools: [] });
 
@@ -628,7 +627,7 @@ describe("MCPService", () => {
         headers: { "Custom-Header": "value" },
       };
 
-      const httpService = new MCPService(httpConfig);
+      const httpService = new MCPService(httpConfig, mockLogger, mockLogger);
       mockClient.connect.mockResolvedValue(undefined);
       mockClient.listTools.mockResolvedValue({ tools: [] });
 
@@ -664,7 +663,7 @@ describe("MCPService", () => {
       ];
 
       for (const cfg of configs) {
-        expect(() => new MCPService(cfg)).not.toThrow();
+        expect(() => new MCPService(cfg, mockLogger, mockLogger)).not.toThrow();
         expect(TransportFactory.validateConfig).toHaveBeenCalledWith(cfg);
       }
     });

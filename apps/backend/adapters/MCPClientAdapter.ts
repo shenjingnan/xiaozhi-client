@@ -45,7 +45,7 @@ export class MCPClientAdapter implements IMCPClient {
     this.serviceName = serviceName;
     // 确保配置中包含服务名称
     const serviceConfig = { ...config, name: serviceName };
-    this.mcpService = new MCPService(serviceConfig);
+    this.mcpService = new MCPService(serviceConfig, logger);
 
     logger.info(`创建 MCPClientAdapter: ${serviceName}`);
   }

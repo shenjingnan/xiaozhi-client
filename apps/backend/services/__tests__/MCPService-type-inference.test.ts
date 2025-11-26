@@ -11,7 +11,7 @@ describe("MCPService 自动类型推断测试", () => {
       };
 
       // 在构造函数中会调用 inferTransportType
-      const service = new MCPService(config);
+      const service = new MCPService(config, mockLogger);
       const serviceConfig = service.getConfig();
 
       expect(serviceConfig.type).toBe(MCPTransportType.SSE);
@@ -24,7 +24,7 @@ describe("MCPService 自动类型推断测试", () => {
         url: "https://example.com/sse", // 这个URL会推断为SSE，但显式指定为STREAMABLE_HTTP
       };
 
-      const service = new MCPService(config);
+      const service = new MCPService(config, mockLogger);
       const serviceConfig = service.getConfig();
 
       expect(serviceConfig.type).toBe(MCPTransportType.STREAMABLE_HTTP);
@@ -56,7 +56,7 @@ describe("MCPService 自动类型推断测试", () => {
           ...config,
         };
 
-        const service = new MCPService(serviceConfig);
+        const service = new MCPService(serviceConfig, mockLogger);
         const result = service.getConfig();
 
         expect(result.type).toBe(type);
@@ -72,7 +72,7 @@ describe("MCPService 自动类型推断测试", () => {
         args: ["server.js"],
       };
 
-      const service = new MCPService(config);
+      const service = new MCPService(config, mockLogger);
       const serviceConfig = service.getConfig();
 
       expect(serviceConfig.type).toBe(MCPTransportType.STDIO);
@@ -86,7 +86,7 @@ describe("MCPService 自动类型推断测试", () => {
         url: "https://example.com/sse",
       };
 
-      const service = new MCPService(config);
+      const service = new MCPService(config, mockLogger);
       const serviceConfig = service.getConfig();
 
       expect(serviceConfig.type).toBe(MCPTransportType.STDIO);
@@ -98,7 +98,7 @@ describe("MCPService 自动类型推断测试", () => {
         command: "python",
       };
 
-      const service = new MCPService(config);
+      const service = new MCPService(config, mockLogger);
       const serviceConfig = service.getConfig();
 
       expect(serviceConfig.type).toBe(MCPTransportType.STDIO);
@@ -111,7 +111,7 @@ describe("MCPService 自动类型推断测试", () => {
         args: [],
       };
 
-      const service = new MCPService(config);
+      const service = new MCPService(config, mockLogger);
       const serviceConfig = service.getConfig();
 
       expect(serviceConfig.type).toBe(MCPTransportType.STDIO);
@@ -125,7 +125,7 @@ describe("MCPService 自动类型推断测试", () => {
         url: "https://mcp.amap.com/sse?key=test",
       };
 
-      const service = new MCPService(config);
+      const service = new MCPService(config, mockLogger);
       const serviceConfig = service.getConfig();
 
       expect(serviceConfig.type).toBe(MCPTransportType.SSE);
@@ -137,7 +137,7 @@ describe("MCPService 自动类型推断测试", () => {
         url: "https://example.com/sse?apiKey=123&timeout=5000",
       };
 
-      const service = new MCPService(config);
+      const service = new MCPService(config, mockLogger);
       const serviceConfig = service.getConfig();
 
       expect(serviceConfig.type).toBe(MCPTransportType.SSE);
@@ -157,7 +157,7 @@ describe("MCPService 自动类型推断测试", () => {
           url,
         };
 
-        const service = new MCPService(config);
+        const service = new MCPService(config, mockLogger);
         const serviceConfig = service.getConfig();
 
         expect(serviceConfig.type).toBe(MCPTransportType.SSE);
@@ -178,7 +178,7 @@ describe("MCPService 自动类型推断测试", () => {
           url,
         };
 
-        const service = new MCPService(config);
+        const service = new MCPService(config, mockLogger);
         const serviceConfig = service.getConfig();
 
         expect(serviceConfig.type).toBe(MCPTransportType.SSE);
@@ -191,7 +191,7 @@ describe("MCPService 自动类型推断测试", () => {
         url: "https://api.example.com:8080/sse",
       };
 
-      const service = new MCPService(config);
+      const service = new MCPService(config, mockLogger);
       const serviceConfig = service.getConfig();
 
       expect(serviceConfig.type).toBe(MCPTransportType.SSE);
@@ -203,7 +203,7 @@ describe("MCPService 自动类型推断测试", () => {
         url: "https://example.com/sse#section1",
       };
 
-      const service = new MCPService(config);
+      const service = new MCPService(config, mockLogger);
       const serviceConfig = service.getConfig();
 
       expect(serviceConfig.type).toBe(MCPTransportType.SSE);
@@ -217,7 +217,7 @@ describe("MCPService 自动类型推断测试", () => {
         url: "https://example.com/mcp",
       };
 
-      const service = new MCPService(config);
+      const service = new MCPService(config, mockLogger);
       const serviceConfig = service.getConfig();
 
       expect(serviceConfig.type).toBe(MCPTransportType.STREAMABLE_HTTP);
@@ -236,7 +236,7 @@ describe("MCPService 自动类型推断测试", () => {
           url,
         };
 
-        const service = new MCPService(config);
+        const service = new MCPService(config, mockLogger);
         const serviceConfig = service.getConfig();
 
         expect(serviceConfig.type).toBe(MCPTransportType.STREAMABLE_HTTP);
@@ -256,7 +256,7 @@ describe("MCPService 自动类型推断测试", () => {
           url,
         };
 
-        const service = new MCPService(config);
+        const service = new MCPService(config, mockLogger);
         const serviceConfig = service.getConfig();
 
         expect(serviceConfig.type).toBe(MCPTransportType.STREAMABLE_HTTP);
@@ -277,7 +277,7 @@ describe("MCPService 自动类型推断测试", () => {
           url,
         };
 
-        const service = new MCPService(config);
+        const service = new MCPService(config, mockLogger);
         const serviceConfig = service.getConfig();
 
         expect(serviceConfig.type).toBe(MCPTransportType.STREAMABLE_HTTP);
@@ -297,7 +297,7 @@ describe("MCPService 自动类型推断测试", () => {
           url,
         };
 
-        const service = new MCPService(config);
+        const service = new MCPService(config, mockLogger);
         const serviceConfig = service.getConfig();
 
         expect(serviceConfig.type).toBe(MCPTransportType.STREAMABLE_HTTP);
@@ -310,7 +310,7 @@ describe("MCPService 自动类型推断测试", () => {
         url: "https://example.com/mcp?version=1.0&format=json",
       };
 
-      const service = new MCPService(config);
+      const service = new MCPService(config, mockLogger);
       const serviceConfig = service.getConfig();
 
       expect(serviceConfig.type).toBe(MCPTransportType.STREAMABLE_HTTP);
@@ -325,7 +325,7 @@ describe("MCPService 自动类型推断测试", () => {
       };
 
       expect(() => {
-        new MCPService(config);
+        new MCPService(config, mockLogger);
       }).toThrow("无法为服务 invalid-service 推断传输类型");
     });
 
@@ -335,7 +335,7 @@ describe("MCPService 自动类型推断测试", () => {
         url: "not-a-valid-url",
       };
 
-      const service = new MCPService(config);
+      const service = new MCPService(config, mockLogger);
       const serviceConfig = service.getConfig();
 
       // 应该默认为 streamable-http 类型
@@ -348,7 +348,7 @@ describe("MCPService 自动类型推断测试", () => {
         url: "",
       };
 
-      const service = new MCPService(config);
+      const service = new MCPService(config, mockLogger);
       const serviceConfig = service.getConfig();
 
       expect(serviceConfig.type).toBe(MCPTransportType.STREAMABLE_HTTP);
@@ -360,7 +360,7 @@ describe("MCPService 自动类型推断测试", () => {
         url: "https://",
       };
 
-      const service = new MCPService(config);
+      const service = new MCPService(config, mockLogger);
       const serviceConfig = service.getConfig();
 
       expect(serviceConfig.type).toBe(MCPTransportType.STREAMABLE_HTTP);
@@ -388,7 +388,7 @@ describe("MCPService 自动类型推断测试", () => {
         name: `case-service-${i}`,
       }))) {
         const config = { name, url };
-        const service = new MCPService(config);
+        const service = new MCPService(config, mockLogger);
         const serviceConfig = service.getConfig();
         expect(serviceConfig.type).toBe(expected);
       }
@@ -416,7 +416,7 @@ describe("MCPService 自动类型推断测试", () => {
         name: `trailing-service-${i}`,
       }))) {
         const config = { name, url };
-        const service = new MCPService(config);
+        const service = new MCPService(config, mockLogger);
         const serviceConfig = service.getConfig();
         expect(serviceConfig.type).toBe(expected);
       }
@@ -447,7 +447,7 @@ describe("MCPService 自动类型推断测试", () => {
         name: `substring-service-${i}`,
       }))) {
         const config = { name, url };
-        const service = new MCPService(config);
+        const service = new MCPService(config, mockLogger);
         const serviceConfig = service.getConfig();
         expect(serviceConfig.type).toBe(expected);
       }
@@ -459,7 +459,7 @@ describe("MCPService 自动类型推断测试", () => {
         url: "https://example.com/sse?q=test%20value&param=1+2",
       };
 
-      const service = new MCPService(config);
+      const service = new MCPService(config, mockLogger);
       const serviceConfig = service.getConfig();
 
       expect(serviceConfig.type).toBe(MCPTransportType.SSE);
@@ -474,7 +474,7 @@ describe("MCPService 自动类型推断测试", () => {
       };
 
       const originalConfigCopy = { ...originalConfig };
-      const service = new MCPService(originalConfig);
+      const service = new MCPService(originalConfig, mockLogger);
 
       // 原始配置应该保持不变
       expect(originalConfig).toEqual(originalConfigCopy);
@@ -492,7 +492,7 @@ describe("MCPService 自动类型推断测试", () => {
       };
 
       const originalConfigCopy = { ...originalConfig };
-      const service = new MCPService(originalConfig);
+      const service = new MCPService(originalConfig, mockLogger);
 
       expect(originalConfig).toEqual(originalConfigCopy);
 
@@ -512,7 +512,7 @@ describe("MCPService 自动类型推断测试", () => {
         url: "https://example.com/mcp", // URL 推断为 MCP 但显式类型为 SSE
       };
 
-      const explicitService = new MCPService(explicitConfig);
+      const explicitService = new MCPService(explicitConfig, mockLogger);
       expect(explicitService.getConfig().type).toBe(MCPTransportType.SSE);
 
       // 2. command 优先级高于 URL
@@ -522,7 +522,7 @@ describe("MCPService 自动类型推断测试", () => {
         url: "https://example.com/sse", // URL 推断为 SSE 但 command 优先
       };
 
-      const commandService = new MCPService(commandConfig);
+      const commandService = new MCPService(commandConfig, mockLogger);
       expect(commandService.getConfig().type).toBe(MCPTransportType.STDIO);
 
       // 3. 只有 URL 时进行推断
@@ -531,7 +531,7 @@ describe("MCPService 自动类型推断测试", () => {
         url: "https://example.com/sse", // 推断为 SSE
       };
 
-      const urlService = new MCPService(urlConfig);
+      const urlService = new MCPService(urlConfig, mockLogger);
       expect(urlService.getConfig().type).toBe(MCPTransportType.SSE);
     });
   });

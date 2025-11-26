@@ -1,6 +1,7 @@
 import { convertLegacyToNew } from "@adapters/ConfigAdapter.js";
 import { describe, expect, it } from "vitest";
-import { MCPService, MCPTransportType } from "../MCPService.js";
+import { MCPService, MCPTransportType } from "@/lib/mcp";
+import { logger } from "@root/Logger.js";
 
 describe("MCPService 和 ConfigAdapter 推断逻辑一致性测试", () => {
   const testCases = [
@@ -52,7 +53,7 @@ describe("MCPService 和 ConfigAdapter 推断逻辑一致性测试", () => {
 
       // MCPService 推断
       const mcpServiceConfig = { name: "test-service", url };
-      const mcpService = new MCPService(mcpServiceConfig);
+      const mcpService = new MCPService(mcpServiceConfig, logger);
       const mcpServiceResult = mcpService.getConfig();
 
       // 验证两个组件的推断结果一致
@@ -74,7 +75,7 @@ describe("MCPService 和 ConfigAdapter 推断逻辑一致性测试", () => {
 
     // MCPService 处理无效 URL
     const mcpServiceConfig = { name: "invalid-service", url: invalidUrl };
-    const mcpService = new MCPService(mcpServiceConfig);
+    const mcpService = new MCPService(mcpServiceConfig, logger);
     const mcpServiceResult = mcpService.getConfig();
 
     // 两个组件都应该默认推断为 STREAMABLE_HTTP
@@ -101,7 +102,7 @@ describe("MCPService 和 ConfigAdapter 推断逻辑一致性测试", () => {
     );
 
     // MCPService 处理显式类型
-    const mcpService = new MCPService(explicitConfig);
+    const mcpService = new MCPService(explicitConfig, logger);
     const mcpServiceResult = mcpService.getConfig();
 
     // 两个组件都应该使用显式指定的类型

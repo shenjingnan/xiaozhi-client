@@ -28,7 +28,6 @@ export * from "./PerformanceMonitor.js";
 export {
   type MCPTransportType,
   ConnectionState,
-  type PingOptions,
   type ModelScopeSSEOptions,
   type MCPServiceConfig,
   type MCPServiceStatus,
