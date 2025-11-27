@@ -6,6 +6,7 @@
 import { isAbsolute, resolve } from "node:path";
 import type { MCPServiceConfig } from "@/lib/mcp/types";
 import { MCPTransportType } from "@/lib/mcp/types";
+import { inferTransportTypeFromUrl } from "@/lib/mcp/utils";
 import { logger as globalLogger } from "@root/Logger.js";
 import type {
   LocalMCPServerConfig,
@@ -16,30 +17,6 @@ import type {
 
 // 为配置适配器创建带标签的 logger
 const logger = globalLogger.withTag("ConfigAdapter");
-
-/**
- * 根据URL路径推断传输类型
- * 支持复杂路径的末尾匹配，如 /f0fed2f733514b/sse
- */
-function inferTransportTypeFromUrl(url: string): MCPTransportType {
-  // 基于路径末尾推断，支持包含多个 / 的复杂路径
-  try {
-    const parsedUrl = new URL(url);
-    const pathname = parsedUrl.pathname;
-
-    // 检查路径末尾
-    if (pathname.endsWith("/sse")) {
-      return MCPTransportType.SSE;
-    }
-    if (pathname.endsWith("/mcp")) {
-      return MCPTransportType.STREAMABLE_HTTP;
-    }
-    return MCPTransportType.STREAMABLE_HTTP; // 默认
-  } catch (error) {
-    logger.warn(`URL 解析失败，默认推断为 streamable-http 类型: ${url}`, error);
-    return MCPTransportType.STREAMABLE_HTTP; // URL 解析失败时的默认值
-  }
-}
 
 /**
  * 配置验证错误类

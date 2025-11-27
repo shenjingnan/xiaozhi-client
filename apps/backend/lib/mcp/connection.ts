@@ -10,6 +10,7 @@ import type {
   ToolCallResult,
 } from "./types.js";
 import { ConnectionState, MCPTransportType } from "./types.js";
+import { inferTransportTypeFromConfig } from "./utils.js";
 
 /**
  * MCP 服务类
@@ -29,68 +30,11 @@ export class MCPService {
   constructor(config: MCPServiceConfig, logger: Logger) {
     this.logger = logger;
 
-    // 自动推断服务类型（如果没有显式指定）
-    if (!config.type) {
-      if (config.command) {
-        // 包含 command 字段 → stdio 类型
-        this.config = {
-          ...config,
-          type: MCPTransportType.STDIO,
-        };
-      } else if (config.url !== undefined && config.url !== null) {
-        // 包含 url 字段，使用统一的 URL 路径推断逻辑
-        const inferredType = this.inferTransportTypeFromUrl(
-          config.url,
-          config.name
-        );
-        this.config = {
-          ...config,
-          type: inferredType,
-        };
-      } else {
-        // 无法推断，抛出错误
-        throw new Error(
-          `无法为服务 ${config.name} 推断传输类型。请显式指定 type 字段，或提供 command/url 配置`
-        );
-      }
-    } else {
-      this.config = config;
-    }
+    // 使用工具方法推断服务类型
+    this.config = inferTransportTypeFromConfig(config);
 
     // 验证配置
     this.validateConfig();
-  }
-
-  /**
-   * 根据 URL 路径推断传输类型（与 ConfigAdapter 保持一致）
-   * 基于路径末尾推断，支持包含多个 / 的复杂路径
-   */
-  private inferTransportTypeFromUrl(
-    url: string,
-    serviceName: string
-  ): MCPTransportType {
-    try {
-      const parsedUrl = new URL(url);
-      const pathname = parsedUrl.pathname;
-
-      // 检查路径末尾
-      if (pathname.endsWith("/sse")) {
-        return MCPTransportType.SSE;
-      }
-      if (pathname.endsWith("/mcp")) {
-        return MCPTransportType.STREAMABLE_HTTP;
-      }
-      this.logger.info(
-        `[MCP-${serviceName}] URL 路径 ${pathname} 不匹配特定规则，默认推断为 streamable-http 类型`
-      );
-      return MCPTransportType.STREAMABLE_HTTP;
-    } catch (error) {
-      this.logger.warn(
-        `[MCP-${serviceName}] URL 解析失败，默认推断为 streamable-http 类型`,
-        error
-      );
-      return MCPTransportType.STREAMABLE_HTTP;
-    }
   }
 
   /**
