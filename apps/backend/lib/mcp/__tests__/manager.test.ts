@@ -4,6 +4,8 @@
  */
 
 import { MCPServiceManager } from "@/lib/mcp";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type { Logger } from "@root/Logger.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies
@@ -92,7 +94,28 @@ vi.mock("@utils/ToolCallLogger.js", () => ({
 
 describe("MCPServiceManager - customMCP 支持", () => {
   let serviceManager: MCPServiceManager;
-  let mockCustomMCPHandler: any;
+  let mockCustomMCPHandler: {
+    initialize: ReturnType<typeof vi.fn>;
+    reinitialize: ReturnType<typeof vi.fn>;
+    hasTool: ReturnType<typeof vi.fn>;
+    getTools: ReturnType<typeof vi.fn>;
+    getToolCount: ReturnType<typeof vi.fn>;
+    getToolNames: ReturnType<typeof vi.fn>;
+    getToolInfo: ReturnType<typeof vi.fn>;
+    callTool: ReturnType<typeof vi.fn>;
+    cleanup: ReturnType<typeof vi.fn>;
+    stopCleanupTimer: ReturnType<typeof vi.fn>;
+    getCacheLifecycleManager: ReturnType<typeof vi.fn>;
+    getTaskStateManager: ReturnType<typeof vi.fn>;
+    getCacheStatistics: ReturnType<typeof vi.fn>;
+    getTaskStatistics: ReturnType<typeof vi.fn>;
+    getTaskStatus: ReturnType<typeof vi.fn>;
+    validateTaskId: ReturnType<typeof vi.fn>;
+    restartStalledTasks: ReturnType<typeof vi.fn>;
+    manualCleanupCache: ReturnType<typeof vi.fn>;
+    validateSystemIntegrity: ReturnType<typeof vi.fn>;
+    [key: string]: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     // Reset all mocks first
@@ -102,7 +125,11 @@ describe("MCPServiceManager - customMCP 支持", () => {
     serviceManager = new MCPServiceManager();
 
     // Get the mocked CustomMCPHandler instance
-    mockCustomMCPHandler = (serviceManager as any).customMCPHandler;
+    mockCustomMCPHandler = (
+      serviceManager as unknown as {
+        customMCPHandler: typeof mockCustomMCPHandler;
+      }
+    ).customMCPHandler;
 
     // Ensure all required mock methods exist with complete default behavior
     const requiredMethods = [
@@ -322,7 +349,7 @@ describe("MCPServiceManager - customMCP 支持", () => {
           name: "incomplete_tool",
           // 缺少 description
           inputSchema: { type: "object" },
-        } as any,
+        } as Tool,
       ];
 
       mockCustomMCPHandler.getTools.mockReturnValue(incompleteTools);
@@ -339,7 +366,9 @@ describe("MCPServiceManager - customMCP 支持", () => {
   describe("错误处理和边界情况", () => {
     it("应该正确处理 CustomMCPHandler 完全未初始化的情况", () => {
       // Arrange - 模拟 CustomMCPHandler 完全不存在
-      (serviceManager as any).customMCPHandler = null;
+      (
+        serviceManager as unknown as { customMCPHandler: null }
+      ).customMCPHandler = null;
 
       // Act & Assert - 应该优雅地处理而不是抛出异常
       expect(() => {
@@ -381,8 +410,18 @@ describe("MCPServiceManager - customMCP 支持", () => {
 
 describe("MCPServiceManager - Logger 注入功能", () => {
   let serviceManager: MCPServiceManager;
-  let mockLogger: any;
-  let mockCustomMCPHandler: any;
+  let mockLogger: {
+    info: ReturnType<typeof vi.fn>;
+    error: ReturnType<typeof vi.fn>;
+    debug: ReturnType<typeof vi.fn>;
+    warn: ReturnType<typeof vi.fn>;
+    withTag: ReturnType<typeof vi.fn>;
+  };
+  let mockCustomMCPHandler: {
+    hasTool: ReturnType<typeof vi.fn>;
+    getTools: ReturnType<typeof vi.fn>;
+    [key: string]: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     // Reset all mocks first
@@ -401,7 +440,11 @@ describe("MCPServiceManager - Logger 注入功能", () => {
     serviceManager = new MCPServiceManager();
 
     // Get the mocked CustomMCPHandler instance
-    mockCustomMCPHandler = (serviceManager as any).customMCPHandler;
+    mockCustomMCPHandler = (
+      serviceManager as unknown as {
+        customMCPHandler: typeof mockCustomMCPHandler;
+      }
+    ).customMCPHandler;
 
     // 确保必要方法存在
     if (!mockCustomMCPHandler.hasTool) {
@@ -424,7 +467,10 @@ describe("MCPServiceManager - Logger 注入功能", () => {
     it("应该支持构造函数注入 logger", () => {
       // Act & Assert - 不应该抛出异常
       expect(() => {
-        serviceManager = new MCPServiceManager(undefined, mockLogger);
+        serviceManager = new MCPServiceManager(
+          undefined,
+          mockLogger as unknown as Logger
+        );
       }).not.toThrow();
     });
 
@@ -441,13 +487,16 @@ describe("MCPServiceManager - Logger 注入功能", () => {
 
       // Act & Assert - 不应该抛出异常
       expect(() => {
-        serviceManager.setLogger(mockLogger);
+        serviceManager.setLogger(mockLogger as unknown as Logger);
       }).not.toThrow();
     });
 
     it("应该支持 getLogger 方法", () => {
       // Arrange
-      serviceManager = new MCPServiceManager(undefined, mockLogger);
+      serviceManager = new MCPServiceManager(
+        undefined,
+        mockLogger as unknown as Logger
+      );
 
       // Act & Assert - 不应该抛出异常
       expect(() => {
@@ -458,7 +507,10 @@ describe("MCPServiceManager - Logger 注入功能", () => {
 
     it("应该正确注入和使用 logger", () => {
       // Arrange
-      serviceManager = new MCPServiceManager(undefined, mockLogger);
+      serviceManager = new MCPServiceManager(
+        undefined,
+        mockLogger as unknown as Logger
+      );
 
       // Act & Assert - logger 应该被正确注入
       expect(() => {
