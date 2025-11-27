@@ -664,3 +664,289 @@ describe("MCPService", () => {
     });
   });
 });
+
+// 自动类型推断测试（合并自 MCPService-type-inference.test.ts）
+describe("MCPService 自动类型推断测试", () => {
+  let mockLogger: any;
+
+  beforeEach(() => {
+    mockLogger = {
+      info: vi.fn(),
+      error: vi.fn(),
+      warn: vi.fn(),
+      debug: vi.fn(),
+      withTag: vi.fn().mockReturnThis(),
+    };
+  });
+
+  describe("显式指定类型的情况", () => {
+    it("应该使用显式指定的类型", () => {
+      const config = {
+        name: "test-service",
+        type: MCPTransportType.SSE,
+        url: "https://example.com/sse",
+      };
+
+      const service = new MCPService(config, mockLogger);
+      const serviceConfig = service.getConfig();
+
+      expect(serviceConfig.type).toBe(MCPTransportType.SSE);
+    });
+
+    it("应该优先使用显式类型而非URL推断", () => {
+      const config = {
+        name: "explicit-priority-service",
+        type: MCPTransportType.STREAMABLE_HTTP,
+        url: "https://example.com/sse", // 这个URL会推断为SSE，但显式指定为STREAMABLE_HTTP
+      };
+
+      const service = new MCPService(config, mockLogger);
+      const serviceConfig = service.getConfig();
+
+      expect(serviceConfig.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+    });
+
+    it("应该正确处理所有显式类型", () => {
+      const testCases = [
+        {
+          type: MCPTransportType.STDIO,
+          name: "stdio-test",
+          config: { command: "node", args: ["test.js"] },
+        },
+        {
+          type: MCPTransportType.SSE,
+          name: "sse-test",
+          config: { url: "https://example.com/test" },
+        },
+        {
+          type: MCPTransportType.STREAMABLE_HTTP,
+          name: "http-test",
+          config: { url: "https://example.com/test" },
+        },
+      ];
+
+      for (const { type, name, config } of testCases) {
+        const serviceConfig = {
+          name,
+          type,
+          ...config,
+        };
+
+        const service = new MCPService(serviceConfig, mockLogger);
+        const result = service.getConfig();
+
+        expect(result.type).toBe(type);
+      }
+    });
+  });
+
+  describe("自动推断 stdio 类型", () => {
+    it("应该根据 command 字段推断为 stdio 类型", () => {
+      const config = {
+        name: "stdio-service",
+        command: "node",
+        args: ["server.js"],
+      };
+
+      const service = new MCPService(config, mockLogger);
+      const serviceConfig = service.getConfig();
+
+      expect(serviceConfig.type).toBe(MCPTransportType.STDIO);
+    });
+
+    it("即使有 url 字段，command 字段也应优先", () => {
+      const config = {
+        name: "mixed-service",
+        command: "python",
+        args: ["server.py"],
+        url: "https://example.com/sse",
+      };
+
+      const service = new MCPService(config, mockLogger);
+      const serviceConfig = service.getConfig();
+
+      expect(serviceConfig.type).toBe(MCPTransportType.STDIO);
+    });
+
+    it("应该处理只有 command 没有 args 的情况", () => {
+      const config = {
+        name: "command-only-service",
+        command: "python",
+      };
+
+      const service = new MCPService(config, mockLogger);
+      const serviceConfig = service.getConfig();
+
+      expect(serviceConfig.type).toBe(MCPTransportType.STDIO);
+    });
+
+    it("应该处理空的 args 数组", () => {
+      const config = {
+        name: "empty-args-service",
+        command: "node",
+        args: [],
+      };
+
+      const service = new MCPService(config, mockLogger);
+      const serviceConfig = service.getConfig();
+
+      expect(serviceConfig.type).toBe(MCPTransportType.STDIO);
+    });
+  });
+
+  describe("自动推断 SSE 类型", () => {
+    it("应该根据 /sse 路径推断为 SSE 类型", () => {
+      const config = {
+        name: "sse-service",
+        url: "https://mcp.amap.com/sse?key=test",
+      };
+
+      const service = new MCPService(config, mockLogger);
+      const serviceConfig = service.getConfig();
+
+      expect(serviceConfig.type).toBe(MCPTransportType.SSE);
+    });
+
+    it("应该正确处理带有查询参数的 SSE URL", () => {
+      const config = {
+        name: "sse-service-with-params",
+        url: "https://example.com/sse?apiKey=123&timeout=5000",
+      };
+
+      const service = new MCPService(config, mockLogger);
+      const serviceConfig = service.getConfig();
+
+      expect(serviceConfig.type).toBe(MCPTransportType.SSE);
+    });
+
+    it("应该正确推断复杂的 ModelScope SSE 路径", () => {
+      const testCases = [
+        "https://mcp.api-inference.modelscope.net/f0fed2f733514b/sse",
+        "https://mcp.api-inference.modelscope.net/8928ccc99fa34b/sse",
+        "https://mcp.api-inference.modelscope.net/abcdef123456/sse",
+        "https://api.modelscope.cn/mcp/sse",
+      ];
+
+      for (const url of testCases) {
+        const config = {
+          name: "modelscope-sse-service",
+          url,
+        };
+
+        const service = new MCPService(config, mockLogger);
+        const serviceConfig = service.getConfig();
+
+        expect(serviceConfig.type).toBe(MCPTransportType.SSE);
+      }
+    });
+  });
+
+  describe("自动推断 streamable-http 类型", () => {
+    it("应该根据 /mcp 路径推断为 streamable-http 类型", () => {
+      const config = {
+        name: "mcp-service",
+        url: "https://example.com/mcp",
+      };
+
+      const service = new MCPService(config, mockLogger);
+      const serviceConfig = service.getConfig();
+
+      expect(serviceConfig.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+    });
+
+    it("应该正确推断复杂的 ModelScope MCP 路径", () => {
+      const testCases = [
+        "https://mcp.api-inference.modelscope.net/8928ccc99fa34b/mcp",
+        "https://mcp.api-inference.modelscope.net/f0fed2f733514b/mcp",
+        "https://api.modelscope.cn/service/mcp",
+      ];
+
+      for (const url of testCases) {
+        const config = {
+          name: "modelscope-mcp-service",
+          url,
+        };
+
+        const service = new MCPService(config, mockLogger);
+        const serviceConfig = service.getConfig();
+
+        expect(serviceConfig.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+      }
+    });
+
+    it("对于其他路径应该默认推断为 streamable-http 类型", () => {
+      const testCases = [
+        { url: "https://example.com/api/v1/tools", name: "api-service" },
+        { url: "https://example.com/endpoint", name: "endpoint-service" },
+        { url: "https://example.com/service", name: "generic-service" },
+        { url: "https://example.com/webhook", name: "webhook-service" },
+      ];
+
+      for (const { url, name } of testCases) {
+        const config = {
+          name,
+          url,
+        };
+
+        const service = new MCPService(config, mockLogger);
+        const serviceConfig = service.getConfig();
+
+        expect(serviceConfig.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+      }
+    });
+
+    it("对于根路径应该默认推断为 streamable-http 类型", () => {
+      const testCases = [
+        { url: "https://example.com/", name: "root-service-1" },
+        { url: "https://example.com", name: "root-service-2" },
+        { url: "https://api.example.com/", name: "root-service-3" },
+      ];
+
+      for (const { url, name } of testCases) {
+        const config = {
+          name,
+          url,
+        };
+
+        const service = new MCPService(config, mockLogger);
+        const serviceConfig = service.getConfig();
+
+        expect(serviceConfig.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+      }
+    });
+  });
+
+  describe("类型推断优先级", () => {
+    it("应该正确处理类型推断优先级：显式类型 > command > URL", () => {
+      // 1. 显式类型优先级最高
+      const explicitConfig = {
+        name: "explicit-priority",
+        type: MCPTransportType.SSE,
+        command: "node", // command 存在但显式类型优先
+        url: "https://example.com/mcp", // URL 推断为 MCP 但显式类型为 SSE
+      };
+
+      const explicitService = new MCPService(explicitConfig, mockLogger);
+      expect(explicitService.getConfig().type).toBe(MCPTransportType.SSE);
+
+      // 2. command 优先级高于 URL
+      const commandConfig = {
+        name: "command-priority",
+        command: "python", // command 存在
+        url: "https://example.com/sse", // URL 推断为 SSE 但 command 优先
+      };
+
+      const commandService = new MCPService(commandConfig, mockLogger);
+      expect(commandService.getConfig().type).toBe(MCPTransportType.STDIO);
+
+      // 3. 只有 URL 时进行推断
+      const urlConfig = {
+        name: "url-inference",
+        url: "https://example.com/sse", // 推断为 SSE
+      };
+
+      const urlService = new MCPService(urlConfig, mockLogger);
+      expect(urlService.getConfig().type).toBe(MCPTransportType.SSE);
+    });
+  });
+});
