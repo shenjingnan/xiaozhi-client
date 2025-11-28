@@ -26,10 +26,7 @@ async function getInstance(): Promise<MCPServiceManager> {
     return instance;
   } catch (error) {
     // 简化的错误处理：重新创建实例
-    console.error(
-      "创建或更新 MCPServiceManager 实例失败，正在重试:",
-      error
-    );
+    console.error("创建或更新 MCPServiceManager 实例失败，正在重试:", error);
     instance = new MCPServiceManager();
     return instance;
   }
