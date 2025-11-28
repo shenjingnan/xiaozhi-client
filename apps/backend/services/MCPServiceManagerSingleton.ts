@@ -4,8 +4,6 @@
  */
 
 import { MCPServiceManager } from "@/lib/mcp";
-import type { Logger } from "@root/Logger.js";
-import { logger as globalLogger } from "@root/Logger.js";
 
 // 重新导出相关类型，便于外部使用
 export type { Tool } from "@modelcontextprotocol/sdk/types.js";
@@ -13,34 +11,26 @@ export type { LocalMCPServerConfig } from "@root/configManager.js";
 
 // 简单的实例缓存
 let instance: MCPServiceManager | null = null;
-let currentLogger: Logger | undefined;
 
 /**
  * 获取 MCPServiceManager 单例实例
  *
- * @param logger 可选的 logger 实例，用于注入到服务管理器中
  * @returns Promise<MCPServiceManager> 管理器实例
  */
-async function getInstance(logger?: Logger): Promise<MCPServiceManager> {
+async function getInstance(): Promise<MCPServiceManager> {
   try {
     if (!instance) {
-      instance = new MCPServiceManager(undefined, logger);
-      currentLogger = logger;
-    } else if (logger && logger !== currentLogger) {
-      // 简单的 Logger 更新，无需互斥锁
-      await instance.setLogger(logger);
-      currentLogger = logger;
+      instance = new MCPServiceManager();
     }
 
     return instance;
   } catch (error) {
     // 简化的错误处理：重新创建实例
-    globalLogger.error(
+    console.error(
       "创建或更新 MCPServiceManager 实例失败，正在重试:",
       error
     );
-    instance = new MCPServiceManager(undefined, logger);
-    currentLogger = logger;
+    instance = new MCPServiceManager();
     return instance;
   }
 }

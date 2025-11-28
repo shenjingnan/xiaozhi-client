@@ -5,8 +5,6 @@ import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import type { StreamableHTTPClientTransportOptions } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
 import { EventSource } from "eventsource";
 
 // 全局 polyfill EventSource（用于 SSE）
@@ -25,19 +23,13 @@ export interface Transport {
   close?(): Promise<void>;
 }
 
-// 创建 logger 实例
-function getLogger(): Logger {
-  return logger;
-}
-
 /**
  * 创建 transport 实例
  * @param config MCP 服务配置
  * @returns transport 实例
  */
 export function createTransport(config: MCPServiceConfig): MCPServerTransport {
-  const logger = getLogger();
-  logger.debug(
+  console.debug(
     `[TransportFactory] 创建 ${config.type} transport for ${config.name}`
   );
 
