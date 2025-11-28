@@ -6,20 +6,11 @@
  * 提供 Stdio 模式的 MCP 服务器，主要用于 Cursor 等客户端
  */
 
-import { dirname } from "node:path";
 import process from "node:process";
-import { fileURLToPath } from "node:url";
 import { MCPServiceManager } from "@/lib/mcp";
 import { StdioAdapter } from "@/lib/mcp/transports";
-// import { ServerMode, createServer } from "@core/ServerFactory.js";
-// TODO: ServerFactory重构中，暂时禁用
 import { logger } from "@root/Logger.js";
 import { configManager } from "@root/configManager.js";
-
-// ESM 兼容的 __dirname
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-// 使用全局 logger 实例
 
 // 初始化日志文件
 const logDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();
