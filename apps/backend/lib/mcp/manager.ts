@@ -31,7 +31,7 @@ import { MCPCacheManager } from "@root/services/MCPCacheManager.js";
 import { ToolSyncManager } from "@root/services/ToolSyncManager.js";
 import type { MCPMessage } from "@root/types/mcp.js";
 import { ToolCallLogger } from "@utils/ToolCallLogger.js";
-import type { ConnectionState, TransportAdapter } from "./transports/index.js";
+import { ConnectionState, type TransportAdapter } from "./transports/index.js";
 
 export class MCPServiceManager extends EventEmitter {
   private services: Map<string, MCPService> = new Map();
