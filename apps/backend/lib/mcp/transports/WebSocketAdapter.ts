@@ -9,6 +9,7 @@
  * 4. 消息压缩和批量处理
  */
 
+import type { IncomingMessage } from "node:http";
 import type { MCPMessageHandler } from "@core/MCPMessageHandler.js";
 import WebSocket, { WebSocketServer } from "ws";
 import { ConnectionState, TransportAdapter } from "./TransportAdapter.js";
@@ -528,7 +529,7 @@ export class WebSocketAdapter extends TransportAdapter {
   /**
    * 处理新连接（服务器模式）
    */
-  private handleNewConnection(ws: WebSocket, request: any): void {
+  private handleNewConnection(ws: WebSocket, request: IncomingMessage): void {
     // 检查连接数限制
     if (this.connections.size >= this.maxConnections) {
       this.logger.warn("达到最大连接数限制，拒绝新连接");

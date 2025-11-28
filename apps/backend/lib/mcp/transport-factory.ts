@@ -1,4 +1,4 @@
-import type { MCPServiceConfig } from "@/lib/mcp/types";
+import type { MCPServerTransport, MCPServiceConfig } from "@/lib/mcp/types";
 import { MCPTransportType } from "@/lib/mcp/types";
 import type { SSEClientTransportOptions } from "@modelcontextprotocol/sdk/client/sse.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
@@ -10,8 +10,13 @@ import { logger } from "@root/Logger.js";
 import { EventSource } from "eventsource";
 
 // 全局 polyfill EventSource（用于 SSE）
-if (typeof global !== "undefined" && !global.EventSource) {
-  (global as any).EventSource = EventSource;
+// 使用类型断言避免与已有 EventSource 类型冲突
+if (
+  typeof global !== "undefined" &&
+  !(global as typeof global & { EventSource?: unknown }).EventSource
+) {
+  (global as typeof global & { EventSource: typeof EventSource }).EventSource =
+    EventSource;
 }
 
 // Transport 基础接口
@@ -30,7 +35,7 @@ function getLogger(): Logger {
  * @param config MCP 服务配置
  * @returns transport 实例
  */
-export function createTransport(config: MCPServiceConfig): any {
+export function createTransport(config: MCPServiceConfig): MCPServerTransport {
   const logger = getLogger();
   logger.debug(
     `[TransportFactory] 创建 ${config.type} transport for ${config.name}`
@@ -116,16 +121,20 @@ function createStreamableHTTPTransport(
  * 创建 SSE 选项
  */
 function createSSEOptions(config: MCPServiceConfig): SSEClientTransportOptions {
-  const options: any = {};
+  const options: SSEClientTransportOptions = {};
 
   // 添加认证头
   if (config.apiKey) {
-    options.headers = {
-      Authorization: `Bearer ${config.apiKey}`,
-      ...config.headers,
+    options.requestInit = {
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        ...config.headers,
+      },
     };
   } else if (config.headers) {
-    options.headers = config.headers;
+    options.requestInit = {
+      headers: config.headers,
+    };
   }
 
   return options;
@@ -134,8 +143,10 @@ function createSSEOptions(config: MCPServiceConfig): SSEClientTransportOptions {
 /**
  * 创建 ModelScope SSE 选项
  */
-function createModelScopeSSEOptions(config: MCPServiceConfig): any {
-  const token = config.apiKey!; // 已在调用方验证过
+function createModelScopeSSEOptions(
+  config: MCPServiceConfig
+): SSEClientTransportOptions {
+  const token = config.apiKey; // 已在调用方验证过
 
   // 如果有自定义SSE选项，使用它们
   if (config.customSSEOptions) {
@@ -167,16 +178,20 @@ function createModelScopeSSEOptions(config: MCPServiceConfig): any {
 function createStreamableHTTPOptions(
   config: MCPServiceConfig
 ): StreamableHTTPClientTransportOptions {
-  const options: any = {};
+  const options: StreamableHTTPClientTransportOptions = {};
 
   // 添加认证头
   if (config.apiKey) {
-    options.headers = {
-      Authorization: `Bearer ${config.apiKey}`,
-      ...config.headers,
+    options.requestInit = {
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        ...config.headers,
+      },
     };
   } else if (config.headers) {
-    options.headers = config.headers;
+    options.requestInit = {
+      headers: config.headers,
+    };
   }
 
   return options;
