@@ -4,8 +4,6 @@
  */
 
 import { MCPServiceManager } from "@/lib/mcp";
-import type { Logger } from "@root/Logger.js";
-import { logger as globalLogger } from "@root/Logger.js";
 
 // 重新导出相关类型，便于外部使用
 export type { Tool } from "@modelcontextprotocol/sdk/types.js";
@@ -13,34 +11,23 @@ export type { LocalMCPServerConfig } from "@root/configManager.js";
 
 // 简单的实例缓存
 let instance: MCPServiceManager | null = null;
-let currentLogger: Logger | undefined;
 
 /**
  * 获取 MCPServiceManager 单例实例
  *
- * @param logger 可选的 logger 实例，用于注入到服务管理器中
  * @returns Promise<MCPServiceManager> 管理器实例
  */
-async function getInstance(logger?: Logger): Promise<MCPServiceManager> {
+async function getInstance(): Promise<MCPServiceManager> {
   try {
     if (!instance) {
-      instance = new MCPServiceManager(undefined, logger);
-      currentLogger = logger;
-    } else if (logger && logger !== currentLogger) {
-      // 简单的 Logger 更新，无需互斥锁
-      await instance.setLogger(logger);
-      currentLogger = logger;
+      instance = new MCPServiceManager();
     }
 
     return instance;
   } catch (error) {
     // 简化的错误处理：重新创建实例
-    globalLogger.error(
-      "创建或更新 MCPServiceManager 实例失败，正在重试:",
-      error
-    );
-    instance = new MCPServiceManager(undefined, logger);
-    currentLogger = logger;
+    console.error("创建或更新 MCPServiceManager 实例失败，正在重试:", error);
+    instance = new MCPServiceManager();
     return instance;
   }
 }
@@ -57,16 +44,14 @@ async function cleanup(): Promise<void> {
     if (instance) {
       await instance.stopAllServices();
       instance = null;
-      currentLogger = undefined;
     }
   } catch (error) {
-    globalLogger.error(
+    console.error(
       "❌ MCPServiceManager 单例清理失败:",
       (error as Error).message
     );
     // 即使清理失败，也要重置状态
     instance = null;
-    currentLogger = undefined;
     throw error;
   }
 }
@@ -80,7 +65,6 @@ async function cleanup(): Promise<void> {
 function reset(): void {
   console.log("🔄 重置 MCPServiceManager 单例状态");
   instance = null;
-  currentLogger = undefined;
 }
 
 /**
@@ -119,23 +103,20 @@ export default MCPServiceManagerSingleton;
 
 // 处理未捕获的异常，简化清理逻辑
 process.on("uncaughtException", async (error) => {
-  globalLogger.error("💥 未捕获的异常，清理 MCPServiceManager 单例:", error);
+  console.error("💥 未捕获的异常，清理 MCPServiceManager 单例:", error);
   try {
     await MCPServiceManagerSingleton.cleanup();
   } catch (cleanupError) {
-    globalLogger.error("清理过程中发生错误:", cleanupError);
+    console.error("清理过程中发生错误:", cleanupError);
   }
 });
 
 // 处理未处理的Promise拒绝
 process.on("unhandledRejection", async (reason) => {
-  globalLogger.error(
-    "💥 未处理的Promise拒绝，清理 MCPServiceManager 单例:",
-    reason
-  );
+  console.error("💥 未处理的Promise拒绝，清理 MCPServiceManager 单例:", reason);
   try {
     await MCPServiceManagerSingleton.cleanup();
   } catch (cleanupError) {
-    globalLogger.error("清理过程中发生错误:", cleanupError);
+    console.error("清理过程中发生错误:", cleanupError);
   }
 });

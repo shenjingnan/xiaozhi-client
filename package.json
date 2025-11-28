@@ -33,7 +33,7 @@
     "xiaozhi-client": "dist/cli.js"
   },
   "scripts": {
-    "build": "pnpm run build:packages && pnpm run build:web && cross-env NODE_ENV=production tsup --config config/tsup.config.ts",
+    "build": "pnpm run build:packages && pnpm run build:web && cross-env NODE_ENV=${NODE_ENV:-production} tsup --config config/tsup.config.ts",
     "build:packages": "pnpm --filter './packages/*' run build",
     "build:web": "cd apps/frontend && pnpm install && pnpm run build",
     "dev": "pnpm run build:packages && cross-env NODE_ENV=development tsup --config config/tsup.config.ts --watch",

@@ -1,10 +1,10 @@
 import { MCPServiceManager } from "@/lib/mcp";
 import { MCPTransportType } from "@/lib/mcp";
+import { TransportFactory } from "@/lib/mcp/transport-factory.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setupCommonMocks } from "../../__tests__/index.js";
 import { configManager } from "../../configManager.js";
 import type { MCPServiceConfig } from "../MCPService.js";
-import { TransportFactory } from "../TransportFactory.js";
 
 // Mock dependencies
 vi.mock("@/lib/mcp", () => {
@@ -104,7 +104,7 @@ vi.mock("@/lib/mcp", () => {
     },
   };
 });
-vi.mock("../TransportFactory.js");
+vi.mock("@/lib/mcp/transport-factory.js");
 
 // 设置统一的mock配置
 setupCommonMocks();

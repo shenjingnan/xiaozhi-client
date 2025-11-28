@@ -34,9 +34,8 @@ export const mcpServiceManagerMiddleware = async (
 
       contextLogger.debug("[MCPMiddleware] 正在初始化 MCPServiceManager 实例");
 
-      // 通过 Singleton 获取实例，传入 Context 中的 logger
-      const serviceManager =
-        await MCPServiceManagerSingleton.getInstance(contextLogger);
+      // 通过 Singleton 获取实例，不再传入 logger
+      const serviceManager = await MCPServiceManagerSingleton.getInstance();
 
       // 将实例注入到 Context
       c.set("mcpServiceManager", serviceManager);

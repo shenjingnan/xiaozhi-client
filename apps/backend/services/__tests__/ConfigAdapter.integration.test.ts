@@ -82,7 +82,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
 
         // MCPService 推断
         const mcpServiceConfig = { name: testCase.name, url: testCase.url };
-        const mcpService = new MCPService(mcpServiceConfig, mockLogger);
+        const mcpService = new MCPService(mcpServiceConfig);
         const mcpServiceResult = mcpService.getConfig();
 
         // 验证两个组件的推断结果一致
@@ -131,7 +131,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
           command: testCase.command,
           args: testCase.args,
         };
-        const mcpService = new MCPService(mcpServiceConfig, mockLogger);
+        const mcpService = new MCPService(mcpServiceConfig);
         const mcpServiceResult = mcpService.getConfig();
 
         // 验证两个组件的处理结果一致
@@ -161,7 +161,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
         type: MCPTransportType.SSE,
         url: "https://example.com/mcp",
       };
-      const mcpService = new MCPService(mcpServiceConfig, mockLogger);
+      const mcpService = new MCPService(mcpServiceConfig);
       const mcpServiceResult = mcpService.getConfig();
 
       expect(configAdapterResult.type).toBe(MCPTransportType.SSE);
@@ -185,7 +185,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
         type: MCPTransportType.STREAMABLE_HTTP,
         url: "https://example.com/sse",
       };
-      const mcpService = new MCPService(mcpServiceConfig, mockLogger);
+      const mcpService = new MCPService(mcpServiceConfig);
       const mcpServiceResult = mcpService.getConfig();
 
       expect(configAdapterResult.type).toBe(MCPTransportType.STREAMABLE_HTTP);
@@ -247,7 +247,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
           }
         }
 
-        const mcpService = new MCPService(mcpServiceConfig, mockLogger);
+        const mcpService = new MCPService(mcpServiceConfig);
         const mcpServiceConfigResult = mcpService.getConfig();
 
         // 验证类型一致性
@@ -337,7 +337,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
         let serviceResult: any = null;
 
         try {
-          const service = new MCPService({ name, ...config }, mockLogger);
+          const service = new MCPService({ name, ...config });
           serviceResult = service.getConfig();
         } catch (error) {
           serviceError = error as Error;
@@ -368,11 +368,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
 
       // MCPService 应该抛出错误
       expect(
-        () =>
-          new MCPService(
-            { name: "", url: "https://example.com/sse" },
-            mockLogger
-          )
+        () => new MCPService({ name: "", url: "https://example.com/sse" })
       ).toThrow();
     });
   });
@@ -425,7 +421,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
       const services: Record<string, MCPService> = {};
 
       for (const [serviceName, config] of Object.entries(convertedConfigs)) {
-        services[serviceName] = new MCPService(config, mockLogger);
+        services[serviceName] = new MCPService(config);
       }
 
       // 第三步：验证所有服务都能正确获取配置
@@ -473,7 +469,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
         "dynamic-service",
         initialConfig
       );
-      const initialService = new MCPService(initialConverted, mockLogger);
+      const initialService = new MCPService(initialConverted);
 
       expect(initialConverted.type).toBe(MCPTransportType.STREAMABLE_HTTP);
       expect(initialService.getConfig().type).toBe(
@@ -489,7 +485,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
         "dynamic-service",
         updatedConfig
       );
-      const updatedService = new MCPService(updatedConverted, mockLogger);
+      const updatedService = new MCPService(updatedConverted);
 
       expect(updatedConverted.type).toBe(MCPTransportType.SSE);
       expect(updatedService.getConfig().type).toBe(MCPTransportType.SSE);
@@ -573,13 +569,10 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
       expect(adapterResult.type).toBe(MCPTransportType.SSE);
 
       // MCPService 应该能处理
-      const service = new MCPService(
-        {
-          name: "long-url-service",
-          url: longUrl,
-        },
-        mockLogger
-      );
+      const service = new MCPService({
+        name: "long-url-service",
+        url: longUrl,
+      });
       const serviceResult = service.getConfig();
       expect(serviceResult.type).toBe(MCPTransportType.SSE);
     });

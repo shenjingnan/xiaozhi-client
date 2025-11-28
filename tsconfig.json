@@ -23,7 +23,7 @@
       "@errors/*": ["apps/backend/errors/*"],
       "@utils/*": ["apps/backend/utils/*"],
       "@core/*": ["apps/backend/core/*"],
-      "@transports/*": ["apps/backend/transports/*"],
+      "@transports/*": ["apps/backend/lib/mcp/transports/*"],
       "@adapters/*": ["apps/backend/adapters/*"],
       "@managers/*": ["apps/backend/managers/*"],
       "@types/*": ["apps/backend/types/*"],

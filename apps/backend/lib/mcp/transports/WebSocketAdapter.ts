@@ -9,17 +9,15 @@
  * 4. 消息压缩和批量处理
  */
 
+import type { IncomingMessage } from "node:http";
 import type { MCPMessageHandler } from "@core/MCPMessageHandler.js";
-import {
-  ConnectionState,
-  TransportAdapter,
-} from "@transports/TransportAdapter.js";
+import WebSocket, { WebSocketServer } from "ws";
+import { ConnectionState, TransportAdapter } from "./TransportAdapter.js";
 import type {
   MCPMessage,
   MCPResponse,
   TransportConfig,
-} from "@transports/TransportAdapter.js";
-import WebSocket, { WebSocketServer } from "ws";
+} from "./TransportAdapter.js";
 
 /**
  * WebSocket 连接状态枚举
@@ -144,7 +142,7 @@ export class WebSocketAdapter extends TransportAdapter {
    * 初始化 WebSocket 适配器
    */
   async initialize(): Promise<void> {
-    this.logger.info(`初始化 WebSocket 适配器 (${this.mode} 模式)`);
+    console.info(`初始化 WebSocket 适配器 (${this.mode} 模式)`);
 
     try {
       this.setState(ConnectionState.CONNECTING);
@@ -156,9 +154,9 @@ export class WebSocketAdapter extends TransportAdapter {
         await this.initializeServer();
       }
 
-      this.logger.info("WebSocket 适配器初始化完成");
+      console.info("WebSocket 适配器初始化完成");
     } catch (error) {
-      this.logger.error("WebSocket 适配器初始化失败", error);
+      console.error("WebSocket 适配器初始化失败", error);
       this.setState(ConnectionState.ERROR);
       this.wsState = WebSocketState.FAILED;
       throw error;
@@ -225,11 +223,11 @@ export class WebSocketAdapter extends TransportAdapter {
         });
 
         this.wsServer.on("error", (error) => {
-          this.logger.error("WebSocket 服务器错误", error);
+          console.error("WebSocket 服务器错误", error);
           reject(error);
         });
 
-        this.logger.info(`WebSocket 服务器监听端口 ${port}`);
+        console.info(`WebSocket 服务器监听端口 ${port}`);
         resolve();
       } catch (error) {
         reject(error);
@@ -242,19 +240,19 @@ export class WebSocketAdapter extends TransportAdapter {
    */
   async start(): Promise<void> {
     if (this.wsState === WebSocketState.CONNECTED) {
-      this.logger.warn("WebSocket 适配器已启动");
+      console.warn("WebSocket 适配器已启动");
       return;
     }
 
-    this.logger.info("启动 WebSocket 适配器");
+    console.info("启动 WebSocket 适配器");
 
     try {
       this.setState(ConnectionState.CONNECTED);
       this.wsState = WebSocketState.CONNECTED;
 
-      this.logger.info("WebSocket 适配器启动成功");
+      console.info("WebSocket 适配器启动成功");
     } catch (error) {
-      this.logger.error("启动 WebSocket 适配器失败", error);
+      console.error("启动 WebSocket 适配器失败", error);
       this.setState(ConnectionState.ERROR);
       this.wsState = WebSocketState.FAILED;
       throw error;
@@ -265,7 +263,7 @@ export class WebSocketAdapter extends TransportAdapter {
    * 停止 WebSocket 适配器
    */
   async stop(): Promise<void> {
-    this.logger.info("停止 WebSocket 适配器");
+    console.info("停止 WebSocket 适配器");
 
     try {
       // 标记为手动断开
@@ -307,9 +305,9 @@ export class WebSocketAdapter extends TransportAdapter {
       this.setState(ConnectionState.DISCONNECTED);
       this.wsState = WebSocketState.DISCONNECTED;
 
-      this.logger.info("WebSocket 适配器已停止");
+      console.info("WebSocket 适配器已停止");
     } catch (error) {
-      this.logger.error("停止 WebSocket 适配器时出错", error);
+      console.error("停止 WebSocket 适配器时出错", error);
       throw error;
     }
   }
@@ -351,12 +349,12 @@ export class WebSocketAdapter extends TransportAdapter {
         }
       }
 
-      this.logger.debug("消息已发送", {
+      console.debug("消息已发送", {
         messageId: message.id,
         method: "method" in message ? message.method : "response",
       });
     } catch (error) {
-      this.logger.error("发送消息失败", error);
+      console.error("发送消息失败", error);
       throw error;
     }
   }
@@ -420,13 +418,13 @@ export class WebSocketAdapter extends TransportAdapter {
         item.resolve();
       }
 
-      this.logger.debug(`批处理发送 ${batch.length} 条消息`);
+      console.debug(`批处理发送 ${batch.length} 条消息`);
     } catch (error) {
       // 拒绝所有 Promise
       for (const item of batch) {
         item.reject(error as Error);
       }
-      this.logger.error("批处理发送失败", error);
+      console.error("批处理发送失败", error);
     }
   }
 
@@ -458,7 +456,7 @@ export class WebSocketAdapter extends TransportAdapter {
         }
       }
     } catch (error) {
-      this.logger.error("处理接收数据失败", error);
+      console.error("处理接收数据失败", error);
     }
   }
 
@@ -480,7 +478,7 @@ export class WebSocketAdapter extends TransportAdapter {
     this.reconnectState.nextInterval = this.reconnectOptions.initialInterval;
     this.reconnectState.lastError = null;
 
-    this.logger.info("WebSocket 连接已建立");
+    console.info("WebSocket 连接已建立");
   }
 
   /**
@@ -494,7 +492,7 @@ export class WebSocketAdapter extends TransportAdapter {
     }
 
     this.reconnectState.lastError = error;
-    this.logger.error("WebSocket 连接错误", error);
+    console.error("WebSocket 连接错误", error);
 
     this.setState(ConnectionState.ERROR);
     this.wsState = WebSocketState.FAILED;
@@ -510,7 +508,7 @@ export class WebSocketAdapter extends TransportAdapter {
     this.setState(ConnectionState.DISCONNECTED);
     this.wsState = WebSocketState.DISCONNECTED;
 
-    this.logger.info(`WebSocket 连接已关闭 (代码: ${code}, 原因: ${reason})`);
+    console.info(`WebSocket 连接已关闭 (代码: ${code}, 原因: ${reason})`);
 
     // 如果是手动断开，不进行重连
     if (this.reconnectState.isManualDisconnect) {
@@ -522,7 +520,7 @@ export class WebSocketAdapter extends TransportAdapter {
       this.scheduleReconnect();
     } else {
       this.wsState = WebSocketState.FAILED;
-      this.logger.warn(
+      console.warn(
         `已达到最大重连次数 (${this.reconnectOptions.maxAttempts})，停止重连`
       );
     }
@@ -531,10 +529,10 @@ export class WebSocketAdapter extends TransportAdapter {
   /**
    * 处理新连接（服务器模式）
    */
-  private handleNewConnection(ws: WebSocket, request: any): void {
+  private handleNewConnection(ws: WebSocket, request: IncomingMessage): void {
     // 检查连接数限制
     if (this.connections.size >= this.maxConnections) {
-      this.logger.warn("达到最大连接数限制，拒绝新连接");
+      console.warn("达到最大连接数限制，拒绝新连接");
       ws.close(1013, "服务器繁忙");
       return;
     }
@@ -542,7 +540,7 @@ export class WebSocketAdapter extends TransportAdapter {
     const connectionId = `${this.getConnectionId()}_${this.connections.size}`;
     this.connections.set(connectionId, ws);
 
-    this.logger.info(`新 WebSocket 连接: ${connectionId}`);
+    console.info(`新 WebSocket 连接: ${connectionId}`);
 
     ws.on("message", (data) => {
       this.handleIncomingData(data);
@@ -550,11 +548,11 @@ export class WebSocketAdapter extends TransportAdapter {
 
     ws.on("close", () => {
       this.connections.delete(connectionId);
-      this.logger.info(`WebSocket 连接已断开: ${connectionId}`);
+      console.info(`WebSocket 连接已断开: ${connectionId}`);
     });
 
     ws.on("error", (error) => {
-      this.logger.error(`WebSocket 连接错误 ${connectionId}:`, error);
+      console.error(`WebSocket 连接错误 ${connectionId}:`, error);
       this.connections.delete(connectionId);
     });
   }
@@ -595,7 +593,7 @@ export class WebSocketAdapter extends TransportAdapter {
       interval += Math.random() * 1000;
     }
 
-    this.logger.info(
+    console.info(
       `安排重连 (第 ${this.reconnectState.attempts} 次，${interval}ms 后)`
     );
 
@@ -603,7 +601,7 @@ export class WebSocketAdapter extends TransportAdapter {
       try {
         await this.initializeClient();
       } catch (error) {
-        this.logger.error("重连失败", error);
+        console.error("重连失败", error);
 
         if (this.shouldReconnect()) {
           this.scheduleReconnect();
@@ -672,7 +670,7 @@ export class WebSocketAdapter extends TransportAdapter {
       throw new Error("只有客户端模式支持重连");
     }
 
-    this.logger.info("强制重连");
+    console.info("强制重连");
 
     // 重置重连状态
     this.reconnectState.attempts = 0;

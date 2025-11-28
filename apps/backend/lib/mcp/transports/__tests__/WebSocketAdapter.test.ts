@@ -7,23 +7,49 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { ConnectionState } from "../TransportAdapter.js";
 import type { WebSocketConfig } from "../WebSocketAdapter.js";
 import { WebSocketAdapter, WebSocketState } from "../WebSocketAdapter.js";
-
-// Mock ConfigManager 模块
-vi.mock("../../configManager.js", () => ({
+// Mock ConfigManager 模块，使用项目标准路径别名
+vi.mock("@root/configManager.js", () => ({
   configManager: {
     configExists: vi.fn().mockReturnValue(true),
     getConfig: vi.fn().mockReturnValue({
       mcpEndpoint: "ws://localhost:8080",
-      mcpServers: {},
+      mcpServers: {
+        "test-service": {
+          command: "node",
+          args: ["test-server.js"],
+          env: {},
+        },
+      },
+      modelscope: {
+        apiKey: "test-api-key",
+        baseUrl: "https://test.modelscope.com",
+      },
       connection: {
-        heartbeatInterval: 30000,
-        heartbeatTimeout: 10000,
-        reconnectInterval: 5000,
+        heartbeat: {
+          enabled: true,
+          interval: 1000,
+          timeout: 5000,
+        },
+        retry: {
+          maxAttempts: 3,
+          delay: 1000,
+        },
       },
-      toolCallLog: {
-        maxRecords: 100,
+      webUI: {
+        enabled: true,
+        port: 3000,
       },
-    } as any),
+    }),
+    setConfig: vi.fn().mockResolvedValue(undefined),
+    validateConfig: vi.fn().mockReturnValue({ valid: true }),
+    getMcpEndpoints: vi.fn().mockReturnValue(["ws://localhost:8080"]),
+    getServiceConfig: vi.fn().mockReturnValue({
+      command: "node",
+      args: ["test-server.js"],
+      env: {},
+    }),
+    watchConfig: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+    // 添加 MCPServiceManager 构造函数需要的方法
     getToolCallLogConfig: vi.fn().mockReturnValue({ maxRecords: 100 }),
     getConfigDir: vi.fn().mockReturnValue("/tmp/xiaozhi-test-websocket"),
     getMcpServerConfig: vi.fn().mockReturnValue({}),
@@ -41,15 +67,34 @@ vi.mock("../../configManager.js", () => ({
   },
 }));
 
-// Mock Logger 模块
-vi.mock("../../Logger.js", () => ({
+// Mock Logger 模块，使用项目标准路径别名
+vi.mock("@root/Logger.js", () => ({
   logger: {
-    info: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
     debug: vi.fn(),
-    withTag: vi.fn().mockReturnThis(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    success: vi.fn(),
+    withTag: vi.fn().mockReturnValue({
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      success: vi.fn(),
+    }),
   },
+}));
+
+// Mock MCPMessageHandler
+vi.mock("@core/MCPMessageHandler.js", () => ({
+  MCPMessageHandler: vi.fn().mockImplementation(() => ({
+    handleRequest: vi.fn().mockResolvedValue({
+      jsonrpc: "2.0",
+      id: "test-id",
+      result: { success: true },
+    }),
+    initialize: vi.fn().mockResolvedValue(undefined),
+  })),
 }));
 
 import { MCPServiceManager } from "@/lib/mcp";

@@ -98,13 +98,10 @@ describe("MCPClientAdapter", () => {
     });
 
     it("应该使用正确的配置创建 MCPService", () => {
-      expect(MCPService).toHaveBeenCalledWith(
-        {
-          ...testConfig,
-          name: "test-service",
-        },
-        expect.any(Object) // 匹配 logger 参数
-      );
+      expect(MCPService).toHaveBeenCalledWith({
+        ...testConfig,
+        name: "test-service",
+      });
     });
   });
 

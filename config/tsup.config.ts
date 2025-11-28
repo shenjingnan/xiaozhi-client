@@ -1,5 +1,5 @@
-import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from "fs";
-import { join } from "path";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { defineConfig } from "tsup";
 
 /**
@@ -48,6 +48,12 @@ export default defineConfig({
   bundle: true,
   keepNames: true,
   platform: "node",
+  esbuildOptions: (options) => {
+    // 在生产环境移除 console 和 debugger
+    if (process.env.NODE_ENV === "production") {
+      options.drop = ["console", "debugger"];
+    }
+  },
   outExtension() {
     return {
       js: ".js",
