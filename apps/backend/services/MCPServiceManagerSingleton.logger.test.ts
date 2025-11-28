@@ -51,7 +51,7 @@ describe("MCPServiceManagerSingleton - Logger 注入功能", () => {
     it("应该支持带 logger 参数的 getInstance 调用", async () => {
       // Act & Assert - 不应该抛出异常
       await expect(
-        MCPServiceManagerSingleton.getInstance(mockLogger)
+        MCPServiceManagerSingleton.getInstance()
       ).resolves.toBeDefined();
       expect(MCPServiceManagerSingleton.isInitialized()).toBe(true);
     });
@@ -70,7 +70,7 @@ describe("MCPServiceManagerSingleton - Logger 注入功能", () => {
 
       // Act & Assert - 应该成功更新 logger（不抛出异常）
       await expect(
-        MCPServiceManagerSingleton.getInstance(mockLogger)
+        MCPServiceManagerSingleton.getInstance()
       ).resolves.toBeDefined();
     });
   });
@@ -78,7 +78,7 @@ describe("MCPServiceManagerSingleton - Logger 注入功能", () => {
   describe("向后兼容性测试", () => {
     it("应该保持所有现有方法的正常工作", async () => {
       // Arrange
-      await MCPServiceManagerSingleton.getInstance(mockLogger);
+      await MCPServiceManagerSingleton.getInstance();
 
       // Act & Assert - 所有现有方法应该正常工作
       expect(() => {
@@ -107,7 +107,7 @@ describe("MCPServiceManagerSingleton - Logger 注入功能", () => {
   describe("状态管理测试", () => {
     it("应该在清理后正确重置状态", async () => {
       // Arrange
-      await MCPServiceManagerSingleton.getInstance(mockLogger);
+      await MCPServiceManagerSingleton.getInstance();
       expect(MCPServiceManagerSingleton.isInitialized()).toBe(true);
 
       // Act
@@ -119,12 +119,11 @@ describe("MCPServiceManagerSingleton - Logger 注入功能", () => {
 
     it("应该在重置后允许重新初始化", async () => {
       // Arrange
-      await MCPServiceManagerSingleton.getInstance(mockLogger);
+      await MCPServiceManagerSingleton.getInstance();
       MCPServiceManagerSingleton.reset();
 
       // Act
-      const newInstance =
-        await MCPServiceManagerSingleton.getInstance(mockLogger);
+      const newInstance = await MCPServiceManagerSingleton.getInstance();
 
       // Assert
       expect(newInstance).toBeDefined();

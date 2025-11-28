@@ -5,7 +5,6 @@
 
 import { MCPServiceManager } from "@/lib/mcp";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { Logger } from "@root/Logger.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies
@@ -467,10 +466,7 @@ describe("MCPServiceManager - Logger 注入功能", () => {
     it("应该支持构造函数注入 logger", () => {
       // Act & Assert - 不应该抛出异常
       expect(() => {
-        serviceManager = new MCPServiceManager(
-          undefined,
-          mockLogger as unknown as Logger
-        );
+        serviceManager = new MCPServiceManager();
       }).not.toThrow();
     });
 
@@ -481,43 +477,7 @@ describe("MCPServiceManager - Logger 注入功能", () => {
       }).not.toThrow();
     });
 
-    it("应该支持 setLogger 方法", () => {
-      // Arrange
-      serviceManager = new MCPServiceManager();
-
-      // Act & Assert - 不应该抛出异常
-      expect(() => {
-        serviceManager.setLogger(mockLogger as unknown as Logger);
-      }).not.toThrow();
-    });
-
-    it("应该支持 getLogger 方法", () => {
-      // Arrange
-      serviceManager = new MCPServiceManager(
-        undefined,
-        mockLogger as unknown as Logger
-      );
-
-      // Act & Assert - 不应该抛出异常
-      expect(() => {
-        const logger = serviceManager.getLogger();
-        expect(logger).toBeDefined();
-      }).not.toThrow();
-    });
-
-    it("应该正确注入和使用 logger", () => {
-      // Arrange
-      serviceManager = new MCPServiceManager(
-        undefined,
-        mockLogger as unknown as Logger
-      );
-
-      // Act & Assert - logger 应该被正确注入
-      expect(() => {
-        const currentLogger = serviceManager.getLogger();
-        expect(currentLogger).toBeDefined();
-      }).not.toThrow();
-    });
+    // Logger 相关方法已移除，不再需要测试
   });
 
   describe("向后兼容性测试", () => {
