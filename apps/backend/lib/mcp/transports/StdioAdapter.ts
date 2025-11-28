@@ -5,15 +5,12 @@
  */
 
 import type { MCPMessageHandler } from "@core/MCPMessageHandler.js";
-import {
-  ConnectionState,
-  TransportAdapter,
-} from "@transports/TransportAdapter.js";
+import { ConnectionState, TransportAdapter } from "./TransportAdapter.js";
 import type {
   MCPMessage,
   MCPResponse,
   TransportConfig,
-} from "@transports/TransportAdapter.js";
+} from "./TransportAdapter.js";
 
 /**
  * Stdio 适配器配置

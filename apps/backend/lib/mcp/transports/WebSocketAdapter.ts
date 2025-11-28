@@ -10,16 +10,13 @@
  */
 
 import type { MCPMessageHandler } from "@core/MCPMessageHandler.js";
-import {
-  ConnectionState,
-  TransportAdapter,
-} from "@transports/TransportAdapter.js";
+import WebSocket, { WebSocketServer } from "ws";
+import { ConnectionState, TransportAdapter } from "./TransportAdapter.js";
 import type {
   MCPMessage,
   MCPResponse,
   TransportConfig,
-} from "@transports/TransportAdapter.js";
-import WebSocket, { WebSocketServer } from "ws";
+} from "./TransportAdapter.js";
 
 /**
  * WebSocket 连接状态枚举

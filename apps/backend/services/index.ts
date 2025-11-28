@@ -34,7 +34,20 @@ export {
   type ToolCallResult,
   MCPService,
 } from "./MCPService.js";
-export { TransportFactory } from "./TransportFactory.js";
+export { TransportFactory } from "@/lib/mcp/transport-factory.js";
+
+// 传输适配器重新导出（向后兼容）
+export {
+  TransportAdapter,
+  StdioAdapter,
+  WebSocketAdapter,
+  type MCPMessage,
+  type MCPResponse,
+  type MCPError,
+  type TransportConfig,
+  type StdioConfig,
+  type WebSocketConfig,
+} from "@/lib/mcp/transports/index.js";
 
 // CustomMCPHandler 导出 - 避免冲突的 ToolCallResult
 export { CustomMCPHandler } from "./CustomMCPHandler.js";

@@ -5,9 +5,9 @@ import { Logger } from "@root/Logger.js";
 // 导入 mock 后的函数
 import type { EventBus } from "@root/services/EventBus.js";
 import { getEventBus } from "@root/services/EventBus.js";
-import { TransportFactory } from "@root/services/TransportFactory.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MCPService } from "../connection";
+import { TransportFactory } from "../transport-factory.js";
 import type { MCPServiceConfig } from "../types";
 
 // Mock 接口定义 - 使用简单的接口避免复杂类型冲突
@@ -50,7 +50,7 @@ type MockTransport = Record<string, never>;
 vi.mock("@modelcontextprotocol/sdk/client/index.js");
 vi.mock("@modelcontextprotocol/sdk/client/stdio.js");
 vi.mock("@root/Logger.js");
-vi.mock("@root/services/TransportFactory.js");
+vi.mock("../transport-factory.js");
 vi.mock("@root/services/EventBus.js", () => ({
   getEventBus: vi.fn(),
 }));

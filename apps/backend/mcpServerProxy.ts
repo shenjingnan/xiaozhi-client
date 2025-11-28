@@ -9,7 +9,10 @@
 import { dirname } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-import { ServerMode, createServer } from "@core/ServerFactory.js";
+import { MCPServiceManager } from "@/lib/mcp";
+import { StdioAdapter } from "@/lib/mcp/transports";
+// import { ServerMode, createServer } from "@core/ServerFactory.js";
+// TODO: ServerFactory重构中，暂时禁用
 import { logger } from "@root/Logger.js";
 import { configManager } from "@root/configManager.js";
 
@@ -35,15 +38,15 @@ async function main(): Promise<void> {
     await loadConfiguration();
 
     // 创建 Stdio 模式的服务管理器
-    const serviceManager = await createServer({
-      mode: ServerMode.STDIO,
-      stdioConfig: {
-        name: "mcp-proxy",
-        encoding: "utf8",
-      },
-    });
+    const serviceManager = new MCPServiceManager();
+    await serviceManager.start();
 
-    // 服务管理器已经在 createServer 中启动，无需再次启动
+    // 注册 Stdio 适配器
+    const stdioAdapter = new StdioAdapter(serviceManager.getMessageHandler(), {
+      name: "mcp-proxy",
+      encoding: "utf8",
+    });
+    await serviceManager.registerTransport("stdio", stdioAdapter);
 
     logger.info("MCP 服务器代理启动成功");
 

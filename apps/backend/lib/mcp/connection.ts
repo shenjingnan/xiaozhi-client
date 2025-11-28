@@ -2,7 +2,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { getEventBus } from "@root/services/EventBus.js";
-import { TransportFactory } from "@root/services/TransportFactory.js";
+import { TransportFactory } from "./transport-factory.js";
 import type {
   MCPServerTransport,
   MCPServiceConfig,

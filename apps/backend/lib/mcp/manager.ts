@@ -30,9 +30,8 @@ import { getEventBus } from "@root/services/EventBus.js";
 import { MCPCacheManager } from "@root/services/MCPCacheManager.js";
 import { ToolSyncManager } from "@root/services/ToolSyncManager.js";
 import type { MCPMessage } from "@root/types/mcp.js";
-import type { TransportAdapter } from "@transports/TransportAdapter.js";
-import { ConnectionState } from "@transports/TransportAdapter.js";
 import { ToolCallLogger } from "@utils/ToolCallLogger.js";
+import type { ConnectionState, TransportAdapter } from "./transports/index.js";
 
 export class MCPServiceManager extends EventEmitter {
   private services: Map<string, MCPService> = new Map();

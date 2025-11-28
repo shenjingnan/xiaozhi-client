@@ -8,7 +8,7 @@ import { WebSocketServer } from "ws";
 import {
   createMockConfigManager,
   createMockLogger,
-} from "../../__tests__/index.js";
+} from "../../../../__tests__/index.js";
 import type { WebSocketConfig } from "../WebSocketAdapter.js";
 import { WebSocketAdapter } from "../WebSocketAdapter.js";
 
