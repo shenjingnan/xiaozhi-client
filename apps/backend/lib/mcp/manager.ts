@@ -722,7 +722,11 @@ export class MCPServiceManager extends EventEmitter {
           toolInfo.originalName,
           arguments_ || {}
         );
-        console.debug(`[MCPManager] 工具 ${toolName} 调用成功，结果:`, result);
+
+        console.debug("[MCPManager] 工具调用成功", {
+          toolName: toolName,
+          result: result,
+        });
 
         // 异步更新工具调用统计（成功调用）
         this.updateToolStatsSafe(
@@ -837,10 +841,10 @@ export class MCPServiceManager extends EventEmitter {
           );
         }
 
-        console.debug(`[MCPManager] 已更新工具 ${toolName} 的失败调用统计信息`);
+        console.debug("[MCPManager] 已更新工具的失败调用统计信息", { toolName });
       }
     } catch (error) {
-      console.error(`[MCPManager] 更新工具 ${toolName} 统计信息失败:`, error);
+      console.error("[MCPManager] 更新工具统计信息失败:", { toolName, error});
       throw error;
     }
   }
@@ -868,7 +872,7 @@ export class MCPServiceManager extends EventEmitter {
       );
     } catch (error) {
       const action = isSuccess ? "统计信息" : "失败统计信息";
-      console.warn(`[MCPManager] 更新工具 ${toolName} ${action}失败:`, error);
+      console.warn("[MCPManager] 更新工具统计信息失败:", { toolName, action, error });
       // 统计更新失败不应该影响主流程，所以这里只记录警告
     }
   }
