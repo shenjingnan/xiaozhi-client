@@ -18,7 +18,7 @@ import type {
   UnifiedServerConfig,
   UnifiedServerStatus,
 } from "@/lib/mcp/types";
-import { MCPTransportType } from "@/lib/mcp/types";
+import { isModelScopeURL } from "@adapters/ConfigAdapter";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { MCPToolConfig } from "@root/configManager.js";
 import { configManager } from "@root/configManager.js";
@@ -1207,33 +1207,64 @@ export class MCPServiceManager extends EventEmitter {
   }
 
   /**
+   * 检查是否为 ModelScope 服务
+   * 统一使用 ConfigAdapter 的 isModelScopeURL 函数
+   */
+  private isModelScopeService(config: MCPServiceConfig): boolean {
+    return config.url ? isModelScopeURL(config.url) : false;
+  }
+
+  /**
+   * 处理 ModelScope 服务认证
+   * 智能检查现有认证信息，按优先级处理
+   */
+  private handleModelScopeAuth(
+    originalConfig: MCPServiceConfig,
+    enhancedConfig: MCPServiceConfig
+  ): void {
+    // 1. 检查是否已有 Authorization header
+    const existingAuthHeader = originalConfig.headers?.Authorization;
+
+    if (existingAuthHeader) {
+      // 已有认证信息，直接使用
+      console.info(
+        `[MCPManager] 服务 ${originalConfig.name} 使用已有的 Authorization header`
+      );
+      return;
+    }
+
+    // 2. 检查全局 ModelScope API Key
+    const modelScopeApiKey = configManager.getModelScopeApiKey();
+
+    if (modelScopeApiKey) {
+      // 注入全局 API Key
+      enhancedConfig.apiKey = modelScopeApiKey;
+      console.info(
+        `[MCPManager] 为 ${originalConfig.name} 服务添加 ModelScope API Key`
+      );
+      return;
+    }
+
+    // 3. 无法获取认证信息，提供详细错误信息
+    const serviceUrl = originalConfig.url || "未知";
+    const serviceName = originalConfig.name || "未知";
+
+    throw new Error(
+      `ModelScope 服务 "${serviceName}" 需要认证信息，但未找到有效的认证配置。服务 URL: ${serviceUrl}请选择以下任一方式配置认证：1. 在服务配置中添加 headers.Authorization2. 或者在全局配置中设置 modelscope.apiKey3. 或者设置环境变量 MODELSCOPE_API_TOKEN获取 ModelScope API Key: https://modelscope.cn/my?myInfo=true`
+    );
+  }
+
+  /**
    * 增强服务配置
-   * 根据服务类型添加必要的全局配置
+   * 根据服务类型添加必要的全局配置，智能处理认证信息
    */
   private enhanceServiceConfig(config: MCPServiceConfig): MCPServiceConfig {
     const enhancedConfig = { ...config };
 
     try {
-      // 处理 ModelScope SSE 服务
-      if (
-        config.type === MCPTransportType.SSE &&
-        config.url &&
-        config.url.includes("modelscope")
-      ) {
-        const modelScopeApiKey = configManager.getModelScopeApiKey();
-        if (modelScopeApiKey) {
-          enhancedConfig.apiKey = modelScopeApiKey;
-          console.info(
-            `[MCPManager] 为 ${config.name} 服务添加 ModelScope API Key`
-          );
-        } else {
-          console.warn(
-            `[MCPManager] ${config.name} 服务需要 ModelScope API Key，但未在配置中找到`
-          );
-          throw new Error(
-            `ModelScope SSE 服务 ${config.name} 需要 API Key，请在配置文件中设置 modelscope.apiKey`
-          );
-        }
+      // 处理 ModelScope 服务（智能认证检查）
+      if (this.isModelScopeService(config)) {
+        this.handleModelScopeAuth(config, enhancedConfig);
       }
 
       return enhancedConfig;

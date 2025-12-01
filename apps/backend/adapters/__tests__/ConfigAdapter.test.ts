@@ -247,7 +247,7 @@ describe("ConfigAdapter", () => {
           type: "sse",
           url: "https://example.com/sse",
           headers: {
-            "Authorization": "Bearer token123",
+            Authorization: "Bearer token123",
             "X-Custom-Header": "test-value",
           },
         };
@@ -258,7 +258,7 @@ describe("ConfigAdapter", () => {
         expect(result.type).toBe(MCPTransportType.SSE);
         expect(result.url).toBe("https://example.com/sse");
         expect(result.headers).toEqual({
-          "Authorization": "Bearer token123",
+          Authorization: "Bearer token123",
           "X-Custom-Header": "test-value",
         });
       });

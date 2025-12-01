@@ -312,7 +312,7 @@ function isStreamableHTTPConfig(
 /**
  * 检查是否为 ModelScope URL
  */
-function isModelScopeURL(url: string): boolean {
+export function isModelScopeURL(url: string): boolean {
   return url.includes("modelscope.net") || url.includes("modelscope.cn");
 }
 

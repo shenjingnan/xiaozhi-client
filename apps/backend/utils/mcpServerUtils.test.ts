@@ -191,7 +191,7 @@ describe("MCP Server Utils - Server Side", () => {
         type: "sse" as const,
         url: "https://example.com/sse",
         headers: {
-          "Authorization": "Bearer token123",
+          Authorization: "Bearer token123",
           "Content-Type": "application/json",
         },
       };
