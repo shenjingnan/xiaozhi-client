@@ -4,7 +4,7 @@
  * 从 mcpServerProxy.ts 中抽取的 stdio 处理逻辑
  */
 
-import type { MCPMessageHandler } from "../MCPMessageHandler.js";
+import type { MCPMessageHandler } from "@/lib/mcp";
 import { ConnectionState, TransportAdapter } from "./TransportAdapter.js";
 import type {
   MCPMessage,

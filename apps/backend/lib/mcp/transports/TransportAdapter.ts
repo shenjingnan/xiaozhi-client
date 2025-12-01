@@ -5,7 +5,7 @@
  */
 
 import type { MCPError, MCPMessage, MCPResponse } from "@root/types/mcp.js";
-import type { MCPMessageHandler } from "../MCPMessageHandler.js";
+import type { MCPMessageHandler } from "@/lib/mcp";
 
 // 重新导出接口以保持向后兼容
 export type { MCPMessage, MCPResponse, MCPError };
