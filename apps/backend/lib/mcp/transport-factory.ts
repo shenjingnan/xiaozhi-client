@@ -138,7 +138,12 @@ function createSSEOptions(config: MCPServiceConfig): SSEClientTransportOptions {
 function createModelScopeSSEOptions(
   config: MCPServiceConfig
 ): SSEClientTransportOptions {
-  const token = config.apiKey; // 已在调用方验证过
+  // 添加防御性空值检查
+  if (!config.apiKey) {
+    throw new Error("ModelScope SSE transport 需要 apiKey 配置");
+  }
+
+  const token = config.apiKey;
 
   // 如果有自定义SSE选项，使用它们
   if (config.customSSEOptions) {
