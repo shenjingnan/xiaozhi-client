@@ -183,6 +183,7 @@ function convertSSEConfig(
     type: inferredType,
     url: config.url,
     timeout: 30000,
+    headers: config.headers,
   };
 
   // 如果是 ModelScope 服务，添加特殊配置
@@ -219,6 +220,7 @@ function convertStreamableHTTPConfig(
     type: MCPTransportType.STREAMABLE_HTTP,
     url,
     timeout: 30000,
+    headers: config.headers,
   };
 }
 

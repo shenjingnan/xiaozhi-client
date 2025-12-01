@@ -184,4 +184,95 @@ describe("MCP Server Utils - Server Side", () => {
       expect(result.error).toContain("配置必须是一个对象");
     });
   });
+
+  describe("headers 字段验证", () => {
+    it("应该验证带有合法 headers 的 SSE 配置", () => {
+      const config = {
+        type: "sse" as const,
+        url: "https://example.com/sse",
+        headers: {
+          "Authorization": "Bearer token123",
+          "Content-Type": "application/json",
+        },
+      };
+
+      const result = validateMcpServerConfig("test-service", config);
+      expect(result.valid).toBe(true);
+      expect(result.error).toBeUndefined();
+    });
+
+    it("应该验证带有合法 headers 的 Streamable-HTTP 配置", () => {
+      const config = {
+        type: "streamable-http" as const,
+        url: "https://example.com/mcp",
+        headers: {
+          "X-API-Key": "test-key-456",
+          "User-Agent": "xiaozhi-client/1.0.0",
+        },
+      };
+
+      const result = validateMcpServerConfig("test-service", config);
+      expect(result.valid).toBe(true);
+      expect(result.error).toBeUndefined();
+    });
+
+    it("应该拒绝带有非法 headers 的 SSE 配置", () => {
+      const config = {
+        type: "sse" as const,
+        url: "https://example.com/sse",
+        headers: "invalid-headers", // 应该是对象
+      };
+
+      const result = validateMcpServerConfig("test-service", config);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("headers 字段必须是对象");
+    });
+
+    it("应该拒绝带有非法 headers 的 Streamable-HTTP 配置", () => {
+      const config = {
+        type: "streamable-http" as const,
+        url: "https://example.com/mcp",
+        headers: 12345, // 应该是对象
+      };
+
+      const result = validateMcpServerConfig("test-service", config);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("headers 字段必须是对象");
+    });
+
+    it("应该允许没有 headers 字段的配置", () => {
+      const sseConfig = {
+        type: "sse" as const,
+        url: "https://example.com/sse",
+        // 没有 headers 字段
+      };
+
+      const httpConfig = {
+        type: "streamable-http" as const,
+        url: "https://example.com/mcp",
+        // 没有 headers 字段
+      };
+
+      const sseResult = validateMcpServerConfig("sse-service", sseConfig);
+      const httpResult = validateMcpServerConfig("http-service", httpConfig);
+
+      expect(sseResult.valid).toBe(true);
+      expect(sseResult.error).toBeUndefined();
+
+      expect(httpResult.valid).toBe(true);
+      expect(httpResult.error).toBeUndefined();
+    });
+
+    it("应该允许空的 headers 对象", () => {
+      const config = {
+        type: "sse" as const,
+        url: "https://example.com/sse",
+        headers: {}, // 空对象应该被允许
+      };
+
+      const result = validateMcpServerConfig("test-service", config);
+      expect(result.valid).toBe(true);
+      expect(result.error).toBeUndefined();
+    });
+  });
 });

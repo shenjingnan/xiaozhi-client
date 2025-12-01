@@ -31,12 +31,14 @@ export interface LocalMCPServerConfig {
 export interface SSEMCPServerConfig {
   type: "sse";
   url: string;
+  headers?: Record<string, string>;
 }
 
 // Streamable HTTP MCP 服务配置
 export interface StreamableHTTPMCPServerConfig {
   type?: "streamable-http"; // 可选，因为默认就是 streamable-http
   url: string;
+  headers?: Record<string, string>;
 }
 
 // 统一的 MCP 服务配置

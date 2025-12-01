@@ -241,6 +241,51 @@ describe("ConfigAdapter", () => {
           ConfigValidationError
         );
       });
+
+      it("应该正确传递 SSE 配置中的 headers", () => {
+        const legacyConfig: SSEMCPServerConfig = {
+          type: "sse",
+          url: "https://example.com/sse",
+          headers: {
+            "Authorization": "Bearer token123",
+            "X-Custom-Header": "test-value",
+          },
+        };
+
+        const result = convertLegacyToNew("sse-with-headers", legacyConfig);
+
+        expect(result.name).toBe("sse-with-headers");
+        expect(result.type).toBe(MCPTransportType.SSE);
+        expect(result.url).toBe("https://example.com/sse");
+        expect(result.headers).toEqual({
+          "Authorization": "Bearer token123",
+          "X-Custom-Header": "test-value",
+        });
+      });
+
+      it("应该处理 SSE 配置中没有 headers 的情况", () => {
+        const legacyConfig: SSEMCPServerConfig = {
+          type: "sse",
+          url: "https://example.com/sse",
+          // 没有 headers 字段
+        };
+
+        const result = convertLegacyToNew("sse-no-headers", legacyConfig);
+
+        expect(result.headers).toBeUndefined();
+      });
+
+      it("应该处理 SSE 配置中空的 headers", () => {
+        const legacyConfig: SSEMCPServerConfig = {
+          type: "sse",
+          url: "https://example.com/sse",
+          headers: {}, // 空对象
+        };
+
+        const result = convertLegacyToNew("sse-empty-headers", legacyConfig);
+
+        expect(result.headers).toEqual({});
+      });
     });
 
     describe("Streamable HTTP 配置转换", () => {
@@ -280,6 +325,53 @@ describe("ConfigAdapter", () => {
         expect(() => convertLegacyToNew("test", legacyConfig)).toThrow(
           ConfigValidationError
         );
+      });
+
+      it("应该正确传递 Streamable HTTP 配置中的 headers", () => {
+        const legacyConfig: StreamableHTTPMCPServerConfig = {
+          type: "streamable-http",
+          url: "https://api.example.com/mcp",
+          headers: {
+            "X-API-Key": "test-key-456",
+            "Content-Type": "application/json",
+            "User-Agent": "xiaozhi-client/1.0.0",
+          },
+        };
+
+        const result = convertLegacyToNew("http-with-headers", legacyConfig);
+
+        expect(result.name).toBe("http-with-headers");
+        expect(result.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+        expect(result.url).toBe("https://api.example.com/mcp");
+        expect(result.headers).toEqual({
+          "X-API-Key": "test-key-456",
+          "Content-Type": "application/json",
+          "User-Agent": "xiaozhi-client/1.0.0",
+        });
+      });
+
+      it("应该处理 Streamable HTTP 配置中没有 headers 的情况", () => {
+        const legacyConfig: StreamableHTTPMCPServerConfig = {
+          type: "streamable-http",
+          url: "https://api.example.com/mcp",
+          // 没有 headers 字段
+        };
+
+        const result = convertLegacyToNew("http-no-headers", legacyConfig);
+
+        expect(result.headers).toBeUndefined();
+      });
+
+      it("应该处理 Streamable HTTP 配置中空的 headers", () => {
+        const legacyConfig: StreamableHTTPMCPServerConfig = {
+          type: "streamable-http",
+          url: "https://api.example.com/mcp",
+          headers: {}, // 空对象
+        };
+
+        const result = convertLegacyToNew("http-empty-headers", legacyConfig);
+
+        expect(result.headers).toEqual({});
       });
     });
 

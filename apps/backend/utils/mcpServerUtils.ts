@@ -16,11 +16,13 @@ export interface LocalMCPServerConfig {
 export interface SSEMCPServerConfig {
   type: "sse";
   url: string;
+  headers?: Record<string, string>;
 }
 
 export interface StreamableHTTPMCPServerConfig {
   type?: "streamable-http"; // 可选，因为默认就是 streamable-http
   url: string;
+  headers?: Record<string, string>;
 }
 
 export type MCPServerConfig =
@@ -195,6 +197,12 @@ export function validateMcpServerConfig(
             error: `服务 "${serverName}" 缺少必需的 url 字段或字段类型不正确`,
           };
         }
+        if (serverConfig.headers && typeof serverConfig.headers !== "object") {
+          return {
+            valid: false,
+            error: `服务 "${serverName}" 的 headers 字段必须是对象`,
+          };
+        }
         break;
 
       case "streamable-http":
@@ -208,6 +216,12 @@ export function validateMcpServerConfig(
           return {
             valid: false,
             error: `服务 "${serverName}" 的 type 字段如果存在，必须是 "streamable-http"`,
+          };
+        }
+        if (serverConfig.headers && typeof serverConfig.headers !== "object") {
+          return {
+            valid: false,
+            error: `服务 "${serverName}" 的 headers 字段必须是对象`,
           };
         }
         break;
