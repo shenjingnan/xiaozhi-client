@@ -7,6 +7,7 @@ import { MCPService } from "@/lib/mcp";
 import type { MCPServiceConfig, ToolCallResult } from "@/lib/mcp/types";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { logger as globalLogger } from "@root/Logger.js";
+import { TypeFieldNormalizer } from "@utils/TypeFieldNormalizer.js";
 
 /**
  * MCP 客户端接口
@@ -43,8 +44,11 @@ export class MCPClientAdapter implements IMCPClient {
 
   constructor(serviceName: string, config: MCPServiceConfig) {
     this.serviceName = serviceName;
-    // 确保配置中包含服务名称
-    const serviceConfig = { ...config, name: serviceName };
+    // 标准化配置并确保配置中包含服务名称
+    const normalizedConfig = TypeFieldNormalizer.normalizeTypeField(
+      config
+    ) as MCPServiceConfig;
+    const serviceConfig = { ...normalizedConfig, name: serviceName };
     this.mcpService = new MCPService(serviceConfig);
 
     logger.info(`创建 MCPClientAdapter: ${serviceName}`);

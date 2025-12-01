@@ -2,6 +2,7 @@ import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { getEventBus } from "@services/EventBus.js";
+import { TypeFieldNormalizer } from "@utils/TypeFieldNormalizer.js";
 import { validateMcpServerConfig } from "@utils/mcpServerUtils";
 import * as commentJson from "comment-json";
 import dayjs from "dayjs";
@@ -439,8 +440,12 @@ export class ConfigManager {
         throw new Error(`配置文件格式错误：mcpServers.${serverName} 无效`);
       }
 
-      // 使用统一的验证逻辑
-      const validation = validateMcpServerConfig(serverName, serverConfig);
+      // 使用 TypeFieldNormalizer 标准化 type 字段
+      const normalizedConfig =
+        TypeFieldNormalizer.normalizeTypeField(serverConfig);
+
+      // 使用统一的验证逻辑验证标准化后的配置
+      const validation = validateMcpServerConfig(serverName, normalizedConfig);
       if (!validation.valid) {
         throw new Error(`配置文件格式错误：${validation.error}`);
       }

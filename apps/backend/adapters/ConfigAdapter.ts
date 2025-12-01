@@ -14,6 +14,7 @@ import type {
   SSEMCPServerConfig,
   StreamableHTTPMCPServerConfig,
 } from "@root/configManager.js";
+import { TypeFieldNormalizer } from "@utils/TypeFieldNormalizer.js";
 
 // 为配置适配器创建带标签的 logger
 const logger = globalLogger.withTag("ConfigAdapter");
@@ -50,8 +51,13 @@ export function convertLegacyToNew(
       throw new ConfigValidationError("配置对象不能为空", serviceName);
     }
 
+    // 首先标准化配置中的 type 字段
+    const normalizedConfig = TypeFieldNormalizer.normalizeTypeField(
+      legacyConfig
+    ) as MCPServerConfig;
+
     // 根据配置类型进行转换
-    const newConfig = convertByConfigType(serviceName, legacyConfig);
+    const newConfig = convertByConfigType(serviceName, normalizedConfig);
 
     // 验证转换后的配置
     validateNewConfig(newConfig);
