@@ -65,7 +65,7 @@ export type MCPServerConfig =
  * ```
  */
 export function getMcpServerCommunicationType(
-  serverConfig: MCPServerConfig | Record<string, any>
+  serverConfig: MCPServerConfig | Record<string, unknown>
 ): MCPCommunicationType {
   // 参数验证
   if (!serverConfig || typeof serverConfig !== "object") {
@@ -100,7 +100,7 @@ export function getMcpServerCommunicationType(
  * 检查 MCP 服务配置是否为 stdio 类型
  */
 export function isStdioMcpServer(
-  serverConfig: MCPServerConfig | Record<string, any>
+  serverConfig: MCPServerConfig | Record<string, unknown>
 ): serverConfig is LocalMCPServerConfig {
   return getMcpServerCommunicationType(serverConfig) === "stdio";
 }
@@ -109,7 +109,7 @@ export function isStdioMcpServer(
  * 检查 MCP 服务配置是否为 sse 类型
  */
 export function isSSEMcpServer(
-  serverConfig: MCPServerConfig | Record<string, any>
+  serverConfig: MCPServerConfig | Record<string, unknown>
 ): serverConfig is SSEMCPServerConfig {
   return getMcpServerCommunicationType(serverConfig) === "sse";
 }
@@ -118,7 +118,7 @@ export function isSSEMcpServer(
  * 检查 MCP 服务配置是否为 streamable-http 类型
  */
 export function isStreamableHTTPMcpServer(
-  serverConfig: MCPServerConfig | Record<string, any>
+  serverConfig: MCPServerConfig | Record<string, unknown>
 ): serverConfig is StreamableHTTPMCPServerConfig {
   return getMcpServerCommunicationType(serverConfig) === "streamable-http";
 }
@@ -128,7 +128,7 @@ export function isStreamableHTTPMcpServer(
  * 用于在日志中显示更友好的通信类型名称
  */
 export function getMcpServerTypeDisplayName(
-  serverConfig: MCPServerConfig | Record<string, any>
+  serverConfig: MCPServerConfig | Record<string, unknown>
 ): string {
   const type = getMcpServerCommunicationType(serverConfig);
 
@@ -150,9 +150,13 @@ export function getMcpServerTypeDisplayName(
  */
 export function validateMcpServerConfig(
   serverName: string,
-  serverConfig: any
+  serverConfig: unknown
 ): { valid: boolean; error?: string } {
-  if (!serverConfig || typeof serverConfig !== "object") {
+  if (
+    !serverConfig ||
+    typeof serverConfig !== "object" ||
+    Array.isArray(serverConfig)
+  ) {
     return {
       valid: false,
       error: `服务 "${serverName}" 的配置必须是一个对象`,
@@ -160,23 +164,30 @@ export function validateMcpServerConfig(
   }
 
   try {
-    const communicationType = getMcpServerCommunicationType(serverConfig);
+    const communicationType = getMcpServerCommunicationType(
+      serverConfig as Record<string, unknown>
+    );
+
+    const config = serverConfig as Record<string, unknown>;
 
     switch (communicationType) {
       case "stdio":
-        if (!serverConfig.command || typeof serverConfig.command !== "string") {
+        if (!config.command || typeof config.command !== "string") {
           return {
             valid: false,
             error: `服务 "${serverName}" 缺少必需的 command 字段或字段类型不正确`,
           };
         }
-        if (!Array.isArray(serverConfig.args)) {
+        if (!Array.isArray(config.args)) {
           return {
             valid: false,
             error: `服务 "${serverName}" 的 args 字段必须是数组`,
           };
         }
-        if (serverConfig.env && typeof serverConfig.env !== "object") {
+        if (
+          config.env &&
+          (typeof config.env !== "object" || Array.isArray(config.env))
+        ) {
           return {
             valid: false,
             error: `服务 "${serverName}" 的 env 字段必须是对象`,
@@ -185,19 +196,22 @@ export function validateMcpServerConfig(
         break;
 
       case "sse":
-        if (serverConfig.type !== "sse") {
+        if (config.type !== "sse") {
           return {
             valid: false,
             error: `服务 "${serverName}" 的 type 字段必须是 "sse"`,
           };
         }
-        if (!serverConfig.url || typeof serverConfig.url !== "string") {
+        if (!config.url || typeof config.url !== "string") {
           return {
             valid: false,
             error: `服务 "${serverName}" 缺少必需的 url 字段或字段类型不正确`,
           };
         }
-        if (serverConfig.headers && typeof serverConfig.headers !== "object") {
+        if (
+          config.headers &&
+          (typeof config.headers !== "object" || Array.isArray(config.headers))
+        ) {
           return {
             valid: false,
             error: `服务 "${serverName}" 的 headers 字段必须是对象`,
@@ -206,19 +220,22 @@ export function validateMcpServerConfig(
         break;
 
       case "streamable-http":
-        if (!serverConfig.url || typeof serverConfig.url !== "string") {
+        if (!config.url || typeof config.url !== "string") {
           return {
             valid: false,
             error: `服务 "${serverName}" 缺少必需的 url 字段或字段类型不正确`,
           };
         }
-        if (serverConfig.type && serverConfig.type !== "streamable-http") {
+        if (config.type && config.type !== "streamable-http") {
           return {
             valid: false,
             error: `服务 "${serverName}" 的 type 字段如果存在，必须是 "streamable-http"`,
           };
         }
-        if (serverConfig.headers && typeof serverConfig.headers !== "object") {
+        if (
+          config.headers &&
+          (typeof config.headers !== "object" || Array.isArray(config.headers))
+        ) {
           return {
             valid: false,
             error: `服务 "${serverName}" 的 headers 字段必须是对象`,

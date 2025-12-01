@@ -4,24 +4,30 @@
  */
 
 /**
+ * MCP 服务器配置的基础接口
+ * 定义包含可选 type 字段的配置对象结构
+ */
+export interface MCPBaseConfig {
+  type?: string;
+  [key: string]: unknown; // 允许其他配置属性
+}
+
+/**
  * MCP 服务器配置 Type 字段标准化工具类
  */
-
 export namespace TypeFieldNormalizer {
   /**
    * 标准化type字段格式
    * 支持将各种格式转换为标准的中划线格式
    */
   // 函数重载：泛型版本，用于类型安全的调用
-  export function normalizeTypeField<T extends Record<string, any>>(
-    config: T
-  ): T;
+  export function normalizeTypeField<T extends MCPBaseConfig>(config: T): T;
 
   // 函数重载：向后兼容版本，用于 unknown 类型输入
   export function normalizeTypeField(config: unknown): unknown;
 
   // 统一实现
-  export function normalizeTypeField<T extends Record<string, any>>(
+  export function normalizeTypeField<T extends MCPBaseConfig>(
     config: T | unknown
   ): T | unknown {
     if (!config || typeof config !== "object") {
