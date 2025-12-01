@@ -72,7 +72,10 @@ export abstract class TransportAdapter {
    */
   protected async handleIncomingMessage(message: MCPMessage): Promise<void> {
     try {
-      console.debug("[TransportAdapter] 处理接收到的消息", { method: message.method, message });
+      console.debug("[TransportAdapter] 处理接收到的消息", {
+        method: message.method,
+        message,
+      });
 
       const response = await this.messageHandler.handleMessage(message);
 

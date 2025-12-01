@@ -841,10 +841,12 @@ export class MCPServiceManager extends EventEmitter {
           );
         }
 
-        console.debug("[MCPManager] 已更新工具的失败调用统计信息", { toolName });
+        console.debug("[MCPManager] 已更新工具的失败调用统计信息", {
+          toolName,
+        });
       }
     } catch (error) {
-      console.error("[MCPManager] 更新工具统计信息失败:", { toolName, error});
+      console.error("[MCPManager] 更新工具统计信息失败:", { toolName, error });
       throw error;
     }
   }
@@ -872,7 +874,11 @@ export class MCPServiceManager extends EventEmitter {
       );
     } catch (error) {
       const action = isSuccess ? "统计信息" : "失败统计信息";
-      console.warn("[MCPManager] 更新工具统计信息失败:", { toolName, action, error });
+      console.warn("[MCPManager] 更新工具统计信息失败:", {
+        toolName,
+        action,
+        error,
+      });
       // 统计更新失败不应该影响主流程，所以这里只记录警告
     }
   }
