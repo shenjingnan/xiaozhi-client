@@ -85,21 +85,74 @@ vi.mock("@root/Logger.js", () => ({
   },
 }));
 
-// Mock MCPMessageHandler
-vi.mock("@core/MCPMessageHandler.js", () => ({
-  MCPMessageHandler: vi.fn().mockImplementation(() => ({
-    handleRequest: vi.fn().mockResolvedValue({
-      jsonrpc: "2.0",
-      id: "test-id",
-      result: { success: true },
+// Mock MCP 模块，提供完整的导出
+vi.mock("@/lib/mcp", () => {
+  // 创建 mock serviceManager 实例
+  const mockServiceManager = {
+    getAllTools: vi.fn().mockReturnValue([]),
+    callTool: vi.fn().mockResolvedValue({
+      content: [{ type: "text", text: "mock result" }],
+      isError: false,
+    }),
+    hasTool: vi.fn().mockReturnValue(false),
+    getStatus: vi.fn().mockReturnValue({
+      services: {},
+      totalTools: 0,
+      availableTools: [],
+    }),
+    startAllServices: vi.fn().mockResolvedValue(undefined),
+    stopAllServices: vi.fn().mockResolvedValue(undefined),
+    initialize: vi.fn().mockResolvedValue(undefined),
+  };
+
+  // 创建 mock messageHandler 实例工厂
+  const createMockMessageHandler = (serviceManager: any) => ({
+    handleMessage: vi.fn().mockImplementation(async (message: any) => {
+      switch (message.method) {
+        case "initialize":
+          return {
+            jsonrpc: "2.0",
+            result: {
+              serverInfo: { name: "xiaozhi-mcp-server", version: "1.0.0" },
+              capabilities: { tools: {}, logging: {} },
+              protocolVersion: "2024-11-05",
+            },
+            id: message.id,
+          };
+        case "tools/list":
+          return {
+            jsonrpc: "2.0",
+            result: { tools: [] },
+            id: message.id,
+          };
+        case "tools/call":
+          return {
+            jsonrpc: "2.0",
+            result: {
+              content: [{ type: "text", text: "mock tool result" }],
+              isError: false,
+            },
+            id: message.id,
+          };
+        default:
+          return {
+            jsonrpc: "2.0",
+            error: { code: -32601, message: "Method not found" },
+            id: message.id,
+          };
+      }
     }),
     initialize: vi.fn().mockResolvedValue(undefined),
-  })),
-}));
+    getServiceManager: vi.fn().mockReturnValue(serviceManager),
+  });
 
-import { MCPServiceManager } from "@/lib/mcp";
-// 动态导入被 mock 的模块
-import { MCPMessageHandler } from "@core/MCPMessageHandler.js";
+  return {
+    MCPServiceManager: vi.fn().mockImplementation(() => mockServiceManager),
+    MCPMessageHandler: vi.fn().mockImplementation(createMockMessageHandler),
+  };
+});
+
+import { MCPMessageHandler, MCPServiceManager } from "@/lib/mcp";
 
 describe("WebSocket 适配器测试", () => {
   let serviceManager: MCPServiceManager;

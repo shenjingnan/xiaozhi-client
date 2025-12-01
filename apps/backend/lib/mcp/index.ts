@@ -3,6 +3,7 @@ export * from "@/lib/mcp/connection.js";
 export * from "@/lib/mcp/types.js";
 export * from "@/lib/mcp/utils.js";
 export * from "@/lib/mcp/transport-factory.js";
+export * from "./MCPMessageHandler.js";
 // 选择性导出transports，避免重复的ConnectionState
 export {
   TransportAdapter,
