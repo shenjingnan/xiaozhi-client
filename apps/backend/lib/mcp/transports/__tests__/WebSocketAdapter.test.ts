@@ -97,9 +97,7 @@ vi.mock("../../MCPMessageHandler.js", () => ({
   })),
 }));
 
-import { MCPServiceManager } from "@/lib/mcp";
-// 动态导入被 mock 的模块
-import { MCPMessageHandler } from "../../MCPMessageHandler.js";
+import { MCPMessageHandler, MCPServiceManager } from "@/lib/mcp";
 
 describe("WebSocket 适配器测试", () => {
   let serviceManager: MCPServiceManager;
