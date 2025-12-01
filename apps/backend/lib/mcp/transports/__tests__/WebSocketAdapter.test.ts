@@ -86,7 +86,7 @@ vi.mock("@root/Logger.js", () => ({
 }));
 
 // Mock MCPMessageHandler
-vi.mock("../../MCPMessageHandler.js", () => ({
+vi.mock("@/lib/mcp", () => ({
   MCPMessageHandler: vi.fn().mockImplementation(() => ({
     handleRequest: vi.fn().mockResolvedValue({
       jsonrpc: "2.0",
