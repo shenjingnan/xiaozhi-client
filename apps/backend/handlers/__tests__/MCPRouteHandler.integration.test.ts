@@ -12,7 +12,7 @@ vi.mock("@services/MCPServiceManagerSingleton.js", () => ({
 }));
 
 // Mock MCPMessageHandler
-vi.mock("@/lib/mcp/MCPMessageHandler.js", () => ({
+vi.mock("@/lib/mcp", () => ({
   MCPMessageHandler: vi.fn().mockImplementation(() => ({
     handleMessage: vi.fn().mockImplementation((message) => {
       return Promise.resolve({
