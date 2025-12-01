@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import type { MCPServiceManager } from "@/lib/mcp";
+import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import { convertLegacyToNew } from "@adapters/index.js";
 import {
   ConfigApiHandler,
@@ -226,10 +227,17 @@ export class WebServer {
       await this.loadMCPServicesFromConfig(config.mcpServers);
 
       // 4. 获取工具列表
-      const tools = this.mcpServiceManager.getAllTools();
-      this.logger.debug(`已加载 ${tools.length} 个工具`);
+      const rawTools = this.mcpServiceManager.getAllTools();
+      this.logger.debug(`已加载 ${rawTools.length} 个工具`);
 
-      // 5. 初始化小智接入点连接
+      // 5. 转换工具格式以符合 MCP SDK 要求
+      const tools: Tool[] = rawTools.map((tool) => ({
+        name: tool.name,
+        description: tool.description || "",
+        inputSchema: ensureToolJSONSchema(tool.inputSchema),
+      }));
+
+      // 6. 初始化小智接入点连接
       await this.initializeXiaozhiConnection(config.mcpEndpoint, tools);
 
       this.logger.debug("所有连接初始化完成");

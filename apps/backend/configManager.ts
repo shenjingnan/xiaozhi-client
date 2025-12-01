@@ -1,7 +1,9 @@
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { CustomMCPTool as CoreCustomMCPTool } from "@/lib/mcp/types.js";
 import { getEventBus } from "@services/EventBus.js";
+import { TypeFieldNormalizer } from "@utils/TypeFieldNormalizer.js";
 import { validateMcpServerConfig } from "@utils/mcpServerUtils";
 import * as commentJson from "comment-json";
 import dayjs from "dayjs";
@@ -31,12 +33,14 @@ export interface LocalMCPServerConfig {
 export interface SSEMCPServerConfig {
   type: "sse";
   url: string;
+  headers?: Record<string, string>;
 }
 
 // Streamable HTTP MCP 服务配置
 export interface StreamableHTTPMCPServerConfig {
   type?: "streamable-http"; // 可选，因为默认就是 streamable-http
   url: string;
+  headers?: Record<string, string>;
 }
 
 // 统一的 MCP 服务配置
@@ -94,7 +98,7 @@ export interface ProxyHandlerConfig {
     retry_count?: number;
     retry_delay?: number;
     headers?: Record<string, string>;
-    params?: Record<string, any>;
+    params?: Record<string, unknown>;
   };
 }
 
@@ -129,7 +133,7 @@ export interface FunctionHandlerConfig {
   module: string; // 模块路径
   function: string; // 函数名
   timeout?: number;
-  context?: Record<string, any>; // 函数执行上下文
+  context?: Record<string, unknown>; // 函数执行上下文
 }
 
 // 脚本处理器配置
@@ -166,10 +170,10 @@ export type HandlerConfig =
   | ChainHandlerConfig
   | MCPHandlerConfig;
 
-export interface CustomMCPTool {
-  name: string;
+// 扩展核心库的 CustomMCPTool 接口，添加使用统计信息
+export interface CustomMCPTool extends CoreCustomMCPTool {
+  // 确保必填字段
   description: string;
-  inputSchema: any;
   handler: HandlerConfig;
 
   // 使用统计信息（可选）
@@ -181,6 +185,11 @@ export interface CustomMCPTool {
 
 export interface CustomMCPConfig {
   tools: CustomMCPTool[];
+}
+
+// Web 服务器实例接口（用于配置更新通知）
+export interface WebServerInstance {
+  broadcastConfigUpdate(config: AppConfig): void;
 }
 
 export interface PlatformsConfig {
@@ -220,7 +229,10 @@ export class ConfigManager {
   private defaultConfigPath: string;
   private config: AppConfig | null = null;
   private currentConfigPath: string | null = null; // 跟踪当前使用的配置文件路径
-  private json5Writer: any = null; // json5-writer 实例，用于保留 JSON5 注释
+  private json5Writer: {
+    write(data: unknown): void;
+    toSource(): string;
+  } | null = null; // json5-writer 实例，用于保留 JSON5 注释
   private eventBus = getEventBus(); // 事件总线
 
   // 统计更新并发控制
@@ -437,8 +449,12 @@ export class ConfigManager {
         throw new Error(`配置文件格式错误：mcpServers.${serverName} 无效`);
       }
 
-      // 使用统一的验证逻辑
-      const validation = validateMcpServerConfig(serverName, serverConfig);
+      // 使用 TypeFieldNormalizer 标准化 type 字段
+      const normalizedConfig =
+        TypeFieldNormalizer.normalizeTypeField(serverConfig);
+
+      // 使用统一的验证逻辑验证标准化后的配置
+      const validation = validateMcpServerConfig(serverName, normalizedConfig);
       if (!validation.valid) {
         throw new Error(`配置文件格式错误：${validation.error}`);
       }
@@ -1640,7 +1656,9 @@ export class ConfigManager {
   private notifyConfigUpdate(config: AppConfig): void {
     try {
       // 检查是否有全局的 webServer 实例（当使用 --ui 参数启动时会设置）
-      const webServer = (global as any).__webServer;
+      const webServer = (
+        global as typeof global & { __webServer?: WebServerInstance }
+      ).__webServer;
       if (webServer && typeof webServer.broadcastConfigUpdate === "function") {
         // 调用 webServer 的 broadcastConfigUpdate 方法来通知所有连接的客户端
         webServer.broadcastConfigUpdate(config);

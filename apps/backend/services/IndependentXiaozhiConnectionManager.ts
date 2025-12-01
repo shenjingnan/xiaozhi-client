@@ -1,4 +1,5 @@
 import { EventEmitter } from "node:events";
+import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import type { MCPServerAddResult } from "@handlers/MCPServerApiHandler.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
@@ -13,7 +14,13 @@ import { z } from "zod";
 
 // 使用接口定义避免循环依赖
 interface IMCPServiceManager {
-  getAllTools(): Tool[];
+  getAllTools(): Array<{
+    name: string;
+    description: string;
+    inputSchema: import("@/lib/mcp/types.js").JSONSchema;
+    serviceName?: string;
+    originalName?: string;
+  }>;
   callTool(
     toolName: string,
     arguments_: Record<string, unknown>
@@ -1143,7 +1150,13 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     }
 
     try {
-      return this.mcpServiceManager.getAllTools();
+      const rawTools = this.mcpServiceManager.getAllTools();
+      // 转换工具格式以符合 MCP SDK 的 Tool 类型
+      return rawTools.map((tool) => ({
+        name: tool.name,
+        description: tool.description,
+        inputSchema: ensureToolJSONSchema(tool.inputSchema),
+      }));
     } catch (error) {
       this.logger.error("获取工具列表失败:", error);
       return [];

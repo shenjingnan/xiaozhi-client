@@ -1,3 +1,5 @@
+import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
+import type { JSONSchema, ToolCallResult } from "@/lib/mcp/types.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { sliceEndpoint } from "@utils/mcpServerUtils.js";
 import WebSocket from "ws";
@@ -5,29 +7,14 @@ import type { Logger } from "./Logger.js";
 import { logger } from "./Logger.js";
 import type { MCPMessage } from "./types/index.js";
 
-// JSON Schema 类型定义（与 MCPServiceManager 保持一致）
-type JSONSchema = Record<string, unknown> & {
-  type: "object";
-  properties?: Record<string, unknown>;
-  required?: string[];
-  additionalProperties?: boolean;
-};
-
-// 工具调用结果接口（与 MCPServiceManager 保持一致）
-interface ToolCallResult {
-  content: Array<{
-    type: string;
-    text: string;
-  }>;
-  isError?: boolean;
-}
-
 // MCPServiceManager 接口定义
 interface IMCPServiceManager {
   getAllTools(): Array<{
     name: string;
-    description?: string;
+    description: string;
     inputSchema: JSONSchema;
+    serviceName?: string;
+    originalName?: string;
   }>;
   callTool(
     toolName: string,
@@ -266,7 +253,7 @@ export class ProxyMCPServer {
         newTools.set(toolInfo.name, {
           name: toolInfo.name,
           description: toolInfo.description,
-          inputSchema: toolInfo.inputSchema,
+          inputSchema: ensureToolJSONSchema(toolInfo.inputSchema),
         });
       }
 

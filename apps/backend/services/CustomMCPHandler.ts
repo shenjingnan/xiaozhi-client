@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import type { MCPServiceManager } from "@/lib/mcp";
+import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import { CacheLifecycleManager } from "@managers/CacheLifecycleManager.js";
 import { TaskStateManager } from "@managers/TaskStateManager.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
@@ -227,7 +228,7 @@ export class CustomMCPHandler {
     return Array.from(this.tools.values()).map((tool) => ({
       name: tool.name,
       description: tool.description,
-      inputSchema: tool.inputSchema,
+      inputSchema: ensureToolJSONSchema(tool.inputSchema),
     }));
   }
 

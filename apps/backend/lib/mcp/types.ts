@@ -123,14 +123,56 @@ export interface ToolCallResult {
 
 /**
  * JSON Schema 类型定义
- * 兼容 MCP SDK 的 JSON Schema 格式
+ * 兼容 MCP SDK 的 JSON Schema 格式，同时支持更宽松的对象格式以保持向后兼容
  */
-export type JSONSchema = Record<string, unknown> & {
+export type JSONSchema =
+  | (Record<string, unknown> & {
+      type: "object";
+      properties?: Record<string, unknown>;
+      required?: string[];
+      additionalProperties?: boolean;
+    })
+  | Record<string, unknown>; // 允许更宽松的格式以保持向后兼容
+
+/**
+ * 类型守卫：检查对象是否为有效的 MCP Tool JSON Schema
+ */
+export function isValidToolJSONSchema(obj: unknown): obj is {
   type: "object";
   properties?: Record<string, unknown>;
   required?: string[];
   additionalProperties?: boolean;
-};
+} {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "type" in obj &&
+    (obj as { type?: unknown }).type === "object"
+  );
+}
+
+/**
+ * 确保对象符合 MCP Tool JSON Schema 格式
+ * 如果不符合，会返回一个默认的空对象 schema
+ */
+export function ensureToolJSONSchema(schema: JSONSchema): {
+  type: "object";
+  properties?: Record<string, unknown>;
+  required?: string[];
+  additionalProperties?: boolean;
+} {
+  if (isValidToolJSONSchema(schema)) {
+    return schema;
+  }
+
+  // 如果不符合标准格式，返回默认的空对象 schema
+  return {
+    type: "object",
+    properties: {},
+    required: [],
+    additionalProperties: true,
+  };
+}
 
 /**
  * CustomMCP 工具类型定义

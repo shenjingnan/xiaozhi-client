@@ -1,3 +1,4 @@
+import { TypeFieldNormalizer } from "@utils/TypeFieldNormalizer.js";
 import { MCPTransportType } from "./types.js";
 import type { MCPServiceConfig } from "./types.js";
 
@@ -54,9 +55,10 @@ export function inferTransportTypeFromUrl(
 export function inferTransportTypeFromConfig(
   config: MCPServiceConfig
 ): MCPServiceConfig {
-  // 如果已显式指定类型，直接返回
+  // 如果已显式指定类型，先标准化然后返回
   if (config.type) {
-    return config;
+    const normalizedConfig = TypeFieldNormalizer.normalizeTypeField(config);
+    return normalizedConfig as MCPServiceConfig;
   }
 
   // 基于 command 字段推断

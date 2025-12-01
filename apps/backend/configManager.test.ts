@@ -2989,4 +2989,190 @@ describe("ConfigManager", () => {
       });
     });
   });
+
+  describe("Type 字段标准化集成测试", () => {
+    let configManager: ConfigManager;
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+      // Mock config directory exists
+      mockExistsSync.mockImplementation((path) => {
+        if (path.toString().includes("config")) {
+          return true;
+        }
+        return false;
+      });
+      // Mock config file exists
+      mockExistsSync.mockReturnValue(true);
+
+      // Mock resolve to return a simple path
+      mockResolve.mockReturnValue("/test/config/xiaozhi.config.json");
+
+      configManager = ConfigManager.getInstance();
+    });
+
+    it("应该接受 streamable_http 格式的配置", () => {
+      const testConfig = {
+        mcpEndpoint: "",
+        mcpServers: {
+          testService: {
+            type: "streamable_http",
+            url: "http://example.com",
+          },
+        },
+      };
+
+      mockReadFileSync.mockReturnValue(JSON.stringify(testConfig));
+
+      // 应该不抛出错误
+      expect(() => {
+        configManager.getConfig();
+      }).not.toThrow();
+    });
+
+    it("应该接受 streamableHttp 格式的配置", () => {
+      const testConfig = {
+        mcpEndpoint: "",
+        mcpServers: {
+          testService: {
+            type: "streamableHttp",
+            url: "http://example.com",
+          },
+        },
+      };
+
+      mockReadFileSync.mockReturnValue(JSON.stringify(testConfig));
+
+      // 应该不抛出错误
+      expect(() => {
+        configManager.getConfig();
+      }).not.toThrow();
+    });
+
+    it("应该接受 s_se 格式的配置", () => {
+      const testConfig = {
+        mcpEndpoint: "",
+        mcpServers: {
+          testService: {
+            type: "s_se",
+            url: "http://example.com",
+          },
+        },
+      };
+
+      mockReadFileSync.mockReturnValue(JSON.stringify(testConfig));
+
+      // 应该不抛出错误
+      expect(() => {
+        configManager.getConfig();
+      }).not.toThrow();
+    });
+
+    it("应该继续接受标准的 streamable-http 格式配置", () => {
+      const testConfig = {
+        mcpEndpoint: "",
+        mcpServers: {
+          testService: {
+            type: "streamable-http",
+            url: "http://example.com",
+          },
+        },
+      };
+
+      mockReadFileSync.mockReturnValue(JSON.stringify(testConfig));
+
+      // 应该不抛出错误
+      expect(() => {
+        configManager.getConfig();
+      }).not.toThrow();
+    });
+
+    it("应该继续接受标准的 sse 格式配置", () => {
+      const testConfig = {
+        mcpEndpoint: "",
+        mcpServers: {
+          testService: {
+            type: "sse",
+            url: "http://example.com",
+          },
+        },
+      };
+
+      mockReadFileSync.mockReturnValue(JSON.stringify(testConfig));
+
+      // 应该不抛出错误
+      expect(() => {
+        configManager.getConfig();
+      }).not.toThrow();
+    });
+
+    it("应该处理混合格式的多个服务配置", () => {
+      const testConfig = {
+        mcpEndpoint: "",
+        mcpServers: {
+          service1: {
+            type: "streamable_http",
+            url: "http://example1.com",
+          },
+          service2: {
+            type: "streamableHttp",
+            url: "http://example2.com",
+          },
+          service3: {
+            type: "sse",
+            url: "http://example3.com",
+          },
+          service4: {
+            type: "streamable-http",
+            url: "http://example4.com",
+          },
+        },
+      };
+
+      mockReadFileSync.mockReturnValue(JSON.stringify(testConfig));
+
+      // 应该不抛出错误
+      expect(() => {
+        configManager.getConfig();
+      }).not.toThrow();
+    });
+
+    it("应该拒绝无效的 type 格式", () => {
+      const testConfig = {
+        mcpEndpoint: "",
+        mcpServers: {
+          testService: {
+            type: "invalid-format",
+            url: "http://example.com",
+          },
+        },
+      };
+
+      mockReadFileSync.mockReturnValue(JSON.stringify(testConfig));
+
+      // 应该抛出错误，因为验证逻辑仍然会对无效格式进行检查
+      expect(() => {
+        configManager.getConfig();
+      }).toThrow();
+    });
+
+    it("应该处理没有 type 字段的配置（stdio 类型）", () => {
+      const testConfig = {
+        mcpEndpoint: "",
+        mcpServers: {
+          testService: {
+            command: "node",
+            args: ["server.js"],
+          },
+        },
+      };
+
+      mockReadFileSync.mockReturnValue(JSON.stringify(testConfig));
+
+      // 应该不抛出错误
+      expect(() => {
+        configManager.getConfig();
+      }).not.toThrow();
+    });
+  });
 });
