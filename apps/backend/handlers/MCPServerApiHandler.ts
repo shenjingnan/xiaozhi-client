@@ -1114,13 +1114,13 @@ export class MCPServerApiHandler {
 }
 
 /**
- * MCP 服务配置验证工具类
+ * MCP 服务配置验证工具命名空间
  */
-export  class MCPServerConfigValidator {
+export namespace MCPServerConfigValidator {
   /**
    * 验证服务配置
    */
-  static validateConfig(config: MCPServerConfig): ValidationResult {
+  export function validateConfig(config: MCPServerConfig): ValidationResult {
     const errors: string[] = [];
 
     // 验证配置基本结构
@@ -1161,7 +1161,7 @@ export  class MCPServerConfigValidator {
   /**
    * 验证服务名称
    */
-  static validateServiceName(name: string): ValidationResult {
+  export function validateServiceName(name: string): ValidationResult {
     const errors: string[] = [];
 
     if (!name || typeof name !== "string") {
@@ -1183,7 +1183,7 @@ export  class MCPServerConfigValidator {
   /**
    * 检查服务是否已存在
    */
-  static checkServiceExists(
+  export function checkServiceExists(
     name: string,
     configManager: ConfigManager
   ): boolean {
