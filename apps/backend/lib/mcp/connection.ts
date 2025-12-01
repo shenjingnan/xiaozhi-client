@@ -1,8 +1,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { Logger } from "@root/Logger.js";
 import { getEventBus } from "@root/services/EventBus.js";
-import { TransportFactory } from "@root/services/TransportFactory.js";
+import { TransportFactory } from "./transport-factory.js";
 import type {
   MCPServerTransport,
   MCPServiceConfig,
@@ -22,14 +21,11 @@ export class MCPService {
   private transport: MCPServerTransport | null = null;
   private tools: Map<string, Tool> = new Map();
   private connectionState: ConnectionState = ConnectionState.DISCONNECTED;
-  private logger: Logger;
   private connectionTimeout: NodeJS.Timeout | null = null;
   private initialized = false;
   private eventBus = getEventBus();
 
-  constructor(config: MCPServiceConfig, logger: Logger) {
-    this.logger = logger;
-
+  constructor(config: MCPServiceConfig) {
     // 使用工具方法推断服务类型
     this.config = inferTransportTypeFromConfig(config);
 
@@ -65,7 +61,7 @@ export class MCPService {
    */
   private async attemptConnection(): Promise<void> {
     this.connectionState = ConnectionState.CONNECTING;
-    this.logger.debug(
+    console.debug(
       `[MCP-${this.config.name}] 正在连接 MCP 服务: ${this.config.name}`
     );
 
@@ -135,7 +131,7 @@ export class MCPService {
     this.connectionState = ConnectionState.CONNECTED;
     this.initialized = true;
 
-    this.logger.info(
+    console.info(
       `[MCP-${this.config.name}] MCP 服务 ${this.config.name} 连接已建立`
     );
   }
@@ -147,7 +143,7 @@ export class MCPService {
     this.connectionState = ConnectionState.DISCONNECTED;
     this.initialized = false;
 
-    this.logger.debug(`MCP 服务 ${this.config.name} 连接错误:`, error.message);
+    console.debug(`MCP 服务 ${this.config.name} 连接错误:`, error.message);
 
     // 清理连接超时定时器
     if (this.connectionTimeout) {
@@ -215,13 +211,13 @@ export class MCPService {
         this.tools.set(tool.name, tool);
       }
 
-      this.logger.debug(
+      console.debug(
         `${this.config.name} 服务加载了 ${tools.length} 个工具: ${tools
           .map((t) => t.name)
           .join(", ")}`
       );
     } catch (error) {
-      this.logger.error(
+      console.error(
         `${this.config.name} 获取工具列表失败:`,
         error instanceof Error ? error.message : String(error)
       );
@@ -233,7 +229,7 @@ export class MCPService {
    * 断开连接
    */
   async disconnect(): Promise<void> {
-    this.logger.info(`主动断开 MCP 服务 ${this.config.name} 连接`);
+    console.info(`主动断开 MCP 服务 ${this.config.name} 连接`);
 
     // 清理连接资源
     this.cleanupConnection();
@@ -271,7 +267,7 @@ export class MCPService {
       throw new Error(`工具 ${name} 在服务 ${this.config.name} 中不存在`);
     }
 
-    this.logger.debug(
+    console.debug(
       `调用 ${this.config.name} 服务的工具 ${name}，参数:`,
       JSON.stringify(arguments_)
     );
@@ -282,14 +278,14 @@ export class MCPService {
         arguments: arguments_ || {},
       });
 
-      this.logger.debug(
+      console.debug(
         `工具 ${name} 调用成功，结果:`,
         `${JSON.stringify(result).substring(0, 500)}...`
       );
 
       return result as ToolCallResult;
     } catch (error) {
-      this.logger.error(
+      console.error(
         `工具 ${name} 调用失败:`,
         error instanceof Error ? error.message : String(error)
       );

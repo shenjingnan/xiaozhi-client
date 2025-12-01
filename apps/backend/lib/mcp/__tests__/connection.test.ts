@@ -5,9 +5,9 @@ import { Logger } from "@root/Logger.js";
 // 导入 mock 后的函数
 import type { EventBus } from "@root/services/EventBus.js";
 import { getEventBus } from "@root/services/EventBus.js";
-import { TransportFactory } from "@root/services/TransportFactory.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MCPService } from "../connection";
+import { TransportFactory } from "../transport-factory.js";
 import type { MCPServiceConfig } from "../types";
 
 // Mock 接口定义 - 使用简单的接口避免复杂类型冲突
@@ -50,7 +50,7 @@ type MockTransport = Record<string, never>;
 vi.mock("@modelcontextprotocol/sdk/client/index.js");
 vi.mock("@modelcontextprotocol/sdk/client/stdio.js");
 vi.mock("@root/Logger.js");
-vi.mock("@root/services/TransportFactory.js");
+vi.mock("../transport-factory.js");
 vi.mock("@root/services/EventBus.js", () => ({
   getEventBus: vi.fn(),
 }));
@@ -114,7 +114,7 @@ describe("MCPService", () => {
       args: ["test-server.js"],
     };
 
-    service = new MCPService(config, mockLogger as unknown as Logger);
+    service = new MCPService(config);
   });
 
   afterEach(() => {
@@ -134,9 +134,9 @@ describe("MCPService", () => {
         throw error;
       });
 
-      expect(
-        () => new MCPService(invalidConfig, mockLogger as unknown as Logger)
-      ).toThrow("配置必须包含有效的 name 字段");
+      expect(() => new MCPService(invalidConfig)).toThrow(
+        "配置必须包含有效的 name 字段"
+      );
     });
 
     it("should throw error for SSE without URL", () => {
@@ -146,9 +146,9 @@ describe("MCPService", () => {
         throw error;
       });
 
-      expect(
-        () => new MCPService(invalidConfig, mockLogger as unknown as Logger)
-      ).toThrow("sse 类型需要 url 字段");
+      expect(() => new MCPService(invalidConfig)).toThrow(
+        "sse 类型需要 url 字段"
+      );
     });
 
     it("should throw error for missing command", () => {
@@ -158,16 +158,13 @@ describe("MCPService", () => {
         throw error;
       });
 
-      expect(
-        () => new MCPService(invalidConfig, mockLogger as unknown as Logger)
-      ).toThrow("stdio 类型需要 command 字段");
+      expect(() => new MCPService(invalidConfig)).toThrow(
+        "stdio 类型需要 command 字段"
+      );
     });
 
     it("should create service with basic config", () => {
-      const serviceWithOptions = new MCPService(
-        config,
-        mockLogger as unknown as Logger
-      );
+      const serviceWithOptions = new MCPService(config);
       const status = serviceWithOptions.getStatus();
 
       expect(status.name).toBe("test-service");
@@ -497,10 +494,7 @@ describe("MCPService", () => {
 
     it("should set disconnected state on connection failure", async () => {
       // 创建服务实例用于测试
-      const testService = new MCPService(
-        config,
-        mockLogger as unknown as Logger
-      );
+      const testService = new MCPService(config);
 
       mockClient.connect.mockRejectedValue(new Error("Connection failed"));
 
@@ -516,10 +510,7 @@ describe("MCPService", () => {
     it("should fail connection when connect fails", async () => {
       // Configure service for testing
       const testConfig = { ...config };
-      const testService = new MCPService(
-        testConfig,
-        mockLogger as unknown as Logger
-      );
+      const testService = new MCPService(testConfig);
 
       mockClient.connect.mockRejectedValue(new Error("Connection failed"));
 
@@ -599,10 +590,7 @@ describe("MCPService", () => {
     });
 
     it("should handle connection failure gracefully", async () => {
-      const testService = new MCPService(
-        config,
-        mockLogger as unknown as Logger
-      );
+      const testService = new MCPService(config);
 
       mockClient.connect.mockRejectedValue(new Error("Connection failed"));
 
@@ -615,10 +603,7 @@ describe("MCPService", () => {
     });
 
     it("should show correct connection status", async () => {
-      const testService = new MCPService(
-        config,
-        mockLogger as unknown as Logger
-      );
+      const testService = new MCPService(config);
 
       // Initially disconnected
       expect(testService.isConnected()).toBe(false);
@@ -638,10 +623,7 @@ describe("MCPService", () => {
     });
 
     it("should handle multiple connection attempts properly", async () => {
-      const testService = new MCPService(
-        config,
-        mockLogger as unknown as Logger
-      );
+      const testService = new MCPService(config);
 
       mockClient.connect.mockRejectedValue(new Error("Connection failed"));
 
@@ -673,10 +655,7 @@ describe("MCPService", () => {
         apiKey: "test-key",
       };
 
-      const sseService = new MCPService(
-        sseConfig,
-        mockLogger as unknown as Logger
-      );
+      const sseService = new MCPService(sseConfig);
       mockClient.connect.mockResolvedValue(undefined);
       mockClient.listTools.mockResolvedValue({ tools: [] });
 
@@ -695,10 +674,7 @@ describe("MCPService", () => {
         headers: { "Custom-Header": "value" },
       };
 
-      const httpService = new MCPService(
-        httpConfig,
-        mockLogger as unknown as Logger
-      );
+      const httpService = new MCPService(httpConfig);
       mockClient.connect.mockResolvedValue(undefined);
       mockClient.listTools.mockResolvedValue({ tools: [] });
 
@@ -734,9 +710,7 @@ describe("MCPService", () => {
       ];
 
       for (const cfg of configs) {
-        expect(
-          () => new MCPService(cfg, mockLogger as unknown as Logger)
-        ).not.toThrow();
+        expect(() => new MCPService(cfg)).not.toThrow();
         expect(TransportFactory.validateConfig).toHaveBeenCalledWith(cfg);
       }
     });
@@ -767,7 +741,7 @@ describe("MCPService 自动类型推断测试", () => {
         url: "https://example.com/sse",
       };
 
-      const service = new MCPService(config, mockLogger as unknown as Logger);
+      const service = new MCPService(config);
       const serviceConfig = service.getConfig();
 
       expect(serviceConfig.type).toBe(MCPTransportType.SSE);
@@ -780,7 +754,7 @@ describe("MCPService 自动类型推断测试", () => {
         url: "https://example.com/sse", // 这个URL会推断为SSE，但显式指定为STREAMABLE_HTTP
       };
 
-      const service = new MCPService(config, mockLogger as unknown as Logger);
+      const service = new MCPService(config);
       const serviceConfig = service.getConfig();
 
       expect(serviceConfig.type).toBe(MCPTransportType.STREAMABLE_HTTP);
@@ -812,10 +786,7 @@ describe("MCPService 自动类型推断测试", () => {
           ...config,
         };
 
-        const service = new MCPService(
-          serviceConfig,
-          mockLogger as unknown as Logger
-        );
+        const service = new MCPService(serviceConfig);
         const result = service.getConfig();
 
         expect(result.type).toBe(type);
@@ -831,7 +802,7 @@ describe("MCPService 自动类型推断测试", () => {
         args: ["server.js"],
       };
 
-      const service = new MCPService(config, mockLogger as unknown as Logger);
+      const service = new MCPService(config);
       const serviceConfig = service.getConfig();
 
       expect(serviceConfig.type).toBe(MCPTransportType.STDIO);
@@ -845,7 +816,7 @@ describe("MCPService 自动类型推断测试", () => {
         url: "https://example.com/sse",
       };
 
-      const service = new MCPService(config, mockLogger as unknown as Logger);
+      const service = new MCPService(config);
       const serviceConfig = service.getConfig();
 
       expect(serviceConfig.type).toBe(MCPTransportType.STDIO);
@@ -857,7 +828,7 @@ describe("MCPService 自动类型推断测试", () => {
         command: "python",
       };
 
-      const service = new MCPService(config, mockLogger as unknown as Logger);
+      const service = new MCPService(config);
       const serviceConfig = service.getConfig();
 
       expect(serviceConfig.type).toBe(MCPTransportType.STDIO);
@@ -870,7 +841,7 @@ describe("MCPService 自动类型推断测试", () => {
         args: [],
       };
 
-      const service = new MCPService(config, mockLogger as unknown as Logger);
+      const service = new MCPService(config);
       const serviceConfig = service.getConfig();
 
       expect(serviceConfig.type).toBe(MCPTransportType.STDIO);
@@ -884,7 +855,7 @@ describe("MCPService 自动类型推断测试", () => {
         url: "https://mcp.amap.com/sse?key=test",
       };
 
-      const service = new MCPService(config, mockLogger as unknown as Logger);
+      const service = new MCPService(config);
       const serviceConfig = service.getConfig();
 
       expect(serviceConfig.type).toBe(MCPTransportType.SSE);
@@ -896,7 +867,7 @@ describe("MCPService 自动类型推断测试", () => {
         url: "https://example.com/sse?apiKey=123&timeout=5000",
       };
 
-      const service = new MCPService(config, mockLogger as unknown as Logger);
+      const service = new MCPService(config);
       const serviceConfig = service.getConfig();
 
       expect(serviceConfig.type).toBe(MCPTransportType.SSE);
@@ -916,7 +887,7 @@ describe("MCPService 自动类型推断测试", () => {
           url,
         };
 
-        const service = new MCPService(config, mockLogger as unknown as Logger);
+        const service = new MCPService(config);
         const serviceConfig = service.getConfig();
 
         expect(serviceConfig.type).toBe(MCPTransportType.SSE);
@@ -931,7 +902,7 @@ describe("MCPService 自动类型推断测试", () => {
         url: "https://example.com/mcp",
       };
 
-      const service = new MCPService(config, mockLogger as unknown as Logger);
+      const service = new MCPService(config);
       const serviceConfig = service.getConfig();
 
       expect(serviceConfig.type).toBe(MCPTransportType.STREAMABLE_HTTP);
@@ -950,7 +921,7 @@ describe("MCPService 自动类型推断测试", () => {
           url,
         };
 
-        const service = new MCPService(config, mockLogger as unknown as Logger);
+        const service = new MCPService(config);
         const serviceConfig = service.getConfig();
 
         expect(serviceConfig.type).toBe(MCPTransportType.STREAMABLE_HTTP);
@@ -971,7 +942,7 @@ describe("MCPService 自动类型推断测试", () => {
           url,
         };
 
-        const service = new MCPService(config, mockLogger as unknown as Logger);
+        const service = new MCPService(config);
         const serviceConfig = service.getConfig();
 
         expect(serviceConfig.type).toBe(MCPTransportType.STREAMABLE_HTTP);
@@ -991,7 +962,7 @@ describe("MCPService 自动类型推断测试", () => {
           url,
         };
 
-        const service = new MCPService(config, mockLogger as unknown as Logger);
+        const service = new MCPService(config);
         const serviceConfig = service.getConfig();
 
         expect(serviceConfig.type).toBe(MCPTransportType.STREAMABLE_HTTP);
@@ -1009,10 +980,7 @@ describe("MCPService 自动类型推断测试", () => {
         url: "https://example.com/mcp", // URL 推断为 MCP 但显式类型为 SSE
       };
 
-      const explicitService = new MCPService(
-        explicitConfig,
-        mockLogger as unknown as Logger
-      );
+      const explicitService = new MCPService(explicitConfig);
       expect(explicitService.getConfig().type).toBe(MCPTransportType.SSE);
 
       // 2. command 优先级高于 URL
@@ -1022,10 +990,7 @@ describe("MCPService 自动类型推断测试", () => {
         url: "https://example.com/sse", // URL 推断为 SSE 但 command 优先
       };
 
-      const commandService = new MCPService(
-        commandConfig,
-        mockLogger as unknown as Logger
-      );
+      const commandService = new MCPService(commandConfig);
       expect(commandService.getConfig().type).toBe(MCPTransportType.STDIO);
 
       // 3. 只有 URL 时进行推断
@@ -1034,10 +999,7 @@ describe("MCPService 自动类型推断测试", () => {
         url: "https://example.com/sse", // 推断为 SSE
       };
 
-      const urlService = new MCPService(
-        urlConfig,
-        mockLogger as unknown as Logger
-      );
+      const urlService = new MCPService(urlConfig);
       expect(urlService.getConfig().type).toBe(MCPTransportType.SSE);
     });
   });

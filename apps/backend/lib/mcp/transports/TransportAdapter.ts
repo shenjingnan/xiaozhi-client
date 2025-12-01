@@ -5,8 +5,6 @@
  */
 
 import type { MCPMessageHandler } from "@core/MCPMessageHandler.js";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
 import type { MCPError, MCPMessage, MCPResponse } from "@root/types/mcp.js";
 
 // 重新导出接口以保持向后兼容
@@ -33,7 +31,6 @@ export interface TransportConfig {
  * 所有具体的传输适配器都必须继承此类并实现抽象方法
  */
 export abstract class TransportAdapter {
-  protected logger: Logger;
   protected messageHandler: MCPMessageHandler;
   protected connectionId: string;
   protected config: TransportConfig;
@@ -43,7 +40,6 @@ export abstract class TransportAdapter {
     this.messageHandler = messageHandler;
     this.config = config;
     this.connectionId = this.generateConnectionId();
-    this.logger = logger;
   }
 
   /**
@@ -76,19 +72,22 @@ export abstract class TransportAdapter {
    */
   protected async handleIncomingMessage(message: MCPMessage): Promise<void> {
     try {
-      this.logger.debug(`处理接收到的消息: ${message.method}`, message);
+      console.debug("[TransportAdapter] 处理接收到的消息", {
+        method: message.method,
+        message,
+      });
 
       const response = await this.messageHandler.handleMessage(message);
 
       // 仅对非通知消息发送响应
       if (response !== null) {
-        this.logger.debug("发送响应消息:", response);
+        console.debug("发送响应消息:", response);
         await this.sendMessage(response);
       } else {
-        this.logger.debug("收到通知消息，无需响应");
+        console.debug("收到通知消息，无需响应");
       }
     } catch (error) {
-      this.logger.error(`处理消息时出错: ${message.method}`, error);
+      console.error("处理消息时出错", { error, message });
 
       const errorResponse = this.createErrorResponse(
         error as Error,
@@ -165,7 +164,7 @@ export abstract class TransportAdapter {
     this.state = state;
 
     if (oldState !== state) {
-      this.logger.info(`连接状态变更: ${oldState} -> ${state}`);
+      console.info(`连接状态变更: ${oldState} -> ${state}`);
       this.onStateChange(oldState, state);
     }
   }
@@ -205,18 +204,18 @@ export abstract class TransportAdapter {
 
       // 验证基本的 JSON-RPC 格式
       if (!message.jsonrpc || message.jsonrpc !== "2.0") {
-        this.logger.warn("收到非 JSON-RPC 2.0 格式的消息", message);
+        console.warn("收到非 JSON-RPC 2.0 格式的消息", message);
         return null;
       }
 
       if (!message.method) {
-        this.logger.warn("收到没有 method 字段的消息", message);
+        console.warn("收到没有 method 字段的消息", message);
         return null;
       }
 
       return message;
     } catch (error) {
-      this.logger.error("解析 JSON 消息失败", { data, error });
+      console.error("解析 JSON 消息失败", { data, error });
       return null;
     }
   }
@@ -229,7 +228,7 @@ export abstract class TransportAdapter {
     try {
       return JSON.stringify(message);
     } catch (error) {
-      this.logger.error("序列化消息失败", { message, error });
+      console.error("序列化消息失败", { message, error });
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       throw new Error(`消息序列化失败: ${errorMessage}`);

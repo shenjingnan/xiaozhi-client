@@ -1,6 +1,6 @@
+import { TransportFactory } from "@/lib/mcp/transport-factory.js";
 import { describe, expect, it } from "vitest";
 import { MCPTransportType } from "../MCPService.js";
-import { TransportFactory } from "../TransportFactory.js";
 
 describe("TransportFactory", () => {
   describe("validateConfig", () => {

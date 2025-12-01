@@ -5,15 +5,12 @@
  */
 
 import type { MCPMessageHandler } from "@core/MCPMessageHandler.js";
-import {
-  ConnectionState,
-  TransportAdapter,
-} from "@transports/TransportAdapter.js";
+import { ConnectionState, TransportAdapter } from "./TransportAdapter.js";
 import type {
   MCPMessage,
   MCPResponse,
   TransportConfig,
-} from "@transports/TransportAdapter.js";
+} from "./TransportAdapter.js";
 
 /**
  * Stdio 适配器配置
@@ -46,7 +43,7 @@ export class StdioAdapter extends TransportAdapter {
    * 初始化 Stdio 适配器
    */
   async initialize(): Promise<void> {
-    this.logger.info("初始化 Stdio 适配器");
+    console.info("初始化 Stdio 适配器");
 
     try {
       // 设置标准输入编码
@@ -56,9 +53,9 @@ export class StdioAdapter extends TransportAdapter {
       this.setupProcessHandlers();
 
       this.setState(ConnectionState.CONNECTING);
-      this.logger.info("Stdio 适配器初始化完成");
+      console.info("Stdio 适配器初始化完成");
     } catch (error) {
-      this.logger.error("Stdio 适配器初始化失败", error);
+      console.error("Stdio 适配器初始化失败", error);
       this.setState(ConnectionState.ERROR);
       throw error;
     }
@@ -69,20 +66,20 @@ export class StdioAdapter extends TransportAdapter {
    */
   async start(): Promise<void> {
     if (this.isRunning) {
-      this.logger.warn("Stdio 适配器已在运行");
+      console.warn("Stdio 适配器已在运行");
       return;
     }
 
-    this.logger.info("启动 Stdio 适配器");
+    console.info("启动 Stdio 适配器");
 
     try {
       this.isRunning = true;
       this.setupStdioHandlers();
       this.setState(ConnectionState.CONNECTED);
 
-      this.logger.info("Stdio 适配器启动成功，等待消息...");
+      console.info("Stdio 适配器启动成功，等待消息...");
     } catch (error) {
-      this.logger.error("启动 Stdio 适配器失败", error);
+      console.error("启动 Stdio 适配器失败", error);
       this.setState(ConnectionState.ERROR);
       this.isRunning = false;
       throw error;
@@ -97,16 +94,16 @@ export class StdioAdapter extends TransportAdapter {
       return;
     }
 
-    this.logger.info("停止 Stdio 适配器");
+    console.info("停止 Stdio 适配器");
 
     try {
       this.isRunning = false;
       this.removeStdioHandlers();
       this.setState(ConnectionState.DISCONNECTED);
 
-      this.logger.info("Stdio 适配器已停止");
+      console.info("Stdio 适配器已停止");
     } catch (error) {
-      this.logger.error("停止 Stdio 适配器时出错", error);
+      console.error("停止 Stdio 适配器时出错", error);
       throw error;
     }
   }
@@ -121,12 +118,12 @@ export class StdioAdapter extends TransportAdapter {
       // 写入到标准输出，添加换行符
       process.stdout.write(`${serializedMessage}\n`);
 
-      this.logger.debug("消息已发送到 stdout", {
+      console.debug("消息已发送到 stdout", {
         messageId: message.id,
         method: "method" in message ? message.method : "response",
       });
     } catch (error) {
-      this.logger.error("发送消息失败", error);
+      console.error("发送消息失败", error);
       throw error;
     }
   }
@@ -164,7 +161,7 @@ export class StdioAdapter extends TransportAdapter {
 
       // 检查缓冲区大小
       if (this.messageBuffer.length > this.bufferSize) {
-        this.logger.warn(
+        console.warn(
           `消息缓冲区超过限制 (${this.bufferSize} bytes)，清空缓冲区`
         );
         this.messageBuffer = "";
@@ -185,7 +182,7 @@ export class StdioAdapter extends TransportAdapter {
         }
       }
     } catch (error) {
-      this.logger.error("处理 stdin 数据时出错", error);
+      console.error("处理 stdin 数据时出错", error);
     }
   }
 
@@ -194,14 +191,14 @@ export class StdioAdapter extends TransportAdapter {
    */
   private async processMessageLine(line: string): Promise<void> {
     try {
-      this.logger.debug(`处理消息行: ${line.substring(0, 200)}...`);
+      console.debug(`处理消息行: ${line.substring(0, 200)}...`);
 
       const message = this.parseMessage(line);
       if (message) {
         await this.handleIncomingMessage(message);
       }
     } catch (error) {
-      this.logger.error(`处理消息行失败: ${line.substring(0, 100)}...`, error);
+      console.error(`处理消息行失败: ${line.substring(0, 100)}...`, error);
 
       // 尝试从原始消息中提取ID，如果失败则生成默认ID
       let messageId: string | number = `parse-error-${Date.now()}`;
@@ -237,9 +234,9 @@ export class StdioAdapter extends TransportAdapter {
    * 处理标准输入结束
    */
   private handleStdinEnd(): void {
-    this.logger.info("标准输入已关闭，停止适配器");
+    console.info("标准输入已关闭，停止适配器");
     this.stop().catch((error) => {
-      this.logger.error("停止适配器时出错", error);
+      console.error("停止适配器时出错", error);
     });
   }
 
@@ -247,7 +244,7 @@ export class StdioAdapter extends TransportAdapter {
    * 处理标准输入错误
    */
   private handleStdinError(error: Error): void {
-    this.logger.error("标准输入错误", error);
+    console.error("标准输入错误", error);
     this.setState(ConnectionState.ERROR);
   }
 
@@ -257,7 +254,7 @@ export class StdioAdapter extends TransportAdapter {
   private setupProcessHandlers(): void {
     // 处理进程退出信号
     const handleExit = () => {
-      this.logger.info("收到退出信号，清理资源");
+      console.info("收到退出信号，清理资源");
       this.stop().finally(() => {
         process.exit(0);
       });
@@ -268,13 +265,13 @@ export class StdioAdapter extends TransportAdapter {
 
     // 处理未捕获的异常
     process.on("uncaughtException", (error) => {
-      this.logger.error("未捕获的异常", error);
+      console.error("未捕获的异常", error);
       this.setState(ConnectionState.ERROR);
     });
 
     // 处理未处理的 Promise 拒绝
     process.on("unhandledRejection", (reason, promise) => {
-      this.logger.error("未处理的 Promise 拒绝", { reason, promise });
+      console.error("未处理的 Promise 拒绝", { reason, promise });
     });
   }
 
@@ -302,6 +299,6 @@ export class StdioAdapter extends TransportAdapter {
    */
   clearBuffer(): void {
     this.messageBuffer = "";
-    this.logger.debug("消息缓冲区已清空");
+    console.debug("消息缓冲区已清空");
   }
 }

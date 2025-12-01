@@ -1,17 +1,20 @@
-import type { MCPServiceConfig } from "@/lib/mcp/types";
+import type { MCPServerTransport, MCPServiceConfig } from "@/lib/mcp/types";
 import { MCPTransportType } from "@/lib/mcp/types";
 import type { SSEClientTransportOptions } from "@modelcontextprotocol/sdk/client/sse.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import type { StreamableHTTPClientTransportOptions } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
 import { EventSource } from "eventsource";
 
 // 全局 polyfill EventSource（用于 SSE）
-if (typeof global !== "undefined" && !global.EventSource) {
-  (global as any).EventSource = EventSource;
+// 使用类型断言避免与已有 EventSource 类型冲突
+if (
+  typeof global !== "undefined" &&
+  !(global as typeof global & { EventSource?: unknown }).EventSource
+) {
+  (global as typeof global & { EventSource: typeof EventSource }).EventSource =
+    EventSource;
 }
 
 // Transport 基础接口
@@ -20,19 +23,13 @@ export interface Transport {
   close?(): Promise<void>;
 }
 
-// 创建 logger 实例
-function getLogger(): Logger {
-  return logger;
-}
-
 /**
  * 创建 transport 实例
  * @param config MCP 服务配置
  * @returns transport 实例
  */
-export function createTransport(config: MCPServiceConfig): any {
-  const logger = getLogger();
-  logger.debug(
+export function createTransport(config: MCPServiceConfig): MCPServerTransport {
+  console.debug(
     `[TransportFactory] 创建 ${config.type} transport for ${config.name}`
   );
 
@@ -116,16 +113,20 @@ function createStreamableHTTPTransport(
  * 创建 SSE 选项
  */
 function createSSEOptions(config: MCPServiceConfig): SSEClientTransportOptions {
-  const options: any = {};
+  const options: SSEClientTransportOptions = {};
 
   // 添加认证头
   if (config.apiKey) {
-    options.headers = {
-      Authorization: `Bearer ${config.apiKey}`,
-      ...config.headers,
+    options.requestInit = {
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        ...config.headers,
+      },
     };
   } else if (config.headers) {
-    options.headers = config.headers;
+    options.requestInit = {
+      headers: config.headers,
+    };
   }
 
   return options;
@@ -134,8 +135,15 @@ function createSSEOptions(config: MCPServiceConfig): SSEClientTransportOptions {
 /**
  * 创建 ModelScope SSE 选项
  */
-function createModelScopeSSEOptions(config: MCPServiceConfig): any {
-  const token = config.apiKey!; // 已在调用方验证过
+function createModelScopeSSEOptions(
+  config: MCPServiceConfig
+): SSEClientTransportOptions {
+  // 添加防御性空值检查
+  if (!config.apiKey) {
+    throw new Error("ModelScope SSE transport 需要 apiKey 配置");
+  }
+
+  const token = config.apiKey;
 
   // 如果有自定义SSE选项，使用它们
   if (config.customSSEOptions) {
@@ -167,16 +175,20 @@ function createModelScopeSSEOptions(config: MCPServiceConfig): any {
 function createStreamableHTTPOptions(
   config: MCPServiceConfig
 ): StreamableHTTPClientTransportOptions {
-  const options: any = {};
+  const options: StreamableHTTPClientTransportOptions = {};
 
   // 添加认证头
   if (config.apiKey) {
-    options.headers = {
-      Authorization: `Bearer ${config.apiKey}`,
-      ...config.headers,
+    options.requestInit = {
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        ...config.headers,
+      },
     };
   } else if (config.headers) {
-    options.headers = config.headers;
+    options.requestInit = {
+      headers: config.headers,
+    };
   }
 
   return options;
