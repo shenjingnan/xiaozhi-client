@@ -87,7 +87,7 @@ export abstract class TransportAdapter {
         console.debug("收到通知消息，无需响应");
       }
     } catch (error) {
-      console.error(`处理消息时出错: ${message.method}`, error);
+      console.error("处理消息时出错", { error, message });
 
       const errorResponse = this.createErrorResponse(
         error as Error,
