@@ -240,6 +240,18 @@ describe("MCP Server Utils - Server Side", () => {
       expect(result.error).toContain("headers 字段必须是对象");
     });
 
+    it("应该拒绝 headers 为数组的配置", () => {
+      const config = {
+        type: "sse" as const,
+        url: "https://example.com/sse",
+        headers: ["Authorization", "Bearer token123"], // 应该是对象而不是数组
+      };
+
+      const result = validateMcpServerConfig("test-service", config);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("headers 字段必须是对象");
+    });
+
     it("应该允许没有 headers 字段的配置", () => {
       const sseConfig = {
         type: "sse" as const,

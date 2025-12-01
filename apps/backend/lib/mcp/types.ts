@@ -144,7 +144,10 @@ export function isValidToolJSONSchema(obj: unknown): obj is {
   additionalProperties?: boolean;
 } {
   return (
-    typeof obj === "object" && obj !== null && (obj as any).type === "object"
+    typeof obj === "object" &&
+    obj !== null &&
+    "type" in obj &&
+    (obj as { type?: unknown }).type === "object"
   );
 }
 
