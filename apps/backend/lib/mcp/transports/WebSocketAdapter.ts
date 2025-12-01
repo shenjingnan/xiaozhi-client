@@ -10,8 +10,8 @@
  */
 
 import type { IncomingMessage } from "node:http";
-import type { MCPMessageHandler } from "@core/MCPMessageHandler.js";
 import WebSocket, { WebSocketServer } from "ws";
+import type { MCPMessageHandler } from "../MCPMessageHandler.js";
 import { ConnectionState, TransportAdapter } from "./TransportAdapter.js";
 import type {
   MCPMessage,

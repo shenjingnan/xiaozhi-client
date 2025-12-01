@@ -86,7 +86,7 @@ vi.mock("@root/Logger.js", () => ({
 }));
 
 // Mock MCPMessageHandler
-vi.mock("@core/MCPMessageHandler.js", () => ({
+vi.mock("../../MCPMessageHandler.js", () => ({
   MCPMessageHandler: vi.fn().mockImplementation(() => ({
     handleRequest: vi.fn().mockResolvedValue({
       jsonrpc: "2.0",
@@ -99,7 +99,7 @@ vi.mock("@core/MCPMessageHandler.js", () => ({
 
 import { MCPServiceManager } from "@/lib/mcp";
 // 动态导入被 mock 的模块
-import { MCPMessageHandler } from "@core/MCPMessageHandler.js";
+import { MCPMessageHandler } from "../../MCPMessageHandler.js";
 
 describe("WebSocket 适配器测试", () => {
   let serviceManager: MCPServiceManager;

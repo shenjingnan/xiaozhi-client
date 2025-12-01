@@ -7,7 +7,7 @@ const mockServiceManager = {
 };
 
 // Mock MCPMessageHandler
-vi.mock("@core/MCPMessageHandler.js", () => ({
+vi.mock("@/lib/mcp/MCPMessageHandler.js", () => ({
   MCPMessageHandler: vi.fn().mockImplementation(() => ({
     handleMessage: vi.fn().mockResolvedValue({
       jsonrpc: "2.0",

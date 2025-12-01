@@ -3,8 +3,8 @@
  */
 
 import type { MCPServiceManager } from "@/lib/mcp";
+import { MCPMessageHandler } from "@/lib/mcp/MCPMessageHandler.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { MCPMessageHandler } from "../MCPMessageHandler.js";
 
 // Mock MCPServiceManager
 const mockServiceManager = {

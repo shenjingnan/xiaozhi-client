@@ -19,7 +19,6 @@ import type {
   UnifiedServerStatus,
 } from "@/lib/mcp/types";
 import { MCPTransportType } from "@/lib/mcp/types";
-import { MCPMessageHandler } from "@core/MCPMessageHandler.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { MCPToolConfig } from "@root/configManager.js";
 import { configManager } from "@root/configManager.js";
@@ -29,6 +28,7 @@ import { MCPCacheManager } from "@root/services/MCPCacheManager.js";
 import { ToolSyncManager } from "@root/services/ToolSyncManager.js";
 import type { MCPMessage } from "@root/types/mcp.js";
 import { ToolCallLogger } from "@utils/ToolCallLogger.js";
+import { MCPMessageHandler } from "./MCPMessageHandler.js";
 import { ConnectionState, type TransportAdapter } from "./transports/index.js";
 
 export class MCPServiceManager extends EventEmitter {
