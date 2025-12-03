@@ -28,7 +28,8 @@
       "@managers/*": ["apps/backend/managers/*"],
       "@types/*": ["apps/backend/types/*"],
       "@/lib/*": ["apps/backend/lib/*"],
-      "@root/*": ["apps/backend/*"]
+      "@root/*": ["apps/backend/*"],
+      "@routes/*": ["apps/backend/routes/*"]
     },
     "strict": true,
     "noImplicitAny": true,

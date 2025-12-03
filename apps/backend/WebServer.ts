@@ -56,6 +56,13 @@ import type { Context } from "hono";
 import type { Hono } from "hono";
 import { WebSocketServer } from "ws";
 
+// 路由系统导入
+import {
+  type HandlerDependencies,
+  RouteAggregator,
+  RouteRegistry,
+} from "./routes/index.js";
+
 // 统一成功响应格式
 interface ApiSuccessResponse<T = unknown> {
   success: boolean;
@@ -120,6 +127,10 @@ export class WebServer {
 
   // 心跳监控
   private heartbeatMonitorInterval?: NodeJS.Timeout;
+
+  // 路由系统
+  private routeRegistry?: RouteRegistry;
+  private routeAggregator?: RouteAggregator;
 
   // 向后兼容的属性
   private proxyMCPServer: ProxyMCPServer | undefined;
@@ -196,7 +207,8 @@ export class WebServer {
     // 初始化 Hono 应用
     this.app = createApp();
     this.setupMiddleware();
-    this.setupRoutes();
+    this.setupRouteSystem();
+    this.setupRoutesFromRegistry();
 
     // 监听接入点状态变更事件
     this.setupEndpointStatusListener();
@@ -594,6 +606,84 @@ export class WebServer {
     this.app?.onError(errorHandlerMiddleware);
   }
 
+  /**
+   * 设置路由系统
+   */
+  private setupRouteSystem(): void {
+    // 创建处理器依赖
+    const dependencies: HandlerDependencies = {
+      configApiHandler: this.configApiHandler,
+      statusApiHandler: this.statusApiHandler,
+      serviceApiHandler: this.serviceApiHandler,
+      toolApiHandler: this.toolApiHandler,
+      toolCallLogApiHandler: this.toolCallLogApiHandler,
+      versionApiHandler: this.versionApiHandler,
+      staticFileHandler: this.staticFileHandler,
+      mcpRouteHandler: this.mcpRouteHandler,
+      mcpServerApiHandler: this.mcpServerApiHandler,
+      updateApiHandler: new UpdateApiHandler(),
+      cozeApiHandler: CozeApiHandler,
+      createEndpointHandler: (
+        connectionManager: IndependentXiaozhiConnectionManager
+      ) => {
+        return new MCPEndpointApiHandler(connectionManager, configManager);
+      },
+    };
+
+    // 初始化路由聚合器
+    this.routeAggregator = new RouteAggregator(dependencies);
+
+    // 初始化路由注册器
+    if (this.app) {
+      this.routeRegistry = new RouteRegistry(this.app, dependencies, {
+        verboseLogging: false, // 生产环境设为 false
+        throwOnRegistrationError: true,
+      });
+    }
+  }
+
+  /**
+   * 从注册器设置路由
+   */
+  private setupRoutesFromRegistry(): void {
+    if (!this.routeRegistry || !this.routeAggregator) {
+      throw new Error("路由系统未初始化");
+    }
+
+    try {
+      // 创建所有路由模块
+      const routes = this.routeAggregator.createAllRoutes();
+
+      // 设置端点路由的连接管理器
+      const endpointRoute = routes.find(
+        (route) => route.getDomainInfo().name === "endpoint"
+      ) as any;
+      if (endpointRoute && this.xiaozhiConnectionManager) {
+        endpointRoute.setConnectionManager(this.xiaozhiConnectionManager);
+      }
+
+      // 注册所有路由
+      this.routeRegistry.registerRoutes(routes);
+
+      // 完成注册
+      this.routeRegistry.completeRegistration();
+
+      this.logger.info("路由系统注册完成", {
+        statistics: this.routeRegistry.getStatistics(),
+      });
+    } catch (error) {
+      this.logger.error("路由系统注册失败:", error);
+
+      // 回滚到原有的路由系统
+      this.logger.warn("回退到原有路由系统");
+      this.setupRoutes();
+    }
+  }
+
+  /**
+   * 设置路由
+   * @deprecated 使用 setupRoutesFromRegistry 替代，仅作为回退方案
+   */
   private setupRoutes() {
     // 配置相关 API 路由
     this.app?.get("/api/config", (c) => this.configApiHandler.getConfig(c));
