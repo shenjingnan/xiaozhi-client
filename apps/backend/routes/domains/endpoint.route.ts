@@ -5,7 +5,7 @@
  */
 
 import type { Context } from "hono";
-import { createErrorResponse } from "../../middlewares/error.middleware.js";
+import { getEndpointHandlerOrError } from "../helpers/index.js";
 import type { SimpleRouteConfig } from "../types.js";
 
 /**
@@ -20,91 +20,67 @@ export const endpointRoutes: SimpleRouteConfig = {
     {
       method: "POST",
       path: "/status",
-      handler: (c: Context) => {
-        const endpointHandler = c.get("endpointHandler");
-        if (!endpointHandler) {
-          const errorResponse = createErrorResponse(
-            "CONNECTION_MANAGER_NOT_AVAILABLE",
-            "连接管理器未初始化"
-          );
-          return c.json(errorResponse, 503);
+      handler: async (c: Context) => {
+        const handlerOrError = getEndpointHandlerOrError(c);
+        if (handlerOrError instanceof Response) {
+          return handlerOrError;
         }
-        return endpointHandler.getEndpointStatus(c);
+        return await handlerOrError.getEndpointStatus(c);
       },
     },
     {
       method: "POST",
       path: "/connect",
-      handler: (c: Context) => {
-        const endpointHandler = c.get("endpointHandler");
-        if (!endpointHandler) {
-          const errorResponse = createErrorResponse(
-            "CONNECTION_MANAGER_NOT_AVAILABLE",
-            "连接管理器未初始化"
-          );
-          return c.json(errorResponse, 503);
+      handler: async (c: Context) => {
+        const handlerOrError = getEndpointHandlerOrError(c);
+        if (handlerOrError instanceof Response) {
+          return handlerOrError;
         }
-        return endpointHandler.connectEndpoint(c);
+        return await handlerOrError.connectEndpoint(c);
       },
     },
     {
       method: "POST",
       path: "/disconnect",
-      handler: (c: Context) => {
-        const endpointHandler = c.get("endpointHandler");
-        if (!endpointHandler) {
-          const errorResponse = createErrorResponse(
-            "CONNECTION_MANAGER_NOT_AVAILABLE",
-            "连接管理器未初始化"
-          );
-          return c.json(errorResponse, 503);
+      handler: async (c: Context) => {
+        const handlerOrError = getEndpointHandlerOrError(c);
+        if (handlerOrError instanceof Response) {
+          return handlerOrError;
         }
-        return endpointHandler.disconnectEndpoint(c);
+        return await handlerOrError.disconnectEndpoint(c);
       },
     },
     {
       method: "POST",
       path: "/reconnect",
-      handler: (c: Context) => {
-        const endpointHandler = c.get("endpointHandler");
-        if (!endpointHandler) {
-          const errorResponse = createErrorResponse(
-            "CONNECTION_MANAGER_NOT_AVAILABLE",
-            "连接管理器未初始化"
-          );
-          return c.json(errorResponse, 503);
+      handler: async (c: Context) => {
+        const handlerOrError = getEndpointHandlerOrError(c);
+        if (handlerOrError instanceof Response) {
+          return handlerOrError;
         }
-        return endpointHandler.reconnectEndpoint(c);
+        return await handlerOrError.reconnectEndpoint(c);
       },
     },
     {
       method: "POST",
       path: "/add",
-      handler: (c: Context) => {
-        const endpointHandler = c.get("endpointHandler");
-        if (!endpointHandler) {
-          const errorResponse = createErrorResponse(
-            "CONNECTION_MANAGER_NOT_AVAILABLE",
-            "连接管理器未初始化"
-          );
-          return c.json(errorResponse, 503);
+      handler: async (c: Context) => {
+        const handlerOrError = getEndpointHandlerOrError(c);
+        if (handlerOrError instanceof Response) {
+          return handlerOrError;
         }
-        return endpointHandler.addEndpoint(c);
+        return await handlerOrError.addEndpoint(c);
       },
     },
     {
       method: "POST",
       path: "/remove",
-      handler: (c: Context) => {
-        const endpointHandler = c.get("endpointHandler");
-        if (!endpointHandler) {
-          const errorResponse = createErrorResponse(
-            "CONNECTION_MANAGER_NOT_AVAILABLE",
-            "连接管理器未初始化"
-          );
-          return c.json(errorResponse, 503);
+      handler: async (c: Context) => {
+        const handlerOrError = getEndpointHandlerOrError(c);
+        if (handlerOrError instanceof Response) {
+          return handlerOrError;
         }
-        return endpointHandler.removeEndpoint(c);
+        return await handlerOrError.removeEndpoint(c);
       },
     },
   ],

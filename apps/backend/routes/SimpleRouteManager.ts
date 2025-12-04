@@ -93,27 +93,33 @@ export class SimpleRouteManager {
   applyToApp(app: Hono<AppContext>): void {
     console.log(`开始将 ${this.routes.size} 个路由域应用到 Hono 应用...`);
 
-    // 设置全局中间件，注入依赖
+    // 设置全局中间件，仅注入基本依赖
     app.use("*", async (c, next) => {
       c.set("dependencies", this.dependencies);
+      await next();
+    });
 
-      // 为端点路由注入 endpointHandler
-      if (c.req.path.startsWith("/api/endpoint") && this.getConnectionManager) {
+    // 为端点路由设置专用中间件，只应用于 /api/endpoint/* 路径
+    if (this.getConnectionManager) {
+      app.use("/api/endpoint/*", async (c, next) => {
         try {
-          const connectionManager = this.getConnectionManager();
-          if (connectionManager && !c.get("endpointHandler")) {
-            const endpointHandler =
-              this.dependencies.createEndpointHandler(connectionManager);
-            c.set("endpointHandler", endpointHandler);
+          if (!c.get("endpointHandler") && this.getConnectionManager) {
+            const connectionManager = this.getConnectionManager();
+            if (connectionManager) {
+              const endpointHandler =
+                this.dependencies.createEndpointHandler(connectionManager);
+              if (endpointHandler) {
+                c.set("endpointHandler", endpointHandler);
+              }
+            }
           }
         } catch (error) {
           console.error("Failed to create endpointHandler:", error);
           // 不抛出错误，让路由处理器处理未初始化的情况
         }
-      }
-
-      await next();
-    });
+        await next();
+      });
+    }
 
     // 获取所有路由并排序，确保 static 路由最后应用
     const routeEntries = Array.from(this.routes.entries());

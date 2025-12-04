@@ -20,6 +20,7 @@ export const miscRoutes: SimpleRouteConfig = {
         ) as HandlerDependencies;
         return serviceApiHandler.restartService(c);
       },
+      // 注意：此路由是为了向后兼容保留，与 /api/services/restart 功能重复
     },
   ],
 };

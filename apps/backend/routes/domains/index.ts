@@ -14,7 +14,7 @@ export { servicesRoutes } from "./services.route.js";
 export { updateRoutes } from "./update.route.js";
 export { staticRoutes } from "./static.route.js";
 export { cozeRoutes } from "./coze.route.js";
-export { toollogsRoutes } from "./toollogs.route.js";
+export { toolLogsRoutes } from "./tool-logs.route.js";
 export { mcpserverRoutes } from "./mcpserver.route.js";
 export { endpointRoutes } from "./endpoint.route.js";
 export { miscRoutes } from "./misc.route.js";
@@ -32,7 +32,7 @@ export const routeNames = [
   "update",
   "static",
   "coze",
-  "toollogs",
+  "tool-logs",
   "mcpserver",
   "endpoint",
   "misc",

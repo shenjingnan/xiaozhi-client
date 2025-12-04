@@ -4,7 +4,7 @@
  */
 
 import type { Context } from "hono";
-import type { SimpleRouteConfig } from "../types.js";
+import type { HandlerDependencies, SimpleRouteConfig } from "../types.js";
 
 export const updateRoutes: SimpleRouteConfig = {
   name: "update",
@@ -15,8 +15,10 @@ export const updateRoutes: SimpleRouteConfig = {
       method: "POST",
       path: "/update",
       handler: (c: Context) => {
-        const handler = c.get("updateApiHandler");
-        return handler.performUpdate(c);
+        const { updateApiHandler } = c.get(
+          "dependencies"
+        ) as HandlerDependencies;
+        return updateApiHandler.performUpdate(c);
       },
     },
   ],

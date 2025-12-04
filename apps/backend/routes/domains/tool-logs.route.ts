@@ -4,10 +4,10 @@
  */
 
 import type { Context } from "hono";
-import type { SimpleRouteConfig } from "../types.js";
+import type { HandlerDependencies, SimpleRouteConfig } from "../types.js";
 
-export const toollogsRoutes: SimpleRouteConfig = {
-  name: "toollogs",
+export const toolLogsRoutes: SimpleRouteConfig = {
+  name: "tool-logs",
   path: "/api/tool-calls",
   description: "工具调用日志相关 API",
   routes: [
@@ -15,8 +15,10 @@ export const toollogsRoutes: SimpleRouteConfig = {
       method: "GET",
       path: "/logs",
       handler: (c: Context) => {
-        const handler = c.get("toolCallLogApiHandler");
-        return handler.getToolCallLogs(c);
+        const { toolCallLogApiHandler } = c.get(
+          "dependencies"
+        ) as HandlerDependencies;
+        return toolCallLogApiHandler.getToolCallLogs(c);
       },
     },
   ],
