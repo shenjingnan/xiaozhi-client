@@ -5,7 +5,7 @@
  */
 
 import type { IndependentXiaozhiConnectionManager } from "@services/index.js";
-import type { Hono } from "hono";
+import type { Context, Hono, Next } from "hono";
 import { createErrorResponse } from "../middlewares/error.middleware.js";
 import type { AppContext } from "../types/hono.context.js";
 import type { HandlerDependencies } from "./types.js";
@@ -154,7 +154,7 @@ export class SimpleRouteManager {
       ];
 
       // 创建包装的处理器，添加错误处理
-      const wrappedHandler = async (c: any, next: any) => {
+      const wrappedHandler = async (c: Context<AppContext>, next: Next) => {
         try {
           const result = await route.handler(c);
           // 直接返回结果，不管是 Response 还是什么
