@@ -5,7 +5,7 @@
  */
 
 import type { Context } from "hono";
-import type { SimpleRouteConfig } from "../types.js";
+import type { HandlerDependencies, SimpleRouteConfig } from "../types.js";
 
 /**
  * 工具调用路由配置
@@ -20,7 +20,7 @@ export const toolsRoutes: SimpleRouteConfig = {
       method: "POST",
       path: "/call",
       handler: (c: Context) => {
-        const { toolApiHandler } = c.get("dependencies") as any;
+        const { toolApiHandler } = c.get("dependencies") as HandlerDependencies;
         return toolApiHandler.callTool(c);
       },
     },
@@ -28,7 +28,7 @@ export const toolsRoutes: SimpleRouteConfig = {
       method: "GET",
       path: "/list",
       handler: (c: Context) => {
-        const { toolApiHandler } = c.get("dependencies") as any;
+        const { toolApiHandler } = c.get("dependencies") as HandlerDependencies;
         return toolApiHandler.listTools(c);
       },
     },
@@ -36,7 +36,7 @@ export const toolsRoutes: SimpleRouteConfig = {
       method: "GET",
       path: "/custom",
       handler: (c: Context) => {
-        const { toolApiHandler } = c.get("dependencies") as any;
+        const { toolApiHandler } = c.get("dependencies") as HandlerDependencies;
         return toolApiHandler.getCustomTools(c);
       },
     },
@@ -44,7 +44,7 @@ export const toolsRoutes: SimpleRouteConfig = {
       method: "POST",
       path: "/custom",
       handler: (c: Context) => {
-        const { toolApiHandler } = c.get("dependencies") as any;
+        const { toolApiHandler } = c.get("dependencies") as HandlerDependencies;
         return toolApiHandler.addCustomTool(c);
       },
     },
@@ -52,7 +52,7 @@ export const toolsRoutes: SimpleRouteConfig = {
       method: "PUT",
       path: "/custom/:toolName",
       handler: (c: Context) => {
-        const { toolApiHandler } = c.get("dependencies") as any;
+        const { toolApiHandler } = c.get("dependencies") as HandlerDependencies;
         return toolApiHandler.updateCustomTool(c);
       },
     },
@@ -60,7 +60,7 @@ export const toolsRoutes: SimpleRouteConfig = {
       method: "DELETE",
       path: "/custom/:toolName",
       handler: (c: Context) => {
-        const { toolApiHandler } = c.get("dependencies") as any;
+        const { toolApiHandler } = c.get("dependencies") as HandlerDependencies;
         return toolApiHandler.removeCustomTool(c);
       },
     },

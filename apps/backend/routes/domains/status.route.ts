@@ -5,7 +5,7 @@
  */
 
 import type { Context } from "hono";
-import type { SimpleRouteConfig } from "../types.js";
+import type { HandlerDependencies, SimpleRouteConfig } from "../types.js";
 
 /**
  * 状态查询路由配置
@@ -20,7 +20,9 @@ export const statusRoutes: SimpleRouteConfig = {
       method: "GET",
       path: "",
       handler: (c: Context) => {
-        const { statusApiHandler } = c.get("dependencies") as any;
+        const { statusApiHandler } = c.get(
+          "dependencies"
+        ) as HandlerDependencies;
         return statusApiHandler.getStatus(c);
       },
     },
@@ -28,7 +30,9 @@ export const statusRoutes: SimpleRouteConfig = {
       method: "GET",
       path: "/client",
       handler: (c: Context) => {
-        const { statusApiHandler } = c.get("dependencies") as any;
+        const { statusApiHandler } = c.get(
+          "dependencies"
+        ) as HandlerDependencies;
         return statusApiHandler.getClientStatus(c);
       },
     },
@@ -36,7 +40,9 @@ export const statusRoutes: SimpleRouteConfig = {
       method: "PUT",
       path: "/client",
       handler: (c: Context) => {
-        const { statusApiHandler } = c.get("dependencies") as any;
+        const { statusApiHandler } = c.get(
+          "dependencies"
+        ) as HandlerDependencies;
         return statusApiHandler.updateClientStatus(c);
       },
     },
@@ -44,7 +50,9 @@ export const statusRoutes: SimpleRouteConfig = {
       method: "POST",
       path: "/reset",
       handler: (c: Context) => {
-        const { statusApiHandler } = c.get("dependencies") as any;
+        const { statusApiHandler } = c.get(
+          "dependencies"
+        ) as HandlerDependencies;
         return statusApiHandler.resetStatus(c);
       },
     },
@@ -52,7 +60,9 @@ export const statusRoutes: SimpleRouteConfig = {
       method: "GET",
       path: "/mcp-servers",
       handler: (c: Context) => {
-        const { statusApiHandler } = c.get("dependencies") as any;
+        const { statusApiHandler } = c.get(
+          "dependencies"
+        ) as HandlerDependencies;
         return statusApiHandler.getActiveMCPServers(c);
       },
     },
@@ -60,7 +70,9 @@ export const statusRoutes: SimpleRouteConfig = {
       method: "PUT",
       path: "/mcp-servers",
       handler: (c: Context) => {
-        const { statusApiHandler } = c.get("dependencies") as any;
+        const { statusApiHandler } = c.get(
+          "dependencies"
+        ) as HandlerDependencies;
         return statusApiHandler.setActiveMCPServers(c);
       },
     },

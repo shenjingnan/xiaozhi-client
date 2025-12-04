@@ -5,7 +5,7 @@
  */
 
 import type { Context } from "hono";
-import type { SimpleRouteConfig } from "../types.js";
+import type { HandlerDependencies, SimpleRouteConfig } from "../types.js";
 
 /**
  * 版本信息路由配置
@@ -20,7 +20,9 @@ export const versionRoutes: SimpleRouteConfig = {
       method: "GET",
       path: "",
       handler: (c: Context) => {
-        const { versionApiHandler } = c.get("dependencies") as any;
+        const { versionApiHandler } = c.get(
+          "dependencies"
+        ) as HandlerDependencies;
         return versionApiHandler.getVersion(c);
       },
     },
@@ -28,7 +30,9 @@ export const versionRoutes: SimpleRouteConfig = {
       method: "GET",
       path: "/simple",
       handler: (c: Context) => {
-        const { versionApiHandler } = c.get("dependencies") as any;
+        const { versionApiHandler } = c.get(
+          "dependencies"
+        ) as HandlerDependencies;
         return versionApiHandler.getVersionSimple(c);
       },
     },
@@ -36,7 +40,9 @@ export const versionRoutes: SimpleRouteConfig = {
       method: "DELETE",
       path: "/cache",
       handler: (c: Context) => {
-        const { versionApiHandler } = c.get("dependencies") as any;
+        const { versionApiHandler } = c.get(
+          "dependencies"
+        ) as HandlerDependencies;
         return versionApiHandler.clearVersionCache(c);
       },
     },
@@ -44,7 +50,9 @@ export const versionRoutes: SimpleRouteConfig = {
       method: "GET",
       path: "/latest",
       handler: (c: Context) => {
-        const { versionApiHandler } = c.get("dependencies") as any;
+        const { versionApiHandler } = c.get(
+          "dependencies"
+        ) as HandlerDependencies;
         return versionApiHandler.checkLatestVersion(c);
       },
     },

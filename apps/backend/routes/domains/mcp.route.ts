@@ -5,7 +5,7 @@
  */
 
 import type { Context } from "hono";
-import type { SimpleRouteConfig } from "../types.js";
+import type { HandlerDependencies, SimpleRouteConfig } from "../types.js";
 
 /**
  * MCP 协议路由配置
@@ -20,7 +20,9 @@ export const mcpRoutes: SimpleRouteConfig = {
       method: "POST",
       path: "",
       handler: (c: Context) => {
-        const { mcpRouteHandler } = c.get("dependencies") as any;
+        const { mcpRouteHandler } = c.get(
+          "dependencies"
+        ) as HandlerDependencies;
         return mcpRouteHandler.handlePost(c);
       },
     },
@@ -28,7 +30,9 @@ export const mcpRoutes: SimpleRouteConfig = {
       method: "GET",
       path: "",
       handler: (c: Context) => {
-        const { mcpRouteHandler } = c.get("dependencies") as any;
+        const { mcpRouteHandler } = c.get(
+          "dependencies"
+        ) as HandlerDependencies;
         return mcpRouteHandler.handleGet(c);
       },
     },

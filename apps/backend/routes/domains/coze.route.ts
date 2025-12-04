@@ -4,7 +4,7 @@
  */
 
 import type { Context } from "hono";
-import type { SimpleRouteConfig } from "../types.js";
+import type { HandlerDependencies, SimpleRouteConfig } from "../types.js";
 
 export const cozeRoutes: SimpleRouteConfig = {
   name: "coze",
@@ -15,7 +15,7 @@ export const cozeRoutes: SimpleRouteConfig = {
       method: "GET",
       path: "/workspaces",
       handler: (c: Context) => {
-        const { cozeApiHandler } = c.get("dependencies") as any;
+        const { cozeApiHandler } = c.get("dependencies") as HandlerDependencies;
         return cozeApiHandler.getWorkspaces(c);
       },
     },
@@ -23,7 +23,7 @@ export const cozeRoutes: SimpleRouteConfig = {
       method: "GET",
       path: "/workflows",
       handler: (c: Context) => {
-        const { cozeApiHandler } = c.get("dependencies") as any;
+        const { cozeApiHandler } = c.get("dependencies") as HandlerDependencies;
         return cozeApiHandler.getWorkflows(c);
       },
     },
@@ -31,7 +31,7 @@ export const cozeRoutes: SimpleRouteConfig = {
       method: "POST",
       path: "/cache/clear",
       handler: (c: Context) => {
-        const { cozeApiHandler } = c.get("dependencies") as any;
+        const { cozeApiHandler } = c.get("dependencies") as HandlerDependencies;
         return cozeApiHandler.clearCache(c);
       },
     },
@@ -39,7 +39,7 @@ export const cozeRoutes: SimpleRouteConfig = {
       method: "GET",
       path: "/cache/stats",
       handler: (c: Context) => {
-        const { cozeApiHandler } = c.get("dependencies") as any;
+        const { cozeApiHandler } = c.get("dependencies") as HandlerDependencies;
         return cozeApiHandler.getCacheStats(c);
       },
     },

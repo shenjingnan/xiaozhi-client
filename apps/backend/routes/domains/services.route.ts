@@ -4,7 +4,7 @@
  */
 
 import type { Context } from "hono";
-import type { SimpleRouteConfig } from "../types.js";
+import type { HandlerDependencies, SimpleRouteConfig } from "../types.js";
 
 export const servicesRoutes: SimpleRouteConfig = {
   name: "services",
@@ -15,7 +15,9 @@ export const servicesRoutes: SimpleRouteConfig = {
       method: "POST",
       path: "/restart",
       handler: (c: Context) => {
-        const { serviceApiHandler } = c.get("dependencies") as any;
+        const { serviceApiHandler } = c.get(
+          "dependencies"
+        ) as HandlerDependencies;
         return serviceApiHandler.restartService(c);
       },
     },
@@ -23,7 +25,9 @@ export const servicesRoutes: SimpleRouteConfig = {
       method: "POST",
       path: "/stop",
       handler: (c: Context) => {
-        const { serviceApiHandler } = c.get("dependencies") as any;
+        const { serviceApiHandler } = c.get(
+          "dependencies"
+        ) as HandlerDependencies;
         return serviceApiHandler.stopService(c);
       },
     },
@@ -31,7 +35,9 @@ export const servicesRoutes: SimpleRouteConfig = {
       method: "POST",
       path: "/start",
       handler: (c: Context) => {
-        const { serviceApiHandler } = c.get("dependencies") as any;
+        const { serviceApiHandler } = c.get(
+          "dependencies"
+        ) as HandlerDependencies;
         return serviceApiHandler.startService(c);
       },
     },
@@ -39,7 +45,9 @@ export const servicesRoutes: SimpleRouteConfig = {
       method: "GET",
       path: "/status",
       handler: (c: Context) => {
-        const { serviceApiHandler } = c.get("dependencies") as any;
+        const { serviceApiHandler } = c.get(
+          "dependencies"
+        ) as HandlerDependencies;
         return serviceApiHandler.getServiceStatus(c);
       },
     },
@@ -47,7 +55,9 @@ export const servicesRoutes: SimpleRouteConfig = {
       method: "GET",
       path: "/health",
       handler: (c: Context) => {
-        const { serviceApiHandler } = c.get("dependencies") as any;
+        const { serviceApiHandler } = c.get(
+          "dependencies"
+        ) as HandlerDependencies;
         return serviceApiHandler.getServiceHealth(c);
       },
     },

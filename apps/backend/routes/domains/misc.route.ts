@@ -4,7 +4,7 @@
  */
 
 import type { Context } from "hono";
-import type { SimpleRouteConfig } from "../types.js";
+import type { HandlerDependencies, SimpleRouteConfig } from "../types.js";
 
 export const miscRoutes: SimpleRouteConfig = {
   name: "misc",
@@ -15,7 +15,9 @@ export const miscRoutes: SimpleRouteConfig = {
       method: "POST",
       path: "/restart",
       handler: (c: Context) => {
-        const { serviceApiHandler } = c.get("dependencies") as any;
+        const { serviceApiHandler } = c.get(
+          "dependencies"
+        ) as HandlerDependencies;
         return serviceApiHandler.restartService(c);
       },
     },

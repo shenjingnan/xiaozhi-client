@@ -11,7 +11,6 @@ export type {
   HandlerDependencies,
   RouteRegistryOptions,
   RouteStatistics,
-  // 新的简化架构类型
   HTTPMethod,
   RouteDefinition,
   SimpleRouteConfig,

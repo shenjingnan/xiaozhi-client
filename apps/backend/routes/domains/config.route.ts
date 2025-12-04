@@ -5,7 +5,8 @@
  */
 
 import type { Context } from "hono";
-import type { SimpleRouteConfig } from "../types.js";
+import type { AppContext } from "../../types/hono.context.js";
+import type { HandlerDependencies, SimpleRouteConfig } from "../types.js";
 
 /**
  * 配置管理路由配置
@@ -19,72 +20,81 @@ export const configRoutes: SimpleRouteConfig = {
     {
       method: "GET",
       path: "",
-      handler: (c: Context) => {
-        const { configApiHandler } = c.get("dependencies") as any;
+      handler: (c: Context<AppContext>) => {
+        const dependencies = c.get("dependencies") as HandlerDependencies;
+        const { configApiHandler } = dependencies;
         return configApiHandler.getConfig(c);
       },
     },
     {
       method: "PUT",
       path: "",
-      handler: (c: Context) => {
-        const { configApiHandler } = c.get("dependencies") as any;
+      handler: (c: Context<AppContext>) => {
+        const dependencies = c.get("dependencies") as HandlerDependencies;
+        const { configApiHandler } = dependencies;
         return configApiHandler.updateConfig(c);
       },
     },
     {
       method: "GET",
       path: "/mcp-endpoint",
-      handler: (c: Context) => {
-        const { configApiHandler } = c.get("dependencies") as any;
+      handler: (c: Context<AppContext>) => {
+        const dependencies = c.get("dependencies") as HandlerDependencies;
+        const { configApiHandler } = dependencies;
         return configApiHandler.getMcpEndpoint(c);
       },
     },
     {
       method: "GET",
       path: "/mcp-endpoints",
-      handler: (c: Context) => {
-        const { configApiHandler } = c.get("dependencies") as any;
+      handler: (c: Context<AppContext>) => {
+        const dependencies = c.get("dependencies") as HandlerDependencies;
+        const { configApiHandler } = dependencies;
         return configApiHandler.getMcpEndpoints(c);
       },
     },
     {
       method: "GET",
       path: "/mcp-servers",
-      handler: (c: Context) => {
-        const { configApiHandler } = c.get("dependencies") as any;
+      handler: (c: Context<AppContext>) => {
+        const dependencies = c.get("dependencies") as HandlerDependencies;
+        const { configApiHandler } = dependencies;
         return configApiHandler.getMcpServers(c);
       },
     },
     {
       method: "GET",
       path: "/connection",
-      handler: (c: Context) => {
-        const { configApiHandler } = c.get("dependencies") as any;
+      handler: (c: Context<AppContext>) => {
+        const dependencies = c.get("dependencies") as HandlerDependencies;
+        const { configApiHandler } = dependencies;
         return configApiHandler.getConnectionConfig(c);
       },
     },
     {
       method: "POST",
       path: "/reload",
-      handler: (c: Context) => {
-        const { configApiHandler } = c.get("dependencies") as any;
+      handler: (c: Context<AppContext>) => {
+        const dependencies = c.get("dependencies") as HandlerDependencies;
+        const { configApiHandler } = dependencies;
         return configApiHandler.reloadConfig(c);
       },
     },
     {
       method: "GET",
       path: "/path",
-      handler: (c: Context) => {
-        const { configApiHandler } = c.get("dependencies") as any;
+      handler: (c: Context<AppContext>) => {
+        const dependencies = c.get("dependencies") as HandlerDependencies;
+        const { configApiHandler } = dependencies;
         return configApiHandler.getConfigPath(c);
       },
     },
     {
       method: "GET",
       path: "/exists",
-      handler: (c: Context) => {
-        const { configApiHandler } = c.get("dependencies") as any;
+      handler: (c: Context<AppContext>) => {
+        const dependencies = c.get("dependencies") as HandlerDependencies;
+        const { configApiHandler } = dependencies;
         return configApiHandler.checkConfigExists(c);
       },
     },
