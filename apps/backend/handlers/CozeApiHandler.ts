@@ -79,7 +79,7 @@ export class CozeApiHandler {
    * 获取工作空间列表
    * GET /api/coze/workspaces
    */
-  static async getWorkspaces(c: Context): Promise<Response> {
+  async getWorkspaces(c: Context): Promise<Response> {
     try {
       logger.info("处理获取工作空间列表请求");
 
@@ -150,7 +150,7 @@ export class CozeApiHandler {
    * 获取工作流列表
    * GET /api/coze/workflows?workspace_id=xxx&page_num=1&page_size=20
    */
-  static async getWorkflows(c: Context): Promise<Response> {
+  async getWorkflows(c: Context): Promise<Response> {
     try {
       logger.info("处理获取工作流列表请求");
 
@@ -295,7 +295,7 @@ export class CozeApiHandler {
    * 清除扣子 API 缓存
    * POST /api/coze/cache/clear
    */
-  static async clearCache(c: Context): Promise<Response> {
+  async clearCache(c: Context): Promise<Response> {
     try {
       logger.info("处理清除扣子 API 缓存请求");
 
@@ -354,7 +354,7 @@ export class CozeApiHandler {
    * 获取缓存统计信息
    * GET /api/coze/cache/stats
    */
-  static async getCacheStats(c: Context): Promise<Response> {
+  async getCacheStats(c: Context): Promise<Response> {
     try {
       logger.info("处理获取缓存统计信息请求");
 

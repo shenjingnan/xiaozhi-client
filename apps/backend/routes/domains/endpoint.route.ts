@@ -5,6 +5,7 @@
  */
 
 import type { Context } from "hono";
+import { createErrorResponse } from "../../middlewares/error.middleware.js";
 import type { SimpleRouteConfig } from "../types.js";
 
 /**
@@ -22,7 +23,11 @@ export const endpointRoutes: SimpleRouteConfig = {
       handler: (c: Context) => {
         const endpointHandler = c.get("endpointHandler");
         if (!endpointHandler) {
-          throw new Error("端点处理器未初始化，请先设置连接管理器");
+          const errorResponse = createErrorResponse(
+            "CONNECTION_MANAGER_NOT_AVAILABLE",
+            "连接管理器未初始化"
+          );
+          return c.json(errorResponse, 503);
         }
         return endpointHandler.getEndpointStatus(c);
       },
@@ -33,7 +38,11 @@ export const endpointRoutes: SimpleRouteConfig = {
       handler: (c: Context) => {
         const endpointHandler = c.get("endpointHandler");
         if (!endpointHandler) {
-          throw new Error("端点处理器未初始化，请先设置连接管理器");
+          const errorResponse = createErrorResponse(
+            "CONNECTION_MANAGER_NOT_AVAILABLE",
+            "连接管理器未初始化"
+          );
+          return c.json(errorResponse, 503);
         }
         return endpointHandler.connectEndpoint(c);
       },
@@ -44,7 +53,11 @@ export const endpointRoutes: SimpleRouteConfig = {
       handler: (c: Context) => {
         const endpointHandler = c.get("endpointHandler");
         if (!endpointHandler) {
-          throw new Error("端点处理器未初始化，请先设置连接管理器");
+          const errorResponse = createErrorResponse(
+            "CONNECTION_MANAGER_NOT_AVAILABLE",
+            "连接管理器未初始化"
+          );
+          return c.json(errorResponse, 503);
         }
         return endpointHandler.disconnectEndpoint(c);
       },
@@ -55,7 +68,11 @@ export const endpointRoutes: SimpleRouteConfig = {
       handler: (c: Context) => {
         const endpointHandler = c.get("endpointHandler");
         if (!endpointHandler) {
-          throw new Error("端点处理器未初始化，请先设置连接管理器");
+          const errorResponse = createErrorResponse(
+            "CONNECTION_MANAGER_NOT_AVAILABLE",
+            "连接管理器未初始化"
+          );
+          return c.json(errorResponse, 503);
         }
         return endpointHandler.reconnectEndpoint(c);
       },
@@ -66,7 +83,11 @@ export const endpointRoutes: SimpleRouteConfig = {
       handler: (c: Context) => {
         const endpointHandler = c.get("endpointHandler");
         if (!endpointHandler) {
-          throw new Error("端点处理器未初始化，请先设置连接管理器");
+          const errorResponse = createErrorResponse(
+            "CONNECTION_MANAGER_NOT_AVAILABLE",
+            "连接管理器未初始化"
+          );
+          return c.json(errorResponse, 503);
         }
         return endpointHandler.addEndpoint(c);
       },
@@ -77,7 +98,11 @@ export const endpointRoutes: SimpleRouteConfig = {
       handler: (c: Context) => {
         const endpointHandler = c.get("endpointHandler");
         if (!endpointHandler) {
-          throw new Error("端点处理器未初始化，请先设置连接管理器");
+          const errorResponse = createErrorResponse(
+            "CONNECTION_MANAGER_NOT_AVAILABLE",
+            "连接管理器未初始化"
+          );
+          return c.json(errorResponse, 503);
         }
         return endpointHandler.removeEndpoint(c);
       },

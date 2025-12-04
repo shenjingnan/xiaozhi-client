@@ -4,7 +4,9 @@
  * 提供直接、高效的路由注册和管理功能
  */
 
+import type { IndependentXiaozhiConnectionManager } from "@services/index.js";
 import type { Hono } from "hono";
+import { createErrorResponse } from "../middlewares/error.middleware.js";
 import type { AppContext } from "../types/hono.context.js";
 import type { HandlerDependencies } from "./types.js";
 import type { RouteStats, SimpleRouteConfig } from "./types.js";
@@ -16,9 +18,16 @@ import type { RouteStats, SimpleRouteConfig } from "./types.js";
 export class SimpleRouteManager {
   private routes: Map<string, SimpleRouteConfig> = new Map();
   private dependencies: HandlerDependencies;
+  private getConnectionManager?: () =>
+    | IndependentXiaozhiConnectionManager
+    | undefined;
 
-  constructor(dependencies: HandlerDependencies) {
+  constructor(
+    dependencies: HandlerDependencies,
+    getConnectionManager?: () => IndependentXiaozhiConnectionManager | undefined
+  ) {
     this.dependencies = dependencies;
+    this.getConnectionManager = getConnectionManager;
   }
 
   /**
@@ -87,10 +96,35 @@ export class SimpleRouteManager {
     // 设置全局中间件，注入依赖
     app.use("*", async (c, next) => {
       c.set("dependencies", this.dependencies);
+
+      // 为端点路由注入 endpointHandler
+      if (c.req.path.startsWith("/api/endpoint") && this.getConnectionManager) {
+        try {
+          const connectionManager = this.getConnectionManager();
+          if (connectionManager && !c.get("endpointHandler")) {
+            const endpointHandler =
+              this.dependencies.createEndpointHandler(connectionManager);
+            c.set("endpointHandler", endpointHandler);
+          }
+        } catch (error) {
+          console.error("Failed to create endpointHandler:", error);
+          // 不抛出错误，让路由处理器处理未初始化的情况
+        }
+      }
+
       await next();
     });
 
-    for (const [domainName, config] of this.routes) {
+    // 获取所有路由并排序，确保 static 路由最后应用
+    const routeEntries = Array.from(this.routes.entries());
+    routeEntries.sort(([nameA], [nameB]) => {
+      // static 路由永远排在最后
+      if (nameA === "static") return 1;
+      if (nameB === "static") return -1;
+      return 0;
+    });
+
+    for (const [domainName, config] of routeEntries) {
       try {
         this.applyRouteConfig(app, config);
         console.log(`✓ 成功应用路由域: ${domainName}`);
@@ -119,41 +153,59 @@ export class SimpleRouteManager {
         ...(route.middleware || []),
       ];
 
+      // 创建包装的处理器，添加错误处理
+      const wrappedHandler = async (c: any, next: any) => {
+        try {
+          const result = await route.handler(c);
+          // 直接返回结果，不管是 Response 还是什么
+          // Hono 会处理 Response 对象
+          return result;
+        } catch (error) {
+          console.error(`路由处理错误 [${route.method} ${fullPath}]:`, error);
+          const errorResponse = createErrorResponse(
+            "HANDLER_ERROR",
+            "处理器执行失败",
+            error instanceof Error ? error.message : String(error)
+          );
+          return c.json(errorResponse, 500);
+        }
+      };
+
       // 注册路由 - 使用Hono的标准API
       switch (route.method) {
         case "GET":
           if (allMiddleware.length > 0) {
-            app.get(fullPath, ...allMiddleware, route.handler);
+            app.get(fullPath, ...allMiddleware, wrappedHandler);
           } else {
-            app.get(fullPath, route.handler);
+            app.get(fullPath, wrappedHandler);
           }
           break;
         case "POST":
           if (allMiddleware.length > 0) {
-            app.post(fullPath, ...allMiddleware, route.handler);
+            app.post(fullPath, ...allMiddleware, wrappedHandler);
           } else {
-            app.post(fullPath, route.handler);
+            app.post(fullPath, wrappedHandler);
           }
           break;
         case "PUT":
           if (allMiddleware.length > 0) {
-            app.put(fullPath, ...allMiddleware, route.handler);
+            app.put(fullPath, ...allMiddleware, wrappedHandler);
           } else {
-            app.put(fullPath, route.handler);
+            app.put(fullPath, wrappedHandler);
           }
           break;
         case "DELETE":
           if (allMiddleware.length > 0) {
-            app.delete(fullPath, ...allMiddleware, route.handler);
+            app.delete(fullPath, ...allMiddleware, wrappedHandler);
           } else {
-            app.delete(fullPath, route.handler);
+            app.delete(fullPath, wrappedHandler);
           }
           break;
         case "PATCH":
           if (allMiddleware.length > 0) {
-            app.patch(fullPath, ...allMiddleware, route.handler);
+            app.patch(fullPath, ...allMiddleware, wrappedHandler);
           } else {
-            app.patch(fullPath, route.handler);
+            app.patch(fullPath, wrappedHandler);
           }
           break;
         default:

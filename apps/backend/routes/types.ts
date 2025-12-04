@@ -78,8 +78,8 @@ export interface HandlerDependencies {
   mcpServerApiHandler?: MCPServerApiHandler;
   /** 更新管理处理器 */
   updateApiHandler: UpdateApiHandler;
-  /** 扣子 API 处理器 - 使用静态方法，所以是类而不是实例 */
-  cozeApiHandler: typeof CozeApiHandler;
+  /** 扣子 API 处理器 */
+  cozeApiHandler: CozeApiHandler;
   /** 创建端点处理器的工厂函数 */
   createEndpointHandler: (
     connectionManager: IndependentXiaozhiConnectionManager

@@ -33,11 +33,35 @@ export const statusRoutes: SimpleRouteConfig = {
       },
     },
     {
+      method: "PUT",
+      path: "/client",
+      handler: (c: Context) => {
+        const { statusApiHandler } = c.get("dependencies") as any;
+        return statusApiHandler.updateClientStatus(c);
+      },
+    },
+    {
       method: "POST",
       path: "/reset",
       handler: (c: Context) => {
         const { statusApiHandler } = c.get("dependencies") as any;
         return statusApiHandler.resetStatus(c);
+      },
+    },
+    {
+      method: "GET",
+      path: "/mcp-servers",
+      handler: (c: Context) => {
+        const { statusApiHandler } = c.get("dependencies") as any;
+        return statusApiHandler.getActiveMCPServers(c);
+      },
+    },
+    {
+      method: "PUT",
+      path: "/mcp-servers",
+      handler: (c: Context) => {
+        const { statusApiHandler } = c.get("dependencies") as any;
+        return statusApiHandler.setActiveMCPServers(c);
       },
     },
   ],

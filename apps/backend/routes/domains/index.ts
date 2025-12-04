@@ -17,6 +17,7 @@ export { cozeRoutes } from "./coze.route.js";
 export { toollogsRoutes } from "./toollogs.route.js";
 export { mcpserverRoutes } from "./mcpserver.route.js";
 export { endpointRoutes } from "./endpoint.route.js";
+export { miscRoutes } from "./misc.route.js";
 
 /**
  * 路由域名列表
@@ -34,6 +35,7 @@ export const routeNames = [
   "toollogs",
   "mcpserver",
   "endpoint",
+  "misc",
 ] as const;
 
 /**

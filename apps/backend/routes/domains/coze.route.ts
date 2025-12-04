@@ -15,32 +15,32 @@ export const cozeRoutes: SimpleRouteConfig = {
       method: "GET",
       path: "/workspaces",
       handler: (c: Context) => {
-        const handler = c.get("cozeApiHandler");
-        return handler.getWorkspaces(c);
+        const { cozeApiHandler } = c.get("dependencies") as any;
+        return cozeApiHandler.getWorkspaces(c);
       },
     },
     {
       method: "GET",
       path: "/workflows",
       handler: (c: Context) => {
-        const handler = c.get("cozeApiHandler");
-        return handler.getWorkflows(c);
+        const { cozeApiHandler } = c.get("dependencies") as any;
+        return cozeApiHandler.getWorkflows(c);
       },
     },
     {
       method: "POST",
       path: "/cache/clear",
       handler: (c: Context) => {
-        const handler = c.get("cozeApiHandler");
-        return handler.clearCache(c);
+        const { cozeApiHandler } = c.get("dependencies") as any;
+        return cozeApiHandler.clearCache(c);
       },
     },
     {
       method: "GET",
       path: "/cache/stats",
       handler: (c: Context) => {
-        const handler = c.get("cozeApiHandler");
-        return handler.getCacheStats(c);
+        const { cozeApiHandler } = c.get("dependencies") as any;
+        return cozeApiHandler.getCacheStats(c);
       },
     },
   ],

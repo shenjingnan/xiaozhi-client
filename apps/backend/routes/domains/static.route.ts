@@ -15,8 +15,15 @@ export const staticRoutes: SimpleRouteConfig = {
       method: "GET",
       path: "*",
       handler: (c: Context) => {
-        const handler = c.get("staticFileHandler");
-        return handler.handleStaticFile(c);
+        // 如果路径以 /api/ 开头，不处理
+        if (c.req.path.startsWith("/api/")) {
+          // 返回 404 让全局 404 处理器处理
+          // 但是我们需要显式调用 next() 来让下一个处理器处理
+          // 在 Hono 中，我们可以返回一个特殊的响应来触发 404
+          return c.notFound();
+        }
+        const { staticFileHandler } = c.get("dependencies") as any;
+        return staticFileHandler.handleStaticFile(c);
       },
     },
   ],

@@ -87,6 +87,18 @@ vi.mock("@services/StatusService.js", () => ({
     return {
       updateRestartStatus: vi.fn(),
       getRestartStatus: vi.fn().mockReturnValue({ status: "completed" }),
+      // 添加缺失的方法
+      getFullStatus: vi.fn().mockReturnValue({
+        client: { status: "connected", mcpEndpoint: "", activeMCPServers: [] },
+        timestamp: Date.now(),
+      }),
+      getClientStatus: vi.fn().mockReturnValue({
+        status: "connected",
+        mcpEndpoint: "",
+        activeMCPServers: [],
+      }),
+      isClientConnected: vi.fn().mockReturnValue(true),
+      getLastHeartbeat: vi.fn().mockReturnValue(Date.now()),
     };
   }),
 }));
@@ -130,29 +142,51 @@ vi.mock("@cli/Container.js", () => ({
 // Mock ServiceApiHandler
 vi.mock("@handlers/ServiceApiHandler.js", () => ({
   ServiceApiHandler: vi.fn().mockImplementation(() => ({
-    getServiceHealth: vi.fn().mockResolvedValue({
-      status: 200,
-      json: () => ({
-        success: true,
-        data: { status: "healthy", timestamp: Date.now() },
-      }),
-    }),
-    getServiceStatus: vi.fn().mockResolvedValue({
-      status: 200,
-      json: () => ({ success: true, data: { running: true } }),
-    }),
-    restartService: vi.fn().mockResolvedValue({
-      status: 200,
-      json: () => ({ success: true, message: "重启请求已接收" }),
-    }),
-    stopService: vi.fn().mockResolvedValue({
-      status: 200,
-      json: () => ({ success: true, message: "停止请求已接收" }),
-    }),
-    startService: vi.fn().mockResolvedValue({
-      status: 200,
-      json: () => ({ success: true, message: "启动请求已接收" }),
-    }),
+    getServiceHealth: vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          success: true,
+          data: { status: "healthy", timestamp: Date.now() },
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      )
+    ),
+    getServiceStatus: vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ success: true, data: { running: true } }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })
+    ),
+    restartService: vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({ success: true, message: "重启请求已接收" }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      )
+    ),
+    stopService: vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({ success: true, message: "停止请求已接收" }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      )
+    ),
+    startService: vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({ success: true, message: "启动请求已接收" }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      )
+    ),
   })),
 }));
 

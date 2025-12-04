@@ -32,5 +32,37 @@ export const toolsRoutes: SimpleRouteConfig = {
         return toolApiHandler.listTools(c);
       },
     },
+    {
+      method: "GET",
+      path: "/custom",
+      handler: (c: Context) => {
+        const { toolApiHandler } = c.get("dependencies") as any;
+        return toolApiHandler.getCustomTools(c);
+      },
+    },
+    {
+      method: "POST",
+      path: "/custom",
+      handler: (c: Context) => {
+        const { toolApiHandler } = c.get("dependencies") as any;
+        return toolApiHandler.addCustomTool(c);
+      },
+    },
+    {
+      method: "PUT",
+      path: "/custom/:toolName",
+      handler: (c: Context) => {
+        const { toolApiHandler } = c.get("dependencies") as any;
+        return toolApiHandler.updateCustomTool(c);
+      },
+    },
+    {
+      method: "DELETE",
+      path: "/custom/:toolName",
+      handler: (c: Context) => {
+        const { toolApiHandler } = c.get("dependencies") as any;
+        return toolApiHandler.removeCustomTool(c);
+      },
+    },
   ],
 };

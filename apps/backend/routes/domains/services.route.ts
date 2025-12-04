@@ -15,40 +15,40 @@ export const servicesRoutes: SimpleRouteConfig = {
       method: "POST",
       path: "/restart",
       handler: (c: Context) => {
-        const handler = c.get("serviceApiHandler");
-        return handler.restartService(c);
+        const { serviceApiHandler } = c.get("dependencies") as any;
+        return serviceApiHandler.restartService(c);
       },
     },
     {
       method: "POST",
       path: "/stop",
       handler: (c: Context) => {
-        const handler = c.get("serviceApiHandler");
-        return handler.stopService(c);
+        const { serviceApiHandler } = c.get("dependencies") as any;
+        return serviceApiHandler.stopService(c);
       },
     },
     {
       method: "POST",
       path: "/start",
       handler: (c: Context) => {
-        const handler = c.get("serviceApiHandler");
-        return handler.startService(c);
+        const { serviceApiHandler } = c.get("dependencies") as any;
+        return serviceApiHandler.startService(c);
       },
     },
     {
       method: "GET",
       path: "/status",
       handler: (c: Context) => {
-        const handler = c.get("serviceApiHandler");
-        return handler.getServiceStatus(c);
+        const { serviceApiHandler } = c.get("dependencies") as any;
+        return serviceApiHandler.getServiceStatus(c);
       },
     },
     {
       method: "GET",
       path: "/health",
       handler: (c: Context) => {
-        const handler = c.get("serviceApiHandler");
-        return handler.getServiceHealth(c);
+        const { serviceApiHandler } = c.get("dependencies") as any;
+        return serviceApiHandler.getServiceHealth(c);
       },
     },
   ],

@@ -32,5 +32,21 @@ export const versionRoutes: SimpleRouteConfig = {
         return versionApiHandler.getVersionSimple(c);
       },
     },
+    {
+      method: "DELETE",
+      path: "/cache",
+      handler: (c: Context) => {
+        const { versionApiHandler } = c.get("dependencies") as any;
+        return versionApiHandler.clearVersionCache(c);
+      },
+    },
+    {
+      method: "GET",
+      path: "/latest",
+      handler: (c: Context) => {
+        const { versionApiHandler } = c.get("dependencies") as any;
+        return versionApiHandler.checkLatestVersion(c);
+      },
+    },
   ],
 };

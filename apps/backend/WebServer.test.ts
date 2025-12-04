@@ -415,32 +415,37 @@ vi.mock("./handlers/ToolApiHandler", () => {
   };
 });
 
-vi.mock("./handlers/CozeApiHandler", () => ({
-  getWorkspaces: vi.fn((c) =>
-    c.json({
-      success: true,
-      data: { workspaces: ["workspace1", "workspace2"] },
-    })
-  ),
-  getWorkflows: vi.fn((c) =>
-    c.json({
-      success: true,
-      data: { workflows: ["workflow1", "workflow2"] },
-    })
-  ),
-  clearCache: vi.fn((c) =>
-    c.json({
-      success: true,
-      message: "缓存已清空",
-    })
-  ),
-  getCacheStats: vi.fn((c) =>
-    c.json({
-      success: true,
-      data: { cacheSize: 100, hitRate: 0.8 },
-    })
-  ),
-}));
+vi.mock("./handlers/CozeApiHandler", () => {
+  const mockCozeApiHandler = {
+    getWorkspaces: vi.fn((c) =>
+      c.json({
+        success: true,
+        data: { workspaces: ["workspace1", "workspace2"] },
+      })
+    ),
+    getWorkflows: vi.fn((c) =>
+      c.json({
+        success: true,
+        data: { workflows: ["workflow1", "workflow2"] },
+      })
+    ),
+    clearCache: vi.fn((c) =>
+      c.json({
+        success: true,
+        message: "缓存已清空",
+      })
+    ),
+    getCacheStats: vi.fn((c) =>
+      c.json({
+        success: true,
+        data: { cacheSize: 100, hitRate: 0.8 },
+      })
+    ),
+  };
+  return {
+    CozeApiHandler: vi.fn(() => mockCozeApiHandler),
+  };
+});
 
 vi.mock("./handlers/MCPRouteHandler", () => {
   const mockMCPRouteHandler = {
@@ -594,6 +599,7 @@ describe("WebServer", () => {
       test: { command: "node", args: ["test.js"] },
     });
     mockConfigManager.getWebUIPort.mockReturnValue(currentPort);
+    mockConfigManager.configExists.mockReturnValue(true);
     mockConfigManager.updateMcpEndpoint.mockResolvedValue(undefined);
     mockConfigManager.updateWebUIConfig.mockResolvedValue(undefined);
     mockConfigManager.removeMcpServer.mockResolvedValue(undefined);
@@ -1401,9 +1407,9 @@ describe("WebServer", () => {
 
     it("应该处理版本缓存清理", async () => {
       const response = await fetch(
-        `http://localhost:${currentPort}/api/version/cache/clear`,
+        `http://localhost:${currentPort}/api/version/cache`,
         {
-          method: "POST",
+          method: "DELETE",
         }
       );
       expect(response.status).toBe(200);

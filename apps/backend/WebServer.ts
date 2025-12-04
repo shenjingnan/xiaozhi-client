@@ -26,6 +26,7 @@ import {
   createErrorResponse,
   errorHandlerMiddleware,
   loggerMiddleware,
+  notFoundHandlerMiddleware,
 } from "@middlewares/index.js";
 import { mcpServiceManagerMiddleware } from "@middlewares/mcpServiceManager.middleware.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
@@ -66,6 +67,7 @@ import {
   endpointRoutes,
   mcpRoutes,
   mcpserverRoutes,
+  miscRoutes,
   servicesRoutes,
   staticRoutes,
   statusRoutes,
@@ -132,6 +134,7 @@ export class WebServer {
   private staticFileHandler: StaticFileHandler;
   private mcpRouteHandler: MCPRouteHandler;
   private mcpServerApiHandler?: MCPServerApiHandler;
+  private cozeApiHandler: CozeApiHandler;
 
   // WebSocket 处理器
   private realtimeNotificationHandler: RealtimeNotificationHandler;
@@ -202,6 +205,7 @@ export class WebServer {
     this.versionApiHandler = new VersionApiHandler();
     this.staticFileHandler = new StaticFileHandler();
     this.mcpRouteHandler = new MCPRouteHandler();
+    this.cozeApiHandler = new CozeApiHandler();
 
     // MCPServerApiHandler 将在 start() 方法中初始化，因为它需要 mcpServiceManager
 
@@ -220,6 +224,9 @@ export class WebServer {
     this.setupMiddleware();
     this.setupRouteSystem();
     this.setupRoutesFromRegistry();
+
+    // 在所有路由设置完成后，设置 404 处理
+    this.app.notFound(notFoundHandlerMiddleware);
 
     // 监听接入点状态变更事件
     this.setupEndpointStatusListener();
@@ -633,7 +640,7 @@ export class WebServer {
       mcpRouteHandler: this.mcpRouteHandler,
       mcpServerApiHandler: this.mcpServerApiHandler,
       updateApiHandler: new UpdateApiHandler(),
-      cozeApiHandler: CozeApiHandler,
+      cozeApiHandler: new CozeApiHandler(),
       createEndpointHandler: (
         connectionManager: IndependentXiaozhiConnectionManager
       ) => {
@@ -642,7 +649,10 @@ export class WebServer {
     };
 
     // 初始化简化路由管理器
-    this.routeManager = new SimpleRouteManager(dependencies);
+    this.routeManager = new SimpleRouteManager(
+      dependencies,
+      () => this.xiaozhiConnectionManager
+    );
   }
 
   /**
@@ -654,7 +664,7 @@ export class WebServer {
     }
 
     try {
-      // 注册所有路由配置
+      // 注册所有路由配置 - static 放在最后，作为回退
       this.routeManager.registerRoutes({
         config: configRoutes,
         status: statusRoutes,
@@ -663,11 +673,12 @@ export class WebServer {
         version: versionRoutes,
         services: servicesRoutes,
         update: updateRoutes,
-        static: staticRoutes,
         coze: cozeRoutes,
         toollogs: toollogsRoutes,
         mcpserver: mcpserverRoutes,
         endpoint: endpointRoutes,
+        misc: miscRoutes,
+        static: staticRoutes, // 放在最后作为回退
       });
 
       // 应用路由到 Hono 应用
@@ -806,14 +817,16 @@ export class WebServer {
 
     // 扣子 API 相关路由
     this.app?.get("/api/coze/workspaces", (c) =>
-      CozeApiHandler.getWorkspaces(c)
+      this.cozeApiHandler.getWorkspaces(c)
     );
-    this.app?.get("/api/coze/workflows", (c) => CozeApiHandler.getWorkflows(c));
+    this.app?.get("/api/coze/workflows", (c) =>
+      this.cozeApiHandler.getWorkflows(c)
+    );
     this.app?.post("/api/coze/cache/clear", (c) =>
-      CozeApiHandler.clearCache(c)
+      this.cozeApiHandler.clearCache(c)
     );
     this.app?.get("/api/coze/cache/stats", (c) =>
-      CozeApiHandler.getCacheStats(c)
+      this.cozeApiHandler.getCacheStats(c)
     );
 
     // MCP 端点管理相关路由 - 动态处理
