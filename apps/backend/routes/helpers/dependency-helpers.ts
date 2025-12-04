@@ -6,7 +6,6 @@
 import type { MCPEndpointApiHandler } from "@handlers/index.js";
 import type { Context } from "hono";
 import { createErrorResponse } from "../../middlewares/error.middleware.js";
-import type { HandlerDependencies } from "../types.js";
 
 /**
  * 获取端点处理器或返回错误响应
@@ -28,25 +27,4 @@ export function getEndpointHandlerOrError(
   }
 
   return endpointHandler;
-}
-
-/**
- * 安全地从 context 获取指定的处理器
- * 提供统一的依赖获取方式
- * @param c - Hono context 对象
- * @param key - 处理器的键名
- * @returns 处理器实例
- */
-export function getHandler<T extends keyof HandlerDependencies>(
-  c: Context,
-  key: T
-): NonNullable<HandlerDependencies[T]> {
-  const dependencies = c.get("dependencies") as HandlerDependencies;
-  const handler = dependencies[key];
-
-  if (!handler) {
-    throw new Error(`Handler '${String(key)}' not found in dependencies`);
-  }
-
-  return handler as NonNullable<HandlerDependencies[T]>;
 }
