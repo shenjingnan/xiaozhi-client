@@ -153,16 +153,3 @@ export interface SimpleRouteConfig {
   middleware?: MiddlewareHandler[];
 }
 
-/**
- * 路由注册统计信息（简化版本）
- */
-export interface RouteStats {
-  /** 注册的域数量 */
-  domains: number;
-  /** 注册的路由总数 */
-  routes: number;
-  /** 成功注册的路由数 */
-  successful: number;
-  /** 失败注册的路由数 */
-  failed: number;
-}

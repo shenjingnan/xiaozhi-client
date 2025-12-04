@@ -681,13 +681,7 @@ export class WebServer {
       // 应用路由到 Hono 应用
       this.routeManager.applyToApp(this.app);
 
-      const stats = this.routeManager.getRouteStats();
-      this.logger.info("路由系统注册完成", {
-        domains: stats.domains,
-        routes: stats.routes,
-        successful: stats.successful,
-        failed: stats.failed,
-      });
+      this.logger.info("路由系统注册完成");
     } catch (error) {
       this.logger.error("路由系统注册失败:", error);
     }

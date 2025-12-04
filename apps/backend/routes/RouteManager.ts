@@ -7,7 +7,7 @@ import type { Context, Hono, Next } from "hono";
 import { createErrorResponse } from "../middlewares/error.middleware.js";
 import type { AppContext } from "../types/hono.context.js";
 import type { HandlerDependencies } from "./types.js";
-import type { RouteStats, SimpleRouteConfig } from "./types.js";
+import type { SimpleRouteConfig } from "./types.js";
 
 /**
  * 路由管理器
@@ -57,25 +57,6 @@ export class RouteManager {
    */
   getRoute(name: string): SimpleRouteConfig | undefined {
     return this.routes.get(name);
-  }
-
-  /**
-   * 获取路由统计信息
-   */
-  getRouteStats(): RouteStats {
-    const stats: RouteStats = {
-      domains: this.routes.size,
-      routes: 0,
-      successful: 0,
-      failed: 0,
-    };
-
-    for (const config of this.routes.values()) {
-      stats.routes += config.routes.length;
-      stats.successful += config.routes.length; // 简化版本，假设都成功
-    }
-
-    return stats;
   }
 
   /**

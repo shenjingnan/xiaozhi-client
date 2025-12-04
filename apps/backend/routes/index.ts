@@ -8,7 +8,6 @@ export type {
   HTTPMethod,
   RouteDefinition,
   SimpleRouteConfig,
-  RouteStats,
 } from "./types.js";
 
 // 核心类
