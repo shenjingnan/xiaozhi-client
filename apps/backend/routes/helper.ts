@@ -1,11 +1,11 @@
 /**
- * 路由依赖注入辅助函数
- * 提供统一的依赖获取和错误处理逻辑
+ * 路由辅助函数
+ * 提供路由系统中使用的辅助功能
  */
 
 import type { MCPEndpointApiHandler } from "@handlers/index.js";
 import type { Context } from "hono";
-import { createErrorResponse } from "../../middlewares/error.middleware.js";
+import { createErrorResponse } from "../middlewares/error.middleware.js";
 
 /**
  * 获取端点处理器或返回错误响应

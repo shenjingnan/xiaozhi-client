@@ -5,7 +5,7 @@
  */
 
 import type { Context } from "hono";
-import { getEndpointHandlerOrError } from "../helpers/index.js";
+import { getEndpointHandlerOrError } from "../helper.js";
 import type { SimpleRouteConfig } from "../types.js";
 
 /**
