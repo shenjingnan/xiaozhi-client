@@ -1,9 +1,3 @@
-/**
- * 路由系统入口
- * 统一导出路由系统相关的所有类型、类和工具
- * 重构版本：使用简化的路由架构
- */
-
 // 类型定义
 export type {
   RouteConfig,
@@ -17,8 +11,8 @@ export type {
   RouteStats,
 } from "./types.js";
 
-// 简化的核心类
-export { SimpleRouteManager } from "./SimpleRouteManager.js";
+// 核心类
+export { RouteManager } from "./RouteManager.js";
 
 // 路由域导出
 export * from "./domains/index.js";

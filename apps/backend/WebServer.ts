@@ -57,10 +57,10 @@ import type { Context } from "hono";
 import type { Hono } from "hono";
 import { WebSocketServer } from "ws";
 
-// 路由系统导入 - 使用新的简化架构
+// 路由系统导入
 import {
   type HandlerDependencies,
-  SimpleRouteManager,
+  RouteManager,
   // 导入所有路由配置
   configRoutes,
   cozeRoutes,
@@ -143,8 +143,8 @@ export class WebServer {
   // 心跳监控
   private heartbeatMonitorInterval?: NodeJS.Timeout;
 
-  // 路由系统 - 使用新的简化架构
-  private routeManager?: SimpleRouteManager;
+  // 路由系统
+  private routeManager?: RouteManager;
 
   // 向后兼容的属性
   private proxyMCPServer: ProxyMCPServer | undefined;
@@ -625,7 +625,7 @@ export class WebServer {
   }
 
   /**
-   * 设置路由系统 - 使用新的简化架构
+   * 设置路由系统
    */
   private setupRouteSystem(): void {
     // 创建处理器依赖
@@ -648,15 +648,12 @@ export class WebServer {
       },
     };
 
-    // 初始化简化路由管理器
-    this.routeManager = new SimpleRouteManager(
-      dependencies,
-      () => this.xiaozhiConnectionManager
-    );
+    // 初始化路由管理器
+    this.routeManager = new RouteManager(dependencies);
   }
 
   /**
-   * 从路由配置设置路由 - 使用新的简化架构
+   * 从路由配置设置路由
    */
   private setupRoutesFromRegistry(): void {
     if (!this.routeManager || !this.app) {

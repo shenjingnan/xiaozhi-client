@@ -31,13 +31,13 @@ export type AppContextVariables = {
 
   /**
    * 路由处理器依赖
-   * 由 SimpleRouteManager 注入
+   * 由 RouteManager 注入
    */
   dependencies?: HandlerDependencies;
 
   /**
    * 端点处理器实例
-   * 由 SimpleRouteManager 动态注入（仅用于端点路由）
+   * 通过路由配置中的 helper 函数动态获取
    */
   endpointHandler?: MCPEndpointApiHandler;
 };

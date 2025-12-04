@@ -1,10 +1,8 @@
 /**
- * 简化的路由管理器
- * 替代原有的复杂三层架构（BaseRoute + RouteAggregator + RouteRegistry）
+ * 路由管理器
  * 提供直接、高效的路由注册和管理功能
  */
 
-import type { IndependentXiaozhiConnectionManager } from "@services/index.js";
 import type { Context, Hono, Next } from "hono";
 import { createErrorResponse } from "../middlewares/error.middleware.js";
 import type { AppContext } from "../types/hono.context.js";
@@ -12,22 +10,15 @@ import type { HandlerDependencies } from "./types.js";
 import type { RouteStats, SimpleRouteConfig } from "./types.js";
 
 /**
- * 简化的路由管理器
- * 直接管理路由配置，减少不必要的抽象层次
+ * 路由管理器
+ * 直接管理路由配置，提供路由注册和应用功能
  */
-export class SimpleRouteManager {
+export class RouteManager {
   private routes: Map<string, SimpleRouteConfig> = new Map();
   private dependencies: HandlerDependencies;
-  private getConnectionManager?: () =>
-    | IndependentXiaozhiConnectionManager
-    | undefined;
 
-  constructor(
-    dependencies: HandlerDependencies,
-    getConnectionManager?: () => IndependentXiaozhiConnectionManager | undefined
-  ) {
+  constructor(dependencies: HandlerDependencies) {
     this.dependencies = dependencies;
-    this.getConnectionManager = getConnectionManager;
   }
 
   /**
@@ -98,28 +89,6 @@ export class SimpleRouteManager {
       c.set("dependencies", this.dependencies);
       await next();
     });
-
-    // 为端点路由设置专用中间件，只应用于 /api/endpoint/* 路径
-    if (this.getConnectionManager) {
-      app.use("/api/endpoint/*", async (c, next) => {
-        try {
-          if (!c.get("endpointHandler") && this.getConnectionManager) {
-            const connectionManager = this.getConnectionManager();
-            if (connectionManager) {
-              const endpointHandler =
-                this.dependencies.createEndpointHandler(connectionManager);
-              if (endpointHandler) {
-                c.set("endpointHandler", endpointHandler);
-              }
-            }
-          }
-        } catch (error) {
-          console.error("Failed to create endpointHandler:", error);
-          // 不抛出错误，让路由处理器处理未初始化的情况
-        }
-        await next();
-      });
-    }
 
     // 获取所有路由并排序，确保 static 路由最后应用
     const routeEntries = Array.from(this.routes.entries());
