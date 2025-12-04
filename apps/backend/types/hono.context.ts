@@ -7,6 +7,7 @@ import type { MCPServiceManager } from "@/lib/mcp";
 import type { Logger } from "@root/Logger.js";
 import type { Context } from "hono";
 import { Hono } from "hono";
+import type { HandlerDependencies } from "../routes/types.js";
 
 /**
  * 扩展 Hono Context 的 Variables 类型
@@ -24,6 +25,12 @@ export type AppContextVariables = {
    * 由 mcpServiceManagerMiddleware 注入
    */
   mcpServiceManager?: MCPServiceManager;
+
+  /**
+   * 路由处理器依赖
+   * 由 SimpleRouteManager 注入
+   */
+  dependencies?: HandlerDependencies;
 };
 
 /**

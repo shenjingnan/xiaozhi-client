@@ -3,7 +3,7 @@
  * 提供类型安全的路由配置和依赖注入
  */
 
-import type { Context } from "hono";
+import type { Context, MiddlewareHandler } from "hono";
 import type { ConfigApiHandler } from "../handlers/ConfigApiHandler.js";
 import type { CozeApiHandler } from "../handlers/CozeApiHandler.js";
 import type { MCPEndpointApiHandler } from "../handlers/MCPEndpointApiHandler.js";
@@ -108,4 +108,59 @@ export interface RouteStatistics {
   routeDistribution: Record<string, number>;
   /** 支持的 HTTP 方法统计 */
   methodDistribution: Record<string, number>;
+}
+
+// ============================================================================
+// 以下为简化架构的新增类型定义
+// ============================================================================
+
+/**
+ * HTTP 方法类型（简化版本）
+ */
+export type HTTPMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+
+/**
+ * 简化的路由定义接口
+ * 用于新的路由架构，减少不必要的复杂性
+ */
+export interface RouteDefinition {
+  /** HTTP 方法 */
+  method: HTTPMethod;
+  /** 路由路径（相对于域路径） */
+  path: string;
+  /** 处理函数 */
+  handler: (c: Context) => Promise<Response | undefined>;
+  /** 路由级别的中间件 */
+  middleware?: MiddlewareHandler[];
+}
+
+/**
+ * 简化的路由域配置接口
+ * 用于新架构的路由配置
+ */
+export interface SimpleRouteConfig {
+  /** 域名称 */
+  name: string;
+  /** 域基础路径 */
+  path: string;
+  /** 域描述 */
+  description?: string;
+  /** 路由定义列表 */
+  routes: RouteDefinition[];
+  /** 域级别的中间件 */
+  middleware?: MiddlewareHandler[];
+}
+
+/**
+ * 路由注册统计信息（简化版本）
+ */
+export interface RouteStats {
+  /** 注册的域数量 */
+  domains: number;
+  /** 注册的路由总数 */
+  routes: number;
+  /** 成功注册的路由数 */
+  successful: number;
+  /** 失败注册的路由数 */
+  failed: number;
 }

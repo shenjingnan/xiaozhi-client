@@ -1,1 +1,0 @@
-export { ConfigRoutes } from "./ConfigRoutes.js";

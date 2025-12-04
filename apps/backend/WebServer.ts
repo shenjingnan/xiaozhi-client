@@ -56,11 +56,23 @@ import type { Context } from "hono";
 import type { Hono } from "hono";
 import { WebSocketServer } from "ws";
 
-// 路由系统导入
+// 路由系统导入 - 使用新的简化架构
 import {
   type HandlerDependencies,
-  RouteAggregator,
-  RouteRegistry,
+  SimpleRouteManager,
+  // 导入所有路由配置
+  configRoutes,
+  statusRoutes,
+  toolsRoutes,
+  mcpRoutes,
+  versionRoutes,
+  servicesRoutes,
+  updateRoutes,
+  staticRoutes,
+  cozeRoutes,
+  toollogsRoutes,
+  mcpserverRoutes,
+  endpointRoutes,
 } from "./routes/index.js";
 
 // 统一成功响应格式
@@ -128,9 +140,8 @@ export class WebServer {
   // 心跳监控
   private heartbeatMonitorInterval?: NodeJS.Timeout;
 
-  // 路由系统
-  private routeRegistry?: RouteRegistry;
-  private routeAggregator?: RouteAggregator;
+  // 路由系统 - 使用新的简化架构
+  private routeManager?: SimpleRouteManager;
 
   // 向后兼容的属性
   private proxyMCPServer: ProxyMCPServer | undefined;
@@ -607,7 +618,7 @@ export class WebServer {
   }
 
   /**
-   * 设置路由系统
+   * 设置路由系统 - 使用新的简化架构
    */
   private setupRouteSystem(): void {
     // 创建处理器依赖
@@ -630,46 +641,44 @@ export class WebServer {
       },
     };
 
-    // 初始化路由聚合器
-    this.routeAggregator = new RouteAggregator(dependencies);
-
-    // 初始化路由注册器
-    if (this.app) {
-      this.routeRegistry = new RouteRegistry(this.app, dependencies, {
-        verboseLogging: false, // 生产环境设为 false
-        throwOnRegistrationError: true,
-      });
-    }
+    // 初始化简化路由管理器
+    this.routeManager = new SimpleRouteManager(dependencies);
   }
 
   /**
-   * 从注册器设置路由
+   * 从路由配置设置路由 - 使用新的简化架构
    */
   private setupRoutesFromRegistry(): void {
-    if (!this.routeRegistry || !this.routeAggregator) {
+    if (!this.routeManager || !this.app) {
       throw new Error("路由系统未初始化");
     }
 
     try {
-      // 创建所有路由模块
-      const routes = this.routeAggregator.createAllRoutes();
+      // 注册所有路由配置
+      this.routeManager.registerRoutes({
+        config: configRoutes,
+        status: statusRoutes,
+        tools: toolsRoutes,
+        mcp: mcpRoutes,
+        version: versionRoutes,
+        services: servicesRoutes,
+        update: updateRoutes,
+        static: staticRoutes,
+        coze: cozeRoutes,
+        toollogs: toollogsRoutes,
+        mcpserver: mcpserverRoutes,
+        endpoint: endpointRoutes,
+      });
 
-      // 设置端点路由的连接管理器
-      const endpointRoute = routes.find(
-        (route) => route.getDomainInfo().name === "endpoint"
-      ) as any;
-      if (endpointRoute && this.xiaozhiConnectionManager) {
-        endpointRoute.setConnectionManager(this.xiaozhiConnectionManager);
-      }
+      // 应用路由到 Hono 应用
+      this.routeManager.applyToApp(this.app);
 
-      // 注册所有路由
-      this.routeRegistry.registerRoutes(routes);
-
-      // 完成注册
-      this.routeRegistry.completeRegistration();
-
+      const stats = this.routeManager.getRouteStats();
       this.logger.info("路由系统注册完成", {
-        statistics: this.routeRegistry.getStatistics(),
+        domains: stats.domains,
+        routes: stats.routes,
+        successful: stats.successful,
+        failed: stats.failed,
       });
     } catch (error) {
       this.logger.error("路由系统注册失败:", error);
