@@ -39,4 +39,4 @@ export const routeNames = [
 /**
  * 路由域名类型
  */
-export type RouteName = typeof routeNames[number];
+export type RouteName = (typeof routeNames)[number];

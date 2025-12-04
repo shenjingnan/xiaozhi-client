@@ -4,9 +4,9 @@
  * 提供直接、高效的路由注册和管理功能
  */
 
-import type { HandlerDependencies } from "./types.js";
 import type { Hono } from "hono";
 import type { AppContext } from "../types/hono.context.js";
+import type { HandlerDependencies } from "./types.js";
 import type { RouteStats, SimpleRouteConfig } from "./types.js";
 
 /**
@@ -105,7 +105,10 @@ export class SimpleRouteManager {
   /**
    * 应用单个路由配置到 Hono 应用
    */
-  private applyRouteConfig(app: Hono<AppContext>, config: SimpleRouteConfig): void {
+  private applyRouteConfig(
+    app: Hono<AppContext>,
+    config: SimpleRouteConfig
+  ): void {
     // 注册每个具体的路由
     for (const route of config.routes) {
       const fullPath = config.path + route.path;

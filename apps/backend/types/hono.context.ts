@@ -7,7 +7,7 @@ import type { MCPServiceManager } from "@/lib/mcp";
 import type { Logger } from "@root/Logger.js";
 import type { Context } from "hono";
 import { Hono } from "hono";
-import type { HandlerDependencies } from "../routes/types.js";
+import type { HandlerDependencies } from "../routes/index.js";
 
 /**
  * 扩展 Hono Context 的 Variables 类型

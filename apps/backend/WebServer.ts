@@ -62,17 +62,17 @@ import {
   SimpleRouteManager,
   // 导入所有路由配置
   configRoutes,
-  statusRoutes,
-  toolsRoutes,
-  mcpRoutes,
-  versionRoutes,
-  servicesRoutes,
-  updateRoutes,
-  staticRoutes,
   cozeRoutes,
-  toollogsRoutes,
-  mcpserverRoutes,
   endpointRoutes,
+  mcpRoutes,
+  mcpserverRoutes,
+  servicesRoutes,
+  staticRoutes,
+  statusRoutes,
+  toollogsRoutes,
+  toolsRoutes,
+  updateRoutes,
+  versionRoutes,
 } from "./routes/index.js";
 
 // 统一成功响应格式

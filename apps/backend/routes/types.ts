@@ -3,20 +3,22 @@
  * 提供类型安全的路由配置和依赖注入
  */
 
+import type {
+  ConfigApiHandler,
+  CozeApiHandler,
+  MCPEndpointApiHandler,
+  MCPRouteHandler,
+  MCPServerApiHandler,
+  ServiceApiHandler,
+  StaticFileHandler,
+  StatusApiHandler,
+  ToolApiHandler,
+  ToolCallLogApiHandler,
+  UpdateApiHandler,
+  VersionApiHandler,
+} from "@handlers/index.js";
+import type { IndependentXiaozhiConnectionManager } from "@services/index.js";
 import type { Context, MiddlewareHandler } from "hono";
-import type { ConfigApiHandler } from "../handlers/ConfigApiHandler.js";
-import type { CozeApiHandler } from "../handlers/CozeApiHandler.js";
-import type { MCPEndpointApiHandler } from "../handlers/MCPEndpointApiHandler.js";
-import type { MCPRouteHandler } from "../handlers/MCPRouteHandler.js";
-import type { MCPServerApiHandler } from "../handlers/MCPServerApiHandler.js";
-import type { ServiceApiHandler } from "../handlers/ServiceApiHandler.js";
-import type { StaticFileHandler } from "../handlers/StaticFileHandler.js";
-import type { StatusApiHandler } from "../handlers/StatusApiHandler.js";
-import type { ToolApiHandler } from "../handlers/ToolApiHandler.js";
-import type { ToolCallLogApiHandler } from "../handlers/ToolCallLogApiHandler.js";
-import type { UpdateApiHandler } from "../handlers/UpdateApiHandler.js";
-import type { VersionApiHandler } from "../handlers/VersionApiHandler.js";
-import type { IndependentXiaozhiConnectionManager } from "../services/XiaozhiConnectionManagerSingleton.js";
 import type { AppContext } from "../types/hono.context.js";
 
 /**
