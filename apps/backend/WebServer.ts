@@ -3,11 +3,11 @@ import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import type { MCPServiceManager } from "@/lib/mcp";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import { convertLegacyToNew } from "@adapters/index.js";
+import type { MCPEndpointApiHandler } from "@handlers/index.js";
 import {
   ConfigApiHandler,
   CozeApiHandler,
   HeartbeatHandler,
-  MCPEndpointApiHandler,
   MCPRouteHandler,
   MCPServerApiHandler,
   RealtimeNotificationHandler,
@@ -23,12 +23,13 @@ import type { ServerType } from "@hono/node-server";
 import { serve } from "@hono/node-server";
 import {
   corsMiddleware,
-  createErrorResponse,
   errorHandlerMiddleware,
   loggerMiddleware,
   notFoundHandlerMiddleware,
 } from "@middlewares/index.js";
 import { mcpServiceManagerMiddleware } from "@middlewares/mcpServiceManager.middleware.js";
+import { xiaozhiConnectionManagerMiddleware } from "@middlewares/xiaozhiConnectionManager.middleware.js";
+import { xiaozhiEndpointsMiddleware } from "@middlewares/xiaozhiEndpoints.middleware.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
@@ -53,7 +54,6 @@ import {
   destroyEventBus,
   getEventBus,
 } from "@services/index.js";
-import type { Context } from "hono";
 import type { Hono } from "hono";
 import { WebSocketServer } from "ws";
 
@@ -96,14 +96,6 @@ interface XiaozhiConnectionStatusResponse {
     reconnectStats: Record<string, unknown>;
   };
   connections?: SimpleConnectionStatus[];
-}
-
-// 硬编码常量已移除，改为配置驱动
-interface ClientInfo {
-  status: "connected" | "disconnected";
-  mcpEndpoint: string;
-  activeMCPServers: string[];
-  lastHeartbeat?: number;
 }
 
 /**
@@ -153,31 +145,6 @@ export class WebServer {
     | undefined;
   private mcpServiceManager: MCPServiceManager | undefined;
 
-  /**
-   * 创建统一的成功响应
-   * @deprecated 使用处理器中的方法替代
-   */
-  private createSuccessResponse<T>(
-    data?: T,
-    message?: string
-  ): ApiSuccessResponse<T> {
-    return {
-      success: true,
-      data,
-      message,
-    };
-  }
-
-  /**
-   * 记录废弃功能使用警告
-   * @deprecated 使用处理器中的方法替代
-   */
-  private logDeprecationWarning(feature: string, alternative: string): void {
-    this.logger.warn(
-      `[DEPRECATED] ${feature} 功能已废弃，请使用 ${alternative} 替代`
-    );
-  }
-
   constructor(port?: number) {
     // 端口配置
     try {
@@ -222,8 +189,6 @@ export class WebServer {
     // 初始化 Hono 应用
     this.app = createApp();
     this.setupMiddleware();
-    this.setupRouteSystem();
-    this.setupRoutesFromRegistry();
 
     // 在所有路由设置完成后，设置 404 处理
     this.app.notFound(notFoundHandlerMiddleware);
@@ -419,6 +384,16 @@ export class WebServer {
   }
 
   /**
+   * 获取小智连接管理器实例
+   * 提供给中间件使用
+   */
+  public getXiaozhiConnectionManager():
+    | IndependentXiaozhiConnectionManager
+    | undefined {
+    return this.xiaozhiConnectionManager;
+  }
+
+  /**
    * 获取小智连接状态信息
    */
   getXiaozhiConnectionStatus(): XiaozhiConnectionStatusResponse {
@@ -450,120 +425,6 @@ export class WebServer {
       type: "none",
       connected: false,
     };
-  }
-
-  /**
-   * 处理获取接入点状态请求
-   */
-  private async handleEndpointStatus(c: Context): Promise<Response> {
-    if (!this.xiaozhiConnectionManager) {
-      const errorResponse = createErrorResponse(
-        "CONNECTION_MANAGER_NOT_AVAILABLE",
-        "连接管理器未初始化"
-      );
-      return c.json(errorResponse, 503);
-    }
-
-    const mcpEndpointApiHandler = new MCPEndpointApiHandler(
-      this.xiaozhiConnectionManager,
-      configManager
-    );
-    return mcpEndpointApiHandler.getEndpointStatus(c);
-  }
-
-  /**
-   * 处理接入点连接请求
-   */
-  private async handleEndpointConnect(c: Context): Promise<Response> {
-    if (!this.xiaozhiConnectionManager) {
-      const errorResponse = createErrorResponse(
-        "CONNECTION_MANAGER_NOT_AVAILABLE",
-        "连接管理器未初始化"
-      );
-      return c.json(errorResponse, 503);
-    }
-
-    const mcpEndpointApiHandler = new MCPEndpointApiHandler(
-      this.xiaozhiConnectionManager,
-      configManager
-    );
-    return mcpEndpointApiHandler.connectEndpoint(c);
-  }
-
-  /**
-   * 处理接入点断开请求
-   */
-  private async handleEndpointDisconnect(c: Context): Promise<Response> {
-    if (!this.xiaozhiConnectionManager) {
-      const errorResponse = createErrorResponse(
-        "CONNECTION_MANAGER_NOT_AVAILABLE",
-        "连接管理器未初始化"
-      );
-      return c.json(errorResponse, 503);
-    }
-
-    const mcpEndpointApiHandler = new MCPEndpointApiHandler(
-      this.xiaozhiConnectionManager,
-      configManager
-    );
-    return mcpEndpointApiHandler.disconnectEndpoint(c);
-  }
-
-  /**
-   * 处理接入点重连请求
-   */
-  private async handleEndpointReconnect(c: Context): Promise<Response> {
-    if (!this.xiaozhiConnectionManager) {
-      const errorResponse = createErrorResponse(
-        "CONNECTION_MANAGER_NOT_AVAILABLE",
-        "连接管理器未初始化"
-      );
-      return c.json(errorResponse, 503);
-    }
-
-    const mcpEndpointApiHandler = new MCPEndpointApiHandler(
-      this.xiaozhiConnectionManager,
-      configManager
-    );
-    return mcpEndpointApiHandler.reconnectEndpoint(c);
-  }
-
-  /**
-   * 处理添加接入点请求
-   */
-  private async handleEndpointAdd(c: Context): Promise<Response> {
-    if (!this.xiaozhiConnectionManager) {
-      const errorResponse = createErrorResponse(
-        "CONNECTION_MANAGER_NOT_AVAILABLE",
-        "连接管理器未初始化"
-      );
-      return c.json(errorResponse, 503);
-    }
-
-    const mcpEndpointApiHandler = new MCPEndpointApiHandler(
-      this.xiaozhiConnectionManager,
-      configManager
-    );
-    return await mcpEndpointApiHandler.addEndpoint(c);
-  }
-
-  /**
-   * 处理移除接入点请求
-   */
-  private async handleEndpointRemove(c: Context): Promise<Response> {
-    if (!this.xiaozhiConnectionManager) {
-      const errorResponse = createErrorResponse(
-        "CONNECTION_MANAGER_NOT_AVAILABLE",
-        "连接管理器未初始化"
-      );
-      return c.json(errorResponse, 503);
-    }
-
-    const mcpEndpointApiHandler = new MCPEndpointApiHandler(
-      this.xiaozhiConnectionManager,
-      configManager
-    );
-    return mcpEndpointApiHandler.removeEndpoint(c);
   }
 
   /**
@@ -617,6 +478,22 @@ export class WebServer {
     // MCP Service Manager 中间件 - 在 Logger 之后，CORS 之前
     this.app?.use("*", mcpServiceManagerMiddleware);
 
+    // 注入 WebServer 实例到上下文
+    // 使用类型断言避免循环引用问题
+    this.app?.use("*", async (c, next) => {
+      c.set(
+        "webServer",
+        this as unknown as import("./types/hono.context.js").IWebServer
+      );
+      await next();
+    });
+
+    // 小智连接管理器中间件
+    this.app?.use("*", xiaozhiConnectionManagerMiddleware());
+
+    // 小智端点处理器中间件（在连接管理器中间件之后）
+    this.app?.use("*", xiaozhiEndpointsMiddleware());
+
     // CORS 中间件
     this.app?.use("*", corsMiddleware);
 
@@ -629,6 +506,7 @@ export class WebServer {
    */
   private setupRouteSystem(): void {
     // 创建处理器依赖
+    // 注意：endpointHandler 现在通过中间件动态注入，不再在这里初始化
     const dependencies: HandlerDependencies = {
       configApiHandler: this.configApiHandler,
       statusApiHandler: this.statusApiHandler,
@@ -641,11 +519,7 @@ export class WebServer {
       mcpServerApiHandler: this.mcpServerApiHandler,
       updateApiHandler: new UpdateApiHandler(),
       cozeApiHandler: new CozeApiHandler(),
-      createEndpointHandler: (
-        connectionManager: IndependentXiaozhiConnectionManager
-      ) => {
-        return new MCPEndpointApiHandler(connectionManager, configManager);
-      },
+      endpointHandler: undefined as unknown as MCPEndpointApiHandler, // 临时使用 undefined，实际通过中间件注入
     };
 
     // 初始化路由管理器
@@ -835,6 +709,10 @@ export class WebServer {
 
     // 2. 初始化所有连接（配置驱动）
     await this.initializeConnections();
+
+    // 3. 设置路由系统（在连接初始化之后）
+    this.setupRouteSystem();
+    this.setupRoutesFromRegistry();
   }
 
   public stop(): Promise<void> {

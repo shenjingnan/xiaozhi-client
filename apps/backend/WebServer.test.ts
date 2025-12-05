@@ -1650,8 +1650,8 @@ describe("WebServer", () => {
         expect(data.data.connected).toBe(true);
       } else {
         const data = await response.json();
-        expect(data.error.code).toBe("CONNECTION_MANAGER_NOT_AVAILABLE");
-        expect(data.error.message).toBe("连接管理器未初始化");
+        expect(data.error.code).toBe("ENDPOINT_HANDLER_NOT_AVAILABLE");
+        expect(data.error.message).toBe("端点处理器尚未初始化，请稍后再试");
       }
     });
 
@@ -1674,8 +1674,8 @@ describe("WebServer", () => {
         expect(data.data.operation).toBe("connect");
       } else {
         const data = await response.json();
-        expect(data.error.code).toBe("CONNECTION_MANAGER_NOT_AVAILABLE");
-        expect(data.error.message).toBe("连接管理器未初始化");
+        expect(data.error.code).toBe("ENDPOINT_HANDLER_NOT_AVAILABLE");
+        expect(data.error.message).toBe("端点处理器尚未初始化，请稍后再试");
       }
     });
 
@@ -1698,8 +1698,8 @@ describe("WebServer", () => {
         expect(data.data.operation).toBe("disconnect");
       } else {
         const data = await response.json();
-        expect(data.error.code).toBe("CONNECTION_MANAGER_NOT_AVAILABLE");
-        expect(data.error.message).toBe("连接管理器未初始化");
+        expect(data.error.code).toBe("ENDPOINT_HANDLER_NOT_AVAILABLE");
+        expect(data.error.message).toBe("端点处理器尚未初始化，请稍后再试");
       }
     });
 
@@ -1722,8 +1722,8 @@ describe("WebServer", () => {
         expect(data.data.operation).toBe("reconnect");
       } else {
         const data = await response.json();
-        expect(data.error.code).toBe("CONNECTION_MANAGER_NOT_AVAILABLE");
-        expect(data.error.message).toBe("连接管理器未初始化");
+        expect(data.error.code).toBe("ENDPOINT_HANDLER_NOT_AVAILABLE");
+        expect(data.error.message).toBe("端点处理器尚未初始化，请稍后再试");
       }
     });
 
@@ -1749,8 +1749,8 @@ describe("WebServer", () => {
         expect(data.data.operation).toBe("add");
       } else {
         const data = await response.json();
-        expect(data.error.code).toBe("CONNECTION_MANAGER_NOT_AVAILABLE");
-        expect(data.error.message).toBe("连接管理器未初始化");
+        expect(data.error.code).toBe("ENDPOINT_HANDLER_NOT_AVAILABLE");
+        expect(data.error.message).toBe("端点处理器尚未初始化，请稍后再试");
       }
     });
 
@@ -1773,8 +1773,8 @@ describe("WebServer", () => {
         expect(data.data.operation).toBe("remove");
       } else {
         const data = await response.json();
-        expect(data.error.code).toBe("CONNECTION_MANAGER_NOT_AVAILABLE");
-        expect(data.error.message).toBe("连接管理器未初始化");
+        expect(data.error.code).toBe("ENDPOINT_HANDLER_NOT_AVAILABLE");
+        expect(data.error.message).toBe("端点处理器尚未初始化，请稍后再试");
       }
     });
 
@@ -1798,8 +1798,8 @@ describe("WebServer", () => {
       expect(response.status).toBe(503);
 
       const data = await response.json();
-      expect(data.error.code).toBe("CONNECTION_MANAGER_NOT_AVAILABLE");
-      expect(data.error.message).toBe("连接管理器未初始化");
+      expect(data.error.code).toBe("ENDPOINT_HANDLER_NOT_AVAILABLE");
+      expect(data.error.message).toBe("端点处理器尚未初始化，请稍后再试");
 
       await tempWebServer.stop();
     });

@@ -17,7 +17,6 @@ import type {
   UpdateApiHandler,
   VersionApiHandler,
 } from "@handlers/index.js";
-import type { IndependentXiaozhiConnectionManager } from "@services/index.js";
 import type { Context, MiddlewareHandler } from "hono";
 import type { AppContext } from "../types/hono.context.js";
 
@@ -80,10 +79,8 @@ export interface HandlerDependencies {
   updateApiHandler: UpdateApiHandler;
   /** 扣子 API 处理器 */
   cozeApiHandler: CozeApiHandler;
-  /** 创建端点处理器的工厂函数 */
-  createEndpointHandler: (
-    connectionManager: IndependentXiaozhiConnectionManager
-  ) => MCPEndpointApiHandler;
+  /** 小智接入点处理器 */
+  endpointHandler: MCPEndpointApiHandler;
 }
 
 /**
@@ -152,4 +149,3 @@ export interface SimpleRouteConfig {
   /** 域级别的中间件 */
   middleware?: MiddlewareHandler[];
 }
-

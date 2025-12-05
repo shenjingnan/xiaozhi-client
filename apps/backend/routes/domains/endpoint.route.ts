@@ -1,16 +1,65 @@
 /**
  * 端点管理路由配置
  * 处理所有端点管理相关的 API 路由
- * 注意：此模块需要延迟初始化处理
+ * 使用中间件动态注入的 endpointHandler
  */
 
 import type { Context } from "hono";
-import { getEndpointHandlerOrError } from "../helper.js";
+import type { AppContext } from "../../types/hono.context.js";
 import type { SimpleRouteConfig } from "../types.js";
 
 /**
+ * 统一的错误响应函数
+ */
+const createErrorResponse = (code: string, message: string) => {
+  return {
+    error: {
+      code,
+      message,
+    },
+  };
+};
+
+/**
+ * 端点处理器包装函数
+ * 从中间件获取 endpointHandler 并调用相应方法
+ */
+const withEndpointHandler = async (
+  c: Context<AppContext>,
+  handlerName: string
+): Promise<Response> => {
+  // 从中间件获取 endpointHandler
+  const endpointHandler = c.get("endpointHandler");
+
+  if (!endpointHandler) {
+    const errorResponse = createErrorResponse(
+      "ENDPOINT_HANDLER_NOT_AVAILABLE",
+      "端点处理器尚未初始化，请稍后再试"
+    );
+    return c.json(errorResponse, 503);
+  }
+
+  // 调用对应的处理方法
+  try {
+    return await (
+      endpointHandler as unknown as Record<
+        string,
+        (c: Context<AppContext>) => Promise<Response>
+      >
+    )[handlerName](c);
+  } catch (error) {
+    console.error(`端点处理器错误 [${handlerName}]:`, error);
+    const errorResponse = createErrorResponse(
+      "ENDPOINT_HANDLER_ERROR",
+      error instanceof Error ? error.message : "端点处理失败"
+    );
+    return c.json(errorResponse, 500);
+  }
+};
+
+/**
  * 端点管理路由配置
- * 包含延迟初始化逻辑来处理需要连接管理器的端点处理器
+ * 所有端点管理相关 API 的路由定义
  */
 export const endpointRoutes: SimpleRouteConfig = {
   name: "endpoint",
@@ -20,68 +69,38 @@ export const endpointRoutes: SimpleRouteConfig = {
     {
       method: "POST",
       path: "/status",
-      handler: async (c: Context) => {
-        const handlerOrError = getEndpointHandlerOrError(c);
-        if (handlerOrError instanceof Response) {
-          return handlerOrError;
-        }
-        return await handlerOrError.getEndpointStatus(c);
-      },
+      handler: (c: Context<AppContext>) =>
+        withEndpointHandler(c, "getEndpointStatus"),
     },
     {
       method: "POST",
       path: "/connect",
-      handler: async (c: Context) => {
-        const handlerOrError = getEndpointHandlerOrError(c);
-        if (handlerOrError instanceof Response) {
-          return handlerOrError;
-        }
-        return await handlerOrError.connectEndpoint(c);
-      },
+      handler: (c: Context<AppContext>) =>
+        withEndpointHandler(c, "connectEndpoint"),
     },
     {
       method: "POST",
       path: "/disconnect",
-      handler: async (c: Context) => {
-        const handlerOrError = getEndpointHandlerOrError(c);
-        if (handlerOrError instanceof Response) {
-          return handlerOrError;
-        }
-        return await handlerOrError.disconnectEndpoint(c);
-      },
+      handler: (c: Context<AppContext>) =>
+        withEndpointHandler(c, "disconnectEndpoint"),
     },
     {
       method: "POST",
       path: "/reconnect",
-      handler: async (c: Context) => {
-        const handlerOrError = getEndpointHandlerOrError(c);
-        if (handlerOrError instanceof Response) {
-          return handlerOrError;
-        }
-        return await handlerOrError.reconnectEndpoint(c);
-      },
+      handler: (c: Context<AppContext>) =>
+        withEndpointHandler(c, "reconnectEndpoint"),
     },
     {
       method: "POST",
       path: "/add",
-      handler: async (c: Context) => {
-        const handlerOrError = getEndpointHandlerOrError(c);
-        if (handlerOrError instanceof Response) {
-          return handlerOrError;
-        }
-        return await handlerOrError.addEndpoint(c);
-      },
+      handler: (c: Context<AppContext>) =>
+        withEndpointHandler(c, "addEndpoint"),
     },
     {
       method: "POST",
       path: "/remove",
-      handler: async (c: Context) => {
-        const handlerOrError = getEndpointHandlerOrError(c);
-        if (handlerOrError instanceof Response) {
-          return handlerOrError;
-        }
-        return await handlerOrError.removeEndpoint(c);
-      },
+      handler: (c: Context<AppContext>) =>
+        withEndpointHandler(c, "removeEndpoint"),
     },
   ],
 };
