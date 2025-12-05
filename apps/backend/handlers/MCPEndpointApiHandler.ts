@@ -1,10 +1,10 @@
+import type { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/IndependentXiaozhiConnectionManager.js";
+import type { ConnectionStatus } from "@/lib/endpoint/IndependentXiaozhiConnectionManager.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type { ConfigManager } from "@root/configManager.js";
 import type { EventBus } from "@services/EventBus.js";
 import { getEventBus } from "@services/EventBus.js";
-import type { IndependentXiaozhiConnectionManager } from "@services/IndependentXiaozhiConnectionManager.js";
-import type { ConnectionStatus } from "@services/IndependentXiaozhiConnectionManager.js";
 import type { Context } from "hono";
 
 /**

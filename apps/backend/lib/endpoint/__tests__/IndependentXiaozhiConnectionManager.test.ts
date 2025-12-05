@@ -1,6 +1,6 @@
-import { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/IndependentXiaozhiConnectionManager.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { IndependentXiaozhiConnectionManager } from "../IndependentXiaozhiConnectionManager.js";
 
 // 定义测试中使用的类型接口
 // 更广泛的 Mock 类型定义，兼容真实类型
@@ -80,7 +80,7 @@ vi.mock("../../Logger.js", () => ({
   },
 }));
 
-vi.mock("../../configManager.js", () => ({
+vi.mock("@root/configManager.js", () => ({
   configManager: {
     getMcpEndpoints: vi.fn().mockReturnValue([]),
     addMcpEndpoint: vi.fn(),
@@ -150,7 +150,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
     vi.clearAllMocks();
 
     // Get the mocked logger instance
-    const { logger } = await import("../../Logger.js");
+    const { logger } = await import("@root/Logger.js");
     mockLogger = logger as unknown as MockLogger;
 
     // Mock EventBus
@@ -162,7 +162,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
     const { getEventBus } = await import("@services/EventBus.js");
     vi.mocked(getEventBus).mockReturnValue(mockEventBus as unknown as any);
 
-    const { configManager } = await import("../../configManager.js");
+    const { configManager } = await import("@root/configManager.js");
     mockConfigManager = configManager as unknown as MockConfigManager;
     manager = new IndependentXiaozhiConnectionManager(configManager);
   });
@@ -275,7 +275,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
     test("应该在未初始化时抛出错误", async () => {
       // 创建未初始化的管理器
       const { configManager: testConfigManager1 } = await import(
-        "../../configManager.js"
+        "@root/configManager.js"
       );
       const uninitializedManager = new IndependentXiaozhiConnectionManager(
         testConfigManager1
@@ -480,7 +480,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
     test("应该正确处理空端点列表初始化", async () => {
       const { configManager: testConfigManager2 } = await import(
-        "../../configManager.js"
+        "@root/configManager.js"
       );
       const emptyManager = new IndependentXiaozhiConnectionManager(
         testConfigManager2
@@ -640,7 +640,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
   describe("初始化和清理", () => {
     test("应该成功初始化连接管理器", async () => {
       const { configManager: testConfigManager } = await import(
-        "../../configManager.js"
+        "@root/configManager.js"
       );
       const testManager = new IndependentXiaozhiConnectionManager(
         testConfigManager
@@ -658,7 +658,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
     test("初始化时应该验证端点参数", async () => {
       const { configManager: testConfigManager } = await import(
-        "../../configManager.js"
+        "@root/configManager.js"
       );
 
       // 测试1: 空端点列表现在允许初始化（支持零配置启动）
@@ -691,7 +691,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
     test("初始化失败时应该清理资源", async () => {
       const { configManager: testConfigManager } = await import(
-        "../../configManager.js"
+        "@root/configManager.js"
       );
       const testManager = new IndependentXiaozhiConnectionManager(
         testConfigManager
@@ -728,7 +728,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
     test("清理失败时应该抛出错误", async () => {
       const { configManager: testConfigManager } = await import(
-        "../../configManager.js"
+        "@root/configManager.js"
       );
       const testManager = new IndependentXiaozhiConnectionManager(
         testConfigManager
@@ -816,7 +816,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
     test("未初始化时连接应该抛出错误", async () => {
       const { configManager: testConfigManager } = await import(
-        "../../configManager.js"
+        "@root/configManager.js"
       );
       const testManager = new IndependentXiaozhiConnectionManager(
         testConfigManager
@@ -938,7 +938,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
     test("未初始化时添加端点应该抛出错误", async () => {
       const { configManager: testConfigManager } = await import(
-        "../../configManager.js"
+        "@root/configManager.js"
       );
       const testManager = new IndependentXiaozhiConnectionManager(
         testConfigManager
@@ -1207,7 +1207,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
     test("未初始化时更新端点应该抛出错误", async () => {
       const { configManager: testConfigManager } = await import(
-        "../../configManager.js"
+        "@root/configManager.js"
       );
       const testManager = new IndependentXiaozhiConnectionManager(
         testConfigManager

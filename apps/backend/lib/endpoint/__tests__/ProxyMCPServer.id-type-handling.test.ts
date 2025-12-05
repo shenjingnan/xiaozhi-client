@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import WebSocket from "ws";
-import { ProxyMCPServer, ToolCallErrorCode } from "../ProxyMCPServer";
+import { ProxyMCPServer, ToolCallErrorCode } from "../ProxyMCPServer.js";
 
 describe("ProxyMCPServer ID 类型处理回归测试", () => {
   let proxyServer: ProxyMCPServer;

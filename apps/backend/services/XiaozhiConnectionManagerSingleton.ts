@@ -3,18 +3,18 @@
  * 提供全局唯一的 XiaozhiConnectionManager 实例
  */
 
+import type { IndependentConnectionOptions } from "@/lib/endpoint/IndependentXiaozhiConnectionManager.js";
+import { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/IndependentXiaozhiConnectionManager.js";
 import { configManager } from "@root/configManager.js";
-import type { IndependentConnectionOptions } from "@services/IndependentXiaozhiConnectionManager.js";
-import { IndependentXiaozhiConnectionManager } from "@services/IndependentXiaozhiConnectionManager.js";
 
 // 类型兼容性导出
 export type {
   IndependentConnectionOptions as XiaozhiConnectionOptions,
   ConnectionStatus,
-} from "@services/IndependentXiaozhiConnectionManager.js";
+} from "@/lib/endpoint/IndependentXiaozhiConnectionManager.js";
 
 // 导出新管理器类型（便于直接使用）
-export type { IndependentXiaozhiConnectionManager } from "@services/IndependentXiaozhiConnectionManager.js";
+export type { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/IndependentXiaozhiConnectionManager.js";
 
 // 内部类型定义
 type ConnectionManagerType = IndependentXiaozhiConnectionManager;
