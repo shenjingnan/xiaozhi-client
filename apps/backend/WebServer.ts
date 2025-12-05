@@ -3,7 +3,6 @@ import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import type { MCPServiceManager } from "@/lib/mcp";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import { convertLegacyToNew } from "@adapters/index.js";
-import type { MCPEndpointApiHandler } from "@handlers/index.js";
 import {
   ConfigApiHandler,
   CozeApiHandler,
@@ -25,11 +24,11 @@ import {
   corsMiddleware,
   errorHandlerMiddleware,
   loggerMiddleware,
+  mcpServiceManagerMiddleware,
   notFoundHandlerMiddleware,
+  xiaozhiConnectionManagerMiddleware,
+  xiaozhiEndpointsMiddleware,
 } from "@middlewares/index.js";
-import { mcpServiceManagerMiddleware } from "@middlewares/mcpServiceManager.middleware.js";
-import { xiaozhiConnectionManagerMiddleware } from "@middlewares/xiaozhiConnectionManager.middleware.js";
-import { xiaozhiEndpointsMiddleware } from "@middlewares/xiaozhiEndpoints.middleware.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
@@ -126,6 +125,7 @@ export class WebServer {
   private staticFileHandler: StaticFileHandler;
   private mcpRouteHandler: MCPRouteHandler;
   private mcpServerApiHandler?: MCPServerApiHandler;
+  private updateApiHandler: UpdateApiHandler;
   private cozeApiHandler: CozeApiHandler;
 
   // WebSocket 处理器
@@ -172,6 +172,7 @@ export class WebServer {
     this.versionApiHandler = new VersionApiHandler();
     this.staticFileHandler = new StaticFileHandler();
     this.mcpRouteHandler = new MCPRouteHandler();
+    this.updateApiHandler = new UpdateApiHandler();
     this.cozeApiHandler = new CozeApiHandler();
 
     // MCPServerApiHandler 将在 start() 方法中初始化，因为它需要 mcpServiceManager
@@ -499,14 +500,37 @@ export class WebServer {
 
     // 错误处理中间件
     this.app?.onError(errorHandlerMiddleware);
+
+    // 注入路由系统依赖
+    // 注意：这个中间件必须在路由注册之前设置
+    this.app?.use("*", async (c, next) => {
+      // 延迟获取依赖，确保所有处理器都已初始化
+      const dependencies = {
+        configApiHandler: this.configApiHandler,
+        statusApiHandler: this.statusApiHandler,
+        serviceApiHandler: this.serviceApiHandler,
+        toolApiHandler: this.toolApiHandler,
+        toolCallLogApiHandler: this.toolCallLogApiHandler,
+        versionApiHandler: this.versionApiHandler,
+        staticFileHandler: this.staticFileHandler,
+        mcpRouteHandler: this.mcpRouteHandler,
+        mcpServerApiHandler: this.mcpServerApiHandler,
+        updateApiHandler: this.updateApiHandler,
+        cozeApiHandler: this.cozeApiHandler,
+        // endpointHandler 通过中间件动态注入，不在此初始化
+      };
+      c.set("dependencies", dependencies);
+      await next();
+    });
   }
 
   /**
    * 设置路由系统
    */
   private setupRouteSystem(): void {
-    // 创建处理器依赖
-    // 注意：endpointHandler 现在通过中间件动态注入，不再在这里初始化
+    // 创建处理器依赖对象，但不传入 RouteManager
+    // 因为依赖现在通过中间件动态注入
+    // RouteManager 仍然需要传入依赖对象以保持向后兼容
     const dependencies: HandlerDependencies = {
       configApiHandler: this.configApiHandler,
       statusApiHandler: this.statusApiHandler,
@@ -517,9 +541,9 @@ export class WebServer {
       staticFileHandler: this.staticFileHandler,
       mcpRouteHandler: this.mcpRouteHandler,
       mcpServerApiHandler: this.mcpServerApiHandler,
-      updateApiHandler: new UpdateApiHandler(),
-      cozeApiHandler: new CozeApiHandler(),
-      endpointHandler: undefined as unknown as MCPEndpointApiHandler, // 临时使用 undefined，实际通过中间件注入
+      updateApiHandler: this.updateApiHandler,
+      cozeApiHandler: this.cozeApiHandler,
+      // endpointHandler 通过中间件动态注入，设为 undefined
     };
 
     // 初始化路由管理器

@@ -9,6 +9,17 @@ import type { AppContext } from "../../types/hono.context.js";
 import type { RouteConfig } from "../types.js";
 
 /**
+ * 端点处理器方法名类型
+ */
+type EndpointHandlerMethod =
+  | "getEndpointStatus"
+  | "connectEndpoint"
+  | "disconnectEndpoint"
+  | "reconnectEndpoint"
+  | "addEndpoint"
+  | "removeEndpoint";
+
+/**
  * 统一的错误响应函数
  */
 const createErrorResponse = (code: string, message: string) => {
@@ -26,7 +37,7 @@ const createErrorResponse = (code: string, message: string) => {
  */
 const withEndpointHandler = async (
   c: Context<AppContext>,
-  handlerName: string
+  handlerName: EndpointHandlerMethod
 ): Promise<Response> => {
   // 从中间件获取 endpointHandler
   const endpointHandler = c.get("endpointHandler");
@@ -41,12 +52,8 @@ const withEndpointHandler = async (
 
   // 调用对应的处理方法
   try {
-    return await (
-      endpointHandler as unknown as Record<
-        string,
-        (c: Context<AppContext>) => Promise<Response>
-      >
-    )[handlerName](c);
+    // 使用类型安全的方式调用方法
+    return await endpointHandler[handlerName](c);
   } catch (error) {
     console.error(`端点处理器错误 [${handlerName}]:`, error);
     const errorResponse = createErrorResponse(

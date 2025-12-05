@@ -65,11 +65,7 @@ export class RouteManager {
   applyToApp(app: Hono<AppContext>): void {
     console.log(`开始将 ${this.routes.size} 个路由域应用到 Hono 应用...`);
 
-    // 设置全局中间件，仅注入基本依赖
-    app.use("*", async (c, next) => {
-      c.set("dependencies", this.dependencies);
-      await next();
-    });
+    // 注意：全局依赖注入中间件已移至 WebServer.ts 的 setupMiddleware()，避免中间件顺序冲突
 
     // 获取所有路由并排序，确保 static 路由最后应用
     const routeEntries = Array.from(this.routes.entries());
@@ -124,45 +120,25 @@ export class RouteManager {
         }
       };
 
-      // 注册路由 - 使用Hono的标准API
-      switch (route.method) {
-        case "GET":
-          if (allMiddleware.length > 0) {
-            app.get(fullPath, ...allMiddleware, wrappedHandler);
-          } else {
-            app.get(fullPath, wrappedHandler);
-          }
-          break;
-        case "POST":
-          if (allMiddleware.length > 0) {
-            app.post(fullPath, ...allMiddleware, wrappedHandler);
-          } else {
-            app.post(fullPath, wrappedHandler);
-          }
-          break;
-        case "PUT":
-          if (allMiddleware.length > 0) {
-            app.put(fullPath, ...allMiddleware, wrappedHandler);
-          } else {
-            app.put(fullPath, wrappedHandler);
-          }
-          break;
-        case "DELETE":
-          if (allMiddleware.length > 0) {
-            app.delete(fullPath, ...allMiddleware, wrappedHandler);
-          } else {
-            app.delete(fullPath, wrappedHandler);
-          }
-          break;
-        case "PATCH":
-          if (allMiddleware.length > 0) {
-            app.patch(fullPath, ...allMiddleware, wrappedHandler);
-          } else {
-            app.patch(fullPath, wrappedHandler);
-          }
-          break;
-        default:
-          throw new Error(`不支持的 HTTP 方法: ${route.method}`);
+      // 使用方法映射简化注册逻辑，减少重复
+      const methodHandlers = {
+        GET: app.get.bind(app),
+        POST: app.post.bind(app),
+        PUT: app.put.bind(app),
+        DELETE: app.delete.bind(app),
+        PATCH: app.patch.bind(app),
+      } as const;
+
+      const handler =
+        methodHandlers[route.method as keyof typeof methodHandlers];
+      if (!handler) {
+        throw new Error(`不支持的 HTTP 方法: ${route.method}`);
+      }
+
+      if (allMiddleware.length > 0) {
+        handler(fullPath, ...allMiddleware, wrappedHandler);
+      } else {
+        handler(fullPath, wrappedHandler);
       }
     }
   }

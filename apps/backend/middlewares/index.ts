@@ -10,6 +10,8 @@ export {
   mcpServiceManagerMiddleware,
   hasMCPServiceManager,
 } from "./mcpServiceManager.middleware.js";
+export { xiaozhiConnectionManagerMiddleware } from "./xiaozhiConnectionManager.middleware.js";
+export { xiaozhiEndpointsMiddleware } from "./xiaozhiEndpoints.middleware.js";
 
 // 重新导出 context 相关函数
 export {

@@ -33,11 +33,20 @@ interface ErrorWithCode {
  * 类型守卫函数：检查错误是否带有 code 属性
  */
 function isErrorWithCode(error: unknown): error is ErrorWithCode {
-  return (
-    error instanceof Error &&
-    "code" in error &&
-    typeof (error as ErrorWithCode).code === "string"
-  );
+  if (!(error instanceof Error && "code" in error)) {
+    return false;
+  }
+
+  const code = (error as ErrorWithCode).code;
+  const validCodes: CozeErrorCode[] = [
+    "AUTH_FAILED",
+    "RATE_LIMITED",
+    "TIMEOUT",
+    "API_ERROR",
+    "NETWORK_ERROR",
+  ];
+
+  return typeof code === "string" && validCodes.includes(code as CozeErrorCode);
 }
 
 /**

@@ -46,8 +46,8 @@ export interface HandlerDependencies {
   updateApiHandler: UpdateApiHandler;
   /** 扣子 API 处理器 */
   cozeApiHandler: CozeApiHandler;
-  /** 小智接入点处理器 */
-  endpointHandler: MCPEndpointApiHandler;
+  /** 小智接入点处理器（通过中间件动态注入） */
+  endpointHandler?: MCPEndpointApiHandler;
 }
 
 /**

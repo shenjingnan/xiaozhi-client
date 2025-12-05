@@ -13,18 +13,24 @@ import type { AppContext } from "../types/hono.context.js";
  * 创建单例的 MCPEndpointApiHandler 并注入到上下文中
  */
 export const xiaozhiEndpointsMiddleware = (): MiddlewareHandler<AppContext> => {
-  // 使用闭包缓存 handler 实例
+  // 使用闭包缓存 handler 实例和 manager
   let endpointHandler: MCPEndpointApiHandler | null = null;
+  let lastManager: any = null;
 
   return async (c, next) => {
     const xiaozhiConnectionManager = c.get("xiaozhiConnectionManager");
 
-    // 如果连接管理器可用且 handler 未创建，则创建 handler
-    if (xiaozhiConnectionManager && !endpointHandler) {
-      endpointHandler = new MCPEndpointApiHandler(
-        xiaozhiConnectionManager,
-        configManager
-      );
+    // 如果 manager 发生变化，则重建 handler
+    if (xiaozhiConnectionManager !== lastManager) {
+      lastManager = xiaozhiConnectionManager;
+      if (xiaozhiConnectionManager) {
+        endpointHandler = new MCPEndpointApiHandler(
+          xiaozhiConnectionManager,
+          configManager
+        );
+      } else {
+        endpointHandler = null;
+      }
     }
 
     // 将 handler 注入到上下文中

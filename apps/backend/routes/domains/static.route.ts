@@ -7,25 +7,18 @@ import type { Context } from "hono";
 import type { HandlerDependencies, RouteConfig } from "../types.js";
 
 /**
- * 安全地从 Hono context 中获取 HandlerDependencies
+ * 从 Hono context 中获取 HandlerDependencies
  * @param c - Hono context 对象
  * @returns HandlerDependencies 实例
  */
 function getHandlerDependencies(c: Context): HandlerDependencies {
   const dependencies = c.get("dependencies");
 
-  // 类型守卫：检查 dependencies 是否符合 HandlerDependencies 接口
-  if (
-    dependencies &&
-    typeof dependencies === "object" &&
-    "staticFileHandler" in dependencies
-  ) {
-    return dependencies as HandlerDependencies;
+  if (!dependencies) {
+    throw new Error("Handler dependencies not configured");
   }
 
-  throw new Error(
-    "Handler dependencies not properly configured in Hono context"
-  );
+  return dependencies as HandlerDependencies;
 }
 
 export const staticRoutes: RouteConfig = {

@@ -6,6 +6,26 @@
 import type { Context } from "hono";
 import type { HandlerDependencies, RouteConfig } from "../types.js";
 
+/**
+ * MCP 服务器处理器包装函数
+ * 统一处理 MCP Server API Handler 的错误检查
+ */
+const withMCPServerHandler = async (
+  c: Context,
+  handlerFn: (
+    handler: NonNullable<HandlerDependencies["mcpServerApiHandler"]>
+  ) => Promise<Response>
+): Promise<Response> => {
+  const dependencies = c.get("dependencies") as HandlerDependencies;
+  const handler = dependencies.mcpServerApiHandler;
+
+  if (!handler) {
+    return c.json({ error: "MCP Server API Handler not initialized" }, 503);
+  }
+
+  return await handlerFn(handler);
+};
+
 export const mcpserverRoutes: RouteConfig = {
   name: "mcpserver",
   path: "/api/mcp-servers",
@@ -14,62 +34,26 @@ export const mcpserverRoutes: RouteConfig = {
     {
       method: "POST",
       path: "",
-      handler: async (c: Context) => {
-        const dependencies = c.get("dependencies") as HandlerDependencies;
-        const handler = dependencies.mcpServerApiHandler;
-        if (!handler) {
-          return c.json(
-            { error: "MCP Server API Handler not initialized" },
-            503
-          );
-        }
-        return await handler.addMCPServer(c);
-      },
+      handler: (c: Context) =>
+        withMCPServerHandler(c, (h) => h.addMCPServer(c)),
     },
     {
       method: "DELETE",
       path: "/:serverName",
-      handler: async (c: Context) => {
-        const dependencies = c.get("dependencies") as HandlerDependencies;
-        const handler = dependencies.mcpServerApiHandler;
-        if (!handler) {
-          return c.json(
-            { error: "MCP Server API Handler not initialized" },
-            503
-          );
-        }
-        return await handler.removeMCPServer(c);
-      },
+      handler: (c: Context) =>
+        withMCPServerHandler(c, (h) => h.removeMCPServer(c)),
     },
     {
       method: "GET",
       path: "/:serverName/status",
-      handler: async (c: Context) => {
-        const dependencies = c.get("dependencies") as HandlerDependencies;
-        const handler = dependencies.mcpServerApiHandler;
-        if (!handler) {
-          return c.json(
-            { error: "MCP Server API Handler not initialized" },
-            503
-          );
-        }
-        return await handler.getMCPServerStatus(c);
-      },
+      handler: (c: Context) =>
+        withMCPServerHandler(c, (h) => h.getMCPServerStatus(c)),
     },
     {
       method: "GET",
       path: "",
-      handler: async (c: Context) => {
-        const dependencies = c.get("dependencies") as HandlerDependencies;
-        const handler = dependencies.mcpServerApiHandler;
-        if (!handler) {
-          return c.json(
-            { error: "MCP Server API Handler not initialized" },
-            503
-          );
-        }
-        return await handler.listMCPServers(c);
-      },
+      handler: (c: Context) =>
+        withMCPServerHandler(c, (h) => h.listMCPServers(c)),
     },
   ],
 };
