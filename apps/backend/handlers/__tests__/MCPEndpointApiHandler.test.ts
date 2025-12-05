@@ -1,4 +1,4 @@
-import type { ConnectionStatus } from "@services/IndependentXiaozhiConnectionManager.js";
+import type { ConnectionStatus } from "@/lib/endpoint/IndependentXiaozhiConnectionManager.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MCPEndpointApiHandler } from "../MCPEndpointApiHandler.js";
 
