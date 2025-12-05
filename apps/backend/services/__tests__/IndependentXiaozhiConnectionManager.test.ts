@@ -35,6 +35,7 @@ interface ProxyMCPServerMock {
   off: ReturnType<typeof vi.fn>;
   destroy: ReturnType<typeof vi.fn>;
   setServiceManager?: ReturnType<typeof vi.fn>;
+  tools: Map<string, Tool>;
 }
 
 interface ConnectionState {
@@ -88,7 +89,7 @@ vi.mock("../../configManager.js", () => ({
   },
 }));
 
-vi.mock("../../ProxyMCPServer.js", () => ({
+vi.mock("@/lib/endpoint/ProxyMCPServer.js", () => ({
   ProxyMCPServer: vi.fn().mockImplementation(() => ({
     connect: vi.fn(),
     disconnect: vi.fn(),
@@ -103,6 +104,27 @@ vi.mock("../../ProxyMCPServer.js", () => ({
     on: vi.fn(),
     off: vi.fn(),
     destroy: vi.fn(),
+    setServiceManager: vi.fn(),
+    // 添加 tools Map 属性，避免 connect 时因 tools 为空而报错
+    tools: new Map([
+      [
+        "test-tool",
+        {
+          name: "test-tool",
+          description: "Test tool for testing",
+          inputSchema: {
+            type: "object",
+            properties: {
+              input: {
+                type: "string",
+                description: "Test input",
+              },
+            },
+            required: [],
+          },
+        },
+      ],
+    ]),
   })),
 }));
 
@@ -1477,7 +1499,8 @@ describe("IndependentXiaozhiConnectionManager", () => {
         manager.setServiceManager(mockServiceManager);
 
         expect(mockLogger.error).toHaveBeenCalledWith(
-          expect.stringContaining("工具同步失败")
+          "工具同步失败 ws://localhost:8080:",
+          expect.any(Error)
         );
       }
     });

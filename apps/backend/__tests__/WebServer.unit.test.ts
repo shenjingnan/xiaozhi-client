@@ -18,7 +18,7 @@ vi.mock("../configManager.js", () => ({
   },
 }));
 
-vi.mock("../ProxyMCPServer.js", () => ({
+vi.mock("@/lib/endpoint/ProxyMCPServer.js", () => ({
   ProxyMCPServer: vi.fn().mockImplementation((endpoint: string) => ({
     endpoint,
     connect: vi.fn().mockResolvedValue(undefined),
@@ -37,10 +37,10 @@ vi.mock("@services/MCPServiceManagerSingleton.js", () => ({
   },
 }));
 
+import { ProxyMCPServer } from "@/lib/endpoint/ProxyMCPServer.js";
 // Import the mocked modules for use in tests
 import { MCPServiceManagerSingleton } from "@services/MCPServiceManagerSingleton.js";
 import { XiaozhiConnectionManagerSingleton } from "@services/XiaozhiConnectionManagerSingleton.js";
-import { ProxyMCPServer } from "../ProxyMCPServer.js";
 
 vi.mock("@services/XiaozhiConnectionManagerSingleton.js", () => ({
   XiaozhiConnectionManagerSingleton: {
@@ -543,6 +543,11 @@ describe("WebServer Unit Tests", () => {
           () => mockProxyServer as any
         );
 
+        // 重要：在调用前 mock connectWithRetry 方法避免真实等待
+        vi.spyOn(webServer as any, "connectWithRetry").mockResolvedValue(
+          undefined
+        );
+
         webServer.mcpServiceManager = mockServiceManager;
 
         const tools = [{ name: "test-tool", description: "Test tool" }];
@@ -561,7 +566,9 @@ describe("WebServer Unit Tests", () => {
         expect(mockProxyServer.setServiceManager).toHaveBeenCalledWith(
           mockServiceManager
         );
-        expect(mockProxyServer.connect).toHaveBeenCalled();
+
+        // 验证 connectWithRetry 被调用
+        expect((webServer as any).connectWithRetry).toHaveBeenCalled();
 
         // 验证 proxyMCPServer 被设置
         expect(webServer.proxyMCPServer).toBeDefined();
@@ -604,9 +611,17 @@ describe("WebServer Unit Tests", () => {
           (webServer as any).initializeXiaozhiConnection(endpoint, tools)
         ).rejects.toThrow();
 
-        // 验证尝试了两种连接方式
+        // 验证尝试了两种连接方式（按执行顺序）
         expect(mockConnectionManager.initialize).toHaveBeenCalled();
+
+        // 先验证 ProxyMCPServer 构造函数被调用
         expect(ProxyMCPServer).toHaveBeenCalledWith(endpoint);
+        expect(mockProxyServer.setServiceManager).toHaveBeenCalledWith(
+          mockServiceManager
+        );
+
+        // 再验证 connectWithRetry 被调用
+        expect((webServer as any).connectWithRetry).toHaveBeenCalled();
       }, 10000); // 设置 10 秒超时
     });
 

@@ -34,7 +34,14 @@ interface ProxyMCPServerMock {
   on: ReturnType<typeof vi.fn>;
   off: ReturnType<typeof vi.fn>;
   destroy: ReturnType<typeof vi.fn>;
-  setServiceManager?: ReturnType<typeof vi.fn>;
+  setServiceManager: ReturnType<typeof vi.fn>;
+  getTools: ReturnType<typeof vi.fn>;
+  hasTool: ReturnType<typeof vi.fn>;
+  addTool: ReturnType<typeof vi.fn>;
+  addTools: ReturnType<typeof vi.fn>;
+  removeTool: ReturnType<typeof vi.fn>;
+  syncToolsFromServiceManager: ReturnType<typeof vi.fn>;
+  _getTools: () => Map<string, unknown>;
 }
 
 interface ConnectionState {
@@ -64,8 +71,8 @@ type ManagerPrivateAccess = {
   performReconnect: (endpoint: string) => Promise<void>;
 };
 
-// Mock dependencies
-vi.mock("../../Logger.js", () => ({
+// Mock dependencies - logger mock must be defined inline
+vi.mock("@root/Logger.js", () => ({
   logger: {
     debug: vi.fn(),
     info: vi.fn(),
@@ -88,22 +95,54 @@ vi.mock("@root/configManager.js", () => ({
   },
 }));
 
-vi.mock("../../ProxyMCPServer.js", () => ({
-  ProxyMCPServer: vi.fn().mockImplementation(() => ({
-    connect: vi.fn(),
-    disconnect: vi.fn(),
-    getConnectionStatus: vi.fn().mockReturnValue({
-      connected: false,
-      initialized: true,
-      isReconnecting: false,
-      reconnectAttempts: 0,
-      nextReconnectTime: undefined,
-      reconnectDelay: 0,
-    }),
-    on: vi.fn(),
-    off: vi.fn(),
-    destroy: vi.fn(),
-  })),
+vi.mock("../ProxyMCPServer.js", () => ({
+  ProxyMCPServer: vi.fn().mockImplementation(() => {
+    // 创建工具集合的 Mock
+    const mockTools = new Map();
+
+    // 添加一个默认工具，避免"未配置任何工具"错误
+    mockTools.set("test-tool", {
+      name: "test-tool",
+      description: "Test tool for testing",
+      inputSchema: {
+        type: "object",
+        properties: {
+          input: {
+            type: "string",
+            description: "Test input",
+          },
+        },
+        required: [],
+      },
+    });
+
+    return {
+      connect: vi.fn().mockResolvedValue(undefined),
+      disconnect: vi.fn(),
+      setServiceManager: vi.fn(),
+      getTools: vi.fn().mockReturnValue(Array.from(mockTools.values())),
+      hasTool: vi.fn().mockReturnValue(true),
+      addTool: vi.fn().mockImplementation((name, tool) => {
+        mockTools.set(name, tool);
+      }),
+      addTools: vi.fn(),
+      removeTool: vi.fn(),
+      syncToolsFromServiceManager: vi.fn(),
+      getConnectionStatus: vi.fn().mockReturnValue({
+        connected: false,
+        initialized: true,
+        isReconnecting: false,
+        reconnectAttempts: 0,
+        nextReconnectTime: undefined,
+        reconnectDelay: 0,
+      }),
+      on: vi.fn(),
+      off: vi.fn(),
+      destroy: vi.fn(),
+      // 添加内部工具访问以便测试
+      _getTools: () => mockTools,
+    };
+  }),
 }));
 
 vi.mock("@services/EventBus.js", () => ({
@@ -147,11 +186,19 @@ describe("IndependentXiaozhiConnectionManager", () => {
   ];
 
   beforeEach(async () => {
+    // Clear all mocks and reset call counts
     vi.clearAllMocks();
 
     // Get the mocked logger instance
     const { logger } = await import("@root/Logger.js");
     mockLogger = logger as unknown as MockLogger;
+
+    // Reset logger mock call counts
+    mockLogger.debug.mockClear();
+    mockLogger.info.mockClear();
+    mockLogger.error.mockClear();
+    mockLogger.warn.mockClear();
+    mockLogger.withTag.mockClear();
 
     // Mock EventBus
     mockEventBus = {
@@ -233,6 +280,11 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
       // 清理调用记录
       vi.clearAllMocks();
+      mockLogger.debug.mockClear();
+      mockLogger.info.mockClear();
+      mockLogger.error.mockClear();
+      mockLogger.warn.mockClear();
+      mockLogger.withTag.mockClear();
 
       // 再次连接应该跳过
       await manager.connectExistingEndpoint(endpoint);
@@ -258,7 +310,9 @@ describe("IndependentXiaozhiConnectionManager", () => {
       const privateManager = manager as unknown as ManagerPrivateAccess;
       const proxyServer = privateManager.connections.get(endpoint);
       if (proxyServer?.connect) {
-        vi.mocked(proxyServer.connect).mockRejectedValue(new Error("连接失败"));
+        (proxyServer.connect as ReturnType<typeof vi.fn>).mockRejectedValue(
+          new Error("连接失败")
+        );
       }
 
       await expect(manager.connectExistingEndpoint(endpoint)).rejects.toThrow(
@@ -572,6 +626,11 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
       // 清理事件记录
       vi.clearAllMocks();
+      mockLogger.debug.mockClear();
+      mockLogger.info.mockClear();
+      mockLogger.error.mockClear();
+      mockLogger.warn.mockClear();
+      mockLogger.withTag.mockClear();
 
       // 注意：根据实际实现，addEndpoint 方法可能不会发送事件
       await manager.addEndpoint(endpoint);
@@ -594,6 +653,11 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
       // 清理事件记录
       vi.clearAllMocks();
+      mockLogger.debug.mockClear();
+      mockLogger.info.mockClear();
+      mockLogger.error.mockClear();
+      mockLogger.warn.mockClear();
+      mockLogger.withTag.mockClear();
 
       // 尝试连接不存在的接入点
       try {
@@ -785,8 +849,10 @@ describe("IndependentXiaozhiConnectionManager", () => {
       const mockConnection2 = connections.get("ws://localhost:8081");
 
       if (mockConnection1?.connect && mockConnection2?.connect) {
-        vi.mocked(mockConnection1.connect).mockResolvedValue(undefined);
-        vi.mocked(mockConnection2.connect).mockRejectedValue(
+        (mockConnection1.connect as ReturnType<typeof vi.fn>).mockResolvedValue(
+          undefined
+        );
+        (mockConnection2.connect as ReturnType<typeof vi.fn>).mockRejectedValue(
           new Error("连接失败")
         );
       }
@@ -806,7 +872,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
       const connections = privateManager.connections;
       const mockConnection = connections.get("ws://localhost:8080");
       if (mockConnection?.connect) {
-        vi.mocked(mockConnection.connect).mockRejectedValue(
+        (mockConnection.connect as ReturnType<typeof vi.fn>).mockRejectedValue(
           new Error("连接失败")
         );
       }
@@ -1105,6 +1171,11 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
       // 清理日志记录以便检查
       vi.clearAllMocks();
+      mockLogger.debug.mockClear();
+      mockLogger.info.mockClear();
+      mockLogger.error.mockClear();
+      mockLogger.warn.mockClear();
+      mockLogger.withTag.mockClear();
 
       manager.stopReconnect(endpoint);
 
@@ -1139,6 +1210,11 @@ describe("IndependentXiaozhiConnectionManager", () => {
 
       // 清理日志记录以便检查
       vi.clearAllMocks();
+      mockLogger.debug.mockClear();
+      mockLogger.info.mockClear();
+      mockLogger.error.mockClear();
+      mockLogger.warn.mockClear();
+      mockLogger.withTag.mockClear();
 
       manager.stopAllReconnects();
 
@@ -1342,6 +1418,11 @@ describe("IndependentXiaozhiConnectionManager", () => {
     test("预热时应该处理预热失败的情况", async () => {
       // 清理日志记录
       vi.clearAllMocks();
+      mockLogger.debug.mockClear();
+      mockLogger.info.mockClear();
+      mockLogger.error.mockClear();
+      mockLogger.warn.mockClear();
+      mockLogger.withTag.mockClear();
 
       // 当前的预热实现实际上只是记录日志，不会执行失败的操作
       // 所以我们测试预热完成的情况
@@ -1398,7 +1479,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
       const connections = privateManager.connections;
       const mockConnection = connections.get(endpoint);
       if (mockConnection?.connect) {
-        vi.mocked(mockConnection.connect).mockRejectedValue(
+        (mockConnection.connect as ReturnType<typeof vi.fn>).mockRejectedValue(
           new Error("连接失败")
         );
       }
@@ -1477,7 +1558,8 @@ describe("IndependentXiaozhiConnectionManager", () => {
         manager.setServiceManager(mockServiceManager);
 
         expect(mockLogger.error).toHaveBeenCalledWith(
-          expect.stringContaining("工具同步失败")
+          expect.stringContaining("工具同步失败 ws://localhost:8080"),
+          expect.any(Error)
         );
       }
     });
