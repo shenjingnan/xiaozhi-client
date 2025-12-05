@@ -18,39 +18,6 @@ import type {
   VersionApiHandler,
 } from "@handlers/index.js";
 import type { Context, MiddlewareHandler } from "hono";
-import type { AppContext } from "../types/hono.context.js";
-
-/**
- * 路由配置接口
- * 定义单个路由的完整配置信息
- */
-export interface RouteConfig {
-  /** 路由路径（相对于域路径） */
-  path: string;
-  /** HTTP 方法 */
-  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-  /** 路由处理函数 */
-  handler: (c: Context<AppContext>) => Promise<Response> | Response;
-  /** 路由级别的中间件（可选） */
-  middleware?: Array<(c: Context, next: () => Promise<void>) => Promise<void>>;
-}
-
-/**
- * 路由域配置接口
- * 定义一个功能域的所有路由配置
- */
-export interface RouteDomainConfig {
-  /** 域名称（英文，用于标识） */
-  name: string;
-  /** 域描述（中文，用于文档和日志） */
-  description: string;
-  /** 域的基础路径 */
-  path: string;
-  /** 域内的所有路由配置 */
-  routes: RouteConfig[];
-  /** 域级别的中间件（可选，应用于域内所有路由） */
-  middleware?: Array<(c: Context, next: () => Promise<void>) => Promise<void>>;
-}
 
 /**
  * 处理器依赖接口
@@ -109,18 +76,14 @@ export interface RouteStatistics {
   methodDistribution: Record<string, number>;
 }
 
-// ============================================================================
-// 以下为简化架构的新增类型定义
-// ============================================================================
-
 /**
- * HTTP 方法类型（简化版本）
+ * HTTP 方法类型
  */
 export type HTTPMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
 /**
- * 简化的路由定义接口
- * 用于新的路由架构，减少不必要的复杂性
+ * 路由定义接口
+ * 定义单个路由的配置信息
  */
 export interface RouteDefinition {
   /** HTTP 方法 */
@@ -134,10 +97,10 @@ export interface RouteDefinition {
 }
 
 /**
- * 简化的路由域配置接口
- * 用于新架构的路由配置
+ * 路由域配置接口
+ * 定义一个功能域的所有路由配置
  */
-export interface SimpleRouteConfig {
+export interface RouteConfig {
   /** 域名称 */
   name: string;
   /** 域基础路径 */

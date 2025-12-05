@@ -5,13 +5,13 @@
  */
 
 import type { Context } from "hono";
-import type { HandlerDependencies, SimpleRouteConfig } from "../types.js";
+import type { HandlerDependencies, RouteConfig } from "../types.js";
 
 /**
  * MCP 协议路由配置
  * 从原有的 MCPRoutes 类迁移而来，保持功能完全一致
  */
-export const mcpRoutes: SimpleRouteConfig = {
+export const mcpRoutes: RouteConfig = {
   name: "mcp",
   path: "/mcp",
   description: "MCP 协议相关 API",

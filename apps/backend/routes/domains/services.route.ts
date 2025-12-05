@@ -4,9 +4,9 @@
  */
 
 import type { Context } from "hono";
-import type { HandlerDependencies, SimpleRouteConfig } from "../types.js";
+import type { HandlerDependencies, RouteConfig } from "../types.js";
 
-export const servicesRoutes: SimpleRouteConfig = {
+export const servicesRoutes: RouteConfig = {
   name: "services",
   path: "/api/services",
   description: "服务管理相关 API",

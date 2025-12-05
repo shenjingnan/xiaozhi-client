@@ -5,13 +5,13 @@
  */
 
 import type { Context } from "hono";
-import type { HandlerDependencies, SimpleRouteConfig } from "../types.js";
+import type { HandlerDependencies, RouteConfig } from "../types.js";
 
 /**
  * 版本信息路由配置
  * 从原有的 VersionRoutes 类迁移而来，保持功能完全一致
  */
-export const versionRoutes: SimpleRouteConfig = {
+export const versionRoutes: RouteConfig = {
   name: "version",
   path: "/api/version",
   description: "版本信息相关 API",

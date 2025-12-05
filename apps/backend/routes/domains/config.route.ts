@@ -6,13 +6,13 @@
 
 import type { Context } from "hono";
 import type { AppContext } from "../../types/hono.context.js";
-import type { HandlerDependencies, SimpleRouteConfig } from "../types.js";
+import type { HandlerDependencies, RouteConfig } from "../types.js";
 
 /**
  * 配置管理路由配置
  * 从原有的 ConfigRoutes 类迁移而来，保持功能完全一致
  */
-export const configRoutes: SimpleRouteConfig = {
+export const configRoutes: RouteConfig = {
   name: "config",
   path: "/api/config",
   description: "配置管理相关 API",

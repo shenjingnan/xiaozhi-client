@@ -4,7 +4,7 @@
  */
 
 import type { Context } from "hono";
-import type { HandlerDependencies, SimpleRouteConfig } from "../types.js";
+import type { HandlerDependencies, RouteConfig } from "../types.js";
 
 /**
  * 安全地从 Hono context 中获取 HandlerDependencies
@@ -28,7 +28,7 @@ function getHandlerDependencies(c: Context): HandlerDependencies {
   );
 }
 
-export const staticRoutes: SimpleRouteConfig = {
+export const staticRoutes: RouteConfig = {
   name: "static",
   path: "/", // 静态文件服务使用根路径
   description: "静态文件服务路由",

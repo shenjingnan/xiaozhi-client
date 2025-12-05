@@ -4,9 +4,9 @@
  */
 
 import type { Context } from "hono";
-import type { HandlerDependencies, SimpleRouteConfig } from "../types.js";
+import type { HandlerDependencies, RouteConfig } from "../types.js";
 
-export const cozeRoutes: SimpleRouteConfig = {
+export const cozeRoutes: RouteConfig = {
   name: "coze",
   path: "/api/coze",
   description: "扣子 API 相关路由",

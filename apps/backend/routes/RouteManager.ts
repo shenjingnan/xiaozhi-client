@@ -7,14 +7,14 @@ import type { Context, Hono, Next } from "hono";
 import { createErrorResponse } from "../middlewares/error.middleware.js";
 import type { AppContext } from "../types/hono.context.js";
 import type { HandlerDependencies } from "./types.js";
-import type { SimpleRouteConfig } from "./types.js";
+import type { RouteConfig } from "./types.js";
 
 /**
  * 路由管理器
  * 直接管理路由配置，提供路由注册和应用功能
  */
 export class RouteManager {
-  private routes: Map<string, SimpleRouteConfig> = new Map();
+  private routes: Map<string, RouteConfig> = new Map();
   private dependencies: HandlerDependencies;
 
   constructor(dependencies: HandlerDependencies) {
@@ -24,7 +24,7 @@ export class RouteManager {
   /**
    * 注册单个路由模块
    */
-  registerRoute(name: string, config: SimpleRouteConfig): void {
+  registerRoute(name: string, config: RouteConfig): void {
     if (this.routes.has(name)) {
       console.warn(`路由域 '${name}' 已存在，将被覆盖`);
     }
@@ -35,7 +35,7 @@ export class RouteManager {
   /**
    * 批量注册路由模块
    */
-  registerRoutes(routeConfigs: Record<string, SimpleRouteConfig>): void {
+  registerRoutes(routeConfigs: Record<string, RouteConfig>): void {
     console.log(`开始批量注册 ${Object.keys(routeConfigs).length} 个路由域...`);
 
     for (const [name, config] of Object.entries(routeConfigs)) {
@@ -48,14 +48,14 @@ export class RouteManager {
   /**
    * 获取所有注册的路由配置
    */
-  getAllRoutes(): Map<string, SimpleRouteConfig> {
+  getAllRoutes(): Map<string, RouteConfig> {
     return new Map(this.routes);
   }
 
   /**
    * 获取指定名称的路由配置
    */
-  getRoute(name: string): SimpleRouteConfig | undefined {
+  getRoute(name: string): RouteConfig | undefined {
     return this.routes.get(name);
   }
 
@@ -95,10 +95,7 @@ export class RouteManager {
   /**
    * 应用单个路由配置到 Hono 应用
    */
-  private applyRouteConfig(
-    app: Hono<AppContext>,
-    config: SimpleRouteConfig
-  ): void {
+  private applyRouteConfig(app: Hono<AppContext>, config: RouteConfig): void {
     // 注册每个具体的路由
     for (const route of config.routes) {
       const fullPath = config.path + route.path;

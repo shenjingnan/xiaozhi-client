@@ -5,13 +5,13 @@
  */
 
 import type { Context } from "hono";
-import type { HandlerDependencies, SimpleRouteConfig } from "../types.js";
+import type { HandlerDependencies, RouteConfig } from "../types.js";
 
 /**
  * 工具调用路由配置
  * 从原有的 ToolsRoutes 类迁移而来，保持功能完全一致
  */
-export const toolsRoutes: SimpleRouteConfig = {
+export const toolsRoutes: RouteConfig = {
   name: "tools",
   path: "/api/tools",
   description: "工具调用相关 API",

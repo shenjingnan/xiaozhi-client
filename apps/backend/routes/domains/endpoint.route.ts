@@ -6,7 +6,7 @@
 
 import type { Context } from "hono";
 import type { AppContext } from "../../types/hono.context.js";
-import type { SimpleRouteConfig } from "../types.js";
+import type { RouteConfig } from "../types.js";
 
 /**
  * 统一的错误响应函数
@@ -61,7 +61,7 @@ const withEndpointHandler = async (
  * 端点管理路由配置
  * 所有端点管理相关 API 的路由定义
  */
-export const endpointRoutes: SimpleRouteConfig = {
+export const endpointRoutes: RouteConfig = {
   name: "endpoint",
   path: "/api/endpoint",
   description: "端点管理相关 API",

@@ -1,13 +1,11 @@
 // 类型定义
 export type {
-  RouteConfig,
-  RouteDomainConfig,
   HandlerDependencies,
   RouteRegistryOptions,
   RouteStatistics,
   HTTPMethod,
   RouteDefinition,
-  SimpleRouteConfig,
+  RouteConfig,
 } from "./types.js";
 
 // 核心类

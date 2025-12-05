@@ -5,13 +5,13 @@
  */
 
 import type { Context } from "hono";
-import type { HandlerDependencies, SimpleRouteConfig } from "../types.js";
+import type { HandlerDependencies, RouteConfig } from "../types.js";
 
 /**
  * 状态查询路由配置
  * 从原有的 StatusRoutes 类迁移而来，保持功能完全一致
  */
-export const statusRoutes: SimpleRouteConfig = {
+export const statusRoutes: RouteConfig = {
   name: "status",
   path: "/api/status",
   description: "状态查询相关 API",

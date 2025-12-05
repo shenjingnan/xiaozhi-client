@@ -4,9 +4,9 @@
  */
 
 import type { Context } from "hono";
-import type { HandlerDependencies, SimpleRouteConfig } from "../types.js";
+import type { HandlerDependencies, RouteConfig } from "../types.js";
 
-export const mcpserverRoutes: SimpleRouteConfig = {
+export const mcpserverRoutes: RouteConfig = {
   name: "mcpserver",
   path: "/api/mcp-servers",
   description: "MCP 服务器管理相关 API",
