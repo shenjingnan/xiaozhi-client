@@ -53,6 +53,10 @@ export interface HandlerDependencies {
 /**
  * 路由注册选项接口
  * 控制路由注册的行为
+ *
+ * @future-feature 计划在 v2.0.0 中实现，用于提供更灵活的路由注册控制
+ * - 支持详细的注册日志，便于调试和监控
+ * - 支持注册失败时的异常处理策略配置
  */
 export interface RouteRegistryOptions {
   /** 是否启用详细的路由注册日志 */
@@ -64,6 +68,11 @@ export interface RouteRegistryOptions {
 /**
  * 路由统计信息接口
  * 提供路由系统的运行时统计
+ *
+ * @future-feature 计划在 v2.0.0 中实现，用于提供路由系统的监控和分析能力
+ * - 统计各域的路由数量分布
+ * - 分析 HTTP 方法的使用情况
+ * - 支持路由性能监控和优化建议
  */
 export interface RouteStatistics {
   /** 注册的域数量 */

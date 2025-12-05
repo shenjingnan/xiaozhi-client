@@ -504,34 +504,18 @@ export class WebServer {
     // 注入路由系统依赖
     // 注意：这个中间件必须在路由注册之前设置
     this.app?.use("*", async (c, next) => {
-      // 延迟获取依赖，确保所有处理器都已初始化
-      const dependencies = {
-        configApiHandler: this.configApiHandler,
-        statusApiHandler: this.statusApiHandler,
-        serviceApiHandler: this.serviceApiHandler,
-        toolApiHandler: this.toolApiHandler,
-        toolCallLogApiHandler: this.toolCallLogApiHandler,
-        versionApiHandler: this.versionApiHandler,
-        staticFileHandler: this.staticFileHandler,
-        mcpRouteHandler: this.mcpRouteHandler,
-        mcpServerApiHandler: this.mcpServerApiHandler,
-        updateApiHandler: this.updateApiHandler,
-        cozeApiHandler: this.cozeApiHandler,
-        // endpointHandler 通过中间件动态注入，不在此初始化
-      };
+      const dependencies = this.createHandlerDependencies();
       c.set("dependencies", dependencies);
       await next();
     });
   }
 
   /**
-   * 设置路由系统
+   * 创建处理器依赖对象
+   * 统一管理依赖对象的创建，避免代码重复
    */
-  private setupRouteSystem(): void {
-    // 创建处理器依赖对象，但不传入 RouteManager
-    // 因为依赖现在通过中间件动态注入
-    // RouteManager 仍然需要传入依赖对象以保持向后兼容
-    const dependencies: HandlerDependencies = {
+  private createHandlerDependencies(): HandlerDependencies {
+    return {
       configApiHandler: this.configApiHandler,
       statusApiHandler: this.statusApiHandler,
       serviceApiHandler: this.serviceApiHandler,
@@ -543,11 +527,17 @@ export class WebServer {
       mcpServerApiHandler: this.mcpServerApiHandler,
       updateApiHandler: this.updateApiHandler,
       cozeApiHandler: this.cozeApiHandler,
-      // endpointHandler 通过中间件动态注入，设为 undefined
+      // endpointHandler 通过中间件动态注入，不在此初始化
     };
+  }
 
+  /**
+   * 设置路由系统
+   */
+  private setupRouteSystem(): void {
     // 初始化路由管理器
-    this.routeManager = new RouteManager(dependencies);
+    // 注意：RouteManager 不再需要依赖参数，因为依赖通过中间件动态注入
+    this.routeManager = new RouteManager();
   }
 
   /**

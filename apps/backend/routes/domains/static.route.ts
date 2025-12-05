@@ -6,21 +6,6 @@
 import type { Context } from "hono";
 import type { HandlerDependencies, RouteConfig } from "../types.js";
 
-/**
- * 从 Hono context 中获取 HandlerDependencies
- * @param c - Hono context 对象
- * @returns HandlerDependencies 实例
- */
-function getHandlerDependencies(c: Context): HandlerDependencies {
-  const dependencies = c.get("dependencies");
-
-  if (!dependencies) {
-    throw new Error("Handler dependencies not configured");
-  }
-
-  return dependencies as HandlerDependencies;
-}
-
 export const staticRoutes: RouteConfig = {
   name: "static",
   path: "/", // 静态文件服务使用根路径
@@ -34,8 +19,8 @@ export const staticRoutes: RouteConfig = {
         if (c.req.path.startsWith("/api/")) {
           return c.notFound();
         }
-        const { staticFileHandler } = getHandlerDependencies(c);
-        return await staticFileHandler.handleStaticFile(c);
+        const dependencies = c.get("dependencies") as HandlerDependencies;
+        return await dependencies.staticFileHandler.handleStaticFile(c);
       },
     },
   ],

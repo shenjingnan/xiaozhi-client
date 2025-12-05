@@ -6,20 +6,15 @@
 import type { Context, Hono, Next } from "hono";
 import { createErrorResponse } from "../middlewares/error.middleware.js";
 import type { AppContext } from "../types/hono.context.js";
-import type { HandlerDependencies } from "./types.js";
 import type { RouteConfig } from "./types.js";
 
 /**
  * 路由管理器
  * 直接管理路由配置，提供路由注册和应用功能
+ * 注意：依赖注入现在通过 WebServer 的中间件处理，RouteManager 不再直接管理依赖
  */
 export class RouteManager {
   private routes: Map<string, RouteConfig> = new Map();
-  private dependencies: HandlerDependencies;
-
-  constructor(dependencies: HandlerDependencies) {
-    this.dependencies = dependencies;
-  }
 
   /**
    * 注册单个路由模块
