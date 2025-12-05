@@ -66,6 +66,16 @@ export const errorHandlerMiddleware = (err: Error, c: Context) => {
     loggerInstance = logger;
   }
 
+  // 在开发环境中打印详细错误信息
+  if (process.env.NODE_ENV === "development") {
+    console.error("HTTP Request Error:", {
+      error: err.message,
+      stack: err.stack,
+      path: c.req.path,
+      method: c.req.method,
+    });
+  }
+
   loggerInstance.error("HTTP request error:", err);
   const errorResponse = createErrorResponse(
     "INTERNAL_SERVER_ERROR",
@@ -73,4 +83,29 @@ export const errorHandlerMiddleware = (err: Error, c: Context) => {
     process.env.NODE_ENV === "development" ? err.stack : undefined
   );
   return c.json(errorResponse, 500);
+};
+
+/**
+ * 404 Not Found 处理中间件
+ */
+export const notFoundHandlerMiddleware = (c: Context) => {
+  // 如果是 API 路径，返回 API_NOT_FOUND
+  if (c.req.path.startsWith("/api/")) {
+    const errorResponse = createErrorResponse(
+      "API_NOT_FOUND",
+      "请求的资源不存在",
+      {
+        path: c.req.path,
+        method: c.req.method,
+      }
+    );
+    return c.json(errorResponse, 404);
+  }
+
+  // 非 API 路径返回通用的 NOT_FOUND
+  const errorResponse = createErrorResponse("NOT_FOUND", "请求的资源不存在", {
+    path: c.req.path,
+    method: c.req.method,
+  });
+  return c.json(errorResponse, 404);
 };

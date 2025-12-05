@@ -5,8 +5,28 @@
 
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { Logger } from "@root/Logger.js";
+import type { IndependentXiaozhiConnectionManager } from "@services/index.js";
 import type { Context } from "hono";
 import { Hono } from "hono";
+import type {
+  HandlerDependencies,
+  MCPEndpointApiHandler,
+} from "../routes/index.js";
+
+/**
+ * WebServer 实例类型定义
+ * 避免与 WebServer 实现类的循环引用
+ * 使用类型断言的方式来定义接口
+ */
+export interface IWebServer {
+  /**
+   * 获取小智连接管理器实例
+   * 在 xiaozhiConnectionManagerMiddleware 中使用
+   */
+  getXiaozhiConnectionManager():
+    | IndependentXiaozhiConnectionManager
+    | undefined;
+}
 
 /**
  * 扩展 Hono Context 的 Variables 类型
@@ -24,6 +44,30 @@ export type AppContextVariables = {
    * 由 mcpServiceManagerMiddleware 注入
    */
   mcpServiceManager?: MCPServiceManager;
+
+  /**
+   * 路由处理器依赖
+   * 由 RouteManager 注入
+   */
+  dependencies?: HandlerDependencies;
+
+  /**
+   * WebServer 实例引用
+   * 用于获取运行时依赖
+   */
+  webServer?: IWebServer;
+
+  /**
+   * 小智连接管理器实例
+   * 由 xiaozhiConnectionManagerMiddleware 注入
+   */
+  xiaozhiConnectionManager?: IndependentXiaozhiConnectionManager;
+
+  /**
+   * 端点处理器实例
+   * 由 xiaozhiEndpointsMiddleware 注入
+   */
+  endpointHandler?: MCPEndpointApiHandler | null;
 };
 
 /**

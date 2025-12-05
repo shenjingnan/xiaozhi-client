@@ -40,6 +40,7 @@ vi.mock("@root/configManager.js", () => ({
     }),
     getToolCallLogConfig: vi.fn().mockReturnValue({}),
     getMcpEndpoints: vi.fn().mockReturnValue([]),
+    getCustomMCPTools: vi.fn().mockReturnValue([]),
     updateToolUsageStatsWithLock: vi.fn().mockResolvedValue(undefined),
     updateMCPServerToolStatsWithLock: vi.fn().mockResolvedValue(undefined),
     clearAllStatsUpdateLocks: vi.fn().mockImplementation(() => {}),
@@ -80,6 +81,115 @@ vi.mock("../../Logger.js", () => ({
   },
 }));
 
+// Mock StatusService
+vi.mock("@services/StatusService.js", () => ({
+  StatusService: vi.fn().mockImplementation(() => {
+    return {
+      updateRestartStatus: vi.fn(),
+      getRestartStatus: vi.fn().mockReturnValue({ status: "completed" }),
+      // 添加缺失的方法
+      getFullStatus: vi.fn().mockReturnValue({
+        client: { status: "connected", mcpEndpoint: "", activeMCPServers: [] },
+        timestamp: Date.now(),
+      }),
+      getClientStatus: vi.fn().mockReturnValue({
+        status: "connected",
+        mcpEndpoint: "",
+        activeMCPServers: [],
+      }),
+      isClientConnected: vi.fn().mockReturnValue(true),
+      getLastHeartbeat: vi.fn().mockReturnValue(Date.now()),
+    };
+  }),
+}));
+
+// Mock EventBus
+vi.mock("@services/EventBus.js", () => {
+  const mockEventBus = {
+    emitEvent: vi.fn(),
+    onEvent: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
+    once: vi.fn(),
+    removeAllListeners: vi.fn(),
+  };
+  return {
+    getEventBus: vi.fn().mockReturnValue(mockEventBus),
+    EventBus: vi.fn().mockImplementation(() => mockEventBus),
+  };
+});
+
+// Mock Container
+vi.mock("@cli/Container.js", () => ({
+  createContainer: vi.fn().mockResolvedValue({
+    get: vi.fn().mockReturnValue({
+      getStatus: vi.fn().mockResolvedValue({
+        running: true,
+        mode: "test",
+        services: {},
+      }),
+    }),
+  }),
+  DIContainer: vi.fn().mockImplementation(() => ({
+    register: vi.fn(),
+    registerSingleton: vi.fn(),
+    registerInstance: vi.fn(),
+    get: vi.fn(),
+    has: vi.fn(),
+  })),
+}));
+
+// Mock ServiceApiHandler
+vi.mock("@handlers/ServiceApiHandler.js", () => ({
+  ServiceApiHandler: vi.fn().mockImplementation(() => ({
+    getServiceHealth: vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          success: true,
+          data: { status: "healthy", timestamp: Date.now() },
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      )
+    ),
+    getServiceStatus: vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ success: true, data: { running: true } }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })
+    ),
+    restartService: vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({ success: true, message: "重启请求已接收" }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      )
+    ),
+    stopService: vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({ success: true, message: "停止请求已接收" }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      )
+    ),
+    startService: vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({ success: true, message: "启动请求已接收" }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      )
+    ),
+  })),
+}));
+
 describe("MCPServer 阶段一重构验收测试", () => {
   let server: MCPServer;
   let port: number;
@@ -89,6 +199,9 @@ describe("MCPServer 阶段一重构验收测试", () => {
     // 设置测试环境变量，防止在项目根目录创建配置文件
     originalEnv = process.env.XIAOZHI_CONFIG_DIR;
     process.env.XIAOZHI_CONFIG_DIR = "/tmp/xiaozhi-test-mcp-server";
+
+    // 启用开发模式以获取详细错误信息
+    process.env.NODE_ENV = "development";
 
     // 彻底清除可能影响端口配置的所有环境变量
     process.env.PORT = undefined;
@@ -352,6 +465,13 @@ describe("MCPServer 阶段一重构验收测试", () => {
     const response = await request(`http://localhost:${port}`).get(
       "/api/services/health"
     );
+
+    // 如果状态码不是200，输出详细的错误信息用于调试
+    if (response.status !== 200) {
+      console.error("健康检查端点失败，状态码:", response.status);
+      console.error("响应体:", JSON.stringify(response.body, null, 2));
+      console.error("响应头:", JSON.stringify(response.headers, null, 2));
+    }
 
     expect(response.status).toBe(200);
     // 检查 WebServer 健康检查端点响应格式

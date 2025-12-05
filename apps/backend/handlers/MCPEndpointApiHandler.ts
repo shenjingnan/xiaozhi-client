@@ -8,17 +8,38 @@ import type { ConnectionStatus } from "@services/IndependentXiaozhiConnectionMan
 import type { Context } from "hono";
 
 /**
+ * HTTP 状态码类型定义
+ */
+type HttpStatusCode =
+  | 200 // OK
+  | 400 // Bad Request
+  | 401 // Unauthorized
+  | 403 // Forbidden
+  | 404 // Not Found
+  | 409 // Conflict
+  | 500 // Internal Server Error
+  | 503; // Service Unavailable;
+
+/**
+ * 错误详情类型定义
+ */
+interface ErrorDetails {
+  endpoint?: string;
+  [key: string]: unknown;
+}
+
+/**
  * 统一响应格式接口
  */
 interface ApiErrorResponse {
   error: {
     code: string;
     message: string;
-    details?: any;
+    details?: ErrorDetails;
   };
 }
 
-interface ApiSuccessResponse<T = any> {
+interface ApiSuccessResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
@@ -63,7 +84,7 @@ export class MCPEndpointApiHandler {
     code: string,
     message: string,
     endpoint?: string,
-    details?: any
+    details?: Record<string, unknown>
   ): ApiErrorResponse {
     return {
       error: {
@@ -514,7 +535,7 @@ export class MCPEndpointApiHandler {
         error instanceof Error ? error.message : "接入点添加失败",
         undefined
       );
-      return c.json(errorResponse, httpStatus as any);
+      return c.json(errorResponse, httpStatus as HttpStatusCode);
     }
   }
 
@@ -598,7 +619,7 @@ export class MCPEndpointApiHandler {
         error instanceof Error ? error.message : "接入点移除失败",
         endpoint
       );
-      return c.json(errorResponse, httpStatus as any);
+      return c.json(errorResponse, httpStatus as HttpStatusCode);
     }
   }
 }

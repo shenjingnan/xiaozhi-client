@@ -7,7 +7,6 @@ import {
   ConfigApiHandler,
   CozeApiHandler,
   HeartbeatHandler,
-  MCPEndpointApiHandler,
   MCPRouteHandler,
   MCPServerApiHandler,
   RealtimeNotificationHandler,
@@ -23,11 +22,13 @@ import type { ServerType } from "@hono/node-server";
 import { serve } from "@hono/node-server";
 import {
   corsMiddleware,
-  createErrorResponse,
   errorHandlerMiddleware,
   loggerMiddleware,
+  mcpServiceManagerMiddleware,
+  notFoundHandlerMiddleware,
+  xiaozhiConnectionManagerMiddleware,
+  xiaozhiEndpointsMiddleware,
 } from "@middlewares/index.js";
-import { mcpServiceManagerMiddleware } from "@middlewares/mcpServiceManager.middleware.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
@@ -52,9 +53,28 @@ import {
   destroyEventBus,
   getEventBus,
 } from "@services/index.js";
-import type { Context } from "hono";
 import type { Hono } from "hono";
 import { WebSocketServer } from "ws";
+
+// 路由系统导入
+import {
+  type HandlerDependencies,
+  RouteManager,
+  // 导入所有路由配置
+  configRoutes,
+  cozeRoutes,
+  endpointRoutes,
+  mcpRoutes,
+  mcpserverRoutes,
+  miscRoutes,
+  servicesRoutes,
+  staticRoutes,
+  statusRoutes,
+  toolLogsRoutes,
+  toolsRoutes,
+  updateRoutes,
+  versionRoutes,
+} from "./routes/index.js";
 
 // 统一成功响应格式
 interface ApiSuccessResponse<T = unknown> {
@@ -75,14 +95,6 @@ interface XiaozhiConnectionStatusResponse {
     reconnectStats: Record<string, unknown>;
   };
   connections?: SimpleConnectionStatus[];
-}
-
-// 硬编码常量已移除，改为配置驱动
-interface ClientInfo {
-  status: "connected" | "disconnected";
-  mcpEndpoint: string;
-  activeMCPServers: string[];
-  lastHeartbeat?: number;
 }
 
 /**
@@ -113,6 +125,8 @@ export class WebServer {
   private staticFileHandler: StaticFileHandler;
   private mcpRouteHandler: MCPRouteHandler;
   private mcpServerApiHandler?: MCPServerApiHandler;
+  private updateApiHandler: UpdateApiHandler;
+  private cozeApiHandler: CozeApiHandler;
 
   // WebSocket 处理器
   private realtimeNotificationHandler: RealtimeNotificationHandler;
@@ -121,37 +135,15 @@ export class WebServer {
   // 心跳监控
   private heartbeatMonitorInterval?: NodeJS.Timeout;
 
+  // 路由系统
+  private routeManager?: RouteManager;
+
   // 向后兼容的属性
   private proxyMCPServer: ProxyMCPServer | undefined;
   private xiaozhiConnectionManager:
     | IndependentXiaozhiConnectionManager
     | undefined;
   private mcpServiceManager: MCPServiceManager | undefined;
-
-  /**
-   * 创建统一的成功响应
-   * @deprecated 使用处理器中的方法替代
-   */
-  private createSuccessResponse<T>(
-    data?: T,
-    message?: string
-  ): ApiSuccessResponse<T> {
-    return {
-      success: true,
-      data,
-      message,
-    };
-  }
-
-  /**
-   * 记录废弃功能使用警告
-   * @deprecated 使用处理器中的方法替代
-   */
-  private logDeprecationWarning(feature: string, alternative: string): void {
-    this.logger.warn(
-      `[DEPRECATED] ${feature} 功能已废弃，请使用 ${alternative} 替代`
-    );
-  }
 
   constructor(port?: number) {
     // 端口配置
@@ -180,6 +172,8 @@ export class WebServer {
     this.versionApiHandler = new VersionApiHandler();
     this.staticFileHandler = new StaticFileHandler();
     this.mcpRouteHandler = new MCPRouteHandler();
+    this.updateApiHandler = new UpdateApiHandler();
+    this.cozeApiHandler = new CozeApiHandler();
 
     // MCPServerApiHandler 将在 start() 方法中初始化，因为它需要 mcpServiceManager
 
@@ -196,7 +190,9 @@ export class WebServer {
     // 初始化 Hono 应用
     this.app = createApp();
     this.setupMiddleware();
-    this.setupRoutes();
+
+    // 在所有路由设置完成后，设置 404 处理
+    this.app.notFound(notFoundHandlerMiddleware);
 
     // 监听接入点状态变更事件
     this.setupEndpointStatusListener();
@@ -389,6 +385,16 @@ export class WebServer {
   }
 
   /**
+   * 获取小智连接管理器实例
+   * 提供给中间件使用
+   */
+  public getXiaozhiConnectionManager():
+    | IndependentXiaozhiConnectionManager
+    | undefined {
+    return this.xiaozhiConnectionManager;
+  }
+
+  /**
    * 获取小智连接状态信息
    */
   getXiaozhiConnectionStatus(): XiaozhiConnectionStatusResponse {
@@ -420,120 +426,6 @@ export class WebServer {
       type: "none",
       connected: false,
     };
-  }
-
-  /**
-   * 处理获取接入点状态请求
-   */
-  private async handleEndpointStatus(c: Context): Promise<Response> {
-    if (!this.xiaozhiConnectionManager) {
-      const errorResponse = createErrorResponse(
-        "CONNECTION_MANAGER_NOT_AVAILABLE",
-        "连接管理器未初始化"
-      );
-      return c.json(errorResponse, 503);
-    }
-
-    const mcpEndpointApiHandler = new MCPEndpointApiHandler(
-      this.xiaozhiConnectionManager,
-      configManager
-    );
-    return mcpEndpointApiHandler.getEndpointStatus(c);
-  }
-
-  /**
-   * 处理接入点连接请求
-   */
-  private async handleEndpointConnect(c: Context): Promise<Response> {
-    if (!this.xiaozhiConnectionManager) {
-      const errorResponse = createErrorResponse(
-        "CONNECTION_MANAGER_NOT_AVAILABLE",
-        "连接管理器未初始化"
-      );
-      return c.json(errorResponse, 503);
-    }
-
-    const mcpEndpointApiHandler = new MCPEndpointApiHandler(
-      this.xiaozhiConnectionManager,
-      configManager
-    );
-    return mcpEndpointApiHandler.connectEndpoint(c);
-  }
-
-  /**
-   * 处理接入点断开请求
-   */
-  private async handleEndpointDisconnect(c: Context): Promise<Response> {
-    if (!this.xiaozhiConnectionManager) {
-      const errorResponse = createErrorResponse(
-        "CONNECTION_MANAGER_NOT_AVAILABLE",
-        "连接管理器未初始化"
-      );
-      return c.json(errorResponse, 503);
-    }
-
-    const mcpEndpointApiHandler = new MCPEndpointApiHandler(
-      this.xiaozhiConnectionManager,
-      configManager
-    );
-    return mcpEndpointApiHandler.disconnectEndpoint(c);
-  }
-
-  /**
-   * 处理接入点重连请求
-   */
-  private async handleEndpointReconnect(c: Context): Promise<Response> {
-    if (!this.xiaozhiConnectionManager) {
-      const errorResponse = createErrorResponse(
-        "CONNECTION_MANAGER_NOT_AVAILABLE",
-        "连接管理器未初始化"
-      );
-      return c.json(errorResponse, 503);
-    }
-
-    const mcpEndpointApiHandler = new MCPEndpointApiHandler(
-      this.xiaozhiConnectionManager,
-      configManager
-    );
-    return mcpEndpointApiHandler.reconnectEndpoint(c);
-  }
-
-  /**
-   * 处理添加接入点请求
-   */
-  private async handleEndpointAdd(c: Context): Promise<Response> {
-    if (!this.xiaozhiConnectionManager) {
-      const errorResponse = createErrorResponse(
-        "CONNECTION_MANAGER_NOT_AVAILABLE",
-        "连接管理器未初始化"
-      );
-      return c.json(errorResponse, 503);
-    }
-
-    const mcpEndpointApiHandler = new MCPEndpointApiHandler(
-      this.xiaozhiConnectionManager,
-      configManager
-    );
-    return await mcpEndpointApiHandler.addEndpoint(c);
-  }
-
-  /**
-   * 处理移除接入点请求
-   */
-  private async handleEndpointRemove(c: Context): Promise<Response> {
-    if (!this.xiaozhiConnectionManager) {
-      const errorResponse = createErrorResponse(
-        "CONNECTION_MANAGER_NOT_AVAILABLE",
-        "连接管理器未初始化"
-      );
-      return c.json(errorResponse, 503);
-    }
-
-    const mcpEndpointApiHandler = new MCPEndpointApiHandler(
-      this.xiaozhiConnectionManager,
-      configManager
-    );
-    return mcpEndpointApiHandler.removeEndpoint(c);
   }
 
   /**
@@ -587,192 +479,100 @@ export class WebServer {
     // MCP Service Manager 中间件 - 在 Logger 之后，CORS 之前
     this.app?.use("*", mcpServiceManagerMiddleware);
 
+    // 注入 WebServer 实例到上下文
+    // 使用类型断言避免循环引用问题
+    this.app?.use("*", async (c, next) => {
+      c.set(
+        "webServer",
+        this as unknown as import("./types/hono.context.js").IWebServer
+      );
+      await next();
+    });
+
+    // 小智连接管理器中间件
+    this.app?.use("*", xiaozhiConnectionManagerMiddleware());
+
+    // 小智端点处理器中间件（在连接管理器中间件之后）
+    this.app?.use("*", xiaozhiEndpointsMiddleware());
+
     // CORS 中间件
     this.app?.use("*", corsMiddleware);
 
     // 错误处理中间件
     this.app?.onError(errorHandlerMiddleware);
+
+    // 注入路由系统依赖
+    // 注意：这个中间件必须在路由注册之前设置
+    this.app?.use("*", async (c, next) => {
+      const dependencies = this.createHandlerDependencies();
+      c.set("dependencies", dependencies);
+      await next();
+    });
   }
 
-  private setupRoutes() {
-    // 配置相关 API 路由
-    this.app?.get("/api/config", (c) => this.configApiHandler.getConfig(c));
-    this.app?.put("/api/config", (c) => this.configApiHandler.updateConfig(c));
-    this.app?.get("/api/config/mcp-endpoint", (c) =>
-      this.configApiHandler.getMcpEndpoint(c)
-    );
-    this.app?.get("/api/config/mcp-endpoints", (c) =>
-      this.configApiHandler.getMcpEndpoints(c)
-    );
-    this.app?.get("/api/config/mcp-servers", (c) =>
-      this.configApiHandler.getMcpServers(c)
-    );
-    this.app?.get("/api/config/connection", (c) =>
-      this.configApiHandler.getConnectionConfig(c)
-    );
-    this.app?.post("/api/config/reload", (c) =>
-      this.configApiHandler.reloadConfig(c)
-    );
-    this.app?.get("/api/config/path", (c) =>
-      this.configApiHandler.getConfigPath(c)
-    );
-    this.app?.get("/api/config/exists", (c) =>
-      this.configApiHandler.checkConfigExists(c)
-    );
+  /**
+   * 创建处理器依赖对象
+   * 统一管理依赖对象的创建，避免代码重复
+   */
+  private createHandlerDependencies(): HandlerDependencies {
+    return {
+      configApiHandler: this.configApiHandler,
+      statusApiHandler: this.statusApiHandler,
+      serviceApiHandler: this.serviceApiHandler,
+      toolApiHandler: this.toolApiHandler,
+      toolCallLogApiHandler: this.toolCallLogApiHandler,
+      versionApiHandler: this.versionApiHandler,
+      staticFileHandler: this.staticFileHandler,
+      mcpRouteHandler: this.mcpRouteHandler,
+      mcpServerApiHandler: this.mcpServerApiHandler,
+      updateApiHandler: this.updateApiHandler,
+      cozeApiHandler: this.cozeApiHandler,
+      // endpointHandler 通过中间件动态注入，不在此初始化
+    };
+  }
 
-    // 版本信息 API 路由
-    this.app?.get("/api/version", (c) => this.versionApiHandler.getVersion(c));
-    this.app?.get("/api/version/simple", (c) =>
-      this.versionApiHandler.getVersionSimple(c)
-    );
-    this.app?.get("/api/version/available", (c) =>
-      this.versionApiHandler.getAvailableVersions(c)
-    );
-    this.app?.get("/api/version/latest", (c) =>
-      this.versionApiHandler.checkLatestVersion(c)
-    );
-    this.app?.post("/api/version/cache/clear", (c) =>
-      this.versionApiHandler.clearVersionCache(c)
-    );
+  /**
+   * 设置路由系统
+   */
+  private setupRouteSystem(): void {
+    // 初始化路由管理器
+    // 注意：RouteManager 不再需要依赖参数，因为依赖通过中间件动态注入
+    this.routeManager = new RouteManager();
+  }
 
-    // 更新相关 API 路由
-    const updateApiHandler = new UpdateApiHandler();
-    this.app?.post("/api/update", (c) => updateApiHandler.performUpdate(c));
+  /**
+   * 从路由配置设置路由
+   */
+  private setupRoutesFromRegistry(): void {
+    if (!this.routeManager || !this.app) {
+      throw new Error("路由系统未初始化");
+    }
 
-    // 状态相关 API 路由
-    this.app?.get("/api/status", (c) => this.statusApiHandler.getStatus(c));
-    this.app?.get("/api/status/client", (c) =>
-      this.statusApiHandler.getClientStatus(c)
-    );
-    this.app?.get("/api/status/restart", (c) =>
-      this.statusApiHandler.getRestartStatus(c)
-    );
-    this.app?.get("/api/status/connected", (c) =>
-      this.statusApiHandler.checkClientConnected(c)
-    );
-    this.app?.get("/api/status/heartbeat", (c) =>
-      this.statusApiHandler.getLastHeartbeat(c)
-    );
-    this.app?.get("/api/status/mcp-servers", (c) =>
-      this.statusApiHandler.getActiveMCPServers(c)
-    );
-    this.app?.put("/api/status/client", (c) =>
-      this.statusApiHandler.updateClientStatus(c)
-    );
-    this.app?.put("/api/status/mcp-servers", (c) =>
-      this.statusApiHandler.setActiveMCPServers(c)
-    );
-    this.app?.post("/api/status/reset", (c) =>
-      this.statusApiHandler.resetStatus(c)
-    );
+    try {
+      // 注册所有路由配置 - static 放在最后，作为回退
+      this.routeManager.registerRoutes({
+        config: configRoutes,
+        status: statusRoutes,
+        tools: toolsRoutes,
+        mcp: mcpRoutes,
+        version: versionRoutes,
+        services: servicesRoutes,
+        update: updateRoutes,
+        coze: cozeRoutes,
+        "tool-logs": toolLogsRoutes,
+        mcpserver: mcpserverRoutes,
+        endpoint: endpointRoutes,
+        misc: miscRoutes,
+        static: staticRoutes, // 放在最后作为回退
+      });
 
-    // 服务相关 API 路由
-    this.app?.post("/api/services/restart", (c) =>
-      this.serviceApiHandler.restartService(c)
-    );
-    this.app?.post("/api/services/stop", (c) =>
-      this.serviceApiHandler.stopService(c)
-    );
-    this.app?.post("/api/services/start", (c) =>
-      this.serviceApiHandler.startService(c)
-    );
-    this.app?.get("/api/services/status", (c) =>
-      this.serviceApiHandler.getServiceStatus(c)
-    );
-    this.app?.get("/api/services/health", (c) =>
-      this.serviceApiHandler.getServiceHealth(c)
-    );
+      // 应用路由到 Hono 应用
+      this.routeManager.applyToApp(this.app);
 
-    // 工具调用相关 API 路由
-    this.app?.post("/api/tools/call", (c) => this.toolApiHandler.callTool(c));
-    this.app?.get("/api/tools/list", (c) => this.toolApiHandler.listTools(c));
-    this.app?.get("/api/tools/custom", (c) =>
-      this.toolApiHandler.getCustomTools(c)
-    );
-    // 新增工具管理路由
-    this.app?.post("/api/tools/custom", (c) =>
-      this.toolApiHandler.addCustomTool(c)
-    );
-    this.app?.put("/api/tools/custom/:toolName", (c) =>
-      this.toolApiHandler.updateCustomTool(c)
-    );
-    this.app?.delete("/api/tools/custom/:toolName", (c) =>
-      this.toolApiHandler.removeCustomTool(c)
-    );
-
-    // 工具调用日志相关 API 路由
-    this.app?.get("/api/tool-calls/logs", (c) =>
-      this.toolCallLogApiHandler.getToolCallLogs(c)
-    );
-
-    // 扣子 API 相关路由
-    this.app?.get("/api/coze/workspaces", (c) =>
-      CozeApiHandler.getWorkspaces(c)
-    );
-    this.app?.get("/api/coze/workflows", (c) => CozeApiHandler.getWorkflows(c));
-    this.app?.post("/api/coze/cache/clear", (c) =>
-      CozeApiHandler.clearCache(c)
-    );
-    this.app?.get("/api/coze/cache/stats", (c) =>
-      CozeApiHandler.getCacheStats(c)
-    );
-
-    // MCP 端点管理相关路由 - 动态处理
-    this.app?.post("/api/endpoint/status", (c) => this.handleEndpointStatus(c));
-    this.app?.post("/api/endpoint/connect", (c) =>
-      this.handleEndpointConnect(c)
-    );
-    this.app?.post("/api/endpoint/disconnect", (c) =>
-      this.handleEndpointDisconnect(c)
-    );
-    this.app?.post("/api/endpoint/reconnect", (c) =>
-      this.handleEndpointReconnect(c)
-    );
-    // 新增的接入点管理路由
-    this.app?.post("/api/endpoint/add", (c) => this.handleEndpointAdd(c));
-    this.app?.post("/api/endpoint/remove", (c) => this.handleEndpointRemove(c));
-
-    // MCP 服务器管理路由
-    this.app?.post(
-      "/api/mcp-servers",
-      (c) =>
-        this.mcpServerApiHandler?.addMCPServer(c) ||
-        c.json({ error: "MCP Server API Handler not initialized" }, 500)
-    );
-    this.app?.delete(
-      "/api/mcp-servers/:serverName",
-      (c) =>
-        this.mcpServerApiHandler?.removeMCPServer(c) ||
-        c.json({ error: "MCP Server API Handler not initialized" }, 500)
-    );
-    this.app?.get(
-      "/api/mcp-servers/:serverName/status",
-      (c) =>
-        this.mcpServerApiHandler?.getMCPServerStatus(c) ||
-        c.json({ error: "MCP Server API Handler not initialized" }, 500)
-    );
-    this.app?.get(
-      "/api/mcp-servers",
-      (c) =>
-        this.mcpServerApiHandler?.listMCPServers(c) ||
-        c.json({ error: "MCP Server API Handler not initialized" }, 500)
-    );
-
-    // MCP 服务路由 - 符合 MCP Streamable HTTP 规范
-    this.app?.post("/mcp", (c) => this.mcpRouteHandler.handlePost(c));
-    this.app?.get("/mcp", (c) => this.mcpRouteHandler.handleGet(c));
-
-    // 处理未知的 API 路由
-    this.app?.all("/api/*", async (c) => {
-      const errorResponse = createErrorResponse(
-        "API_NOT_FOUND",
-        `API 端点不存在: ${c.req.path}`
-      );
-      return c.json(errorResponse, 404);
-    });
-
-    // 静态文件服务 - 放在最后作为回退
-    this.app.get("*", (c) => this.staticFileHandler.handleStaticFile(c));
+      this.logger.info("路由系统注册完成");
+    } catch (error) {
+      this.logger.error("路由系统注册失败:", error);
+    }
   }
 
   private setupWebSocket() {
@@ -923,6 +723,10 @@ export class WebServer {
 
     // 2. 初始化所有连接（配置驱动）
     await this.initializeConnections();
+
+    // 3. 设置路由系统（在连接初始化之后）
+    this.setupRouteSystem();
+    this.setupRoutesFromRegistry();
   }
 
   public stop(): Promise<void> {

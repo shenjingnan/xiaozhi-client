@@ -10,9 +10,49 @@ import { CozeApiService } from "@services/CozeApiService";
 import type { Context } from "hono";
 
 /**
+ * 错误代码类型
+ */
+type CozeErrorCode =
+  | "AUTH_FAILED"
+  | "RATE_LIMITED"
+  | "TIMEOUT"
+  | "API_ERROR"
+  | "NETWORK_ERROR";
+
+/**
+ * 带 code 属性的错误接口
+ */
+interface ErrorWithCode {
+  code: CozeErrorCode;
+  message: string;
+  statusCode?: number;
+  response?: unknown;
+}
+
+/**
+ * 类型守卫函数：检查错误是否带有 code 属性
+ */
+function isErrorWithCode(error: unknown): error is ErrorWithCode {
+  if (!(error instanceof Error && "code" in error)) {
+    return false;
+  }
+
+  const code = (error as ErrorWithCode).code;
+  const validCodes: CozeErrorCode[] = [
+    "AUTH_FAILED",
+    "RATE_LIMITED",
+    "TIMEOUT",
+    "API_ERROR",
+    "NETWORK_ERROR",
+  ];
+
+  return typeof code === "string" && validCodes.includes(code as CozeErrorCode);
+}
+
+/**
  * 统一的 API 响应格式
  */
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
@@ -26,7 +66,7 @@ interface ErrorResponse {
   message: string;
   error?: {
     code: string;
-    details?: any;
+    details?: unknown;
   };
 }
 
@@ -47,7 +87,7 @@ function createSuccessResponse<T>(data: T, message?: string): ApiResponse<T> {
 function createErrorResponse(
   message: string,
   code?: string,
-  details?: any
+  details?: unknown
 ): ErrorResponse {
   return {
     success: false,
@@ -79,7 +119,7 @@ export class CozeApiHandler {
    * 获取工作空间列表
    * GET /api/coze/workspaces
    */
-  static async getWorkspaces(c: Context): Promise<Response> {
+  async getWorkspaces(c: Context): Promise<Response> {
     try {
       logger.info("处理获取工作空间列表请求");
 
@@ -109,7 +149,7 @@ export class CozeApiHandler {
       logger.error("获取工作空间列表失败:", error);
 
       // 根据错误类型返回不同的响应
-      if (error instanceof Error && (error as any).code === "AUTH_FAILED") {
+      if (isErrorWithCode(error) && error.code === "AUTH_FAILED") {
         return c.json(
           createErrorResponse(
             "扣子 API 认证失败，请检查 Token 配置",
@@ -119,14 +159,14 @@ export class CozeApiHandler {
         );
       }
 
-      if (error instanceof Error && (error as any).code === "RATE_LIMITED") {
+      if (isErrorWithCode(error) && error.code === "RATE_LIMITED") {
         return c.json(
           createErrorResponse("请求过于频繁，请稍后重试", "RATE_LIMITED"),
           429
         );
       }
 
-      if (error instanceof Error && (error as any).code === "TIMEOUT") {
+      if (isErrorWithCode(error) && error.code === "TIMEOUT") {
         return c.json(
           createErrorResponse("请求超时，请稍后重试", "TIMEOUT"),
           408
@@ -150,7 +190,7 @@ export class CozeApiHandler {
    * 获取工作流列表
    * GET /api/coze/workflows?workspace_id=xxx&page_num=1&page_size=20
    */
-  static async getWorkflows(c: Context): Promise<Response> {
+  async getWorkflows(c: Context): Promise<Response> {
     try {
       logger.info("处理获取工作流列表请求");
 
@@ -254,7 +294,7 @@ export class CozeApiHandler {
       logger.error("获取工作流列表失败:", error);
 
       // 根据错误类型返回不同的响应
-      if (error instanceof Error && (error as any).code === "AUTH_FAILED") {
+      if (isErrorWithCode(error) && error.code === "AUTH_FAILED") {
         return c.json(
           createErrorResponse(
             "扣子 API 认证失败，请检查 Token 配置",
@@ -264,14 +304,14 @@ export class CozeApiHandler {
         );
       }
 
-      if (error instanceof Error && (error as any).code === "RATE_LIMITED") {
+      if (isErrorWithCode(error) && error.code === "RATE_LIMITED") {
         return c.json(
           createErrorResponse("请求过于频繁，请稍后重试", "RATE_LIMITED"),
           429
         );
       }
 
-      if (error instanceof Error && (error as any).code === "TIMEOUT") {
+      if (isErrorWithCode(error) && error.code === "TIMEOUT") {
         return c.json(
           createErrorResponse("请求超时，请稍后重试", "TIMEOUT"),
           408
@@ -295,7 +335,7 @@ export class CozeApiHandler {
    * 清除扣子 API 缓存
    * POST /api/coze/cache/clear
    */
-  static async clearCache(c: Context): Promise<Response> {
+  async clearCache(c: Context): Promise<Response> {
     try {
       logger.info("处理清除扣子 API 缓存请求");
 
@@ -354,7 +394,7 @@ export class CozeApiHandler {
    * 获取缓存统计信息
    * GET /api/coze/cache/stats
    */
-  static async getCacheStats(c: Context): Promise<Response> {
+  async getCacheStats(c: Context): Promise<Response> {
     try {
       logger.info("处理获取缓存统计信息请求");
 

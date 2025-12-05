@@ -53,6 +53,14 @@ export default defineConfig({
     if (process.env.NODE_ENV === "production") {
       options.drop = ["console", "debugger"];
     }
+
+    // 添加路径别名支持
+    options.resolveExtensions = ['.ts', '.js', '.json'];
+
+    // 确保能够解析路径别名
+    if (!options.external) {
+      options.external = [];
+    }
   },
   outExtension() {
     return {
