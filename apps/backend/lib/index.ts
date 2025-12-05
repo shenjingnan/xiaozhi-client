@@ -13,5 +13,3 @@ export {
   type SimpleConnectionStatus,
   type ConnectionStatus,
 } from "./endpoint/index.js";
-
-export type { ConfigChangeEvent as EndpointConfigChangeEvent } from "./endpoint/index.js";

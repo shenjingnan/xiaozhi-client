@@ -3,7 +3,7 @@ import type { JSONSchema, ToolCallResult } from "@/lib/mcp/types.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
-import type { MCPMessage } from "@types/index.js";
+import type { MCPMessage } from "@root/types/mcp.js";
 import { sliceEndpoint } from "@utils/mcpServerUtils.js";
 import WebSocket from "ws";
 
