@@ -1,9 +1,9 @@
-import type WebSocket from "ws";
 import type { MCPMessage } from "@root/types/mcp.js";
-import type { MockServiceManager, MockWebSocket } from "./testTypes.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type WebSocket from "ws";
 import { ProxyMCPServer } from "../connection.js";
 import { createMockWebSocket, wait } from "./testHelpers.js";
+import type { MockServiceManager, MockWebSocket } from "./testTypes.js";
 import { ConnectionState, getProxyServerInternals } from "./testTypes.js";
 
 describe("ProxyMCPServer 工具调用核心功能", () => {

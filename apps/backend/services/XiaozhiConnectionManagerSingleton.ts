@@ -7,15 +7,6 @@ import type { IndependentConnectionOptions } from "@/lib/endpoint/manager.js";
 import { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/manager.js";
 import { configManager } from "@root/configManager.js";
 
-// 类型兼容性导出
-export type {
-  IndependentConnectionOptions as XiaozhiConnectionOptions,
-  ConnectionStatus,
-} from "@/lib/endpoint/manager.js";
-
-// 导出新管理器类型（便于直接使用）
-export type { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/manager.js";
-
 // 内部类型定义
 type ConnectionManagerType = IndependentXiaozhiConnectionManager;
 type ConnectionOptionsType = IndependentConnectionOptions;
