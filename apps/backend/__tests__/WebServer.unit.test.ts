@@ -18,7 +18,7 @@ vi.mock("../configManager.js", () => ({
   },
 }));
 
-vi.mock("@/lib/endpoint/ProxyMCPServer.js", () => ({
+vi.mock("@/lib/endpoint/connection.js", () => ({
   ProxyMCPServer: vi.fn().mockImplementation((endpoint: string) => ({
     endpoint,
     connect: vi.fn().mockResolvedValue(undefined),
@@ -37,7 +37,7 @@ vi.mock("@services/MCPServiceManagerSingleton.js", () => ({
   },
 }));
 
-import { ProxyMCPServer } from "@/lib/endpoint/ProxyMCPServer.js";
+import { ProxyMCPServer } from "@/lib/endpoint/connection.js";
 // Import the mocked modules for use in tests
 import { MCPServiceManagerSingleton } from "@services/MCPServiceManagerSingleton.js";
 import { XiaozhiConnectionManagerSingleton } from "@services/XiaozhiConnectionManagerSingleton.js";

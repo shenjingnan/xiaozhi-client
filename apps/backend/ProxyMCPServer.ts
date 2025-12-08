@@ -10,4 +10,4 @@ export {
   ProxyMCPServer,
   ToolCallErrorCode,
   ToolCallError,
-} from "./lib/index.js";
+} from "./lib/endpoint/index.js";

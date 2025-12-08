@@ -1,5 +1,5 @@
-import type { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/IndependentXiaozhiConnectionManager.js";
-import type { ConnectionStatus } from "@/lib/endpoint/IndependentXiaozhiConnectionManager.js";
+import type { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/manager.js";
+import type { ConnectionStatus } from "@/lib/endpoint/manager.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type { ConfigManager } from "@root/configManager.js";

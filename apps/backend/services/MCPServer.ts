@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import { ProxyMCPServer } from "@/lib/endpoint/ProxyMCPServer.js";
+import { ProxyMCPServer } from "@/lib/endpoint/connection.js";
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { WebServer } from "@root/WebServer.js";
 import { Logger } from "../Logger.js";

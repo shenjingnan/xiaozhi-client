@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import WebSocket from "ws";
-import { ProxyMCPServer } from "../ProxyMCPServer.js";
+import { ProxyMCPServer } from "../connection.js";
 
 describe("ProxyMCPServer 工具调用功能", () => {
   let proxyServer: ProxyMCPServer;

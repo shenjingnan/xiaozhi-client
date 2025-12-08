@@ -1,6 +1,6 @@
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { IndependentXiaozhiConnectionManager } from "../IndependentXiaozhiConnectionManager.js";
+import { IndependentXiaozhiConnectionManager } from "../manager.js";
 
 // 定义测试中使用的类型接口
 // 更广泛的 Mock 类型定义，兼容真实类型

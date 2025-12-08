@@ -7,8 +7,8 @@
  */
 
 // 核心类导出
-export { ProxyMCPServer } from "./ProxyMCPServer.js";
-export { IndependentXiaozhiConnectionManager } from "./IndependentXiaozhiConnectionManager.js";
+export { ProxyMCPServer } from "./connection.js";
+export { IndependentXiaozhiConnectionManager } from "./manager.js";
 
 // 类型导出
 export type {
@@ -16,10 +16,10 @@ export type {
   SimpleConnectionStatus,
   ConnectionStatus,
   ConfigChangeEvent as EndpointConfigChangeEvent,
-} from "./IndependentXiaozhiConnectionManager.js";
+} from "./manager.js";
 
 // 枚举导出
-export { XiaozhiConnectionState } from "./IndependentXiaozhiConnectionManager.js";
+export { XiaozhiConnectionState } from "./manager.js";
 
 // ProxyMCPServer 相关导出
-export { ToolCallErrorCode, ToolCallError } from "./ProxyMCPServer.js";
+export { ToolCallErrorCode, ToolCallError } from "./connection.js";
