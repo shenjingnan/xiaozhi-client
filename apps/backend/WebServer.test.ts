@@ -335,7 +335,7 @@ vi.mock("@services/XiaozhiConnectionManagerSingleton", () => ({
   },
 }));
 
-vi.mock("./ProxyMCPServer", () => ({
+vi.mock("./lib/endpoint/index.js", () => ({
   ProxyMCPServer: vi.fn().mockImplementation(() => ({
     setServiceManager: vi.fn(),
     connect: vi.fn(),

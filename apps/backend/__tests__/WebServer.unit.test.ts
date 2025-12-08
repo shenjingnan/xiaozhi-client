@@ -206,7 +206,7 @@ describe("WebServer Unit Tests", () => {
 
     it("should handle single-endpoint fallback", async () => {
       // Mock ProxyMCPServer
-      const { ProxyMCPServer } = await import("../ProxyMCPServer.js");
+      const { ProxyMCPServer } = await import("../lib/endpoint/index.js");
       const mockProxyServer = {
         // 基本属性
         endpointUrl: "wss://test.example.com",
