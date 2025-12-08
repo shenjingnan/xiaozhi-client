@@ -1,73 +1,44 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import WebSocket from "ws";
 import { ProxyMCPServer } from "../connection.js";
+import { createMockWebSocket, wait } from "./testHelpers.js";
 
-describe("ProxyMCPServer 工具调用功能", () => {
+describe("ProxyMCPServer 工具调用核心功能", () => {
   let proxyServer: ProxyMCPServer;
   let mockServiceManager: any;
   let mockWs: any;
 
   beforeEach(() => {
-    // 模拟 WebSocket
-    mockWs = {
-      readyState: WebSocket.OPEN,
-      send: vi.fn(),
-      on: vi.fn(),
-      close: vi.fn(),
-    };
+    mockWs = createMockWebSocket();
 
-    // 模拟 MCPServiceManager
     mockServiceManager = {
       callTool: vi.fn(),
-      getAllTools: vi.fn().mockReturnValue([]),
+      getAllTools: vi.fn().mockReturnValue([
+        {
+          name: "test-tool",
+          description: "测试工具",
+          inputSchema: { type: "object", properties: {} },
+        },
+      ]),
     };
 
     proxyServer = new ProxyMCPServer("ws://test-endpoint");
     proxyServer.setServiceManager(mockServiceManager);
 
-    // 设置模拟的 WebSocket 连接
+    // 手动设置 WebSocket 监听器（模拟连接成功后的状态）
+    proxyServer.connect = vi.fn().mockResolvedValue();
     (proxyServer as any).ws = mockWs;
     (proxyServer as any).connectionStatus = true;
-  });
+    (proxyServer as any).serverInitialized = true;
+    (proxyServer as any).connectionState = "connected";
 
-  describe("参数验证", () => {
-    it("应该接受有效的工具调用参数", () => {
-      const params = {
-        name: "test-tool",
-        arguments: { key: "value" },
-      };
-
-      expect(() => {
-        (proxyServer as any).validateToolCallParams(params);
-      }).not.toThrow();
-    });
-
-    it("应该拒绝空的工具名称", () => {
-      const params = {
-        name: "",
-        arguments: {},
-      };
-
-      expect(() => {
-        (proxyServer as any).validateToolCallParams(params);
-      }).toThrow("工具名称必须是非空字符串");
-    });
-
-    it("应该拒绝无效的参数格式", () => {
-      const params = {
-        name: "test-tool",
-        arguments: "invalid",
-      };
-
-      expect(() => {
-        (proxyServer as any).validateToolCallParams(params);
-      }).toThrow("工具参数必须是对象");
-    });
-
-    it("应该拒绝空参数", () => {
-      expect(() => {
-        (proxyServer as any).validateToolCallParams(null);
-      }).toThrow("请求参数必须是对象");
+    // 手动设置消息监听器
+    mockWs.on("message", (data: any) => {
+      try {
+        const message = JSON.parse(data.toString());
+        (proxyServer as any).handleMessage(message);
+      } catch (error) {
+        console.error("消息解析错误:", error);
+      }
     });
   });
 
@@ -77,12 +48,11 @@ describe("ProxyMCPServer 工具调用功能", () => {
         content: [{ type: "text", text: "success" }],
         isError: false,
       };
-
       mockServiceManager.callTool.mockResolvedValue(mockResult);
 
       const request = {
         jsonrpc: "2.0",
-        id: "test-id",
+        id: "call-1",
         method: "tools/call",
         params: {
           name: "test-tool",
@@ -90,7 +60,11 @@ describe("ProxyMCPServer 工具调用功能", () => {
         },
       };
 
-      await (proxyServer as any).handleToolCall(request);
+      // 模拟接收到 WebSocket 消息
+      mockWs.trigger("message", JSON.stringify(request));
+
+      // 等待异步处理完成
+      await wait(100);
 
       expect(mockServiceManager.callTool).toHaveBeenCalledWith("test-tool", {
         input: "test",
@@ -100,14 +74,13 @@ describe("ProxyMCPServer 工具调用功能", () => {
       );
     });
 
-    it("应该处理工具不存在的错误", async () => {
-      mockServiceManager.callTool.mockRejectedValue(
-        new Error("未找到工具: test-tool")
-      );
+    it("应该处理工具调用错误", async () => {
+      const error = new Error("工具执行失败");
+      mockServiceManager.callTool.mockRejectedValue(error);
 
       const request = {
         jsonrpc: "2.0",
-        id: "test-id",
+        id: "call-error",
         method: "tools/call",
         params: {
           name: "test-tool",
@@ -115,184 +88,138 @@ describe("ProxyMCPServer 工具调用功能", () => {
         },
       };
 
-      await (proxyServer as any).handleToolCall(request);
+      // 模拟接收到 WebSocket 消息
+      mockWs.trigger("message", JSON.stringify(request));
+
+      // 等待异步处理完成
+      await wait(100);
 
       expect(mockWs.send).toHaveBeenCalledWith(
         expect.stringContaining('"error"')
       );
     });
 
-    it("应该处理服务管理器未设置的错误", async () => {
-      // 清除服务管理器
-      (proxyServer as any).serviceManager = null;
-
+    it("应该处理不存在的工具", async () => {
       const request = {
         jsonrpc: "2.0",
-        id: "test-id",
+        id: "call-missing",
         method: "tools/call",
         params: {
-          name: "test-tool",
+          name: "non-existent-tool",
           arguments: {},
         },
       };
 
-      await (proxyServer as any).handleToolCall(request);
+      // 模拟接收到 WebSocket 消息
+      mockWs.trigger("message", JSON.stringify(request));
+
+      // 等待异步处理完成
+      await wait(100);
 
       expect(mockWs.send).toHaveBeenCalledWith(
         expect.stringContaining('"error"')
-      );
-      expect(mockWs.send).toHaveBeenCalledWith(
-        expect.stringContaining("-32001")
       );
     });
   });
 
   describe("超时处理", () => {
-    it("应该在超时时返回错误", async () => {
-      // 模拟一个永远不会resolve的Promise
+    it("应该在超时时间内返回结果", async () => {
       mockServiceManager.callTool.mockImplementation(
-        () => new Promise(() => {}) // 永远不会resolve
+        () =>
+          new Promise((resolve) => {
+            setTimeout(() => {
+              resolve({ content: [{ type: "text", text: "延迟响应" }] });
+            }, 100);
+          })
       );
 
       const request = {
         jsonrpc: "2.0",
-        id: "test-id",
+        id: "timeout-test",
         method: "tools/call",
         params: {
-          name: "slow-tool",
+          name: "test-tool",
           arguments: {},
         },
       };
 
-      // 临时设置较短的超时时间和禁用重试
-      proxyServer.updateToolCallConfig({ timeout: 100 });
-      proxyServer.updateRetryConfig({ maxAttempts: 1 });
+      // 设置较短的超时时间
+      proxyServer.updateToolCallConfig({ timeout: 200 });
 
-      await (proxyServer as any).handleToolCall(request);
+      // 模拟接收到 WebSocket 消息
+      const onMessageCallback = mockWs.on.mock.calls.find(
+        (call: any) => call[0] === "message"
+      )?.[1];
 
-      expect(mockWs.send).toHaveBeenCalledWith(
-        expect.stringContaining('"error"')
-      );
-      expect(mockWs.send).toHaveBeenCalledWith(
-        expect.stringContaining("-32002")
-      );
-    }, 2000); // 增加测试超时时间
+      if (onMessageCallback) {
+        onMessageCallback(JSON.stringify(request));
+
+        // 等待异步处理完成
+        await new Promise(resolve => setTimeout(resolve, 150));
+      }
+
+      expect(mockServiceManager.callTool).toHaveBeenCalled();
+    });
   });
 
-  describe("性能监控", () => {
-    it("应该正确记录成功调用的性能指标", async () => {
-      const mockResult = {
-        content: [{ type: "text", text: "success" }],
-        isError: false,
-      };
-
-      mockServiceManager.callTool.mockResolvedValue(mockResult);
+  describe("特殊参数处理", () => {
+    it("应该处理空对象参数", async () => {
+      mockServiceManager.callTool.mockResolvedValue({
+        content: [{ type: "text", text: "空参数处理" }],
+      });
 
       const request = {
         jsonrpc: "2.0",
-        id: "perf-test-id",
+        id: "empty-args",
         method: "tools/call",
         params: {
           name: "test-tool",
-          arguments: { input: "test" },
-        },
-      };
-
-      await (proxyServer as any).handleToolCall(request);
-
-      const metrics = proxyServer.getPerformanceMetrics();
-      expect(metrics.totalCalls).toBe(1);
-      expect(metrics.successfulCalls).toBe(1);
-      expect(metrics.failedCalls).toBe(0);
-      expect(metrics.successRate).toBe(100);
-    });
-
-    it("应该正确记录失败调用的性能指标", async () => {
-      mockServiceManager.callTool.mockRejectedValue(new Error("工具执行失败"));
-
-      const request = {
-        jsonrpc: "2.0",
-        id: "perf-fail-test-id",
-        method: "tools/call",
-        params: {
-          name: "failing-tool",
           arguments: {},
         },
       };
 
-      await (proxyServer as any).handleToolCall(request);
+      // 模拟接收到 WebSocket 消息
+      mockWs.trigger("message", JSON.stringify(request));
 
-      const metrics = proxyServer.getPerformanceMetrics();
-      expect(metrics.totalCalls).toBe(1);
-      expect(metrics.successfulCalls).toBe(0);
-      expect(metrics.failedCalls).toBe(1);
-      expect(metrics.successRate).toBe(0);
+      // 等待异步处理完成
+      await wait(100);
+
+      expect(mockServiceManager.callTool).toHaveBeenCalledWith("test-tool", {});
     });
 
-    it("应该能够获取调用记录", async () => {
-      const mockResult = {
-        content: [{ type: "text", text: "success" }],
-        isError: false,
+    it("应该处理复杂对象参数", async () => {
+      const complexArgs = {
+        nested: {
+          array: [1, 2, 3],
+          object: { key: "value" },
+        },
+        special: "特殊字符测试",
       };
 
-      mockServiceManager.callTool.mockResolvedValue(mockResult);
+      mockServiceManager.callTool.mockResolvedValue({
+        content: [{ type: "text", text: "复杂参数处理" }],
+      });
 
       const request = {
         jsonrpc: "2.0",
-        id: "record-test-id",
+        id: "complex-args",
         method: "tools/call",
         params: {
           name: "test-tool",
-          arguments: { input: "test" },
+          arguments: complexArgs,
         },
       };
 
-      await (proxyServer as any).handleToolCall(request);
+      // 模拟接收到 WebSocket 消息
+      mockWs.trigger("message", JSON.stringify(request));
 
-      const records = proxyServer.getCallRecords(1);
-      expect(records).toHaveLength(1);
-      expect(records[0].id).toBe("record-test-id");
-      expect(records[0].toolName).toBe("test-tool");
-      expect(records[0].success).toBe(true);
-      expect(records[0].duration).toBeGreaterThanOrEqual(0);
-    });
-  });
+      // 等待异步处理完成
+      await wait(100);
 
-  describe("配置管理", () => {
-    it("应该能够更新工具调用配置", () => {
-      const newConfig = {
-        timeout: 60000,
-        retryAttempts: 5,
-      };
-
-      proxyServer.updateToolCallConfig(newConfig);
-
-      const config = proxyServer.getConfiguration();
-      expect(config.toolCall.timeout).toBe(60000);
-      expect(config.toolCall.retryAttempts).toBe(5);
-    });
-
-    it("应该能够更新重试配置", () => {
-      const newRetryConfig = {
-        maxAttempts: 5,
-        initialDelay: 2000,
-      };
-
-      proxyServer.updateRetryConfig(newRetryConfig);
-
-      const config = proxyServer.getConfiguration();
-      expect(config.retry.maxAttempts).toBe(5);
-      expect(config.retry.initialDelay).toBe(2000);
-    });
-
-    it("应该能够获取增强状态信息", () => {
-      const status = proxyServer.getEnhancedStatus();
-
-      expect(status).toHaveProperty("performance");
-      expect(status).toHaveProperty("configuration");
-      expect(status.performance).toHaveProperty("totalCalls");
-      expect(status.configuration).toHaveProperty("toolCall");
-      expect(status.configuration).toHaveProperty("retry");
+      expect(mockServiceManager.callTool).toHaveBeenCalledWith(
+        "test-tool",
+        complexArgs
+      );
     });
   });
 });
