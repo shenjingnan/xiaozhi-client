@@ -90,7 +90,9 @@ describe("IndependentXiaozhiConnectionManager 核心功能测试", () => {
 
       const endpoints = manager.getEndpoints();
       expect(endpoints).toContain(testEndpoint);
-      expect(mockConfigManager.addMcpEndpoint).toHaveBeenCalledWith(testEndpoint);
+      expect(mockConfigManager.addMcpEndpoint).toHaveBeenCalledWith(
+        testEndpoint
+      );
     });
 
     test("应该成功移除端点", async () => {
@@ -100,7 +102,9 @@ describe("IndependentXiaozhiConnectionManager 核心功能测试", () => {
       // 然后移除
       await manager.removeEndpoint(testEndpoint);
 
-      expect(mockConfigManager.removeMcpEndpoint).toHaveBeenCalledWith(testEndpoint);
+      expect(mockConfigManager.removeMcpEndpoint).toHaveBeenCalledWith(
+        testEndpoint
+      );
     });
 
     test("应该获取所有端点列表", async () => {

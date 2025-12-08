@@ -155,7 +155,7 @@ describe("ProxyMCPServer 工具调用核心功能", () => {
         onMessageCallback(JSON.stringify(request));
 
         // 等待异步处理完成
-        await new Promise(resolve => setTimeout(resolve, 150));
+        await new Promise((resolve) => setTimeout(resolve, 150));
       }
 
       expect(mockServiceManager.callTool).toHaveBeenCalled();

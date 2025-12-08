@@ -1,6 +1,6 @@
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ProxyMCPServer } from "../connection.js";
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { createMockWebSocket, wait } from "./testHelpers.js";
 
 describe("ProxyMCPServer 集成测试", () => {
@@ -169,7 +169,7 @@ describe("ProxyMCPServer 集成测试", () => {
       // 验证每个响应
       const sentCalls = mockWs.send.mock.calls;
       for (let i = 0; i < 5; i++) {
-        const responseCall = sentCalls.find(call => {
+        const responseCall = sentCalls.find((call) => {
           const response = JSON.parse(call[0]);
           return response.id === `concurrent-${i}`;
         });
@@ -202,11 +202,11 @@ describe("ProxyMCPServer 集成测试", () => {
 
       // 并发执行不同类型的请求
       await Promise.all([
-        new Promise(resolve => {
+        new Promise((resolve) => {
           mockWs.trigger("message", JSON.stringify(listRequest));
           setTimeout(resolve, 100);
         }),
-        new Promise(resolve => {
+        new Promise((resolve) => {
           mockWs.trigger("message", JSON.stringify(toolCallRequest));
           setTimeout(resolve, 100);
         }),
@@ -296,10 +296,13 @@ describe("ProxyMCPServer 集成测试", () => {
         content: [{ type: "text", text: "已恢复" }],
       });
 
-      mockWs.trigger("message", JSON.stringify({
-        ...request,
-        id: "recovered",
-      }));
+      mockWs.trigger(
+        "message",
+        JSON.stringify({
+          ...request,
+          id: "recovered",
+        })
+      );
       await wait(100);
 
       const sentCalls = mockWs.send.mock.calls;
@@ -461,9 +464,9 @@ describe("ProxyMCPServer 集成测试", () => {
       expect(mockWs.send).toHaveBeenCalled();
 
       // 查找 tools/list 的响应
-      const listResponse = mockWs.send.mock.calls.find(call => {
+      const listResponse = mockWs.send.mock.calls.find((call) => {
         const response = JSON.parse(call[0]);
-        return response.result && response.result.tools;
+        return response.result?.tools;
       });
 
       expect(listResponse).toBeDefined();
@@ -496,7 +499,10 @@ describe("ProxyMCPServer 集成测试", () => {
       mockWs.trigger("message", JSON.stringify(request));
       await wait(100);
 
-      expect(mockServiceManager.callTool).toHaveBeenCalledWith("echo-tool", specialChars);
+      expect(mockServiceManager.callTool).toHaveBeenCalledWith(
+        "echo-tool",
+        specialChars
+      );
     });
   });
 });

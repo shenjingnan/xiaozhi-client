@@ -1,11 +1,20 @@
+import type { MCPMessage } from "@root/types/mcp.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { Data } from "ws";
+import type WebSocket from "ws";
 import { ProxyMCPServer } from "../connection.js";
 import { createMockWebSocket, wait } from "./testHelpers.js";
+import type {
+  MockServiceManager,
+  MockWebSocket,
+  ToolCallParams,
+} from "./testTypes.js";
+import { ConnectionState, getProxyServerInternals } from "./testTypes.js";
 
 describe("ProxyMCPServer 基础功能测试", () => {
   let proxyServer: ProxyMCPServer;
-  let mockServiceManager: any;
-  let mockWs: any;
+  let mockServiceManager: MockServiceManager;
+  let mockWs: MockWebSocket;
 
   beforeEach(() => {
     // 模拟 WebSocket
@@ -27,17 +36,38 @@ describe("ProxyMCPServer 基础功能测试", () => {
     proxyServer.setServiceManager(mockServiceManager);
 
     // 手动设置 WebSocket 监听器（模拟连接成功后的状态）
-    proxyServer.connect = vi.fn().mockResolvedValue();
-    (proxyServer as any).ws = mockWs;
-    (proxyServer as any).connectionStatus = true;
-    (proxyServer as any).serverInitialized = true;
-    (proxyServer as any).connectionState = "connected";
+    proxyServer.connect = vi.fn().mockResolvedValue(undefined);
+
+    // 使用类型安全的内部状态访问器
+    const internals = getProxyServerInternals(proxyServer);
+    internals.ws = mockWs as unknown as WebSocket;
+    internals.connectionStatus = true;
+    internals.serverInitialized = true;
+    internals.connectionState = ConnectionState.CONNECTED;
 
     // 手动设置消息监听器
-    mockWs.on("message", (data: any) => {
+    mockWs.on("message", (data: Data) => {
       try {
-        const message = JSON.parse(data.toString());
-        (proxyServer as any).handleMessage(message);
+        let dataString: string;
+
+        if (Buffer.isBuffer(data)) {
+          dataString = data.toString("utf8");
+        } else if (typeof data === "string") {
+          dataString = data;
+        } else if (ArrayBuffer.isView(data)) {
+          dataString = Buffer.from(
+            data.buffer,
+            data.byteOffset,
+            data.byteLength
+          ).toString("utf8");
+        } else if (data instanceof ArrayBuffer) {
+          dataString = Buffer.from(data).toString("utf8");
+        } else {
+          dataString = String(data);
+        }
+
+        const message = JSON.parse(dataString) as MCPMessage;
+        internals.handleMessage(message);
       } catch (error) {
         console.error("消息解析错误:", error);
       }
@@ -47,26 +77,31 @@ describe("ProxyMCPServer 基础功能测试", () => {
   describe("连接管理", () => {
     it("应该正确初始化服务器", () => {
       expect(proxyServer).toBeDefined();
-      expect((proxyServer as any).endpointUrl).toBe("ws://test-endpoint");
+      const internals = getProxyServerInternals(proxyServer);
+      expect(internals.endpointUrl).toBe("ws://test-endpoint");
     });
 
     it("应该设置服务管理器", () => {
-      expect((proxyServer as any).serviceManager).toBe(mockServiceManager);
+      const internals = getProxyServerInternals(proxyServer);
+      expect(internals.serviceManager).toBe(mockServiceManager);
     });
 
     it("应该正确处理连接状态", () => {
       expect(proxyServer.isConnected()).toBe(true);
 
-      (proxyServer as any).connectionStatus = false;
+      const internals = getProxyServerInternals(proxyServer);
+      internals.connectionStatus = false;
       expect(proxyServer.isConnected()).toBe(false);
     });
 
     it("应该处理 URL 格式化", () => {
       const server1 = new ProxyMCPServer("ws://localhost:8080");
-      expect((server1 as any).endpointUrl).toBe("ws://localhost:8080");
+      const internals1 = getProxyServerInternals(server1);
+      expect(internals1.endpointUrl).toBe("ws://localhost:8080");
 
       const server2 = new ProxyMCPServer("http://localhost:8080");
-      expect((server2 as any).endpointUrl).toBe("http://localhost:8080");
+      const internals2 = getProxyServerInternals(server2);
+      expect(internals2.endpointUrl).toBe("http://localhost:8080");
     });
   });
 
@@ -85,7 +120,9 @@ describe("ProxyMCPServer 基础功能测试", () => {
       await wait(10);
 
       expect(mockWs.send).toHaveBeenCalledWith(
-        expect.stringMatching(/\{"jsonrpc":"2\.0","id":"ping-1","result":\{\}\}/)
+        expect.stringMatching(
+          /\{"jsonrpc":"2\.0","id":"ping-1","result":\{\}\}/
+        )
       );
     });
 
@@ -147,14 +184,16 @@ describe("ProxyMCPServer 基础功能测试", () => {
       };
       mockServiceManager.callTool.mockResolvedValue(mockResponse);
 
+      const toolCallParams: ToolCallParams = {
+        name: "test-tool",
+        arguments: { param1: "value1" },
+      };
+
       const toolCallRequest = {
-        jsonrpc: "2.0",
+        jsonrpc: "2.0" as const,
         id: "call-1",
         method: "tools/call",
-        params: {
-          name: "test-tool",
-          arguments: { param1: "value1" },
-        },
+        params: toolCallParams,
       };
 
       // 模拟接收到 WebSocket 消息
@@ -298,7 +337,8 @@ describe("ProxyMCPServer 基础功能测试", () => {
       proxyServer.updateRetryConfig(retryConfig);
 
       // 通过内部 API 检查配置是否更新
-      const internalRetryConfig = (proxyServer as any).retryConfig;
+      const internals = getProxyServerInternals(proxyServer);
+      const internalRetryConfig = internals.retryConfig;
       expect(internalRetryConfig.maxAttempts).toBe(5);
       expect(internalRetryConfig.initialDelay).toBe(2000);
     });
