@@ -1,6 +1,7 @@
-import { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/IndependentXiaozhiConnectionManager.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type { EventBus } from "@services/EventBus.js";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/IndependentXiaozhiConnectionManager.js";
 
 // 定义测试中使用的类型接口
 // 更广泛的 Mock 类型定义，兼容真实类型
@@ -182,7 +183,7 @@ describe("IndependentXiaozhiConnectionManager", () => {
       offEvent: vi.fn(),
     };
     const { getEventBus } = await import("@services/EventBus.js");
-    vi.mocked(getEventBus).mockReturnValue(mockEventBus as unknown as any);
+    vi.mocked(getEventBus).mockReturnValue(mockEventBus as unknown as EventBus);
 
     const { configManager } = await import("../../configManager.js");
     mockConfigManager = configManager as unknown as MockConfigManager;
