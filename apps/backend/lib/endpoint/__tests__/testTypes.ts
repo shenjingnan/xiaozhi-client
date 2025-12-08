@@ -70,8 +70,8 @@ export interface MockWebSocket {
   addEventListener: ReturnType<typeof vi.fn>;
   removeEventListener: ReturnType<typeof vi.fn>;
   removeAllListeners: ReturnType<typeof vi.fn>;
-  trigger: (event: string, ...args: any[]) => void;
-  getListeners: () => Record<string, ((...args: any[]) => void)[]>;
+  trigger: (event: string, ...args: unknown[]) => void;
+  getListeners: () => Record<string, ((...args: unknown[]) => void)[]>;
 }
 
 /**

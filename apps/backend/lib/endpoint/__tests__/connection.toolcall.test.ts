@@ -1,11 +1,14 @@
+import type { MCPMessage } from "@root/types/mcp.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ProxyMCPServer } from "../connection.js";
 import { createMockWebSocket, wait } from "./testHelpers.js";
+import type { MockServiceManager, MockWebSocket } from "./testTypes.js";
+import { ConnectionState, getProxyServerInternals } from "./testTypes.js";
 
 describe("ProxyMCPServer 工具调用核心功能", () => {
   let proxyServer: ProxyMCPServer;
-  let mockServiceManager: any;
-  let mockWs: any;
+  let mockServiceManager: MockServiceManager;
+  let mockWs: MockWebSocket;
 
   beforeEach(() => {
     mockWs = createMockWebSocket();
@@ -24,18 +27,21 @@ describe("ProxyMCPServer 工具调用核心功能", () => {
     proxyServer = new ProxyMCPServer("ws://test-endpoint");
     proxyServer.setServiceManager(mockServiceManager);
 
+    // 获取内部状态访问器
+    const internals = getProxyServerInternals(proxyServer);
+
     // 手动设置 WebSocket 监听器（模拟连接成功后的状态）
     proxyServer.connect = vi.fn().mockResolvedValue(undefined);
-    (proxyServer as any).ws = mockWs;
-    (proxyServer as any).connectionStatus = true;
-    (proxyServer as any).serverInitialized = true;
-    (proxyServer as any).connectionState = "connected";
+    internals.ws = mockWs as any; // 需要类型断言，因为 MockWebSocket 不能直接赋值给 WebSocket
+    internals.connectionStatus = true;
+    internals.serverInitialized = true;
+    internals.connectionState = ConnectionState.CONNECTED;
 
     // 手动设置消息监听器
-    mockWs.on("message", (data: any) => {
+    mockWs.on("message", (data: string | Buffer) => {
       try {
-        const message = JSON.parse(data.toString());
-        (proxyServer as any).handleMessage(message);
+        const message = JSON.parse(data.toString()) as MCPMessage;
+        internals.handleMessage(message);
       } catch (error) {
         console.error("消息解析错误:", error);
       }
@@ -148,8 +154,8 @@ describe("ProxyMCPServer 工具调用核心功能", () => {
 
       // 模拟接收到 WebSocket 消息
       const onMessageCallback = mockWs.on.mock.calls.find(
-        (call: any) => call[0] === "message"
-      )?.[1];
+        (call: unknown[]) => Array.isArray(call) && call[0] === "message"
+      )?.[1] as ((data: string) => void) | undefined;
 
       if (onMessageCallback) {
         onMessageCallback(JSON.stringify(request));
