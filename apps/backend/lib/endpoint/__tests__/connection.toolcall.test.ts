@@ -25,7 +25,7 @@ describe("ProxyMCPServer 工具调用核心功能", () => {
     proxyServer.setServiceManager(mockServiceManager);
 
     // 手动设置 WebSocket 监听器（模拟连接成功后的状态）
-    proxyServer.connect = vi.fn().mockResolvedValue();
+    proxyServer.connect = vi.fn().mockResolvedValue(undefined);
     (proxyServer as any).ws = mockWs;
     (proxyServer as any).connectionStatus = true;
     (proxyServer as any).serverInitialized = true;

@@ -1,12 +1,53 @@
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type { MCPMessage } from "@root/types/mcp.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ProxyMCPServer } from "../connection.js";
 import { createMockWebSocket, wait } from "./testHelpers.js";
 
+// Mock WebSocket 接口（基于 testHelpers.ts 实现）
+interface MockWebSocket {
+  readyState: number;
+  send: ReturnType<typeof vi.fn>;
+  on: ReturnType<typeof vi.fn>;
+  close: ReturnType<typeof vi.fn>;
+  addEventListener: ReturnType<typeof vi.fn>;
+  removeEventListener: ReturnType<typeof vi.fn>;
+  removeAllListeners: ReturnType<typeof vi.fn>;
+  trigger: (event: string, ...args: unknown[]) => void;
+  getListeners: () => Record<string, Array<(...args: unknown[]) => void>>;
+}
+
+// Mock Service Manager 接口（基于 IMCPServiceManager）
+interface MockServiceManager {
+  callTool: ReturnType<typeof vi.fn>;
+  getAllTools: ReturnType<typeof vi.fn>;
+}
+
+// 类型安全的私有属性设置函数
+function setPrivateProperty<T>(obj: T, prop: string, value: unknown): void {
+  Object.defineProperty(obj, prop, {
+    value,
+    writable: true,
+    configurable: true,
+  });
+}
+
+// 测试专用的 ProxyMCPServer 设置函数
+function setupTestProxyServer(
+  proxyServer: ProxyMCPServer,
+  mockWs: MockWebSocket
+): void {
+  // 类型安全地设置私有属性
+  setPrivateProperty(proxyServer, "ws", mockWs);
+  setPrivateProperty(proxyServer, "connectionStatus", true);
+  setPrivateProperty(proxyServer, "serverInitialized", true);
+  setPrivateProperty(proxyServer, "connectionState", "connected");
+}
+
 describe("ProxyMCPServer 集成测试", () => {
   let proxyServer: ProxyMCPServer;
-  let mockServiceManager: any;
-  let mockWs: any;
+  let mockServiceManager: MockServiceManager;
+  let mockWs: MockWebSocket;
 
   const testTools: Tool[] = [
     {
@@ -47,17 +88,17 @@ describe("ProxyMCPServer 集成测试", () => {
     proxyServer.setServiceManager(mockServiceManager);
 
     // 手动设置 WebSocket 监听器（模拟连接成功后的状态）
-    proxyServer.connect = vi.fn().mockResolvedValue();
-    (proxyServer as any).ws = mockWs;
-    (proxyServer as any).connectionStatus = true;
-    (proxyServer as any).serverInitialized = true;
-    (proxyServer as any).connectionState = "connected";
+    proxyServer.connect = vi.fn().mockResolvedValue(undefined);
+    setupTestProxyServer(proxyServer, mockWs);
 
     // 手动设置消息监听器
-    mockWs.on("message", (data: any) => {
+    mockWs.on("message", (data: Buffer | string) => {
       try {
-        const message = JSON.parse(data.toString());
-        (proxyServer as any).handleMessage(message);
+        const message: MCPMessage = JSON.parse(data.toString());
+        // 类型安全的私有方法调用
+        (
+          proxyServer as unknown as { handleMessage: (msg: MCPMessage) => void }
+        ).handleMessage(message);
       } catch (error) {
         console.error("消息解析错误:", error);
       }
@@ -174,7 +215,7 @@ describe("ProxyMCPServer 集成测试", () => {
           return response.id === `concurrent-${i}`;
         });
         expect(responseCall).toBeDefined();
-        const response = JSON.parse(responseCall![0]);
+        const response = JSON.parse(responseCall?.[0] ?? "");
         expect(response.result.content[0].text).toBe(`response-${i}`);
       }
     });
@@ -470,7 +511,7 @@ describe("ProxyMCPServer 集成测试", () => {
       });
 
       expect(listResponse).toBeDefined();
-      const response = JSON.parse(listResponse![0]);
+      const response = JSON.parse(listResponse?.[0] ?? "");
       expect(response.result.tools).toBeDefined();
       expect(response.result.tools[0].name).toBe("old-tool");
     });
