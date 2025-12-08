@@ -3,8 +3,8 @@
  * 提供全局唯一的 XiaozhiConnectionManager 实例
  */
 
-import type { IndependentConnectionOptions } from "@/lib/endpoint/manager.js";
-import { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/manager.js";
+import type { IndependentConnectionOptions } from "@/lib/endpoint/index.js";
+import { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/index.js";
 import { configManager } from "@root/configManager.js";
 
 // 内部类型定义

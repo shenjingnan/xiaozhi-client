@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import { ProxyMCPServer } from "@/lib/endpoint/connection.js";
-import type { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/manager.js";
+import type { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/index.js";
 import type { MCPServiceManager } from "@/lib/mcp";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import { convertLegacyToNew } from "@adapters/index.js";

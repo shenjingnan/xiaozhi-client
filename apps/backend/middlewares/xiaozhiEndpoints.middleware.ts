@@ -3,7 +3,7 @@
  * 负责创建和管理 MCPEndpointApiHandler 实例
  */
 
-import type { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/manager.js";
+import type { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/index.js";
 import { MCPEndpointApiHandler } from "@handlers/MCPEndpointApiHandler.js";
 import { configManager } from "@root/configManager.js";
 import type { MiddlewareHandler } from "hono";

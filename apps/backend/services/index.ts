@@ -9,10 +9,10 @@ export {
   XiaozhiConnectionState,
   type IndependentConnectionOptions,
   type SimpleConnectionStatus,
-} from "@/lib/endpoint/manager.js";
+} from "@/lib/endpoint/index.js";
 
 // 重命名 ConfigChangeEvent 以避免与 ConfigWatcher 的冲突
-export type { ConfigChangeEvent as EndpointConfigChangeEvent } from "@/lib/endpoint/manager.js";
+export type { EndpointConfigChangeEvent } from "@/lib/endpoint/index.js";
 
 export * from "./XiaozhiConnectionManagerSingleton.js";
 

@@ -1,4 +1,4 @@
-import type { ConnectionStatus } from "@/lib/endpoint/manager.js";
+import type { ConnectionStatus } from "@/lib/endpoint/index.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MCPEndpointApiHandler } from "../MCPEndpointApiHandler.js";
 
