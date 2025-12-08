@@ -1,8 +1,9 @@
+import type WebSocket from "ws";
 import type { MCPMessage } from "@root/types/mcp.js";
+import type { MockServiceManager, MockWebSocket } from "./testTypes.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ProxyMCPServer } from "../connection.js";
 import { createMockWebSocket, wait } from "./testHelpers.js";
-import type { MockServiceManager, MockWebSocket } from "./testTypes.js";
 import { ConnectionState, getProxyServerInternals } from "./testTypes.js";
 
 describe("ProxyMCPServer 工具调用核心功能", () => {
@@ -32,7 +33,7 @@ describe("ProxyMCPServer 工具调用核心功能", () => {
 
     // 手动设置 WebSocket 监听器（模拟连接成功后的状态）
     proxyServer.connect = vi.fn().mockResolvedValue(undefined);
-    internals.ws = mockWs as any; // 需要类型断言，因为 MockWebSocket 不能直接赋值给 WebSocket
+    internals.ws = mockWs as unknown as WebSocket;
     internals.connectionStatus = true;
     internals.serverInitialized = true;
     internals.connectionState = ConnectionState.CONNECTED;
