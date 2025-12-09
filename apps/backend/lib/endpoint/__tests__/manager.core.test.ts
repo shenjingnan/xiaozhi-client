@@ -199,12 +199,29 @@ describe("IndependentXiaozhiConnectionManager 核心功能测试", () => {
       await manager.addEndpoint(testEndpoint);
       await manager.connect();
 
+      // 验证初始状态：端点已连接
+      let status = manager.getConnectionStatus();
+      expect(status).toHaveLength(1);
+      expect(status[0].endpoint).toBe(testEndpoint);
+      expect(status[0].connected).toBe(true);
+      expect(manager.isAnyConnected()).toBe(true);
+
+      // 执行断开操作
       await manager.disconnectEndpoint(testEndpoint);
 
-      // 通过公共API验证端点已移除
+      // 验证端点仍在列表中
       const endpoints = manager.getEndpoints();
-      // 注意：端点可能仍然在配置中，但连接已断开
-      // 这里我们只测试断开操作不会抛出异常
+      expect(endpoints).toContain(testEndpoint);
+
+      // 验证连接状态已更新
+      status = manager.getConnectionStatus();
+      expect(status).toHaveLength(1);
+      expect(status[0].endpoint).toBe(testEndpoint);
+      expect(status[0].connected).toBe(false);
+      expect(status[0].initialized).toBe(false);
+
+      // 验证整体连接状态
+      expect(manager.isAnyConnected()).toBe(false);
     });
 
     test("应该清除所有端点", async () => {
