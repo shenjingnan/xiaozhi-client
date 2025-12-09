@@ -1,8 +1,6 @@
 import { EventEmitter } from "node:events";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
 import type { ConfigManager } from "@root/configManager.js";
 import type { ToolCallResult } from "@services/CustomMCPHandler.js";
 import type { EventBus } from "@services/EventBus.js";
@@ -97,7 +95,6 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   // 核心依赖
   private mcpServiceManager: IMCPServiceManager | null = null;
   private configManager: ConfigManager;
-  private logger: Logger;
   private eventBus: EventBus;
 
   // 状态管理
@@ -113,12 +110,11 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   ) {
     super();
     this.configManager = configManager;
-    this.logger = logger;
     this.eventBus = getEventBus();
     this.options = { ...DEFAULT_OPTIONS, ...options };
 
-    this.logger.debug("[IndependentXiaozhiConnectionManager] 实例已创建");
-    this.logger.debug(
+    console.debug("[IndependentXiaozhiConnectionManager] 实例已创建");
+    console.debug(
       "[IndependentXiaozhiConnectionManager] 配置选项:",
       this.options
     );
@@ -132,7 +128,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   async initialize(endpoints: string[], tools: Tool[]): Promise<void> {
     if (this.isInitialized) return;
 
-    this.logger.debug(
+    console.debug(
       `开始初始化 IndependentXiaozhiConnectionManager，小智接入点数量: ${endpoints.length}`
     );
 
@@ -150,14 +146,11 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
 
       this.isInitialized = true;
 
-      this.logger.debug(
+      console.debug(
         `IndependentXiaozhiConnectionManager 初始化完成，管理 ${this.connections.size} 个连接`
       );
     } catch (error) {
-      this.logger.error(
-        "IndependentXiaozhiConnectionManager 初始化失败:",
-        error
-      );
+      console.error("IndependentXiaozhiConnectionManager 初始化失败:", error);
       await this.cleanup(); // 清理部分创建的连接
       throw error;
     }
@@ -176,7 +169,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     if (this.isConnecting) return;
 
     this.isConnecting = true;
-    this.logger.debug(`开始连接所有小智接入点，总数: ${this.connections.size}`);
+    console.debug(`开始连接所有小智接入点，总数: ${this.connections.size}`);
 
     try {
       const connectionPromises: Promise<void>[] = [];
@@ -209,7 +202,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    * 断开所有连接
    */
   async disconnect(): Promise<void> {
-    this.logger.debug("开始断开所有连接");
+    console.debug("开始断开所有连接");
 
     // 断开所有连接
     const disconnectPromises: Promise<void>[] = [];
@@ -220,7 +213,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     }
 
     await Promise.allSettled(disconnectPromises);
-    this.logger.debug("所有小智接入点已断开连接");
+    console.debug("所有小智接入点已断开连接");
   }
 
   /**
@@ -234,7 +227,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
 
     // 检查连接管理器中的重复性
     if (this.connections.has(endpoint)) {
-      this.logger.debug(
+      console.debug(
         `小智接入点 ${sliceEndpoint(endpoint)} 已存在于连接管理器中，跳过添加`
       );
       return;
@@ -245,7 +238,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       throw new Error(`接入点 ${sliceEndpoint(endpoint)} 已存在于配置文件中`);
     }
 
-    this.logger.debug(`动态添加小智接入点: ${sliceEndpoint(endpoint)}`);
+    console.debug(`动态添加小智接入点: ${sliceEndpoint(endpoint)}`);
 
     try {
       // 先更新配置文件
@@ -265,14 +258,14 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         }
         await this.connectSingleEndpoint(endpoint, proxyServer);
 
-        this.logger.info(`添加接入点成功： ${sliceEndpoint(endpoint)}`);
+        console.info(`添加接入点成功： ${sliceEndpoint(endpoint)}`);
       } catch (error) {
         // 回滚配置文件更改
         try {
           this.configManager.removeMcpEndpoint(endpoint);
-          this.logger.debug(`配置文件回滚成功: ${sliceEndpoint(endpoint)}`);
+          console.debug(`配置文件回滚成功: ${sliceEndpoint(endpoint)}`);
         } catch (rollbackError) {
-          this.logger.error(
+          console.error(
             `配置文件回滚失败: ${sliceEndpoint(endpoint)}`,
             rollbackError
           );
@@ -282,14 +275,11 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         this.connections.delete(endpoint);
         this.connectionStates.delete(endpoint);
 
-        this.logger.error(
-          `添加小智接入点失败： ${sliceEndpoint(endpoint)}`,
-          error
-        );
+        console.error(`添加小智接入点失败： ${sliceEndpoint(endpoint)}`, error);
         throw error;
       }
     } catch (error) {
-      this.logger.error(
+      console.error(
         `添加小智接入点失败（配置文件操作）： ${sliceEndpoint(endpoint)}`,
         error
       );
@@ -303,13 +293,13 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    */
   async removeEndpoint(endpoint: string): Promise<void> {
     if (!this.connections.has(endpoint)) {
-      this.logger.debug(
+      console.debug(
         `小智接入点 ${sliceEndpoint(endpoint)} 不存在于连接管理器中，跳过移除`
       );
       return;
     }
 
-    this.logger.debug(`动态移除小智接入点: ${sliceEndpoint(endpoint)}`);
+    console.debug(`动态移除小智接入点: ${sliceEndpoint(endpoint)}`);
 
     try {
       const proxyServer = this.connections.get(endpoint);
@@ -328,27 +318,24 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         this.connections.delete(endpoint);
         this.connectionStates.delete(endpoint);
 
-        this.logger.info(`移除小智接入点成功：${sliceEndpoint(endpoint)}`);
+        console.info(`移除小智接入点成功：${sliceEndpoint(endpoint)}`);
       } catch (error) {
         // 回滚配置文件更改
         try {
           this.configManager.addMcpEndpoint(endpoint);
-          this.logger.debug(`配置文件回滚成功: ${sliceEndpoint(endpoint)}`);
+          console.debug(`配置文件回滚成功: ${sliceEndpoint(endpoint)}`);
         } catch (rollbackError) {
-          this.logger.error(
+          console.error(
             `配置文件回滚失败: ${sliceEndpoint(endpoint)}`,
             rollbackError
           );
         }
 
-        this.logger.error(
-          `移除小智接入点失败： ${sliceEndpoint(endpoint)}`,
-          error
-        );
+        console.error(`移除小智接入点失败： ${sliceEndpoint(endpoint)}`, error);
         throw error;
       }
     } catch (error) {
-      this.logger.error(
+      console.error(
         `移除小智接入点失败（配置文件操作）： ${sliceEndpoint(endpoint)}`,
         error
       );
@@ -373,19 +360,16 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   async disconnectEndpoint(endpoint: string): Promise<void> {
     const proxyServer = this.connections.get(endpoint);
     if (!proxyServer) {
-      this.logger.debug(`接入点不存在，跳过断开: ${sliceEndpoint(endpoint)}`);
+      console.debug(`接入点不存在，跳过断开: ${sliceEndpoint(endpoint)}`);
       return;
     }
 
-    this.logger.info(`断开连接接入点: ${sliceEndpoint(endpoint)}`);
+    console.info(`断开连接接入点: ${sliceEndpoint(endpoint)}`);
 
     try {
       await this.disconnectSingleEndpoint(endpoint, proxyServer);
     } catch (error) {
-      this.logger.error(
-        `断开连接接入点失败： ${sliceEndpoint(endpoint)}`,
-        error
-      );
+      console.error(`断开连接接入点失败： ${sliceEndpoint(endpoint)}`, error);
       throw error;
     }
   }
@@ -394,7 +378,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    * 清除所有小智接入点
    */
   async clearEndpoints(): Promise<void> {
-    this.logger.debug("清除所有接入点");
+    console.debug("清除所有接入点");
 
     // 断开所有连接
     const disconnectPromises = Array.from(this.connections.keys()).map(
@@ -402,7 +386,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     );
     await Promise.allSettled(disconnectPromises);
 
-    this.logger.info("所有接入点已清除");
+    console.info("所有接入点已清除");
   }
 
   /**
@@ -430,7 +414,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    */
   setServiceManager(manager: IMCPServiceManager): void {
     this.mcpServiceManager = manager;
-    this.logger.debug("已设置 MCPServiceManager");
+    console.debug("已设置 MCPServiceManager");
 
     // 如果已有连接，同步工具到所有连接
     if (this.connections.size > 0) {
@@ -479,11 +463,11 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
 
     const currentState = this.connectionStates.get(endpoint);
     if (currentState?.connected) {
-      this.logger.debug(`接入点 ${sliceEndpoint(endpoint)} 已连接，跳过连接`);
+      console.debug(`接入点 ${sliceEndpoint(endpoint)} 已连接，跳过连接`);
       return;
     }
 
-    this.logger.info(`连接已存在的接入点: ${sliceEndpoint(endpoint)}`);
+    console.info(`连接已存在的接入点: ${sliceEndpoint(endpoint)}`);
     await this.connectSingleEndpoint(endpoint, proxyServer);
   }
 
@@ -558,7 +542,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       throw new Error("IndependentXiaozhiConnectionManager 未初始化");
     }
 
-    this.logger.info(
+    console.info(
       `更新小智接入点配置，新小智接入点数量: ${newEndpoints.length}`
     );
 
@@ -567,7 +551,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       this.validateEndpoints(newEndpoints);
 
     if (invalidEndpoints.length > 0) {
-      this.logger.warn(`发现无效小智接入点: ${invalidEndpoints.join(", ")}`);
+      console.warn(`发现无效小智接入点: ${invalidEndpoints.join(", ")}`);
     }
 
     if (validEndpoints.length === 0) {
@@ -582,7 +566,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     );
     const toKeep = currentEndpoints.filter((ep) => validEndpoints.includes(ep));
 
-    this.logger.info(
+    console.info(
       `小智接入点变更 - 添加: ${toAdd.length}, 移除: ${toRemove.length}, 保持: ${toKeep.length}`
     );
 
@@ -617,9 +601,9 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       };
 
       this.emit("configChange", changeEvent);
-      this.logger.info("小智接入点配置更新完成");
+      console.info("小智接入点配置更新完成");
     } catch (error) {
-      this.logger.error("小智接入点配置更新失败:", error);
+      console.error("小智接入点配置更新失败:", error);
       throw error;
     }
   }
@@ -629,7 +613,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    * @param newOptions 新的连接选项
    */
   updateOptions(newOptions: Partial<IndependentConnectionOptions>): void {
-    this.logger.info("更新连接选项");
+    console.info("更新连接选项");
 
     // 验证新选项
     const { valid, errors } = this.validateOptions(newOptions);
@@ -654,8 +638,8 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     };
 
     this.emit("configChange", changeEvent);
-    this.logger.info("连接选项更新完成");
-    this.logger.debug("新的配置选项:", this.options);
+    console.info("连接选项更新完成");
+    console.debug("新的配置选项:", this.options);
   }
 
   /**
@@ -680,7 +664,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     options?: Partial<IndependentConnectionOptions>;
     tools?: Tool[];
   }): Promise<void> {
-    this.logger.info("开始热重载配置");
+    console.info("开始热重载配置");
 
     try {
       // 更新选项（如果提供）
@@ -693,9 +677,9 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         await this.updateEndpoints(config.endpoints, config.tools || []);
       }
 
-      this.logger.info("配置热重载完成");
+      console.info("配置热重载完成");
     } catch (error) {
-      this.logger.error("配置热重载失败:", error);
+      console.error("配置热重载失败:", error);
       throw error;
     }
   }
@@ -708,32 +692,29 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     const targetEndpoints =
       endpoints.length > 0 ? endpoints : Array.from(this.connections.keys());
 
-    this.logger.info(`开始预热连接，小智接入点数量: ${targetEndpoints.length}`);
+    console.info(`开始预热连接，小智接入点数量: ${targetEndpoints.length}`);
 
     const prewarmPromises = targetEndpoints.map(async (endpoint) => {
       try {
         const connection = this.connections.get(endpoint);
         if (connection) {
           // 执行预热操作（例如建立连接、验证状态等）
-          this.logger.debug(`小智接入点 ${sliceEndpoint(endpoint)} 预热完成`);
+          console.debug(`小智接入点 ${sliceEndpoint(endpoint)} 预热完成`);
         }
       } catch (error) {
-        this.logger.warn(
-          `小智接入点 ${sliceEndpoint(endpoint)} 预热失败:`,
-          error
-        );
+        console.warn(`小智接入点 ${sliceEndpoint(endpoint)} 预热失败:`, error);
       }
     });
 
     await Promise.all(prewarmPromises);
-    this.logger.info("连接预热完成");
+    console.info("连接预热完成");
   }
 
   /**
    * 资源清理
    */
   async cleanup(): Promise<void> {
-    this.logger.debug("开始清理 IndependentXiaozhiConnectionManager 资源");
+    console.debug("开始清理 IndependentXiaozhiConnectionManager 资源");
 
     try {
       // 断开所有连接
@@ -747,12 +728,9 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       this.isInitialized = false;
       this.isConnecting = false;
 
-      this.logger.debug("IndependentXiaozhiConnectionManager 资源清理完成");
+      console.debug("IndependentXiaozhiConnectionManager 资源清理完成");
     } catch (error) {
-      this.logger.error(
-        "IndependentXiaozhiConnectionManager 资源清理失败:",
-        error
-      );
+      console.error("IndependentXiaozhiConnectionManager 资源清理失败:", error);
       throw error;
     }
   }
@@ -769,7 +747,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       const configEndpoints = this.configManager.getMcpEndpoints();
       return configEndpoints.includes(endpoint);
     } catch (error) {
-      this.logger.error(`检查配置文件重复性失败: ${error}`);
+      console.error(`检查配置文件重复性失败: ${error}`);
       // 如果配置文件读取失败，保守起见认为接入点已存在
       return true;
     }
@@ -806,7 +784,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     endpoint: string,
     tools: Tool[]
   ): Promise<void> {
-    this.logger.debug(`创建连接实例: ${sliceEndpoint(endpoint)}`);
+    console.debug(`创建连接实例: ${sliceEndpoint(endpoint)}`);
 
     try {
       // 创建 ProxyMCPServer 实例
@@ -827,9 +805,9 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         initialized: false,
       });
 
-      this.logger.debug(`连接实例创建成功: ${sliceEndpoint(endpoint)}`);
+      console.debug(`连接实例创建成功: ${sliceEndpoint(endpoint)}`);
     } catch (error) {
-      this.logger.error(`创建连接实例失败 ${sliceEndpoint(endpoint)}:`, error);
+      console.error(`创建连接实例失败 ${sliceEndpoint(endpoint)}:`, error);
       throw error;
     }
   }
@@ -846,7 +824,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       throw new Error(`小智接入点状态不存在: ${sliceEndpoint(endpoint)}`);
     }
 
-    this.logger.debug(`连接小智接入点: ${sliceEndpoint(endpoint)}`);
+    console.debug(`连接小智接入点: ${sliceEndpoint(endpoint)}`);
 
     try {
       // 更新状态为连接中
@@ -872,7 +850,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         "connection-manager"
       );
 
-      this.logger.info(`小智接入点连接成功: ${sliceEndpoint(endpoint)}`);
+      console.info(`小智接入点连接成功: ${sliceEndpoint(endpoint)}`);
     } catch (error) {
       // 更新连接失败状态
       status.connected = false;
@@ -889,7 +867,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         "connection-manager"
       );
 
-      this.logger.error(`连接失败 ${sliceEndpoint(endpoint)}:`, error);
+      console.error(`连接失败 ${sliceEndpoint(endpoint)}:`, error);
 
       // 直接抛出错误，不再重连
       throw error;
@@ -908,7 +886,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       return;
     }
 
-    this.logger.debug(`断开小智接入点: ${sliceEndpoint(endpoint)}`);
+    console.debug(`断开小智接入点: ${sliceEndpoint(endpoint)}`);
 
     try {
       // 执行断开连接（ProxyMCPServer.disconnect 是同步方法）
@@ -928,12 +906,9 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         "connection-manager"
       );
 
-      this.logger.debug(`小智接入点断开成功: ${sliceEndpoint(endpoint)}`);
+      console.debug(`小智接入点断开成功: ${sliceEndpoint(endpoint)}`);
     } catch (error) {
-      this.logger.error(
-        `小智接入点断开失败 ${sliceEndpoint(endpoint)}:`,
-        error
-      );
+      console.error(`小智接入点断开失败 ${sliceEndpoint(endpoint)}:`, error);
       // 即使断开失败，也要更新状态
       status.connected = false;
       status.initialized = false;
@@ -967,7 +942,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         inputSchema: ensureToolJSONSchema(tool.inputSchema),
       }));
     } catch (error) {
-      this.logger.error("获取工具列表失败:", error);
+      console.error("获取工具列表失败:", error);
       return [];
     }
   }
@@ -980,14 +955,14 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       return;
     }
 
-    this.logger.debug("同步工具到所有连接");
+    console.debug("同步工具到所有连接");
 
     for (const [endpoint, proxyServer] of this.connections) {
       try {
         proxyServer.setServiceManager(this.mcpServiceManager);
-        this.logger.debug(`工具同步成功: ${sliceEndpoint(endpoint)}`);
+        console.debug(`工具同步成功: ${sliceEndpoint(endpoint)}`);
       } catch (error) {
-        this.logger.error(`工具同步失败 ${sliceEndpoint(endpoint)}:`, error);
+        console.error(`工具同步失败 ${sliceEndpoint(endpoint)}:`, error);
       }
     }
   }
