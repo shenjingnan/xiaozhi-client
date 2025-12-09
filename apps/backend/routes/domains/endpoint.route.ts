@@ -90,7 +90,7 @@ export const endpointRoutes: RouteConfig = {
       handler: (c: Context<AppContext>) =>
         withEndpointHandler(c, "disconnectEndpoint"),
     },
-        {
+    {
       method: "POST",
       path: "/add",
       handler: (c: Context<AppContext>) =>

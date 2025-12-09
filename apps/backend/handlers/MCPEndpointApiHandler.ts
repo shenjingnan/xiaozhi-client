@@ -361,7 +361,6 @@ export class MCPEndpointApiHandler {
     }
   }
 
-  
   /**
    * 添加新接入点
    * POST /api/endpoint/add

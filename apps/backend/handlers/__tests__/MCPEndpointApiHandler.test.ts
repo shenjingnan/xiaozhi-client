@@ -874,7 +874,6 @@ describe("MCPEndpointApiHandler", () => {
     });
   });
 
-  
   describe("边界场景和错误处理", () => {
     it("应该正确处理并返回500错误当连接管理器抛出异常时", async () => {
       // Arrange

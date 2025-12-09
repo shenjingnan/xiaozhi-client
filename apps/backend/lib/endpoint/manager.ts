@@ -1,10 +1,9 @@
 import { EventEmitter } from "node:events";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
-import type { MCPServerAddResult } from "@handlers/MCPServerApiHandler.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
-import type { ConfigManager, MCPServerConfig } from "@root/configManager.js";
+import type { ConfigManager } from "@root/configManager.js";
 import type { ToolCallResult } from "@services/CustomMCPHandler.js";
 import type { EventBus } from "@services/EventBus.js";
 import { getEventBus } from "@services/EventBus.js";
@@ -123,8 +122,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       "[IndependentXiaozhiConnectionManager] 配置选项:",
       this.options
     );
-
-    }
+  }
 
   /**
    * 初始化连接管理器
@@ -440,7 +438,6 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     }
   }
 
-  
   /**
    * 发射接入点状态变更事件
    */
@@ -498,7 +495,6 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  
   /**
    * 验证小智接入点配置
    */
@@ -893,10 +889,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         "connection-manager"
       );
 
-      this.logger.error(
-        `连接失败 ${sliceEndpoint(endpoint)}:`,
-        error
-      );
+      this.logger.error(`连接失败 ${sliceEndpoint(endpoint)}:`, error);
 
       // 直接抛出错误，不再重连
       throw error;
@@ -998,5 +991,4 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       }
     }
   }
-
-  }
+}
