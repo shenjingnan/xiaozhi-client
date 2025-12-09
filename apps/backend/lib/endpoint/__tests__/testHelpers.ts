@@ -1,3 +1,5 @@
+import { vi } from "vitest";
+
 /**
  * 创建一个模拟的 WebSocket 对象，带有事件监听器功能
  */
