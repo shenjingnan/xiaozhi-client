@@ -66,7 +66,6 @@ interface ToolCallOptions {
   retryDelay?: number;
 }
 
-
 // 重试配置接口
 interface RetryConfig {
   maxAttempts: number;
@@ -142,7 +141,6 @@ export class ProxyMCPServer {
   // 连接超时定时器
   private connectionTimeout: NodeJS.Timeout | null = null;
 
-  
   // 重试配置
   private retryConfig: RetryConfig = {
     maxAttempts: 3,
