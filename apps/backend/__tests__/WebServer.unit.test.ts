@@ -248,13 +248,9 @@ describe("WebServer Unit Tests", () => {
         updateReconnectOptions: vi.fn(),
         getReconnectOptions: vi.fn().mockReturnValue({}),
         resetReconnectState: vi.fn(),
-        getPerformanceMetrics: vi.fn().mockReturnValue({}),
-        getCallHistory: vi.fn().mockReturnValue([]),
-        resetPerformanceMetrics: vi.fn(),
         updateToolCallConfig: vi.fn(),
         updateRetryConfig: vi.fn(),
         getConfiguration: vi.fn().mockReturnValue({}),
-        getEnhancedStatus: vi.fn().mockReturnValue({}),
       } as any;
 
       vi.mocked(ProxyMCPServer).mockReturnValue(mockProxyServer);
