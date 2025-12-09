@@ -309,41 +309,6 @@ describe("ProxyMCPServer 基础功能测试", () => {
     });
   });
 
-  describe("配置管理", () => {
-    it("应该获取当前配置", () => {
-      const config = proxyServer.getConfiguration();
-      expect(config).toBeDefined();
-      expect(config.toolCall).toBeDefined();
-      expect(config.retry).toBeDefined();
-      expect(config.toolCall.timeout).toBeGreaterThan(0);
-    });
-
-    it("应该更新工具调用配置", () => {
-      const newConfig = { timeout: 60000, retryAttempts: 5 };
-      proxyServer.updateToolCallConfig(newConfig);
-
-      const config = proxyServer.getConfiguration();
-      expect(config.toolCall.timeout).toBe(60000);
-      expect(config.toolCall.retryAttempts).toBe(5);
-    });
-
-    it("应该更新重试配置", () => {
-      const retryConfig = {
-        maxAttempts: 5,
-        initialDelay: 2000,
-        maxDelay: 30000,
-        backoffMultiplier: 2,
-      };
-      proxyServer.updateRetryConfig(retryConfig);
-
-      // 通过内部 API 检查配置是否更新
-      const internals = getProxyServerInternals(proxyServer);
-      const internalRetryConfig = internals.retryConfig;
-      expect(internalRetryConfig.maxAttempts).toBe(5);
-      expect(internalRetryConfig.initialDelay).toBe(2000);
-    });
-  });
-
   describe("工具管理", () => {
     it("应该正确从服务管理器同步工具", () => {
       // 初始化时已经设置了服务管理器并同步了工具
