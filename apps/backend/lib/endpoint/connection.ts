@@ -82,13 +82,16 @@ export class ProxyMCPServer {
   // 连接状态管理
   private connectionState: ConnectionState = ConnectionState.DISCONNECTED;
 
+  // 最后一次错误信息
+  private lastError: string | null = null;
+
   // 连接超时定时器
   private connectionTimeout: NodeJS.Timeout | null = null;
 
   // 工具调用超时配置
   private toolCallTimeout = 30000;
 
-  constructor(endpointUrl: string, options?: Record<string, never>) {
+  constructor(endpointUrl: string) {
     this.endpointUrl = endpointUrl;
     this.logger = logger;
   }
@@ -329,6 +332,9 @@ export class ProxyMCPServer {
    * 处理连接错误
    */
   private handleConnectionError(error: Error): void {
+    // 记录最后一次错误信息
+    this.lastError = error.message;
+
     // 清理连接超时定时器
     if (this.connectionTimeout) {
       clearTimeout(this.connectionTimeout);
@@ -487,7 +493,7 @@ export class ProxyMCPServer {
       url: this.endpointUrl,
       availableTools: this.tools.size,
       connectionState: this.connectionState,
-      lastError: null,
+      lastError: this.lastError,
     };
   }
 
@@ -676,7 +682,7 @@ export class ProxyMCPServer {
               )
             );
           } else if (errorMessage.includes("暂时不可用")) {
-            // 处理临时性错误
+            // 标记为服务不可用错误
             reject(
               new ToolCallError(
                 ToolCallErrorCode.SERVICE_UNAVAILABLE,
@@ -684,7 +690,7 @@ export class ProxyMCPServer {
               )
             );
           } else if (errorMessage.includes("持续不可用")) {
-            // 处理持续性错误
+            // 标记为服务不可用错误
             reject(
               new ToolCallError(
                 ToolCallErrorCode.SERVICE_UNAVAILABLE,
