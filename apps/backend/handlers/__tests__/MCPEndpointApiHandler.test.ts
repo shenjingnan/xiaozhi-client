@@ -483,9 +483,6 @@ describe("MCPEndpointApiHandler", () => {
           endpoint,
           connected: false,
           initialized: true,
-          isReconnecting: false,
-          reconnectAttempts: 0,
-          reconnectDelay: 0,
         })
       );
     });
