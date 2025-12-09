@@ -1,8 +1,6 @@
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import type { JSONSchema, ToolCallResult } from "@/lib/mcp/types.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
 import type { MCPMessage } from "@root/types/mcp.js";
 import { sliceEndpoint } from "@utils/mcpServerUtils.js";
 import WebSocket from "ws";
@@ -71,7 +69,6 @@ interface ProxyMCPServerStatus {
 export class ProxyMCPServer {
   private endpointUrl: string;
   private ws: WebSocket | null = null;
-  private logger: Logger;
   private connectionStatus = false;
   private serverInitialized = false;
   private serviceManager: IMCPServiceManager | null = null;
@@ -93,7 +90,6 @@ export class ProxyMCPServer {
 
   constructor(endpointUrl: string) {
     this.endpointUrl = endpointUrl;
-    this.logger = logger;
   }
 
   /**
@@ -102,7 +98,7 @@ export class ProxyMCPServer {
    */
   setServiceManager(serviceManager: IMCPServiceManager): void {
     this.serviceManager = serviceManager;
-    this.logger.info("已设置 MCPServiceManager");
+    console.info("已设置 MCPServiceManager");
 
     // 立即同步工具
     this.syncToolsFromServiceManager();
@@ -114,7 +110,7 @@ export class ProxyMCPServer {
    */
   syncToolsFromServiceManager(): void {
     if (!this.serviceManager) {
-      this.logger.debug("MCPServiceManager 未设置，跳过工具同步");
+      console.debug("MCPServiceManager 未设置，跳过工具同步");
       return;
     }
 
@@ -136,9 +132,9 @@ export class ProxyMCPServer {
       // 原子性替换
       this.tools = newTools;
 
-      this.logger.info(`已从 MCPServiceManager 同步 ${this.tools.size} 个工具`);
+      console.info(`已从 MCPServiceManager 同步 ${this.tools.size} 个工具`);
     } catch (error) {
-      this.logger.error(
+      console.error(
         `同步工具失败: ${error instanceof Error ? error.message : String(error)}`
       );
       // 同步失败时保持现有工具不变，确保服务可用性
@@ -155,7 +151,7 @@ export class ProxyMCPServer {
   addTool(name: string, tool: Tool): this {
     this.validateTool(name, tool);
     this.tools.set(name, tool);
-    this.logger.debug(`工具 '${name}' 已添加`);
+    console.debug(`工具 '${name}' 已添加`);
     return this;
   }
 
@@ -178,9 +174,9 @@ export class ProxyMCPServer {
    */
   removeTool(name: string): this {
     if (this.tools.delete(name)) {
-      this.logger.debug(`工具 '${name}' 已移除`);
+      console.debug(`工具 '${name}' 已移除`);
     } else {
-      this.logger.warn(`尝试移除不存在的工具: '${name}'`);
+      console.warn(`尝试移除不存在的工具: '${name}'`);
     }
     return this;
   }
@@ -275,7 +271,7 @@ export class ProxyMCPServer {
    */
   private async attemptConnection(): Promise<void> {
     this.connectionState = ConnectionState.CONNECTING;
-    this.logger.debug(`正在连接小智接入点: ${sliceEndpoint(this.endpointUrl)}`);
+    console.debug(`正在连接小智接入点: ${sliceEndpoint(this.endpointUrl)}`);
 
     return new Promise((resolve, reject) => {
       // 设置连接超时
@@ -297,7 +293,7 @@ export class ProxyMCPServer {
           const message: MCPMessage = JSON.parse(data.toString());
           this.handleMessage(message);
         } catch (error) {
-          this.logger.error("MCP 消息解析错误:", error);
+          console.error("MCP 消息解析错误:", error);
         }
       });
 
@@ -325,7 +321,7 @@ export class ProxyMCPServer {
     this.connectionStatus = true;
     this.connectionState = ConnectionState.CONNECTED;
 
-    this.logger.debug("MCP WebSocket 连接已建立");
+    console.debug("MCP WebSocket 连接已建立");
   }
 
   /**
@@ -341,7 +337,7 @@ export class ProxyMCPServer {
       this.connectionTimeout = null;
     }
 
-    this.logger.error("MCP WebSocket 错误:", error.message);
+    console.error("MCP WebSocket 错误:", error.message);
 
     // 清理当前连接
     this.cleanupConnection();
@@ -354,7 +350,7 @@ export class ProxyMCPServer {
     this.connectionStatus = false;
     this.serverInitialized = false;
     this.connectionState = ConnectionState.DISCONNECTED;
-    this.logger.info(`小智连接已关闭 (代码: ${code}, 原因: ${reason})`);
+    console.info(`小智连接已关闭 (代码: ${code}, 原因: ${reason})`);
   }
 
   /**
@@ -375,7 +371,7 @@ export class ProxyMCPServer {
         }
       } catch (error) {
         // 忽略关闭时的错误
-        this.logger.debug("WebSocket 关闭时出现错误（已忽略）:", error);
+        console.debug("WebSocket 关闭时出现错误（已忽略）:", error);
       }
 
       this.ws = null;
@@ -393,7 +389,7 @@ export class ProxyMCPServer {
   }
 
   private handleMessage(message: MCPMessage): void {
-    this.logger.debug("收到 MCP 消息:", JSON.stringify(message, null, 2));
+    console.debug("收到 MCP 消息:", JSON.stringify(message, null, 2));
 
     if (message.method) {
       this.handleServerRequest(message);
@@ -416,36 +412,36 @@ export class ProxyMCPServer {
           },
         });
         this.serverInitialized = true;
-        this.logger.debug("MCP 服务器初始化完成");
+        console.debug("MCP 服务器初始化完成");
         break;
 
       case "tools/list": {
         const toolsList = this.getTools();
         this.sendResponse(request.id, { tools: toolsList });
-        this.logger.debug(`MCP 工具列表已发送 (${toolsList.length}个工具)`);
+        console.debug(`MCP 工具列表已发送 (${toolsList.length}个工具)`);
         break;
       }
 
       case "tools/call": {
         // 异步处理工具调用，避免阻塞其他消息
         this.handleToolCall(request).catch((error) => {
-          this.logger.error("处理工具调用时发生未捕获错误:", error);
+          console.error("处理工具调用时发生未捕获错误:", error);
         });
         break;
       }
 
       case "ping":
         this.sendResponse(request.id, {});
-        this.logger.debug("回应 MCP ping 消息");
+        console.debug("回应 MCP ping 消息");
         break;
 
       default:
-        this.logger.warn(`未知的 MCP 请求: ${request.method}`);
+        console.warn(`未知的 MCP 请求: ${request.method}`);
     }
   }
 
   private sendResponse(id: number | string, result: unknown): void {
-    this.logger.debug(
+    console.debug(
       `尝试发送响应: id=${id}, isConnected=${this.connectionStatus}, wsReadyState=${this.ws?.readyState}`
     );
 
@@ -458,14 +454,19 @@ export class ProxyMCPServer {
 
       try {
         this.ws.send(JSON.stringify(response));
-        this.logger.debug(`响应已发送: id=${id}`, {
+        console.debug("响应已发送", {
+          id,
           responseSize: JSON.stringify(response).length,
         });
       } catch (error) {
-        this.logger.error(`发送响应失败: id=${id}`, error);
+        console.error("发送响应失败", {
+          id,
+          error,
+        });
       }
     } else {
-      this.logger.error(`无法发送响应: id=${id}, 连接状态检查失败`, {
+      console.error("无法发送响应", {
+        id,
         isConnected: this.connectionStatus,
         wsReadyState: this.ws?.readyState,
         wsReadyStateText:
@@ -509,7 +510,7 @@ export class ProxyMCPServer {
    * 主动断开 小智连接
    */
   public disconnect(): void {
-    this.logger.info("主动断开 小智连接");
+    console.info("主动断开 小智连接");
 
     // 清理连接资源
     this.cleanupConnection();
@@ -539,7 +540,7 @@ export class ProxyMCPServer {
       // 1. 验证请求格式
       const params = this.validateToolCallParams(request.params);
 
-      this.logger.info(`开始处理工具调用: ${params.name}`, {
+      console.info("开始处理工具调用", {
         requestId,
         toolName: params.name,
         hasArguments: !!params.arguments,
@@ -569,8 +570,9 @@ export class ProxyMCPServer {
       });
 
       // 5. 记录调用成功
-      this.logger.info(`工具调用成功: ${params.name}`, {
+      console.info("工具调用成功", {
         requestId,
+        toolName: params.name,
         duration: `${Date.now() - startTime}ms`,
       });
     } catch (error) {
@@ -744,7 +746,7 @@ export class ProxyMCPServer {
     this.sendErrorResponse(requestId, errorResponse);
 
     // 记录错误日志
-    this.logger.error("工具调用失败", {
+    console.error("工具调用失败", {
       requestId,
       duration: `${duration}ms`,
       error: errorResponse,
@@ -765,7 +767,7 @@ export class ProxyMCPServer {
         error,
       };
       this.ws.send(JSON.stringify(response));
-      this.logger.debug("已发送错误响应:", response);
+      console.debug("已发送错误响应:", response);
     }
   }
 }
