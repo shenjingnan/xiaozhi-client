@@ -501,16 +501,6 @@ vi.mock("./handlers/MCPEndpointApiHandler", () => {
         },
       })
     ),
-    reconnectEndpoint: vi.fn((c) =>
-      c.json({
-        success: true,
-        data: {
-          endpoint: "ws://localhost:9999",
-          connected: true,
-          operation: "reconnect",
-        },
-      })
-    ),
     addEndpoint: vi.fn((c) =>
       c.json({
         success: true,
