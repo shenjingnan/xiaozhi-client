@@ -454,14 +454,19 @@ export class ProxyMCPServer {
 
       try {
         this.ws.send(JSON.stringify(response));
-        console.debug(`响应已发送: id=${id}`, {
+        console.debug("响应已发送", {
+          id,
           responseSize: JSON.stringify(response).length,
         });
       } catch (error) {
-        console.error(`发送响应失败: id=${id}`, error);
+        console.error("发送响应失败", {
+          id,
+          error,
+        });
       }
     } else {
-      console.error(`无法发送响应: id=${id}, 连接状态检查失败`, {
+      console.error("无法发送响应", {
+        id,
         isConnected: this.connectionStatus,
         wsReadyState: this.ws?.readyState,
         wsReadyStateText:
@@ -535,7 +540,7 @@ export class ProxyMCPServer {
       // 1. 验证请求格式
       const params = this.validateToolCallParams(request.params);
 
-      console.info(`开始处理工具调用: ${params.name}`, {
+      console.info("开始处理工具调用", {
         requestId,
         toolName: params.name,
         hasArguments: !!params.arguments,
@@ -565,8 +570,9 @@ export class ProxyMCPServer {
       });
 
       // 5. 记录调用成功
-      console.info(`工具调用成功: ${params.name}`, {
+      console.info("工具调用成功", {
         requestId,
+        toolName: params.name,
         duration: `${Date.now() - startTime}ms`,
       });
     } catch (error) {
