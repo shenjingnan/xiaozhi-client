@@ -198,7 +198,6 @@ describe("WebServer Unit Tests", () => {
           connectedConnections: 2,
           totalConnections: 2,
           healthCheckStats: {},
-          reconnectStats: { totalReconnects: 0 },
         },
         connections: expect.any(Array),
       });
@@ -315,8 +314,6 @@ describe("WebServer Unit Tests", () => {
         expect(
           XiaozhiConnectionManagerSingleton.getInstance
         ).toHaveBeenCalledWith({
-          reconnectInterval: 5000,
-          maxReconnectAttempts: 3,
           connectionTimeout: 10000,
         });
 
@@ -394,8 +391,6 @@ describe("WebServer Unit Tests", () => {
         expect(
           XiaozhiConnectionManagerSingleton.getInstance
         ).toHaveBeenCalledWith({
-          reconnectInterval: 5000,
-          maxReconnectAttempts: 3,
           connectionTimeout: 10000,
         });
 

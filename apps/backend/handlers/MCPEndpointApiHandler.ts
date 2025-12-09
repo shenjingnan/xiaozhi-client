@@ -345,10 +345,6 @@ export class MCPEndpointApiHandler {
         endpoint,
         connected: false,
         initialized: true,
-        isReconnecting: false,
-        reconnectAttempts: 0,
-        nextReconnectTime: undefined,
-        reconnectDelay: 0,
       };
       const response = this.createSuccessResponse(
         endpointStatus || fallbackStatus
@@ -359,88 +355,6 @@ export class MCPEndpointApiHandler {
       const errorResponse = this.createErrorResponse(
         "ENDPOINT_DISCONNECT_ERROR",
         error instanceof Error ? error.message : "接入点断开失败",
-        endpoint
-      );
-      return c.json(errorResponse, 500);
-    }
-  }
-
-  /**
-   * 重连指定接入点
-   * POST /api/endpoint/reconnect
-   */
-  async reconnectEndpoint(c: Context): Promise<Response> {
-    const parseResult = await this.parseEndpointFromBody(
-      c,
-      "ENDPOINT_RECONNECT_ERROR"
-    );
-    if (!parseResult.ok) {
-      return parseResult.response;
-    }
-
-    const endpoint = parseResult.endpoint;
-    this.logger.info(`处理接入点重连请求: ${endpoint}`);
-
-    try {
-      // 检查端点是否存在
-      const connectionStatus =
-        this.xiaozhiConnectionManager.getConnectionStatus();
-      const existingStatus = connectionStatus.find(
-        (status) => status.endpoint === endpoint
-      );
-
-      if (!existingStatus) {
-        const errorResponse = this.createErrorResponse(
-          "ENDPOINT_NOT_FOUND",
-          "端点不存在",
-          endpoint
-        );
-        return c.json(errorResponse, 404);
-      }
-
-      // 如果端点已连接，先断开
-      if (existingStatus.connected) {
-        await this.xiaozhiConnectionManager.disconnectEndpoint(endpoint);
-      }
-
-      // 执行重连操作
-      await this.xiaozhiConnectionManager.triggerReconnect(endpoint);
-
-      // 获取重连后的状态
-      const updatedConnectionStatus =
-        this.xiaozhiConnectionManager.getConnectionStatus();
-      const endpointStatus = updatedConnectionStatus.find(
-        (status) => status.endpoint === endpoint
-      );
-
-      if (!endpointStatus) {
-        const errorResponse = this.createErrorResponse(
-          "ENDPOINT_STATUS_NOT_FOUND",
-          "无法获取端点连接状态",
-          endpoint
-        );
-        return c.json(errorResponse, 500);
-      }
-
-      // 发送重连成功事件
-      this.eventBus.emitEvent("endpoint:status:changed", {
-        endpoint,
-        connected: true,
-        operation: "reconnect",
-        success: true,
-        message: "接入点重连成功",
-        timestamp: Date.now(),
-        source: "http-api",
-      });
-
-      this.logger.info(`接入点重连成功: ${endpoint}`);
-      const response = this.createSuccessResponse(endpointStatus);
-      return c.json(response);
-    } catch (error) {
-      this.logger.error("接入点重连失败:", error);
-      const errorResponse = this.createErrorResponse(
-        "ENDPOINT_RECONNECT_ERROR",
-        error instanceof Error ? error.message : "接入点重连失败",
         endpoint
       );
       return c.json(errorResponse, 500);

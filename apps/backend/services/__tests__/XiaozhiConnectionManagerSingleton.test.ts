@@ -46,25 +46,17 @@ describe("XiaozhiConnectionManagerSingleton", () => {
     expect(instance1).toBe(instance2);
   });
 
-  test("应该兼容旧配置选项", async () => {
+  test("应该正确处理配置选项", async () => {
     const options = {
-      healthCheckInterval: 30000,
-      reconnectInterval: 5000,
-      // 废弃的配置项（应该被忽略）
-      loadBalanceStrategy: "round-robin" as const,
+      connectionTimeout: 20000,
     };
 
     const instance =
       await XiaozhiConnectionManagerSingleton.getInstance(options);
     expect(instance).toBeDefined();
 
-    // 验证警告消息
-    expect(warnMessages.some((msg) => msg.includes("废弃的配置选项"))).toBe(
-      true
-    );
-    expect(
-      warnMessages.some((msg) => msg.includes("loadBalanceStrategy"))
-    ).toBe(true);
+    // 验证没有警告消息
+    expect(warnMessages.length).toBe(0);
   });
 
   test("应该正确处理重复初始化", async () => {

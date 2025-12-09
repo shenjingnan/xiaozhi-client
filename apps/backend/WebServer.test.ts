@@ -501,16 +501,6 @@ vi.mock("./handlers/MCPEndpointApiHandler", () => {
         },
       })
     ),
-    reconnectEndpoint: vi.fn((c) =>
-      c.json({
-        success: true,
-        data: {
-          endpoint: "ws://localhost:9999",
-          connected: true,
-          operation: "reconnect",
-        },
-      })
-    ),
     addEndpoint: vi.fn((c) =>
       c.json({
         success: true,
@@ -1713,18 +1703,11 @@ describe("WebServer", () => {
           body: JSON.stringify(endpointRequest),
         }
       );
-      // 由于连接管理器可能未初始化，期望 503 或 200
-      expect([200, 503]).toContain(response.status);
+      // reconnect 路由已被移除，应该返回 404
+      expect(response.status).toBe(404);
 
-      if (response.status === 200) {
-        const data = await response.json();
-        expect(data.success).toBe(true);
-        expect(data.data.operation).toBe("reconnect");
-      } else {
-        const data = await response.json();
-        expect(data.error.code).toBe("ENDPOINT_HANDLER_NOT_AVAILABLE");
-        expect(data.error.message).toBe("端点处理器尚未初始化，请稍后再试");
-      }
+      const data = await response.json();
+      expect(data.error).toBeDefined();
     });
 
     it("应该处理添加端点请求", async () => {

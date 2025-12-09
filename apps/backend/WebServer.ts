@@ -91,7 +91,6 @@ interface XiaozhiConnectionStatusResponse {
     connectedConnections: number;
     totalConnections: number;
     healthCheckStats: Record<string, unknown>;
-    reconnectStats: Record<string, unknown>;
   };
   connections?: SimpleConnectionStatus[];
 }
@@ -308,8 +307,6 @@ export class WebServer {
       // 获取小智连接管理器单例
       this.xiaozhiConnectionManager =
         await XiaozhiConnectionManagerSingleton.getInstance({
-          reconnectInterval: 5000,
-          maxReconnectAttempts: 3,
           connectionTimeout: 10000,
         });
 
@@ -407,7 +404,6 @@ export class WebServer {
           totalConnections:
             this.xiaozhiConnectionManager.getConnectionStatus().length,
           healthCheckStats: {}, // 简化后不再提供复杂的健康检查统计
-          reconnectStats: this.xiaozhiConnectionManager.getReconnectStats(),
         },
         connections: this.xiaozhiConnectionManager.getConnectionStatus(),
       };

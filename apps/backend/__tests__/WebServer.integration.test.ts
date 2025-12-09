@@ -324,7 +324,6 @@ describe("WebServer 集成测试", () => {
         0
       );
       expect(connectionStatus.manager.healthCheckStats).toBeDefined();
-      expect(connectionStatus.manager.reconnectStats).toBeDefined();
     });
 
     it("应该为单端点回退提供连接状态", async () => {
