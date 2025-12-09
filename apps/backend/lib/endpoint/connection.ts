@@ -34,7 +34,6 @@ enum ConnectionState {
   DISCONNECTED = "disconnected",
   CONNECTING = "connecting",
   CONNECTED = "connected",
-  RECONNECTING = "reconnecting",
   FAILED = "failed",
 }
 
@@ -59,48 +58,6 @@ export class ToolCallError extends Error {
   }
 }
 
-// 工具调用配置接口
-interface ToolCallOptions {
-  timeout?: number;
-  retryAttempts?: number;
-  retryDelay?: number;
-}
-
-// 重试配置接口
-interface RetryConfig {
-  maxAttempts: number;
-  initialDelay: number;
-  maxDelay: number;
-  backoffMultiplier: number;
-  retryableErrors: ToolCallErrorCode[];
-}
-
-// 重连配置接口
-interface ReconnectOptions {
-  enabled: boolean; // 是否启用自动重连
-  maxAttempts: number; // 最大重连次数
-  initialInterval: number; // 初始重连间隔(ms)
-  maxInterval: number; // 最大重连间隔(ms)
-  backoffStrategy: "linear" | "exponential" | "fixed"; // 退避策略
-  backoffMultiplier: number; // 退避倍数
-  timeout: number; // 单次连接超时时间(ms)
-  jitter: boolean; // 是否添加随机抖动
-}
-
-// 重连状态接口
-interface ReconnectState {
-  attempts: number; // 当前重连次数
-  nextInterval: number; // 下次重连间隔
-  timer: NodeJS.Timeout | null; // 重连定时器
-  lastError: Error | null; // 最后一次错误
-  isManualDisconnect: boolean; // 是否为主动断开
-}
-
-// 服务器选项接口
-interface ProxyMCPServerOptions {
-  reconnect?: Partial<ReconnectOptions>;
-}
-
 // 服务器状态接口
 interface ProxyMCPServerStatus {
   connected: boolean;
@@ -108,7 +65,6 @@ interface ProxyMCPServerStatus {
   url: string;
   availableTools: number;
   connectionState: ConnectionState;
-  reconnectAttempts: number;
   lastError: string | null;
 }
 
@@ -126,58 +82,18 @@ export class ProxyMCPServer {
   // 连接状态管理
   private connectionState: ConnectionState = ConnectionState.DISCONNECTED;
 
-  // 重连配置
-  private reconnectOptions: ReconnectOptions;
-
-  // 重连状态
-  private reconnectState: ReconnectState = {
-    attempts: 0,
-    nextInterval: 0,
-    timer: null,
-    lastError: null,
-    isManualDisconnect: false,
-  };
+  // 最后一次错误信息
+  private lastError: string | null = null;
 
   // 连接超时定时器
   private connectionTimeout: NodeJS.Timeout | null = null;
 
-  // 重试配置
-  private retryConfig: RetryConfig = {
-    maxAttempts: 3,
-    initialDelay: 1000,
-    maxDelay: 10000,
-    backoffMultiplier: 2,
-    retryableErrors: [
-      ToolCallErrorCode.SERVICE_UNAVAILABLE,
-      ToolCallErrorCode.TIMEOUT,
-    ],
-  };
+  // 工具调用超时配置
+  private toolCallTimeout = 30000;
 
-  // 工具调用配置
-  private toolCallConfig: ToolCallOptions = {
-    timeout: 30000,
-    retryAttempts: 3,
-    retryDelay: 1000,
-  };
-
-  constructor(endpointUrl: string, options?: ProxyMCPServerOptions) {
+  constructor(endpointUrl: string) {
     this.endpointUrl = endpointUrl;
     this.logger = logger;
-
-    // 初始化重连配置
-    this.reconnectOptions = {
-      enabled: true,
-      maxAttempts: 10,
-      initialInterval: 3000,
-      maxInterval: 30000,
-      backoffStrategy: "exponential",
-      backoffMultiplier: 1.5,
-      timeout: 10000,
-      jitter: true,
-      ...options?.reconnect,
-    };
-
-    this.reconnectState.nextInterval = this.reconnectOptions.initialInterval;
   }
 
   /**
@@ -350,9 +266,6 @@ export class ProxyMCPServer {
     // 清理之前的连接
     this.cleanupConnection();
 
-    // 重置手动断开标志
-    this.reconnectState.isManualDisconnect = false;
-
     return this.attemptConnection();
   }
 
@@ -362,21 +275,15 @@ export class ProxyMCPServer {
    */
   private async attemptConnection(): Promise<void> {
     this.connectionState = ConnectionState.CONNECTING;
-    this.logger.debug(
-      `正在连接小智接入点: ${sliceEndpoint(this.endpointUrl)} (尝试 ${
-        this.reconnectState.attempts + 1
-      }/${this.reconnectOptions.maxAttempts})`
-    );
+    this.logger.debug(`正在连接小智接入点: ${sliceEndpoint(this.endpointUrl)}`);
 
     return new Promise((resolve, reject) => {
       // 设置连接超时
       this.connectionTimeout = setTimeout(() => {
-        const error = new Error(
-          `连接超时 (${this.reconnectOptions.timeout}ms)`
-        );
+        const error = new Error("连接超时 (10000ms)");
         this.handleConnectionError(error);
         reject(error);
-      }, this.reconnectOptions.timeout);
+      }, 10000);
 
       this.ws = new WebSocket(this.endpointUrl);
 
@@ -418,11 +325,6 @@ export class ProxyMCPServer {
     this.connectionStatus = true;
     this.connectionState = ConnectionState.CONNECTED;
 
-    // 重置重连状态
-    this.reconnectState.attempts = 0;
-    this.reconnectState.nextInterval = this.reconnectOptions.initialInterval;
-    this.reconnectState.lastError = null;
-
     this.logger.debug("MCP WebSocket 连接已建立");
   }
 
@@ -430,13 +332,15 @@ export class ProxyMCPServer {
    * 处理连接错误
    */
   private handleConnectionError(error: Error): void {
+    // 记录最后一次错误信息
+    this.lastError = error.message;
+
     // 清理连接超时定时器
     if (this.connectionTimeout) {
       clearTimeout(this.connectionTimeout);
       this.connectionTimeout = null;
     }
 
-    this.reconnectState.lastError = error;
     this.logger.error("MCP WebSocket 错误:", error.message);
 
     // 清理当前连接
@@ -449,106 +353,8 @@ export class ProxyMCPServer {
   private handleConnectionClose(code: number, reason: string): void {
     this.connectionStatus = false;
     this.serverInitialized = false;
+    this.connectionState = ConnectionState.DISCONNECTED;
     this.logger.info(`小智连接已关闭 (代码: ${code}, 原因: ${reason})`);
-
-    // 如果是手动断开，不进行重连
-    if (this.reconnectState.isManualDisconnect) {
-      this.connectionState = ConnectionState.DISCONNECTED;
-      return;
-    }
-
-    // 检查是否需要重连
-    if (this.shouldReconnect()) {
-      this.scheduleReconnect();
-    } else {
-      this.connectionState = ConnectionState.FAILED;
-      this.logger.warn(
-        `已达到最大重连次数 (${this.reconnectOptions.maxAttempts})，停止重连`
-      );
-    }
-  }
-
-  /**
-   * 检查是否应该重连
-   */
-  private shouldReconnect(): boolean {
-    return (
-      this.reconnectOptions.enabled &&
-      this.reconnectState.attempts < this.reconnectOptions.maxAttempts &&
-      !this.reconnectState.isManualDisconnect
-    );
-  }
-
-  /**
-   * 安排重连
-   */
-  private scheduleReconnect(): void {
-    this.connectionState = ConnectionState.RECONNECTING;
-    this.reconnectState.attempts++;
-
-    // 计算下次重连间隔
-    this.calculateNextInterval();
-
-    this.logger.debug(
-      `将在 ${Math.floor(this.reconnectState.nextInterval)}ms 后进行第 ${this.reconnectState.attempts} 次重连`
-    );
-
-    // 清理之前的重连定时器
-    if (this.reconnectState.timer) {
-      clearTimeout(this.reconnectState.timer);
-    }
-
-    // 设置重连定时器
-    this.reconnectState.timer = setTimeout(async () => {
-      try {
-        await this.attemptConnection();
-      } catch (error) {
-        // 连接失败会触发 handleConnectionError，无需额外处理
-      }
-    }, this.reconnectState.nextInterval);
-  }
-
-  /**
-   * 计算下次重连间隔
-   */
-  private calculateNextInterval(): void {
-    let interval: number;
-
-    switch (this.reconnectOptions.backoffStrategy) {
-      case "fixed":
-        interval = this.reconnectOptions.initialInterval;
-        break;
-
-      case "linear":
-        interval =
-          this.reconnectOptions.initialInterval +
-          this.reconnectState.attempts *
-            this.reconnectOptions.backoffMultiplier *
-            1000;
-        break;
-
-      case "exponential":
-        interval =
-          this.reconnectOptions.initialInterval *
-          this.reconnectOptions.backoffMultiplier **
-            (this.reconnectState.attempts - 1);
-        break;
-
-      default:
-        interval = this.reconnectOptions.initialInterval;
-    }
-
-    // 限制最大间隔
-    interval = Math.min(interval, this.reconnectOptions.maxInterval);
-
-    // 添加随机抖动
-    if (this.reconnectOptions.jitter) {
-      const jitterRange = interval * 0.1; // 10% 抖动
-      const jitter = (Math.random() - 0.5) * 2 * jitterRange;
-      interval += jitter;
-    }
-
-    this.reconnectState.nextInterval = Math.max(interval, 1000); // 最小1秒
   }
 
   /**
@@ -584,16 +390,6 @@ export class ProxyMCPServer {
     // 重置连接状态
     this.connectionStatus = false;
     this.serverInitialized = false;
-  }
-
-  /**
-   * 停止重连
-   */
-  private stopReconnect(): void {
-    if (this.reconnectState.timer) {
-      clearTimeout(this.reconnectState.timer);
-      this.reconnectState.timer = null;
-    }
   }
 
   private handleMessage(message: MCPMessage): void {
@@ -683,12 +479,6 @@ export class ProxyMCPServer {
                   ? "CLOSED"
                   : "UNKNOWN",
       });
-
-      // 尝试重新连接并发送响应
-      if (!this.connectionStatus || this.ws?.readyState !== WebSocket.OPEN) {
-        this.logger.warn(`尝试重新连接以发送响应: id=${id}`);
-        this.scheduleReconnect();
-      }
     }
   }
 
@@ -703,8 +493,7 @@ export class ProxyMCPServer {
       url: this.endpointUrl,
       availableTools: this.tools.size,
       connectionState: this.connectionState,
-      reconnectAttempts: this.reconnectState.attempts,
-      lastError: this.reconnectState.lastError?.message || null,
+      lastError: this.lastError,
     };
   }
 
@@ -722,81 +511,11 @@ export class ProxyMCPServer {
   public disconnect(): void {
     this.logger.info("主动断开 小智连接");
 
-    // 标记为手动断开，阻止自动重连
-    this.reconnectState.isManualDisconnect = true;
-
-    // 停止重连定时器
-    this.stopReconnect();
-
     // 清理连接资源
     this.cleanupConnection();
 
     // 设置状态为已断开
     this.connectionState = ConnectionState.DISCONNECTED;
-  }
-
-  /**
-   * 手动重连小智接入点
-   */
-  public async reconnect(): Promise<void> {
-    this.logger.info("手动重连小智接入点");
-
-    // 停止自动重连
-    this.stopReconnect();
-
-    // 重置重连状态
-    this.reconnectState.attempts = 0;
-    this.reconnectState.nextInterval = this.reconnectOptions.initialInterval;
-    this.reconnectState.isManualDisconnect = false;
-
-    // 清理现有连接
-    this.cleanupConnection();
-
-    // 尝试连接
-    await this.connect();
-  }
-
-  /**
-   * 启用自动重连
-   */
-  public enableReconnect(): void {
-    this.reconnectOptions.enabled = true;
-    this.logger.info("自动重连已启用");
-  }
-
-  /**
-   * 禁用自动重连
-   */
-  public disableReconnect(): void {
-    this.reconnectOptions.enabled = false;
-    this.stopReconnect();
-    this.logger.info("自动重连已禁用");
-  }
-
-  /**
-   * 更新重连配置
-   */
-  public updateReconnectOptions(options: Partial<ReconnectOptions>): void {
-    this.reconnectOptions = { ...this.reconnectOptions, ...options };
-    this.logger.info("重连配置已更新", options);
-  }
-
-  /**
-   * 获取重连配置
-   */
-  public getReconnectOptions(): ReconnectOptions {
-    return { ...this.reconnectOptions };
-  }
-
-  /**
-   * 重置重连状态
-   */
-  public resetReconnectState(): void {
-    this.stopReconnect();
-    this.reconnectState.attempts = 0;
-    this.reconnectState.nextInterval = this.reconnectOptions.initialInterval;
-    this.reconnectState.lastError = null;
-    this.logger.info("重连状态已重置");
   }
 
   /**
@@ -834,10 +553,11 @@ export class ProxyMCPServer {
         );
       }
 
-      // 3. 执行工具调用（带重试机制）
-      const result = await this.executeToolWithRetry(
+      // 3. 执行工具调用
+      const result = await this.executeToolWithTimeout(
         params.name,
-        params.arguments || {}
+        params.arguments || {},
+        this.toolCallTimeout
       );
 
       // 4. 发送成功响应
@@ -897,70 +617,6 @@ export class ProxyMCPServer {
       name: paramsObj.name,
       arguments: paramsObj.arguments as Record<string, unknown>,
     };
-  }
-
-  /**
-   * 带重试机制的工具执行
-   */
-  private async executeToolWithRetry(
-    toolName: string,
-    arguments_: Record<string, unknown>
-  ): Promise<ToolCallResult> {
-    let lastError: ToolCallError | null = null;
-
-    for (let attempt = 1; attempt <= this.retryConfig.maxAttempts; attempt++) {
-      try {
-        return await this.executeToolWithTimeout(
-          toolName,
-          arguments_,
-          this.toolCallConfig.timeout
-        );
-      } catch (error) {
-        // 确保错误是 ToolCallError 类型
-        if (error instanceof ToolCallError) {
-          lastError = error;
-        } else {
-          // 如果不是 ToolCallError，转换为 ToolCallError
-          lastError = new ToolCallError(
-            ToolCallErrorCode.TOOL_EXECUTION_ERROR,
-            error instanceof Error ? error.message : "未知错误"
-          );
-        }
-
-        // 检查是否是可重试的错误
-        if (
-          this.retryConfig.retryableErrors.includes(lastError.code) &&
-          attempt < this.retryConfig.maxAttempts
-        ) {
-          // 计算重试延迟
-          const delay = Math.min(
-            this.retryConfig.initialDelay *
-              this.retryConfig.backoffMultiplier ** (attempt - 1),
-            this.retryConfig.maxDelay
-          );
-
-          this.logger.warn(
-            `工具调用失败，将在 ${delay}ms 后重试 (${attempt}/${this.retryConfig.maxAttempts})`,
-            {
-              toolName,
-              error: lastError.message,
-              attempt,
-              delay,
-            }
-          );
-
-          // 等待重试延迟
-          await new Promise((resolve) => setTimeout(resolve, delay));
-          continue;
-        }
-
-        // 不可重试的错误或已达到最大重试次数
-        break;
-      }
-    }
-
-    // 所有重试都失败了，抛出最后一个错误
-    throw lastError;
   }
 
   /**
@@ -1026,7 +682,7 @@ export class ProxyMCPServer {
               )
             );
           } else if (errorMessage.includes("暂时不可用")) {
-            // 处理临时性错误，标记为服务不可用（可重试）
+            // 标记为服务不可用错误
             reject(
               new ToolCallError(
                 ToolCallErrorCode.SERVICE_UNAVAILABLE,
@@ -1034,7 +690,7 @@ export class ProxyMCPServer {
               )
             );
           } else if (errorMessage.includes("持续不可用")) {
-            // 处理持续性错误，也标记为服务不可用（可重试）
+            // 标记为服务不可用错误
             reject(
               new ToolCallError(
                 ToolCallErrorCode.SERVICE_UNAVAILABLE,
@@ -1111,33 +767,5 @@ export class ProxyMCPServer {
       this.ws.send(JSON.stringify(response));
       this.logger.debug("已发送错误响应:", response);
     }
-  }
-  /**
-   * 更新工具调用配置
-   */
-  public updateToolCallConfig(config: Partial<ToolCallOptions>): void {
-    this.toolCallConfig = { ...this.toolCallConfig, ...config };
-    this.logger.info("工具调用配置已更新", this.toolCallConfig);
-  }
-
-  /**
-   * 更新重试配置
-   */
-  public updateRetryConfig(config: Partial<RetryConfig>): void {
-    this.retryConfig = { ...this.retryConfig, ...config };
-    this.logger.info("重试配置已更新", this.retryConfig);
-  }
-
-  /**
-   * 获取当前配置
-   */
-  public getConfiguration(): {
-    toolCall: ToolCallOptions;
-    retry: RetryConfig;
-  } {
-    return {
-      toolCall: { ...this.toolCallConfig },
-      retry: { ...this.retryConfig },
-    };
   }
 }

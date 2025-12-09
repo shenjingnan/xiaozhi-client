@@ -151,7 +151,8 @@ describe("ProxyMCPServer 工具调用核心功能", () => {
       };
 
       // 设置较短的超时时间
-      proxyServer.updateToolCallConfig({ timeout: 200 });
+      const internals = getProxyServerInternals(proxyServer);
+      internals.toolCallTimeout = 200;
 
       // 模拟接收到 WebSocket 消息
       const onMessageCallback = mockWs.on.mock.calls.find(

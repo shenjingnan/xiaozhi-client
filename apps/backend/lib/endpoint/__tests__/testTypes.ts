@@ -33,19 +33,10 @@ interface IMCPServiceManager {
   }>;
 }
 
-interface RetryConfig {
-  maxAttempts: number;
-  initialDelay: number;
-  maxDelay: number;
-  backoffMultiplier: number;
-  retryableErrors: number[];
-}
-
 export enum ConnectionState {
   DISCONNECTED = "disconnected",
   CONNECTING = "connecting",
   CONNECTED = "connected",
-  RECONNECTING = "reconnecting",
   FAILED = "failed",
 }
 
@@ -84,9 +75,9 @@ export interface ProxyServerInternals {
   serverInitialized: boolean;
   connectionState: ConnectionState;
   serviceManager: IMCPServiceManager | null;
-  retryConfig: RetryConfig;
   handleMessage: (message: MCPMessage) => void;
   endpointUrl: string;
+  toolCallTimeout: number;
 }
 
 /**
