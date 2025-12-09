@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "Bash(gh repo view:*)",
       "Bash(git fetch:*)",
       "Bash(git symbolic-ref:*)",
       "Bash(git --no-pager show:*)",
@@ -8,6 +9,8 @@
       "Bash(git show:*)",
       "Bash(git log:*)",
       "Bash(git --no-pager diff:*)",
+      "Bash(git --no-pager status)",
+      "Bash(git --no-pager status:*)",
       "Bash(pnpm run:*)",
       "Bash(pnpm add:*)",
       "Bash(pnpm format:*)",
@@ -31,6 +34,11 @@
       "Bash(xargs sed:*)",
       "Bash(nr:*)",
       "Bash(cat:*)",
+      "Bash(jq:*)",
+      "Bash(echo:*)",
+      "Bash(xargs:*)",
+      "Bash(ls:*)",
+      "Bash(grep:*)",
       "WebFetch",
       "WebSearch"
     ],
