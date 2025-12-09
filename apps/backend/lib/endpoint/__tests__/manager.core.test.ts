@@ -295,50 +295,19 @@ describe("IndependentXiaozhiConnectionManager 核心功能测试", () => {
   describe("配置管理", () => {
     test("应该更新选项", () => {
       const newOptions = {
-        maxReconnectAttempts: 10,
-        reconnectInterval: 5000,
+        connectionTimeout: 20000,
       };
 
       manager.updateOptions(newOptions);
 
       const config = manager.getCurrentConfig();
-      expect(config.options.maxReconnectAttempts).toBe(10);
-      expect(config.options.reconnectInterval).toBe(5000);
+      expect(config.options.connectionTimeout).toBe(20000);
     });
 
     test("应该获取当前配置", () => {
       const config = manager.getCurrentConfig();
       expect(config).toBeDefined();
       expect(config.options).toBeDefined();
-    });
-  });
-
-  describe("重连管理", () => {
-    test("应该停止重连", async () => {
-      await manager.addEndpoint(testEndpoint);
-
-      // 测试调用 stopReconnect 不会抛出异常
-      expect(() => {
-        manager.stopReconnect(testEndpoint);
-      }).not.toThrow();
-    });
-
-    test("应该停止所有重连", async () => {
-      await manager.addEndpoint(testEndpoint);
-      await manager.addEndpoint("ws://test-endpoint-2");
-
-      // 测试调用 stopAllReconnects 不会抛出异常
-      expect(() => {
-        manager.stopAllReconnects();
-      }).not.toThrow();
-    });
-
-    test("应该获取重连统计", async () => {
-      await manager.addEndpoint(testEndpoint);
-
-      const stats = manager.getReconnectStats();
-      expect(stats).toBeDefined();
-      expect(typeof stats).toBe("object");
     });
   });
 

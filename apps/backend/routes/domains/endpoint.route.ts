@@ -15,7 +15,6 @@ type EndpointHandlerMethod =
   | "getEndpointStatus"
   | "connectEndpoint"
   | "disconnectEndpoint"
-  | "reconnectEndpoint"
   | "addEndpoint"
   | "removeEndpoint";
 
@@ -91,13 +90,7 @@ export const endpointRoutes: RouteConfig = {
       handler: (c: Context<AppContext>) =>
         withEndpointHandler(c, "disconnectEndpoint"),
     },
-    {
-      method: "POST",
-      path: "/reconnect",
-      handler: (c: Context<AppContext>) =>
-        withEndpointHandler(c, "reconnectEndpoint"),
-    },
-    {
+        {
       method: "POST",
       path: "/add",
       handler: (c: Context<AppContext>) =>

@@ -47,15 +47,7 @@ export interface ConfigChangeEvent {
 // 错误类型枚举
 // 独立连接选项接口
 export interface IndependentConnectionOptions {
-  reconnectInterval?: number; // 重连间隔（毫秒），默认 5000
-  maxReconnectAttempts?: number; // 最大重连次数，默认 3
   connectionTimeout?: number; // 连接超时时间（毫秒），默认 10000
-  errorRecoveryEnabled?: boolean; // 启用错误恢复，默认 true
-  errorNotificationEnabled?: boolean; // 启用错误通知，默认 true
-  // MCP服务变更重连配置
-  serviceAddedDelayMs?: number; // 服务添加后的重连延迟时间（毫秒），默认 2000
-  serviceRemovedDelayMs?: number; // 服务删除后的重连延迟时间（毫秒），默认 0
-  batchAddedDelayMs?: number; // 批量添加后的重连延迟时间（毫秒），默认 3000
 }
 
 // 连接状态接口
@@ -63,19 +55,13 @@ export interface SimpleConnectionStatus {
   endpoint: string;
   connected: boolean;
   initialized: boolean;
-  // 保留必要的重连相关状态
-  isReconnecting: boolean;
-  lastReconnectAttempt?: Date;
-  reconnectDelay: number;
+  lastConnected?: Date;
+  lastError?: string;
 }
 
 // 保持向后兼容的连接状态接口
 export interface ConnectionStatus extends SimpleConnectionStatus {
-  nextReconnectTime: undefined;
-  // 保留必要字段用于向后兼容
-  lastConnected?: Date;
-  lastError?: string;
-  reconnectAttempts: number;
+  // 移除所有重连相关字段
 }
 
 // 连接状态枚举
@@ -83,50 +69,19 @@ export enum XiaozhiConnectionState {
   DISCONNECTED = "disconnected",
   CONNECTING = "connecting",
   CONNECTED = "connected",
-  RECONNECTING = "reconnecting",
-  FAILED = "failed",
 }
 
 // 默认配置
 const DEFAULT_OPTIONS: Required<IndependentConnectionOptions> = {
-  reconnectInterval: 5000,
-  maxReconnectAttempts: 3,
   connectionTimeout: 10000,
-  errorRecoveryEnabled: true,
-  errorNotificationEnabled: true,
-  serviceAddedDelayMs: 2000,
-  serviceRemovedDelayMs: 2000,
-  batchAddedDelayMs: 3000,
 };
 
 // zod 验证 schema
 const IndependentConnectionOptionsSchema = z
   .object({
-    reconnectInterval: z
-      .number()
-      .min(100, "reconnectInterval 必须是大于等于 100 的数字")
-      .optional(),
-    maxReconnectAttempts: z
-      .number()
-      .min(0, "maxReconnectAttempts 必须是大于等于 0 的数字")
-      .optional(),
     connectionTimeout: z
       .number()
       .min(1000, "connectionTimeout 必须是大于等于 1000 的数字")
-      .optional(),
-    errorRecoveryEnabled: z.boolean().optional(),
-    errorNotificationEnabled: z.boolean().optional(),
-    serviceAddedDelayMs: z
-      .number()
-      .min(0, "serviceAddedDelayMs 必须是大于等于 0 的数字")
-      .optional(),
-    serviceRemovedDelayMs: z
-      .number()
-      .min(0, "serviceRemovedDelayMs 必须是大于等于 0 的数字")
-      .optional(),
-    batchAddedDelayMs: z
-      .number()
-      .min(0, "batchAddedDelayMs 必须是大于等于 0 的数字")
       .optional(),
   })
   .strict();
@@ -153,9 +108,6 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   // 配置选项
   private options: Required<IndependentConnectionOptions>;
 
-  // 重连管理
-  private reconnectTimers: Map<string, NodeJS.Timeout> = new Map();
-
   constructor(
     configManager: ConfigManager,
     options?: IndependentConnectionOptions
@@ -172,9 +124,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       this.options
     );
 
-    // 设置MCP服务事件监听
-    this.setupMCPServerEventListeners();
-  }
+    }
 
   /**
    * 初始化连接管理器
@@ -262,9 +212,6 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    */
   async disconnect(): Promise<void> {
     this.logger.debug("开始断开所有连接");
-
-    // 清理重连定时器
-    this.clearAllReconnectTimers();
 
     // 断开所有连接
     const disconnectPromises: Promise<void>[] = [];
@@ -383,13 +330,6 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         this.connections.delete(endpoint);
         this.connectionStates.delete(endpoint);
 
-        // 清理重连定时器
-        const timer = this.reconnectTimers.get(endpoint);
-        if (timer) {
-          clearTimeout(timer);
-          this.reconnectTimers.delete(endpoint);
-        }
-
         this.logger.info(`移除小智接入点成功：${sliceEndpoint(endpoint)}`);
       } catch (error) {
         // 回滚配置文件更改
@@ -500,68 +440,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     }
   }
 
-  /**
-   * 手动触发指定小智接入点的重连
-   * @param endpoint 小智接入点地址
-   */
-  async triggerReconnect(endpoint: string): Promise<void> {
-    const status = this.connectionStates.get(endpoint);
-    if (!status) {
-      throw new Error(`小智接入点 ${endpoint} 不存在`);
-    }
-
-    if (status.connected) {
-      this.logger.warn(
-        `小智接入点 ${sliceEndpoint(endpoint)} 已连接，无需重连`
-      );
-      return;
-    }
-
-    this.logger.info(`手动触发重连: ${sliceEndpoint(endpoint)}`);
-
-    // 清理现有的重连定时器
-    const existingTimer = this.reconnectTimers.get(endpoint);
-    if (existingTimer) {
-      clearTimeout(existingTimer);
-      this.reconnectTimers.delete(endpoint);
-    }
-
-    // 立即执行重连
-    await this.performReconnect(endpoint);
-  }
-
-  /**
-   * 停止指定小智接入点的重连
-   * @param endpoint 小智接入点地址
-   */
-  stopReconnect(endpoint: string): void {
-    const status = this.connectionStates.get(endpoint);
-    if (!status) {
-      this.logger.warn(`小智接入点 ${sliceEndpoint(endpoint)} 不存在`);
-      return;
-    }
-
-    const timer = this.reconnectTimers.get(endpoint);
-    if (timer) {
-      clearTimeout(timer);
-      this.reconnectTimers.delete(endpoint);
-      status.isReconnecting = false;
-      status.nextReconnectTime = undefined;
-      this.logger.info(`已停止小智接入点 ${sliceEndpoint(endpoint)} 的重连`);
-    }
-  }
-
-  /**
-   * 停止所有小智接入点的重连
-   */
-  stopAllReconnects(): void {
-    this.logger.info("停止所有小智接入点的重连");
-
-    for (const [endpoint] of this.reconnectTimers) {
-      this.stopReconnect(endpoint);
-    }
-  }
-
+  
   /**
    * 发射接入点状态变更事件
    */
@@ -619,61 +498,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  /**
-   * 获取重连统计信息
-   */
-  getReconnectStats(): Record<
-    string,
-    {
-      endpoint: string;
-      reconnectAttempts: number;
-      isReconnecting: boolean;
-      nextReconnectTime?: Date;
-      lastReconnectAttempt?: Date;
-      reconnectDelay: number;
-      // errorType?: ConnectionErrorType; // 已移除 - 错误类型不再分类
-      recentReconnectHistory: Array<{
-        timestamp: Date;
-        success: boolean;
-        error?: string;
-        delay: number;
-      }>;
-    }
-  > {
-    const stats: Record<
-      string,
-      {
-        endpoint: string;
-        reconnectAttempts: number;
-        isReconnecting: boolean;
-        nextReconnectTime?: Date;
-        lastReconnectAttempt?: Date;
-        reconnectDelay: number;
-        recentReconnectHistory: Array<{
-          timestamp: Date;
-          success: boolean;
-          error?: string;
-          delay: number;
-        }>;
-      }
-    > = {};
-
-    for (const [endpoint, status] of this.connectionStates) {
-      stats[endpoint] = {
-        endpoint,
-        reconnectAttempts: status.reconnectAttempts,
-        isReconnecting: status.isReconnecting,
-        nextReconnectTime: status.nextReconnectTime,
-        lastReconnectAttempt: status.lastReconnectAttempt,
-        reconnectDelay: status.reconnectDelay,
-        // errorType: status.errorType, // 错误类型已移除
-        recentReconnectHistory: [], // 重连历史记录已移除，使用空数组
-      };
-    }
-
-    return stats;
-  }
-
+  
   /**
    * 验证小智接入点配置
    */
@@ -1004,11 +829,6 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         endpoint,
         connected: false,
         initialized: false,
-        isReconnecting: false,
-        lastReconnectAttempt: undefined,
-        reconnectDelay: this.options.reconnectInterval,
-        reconnectAttempts: 0,
-        nextReconnectTime: undefined,
       });
 
       this.logger.debug(`连接实例创建成功: ${sliceEndpoint(endpoint)}`);
@@ -1045,7 +865,6 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       status.initialized = true;
       status.lastConnected = new Date();
       status.lastError = undefined;
-      status.reconnectAttempts = 0;
 
       // 发射连接成功事件
       this.emitEndpointStatusChanged(
@@ -1063,7 +882,6 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       status.connected = false;
       status.initialized = false;
       status.lastError = error instanceof Error ? error.message : String(error);
-      status.reconnectAttempts++;
 
       // 发射连接失败事件
       this.emitEndpointStatusChanged(
@@ -1076,13 +894,11 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       );
 
       this.logger.error(
-        `小智接入点连接失败 ${sliceEndpoint(endpoint)}:`,
+        `连接失败 ${sliceEndpoint(endpoint)}:`,
         error
       );
 
-      // 启动重连（如果未超过最大重连次数）
-      this.scheduleReconnect(endpoint);
-
+      // 直接抛出错误，不再重连
       throw error;
     }
   }
@@ -1183,354 +999,4 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     }
   }
 
-  /**
-   * 安排重连
-   */
-  private scheduleReconnect(endpoint: string): void {
-    const status = this.connectionStates.get(endpoint);
-    if (!status) return;
-
-    // 简单的重连限制
-    if (status.reconnectAttempts >= this.options.maxReconnectAttempts) {
-      this.logger.warn(`停止重连 ${sliceEndpoint(endpoint)}: 达到最大重连次数`);
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      this.reconnectTimers.delete(endpoint);
-      this.performReconnect(endpoint);
-    }, this.options.reconnectInterval);
-
-    this.reconnectTimers.set(endpoint, timer);
   }
-
-  /**
-   * 执行重连
-   */
-  private async performReconnect(endpoint: string): Promise<void> {
-    const status = this.connectionStates.get(endpoint);
-    if (!status) return;
-
-    const proxyServer = this.connections.get(endpoint);
-    if (!proxyServer) {
-      this.logger.warn(`重连时找不到代理服务器: ${sliceEndpoint(endpoint)}`);
-      return;
-    }
-
-    try {
-      status.isReconnecting = true;
-      status.lastReconnectAttempt = new Date();
-
-      // 重连：先断开现有连接，然后重新连接
-      try {
-        await proxyServer.disconnect();
-      } catch (error) {
-        // 断开连接失败不影响重连，继续尝试连接
-        this.logger.debug(
-          `断开连接失败（继续重连）: ${sliceEndpoint(endpoint)}:`,
-          error
-        );
-      }
-
-      // 重新连接
-      await proxyServer.connect();
-
-      // 更新连接成功状态
-      status.connected = true;
-      status.initialized = true;
-      status.lastConnected = new Date();
-      status.lastError = undefined;
-      status.reconnectAttempts = 0;
-      status.isReconnecting = false;
-
-      // 发射重连成功事件
-      this.emitEndpointStatusChanged(
-        endpoint,
-        true,
-        "reconnect",
-        true,
-        "接入点重连成功",
-        "connection-manager"
-      );
-
-      this.logger.info(`重连成功 ${sliceEndpoint(endpoint)}`);
-    } catch (error) {
-      // 更新连接失败状态
-      status.connected = false;
-      status.initialized = false;
-      status.lastError = error instanceof Error ? error.message : String(error);
-      status.reconnectAttempts++;
-      status.isReconnecting = false;
-
-      // 发射重连失败事件
-      this.emitEndpointStatusChanged(
-        endpoint,
-        false,
-        "reconnect",
-        false,
-        error instanceof Error ? error.message : "重连失败",
-        "connection-manager"
-      );
-
-      this.logger.error(`重连失败 ${sliceEndpoint(endpoint)}:`, error);
-
-      // 继续启动重连（如果未超过最大重连次数）
-      this.scheduleReconnect(endpoint);
-    }
-  }
-
-  /**
-   * 清理所有重连定时器
-   */
-  private clearAllReconnectTimers(): void {
-    for (const [, timer] of this.reconnectTimers) {
-      clearTimeout(timer);
-    }
-    this.reconnectTimers.clear();
-  }
-
-  // ==================== MCP 服务事件监听和自动重连 ====================
-
-  /**
-   * 设置MCP服务事件监听
-   */
-  private setupMCPServerEventListeners(): void {
-    // 监听MCP服务添加事件
-    this.eventBus.onEvent("mcp:server:added", async (data) => {
-      await this.handleMCPServerAdded(data);
-    });
-
-    // 监听MCP服务删除事件
-    this.eventBus.onEvent("mcp:server:removed", async (data) => {
-      await this.handleMCPServerRemoved(data);
-    });
-
-    // 监听批量服务添加事件
-    this.eventBus.onEvent("mcp:server:batch_added", async (data) => {
-      await this.handleMCPServerBatchAdded(data);
-    });
-  }
-
-  /**
-   * 处理MCP服务添加事件
-   */
-  private async handleMCPServerAdded(data: {
-    serverName: string;
-    config: MCPServerConfig;
-    tools: string[];
-    timestamp: Date;
-  }): Promise<void> {
-    this.logger.info(`检测到MCP服务添加: ${data.serverName}，准备重连接入点`);
-
-    try {
-      // 延迟重连，等待服务完全启动
-      await this.reconnectAllEndpoints({
-        reason: "server_added",
-        delayMs: this.options.serviceAddedDelayMs,
-        serverName: data.serverName,
-      });
-    } catch (error) {
-      this.logger.error(`处理MCP服务添加事件失败: ${data.serverName}`, error);
-    }
-  }
-
-  /**
-   * 处理MCP服务删除事件
-   */
-  private async handleMCPServerRemoved(data: {
-    serverName: string;
-    affectedTools: string[];
-    timestamp: Date;
-  }): Promise<void> {
-    this.logger.info(`检测到MCP服务删除: ${data.serverName}，准备重连接入点`);
-
-    try {
-      // 立即重连，移除已删除服务的工具
-      await this.reconnectAllEndpoints({
-        reason: "server_removed",
-        delayMs: this.options.serviceRemovedDelayMs,
-        serverName: data.serverName,
-      });
-    } catch (error) {
-      this.logger.error(`处理MCP服务删除事件失败: ${data.serverName}`, error);
-    }
-  }
-
-  /**
-   * 处理批量MCP服务添加事件
-   */
-  private async handleMCPServerBatchAdded(data: {
-    totalServers: number;
-    addedCount: number;
-    failedCount: number;
-    successfullyAddedServers: string[];
-    results: MCPServerAddResult[];
-    timestamp: Date;
-  }): Promise<void> {
-    this.logger.info(
-      `检测到批量MCP服务添加: ${data.addedCount}个服务，准备重连接入点`
-    );
-
-    try {
-      // 批量重连，延迟更长时间
-      await this.reconnectAllEndpoints({
-        reason: "batch_server_added",
-        delayMs: this.options.batchAddedDelayMs,
-        serverNames: data.successfullyAddedServers,
-      });
-    } catch (error) {
-      this.logger.error("处理批量MCP服务添加事件失败", error);
-    }
-  }
-
-  /**
-   * 重连所有接入点
-   */
-  private async reconnectAllEndpoints(options: {
-    reason: string;
-    delayMs: number;
-    serverName?: string;
-    serverNames?: string[];
-  }): Promise<void> {
-    this.logger.info(`开始重连所有接入点，原因: ${options.reason}`);
-
-    // 获取所有当前连接的接入点
-    const connectedEndpoints = Array.from(this.connections.keys());
-
-    if (connectedEndpoints.length === 0) {
-      this.logger.debug("没有已连接的接入点需要重连");
-      return;
-    }
-
-    this.logger.debug(
-      `找到 ${connectedEndpoints.length} 个已连接的接入点需要重连`
-    );
-
-    // 等待指定的延迟时间
-    if (options.delayMs > 0) {
-      this.logger.debug(`等待 ${options.delayMs}ms 后开始重连`);
-      await new Promise((resolve) => setTimeout(resolve, options.delayMs));
-    }
-
-    // 断开所有现有连接
-    for (const endpoint of connectedEndpoints) {
-      await this.disconnectEndpointForReconnect(endpoint);
-    }
-
-    // 重新连接所有接入点
-    const reconnectPromises = connectedEndpoints.map(async (endpoint) => {
-      try {
-        await this.connectToEndpoint(endpoint);
-        this.logger.debug(`接入点重连成功: ${sliceEndpoint(endpoint)}`);
-      } catch (error) {
-        this.logger.error(`接入点重连失败: ${sliceEndpoint(endpoint)}`, error);
-      }
-    });
-
-    await Promise.all(reconnectPromises);
-
-    this.logger.info(`所有接入点重连完成，原因: ${options.reason}`);
-
-    // 发射重连完成事件
-    this.eventBus.emitEvent("connection:reconnect:completed", {
-      success: true,
-      reason: options.reason,
-      timestamp: new Date(),
-    });
-  }
-
-  /**
-   * 为重连断开指定接入点的连接
-   */
-  private async disconnectEndpointForReconnect(
-    endpoint: string
-  ): Promise<void> {
-    const connection = this.connections.get(endpoint);
-    if (!connection) {
-      this.logger.warn(`接入点未找到: ${endpoint}`);
-      return;
-    }
-
-    try {
-      // 断开连接
-      await connection.disconnect();
-
-      // 从连接池中移除
-      this.connections.delete(endpoint);
-      this.connectionStates.delete(endpoint);
-
-      // 清理重连定时器
-      const reconnectTimer = this.reconnectTimers.get(endpoint);
-      if (reconnectTimer) {
-        clearTimeout(reconnectTimer);
-        this.reconnectTimers.delete(endpoint);
-      }
-
-      this.logger.debug(`接入点已断开: ${sliceEndpoint(endpoint)}`);
-
-      // 发射断开事件
-      this.eventBus.emitEvent("endpoint:status:changed", {
-        endpoint,
-        connected: false,
-        operation: "disconnect",
-        success: true,
-        message: "MCP服务变更导致重连",
-        timestamp: Date.now(),
-        source: "ConnectionManager",
-      });
-    } catch (error) {
-      this.logger.error(`断开接入点失败: ${sliceEndpoint(endpoint)}`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * 连接到指定接入点
-   */
-  private async connectToEndpoint(endpoint: string): Promise<void> {
-    // 检查是否已存在连接
-    if (this.connections.has(endpoint)) {
-      this.logger.debug(`接入点已存在连接: ${sliceEndpoint(endpoint)}`);
-      return;
-    }
-
-    this.logger.debug(`连接接入点: ${sliceEndpoint(endpoint)}`);
-
-    try {
-      // 创建新的 ProxyMCPServer 实例
-      const proxyServer = new ProxyMCPServer(endpoint);
-
-      // 设置 MCP 服务管理器
-      if (this.mcpServiceManager) {
-        proxyServer.setServiceManager(this.mcpServiceManager);
-      }
-
-      // 存储连接实例
-      this.connections.set(endpoint, proxyServer);
-
-      // 初始化连接状态
-      this.connectionStates.set(endpoint, {
-        endpoint,
-        connected: false,
-        initialized: false,
-        isReconnecting: false,
-        lastReconnectAttempt: undefined,
-        reconnectDelay: this.options.reconnectInterval,
-        reconnectAttempts: 0,
-        nextReconnectTime: undefined,
-      });
-
-      // 执行连接
-      await this.connectSingleEndpoint(endpoint, proxyServer);
-
-      this.logger.info(`接入点连接成功: ${sliceEndpoint(endpoint)}`);
-    } catch (error) {
-      // 清理失败的连接
-      this.connections.delete(endpoint);
-      this.connectionStates.delete(endpoint);
-
-      this.logger.error(`接入点连接失败: ${sliceEndpoint(endpoint)}`, error);
-      throw error;
-    }
-  }
-}
