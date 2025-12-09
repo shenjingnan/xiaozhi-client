@@ -1,8 +1,8 @@
 import { EventEmitter } from "node:events";
+import { ProxyMCPServer } from "@/lib/endpoint/connection.js";
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { WebServer } from "@root/WebServer.js";
 import { Logger } from "../Logger.js";
-import { ProxyMCPServer } from "../ProxyMCPServer.js";
 import { configManager } from "../configManager.js";
 
 const logger = new Logger();

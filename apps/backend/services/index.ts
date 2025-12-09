@@ -4,18 +4,6 @@ export * from "./NotificationService.js";
 export * from "./MCPServiceManagerSingleton.js";
 export * from "./EventBus.js";
 
-// IndependentXiaozhiConnectionManager 导出 - 避免冲突的 ConfigChangeEvent
-export {
-  IndependentXiaozhiConnectionManager,
-  XiaozhiConnectionState,
-  type IndependentConnectionOptions,
-  type SimpleConnectionStatus,
-  type ConnectionStatus,
-} from "./IndependentXiaozhiConnectionManager.js";
-
-// 重命名 ConfigChangeEvent 以避免与 ConfigWatcher 的冲突
-export type { ConfigChangeEvent as EndpointConfigChangeEvent } from "./IndependentXiaozhiConnectionManager.js";
-
 export * from "./XiaozhiConnectionManagerSingleton.js";
 
 // 新增导出 - 高优先级服务模块

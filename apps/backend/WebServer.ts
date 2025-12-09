@@ -1,5 +1,11 @@
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
+import { ProxyMCPServer } from "@/lib/endpoint/connection.js";
+import type { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/index.js";
+import type {
+  EndpointConfigChangeEvent,
+  SimpleConnectionStatus,
+} from "@/lib/endpoint/index.js";
 import type { MCPServiceManager } from "@/lib/mcp";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import { convertLegacyToNew } from "@adapters/index.js";
@@ -32,18 +38,11 @@ import {
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
-import { ProxyMCPServer } from "@root/ProxyMCPServer.js";
 import { configManager } from "@root/configManager.js";
 import type { MCPServerConfig } from "@root/configManager.js";
 import type { AppContext } from "@root/types/index.js";
 import { createApp } from "@root/types/index.js";
-import type {
-  EndpointConfigChangeEvent,
-  EventBus,
-  EventBusEvents,
-  IndependentXiaozhiConnectionManager,
-  SimpleConnectionStatus,
-} from "@services/index.js";
+import type { EventBus, EventBusEvents } from "@services/index.js";
 import {
   ConfigService,
   MCPServiceManagerSingleton,

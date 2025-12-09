@@ -4,13 +4,13 @@ import type { MCPServerAddResult } from "@handlers/MCPServerApiHandler.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
-import { ProxyMCPServer } from "@root/ProxyMCPServer.js";
 import type { ConfigManager, MCPServerConfig } from "@root/configManager.js";
 import type { ToolCallResult } from "@services/CustomMCPHandler.js";
 import type { EventBus } from "@services/EventBus.js";
 import { getEventBus } from "@services/EventBus.js";
 import { sliceEndpoint } from "@utils/mcpServerUtils.js";
 import { z } from "zod";
+import { ProxyMCPServer } from "./connection.js";
 
 // 使用接口定义避免循环依赖
 interface IMCPServiceManager {
