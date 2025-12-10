@@ -6,7 +6,7 @@ import type {
   EndpointConfigChangeEvent,
   SimpleConnectionStatus,
 } from "@/lib/endpoint/index.js";
-import type { MCPServiceManager } from "@/lib/mcp";
+import { MCPServiceManager } from "@/lib/mcp";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import { convertLegacyToNew } from "@adapters/index.js";
 import {
@@ -139,7 +139,7 @@ export class WebServer {
   private proxyMCPServer: ProxyMCPServer | undefined;
   private xiaozhiConnectionManager: IndependentXiaozhiConnectionManager | null =
     null;
-  private mcpServiceManager: MCPServiceManager | undefined;
+  private mcpServiceManager: MCPServiceManager | null = null; // WebServer 直接管理的实例
 
   constructor(port?: number) {
     // 端口配置
@@ -204,8 +204,10 @@ export class WebServer {
       // 1. 读取配置
       const config = await this.loadConfiguration();
 
-      // 2. 初始化 MCP 服务管理器
-      this.mcpServiceManager = await MCPServiceManagerSingleton.getInstance();
+      // 2. 初始化 MCP 服务管理器（WebServer 直接管理）
+      if (!this.mcpServiceManager) {
+        this.mcpServiceManager = new MCPServiceManager();
+      }
 
       // 2.1. 初始化 MCP 服务器 API 处理器
       this.mcpServerApiHandler = new MCPServerApiHandler(
@@ -373,6 +375,28 @@ export class WebServer {
       );
     }
     return this.xiaozhiConnectionManager;
+  }
+
+  /**
+   * 设置 MCP 服务管理器实例（主要用于测试依赖注入）
+   */
+  public setMCPServiceManager(manager: MCPServiceManager): void {
+    this.mcpServiceManager = manager;
+  }
+
+  /**
+   * 获取 MCP 服务管理器实例
+   * 提供给中间件使用
+   * WebServer 启动后始终返回有效的服务管理器实例
+   * @throws {Error} 如果服务管理器未初始化
+   */
+  public getMCPServiceManager(): MCPServiceManager {
+    if (!this.mcpServiceManager) {
+      throw new Error(
+        "MCPServiceManager 未初始化，请确保 WebServer 已调用 start() 方法完成初始化"
+      );
+    }
+    return this.mcpServiceManager;
   }
 
   /**
@@ -723,7 +747,7 @@ export class WebServer {
       // 停止 MCP 客户端
       this.proxyMCPServer?.disconnect();
 
-      // 清理连接管理器
+      // 清理连接管理器和 MCPServiceManager
       (async () => {
         try {
           if (this.xiaozhiConnectionManager) {
@@ -732,6 +756,16 @@ export class WebServer {
           }
         } catch (error) {
           this.logger.error("连接管理器清理失败:", error);
+        }
+
+        try {
+          if (this.mcpServiceManager) {
+            await this.mcpServiceManager.stopAllServices();
+            this.mcpServiceManager = null;
+            this.logger.debug("MCPServiceManager 已清理");
+          }
+        } catch (error) {
+          this.logger.error("MCPServiceManager 清理失败:", error);
         }
 
         // 停止心跳监控

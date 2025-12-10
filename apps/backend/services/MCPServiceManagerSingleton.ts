@@ -1,6 +1,11 @@
 /**
+ * @deprecated 请使用 WebServer.getMCPServiceManager() 获取实例
+ *
  * MCP 服务管理器单例
  * 提供全局唯一的 MCPServiceManager 实例，简化实现以满足项目实际需求
+ *
+ * 注意：此单例模式已废弃，新代码应通过 WebServer 获取 MCPServiceManager 实例
+ * 保留此文件仅用于向后兼容
  */
 
 import { MCPServiceManager } from "@/lib/mcp";

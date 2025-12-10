@@ -1,29 +1,28 @@
 /**
  * MCP Service Manager 中间件
  * 将 MCPServiceManager 实例注入到 Hono Context 中
- * 提供统一的依赖注入模式，替代直接使用 Singleton
+ * 提供统一的依赖注入模式，从 WebServer 获取实例而非 Singleton
  */
 
 import { logger } from "@root/Logger.js";
-import { MCPServiceManagerSingleton } from "@services/MCPServiceManagerSingleton.js";
 import type { Context, Next } from "hono";
-import { getMCPServiceManager } from "../types/hono.context.js";
+import type { AppContextVariables } from "../types/hono.context.js";
 
 /**
  * MCP Service Manager 中间件
  *
  * 功能：
- * 1. 将 MCPServiceManager 实例注入到 Hono Context
- * 2. 确保实例只初始化一次
+ * 1. 从 WebServer 获取 MCPServiceManager 实例
+ * 2. 将实例注入到 Hono Context
  * 3. 提供错误处理和日志记录
- * 4. 与现有 Singleton 模式兼容
+ * 4. 与 WebServer 生命周期绑定
  * 5. 使用 Hono Context 中的 logger 实现统一的日志配置
  *
  * @param c Hono Context
  * @param next 下一个中间件函数
  */
 export const mcpServiceManagerMiddleware = async (
-  c: Context,
+  c: Context<{ Variables: AppContextVariables }>,
   next: Next
 ): Promise<void> => {
   // 检查是否已经注入，避免重复初始化
@@ -32,10 +31,15 @@ export const mcpServiceManagerMiddleware = async (
       // 尝试从 Context 获取 logger，如果不存在则使用全局 logger
       const contextLogger = c.get("logger") || logger;
 
-      contextLogger.debug("[MCPMiddleware] 正在初始化 MCPServiceManager 实例");
+      contextLogger.debug("[MCPMiddleware] 正在从 WebServer 获取 MCPServiceManager 实例");
 
-      // 通过 Singleton 获取实例，不再传入 logger
-      const serviceManager = await MCPServiceManagerSingleton.getInstance();
+      // 从 WebServer 获取实例
+      const webServer = c.get("webServer");
+      if (!webServer) {
+        throw new Error("WebServer 未注入到 Context");
+      }
+
+      const serviceManager = webServer.getMCPServiceManager();
 
       // 将实例注入到 Context
       c.set("mcpServiceManager", serviceManager);
@@ -46,13 +50,20 @@ export const mcpServiceManagerMiddleware = async (
     } catch (error) {
       // 记录错误但不阻断请求处理
       const errorLogger = c.get("logger") || logger;
-      errorLogger.error(
-        "[MCPMiddleware] 初始化 MCPServiceManager 失败:",
-        error
-      );
 
-      // 不设置实例，Handler 中需要处理未初始化的情况
-      // 这样可以确保应用其他功能仍然可用
+      if (error instanceof Error && error.message.includes("未初始化")) {
+        errorLogger.debug(
+          "[MCPMiddleware] MCPServiceManager 尚未初始化，允许通过"
+        );
+        // 不设置实例，Handler 中需要处理未初始化的情况
+      } else {
+        errorLogger.error(
+          "[MCPMiddleware] 获取 MCPServiceManager 失败:",
+          error
+        );
+        // 其他错误继续抛出
+        throw error;
+      }
     }
   }
 
@@ -65,6 +76,8 @@ export const mcpServiceManagerMiddleware = async (
  * @param c Hono Context
  * @returns 是否存在 MCPServiceManager 实例
  */
-export const hasMCPServiceManager = (c: Context): boolean => {
-  return getMCPServiceManager(c) !== undefined;
+export const hasMCPServiceManager = (
+  c: Context<{ Variables: AppContextVariables }>
+): boolean => {
+  return c.get("mcpServiceManager") !== undefined;
 };
