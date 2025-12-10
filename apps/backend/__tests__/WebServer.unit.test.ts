@@ -176,8 +176,8 @@ describe("WebServer Unit Tests", () => {
 
       expect(connectionStatus).toMatchObject({
         type: "single-endpoint",
-        connected: true,  // 注意：proxyMCPServer 存在时总是返回 connected: true
-        endpoint: "unknown",  // 注意：返回的是 "unknown"，不是实际 endpoint
+        connected: true, // 注意：proxyMCPServer 存在时总是返回 connected: true
+        endpoint: "unknown", // 注意：返回的是 "unknown"，不是实际 endpoint
       });
     });
   });
@@ -336,6 +336,5 @@ describe("WebServer Unit Tests", () => {
       // 验证清理被调用
       expect(mockManager.cleanup).toHaveBeenCalled();
     });
-
-      });
+  });
 });

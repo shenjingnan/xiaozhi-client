@@ -171,14 +171,16 @@ describe("WebServer Integration Tests", () => {
       } finally {
         // 恢复 mock
         vi.doMock("@/lib/endpoint/index.js", () => ({
-          IndependentXiaozhiConnectionManager: vi.fn().mockImplementation(() => ({
-            initialize: vi.fn().mockResolvedValue(undefined),
-            connect: vi.fn().mockResolvedValue(undefined),
-            setServiceManager: vi.fn(),
-            getConnectionStatus: vi.fn().mockReturnValue([]),
-            on: vi.fn(),
-            cleanup: vi.fn().mockResolvedValue(undefined),
-          })),
+          IndependentXiaozhiConnectionManager: vi
+            .fn()
+            .mockImplementation(() => ({
+              initialize: vi.fn().mockResolvedValue(undefined),
+              connect: vi.fn().mockResolvedValue(undefined),
+              setServiceManager: vi.fn(),
+              getConnectionStatus: vi.fn().mockReturnValue([]),
+              on: vi.fn(),
+              cleanup: vi.fn().mockResolvedValue(undefined),
+            })),
         }));
       }
     });
@@ -272,10 +274,10 @@ describe("WebServer Integration Tests", () => {
 
       // 等待第一个服务器启动
       await new Promise<void>((resolve, reject) => {
-        httpServer.listen(testOccupiedPort, 'localhost', () => {
+        httpServer.listen(testOccupiedPort, "localhost", () => {
           resolve();
         });
-        httpServer.on('error', reject);
+        httpServer.on("error", reject);
       });
 
       try {
@@ -342,6 +344,5 @@ describe("WebServer Integration Tests", () => {
         }
       }
     });
-
-      });
+  });
 });
