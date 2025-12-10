@@ -4,8 +4,6 @@ export * from "./NotificationService.js";
 export * from "./MCPServiceManagerSingleton.js";
 export * from "./EventBus.js";
 
-export * from "./XiaozhiConnectionManagerSingleton.js";
-
 // 新增导出 - 高优先级服务模块
 export * from "./ConfigWatcher.js";
 export * from "./ErrorHandler.js";

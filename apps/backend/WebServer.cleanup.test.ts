@@ -114,16 +114,16 @@ vi.mock("@services/MCPServiceManagerSingleton", () => ({
   },
 }));
 
-// Mock XiaozhiConnectionManagerSingleton
-vi.mock("@services/XiaozhiConnectionManagerSingleton", () => ({
-  XiaozhiConnectionManagerSingleton: {
-    getInstance: vi.fn(() => ({
-      setServiceManager: vi.fn(),
-      initialize: vi.fn(),
-      connect: vi.fn(),
-      on: vi.fn(),
-    })),
-  },
+// Mock IndependentXiaozhiConnectionManager
+vi.mock("@/lib/endpoint/index", () => ({
+  IndependentXiaozhiConnectionManager: vi.fn().mockImplementation(() => ({
+    initialize: vi.fn().mockResolvedValue(undefined),
+    connect: vi.fn().mockResolvedValue(undefined),
+    cleanup: vi.fn().mockResolvedValue(undefined),
+    setServiceManager: vi.fn(),
+    getConnectionStatus: vi.fn().mockReturnValue([]),
+    on: vi.fn(),
+  })),
 }));
 
 // Mock convertLegacyToNew

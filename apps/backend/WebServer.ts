@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
-import { ProxyMCPServer } from "@/lib/endpoint/connection.js";
-import type { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/index.js";
+import type { ProxyMCPServer } from "@/lib/endpoint/connection.js";
+import { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/index.js";
 import type {
   EndpointConfigChangeEvent,
   SimpleConnectionStatus,
@@ -48,7 +48,6 @@ import {
   MCPServiceManagerSingleton,
   NotificationService,
   StatusService,
-  XiaozhiConnectionManagerSingleton,
   destroyEventBus,
   getEventBus,
 } from "@services/index.js";
@@ -138,9 +137,8 @@ export class WebServer {
 
   // 向后兼容的属性
   private proxyMCPServer: ProxyMCPServer | undefined;
-  private xiaozhiConnectionManager:
-    | IndependentXiaozhiConnectionManager
-    | undefined;
+  private xiaozhiConnectionManager: IndependentXiaozhiConnectionManager | null =
+    null;
   private mcpServiceManager: MCPServiceManager | undefined;
 
   constructor(port?: number) {
@@ -194,8 +192,6 @@ export class WebServer {
 
     // 监听接入点状态变更事件
     this.setupEndpointStatusListener();
-
-    // HTTP 服务器和 WebSocket 服务器将在 start() 方法中初始化
   }
 
   /**
@@ -298,35 +294,34 @@ export class WebServer {
       (ep) => ep && !ep.includes("<请填写")
     );
 
-    // 1. 初始化连接管理器
+    // 1. 初始化连接管理器（无论是否有有效端点）
     this.logger.debug(
       `初始化小智接入点连接管理器，端点数量: ${validEndpoints.length}`
     );
 
     try {
-      // 获取小智连接管理器单例
-      this.xiaozhiConnectionManager =
-        await XiaozhiConnectionManagerSingleton.getInstance({
-          connectionTimeout: 10000,
-        });
+      // 创建连接管理器实例（总是创建）
+      if (!this.xiaozhiConnectionManager) {
+        this.xiaozhiConnectionManager = new IndependentXiaozhiConnectionManager(
+          configManager,
+          {
+            connectionTimeout: 10000,
+          }
+        );
+        this.logger.debug("✅ 新建连接管理器实例");
+      }
 
       // 设置 MCP 服务管理器
-      if (this.mcpServiceManager && this.xiaozhiConnectionManager) {
+      if (this.mcpServiceManager) {
         this.xiaozhiConnectionManager.setServiceManager(this.mcpServiceManager);
       }
 
-      this.logger.debug("✅ 连接管理器初始化完成");
-    } catch (error) {
-      this.logger.error("❌ 连接管理器初始化失败:", error);
-      // 连接管理器初始化失败时，继续后续流程，允许延迟初始化
-      return;
-    }
+      this.logger.debug("✅ 连接管理器设置完成");
 
-    // 2. 只有在有有效端点时才进行连接和初始化
-    if (validEndpoints.length > 0) {
-      this.logger.debug("有效端点列表:", validEndpoints);
+      // 2. 只有在有有效端点时才进行连接和初始化
+      if (validEndpoints.length > 0) {
+        this.logger.debug("有效端点列表:", validEndpoints);
 
-      try {
         // 初始化连接管理器（传入端点列表）
         await this.xiaozhiConnectionManager.initialize(validEndpoints, tools);
 
@@ -344,49 +339,39 @@ export class WebServer {
         this.logger.debug(
           `小智接入点连接管理器初始化完成，管理 ${validEndpoints.length} 个端点`
         );
-      } catch (error) {
-        this.logger.error("小智接入点连接管理器初始化失败:", error);
-
-        // 如果新的连接管理器失败，回退到原有的单连接模式（向后兼容）
-        this.logger.warn("回退到单连接模式");
-        const validEndpoint = validEndpoints[0];
-
-        this.logger.debug(`初始化单个小智接入点连接: ${validEndpoint}`);
-        this.proxyMCPServer = new ProxyMCPServer(validEndpoint);
-
-        if (this.mcpServiceManager) {
-          this.proxyMCPServer.setServiceManager(this.mcpServiceManager);
-        }
-
-        // 使用重连机制连接到小智接入点
-        const proxyServer = this.proxyMCPServer;
-        await this.connectWithRetry(
-          () => proxyServer.connect(),
-          "小智接入点连接"
-        );
-        this.logger.debug("小智接入点连接成功");
+      } else {
+        // 即使没有端点，也需要调用 initialize 以完成内部设置
+        await this.xiaozhiConnectionManager.initialize([], tools);
+        this.logger.debug("小智接入点连接管理器初始化完成（无端点）");
       }
-    } else {
-      try {
-        if (this.xiaozhiConnectionManager) {
-          // 初始化为空管理器，允许后续动态添加端点
-          await this.xiaozhiConnectionManager.initialize([], tools);
-          this.logger.debug("连接管理器已初始化为空管理器，支持动态添加端点");
-        }
-      } catch (error) {
-        this.logger.error("❌ 空连接管理器初始化失败:", error);
-        // 不抛出错误，允许系统继续运行
-      }
+    } catch (error) {
+      this.logger.error("小智接入点连接管理器初始化失败:", error);
+      // 抛出错误，让调用者知道初始化失败
+      throw error;
     }
+  }
+
+  /**
+   * 设置连接管理器实例（主要用于测试依赖注入）
+   */
+  public setXiaozhiConnectionManager(
+    manager: IndependentXiaozhiConnectionManager
+  ): void {
+    this.xiaozhiConnectionManager = manager;
   }
 
   /**
    * 获取小智连接管理器实例
    * 提供给中间件使用
+   * WebServer 启动后始终返回有效的连接管理器实例
+   * @throws {Error} 如果连接管理器未初始化
    */
-  public getXiaozhiConnectionManager():
-    | IndependentXiaozhiConnectionManager
-    | undefined {
+  public getXiaozhiConnectionManager(): IndependentXiaozhiConnectionManager {
+    if (!this.xiaozhiConnectionManager) {
+      throw new Error(
+        "小智连接管理器未初始化，请确保 WebServer 已调用 start() 方法完成初始化"
+      );
+    }
     return this.xiaozhiConnectionManager;
   }
 
@@ -738,43 +723,55 @@ export class WebServer {
       // 停止 MCP 客户端
       this.proxyMCPServer?.disconnect();
 
-      // 停止心跳监控
-      if (this.heartbeatMonitorInterval) {
-        this.heartbeatHandler.stopHeartbeatMonitoring(
-          this.heartbeatMonitorInterval
-        );
-        this.heartbeatMonitorInterval = undefined;
-      }
-
-      // 强制断开所有 WebSocket 客户端连接
-      if (this.wss) {
-        for (const client of this.wss.clients) {
-          client.terminate();
+      // 清理连接管理器
+      (async () => {
+        try {
+          if (this.xiaozhiConnectionManager) {
+            await this.xiaozhiConnectionManager.cleanup();
+            this.logger.debug("连接管理器已清理");
+          }
+        } catch (error) {
+          this.logger.error("连接管理器清理失败:", error);
         }
 
-        // 关闭 WebSocket 服务器
-        this.wss.close(() => {
-          // 强制关闭 HTTP 服务器，不等待现有连接
-          if (this.httpServer) {
-            this.httpServer.close(() => {
-              this.logger.info("Web 服务器已停止");
-              doResolve();
-            });
-          } else {
-            this.logger.info("Web 服务器已停止");
-            doResolve();
+        // 停止心跳监控
+        if (this.heartbeatMonitorInterval) {
+          this.heartbeatHandler.stopHeartbeatMonitoring(
+            this.heartbeatMonitorInterval
+          );
+          this.heartbeatMonitorInterval = undefined;
+        }
+
+        // 强制断开所有 WebSocket 客户端连接
+        if (this.wss) {
+          for (const client of this.wss.clients) {
+            client.terminate();
           }
 
-          // 设置超时，如果 2 秒内没有关闭则强制退出
-          setTimeout(() => {
-            this.logger.info("Web 服务器已强制停止");
-            doResolve();
-          }, 2000);
-        });
-      } else {
-        this.logger.info("Web 服务器已停止");
-        doResolve();
-      }
+          // 关闭 WebSocket 服务器
+          this.wss.close(() => {
+            // 强制关闭 HTTP 服务器，不等待现有连接
+            if (this.httpServer) {
+              this.httpServer.close(() => {
+                this.logger.info("Web 服务器已停止");
+                doResolve();
+              });
+            } else {
+              this.logger.info("Web 服务器已停止");
+              doResolve();
+            }
+
+            // 设置超时，如果 2 秒内没有关闭则强制退出
+            setTimeout(() => {
+              this.logger.info("Web 服务器已强制停止");
+              doResolve();
+            }, 2000);
+          });
+        } else {
+          this.logger.info("Web 服务器已停止");
+          doResolve();
+        }
+      })();
     });
   }
 
