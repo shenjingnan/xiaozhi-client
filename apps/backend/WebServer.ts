@@ -370,9 +370,14 @@ export class WebServer {
       }
     } else {
       try {
-        // 即使没有端点，也要初始化为空管理器，允许后续动态添加端点
-        await this.xiaozhiConnectionManager.initialize([], tools);
-        this.logger.debug("连接管理器已初始化为空管理器，支持动态添加端点");
+        // 检查管理器是否存在
+        if (this.xiaozhiConnectionManager) {
+          // 即使没有端点，也要初始化为空管理器，允许后续动态添加端点
+          await this.xiaozhiConnectionManager.initialize([], tools);
+          this.logger.debug("连接管理器已初始化为空管理器，支持动态添加端点");
+        } else {
+          this.logger.warn("连接管理器未创建，跳过初始化");
+        }
       } catch (error) {
         this.logger.error("❌ 空连接管理器初始化失败:", error);
         // 不抛出错误，允许系统继续运行
@@ -757,45 +762,45 @@ export class WebServer {
         } catch (error) {
           this.logger.error("连接管理器清理失败:", error);
         }
-      })();
 
-      // 停止心跳监控
-      if (this.heartbeatMonitorInterval) {
-        this.heartbeatHandler.stopHeartbeatMonitoring(
-          this.heartbeatMonitorInterval
-        );
-        this.heartbeatMonitorInterval = undefined;
-      }
-
-      // 强制断开所有 WebSocket 客户端连接
-      if (this.wss) {
-        for (const client of this.wss.clients) {
-          client.terminate();
+        // 停止心跳监控
+        if (this.heartbeatMonitorInterval) {
+          this.heartbeatHandler.stopHeartbeatMonitoring(
+            this.heartbeatMonitorInterval
+          );
+          this.heartbeatMonitorInterval = undefined;
         }
 
-        // 关闭 WebSocket 服务器
-        this.wss.close(() => {
-          // 强制关闭 HTTP 服务器，不等待现有连接
-          if (this.httpServer) {
-            this.httpServer.close(() => {
-              this.logger.info("Web 服务器已停止");
-              doResolve();
-            });
-          } else {
-            this.logger.info("Web 服务器已停止");
-            doResolve();
+        // 强制断开所有 WebSocket 客户端连接
+        if (this.wss) {
+          for (const client of this.wss.clients) {
+            client.terminate();
           }
 
-          // 设置超时，如果 2 秒内没有关闭则强制退出
-          setTimeout(() => {
-            this.logger.info("Web 服务器已强制停止");
-            doResolve();
-          }, 2000);
-        });
-      } else {
-        this.logger.info("Web 服务器已停止");
-        doResolve();
-      }
+          // 关闭 WebSocket 服务器
+          this.wss.close(() => {
+            // 强制关闭 HTTP 服务器，不等待现有连接
+            if (this.httpServer) {
+              this.httpServer.close(() => {
+                this.logger.info("Web 服务器已停止");
+                doResolve();
+              });
+            } else {
+              this.logger.info("Web 服务器已停止");
+              doResolve();
+            }
+
+            // 设置超时，如果 2 秒内没有关闭则强制退出
+            setTimeout(() => {
+              this.logger.info("Web 服务器已强制停止");
+              doResolve();
+            }, 2000);
+          });
+        } else {
+          this.logger.info("Web 服务器已停止");
+          doResolve();
+        }
+      })();
     });
   }
 
