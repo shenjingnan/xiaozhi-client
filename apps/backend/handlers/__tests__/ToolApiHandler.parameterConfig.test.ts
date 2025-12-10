@@ -22,13 +22,6 @@ vi.mock("../../configManager.js", () => ({
   },
 }));
 
-// Mock MCPServiceManagerSingleton
-vi.mock("@services/MCPServiceManagerSingleton.js", () => ({
-  MCPServiceManagerSingleton: {
-    isInitialized: vi.fn(() => true),
-    getInstance: vi.fn(() => Promise.resolve({})),
-  },
-}));
 
 describe("ToolApiHandler - 参数配置功能", () => {
   let handler: ToolApiHandler;

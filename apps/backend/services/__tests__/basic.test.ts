@@ -8,7 +8,6 @@ describe("Services Basic Tests", () => {
       () => import("../EventBus.js"),
       () => import("../NotificationService.js"),
       () => import("../StatusService.js"),
-      () => import("../MCPServiceManagerSingleton.js"),
     ];
 
     for (const importModule of modules) {
@@ -26,15 +25,5 @@ describe("Services Basic Tests", () => {
     expect(() => new EventBus()).not.toThrow();
     expect(() => new NotificationService()).not.toThrow();
     expect(() => new StatusService()).not.toThrow();
-  });
-
-  it("should have working singleton functions", async () => {
-    const { getEventBus } = await import("../EventBus.js");
-    const { MCPServiceManagerSingleton } = await import(
-      "../MCPServiceManagerSingleton.js"
-    );
-
-    expect(() => getEventBus()).not.toThrow();
-    expect(() => MCPServiceManagerSingleton.getInstance()).not.toThrow();
   });
 });

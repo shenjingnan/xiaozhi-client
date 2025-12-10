@@ -45,7 +45,6 @@ import { createApp } from "@root/types/index.js";
 import type { EventBus, EventBusEvents } from "@services/index.js";
 import {
   ConfigService,
-  MCPServiceManagerSingleton,
   NotificationService,
   StatusService,
   destroyEventBus,

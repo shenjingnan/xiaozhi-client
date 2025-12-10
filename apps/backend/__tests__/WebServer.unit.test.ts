@@ -28,15 +28,6 @@ vi.mock("@/lib/endpoint/connection.js", () => ({
   })),
 }));
 
-vi.mock("@services/MCPServiceManagerSingleton.js", () => ({
-  MCPServiceManagerSingleton: {
-    getInstance: vi.fn().mockResolvedValue({
-      startAllServices: vi.fn().mockResolvedValue(undefined),
-      getAllTools: vi.fn().mockReturnValue([]),
-      cleanup: vi.fn().mockResolvedValue(undefined),
-    }),
-  },
-}));
 
 vi.mock("@/lib/endpoint/index.js", () => ({
   IndependentXiaozhiConnectionManager: vi.fn().mockImplementation(() => ({
@@ -48,7 +39,6 @@ vi.mock("@/lib/endpoint/index.js", () => ({
     cleanup: vi.fn().mockResolvedValue(undefined),
   })),
 }));
-import { MCPServiceManagerSingleton } from "@services/MCPServiceManagerSingleton.js";
 
 describe("WebServer Unit Tests", () => {
   let WebServer: any;
@@ -228,11 +218,6 @@ describe("WebServer Unit Tests", () => {
         getAllTools: vi.fn().mockReturnValue([]),
         cleanup: vi.fn().mockResolvedValue(undefined),
       };
-
-      // 重置 MCP 服务管理器的 mock
-      vi.mocked(MCPServiceManagerSingleton.getInstance).mockResolvedValue(
-        mockServiceManager
-      );
     });
 
     it("应该在有端点配置时正确初始化", async () => {

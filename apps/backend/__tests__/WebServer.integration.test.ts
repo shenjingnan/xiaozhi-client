@@ -29,6 +29,8 @@ vi.mock("../configManager.js", () => ({
     getWebUIPort: vi.fn(),
     configExists: vi.fn(),
     cleanupInvalidServerToolsConfig: vi.fn(),
+    getToolCallLogConfig: vi.fn().mockReturnValue({}),
+    getConfigDir: vi.fn().mockReturnValue("/tmp"),
     on: vi.fn(),
     off: vi.fn(),
   },
@@ -43,15 +45,6 @@ vi.mock("../ProxyMCPServer.js", () => ({
   })),
 }));
 
-vi.mock("@services/MCPServiceManagerSingleton.js", () => ({
-  MCPServiceManagerSingleton: {
-    getInstance: vi.fn().mockResolvedValue({
-      startAllServices: vi.fn().mockResolvedValue(undefined),
-      getAllTools: vi.fn().mockReturnValue([]),
-      cleanup: vi.fn().mockResolvedValue(undefined),
-    }),
-  },
-}));
 
 vi.mock("@/lib/endpoint/index.js", () => ({
   IndependentXiaozhiConnectionManager: vi.fn().mockImplementation(() => ({

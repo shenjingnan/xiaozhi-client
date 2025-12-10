@@ -1,7 +1,6 @@
 export * from "./ConfigService.js";
 export * from "./StatusService.js";
 export * from "./NotificationService.js";
-export * from "./MCPServiceManagerSingleton.js";
 export * from "./EventBus.js";
 
 // 新增导出 - 高优先级服务模块

@@ -1,15 +1,28 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { WebServer } from "../../WebServer.js";
 
-// Mock MCPServiceManagerSingleton
-vi.mock("@services/MCPServiceManagerSingleton.js", () => ({
-  MCPServiceManagerSingleton: {
-    getInstance: vi.fn().mockResolvedValue({
-      // Mock service manager
-    }),
-    isInitialized: vi.fn().mockReturnValue(true),
+// Mock configManager
+vi.mock("../../configManager.js", () => ({
+  configManager: {
+    configExists: vi.fn().mockReturnValue(true),
+    getConfig: vi.fn().mockReturnValue({}),
+    getMcpEndpoint: vi.fn().mockReturnValue(""),
+    getMcpServers: vi.fn().mockReturnValue({}),
+    updateMcpEndpoint: vi.fn(),
+    updateMcpServer: vi.fn(),
+    removeMcpServer: vi.fn(),
+    updateConnectionConfig: vi.fn(),
+    updateModelScopeConfig: vi.fn(),
+    updateWebUIConfig: vi.fn(),
+    getWebUIPort: vi.fn().mockReturnValue(3001),
+    setToolEnabled: vi.fn(),
+    removeServerToolsConfig: vi.fn(),
+    cleanupInvalidServerToolsConfig: vi.fn(),
+    getToolCallLogConfig: vi.fn().mockReturnValue({}),
+    getConfigDir: vi.fn().mockReturnValue("/tmp"),
   },
 }));
+
 
 // Mock MCPMessageHandler
 vi.mock("@/lib/mcp", () => ({
