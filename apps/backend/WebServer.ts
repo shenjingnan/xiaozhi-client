@@ -137,7 +137,7 @@ export class WebServer {
 
   // 向后兼容的属性
   private proxyMCPServer: ProxyMCPServer | undefined;
-  private xiaozhiConnectionManager?: IndependentXiaozhiConnectionManager;
+  private xiaozhiConnectionManager: IndependentXiaozhiConnectionManager | null = null;
   private mcpServiceManager: MCPServiceManager | undefined;
 
   constructor(port?: number) {
@@ -191,8 +191,6 @@ export class WebServer {
 
     // 监听接入点状态变更事件
     this.setupEndpointStatusListener();
-
-    // HTTP 服务器和 WebSocket 服务器将在 start() 方法中初始化
   }
 
   /**
@@ -397,10 +395,15 @@ export class WebServer {
   /**
    * 获取小智连接管理器实例
    * 提供给中间件使用
+   * WebServer 启动后始终返回有效的连接管理器实例
+   * @throws {Error} 如果连接管理器未初始化
    */
-  public getXiaozhiConnectionManager():
-    | IndependentXiaozhiConnectionManager
-    | undefined {
+  public getXiaozhiConnectionManager(): IndependentXiaozhiConnectionManager {
+    if (!this.xiaozhiConnectionManager) {
+      throw new Error(
+        "小智连接管理器未初始化，请确保 WebServer 已调用 start() 方法完成初始化"
+      );
+    }
     return this.xiaozhiConnectionManager;
   }
 
