@@ -31,7 +31,9 @@ export const mcpServiceManagerMiddleware = async (
       // 尝试从 Context 获取 logger，如果不存在则使用全局 logger
       const contextLogger = c.get("logger") || logger;
 
-      contextLogger.debug("[MCPMiddleware] 正在从 WebServer 获取 MCPServiceManager 实例");
+      contextLogger.debug(
+        "[MCPMiddleware] 正在从 WebServer 获取 MCPServiceManager 实例"
+      );
 
       // 从 WebServer 获取实例
       const webServer = c.get("webServer");

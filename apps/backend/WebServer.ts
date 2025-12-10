@@ -200,13 +200,18 @@ export class WebServer {
     try {
       this.logger.debug("开始初始化连接...");
 
-      // 1. 读取配置
-      const config = await this.loadConfiguration();
-
       // 2. 初始化 MCP 服务管理器（WebServer 直接管理）
       if (!this.mcpServiceManager) {
+        this.logger.debug("创建新的 MCPServiceManager 实例");
         this.mcpServiceManager = new MCPServiceManager();
+        // 启动服务管理器，确保它可以正常工作
+        await this.mcpServiceManager.start();
+      } else {
+        this.logger.debug("使用现有的 MCPServiceManager 实例，跳过创建");
       }
+
+      // 1. 读取配置
+      const config = await this.loadConfiguration();
 
       // 2.1. 初始化 MCP 服务器 API 处理器
       this.mcpServerApiHandler = new MCPServerApiHandler(
@@ -234,6 +239,12 @@ export class WebServer {
       this.logger.debug("所有连接初始化完成");
     } catch (error) {
       this.logger.error("连接初始化失败:", error);
+      // 确保 MCPServiceManager 已经创建，即使配置加载失败
+      if (!this.mcpServiceManager) {
+        this.logger.debug("配置加载失败，创建最小化的 MCPServiceManager 实例");
+        this.mcpServiceManager = new MCPServiceManager();
+        await this.mcpServiceManager.start();
+      }
     }
   }
 
@@ -479,9 +490,6 @@ export class WebServer {
     // Logger 中间件 - 必须在最前面
     this.app?.use("*", loggerMiddleware);
 
-    // MCP Service Manager 中间件 - 在 Logger 之后，CORS 之前
-    this.app?.use("*", mcpServiceManagerMiddleware);
-
     // 注入 WebServer 实例到上下文
     // 使用类型断言避免循环引用问题
     this.app?.use("*", async (c, next) => {
@@ -491,6 +499,9 @@ export class WebServer {
       );
       await next();
     });
+
+    // MCP Service Manager 中间件 - 必须在 WebServer 注入之后
+    this.app?.use("*", mcpServiceManagerMiddleware);
 
     // 小智连接管理器中间件
     this.app?.use("*", xiaozhiConnectionManagerMiddleware());
@@ -679,7 +690,15 @@ export class WebServer {
       return;
     }
 
-    // 1. 启动 HTTP 服务器
+    // 1. 初始化所有连接（配置驱动）
+    // 这必须在启动服务器之前完成，确保 MCPServiceManager 可用
+    await this.initializeConnections();
+
+    // 2. 设置路由系统（在连接初始化之后）
+    this.setupRouteSystem();
+    this.setupRoutesFromRegistry();
+
+    // 3. 启动 HTTP 服务器
     const server = serve({
       fetch: this.app.fetch,
       port: this.port,
@@ -708,28 +727,6 @@ export class WebServer {
 
     this.logger.info(`Web server listening on http://0.0.0.0:${this.port}`);
     this.logger.info(`Local access: http://localhost:${this.port}`);
-
-    // // 输出架构重构信息
-    // this.logger.info("=== 通信架构重构信息 - 第二阶段完成 ===");
-    // this.logger.info("✅ 模块化拆分: HTTP/WebSocket 处理器独立");
-    // this.logger.info(
-    //   "✅ 服务层抽象: ConfigService, StatusService, NotificationService"
-    // );
-    // this.logger.info("✅ 事件驱动机制: EventBus 实现模块间解耦通信");
-    // this.logger.info("✅ HTTP API 职责: 配置管理、状态查询、服务控制");
-    // this.logger.info("✅ WebSocket 职责: 实时通知、心跳检测、事件广播");
-    // this.logger.info(
-    //   "⚠️  已废弃的 WebSocket 消息: getConfig, updateConfig, getStatus, restartService"
-    // );
-    // this.logger.info("📖 推荐使用对应的 HTTP API 替代废弃的 WebSocket 消息");
-    // this.logger.info("================================================");
-
-    // 2. 初始化所有连接（配置驱动）
-    await this.initializeConnections();
-
-    // 3. 设置路由系统（在连接初始化之后）
-    this.setupRouteSystem();
-    this.setupRoutesFromRegistry();
   }
 
   public stop(): Promise<void> {

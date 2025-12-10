@@ -23,7 +23,6 @@ vi.mock("../../configManager.js", () => ({
   },
 }));
 
-
 // Mock MCPMessageHandler
 vi.mock("@/lib/mcp", () => ({
   MCPMessageHandler: vi.fn().mockImplementation(() => ({

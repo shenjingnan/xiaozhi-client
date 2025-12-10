@@ -240,9 +240,9 @@ export class ServiceManagerImpl implements IServiceManager {
       // 立即退出父进程，释放终端控制权
       process.exit(0);
     } else {
-      // 前台模式 - 直接启动 MCP Server
-      const { MCPServer } = await import("@services/MCPServer.js");
-      const server = new MCPServer(port);
+      // 前台模式 - 直接启动 Web Server
+      const { WebServer } = await import("@root/WebServer.js");
+      const server = new WebServer(port);
 
       // 处理退出信号
       const cleanup = async () => {

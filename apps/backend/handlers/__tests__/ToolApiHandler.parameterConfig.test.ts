@@ -22,7 +22,6 @@ vi.mock("../../configManager.js", () => ({
   },
 }));
 
-
 describe("ToolApiHandler - 参数配置功能", () => {
   let handler: ToolApiHandler;
   let mockContext: Partial<Context>;

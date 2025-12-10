@@ -45,7 +45,6 @@ vi.mock("../ProxyMCPServer.js", () => ({
   })),
 }));
 
-
 vi.mock("@/lib/endpoint/index.js", () => ({
   IndependentXiaozhiConnectionManager: vi.fn().mockImplementation(() => ({
     initialize: vi.fn().mockResolvedValue(undefined),

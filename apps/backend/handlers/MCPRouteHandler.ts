@@ -174,13 +174,20 @@ export class MCPRouteHandler {
       // 从 Context 中获取 MCP 服务管理器实例
       const serviceManager = c.get("mcpServiceManager");
       if (!serviceManager) {
-        throw new Error(
-          "MCPServiceManager 未在 Context 中找到，请检查中间件配置"
-        );
-      }
+        // MCPServiceManager 尚未初始化，这可能在某些情况下发生
+        // 直接使用 WebServer 的实例
+        const webServer = c.get("webServer");
+        if (!webServer) {
+          throw new Error("WebServer 未在 Context 中找到，请检查中间件配置");
+        }
 
-      this.mcpMessageHandler = new MCPMessageHandler(serviceManager);
-      this.logger.debug("MCP 消息处理器初始化成功");
+        const mcpServiceManager = webServer.getMCPServiceManager();
+        this.mcpMessageHandler = new MCPMessageHandler(mcpServiceManager);
+        this.logger.debug("MCP 消息处理器初始化成功（直接从 WebServer 获取）");
+      } else {
+        this.mcpMessageHandler = new MCPMessageHandler(serviceManager);
+        this.logger.debug("MCP 消息处理器初始化成功");
+      }
     } catch (error) {
       this.logger.error("MCP 消息处理器初始化失败:", error);
       this.metrics.errorCount++;

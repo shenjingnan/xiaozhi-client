@@ -311,7 +311,6 @@ vi.mock("./handlers/HeartbeatHandler", () => {
   };
 });
 
-
 vi.mock("@/lib/endpoint/index", () => ({
   IndependentXiaozhiConnectionManager: vi.fn().mockImplementation(() => ({
     initialize: vi.fn().mockResolvedValue(undefined),
@@ -1258,7 +1257,6 @@ describe("WebServer", () => {
       await expect(webServer.start()).resolves.not.toThrow();
     });
 
-  
     it("应该处理小智连接管理器初始化失败", async () => {
       // Mock IndependentXiaozhiConnectionManager constructor to throw
       vi.mocked(IndependentXiaozhiConnectionManager).mockImplementation(() => {
