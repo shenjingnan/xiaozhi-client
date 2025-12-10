@@ -22,21 +22,20 @@ export const xiaozhiConnectionManagerMiddleware =
       }
 
       if (!webServer.getXiaozhiConnectionManager) {
-        throw new Error(
-          "WebServer 实例缺少 getXiaozhiConnectionManager 方法"
-        );
+        throw new Error("WebServer 实例缺少 getXiaozhiConnectionManager 方法");
       }
 
       try {
         const connectionManager = webServer.getXiaozhiConnectionManager();
         c.set("xiaozhiConnectionManager", connectionManager);
       } catch (error) {
+        // 记录错误但不阻断请求
         if (error instanceof Error && error.message.includes("未初始化")) {
-          throw new Error(
-            "小智连接管理器未初始化，请确保 WebServer 已完全启动"
-          );
+          console.warn("小智连接管理器未初始化，使用 null 值:", error.message);
+          c.set("xiaozhiConnectionManager", null);
+        } else {
+          throw error;
         }
-        throw error;
       }
 
       await next();

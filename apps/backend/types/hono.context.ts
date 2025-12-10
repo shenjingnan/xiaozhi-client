@@ -61,8 +61,9 @@ export type AppContextVariables = {
    * 小智连接管理器实例
    * 由 xiaozhiConnectionManagerMiddleware 注入
    * WebServer 启动后始终可用的连接管理器实例
+   * 可能为 null（初始化失败时）
    */
-  xiaozhiConnectionManager: IndependentXiaozhiConnectionManager;
+  xiaozhiConnectionManager: IndependentXiaozhiConnectionManager | null;
 
   /**
    * 端点处理器实例
