@@ -137,11 +137,8 @@ export class WebServer {
 
   // 向后兼容的属性
   private proxyMCPServer: ProxyMCPServer | undefined;
-  private xiaozhiConnectionManager!: IndependentXiaozhiConnectionManager;
+  private xiaozhiConnectionManager?: IndependentXiaozhiConnectionManager;
   private mcpServiceManager: MCPServiceManager | undefined;
-
-  // 依赖注入支持（主要用于测试）
-  private _connectionManagerMock?: IndependentXiaozhiConnectionManager;
 
   constructor(port?: number) {
     // 端口配置
@@ -304,18 +301,15 @@ export class WebServer {
     );
 
     try {
-      // 创建连接管理器实例（移除单例依赖）
-      if (this._connectionManagerMock) {
-        // 使用注入的 mock 实例（测试场景）
-        this.xiaozhiConnectionManager = this._connectionManagerMock;
-      } else {
-        // 创建新实例
+      // 创建连接管理器实例
+      if (!this.xiaozhiConnectionManager) {
         this.xiaozhiConnectionManager = new IndependentXiaozhiConnectionManager(
           configManager,
           {
             connectionTimeout: 10000,
           }
         );
+        this.logger.debug("✅ 新建连接管理器实例");
       }
 
       // 设置 MCP 服务管理器
@@ -323,7 +317,7 @@ export class WebServer {
         this.xiaozhiConnectionManager.setServiceManager(this.mcpServiceManager);
       }
 
-      this.logger.debug("✅ 连接管理器创建完成");
+      this.logger.debug("✅ 连接管理器设置完成");
     } catch (error) {
       this.logger.error("❌ 连接管理器创建失败:", error);
       // 连接管理器创建失败时，继续后续流程，允许延迟初始化
@@ -392,7 +386,6 @@ export class WebServer {
   public setXiaozhiConnectionManager(
     manager: IndependentXiaozhiConnectionManager
   ): void {
-    this._connectionManagerMock = manager;
     this.xiaozhiConnectionManager = manager;
   }
 
@@ -755,7 +748,7 @@ export class WebServer {
       // 清理连接管理器
       (async () => {
         try {
-          if (this.xiaozhiConnectionManager && !this._connectionManagerMock) {
+          if (this.xiaozhiConnectionManager) {
             await this.xiaozhiConnectionManager.cleanup();
             this.logger.debug("连接管理器已清理");
           }
