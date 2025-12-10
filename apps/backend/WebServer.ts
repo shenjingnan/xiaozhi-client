@@ -393,7 +393,9 @@ export class WebServer {
    * 获取小智连接管理器实例
    * 提供给中间件使用
    */
-  public getXiaozhiConnectionManager(): IndependentXiaozhiConnectionManager {
+  public getXiaozhiConnectionManager():
+    | IndependentXiaozhiConnectionManager
+    | undefined {
     return this.xiaozhiConnectionManager;
   }
 

@@ -22,8 +22,11 @@ export interface IWebServer {
   /**
    * 获取小智连接管理器实例
    * 在 xiaozhiConnectionManagerMiddleware 中使用
+   * 可能返回 undefined 如果管理器未初始化
    */
-  getXiaozhiConnectionManager(): IndependentXiaozhiConnectionManager;
+  getXiaozhiConnectionManager():
+    | IndependentXiaozhiConnectionManager
+    | undefined;
 }
 
 /**
@@ -58,8 +61,9 @@ export type AppContextVariables = {
   /**
    * 小智连接管理器实例
    * 由 xiaozhiConnectionManagerMiddleware 注入
+   * 可能为 undefined 如果管理器未初始化
    */
-  xiaozhiConnectionManager: IndependentXiaozhiConnectionManager;
+  xiaozhiConnectionManager?: IndependentXiaozhiConnectionManager;
 
   /**
    * 端点处理器实例
