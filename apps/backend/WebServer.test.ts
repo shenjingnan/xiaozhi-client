@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/index";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import WebSocket from "ws";
 import { WebServer } from "./WebServer";
@@ -319,20 +320,15 @@ vi.mock("@services/MCPServiceManagerSingleton", () => ({
   },
 }));
 
-vi.mock("@services/XiaozhiConnectionManagerSingleton", () => ({
-  XiaozhiConnectionManagerSingleton: {
-    getInstance: vi.fn().mockResolvedValue({
-      setServiceManager: vi.fn(),
-      initialize: vi.fn(),
-      connect: vi.fn(),
-      on: vi.fn(),
-      getConnectionStatus: vi.fn(() => []),
-      getLoadBalanceStats: vi.fn(() => ({})),
-      getHealthCheckStats: vi.fn(() => ({})),
-      getReconnectStats: vi.fn(() => ({})),
-      selectBestConnection: vi.fn(() => null),
-    }),
-  },
+vi.mock("@/lib/endpoint/index", () => ({
+  IndependentXiaozhiConnectionManager: vi.fn().mockImplementation(() => ({
+    initialize: vi.fn().mockResolvedValue(undefined),
+    connect: vi.fn().mockResolvedValue(undefined),
+    cleanup: vi.fn().mockResolvedValue(undefined),
+    setServiceManager: vi.fn(),
+    getConnectionStatus: vi.fn().mockReturnValue([]),
+    on: vi.fn(),
+  })),
 }));
 
 vi.mock("./lib/endpoint/index.js", () => ({
@@ -1288,14 +1284,10 @@ describe("WebServer", () => {
     });
 
     it("应该处理小智连接管理器初始化失败", async () => {
-      const { XiaozhiConnectionManagerSingleton } = await import(
-        "@services/XiaozhiConnectionManagerSingleton"
-      );
-      vi.mocked(
-        XiaozhiConnectionManagerSingleton.getInstance
-      ).mockRejectedValue(
-        new Error("Xiaozhi Connection Manager initialization failed")
-      );
+      // Mock IndependentXiaozhiConnectionManager constructor to throw
+      vi.mocked(IndependentXiaozhiConnectionManager).mockImplementation(() => {
+        throw new Error("Xiaozhi Connection Manager initialization failed");
+      });
 
       webServer = new WebServer(currentPort);
 

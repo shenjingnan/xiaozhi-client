@@ -9,7 +9,6 @@ describe("Services Basic Tests", () => {
       () => import("../NotificationService.js"),
       () => import("../StatusService.js"),
       () => import("../MCPServiceManagerSingleton.js"),
-      () => import("../XiaozhiConnectionManagerSingleton.js"),
     ];
 
     for (const importModule of modules) {
@@ -34,12 +33,8 @@ describe("Services Basic Tests", () => {
     const { MCPServiceManagerSingleton } = await import(
       "../MCPServiceManagerSingleton.js"
     );
-    const { XiaozhiConnectionManagerSingleton } = await import(
-      "../XiaozhiConnectionManagerSingleton.js"
-    );
 
     expect(() => getEventBus()).not.toThrow();
     expect(() => MCPServiceManagerSingleton.getInstance()).not.toThrow();
-    expect(() => XiaozhiConnectionManagerSingleton.getInstance()).not.toThrow();
   });
 });
