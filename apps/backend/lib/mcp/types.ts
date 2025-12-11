@@ -198,6 +198,18 @@ export interface ToolInfo {
   tool: Tool;
 }
 
+/**
+ * MCP 工具项接口
+ * 用于表示 getAllTools() 方法返回的工具对象
+ */
+export interface MCPToolItem {
+  name: string;
+  description: string;
+  inputSchema: JSONSchema;
+  serviceName: string;
+  originalName: string;
+}
+
 // =========================
 // 5. 服务器配置类型
 // =========================

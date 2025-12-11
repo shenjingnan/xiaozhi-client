@@ -10,8 +10,8 @@ import { EventEmitter } from "node:events";
 import { MCPService } from "@/lib/mcp";
 import type {
   CustomMCPTool,
-  JSONSchema,
   MCPServiceConfig,
+  MCPToolItem,
   ManagerStatus,
   ToolCallResult,
   ToolInfo,
@@ -486,20 +486,8 @@ export class MCPServiceManager extends EventEmitter {
   /**
    * 获取所有可用工具（优化版本，移除阻塞逻辑，添加工具启用状态过滤）
    */
-  getAllTools(): Array<{
-    name: string;
-    description: string;
-    inputSchema: JSONSchema;
-    serviceName: string;
-    originalName: string;
-  }> {
-    const allTools: Array<{
-      name: string;
-      description: string;
-      inputSchema: JSONSchema;
-      serviceName: string;
-      originalName: string;
-    }> = [];
+  getAllTools(): Array<MCPToolItem> {
+    const allTools: Array<MCPToolItem> = [];
 
     // 1. 收集所有已连接服务的工具（包含启用状态过滤）
     for (const [serviceName, service] of this.services) {

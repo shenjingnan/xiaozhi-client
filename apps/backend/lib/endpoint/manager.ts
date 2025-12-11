@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import type { MCPServiceManager } from "@/lib/mcp/index.js";
+import type { MCPServiceManager, MCPToolItem } from "@/lib/mcp/index.js";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { ConfigManager } from "@root/configManager.js";
@@ -921,7 +921,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     try {
       const rawTools = this.mcpServiceManager.getAllTools();
       // 转换工具格式以符合 MCP SDK 的 Tool 类型
-      return rawTools.map((tool: any) => ({
+      return rawTools.map((tool: MCPToolItem) => ({
         name: tool.name,
         description: tool.description,
         inputSchema: ensureToolJSONSchema(tool.inputSchema),
