@@ -175,9 +175,9 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       const connectionPromises: Promise<void>[] = [];
 
       // 并发连接所有小智接入点
-      for (const [endpoint, proxyServer] of this.connections) {
+      for (const [endpoint, endpointConnection] of this.connections) {
         connectionPromises.push(
-          this.connectSingleEndpoint(endpoint, proxyServer)
+          this.connectSingleEndpoint(endpoint, endpointConnection)
         );
       }
 
@@ -206,9 +206,9 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
 
     // 断开所有连接
     const disconnectPromises: Promise<void>[] = [];
-    for (const [endpoint, proxyServer] of this.connections) {
+    for (const [endpoint, endpointConnection] of this.connections) {
       disconnectPromises.push(
-        this.disconnectSingleEndpoint(endpoint, proxyServer)
+        this.disconnectSingleEndpoint(endpoint, endpointConnection)
       );
     }
 
@@ -252,11 +252,11 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         await this.createConnection(endpoint, tools);
 
         // 自动连接新添加的接入点
-        const proxyServer = this.connections.get(endpoint);
-        if (!proxyServer) {
+        const endpointConnection = this.connections.get(endpoint);
+        if (!endpointConnection) {
           throw new Error(`无法获取接入点连接: ${endpoint}`);
         }
-        await this.connectSingleEndpoint(endpoint, proxyServer);
+        await this.connectSingleEndpoint(endpoint, endpointConnection);
 
         console.info(`添加接入点成功： ${sliceEndpoint(endpoint)}`);
       } catch (error) {
@@ -302,8 +302,8 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     console.debug(`动态移除小智接入点: ${sliceEndpoint(endpoint)}`);
 
     try {
-      const proxyServer = this.connections.get(endpoint);
-      if (!proxyServer) {
+      const endpointConnection = this.connections.get(endpoint);
+      if (!endpointConnection) {
         throw new Error(`无法获取接入点连接: ${endpoint}`);
       }
 
@@ -312,7 +312,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
 
       try {
         // 断开连接
-        await this.disconnectSingleEndpoint(endpoint, proxyServer);
+        await this.disconnectSingleEndpoint(endpoint, endpointConnection);
 
         // 清理资源
         this.connections.delete(endpoint);
@@ -358,8 +358,8 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    * @param endpoint 要断开的小智接入点
    */
   async disconnectEndpoint(endpoint: string): Promise<void> {
-    const proxyServer = this.connections.get(endpoint);
-    if (!proxyServer) {
+    const endpointConnection = this.connections.get(endpoint);
+    if (!endpointConnection) {
       console.debug(`接入点不存在，跳过断开: ${sliceEndpoint(endpoint)}`);
       return;
     }
@@ -367,7 +367,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     console.info(`断开连接接入点: ${sliceEndpoint(endpoint)}`);
 
     try {
-      await this.disconnectSingleEndpoint(endpoint, proxyServer);
+      await this.disconnectSingleEndpoint(endpoint, endpointConnection);
     } catch (error) {
       console.error(`断开连接接入点失败： ${sliceEndpoint(endpoint)}`, error);
       throw error;
@@ -454,8 +454,8 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       throw new Error("IndependentXiaozhiConnectionManager 未初始化");
     }
 
-    const proxyServer = this.connections.get(endpoint);
-    if (!proxyServer) {
+    const endpointConnection = this.connections.get(endpoint);
+    if (!endpointConnection) {
       throw new Error(
         `接入点 ${sliceEndpoint(endpoint)} 不存在，请先添加接入点`
       );
@@ -468,7 +468,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     }
 
     console.info(`连接已存在的接入点: ${sliceEndpoint(endpoint)}`);
-    await this.connectSingleEndpoint(endpoint, proxyServer);
+    await this.connectSingleEndpoint(endpoint, endpointConnection);
   }
 
   /**
@@ -788,15 +788,15 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
 
     try {
       // 创建 EndpointConnection 实例
-      const proxyServer = new EndpointConnection(endpoint);
+      const endpointConnection = new EndpointConnection(endpoint);
 
       // 设置 MCP 服务管理器
       if (this.mcpServiceManager) {
-        proxyServer.setServiceManager(this.mcpServiceManager);
+        endpointConnection.setServiceManager(this.mcpServiceManager);
       }
 
       // 存储连接实例
-      this.connections.set(endpoint, proxyServer);
+      this.connections.set(endpoint, endpointConnection);
 
       // 初始化连接状态
       this.connectionStates.set(endpoint, {
@@ -817,7 +817,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    */
   private async connectSingleEndpoint(
     endpoint: string,
-    proxyServer: EndpointConnection
+    endpointConnection: EndpointConnection
   ): Promise<void> {
     const status = this.connectionStates.get(endpoint);
     if (!status) {
@@ -832,7 +832,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       status.initialized = false;
 
       // 执行连接
-      await proxyServer.connect();
+      await endpointConnection.connect();
 
       // 更新连接成功状态
       status.connected = true;
@@ -879,7 +879,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    */
   private async disconnectSingleEndpoint(
     endpoint: string,
-    proxyServer: EndpointConnection
+    endpointConnection: EndpointConnection
   ): Promise<void> {
     const status = this.connectionStates.get(endpoint);
     if (!status) {
@@ -890,7 +890,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
 
     try {
       // 执行断开连接（EndpointConnection.disconnect 是同步方法）
-      proxyServer.disconnect();
+      endpointConnection.disconnect();
 
       // 更新状态
       status.connected = false;
@@ -957,9 +957,9 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
 
     console.debug("同步工具到所有连接");
 
-    for (const [endpoint, proxyServer] of this.connections) {
+    for (const [endpoint, endpointConnection] of this.connections) {
       try {
-        proxyServer.setServiceManager(this.mcpServiceManager);
+        endpointConnection.setServiceManager(this.mcpServiceManager);
         console.debug(`工具同步成功: ${sliceEndpoint(endpoint)}`);
       } catch (error) {
         console.error(`工具同步失败 ${sliceEndpoint(endpoint)}:`, error);
