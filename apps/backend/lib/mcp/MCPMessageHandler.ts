@@ -5,6 +5,7 @@
  */
 
 import type { MCPServiceManager } from "@/lib/mcp";
+import { validateToolCallParams } from "@/lib/mcp";
 import type {
   ClientCapabilities,
   InitializedNotification,
@@ -208,13 +209,12 @@ export class MCPMessageHandler {
     id?: string | number
   ): Promise<MCPResponse> {
     try {
-      if (!params.name) {
-        throw new Error("工具名称不能为空");
-      }
+      // 参数校验
+      const validatedParams = validateToolCallParams(params);
 
       const result = await this.serviceManager.callTool(
-        params.name,
-        params.arguments || {}
+        validatedParams.name,
+        validatedParams.arguments || {}
       );
 
       return {

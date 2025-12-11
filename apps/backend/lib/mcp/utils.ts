@@ -1,6 +1,11 @@
 import { TypeFieldNormalizer } from "@utils/TypeFieldNormalizer.js";
-import { MCPTransportType } from "./types.js";
-import type { MCPServiceConfig } from "./types.js";
+import { MCPTransportType, ToolCallError, ToolCallErrorCode } from "./types.js";
+import type {
+  MCPServiceConfig,
+  ToolCallParams,
+  ToolCallValidationOptions,
+  ValidatedToolCallParams,
+} from "./types.js";
 
 /**
  * 根据 URL 路径推断传输类型
@@ -83,4 +88,75 @@ export function inferTransportTypeFromConfig(
   throw new Error(
     `无法为服务 ${config.name} 推断传输类型。请显式指定 type 字段，或提供 command/url 配置`
   );
+}
+
+// =========================
+// 参数校验工具函数
+// =========================
+
+/**
+ * 验证工具调用参数
+ * 对传入的参数进行完整性和格式验证
+ *
+ * @param params 待验证的参数
+ * @param options 验证选项
+ * @returns 验证后的参数
+ * @throws ToolCallError 验证失败时抛出
+ */
+export function validateToolCallParams(
+  params: unknown,
+  options?: ToolCallValidationOptions
+): ValidatedToolCallParams {
+  const opts = {
+    validateName: true,
+    validateArguments: true,
+    allowEmptyArguments: true,
+    ...options,
+  };
+
+  // 1. 验证参数必须是对象
+  if (!params || typeof params !== "object") {
+    throw new ToolCallError(
+      ToolCallErrorCode.INVALID_PARAMS,
+      "请求参数必须是对象"
+    );
+  }
+
+  const paramsObj = params as Record<string, unknown>;
+
+  // 2. 验证工具名称
+  if (opts.validateName) {
+    if (!paramsObj.name || typeof paramsObj.name !== "string") {
+      throw new ToolCallError(
+        ToolCallErrorCode.INVALID_PARAMS,
+        "工具名称必须是非空字符串"
+      );
+    }
+  }
+
+  // 3. 验证工具参数格式
+  if (opts.validateArguments && paramsObj.arguments !== undefined) {
+    if (
+      typeof paramsObj.arguments !== "object" ||
+      Array.isArray(paramsObj.arguments)
+    ) {
+      throw new ToolCallError(
+        ToolCallErrorCode.INVALID_PARAMS,
+        "工具参数必须是对象"
+      );
+    }
+  }
+
+  // 4. 执行自定义验证
+  if (opts.customValidator) {
+    const error = opts.customValidator(paramsObj as unknown as ToolCallParams);
+    if (error) {
+      throw new ToolCallError(ToolCallErrorCode.INVALID_PARAMS, error);
+    }
+  }
+
+  return {
+    name: paramsObj.name as string,
+    arguments: paramsObj.arguments as Record<string, unknown>,
+  };
 }
