@@ -236,6 +236,9 @@ describe("ProxyMCPServer 基础功能测试", () => {
     });
 
     it("应该处理不存在的工具", async () => {
+      // 模拟工具不存在的情况，返回 rejected Promise
+      mockServiceManager.callTool.mockRejectedValue(new Error("未找到工具"));
+
       const toolCallRequest = {
         jsonrpc: "2.0",
         id: "call-missing",
@@ -325,24 +328,17 @@ describe("ProxyMCPServer 基础功能测试", () => {
       expect(syncedTools).toHaveLength(0);
     });
 
-    it("应该添加和移除工具", () => {
+    it("应该直接从服务管理器获取工具", () => {
       const newProxyServer = new ProxyMCPServer("ws://test-endpoint");
 
-      // 添加工具
-      newProxyServer.addTool("new-tool", {
-        name: "new-tool",
-        description: "新工具",
-        inputSchema: {
-          type: "object",
-          properties: {},
-        },
-      });
+      // 设置服务管理器
+      newProxyServer.setServiceManager(mockServiceManager);
 
-      expect(newProxyServer.hasTool("new-tool")).toBe(true);
-
-      // 移除工具
-      newProxyServer.removeTool("new-tool");
-      expect(newProxyServer.hasTool("new-tool")).toBe(false);
+      // 获取工具应该直接从服务管理器获取
+      const tools = newProxyServer.getTools();
+      expect(tools).toHaveLength(1);
+      expect(tools[0].name).toBe("test-tool");
+      expect(tools[0].description).toBe("测试工具");
     });
   });
 
