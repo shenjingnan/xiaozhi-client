@@ -26,6 +26,14 @@ export interface IWebServer {
    * 如果在启动前调用，会抛出错误
    */
   getXiaozhiConnectionManager(): IndependentXiaozhiConnectionManager;
+
+  /**
+   * 获取 MCP 服务管理器实例
+   * 在 mcpServiceManagerMiddleware 中使用
+   * WebServer 启动后始终返回有效的服务管理器实例
+   * 如果在启动前调用，会抛出错误
+   */
+  getMCPServiceManager(): MCPServiceManager;
 }
 
 /**

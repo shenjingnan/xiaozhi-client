@@ -20,6 +20,8 @@ vi.mock("./configManager", () => ({
     setToolEnabled: vi.fn(),
     removeServerToolsConfig: vi.fn(),
     cleanupInvalidServerToolsConfig: vi.fn(),
+    getToolCallLogConfig: vi.fn().mockReturnValue({}),
+    getConfigDir: vi.fn().mockReturnValue("/tmp"),
   },
 }));
 

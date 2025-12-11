@@ -275,7 +275,7 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
 
       await serviceManager.start(mcpOptions);
 
-      expect(mockMCPServerInstance.start).toHaveBeenCalled();
+      expect(mockWebServerInstance.start).toHaveBeenCalled();
     });
 
     it("应处理 stdio 模式", async () => {

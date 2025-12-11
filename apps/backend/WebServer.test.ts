@@ -23,6 +23,8 @@ vi.mock("./configManager", () => {
     cleanupInvalidServerToolsConfig: vi.fn(),
     addMcpEndpoint: vi.fn(),
     removeMcpEndpoint: vi.fn(),
+    getToolCallLogConfig: vi.fn().mockReturnValue({}),
+    getConfigDir: vi.fn().mockReturnValue("/tmp"),
   };
   return {
     configManager: mockConfigManager,
@@ -308,17 +310,6 @@ vi.mock("./handlers/HeartbeatHandler", () => {
     HeartbeatHandler: vi.fn(() => mockHeartbeatHandler),
   };
 });
-
-// Mock MCP 相关服务
-vi.mock("@services/MCPServiceManagerSingleton", () => ({
-  MCPServiceManagerSingleton: {
-    getInstance: vi.fn().mockResolvedValue({
-      addServiceConfig: vi.fn(),
-      startAllServices: vi.fn(),
-      getAllTools: vi.fn(() => []),
-    }),
-  },
-}));
 
 vi.mock("@/lib/endpoint/index", () => ({
   IndependentXiaozhiConnectionManager: vi.fn().mockImplementation(() => ({
@@ -1259,20 +1250,6 @@ describe("WebServer", () => {
   describe("连接初始化测试", () => {
     it("应该处理配置文件不存在的情况", async () => {
       mockConfigManager.configExists = vi.fn(() => false);
-
-      webServer = new WebServer(currentPort);
-
-      // 服务器应该能够启动，即使连接初始化失败
-      await expect(webServer.start()).resolves.not.toThrow();
-    });
-
-    it("应该处理 MCP 服务管理器初始化失败", async () => {
-      const { MCPServiceManagerSingleton } = await import(
-        "@services/MCPServiceManagerSingleton"
-      );
-      vi.mocked(MCPServiceManagerSingleton.getInstance).mockRejectedValue(
-        new Error("MCP Service Manager initialization failed")
-      );
 
       webServer = new WebServer(currentPort);
 

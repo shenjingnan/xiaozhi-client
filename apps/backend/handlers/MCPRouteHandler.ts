@@ -5,6 +5,7 @@
  */
 
 import { randomUUID } from "node:crypto";
+import type { MCPServiceManager } from "@/lib/mcp";
 import { MCPMessageHandler } from "@/lib/mcp";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
@@ -163,6 +164,31 @@ export class MCPRouteHandler {
   }
 
   /**
+   * 获取 MCP 服务管理器实例
+   * 优先从 Context 获取，如果不存在则从 WebServer 获取
+   */
+  private getMCPServiceManager(c: Context): MCPServiceManager {
+    // 首先尝试从 Context 获取
+    const serviceManager = c.get("mcpServiceManager");
+    if (serviceManager) {
+      return serviceManager;
+    }
+
+    // 如果 Context 中没有，则从 WebServer 获取
+    const webServer = c.get("webServer");
+    if (!webServer) {
+      throw new Error("WebServer 未在 Context 中找到，请检查中间件配置");
+    }
+
+    const mcpServiceManager = webServer.getMCPServiceManager();
+    this.logger.debug(
+      "MCPServiceManager 从 WebServer 获取（Context 中未找到）"
+    );
+
+    return mcpServiceManager;
+  }
+
+  /**
    * 初始化 MCP 消息处理器
    */
   private async initializeMessageHandler(c: Context): Promise<void> {
@@ -171,14 +197,7 @@ export class MCPRouteHandler {
     }
 
     try {
-      // 从 Context 中获取 MCP 服务管理器实例
-      const serviceManager = c.get("mcpServiceManager");
-      if (!serviceManager) {
-        throw new Error(
-          "MCPServiceManager 未在 Context 中找到，请检查中间件配置"
-        );
-      }
-
+      const serviceManager = this.getMCPServiceManager(c);
       this.mcpMessageHandler = new MCPMessageHandler(serviceManager);
       this.logger.debug("MCP 消息处理器初始化成功");
     } catch (error) {
@@ -238,7 +257,9 @@ export class MCPRouteHandler {
       const supportedVersions = ["2024-11-05", "2025-06-18"];
       if (protocolVersion && !supportedVersions.includes(protocolVersion)) {
         this.logger.warn(
-          `不支持的 MCP 协议版本: ${protocolVersion}，支持的版本: ${supportedVersions.join(", ")}`
+          `不支持的 MCP 协议版本: ${protocolVersion}，支持的版本: ${supportedVersions.join(
+            ", "
+          )}`
         );
       }
 
@@ -838,7 +859,9 @@ export class MCPRouteHandler {
         data,
       });
       throw new Error(
-        `广播消息无法序列化: ${error instanceof Error ? error.message : String(error)}`
+        `广播消息无法序列化: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
 
