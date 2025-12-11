@@ -4,11 +4,7 @@ import type { Data } from "ws";
 import type WebSocket from "ws";
 import { ProxyMCPServer } from "../connection.js";
 import { createMockWebSocket, wait } from "./testHelpers.js";
-import type {
-  MockServiceManager,
-  MockWebSocket,
-  ToolCallParams,
-} from "./testTypes.js";
+import type { MockServiceManager, MockWebSocket } from "./testTypes.js";
 import { ConnectionState, getProxyServerInternals } from "./testTypes.js";
 
 describe("ProxyMCPServer 基础功能测试", () => {
@@ -20,17 +16,10 @@ describe("ProxyMCPServer 基础功能测试", () => {
     // 模拟 WebSocket
     mockWs = createMockWebSocket();
 
-    // 模拟 MCPServiceManager
+    // 模拟 MCPServiceManager - 使用 Partial 因为我们只需要 routeMessage 方法
     mockServiceManager = {
-      callTool: vi.fn(),
-      getAllTools: vi.fn().mockReturnValue([
-        {
-          name: "test-tool",
-          description: "测试工具",
-          inputSchema: { type: "object", properties: {} },
-        },
-      ]),
-    };
+      routeMessage: vi.fn().mockResolvedValue(null),
+    } as any;
 
     proxyServer = new ProxyMCPServer("ws://test-endpoint");
     proxyServer.setServiceManager(mockServiceManager);
@@ -42,11 +31,10 @@ describe("ProxyMCPServer 基础功能测试", () => {
     const internals = getProxyServerInternals(proxyServer);
     internals.ws = mockWs as unknown as WebSocket;
     internals.connectionStatus = true;
-    internals.serverInitialized = true;
     internals.connectionState = ConnectionState.CONNECTED;
 
     // 手动设置消息监听器
-    mockWs.on("message", (data: Data) => {
+    mockWs.on("message", async (data: Data) => {
       try {
         let dataString: string;
 
@@ -67,7 +55,7 @@ describe("ProxyMCPServer 基础功能测试", () => {
         }
 
         const message = JSON.parse(dataString) as MCPMessage;
-        internals.handleMessage(message);
+        await internals.handleMessage(message);
       } catch (error) {
         console.error("消息解析错误:", error);
       }
@@ -106,239 +94,97 @@ describe("ProxyMCPServer 基础功能测试", () => {
   });
 
   describe("消息处理", () => {
-    it("应该正确处理 ping 消息", async () => {
-      const pingMessage = {
+    it("应该将消息转发给 MCPServiceManager", async () => {
+      const testMessage = {
         jsonrpc: "2.0",
-        id: "ping-1",
-        method: "ping",
+        id: "test-1",
+        method: "tools/list",
       };
 
+      // 模拟 MCPServiceManager 的响应
+      const mockResponse = {
+        jsonrpc: "2.0",
+        id: "test-1",
+        result: { tools: [] },
+      };
+      mockServiceManager.routeMessage.mockResolvedValue(mockResponse);
+
       // 模拟接收到 WebSocket 消息
-      mockWs.trigger("message", JSON.stringify(pingMessage));
+      mockWs.trigger("message", JSON.stringify(testMessage));
 
       // 等待异步处理完成
       await wait(10);
 
-      expect(mockWs.send).toHaveBeenCalledWith(
-        expect.stringMatching(
-          /\{"jsonrpc":"2\.0","id":"ping-1","result":\{\}\}/
-        )
-      );
+      // 验证消息被转发给 MCPServiceManager
+      expect(mockServiceManager.routeMessage).toHaveBeenCalledWith(testMessage);
+
+      // 验证响应被发送回客户端
+      expect(mockWs.send).toHaveBeenCalledWith(JSON.stringify(mockResponse));
     });
 
-    it("应该正确处理 tools/list 请求", async () => {
-      const listRequest = {
+    it("应该处理没有响应的消息", async () => {
+      const notificationMessage = {
         jsonrpc: "2.0",
-        id: "list-1",
+        method: "notifications/initialized",
+      };
+
+      // 模拟 MCPServiceManager 返回 null（通知消息不需要响应）
+      mockServiceManager.routeMessage.mockResolvedValue(null);
+
+      // 模拟接收到 WebSocket 消息
+      mockWs.trigger("message", JSON.stringify(notificationMessage));
+
+      // 等待异步处理完成
+      await wait(10);
+
+      // 验证消息被转发给 MCPServiceManager
+      expect(mockServiceManager.routeMessage).toHaveBeenCalledWith(
+        notificationMessage
+      );
+
+      // 验证没有发送响应
+      expect(mockWs.send).not.toHaveBeenCalled();
+    });
+
+    it("应该处理没有 serviceManager 的情况", async () => {
+      // 移除 serviceManager
+      const internals = getProxyServerInternals(proxyServer);
+      internals.serviceManager = null;
+
+      const testMessage = {
+        jsonrpc: "2.0",
+        id: "test-1",
         method: "tools/list",
       };
 
       // 模拟接收到 WebSocket 消息
-      mockWs.trigger("message", JSON.stringify(listRequest));
+      mockWs.trigger("message", JSON.stringify(testMessage));
 
       // 等待异步处理完成
       await wait(10);
 
-      expect(mockWs.send).toHaveBeenCalledWith(
-        expect.stringContaining('"tools"')
-      );
-      expect(mockServiceManager.getAllTools).toHaveBeenCalled();
+      // 验证没有发送响应
+      expect(mockWs.send).not.toHaveBeenCalled();
     });
 
-    it("应该处理未知方法", async () => {
-      const unknownRequest = {
+    it("应该处理 serviceManager 抛出错误的情况", async () => {
+      const testMessage = {
         jsonrpc: "2.0",
-        id: "unknown-1",
-        method: "unknown/method",
+        id: "test-1",
+        method: "tools/list",
       };
 
+      // 模拟 serviceManager 抛出错误
+      mockServiceManager.routeMessage.mockRejectedValue(new Error("处理失败"));
+
       // 模拟接收到 WebSocket 消息
-      mockWs.trigger("message", JSON.stringify(unknownRequest));
+      mockWs.trigger("message", JSON.stringify(testMessage));
 
       // 等待异步处理完成
       await wait(10);
 
-      // 未知方法不会发送响应，只是记录警告日志
-    });
-
-    it("应该处理无效的 JSON-RPC 消息", async () => {
-      const invalidMessage = {
-        id: "invalid-1",
-        // 缺少 jsonrpc 和 method
-      };
-
-      // 模拟接收到 WebSocket 消息
-      mockWs.trigger("message", JSON.stringify(invalidMessage));
-
-      // 等待异步处理完成
-      await wait(10);
-
-      // 无效消息不会发送响应，因为没有 method 字段
-    });
-  });
-
-  describe("工具调用", () => {
-    it("应该正确调用工具", async () => {
-      const mockResponse = {
-        content: [{ type: "text", text: "工具调用成功" }],
-      };
-      mockServiceManager.callTool.mockResolvedValue(mockResponse);
-
-      const toolCallParams: ToolCallParams = {
-        name: "test-tool",
-        arguments: { param1: "value1" },
-      };
-
-      const toolCallRequest = {
-        jsonrpc: "2.0" as const,
-        id: "call-1",
-        method: "tools/call",
-        params: toolCallParams,
-      };
-
-      // 模拟接收到 WebSocket 消息
-      mockWs.trigger("message", JSON.stringify(toolCallRequest));
-
-      // 等待异步处理完成
-      await wait(100);
-
-      expect(mockServiceManager.callTool).toHaveBeenCalledWith("test-tool", {
-        param1: "value1",
-      });
-      expect(mockWs.send).toHaveBeenCalledWith(
-        expect.stringContaining('"content"')
-      );
-    });
-
-    it("应该处理工具调用错误", async () => {
-      const error = new Error("工具执行失败");
-      mockServiceManager.callTool.mockRejectedValue(error);
-
-      const toolCallRequest = {
-        jsonrpc: "2.0",
-        id: "call-error",
-        method: "tools/call",
-        params: {
-          name: "test-tool",
-          arguments: {},
-        },
-      };
-
-      // 模拟接收到 WebSocket 消息
-      mockWs.trigger("message", JSON.stringify(toolCallRequest));
-
-      // 等待异步处理完成
-      await wait(100);
-
-      expect(mockWs.send).toHaveBeenCalledWith(
-        expect.stringContaining('"error"')
-      );
-    });
-
-    it("应该处理不存在的工具", async () => {
-      // 模拟工具不存在的情况，返回 rejected Promise
-      mockServiceManager.callTool.mockRejectedValue(new Error("未找到工具"));
-
-      const toolCallRequest = {
-        jsonrpc: "2.0",
-        id: "call-missing",
-        method: "tools/call",
-        params: {
-          name: "missing-tool",
-          arguments: {},
-        },
-      };
-
-      // 模拟接收到 WebSocket 消息
-      mockWs.trigger("message", JSON.stringify(toolCallRequest));
-
-      // 等待异步处理完成
-      await wait(100);
-
-      expect(mockWs.send).toHaveBeenCalledWith(
-        expect.stringContaining('"error"')
-      );
-    });
-  });
-
-  describe("错误处理", () => {
-    it("应该正确处理普通错误", async () => {
-      const error = new Error("测试错误");
-      mockServiceManager.callTool.mockRejectedValue(error);
-
-      const toolCallRequest = {
-        jsonrpc: "2.0",
-        id: "error-test",
-        method: "tools/call",
-        params: {
-          name: "test-tool",
-          arguments: {},
-        },
-      };
-
-      // 模拟接收到 WebSocket 消息
-      mockWs.trigger("message", JSON.stringify(toolCallRequest));
-
-      // 等待异步处理完成
-      await wait(100);
-
-      expect(mockWs.send).toHaveBeenCalledWith(
-        expect.stringMatching(/"error".*测试错误/)
-      );
-    });
-
-    it("应该处理 null 错误", async () => {
-      mockServiceManager.callTool.mockRejectedValue(null);
-
-      const toolCallRequest = {
-        jsonrpc: "2.0",
-        id: "null-error",
-        method: "tools/call",
-        params: {
-          name: "test-tool",
-          arguments: {},
-        },
-      };
-
-      // 模拟接收到 WebSocket 消息
-      mockWs.trigger("message", JSON.stringify(toolCallRequest));
-
-      // 等待异步处理完成
-      await wait(100);
-
-      expect(mockWs.send).toHaveBeenCalledWith(
-        expect.stringContaining('"error"')
-      );
-    });
-  });
-
-  describe("工具管理", () => {
-    it("应该正确从服务管理器同步工具", () => {
-      // 初始化时已经设置了服务管理器并同步了工具
-      const syncedTools = proxyServer.getTools();
-      expect(syncedTools).toHaveLength(1);
-      expect(syncedTools[0].name).toBe("test-tool");
-    });
-
-    it("应该处理服务管理器未设置的情况", () => {
-      const newProxyServer = new ProxyMCPServer("ws://test-endpoint");
-      // 不设置服务管理器
-
-      const syncedTools = newProxyServer.getTools();
-      expect(syncedTools).toHaveLength(0);
-    });
-
-    it("应该直接从服务管理器获取工具", () => {
-      const newProxyServer = new ProxyMCPServer("ws://test-endpoint");
-
-      // 设置服务管理器
-      newProxyServer.setServiceManager(mockServiceManager);
-
-      // 获取工具应该直接从服务管理器获取
-      const tools = newProxyServer.getTools();
-      expect(tools).toHaveLength(1);
-      expect(tools[0].name).toBe("test-tool");
-      expect(tools[0].description).toBe("测试工具");
+      // 验证没有发送响应（错误被捕获并记录）
+      expect(mockWs.send).not.toHaveBeenCalled();
     });
   });
 

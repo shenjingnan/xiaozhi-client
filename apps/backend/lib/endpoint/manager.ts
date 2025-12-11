@@ -1,28 +1,13 @@
 import { EventEmitter } from "node:events";
+import type { MCPServiceManager } from "@/lib/mcp/index.js";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { ConfigManager } from "@root/configManager.js";
-import type { ToolCallResult } from "@services/CustomMCPHandler.js";
 import type { EventBus } from "@services/EventBus.js";
 import { getEventBus } from "@services/EventBus.js";
 import { sliceEndpoint } from "@utils/mcpServerUtils.js";
 import { z } from "zod";
 import { ProxyMCPServer } from "./connection.js";
-
-// 使用接口定义避免循环依赖
-interface IMCPServiceManager {
-  getAllTools(): Array<{
-    name: string;
-    description: string;
-    inputSchema: import("@/lib/mcp/types.js").JSONSchema;
-    serviceName?: string;
-    originalName?: string;
-  }>;
-  callTool(
-    toolName: string,
-    arguments_: Record<string, unknown>
-  ): Promise<ToolCallResult>;
-}
 
 // 配置变更事件类型
 export interface ConfigChangeEvent {
@@ -93,7 +78,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   private connectionStates: Map<string, ConnectionStatus> = new Map();
 
   // 核心依赖
-  private mcpServiceManager: IMCPServiceManager | null = null;
+  private mcpServiceManager: MCPServiceManager | null = null;
   private configManager: ConfigManager;
   private eventBus: EventBus;
 
@@ -412,7 +397,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    * 设置 MCP 服务管理器
    * @param manager MCP 服务管理器实例
    */
-  setServiceManager(manager: IMCPServiceManager): void {
+  setServiceManager(manager: MCPServiceManager): void {
     this.mcpServiceManager = manager;
     console.debug("已设置 MCPServiceManager");
 
@@ -936,7 +921,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     try {
       const rawTools = this.mcpServiceManager.getAllTools();
       // 转换工具格式以符合 MCP SDK 的 Tool 类型
-      return rawTools.map((tool) => ({
+      return rawTools.map((tool: any) => ({
         name: tool.name,
         description: tool.description,
         inputSchema: ensureToolJSONSchema(tool.inputSchema),

@@ -9,30 +9,6 @@ import type { Data } from "ws";
 import type WebSocket from "ws";
 import type { ProxyMCPServer } from "../connection.js";
 
-// 从 connection.ts 导入必要的类型
-// 注意：这些接口在 connection.ts 中是私有的，我们在这里重新定义用于测试
-interface IMCPServiceManager {
-  getAllTools(): Array<{
-    name: string;
-    description: string;
-    inputSchema: {
-      type: string;
-      properties?: Record<string, unknown>;
-    };
-    serviceName?: string;
-    originalName?: string;
-  }>;
-  callTool(
-    toolName: string,
-    arguments_: Record<string, unknown>
-  ): Promise<{
-    content: Array<{
-      type: string;
-      text: string;
-    }>;
-  }>;
-}
-
 export enum ConnectionState {
   DISCONNECTED = "disconnected",
   CONNECTING = "connecting",
@@ -42,11 +18,10 @@ export enum ConnectionState {
 
 /**
  * Mock ServiceManager 类型
- * 结合了 IMCPServiceManager 接口和 vitest 的 mock 函数
+ * 在测试中，我们只需要模拟 routeMessage 方法
  */
-export type MockServiceManager = IMCPServiceManager & {
-  callTool: ReturnType<typeof vi.fn>;
-  getAllTools: ReturnType<typeof vi.fn>;
+export type MockServiceManager = {
+  routeMessage: ReturnType<typeof vi.fn>;
 };
 
 /**
@@ -72,12 +47,10 @@ export interface MockWebSocket {
 export interface ProxyServerInternals {
   ws: WebSocket | null;
   connectionStatus: boolean;
-  serverInitialized: boolean;
   connectionState: ConnectionState;
-  serviceManager: IMCPServiceManager | null;
-  handleMessage: (message: MCPMessage) => void;
+  serviceManager: MockServiceManager | null;
+  handleMessage: (message: MCPMessage) => Promise<void>;
   endpointUrl: string;
-  toolCallTimeout: number;
 }
 
 /**
@@ -146,8 +119,7 @@ export interface ToolListItem {
  */
 export function createMockServiceManager(): MockServiceManager {
   return {
-    callTool: vi.fn(),
-    getAllTools: vi.fn().mockReturnValue([]),
+    routeMessage: vi.fn(),
   };
 }
 

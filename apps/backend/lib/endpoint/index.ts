@@ -20,6 +20,3 @@ export type {
 
 // 枚举导出
 export { XiaozhiConnectionState } from "./manager.js";
-
-// ProxyMCPServer 相关导出
-export { ToolCallErrorCode, ToolCallError } from "./connection.js";

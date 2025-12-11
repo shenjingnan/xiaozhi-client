@@ -1,23 +1,8 @@
+import type { MCPServiceManager } from "@/lib/mcp/index.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { ConfigManager } from "@root/configManager.js";
-import type { ToolCallResult } from "@services/CustomMCPHandler.js";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { IndependentXiaozhiConnectionManager } from "../manager.js";
-
-// 重新定义 IMCPServiceManager 接口（因为它没有被导出）
-interface IMCPServiceManager {
-  getAllTools(): Array<{
-    name: string;
-    description: string;
-    inputSchema: import("@/lib/mcp/types.js").JSONSchema;
-    serviceName?: string;
-    originalName?: string;
-  }>;
-  callTool(
-    toolName: string,
-    arguments_: Record<string, unknown>
-  ): Promise<ToolCallResult>;
-}
 
 // Mock 类型定义
 interface MockEventBus {
@@ -32,7 +17,7 @@ interface MockConfigManager {
   removeMcpEndpoint: ReturnType<typeof vi.fn>;
 }
 
-interface MockServiceManager extends IMCPServiceManager {
+interface MockServiceManager extends Partial<MCPServiceManager> {
   getAllTools: ReturnType<typeof vi.fn>;
   callTool: ReturnType<typeof vi.fn>;
 }

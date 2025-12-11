@@ -7,8 +7,6 @@ export {
   ProxyMCPServer,
   IndependentXiaozhiConnectionManager,
   XiaozhiConnectionState,
-  ToolCallErrorCode,
-  ToolCallError,
   type IndependentConnectionOptions,
   type SimpleConnectionStatus,
   type ConnectionStatus,
