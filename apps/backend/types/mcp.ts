@@ -12,13 +12,13 @@ export interface MCPMessage {
   jsonrpc: "2.0";
   method: string;
   params?: unknown;
-  id: string | number;
+  id?: string | number;
 }
 
 // MCP 响应接口 - 定义 JSON-RPC 2.0 标准响应格式
 export interface MCPResponse {
   jsonrpc: "2.0";
-  id: string | number;
+  id?: string | number | null;
   result?: unknown;
   error?: MCPError;
 }

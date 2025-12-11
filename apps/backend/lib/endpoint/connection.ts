@@ -203,7 +203,29 @@ export class ProxyMCPServer {
       }
     } catch (error) {
       console.error("处理消息时发生错误:", error);
-      // 可以选择发送错误响应给客户端
+
+      // 发送 JSON-RPC 2.0 标准错误响应给客户端，避免客户端一直等待
+      if (this.ws?.readyState === WebSocket.OPEN) {
+        const errorResponse = {
+          jsonrpc: "2.0",
+          id: message.id ?? null,
+          error: {
+            code: -32603, // Internal error
+            message: error instanceof Error ? error.message : String(error),
+            data: error instanceof Error && error.stack ? { stack: error.stack } : undefined,
+          },
+        };
+
+        try {
+          this.ws.send(JSON.stringify(errorResponse));
+          console.debug("错误响应已发送", {
+            id: errorResponse.id,
+            error: errorResponse.error,
+          });
+        } catch (sendError) {
+          console.error("发送错误响应失败:", sendError);
+        }
+      }
     }
   }
 

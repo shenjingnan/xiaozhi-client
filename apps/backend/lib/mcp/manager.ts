@@ -1932,7 +1932,7 @@ export class MCPServiceManager extends EventEmitter {
       jsonrpc: "2.0",
       method: "response", // 标识这是一个响应消息
       params: response,
-      id: response.id, // 使用响应中的ID
+      id: response.id ?? undefined, // 使用响应中的ID，null 转为 undefined
     };
   }
 

@@ -103,7 +103,7 @@ export abstract class TransportAdapter {
    */
   protected createErrorResponse(
     error: Error,
-    id: string | number
+    id?: string | number | null
   ): MCPResponse {
     // 根据错误类型确定错误代码
     let errorCode = -32603; // Internal error
