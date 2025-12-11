@@ -112,7 +112,7 @@ export class ProxyMCPServer {
       const allTools = this.serviceManager.getAllTools();
 
       // 转换为 Tool 格式
-      return allTools.map(toolInfo => ({
+      return allTools.map((toolInfo) => ({
         name: toolInfo.name,
         description: toolInfo.description,
         inputSchema: ensureToolJSONSchema(toolInfo.inputSchema),
