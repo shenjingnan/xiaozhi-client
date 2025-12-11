@@ -58,6 +58,11 @@ vi.mock("@/lib/mcp", () => ({
       addService: vi.fn(),
       removeService: vi.fn(),
       getServiceStatus: vi.fn().mockReturnValue("connected"),
+      // WebServer 需要的方法
+      getAllTools: vi.fn().mockReturnValue([]),
+      stopAllServices: vi.fn().mockResolvedValue(undefined),
+      // MCP 生命周期方法
+      whenReady: vi.fn().mockResolvedValue(undefined),
     };
     // 添加 EventEmitter 的方法，因为 MCPServiceManager 继承自 EventEmitter
     Object.setPrototypeOf(instance, EventEmitter.prototype);

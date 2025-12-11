@@ -53,6 +53,7 @@ import {
 import type { Hono } from "hono";
 import { WebSocketServer } from "ws";
 
+import { MCPServiceManagerNotInitializedError } from "./errors/MCPErrors.middleware.js";
 // 路由系统导入
 import {
   type HandlerDependencies,
@@ -239,11 +240,19 @@ export class WebServer {
       this.logger.debug("所有连接初始化完成");
     } catch (error) {
       this.logger.error("连接初始化失败:", error);
-      // 确保 MCPServiceManager 已经创建，即使配置加载失败
+      // 降级模式：即使配置加载失败，也确保 MCPServiceManager 可用
       if (!this.mcpServiceManager) {
-        this.logger.debug("配置加载失败，创建最小化的 MCPServiceManager 实例");
+        this.logger.warn(
+          "配置加载失败，正在进入降级模式。在降级模式下：\n" +
+            "1. 将创建一个空配置的 MCPServiceManager 实例\n" +
+            "2. 不会加载任何 MCP 服务器或端点\n" +
+            "3. WebServer 仍然可以启动并提供基础 API 服务\n" +
+            "4. 用户需要通过 API 重新配置端点或服务器\n" +
+            "5. 建议尽快运行 'xiaozhi init' 初始化配置文件"
+        );
         this.mcpServiceManager = new MCPServiceManager();
         await this.mcpServiceManager.start();
+        this.logger.info("降级模式已激活，MCPServiceManager 使用空配置启动");
       }
     }
   }
@@ -389,20 +398,31 @@ export class WebServer {
 
   /**
    * 设置 MCP 服务管理器实例（主要用于测试依赖注入）
+   * 警告：如果要替换现有实例，调用者需要负责清理原有实例的资源
    */
   public setMCPServiceManager(manager: MCPServiceManager): void {
+    // 如果已有实例且它正在运行，先清理它
+    if (this.mcpServiceManager && this.mcpServiceManager !== manager) {
+      this.logger.warn(
+        "替换现有的 MCPServiceManager 实例，注意清理原有实例的资源"
+      );
+      // 注意：这里不直接调用 stopAllServices，因为调用者可能还在使用它
+      // 调用者应该负责清理原有实例
+    }
+
     this.mcpServiceManager = manager;
+    this.logger.debug("MCPServiceManager 实例已更新");
   }
 
   /**
    * 获取 MCP 服务管理器实例
    * 提供给中间件使用
    * WebServer 启动后始终返回有效的服务管理器实例
-   * @throws {Error} 如果服务管理器未初始化
+   * @throws {MCPServiceManagerNotInitializedError} 如果服务管理器未初始化
    */
   public getMCPServiceManager(): MCPServiceManager {
     if (!this.mcpServiceManager) {
-      throw new Error(
+      throw new MCPServiceManagerNotInitializedError(
         "MCPServiceManager 未初始化，请确保 WebServer 已调用 start() 方法完成初始化"
       );
     }
