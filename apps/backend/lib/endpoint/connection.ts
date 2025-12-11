@@ -73,9 +73,6 @@ export class ProxyMCPServer {
   private serverInitialized = false;
   private serviceManager: IMCPServiceManager | null = null;
 
-  // 工具管理
-  private tools: Map<string, Tool> = new Map();
-
   // 连接状态管理
   private connectionState: ConnectionState = ConnectionState.DISCONNECTED;
 
@@ -99,148 +96,32 @@ export class ProxyMCPServer {
   setServiceManager(serviceManager: IMCPServiceManager): void {
     this.serviceManager = serviceManager;
     console.info("已设置 MCPServiceManager");
-
-    // 立即同步工具
-    this.syncToolsFromServiceManager();
   }
-
-  /**
-   * 从 MCPServiceManager 同步工具
-   * 优化版本：支持增量同步和错误恢复
-   */
-  syncToolsFromServiceManager(): void {
-    if (!this.serviceManager) {
-      console.debug("MCPServiceManager 未设置，跳过工具同步");
-      return;
-    }
-
-    try {
-      // 从 MCPServiceManager 获取所有工具
-      const allTools = this.serviceManager.getAllTools();
-
-      // 原子性更新：先构建新的工具映射，再替换
-      const newTools = new Map<string, Tool>();
-
-      for (const toolInfo of allTools) {
-        newTools.set(toolInfo.name, {
-          name: toolInfo.name,
-          description: toolInfo.description,
-          inputSchema: ensureToolJSONSchema(toolInfo.inputSchema),
-        });
-      }
-
-      // 原子性替换
-      this.tools = newTools;
-
-      console.info(`已从 MCPServiceManager 同步 ${this.tools.size} 个工具`);
-    } catch (error) {
-      console.error(
-        `同步工具失败: ${error instanceof Error ? error.message : String(error)}`
-      );
-      // 同步失败时保持现有工具不变，确保服务可用性
-    }
-  }
-
-  /**
-   * 添加单个工具
-   * @param name 工具名称
-   * @param tool 工具定义
-   * @param options 工具选项（可选）
-   * @returns 返回 this 支持链式调用
-   */
-  addTool(name: string, tool: Tool): this {
-    this.validateTool(name, tool);
-    this.tools.set(name, tool);
-    console.debug(`工具 '${name}' 已添加`);
-    return this;
-  }
-
-  /**
-   * 批量添加工具
-   * @param tools 工具对象，键为工具名称，值为工具定义
-   * @returns 返回 this 支持链式调用
-   */
-  addTools(tools: Record<string, Tool>): this {
-    for (const [name, tool] of Object.entries(tools)) {
-      this.addTool(name, tool);
-    }
-    return this;
-  }
-
-  /**
-   * 移除单个工具
-   * @param name 工具名称
-   * @returns 返回 this 支持链式调用
-   */
-  removeTool(name: string): this {
-    if (this.tools.delete(name)) {
-      console.debug(`工具 '${name}' 已移除`);
-    } else {
-      console.warn(`尝试移除不存在的工具: '${name}'`);
-    }
-    return this;
-  }
-
   /**
    * 获取当前所有工具列表
    * @returns 工具数组
    */
   getTools(): Tool[] {
-    // 每次获取工具时都尝试从 MCPServiceManager 同步
+    if (!this.serviceManager) {
+      console.debug("MCPServiceManager 未设置，返回空工具列表");
+      return [];
+    }
+
     try {
-      this.syncToolsFromServiceManager();
+      // 直接从 MCPServiceManager 获取所有工具
+      const allTools = this.serviceManager.getAllTools();
+
+      // 转换为 Tool 格式
+      return allTools.map(toolInfo => ({
+        name: toolInfo.name,
+        description: toolInfo.description,
+        inputSchema: ensureToolJSONSchema(toolInfo.inputSchema),
+      }));
     } catch (error) {
-      // 静默处理同步错误，不影响现有工具的返回
-    }
-
-    return Array.from(this.tools.values());
-  }
-
-  /**
-   * 检查工具是否存在
-   * @param name 工具名称
-   * @returns 是否存在
-   */
-  hasTool(name: string): boolean {
-    return this.tools.has(name);
-  }
-
-  /**
-   * 验证工具的有效性
-   * @param name 工具名称
-   * @param tool 工具定义
-   */
-  private validateTool(name: string, tool: Tool): void {
-    if (!name || typeof name !== "string" || name.trim() === "") {
-      throw new Error("工具名称必须是非空字符串");
-    }
-
-    if (this.tools.has(name)) {
-      throw new Error(`工具 '${name}' 已存在`);
-    }
-
-    if (!tool || typeof tool !== "object") {
-      throw new Error("工具必须是有效的对象");
-    }
-
-    // 验证工具的必需字段
-    if (!tool.name || typeof tool.name !== "string") {
-      throw new Error("工具必须包含有效的 'name' 字段");
-    }
-
-    if (!tool.description || typeof tool.description !== "string") {
-      throw new Error("工具必须包含有效的 'description' 字段");
-    }
-
-    if (!tool.inputSchema || typeof tool.inputSchema !== "object") {
-      throw new Error("工具必须包含有效的 'inputSchema' 字段");
-    }
-
-    // 验证 inputSchema 的基本结构
-    if (!tool.inputSchema.type || !tool.inputSchema.properties) {
-      throw new Error(
-        "工具的 inputSchema 必须包含 'type' 和 'properties' 字段"
+      console.error(
+        `获取工具列表失败: ${error instanceof Error ? error.message : String(error)}`
       );
+      return [];
     }
   }
 
@@ -250,8 +131,8 @@ export class ProxyMCPServer {
    */
   public async connect(): Promise<void> {
     // 连接前验证
-    if (this.tools.size === 0) {
-      throw new Error("未配置任何工具。请在连接前至少添加一个工具。");
+    if (!this.serviceManager) {
+      throw new Error("MCPServiceManager 未设置。请在连接前先设置服务管理器。");
     }
 
     // 如果正在连接中，等待当前连接完成
@@ -488,11 +369,16 @@ export class ProxyMCPServer {
    * @returns 服务器状态
    */
   public getStatus(): ProxyMCPServerStatus {
+    // 从 MCPServiceManager 获取工具数量
+    const availableTools = this.serviceManager
+      ? this.serviceManager.getAllTools().length
+      : 0;
+
     return {
       connected: this.connectionStatus,
       initialized: this.serverInitialized,
       url: this.endpointUrl,
-      availableTools: this.tools.size,
+      availableTools,
       connectionState: this.connectionState,
       lastError: this.lastError,
     };
