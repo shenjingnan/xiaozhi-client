@@ -1,3 +1,4 @@
+import { EventEmitter } from "node:events";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { WebServer } from "../../WebServer.js";
 
@@ -23,7 +24,7 @@ vi.mock("../../configManager.js", () => ({
   },
 }));
 
-// Mock MCPMessageHandler
+// Mock MCPMessageHandler 和 MCPServiceManager
 vi.mock("@/lib/mcp", () => ({
   MCPMessageHandler: vi.fn().mockImplementation(() => ({
     handleMessage: vi.fn().mockImplementation((message) => {
@@ -38,6 +39,30 @@ vi.mock("@/lib/mcp", () => ({
       });
     }),
   })),
+
+  // 新增 MCPServiceManager mock
+  MCPServiceManager: vi.fn().mockImplementation(() => {
+    const instance = {
+      start: vi.fn().mockResolvedValue(undefined),
+      stop: vi.fn().mockResolvedValue(undefined),
+      isRunning: true,
+      tools: new Map(),
+      services: new Map(),
+      on: vi.fn(),
+      off: vi.fn(),
+      emit: vi.fn(),
+      removeAllListeners: vi.fn(),
+      // 其他可能需要的方法
+      listTools: vi.fn().mockResolvedValue([]),
+      callTool: vi.fn().mockResolvedValue({ content: [] }),
+      addService: vi.fn(),
+      removeService: vi.fn(),
+      getServiceStatus: vi.fn().mockReturnValue("connected"),
+    };
+    // 添加 EventEmitter 的方法，因为 MCPServiceManager 继承自 EventEmitter
+    Object.setPrototypeOf(instance, EventEmitter.prototype);
+    return instance;
+  }),
 }));
 
 describe("MCPRouteHandler Integration Tests", () => {
