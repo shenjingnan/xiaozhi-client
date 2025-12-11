@@ -254,6 +254,9 @@ export class ProxyMCPServer {
     // 重置连接状态
     this.connectionStatus = false;
     this.serverInitialized = false;
+
+    // 重置连接状态为已断开
+    this.connectionState = ConnectionState.DISCONNECTED;
   }
 
   private handleMessage(message: MCPMessage): void {
@@ -388,9 +391,6 @@ export class ProxyMCPServer {
 
     // 清理连接资源
     this.cleanupConnection();
-
-    // 设置状态为已断开
-    this.connectionState = ConnectionState.DISCONNECTED;
   }
 
   /**
