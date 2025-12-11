@@ -95,7 +95,6 @@ export class ProxyMCPServer {
    */
   setServiceManager(serviceManager: IMCPServiceManager): void {
     this.serviceManager = serviceManager;
-    console.info("已设置 MCPServiceManager");
   }
 
   /**
@@ -273,16 +272,17 @@ export class ProxyMCPServer {
   private handleMessage(message: MCPMessage): void {
     console.debug("收到 MCP 消息:", JSON.stringify(message, null, 2));
 
-    if (message.method) {
-      this.handleServerRequest(message);
+    // 如果没有 method 字段，忽略该消息
+    if (!message.method) {
+      console.debug("收到没有 method 字段的消息，忽略");
+      return;
     }
-  }
 
-  private handleServerRequest(request: MCPMessage): void {
-    switch (request.method) {
+    // 直接处理请求
+    switch (message.method) {
       case "initialize":
       case "notifications/initialized":
-        this.sendResponse(request.id, {
+        this.sendResponse(message.id, {
           protocolVersion: "2024-11-05",
           capabilities: {
             tools: { listChanged: true },
@@ -299,26 +299,26 @@ export class ProxyMCPServer {
 
       case "tools/list": {
         const toolsList = this.getTools();
-        this.sendResponse(request.id, { tools: toolsList });
+        this.sendResponse(message.id, { tools: toolsList });
         console.debug(`MCP 工具列表已发送 (${toolsList.length}个工具)`);
         break;
       }
 
       case "tools/call": {
         // 异步处理工具调用，避免阻塞其他消息
-        this.handleToolCall(request).catch((error) => {
+        this.handleToolCall(message).catch((error) => {
           console.error("处理工具调用时发生未捕获错误:", error);
         });
         break;
       }
 
       case "ping":
-        this.sendResponse(request.id, {});
+        this.sendResponse(message.id, {});
         console.debug("回应 MCP ping 消息");
         break;
 
       default:
-        console.warn(`未知的 MCP 请求: ${request.method}`);
+        console.warn(`未知的 MCP 请求: ${message.method}`);
     }
   }
 
