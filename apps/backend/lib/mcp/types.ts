@@ -253,6 +253,75 @@ export interface ManagerStatus {
 }
 
 // =========================
+// 7. 参数校验相关类型
+// =========================
+
+/**
+ * 工具调用参数接口
+ * 定义标准工具调用参数结构
+ */
+export interface ToolCallParams {
+  name: string;
+  arguments?: Record<string, unknown>;
+}
+
+/**
+ * 验证后的工具调用参数
+ * 参数校验通过后的标准化参数结构
+ */
+export interface ValidatedToolCallParams {
+  name: string;
+  arguments?: Record<string, unknown>;
+}
+
+/**
+ * 工具调用验证选项
+ * 提供灵活的参数校验配置
+ */
+export interface ToolCallValidationOptions {
+  /** 是否验证工具名称，默认为 true */
+  validateName?: boolean;
+  /** 是否验证参数格式，默认为 true */
+  validateArguments?: boolean;
+  /** 是否允许空参数，默认为 true */
+  allowEmptyArguments?: boolean;
+  /** 自定义验证函数 */
+  customValidator?: (params: ToolCallParams) => string | null;
+}
+
+/**
+ * 工具调用错误码枚举
+ * 统一的工具调用错误码定义
+ */
+export enum ToolCallErrorCode {
+  /** 无效参数 */
+  INVALID_PARAMS = -32602,
+  /** 工具不存在 */
+  TOOL_NOT_FOUND = -32601,
+  /** 服务不可用 */
+  SERVICE_UNAVAILABLE = -32001,
+  /** 调用超时 */
+  TIMEOUT = -32002,
+  /** 工具执行错误 */
+  TOOL_EXECUTION_ERROR = -32000,
+}
+
+/**
+ * 工具调用错误类
+ * 统一的工具调用错误处理
+ */
+export class ToolCallError extends Error {
+  constructor(
+    public code: ToolCallErrorCode,
+    message: string,
+    public data?: unknown
+  ) {
+    super(message);
+    this.name = "ToolCallError";
+  }
+}
+
+// =========================
 // 向后兼容性别名
 // =========================
 

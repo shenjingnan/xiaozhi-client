@@ -1,9 +1,15 @@
-import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import type { JSONSchema, ToolCallResult } from "@/lib/mcp/types.js";
+import {
+  ToolCallError,
+  ToolCallErrorCode,
+  ensureToolJSONSchema,
+} from "@/lib/mcp/types.js";
+import { validateToolCallParams } from "@/lib/mcp/utils.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { MCPMessage } from "@root/types/mcp.js";
 import { sliceEndpoint } from "@utils/mcpServerUtils.js";
 import WebSocket from "ws";
+export { ToolCallErrorCode, ToolCallError } from "@/lib/mcp/types.js";
 
 // MCPServiceManager 接口定义
 interface IMCPServiceManager {
@@ -33,27 +39,6 @@ enum ConnectionState {
   CONNECTING = "connecting",
   CONNECTED = "connected",
   FAILED = "failed",
-}
-
-// 工具调用错误码枚举
-export enum ToolCallErrorCode {
-  INVALID_PARAMS = -32602, // 无效参数
-  TOOL_NOT_FOUND = -32601, // 工具不存在
-  TOOL_EXECUTION_ERROR = -32000, // 工具执行错误
-  SERVICE_UNAVAILABLE = -32001, // 服务不可用
-  TIMEOUT = -32002, // 调用超时
-}
-
-// 工具调用错误类
-export class ToolCallError extends Error {
-  constructor(
-    public code: ToolCallErrorCode,
-    message: string,
-    public data?: unknown
-  ) {
-    super(message);
-    this.name = "ToolCallError";
-  }
 }
 
 // 服务器状态接口
@@ -119,7 +104,9 @@ export class ProxyMCPServer {
       }));
     } catch (error) {
       console.error(
-        `获取工具列表失败: ${error instanceof Error ? error.message : String(error)}`
+        `获取工具列表失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
       return [];
     }
@@ -425,7 +412,7 @@ export class ProxyMCPServer {
 
     try {
       // 1. 验证请求格式
-      const params = this.validateToolCallParams(request.params);
+      const params = validateToolCallParams(request.params);
 
       console.info("开始处理工具调用", {
         requestId,
@@ -466,46 +453,6 @@ export class ProxyMCPServer {
       // 6. 处理错误并发送错误响应
       this.handleToolCallError(error, requestId, Date.now() - startTime);
     }
-  }
-
-  /**
-   * 验证工具调用参数
-   */
-  private validateToolCallParams(params: unknown): {
-    name: string;
-    arguments?: Record<string, unknown>;
-  } {
-    if (!params || typeof params !== "object") {
-      throw new ToolCallError(
-        ToolCallErrorCode.INVALID_PARAMS,
-        "请求参数必须是对象"
-      );
-    }
-
-    const paramsObj = params as Record<string, unknown>;
-
-    if (!paramsObj.name || typeof paramsObj.name !== "string") {
-      throw new ToolCallError(
-        ToolCallErrorCode.INVALID_PARAMS,
-        "工具名称必须是非空字符串"
-      );
-    }
-
-    if (
-      paramsObj.arguments !== undefined &&
-      (typeof paramsObj.arguments !== "object" ||
-        Array.isArray(paramsObj.arguments))
-    ) {
-      throw new ToolCallError(
-        ToolCallErrorCode.INVALID_PARAMS,
-        "工具参数必须是对象"
-      );
-    }
-
-    return {
-      name: paramsObj.name,
-      arguments: paramsObj.arguments as Record<string, unknown>,
-    };
   }
 
   /**
