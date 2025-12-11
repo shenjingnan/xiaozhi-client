@@ -227,7 +227,9 @@ describe("IndependentXiaozhiConnectionManager 核心功能测试", () => {
       };
 
       // 通过行为验证而不是内部状态
-      manager.setServiceManager(mockServiceManager);
+      manager.setServiceManager(
+        mockServiceManager as unknown as MCPServiceManager
+      );
       // 验证服务管理器已设置（通过后续行为来验证）
       expect(mockServiceManager.getAllTools).toBeDefined();
     });
@@ -239,7 +241,9 @@ describe("IndependentXiaozhiConnectionManager 核心功能测试", () => {
       };
 
       // 通过行为验证而不是内部状态
-      manager.setServiceManager(mockServiceManager);
+      manager.setServiceManager(
+        mockServiceManager as unknown as MCPServiceManager
+      );
       // 验证服务管理器已设置（通过后续行为来验证）
       expect(mockServiceManager.getAllTools).toBeDefined();
     });

@@ -1,3 +1,4 @@
+import type { MCPServiceManager } from "@/lib/mcp/manager.js";
 import type { MCPMessage } from "@root/types/mcp.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Data } from "ws";
@@ -19,10 +20,12 @@ describe("ProxyMCPServer 基础功能测试", () => {
     // 模拟 MCPServiceManager - 使用 Partial 因为我们只需要 routeMessage 方法
     mockServiceManager = {
       routeMessage: vi.fn().mockResolvedValue(null),
-    } as any;
+    } as MockServiceManager;
 
     proxyServer = new ProxyMCPServer("ws://test-endpoint");
-    proxyServer.setServiceManager(mockServiceManager);
+    proxyServer.setServiceManager(
+      mockServiceManager as unknown as MCPServiceManager
+    );
 
     // 手动设置 WebSocket 监听器（模拟连接成功后的状态）
     proxyServer.connect = vi.fn().mockResolvedValue(undefined);
