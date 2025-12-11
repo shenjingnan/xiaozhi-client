@@ -7,7 +7,7 @@ import type { EventBus } from "@services/EventBus.js";
 import { getEventBus } from "@services/EventBus.js";
 import { sliceEndpoint } from "@utils/mcpServerUtils.js";
 import { z } from "zod";
-import { ProxyMCPServer } from "./connection.js";
+import { EndpointConnection } from "./connection.js";
 
 // 使用接口定义避免循环依赖
 interface IMCPServiceManager {
@@ -89,7 +89,7 @@ const IndependentConnectionOptionsSchema = z
  */
 export class IndependentXiaozhiConnectionManager extends EventEmitter {
   // 连接实例管理
-  private connections: Map<string, ProxyMCPServer> = new Map();
+  private connections: Map<string, EndpointConnection> = new Map();
   private connectionStates: Map<string, ConnectionStatus> = new Map();
 
   // 核心依赖
@@ -787,8 +787,8 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     console.debug(`创建连接实例: ${sliceEndpoint(endpoint)}`);
 
     try {
-      // 创建 ProxyMCPServer 实例
-      const proxyServer = new ProxyMCPServer(endpoint);
+      // 创建 EndpointConnection 实例
+      const proxyServer = new EndpointConnection(endpoint);
 
       // 设置 MCP 服务管理器
       if (this.mcpServiceManager) {
@@ -817,7 +817,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    */
   private async connectSingleEndpoint(
     endpoint: string,
-    proxyServer: ProxyMCPServer
+    proxyServer: EndpointConnection
   ): Promise<void> {
     const status = this.connectionStates.get(endpoint);
     if (!status) {
@@ -879,7 +879,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    */
   private async disconnectSingleEndpoint(
     endpoint: string,
-    proxyServer: ProxyMCPServer
+    proxyServer: EndpointConnection
   ): Promise<void> {
     const status = this.connectionStates.get(endpoint);
     if (!status) {
@@ -889,7 +889,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     console.debug(`断开小智接入点: ${sliceEndpoint(endpoint)}`);
 
     try {
-      // 执行断开连接（ProxyMCPServer.disconnect 是同步方法）
+      // 执行断开连接（EndpointConnection.disconnect 是同步方法）
       proxyServer.disconnect();
 
       // 更新状态

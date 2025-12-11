@@ -1,13 +1,13 @@
 import type { MCPMessage } from "@root/types/mcp.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type WebSocket from "ws";
-import { ProxyMCPServer } from "../connection.js";
+import { EndpointConnection } from "../connection.js";
 import { createMockWebSocket, wait } from "./testHelpers.js";
 import type { MockServiceManager, MockWebSocket } from "./testTypes.js";
 import { ConnectionState, getProxyServerInternals } from "./testTypes.js";
 
-describe("ProxyMCPServer 工具调用核心功能", () => {
-  let proxyServer: ProxyMCPServer;
+describe("EndpointConnection 工具调用核心功能", () => {
+  let proxyServer: EndpointConnection;
   let mockServiceManager: MockServiceManager;
   let mockWs: MockWebSocket;
 
@@ -25,7 +25,7 @@ describe("ProxyMCPServer 工具调用核心功能", () => {
       ]),
     };
 
-    proxyServer = new ProxyMCPServer("ws://test-endpoint");
+    proxyServer = new EndpointConnection("ws://test-endpoint");
     proxyServer.setServiceManager(mockServiceManager);
 
     // 获取内部状态访问器

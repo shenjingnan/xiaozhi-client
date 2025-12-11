@@ -1,4 +1,19 @@
-import type { JSONSchema, ToolCallResult } from "@/lib/mcp/types.js";
+import type { ToolCallResult } from "@/lib/mcp/types.js";
+
+// 定义接口避免循环依赖
+interface IMCPServiceManager {
+  getAllTools(): Array<{
+    name: string;
+    description: string;
+    inputSchema: import("@/lib/mcp/types.js").JSONSchema;
+    serviceName?: string;
+    originalName?: string;
+  }>;
+  callTool(
+    toolName: string,
+    arguments_: Record<string, unknown>
+  ): Promise<ToolCallResult>;
+}
 import {
   ToolCallError,
   ToolCallErrorCode,
@@ -10,21 +25,6 @@ import type { MCPMessage } from "@root/types/mcp.js";
 import { sliceEndpoint } from "@utils/mcpServerUtils.js";
 import WebSocket from "ws";
 export { ToolCallErrorCode, ToolCallError } from "@/lib/mcp/types.js";
-
-// MCPServiceManager 接口定义
-interface IMCPServiceManager {
-  getAllTools(): Array<{
-    name: string;
-    description: string;
-    inputSchema: JSONSchema;
-    serviceName?: string;
-    originalName?: string;
-  }>;
-  callTool(
-    toolName: string,
-    arguments_: Record<string, unknown>
-  ): Promise<ToolCallResult>;
-}
 
 // 扩展的 MCP 消息接口，用于响应消息
 interface ExtendedMCPMessage {
@@ -42,7 +42,7 @@ enum ConnectionState {
 }
 
 // 服务器状态接口
-interface ProxyMCPServerStatus {
+interface EndpointConnectionStatus {
   connected: boolean;
   initialized: boolean;
   url: string;
@@ -51,7 +51,7 @@ interface ProxyMCPServerStatus {
   lastError: string | null;
 }
 
-export class ProxyMCPServer {
+export class EndpointConnection {
   private endpointUrl: string;
   private ws: WebSocket | null = null;
   private connectionStatus = false;
@@ -359,7 +359,7 @@ export class ProxyMCPServer {
    * 获取服务器状态
    * @returns 服务器状态
    */
-  public getStatus(): ProxyMCPServerStatus {
+  public getStatus(): EndpointConnectionStatus {
     // 从 MCPServiceManager 获取工具数量
     const availableTools = this.serviceManager
       ? this.serviceManager.getAllTools().length

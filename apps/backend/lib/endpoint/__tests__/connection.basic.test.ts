@@ -2,7 +2,7 @@ import type { MCPMessage } from "@root/types/mcp.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Data } from "ws";
 import type WebSocket from "ws";
-import { ProxyMCPServer } from "../connection.js";
+import { EndpointConnection } from "../connection.js";
 import { createMockWebSocket, wait } from "./testHelpers.js";
 import type {
   MockServiceManager,
@@ -11,8 +11,8 @@ import type {
 } from "./testTypes.js";
 import { ConnectionState, getProxyServerInternals } from "./testTypes.js";
 
-describe("ProxyMCPServer 基础功能测试", () => {
-  let proxyServer: ProxyMCPServer;
+describe("EndpointConnection 基础功能测试", () => {
+  let proxyServer: EndpointConnection;
   let mockServiceManager: MockServiceManager;
   let mockWs: MockWebSocket;
 
@@ -32,7 +32,7 @@ describe("ProxyMCPServer 基础功能测试", () => {
       ]),
     };
 
-    proxyServer = new ProxyMCPServer("ws://test-endpoint");
+    proxyServer = new EndpointConnection("ws://test-endpoint");
     proxyServer.setServiceManager(mockServiceManager);
 
     // 手动设置 WebSocket 监听器（模拟连接成功后的状态）
@@ -95,11 +95,11 @@ describe("ProxyMCPServer 基础功能测试", () => {
     });
 
     it("应该处理 URL 格式化", () => {
-      const server1 = new ProxyMCPServer("ws://localhost:8080");
+      const server1 = new EndpointConnection("ws://localhost:8080");
       const internals1 = getProxyServerInternals(server1);
       expect(internals1.endpointUrl).toBe("ws://localhost:8080");
 
-      const server2 = new ProxyMCPServer("http://localhost:8080");
+      const server2 = new EndpointConnection("http://localhost:8080");
       const internals2 = getProxyServerInternals(server2);
       expect(internals2.endpointUrl).toBe("http://localhost:8080");
     });
@@ -321,7 +321,7 @@ describe("ProxyMCPServer 基础功能测试", () => {
     });
 
     it("应该处理服务管理器未设置的情况", () => {
-      const newProxyServer = new ProxyMCPServer("ws://test-endpoint");
+      const newProxyServer = new EndpointConnection("ws://test-endpoint");
       // 不设置服务管理器
 
       const syncedTools = newProxyServer.getTools();
@@ -329,7 +329,7 @@ describe("ProxyMCPServer 基础功能测试", () => {
     });
 
     it("应该直接从服务管理器获取工具", () => {
-      const newProxyServer = new ProxyMCPServer("ws://test-endpoint");
+      const newProxyServer = new EndpointConnection("ws://test-endpoint");
 
       // 设置服务管理器
       newProxyServer.setServiceManager(mockServiceManager);

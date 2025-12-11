@@ -1,7 +1,7 @@
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { MCPMessage } from "@root/types/mcp.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ProxyMCPServer } from "../connection.js";
+import { EndpointConnection } from "../connection.js";
 import { createMockWebSocket, wait } from "./testHelpers.js";
 
 // Mock WebSocket 接口（基于 testHelpers.ts 实现）
@@ -32,9 +32,9 @@ function setPrivateProperty<T>(obj: T, prop: string, value: unknown): void {
   });
 }
 
-// 测试专用的 ProxyMCPServer 设置函数
+// 测试专用的 EndpointConnection 设置函数
 function setupTestProxyServer(
-  proxyServer: ProxyMCPServer,
+  proxyServer: EndpointConnection,
   mockWs: MockWebSocket
 ): void {
   // 类型安全地设置私有属性
@@ -44,8 +44,8 @@ function setupTestProxyServer(
   setPrivateProperty(proxyServer, "connectionState", "connected");
 }
 
-describe("ProxyMCPServer 集成测试", () => {
-  let proxyServer: ProxyMCPServer;
+describe("EndpointConnection 集成测试", () => {
+  let proxyServer: EndpointConnection;
   let mockServiceManager: MockServiceManager;
   let mockWs: MockWebSocket;
 
@@ -84,7 +84,7 @@ describe("ProxyMCPServer 集成测试", () => {
       getAllTools: vi.fn().mockReturnValue(testTools),
     };
 
-    proxyServer = new ProxyMCPServer("ws://test-endpoint");
+    proxyServer = new EndpointConnection("ws://test-endpoint");
     proxyServer.setServiceManager(mockServiceManager);
 
     // 手动设置 WebSocket 监听器（模拟连接成功后的状态）

@@ -320,7 +320,7 @@ vi.mock("@/lib/endpoint/index", () => ({
     getConnectionStatus: vi.fn().mockReturnValue([]),
     on: vi.fn(),
   })),
-  ProxyMCPServer: vi.fn().mockImplementation(() => ({
+  EndpointConnection: vi.fn().mockImplementation(() => ({
     setServiceManager: vi.fn(),
     connect: vi.fn(),
     disconnect: vi.fn(),

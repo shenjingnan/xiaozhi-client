@@ -4,7 +4,7 @@
 
 // endpoint 模块导出
 export {
-  ProxyMCPServer,
+  EndpointConnection,
   IndependentXiaozhiConnectionManager,
   XiaozhiConnectionState,
   ToolCallErrorCode,

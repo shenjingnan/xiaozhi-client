@@ -7,7 +7,7 @@ import type { MCPMessage } from "@root/types/mcp.js";
 import { vi } from "vitest";
 import type { Data } from "ws";
 import type WebSocket from "ws";
-import type { ProxyMCPServer } from "../connection.js";
+import type { EndpointConnection } from "../connection.js";
 
 // 从 connection.ts 导入必要的类型
 // 注意：这些接口在 connection.ts 中是私有的，我们在这里重新定义用于测试
@@ -31,6 +31,13 @@ interface IMCPServiceManager {
       text: string;
     }>;
   }>;
+  // 添加必要的属性以匹配 MCPServiceManager 类型
+  services?: Map<string, unknown>;
+  configs?: Map<string, unknown>;
+  tools?: Map<string, unknown>;
+  customMCPHandler?: unknown;
+  // 其他 MCPServiceManager 的属性...
+  [key: string]: unknown;
 }
 
 export enum ConnectionState {
@@ -42,9 +49,9 @@ export enum ConnectionState {
 
 /**
  * Mock ServiceManager 类型
- * 结合了 IMCPServiceManager 接口和 vitest 的 mock 函数
+ * 使用 any 类型简化测试中的类型处理
  */
-export type MockServiceManager = IMCPServiceManager & {
+export type MockServiceManager = any & {
   callTool: ReturnType<typeof vi.fn>;
   getAllTools: ReturnType<typeof vi.fn>;
 };
@@ -66,10 +73,10 @@ export interface MockWebSocket {
 }
 
 /**
- * ProxyMCPServer 内部状态访问接口
+ * EndpointConnection 内部状态访问接口
  * 用于测试时安全访问私有成员
  */
-export interface ProxyServerInternals {
+export interface EndpointConnectionInternals {
   ws: WebSocket | null;
   connectionStatus: boolean;
   serverInitialized: boolean;
@@ -81,13 +88,13 @@ export interface ProxyServerInternals {
 }
 
 /**
- * 获取 ProxyMCPServer 的内部状态访问器
+ * 获取 EndpointConnection 的内部状态访问器
  * 提供类型安全的私有成员访问
  */
 export function getProxyServerInternals(
-  server: ProxyMCPServer
-): ProxyServerInternals {
-  return server as unknown as ProxyServerInternals;
+  server: EndpointConnection
+): EndpointConnectionInternals {
+  return server as unknown as EndpointConnectionInternals;
 }
 
 /**

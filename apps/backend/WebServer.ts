@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
-import type { ProxyMCPServer } from "@/lib/endpoint/connection.js";
+import type { EndpointConnection } from "@/lib/endpoint/connection.js";
 import { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/index.js";
 import type {
   EndpointConfigChangeEvent,
@@ -136,7 +136,7 @@ export class WebServer {
   private routeManager?: RouteManager;
 
   // 向后兼容的属性
-  private proxyMCPServer: ProxyMCPServer | undefined;
+  private proxyMCPServer: EndpointConnection | undefined;
   private xiaozhiConnectionManager: IndependentXiaozhiConnectionManager | null =
     null;
   private mcpServiceManager: MCPServiceManager | null = null; // WebServer 直接管理的实例

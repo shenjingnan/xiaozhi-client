@@ -20,7 +20,7 @@ vi.mock("../configManager.js", () => ({
 }));
 
 vi.mock("@/lib/endpoint/connection.js", () => ({
-  ProxyMCPServer: vi.fn().mockImplementation((endpoint: string) => ({
+  EndpointConnection: vi.fn().mockImplementation((endpoint: string) => ({
     endpoint,
     connect: vi.fn().mockResolvedValue(undefined),
     disconnect: vi.fn(),
@@ -140,7 +140,7 @@ describe("WebServer Unit Tests", () => {
     });
 
     it("should handle single-endpoint fallback", async () => {
-      // Mock ProxyMCPServer
+      // Mock EndpointConnection
       const mockProxyServer = {
         endpoint: "wss://test.example.com",
         isConnected: false,
