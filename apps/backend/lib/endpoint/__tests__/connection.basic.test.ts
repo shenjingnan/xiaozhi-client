@@ -186,8 +186,24 @@ describe("ProxyMCPServer 基础功能测试", () => {
       // 等待异步处理完成
       await wait(10);
 
-      // 验证没有发送响应（错误被捕获并记录）
-      expect(mockWs.send).not.toHaveBeenCalled();
+      // 验证发送了错误响应
+      expect(mockWs.send).toHaveBeenCalled();
+
+      // 解析发送的响应
+      const sentData = mockWs.send.mock.calls[0][0];
+      const response = JSON.parse(sentData);
+
+      // 验证错误响应格式
+      expect(response).toMatchObject({
+        jsonrpc: "2.0",
+        id: "test-1",
+        error: {
+          code: -32603,
+          message: "处理失败",
+        },
+      });
+      expect(response.error.data).toBeDefined();
+      expect(response.error.data.stack).toContain("处理失败");
     });
   });
 

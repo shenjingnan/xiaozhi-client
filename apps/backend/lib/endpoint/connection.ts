@@ -212,7 +212,10 @@ export class ProxyMCPServer {
           error: {
             code: -32603, // Internal error
             message: error instanceof Error ? error.message : String(error),
-            data: error instanceof Error && error.stack ? { stack: error.stack } : undefined,
+            data:
+              error instanceof Error && error.stack
+                ? { stack: error.stack }
+                : undefined,
           },
         };
 
