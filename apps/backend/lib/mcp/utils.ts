@@ -135,7 +135,11 @@ export function validateToolCallParams(
   }
 
   // 3. 验证工具参数格式
-  if (opts.validateArguments && paramsObj.arguments !== undefined) {
+  if (
+    opts.validateArguments &&
+    paramsObj.arguments !== undefined &&
+    paramsObj.arguments !== null
+  ) {
     if (
       typeof paramsObj.arguments !== "object" ||
       Array.isArray(paramsObj.arguments)
@@ -147,7 +151,22 @@ export function validateToolCallParams(
     }
   }
 
-  // 4. 执行自定义验证
+  // 4. 验证是否允许空参数
+  if (
+    !opts.allowEmptyArguments &&
+    paramsObj.arguments !== undefined &&
+    paramsObj.arguments !== null
+  ) {
+    const argsObj = paramsObj.arguments as Record<string, unknown>;
+    if (Object.keys(argsObj).length === 0) {
+      throw new ToolCallError(
+        ToolCallErrorCode.INVALID_PARAMS,
+        "工具参数不能为空"
+      );
+    }
+  }
+
+  // 5. 执行自定义验证
   if (opts.customValidator) {
     const error = opts.customValidator(paramsObj as unknown as ToolCallParams);
     if (error) {

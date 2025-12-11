@@ -299,7 +299,7 @@ export enum ToolCallErrorCode {
   /** 工具不存在 */
   TOOL_NOT_FOUND = -32601,
   /** 服务不可用 */
-  SERVICE_UNAVAILABLE = -32601,
+  SERVICE_UNAVAILABLE = -32001,
   /** 调用超时 */
   TIMEOUT = -32002,
   /** 工具执行错误 */
