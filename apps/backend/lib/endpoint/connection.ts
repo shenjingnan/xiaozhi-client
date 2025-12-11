@@ -97,6 +97,7 @@ export class ProxyMCPServer {
     this.serviceManager = serviceManager;
     console.info("已设置 MCPServiceManager");
   }
+
   /**
    * 获取当前所有工具列表
    * @returns 工具数组

@@ -236,6 +236,9 @@ describe("ProxyMCPServer 基础功能测试", () => {
     });
 
     it("应该处理不存在的工具", async () => {
+      // 模拟工具不存在的情况，返回 rejected Promise
+      mockServiceManager.callTool.mockRejectedValue(new Error("未找到工具"));
+
       const toolCallRequest = {
         jsonrpc: "2.0",
         id: "call-missing",
