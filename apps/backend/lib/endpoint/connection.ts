@@ -394,6 +394,23 @@ export class EndpointConnection {
   }
 
   /**
+   * 重连小智接入点
+   * @returns 重连成功后的 Promise
+   */
+  public async reconnect(): Promise<void> {
+    console.info(`重连小智接入点: ${sliceEndpoint(this.endpointUrl)}`);
+
+    // 先断开连接
+    this.disconnect();
+
+    // 等待一小段时间确保连接完全断开
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // 重新连接
+    await this.connect();
+  }
+
+  /**
    * 处理工具调用请求
    */
   private async handleToolCall(request: MCPMessage): Promise<void> {

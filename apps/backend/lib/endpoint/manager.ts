@@ -415,11 +415,6 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   setServiceManager(manager: IMCPServiceManager): void {
     this.mcpServiceManager = manager;
     console.debug("已设置 MCPServiceManager");
-
-    // 如果已有连接，同步工具到所有连接
-    if (this.connections.size > 0) {
-      this.syncToolsToAllConnections();
-    }
   }
 
   /**
@@ -469,6 +464,77 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
 
     console.info(`连接已存在的接入点: ${sliceEndpoint(endpoint)}`);
     await this.connectSingleEndpoint(endpoint, endpointConnection);
+  }
+
+  /**
+   * 重连所有接入点
+   */
+  async reconnectAll(): Promise<void> {
+    if (!this.isInitialized) {
+      throw new Error(
+        "IndependentXiaozhiConnectionManager 未初始化，请先调用 initialize()"
+      );
+    }
+
+    console.info(`开始重连所有接入点，总数: ${this.connections.size}`);
+
+    const reconnectPromises: Promise<void>[] = [];
+    const results: Array<{ endpoint: string; success: boolean; error?: string }> = [];
+
+    // 并发重连所有接入点
+    for (const [endpoint, endpointConnection] of this.connections) {
+      const promise = this.reconnectSingleEndpoint(endpoint, endpointConnection)
+        .then(() => {
+          results.push({ endpoint, success: true });
+        })
+        .catch((error) => {
+          results.push({
+            endpoint,
+            success: false,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        });
+
+      reconnectPromises.push(promise);
+    }
+
+    // 等待所有重连完成
+    await Promise.allSettled(reconnectPromises);
+
+    // 统计结果
+    const successCount = results.filter((r) => r.success).length;
+    const failureCount = results.filter((r) => !r.success).length;
+
+    console.info(`重连完成: 成功 ${successCount}, 失败 ${failureCount}`);
+
+    // 如果有失败的，输出错误信息
+    if (failureCount > 0) {
+      const failures = results.filter((r) => !r.success);
+      console.error("重连失败的接入点:");
+      for (const f of failures) {
+        console.error(`  - ${sliceEndpoint(f.endpoint)}: ${f.error}`);
+      }
+    }
+  }
+
+  /**
+   * 重连指定的接入点
+   * @param endpoint 要重连的接入点地址
+   */
+  async reconnectEndpoint(endpoint: string): Promise<void> {
+    if (!this.isInitialized) {
+      throw new Error("IndependentXiaozhiConnectionManager 未初始化");
+    }
+
+    const endpointConnection = this.connections.get(endpoint);
+    if (!endpointConnection) {
+      throw new Error(
+        `接入点 ${sliceEndpoint(endpoint)} 不存在，请先添加接入点`
+      );
+    }
+
+    console.info(`重连接入点: ${sliceEndpoint(endpoint)}`);
+    await this.reconnectSingleEndpoint(endpoint, endpointConnection);
   }
 
   /**
@@ -926,6 +992,62 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   }
 
   /**
+   * 重连单个小智接入点
+   */
+  private async reconnectSingleEndpoint(
+    endpoint: string,
+    endpointConnection: EndpointConnection
+  ): Promise<void> {
+    const status = this.connectionStates.get(endpoint);
+    if (!status) {
+      throw new Error(`小智接入点状态不存在: ${sliceEndpoint(endpoint)}`);
+    }
+
+    console.debug(`重连小智接入点: ${sliceEndpoint(endpoint)}`);
+
+    try {
+      // 执行重连
+      await endpointConnection.reconnect();
+
+      // 更新连接成功状态
+      status.connected = true;
+      status.initialized = true;
+      status.lastConnected = new Date();
+      status.lastError = undefined;
+
+      // 发射重连成功事件
+      this.emitEndpointStatusChanged(
+        endpoint,
+        true,
+        "reconnect",
+        true,
+        "接入点重连成功",
+        "connection-manager"
+      );
+
+      console.info(`小智接入点重连成功: ${sliceEndpoint(endpoint)}`);
+    } catch (error) {
+      // 更新连接失败状态
+      status.connected = false;
+      status.initialized = false;
+      status.lastError = error instanceof Error ? error.message : String(error);
+
+      // 发射重连失败事件
+      this.emitEndpointStatusChanged(
+        endpoint,
+        false,
+        "reconnect",
+        false,
+        error instanceof Error ? error.message : "重连失败",
+        "connection-manager"
+      );
+
+      console.error(`重连失败 ${sliceEndpoint(endpoint)}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * 获取当前工具列表
    */
   private getCurrentTools(): Tool[] {
@@ -947,23 +1069,4 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     }
   }
 
-  /**
-   * 同步工具到所有连接
-   */
-  private syncToolsToAllConnections(): void {
-    if (!this.mcpServiceManager) {
-      return;
-    }
-
-    console.debug("同步工具到所有连接");
-
-    for (const [endpoint, endpointConnection] of this.connections) {
-      try {
-        endpointConnection.setServiceManager(this.mcpServiceManager);
-        console.debug(`工具同步成功: ${sliceEndpoint(endpoint)}`);
-      } catch (error) {
-        console.error(`工具同步失败 ${sliceEndpoint(endpoint)}:`, error);
-      }
-    }
   }
-}
