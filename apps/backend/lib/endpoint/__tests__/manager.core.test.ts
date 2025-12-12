@@ -62,17 +62,42 @@ vi.mock("@root/configManager.js", () => ({
 }));
 
 vi.mock("../connection.js", () => ({
-  EndpointConnection: vi.fn().mockImplementation((endpoint: string) => ({
-    connect: vi.fn(),
-    disconnect: vi.fn(),
-    isConnected: vi.fn().mockReturnValue(false),
-    on: vi.fn(),
-    off: vi.fn(),
-    destroy: vi.fn(),
-    setServiceManager: vi.fn(),
-    getTools: vi.fn().mockReturnValue([]),
-    syncToolsFromServiceManager: vi.fn(),
-  })),
+  EndpointConnection: vi
+    .fn()
+    .mockImplementation((endpoint: string, reconnectDelay?: number) => {
+      const eventListeners: Record<string, ((...args: any[]) => void)[]> = {};
+
+      return {
+        connect: vi.fn().mockResolvedValue(undefined),
+        disconnect: vi.fn(),
+        isConnected: vi.fn().mockReturnValue(false),
+        on: vi
+          .fn()
+          .mockImplementation(
+            (event: string, listener: (...args: any[]) => void) => {
+              if (!eventListeners[event]) {
+                eventListeners[event] = [];
+              }
+              eventListeners[event].push(listener);
+            }
+          ),
+        off: vi.fn(),
+        destroy: vi.fn(),
+        setServiceManager: vi.fn(),
+        getTools: vi.fn().mockReturnValue([]),
+        syncToolsFromServiceManager: vi.fn(),
+        reconnect: vi.fn().mockResolvedValue(undefined),
+        emit: vi.fn().mockImplementation((event: string, ...args: any[]) => {
+          if (eventListeners[event]) {
+            for (const listener of eventListeners[event]) {
+              listener(...args);
+            }
+          }
+        }),
+        // 保留事件监听器引用供测试使用
+        _eventListeners: eventListeners,
+      };
+    }),
 }));
 
 describe("IndependentXiaozhiConnectionManager 核心功能测试", () => {
@@ -104,9 +129,10 @@ describe("IndependentXiaozhiConnectionManager 核心功能测试", () => {
 
     vi.clearAllMocks();
 
-    // 创建管理器实例（使用类型断言）
+    // 创建管理器实例（使用类型断言和较短的重连延迟）
     manager = new IndependentXiaozhiConnectionManager(
-      mockConfigManager as unknown as ConfigManager
+      mockConfigManager as unknown as ConfigManager,
+      { reconnectDelay: 100 } // 使用 100ms 延迟以加快测试速度
     );
     // 使用类型安全的方式设置私有属性
     (manager as unknown as { eventBus: MockEventBus }).eventBus = mockEventBus;
@@ -321,6 +347,167 @@ describe("IndependentXiaozhiConnectionManager 核心功能测试", () => {
       // 通过公共API验证清理完成
       expect(manager.isAnyConnected()).toBe(false);
       expect(manager.getEndpoints()).toHaveLength(0);
+    });
+  });
+
+  describe("IndependentXiaozhiConnectionManager 重连功能测试", () => {
+    const mockTools: Tool[] = [
+      {
+        name: "test-tool",
+        description: "测试工具",
+        inputSchema: { type: "object" },
+      },
+    ];
+
+    beforeEach(async () => {
+      // 初始化管理器
+      await manager.initialize([testEndpoint], mockTools);
+    });
+
+    describe("reconnectAll() 方法测试", () => {
+      test("未初始化时应该抛出错误", async () => {
+        const uninitializedManager = new IndependentXiaozhiConnectionManager(
+          mockConfigManager as any,
+          { reconnectDelay: 100 }
+        );
+
+        await expect(uninitializedManager.reconnectAll()).rejects.toThrow(
+          "未初始化"
+        );
+      });
+
+      test("所有端点成功重连", async () => {
+        // 添加多个端点
+        const endpoint2 = "ws://test-endpoint2";
+        await manager.addEndpoint(endpoint2);
+
+        // 连接所有端点
+        await manager.connect();
+
+        // 执行重连
+        const result = await manager.reconnectAll();
+
+        expect(result.successCount).toBe(2);
+        expect(result.failureCount).toBe(0);
+        expect(result.results).toHaveLength(2);
+        expect(result.results.every((r) => r.success)).toBe(true);
+      });
+
+      test("部分成功部分失败", async () => {
+        // 添加第二个端点
+        const endpoint2 = "ws://test-endpoint2";
+        await manager.addEndpoint(endpoint2);
+        await manager.connect();
+
+        // 获取连接实例并模拟其中一个重连失败
+        const connections = (manager as any).connections;
+        const mockConnection = connections.get(endpoint2);
+        const originalReconnect = mockConnection.reconnect;
+        mockConnection.reconnect = vi
+          .fn()
+          .mockRejectedValue(new Error("重连失败"));
+
+        // 执行重连
+        const result = await manager.reconnectAll();
+
+        expect(result.successCount).toBe(1);
+        expect(result.failureCount).toBe(1);
+        expect(result.results).toHaveLength(2);
+        expect(result.results.filter((r) => r.success)).toHaveLength(1);
+        expect(result.results.filter((r) => !r.success)).toHaveLength(1);
+
+        // 恢复原始方法
+        mockConnection.reconnect = originalReconnect;
+      });
+
+      test("应该并发重连所有端点", async () => {
+        const endpoint2 = "ws://test-endpoint2";
+        await manager.addEndpoint(endpoint2);
+        await manager.connect();
+
+        // 跟踪重连开始和结束时间
+        const startTime = Date.now();
+        const result = await manager.reconnectAll();
+        const endTime = Date.now();
+
+        // 验证结果
+        expect(result.successCount).toBe(2);
+        expect(result.failureCount).toBe(0);
+
+        // 验证是并发执行（时间应该接近单个重连的时间）
+        expect(endTime - startTime).toBeLessThan(500); // 假设重连延迟是 100ms，两个并发应该在 200ms 左右完成
+      });
+    });
+
+    describe("reconnectEndpoint() 方法测试", () => {
+      test("未初始化时应该抛出错误", async () => {
+        const uninitializedManager = new IndependentXiaozhiConnectionManager(
+          mockConfigManager as any,
+          { reconnectDelay: 100 }
+        );
+
+        await expect(
+          uninitializedManager.reconnectEndpoint(testEndpoint)
+        ).rejects.toThrow("未初始化");
+      });
+
+      test("成功重连存在的端点", async () => {
+        // 先连接
+        await manager.connect();
+
+        // 执行重连
+        await expect(
+          manager.reconnectEndpoint(testEndpoint)
+        ).resolves.not.toThrow();
+
+        // 验证端点仍然连接
+        expect(manager.isEndpointConnected(testEndpoint)).toBe(true);
+      });
+
+      test("端点不存在时应该抛出错误", async () => {
+        const nonExistentEndpoint = "ws://non-existent";
+
+        await expect(
+          manager.reconnectEndpoint(nonExistentEndpoint)
+        ).rejects.toThrow("不存在");
+      });
+
+      test("重连失败时应该传播错误", async () => {
+        // 先连接
+        await manager.connect();
+
+        // 获取连接实例并模拟重连失败
+        const connections = (manager as any).connections;
+        const mockConnection = connections.get(testEndpoint);
+        const originalReconnect = mockConnection.reconnect;
+        mockConnection.reconnect = vi
+          .fn()
+          .mockRejectedValue(new Error("重连失败"));
+
+        await expect(manager.reconnectEndpoint(testEndpoint)).rejects.toThrow(
+          "重连失败"
+        );
+
+        // 恢复原始方法
+        mockConnection.reconnect = originalReconnect;
+      });
+    });
+
+    describe("reconnectSingleEndpoint() 私有方法间接测试", () => {
+      test("通过公共方法间接测试私有方法", async () => {
+        // 先连接
+        await manager.connect();
+
+        // 监听状态变化事件
+        const statusChangedListener = vi.fn();
+        manager.on("endpointStatusChanged", statusChangedListener);
+
+        // 执行重连
+        await manager.reconnectEndpoint(testEndpoint);
+
+        // 验证端点仍然连接
+        expect(manager.isEndpointConnected(testEndpoint)).toBe(true);
+      });
     });
   });
 });
