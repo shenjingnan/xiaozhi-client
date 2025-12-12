@@ -29,11 +29,11 @@ import { serve } from "@hono/node-server";
 import {
   corsMiddleware,
   endpointManagerMiddleware,
+  endpointsMiddleware,
   errorHandlerMiddleware,
   loggerMiddleware,
   mcpServiceManagerMiddleware,
   notFoundHandlerMiddleware,
-  xiaozhiEndpointsMiddleware,
 } from "@middlewares/index.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
@@ -519,8 +519,8 @@ export class WebServer {
     // 小智连接管理器中间件
     this.app?.use("*", endpointManagerMiddleware());
 
-    // 小智端点处理器中间件（在连接管理器中间件之后）
-    this.app?.use("*", xiaozhiEndpointsMiddleware());
+    // 小智接入点处理器中间件（在连接管理器中间件之后）
+    this.app?.use("*", endpointsMiddleware());
 
     // CORS 中间件
     this.app?.use("*", corsMiddleware);

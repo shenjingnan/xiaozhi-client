@@ -75,7 +75,7 @@ export type AppContextVariables = {
 
   /**
    * 端点处理器实例
-   * 由 xiaozhiEndpointsMiddleware 注入
+   * 由 endpointsMiddleware 注入
    */
   endpointHandler?: MCPEndpointApiHandler | null;
 };

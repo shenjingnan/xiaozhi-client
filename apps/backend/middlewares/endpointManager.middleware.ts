@@ -21,7 +21,7 @@ export const endpointManagerMiddleware = (): MiddlewareHandler<AppContext> => {
     }
 
     if (!webServer.getEndpointManager) {
-      throw new Error("WebServer 实例缺少 getXiaozhiConnectionManager 方法");
+      throw new Error("WebServer 实例缺少 getEndpointManager 方法");
     }
 
     try {
