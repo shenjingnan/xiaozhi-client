@@ -33,19 +33,19 @@ function setPrivateProperty<T>(obj: T, prop: string, value: unknown): void {
 }
 
 // 测试专用的 EndpointConnection 设置函数
-function setupTestProxyServer(
-  proxyServer: EndpointConnection,
+function setupTestEndpointConnection(
+  endpointConnection: EndpointConnection,
   mockWs: MockWebSocket
 ): void {
   // 类型安全地设置私有属性
-  setPrivateProperty(proxyServer, "ws", mockWs);
-  setPrivateProperty(proxyServer, "connectionStatus", true);
-  setPrivateProperty(proxyServer, "serverInitialized", true);
-  setPrivateProperty(proxyServer, "connectionState", "connected");
+  setPrivateProperty(endpointConnection, "ws", mockWs);
+  setPrivateProperty(endpointConnection, "connectionStatus", true);
+  setPrivateProperty(endpointConnection, "serverInitialized", true);
+  setPrivateProperty(endpointConnection, "connectionState", "connected");
 }
 
 describe("EndpointConnection 集成测试", () => {
-  let proxyServer: EndpointConnection;
+  let endpointConnection: EndpointConnection;
   let mockServiceManager: MockServiceManager;
   let mockWs: MockWebSocket;
 
@@ -84,12 +84,12 @@ describe("EndpointConnection 集成测试", () => {
       getAllTools: vi.fn().mockReturnValue(testTools),
     };
 
-    proxyServer = new EndpointConnection("ws://test-endpoint");
-    proxyServer.setServiceManager(mockServiceManager);
+    endpointConnection = new EndpointConnection("ws://test-endpoint");
+    endpointConnection.setServiceManager(mockServiceManager);
 
     // 手动设置 WebSocket 监听器（模拟连接成功后的状态）
-    proxyServer.connect = vi.fn().mockResolvedValue(undefined);
-    setupTestProxyServer(proxyServer, mockWs);
+    endpointConnection.connect = vi.fn().mockResolvedValue(undefined);
+    setupTestEndpointConnection(endpointConnection, mockWs);
 
     // 手动设置消息监听器
     mockWs.on("message", (data: Buffer | string) => {
@@ -97,7 +97,9 @@ describe("EndpointConnection 集成测试", () => {
         const message: MCPMessage = JSON.parse(data.toString());
         // 类型安全的私有方法调用
         (
-          proxyServer as unknown as { handleMessage: (msg: MCPMessage) => void }
+          endpointConnection as unknown as {
+            handleMessage: (msg: MCPMessage) => void;
+          }
         ).handleMessage(message);
       } catch (error) {
         console.error("消息解析错误:", error);

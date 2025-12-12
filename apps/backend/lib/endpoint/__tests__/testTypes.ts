@@ -49,12 +49,18 @@ export enum ConnectionState {
 
 /**
  * Mock ServiceManager 类型
- * 使用 any 类型简化测试中的类型处理
+ * 模拟 IMCPServiceManager 接口的测试实现
  */
-export type MockServiceManager = any & {
+export interface MockServiceManager {
   callTool: ReturnType<typeof vi.fn>;
   getAllTools: ReturnType<typeof vi.fn>;
-};
+  // 添加必要的属性以匹配 MCPServiceManager 类型
+  services?: Map<string, unknown>;
+  configs?: Map<string, unknown>;
+  tools?: Map<string, unknown>;
+  customMCPHandler?: unknown;
+  [key: string]: unknown; // 允许其他属性
+}
 
 /**
  * Mock WebSocket 类型
@@ -91,7 +97,7 @@ export interface EndpointConnectionInternals {
  * 获取 EndpointConnection 的内部状态访问器
  * 提供类型安全的私有成员访问
  */
-export function getProxyServerInternals(
+export function getEndpointConnectionInternals(
   server: EndpointConnection
 ): EndpointConnectionInternals {
   return server as unknown as EndpointConnectionInternals;

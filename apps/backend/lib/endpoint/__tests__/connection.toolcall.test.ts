@@ -4,10 +4,13 @@ import type WebSocket from "ws";
 import { EndpointConnection } from "../connection.js";
 import { createMockWebSocket, wait } from "./testHelpers.js";
 import type { MockServiceManager, MockWebSocket } from "./testTypes.js";
-import { ConnectionState, getProxyServerInternals } from "./testTypes.js";
+import {
+  ConnectionState,
+  getEndpointConnectionInternals,
+} from "./testTypes.js";
 
 describe("EndpointConnection 工具调用核心功能", () => {
-  let proxyServer: EndpointConnection;
+  let endpointConnection: EndpointConnection;
   let mockServiceManager: MockServiceManager;
   let mockWs: MockWebSocket;
 
@@ -25,14 +28,14 @@ describe("EndpointConnection 工具调用核心功能", () => {
       ]),
     };
 
-    proxyServer = new EndpointConnection("ws://test-endpoint");
-    proxyServer.setServiceManager(mockServiceManager);
+    endpointConnection = new EndpointConnection("ws://test-endpoint");
+    endpointConnection.setServiceManager(mockServiceManager);
 
     // 获取内部状态访问器
-    const internals = getProxyServerInternals(proxyServer);
+    const internals = getEndpointConnectionInternals(endpointConnection);
 
     // 手动设置 WebSocket 监听器（模拟连接成功后的状态）
-    proxyServer.connect = vi.fn().mockResolvedValue(undefined);
+    endpointConnection.connect = vi.fn().mockResolvedValue(undefined);
     internals.ws = mockWs as unknown as WebSocket;
     internals.connectionStatus = true;
     internals.serverInitialized = true;
@@ -151,7 +154,7 @@ describe("EndpointConnection 工具调用核心功能", () => {
       };
 
       // 设置较短的超时时间
-      const internals = getProxyServerInternals(proxyServer);
+      const internals = getEndpointConnectionInternals(endpointConnection);
       internals.toolCallTimeout = 200;
 
       // 模拟接收到 WebSocket 消息

@@ -148,7 +148,7 @@ describe("WebServer Unit Tests", () => {
 
     it("should handle single-endpoint fallback", async () => {
       // Mock EndpointConnection
-      const mockProxyServer = {
+      const mockEndpointConnection = {
         endpoint: "wss://test.example.com",
         isConnected: false,
         getStatus: vi.fn().mockReturnValue({
@@ -163,7 +163,7 @@ describe("WebServer Unit Tests", () => {
       } as any;
 
       // 设置 fallback 服务器
-      webServer.endpointConnection = mockProxyServer;
+      webServer.endpointConnection = mockEndpointConnection;
 
       // 清空连接管理器（不设置，让它为 undefined）
       (webServer as any).xiaozhiConnectionManager = undefined;

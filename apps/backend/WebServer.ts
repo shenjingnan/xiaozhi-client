@@ -135,7 +135,7 @@ export class WebServer {
   // 路由系统
   private routeManager?: RouteManager;
 
-  // 向后兼容的属性
+  // 连接管理相关属性
   private endpointConnection: EndpointConnection | undefined;
   private xiaozhiConnectionManager: IndependentXiaozhiConnectionManager | null =
     null;
