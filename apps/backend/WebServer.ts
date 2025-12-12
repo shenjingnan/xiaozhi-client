@@ -28,12 +28,12 @@ import type { ServerType } from "@hono/node-server";
 import { serve } from "@hono/node-server";
 import {
   corsMiddleware,
+  endpointManagerMiddleware,
+  endpointsMiddleware,
   errorHandlerMiddleware,
   loggerMiddleware,
   mcpServiceManagerMiddleware,
   notFoundHandlerMiddleware,
-  xiaozhiConnectionManagerMiddleware,
-  xiaozhiEndpointsMiddleware,
 } from "@middlewares/index.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
@@ -137,7 +137,7 @@ export class WebServer {
 
   // 连接管理相关属性
   private endpointConnection: EndpointConnection | undefined;
-  private xiaozhiConnectionManager: EndpointManager | null = null;
+  private endpointManager: EndpointManager | null = null;
   private mcpServiceManager: MCPServiceManager | null = null; // WebServer 直接管理的实例
 
   constructor(port?: number) {
@@ -321,8 +321,8 @@ export class WebServer {
 
     try {
       // 创建连接管理器实例（总是创建）
-      if (!this.xiaozhiConnectionManager) {
-        this.xiaozhiConnectionManager = new EndpointManager(configManager, {
+      if (!this.endpointManager) {
+        this.endpointManager = new EndpointManager(configManager, {
           connectionTimeout: 10000,
         });
         this.logger.debug("✅ 新建连接管理器实例");
@@ -330,7 +330,7 @@ export class WebServer {
 
       // 设置 MCP 服务管理器
       if (this.mcpServiceManager) {
-        this.xiaozhiConnectionManager.setServiceManager(this.mcpServiceManager);
+        this.endpointManager.setServiceManager(this.mcpServiceManager);
       }
 
       this.logger.debug("✅ 连接管理器设置完成");
@@ -340,13 +340,13 @@ export class WebServer {
         this.logger.debug("有效端点列表:", validEndpoints);
 
         // 初始化连接管理器（传入端点列表）
-        await this.xiaozhiConnectionManager.initialize(validEndpoints, tools);
+        await this.endpointManager.initialize(validEndpoints, tools);
 
         // 连接所有端点
-        await this.xiaozhiConnectionManager.connect();
+        await this.endpointManager.connect();
 
         // 设置配置变更监听器
-        this.xiaozhiConnectionManager.on(
+        this.endpointManager.on(
           "configChange",
           (event: EndpointConfigChangeEvent) => {
             this.logger.debug(`小智连接配置变更: ${event.type}`, event.data);
@@ -358,7 +358,7 @@ export class WebServer {
         );
       } else {
         // 即使没有端点，也需要调用 initialize 以完成内部设置
-        await this.xiaozhiConnectionManager.initialize([], tools);
+        await this.endpointManager.initialize([], tools);
         this.logger.debug("小智接入点连接管理器初始化完成（无端点）");
       }
     } catch (error) {
@@ -372,7 +372,7 @@ export class WebServer {
    * 设置连接管理器实例（主要用于测试依赖注入）
    */
   public setXiaozhiConnectionManager(manager: EndpointManager): void {
-    this.xiaozhiConnectionManager = manager;
+    this.endpointManager = manager;
   }
 
   /**
@@ -381,13 +381,13 @@ export class WebServer {
    * WebServer 启动后始终返回有效的连接管理器实例
    * @throws {Error} 如果连接管理器未初始化
    */
-  public getXiaozhiConnectionManager(): EndpointManager {
-    if (!this.xiaozhiConnectionManager) {
+  public getEndpointManager(): EndpointManager {
+    if (!this.endpointManager) {
       throw new Error(
         "小智连接管理器未初始化，请确保 WebServer 已调用 start() 方法完成初始化"
       );
     }
-    return this.xiaozhiConnectionManager;
+    return this.endpointManager;
   }
 
   /**
@@ -426,19 +426,18 @@ export class WebServer {
   /**
    * 获取小智连接状态信息
    */
-  getXiaozhiConnectionStatus(): XiaozhiConnectionStatusResponse {
-    if (this.xiaozhiConnectionManager) {
+  getEndpointConnectionStatus(): XiaozhiConnectionStatusResponse {
+    if (this.endpointManager) {
       return {
         type: "multi-endpoint",
         manager: {
-          connectedConnections: this.xiaozhiConnectionManager
+          connectedConnections: this.endpointManager
             .getConnectionStatus()
             .filter((status) => status.connected).length,
-          totalConnections:
-            this.xiaozhiConnectionManager.getConnectionStatus().length,
+          totalConnections: this.endpointManager.getConnectionStatus().length,
           healthCheckStats: {}, // 简化后不再提供复杂的健康检查统计
         },
-        connections: this.xiaozhiConnectionManager.getConnectionStatus(),
+        connections: this.endpointManager.getConnectionStatus(),
       };
     }
 
@@ -518,10 +517,10 @@ export class WebServer {
     this.app?.use("*", mcpServiceManagerMiddleware);
 
     // 小智连接管理器中间件
-    this.app?.use("*", xiaozhiConnectionManagerMiddleware());
+    this.app?.use("*", endpointManagerMiddleware());
 
-    // 小智端点处理器中间件（在连接管理器中间件之后）
-    this.app?.use("*", xiaozhiEndpointsMiddleware());
+    // 小智接入点处理器中间件（在连接管理器中间件之后）
+    this.app?.use("*", endpointsMiddleware());
 
     // CORS 中间件
     this.app?.use("*", corsMiddleware);
@@ -760,8 +759,8 @@ export class WebServer {
       // 清理连接管理器和 MCPServiceManager
       (async () => {
         try {
-          if (this.xiaozhiConnectionManager) {
-            await this.xiaozhiConnectionManager.cleanup();
+          if (this.endpointManager) {
+            await this.endpointManager.cleanup();
             this.logger.debug("连接管理器已清理");
           }
         } catch (error) {

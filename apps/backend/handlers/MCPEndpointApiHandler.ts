@@ -63,16 +63,13 @@ interface EndpointOperationResponse {
  */
 export class MCPEndpointApiHandler {
   private logger: Logger;
-  private xiaozhiConnectionManager: EndpointManager;
+  private endpointManager: EndpointManager;
   private configManager: ConfigManager;
   private eventBus: EventBus;
 
-  constructor(
-    xiaozhiConnectionManager: EndpointManager,
-    configManager: ConfigManager
-  ) {
+  constructor(endpointManager: EndpointManager, configManager: ConfigManager) {
     this.logger = logger.withTag("MCPEndpointApiHandler");
-    this.xiaozhiConnectionManager = xiaozhiConnectionManager;
+    this.endpointManager = endpointManager;
     this.configManager = configManager;
     this.eventBus = getEventBus();
   }
@@ -165,8 +162,7 @@ export class MCPEndpointApiHandler {
     this.logger.debug(`处理获取接入点状态请求: ${endpoint}`);
     try {
       // 获取连接状态
-      const connectionStatus =
-        this.xiaozhiConnectionManager.getConnectionStatus();
+      const connectionStatus = this.endpointManager.getConnectionStatus();
       const endpointStatus = connectionStatus.find(
         (status) => status.endpoint === endpoint
       );
@@ -210,8 +206,7 @@ export class MCPEndpointApiHandler {
     this.logger.info(`处理接入点连接请求: ${endpoint}`);
     try {
       // 检查端点是否存在
-      const connectionStatus =
-        this.xiaozhiConnectionManager.getConnectionStatus();
+      const connectionStatus = this.endpointManager.getConnectionStatus();
       const existingStatus = connectionStatus.find(
         (status) => status.endpoint === endpoint
       );
@@ -235,11 +230,11 @@ export class MCPEndpointApiHandler {
       }
 
       // 执行连接操作 - 连接已存在的端点
-      await this.xiaozhiConnectionManager.connectExistingEndpoint(endpoint);
+      await this.endpointManager.connectExistingEndpoint(endpoint);
 
       // 获取连接后的状态
       const updatedConnectionStatus =
-        this.xiaozhiConnectionManager.getConnectionStatus();
+        this.endpointManager.getConnectionStatus();
       const endpointStatus = updatedConnectionStatus.find(
         (status) => status.endpoint === endpoint
       );
@@ -295,8 +290,7 @@ export class MCPEndpointApiHandler {
     this.logger.info(`处理接入点断开请求: ${endpoint}`);
     try {
       // 检查端点是否存在且已连接
-      const connectionStatus =
-        this.xiaozhiConnectionManager.getConnectionStatus();
+      const connectionStatus = this.endpointManager.getConnectionStatus();
       const existingStatus = connectionStatus.find(
         (status) => status.endpoint === endpoint
       );
@@ -320,11 +314,11 @@ export class MCPEndpointApiHandler {
       }
 
       // 执行断开操作
-      await this.xiaozhiConnectionManager.disconnectEndpoint(endpoint);
+      await this.endpointManager.disconnectEndpoint(endpoint);
 
       // 获取断开后的状态
       const updatedConnectionStatus =
-        this.xiaozhiConnectionManager.getConnectionStatus();
+        this.endpointManager.getConnectionStatus();
       const endpointStatus = updatedConnectionStatus.find(
         (status) => status.endpoint === endpoint
       );
@@ -377,8 +371,7 @@ export class MCPEndpointApiHandler {
     const endpoint = parseResult.endpoint;
     try {
       // 检查端点是否已存在
-      const connectionStatus =
-        this.xiaozhiConnectionManager.getConnectionStatus();
+      const connectionStatus = this.endpointManager.getConnectionStatus();
       const existingStatus = connectionStatus.find(
         (status) => status.endpoint === endpoint
       );
@@ -393,11 +386,11 @@ export class MCPEndpointApiHandler {
       }
 
       // 执行添加操作
-      await this.xiaozhiConnectionManager.addEndpoint(endpoint);
+      await this.endpointManager.addEndpoint(endpoint);
 
       // 获取添加后的状态
       const updatedConnectionStatus =
-        this.xiaozhiConnectionManager.getConnectionStatus();
+        this.endpointManager.getConnectionStatus();
       const endpointStatus = updatedConnectionStatus.find(
         (status) => status.endpoint === endpoint
       );
@@ -470,8 +463,7 @@ export class MCPEndpointApiHandler {
     this.logger.info(`处理接入点移除请求: ${endpoint}`);
     try {
       // 检查端点是否存在
-      const connectionStatus =
-        this.xiaozhiConnectionManager.getConnectionStatus();
+      const connectionStatus = this.endpointManager.getConnectionStatus();
       const existingStatus = connectionStatus.find(
         (status) => status.endpoint === endpoint
       );
@@ -487,11 +479,11 @@ export class MCPEndpointApiHandler {
 
       // 如果端点已连接，先断开连接
       if (existingStatus.connected) {
-        await this.xiaozhiConnectionManager.disconnectEndpoint(endpoint);
+        await this.endpointManager.disconnectEndpoint(endpoint);
       }
 
       // 执行移除操作
-      await this.xiaozhiConnectionManager.removeEndpoint(endpoint);
+      await this.endpointManager.removeEndpoint(endpoint);
 
       // 发送移除成功事件
       this.eventBus.emitEvent("endpoint:status:changed", {
