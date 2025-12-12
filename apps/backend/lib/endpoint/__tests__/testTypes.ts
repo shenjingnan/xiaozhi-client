@@ -12,6 +12,10 @@ import type { EndpointConnection } from "../connection.js";
 // 从 connection.ts 导入必要的类型
 // 注意：这些接口在 connection.ts 中是私有的，我们在这里重新定义用于测试
 interface IMCPServiceManager {
+  /**
+   * 获取所有可用的工具列表
+   * @returns 工具定义数组
+   */
   getAllTools(): Array<{
     name: string;
     description: string;
@@ -22,6 +26,12 @@ interface IMCPServiceManager {
     serviceName?: string;
     originalName?: string;
   }>;
+  /**
+   * 调用指定的工具
+   * @param toolName 工具名称
+   * @param arguments_ 工具参数
+   * @returns 工具执行结果
+   */
   callTool(
     toolName: string,
     arguments_: Record<string, unknown>
@@ -31,12 +41,30 @@ interface IMCPServiceManager {
       text: string;
     }>;
   }>;
-  // 添加必要的属性以匹配 MCPServiceManager 类型
+  /**
+   * 以下属性为测试兼容性而添加，用于模拟实际的 MCPServiceManager 类型结构。
+   * 请保持与实际 MCPServiceManager 类型同步。
+   * @see ../connection.ts 中的 MCPServiceManager 类型定义
+   */
+  /**
+   * 服务集合，模拟 MCPServiceManager 的 services 属性
+   */
   services?: Map<string, unknown>;
+  /**
+   * 配置集合，模拟 MCPServiceManager 的 configs 属性
+   */
   configs?: Map<string, unknown>;
+  /**
+   * 工具集合，模拟 MCPServiceManager 的 tools 属性
+   */
   tools?: Map<string, unknown>;
+  /**
+   * 自定义 MCP 处理器，模拟 MCPServiceManager 的 customMCPHandler 属性
+   */
   customMCPHandler?: unknown;
-  // 其他 MCPServiceManager 的属性...
+  /**
+   * 允许添加其他属性以匹配 MCPServiceManager 的实际结构
+   */
   [key: string]: unknown;
 }
 
@@ -54,12 +82,31 @@ export enum ConnectionState {
 export interface MockServiceManager {
   callTool: ReturnType<typeof vi.fn>;
   getAllTools: ReturnType<typeof vi.fn>;
-  // 添加必要的属性以匹配 MCPServiceManager 类型
+  /**
+   * 服务集合，模拟 MCPServiceManager 的 services 属性
+   * 用于存储注册的服务实例
+   */
   services?: Map<string, unknown>;
+  /**
+   * 配置集合，模拟 MCPServiceManager 的 configs 属性
+   * 用于存储服务配置信息
+   */
   configs?: Map<string, unknown>;
+  /**
+   * 工具集合，模拟 MCPServiceManager 的 tools 属性
+   * 用于存储可用的工具定义
+   */
   tools?: Map<string, unknown>;
+  /**
+   * 自定义 MCP 处理器，模拟 MCPServiceManager 的 customMCPHandler 属性
+   * 用于处理自定义的 MCP 协议消息
+   */
   customMCPHandler?: unknown;
-  [key: string]: unknown; // 允许其他属性
+  /**
+   * 允许添加其他属性以匹配 MCPServiceManager 的实际结构
+   * 这确保了 mock 可以完全模拟真实的 MCPServiceManager 接口
+   */
+  [key: string]: unknown;
 }
 
 /**

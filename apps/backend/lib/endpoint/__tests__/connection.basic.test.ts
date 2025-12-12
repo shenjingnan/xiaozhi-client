@@ -324,21 +324,25 @@ describe("EndpointConnection 基础功能测试", () => {
     });
 
     it("应该处理服务管理器未设置的情况", () => {
-      const newProxyServer = new EndpointConnection("ws://test-endpoint");
+      const newEndpointConnection = new EndpointConnection(
+        "ws://test-endpoint"
+      );
       // 不设置服务管理器
 
-      const syncedTools = newProxyServer.getTools();
+      const syncedTools = newEndpointConnection.getTools();
       expect(syncedTools).toHaveLength(0);
     });
 
     it("应该直接从服务管理器获取工具", () => {
-      const newProxyServer = new EndpointConnection("ws://test-endpoint");
+      const newEndpointConnection = new EndpointConnection(
+        "ws://test-endpoint"
+      );
 
       // 设置服务管理器
-      newProxyServer.setServiceManager(mockServiceManager);
+      newEndpointConnection.setServiceManager(mockServiceManager);
 
       // 获取工具应该直接从服务管理器获取
-      const tools = newProxyServer.getTools();
+      const tools = newEndpointConnection.getTools();
       expect(tools).toHaveLength(1);
       expect(tools[0].name).toBe("test-tool");
       expect(tools[0].description).toBe("测试工具");

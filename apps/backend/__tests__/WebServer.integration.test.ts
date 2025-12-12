@@ -36,7 +36,7 @@ vi.mock("../configManager.js", () => ({
   },
 }));
 
-vi.mock("../endpoint/connection.js", () => ({
+vi.mock("@/lib/endpoint/connection.js", () => ({
   EndpointConnection: vi.fn().mockImplementation((endpoint: string) => ({
     endpoint,
     connect: vi.fn().mockResolvedValue(undefined),
