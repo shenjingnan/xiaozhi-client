@@ -93,7 +93,7 @@ const IndependentConnectionOptionsSchema = z
  * 小智接入点管理器
  * 负责管理多个小智接入点的连接，每个小智接入点独立运行
  */
-export class IndependentXiaozhiConnectionManager extends EventEmitter {
+export class EndpointManager extends EventEmitter {
   // 连接实例管理
   private connections: Map<string, EndpointConnection> = new Map();
   private connectionStates: Map<string, ConnectionStatus> = new Map();
@@ -119,9 +119,9 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     this.eventBus = getEventBus();
     this.options = { ...DEFAULT_OPTIONS, ...options };
 
-    console.debug("[IndependentXiaozhiConnectionManager] 实例已创建");
+    console.debug("[EndpointManager] 实例已创建");
     console.debug(
-      "[IndependentXiaozhiConnectionManager] 配置选项:",
+      "[EndpointManager] 配置选项:",
       this.options
     );
   }
@@ -135,7 +135,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     if (this.isInitialized) return;
 
     console.debug(
-      `开始初始化 IndependentXiaozhiConnectionManager，小智接入点数量: ${endpoints.length}`
+      `开始初始化 EndpointManager，小智接入点数量: ${endpoints.length}`
     );
 
     try {
@@ -153,10 +153,10 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       this.isInitialized = true;
 
       console.debug(
-        `IndependentXiaozhiConnectionManager 初始化完成，管理 ${this.connections.size} 个连接`
+        `EndpointManager 初始化完成，管理 ${this.connections.size} 个连接`
       );
     } catch (error) {
-      console.error("IndependentXiaozhiConnectionManager 初始化失败:", error);
+      console.error("EndpointManager 初始化失败:", error);
       await this.cleanup(); // 清理部分创建的连接
       throw error;
     }
@@ -168,7 +168,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   async connect(): Promise<void> {
     if (!this.isInitialized) {
       throw new Error(
-        "IndependentXiaozhiConnectionManager 未初始化，请先调用 initialize()"
+        "EndpointManager 未初始化，请先调用 initialize()"
       );
     }
 
@@ -228,7 +228,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    */
   async addEndpoint(endpoint: string): Promise<void> {
     if (!this.isInitialized) {
-      throw new Error("IndependentXiaozhiConnectionManager 未初始化");
+      throw new Error("EndpointManager 未初始化");
     }
 
     // 检查连接管理器中的重复性
@@ -471,7 +471,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    */
   async connectExistingEndpoint(endpoint: string): Promise<void> {
     if (!this.isInitialized) {
-      throw new Error("IndependentXiaozhiConnectionManager 未初始化");
+      throw new Error("EndpointManager 未初始化");
     }
 
     const endpointConnection = this.connections.get(endpoint);
@@ -506,7 +506,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   }> {
     if (!this.isInitialized) {
       throw new Error(
-        "IndependentXiaozhiConnectionManager 未初始化，请先调用 initialize()"
+        "EndpointManager 未初始化，请先调用 initialize()"
       );
     }
 
@@ -567,7 +567,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    */
   async reconnectEndpoint(endpoint: string): Promise<void> {
     if (!this.isInitialized) {
-      throw new Error("IndependentXiaozhiConnectionManager 未初始化");
+      throw new Error("EndpointManager 未初始化");
     }
 
     const endpointConnection = this.connections.get(endpoint);
@@ -649,7 +649,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     tools: Tool[] = []
   ): Promise<void> {
     if (!this.isInitialized) {
-      throw new Error("IndependentXiaozhiConnectionManager 未初始化");
+      throw new Error("EndpointManager 未初始化");
     }
 
     console.info(
@@ -824,7 +824,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
    * 资源清理
    */
   async cleanup(): Promise<void> {
-    console.debug("开始清理 IndependentXiaozhiConnectionManager 资源");
+    console.debug("开始清理 EndpointManager 资源");
 
     try {
       // 断开所有连接
@@ -838,9 +838,9 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       this.isInitialized = false;
       this.isConnecting = false;
 
-      console.debug("IndependentXiaozhiConnectionManager 资源清理完成");
+      console.debug("EndpointManager 资源清理完成");
     } catch (error) {
-      console.error("IndependentXiaozhiConnectionManager 资源清理失败:", error);
+      console.error("EndpointManager 资源清理失败:", error);
       throw error;
     }
   }

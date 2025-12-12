@@ -1,4 +1,4 @@
-import type { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/index.js";
+import type { EndpointManager } from "@/lib/endpoint/index.js";
 import type { ConnectionStatus } from "@/lib/endpoint/index.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
@@ -63,12 +63,12 @@ interface EndpointOperationResponse {
  */
 export class MCPEndpointApiHandler {
   private logger: Logger;
-  private xiaozhiConnectionManager: IndependentXiaozhiConnectionManager;
+  private xiaozhiConnectionManager: EndpointManager;
   private configManager: ConfigManager;
   private eventBus: EventBus;
 
   constructor(
-    xiaozhiConnectionManager: IndependentXiaozhiConnectionManager,
+    xiaozhiConnectionManager: EndpointManager,
     configManager: ConfigManager
   ) {
     this.logger = logger.withTag("MCPEndpointApiHandler");

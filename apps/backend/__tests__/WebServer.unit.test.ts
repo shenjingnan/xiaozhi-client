@@ -29,7 +29,7 @@ vi.mock("@/lib/endpoint/connection.js", () => ({
 }));
 
 vi.mock("@/lib/endpoint/index.js", () => ({
-  IndependentXiaozhiConnectionManager: vi.fn().mockImplementation(() => ({
+  EndpointManager: vi.fn().mockImplementation(() => ({
     initialize: vi.fn().mockResolvedValue(undefined),
     connect: vi.fn().mockResolvedValue(undefined),
     setServiceManager: vi.fn(),

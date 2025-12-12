@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import type { EndpointConnection } from "@/lib/endpoint/connection.js";
-import { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/index.js";
+import { EndpointManager } from "@/lib/endpoint/index.js";
 import type {
   EndpointConfigChangeEvent,
   SimpleConnectionStatus,
@@ -137,7 +137,7 @@ export class WebServer {
 
   // 连接管理相关属性
   private endpointConnection: EndpointConnection | undefined;
-  private xiaozhiConnectionManager: IndependentXiaozhiConnectionManager | null =
+  private xiaozhiConnectionManager: EndpointManager | null =
     null;
   private mcpServiceManager: MCPServiceManager | null = null; // WebServer 直接管理的实例
 
@@ -323,7 +323,7 @@ export class WebServer {
     try {
       // 创建连接管理器实例（总是创建）
       if (!this.xiaozhiConnectionManager) {
-        this.xiaozhiConnectionManager = new IndependentXiaozhiConnectionManager(
+        this.xiaozhiConnectionManager = new EndpointManager(
           configManager,
           {
             connectionTimeout: 10000,
@@ -376,7 +376,7 @@ export class WebServer {
    * 设置连接管理器实例（主要用于测试依赖注入）
    */
   public setXiaozhiConnectionManager(
-    manager: IndependentXiaozhiConnectionManager
+    manager: EndpointManager
   ): void {
     this.xiaozhiConnectionManager = manager;
   }
@@ -387,7 +387,7 @@ export class WebServer {
    * WebServer 启动后始终返回有效的连接管理器实例
    * @throws {Error} 如果连接管理器未初始化
    */
-  public getXiaozhiConnectionManager(): IndependentXiaozhiConnectionManager {
+  public getXiaozhiConnectionManager(): EndpointManager {
     if (!this.xiaozhiConnectionManager) {
       throw new Error(
         "小智连接管理器未初始化，请确保 WebServer 已调用 start() 方法完成初始化"

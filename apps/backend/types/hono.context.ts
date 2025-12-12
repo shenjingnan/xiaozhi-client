@@ -3,7 +3,7 @@
  * 为 Hono Context 添加项目特定的变量类型定义
  */
 
-import type { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/index.js";
+import type { EndpointManager } from "@/lib/endpoint/index.js";
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { Logger } from "@root/Logger.js";
 import type { Context } from "hono";
@@ -25,7 +25,7 @@ export interface IWebServer {
    * WebServer 启动后始终返回有效的连接管理器实例
    * 如果在启动前调用，会抛出错误
    */
-  getXiaozhiConnectionManager(): IndependentXiaozhiConnectionManager;
+  getXiaozhiConnectionManager(): EndpointManager;
 
   /**
    * 获取 MCP 服务管理器实例
@@ -71,7 +71,7 @@ export type AppContextVariables = {
    * WebServer 启动后始终可用的连接管理器实例
    * 可能为 null（初始化失败时）
    */
-  xiaozhiConnectionManager: IndependentXiaozhiConnectionManager | null;
+  xiaozhiConnectionManager: EndpointManager | null;
 
   /**
    * 端点处理器实例

@@ -1,5 +1,5 @@
 import { createServer } from "node:http";
-import { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/index";
+import { EndpointManager } from "@/lib/endpoint/index";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import WebSocket from "ws";
 import { WebServer } from "./WebServer";
@@ -312,7 +312,7 @@ vi.mock("./handlers/HeartbeatHandler", () => {
 });
 
 vi.mock("@/lib/endpoint/index", () => ({
-  IndependentXiaozhiConnectionManager: vi.fn().mockImplementation(() => ({
+  EndpointManager: vi.fn().mockImplementation(() => ({
     initialize: vi.fn().mockResolvedValue(undefined),
     connect: vi.fn().mockResolvedValue(undefined),
     cleanup: vi.fn().mockResolvedValue(undefined),
@@ -1258,8 +1258,8 @@ describe("WebServer", () => {
     });
 
     it("应该处理小智连接管理器初始化失败", async () => {
-      // Mock IndependentXiaozhiConnectionManager constructor to throw
-      vi.mocked(IndependentXiaozhiConnectionManager).mockImplementation(() => {
+      // Mock EndpointManager constructor to throw
+      vi.mocked(EndpointManager).mockImplementation(() => {
         throw new Error("Xiaozhi Connection Manager initialization failed");
       });
 

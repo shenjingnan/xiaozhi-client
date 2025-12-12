@@ -2,7 +2,7 @@ import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { ConfigManager } from "@root/configManager.js";
 import type { ToolCallResult } from "@services/CustomMCPHandler.js";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { IndependentXiaozhiConnectionManager } from "../manager.js";
+import { EndpointManager } from "../manager.js";
 
 // 重新定义 IMCPServiceManager 接口（因为它没有被导出）
 interface IMCPServiceManager {
@@ -100,8 +100,8 @@ vi.mock("../connection.js", () => ({
     }),
 }));
 
-describe("IndependentXiaozhiConnectionManager 核心功能测试", () => {
-  let manager: IndependentXiaozhiConnectionManager;
+describe("EndpointManager 核心功能测试", () => {
+  let manager: EndpointManager;
   let mockEventBus: MockEventBus;
   let mockConfigManager: MockConfigManager;
 
@@ -130,7 +130,7 @@ describe("IndependentXiaozhiConnectionManager 核心功能测试", () => {
     vi.clearAllMocks();
 
     // 创建管理器实例（使用类型断言和较短的重连延迟）
-    manager = new IndependentXiaozhiConnectionManager(
+    manager = new EndpointManager(
       mockConfigManager as unknown as ConfigManager,
       { reconnectDelay: 100 } // 使用 100ms 延迟以加快测试速度
     );
@@ -350,7 +350,7 @@ describe("IndependentXiaozhiConnectionManager 核心功能测试", () => {
     });
   });
 
-  describe("IndependentXiaozhiConnectionManager 重连功能测试", () => {
+  describe("EndpointManager 重连功能测试", () => {
     const mockTools: Tool[] = [
       {
         name: "test-tool",
@@ -366,7 +366,7 @@ describe("IndependentXiaozhiConnectionManager 核心功能测试", () => {
 
     describe("reconnectAll() 方法测试", () => {
       test("未初始化时应该抛出错误", async () => {
-        const uninitializedManager = new IndependentXiaozhiConnectionManager(
+        const uninitializedManager = new EndpointManager(
           mockConfigManager as any,
           { reconnectDelay: 100 }
         );
@@ -441,7 +441,7 @@ describe("IndependentXiaozhiConnectionManager 核心功能测试", () => {
 
     describe("reconnectEndpoint() 方法测试", () => {
       test("未初始化时应该抛出错误", async () => {
-        const uninitializedManager = new IndependentXiaozhiConnectionManager(
+        const uninitializedManager = new EndpointManager(
           mockConfigManager as any,
           { reconnectDelay: 100 }
         );

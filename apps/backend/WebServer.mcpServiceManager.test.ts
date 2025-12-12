@@ -105,9 +105,9 @@ describe("WebServer MCPServiceManager 方法测试", () => {
         }),
       }));
 
-      // Mock IndependentXiaozhiConnectionManager
+      // Mock EndpointManager
       vi.mock("@/lib/endpoint/index", () => ({
-        IndependentXiaozhiConnectionManager: vi.fn().mockImplementation(() => ({
+        EndpointManager: vi.fn().mockImplementation(() => ({
           initialize: vi.fn().mockResolvedValue(undefined),
           connect: vi.fn().mockResolvedValue(undefined),
           cleanup: vi.fn().mockResolvedValue(undefined),

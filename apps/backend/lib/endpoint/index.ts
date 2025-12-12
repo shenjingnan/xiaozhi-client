@@ -3,12 +3,12 @@
  *
  * 此模块负责管理小智接入点的连接，包括：
  * - EndpointConnection: 单个 WebSocket 连接实现
- * - IndependentXiaozhiConnectionManager: 多个连接的管理器
+ * - EndpointManager: 多个连接的管理器
  */
 
 // 核心类导出
 export { EndpointConnection } from "./connection.js";
-export { IndependentXiaozhiConnectionManager } from "./manager.js";
+export { EndpointManager } from "./manager.js";
 
 // 类型导出
 export type {
