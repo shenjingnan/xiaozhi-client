@@ -16,8 +16,7 @@ import type { AppContext } from "../types/hono.context.js";
 export const xiaozhiEndpointsMiddleware = (): MiddlewareHandler<AppContext> => {
   // 使用闭包缓存 handler 实例和 manager
   let endpointHandler: MCPEndpointApiHandler | null = null;
-  let lastManager: EndpointManager | null | undefined =
-    undefined;
+  let lastManager: EndpointManager | null | undefined = undefined;
 
   return async (c, next) => {
     const xiaozhiConnectionManager = c.get("xiaozhiConnectionManager");

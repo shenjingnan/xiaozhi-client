@@ -120,10 +120,7 @@ export class EndpointManager extends EventEmitter {
     this.options = { ...DEFAULT_OPTIONS, ...options };
 
     console.debug("[EndpointManager] 实例已创建");
-    console.debug(
-      "[EndpointManager] 配置选项:",
-      this.options
-    );
+    console.debug("[EndpointManager] 配置选项:", this.options);
   }
 
   /**
@@ -167,9 +164,7 @@ export class EndpointManager extends EventEmitter {
    */
   async connect(): Promise<void> {
     if (!this.isInitialized) {
-      throw new Error(
-        "EndpointManager 未初始化，请先调用 initialize()"
-      );
+      throw new Error("EndpointManager 未初始化，请先调用 initialize()");
     }
 
     if (this.isConnecting) return;
@@ -505,9 +500,7 @@ export class EndpointManager extends EventEmitter {
     }>;
   }> {
     if (!this.isInitialized) {
-      throw new Error(
-        "EndpointManager 未初始化，请先调用 initialize()"
-      );
+      throw new Error("EndpointManager 未初始化，请先调用 initialize()");
     }
 
     console.info(`开始重连所有接入点，总数: ${this.connections.size}`);

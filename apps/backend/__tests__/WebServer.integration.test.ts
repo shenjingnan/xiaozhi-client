@@ -149,9 +149,7 @@ describe("WebServer Integration Tests", () => {
         // 获取连接管理器
         const connectionManager = realWebServer.getXiaozhiConnectionManager();
         expect(connectionManager).toBeDefined();
-        expect(connectionManager).toBeInstanceOf(
-          EndpointManager
-        );
+        expect(connectionManager).toBeInstanceOf(EndpointManager);
 
         // 获取连接状态
         const status = realWebServer.getXiaozhiConnectionStatus();
@@ -163,16 +161,14 @@ describe("WebServer Integration Tests", () => {
       } finally {
         // 恢复 mock
         vi.doMock("@/lib/endpoint/index.js", () => ({
-          EndpointManager: vi
-            .fn()
-            .mockImplementation(() => ({
-              initialize: vi.fn().mockResolvedValue(undefined),
-              connect: vi.fn().mockResolvedValue(undefined),
-              setServiceManager: vi.fn(),
-              getConnectionStatus: vi.fn().mockReturnValue([]),
-              on: vi.fn(),
-              cleanup: vi.fn().mockResolvedValue(undefined),
-            })),
+          EndpointManager: vi.fn().mockImplementation(() => ({
+            initialize: vi.fn().mockResolvedValue(undefined),
+            connect: vi.fn().mockResolvedValue(undefined),
+            setServiceManager: vi.fn(),
+            getConnectionStatus: vi.fn().mockReturnValue([]),
+            on: vi.fn(),
+            cleanup: vi.fn().mockResolvedValue(undefined),
+          })),
         }));
       }
     });
@@ -228,9 +224,7 @@ describe("WebServer Integration Tests", () => {
         expect(EndpointManager).toHaveBeenCalled();
       } else {
         // 如果不是 mock（真实实例），验证连接管理器已创建
-        expect(connectionManager).toBeInstanceOf(
-          EndpointManager
-        );
+        expect(connectionManager).toBeInstanceOf(EndpointManager);
       }
 
       await newWebServer.stop();

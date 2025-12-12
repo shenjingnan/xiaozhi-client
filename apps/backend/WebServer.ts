@@ -137,8 +137,7 @@ export class WebServer {
 
   // 连接管理相关属性
   private endpointConnection: EndpointConnection | undefined;
-  private xiaozhiConnectionManager: EndpointManager | null =
-    null;
+  private xiaozhiConnectionManager: EndpointManager | null = null;
   private mcpServiceManager: MCPServiceManager | null = null; // WebServer 直接管理的实例
 
   constructor(port?: number) {
@@ -323,12 +322,9 @@ export class WebServer {
     try {
       // 创建连接管理器实例（总是创建）
       if (!this.xiaozhiConnectionManager) {
-        this.xiaozhiConnectionManager = new EndpointManager(
-          configManager,
-          {
-            connectionTimeout: 10000,
-          }
-        );
+        this.xiaozhiConnectionManager = new EndpointManager(configManager, {
+          connectionTimeout: 10000,
+        });
         this.logger.debug("✅ 新建连接管理器实例");
       }
 
@@ -375,9 +371,7 @@ export class WebServer {
   /**
    * 设置连接管理器实例（主要用于测试依赖注入）
    */
-  public setXiaozhiConnectionManager(
-    manager: EndpointManager
-  ): void {
+  public setXiaozhiConnectionManager(manager: EndpointManager): void {
     this.xiaozhiConnectionManager = manager;
   }
 
