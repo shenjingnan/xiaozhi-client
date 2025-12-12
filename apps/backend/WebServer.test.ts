@@ -1320,7 +1320,7 @@ describe("WebServer", () => {
       webServer = new WebServer(currentPort);
       await webServer.start();
 
-      const status = webServer.getXiaozhiConnectionStatus();
+      const status = webServer.getEndpointConnectionStatus();
       expect(status).toBeDefined();
       expect(status.type).toBeDefined();
     });
@@ -1328,7 +1328,7 @@ describe("WebServer", () => {
     it("应该处理无连接的情况", () => {
       webServer = new WebServer(currentPort);
 
-      const status = webServer.getXiaozhiConnectionStatus();
+      const status = webServer.getEndpointConnectionStatus();
       expect(status.type).toBe("none");
       expect(status.connected).toBe(false);
     });
@@ -1830,7 +1830,7 @@ describe("WebServer", () => {
       // 这里我们主要验证方法不会抛出未处理的异常
       expect(() => {
         // 我们无法直接调用私有方法，但可以验证相关的错误处理
-        webServer.getXiaozhiConnectionStatus();
+        webServer.getEndpointConnectionStatus();
       }).not.toThrow();
     });
 
@@ -1840,7 +1840,7 @@ describe("WebServer", () => {
 
       // 验证超时处理
       expect(() => {
-        webServer.getXiaozhiConnectionStatus();
+        webServer.getEndpointConnectionStatus();
       }).not.toThrow();
     });
   });

@@ -147,12 +147,12 @@ describe("WebServer Integration Tests", () => {
         await realWebServer.start();
 
         // 获取连接管理器
-        const connectionManager = realWebServer.getXiaozhiConnectionManager();
+        const connectionManager = realWebServer.getEndpointManager();
         expect(connectionManager).toBeDefined();
         expect(connectionManager).toBeInstanceOf(EndpointManager);
 
         // 获取连接状态
-        const status = realWebServer.getXiaozhiConnectionStatus();
+        const status = realWebServer.getEndpointConnectionStatus();
         expect(status).toBeDefined();
         expect(status.type).toBe("multi-endpoint");
 

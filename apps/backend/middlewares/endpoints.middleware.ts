@@ -19,17 +19,17 @@ export const xiaozhiEndpointsMiddleware = (): MiddlewareHandler<AppContext> => {
   let lastManager: EndpointManager | null | undefined = undefined;
 
   return async (c, next) => {
-    const xiaozhiConnectionManager = c.get("xiaozhiConnectionManager");
+    const endpointManager = c.get("endpointManager");
 
     // 如果 manager 发生变化，则重建 handler
     // 注意：使用引用相等检查（!==）确保使用最新的 manager 实例
     // 即使 manager 内容相同，但对象引用不同时也会重建 handler
     // 这是期望的行为，确保 handler 总是使用最新的连接管理
-    if (xiaozhiConnectionManager !== lastManager) {
-      lastManager = xiaozhiConnectionManager;
-      if (xiaozhiConnectionManager) {
+    if (endpointManager !== lastManager) {
+      lastManager = endpointManager;
+      if (endpointManager) {
         endpointHandler = new MCPEndpointApiHandler(
-          xiaozhiConnectionManager,
+          endpointManager,
           configManager
         );
       } else {

@@ -166,7 +166,7 @@ describe("WebServer Unit Tests", () => {
       webServer.endpointConnection = mockEndpointConnection;
 
       // 清空连接管理器（不设置，让它为 undefined）
-      (webServer as any).xiaozhiConnectionManager = undefined;
+      (webServer as any).endpointManager = undefined;
 
       const connectionStatus = webServer.getXiaozhiConnectionStatus();
 
