@@ -3,7 +3,7 @@
  * 负责创建和管理 MCPEndpointApiHandler 实例
  */
 
-import type { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/index.js";
+import type { EndpointManager } from "@/lib/endpoint/index.js";
 import { MCPEndpointApiHandler } from "@handlers/MCPEndpointApiHandler.js";
 import { configManager } from "@root/configManager.js";
 import type { MiddlewareHandler } from "hono";
@@ -16,8 +16,7 @@ import type { AppContext } from "../types/hono.context.js";
 export const xiaozhiEndpointsMiddleware = (): MiddlewareHandler<AppContext> => {
   // 使用闭包缓存 handler 实例和 manager
   let endpointHandler: MCPEndpointApiHandler | null = null;
-  let lastManager: IndependentXiaozhiConnectionManager | null | undefined =
-    undefined;
+  let lastManager: EndpointManager | null | undefined = undefined;
 
   return async (c, next) => {
     const xiaozhiConnectionManager = c.get("xiaozhiConnectionManager");

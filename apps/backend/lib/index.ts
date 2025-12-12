@@ -5,7 +5,7 @@
 // endpoint 模块导出
 export {
   EndpointConnection,
-  IndependentXiaozhiConnectionManager,
+  EndpointManager,
   XiaozhiConnectionState,
   ToolCallErrorCode,
   ToolCallError,

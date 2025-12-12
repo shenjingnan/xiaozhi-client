@@ -28,7 +28,7 @@ vi.mock("../../configManager.js", () => ({
   },
 }));
 
-// Mock IndependentXiaozhiConnectionManager
+// Mock EndpointManager
 const mockConnectionManager = {
   getConnectionStatus: vi.fn(),
   connectExistingEndpoint: vi.fn(),

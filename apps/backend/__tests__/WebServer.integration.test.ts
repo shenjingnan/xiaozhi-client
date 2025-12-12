@@ -1,4 +1,4 @@
-import { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/index.js";
+import { EndpointManager } from "@/lib/endpoint/index.js";
 import {
   afterAll,
   afterEach,
@@ -46,7 +46,7 @@ vi.mock("@/lib/endpoint/connection.js", () => ({
 }));
 
 vi.mock("@/lib/endpoint/index.js", () => ({
-  IndependentXiaozhiConnectionManager: vi.fn().mockImplementation(() => ({
+  EndpointManager: vi.fn().mockImplementation(() => ({
     initialize: vi.fn().mockResolvedValue(undefined),
     connect: vi.fn().mockResolvedValue(undefined),
     setServiceManager: vi.fn(),
@@ -149,9 +149,7 @@ describe("WebServer Integration Tests", () => {
         // 获取连接管理器
         const connectionManager = realWebServer.getXiaozhiConnectionManager();
         expect(connectionManager).toBeDefined();
-        expect(connectionManager).toBeInstanceOf(
-          IndependentXiaozhiConnectionManager
-        );
+        expect(connectionManager).toBeInstanceOf(EndpointManager);
 
         // 获取连接状态
         const status = realWebServer.getXiaozhiConnectionStatus();
@@ -163,16 +161,14 @@ describe("WebServer Integration Tests", () => {
       } finally {
         // 恢复 mock
         vi.doMock("@/lib/endpoint/index.js", () => ({
-          IndependentXiaozhiConnectionManager: vi
-            .fn()
-            .mockImplementation(() => ({
-              initialize: vi.fn().mockResolvedValue(undefined),
-              connect: vi.fn().mockResolvedValue(undefined),
-              setServiceManager: vi.fn(),
-              getConnectionStatus: vi.fn().mockReturnValue([]),
-              on: vi.fn(),
-              cleanup: vi.fn().mockResolvedValue(undefined),
-            })),
+          EndpointManager: vi.fn().mockImplementation(() => ({
+            initialize: vi.fn().mockResolvedValue(undefined),
+            connect: vi.fn().mockResolvedValue(undefined),
+            setServiceManager: vi.fn(),
+            getConnectionStatus: vi.fn().mockReturnValue([]),
+            on: vi.fn(),
+            cleanup: vi.fn().mockResolvedValue(undefined),
+          })),
         }));
       }
     });
@@ -224,13 +220,11 @@ describe("WebServer Integration Tests", () => {
       expect(connectionManager).toBeDefined();
 
       // 验证初始化被调用（只有在使用 mock 时才能验证）
-      if (vi.isMockFunction(IndependentXiaozhiConnectionManager)) {
-        expect(IndependentXiaozhiConnectionManager).toHaveBeenCalled();
+      if (vi.isMockFunction(EndpointManager)) {
+        expect(EndpointManager).toHaveBeenCalled();
       } else {
         // 如果不是 mock（真实实例），验证连接管理器已创建
-        expect(connectionManager).toBeInstanceOf(
-          IndependentXiaozhiConnectionManager
-        );
+        expect(connectionManager).toBeInstanceOf(EndpointManager);
       }
 
       await newWebServer.stop();
@@ -241,7 +235,7 @@ describe("WebServer Integration Tests", () => {
     it("应该处理连接管理器初始化失败", async () => {
       // Mock 初始化失败
       vi.doMock("@/lib/endpoint/index.js", () => ({
-        IndependentXiaozhiConnectionManager: vi.fn().mockImplementation(() => {
+        EndpointManager: vi.fn().mockImplementation(() => {
           throw new Error("初始化失败");
         }),
       }));
