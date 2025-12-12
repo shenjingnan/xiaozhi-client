@@ -31,6 +31,7 @@ vi.mock("../configManager.js", () => ({
     cleanupInvalidServerToolsConfig: vi.fn(),
     getToolCallLogConfig: vi.fn().mockReturnValue({}),
     getConfigDir: vi.fn().mockReturnValue("/tmp"),
+    getCustomMCPTools: vi.fn().mockReturnValue([]),
     on: vi.fn(),
     off: vi.fn(),
   },
@@ -127,7 +128,7 @@ describe("WebServer Integration Tests", () => {
       await expect(newWebServer.start()).resolves.not.toThrow();
 
       // 验证连接管理器已初始化
-      expect(newWebServer.getXiaozhiConnectionManager()).toBeDefined();
+      expect(newWebServer.getEndpointManager()).toBeDefined();
 
       await newWebServer.stop();
     });
@@ -194,12 +195,13 @@ describe("WebServer Integration Tests", () => {
       await webServer.start();
 
       // 验证使用的是注入的管理器
-      const connectionManager = webServer.getXiaozhiConnectionManager();
+      const connectionManager = webServer.getEndpointManager();
       expect(connectionManager).toBe(mockManager);
 
       // 验证连接状态
-      const status = webServer.getXiaozhiConnectionStatus();
-      expect(status.manager.connectedConnections).toBe(1);
+      const status = webServer.getEndpointConnectionStatus();
+      expect(status.type).toBe("multi-endpoint");
+      expect(status.manager?.connectedConnections).toBe(1);
     });
 
     it("应该在有端点配置时初始化连接", async () => {
@@ -216,7 +218,7 @@ describe("WebServer Integration Tests", () => {
       await newWebServer.start();
 
       // 获取连接管理器
-      const connectionManager = newWebServer.getXiaozhiConnectionManager();
+      const connectionManager = newWebServer.getEndpointManager();
       expect(connectionManager).toBeDefined();
 
       // 验证初始化被调用（只有在使用 mock 时才能验证）
@@ -314,7 +316,7 @@ describe("WebServer Integration Tests", () => {
         await testWebServer.start();
 
         // 获取连接管理器
-        const connectionManager = testWebServer.getXiaozhiConnectionManager();
+        const connectionManager = testWebServer.getEndpointManager();
         expect(connectionManager).toBeDefined();
         expect(connectionManager).toBe(mockManager);
 

@@ -95,8 +95,8 @@ describe("WebServer Unit Tests", () => {
 
   describe("Connection Status API", () => {
     it("should provide connection status method", () => {
-      expect(webServer.getXiaozhiConnectionStatus).toBeDefined();
-      expect(typeof webServer.getXiaozhiConnectionStatus).toBe("function");
+      expect(webServer.getEndpointConnectionStatus).toBeDefined();
+      expect(typeof webServer.getEndpointConnectionStatus).toBe("function");
     });
 
     it("should return none status when no connections", () => {
@@ -107,7 +107,7 @@ describe("WebServer Unit Tests", () => {
       };
       webServer.setXiaozhiConnectionManager(mockManager);
 
-      const connectionStatus = webServer.getXiaozhiConnectionStatus();
+      const connectionStatus = webServer.getEndpointConnectionStatus();
 
       expect(connectionStatus).toMatchObject({
         type: "multi-endpoint",
@@ -133,7 +133,7 @@ describe("WebServer Unit Tests", () => {
       // 使用依赖注入设置 mock 连接管理器
       webServer.setXiaozhiConnectionManager(mockManager);
 
-      const connectionStatus = webServer.getXiaozhiConnectionStatus();
+      const connectionStatus = webServer.getEndpointConnectionStatus();
 
       expect(connectionStatus).toMatchObject({
         type: "multi-endpoint",
@@ -168,7 +168,7 @@ describe("WebServer Unit Tests", () => {
       // 清空连接管理器（不设置，让它为 undefined）
       (webServer as any).endpointManager = undefined;
 
-      const connectionStatus = webServer.getXiaozhiConnectionStatus();
+      const connectionStatus = webServer.getEndpointConnectionStatus();
 
       expect(connectionStatus).toMatchObject({
         type: "single-endpoint",
@@ -188,7 +188,7 @@ describe("WebServer Unit Tests", () => {
 
       webServer.setXiaozhiConnectionManager(mockManager);
 
-      expect(webServer.getXiaozhiConnectionManager()).toBe(mockManager);
+      expect(webServer.getEndpointManager()).toBe(mockManager);
     });
 
     it("应该在获取连接管理器时返回已设置的实例", () => {
@@ -199,7 +199,7 @@ describe("WebServer Unit Tests", () => {
 
       webServer.setXiaozhiConnectionManager(mockManager);
 
-      const manager = webServer.getXiaozhiConnectionManager();
+      const manager = webServer.getEndpointManager();
       expect(manager).toBe(mockManager);
       expect((manager as any).test).toBe("value");
     });
