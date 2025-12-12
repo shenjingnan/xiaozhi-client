@@ -69,9 +69,13 @@ export class EndpointConnection {
 
   // 工具调用超时配置
   private toolCallTimeout = 30000;
+  private reconnectDelay = 2000; // 默认重连延迟 2000ms
 
-  constructor(endpointUrl: string) {
+  constructor(endpointUrl: string, reconnectDelay?: number) {
     this.endpointUrl = endpointUrl;
+    if (reconnectDelay !== undefined) {
+      this.reconnectDelay = reconnectDelay;
+    }
   }
 
   /**
@@ -400,11 +404,16 @@ export class EndpointConnection {
   public async reconnect(): Promise<void> {
     console.info(`重连小智接入点: ${sliceEndpoint(this.endpointUrl)}`);
 
+    // 检查服务管理器是否已设置
+    if (!this.serviceManager) {
+      throw new Error("MCPServiceManager 未设置。请在重连前先设置服务管理器。");
+    }
+
     // 先断开连接
     this.disconnect();
 
-    // 等待一小段时间确保连接完全断开
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // 等待可配置的时间确保连接完全断开
+    await new Promise((resolve) => setTimeout(resolve, this.reconnectDelay));
 
     // 重新连接
     await this.connect();

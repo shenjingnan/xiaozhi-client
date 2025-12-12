@@ -45,6 +45,7 @@ export interface ConfigChangeEvent {
 // 独立连接选项接口
 export interface IndependentConnectionOptions {
   connectionTimeout?: number; // 连接超时时间（毫秒），默认 10000
+  reconnectDelay?: number; // 重连延迟时间（毫秒），默认 2000
 }
 
 // 连接状态接口
@@ -71,6 +72,7 @@ export enum XiaozhiConnectionState {
 // 默认配置
 const DEFAULT_OPTIONS: Required<IndependentConnectionOptions> = {
   connectionTimeout: 10000,
+  reconnectDelay: 2000,
 };
 
 // zod 验证 schema
@@ -79,6 +81,10 @@ const IndependentConnectionOptionsSchema = z
     connectionTimeout: z
       .number()
       .min(1000, "connectionTimeout 必须是大于等于 1000 的数字")
+      .optional(),
+    reconnectDelay: z
+      .number()
+      .min(500, "reconnectDelay 必须是大于等于 500 的数字")
       .optional(),
   })
   .strict();
@@ -409,6 +415,25 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
   }
 
   /**
+   * 检查指定端点是否已连接
+   * @param endpoint 端点地址
+   * @returns 是否已连接
+   */
+  isEndpointConnected(endpoint: string): boolean {
+    const status = this.connectionStates.get(endpoint);
+    return status?.connected ?? false;
+  }
+
+  /**
+   * 获取指定端点的状态
+   * @param endpoint 端点地址
+   * @returns 端点状态
+   */
+  getEndpointStatus(endpoint: string): SimpleConnectionStatus | undefined {
+    return this.connectionStates.get(endpoint);
+  }
+
+  /**
    * 设置 MCP 服务管理器
    * @param manager MCP 服务管理器实例
    */
@@ -468,8 +493,17 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
 
   /**
    * 重连所有接入点
+   * @returns 重连结果统计
    */
-  async reconnectAll(): Promise<void> {
+  async reconnectAll(): Promise<{
+    successCount: number;
+    failureCount: number;
+    results: Array<{
+      endpoint: string;
+      success: boolean;
+      error?: string;
+    }>;
+  }> {
     if (!this.isInitialized) {
       throw new Error(
         "IndependentXiaozhiConnectionManager 未初始化，请先调用 initialize()"
@@ -519,6 +553,12 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
         console.error(`  - ${sliceEndpoint(f.endpoint)}: ${f.error}`);
       }
     }
+
+    return {
+      successCount,
+      failureCount,
+      results,
+    };
   }
 
   /**
@@ -857,8 +897,11 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     console.debug(`创建连接实例: ${sliceEndpoint(endpoint)}`);
 
     try {
-      // 创建 EndpointConnection 实例
-      const endpointConnection = new EndpointConnection(endpoint);
+      // 创建 EndpointConnection 实例，传递重连延迟配置
+      const endpointConnection = new EndpointConnection(
+        endpoint,
+        this.options.reconnectDelay
+      );
 
       // 设置 MCP 服务管理器
       if (this.mcpServiceManager) {

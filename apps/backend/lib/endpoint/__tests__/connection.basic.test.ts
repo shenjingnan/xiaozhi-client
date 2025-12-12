@@ -366,4 +366,93 @@ describe("EndpointConnection 基础功能测试", () => {
       expect(() => endpointConnection.disconnect()).not.toThrow();
     });
   });
+
+  describe("EndpointConnection.reconnect() 测试", () => {
+    it("serviceManager 未设置时应该快速失败", async () => {
+      const connectionWithoutServiceManager = new EndpointConnection(
+        "ws://test-endpoint"
+      );
+
+      await expect(connectionWithoutServiceManager.reconnect()).rejects.toThrow(
+        "MCPServiceManager 未设置"
+      );
+    });
+
+    it("应该按照正确的顺序执行重连操作", async () => {
+      const customDelay = 100;
+      const connection = new EndpointConnection(
+        "ws://test-endpoint",
+        customDelay
+      );
+      connection.setServiceManager(mockServiceManager);
+
+      // Mock disconnect 和 connect 方法
+      const disconnectSpy = vi.fn();
+      const connectSpy = vi.fn().mockResolvedValue(undefined);
+      connection.disconnect = disconnectSpy;
+      connection.connect = connectSpy;
+
+      const startTime = Date.now();
+      await connection.reconnect();
+      const endTime = Date.now();
+
+      // 验证调用顺序
+      expect(disconnectSpy).toHaveBeenCalledBefore(connectSpy);
+      expect(connectSpy).toHaveBeenCalled();
+
+      // 验证延迟时间（允许一些误差）
+      expect(endTime - startTime).toBeGreaterThanOrEqual(customDelay);
+    });
+
+    it("应该使用自定义的延迟时间", async () => {
+      const customDelay = 500;
+      const connection = new EndpointConnection(
+        "ws://test-endpoint",
+        customDelay
+      );
+      connection.setServiceManager(mockServiceManager);
+
+      // Mock disconnect 和 connect 方法
+      connection.disconnect = vi.fn();
+      connection.connect = vi.fn().mockResolvedValue(undefined);
+
+      const startTime = Date.now();
+      await connection.reconnect();
+      const endTime = Date.now();
+
+      // 验证延迟时间（允许 100ms 的误差）
+      expect(endTime - startTime).toBeGreaterThanOrEqual(customDelay - 50);
+      expect(endTime - startTime).toBeLessThan(customDelay + 150);
+    });
+
+    it("应该正确处理 connect 失败的情况", async () => {
+      const connection = new EndpointConnection("ws://test-endpoint", 100);
+      connection.setServiceManager(mockServiceManager);
+
+      // Mock disconnect 和 connect 方法
+      connection.disconnect = vi.fn();
+      const connectError = new Error("连接失败");
+      connection.connect = vi.fn().mockRejectedValue(connectError);
+
+      await expect(connection.reconnect()).rejects.toThrow("连接失败");
+      expect(connection.disconnect).toHaveBeenCalled();
+    });
+
+    it("应该正确处理重连流程", async () => {
+      const connection = new EndpointConnection("ws://test-endpoint", 100);
+      connection.setServiceManager(mockServiceManager);
+
+      // Mock disconnect 和 connect 方法
+      const disconnectSpy = vi.fn();
+      const connectSpy = vi.fn().mockResolvedValue(undefined);
+      connection.disconnect = disconnectSpy;
+      connection.connect = connectSpy;
+
+      await connection.reconnect();
+
+      // 验证调用顺序和状态
+      expect(disconnectSpy).toHaveBeenCalled();
+      expect(connectSpy).toHaveBeenCalled();
+    });
+  });
 });
