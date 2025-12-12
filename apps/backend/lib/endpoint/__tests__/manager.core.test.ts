@@ -62,7 +62,7 @@ vi.mock("@root/configManager.js", () => ({
 }));
 
 vi.mock("../connection.js", () => ({
-  ProxyMCPServer: vi.fn().mockImplementation((endpoint: string) => ({
+  EndpointConnection: vi.fn().mockImplementation((endpoint: string) => ({
     connect: vi.fn(),
     disconnect: vi.fn(),
     isConnected: vi.fn().mockReturnValue(false),

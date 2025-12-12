@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
-import type { ProxyMCPServer } from "@/lib/endpoint/connection.js";
+import type { EndpointConnection } from "@/lib/endpoint/connection.js";
 import { IndependentXiaozhiConnectionManager } from "@/lib/endpoint/index.js";
 import type {
   EndpointConfigChangeEvent,
@@ -135,8 +135,8 @@ export class WebServer {
   // 路由系统
   private routeManager?: RouteManager;
 
-  // 向后兼容的属性
-  private proxyMCPServer: ProxyMCPServer | undefined;
+  // 连接管理相关属性
+  private endpointConnection: EndpointConnection | undefined;
   private xiaozhiConnectionManager: IndependentXiaozhiConnectionManager | null =
     null;
   private mcpServiceManager: MCPServiceManager | null = null; // WebServer 直接管理的实例
@@ -448,7 +448,7 @@ export class WebServer {
       };
     }
 
-    if (this.proxyMCPServer) {
+    if (this.endpointConnection) {
       return {
         type: "single-endpoint",
         connected: true,
@@ -761,7 +761,7 @@ export class WebServer {
       };
 
       // 停止 MCP 客户端
-      this.proxyMCPServer?.disconnect();
+      this.endpointConnection?.disconnect();
 
       // 清理连接管理器和 MCPServiceManager
       (async () => {
@@ -847,7 +847,7 @@ export class WebServer {
     destroyEventBus();
 
     // 断开 MCP 连接
-    this.proxyMCPServer?.disconnect();
+    this.endpointConnection?.disconnect();
 
     this.logger.debug("WebServer 实例已销毁");
   }

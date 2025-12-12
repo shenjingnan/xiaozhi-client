@@ -7,11 +7,15 @@ import type { MCPMessage } from "@root/types/mcp.js";
 import { vi } from "vitest";
 import type { Data } from "ws";
 import type WebSocket from "ws";
-import type { ProxyMCPServer } from "../connection.js";
+import type { EndpointConnection } from "../connection.js";
 
 // 从 connection.ts 导入必要的类型
 // 注意：这些接口在 connection.ts 中是私有的，我们在这里重新定义用于测试
 interface IMCPServiceManager {
+  /**
+   * 获取所有可用的工具列表
+   * @returns 工具定义数组
+   */
   getAllTools(): Array<{
     name: string;
     description: string;
@@ -22,6 +26,12 @@ interface IMCPServiceManager {
     serviceName?: string;
     originalName?: string;
   }>;
+  /**
+   * 调用指定的工具
+   * @param toolName 工具名称
+   * @param arguments_ 工具参数
+   * @returns 工具执行结果
+   */
   callTool(
     toolName: string,
     arguments_: Record<string, unknown>
@@ -31,6 +41,31 @@ interface IMCPServiceManager {
       text: string;
     }>;
   }>;
+  /**
+   * 以下属性为测试兼容性而添加，用于模拟实际的 MCPServiceManager 类型结构。
+   * 请保持与实际 MCPServiceManager 类型同步。
+   * @see ../connection.ts 中的 MCPServiceManager 类型定义
+   */
+  /**
+   * 服务集合，模拟 MCPServiceManager 的 services 属性
+   */
+  services?: Map<string, unknown>;
+  /**
+   * 配置集合，模拟 MCPServiceManager 的 configs 属性
+   */
+  configs?: Map<string, unknown>;
+  /**
+   * 工具集合，模拟 MCPServiceManager 的 tools 属性
+   */
+  tools?: Map<string, unknown>;
+  /**
+   * 自定义 MCP 处理器，模拟 MCPServiceManager 的 customMCPHandler 属性
+   */
+  customMCPHandler?: unknown;
+  /**
+   * 允许添加其他属性以匹配 MCPServiceManager 的实际结构
+   */
+  [key: string]: unknown;
 }
 
 export enum ConnectionState {
@@ -42,12 +77,37 @@ export enum ConnectionState {
 
 /**
  * Mock ServiceManager 类型
- * 结合了 IMCPServiceManager 接口和 vitest 的 mock 函数
+ * 模拟 IMCPServiceManager 接口的测试实现
  */
-export type MockServiceManager = IMCPServiceManager & {
+export interface MockServiceManager {
   callTool: ReturnType<typeof vi.fn>;
   getAllTools: ReturnType<typeof vi.fn>;
-};
+  /**
+   * 服务集合，模拟 MCPServiceManager 的 services 属性
+   * 用于存储注册的服务实例
+   */
+  services?: Map<string, unknown>;
+  /**
+   * 配置集合，模拟 MCPServiceManager 的 configs 属性
+   * 用于存储服务配置信息
+   */
+  configs?: Map<string, unknown>;
+  /**
+   * 工具集合，模拟 MCPServiceManager 的 tools 属性
+   * 用于存储可用的工具定义
+   */
+  tools?: Map<string, unknown>;
+  /**
+   * 自定义 MCP 处理器，模拟 MCPServiceManager 的 customMCPHandler 属性
+   * 用于处理自定义的 MCP 协议消息
+   */
+  customMCPHandler?: unknown;
+  /**
+   * 允许添加其他属性以匹配 MCPServiceManager 的实际结构
+   * 这确保了 mock 可以完全模拟真实的 MCPServiceManager 接口
+   */
+  [key: string]: unknown;
+}
 
 /**
  * Mock WebSocket 类型
@@ -66,10 +126,10 @@ export interface MockWebSocket {
 }
 
 /**
- * ProxyMCPServer 内部状态访问接口
+ * EndpointConnection 内部状态访问接口
  * 用于测试时安全访问私有成员
  */
-export interface ProxyServerInternals {
+export interface EndpointConnectionInternals {
   ws: WebSocket | null;
   connectionStatus: boolean;
   serverInitialized: boolean;
@@ -81,13 +141,13 @@ export interface ProxyServerInternals {
 }
 
 /**
- * 获取 ProxyMCPServer 的内部状态访问器
+ * 获取 EndpointConnection 的内部状态访问器
  * 提供类型安全的私有成员访问
  */
-export function getProxyServerInternals(
-  server: ProxyMCPServer
-): ProxyServerInternals {
-  return server as unknown as ProxyServerInternals;
+export function getEndpointConnectionInternals(
+  server: EndpointConnection
+): EndpointConnectionInternals {
+  return server as unknown as EndpointConnectionInternals;
 }
 
 /**

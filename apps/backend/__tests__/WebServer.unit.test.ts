@@ -20,7 +20,7 @@ vi.mock("../configManager.js", () => ({
 }));
 
 vi.mock("@/lib/endpoint/connection.js", () => ({
-  ProxyMCPServer: vi.fn().mockImplementation((endpoint: string) => ({
+  EndpointConnection: vi.fn().mockImplementation((endpoint: string) => ({
     endpoint,
     connect: vi.fn().mockResolvedValue(undefined),
     disconnect: vi.fn(),
@@ -36,6 +36,13 @@ vi.mock("@/lib/endpoint/index.js", () => ({
     getConnectionStatus: vi.fn().mockReturnValue([]),
     on: vi.fn(),
     cleanup: vi.fn().mockResolvedValue(undefined),
+  })),
+}));
+
+vi.mock("@/lib/mcp/manager.js", () => ({
+  MCPServiceManager: vi.fn().mockImplementation(() => ({
+    stopAllServices: vi.fn().mockResolvedValue(undefined),
+    stop: vi.fn().mockResolvedValue(undefined),
   })),
 }));
 
@@ -140,8 +147,8 @@ describe("WebServer Unit Tests", () => {
     });
 
     it("should handle single-endpoint fallback", async () => {
-      // Mock ProxyMCPServer
-      const mockProxyServer = {
+      // Mock EndpointConnection
+      const mockEndpointConnection = {
         endpoint: "wss://test.example.com",
         isConnected: false,
         getStatus: vi.fn().mockReturnValue({
@@ -156,7 +163,7 @@ describe("WebServer Unit Tests", () => {
       } as any;
 
       // 设置 fallback 服务器
-      webServer.proxyMCPServer = mockProxyServer;
+      webServer.endpointConnection = mockEndpointConnection;
 
       // 清空连接管理器（不设置，让它为 undefined）
       (webServer as any).xiaozhiConnectionManager = undefined;
@@ -165,7 +172,7 @@ describe("WebServer Unit Tests", () => {
 
       expect(connectionStatus).toMatchObject({
         type: "single-endpoint",
-        connected: true, // 注意：proxyMCPServer 存在时总是返回 connected: true
+        connected: true, // 注意：endpointConnection 存在时总是返回 connected: true
         endpoint: "unknown", // 注意：返回的是 "unknown"，不是实际 endpoint
       });
     });
@@ -176,6 +183,7 @@ describe("WebServer Unit Tests", () => {
       const mockManager = {
         initialize: vi.fn(),
         connect: vi.fn(),
+        cleanup: vi.fn().mockResolvedValue(undefined),
       } as any;
 
       webServer.setXiaozhiConnectionManager(mockManager);
@@ -186,6 +194,7 @@ describe("WebServer Unit Tests", () => {
     it("应该在获取连接管理器时返回已设置的实例", () => {
       const mockManager = {
         test: "value",
+        cleanup: vi.fn().mockResolvedValue(undefined),
       } as any;
 
       webServer.setXiaozhiConnectionManager(mockManager);
@@ -214,6 +223,7 @@ describe("WebServer Unit Tests", () => {
       // Mock MCP 服务管理器
       mockServiceManager = {
         startAllServices: vi.fn().mockResolvedValue(undefined),
+        stopAllServices: vi.fn().mockResolvedValue(undefined),
         getAllTools: vi.fn().mockReturnValue([]),
         cleanup: vi.fn().mockResolvedValue(undefined),
       };

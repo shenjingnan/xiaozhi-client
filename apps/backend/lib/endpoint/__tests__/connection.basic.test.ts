@@ -2,17 +2,20 @@ import type { MCPMessage } from "@root/types/mcp.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Data } from "ws";
 import type WebSocket from "ws";
-import { ProxyMCPServer } from "../connection.js";
+import { EndpointConnection } from "../connection.js";
 import { createMockWebSocket, wait } from "./testHelpers.js";
 import type {
   MockServiceManager,
   MockWebSocket,
   ToolCallParams,
 } from "./testTypes.js";
-import { ConnectionState, getProxyServerInternals } from "./testTypes.js";
+import {
+  ConnectionState,
+  getEndpointConnectionInternals,
+} from "./testTypes.js";
 
-describe("ProxyMCPServer 基础功能测试", () => {
-  let proxyServer: ProxyMCPServer;
+describe("EndpointConnection 基础功能测试", () => {
+  let endpointConnection: EndpointConnection;
   let mockServiceManager: MockServiceManager;
   let mockWs: MockWebSocket;
 
@@ -32,14 +35,14 @@ describe("ProxyMCPServer 基础功能测试", () => {
       ]),
     };
 
-    proxyServer = new ProxyMCPServer("ws://test-endpoint");
-    proxyServer.setServiceManager(mockServiceManager);
+    endpointConnection = new EndpointConnection("ws://test-endpoint");
+    endpointConnection.setServiceManager(mockServiceManager);
 
     // 手动设置 WebSocket 监听器（模拟连接成功后的状态）
-    proxyServer.connect = vi.fn().mockResolvedValue(undefined);
+    endpointConnection.connect = vi.fn().mockResolvedValue(undefined);
 
     // 使用类型安全的内部状态访问器
-    const internals = getProxyServerInternals(proxyServer);
+    const internals = getEndpointConnectionInternals(endpointConnection);
     internals.ws = mockWs as unknown as WebSocket;
     internals.connectionStatus = true;
     internals.serverInitialized = true;
@@ -76,31 +79,31 @@ describe("ProxyMCPServer 基础功能测试", () => {
 
   describe("连接管理", () => {
     it("应该正确初始化服务器", () => {
-      expect(proxyServer).toBeDefined();
-      const internals = getProxyServerInternals(proxyServer);
+      expect(endpointConnection).toBeDefined();
+      const internals = getEndpointConnectionInternals(endpointConnection);
       expect(internals.endpointUrl).toBe("ws://test-endpoint");
     });
 
     it("应该设置服务管理器", () => {
-      const internals = getProxyServerInternals(proxyServer);
+      const internals = getEndpointConnectionInternals(endpointConnection);
       expect(internals.serviceManager).toBe(mockServiceManager);
     });
 
     it("应该正确处理连接状态", () => {
-      expect(proxyServer.isConnected()).toBe(true);
+      expect(endpointConnection.isConnected()).toBe(true);
 
-      const internals = getProxyServerInternals(proxyServer);
+      const internals = getEndpointConnectionInternals(endpointConnection);
       internals.connectionStatus = false;
-      expect(proxyServer.isConnected()).toBe(false);
+      expect(endpointConnection.isConnected()).toBe(false);
     });
 
     it("应该处理 URL 格式化", () => {
-      const server1 = new ProxyMCPServer("ws://localhost:8080");
-      const internals1 = getProxyServerInternals(server1);
+      const server1 = new EndpointConnection("ws://localhost:8080");
+      const internals1 = getEndpointConnectionInternals(server1);
       expect(internals1.endpointUrl).toBe("ws://localhost:8080");
 
-      const server2 = new ProxyMCPServer("http://localhost:8080");
-      const internals2 = getProxyServerInternals(server2);
+      const server2 = new EndpointConnection("http://localhost:8080");
+      const internals2 = getEndpointConnectionInternals(server2);
       expect(internals2.endpointUrl).toBe("http://localhost:8080");
     });
   });
@@ -315,27 +318,31 @@ describe("ProxyMCPServer 基础功能测试", () => {
   describe("工具管理", () => {
     it("应该正确从服务管理器同步工具", () => {
       // 初始化时已经设置了服务管理器并同步了工具
-      const syncedTools = proxyServer.getTools();
+      const syncedTools = endpointConnection.getTools();
       expect(syncedTools).toHaveLength(1);
       expect(syncedTools[0].name).toBe("test-tool");
     });
 
     it("应该处理服务管理器未设置的情况", () => {
-      const newProxyServer = new ProxyMCPServer("ws://test-endpoint");
+      const newEndpointConnection = new EndpointConnection(
+        "ws://test-endpoint"
+      );
       // 不设置服务管理器
 
-      const syncedTools = newProxyServer.getTools();
+      const syncedTools = newEndpointConnection.getTools();
       expect(syncedTools).toHaveLength(0);
     });
 
     it("应该直接从服务管理器获取工具", () => {
-      const newProxyServer = new ProxyMCPServer("ws://test-endpoint");
+      const newEndpointConnection = new EndpointConnection(
+        "ws://test-endpoint"
+      );
 
       // 设置服务管理器
-      newProxyServer.setServiceManager(mockServiceManager);
+      newEndpointConnection.setServiceManager(mockServiceManager);
 
       // 获取工具应该直接从服务管理器获取
-      const tools = newProxyServer.getTools();
+      const tools = newEndpointConnection.getTools();
       expect(tools).toHaveLength(1);
       expect(tools[0].name).toBe("test-tool");
       expect(tools[0].description).toBe("测试工具");
@@ -344,10 +351,10 @@ describe("ProxyMCPServer 基础功能测试", () => {
 
   describe("断开连接", () => {
     it("应该正确断开连接", () => {
-      proxyServer.disconnect();
+      endpointConnection.disconnect();
 
       expect(mockWs.close).toHaveBeenCalled();
-      expect(proxyServer.isConnected()).toBe(false);
+      expect(endpointConnection.isConnected()).toBe(false);
     });
 
     it("应该处理断开连接时的错误", () => {
@@ -356,7 +363,7 @@ describe("ProxyMCPServer 基础功能测试", () => {
       });
 
       // 不应该抛出错误
-      expect(() => proxyServer.disconnect()).not.toThrow();
+      expect(() => endpointConnection.disconnect()).not.toThrow();
     });
   });
 });
