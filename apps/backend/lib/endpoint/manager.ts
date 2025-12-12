@@ -479,7 +479,11 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
     console.info(`开始重连所有接入点，总数: ${this.connections.size}`);
 
     const reconnectPromises: Promise<void>[] = [];
-    const results: Array<{ endpoint: string; success: boolean; error?: string }> = [];
+    const results: Array<{
+      endpoint: string;
+      success: boolean;
+      error?: string;
+    }> = [];
 
     // 并发重连所有接入点
     for (const [endpoint, endpointConnection] of this.connections) {
@@ -491,7 +495,7 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
           results.push({
             endpoint,
             success: false,
-            error: error instanceof Error ? error.message : String(error)
+            error: error instanceof Error ? error.message : String(error),
           });
         });
 
@@ -1068,5 +1072,4 @@ export class IndependentXiaozhiConnectionManager extends EventEmitter {
       return [];
     }
   }
-
-  }
+}
