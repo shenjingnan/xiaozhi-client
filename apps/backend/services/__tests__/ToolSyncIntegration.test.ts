@@ -1,6 +1,6 @@
+import type { MCPServiceConfig } from "@/lib/mcp/types.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { MCPServiceConfig } from "@/lib/mcp/types.js";
 
 // Mock CustomMCPHandler - 需要在其他 mock 之前定义
 let mockCustomMCPTools: any[] = [];
