@@ -6,7 +6,6 @@ export * from "./EventBus.js";
 // 新增导出 - 高优先级服务模块
 export * from "./ConfigWatcher.js";
 export * from "./ErrorHandler.js";
-export * from "./PerformanceMonitor.js";
 
 // MCPService 导出 - 避免冲突的 ToolCallResult
 export {

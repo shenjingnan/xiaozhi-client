@@ -13,10 +13,6 @@ import {
 } from "../ErrorHandler.js";
 import type { MCPServiceConfig } from "../MCPService.js";
 import { MCPTransportType } from "../MCPService.js";
-import {
-  OperationType,
-  PerformanceMonitorClass,
-} from "../PerformanceMonitor.js";
 
 // Mock dependencies
 vi.mock("../../Logger.js");
@@ -68,49 +64,34 @@ describe("Advanced Features Integration", () => {
     }
   });
 
-  describe("Error Handling + Performance Monitoring Integration", () => {
-    it("should track performance metrics for error scenarios", () => {
+  describe("Error Handling Integration", () => {
+    it("should categorize errors correctly", () => {
       const serviceName = "test-service";
-      const performanceMonitor = new PerformanceMonitorClass();
 
-      // Start timing an operation
-      const timerId = performanceMonitor.startTiming(
-        serviceName,
-        "test-operation",
-        OperationType.TOOL_CALL
-      );
+      // Simulate different types of errors
+      const toolError = new Error("Tool call failed");
+      const connectionError = new Error("Connection failed");
+      const configError = new Error("Invalid configuration");
 
-      // Simulate an error
-      const error = new Error("Tool call failed");
-      const mcpError = categorizeError(error, serviceName);
+      const mcpToolError = categorizeError(toolError, serviceName);
+      const mcpConnectionError = categorizeError(connectionError, serviceName);
+      const mcpConfigError = categorizeError(configError, serviceName);
 
-      // End timing with failure
-      performanceMonitor.endTiming(timerId, false);
-
-      // Record the error
-      performanceMonitor.recordError(serviceName, "test-operation");
-
-      // Check that both systems recorded the failure
-      const errorStats = getErrorStatistics(serviceName);
-      const perfMetrics = performanceMonitor.getMetrics(serviceName);
-
-      expect(errorStats.totalErrors).toBe(1);
-      expect(errorStats.errorsByCategory.get(ErrorCategory.TOOL_CALL)).toBe(1);
-      expect(perfMetrics!.failedOperations).toBe(2); // endTiming + recordError both increment
-      expect(perfMetrics!.totalOperations).toBe(2);
-      expect(perfMetrics!.errorRate).toBe(1);
-      expect(mcpError.category).toBe(ErrorCategory.TOOL_CALL);
+      // Verify error categorization
+      expect(mcpToolError.category).toBe(ErrorCategory.TOOL_CALL);
+      expect(mcpConnectionError.category).toBe(ErrorCategory.CONNECTION);
+      expect(mcpConfigError.category).toBe(ErrorCategory.CONFIGURATION);
     });
 
-    it("should correlate error alerts with performance degradation", () => {
+    it("should trigger alerts for high error rates", () => {
       const serviceName = "test-service-2";
-      const performanceMonitor = new PerformanceMonitorClass();
 
       // Generate multiple errors to trigger alert
+      const errors = [];
       for (let i = 0; i < 12; i++) {
         const error = new Error(`Error ${i}`);
         const mcpError = categorizeError(error, serviceName);
-        performanceMonitor.recordError(serviceName, `operation-${i}`);
+        errors.push(mcpError);
 
         if (i === 11) {
           // Last error should trigger alert
@@ -118,9 +99,9 @@ describe("Advanced Features Integration", () => {
         }
       }
 
-      const perfMetrics = performanceMonitor.getMetrics(serviceName);
-      expect(perfMetrics!.errorRate).toBe(1); // 100% error rate
-      expect(perfMetrics!.failedOperations).toBe(12);
+      // Verify error statistics
+      const errorStats = getErrorStatistics(serviceName);
+      expect(errorStats.totalErrors).toBe(12);
     });
   });
 
