@@ -4,7 +4,7 @@ import { TransportFactory } from "@/lib/mcp/transport-factory.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setupCommonMocks } from "../../__tests__/index.js";
 import { configManager } from "../../configManager.js";
-import type { MCPServiceConfig } from "../MCPService.js";
+import type { MCPServiceConfig } from "@/lib/mcp/types.js";
 
 // Mock dependencies
 vi.mock("@/lib/mcp", () => {
