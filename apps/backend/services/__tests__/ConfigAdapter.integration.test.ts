@@ -3,6 +3,7 @@
  * 验证两个组件的协同工作和类型推断一致性
  */
 
+import { MCPService, MCPTransportType } from "@/lib/mcp";
 import {
   convertLegacyConfigBatch,
   convertLegacyToNew,
@@ -15,7 +16,6 @@ import type {
   SSEMCPServerConfig,
   StreamableHTTPMCPServerConfig,
 } from "../../configManager.js";
-import { MCPService, MCPTransportType } from "../MCPService.js";
 
 // 统一的mockLogger定义
 let mockLogger: any;

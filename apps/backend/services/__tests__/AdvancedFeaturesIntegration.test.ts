@@ -1,6 +1,8 @@
 import { existsSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { MCPServiceConfig } from "@/lib/mcp";
+import { MCPTransportType } from "@/lib/mcp";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Logger } from "../../Logger.js";
 import { ConfigWatcherClass } from "../ConfigWatcher.js";
@@ -11,8 +13,6 @@ import {
   getErrorStatistics,
   shouldAlert,
 } from "../ErrorHandler.js";
-import type { MCPServiceConfig } from "../MCPService.js";
-import { MCPTransportType } from "../MCPService.js";
 
 // Mock dependencies
 vi.mock("../../Logger.js");

@@ -16,7 +16,7 @@ export {
   type MCPServiceStatus,
   type ToolCallResult,
   MCPService,
-} from "./MCPService.js";
+} from "@/lib/mcp";
 export { TransportFactory } from "@/lib/mcp/transport-factory.js";
 
 // 传输适配器重新导出（向后兼容）
