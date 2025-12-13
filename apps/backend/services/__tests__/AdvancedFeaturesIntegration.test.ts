@@ -11,8 +11,8 @@ import {
   getErrorStatistics,
   shouldAlert,
 } from "../ErrorHandler.js";
-import type { MCPServiceConfig } from "../MCPService.js";
-import { MCPTransportType } from "../MCPService.js";
+import type { MCPServiceConfig } from "@/lib/mcp";
+import { MCPTransportType } from "@/lib/mcp";
 
 // Mock dependencies
 vi.mock("../../Logger.js");

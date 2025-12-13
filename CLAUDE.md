@@ -319,7 +319,7 @@ import { MCPService } from "@/lib/mcp";
 import { MCPServiceManager } from "@/lib/mcp";
 
 // ✅ 向后兼容方式（仍然支持）
-import { MCPService } from "@services/MCPService.js";
+import { MCPService } from "@/lib/mcp";
 import { MCPServiceManager } from "@services/MCPServiceManager.js";
 ```
 

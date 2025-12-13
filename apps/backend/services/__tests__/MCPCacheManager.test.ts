@@ -10,8 +10,8 @@ import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MCPToolsCache } from "../MCPCacheManager.js";
 import { MCPCacheManager } from "../MCPCacheManager.js";
-import type { MCPServiceConfig } from "../MCPService.js";
-import { MCPTransportType } from "../MCPService.js";
+import type { MCPServiceConfig } from "@/lib/mcp";
+import { MCPTransportType } from "@/lib/mcp";
 
 // Mock logger
 vi.mock("../../Logger.js", () => ({

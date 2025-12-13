@@ -4,8 +4,8 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConfigWatcherOptions } from "../ConfigWatcher.js";
 import { ConfigWatcher, ConfigWatcherClass } from "../ConfigWatcher.js";
-import type { MCPServiceConfig } from "../MCPService.js";
-import { MCPTransportType } from "../MCPService.js";
+import type { MCPServiceConfig } from "@/lib/mcp";
+import { MCPTransportType } from "@/lib/mcp";
 
 // Mock dependencies
 vi.mock("../../Logger.js", () => ({

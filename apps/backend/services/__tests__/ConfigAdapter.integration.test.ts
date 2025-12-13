@@ -15,7 +15,7 @@ import type {
   SSEMCPServerConfig,
   StreamableHTTPMCPServerConfig,
 } from "../../configManager.js";
-import { MCPService, MCPTransportType } from "../MCPService.js";
+import { MCPService, MCPTransportType } from "@/lib/mcp";
 
 // 统一的mockLogger定义
 let mockLogger: any;
