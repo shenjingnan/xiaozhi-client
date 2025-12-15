@@ -24,6 +24,7 @@ import type {
   TaskStatus,
 } from "@root/types/index.js";
 import { generateCacheKey, shouldCleanupCache } from "@root/types/index.js";
+import type { ToolCallResult } from "@services/CustomMCPHandler.js";
 import dayjs from "dayjs";
 
 // 缓存条目接口
@@ -368,8 +369,8 @@ export class MCPCacheManager {
    */
   async writeCustomMCPResult(
     toolName: string,
-    arguments_: any,
-    result: any,
+    arguments_: Record<string, unknown>,
+    result: ToolCallResult,
     status: TaskStatus = "completed",
     taskId?: string,
     ttl = 300000
@@ -414,7 +415,7 @@ export class MCPCacheManager {
    */
   async readCustomMCPResult(
     toolName: string,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<EnhancedToolResultCache | null> {
     try {
       const cache = await this.loadExtendedCache();
@@ -450,9 +451,9 @@ export class MCPCacheManager {
    */
   async updateCustomMCPStatus(
     toolName: string,
-    arguments_: any,
+    arguments_: Record<string, unknown>,
     newStatus: TaskStatus,
-    result?: any,
+    result?: ToolCallResult,
     error?: string
   ): Promise<boolean> {
     try {
@@ -508,7 +509,7 @@ export class MCPCacheManager {
    */
   async markCustomMCPAsConsumed(
     toolName: string,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<boolean> {
     try {
       const cache = await this.loadExtendedCache();
@@ -545,7 +546,7 @@ export class MCPCacheManager {
    */
   async deleteCustomMCPResult(
     toolName: string,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<boolean> {
     try {
       const cache = await this.loadExtendedCache();
@@ -704,7 +705,7 @@ export class MCPCacheManager {
    * 保存扩展缓存（包含 CustomMCP 结果）
    */
   async saveExtendedCache(cache: ExtendedMCPToolsCache): Promise<void> {
-    await this.saveCache(cache as any);
+    await this.saveCache(cache);
   }
 
   /**
