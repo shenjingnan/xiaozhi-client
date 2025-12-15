@@ -1,6 +1,5 @@
 ---
 description: 生成代码评审友好的 commit 信息
-allowed-tools: Bash(git --no-pager diff:*)
 ---
 
 ### 我希望你提供给我的内容

@@ -54,6 +54,13 @@ export interface CacheStats {
   cacheFileSize: number;
 }
 
+// 重新导出相关类型
+export type {
+  CacheStatistics,
+  EnhancedToolResultCache,
+  ExtendedMCPToolsCache,
+} from "@root/types/index.js";
+
 export class MCPCacheManager {
   private cachePath: string;
   private logger: Logger;
@@ -270,7 +277,7 @@ export class MCPCacheManager {
   /**
    * 验证缓存数据结构
    */
-  private validateCacheStructure(cache: any): cache is MCPToolsCache {
+  private validateCacheStructure(cache: MCPToolsCache): boolean {
     try {
       return (
         cache &&

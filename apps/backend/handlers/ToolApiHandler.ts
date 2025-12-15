@@ -18,7 +18,7 @@ import type {
   MCPToolData,
 } from "@root/types/toolApi.js";
 import { ToolType } from "@root/types/toolApi.js";
-import { MCPCacheManager } from "@services/MCPCacheManager.js";
+import { MCPCacheManager } from "@/lib/mcp";
 import Ajv from "ajv";
 import dayjs from "dayjs";
 import type { Context } from "hono";

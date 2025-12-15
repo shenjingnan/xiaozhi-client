@@ -24,7 +24,7 @@ import type { MCPToolConfig } from "@root/configManager.js";
 import { configManager } from "@root/configManager.js";
 import { CustomMCPHandler } from "@root/services/CustomMCPHandler.js";
 import { getEventBus } from "@root/services/EventBus.js";
-import { MCPCacheManager } from "@root/services/MCPCacheManager.js";
+import { MCPCacheManager } from "@/lib/mcp";
 import { ToolSyncManager } from "@root/services/ToolSyncManager.js";
 import type { MCPMessage } from "@root/types/mcp.js";
 import { ToolCallLogger } from "@utils/ToolCallLogger.js";

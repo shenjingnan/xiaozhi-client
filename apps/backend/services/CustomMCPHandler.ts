@@ -31,7 +31,7 @@ import {
 } from "@root/types/mcp.js";
 import { TimeoutError, createTimeoutResponse } from "@root/types/timeout.js";
 import { getEventBus } from "@services/EventBus.js";
-import { MCPCacheManager } from "@services/MCPCacheManager.js";
+import { MCPCacheManager } from "@/lib/mcp";
 
 // 工具调用结果接口（与 MCPServiceManager 保持一致）
 export interface ToolCallResult {

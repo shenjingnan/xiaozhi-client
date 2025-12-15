@@ -35,3 +35,14 @@ export {
 // CustomMCPHandler 导出 - 避免冲突的 ToolCallResult
 export { CustomMCPHandler } from "./CustomMCPHandler.js";
 export * from "./CozeApiService.js";
+
+// MCPCacheManager 向后兼容性导出
+export { MCPCacheManager } from "@/lib/mcp";
+export type {
+  MCPToolsCache,
+  MCPToolsCacheEntry,
+  CacheStats,
+  CacheStatistics,
+  EnhancedToolResultCache,
+  ExtendedMCPToolsCache
+} from "@/lib/mcp";
