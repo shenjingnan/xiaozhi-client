@@ -23,6 +23,7 @@ import type {
   ExtendedMCPToolsCache,
   TaskStatus,
   ToolCallResponse,
+  ToolCallResult,
 } from "@root/types/mcp.js";
 import {
   DEFAULT_CONFIG,
@@ -32,15 +33,6 @@ import {
 } from "@root/types/mcp.js";
 import { TimeoutError, createTimeoutResponse } from "@root/types/timeout.js";
 import { getEventBus } from "@services/EventBus.js";
-
-// 工具调用结果接口（与 MCPServiceManager 保持一致）
-export interface ToolCallResult {
-  content: Array<{
-    type: string;
-    text: string;
-  }>;
-  isError?: boolean;
-}
 
 // 工具调用参数类型
 type ToolArguments = Record<string, unknown>;

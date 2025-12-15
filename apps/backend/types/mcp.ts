@@ -4,8 +4,16 @@
 
 import { createHash } from "node:crypto";
 import type { MCPToolsCache } from "@/lib/mcp";
-import type { ToolCallResult } from "@services/CustomMCPHandler.js";
 import type { TimeoutResponse } from "./timeout.js";
+
+// 工具调用结果接口（与 MCPServiceManager 保持一致）
+export interface ToolCallResult {
+  content: Array<{
+    type: string;
+    text: string;
+  }>;
+  isError?: boolean;
+}
 
 // MCP 消息接口 - 定义 JSON-RPC 2.0 标准消息格式
 export interface MCPMessage {

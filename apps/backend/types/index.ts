@@ -12,6 +12,7 @@ export type {
   TimeoutConfig,
   TaskInfo,
   ToolCallResponse,
+  ToolCallResult,
 } from "./mcp.js";
 export {
   generateCacheKey,

@@ -1,6 +1,6 @@
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { ConfigManager } from "@root/configManager.js";
-import type { ToolCallResult } from "@services/CustomMCPHandler.js";
+import type { ToolCallResult } from "@root/types/mcp.js";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { EndpointManager } from "../manager.js";
 

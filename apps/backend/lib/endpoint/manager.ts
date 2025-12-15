@@ -2,7 +2,7 @@ import { EventEmitter } from "node:events";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { ConfigManager } from "@root/configManager.js";
-import type { ToolCallResult } from "@services/CustomMCPHandler.js";
+import type { ToolCallResult } from "@root/types/mcp.js";
 import type { EventBus } from "@services/EventBus.js";
 import { getEventBus } from "@services/EventBus.js";
 import { sliceEndpoint } from "@utils/mcpServerUtils.js";
