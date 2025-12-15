@@ -3,6 +3,7 @@
  * 处理通过 HTTP API 调用 MCP 工具的请求
  */
 
+import { MCPCacheManager } from "@/lib/mcp";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import { configManager } from "@root/configManager.js";
@@ -18,7 +19,6 @@ import type {
   MCPToolData,
 } from "@root/types/toolApi.js";
 import { ToolType } from "@root/types/toolApi.js";
-import { MCPCacheManager } from "@/lib/mcp";
 import Ajv from "ajv";
 import dayjs from "dayjs";
 import type { Context } from "hono";

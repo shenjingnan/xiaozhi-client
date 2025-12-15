@@ -6,12 +6,12 @@ import {
   writeFileSync,
 } from "node:fs";
 import { resolve } from "node:path";
-import type { MCPServiceConfig } from "../types";
-import { MCPTransportType } from "../types";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MCPToolsCache } from "../cache";
 import { MCPCacheManager } from "../cache";
+import type { MCPServiceConfig } from "../types";
+import { MCPTransportType } from "../types";
 
 // Mock logger
 vi.mock("../../Logger.js", () => ({

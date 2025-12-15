@@ -3,8 +3,8 @@
  */
 
 import { createHash } from "node:crypto";
-import type { ToolCallResult } from "@services/CustomMCPHandler.js";
 import type { MCPToolsCache } from "@/lib/mcp";
+import type { ToolCallResult } from "@services/CustomMCPHandler.js";
 import type { TimeoutResponse } from "./timeout.js";
 
 // MCP 消息接口 - 定义 JSON-RPC 2.0 标准消息格式

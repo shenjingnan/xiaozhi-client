@@ -8,6 +8,7 @@
 
 import { EventEmitter } from "node:events";
 import { MCPService } from "@/lib/mcp";
+import { MCPCacheManager } from "@/lib/mcp";
 import type {
   CustomMCPTool,
   JSONSchema,
@@ -24,7 +25,6 @@ import type { MCPToolConfig } from "@root/configManager.js";
 import { configManager } from "@root/configManager.js";
 import { CustomMCPHandler } from "@root/services/CustomMCPHandler.js";
 import { getEventBus } from "@root/services/EventBus.js";
-import { MCPCacheManager } from "@/lib/mcp";
 import { ToolSyncManager } from "@root/services/ToolSyncManager.js";
 import type { MCPMessage } from "@root/types/mcp.js";
 import { ToolCallLogger } from "@utils/ToolCallLogger.js";
