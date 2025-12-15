@@ -24,6 +24,7 @@ import { ToolType } from "@root/types/toolApi.js";
 import Ajv from "ajv";
 import dayjs from "dayjs";
 import type { Context } from "hono";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 
 /**
  * 工具调用请求接口
@@ -117,7 +118,7 @@ export class ToolApiHandler {
     data: ToolCallResponse,
     statusCode: number
   ): Response {
-    return c.json(data, statusCode as any);
+    return c.json(data, statusCode as ContentfulStatusCode);
   }
 
   /**
