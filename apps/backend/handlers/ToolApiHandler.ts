@@ -2184,8 +2184,8 @@ export class ToolApiHandler {
       };
     }
 
-    // 类型守卫：确保 workflow 是一个对象
-    if (!Array.isArray(workflow) && typeof workflow === "object") {
+    // 类型守卫：确保 workflow 不是数组
+    if (!Array.isArray(workflow)) {
       const workflowObj = workflow as Record<string, unknown>;
 
       // 检查必需字段

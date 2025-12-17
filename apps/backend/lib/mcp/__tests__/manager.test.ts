@@ -76,16 +76,12 @@ vi.mock("@root/services/CustomMCPHandler.js", () => ({
   }),
 }));
 
-vi.mock("@/lib/mcp", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/mcp")>();
-  return {
-    ...actual,
-    MCPCacheManager: vi.fn().mockImplementation(() => ({
-      loadCache: vi.fn(),
-      saveCache: vi.fn(),
-    })),
-  };
-});
+vi.mock("@/lib/mcp/cache.js", () => ({
+  MCPCacheManager: vi.fn().mockImplementation(() => ({
+    loadCache: vi.fn(),
+    saveCache: vi.fn(),
+  })),
+}));
 
 vi.mock("@utils/ToolCallLogger.js", () => ({
   ToolCallLogger: vi.fn().mockImplementation(() => ({
