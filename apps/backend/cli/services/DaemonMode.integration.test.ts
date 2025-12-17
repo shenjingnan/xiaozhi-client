@@ -21,7 +21,7 @@ vi.mock("node:fs", () => ({
 
 vi.mock("@cli/utils/PathUtils.js", () => ({
   PathUtils: {
-    getWebServerStandalonePath: vi.fn(),
+    getWebServerLauncherPath: vi.fn(),
     getExecutablePath: vi.fn(),
     getConfigDir: vi.fn(),
     getLogFile: vi.fn(),
@@ -53,8 +53,8 @@ describe("Daemon 模式集成测试", () => {
     mockConsoleLog.mockImplementation(() => {});
 
     // Setup PathUtils mocks
-    vi.mocked(PathUtils.getWebServerStandalonePath).mockReturnValue(
-      "/test/WebServerStandalone.js"
+    vi.mocked(PathUtils.getWebServerLauncherPath).mockReturnValue(
+      "/test/WebServerLauncher.js"
     );
     vi.mocked(PathUtils.getExecutablePath).mockImplementation(
       (name: string) => {
@@ -134,10 +134,10 @@ describe("Daemon 模式集成测试", () => {
       );
 
       // Verify complete workflow
-      expect(PathUtils.getWebServerStandalonePath).toHaveBeenCalled();
+      expect(PathUtils.getWebServerLauncherPath).toHaveBeenCalled();
       expect(mockSpawn).toHaveBeenCalledWith(
         "node",
-        ["/test/WebServerStandalone.js"],
+        ["/test/WebServerLauncher.js"],
         {
           detached: true,
           stdio: ["ignore", "ignore", "ignore"],
@@ -180,7 +180,7 @@ describe("Daemon 模式集成测试", () => {
 
       expect(mockSpawn).toHaveBeenCalledWith(
         "node",
-        ["/test/WebServerStandalone.js"],
+        ["/test/WebServerLauncher.js"],
         {
           detached: true,
           stdio: ["ignore", "ignore", "ignore"],
@@ -257,7 +257,7 @@ describe("Daemon 模式集成测试", () => {
       };
 
       await expect(serviceManager.start(options)).rejects.toThrow(
-        "WebServer 文件不存在: /test/WebServerStandalone.js"
+        "WebServer 文件不存在: /test/WebServerLauncher.js"
       );
 
       // Should not attempt to spawn or exit

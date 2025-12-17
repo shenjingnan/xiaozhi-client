@@ -180,7 +180,7 @@ export class DaemonManagerImpl implements IDaemonManager {
     options: DaemonOptions
   ): Promise<ChildProcess> {
     // 获取启动脚本路径
-    const scriptPath = PathUtils.getWebServerStandalonePath();
+    const scriptPath = PathUtils.getWebServerLauncherPath();
 
     // 构建启动参数
     const args = [scriptPath];

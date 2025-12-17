@@ -263,7 +263,7 @@ export class ServiceManagerImpl implements IServiceManager {
    */
   private async startWebServerInDaemon(): Promise<void> {
     const { spawn } = await import("node:child_process");
-    const webServerPath = PathUtils.getWebServerStandalonePath();
+    const webServerPath = PathUtils.getWebServerLauncherPath();
 
     const fs = await import("node:fs");
     if (!fs.default.existsSync(webServerPath)) {

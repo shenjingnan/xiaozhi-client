@@ -56,7 +56,7 @@ vi.mock("node:fs", () => ({
 // Mock utils
 vi.mock("@cli/utils/PathUtils.js", () => ({
   PathUtils: {
-    getWebServerStandalonePath: vi.fn(() => "/path/to/webserver.js"),
+    getWebServerLauncherPath: vi.fn(() => "/path/to/webserver.js"),
     getConfigDir: vi.fn(() => "/config"),
     getLogFile: vi.fn(() => "/logs/xiaozhi.log"),
   },
