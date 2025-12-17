@@ -84,8 +84,11 @@ describe("PathUtils 路径工具", () => {
         process.argv = ["node", "/opt/xiaozhi/dist/cli.js"];
         mockRealpathSync.mockReturnValue("/opt/xiaozhi/dist/cli.js");
 
-        const result = PathUtils.getExecutablePath("mcpServerProxy");
-        const expected = path.join("/opt/xiaozhi/dist", "mcpServerProxy.js");
+        const result = PathUtils.getExecutablePath("WebServerStandalone");
+        const expected = path.join(
+          "/opt/xiaozhi/dist",
+          "WebServerStandalone.js"
+        );
 
         expect(result).toBe(expected);
       });
@@ -129,10 +132,10 @@ describe("PathUtils 路径工具", () => {
         process.argv = ["node", symlinkPath];
         mockRealpathSync.mockReturnValue(realPath);
 
-        const result = PathUtils.getExecutablePath("mcpServerProxy");
+        const result = PathUtils.getExecutablePath("WebServerStandalone");
         const expected = path.join(
           "/opt/xiaozhi-client/dist",
-          "mcpServerProxy.js"
+          "WebServerStandalone.js"
         );
 
         expect(result).toBe(expected);
@@ -175,7 +178,6 @@ describe("PathUtils 路径工具", () => {
 
         const testCases = [
           { name: "WebServerStandalone", expected: "WebServerStandalone.js" },
-          { name: "mcpServerProxy", expected: "mcpServerProxy.js" },
           { name: "customScript", expected: "customScript.js" },
           { name: "app", expected: "app.js" },
         ];
@@ -260,7 +262,6 @@ describe("PathUtils 路径工具", () => {
         const webServerPath = PathUtils.getExecutablePath(
           "WebServerStandalone"
         );
-        const mcpProxyPath = PathUtils.getExecutablePath("mcpServerProxy");
 
         const expectedDir =
           "/Users/user/.nvm/versions/node/v18.17.0/lib/node_modules/xiaozhi-client/dist";
@@ -268,10 +269,6 @@ describe("PathUtils 路径工具", () => {
         expect(webServerPath).toBe(
           path.join(expectedDir, "WebServerStandalone.js")
         );
-        expect(mcpProxyPath).toBe(path.join(expectedDir, "mcpServerProxy.js"));
-
-        // 确保两个路径在同一目录下
-        expect(path.dirname(webServerPath)).toBe(path.dirname(mcpProxyPath));
       });
 
       it("应该在 Unix 系统路径格式下正确工作", () => {
@@ -396,20 +393,6 @@ describe("PathUtils 路径工具", () => {
     });
   });
 
-  describe("getMcpServerProxyPath 获取 MCP 服务器代理路径", () => {
-    it("应该返回正确的 mcpServerProxy 路径", () => {
-      process.argv = ["node", "/Users/test/xiaozhi-client/dist/cli.js"];
-
-      const result = PathUtils.getMcpServerProxyPath();
-      const expected = path.join(
-        "/Users/test/xiaozhi-client/dist",
-        "mcpServerProxy.js"
-      );
-
-      expect(result).toBe(expected);
-    });
-  });
-
   describe("路径解析一致性", () => {
     it("应该在不同方法间保持一致的路径解析", () => {
       // 使用跨平台的路径格式
@@ -417,16 +400,13 @@ describe("PathUtils 路径工具", () => {
       process.argv = ["node", testCliPath];
 
       const webServerPath = PathUtils.getWebServerStandalonePath();
-      const mcpProxyPath = PathUtils.getMcpServerProxyPath();
       const customPath = PathUtils.getExecutablePath("custom");
 
       // All paths should be in the same directory
       const webServerDir = path.dirname(webServerPath);
-      const mcpProxyDir = path.dirname(mcpProxyPath);
       const customDir = path.dirname(customPath);
 
-      expect(webServerDir).toBe(mcpProxyDir);
-      expect(mcpProxyDir).toBe(customDir);
+      expect(webServerDir).toBe(customDir);
       // 使用跨平台的期望路径
       const expectedDir = path.join("/test", "dist");
       expect(customDir).toBe(expectedDir);

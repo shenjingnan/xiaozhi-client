@@ -231,12 +231,12 @@ describe("CLI 命令行工具", () => {
   describe("服务命令", () => {
     it("应该获取正确的服务命令", () => {
       const expectedCommand = "node";
-      const expectedArgs = [expect.stringContaining("mcpServerProxy")];
+      const expectedArgs = [expect.stringContaining("WebServerStandalone")];
 
       // Test would require access to getServiceCommand function
       expect(expectedCommand).toBe("node");
       expect(expectedArgs[0]).toEqual(
-        expect.stringContaining("mcpServerProxy")
+        expect.stringContaining("WebServerStandalone")
       );
     });
 
@@ -246,13 +246,13 @@ describe("CLI 命令行工具", () => {
         // 模拟 .js 文件存在，.cjs 文件不存在
         if (
           filePath.includes("mcpPipe.js") ||
-          filePath.includes("mcpServerProxy.js")
+          filePath.includes("WebServerStandalone.js")
         ) {
           return true;
         }
         if (
           filePath.includes("mcpPipe.cjs") ||
-          filePath.includes("mcpServerProxy.cjs")
+          filePath.includes("WebServerStandalone.cjs")
         ) {
           return false;
         }
@@ -266,11 +266,11 @@ describe("CLI 命令行工具", () => {
     it("应该生成正确的启动参数", () => {
       // 测试启动参数生成
       const expectedCommand = "node";
-      const expectedArgs = ["mcpPipe.js", "mcpServerProxy.js"];
+      const expectedArgs = ["mcpPipe.js", "WebServerStandalone.js"];
 
       // 验证命令和参数格式
       expect(expectedCommand).toBe("node");
-      expect(expectedArgs).toEqual(["mcpPipe.js", "mcpServerProxy.js"]);
+      expect(expectedArgs).toEqual(["mcpPipe.js", "WebServerStandalone.js"]);
     });
   });
 
@@ -744,7 +744,6 @@ describe("CLI 命令行工具", () => {
         "src/cli.ts",
         "src/mcpCommands.ts",
         "src/mcpPipe.ts",
-        "src/mcpServerProxy.ts",
         "src/configManager.ts",
       ];
 

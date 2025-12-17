@@ -72,9 +72,6 @@ vi.mock("@cli/utils/PathUtils.js", () => ({
       .mockReturnValue("/mock/path/WebServerStandalone.js"),
     getExecutablePath: vi.fn().mockReturnValue("/mock/path/cli.js"),
     getConfigDir: vi.fn().mockReturnValue("/mock/config"),
-    getMcpServerProxyPath: vi
-      .fn()
-      .mockReturnValue("/mock/path/mcpServerProxy.js"),
     getLogFile: vi.fn().mockReturnValue("/mock/logs/xiaozhi.log"),
   },
 }));
@@ -115,9 +112,6 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
     );
     vi.mocked(PathUtils.getExecutablePath).mockReturnValue("/mock/path/cli.js");
     vi.mocked(PathUtils.getConfigDir).mockReturnValue("/mock/config");
-    vi.mocked(PathUtils.getMcpServerProxyPath).mockReturnValue(
-      "/mock/path/mcpServerProxy.js"
-    );
     vi.mocked(PathUtils.getLogFile).mockReturnValue("/mock/logs/xiaozhi.log");
 
     // 重置 mock 实例
@@ -276,27 +270,6 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
       await serviceManager.start(mcpOptions);
 
       expect(mockWebServerInstance.start).toHaveBeenCalled();
-    });
-
-    it("应处理 stdio 模式", async () => {
-      const { spawn } = await import("node:child_process");
-      const mockSpawn = vi.mocked(spawn);
-      mockSpawn.mockReturnValue({
-        pid: 1234,
-      } as any);
-
-      const stdioOptions: ServiceStartOptions = {
-        ...defaultOptions,
-        mode: "stdio",
-      };
-
-      await serviceManager.start(stdioOptions);
-
-      expect(mockSpawn).toHaveBeenCalled();
-      expect(mockProcessManager.savePidInfo).toHaveBeenCalledWith(
-        1234,
-        "foreground"
-      );
     });
 
     describe("daemon 模式", () => {

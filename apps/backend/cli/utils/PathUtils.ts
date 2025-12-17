@@ -216,13 +216,6 @@ export class PathUtils {
   }
 
   /**
-   * 获取 MCP 服务器代理路径
-   */
-  static getMcpServerProxyPath(): string {
-    return PathUtils.getExecutablePath("mcpServerProxy");
-  }
-
-  /**
    * 获取 Web 服务器独立启动脚本路径
    */
   static getWebServerStandalonePath(): string {
