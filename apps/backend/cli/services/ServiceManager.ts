@@ -68,7 +68,8 @@ export class ServiceManagerImpl implements IServiceManager {
           await this.startMcpServerMode(options);
           break;
         case "stdio":
-          await this.startStdioMode(options);
+          // stdio 模式已废弃，改为启动 Web 服务
+          await this.startNormalMode(options);
           break;
         case "normal":
           await this.startNormalMode(options);
@@ -255,26 +256,6 @@ export class ServiceManagerImpl implements IServiceManager {
 
       await server.start();
     }
-  }
-
-  /**
-   * 启动 stdio 模式
-   */
-  private async startStdioMode(options: ServiceStartOptions): Promise<void> {
-    const { spawn } = await import("node:child_process");
-    const mcpProxyPath = PathUtils.getMcpServerProxyPath();
-
-    // 直接执行 mcpServerProxy，它已经支持 stdio
-    const child = spawn("node", [mcpProxyPath], {
-      stdio: "inherit",
-      env: {
-        ...process.env,
-        XIAOZHI_CONFIG_DIR: PathUtils.getConfigDir(),
-      },
-    });
-
-    // 保存 PID 信息
-    this.processManager.savePidInfo(child.pid!, "foreground");
   }
 
   /**

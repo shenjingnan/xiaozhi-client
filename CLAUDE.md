@@ -153,11 +153,10 @@ xiaozhi-client 是一个务实的开源 MCP 客户端：
 
 ### 入口点
 
-项目构建三个主要入口点：
+项目构建两个主要入口点：
 
 - `dist/cli.js` - CLI 工具（主入口点）
-- `dist/mcpServerProxy.js` - MCP 服务器代理，用于集成到其他客户端
-- `dist/WebServerStandalone.js` - 独立 Web 服务器
+- `dist/WebServerStandalone.js` - 独立 Web 服务器，提供 /mcp 端点
 
 ### 测试策略
 

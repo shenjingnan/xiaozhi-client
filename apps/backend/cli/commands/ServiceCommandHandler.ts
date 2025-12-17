@@ -86,14 +86,15 @@ export class ServiceCommandHandler extends BaseCommandHandler {
       const serviceManager = this.getService<any>("serviceManager");
 
       if (options.stdio) {
-        // stdio 模式 - 直接运行 mcpServerProxy
-        await this.startStdioMode();
-      } else {
-        // 传统模式
-        await serviceManager.start({
-          daemon: options.daemon || false,
-        });
+        // stdio 模式已迁移到 HTTP 方式
+        this.showStdioMigrationGuide();
+        return;
       }
+
+      // 传统模式
+      await serviceManager.start({
+        daemon: options.daemon || false,
+      });
     } catch (error) {
       this.handleError(error as Error);
     }
@@ -162,25 +163,23 @@ export class ServiceCommandHandler extends BaseCommandHandler {
   }
 
   /**
-   * 启动 stdio 模式
+   * 显示 stdio 模式迁移指南
    */
-  private async startStdioMode(): Promise<void> {
-    const { spawn } = await import("node:child_process");
-    const { fileURLToPath } = await import("node:url");
-    const path = await import("node:path");
+  private showStdioMigrationGuide(): void {
+    console.log("\n❌ stdio 模式已废弃\n");
+    console.log("小智客户端已迁移到纯 HTTP 架构，请使用以下方式：\n");
 
-    const scriptPath = fileURLToPath(import.meta.url);
-    const distDir = path.dirname(scriptPath);
-    const mcpProxyPath = path.join(distDir, "mcpServerProxy.js");
+    console.log("1. 启动 Web 服务：");
+    console.log("   xiaozhi start\n");
 
-    // 直接执行 mcpServerProxy，它已经支持 stdio
-    spawn("node", [mcpProxyPath], {
-      stdio: "inherit",
-      env: {
-        ...process.env,
-        // 如果用户没有设置 XIAOZHI_CONFIG_DIR，则使用当前工作目录
-        XIAOZHI_CONFIG_DIR: process.env.XIAOZHI_CONFIG_DIR || process.cwd(),
-      },
-    });
+    console.log("2. 在 Cursor 中配置 HTTP 端点：");
+    console.log('   "mcpServers": {');
+    console.log('     "xiaozhi-client": {');
+    console.log('       "type": "streamableHttp",');
+    console.log('       "url": "http://localhost:9999/mcp"');
+    console.log("     }");
+    console.log("   }\n");
+
+    console.log("💡 HTTP 方式支持更多高级功能，如远程访问、认证等。\n");
   }
 }
