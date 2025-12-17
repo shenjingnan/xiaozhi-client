@@ -179,7 +179,5 @@ export class ServiceCommandHandler extends BaseCommandHandler {
     console.log('       "url": "http://localhost:9999/mcp"');
     console.log("     }");
     console.log("   }\n");
-
-    console.log("💡 HTTP 方式支持更多高级功能，如远程访问、认证等。\n");
   }
 }
