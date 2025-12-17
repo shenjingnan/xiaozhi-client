@@ -3,6 +3,9 @@
  * 处理通过 HTTP API 调用 MCP 工具的请求
  */
 
+import { MCPCacheManager } from "@/lib/mcp";
+import type { MCPServiceManager } from "@/lib/mcp";
+import type { JSONSchema } from "@/lib/mcp/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import { configManager } from "@root/configManager.js";
@@ -18,10 +21,10 @@ import type {
   MCPToolData,
 } from "@root/types/toolApi.js";
 import { ToolType } from "@root/types/toolApi.js";
-import { MCPCacheManager } from "@services/MCPCacheManager.js";
 import Ajv from "ajv";
 import dayjs from "dayjs";
 import type { Context } from "hono";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 
 /**
  * 工具调用请求接口
@@ -29,7 +32,7 @@ import type { Context } from "hono";
 interface ToolCallRequest {
   serviceName: string;
   toolName: string;
-  args: any;
+  args: Record<string, unknown>;
 }
 
 /**
@@ -37,7 +40,7 @@ interface ToolCallRequest {
  */
 interface ToolCallResponse {
   success: boolean;
-  data?: any | CustomMCPTool[] | { list: CustomMCPTool[]; total: number };
+  data?: unknown | CustomMCPTool[] | { list: CustomMCPTool[]; total: number };
   error?: {
     code: string;
     message: string;
@@ -71,7 +74,10 @@ export class ToolApiHandler {
   /**
    * 创建成功响应
    */
-  private createSuccessResponse(data: any, message?: string): ToolCallResponse {
+  private createSuccessResponse(
+    data: unknown,
+    message?: string
+  ): ToolCallResponse {
     return {
       success: true,
       data,
@@ -90,6 +96,29 @@ export class ToolApiHandler {
         message,
       },
     };
+  }
+
+  /**
+   * 确保 HTTP 状态码是有效的
+   */
+  private ensureValidStatusCode(code: number): number {
+    // 确保状态码是有效的 HTTP 状态码
+    if (code >= 100 && code < 600) {
+      return code;
+    }
+    // 默认返回 500
+    return 500;
+  }
+
+  /**
+   * 创建 Hono 响应，正确处理状态码类型
+   */
+  private createHonoResponse(
+    c: Context,
+    data: ToolCallResponse,
+    statusCode: number
+  ): Response {
+    return c.json(data, statusCode as ContentfulStatusCode);
   }
 
   /**
@@ -141,7 +170,7 @@ export class ToolApiHandler {
       }
 
       // 调用工具 - 特殊处理 customMCP 服务
-      let result: any;
+      let result: unknown;
       if (serviceName === "customMCP") {
         // 对于 customMCP 服务，直接使用 toolName 调用
         result = await serviceManager.callTool(toolName, args || {});
@@ -210,7 +239,7 @@ export class ToolApiHandler {
       }
 
       // 获取自定义 MCP 工具列表
-      let customTools: any[] = [];
+      let customTools: CustomMCPTool[] = [];
       let configPath = "";
 
       try {
@@ -404,7 +433,7 @@ export class ToolApiHandler {
    * @private
    */
   private async validateServiceAndTool(
-    serviceManager: any,
+    serviceManager: MCPServiceManager,
     serviceName: string,
     toolName: string
   ): Promise<void> {
@@ -414,7 +443,7 @@ export class ToolApiHandler {
       if (!serviceManager.hasCustomMCPTool(toolName)) {
         const availableTools = serviceManager
           .getCustomMCPTools()
-          .map((tool: any) => tool.name);
+          .map((tool) => tool.name);
 
         if (availableTools.length === 0) {
           throw new Error(
@@ -430,9 +459,7 @@ export class ToolApiHandler {
       // 验证 customMCP 工具配置是否有效
       try {
         const customTools = serviceManager.getCustomMCPTools();
-        const targetTool = customTools.find(
-          (tool: any) => tool.name === toolName
-        );
+        const targetTool = customTools.find((tool) => tool.name === toolName);
 
         if (targetTool && !targetTool.description) {
           this.logger.warn(`customMCP 工具 '${toolName}' 缺少描述信息`);
@@ -460,16 +487,14 @@ export class ToolApiHandler {
    * @private
    */
   private async validateCustomMCPArguments(
-    serviceManager: any,
+    serviceManager: MCPServiceManager,
     toolName: string,
-    args: any
+    args: Record<string, unknown>
   ): Promise<void> {
     try {
       // 获取工具的 inputSchema
       const customTools = serviceManager.getCustomMCPTools();
-      const targetTool = customTools.find(
-        (tool: any) => tool.name === toolName
-      );
+      const targetTool = customTools.find((tool) => tool.name === toolName);
 
       if (!targetTool) {
         throw new Error(`customMCP 工具 '${toolName}' 不存在`);
@@ -563,15 +588,25 @@ export class ToolApiHandler {
 
       // 根据错误类型返回不同的HTTP状态码和错误信息
       const { statusCode, errorResponse } = this.handleAddToolError(error);
-      return c.json(errorResponse, statusCode as any);
+      return this.createHonoResponse(
+        c,
+        errorResponse,
+        this.ensureValidStatusCode(statusCode)
+      );
     }
   }
 
   /**
    * 判断是否为新格式的请求
    */
-  private isNewFormatRequest(body: any): body is AddCustomToolRequest {
-    return body && typeof body === "object" && "type" in body && "data" in body;
+  private isNewFormatRequest(body: unknown): body is AddCustomToolRequest {
+    return (
+      body !== null &&
+      typeof body === "object" &&
+      !Array.isArray(body) &&
+      "type" in body &&
+      "data" in body
+    );
   }
 
   /**
@@ -640,9 +675,10 @@ export class ToolApiHandler {
       customDescription
     );
     if (preCheckResult) {
-      return c.json(
+      return this.createHonoResponse(
+        c,
         preCheckResult.errorResponse,
-        preCheckResult.statusCode as any
+        this.ensureValidStatusCode(preCheckResult.statusCode)
       );
     }
 
@@ -817,9 +853,10 @@ export class ToolApiHandler {
       customDescription
     );
     if (preCheckResult) {
-      return c.json(
+      return this.createHonoResponse(
+        c,
         preCheckResult.errorResponse,
-        preCheckResult.statusCode as any
+        this.ensureValidStatusCode(preCheckResult.statusCode)
       );
     }
 
@@ -901,7 +938,11 @@ export class ToolApiHandler {
 
       // 根据错误类型返回不同的HTTP状态码和错误信息
       const { statusCode, errorResponse } = this.handleUpdateToolError(error);
-      return c.json(errorResponse, statusCode as any);
+      return this.createHonoResponse(
+        c,
+        errorResponse,
+        this.ensureValidStatusCode(statusCode)
+      );
     }
   }
 
@@ -1046,7 +1087,7 @@ export class ToolApiHandler {
    */
   private handleUpdateToolError(error: unknown): {
     statusCode: number;
-    errorResponse: any;
+    errorResponse: ToolCallResponse;
   } {
     const errorMessage =
       error instanceof Error ? error.message : "更新自定义工具配置失败";
@@ -1187,7 +1228,11 @@ export class ToolApiHandler {
 
       // 根据错误类型返回不同的HTTP状态码和错误信息
       const { statusCode, errorResponse } = this.handleRemoveToolError(error);
-      return c.json(errorResponse, statusCode as any);
+      return this.createHonoResponse(
+        c,
+        errorResponse,
+        this.ensureValidStatusCode(statusCode)
+      );
     }
   }
 
@@ -1365,7 +1410,7 @@ export class ToolApiHandler {
    * 验证工作流更新数据完整性
    * 用于更新场景，只验证关键字段
    */
-  private validateWorkflowUpdateData(workflow: any): void {
+  private validateWorkflowUpdateData(workflow: Partial<CozeWorkflow>): void {
     if (!workflow) {
       throw new Error("工作流数据不能为空");
     }
@@ -1631,7 +1676,9 @@ export class ToolApiHandler {
     this.validateJsonSchema(tool.inputSchema);
 
     // HTTP处理器验证
-    this.validateProxyHandler(tool.handler);
+    if (tool.handler) {
+      this.validateProxyHandler(tool.handler as ProxyHandlerConfig);
+    }
   }
 
   /**
@@ -1674,7 +1721,7 @@ export class ToolApiHandler {
   /**
    * 验证HTTP处理器配置
    */
-  private validateProxyHandler(handler: any): void {
+  private validateProxyHandler(handler: ProxyHandlerConfig): void {
     if (!handler || typeof handler !== "object") {
       throw new Error("HTTP处理器配置不能为空");
     }
@@ -1696,7 +1743,7 @@ export class ToolApiHandler {
   /**
    * 验证认证配置
    */
-  private validateAuthConfig(auth: any): void {
+  private validateAuthConfig(auth: { type: string; token?: string }): void {
     if (!auth || typeof auth !== "object") {
       throw new Error("认证配置必须是对象");
     }
@@ -1755,7 +1802,7 @@ export class ToolApiHandler {
   /**
    * 验证JSON Schema格式
    */
-  private validateJsonSchema(schema: any): void {
+  private validateJsonSchema(schema: JSONSchema): void {
     if (!schema || typeof schema !== "object") {
       throw new Error("输入参数结构必须是有效的对象");
     }
@@ -1780,7 +1827,7 @@ export class ToolApiHandler {
   private generateInputSchema(
     workflow: CozeWorkflow,
     parameterConfig?: WorkflowParameterConfig
-  ): any {
+  ): JSONSchema {
     // 如果提供了参数配置，使用参数配置生成schema
     if (parameterConfig && parameterConfig.parameters.length > 0) {
       return this.generateInputSchemaFromConfig(parameterConfig);
@@ -1807,8 +1854,8 @@ export class ToolApiHandler {
    */
   private generateInputSchemaFromConfig(
     parameterConfig: WorkflowParameterConfig
-  ): any {
-    const properties: Record<string, any> = {};
+  ): JSONSchema {
+    const properties: Record<string, unknown> = {};
     const required: string[] = [];
 
     for (const param of parameterConfig.parameters) {
@@ -1835,7 +1882,7 @@ export class ToolApiHandler {
    */
   private handleAddToolError(error: unknown): {
     statusCode: number;
-    errorResponse: any;
+    errorResponse: ToolCallResponse;
   } {
     const errorMessage =
       error instanceof Error ? error.message : "添加自定义工具失败";
@@ -1982,7 +2029,7 @@ export class ToolApiHandler {
    */
   private handleRemoveToolError(error: unknown): {
     statusCode: number;
-    errorResponse: any;
+    errorResponse: ToolCallResponse;
   } {
     const errorMessage =
       error instanceof Error ? error.message : "删除自定义工具失败";
@@ -2085,10 +2132,10 @@ export class ToolApiHandler {
    * 执行边界条件预检查
    */
   private performPreChecks(
-    workflow: any,
+    workflow: unknown,
     customName?: string,
     customDescription?: string
-  ): { statusCode: number; errorResponse: any } | null {
+  ): { statusCode: number; errorResponse: ToolCallResponse } | null {
     // 检查基础参数
     const basicCheckResult = this.checkBasicParameters(
       workflow,
@@ -2112,10 +2159,10 @@ export class ToolApiHandler {
    * 检查基础参数
    */
   private checkBasicParameters(
-    workflow: any,
+    workflow: unknown,
     customName?: string,
     customDescription?: string
-  ): { statusCode: number; errorResponse: any } | null {
+  ): { statusCode: number; errorResponse: ToolCallResponse } | null {
     // 检查workflow参数
     if (!workflow) {
       return {
@@ -2137,33 +2184,38 @@ export class ToolApiHandler {
       };
     }
 
-    // 检查必需字段
-    if (
-      !workflow.workflow_id ||
-      typeof workflow.workflow_id !== "string" ||
-      !workflow.workflow_id.trim()
-    ) {
-      return {
-        statusCode: 400,
-        errorResponse: this.createErrorResponse(
-          "INVALID_REQUEST",
-          "workflow_id 不能为空且必须是非空字符串"
-        ),
-      };
-    }
+    // 类型守卫：确保 workflow 不是数组
+    if (!Array.isArray(workflow)) {
+      const workflowObj = workflow as Record<string, unknown>;
 
-    if (
-      !workflow.workflow_name ||
-      typeof workflow.workflow_name !== "string" ||
-      !workflow.workflow_name.trim()
-    ) {
-      return {
-        statusCode: 400,
-        errorResponse: this.createErrorResponse(
-          "INVALID_REQUEST",
-          "workflow_name 不能为空且必须是非空字符串"
-        ),
-      };
+      // 检查必需字段
+      if (
+        !workflowObj.workflow_id ||
+        typeof workflowObj.workflow_id !== "string" ||
+        !workflowObj.workflow_id.trim()
+      ) {
+        return {
+          statusCode: 400,
+          errorResponse: this.createErrorResponse(
+            "INVALID_REQUEST",
+            "workflow_id 不能为空且必须是非空字符串"
+          ),
+        };
+      }
+
+      if (
+        !workflowObj.workflow_name ||
+        typeof workflowObj.workflow_name !== "string" ||
+        !workflowObj.workflow_name.trim()
+      ) {
+        return {
+          statusCode: 400,
+          errorResponse: this.createErrorResponse(
+            "INVALID_REQUEST",
+            "workflow_name 不能为空且必须是非空字符串"
+          ),
+        };
+      }
     }
 
     // 检查自定义参数
@@ -2229,7 +2281,7 @@ export class ToolApiHandler {
    */
   private checkSystemStatus(): {
     statusCode: number;
-    errorResponse: any;
+    errorResponse: ToolCallResponse;
   } | null {
     // 检查扣子API配置
     try {
@@ -2275,7 +2327,7 @@ export class ToolApiHandler {
    */
   private checkResourceLimits(): {
     statusCode: number;
-    errorResponse: any;
+    errorResponse: ToolCallResponse;
   } | null {
     try {
       // 检查现有工具数量限制

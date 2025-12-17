@@ -22,6 +22,7 @@ import type {
   EnhancedToolResultCache,
   ExtendedMCPToolsCache,
   TaskStatus,
+  ToolCallResult,
 } from "@root/types/index.js";
 import { generateCacheKey, shouldCleanupCache } from "@root/types/index.js";
 import dayjs from "dayjs";
@@ -53,6 +54,13 @@ export interface CacheStats {
   serverCount: number;
   cacheFileSize: number;
 }
+
+// 重新导出相关类型
+export type {
+  CacheStatistics,
+  EnhancedToolResultCache,
+  ExtendedMCPToolsCache,
+} from "@root/types/index.js";
 
 export class MCPCacheManager {
   private cachePath: string;
@@ -199,7 +207,7 @@ export class MCPCacheManager {
       }
 
       const cacheData = readFileSync(this.cachePath, "utf8");
-      const cache = JSON.parse(cacheData) as MCPToolsCache;
+      const cache: unknown = JSON.parse(cacheData);
 
       // 验证缓存结构
       if (!this.validateCacheStructure(cache)) {
@@ -269,19 +277,28 @@ export class MCPCacheManager {
 
   /**
    * 验证缓存数据结构
+   * 使用类型谓词确保类型安全
    */
-  private validateCacheStructure(cache: any): cache is MCPToolsCache {
+  private validateCacheStructure(cache: unknown): cache is MCPToolsCache {
     try {
+      if (!cache || typeof cache !== "object") {
+        return false;
+      }
+
+      const cacheObj = cache as Record<string, unknown>;
+      const metadata = cacheObj.metadata as Record<string, unknown>;
+
       return (
-        cache &&
-        typeof cache === "object" &&
-        typeof cache.version === "string" &&
-        typeof cache.mcpServers === "object" &&
-        cache.metadata &&
-        typeof cache.metadata === "object" &&
-        typeof cache.metadata.lastGlobalUpdate === "string" &&
-        typeof cache.metadata.totalWrites === "number" &&
-        typeof cache.metadata.createdAt === "string"
+        typeof cacheObj.version === "string" &&
+        typeof cacheObj.mcpServers === "object" &&
+        cacheObj.mcpServers !== null &&
+        cacheObj.metadata !== null &&
+        cacheObj.metadata !== undefined &&
+        typeof metadata === "object" &&
+        metadata !== null &&
+        typeof metadata.lastGlobalUpdate === "string" &&
+        typeof metadata.totalWrites === "number" &&
+        typeof metadata.createdAt === "string"
       );
     } catch {
       return false;
@@ -361,8 +378,8 @@ export class MCPCacheManager {
    */
   async writeCustomMCPResult(
     toolName: string,
-    arguments_: any,
-    result: any,
+    arguments_: Record<string, unknown>,
+    result: ToolCallResult,
     status: TaskStatus = "completed",
     taskId?: string,
     ttl = 300000
@@ -407,7 +424,7 @@ export class MCPCacheManager {
    */
   async readCustomMCPResult(
     toolName: string,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<EnhancedToolResultCache | null> {
     try {
       const cache = await this.loadExtendedCache();
@@ -443,9 +460,9 @@ export class MCPCacheManager {
    */
   async updateCustomMCPStatus(
     toolName: string,
-    arguments_: any,
+    arguments_: Record<string, unknown>,
     newStatus: TaskStatus,
-    result?: any,
+    result?: ToolCallResult,
     error?: string
   ): Promise<boolean> {
     try {
@@ -501,7 +518,7 @@ export class MCPCacheManager {
    */
   async markCustomMCPAsConsumed(
     toolName: string,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<boolean> {
     try {
       const cache = await this.loadExtendedCache();
@@ -538,7 +555,7 @@ export class MCPCacheManager {
    */
   async deleteCustomMCPResult(
     toolName: string,
-    arguments_: any
+    arguments_: Record<string, unknown>
   ): Promise<boolean> {
     try {
       const cache = await this.loadExtendedCache();
@@ -697,7 +714,7 @@ export class MCPCacheManager {
    * 保存扩展缓存（包含 CustomMCP 结果）
    */
   async saveExtendedCache(cache: ExtendedMCPToolsCache): Promise<void> {
-    await this.saveCache(cache as any);
+    await this.saveCache(cache);
   }
 
   /**

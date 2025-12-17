@@ -76,7 +76,7 @@ vi.mock("@root/services/CustomMCPHandler.js", () => ({
   }),
 }));
 
-vi.mock("@root/services/MCPCacheManager.js", () => ({
+vi.mock("@/lib/mcp/cache.js", () => ({
   MCPCacheManager: vi.fn().mockImplementation(() => ({
     loadCache: vi.fn(),
     saveCache: vi.fn(),

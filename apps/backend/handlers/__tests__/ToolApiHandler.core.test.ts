@@ -45,7 +45,7 @@ const mockServiceManager = {
 };
 
 // Mock MCPCacheManager
-vi.mock("@services/MCPCacheManager.js", () => ({
+vi.mock("@/lib/mcp", () => ({
   MCPCacheManager: vi.fn().mockImplementation(() => ({
     getAllCachedTools: vi.fn().mockResolvedValue([]),
   })) as any,
@@ -220,7 +220,7 @@ describe("ToolApiHandler - 核心功能测试", () => {
       );
 
       // Mock MCPCacheManager
-      const { MCPCacheManager } = await import("@services/MCPCacheManager.js");
+      const { MCPCacheManager } = await import("@/lib/mcp");
       const mockMCPCacheManager = vi.mocked(MCPCacheManager);
       mockMCPCacheManager.mockImplementation(
         () =>
