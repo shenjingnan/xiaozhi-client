@@ -232,8 +232,8 @@ describe("第二阶段：工具同步优化集成测试", () => {
           inputSchema: { type: "object" as const },
           handler: {
             type: "proxy" as const,
-            platform: "custom" as const,
-            config: {},
+            platform: "coze" as const,
+            config: { workflow_id: "test-workflow" },
           },
         },
       ];
@@ -313,9 +313,11 @@ describe("第二阶段：工具同步优化集成测试", () => {
     });
 
     it("应该正确处理 CustomMCPHandler 重新初始化失败", async () => {
-      // Mock 重新初始化失败
-      const reinitSpy = vi.spyOn(customMCPHandler as any, "reinitialize");
-      reinitSpy.mockRejectedValue(new Error("重新初始化失败"));
+      // Mock 重新初始化失败 - 使用 throw 而不是 mockRejectedValue
+      const reinitSpy = vi.spyOn(customMCPHandler, "reinitialize");
+      reinitSpy.mockImplementationOnce(() => {
+        throw new Error("重新初始化失败");
+      });
 
       // 监听错误日志
       const errorSpy = vi.spyOn(mockLogger, "error");
@@ -327,7 +329,7 @@ describe("第二阶段：工具同步优化集成测试", () => {
       });
 
       // 等待异步操作完成
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       // 验证错误被记录
       expect(errorSpy).toHaveBeenCalledWith(
@@ -347,8 +349,8 @@ describe("第二阶段：工具同步优化集成测试", () => {
           inputSchema: { type: "object" as const },
           handler: {
             type: "proxy" as const,
-            platform: "custom" as const,
-            config: {},
+            platform: "coze" as const,
+            config: { workflow_id: "test-workflow" },
           },
         },
       ];

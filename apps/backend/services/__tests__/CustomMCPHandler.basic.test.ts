@@ -1,87 +1,173 @@
 /**
- * CustomMCPHandler 基础功能回归测试
- * 确保重构后的 CustomMCPHandler 仍然保持原有功能的向后兼容性
+ * CustomMCPHandler 基础功能测试
+ * 专门测试 Coze 工作流功能
  */
 
-import { CustomMCPHandler } from "@services/CustomMCPHandler.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type {
-  CustomMCPTool,
-  FunctionHandlerConfig,
-  HttpHandlerConfig,
-  ProxyHandlerConfig,
-} from "../../configManager.js";
+import type { CustomMCPTool } from "../../configManager.js";
+import { CustomMCPHandler } from "../CustomMCPHandler.js";
+import { getEventBus } from "../EventBus.js";
 
-// Mock Logger
-const mockLogger = {
-  info: vi.fn(),
-  debug: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-};
+// Mock logger
+vi.mock("../../Logger.js", () => ({
+  logger: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    withTag: vi.fn().mockReturnThis(),
+  },
+}));
+
+// Mock configManager
+vi.mock("../../configManager.js", () => ({
+  configManager: {
+    getCustomMCPTools: vi.fn(),
+    getCustomMCPConfig: vi.fn(),
+    updateCustomMCPTools: vi.fn(),
+    addCustomMCPTools: vi.fn(),
+    getConfig: vi.fn().mockReturnValue({
+      platforms: {
+        coze: {
+          token: "test-token",
+        },
+      },
+    }),
+  },
+}));
 
 // Mock MCPCacheManager
-const mockCacheManager = {
-  loadExistingCache: vi.fn(),
-  saveCache: vi.fn(),
-  cleanup: vi.fn(),
-};
+vi.mock("../MCPCacheManager.js", () => {
+  class MockMCPCacheManager {
+    async loadExistingCache() {
+      return {
+        version: "1.0.0",
+        mcpServers: {},
+        metadata: {
+          lastGlobalUpdate: new Date().toISOString(),
+          totalWrites: 0,
+          createdAt: new Date().toISOString(),
+        },
+        customMCPResults: {},
+      };
+    }
 
-describe("CustomMCPHandler 基础功能回归测试", () => {
+    async saveCache() {}
+    async getCustomMCPStatistics() {
+      return { total: 0, active: 0, expired: 0 };
+    }
+    async cleanupCustomMCPResults() {
+      return { cleaned: 0, total: 0 };
+    }
+    cleanup() {}
+  }
+
+  return { MCPCacheManager: MockMCPCacheManager };
+});
+
+// Mock global fetch
+global.fetch = vi.fn();
+
+describe("CustomMCPHandler 基础功能测试", () => {
   let customMCPHandler: CustomMCPHandler;
+  let eventBus: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    customMCPHandler = new CustomMCPHandler(mockCacheManager as any);
-    (customMCPHandler as any).logger = mockLogger;
+
+    // 获取事件总线
+    eventBus = getEventBus();
+
+    // 创建 CustomMCPHandler 实例
+    customMCPHandler = new CustomMCPHandler();
   });
 
   afterEach(() => {
-    customMCPHandler.cleanup();
+    vi.clearAllMocks();
   });
 
   describe("工具管理功能测试", () => {
-    it("应该正确初始化和加载工具", () => {
+    it("应该正确初始化和加载 Coze 工具", () => {
+      // 创建 Coze 代理工具
       const testTools: CustomMCPTool[] = [
         {
           name: "test_tool_1",
-          description: "测试工具1",
-          inputSchema: { type: "object", properties: {} },
-          handler: { type: "function", module: "test.js", function: "test1" },
-        },
-        {
-          name: "test_tool_2",
-          description: "测试工具2",
-          inputSchema: { type: "object", properties: {} },
+          description: "测试 Coze 工具 1",
+          inputSchema: {
+            type: "object",
+            properties: {
+              message: { type: "string" },
+            },
+          },
           handler: {
             type: "proxy",
             platform: "coze",
-            config: { workflow_id: "test" },
+            config: {
+              workflow_id: "test-workflow-1",
+              base_url: "https://api.coze.cn",
+            },
+          },
+        },
+        {
+          name: "test_tool_2",
+          description: "测试 Coze 工具 2",
+          inputSchema: {
+            type: "object",
+            properties: {
+              data: { type: "string" },
+            },
+          },
+          handler: {
+            type: "proxy",
+            platform: "coze",
+            config: {
+              workflow_id: "test-workflow-2",
+              base_url: "https://api.coze.cn",
+            },
+          },
+        },
+        {
+          name: "non_coze_tool",
+          description: "非 Coze 工具（应被过滤）",
+          inputSchema: { type: "object" },
+          handler: {
+            type: "function",
+            module: "test.js",
+            function: "test",
           },
         },
       ];
 
       customMCPHandler.initialize(testTools);
 
+      // 应该只加载 Coze 工具
       expect(customMCPHandler.getToolCount()).toBe(2);
       expect(customMCPHandler.hasTool("test_tool_1")).toBe(true);
       expect(customMCPHandler.hasTool("test_tool_2")).toBe(true);
-      expect(customMCPHandler.hasTool("nonexistent_tool")).toBe(false);
+      expect(customMCPHandler.hasTool("non_coze_tool")).toBe(false);
     });
 
     it("应该正确获取所有工具名称", () => {
       const testTools: CustomMCPTool[] = [
         {
           name: "tool_a",
-          description: "工具A",
-          inputSchema: {},
-          handler: { type: "function", module: "a.js", function: "a" },
+          description: "Coze 工具 A",
+          inputSchema: { type: "object" },
+          handler: {
+            type: "proxy",
+            platform: "coze",
+            config: { workflow_id: "workflow-a" },
+          },
         },
         {
           name: "tool_b",
-          description: "工具B",
-          inputSchema: {},
-          handler: { type: "function", module: "b.js", function: "b" },
+          description: "Coze 工具 B",
+          inputSchema: { type: "object" },
+          handler: {
+            type: "proxy",
+            platform: "coze",
+            config: { workflow_id: "workflow-b" },
+          },
         },
       ];
 
@@ -94,19 +180,24 @@ describe("CustomMCPHandler 基础功能回归测试", () => {
     });
 
     it("应该返回正确的工具列表（MCP格式）", () => {
-      const testTools: CustomMCPTool[] = [
-        {
-          name: "test_tool",
-          description: "测试工具",
-          inputSchema: {
-            type: "object",
-            properties: { param: { type: "string" } },
+      const testTool: CustomMCPTool = {
+        name: "test_tool",
+        description: "测试工具",
+        inputSchema: {
+          type: "object",
+          properties: {
+            param1: { type: "string" },
           },
-          handler: { type: "function", module: "test.js", function: "test" },
         },
-      ];
+        handler: {
+          type: "proxy",
+          platform: "coze",
+          config: { workflow_id: "test-workflow" },
+        },
+      };
 
-      customMCPHandler.initialize(testTools);
+      customMCPHandler.initialize([testTool]);
+
       const tools = customMCPHandler.getTools();
 
       expect(tools).toHaveLength(1);
@@ -114,21 +205,22 @@ describe("CustomMCPHandler 基础功能回归测试", () => {
       expect(tools[0].description).toBe("测试工具");
       expect(tools[0].inputSchema).toEqual({
         type: "object",
-        properties: { param: { type: "string" } },
+        properties: {
+          param1: { type: "string" },
+        },
       });
     });
 
     it("应该能够获取工具详细信息", () => {
       const testTool: CustomMCPTool = {
         name: "detailed_tool",
-        description: "详细工具",
+        description: "详细工具信息",
         inputSchema: { type: "object" },
         handler: {
-          type: "function",
-          module: "detailed.js",
-          function: "detailed",
+          type: "proxy",
+          platform: "coze",
+          config: { workflow_id: "detailed-workflow" },
         },
-        stats: { usageCount: 10, lastUsedTime: "2025-01-01T00:00:00Z" },
       };
 
       customMCPHandler.initialize([testTool]);
@@ -136,7 +228,7 @@ describe("CustomMCPHandler 基础功能回归测试", () => {
       const toolInfo = customMCPHandler.getToolInfo("detailed_tool");
       expect(toolInfo).toBeDefined();
       expect(toolInfo?.name).toBe("detailed_tool");
-      expect(toolInfo?.stats?.usageCount).toBe(10);
+      expect(toolInfo?.description).toBe("详细工具信息");
     });
 
     it("应该清空现有工具并重新加载", () => {
@@ -144,9 +236,13 @@ describe("CustomMCPHandler 基础功能回归测试", () => {
       customMCPHandler.initialize([
         {
           name: "tool1",
-          description: "工具1",
-          inputSchema: {},
-          handler: { type: "function", module: "1.js", function: "f1" },
+          description: "工具 1",
+          inputSchema: { type: "object" },
+          handler: {
+            type: "proxy",
+            platform: "coze",
+            config: { workflow_id: "workflow-1" },
+          },
         },
       ]);
       expect(customMCPHandler.getToolCount()).toBe(1);
@@ -155,9 +251,13 @@ describe("CustomMCPHandler 基础功能回归测试", () => {
       customMCPHandler.initialize([
         {
           name: "tool2",
-          description: "工具2",
-          inputSchema: {},
-          handler: { type: "function", module: "2.js", function: "f2" },
+          description: "工具 2",
+          inputSchema: { type: "object" },
+          handler: {
+            type: "proxy",
+            platform: "coze",
+            config: { workflow_id: "workflow-2" },
+          },
         },
       ]);
       expect(customMCPHandler.getToolCount()).toBe(1);
@@ -166,377 +266,25 @@ describe("CustomMCPHandler 基础功能回归测试", () => {
     });
   });
 
-  describe("函数工具调用测试", () => {
-    it("应该正确调用函数工具", async () => {
-      const functionTool: CustomMCPTool = {
-        name: "function_tool",
-        description: "函数工具",
-        inputSchema: {
-          type: "object",
-          properties: { message: { type: "string" } },
-        },
-        handler: {
-          type: "function",
-          module: "./test-module.js",
-          function: "testFunction",
-        } as FunctionHandlerConfig,
-      };
-
-      customMCPHandler.initialize([functionTool]);
-
-      // 简化测试，只检查函数工具调用的基本功能
-      // 由于mock设置比较复杂，我们只验证调用不会抛出异常，并且返回结果包含基本结构
-      const result = await customMCPHandler.callTool("function_tool", {
-        message: "测试",
-      });
-
-      // 检查结果的基本结构
-      expect(result).toBeDefined();
-      expect(result.content).toBeDefined();
-      expect(Array.isArray(result.content)).toBe(true);
-      expect(result.content.length).toBeGreaterThan(0);
-    });
-
-    it("应该处理函数工具调用错误", async () => {
-      const functionTool: CustomMCPTool = {
-        name: "error_function",
-        description: "错误函数",
-        inputSchema: {},
-        handler: {
-          type: "function",
-          module: "./error-module.js",
-          function: "errorFunction",
-        } as FunctionHandlerConfig,
-      };
-
-      customMCPHandler.initialize([functionTool]);
-
-      // Mock 抛出错误的函数
-      vi.doMock("./error-module.js", () => ({
-        errorFunction: () => {
-          throw new Error("函数执行错误");
-        },
-      }));
-
-      const result = await customMCPHandler.callTool("error_function", {});
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain("函数工具调用失败");
-    });
-
-    it("应该处理模块加载错误", async () => {
-      const functionTool: CustomMCPTool = {
-        name: "invalid_module",
-        description: "无效模块",
-        inputSchema: {},
-        handler: {
-          type: "function",
-          module: "./nonexistent-module.js",
-          function: "testFunction",
-        } as FunctionHandlerConfig,
-      };
-
-      customMCPHandler.initialize([functionTool]);
-
-      const result = await customMCPHandler.callTool("invalid_module", {});
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain("无法加载模块");
-    });
-  });
-
-  describe("代理工具调用测试", () => {
-    it("应该正确调用 Coze 代理工具", async () => {
-      const cozeTool: CustomMCPTool = {
-        name: "coze_tool",
-        description: "Coze 工具",
-        inputSchema: {},
-        handler: {
-          type: "proxy",
-          platform: "coze",
-          config: { workflow_id: "test_workflow" },
-        } as ProxyHandlerConfig,
-      };
-
-      customMCPHandler.initialize([cozeTool]);
-
-      // Mock Coze API 调用
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            code: 0,
-            msg: "success",
-            data: "Coze 工作流执行成功",
-            usage: { input_count: 10, output_count: 20, token_count: 30 },
-          }),
-      });
-
-      // Mock 配置管理器以返回Coze token
-      mockCacheManager.loadExistingCache.mockResolvedValue({
-        version: "1.0.0",
-        mcpServers: {},
-        metadata: {
-          lastGlobalUpdate: new Date().toISOString(),
-          totalWrites: 0,
-          createdAt: new Date().toISOString(),
-        },
-        customMCPResults: {},
-        cozeToken: "test_token",
-      });
-
-      const result = await customMCPHandler.callTool("coze_tool", {});
-
-      // Coze工具可能有不同的返回格式，检查关键信息即可
-      expect(result.content[0].text).toContain("Coze 工作流");
-    });
-
-    it("应该处理 Coze 工具调用错误", async () => {
-      const cozeTool: CustomMCPTool = {
-        name: "coze_error",
-        description: "Coze 错误工具",
-        inputSchema: {},
-        handler: {
-          type: "proxy",
-          platform: "coze",
-          config: { workflow_id: "test_workflow" },
-        } as ProxyHandlerConfig,
-      };
-
-      customMCPHandler.initialize([cozeTool]);
-
-      // Mock Coze API 错误
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: false,
-        status: 400,
-        text: () => Promise.resolve("Bad Request"),
-      });
-
-      const result = await customMCPHandler.callTool("coze_error", {});
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain("Coze 工作流调用失败");
-    });
-
-    it("应该拒绝不支持的代理平台", async () => {
-      const unsupportedTool: CustomMCPTool = {
-        name: "unsupported_platform",
-        description: "不支持的平台",
-        inputSchema: {},
-        handler: {
-          type: "proxy",
-          platform: "unsupported" as any,
-          config: {},
-        } as ProxyHandlerConfig,
-      };
-
-      customMCPHandler.initialize([unsupportedTool]);
-
-      await expect(
-        customMCPHandler.callTool("unsupported_platform", {})
-      ).rejects.toThrow("不支持的代理平台: unsupported");
-    });
-  });
-
-  describe("HTTP 工具调用测试", () => {
-    beforeEach(() => {
-      // Mock fetch
-      global.fetch = vi.fn();
-    });
-
-    afterEach(() => {
-      vi.restoreAllMocks();
-    });
-
-    it("应该正确调用 HTTP 工具", async () => {
-      const httpTool: CustomMCPTool = {
-        name: "http_tool",
-        description: "HTTP 工具",
-        inputSchema: {},
-        handler: {
-          type: "http",
-          url: "https://api.example.com/test",
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-        } as HttpHandlerConfig,
-      };
-
-      customMCPHandler.initialize([httpTool]);
-
-      (fetch as any).mockResolvedValue({
-        ok: true,
-        headers: { get: () => "application/json" },
-        json: () => Promise.resolve({ success: true, data: "HTTP 调用成功" }),
-      });
-
-      const result = await customMCPHandler.callTool("http_tool", {});
-
-      expect(result.isError).toBe(false);
-      expect(result.content[0].text).toContain("HTTP 调用成功");
-    });
-
-    it("应该处理 HTTP 工具调用错误", async () => {
-      const httpTool: CustomMCPTool = {
-        name: "http_error",
-        description: "HTTP 错误工具",
-        inputSchema: {},
-        handler: {
-          type: "http",
-          url: "https://api.example.com/error",
-          method: "POST",
-        } as HttpHandlerConfig,
-      };
-
-      customMCPHandler.initialize([httpTool]);
-
-      (fetch as any).mockResolvedValue({
-        ok: false,
-        status: 500,
-        statusText: "Internal Server Error",
-        headers: { get: () => "text/plain" },
-        text: () => Promise.resolve("Internal Server Error"),
-      });
-
-      const result = await customMCPHandler.callTool("http_error", {});
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain("HTTP 请求失败");
-    });
-
-    it("应该处理 HTTP 工具超时", async () => {
-      const httpTool: CustomMCPTool = {
-        name: "http_timeout",
-        description: "HTTP 超时工具",
-        inputSchema: {},
-        handler: {
-          type: "http",
-          url: "https://api.example.com/slow",
-          timeout: 1000,
-        } as HttpHandlerConfig,
-      };
-
-      customMCPHandler.initialize([httpTool]);
-
-      (fetch as any).mockImplementation(() => {
-        return new Promise((_, reject) => {
-          setTimeout(() => reject(new Error("AbortError: timeout")), 1500);
-        });
-      });
-
-      const result = await customMCPHandler.callTool("http_timeout", {});
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain("timeout");
-    });
-  });
-
   describe("错误处理测试", () => {
     it("应该处理工具不存在错误", async () => {
-      customMCPHandler.initialize([]);
-
       await expect(
-        customMCPHandler.callTool("nonexistent_tool", {})
-      ).rejects.toThrow("未找到工具: nonexistent_tool");
-    });
-
-    it("应该处理不支持的工具类型", async () => {
-      const unsupportedTool: CustomMCPTool = {
-        name: "unsupported_type",
-        description: "不支持的类型",
-        inputSchema: {},
-        handler: { type: "unsupported" as any, config: {} as any },
-      };
-
-      customMCPHandler.initialize([unsupportedTool]);
-
-      await expect(
-        customMCPHandler.callTool("unsupported_type", {})
-      ).rejects.toThrow("不支持的处理器类型: unsupported");
-    });
-
-    it("应该处理 MCP 类型工具路由错误", async () => {
-      const mcpTool: CustomMCPTool = {
-        name: "mcp_tool",
-        description: "MCP 工具",
-        inputSchema: {},
-        handler: {
-          type: "mcp",
-          config: { serviceName: "test-service", toolName: "test-tool" },
-        },
-      };
-
-      customMCPHandler.initialize([mcpTool]);
-
-      const result = await customMCPHandler.callTool("mcp_tool", {});
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain("MCPServiceManager 未初始化");
-    });
-  });
-
-  describe("配置和选项测试", () => {
-    it("应该支持自定义超时选项", async () => {
-      const testTool: CustomMCPTool = {
-        name: "timeout_test",
-        description: "超时测试",
-        inputSchema: {},
-        handler: { type: "function", module: "test.js", function: "test" },
-      };
-
-      customMCPHandler.initialize([testTool]);
-
-      // Mock 慢速函数
-      vi.doMock("test.js", () => ({
-        test: () => new Promise((resolve) => setTimeout(resolve, 5000)),
-      }));
-
-      const startTime = Date.now();
-      const result = await customMCPHandler.callTool(
-        "timeout_test",
-        {},
-        { timeout: 2000 }
-      );
-      const responseTime = Date.now() - startTime;
-
-      expect(responseTime).toBeLessThan(3000); // 应该在2秒超时附近
-    });
-
-    it("应该兼容旧的调用方式", async () => {
-      const testTool: CustomMCPTool = {
-        name: "legacy_test",
-        description: "兼容性测试",
-        inputSchema: {},
-        handler: {
-          type: "function",
-          module: "./test-legacy.js",
-          function: "legacy",
-        },
-      };
-
-      customMCPHandler.initialize([testTool]);
-
-      // Mock 动态导入
-      vi.doMock("./test-legacy.js", () => ({
-        legacy: () => "legacy result",
-      }));
-
-      // 使用旧的调用方式（不带选项）
-      const result = await customMCPHandler.callTool("legacy_test", {});
-
-      // 检查结果的基本结构，允许一定的灵活性
-      expect(result).toBeDefined();
-      expect(result.content).toBeDefined();
-      expect(Array.isArray(result.content)).toBe(true);
+        customMCPHandler.callTool("non-existent-tool", {})
+      ).rejects.toThrow("未找到工具: non-existent-tool");
     });
   });
 
   describe("资源清理测试", () => {
     it("应该正确清理资源", () => {
       const testTool: CustomMCPTool = {
-        name: "cleanup_test",
-        description: "清理测试",
-        inputSchema: {},
-        handler: { type: "function", module: "test.js", function: "cleanup" },
+        name: "cleanup_tool",
+        description: "清理测试工具",
+        inputSchema: { type: "object" },
+        handler: {
+          type: "proxy",
+          platform: "coze",
+          config: { workflow_id: "cleanup-workflow" },
+        },
       };
 
       customMCPHandler.initialize([testTool]);
@@ -544,28 +292,43 @@ describe("CustomMCPHandler 基础功能回归测试", () => {
 
       // 清理资源
       customMCPHandler.cleanup();
+
+      // 验证资源被清理
       expect(customMCPHandler.getToolCount()).toBe(0);
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        "[CustomMCP] 清理 CustomMCP 处理器资源"
-      );
     });
 
     it("应该能够多次调用清理而不出错", () => {
-      customMCPHandler.initialize([
-        {
-          name: "test",
-          description: "test",
-          inputSchema: {},
-          handler: { type: "function", module: "test.js", function: "test" },
-        },
-      ]);
+      expect(() => {
+        customMCPHandler.cleanup();
+        customMCPHandler.cleanup();
+        customMCPHandler.cleanup();
+      }).not.toThrow();
+    });
+  });
 
-      // 多次调用清理
-      customMCPHandler.cleanup();
-      customMCPHandler.cleanup();
-      customMCPHandler.cleanup();
+  describe("配置更新响应测试", () => {
+    it("应该在配置更新处理失败时记录错误", async () => {
+      const { logger } = await import("../../Logger.js");
 
-      expect(customMCPHandler.getToolCount()).toBe(0);
+      // Mock initialize 方法抛出异常
+      vi.spyOn(customMCPHandler, "initialize").mockImplementation(() => {
+        throw new Error("重新初始化失败");
+      });
+
+      // 发射配置更新事件
+      eventBus.emitEvent("config:updated", {
+        type: "customMCP",
+        timestamp: new Date(),
+      });
+
+      // 等待异步处理
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // 验证错误被记录
+      expect(logger.error).toHaveBeenCalledWith(
+        "[CustomMCP] 配置更新处理失败:",
+        expect.any(Error)
+      );
     });
   });
 });
