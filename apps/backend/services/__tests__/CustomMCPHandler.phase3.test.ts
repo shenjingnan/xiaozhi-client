@@ -316,7 +316,7 @@ describe("CustomMCPHandler 第三阶段优化测试", () => {
 
   describe("配置变更响应", () => {
     it("应该在 customMCP 配置更新时重新初始化", async () => {
-      const reinitializeSpy = vi.spyOn(customMCPHandler, "reinitialize");
+      const initializeSpy = vi.spyOn(customMCPHandler, "initialize");
 
       // 发射配置更新事件
       eventBus.emitEvent("config:updated", {
@@ -328,11 +328,11 @@ describe("CustomMCPHandler 第三阶段优化测试", () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       // 验证重新初始化被调用
-      expect(reinitializeSpy).toHaveBeenCalled();
+      expect(initializeSpy).toHaveBeenCalled();
     });
 
     it("应该在 serverTools 配置更新时重新初始化", async () => {
-      const reinitializeSpy = vi.spyOn(customMCPHandler, "reinitialize");
+      const initializeSpy = vi.spyOn(customMCPHandler, "initialize");
 
       // 发射配置更新事件
       eventBus.emitEvent("config:updated", {
@@ -345,7 +345,7 @@ describe("CustomMCPHandler 第三阶段优化测试", () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       // 验证重新初始化被调用
-      expect(reinitializeSpy).toHaveBeenCalled();
+      expect(initializeSpy).toHaveBeenCalled();
     });
   });
 
@@ -359,10 +359,10 @@ describe("CustomMCPHandler 第三阶段优化测试", () => {
     it("应该处理配置更新处理中的异常", async () => {
       const { logger } = await import("../../Logger.js");
 
-      // Mock reinitialize 方法抛出异常
-      vi.spyOn(customMCPHandler, "reinitialize").mockRejectedValue(
-        new Error("重新初始化失败")
-      );
+      // Mock initialize 方法抛出异常
+      vi.spyOn(customMCPHandler, "initialize").mockImplementation(() => {
+        throw new Error("重新初始化失败");
+      });
 
       // 发射配置更新事件
       eventBus.emitEvent("config:updated", {

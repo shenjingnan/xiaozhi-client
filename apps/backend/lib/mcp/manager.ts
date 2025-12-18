@@ -90,7 +90,7 @@ export class MCPServiceManager extends EventEmitter {
       : undefined;
 
     this.cacheManager = new MCPCacheManager(cachePath);
-    this.customMCPHandler = new CustomMCPHandler();
+    this.customMCPHandler = new CustomMCPHandler(this.cacheManager, this);
     this.toolSyncManager = new ToolSyncManager(configManager);
 
     // 初始化工具调用记录器
@@ -1142,7 +1142,7 @@ export class MCPServiceManager extends EventEmitter {
   private async refreshCustomMCPHandler(): Promise<void> {
     try {
       console.debug("重新初始化CustomMCPHandler");
-      await this.customMCPHandler.reinitialize();
+      this.customMCPHandler.initialize();
       console.debug("CustomMCPHandler重新初始化完成");
     } catch (error) {
       console.error("CustomMCPHandler重新初始化失败:", error);
