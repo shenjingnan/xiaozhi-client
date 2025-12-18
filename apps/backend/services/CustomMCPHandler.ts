@@ -20,6 +20,7 @@ import {
   shouldCleanupCache,
 } from "@root/types/mcp.js";
 import { TimeoutError, createTimeoutResponse } from "@root/types/timeout.js";
+import { getEventBus } from "./EventBus.js";
 
 // 工具调用参数类型
 type ToolArguments = Record<string, unknown>;
@@ -70,6 +71,28 @@ export class CustomMCPHandler {
     this.logger = logger;
     this.cacheManager = cacheManager || new MCPCacheManager();
     this.mcpServiceManager = mcpServiceManager;
+
+    // 设置事件监听器
+    this.setupEventListeners();
+  }
+
+  /**
+   * 设置事件监听器
+   */
+  private setupEventListeners(): void {
+    const eventBus = getEventBus();
+
+    // 监听配置更新事件
+    eventBus.onEvent("config:updated", async (data) => {
+      if (data.type === "customMCP") {
+        this.logger.info("[CustomMCP] 检测到配置更新，重新初始化...");
+        try {
+          this.reinitialize();
+        } catch (error) {
+          this.logger.error("[CustomMCP] 配置更新处理失败:", error);
+        }
+      }
+    });
   }
 
   /**
@@ -146,6 +169,15 @@ export class CustomMCPHandler {
    */
   public getToolInfo(toolName: string): CustomMCPTool | undefined {
     return this.tools.get(toolName);
+  }
+
+  /**
+   * 重新初始化 CustomMCP 处理器
+   * 重新加载配置中的 customMCP 工具
+   */
+  public reinitialize(): void {
+    this.logger.debug("[CustomMCP] 重新初始化 CustomMCP 处理器...");
+    this.initialize();
   }
 
   /**
