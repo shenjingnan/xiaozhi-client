@@ -27,7 +27,7 @@ const mockProcessManager: ProcessManager = {
 const mockConfigManager = {
   configExists: vi.fn(),
   getConfig: vi.fn(),
-};
+} as any;
 
 const mockLogger = {
   error: vi.fn(),
@@ -97,8 +97,7 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
   beforeEach(async () => {
     serviceManager = new ServiceManagerImpl(
       mockProcessManager,
-      mockConfigManager,
-      mockLogger
+      mockConfigManager
     );
 
     // 重置所有 mock
@@ -466,7 +465,7 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
           /process\.exit/
         );
         expect(mockProcessManager.savePidInfo).toHaveBeenCalledWith(
-          undefined,
+          0,
           "daemon"
         );
       });

@@ -12,6 +12,8 @@ import type {
 } from "@cli/interfaces/Service.js";
 import { PathUtils } from "@cli/utils/PathUtils.js";
 import { PlatformUtils } from "@cli/utils/PlatformUtils.js";
+import type { Logger } from "@root/Logger.js";
+import type { WebServer } from "@root/WebServer.js";
 
 /**
  * 守护进程选项
@@ -35,14 +37,14 @@ export class DaemonManagerImpl implements IDaemonManager {
 
   constructor(
     private processManager: ProcessManager,
-    private logger: any
+    private logger: Logger
   ) {}
 
   /**
    * 启动守护进程
    */
   async startDaemon(
-    serverFactory: () => Promise<any>,
+    serverFactory: () => Promise<WebServer>,
     options: DaemonOptions = {}
   ): Promise<void> {
     try {
@@ -108,7 +110,7 @@ export class DaemonManagerImpl implements IDaemonManager {
    * 重启守护进程
    */
   async restartDaemon(
-    serverFactory: () => Promise<any>,
+    serverFactory: () => Promise<WebServer>,
     options: DaemonOptions = {}
   ): Promise<void> {
     try {
@@ -176,7 +178,7 @@ export class DaemonManagerImpl implements IDaemonManager {
    * 生成守护进程
    */
   private async spawnDaemonProcess(
-    serverFactory: () => Promise<any>,
+    serverFactory: () => Promise<WebServer>,
     options: DaemonOptions
   ): Promise<ChildProcess> {
     // 获取启动脚本路径

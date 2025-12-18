@@ -10,8 +10,8 @@ import type {
   ServiceStatus,
 } from "@cli/interfaces/Service.js";
 import { PathUtils } from "@cli/utils/PathUtils.js";
-import { PlatformUtils } from "@cli/utils/PlatformUtils.js";
 import { Validation } from "@cli/utils/Validation.js";
+import type { ConfigManager } from "@root/configManager.js";
 
 /**
  * 服务管理器实现
@@ -19,8 +19,7 @@ import { Validation } from "@cli/utils/Validation.js";
 export class ServiceManagerImpl implements IServiceManager {
   constructor(
     private processManager: ProcessManager,
-    private configManager: any,
-    private logger: any
+    private configManager: ConfigManager
   ) {}
 
   /**
@@ -42,7 +41,7 @@ export class ServiceManagerImpl implements IServiceManager {
 
         try {
           // 优雅停止现有进程
-          await this.processManager.gracefulKillProcess(status.pid!);
+          await this.processManager.gracefulKillProcess(status.pid || 0);
 
           // 清理 PID 文件
           this.processManager.cleanupPidFile();
@@ -100,7 +99,7 @@ export class ServiceManagerImpl implements IServiceManager {
       }
 
       // 优雅停止进程
-      await this.processManager.gracefulKillProcess(status.pid!);
+      await this.processManager.gracefulKillProcess(status.pid || 0);
 
       // 清理 PID 文件
       this.processManager.cleanupPidFile();
@@ -188,8 +187,6 @@ export class ServiceManagerImpl implements IServiceManager {
    * 启动普通模式
    */
   private async startNormalMode(options: ServiceStartOptions): Promise<void> {
-    const { spawn } = await import("node:child_process");
-
     if (options.daemon) {
       // 后台模式 - 默认启动 WebUI
       await this.startWebServerInDaemon();
@@ -227,7 +224,7 @@ export class ServiceManagerImpl implements IServiceManager {
       );
 
       // 保存 PID 信息
-      this.processManager.savePidInfo(child.pid!, "daemon");
+      this.processManager.savePidInfo(child.pid || 0, "daemon");
 
       // 完全分离子进程
       child.unref();
@@ -283,7 +280,7 @@ export class ServiceManagerImpl implements IServiceManager {
     });
 
     // 保存 PID 信息
-    this.processManager.savePidInfo(child.pid!, "daemon");
+    this.processManager.savePidInfo(child.pid || 0, "daemon");
 
     // 完全分离子进程
     child.unref();
@@ -318,34 +315,5 @@ export class ServiceManagerImpl implements IServiceManager {
     this.processManager.savePidInfo(process.pid, "foreground");
 
     await server.start();
-  }
-
-  /**
-   * 打开浏览器URL
-   */
-  private async openBrowserUrl(url: string): Promise<void> {
-    try {
-      const { spawn } = await import("node:child_process");
-      const platform = PlatformUtils.getCurrentPlatform();
-
-      let command: string;
-      let args: string[];
-
-      if (platform === "darwin") {
-        command = "open";
-        args = [url];
-      } else if (platform === "win32") {
-        command = "start";
-        args = ["", url];
-      } else {
-        command = "xdg-open";
-        args = [url];
-      }
-
-      spawn(command, args, { detached: true, stdio: "ignore" });
-      console.log(`🌐 已尝试打开浏览器: ${url}`);
-    } catch (error) {
-      console.log(`⚠️  自动打开浏览器失败，请手动访问: ${url}`);
-    }
   }
 }

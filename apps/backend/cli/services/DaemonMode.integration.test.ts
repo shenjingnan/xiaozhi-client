@@ -88,7 +88,7 @@ describe("Daemon 模式集成测试", () => {
     const mockConfigManager = {
       configExists: vi.fn().mockReturnValue(true),
       getConfig: vi.fn().mockReturnValue({ webServer: { port: 9999 } }),
-    };
+    } as any;
 
     // Setup Logger mock
     const mockLogger = {
@@ -99,8 +99,7 @@ describe("Daemon 模式集成测试", () => {
 
     serviceManager = new ServiceManagerImpl(
       mockProcessManager,
-      mockConfigManager,
-      mockLogger
+      mockConfigManager
     );
   });
 
