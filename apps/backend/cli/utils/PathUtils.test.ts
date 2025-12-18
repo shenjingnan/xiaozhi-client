@@ -371,7 +371,7 @@ describe("PathUtils 路径工具", () => {
     });
   });
 
-  describe("getWebServerLauncherPath 获取 WebServer 独立启动路径", () => {
+  describe("getWebServerLauncherPath 获取 WebServer 启动器路径", () => {
     it("应该返回正确的 WebServerLauncher 路径", () => {
       process.argv = ["node", "/Users/test/xiaozhi-client/dist/cli.js"];
 
