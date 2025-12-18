@@ -5,7 +5,6 @@ import type { MCPServiceConfig } from "@/lib/mcp";
 import { MCPTransportType } from "@/lib/mcp";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Logger } from "../../Logger.js";
-import { ConfigWatcherClass } from "../ConfigWatcher.js";
 import {
   ErrorCategory,
   categorizeError,
@@ -102,26 +101,6 @@ describe("Advanced Features Integration", () => {
       // Verify error statistics
       const errorStats = getErrorStatistics(serviceName);
       expect(errorStats.totalErrors).toBe(12);
-    });
-  });
-
-  describe("Configuration Validation Integration", () => {
-    it("should handle configuration validation errors gracefully", () => {
-      const configWatcher = new ConfigWatcherClass();
-      const invalidConfig = [
-        {
-          name: "invalid-service",
-          // Missing type field
-          command: "test-command",
-        } as MCPServiceConfig,
-      ];
-
-      const validation = configWatcher.validateConfig(invalidConfig);
-
-      expect(validation.valid).toBe(false);
-      expect(validation.errors).toContain(
-        "服务 invalid-service 缺少 type 字段"
-      );
     });
   });
 });

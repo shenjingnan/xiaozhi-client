@@ -4,7 +4,6 @@ export * from "./NotificationService.js";
 export * from "./EventBus.js";
 
 // 新增导出 - 高优先级服务模块
-export * from "./ConfigWatcher.js";
 export * from "./ErrorHandler.js";
 
 // MCPService 导出 - 避免冲突的 ToolCallResult
