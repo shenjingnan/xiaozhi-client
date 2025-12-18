@@ -5,7 +5,7 @@ import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
-import type { CustomMCPTool, ProxyHandlerConfig } from "@root/configManager.js";
+import type { CustomMCPTool, ProxyHandlerConfig, HandlerConfig } from "@root/configManager.js";
 import { configManager } from "@root/configManager.js";
 import type {
   EnhancedToolResultCache,
@@ -24,6 +24,11 @@ import { getEventBus } from "./EventBus.js";
 
 // 工具调用参数类型
 type ToolArguments = Record<string, unknown>;
+
+// 类型守卫函数：检查是否为代理处理器
+function isProxyHandler(handler: HandlerConfig): handler is ProxyHandlerConfig {
+  return handler.type === 'proxy';
+}
 
 // Coze API 响应类型
 interface CozeApiResponse {
@@ -104,21 +109,23 @@ export class CustomMCPHandler {
     this.logger.debug("[CustomMCP] 初始化 CustomMCP 处理器...");
 
     try {
-      const customTools = tools || (configManager as any).getCustomMCPTools();
+      const customTools = tools || configManager.getCustomMCPTools();
 
       // 清空现有工具
       this.tools.clear();
 
       // 只加载 coze 代理工具
       for (const tool of customTools) {
-        if (tool.handler.type === "proxy" && tool.handler.platform === "coze") {
+        if (isProxyHandler(tool.handler) && tool.handler.platform === "coze") {
           this.tools.set(tool.name, tool);
           this.logger.debug(
             `[CustomMCP] 已加载 Coze 工具: ${tool.name} (workflow_id: ${tool.handler.config.workflow_id})`
           );
         } else {
+          // 根据是否为 proxy 类型显示不同的警告信息
+          const platformInfo = isProxyHandler(tool.handler) ? `/${tool.handler.platform}` : '';
           this.logger.warn(
-            `[CustomMCP] 跳过不支持的工具类型: ${tool.name} (${tool.handler.type}/${(tool.handler as any).platform})`
+            `[CustomMCP] 跳过不支持的工具类型: ${tool.name} (${tool.handler.type}${platformInfo})`
           );
         }
       }
