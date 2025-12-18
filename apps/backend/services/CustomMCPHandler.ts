@@ -5,10 +5,7 @@ import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
-import type {
-  CustomMCPTool,
-  ProxyHandlerConfig,
-} from "@root/configManager.js";
+import type { CustomMCPTool, ProxyHandlerConfig } from "@root/configManager.js";
 import { configManager } from "@root/configManager.js";
 import type {
   EnhancedToolResultCache,
@@ -201,9 +198,7 @@ export class CustomMCPHandler {
   /**
    * 创建超时 Promise
    */
-  private async createTimeoutPromise(
-    toolName: string
-  ): Promise<never> {
+  private async createTimeoutPromise(toolName: string): Promise<never> {
     return new Promise((_, reject) => {
       setTimeout(() => {
         reject(new TimeoutError(`工具调用超时: ${toolName}`));
@@ -341,7 +336,7 @@ export class CustomMCPHandler {
         throw new Error(`Coze API 请求失败 (${response.status}): ${errorText}`);
       }
 
-      const responseData = await response.json() as CozeApiResponse;
+      const responseData = (await response.json()) as CozeApiResponse;
       this.logger.debug("[CustomMCP] Coze API 响应:", responseData);
 
       return responseData;
