@@ -5,7 +5,11 @@ import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
-import type { CustomMCPTool, ProxyHandlerConfig, HandlerConfig } from "@root/configManager.js";
+import type {
+  CustomMCPTool,
+  HandlerConfig,
+  ProxyHandlerConfig,
+} from "@root/configManager.js";
 import { configManager } from "@root/configManager.js";
 import type {
   EnhancedToolResultCache,
@@ -27,7 +31,7 @@ type ToolArguments = Record<string, unknown>;
 
 // 类型守卫函数：检查是否为代理处理器
 function isProxyHandler(handler: HandlerConfig): handler is ProxyHandlerConfig {
-  return handler.type === 'proxy';
+  return handler.type === "proxy";
 }
 
 // Coze API 响应类型
@@ -123,7 +127,9 @@ export class CustomMCPHandler {
           );
         } else {
           // 根据是否为 proxy 类型显示不同的警告信息
-          const platformInfo = isProxyHandler(tool.handler) ? `/${tool.handler.platform}` : '';
+          const platformInfo = isProxyHandler(tool.handler)
+            ? `/${tool.handler.platform}`
+            : "";
           this.logger.warn(
             `[CustomMCP] 跳过不支持的工具类型: ${tool.name} (${tool.handler.type}${platformInfo})`
           );
