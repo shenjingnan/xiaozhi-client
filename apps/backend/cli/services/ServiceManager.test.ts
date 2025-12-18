@@ -27,7 +27,7 @@ const mockProcessManager: ProcessManager = {
 const mockConfigManager = {
   configExists: vi.fn(),
   getConfig: vi.fn(),
-};
+} as any;
 
 const mockLogger = {
   error: vi.fn(),
@@ -67,9 +67,9 @@ vi.mock("@services/MCPServer.js", () => ({
 // Mock PathUtils
 vi.mock("@cli/utils/PathUtils.js", () => ({
   PathUtils: {
-    getWebServerStandalonePath: vi
+    getWebServerLauncherPath: vi
       .fn()
-      .mockReturnValue("/mock/path/WebServerStandalone.js"),
+      .mockReturnValue("/mock/path/WebServerLauncher.js"),
     getExecutablePath: vi.fn().mockReturnValue("/mock/path/cli.js"),
     getConfigDir: vi.fn().mockReturnValue("/mock/config"),
     getLogFile: vi.fn().mockReturnValue("/mock/logs/xiaozhi.log"),
@@ -97,8 +97,7 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
   beforeEach(async () => {
     serviceManager = new ServiceManagerImpl(
       mockProcessManager,
-      mockConfigManager,
-      mockLogger
+      mockConfigManager
     );
 
     // 重置所有 mock
@@ -107,8 +106,8 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
 
     // Reset PathUtils mocks
     const { PathUtils } = await import("@cli/utils/PathUtils.js");
-    vi.mocked(PathUtils.getWebServerStandalonePath).mockReturnValue(
-      "/mock/path/WebServerStandalone.js"
+    vi.mocked(PathUtils.getWebServerLauncherPath).mockReturnValue(
+      "/mock/path/WebServerLauncher.js"
     );
     vi.mocked(PathUtils.getExecutablePath).mockReturnValue("/mock/path/cli.js");
     vi.mocked(PathUtils.getConfigDir).mockReturnValue("/mock/config");
@@ -299,7 +298,7 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
         // 验证子进程正确启动
         expect(mockSpawn).toHaveBeenCalledWith(
           "node",
-          ["/mock/path/WebServerStandalone.js"],
+          ["/mock/path/WebServerLauncher.js"],
           {
             detached: true,
             stdio: ["ignore", "ignore", "ignore"],
@@ -347,7 +346,7 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
 
         expect(mockSpawn).toHaveBeenCalledWith(
           "node",
-          ["/mock/path/WebServerStandalone.js"],
+          ["/mock/path/WebServerLauncher.js"],
           {
             detached: true,
             stdio: ["ignore", "ignore", "ignore"],
@@ -466,7 +465,7 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
           /process\.exit/
         );
         expect(mockProcessManager.savePidInfo).toHaveBeenCalledWith(
-          undefined,
+          0,
           "daemon"
         );
       });

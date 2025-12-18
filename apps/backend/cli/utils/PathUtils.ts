@@ -16,6 +16,7 @@ import { FileUtils } from "@cli/utils/FileUtils.js";
 /**
  * 路径工具类
  */
+
 export class PathUtils {
   /**
    * 获取 PID 文件路径
@@ -216,10 +217,10 @@ export class PathUtils {
   }
 
   /**
-   * 获取 Web 服务器独立启动脚本路径
+   * 获取 Web 服务器启动器路径
    */
-  static getWebServerStandalonePath(): string {
-    return PathUtils.getExecutablePath("WebServerStandalone");
+  static getWebServerLauncherPath(): string {
+    return PathUtils.getExecutablePath("WebServerLauncher");
   }
 
   /**

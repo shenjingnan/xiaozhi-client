@@ -26,7 +26,24 @@ const mockLogger = {
   error: vi.fn(),
   info: vi.fn(),
   warn: vi.fn(),
-};
+  success: vi.fn(),
+  debug: vi.fn(),
+  log: vi.fn(),
+  setLevel: vi.fn(),
+  getLevel: vi.fn(),
+  initLogFile: vi.fn(),
+  enableFileLogging: vi.fn(),
+  close: vi.fn(),
+  withTag: vi.fn(() => mockLogger),
+  cleanupOldLogs: vi.fn(),
+  setLogFileOptions: vi.fn(),
+  logFilePath: null,
+  pinoInstance: null,
+  isDaemonMode: false,
+  logLevel: "info" as const,
+  maxLogFileSize: 10 * 1024 * 1024,
+  maxLogFiles: 5,
+} as any;
 
 // Mock child_process
 const mockChild = {
@@ -56,7 +73,7 @@ vi.mock("node:fs", () => ({
 // Mock utils
 vi.mock("@cli/utils/PathUtils.js", () => ({
   PathUtils: {
-    getWebServerStandalonePath: vi.fn(() => "/path/to/webserver.js"),
+    getWebServerLauncherPath: vi.fn(() => "/path/to/webserver.js"),
     getConfigDir: vi.fn(() => "/config"),
     getLogFile: vi.fn(() => "/logs/xiaozhi.log"),
   },

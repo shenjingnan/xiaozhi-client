@@ -68,10 +68,10 @@ describe("PathUtils 路径工具", () => {
           "/Users/test/xiaozhi-client/dist/cli.js"
         );
 
-        const result = PathUtils.getExecutablePath("WebServerStandalone");
+        const result = PathUtils.getExecutablePath("WebServerLauncher");
         const expected = path.join(
           "/Users/test/xiaozhi-client/dist",
-          "WebServerStandalone.js"
+          "WebServerLauncher.js"
         );
 
         expect(result).toBe(expected);
@@ -84,11 +84,8 @@ describe("PathUtils 路径工具", () => {
         process.argv = ["node", "/opt/xiaozhi/dist/cli.js"];
         mockRealpathSync.mockReturnValue("/opt/xiaozhi/dist/cli.js");
 
-        const result = PathUtils.getExecutablePath("WebServerStandalone");
-        const expected = path.join(
-          "/opt/xiaozhi/dist",
-          "WebServerStandalone.js"
-        );
+        const result = PathUtils.getExecutablePath("WebServerLauncher");
+        const expected = path.join("/opt/xiaozhi/dist", "WebServerLauncher.js");
 
         expect(result).toBe(expected);
       });
@@ -115,10 +112,10 @@ describe("PathUtils 路径工具", () => {
         process.argv = ["node", symlinkPath];
         mockRealpathSync.mockReturnValue(realPath);
 
-        const result = PathUtils.getExecutablePath("WebServerStandalone");
+        const result = PathUtils.getExecutablePath("WebServerLauncher");
         const expected = path.join(
           "/Users/nemo/.nvm/versions/node/v20.19.2/lib/node_modules/xiaozhi-client/dist",
-          "WebServerStandalone.js"
+          "WebServerLauncher.js"
         );
 
         expect(result).toBe(expected);
@@ -132,10 +129,10 @@ describe("PathUtils 路径工具", () => {
         process.argv = ["node", symlinkPath];
         mockRealpathSync.mockReturnValue(realPath);
 
-        const result = PathUtils.getExecutablePath("WebServerStandalone");
+        const result = PathUtils.getExecutablePath("WebServerLauncher");
         const expected = path.join(
           "/opt/xiaozhi-client/dist",
-          "WebServerStandalone.js"
+          "WebServerLauncher.js"
         );
 
         expect(result).toBe(expected);
@@ -149,8 +146,8 @@ describe("PathUtils 路径工具", () => {
           throw new Error("ENOENT: no such file or directory");
         });
 
-        const result = PathUtils.getExecutablePath("WebServerStandalone");
-        const expected = path.join("/broken/symlink", "WebServerStandalone.js");
+        const result = PathUtils.getExecutablePath("WebServerLauncher");
+        const expected = path.join("/broken/symlink", "WebServerLauncher.js");
 
         expect(result).toBe(expected);
         expect(mockRealpathSync).toHaveBeenCalledWith(symlinkPath);
@@ -177,7 +174,7 @@ describe("PathUtils 路径工具", () => {
         mockRealpathSync.mockReturnValue("/test/dist/cli.js");
 
         const testCases = [
-          { name: "WebServerStandalone", expected: "WebServerStandalone.js" },
+          { name: "WebServerLauncher", expected: "WebServerLauncher.js" },
           { name: "customScript", expected: "customScript.js" },
           { name: "app", expected: "app.js" },
         ];
@@ -259,15 +256,13 @@ describe("PathUtils 路径工具", () => {
         process.argv = ["node", npmBinPath];
         mockRealpathSync.mockReturnValue(npmRealPath);
 
-        const webServerPath = PathUtils.getExecutablePath(
-          "WebServerStandalone"
-        );
+        const webServerPath = PathUtils.getExecutablePath("WebServerLauncher");
 
         const expectedDir =
           "/Users/user/.nvm/versions/node/v18.17.0/lib/node_modules/xiaozhi-client/dist";
 
         expect(webServerPath).toBe(
-          path.join(expectedDir, "WebServerStandalone.js")
+          path.join(expectedDir, "WebServerLauncher.js")
         );
       });
 
@@ -327,7 +322,7 @@ describe("PathUtils 路径工具", () => {
         // 多次调用应该返回一致的结果
         const results = [];
         for (let i = 0; i < 5; i++) {
-          results.push(PathUtils.getExecutablePath("WebServerStandalone"));
+          results.push(PathUtils.getExecutablePath("WebServerLauncher"));
         }
 
         const firstResult = results[0];
@@ -368,25 +363,22 @@ describe("PathUtils 路径工具", () => {
           throw new Error("ELOOP: too many symbolic links encountered");
         });
 
-        const result = PathUtils.getExecutablePath("WebServerStandalone");
-        const expected = path.join(
-          "/circular/symlink",
-          "WebServerStandalone.js"
-        );
+        const result = PathUtils.getExecutablePath("WebServerLauncher");
+        const expected = path.join("/circular/symlink", "WebServerLauncher.js");
 
         expect(result).toBe(expected);
       });
     });
   });
 
-  describe("getWebServerStandalonePath 获取 WebServer 独立启动路径", () => {
-    it("应该返回正确的 WebServerStandalone 路径", () => {
+  describe("getWebServerLauncherPath 获取 WebServer 启动器路径", () => {
+    it("应该返回正确的 WebServerLauncher 路径", () => {
       process.argv = ["node", "/Users/test/xiaozhi-client/dist/cli.js"];
 
-      const result = PathUtils.getWebServerStandalonePath();
+      const result = PathUtils.getWebServerLauncherPath();
       const expected = path.join(
         "/Users/test/xiaozhi-client/dist",
-        "WebServerStandalone.js"
+        "WebServerLauncher.js"
       );
 
       expect(result).toBe(expected);
@@ -399,7 +391,7 @@ describe("PathUtils 路径工具", () => {
       const testCliPath = path.join("/test", "dist", "cli.js");
       process.argv = ["node", testCliPath];
 
-      const webServerPath = PathUtils.getWebServerStandalonePath();
+      const webServerPath = PathUtils.getWebServerLauncherPath();
       const customPath = PathUtils.getExecutablePath("custom");
 
       // All paths should be in the same directory
