@@ -85,10 +85,7 @@ describe("PathUtils 路径工具", () => {
         mockRealpathSync.mockReturnValue("/opt/xiaozhi/dist/cli.js");
 
         const result = PathUtils.getExecutablePath("WebServerLauncher");
-        const expected = path.join(
-          "/opt/xiaozhi/dist",
-          "WebServerLauncher.js"
-        );
+        const expected = path.join("/opt/xiaozhi/dist", "WebServerLauncher.js");
 
         expect(result).toBe(expected);
       });
@@ -259,9 +256,7 @@ describe("PathUtils 路径工具", () => {
         process.argv = ["node", npmBinPath];
         mockRealpathSync.mockReturnValue(npmRealPath);
 
-        const webServerPath = PathUtils.getExecutablePath(
-          "WebServerLauncher"
-        );
+        const webServerPath = PathUtils.getExecutablePath("WebServerLauncher");
 
         const expectedDir =
           "/Users/user/.nvm/versions/node/v18.17.0/lib/node_modules/xiaozhi-client/dist";
@@ -369,10 +364,7 @@ describe("PathUtils 路径工具", () => {
         });
 
         const result = PathUtils.getExecutablePath("WebServerLauncher");
-        const expected = path.join(
-          "/circular/symlink",
-          "WebServerLauncher.js"
-        );
+        const expected = path.join("/circular/symlink", "WebServerLauncher.js");
 
         expect(result).toBe(expected);
       });
