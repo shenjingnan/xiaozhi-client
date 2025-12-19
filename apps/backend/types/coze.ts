@@ -149,7 +149,6 @@ export interface CozePlatformConfig {
   token: string;
 }
 
-
 /**
  * 扣子 API 服务配置
  */

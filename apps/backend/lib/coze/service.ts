@@ -3,13 +3,13 @@
  * 负责与扣子 API 的交互，包括工作空间和工作流的获取
  */
 
-import NodeCache from "node-cache";
 import type { WorkSpace } from "@/lib/coze";
 import type {
   CozeWorkflowsData,
   CozeWorkflowsParams,
   CozeWorkflowsResponse,
 } from "@root/types/coze";
+import NodeCache from "node-cache";
 import { createCozeClient } from "./client";
 
 /**
@@ -91,7 +91,7 @@ export class CozeApiService {
 
     // node-cache 不支持模式匹配，需要手动实现
     const keys = this.cache.keys();
-    const keysToDelete = keys.filter(key => key.includes(pattern));
+    const keysToDelete = keys.filter((key) => key.includes(pattern));
     this.cache.del(keysToDelete);
   }
 
