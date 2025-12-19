@@ -2,6 +2,7 @@ import { MCPServiceManager } from "@/lib/mcp";
 import { MCPTransportType } from "@/lib/mcp";
 import { TransportFactory } from "@/lib/mcp/transport-factory.js";
 import type { MCPServiceConfig } from "@/lib/mcp/types.js";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setupCommonMocks } from "../../__tests__/index.js";
 import { configManager } from "../../configManager.js";
@@ -10,9 +11,9 @@ import { configManager } from "../../configManager.js";
 vi.mock("@/lib/mcp", () => {
   class MockMCPService {
     private connected = false;
-    private tools: any[] = [];
+    private tools: Tool[] = [];
 
-    constructor(private config: any) {}
+    constructor(private config: MCPServiceConfig) {}
 
     async connect() {
       this.connected = true;
@@ -26,7 +27,7 @@ vi.mock("@/lib/mcp", () => {
       return this.tools;
     }
 
-    async callTool(name: string, args: any) {
+    async callTool(name: string, args: Record<string, unknown>) {
       return {
         content: [{ type: "text", text: `Mock result for ${name}` }],
       };
@@ -49,15 +50,10 @@ vi.mock("@/lib/mcp", () => {
   }
 
   class MockMCPServiceManager {
-    private services = new Map();
+    private services = new Map<string, MockMCPService>();
     private configs = new Map();
-    public toolSyncManager = { logger: {} };
 
-    constructor() {
-      this.toolSyncManager = { logger: {} };
-    }
-
-    addServiceConfig(name: string, config: any) {
+    addServiceConfig(name: string, config: MCPServiceConfig) {
       this.configs.set(name, config);
     }
 

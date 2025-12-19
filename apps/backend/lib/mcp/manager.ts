@@ -130,7 +130,7 @@ export class MCPServiceManager extends EventEmitter {
     tools: Tool[];
     connectionTime: Date;
   }): Promise<void> {
-    console.debug(`服务 ${data.serviceName} 连接成功，开始工具同步`);
+    console.debug(`服务 ${data.serviceName} 连接成功，开始刷新工具缓存`);
 
     try {
       // 获取最新的工具列表
@@ -139,10 +139,10 @@ export class MCPServiceManager extends EventEmitter {
         // 重新初始化CustomMCPHandler
         await this.refreshCustomMCPHandlerPublic();
 
-        console.info(`服务 ${data.serviceName} 工具同步完成`);
+        console.info(`服务 ${data.serviceName} 工具缓存刷新完成`);
       }
     } catch (error) {
-      console.error(`同步服务 ${data.serviceName} 工具失败:`, error);
+      console.error(`刷新服务 ${data.serviceName} 工具缓存失败:`, error);
     }
   }
 
@@ -302,9 +302,9 @@ export class MCPServiceManager extends EventEmitter {
       // 更新工具缓存
       await this.refreshToolsCache();
 
-      // 注意：工具同步现在通过事件监听器自动处理，不需要在这里手动调用
+      // 注意：工具缓存刷新现在通过事件监听器自动处理，不需要在这里手动调用
       // MCPService.connect() 成功后会发射 mcp:service:connected 事件
-      // 事件监听器会自动触发工具同步和CustomMCPHandler刷新
+      // 事件监听器会自动触发工具缓存刷新和CustomMCPHandler刷新
 
       const tools = service.getTools();
       console.debug(
