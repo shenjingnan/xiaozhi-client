@@ -146,24 +146,6 @@ export interface EventBusEvents {
     timestamp: Date;
   };
 
-  // 工具同步相关事件
-  "tool-sync:server-tools-updated": {
-    serviceName: string;
-    timestamp: Date;
-  };
-  "tool-sync:general-config-updated": {
-    timestamp: Date;
-  };
-  "tool-sync:request-service-tools": {
-    serviceName: string;
-    timestamp: Date;
-  };
-  "tool-sync:service-tools-removed": {
-    serviceName: string;
-    removedCount: number;
-    timestamp: Date;
-  };
-
   // NPM 安装相关事件
   "npm:install:started": {
     version: string;

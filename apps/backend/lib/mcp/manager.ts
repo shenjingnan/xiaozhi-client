@@ -25,7 +25,6 @@ import type { MCPToolConfig } from "@root/configManager.js";
 import { configManager } from "@root/configManager.js";
 import { CustomMCPHandler } from "@root/services/CustomMCPHandler.js";
 import { getEventBus } from "@root/services/EventBus.js";
-import { ToolSyncManager } from "@root/services/ToolSyncManager.js";
 import type { MCPMessage } from "@root/types/mcp.js";
 import { ToolCallLogger } from "@utils/ToolCallLogger.js";
 import { MCPMessageHandler } from "./MCPMessageHandler.js";
@@ -37,7 +36,6 @@ export class MCPServiceManager extends EventEmitter {
   private tools: Map<string, ToolInfo> = new Map(); // 缓存工具信息，保持向后兼容
   private customMCPHandler: CustomMCPHandler; // CustomMCP 工具处理器
   private cacheManager: MCPCacheManager; // 缓存管理器
-  private toolSyncManager: ToolSyncManager; // 工具同步管理器
   private eventBus = getEventBus(); // 事件总线
   private toolCallLogger: ToolCallLogger; // 工具调用记录器
   private retryTimers: Map<string, NodeJS.Timeout> = new Map(); // 重试定时器
@@ -91,7 +89,6 @@ export class MCPServiceManager extends EventEmitter {
 
     this.cacheManager = new MCPCacheManager(cachePath);
     this.customMCPHandler = new CustomMCPHandler(this.cacheManager, this);
-    this.toolSyncManager = new ToolSyncManager(configManager);
 
     // 初始化工具调用记录器
     const toolCallLogConfig = configManager.getToolCallLogConfig();
@@ -123,15 +120,6 @@ export class MCPServiceManager extends EventEmitter {
     this.eventBus.onEvent("mcp:service:connection:failed", async (data) => {
       await this.handleServiceConnectionFailed(data);
     });
-
-    // 监听工具同步相关事件
-    this.eventBus.onEvent("tool-sync:server-tools-updated", async (data) => {
-      await this.handleServerToolsUpdated(data);
-    });
-
-    this.eventBus.onEvent("tool-sync:general-config-updated", async (data) => {
-      await this.handleGeneralConfigUpdated(data);
-    });
   }
 
   /**
@@ -142,29 +130,19 @@ export class MCPServiceManager extends EventEmitter {
     tools: Tool[];
     connectionTime: Date;
   }): Promise<void> {
-    console.debug(`服务 ${data.serviceName} 连接成功，开始工具同步`);
+    console.debug(`服务 ${data.serviceName} 连接成功，开始刷新工具缓存`);
 
     try {
       // 获取最新的工具列表
       const service = this.services.get(data.serviceName);
       if (service) {
-        const tools = service.getTools();
-
-        // 触发工具同步
-        if (this.toolSyncManager) {
-          await this.toolSyncManager.syncToolsAfterConnection(
-            data.serviceName,
-            tools
-          );
-        }
-
         // 重新初始化CustomMCPHandler
         await this.refreshCustomMCPHandlerPublic();
 
-        console.info(`服务 ${data.serviceName} 工具同步完成`);
+        console.info(`服务 ${data.serviceName} 工具缓存刷新完成`);
       }
     } catch (error) {
-      console.error(`同步服务 ${data.serviceName} 工具失败:`, error);
+      console.error(`刷新服务 ${data.serviceName} 工具缓存失败:`, error);
     }
   }
 
@@ -205,71 +183,6 @@ export class MCPServiceManager extends EventEmitter {
       await this.refreshCustomMCPHandlerPublic();
     } catch (error) {
       console.error("刷新CustomMCPHandler失败:", error);
-    }
-  }
-
-  /**
-   * 处理serverTools配置更新事件
-   */
-  private async handleServerToolsUpdated(data: {
-    serviceName: string;
-    timestamp: Date;
-  }): Promise<void> {
-    console.debug(`处理服务 ${data.serviceName} 的serverTools配置更新`);
-
-    try {
-      const service = this.services.get(data.serviceName);
-      if (service?.isConnected()) {
-        const tools = service.getTools();
-
-        // 重新同步该服务的工具
-        if (this.toolSyncManager) {
-          await this.toolSyncManager.syncToolsAfterConnection(
-            data.serviceName,
-            tools
-          );
-        }
-
-        // 刷新CustomMCPHandler
-        await this.refreshCustomMCPHandlerPublic();
-
-        console.info(`服务 ${data.serviceName} 配置更新同步完成`);
-      }
-    } catch (error) {
-      console.error(`处理服务 ${data.serviceName} 配置更新失败:`, error);
-    }
-  }
-
-  /**
-   * 处理通用配置更新事件
-   */
-  private async handleGeneralConfigUpdated(data: {
-    timestamp: Date;
-  }): Promise<void> {
-    console.info("处理通用配置更新，检查所有已连接服务");
-
-    try {
-      // 检查所有已连接的服务
-      for (const [serviceName, service] of this.services) {
-        if (service.isConnected()) {
-          const tools = service.getTools();
-
-          // 重新同步每个服务的工具
-          if (this.toolSyncManager) {
-            await this.toolSyncManager.syncToolsAfterConnection(
-              serviceName,
-              tools
-            );
-          }
-        }
-      }
-
-      // 刷新CustomMCPHandler
-      await this.refreshCustomMCPHandlerPublic();
-
-      console.info("通用配置更新同步完成");
-    } catch (error) {
-      console.error("处理通用配置更新失败:", error);
     }
   }
 
@@ -389,9 +302,9 @@ export class MCPServiceManager extends EventEmitter {
       // 更新工具缓存
       await this.refreshToolsCache();
 
-      // 注意：工具同步现在通过事件监听器自动处理，不需要在这里手动调用
+      // 注意：工具缓存刷新现在通过事件监听器自动处理，不需要在这里手动调用
       // MCPService.connect() 成功后会发射 mcp:service:connected 事件
-      // 事件监听器会自动触发工具同步和CustomMCPHandler刷新
+      // 事件监听器会自动触发工具缓存刷新和CustomMCPHandler刷新
 
       const tools = service.getTools();
       console.debug(

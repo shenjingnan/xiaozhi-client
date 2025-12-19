@@ -264,8 +264,6 @@ vi.mock("../CustomMCPHandler.js", () => {
 // Mock MCPCacheManager
 vi.mock("../MCPCacheManager.js", () => {
   class MockMCPCacheManager {
-    constructor() {}
-
     async writeCacheEntry() {}
     async readCacheEntry() {
       return null;
@@ -280,7 +278,7 @@ const { configManager: mockConfigManager } = await import(
   "../../configManager.js"
 );
 
-describe("工具同步集成测试", () => {
+describe("工具缓存集成测试", () => {
   let serviceManager: MCPServiceManager;
 
   beforeEach(() => {
@@ -370,7 +368,7 @@ describe("工具同步集成测试", () => {
     vi.mocked(mockConfigManager.getConfigDir).mockReturnValue("/tmp/test");
   });
 
-  describe("端到端工具同步流程", () => {
+  describe("端到端工具聚合流程", () => {
     it("应该在 getAllTools 中正确聚合和去重", () => {
       // Arrange - 设置 customMCP 工具来测试去重逻辑
       mockCustomMCPTools = [

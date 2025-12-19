@@ -99,28 +99,4 @@ describe("MCPServiceManager 事件监听测试", () => {
     // 验证处理器被调用
     expect(handleServiceConnectedSpy).toHaveBeenCalledWith(eventData);
   });
-
-  it("应该能够响应配置更新事件", async () => {
-    // 监听工具同步管理器的配置更新处理
-    const toolSyncManager = (mcpServiceManager as any).toolSyncManager;
-    const handleConfigUpdatedSpy = vi.spyOn(
-      toolSyncManager as any,
-      "handleConfigUpdated"
-    );
-
-    // 发射配置更新事件
-    const eventData = {
-      type: "serverTools",
-      serviceName: "test-service",
-      timestamp: new Date(),
-    };
-
-    eventBus.emitEvent("config:updated", eventData);
-
-    // 等待异步处理
-    await new Promise((resolve) => setTimeout(resolve, 10));
-
-    // 验证处理器被调用
-    expect(handleConfigUpdatedSpy).toHaveBeenCalledWith(eventData);
-  });
 });
