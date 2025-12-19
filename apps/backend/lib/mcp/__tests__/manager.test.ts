@@ -34,7 +34,6 @@ vi.mock("@root/configManager.js", () => ({
   },
 }));
 
-
 vi.mock("@root/services/CustomMCPHandler.js", () => ({
   CustomMCPHandler: vi.fn().mockImplementation(() => {
     // 创建所有需要的Mock方法

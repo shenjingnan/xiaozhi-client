@@ -134,7 +134,6 @@ describe("Multi-Protocol Integration", () => {
 
     manager = new MCPServiceManager();
 
-    
     // Mock TransportFactory
     vi.mocked(TransportFactory).validateConfig = vi.fn();
     vi.mocked(TransportFactory).create = vi.fn().mockReturnValue({
