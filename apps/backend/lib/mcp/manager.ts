@@ -120,15 +120,6 @@ export class MCPServiceManager extends EventEmitter {
     this.eventBus.onEvent("mcp:service:connection:failed", async (data) => {
       await this.handleServiceConnectionFailed(data);
     });
-
-    // 监听工具同步相关事件
-    this.eventBus.onEvent("tool-sync:server-tools-updated", async (data) => {
-      await this.handleServerToolsUpdated(data);
-    });
-
-    this.eventBus.onEvent("tool-sync:general-config-updated", async (data) => {
-      await this.handleGeneralConfigUpdated(data);
-    });
   }
 
   /**
@@ -145,8 +136,6 @@ export class MCPServiceManager extends EventEmitter {
       // 获取最新的工具列表
       const service = this.services.get(data.serviceName);
       if (service) {
-        const tools = service.getTools();
-
         // 重新初始化CustomMCPHandler
         await this.refreshCustomMCPHandlerPublic();
 
@@ -194,55 +183,6 @@ export class MCPServiceManager extends EventEmitter {
       await this.refreshCustomMCPHandlerPublic();
     } catch (error) {
       console.error("刷新CustomMCPHandler失败:", error);
-    }
-  }
-
-  /**
-   * 处理serverTools配置更新事件
-   */
-  private async handleServerToolsUpdated(data: {
-    serviceName: string;
-    timestamp: Date;
-  }): Promise<void> {
-    console.debug(`处理服务 ${data.serviceName} 的serverTools配置更新`);
-
-    try {
-      const service = this.services.get(data.serviceName);
-      if (service?.isConnected()) {
-        const tools = service.getTools();
-
-        // 刷新CustomMCPHandler
-        await this.refreshCustomMCPHandlerPublic();
-
-        console.info(`服务 ${data.serviceName} 配置更新同步完成`);
-      }
-    } catch (error) {
-      console.error(`处理服务 ${data.serviceName} 配置更新失败:`, error);
-    }
-  }
-
-  /**
-   * 处理通用配置更新事件
-   */
-  private async handleGeneralConfigUpdated(data: {
-    timestamp: Date;
-  }): Promise<void> {
-    console.info("处理通用配置更新，检查所有已连接服务");
-
-    try {
-      // 检查所有已连接的服务
-      for (const [serviceName, service] of this.services) {
-        if (service.isConnected()) {
-          const tools = service.getTools();
-        }
-      }
-
-      // 刷新CustomMCPHandler
-      await this.refreshCustomMCPHandlerPublic();
-
-      console.info("通用配置更新同步完成");
-    } catch (error) {
-      console.error("处理通用配置更新失败:", error);
     }
   }
 
