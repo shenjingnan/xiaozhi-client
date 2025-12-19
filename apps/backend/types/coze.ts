@@ -149,17 +149,6 @@ export interface CozePlatformConfig {
   token: string;
 }
 
-/**
- * 缓存项接口
- */
-export interface CacheItem<T = any> {
-  /** 缓存数据 */
-  data: T;
-  /** 缓存时间戳 */
-  timestamp: number;
-  /** 缓存过期时间（毫秒） */
-  ttl: number;
-}
 
 /**
  * 扣子 API 服务配置

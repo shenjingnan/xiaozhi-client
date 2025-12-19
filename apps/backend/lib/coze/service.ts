@@ -3,26 +3,32 @@
  * 负责与扣子 API 的交互，包括工作空间和工作流的获取
  */
 
+import NodeCache from "node-cache";
 import type { WorkSpace } from "@/lib/coze";
 import type {
   CozeWorkflowsData,
   CozeWorkflowsParams,
   CozeWorkflowsResponse,
 } from "@root/types/coze";
-import { CozeApiCache } from "./cache";
 import { createCozeClient } from "./client";
 
 /**
  * 扣子 API 服务类
  */
 export class CozeApiService {
-  private cache = new CozeApiCache();
+  private cache: NodeCache;
   private token: string; // 保留 token 字段用于可能的后续扩展（如 token 刷新）
   private client: ReturnType<typeof createCozeClient>;
 
   constructor(token: string) {
     this.token = token.trim();
     this.client = createCozeClient(this.token);
+
+    // 初始化缓存
+    this.cache = new NodeCache({
+      stdTTL: 5 * 60, // 默认5分钟
+      useClones: false, // 提高性能
+    });
   }
 
   /**
@@ -35,7 +41,8 @@ export class CozeApiService {
 
     const { workspaces = [] } = await this.client.workspaces.list();
 
-    this.cache.set(cacheKey, workspaces, "workspaces");
+    // 设置缓存，过期时间30分钟
+    this.cache.set(cacheKey, workspaces, 30 * 60);
 
     return workspaces;
   }
@@ -66,7 +73,8 @@ export class CozeApiService {
 
     const result = response.data;
 
-    this.cache.set(cacheKey, result, "workflows");
+    // 设置缓存，使用默认的5分钟过期时间
+    this.cache.set(cacheKey, result);
 
     return result;
   }
@@ -75,13 +83,26 @@ export class CozeApiService {
    * 清除缓存
    */
   clearCache(pattern?: string): void {
-    this.cache.clear(pattern);
+    if (!pattern) {
+      // 清除所有缓存
+      this.cache.flushAll();
+      return;
+    }
+
+    // node-cache 不支持模式匹配，需要手动实现
+    const keys = this.cache.keys();
+    const keysToDelete = keys.filter(key => key.includes(pattern));
+    this.cache.del(keysToDelete);
   }
 
   /**
    * 获取缓存统计信息
    */
   getCacheStats(): { size: number; keys: string[] } {
-    return this.cache.getStats();
+    const stats = this.cache.getStats();
+    return {
+      size: stats.keys,
+      keys: this.cache.keys(),
+    };
   }
 }
