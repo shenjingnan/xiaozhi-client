@@ -3,7 +3,7 @@
  * 负责与扣子 API 的交互，包括工作空间和工作流的获取
  */
 
-import type { WorkSpace } from "@/lib/coze";
+import type { RunWorkflowData, WorkSpace } from "@/lib/coze";
 import type {
   CozeWorkflowsData,
   CozeWorkflowsParams,
@@ -76,6 +76,22 @@ export class CozeApiService {
     this.cache.set(cacheKey, result);
 
     return result;
+  }
+
+  /**
+   * 运行工作流
+   * @param workflowId - 工作流ID
+   * @param parameters - 参数
+   * @returns 运行工作流数据
+   */
+  callWorkflow(
+    workflowId: string,
+    parameters: Record<string, unknown>
+  ): Promise<RunWorkflowData> {
+    return this.client.workflows.runs.create({
+      workflow_id: workflowId,
+      parameters,
+    });
   }
 
   /**
