@@ -134,9 +134,7 @@ describe("Multi-Protocol Integration", () => {
 
     manager = new MCPServiceManager();
 
-    // Replace ToolSyncManager's logger with mock logger to avoid real logger calls
-    (manager as any).toolSyncManager.logger = mockLogger;
-
+    
     // Mock TransportFactory
     vi.mocked(TransportFactory).validateConfig = vi.fn();
     vi.mocked(TransportFactory).create = vi.fn().mockReturnValue({

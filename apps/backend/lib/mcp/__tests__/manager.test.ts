@@ -34,11 +34,6 @@ vi.mock("@root/configManager.js", () => ({
   },
 }));
 
-vi.mock("@root/services/ToolSyncManager.js", () => ({
-  ToolSyncManager: vi.fn().mockImplementation(() => ({
-    syncToolsAfterConnection: vi.fn(),
-  })),
-}));
 
 vi.mock("@root/services/CustomMCPHandler.js", () => ({
   CustomMCPHandler: vi.fn().mockImplementation(() => {

@@ -25,7 +25,6 @@ import type { MCPToolConfig } from "@root/configManager.js";
 import { configManager } from "@root/configManager.js";
 import { CustomMCPHandler } from "@root/services/CustomMCPHandler.js";
 import { getEventBus } from "@root/services/EventBus.js";
-import { ToolSyncManager } from "@root/services/ToolSyncManager.js";
 import type { MCPMessage } from "@root/types/mcp.js";
 import { ToolCallLogger } from "@utils/ToolCallLogger.js";
 import { MCPMessageHandler } from "./MCPMessageHandler.js";
@@ -37,7 +36,6 @@ export class MCPServiceManager extends EventEmitter {
   private tools: Map<string, ToolInfo> = new Map(); // 缓存工具信息，保持向后兼容
   private customMCPHandler: CustomMCPHandler; // CustomMCP 工具处理器
   private cacheManager: MCPCacheManager; // 缓存管理器
-  private toolSyncManager: ToolSyncManager; // 工具同步管理器
   private eventBus = getEventBus(); // 事件总线
   private toolCallLogger: ToolCallLogger; // 工具调用记录器
   private retryTimers: Map<string, NodeJS.Timeout> = new Map(); // 重试定时器
@@ -91,7 +89,6 @@ export class MCPServiceManager extends EventEmitter {
 
     this.cacheManager = new MCPCacheManager(cachePath);
     this.customMCPHandler = new CustomMCPHandler(this.cacheManager, this);
-    this.toolSyncManager = new ToolSyncManager(configManager);
 
     // 初始化工具调用记录器
     const toolCallLogConfig = configManager.getToolCallLogConfig();
@@ -149,14 +146,6 @@ export class MCPServiceManager extends EventEmitter {
       const service = this.services.get(data.serviceName);
       if (service) {
         const tools = service.getTools();
-
-        // 触发工具同步
-        if (this.toolSyncManager) {
-          await this.toolSyncManager.syncToolsAfterConnection(
-            data.serviceName,
-            tools
-          );
-        }
 
         // 重新初始化CustomMCPHandler
         await this.refreshCustomMCPHandlerPublic();
@@ -222,14 +211,6 @@ export class MCPServiceManager extends EventEmitter {
       if (service?.isConnected()) {
         const tools = service.getTools();
 
-        // 重新同步该服务的工具
-        if (this.toolSyncManager) {
-          await this.toolSyncManager.syncToolsAfterConnection(
-            data.serviceName,
-            tools
-          );
-        }
-
         // 刷新CustomMCPHandler
         await this.refreshCustomMCPHandlerPublic();
 
@@ -253,14 +234,6 @@ export class MCPServiceManager extends EventEmitter {
       for (const [serviceName, service] of this.services) {
         if (service.isConnected()) {
           const tools = service.getTools();
-
-          // 重新同步每个服务的工具
-          if (this.toolSyncManager) {
-            await this.toolSyncManager.syncToolsAfterConnection(
-              serviceName,
-              tools
-            );
-          }
         }
       }
 
