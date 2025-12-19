@@ -105,17 +105,6 @@ vi.mock("node:child_process", () => ({
   })),
 }));
 
-// Mock MCPServiceManagerSingleton
-vi.mock("@services/MCPServiceManagerSingleton", () => ({
-  MCPServiceManagerSingleton: {
-    getInstance: vi.fn(() => ({
-      addServiceConfig: vi.fn(),
-      startAllServices: vi.fn(),
-      getAllTools: vi.fn(() => []),
-    })),
-  },
-}));
-
 // Mock EndpointManager
 vi.mock("@/lib/endpoint/index", () => ({
   EndpointManager: vi.fn().mockImplementation(() => ({
