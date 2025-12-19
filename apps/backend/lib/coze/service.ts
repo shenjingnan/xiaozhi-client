@@ -9,20 +9,25 @@ import type {
   CozeWorkflowsParams,
   CozeWorkflowsResponse,
 } from "@root/types/coze";
-import { CozeApiCache } from "./cache";
+import NodeCache from "node-cache";
 import { createCozeClient } from "./client";
 
 /**
  * 扣子 API 服务类
  */
 export class CozeApiService {
-  private cache = new CozeApiCache();
+  private cache: NodeCache;
   private token: string; // 保留 token 字段用于可能的后续扩展（如 token 刷新）
   private client: ReturnType<typeof createCozeClient>;
 
   constructor(token: string) {
     this.token = token.trim();
     this.client = createCozeClient(this.token);
+
+    // 初始化缓存
+    this.cache = new NodeCache({
+      stdTTL: 5 * 60, // 默认5分钟（工作流缓存使用此默认值）
+    });
   }
 
   /**
@@ -35,7 +40,8 @@ export class CozeApiService {
 
     const { workspaces = [] } = await this.client.workspaces.list();
 
-    this.cache.set(cacheKey, workspaces, "workspaces");
+    // 设置缓存，过期时间30分钟
+    this.cache.set(cacheKey, workspaces, 30 * 60);
 
     return workspaces;
   }
@@ -66,22 +72,55 @@ export class CozeApiService {
 
     const result = response.data;
 
-    this.cache.set(cacheKey, result, "workflows");
+    // 设置缓存，使用默认的5分钟过期时间
+    this.cache.set(cacheKey, result);
 
     return result;
   }
 
   /**
    * 清除缓存
+   * @param pattern 可选的模式字符串，清除所有以该模式开头的缓存键
    */
   clearCache(pattern?: string): void {
-    this.cache.clear(pattern);
+    if (!pattern) {
+      // 清除所有缓存
+      this.cache.flushAll();
+      return;
+    }
+
+    // node-cache 不支持模式匹配，需要手动实现
+    // 使用前缀匹配，避免意外匹配
+    const keys = this.cache.keys();
+    const keysToDelete = keys.filter((key) => key.startsWith(pattern));
+    this.cache.del(keysToDelete);
   }
 
   /**
    * 获取缓存统计信息
    */
-  getCacheStats(): { size: number; keys: string[] } {
-    return this.cache.getStats();
+  getCacheStats(): {
+    size: number;
+    keys: string[];
+    hits: number;
+    misses: number;
+    hitRate: number;
+    ksize: number;
+    vsize: number;
+  } {
+    const stats = this.cache.getStats();
+    const keys = this.cache.keys();
+    const totalRequests = stats.hits + stats.misses;
+    const hitRate = totalRequests > 0 ? stats.hits / totalRequests : 0;
+
+    return {
+      size: stats.keys,
+      keys,
+      hits: stats.hits,
+      misses: stats.misses,
+      hitRate,
+      ksize: stats.ksize,
+      vsize: stats.vsize,
+    };
   }
 }
