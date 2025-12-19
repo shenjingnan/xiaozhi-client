@@ -1,9 +1,9 @@
 #!/usr/bin/env node
+import { CozeApiService } from "@/lib/coze";
+import type { RunWorkflowData } from "@/lib/coze";
 import type { MCPServiceManager } from "@/lib/mcp";
 import { MCPCacheManager } from "@/lib/mcp";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
-import { CozeApiService } from "@/lib/coze";
-import type { RunWorkflowData } from "@/lib/coze";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
@@ -290,7 +290,7 @@ export class CustomMCPHandler {
       // 假设 workflowData 有 data 字段或其他响应数据字段
       const responseData = workflowData.data || workflowData;
 
-      if (typeof responseData === 'string') {
+      if (typeof responseData === "string") {
         return {
           content: [
             {
@@ -379,9 +379,6 @@ export class CustomMCPHandler {
     }
   }
 
-  
-  
-  
   /**
    * 清理已消费的缓存
    */
