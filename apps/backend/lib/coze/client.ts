@@ -11,7 +11,10 @@ export type Language = "zh" | "en";
 /**
  * 创建 Coze API 客户端
  */
-export function createCozeClient(token: string, language: Language = "zh"): CozeAPI {
+export function createCozeClient(
+  token: string,
+  language: Language = "zh"
+): CozeAPI {
   if (!token || typeof token !== "string" || token.trim() === "") {
     throw new Error("扣子 API Token 不能为空");
   }
