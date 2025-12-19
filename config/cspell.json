@@ -3,6 +3,8 @@
   "language": "en",
   "globRoot": "../",
   "words": [
+    "vsize",
+    "ksize",
     "1",
     "24",
     "addgroup",
