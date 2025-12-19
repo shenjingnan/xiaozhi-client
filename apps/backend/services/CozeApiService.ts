@@ -3,14 +3,13 @@
  * 负责与扣子 API 的交互，包括工作空间和工作流的获取
  */
 
+import type { WorkSpace } from "@/lib/coze";
+import { CozeAPI, config } from "@/lib/coze";
 import type {
   CacheItem,
-  CozeApiError,
-  CozeWorkflow,
+  CozeWorkflowsData,
   CozeWorkflowsParams,
   CozeWorkflowsResponse,
-  CozeWorkspace,
-  CozeWorkspacesResponse,
 } from "@root/types/coze";
 import { logger } from "../Logger";
 
@@ -84,157 +83,46 @@ class CozeApiCache {
 }
 
 /**
- * 扣子 API 错误类
- */
-class CozeApiErrorImpl extends Error implements CozeApiError {
-  public code: string;
-  public statusCode?: number;
-  public response?: any;
-
-  constructor(
-    message: string,
-    code: string,
-    statusCode?: number,
-    response?: any
-  ) {
-    super(message);
-    this.name = "CozeApiError";
-    this.code = code;
-    this.statusCode = statusCode;
-    this.response = response;
-  }
-}
-
-/**
- * 指数退避重试函数
- */
-async function retryWithBackoff<T>(
-  fn: () => Promise<T>,
-  maxAttempts = 3,
-  baseDelay = 1000
-): Promise<T> {
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      return await fn();
-    } catch (error) {
-      if (attempt === maxAttempts) {
-        throw error;
-      }
-
-      // 指数退避延迟
-      const delay = baseDelay * 2 ** (attempt - 1);
-      logger.warn(
-        `扣子 API 调用失败，${delay}ms 后重试 (${attempt}/${maxAttempts})`,
-        error
-      );
-      await new Promise((resolve) => setTimeout(resolve, delay));
-    }
-  }
-  throw new Error("Max retry attempts exceeded");
-}
-
-/**
- * 处理扣子 API 错误
- */
-function handleCozeApiError(
-  response: Response,
-  responseData?: any
-): CozeApiError {
-  const statusCode = response.status;
-
-  if (statusCode === 401) {
-    return new CozeApiErrorImpl(
-      "认证失败，请检查扣子 API Token 配置",
-      "AUTH_FAILED",
-      401,
-      responseData
-    );
-  }
-
-  if (statusCode === 429) {
-    return new CozeApiErrorImpl(
-      "请求过于频繁，请稍后重试",
-      "RATE_LIMITED",
-      429,
-      responseData
-    );
-  }
-
-  if (statusCode >= 500) {
-    return new CozeApiErrorImpl(
-      "扣子服务器错误，请稍后重试",
-      "SERVER_ERROR",
-      statusCode,
-      responseData
-    );
-  }
-
-  return new CozeApiErrorImpl(
-    responseData?.msg || `API 调用失败: ${response.statusText}`,
-    "API_ERROR",
-    statusCode,
-    responseData
-  );
-}
-
-/**
  * 扣子 API 服务类
  */
 export class CozeApiService {
   private cache = new CozeApiCache();
   private token: string;
-
-  // 使用合理的默认配置，避免配置过度复杂化
-  private readonly API_BASE_URL = "https://api.coze.cn";
-  private readonly TIMEOUT = 10000;
-  private readonly RETRY_ATTEMPTS = 3;
+  private client: CozeAPI;
 
   constructor(token: string) {
     if (!token || typeof token !== "string" || token.trim() === "") {
       throw new Error("扣子 API Token 不能为空");
     }
     this.token = token.trim();
+
+    this.client = new CozeAPI({
+      baseURL: config.zh.COZE_BASE_URL,
+      token: this.token,
+      baseWsURL: config.zh.COZE_BASE_WS_URL,
+      debug: false,
+    });
   }
 
   /**
    * 获取工作空间列表
    */
-  async getWorkspaces(): Promise<CozeWorkspace[]> {
+  async getWorkspaces(): Promise<WorkSpace[]> {
     const cacheKey = "workspaces";
-    const cached = this.cache.get<CozeWorkspace[]>(cacheKey);
-    if (cached) {
-      logger.debug("从缓存获取工作空间列表");
-      return cached;
-    }
+    const cached = this.cache.get<WorkSpace[]>(cacheKey);
+    if (cached) return cached;
 
-    logger.info("获取扣子工作空间列表");
+    const { workspaces = [] } = await this.client.workspaces.list();
 
-    const response =
-      await this.request<CozeWorkspacesResponse>("/v1/workspaces");
-
-    if (response.code !== 0) {
-      throw new CozeApiErrorImpl(
-        response.msg || "获取工作空间列表失败",
-        "API_ERROR",
-        undefined,
-        response
-      );
-    }
-
-    const workspaces = response.data.workspaces;
     this.cache.set(cacheKey, workspaces, "workspaces");
 
-    logger.info(`成功获取 ${workspaces.length} 个工作空间`);
     return workspaces;
   }
 
   /**
    * 获取工作流列表
    */
-  async getWorkflows(params: CozeWorkflowsParams): Promise<{
-    items: CozeWorkflow[];
-    hasMore: boolean;
-  }> {
+  async getWorkflows(params: CozeWorkflowsParams): Promise<CozeWorkflowsData> {
     const { workspace_id, page_num = 1, page_size = 20 } = params;
 
     if (!workspace_id || typeof workspace_id !== "string") {
@@ -242,105 +130,24 @@ export class CozeApiService {
     }
 
     const cacheKey = `workflows:${workspace_id}:${page_num}:${page_size}`;
-    const cached = this.cache.get<{ items: CozeWorkflow[]; hasMore: boolean }>(
-      cacheKey
-    );
-    if (cached) {
-      logger.debug(`从缓存获取工作流列表: ${workspace_id}`);
-      return cached;
-    }
+    const cached = this.cache.get<CozeWorkflowsData>(cacheKey);
+    if (cached) return cached;
 
-    logger.info(
-      `获取工作空间 ${workspace_id} 的工作流列表 (页码: ${page_num}, 每页: ${page_size})`
-    );
-
-    const queryParams = new URLSearchParams({
+    const response = await this.client.get<
+      CozeWorkflowsParams,
+      CozeWorkflowsResponse
+    >("/v1/workflows", {
       workspace_id,
-      page_num: page_num.toString(),
-      page_size: page_size.toString(),
+      page_num: page_num,
+      page_size: page_size,
       workflow_mode: "workflow",
     });
 
-    const response = await this.request<CozeWorkflowsResponse>(
-      `/v1/workflows?${queryParams}`
-    );
-
-    if (response.code !== 0) {
-      throw new CozeApiErrorImpl(
-        response.msg || "获取工作流列表失败",
-        "API_ERROR",
-        undefined,
-        response
-      );
-    }
-
-    const result = {
-      items: response.data.items,
-      hasMore: response.data.has_more,
-    };
+    const result = response.data;
 
     this.cache.set(cacheKey, result, "workflows");
 
-    logger.info(
-      `成功获取 ${result.items.length} 个工作流，hasMore: ${result.hasMore}`
-    );
     return result;
-  }
-
-  /**
-   * 通用请求方法
-   */
-  private async request<T>(endpoint: string): Promise<T> {
-    return retryWithBackoff(async () => {
-      const url = `${this.API_BASE_URL}${endpoint}`;
-
-      logger.debug(`发起扣子 API 请求: ${url}`);
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.TIMEOUT);
-
-      try {
-        const response = await fetch(url, {
-          headers: {
-            Authorization: `Bearer ${this.token}`,
-            "Content-Type": "application/json",
-          },
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeoutId);
-
-        let responseData: any;
-        try {
-          responseData = await response.json();
-        } catch (parseError) {
-          logger.error("解析响应 JSON 失败:", parseError);
-          throw new CozeApiErrorImpl(
-            "响应数据格式错误",
-            "PARSE_ERROR",
-            response.status
-          );
-        }
-
-        if (!response.ok) {
-          throw handleCozeApiError(response, responseData);
-        }
-
-        return responseData;
-      } catch (error) {
-        clearTimeout(timeoutId);
-
-        if (error instanceof Error && error.name === "AbortError") {
-          throw new CozeApiErrorImpl(
-            `请求超时 (${this.TIMEOUT}ms)`,
-            "TIMEOUT",
-            undefined
-          );
-        }
-
-        throw error;
-      }
-    }, this.RETRY_ATTEMPTS);
   }
 
   /**
