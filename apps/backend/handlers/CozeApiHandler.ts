@@ -3,10 +3,10 @@
  * 提供扣子工作空间和工作流相关的 RESTful API 接口
  */
 
+import { CozeApiService } from "@/lib/coze";
 import { logger } from "@root/Logger";
 import { configManager } from "@root/configManager";
 import type { CozeWorkflowsParams } from "@root/types/coze";
-import { CozeApiService } from "@services/CozeApiService";
 import type { Context } from "hono";
 
 /**
@@ -136,8 +136,9 @@ export class CozeApiHandler {
       }
 
       const cozeApiService = getCozeApiService();
-      const workspaces = await cozeApiService.getWorkspaces();
 
+      logger.info("调用 Coze API 获取工作空间列表");
+      const workspaces = await cozeApiService.getWorkspaces();
       logger.info(`成功获取 ${workspaces.length} 个工作空间`);
 
       return c.json(
@@ -251,8 +252,11 @@ export class CozeApiHandler {
       };
 
       const cozeApiService = getCozeApiService();
-      const result = await cozeApiService.getWorkflows(params);
 
+      logger.info(
+        `开始获取工作空间 ${workspace_id} 的工作流列表，页码: ${page_num}，每页: ${page_size}`
+      );
+      const result = await cozeApiService.getWorkflows(params);
       logger.info(
         `成功获取工作空间 ${workspace_id} 的 ${result.items.length} 个工作流`
       );
@@ -354,7 +358,9 @@ export class CozeApiHandler {
       const pattern = c.req.query("pattern"); // 可选的缓存模式参数
 
       const cozeApiService = getCozeApiService();
+
       const statsBefore = cozeApiService.getCacheStats();
+      logger.info(`开始清除缓存${pattern ? ` (模式: ${pattern})` : ""}`);
 
       cozeApiService.clearCache(pattern);
 

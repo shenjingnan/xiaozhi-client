@@ -8,4 +8,3 @@ export * from "./ErrorHandler.js";
 
 // CustomMCPHandler 导出 - 避免冲突的 ToolCallResult
 export { CustomMCPHandler } from "./CustomMCPHandler.js";
-export * from "./CozeApiService.js";
