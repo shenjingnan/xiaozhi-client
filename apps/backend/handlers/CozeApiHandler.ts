@@ -137,7 +137,7 @@ export class CozeApiHandler {
 
       const cozeApiService = getCozeApiService();
 
-      logger.info("开始获取工作空间列表");
+      logger.info("调用 Coze API 获取工作空间列表");
       const workspaces = await cozeApiService.getWorkspaces();
       logger.info(`成功获取 ${workspaces.length} 个工作空间`);
 

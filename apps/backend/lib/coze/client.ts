@@ -10,6 +10,8 @@ export type Language = "zh" | "en";
 
 /**
  * 创建 Coze API 客户端
+ * @param token - API 访问令牌
+ * @param language - API 环境语言，默认为 "zh"（中文），可选 "en"（英文）
  */
 export function createCozeClient(
   token: string,

@@ -17,12 +17,12 @@ import { createCozeClient } from "./client";
  */
 export class CozeApiService {
   private cache = new CozeApiCache();
-  private token: string;
+  private token: string; // 保留 token 字段用于可能的后续扩展（如 token 刷新）
   private client: ReturnType<typeof createCozeClient>;
 
   constructor(token: string) {
-    this.token = token;
-    this.client = createCozeClient(token);
+    this.token = token.trim();
+    this.client = createCozeClient(this.token);
   }
 
   /**
