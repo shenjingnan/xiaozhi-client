@@ -284,7 +284,7 @@ export class CozeApiHandler {
       return c.json(
         createSuccessResponse({
           items: enhancedItems,
-          has_more: result.hasMore,
+          has_more: result.has_more,
           page_num,
           page_size,
           total_count: result.items.length, // 当前页的数量
