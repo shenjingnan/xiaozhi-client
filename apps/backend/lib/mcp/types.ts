@@ -157,18 +157,23 @@ export function isValidToolJSONSchema(obj: unknown): obj is {
  */
 export function ensureToolJSONSchema(schema: JSONSchema): {
   type: "object";
-  properties?: Record<string, unknown>;
+  properties?: Record<string, object>;
   required?: string[];
   additionalProperties?: boolean;
 } {
   if (isValidToolJSONSchema(schema)) {
-    return schema;
+    return schema as {
+      type: "object";
+      properties?: Record<string, object>;
+      required?: string[];
+      additionalProperties?: boolean;
+    };
   }
 
   // 如果不符合标准格式，返回默认的空对象 schema
   return {
     type: "object",
-    properties: {},
+    properties: {} as Record<string, object>,
     required: [],
     additionalProperties: true,
   };

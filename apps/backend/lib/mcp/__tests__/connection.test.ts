@@ -186,9 +186,7 @@ describe("MCPService", () => {
           version: "1.0.0",
         },
         {
-          capabilities: {
-            tools: {},
-          },
+          capabilities: {},
         }
       );
       expect(TransportFactory.create).toHaveBeenCalledWith(config);
