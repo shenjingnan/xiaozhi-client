@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { CozeApiService } from "@/lib/coze";
+import type { RunWorkflowData } from "@/lib/coze";
 import type { MCPServiceManager } from "@/lib/mcp";
 import { MCPCacheManager } from "@/lib/mcp";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
@@ -34,26 +36,6 @@ function isProxyHandler(handler: HandlerConfig): handler is ProxyHandlerConfig {
   return handler.type === "proxy";
 }
 
-// Coze API 响应类型
-interface CozeApiResponse {
-  code: number;
-  msg: string;
-  debug_url: string;
-  data: string;
-  usage: {
-    input_count: number;
-    output_count: number;
-    token_count: number;
-  };
-}
-
-// Coze 请求数据类型
-interface CozeRequestData {
-  workflow_id?: string;
-  bot_id?: string;
-  parameters: Record<string, unknown>;
-}
-
 // 扩展的工具调用选项
 interface ToolCallOptions {
   timeout?: number; // 超时时间（毫秒）
@@ -83,6 +65,19 @@ export class CustomMCPHandler {
 
     // 设置事件监听器
     this.setupEventListeners();
+  }
+
+  /**
+   * 获取 CozeApiService 实例
+   */
+  private getCozeApiService(): CozeApiService {
+    const token = configManager.getConfig().platforms?.coze?.token;
+
+    if (!token) {
+      throw new Error("Coze Token 配置不存在");
+    }
+
+    return new CozeApiService(token);
   }
 
   /**
@@ -284,6 +279,57 @@ export class CustomMCPHandler {
   }
 
   /**
+   * 处理工作流响应
+   */
+  private processWorkflowResponse(
+    toolName: string,
+    workflowData: RunWorkflowData
+  ): ToolCallResult {
+    try {
+      // 根据 RunWorkflowData 的实际结构进行处理
+      // 假设 workflowData 有 data 字段或其他响应数据字段
+      const responseData = workflowData.data || workflowData;
+
+      if (typeof responseData === "string") {
+        return {
+          content: [
+            {
+              type: "text",
+              text: responseData,
+            },
+          ],
+          isError: false,
+        };
+      }
+
+      // 如果是对象，转换为 JSON 字符串
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(responseData, null, 2),
+          },
+        ],
+        isError: false,
+      };
+    } catch (error) {
+      this.logger.error(`[CustomMCP] 处理工作流响应失败: ${toolName}`, error);
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: `处理响应失败: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  }
+
+  /**
    * 调用 Coze 工作流
    */
   private async callCozeWorkflow(
@@ -298,14 +344,24 @@ export class CustomMCPHandler {
     });
 
     try {
-      // 构建请求参数
-      const requestData = this.buildCozeRequest(config, arguments_);
-      // 发送请求到 Coze API
-      const response = await this.sendCozeRequest(config, requestData);
+      // 使用 CozeApiService
+      const cozeApiService = this.getCozeApiService();
+
+      // 检查 workflow_id 是否存在
+      if (!config.workflow_id) {
+        throw new Error("工作流ID未配置");
+      }
+
+      // 调用 callWorkflow 方法
+      const workflowResult = await cozeApiService.callWorkflow(
+        config.workflow_id,
+        arguments_
+      );
+
       this.logger.info(`[CustomMCP] Coze 工作流调用成功: ${tool.name}`);
 
-      // 处理响应
-      return this.processCozeResponse(tool.name, response);
+      // 转换响应格式为 ToolCallResult
+      return this.processWorkflowResponse(tool.name, workflowResult);
     } catch (error) {
       this.logger.error(`[CustomMCP] Coze 工作流调用失败: ${tool.name}`, error);
 
@@ -314,127 +370,6 @@ export class CustomMCPHandler {
           {
             type: "text",
             text: `Coze 工作流调用失败: ${
-              error instanceof Error ? error.message : String(error)
-            }`,
-          },
-        ],
-        isError: true,
-      };
-    }
-  }
-
-  /**
-   * 构建 Coze 请求数据
-   */
-  private buildCozeRequest(
-    config: ProxyHandlerConfig["config"],
-    arguments_: ToolArguments
-  ): CozeRequestData {
-    return {
-      workflow_id: config.workflow_id,
-      parameters: {
-        ...arguments_,
-      },
-    };
-  }
-
-  /**
-   * 发送 Coze API 请求
-   */
-  private async sendCozeRequest(
-    config: ProxyHandlerConfig["config"],
-    requestData: CozeRequestData
-  ): Promise<CozeApiResponse> {
-    const baseUrl = config.base_url || "https://api.coze.cn";
-    const endpoint = "/v1/workflow/run";
-    const url = `${baseUrl}${endpoint}`;
-    const timeout = config.timeout || 300000;
-
-    const token = configManager.getConfig().platforms?.coze?.token;
-    if (!token) {
-      throw new Error("Coze Token 配置不存在");
-    }
-
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      ...config.headers,
-    };
-
-    this.logger.debug(`[CustomMCP] 发送 Coze 请求到: ${url}`);
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-    try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(requestData),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Coze API 请求失败 (${response.status}): ${errorText}`);
-      }
-
-      const responseData = (await response.json()) as CozeApiResponse;
-      this.logger.debug("[CustomMCP] Coze API 响应:", responseData);
-
-      return responseData;
-    } catch (error) {
-      clearTimeout(timeoutId);
-
-      if (error instanceof Error && error.name === "AbortError") {
-        throw new Error(`Coze API 请求超时 (${timeout}ms)`);
-      }
-
-      throw error;
-    }
-  }
-
-  /**
-   * 处理 Coze API 响应
-   */
-  private processCozeResponse(
-    toolName: string,
-    response: CozeApiResponse
-  ): ToolCallResult {
-    try {
-      // 处理工作流响应
-      if (response.data) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: response.data,
-            },
-          ],
-          isError: false,
-        };
-      }
-
-      // 默认处理：返回整个响应
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(response, null, 2),
-          },
-        ],
-        isError: false,
-      };
-    } catch (error) {
-      this.logger.error(`[CustomMCP] 处理 Coze 响应失败: ${toolName}`, error);
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: `处理响应失败: ${
               error instanceof Error ? error.message : String(error)
             }`,
           },
