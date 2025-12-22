@@ -240,13 +240,12 @@ export class CustomMCPHandler {
    */
   private async createTimeoutPromise(
     toolName: string,
-    timeout?: number
+    timeout: number
   ): Promise<never> {
-    const actualTimeout = timeout || this.TIMEOUT; // 使用传入的 timeout 或默认值
     return new Promise((_, reject) => {
       setTimeout(() => {
         reject(new TimeoutError(`工具调用超时: ${toolName}`));
-      }, actualTimeout);
+      }, timeout);
     });
   }
 
