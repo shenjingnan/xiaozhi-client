@@ -26,8 +26,8 @@ import { configManager } from "@root/configManager.js";
 import { getEventBus } from "@root/services/EventBus.js";
 import type { MCPMessage } from "@root/types/mcp.js";
 import { ToolCallLogger } from "@utils/ToolCallLogger.js";
-import { CustomMCPHandler } from "./CustomMCPHandler.js";
-import { MCPMessageHandler } from "./MCPMessageHandler.js";
+import { CustomMCPHandler } from "./custom.js";
+import { MCPMessageHandler } from "./message.js";
 import { ConnectionState, type TransportAdapter } from "./transports/index.js";
 
 export class MCPServiceManager extends EventEmitter {

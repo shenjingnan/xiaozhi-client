@@ -6,7 +6,7 @@
 import type { CustomMCPTool } from "@root/configManager.js";
 import { getEventBus } from "@root/services/EventBus.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { CustomMCPHandler } from "../CustomMCPHandler.js";
+import { CustomMCPHandler } from "../custom.js";
 
 // Mock logger
 vi.mock("@root/Logger.js", () => ({
