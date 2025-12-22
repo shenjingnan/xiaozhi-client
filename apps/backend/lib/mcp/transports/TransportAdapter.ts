@@ -4,7 +4,7 @@
  * 这是阶段二重构的核心组件，用于抽象不同的传输层实现
  */
 
-import type { MCPMessageHandler } from "@/lib/mcp";
+import type { MCPMessageHandler } from "@/lib/mcp/message.js";
 import type { MCPError, MCPMessage, MCPResponse } from "@root/types/mcp.js";
 
 // 重新导出接口以保持向后兼容

@@ -3,6 +3,8 @@
  * 阶段四：WebSocket 集成和性能测试
  */
 
+import type { MCPCacheManager } from "@/lib/mcp/cache.js";
+import type { MCPMessage } from "@root/types/mcp.js";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { ConnectionState } from "../TransportAdapter.js";
 import type { WebSocketConfig } from "../WebSocketAdapter.js";
@@ -106,8 +108,8 @@ vi.mock("@/lib/mcp", () => {
   };
 
   // 创建 mock messageHandler 实例工厂
-  const createMockMessageHandler = (serviceManager: any) => ({
-    handleMessage: vi.fn().mockImplementation(async (message: any) => {
+  const createMockMessageHandler = (serviceManager: MCPServiceManager) => ({
+    handleMessage: vi.fn().mockImplementation(async (message: MCPMessage) => {
       switch (message.method) {
         case "initialize":
           return {
@@ -146,13 +148,66 @@ vi.mock("@/lib/mcp", () => {
     getServiceManager: vi.fn().mockReturnValue(serviceManager),
   });
 
+  // 创建 mock MCPCacheManager 实例
+  const createMockCacheManager = (customCachePath?: string) => ({
+    writeCacheEntry: vi.fn().mockResolvedValue(undefined),
+    loadExistingCache: vi.fn().mockResolvedValue({
+      version: "1.0.0",
+      mcpServers: {},
+      metadata: {
+        lastGlobalUpdate: "2024-01-01 00:00:00",
+        totalWrites: 0,
+        createdAt: "2024-01-01 00:00:00",
+      },
+    }),
+    saveCache: vi.fn().mockResolvedValue(undefined),
+    getStats: vi.fn().mockResolvedValue(null),
+    getFilePath: vi
+      .fn()
+      .mockReturnValue(customCachePath || "/tmp/xiaozhi.cache.json"),
+    writeCustomMCPResult: vi.fn().mockResolvedValue(undefined),
+    readCustomMCPResult: vi.fn().mockResolvedValue(null),
+    updateCustomMCPStatus: vi.fn().mockResolvedValue(false),
+    markCustomMCPAsConsumed: vi.fn().mockResolvedValue(false),
+    deleteCustomMCPResult: vi.fn().mockResolvedValue(false),
+    cleanupCustomMCPResults: vi
+      .fn()
+      .mockResolvedValue({ cleaned: 0, total: 0 }),
+    getCustomMCPStatistics: vi.fn().mockResolvedValue({
+      totalEntries: 0,
+      pendingTasks: 0,
+      completedTasks: 0,
+      failedTasks: 0,
+      consumedEntries: 0,
+      cacheHitRate: 0,
+      lastCleanupTime: new Date().toISOString(),
+      memoryUsage: 0,
+    }),
+    stopCleanupTimer: vi.fn(),
+    cleanup: vi.fn(),
+  });
+
+  // 创建 mock CustomMCPHandler 实例
+  const createMockCustomMCPHandler = (
+    cacheManager: MCPCacheManager,
+    serviceManager: MCPServiceManager
+  ) => ({
+    handleToolCall: vi.fn().mockResolvedValue({
+      content: [{ type: "text", text: "mock custom tool result" }],
+      isError: false,
+    }),
+  });
+
   return {
     MCPServiceManager: vi.fn().mockImplementation(() => mockServiceManager),
     MCPMessageHandler: vi.fn().mockImplementation(createMockMessageHandler),
+    MCPCacheManager: vi.fn().mockImplementation(createMockCacheManager),
+    CustomMCPHandler: vi.fn().mockImplementation(createMockCustomMCPHandler),
   };
 });
 
-import { MCPMessageHandler, MCPServiceManager } from "@/lib/mcp";
+import { MCPServiceManager } from "@/lib/mcp/manager.js";
+import { MCPMessageHandler } from "@/lib/mcp/message.js";
 
 describe("WebSocket 适配器测试", () => {
   let serviceManager: MCPServiceManager;

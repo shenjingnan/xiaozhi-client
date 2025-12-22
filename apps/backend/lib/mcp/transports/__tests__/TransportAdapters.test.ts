@@ -3,7 +3,10 @@
  * 验证 TransportAdapter 和 StdioAdapter 的功能
  */
 
-import { MCPMessageHandler, MCPServiceManager } from "@/lib/mcp";
+import { MCPServiceManager } from "@/lib/mcp/manager.js";
+import { MCPMessageHandler } from "@/lib/mcp/message.js";
+import type { AppConfig } from "@root/configManager.js";
+import type { MCPMessage, MCPResponse } from "@root/types/mcp.js";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { configManager } from "../../../../configManager.js";
 import { StdioAdapter } from "../StdioAdapter.js";
@@ -46,6 +49,41 @@ describe("传输层抽象验收测试", () => {
   let serviceManager: MCPServiceManager;
   let messageHandler: MCPMessageHandler;
 
+  // 测试用子类，暴露受保护的方法供测试使用
+  class TestAdapter extends TransportAdapter {
+    async initialize(): Promise<void> {
+      this.setState(ConnectionState.CONNECTING);
+    }
+
+    async start(): Promise<void> {
+      this.setState(ConnectionState.CONNECTED);
+    }
+
+    async stop(): Promise<void> {
+      this.setState(ConnectionState.DISCONNECTED);
+    }
+
+    async sendMessage(): Promise<void> {
+      // Test implementation
+    }
+
+    // 暴露受保护的方法供测试使用
+    public testParseMessage(data: string): MCPMessage | null {
+      return this.parseMessage(data);
+    }
+
+    public testSerializeMessage(message: MCPMessage | MCPResponse): string {
+      return this.serializeMessage(message);
+    }
+
+    public testCreateErrorResponse(
+      error: Error,
+      id: string | number
+    ): MCPResponse {
+      return this.createErrorResponse(error, id);
+    }
+  }
+
   beforeEach(() => {
     // Mock ConfigManager 方法以避免依赖真实配置文件
     vi.spyOn(configManager, "configExists").mockReturnValue(true);
@@ -60,7 +98,7 @@ describe("传输层抽象验收测试", () => {
       toolCallLog: {
         maxRecords: 100,
       },
-    } as any);
+    } as AppConfig);
     vi.spyOn(configManager, "getToolCallLogConfig").mockReturnValue({
       maxRecords: 100,
     });
@@ -78,24 +116,6 @@ describe("传输层抽象验收测试", () => {
   });
 
   describe("TransportAdapter 抽象基类", () => {
-    class TestAdapter extends TransportAdapter {
-      async initialize(): Promise<void> {
-        this.setState(ConnectionState.CONNECTING);
-      }
-
-      async start(): Promise<void> {
-        this.setState(ConnectionState.CONNECTED);
-      }
-
-      async stop(): Promise<void> {
-        this.setState(ConnectionState.DISCONNECTED);
-      }
-
-      async sendMessage(): Promise<void> {
-        // Test implementation
-      }
-    }
-
     test("应该正确初始化基类属性", () => {
       const adapter = new TestAdapter(messageHandler, { name: "test" });
 
@@ -124,7 +144,7 @@ describe("传输层抽象验收测试", () => {
       const adapter = new TestAdapter(messageHandler, { name: "test" });
 
       const validMessage = '{"jsonrpc": "2.0", "method": "test", "id": 1}';
-      const parsed = (adapter as any).parseMessage(validMessage);
+      const parsed = adapter.testParseMessage(validMessage);
 
       expect(parsed).toEqual({
         jsonrpc: "2.0",
@@ -137,7 +157,7 @@ describe("传输层抽象验收测试", () => {
       const adapter = new TestAdapter(messageHandler, { name: "test" });
 
       const invalidMessage = '{"invalid": json}';
-      const parsed = (adapter as any).parseMessage(invalidMessage);
+      const parsed = adapter.testParseMessage(invalidMessage);
 
       expect(parsed).toBeNull();
     });
@@ -151,7 +171,7 @@ describe("传输层抽象验收测试", () => {
         id: 1,
       };
 
-      const serialized = (adapter as any).serializeMessage(message);
+      const serialized = adapter.testSerializeMessage(message);
       expect(serialized).toBe('{"jsonrpc":"2.0","method":"test","id":1}');
     });
 
@@ -159,7 +179,7 @@ describe("传输层抽象验收测试", () => {
       const adapter = new TestAdapter(messageHandler, { name: "test" });
 
       const error = new Error("测试错误");
-      const errorResponse = (adapter as any).createErrorResponse(error, 1);
+      const errorResponse = adapter.testCreateErrorResponse(error, 1);
 
       expect(errorResponse).toEqual({
         jsonrpc: "2.0",

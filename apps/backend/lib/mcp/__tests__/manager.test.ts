@@ -6,6 +6,7 @@
 import { MCPServiceManager } from "@/lib/mcp";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { CustomMCPHandler } from "../custom.js";
 
 // Mock dependencies
 vi.mock("@root/Logger.js", () => ({
@@ -34,40 +35,35 @@ vi.mock("@root/configManager.js", () => ({
   },
 }));
 
-vi.mock("../CustomMCPHandler.js", () => ({
-  CustomMCPHandler: vi.fn().mockImplementation(() => {
-    // 创建所有需要的Mock方法
-    const mockMethods = {
-      // 基础方法
-      initialize: vi.fn(),
-      reinitialize: vi.fn(),
-      hasTool: vi.fn(),
-      getTools: vi.fn(),
-      getToolCount: vi.fn(),
-      getToolNames: vi.fn(),
-      getToolInfo: vi.fn(),
+vi.mock("../custom.js", () => ({
+  CustomMCPHandler: vi.fn().mockImplementation(() => ({
+    // 基础方法
+    initialize: vi.fn(),
+    reinitialize: vi.fn(),
+    hasTool: vi.fn(),
+    getTools: vi.fn(),
+    getToolCount: vi.fn(),
+    getToolNames: vi.fn(),
+    getToolInfo: vi.fn(),
 
-      // 工具调用方法
-      callTool: vi.fn(),
+    // 工具调用方法
+    callTool: vi.fn(),
 
-      // 资源管理方法
-      cleanup: vi.fn(),
-      stopCleanupTimer: vi.fn(),
+    // 资源管理方法
+    cleanup: vi.fn(),
+    stopCleanupTimer: vi.fn(),
 
-      // 管理器集成方法
-      getCacheLifecycleManager: vi.fn(),
-      getTaskStateManager: vi.fn(),
-      getCacheStatistics: vi.fn(),
-      getTaskStatistics: vi.fn(),
-      getTaskStatus: vi.fn(),
-      validateTaskId: vi.fn(),
-      restartStalledTasks: vi.fn(),
-      manualCleanupCache: vi.fn(),
-      validateSystemIntegrity: vi.fn(),
-    };
-
-    return mockMethods;
-  }),
+    // 管理器集成方法
+    getCacheLifecycleManager: vi.fn(),
+    getTaskStateManager: vi.fn(),
+    getCacheStatistics: vi.fn(),
+    getTaskStatistics: vi.fn(),
+    getTaskStatus: vi.fn(),
+    validateTaskId: vi.fn(),
+    restartStalledTasks: vi.fn(),
+    manualCleanupCache: vi.fn(),
+    validateSystemIntegrity: vi.fn(),
+  })),
 }));
 
 vi.mock("@/lib/mcp/cache.js", () => ({
@@ -87,28 +83,7 @@ vi.mock("@utils/ToolCallLogger.js", () => ({
 
 describe("MCPServiceManager - customMCP 支持", () => {
   let serviceManager: MCPServiceManager;
-  let mockCustomMCPHandler: {
-    initialize: ReturnType<typeof vi.fn>;
-    reinitialize: ReturnType<typeof vi.fn>;
-    hasTool: ReturnType<typeof vi.fn>;
-    getTools: ReturnType<typeof vi.fn>;
-    getToolCount: ReturnType<typeof vi.fn>;
-    getToolNames: ReturnType<typeof vi.fn>;
-    getToolInfo: ReturnType<typeof vi.fn>;
-    callTool: ReturnType<typeof vi.fn>;
-    cleanup: ReturnType<typeof vi.fn>;
-    stopCleanupTimer: ReturnType<typeof vi.fn>;
-    getCacheLifecycleManager: ReturnType<typeof vi.fn>;
-    getTaskStateManager: ReturnType<typeof vi.fn>;
-    getCacheStatistics: ReturnType<typeof vi.fn>;
-    getTaskStatistics: ReturnType<typeof vi.fn>;
-    getTaskStatus: ReturnType<typeof vi.fn>;
-    validateTaskId: ReturnType<typeof vi.fn>;
-    restartStalledTasks: ReturnType<typeof vi.fn>;
-    manualCleanupCache: ReturnType<typeof vi.fn>;
-    validateSystemIntegrity: ReturnType<typeof vi.fn>;
-    [key: string]: ReturnType<typeof vi.fn>;
-  };
+  let mockCustomMCPHandler: ReturnType<typeof vi.mocked<CustomMCPHandler>>;
 
   beforeEach(() => {
     // Reset all mocks first
@@ -117,43 +92,30 @@ describe("MCPServiceManager - customMCP 支持", () => {
     // Create service manager instance
     serviceManager = new MCPServiceManager();
 
-    // Get the mocked CustomMCPHandler instance
-    mockCustomMCPHandler = (
-      serviceManager as unknown as {
-        customMCPHandler: typeof mockCustomMCPHandler;
-      }
-    ).customMCPHandler;
+    // 直接获取 mock 实例并确保其存在
+    mockCustomMCPHandler = vi.mocked(serviceManager.getCustomMCPHandler());
 
-    // Ensure all required mock methods exist with complete default behavior
-    const requiredMethods = [
-      "initialize",
-      "reinitialize",
-      "hasTool",
-      "getTools",
-      "getToolCount",
-      "getToolNames",
-      "getToolInfo",
-      "callTool",
-      "cleanup",
-      "stopCleanupTimer",
-      "getCacheLifecycleManager",
-      "getTaskStateManager",
-      "getCacheStatistics",
-      "getTaskStatistics",
-      "getTaskStatus",
-      "validateTaskId",
-      "restartStalledTasks",
-      "manualCleanupCache",
-      "validateSystemIntegrity",
-    ];
-
-    for (const methodName of requiredMethods) {
-      if (!mockCustomMCPHandler[methodName]) {
-        mockCustomMCPHandler[methodName] = vi.fn();
-      }
+    // 确保 mock 方法存在
+    if (!mockCustomMCPHandler.hasTool) {
+      mockCustomMCPHandler.hasTool = vi.fn();
+    }
+    if (!mockCustomMCPHandler.getTools) {
+      mockCustomMCPHandler.getTools = vi.fn();
+    }
+    if (!mockCustomMCPHandler.getToolCount) {
+      mockCustomMCPHandler.getToolCount = vi.fn();
+    }
+    if (!mockCustomMCPHandler.getToolNames) {
+      mockCustomMCPHandler.getToolNames = vi.fn();
+    }
+    if (!mockCustomMCPHandler.getToolInfo) {
+      mockCustomMCPHandler.getToolInfo = vi.fn();
+    }
+    if (!mockCustomMCPHandler.callTool) {
+      mockCustomMCPHandler.callTool = vi.fn();
     }
 
-    // 设置合理的默认返回值
+    // 设置默认返回值
     mockCustomMCPHandler.hasTool.mockReturnValue(false);
     mockCustomMCPHandler.getTools.mockReturnValue([]);
     mockCustomMCPHandler.getToolCount.mockReturnValue(0);
@@ -205,7 +167,7 @@ describe("MCPServiceManager - customMCP 支持", () => {
           name: "test_coze_workflow",
           description: "测试coze工作流是否正常可用",
           inputSchema: {
-            type: "object",
+            type: "object" as const,
             properties: {
               input: {
                 type: "string",
@@ -219,7 +181,7 @@ describe("MCPServiceManager - customMCP 支持", () => {
           name: "another_tool",
           description: "另一个测试工具",
           inputSchema: {
-            type: "object",
+            type: "object" as const,
             properties: {
               param: {
                 type: "string",
@@ -230,7 +192,9 @@ describe("MCPServiceManager - customMCP 支持", () => {
         },
       ];
 
-      mockCustomMCPHandler.getTools.mockReturnValue(expectedTools);
+      mockCustomMCPHandler.getTools.mockReturnValue(
+        expectedTools as unknown as Tool[]
+      );
 
       // Act
       const result = serviceManager.getCustomMCPTools();
@@ -260,19 +224,21 @@ describe("MCPServiceManager - customMCP 支持", () => {
         {
           name: "custom_tool_1",
           description: "自定义工具1",
-          inputSchema: { type: "object" },
+          inputSchema: { type: "object" as const },
         },
         {
           name: "custom_tool_2",
           description: "自定义工具2",
-          inputSchema: { type: "object" },
+          inputSchema: { type: "object" as const },
         },
       ];
 
       mockCustomMCPHandler.hasTool.mockImplementation((toolName: string) => {
         return customTools.some((tool) => tool.name === toolName);
       });
-      mockCustomMCPHandler.getTools.mockReturnValue(customTools);
+      mockCustomMCPHandler.getTools.mockReturnValue(
+        customTools as unknown as Tool[]
+      );
 
       // Act & Assert - 测试工具存在检查
       expect(serviceManager.hasCustomMCPTool("custom_tool_1")).toBe(true);
@@ -336,16 +302,18 @@ describe("MCPServiceManager - customMCP 支持", () => {
         {
           name: "complete_tool",
           description: "完整的工具",
-          inputSchema: { type: "object" },
+          inputSchema: { type: "object" as const },
         },
         {
           name: "incomplete_tool",
           // 缺少 description
-          inputSchema: { type: "object" },
+          inputSchema: { type: "object" as const },
         } as Tool,
       ];
 
-      mockCustomMCPHandler.getTools.mockReturnValue(incompleteTools);
+      mockCustomMCPHandler.getTools.mockReturnValue(
+        incompleteTools as unknown as Tool[]
+      );
 
       // Act
       const result = serviceManager.getCustomMCPTools();
@@ -358,10 +326,10 @@ describe("MCPServiceManager - customMCP 支持", () => {
 
   describe("错误处理和边界情况", () => {
     it("应该正确处理 CustomMCPHandler 完全未初始化的情况", () => {
-      // Arrange - 模拟 CustomMCPHandler 完全不存在
-      (
-        serviceManager as unknown as { customMCPHandler: null }
-      ).customMCPHandler = null;
+      // Arrange - 使用 vi.spyOn 模拟 getCustomMCPHandler 返回 null
+      const spy = vi
+        .spyOn(serviceManager, "getCustomMCPHandler")
+        .mockReturnValue(null as unknown as CustomMCPHandler);
 
       // Act & Assert - 应该优雅地处理而不是抛出异常
       expect(() => {
@@ -371,6 +339,9 @@ describe("MCPServiceManager - customMCP 支持", () => {
       expect(() => {
         serviceManager.getCustomMCPTools();
       }).not.toThrow();
+
+      // Cleanup
+      spy.mockRestore();
     });
 
     it("应该正确处理方法调用抛出异常的情况", () => {
@@ -403,53 +374,37 @@ describe("MCPServiceManager - customMCP 支持", () => {
 
 describe("MCPServiceManager - Logger 注入功能", () => {
   let serviceManager: MCPServiceManager;
-  let mockLogger: {
-    info: ReturnType<typeof vi.fn>;
-    error: ReturnType<typeof vi.fn>;
-    debug: ReturnType<typeof vi.fn>;
-    warn: ReturnType<typeof vi.fn>;
-    withTag: ReturnType<typeof vi.fn>;
-  };
-  let mockCustomMCPHandler: {
-    hasTool: ReturnType<typeof vi.fn>;
-    getTools: ReturnType<typeof vi.fn>;
-    [key: string]: ReturnType<typeof vi.fn>;
-  };
+  let mockCustomMCPHandler: ReturnType<typeof vi.mocked<CustomMCPHandler>>;
 
   beforeEach(() => {
     // Reset all mocks first
     vi.clearAllMocks();
 
-    // 创建简单的 mock logger 实例
-    mockLogger = {
-      info: vi.fn(),
-      error: vi.fn(),
-      debug: vi.fn(),
-      warn: vi.fn(),
-      withTag: vi.fn().mockReturnThis(),
-    };
-
     // Create service manager instance
     serviceManager = new MCPServiceManager();
 
-    // Get the mocked CustomMCPHandler instance
-    mockCustomMCPHandler = (
-      serviceManager as unknown as {
-        customMCPHandler: typeof mockCustomMCPHandler;
-      }
-    ).customMCPHandler;
+    // 直接获取 mock 实例
+    mockCustomMCPHandler = vi.mocked(serviceManager.getCustomMCPHandler());
 
-    // 确保必要方法存在
+    // 确保 mock 方法存在
     if (!mockCustomMCPHandler.hasTool) {
       mockCustomMCPHandler.hasTool = vi.fn();
     }
     if (!mockCustomMCPHandler.getTools) {
       mockCustomMCPHandler.getTools = vi.fn();
     }
+    if (!mockCustomMCPHandler.getToolCount) {
+      mockCustomMCPHandler.getToolCount = vi.fn();
+    }
+    if (!mockCustomMCPHandler.getToolNames) {
+      mockCustomMCPHandler.getToolNames = vi.fn();
+    }
 
     // 设置默认返回值
     mockCustomMCPHandler.hasTool.mockReturnValue(false);
     mockCustomMCPHandler.getTools.mockReturnValue([]);
+    mockCustomMCPHandler.getToolCount.mockReturnValue(0);
+    mockCustomMCPHandler.getToolNames.mockReturnValue([]);
   });
 
   afterEach(() => {
@@ -482,7 +437,7 @@ describe("MCPServiceManager - Logger 注入功能", () => {
         {
           name: "test_custom_tool",
           description: "测试自定义工具",
-          inputSchema: { type: "object" },
+          inputSchema: { type: "object" as const },
         },
       ]);
 

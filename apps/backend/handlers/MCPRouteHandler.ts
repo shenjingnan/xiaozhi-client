@@ -6,7 +6,7 @@
 
 import { randomUUID } from "node:crypto";
 import type { MCPServiceManager } from "@/lib/mcp";
-import { MCPMessageHandler } from "@/lib/mcp";
+import { MCPMessageHandler } from "@/lib/mcp/message.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type { MCPMessage, MCPResponse } from "@root/types/mcp.js";

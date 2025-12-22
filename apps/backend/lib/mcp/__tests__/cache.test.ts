@@ -211,8 +211,13 @@ describe("MCPCacheManager", () => {
     it("应该处理写入错误而不抛出异常", async () => {
       // 创建一个无效的缓存目录路径
       const invalidCacheManager = new MCPCacheManager();
-      // 通过反射设置一个无效路径
-      (invalidCacheManager as any).cachePath = "/invalid/path/cache.json";
+      // 通过 Object.defineProperty 安全地设置私有属性，模拟无效路径场景
+      // 避免使用 any 类型，保持类型安全
+      Object.defineProperty(invalidCacheManager, "cachePath", {
+        value: "/invalid/path/cache.json",
+        writable: true,
+        configurable: true,
+      });
 
       // 应该不抛出异常
       await expect(
@@ -232,18 +237,18 @@ describe("MCPCacheManager", () => {
       const stats = await cacheManager.getStats();
 
       expect(stats).toBeDefined();
-      expect(stats!.totalWrites).toBe(2);
-      expect(stats!.serverCount).toBe(2);
-      expect(stats!.cacheFileSize).toBeGreaterThan(0);
-      expect(stats!.lastUpdate).toBeDefined();
+      expect(stats?.totalWrites).toBe(2);
+      expect(stats?.serverCount).toBe(2);
+      expect(stats?.cacheFileSize).toBeGreaterThan(0);
+      expect(stats?.lastUpdate).toBeDefined();
     });
 
     it("应该处理不存在的缓存文件", async () => {
       const stats = await cacheManager.getStats();
 
       expect(stats).toBeDefined();
-      expect(stats!.totalWrites).toBe(0);
-      expect(stats!.serverCount).toBe(0);
+      expect(stats?.totalWrites).toBe(0);
+      expect(stats?.serverCount).toBe(0);
     });
   });
 
