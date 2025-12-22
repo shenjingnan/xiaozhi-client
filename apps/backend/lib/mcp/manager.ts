@@ -567,7 +567,8 @@ export class MCPServiceManager extends EventEmitter {
    */
   async callTool(
     toolName: string,
-    arguments_: Record<string, unknown>
+    arguments_: Record<string, unknown>,
+    options?: { timeout?: number }
   ): Promise<ToolCallResult> {
     const startTime = Date.now();
 
@@ -604,8 +605,12 @@ export class MCPServiceManager extends EventEmitter {
             true
           );
         } else {
-          // 其他类型的 customMCP 工具正常处理
-          result = await this.customMCPHandler.callTool(toolName, arguments_);
+          // 其他类型的 customMCP 工具正常处理，传递options参数
+          result = await this.customMCPHandler.callTool(
+            toolName,
+            arguments_,
+            options
+          );
           console.info(`[MCPManager] CustomMCP 工具 ${toolName} 调用成功`);
 
           // 异步更新工具调用统计（成功调用）
