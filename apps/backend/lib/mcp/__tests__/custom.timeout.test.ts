@@ -7,6 +7,15 @@ import type { CustomMCPTool } from "@root/configManager.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CustomMCPHandler } from "../custom.js";
 
+// 类型定义：测试用到的私有方法签名
+// 使用类型断言来访问私有方法（仅用于测试）
+type TestableCustomMCPHandler = {
+  generateCacheKey(
+    toolName: string,
+    arguments_: Record<string, unknown>
+  ): string;
+};
+
 // Mock logger
 vi.mock("@root/Logger.js", () => ({
   logger: {
@@ -69,12 +78,16 @@ global.fetch = vi.fn();
 
 describe("CustomMCPHandler 基础测试", () => {
   let customMCPHandler: CustomMCPHandler;
+  let handlerWithPrivateMethods: TestableCustomMCPHandler;
 
   beforeEach(() => {
     vi.clearAllMocks();
 
     // 创建 CustomMCPHandler 实例
     customMCPHandler = new CustomMCPHandler();
+    // 类型转换以访问私有方法（仅用于测试）
+    handlerWithPrivateMethods =
+      customMCPHandler as unknown as TestableCustomMCPHandler;
   });
 
   afterEach(() => {
@@ -84,15 +97,15 @@ describe("CustomMCPHandler 基础测试", () => {
 
   describe("缓存管理测试", () => {
     it("应该正确生成缓存键", async () => {
-      const cacheKey1 = (customMCPHandler as any).generateCacheKey(
+      const cacheKey1 = handlerWithPrivateMethods.generateCacheKey(
         "test_tool",
         { param: "value1" }
       );
-      const cacheKey2 = (customMCPHandler as any).generateCacheKey(
+      const cacheKey2 = handlerWithPrivateMethods.generateCacheKey(
         "test_tool",
         { param: "value2" }
       );
-      const cacheKey3 = (customMCPHandler as any).generateCacheKey(
+      const cacheKey3 = handlerWithPrivateMethods.generateCacheKey(
         "test_tool",
         { param: "value1" }
       );

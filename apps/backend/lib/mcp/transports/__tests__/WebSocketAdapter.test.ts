@@ -3,6 +3,8 @@
  * 阶段四：WebSocket 集成和性能测试
  */
 
+import type { MCPCacheManager } from "@/lib/mcp/cache.js";
+import type { MCPMessage } from "@root/types/mcp.js";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { ConnectionState } from "../TransportAdapter.js";
 import type { WebSocketConfig } from "../WebSocketAdapter.js";
@@ -106,8 +108,8 @@ vi.mock("@/lib/mcp", () => {
   };
 
   // 创建 mock messageHandler 实例工厂
-  const createMockMessageHandler = (serviceManager: any) => ({
-    handleMessage: vi.fn().mockImplementation(async (message: any) => {
+  const createMockMessageHandler = (serviceManager: MCPServiceManager) => ({
+    handleMessage: vi.fn().mockImplementation(async (message: MCPMessage) => {
       switch (message.method) {
         case "initialize":
           return {
@@ -187,8 +189,8 @@ vi.mock("@/lib/mcp", () => {
 
   // 创建 mock CustomMCPHandler 实例
   const createMockCustomMCPHandler = (
-    cacheManager: any,
-    serviceManager: any
+    cacheManager: MCPCacheManager,
+    serviceManager: MCPServiceManager
   ) => ({
     handleToolCall: vi.fn().mockResolvedValue({
       content: [{ type: "text", text: "mock custom tool result" }],

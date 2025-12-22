@@ -5,6 +5,7 @@
 
 import type { CustomMCPTool } from "@root/configManager.js";
 import { getEventBus } from "@root/services/EventBus.js";
+import type { EventBus } from "@services/EventBus.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CustomMCPHandler } from "../custom.js";
 
@@ -70,7 +71,7 @@ global.fetch = vi.fn();
 
 describe("CustomMCPHandler 基础功能测试", () => {
   let customMCPHandler: CustomMCPHandler;
-  let eventBus: any;
+  let eventBus: EventBus;
 
   beforeEach(() => {
     vi.clearAllMocks();

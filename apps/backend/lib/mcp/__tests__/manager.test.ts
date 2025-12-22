@@ -6,6 +6,7 @@
 import { MCPServiceManager } from "@/lib/mcp";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { CustomMCPHandler } from "../custom.js";
 
 // Mock dependencies
 vi.mock("@root/Logger.js", () => ({
@@ -82,7 +83,7 @@ vi.mock("@utils/ToolCallLogger.js", () => ({
 
 describe("MCPServiceManager - customMCP 支持", () => {
   let serviceManager: MCPServiceManager;
-  let mockCustomMCPHandler: any;
+  let mockCustomMCPHandler: ReturnType<typeof vi.mocked<CustomMCPHandler>>;
 
   beforeEach(() => {
     // Reset all mocks first
@@ -92,9 +93,7 @@ describe("MCPServiceManager - customMCP 支持", () => {
     serviceManager = new MCPServiceManager();
 
     // 直接获取 mock 实例并确保其存在
-    mockCustomMCPHandler = vi.mocked(
-      serviceManager.getCustomMCPHandler()
-    ) as any;
+    mockCustomMCPHandler = vi.mocked(serviceManager.getCustomMCPHandler());
 
     // 确保 mock 方法存在
     if (!mockCustomMCPHandler.hasTool) {
@@ -168,7 +167,7 @@ describe("MCPServiceManager - customMCP 支持", () => {
           name: "test_coze_workflow",
           description: "测试coze工作流是否正常可用",
           inputSchema: {
-            type: "object",
+            type: "object" as const,
             properties: {
               input: {
                 type: "string",
@@ -182,7 +181,7 @@ describe("MCPServiceManager - customMCP 支持", () => {
           name: "another_tool",
           description: "另一个测试工具",
           inputSchema: {
-            type: "object",
+            type: "object" as const,
             properties: {
               param: {
                 type: "string",
@@ -193,7 +192,9 @@ describe("MCPServiceManager - customMCP 支持", () => {
         },
       ];
 
-      mockCustomMCPHandler.getTools.mockReturnValue(expectedTools);
+      mockCustomMCPHandler.getTools.mockReturnValue(
+        expectedTools as unknown as Tool[]
+      );
 
       // Act
       const result = serviceManager.getCustomMCPTools();
@@ -223,19 +224,21 @@ describe("MCPServiceManager - customMCP 支持", () => {
         {
           name: "custom_tool_1",
           description: "自定义工具1",
-          inputSchema: { type: "object" },
+          inputSchema: { type: "object" as const },
         },
         {
           name: "custom_tool_2",
           description: "自定义工具2",
-          inputSchema: { type: "object" },
+          inputSchema: { type: "object" as const },
         },
       ];
 
       mockCustomMCPHandler.hasTool.mockImplementation((toolName: string) => {
         return customTools.some((tool) => tool.name === toolName);
       });
-      mockCustomMCPHandler.getTools.mockReturnValue(customTools);
+      mockCustomMCPHandler.getTools.mockReturnValue(
+        customTools as unknown as Tool[]
+      );
 
       // Act & Assert - 测试工具存在检查
       expect(serviceManager.hasCustomMCPTool("custom_tool_1")).toBe(true);
@@ -299,16 +302,18 @@ describe("MCPServiceManager - customMCP 支持", () => {
         {
           name: "complete_tool",
           description: "完整的工具",
-          inputSchema: { type: "object" },
+          inputSchema: { type: "object" as const },
         },
         {
           name: "incomplete_tool",
           // 缺少 description
-          inputSchema: { type: "object" },
+          inputSchema: { type: "object" as const },
         } as Tool,
       ];
 
-      mockCustomMCPHandler.getTools.mockReturnValue(incompleteTools);
+      mockCustomMCPHandler.getTools.mockReturnValue(
+        incompleteTools as unknown as Tool[]
+      );
 
       // Act
       const result = serviceManager.getCustomMCPTools();
@@ -324,7 +329,7 @@ describe("MCPServiceManager - customMCP 支持", () => {
       // Arrange - 使用 vi.spyOn 模拟 getCustomMCPHandler 返回 null
       const spy = vi
         .spyOn(serviceManager, "getCustomMCPHandler")
-        .mockReturnValue(null as any);
+        .mockReturnValue(null as unknown as CustomMCPHandler);
 
       // Act & Assert - 应该优雅地处理而不是抛出异常
       expect(() => {
@@ -369,7 +374,7 @@ describe("MCPServiceManager - customMCP 支持", () => {
 
 describe("MCPServiceManager - Logger 注入功能", () => {
   let serviceManager: MCPServiceManager;
-  let mockCustomMCPHandler: any;
+  let mockCustomMCPHandler: ReturnType<typeof vi.mocked<CustomMCPHandler>>;
 
   beforeEach(() => {
     // Reset all mocks first
@@ -379,9 +384,7 @@ describe("MCPServiceManager - Logger 注入功能", () => {
     serviceManager = new MCPServiceManager();
 
     // 直接获取 mock 实例
-    mockCustomMCPHandler = vi.mocked(
-      serviceManager.getCustomMCPHandler()
-    ) as any;
+    mockCustomMCPHandler = vi.mocked(serviceManager.getCustomMCPHandler());
 
     // 确保 mock 方法存在
     if (!mockCustomMCPHandler.hasTool) {
@@ -434,7 +437,7 @@ describe("MCPServiceManager - Logger 注入功能", () => {
         {
           name: "test_custom_tool",
           description: "测试自定义工具",
-          inputSchema: { type: "object" },
+          inputSchema: { type: "object" as const },
         },
       ]);
 
