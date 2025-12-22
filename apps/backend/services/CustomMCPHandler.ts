@@ -211,10 +211,10 @@ export class CustomMCPHandler {
     }
 
     try {
-      // 使用 Promise.race 实现超时控制
+      const timeout = options?.timeout || this.TIMEOUT;
       const result = await Promise.race([
         this.callCozeWorkflow(tool, arguments_),
-        this.createTimeoutPromise(toolName),
+        this.createTimeoutPromise(toolName, timeout),
       ]);
 
       // 缓存结果（标记为未消费）
@@ -238,11 +238,14 @@ export class CustomMCPHandler {
   /**
    * 创建超时 Promise
    */
-  private async createTimeoutPromise(toolName: string): Promise<never> {
+  private async createTimeoutPromise(
+    toolName: string,
+    timeout: number
+  ): Promise<never> {
     return new Promise((_, reject) => {
       setTimeout(() => {
         reject(new TimeoutError(`工具调用超时: ${toolName}`));
-      }, this.TIMEOUT);
+      }, timeout);
     });
   }
 

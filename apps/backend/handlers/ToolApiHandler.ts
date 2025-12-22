@@ -172,10 +172,12 @@ export class ToolApiHandler {
       // 调用工具 - 特殊处理 customMCP 服务
       let result: unknown;
       if (serviceName === "customMCP") {
-        // 对于 customMCP 服务，直接使用 toolName 调用
-        result = await serviceManager.callTool(toolName, args || {});
+        // 对于 customMCP 服务，直接使用 toolName 调用，传递60秒超时
+        result = await serviceManager.callTool(toolName, args || {}, {
+          timeout: 60000,
+        });
       } else {
-        // 对于标准 MCP 服务，使用 serviceName__toolName 格式
+        // 对于标准 MCP 服务，使用 serviceName__toolName 格式，保持8秒超时
         const toolKey = `${serviceName}__${toolName}`;
         result = await serviceManager.callTool(toolKey, args || {});
       }
