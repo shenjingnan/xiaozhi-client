@@ -52,17 +52,6 @@ vi.mock("../custom.js", () => ({
     // 资源管理方法
     cleanup: vi.fn(),
     stopCleanupTimer: vi.fn(),
-
-    // 管理器集成方法
-    getCacheLifecycleManager: vi.fn(),
-    getTaskStateManager: vi.fn(),
-    getCacheStatistics: vi.fn(),
-    getTaskStatistics: vi.fn(),
-    getTaskStatus: vi.fn(),
-    validateTaskId: vi.fn(),
-    restartStalledTasks: vi.fn(),
-    manualCleanupCache: vi.fn(),
-    validateSystemIntegrity: vi.fn(),
   })),
 }));
 

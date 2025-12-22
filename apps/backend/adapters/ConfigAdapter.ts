@@ -128,9 +128,7 @@ function convertByConfigType(
   throw new ConfigValidationError("无法识别的配置类型", serviceName);
 }
 
-/**
- * 转换本地 stdio 配置
- */
+/** * 转换本地 stdio 配置 */
 function convertLocalConfig(
   serviceName: string,
   config: LocalMCPServerConfig
@@ -295,24 +293,6 @@ function isLocalConfig(
   config: MCPServerConfig
 ): config is LocalMCPServerConfig {
   return "command" in config && typeof config.command === "string";
-}
-
-/**
- * 检查是否为 SSE 配置
- */
-function isSSEConfig(config: MCPServerConfig): config is SSEMCPServerConfig {
-  return "url" in config && (!("type" in config) || config.type === "sse");
-}
-
-/**
- * 检查是否为 Streamable HTTP 配置
- */
-function isStreamableHTTPConfig(
-  config: MCPServerConfig
-): config is StreamableHTTPMCPServerConfig {
-  return (
-    "type" in config && config.type === "streamable-http" && "url" in config
-  );
 }
 
 /**
