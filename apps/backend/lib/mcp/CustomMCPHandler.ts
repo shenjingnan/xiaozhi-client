@@ -13,6 +13,7 @@ import type {
   ProxyHandlerConfig,
 } from "@root/configManager.js";
 import { configManager } from "@root/configManager.js";
+import { getEventBus } from "@root/services/EventBus.js";
 import type {
   EnhancedToolResultCache,
   ExtendedMCPToolsCache,
@@ -26,7 +27,6 @@ import {
   shouldCleanupCache,
 } from "@root/types/mcp.js";
 import { TimeoutError, createTimeoutResponse } from "@root/types/timeout.js";
-import { getEventBus } from "@root/services/EventBus.js";
 
 // 工具调用参数类型
 type ToolArguments = Record<string, unknown>;

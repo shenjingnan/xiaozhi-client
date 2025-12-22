@@ -3,8 +3,8 @@
  * 测试基本功能和资源管理
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomMCPTool } from "@root/configManager.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CustomMCPHandler } from "../CustomMCPHandler.js";
 
 // Mock logger

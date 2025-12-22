@@ -3,10 +3,10 @@
  * 专门测试 Coze 工作流功能
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomMCPTool } from "@root/configManager.js";
-import { CustomMCPHandler } from "../CustomMCPHandler.js";
 import { getEventBus } from "@root/services/EventBus.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { CustomMCPHandler } from "../CustomMCPHandler.js";
 
 // Mock logger
 vi.mock("@root/Logger.js", () => ({
