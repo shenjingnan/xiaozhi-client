@@ -62,7 +62,7 @@ RUN npx --version && echo "✓ npx is available" \
 WORKDIR /workspaces
 
 # 复制模板到备份目录（避免被卷挂载覆盖）
-COPY templates/ /templates-backup/
+COPY docker/templates/ /templates-backup/
 
 # 复制初始化脚本并设置权限
 COPY docker/scripts/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
