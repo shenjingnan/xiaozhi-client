@@ -133,7 +133,8 @@ describe("ToolApiHandler - 集成测试", () => {
       // Assert
       expect(mockServiceManager.callTool).toHaveBeenCalledWith(
         "test_proxy_tool",
-        { input: "测试输入" }
+        { input: "测试输入" },
+        { timeout: 60000 }
       );
       expect(mockContext.json).toHaveBeenCalledWith({
         success: true,
@@ -197,7 +198,8 @@ describe("ToolApiHandler - 集成测试", () => {
       // Assert
       expect(mockServiceManager.callTool).toHaveBeenCalledWith(
         "test_http_tool",
-        { url: "https://test.com", method: "GET" }
+        { url: "https://test.com", method: "GET" },
+        { timeout: 60000 }
       );
       expect(mockContext.json).toHaveBeenCalledWith({
         success: true,
@@ -260,7 +262,8 @@ describe("ToolApiHandler - 集成测试", () => {
       // Assert
       expect(mockServiceManager.callTool).toHaveBeenCalledWith(
         "test_function_tool",
-        { x: 5, y: 3 }
+        { x: 5, y: 3 },
+        { timeout: 60000 }
       );
       expect(mockContext.json).toHaveBeenCalledWith({
         success: true,
@@ -425,7 +428,8 @@ describe("ToolApiHandler - 集成测试", () => {
               port: 3306,
             },
           },
-        }
+        },
+        { timeout: 60000 }
       );
       expect(mockContext.json).toHaveBeenCalledWith({
         success: true,
