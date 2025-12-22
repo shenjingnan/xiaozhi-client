@@ -152,8 +152,8 @@ vi.mock("@/lib/mcp", () => {
   };
 });
 
-import { MCPMessageHandler } from "@/lib/mcp/message.js";
 import { MCPServiceManager } from "@/lib/mcp/manager.js";
+import { MCPMessageHandler } from "@/lib/mcp/message.js";
 
 describe("WebSocket 适配器测试", () => {
   let serviceManager: MCPServiceManager;
