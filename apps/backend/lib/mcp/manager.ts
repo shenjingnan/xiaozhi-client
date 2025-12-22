@@ -23,7 +23,7 @@ import { isModelScopeURL } from "@adapters/ConfigAdapter";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { MCPToolConfig } from "@root/configManager.js";
 import { configManager } from "@root/configManager.js";
-import { CustomMCPHandler } from "@root/services/CustomMCPHandler.js";
+import { CustomMCPHandler } from "./CustomMCPHandler.js";
 import { getEventBus } from "@root/services/EventBus.js";
 import type { MCPMessage } from "@root/types/mcp.js";
 import { ToolCallLogger } from "@utils/ToolCallLogger.js";
