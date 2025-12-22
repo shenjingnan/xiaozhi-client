@@ -26,6 +26,18 @@ import { configManager } from "@root/configManager.js";
 import { CustomMCPHandler } from "@root/services/CustomMCPHandler.js";
 import { getEventBus } from "@root/services/EventBus.js";
 import type { MCPMessage } from "@root/types/mcp.js";
+import {
+  DEFAULT_CONFIG,
+  generateCacheKey,
+  isCacheExpired,
+  shouldCleanupCache,
+} from "@root/types/mcp.js";
+import type {
+  EnhancedToolResultCache,
+  ExtendedMCPToolsCache,
+  ToolCallResponse,
+} from "@root/types/mcp.js";
+import { TimeoutError, createTimeoutResponse } from "@root/types/timeout.js";
 import { ToolCallLogger } from "@utils/ToolCallLogger.js";
 import { MCPMessageHandler } from "./MCPMessageHandler.js";
 import { ConnectionState, type TransportAdapter } from "./transports/index.js";
@@ -40,6 +52,10 @@ export class MCPServiceManager extends EventEmitter {
   private toolCallLogger: ToolCallLogger; // 工具调用记录器
   private retryTimers: Map<string, NodeJS.Timeout> = new Map(); // 重试定时器
   private failedServices: Set<string> = new Set(); // 失败的服务集合
+
+  // CustomMCP 工具处理常量
+  private readonly CUSTOM_MCP_TIMEOUT = DEFAULT_CONFIG.TIMEOUT; // 8秒超时
+  private readonly CUSTOM_MCP_CACHE_TTL = DEFAULT_CONFIG.CACHE_TTL; // 5分钟缓存过期
 
   // 新增：传输适配器管理
   private transportAdapters: Map<string, TransportAdapter> = new Map();
@@ -563,6 +579,163 @@ export class MCPServiceManager extends EventEmitter {
   }
 
   /**
+   * 获取已完成的 CustomMCP 工具结果（从缓存）
+   */
+  private async getCompletedCustomMCPResult(
+    toolName: string,
+    arguments_: Record<string, unknown>
+  ): Promise<ToolCallResult | null> {
+    try {
+      const cacheKey = generateCacheKey(toolName, arguments_);
+      const cache = await this.loadExtendedCache();
+
+      if (!cache.customMCPResults || !cache.customMCPResults[cacheKey]) {
+        return null;
+      }
+
+      const cached = cache.customMCPResults[cacheKey];
+
+      // 只返回已完成且未消费的结果
+      if (cached.status === "completed" && !cached.consumed) {
+        // 检查是否过期
+        if (!isCacheExpired(cached.timestamp, cached.ttl)) {
+          return cached.result;
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.warn(`[MCPManager] 获取 CustomMCP 缓存失败: ${error}`);
+      return null;
+    }
+  }
+
+  /**
+   * 缓存 CustomMCP 工具结果
+   */
+  private async cacheCustomMCPResult(
+    toolName: string,
+    arguments_: Record<string, unknown>,
+    result: ToolCallResult
+  ): Promise<void> {
+    try {
+      const cacheKey = generateCacheKey(toolName, arguments_);
+      const cacheData: EnhancedToolResultCache = {
+        result,
+        timestamp: new Date().toISOString(),
+        ttl: this.CUSTOM_MCP_CACHE_TTL,
+        status: "completed",
+        consumed: false, // 初始状态为未消费
+        retryCount: 0,
+      };
+
+      await this.updateCustomMCPCacheWithResult(cacheKey, cacheData);
+      console.debug(`[MCPManager] 缓存 CustomMCP 工具结果: ${toolName}`);
+    } catch (error) {
+      console.warn(`[MCPManager] 缓存 CustomMCP 结果失败: ${error}`);
+    }
+  }
+
+  /**
+   * 清理已消费的 CustomMCP 缓存
+   */
+  private async clearConsumedCustomMCPResult(
+    toolName: string,
+    arguments_: Record<string, unknown>
+  ): Promise<void> {
+    try {
+      const cacheKey = generateCacheKey(toolName, arguments_);
+      const cache = await this.loadExtendedCache();
+
+      if (cache.customMCPResults?.[cacheKey]) {
+        // 标记为已消费
+        cache.customMCPResults[cacheKey].consumed = true;
+
+        // 如果已消费且已过期，直接删除
+        const cached = cache.customMCPResults[cacheKey];
+        if (shouldCleanupCache(cached)) {
+          delete cache.customMCPResults[cacheKey];
+        }
+
+        // 保存缓存更改
+        await this.saveExtendedCache(cache);
+        console.debug(`[MCPManager] 清理已消费的 CustomMCP 缓存: ${cacheKey}`);
+      }
+    } catch (error) {
+      console.warn(`[MCPManager] 清理 CustomMCP 缓存失败: ${error}`);
+    }
+  }
+
+  /**
+   * 创建超时 Promise
+   */
+  private async createCustomMCPTimeoutPromise(
+    toolName: string,
+    timeout: number
+  ): Promise<never> {
+    return new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new TimeoutError(`CustomMCP 工具调用超时: ${toolName}`));
+      }, timeout);
+    });
+  }
+
+  /**
+   * 加载扩展缓存
+   */
+  private async loadExtendedCache(): Promise<ExtendedMCPToolsCache> {
+    try {
+      const cacheData = await this.cacheManager.loadExistingCache();
+      return cacheData as ExtendedMCPToolsCache;
+    } catch (error) {
+      return {
+        version: "1.0.0",
+        mcpServers: {},
+        metadata: {
+          lastGlobalUpdate: new Date().toISOString(),
+          totalWrites: 0,
+          createdAt: new Date().toISOString(),
+        },
+        customMCPResults: {},
+      };
+    }
+  }
+
+  /**
+   * 更新 CustomMCP 缓存结果
+   */
+  private async updateCustomMCPCacheWithResult(
+    cacheKey: string,
+    cacheData: EnhancedToolResultCache
+  ): Promise<void> {
+    try {
+      const cache = await this.loadExtendedCache();
+
+      if (!cache.customMCPResults) {
+        cache.customMCPResults = {};
+      }
+
+      cache.customMCPResults[cacheKey] = cacheData;
+
+      // 保存缓存
+      await this.saveExtendedCache(cache);
+    } catch (error) {
+      console.warn(`[MCPManager] 更新 CustomMCP 缓存失败: ${error}`);
+    }
+  }
+
+  /**
+   * 保存扩展缓存
+   */
+  private async saveExtendedCache(cache: ExtendedMCPToolsCache): Promise<void> {
+    try {
+      await this.cacheManager.saveCache(cache);
+    } catch (error) {
+      console.warn(`[MCPManager] 保存扩展缓存失败: ${error}`);
+    }
+  }
+
+  /**
    * 调用 MCP 工具（支持标准 MCP 工具和 customMCP 工具）
    */
   async callTool(
@@ -605,12 +778,8 @@ export class MCPServiceManager extends EventEmitter {
             true
           );
         } else {
-          // 其他类型的 customMCP 工具正常处理，传递options参数
-          result = await this.customMCPHandler.callTool(
-            toolName,
-            arguments_,
-            options
-          );
+          // 其他类型的 customMCP 工具使用统一的缓存和超时处理
+          result = await this.executeCustomMCPTool(toolName, arguments_, options);
           console.info(`[MCPManager] CustomMCP 工具 ${toolName} 调用成功`);
 
           // 异步更新工具调用统计（成功调用）
@@ -709,6 +878,48 @@ export class MCPServiceManager extends EventEmitter {
             (error as Error).message
           );
         }
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * 执行 CustomMCP 工具（统一处理缓存和超时）
+   */
+  private async executeCustomMCPTool(
+    toolName: string,
+    arguments_: Record<string, unknown>,
+    options?: { timeout?: number }
+  ): Promise<ToolCallResult> {
+    // 首先检查是否有已完成的任务结果（一次性缓存）
+    const completedResult = await this.getCompletedCustomMCPResult(toolName, arguments_);
+    if (completedResult) {
+      console.debug(`[MCPManager] 返回已完成的 CustomMCP 任务结果: ${toolName}`);
+      // 立即清理已消费的缓存
+      await this.clearConsumedCustomMCPResult(toolName, arguments_);
+      return completedResult;
+    }
+
+    try {
+      const timeout = options?.timeout || this.CUSTOM_MCP_TIMEOUT;
+      const result = await Promise.race([
+        this.customMCPHandler.executeTool(toolName, arguments_), // 使用新的 executeTool 方法
+        this.createCustomMCPTimeoutPromise(toolName, timeout),
+      ]);
+
+      // 缓存结果（标记为未消费）
+      await this.cacheCustomMCPResult(toolName, arguments_, result);
+
+      return result;
+    } catch (error) {
+      // 如果是超时错误，返回友好提示
+      if (error instanceof TimeoutError) {
+        const taskId = generateCacheKey(toolName, arguments_);
+        console.info(
+          `[MCPManager] CustomMCP 工具超时，返回友好提示: ${toolName}, taskId: ${taskId}`
+        );
+        return createTimeoutResponse(taskId, toolName) as ToolCallResult;
       }
 
       throw error;

@@ -13,18 +13,8 @@ import type {
   ProxyHandlerConfig,
 } from "@root/configManager.js";
 import { configManager } from "@root/configManager.js";
-import type {
-  EnhancedToolResultCache,
-  ExtendedMCPToolsCache,
-  ToolCallResponse,
-  ToolCallResult,
-} from "@root/types/mcp.js";
-import {
-  DEFAULT_CONFIG,
-  generateCacheKey,
-  isCacheExpired,
-  shouldCleanupCache,
-} from "@root/types/mcp.js";
+import type { ToolCallResponse, ToolCallResult } from "@root/types/mcp.js";
+import { DEFAULT_CONFIG, generateCacheKey } from "@root/types/mcp.js";
 import { TimeoutError, createTimeoutResponse } from "@root/types/timeout.js";
 import { getEventBus } from "./EventBus.js";
 
@@ -53,7 +43,6 @@ export class CustomMCPHandler {
   private cacheManager: MCPCacheManager;
   private mcpServiceManager?: MCPServiceManager;
   private readonly TIMEOUT = DEFAULT_CONFIG.TIMEOUT; // 统一8秒超时
-  private readonly CACHE_TTL = DEFAULT_CONFIG.CACHE_TTL; // 5分钟缓存过期
 
   constructor(
     cacheManager?: MCPCacheManager,
@@ -190,6 +179,7 @@ export class CustomMCPHandler {
 
   /**
    * 调用工具（支持超时友好响应和缓存管理）
+   * @deprecated 此方法保留向后兼容，建议使用 MCPServiceManager.executeCustomMCPTool
    */
   public async callTool(
     toolName: string,
@@ -201,30 +191,18 @@ export class CustomMCPHandler {
       throw new Error(`未找到工具: ${toolName}`);
     }
 
-    // 首先检查是否有已完成的任务结果（一次性缓存）
-    const completedResult = await this.getCompletedResult(toolName, arguments_);
-    if (completedResult) {
-      this.logger.debug(`[CustomMCP] 返回已完成的任务结果: ${toolName}`);
-      // 立即清理已消费的缓存
-      await this.clearConsumedCache(toolName, arguments_);
-      return completedResult;
-    }
-
     try {
       const timeout = options?.timeout || this.TIMEOUT;
       const result = await Promise.race([
-        this.callCozeWorkflow(tool, arguments_),
+        this.executeCozeWorkflow(tool, arguments_),
         this.createTimeoutPromise(toolName, timeout),
       ]);
-
-      // 缓存结果（标记为未消费）
-      await this.cacheResult(toolName, arguments_, result);
 
       return result;
     } catch (error) {
       // 如果是超时错误，返回友好提示
       if (error instanceof TimeoutError) {
-        const taskId = await this.generateTaskId(toolName, arguments_);
+        const taskId = generateCacheKey(toolName, arguments_);
         this.logger.info(
           `[CustomMCP] 工具超时，返回友好提示: ${toolName}, taskId: ${taskId}`
         );
@@ -233,6 +211,29 @@ export class CustomMCPHandler {
 
       throw error;
     }
+  }
+
+  /**
+   * 纯执行器方法 - 执行 Coze 工作流调用
+   * 简化的执行方法，由 MCPServiceManager 统一管理缓存和超时
+   * @param toolName 工具名称
+   * @param arguments_ 工具参数
+   * @returns 执行结果
+   */
+  public async executeTool(
+    toolName: string,
+    arguments_: ToolArguments
+  ): Promise<ToolCallResult> {
+    const tool = this.tools.get(toolName);
+    if (!tool) {
+      throw new Error(`未找到工具: ${toolName}`);
+    }
+
+    this.logger.info(`[CustomMCP] 执行工具: ${toolName}`, {
+      workflow_id: (tool.handler as ProxyHandlerConfig).config.workflow_id,
+    });
+
+    return await this.executeCozeWorkflow(tool, arguments_);
   }
 
   /**
@@ -247,38 +248,6 @@ export class CustomMCPHandler {
         reject(new TimeoutError(`工具调用超时: ${toolName}`));
       }, timeout);
     });
-  }
-
-  /**
-   * 获取已完成的任务结果（一次性缓存）
-   */
-  private async getCompletedResult(
-    toolName: string,
-    arguments_: ToolArguments
-  ): Promise<ToolCallResult | null> {
-    try {
-      const cacheKey = this.generateCacheKey(toolName, arguments_);
-      const cache = await this.loadExtendedCache();
-
-      if (!cache.customMCPResults || !cache.customMCPResults[cacheKey]) {
-        return null;
-      }
-
-      const cached = cache.customMCPResults[cacheKey];
-
-      // 只返回已完成且未消费的结果
-      if (cached.status === "completed" && !cached.consumed) {
-        // 检查是否过期
-        if (!isCacheExpired(cached.timestamp, cached.ttl)) {
-          return cached.result;
-        }
-      }
-
-      return null;
-    } catch (error) {
-      this.logger.warn(`[CustomMCP] 获取缓存失败: ${error}`);
-      return null;
-    }
   }
 
   /**
@@ -333,16 +302,17 @@ export class CustomMCPHandler {
   }
 
   /**
-   * 调用 Coze 工作流
+   * 执行 Coze 工作流
+   * 纯执行器方法，不包含缓存和超时逻辑
    */
-  private async callCozeWorkflow(
+  public async executeCozeWorkflow(
     tool: CustomMCPTool,
     arguments_: ToolArguments
   ): Promise<ToolCallResult> {
     const handler = tool.handler as ProxyHandlerConfig;
     const config = handler.config;
 
-    this.logger.info(`[CustomMCP] 调用 Coze 工作流: ${tool.name}`, {
+    this.logger.info(`[CustomMCP] 执行 Coze 工作流: ${tool.name}`, {
       workflow_id: config.workflow_id,
     });
 
@@ -361,12 +331,12 @@ export class CustomMCPHandler {
         arguments_
       );
 
-      this.logger.info(`[CustomMCP] Coze 工作流调用成功: ${tool.name}`);
+      this.logger.info(`[CustomMCP] Coze 工作流执行成功: ${tool.name}`);
 
       // 转换响应格式为 ToolCallResult
       return this.processWorkflowResponse(tool.name, workflowResult);
     } catch (error) {
-      this.logger.error(`[CustomMCP] Coze 工作流调用失败: ${tool.name}`, error);
+      this.logger.error(`[CustomMCP] Coze 工作流执行失败: ${tool.name}`, error);
 
       return {
         content: [
@@ -382,137 +352,7 @@ export class CustomMCPHandler {
     }
   }
 
-  /**
-   * 清理已消费的缓存
-   */
-  private async clearConsumedCache(
-    toolName: string,
-    arguments_: ToolArguments
-  ): Promise<void> {
-    try {
-      const cacheKey = this.generateCacheKey(toolName, arguments_);
-      const cache = await this.loadExtendedCache();
-
-      if (cache.customMCPResults?.[cacheKey]) {
-        // 标记为已消费
-        cache.customMCPResults[cacheKey].consumed = true;
-
-        // 如果已消费且已过期，直接删除
-        const cached = cache.customMCPResults[cacheKey];
-        if (shouldCleanupCache(cached)) {
-          delete cache.customMCPResults[cacheKey];
-        }
-
-        // 保存缓存更改
-        await this.saveCache(cache);
-        this.logger.debug(`[CustomMCP] 清理已消费缓存: ${cacheKey}`);
-      }
-    } catch (error) {
-      this.logger.warn(`[CustomMCP] 清理缓存失败: ${error}`);
-    }
-  }
-
-  /**
-   * 生成任务ID
-   */
-  private async generateTaskId(
-    toolName: string,
-    arguments_: ToolArguments
-  ): Promise<string> {
-    return generateCacheKey(toolName, arguments_);
-  }
-
-  /**
-   * 生成缓存键
-   */
-  private generateCacheKey(
-    toolName: string,
-    arguments_: ToolArguments
-  ): string {
-    return generateCacheKey(toolName, arguments_);
-  }
-
-  /**
-   * 加载扩展缓存
-   */
-  private async loadExtendedCache(): Promise<ExtendedMCPToolsCache> {
-    try {
-      const cacheData = await this.cacheManager.loadExistingCache();
-      return cacheData as ExtendedMCPToolsCache;
-    } catch (error) {
-      return {
-        version: "1.0.0",
-        mcpServers: {},
-        metadata: {
-          lastGlobalUpdate: new Date().toISOString(),
-          totalWrites: 0,
-          createdAt: new Date().toISOString(),
-        },
-        customMCPResults: {},
-      };
-    }
-  }
-
-  /**
-   * 更新缓存结果
-   */
-  private async updateCacheWithResult(
-    cacheKey: string,
-    cacheData: EnhancedToolResultCache
-  ): Promise<void> {
-    try {
-      const cache = await this.loadExtendedCache();
-
-      if (!cache.customMCPResults) {
-        cache.customMCPResults = {};
-      }
-
-      cache.customMCPResults[cacheKey] = cacheData;
-
-      // 使用 MCPCacheManager 的保存方法
-      await this.saveCache(cache);
-    } catch (error) {
-      this.logger.warn(`[CustomMCP] 更新缓存失败: ${error}`);
-    }
-  }
-
-  /**
-   * 缓存结果
-   */
-  private async cacheResult(
-    toolName: string,
-    arguments_: ToolArguments,
-    result: ToolCallResult
-  ): Promise<void> {
-    try {
-      const cacheKey = this.generateCacheKey(toolName, arguments_);
-      const cacheData: EnhancedToolResultCache = {
-        result,
-        timestamp: new Date().toISOString(),
-        ttl: this.CACHE_TTL,
-        status: "completed",
-        consumed: false, // 初始状态为未消费
-        retryCount: 0,
-      };
-
-      await this.updateCacheWithResult(cacheKey, cacheData);
-      this.logger.debug(`[CustomMCP] 缓存工具结果: ${toolName}`);
-    } catch (error) {
-      this.logger.warn(`[CustomMCP] 缓存结果失败: ${error}`);
-    }
-  }
-
-  /**
-   * 保存缓存
-   */
-  private async saveCache(cache: ExtendedMCPToolsCache): Promise<void> {
-    try {
-      await this.cacheManager.saveCache(cache);
-    } catch (error) {
-      this.logger.warn(`[CustomMCP] 保存缓存失败: ${error}`);
-    }
-  }
-
+  
   /**
    * 清理资源
    */
