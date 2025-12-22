@@ -3,13 +3,13 @@
  * 专门测试 Coze 工作流功能
  */
 
+import type { CustomMCPTool } from "@root/configManager.js";
+import { getEventBus } from "@root/services/EventBus.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { CustomMCPTool } from "../../configManager.js";
 import { CustomMCPHandler } from "../CustomMCPHandler.js";
-import { getEventBus } from "../EventBus.js";
 
 // Mock logger
-vi.mock("../../Logger.js", () => ({
+vi.mock("@root/Logger.js", () => ({
   logger: {
     debug: vi.fn(),
     info: vi.fn(),
@@ -20,7 +20,7 @@ vi.mock("../../Logger.js", () => ({
 }));
 
 // Mock configManager
-vi.mock("../../configManager.js", () => ({
+vi.mock("@root/configManager.js", () => ({
   configManager: {
     getCustomMCPTools: vi.fn(),
     getCustomMCPConfig: vi.fn(),
@@ -308,7 +308,7 @@ describe("CustomMCPHandler 基础功能测试", () => {
 
   describe("配置更新响应测试", () => {
     it("应该在配置更新处理失败时记录错误", async () => {
-      const { logger } = await import("../../Logger.js");
+      const { logger } = await import("@root/Logger.js");
 
       // Mock initialize 方法抛出异常
       vi.spyOn(customMCPHandler, "initialize").mockImplementation(() => {

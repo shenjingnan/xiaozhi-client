@@ -6,5 +6,5 @@ export * from "./EventBus.js";
 // 新增导出 - 高优先级服务模块
 export * from "./ErrorHandler.js";
 
-// CustomMCPHandler 导出 - 避免冲突的 ToolCallResult
-export { CustomMCPHandler } from "./CustomMCPHandler.js";
+// CustomMCPHandler 重新导出 - 保持向后兼容性
+export { CustomMCPHandler } from "@/lib/mcp/CustomMCPHandler.js";

@@ -3,12 +3,12 @@
  * 测试基本功能和资源管理
  */
 
+import type { CustomMCPTool } from "@root/configManager.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { CustomMCPTool } from "../../configManager.js";
 import { CustomMCPHandler } from "../CustomMCPHandler.js";
 
 // Mock logger
-vi.mock("../../Logger.js", () => ({
+vi.mock("@root/Logger.js", () => ({
   logger: {
     debug: vi.fn(),
     info: vi.fn(),
