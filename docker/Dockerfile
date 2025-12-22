@@ -65,7 +65,7 @@ WORKDIR /workspaces
 COPY templates/ /templates-backup/
 
 # 复制初始化脚本并设置权限
-COPY scripts/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY docker/scripts/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
 # 安装模板项目的依赖到备份目录（用于初始化时复制）
 # 使用国内镜像源安装依赖
