@@ -422,7 +422,7 @@ export class ConfigManager {
   /**
    * 验证配置文件结构
    */
-  private validateConfig(config: unknown): void {
+  public validateConfig(config: unknown): void {
     if (!config || typeof config !== "object") {
       throw new Error("配置文件格式错误：根对象无效");
     }
@@ -566,6 +566,12 @@ export class ConfigManager {
     const config = this.getMutableConfig();
     config.mcpEndpoint = endpoint;
     this.saveConfig(config);
+
+    // 发射配置更新事件
+    this.eventBus.emitEvent("config:updated", {
+      type: "endpoint",
+      timestamp: new Date(),
+    });
   }
 
   /**
@@ -692,6 +698,91 @@ export class ConfigManager {
 
     // 记录清理结果
     console.log("成功移除 MCP 服务", { serverName });
+  }
+
+  /**
+   * 批量更新配置（由 Handler 调用）
+   */
+  public updateConfig(newConfig: Partial<AppConfig>): void {
+    const config = this.getMutableConfig();
+
+    // 更新 MCP 端点
+    if (newConfig.mcpEndpoint !== undefined) {
+      config.mcpEndpoint = newConfig.mcpEndpoint;
+    }
+
+    // 更新 MCP 服务
+    if (newConfig.mcpServers) {
+      const currentServers = { ...config.mcpServers };
+      for (const [name, serverConfig] of Object.entries(newConfig.mcpServers)) {
+        config.mcpServers[name] = serverConfig;
+      }
+      // 删除不存在的服务
+      for (const name of Object.keys(currentServers)) {
+        if (!(name in newConfig.mcpServers)) {
+          delete config.mcpServers[name];
+          // 同时清理工具配置
+          if (config.mcpServerConfig?.[name]) {
+            delete config.mcpServerConfig[name];
+          }
+        }
+      }
+    }
+
+    // 更新连接配置
+    if (newConfig.connection) {
+      if (!config.connection) {
+        config.connection = {};
+      }
+      Object.assign(config.connection, newConfig.connection);
+    }
+
+    // 更新 ModelScope 配置
+    if (newConfig.modelscope) {
+      if (!config.modelscope) {
+        config.modelscope = {};
+      }
+      Object.assign(config.modelscope, newConfig.modelscope);
+    }
+
+    // 更新 Web UI 配置
+    if (newConfig.webUI) {
+      if (!config.webUI) {
+        config.webUI = {};
+      }
+      Object.assign(config.webUI, newConfig.webUI);
+    }
+
+    // 更新服务工具配置
+    if (newConfig.mcpServerConfig) {
+      for (const [serverName, toolsConfig] of Object.entries(
+        newConfig.mcpServerConfig
+      )) {
+        if (config.mcpServerConfig?.[serverName]) {
+          config.mcpServerConfig[serverName] = toolsConfig;
+        }
+      }
+    }
+
+    // 更新平台配置
+    if (newConfig.platforms) {
+      for (const [platformName, platformConfig] of Object.entries(
+        newConfig.platforms
+      )) {
+        if (!config.platforms) {
+          config.platforms = {};
+        }
+        config.platforms[platformName] = platformConfig;
+      }
+    }
+
+    this.saveConfig(config);
+
+    // 发射配置更新事件
+    this.eventBus.emitEvent("config:updated", {
+      type: "config",
+      timestamp: new Date(),
+    });
   }
 
   /**
@@ -978,6 +1069,12 @@ export class ConfigManager {
     // 直接修改现有的 connection 对象以保留注释
     Object.assign(config.connection, connectionConfig);
     this.saveConfig(config);
+
+    // 发射配置更新事件
+    this.eventBus.emitEvent("config:updated", {
+      type: "connection",
+      timestamp: new Date(),
+    });
   }
 
   /**
@@ -1137,6 +1234,12 @@ export class ConfigManager {
     // 直接修改现有的 modelscope 对象以保留注释
     Object.assign(config.modelscope, modelScopeConfig);
     this.saveConfig(config);
+
+    // 发射配置更新事件
+    this.eventBus.emitEvent("config:updated", {
+      type: "modelscope",
+      timestamp: new Date(),
+    });
   }
 
   /**
@@ -1717,6 +1820,12 @@ export class ConfigManager {
     // 直接修改现有的 webUI 对象以保留注释
     Object.assign(config.webUI, webUIConfig);
     this.saveConfig(config);
+
+    // 发射配置更新事件
+    this.eventBus.emitEvent("config:updated", {
+      type: "webui",
+      timestamp: new Date(),
+    });
   }
 
   /**
@@ -1740,6 +1849,13 @@ export class ConfigManager {
     config.platforms[platformName] = platformConfig;
     // 注意：Web UI 可能需要刷新才能看到更新后的数据
     this.saveConfig(config);
+
+    // 发射配置更新事件
+    this.eventBus.emitEvent("config:updated", {
+      type: "platform",
+      platformName,
+      timestamp: new Date(),
+    });
   }
 
   /**

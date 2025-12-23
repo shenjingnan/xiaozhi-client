@@ -124,42 +124,13 @@ export class RealtimeNotificationHandler {
     this.logDeprecationWarning("WebSocket updateConfig", "PUT /api/config");
 
     try {
-      // 更新 MCP 端点
-      if (configData.mcpEndpoint !== configManager.getMcpEndpoint()) {
-        configManager.updateMcpEndpoint(configData.mcpEndpoint);
-      }
+      // 使用 configManager 的验证方法
+      configManager.validateConfig(configData);
 
-      // 更新 MCP 服务
-      const currentServers = configManager.getMcpServers();
-      for (const [name, config] of Object.entries(configData.mcpServers)) {
-        if (JSON.stringify(currentServers[name]) !== JSON.stringify(config)) {
-          configManager.updateMcpServer(name, config);
-        }
-      }
+      // 使用 configManager 的批量更新方法
+      configManager.updateConfig(configData);
 
-      // 删除不存在的服务
-      for (const name of Object.keys(currentServers)) {
-        if (!(name in configData.mcpServers)) {
-          configManager.removeMcpServer(name);
-        }
-      }
-
-      // 更新连接配置
-      if (configData.connection) {
-        configManager.updateConnectionConfig(configData.connection);
-      }
-
-      // 更新 ModelScope 配置
-      if (configData.modelscope) {
-        configManager.updateModelScopeConfig(configData.modelscope);
-      }
-
-      // 更新 Web UI 配置
-      if (configData.webUI) {
-        configManager.updateWebUIConfig(configData.webUI);
-      }
-
-      // 更新服务工具配置
+      // 更新服务工具配置（单独处理，因为 updateConfig 只更新已存在的配置）
       if (configData.mcpServerConfig) {
         for (const [serverName, toolsConfig] of Object.entries(
           configData.mcpServerConfig
@@ -176,21 +147,14 @@ export class RealtimeNotificationHandler {
         }
       }
 
-      if (configData.platforms) {
-        for (const [platformName, platformConfig] of Object.entries(
-          configData.platforms
-        )) {
-          configManager.updatePlatformConfig(platformName, platformConfig);
-        }
-      }
-
-      this.logger.debug("WebSocket: updateConfig 请求处理成功", { clientId });
+      this.logger.debug("WebSocket: 配置更新成功", { clientId });
+      ws.send(JSON.stringify({ type: "config:updated", success: true }));
     } catch (error) {
-      this.logger.error("WebSocket: updateConfig 请求处理失败", error);
+      this.logger.error("WebSocket: 配置更新失败", error);
       this.sendError(
         ws,
         "CONFIG_UPDATE_ERROR",
-        error instanceof Error ? error.message : "配置更新失败"
+        error instanceof Error ? error.message : String(error)
       );
     }
   }

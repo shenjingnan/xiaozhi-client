@@ -11,6 +11,7 @@ export interface EventBusEvents {
   "config:updated": {
     type: string;
     serviceName?: string;
+    platformName?: string;
     timestamp: Date;
   };
   "config:error": { error: Error; operation: string };

@@ -26,6 +26,8 @@ vi.mock("@/lib/config/manager.js", () => ({
     setToolEnabled: vi.fn(),
     updatePlatformConfig: vi.fn(),
     getMcpEndpoint: vi.fn(),
+    validateConfig: vi.fn(),
+    updateConfig: vi.fn(),
   },
 }));
 
@@ -102,6 +104,8 @@ describe("RealtimeNotificationHandler", () => {
       updateWebUIConfig: vi.fn(),
       setToolEnabled: vi.fn(),
       updatePlatformConfig: vi.fn(),
+      validateConfig: vi.fn(),
+      updateConfig: vi.fn(),
     };
     const { configManager } = await import("@/lib/config/manager.js");
     Object.assign(configManager, mockConfigService);
@@ -218,11 +222,13 @@ describe("RealtimeNotificationHandler", () => {
         clientId
       );
 
-      expect(mockConfigService.getMcpEndpoint).toHaveBeenCalled();
-      expect(mockLogger.debug).toHaveBeenCalledWith(
-        "WebSocket: updateConfig 请求处理成功",
-        { clientId }
-      );
+      // 验证 validateConfig 被调用
+      expect(mockConfigService.validateConfig).toHaveBeenCalledWith(configData);
+      // 验证 updateConfig 被调用
+      expect(mockConfigService.updateConfig).toHaveBeenCalledWith(configData);
+      expect(mockLogger.debug).toHaveBeenCalledWith("WebSocket: 配置更新成功", {
+        clientId,
+      });
       expect(mockLogger.warn).toHaveBeenCalledWith(
         "[DEPRECATED] WebSocket updateConfig 功能已废弃，请使用 PUT /api/config 替代"
       );
@@ -409,16 +415,18 @@ describe("RealtimeNotificationHandler", () => {
       const handler = realtimeHandler as any;
       await handler.handleUpdateConfig(mockWebSocket, configData, clientId);
 
-      expect(mockConfigService.getMcpEndpoint).toHaveBeenCalled();
-      expect(mockLogger.debug).toHaveBeenCalledWith(
-        "WebSocket: updateConfig 请求处理成功",
-        { clientId }
-      );
+      // 验证 validateConfig 被调用
+      expect(mockConfigService.validateConfig).toHaveBeenCalledWith(configData);
+      // 验证 updateConfig 被调用
+      expect(mockConfigService.updateConfig).toHaveBeenCalledWith(configData);
+      expect(mockLogger.debug).toHaveBeenCalledWith("WebSocket: 配置更新成功", {
+        clientId,
+      });
     });
 
     it("should handle updateConfig error", async () => {
       const error = new Error("Config update failed");
-      mockConfigService.getMcpEndpoint.mockImplementation(() => {
+      mockConfigService.validateConfig.mockImplementation(() => {
         throw error;
       });
 
@@ -426,7 +434,7 @@ describe("RealtimeNotificationHandler", () => {
       await handler.handleUpdateConfig(mockWebSocket, configData, clientId);
 
       expect(mockLogger.error).toHaveBeenCalledWith(
-        "WebSocket: updateConfig 请求处理失败",
+        "WebSocket: 配置更新失败",
         error
       );
       expectErrorMessage(
@@ -437,14 +445,14 @@ describe("RealtimeNotificationHandler", () => {
     });
 
     it("should handle non-Error exceptions in updateConfig", async () => {
-      mockConfigService.getMcpEndpoint.mockImplementation(() => {
+      mockConfigService.validateConfig.mockImplementation(() => {
         throw "String error";
       });
 
       const handler = realtimeHandler as any;
       await handler.handleUpdateConfig(mockWebSocket, configData, clientId);
 
-      expectErrorMessage(mockWebSocket, "CONFIG_UPDATE_ERROR", "配置更新失败");
+      expectErrorMessage(mockWebSocket, "CONFIG_UPDATE_ERROR", "String error");
     });
   });
 
@@ -736,7 +744,9 @@ describe("RealtimeNotificationHandler", () => {
       // Verify all operations were called
       expect(mockConfigService.getConfig).toHaveBeenCalledTimes(1);
       expect(mockStatusService.getFullStatus).toHaveBeenCalledTimes(1);
-      expect(mockConfigService.getMcpEndpoint).toHaveBeenCalled();
+      // 验证 validateConfig 和 updateConfig 被调用
+      expect(mockConfigService.validateConfig).toHaveBeenCalledWith(configData);
+      expect(mockConfigService.updateConfig).toHaveBeenCalledWith(configData);
       expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
         "service:restart:requested",
         expect.objectContaining({

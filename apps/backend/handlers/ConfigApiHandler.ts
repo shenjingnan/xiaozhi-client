@@ -46,51 +46,13 @@ export class ConfigApiHandler extends AbstractApiHandler {
       logger.debug("处理更新配置请求");
       const newConfig: AppConfig = await c.req.json();
 
-      // 验证请求体
-      if (!newConfig || typeof newConfig !== "object") {
-        const errorResponse = createErrorResponse(
-          "INVALID_REQUEST_BODY",
-          "请求体必须是有效的配置对象"
-        );
-        return c.json(errorResponse, 400);
-      }
+      // 使用 configManager 的验证方法
+      configManager.validateConfig(newConfig);
 
-      // 更新 MCP 端点
-      if (newConfig.mcpEndpoint !== configManager.getMcpEndpoint()) {
-        configManager.updateMcpEndpoint(newConfig.mcpEndpoint);
-      }
+      // 使用 configManager 的批量更新方法
+      configManager.updateConfig(newConfig);
 
-      // 更新 MCP 服务
-      const currentServers = configManager.getMcpServers();
-      for (const [name, config] of Object.entries(newConfig.mcpServers)) {
-        if (JSON.stringify(currentServers[name]) !== JSON.stringify(config)) {
-          configManager.updateMcpServer(name, config);
-        }
-      }
-
-      // 删除不存在的服务
-      for (const name of Object.keys(currentServers)) {
-        if (!(name in newConfig.mcpServers)) {
-          configManager.removeMcpServer(name);
-        }
-      }
-
-      // 更新连接配置
-      if (newConfig.connection) {
-        configManager.updateConnectionConfig(newConfig.connection);
-      }
-
-      // 更新 ModelScope 配置
-      if (newConfig.modelscope) {
-        configManager.updateModelScopeConfig(newConfig.modelscope);
-      }
-
-      // 更新 Web UI 配置
-      if (newConfig.webUI) {
-        configManager.updateWebUIConfig(newConfig.webUI);
-      }
-
-      // 更新服务工具配置
+      // 更新服务工具配置（单独处理，因为 updateConfig 只更新已存在的配置）
       if (newConfig.mcpServerConfig) {
         for (const [serverName, toolsConfig] of Object.entries(
           newConfig.mcpServerConfig
@@ -104,14 +66,6 @@ export class ConfigApiHandler extends AbstractApiHandler {
               toolConfig.enable
             );
           }
-        }
-      }
-
-      if (newConfig.platforms) {
-        for (const [platformName, platformConfig] of Object.entries(
-          newConfig.platforms
-        )) {
-          configManager.updatePlatformConfig(platformName, platformConfig);
         }
       }
 

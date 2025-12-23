@@ -32,6 +32,8 @@ vi.mock("@/lib/config/manager.js", () => ({
     reloadConfig: vi.fn(),
     getConfigPath: vi.fn(),
     configExists: vi.fn(),
+    validateConfig: vi.fn(),
+    updateConfig: vi.fn(),
   },
 }));
 
@@ -94,6 +96,8 @@ describe("ConfigApiHandler", () => {
       reloadConfig: vi.fn(),
       getConfigPath: vi.fn(),
       configExists: vi.fn(),
+      validateConfig: vi.fn(),
+      updateConfig: vi.fn(),
     };
     const { configManager } = await import("@/lib/config/manager.js");
     Object.assign(configManager, mockConfigManager);
@@ -185,17 +189,14 @@ describe("ConfigApiHandler", () => {
 
   describe("updateConfig", () => {
     it("should update config successfully", async () => {
-      // 模拟获取当前配置的方法返回值，使源代码中的比较操作能够正常执行
-      mockConfigManager.getMcpEndpoint.mockReturnValue("ws://localhost:3000");
-      mockConfigManager.getMcpServers.mockReturnValue({
-        calculator: { command: "node", args: ["calculator.js"] },
-        datetime: { command: "python", args: ["datetime.py"] },
-      });
-
       mockContext.req.json.mockResolvedValue(mockConfig);
 
       await configApiHandler.updateConfig(mockContext);
 
+      // 验证 validateConfig 被调用
+      expect(mockConfigManager.validateConfig).toHaveBeenCalledWith(mockConfig);
+      // 验证 updateConfig 被调用
+      expect(mockConfigManager.updateConfig).toHaveBeenCalledWith(mockConfig);
       expect(mockContext.req.json).toHaveBeenCalledTimes(1);
       expect(mockLogger.debug).toHaveBeenCalledWith("处理更新配置请求");
       expect(mockLogger.info).toHaveBeenCalledWith("配置更新成功");
@@ -208,15 +209,18 @@ describe("ConfigApiHandler", () => {
 
     it("should handle invalid request body - null", async () => {
       mockContext.req.json.mockResolvedValue(null);
+      mockConfigManager.validateConfig.mockImplementation(() => {
+        throw new Error("配置必须是有效的对象");
+      });
 
       await configApiHandler.updateConfig(mockContext);
 
-      expect(mockConfigManager.updateMcpEndpoint).not.toHaveBeenCalled();
+      expect(mockConfigManager.updateConfig).not.toHaveBeenCalled();
       expect(mockContext.json).toHaveBeenCalledWith(
         {
           error: {
-            code: "INVALID_REQUEST_BODY",
-            message: "请求体必须是有效的配置对象",
+            code: "CONFIG_UPDATE_ERROR",
+            message: "配置必须是有效的对象",
             details: undefined,
           },
         },
@@ -226,15 +230,18 @@ describe("ConfigApiHandler", () => {
 
     it("should handle invalid request body - string", async () => {
       mockContext.req.json.mockResolvedValue("invalid config");
+      mockConfigManager.validateConfig.mockImplementation(() => {
+        throw new Error("配置必须是有效的对象");
+      });
 
       await configApiHandler.updateConfig(mockContext);
 
-      expect(mockConfigManager.updateMcpEndpoint).not.toHaveBeenCalled();
+      expect(mockConfigManager.updateConfig).not.toHaveBeenCalled();
       expect(mockContext.json).toHaveBeenCalledWith(
         {
           error: {
-            code: "INVALID_REQUEST_BODY",
-            message: "请求体必须是有效的配置对象",
+            code: "CONFIG_UPDATE_ERROR",
+            message: "配置必须是有效的对象",
             details: undefined,
           },
         },
@@ -245,7 +252,7 @@ describe("ConfigApiHandler", () => {
     it("should handle config update error", async () => {
       const error = new Error("Config update failed");
       mockContext.req.json.mockResolvedValue(mockConfig);
-      mockConfigManager.getMcpEndpoint.mockImplementation(() => {
+      mockConfigManager.validateConfig.mockImplementation(() => {
         throw error;
       });
 
