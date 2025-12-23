@@ -2,7 +2,7 @@
  * 服务管理服务
  */
 
-import type { ConfigManager } from "@/lib/config/configManager.js";
+import type { ConfigManager } from "@/lib/config/manager.js";
 import { ConfigError, ServiceError } from "@cli/errors/index.js";
 import type {
   ServiceManager as IServiceManager,

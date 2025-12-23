@@ -3,7 +3,7 @@
  * 专门测试 Coze 工作流功能
  */
 
-import type { CustomMCPTool } from "@/lib/config/configManager.js";
+import type { CustomMCPTool } from "@/lib/config/manager.js";
 import { getEventBus } from "@root/services/EventBus.js";
 import type { EventBus } from "@services/EventBus.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -21,7 +21,7 @@ vi.mock("@root/Logger.js", () => ({
 }));
 
 // Mock configManager
-vi.mock("@/lib/config/configManager.js", () => ({
+vi.mock("@/lib/config/manager.js", () => ({
   configManager: {
     getCustomMCPTools: vi.fn(),
     getCustomMCPConfig: vi.fn(),

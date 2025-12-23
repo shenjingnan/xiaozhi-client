@@ -1,4 +1,4 @@
-import type { AppConfig } from "@/lib/config/configManager.js";
+import type { AppConfig } from "@/lib/config/manager.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NotificationService } from "../NotificationService.js";
 import type { WebSocketClient } from "../NotificationService.js";
@@ -26,7 +26,7 @@ vi.mock("@root/Logger.js", () => ({
 }));
 
 // Mock ConfigManager
-vi.mock("@/lib/config/configManager.js", () => ({
+vi.mock("@/lib/config/manager.js", () => ({
   configManager: {
     getConfig: vi.fn().mockReturnValue({
       mcpEndpoint: "ws://localhost:3000",
@@ -103,7 +103,7 @@ describe("NotificationService", () => {
     (logger.withTag as any).mockReturnValue(mockLogger);
 
     // Mock ConfigManager
-    const { configManager } = await import("@/lib/config/configManager.js");
+    const { configManager } = await import("@/lib/config/manager.js");
     (configManager.getConfig as any).mockReturnValue(mockConfig);
 
     // Mock WebSocket

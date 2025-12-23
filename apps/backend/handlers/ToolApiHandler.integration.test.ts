@@ -1,4 +1,4 @@
-import { configManager } from "@/lib/config/configManager.js";
+import { configManager } from "@/lib/config/manager.js";
 import {
   afterAll,
   afterEach,

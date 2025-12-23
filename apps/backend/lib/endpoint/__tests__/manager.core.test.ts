@@ -1,4 +1,4 @@
-import type { ConfigManager } from "@/lib/config/configManager.js";
+import type { ConfigManager } from "@/lib/config/manager.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { ToolCallResult } from "@root/types/mcp.js";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
@@ -53,7 +53,7 @@ vi.mock("@root/Logger.js", () => ({
   },
 }));
 
-vi.mock("@/lib/config/configManager.js", () => ({
+vi.mock("@/lib/config/manager.js", () => ({
   ConfigManager: vi.fn().mockImplementation(() => ({
     getMcpEndpoints: vi.fn().mockReturnValue([]),
     addMcpEndpoint: vi.fn(),

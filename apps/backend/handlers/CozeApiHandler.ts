@@ -3,7 +3,7 @@
  * 提供扣子工作空间和工作流相关的 RESTful API 接口
  */
 
-import { configManager } from "@/lib/config/configManager.js";
+import { configManager } from "@/lib/config/manager.js";
 import { CozeApiService } from "@/lib/coze";
 import { logger } from "@root/Logger";
 import type { CozeWorkflowsParams } from "@root/types/coze";

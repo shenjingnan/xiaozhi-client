@@ -2,7 +2,7 @@
  * 依赖注入容器
  */
 
-import { configManager } from "@/lib/config/configManager.js";
+import { configManager } from "@/lib/config/manager.js";
 import { ErrorHandler } from "@cli/errors/ErrorHandlers.js";
 import type { IDIContainer } from "@cli/interfaces/Config.js";
 import { FileUtils } from "@cli/utils/FileUtils.js";

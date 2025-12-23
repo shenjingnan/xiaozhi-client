@@ -9,8 +9,8 @@ import type {
   MCPServerConfig,
   ModelScopeConfig,
   WebUIConfig,
-} from "./configManager";
-import { ConfigManager } from "./configManager";
+} from "./manager";
+import { ConfigManager } from "./manager";
 
 // Mock fs module
 vi.mock("node:fs", () => ({

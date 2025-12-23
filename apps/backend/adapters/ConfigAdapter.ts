@@ -9,7 +9,7 @@ import type {
   MCPServerConfig,
   SSEMCPServerConfig,
   StreamableHTTPMCPServerConfig,
-} from "@/lib/config/configManager.js";
+} from "@/lib/config/manager.js";
 import type { MCPServiceConfig } from "@/lib/mcp/types";
 import { MCPTransportType } from "@/lib/mcp/types";
 import { inferTransportTypeFromUrl } from "@/lib/mcp/utils";

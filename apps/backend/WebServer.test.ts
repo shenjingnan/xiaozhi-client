@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import WebSocket from "ws";
 import { WebServer } from "./WebServer";
 
-vi.mock("@/lib/config/configManager.js", () => {
+vi.mock("@/lib/config/manager.js", () => {
   const mockConfigManager = {
     getConfig: vi.fn(),
     getMcpEndpoint: vi.fn(),
@@ -556,7 +556,7 @@ describe("WebServer", () => {
   let currentPort: number;
 
   beforeEach(async () => {
-    const { configManager } = await import("@/lib/config/configManager.js");
+    const { configManager } = await import("@/lib/config/manager.js");
     mockConfigManager = configManager;
 
     // 获取唯一的可用端口
