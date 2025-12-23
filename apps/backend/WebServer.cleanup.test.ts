@@ -22,6 +22,8 @@ vi.mock("@/lib/config/manager.js", () => ({
     cleanupInvalidServerToolsConfig: vi.fn(),
     getToolCallLogConfig: vi.fn().mockReturnValue({}),
     getConfigDir: vi.fn().mockReturnValue("/tmp"),
+    getCustomMCPTools: vi.fn().mockReturnValue([]),
+    clearAllStatsUpdateLocks: vi.fn(),
   },
 }));
 
@@ -44,6 +46,7 @@ vi.mock("./Logger", () => {
 vi.mock("@services/EventBus", () => {
   const mockEventBus = {
     onEvent: vi.fn(),
+    emitEvent: vi.fn(),
     emit: vi.fn(),
     removeAllListeners: vi.fn(),
     destroy: vi.fn(),

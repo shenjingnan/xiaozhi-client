@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
+import { convertLegacyToNew } from "@/lib/config/ConfigAdapter.js";
 import { configManager } from "@/lib/config/manager.js";
 import type { MCPServerConfig } from "@/lib/config/manager.js";
 import type { EndpointConnection } from "@/lib/endpoint/connection.js";
@@ -10,7 +11,6 @@ import type {
 } from "@/lib/endpoint/index.js";
 import { MCPServiceManager } from "@/lib/mcp";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
-import { convertLegacyToNew } from "@/lib/config/ConfigAdapter.js";
 import {
   ConfigApiHandler,
   CozeApiHandler,
