@@ -61,7 +61,10 @@ export function isLocalMCPServerConfig(
     typeof config === "object" &&
     config !== null &&
     "command" in config &&
-    "args" in config
+    "args" in config &&
+    typeof config.command === "string" &&
+    Array.isArray(config.args) &&
+    config.args.every((arg: unknown) => typeof arg === "string")
   );
 }
 

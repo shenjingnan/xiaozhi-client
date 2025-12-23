@@ -11,8 +11,6 @@ import type {
   ListOptions,
 } from "@cli/interfaces/CommandTypes.js";
 import { isLocalMCPServerConfig } from "@cli/interfaces/CommandTypes.js";
-import type { IDIContainer } from "@cli/interfaces/Config.js";
-import type { MCPServerConfig } from "@root/configManager.js";
 import { configManager } from "@root/configManager.js";
 import { ToolCallService } from "@services/ToolCallService.js";
 import chalk from "chalk";
@@ -24,13 +22,27 @@ import ora from "ora";
  */
 export class McpCommandHandler extends BaseCommandHandler {
   /**
+   * 中文字符正则表达式
+   *
+   * Unicode 范围说明：
+   * - \u4e00-\u9fff: CJK 统一汉字（基本汉字）
+   * - \u3400-\u4dbf: CJK 扩展 A（扩展汉字）
+   * - \uff00-\uffef: 全角字符和半角片假名（包括中文标点符号）
+   *
+   * 注意：此范围可能不完全覆盖所有中日韩字符（如 CJK 扩展 B-F 等），
+   * 但已覆盖绝大多数常用中文场景。
+   */
+  private static readonly CHINESE_CHAR_REGEX =
+    /[\u4e00-\u9fff\u3400-\u4dbf\uff00-\uffef]/;
+
+  /**
    * 计算字符串的显示宽度（中文字符占2个宽度，英文字符占1个宽度）
    */
   private static getDisplayWidth(str: string): number {
     let width = 0;
     for (const char of str) {
       // 判断是否为中文字符（包括中文标点符号）
-      if (/[\u4e00-\u9fff\u3400-\u4dbf\uff00-\uffef]/.test(char)) {
+      if (McpCommandHandler.CHINESE_CHAR_REGEX.test(char)) {
         width += 2;
       } else {
         width += 1;
@@ -57,9 +69,7 @@ export class McpCommandHandler extends BaseCommandHandler {
     let hasAddedChar = false;
 
     for (const char of str) {
-      const charWidth = /[\u4e00-\u9fff\u3400-\u4dbf\uff00-\uffef]/.test(char)
-        ? 2
-        : 1;
+      const charWidth = McpCommandHandler.CHINESE_CHAR_REGEX.test(char) ? 2 : 1;
 
       // 如果加上当前字符会超出限制
       if (currentWidth + charWidth > maxWidth - 3) {
@@ -136,10 +146,6 @@ export class McpCommandHandler extends BaseCommandHandler {
       },
     },
   ];
-
-  constructor(container: IDIContainer) {
-    super(container);
-  }
 
   /**
    * 主命令执行（显示帮助）
@@ -393,7 +399,7 @@ export class McpCommandHandler extends BaseCommandHandler {
 
         // 然后显示标准 MCP 服务
         for (const serverName of serverNames) {
-          const serverConfig = mcpServers[serverName] as MCPServerConfig;
+          const serverConfig = mcpServers[serverName];
           const toolsConfig = configManager.getServerToolsConfig(serverName);
           const toolCount = Object.keys(toolsConfig).length;
           const enabledCount = Object.values(toolsConfig).filter(
