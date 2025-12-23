@@ -331,7 +331,7 @@ vi.mock("@/lib/endpoint/index", () => ({
   })),
 }));
 
-vi.mock("@/lib/config/ConfigAdapter.js", () => ({
+vi.mock("@/lib/config/adapter.js", () => ({
   convertLegacyToNew: vi.fn((_name, config) => config),
   isModelScopeURL: vi.fn((url) => url.includes("modelscope")),
 }));
