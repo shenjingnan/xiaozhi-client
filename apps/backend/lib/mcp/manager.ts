@@ -7,6 +7,7 @@
  */
 
 import { EventEmitter } from "node:events";
+import { isModelScopeURL } from "@/lib/config/ConfigAdapter.js";
 import type { MCPToolConfig } from "@/lib/config/manager.js";
 import { configManager } from "@/lib/config/manager.js";
 import { MCPService } from "@/lib/mcp";
@@ -21,7 +22,6 @@ import type {
   UnifiedServerConfig,
   UnifiedServerStatus,
 } from "@/lib/mcp/types";
-import { isModelScopeURL } from "@adapters/ConfigAdapter";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { getEventBus } from "@root/services/EventBus.js";
 import type { MCPMessage } from "@root/types/mcp.js";

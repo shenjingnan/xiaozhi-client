@@ -4,6 +4,12 @@
  */
 
 import { isAbsolute } from "node:path";
+import {
+  ConfigValidationError,
+  convertLegacyConfigBatch,
+  convertLegacyToNew,
+  getConfigTypeDescription,
+} from "@/lib/config/ConfigAdapter.js";
 import type {
   LocalMCPServerConfig,
   MCPServerConfig,
@@ -12,12 +18,6 @@ import type {
 } from "@/lib/config/manager.js";
 import { MCPTransportType } from "@/lib/mcp/types";
 import { describe, expect, it } from "vitest";
-import {
-  ConfigValidationError,
-  convertLegacyConfigBatch,
-  convertLegacyToNew,
-  getConfigTypeDescription,
-} from "../ConfigAdapter.js";
 
 describe("ConfigAdapter", () => {
   describe("convertLegacyToNew", () => {

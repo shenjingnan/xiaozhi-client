@@ -3,16 +3,16 @@
  * 验证适配器的基本功能和兼容性
  */
 
+import {
+  convertLegacyToNew,
+  getConfigTypeDescription,
+} from "@/lib/config/ConfigAdapter.js";
 import type {
   LocalMCPServerConfig,
   SSEMCPServerConfig,
 } from "@/lib/config/manager.js";
 import { MCPTransportType } from "@/lib/mcp/types";
 import { describe, expect, it } from "vitest";
-import {
-  convertLegacyToNew,
-  getConfigTypeDescription,
-} from "../ConfigAdapter.js";
 
 describe("适配器集成测试", () => {
   describe("配置转换功能", () => {

@@ -1,5 +1,5 @@
+import { convertLegacyToNew } from "@/lib/config/ConfigAdapter.js";
 import { MCPService, MCPTransportType } from "@/lib/mcp";
-import { convertLegacyToNew } from "@adapters/ConfigAdapter.js";
 import { describe, expect, it } from "vitest";
 
 describe("MCPService 和 ConfigAdapter 推断逻辑一致性测试", () => {

@@ -10,7 +10,7 @@ import type {
 } from "@/lib/endpoint/index.js";
 import { MCPServiceManager } from "@/lib/mcp";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
-import { convertLegacyToNew } from "@adapters/index.js";
+import { convertLegacyToNew } from "@/lib/config/ConfigAdapter.js";
 import {
   ConfigApiHandler,
   CozeApiHandler,
