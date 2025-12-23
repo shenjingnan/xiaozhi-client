@@ -185,6 +185,13 @@ describe("ConfigApiHandler", () => {
 
   describe("updateConfig", () => {
     it("should update config successfully", async () => {
+      // 模拟获取当前配置的方法返回值，使源代码中的比较操作能够正常执行
+      mockConfigManager.getMcpEndpoint.mockReturnValue("ws://localhost:3000");
+      mockConfigManager.getMcpServers.mockReturnValue({
+        calculator: { command: "node", args: ["calculator.js"] },
+        datetime: { command: "python", args: ["datetime.py"] },
+      });
+
       mockContext.req.json.mockResolvedValue(mockConfig);
 
       await configApiHandler.updateConfig(mockContext);
