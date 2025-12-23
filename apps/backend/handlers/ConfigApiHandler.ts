@@ -1,8 +1,8 @@
+import type { AppConfig } from "@/lib/config/configManager.js";
 import {
   createErrorResponse,
   createSuccessResponse,
 } from "@middlewares/index.js";
-import type { AppConfig } from "@root/configManager.js";
 import { ConfigService } from "@services/ConfigService.js";
 import type { Context } from "hono";
 import { AbstractApiHandler } from "./AbstractApiHandler.js";

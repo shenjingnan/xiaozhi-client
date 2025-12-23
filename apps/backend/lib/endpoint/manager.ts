@@ -1,7 +1,7 @@
 import { EventEmitter } from "node:events";
+import type { ConfigManager } from "@/lib/config/configManager.js";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { ConfigManager } from "@root/configManager.js";
 import type { ToolCallResult } from "@root/types/mcp.js";
 import type { EventBus } from "@services/EventBus.js";
 import { getEventBus } from "@services/EventBus.js";

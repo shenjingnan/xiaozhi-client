@@ -1,10 +1,13 @@
+import type {
+  ConfigManager,
+  MCPServerConfig,
+} from "@/lib/config/configManager.js";
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { MCPService } from "@/lib/mcp";
 import type { MCPServiceConfig, MCPTransportType } from "@/lib/mcp/types";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
-import type { ConfigManager, MCPServerConfig } from "@root/configManager.js";
 import {
   ErrorCategory,
   MCPError,

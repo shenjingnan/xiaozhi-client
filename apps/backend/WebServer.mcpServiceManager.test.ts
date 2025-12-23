@@ -76,7 +76,7 @@ describe("WebServer MCPServiceManager 方法测试", () => {
 
     it("在 WebServer 启动后应该返回有效实例", async () => {
       // Mock configManager 以避免配置加载失败
-      vi.mock("../configManager", () => ({
+      vi.mock("@/lib/config/configManager.js", () => ({
         configManager: {
           getConfig: vi.fn().mockReturnValue({
             mcpEndpoint: "ws://test",

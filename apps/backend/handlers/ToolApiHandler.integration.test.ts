@@ -1,3 +1,4 @@
+import { configManager } from "@/lib/config/configManager.js";
 import {
   afterAll,
   afterEach,
@@ -8,7 +9,6 @@ import {
   it,
   vi,
 } from "vitest";
-import { configManager } from "../configManager.js";
 import { ToolApiHandler } from "./ToolApiHandler.js";
 
 // Mock dependencies

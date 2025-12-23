@@ -7,6 +7,8 @@
  */
 
 import { EventEmitter } from "node:events";
+import type { MCPToolConfig } from "@/lib/config/configManager.js";
+import { configManager } from "@/lib/config/configManager.js";
 import { MCPService } from "@/lib/mcp";
 import { MCPCacheManager } from "@/lib/mcp";
 import type {
@@ -21,8 +23,6 @@ import type {
 } from "@/lib/mcp/types";
 import { isModelScopeURL } from "@adapters/ConfigAdapter";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { MCPToolConfig } from "@root/configManager.js";
-import { configManager } from "@root/configManager.js";
 import { getEventBus } from "@root/services/EventBus.js";
 import type { MCPMessage } from "@root/types/mcp.js";
 import { ToolCallLogger } from "@utils/ToolCallLogger.js";

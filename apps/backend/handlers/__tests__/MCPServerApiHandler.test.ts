@@ -1,11 +1,11 @@
+import type { ConfigManager } from "@/lib/config/configManager.js";
+import type { MCPServerConfig } from "@/lib/config/configManager.js";
 import type { MCPServiceManager } from "@/lib/mcp";
 import { MCPErrorCode } from "@errors/MCPErrors.js";
 import type { EventBus } from "@services/EventBus.js";
 import { TypeFieldNormalizer } from "@utils/TypeFieldNormalizer.js";
 import type { Context } from "hono";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ConfigManager } from "../../configManager.js";
-import type { MCPServerConfig } from "../../configManager.js";
 import {
   MCPServerApiHandler,
   MCPServerConfigValidator,

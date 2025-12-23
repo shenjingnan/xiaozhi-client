@@ -2,6 +2,7 @@
  * MCP管理命令处理器
  */
 
+import { configManager } from "@/lib/config/configManager.js";
 import type { SubCommand } from "@cli/interfaces/Command.js";
 import { BaseCommandHandler } from "@cli/interfaces/Command.js";
 import type {
@@ -11,7 +12,6 @@ import type {
   ListOptions,
 } from "@cli/interfaces/CommandTypes.js";
 import { isLocalMCPServerConfig } from "@cli/interfaces/CommandTypes.js";
-import { configManager } from "@root/configManager.js";
 import { ToolCallService } from "@services/ToolCallService.js";
 import chalk from "chalk";
 import Table from "cli-table3";

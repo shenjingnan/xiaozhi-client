@@ -1,5 +1,5 @@
+import type { AppConfig } from "@/lib/config/configManager.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { AppConfig } from "../../configManager.js";
 import { createErrorResponse, createSuccessResponse } from "../../middlewares";
 import { ConfigApiHandler } from "../ConfigApiHandler.js";
 

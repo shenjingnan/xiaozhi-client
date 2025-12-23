@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@cli.js", () => ({}));
 
 // Mock all dependencies
-vi.mock("../configManager.js", () => ({
+vi.mock("@/lib/config/configManager.js", () => ({
   configManager: {
     getConfig: vi.fn(),
     getMcpEndpoints: vi.fn(),
@@ -59,7 +59,7 @@ describe("WebServer Unit Tests", () => {
     vi.clearAllMocks();
 
     // 设置默认的 mock 返回值
-    const { configManager } = await import("../configManager.js");
+    const { configManager } = await import("@/lib/config/configManager.js");
     vi.mocked(configManager.getConfig).mockReturnValue({
       mcpEndpoint: ["wss://test1.example.com", "wss://test2.example.com"],
       mcpServers: {},

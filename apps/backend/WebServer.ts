@@ -1,5 +1,7 @@
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
+import { configManager } from "@/lib/config/configManager.js";
+import type { MCPServerConfig } from "@/lib/config/configManager.js";
 import type { EndpointConnection } from "@/lib/endpoint/connection.js";
 import { EndpointManager } from "@/lib/endpoint/index.js";
 import type {
@@ -38,8 +40,6 @@ import {
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
-import { configManager } from "@root/configManager.js";
-import type { MCPServerConfig } from "@root/configManager.js";
 import type { AppContext } from "@root/types/index.js";
 import { createApp } from "@root/types/index.js";
 import type { EventBus, EventBusEvents } from "@services/index.js";

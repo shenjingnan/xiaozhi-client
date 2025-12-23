@@ -4,16 +4,16 @@
  */
 
 import { isAbsolute, resolve } from "node:path";
-import type { MCPServiceConfig } from "@/lib/mcp/types";
-import { MCPTransportType } from "@/lib/mcp/types";
-import { inferTransportTypeFromUrl } from "@/lib/mcp/utils";
-import { logger as globalLogger } from "@root/Logger.js";
 import type {
   LocalMCPServerConfig,
   MCPServerConfig,
   SSEMCPServerConfig,
   StreamableHTTPMCPServerConfig,
-} from "@root/configManager.js";
+} from "@/lib/config/configManager.js";
+import type { MCPServiceConfig } from "@/lib/mcp/types";
+import { MCPTransportType } from "@/lib/mcp/types";
+import { inferTransportTypeFromUrl } from "@/lib/mcp/utils";
+import { logger as globalLogger } from "@root/Logger.js";
 import { TypeFieldNormalizer } from "@utils/TypeFieldNormalizer.js";
 
 // 为配置适配器创建带标签的 logger
