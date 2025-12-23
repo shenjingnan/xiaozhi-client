@@ -25,6 +25,10 @@ vi.mock("@/lib/config/manager.js", () => {
     removeMcpEndpoint: vi.fn(),
     getToolCallLogConfig: vi.fn().mockReturnValue({}),
     getConfigDir: vi.fn().mockReturnValue("/tmp"),
+    getCustomMCPTools: vi.fn(() => []),
+    getCustomMCPConfig: vi.fn(() => null),
+    hasValidCustomMCPTools: vi.fn(() => false),
+    clearAllStatsUpdateLocks: vi.fn(),
   };
   return {
     configManager: mockConfigManager,
@@ -327,8 +331,9 @@ vi.mock("@/lib/endpoint/index", () => ({
   })),
 }));
 
-vi.mock("./adapters/ConfigAdapter", () => ({
+vi.mock("@/lib/config/ConfigAdapter.js", () => ({
   convertLegacyToNew: vi.fn((_name, config) => config),
+  isModelScopeURL: vi.fn((url) => url.includes("modelscope")),
 }));
 
 vi.mock("./handlers/VersionApiHandler", () => {
