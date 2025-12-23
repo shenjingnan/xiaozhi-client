@@ -44,7 +44,6 @@ import type { AppContext } from "@root/types/index.js";
 import { createApp } from "@root/types/index.js";
 import type { EventBus, EventBusEvents } from "@services/index.js";
 import {
-  ConfigService,
   NotificationService,
   StatusService,
   destroyEventBus,
@@ -108,7 +107,6 @@ export class WebServer {
   private eventBus: EventBus;
 
   // 服务层
-  private configService: ConfigService;
   private statusService: StatusService;
   private notificationService: NotificationService;
 
@@ -154,7 +152,6 @@ export class WebServer {
     this.eventBus = getEventBus();
 
     // 初始化服务层
-    this.configService = new ConfigService();
     this.statusService = new StatusService();
     this.notificationService = new NotificationService();
 

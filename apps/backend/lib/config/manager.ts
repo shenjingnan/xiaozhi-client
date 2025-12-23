@@ -362,7 +362,14 @@ export class ConfigManager {
    */
   private loadConfig(): AppConfig {
     if (!this.configExists()) {
-      throw new Error("配置文件不存在，请先运行 xiaozhi init 初始化配置");
+      const error = new Error(
+        "配置文件不存在，请先运行 xiaozhi init 初始化配置"
+      );
+      this.eventBus.emitEvent("config:error", {
+        error,
+        operation: "loadConfig",
+      });
+      throw error;
     }
 
     try {
@@ -400,6 +407,11 @@ export class ConfigManager {
 
       return config;
     } catch (error) {
+      // 发射配置错误事件
+      this.eventBus.emitEvent("config:error", {
+        error: error instanceof Error ? error : new Error(String(error)),
+        operation: "loadConfig",
+      });
       if (error instanceof SyntaxError) {
         throw new Error(`配置文件格式错误: ${error.message}`);
       }
@@ -466,6 +478,7 @@ export class ConfigManager {
   public getConfig(): Readonly<AppConfig> {
     this.config = this.loadConfig();
 
+    console.log("获取配置成功");
     // 返回深度只读副本
     return JSON.parse(JSON.stringify(this.config));
   }
@@ -867,9 +880,16 @@ export class ConfigManager {
       // 更新缓存
       this.config = config;
 
+      console.log("配置保存成功");
+
       // 通知 Web 界面配置已更新（如果 Web 服务器正在运行）
       this.notifyConfigUpdate(config);
     } catch (error) {
+      // 发射配置错误事件
+      this.eventBus.emitEvent("config:error", {
+        error: error instanceof Error ? error : new Error(String(error)),
+        operation: "saveConfig",
+      });
       throw new Error(
         `保存配置失败: ${
           error instanceof Error ? error.message : String(error)

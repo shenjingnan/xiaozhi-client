@@ -14,11 +14,19 @@ vi.mock("../../Logger.js", () => ({
   },
 }));
 
-vi.mock("@services/ConfigService.js", () => ({
-  ConfigService: vi.fn().mockImplementation(() => ({
+vi.mock("@/lib/config/manager.js", () => ({
+  configManager: {
     getConfig: vi.fn(),
-    updateConfig: vi.fn(),
-  })),
+    updateMcpEndpoint: vi.fn(),
+    updateMcpServer: vi.fn(),
+    removeMcpServer: vi.fn(),
+    updateConnectionConfig: vi.fn(),
+    updateModelScopeConfig: vi.fn(),
+    updateWebUIConfig: vi.fn(),
+    setToolEnabled: vi.fn(),
+    updatePlatformConfig: vi.fn(),
+    getMcpEndpoint: vi.fn(),
+  },
 }));
 
 vi.mock("@services/EventBus.js", () => ({
@@ -81,13 +89,22 @@ describe("RealtimeNotificationHandler", () => {
     const { logger } = await import("../../Logger.js");
     vi.mocked(logger.withTag).mockReturnValue(mockLogger);
 
-    // Mock ConfigService
+    // Mock ConfigManager
     mockConfigService = {
-      getConfig: vi.fn(),
-      updateConfig: vi.fn(),
+      getConfig: vi.fn().mockReturnValue(mockConfig),
+      getMcpEndpoint: vi.fn().mockReturnValue(mockConfig.mcpEndpoint),
+      getMcpServers: vi.fn().mockReturnValue(mockConfig.mcpServers),
+      updateMcpEndpoint: vi.fn(),
+      updateMcpServer: vi.fn(),
+      removeMcpServer: vi.fn(),
+      updateConnectionConfig: vi.fn(),
+      updateModelScopeConfig: vi.fn(),
+      updateWebUIConfig: vi.fn(),
+      setToolEnabled: vi.fn(),
+      updatePlatformConfig: vi.fn(),
     };
-    const { ConfigService } = await import("@services/ConfigService.js");
-    vi.mocked(ConfigService).mockImplementation(() => mockConfigService);
+    const { configManager } = await import("@/lib/config/manager.js");
+    Object.assign(configManager, mockConfigService);
 
     // Mock EventBus
     mockEventBus = {
@@ -150,9 +167,14 @@ describe("RealtimeNotificationHandler", () => {
   describe("handleMessage", () => {
     const clientId = "test-client-123";
 
-    it("should handle getConfig message", async () => {
-      mockConfigService.getConfig.mockResolvedValue(mockConfig);
+    beforeEach(() => {
+      mockConfigService.getConfig.mockReturnValue(mockConfig);
+      mockConfigService.getMcpEndpoint.mockReturnValue(mockConfig.mcpEndpoint);
+      mockConfigService.getMcpServers.mockReturnValue(mockConfig.mcpServers);
+      mockStatusService.getFullStatus.mockReturnValue(mockStatus);
+    });
 
+    it("should handle getConfig message", async () => {
       await realtimeHandler.handleMessage(
         mockWebSocket,
         { type: "getConfig" },
@@ -181,8 +203,14 @@ describe("RealtimeNotificationHandler", () => {
     });
 
     it("should handle updateConfig message", async () => {
-      const configData = { mcpEndpoint: "ws://localhost:4000" };
-      mockConfigService.updateConfig.mockResolvedValue(undefined);
+      const configData = {
+        mcpEndpoint: "ws://localhost:4000",
+        mcpServers: {},
+        connection: {},
+        webUI: {},
+        mcpServerConfig: {},
+        platforms: {},
+      } as any;
 
       await realtimeHandler.handleMessage(
         mockWebSocket,
@@ -190,10 +218,7 @@ describe("RealtimeNotificationHandler", () => {
         clientId
       );
 
-      expect(mockConfigService.updateConfig).toHaveBeenCalledWith(
-        configData,
-        `websocket-${clientId}`
-      );
+      expect(mockConfigService.getMcpEndpoint).toHaveBeenCalled();
       expect(mockLogger.debug).toHaveBeenCalledWith(
         "WebSocket: updateConfig 请求处理成功",
         { clientId }
@@ -274,7 +299,9 @@ describe("RealtimeNotificationHandler", () => {
 
     it("should handle message processing error", async () => {
       const error = new Error("Processing failed");
-      mockConfigService.getConfig.mockRejectedValue(error);
+      mockConfigService.getConfig.mockImplementation(() => {
+        throw error;
+      });
 
       await realtimeHandler.handleMessage(
         mockWebSocket,
@@ -294,7 +321,9 @@ describe("RealtimeNotificationHandler", () => {
     });
 
     it("should handle non-Error exceptions", async () => {
-      mockConfigService.getConfig.mockRejectedValue("String error");
+      mockConfigService.getConfig.mockImplementation(() => {
+        throw "String error";
+      });
 
       await realtimeHandler.handleMessage(
         mockWebSocket,
@@ -309,9 +338,11 @@ describe("RealtimeNotificationHandler", () => {
   describe("handleGetConfig", () => {
     const clientId = "test-client-123";
 
-    it("should handle getConfig success", async () => {
-      mockConfigService.getConfig.mockResolvedValue(mockConfig);
+    beforeEach(() => {
+      mockConfigService.getConfig.mockReturnValue(mockConfig);
+    });
 
+    it("should handle getConfig success", async () => {
       // Access private method through type assertion for testing
       const handler = realtimeHandler as any;
       await handler.handleGetConfig(mockWebSocket, clientId);
@@ -328,7 +359,9 @@ describe("RealtimeNotificationHandler", () => {
 
     it("should handle getConfig error", async () => {
       const error = new Error("Config read failed");
-      mockConfigService.getConfig.mockRejectedValue(error);
+      mockConfigService.getConfig.mockImplementation(() => {
+        throw error;
+      });
 
       const handler = realtimeHandler as any;
       await handler.handleGetConfig(mockWebSocket, clientId);
@@ -345,7 +378,9 @@ describe("RealtimeNotificationHandler", () => {
     });
 
     it("should handle non-Error exceptions in getConfig", async () => {
-      mockConfigService.getConfig.mockRejectedValue("String error");
+      mockConfigService.getConfig.mockImplementation(() => {
+        throw "String error";
+      });
 
       const handler = realtimeHandler as any;
       await handler.handleGetConfig(mockWebSocket, clientId);
@@ -356,18 +391,25 @@ describe("RealtimeNotificationHandler", () => {
 
   describe("handleUpdateConfig", () => {
     const clientId = "test-client-123";
-    const configData = { mcpEndpoint: "ws://localhost:4000" };
+    const configData = {
+      mcpEndpoint: "ws://localhost:4000",
+      mcpServers: {},
+      connection: {},
+      webUI: {},
+      mcpServerConfig: {},
+      platforms: {},
+    } as any;
+
+    beforeEach(() => {
+      mockConfigService.getMcpEndpoint.mockReturnValue("ws://localhost:3000");
+      mockConfigService.getMcpServers.mockReturnValue({});
+    });
 
     it("should handle updateConfig success", async () => {
-      mockConfigService.updateConfig.mockResolvedValue(undefined);
-
       const handler = realtimeHandler as any;
       await handler.handleUpdateConfig(mockWebSocket, configData, clientId);
 
-      expect(mockConfigService.updateConfig).toHaveBeenCalledWith(
-        configData,
-        `websocket-${clientId}`
-      );
+      expect(mockConfigService.getMcpEndpoint).toHaveBeenCalled();
       expect(mockLogger.debug).toHaveBeenCalledWith(
         "WebSocket: updateConfig 请求处理成功",
         { clientId }
@@ -376,7 +418,9 @@ describe("RealtimeNotificationHandler", () => {
 
     it("should handle updateConfig error", async () => {
       const error = new Error("Config update failed");
-      mockConfigService.updateConfig.mockRejectedValue(error);
+      mockConfigService.getMcpEndpoint.mockImplementation(() => {
+        throw error;
+      });
 
       const handler = realtimeHandler as any;
       await handler.handleUpdateConfig(mockWebSocket, configData, clientId);
@@ -393,7 +437,9 @@ describe("RealtimeNotificationHandler", () => {
     });
 
     it("should handle non-Error exceptions in updateConfig", async () => {
-      mockConfigService.updateConfig.mockRejectedValue("String error");
+      mockConfigService.getMcpEndpoint.mockImplementation(() => {
+        throw "String error";
+      });
 
       const handler = realtimeHandler as any;
       await handler.handleUpdateConfig(mockWebSocket, configData, clientId);
@@ -552,10 +598,12 @@ describe("RealtimeNotificationHandler", () => {
   describe("sendInitialData", () => {
     const clientId = "test-client-123";
 
-    it("should send initial data successfully", async () => {
-      mockConfigService.getConfig.mockResolvedValue(mockConfig);
+    beforeEach(() => {
+      mockConfigService.getConfig.mockReturnValue(mockConfig);
       mockStatusService.getFullStatus.mockReturnValue(mockStatus);
+    });
 
+    it("should send initial data successfully", async () => {
       await realtimeHandler.sendInitialData(mockWebSocket, clientId);
 
       expect(mockLogger.debug).toHaveBeenCalledWith("发送初始数据给客户端", {
@@ -589,7 +637,7 @@ describe("RealtimeNotificationHandler", () => {
         client: mockStatus.client,
         restart: null,
       };
-      mockConfigService.getConfig.mockResolvedValue(mockConfig);
+      mockConfigService.getConfig.mockReturnValue(mockConfig);
       mockStatusService.getFullStatus.mockReturnValue(statusWithoutRestart);
 
       await realtimeHandler.sendInitialData(mockWebSocket, clientId);
@@ -611,7 +659,9 @@ describe("RealtimeNotificationHandler", () => {
 
     it("should handle sendInitialData error", async () => {
       const error = new Error("Initial data failed");
-      mockConfigService.getConfig.mockRejectedValue(error);
+      mockConfigService.getConfig.mockImplementation(() => {
+        throw error;
+      });
 
       await realtimeHandler.sendInitialData(mockWebSocket, clientId);
 
@@ -624,7 +674,9 @@ describe("RealtimeNotificationHandler", () => {
     });
 
     it("should handle non-Error exceptions in sendInitialData", async () => {
-      mockConfigService.getConfig.mockRejectedValue("String error");
+      mockConfigService.getConfig.mockImplementation(() => {
+        throw "String error";
+      });
 
       await realtimeHandler.sendInitialData(mockWebSocket, clientId);
 
@@ -641,7 +693,7 @@ describe("RealtimeNotificationHandler", () => {
 
     it("should handle complete message workflow", async () => {
       // Setup mocks
-      mockConfigService.getConfig.mockResolvedValue(mockConfig);
+      mockConfigService.getConfig.mockReturnValue(mockConfig);
       mockStatusService.getFullStatus.mockReturnValue(mockStatus);
 
       // Test getConfig message
@@ -659,8 +711,15 @@ describe("RealtimeNotificationHandler", () => {
       );
 
       // Test updateConfig message
-      const configData = { mcpEndpoint: "ws://localhost:4000" };
-      mockConfigService.updateConfig.mockResolvedValue(undefined);
+      const configData = {
+        mcpEndpoint: "ws://localhost:4000",
+        mcpServers: {},
+        connection: {},
+        webUI: {},
+        mcpServerConfig: {},
+        platforms: {},
+      } as any;
+      mockConfigService.getMcpEndpoint.mockReturnValue("ws://localhost:3000");
       await realtimeHandler.handleMessage(
         mockWebSocket,
         { type: "updateConfig", data: configData },
@@ -677,10 +736,7 @@ describe("RealtimeNotificationHandler", () => {
       // Verify all operations were called
       expect(mockConfigService.getConfig).toHaveBeenCalledTimes(1);
       expect(mockStatusService.getFullStatus).toHaveBeenCalledTimes(1);
-      expect(mockConfigService.updateConfig).toHaveBeenCalledWith(
-        configData,
-        `websocket-${clientId}`
-      );
+      expect(mockConfigService.getMcpEndpoint).toHaveBeenCalled();
       expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
         "service:restart:requested",
         expect.objectContaining({
@@ -695,7 +751,7 @@ describe("RealtimeNotificationHandler", () => {
 
     it("should handle mixed success and error scenarios", async () => {
       // First message succeeds
-      mockConfigService.getConfig.mockResolvedValue(mockConfig);
+      mockConfigService.getConfig.mockReturnValue(mockConfig);
       await realtimeHandler.handleMessage(
         mockWebSocket,
         { type: "getConfig" },
@@ -736,7 +792,7 @@ describe("RealtimeNotificationHandler", () => {
 
     it("should handle sendInitialData with partial failures", async () => {
       // Config succeeds, status fails
-      mockConfigService.getConfig.mockResolvedValue(mockConfig);
+      mockConfigService.getConfig.mockReturnValue(mockConfig);
       mockStatusService.getFullStatus.mockImplementation(() => {
         throw new Error("Status failed");
       });
@@ -754,7 +810,9 @@ describe("RealtimeNotificationHandler", () => {
     const clientId = "test-client-123";
 
     it("should handle message with null data", async () => {
-      mockConfigService.updateConfig.mockResolvedValue(undefined);
+      mockConfigService.getMcpEndpoint.mockImplementation(() => {
+        throw new Error("Cannot read properties of null");
+      });
 
       await realtimeHandler.handleMessage(
         mockWebSocket,
@@ -762,14 +820,14 @@ describe("RealtimeNotificationHandler", () => {
         clientId
       );
 
-      expect(mockConfigService.updateConfig).toHaveBeenCalledWith(
-        null,
-        `websocket-${clientId}`
-      );
+      // Should handle error gracefully
+      expect(mockLogger.error).toHaveBeenCalled();
     });
 
     it("should handle message with undefined data", async () => {
-      mockConfigService.updateConfig.mockResolvedValue(undefined);
+      mockConfigService.getMcpEndpoint.mockImplementation(() => {
+        throw new Error("Cannot read properties of undefined");
+      });
 
       await realtimeHandler.handleMessage(
         mockWebSocket,
@@ -777,10 +835,8 @@ describe("RealtimeNotificationHandler", () => {
         clientId
       );
 
-      expect(mockConfigService.updateConfig).toHaveBeenCalledWith(
-        undefined,
-        `websocket-${clientId}`
-      );
+      // Should handle error gracefully
+      expect(mockLogger.error).toHaveBeenCalled();
     });
 
     it("should handle empty client ID", async () => {
@@ -848,20 +904,20 @@ describe("RealtimeNotificationHandler", () => {
     });
 
     it("should handle config service returning null", async () => {
-      mockConfigService.getConfig.mockResolvedValue(null);
+      mockConfigService.getConfig.mockReturnValue({});
       mockStatusService.getFullStatus.mockReturnValue(mockStatus);
 
       await realtimeHandler.sendInitialData(mockWebSocket, clientId);
 
-      // Should still send the null config
+      // Should send the empty config
       expect(mockWebSocket.send).toHaveBeenCalledWith(
-        JSON.stringify({ type: "configUpdate", data: null })
+        JSON.stringify({ type: "configUpdate", data: {} })
       );
     });
 
     it("should handle very long client ID", async () => {
       const longClientId = "a".repeat(1000);
-      mockConfigService.getConfig.mockResolvedValue(mockConfig);
+      mockConfigService.getConfig.mockReturnValue(mockConfig);
 
       await realtimeHandler.handleMessage(
         mockWebSocket,

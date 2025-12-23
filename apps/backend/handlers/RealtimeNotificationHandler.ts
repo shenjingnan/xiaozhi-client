@@ -1,6 +1,7 @@
+import type { AppConfig } from "@/lib/config/manager.js";
+import { configManager } from "@/lib/config/manager.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
-import { ConfigService } from "@services/ConfigService.js";
 import type { EventBus } from "@services/EventBus.js";
 import { getEventBus } from "@services/EventBus.js";
 import type { NotificationService } from "@services/NotificationService.js";
@@ -21,7 +22,6 @@ interface WebSocketMessage {
 export class RealtimeNotificationHandler {
   private logger: Logger;
   private notificationService: NotificationService;
-  private configService: ConfigService;
   private statusService: StatusService;
   private eventBus: EventBus;
 
@@ -31,7 +31,6 @@ export class RealtimeNotificationHandler {
   ) {
     this.logger = logger.withTag("RealtimeNotificationHandler");
     this.notificationService = notificationService;
-    this.configService = new ConfigService();
     this.statusService = statusService;
     this.eventBus = getEventBus();
   }
@@ -100,7 +99,7 @@ export class RealtimeNotificationHandler {
     this.logDeprecationWarning("WebSocket getConfig", "GET /api/config");
 
     try {
-      const config = await this.configService.getConfig();
+      const config = configManager.getConfig();
       this.logger.debug("WebSocket: getConfig 请求处理成功", { clientId });
       ws.send(JSON.stringify({ type: "config", data: config }));
     } catch (error) {
@@ -119,16 +118,72 @@ export class RealtimeNotificationHandler {
    */
   private async handleUpdateConfig(
     ws: any,
-    configData: any,
+    configData: AppConfig,
     clientId: string
   ): Promise<void> {
     this.logDeprecationWarning("WebSocket updateConfig", "PUT /api/config");
 
     try {
-      await this.configService.updateConfig(
-        configData,
-        `websocket-${clientId}`
-      );
+      // 更新 MCP 端点
+      if (configData.mcpEndpoint !== configManager.getMcpEndpoint()) {
+        configManager.updateMcpEndpoint(configData.mcpEndpoint);
+      }
+
+      // 更新 MCP 服务
+      const currentServers = configManager.getMcpServers();
+      for (const [name, config] of Object.entries(configData.mcpServers)) {
+        if (JSON.stringify(currentServers[name]) !== JSON.stringify(config)) {
+          configManager.updateMcpServer(name, config);
+        }
+      }
+
+      // 删除不存在的服务
+      for (const name of Object.keys(currentServers)) {
+        if (!(name in configData.mcpServers)) {
+          configManager.removeMcpServer(name);
+        }
+      }
+
+      // 更新连接配置
+      if (configData.connection) {
+        configManager.updateConnectionConfig(configData.connection);
+      }
+
+      // 更新 ModelScope 配置
+      if (configData.modelscope) {
+        configManager.updateModelScopeConfig(configData.modelscope);
+      }
+
+      // 更新 Web UI 配置
+      if (configData.webUI) {
+        configManager.updateWebUIConfig(configData.webUI);
+      }
+
+      // 更新服务工具配置
+      if (configData.mcpServerConfig) {
+        for (const [serverName, toolsConfig] of Object.entries(
+          configData.mcpServerConfig
+        )) {
+          for (const [toolName, toolConfig] of Object.entries(
+            toolsConfig.tools
+          )) {
+            configManager.setToolEnabled(
+              serverName,
+              toolName,
+              toolConfig.enable
+            );
+          }
+        }
+      }
+
+      if (configData.platforms) {
+        for (const [platformName, platformConfig] of Object.entries(
+          configData.platforms
+        )) {
+          configManager.updatePlatformConfig(platformName, platformConfig);
+        }
+      }
+
       this.logger.debug("WebSocket: updateConfig 请求处理成功", { clientId });
     } catch (error) {
       this.logger.error("WebSocket: updateConfig 请求处理失败", error);
@@ -231,7 +286,7 @@ export class RealtimeNotificationHandler {
       this.logger.debug("发送初始数据给客户端", { clientId });
 
       // 发送当前配置
-      const config = await this.configService.getConfig();
+      const config = configManager.getConfig();
       ws.send(JSON.stringify({ type: "configUpdate", data: config }));
 
       // 发送当前状态
