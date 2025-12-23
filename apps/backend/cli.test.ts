@@ -14,6 +14,45 @@ import {
   vi,
 } from "vitest";
 
+// 导入必要的类型定义
+import type { ChildProcess } from "node:child_process";
+import type { MockedFunction } from "vitest";
+
+// Vitest 的 vi.mocked 返回类型不完全符合 Mocked<T> 的严格定义
+// 使用更实用的 mock 类型定义
+type FsMock = typeof fs & {
+  existsSync: MockedFunction<typeof fs.existsSync>;
+  readFileSync: MockedFunction<typeof fs.readFileSync>;
+  writeFileSync: MockedFunction<typeof fs.writeFileSync>;
+  mkdirSync: MockedFunction<typeof fs.mkdirSync>;
+  createWriteStream: MockedFunction<typeof fs.createWriteStream>;
+  readdirSync: MockedFunction<typeof fs.readdirSync>;
+  statSync: MockedFunction<typeof fs.statSync>;
+  copyFileSync: MockedFunction<typeof fs.copyFileSync>;
+  unlinkSync: MockedFunction<typeof fs.unlinkSync>;
+};
+
+type OsMock = typeof os & {
+  tmpdir: MockedFunction<typeof os.tmpdir>;
+};
+
+type PathMock = typeof path & {
+  join: MockedFunction<typeof path.join>;
+  resolve: MockedFunction<typeof path.resolve>;
+  dirname: MockedFunction<typeof path.dirname>;
+};
+
+// ConfigManager mock 类型 - 定义测试中实际使用的方法
+type ConfigManagerMock = {
+  configExists: MockedFunction<() => boolean>;
+  getMcpEndpoint: MockedFunction<() => string>;
+  getMcpEndpoints: MockedFunction<() => string[]>;
+  initConfig: MockedFunction<(format: "json" | "json5" | "jsonc") => void>;
+  getConfig: MockedFunction<() => Record<string, unknown>>;
+  getConfigPath: MockedFunction<() => string>;
+  updateMcpEndpoint: MockedFunction<(endpoint: string | string[]) => void>;
+};
+
 // Mock dependencies
 vi.mock("node:child_process", () => ({
   spawn: vi.fn(),
@@ -103,7 +142,6 @@ vi.mock("./configManager", () => ({
   },
 }));
 
-// mcpCommands 功能已迁移到 McpCommandHandler 中
 
 // Mock process before any imports
 const originalArgv = process.argv;
@@ -134,7 +172,7 @@ afterAll(() => {
 });
 
 // Import functions to test - this will be done after beforeAll
-let cliModule: any;
+let cliModule: Record<string, unknown>;
 
 beforeAll(async () => {
   // Dynamic import after mocking
@@ -151,12 +189,12 @@ class MockChildProcess extends EventEmitter {
 }
 
 describe("CLI 命令行工具", () => {
-  let mockSpawn: any;
-  let mockExecSync: any;
-  let mockFs: any;
-  let mockOs: any;
-  let mockPath: any;
-  let mockConfigManager: any;
+  let mockSpawn: MockedFunction<typeof spawn>;
+  let mockExecSync: MockedFunction<typeof execSync>;
+  let mockFs: FsMock;
+  let mockOs: OsMock;
+  let mockPath: PathMock;
+  let mockConfigManager: ConfigManagerMock;
   let mockProcess: MockChildProcess;
 
   beforeEach(async () => {
@@ -164,15 +202,17 @@ describe("CLI 命令行工具", () => {
 
     mockSpawn = vi.mocked(spawn);
     mockExecSync = vi.mocked(execSync);
-    mockFs = vi.mocked(fs);
-    mockOs = vi.mocked(os);
-    mockPath = vi.mocked(path);
+    // 使用类型断言解决 vi.mocked 的类型兼容性问题
+    mockFs = vi.mocked(fs) as FsMock;
+    mockOs = vi.mocked(os) as OsMock;
+    mockPath = vi.mocked(path) as PathMock;
     const configManagerModule = await import("./configManager");
-    mockConfigManager = vi.mocked(configManagerModule.configManager);
+    mockConfigManager = vi.mocked(configManagerModule.configManager) as ConfigManagerMock;
 
     // Setup mock instances
     mockProcess = new MockChildProcess();
-    mockSpawn.mockReturnValue(mockProcess);
+    // 使用 as unknown 解决类型兼容性问题
+    mockSpawn.mockReturnValue(mockProcess as unknown as ChildProcess);
 
     // Setup default mocks
     mockOs.tmpdir.mockReturnValue("/tmp");
@@ -182,9 +222,10 @@ describe("CLI 命令行工具", () => {
 
     mockFs.existsSync.mockReturnValue(false);
     mockFs.readFileSync.mockReturnValue('{"pid": 12345, "mode": "daemon"}');
+    // 使用 as unknown 解决 WriteStream 类型兼容性问题
     mockFs.createWriteStream.mockReturnValue({
       write: vi.fn(),
-    });
+    } as unknown as ReturnType<typeof fs.createWriteStream>);
 
     mockConfigManager.configExists.mockReturnValue(true);
     mockConfigManager.getMcpEndpoint.mockReturnValue(
@@ -238,6 +279,7 @@ describe("CLI 命令行工具", () => {
 
     it("应该使用正确的文件扩展名查找服务文件", () => {
       // 测试服务文件查找逻辑
+      // @ts-expect-error - 测试中使用更具体的 string 类型，而实际函数接受 PathLike
       mockFs.existsSync.mockImplementation((filePath: string) => {
         // 模拟 .js 文件存在，.cjs 文件不存在
         if (
@@ -405,6 +447,7 @@ describe("CLI 命令行工具", () => {
   describe("项目创建", () => {
     it("应该创建基础项目", async () => {
       mockFs.existsSync.mockReturnValue(false); // Target directory doesn't exist
+      // @ts-expect-error - 测试中 mock 实现返回 void，而实际函数可能返回 string | undefined
       mockFs.mkdirSync.mockImplementation(() => {});
       mockFs.writeFileSync.mockImplementation(() => {});
 
@@ -414,11 +457,12 @@ describe("CLI 命令行工具", () => {
     });
 
     it("应该从模板创建项目", async () => {
+      // @ts-expect-error - 测试中使用更具体的 string 类型，而实际函数接受 PathLike
       mockFs.existsSync.mockImplementation((path: string) => {
         if (path.includes("templates")) return true;
         return false; // Target directory doesn't exist
       });
-      mockFs.readdirSync.mockReturnValue(["hello-world"]);
+      mockFs.readdirSync.mockReturnValue(["hello-world"] as unknown as ReturnType<typeof fs.readdirSync>);
 
       // Test would require access to createProject function with template option
       expect(mockFs.existsSync).toBeDefined();
@@ -542,7 +586,9 @@ describe("CLI 命令行工具", () => {
 
       expect(expectedCommands).toContain("list");
       expect(expectedCommands).toContain("server <serverName>");
-      expect(expectedCommands).toContain("tool <serverName> <toolName> <action>");
+      expect(expectedCommands).toContain(
+        "tool <serverName> <toolName> <action>"
+      );
     });
   });
 
@@ -559,11 +605,13 @@ describe("CLI 命令行工具", () => {
   describe("ESM 兼容性", () => {
     it("应该在 ESM 环境中正确读取版本号", () => {
       // Mock package.json existence and content
+      // @ts-expect-error - 测试中使用更具体的 string 类型，而实际函数接受 PathLike
       mockFs.existsSync.mockImplementation((path: string) => {
         if (path.includes("package.json")) return true;
         return false;
       });
 
+      // @ts-expect-error - 测试中使用更具体的 string 类型，而实际函数接受 PathOrFileDescriptor
       mockFs.readFileSync.mockImplementation((path: string) => {
         if (path.includes("package.json")) {
           return JSON.stringify({ version: "1.0.4" });
@@ -692,7 +740,6 @@ describe("CLI 命令行工具", () => {
       const projectRoot = getProjectRoot();
       const srcFiles = [
         "src/cli.ts",
-        // "src/mcpCommands.ts", // 已迁移到 cli/commands/McpCommandHandler.ts
         "src/mcpPipe.ts",
         "src/configManager.ts",
       ];

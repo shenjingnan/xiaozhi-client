@@ -5,6 +5,14 @@
 import type { SubCommand } from "@cli/interfaces/Command.js";
 import { BaseCommandHandler } from "@cli/interfaces/Command.js";
 import type { IDIContainer } from "@cli/interfaces/Config.js";
+import type {
+  CallOptions,
+  CommandArguments,
+  CommandOptions,
+  ListOptions,
+} from "@cli/interfaces/CommandTypes.js";
+import type { MCPServerConfig } from "@root/configManager.js";
+import { isLocalMCPServerConfig } from "@cli/interfaces/CommandTypes.js";
 import { configManager } from "@root/configManager.js";
 import { ToolCallService } from "@services/ToolCallService.js";
 import chalk from "chalk";
@@ -79,14 +87,14 @@ export class McpCommandHandler extends BaseCommandHandler {
       name: "list",
       description: "列出 MCP 服务",
       options: [{ flags: "--tools", description: "显示所有服务的工具列表" }],
-      execute: async (args: any[], options: any) => {
-        await this.handleList(options);
+      execute: async (args: CommandArguments, options: CommandOptions) => {
+        await this.handleList(options as ListOptions);
       },
     },
     {
       name: "server",
       description: "管理指定的 MCP 服务",
-      execute: async (args: any[], options: any) => {
+      execute: async (args: CommandArguments, options: CommandOptions) => {
         this.validateArgs(args, 1);
         await this.handleServer(args[0]);
       },
@@ -94,7 +102,7 @@ export class McpCommandHandler extends BaseCommandHandler {
     {
       name: "tool",
       description: "启用或禁用指定服务的工具",
-      execute: async (args: any[], options: any) => {
+      execute: async (args: CommandArguments, options: CommandOptions) => {
         this.validateArgs(args, 3);
         const [serverName, toolName, action] = args;
 
@@ -117,10 +125,14 @@ export class McpCommandHandler extends BaseCommandHandler {
           defaultValue: "{}",
         },
       ],
-      execute: async (args: any[], options: any) => {
+      execute: async (args: CommandArguments, options: CommandOptions) => {
         this.validateArgs(args, 2);
         const [serviceName, toolName] = args;
-        await this.handleCall(serviceName, toolName, options.args);
+        await this.handleCall(
+          serviceName,
+          toolName,
+          (options as CallOptions).args ?? "{}"
+        );
       },
     },
   ];
@@ -132,14 +144,17 @@ export class McpCommandHandler extends BaseCommandHandler {
   /**
    * 主命令执行（显示帮助）
    */
-  async execute(args: any[], options: any): Promise<void> {
+  async execute(
+    args: CommandArguments,
+    options: CommandOptions
+  ): Promise<void> {
     console.log("MCP 服务和工具管理命令。使用 --help 查看可用的子命令。");
   }
 
   /**
    * 处理列出服务命令
    */
-  private async handleList(options: any): Promise<void> {
+  private async handleList(options: ListOptions): Promise<void> {
     try {
       await this.handleListInternal(options);
     } catch (error) {
@@ -305,7 +320,10 @@ export class McpCommandHandler extends BaseCommandHandler {
         // 首先添加 customMCP 工具（如果存在）
         if (hasCustomMCP) {
           for (const customTool of customMCPTools) {
-            const description = McpCommandHandler.truncateToWidth(customTool.description || "", 32);
+            const description = McpCommandHandler.truncateToWidth(
+              customTool.description || "",
+              32
+            );
 
             table.push([
               "customMCP",
@@ -375,7 +393,7 @@ export class McpCommandHandler extends BaseCommandHandler {
 
         // 然后显示标准 MCP 服务
         for (const serverName of serverNames) {
-          const serverConfig = mcpServers[serverName];
+          const serverConfig = mcpServers[serverName] as MCPServerConfig;
           const toolsConfig = configManager.getServerToolsConfig(serverName);
           const toolCount = Object.keys(toolsConfig).length;
           const enabledCount = Object.values(toolsConfig).filter(
@@ -393,11 +411,11 @@ export class McpCommandHandler extends BaseCommandHandler {
               console.log(`  类型: ${chalk.gray("Streamable HTTP")}`);
             }
             console.log(`  URL: ${chalk.gray(serverConfig.url)}`);
-          } else {
+          } else if (isLocalMCPServerConfig(serverConfig)) {
             // 本地服务
             console.log(
-              `  命令: ${chalk.gray((serverConfig as any).command)} ${chalk.gray(
-                (serverConfig as any).args.join(" ")
+              `  命令: ${chalk.gray(serverConfig.command)} ${chalk.gray(
+                serverConfig.args.join(" ")
               )}`
             );
           }
@@ -415,7 +433,9 @@ export class McpCommandHandler extends BaseCommandHandler {
       }
 
       console.log(chalk.gray("💡 提示:"));
-      console.log(chalk.gray("  - 使用 'xiaozhi mcp list --tools' 查看所有工具"));
+      console.log(
+        chalk.gray("  - 使用 'xiaozhi mcp list --tools' 查看所有工具")
+      );
       console.log(
         chalk.gray("  - 使用 'xiaozhi mcp <服务名> list' 查看指定服务的工具")
       );
@@ -485,7 +505,10 @@ export class McpCommandHandler extends BaseCommandHandler {
           : chalk.red("禁用");
 
         // 截断描述到最大40个字符宽度（约20个中文字符）
-        const description = McpCommandHandler.truncateToWidth(toolConfig.description || "", 40);
+        const description = McpCommandHandler.truncateToWidth(
+          toolConfig.description || "",
+          40
+        );
 
         table.push([toolName, status, description]);
       }

@@ -1,8 +1,70 @@
+import type { IDIContainer } from "@cli/interfaces/Config.js";
+import { configManager } from "@root/configManager.js";
+import type {
+  MCPServerConfig,
+  MCPServerToolsConfig,
+  MCPToolConfig,
+} from "@root/configManager.js";
 import ora from "ora";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { configManager } from "@root/configManager.js";
 import { McpCommandHandler } from "../McpCommandHandler.js";
-import type { IDIContainer } from "@cli/interfaces/Config.js";
+
+// 测试专用类型定义
+interface MockedOra {
+  start: ReturnType<typeof vi.fn>;
+  succeed: ReturnType<typeof vi.fn>;
+  fail: ReturnType<typeof vi.fn>;
+  warn: ReturnType<typeof vi.fn>;
+}
+
+// 简化 mock spinner 类型
+interface MockSpinner extends MockedOra {
+  // 只包含我们实际需要的方法
+  text?: string;
+}
+
+interface MockServerConfig {
+  [serverName: string]: MCPServerConfig;
+}
+
+interface MockServerToolsConfig {
+  [serverName: string]: MCPServerToolsConfig;
+}
+
+interface ListCommandOptions {
+  tools?: boolean;
+}
+
+// 为测试创建可访问私有方法的扩展类
+class McpCommandHandlerTest extends McpCommandHandler {
+  // 公开静态私有方法用于测试
+  public static testGetDisplayWidth(str: string): number {
+    return (McpCommandHandler as unknown as { getDisplayWidth: (str: string) => number }).getDisplayWidth(str);
+  }
+
+  public static testTruncateToWidth(str: string, maxWidth: number): string {
+    return (McpCommandHandler as unknown as { truncateToWidth: (str: string, maxWidth: number) => string }).truncateToWidth(str, maxWidth);
+  }
+
+  // 公开实例私有方法用于测试
+  public async testHandleListInternal(
+    options: ListCommandOptions = {}
+  ): Promise<void> {
+    return (this as unknown as { handleListInternal: (options: ListCommandOptions) => Promise<void> }).handleListInternal(options);
+  }
+
+  public async testHandleServerInternal(serverName: string): Promise<void> {
+    return (this as unknown as { handleServerInternal: (serverName: string) => Promise<void> }).handleServerInternal(serverName);
+  }
+
+  public async testHandleToolInternal(
+    serverName: string,
+    toolName: string,
+    enabled: boolean
+  ): Promise<void> {
+    return (this as unknown as { handleToolInternal: (serverName: string, toolName: string, enabled: boolean) => Promise<void> }).handleToolInternal(serverName, toolName, enabled);
+  }
+}
 
 // Mock dependencies
 vi.mock("chalk", () => ({
@@ -53,11 +115,12 @@ const mockProcessExit = vi.spyOn(process, "exit").mockImplementation(() => {
 });
 
 describe("McpCommandHandler", () => {
-  const mockSpinner = {
+  const mockSpinner: MockSpinner = {
     start: vi.fn().mockReturnThis(),
     succeed: vi.fn().mockReturnThis(),
     fail: vi.fn().mockReturnThis(),
     warn: vi.fn().mockReturnThis(),
+    text: "",
   };
 
   const mockContainer: IDIContainer = {
@@ -66,12 +129,12 @@ describe("McpCommandHandler", () => {
     register: vi.fn(),
   };
 
-  let handler: McpCommandHandler;
+  let handler: McpCommandHandlerTest;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (ora as any).mockReturnValue(mockSpinner);
-    handler = new McpCommandHandler(mockContainer);
+    vi.mocked(ora).mockReturnValue(mockSpinner as unknown as ReturnType<typeof ora>);
+    handler = new McpCommandHandlerTest(mockContainer);
   });
 
   afterEach(() => {
@@ -81,81 +144,125 @@ describe("McpCommandHandler", () => {
   describe("静态工具函数", () => {
     describe("getDisplayWidth", () => {
       it("应该正确计算英文字符的宽度", () => {
-        expect((McpCommandHandler as any).getDisplayWidth("hello")).toBe(5);
-        expect((McpCommandHandler as any).getDisplayWidth("Hello World!")).toBe(12);
-        expect((McpCommandHandler as any).getDisplayWidth("")).toBe(0);
+        expect(McpCommandHandlerTest.testGetDisplayWidth("hello")).toBe(5);
+        expect(McpCommandHandlerTest.testGetDisplayWidth("Hello World!")).toBe(
+          12
+        );
+        expect(McpCommandHandlerTest.testGetDisplayWidth("")).toBe(0);
       });
 
       it("应该正确计算中文字符的宽度", () => {
-        expect((McpCommandHandler as any).getDisplayWidth("你好")).toBe(4); // 2个中文字符 = 4宽度
-        expect((McpCommandHandler as any).getDisplayWidth("中文测试")).toBe(8); // 4个中文字符 = 8宽度
-        expect((McpCommandHandler as any).getDisplayWidth("测试")).toBe(4); // 2个中文字符 = 4宽度
+        expect(McpCommandHandlerTest.testGetDisplayWidth("你好")).toBe(4); // 2个中文字符 = 4宽度
+        expect(McpCommandHandlerTest.testGetDisplayWidth("中文测试")).toBe(8); // 4个中文字符 = 8宽度
+        expect(McpCommandHandlerTest.testGetDisplayWidth("测试")).toBe(4); // 2个中文字符 = 4宽度
       });
 
       it("应该正确计算混合字符的宽度", () => {
-        expect((McpCommandHandler as any).getDisplayWidth("Hello你好")).toBe(9); // 5个英文 + 2个中文 = 5 + 4 = 9
-        expect((McpCommandHandler as any).getDisplayWidth("测试Test")).toBe(8); // 2个中文 + 4个英文 = 4 + 4 = 8
-        expect((McpCommandHandler as any).getDisplayWidth("中文English混合")).toBe(15); // 2个中文 + 7个英文 + 2个中文 = 4 + 7 + 4 = 15
+        expect(McpCommandHandlerTest.testGetDisplayWidth("Hello你好")).toBe(9); // 5个英文 + 2个中文 = 5 + 4 = 9
+        expect(McpCommandHandlerTest.testGetDisplayWidth("测试Test")).toBe(8); // 2个中文 + 4个英文 = 4 + 4 = 8
+        expect(
+          McpCommandHandlerTest.testGetDisplayWidth("中文English混合")
+        ).toBe(15); // 2个中文 + 7个英文 + 2个中文 = 4 + 7 + 4 = 15
       });
 
       it("应该正确处理中文标点符号", () => {
-        expect((McpCommandHandler as any).getDisplayWidth("你好，世界！")).toBe(12); // 4个中文字符 + 2个中文标点 = 12
-        expect((McpCommandHandler as any).getDisplayWidth("测试：成功")).toBe(10); // 4个中文字符 + 1个中文冒号 = 10
+        expect(McpCommandHandlerTest.testGetDisplayWidth("你好，世界！")).toBe(
+          12
+        ); // 4个中文字符 + 2个中文标点 = 12
+        expect(McpCommandHandlerTest.testGetDisplayWidth("测试：成功")).toBe(
+          10
+        ); // 4个中文字符 + 1个中文冒号 = 10
       });
 
       it("应该处理特殊字符", () => {
-        expect((McpCommandHandler as any).getDisplayWidth("test@example.com")).toBe(16);
-        expect((McpCommandHandler as any).getDisplayWidth("123-456-789")).toBe(11);
+        expect(
+          McpCommandHandlerTest.testGetDisplayWidth("test@example.com")
+        ).toBe(16);
+        expect(McpCommandHandlerTest.testGetDisplayWidth("123-456-789")).toBe(
+          11
+        );
       });
     });
 
     describe("truncateToWidth", () => {
       it("应该不截断宽度限制内的字符串", () => {
-        expect((McpCommandHandler as any).truncateToWidth("hello", 10)).toBe("hello");
-        expect((McpCommandHandler as any).truncateToWidth("你好", 10)).toBe("你好");
-        expect((McpCommandHandler as any).truncateToWidth("Hello你好", 10)).toBe("Hello你好");
+        expect(McpCommandHandlerTest.testTruncateToWidth("hello", 10)).toBe(
+          "hello"
+        );
+        expect(McpCommandHandlerTest.testTruncateToWidth("你好", 10)).toBe(
+          "你好"
+        );
+        expect(McpCommandHandlerTest.testTruncateToWidth("Hello你好", 10)).toBe(
+          "Hello你好"
+        );
       });
 
       it("应该正确截断英文字符串", () => {
-        expect((McpCommandHandler as any).truncateToWidth("Hello World", 8)).toBe("Hello...");
-        expect((McpCommandHandler as any).truncateToWidth("This is a very long description", 15)).toBe(
-          "This is a ve..."
-        );
+        expect(
+          McpCommandHandlerTest.testTruncateToWidth("Hello World", 8)
+        ).toBe("Hello...");
+        expect(
+          McpCommandHandlerTest.testTruncateToWidth(
+            "This is a very long description",
+            15
+          )
+        ).toBe("This is a ve...");
       });
 
       it("应该正确截断中文字符串", () => {
         // "这是一个很长的描述文本" = 16宽度, maxWidth=10, 所以 "这是一..." = 7宽度
-        expect((McpCommandHandler as any).truncateToWidth("这是一个很长的描述文本", 10)).toBe("这是一...");
+        expect(
+          McpCommandHandlerTest.testTruncateToWidth(
+            "这是一个很长的描述文本",
+            10
+          )
+        ).toBe("这是一...");
         // "中文测试内容" = 10宽度, maxWidth=6, 所以 "中..." = 5宽度
-        expect((McpCommandHandler as any).truncateToWidth("中文测试内容", 6)).toBe("中...");
+        expect(
+          McpCommandHandlerTest.testTruncateToWidth("中文测试内容", 6)
+        ).toBe("中...");
       });
 
       it("应该正确截断混合字符串", () => {
         // "Hello你好World" = 13宽度, maxWidth=10, 所以 "Hello你..." = 10宽度
-        expect((McpCommandHandler as any).truncateToWidth("Hello你好World", 10)).toBe("Hello你...");
+        expect(
+          McpCommandHandlerTest.testTruncateToWidth("Hello你好World", 10)
+        ).toBe("Hello你...");
         // "测试Test内容" = 12宽度, maxWidth=8, 所以 "测试T..." = 8宽度
-        expect((McpCommandHandler as any).truncateToWidth("测试Test内容", 8)).toBe("测试T...");
+        expect(
+          McpCommandHandlerTest.testTruncateToWidth("测试Test内容", 8)
+        ).toBe("测试T...");
       });
 
       it("应该处理边界情况", () => {
-        expect((McpCommandHandler as any).truncateToWidth("", 10)).toBe("");
-        expect((McpCommandHandler as any).truncateToWidth("a", 1)).toBe("a");
-        expect((McpCommandHandler as any).truncateToWidth("ab", 1)).toBe(""); // 连一个字符 + "..." 都放不下
+        expect(McpCommandHandlerTest.testTruncateToWidth("", 10)).toBe("");
+        expect(McpCommandHandlerTest.testTruncateToWidth("a", 1)).toBe("a");
+        expect(McpCommandHandlerTest.testTruncateToWidth("ab", 1)).toBe(""); // 连一个字符 + "..." 都放不下
       });
 
       it("应该处理非常短的宽度限制", () => {
-        expect((McpCommandHandler as any).truncateToWidth("hello", 3)).toBe(""); // maxWidth <= 3, 返回空字符串
-        expect((McpCommandHandler as any).truncateToWidth("hello", 4)).toBe("h...");
-        expect((McpCommandHandler as any).truncateToWidth("你好", 4)).toBe("你好"); // "你好" 宽度=4, 正好符合 maxWidth=4
-        expect((McpCommandHandler as any).truncateToWidth("你好世界", 4)).toBe(""); // "你好世界" 宽度=8 > 4, 但连一个字符 + "..." 都放不下
-        expect((McpCommandHandler as any).truncateToWidth("你好", 5)).toBe("你好"); // "你好" 宽度=4 <= maxWidth=5, 不需要截断
-        expect((McpCommandHandler as any).truncateToWidth("你好世界", 5)).toBe("你...");
+        expect(McpCommandHandlerTest.testTruncateToWidth("hello", 3)).toBe(""); // maxWidth <= 3, 返回空字符串
+        expect(McpCommandHandlerTest.testTruncateToWidth("hello", 4)).toBe(
+          "h..."
+        );
+        expect(McpCommandHandlerTest.testTruncateToWidth("你好", 4)).toBe(
+          "你好"
+        ); // "你好" 宽度=4, 正好符合 maxWidth=4
+        expect(McpCommandHandlerTest.testTruncateToWidth("你好世界", 4)).toBe(
+          ""
+        ); // "你好世界" 宽度=8 > 4, 但连一个字符 + "..." 都放不下
+        expect(McpCommandHandlerTest.testTruncateToWidth("你好", 5)).toBe(
+          "你好"
+        ); // "你好" 宽度=4 <= maxWidth=5, 不需要截断
+        expect(McpCommandHandlerTest.testTruncateToWidth("你好世界", 5)).toBe(
+          "你..."
+        );
       });
     });
   });
 
   describe("handleListInternal", () => {
-    const mockServers = {
+    const mockServers: MockServerConfig = {
       calculator: {
         command: "node",
         args: ["./mcpServers/calculator.js"],
@@ -166,7 +273,7 @@ describe("McpCommandHandler", () => {
       },
     };
 
-    const mockServerConfig = {
+    const mockServerConfig: MockServerToolsConfig = {
       calculator: {
         tools: {
           calculator: {
@@ -190,20 +297,20 @@ describe("McpCommandHandler", () => {
     };
 
     beforeEach(() => {
-      (configManager.getMcpServers as any).mockReturnValue(mockServers);
-      (configManager.getMcpServerConfig as any).mockReturnValue(
+      vi.mocked(configManager.getMcpServers).mockReturnValue(mockServers);
+      vi.mocked(configManager.getMcpServerConfig).mockReturnValue(
         mockServerConfig
       );
-      (configManager.getServerToolsConfig as any).mockImplementation(
+      vi.mocked(configManager.getServerToolsConfig).mockImplementation(
         (serverName: string) => {
-          return (mockServerConfig as any)[serverName]?.tools || {};
+          return mockServerConfig[serverName]?.tools || {};
         }
       );
-      (configManager.getCustomMCPTools as any).mockReturnValue([]);
+      vi.mocked(configManager.getCustomMCPTools).mockReturnValue([]);
     });
 
     it("应该列出不带工具选项的服务", async () => {
-      await (handler as any).handleListInternal();
+      await handler.testHandleListInternal();
 
       expect(mockSpinner.succeed).toHaveBeenCalledWith("找到 2 个 MCP 服务");
       expect(mockConsoleLog).toHaveBeenCalledWith(
@@ -218,7 +325,7 @@ describe("McpCommandHandler", () => {
     });
 
     it("应该使用cli-table3列出带工具选项的服务", async () => {
-      await (handler as any).handleListInternal({ tools: true });
+      await handler.testHandleListInternal({ tools: true });
 
       expect(mockSpinner.succeed).toHaveBeenCalledWith("找到 2 个 MCP 服务");
       expect(mockConsoleLog).toHaveBeenCalledWith(
@@ -243,9 +350,9 @@ describe("McpCommandHandler", () => {
     });
 
     it("应该处理空服务列表", async () => {
-      (configManager.getMcpServers as any).mockReturnValue({});
+      vi.mocked(configManager.getMcpServers).mockReturnValue({});
 
-      await (handler as any).handleListInternal();
+      await handler.testHandleListInternal();
 
       expect(mockSpinner.warn).toHaveBeenCalledWith(
         "未配置任何 MCP 服务或 customMCP 工具"
@@ -256,12 +363,12 @@ describe("McpCommandHandler", () => {
     });
 
     it("应该优雅地处理错误", async () => {
-      (configManager.getMcpServers as any).mockImplementation(() => {
+      vi.mocked(configManager.getMcpServers).mockImplementation(() => {
         throw new Error("Config error");
       });
 
       await expect(async () => {
-        await (handler as any).handleListInternal();
+        await handler.testHandleListInternal();
       }).rejects.toThrow("process.exit called");
 
       expect(mockSpinner.fail).toHaveBeenCalledWith("获取 MCP 服务列表失败");
@@ -273,14 +380,14 @@ describe("McpCommandHandler", () => {
   });
 
   describe("handleServerInternal", () => {
-    const mockServers = {
+    const mockServers: MockServerConfig = {
       datetime: {
         command: "node",
         args: ["./mcpServers/datetime.js"],
       },
     };
 
-    const mockToolsConfig = {
+    const mockToolsConfig: Record<string, MCPToolConfig> = {
       get_current_time: {
         description: "获取当前时间",
         enable: true,
@@ -292,14 +399,14 @@ describe("McpCommandHandler", () => {
     };
 
     beforeEach(() => {
-      (configManager.getMcpServers as any).mockReturnValue(mockServers);
-      (configManager.getServerToolsConfig as any).mockReturnValue(
+      vi.mocked(configManager.getMcpServers).mockReturnValue(mockServers);
+      vi.mocked(configManager.getServerToolsConfig).mockReturnValue(
         mockToolsConfig
       );
     });
 
     it("应该列出现有服务的工具", async () => {
-      await (handler as any).handleServerInternal("datetime");
+      await handler.testHandleServerInternal("datetime");
 
       expect(mockSpinner.succeed).toHaveBeenCalledWith(
         "服务 'datetime' 共有 2 个工具"
@@ -316,9 +423,9 @@ describe("McpCommandHandler", () => {
     });
 
     it("应该处理不存在的服务", async () => {
-      (configManager.getMcpServers as any).mockReturnValue({});
+      vi.mocked(configManager.getMcpServers).mockReturnValue({});
 
-      await (handler as any).handleServerInternal("non-existent");
+      await handler.testHandleServerInternal("non-existent");
 
       expect(mockSpinner.fail).toHaveBeenCalledWith(
         "服务 'non-existent' 不存在"
@@ -331,12 +438,12 @@ describe("McpCommandHandler", () => {
     });
 
     it("应该优雅地处理错误", async () => {
-      (configManager.getMcpServers as any).mockImplementation(() => {
+      vi.mocked(configManager.getMcpServers).mockImplementation(() => {
         throw new Error("Config error");
       });
 
       await expect(async () => {
-        await (handler as any).handleServerInternal("datetime");
+        await handler.testHandleServerInternal("datetime");
       }).rejects.toThrow("process.exit called");
 
       expect(mockSpinner.fail).toHaveBeenCalledWith("获取工具列表失败");
@@ -348,14 +455,14 @@ describe("McpCommandHandler", () => {
   });
 
   describe("handleToolInternal", () => {
-    const mockServers = {
+    const mockServers: MockServerConfig = {
       datetime: {
         command: "node",
         args: ["./mcpServers/datetime.js"],
       },
     };
 
-    const mockToolsConfig = {
+    const mockToolsConfig: Record<string, MCPToolConfig> = {
       get_current_time: {
         description: "获取当前时间",
         enable: true,
@@ -363,14 +470,18 @@ describe("McpCommandHandler", () => {
     };
 
     beforeEach(() => {
-      (configManager.getMcpServers as any).mockReturnValue(mockServers);
-      (configManager.getServerToolsConfig as any).mockReturnValue(
+      vi.mocked(configManager.getMcpServers).mockReturnValue(mockServers);
+      vi.mocked(configManager.getServerToolsConfig).mockReturnValue(
         mockToolsConfig
       );
     });
 
     it("应该成功启用工具", async () => {
-      await (handler as any).handleToolInternal("datetime", "get_current_time", true);
+      await handler.testHandleToolInternal(
+        "datetime",
+        "get_current_time",
+        true
+      );
 
       expect(mockSpinner.succeed).toHaveBeenCalledWith(
         expect.stringContaining("成功启用工具")
@@ -387,7 +498,11 @@ describe("McpCommandHandler", () => {
     });
 
     it("应该成功禁用工具", async () => {
-      await (handler as any).handleToolInternal("datetime", "get_current_time", false);
+      await handler.testHandleToolInternal(
+        "datetime",
+        "get_current_time",
+        false
+      );
 
       expect(mockSpinner.succeed).toHaveBeenCalledWith(
         expect.stringContaining("成功禁用工具")
@@ -401,9 +516,9 @@ describe("McpCommandHandler", () => {
     });
 
     it("应该处理不存在的服务", async () => {
-      (configManager.getMcpServers as any).mockReturnValue({});
+      vi.mocked(configManager.getMcpServers).mockReturnValue({});
 
-      await (handler as any).handleToolInternal("non-existent", "tool", true);
+      await handler.testHandleToolInternal("non-existent", "tool", true);
 
       expect(mockSpinner.fail).toHaveBeenCalledWith(
         "服务 'non-existent' 不存在"
@@ -416,9 +531,13 @@ describe("McpCommandHandler", () => {
     });
 
     it("应该处理不存在的工具", async () => {
-      (configManager.getServerToolsConfig as any).mockReturnValue({});
+      vi.mocked(configManager.getServerToolsConfig).mockReturnValue({});
 
-      await (handler as any).handleToolInternal("datetime", "non-existent-tool", true);
+      await handler.testHandleToolInternal(
+        "datetime",
+        "non-existent-tool",
+        true
+      );
 
       expect(mockSpinner.fail).toHaveBeenCalledWith(
         "工具 'non-existent-tool' 在服务 'datetime' 中不存在"
@@ -431,12 +550,12 @@ describe("McpCommandHandler", () => {
     });
 
     it("应该优雅地处理启用工具时的错误", async () => {
-      (configManager.getMcpServers as any).mockImplementation(() => {
+      vi.mocked(configManager.getMcpServers).mockImplementation(() => {
         throw new Error("Config error");
       });
 
       await expect(async () => {
-        await (handler as any).handleToolInternal("datetime", "tool", true);
+        await handler.testHandleToolInternal("datetime", "tool", true);
       }).rejects.toThrow("process.exit called");
 
       expect(mockSpinner.fail).toHaveBeenCalledWith("启用工具失败");

@@ -4,6 +4,10 @@
 
 import type { IDIContainer } from "@cli/interfaces/Config.js";
 import type { Command } from "commander";
+import type {
+  CommandArguments,
+  CommandOptions,
+} from "@cli/interfaces/CommandTypes.js";
 
 /**
  * 命令处理器接口
@@ -18,7 +22,7 @@ export interface CommandHandler {
   /** 子命令 */
   subcommands?: SubCommand[];
   /** 执行命令 */
-  execute(args: any[], options: any): Promise<void>;
+  execute(args: CommandArguments, options: CommandOptions): Promise<void>;
 }
 
 /**
@@ -29,8 +33,8 @@ export interface CommandOption {
   flags: string;
   /** 选项描述 */
   description: string;
-  /** 默认值 */
-  defaultValue?: any;
+  /** 默认值（限制为 Commander.js 支持的类型） */
+  defaultValue?: string | boolean | string[];
 }
 
 /**
@@ -44,7 +48,7 @@ export interface SubCommand {
   /** 子命令选项 */
   options?: CommandOption[];
   /** 执行子命令 */
-  execute(args: any[], options: any): Promise<void>;
+  execute(args: CommandArguments, options: CommandOptions): Promise<void>;
 }
 
 /**
@@ -54,9 +58,9 @@ export interface CommandContext {
   /** DI 容器 */
   container: IDIContainer;
   /** 命令行参数 */
-  args: any[];
+  args: CommandArguments;
   /** 命令选项 */
-  options: any;
+  options: CommandOptions;
 }
 
 /**
@@ -70,7 +74,10 @@ export abstract class BaseCommandHandler implements CommandHandler {
 
   constructor(protected container: IDIContainer) {}
 
-  abstract execute(args: any[], options: any): Promise<void>;
+  abstract execute(
+    args: CommandArguments,
+    options: CommandOptions
+  ): Promise<void>;
 
   /**
    * 获取服务实例
@@ -83,14 +90,16 @@ export abstract class BaseCommandHandler implements CommandHandler {
    * 处理错误
    */
   protected handleError(error: Error): void {
-    const errorHandler = this.getService<any>("errorHandler");
-    errorHandler.handle(error);
+    const errorHandler = this.getService<unknown>("errorHandler");
+    // 类型断言：errorHandler 应该有 handle 方法
+    const handler = errorHandler as { handle: (error: Error) => void };
+    handler.handle(error);
   }
 
   /**
    * 验证参数
    */
-  protected validateArgs(args: any[], expectedCount: number): void {
+  protected validateArgs(args: CommandArguments, expectedCount: number): void {
     if (args.length < expectedCount) {
       throw new Error(
         `命令需要至少 ${expectedCount} 个参数，但只提供了 ${args.length} 个`
