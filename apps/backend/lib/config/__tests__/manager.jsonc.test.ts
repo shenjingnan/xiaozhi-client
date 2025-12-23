@@ -95,7 +95,7 @@ describe("ConfigManager JSONC Comment Preservation", () => {
     vi.clearAllMocks();
 
     // 重置 ConfigManager 单例
-    (ConfigManager as any).instance = undefined;
+    (ConfigManager as unknown as { instance: undefined }).instance = undefined;
     configManager = ConfigManager.getInstance();
 
     // 设置默认 mock 行为
@@ -379,7 +379,8 @@ describe("ConfigManager JSONC Comment Preservation", () => {
       mockReadFileSync.mockReturnValue(invalidJsoncContent);
 
       // 重新获取配置管理器实例
-      (ConfigManager as any).instance = undefined;
+      (ConfigManager as unknown as { instance: undefined }).instance =
+        undefined;
 
       // 尝试加载配置应该抛出错误
       expect(() => {
@@ -403,7 +404,8 @@ describe("ConfigManager JSONC Comment Preservation", () => {
       mockReadFileSync.mockReturnValue(configWithoutConnection);
 
       // 重新获取配置管理器实例以重新加载配置
-      (ConfigManager as any).instance = undefined;
+      (ConfigManager as unknown as { instance: undefined }).instance =
+        undefined;
       configManager = ConfigManager.getInstance();
 
       // 更新连接配置（应该创建新的 connection 对象）

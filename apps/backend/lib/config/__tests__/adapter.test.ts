@@ -40,9 +40,9 @@ describe("ConfigAdapter", () => {
 
         // 验证路径解析功能
         expect(result.args).toBeDefined();
-        expect(result.args![0]).toMatch(/.*calculator\.js$/);
+        expect(result.args?.[0]).toMatch(/.*calculator\.js$/);
         // 使用 isAbsolute 来检查是否为绝对路径，支持跨平台
-        expect(isAbsolute(result.args![0])).toBe(true);
+        expect(isAbsolute(result.args?.[0] ?? "")).toBe(true);
       });
 
       it("应该处理没有 args 的本地配置", () => {
@@ -63,7 +63,7 @@ describe("ConfigAdapter", () => {
         const legacyConfig = {
           command: "",
           args: ["test.js"],
-        } as any;
+        } as unknown as LocalMCPServerConfig;
 
         expect(() => convertLegacyToNew("test", legacyConfig)).toThrow(
           ConfigValidationError
@@ -115,9 +115,9 @@ describe("ConfigAdapter", () => {
         const result = convertLegacyToNew("datetime", legacyConfig);
 
         expect(result.args).toBeDefined();
-        expect(result.args![0]).toMatch(/.*mcpServers[\/\\]datetime\.js$/);
+        expect(result.args?.[0]).toMatch(/.*mcpServers[\/\\]datetime\.js$/);
         // 使用 isAbsolute 来检查是否为绝对路径，支持跨平台
-        expect(isAbsolute(result.args![0])).toBe(true);
+        expect(isAbsolute(result.args?.[0] ?? "")).toBe(true);
       });
 
       it("应该解析相对路径（不以 / 开头的脚本文件）", () => {
@@ -129,9 +129,9 @@ describe("ConfigAdapter", () => {
         const result = convertLegacyToNew("python-server", legacyConfig);
 
         expect(result.args).toBeDefined();
-        expect(result.args![0]).toMatch(/.*server\.py$/);
+        expect(result.args?.[0]).toMatch(/.*server\.py$/);
         // 使用 isAbsolute 来检查是否为绝对路径，支持跨平台
-        expect(isAbsolute(result.args![0])).toBe(true);
+        expect(isAbsolute(result.args?.[0] ?? "")).toBe(true);
       });
 
       it("应该保持绝对路径不变", () => {
@@ -144,7 +144,7 @@ describe("ConfigAdapter", () => {
         const result = convertLegacyToNew("absolute-server", legacyConfig);
 
         expect(result.args).toBeDefined();
-        expect(result.args![0]).toBe(absolutePath);
+        expect(result.args?.[0]).toBe(absolutePath);
       });
 
       it("应该保持非脚本参数不变", () => {
@@ -156,10 +156,10 @@ describe("ConfigAdapter", () => {
         const result = convertLegacyToNew("server", legacyConfig);
 
         expect(result.args).toBeDefined();
-        expect(result.args![0]).toBe("--version"); // 非脚本参数保持不变
-        expect(result.args![1]).toMatch(/.*server\.js$/); // 脚本文件被解析
-        expect(result.args![2]).toBe("--port"); // 非脚本参数保持不变
-        expect(result.args![3]).toBe("3000"); // 非脚本参数保持不变
+        expect(result.args?.[0]).toBe("--version"); // 非脚本参数保持不变
+        expect(result.args?.[1]).toMatch(/.*server\.js$/); // 脚本文件被解析
+        expect(result.args?.[2]).toBe("--port"); // 非脚本参数保持不变
+        expect(result.args?.[3]).toBe("3000"); // 非脚本参数保持不变
       });
 
       it("应该处理不同的脚本文件扩展名", () => {
@@ -180,9 +180,9 @@ describe("ConfigAdapter", () => {
           const result = convertLegacyToNew(`test-${ext}`, legacyConfig);
 
           expect(result.args).toBeDefined();
-          expect(result.args![0]).toMatch(new RegExp(`.*${file}$`));
+          expect(result.args?.[0]).toMatch(new RegExp(`.*${file}$`));
           // 使用 isAbsolute 来检查是否为绝对路径，支持跨平台
-          expect(isAbsolute(result.args![0])).toBe(true);
+          expect(isAbsolute(result.args?.[0] ?? "")).toBe(true);
         }
       });
     });
@@ -235,7 +235,7 @@ describe("ConfigAdapter", () => {
         const legacyConfig = {
           type: "sse",
           url: undefined,
-        } as any;
+        } as unknown as SSEMCPServerConfig;
 
         expect(() => convertLegacyToNew("test", legacyConfig)).toThrow(
           ConfigValidationError
@@ -320,7 +320,7 @@ describe("ConfigAdapter", () => {
         const legacyConfig = {
           type: "streamable-http",
           url: undefined,
-        } as any;
+        } as unknown as StreamableHTTPMCPServerConfig;
 
         expect(() => convertLegacyToNew("test", legacyConfig)).toThrow(
           ConfigValidationError
@@ -388,15 +388,15 @@ describe("ConfigAdapter", () => {
       });
 
       it("应该在配置对象为空时抛出错误", () => {
-        expect(() => convertLegacyToNew("test", null as any)).toThrow(
-          ConfigValidationError
-        );
+        expect(() =>
+          convertLegacyToNew("test", null as unknown as MCPServerConfig)
+        ).toThrow(ConfigValidationError);
       });
 
       it("应该在无法识别配置类型时抛出错误", () => {
         const invalidConfig = {
           invalidField: "value",
-        } as any;
+        } as unknown as MCPServerConfig;
 
         expect(() => convertLegacyToNew("test", invalidConfig)).toThrow(
           ConfigValidationError
@@ -770,7 +770,7 @@ describe("ConfigAdapter", () => {
         },
         invalid: {
           invalidField: "value",
-        } as any,
+        } as unknown as MCPServerConfig,
       };
 
       expect(() => convertLegacyConfigBatch(legacyConfigs)).toThrow(
@@ -823,7 +823,7 @@ describe("ConfigAdapter", () => {
     });
 
     it("应该返回未知类型的描述", () => {
-      const config = { unknown: "field" } as any;
+      const config = { unknown: "field" } as unknown as MCPServerConfig;
       const description = getConfigTypeDescription(config);
       expect(description).toBe("未知类型");
     });

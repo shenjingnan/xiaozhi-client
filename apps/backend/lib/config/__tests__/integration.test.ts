@@ -9,6 +9,7 @@ import {
 } from "@/lib/config/adapter.js";
 import type {
   LocalMCPServerConfig,
+  MCPServerConfig,
   SSEMCPServerConfig,
 } from "@/lib/config/manager.js";
 import { MCPTransportType } from "@/lib/mcp/types";
@@ -102,12 +103,14 @@ describe("适配器集成测试", () => {
         convertLegacyToNew("", { command: "test", args: [] })
       ).toThrow("服务名称必须是非空字符串");
 
-      expect(() => convertLegacyToNew("test", null as any)).toThrow(
-        "配置对象不能为空"
-      );
+      expect(() =>
+        convertLegacyToNew("test", null as unknown as MCPServerConfig)
+      ).toThrow("配置对象不能为空");
 
       expect(() =>
-        convertLegacyToNew("test", { invalid: "config" } as any)
+        convertLegacyToNew("test", {
+          invalid: "config",
+        } as unknown as MCPServerConfig)
       ).toThrow("无法识别的配置类型");
     });
   });

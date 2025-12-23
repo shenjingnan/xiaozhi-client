@@ -168,7 +168,7 @@ describe("ConfigManager", () => {
 
   describe("初始化配置", () => {
     it("应该成功初始化配置", () => {
-      mockExistsSync.mockImplementation((path: any) => {
+      mockExistsSync.mockImplementation((path: PathLike) => {
         // 模拟默认配置模板文件存在
         if (
           path.toString().includes("templates") ||
@@ -187,7 +187,7 @@ describe("ConfigManager", () => {
     });
 
     it("应该成功初始化 JSON5 格式配置", () => {
-      mockExistsSync.mockImplementation((path: any) => {
+      mockExistsSync.mockImplementation((path: PathLike) => {
         // 模拟默认配置模板文件存在
         if (
           path.toString().includes("templates") ||
@@ -205,7 +205,7 @@ describe("ConfigManager", () => {
     });
 
     it("应该成功初始化 JSONC 格式配置", () => {
-      mockExistsSync.mockImplementation((path: any) => {
+      mockExistsSync.mockImplementation((path: PathLike) => {
         // 模拟默认配置模板文件存在
         if (
           path.toString().includes("templates") ||
@@ -281,7 +281,7 @@ describe("ConfigManager", () => {
 
     it("应该返回配置的深拷贝", () => {
       const config = configManager.getConfig();
-      (config as any).mcpEndpoint = "modified";
+      (config as unknown as { mcpEndpoint: string }).mcpEndpoint = "modified";
 
       const config2 = configManager.getConfig();
       expect(config2.mcpEndpoint).toBe(mockConfig.mcpEndpoint);
@@ -472,7 +472,7 @@ describe("ConfigManager", () => {
     it("应该返回现有服务器的工具配置", () => {
       const toolsConfig = configManager.getServerToolsConfig("test-server");
       expect(toolsConfig).toEqual(
-        mockConfig.mcpServerConfig!["test-server"].tools
+        mockConfig.mcpServerConfig?.["test-server"].tools
       );
     });
 
@@ -596,7 +596,7 @@ describe("ConfigManager", () => {
       const serverConfig = {
         command: "node",
         args: "not-array",
-      } as any;
+      } as unknown as MCPServerConfig;
 
       expect(() => configManager.updateMcpServer("test", serverConfig)).toThrow(
         "args 字段必须是数组"
@@ -608,7 +608,7 @@ describe("ConfigManager", () => {
         command: "node",
         args: ["test.js"],
         env: "not-object",
-      } as any;
+      } as unknown as MCPServerConfig;
 
       expect(() => configManager.updateMcpServer("test", serverConfig)).toThrow(
         "env 字段必须是对象"
@@ -1101,7 +1101,7 @@ describe("ConfigManager", () => {
             description: "不完整的工具",
             inputSchema: {},
             // 缺少 handler 字段
-          } as any,
+          } as unknown as CustomMCPTool,
         ],
       };
       mockReadFileSync.mockReturnValue(JSON.stringify(testConfig));
@@ -1623,7 +1623,7 @@ describe("ConfigManager", () => {
         configManager.updateConnectionConfig({ heartbeatInterval: 45000 });
 
         const writtenConfig = JSON.parse(
-          (mockWriteFileSync.mock.calls[0] as any)[1]
+          (mockWriteFileSync.mock.calls[0] as unknown as [string, string])[1]
         );
 
         expect(writtenConfig.connection).toEqual({
@@ -1741,7 +1741,7 @@ describe("ConfigManager", () => {
 
           // 恢复环境变量
           if (originalEnv === undefined) {
-            process.env.MODELSCOPE_API_TOKEN = undefined as any;
+            process.env.MODELSCOPE_API_TOKEN = undefined as unknown as string;
           } else {
             process.env.MODELSCOPE_API_TOKEN = originalEnv;
           }
@@ -1756,7 +1756,7 @@ describe("ConfigManager", () => {
 
           // 恢复环境变量
           if (originalEnv === undefined) {
-            process.env.MODELSCOPE_API_TOKEN = undefined as any;
+            process.env.MODELSCOPE_API_TOKEN = undefined as unknown as string;
           } else {
             process.env.MODELSCOPE_API_TOKEN = originalEnv;
           }
@@ -1768,7 +1768,7 @@ describe("ConfigManager", () => {
           configManager.updateModelScopeConfig({ apiKey: "new-api-key" });
 
           const writtenConfig = JSON.parse(
-            (mockWriteFileSync.mock.calls[0] as any)[1]
+            (mockWriteFileSync.mock.calls[0] as unknown as [string, string])[1]
           );
 
           expect(writtenConfig.modelscope).toEqual({
@@ -1782,7 +1782,7 @@ describe("ConfigManager", () => {
           configManager.setModelScopeApiKey("new-api-key");
 
           const writtenConfig = JSON.parse(
-            (mockWriteFileSync.mock.calls[0] as any)[1]
+            (mockWriteFileSync.mock.calls[0] as unknown as [string, string])[1]
           );
 
           expect(writtenConfig.modelscope.apiKey).toBe("new-api-key");
@@ -1795,9 +1795,9 @@ describe("ConfigManager", () => {
         });
 
         it("应该为非字符串 API Key 抛出错误", () => {
-          expect(() => configManager.setModelScopeApiKey(null as any)).toThrow(
-            "API Key 必须是非空字符串"
-          );
+          expect(() =>
+            configManager.setModelScopeApiKey(null as unknown as string)
+          ).toThrow("API Key 必须是非空字符串");
         });
       });
     });
@@ -1870,7 +1870,7 @@ describe("ConfigManager", () => {
         configManager.updateWebUIConfig({ port: 3000 });
 
         const writtenConfig = JSON.parse(
-          (mockWriteFileSync.mock.calls[0] as any)[1]
+          (mockWriteFileSync.mock.calls[0] as unknown as [string, string])[1]
         );
 
         expect(writtenConfig.webUI).toEqual({
@@ -1885,7 +1885,7 @@ describe("ConfigManager", () => {
         configManager.updateWebUIConfig({ port: 3000 });
 
         const writtenConfig = JSON.parse(
-          (mockWriteFileSync.mock.calls[0] as any)[1]
+          (mockWriteFileSync.mock.calls[0] as unknown as [string, string])[1]
         );
 
         expect(writtenConfig.webUI).toEqual({
@@ -1906,7 +1906,7 @@ describe("ConfigManager", () => {
         configManager.updateWebUIConfig({ port: 3000 });
 
         const writtenConfig = JSON.parse(
-          (mockWriteFileSync.mock.calls[0] as any)[1]
+          (mockWriteFileSync.mock.calls[0] as unknown as [string, string])[1]
         );
 
         expect(writtenConfig.webUI).toEqual({
@@ -1920,7 +1920,7 @@ describe("ConfigManager", () => {
         configManager.setWebUIPort(3000);
 
         const writtenConfig = JSON.parse(
-          (mockWriteFileSync.mock.calls[0] as any)[1]
+          (mockWriteFileSync.mock.calls[0] as unknown as [string, string])[1]
         );
 
         expect(writtenConfig.webUI.port).toBe(3000);
@@ -2089,7 +2089,7 @@ describe("ConfigManager", () => {
         configManager.updateMcpEndpoint("https://new-endpoint.com/mcp");
 
         const writtenConfig = JSON.parse(
-          (mockWriteFileSync.mock.calls[0] as any)[1]
+          (mockWriteFileSync.mock.calls[0] as unknown as [string, string])[1]
         );
 
         expect(writtenConfig.mcpEndpoint).toBe("https://new-endpoint.com/mcp");
@@ -2103,7 +2103,7 @@ describe("ConfigManager", () => {
         configManager.updateMcpEndpoint(newEndpoints);
 
         const writtenConfig = JSON.parse(
-          (mockWriteFileSync.mock.calls[0] as any)[1]
+          (mockWriteFileSync.mock.calls[0] as unknown as [string, string])[1]
         );
 
         expect(writtenConfig.mcpEndpoint).toEqual(newEndpoints);
@@ -2121,7 +2121,7 @@ describe("ConfigManager", () => {
         configManager.addMcpEndpoint("https://new-endpoint.com/mcp");
 
         const writtenConfig = JSON.parse(
-          (mockWriteFileSync.mock.calls[0] as any)[1]
+          (mockWriteFileSync.mock.calls[0] as unknown as [string, string])[1]
         );
 
         expect(writtenConfig.mcpEndpoint).toEqual([
@@ -2163,7 +2163,7 @@ describe("ConfigManager", () => {
         configManager.removeMcpEndpoint("https://endpoint2.com/mcp");
 
         const writtenConfig = JSON.parse(
-          (mockWriteFileSync.mock.calls[0] as any)[1]
+          (mockWriteFileSync.mock.calls[0] as unknown as [string, string])[1]
         );
 
         expect(writtenConfig.mcpEndpoint).toEqual([
@@ -2601,7 +2601,7 @@ describe("ConfigManager", () => {
 
       it("应该拒绝非数组输入", () => {
         const isValid = configManager.validateCustomMCPTools(
-          mockCustomMCPTool as any
+          mockCustomMCPTool as unknown as CustomMCPTool[]
         );
         expect(isValid).toBe(false);
       });
@@ -2610,7 +2610,7 @@ describe("ConfigManager", () => {
         const { name, ...invalidTool } = mockCustomMCPTool;
 
         const isValid = configManager.validateCustomMCPTools([
-          invalidTool as any,
+          invalidTool as unknown as CustomMCPTool,
         ]);
         expect(isValid).toBe(false);
       });
@@ -2619,7 +2619,7 @@ describe("ConfigManager", () => {
         const invalidTool = { ...mockCustomMCPTool, name: 123 };
 
         const isValid = configManager.validateCustomMCPTools([
-          invalidTool as any,
+          invalidTool as unknown as CustomMCPTool,
         ]);
         expect(isValid).toBe(false);
       });
@@ -2628,7 +2628,7 @@ describe("ConfigManager", () => {
         const { description, ...invalidTool } = mockCustomMCPTool;
 
         const isValid = configManager.validateCustomMCPTools([
-          invalidTool as any,
+          invalidTool as unknown as CustomMCPTool,
         ]);
         expect(isValid).toBe(false);
       });
@@ -2637,7 +2637,7 @@ describe("ConfigManager", () => {
         const invalidTool = { ...mockCustomMCPTool, description: 123 };
 
         const isValid = configManager.validateCustomMCPTools([
-          invalidTool as any,
+          invalidTool as unknown as CustomMCPTool,
         ]);
         expect(isValid).toBe(false);
       });
@@ -2646,7 +2646,7 @@ describe("ConfigManager", () => {
         const { inputSchema, ...invalidTool } = mockCustomMCPTool;
 
         const isValid = configManager.validateCustomMCPTools([
-          invalidTool as any,
+          invalidTool as unknown as CustomMCPTool,
         ]);
         expect(isValid).toBe(false);
       });
@@ -2655,7 +2655,7 @@ describe("ConfigManager", () => {
         const invalidTool = { ...mockCustomMCPTool, inputSchema: "invalid" };
 
         const isValid = configManager.validateCustomMCPTools([
-          invalidTool as any,
+          invalidTool as unknown as CustomMCPTool,
         ]);
         expect(isValid).toBe(false);
       });
@@ -2664,7 +2664,7 @@ describe("ConfigManager", () => {
         const { handler, ...invalidTool } = mockCustomMCPTool;
 
         const isValid = configManager.validateCustomMCPTools([
-          invalidTool as any,
+          invalidTool as unknown as CustomMCPTool,
         ]);
         expect(isValid).toBe(false);
       });
@@ -2673,7 +2673,7 @@ describe("ConfigManager", () => {
         const invalidTool = { ...mockCustomMCPTool, handler: "invalid" };
 
         const isValid = configManager.validateCustomMCPTools([
-          invalidTool as any,
+          invalidTool as unknown as CustomMCPTool,
         ]);
         expect(isValid).toBe(false);
       });
@@ -2685,7 +2685,7 @@ describe("ConfigManager", () => {
         };
 
         const isValid = configManager.validateCustomMCPTools([
-          invalidTool as any,
+          invalidTool as unknown as CustomMCPTool,
         ]);
         expect(isValid).toBe(false);
       });
@@ -2777,7 +2777,7 @@ describe("ConfigManager", () => {
 
         const isValid = configManager.validateCustomMCPTools([
           validTool,
-          invalidTool as any,
+          invalidTool as unknown as CustomMCPTool,
         ]);
         expect(isValid).toBe(false);
       });
@@ -2884,7 +2884,7 @@ describe("ConfigManager", () => {
 
       it("应该在工具配置为空时抛出错误", () => {
         expect(() => {
-          configManager.addCustomMCPTool(null as any);
+          configManager.addCustomMCPTool(null as unknown as CustomMCPTool);
         }).toThrow("工具配置不能为空");
       });
     });
@@ -2976,12 +2976,16 @@ describe("ConfigManager", () => {
 
       it("应该在工具配置不是数组时抛出错误", () => {
         expect(() => {
-          configManager.updateCustomMCPTools("not an array" as any);
+          configManager.updateCustomMCPTools(
+            "not an array" as unknown as CustomMCPTool[]
+          );
         }).toThrow("工具配置必须是数组");
       });
 
       it("应该在工具配置无效时抛出错误", () => {
-        const invalidTools = [{ name: "", description: "invalid" }] as any;
+        const invalidTools = [
+          { name: "", description: "invalid" },
+        ] as unknown as CustomMCPTool[];
 
         expect(() => {
           configManager.updateCustomMCPTools(invalidTools);
