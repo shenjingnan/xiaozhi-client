@@ -2,6 +2,7 @@
  * 服务管理服务
  */
 
+import type { ConfigManager } from "@/lib/config/configManager.js";
 import { ConfigError, ServiceError } from "@cli/errors/index.js";
 import type {
   ServiceManager as IServiceManager,
@@ -11,7 +12,6 @@ import type {
 } from "@cli/interfaces/Service.js";
 import { PathUtils } from "@cli/utils/PathUtils.js";
 import { Validation } from "@cli/utils/Validation.js";
-import type { ConfigManager } from "@root/configManager.js";
 
 /**
  * 服务管理器实现

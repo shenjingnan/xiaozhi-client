@@ -3,13 +3,16 @@
  * 处理通过 HTTP API 调用 MCP 工具的请求
  */
 
+import { configManager } from "@/lib/config/configManager.js";
+import type {
+  CustomMCPTool,
+  ProxyHandlerConfig,
+} from "@/lib/config/configManager.js";
 import { MCPCacheManager } from "@/lib/mcp";
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { JSONSchema } from "@/lib/mcp/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
-import { configManager } from "@root/configManager.js";
-import type { CustomMCPTool, ProxyHandlerConfig } from "@root/configManager.js";
 import type {
   CozeWorkflow,
   WorkflowParameterConfig,

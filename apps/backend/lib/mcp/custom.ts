@@ -1,4 +1,10 @@
 #!/usr/bin/env node
+import type {
+  CustomMCPTool,
+  HandlerConfig,
+  ProxyHandlerConfig,
+} from "@/lib/config/configManager.js";
+import { configManager } from "@/lib/config/configManager.js";
 import { CozeApiService } from "@/lib/coze";
 import type { RunWorkflowData } from "@/lib/coze";
 import type { MCPServiceManager } from "@/lib/mcp";
@@ -7,12 +13,6 @@ import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
-import type {
-  CustomMCPTool,
-  HandlerConfig,
-  ProxyHandlerConfig,
-} from "@root/configManager.js";
-import { configManager } from "@root/configManager.js";
 import { getEventBus } from "@root/services/EventBus.js";
 import type {
   EnhancedToolResultCache,

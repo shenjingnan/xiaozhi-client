@@ -1,5 +1,5 @@
+import type { AppConfig } from "@/lib/config/configManager.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { AppConfig } from "../../configManager.js";
 import { RealtimeNotificationHandler } from "../RealtimeNotificationHandler.js";
 
 // Mock dependencies

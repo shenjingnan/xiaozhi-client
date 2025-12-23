@@ -1,7 +1,7 @@
+import type { AppConfig } from "@/lib/config/configManager.js";
+import { configManager } from "@/lib/config/configManager.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
-import type { AppConfig } from "@root/configManager.js";
-import { configManager } from "@root/configManager.js";
 import type { EventBus } from "@services/EventBus.js";
 import { getEventBus } from "@services/EventBus.js";
 

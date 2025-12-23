@@ -1,8 +1,8 @@
+import type { ConfigManager } from "@/lib/config/configManager.js";
 import type { EndpointManager } from "@/lib/endpoint/index.js";
 import type { ConnectionStatus } from "@/lib/endpoint/index.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
-import type { ConfigManager } from "@root/configManager.js";
 import type { EventBus } from "@services/EventBus.js";
 import { getEventBus } from "@services/EventBus.js";
 import type { Context } from "hono";

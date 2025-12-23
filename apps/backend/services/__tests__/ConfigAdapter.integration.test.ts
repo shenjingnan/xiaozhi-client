@@ -3,6 +3,12 @@
  * 验证两个组件的协同工作和类型推断一致性
  */
 
+import type {
+  LocalMCPServerConfig,
+  MCPServerConfig,
+  SSEMCPServerConfig,
+  StreamableHTTPMCPServerConfig,
+} from "@/lib/config/configManager.js";
 import { MCPService, MCPTransportType } from "@/lib/mcp";
 import {
   convertLegacyConfigBatch,
@@ -10,12 +16,6 @@ import {
   getConfigTypeDescription,
 } from "@adapters/ConfigAdapter.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type {
-  LocalMCPServerConfig,
-  MCPServerConfig,
-  SSEMCPServerConfig,
-  StreamableHTTPMCPServerConfig,
-} from "../../configManager.js";
 
 // 统一的mockLogger定义
 let mockLogger: any;
