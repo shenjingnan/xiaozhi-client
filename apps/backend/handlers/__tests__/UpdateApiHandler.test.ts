@@ -1,10 +1,10 @@
-import { NPMManager } from "@services/NPMManager.js";
+import { NPMManager } from "@/lib/npm";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { logger } from "../../Logger.js";
 import { UpdateApiHandler } from "../UpdateApiHandler.js";
 
 // Mock dependencies
-vi.mock("@services/NPMManager.js");
+vi.mock("@/lib/npm");
 vi.mock("../../Logger.js");
 vi.mock("@services/EventBus.js");
 

@@ -8,7 +8,7 @@ vi.mock("../../Logger.js");
 vi.mock("../EventBus.js");
 
 // Import after mocking
-import { NPMManager } from "../NPMManager.js";
+import { NPMManager } from "@/lib/npm";
 
 describe("NPMManager", () => {
   let npmManager: NPMManager;

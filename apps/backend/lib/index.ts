@@ -13,3 +13,6 @@ export {
   type SimpleConnectionStatus,
   type ConnectionStatus,
 } from "./endpoint/index.js";
+
+// npm 模块导出
+export { NPMManager } from "./npm/index.js";
