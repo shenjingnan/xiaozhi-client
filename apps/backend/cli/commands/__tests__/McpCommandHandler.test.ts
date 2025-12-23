@@ -39,22 +39,38 @@ interface ListCommandOptions {
 class McpCommandHandlerTest extends McpCommandHandler {
   // 公开静态私有方法用于测试
   public static testGetDisplayWidth(str: string): number {
-    return (McpCommandHandler as unknown as { getDisplayWidth: (str: string) => number }).getDisplayWidth(str);
+    return (
+      McpCommandHandler as unknown as {
+        getDisplayWidth: (str: string) => number;
+      }
+    ).getDisplayWidth(str);
   }
 
   public static testTruncateToWidth(str: string, maxWidth: number): string {
-    return (McpCommandHandler as unknown as { truncateToWidth: (str: string, maxWidth: number) => string }).truncateToWidth(str, maxWidth);
+    return (
+      McpCommandHandler as unknown as {
+        truncateToWidth: (str: string, maxWidth: number) => string;
+      }
+    ).truncateToWidth(str, maxWidth);
   }
 
   // 公开实例私有方法用于测试
   public async testHandleListInternal(
     options: ListCommandOptions = {}
   ): Promise<void> {
-    return (this as unknown as { handleListInternal: (options: ListCommandOptions) => Promise<void> }).handleListInternal(options);
+    return (
+      this as unknown as {
+        handleListInternal: (options: ListCommandOptions) => Promise<void>;
+      }
+    ).handleListInternal(options);
   }
 
   public async testHandleServerInternal(serverName: string): Promise<void> {
-    return (this as unknown as { handleServerInternal: (serverName: string) => Promise<void> }).handleServerInternal(serverName);
+    return (
+      this as unknown as {
+        handleServerInternal: (serverName: string) => Promise<void>;
+      }
+    ).handleServerInternal(serverName);
   }
 
   public async testHandleToolInternal(
@@ -62,7 +78,15 @@ class McpCommandHandlerTest extends McpCommandHandler {
     toolName: string,
     enabled: boolean
   ): Promise<void> {
-    return (this as unknown as { handleToolInternal: (serverName: string, toolName: string, enabled: boolean) => Promise<void> }).handleToolInternal(serverName, toolName, enabled);
+    return (
+      this as unknown as {
+        handleToolInternal: (
+          serverName: string,
+          toolName: string,
+          enabled: boolean
+        ) => Promise<void>;
+      }
+    ).handleToolInternal(serverName, toolName, enabled);
   }
 }
 
@@ -133,7 +157,9 @@ describe("McpCommandHandler", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(ora).mockReturnValue(mockSpinner as unknown as ReturnType<typeof ora>);
+    vi.mocked(ora).mockReturnValue(
+      mockSpinner as unknown as ReturnType<typeof ora>
+    );
     handler = new McpCommandHandlerTest(mockContainer);
   });
 

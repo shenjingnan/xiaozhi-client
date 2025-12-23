@@ -4,15 +4,15 @@
 
 import type { SubCommand } from "@cli/interfaces/Command.js";
 import { BaseCommandHandler } from "@cli/interfaces/Command.js";
-import type { IDIContainer } from "@cli/interfaces/Config.js";
 import type {
   CallOptions,
   CommandArguments,
   CommandOptions,
   ListOptions,
 } from "@cli/interfaces/CommandTypes.js";
-import type { MCPServerConfig } from "@root/configManager.js";
 import { isLocalMCPServerConfig } from "@cli/interfaces/CommandTypes.js";
+import type { IDIContainer } from "@cli/interfaces/Config.js";
+import type { MCPServerConfig } from "@root/configManager.js";
 import { configManager } from "@root/configManager.js";
 import { ToolCallService } from "@services/ToolCallService.js";
 import chalk from "chalk";

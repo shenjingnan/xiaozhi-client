@@ -142,7 +142,6 @@ vi.mock("./configManager", () => ({
   },
 }));
 
-
 // Mock process before any imports
 const originalArgv = process.argv;
 
@@ -207,7 +206,9 @@ describe("CLI 命令行工具", () => {
     mockOs = vi.mocked(os) as OsMock;
     mockPath = vi.mocked(path) as PathMock;
     const configManagerModule = await import("./configManager");
-    mockConfigManager = vi.mocked(configManagerModule.configManager) as ConfigManagerMock;
+    mockConfigManager = vi.mocked(
+      configManagerModule.configManager
+    ) as ConfigManagerMock;
 
     // Setup mock instances
     mockProcess = new MockChildProcess();
@@ -462,7 +463,9 @@ describe("CLI 命令行工具", () => {
         if (path.includes("templates")) return true;
         return false; // Target directory doesn't exist
       });
-      mockFs.readdirSync.mockReturnValue(["hello-world"] as unknown as ReturnType<typeof fs.readdirSync>);
+      mockFs.readdirSync.mockReturnValue([
+        "hello-world",
+      ] as unknown as ReturnType<typeof fs.readdirSync>);
 
       // Test would require access to createProject function with template option
       expect(mockFs.existsSync).toBeDefined();
@@ -738,11 +741,7 @@ describe("CLI 命令行工具", () => {
 
     it("应该确保源码中不使用 CommonJS 语法", () => {
       const projectRoot = getProjectRoot();
-      const srcFiles = [
-        "src/cli.ts",
-        "src/mcpPipe.ts",
-        "src/configManager.ts",
-      ];
+      const srcFiles = ["src/cli.ts", "src/mcpPipe.ts", "src/configManager.ts"];
 
       for (const file of srcFiles) {
         const filePath = realPath.join(projectRoot, file);
