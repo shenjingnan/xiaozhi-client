@@ -7,7 +7,7 @@ import {
   convertLegacyConfigBatch,
   convertLegacyToNew,
   getConfigTypeDescription,
-} from "@/lib/config/ConfigAdapter.js";
+} from "@/lib/config/adapter.js";
 import type {
   LocalMCPServerConfig,
   MCPServerConfig,

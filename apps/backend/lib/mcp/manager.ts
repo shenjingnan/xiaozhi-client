@@ -7,7 +7,7 @@
  */
 
 import { EventEmitter } from "node:events";
-import { isModelScopeURL } from "@/lib/config/ConfigAdapter.js";
+import { isModelScopeURL } from "@/lib/config/adapter.js";
 import type { MCPToolConfig } from "@/lib/config/manager.js";
 import { configManager } from "@/lib/config/manager.js";
 import { MCPService } from "@/lib/mcp";

@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
-import { convertLegacyToNew } from "@/lib/config/ConfigAdapter.js";
+import { convertLegacyToNew } from "@/lib/config/adapter.js";
 import { configManager } from "@/lib/config/manager.js";
 import type { MCPServerConfig } from "@/lib/config/manager.js";
 import type { EndpointConnection } from "@/lib/endpoint/connection.js";

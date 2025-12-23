@@ -1,4 +1,4 @@
-import { convertLegacyToNew } from "@/lib/config/ConfigAdapter.js";
+import { convertLegacyToNew } from "@/lib/config/adapter.js";
 import { MCPService, MCPTransportType } from "@/lib/mcp";
 import { describe, expect, it } from "vitest";
 
