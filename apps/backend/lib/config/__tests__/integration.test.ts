@@ -9,6 +9,7 @@ import {
 } from "@/lib/config/adapter.js";
 import type {
   LocalMCPServerConfig,
+  MCPServerConfig,
   SSEMCPServerConfig,
 } from "@/lib/config/manager.js";
 import { MCPTransportType } from "@/lib/mcp/types";
@@ -96,56 +97,20 @@ describe("适配器集成测试", () => {
     });
   });
 
-  describe("工具前缀机制验证", () => {
-    it("应该生成正确的工具前缀格式", () => {
-      // 这里我们测试前缀格式的一致性
-      const testCases = [
-        {
-          serviceName: "calculator",
-          toolName: "add",
-          expected: "calculator_xzcli_add",
-        },
-        {
-          serviceName: "weather-service",
-          toolName: "get_weather",
-          expected: "weather_service_xzcli_get_weather",
-        },
-        {
-          serviceName: "my-tool",
-          toolName: "process",
-          expected: "my_tool_xzcli_process",
-        },
-      ];
-
-      for (const testCase of testCases) {
-        // 模拟前缀生成逻辑
-        const normalizedServerName = testCase.serviceName.replace(/-/g, "_");
-        const prefixedName = `${normalizedServerName}_xzcli_${testCase.toolName}`;
-
-        expect(prefixedName).toBe(testCase.expected);
-
-        // 模拟前缀解析逻辑
-        const prefix = `${normalizedServerName}_xzcli_`;
-        if (prefixedName.startsWith(prefix)) {
-          const originalName = prefixedName.substring(prefix.length);
-          expect(originalName).toBe(testCase.toolName);
-        }
-      }
-    });
-  });
-
   describe("错误处理", () => {
     it("应该在无效配置时抛出错误", () => {
       expect(() =>
         convertLegacyToNew("", { command: "test", args: [] })
       ).toThrow("服务名称必须是非空字符串");
 
-      expect(() => convertLegacyToNew("test", null as any)).toThrow(
-        "配置对象不能为空"
-      );
+      expect(() =>
+        convertLegacyToNew("test", null as unknown as MCPServerConfig)
+      ).toThrow("配置对象不能为空");
 
       expect(() =>
-        convertLegacyToNew("test", { invalid: "config" } as any)
+        convertLegacyToNew("test", {
+          invalid: "config",
+        } as unknown as MCPServerConfig)
       ).toThrow("无法识别的配置类型");
     });
   });

@@ -278,7 +278,7 @@ describe("ConfigManager JSON5 Comment Preservation", () => {
       configManager.getConfig();
 
       // 手动清除 json5Writer 实例来模拟错误情况
-      (configManager as any).json5Writer = null;
+      (configManager as unknown as { json5Writer: null }).json5Writer = null;
 
       configManager.updateMcpServer("test-server", {
         command: "node",
