@@ -35,7 +35,7 @@ export function convertLegacyToNew(
   serviceName: string,
   legacyConfig: MCPServerConfig
 ): MCPServiceConfig {
-  console.log('转换配置', { serviceName, legacyConfig });
+  console.log("转换配置", { serviceName, legacyConfig });
 
   try {
     // 验证输入参数
@@ -58,10 +58,10 @@ export function convertLegacyToNew(
     // 验证转换后的配置
     validateNewConfig(newConfig);
 
-    console.log('配置转换成功', { serviceName, type: newConfig.type });
+    console.log("配置转换成功", { serviceName, type: newConfig.type });
     return newConfig;
   } catch (error) {
-    console.error('配置转换失败', { serviceName, error });
+    console.error("配置转换失败", { serviceName, error });
     throw error instanceof ConfigValidationError
       ? error
       : new ConfigValidationError(
@@ -144,7 +144,7 @@ function convertLocalConfig(
     // 检查是否为相对路径（以 ./ 开头或不以 / 开头且包含文件扩展名）
     if (isRelativePath(arg)) {
       const resolvedPath = resolve(workingDir, arg);
-      console.log('解析相对路径', { arg, resolvedPath });
+      console.log("解析相对路径", { arg, resolvedPath });
       return resolvedPath;
     }
     return arg;
@@ -191,7 +191,12 @@ function convertSSEConfig(
     baseConfig.modelScopeAuth = true;
   }
 
-  console.log('SSE配置转换', { serviceName, url: config.url, inferredType, isModelScope });
+  console.log("SSE配置转换", {
+    serviceName,
+    url: config.url,
+    inferredType,
+    isModelScope,
+  });
 
   return baseConfig;
 }
@@ -249,7 +254,7 @@ export function convertLegacyConfigBatch(
     throw new ConfigValidationError(`批量配置转换失败: ${errorMessages}`);
   }
 
-  console.log('批量配置转换成功', { count: Object.keys(newConfigs).length });
+  console.log("批量配置转换成功", { count: Object.keys(newConfigs).length });
   return newConfigs;
 }
 
