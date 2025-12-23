@@ -2,7 +2,6 @@ import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { CustomMCPTool as CoreCustomMCPTool } from "@/lib/mcp/types.js";
-import { logger } from "@root/Logger.js";
 import { getEventBus } from "@services/EventBus.js";
 import { TypeFieldNormalizer } from "@utils/TypeFieldNormalizer.js";
 import { validateMcpServerConfig } from "@utils/mcpServerUtils";
@@ -679,7 +678,7 @@ export class ConfigManager {
     });
 
     // 记录清理结果
-    logger.info(`成功移除 MCP 服务 ${serverName} 及其相关配置`);
+    console.log('成功移除 MCP 服务', { serverName });
   }
 
   /**
@@ -759,9 +758,7 @@ export class ConfigManager {
 
       this.saveConfig(config);
 
-      logger.info(
-        `已清理 ${invalidServerNames.length} 个无效的服务工具配置: ${invalidServerNames.join(", ")}`
-      );
+      console.log('已清理无效的服务工具配置', { count: invalidServerNames.length, serverNames: invalidServerNames });
     }
   }
 
@@ -1004,7 +1001,7 @@ export class ConfigManager {
           this.updateCustomMCPToolStats(serverName, toolName, callTime),
         ]);
 
-        logger.debug(`工具使用统计已更新: ${serverName}/${toolName}`);
+        console.log('工具使用统计已更新', { serverName, toolName });
       } else {
         // 两个参数的情况：updateToolUsageStats(toolName, incrementUsageCount)
         const toolName = arg1;
@@ -1018,25 +1015,17 @@ export class ConfigManager {
           incrementUsageCount
         );
 
-        logger.debug(`CustomMCP 工具使用统计已更新: ${toolName}`);
+        console.log('CustomMCP 工具使用统计已更新', { toolName });
       }
     } catch (error) {
       // 错误不应该影响主要的工具调用流程
       if (typeof arg2 === "string" && arg3) {
         const serverName = arg1;
         const toolName = arg2;
-        logger.error(
-          `更新工具使用统计失败 (${serverName}/${toolName}): ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        );
+        console.error('更新工具使用统计失败', { serverName, toolName, error });
       } else {
         const toolName = arg1;
-        logger.error(
-          `更新 CustomMCP 工具使用统计失败 (${toolName}): ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        );
+        console.error('更新 CustomMCP 工具使用统计失败', { toolName, error });
       }
     }
   }
@@ -1168,24 +1157,22 @@ export class ConfigManager {
     for (const tool of tools) {
       // 检查必需字段
       if (!tool.name || typeof tool.name !== "string") {
-        logger.warn(
-          `CustomMCP 工具缺少有效的 name 字段: ${JSON.stringify(tool)}`
-        );
+        console.warn('CustomMCP 工具缺少有效的 name 字段', { tool });
         return false;
       }
 
       if (!tool.description || typeof tool.description !== "string") {
-        logger.warn(`CustomMCP 工具 ${tool.name} 缺少有效的 description 字段`);
+        console.warn('CustomMCP 工具缺少有效的 description 字段', { toolName: tool.name });
         return false;
       }
 
       if (!tool.inputSchema || typeof tool.inputSchema !== "object") {
-        logger.warn(`CustomMCP 工具 ${tool.name} 缺少有效的 inputSchema 字段`);
+        console.warn('CustomMCP 工具缺少有效的 inputSchema 字段', { toolName: tool.name });
         return false;
       }
 
       if (!tool.handler || typeof tool.handler !== "object") {
-        logger.warn(`CustomMCP 工具 ${tool.name} 缺少有效的 handler 字段`);
+        console.warn('CustomMCP 工具缺少有效的 handler 字段', { toolName: tool.name });
         return false;
       }
 
@@ -1195,9 +1182,7 @@ export class ConfigManager {
           tool.handler.type
         )
       ) {
-        logger.warn(
-          `CustomMCP 工具 ${tool.name} 的 handler.type 必须是 'proxy', 'function', 'http', 'script', 'chain' 或 'mcp'`
-        );
+        console.warn('CustomMCP 工具的 handler.type 类型无效', { toolName: tool.name, type: tool.handler.type });
         return false;
       }
 
@@ -1231,7 +1216,7 @@ export class ConfigManager {
       case "mcp":
         return this.validateMCPHandler(toolName, handler);
       default:
-        logger.warn(`CustomMCP 工具 ${toolName} 使用了未知的处理器类型`);
+        console.warn('CustomMCP 工具使用了未知的处理器类型', { toolName, handlerType: (handler as HandlerConfig).type });
         return false;
     }
   }
@@ -1244,30 +1229,24 @@ export class ConfigManager {
     handler: ProxyHandlerConfig
   ): boolean {
     if (!handler.platform) {
-      logger.warn(
-        `CustomMCP 工具 ${toolName} 的 proxy 处理器缺少 platform 字段`
-      );
+      console.warn('CustomMCP 工具的 proxy 处理器缺少 platform 字段', { toolName });
       return false;
     }
 
     if (!["coze", "openai", "anthropic", "custom"].includes(handler.platform)) {
-      logger.warn(
-        `CustomMCP 工具 ${toolName} 的 proxy 处理器使用了不支持的平台: ${handler.platform}`
-      );
+      console.warn('CustomMCP 工具的 proxy 处理器使用了不支持的平台', { toolName, platform: handler.platform });
       return false;
     }
 
     if (!handler.config || typeof handler.config !== "object") {
-      logger.warn(`CustomMCP 工具 ${toolName} 的 proxy 处理器缺少 config 字段`);
+      console.warn('CustomMCP 工具的 proxy 处理器缺少 config 字段', { toolName });
       return false;
     }
 
     // Coze 平台特定验证
     if (handler.platform === "coze") {
       if (!handler.config.workflow_id && !handler.config.bot_id) {
-        logger.warn(
-          `CustomMCP 工具 ${toolName} 的 Coze 处理器必须提供 workflow_id 或 bot_id`
-        );
+        console.warn('CustomMCP 工具的 Coze 处理器必须提供 workflow_id 或 bot_id', { toolName });
         return false;
       }
     }
@@ -1283,18 +1262,14 @@ export class ConfigManager {
     handler: HttpHandlerConfig
   ): boolean {
     if (!handler.url || typeof handler.url !== "string") {
-      logger.warn(
-        `CustomMCP 工具 ${toolName} 的 http 处理器缺少有效的 url 字段`
-      );
+      console.warn('CustomMCP 工具的 http 处理器缺少有效的 url 字段', { toolName });
       return false;
     }
 
     try {
       new URL(handler.url);
     } catch {
-      logger.warn(
-        `CustomMCP 工具 ${toolName} 的 http 处理器 url 格式无效: ${handler.url}`
-      );
+      console.warn('CustomMCP 工具的 http 处理器 url 格式无效', { toolName, url: handler.url });
       return false;
     }
 
@@ -1302,9 +1277,7 @@ export class ConfigManager {
       handler.method &&
       !["GET", "POST", "PUT", "DELETE", "PATCH"].includes(handler.method)
     ) {
-      logger.warn(
-        `CustomMCP 工具 ${toolName} 的 http 处理器使用了不支持的 HTTP 方法: ${handler.method}`
-      );
+      console.warn('CustomMCP 工具的 http 处理器使用了不支持的 HTTP 方法', { toolName, method: handler.method });
       return false;
     }
 
@@ -1319,16 +1292,12 @@ export class ConfigManager {
     handler: FunctionHandlerConfig
   ): boolean {
     if (!handler.module || typeof handler.module !== "string") {
-      logger.warn(
-        `CustomMCP 工具 ${toolName} 的 function 处理器缺少有效的 module 字段`
-      );
+      console.warn('CustomMCP 工具的 function 处理器缺少有效的 module 字段', { toolName });
       return false;
     }
 
     if (!handler.function || typeof handler.function !== "string") {
-      logger.warn(
-        `CustomMCP 工具 ${toolName} 的 function 处理器缺少有效的 function 字段`
-      );
+      console.warn('CustomMCP 工具的 function 处理器缺少有效的 function 字段', { toolName });
       return false;
     }
 
@@ -1343,9 +1312,7 @@ export class ConfigManager {
     handler: ScriptHandlerConfig
   ): boolean {
     if (!handler.script || typeof handler.script !== "string") {
-      logger.warn(
-        `CustomMCP 工具 ${toolName} 的 script 处理器缺少有效的 script 字段`
-      );
+      console.warn('CustomMCP 工具的 script 处理器缺少有效的 script 字段', { toolName });
       return false;
     }
 
@@ -1353,9 +1320,7 @@ export class ConfigManager {
       handler.interpreter &&
       !["node", "python", "bash"].includes(handler.interpreter)
     ) {
-      logger.warn(
-        `CustomMCP 工具 ${toolName} 的 script 处理器使用了不支持的解释器: ${handler.interpreter}`
-      );
+      console.warn('CustomMCP 工具的 script 处理器使用了不支持的解释器', { toolName, interpreter: handler.interpreter });
       return false;
     }
 
@@ -1374,23 +1339,17 @@ export class ConfigManager {
       !Array.isArray(handler.tools) ||
       handler.tools.length === 0
     ) {
-      logger.warn(
-        `CustomMCP 工具 ${toolName} 的 chain 处理器缺少有效的 tools 数组`
-      );
+      console.warn('CustomMCP 工具的 chain 处理器缺少有效的 tools 数组', { toolName });
       return false;
     }
 
     if (!["sequential", "parallel"].includes(handler.mode)) {
-      logger.warn(
-        `CustomMCP 工具 ${toolName} 的 chain 处理器使用了不支持的执行模式: ${handler.mode}`
-      );
+      console.warn('CustomMCP 工具的 chain 处理器使用了不支持的执行模式', { toolName, mode: handler.mode });
       return false;
     }
 
     if (!["stop", "continue", "retry"].includes(handler.error_handling)) {
-      logger.warn(
-        `CustomMCP 工具 ${toolName} 的 chain 处理器使用了不支持的错误处理策略: ${handler.error_handling}`
-      );
+      console.warn('CustomMCP 工具的 chain 处理器使用了不支持的错误处理策略', { toolName, errorHandling: handler.error_handling });
       return false;
     }
 
@@ -1405,7 +1364,7 @@ export class ConfigManager {
     handler: MCPHandlerConfig
   ): boolean {
     if (!handler.config || typeof handler.config !== "object") {
-      logger.warn(`CustomMCP 工具 ${toolName} 的 mcp 处理器缺少 config 字段`);
+      console.warn('CustomMCP 工具的 mcp 处理器缺少 config 字段', { toolName });
       return false;
     }
 
@@ -1413,9 +1372,7 @@ export class ConfigManager {
       !handler.config.serviceName ||
       typeof handler.config.serviceName !== "string"
     ) {
-      logger.warn(
-        `CustomMCP 工具 ${toolName} 的 mcp 处理器缺少有效的 serviceName`
-      );
+      console.warn('CustomMCP 工具的 mcp 处理器缺少有效的 serviceName', { toolName });
       return false;
     }
 
@@ -1423,9 +1380,7 @@ export class ConfigManager {
       !handler.config.toolName ||
       typeof handler.config.toolName !== "string"
     ) {
-      logger.warn(
-        `CustomMCP 工具 ${toolName} 的 mcp 处理器缺少有效的 toolName`
-      );
+      console.warn('CustomMCP 工具的 mcp 处理器缺少有效的 toolName', { toolName });
       return false;
     }
 
@@ -1444,7 +1399,7 @@ export class ConfigManager {
 
       return this.validateCustomMCPTools(tools);
     } catch (error) {
-      logger.error("检查 customMCP 工具配置时出错:", error);
+      console.error('检查 customMCP 工具配置时出错', { error });
       return false;
     }
   }
@@ -1481,7 +1436,7 @@ export class ConfigManager {
     config.customMCP.tools.unshift(tool);
     this.saveConfig(config);
 
-    logger.info(`成功添加自定义 MCP 工具: ${tool.name}`);
+    console.log('成功添加自定义 MCP 工具', { toolName: tool.name });
   }
 
   /**
@@ -1526,9 +1481,7 @@ export class ConfigManager {
         timestamp: new Date(),
       });
 
-      logger.debug(
-        `成功批量添加 ${newTools.length} 个自定义 MCP 工具: ${newTools.map((t) => t.name).join(", ")}`
-      );
+      console.log('成功批量添加自定义 MCP 工具', { count: newTools.length, toolNames: newTools.map(t => t.name) });
     }
   }
 
@@ -1557,7 +1510,7 @@ export class ConfigManager {
     config.customMCP.tools.splice(toolIndex, 1);
     this.saveConfig(config);
 
-    logger.info(`成功删除自定义 MCP 工具: ${toolName}`);
+    console.log('成功删除自定义 MCP 工具', { toolName });
   }
 
   /**
@@ -1598,7 +1551,7 @@ export class ConfigManager {
     config.customMCP.tools[toolIndex] = updatedTool;
     this.saveConfig(config);
 
-    logger.debug(`成功更新自定义 MCP 工具: ${toolName}`);
+    console.log('成功更新自定义 MCP 工具', { toolName });
   }
 
   /**
@@ -1630,7 +1583,7 @@ export class ConfigManager {
       timestamp: new Date(),
     });
 
-    logger.debug(`成功更新自定义 MCP 工具配置，共 ${tools.length} 个工具`);
+    console.log('成功更新自定义 MCP 工具配置', { count: tools.length });
   }
 
   /**
@@ -1915,18 +1868,10 @@ export class ConfigManager {
       if (typeof arg3 === "string") {
         const serverName = arg1;
         const toolName = arg2;
-        logger.error(
-          `更新 customMCP 工具统计信息失败 (${serverName}/${toolName}): ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        );
+        console.error('更新 customMCP 工具统计信息失败', { serverName, toolName, error });
       } else {
         const toolName = arg1;
-        logger.error(
-          `更新 customMCP 工具统计信息失败 (${toolName}): ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        );
+        console.error('更新 customMCP 工具统计信息失败', { toolName, error });
       }
       // customMCP 统计更新失败不应该影响主要流程
     }
@@ -1939,7 +1884,7 @@ export class ConfigManager {
    */
   private async acquireStatsUpdateLock(toolKey: string): Promise<boolean> {
     if (this.statsUpdateLocks.has(toolKey)) {
-      logger.debug(`工具 ${toolKey} 的统计更新正在进行中，跳过本次更新`);
+      console.log('工具统计更新正在进行中，跳过本次更新', { toolKey });
       return false;
     }
 
@@ -1973,7 +1918,7 @@ export class ConfigManager {
       this.statsUpdateLockTimeouts.delete(toolKey);
     }
 
-    logger.debug(`已释放工具 ${toolKey} 的统计更新锁`);
+    console.log('已释放工具的统计更新锁', { toolKey });
   }
 
   /**
@@ -1993,9 +1938,9 @@ export class ConfigManager {
 
     try {
       await this.updateToolUsageStats(toolName, incrementUsageCount);
-      logger.debug(`工具 ${toolName} 统计更新完成`);
+      console.log('工具统计更新完成', { toolName });
     } catch (error) {
-      logger.error(`工具 ${toolName} 统计更新失败:`, error);
+      console.error('工具统计更新失败', { toolName, error });
       throw error;
     } finally {
       this.releaseStatsUpdateLock(toolKey);
@@ -2028,12 +1973,9 @@ export class ConfigManager {
         callTime,
         incrementUsageCount
       );
-      logger.debug(`MCP 服务工具 ${serviceName}/${toolName} 统计更新完成`);
+      console.log('MCP 服务工具统计更新完成', { serviceName, toolName });
     } catch (error) {
-      logger.error(
-        `MCP 服务工具 ${serviceName}/${toolName} 统计更新失败:`,
-        error
-      );
+      console.error('MCP 服务工具统计更新失败', { serviceName, toolName, error });
       throw error;
     } finally {
       this.releaseStatsUpdateLock(toolKey);
@@ -2054,7 +1996,7 @@ export class ConfigManager {
     this.statsUpdateLockTimeouts.clear();
 
     if (lockCount > 0) {
-      logger.info(`已清理 ${lockCount} 个统计更新锁`);
+      console.log('已清理统计更新锁', { count: lockCount });
     }
   }
 
