@@ -1,7 +1,4 @@
-import type {
-  ConfigManager,
-  MCPServerConfig,
-} from "@/lib/config/configManager.js";
+import type { ConfigManager, MCPServerConfig } from "@/lib/config/manager.js";
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { MCPService } from "@/lib/mcp";
 import type { MCPServiceConfig, MCPTransportType } from "@/lib/mcp/types";

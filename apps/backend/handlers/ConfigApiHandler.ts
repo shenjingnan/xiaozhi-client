@@ -1,4 +1,4 @@
-import type { AppConfig } from "@/lib/config/configManager.js";
+import type { AppConfig } from "@/lib/config/manager.js";
 import {
   createErrorResponse,
   createSuccessResponse,

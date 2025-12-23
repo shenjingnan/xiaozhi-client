@@ -1,4 +1,4 @@
-import type { AppConfig } from "@/lib/config/configManager.js";
+import type { AppConfig } from "@/lib/config/manager.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigService } from "../ConfigService.js";
 
@@ -14,7 +14,7 @@ vi.mock("../../Logger.js", () => ({
   },
 }));
 
-vi.mock("@/lib/config/configManager.js", () => ({
+vi.mock("@/lib/config/manager.js", () => ({
   configManager: {
     getConfig: vi.fn(),
     getMcpEndpoint: vi.fn(),
@@ -104,7 +104,7 @@ describe("ConfigService", () => {
     vi.mocked(getEventBus).mockReturnValue(mockEventBus);
 
     // Mock ConfigManager
-    const { configManager } = await import("@/lib/config/configManager.js");
+    const { configManager } = await import("@/lib/config/manager.js");
     mockConfigManager = configManager;
 
     configService = new ConfigService();

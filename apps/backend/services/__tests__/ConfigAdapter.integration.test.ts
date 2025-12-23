@@ -8,7 +8,7 @@ import type {
   MCPServerConfig,
   SSEMCPServerConfig,
   StreamableHTTPMCPServerConfig,
-} from "@/lib/config/configManager.js";
+} from "@/lib/config/manager.js";
 import { MCPService, MCPTransportType } from "@/lib/mcp";
 import {
   convertLegacyConfigBatch,

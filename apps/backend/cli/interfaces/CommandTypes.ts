@@ -6,7 +6,7 @@
 import type {
   LocalMCPServerConfig,
   MCPServerConfig,
-} from "@/lib/config/configManager.js";
+} from "@/lib/config/manager.js";
 
 // =========================
 // 基础命令参数和选项类型

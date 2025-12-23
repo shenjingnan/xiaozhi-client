@@ -3,7 +3,7 @@
  * 验证 MCP 服务环境变量传递修复是否正确工作
  */
 
-import type { LocalMCPServerConfig } from "@/lib/config/configManager.js";
+import type { LocalMCPServerConfig } from "@/lib/config/manager.js";
 import { MCPTransportType } from "@/lib/mcp";
 import { convertLegacyToNew } from "@adapters/ConfigAdapter.js";
 import { describe, expect, it } from "vitest";

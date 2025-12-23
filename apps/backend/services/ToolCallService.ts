@@ -3,7 +3,7 @@
  * 负责处理手动工具调用的核心逻辑
  */
 
-import { configManager } from "@/lib/config/configManager.js";
+import { configManager } from "@/lib/config/manager.js";
 import { ProcessManagerImpl } from "@cli/services/ProcessManager.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";

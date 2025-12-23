@@ -3,7 +3,7 @@
  * 测试核心业务逻辑和边界条件处理
  */
 
-import { configManager } from "@/lib/config/configManager.js";
+import { configManager } from "@/lib/config/manager.js";
 import type { CozeWorkflow } from "@root/types/coze.js";
 import { ToolType } from "@root/types/toolApi.js";
 import type { Context } from "hono";
@@ -11,7 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ToolApiHandler } from "../ToolApiHandler.js";
 
 // Mock configManager
-vi.mock("@/lib/config/configManager.js", () => ({
+vi.mock("@/lib/config/manager.js", () => ({
   configManager: {
     addCustomMCPTool: vi.fn(),
     getCustomMCPTools: vi.fn(() => []),

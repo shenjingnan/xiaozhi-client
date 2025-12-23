@@ -20,7 +20,7 @@ vi.mock("@services/EventBus.js", () => ({
   }),
 }));
 
-vi.mock("@/lib/config/configManager.js", () => ({
+vi.mock("@/lib/config/manager.js", () => ({
   configManager: {
     getMcpEndpoints: vi.fn(),
     addMcpEndpoint: vi.fn(),
@@ -56,7 +56,7 @@ describe("MCPEndpointApiHandler", () => {
     vi.clearAllMocks();
 
     // Create handler instance
-    const { configManager } = await import("@/lib/config/configManager.js");
+    const { configManager } = await import("@/lib/config/manager.js");
     handler = new MCPEndpointApiHandler(
       mockConnectionManager as any,
       configManager

@@ -1,4 +1,4 @@
-import { configManager } from "@/lib/config/configManager.js";
+import { configManager } from "@/lib/config/manager.js";
 import { MCPServiceManager } from "@/lib/mcp";
 import { MCPTransportType } from "@/lib/mcp";
 import { TransportFactory } from "@/lib/mcp/transport-factory.js";

@@ -1,4 +1,4 @@
-import type { AppConfig } from "@/lib/config/configManager.js";
+import type { AppConfig } from "@/lib/config/manager.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createErrorResponse, createSuccessResponse } from "../../middlewares";
 import { ConfigApiHandler } from "../ConfigApiHandler.js";

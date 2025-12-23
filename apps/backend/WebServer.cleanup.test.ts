@@ -1,10 +1,10 @@
 import { createServer } from "node:http";
-import { configManager } from "@/lib/config/configManager.js";
+import { configManager } from "@/lib/config/manager.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WebServer } from "./WebServer";
 
 // Mock configManager
-vi.mock("@/lib/config/configManager.js", () => ({
+vi.mock("@/lib/config/manager.js", () => ({
   configManager: {
     configExists: vi.fn(),
     getConfig: vi.fn(),

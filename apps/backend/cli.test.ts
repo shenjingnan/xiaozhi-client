@@ -130,7 +130,7 @@ vi.mock("ora", () => ({
   })),
 }));
 
-vi.mock("@/lib/config/configManager.js", () => ({
+vi.mock("@/lib/config/manager.js", () => ({
   configManager: {
     configExists: vi.fn(),
     getMcpEndpoint: vi.fn(),
@@ -205,7 +205,7 @@ describe("CLI 命令行工具", () => {
     mockFs = vi.mocked(fs) as FsMock;
     mockOs = vi.mocked(os) as OsMock;
     mockPath = vi.mocked(path) as PathMock;
-    const configManagerModule = await import("@/lib/config/configManager.js");
+    const configManagerModule = await import("@/lib/config/manager.js");
     mockConfigManager = vi.mocked(
       configManagerModule.configManager
     ) as ConfigManagerMock;

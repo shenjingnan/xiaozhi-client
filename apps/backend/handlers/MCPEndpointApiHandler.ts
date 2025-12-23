@@ -1,4 +1,4 @@
-import type { ConfigManager } from "@/lib/config/configManager.js";
+import type { ConfigManager } from "@/lib/config/manager.js";
 import type { EndpointManager } from "@/lib/endpoint/index.js";
 import type { ConnectionStatus } from "@/lib/endpoint/index.js";
 import type { Logger } from "@root/Logger.js";

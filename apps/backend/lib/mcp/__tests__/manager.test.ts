@@ -24,7 +24,7 @@ vi.mock("@root/Logger.js", () => ({
   },
 }));
 
-vi.mock("@/lib/config/configManager.js", () => ({
+vi.mock("@/lib/config/manager.js", () => ({
   configManager: {
     getCustomMCPTools: vi.fn(),
     getMcpServers: vi.fn(),

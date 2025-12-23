@@ -1,5 +1,5 @@
-import type { ConfigManager } from "@/lib/config/configManager.js";
-import type { MCPServerConfig } from "@/lib/config/configManager.js";
+import type { ConfigManager } from "@/lib/config/manager.js";
+import type { MCPServerConfig } from "@/lib/config/manager.js";
 import type { MCPServiceManager } from "@/lib/mcp";
 import { MCPErrorCode } from "@errors/MCPErrors.js";
 import type { EventBus } from "@services/EventBus.js";

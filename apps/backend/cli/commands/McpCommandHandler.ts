@@ -2,7 +2,7 @@
  * MCP管理命令处理器
  */
 
-import { configManager } from "@/lib/config/configManager.js";
+import { configManager } from "@/lib/config/manager.js";
 import type { SubCommand } from "@cli/interfaces/Command.js";
 import { BaseCommandHandler } from "@cli/interfaces/Command.js";
 import type {
