@@ -1,9 +1,9 @@
 import type { AppConfig } from "@/lib/config/manager.js";
+import { configManager } from "@/lib/config/manager.js";
 import {
   createErrorResponse,
   createSuccessResponse,
 } from "@middlewares/index.js";
-import { ConfigService } from "@services/ConfigService.js";
 import type { Context } from "hono";
 import { AbstractApiHandler } from "./AbstractApiHandler.js";
 
@@ -11,11 +11,8 @@ import { AbstractApiHandler } from "./AbstractApiHandler.js";
  * 配置 API 处理器
  */
 export class ConfigApiHandler extends AbstractApiHandler {
-  private configService: ConfigService;
-
   constructor() {
     super();
-    this.configService = new ConfigService();
   }
 
   /**
@@ -26,7 +23,7 @@ export class ConfigApiHandler extends AbstractApiHandler {
     const logger = this.getLogger(c);
     try {
       logger.debug("处理获取配置请求");
-      const config = await this.configService.getConfig();
+      const config = configManager.getConfig();
       logger.info("获取配置成功");
       return c.json(createSuccessResponse(config));
     } catch (error) {
@@ -49,18 +46,30 @@ export class ConfigApiHandler extends AbstractApiHandler {
       logger.debug("处理更新配置请求");
       const newConfig: AppConfig = await c.req.json();
 
-      // 验证请求体
-      if (!newConfig || typeof newConfig !== "object") {
-        const errorResponse = createErrorResponse(
-          "INVALID_REQUEST_BODY",
-          "请求体必须是有效的配置对象"
-        );
-        return c.json(errorResponse, 400);
+      // 使用 configManager 的验证方法
+      configManager.validateConfig(newConfig);
+
+      // 使用 configManager 的批量更新方法
+      configManager.updateConfig(newConfig);
+
+      // 更新服务工具配置（单独处理，因为 updateConfig 只更新已存在的配置）
+      if (newConfig.mcpServerConfig) {
+        for (const [serverName, toolsConfig] of Object.entries(
+          newConfig.mcpServerConfig
+        )) {
+          for (const [toolName, toolConfig] of Object.entries(
+            toolsConfig.tools
+          )) {
+            configManager.setToolEnabled(
+              serverName,
+              toolName,
+              toolConfig.enable
+            );
+          }
+        }
       }
 
-      await this.configService.updateConfig(newConfig, "http-api");
       logger.info("配置更新成功");
-
       return c.json(createSuccessResponse(null, "配置更新成功"));
     } catch (error) {
       logger.error("配置更新失败:", error);
@@ -80,7 +89,7 @@ export class ConfigApiHandler extends AbstractApiHandler {
     const logger = this.getLogger(c);
     try {
       logger.debug("处理获取 MCP 端点请求");
-      const endpoint = this.configService.getMcpEndpoint();
+      const endpoint = configManager.getMcpEndpoint();
       logger.debug("获取 MCP 端点成功");
       return c.json(createSuccessResponse({ endpoint }));
     } catch (error) {
@@ -101,7 +110,7 @@ export class ConfigApiHandler extends AbstractApiHandler {
     const logger = this.getLogger(c);
     try {
       logger.debug("处理获取 MCP 端点列表请求");
-      const endpoints = this.configService.getMcpEndpoints();
+      const endpoints = configManager.getMcpEndpoints();
       logger.debug("获取 MCP 端点列表成功");
       return c.json(createSuccessResponse({ endpoints }));
     } catch (error) {
@@ -122,7 +131,7 @@ export class ConfigApiHandler extends AbstractApiHandler {
     const logger = this.getLogger(c);
     try {
       logger.debug("处理获取 MCP 服务配置请求");
-      const servers = this.configService.getMcpServers();
+      const servers = configManager.getMcpServers();
       logger.debug("获取 MCP 服务配置成功");
       return c.json(createSuccessResponse({ servers }));
     } catch (error) {
@@ -143,7 +152,7 @@ export class ConfigApiHandler extends AbstractApiHandler {
     const logger = this.getLogger(c);
     try {
       logger.debug("处理获取连接配置请求");
-      const connection = this.configService.getConnectionConfig();
+      const connection = configManager.getConnectionConfig();
       logger.debug("获取连接配置成功");
       return c.json(createSuccessResponse({ connection }));
     } catch (error) {
@@ -164,7 +173,8 @@ export class ConfigApiHandler extends AbstractApiHandler {
     const logger = this.getLogger(c);
     try {
       logger.info("处理重新加载配置请求");
-      const config = await this.configService.reloadConfig();
+      configManager.reloadConfig();
+      const config = configManager.getConfig();
       logger.info("重新加载配置成功");
       return c.json(createSuccessResponse(config, "配置重新加载成功"));
     } catch (error) {
@@ -185,7 +195,7 @@ export class ConfigApiHandler extends AbstractApiHandler {
     const logger = this.getLogger(c);
     try {
       logger.debug("处理获取配置文件路径请求");
-      const path = this.configService.getConfigPath();
+      const path = configManager.getConfigPath();
       logger.debug("获取配置文件路径成功");
       return c.json(createSuccessResponse({ path }));
     } catch (error) {
@@ -206,7 +216,7 @@ export class ConfigApiHandler extends AbstractApiHandler {
     const logger = this.getLogger(c);
     try {
       logger.debug("处理检查配置是否存在请求");
-      const exists = this.configService.configExists();
+      const exists = configManager.configExists();
       logger.debug(`配置存在检查结果: ${exists}`);
       return c.json(createSuccessResponse({ exists }));
     } catch (error) {

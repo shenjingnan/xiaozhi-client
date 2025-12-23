@@ -24,6 +24,8 @@ vi.mock("@/lib/config/manager.js", () => ({
     getConfigDir: vi.fn().mockReturnValue("/tmp"),
     getCustomMCPTools: vi.fn().mockReturnValue([]),
     clearAllStatsUpdateLocks: vi.fn(),
+    validateConfig: vi.fn(),
+    updateConfig: vi.fn(),
   },
 }));
 

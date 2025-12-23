@@ -1,6 +1,7 @@
+import type { AppConfig } from "@/lib/config/manager.js";
+import { configManager } from "@/lib/config/manager.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
-import { ConfigService } from "@services/ConfigService.js";
 import type { EventBus } from "@services/EventBus.js";
 import { getEventBus } from "@services/EventBus.js";
 import type { NotificationService } from "@services/NotificationService.js";
@@ -21,7 +22,6 @@ interface WebSocketMessage {
 export class RealtimeNotificationHandler {
   private logger: Logger;
   private notificationService: NotificationService;
-  private configService: ConfigService;
   private statusService: StatusService;
   private eventBus: EventBus;
 
@@ -31,7 +31,6 @@ export class RealtimeNotificationHandler {
   ) {
     this.logger = logger.withTag("RealtimeNotificationHandler");
     this.notificationService = notificationService;
-    this.configService = new ConfigService();
     this.statusService = statusService;
     this.eventBus = getEventBus();
   }
@@ -100,7 +99,7 @@ export class RealtimeNotificationHandler {
     this.logDeprecationWarning("WebSocket getConfig", "GET /api/config");
 
     try {
-      const config = await this.configService.getConfig();
+      const config = configManager.getConfig();
       this.logger.debug("WebSocket: getConfig 请求处理成功", { clientId });
       ws.send(JSON.stringify({ type: "config", data: config }));
     } catch (error) {
@@ -119,23 +118,43 @@ export class RealtimeNotificationHandler {
    */
   private async handleUpdateConfig(
     ws: any,
-    configData: any,
+    configData: AppConfig,
     clientId: string
   ): Promise<void> {
     this.logDeprecationWarning("WebSocket updateConfig", "PUT /api/config");
 
     try {
-      await this.configService.updateConfig(
-        configData,
-        `websocket-${clientId}`
-      );
-      this.logger.debug("WebSocket: updateConfig 请求处理成功", { clientId });
+      // 使用 configManager 的验证方法
+      configManager.validateConfig(configData);
+
+      // 使用 configManager 的批量更新方法
+      configManager.updateConfig(configData);
+
+      // 更新服务工具配置（单独处理，因为 updateConfig 只更新已存在的配置）
+      if (configData.mcpServerConfig) {
+        for (const [serverName, toolsConfig] of Object.entries(
+          configData.mcpServerConfig
+        )) {
+          for (const [toolName, toolConfig] of Object.entries(
+            toolsConfig.tools
+          )) {
+            configManager.setToolEnabled(
+              serverName,
+              toolName,
+              toolConfig.enable
+            );
+          }
+        }
+      }
+
+      this.logger.debug("WebSocket: 配置更新成功", { clientId });
+      ws.send(JSON.stringify({ type: "config:updated", success: true }));
     } catch (error) {
-      this.logger.error("WebSocket: updateConfig 请求处理失败", error);
+      this.logger.error("WebSocket: 配置更新失败", error);
       this.sendError(
         ws,
         "CONFIG_UPDATE_ERROR",
-        error instanceof Error ? error.message : "配置更新失败"
+        error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -231,7 +250,7 @@ export class RealtimeNotificationHandler {
       this.logger.debug("发送初始数据给客户端", { clientId });
 
       // 发送当前配置
-      const config = await this.configService.getConfig();
+      const config = configManager.getConfig();
       ws.send(JSON.stringify({ type: "configUpdate", data: config }));
 
       // 发送当前状态

@@ -13,10 +13,10 @@ vi.mock("../../Logger.js", () => ({
   },
 }));
 
-vi.mock("@services/ConfigService.js", () => ({
-  ConfigService: vi.fn().mockImplementation(() => ({
+vi.mock("@/lib/config/manager.js", () => ({
+  configManager: {
     getConfig: vi.fn(),
-  })),
+  },
 }));
 
 // Mock timers
@@ -69,12 +69,12 @@ describe("HeartbeatHandler", () => {
     const { logger } = await import("../../Logger.js");
     vi.mocked(logger.withTag).mockReturnValue(mockLogger);
 
-    // Mock ConfigService
+    // Mock ConfigManager
     mockConfigService = {
-      getConfig: vi.fn(),
+      getConfig: vi.fn().mockReturnValue(mockConfig),
     };
-    const { ConfigService } = await import("@services/ConfigService.js");
-    vi.mocked(ConfigService).mockImplementation(() => mockConfigService);
+    const { configManager } = await import("@/lib/config/manager.js");
+    Object.assign(configManager, mockConfigService);
 
     // Mock StatusService
     mockStatusService = {
@@ -117,7 +117,7 @@ describe("HeartbeatHandler", () => {
     const clientId = "test-client-123";
 
     beforeEach(() => {
-      mockConfigService.getConfig.mockResolvedValue(mockConfig);
+      mockConfigService.getConfig.mockReturnValue(mockConfig);
       vi.spyOn(Date, "now").mockReturnValue(1234567890);
     });
 
@@ -212,7 +212,9 @@ describe("HeartbeatHandler", () => {
 
     it("should handle config service error gracefully", async () => {
       const configError = new Error("Config fetch failed");
-      mockConfigService.getConfig.mockRejectedValue(configError);
+      mockConfigService.getConfig.mockImplementation(() => {
+        throw configError;
+      });
 
       await heartbeatHandler.handleClientStatus(
         mockWebSocket,
@@ -636,7 +638,7 @@ describe("HeartbeatHandler", () => {
 
     beforeEach(() => {
       vi.spyOn(Date, "now").mockReturnValue(1234567890);
-      mockConfigService.getConfig.mockResolvedValue(mockConfig);
+      mockConfigService.getConfig.mockReturnValue(mockConfig);
     });
 
     it("should handle complete client lifecycle", async () => {
@@ -743,7 +745,7 @@ describe("HeartbeatHandler", () => {
 
     beforeEach(() => {
       vi.spyOn(Date, "now").mockReturnValue(1234567890);
-      mockConfigService.getConfig.mockResolvedValue(mockConfig);
+      mockConfigService.getConfig.mockReturnValue(mockConfig);
     });
 
     it("should handle heartbeat message with minimal data", async () => {

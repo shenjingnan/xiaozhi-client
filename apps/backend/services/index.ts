@@ -1,4 +1,3 @@
-export * from "./ConfigService.js";
 export * from "./StatusService.js";
 export * from "./NotificationService.js";
 export * from "./EventBus.js";

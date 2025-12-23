@@ -1,6 +1,6 @@
+import { configManager } from "@/lib/config/manager.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
-import { ConfigService } from "@services/ConfigService.js";
 import type { NotificationService } from "@services/NotificationService.js";
 import type { StatusService } from "@services/StatusService.js";
 
@@ -24,7 +24,6 @@ export class HeartbeatHandler {
   private logger: Logger;
   private statusService: StatusService;
   private notificationService: NotificationService;
-  private configService: ConfigService;
 
   constructor(
     statusService: StatusService,
@@ -33,7 +32,6 @@ export class HeartbeatHandler {
     this.logger = logger.withTag("HeartbeatHandler");
     this.statusService = statusService;
     this.notificationService = notificationService;
-    this.configService = new ConfigService();
   }
 
   /**
@@ -77,7 +75,7 @@ export class HeartbeatHandler {
    */
   private async sendLatestConfig(ws: any, clientId: string): Promise<void> {
     try {
-      const latestConfig = await this.configService.getConfig();
+      const latestConfig = configManager.getConfig();
       const message = {
         type: "configUpdate",
         data: latestConfig,
