@@ -13,11 +13,7 @@ import type {
 import type { MCPServiceConfig } from "@/lib/mcp/types";
 import { MCPTransportType } from "@/lib/mcp/types";
 import { inferTransportTypeFromUrl } from "@/lib/mcp/utils";
-import { logger as globalLogger } from "@root/Logger.js";
 import { TypeFieldNormalizer } from "@utils/TypeFieldNormalizer.js";
-
-// 为配置适配器创建带标签的 logger
-const logger = globalLogger.withTag("ConfigAdapter");
 
 /**
  * 配置验证错误类
@@ -39,7 +35,7 @@ export function convertLegacyToNew(
   serviceName: string,
   legacyConfig: MCPServerConfig
 ): MCPServiceConfig {
-  logger.debug(`转换配置: ${serviceName}`, legacyConfig);
+  console.log("转换配置", { serviceName, legacyConfig });
 
   try {
     // 验证输入参数
@@ -62,10 +58,10 @@ export function convertLegacyToNew(
     // 验证转换后的配置
     validateNewConfig(newConfig);
 
-    logger.debug(`配置转换成功: ${serviceName} -> ${newConfig.type}`);
+    console.log("配置转换成功", { serviceName, type: newConfig.type });
     return newConfig;
   } catch (error) {
-    logger.error(`配置转换失败: ${serviceName}`, error);
+    console.error("配置转换失败", { serviceName, error });
     throw error instanceof ConfigValidationError
       ? error
       : new ConfigValidationError(
@@ -148,7 +144,7 @@ function convertLocalConfig(
     // 检查是否为相对路径（以 ./ 开头或不以 / 开头且包含文件扩展名）
     if (isRelativePath(arg)) {
       const resolvedPath = resolve(workingDir, arg);
-      logger.debug(`解析相对路径: ${arg} -> ${resolvedPath}`);
+      console.log("解析相对路径", { arg, resolvedPath });
       return resolvedPath;
     }
     return arg;
@@ -195,9 +191,12 @@ function convertSSEConfig(
     baseConfig.modelScopeAuth = true;
   }
 
-  logger.info(
-    `[ConfigAdapter] 服务 ${serviceName} URL: ${config.url}，推断类型: ${inferredType}${isModelScope ? " (ModelScope)" : ""}`
-  );
+  console.log("SSE配置转换", {
+    serviceName,
+    url: config.url,
+    inferredType,
+    isModelScope,
+  });
 
   return baseConfig;
 }
@@ -255,9 +254,7 @@ export function convertLegacyConfigBatch(
     throw new ConfigValidationError(`批量配置转换失败: ${errorMessages}`);
   }
 
-  logger.info(
-    `批量配置转换成功，共转换 ${Object.keys(newConfigs).length} 个服务`
-  );
+  console.log("批量配置转换成功", { count: Object.keys(newConfigs).length });
   return newConfigs;
 }
 
