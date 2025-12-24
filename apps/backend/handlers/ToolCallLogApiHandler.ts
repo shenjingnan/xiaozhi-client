@@ -5,8 +5,8 @@
 
 import { PAGINATION_CONSTANTS } from "@cli/Constants.js";
 import { logger } from "@root/Logger.js";
-import type { ToolCallQuery } from "@services/ToolCallLogService.js";
-import { ToolCallLogService } from "@services/ToolCallLogService.js";
+import type { ToolCallQuery } from "@/lib/mcp/log.js";
+import { ToolCallLogService } from "@/lib/mcp/log.js";
 import type { Context } from "hono";
 import { z } from "zod";
 

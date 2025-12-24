@@ -25,7 +25,7 @@ import type {
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { getEventBus } from "@root/services/EventBus.js";
 import type { MCPMessage } from "@root/types/mcp.js";
-import { ToolCallLogger } from "@utils/ToolCallLogger.js";
+import { ToolCallLogger } from "./log.js";
 import { CustomMCPHandler } from "./custom.js";
 import { MCPMessageHandler } from "./message.js";
 import { ConnectionState, type TransportAdapter } from "./transports/index.js";
