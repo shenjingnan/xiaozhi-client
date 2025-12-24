@@ -109,6 +109,7 @@
     "node_modules/**",
     "**/dist/**",
     "dist/**",
+    "docs/out/**",
     "**/coverage/**",
     ".git/**",
     "*.log",
