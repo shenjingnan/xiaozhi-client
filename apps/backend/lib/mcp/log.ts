@@ -313,7 +313,7 @@ export class ToolCallLogService {
     // 按工具名称过滤
     if (query.toolName) {
       filtered = filtered.filter((record) =>
-        record.toolName.toLowerCase().includes(query.toolName!.toLowerCase())
+        record.toolName.toLowerCase().includes(query.toolName?.toLowerCase() ?? "")
       );
     }
 
@@ -322,7 +322,7 @@ export class ToolCallLogService {
       filtered = filtered.filter((record) =>
         record.serverName
           ?.toLowerCase()
-          .includes(query.serverName!.toLowerCase())
+          .includes(query.serverName?.toLowerCase() ?? "")
       );
     }
 
