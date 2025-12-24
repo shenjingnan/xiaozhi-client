@@ -1,0 +1,33 @@
+{
+  "name": "docs",
+  "version": "1.0.0",
+  "description": "docs",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next",
+    "build": "next build",
+    "start": "next start",
+    "postbuild": "pagefind --site .next/server/app --output-path out/_pagefind"
+  },
+  "keywords": [
+    "xiaozhi-client"
+  ],
+  "author": "shenjingnan <sjn.code@gmail.com>",
+  "license": "MIT",
+  "packageManager": "pnpm@10.13.1",
+  "dependencies": {
+    "@tailwindcss/postcss": "^4.1.15",
+    "next": "^15.5.8",
+    "nextra": "^4.6.0",
+    "nextra-theme-docs": "^4.6.0",
+    "postcss": "^8.5.6",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "sass": "^1.93.2",
+    "tailwindcss": "^4.1.15"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.2",
+    "pagefind": "^1.4.0"
+  }
+}

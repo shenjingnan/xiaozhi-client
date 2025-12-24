@@ -1,0 +1,7 @@
+@import "tailwindcss";
+@import "nextra-theme-docs/style.css";
+
+:root {
+  --x-radius-md: 0.5rem;
+  --nextra-content-width: 100rem;
+}
