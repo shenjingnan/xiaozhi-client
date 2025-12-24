@@ -1,6 +1,6 @@
 import { NPMManager } from "@/lib/npm";
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { Context } from "hono";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { logger } from "../../Logger.js";
 import { UpdateApiHandler } from "../UpdateApiHandler.js";
 
