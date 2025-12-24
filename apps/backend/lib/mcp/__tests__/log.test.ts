@@ -22,22 +22,6 @@ import {
   type ToolCallRecord,
 } from "../log.js";
 
-// Mock logger
-vi.mock("@root/Logger.js", () => ({
-  logger: {
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    withTag: vi.fn(() => ({
-      debug: vi.fn(),
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-    })),
-  },
-}));
-
 // ==================== ToolCallLogger 测试 ====================
 
 describe("ToolCallLogger", () => {
@@ -446,15 +430,19 @@ describe("ToolCallLogger", () => {
         duration: 50,
       };
 
-      const { logger } = await import("@root/Logger.js");
-      const mockInfo = vi.mocked(logger.info);
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
       await toolCallLogger.recordToolCall(record);
 
       // 检查是否调用了控制台日志
-      expect(mockInfo).toHaveBeenCalledWith(
-        expect.stringContaining("[工具调用] ✅ test_tool (50ms)")
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "[工具调用]",
+        expect.objectContaining({
+          message: expect.stringContaining("✅ test_tool (50ms)"),
+        })
       );
+
+      consoleSpy.mockRestore();
     });
 
     it("应该为失败的调用显示失败表情符号", async () => {
@@ -465,15 +453,19 @@ describe("ToolCallLogger", () => {
         duration: 30,
       };
 
-      const { logger } = await import("@root/Logger.js");
-      const mockInfo = vi.mocked(logger.info);
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
       await toolCallLogger.recordToolCall(record);
 
       // 检查是否调用了控制台日志
-      expect(mockInfo).toHaveBeenCalledWith(
-        expect.stringContaining("[工具调用] ❌ failing_tool (30ms)")
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "[工具调用]",
+        expect.objectContaining({
+          message: expect.stringContaining("❌ failing_tool (30ms)"),
+        })
       );
+
+      consoleSpy.mockRestore();
     });
   });
 

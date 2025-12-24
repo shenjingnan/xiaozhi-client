@@ -6,7 +6,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { PathUtils } from "@cli/utils/PathUtils.js";
-import { logger } from "@root/Logger.js";
 import pino from "pino";
 import type { Logger as PinoLogger } from "pino";
 
@@ -85,9 +84,10 @@ export class ToolCallLogger {
     // 创建 Pino 实例
     this.pinoLogger = this.createPinoLogger(this.logFilePath);
 
-    logger.debug(
-      `ToolCallLogger 初始化: maxRecords=${this.maxRecords}, path=${this.logFilePath}`
-    );
+    console.log("ToolCallLogger 初始化", {
+      maxRecords: this.maxRecords,
+      path: this.logFilePath,
+    });
   }
 
   /**
@@ -104,9 +104,9 @@ export class ToolCallLogger {
           try {
             const logObj = JSON.parse(chunk);
             const message = this.formatConsoleMessage(logObj);
-            logger.info(`[工具调用] ${message}`);
+            console.log("[工具调用]", { message });
           } catch {
-            logger.info(`[工具调用] ${chunk.trim()}`);
+            console.log("[工具调用]", { chunk: chunk.trim() });
           }
         },
       },
@@ -125,7 +125,7 @@ export class ToolCallLogger {
       });
     } catch (error) {
       // 如果文件路径无效，记录错误但不抛出异常
-      logger.error("无法创建工具调用日志文件:", error);
+      console.error("无法创建工具调用日志文件", { error });
     }
 
     return pino(
@@ -187,11 +187,12 @@ export class ToolCallLogger {
         linesToKeep.join("\n") + (linesToKeep.length > 0 ? "\n" : "");
       fs.writeFileSync(this.logFilePath, newContent, "utf8");
 
-      logger.debug(
-        `已清理 ${recordsToRemove} 条旧的工具调用记录，保留最新 ${this.maxRecords} 条`
-      );
+      console.log("已清理旧的工具调用记录", {
+        recordsToRemove,
+        maxRecords: this.maxRecords,
+      });
     } catch (error) {
-      logger.error("清理旧工具调用记录失败:", error);
+      console.error("清理旧工具调用记录失败", { error });
     }
   }
 
@@ -207,7 +208,7 @@ export class ToolCallLogger {
       this.pinoLogger.info(record, record.toolName);
     } catch (error) {
       // 记录失败不应该影响主流程，只记录错误日志
-      logger.error("记录工具调用失败:", error);
+      console.error("记录工具调用失败", { error });
     }
   }
 
@@ -233,11 +234,9 @@ export class ToolCallLogger {
  * 负责读取和查询工具调用日志
  */
 export class ToolCallLogService {
-  private logger: typeof logger;
   private configDir: string;
 
   constructor(configDir?: string) {
-    this.logger = logger.withTag("ToolCallLogService");
     this.configDir = configDir || PathUtils.getConfigDir();
   }
 
@@ -283,11 +282,11 @@ export class ToolCallLogService {
           }
           // 如果没有时间戳，记录警告信息提示数据质量问题
           if (!record.timestamp) {
-            this.logger.warn("日志记录缺少时间戳, 已保持为 undefined:", line);
+            console.warn("日志记录缺少时间戳", { line });
           }
           records.push(record);
         } catch {
-          this.logger.warn("跳过无效的日志行:", line);
+          console.warn("跳过无效的日志行", { line });
         }
       }
 
@@ -296,7 +295,7 @@ export class ToolCallLogService {
 
       return records;
     } catch (error) {
-      this.logger.error("读取日志文件失败:", error);
+      console.error("读取日志文件失败", { error });
       throw new Error("无法读取工具调用日志文件");
     }
   }
@@ -374,7 +373,10 @@ export class ToolCallLogService {
     const paginated = filtered.slice(offset, offset + limit);
     const hasMore = offset + limit < total;
 
-    this.logger.debug(`返回工具调用日志: ${paginated.length}/${total} 条记录`);
+    console.log("返回工具调用日志", {
+      count: paginated.length,
+      total,
+    });
 
     return {
       records: paginated,
