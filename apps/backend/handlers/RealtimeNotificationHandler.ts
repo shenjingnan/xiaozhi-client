@@ -29,7 +29,7 @@ export class RealtimeNotificationHandler {
     notificationService: NotificationService,
     statusService: StatusService
   ) {
-    this.logger = logger.withTag("RealtimeNotificationHandler");
+    this.logger = logger;
     this.notificationService = notificationService;
     this.statusService = statusService;
     this.eventBus = getEventBus();

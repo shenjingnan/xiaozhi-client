@@ -5,12 +5,10 @@ import { ServiceApiHandler } from "../ServiceApiHandler.js";
 // Mock dependencies
 vi.mock("../../Logger.js", () => ({
   logger: {
-    withTag: vi.fn().mockReturnValue({
-      debug: vi.fn(),
-      info: vi.fn(),
-      error: vi.fn(),
-      warn: vi.fn(),
-    }),
+    debug: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
   },
 }));
 

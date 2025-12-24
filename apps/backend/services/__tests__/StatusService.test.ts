@@ -5,12 +5,10 @@ import { StatusService } from "../StatusService.js";
 // Mock dependencies
 vi.mock("../../Logger.js", () => ({
   logger: {
-    withTag: vi.fn().mockReturnValue({
-      debug: vi.fn(),
-      info: vi.fn(),
-      error: vi.fn(),
-      warn: vi.fn(),
-    }),
+    debug: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
   },
 }));
 
@@ -41,7 +39,7 @@ describe("StatusService", () => {
       warn: vi.fn(),
     };
     const { logger } = await import("../../Logger.js");
-    vi.mocked(logger.withTag).mockReturnValue(mockLogger);
+    Object.assign(logger, mockLogger);
 
     // Mock EventBus
     mockEventBus = {

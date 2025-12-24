@@ -15,13 +15,11 @@ vi.mock("../EventBus.js", () => ({
 // Mock Logger
 vi.mock("@root/Logger.js", () => ({
   logger: {
-    withTag: vi.fn().mockReturnValue({
-      debug: vi.fn(),
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-      success: vi.fn(),
-    }),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    success: vi.fn(),
   },
 }));
 
@@ -100,7 +98,7 @@ describe("NotificationService", () => {
       success: vi.fn(),
     };
     const { logger } = await import("../../Logger.js");
-    (logger.withTag as any).mockReturnValue(mockLogger);
+    Object.assign(logger, mockLogger);
 
     // Mock ConfigManager
     const { configManager } = await import("@/lib/config/manager.js");

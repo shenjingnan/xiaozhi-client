@@ -38,7 +38,7 @@ export class McpCommandHandler extends BaseCommandHandler {
 
   constructor(...args: ConstructorParameters<typeof BaseCommandHandler>) {
     super(...args);
-    this.logger = logger.withTag("McpCommandHandler");
+    this.logger = logger;
     this.processManager = new ProcessManagerImpl();
 
     // 获取 Web 服务器的端口

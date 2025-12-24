@@ -50,9 +50,7 @@ describe("UpdateApiHandler", () => {
       warn: vi.fn(),
       debug: vi.fn(),
     };
-    vi.spyOn(logger, "withTag").mockReturnValue(
-      mockLogger as unknown as ReturnType<typeof logger.withTag>
-    );
+    Object.assign(logger, mockLogger);
 
     // Setup mock event bus
     mockEventBus = {

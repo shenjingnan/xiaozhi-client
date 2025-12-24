@@ -68,7 +68,7 @@ export class MCPEndpointApiHandler {
   private eventBus: EventBus;
 
   constructor(endpointManager: EndpointManager, configManager: ConfigManager) {
-    this.logger = logger.withTag("MCPEndpointApiHandler");
+    this.logger = logger;
     this.endpointManager = endpointManager;
     this.configManager = configManager;
     this.eventBus = getEventBus();

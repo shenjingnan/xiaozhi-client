@@ -14,7 +14,7 @@ export class StaticFileHandler {
   private webPath: string | null = null;
 
   constructor() {
-    this.logger = logger.withTag("StaticFileHandler");
+    this.logger = logger;
     this.initializeWebPath();
   }
 

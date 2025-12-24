@@ -304,15 +304,6 @@ describe("Logger", async () => {
     });
   });
 
-  describe("withTag", () => {
-    it("should return the same instance (deprecated functionality)", () => {
-      const testLogger = new Logger();
-      const taggedLogger = testLogger.withTag("TEST_TAG");
-
-      expect(taggedLogger).toBe(testLogger);
-    });
-  });
-
   describe("close", () => {
     it("should handle close gracefully", () => {
       const testLogger = new Logger();

@@ -146,7 +146,7 @@ export class WebServer {
       // 配置读取失败时使用默认端口
       this.port = port ?? 9999;
     }
-    this.logger = logger.withTag("WebServer");
+    this.logger = logger;
 
     // 初始化事件总线
     this.eventBus = getEventBus();

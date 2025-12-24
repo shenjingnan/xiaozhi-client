@@ -81,7 +81,7 @@ export class ServiceRestartManager {
       ...config,
     };
 
-    this.logger = logger.withTag("ServiceRestartManager");
+    this.logger = logger;
     this.setupEventListeners();
   }
 

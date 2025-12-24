@@ -141,7 +141,7 @@ export class MCPServerApiHandler {
     mcpServiceManager: MCPServiceManager,
     configManager: ConfigManager
   ) {
-    this.logger = logger.withTag("MCPServerApiHandler");
+    this.logger = logger;
     this.mcpServiceManager = mcpServiceManager;
     this.configManager = configManager;
   }

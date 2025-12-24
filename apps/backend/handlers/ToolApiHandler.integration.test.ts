@@ -14,12 +14,10 @@ import { ToolApiHandler } from "./ToolApiHandler.js";
 // Mock dependencies
 vi.mock("../Logger.js", () => ({
   logger: {
-    withTag: vi.fn(() => ({
-      info: vi.fn(),
-      error: vi.fn(),
-      debug: vi.fn(),
-      warn: vi.fn(),
-    })),
+    info: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+    warn: vi.fn(),
   },
 }));
 

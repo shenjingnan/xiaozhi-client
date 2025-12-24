@@ -40,7 +40,7 @@ export class StatusService {
   private readonly HEARTBEAT_TIMEOUT = 35000; // 35 seconds
 
   constructor() {
-    this.logger = logger.withTag("StatusService");
+    this.logger = logger;
     this.eventBus = getEventBus();
   }
 

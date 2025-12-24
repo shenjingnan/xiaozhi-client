@@ -29,7 +29,7 @@ export class HeartbeatHandler {
     statusService: StatusService,
     notificationService: NotificationService
   ) {
-    this.logger = logger.withTag("HeartbeatHandler");
+    this.logger = logger;
     this.statusService = statusService;
     this.notificationService = notificationService;
   }

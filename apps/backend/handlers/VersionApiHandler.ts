@@ -28,7 +28,7 @@ export class VersionApiHandler {
   private logger: Logger;
 
   constructor() {
-    this.logger = logger.withTag("VersionApiHandler");
+    this.logger = logger;
   }
 
   /**
