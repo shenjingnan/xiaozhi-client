@@ -124,7 +124,7 @@ export class McpCommandHandler extends BaseCommandHandler {
    * @param argsString JSON 字符串
    * @returns 解析后的参数对象
    */
-  private static parseJsonArgs(argsString: string): any {
+  private static parseJsonArgs(argsString: string): Record<string, unknown> {
     try {
       return JSON.parse(argsString);
     } catch (error) {
@@ -320,7 +320,7 @@ export class McpCommandHandler extends BaseCommandHandler {
   private async callToolInternal(
     serviceName: string,
     toolName: string,
-    args: any
+    args: Record<string, unknown>
   ): Promise<ToolCallResult> {
     // 1. 检查服务状态
     await this.validateServiceStatus();
