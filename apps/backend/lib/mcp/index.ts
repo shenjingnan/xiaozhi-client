@@ -6,6 +6,7 @@ export * from "@/lib/mcp/transport-factory.js";
 export * from "./message.js";
 export * from "@/lib/mcp/cache.js";
 export * from "./custom.js";
+export * from "./log.js";
 // 选择性导出transports，避免重复的ConnectionState
 export {
   TransportAdapter,

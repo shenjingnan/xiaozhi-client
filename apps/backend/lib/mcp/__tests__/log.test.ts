@@ -1,24 +1,44 @@
 /**
- * ToolCallLogger 单元测试
+ * MCP 工具调用日志模块测试
+ * 包含 ToolCallLogger 和 ToolCallLogService 的测试
  */
 
-import { existsSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  rmSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import * as fs from "node:fs/promises";
+import * as os from "node:os";
 import * as path from "node:path";
 import { PathUtils } from "@cli/utils/PathUtils.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ToolCallLogConfig } from "../ToolCallLogger.js";
-import { ToolCallLogger } from "../ToolCallLogger.js";
+import {
+  type ToolCallLogConfig,
+  ToolCallLogService,
+  ToolCallLogger,
+  type ToolCallRecord,
+} from "../log.js";
 
 // Mock logger
-vi.mock("../../Logger.js", () => ({
+vi.mock("@root/Logger.js", () => ({
   logger: {
     debug: vi.fn(),
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
+    withTag: vi.fn(() => ({
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    })),
   },
 }));
+
+// ==================== ToolCallLogger 测试 ====================
 
 describe("ToolCallLogger", () => {
   // 使用 PathUtils 获取跨平台兼容的临时目录
@@ -97,17 +117,17 @@ describe("ToolCallLogger", () => {
   });
 
   describe("constructor", () => {
-    it("should initialize with correct configuration", () => {
+    it("应该使用正确的配置初始化", () => {
       expect(toolCallLogger.getMaxRecords()).toBe(5);
       expect(toolCallLogger.getLogFilePath()).toBe(logFilePath);
     });
 
-    it("should use default values when config is not provided", () => {
+    it("应该在未提供配置时使用默认值", () => {
       const defaultLogger = new ToolCallLogger({}, testDir);
       expect(defaultLogger.getMaxRecords()).toBe(100);
     });
 
-    it("should generate default log file path when not provided", () => {
+    it("应该在未提供路径时生成默认日志文件路径", () => {
       const defaultLogger = new ToolCallLogger({}, testDir);
       // 预期路径应该被规范化
       const expectedPath = path.resolve(
@@ -118,7 +138,7 @@ describe("ToolCallLogger", () => {
   });
 
   describe("recordToolCall", () => {
-    it("should record tool call successfully", async () => {
+    it("应该成功记录工具调用", async () => {
       // 调用记录方法应该不会抛出错误
       await expect(
         toolCallLogger.recordToolCall({
@@ -128,7 +148,7 @@ describe("ToolCallLogger", () => {
       ).resolves.toBeUndefined();
     });
 
-    it("should create log file and record first tool call", async () => {
+    it("应该创建日志文件并记录第一次工具调用", async () => {
       const record = {
         timestamp: Date.now(),
         toolName: "calculator_add",
@@ -180,7 +200,7 @@ describe("ToolCallLogger", () => {
       expect(true).toBe(true);
     });
 
-    it("should append multiple records", async () => {
+    it("应该追加多条记录", async () => {
       const record1 = {
         timestamp: Date.now(),
         toolName: "calculator_add",
@@ -236,8 +256,8 @@ describe("ToolCallLogger", () => {
       expect(true).toBe(true);
     });
 
-    it("should handle errors gracefully", async () => {
-      // Create a logger with invalid file path to simulate error
+    it("应该优雅地处理错误", async () => {
+      // 创建一个带有无效文件路径的 logger 来模拟错误
       const invalidLogger = new ToolCallLogger(
         {
           maxRecords: 5,
@@ -252,13 +272,13 @@ describe("ToolCallLogger", () => {
         success: true,
       };
 
-      // Should not throw even with invalid path
+      // 即使路径无效也不应该抛出异常
       await expect(
         invalidLogger.recordToolCall(record)
       ).resolves.toBeUndefined();
     });
 
-    it("should record failed tool calls", async () => {
+    it("应该记录失败的工具调用", async () => {
       const failedRecord = {
         timestamp: Date.now(),
         toolName: "failing_tool",
@@ -303,13 +323,13 @@ describe("ToolCallLogger", () => {
       expect(true).toBe(true);
     });
 
-    it("should enforce maxRecords limit by removing old records", async () => {
+    it("应该通过删除旧记录来强制执行 maxRecords 限制", async () => {
       const limitedLogger = new ToolCallLogger(
         { maxRecords: 3, logFilePath: logFilePath },
         testDir
       );
 
-      // Record 5 tool calls (exceeding the limit of 3)
+      // 记录 5 次工具调用（超过限制 3）
       for (let i = 1; i <= 5; i++) {
         await limitedLogger.recordToolCall({
           toolName: `tool_${i}`,
@@ -334,10 +354,10 @@ describe("ToolCallLogger", () => {
               .filter((line) => line.trim() !== "");
 
             if (logLines.length > 0) {
-              // Should only have the latest 3 records
+              // 应该只有最新的 3 条记录
               expect(logLines.length).toBeLessThanOrEqual(3);
 
-              // Check that the oldest records are removed (if we have all records)
+              // 检查最旧的记录是否被删除（如果我们有所有记录）
               if (logLines.length === 3) {
                 const remainingToolNames = logLines.map(
                   (line) => JSON.parse(line).toolName
@@ -359,13 +379,13 @@ describe("ToolCallLogger", () => {
       expect(true).toBe(true);
     });
 
-    it("should keep exactly maxRecords when reaching limit", async () => {
+    it("应该在达到限制时保持 maxRecords 的数量", async () => {
       const limitedLogger = new ToolCallLogger(
         { maxRecords: 2, logFilePath: logFilePath },
         testDir
       );
 
-      // Record exactly 2 tool calls (matching the limit)
+      // 记录恰好 2 次工具调用（匹配限制）
       await limitedLogger.recordToolCall({
         toolName: "first_tool",
         success: true,
@@ -394,11 +414,11 @@ describe("ToolCallLogger", () => {
               .filter((line) => line.trim() !== "");
 
             if (logLines.length > 0) {
-              // Should have exactly 2 records (or at least 1 if some operations were skipped)
+              // 应该恰好有 2 条记录（或至少 1 条如果某些操作被跳过）
               expect(logLines.length).toBeGreaterThanOrEqual(1);
               expect(logLines.length).toBeLessThanOrEqual(2);
 
-              // Check tool names if we have the expected number of records
+              // 如果我们有预期的记录数量，检查工具名称
               if (logLines.length === 2) {
                 const toolNames = logLines.map(
                   (line) => JSON.parse(line).toolName
@@ -417,8 +437,8 @@ describe("ToolCallLogger", () => {
     });
   });
 
-  describe("console output", () => {
-    it("should output formatted messages to console", async () => {
+  describe("控制台输出", () => {
+    it("应该向控制台输出格式化消息", async () => {
       const record = {
         timestamp: Date.now(),
         toolName: "test_tool",
@@ -426,7 +446,7 @@ describe("ToolCallLogger", () => {
         duration: 50,
       };
 
-      const { logger } = await import("../../Logger.js");
+      const { logger } = await import("@root/Logger.js");
       const mockInfo = vi.mocked(logger.info);
 
       await toolCallLogger.recordToolCall(record);
@@ -437,7 +457,7 @@ describe("ToolCallLogger", () => {
       );
     });
 
-    it("should show failure emoji for failed calls", async () => {
+    it("应该为失败的调用显示失败表情符号", async () => {
       const record = {
         timestamp: Date.now(),
         toolName: "failing_tool",
@@ -445,7 +465,7 @@ describe("ToolCallLogger", () => {
         duration: 30,
       };
 
-      const { logger } = await import("../../Logger.js");
+      const { logger } = await import("@root/Logger.js");
       const mockInfo = vi.mocked(logger.info);
 
       await toolCallLogger.recordToolCall(record);
@@ -457,8 +477,8 @@ describe("ToolCallLogger", () => {
     });
   });
 
-  describe("file format", () => {
-    it("should output valid JSON format", async () => {
+  describe("文件格式", () => {
+    it("应该输出有效的 JSON 格式", async () => {
       const record = {
         timestamp: Date.now(),
         toolName: "test_tool",
@@ -510,6 +530,250 @@ describe("ToolCallLogger", () => {
 
       // 无论如何，记录操作都应该成功
       expect(true).toBe(true);
+    });
+  });
+});
+
+// ==================== ToolCallLogService 测试 ====================
+
+describe("ToolCallLogService", () => {
+  let toolCallLogService: ToolCallLogService;
+  let tempDir: string;
+  let logFilePath: string;
+
+  beforeEach(() => {
+    // 创建临时目录
+    tempDir = mkdtempSync(path.join(os.tmpdir(), "tool-call-test-"));
+    logFilePath = path.join(tempDir, "tool-calls.jsonl");
+
+    // 创建服务实例
+    toolCallLogService = new ToolCallLogService(tempDir);
+  });
+
+  afterEach(() => {
+    // 清理临时文件和目录
+    try {
+      if (existsSync(logFilePath)) {
+        unlinkSync(logFilePath);
+      }
+      rmSync(tempDir, { recursive: true, force: true });
+    } catch (error) {
+      console.warn("清理临时文件失败:", error);
+    }
+  });
+
+  describe("getToolCallLogs", () => {
+    it("应该返回空的日志记录列表", async () => {
+      // 不创建日志文件，测试空文件情况
+      // 创建空日志文件
+      writeFileSync(logFilePath, "", "utf8");
+
+      const result = await toolCallLogService.getToolCallLogs();
+      expect(result.records).toHaveLength(0);
+      expect(result.total).toBe(0);
+      expect(result.hasMore).toBe(false);
+    });
+
+    it("应该正确解析和返回日志记录", async () => {
+      // 创建测试数据
+      const testRecords: ToolCallRecord[] = [
+        {
+          toolName: "test_tool_1",
+          serverName: "test_server",
+          success: true,
+          duration: 100,
+          arguments: { input: "test" },
+          result: { output: "success" },
+          timestamp: Date.now() - 1000,
+        },
+        {
+          toolName: "test_tool_2",
+          serverName: "test_server",
+          success: false,
+          duration: 200,
+          error: "Test error",
+          timestamp: Date.now(),
+        },
+      ];
+
+      // 写入测试数据到日志文件
+      const logData = testRecords
+        .map((record) => JSON.stringify(record))
+        .join("\n");
+      writeFileSync(logFilePath, logData, "utf8");
+
+      const result = await toolCallLogService.getToolCallLogs();
+
+      expect(result.records).toHaveLength(2);
+      expect(result.total).toBe(2);
+      expect(result.hasMore).toBe(false);
+
+      // 验证记录按时间戳倒序排列
+      expect(result.records[0].toolName).toBe("test_tool_2");
+      expect(result.records[1].toolName).toBe("test_tool_1");
+    });
+
+    it("应该正确应用查询参数过滤", async () => {
+      const testRecords: ToolCallRecord[] = [
+        {
+          toolName: "search_tool",
+          serverName: "search_server",
+          success: true,
+          duration: 50,
+          timestamp: Date.now() - 2000,
+        },
+        {
+          toolName: "calculate_tool",
+          serverName: "math_server",
+          success: false,
+          duration: 100,
+          timestamp: Date.now() - 1000,
+        },
+        {
+          toolName: "search_tool",
+          serverName: "search_server",
+          success: true,
+          duration: 75,
+          timestamp: Date.now(),
+        },
+      ];
+
+      const logData = testRecords
+        .map((record) => JSON.stringify(record))
+        .join("\n");
+      writeFileSync(logFilePath, logData, "utf8");
+
+      // 测试按工具名称过滤
+      const result1 = await toolCallLogService.getToolCallLogs({
+        toolName: "search_tool",
+      });
+      expect(result1.records).toHaveLength(2);
+      expect(result1.total).toBe(2);
+
+      // 测试按服务器名称过滤
+      const result2 = await toolCallLogService.getToolCallLogs({
+        serverName: "math_server",
+      });
+      expect(result2.records).toHaveLength(1);
+      expect(result2.total).toBe(1);
+
+      // 测试按成功状态过滤
+      const result3 = await toolCallLogService.getToolCallLogs({
+        success: false,
+      });
+      expect(result3.records).toHaveLength(1);
+      expect(result3.total).toBe(1);
+
+      // 测试分页
+      const result4 = await toolCallLogService.getToolCallLogs({
+        limit: 1,
+        offset: 1,
+      });
+      expect(result4.records).toHaveLength(1);
+      expect(result4.total).toBe(3);
+      expect(result4.hasMore).toBe(true);
+    });
+
+    it("应该正确处理时间范围过滤", async () => {
+      const now = Date.now();
+      const testRecords: ToolCallRecord[] = [
+        {
+          toolName: "tool1",
+          success: true,
+          timestamp: now - 5000, // 5秒前
+        },
+        {
+          toolName: "tool2",
+          success: true,
+          timestamp: now - 2000, // 2秒前
+        },
+        {
+          toolName: "tool3",
+          success: true,
+          timestamp: now, // 现在
+        },
+      ];
+
+      const logData = testRecords
+        .map((record) => JSON.stringify(record))
+        .join("\n");
+      writeFileSync(logFilePath, logData, "utf8");
+
+      const startDate = new Date(now - 3000).toISOString(); // 3秒前
+      const endDate = new Date(now - 1000).toISOString(); // 1秒前
+
+      const result = await toolCallLogService.getToolCallLogs({
+        startDate,
+        endDate,
+      });
+
+      expect(result.records).toHaveLength(1);
+      expect(result.records[0].toolName).toBe("tool2");
+    });
+  });
+
+  describe("边界情况处理", () => {
+    it("应该跳过无效的 JSON 行", async () => {
+      const invalidLogData = [
+        '{"toolName": "valid_record", "success": true}',
+        "invalid json line",
+        '{"toolName": "another_valid", "success": false}',
+        "",
+      ].join("\n");
+
+      writeFileSync(logFilePath, invalidLogData, "utf8");
+
+      const result = await toolCallLogService.getToolCallLogs();
+
+      expect(result.records).toHaveLength(2);
+      expect(result.total).toBe(2);
+      // 验证记录包含两个有效的工具名称（顺序可能因为时间戳相同而不同）
+      const toolNames = result.records.map((r) => r.toolName);
+      expect(toolNames).toContain("another_valid");
+      expect(toolNames).toContain("valid_record");
+    });
+
+    it("应该处理空文件", async () => {
+      // 创建空文件
+      writeFileSync(logFilePath, "", "utf8");
+
+      const result = await toolCallLogService.getToolCallLogs();
+
+      expect(result.records).toHaveLength(0);
+      expect(result.total).toBe(0);
+      expect(result.hasMore).toBe(false);
+    });
+
+    it("应该处理只包含空行的文件", async () => {
+      const logData = "\n\n\n";
+      writeFileSync(logFilePath, logData, "utf8");
+
+      const result = await toolCallLogService.getToolCallLogs();
+
+      expect(result.records).toHaveLength(0);
+      expect(result.total).toBe(0);
+    });
+
+    it("应该限制最大返回数量", async () => {
+      const testRecords: ToolCallRecord[] = Array.from(
+        { length: 10 },
+        (_, i) => ({
+          toolName: `tool_${i}`,
+          success: true,
+          timestamp: Date.now() - i * 1000,
+        })
+      );
+
+      const logData = testRecords
+        .map((record) => JSON.stringify(record))
+        .join("\n");
+      writeFileSync(logFilePath, logData, "utf8");
+
+      const result = await toolCallLogService.getToolCallLogs({ limit: 5 });
+
+      expect(result.records).toHaveLength(5);
+      expect(result.total).toBe(10);
+      expect(result.hasMore).toBe(true);
     });
   });
 });

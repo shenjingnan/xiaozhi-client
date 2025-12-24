@@ -62,7 +62,7 @@ vi.mock("@/lib/mcp/cache.js", () => ({
   })),
 }));
 
-vi.mock("@utils/ToolCallLogger.js", () => ({
+vi.mock("@/lib/mcp/log.js", () => ({
   ToolCallLogger: vi.fn().mockImplementation(() => ({
     recordToolCall: vi.fn().mockResolvedValue(undefined),
     getLogFilePath: vi.fn().mockReturnValue("/tmp/tool-calls.jsonl"),
