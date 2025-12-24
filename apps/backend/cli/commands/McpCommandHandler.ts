@@ -273,14 +273,39 @@ export class McpCommandHandler extends BaseCommandHandler {
       if (!response.ok) {
         throw new Error(`Web 服务器响应错误: ${response.status}`);
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      // 超时单独提示
       if (error instanceof Error && error.name === "AbortError") {
         throw new Error("连接 xiaozhi 服务超时。请检查服务是否正常运行。");
       }
+
+      // 已知的 Error 实例，区分网络错误与其他错误
+      if (error instanceof Error) {
+        const isNetworkError =
+          error instanceof TypeError &&
+          /fetch|network|failed/i.test(error.message);
+
+        if (isNetworkError) {
+          throw new Error(
+            `无法连接到 xiaozhi 服务（网络请求失败）。请检查网络连接或服务地址是否正确。原始错误: ${error.message}`
+          );
+        }
+
+        throw new Error(
+          `无法连接到 xiaozhi 服务。请检查服务状态。原始错误: ${error.message}`
+        );
+      }
+
+      // 非 Error 对象的兜底处理，避免出现 [object Object]
+      let detail: string;
+      try {
+        detail = JSON.stringify(error);
+      } catch {
+        detail = String(error);
+      }
+
       throw new Error(
-        `无法连接到 xiaozhi 服务。请检查服务状态。错误详情: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `无法连接到 xiaozhi 服务。请检查服务状态。错误详情: ${detail}`
       );
     }
   }
@@ -315,11 +340,18 @@ export class McpCommandHandler extends BaseCommandHandler {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.error?.message ||
-            `HTTP ${response.status}: ${response.statusText}`
-        );
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          const detailedMessage =
+            errorData?.error?.message ?? errorData?.message;
+          if (typeof detailedMessage === "string" && detailedMessage.trim()) {
+            errorMessage = detailedMessage;
+          }
+        } catch {
+          // 响应体不是 JSON 时，保留默认的 HTTP 错误信息
+        }
+        throw new Error(errorMessage);
       }
 
       const responseData = await response.json();
@@ -375,9 +407,12 @@ export class McpCommandHandler extends BaseCommandHandler {
         );
       }
 
+      // 测试环境：通过抛出错误让测试可以捕获并断言
+      if (process.env.NODE_ENV === "test") {
+        throw new Error("process.exit called");
+      }
+
       process.exit(1);
-      // unreachable: 测试时 process.exit 被 mock，需要抛出错误以便测试捕获
-      throw new Error("process.exit called");
     }
   }
 
