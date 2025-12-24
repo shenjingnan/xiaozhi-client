@@ -13,14 +13,22 @@ import { z } from "zod";
 /**
  * 统一响应接口
  */
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: {
     code: string;
     message: string;
-    details?: any;
+    details?: unknown;
   };
+}
+
+/**
+ * Zod 验证错误详细信息
+ */
+interface ValidationErrorDetail {
+  field: string;
+  message: string;
 }
 
 /**
@@ -118,7 +126,7 @@ export class ToolCallLogApiHandler {
   private createErrorResponse(
     code: string,
     message: string,
-    details?: any
+    details?: unknown
   ): Response {
     const response: ApiResponse = {
       success: false,
@@ -153,7 +161,7 @@ export class ToolCallLogApiHandler {
   private parseAndValidateQueryParams(c: Context): {
     success: boolean;
     data?: ToolCallQuery;
-    error?: any;
+    error?: ValidationErrorDetail[];
   } {
     const query = c.req.query();
     const result = ToolCallQuerySchema.safeParse(query);
