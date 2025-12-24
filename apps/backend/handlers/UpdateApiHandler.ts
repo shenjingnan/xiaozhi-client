@@ -11,7 +11,7 @@ const UpdateRequestSchema = z.object({
 
 export class UpdateApiHandler {
   private npmManager: NPMManager;
-  private logger = logger.withTag("UpdateApiHandler");
+  private logger = logger;
   private eventBus = getEventBus();
   private activeInstalls: Map<string, boolean> = new Map();
 

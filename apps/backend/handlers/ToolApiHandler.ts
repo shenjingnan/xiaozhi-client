@@ -70,7 +70,7 @@ export class ToolApiHandler {
   private ajv: Ajv;
 
   constructor() {
-    this.logger = logger.withTag("ToolApiHandler");
+    this.logger = logger;
     this.ajv = new Ajv({ allErrors: true, verbose: true });
   }
 

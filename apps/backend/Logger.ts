@@ -449,16 +449,6 @@ export class Logger {
   }
 
   /**
-   * 创建一个带标签的日志实例（已废弃，直接返回原实例）
-   * @param tag 标签（不再使用）
-   * @deprecated 标签功能已移除
-   */
-  withTag(_tag: string): Logger {
-    // 不再添加标签，直接返回共享实例
-    return this;
-  }
-
-  /**
    * 关闭日志文件流
    */
   close(): void {

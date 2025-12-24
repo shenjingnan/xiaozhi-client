@@ -36,7 +36,7 @@ export class NotificationService {
   private maxQueueSize = 100;
 
   constructor() {
-    this.logger = logger.withTag("NotificationService");
+    this.logger = logger;
     this.eventBus = getEventBus();
     this.setupEventListeners();
   }

@@ -249,7 +249,7 @@ export class EventBus extends EventEmitter {
 
   constructor() {
     super();
-    this.logger = logger.withTag("EventBus");
+    this.logger = logger;
     this.setMaxListeners(this.maxListeners);
     this.setupErrorHandling();
   }

@@ -28,7 +28,7 @@ export class StatusApiHandler {
   private statusService: StatusService;
 
   constructor(statusService: StatusService) {
-    this.logger = logger.withTag("StatusApiHandler");
+    this.logger = logger;
     this.statusService = statusService;
   }
 

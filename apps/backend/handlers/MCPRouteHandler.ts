@@ -67,7 +67,7 @@ export class MCPRouteHandler {
   private startTime: Date;
 
   constructor(config: MCPRouteHandlerConfig = {}) {
-    this.logger = logger.withTag("MCPRouteHandler");
+    this.logger = logger;
     this.config = {
       maxClients: config.maxClients ?? 100,
       connectionTimeout: config.connectionTimeout ?? 300000, // 5分钟

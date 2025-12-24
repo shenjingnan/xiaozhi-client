@@ -5,12 +5,10 @@ import { StatusApiHandler } from "../StatusApiHandler.js";
 // Mock dependencies
 vi.mock("../../Logger.js", () => ({
   logger: {
-    withTag: vi.fn(() => ({
-      debug: vi.fn(),
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-    })),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
   },
 }));
 
@@ -56,7 +54,7 @@ describe("StatusApiHandler 状态 API 处理器", () => {
       warn: vi.fn(),
       error: vi.fn(),
     };
-    vi.mocked(logger.withTag).mockReturnValue(mockLogger);
+    Object.assign(logger, mockLogger);
 
     // Create handler instance
     statusApiHandler = new StatusApiHandler(mockStatusService);

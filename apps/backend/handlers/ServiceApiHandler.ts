@@ -33,7 +33,7 @@ export class ServiceApiHandler {
   private eventBus: EventBus;
 
   constructor(statusService: StatusService) {
-    this.logger = logger.withTag("ServiceApiHandler");
+    this.logger = logger;
     this.statusService = statusService;
     this.eventBus = getEventBus();
   }
