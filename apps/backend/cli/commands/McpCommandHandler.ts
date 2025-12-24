@@ -12,15 +12,44 @@ import type {
   ListOptions,
 } from "@cli/interfaces/CommandTypes.js";
 import { isLocalMCPServerConfig } from "@cli/interfaces/CommandTypes.js";
-import { ToolCallService } from "@services/ToolCallService.js";
+import { ProcessManagerImpl } from "@cli/services/ProcessManager.js";
+import type { Logger } from "@root/Logger.js";
+import { logger } from "@root/Logger.js";
 import chalk from "chalk";
 import Table from "cli-table3";
 import ora from "ora";
+
+// 工具调用结果接口
+interface ToolCallResult {
+  content: Array<{
+    type: string;
+    text: string;
+  }>;
+  isError?: boolean;
+}
 
 /**
  * MCP管理命令处理器
  */
 export class McpCommandHandler extends BaseCommandHandler {
+  private logger: Logger;
+  private processManager: ProcessManagerImpl;
+  private baseUrl: string;
+
+  constructor(...args: ConstructorParameters<typeof BaseCommandHandler>) {
+    super(...args);
+    this.logger = logger.withTag("McpCommandHandler");
+    this.processManager = new ProcessManagerImpl();
+
+    // 获取 Web 服务器的端口
+    try {
+      const webPort = configManager.getWebUIPort() ?? 9999;
+      this.baseUrl = `http://localhost:${webPort}`;
+    } catch {
+      this.baseUrl = "http://localhost:9999";
+    }
+  }
+
   /**
    * 中文字符正则表达式
    *
@@ -89,6 +118,33 @@ export class McpCommandHandler extends BaseCommandHandler {
 
     return result;
   }
+
+  /**
+   * 解析 JSON 参数
+   * @param argsString JSON 字符串
+   * @returns 解析后的参数对象
+   */
+  private static parseJsonArgs(argsString: string): any {
+    try {
+      return JSON.parse(argsString);
+    } catch (error) {
+      throw new Error(
+        `参数格式错误，请使用有效的 JSON 格式。错误详情: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  /**
+   * 格式化工具调用结果输出
+   * @param result 工具调用结果
+   * @returns 格式化后的字符串
+   */
+  private static formatToolCallResult(result: ToolCallResult): string {
+    return JSON.stringify(result);
+  }
+
   override name = "mcp";
   override description = "MCP 服务和工具管理";
 
@@ -195,6 +251,94 @@ export class McpCommandHandler extends BaseCommandHandler {
   }
 
   /**
+   * 验证服务状态
+   * @private
+   */
+  private async validateServiceStatus(): Promise<void> {
+    // 检查进程级别的服务状态
+    const processStatus = this.processManager.getServiceStatus();
+    if (!processStatus.running) {
+      throw new Error(
+        "xiaozhi 服务未启动。请先运行 'xiaozhi start' 或 'xiaozhi start -d' 启动服务。"
+      );
+    }
+
+    // 检查 Web 服务器是否可访问
+    try {
+      const response = await fetch(`${this.baseUrl}/api/status`, {
+        method: "GET",
+        signal: AbortSignal.timeout(5000), // 5秒超时
+      });
+
+      if (!response.ok) {
+        throw new Error(`Web 服务器响应错误: ${response.status}`);
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new Error("连接 xiaozhi 服务超时。请检查服务是否正常运行。");
+      }
+      throw new Error(
+        `无法连接到 xiaozhi 服务。请检查服务状态。错误详情: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  /**
+   * 调用 MCP 工具的内部实现
+   * @param serviceName 服务名称
+   * @param toolName 工具名称
+   * @param args 工具参数
+   * @returns 工具调用结果
+   */
+  private async callToolInternal(
+    serviceName: string,
+    toolName: string,
+    args: any
+  ): Promise<ToolCallResult> {
+    // 1. 检查服务状态
+    await this.validateServiceStatus();
+
+    // 2. 通过 HTTP API 调用工具
+    try {
+      const response = await fetch(`${this.baseUrl}/api/tools/call`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          serviceName,
+          toolName,
+          args,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error?.message ||
+            `HTTP ${response.status}: ${response.statusText}`
+        );
+      }
+
+      const responseData = await response.json();
+
+      if (!responseData.success) {
+        throw new Error(responseData.error?.message || "工具调用失败");
+      }
+
+      return responseData.data;
+    } catch (error) {
+      this.logger.error(
+        `工具调用失败: ${serviceName}/${toolName}`,
+        error instanceof Error ? error.message : String(error)
+      );
+      throw error;
+    }
+  }
+
+  /**
    * 处理工具调用命令
    */
   private async handleCall(
@@ -203,30 +347,25 @@ export class McpCommandHandler extends BaseCommandHandler {
     argsString: string
   ): Promise<void> {
     try {
-      const toolCallService = new ToolCallService();
-
       // 解析参数
-      const args = toolCallService.parseJsonArgs(argsString);
+      const args = McpCommandHandler.parseJsonArgs(argsString);
 
       // 调用工具
-      const result = await toolCallService.callTool(
-        serviceName,
-        toolName,
-        args
-      );
+      const result = await this.callToolInternal(serviceName, toolName, args);
 
-      console.log(toolCallService.formatOutput(result));
+      console.log(McpCommandHandler.formatToolCallResult(result));
     } catch (error) {
       console.log(`工具调用失败: ${serviceName}/${toolName}`);
       console.error(chalk.red("错误:"), (error as Error).message);
 
       // 提供有用的提示
-      if ((error as Error).message.includes("服务未启动")) {
+      const errorMessage = (error as Error).message;
+      if (errorMessage.includes("服务未启动")) {
         console.log();
         console.log(chalk.yellow("💡 请先启动服务:"));
         console.log(chalk.gray("  xiaozhi start        # 前台启动"));
         console.log(chalk.gray("  xiaozhi start -d     # 后台启动"));
-      } else if ((error as Error).message.includes("参数格式错误")) {
+      } else if (errorMessage.includes("参数格式错误")) {
         console.log();
         console.log(chalk.yellow("💡 正确格式示例:"));
         console.log(
@@ -237,6 +376,8 @@ export class McpCommandHandler extends BaseCommandHandler {
       }
 
       process.exit(1);
+      // unreachable: 测试时 process.exit 被 mock，需要抛出错误以便测试捕获
+      throw new Error("process.exit called");
     }
   }
 
