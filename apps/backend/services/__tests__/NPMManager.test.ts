@@ -8,14 +8,65 @@ vi.mock("../../Logger.js");
 vi.mock("../EventBus.js");
 
 // Import after mocking
+import type { EventBus } from "@services/EventBus.js";
 import { NPMManager } from "@/lib/npm";
+
+/**
+ * Mock Logger 类型接口
+ * 用于测试中模拟 Logger 对象
+ */
+interface MockLogger {
+  info: ReturnType<typeof vi.fn>;
+  error: ReturnType<typeof vi.fn>;
+  warn: ReturnType<typeof vi.fn>;
+  debug: ReturnType<typeof vi.fn>;
+}
+
+/**
+ * Mock EventBus 类型接口
+ * 用于测试中模拟 EventBus 对象
+ */
+interface MockEventBus extends Partial<EventBus> {
+  emitEvent: ReturnType<typeof vi.fn>;
+  mock?: {
+    calls: Array<[string, Record<string, unknown>]>;
+  };
+}
+
+/**
+ * Mock ChildProcess 类型接口（简化版）
+ * 用于测试中模拟 child_process.spawn 返回的进程对象
+ */
+interface MockChildProcess {
+  stdout: {
+    on: ReturnType<typeof vi.fn>;
+  };
+  stderr: {
+    on: ReturnType<typeof vi.fn>;
+  };
+  on: ReturnType<typeof vi.fn>;
+}
+
+/**
+ * Mock spawn 函数类型
+ * 用于测试中模拟 child_process.spawn 函数
+ */
+type MockSpawn = ReturnType<typeof vi.fn> & {
+  mockReturnValue: (value: MockChildProcess) => void;
+};
+
+/**
+ * Mock execAsync 函数类型
+ * 用于测试中模拟 promisify(exec) 函数
+ */
+type MockExecAsync = ReturnType<typeof vi.fn>;
 
 describe("NPMManager", () => {
   let npmManager: NPMManager;
-  let mockLogger: any;
-  let mockEventBus: any;
-  let mockSpawn: any;
-  let mockExecAsync: any;
+  let mockLogger: MockLogger;
+  let mockEventBus: MockEventBus;
+  let mockSpawn: MockSpawn;
+  let mockExecAsync: MockExecAsync;
 
   beforeEach(async () => {
     // Reset all mocks
@@ -42,19 +93,19 @@ describe("NPMManager", () => {
 
     // Mock the imports
     const { logger } = await import("../../Logger.js");
-    vi.mocked(logger.withTag).mockReturnValue(mockLogger);
+    vi.mocked(logger.withTag).mockReturnValue(mockLogger as never);
 
     const { getEventBus } = await import("../EventBus.js");
-    vi.mocked(getEventBus).mockReturnValue(mockEventBus);
+    vi.mocked(getEventBus).mockReturnValue(mockEventBus as never);
 
     const { spawn } = await import("node:child_process");
-    vi.mocked(spawn).mockImplementation(mockSpawn);
+    vi.mocked(spawn).mockImplementation(mockSpawn as never);
 
     const { promisify } = await import("node:util");
-    vi.mocked(promisify).mockReturnValue(mockExecAsync);
+    vi.mocked(promisify).mockReturnValue(mockExecAsync as never);
 
     // Create NPMManager instance
-    npmManager = new NPMManager(mockEventBus);
+    npmManager = new NPMManager(mockEventBus as never);
   });
 
   afterEach(() => {
@@ -64,7 +115,7 @@ describe("NPMManager", () => {
   describe("constructor", () => {
     test("应该使用注入的 EventBus", () => {
       // Act
-      const manager = new NPMManager(mockEventBus);
+      const manager = new NPMManager(mockEventBus as never);
 
       // Assert
       expect(manager).toBeInstanceOf(NPMManager);
@@ -268,13 +319,16 @@ describe("NPMManager", () => {
 
       // Assert
       const startCall = mockEventBus.emitEvent.mock.calls.find(
-        (call: [string, unknown]) => call[0] === "npm:install:started"
-      );
+        (call) => call[0] === "npm:install:started"
+      ) as [string, { version: string; installId: string }] | undefined;
       const installId = startCall?.[1]?.installId;
 
+      // 确保找到调用记录
+      expect(startCall).toBeDefined();
+      expect(installId).toBeDefined();
       expect(installId).toMatch(/^install-\d+-[a-z0-9]+$/);
       expect(typeof installId).toBe("string");
-      expect(installId.length).toBeGreaterThan(10);
+      expect(installId!.length).toBeGreaterThan(10);
     });
   });
 
