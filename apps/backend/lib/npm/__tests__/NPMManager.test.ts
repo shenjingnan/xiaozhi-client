@@ -4,12 +4,12 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 vi.mock("node:child_process");
 vi.mock("node:util");
 vi.mock("semver");
-vi.mock("../../Logger.js");
-vi.mock("../EventBus.js");
+vi.mock("../../../Logger.js");
+vi.mock("../../../services/EventBus.js");
 
+import { NPMManager } from "@/lib/npm";
 // Import after mocking
 import type { EventBus } from "@services/EventBus.js";
-import { NPMManager } from "@/lib/npm";
 
 /**
  * Mock Logger 类型接口
@@ -92,10 +92,10 @@ describe("NPMManager", () => {
     mockExecAsync = vi.fn();
 
     // Mock the imports
-    const { logger } = await import("../../Logger.js");
+    const { logger } = await import("../../../Logger.js");
     vi.mocked(logger.withTag).mockReturnValue(mockLogger as never);
 
-    const { getEventBus } = await import("../EventBus.js");
+    const { getEventBus } = await import("../../../services/EventBus.js");
     vi.mocked(getEventBus).mockReturnValue(mockEventBus as never);
 
     const { spawn } = await import("node:child_process");
@@ -328,7 +328,7 @@ describe("NPMManager", () => {
       expect(installId).toBeDefined();
       expect(installId).toMatch(/^install-\d+-[a-z0-9]+$/);
       expect(typeof installId).toBe("string");
-      expect(installId!.length).toBeGreaterThan(10);
+      expect(installId?.length).toBeGreaterThan(10);
     });
   });
 
