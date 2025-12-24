@@ -1,5 +1,6 @@
 import { NPMManager } from "@/lib/npm";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import type { Context } from "hono";
 import { logger } from "../../Logger.js";
 import { UpdateApiHandler } from "../UpdateApiHandler.js";
 
@@ -8,11 +9,35 @@ vi.mock("@/lib/npm");
 vi.mock("../../Logger.js");
 vi.mock("@services/EventBus.js");
 
+// Mock 类型定义
+interface MockNPMManager {
+  installVersion: ReturnType<typeof vi.fn>;
+}
+
+interface MockLogger {
+  info: ReturnType<typeof vi.fn>;
+  error: ReturnType<typeof vi.fn>;
+  warn: ReturnType<typeof vi.fn>;
+  debug: ReturnType<typeof vi.fn>;
+}
+
+interface MockEventBus {
+  emitEvent: ReturnType<typeof vi.fn>;
+  onEvent: ReturnType<typeof vi.fn>;
+}
+
+interface MockContext {
+  req: {
+    json: ReturnType<typeof vi.fn>;
+  };
+  json: ReturnType<typeof vi.fn>;
+}
+
 describe("UpdateApiHandler", () => {
   let updateApiHandler: UpdateApiHandler;
-  let mockNPMManager: any;
-  let mockLogger: any;
-  let mockEventBus: any;
+  let mockNPMManager: MockNPMManager;
+  let mockLogger: MockLogger;
+  let mockEventBus: MockEventBus;
 
   beforeEach(async () => {
     // Reset all mocks
@@ -25,7 +50,9 @@ describe("UpdateApiHandler", () => {
       warn: vi.fn(),
       debug: vi.fn(),
     };
-    (logger.withTag as any).mockReturnValue(mockLogger);
+    vi.spyOn(logger, "withTag").mockReturnValue(
+      mockLogger as unknown as ReturnType<typeof logger.withTag>
+    );
 
     // Setup mock event bus
     mockEventBus = {
@@ -33,13 +60,17 @@ describe("UpdateApiHandler", () => {
       onEvent: vi.fn(),
     };
     const { getEventBus } = await import("@services/EventBus.js");
-    vi.mocked(getEventBus).mockReturnValue(mockEventBus);
+    vi.mocked(getEventBus).mockReturnValue(
+      mockEventBus as unknown as ReturnType<typeof getEventBus>
+    );
 
     // Setup mock NPMManager
     mockNPMManager = {
       installVersion: vi.fn(),
     };
-    (NPMManager as any).mockImplementation(() => mockNPMManager);
+    vi.mocked(NPMManager).mockImplementation(
+      () => mockNPMManager as unknown as NPMManager
+    );
 
     // Create handler instance
     updateApiHandler = new UpdateApiHandler();
@@ -62,7 +93,7 @@ describe("UpdateApiHandler", () => {
       mockNPMManager.installVersion.mockResolvedValue(undefined);
 
       // Act
-      await updateApiHandler.performUpdate(mockContext as any);
+      await updateApiHandler.performUpdate(mockContext as unknown as Context);
 
       // Assert
       expect(mockNPMManager.installVersion).toHaveBeenCalledWith("1.7.9");
@@ -86,7 +117,7 @@ describe("UpdateApiHandler", () => {
       };
 
       // Act
-      await updateApiHandler.performUpdate(mockContext as any);
+      await updateApiHandler.performUpdate(mockContext as unknown as Context);
 
       // Assert
       expect(mockContext.json).toHaveBeenCalledWith(
@@ -118,7 +149,7 @@ describe("UpdateApiHandler", () => {
       };
 
       // Act
-      await updateApiHandler.performUpdate(mockContext as any);
+      await updateApiHandler.performUpdate(mockContext as unknown as Context);
 
       // Assert
       expect(mockContext.json).toHaveBeenCalledWith(
@@ -150,7 +181,7 @@ describe("UpdateApiHandler", () => {
       };
 
       // Act
-      await updateApiHandler.performUpdate(mockContext as any);
+      await updateApiHandler.performUpdate(mockContext as unknown as Context);
 
       // Assert
       expect(mockContext.json).toHaveBeenCalledWith(
@@ -185,7 +216,7 @@ describe("UpdateApiHandler", () => {
       mockNPMManager.installVersion.mockRejectedValue(installError);
 
       // Act
-      await updateApiHandler.performUpdate(mockContext as any);
+      await updateApiHandler.performUpdate(mockContext as unknown as Context);
 
       // 等待一下，让异步错误处理执行
       await new Promise((resolve) => setTimeout(resolve, 10));
@@ -217,7 +248,7 @@ describe("UpdateApiHandler", () => {
       };
 
       // Act
-      await updateApiHandler.performUpdate(mockContext as any);
+      await updateApiHandler.performUpdate(mockContext as unknown as Context);
 
       // Assert
       expect(mockLogger.error).toHaveBeenCalledWith(
@@ -249,7 +280,7 @@ describe("UpdateApiHandler", () => {
       mockNPMManager.installVersion.mockRejectedValue(installError);
 
       // Act
-      await updateApiHandler.performUpdate(mockContext as any);
+      await updateApiHandler.performUpdate(mockContext as unknown as Context);
 
       // 等待一下，让异步错误处理执行
       await new Promise((resolve) => setTimeout(resolve, 10));
