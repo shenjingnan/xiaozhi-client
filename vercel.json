@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "docs/package.json",
+      "use": "@vercel/next",
+      "config": {
+        "installCommand": "pnpm install --filter=docs"
+      }
+    }
+  ]
+}
