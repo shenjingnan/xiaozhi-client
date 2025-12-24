@@ -4,23 +4,11 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 vi.mock("node:child_process");
 vi.mock("node:util");
 vi.mock("semver");
-vi.mock("../../../Logger.js");
 vi.mock("../../../services/EventBus.js");
 
 import { NPMManager } from "@/lib/npm";
 // Import after mocking
 import type { EventBus } from "@services/EventBus.js";
-
-/**
- * Mock Logger 类型接口
- * 用于测试中模拟 Logger 对象
- */
-interface MockLogger {
-  info: ReturnType<typeof vi.fn>;
-  error: ReturnType<typeof vi.fn>;
-  warn: ReturnType<typeof vi.fn>;
-  debug: ReturnType<typeof vi.fn>;
-}
 
 /**
  * Mock EventBus 类型接口
@@ -63,7 +51,6 @@ type MockExecAsync = ReturnType<typeof vi.fn>;
 
 describe("NPMManager", () => {
   let npmManager: NPMManager;
-  let mockLogger: MockLogger;
   let mockEventBus: MockEventBus;
   let mockSpawn: MockSpawn;
   let mockExecAsync: MockExecAsync;
@@ -71,14 +58,6 @@ describe("NPMManager", () => {
   beforeEach(async () => {
     // Reset all mocks
     vi.clearAllMocks();
-
-    // Setup mock logger
-    mockLogger = {
-      info: vi.fn(),
-      error: vi.fn(),
-      warn: vi.fn(),
-      debug: vi.fn(),
-    };
 
     // Setup mock event bus
     mockEventBus = {
@@ -92,9 +71,6 @@ describe("NPMManager", () => {
     mockExecAsync = vi.fn();
 
     // Mock the imports
-    const { logger } = await import("../../../Logger.js");
-    vi.mocked(logger.withTag).mockReturnValue(mockLogger as never);
-
     const { getEventBus } = await import("../../../services/EventBus.js");
     vi.mocked(getEventBus).mockReturnValue(mockEventBus as never);
 
@@ -201,12 +177,6 @@ describe("NPMManager", () => {
           duration: expect.any(Number),
           timestamp: expect.any(Number),
         }
-      );
-
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        expect.stringMatching(
-          /^开始安装: xiaozhi-client@1\.7\.9 \[install-\d+-[a-z0-9]+\]$/
-        )
       );
     });
 

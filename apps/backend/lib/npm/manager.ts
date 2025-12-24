@@ -1,6 +1,5 @@
 import { exec, spawn } from "node:child_process";
 import { promisify } from "node:util";
-import { logger } from "@root/Logger.js";
 import type { EventBus } from "@services/EventBus.js";
 import { getEventBus } from "@services/EventBus.js";
 import semver from "semver";
@@ -8,7 +7,6 @@ import semver from "semver";
 const execAsync = promisify(exec);
 
 export class NPMManager {
-  private logger = logger.withTag("NPMManager");
   private eventBus: EventBus;
 
   constructor(eventBus?: EventBus) {
@@ -22,7 +20,7 @@ export class NPMManager {
     const installId = `install-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const startTime = Date.now();
 
-    this.logger.info(`开始安装: xiaozhi-client@${version} [${installId}]`);
+    console.log("开始安装", { version, installId });
 
     // 发射安装开始事件
     this.eventBus.emitEvent("npm:install:started", {
@@ -170,7 +168,7 @@ export class NPMManager {
       // 进行降序排列（最新的在前）
       return filteredVersions.sort((a, b) => semver.rcompare(a, b));
     } catch (error) {
-      this.logger.error("获取版本列表失败:", error);
+      console.log("获取版本列表失败", { error });
       // 如果获取失败，返回一些默认版本
       return [];
     }
@@ -221,14 +219,12 @@ export class NPMManager {
         // 使用 semver 比较版本
         hasUpdate = semver.gt(latestVersion, currentVersion);
       } catch (error) {
-        this.logger.warn("版本比较失败:", error);
+        console.log("版本比较失败", { error });
         // 如果比较失败，尝试字符串比较
         hasUpdate = latestVersion !== currentVersion;
       }
 
-      this.logger.info(
-        `版本检查完成: 当前版本 ${currentVersion}, 最新版本 ${latestVersion}, 有更新: ${hasUpdate}`
-      );
+      console.log("版本检查完成", { currentVersion, latestVersion, hasUpdate });
 
       return {
         currentVersion,
@@ -236,7 +232,7 @@ export class NPMManager {
         hasUpdate,
       };
     } catch (error) {
-      this.logger.error("检查最新版本失败:", error);
+      console.log("检查最新版本失败", { error });
       return {
         currentVersion: "unknown",
         latestVersion: null,
