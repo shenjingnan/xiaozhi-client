@@ -88,6 +88,22 @@ class McpCommandHandlerTest extends McpCommandHandler {
       }
     ).handleToolInternal(serverName, toolName, enabled);
   }
+
+  public async testHandleCall(
+    serviceName: string,
+    toolName: string,
+    argsString: string
+  ): Promise<void> {
+    return (
+      this as unknown as {
+        handleCall: (
+          serviceName: string,
+          toolName: string,
+          argsString: string
+        ) => Promise<void>;
+      }
+    ).handleCall(serviceName, toolName, argsString);
+  }
 }
 
 // Mock dependencies
@@ -118,22 +134,31 @@ vi.mock("@/lib/config/manager.js", () => ({
     getServerToolsConfig: vi.fn(),
     setToolEnabled: vi.fn(),
     getCustomMCPTools: vi.fn(),
+    getWebUIPort: vi.fn(),
   },
 }));
 
-vi.mock("@services/ToolCallService.js", () => ({
-  ToolCallService: vi.fn().mockImplementation(() => ({
-    parseJsonArgs: vi.fn(),
-    callTool: vi.fn(),
-    formatOutput: vi.fn(),
+// Mock ProcessManager
+const mockGetServiceStatus = vi
+  .fn()
+  .mockReturnValue({ running: false, pid: null });
+
+vi.mock("@cli/services/ProcessManager.js", () => ({
+  ProcessManagerImpl: vi.fn().mockImplementation(() => ({
+    getServiceStatus: mockGetServiceStatus,
   })),
 }));
+
+// Mock fetch for HTTP API calls
+global.fetch = vi.fn();
 
 // Mock console methods
 const mockConsoleLog = vi.spyOn(console, "log").mockImplementation(() => {});
 const mockConsoleError = vi
   .spyOn(console, "error")
   .mockImplementation(() => {});
+// 设置测试环境变量
+process.env.NODE_ENV = "test";
 const mockProcessExit = vi.spyOn(process, "exit").mockImplementation(() => {
   throw new Error("process.exit called");
 });
@@ -589,6 +614,140 @@ describe("McpCommandHandler", () => {
         expect.stringContaining("错误: Config error")
       );
       expect(mockProcessExit).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe("handleCall", () => {
+    beforeEach(() => {
+      // 默认 mock Web 端口
+      vi.mocked(configManager.getWebUIPort).mockReturnValue(9999);
+      // 默认 mock 服务未运行状态
+      mockGetServiceStatus.mockReturnValue({ running: false, pid: null });
+    });
+
+    it("应该成功调用工具并返回结果", async () => {
+      // Mock ProcessManager 返回服务运行中
+      mockGetServiceStatus.mockReturnValue({
+        running: true,
+        pid: 12345,
+      });
+
+      // Mock fetch 返回成功响应
+      const mockFetch = vi.mocked(fetch);
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true }),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: {
+              content: [{ type: "text", text: "3" }],
+            },
+          }),
+        } as Response);
+
+      await handler.testHandleCall("calculator", "calculator", '{"a": 1}');
+
+      // 验证调用了正确的 API
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:9999/api/tools/call",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            serviceName: "calculator",
+            toolName: "calculator",
+            args: { a: 1 },
+          }),
+        }
+      );
+
+      // 验证输出结果
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '{"content":[{"type":"text","text":"3"}]}'
+      );
+    });
+
+    it("应该在参数格式错误时抛出错误", async () => {
+      await expect(async () => {
+        await handler.testHandleCall(
+          "calculator",
+          "calculator",
+          "invalid-json"
+        );
+      }).rejects.toThrow("process.exit called");
+
+      expect(mockConsoleError).toHaveBeenCalledWith(
+        expect.stringContaining("错误:"),
+        expect.stringContaining("参数格式错误")
+      );
+    });
+
+    it("应该在服务未启动时显示提示", async () => {
+      // 重置 ProcessManager mock 返回服务未运行
+      mockGetServiceStatus.mockReturnValue({ running: false, pid: null });
+
+      // 确保 fetch 返回一个有效的 Response，但由于服务未启动，不应该调用到 fetch
+      const mockFetch = vi.mocked(fetch);
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true }),
+      } as Response);
+
+      await expect(async () => {
+        await handler.testHandleCall("calculator", "calculator", '{"a": 1}');
+      }).rejects.toThrow();
+
+      // 验证错误处理流程 - 服务未启动的错误应该在调用 fetch 之前被抛出
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        expect.stringContaining("工具调用失败:")
+      );
+      expect(mockConsoleError).toHaveBeenCalledWith(
+        "错误:",
+        expect.stringContaining("服务未启动")
+      );
+      // 测试环境中会直接 throw，不调用 process.exit(1)
+
+      // fetch 不应该被调用，因为在服务状态检查时就失败了
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it("应该在 HTTP API 调用失败时显示错误", async () => {
+      // Mock ProcessManager 返回服务运行中
+      mockGetServiceStatus.mockReturnValue({
+        running: true,
+        pid: 12345,
+      });
+
+      // Mock fetch 返回失败响应
+      const mockFetch = vi.mocked(fetch);
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true }),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 500,
+          statusText: "Internal Server Error",
+          json: async () => ({
+            success: false,
+            error: { message: "工具调用失败" },
+          }),
+        } as Response);
+
+      await expect(async () => {
+        await handler.testHandleCall("calculator", "calculator", '{"a": 1}');
+      }).rejects.toThrow("process.exit called");
+
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        expect.stringContaining("工具调用失败:")
+      );
     });
   });
 });
