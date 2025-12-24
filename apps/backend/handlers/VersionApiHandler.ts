@@ -1,7 +1,7 @@
+import { NPMManager } from "@/lib/npm";
 import { VersionUtils } from "@cli/utils/VersionUtils.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
-import { NPMManager } from "@services/NPMManager.js";
 import type { Context } from "hono";
 
 /**
@@ -11,11 +11,11 @@ interface ApiErrorResponse {
   error: {
     code: string;
     message: string;
-    details?: any;
+    details?: unknown;
   };
 }
 
-interface ApiSuccessResponse<T = any> {
+interface ApiSuccessResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
@@ -37,7 +37,7 @@ export class VersionApiHandler {
   private createErrorResponse(
     code: string,
     message: string,
-    details?: any
+    details?: unknown
   ): ApiErrorResponse {
     return {
       error: {
@@ -145,11 +145,11 @@ export class VersionApiHandler {
       this.logger.debug("处理获取可用版本列表请求");
 
       // 获取查询参数
-      const type = (c.req.query("type") as any) || "stable";
+      const type = (c.req.query("type") as unknown) || "stable";
 
       // 验证版本类型参数
       const validTypes = ["stable", "rc", "beta", "all"];
-      if (!validTypes.includes(type)) {
+      if (!validTypes.includes(type as string)) {
         const errorResponse = this.createErrorResponse(
           "INVALID_VERSION_TYPE",
           `无效的版本类型: ${type}。支持的类型: ${validTypes.join(", ")}`
@@ -158,7 +158,7 @@ export class VersionApiHandler {
       }
 
       const npmManager = new NPMManager();
-      const versions = await npmManager.getAvailableVersions(type);
+      const versions = await npmManager.getAvailableVersions(type as string);
 
       this.logger.debug(`获取到 ${versions.length} 个可用版本 (类型: ${type})`);
 
