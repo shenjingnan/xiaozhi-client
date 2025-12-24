@@ -3,16 +3,22 @@
  * 包含 ToolCallLogger 和 ToolCallLogService 的测试
  */
 
-import { existsSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  rmSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import { PathUtils } from "@cli/utils/PathUtils.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  ToolCallLogger,
-  ToolCallLogService,
   type ToolCallLogConfig,
+  ToolCallLogService,
+  ToolCallLogger,
   type ToolCallRecord,
 } from "../log.js";
 
