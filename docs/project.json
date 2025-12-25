@@ -17,7 +17,7 @@
         "command": "pnpm build",
         "cwd": "docs"
       },
-      "outputs": ["{projectRoot}/.next"]
+      "outputs": ["{workspaceRoot}/dist/docs"]
     }
   },
   "tags": ["type:app", "platform:web"]

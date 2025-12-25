@@ -43,7 +43,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: "dist",
+    outDir: "../../dist/frontend",
     sourcemap: true,
     // 代码分割优化配置
     rollupOptions: {
