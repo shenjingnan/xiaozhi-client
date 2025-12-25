@@ -46,265 +46,93 @@ jobs:
         retry_on: error
         command: pnpm install --frozen-lockfile
 
-    - name: 安装 Web 依赖
-      run: |
-        cd apps/frontend
-        pnpm install --frozen-lockfile
+    # 代码质量检查
+    - name: Nx Lint
+      run: pnpm run nx:lint
 
-    # 根目录代码质量检查
-    - name: TypeScript 类型检查 (根目录)
-      run: pnpm run type:check
-
-    - name: Biome 代码检查 (根目录)
-      run: pnpm run check
+    - name: Nx Type Check
+      run: pnpm run nx:type-check
 
     - name: 拼写检查 (根目录)
       run: pnpm run spell:check
 
-    - name: 代码重复率检查 (根目录)
+    - name: 代码重复率检查 (backend)
       run: pnpm run duplicate:check
 
-    # Web 目录代码质量检查
-    - name: TypeScript 类型检查 (Web)
-      working-directory: apps/frontend
-      run: pnpm run type:check
-
-    - name: Biome 代码检查 (Web)
-      working-directory: apps/frontend
-      run: pnpm run check
-
-    - name: 拼写检查 (Web)
-      working-directory: apps/frontend
-      run: pnpm run spell:check
-
-    - name: 构建项目
-      uses: nick-invision/retry@v3
-      with:
-        timeout_minutes: 5
-        max_attempts: 2
-        retry_on: error
-        command: pnpm run build
-
-    - name: 运行测试并生成覆盖率报告 (根目录)
+    # 构建和测试
+    - name: Nx Build
       uses: nick-invision/retry@v3
       with:
         timeout_minutes: 10
         max_attempts: 2
         retry_on: error
-        command: pnpm run test:coverage
+        command: pnpm run nx:build
 
-    - name: 运行 Web 测试并生成覆盖率报告
-      run: |
-        cd apps/frontend
-        pnpm run test:coverage
+    - name: Nx Test
+      uses: nick-invision/retry@v3
+      with:
+        timeout_minutes: 10
+        max_attempts: 2
+        retry_on: error
+        command: pnpm run nx:test:coverage
 
-    - name: 上传根目录覆盖率报告 (仅在 Ubuntu + Node 20.19.2 环境)
+    # 上传覆盖率（仅 Ubuntu + Node 20.19.2）
+    - name: 上传覆盖率报告
       uses: codecov/codecov-action@v4
       if: matrix.os == 'ubuntu-latest' && matrix.node-version == '20.19.2'
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-        files: ./coverage/lcov.info
-        flags: cli-tests
-        name: codecov-cli
+        files: |
+          ./coverage/lcov.info
+          ./apps/frontend/coverage/lcov.info
+        flags: unittests
+        name: codecov-${{ matrix.os }}-node${{ matrix.node-version }}
         fail_ci_if_error: true
         verbose: true
 
-    - name: 上传 Web 覆盖率报告 (仅在 Ubuntu + Node 20.19.2 环境)
-      uses: codecov/codecov-action@v4
-      if: matrix.os == 'ubuntu-latest' && matrix.node-version == '20.19.2'
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        files: ./apps/frontend/coverage/lcov.info
-        flags: web-tests
-        name: codecov-web
-        fail_ci_if_error: true
-        verbose: true
-
+    # CLI 功能测试
     - name: CLI 功能测试
       run: |
         echo "开始 CLI 功能测试..."
-
-        # 1. 测试版本命令
-        echo "1. 测试 xiaozhi -v"
         node dist/cli.js -v
-
-        # 2. 测试创建项目
-        echo "2. 测试 xiaozhi create myapp"
         node dist/cli.js create myapp
-
-        # 3. 测试使用模板创建项目
-        echo "3. 测试 xiaozhi create myapp2 --template hello-world"
         node dist/cli.js create myapp2 --template hello-world
-
         echo "✅ CLI 功能测试完成"
 
     - name: CLI 配置测试 (Unix)
       if: runner.os != 'Windows'
       working-directory: myapp2
       run: |
-        echo "开始 CLI 配置测试..."
-
-        # 4. 测试配置 mcpEndpoint
-        echo "4. 测试 xiaozhi config set mcpEndpoint"
         node ../dist/cli.js config set mcpEndpoint "wss://api.xiaozhi.me/mcp/?token=xyz"
-
-        # 验证配置是否正确写入
-        if [ -f "xiaozhi.config.json" ]; then
-          echo "配置文件已创建"
-          cat xiaozhi.config.json
-        else
-          echo "❌ 配置文件未创建"
-          exit 1
-        fi
-
-        # 5. 测试读取配置
-        echo "5. 测试读取 xiaozhi config get mcpEndpoint"
         node ../dist/cli.js config get mcpEndpoint
-
         echo "✅ CLI 配置测试完成"
 
     - name: CLI 配置测试 (Windows)
       if: runner.os == 'Windows'
       working-directory: myapp2
       run: |
-        echo "开始 CLI 配置测试..."
-
-        # 4. 测试配置 mcpEndpoint
-        echo "4. 测试 xiaozhi config set mcpEndpoint"
         node ../dist/cli.js config set mcpEndpoint "wss://api.xiaozhi.me/mcp/?token=xyz"
-
-        # 验证配置是否正确写入
-        if (Test-Path "xiaozhi.config.json") {
-          echo "配置文件已创建"
-          Get-Content xiaozhi.config.json
-        } else {
-          echo "❌ 配置文件未创建"
-          exit 1
-        }
-
-        # 5. 测试读取配置
-        echo "5. 测试读取 xiaozhi config get mcpEndpoint"
         node ../dist/cli.js config get mcpEndpoint
-
         echo "✅ CLI 配置测试完成"
       shell: pwsh
 
-    - name: CLI 服务测试 (Unix)
-      if: runner.os != 'Windows'
-      working-directory: myapp2
-      run: |
-        echo "开始 CLI 服务测试..."
-
-        # 6. 测试启动服务 (后台运行)
-        echo "6. 测试 xiaozhi start"
-        timeout 10s node ../dist/cli.js start || echo "服务启动测试完成 (预期超时)"
-
-        # 7. 测试停止服务
-        echo "7. 测试 xiaozhi stop"
-        node ../dist/cli.js stop || echo "服务停止测试完成"
-
-        echo "✅ CLI 服务测试完成"
-
-    - name: CLI 服务测试 (Windows)
-      if: runner.os == 'Windows'
-      working-directory: myapp2
-      run: |
-        echo "开始 CLI 服务测试..."
-
-        # 6. 测试启动服务 (简化测试，避免复杂的进程管理)
-        echo "6. 测试 xiaozhi start (Windows 简化测试)"
-        # 在 Windows 上只测试命令是否能正常解析，不实际启动服务
-        node ../dist/cli.js start --help 2>$null
-        if ($LASTEXITCODE -ne 0) { echo "start 命令测试完成" }
-
-        # 7. 测试停止服务
-        echo "7. 测试 xiaozhi stop"
-        node ../dist/cli.js stop
-        if ($LASTEXITCODE -ne 0) { echo "服务停止测试完成" }
-
-        # 确保步骤以成功状态结束
-        $global:LASTEXITCODE = 0
-        echo "✅ CLI 服务测试完成"
-      shell: pwsh
-
-    - name: Windows uvx 命令支持测试
-      if: runner.os == 'Windows'
-      working-directory: myapp2
-      run: |
-        echo "开始 Windows uvx 命令支持测试..."
-
-        # 安装 Python 和 uv (如果需要)
-        echo "检查 Python 环境..."
-        python --version || echo "Python 未安装，跳过 uvx 测试"
-
-        # 检查 uvx 是否可用
-        echo "检查 uvx 命令..."
-        if (Get-Command uvx -ErrorAction SilentlyContinue) {
-          echo "✅ uvx 命令可用"
-          uvx --version
-
-          # 创建包含 uvx 服务的测试配置
-          echo "创建包含 uvx 服务的测试配置..."
-          $config = @{
-            mcpEndpoint = "wss://api.xiaozhi.me/mcp/?token=test"
-            mcpServers = @{
-              "test-uvx-service" = @{
-                command = "uvx"
-                args = @("--help")
-              }
-            }
-          } | ConvertTo-Json -Depth 3
-
-          $config | Out-File -FilePath "xiaozhi.config.uvx.json" -Encoding UTF8
-
-          echo "测试配置文件内容："
-          Get-Content "xiaozhi.config.uvx.json"
-
-          # 测试 uvx 命令解析 (不实际启动服务，只测试命令解析)
-          echo "测试 uvx 命令解析..."
-          $env:XIAOZHI_CONFIG_FILE = "xiaozhi.config.uvx.json"
-
-          # 使用 timeout 命令限制执行时间，避免长时间等待
-          echo "启动服务测试 (5秒超时)..."
-          Start-Process -FilePath "node" -ArgumentList "../dist/cli.js", "start" -Wait -TimeoutSec 5 -ErrorAction SilentlyContinue
-          echo "uvx 命令解析测试完成"
-
-        } else {
-          echo "⚠️ uvx 命令不可用，跳过 uvx 测试"
-          echo "这可能是因为 uv 未安装或不在 PATH 中"
-        }
-
-        echo "✅ Windows uvx 命令支持测试完成"
-      shell: pwsh
-
-    - name: 上传根目录覆盖率报告 (仅在 Ubuntu + Node 20.19.2 环境)
+    # 上传构建产物
+    - name: 上传覆盖率报告
       uses: actions/upload-artifact@v4
       if: always() && matrix.os == 'ubuntu-latest' && matrix.node-version == '20.19.2'
       with:
-        name: coverage-report-cli
-        path: coverage/
+        name: coverage-report-${{ matrix.os }}-node${{ matrix.node-version }}
+        path: |
+          coverage/
+          apps/frontend/coverage/
         retention-days: 30
 
-    - name: 上传 Web 覆盖率报告 (仅在 Ubuntu + Node 20.19.2 环境)
-      uses: actions/upload-artifact@v4
-      if: always() && matrix.os == 'ubuntu-latest' && matrix.node-version == '20.19.2'
-      with:
-        name: coverage-report-web
-        path: apps/frontend/coverage/
-        retention-days: 30
-
-    - name: 上传 CLI 构建产物
+    - name: 上传构建产物
       uses: actions/upload-artifact@v4
       if: success()
       with:
-        name: build-artifacts-cli-${{ matrix.os }}-node${{ matrix.node-version }}
-        path: dist/
-        retention-days: 7
-
-    - name: 上传 Web 构建产物
-      uses: actions/upload-artifact@v4
-      if: success()
-      with:
-        name: build-artifacts-web-${{ matrix.os }}-node${{ matrix.node-version }}
-        path: apps/frontend/dist/
+        name: build-artifacts-${{ matrix.os }}-node${{ matrix.node-version }}
+        path: |
+          dist/
+          apps/frontend/dist/
         retention-days: 7

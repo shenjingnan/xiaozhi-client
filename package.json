@@ -54,7 +54,18 @@
     "example": "node --loader ts-node/esm",
     "docs:dev": "cd docs && pnpm dev",
     "release": "npx release-it --config config/release-it.json",
-    "release:dry": "npx release-it --config config/release-it.json --dry-run"
+    "release:dry": "npx release-it --config config/release-it.json --dry-run",
+    "nx:lint": "nx run-many -t lint",
+    "nx:type-check": "nx run-many -t type-check",
+    "nx:test": "nx run-many -t test",
+    "nx:test:coverage": "nx run-many -t test:coverage --parallel=true",
+    "nx:build": "nx run-many -t build --parallel=false",
+    "nx:projects": "nx show projects",
+    "nx:graph": "nx graph",
+    "nx:affected": "nx print-affected",
+    "nx:backend": "nx run backend:build",
+    "nx:frontend": "nx run frontend:build",
+    "nx:docs": "nx run docs:build"
   },
   "dependencies": {
     "@coze/api": "^1.3.9",
@@ -85,6 +96,9 @@
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
     "@codecov/vite-plugin": "^1.9.1",
+    "@nx/vite": "^22.3.3",
+    "@nx/vitest": "^22.3.3",
+    "@nx/workspace": "^22.3.3",
     "@release-it/conventional-changelog": "^10.0.1",
     "@types/node": "^24.3.0",
     "@types/node-fetch": "^2.6.12",
@@ -101,6 +115,7 @@
     "glob": "^11.0.3",
     "happy-dom": "^20.0.2",
     "jscpd": "^4.0.5",
+    "nx": "^22.3.3",
     "release-it": "^19.0.4",
     "semver": "^7.7.2",
     "supertest": "^7.1.4",
