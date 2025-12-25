@@ -29,12 +29,17 @@ export class StaticFileHandler {
       this.logger.debug(`当前文件目录: ${__dirname}`);
 
       // 确定web目录路径
-      // 无论是全局安装还是直接执行，实际运行的都是 dist/cli.js 或 dist/handlers/StaticFileHandler.js
-      // 因此静态文件应该位于相对于 dist 目录的 ../web/dist 路径
+      // 支持 Nx 构建的 dist/frontend 目录结构
       const possibleWebPaths = [
-        // 新的主要路径：从 dist 目录向上查找 apps/frontend/dist
-        // 对于 dist/handlers/StaticFileHandler.js -> ../../apps/frontend/dist
-        // 对于 dist/cli.js -> ../apps/frontend/dist
+        // Nx 构建的主要路径：dist/frontend/
+        // 对于 dist/backend/handlers/StaticFileHandler.js -> ../../../frontend
+        // 对于 dist/backend/cli.js -> ../../frontend
+        // 对于 dist/cli.js -> ../frontend
+        join(__dirname, "..", "..", "..", "frontend"),
+        join(__dirname, "..", "..", "frontend"),
+        join(__dirname, "..", "frontend"),
+
+        // 兼容旧构建路径：从 dist 目录向上查找 apps/frontend/dist
         join(__dirname, "..", "..", "apps", "frontend", "dist"),
         join(__dirname, "..", "apps", "frontend", "dist"),
 
@@ -43,8 +48,6 @@ export class StaticFileHandler {
         join(__dirname, "..", "apps", "frontend"),
 
         // 兼容路径：保持对旧 web 目录的支持（向后兼容）
-        // 对于 dist/handlers/StaticFileHandler.js -> ../../web/dist
-        // 对于 dist/cli.js -> ../web/dist
         join(__dirname, "..", "..", "web", "dist"),
         join(__dirname, "..", "web", "dist"),
 
