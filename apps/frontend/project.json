@@ -1,0 +1,61 @@
+{
+  "name": "frontend",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/frontend/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/vite:build",
+      "options": {
+        "configPath": "apps/frontend/vite.config.ts"
+      },
+      "outputs": ["{projectRoot}/dist"],
+      "dependsOn": ["shared-types:build"]
+    },
+    "serve": {
+      "executor": "@nx/vite:dev",
+      "options": {
+        "configPath": "apps/frontend/vite.config.ts"
+      }
+    },
+    "preview": {
+      "executor": "@nx/vite:preview",
+      "options": {
+        "configPath": "apps/frontend/vite.config.ts"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run",
+        "cwd": "apps/frontend"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "biome check --config-path=config/biome.json apps/frontend/src"
+      }
+    },
+    "lint:fix": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "biome check --write --config-path=config/biome.json apps/frontend/src"
+      }
+    },
+    "format": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "biome format --write --config-path=config/biome.json apps/frontend/src"
+      }
+    },
+    "type-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit"
+      }
+    }
+  },
+  "tags": ["type:app", "platform:web"],
+  "implicitDependencies": ["shared-types"]
+}
