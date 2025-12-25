@@ -14,13 +14,11 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["production", "^production"],
-      "cache": true,
-      "parallel": false
+      "cache": true
     },
     "test": {
       "inputs": ["default", "^production", "sharedGlobals"],
-      "cache": true,
-      "parallel": true
+      "cache": true
     },
     "lint": {
       "inputs": ["default", "{workspaceRoot}/config/biome.json"],
@@ -41,11 +39,7 @@
       }
     }
   ],
-  "affected": {
-    "defaultBase": "main"
-  },
-  "cli": {
-    "defaultCollection": "@nx/vite"
-  },
+  "defaultBase": "main",
+  "defaultCollection": "@nx/vite",
   "useNxCommand": true
 }
