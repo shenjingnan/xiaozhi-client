@@ -46,21 +46,12 @@ jobs:
         retry_on: error
         command: pnpm install --frozen-lockfile
 
-    # Nx 受影响的项目检测
-    - name: 检测受影响的项目
-      id: affected
-      run: |
-        # 检测受影响的项目（相对于 main 分支）
-        AFFECTED=$(npx nx print-affected --base=main --head=HEAD --select=projects)
-        echo "affected=$AFFECTED" >> $GITHUB_OUTPUT
-        echo "受影响的项目: $AFFECTED"
+    # 代码质量检查
+    - name: Nx Lint
+      run: npx nx run-many -t lint
 
-    # 代码质量检查（只检查受影响的项目）
-    - name: Nx Lint (受影响的项目)
-      run: npx nx run-many -t lint --affected=base=main
-
-    - name: Nx Type Check (受影响的项目)
-      run: npx nx run-many -t type-check --affected=base=main
+    - name: Nx Type Check
+      run: npx nx run-many -t type-check
 
     - name: 拼写检查 (根目录)
       run: pnpm run spell:check
@@ -68,22 +59,22 @@ jobs:
     - name: 代码重复率检查 (backend)
       run: pnpm run duplicate:check
 
-    # 构建和测试（只处理受影响的项目）
-    - name: Nx Build (受影响的项目，带缓存)
+    # 构建和测试
+    - name: Nx Build
       uses: nick-invision/retry@v3
       with:
         timeout_minutes: 10
         max_attempts: 2
         retry_on: error
-        command: npx nx run-many -t build --affected=base=main --parallel=false
+        command: npx nx run-many -t build --parallel=false
 
-    - name: Nx Test (受影响的项目，并行执行)
+    - name: Nx Test
       uses: nick-invision/retry@v3
       with:
         timeout_minutes: 10
         max_attempts: 2
         retry_on: error
-        command: npx nx run-many -t test --affected=base=main --coverage --parallel=true
+        command: npx nx run-many -t test --coverage --parallel=true
 
     # 上传覆盖率（仅 Ubuntu + Node 20.19.2）
     - name: 上传覆盖率报告
