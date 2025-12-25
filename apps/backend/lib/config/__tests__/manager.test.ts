@@ -309,13 +309,14 @@ describe("ConfigManager", () => {
 
       mockResolve.mockImplementation(() => "/test/cwd/xiaozhi.config.json5");
 
-      // 模拟 JSON5 格式的配置内容
+      // 模拟 JSON5 格式的配置内容（使用带引号的键以兼容 comment-json）
       const json5Config = `{
-        mcpEndpoint: "https://example.com/mcp",
-        mcpServers: {
+        // MCP 接入点
+        "mcpEndpoint": "https://example.com/mcp",
+        "mcpServers": {
           "test-server": {
-            command: "node",
-            args: ["test.js"]
+            "command": "node",
+            "args": ["test.js"]
           }
         }
       }`;
@@ -1347,14 +1348,14 @@ describe("ConfigManager", () => {
         return `${dir}/${file}`;
       });
 
-      // 模拟 JSON5 格式的配置内容
+      // 模拟 JSON5 格式的配置内容（使用带引号的键以兼容 comment-json）
       const json5Config = `{
         // MCP 接入点
-        mcpEndpoint: "https://example.com/mcp",
-        mcpServers: {
+        "mcpEndpoint": "https://example.com/mcp",
+        "mcpServers": {
           "test-server": {
-            command: "node",
-            args: ["test.js"],
+            "command": "node",
+            "args": ["test.js"],
           }
         }
       }`;

@@ -1,8 +1,11 @@
 /**
  * JSON5 注释保留适配器
- * 使用 JSON5 实现 JSON5 注释保留功能
+ * 使用 comment-json 实现 JSON5/JSONC 注释保留功能
+ *
+ * 注意：为了使用 comment-json 保留注释，JSON5 配置文件的键需要带引号。
+ * 这与 JSON5 标准语法允许不带引号的键略有不同，但能实现注释保留功能。
  */
-import JSON5 from "json5";
+import * as commentJson from "comment-json";
 
 /**
  * JSON5 写入器适配器接口
@@ -19,8 +22,9 @@ export interface Json5WriterAdapter {
  * @returns Json5WriterAdapter 实例
  */
 export function createJson5Writer(content: string): Json5WriterAdapter {
-  // 使用 JSON5 解析原始内容（支持注释、尾随逗号等 JSON5 特性）
-  const parsedData = JSON5.parse(content) as Record<string, unknown>;
+  // 使用 comment-json 解析原始内容
+  // comment-json 会保留注释信息在返回的对象中
+  const parsedData = commentJson.parse(content) as Record<string, unknown>;
 
   return {
     write(data: unknown): void {
@@ -31,8 +35,8 @@ export function createJson5Writer(content: string): Json5WriterAdapter {
     },
 
     toSource(): string {
-      // 使用 JSON5 序列化，支持尾随逗号等特性
-      return JSON5.stringify(parsedData, null, 2);
+      // 使用 comment-json 序列化，保留注释和格式
+      return commentJson.stringify(parsedData, null, 2);
     },
   };
 }
@@ -43,6 +47,6 @@ export function createJson5Writer(content: string): Json5WriterAdapter {
  * @returns 解析后的对象
  */
 export function parseJson5(content: string): unknown {
-  // 使用 JSON5 解析，支持完整的 JSON5 特性
-  return JSON5.parse(content);
+  // 使用 comment-json 解析，支持注释保留
+  return commentJson.parse(content);
 }
