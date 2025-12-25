@@ -56,7 +56,8 @@
     "type-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc --project ../../config/tsconfig.typecheck.json"
+        "command": "tsc --project ../../config/tsconfig.typecheck.json",
+        "cwd": "apps/backend"
       }
     }
   },
