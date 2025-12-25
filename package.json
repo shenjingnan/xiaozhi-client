@@ -52,7 +52,7 @@
     "duplicate:check": "jscpd apps/backend/",
     "docker:update-version": "node docker/scripts/update-version.js",
     "example": "node --loader ts-node/esm",
-    "docs:dev": "cd docs && mintlify dev",
+    "docs:dev": "cd docs && pnpm dev",
     "release": "npx release-it --config config/release-it.json",
     "release:dry": "npx release-it --config config/release-it.json --dry-run"
   },
@@ -101,7 +101,6 @@
     "glob": "^11.0.3",
     "happy-dom": "^20.0.2",
     "jscpd": "^4.0.5",
-    "mintlify": "^4.0.423",
     "release-it": "^19.0.4",
     "semver": "^7.7.2",
     "supertest": "^7.1.4",

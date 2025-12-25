@@ -21,7 +21,7 @@ argument-hint: [document-type] [document-title]
 
 ### mcp-tool - MCP 工具文档
 
-- **路径**：`docs/usage/{filename}.mdx`
+- **路径**：`docs/content/guides/mcp-tools/{filename}.mdx`
 - **用途**：为特定 MCP 工具或功能创建使用文档
 - **模板内容**：
   - 功能介绍和适用场景
@@ -32,7 +32,7 @@ argument-hint: [document-type] [document-title]
 
 ### dev-guide - 开发指南
 
-- **路径**：`docs/development/{filename}.mdx`
+- **路径**：`docs/content/development/{filename}.mdx`
 - **用途**：开发相关的指南文档
 - **模板内容**：
   - 开发背景和目标
@@ -43,7 +43,7 @@ argument-hint: [document-type] [document-title]
 
 ### api-doc - API 参考文档
 
-- **路径**：`docs/reference/{filename}.mdx`
+- **路径**：`docs/content/api/reference/{filename}.mdx`
 - **用途**：API 接口或命令参考文档
 - **模板内容**：
   - 接口或命令概述
@@ -54,7 +54,7 @@ argument-hint: [document-type] [document-title]
 
 ### user-manual - 用户手册
 
-- **路径**：`docs/getting-started/{filename}.mdx`
+- **路径**：`docs/content/getting-started/{filename}.mdx`
 - **用途**：用户入门和操作指南
 - **模板内容**：
   - 使用场景和目标用户
@@ -65,7 +65,7 @@ argument-hint: [document-type] [document-title]
 
 ### arch-doc - 架构文档
 
-- **路径**：`docs/arch/{filename}.mdx` (如目录不存在则创建)
+- **路径**：`docs/content/architecture/{filename}.mdx` (如目录不存在则创建)
 - **用途**：系统架构和设计文档
 - **模板内容**：
   - 架构概述和设计原理
@@ -86,28 +86,35 @@ argument-hint: [document-type] [document-title]
 
 ## 4. 自动更新导航
 
-创建文档后，请自动更新 `docs/docs.json` 文件：
+创建文档后，请自动更新 `docs/meta.json` 文件（Nextra 导航配置）：
 
 - **getting-started**：入门和快速开始文档
-- **usage**：使用指南和工具文档
-- **reference**：参考文档和 API 说明
+- **guides**：使用指南和工具文档
+- **api**：参考文档和 API 说明
 - **development**：开发指南和技术文档
-- **arch**：架构文档（添加到现有组或创建新组）
+- **architecture**：架构文档（添加到现有组或创建新组）
 
 ### 导航更新规则
 
+Nextra 使用基于文件系统的自动导航，也可以通过 `meta.json` 覆盖：
+
 ```json
 {
-  "navigation": {
-    "pages": [
-      // 按字母顺序或逻辑顺序插入新页面
-      "getting-started/{new-doc}",
-      // 或分组
-      {
-        "group": "开发",
-        "pages": ["development/{new-doc}", "arch/{new-doc}"]
+  "docs": {
+    "getting-started": {
+      "title": "快速开始",
+      "type": "page"
+    },
+    "guides": {
+      "title": "使用指南",
+      "type": "folder",
+      "items": {
+        "mcp-tools": {
+          "title": "MCP 工具",
+          "type": "folder"
+        }
       }
-    ]
+    }
   }
 }
 ```
@@ -179,8 +186,8 @@ argument-hint: [document-type] [document-title]
 如果本地验证失败：
 
 - **MDX 语法错误**：检查组件导入是否正确，避免使用不兼容的组件
-- **导航配置错误**：确保新文档已在 docs.json 中正确配置
-- **Mintlify 配置问题**：检查 docs.json 文件的语法和结构
+- **导航配置错误**：确保新文档已在 meta.json 中正确配置（如使用自定义导航）
+- **Nextra 配置问题**：检查 next.config.ts 和 theme.config.ts 的配置
 - **TypeScript 配置问题**：检查文档中的 TypeScript 代码块语法
 
 ### 5.4 验证成功标准
