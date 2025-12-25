@@ -309,13 +309,14 @@ describe("ConfigManager", () => {
 
       mockResolve.mockImplementation(() => "/test/cwd/xiaozhi.config.json5");
 
-      // 模拟 JSON5 格式的配置内容
+      // 模拟 JSON5 格式的配置内容（使用带引号的键以兼容 comment-json）
       const json5Config = `{
-        mcpEndpoint: "https://example.com/mcp",
-        mcpServers: {
+        // MCP 接入点
+        "mcpEndpoint": "https://example.com/mcp",
+        "mcpServers": {
           "test-server": {
-            command: "node",
-            args: ["test.js"]
+            "command": "node",
+            "args": ["test.js"]
           }
         }
       }`;
@@ -1347,14 +1348,14 @@ describe("ConfigManager", () => {
         return `${dir}/${file}`;
       });
 
-      // 模拟 JSON5 格式的配置内容
+      // 模拟 JSON5 格式的配置内容（使用带引号的键以兼容 comment-json）
       const json5Config = `{
         // MCP 接入点
-        mcpEndpoint: "https://example.com/mcp",
-        mcpServers: {
+        "mcpEndpoint": "https://example.com/mcp",
+        "mcpServers": {
           "test-server": {
-            command: "node",
-            args: ["test.js"],
+            "command": "node",
+            "args": ["test.js"],
           }
         }
       }`;
@@ -2894,7 +2895,7 @@ describe("ConfigManager", () => {
         configManager.removeCustomMCPTool(mockCustomMCPTool.name);
 
         expect(mockWriteFileSync).toHaveBeenCalled();
-        const savedConfig = JSON.parse(
+        const savedConfig = JSON5.parse(
           mockWriteFileSync.mock.calls[0][1] as string
         );
         expect(savedConfig.customMCP.tools).toHaveLength(0);
@@ -2968,7 +2969,7 @@ describe("ConfigManager", () => {
         configManager.updateCustomMCPTools([]);
 
         expect(mockWriteFileSync).toHaveBeenCalled();
-        const savedConfig = JSON.parse(
+        const savedConfig = JSON5.parse(
           mockWriteFileSync.mock.calls[0][1] as string
         );
         expect(savedConfig.customMCP.tools).toEqual([]);
