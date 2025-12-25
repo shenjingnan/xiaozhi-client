@@ -10,7 +10,7 @@
         "command": "tsup",
         "cwd": "packages/shared-types"
       },
-      "outputs": ["{projectRoot}/dist"]
+      "outputs": ["{workspaceRoot}/dist/shared-types"]
     },
     "test": {
       "executor": "nx:run-commands",

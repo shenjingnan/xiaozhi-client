@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { defineConfig } from "tsup";
 
@@ -39,7 +39,7 @@ export default defineConfig({
   entry: ["apps/backend/cli.ts", "apps/backend/WebServerLauncher.ts"],
   format: ["esm"],
   target: "node18",
-  outDir: "dist",
+  outDir: "dist/backend",
   clean: true,
   sourcemap: true,
   dts: true,
@@ -81,10 +81,10 @@ export default defineConfig({
     "express",
   ],
   onSuccess: async () => {
-    // 复制配置文件到 dist
-    const distDir = "dist";
+    // 复制配置文件到 dist/backend
+    const distDir = "dist/backend";
 
-    // 确保 dist 目录存在
+    // 确保 dist/backend 目录存在
     if (!existsSync(distDir)) {
       mkdirSync(distDir, { recursive: true });
     }
@@ -95,25 +95,45 @@ export default defineConfig({
         "xiaozhi.config.default.json",
         join(distDir, "xiaozhi.config.default.json")
       );
-      console.log("✅ 已复制 xiaozhi.config.default.json 到 dist/");
+      console.log("✅ 已复制 xiaozhi.config.default.json 到 dist/backend/");
     }
 
-    // 复制 package.json 到 dist 目录，以便运行时能读取版本号
+    // 复制 package.json 到 dist/backend 目录，以便运行时能读取版本号
     if (existsSync("package.json")) {
       copyFileSync("package.json", join(distDir, "package.json"));
-      console.log("✅ 已复制 package.json 到 dist/");
+      console.log("✅ 已复制 package.json 到 dist/backend/");
     }
 
-    // 复制 templates 目录到 dist 目录
+    // 复制 templates 目录到 dist/backend 目录
     if (existsSync("templates")) {
       try {
         copyDirectory("templates", join(distDir, "templates"));
-        console.log("✅ 已复制 templates 目录到 dist/");
+        console.log("✅ 已复制 templates 目录到 dist/backend/");
       } catch (error) {
         console.warn("⚠️ 复制 templates 目录失败:", error);
       }
     }
 
     console.log("✅ 构建完成，产物现在为 ESM 格式");
+
+    // 创建向后兼容的包装脚本 dist/cli.js
+    const compatCliPath = "dist/cli.js";
+    writeFileSync(
+      compatCliPath,
+      `// 向后兼容包装脚本 - 重定向到新的路径
+export * from './backend/cli.js';
+`
+    );
+    console.log("✅ 已创建向后兼容包装脚本 dist/cli.js");
+
+    // 创建向后兼容的 dist/WebServerLauncher.js
+    const compatLauncherPath = "dist/WebServerLauncher.js";
+    writeFileSync(
+      compatLauncherPath,
+      `// 向后兼容包装脚本 - 重定向到新的路径
+export * from './backend/WebServerLauncher.js';
+`
+    );
+    console.log("✅ 已创建向后兼容包装脚本 dist/WebServerLauncher.js");
   },
 });

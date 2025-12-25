@@ -12,7 +12,7 @@
           "PWD": "{workspaceRoot}"
         }
       },
-      "outputs": ["{workspaceRoot}/dist"],
+      "outputs": ["{workspaceRoot}/dist/backend"],
       "dependsOn": ["shared-types:build"]
     },
     "test": {

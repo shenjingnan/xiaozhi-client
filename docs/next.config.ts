@@ -20,7 +20,7 @@ export default withNextra({
     ? {}
     : {
         output: "export",
-        distDir: "out",
+        distDir: "../dist/docs",
         outputFileTracingRoot: join(__dirname, ".."),
         trailingSlash: true,
       }),

@@ -10,7 +10,7 @@
         "command": "tsc && vite build",
         "cwd": "apps/frontend"
       },
-      "outputs": ["{projectRoot}/dist"],
+      "outputs": ["{workspaceRoot}/dist/frontend"],
       "dependsOn": ["shared-types:build"]
     },
     "serve": {
