@@ -5,9 +5,10 @@
   "projectType": "application",
   "targets": {
     "build": {
-      "executor": "@nx/vite:build",
+      "executor": "nx:run-commands",
       "options": {
-        "configPath": "apps/frontend/vite.config.ts"
+        "command": "tsc && vite build",
+        "cwd": "apps/frontend"
       },
       "outputs": ["{projectRoot}/dist"],
       "dependsOn": ["shared-types:build"]

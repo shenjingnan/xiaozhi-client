@@ -7,7 +7,10 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsup --config ../../config/tsup.config.ts"
+        "command": "cross-env NODE_ENV=${NODE_ENV:-production} tsup --config config/tsup.config.ts",
+        "env": {
+          "PWD": "{workspaceRoot}"
+        }
       },
       "outputs": ["{workspaceRoot}/dist"],
       "dependsOn": ["shared-types:build"]
