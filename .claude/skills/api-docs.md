@@ -2,7 +2,7 @@
 description: 文档自动生成
 ---
 
-我是 API 文档自动生成技能，专门从 xiaozhi-client 项目的源代码中提取 API 信息，生成符合 Mintlify 标准的 MDX 文档，同时遵循务实开发理念。
+我是 API 文档自动生成技能，专门从 xiaozhi-client 项目的源代码中提取 API 信息，生成符合 Nextra (Next.js) 标准的 MDX 文档，同时遵循务实开发理念。
 
 ### 技能使用原则
 - **保持文档质量，但避免过度复杂**：生成清晰有用的文档，但不追求完美的文档结构
@@ -66,7 +66,7 @@ public async LightControl(
 ```
 
 ### 2. MDX 文档生成
-基于提取的信息生成符合 xiaozhi-client 项目标准的 Mintlify MDX 文档。
+基于提取的信息生成符合 xiaozhi-client 项目标准的 Nextra MDX 文档。
 
 #### 文档结构模板
 ```mdx
@@ -266,18 +266,18 @@ const generatedDocs = generateDocumentation(extractedInfo, options);
 
 ### 4. 导航更新
 ```typescript
-// 自动更新 docs.json 文件（Mintlify 导航配置）
+// 自动更新 meta.json 文件（Nextra 导航配置）
 function updateNavigation(docs: GeneratedDoc[]): void {
-  const docsJsonPath = 'docs/docs.json';
-  const currentConfig = readFileSync(docsJsonPath, 'utf8');
+  const metaJsonPath = 'docs/meta.json';
+  const currentConfig = readFileSync(metaJsonPath, 'utf8');
   const updatedConfig = insertIntoNavigation(currentConfig, docs);
-  writeFileSync(docsJsonPath, updatedConfig);
+  writeFileSync(metaJsonPath, updatedConfig);
 }
 
 function insertIntoNavigation(config: string, docs: GeneratedDoc[]): string {
   const parsed = JSON.parse(config);
   // 根据文档类型插入到合适的导航位置
-  // mcp-tools -> usage, api -> reference, dev-guides -> development
+  // MCP 工具文档 -> 使用指南，API 参考 -> 开发指南
   return JSON.stringify(parsed, null, 2);
 }
 ```
@@ -520,4 +520,24 @@ api-docs coverage
 - 提供迁移指南
 - 维护向后兼容性
 
-通过这个技能，可以确保 xiaozhi-client 项目的 API 文档始终保持最新、准确和高质量，提升开发者体验和项目可维护性。特别适配 Mintlify 文档系统和项目的复杂路径别名结构。
+通过这个技能，可以确保 xiaozhi-client 项目的 API 文档始终保持最新、准确和高质量，提升开发者体验和项目可维护性。特别适配 Nextra (Next.js) 文档系统和项目的复杂路径别名结构。
+
+## Nextra 特定说明
+
+### 导航配置
+- 使用 `docs/meta.json` 管理文档导航结构
+- 支持多层级嵌套和分组
+- 自动根据文件路径生成导航树
+
+### 文档放置
+- MCP 工具文档：`docs/content/guides/mcp-tools/*.mdx`
+- API 参考文档：`docs/content/api/reference/*.mdx`
+- 开发指南：`docs/content/development/*.mdx`
+
+### Front Matter 支持
+```yaml
+---
+title: 工具名称
+description: 工具描述
+---
+```

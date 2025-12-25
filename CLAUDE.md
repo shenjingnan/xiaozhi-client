@@ -45,7 +45,7 @@
 
 ### 文档开发
 
-- **文档系统**：使用 Mintlify，支持 MDX 格式
+- **文档系统**：使用 Nextra (Next.js)，支持 MDX 格式
 - **文档创建**：使用 `/docs-create [document-type] [document-title]` 命令
 - **文档更新**：使用 `/docs-update [scope] [target]` 批量更新
 - **文档验证**：
@@ -371,7 +371,7 @@ import { helperFunction } from "./helpers";
 - **路径别名验证器** - 检查和修复路径别名使用问题
 - **类型验证器** - TypeScript 严格模式检查和修复
 - **CI 验证器** - 完整代码质量检查和 CI 标准验证
-- **API 文档生成器** - 从源码自动生成 Mintlify 格式文档
+- **API 文档生成器** - 从源码自动生成 Nextra 格式文档
 - **开发流程检查器** - 确保代码修改后执行必要的质量检查命令
 
 ### 重要说明
@@ -381,4 +381,4 @@ import { helperFunction } from "./helpers";
 - 外部依赖不打包（ws、express、commander 等）
 - 模板目录复制到 dist 用于项目脚手架
 - Web UI 在 `web/` 目录中单独构建
-- 文档系统使用 Mintlify，支持 MDX 格式
+- 文档系统使用 Nextra (Next.js)，支持 MDX 格式
