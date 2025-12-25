@@ -32,6 +32,13 @@
         "cwd": "apps/frontend"
       }
     },
+    "test:coverage": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run --coverage",
+        "cwd": "apps/frontend"
+      }
+    },
     "lint": {
       "executor": "nx:run-commands",
       "options": {
@@ -53,7 +60,8 @@
     "type-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc --noEmit"
+        "command": "tsc --noEmit",
+        "cwd": "apps/frontend"
       }
     }
   },

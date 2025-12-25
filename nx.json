@@ -39,7 +39,5 @@
       }
     }
   ],
-  "defaultBase": "main",
-  "defaultCollection": "@nx/vite",
-  "useNxCommand": true
+  "defaultBase": "main"
 }

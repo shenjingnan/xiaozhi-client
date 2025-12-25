@@ -58,7 +58,7 @@
     "nx:lint": "nx run-many -t lint",
     "nx:type-check": "nx run-many -t type-check",
     "nx:test": "nx run-many -t test",
-    "nx:test:coverage": "nx run-many -t test --coverage --parallel=true",
+    "nx:test:coverage": "nx run-many -t test:coverage --parallel=true",
     "nx:build": "nx run-many -t build --parallel=false",
     "nx:projects": "nx show projects",
     "nx:graph": "nx graph",
