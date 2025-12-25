@@ -25,9 +25,9 @@
 - 支持 通过模板创建 xiaozhi-client 项目 (xiaozhi create \<my-app\> --template hello-world)
 - 支持 后台运行(xiaozhi start -d)
 
-![Web UI 配置界面](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/web-ui-preview.png)
+![Web UI 配置界面](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/public/images/web-ui-preview.png)
 
-![效果图](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/images/preview.png)
+![效果图](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/public/images/preview.png)
 
 ## 快速上手
 
