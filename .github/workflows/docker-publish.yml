@@ -59,7 +59,7 @@ jobs:
 
       # 使用 Nx 构建所有项目（确保依赖顺序正确）
       - name: 使用 Nx 构建项目
-        run: npx nx run-many -t build --parallel=false
+        run: pnpm run nx:build
 
       - name: 获取版本号
         id: get_version

@@ -54,7 +54,18 @@
     "example": "node --loader ts-node/esm",
     "docs:dev": "cd docs && pnpm dev",
     "release": "npx release-it --config config/release-it.json",
-    "release:dry": "npx release-it --config config/release-it.json --dry-run"
+    "release:dry": "npx release-it --config config/release-it.json --dry-run",
+    "nx:lint": "npx nx run-many -t lint",
+    "nx:type-check": "npx nx run-many -t type-check",
+    "nx:test": "npx nx run-many -t test",
+    "nx:test:coverage": "npx nx run-many -t test --coverage --parallel=true",
+    "nx:build": "npx nx run-many -t build --parallel=false",
+    "nx:projects": "npx nx show projects",
+    "nx:graph": "npx nx graph",
+    "nx:affected": "npx nx print-affected",
+    "nx:backend": "npx nx run backend:build",
+    "nx:frontend": "npx nx run frontend:build",
+    "nx:docs": "npx nx run docs:build"
   },
   "dependencies": {
     "@coze/api": "^1.3.9",

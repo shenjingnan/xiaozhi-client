@@ -48,10 +48,10 @@ jobs:
 
     # 代码质量检查
     - name: Nx Lint
-      run: npx nx run-many -t lint
+      run: pnpm run nx:lint
 
     - name: Nx Type Check
-      run: npx nx run-many -t type-check
+      run: pnpm run nx:type-check
 
     - name: 拼写检查 (根目录)
       run: pnpm run spell:check
@@ -66,7 +66,7 @@ jobs:
         timeout_minutes: 10
         max_attempts: 2
         retry_on: error
-        command: npx nx run-many -t build --parallel=false
+        command: pnpm run nx:build
 
     - name: Nx Test
       uses: nick-invision/retry@v3
@@ -74,7 +74,7 @@ jobs:
         timeout_minutes: 10
         max_attempts: 2
         retry_on: error
-        command: npx nx run-many -t test --coverage --parallel=true
+        command: pnpm run nx:test:coverage
 
     # 上传覆盖率（仅 Ubuntu + Node 20.19.2）
     - name: 上传覆盖率报告
