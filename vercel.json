@@ -5,9 +5,7 @@
       "src": "docs/package.json",
       "use": "@vercel/next",
       "config": {
-        "installCommand": "pnpm install --filter=docs",
-        "buildCommand": "pnpm build:docs",
-        "outputDirectory": "docs/out"
+        "installCommand": "pnpm install --filter=docs"
       }
     }
   ]
