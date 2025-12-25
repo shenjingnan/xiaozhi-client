@@ -1,8 +1,8 @@
 import type { PathLike } from "node:fs";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import * as commentJson from "comment-json";
 import JSON5 from "json5";
-import * as json5Writer from "json5-writer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppConfig, ConnectionConfig } from "../manager";
 import { ConfigManager } from "../manager";
@@ -255,7 +255,7 @@ describe("ConfigManager JSON5 Comment Preservation", () => {
       expect(parsed.mcpServers).toBeDefined();
     });
 
-    it("保存的内容应该可以被 json5-writer 重新加载", () => {
+    it("保存的内容应该可以被 comment-json 重新加载", () => {
       configManager.updateMcpServer("test-server", {
         command: "node",
         args: ["./test.js"],
@@ -263,17 +263,17 @@ describe("ConfigManager JSON5 Comment Preservation", () => {
 
       const savedContent = mockWriteFileSync.mock.calls[0][1] as string;
 
-      // 验证可以被 json5-writer 重新加载
-      expect(() => json5Writer.load(savedContent)).not.toThrow();
+      // 验证可以被 comment-json 重新加载
+      expect(() => commentJson.parse(savedContent)).not.toThrow();
 
-      const writer = json5Writer.load(savedContent);
-      expect(writer).toBeDefined();
-      expect(writer.toSource()).toBeDefined();
+      const parsed = commentJson.parse(savedContent) as unknown as AppConfig;
+      expect(parsed).toBeDefined();
+      expect(parsed.mcpServers).toBeDefined();
     });
   });
 
   describe("错误处理", () => {
-    it("当没有 json5Writer 实例时应该回退到标准 JSON5", () => {
+    it("当没有 JSON5 适配器实例时应该回退到 comment-json 序列化", () => {
       // 先加载配置
       configManager.getConfig();
 
@@ -287,11 +287,11 @@ describe("ConfigManager JSON5 Comment Preservation", () => {
 
       const savedContent = mockWriteFileSync.mock.calls[0][1] as string;
 
-      // 验证仍然可以被 JSON5 解析
-      expect(() => JSON5.parse(savedContent)).not.toThrow();
+      // 验证仍然可以被 comment-json 解析
+      expect(() => commentJson.parse(savedContent)).not.toThrow();
 
       // 验证配置被正确保存
-      const parsed = JSON5.parse(savedContent) as AppConfig;
+      const parsed = commentJson.parse(savedContent) as unknown as AppConfig;
       expect(parsed.mcpServers["test-server"]).toEqual({
         command: "node",
         args: ["./test.js"],

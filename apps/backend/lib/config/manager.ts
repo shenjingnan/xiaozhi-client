@@ -7,8 +7,7 @@ import { TypeFieldNormalizer } from "@utils/TypeFieldNormalizer.js";
 import { validateMcpServerConfig } from "@utils/mcpServerUtils";
 import * as commentJson from "comment-json";
 import dayjs from "dayjs";
-import JSON5 from "json5";
-import * as json5Writer from "json5-writer";
+import { createJson5Writer, parseJson5 } from "./json5-adapter.js";
 
 // 在 ESM 中，需要从 import.meta.url 获取当前文件目录
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -388,10 +387,10 @@ export class ConfigManager {
       // 根据文件格式使用相应的解析器
       switch (configFileFormat) {
         case "json5":
-          // 使用 JSON5 解析配置对象，同时使用 json5-writer 保留注释信息
-          config = JSON5.parse(configData) as AppConfig;
-          // 创建 json5-writer 实例用于后续保存时保留注释
-          this.json5Writer = json5Writer.load(configData);
+          // 使用 JSON5 解析配置对象，同时使用适配器保留注释信息
+          config = parseJson5(configData) as AppConfig;
+          // 创建适配器实例用于后续保存时保留注释
+          this.json5Writer = createJson5Writer(configData);
           break;
         case "jsonc":
           // 使用 comment-json 解析 JSONC 格式，保留注释信息
@@ -925,24 +924,24 @@ export class ConfigManager {
 
       switch (configFileFormat) {
         case "json5":
-          // 对于 JSON5 格式，使用 json5-writer 库保留注释
+          // 对于 JSON5 格式，使用适配器保留注释
           try {
             if (this.json5Writer) {
-              // 使用 json5-writer 更新配置并保留注释
+              // 使用适配器更新配置并保留注释
               this.json5Writer.write(config);
               configContent = this.json5Writer.toSource();
             } else {
-              // 如果没有 json5Writer 实例，回退到标准 JSON5
-              console.warn("没有 json5Writer 实例，回退到标准 JSON5 格式");
-              configContent = JSON5.stringify(config, null, 2);
+              // 如果没有适配器实例，回退到 comment-json 序列化
+              console.warn("没有 JSON5 适配器实例，使用 comment-json 序列化");
+              configContent = commentJson.stringify(config, null, 2);
             }
-          } catch (json5WriterError) {
-            // 如果 json5-writer 序列化失败，回退到标准 JSON5
+          } catch (json5Error) {
+            // 如果适配器序列化失败，回退到 comment-json 序列化
             console.warn(
-              "使用 json5-writer 保存失败，回退到标准 JSON5 格式:",
-              json5WriterError
+              "使用 JSON5 适配器保存失败，回退到 comment-json 序列化:",
+              json5Error
             );
-            configContent = JSON5.stringify(config, null, 2);
+            configContent = commentJson.stringify(config, null, 2);
           }
           break;
         case "jsonc":
