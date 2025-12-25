@@ -2894,7 +2894,7 @@ describe("ConfigManager", () => {
         configManager.removeCustomMCPTool(mockCustomMCPTool.name);
 
         expect(mockWriteFileSync).toHaveBeenCalled();
-        const savedConfig = JSON.parse(
+        const savedConfig = JSON5.parse(
           mockWriteFileSync.mock.calls[0][1] as string
         );
         expect(savedConfig.customMCP.tools).toHaveLength(0);
@@ -2968,7 +2968,7 @@ describe("ConfigManager", () => {
         configManager.updateCustomMCPTools([]);
 
         expect(mockWriteFileSync).toHaveBeenCalled();
-        const savedConfig = JSON.parse(
+        const savedConfig = JSON5.parse(
           mockWriteFileSync.mock.calls[0][1] as string
         );
         expect(savedConfig.customMCP.tools).toEqual([]);

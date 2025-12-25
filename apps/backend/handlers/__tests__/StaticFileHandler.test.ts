@@ -457,7 +457,7 @@ describe("StaticFileHandler", () => {
 
       const result = staticFileHandler.getWebPath();
 
-      expect(result).toBe("/project/dist/handlers/../../apps/frontend/dist");
+      expect(result).toBe("/project/dist/handlers/../../../frontend");
     });
 
     it("当 web 路径不可用时应该返回 null", () => {
