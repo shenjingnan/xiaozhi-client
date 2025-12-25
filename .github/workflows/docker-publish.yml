@@ -57,8 +57,9 @@ jobs:
       - name: 安装依赖
         run: pnpm install --frozen-lockfile
 
-      - name: 构建项目
-        run: pnpm run build
+      # 使用 Nx 构建所有项目（确保依赖顺序正确）
+      - name: 使用 Nx 构建项目
+        run: npx nx run-many -t build --parallel=false
 
       - name: 获取版本号
         id: get_version

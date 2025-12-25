@@ -47,5 +47,5 @@
   "cli": {
     "defaultCollection": "@nx/vite"
   },
-  "useNxCommand": false
+  "useNxCommand": true
 }
