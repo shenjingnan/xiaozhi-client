@@ -3,7 +3,7 @@
  * 专注于基本功能验证
  */
 
-import { PAGINATION_CONSTANTS } from "@cli/Constants.js";
+import { PAGINATION_CONSTANTS } from "@constants/ApiConstants.js";
 import { describe, expect, it } from "vitest";
 import { ToolCallLogApiHandler } from "./ToolCallLogApiHandler.js";
 

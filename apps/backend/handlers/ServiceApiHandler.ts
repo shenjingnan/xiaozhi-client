@@ -127,7 +127,7 @@ export class ServiceApiHandler {
       // 获取当前服务状态
       const status = await mcpServiceManager.getStatus();
 
-      if (!status.running) {
+      if (!status.isRunning) {
         this.logger.warn("MCP 服务未运行，尝试启动服务");
 
         // 如果服务未运行，尝试启动服务
@@ -145,14 +145,8 @@ export class ServiceApiHandler {
         return;
       }
 
-      // 获取服务运行模式
-      const isDaemon = status.mode === "daemon";
-
-      // 执行重启命令
-      const restartArgs = ["restart"];
-      if (isDaemon) {
-        restartArgs.push("--daemon");
-      }
+      // 执行重启命令，始终使用 daemon 模式
+      const restartArgs = ["restart", "--daemon"];
 
       // 在子进程中执行重启命令
       const child = spawn("xiaozhi", restartArgs, {

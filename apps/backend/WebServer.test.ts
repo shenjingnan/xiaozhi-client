@@ -779,22 +779,13 @@ describe("WebServer", () => {
     let mockSpawn: any;
 
     beforeEach(async () => {
-      const { createContainer } = await import("@cli/Container");
-      const { spawn } = await import("node:child_process");
-      const mockContainer = vi.mocked(createContainer);
+      // 直接 mock mcpServiceManager
+      const { mcpServiceManager } = await import("@managers/MCPServiceManagerSingleton.js");
       mockServiceManager = {
         getStatus: vi.fn(),
       };
-      mockContainer.mockResolvedValue({
-        get: vi.fn((serviceName) => {
-          if (serviceName === "serviceManager") {
-            return mockServiceManager;
-          }
-          return {};
-        }),
-        register: vi.fn(),
-        has: vi.fn(),
-      });
+      vi.mocked(mcpServiceManager.getStatus = mockServiceManager.getStatus.bind(mockServiceManager));
+      const { spawn } = await import("node:child_process");
       mockSpawn = vi.mocked(spawn);
     });
 
@@ -892,9 +883,15 @@ describe("WebServer", () => {
 
       // Mock service status
       mockServiceManager.getStatus.mockResolvedValue({
-        running: true,
-        pid: 12345,
-        mode: "daemon",
+        isRunning: true,
+        serviceStatus: {
+          services: {},
+          totalTools: 5,
+          availableTools: ["tool1", "tool2"],
+        },
+        transportCount: 1,
+        activeConnections: 1,
+        config: {},
       });
 
       // 使用 HTTP API 发送重启请求（新架构）
@@ -924,7 +921,15 @@ describe("WebServer", () => {
 
       // Mock service as not running
       mockServiceManager.getStatus.mockResolvedValue({
-        running: false,
+        isRunning: false,
+        serviceStatus: {
+          services: {},
+          totalTools: 0,
+          availableTools: [],
+        },
+        transportCount: 0,
+        activeConnections: 0,
+        config: {},
       });
 
       // 使用 HTTP API 发送重启请求（新架构）
