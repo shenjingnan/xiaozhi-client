@@ -144,3 +144,4 @@ tmp
 xiaozhi.cache.json
 tool-calls.jsonl
 .nx
+.claude/settings.local.json
