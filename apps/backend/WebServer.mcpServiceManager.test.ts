@@ -2,6 +2,65 @@ import { MCPServiceManager } from "@/lib/mcp";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WebServer } from "./WebServer";
 
+// Mock configManager to avoid triggering real config loading
+vi.mock("@/lib/config/manager.js", () => ({
+  configManager: {
+    getConfig: vi.fn(() => ({
+      mcpEndpoint: [],
+      mcpServers: {},
+      connection: {},
+    })),
+    getMcpServers: vi.fn(() => ({})),
+    getMcpEndpoints: vi.fn(() => []),
+    configExists: vi.fn(() => true),
+    updateMcpEndpoint: vi.fn(),
+    updateMcpServer: vi.fn(),
+    removeMcpServer: vi.fn(),
+    updateConnectionConfig: vi.fn(),
+    updateModelScopeConfig: vi.fn(),
+    updateWebUIConfig: vi.fn(),
+    setToolEnabled: vi.fn(),
+    updatePlatformConfig: vi.fn(),
+    getMcpEndpoint: vi.fn(),
+    getConnectionConfig: vi.fn(),
+    reloadConfig: vi.fn(),
+    getConfigPath: vi.fn(),
+    validateConfig: vi.fn(),
+    updateConfig: vi.fn(),
+  },
+}));
+
+// Mock Logger
+vi.mock("../Logger.js", () => ({
+  logger: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
+// Mock EventBus
+vi.mock("@services/EventBus.js", () => ({
+  getEventBus: vi.fn().mockReturnValue({
+    onEvent: vi.fn(),
+    emitEvent: vi.fn(),
+    removeAllListeners: vi.fn(),
+  }),
+}));
+
+// Mock EndpointManager
+vi.mock("@/lib/endpoint/index.js", () => ({
+  EndpointManager: vi.fn().mockImplementation(() => ({
+    initialize: vi.fn().mockResolvedValue(undefined),
+    connect: vi.fn().mockResolvedValue(undefined),
+    cleanup: vi.fn().mockResolvedValue(undefined),
+    setServiceManager: vi.fn(),
+    getConnectionStatus: vi.fn().mockReturnValue([]),
+    on: vi.fn(),
+  })),
+}));
+
 // Mock MCPServiceManager
 vi.mock("@/lib/mcp", () => ({
   MCPServiceManager: vi.fn().mockImplementation(() => ({
@@ -75,48 +134,6 @@ describe("WebServer MCPServiceManager 方法测试", () => {
     });
 
     it("在 WebServer 启动后应该返回有效实例", async () => {
-      // Mock configManager 以避免配置加载失败
-      vi.mock("@/lib/config/manager.js", () => ({
-        configManager: {
-          getConfig: vi.fn().mockReturnValue({
-            mcpEndpoint: "ws://test",
-            mcpServers: {},
-          }),
-          configExists: vi.fn().mockReturnValue(true),
-        },
-        ConfigManager: vi.fn(),
-      }));
-
-      // Mock Logger
-      vi.mock("../Logger", () => ({
-        logger: {
-          debug: vi.fn(),
-          info: vi.fn(),
-          warn: vi.fn(),
-          error: vi.fn(),
-        },
-      }));
-
-      // Mock EventBus
-      vi.mock("@services/EventBus", () => ({
-        getEventBus: vi.fn().mockReturnValue({
-          onEvent: vi.fn(),
-          removeAllListeners: vi.fn(),
-        }),
-      }));
-
-      // Mock EndpointManager
-      vi.mock("@/lib/endpoint/index", () => ({
-        EndpointManager: vi.fn().mockImplementation(() => ({
-          initialize: vi.fn().mockResolvedValue(undefined),
-          connect: vi.fn().mockResolvedValue(undefined),
-          cleanup: vi.fn().mockResolvedValue(undefined),
-          setServiceManager: vi.fn(),
-          getConnectionStatus: vi.fn().mockReturnValue([]),
-          on: vi.fn(),
-        })),
-      }));
-
       try {
         await webServer.start();
 

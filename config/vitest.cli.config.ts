@@ -1,7 +1,18 @@
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { dirname } from "node:path";
 import { defineConfig } from "vitest/config";
+import tsconfigPaths from "vite-tsconfig-paths";
+
+// ESM 兼容的 __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export default defineConfig({
+  plugins: [
+    // 添加 tsconfig 路径解析插件
+    tsconfigPaths(),
+  ],
   test: {
     globals: true,
     environment: "node",
@@ -36,22 +47,26 @@ export default defineConfig({
   resolve: {
     alias: {
       // CLI 内部路径别名
-      "@": resolve(__dirname, "../packages/cli/src"),
       "@cli/commands": resolve(__dirname, "../packages/cli/src/commands"),
-      "@cli/commands/*": resolve(__dirname, "../packages/cli/src/commands/*"),
       "@cli/services": resolve(__dirname, "../packages/cli/src/services"),
-      "@cli/services/*": resolve(__dirname, "../packages/cli/src/services/*"),
       "@cli/utils": resolve(__dirname, "../packages/cli/src/utils"),
-      "@cli/utils/*": resolve(__dirname, "../packages/cli/src/utils/*"),
       "@cli/errors": resolve(__dirname, "../packages/cli/src/errors"),
-      "@cli/errors/*": resolve(__dirname, "../packages/cli/src/errors/*"),
       "@cli/interfaces": resolve(__dirname, "../packages/cli/src/interfaces"),
-      "@cli/interfaces/*": resolve(__dirname, "../packages/cli/src/interfaces/*"),
-      // 过渡期：backend 别名（用于访问依赖）
-      "@/lib/config": resolve(__dirname, "../apps/backend/lib/config"),
-      "@/lib/config/*": resolve(__dirname, "../apps/backend/lib/config/*"),
+      // Backend 路径别名（与 backend vitest.config.ts 保持一致）
+      "@handlers": resolve(__dirname, "../apps/backend/handlers"),
+      "@middlewares": resolve(__dirname, "../apps/backend/middlewares"),
+      "@services": resolve(__dirname, "../apps/backend/services"),
+      "@errors": resolve(__dirname, "../apps/backend/errors"),
+      "@utils": resolve(__dirname, "../apps/backend/utils"),
+      "@core": resolve(__dirname, "../apps/backend/core"),
+      "@transports": resolve(__dirname, "../apps/backend/lib/mcp/transports"),
+      "@adapters": resolve(__dirname, "../apps/backend/adapters"),
+      "@managers": resolve(__dirname, "../apps/backend/managers"),
+      "@types": resolve(__dirname, "../apps/backend/types"),
+      "@/lib": resolve(__dirname, "../apps/backend/lib"),
       "@root": resolve(__dirname, "../apps/backend"),
-      "@root/*": resolve(__dirname, "../apps/backend/*"),
+      "@routes": resolve(__dirname, "../apps/backend/routes"),
+      "@constants": resolve(__dirname, "../apps/backend/constants"),
     },
   },
 });

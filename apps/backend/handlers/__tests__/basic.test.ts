@@ -1,4 +1,63 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// Mock dependencies to avoid triggering real config loading
+vi.mock("../../Logger.js", () => ({
+  logger: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+  },
+}));
+
+vi.mock("@/lib/config/manager.js", () => ({
+  configManager: {
+    getConfig: vi.fn(() => ({
+      mcpEndpoint: [],
+      mcpServers: {},
+      connection: {},
+    })),
+    getMcpServers: vi.fn(() => ({})),
+    getMcpEndpoints: vi.fn(() => []),
+    updateMcpEndpoint: vi.fn(),
+    updateMcpServer: vi.fn(),
+    removeMcpServer: vi.fn(),
+    updateConnectionConfig: vi.fn(),
+    updateModelScopeConfig: vi.fn(),
+    updateWebUIConfig: vi.fn(),
+    setToolEnabled: vi.fn(),
+    updatePlatformConfig: vi.fn(),
+    getMcpEndpoint: vi.fn(),
+    getConnectionConfig: vi.fn(),
+    reloadConfig: vi.fn(),
+    getConfigPath: vi.fn(),
+    configExists: vi.fn(() => true),
+    validateConfig: vi.fn(),
+    updateConfig: vi.fn(),
+  },
+}));
+
+vi.mock("../../managers/MCPServiceManagerSingleton.js", () => ({
+  mcpServiceManager: {
+    getStatus: vi.fn(),
+  },
+}));
+
+vi.mock("node:child_process", () => ({
+  spawn: vi.fn(),
+}));
+
+vi.mock("@services/EventBus.js", () => ({
+  getEventBus: vi.fn().mockReturnValue({
+    emitEvent: vi.fn(),
+  }),
+}));
+
+vi.mock("@services/StatusService.js", () => ({
+  StatusService: vi.fn().mockImplementation(() => ({
+    updateRestartStatus: vi.fn(),
+  })),
+}));
 
 describe("Handlers Basic Tests", () => {
   it("should be able to import handler modules", async () => {

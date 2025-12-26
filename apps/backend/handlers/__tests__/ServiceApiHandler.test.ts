@@ -48,7 +48,7 @@ describe("ServiceApiHandler", () => {
     // Mock MCPServiceManager
     mockMcpServiceManager = {
       getStatus: vi.fn().mockResolvedValue({
-        running: true,
+        isRunning: true,
         mode: "daemon",
         pid: 12345,
       }),
@@ -98,7 +98,7 @@ describe("ServiceApiHandler", () => {
   describe("getServiceStatus", () => {
     it("should return service status successfully", async () => {
       const mockStatus = {
-        running: true,
+        isRunning: true,
         pid: 12345,
         uptime: 3600000,
         memory: { rss: 50000000 },
@@ -453,7 +453,7 @@ describe("ServiceApiHandler", () => {
 
     it("should execute restart asynchronously for running service", async () => {
       mockMcpServiceManager.getStatus.mockResolvedValue({
-        running: true,
+        isRunning: true,
         mode: "daemon",
         pid: 12345,
       });
@@ -482,7 +482,7 @@ describe("ServiceApiHandler", () => {
 
     it("should start service when not running during restart", async () => {
       mockMcpServiceManager.getStatus.mockResolvedValue({
-        running: false,
+        isRunning: false,
         mode: "daemon",
         pid: null,
       });
@@ -521,7 +521,7 @@ describe("ServiceApiHandler", () => {
 
     it("should handle non-daemon mode restart", async () => {
       mockMcpServiceManager.getStatus.mockResolvedValue({
-        running: true,
+        isRunning: true,
         mode: "standalone",
         pid: 12345,
       });
@@ -531,9 +531,10 @@ describe("ServiceApiHandler", () => {
       // Fast-forward the initial timeout to trigger executeRestart
       await vi.advanceTimersByTimeAsync(500);
 
+      // 注意：实际代码逻辑是始终使用 --daemon 模式
       expect(mockSpawn).toHaveBeenCalledWith(
         "xiaozhi",
-        ["restart"],
+        ["restart", "--daemon"],
         expect.objectContaining({
           detached: true,
           stdio: "ignore",

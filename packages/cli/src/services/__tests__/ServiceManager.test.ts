@@ -45,7 +45,7 @@ const mockMCPServerInstance = {
   stop: vi.fn().mockResolvedValue(undefined),
 };
 
-vi.mock("../../WebServer.js", () => ({
+vi.mock("@root/WebServer.js", () => ({
   WebServer: vi.fn().mockImplementation(() => mockWebServerInstance),
 }));
 
@@ -57,6 +57,9 @@ vi.mock("node:child_process", () => ({
     stderr: { pipe: vi.fn() },
     on: vi.fn(),
     unref: vi.fn(),
+  }),
+  exec: vi.fn().mockImplementation((cmd: string, callback: any) => {
+    callback(null, { stdout: "", stderr: "" });
   }),
 }));
 
@@ -76,15 +79,67 @@ vi.mock("@cli/utils/PathUtils.js", () => ({
   },
 }));
 
+// Mock ConfigManager for WebServer
+vi.mock("@/lib/config/manager.js", () => {
+  const mockConfig = {
+    mcpEndpoint: "ws://localhost:3000",
+    mcpServers: {},
+    webServer: { port: 9999 },
+  };
+  const mockConfigManager = {
+    configExists: vi.fn().mockReturnValue(true),
+    getConfig: vi.fn().mockReturnValue(mockConfig),
+    loadConfig: vi.fn().mockResolvedValue(mockConfig),
+    getToolCallLogConfig: vi.fn().mockReturnValue({ enabled: false }),
+    getMcpServers: vi.fn().mockReturnValue({}),
+    getMcpEndpoint: vi.fn().mockReturnValue("ws://localhost:3000"),
+    getConfigDir: vi.fn().mockReturnValue("/mock/config"),
+  };
+  return {
+    configManager: mockConfigManager,
+    ConfigManager: vi.fn().mockImplementation(() => mockConfigManager),
+  };
+});
+
 // Mock fs
-vi.mock("node:fs", () => ({
-  default: {
-    existsSync: vi.fn().mockReturnValue(true),
+vi.mock("node:fs", () => {
+  const mockExistsSync = vi.fn().mockReturnValue(true);
+  const mockReadFileSync = vi.fn().mockReturnValue(
+    JSON.stringify({
+      mcpEndpoint: "ws://localhost:3000",
+      mcpServers: {},
+    }),
+  );
+  return {
+    default: {
+      existsSync: mockExistsSync,
+      readFileSync: mockReadFileSync,
+      writeFileSync: vi.fn(),
+      copyFileSync: vi.fn(),
+      mkdirSync: vi.fn(),
+      readdirSync: vi.fn().mockReturnValue([]),
+      statSync: vi.fn().mockReturnValue({ isFile: () => true, isDirectory: () => false }),
+      createWriteStream: vi.fn().mockReturnValue({
+        write: vi.fn(),
+      }),
+    },
+    existsSync: mockExistsSync,
+    readFileSync: mockReadFileSync,
+    writeFileSync: vi.fn(),
+    copyFileSync: vi.fn(),
+    mkdirSync: vi.fn(),
+    readdirSync: vi.fn().mockReturnValue([]),
+    statSync: vi.fn().mockReturnValue({ isFile: () => true, isDirectory: () => false }),
     createWriteStream: vi.fn().mockReturnValue({
       write: vi.fn(),
     }),
-  },
-}));
+    promises: {
+      readFile: vi.fn().mockResolvedValue("mock content"),
+      writeFile: vi.fn().mockResolvedValue(undefined),
+      mkdir: vi.fn().mockResolvedValue(undefined),
+    },
+  };
+});
 
 // Mock process.exit
 const mockProcessExit = vi.spyOn(process, "exit").mockImplementation(() => {
@@ -130,7 +185,7 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
     );
 
     // Mock dynamic import for WebServer
-    vi.doMock("../../WebServer.js", () => ({
+    vi.doMock("@root/WebServer.js", () => ({
       WebServer: vi.fn().mockImplementation(() => mockWebServerInstance),
     }));
   });
