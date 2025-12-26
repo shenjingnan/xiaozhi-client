@@ -2,7 +2,7 @@
  * 错误处理系统单元测试
  */
 
-import { ERROR_CODES } from "@cli/Constants";
+import { ERROR_CODES } from "../../Constants";
 import {
   CLIError,
   ConfigError,
@@ -10,7 +10,7 @@ import {
   ProcessError,
   ServiceError,
   ValidationError,
-} from "@cli/errors/index";
+} from "../index";
 import { describe, expect, it } from "vitest";
 
 describe("CLIError", () => {

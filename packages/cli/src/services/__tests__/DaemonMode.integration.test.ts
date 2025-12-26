@@ -1,6 +1,6 @@
-import type { ServiceStartOptions } from "@cli/interfaces/Service";
-import { ServiceManagerImpl } from "@cli/services/ServiceManager";
-import { PathUtils } from "@cli/utils/PathUtils";
+import type { ServiceStartOptions } from "../../interfaces/Service";
+import { ServiceManagerImpl } from "../ServiceManager";
+import { PathUtils } from "../../utils/PathUtils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock external dependencies

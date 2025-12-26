@@ -4,11 +4,11 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { FileError, ValidationError } from "@cli/errors/index";
-import type { TemplateManager as ITemplateManager } from "@cli/interfaces/Service";
-import { FileUtils } from "@cli/utils/FileUtils";
-import { PathUtils } from "@cli/utils/PathUtils";
-import { Validation } from "@cli/utils/Validation";
+import { FileError, ValidationError } from "../errors/index";
+import type { TemplateManager as ITemplateManager } from "../interfaces/Service";
+import { FileUtils } from "../utils/FileUtils";
+import { PathUtils } from "../utils/PathUtils";
+import { Validation } from "../utils/Validation";
 
 /**
  * 模板信息接口

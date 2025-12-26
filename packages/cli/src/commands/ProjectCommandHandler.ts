@@ -3,9 +3,9 @@
  */
 
 import path from "node:path";
-import type { CommandOption } from "@cli/interfaces/Command";
-import { BaseCommandHandler } from "@cli/interfaces/Command";
-import type { IDIContainer } from "@cli/interfaces/Config";
+import type { CommandOption } from "../interfaces/Command";
+import { BaseCommandHandler } from "../interfaces/Command";
+import type { IDIContainer } from "../interfaces/Config";
 import chalk from "chalk";
 import ora from "ora";
 

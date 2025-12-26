@@ -5,13 +5,13 @@
 import type { ChildProcess } from "node:child_process";
 import { spawn } from "node:child_process";
 import fs from "node:fs";
-import { ProcessError, ServiceError } from "@cli/errors/index";
+import { ProcessError, ServiceError } from "../errors/index";
 import type {
   DaemonManager as IDaemonManager,
   ProcessManager,
-} from "@cli/interfaces/Service";
-import { PathUtils } from "@cli/utils/PathUtils";
-import { PlatformUtils } from "@cli/utils/PlatformUtils";
+} from "../interfaces/Service";
+import { PathUtils } from "../utils/PathUtils";
+import { PlatformUtils } from "../utils/PlatformUtils";
 import type { Logger } from "@root/Logger";
 import type { WebServer } from "@root/WebServer";
 

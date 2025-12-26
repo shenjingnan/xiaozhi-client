@@ -10,8 +10,8 @@ import {
   CONFIG_CONSTANTS,
   PATH_CONSTANTS,
   SERVICE_CONSTANTS,
-} from "@cli/Constants";
-import { FileUtils } from "@cli/utils/FileUtils";
+} from "../Constants";
+import { FileUtils } from "./FileUtils";
 
 /**
  * 路径工具类

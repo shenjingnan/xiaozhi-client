@@ -5,8 +5,8 @@
 import type {
   CommandArguments,
   CommandOptions,
-} from "@cli/interfaces/CommandTypes";
-import type { IDIContainer } from "@cli/interfaces/Config";
+} from "./CommandTypes";
+import type { IDIContainer } from "./Config";
 import type { Command } from "commander";
 
 /**

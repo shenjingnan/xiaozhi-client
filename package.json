@@ -27,8 +27,8 @@
     "registry": "https://registry.npmjs.org"
   },
   "bin": {
-    "xiaozhi": "dist/backend/cli.js",
-    "xiaozhi-client": "dist/backend/cli.js"
+    "xiaozhi": "dist/cli/index.js",
+    "xiaozhi-client": "dist/cli/index.js"
   },
   "scripts": {
     "build": "pnpm run build:packages && pnpm run build:web && cross-env NODE_ENV=${NODE_ENV:-production} tsup --config config/tsup.config.ts",

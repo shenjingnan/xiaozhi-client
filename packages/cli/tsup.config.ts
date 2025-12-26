@@ -1,5 +1,6 @@
 import { defineConfig } from "tsup";
 import { resolve } from "node:path";
+import { readFileSync, writeFileSync } from "node:fs";
 
 export default defineConfig({
   entry: {
@@ -43,8 +44,32 @@ export default defineConfig({
     "ora",
     "express",
     "cli-table3",
+    // Backend 模块（运行时从 dist/backend 读取）
+    "@/lib/config/manager",
+    "@/lib/config/manager.js",
+    "@root/Logger",
+    "@root/Logger.js",
+    "@root/WebServer",
+    "@root/WebServer.js",
   ],
   outExtension: () => ({
     js: ".js",
   }),
+  onSuccess: async () => {
+    // 构建后处理：修复导入路径
+    const filePath = resolve('../../dist/cli/index.js');
+    let content = readFileSync(filePath, 'utf-8');
+
+    // 替换 @root/* 为指向 dist/backend 的相对路径
+    content = content
+      .replace(/from "@\/lib\/config\/manager\.js"/g, 'from "../backend/lib/config/manager.js"')
+      .replace(/from "@\/lib\/config\/manager"/g, 'from "../backend/lib/config/manager.js"')
+      .replace(/from "@root\/Logger\.js"/g, 'from "../backend/Logger.js"')
+      .replace(/from "@root\/Logger"/g, 'from "../backend/Logger.js"')
+      .replace(/from "@root\/WebServer\.js"/g, 'from "../backend/WebServer.js"')
+      .replace(/from "@root\/WebServer"/g, 'from "../backend/WebServer.js"');
+
+    writeFileSync(filePath, content);
+    console.log('✅ 已修复 dist/cli/index.js 中的导入路径');
+  },
 });

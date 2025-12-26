@@ -2,7 +2,7 @@
  * 格式化工具单元测试
  */
 
-import { FormatUtils } from "@cli/utils/FormatUtils";
+import { FormatUtils } from "../FormatUtils";
 import { describe, expect, it } from "vitest";
 
 describe("FormatUtils", () => {

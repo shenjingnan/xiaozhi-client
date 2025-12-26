@@ -2,8 +2,8 @@
  * 输入验证工具单元测试
  */
 
-import { ValidationError } from "@cli/errors/index";
-import { Validation } from "@cli/utils/Validation";
+import { ValidationError } from "../../errors/index";
+import { Validation } from "../Validation";
 import { describe, expect, it } from "vitest";
 
 describe("Validation", () => {

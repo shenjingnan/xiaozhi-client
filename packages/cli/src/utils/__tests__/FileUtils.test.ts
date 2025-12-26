@@ -4,8 +4,8 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { FileError } from "@cli/errors/index";
-import { FileUtils } from "@cli/utils/FileUtils";
+import { FileError } from "../../errors/index";
+import { FileUtils } from "../FileUtils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock fs module

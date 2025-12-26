@@ -2,8 +2,8 @@
  * 输入验证工具
  */
 
-import type { ConfigFormat } from "@cli/Types";
-import { ValidationError } from "@cli/errors/index";
+import type { ConfigFormat } from "../Types";
+import { ValidationError } from "../errors/index";
 
 /**
  * 验证工具类

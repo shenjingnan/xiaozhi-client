@@ -2,8 +2,8 @@
  * ConfigCommandHandler 测试
  */
 
-import { ConfigCommandHandler } from "@cli/commands/ConfigCommandHandler";
-import type { IDIContainer } from "@cli/interfaces/Config";
+import { ConfigCommandHandler } from "../ConfigCommandHandler";
+import type { IDIContainer } from "../../interfaces/Config";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock ora

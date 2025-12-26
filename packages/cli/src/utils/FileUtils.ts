@@ -4,8 +4,8 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import type { FileOperationOptions } from "@cli/Types";
-import { FileError } from "@cli/errors/index";
+import type { FileOperationOptions } from "../Types";
+import { FileError } from "../errors/index";
 
 /**
  * 文件工具类

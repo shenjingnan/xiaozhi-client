@@ -3,15 +3,15 @@
  */
 
 import type { ConfigManager } from "@/lib/config/manager";
-import { ConfigError, ServiceError } from "@cli/errors/index";
+import { ConfigError, ServiceError } from "../errors/index";
 import type {
   ServiceManager as IServiceManager,
   ProcessManager,
   ServiceStartOptions,
   ServiceStatus,
-} from "@cli/interfaces/Service";
-import { PathUtils } from "@cli/utils/PathUtils";
-import { Validation } from "@cli/utils/Validation";
+} from "../interfaces/Service";
+import { PathUtils } from "../utils/PathUtils";
+import { Validation } from "../utils/Validation";
 
 /**
  * 服务管理器实现
@@ -298,7 +298,7 @@ export class ServiceManagerImpl implements IServiceManager {
    * 前台模式启动 WebServer
    */
   private async startWebServerInForeground(): Promise<void> {
-    const { WebServer } = await import("../../WebServer.js");
+    const { WebServer } = await import("@root/WebServer.js");
     const server = new WebServer();
 
     // 处理退出信号

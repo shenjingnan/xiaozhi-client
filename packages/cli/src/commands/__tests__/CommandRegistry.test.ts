@@ -1,5 +1,5 @@
-import { CommandRegistry } from "@cli/commands/index";
-import type { IDIContainer } from "@cli/interfaces/Config";
+import { CommandRegistry } from "../index";
+import type { IDIContainer } from "../../interfaces/Config";
 import { Command } from "commander";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 

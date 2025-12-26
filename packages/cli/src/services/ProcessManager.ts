@@ -1,12 +1,12 @@
-import { FileError, ProcessError } from "@cli/errors/index";
+import { FileError, ProcessError } from "../errors/index";
 import type {
   ProcessManager as IProcessManager,
   ServiceStatus,
-} from "@cli/interfaces/Service";
-import { FileUtils } from "@cli/utils/FileUtils";
-import { FormatUtils } from "@cli/utils/FormatUtils";
-import { PathUtils } from "@cli/utils/PathUtils";
-import { PlatformUtils } from "@cli/utils/PlatformUtils";
+} from "../interfaces/Service";
+import { FileUtils } from "../utils/FileUtils";
+import { FormatUtils } from "../utils/FormatUtils";
+import { PathUtils } from "../utils/PathUtils";
+import { PlatformUtils } from "../utils/PlatformUtils";
 
 /**
  * PID 文件信息接口

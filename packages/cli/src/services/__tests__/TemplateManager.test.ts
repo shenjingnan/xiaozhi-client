@@ -2,9 +2,9 @@
  * 模板管理服务单元测试
  */
 
-import { FileError, ValidationError } from "@cli/errors/index";
-import type { TemplateCreateOptions } from "@cli/services/TemplateManager";
-import { TemplateManagerImpl } from "@cli/services/TemplateManager";
+import { FileError, ValidationError } from "../../errors/index";
+import type { TemplateCreateOptions } from "../TemplateManager";
+import { TemplateManagerImpl } from "../TemplateManager";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock 依赖

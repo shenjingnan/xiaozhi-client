@@ -2,7 +2,7 @@
  * CommandHandlerFactory 单元测试
  */
 
-import type { IDIContainer } from "@cli/interfaces/Config.js";
+import type { IDIContainer } from "../../interfaces/Config.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CommandHandlerFactory } from "../CommandHandlerFactory.js";
 

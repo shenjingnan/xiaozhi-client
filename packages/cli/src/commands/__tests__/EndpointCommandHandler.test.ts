@@ -2,8 +2,8 @@
  * EndpointCommandHandler 测试
  */
 
-import { EndpointCommandHandler } from "@cli/commands/EndpointCommandHandler";
-import type { IDIContainer } from "@cli/interfaces/Config";
+import { EndpointCommandHandler } from "../EndpointCommandHandler";
+import type { IDIContainer } from "../../interfaces/Config";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**

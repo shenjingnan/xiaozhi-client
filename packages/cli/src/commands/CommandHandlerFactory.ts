@@ -5,8 +5,8 @@
 import type {
   CommandHandler,
   ICommandHandlerFactory,
-} from "@cli/interfaces/Command";
-import type { IDIContainer } from "@cli/interfaces/Config";
+} from "../interfaces/Command";
+import type { IDIContainer } from "../interfaces/Config";
 
 /**
  * 命令处理器工厂实现

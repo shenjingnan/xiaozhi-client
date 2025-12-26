@@ -2,8 +2,8 @@
  * ProjectCommandHandler 测试
  */
 
-import { ProjectCommandHandler } from "@cli/commands/ProjectCommandHandler";
-import type { IDIContainer } from "@cli/interfaces/Config";
+import { ProjectCommandHandler } from "../ProjectCommandHandler";
+import type { IDIContainer } from "../../interfaces/Config";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /**

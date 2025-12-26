@@ -2,14 +2,14 @@
  * 命令注册器
  */
 
-import { CommandHandlerFactory } from "@cli/commands/CommandHandlerFactory";
-import { ErrorHandler } from "@cli/errors/ErrorHandlers";
+import { CommandHandlerFactory } from "./CommandHandlerFactory";
+import { ErrorHandler } from "../errors/ErrorHandlers";
 import type {
   CommandHandler,
   ICommandHandlerFactory,
   ICommandRegistry,
-} from "@cli/interfaces/Command";
-import type { IDIContainer } from "@cli/interfaces/Config";
+} from "../interfaces/Command";
+import type { IDIContainer } from "../interfaces/Config";
 import type { Command } from "commander";
 
 /**

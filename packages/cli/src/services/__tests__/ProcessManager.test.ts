@@ -2,10 +2,10 @@
  * 进程管理服务单元测试
  */
 
-import { ProcessManagerImpl } from "@cli/services/ProcessManager";
-import { FileUtils } from "@cli/utils/FileUtils";
-import { PathUtils } from "@cli/utils/PathUtils";
-import { PlatformUtils } from "@cli/utils/PlatformUtils";
+import { ProcessManagerImpl } from "../ProcessManager";
+import { FileUtils } from "../../utils/FileUtils";
+import { PathUtils } from "../../utils/PathUtils";
+import { PlatformUtils } from "../../utils/PlatformUtils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock 依赖

@@ -3,14 +3,14 @@
  */
 
 import { configManager } from "@/lib/config/manager";
-import { ErrorHandler } from "@cli/errors/ErrorHandlers";
-import type { IDIContainer } from "@cli/interfaces/Config";
-import { FileUtils } from "@cli/utils/FileUtils";
-import { FormatUtils } from "@cli/utils/FormatUtils";
-import { PathUtils } from "@cli/utils/PathUtils";
-import { PlatformUtils } from "@cli/utils/PlatformUtils";
-import { Validation } from "@cli/utils/Validation";
-import { VersionUtils } from "@cli/utils/VersionUtils";
+import { ErrorHandler } from "./errors/ErrorHandlers";
+import type { IDIContainer } from "./interfaces/Config";
+import { FileUtils } from "./utils/FileUtils";
+import { FormatUtils } from "./utils/FormatUtils";
+import { PathUtils } from "./utils/PathUtils";
+import { PlatformUtils } from "./utils/PlatformUtils";
+import { Validation } from "./utils/Validation";
+import { VersionUtils } from "./utils/VersionUtils";
 import { logger } from "@root/Logger";
 
 /**

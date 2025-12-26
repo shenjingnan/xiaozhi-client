@@ -3,16 +3,16 @@
  */
 
 import { configManager } from "@/lib/config/manager";
-import type { SubCommand } from "@cli/interfaces/Command";
-import { BaseCommandHandler } from "@cli/interfaces/Command";
+import type { SubCommand } from "../interfaces/Command";
+import { BaseCommandHandler } from "../interfaces/Command";
 import type {
   CallOptions,
   CommandArguments,
   CommandOptions,
   ListOptions,
-} from "@cli/interfaces/CommandTypes";
-import { isLocalMCPServerConfig } from "@cli/interfaces/CommandTypes";
-import { ProcessManagerImpl } from "@cli/services/ProcessManager";
+} from "../interfaces/CommandTypes";
+import { isLocalMCPServerConfig } from "../interfaces/CommandTypes";
+import { ProcessManagerImpl } from "../services/ProcessManager";
 import type { Logger } from "@root/Logger";
 import { logger } from "@root/Logger";
 import chalk from "chalk";

@@ -2,8 +2,8 @@
  * 错误处理器
  */
 
-import { ERROR_MESSAGES } from "@cli/errors/ErrorMessages";
-import { CLIError } from "@cli/errors/index";
+import { ERROR_MESSAGES } from "./ErrorMessages";
+import { CLIError } from "./index";
 import chalk from "chalk";
 
 /**

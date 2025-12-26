@@ -1,4 +1,4 @@
-import { ServiceCommandHandler } from "@cli/commands/ServiceCommandHandler";
+import { ServiceCommandHandler } from "../ServiceCommandHandler";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock ServiceManager

@@ -5,9 +5,9 @@
  * 负责初始化依赖注入容器和启动命令处理器
  */
 
-import { DIContainer } from "@cli/Container";
-import { CommandRegistry } from "@cli/commands/index";
-import { ErrorHandler } from "@cli/errors/ErrorHandlers";
+import { DIContainer } from "./Container";
+import { CommandRegistry } from "./commands/index";
+import { ErrorHandler } from "./errors/ErrorHandlers";
 import { Command } from "commander";
 
 const program = new Command();
@@ -29,8 +29,7 @@ async function initializeCLI(): Promise<void> {
     // 配置程序基本信息
     program
       .name("xiaozhi")
-      .description("MCP Calculator Service CLI Tool")
-      .version("1.6.2", "-v, --version", "显示版本信息")
+      .description("小智 MCP 客户端")
       .helpOption("-h, --help", "显示帮助信息");
 
     // 解析命令行参数
