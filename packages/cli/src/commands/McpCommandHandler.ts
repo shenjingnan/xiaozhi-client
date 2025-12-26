@@ -3,6 +3,11 @@
  */
 
 import { configManager } from "@/lib/config/manager";
+import type { Logger } from "@root/Logger";
+import { logger } from "@root/Logger";
+import chalk from "chalk";
+import Table from "cli-table3";
+import ora from "ora";
 import type { SubCommand } from "../interfaces/Command";
 import { BaseCommandHandler } from "../interfaces/Command";
 import type {
@@ -13,11 +18,6 @@ import type {
 } from "../interfaces/CommandTypes";
 import { isLocalMCPServerConfig } from "../interfaces/CommandTypes";
 import { ProcessManagerImpl } from "../services/ProcessManager";
-import type { Logger } from "@root/Logger";
-import { logger } from "@root/Logger";
-import chalk from "chalk";
-import Table from "cli-table3";
-import ora from "ora";
 
 // 工具调用结果接口
 interface ToolCallResult {

@@ -55,6 +55,18 @@
       }
     }
   },
+  "overrides": [
+    {
+      "include": ["packages/cli/**"],
+      "linter": {
+        "rules": {
+          "nursery": {
+            "useImportRestrictions": "off"
+          }
+        }
+      }
+    }
+  ],
   "javascript": {
     "formatter": {
       "quoteStyle": "double",

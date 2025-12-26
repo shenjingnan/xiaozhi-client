@@ -5,6 +5,8 @@
 import type { ChildProcess } from "node:child_process";
 import { spawn } from "node:child_process";
 import fs from "node:fs";
+import type { Logger } from "@root/Logger";
+import type { WebServer } from "@root/WebServer";
 import { ProcessError, ServiceError } from "../errors/index";
 import type {
   DaemonManager as IDaemonManager,
@@ -12,8 +14,6 @@ import type {
 } from "../interfaces/Service";
 import { PathUtils } from "../utils/PathUtils";
 import { PlatformUtils } from "../utils/PlatformUtils";
-import type { Logger } from "@root/Logger";
-import type { WebServer } from "@root/WebServer";
 
 /**
  * 守护进程选项

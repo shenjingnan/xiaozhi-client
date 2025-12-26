@@ -2,12 +2,9 @@
  * 命令接口定义
  */
 
-import type {
-  CommandArguments,
-  CommandOptions,
-} from "./CommandTypes";
-import type { IDIContainer } from "./Config";
 import type { Command } from "commander";
+import type { CommandArguments, CommandOptions } from "./CommandTypes";
+import type { IDIContainer } from "./Config";
 
 /**
  * 命令处理器接口

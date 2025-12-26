@@ -1,5 +1,5 @@
-import { ServiceCommandHandler } from "../ServiceCommandHandler";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ServiceCommandHandler } from "../ServiceCommandHandler";
 
 // Mock ServiceManager
 const mockServiceManager = {

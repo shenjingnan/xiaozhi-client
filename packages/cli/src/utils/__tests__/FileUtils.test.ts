@@ -4,9 +4,9 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FileError } from "../../errors/index";
 import { FileUtils } from "../FileUtils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock fs module
 vi.mock("node:fs");

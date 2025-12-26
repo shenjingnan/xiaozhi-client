@@ -3,6 +3,7 @@
  */
 
 import { configManager } from "@/lib/config/manager";
+import { logger } from "@root/Logger";
 import { ErrorHandler } from "./errors/ErrorHandlers";
 import type { IDIContainer } from "./interfaces/Config";
 import { FileUtils } from "./utils/FileUtils";
@@ -11,7 +12,6 @@ import { PathUtils } from "./utils/PathUtils";
 import { PlatformUtils } from "./utils/PlatformUtils";
 import { Validation } from "./utils/Validation";
 import { VersionUtils } from "./utils/VersionUtils";
-import { logger } from "@root/Logger";
 
 /**
  * 依赖注入容器实现

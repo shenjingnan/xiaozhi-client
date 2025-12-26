@@ -2,11 +2,11 @@
  * 端点管理命令处理器
  */
 
+import chalk from "chalk";
+import ora from "ora";
 import type { SubCommand } from "../interfaces/Command";
 import { BaseCommandHandler } from "../interfaces/Command";
 import type { IDIContainer } from "../interfaces/Config";
-import chalk from "chalk";
-import ora from "ora";
 
 /**
  * 端点管理命令处理器

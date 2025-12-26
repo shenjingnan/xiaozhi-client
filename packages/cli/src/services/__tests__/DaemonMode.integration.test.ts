@@ -1,7 +1,7 @@
-import type { ServiceStartOptions } from "../../interfaces/Service";
-import { ServiceManagerImpl } from "../ServiceManager";
-import { PathUtils } from "../../utils/PathUtils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { ServiceStartOptions } from "../../interfaces/Service";
+import { PathUtils } from "../../utils/PathUtils";
+import { ServiceManagerImpl } from "../ServiceManager";
 
 // Mock external dependencies
 vi.mock("node:child_process", () => ({

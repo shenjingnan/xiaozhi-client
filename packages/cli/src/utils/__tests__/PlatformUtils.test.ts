@@ -3,9 +3,9 @@
  */
 
 import { execSync } from "node:child_process";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ProcessError } from "../../errors/index";
 import { PlatformUtils } from "../PlatformUtils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock child_process module
 vi.mock("node:child_process");

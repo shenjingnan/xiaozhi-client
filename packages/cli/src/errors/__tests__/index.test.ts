@@ -2,6 +2,7 @@
  * 错误处理系统单元测试
  */
 
+import { describe, expect, it } from "vitest";
 import { ERROR_CODES } from "../../Constants";
 import {
   CLIError,
@@ -11,7 +12,6 @@ import {
   ServiceError,
   ValidationError,
 } from "../index";
-import { describe, expect, it } from "vitest";
 
 describe("CLIError", () => {
   it("should create basic CLI error", () => {

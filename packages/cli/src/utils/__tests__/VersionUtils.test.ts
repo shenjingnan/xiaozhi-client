@@ -5,9 +5,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FileError } from "../../errors/index";
 import { VersionUtils } from "../VersionUtils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock fileURLToPath
 vi.mock("node:url");

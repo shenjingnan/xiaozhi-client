@@ -2,9 +2,9 @@
  * 错误处理器
  */
 
+import chalk from "chalk";
 import { ERROR_MESSAGES } from "./ErrorMessages";
 import { CLIError } from "./index";
-import chalk from "chalk";
 
 /**
  * 错误处理器类

@@ -780,11 +780,16 @@ describe("WebServer", () => {
 
     beforeEach(async () => {
       // 直接 mock mcpServiceManager
-      const { mcpServiceManager } = await import("@managers/MCPServiceManagerSingleton.js");
+      const { mcpServiceManager } = await import(
+        "@managers/MCPServiceManagerSingleton.js"
+      );
       mockServiceManager = {
         getStatus: vi.fn(),
       };
-      vi.mocked(mcpServiceManager.getStatus = mockServiceManager.getStatus.bind(mockServiceManager));
+      // 将 getStatus 方法绑定到 mockServiceManager
+      mcpServiceManager.getStatus =
+        mockServiceManager.getStatus.bind(mockServiceManager);
+      vi.mocked(mcpServiceManager.getStatus);
       const { spawn } = await import("node:child_process");
       mockSpawn = vi.mocked(spawn);
     });

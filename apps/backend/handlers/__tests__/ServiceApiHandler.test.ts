@@ -70,7 +70,9 @@ describe("ServiceApiHandler", () => {
     vi.mocked(spawn).mockImplementation(mockSpawn);
 
     // Mock mcpServiceManager
-    const { mcpServiceManager } = await import("../../managers/MCPServiceManagerSingleton.js");
+    const { mcpServiceManager } = await import(
+      "../../managers/MCPServiceManagerSingleton.js"
+    );
     vi.mocked(mcpServiceManager).getStatus = mockMcpServiceManager.getStatus;
 
     // Mock EventBus
@@ -503,7 +505,9 @@ describe("ServiceApiHandler", () => {
     });
 
     it("should handle restart execution error", async () => {
-      mockMcpServiceManager.getStatus.mockRejectedValue(new Error("Service manager error"));
+      mockMcpServiceManager.getStatus.mockRejectedValue(
+        new Error("Service manager error")
+      );
 
       await handler.restartService(mockContext);
 

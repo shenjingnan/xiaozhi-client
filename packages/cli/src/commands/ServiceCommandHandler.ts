@@ -2,10 +2,10 @@
  * 服务管理命令处理器
  */
 
+import { setGlobalLogLevel } from "@root/Logger";
 import type { SubCommand } from "../interfaces/Command";
 import { BaseCommandHandler } from "../interfaces/Command";
 import type { IDIContainer } from "../interfaces/Config";
-import { setGlobalLogLevel } from "@root/Logger";
 
 /**
  * 服务管理命令处理器

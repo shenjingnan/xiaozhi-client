@@ -5,10 +5,10 @@
  * 负责初始化依赖注入容器和启动命令处理器
  */
 
+import { Command } from "commander";
 import { DIContainer } from "./Container";
 import { CommandRegistry } from "./commands/index";
 import { ErrorHandler } from "./errors/ErrorHandlers";
-import { Command } from "commander";
 
 const program = new Command();
 

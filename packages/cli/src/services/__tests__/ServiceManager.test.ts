@@ -2,13 +2,13 @@
  * 服务管理服务单元测试
  */
 
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigError, ServiceError } from "../../errors/index";
 import type {
   ProcessManager,
   ServiceStartOptions,
 } from "../../interfaces/Service";
 import { ServiceManagerImpl } from "../ServiceManager";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock 依赖
 const mockProcessManager: ProcessManager = {
@@ -108,7 +108,7 @@ vi.mock("node:fs", () => {
     JSON.stringify({
       mcpEndpoint: "ws://localhost:3000",
       mcpServers: {},
-    }),
+    })
   );
   return {
     default: {
@@ -118,7 +118,9 @@ vi.mock("node:fs", () => {
       copyFileSync: vi.fn(),
       mkdirSync: vi.fn(),
       readdirSync: vi.fn().mockReturnValue([]),
-      statSync: vi.fn().mockReturnValue({ isFile: () => true, isDirectory: () => false }),
+      statSync: vi
+        .fn()
+        .mockReturnValue({ isFile: () => true, isDirectory: () => false }),
       createWriteStream: vi.fn().mockReturnValue({
         write: vi.fn(),
       }),
@@ -129,7 +131,9 @@ vi.mock("node:fs", () => {
     copyFileSync: vi.fn(),
     mkdirSync: vi.fn(),
     readdirSync: vi.fn().mockReturnValue([]),
-    statSync: vi.fn().mockReturnValue({ isFile: () => true, isDirectory: () => false }),
+    statSync: vi
+      .fn()
+      .mockReturnValue({ isFile: () => true, isDirectory: () => false }),
     createWriteStream: vi.fn().mockReturnValue({
       write: vi.fn(),
     }),

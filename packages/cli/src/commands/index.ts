@@ -2,7 +2,7 @@
  * 命令注册器
  */
 
-import { CommandHandlerFactory } from "./CommandHandlerFactory";
+import type { Command } from "commander";
 import { ErrorHandler } from "../errors/ErrorHandlers";
 import type {
   CommandHandler,
@@ -10,7 +10,7 @@ import type {
   ICommandRegistry,
 } from "../interfaces/Command";
 import type { IDIContainer } from "../interfaces/Config";
-import type { Command } from "commander";
+import { CommandHandlerFactory } from "./CommandHandlerFactory";
 
 /**
  * 命令注册器实现

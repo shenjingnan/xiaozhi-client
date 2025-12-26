@@ -2,9 +2,9 @@
  * ProjectCommandHandler 测试
  */
 
-import { ProjectCommandHandler } from "../ProjectCommandHandler";
-import type { IDIContainer } from "../../interfaces/Config";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { IDIContainer } from "../../interfaces/Config";
+import { ProjectCommandHandler } from "../ProjectCommandHandler";
 
 /**
  * 测试用的 ProjectCommandHandler 子类，用于访问受保护的方法
