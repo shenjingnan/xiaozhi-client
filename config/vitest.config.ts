@@ -52,12 +52,6 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": resolve(__dirname, "../apps/backend"),
-      "@cli": resolve(__dirname, "../apps/backend/cli"),
-      "@cli/commands": resolve(__dirname, "../apps/backend/cli/commands"),
-      "@cli/services": resolve(__dirname, "../apps/backend/cli/services"),
-      "@cli/utils": resolve(__dirname, "../apps/backend/cli/utils"),
-      "@cli/errors": resolve(__dirname, "../apps/backend/cli/errors"),
-      "@cli/interfaces": resolve(__dirname, "../apps/backend/cli/interfaces"),
       "@handlers": resolve(__dirname, "../apps/backend/handlers"),
       "@services": resolve(__dirname, "../apps/backend/services"),
       "@errors": resolve(__dirname, "../apps/backend/errors"),

@@ -183,14 +183,6 @@ afterAll(() => {
   });
 });
 
-// Import functions to test - this will be done after beforeAll
-let cliModule: Record<string, unknown>;
-
-beforeAll(async () => {
-  // Dynamic import after mocking
-  cliModule = await import("./cli");
-});
-
 // Mock child process
 class MockChildProcess extends EventEmitter {
   pid = 12345;
