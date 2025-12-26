@@ -1,7 +1,13 @@
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { dirname } from "node:path";
 import { codecovVitePlugin } from "@codecov/vite-plugin";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
+
+// ESM 兼容的 __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export default defineConfig({
   plugins: [
@@ -28,7 +34,7 @@ export default defineConfig({
       enabled: true,
       provider: "v8",
       reporter: ["text", "json", "html", "lcov"],
-      reportsDirectory: "./coverage",
+      reportsDirectory: resolve(__dirname, "../coverage"),
       exclude: [
         "node_modules/**",
         "dist/**",

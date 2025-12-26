@@ -21,10 +21,10 @@ export default defineConfig({
     include: ["packages/cli/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     exclude: ["node_modules", "dist"],
     coverage: {
-      enabled: false,
+      enabled: true,
       provider: "v8",
       reporter: ["text", "json", "html", "lcov"],
-      reportsDirectory: "./coverage/cli",
+      reportsDirectory: resolve(__dirname, "../coverage"),
       exclude: [
         "node_modules/**",
         "dist/**",

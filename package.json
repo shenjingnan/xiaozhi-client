@@ -55,7 +55,7 @@
     "nx:lint": "nx run-many -t lint",
     "nx:type-check": "nx run-many -t type-check",
     "nx:test": "nx run-many -t test",
-    "nx:test:coverage": "nx run-many -t test:coverage --parallel=true",
+    "nx:test:coverage": "nx run-many -t test:coverage --parallel=false",
     "nx:build": "nx run-many -t build --parallel=false",
     "nx:dev": "nx run-many -t build --parallel=false && concurrently \"nx run backend:dev\" \"nx run cli:dev\" \"nx run frontend:dev\" --prefix \"[{name}]\" --names \"BACKEND,CLI,FRONTEND\"",
     "nx:projects": "nx show projects",
