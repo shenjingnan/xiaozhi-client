@@ -94,25 +94,25 @@ jobs:
     - name: CLI 功能测试
       run: |
         echo "开始 CLI 功能测试..."
-        node dist/backend/cli.js -v
-        node dist/backend/cli.js create myapp
-        node dist/backend/cli.js create myapp2 --template hello-world
+        node dist/cli/index.js -v
+        node dist/cli/index.js create myapp
+        node dist/cli/index.js create myapp2 --template hello-world
         echo "✅ CLI 功能测试完成"
 
     - name: CLI 配置测试 (Unix)
       if: runner.os != 'Windows'
       working-directory: myapp2
       run: |
-        node ../dist/backend/cli.js config set mcpEndpoint "wss://api.xiaozhi.me/mcp/?token=xyz"
-        node ../dist/backend/cli.js config get mcpEndpoint
+        node ../dist/cli/index.js config set mcpEndpoint "wss://api.xiaozhi.me/mcp/?token=xyz"
+        node ../dist/cli/index.js config get mcpEndpoint
         echo "✅ CLI 配置测试完成"
 
     - name: CLI 配置测试 (Windows)
       if: runner.os == 'Windows'
       working-directory: myapp2
       run: |
-        node ../dist/backend/cli.js config set mcpEndpoint "wss://api.xiaozhi.me/mcp/?token=xyz"
-        node ../dist/backend/cli.js config get mcpEndpoint
+        node ../dist/cli/index.js config set mcpEndpoint "wss://api.xiaozhi.me/mcp/?token=xyz"
+        node ../dist/cli/index.js config get mcpEndpoint
         echo "✅ CLI 配置测试完成"
       shell: pwsh
 
