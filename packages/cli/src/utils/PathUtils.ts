@@ -62,8 +62,8 @@ export class PathUtils {
     return [
       // 构建后的环境：dist/cli.js -> dist/templates
       path.join(scriptDir, PATH_CONSTANTS.TEMPLATES_DIR),
-      // 开发环境：src/cli/utils/PathUtils.ts -> templates
-      path.join(scriptDir, "..", "..", "..", PATH_CONSTANTS.TEMPLATES_DIR),
+      // 构建环境：dist/cli/index.js -> dist/templates
+      path.join(scriptDir, "..", PATH_CONSTANTS.TEMPLATES_DIR),
       // npm 全局安装
       path.join(
         scriptDir,
