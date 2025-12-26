@@ -73,7 +73,16 @@ export default defineConfig({
       .replace(/from "@root\/Logger\.js"/g, 'from "../backend/Logger.js"')
       .replace(/from "@root\/Logger"/g, 'from "../backend/Logger.js"')
       .replace(/from "@root\/WebServer\.js"/g, 'from "../backend/WebServer.js"')
-      .replace(/from "@root\/WebServer"/g, 'from "../backend/WebServer.js"');
+      .replace(/from "@root\/WebServer"/g, 'from "../backend/WebServer.js"')
+      // 替换动态导入中的 @root/WebServer.js
+      .replace(
+        /import\("@root\/WebServer\.js"\)/g,
+        'import("../backend/WebServer.js")'
+      )
+      .replace(
+        /import\("@root\/WebServer"\)/g,
+        'import("../backend/WebServer.js")'
+      );
 
     writeFileSync(filePath, content);
     console.log("✅ 已修复 dist/cli/index.js 中的导入路径");

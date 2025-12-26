@@ -68,7 +68,9 @@
     "dev:backend": "nx run backend:dev",
     "dev:frontend": "nx run frontend:dev",
     "dev:cli": "nx run cli:dev",
-    "dev:all": "concurrently \"nx run backend:dev\" \"nx run cli:dev\" \"nx run frontend:dev\" --prefix \"[{name}]\" --names \"BACKEND,CLI,FRONTEND\""
+    "dev:all": "concurrently \"nx run backend:dev\" \"nx run cli:dev\" \"nx run frontend:dev\" --prefix \"[{name}]\" --names \"BACKEND,CLI,FRONTEND\"",
+    "link": "pnpm link --global",
+    "unlink": "pnpm unlink --global"
   },
   "dependencies": {
     "@coze/api": "^1.3.9",

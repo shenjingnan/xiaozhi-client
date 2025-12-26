@@ -36,7 +36,13 @@ function copyDirectory(
 }
 
 export default defineConfig({
-  entry: ["apps/backend/WebServerLauncher.ts", "apps/backend/Logger.ts", "apps/backend/lib/config/manager.ts", "apps/backend/managers/MCPServiceManagerSingleton.ts"],
+  entry: [
+    "apps/backend/WebServer.ts",
+    "apps/backend/WebServerLauncher.ts",
+    "apps/backend/Logger.ts",
+    "apps/backend/lib/config/manager.ts",
+    "apps/backend/managers/MCPServiceManagerSingleton.ts"
+  ],
   format: ["esm"],
   target: "node18",
   outDir: "dist/backend",
