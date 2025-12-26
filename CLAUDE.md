@@ -25,7 +25,7 @@
 - `pnpm dev` - 开发模式（带监视功能）
 - `pnpm test` - 运行一次测试
 - `pnpm test:watch` - 监视模式下运行测试
-- `pnpm test:coverage` - 运行测试并生成覆盖率报告
+- `pnpm nx:test:coverage` - 运行测试并生成覆盖率报告
 - `pnpm test:silent` - 静默运行测试（用于 CI）
 
 ### 代码质量
