@@ -281,7 +281,7 @@ pnpm test apps/backend/{module}/{target}.test.ts
 pnpm test:watch
 
 # 生成覆盖率报告
-pnpm nx:test:coverage
+pnpm test:coverage
 
 # 静默模式运行（CI使用）
 pnpm test:silent
@@ -294,7 +294,7 @@ pnpm test:ui
 
 ```bash
 # 生成覆盖率报告
-pnpm nx:test:coverage
+pnpm test:coverage
 
 # 检查覆盖率阈值（xiaozhi-client 项目标准）
 coverage thresholds: 80% branches, functions, lines, statements
