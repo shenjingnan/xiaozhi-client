@@ -42,9 +42,10 @@ async function initializeCLI(): Promise<void> {
 // 启动 CLI 应用
 // 使用更可靠的检测方法，兼容 Windows 路径
 // 将路径转换为 URL 格式进行比较
-const scriptPath = process.argv[1].replace(/\\/g, '/');
-const isMainModule = import.meta.url === `file:///${scriptPath}` ||
-                      import.meta.url === `file://${scriptPath}`;
+const scriptPath = process.argv[1].replace(/\\/g, "/");
+const isMainModule =
+  import.meta.url === `file:///${scriptPath}` ||
+  import.meta.url === `file://${scriptPath}`;
 if (isMainModule) {
   initializeCLI();
 }
