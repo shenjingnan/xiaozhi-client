@@ -337,7 +337,8 @@ export class TemplateManagerImpl implements ITemplateManager {
       );
 
       return files.filter((file) => {
-        const relativePath = path.relative(basePath, file);
+        // 将路径分隔符统一为 /，确保在 Windows 上也能正确匹配
+        const relativePath = path.relative(basePath, file).split(path.sep).join("/");
         return regex.test(relativePath);
       });
     } catch {

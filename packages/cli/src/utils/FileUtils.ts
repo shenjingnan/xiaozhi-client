@@ -4,6 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { tmpdir } from "node:os";
 import type { FileOperationOptions } from "../Types";
 import { FileError } from "../errors/index";
 
@@ -264,7 +265,7 @@ export class FileUtils {
    * 创建临时文件
    */
   static createTempFile(prefix = "xiaozhi-", suffix = ".tmp"): string {
-    const tempDir = process.env.TMPDIR || process.env.TEMP || "/tmp";
+    const tempDir = process.env.TMPDIR || process.env.TEMP || tmpdir();
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2);
     const fileName = `${prefix}${timestamp}-${random}${suffix}`;
