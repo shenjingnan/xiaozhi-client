@@ -50,6 +50,14 @@
       "options": {
         "command": "echo 'CLI type-check skipped: bundled by tsup which strips types'"
       }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsup --watch",
+        "cwd": "packages/cli"
+      },
+      "dependsOn": ["backend:build"]
     }
   },
   "tags": ["type:lib", "scope:cli"],

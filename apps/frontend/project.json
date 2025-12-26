@@ -14,8 +14,16 @@
       "dependsOn": ["shared-types:build"]
     },
     "serve": {
-      "executor": "@nx/vite:dev",
+      "executor": "@nx/vite:dev-server",
       "options": {
+        "buildTarget": "frontend:build",
+        "configPath": "apps/frontend/vite.config.ts"
+      }
+    },
+    "dev": {
+      "executor": "@nx/vite:dev-server",
+      "options": {
+        "buildTarget": "frontend:build",
         "configPath": "apps/frontend/vite.config.ts"
       }
     },
