@@ -11,12 +11,6 @@
     "rootDir": "./apps/backend",
     "baseUrl": ".",
     "paths": {
-      "@cli/*": ["apps/backend/cli/*"],
-      "@cli/commands/*": ["apps/backend/cli/commands/*"],
-      "@cli/services/*": ["apps/backend/cli/services/*"],
-      "@cli/utils/*": ["apps/backend/cli/utils/*"],
-      "@cli/errors/*": ["apps/backend/cli/errors/*"],
-      "@cli/interfaces/*": ["apps/backend/cli/interfaces/*"],
       "@handlers/*": ["apps/backend/handlers/*"],
       "@middlewares/*": ["apps/backend/middlewares/*"],
       "@services/*": ["apps/backend/services/*"],
@@ -29,7 +23,8 @@
       "@types/*": ["apps/backend/types/*"],
       "@/lib/*": ["apps/backend/lib/*"],
       "@root/*": ["apps/backend/*"],
-      "@routes/*": ["apps/backend/routes/*"]
+      "@routes/*": ["apps/backend/routes/*"],
+      "@constants/*": ["apps/backend/constants/*"]
     },
     "strict": true,
     "noImplicitAny": true,

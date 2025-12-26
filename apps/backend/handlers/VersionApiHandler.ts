@@ -1,5 +1,5 @@
 import { NPMManager } from "@/lib/npm";
-import { VersionUtils } from "@cli/utils/VersionUtils.js";
+import { VersionUtils } from "@utils/VersionUtils.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type { Context } from "hono";

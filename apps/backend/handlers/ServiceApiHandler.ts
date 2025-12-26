@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { createContainer } from "@cli/Container.js";
+import { mcpServiceManager } from "../managers/MCPServiceManagerSingleton.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type { EventBus } from "@services/EventBus.js";
@@ -125,9 +125,7 @@ export class ServiceApiHandler {
 
     try {
       // 获取当前服务状态
-      const container = await createContainer();
-      const serviceManager = container.get("serviceManager") as any;
-      const status = await serviceManager.getStatus();
+      const status = await mcpServiceManager.getStatus();
 
       if (!status.running) {
         this.logger.warn("MCP 服务未运行，尝试启动服务");
@@ -248,9 +246,7 @@ export class ServiceApiHandler {
     try {
       this.logger.debug("处理获取服务状态请求");
 
-      const container = await createContainer();
-      const serviceManager = container.get("serviceManager") as any;
-      const status = await serviceManager.getStatus();
+      const status = await mcpServiceManager.getStatus();
 
       this.logger.debug("获取服务状态成功");
       return c.json(this.createSuccessResponse(status));
