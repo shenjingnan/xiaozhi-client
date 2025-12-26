@@ -49,6 +49,10 @@
     "skipLibCheck": true,
     "resolveJsonModule": true
   },
-  "include": ["apps/backend/**/*"],
-  "exclude": ["node_modules", "dist", "scripts/**/*", "templates/**/*"]
+  "include": ["apps/backend/**/*", "packages/**/*"],
+  "exclude": ["node_modules", "dist", "scripts/**/*", "templates/**/*"],
+  "references": [
+    { "path": "./packages/shared-types" },
+    { "path": "./packages/cli" }
+  ]
 }

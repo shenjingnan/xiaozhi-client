@@ -36,7 +36,7 @@ function copyDirectory(
 }
 
 export default defineConfig({
-  entry: ["apps/backend/cli.ts", "apps/backend/WebServerLauncher.ts"],
+  entry: ["apps/backend/WebServerLauncher.ts"],
   format: ["esm"],
   target: "node18",
   outDir: "dist/backend",
@@ -116,12 +116,12 @@ export default defineConfig({
 
     console.log("✅ 构建完成，产物现在为 ESM 格式");
 
-    // 创建向后兼容的包装脚本 dist/cli.js
+    // 创建向后兼容的 dist/cli.js（从 packages/cli 构建）
     const compatCliPath = "dist/cli.js";
     writeFileSync(
       compatCliPath,
-      `// 向后兼容包装脚本 - 重定向到新的路径
-export * from './backend/cli.js';
+      `// 向后兼容包装脚本 - 重定向到新的 CLI 包
+export * from './cli/index.js';
 `
     );
     console.log("✅ 已创建向后兼容包装脚本 dist/cli.js");
