@@ -23,6 +23,7 @@ vi.mock("@/lib/config/manager.js", () => ({
     getConfig: vi.fn(),
     getMcpEndpoints: vi.fn(),
     getMcpEndpoint: vi.fn(),
+    getMcpServers: vi.fn(() => ({})),
     updateMcpEndpoint: vi.fn(),
     getServerConfigs: vi.fn(),
     getPort: vi.fn(),

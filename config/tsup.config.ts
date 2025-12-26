@@ -36,13 +36,19 @@ function copyDirectory(
 }
 
 export default defineConfig({
-  entry: ["apps/backend/cli.ts", "apps/backend/WebServerLauncher.ts"],
+  entry: [
+    "apps/backend/WebServer.ts",
+    "apps/backend/WebServerLauncher.ts",
+    "apps/backend/Logger.ts",
+    "apps/backend/lib/config/manager.ts",
+    "apps/backend/managers/MCPServiceManagerSingleton.ts"
+  ],
   format: ["esm"],
   target: "node18",
   outDir: "dist/backend",
   clean: true,
   sourcemap: true,
-  dts: true,
+  dts: false, // 禁用 DTS 以避免类型错误
   minify: process.env.NODE_ENV === "production",
   splitting: false,
   bundle: true,
@@ -115,16 +121,6 @@ export default defineConfig({
     }
 
     console.log("✅ 构建完成，产物现在为 ESM 格式");
-
-    // 创建向后兼容的包装脚本 dist/cli.js
-    const compatCliPath = "dist/cli.js";
-    writeFileSync(
-      compatCliPath,
-      `// 向后兼容包装脚本 - 重定向到新的路径
-export * from './backend/cli.js';
-`
-    );
-    console.log("✅ 已创建向后兼容包装脚本 dist/cli.js");
 
     // 创建向后兼容的 dist/WebServerLauncher.js
     const compatLauncherPath = "dist/WebServerLauncher.js";

@@ -284,21 +284,53 @@ export class WebSocketAdapter extends TransportAdapter {
       // 处理剩余的批处理消息
       await this.flushBatchQueue();
 
-      // 关闭客户端连接
+      // 关闭客户端连接（等待关闭完成）
       if (this.ws) {
-        this.ws.close();
+        await new Promise<void>((resolve) => {
+          if (this.ws!.readyState === WebSocket.CLOSED) {
+            resolve();
+            return;
+          }
+
+          const onClose = () => {
+            resolve();
+          };
+
+          this.ws!.once("close", onClose);
+          this.ws!.close();
+
+          // 超时保护，避免无限等待
+          setTimeout(() => {
+            if (this.ws && this.ws.readyState === WebSocket.CLOSED) {
+              resolve();
+            } else {
+              // 超时后强制清理
+              resolve();
+            }
+          }, 1000);
+        });
+
         this.ws = null;
       }
 
-      // 关闭服务器
+      // 关闭服务器（等待关闭完成）
       if (this.wsServer) {
-        this.wsServer.close();
+        await new Promise<void>((resolve) => {
+          this.wsServer!.close((err) => {
+            // 忽略关闭错误
+            resolve();
+          });
+          // 超时保护
+          setTimeout(resolve, 1000);
+        });
         this.wsServer = null;
       }
 
       // 关闭所有连接
       for (const [id, connection] of this.connections) {
-        connection.close();
+        if (connection.readyState === WebSocket.OPEN) {
+          connection.close();
+        }
       }
       this.connections.clear();
 
@@ -562,8 +594,24 @@ export class WebSocketAdapter extends TransportAdapter {
    */
   private cleanupConnection(): void {
     if (this.ws) {
-      this.ws.removeAllListeners();
-      this.ws = null;
+      try {
+        // 移除监听器，防止错误事件传播
+        this.ws.removeAllListeners();
+        // 只在已连接状态下关闭连接
+        // 在 CONNECTING 状态下调用 close() 会抛出异常
+        if (this.ws.readyState === WebSocket.OPEN) {
+          try {
+            this.ws.close();
+          } catch {
+            // 忽略关闭错误
+          }
+        }
+        // 在 CONNECTING 状态下，让连接自然超时失败
+      } catch {
+        // 忽略所有错误
+      } finally {
+        this.ws = null;
+      }
     }
   }
 

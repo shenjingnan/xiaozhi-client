@@ -1,7 +1,13 @@
 import { resolve } from "node:path";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { codecovVitePlugin } from "@codecov/vite-plugin";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
+
+// ESM 兼容的 __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export default defineConfig({
   plugins: [
@@ -28,7 +34,7 @@ export default defineConfig({
       enabled: true,
       provider: "v8",
       reporter: ["text", "json", "html", "lcov"],
-      reportsDirectory: "./coverage",
+      reportsDirectory: resolve(__dirname, "../coverage"),
       exclude: [
         "node_modules/**",
         "dist/**",
@@ -52,12 +58,6 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": resolve(__dirname, "../apps/backend"),
-      "@cli": resolve(__dirname, "../apps/backend/cli"),
-      "@cli/commands": resolve(__dirname, "../apps/backend/cli/commands"),
-      "@cli/services": resolve(__dirname, "../apps/backend/cli/services"),
-      "@cli/utils": resolve(__dirname, "../apps/backend/cli/utils"),
-      "@cli/errors": resolve(__dirname, "../apps/backend/cli/errors"),
-      "@cli/interfaces": resolve(__dirname, "../apps/backend/cli/interfaces"),
       "@handlers": resolve(__dirname, "../apps/backend/handlers"),
       "@services": resolve(__dirname, "../apps/backend/services"),
       "@errors": resolve(__dirname, "../apps/backend/errors"),

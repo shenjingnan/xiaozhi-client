@@ -5,7 +5,7 @@
 
 import type { ToolCallQuery } from "@/lib/mcp/log.js";
 import { ToolCallLogService } from "@/lib/mcp/log.js";
-import { PAGINATION_CONSTANTS } from "@cli/Constants.js";
+import { PAGINATION_CONSTANTS } from "@constants/ApiConstants.js";
 import { logger } from "@root/Logger.js";
 import type { Context } from "hono";
 import { z } from "zod";

@@ -60,6 +60,15 @@ vi.mock("node:child_process", () => ({
 }));
 
 vi.mock("node:fs", () => ({
+  existsSync: vi.fn(),
+  readFileSync: vi.fn(),
+  writeFileSync: vi.fn(),
+  mkdirSync: vi.fn(),
+  createWriteStream: vi.fn(),
+  readdirSync: vi.fn(),
+  statSync: vi.fn(),
+  copyFileSync: vi.fn(),
+  unlinkSync: vi.fn(),
   default: {
     existsSync: vi.fn(),
     readFileSync: vi.fn(),
@@ -74,12 +83,16 @@ vi.mock("node:fs", () => ({
 }));
 
 vi.mock("node:os", () => ({
+  tmpdir: vi.fn(),
   default: {
     tmpdir: vi.fn(),
   },
 }));
 
 vi.mock("node:path", () => ({
+  join: vi.fn(),
+  resolve: vi.fn(),
+  dirname: vi.fn(),
   default: {
     join: vi.fn(),
     resolve: vi.fn(),
@@ -168,14 +181,6 @@ afterAll(() => {
     writable: true,
     configurable: true,
   });
-});
-
-// Import functions to test - this will be done after beforeAll
-let cliModule: Record<string, unknown>;
-
-beforeAll(async () => {
-  // Dynamic import after mocking
-  cliModule = await import("./cli");
 });
 
 // Mock child process

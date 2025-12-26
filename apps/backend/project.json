@@ -59,6 +59,15 @@
         "command": "tsc --project ../../config/tsconfig.typecheck.json",
         "cwd": "apps/backend"
       }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "cross-env NODE_ENV=development tsup --config config/tsup.config.ts --watch",
+        "env": {
+          "PWD": "{workspaceRoot}"
+        }
+      }
     }
   },
   "tags": ["type:app", "platform:node"],

@@ -74,11 +74,14 @@ xiaozhi-client 是一个务实的开源 MCP 客户端：
 
 ### 核心组件
 
-1. **CLI 层** (`apps/backend/cli/`) - 使用 Commander.js 的命令行界面
+1. **CLI 层** (`packages/cli/`) - 使用 Commander.js 的命令行界面
 
-   - 入口点：`apps/backend/cli/index.ts`
-   - 依赖注入容器：`apps/backend/cli/Container.ts`
-   - 命令注册和处理
+   - 入口点：`packages/cli/src/index.ts` → `dist/cli/index.js`
+   - 依赖注入容器：`packages/cli/src/Container.ts`
+   - 命令注册和处理：`packages/cli/src/commands/`
+   - 服务管理：`packages/cli/src/services/`
+   - 工具类：`packages/cli/src/utils/`
+   - 错误处理：`packages/cli/src/errors/`
 
 2. **MCP 核心库** (`apps/backend/lib/mcp/`) - MCP 协议核心实现
 
@@ -283,17 +286,11 @@ xiaozhi-client 是一个务实的开源 MCP 客户端：
 ```json
 {
   "@/*": ["apps/backend/*"],                    // 后端根目录快速访问
-  "@cli/*": ["apps/backend/cli/*"],             // CLI 相关代码
-  "@cli/commands/*": ["apps/backend/cli/commands/*"],  // CLI 命令
-  "@cli/services/*": ["apps/backend/cli/services/*"],  // CLI 服务
-  "@cli/utils/*": ["apps/backend/cli/utils/*"],        // CLI 工具
-  "@cli/errors/*": ["apps/backend/cli/errors/*"],      // CLI 错误处理
-  "@cli/interfaces/*": ["apps/backend/cli/interfaces/*"], // CLI 接口
   "@handlers/*": ["apps/backend/handlers/*"],     // 请求处理器
   "@services/*": ["apps/backend/services/*"],     // 业务服务（重新导出层）
   "@errors/*": ["apps/backend/errors/*"],         // 错误定义
   "@utils/*": ["apps/backend/utils/*"],           // 工具函数
-  "@/lib/*": ["apps/backend/lib/*"],             // 核心库模块（新增）
+  "@/lib/*": ["apps/backend/lib/*"],             // 核心库模块
   "@core/*": ["apps/backend/core/*"],             // 核心 MCP 功能
   "@transports/*": ["apps/backend/transports/*"], // 传输层适配器
   "@adapters/*": ["apps/backend/adapters/*"],     // 适配器模式
@@ -303,7 +300,14 @@ xiaozhi-client 是一个务实的开源 MCP 客户端：
 }
 ```
 
-#### 新架构说明（2024年11月迁移）
+#### 新架构说明（2024年12月迁移）
+
+**CLI 迁移到 packages/cli**：
+- CLI 代码已从 `apps/backend/cli/` 迁移到 `packages/cli/`
+- CLI 包使用相对路径进行内部导入
+- CLI 包通过 external 依赖引用 `@root/*` 和 `@/lib/config/*` 模块
+- 构建产物：`packages/cli` → `dist/cli/index.js`
+- CLI 包是项目入口点，不是独立发布的 npm 包
 
 **MCP 核心库迁移**：
 - `MCPService` 已迁移至 `@/lib/mcp/connection.js`
