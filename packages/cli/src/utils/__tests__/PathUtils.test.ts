@@ -3,9 +3,9 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { PathUtils } from "../PathUtils";
+import { PathUtils } from "@cli/utils/PathUtils.js";
 
-// Mock dependencies
+// Mock dependencies - 需要使用与源文件相同的导入方式
 vi.mock("@cli/utils/FileUtils.js", () => ({
   FileUtils: {
     exists: vi.fn(),

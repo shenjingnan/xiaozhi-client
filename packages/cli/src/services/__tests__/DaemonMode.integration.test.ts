@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ServiceStartOptions } from "../../interfaces/Service";
-import { PathUtils } from "../../utils/PathUtils";
+import type { ServiceStartOptions } from "@cli/interfaces/Service.js";
+import { PathUtils } from "@cli/utils/PathUtils.js";
 import { ServiceManagerImpl } from "../ServiceManager";
 
 // Mock external dependencies

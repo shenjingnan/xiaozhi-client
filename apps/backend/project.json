@@ -7,7 +7,7 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "cross-env NODE_ENV=${NODE_ENV:-production} tsup --config apps/backend/tsup.config.ts",
+        "command": "cross-env NODE_ENV=${NODE_ENV:-production} tsup --config config/tsup.config.ts",
         "env": {
           "PWD": "{workspaceRoot}"
         }
@@ -18,20 +18,20 @@
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vitest run --config apps/backend/vitest.config.ts --coverage.enabled=false"
+        "command": "vitest run --config config/vitest.config.ts --coverage.enabled=false"
       },
       "outputs": ["{workspaceRoot}/coverage"]
     },
     "test:watch": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vitest --config apps/backend/vitest.config.ts"
+        "command": "vitest --config config/vitest.config.ts"
       }
     },
     "test:coverage": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vitest run --coverage --config apps/backend/vitest.config.ts"
+        "command": "vitest run --coverage --config config/vitest.config.ts"
       },
       "outputs": ["{workspaceRoot}/coverage"]
     },
@@ -56,14 +56,14 @@
     "type-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc --project ./tsconfig.typecheck.json",
+        "command": "tsc --project ../../config/tsconfig.typecheck.json",
         "cwd": "apps/backend"
       }
     },
     "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "cross-env NODE_ENV=development tsup --config apps/backend/tsup.config.ts --watch",
+        "command": "cross-env NODE_ENV=development tsup --config config/tsup.config.ts --watch",
         "env": {
           "PWD": "{workspaceRoot}"
         }

@@ -3,8 +3,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ServiceError } from "../../errors/index";
-import type { ProcessManager } from "../../interfaces/Service";
+import { ServiceError } from "@cli/errors/index.js";
+import type { ProcessManager } from "@cli/interfaces/Service.js";
 import type { DaemonOptions } from "../DaemonManager";
 import { DaemonManagerImpl } from "../DaemonManager";
 

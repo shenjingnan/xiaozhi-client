@@ -6,7 +6,7 @@ import type {
 } from "@/lib/config/manager.js";
 import ora from "ora";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { IDIContainer } from "../../interfaces/Config.js";
+import type { IDIContainer } from "@cli/interfaces/Config.js";
 import { McpCommandHandler } from "../McpCommandHandler.js";
 
 // 测试专用类型定义
