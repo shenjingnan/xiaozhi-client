@@ -12,12 +12,7 @@
     "build": "tsup",
     "type-check": "tsc --noEmit"
   },
-  "dependencies": {
-    "chalk": "^5.6.0",
-    "cli-table3": "^0.6.5",
-    "commander": "^14.0.0",
-    "ora": "^8.2.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "^24.3.0",
     "typescript": "^5.9.2"
