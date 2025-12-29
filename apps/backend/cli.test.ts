@@ -707,26 +707,26 @@ describe("CLI 命令行工具", () => {
     });
 
     it("应该确保 package.json 中不再引用 postbuild.js", () => {
-      const projectRoot = getProjectRoot();
-      const packageJsonPath = realPath.join(projectRoot, "package.json");
+      // 直接读取根 package.json，避免找到 apps/backend/package.json
+      const rootPackageJsonPath = realPath.join(process.cwd(), "package.json");
 
-      if (realFs.existsSync(packageJsonPath)) {
+      if (realFs.existsSync(rootPackageJsonPath)) {
         const packageJson = JSON.parse(
-          realFs.readFileSync(packageJsonPath, "utf8")
+          realFs.readFileSync(rootPackageJsonPath, "utf8")
         );
 
-        expect(packageJson.scripts.build).not.toContain("postbuild.js");
-        expect(packageJson.scripts.dev).not.toContain("postbuild.js");
+        expect(packageJson.scripts?.build).not.toContain("postbuild.js");
+        expect(packageJson.scripts?.dev).not.toContain("postbuild.js");
       }
     });
 
     it("应该确保项目使用 ESM 模块类型", () => {
-      const projectRoot = getProjectRoot();
-      const packageJsonPath = realPath.join(projectRoot, "package.json");
+      // 直接读取根 package.json，避免找到 apps/backend/package.json
+      const rootPackageJsonPath = realPath.join(process.cwd(), "package.json");
 
-      if (realFs.existsSync(packageJsonPath)) {
+      if (realFs.existsSync(rootPackageJsonPath)) {
         const packageJson = JSON.parse(
-          realFs.readFileSync(packageJsonPath, "utf8")
+          realFs.readFileSync(rootPackageJsonPath, "utf8")
         );
 
         expect(packageJson.type).toBe("module");
@@ -734,8 +734,9 @@ describe("CLI 命令行工具", () => {
     });
 
     it("应该确保 tsup 配置为 ESM 格式", () => {
-      const projectRoot = getProjectRoot();
-      const tsupConfigPath = realPath.join(projectRoot, "tsup.config.ts");
+      // 使用根目录，因为 tsup.config.ts 在 config/ 目录下
+      const rootDir = process.cwd();
+      const tsupConfigPath = realPath.join(rootDir, "config", "tsup.config.ts");
 
       if (realFs.existsSync(tsupConfigPath)) {
         const tsupConfig = realFs.readFileSync(tsupConfigPath, "utf8");
@@ -745,11 +746,12 @@ describe("CLI 命令行工具", () => {
     });
 
     it("应该确保源码中不使用 CommonJS 语法", () => {
-      const projectRoot = getProjectRoot();
+      // 使用 apps/backend 目录，因为源码在该目录下
+      const backendDir = realPath.dirname(__filename);
       const srcFiles = ["src/cli.ts", "src/mcpPipe.ts", "src/configManager.ts"];
 
       for (const file of srcFiles) {
-        const filePath = realPath.join(projectRoot, file);
+        const filePath = realPath.join(backendDir, file);
         if (realFs.existsSync(filePath)) {
           const content = realFs.readFileSync(filePath, "utf8");
 

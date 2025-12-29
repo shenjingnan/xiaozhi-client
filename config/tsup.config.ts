@@ -74,6 +74,7 @@ export default defineConfig({
     };
   },
   external: [
+    // Node.js 内置模块
     "ws",
     "child_process",
     "fs",
@@ -81,10 +82,32 @@ export default defineConfig({
     "url",
     "process",
     "dotenv",
+    "os",
+    "stream",
+    "events",
+    "util",
+    "crypto",
+    "http",
+    "https",
+    // 外部依赖包
     "commander",
     "chalk",
     "ora",
     "express",
+    "pino",
+    "pino-*",
+    "zod",
+    "comment-json",
+    "dayjs",
+    "ajv",
+    "eventsource",
+    "hono",
+    "@hono/*",
+    "node-cache",
+    "jsonc-parser",
+    "ws",
+    "@coze/api",
+    "@modelcontextprotocol/*",
   ],
   onSuccess: async () => {
     // 复制配置文件到 dist/backend
