@@ -35,6 +35,7 @@
     "test": "nx run-many -t test",
     "test:coverage": "nx run-many -t test:coverage --parallel=false",
     "lint": "nx run-many -t lint",
+    "lint:fix": "nx run-many -t lint:fix",
     "type-check": "nx run-many -t type-check",
     "format": "biome format --write --config-path=config/biome.json .",
     "check:all": "pnpm run lint && pnpm run type-check && pnpm run spell:check && pnpm run duplicate:check",
