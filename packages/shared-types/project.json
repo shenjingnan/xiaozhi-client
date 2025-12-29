@@ -15,7 +15,7 @@
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vitest run --config config/vitest.config.ts"
+        "command": "vitest run --config packages/shared-types/vitest.config.ts"
       }
     },
     "type-check": {
