@@ -70,8 +70,14 @@ export default defineConfig({
       "@utils/*": resolve(__dirname, "../../apps/backend/utils/*"),
       "@core": resolve(__dirname, "../../apps/backend/core"),
       "@core/*": resolve(__dirname, "../../apps/backend/core/*"),
-      "@transports": resolve(__dirname, "../../apps/backend/lib/mcp/transports"),
-      "@transports/*": resolve(__dirname, "../../apps/backend/lib/mcp/transports/*"),
+      "@transports": resolve(
+        __dirname,
+        "../../apps/backend/lib/mcp/transports"
+      ),
+      "@transports/*": resolve(
+        __dirname,
+        "../../apps/backend/lib/mcp/transports/*"
+      ),
       "@adapters": resolve(__dirname, "../../apps/backend/adapters"),
       "@adapters/*": resolve(__dirname, "../../apps/backend/adapters/*"),
       "@managers": resolve(__dirname, "../../apps/backend/managers"),
