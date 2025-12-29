@@ -31,7 +31,7 @@
     "xiaozhi-client": "dist/cli/index.js"
   },
   "scripts": {
-    "build": "nx reset && pnpm run clean:dist && nx run-many -t build --parallel=false",
+    "build": "nx reset && pnpm run clean:dist && nx run-many -t build --exclude=docs --parallel=false",
     "test": "nx run-many -t test",
     "test:coverage": "nx run-many -t test:coverage --parallel=false",
     "lint": "nx run-many -t lint",
@@ -42,10 +42,10 @@
     "spell:check": "cspell --config config/cspell.json .",
     "duplicate:check": "jscpd apps/backend/",
     "docker:update-version": "node docker/scripts/update-version.js",
-    "docs:dev": "cd docs && pnpm dev",
+    "dev:docs": "nx run docs:dev",
     "release": "npx release-it --config config/release-it.json",
     "release:dry": "npx release-it --config config/release-it.json --dry-run",
-    "dev": "nx run-many -t build --parallel=false && concurrently \"nx run backend:dev\" \"nx run cli:dev\" \"nx run frontend:dev\" --prefix \"[{name}]\" --names \"BACKEND,CLI,FRONTEND\"",
+    "dev": "nx run-many -t build --exclude=docs --parallel=false && concurrently \"nx run backend:dev\" \"nx run cli:dev\" \"nx run frontend:dev\" --prefix \"[{name}]\" --names \"BACKEND,CLI,FRONTEND\"",
     "dev:backend": "nx run backend:dev",
     "dev:frontend": "nx run frontend:dev",
     "dev:cli": "nx run cli:dev",
