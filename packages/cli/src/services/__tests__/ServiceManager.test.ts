@@ -29,12 +29,6 @@ const mockConfigManager = {
   getConfig: vi.fn(),
 } as any;
 
-const mockLogger = {
-  error: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
-};
-
 const mockWebServerInstance = {
   start: vi.fn().mockResolvedValue(undefined),
   stop: vi.fn().mockResolvedValue(undefined),
