@@ -62,6 +62,7 @@
     "cli-table3": "^0.6.5",
     "comment-json": "^4.2.5",
     "commander": "^14.0.0",
+    "consola": "^3.4.2",
     "dayjs": "^1.11.13",
     "dotenv": "^17.2.1",
     "eventsource": "^4.0.0",

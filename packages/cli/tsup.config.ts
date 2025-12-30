@@ -41,6 +41,7 @@ export default defineConfig({
     // 依赖的外部包（不打包）
     "commander",
     "chalk",
+    "consola",
     "ora",
     "express",
     "cli-table3",
