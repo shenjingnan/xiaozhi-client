@@ -3,7 +3,7 @@
  */
 
 import { configManager } from "@/lib/config/manager";
-import { logger } from "@root/Logger";
+import consola from "consola";
 import { ErrorHandler } from "./errors/ErrorHandlers";
 import type { IDIContainer } from "./interfaces/Config";
 import { FileUtils } from "./utils/FileUtils";
@@ -136,7 +136,7 @@ export class DIContainer implements IDIContainer {
 
     // 注册日志管理器（单例）
     container.registerSingleton("logger", () => {
-      return logger;
+      return consola;
     });
 
     // 注册错误处理器（单例）

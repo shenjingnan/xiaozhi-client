@@ -5,8 +5,8 @@
 import type { ChildProcess } from "node:child_process";
 import { spawn } from "node:child_process";
 import fs from "node:fs";
-import type { Logger } from "@root/Logger";
 import type { WebServer } from "@root/WebServer";
+import type { ConsolaInstance } from "consola";
 import { ProcessError, ServiceError } from "../errors/index";
 import type {
   DaemonManager as IDaemonManager,
@@ -37,7 +37,7 @@ export class DaemonManagerImpl implements IDaemonManager {
 
   constructor(
     private processManager: ProcessManager,
-    private logger: Logger
+    private logger: ConsolaInstance
   ) {}
 
   /**

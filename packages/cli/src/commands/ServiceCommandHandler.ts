@@ -2,7 +2,7 @@
  * 服务管理命令处理器
  */
 
-import { setGlobalLogLevel } from "@root/Logger";
+import consola from "consola";
 import type { SubCommand } from "../interfaces/Command";
 import { BaseCommandHandler } from "../interfaces/Command";
 import type { IDIContainer } from "../interfaces/Config";
@@ -79,8 +79,7 @@ export class ServiceCommandHandler extends BaseCommandHandler {
     try {
       // 处理--debug参数
       if (options.debug) {
-        // 设置全局日志级别为debug，这将影响所有现有的和新的Logger实例
-        setGlobalLogLevel("debug");
+        consola.level = "debug";
       }
 
       const serviceManager = this.getService<any>("serviceManager");

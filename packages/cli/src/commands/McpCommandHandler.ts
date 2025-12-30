@@ -3,10 +3,9 @@
  */
 
 import { configManager } from "@/lib/config/manager";
-import type { Logger } from "@root/Logger";
-import { logger } from "@root/Logger";
 import chalk from "chalk";
 import Table from "cli-table3";
+import consola from "consola";
 import ora from "ora";
 import type { SubCommand } from "../interfaces/Command";
 import { BaseCommandHandler } from "../interfaces/Command";
@@ -32,13 +31,12 @@ interface ToolCallResult {
  * MCP管理命令处理器
  */
 export class McpCommandHandler extends BaseCommandHandler {
-  private logger: Logger;
+  private logger = consola;
   private processManager: ProcessManagerImpl;
   private baseUrl: string;
 
   constructor(...args: ConstructorParameters<typeof BaseCommandHandler>) {
     super(...args);
-    this.logger = logger;
     this.processManager = new ProcessManagerImpl();
 
     // 获取 Web 服务器的端口
