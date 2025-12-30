@@ -2,7 +2,7 @@
  * MCP管理命令处理器
  */
 
-import { configManager } from "@/lib/config/manager";
+import { configManager } from "@xiaozhi/config";
 import chalk from "chalk";
 import Table from "cli-table3";
 import consola from "consola";

@@ -3,8 +3,8 @@ import type {
   CustomMCPTool,
   HandlerConfig,
   ProxyHandlerConfig,
-} from "@/lib/config/manager.js";
-import { configManager } from "@/lib/config/manager.js";
+} from "@xiaozhi/config";
+import { configManager } from "@xiaozhi/config";
 import { CozeApiService } from "@/lib/coze";
 import type { RunWorkflowData } from "@/lib/coze";
 import type { MCPServiceManager } from "@/lib/mcp";

@@ -1,5 +1,5 @@
-import type { AppConfig } from "@/lib/config/manager.js";
-import { configManager } from "@/lib/config/manager.js";
+import type { AppConfig } from "@xiaozhi/config";
+import { configManager } from "@xiaozhi/config";
 import {
   createErrorResponse,
   createSuccessResponse,

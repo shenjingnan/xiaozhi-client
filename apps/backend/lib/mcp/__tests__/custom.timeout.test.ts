@@ -3,7 +3,7 @@
  * 测试基本功能和资源管理
  */
 
-import type { CustomMCPTool } from "@/lib/config/manager.js";
+import type { CustomMCPTool } from "@xiaozhi/config";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CustomMCPHandler } from "../custom.js";
 
@@ -28,7 +28,7 @@ vi.mock("@root/Logger.js", () => ({
 }));
 
 // Mock configManager
-vi.mock("@/lib/config/manager.js", () => ({
+vi.mock("@xiaozhi/config", () => ({
   configManager: {
     getCustomMCPTools: vi.fn(),
     getCustomMCPConfig: vi.fn(),

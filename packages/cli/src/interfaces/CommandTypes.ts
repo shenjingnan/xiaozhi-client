@@ -6,7 +6,7 @@
 import type {
   LocalMCPServerConfig,
   MCPServerConfig,
-} from "@/lib/config/manager";
+} from "@xiaozhi/config";
 
 // =========================
 // 基础命令参数和选项类型

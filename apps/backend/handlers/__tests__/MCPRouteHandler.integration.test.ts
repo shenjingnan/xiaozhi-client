@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { WebServer } from "../../WebServer.js";
 
 // Mock configManager
-vi.mock("@/lib/config/manager.js", () => ({
+vi.mock("@xiaozhi/config", () => ({
   configManager: {
     configExists: vi.fn().mockReturnValue(true),
     getConfig: vi.fn().mockReturnValue({}),

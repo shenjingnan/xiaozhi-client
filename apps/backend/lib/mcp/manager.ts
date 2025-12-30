@@ -7,9 +7,9 @@
  */
 
 import { EventEmitter } from "node:events";
-import { isModelScopeURL } from "@/lib/config/adapter.js";
-import type { MCPToolConfig } from "@/lib/config/manager.js";
-import { configManager } from "@/lib/config/manager.js";
+import { isModelScopeURL } from "@xiaozhi/config";
+import type { MCPToolConfig } from "@xiaozhi/config";
+import { configManager } from "@xiaozhi/config";
 import { MCPService } from "@/lib/mcp";
 import { MCPCacheManager } from "@/lib/mcp";
 import type {

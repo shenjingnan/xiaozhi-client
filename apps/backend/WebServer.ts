@@ -1,8 +1,8 @@
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
-import { convertLegacyToNew } from "@/lib/config/adapter.js";
-import { configManager } from "@/lib/config/manager.js";
-import type { MCPServerConfig } from "@/lib/config/manager.js";
+import { convertLegacyToNew } from "@xiaozhi/config";
+import { configManager } from "@xiaozhi/config";
+import type { MCPServerConfig } from "@xiaozhi/config";
 import type { EndpointConnection } from "@/lib/endpoint/connection.js";
 import { EndpointManager } from "@/lib/endpoint/index.js";
 import type {

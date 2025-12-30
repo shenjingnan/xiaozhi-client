@@ -3,8 +3,8 @@
  * 验证 TransportAdapter 和 StdioAdapter 的功能
  */
 
-import type { AppConfig } from "@/lib/config/manager.js";
-import { configManager } from "@/lib/config/manager.js";
+import type { AppConfig } from "@xiaozhi/config";
+import { configManager } from "@xiaozhi/config";
 import { MCPServiceManager } from "@/lib/mcp/manager.js";
 import { MCPMessageHandler } from "@/lib/mcp/message.js";
 import type { MCPMessage, MCPResponse } from "@root/types/mcp.js";

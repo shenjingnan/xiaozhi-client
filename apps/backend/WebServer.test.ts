@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import WebSocket from "ws";
 import { WebServer } from "./WebServer";
 
-vi.mock("@/lib/config/manager.js", () => {
+vi.mock("@xiaozhi/config", () => {
   const mockConfigManager = {
     getConfig: vi.fn(),
     getMcpEndpoint: vi.fn(),

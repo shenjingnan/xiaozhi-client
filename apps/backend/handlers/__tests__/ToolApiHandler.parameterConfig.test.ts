@@ -3,7 +3,7 @@
  * 测试第二阶段新增的参数配置功能
  */
 
-import { configManager } from "@/lib/config/manager.js";
+import { configManager } from "@xiaozhi/config";
 import type {
   CozeWorkflow,
   WorkflowParameterConfig,
@@ -13,7 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ToolApiHandler } from "../ToolApiHandler.js";
 
 // Mock configManager
-vi.mock("@/lib/config/manager.js", () => ({
+vi.mock("@xiaozhi/config", () => ({
   configManager: {
     addCustomMCPTool: vi.fn(),
     getCustomMCPTools: vi.fn(() => []),

@@ -10,6 +10,9 @@
     ],
     "sharedGlobals": ["{workspaceRoot}/apps/backend/vitest.config.ts"]
   },
+  "tui": {
+    "enabled": false
+  },
   "targetDefaults": {
     "build": {
       "dependsOn": ["^build"],

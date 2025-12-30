@@ -1,4 +1,4 @@
-import { configManager } from "@/lib/config/manager.js";
+import { configManager } from "@xiaozhi/config";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type { NotificationService } from "@services/NotificationService.js";

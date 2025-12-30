@@ -18,11 +18,15 @@ vi.mock("@services/EventBus.js", () => ({
   }),
 }));
 
-vi.mock("@/lib/config/manager.js", () => ({
+vi.mock("@xiaozhi/config", () => ({
   configManager: {
     getMcpEndpoints: vi.fn(),
     addMcpEndpoint: vi.fn(),
     removeMcpEndpoint: vi.fn(),
+    // 新增的事件回调支持
+    eventCallbacks: new Map(),
+    on: vi.fn(),
+    emitEvent: vi.fn(),
   },
 }));
 
@@ -54,7 +58,7 @@ describe("MCPEndpointApiHandler", () => {
     vi.clearAllMocks();
 
     // Create handler instance
-    const { configManager } = await import("@/lib/config/manager.js");
+    const { configManager } = await import("@xiaozhi/config");
     handler = new MCPEndpointApiHandler(
       mockConnectionManager as any,
       configManager

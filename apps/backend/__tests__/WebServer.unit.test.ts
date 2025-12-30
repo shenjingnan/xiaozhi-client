@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@cli.js", () => ({}));
 
 // Mock all dependencies
-vi.mock("@/lib/config/manager.js", () => ({
+vi.mock("@xiaozhi/config", () => ({
   configManager: {
     getConfig: vi.fn(),
     getMcpEndpoints: vi.fn(),

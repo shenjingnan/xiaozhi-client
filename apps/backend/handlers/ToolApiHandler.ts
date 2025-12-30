@@ -3,11 +3,11 @@
  * 处理通过 HTTP API 调用 MCP 工具的请求
  */
 
-import { configManager } from "@/lib/config/manager.js";
+import { configManager } from "@xiaozhi/config";
 import type {
   CustomMCPTool,
   ProxyHandlerConfig,
-} from "@/lib/config/manager.js";
+} from "@xiaozhi/config";
 import { MCPCacheManager } from "@/lib/mcp";
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { JSONSchema } from "@/lib/mcp/types.js";

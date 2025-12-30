@@ -213,7 +213,7 @@ vi.mock("../../Logger.js", () => ({
 }));
 
 // Mock configManager
-vi.mock("@/lib/config/manager.js", async () => {
+vi.mock("@xiaozhi/config", async () => {
   const actual = await vi.importActual("@/lib/config/manager.js");
   const configManager = actual.configManager as any;
   return {

@@ -13,6 +13,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@xiaozhi/config": "workspace:*",
     "consola": "^3.4.2"
   },
   "devDependencies": {

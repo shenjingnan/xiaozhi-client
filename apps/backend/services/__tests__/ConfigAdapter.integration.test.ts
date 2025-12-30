@@ -7,13 +7,13 @@ import {
   convertLegacyConfigBatch,
   convertLegacyToNew,
   getConfigTypeDescription,
-} from "@/lib/config/adapter.js";
+} from "@xiaozhi/config";
 import type {
   LocalMCPServerConfig,
   MCPServerConfig,
   SSEMCPServerConfig,
   StreamableHTTPMCPServerConfig,
-} from "@/lib/config/manager.js";
+} from "@xiaozhi/config";
 import { MCPService, MCPTransportType } from "@/lib/mcp";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 

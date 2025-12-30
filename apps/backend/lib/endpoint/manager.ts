@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import type { ConfigManager } from "@/lib/config/manager.js";
+import type { ConfigManager } from "@xiaozhi/config";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { ToolCallResult } from "@root/types/mcp.js";

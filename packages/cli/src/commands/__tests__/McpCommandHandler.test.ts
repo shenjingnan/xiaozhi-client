@@ -1,9 +1,9 @@
-import { configManager } from "@/lib/config/manager.js";
+import { configManager } from "@xiaozhi/config";
 import type {
   MCPServerConfig,
   MCPServerToolsConfig,
   MCPToolConfig,
-} from "@/lib/config/manager.js";
+} from "@xiaozhi/config";
 import type { IDIContainer } from "@cli/interfaces/Config.js";
 import ora from "ora";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -127,7 +127,7 @@ vi.mock("ora", () => ({
   })),
 }));
 
-vi.mock("@/lib/config/manager.js", () => ({
+vi.mock("@xiaozhi/config", () => ({
   configManager: {
     getMcpServers: vi.fn(),
     getMcpServerConfig: vi.fn(),

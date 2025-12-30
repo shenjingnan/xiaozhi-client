@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WebServer } from "./WebServer";
 
 // Mock configManager to avoid triggering real config loading
-vi.mock("@/lib/config/manager.js", () => ({
+vi.mock("@xiaozhi/config", () => ({
   configManager: {
     getConfig: vi.fn(() => ({
       mcpEndpoint: [],

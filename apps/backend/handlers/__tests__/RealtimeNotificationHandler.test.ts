@@ -1,4 +1,4 @@
-import type { AppConfig } from "@/lib/config/manager.js";
+import type { AppConfig } from "@xiaozhi/config";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RealtimeNotificationHandler } from "../RealtimeNotificationHandler.js";
 
@@ -12,7 +12,7 @@ vi.mock("../../Logger.js", () => ({
   },
 }));
 
-vi.mock("@/lib/config/manager.js", () => ({
+vi.mock("@xiaozhi/config", () => ({
   configManager: {
     getConfig: vi.fn(),
     updateMcpEndpoint: vi.fn(),
