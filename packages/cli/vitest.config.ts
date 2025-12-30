@@ -18,9 +18,7 @@ export default defineConfig({
     environment: "node",
     testTimeout: 10000,
     hookTimeout: 10000,
-    include: [
-      resolve(__dirname, "**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"),
-    ],
+    include: ["**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     exclude: ["node_modules", "dist"],
     coverage: {
       enabled: true,
