@@ -31,7 +31,6 @@ interface ToolCallResult {
  * MCP管理命令处理器
  */
 export class McpCommandHandler extends BaseCommandHandler {
-  private logger = consola;
   private processManager: ProcessManagerImpl;
   private baseUrl: string;
 
@@ -360,7 +359,7 @@ export class McpCommandHandler extends BaseCommandHandler {
 
       return responseData.data;
     } catch (error) {
-      this.logger.error(
+      consola.error(
         `工具调用失败: ${serviceName}/${toolName}`,
         error instanceof Error ? error.message : String(error)
       );

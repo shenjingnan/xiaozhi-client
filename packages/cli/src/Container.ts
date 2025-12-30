@@ -134,11 +134,6 @@ export class DIContainer implements IDIContainer {
       return configManager;
     });
 
-    // 注册日志管理器（单例）
-    container.registerSingleton("logger", () => {
-      return consola;
-    });
-
     // 注册错误处理器（单例）
     container.registerSingleton("errorHandler", () => {
       return ErrorHandler;
@@ -153,19 +148,16 @@ export class DIContainer implements IDIContainer {
     container.registerSingleton("daemonManager", () => {
       const DaemonManagerModule = require("@cli/services/DaemonManager.js");
       const processManager = container.get("processManager") as any;
-      const logger = container.get("logger") as any;
-      return new DaemonManagerModule.DaemonManagerImpl(processManager, logger);
+      return new DaemonManagerModule.DaemonManagerImpl(processManager);
     });
 
     container.registerSingleton("serviceManager", () => {
       const ServiceManagerModule = require("@cli/services/ServiceManager.js");
       const processManager = container.get("processManager") as any;
       const configManager = container.get("configManager") as any;
-      const logger = container.get("logger") as any;
       return new ServiceManagerModule.ServiceManagerImpl(
         processManager,
-        configManager,
-        logger
+        configManager
       );
     });
 

@@ -3,18 +3,6 @@
  * 使用 any 类型避免递归解析 backend 代码
  */
 
-declare module "@root/Logger" {
-  export interface Logger {}
-  export const logger: Logger;
-  export function setGlobalLogLevel(level: string): void;
-}
-
-declare module "@root/Logger.js" {
-  export interface Logger {}
-  export const logger: Logger;
-  export function setGlobalLogLevel(level: string): void;
-}
-
 declare module "@/lib/config/manager" {
   export interface LocalMCPServerConfig {
     command: string;
