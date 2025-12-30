@@ -4,7 +4,9 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["packages/shared-types/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
+    include: [
+      "packages/shared-types/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
+    ],
     passWithNoTests: true, // 允许没有测试文件时通过
     coverage: {
       enabled: true,

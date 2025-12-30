@@ -21,7 +21,7 @@
       "cache": true
     },
     "lint": {
-      "inputs": ["default", "{workspaceRoot}/config/biome.json"],
+      "inputs": ["default", "{workspaceRoot}/biome.json"],
       "cache": true
     },
     "type-check": {

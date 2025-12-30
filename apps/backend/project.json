@@ -38,19 +38,19 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "biome check --config-path=config/biome.json apps/backend"
+        "command": "biome check apps/backend"
       }
     },
     "lint:fix": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "biome check --write --config-path=config/biome.json apps/backend"
+        "command": "biome check --write apps/backend"
       }
     },
     "format": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "biome format --write --config-path=config/biome.json apps/backend"
+        "command": "biome format --write apps/backend"
       }
     },
     "type-check": {
