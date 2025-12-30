@@ -36,13 +36,13 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "biome check --config-path=biome.json packages/cli"
+        "command": "biome check packages/cli"
       }
     },
     "lint:fix": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "biome check --write --config-path=biome.json packages/cli"
+        "command": "biome check --write packages/cli"
       }
     },
     "type-check": {

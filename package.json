@@ -37,7 +37,7 @@
     "lint": "nx run-many -t lint --output-style=stream",
     "lint:fix": "nx run-many -t lint:fix --output-style=stream",
     "type-check": "nx run-many -t type-check",
-    "format": "biome format --write --config-path=biome.json .",
+    "format": "biome format --write .",
     "check:all": "pnpm run lint && pnpm run type-check && pnpm run check:spell && pnpm run duplicate:check",
     "check:spell": "cspell .",
     "duplicate:check": "jscpd apps/backend/",
