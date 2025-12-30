@@ -31,7 +31,7 @@ pnpm test:coverage
 - **`pnpm check:all`** 包含：
   - `pnpm lint` - Biome 代码规范和格式检查
   - `pnpm type-check` - TypeScript 严格类型检查
-  - `pnpm spell:check` - 拼写检查
+  - `pnpm check:spell` - 拼写检查
   - `pnpm duplicate:check` - 重复代码检查
 
 - **`pnpm test`** 包含：
@@ -143,7 +143,7 @@ vi.mock("@/services/light-service", () => ({
 # GitHub Actions CI 流程检查项
 - ✅ 类型检查通过 (pnpm type:check)
 - ✅ 代码规范检查通过 (pnpm check)
-- ✅ 拼写检查通过 (pnpm spell:check)
+- ✅ 拼写检查通过 (pnpm check:spell)
 - ✅ 构建成功 (pnpm build)
 - ✅ 测试通过 (pnpm test:coverage)
 - ✅ 覆盖率达到要求
@@ -192,7 +192,7 @@ function preCommitCheck() {
   pnpm type-check
 
   # 4. 拼写检查
-  pnpm spell:check
+  pnpm check:spell
 
   # 5. 运行测试
   pnpm test
@@ -244,7 +244,7 @@ function handleCheckFailure(failure: CheckFailure): void {
 
     case 'spell_error':
       console.log(`📖 拼写错误: ${failure.message}`);
-      console.log(`💡 检查拼写: pnpm spell:check`);
+      console.log(`💡 检查拼写: pnpm check:spell`);
       break;
 
     case 'test_failure':
@@ -294,7 +294,7 @@ pnpm lint
 # 如果仍有问题，运行详细诊断
 pnpm check:all  # 查看具体错误
 pnpm type-check  # 查看类型错误详情
-pnpm spell:check  # 查看拼写错误详情
+pnpm check:spell  # 查看拼写错误详情
 ```
 
 ### 2. 智能修复脚本
@@ -323,10 +323,10 @@ fi
 
 # 4. 拼写检查
 echo "📖 检查拼写..."
-SPELL_ERRORS=$(pnpm spell:check 2>&1 | grep -c "error" || echo "0")
+SPELL_ERRORS=$(pnpm check:spell 2>&1 | grep -c "error" || echo "0")
 if [ "$SPELL_ERRORS" -gt 0 ]; then
   echo "❌ 发现 $SPELL_ERRORS 个拼写错误，请检查"
-  pnpm spell:check
+  pnpm check:spell
   exit 1
 fi
 

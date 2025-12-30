@@ -148,7 +148,7 @@ pnpm dev:docs
 curl -s -o /dev/null -w "%{http_code}" http://localhost:3000
 
 # 运行代码质量检查
-pnpm spell:check
+pnpm check:spell
 pnpm lint
 pnpm type-check
 ```

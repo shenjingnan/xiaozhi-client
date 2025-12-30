@@ -300,7 +300,7 @@ coverage thresholds: 80% branches, functions, lines, statements
 ```bash
 pnpm type-check      # TypeScript类型检查
 pnpm lint            # 代码规范和格式检查（Biome）
-pnpm spell:check     # 拼写检查
+pnpm check:spell     # 拼写检查
 pnpm check:all       # 运行所有质量检查
 ```
 

@@ -54,7 +54,7 @@ jobs:
       run: pnpm run type-check
 
     - name: 拼写检查 (根目录)
-      run: pnpm run spell:check
+      run: pnpm run check:spell
 
     - name: 代码重复率检查 (backend)
       run: pnpm run duplicate:check

@@ -379,7 +379,7 @@ pnpm type-check
 pnpm lint
 
 # 运行拼写检查
-pnpm spell:check
+pnpm check:spell
 
 # 运行所有质量检查
 pnpm check:all

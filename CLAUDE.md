@@ -36,7 +36,7 @@
 
 ### 其他质量工具
 
-- `pnpm spell:check` - 使用 cspell 检查拼写
+- `pnpm check:spell` - 使用 cspell 检查拼写
 - `pnpm duplicate:check` - 使用 jscpd 检查重复代码
 - `pnpm dev:docs` - 启动文档开发服务器
 

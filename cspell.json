@@ -1,0 +1,30 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "globRoot": "./",
+  "words": [],
+  "dictionaryDefinitions": [
+    {
+      "name": "xiaozhi-words",
+      "path": "./.cspell/words.txt",
+      "addWords": true
+    }
+  ],
+  "dictionaries": ["xiaozhi-words"],
+  "ignorePaths": [
+    "node_modules/**",
+    "**/dist/**",
+    "dist/**",
+    "docs/out/**",
+    "**/coverage/**",
+    ".git/**",
+    "*.log",
+    "**/tmp/**",
+    "pnpm-lock.yaml",
+    "docs/content/changelog.mdx",
+    "**/*.tsbuildinfo",
+    ".cspell/**"
+  ],
+  "ignoreWords": [],
+  "flagWords": []
+}

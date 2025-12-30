@@ -29,7 +29,7 @@ description: 安全审计
 ## 代码质量检查
 
 - 运行 pnpm check:fix 修复代码格式问题
-- 执行 pnpm spell:check 检查拼写
+- 执行 pnpm check:spell 检查拼写
 
 ## 风险控制
 
