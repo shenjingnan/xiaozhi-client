@@ -128,7 +128,7 @@ Nextra 使用基于文件系统的自动导航，也可以通过 `meta.json` 覆
 1. **语法检查**：确保 MDX 语法正确
 2. **链接检查**：验证所有内部链接有效
 3. **拼写检查**：运行 `pnpm spell:check`
-4. **格式检查**：运行 `pnpm check:fix` 确保代码格式正确
+4. **格式检查**：运行 `pnpm lint` 确保代码格式正确
 5. **路径别名检查**：确保代码示例使用正确的 `@/xxx` 格式路径别名
 
 #### 5.1.5 路径别名验证（重要！）
@@ -159,7 +159,7 @@ Nextra 使用基于文件系统的自动导航，也可以通过 `meta.json` 覆
 1. **启动文档服务**：
 
    ```bash
-   pnpm docs:dev
+   pnpm dev:docs
    ```
 
 2. **等待服务启动**（约 10-15 秒）
@@ -230,7 +230,7 @@ import { UnifiedMCPServer } from "../../core/unified-server";
 # ✅ 使用项目实际命令
 pnpm build
 pnpm dev
-pnpm docs:dev
+pnpm dev:docs
 xiaozhi start --config ./xiaozhi.config.json
 
 # ❌ 避免使用不存在的命令

@@ -24,24 +24,21 @@
 - `pnpm build` - 构建项目（包括 Web 构建和 TypeScript 编译）
 - `pnpm dev` - 开发模式（带监视功能）
 - `pnpm test` - 运行一次测试
-- `pnpm test:watch` - 监视模式下运行测试
 - `pnpm test:coverage` - 运行测试并生成覆盖率报告
-- `pnpm test:silent` - 静默运行测试（用于 CI）
 
 ### 代码质量
 
 - `pnpm lint` - 运行 Biome linter 并自动修复
+- `pnpm lint:fix` - 运行 Biome linter 并自动修复
 - `pnpm format` - 使用 Biome 格式化代码
-- `pnpm type:check` - 运行 TypeScript 类型检查
-- `pnpm check` - 运行 Biome 检查
-- `pnpm check:fix` - 运行 Biome 检查并自动修复
+- `pnpm type-check` - 运行 TypeScript 类型检查
 - `pnpm check:all` - 运行所有质量检查（lint、typecheck、spellcheck、duplicate check）
 
 ### 其他质量工具
 
 - `pnpm spell:check` - 使用 cspell 检查拼写
 - `pnpm duplicate:check` - 使用 jscpd 检查重复代码
-- `pnpm docs:dev` - 启动文档开发服务器
+- `pnpm dev:docs` - 启动文档开发服务器
 
 ### 文档开发
 
@@ -49,7 +46,7 @@
 - **文档创建**：使用 `/docs-create [document-type] [document-title]` 命令
 - **文档更新**：使用 `/docs-update [scope] [target]` 批量更新
 - **文档验证**：
-  - 本地运行 `pnpm docs:dev` 验证文档渲染
+  - 本地运行 `pnpm dev:docs` 验证文档渲染
   - 执行代码示例测试确保可运行性
   - 检查路径别名使用是否正确
 - **支持文档类型**：
@@ -253,8 +250,8 @@ xiaozhi-client 是一个务实的开源 MCP 客户端：
 - [ ] 测试覆盖率达到 80% 要求
 - [ ] 错误处理完善且有意义
 - [ ] **执行开发流程检查**：修改代码后必须运行相应的检查命令
-  - 前端代码：`nr type:check && nr lint && nr test`
-  - 后端代码：`pnpm type:check && pnpm lint && pnpm test`
+  - 前端代码：`pnpm type-check && pnpm lint && pnpm test`
+  - 后端代码：`pnpm type-check && pnpm lint && pnpm test`
   - 全面检查：`pnpm check:all`
 
 ### 本地化规范

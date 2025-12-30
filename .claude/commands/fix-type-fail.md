@@ -3,7 +3,7 @@ description: 修复类型检查失败
 argument-hint: [path, error-log]
 ---
 
-我在目录 `<path>$1</path>` 执行命令 `nr type:check`
+我在目录 `<path>$1</path>` 执行命令 `pnpm type-check`
 发现有很多类型错误，如下
 <error-log>$2</error-log>
 
@@ -66,19 +66,19 @@ argument-hint: [path, error-log]
 
 ### 4.1 编译验证
 
-- 运行 `nr type:check` 确保所有类型错误已修复
-- 运行 `nr build` 确保代码能够正常编译
+- 运行 `pnpm type-check` 确保所有类型错误已修复
+- 运行 `pnpm build` 确保代码能够正常编译
 - 检查生成的类型声明文件（`*.d.ts`）
 
 ### 4.2 功能测试
 
-- 运行相关测试用例：`nr test <相关测试文件>`
+- 运行相关测试用例：`pnpm test <相关测试文件>`
 - 确保修复后的代码功能正常
 - 执行回归测试避免引入新问题
 
 ### 4.3 代码质量检查
 
-- 执行 `pnpm check:fix` 进行代码规范检查和自动修复
+- 执行 `pnpm lint` 进行代码规范检查和自动修复
 - 确保代码符合项目的类型安全要求（如禁用 `any` 类型）
 - 验证导入导出语句的正确性
 
