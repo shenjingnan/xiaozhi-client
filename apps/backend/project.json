@@ -7,7 +7,7 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "cross-env NODE_ENV=${NODE_ENV:-production} tsup --config config/tsup.config.ts",
+        "command": "cross-env NODE_ENV=${NODE_ENV:-production} tsup --config apps/backend/tsup.config.ts",
         "env": {
           "PWD": "{workspaceRoot}"
         }
@@ -56,14 +56,14 @@
     "type-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc --project ../../config/tsconfig.typecheck.json",
+        "command": "tsc --project tsconfig.typecheck.json",
         "cwd": "apps/backend"
       }
     },
     "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "cross-env NODE_ENV=development tsup --config config/tsup.config.ts --watch",
+        "command": "cross-env NODE_ENV=development tsup --config apps/backend/tsup.config.ts --watch",
         "env": {
           "PWD": "{workspaceRoot}"
         }

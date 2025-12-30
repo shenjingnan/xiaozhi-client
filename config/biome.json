@@ -14,7 +14,7 @@
       "*.d.ts",
       "pnpm-lock.yaml",
       "templates/**/*.js",
-      "config/tsup.config.ts",
+      "apps/backend/tsup.config.ts",
       "package.json"
     ]
   },

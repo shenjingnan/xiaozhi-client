@@ -2,12 +2,12 @@
  * 服务管理服务单元测试
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ConfigError, ServiceError } from "../../errors/index";
+import { ConfigError, ServiceError } from "@cli/errors/index.js";
 import type {
   ProcessManager,
   ServiceStartOptions,
-} from "../../interfaces/Service";
+} from "@cli/interfaces/Service.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ServiceManagerImpl } from "../ServiceManager";
 
 // Mock 依赖

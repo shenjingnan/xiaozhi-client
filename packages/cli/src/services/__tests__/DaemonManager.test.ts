@@ -2,9 +2,9 @@
  * 守护进程管理服务单元测试
  */
 
+import { ServiceError } from "@cli/errors/index.js";
+import type { ProcessManager } from "@cli/interfaces/Service.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ServiceError } from "../../errors/index";
-import type { ProcessManager } from "../../interfaces/Service";
 import type { DaemonOptions } from "../DaemonManager";
 import { DaemonManagerImpl } from "../DaemonManager";
 
