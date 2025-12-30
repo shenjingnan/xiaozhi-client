@@ -1,6 +1,6 @@
 {
   "name": "xiaozhi-client",
-  "version": "1.9.4-beta.3",
+  "version": "1.9.4-beta.4",
   "description": "小智 AI 客户端 命令行工具",
   "repository": {
     "type": "git",
@@ -42,8 +42,8 @@
     "check:spell": "cspell .",
     "duplicate:check": "jscpd apps/backend/",
     "docker:update-version": "node docker/scripts/update-version.js",
-    "release": "npx release-it --config config/release-it.json",
-    "release:dry": "npx release-it --config config/release-it.json --dry-run",
+    "release": "npx release-it",
+    "release:dry": "npx release-it --dry-run",
     "dev": "nx run-many -t build --exclude=docs --parallel=false && concurrently \"nx run backend:dev\" \"nx run cli:dev\" \"nx run frontend:dev\" --prefix \"[{name}]\" --names \"BACKEND,CLI,FRONTEND\"",
     "dev:cli": "nx run cli:dev",
     "dev:docs": "nx run docs:dev",
