@@ -19,8 +19,6 @@ content = content
     /from "@\/lib\/config\/manager"/g,
     'from "../../dist/backend/lib/config/manager.js"'
   )
-  .replace(/from "@root\/Logger\.js"/g, 'from "../../dist/backend/Logger.js"')
-  .replace(/from "@root\/Logger"/g, 'from "../../dist/backend/Logger.js"')
   .replace(
     /from "@root\/WebServer\.js"/g,
     'from "../../dist/backend/WebServer.js"'

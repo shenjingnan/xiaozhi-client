@@ -5,8 +5,8 @@
 import type { ChildProcess } from "node:child_process";
 import { spawn } from "node:child_process";
 import fs from "node:fs";
-import type { Logger } from "@root/Logger";
 import type { WebServer } from "@root/WebServer";
+import consola from "consola";
 import { ProcessError, ServiceError } from "../errors/index";
 import type {
   DaemonManager as IDaemonManager,
@@ -35,10 +35,7 @@ export interface DaemonOptions {
 export class DaemonManagerImpl implements IDaemonManager {
   private currentDaemon: ChildProcess | null = null;
 
-  constructor(
-    private processManager: ProcessManager,
-    private logger: Logger
-  ) {}
+  constructor(private processManager: ProcessManager) {}
 
   /**
    * 启动守护进程
@@ -70,7 +67,7 @@ export class DaemonManagerImpl implements IDaemonManager {
       // 分离进程
       child.unref();
 
-      this.logger.info(`守护进程已启动 (PID: ${child.pid})`);
+      consola.info(`守护进程已启动 (PID: ${child.pid})`);
     } catch (error) {
       throw new ServiceError(
         `启动守护进程失败: ${error instanceof Error ? error.message : String(error)}`
@@ -98,7 +95,7 @@ export class DaemonManagerImpl implements IDaemonManager {
       // 清理当前守护进程引用
       this.currentDaemon = null;
 
-      this.logger.info("守护进程已停止");
+      consola.info("守护进程已停止");
     } catch (error) {
       throw new ServiceError(
         `停止守护进程失败: ${error instanceof Error ? error.message : String(error)}`
@@ -241,7 +238,7 @@ export class DaemonManagerImpl implements IDaemonManager {
       const timestamp = new Date().toISOString();
       logStream.write(`\n[${timestamp}] 守护进程启动 (PID: ${child.pid})\n`);
     } catch (error) {
-      this.logger.warn(
+      consola.warn(
         `设置日志重定向失败: ${error instanceof Error ? error.message : String(error)}`
       );
     }
@@ -254,9 +251,9 @@ export class DaemonManagerImpl implements IDaemonManager {
     // 监听进程退出
     child.on("exit", (code, signal) => {
       if (code !== 0 && code !== null) {
-        this.logger.error(`守护进程异常退出 (代码: ${code}, 信号: ${signal})`);
+        consola.error(`守护进程异常退出 (代码: ${code}, 信号: ${signal})`);
       } else {
-        this.logger.info("守护进程正常退出");
+        consola.info("守护进程正常退出");
       }
 
       // 清理 PID 文件
@@ -266,14 +263,14 @@ export class DaemonManagerImpl implements IDaemonManager {
 
     // 监听进程错误
     child.on("error", (error) => {
-      this.logger.error(`守护进程错误: ${error.message}`);
+      consola.error(`守护进程错误: ${error.message}`);
       this.processManager.cleanupPidFile();
       this.currentDaemon = null;
     });
 
     // 监听进程断开连接
     child.on("disconnect", () => {
-      this.logger.info("守护进程断开连接");
+      consola.info("守护进程断开连接");
     });
   }
 
@@ -311,7 +308,7 @@ export class DaemonManagerImpl implements IDaemonManager {
       try {
         this.currentDaemon.kill("SIGTERM");
       } catch (error) {
-        this.logger.warn(
+        consola.warn(
           `清理守护进程失败: ${error instanceof Error ? error.message : String(error)}`
         );
       }

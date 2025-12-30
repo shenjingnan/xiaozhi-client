@@ -41,14 +41,13 @@ export default defineConfig({
     // 依赖的外部包（不打包）
     "commander",
     "chalk",
+    "consola",
     "ora",
     "express",
     "cli-table3",
     // Backend 模块（运行时从 dist/backend 读取）
     "@/lib/config/manager",
     "@/lib/config/manager.js",
-    "@root/Logger",
-    "@root/Logger.js",
     "@root/WebServer",
     "@root/WebServer.js",
   ],
@@ -70,8 +69,6 @@ export default defineConfig({
         /from "@\/lib\/config\/manager"/g,
         'from "../backend/lib/config/manager.js"'
       )
-      .replace(/from "@root\/Logger\.js"/g, 'from "../backend/Logger.js"')
-      .replace(/from "@root\/Logger"/g, 'from "../backend/Logger.js"')
       .replace(/from "@root\/WebServer\.js"/g, 'from "../backend/WebServer.js"')
       .replace(/from "@root\/WebServer"/g, 'from "../backend/WebServer.js"')
       // 替换动态导入中的 @root/WebServer.js

@@ -49,7 +49,6 @@ packages/cli/
 
 CLI 包通过 external 配置引用 backend 模块：
 
-- `@root/Logger` → `dist/backend/Logger.js`
 - `@root/WebServer` → `dist/backend/WebServer.js` (通过 WebServerLauncher)
 - `@/lib/config/manager` → `dist/backend/lib/config/manager.js`
 
@@ -67,7 +66,6 @@ import { CommandRegistry } from "./commands/index";
 
 ```typescript
 // 引用 backend 模块
-import { logger } from "@root/Logger";
 import { configManager } from "@/lib/config/manager";
 ```
 

@@ -12,7 +12,9 @@
     "build": "tsup",
     "type-check": "tsc --noEmit"
   },
-  "dependencies": {},
+  "dependencies": {
+    "consola": "^3.4.2"
+  },
   "devDependencies": {
     "@types/node": "^24.3.0",
     "typescript": "^5.9.2"

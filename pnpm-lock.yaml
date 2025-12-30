@@ -47,6 +47,9 @@ importers:
       comment-json:
         specifier: ^4.2.5
         version: 4.4.1
+      consola:
+        specifier: ^3.4.2
+        version: 3.4.2
       dayjs:
         specifier: ^1.11.13
         version: 1.11.19
@@ -455,6 +458,10 @@ importers:
         version: 1.4.0
 
   packages/cli:
+    dependencies:
+      consola:
+        specifier: ^3.4.2
+        version: 3.4.2
     devDependencies:
       '@types/node':
         specifier: ^24.3.0

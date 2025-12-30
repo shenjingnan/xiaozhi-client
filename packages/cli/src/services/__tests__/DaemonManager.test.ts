@@ -4,6 +4,7 @@
 
 import { ServiceError } from "@cli/errors/index.js";
 import type { ProcessManager } from "@cli/interfaces/Service.js";
+import consola from "consola";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DaemonOptions } from "../DaemonManager";
 import { DaemonManagerImpl } from "../DaemonManager";
@@ -20,29 +21,6 @@ const mockProcessManager: ProcessManager = {
   cleanupContainerState: vi.fn(),
   getProcessInfo: vi.fn(),
   validatePidFile: vi.fn(),
-} as any;
-
-const mockLogger = {
-  error: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
-  success: vi.fn(),
-  debug: vi.fn(),
-  log: vi.fn(),
-  setLevel: vi.fn(),
-  getLevel: vi.fn(),
-  initLogFile: vi.fn(),
-  enableFileLogging: vi.fn(),
-  close: vi.fn(),
-  withTag: vi.fn(() => mockLogger),
-  cleanupOldLogs: vi.fn(),
-  setLogFileOptions: vi.fn(),
-  logFilePath: null,
-  pinoInstance: null,
-  isDaemonMode: false,
-  logLevel: "info" as const,
-  maxLogFileSize: 10 * 1024 * 1024,
-  maxLogFiles: 5,
 } as any;
 
 // Mock child_process
@@ -93,7 +71,12 @@ describe("DaemonManagerImpl", () => {
   const mockServerFactory = vi.fn();
 
   beforeEach(() => {
-    daemonManager = new DaemonManagerImpl(mockProcessManager, mockLogger);
+    daemonManager = new DaemonManagerImpl(mockProcessManager);
+
+    // Mock consola
+    vi.spyOn(consola, "info").mockImplementation(() => consola);
+    vi.spyOn(consola, "warn").mockImplementation(() => consola);
+    vi.spyOn(consola, "error").mockImplementation(() => consola);
 
     // 重置所有 mock
     vi.clearAllMocks();
@@ -144,9 +127,7 @@ describe("DaemonManagerImpl", () => {
         "daemon"
       );
       expect(mockChild.unref).toHaveBeenCalled();
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        "守护进程已启动 (PID: 1234)"
-      );
+      expect(consola.info).toHaveBeenCalledWith("守护进程已启动 (PID: 1234)");
     });
 
     it("should start daemon with options", async () => {
@@ -225,7 +206,7 @@ describe("DaemonManagerImpl", () => {
 
       expect(mockProcessManager.gracefulKillProcess).toHaveBeenCalledWith(1234);
       expect(mockProcessManager.cleanupPidFile).toHaveBeenCalled();
-      expect(mockLogger.info).toHaveBeenCalledWith("守护进程已停止");
+      expect(consola.info).toHaveBeenCalledWith("守护进程已停止");
     });
 
     it("should handle stop errors", async () => {
@@ -375,7 +356,7 @@ describe("DaemonManagerImpl", () => {
       });
 
       expect(() => daemonManager.cleanup()).not.toThrow();
-      expect(mockLogger.warn).toHaveBeenCalled();
+      expect(consola.warn).toHaveBeenCalled();
     });
 
     it("should do nothing if no current daemon", () => {
