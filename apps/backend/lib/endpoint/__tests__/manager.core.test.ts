@@ -1,6 +1,6 @@
-import type { ConfigManager } from "@xiaozhi/config";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { ToolCallResult } from "@root/types/mcp.js";
+import type { ConfigManager } from "@xiaozhi/config";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { EndpointManager } from "../manager.js";
 

@@ -1,5 +1,5 @@
-import { configManager } from "@xiaozhi/config";
 import { EndpointManager } from "@/lib/endpoint/index.js";
+import { configManager } from "@xiaozhi/config";
 import {
   afterAll,
   afterEach,

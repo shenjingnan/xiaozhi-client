@@ -1,9 +1,9 @@
-import type { AppConfig } from "@xiaozhi/config";
-import { configManager } from "@xiaozhi/config";
 import {
   createErrorResponse,
   createSuccessResponse,
 } from "@middlewares/index.js";
+import type { AppConfig } from "@xiaozhi/config";
+import { configManager } from "@xiaozhi/config";
 import type { Context } from "hono";
 import { AbstractApiHandler } from "./AbstractApiHandler.js";
 

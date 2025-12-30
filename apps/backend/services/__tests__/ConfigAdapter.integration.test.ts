@@ -3,6 +3,7 @@
  * 验证两个组件的协同工作和类型推断一致性
  */
 
+import { MCPService, MCPTransportType } from "@/lib/mcp";
 import {
   convertLegacyConfigBatch,
   convertLegacyToNew,
@@ -14,7 +15,6 @@ import type {
   SSEMCPServerConfig,
   StreamableHTTPMCPServerConfig,
 } from "@xiaozhi/config";
-import { MCPService, MCPTransportType } from "@/lib/mcp";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // 统一的mockLogger定义

@@ -3,8 +3,8 @@
  * 用于在 API Handler 中获取服务状态
  */
 
-import { configManager } from "@xiaozhi/config";
 import { MCPServiceManager } from "@/lib/mcp";
+import { configManager } from "@xiaozhi/config";
 
 /**
  * MCP 服务管理器全局单例类

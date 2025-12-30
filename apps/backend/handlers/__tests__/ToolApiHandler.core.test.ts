@@ -3,9 +3,9 @@
  * 测试核心业务逻辑和边界条件处理
  */
 
-import { configManager } from "@xiaozhi/config";
 import type { CozeWorkflow } from "@root/types/coze.js";
 import { ToolType } from "@root/types/toolApi.js";
+import { configManager } from "@xiaozhi/config";
 import type { Context } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ToolApiHandler } from "../ToolApiHandler.js";

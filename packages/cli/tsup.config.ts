@@ -62,14 +62,8 @@ export default defineConfig({
 
     // 替换 @xiaozhi/config 和 @root/* 为指向正确位置的相对路径
     content = content
-      .replace(
-        /from "@xiaozhi\/config\.js"/g,
-        'from "../config/dist/index.js"'
-      )
-      .replace(
-        /from "@xiaozhi\/config"/g,
-        'from "../config/dist/index.js"'
-      )
+      .replace(/from "@xiaozhi\/config\.js"/g, 'from "../config/dist/index.js"')
+      .replace(/from "@xiaozhi\/config"/g, 'from "../config/dist/index.js"')
       .replace(/from "@root\/WebServer\.js"/g, 'from "../backend/WebServer.js"')
       .replace(/from "@root\/WebServer"/g, 'from "../backend/WebServer.js"')
       // 替换动态导入中的 @root/WebServer.js

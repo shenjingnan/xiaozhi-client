@@ -1,8 +1,5 @@
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
-import { convertLegacyToNew } from "@xiaozhi/config";
-import { configManager } from "@xiaozhi/config";
-import type { MCPServerConfig } from "@xiaozhi/config";
 import type { EndpointConnection } from "@/lib/endpoint/connection.js";
 import { EndpointManager } from "@/lib/endpoint/index.js";
 import type {
@@ -49,6 +46,9 @@ import {
   destroyEventBus,
   getEventBus,
 } from "@services/index.js";
+import { convertLegacyToNew } from "@xiaozhi/config";
+import { configManager } from "@xiaozhi/config";
+import type { MCPServerConfig } from "@xiaozhi/config";
 import type { Hono } from "hono";
 import { WebSocketServer } from "ws";
 

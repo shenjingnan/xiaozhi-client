@@ -1,10 +1,4 @@
 #!/usr/bin/env node
-import type {
-  CustomMCPTool,
-  HandlerConfig,
-  ProxyHandlerConfig,
-} from "@xiaozhi/config";
-import { configManager } from "@xiaozhi/config";
 import { CozeApiService } from "@/lib/coze";
 import type { RunWorkflowData } from "@/lib/coze";
 import type { MCPServiceManager } from "@/lib/mcp";
@@ -27,6 +21,12 @@ import {
   shouldCleanupCache,
 } from "@root/types/mcp.js";
 import { TimeoutError, createTimeoutResponse } from "@root/types/timeout.js";
+import type {
+  CustomMCPTool,
+  HandlerConfig,
+  ProxyHandlerConfig,
+} from "@xiaozhi/config";
+import { configManager } from "@xiaozhi/config";
 
 // 工具调用参数类型
 type ToolArguments = Record<string, unknown>;
