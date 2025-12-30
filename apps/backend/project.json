@@ -18,20 +18,23 @@
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vitest run --config apps/backend/vitest.config.ts --coverage.enabled=false"
+        "command": "vitest run --coverage.enabled=false",
+        "cwd": "apps/backend"
       },
       "outputs": ["{workspaceRoot}/coverage"]
     },
     "test:watch": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vitest --config apps/backend/vitest.config.ts"
+        "command": "vitest",
+        "cwd": "apps/backend"
       }
     },
     "test:coverage": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vitest run --coverage --config apps/backend/vitest.config.ts"
+        "command": "vitest run --coverage",
+        "cwd": "apps/backend"
       },
       "outputs": ["{workspaceRoot}/coverage"]
     },
