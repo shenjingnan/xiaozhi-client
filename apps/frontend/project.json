@@ -50,19 +50,19 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "biome check --config-path=config/biome.json apps/frontend/src"
+        "command": "biome check --config-path=biome.json apps/frontend/src"
       }
     },
     "lint:fix": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "biome check --write --config-path=config/biome.json apps/frontend/src"
+        "command": "biome check --write --config-path=biome.json apps/frontend/src"
       }
     },
     "format": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "biome format --write --config-path=config/biome.json apps/frontend/src"
+        "command": "biome format --write --config-path=biome.json apps/frontend/src"
       }
     },
     "type-check": {
