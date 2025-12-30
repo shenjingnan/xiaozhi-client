@@ -99,10 +99,7 @@ describe("项目配置验证", () => {
         // 检查应该使用 ESM 语法
         if (content.includes("import.meta.url")) {
           // 如果使用了 import.meta.url，应该配合 fileURLToPath 使用
-          if (
-            content.includes("__filename") ||
-            content.includes("__dirname")
-          ) {
+          if (content.includes("__filename") || content.includes("__dirname")) {
             expect(content).toMatch(/fileURLToPath\(import\.meta\.url\)/);
           }
         }
