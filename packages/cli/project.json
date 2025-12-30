@@ -16,20 +16,23 @@
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vitest run --config packages/cli/vitest.config.ts --coverage.enabled=false"
+        "command": "vitest run --coverage.enabled=false",
+        "cwd": "packages/cli"
       },
       "outputs": ["{workspaceRoot}/coverage"]
     },
     "test:watch": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vitest --config packages/cli/vitest.config.ts"
+        "command": "vitest",
+        "cwd": "packages/cli"
       }
     },
     "test:coverage": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vitest run --coverage --config packages/cli/vitest.config.ts"
+        "command": "vitest run --coverage",
+        "cwd": "packages/cli"
       },
       "outputs": ["{workspaceRoot}/coverage"]
     },

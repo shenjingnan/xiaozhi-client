@@ -8,7 +8,7 @@
       "!{projectRoot}/**/*.test.ts",
       "!{projectRoot}/**/*.spec.ts"
     ],
-    "sharedGlobals": ["{workspaceRoot}/config/vitest.config.ts"]
+    "sharedGlobals": ["{workspaceRoot}/apps/backend/vitest.config.ts"]
   },
   "targetDefaults": {
     "build": {

@@ -25,7 +25,7 @@ export default defineConfig({
     environment: "node",
     testTimeout: 10000, // 减少默认测试超时时间
     hookTimeout: 10000, // 减少默认 hook 超时时间
-    include: ["apps/backend/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
+    include: ["**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     exclude: ["**/node_modules", "dist", "templates/**/*"],
     // 分组配置，将超时测试分离
     // 超时测试：包含"timeout"字样的测试文件
@@ -43,7 +43,7 @@ export default defineConfig({
         "**/*.config.{js,ts}",
         "coverage/**",
       ],
-      include: ["apps/backend/**/*.ts"],
+      include: [resolve(__dirname, "**/*.ts")],
       all: true,
       thresholds: {
         global: {
@@ -57,18 +57,18 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": resolve(__dirname, "../apps/backend"),
-      "@handlers": resolve(__dirname, "../apps/backend/handlers"),
-      "@services": resolve(__dirname, "../apps/backend/services"),
-      "@errors": resolve(__dirname, "../apps/backend/errors"),
-      "@utils": resolve(__dirname, "../apps/backend/utils"),
-      "@core": resolve(__dirname, "../apps/backend/core"),
-      "@transports": resolve(__dirname, "../apps/backend/transports"),
-      "@adapters": resolve(__dirname, "../apps/backend/adapters"),
-      "@managers": resolve(__dirname, "../apps/backend/managers"),
-      "@types": resolve(__dirname, "../apps/backend/types"),
-      "@/lib": resolve(__dirname, "../apps/backend/lib"),
-      "@root": resolve(__dirname, "../apps/backend"),
+      "@": __dirname,
+      "@handlers": resolve(__dirname, "handlers"),
+      "@services": resolve(__dirname, "services"),
+      "@errors": resolve(__dirname, "errors"),
+      "@utils": resolve(__dirname, "utils"),
+      "@core": resolve(__dirname, "core"),
+      "@transports": resolve(__dirname, "transports"),
+      "@adapters": resolve(__dirname, "adapters"),
+      "@managers": resolve(__dirname, "managers"),
+      "@types": resolve(__dirname, "types"),
+      "@/lib": resolve(__dirname, "lib"),
+      "@root": __dirname,
     },
   },
 });

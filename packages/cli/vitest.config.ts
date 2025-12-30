@@ -18,7 +18,7 @@ export default defineConfig({
     environment: "node",
     testTimeout: 10000,
     hookTimeout: 10000,
-    include: ["packages/cli/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
+    include: ["**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     exclude: ["node_modules", "dist"],
     coverage: {
       enabled: true,
@@ -32,7 +32,7 @@ export default defineConfig({
         "**/*.config.{js,ts}",
         "coverage/**",
       ],
-      include: ["packages/cli/src/**/*.ts"],
+      include: [resolve(__dirname, "src/**/*.ts")],
       all: true,
       thresholds: {
         global: {
