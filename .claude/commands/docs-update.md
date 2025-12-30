@@ -142,15 +142,15 @@ import { Core } from "@/core/unified-server";
 
 ```bash
 # 本地验证流程（xiaozhi-client 项目）
-pnpm docs:dev
+pnpm dev:docs
 
 # 等待服务启动后检查状态
 curl -s -o /dev/null -w "%{http_code}" http://localhost:3000
 
 # 运行代码质量检查
 pnpm spell:check
-pnpm check:fix
-pnpm type:check
+pnpm lint
+pnpm type-check
 ```
 
 ### 5.3 修复报告

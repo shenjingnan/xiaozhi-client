@@ -277,17 +277,8 @@ pnpm test
 # 运行特定测试文件
 pnpm test apps/backend/{module}/{target}.test.ts
 
-# 监视模式
-pnpm test:watch
-
 # 生成覆盖率报告
 pnpm test:coverage
-
-# 静默模式运行（CI使用）
-pnpm test:silent
-
-# 测试UI界面
-pnpm test:ui
 ```
 
 ### 7.2 覆盖率检查
@@ -307,8 +298,8 @@ coverage thresholds: 80% branches, functions, lines, statements
 ### 8.1 代码质量
 
 ```bash
-pnpm type:check      # TypeScript类型检查
-pnpm check:fix       # 代码规范和格式检查（Biome）
+pnpm type-check      # TypeScript类型检查
+pnpm lint            # 代码规范和格式检查（Biome）
 pnpm spell:check     # 拼写检查
 pnpm check:all       # 运行所有质量检查
 ```

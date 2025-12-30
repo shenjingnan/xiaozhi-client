@@ -29,8 +29,8 @@ pnpm test:coverage
 
 #### 检查内容详解
 - **`pnpm check:all`** 包含：
-  - `pnpm check` - Biome 代码规范和格式检查
-  - `pnpm type:check` - TypeScript 严格类型检查
+  - `pnpm lint` - Biome 代码规范和格式检查
+  - `pnpm type-check` - TypeScript 严格类型检查
   - `pnpm spell:check` - 拼写检查
   - `pnpm duplicate:check` - 重复代码检查
 
@@ -80,7 +80,7 @@ const config: Config = {
 
 # 问题：Biome 检查失败
 # 解决方案：运行自动修复
-pnpm check:fix
+pnpm lint
 
 # 问题：导入路径不规范
 # 解决方案：使用路径别名系统
@@ -90,7 +90,7 @@ import { UnifiedMCPServer } from "./core/unified-server"; // ❌
 
 # 问题：未使用的导入
 # 解决方案：移除未使用的导入
-pnpm check:fix  # 会自动清理
+pnpm lint  # 会自动清理
 ```
 
 #### 拼写检查失败诊断
@@ -152,7 +152,7 @@ vi.mock("@/services/light-service", () => ({
 #### 覆盖率要求验证
 ```bash
 # 检查当前覆盖率
-nr test:coverage
+pnpm test:coverage
 
 # 覆盖率要求（基于 vitest.config.ts）
 - 函数覆盖率: 80%
@@ -170,10 +170,10 @@ nr test:coverage
 pnpm add -D husky
 
 # 设置 pre-commit hook
-npx husky add .husky/pre-commit "nr check:all && nr test"
+npx husky add .husky/pre-commit "pnpm check:all && pnpm test"
 
 # 设置 pre-push hook
-npx husky add .husky/pre-push "nr test:coverage"
+npx husky add .husky/pre-push "pnpm test:coverage"
 ```
 
 #### 手动预提交检查
@@ -183,22 +183,22 @@ function preCommitCheck() {
   echo "🔍 执行预提交检查..."
 
   # 1. 代码格式化
-  nr format
+  pnpm format
 
   # 2. 代码规范检查和修复
-  nr check:fix
+  pnpm lint
 
   # 3. 类型检查
-  nr type:check
+  pnpm type-check
 
   # 4. 拼写检查
-  nr spell:check
+  pnpm spell:check
 
   # 5. 运行测试
-  nr test
+  pnpm test
 
   # 6. 生成覆盖率报告
-  nr test:coverage
+  pnpm test:coverage
 
   echo "✅ 预提交检查完成"
 }
@@ -239,12 +239,12 @@ function handleCheckFailure(failure: CheckFailure): void {
 
     case 'lint_error':
       console.log(`📝 代码规范错误: ${failure.message}`);
-      console.log(`💡 自动修复: nr check:fix`);
+      console.log(`💡 自动修复: pnpm lint`);
       break;
 
     case 'spell_error':
       console.log(`📖 拼写错误: ${failure.message}`);
-      console.log(`💡 检查拼写: nr spell:check`);
+      console.log(`💡 检查拼写: pnpm spell:check`);
       break;
 
     case 'test_failure':
@@ -289,12 +289,12 @@ interface QualityGates {
 ### 1. 一键修复命令
 ```bash
 # 修复所有可自动修复的问题
-nr check:fix
+pnpm lint
 
 # 如果仍有问题，运行详细诊断
-nr check:all  # 查看具体错误
-nr type:check  # 查看类型错误详情
-nr spell:check  # 查看拼写错误详情
+pnpm check:all  # 查看具体错误
+pnpm type-check  # 查看类型错误详情
+pnpm spell:check  # 查看拼写错误详情
 ```
 
 ### 2. 智能修复脚本
@@ -306,33 +306,33 @@ echo "🚀 开始自动修复..."
 
 # 1. 代码格式化
 echo "📝 格式化代码..."
-nr format
+pnpm format
 
 # 2. 代码规范检查和自动修复
 echo "🔧 修复代码规范问题..."
-nr check:fix
+pnpm lint
 
 # 3. 类型检查（仅诊断，不自动修复）
 echo "🔍 检查类型问题..."
-TYPE_ERRORS=$(nr type:check 2>&1 | grep -c "error" || echo "0")
+TYPE_ERRORS=$(pnpm type-check 2>&1 | grep -c "error" || echo "0")
 if [ "$TYPE_ERRORS" -gt 0 ]; then
   echo "❌ 发现 $TYPE_ERRORS 个类型错误，需要手动修复"
-  nr type:check
+  pnpm type-check
   exit 1
 fi
 
 # 4. 拼写检查
 echo "📖 检查拼写..."
-SPELL_ERRORS=$(nr spell:check 2>&1 | grep -c "error" || echo "0")
+SPELL_ERRORS=$(pnpm spell:check 2>&1 | grep -c "error" || echo "0")
 if [ "$SPELL_ERRORS" -gt 0 ]; then
   echo "❌ 发现 $SPELL_ERRORS 个拼写错误，请检查"
-  nr spell:check
+  pnpm spell:check
   exit 1
 fi
 
 # 5. 运行测试
 echo "🧪 运行测试..."
-nr test
+pnpm test
 
 echo "✅ 自动修复完成！"
 ```
@@ -349,7 +349,7 @@ const fixStrategies: FixStrategy[] = [
   {
     priority: 'high',
     autoFix: true,
-    description: '代码格式和规范问题（使用 nr check:fix）'
+    description: '代码格式和规范问题（使用 pnpm lint）'
   },
   {
     priority: 'high',
@@ -412,8 +412,8 @@ function generateQualityReport() {
   echo "📊 生成代码质量报告..."
 
   # 运行所有检查
-  nr check:all > check-results.txt 2>&1
-  nr test:coverage > coverage-results.txt 2>&1
+  pnpm check:all > check-results.txt 2>&1
+  pnpm test:coverage > coverage-results.txt 2>&1
 
   # 分析结果
   echo "📈 质量趋势分析:"
@@ -423,7 +423,7 @@ function generateQualityReport() {
 
   # 生成改进建议
   echo "💡 改进建议:"
-  echo "- 定期运行 nr check:all 进行预防性检查"
+  echo "- 定期运行 pnpm check:all 进行预防性检查"
   echo "- 在提交前确保所有检查通过"
   echo "- 保持测试覆盖率在要求水平以上"
 }
@@ -437,10 +437,10 @@ function generateQualityReport() {
 skill: ci-validator
 
 # 手动执行完整检查
-nr check:all && nr test
+pnpm check:all && pnpm test
 
 # 快速检查（仅核心检查）
-nr check && nr test
+pnpm lint && pnpm test
 ```
 
 ### 2. IDE 集成建议
@@ -460,8 +460,8 @@ nr check && nr test
 ### 3. Git 工作流集成
 ```bash
 # 创建 Git 别名简化检查
-git config --global alias.precheck '!nr check:all && nr test'
-git config --global alias.quality '!nr check:all && nr test:coverage'
+git config --global alias.precheck '!pnpm check:all && pnpm test'
+git config --global alias.quality '!pnpm check:all && pnpm test:coverage'
 
 # 使用别名
 git precheck    # 快速检查
@@ -472,7 +472,7 @@ git quality     # 完整质量检查
 
 ### 1. 预防性检查
 - **每次保存文件时**：启用 IDE 自动格式化
-- **每完成一个功能**：运行 `nr check:all`
+- **每完成一个功能**：运行 `pnpm check:all`
 - **每天结束开发前**：运行完整质量检查
 
 ### 2. 渐进式改进
