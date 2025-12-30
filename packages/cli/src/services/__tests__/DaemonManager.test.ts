@@ -2,9 +2,9 @@
  * 守护进程管理服务单元测试
  */
 
-import consola from "consola";
 import { ServiceError } from "@cli/errors/index.js";
 import type { ProcessManager } from "@cli/interfaces/Service.js";
+import consola from "consola";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DaemonOptions } from "../DaemonManager";
 import { DaemonManagerImpl } from "../DaemonManager";
@@ -127,9 +127,7 @@ describe("DaemonManagerImpl", () => {
         "daemon"
       );
       expect(mockChild.unref).toHaveBeenCalled();
-      expect(consola.info).toHaveBeenCalledWith(
-        "守护进程已启动 (PID: 1234)"
-      );
+      expect(consola.info).toHaveBeenCalledWith("守护进程已启动 (PID: 1234)");
     });
 
     it("should start daemon with options", async () => {

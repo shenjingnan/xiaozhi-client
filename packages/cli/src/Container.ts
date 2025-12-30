@@ -3,7 +3,6 @@
  */
 
 import { configManager } from "@/lib/config/manager";
-import consola from "consola";
 import { ErrorHandler } from "./errors/ErrorHandlers";
 import type { IDIContainer } from "./interfaces/Config";
 import { FileUtils } from "./utils/FileUtils";
