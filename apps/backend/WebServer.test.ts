@@ -561,7 +561,7 @@ describe("WebServer", () => {
   let currentPort: number;
 
   beforeEach(async () => {
-    const { configManager } = await import("@/lib/config/manager.js");
+    const { configManager } = await import("@xiaozhi/config");
     mockConfigManager = configManager;
 
     // 获取唯一的可用端口

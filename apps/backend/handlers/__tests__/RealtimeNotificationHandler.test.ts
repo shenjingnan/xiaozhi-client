@@ -105,7 +105,7 @@ describe("RealtimeNotificationHandler", () => {
       validateConfig: vi.fn(),
       updateConfig: vi.fn(),
     };
-    const { configManager } = await import("@/lib/config/manager.js");
+    const { configManager } = await import("@xiaozhi/config");
     Object.assign(configManager, mockConfigService);
 
     // Mock EventBus

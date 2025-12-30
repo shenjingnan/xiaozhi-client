@@ -101,7 +101,7 @@ describe("NotificationService", () => {
     Object.assign(logger, mockLogger);
 
     // Mock ConfigManager
-    const { configManager } = await import("@/lib/config/manager.js");
+    const { configManager } = await import("@xiaozhi/config");
     (configManager.getConfig as any).mockReturnValue(mockConfig);
 
     // Mock WebSocket

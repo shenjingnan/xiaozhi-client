@@ -59,7 +59,7 @@ describe("WebServer Unit Tests", () => {
     vi.clearAllMocks();
 
     // 设置默认的 mock 返回值
-    const { configManager } = await import("@/lib/config/manager.js");
+    const { configManager } = await import("@xiaozhi/config");
     vi.mocked(configManager.getConfig).mockReturnValue({
       mcpEndpoint: ["wss://test1.example.com", "wss://test2.example.com"],
       mcpServers: {},

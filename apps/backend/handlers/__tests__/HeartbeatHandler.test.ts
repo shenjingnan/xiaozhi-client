@@ -71,7 +71,7 @@ describe("HeartbeatHandler", () => {
     mockConfigService = {
       getConfig: vi.fn().mockReturnValue(mockConfig),
     };
-    const { configManager } = await import("@/lib/config/manager.js");
+    const { configManager } = await import("@xiaozhi/config");
     Object.assign(configManager, mockConfigService);
 
     // Mock StatusService

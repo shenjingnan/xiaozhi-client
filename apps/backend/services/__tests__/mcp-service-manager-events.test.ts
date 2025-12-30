@@ -44,7 +44,7 @@ describe("MCPServiceManager 事件监听测试", () => {
     process.env.VITEST = "true";
 
     // 获取模拟实例
-    const { configManager } = await import("@/lib/config/manager.js");
+    const { configManager } = await import("@xiaozhi/config");
     mockConfigManager = configManager;
 
     // 获取事件总线

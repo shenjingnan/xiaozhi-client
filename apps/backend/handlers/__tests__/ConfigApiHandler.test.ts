@@ -97,7 +97,7 @@ describe("ConfigApiHandler", () => {
       validateConfig: vi.fn(),
       updateConfig: vi.fn(),
     };
-    const { configManager } = await import("@/lib/config/manager.js");
+    const { configManager } = await import("@xiaozhi/config");
     Object.assign(configManager, mockConfigManager);
 
     // 模拟 Hono 上下文
