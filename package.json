@@ -15,7 +15,7 @@
     "ai"
   ],
   "type": "module",
-  "main": "dist/backend/cli.js",
+  "main": "dist/cli/index.js",
   "files": [
     "dist",
     "templates",
