@@ -335,9 +335,21 @@ function isLocalConfig(
 
 /**
  * 检查是否为 ModelScope URL
+ * 使用 URL hostname 检查而非简单的字符串包含检查，防止安全绕过
  */
 export function isModelScopeURL(url: string): boolean {
-  return url.includes("modelscope.net") || url.includes("modelscope.cn");
+  try {
+    const parsedUrl = new URL(url);
+    const hostname = parsedUrl.hostname.toLowerCase();
+    return (
+      hostname.endsWith(".modelscope.net") ||
+      hostname.endsWith(".modelscope.cn") ||
+      hostname === "modelscope.net" ||
+      hostname === "modelscope.cn"
+    );
+  } catch {
+    return false;
+  }
 }
 
 /**
