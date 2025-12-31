@@ -140,10 +140,10 @@ jobs:
           echo "🚀 执行发布命令..."
           if [ "$DRY_RUN" = "true" ]; then
             # 预演模式：只更新版本号，不发布
-            nx release version --version $TARGET_VERSION --dry-run
+            npx nx release version --version $TARGET_VERSION --dry-run
           else
             # 正式发布：更新版本、构建、发布
-            nx release version --version $TARGET_VERSION
+            npx nx release version --version $TARGET_VERSION
             pnpm build
-            nx release publish
+            npx nx release publish
           fi
