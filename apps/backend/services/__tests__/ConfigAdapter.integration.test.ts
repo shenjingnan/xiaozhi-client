@@ -3,18 +3,18 @@
  * 验证两个组件的协同工作和类型推断一致性
  */
 
+import { MCPService, MCPTransportType } from "@/lib/mcp";
 import {
   convertLegacyConfigBatch,
   convertLegacyToNew,
   getConfigTypeDescription,
-} from "@/lib/config/adapter.js";
+} from "@xiaozhi-client/config";
 import type {
   LocalMCPServerConfig,
   MCPServerConfig,
   SSEMCPServerConfig,
   StreamableHTTPMCPServerConfig,
-} from "@/lib/config/manager.js";
-import { MCPService, MCPTransportType } from "@/lib/mcp";
+} from "@xiaozhi-client/config";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // 统一的mockLogger定义

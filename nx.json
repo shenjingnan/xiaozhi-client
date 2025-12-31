@@ -10,6 +10,9 @@
     ],
     "sharedGlobals": ["{workspaceRoot}/apps/backend/vitest.config.ts"]
   },
+  "tui": {
+    "enabled": false
+  },
   "targetDefaults": {
     "build": {
       "dependsOn": ["^build"],
@@ -25,6 +28,7 @@
       "cache": true
     },
     "type-check": {
+      "dependsOn": ["^build"],
       "inputs": ["default", "^production"],
       "cache": true
     }

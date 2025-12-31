@@ -2,7 +2,7 @@
  * 服务管理服务
  */
 
-import type { ConfigManager } from "@/lib/config/manager";
+import type { ConfigManager } from "@xiaozhi-client/config";
 import { ConfigError, ServiceError } from "../errors/index";
 import type {
   ServiceManager as IServiceManager,

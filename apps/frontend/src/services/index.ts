@@ -3,7 +3,7 @@
  * 整合 HTTP API 客户端和 WebSocket 管理器
  */
 
-import type { AppConfig, ClientStatus } from "@xiaozhi/shared-types";
+import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
 import { type ApiClient, apiClient } from "./api";
 import {
   type ConnectionState,

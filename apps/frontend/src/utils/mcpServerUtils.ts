@@ -8,7 +8,7 @@ import type {
   MCPServerConfig,
   SSEMCPServerConfig,
   StreamableHTTPMCPServerConfig,
-} from "@xiaozhi/shared-types";
+} from "@xiaozhi-client/shared-types";
 
 // 定义通信类型
 export type MCPCommunicationType = "stdio" | "sse" | "streamable-http";

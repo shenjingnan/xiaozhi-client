@@ -3,11 +3,6 @@
  * 处理通过 HTTP API 调用 MCP 工具的请求
  */
 
-import { configManager } from "@/lib/config/manager.js";
-import type {
-  CustomMCPTool,
-  ProxyHandlerConfig,
-} from "@/lib/config/manager.js";
 import { MCPCacheManager } from "@/lib/mcp";
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { JSONSchema } from "@/lib/mcp/types.js";
@@ -24,6 +19,8 @@ import type {
   MCPToolData,
 } from "@root/types/toolApi.js";
 import { ToolType } from "@root/types/toolApi.js";
+import { configManager } from "@xiaozhi-client/config";
+import type { CustomMCPTool, ProxyHandlerConfig } from "@xiaozhi-client/config";
 import Ajv from "ajv";
 import dayjs from "dayjs";
 import type { Context } from "hono";

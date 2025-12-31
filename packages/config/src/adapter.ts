@@ -9,11 +9,11 @@ import type {
   MCPServerConfig,
   SSEMCPServerConfig,
   StreamableHTTPMCPServerConfig,
-} from "@/lib/config/manager.js";
-import type { MCPServiceConfig } from "@/lib/mcp/types";
-import { MCPTransportType } from "@/lib/mcp/types";
-import { inferTransportTypeFromUrl } from "@/lib/mcp/utils";
-import { TypeFieldNormalizer } from "@utils/TypeFieldNormalizer.js";
+} from "./manager.js";
+
+// 从外部导入 MCP 类型（这些类型将在运行时从 backend 包解析）
+// 为了避免循环依赖，这里使用动态导入的方式
+// 在实际使用时，adapter 将作为 config 包的一部分被使用
 
 /**
  * 配置验证错误类
@@ -25,6 +25,52 @@ export class ConfigValidationError extends Error {
   ) {
     super(message);
     this.name = "ConfigValidationError";
+  }
+}
+
+// 定义简化的 MCP 传输类型（与 core/mcp/types 保持一致）
+export enum MCPTransportType {
+  STDIO = "stdio",
+  SSE = "sse",
+  STREAMABLE_HTTP = "streamable-http",
+}
+
+// 定义简化的 MCPServiceConfig 接口
+export interface MCPServiceConfig {
+  name: string;
+  type: MCPTransportType;
+  command?: string;
+  args?: string[];
+  env?: Record<string, string>;
+  url?: string;
+  timeout?: number;
+  headers?: Record<string, string>;
+  modelScopeAuth?: boolean;
+}
+
+/**
+ * URL 类型推断函数
+ * 与 MCPService 的推断逻辑保持一致
+ * 基于 URL 路径末尾推断传输类型
+ */
+function inferTransportTypeFromUrl(url: string): MCPTransportType {
+  try {
+    const parsedUrl = new URL(url);
+    const pathname = parsedUrl.pathname;
+
+    // 检查路径末尾
+    if (pathname.endsWith("/sse")) {
+      return MCPTransportType.SSE;
+    }
+    if (pathname.endsWith("/mcp")) {
+      return MCPTransportType.STREAMABLE_HTTP;
+    }
+
+    // 默认类型
+    return MCPTransportType.STREAMABLE_HTTP;
+  } catch (error) {
+    // URL 解析失败时使用默认类型
+    return MCPTransportType.STREAMABLE_HTTP;
   }
 }
 
@@ -47,13 +93,8 @@ export function convertLegacyToNew(
       throw new ConfigValidationError("配置对象不能为空", serviceName);
     }
 
-    // 首先标准化配置中的 type 字段
-    const normalizedConfig = TypeFieldNormalizer.normalizeTypeField(
-      legacyConfig
-    ) as MCPServerConfig;
-
     // 根据配置类型进行转换
-    const newConfig = convertByConfigType(serviceName, normalizedConfig);
+    const newConfig = convertByConfigType(serviceName, legacyConfig);
 
     // 验证转换后的配置
     validateNewConfig(newConfig);
@@ -294,9 +335,21 @@ function isLocalConfig(
 
 /**
  * 检查是否为 ModelScope URL
+ * 使用 URL hostname 检查而非简单的字符串包含检查，防止安全绕过
  */
 export function isModelScopeURL(url: string): boolean {
-  return url.includes("modelscope.net") || url.includes("modelscope.cn");
+  try {
+    const parsedUrl = new URL(url);
+    const hostname = parsedUrl.hostname.toLowerCase();
+    return (
+      hostname.endsWith(".modelscope.net") ||
+      hostname.endsWith(".modelscope.cn") ||
+      hostname === "modelscope.net" ||
+      hostname === "modelscope.cn"
+    );
+  } catch {
+    return false;
+  }
 }
 
 /**

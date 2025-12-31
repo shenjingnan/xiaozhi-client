@@ -12,7 +12,7 @@
 
 import { apiClient } from "@services/api";
 import { webSocketManager } from "@services/websocket";
-import type { ClientStatus } from "@xiaozhi/shared-types";
+import type { ClientStatus } from "@xiaozhi-client/shared-types";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";

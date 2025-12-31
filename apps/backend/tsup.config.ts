@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { defineConfig } from "tsup";
 
@@ -40,7 +40,6 @@ export default defineConfig({
     "apps/backend/WebServer.ts",
     "apps/backend/WebServerLauncher.ts",
     "apps/backend/Logger.ts",
-    "apps/backend/lib/config/manager.ts",
     "apps/backend/managers/MCPServiceManagerSingleton.ts"
   ],
   format: ["esm"],
@@ -108,6 +107,9 @@ export default defineConfig({
     "ws",
     "@coze/api",
     "@modelcontextprotocol/*",
+    // @xiaozhi-client/config 包（运行时从 dist/config 读取）
+    "@xiaozhi-client/config",
+    "@xiaozhi-client/config.js",
   ],
   onSuccess: async () => {
     // 复制配置文件到 dist/backend
@@ -142,6 +144,38 @@ export default defineConfig({
         console.warn("⚠️ 复制 templates 目录失败:", error);
       }
     }
+
+    // 修复 dist/backend 中所有 .js 文件的 @xiaozhi-client/config 导入路径
+    function fixImportsInDir(dir: string) {
+      const files = readdirSync(dir, { withFileTypes: true });
+      for (const file of files) {
+        const fullPath = join(dir, file.name);
+        if (file.isDirectory()) {
+          fixImportsInDir(fullPath);
+        } else if (file.name.endsWith(".js")) {
+          let content = readFileSync(fullPath, "utf-8");
+          const originalContent = content;
+
+          // 替换 @xiaozhi-client/config 为指向 dist/config 的相对路径
+          content = content
+            .replace(
+              /from\s*["']@xiaozhi-client\/config\.js["']/g,
+              'from "../config/index.js"'
+            )
+            .replace(
+              /from\s*["']@xiaozhi-client\/config["']/g,
+              'from "../config/index.js"'
+            );
+
+          if (content !== originalContent) {
+            writeFileSync(fullPath, content);
+          }
+        }
+      }
+    }
+
+    fixImportsInDir(distDir);
+    console.log("✅ 已修复 dist/backend 中的 @xiaozhi-client/config 导入路径");
 
     console.log("✅ 构建完成，产物现在为 ESM 格式");
 

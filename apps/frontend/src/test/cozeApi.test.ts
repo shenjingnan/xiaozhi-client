@@ -3,7 +3,10 @@
  */
 
 import { CozeApiClient } from "@services/cozeApi";
-import type { CozeWorkflowsResult, CozeWorkspace } from "@xiaozhi/shared-types";
+import type {
+  CozeWorkflowsResult,
+  CozeWorkspace,
+} from "@xiaozhi-client/shared-types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock fetch

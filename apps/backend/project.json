@@ -13,7 +13,7 @@
         }
       },
       "outputs": ["{workspaceRoot}/dist/backend"],
-      "dependsOn": ["shared-types:build"]
+      "dependsOn": ["shared-types:build", "config:build"]
     },
     "test": {
       "executor": "nx:run-commands",
@@ -61,7 +61,8 @@
       "options": {
         "command": "tsc --project tsconfig.typecheck.json",
         "cwd": "apps/backend"
-      }
+      },
+      "dependsOn": ["config:build"]
     },
     "dev": {
       "executor": "nx:run-commands",

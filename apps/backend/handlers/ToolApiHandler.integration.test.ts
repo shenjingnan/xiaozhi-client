@@ -1,4 +1,4 @@
-import { configManager } from "@/lib/config/manager.js";
+import { configManager } from "@xiaozhi-client/config";
 import {
   afterAll,
   afterEach,

@@ -1,9 +1,9 @@
-import type { ConfigManager } from "@/lib/config/manager.js";
-import type { MCPServerConfig } from "@/lib/config/manager.js";
 import type { MCPServiceManager } from "@/lib/mcp";
 import { MCPErrorCode } from "@errors/MCPErrors.js";
 import type { EventBus } from "@services/EventBus.js";
 import { TypeFieldNormalizer } from "@utils/TypeFieldNormalizer.js";
+import type { ConfigManager } from "@xiaozhi-client/config";
+import type { MCPServerConfig } from "@xiaozhi-client/config";
 import type { Context } from "hono";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {

@@ -6,7 +6,7 @@
 import type {
   CozeWorkflow,
   WorkflowParameterConfig,
-} from "@xiaozhi/shared-types";
+} from "@xiaozhi-client/shared-types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ToolsApiService } from "../toolsApi";
 

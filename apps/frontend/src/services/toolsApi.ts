@@ -6,7 +6,7 @@
 import type {
   CozeWorkflow,
   WorkflowParameterConfig,
-} from "@xiaozhi/shared-types";
+} from "@xiaozhi-client/shared-types";
 import { apiClient } from "./api";
 
 /**

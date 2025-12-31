@@ -98,7 +98,7 @@ export const mockLogger = {
  */
 export const setupConfigManagerMock = (overrides = {}) => {
   // 需要在测试文件中手动设置：
-  // vi.mock("@/lib/config/manager.js", () => ({ configManager: createMockConfigManager(overrides) }));
+  // vi.mock("@xiaozhi-client/config", () => ({ configManager: createMockConfigManager(overrides) }));
 };
 
 /**
@@ -122,5 +122,5 @@ export const setupCommonMocks = (
   // 使用示例：
   // import { setupCommonMocks, createMockConfigManager, createMockLogger } from "./utils/index.js";
   // vi.mock("@root/Logger.js", () => ({ logger: createMockLogger(loggerOverrides) }));
-  // vi.mock("@/lib/config/manager.js", () => ({ configManager: createMockConfigManager(configOverrides) }));
+  // vi.mock("@xiaozhi-client/config", () => ({ configManager: createMockConfigManager(configOverrides) }));
 };

@@ -3,7 +3,7 @@
  * 测试网络服务管理器的功能，特别是新的事件订阅 API
  */
 
-import type { AppConfig, ClientStatus } from "@xiaozhi/shared-types";
+import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
 import {
   afterEach,
   beforeAll,

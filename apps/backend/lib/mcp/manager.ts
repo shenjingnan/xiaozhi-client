@@ -7,9 +7,6 @@
  */
 
 import { EventEmitter } from "node:events";
-import { isModelScopeURL } from "@/lib/config/adapter.js";
-import type { MCPToolConfig } from "@/lib/config/manager.js";
-import { configManager } from "@/lib/config/manager.js";
 import { MCPService } from "@/lib/mcp";
 import { MCPCacheManager } from "@/lib/mcp";
 import type {
@@ -25,6 +22,9 @@ import type {
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { getEventBus } from "@root/services/EventBus.js";
 import type { MCPMessage } from "@root/types/mcp.js";
+import { isModelScopeURL } from "@xiaozhi-client/config";
+import type { MCPToolConfig } from "@xiaozhi-client/config";
+import { configManager } from "@xiaozhi-client/config";
 import { CustomMCPHandler } from "./custom.js";
 import { ToolCallLogger } from "./log.js";
 import { MCPMessageHandler } from "./message.js";

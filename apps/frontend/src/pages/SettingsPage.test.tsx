@@ -1,6 +1,6 @@
 import { NetworkServiceProvider } from "@/providers/WebSocketProvider";
 import { render, screen, waitFor } from "@testing-library/react";
-import type { AppConfig } from "@xiaozhi/shared-types";
+import type { AppConfig } from "@xiaozhi-client/shared-types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import SettingsPage from "./SettingsPage";
 

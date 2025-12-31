@@ -11,7 +11,7 @@ vi.mock("../../Logger.js", () => ({
   },
 }));
 
-vi.mock("@/lib/config/manager.js", () => ({
+vi.mock("@xiaozhi-client/config", () => ({
   configManager: {
     getConfig: vi.fn(),
   },
@@ -71,7 +71,7 @@ describe("HeartbeatHandler", () => {
     mockConfigService = {
       getConfig: vi.fn().mockReturnValue(mockConfig),
     };
-    const { configManager } = await import("@/lib/config/manager.js");
+    const { configManager } = await import("@xiaozhi-client/config");
     Object.assign(configManager, mockConfigService);
 
     // Mock StatusService

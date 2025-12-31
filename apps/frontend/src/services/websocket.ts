@@ -7,7 +7,7 @@
  * - 支持多个 store 订阅 WebSocket 事件
  */
 
-import type { AppConfig, ClientStatus } from "@xiaozhi/shared-types";
+import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
 
 /**
  * WebSocket 消息类型

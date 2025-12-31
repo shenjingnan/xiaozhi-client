@@ -24,7 +24,7 @@ vi.mock("@root/Logger.js", () => ({
   },
 }));
 
-vi.mock("@/lib/config/manager.js", () => ({
+vi.mock("@xiaozhi-client/config", () => ({
   configManager: {
     getCustomMCPTools: vi.fn(),
     getMcpServers: vi.fn(),

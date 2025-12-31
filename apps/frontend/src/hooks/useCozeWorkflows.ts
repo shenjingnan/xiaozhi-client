@@ -9,7 +9,7 @@ import type {
   CozeWorkflow,
   CozeWorkflowsParams,
   CozeWorkspace,
-} from "@xiaozhi/shared-types";
+} from "@xiaozhi-client/shared-types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 /**

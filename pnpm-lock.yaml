@@ -177,6 +177,9 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.24.0
         version: 1.25.1(hono@4.10.4)(zod@3.25.76)
+      '@xiaozhi-client/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       ajv:
         specifier: ^8.17.1
         version: 8.17.1
@@ -304,7 +307,7 @@ importers:
       '@tanstack/react-table':
         specifier: ^8.21.3
         version: 8.21.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@xiaozhi/shared-types':
+      '@xiaozhi-client/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
       class-variance-authority:
@@ -459,6 +462,9 @@ importers:
 
   packages/cli:
     dependencies:
+      '@xiaozhi-client/config':
+        specifier: workspace:*
+        version: link:../config
       consola:
         specifier: ^3.4.2
         version: 3.4.2
@@ -469,6 +475,28 @@ importers:
       typescript:
         specifier: ^5.9.2
         version: 5.9.3
+
+  packages/config:
+    dependencies:
+      comment-json:
+        specifier: ^4.2.5
+        version: 4.4.1
+      dayjs:
+        specifier: ^1.11.13
+        version: 1.11.19
+      json5:
+        specifier: ^2.2.3
+        version: 2.2.3
+    devDependencies:
+      '@types/node':
+        specifier: ^24.3.0
+        version: 24.10.0
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.5
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@24.10.0)(happy-dom@20.0.10)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.1)(tsx@4.20.6)(yaml@2.8.1)
 
   packages/shared-types:
     devDependencies:

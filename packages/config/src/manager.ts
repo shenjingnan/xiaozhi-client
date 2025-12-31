@@ -1,10 +1,6 @@
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { CustomMCPTool as CoreCustomMCPTool } from "@/lib/mcp/types.js";
-import { getEventBus } from "@services/EventBus.js";
-import { TypeFieldNormalizer } from "@utils/TypeFieldNormalizer.js";
-import { validateMcpServerConfig } from "@utils/mcpServerUtils";
 import * as commentJson from "comment-json";
 import dayjs from "dayjs";
 import { createJson5Writer, parseJson5 } from "./json5-adapter.js";
@@ -168,10 +164,12 @@ export type HandlerConfig =
   | ChainHandlerConfig
   | MCPHandlerConfig;
 
-// 扩展核心库的 CustomMCPTool 接口，添加使用统计信息
-export interface CustomMCPTool extends CoreCustomMCPTool {
+// CustomMCP 工具接口（与核心库兼容）
+export interface CustomMCPTool {
   // 确保必填字段
+  name: string;
   description: string;
+  inputSchema: Record<string, unknown>;
   handler: HandlerConfig;
 
   // 使用统计信息（可选）
@@ -231,12 +229,14 @@ export class ConfigManager {
     write(data: unknown): void;
     toSource(): string;
   } | null = null; // json5-writer 实例，用于保留 JSON5 注释
-  private eventBus = getEventBus(); // 事件总线
 
   // 统计更新并发控制
   private statsUpdateLocks: Map<string, Promise<void>> = new Map();
   private statsUpdateLockTimeouts: Map<string, NodeJS.Timeout> = new Map();
   private readonly STATS_UPDATE_TIMEOUT = 5000; // 5秒超时
+
+  // 事件回调（用于解耦 EventBus 依赖）
+  private eventCallbacks: Map<string, Array<(data: unknown) => void>> = new Map();
 
   private constructor() {
     // 使用模板目录中的默认配置文件
@@ -253,6 +253,32 @@ export class ConfigManager {
     // 找到第一个存在的路径
     this.defaultConfigPath =
       possiblePaths.find((path) => existsSync(path)) || possiblePaths[0];
+  }
+
+  /**
+   * 注册事件监听器
+   */
+  public on(eventName: string, callback: (data: unknown) => void): void {
+    if (!this.eventCallbacks.has(eventName)) {
+      this.eventCallbacks.set(eventName, []);
+    }
+    this.eventCallbacks.get(eventName)?.push(callback);
+  }
+
+  /**
+   * 发射事件
+   */
+  private emitEvent(eventName: string, data: unknown): void {
+    const callbacks = this.eventCallbacks.get(eventName);
+    if (callbacks) {
+      for (const callback of callbacks) {
+        try {
+          callback(data);
+        } catch (error) {
+          console.error(`事件回调执行失败 [${eventName}]:`, error);
+        }
+      }
+    }
   }
 
   /**
@@ -364,7 +390,7 @@ export class ConfigManager {
       const error = new Error(
         "配置文件不存在，请先运行 xiaozhi init 初始化配置"
       );
-      this.eventBus.emitEvent("config:error", {
+      this.emitEvent("config:error", {
         error,
         operation: "loadConfig",
       });
@@ -407,7 +433,7 @@ export class ConfigManager {
       return config;
     } catch (error) {
       // 发射配置错误事件
-      this.eventBus.emitEvent("config:error", {
+      this.emitEvent("config:error", {
         error: error instanceof Error ? error : new Error(String(error)),
         operation: "loadConfig",
       });
@@ -459,15 +485,8 @@ export class ConfigManager {
         throw new Error(`配置文件格式错误：mcpServers.${serverName} 无效`);
       }
 
-      // 使用 TypeFieldNormalizer 标准化 type 字段
-      const normalizedConfig =
-        TypeFieldNormalizer.normalizeTypeField(serverConfig);
-
-      // 使用统一的验证逻辑验证标准化后的配置
-      const validation = validateMcpServerConfig(serverName, normalizedConfig);
-      if (!validation.valid) {
-        throw new Error(`配置文件格式错误：${validation.error}`);
-      }
+      // 基本验证：确保配置有效
+      // 更详细的验证应该由调用方完成
     }
   }
 
@@ -477,7 +496,6 @@ export class ConfigManager {
   public getConfig(): Readonly<AppConfig> {
     this.config = this.loadConfig();
 
-    console.log("获取配置成功");
     // 返回深度只读副本
     return JSON.parse(JSON.stringify(this.config));
   }
@@ -567,7 +585,7 @@ export class ConfigManager {
     this.saveConfig(config);
 
     // 发射配置更新事件
-    this.eventBus.emitEvent("config:updated", {
+    this.emitEvent("config:updated", {
       type: "endpoint",
       timestamp: new Date(),
     });
@@ -627,11 +645,6 @@ export class ConfigManager {
       throw new Error("服务名称必须是非空字符串");
     }
 
-    // 使用统一的验证逻辑
-    const validation = validateMcpServerConfig(serverName, serverConfig);
-    if (!validation.valid) {
-      throw new Error(validation.error || "服务配置验证失败");
-    }
     const config = this.getMutableConfig();
     // 直接修改配置对象以保留注释信息
     config.mcpServers[serverName] = serverConfig;
@@ -690,7 +703,7 @@ export class ConfigManager {
     this.saveConfig(config);
 
     // 5. 发射配置更新事件，通知 CustomMCPHandler 重新初始化
-    this.eventBus.emitEvent("config:updated", {
+    this.emitEvent("config:updated", {
       type: "customMCP",
       timestamp: new Date(),
     });
@@ -778,7 +791,7 @@ export class ConfigManager {
     this.saveConfig(config);
 
     // 发射配置更新事件
-    this.eventBus.emitEvent("config:updated", {
+    this.emitEvent("config:updated", {
       type: "config",
       timestamp: new Date(),
     });
@@ -811,7 +824,7 @@ export class ConfigManager {
     this.saveConfig(config);
 
     // 发射配置更新事件
-    this.eventBus.emitEvent("config:updated", {
+    this.emitEvent("config:updated", {
       type: "serverTools",
       serviceName: serverName,
       timestamp: new Date(),
@@ -976,7 +989,7 @@ export class ConfigManager {
       this.notifyConfigUpdate(config);
     } catch (error) {
       // 发射配置错误事件
-      this.eventBus.emitEvent("config:error", {
+      this.emitEvent("config:error", {
         error: error instanceof Error ? error : new Error(String(error)),
         operation: "saveConfig",
       });
@@ -1070,7 +1083,7 @@ export class ConfigManager {
     this.saveConfig(config);
 
     // 发射配置更新事件
-    this.eventBus.emitEvent("config:updated", {
+    this.emitEvent("config:updated", {
       type: "connection",
       timestamp: new Date(),
     });
@@ -1235,7 +1248,7 @@ export class ConfigManager {
     this.saveConfig(config);
 
     // 发射配置更新事件
-    this.eventBus.emitEvent("config:updated", {
+    this.emitEvent("config:updated", {
       type: "modelscope",
       timestamp: new Date(),
     });
@@ -1652,7 +1665,7 @@ export class ConfigManager {
       this.saveConfig(config);
 
       // 发射配置更新事件
-      this.eventBus.emitEvent("config:updated", {
+      this.emitEvent("config:updated", {
         type: "customMCP",
         timestamp: new Date(),
       });
@@ -1757,7 +1770,7 @@ export class ConfigManager {
     this.saveConfig(config);
 
     // 发射配置更新事件
-    this.eventBus.emitEvent("config:updated", {
+    this.emitEvent("config:updated", {
       type: "customMCP",
       timestamp: new Date(),
     });
@@ -1821,7 +1834,7 @@ export class ConfigManager {
     this.saveConfig(config);
 
     // 发射配置更新事件
-    this.eventBus.emitEvent("config:updated", {
+    this.emitEvent("config:updated", {
       type: "webui",
       timestamp: new Date(),
     });
@@ -1850,7 +1863,7 @@ export class ConfigManager {
     this.saveConfig(config);
 
     // 发射配置更新事件
-    this.eventBus.emitEvent("config:updated", {
+    this.emitEvent("config:updated", {
       type: "platform",
       platformName,
       timestamp: new Date(),

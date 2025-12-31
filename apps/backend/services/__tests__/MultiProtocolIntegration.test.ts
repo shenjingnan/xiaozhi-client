@@ -1,9 +1,9 @@
-import { configManager } from "@/lib/config/manager.js";
 import { MCPServiceManager } from "@/lib/mcp";
 import { MCPTransportType } from "@/lib/mcp";
 import { TransportFactory } from "@/lib/mcp/transport-factory.js";
 import type { MCPServiceConfig } from "@/lib/mcp/types.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import { configManager } from "@xiaozhi-client/config";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setupCommonMocks } from "../../__tests__/index.js";
 

@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useWebSocketActions } from "@/providers/WebSocketProvider";
 import { useConfig } from "@/stores/config";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { AppConfig } from "@xiaozhi/shared-types";
+import type { AppConfig } from "@xiaozhi-client/shared-types";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";

@@ -5,7 +5,10 @@
 import { useCozeWorkflows } from "@hooks/useCozeWorkflows";
 import { cozeApiClient } from "@services/cozeApi";
 import { act, renderHook, waitFor } from "@testing-library/react";
-import type { CozeWorkflowsResult, CozeWorkspace } from "@xiaozhi/shared-types";
+import type {
+  CozeWorkflowsResult,
+  CozeWorkspace,
+} from "@xiaozhi-client/shared-types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock cozeApiClient

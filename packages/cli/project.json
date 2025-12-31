@@ -11,7 +11,7 @@
         "cwd": "packages/cli"
       },
       "outputs": ["{workspaceRoot}/dist/cli"],
-      "dependsOn": ["backend:build"]
+      "dependsOn": ["backend:build", "config:build"]
     },
     "test": {
       "executor": "nx:run-commands",

@@ -3,7 +3,7 @@
  * 测试重构后的事件系统和连接管理功能
  */
 
-import type { ClientStatus } from "@xiaozhi/shared-types";
+import type { ClientStatus } from "@xiaozhi-client/shared-types";
 import {
   afterEach,
   beforeAll,

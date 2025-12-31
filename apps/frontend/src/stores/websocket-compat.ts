@@ -6,7 +6,7 @@
  */
 
 import { ConnectionState } from "@services/websocket";
-import type { AppConfig, ClientStatus } from "@xiaozhi/shared-types";
+import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
 import { useConfigStore } from "./config";
 import { useStatusStore } from "./status";
 import { useWebSocketStore } from "./websocket";

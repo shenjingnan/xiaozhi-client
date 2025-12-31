@@ -8,7 +8,7 @@ import type { RestartStatus } from "@services/websocket";
 import { useConfigStore } from "@stores/config";
 import { useStatusStore } from "@stores/status";
 import { useWebSocketActions } from "@stores/websocket";
-import type { AppConfig, ClientStatus } from "@xiaozhi/shared-types";
+import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
 import { useCallback, useEffect, useRef } from "react";
 
 /**

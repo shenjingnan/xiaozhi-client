@@ -29,7 +29,7 @@ import type {
   MCPServerConfig,
   ModelScopeConfig,
   WebUIConfig,
-} from "@xiaozhi/shared-types";
+} from "@xiaozhi-client/shared-types";
 import { useCallback } from "react";
 
 /**
