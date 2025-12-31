@@ -159,12 +159,12 @@ export default defineConfig({
           // 替换 @xiaozhi-client/config 为指向 dist/config 的相对路径
           content = content
             .replace(
-              /from "@xiaozhi\/config\.js"/g,
-              'from "../config/dist/index.js"'
+              /from "@xiaozhi-client\/config\.js"/g,
+              'from "../config/index.js"'
             )
             .replace(
-              /from "@xiaozhi\/config"/g,
-              'from "../config/dist/index.js"'
+              /from "@xiaozhi-client\/config"/g,
+              'from "../config/index.js"'
             );
 
           if (content !== originalContent) {

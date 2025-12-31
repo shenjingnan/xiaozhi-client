@@ -13,7 +13,7 @@
         }
       },
       "outputs": ["{workspaceRoot}/dist/backend"],
-      "dependsOn": ["shared-types:build"]
+      "dependsOn": ["shared-types:build", "config:build"]
     },
     "test": {
       "executor": "nx:run-commands",
