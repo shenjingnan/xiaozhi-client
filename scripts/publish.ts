@@ -20,6 +20,8 @@
 
 import { execaCommand } from "execa";
 import { consola } from "consola";
+import { readFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 
 /**
  * 版本类型
@@ -53,8 +55,6 @@ interface PackageInfo {
   name: string;
   /** 发布路径 */
   path: string;
-  /** 是否应用特殊标签（仅根包需要） */
-  applyTag: boolean;
 }
 
 /**
@@ -133,22 +133,18 @@ function getPackages(): PackageInfo[] {
     {
       name: "@xiaozhi-client/shared-types",
       path: "packages/shared-types",
-      applyTag: false,
     },
     {
       name: "@xiaozhi-client/config",
       path: "packages/config",
-      applyTag: false,
     },
     {
       name: "@xiaozhi-client/cli",
       path: "packages/cli",
-      applyTag: false,
     },
     {
       name: "xiaozhi-client",
       path: ".",
-      applyTag: true,
     },
   ];
 }
@@ -162,23 +158,34 @@ function getPackages(): PackageInfo[] {
  */
 async function runCommand(
   command: string,
-  options: { dryRun?: boolean } = {}
+  options: { dryRun?: boolean; extraEnv?: Record<string, string> } = {}
 ): Promise<void> {
-  const { dryRun = false } = options;
+  const { dryRun = false, extraEnv = {} } = options;
 
   if (dryRun) {
-    log("info", `[预演] ${command}`);
+    const envPrefix = Object.keys(extraEnv).length > 0
+      ? `${Object.entries(extraEnv).map(([k, v]) => `${k}=${v}`).join(" ")} `
+      : "";
+    log("info", `[预演] ${envPrefix}${command}`);
     return;
   }
 
   log("info", `执行: ${command}`);
   try {
-    await execaCommand(command, {
+    const result = await execaCommand(command, {
       stdio: "inherit",
-      env: { NODE_ENV: "production" },
+      env: { NODE_ENV: "production", ...extraEnv },
     });
+
+    // 检查退出码
+    if (result.exitCode !== 0) {
+      throw new Error(`命令退出码: ${result.exitCode}`);
+    }
   } catch (error) {
     log("error", `命令执行失败: ${command}`);
+    if (error instanceof Error) {
+      log("error", `错误信息: ${error.message}`);
+    }
     throw error;
   }
 }
@@ -194,10 +201,25 @@ async function updateVersion(
   dryRun: boolean
 ): Promise<void> {
   log("info", `📦 更新版本号为: ${version}`);
+
+  // 更新子包版本号（通过 Nx Release）
   await runCommand(
     `npx nx release version --version ${version}${dryRun ? " --dry-run" : ""}`,
     { dryRun }
   );
+
+  // 额外更新根包版本号（Nx Release 只更新子包，不更新根包）
+  if (!dryRun) {
+    const rootPackageJsonPath = join(process.cwd(), "package.json");
+    const packageJson = JSON.parse(await readFile(rootPackageJsonPath, "utf-8"));
+    packageJson.version = version;
+    await writeFile(
+      rootPackageJsonPath,
+      `${JSON.stringify(packageJson, null, 2)}\n`
+    );
+    log("info", "✅ 根包版本号已更新");
+  }
+
   log("success", `✅ 版本号已更新: ${version}`);
 }
 
@@ -208,7 +230,9 @@ async function updateVersion(
  */
 async function runBuild(dryRun: boolean): Promise<void> {
   log("info", "🔨 开始构建项目...");
-  await runCommand(`pnpm build`, { dryRun });
+
+  // 禁用 Nx daemon 以避免状态异常问题
+  await runCommand("pnpm build", { dryRun, extraEnv: { NX_DAEMON: "false" } });
   log("success", "✅ 项目构建完成");
 }
 
@@ -224,7 +248,8 @@ async function publishPackage(
   npmTag: string,
   dryRun: boolean
 ): Promise<void> {
-  const tag = pkg.applyTag ? npmTag : "latest";
+  // 所有包都使用相同的标签
+  const tag = npmTag;
   const tagFlag = `--tag ${tag}`;
 
   log("info", `📤 发布包: ${pkg.name} (标签: ${tag})`);
@@ -260,7 +285,7 @@ async function publishAllPackages(npmTag: string, dryRun: boolean): Promise<void
  * @param dryRun - 是否为预演模式
  */
 function showSummary(versionInfo: VersionInfo, dryRun: boolean): void {
-  console.log("\n" + "=".repeat(60));
+  console.log(`\n${"=".repeat(60)}`);
   console.log("📋 发布摘要");
   console.log("=".repeat(60));
   console.log(`版本号: ${versionInfo.original}`);
@@ -268,7 +293,7 @@ function showSummary(versionInfo: VersionInfo, dryRun: boolean): void {
   console.log(`预发布标识: ${versionInfo.prereleaseId || "无"}`);
   console.log(`npm 标签: ${versionInfo.npmTag}`);
   console.log(`预演模式: ${dryRun ? "是" : "否"}`);
-  console.log("=".repeat(60) + "\n");
+  console.log(`${"=".repeat(60)}\n`);
 }
 
 /**
@@ -326,12 +351,12 @@ async function main(version: string, dryRun: boolean): Promise<void> {
   }
 
   // 6. 完成
-  console.log("\n" + "=".repeat(60));
+  console.log(`\n${"=".repeat(60)}`);
   log("success", "🎉 发布流程完成！");
   if (dryRun) {
     log("info", "💡 这是预演模式，未实际发布到 npm");
   }
-  console.log("=".repeat(60) + "\n");
+  console.log(`${"=".repeat(60)}\n`);
 }
 
 /**
