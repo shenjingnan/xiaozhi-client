@@ -39,7 +39,10 @@
   },
   "hooks": {
     "before:init": ["pnpm check:all", "pnpm audit --audit-level moderate"],
-    "after:bump": ["pnpm run build"],
+    "after:bump": [
+      "node scripts/sync-version.js ${version}",
+      "pnpm run build"
+    ],
     "before:release": "echo \"📦 准备发布版本 v${version}\"",
     "after:release": "echo \"🎉 版本 v${version} 发布完成！\""
   }
