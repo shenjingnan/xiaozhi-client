@@ -1,5 +1,5 @@
 {
-  "name": "@xiaozhi/shared-types",
+  "name": "@xiaozhi-client/shared-types",
   "version": "1.0.0",
   "description": "小智项目的共享类型定义",
   "type": "module",

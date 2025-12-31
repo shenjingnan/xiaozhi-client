@@ -21,7 +21,7 @@ import { useConfig } from "@/stores/config";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Textarea } from "@ui/textarea";
-import type { MCPServerConfig } from "@xiaozhi/shared-types";
+import type { MCPServerConfig } from "@xiaozhi-client/shared-types";
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";

@@ -17,7 +17,7 @@ import type {
   MCPServerConfig,
   ModelScopeConfig,
   WebUIConfig,
-} from "@xiaozhi/shared-types";
+} from "@xiaozhi-client/shared-types";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";

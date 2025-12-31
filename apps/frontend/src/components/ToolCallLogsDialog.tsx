@@ -31,7 +31,7 @@ import type {
   ApiResponse,
   ToolCallLogsResponse,
   ToolCallRecord,
-} from "@xiaozhi/shared-types";
+} from "@xiaozhi-client/shared-types";
 import {
   CheckCircle,
   CheckIcon,

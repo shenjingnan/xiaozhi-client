@@ -23,7 +23,7 @@ import type {
   CozeWorkflow,
   MCPServerConfig,
   WorkflowParameter,
-} from "@xiaozhi/shared-types";
+} from "@xiaozhi-client/shared-types";
 import {
   CoffeeIcon,
   MinusIcon,

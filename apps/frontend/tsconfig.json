@@ -31,7 +31,7 @@
       "@pages/*": ["./src/pages/*"],
       "@providers/*": ["./src/providers/*"],
       "@ui/*": ["./src/components/ui/*"],
-      "@xiaozhi/shared-types": ["../../packages/shared-types/src"]
+      "@xiaozhi-client/shared-types": ["../../packages/shared-types/src"]
     }
   },
   "include": ["src"],

@@ -25,7 +25,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { CozeWorkflow, WorkflowParameter } from "@xiaozhi/shared-types";
+import type {
+  CozeWorkflow,
+  WorkflowParameter,
+} from "@xiaozhi-client/shared-types";
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
