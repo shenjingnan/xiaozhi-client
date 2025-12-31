@@ -158,23 +158,29 @@ function getPackages(): PackageInfo[] {
  */
 async function runCommand(
   command: string,
-  options: { dryRun?: boolean; extraEnv?: Record<string, string> } = {}
+  options: {
+    dryRun?: boolean;
+    extraEnv?: Record<string, string>;
+    cwd?: string;
+  } = {}
 ): Promise<void> {
-  const { dryRun = false, extraEnv = {} } = options;
+  const { dryRun = false, extraEnv = {}, cwd } = options;
 
   if (dryRun) {
     const envPrefix = Object.keys(extraEnv).length > 0
       ? `${Object.entries(extraEnv).map(([k, v]) => `${k}=${v}`).join(" ")} `
       : "";
-    log("info", `[预演] ${envPrefix}${command}`);
+    const cwdPrefix = cwd ? `(cd ${cwd}) ` : "";
+    log("info", `[预演] ${cwdPrefix}${envPrefix}${command}`);
     return;
   }
 
-  log("info", `执行: ${command}`);
+  log("info", `执行: ${command}${cwd ? ` (在 ${cwd})` : ""}`);
   try {
     const result = await execaCommand(command, {
       stdio: "inherit",
       env: { NODE_ENV: "production", ...extraEnv },
+      cwd,
     });
 
     // 检查退出码
@@ -254,8 +260,8 @@ async function publishPackage(
 
   log("info", `📤 发布包: ${pkg.name} (标签: ${tag})`);
 
-  const publishCmd = `cd ${pkg.path} && pnpm publish --access public ${tagFlag} --no-git-checks`;
-  await runCommand(publishCmd, { dryRun });
+  const publishCmd = `pnpm publish --access public ${tagFlag} --no-git-checks`;
+  await runCommand(publishCmd, { dryRun, cwd: pkg.path || "." });
 
   log("success", `✅ ${pkg.name} 发布成功`);
 }
