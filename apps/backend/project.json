@@ -61,7 +61,8 @@
       "options": {
         "command": "tsc --project tsconfig.typecheck.json",
         "cwd": "apps/backend"
-      }
+      },
+      "dependsOn": ["config:build"]
     },
     "dev": {
       "executor": "nx:run-commands",
