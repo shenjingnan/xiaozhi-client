@@ -214,16 +214,22 @@ async function updateVersion(
     { dryRun }
   );
 
-  // 额外更新根包版本号（Nx Release 只更新子包，不更新根包）
+  // 手动更新所有包的版本号以确保一致性（防止构建钩子覆盖）
   if (!dryRun) {
-    const rootPackageJsonPath = join(process.cwd(), "package.json");
-    const packageJson = JSON.parse(await readFile(rootPackageJsonPath, "utf-8"));
-    packageJson.version = version;
-    await writeFile(
-      rootPackageJsonPath,
-      `${JSON.stringify(packageJson, null, 2)}\n`
-    );
-    log("info", "✅ 根包版本号已更新");
+    const packages = [
+      "package.json",
+      "packages/shared-types/package.json",
+      "packages/config/package.json",
+      "packages/cli/package.json",
+    ];
+
+    for (const pkgPath of packages) {
+      const fullPath = join(process.cwd(), pkgPath);
+      const packageJson = JSON.parse(await readFile(fullPath, "utf-8"));
+      packageJson.version = version;
+      await writeFile(fullPath, `${JSON.stringify(packageJson, null, 2)}\n`);
+      log("info", `✅ 已更新 ${pkgPath} 版本为 ${version}`);
+    }
   }
 
   log("success", `✅ 版本号已更新: ${version}`);
