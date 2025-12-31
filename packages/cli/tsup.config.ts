@@ -60,16 +60,9 @@ export default defineConfig({
     const filePath = resolve("../../dist/cli/index.js");
     let content = readFileSync(filePath, "utf-8");
 
-    // 替换 @xiaozhi-client/config 和 @root/* 为指向正确位置的相对路径
+    // 替换 @root/* 为指向正确位置的相对路径
+    // 注意：@xiaozhi-client/config 现在从 node_modules 解析，不需要替换
     content = content
-      .replace(
-        /from\s*["']@xiaozhi-client\/config\.js["']/g,
-        'from "../config/index.js"'
-      )
-      .replace(
-        /from\s*["']@xiaozhi-client\/config["']/g,
-        'from "../config/index.js"'
-      )
       .replace(
         /from\s*["']@root\/WebServer\.js["']/g,
         'from "../backend/WebServer.js"'
