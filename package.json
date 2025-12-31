@@ -46,6 +46,8 @@
     "release:dry": "nx release version --dry-run",
     "release:version": "nx release version",
     "release:publish": "nx release publish",
+    "release:multi": "tsx scripts/publish.ts",
+    "release:multi:dry": "tsx scripts/publish.ts --dry-run",
     "dev": "nx run-many -t build --exclude=docs --parallel=false && concurrently \"nx run backend:dev\" \"nx run cli:dev\" \"nx run frontend:dev\" --prefix \"[{name}]\" --names \"BACKEND,CLI,FRONTEND\"",
     "dev:cli": "nx run cli:dev",
     "dev:docs": "nx run docs:dev",

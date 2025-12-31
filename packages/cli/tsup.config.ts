@@ -100,7 +100,7 @@ export default defineConfig({
 
     if (cliPkg.version !== rootPkg.version) {
       rootPkg.version = cliPkg.version;
-      writeFileSync(rootPkgPath, JSON.stringify(rootPkg, null, 2) + "\n");
+      writeFileSync(rootPkgPath, `${JSON.stringify(rootPkg, null, 2)}\n`);
       console.log(`✅ 已同步根 package.json 版本到 ${cliPkg.version}`);
     }
   },
