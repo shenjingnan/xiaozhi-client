@@ -1,4 +1,4 @@
-name: 同步至Gitee
+name: Sync Gitee
 
 on:
   push:

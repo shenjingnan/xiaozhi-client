@@ -1,4 +1,4 @@
-name: Docker 发布
+name: Docker Publish
 
 on:
   workflow_dispatch:

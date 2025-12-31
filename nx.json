@@ -33,6 +33,21 @@
       "cache": true
     }
   },
+  "release": {
+    "projects": ["cli", "config", "shared-types"],
+    "projectsRelationship": "fixed",
+    "version": {
+      "conventionalCommits": true,
+      "git": {
+        "commitMessage": "chore: release v${version}",
+        "tag": "v${version}"
+      }
+    },
+    "changelog": {
+      "workspaceChangelog": true,
+      "projectChangelogs": false
+    }
+  },
   "plugins": [
     {
       "plugin": "@nx/vite/plugin",

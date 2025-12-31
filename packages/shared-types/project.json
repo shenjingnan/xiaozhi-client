@@ -24,6 +24,13 @@
         "command": "tsc --noEmit",
         "cwd": "packages/shared-types"
       }
+    },
+    "nx-release-publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm publish --access public --no-git-checks",
+        "cwd": "packages/shared-types"
+      }
     }
   },
   "tags": ["type:lib"]

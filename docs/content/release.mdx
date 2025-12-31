@@ -1,0 +1,211 @@
+import { Callout, Steps, Tabs } from "nextra/components";
+
+# 发布方法
+
+本文档面向项目维护者，介绍如何发布 xiaozhi-client 项目到 npm。
+
+<Callout type="warning">
+  **发布权限要求**:
+  你需要拥有项目仓库的维护权限，并且配置了正确的 `NPM_TOKEN` 密钥。
+</Callout>
+
+## 版本号规范
+
+项目采用语义化版本号（Semantic Versioning），支持以下版本类型：
+
+| 版本类型 | 格式示例 | 说明 |
+|----------|----------|------|
+| 正式版 | `1.0.0` | 稳定的生产版本 |
+| Beta版 | `1.0.0-beta.0` | 测试版本，可能包含未完成的功能 |
+| RC版 | `1.0.0-rc.0` | 候选发布版本，接近正式版 |
+
+<Callout type="info">
+  **版本号规则**:
+  - 正式版必须在 `main` 分支发布
+  - Beta/RC 版本可以在任意分支发布测试
+  - 所有包使用统一版本号
+</Callout>
+
+## 发布的包
+
+项目采用多包发布策略，每次发布会同时发布以下包：
+
+- `xiaozhi-client` - 主包，CLI 工具
+- `@xiaozhi-client/cli` - CLI 核心库
+- `@xiaozhi-client/config` - 配置管理库
+- `@xiaozhi-client/shared-types` - 共享类型定义
+
+所有包使用相同的版本号，由 nx release 自动管理。
+
+## 发布步骤
+
+<Steps>
+### 准备工作
+
+1. 确保当前代码已通过所有测试
+2. 检查 `CHANGELOG.md` 或 `docs/changelog.mdx` 是否需要更新
+3. 确认要发布的版本号
+
+### 触发 GitHub Actions
+
+1. 进入项目的 [GitHub Actions 页面](https://github.com/shenjingnan/xiaozhi-client/actions)
+2. 选择 `NPM 发布` 工作流
+3. 点击 `Run workflow` 按钮
+4. 选择要发布的分支（正式版必须选择 `main` 分支）
+
+### 填写发布参数
+
+在工作流触发页面填写以下信息：
+
+- **目标版本号**: 如 `1.0.0`、`1.0.0-beta.0`、`1.0.0-rc.0`
+- **预演模式**: 首次发布建议勾选，进行预演测试
+
+<Tabs items={['正式版', 'Beta版', 'RC版']}>
+  <Tabs.Tab>
+
+  ```yaml
+  # 正式版示例
+  目标版本号: 1.9.5
+  预演模式: false (首次建议先 true)
+  ```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+
+  ```yaml
+  # Beta版示例
+  目标版本号: 1.9.5-beta.0
+  预演模式: false (首次建议先 true)
+  ```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+
+  ```yaml
+  # RC版示例
+  目标版本号: 1.9.5-rc.0
+  预演模式: false (首次建议先 true)
+  ```
+
+  </Tabs.Tab>
+</Tabs>
+
+### 执行发布
+
+点击 `Run workflow` 开始发布流程，系统会自动：
+
+1. 验证版本号格式
+2. 检查分支权限
+3. 运行代码质量检查
+4. 同步所有包的版本号
+5. 构建项目
+6. 发布到 npm
+7. 创建 Git 标签
+8. 创建 GitHub Release
+
+### 验证发布结果
+
+发布完成后，验证以下内容：
+
+1. 检查 [GitHub Actions](https://github.com/shenjingnan/xiaozhi-client/actions) 执行状态
+2. 在 [npm](https://www.npmjs.com/package/xiaozhi-client) 确认包版本
+3. 检查 [GitHub Releases](https://github.com/shenjingnan/xiaozhi-client/releases) 是否创建
+4. 验证子包是否正确发布：
+   - [@xiaozhi-client/cli](https://www.npmjs.com/package/@xiaozhi-client/cli)
+   - [@xiaozhi-client/config](https://www.npmjs.com/package/@xiaozhi-client/config)
+   - [@xiaozhi-client/shared-types](https://www.npmjs.com/package/@xiaozhi-client/shared-types)
+
+</Steps>
+
+## 预演模式
+
+<Callout type="info">
+  **预演模式（Dry Run）**:
+  预演模式会执行完整的发布流程，但不会实际发布到 npm 或创建 Git 标签。
+  强烈建议在正式发布前先运行一次预演模式。
+</Callout>
+
+预演模式下，系统会：
+- ✅ 验证版本号格式
+- ✅ 运行代码质量检查
+- ✅ 同步版本号到所有包
+- ✅ 构建项目
+- ❌ 不会发布到 npm
+- ❌ 不会创建 Git 标签
+- ❌ 不会创建 GitHub Release
+
+## 本地测试
+
+在正式发布前，你可以在本地进行测试：
+
+### 测试 nx release
+
+```bash
+# 预演模式：查看将要发布的版本（不实际修改）
+pnpm release:dry
+
+# 或者直接使用 nx 命令
+nx release version --dry-run
+```
+
+### 测试本地构建
+
+```bash
+# 构建所有包
+pnpm run build
+
+# 检查构建产物
+ls -la dist/
+```
+
+## 回滚处理
+
+如果发布发现问题，可以执行以下回滚操作：
+
+### npm 包回滚
+
+```bash
+# 标记包为已废弃
+npm deprecate xiaozhi-client@VERSION "This version has issues"
+npm deprecate @xiaozhi-client/cli@VERSION "This version has issues"
+npm deprecate @xiaozhi-client/config@VERSION "This version has issues"
+npm deprecate @xiaozhi-client/shared-types@VERSION "This version has issues"
+```
+
+### Git 标签回滚
+
+```bash
+# 删除本地标签
+git tag -d vVERSION
+
+# 删除远程标签
+git push origin :refs/tags/vVERSION
+```
+
+### 恢复版本号
+
+```bash
+# 恢复 package.json 版本到上一个提交
+git checkout HEAD~1 -- package.json packages/*/package.json
+
+# 或者使用 nx release 重新指定正确的版本
+nx release version --version 1.9.4
+```
+
+## 常见问题
+
+<Callout type="warning" emoji="⚠️">
+  **正式版必须在 main 分支发布**
+  如果你尝试在其他分支发布正式版，工作流会报错。请先合并到 main 分支再发布。
+</Callout>
+
+<Callout type="warning" emoji="⚠️">
+  **版本号格式必须正确**
+  版本号必须符合语义化版本规范：`主版本.次版本.修订版本`（如 `1.0.0`）
+  预发布版本格式：`主版本.次版本.修订版本-预发布标识.预发布版本`（如 `1.0.0-beta.0`）
+</Callout>
+
+<Callout type="info" emoji="ℹ️">
+  **版本同步**
+  nx release 会自动同步所有包的版本号，你只需要在 GitHub Actions 中填写一次版本号即可。所有包将使用相同的版本号（固定版本模式）。
+</Callout>

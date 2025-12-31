@@ -1,10 +1,10 @@
-# @xiaozhi/client-cli
+# @xiaozhi-client/cli
 
 小智客户端 CLI 包，提供命令行界面用于管理 MCP 服务和配置。
 
 ## 包说明
 
-此包是 xiaozhi-client 项目的 CLI 入口点，不是独立发布的 npm 包。它与 backend、frontend、shared-types 组成一个完整的发布单元。
+此包是 xiaozhi-client 项目的 CLI 入口点，作为独立 npm 包发布。它与 xiaozhi-client 主包共享相同的代码库和版本号。
 
 ## 目录结构
 
