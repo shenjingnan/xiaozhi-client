@@ -45,9 +45,9 @@ export default defineConfig({
     "ora",
     "express",
     "cli-table3",
-    // @xiaozhi/config 包（运行时从 dist/config 读取）
-    "@xiaozhi/config",
-    "@xiaozhi/config.js",
+    // @xiaozhi-client/config 包（运行时从 dist/config 读取）
+    "@xiaozhi-client/config",
+    "@xiaozhi-client/config.js",
     // Backend 模块（运行时从 dist/backend 读取）
     "@root/WebServer",
     "@root/WebServer.js",
@@ -60,7 +60,7 @@ export default defineConfig({
     const filePath = resolve("../../dist/cli/index.js");
     let content = readFileSync(filePath, "utf-8");
 
-    // 替换 @xiaozhi/config 和 @root/* 为指向正确位置的相对路径
+    // 替换 @xiaozhi-client/config 和 @root/* 为指向正确位置的相对路径
     content = content
       .replace(/from "@xiaozhi\/config\.js"/g, 'from "../config/dist/index.js"')
       .replace(/from "@xiaozhi\/config"/g, 'from "../config/dist/index.js"')

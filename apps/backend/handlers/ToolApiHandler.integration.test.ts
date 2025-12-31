@@ -1,4 +1,4 @@
-import { configManager } from "@xiaozhi/config";
+import { configManager } from "@xiaozhi-client/config";
 import {
   afterAll,
   afterEach,

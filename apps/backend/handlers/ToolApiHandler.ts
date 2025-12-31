@@ -19,8 +19,8 @@ import type {
   MCPToolData,
 } from "@root/types/toolApi.js";
 import { ToolType } from "@root/types/toolApi.js";
-import { configManager } from "@xiaozhi/config";
-import type { CustomMCPTool, ProxyHandlerConfig } from "@xiaozhi/config";
+import { configManager } from "@xiaozhi-client/config";
+import type { CustomMCPTool, ProxyHandlerConfig } from "@xiaozhi-client/config";
 import Ajv from "ajv";
 import dayjs from "dayjs";
 import type { Context } from "hono";

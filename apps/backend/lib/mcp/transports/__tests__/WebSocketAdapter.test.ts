@@ -10,7 +10,7 @@ import { ConnectionState } from "../TransportAdapter.js";
 import type { WebSocketConfig } from "../WebSocketAdapter.js";
 import { WebSocketAdapter, WebSocketState } from "../WebSocketAdapter.js";
 // Mock ConfigManager 模块，使用项目标准路径别名
-vi.mock("@xiaozhi/config", () => ({
+vi.mock("@xiaozhi-client/config", () => ({
   configManager: {
     configExists: vi.fn().mockReturnValue(true),
     getConfig: vi.fn().mockReturnValue({

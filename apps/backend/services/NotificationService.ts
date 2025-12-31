@@ -3,8 +3,8 @@ import { logger } from "@root/Logger.js";
 import type { EventBus } from "@services/EventBus.js";
 import { getEventBus } from "@services/EventBus.js";
 import type { ClientInfo, RestartStatus } from "@services/StatusService.js";
-import type { AppConfig } from "@xiaozhi/config";
-import { configManager } from "@xiaozhi/config";
+import type { AppConfig } from "@xiaozhi-client/config";
+import { configManager } from "@xiaozhi-client/config";
 
 /**
  * WebSocket 客户端接口

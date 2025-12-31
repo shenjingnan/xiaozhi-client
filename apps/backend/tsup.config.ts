@@ -107,9 +107,9 @@ export default defineConfig({
     "ws",
     "@coze/api",
     "@modelcontextprotocol/*",
-    // @xiaozhi/config 包（运行时从 dist/config 读取）
-    "@xiaozhi/config",
-    "@xiaozhi/config.js",
+    // @xiaozhi-client/config 包（运行时从 dist/config 读取）
+    "@xiaozhi-client/config",
+    "@xiaozhi-client/config.js",
   ],
   onSuccess: async () => {
     // 复制配置文件到 dist/backend
@@ -145,7 +145,7 @@ export default defineConfig({
       }
     }
 
-    // 修复 dist/backend 中所有 .js 文件的 @xiaozhi/config 导入路径
+    // 修复 dist/backend 中所有 .js 文件的 @xiaozhi-client/config 导入路径
     function fixImportsInDir(dir: string) {
       const files = readdirSync(dir, { withFileTypes: true });
       for (const file of files) {
@@ -156,7 +156,7 @@ export default defineConfig({
           let content = readFileSync(fullPath, "utf-8");
           const originalContent = content;
 
-          // 替换 @xiaozhi/config 为指向 dist/config 的相对路径
+          // 替换 @xiaozhi-client/config 为指向 dist/config 的相对路径
           content = content
             .replace(
               /from "@xiaozhi\/config\.js"/g,
@@ -175,7 +175,7 @@ export default defineConfig({
     }
 
     fixImportsInDir(distDir);
-    console.log("✅ 已修复 dist/backend 中的 @xiaozhi/config 导入路径");
+    console.log("✅ 已修复 dist/backend 中的 @xiaozhi-client/config 导入路径");
 
     console.log("✅ 构建完成，产物现在为 ESM 格式");
 

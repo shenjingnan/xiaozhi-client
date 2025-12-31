@@ -6,7 +6,7 @@
 import { CozeApiService } from "@/lib/coze";
 import { logger } from "@root/Logger";
 import type { CozeWorkflowsParams } from "@root/types/coze";
-import { configManager } from "@xiaozhi/config";
+import { configManager } from "@xiaozhi-client/config";
 import type { Context } from "hono";
 
 /**

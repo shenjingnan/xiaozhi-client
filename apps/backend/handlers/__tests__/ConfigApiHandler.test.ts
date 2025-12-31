@@ -1,4 +1,4 @@
-import type { AppConfig } from "@xiaozhi/config";
+import type { AppConfig } from "@xiaozhi-client/config";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigApiHandler } from "../ConfigApiHandler.js";
 
@@ -12,7 +12,7 @@ vi.mock("../../Logger.js", () => ({
   },
 }));
 
-vi.mock("@xiaozhi/config", () => ({
+vi.mock("@xiaozhi-client/config", () => ({
   configManager: {
     getConfig: vi.fn(),
     updateMcpEndpoint: vi.fn(),
@@ -97,7 +97,7 @@ describe("ConfigApiHandler", () => {
       validateConfig: vi.fn(),
       updateConfig: vi.fn(),
     };
-    const { configManager } = await import("@xiaozhi/config");
+    const { configManager } = await import("@xiaozhi-client/config");
     Object.assign(configManager, mockConfigManager);
 
     // 模拟 Hono 上下文

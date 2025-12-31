@@ -213,8 +213,8 @@ vi.mock("../../Logger.js", () => ({
 }));
 
 // Mock configManager
-vi.mock("@xiaozhi/config", async () => {
-  const actual = await vi.importActual("@xiaozhi/config");
+vi.mock("@xiaozhi-client/config", async () => {
+  const actual = await vi.importActual("@xiaozhi-client/config");
   const configManager = actual.configManager as any;
   return {
     ...actual,
@@ -274,7 +274,9 @@ vi.mock("../MCPCacheManager.js", () => {
 });
 
 // Get mocked configManager
-const { configManager: mockConfigManager } = await import("@xiaozhi/config");
+const { configManager: mockConfigManager } = await import(
+  "@xiaozhi-client/config"
+);
 
 describe("工具缓存集成测试", () => {
   let serviceManager: MCPServiceManager;

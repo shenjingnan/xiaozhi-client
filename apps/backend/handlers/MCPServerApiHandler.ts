@@ -11,7 +11,7 @@ import {
 } from "@root/errors/MCPErrors.js";
 import { getEventBus } from "@services/EventBus.js";
 import { TypeFieldNormalizer } from "@utils/TypeFieldNormalizer.js";
-import type { ConfigManager, MCPServerConfig } from "@xiaozhi/config";
+import type { ConfigManager, MCPServerConfig } from "@xiaozhi-client/config";
 import type { Context } from "hono";
 
 /**

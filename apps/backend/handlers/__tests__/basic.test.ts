@@ -10,7 +10,7 @@ vi.mock("../../Logger.js", () => ({
   },
 }));
 
-vi.mock("@xiaozhi/config", () => ({
+vi.mock("@xiaozhi-client/config", () => ({
   configManager: {
     getConfig: vi.fn(() => ({
       mcpEndpoint: [],

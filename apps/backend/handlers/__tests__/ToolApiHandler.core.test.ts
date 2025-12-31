@@ -5,13 +5,13 @@
 
 import type { CozeWorkflow } from "@root/types/coze.js";
 import { ToolType } from "@root/types/toolApi.js";
-import { configManager } from "@xiaozhi/config";
+import { configManager } from "@xiaozhi-client/config";
 import type { Context } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ToolApiHandler } from "../ToolApiHandler.js";
 
 // Mock configManager
-vi.mock("@xiaozhi/config", () => ({
+vi.mock("@xiaozhi-client/config", () => ({
   configManager: {
     addCustomMCPTool: vi.fn(),
     getCustomMCPTools: vi.fn(() => []),

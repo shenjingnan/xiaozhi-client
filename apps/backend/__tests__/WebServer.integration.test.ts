@@ -1,5 +1,5 @@
 import { EndpointManager } from "@/lib/endpoint/index.js";
-import { configManager } from "@xiaozhi/config";
+import { configManager } from "@xiaozhi-client/config";
 import {
   afterAll,
   afterEach,
@@ -18,7 +18,7 @@ vi.mock("@cli.js", () => ({}));
 let WebServer: any;
 
 // Mock dependencies
-vi.mock("@xiaozhi/config", () => ({
+vi.mock("@xiaozhi-client/config", () => ({
   configManager: {
     getConfig: vi.fn(),
     getMcpEndpoints: vi.fn(),

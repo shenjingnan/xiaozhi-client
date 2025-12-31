@@ -5,7 +5,7 @@ import type { ToolCallResult } from "@root/types/mcp.js";
 import type { EventBus } from "@services/EventBus.js";
 import { getEventBus } from "@services/EventBus.js";
 import { sliceEndpoint } from "@utils/mcpServerUtils.js";
-import type { ConfigManager } from "@xiaozhi/config";
+import type { ConfigManager } from "@xiaozhi-client/config";
 import { z } from "zod";
 import { EndpointConnection } from "./connection.js";
 

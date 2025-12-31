@@ -177,7 +177,7 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.24.0
         version: 1.25.1(hono@4.10.4)(zod@3.25.76)
-      '@xiaozhi/config':
+      '@xiaozhi-client/config':
         specifier: workspace:*
         version: link:../../packages/config
       ajv:
@@ -462,7 +462,7 @@ importers:
 
   packages/cli:
     dependencies:
-      '@xiaozhi/config':
+      '@xiaozhi-client/config':
         specifier: workspace:*
         version: link:../config
       consola:

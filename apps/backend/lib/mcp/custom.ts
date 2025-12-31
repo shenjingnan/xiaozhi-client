@@ -25,8 +25,8 @@ import type {
   CustomMCPTool,
   HandlerConfig,
   ProxyHandlerConfig,
-} from "@xiaozhi/config";
-import { configManager } from "@xiaozhi/config";
+} from "@xiaozhi-client/config";
+import { configManager } from "@xiaozhi-client/config";
 
 // 工具调用参数类型
 type ToolArguments = Record<string, unknown>;

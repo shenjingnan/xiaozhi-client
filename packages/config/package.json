@@ -1,5 +1,5 @@
 {
-  "name": "@xiaozhi/config",
+  "name": "@xiaozhi-client/config",
   "version": "1.0.0",
   "private": true,
   "type": "module",

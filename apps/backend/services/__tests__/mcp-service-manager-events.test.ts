@@ -14,7 +14,7 @@ vi.mock("../../Logger.js", () => ({
   },
 }));
 
-vi.mock("@xiaozhi/config", () => ({
+vi.mock("@xiaozhi-client/config", () => ({
   configManager: {
     getMcpServerConfig: vi.fn(),
     updateServerToolsConfig: vi.fn(),
@@ -44,7 +44,7 @@ describe("MCPServiceManager 事件监听测试", () => {
     process.env.VITEST = "true";
 
     // 获取模拟实例
-    const { configManager } = await import("@xiaozhi/config");
+    const { configManager } = await import("@xiaozhi-client/config");
     mockConfigManager = configManager;
 
     // 获取事件总线

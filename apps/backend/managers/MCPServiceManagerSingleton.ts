@@ -4,7 +4,7 @@
  */
 
 import { MCPServiceManager } from "@/lib/mcp";
-import { configManager } from "@xiaozhi/config";
+import { configManager } from "@xiaozhi-client/config";
 
 /**
  * MCP 服务管理器全局单例类

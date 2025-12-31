@@ -22,9 +22,9 @@ import type {
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { getEventBus } from "@root/services/EventBus.js";
 import type { MCPMessage } from "@root/types/mcp.js";
-import { isModelScopeURL } from "@xiaozhi/config";
-import type { MCPToolConfig } from "@xiaozhi/config";
-import { configManager } from "@xiaozhi/config";
+import { isModelScopeURL } from "@xiaozhi-client/config";
+import type { MCPToolConfig } from "@xiaozhi-client/config";
+import { configManager } from "@xiaozhi-client/config";
 import { CustomMCPHandler } from "./custom.js";
 import { ToolCallLogger } from "./log.js";
 import { MCPMessageHandler } from "./message.js";

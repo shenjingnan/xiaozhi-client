@@ -8,13 +8,13 @@ import {
   convertLegacyConfigBatch,
   convertLegacyToNew,
   getConfigTypeDescription,
-} from "@xiaozhi/config";
+} from "@xiaozhi-client/config";
 import type {
   LocalMCPServerConfig,
   MCPServerConfig,
   SSEMCPServerConfig,
   StreamableHTTPMCPServerConfig,
-} from "@xiaozhi/config";
+} from "@xiaozhi-client/config";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // 统一的mockLogger定义

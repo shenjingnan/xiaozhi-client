@@ -3,7 +3,10 @@
  * 用于替代命令处理器中的 any 类型使用，提供类型安全保障
  */
 
-import type { LocalMCPServerConfig, MCPServerConfig } from "@xiaozhi/config";
+import type {
+  LocalMCPServerConfig,
+  MCPServerConfig,
+} from "@xiaozhi-client/config";
 
 // =========================
 // 基础命令参数和选项类型

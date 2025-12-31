@@ -5,7 +5,7 @@
 
 import type { EndpointManager } from "@/lib/endpoint/index.js";
 import { MCPEndpointApiHandler } from "@handlers/MCPEndpointApiHandler.js";
-import { configManager } from "@xiaozhi/config";
+import { configManager } from "@xiaozhi-client/config";
 import type { MiddlewareHandler } from "hono";
 import type { AppContext } from "../types/hono.context.js";
 

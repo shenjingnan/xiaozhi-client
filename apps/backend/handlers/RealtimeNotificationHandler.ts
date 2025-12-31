@@ -4,8 +4,8 @@ import type { EventBus } from "@services/EventBus.js";
 import { getEventBus } from "@services/EventBus.js";
 import type { NotificationService } from "@services/NotificationService.js";
 import type { StatusService } from "@services/StatusService.js";
-import type { AppConfig } from "@xiaozhi/config";
-import { configManager } from "@xiaozhi/config";
+import type { AppConfig } from "@xiaozhi-client/config";
+import { configManager } from "@xiaozhi-client/config";
 
 /**
  * WebSocket 消息接口

@@ -5,8 +5,8 @@
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import type { AppConfig } from "@xiaozhi/config";
-import { ConfigManager } from "@xiaozhi/config";
+import type { AppConfig } from "@xiaozhi-client/config";
+import { ConfigManager } from "@xiaozhi-client/config";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock fs module

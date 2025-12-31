@@ -46,9 +46,9 @@ import {
   destroyEventBus,
   getEventBus,
 } from "@services/index.js";
-import { convertLegacyToNew } from "@xiaozhi/config";
-import { configManager } from "@xiaozhi/config";
-import type { MCPServerConfig } from "@xiaozhi/config";
+import { convertLegacyToNew } from "@xiaozhi-client/config";
+import { configManager } from "@xiaozhi-client/config";
+import type { MCPServerConfig } from "@xiaozhi-client/config";
 import type { Hono } from "hono";
 import { WebSocketServer } from "ws";
 

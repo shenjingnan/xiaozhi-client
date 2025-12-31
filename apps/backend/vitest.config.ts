@@ -57,6 +57,14 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      "@xiaozhi-client/config": resolve(
+        __dirname,
+        "../../packages/config/dist"
+      ),
+      "@xiaozhi-client/config/": resolve(
+        __dirname,
+        "../../packages/config/dist/"
+      ),
       "@": __dirname,
       "@handlers": resolve(__dirname, "handlers"),
       "@services": resolve(__dirname, "services"),

@@ -5,7 +5,7 @@
 
 import { getEventBus } from "@root/services/EventBus.js";
 import type { EventBus } from "@services/EventBus.js";
-import type { CustomMCPTool } from "@xiaozhi/config";
+import type { CustomMCPTool } from "@xiaozhi-client/config";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CustomMCPHandler } from "../custom.js";
 
@@ -21,7 +21,7 @@ vi.mock("@root/Logger.js", () => ({
 }));
 
 // Mock configManager
-vi.mock("@xiaozhi/config", () => ({
+vi.mock("@xiaozhi-client/config", () => ({
   configManager: {
     getCustomMCPTools: vi.fn(),
     getCustomMCPConfig: vi.fn(),

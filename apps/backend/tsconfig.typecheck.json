@@ -2,7 +2,26 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
-    "types": ["vitest/globals"]
+    "types": ["vitest/globals"],
+    "baseUrl": "../../",
+    "paths": {
+      "@xiaozhi-client/config": ["packages/config/dist"],
+      "@xiaozhi-client/config/*": ["packages/config/dist/*"],
+      "@handlers/*": ["apps/backend/handlers/*"],
+      "@middlewares/*": ["apps/backend/middlewares/*"],
+      "@services/*": ["apps/backend/services/*"],
+      "@errors/*": ["apps/backend/errors/*"],
+      "@utils/*": ["apps/backend/utils/*"],
+      "@core/*": ["apps/backend/core/*"],
+      "@transports/*": ["apps/backend/lib/mcp/transports/*"],
+      "@adapters/*": ["apps/backend/adapters/*"],
+      "@managers/*": ["apps/backend/managers/*"],
+      "@types/*": ["apps/backend/types/*"],
+      "@/lib/*": ["apps/backend/lib/*"],
+      "@root/*": ["apps/backend/*"],
+      "@routes/*": ["apps/backend/routes/*"],
+      "@constants/*": ["apps/backend/constants/*"]
+    }
   },
   "include": ["./**/*"],
   "exclude": [
