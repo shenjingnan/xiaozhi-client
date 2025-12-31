@@ -35,7 +35,7 @@ import { Callout, Steps, Tabs } from "nextra/components";
 - `@xiaozhi-client/config` - 配置管理库
 - `@xiaozhi-client/shared-types` - 共享类型定义
 
-所有包使用相同的版本号，由版本同步脚本自动管理。
+所有包使用相同的版本号，由 nx release 自动管理。
 
 ## 发布步骤
 
@@ -138,17 +138,14 @@ import { Callout, Steps, Tabs } from "nextra/components";
 
 在正式发布前，你可以在本地进行测试：
 
-### 测试版本同步
+### 测试 nx release
 
 ```bash
-# 测试版本同步脚本
-node scripts/sync-version.js 1.9.5-test
+# 预演模式：查看将要发布的版本（不实际修改）
+pnpm release:dry
 
-# 检查版本号是否正确更新
-grep version package.json packages/*/package.json
-
-# 恢复原版本号
-node scripts/sync-version.js 1.9.4-beta.4
+# 或者直接使用 nx 命令
+nx release version --dry-run
 ```
 
 ### 测试本地构建
@@ -159,13 +156,6 @@ pnpm run build
 
 # 检查构建产物
 ls -la dist/
-```
-
-### 测试预演发布
-
-```bash
-# 本地运行 release-it 预演模式
-npx release-it --dry-run -i 1.9.5
 ```
 
 ## 回滚处理
@@ -195,8 +185,11 @@ git push origin :refs/tags/vVERSION
 ### 恢复版本号
 
 ```bash
-# 恢复 package.json 版本
+# 恢复 package.json 版本到上一个提交
 git checkout HEAD~1 -- package.json packages/*/package.json
+
+# 或者使用 nx release 重新指定正确的版本
+nx release version --version 1.9.4
 ```
 
 ## 常见问题
@@ -214,5 +207,5 @@ git checkout HEAD~1 -- package.json packages/*/package.json
 
 <Callout type="info" emoji="ℹ️">
   **版本同步**
-  发布流程会自动同步所有包的版本号，你只需要在 GitHub Actions 中填写一次版本号即可。
+  nx release 会自动同步所有包的版本号，你只需要在 GitHub Actions 中填写一次版本号即可。所有包将使用相同的版本号（固定版本模式）。
 </Callout>

@@ -116,19 +116,7 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           TARGET_VERSION="${{ steps.parse-version.outputs.target_version }}"
-          RELEASE_CMD="npx release-it --ci"
-
-          if [ "${{ steps.parse-version.outputs.version_type }}" = "release" ]; then
-            # 正式版发布
-            RELEASE_CMD="$RELEASE_CMD -i $TARGET_VERSION"
-          else
-            # 预发布版发布
-            RELEASE_CMD="$RELEASE_CMD $TARGET_VERSION --preRelease=${{ steps.parse-version.outputs.prerelease_id }}"
-          fi
-
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            RELEASE_CMD="$RELEASE_CMD --dry-run"
-          fi
+          DRY_RUN="${{ github.event.inputs.dry_run }}"
 
           echo "📦 开始发布流程..."
           echo "📋 版本信息："
@@ -136,8 +124,7 @@ jobs:
           echo "   - 版本类型: ${{ steps.parse-version.outputs.version_type }}"
           echo "   - 预发布ID: ${{ steps.parse-version.outputs.prerelease_id }}"
           echo "   - 当前分支: ${{ github.ref_name }}"
-          echo "   - 预演模式: ${{ github.event.inputs.dry_run }}"
-          echo "   - 执行命令: $RELEASE_CMD"
+          echo "   - 预演模式: $DRY_RUN"
           echo ""
 
           # 检查环境
@@ -151,4 +138,12 @@ jobs:
 
           # 执行发布命令
           echo "🚀 执行发布命令..."
-          eval "$RELEASE_CMD"
+          if [ "$DRY_RUN" = "true" ]; then
+            # 预演模式：只更新版本号，不发布
+            nx release version --version $TARGET_VERSION --dry-run
+          else
+            # 正式发布：更新版本、构建、发布
+            nx release version --version $TARGET_VERSION
+            pnpm build
+            nx release publish
+          fi
