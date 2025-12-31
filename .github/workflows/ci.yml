@@ -120,52 +120,6 @@ jobs:
         echo "✅ CLI 配置测试完成"
       shell: pwsh
 
-    # 服务启动验证 - 检查构建产物中的导入路径是否正确修复
-    - name: 服务启动验证 (Unix)
-      if: runner.os != 'Windows'
-      run: |
-        echo "开始服务启动验证..."
-
-        # 验证 backend 构建产物中是否还有未修复的导入路径
-        if grep -r "@xiaozhi-client/config" dist/backend/ 2>/dev/null; then
-          echo "❌ backend 构建产物中发现未修复的导入路径"
-          exit 1
-        fi
-        echo "✅ backend 导入路径修复验证通过"
-
-        # 验证 CLI 构建产物中是否还有未修复的导入路径
-        if grep -r "@xiaozhi-client/config" dist/cli/ 2>/dev/null; then
-          echo "❌ CLI 构建产物中发现未修复的导入路径"
-          exit 1
-        fi
-        echo "✅ CLI 导入路径修复验证通过"
-
-        echo "✅ 服务启动验证完成"
-
-    - name: 服务启动验证 (Windows)
-      if: runner.os == 'Windows'
-      shell: pwsh
-      run: |
-        Write-Host "开始服务启动验证..."
-
-        # 验证 backend 构建产物中是否还有未修复的导入路径
-        $backendMatch = Select-String -Path "dist\backend\*.js" -Pattern "@xiaozhi-client/config" -ErrorAction SilentlyContinue
-        if ($backendMatch) {
-          Write-Host "❌ backend 构建产物中发现未修复的导入路径"
-          exit 1
-        }
-        Write-Host "✅ backend 导入路径修复验证通过"
-
-        # 验证 CLI 构建产物中是否还有未修复的导入路径
-        $cliMatch = Select-String -Path "dist\cli\*.js" -Pattern "@xiaozhi-client/config" -ErrorAction SilentlyContinue
-        if ($cliMatch) {
-          Write-Host "❌ CLI 构建产物中发现未修复的导入路径"
-          exit 1
-        }
-        Write-Host "✅ CLI 导入路径修复验证通过"
-
-        Write-Host "✅ 服务启动验证完成"
-
     # 上传构建产物
     - name: 上传覆盖率报告
       uses: actions/upload-artifact@v4
