@@ -230,6 +230,15 @@ async function updateVersion(
       await writeFile(fullPath, `${JSON.stringify(packageJson, null, 2)}\n`);
       log("info", `✅ 已更新 ${pkgPath} 版本为 ${version}`);
     }
+
+    // 更新根 package.json 中的 @xiaozhi-client/config 依赖版本
+    const rootPkgPath = join(process.cwd(), "package.json");
+    const rootPkgJson = JSON.parse(await readFile(rootPkgPath, "utf-8"));
+    if (rootPkgJson.dependencies && rootPkgJson.dependencies["@xiaozhi-client/config"]) {
+      rootPkgJson.dependencies["@xiaozhi-client/config"] = version;
+      await writeFile(rootPkgPath, `${JSON.stringify(rootPkgJson, null, 2)}\n`);
+      log("info", `✅ 已更新根 package.json 中 @xiaozhi-client/config 依赖版本为 ${version}`);
+    }
   }
 
   log("success", `✅ 版本号已更新: ${version}`);

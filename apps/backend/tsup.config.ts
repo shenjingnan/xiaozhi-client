@@ -145,38 +145,6 @@ export default defineConfig({
       }
     }
 
-    // 修复 dist/backend 中所有 .js 文件的 @xiaozhi-client/config 导入路径
-    function fixImportsInDir(dir: string) {
-      const files = readdirSync(dir, { withFileTypes: true });
-      for (const file of files) {
-        const fullPath = join(dir, file.name);
-        if (file.isDirectory()) {
-          fixImportsInDir(fullPath);
-        } else if (file.name.endsWith(".js")) {
-          let content = readFileSync(fullPath, "utf-8");
-          const originalContent = content;
-
-          // 替换 @xiaozhi-client/config 为指向 dist/config 的相对路径
-          content = content
-            .replace(
-              /from\s*["']@xiaozhi-client\/config\.js["']/g,
-              'from "../config/index.js"'
-            )
-            .replace(
-              /from\s*["']@xiaozhi-client\/config["']/g,
-              'from "../config/index.js"'
-            );
-
-          if (content !== originalContent) {
-            writeFileSync(fullPath, content);
-          }
-        }
-      }
-    }
-
-    fixImportsInDir(distDir);
-    console.log("✅ 已修复 dist/backend 中的 @xiaozhi-client/config 导入路径");
-
     console.log("✅ 构建完成，产物现在为 ESM 格式");
 
     // 创建向后兼容的 dist/WebServerLauncher.js
