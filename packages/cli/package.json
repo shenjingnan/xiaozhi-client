@@ -1,6 +1,6 @@
 {
   "name": "@xiaozhi-client/cli",
-  "version": "1.9.4-beta.4",
+  "version": "1.9.4-beta.5",
   "private": false,
   "publishConfig": {
     "access": "public"

@@ -34,7 +34,7 @@
     }
   },
   "release": {
-    "projects": ["cli", "config", "shared-types", "."],
+    "projects": ["cli", "config", "shared-types"],
     "projectsRelationship": "fixed",
     "version": {
       "conventionalCommits": true,
