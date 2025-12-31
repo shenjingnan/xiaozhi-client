@@ -49,17 +49,29 @@ export interface MCPServiceConfig {
 }
 
 /**
- * URL 类型推断函数（简化版）
- * 完整实现应该在 backend 的 utils 中
+ * URL 类型推断函数
+ * 与 MCPService 的推断逻辑保持一致
+ * 基于 URL 路径末尾推断传输类型
  */
 function inferTransportTypeFromUrl(url: string): MCPTransportType {
-  // ModelScope URL 通常使用 SSE
-  if (url.includes("modelscope.net") || url.includes("modelscope.cn")) {
-    return MCPTransportType.SSE;
-  }
+  try {
+    const parsedUrl = new URL(url);
+    const pathname = parsedUrl.pathname;
 
-  // 默认使用 STREAMABLE_HTTP
-  return MCPTransportType.STREAMABLE_HTTP;
+    // 检查路径末尾
+    if (pathname.endsWith("/sse")) {
+      return MCPTransportType.SSE;
+    }
+    if (pathname.endsWith("/mcp")) {
+      return MCPTransportType.STREAMABLE_HTTP;
+    }
+
+    // 默认类型
+    return MCPTransportType.STREAMABLE_HTTP;
+  } catch (error) {
+    // URL 解析失败时使用默认类型
+    return MCPTransportType.STREAMABLE_HTTP;
+  }
 }
 
 /**
