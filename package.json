@@ -36,7 +36,7 @@
     "test:coverage": "nx run-many -t test:coverage --parallel=false",
     "lint": "nx run-many -t lint",
     "lint:fix": "nx run-many -t lint:fix",
-    "type-check": "nx run-many -t type-check",
+    "type-check": "nx run-many -t type-check --exclude=docs",
     "format": "biome format --write .",
     "check:all": "pnpm run lint && pnpm run type-check && pnpm run check:spell && pnpm run duplicate:check",
     "check:spell": "cspell .",

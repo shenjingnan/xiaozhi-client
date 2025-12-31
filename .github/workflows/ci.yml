@@ -53,6 +53,10 @@ jobs:
     - name: Nx Type Check
       run: pnpm run type-check
 
+    - name: Docs Type Check
+      working-directory: ./docs
+      run: npx tsc --noEmit
+
     - name: 拼写检查 (根目录)
       run: pnpm run check:spell
 
