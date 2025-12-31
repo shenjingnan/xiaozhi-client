@@ -496,7 +496,6 @@ export class ConfigManager {
   public getConfig(): Readonly<AppConfig> {
     this.config = this.loadConfig();
 
-    console.log("获取配置成功");
     // 返回深度只读副本
     return JSON.parse(JSON.stringify(this.config));
   }

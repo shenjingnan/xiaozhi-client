@@ -63,19 +63,28 @@ export default defineConfig({
     // 替换 @xiaozhi-client/config 和 @root/* 为指向正确位置的相对路径
     content = content
       .replace(
-        /from "@xiaozhi-client\/config\.js"/g,
+        /from\s*["']@xiaozhi-client\/config\.js["']/g,
         'from "../config/index.js"'
       )
-      .replace(/from "@xiaozhi-client\/config"/g, 'from "../config/index.js"')
-      .replace(/from "@root\/WebServer\.js"/g, 'from "../backend/WebServer.js"')
-      .replace(/from "@root\/WebServer"/g, 'from "../backend/WebServer.js"')
+      .replace(
+        /from\s*["']@xiaozhi-client\/config["']/g,
+        'from "../config/index.js"'
+      )
+      .replace(
+        /from\s*["']@root\/WebServer\.js["']/g,
+        'from "../backend/WebServer.js"'
+      )
+      .replace(
+        /from\s*["']@root\/WebServer["']/g,
+        'from "../backend/WebServer.js"'
+      )
       // 替换动态导入中的 @root/WebServer.js
       .replace(
-        /import\("@root\/WebServer\.js"\)/g,
+        /import\(["']@root\/WebServer\.js["']\)/g,
         'import("../backend/WebServer.js")'
       )
       .replace(
-        /import\("@root\/WebServer"\)/g,
+        /import\(["']@root\/WebServer["']\)/g,
         'import("../backend/WebServer.js")'
       );
 
