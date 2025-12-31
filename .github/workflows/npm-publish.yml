@@ -1,4 +1,4 @@
-name: NPM 发布
+name: NPM Publish
 
 on:
   workflow_dispatch:
