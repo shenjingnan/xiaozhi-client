@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "../../dist/backend",
+    "rootDir": "."
+  },
+  "include": ["./**/*"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "scripts/**/*",
+    "templates/**/*",
+    "**/*.config.ts",
+    "vitest.d.ts"
+  ]
+}

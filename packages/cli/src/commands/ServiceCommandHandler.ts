@@ -79,7 +79,7 @@ export class ServiceCommandHandler extends BaseCommandHandler {
     try {
       // 处理--debug参数
       if (options.debug) {
-        consola.level = "debug";
+        consola.level = 5; // debug 级别
       }
 
       const serviceManager = this.getService<any>("serviceManager");

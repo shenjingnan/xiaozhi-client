@@ -47,6 +47,7 @@
   "include": ["apps/backend/**/*", "packages/**/*"],
   "exclude": ["node_modules", "dist", "scripts/**/*", "templates/**/*"],
   "references": [
+    { "path": "./apps/backend" },
     { "path": "./packages/config" },
     { "path": "./packages/shared-types" },
     { "path": "./packages/cli" }

@@ -1,32 +1,13 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "lib": ["ES2022"],
-    "strict": false,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true,
-    "noEmit": true,
-    "baseUrl": ".",
-    "moduleSuffixes": [".ts", ".js"],
-    "paths": {
-      "@/*": ["src/*"],
-      "@cli/commands": ["src/commands"],
-      "@cli/commands/*": ["src/commands/*"],
-      "@cli/services": ["src/services"],
-      "@cli/services/*": ["src/services/*"],
-      "@cli/utils": ["src/utils"],
-      "@cli/utils/*": ["src/utils/*"],
-      "@cli/errors": ["src/errors"],
-      "@cli/errors/*": ["src/errors/*"],
-      "@cli/interfaces": ["src/interfaces"],
-      "@cli/interfaces/*": ["src/interfaces/*"]
-    }
+    "composite": true,
+    "outDir": "../../dist/cli",
+    "rootDir": "src"
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
+  "exclude": ["node_modules", "dist", "**/*.test.ts"],
+  "references": [
+    { "path": "../../apps/backend" }
+  ]
 }
