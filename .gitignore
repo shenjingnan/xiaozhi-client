@@ -24,6 +24,9 @@ lib-cov
 coverage
 *.lcov
 
+# jscpd 重复代码检测报告
+reports
+
 # nyc test coverage
 .nyc_output
 
