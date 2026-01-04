@@ -46,17 +46,6 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      // CLI 内部路径别名（__dirname 是 packages/cli，所以使用相对路径）
-      "@cli/commands": resolve(__dirname, "./src/commands"),
-      "@cli/commands/*": resolve(__dirname, "./src/commands/*"),
-      "@cli/services": resolve(__dirname, "./src/services"),
-      "@cli/services/*": resolve(__dirname, "./src/services/*"),
-      "@cli/utils": resolve(__dirname, "./src/utils"),
-      "@cli/utils/*": resolve(__dirname, "./src/utils/*"),
-      "@cli/errors": resolve(__dirname, "./src/errors"),
-      "@cli/errors/*": resolve(__dirname, "./src/errors/*"),
-      "@cli/interfaces": resolve(__dirname, "./src/interfaces"),
-      "@cli/interfaces/*": resolve(__dirname, "./src/interfaces/*"),
       // Backend 路径别名（从 packages/cli 向上到项目根目录）
       "@handlers": resolve(__dirname, "../../apps/backend/handlers"),
       "@handlers/*": resolve(__dirname, "../../apps/backend/handlers/*"),

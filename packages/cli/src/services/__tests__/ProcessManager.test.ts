@@ -2,16 +2,16 @@
  * 进程管理服务单元测试
  */
 
-import { FileUtils } from "@cli/utils/FileUtils.js";
-import { PathUtils } from "@cli/utils/PathUtils.js";
-import { PlatformUtils } from "@cli/utils/PlatformUtils.js";
+import { FileUtils } from "../../utils/FileUtils.js";
+import { PathUtils } from "../../utils/PathUtils.js";
+import { PlatformUtils } from "../../utils/PlatformUtils.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ProcessManagerImpl } from "../ProcessManager";
 
 // Mock 依赖
-vi.mock("@cli/utils/FileUtils.js");
-vi.mock("@cli/utils/PathUtils.js");
-vi.mock("@cli/utils/PlatformUtils.js");
+vi.mock("../../utils/FileUtils.js");
+vi.mock("../../utils/PathUtils.js");
+vi.mock("../../utils/PlatformUtils.js");
 
 const mockFileUtils = vi.mocked(FileUtils);
 const mockPathUtils = vi.mocked(PathUtils);

@@ -1,4 +1,4 @@
-import type { IDIContainer } from "@cli/interfaces/Config.js";
+import type { IDIContainer } from "../../interfaces/Config.js";
 import { configManager } from "@xiaozhi-client/config";
 import type {
   MCPServerConfig,
@@ -143,7 +143,7 @@ const mockGetServiceStatus = vi
   .fn()
   .mockReturnValue({ running: false, pid: null });
 
-vi.mock("@cli/services/ProcessManager.js", () => ({
+vi.mock("../../services/ProcessManager.js", () => ({
   ProcessManagerImpl: vi.fn().mockImplementation(() => ({
     getServiceStatus: mockGetServiceStatus,
   })),

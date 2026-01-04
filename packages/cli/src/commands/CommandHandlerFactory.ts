@@ -54,7 +54,7 @@ export class CommandHandlerFactory implements ICommandHandlerFactory {
     // 动态导入以避免循环依赖
     const {
       ServiceCommandHandler,
-    } = require("@cli/commands/ServiceCommandHandler.js");
+    } = require("./ServiceCommandHandler.js");
     return new ServiceCommandHandler(this.container);
   }
 
@@ -64,7 +64,7 @@ export class CommandHandlerFactory implements ICommandHandlerFactory {
   private createConfigCommandHandler(): CommandHandler {
     const {
       ConfigCommandHandler,
-    } = require("@cli/commands/ConfigCommandHandler.js");
+    } = require("./ConfigCommandHandler.js");
     return new ConfigCommandHandler(this.container);
   }
 
@@ -74,7 +74,7 @@ export class CommandHandlerFactory implements ICommandHandlerFactory {
   private createProjectCommandHandler(): CommandHandler {
     const {
       ProjectCommandHandler,
-    } = require("@cli/commands/ProjectCommandHandler.js");
+    } = require("./ProjectCommandHandler.js");
     return new ProjectCommandHandler(this.container);
   }
 
@@ -82,7 +82,7 @@ export class CommandHandlerFactory implements ICommandHandlerFactory {
    * 创建MCP命令处理器
    */
   private createMcpCommandHandler(): CommandHandler {
-    const { McpCommandHandler } = require("@cli/commands/McpCommandHandler.js");
+    const { McpCommandHandler } = require("./McpCommandHandler.js");
     return new McpCommandHandler(this.container);
   }
 
@@ -92,7 +92,7 @@ export class CommandHandlerFactory implements ICommandHandlerFactory {
   private createEndpointCommandHandler(): CommandHandler {
     const {
       EndpointCommandHandler,
-    } = require("@cli/commands/EndpointCommandHandler.js");
+    } = require("./EndpointCommandHandler.js");
     return new EndpointCommandHandler(this.container);
   }
 }
