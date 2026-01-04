@@ -1,6 +1,6 @@
-import type { ServiceStartOptions } from "@cli/interfaces/Service.js";
-import { PathUtils } from "@cli/utils/PathUtils.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { ServiceStartOptions } from "../../interfaces/Service.js";
+import { PathUtils } from "../../utils/PathUtils.js";
 import { ServiceManagerImpl } from "../ServiceManager";
 
 // Mock external dependencies
@@ -19,7 +19,7 @@ vi.mock("node:fs", () => ({
   mkdirSync: vi.fn(),
 }));
 
-vi.mock("@cli/utils/PathUtils.js", () => ({
+vi.mock("../../utils/PathUtils.js", () => ({
   PathUtils: {
     getWebServerLauncherPath: vi.fn(),
     getExecutablePath: vi.fn(),

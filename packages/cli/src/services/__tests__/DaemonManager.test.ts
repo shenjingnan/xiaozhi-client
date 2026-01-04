@@ -2,10 +2,10 @@
  * 守护进程管理服务单元测试
  */
 
-import { ServiceError } from "@cli/errors/index.js";
-import type { ProcessManager } from "@cli/interfaces/Service.js";
 import consola from "consola";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ServiceError } from "../../errors/index.js";
+import type { ProcessManager } from "../../interfaces/Service.js";
 import type { DaemonOptions } from "../DaemonManager";
 import { DaemonManagerImpl } from "../DaemonManager";
 
@@ -49,7 +49,7 @@ vi.mock("node:fs", () => ({
 }));
 
 // Mock utils
-vi.mock("@cli/utils/PathUtils.js", () => ({
+vi.mock("../../utils/PathUtils.js", () => ({
   PathUtils: {
     getWebServerLauncherPath: vi.fn(() => "/path/to/webserver.js"),
     getConfigDir: vi.fn(() => "/config"),
@@ -57,7 +57,7 @@ vi.mock("@cli/utils/PathUtils.js", () => ({
   },
 }));
 
-vi.mock("@cli/utils/PlatformUtils.js", () => ({
+vi.mock("../../utils/PlatformUtils.js", () => ({
   PlatformUtils: {
     getTailCommand: vi.fn(() => ({
       command: "tail",

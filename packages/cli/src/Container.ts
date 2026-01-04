@@ -140,18 +140,18 @@ export class DIContainer implements IDIContainer {
 
     // 注册服务层
     container.registerSingleton("processManager", () => {
-      const ProcessManagerModule = require("@cli/services/ProcessManager.js");
+      const ProcessManagerModule = require("./services/ProcessManager.js");
       return new ProcessManagerModule.ProcessManagerImpl();
     });
 
     container.registerSingleton("daemonManager", () => {
-      const DaemonManagerModule = require("@cli/services/DaemonManager.js");
+      const DaemonManagerModule = require("./services/DaemonManager.js");
       const processManager = container.get("processManager") as any;
       return new DaemonManagerModule.DaemonManagerImpl(processManager);
     });
 
     container.registerSingleton("serviceManager", () => {
-      const ServiceManagerModule = require("@cli/services/ServiceManager.js");
+      const ServiceManagerModule = require("./services/ServiceManager.js");
       const processManager = container.get("processManager") as any;
       const configManager = container.get("configManager") as any;
       return new ServiceManagerModule.ServiceManagerImpl(
@@ -162,7 +162,7 @@ export class DIContainer implements IDIContainer {
 
     container.registerSingleton("templateManager", () => {
       // 使用动态导入的同步版本
-      const TemplateManagerModule = require("@cli/services/TemplateManager.js");
+      const TemplateManagerModule = require("./services/TemplateManager.js");
       return new TemplateManagerModule.TemplateManagerImpl();
     });
 
