@@ -1,0 +1,16 @@
+{
+  "threshold": 10,
+  "reporters": ["console", "html"],
+  "output": "reports/jscpd",
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/*.test.ts",
+    "**/*.test.js",
+    "**/*.spec.ts",
+    "**/*.spec.js"
+  ],
+  "format": ["typescript", "javascript"],
+  "absolute": false
+}
