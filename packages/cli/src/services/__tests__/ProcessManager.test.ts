@@ -2,10 +2,10 @@
  * 进程管理服务单元测试
  */
 
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FileUtils } from "../../utils/FileUtils.js";
 import { PathUtils } from "../../utils/PathUtils.js";
 import { PlatformUtils } from "../../utils/PlatformUtils.js";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ProcessManagerImpl } from "../ProcessManager";
 
 // Mock 依赖

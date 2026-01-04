@@ -2,8 +2,8 @@ import { realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { PathUtils } from "../PathUtils.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { PathUtils } from "../PathUtils.js";
 
 // Mock dependencies - 需要使用与源文件相同的导入方式
 vi.mock("../FileUtils.js", () => ({

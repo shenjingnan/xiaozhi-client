@@ -1,4 +1,3 @@
-import type { IDIContainer } from "../../interfaces/Config.js";
 import { configManager } from "@xiaozhi-client/config";
 import type {
   MCPServerConfig,
@@ -7,6 +6,7 @@ import type {
 } from "@xiaozhi-client/config";
 import ora from "ora";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { IDIContainer } from "../../interfaces/Config.js";
 import { McpCommandHandler } from "../McpCommandHandler.js";
 
 // 测试专用类型定义

@@ -2,8 +2,8 @@
  * 模板管理服务单元测试
  */
 
-import { FileError, ValidationError } from "../../errors/index.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { FileError, ValidationError } from "../../errors/index.js";
 import type { TemplateCreateOptions } from "../TemplateManager";
 import { TemplateManagerImpl } from "../TemplateManager";
 
