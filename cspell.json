@@ -13,6 +13,7 @@
   "dictionaries": ["xiaozhi-words"],
   "ignorePaths": [
     "node_modules/**",
+    "reports/jscpd",
     "**/dist/**",
     "dist/**",
     "docs/out/**",
