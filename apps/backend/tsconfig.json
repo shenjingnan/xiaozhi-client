@@ -7,13 +7,14 @@
     "outDir": "../../dist/backend",
     "rootDir": "."
   },
-  "include": ["./**/*"],
+  "include": ["./**/*.ts"],
   "exclude": [
     "node_modules",
     "dist",
     "scripts/**/*",
     "templates/**/*",
     "**/*.config.ts",
-    "vitest.d.ts"
+    "vitest.d.ts",
+    "**/*.test.ts"
   ]
 }
