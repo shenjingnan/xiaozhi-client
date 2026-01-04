@@ -11,7 +11,11 @@ export default defineConfig({
   },
   format: ["esm"],
   outDir: "../../dist/shared-types",
-  dts: true, // 启用 DTS 生成
+  dts: {
+    compilerOptions: {
+      composite: false
+    }
+  }, // 启用 DTS 生成
   clean: true,
   sourcemap: true,
   minify: false,
