@@ -2,6 +2,10 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { defineConfig } from "tsup";
 
+// 读取根目录 package.json 获取版本号
+const rootPkgPath = resolve("../../package.json");
+const pkg = JSON.parse(readFileSync(rootPkgPath, "utf-8"));
+
 export default defineConfig({
   entry: {
     index: "src/index.ts",
@@ -19,8 +23,13 @@ export default defineConfig({
   platform: "node",
   esbuildOptions: (options) => {
     options.resolveExtensions = [".ts", ".js", ".json"];
-    // 使用 esbuild 的别名机制
-    // 由于 esbuild 的 alias 不支持通配符，我们需要注入多个具体的别名
+
+    // 构建时注入版本号常量
+    options.define = {
+      ...options.define, // 保留已有的 define
+      __VERSION__: JSON.stringify(pkg.version),
+      __APP_NAME__: JSON.stringify(pkg.name),
+    };
   },
   external: [
     // Node.js 内置模块
