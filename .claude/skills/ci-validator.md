@@ -30,7 +30,7 @@ pnpm test:coverage
 #### 检查内容详解
 - **`pnpm check:all`** 包含：
   - `pnpm lint` - Biome 代码规范和格式检查
-  - `pnpm type-check` - TypeScript 严格类型检查
+  - `pnpm check:type` - TypeScript 严格类型检查
   - `pnpm check:spell` - 拼写检查
   - `pnpm duplicate:check` - 重复代码检查
 
@@ -141,8 +141,8 @@ vi.mock("@/services/light-service", () => ({
 #### CI 检查清单
 ```yaml
 # GitHub Actions CI 流程检查项
-- ✅ 类型检查通过 (pnpm type:check)
-- ✅ 代码规范检查通过 (pnpm check)
+- ✅ 类型检查通过 (pnpm check:type)
+- ✅ 代码规范检查通过 (pnpm lint)
 - ✅ 拼写检查通过 (pnpm check:spell)
 - ✅ 构建成功 (pnpm build)
 - ✅ 测试通过 (pnpm test:coverage)
@@ -182,22 +182,19 @@ npx husky add .husky/pre-push "pnpm test:coverage"
 function preCommitCheck() {
   echo "🔍 执行预提交检查..."
 
-  # 1. 代码格式化
-  pnpm format
-
-  # 2. 代码规范检查和修复
+  # 1. 代码规范检查和修复（包括格式化）
   pnpm lint
 
-  # 3. 类型检查
-  pnpm type-check
+  # 2. 类型检查
+  pnpm check:type
 
-  # 4. 拼写检查
+  # 3. 拼写检查
   pnpm check:spell
 
-  # 5. 运行测试
+  # 4. 运行测试
   pnpm test
 
-  # 6. 生成覆盖率报告
+  # 5. 生成覆盖率报告
   pnpm test:coverage
 
   echo "✅ 预提交检查完成"
@@ -293,7 +290,7 @@ pnpm lint
 
 # 如果仍有问题，运行详细诊断
 pnpm check:all  # 查看具体错误
-pnpm type-check  # 查看类型错误详情
+pnpm check:type  # 查看类型错误详情
 pnpm check:spell  # 查看拼写错误详情
 ```
 
@@ -304,20 +301,16 @@ pnpm check:spell  # 查看拼写错误详情
 
 echo "🚀 开始自动修复..."
 
-# 1. 代码格式化
-echo "📝 格式化代码..."
-pnpm format
-
-# 2. 代码规范检查和自动修复
+# 1. 代码规范检查和自动修复（包括格式化）
 echo "🔧 修复代码规范问题..."
 pnpm lint
 
-# 3. 类型检查（仅诊断，不自动修复）
+# 2. 类型检查（仅诊断，不自动修复）
 echo "🔍 检查类型问题..."
-TYPE_ERRORS=$(pnpm type-check 2>&1 | grep -c "error" || echo "0")
+TYPE_ERRORS=$(pnpm check:type 2>&1 | grep -c "error" || echo "0")
 if [ "$TYPE_ERRORS" -gt 0 ]; then
   echo "❌ 发现 $TYPE_ERRORS 个类型错误，需要手动修复"
-  pnpm type-check
+  pnpm check:type
   exit 1
 fi
 
@@ -375,7 +368,7 @@ const fixStrategies: FixStrategy[] = [
 ```typescript
 interface QualityReport {
   timestamp: string;
-  typeCheck: {
+  checkType: {
     passed: boolean;
     errors: number;
     warnings: number;

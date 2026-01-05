@@ -76,7 +76,7 @@ import { configManager } from "@/lib/config/manager";
 pnpm build
 
 # 类型检查
-pnpm type-check
+pnpm check:type
 
 # 运行测试
 pnpm test

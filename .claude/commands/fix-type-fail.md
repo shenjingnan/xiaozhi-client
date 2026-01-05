@@ -3,7 +3,7 @@ description: 修复类型检查失败
 argument-hint: [path, error-log]
 ---
 
-我在目录 `<path>$1</path>` 执行命令 `pnpm type-check`
+我在目录 `<path>$1</path>` 执行命令 `pnpm check:type`
 发现有很多类型错误，如下
 <error-log>$2</error-log>
 
@@ -66,7 +66,7 @@ argument-hint: [path, error-log]
 
 ### 4.1 编译验证
 
-- 运行 `pnpm type-check` 确保所有类型错误已修复
+- 运行 `pnpm check:type` 确保所有类型错误已修复
 - 运行 `pnpm build` 确保代码能够正常编译
 - 检查生成的类型声明文件（`*.d.ts`）
 

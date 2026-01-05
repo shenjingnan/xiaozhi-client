@@ -51,7 +51,7 @@ jobs:
       run: pnpm run lint
 
     - name: Nx Type Check
-      run: pnpm run type-check
+      run: pnpm run check:type
 
     - name: Docs Type Check
       working-directory: ./docs

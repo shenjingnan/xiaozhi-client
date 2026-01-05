@@ -52,14 +52,11 @@ pnpm test:watch
 # 生成测试覆盖率报告
 pnpm test:coverage
 
-# 代码格式化
-pnpm format
-
-# 代码检查
+# 代码检查和格式化
 pnpm lint
 
 # 类型检查
-pnpm type:check
+pnpm check:type
 
 # 运行所有检查并修复
 pnpm check:write
@@ -161,8 +158,8 @@ pnpm test:coverage
 
 提交前请确保：
 - 所有测试通过 (`pnpm test`)
-- 代码通过格式检查 (`pnpm check:write`)
-- 类型检查通过 (`pnpm type:check`)
+- 代码通过格式检查 (`pnpm check:fix`)
+- 类型检查通过 (`pnpm check:type`)
 
 ## 许可证
 

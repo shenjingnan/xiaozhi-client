@@ -29,7 +29,7 @@ argument-hint: [failed-test-file]
 
 4. **代码质量检查**：
    - 执行 `pnpm lint` 进行代码规范检查
-   - 执行 `pnpm type-check` 进行类型检查
+   - 执行 `pnpm check:type` 进行类型检查
    - 修复任何代码规范或类型问题
 
 请提供详细的失败原因分析和修复过程说明。

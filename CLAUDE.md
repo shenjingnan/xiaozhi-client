@@ -28,10 +28,9 @@
 
 ### 代码质量
 
-- `pnpm lint` - 运行 Biome linter 并自动修复
-- `pnpm lint:fix` - 运行 Biome linter 并自动修复
-- `pnpm format` - 使用 Biome 格式化代码
-- `pnpm type-check` - 运行 TypeScript 类型检查
+- `pnpm lint` - 运行 Biome linter
+- `pnpm lint:fix` - 运行 Biome linter 并自动修复（包括格式化）
+- `pnpm check:type` - 运行 TypeScript 类型检查
 - `pnpm check:all` - 运行所有质量检查（lint、typecheck、spellcheck、duplicate check）
 
 ### 其他质量工具
@@ -250,8 +249,8 @@ xiaozhi-client 是一个务实的开源 MCP 客户端：
 - [ ] 测试覆盖率达到 80% 要求
 - [ ] 错误处理完善且有意义
 - [ ] **执行开发流程检查**：修改代码后必须运行相应的检查命令
-  - 前端代码：`pnpm type-check && pnpm lint && pnpm test`
-  - 后端代码：`pnpm type-check && pnpm lint && pnpm test`
+  - 前端代码：`pnpm check:type && pnpm lint && pnpm test`
+  - 后端代码：`pnpm check:type && pnpm lint && pnpm test`
   - 全面检查：`pnpm check:all`
 
 ### 本地化规范

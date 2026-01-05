@@ -13,7 +13,6 @@
       "Bash(git --no-pager status:*)",
       "Bash(pnpm run:*)",
       "Bash(pnpm add:*)",
-      "Bash(pnpm format:*)",
       "Bash(pnpm duplicate:*)",
       "Bash(pnpm test:*)",
       "Bash(pnpm type:*)",
