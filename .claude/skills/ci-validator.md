@@ -32,7 +32,7 @@ pnpm test:coverage
   - `pnpm lint` - Biome 代码规范和格式检查
   - `pnpm check:type` - TypeScript 严格类型检查
   - `pnpm check:spell` - 拼写检查
-  - `pnpm duplicate:check` - 重复代码检查
+  - `pnpm check:cpd` - 重复代码检查
 
 - **`pnpm test`** 包含：
   - Vitest 单元测试执行
