@@ -39,8 +39,6 @@ async function initializeCLI(): Promise<void> {
   }
 }
 
-// 启动 CLI 应用
-// CLI 入口文件直接执行初始化（无需模块检测，兼容 npm 全局安装的符号链接）
 initializeCLI();
 
 export { initializeCLI };
