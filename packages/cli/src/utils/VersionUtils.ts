@@ -2,7 +2,7 @@
  * 版本管理工具
  */
 
-import { VERSION, APP_NAME } from "../version";
+import { APP_NAME, VERSION } from "../version";
 
 /**
  * 版本信息接口
