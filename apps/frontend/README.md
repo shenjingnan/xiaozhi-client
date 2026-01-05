@@ -59,7 +59,7 @@ pnpm lint
 pnpm check:type
 
 # 运行所有检查并修复
-pnpm check:write
+pnpm check:fix
 ```
 
 ### 项目结构
