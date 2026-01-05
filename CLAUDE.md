@@ -39,6 +39,23 @@
 - `pnpm check:cpd` - 使用 jscpd 检查重复代码
 - `pnpm dev:docs` - 启动文档开发服务器
 
+### 发布
+
+- `pnpm release --version <版本号>` - 发布到 npm（支持正式版、beta、rc）
+- `pnpm release:dry --version <版本号>` - 预演发布流程（不实际发布）
+
+使用示例：
+```bash
+# 发布正式版
+pnpm release --version 1.0.0
+
+# 发布 beta 版
+pnpm release --version 1.0.0-beta.0
+
+# 预演
+pnpm release:dry --version 1.0.0
+```
+
 ### 文档开发
 
 - **文档系统**：使用 Nextra (Next.js)，支持 MDX 格式

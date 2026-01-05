@@ -18,6 +18,7 @@
       "Bash(pnpm type:*)",
       "Bash(pnpm build:*)",
       "Bash(pnpm check:*)",
+      "Bash(pnpm release:*)",
       "Bash(pnpm spell:*)",
       "Bash(pnpm list:*)",
       "Bash(docker build:*)",
