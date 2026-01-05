@@ -373,7 +373,7 @@ function organizeTypeImports(sourceFile: SourceFile): void {
 ### 1. 检查命令
 ```bash
 # 运行类型检查（xiaozhi-client 项目）
-pnpm type-check
+pnpm check:type
 
 # 运行代码规范和格式检查
 pnpm lint

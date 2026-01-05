@@ -150,7 +150,7 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:3000
 # 运行代码质量检查
 pnpm check:spell
 pnpm lint
-pnpm type-check
+pnpm check:type
 ```
 
 ### 5.3 修复报告

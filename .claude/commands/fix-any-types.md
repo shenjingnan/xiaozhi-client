@@ -47,7 +47,7 @@ argument-hint: [文件路径]
 
 ### 6. 编译和类型检查
 
-- 运行 `pnpm type-check` 确保所有类型错误已修复
+- 运行 `pnpm check:type` 确保所有类型错误已修复
 - 运行 `pnpm build` 确保代码能够正常编译
 - 检查是否有遗留的 `any` 类型使用
 

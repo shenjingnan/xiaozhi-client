@@ -51,7 +51,7 @@ jobs:
       run: pnpm run lint
 
     - name: Nx Type Check
-      run: pnpm run type-check
+      run: pnpm run check:type
 
     - name: Docs Type Check
       working-directory: ./docs
@@ -60,8 +60,8 @@ jobs:
     - name: 拼写检查 (根目录)
       run: pnpm run check:spell
 
-    - name: 代码重复率检查 (backend)
-      run: pnpm run duplicate:check
+    - name: 代码重复率检查 (monorepo)
+      run: pnpm run check:cpd
 
     # 构建和测试
     - name: Nx Build

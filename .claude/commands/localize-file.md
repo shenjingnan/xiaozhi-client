@@ -57,7 +57,7 @@ argument-hint: [文件路径]
 
 ### 7. 代码功能验证
 
-- 运行 `pnpm type-check` 确保类型检查通过
+- 运行 `pnpm check:type` 确保类型检查通过
 - 执行 `pnpm build` 验证代码能正常编译
 - 如果是测试文件，运行 `pnpm test <文件>` 确保测试通过
 - 检查翻译后的字符串没有破坏代码逻辑

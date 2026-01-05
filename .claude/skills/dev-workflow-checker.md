@@ -16,14 +16,14 @@
 
 ### 前端应用 (`apps/frontend`)
 当修改前端代码时，执行以下检查：
-- `pnpm type-check` - TypeScript 类型检查
+- `pnpm check:type` - TypeScript 类型检查
 - `pnpm lint` - Biome linter 检查
 - `pnpm test` - 运行测试套件
 - `pnpm check:all` - 运行所有质量检查（如果需要全面检查）
 
 ### 后端应用 (`apps/backend`)
 当修改后端代码时，执行以下检查：
-- `pnpm type-check` - TypeScript 类型检查
+- `pnpm check:type` - TypeScript 类型检查
 - `pnpm lint` - Biome linter 检查
 - `pnpm test` - 运行测试套件
 - `pnpm check:all` - 运行所有质量检查（如果需要全面检查）
@@ -40,7 +40,7 @@
 ### 前端代码修改流程
 ```bash
 # 1. 类型检查
-pnpm type-check
+pnpm check:type
 
 # 2. 代码风格检查
 pnpm lint
@@ -55,7 +55,7 @@ pnpm check:all
 ### 后端代码修改流程
 ```bash
 # 1. 类型检查
-pnpm type-check
+pnpm check:type
 
 # 2. 代码风格检查
 pnpm lint
