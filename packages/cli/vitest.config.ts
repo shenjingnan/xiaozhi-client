@@ -13,6 +13,11 @@ export default defineConfig({
     // 添加 tsconfig 路径解析插件
     tsconfigPaths(),
   ],
+  // 定义构建时注入的全局变量，用于测试环境
+  define: {
+    __VERSION__: JSON.stringify("1.0.0-test"),
+    __APP_NAME__: JSON.stringify("xiaozhi-client"),
+  },
   test: {
     globals: true,
     environment: "node",
