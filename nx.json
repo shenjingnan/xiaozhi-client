@@ -37,15 +37,17 @@
     "projects": ["cli", "config", "shared-types"],
     "projectsRelationship": "fixed",
     "version": {
-      "conventionalCommits": true,
-      "git": {
-        "commitMessage": "chore: release v${version}",
-        "tag": "v${version}"
-      }
+      "conventionalCommits": true
     },
     "changelog": {
-      "workspaceChangelog": true,
+      "workspaceChangelog": {
+        "file": false
+      },
       "projectChangelogs": false
+    },
+    "git": {
+      "commit": true,
+      "tag": true
     }
   },
   "plugins": [

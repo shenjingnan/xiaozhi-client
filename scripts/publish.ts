@@ -211,40 +211,13 @@ async function updateVersion(
   version: string,
   dryRun: boolean
 ): Promise<void> {
-  log("info", `📦 更新版本号为: ${version}`);
+  log("info", `📦 使用 Nx Release 更新版本号为: ${version}`);
 
-  // 更新子包版本号（通过 Nx Release）
+  // 使用 Nx Release 更新版本（自动处理所有包和依赖）
   await runCommand(
-    `npx nx release version --version ${version}${dryRun ? " --dry-run" : ""}`,
+    `npx nx release version ${version}${dryRun ? " --dry-run" : ""}`,
     { dryRun }
   );
-
-  // 手动更新所有包的版本号以确保一致性（防止构建钩子覆盖）
-  if (!dryRun) {
-    const packages = [
-      "package.json",
-      "packages/shared-types/package.json",
-      "packages/config/package.json",
-      "packages/cli/package.json",
-    ];
-
-    for (const pkgPath of packages) {
-      const fullPath = join(process.cwd(), pkgPath);
-      const packageJson = JSON.parse(await readFile(fullPath, "utf-8"));
-      packageJson.version = version;
-      await writeFile(fullPath, `${JSON.stringify(packageJson, null, 2)}\n`);
-      log("info", `✅ 已更新 ${pkgPath} 版本为 ${version}`);
-    }
-
-    // 更新根 package.json 中的 @xiaozhi-client/config 依赖版本
-    const rootPkgPath = join(process.cwd(), "package.json");
-    const rootPkgJson = JSON.parse(await readFile(rootPkgPath, "utf-8"));
-    if (rootPkgJson.dependencies && rootPkgJson.dependencies["@xiaozhi-client/config"]) {
-      rootPkgJson.dependencies["@xiaozhi-client/config"] = version;
-      await writeFile(rootPkgPath, `${JSON.stringify(rootPkgJson, null, 2)}\n`);
-      log("info", `✅ 已更新根 package.json 中 @xiaozhi-client/config 依赖版本为 ${version}`);
-    }
-  }
 
   log("success", `✅ 版本号已更新: ${version}`);
 }
@@ -459,47 +432,20 @@ async function getPreviousTag(): Promise<string | undefined> {
 }
 
 /**
- * 创建 Git 提交
+ * 推送 Git 提交和 tag 到远程仓库
  *
- * @param version - 版本号
  * @param dryRun - 是否为预演模式
  */
-async function gitCommit(version: string, dryRun: boolean): Promise<void> {
-  log("info", "📦 创建 Git 提交...");
+async function pushToRemote(dryRun: boolean): Promise<void> {
+  log("info", "📤 推送 Git 提交和 tag 到远程仓库...");
 
-  const commitMessage = `chore: release v${version}`;
-
-  try {
-    // 添加所有更改的文件
-    await runCommand("git add package.json packages/*/package.json docs/content/changelog.mdx", { dryRun });
-
-    // 创建提交
-    await runCommand(`git commit -m "${commitMessage}"`, { dryRun });
-
-    if (!dryRun) {
-      log("success", "✅ Git 提交已创建");
-    }
-  } catch (error) {
-    log("error", `创建 Git 提交失败: ${(error as Error).message}`);
-    throw error;
+  if (dryRun) {
+    log("info", "[预演] git push origin <current-branch>");
+    log("info", "[预演] git push origin --tags");
+    return;
   }
-}
-
-/**
- * 创建并推送 tag
- *
- * @param version - 版本号
- * @param dryRun - 是否为预演模式
- */
-async function createAndPushTag(version: string, dryRun: boolean): Promise<void> {
-  log("info", "🏷️ 创建并推送 tag...");
-
-  const tagName = `v${version}`;
 
   try {
-    // 创建 tag
-    await runCommand(`git tag ${tagName}`, { dryRun });
-
     // 获取当前分支
     const { stdout: currentBranch } = await execaCommand("git branch --show-current", {
       stdio: "pipe",
@@ -507,13 +453,12 @@ async function createAndPushTag(version: string, dryRun: boolean): Promise<void>
     const branch = currentBranch.trim();
 
     // 推送提交和 tag
-    if (!dryRun) {
-      await runCommand(`git push origin ${branch}`, { dryRun: false });
-      await runCommand(`git push origin ${tagName}`, { dryRun: false });
-      log("success", `✅ Tag ${tagName} 已创建并推送`);
-    }
+    await runCommand(`git push origin ${branch}`, { dryRun: false });
+    await runCommand("git push origin --tags", { dryRun: false });
+
+    log("success", "✅ Git 提交和 tag 已推送到远程仓库");
   } catch (error) {
-    log("error", `创建或推送 tag 失败: ${(error as Error).message}`);
+    log("error", `推送到远程仓库失败: ${(error as Error).message}`);
     throw error;
   }
 }
@@ -632,20 +577,15 @@ async function main(version: string, dryRun: boolean): Promise<void> {
     return;
   }
 
-  // 6. 正式版额外处理：更新 changelog、创建提交和 tag
+  // 6. 正式版额外处理：更新 changelog、推送到远程
   if (versionInfo.isRelease) {
     try {
-      // 6.1 更新 changelog
+      // 6.1 更新 changelog（自定义路径）
       await updateChangelog(version, dryRun);
 
-      // 6.2 创建 Git 提交
-      await gitCommit(version, dryRun);
-
-      // 6.3 创建并推送 tag
-      await createAndPushTag(version, dryRun);
-
+      // 6.2 推送 Git 提交和 tag（Nx Release 已自动创建）
       if (!dryRun) {
-        log("success", "✅ 正式版 Git 操作完成");
+        await pushToRemote(dryRun);
       }
     } catch (error) {
       log("error", `Git 操作失败: ${(error as Error).message}`);
@@ -662,7 +602,7 @@ async function main(version: string, dryRun: boolean): Promise<void> {
     log("info", "💡 这是预演模式，未实际发布到 npm");
   }
   if (versionInfo.isRelease) {
-    log("info", "💡 正式版：changelog 已更新，Git 提交和 tag 已创建");
+    log("info", "💡 正式版：changelog 已更新，Git 提交和 tag 已推送到远程");
   }
   console.log(`${"=".repeat(60)}\n`);
 }
