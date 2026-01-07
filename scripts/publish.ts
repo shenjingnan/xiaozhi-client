@@ -18,7 +18,7 @@
  * pnpm release:publish:dry --version 1.0.0-beta.0
  */
 
-import { execaCommand } from "execa";
+import { execaCommand, execaCommandSync } from "execa";
 import { consola } from "consola";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -313,7 +313,7 @@ function generateChangelogEntry(version: string, commits: GitCommit[]): string {
   // 获取上一个 tag（用于生成对比链接）
   let previousTag = "v0.0.0";
   try {
-    const { stdout } = execaCommand.sync("git describe --tags --abbrev=0 HEAD^", {
+    const { stdout } = execaCommandSync("git describe --tags --abbrev=0 HEAD^", {
       stdio: "pipe",
     });
     if (stdout.trim()) {
