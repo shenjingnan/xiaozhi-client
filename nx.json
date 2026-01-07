@@ -37,17 +37,20 @@
     "projects": ["cli", "config", "shared-types"],
     "projectsRelationship": "fixed",
     "version": {
-      "conventionalCommits": true
+      "conventionalCommits": true,
+      "git": {
+        "commit": true,
+        "tag": true
+      }
     },
     "changelog": {
       "workspaceChangelog": {
         "file": "CHANGELOG.md"
       },
-      "projectChangelogs": false
-    },
-    "git": {
-      "commit": true,
-      "tag": true
+      "projectChangelogs": false,
+      "git": {
+        "commit": true
+      }
     }
   },
   "plugins": [
