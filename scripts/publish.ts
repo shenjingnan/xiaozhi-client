@@ -18,10 +18,8 @@
  * pnpm release:publish:dry --version 1.0.0-beta.0
  */
 
-import { execaCommand, execaCommandSync } from "execa";
+import { execaCommand } from "execa";
 import { consola } from "consola";
-import { readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
 
 /**
  * 版本类型
@@ -236,202 +234,6 @@ async function runBuild(dryRun: boolean): Promise<void> {
 }
 
 /**
- * Git 提交信息接口
- */
-interface GitCommit {
-  /** 提交哈希 */
-  hash: string;
-  /** 提交类型 */
-  type: string;
-  /** 提交作用域 */
-  scope: string | null;
-  /** 提交描述 */
-  description: string;
-  /** 关联的 PR 或 Issue 编号 */
-  refs: string[];
-}
-
-/**
- * 解析 Git 提交信息
- *
- * @param sinceTag - 起始 tag（不包含）
- * @returns 提交信息数组
- */
-async function parseCommits(sinceTag?: string): Promise<GitCommit[]> {
-  try {
-    // 构建 git log 命令
-    const range = sinceTag ? `${sinceTag}..HEAD` : "HEAD";
-    const { stdout } = await execaCommand(
-      `git log ${range} --pretty=format:"%H|%s"`,
-      { stdio: "pipe" }
-    );
-
-    if (!stdout.trim()) {
-      return [];
-    }
-
-    const commits: GitCommit[] = [];
-    const lines = stdout.trim().split("\n");
-
-    for (const line of lines) {
-      const [hash, subject] = line.split("|", 2);
-      if (!hash || !subject) continue;
-
-      // 解析 conventional commit 格式
-      // 格式: type(scope): description (#refs)
-      const match = subject.match(/^(\w+)(?:\(([^)]+)\))?:?\s*(.+?)(?:\s*\((#[\d,]+)\))?$/);
-
-      if (match) {
-        const [, type, scope, description, refs] = match;
-        commits.push({
-          hash,
-          type,
-          scope: scope || null,
-          description,
-          refs: refs ? refs.split(/[,#]/).filter(Boolean).map((r) => `#${r}`) : [],
-        });
-      }
-    }
-
-    return commits;
-  } catch (error) {
-    log("warn", `解析 Git 提交失败: ${(error as Error).message}`);
-    return [];
-  }
-}
-
-/**
- * 生成 changelog 条目
- *
- * @param version - 版本号
- * @param commits - 提交信息数组
- * @returns 格式化的 changelog 条目
- */
-function generateChangelogEntry(version: string, commits: GitCommit[]): string {
-  const today = new Date().toISOString().split("T")[0];
-
-  // 获取上一个 tag（用于生成对比链接）
-  let previousTag = "v0.0.0";
-  try {
-    const { stdout } = execaCommandSync("git describe --tags --abbrev=0 HEAD^", {
-      stdio: "pipe",
-    });
-    if (stdout.trim()) {
-      previousTag = stdout.trim();
-    }
-  } catch {
-    // 如果没有上一个 tag，使用默认值
-  }
-
-  const lines: string[] = [];
-
-  // 版本标题行
-  lines.push(`## [${version}](https://github.com/shenjingnan/xiaozhi-client/compare/${previousTag}...v${version}) (${today})`);
-  lines.push("");
-
-  // 按类型分组
-  const grouped = new Map<string, GitCommit[]>();
-  const typeOrder = ["Features", "Bug Fixes", "Performance Improvements", "Reverts"];
-
-  for (const commit of commits) {
-    const type = commit.type === "feat" ? "Features" :
-                 commit.type === "fix" ? "Bug Fixes" :
-                 commit.type === "perf" ? "Performance Improvements" :
-                 commit.type === "revert" ? "Reverts" : null;
-
-    if (!type) continue;
-
-    if (!grouped.has(type)) {
-      grouped.set(type, []);
-    }
-    grouped.get(type)!.push(commit);
-  }
-
-  // 如果没有任何提交，返回空内容
-  if (grouped.size === 0) {
-    return `## [${version}](https://github.com/shenjingnan/xiaozhi-client/compare/${previousTag}...v${version}) (${today})\n\n### Features\n\n* 初始发布\n`;
-  }
-
-  // 生成分组内容
-  for (const type of typeOrder) {
-    const typeCommits = grouped.get(type);
-    if (!typeCommits || typeCommits.length === 0) continue;
-
-    lines.push(`### ${type}`);
-    lines.push("");
-
-    for (const commit of typeCommits) {
-      const scope = commit.scope ? `**${commit.scope}:** ` : "";
-      const refs = commit.refs.length > 0 ? ` ([${commit.refs.join(", ")}](https://github.com/shenjingnan/xiaozhi-client/issues/${commit.refs[0].replace("#", "")}))` : "";
-      lines.push(`* ${scope}${commit.description}${refs}`);
-    }
-
-    lines.push("");
-  }
-
-  return lines.join("\n");
-}
-
-/**
- * 更新 changelog.mdx 文件
- *
- * @param version - 版本号
- * @param dryRun - 是否为预演模式
- */
-async function updateChangelog(version: string, dryRun: boolean): Promise<void> {
-  log("info", "📝 更新 changelog...");
-
-  const changelogPath = join(process.cwd(), "docs/content/changelog.mdx");
-
-  try {
-    // 读取现有 changelog
-    const existingContent = await readFile(changelogPath, "utf-8");
-
-    // 解析 Git 提交
-    const previousTag = await getPreviousTag();
-    const commits = await parseCommits(previousTag);
-
-    // 生成新的 changelog 条目
-    const newEntry = generateChangelogEntry(version, commits);
-
-    if (dryRun) {
-      log("info", `[预演] 将在 changelog.mdx 开头插入:\n${newEntry}`);
-      return;
-    }
-
-    // 在文件开头插入新条目（在第一行之后）
-    const lines = existingContent.split("\n");
-    const header = lines.slice(0, 1); // 保留第一行（标题）
-    const content = lines.slice(1); // 其余内容
-
-    const updatedContent = [header[0], "", newEntry, ...content].join("\n");
-
-    // 写入文件
-    await writeFile(changelogPath, updatedContent);
-    log("success", "✅ changelog.mdx 已更新");
-  } catch (error) {
-    log("error", `更新 changelog 失败: ${(error as Error).message}`);
-    throw error;
-  }
-}
-
-/**
- * 获取上一个 tag
- *
- * @returns 上一个 tag 名称
- */
-async function getPreviousTag(): Promise<string | undefined> {
-  try {
-    const { stdout } = await execaCommand("git describe --tags --abbrev=0 HEAD^", {
-      stdio: "pipe",
-    });
-    return stdout.trim() || undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-/**
  * 推送 Git 提交和 tag 到远程仓库
  *
  * @param dryRun - 是否为预演模式
@@ -577,16 +379,11 @@ async function main(version: string, dryRun: boolean): Promise<void> {
     return;
   }
 
-  // 6. 正式版额外处理：更新 changelog、推送到远程
-  if (versionInfo.isRelease) {
+  // 6. 推送 Git 提交和 tag 到远程仓库
+  // Nx Release 会自动生成并提交 CHANGELOG.md
+  if (versionInfo.isRelease && !dryRun) {
     try {
-      // 6.1 更新 changelog（自定义路径）
-      await updateChangelog(version, dryRun);
-
-      // 6.2 推送 Git 提交和 tag（Nx Release 已自动创建）
-      if (!dryRun) {
-        await pushToRemote(dryRun);
-      }
+      await pushToRemote(dryRun);
     } catch (error) {
       log("error", `Git 操作失败: ${(error as Error).message}`);
       log("warn", "⚠️ NPM 包已发布，但 Git 操作失败，请手动处理");
@@ -602,7 +399,7 @@ async function main(version: string, dryRun: boolean): Promise<void> {
     log("info", "💡 这是预演模式，未实际发布到 npm");
   }
   if (versionInfo.isRelease) {
-    log("info", "💡 正式版：changelog 已更新，Git 提交和 tag 已推送到远程");
+    log("info", "💡 正式版：CHANGELOG.md 由 Nx Release 自动更新，Git 提交和 tag 已推送到远程");
   }
   console.log(`${"=".repeat(60)}\n`);
 }

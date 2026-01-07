@@ -41,7 +41,7 @@
     },
     "changelog": {
       "workspaceChangelog": {
-        "file": false
+        "file": "CHANGELOG.md"
       },
       "projectChangelogs": false
     },
