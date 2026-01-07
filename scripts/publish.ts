@@ -283,7 +283,7 @@ async function publishPackage(
 
   log("info", `📤 发布包: ${pkg.name} (标签: ${tag})`);
 
-  const publishCmd = `npm publish --access public ${tagFlag} --no-git-checks`;
+  const publishCmd = `pnpm publish --access public ${tagFlag} --no-git-checks`;
   await runCommand(publishCmd, { dryRun, cwd: pkg.path || "." });
 
   log("success", `✅ ${pkg.name} 发布成功`);
