@@ -56,6 +56,9 @@ importers:
       dayjs:
         specifier: ^1.11.13
         version: 1.11.19
+      dify-client:
+        specifier: ^3.0.0
+        version: 3.0.0
       dotenv:
         specifier: ^17.2.1
         version: 17.2.3
@@ -4241,6 +4244,10 @@ packages:
   diff@4.0.2:
     resolution: {integrity: sha512-58lmxKSA4BNyLz+HHMUzlOEpg09FV+ev6ZMe3vJihgdxzgcwZ8VoEEPmALCZG9LmqfVoNMMKpttIYTVG6uDY7A==}
     engines: {node: '>=0.3.1'}
+
+  dify-client@3.0.0:
+    resolution: {integrity: sha512-4ybDLP3GTysaMM93Sex9u/LF7mTNNVuwwhtk9LzK4AUtw721AUIW+jgSE5CzEJj9iflaiK9aswd0pSI/qyLOzQ==}
+    engines: {node: '>=18.0.0'}
 
   dlv@1.1.3:
     resolution: {integrity: sha512-+HlytyjlPKnIG8XuRG8WvmBP8xs8P71y+SKKS6ZXWoEgLuePxtDoUEiH7WkdePWrQ5JBpE6aoVqfZfJUQkjXwA==}
@@ -11197,6 +11204,12 @@ snapshots:
   didyoumean@1.2.2: {}
 
   diff@4.0.2: {}
+
+  dify-client@3.0.0:
+    dependencies:
+      axios: 1.13.2
+    transitivePeerDependencies:
+      - debug
 
   dlv@1.1.3: {}
 

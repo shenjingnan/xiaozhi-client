@@ -64,6 +64,7 @@
     "comment-json": "^4.2.5",
     "consola": "^3.4.2",
     "dayjs": "^1.11.13",
+    "dify-client": "^3.0.0",
     "dotenv": "^17.2.1",
     "eventsource": "^4.0.0",
     "express": "^5.1.0",
