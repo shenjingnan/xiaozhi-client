@@ -20,6 +20,8 @@
 
 import { execaCommand } from "execa";
 import { consola } from "consola";
+import { readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 /**
  * 版本类型
@@ -216,6 +218,20 @@ async function updateVersion(
     `npx nx release version ${version}${dryRun ? " --dry-run" : ""}`,
     { dryRun }
   );
+
+  // 手动同步根目录 package.json 的版本号
+  // 因为 Nx Release 只更新 release.projects 中的子包（cli、config、shared-types），不更新根目录
+  // 而 tsup 构建时从根目录 package.json 读取版本号注入到代码中
+  // 如果不在构建前同步，会导致代码中的版本号与实际发布版本不一致
+  if (!dryRun) {
+    const rootPkgPath = resolve(process.cwd(), "package.json");
+    const pkg = JSON.parse(readFileSync(rootPkgPath, "utf-8"));
+    pkg.version = version;
+    writeFileSync(rootPkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
+    log("success", `✅ 已同步根 package.json 版本到 ${version}`);
+  } else {
+    log("info", `[预演] 将同步根 package.json 版本到 ${version}`);
+  }
 
   log("success", `✅ 版本号已更新: ${version}`);
 }
