@@ -39,13 +39,18 @@
     "version": {
       "conventionalCommits": true,
       "git": {
-        "commitMessage": "chore: release v${version}",
-        "tag": "v${version}"
+        "commit": true,
+        "tag": true
       }
     },
     "changelog": {
-      "workspaceChangelog": true,
-      "projectChangelogs": false
+      "workspaceChangelog": {
+        "file": "CHANGELOG.md"
+      },
+      "projectChangelogs": false,
+      "git": {
+        "commit": true
+      }
     }
   },
   "plugins": [

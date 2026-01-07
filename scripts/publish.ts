@@ -20,8 +20,6 @@
 
 import { execaCommand } from "execa";
 import { consola } from "consola";
-import { readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
 
 /**
  * 版本类型
@@ -45,6 +43,8 @@ interface VersionInfo {
   prereleaseId: PrereleaseId;
   /** npm 标签 */
   npmTag: "latest" | "beta" | "rc";
+  /** 是否为正式版 */
+  isRelease: boolean;
 }
 
 /**
@@ -93,6 +93,7 @@ function parseVersion(version: string): VersionInfo {
       type: "prerelease",
       prereleaseId: "beta",
       npmTag: "beta",
+      isRelease: false,
     };
   }
 
@@ -102,6 +103,7 @@ function parseVersion(version: string): VersionInfo {
       type: "prerelease",
       prereleaseId: "rc",
       npmTag: "rc",
+      isRelease: false,
     };
   }
 
@@ -111,6 +113,7 @@ function parseVersion(version: string): VersionInfo {
       type: "release",
       prereleaseId: "",
       npmTag: "latest",
+      isRelease: true,
     };
   }
 
@@ -206,40 +209,13 @@ async function updateVersion(
   version: string,
   dryRun: boolean
 ): Promise<void> {
-  log("info", `📦 更新版本号为: ${version}`);
+  log("info", `📦 使用 Nx Release 更新版本号为: ${version}`);
 
-  // 更新子包版本号（通过 Nx Release）
+  // 使用 Nx Release 更新版本（自动处理所有包和依赖）
   await runCommand(
-    `npx nx release version --version ${version}${dryRun ? " --dry-run" : ""}`,
+    `npx nx release version ${version}${dryRun ? " --dry-run" : ""}`,
     { dryRun }
   );
-
-  // 手动更新所有包的版本号以确保一致性（防止构建钩子覆盖）
-  if (!dryRun) {
-    const packages = [
-      "package.json",
-      "packages/shared-types/package.json",
-      "packages/config/package.json",
-      "packages/cli/package.json",
-    ];
-
-    for (const pkgPath of packages) {
-      const fullPath = join(process.cwd(), pkgPath);
-      const packageJson = JSON.parse(await readFile(fullPath, "utf-8"));
-      packageJson.version = version;
-      await writeFile(fullPath, `${JSON.stringify(packageJson, null, 2)}\n`);
-      log("info", `✅ 已更新 ${pkgPath} 版本为 ${version}`);
-    }
-
-    // 更新根 package.json 中的 @xiaozhi-client/config 依赖版本
-    const rootPkgPath = join(process.cwd(), "package.json");
-    const rootPkgJson = JSON.parse(await readFile(rootPkgPath, "utf-8"));
-    if (rootPkgJson.dependencies && rootPkgJson.dependencies["@xiaozhi-client/config"]) {
-      rootPkgJson.dependencies["@xiaozhi-client/config"] = version;
-      await writeFile(rootPkgPath, `${JSON.stringify(rootPkgJson, null, 2)}\n`);
-      log("info", `✅ 已更新根 package.json 中 @xiaozhi-client/config 依赖版本为 ${version}`);
-    }
-  }
 
   log("success", `✅ 版本号已更新: ${version}`);
 }
@@ -255,6 +231,38 @@ async function runBuild(dryRun: boolean): Promise<void> {
   // 禁用 Nx daemon 以避免状态异常问题
   await runCommand("pnpm build", { dryRun, extraEnv: { NX_DAEMON: "false" } });
   log("success", "✅ 项目构建完成");
+}
+
+/**
+ * 推送 Git 提交和 tag 到远程仓库
+ *
+ * @param dryRun - 是否为预演模式
+ */
+async function pushToRemote(dryRun: boolean): Promise<void> {
+  log("info", "📤 推送 Git 提交和 tag 到远程仓库...");
+
+  if (dryRun) {
+    log("info", "[预演] git push origin <current-branch>");
+    log("info", "[预演] git push origin --tags");
+    return;
+  }
+
+  try {
+    // 获取当前分支
+    const { stdout: currentBranch } = await execaCommand("git branch --show-current", {
+      stdio: "pipe",
+    });
+    const branch = currentBranch.trim();
+
+    // 推送提交和 tag
+    await runCommand(`git push origin ${branch}`, { dryRun: false });
+    await runCommand("git push origin --tags", { dryRun: false });
+
+    log("success", "✅ Git 提交和 tag 已推送到远程仓库");
+  } catch (error) {
+    log("error", `推送到远程仓库失败: ${(error as Error).message}`);
+    throw error;
+  }
 }
 
 /**
@@ -371,11 +379,27 @@ async function main(version: string, dryRun: boolean): Promise<void> {
     return;
   }
 
-  // 6. 完成
+  // 6. 推送 Git 提交和 tag 到远程仓库
+  // Nx Release 会自动生成并提交 CHANGELOG.md
+  if (versionInfo.isRelease && !dryRun) {
+    try {
+      await pushToRemote(dryRun);
+    } catch (error) {
+      log("error", `Git 操作失败: ${(error as Error).message}`);
+      log("warn", "⚠️ NPM 包已发布，但 Git 操作失败，请手动处理");
+      process.exit(1);
+      return;
+    }
+  }
+
+  // 7. 完成
   console.log(`\n${"=".repeat(60)}`);
   log("success", "🎉 发布流程完成！");
   if (dryRun) {
     log("info", "💡 这是预演模式，未实际发布到 npm");
+  }
+  if (versionInfo.isRelease) {
+    log("info", "💡 正式版：CHANGELOG.md 由 Nx Release 自动更新，Git 提交和 tag 已推送到远程");
   }
   console.log(`${"=".repeat(60)}\n`);
 }

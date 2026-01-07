@@ -22,7 +22,7 @@
     "*.log",
     "**/tmp/**",
     "pnpm-lock.yaml",
-    "docs/content/changelog.mdx",
+    "CHANGELOG.md",
     "**/*.tsbuildinfo",
     ".cspell/**"
   ],
