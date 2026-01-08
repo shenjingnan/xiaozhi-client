@@ -1,15 +1,6 @@
 {
   "mcpEndpoint": "",
-  "mcpServers": {
-    "calculator": {
-      "command": "node",
-      "args": ["./mcpServers/calculator.js"]
-    },
-    "datetime": {
-      "command": "node",
-      "args": ["./mcpServers/datetime.js"]
-    }
-  },
+  "mcpServers": {},
   "connection": {
     "heartbeatInterval": 30000,
     "heartbeatTimeout": 10000,

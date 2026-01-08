@@ -4,7 +4,7 @@
  */
 
 import path from "node:path";
-import { copyFileSync, mkdirSync, existsSync } from "node:fs";
+import { mkdirSync, existsSync, rmSync, readdirSync, statSync, copyFileSync, mkdirSync as fsMkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -12,15 +12,16 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /**
  * 配置初始化器类
- * 负责在用户家目录创建默认配置文件
+ * 负责在用户家目录创建完整的默认项目目录
  */
 export class ConfigInitializer {
   /**
    * 初始化默认配置
    *
-   * 在用户家目录的 .xiaozhi-client 目录下创建默认配置文件
+   * 复制整个默认模板目录到用户家目录的 .xiaozhi-client
+   * 这包括 mcpServers/ 目录和其他必要文件
    *
-   * @returns 创建的配置文件路径
+   * @returns 创建的项目目录路径
    * @throws 如果无法获取用户家目录或默认配置模板不存在
    */
   static async initializeDefaultConfig(): Promise<string> {
@@ -31,43 +32,86 @@ export class ConfigInitializer {
 
     const xiaozhiClientDir = path.join(homeDir, ".xiaozhi-client");
 
-    // 创建目录（如果不存在）
-    if (!existsSync(xiaozhiClientDir)) {
-      mkdirSync(xiaozhiClientDir, { recursive: true });
+    // 如果目录已存在，先删除（确保是干净的状态）
+    if (existsSync(xiaozhiClientDir)) {
+      rmSync(xiaozhiClientDir, { recursive: true, force: true });
     }
 
-    // 获取默认配置模板
-    const defaultConfigPath = this.getDefaultConfigTemplate();
-    if (!defaultConfigPath) {
-      throw new Error("默认配置模板不存在");
+    // 创建目录
+    mkdirSync(xiaozhiClientDir, { recursive: true });
+
+    // 获取默认模板目录路径
+    const defaultTemplateDir = this.getDefaultTemplateDir();
+    if (!defaultTemplateDir) {
+      throw new Error(
+        "默认配置模板不存在，请检查项目模板文件是否存在"
+      );
     }
 
-    // 目标配置文件路径
-    const targetConfigPath = path.join(xiaozhiClientDir, "xiaozhi.config.json");
+    // 复制整个模板目录
+    this.copyDirectoryRecursive(defaultTemplateDir, xiaozhiClientDir, [
+      "template.json",
+      ".git",
+      "node_modules",
+    ]);
 
-    // 复制配置文件
-    copyFileSync(defaultConfigPath, targetConfigPath);
-
-    return targetConfigPath;
+    return xiaozhiClientDir;
   }
 
   /**
-   * 获取默认配置模板路径
+   * 递归复制目录
    *
-   * 在多个可能的路径中查找默认配置模板文件
-   *
-   * @returns 找到的默认配置模板路径，如果都不存在则返回 null
+   * @param srcDir 源目录
+   * @param destDir 目标目录
+   * @param exclude 要排除的文件/目录列表
    */
-  private static getDefaultConfigTemplate(): string | null {
+  private static copyDirectoryRecursive(
+    srcDir: string,
+    destDir: string,
+    exclude: string[] = []
+  ): void {
+    const items = readdirSync(srcDir);
+
+    for (const item of items) {
+      // 跳过排除列表中的项
+      if (exclude.includes(item)) {
+        continue;
+      }
+
+      const srcPath = path.join(srcDir, item);
+      const destPath = path.join(destDir, item);
+      const stat = statSync(srcPath);
+
+      if (stat.isDirectory()) {
+        // 递归复制子目录
+        fsMkdirSync(destPath, { recursive: true });
+        this.copyDirectoryRecursive(srcPath, destPath, exclude);
+      } else {
+        // 复制文件
+        copyFileSync(srcPath, destPath);
+      }
+    }
+  }
+
+  /**
+   * 获取默认模板目录路径
+   *
+   * 在多个可能的路径中查找默认模板目录
+   *
+   * @returns 找到的默认模板目录路径，如果都不存在则返回 null
+   */
+  private static getDefaultTemplateDir(): string | null {
     const possiblePaths = [
-      // 开发环境
-      resolve(__dirname, "templates", "default", "xiaozhi.config.json"),
-      // 构建后的环境
-      resolve(__dirname, "..", "templates", "default", "xiaozhi.config.json"),
-      // 项目根目录
-      resolve(process.cwd(), "templates", "default", "xiaozhi.config.json"),
-      // dist 目录
-      resolve(__dirname, "..", "..", "..", "templates", "default", "xiaozhi.config.json"),
+      // 开发环境：packages/config/src 目录
+      resolve(__dirname, "templates", "default"),
+      // 开发环境：packages/config 目录
+      resolve(__dirname, "..", "templates", "default"),
+      // 项目根目录的 templates
+      resolve(process.cwd(), "templates", "default"),
+      // dist 目录（从 packages/config/dist 配置目录）
+      resolve(__dirname, "..", "..", "..", "templates", "default"),
+      // 全局安装的 node_modules 目录
+      resolve(__dirname, "..", "..", "..", "..", "templates", "default"),
     ];
 
     for (const p of possiblePaths) {

@@ -177,7 +177,15 @@ export class ServiceManagerImpl implements IServiceManager {
         // 重新加载配置管理器
         this.configManager.reloadConfig();
       } catch (error) {
-        throw ConfigError.configNotFound();
+        // 保留原始错误信息，方便调试
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        console.error(`❌ 创建默认配置失败: ${errorMessage}`);
+
+        // 抛出包含原始错误信息的异常
+        throw new ConfigError(
+          `无法创建默认配置: ${errorMessage}\n请手动运行 'xiaozhi create' 创建配置文件`
+        );
       }
     }
 
