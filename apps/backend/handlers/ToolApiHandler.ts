@@ -372,7 +372,9 @@ export class ToolApiHandler {
     try {
       // 1. 获取 customMCP 中的特殊工具（这些算作启用）
       const customMCPTools = configManager.getCustomMCPTools();
-      const customMCPToolNames = new Set(customMCPTools.map((tool) => tool.name));
+      const customMCPToolNames = new Set(
+        customMCPTools.map((tool) => tool.name)
+      );
 
       // 2. 从 mcpServerConfig 获取所有 MCP 工具配置（权威数据源）
       const mcpServerConfig = configManager.getMcpServerConfig();
@@ -380,8 +382,12 @@ export class ToolApiHandler {
       const disabledTools: CustomMCPTool[] = [];
 
       // 3. 遍历每个服务的工具配置
-      for (const [serviceName, serverConfig] of Object.entries(mcpServerConfig)) {
-        for (const [toolName, toolConfig] of Object.entries(serverConfig.tools || {})) {
+      for (const [serviceName, serverConfig] of Object.entries(
+        mcpServerConfig
+      )) {
+        for (const [toolName, toolConfig] of Object.entries(
+          serverConfig.tools || {}
+        )) {
           // 构建完整工具名
           const fullToolName = `${serviceName}__${toolName}`;
 
@@ -437,7 +443,9 @@ export class ToolApiHandler {
     const mcpServerConfig = configManager.getMcpServerConfig();
 
     for (const [serviceName, serverConfig] of Object.entries(mcpServerConfig)) {
-      for (const [toolName, toolConfig] of Object.entries(serverConfig.tools || {})) {
+      for (const [toolName, toolConfig] of Object.entries(
+        serverConfig.tools || {}
+      )) {
         // 只添加 enable === true 的工具
         if (toolConfig.enable === true) {
           enabledTools.push({
