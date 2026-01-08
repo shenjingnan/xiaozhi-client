@@ -59,7 +59,7 @@ export class ServiceManagerImpl implements IServiceManager {
       }
 
       // 检查环境配置
-      this.checkEnvironment();
+      await this.checkEnvironment();
 
       // 根据模式启动服务
       switch (options.mode) {
@@ -161,13 +161,27 @@ export class ServiceManagerImpl implements IServiceManager {
   /**
    * 检查环境配置
    */
-  private checkEnvironment(): void {
+  private async checkEnvironment(): Promise<void> {
     // 检查配置文件是否存在
     if (!this.configManager.configExists()) {
-      throw ConfigError.configNotFound();
+      // 尝试初始化默认配置
+      try {
+        console.log("ℹ️  未找到配置文件，正在创建默认配置...");
+
+        const { ConfigInitializer } = await import("@xiaozhi-client/config");
+        const configPath = await ConfigInitializer.initializeDefaultConfig();
+
+        console.log(`✅ 默认配置已创建: ${configPath}`);
+        console.log("💡 提示: 您可以稍后编辑此配置文件以自定义设置");
+
+        // 重新加载配置管理器
+        this.configManager.reloadConfig();
+      } catch (error) {
+        throw ConfigError.configNotFound();
+      }
     }
 
-    // 可以添加更多环境检查
+    // 验证配置文件
     try {
       const config = this.configManager.getConfig();
       if (!config) {

@@ -284,26 +284,29 @@ export class ConfigManager {
   /**
    * 获取配置文件路径（动态计算）
    * 支持多种配置文件格式：json5 > jsonc > json
+   *
+   * 查找优先级：
+   * 1. 环境变量 XIAOZHI_CONFIG_DIR 指定的目录
+   * 2. 当前工作目录
+   * 3. 用户家目录/.xiaozhi-client/
    */
   private getConfigFilePath(): string {
-    // 配置文件路径 - 优先使用环境变量指定的目录，否则使用当前工作目录
-    const configDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();
+    // 优先使用 ConfigResolver 解析配置路径
+    const { ConfigResolver } = require("./resolver.js");
+    const resolvedPath = ConfigResolver.resolveConfigPath();
 
-    // 按优先级检查配置文件是否存在
-    const configFileNames = [
-      "xiaozhi.config.json5",
-      "xiaozhi.config.jsonc",
-      "xiaozhi.config.json",
-    ];
-
-    for (const fileName of configFileNames) {
-      const filePath = resolve(configDir, fileName);
-      if (existsSync(filePath)) {
-        return filePath;
-      }
+    if (resolvedPath) {
+      return resolvedPath;
     }
 
-    // 如果都不存在，返回默认的 JSON 文件路径
+    // 如果都找不到，返回用户家目录的默认路径
+    const defaultDir = ConfigResolver.getDefaultConfigDir();
+    if (defaultDir) {
+      return resolve(defaultDir, "xiaozhi.config.json");
+    }
+
+    // 最后回退到当前目录
+    const configDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();
     return resolve(configDir, "xiaozhi.config.json");
   }
 
@@ -334,26 +337,15 @@ export class ConfigManager {
 
   /**
    * 检查配置文件是否存在
+   *
+   * 按优先级检查配置文件是否存在：
+   * 1. 环境变量 XIAOZHI_CONFIG_DIR 指定的目录
+   * 2. 当前工作目录
+   * 3. 用户家目录/.xiaozhi-client/
    */
   public configExists(): boolean {
-    // 配置文件路径 - 优先使用环境变量指定的目录，否则使用当前工作目录
-    const configDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();
-
-    // 按优先级检查配置文件是否存在
-    const configFileNames = [
-      "xiaozhi.config.json5",
-      "xiaozhi.config.jsonc",
-      "xiaozhi.config.json",
-    ];
-
-    for (const fileName of configFileNames) {
-      const filePath = resolve(configDir, fileName);
-      if (existsSync(filePath)) {
-        return true;
-      }
-    }
-
-    return false;
+    const { ConfigResolver } = require("./resolver.js");
+    return ConfigResolver.resolveConfigPath() !== null;
   }
 
   /**
