@@ -323,20 +323,20 @@ export class ToolApiHandler {
 
       switch (status) {
         case "enabled":
-          // 已启用工具：从 xiaozhi.config.json 的 customMCP.tools 获取
-          tools = configManager.getCustomMCPTools();
+          // 已启用工具：包括 customMCP 和 mcpServerConfig 中启用的工具
+          tools = this.getEnabledTools();
           this.logger.debug(`获取已启用工具，共 ${tools.length} 个`);
           break;
 
         case "disabled":
-          // 未启用工具：从缓存中获取所有工具，过滤掉已启用的
+          // 未启用工具：从 mcpServerConfig 中获取禁用的工具
           tools = await this.getDisabledTools();
           this.logger.debug(`获取未启用工具，共 ${tools.length} 个`);
           break;
 
         default:
-          // 所有工具：从 xiaozhi.config.json 的 customMCP.tools 获取
-          tools = configManager.getCustomMCPTools();
+          // 所有工具：包括 customMCP 和 mcpServerConfig 中的所有工具
+          tools = this.getEnabledTools();
           this.logger.debug(`获取所有工具，共 ${tools.length} 个`);
           break;
       }
@@ -366,61 +366,60 @@ export class ToolApiHandler {
 
   /**
    * 获取未启用工具
-   * 从缓存中获取所有工具，过滤掉已启用的工具和已删除的 MCP 服务
+   * 从 mcpServerConfig 中读取工具配置，过滤掉已启用的工具
    */
   private async getDisabledTools(): Promise<CustomMCPTool[]> {
     try {
-      // 1. 获取已启用的工具名称集合
-      const enabledTools = configManager.getCustomMCPTools();
-      const enabledToolNames = new Set(enabledTools.map((tool) => tool.name));
+      // 1. 获取 customMCP 中的特殊工具（这些算作启用）
+      const customMCPTools = configManager.getCustomMCPTools();
+      const customMCPToolNames = new Set(
+        customMCPTools.map((tool) => tool.name)
+      );
 
-      // 2. 从缓存中获取所有可用工具
-      const cacheManager = new MCPCacheManager();
-      const allCachedTools = await cacheManager.getAllCachedTools();
+      // 2. 从 mcpServerConfig 获取所有 MCP 工具配置（权威数据源）
+      const mcpServerConfig = configManager.getMcpServerConfig();
 
-      // 3. 获取当前配置的 MCP 服务列表
-      const config = configManager.getConfig();
-      const configuredServers = new Set(Object.keys(config.mcpServers || {}));
-
-      // 4. 过滤掉已启用的工具和已删除 MCP 服务的工具
       const disabledTools: CustomMCPTool[] = [];
 
-      for (const cachedTool of allCachedTools) {
-        // 如果工具已在启用列表中，跳过
-        if (enabledToolNames.has(cachedTool.name)) {
-          continue;
-        }
+      // 3. 遍历每个服务的工具配置
+      for (const [serviceName, serverConfig] of Object.entries(
+        mcpServerConfig
+      )) {
+        for (const [toolName, toolConfig] of Object.entries(
+          serverConfig.tools || {}
+        )) {
+          // 构建完整工具名
+          const fullToolName = `${serviceName}__${toolName}`;
 
-        // 从工具名称中解析服务名称
-        const serviceName = cachedTool.name.split("__")[0];
+          // 跳过已在 customMCP 中的工具
+          if (customMCPToolNames.has(fullToolName)) {
+            continue;
+          }
 
-        // 检查该 MCP 服务是否仍在配置中
-        if (!configuredServers.has(serviceName)) {
-          // 该 MCP 服务已从配置中删除，不显示为"未启用工具"
-          this.logger.debug(
-            `工具 ${cachedTool.name} 对应的 MCP 服务 ${serviceName} 已删除，跳过显示`
-          );
-          continue;
-        }
+          // 检查 enable 配置
+          if (toolConfig.enable === true) {
+            // 工具已启用，跳过
+            continue;
+          }
 
-        // 将缓存中的 Tool 格式转换为 CustomMCPTool 格式
-        const customTool: CustomMCPTool = {
-          name: cachedTool.name,
-          description: cachedTool.description || "",
-          inputSchema: cachedTool.inputSchema || {},
-          handler: {
-            type: "mcp",
-            config: {
-              serviceName: serviceName,
-              toolName: cachedTool.name.split("__").slice(1).join("__"),
+          // enable 为 false 或未定义，加入禁用列表
+          disabledTools.push({
+            name: fullToolName,
+            description: toolConfig.description || "",
+            inputSchema: {}, // TODO: 需要从实际服务获取 inputSchema
+            handler: {
+              type: "mcp",
+              config: {
+                serviceName: serviceName,
+                toolName: toolName,
+              },
             },
-          },
-        };
-        disabledTools.push(customTool);
+          });
+        }
       }
 
       this.logger.debug(
-        `从 ${allCachedTools.length} 个缓存工具中筛选出 ${disabledTools.length} 个未启用工具`
+        `从 mcpServerConfig 中筛选出 ${disabledTools.length} 个未启用工具`
       );
       return disabledTools;
     } catch (error) {
@@ -428,6 +427,44 @@ export class ToolApiHandler {
       // 如果获取失败，返回空数组而不是抛出错误
       return [];
     }
+  }
+
+  /**
+   * 获取已启用工具
+   * 包括 customMCP 中的特殊工具和 mcpServerConfig 中标记为启用的工具
+   */
+  private getEnabledTools(): CustomMCPTool[] {
+    const enabledTools: CustomMCPTool[] = [];
+
+    // 1. 添加 customMCP 中的特殊工具
+    enabledTools.push(...configManager.getCustomMCPTools());
+
+    // 2. 从 mcpServerConfig 添加启用工具
+    const mcpServerConfig = configManager.getMcpServerConfig();
+
+    for (const [serviceName, serverConfig] of Object.entries(mcpServerConfig)) {
+      for (const [toolName, toolConfig] of Object.entries(
+        serverConfig.tools || {}
+      )) {
+        // 只添加 enable === true 的工具
+        if (toolConfig.enable === true) {
+          enabledTools.push({
+            name: `${serviceName}__${toolName}`,
+            description: toolConfig.description || "",
+            inputSchema: {}, // TODO: 需要从实际服务获取 inputSchema
+            handler: {
+              type: "mcp",
+              config: {
+                serviceName: serviceName,
+                toolName: toolName,
+              },
+            },
+          });
+        }
+      }
+    }
+
+    return enabledTools;
   }
 
   /**
