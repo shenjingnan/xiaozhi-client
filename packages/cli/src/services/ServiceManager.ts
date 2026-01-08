@@ -3,6 +3,7 @@
  */
 
 import type { ConfigManager } from "@xiaozhi-client/config";
+import { ConfigInitializer } from "@xiaozhi-client/config";
 import { ConfigError, ServiceError } from "../errors/index";
 import type {
   ServiceManager as IServiceManager,
@@ -168,7 +169,6 @@ export class ServiceManagerImpl implements IServiceManager {
       try {
         console.log("ℹ️  未找到配置文件，正在创建默认配置...");
 
-        const { ConfigInitializer } = await import("@xiaozhi-client/config");
         const configPath = await ConfigInitializer.initializeDefaultConfig();
 
         console.log(`✅ 默认配置已创建: ${configPath}`);
