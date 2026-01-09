@@ -259,68 +259,46 @@ export function McpServerList({
 
   const handleToggleTool = async (name: string, currentEnable: boolean) => {
     try {
-      if (currentEnable) {
-        // 从使用中的工具移除（删除工具）
-        // 首先找到对应的原始工具信息
-        const originalTool = [...enabledTools, ...disabledTools].find(
-          (tool) => tool.name === name
-        );
+      // 首先找到对应的原始工具信息
+      const originalTool = [...enabledTools, ...disabledTools].find(
+        (tool) => tool.name === name
+      );
 
-        if (!originalTool) {
-          toast.error("找不到对应的工具信息");
-          return;
-        }
+      if (!originalTool) {
+        toast.error("找不到对应的工具信息");
+        return;
+      }
 
-        // 检查是否为 Coze 工作流工具
-        if (originalTool.serverName === "coze") {
+      // 检查是否为 Coze 工作流工具
+      if (originalTool.serverName === "coze") {
+        if (currentEnable) {
           // Coze 工作流工具需要确认对话框
           setCozeToolToRemove(name);
           return; // 等待用户确认
         }
-
-        // 执行移除操作（普通 MCP 工具）
-        await apiClient.removeCustomTool(name);
-        toast.success(`删除工具 ${name} 成功`);
-      } else {
-        // 添加到使用中的工具（启用工具）
-        // 首先找到对应的原始工具信息来构建添加工具的请求
-        const originalTool = [...enabledTools, ...disabledTools].find(
-          (tool) => tool.name === name
+        // 添加 Coze 工作流工具
+        await apiClient.addCustomTool(
+          {
+            workflow_id: "", // Coze 工具不需要 workflow_id
+            workflow_name: name,
+            description: originalTool.description || "",
+            icon_url: "",
+            app_id: "",
+          },
+          name,
+          originalTool.description || ""
         );
-
-        if (!originalTool) {
-          toast.error("找不到对应的工具信息");
-          return;
-        }
-
-        // 根据工具类型构建对应的请求格式
-        if (originalTool.serverName === "coze") {
-          // Coze 工作流工具 - 使用旧的向后兼容格式
-          await apiClient.addCustomTool(
-            {
-              workflow_id: "", // Coze 工具不需要 workflow_id
-              workflow_name: name,
-              description: originalTool.description || "",
-              icon_url: "",
-              app_id: "",
-            },
-            name,
-            originalTool.description || ""
-          );
-        } else {
-          // MCP 工具 - 使用新的类型化格式
-          await apiClient.addCustomTool({
-            type: "mcp",
-            data: {
-              serviceName: originalTool.serverName,
-              toolName: originalTool.toolName,
-              customName: name,
-              customDescription: originalTool.description || "",
-            },
-          });
-        }
-
         toast.success(`添加工具 ${name} 成功`);
+      } else {
+        // 普通 MCP 工具 - 使用新的 MCP 工具管理 API
+        const action = currentEnable ? "disable" : "enable";
+        await apiClient.manageMCPTool({
+          action,
+          serverName: originalTool.serverName,
+          toolName: originalTool.toolName,
+          description: originalTool.description,
+        });
+        toast.success(`${currentEnable ? "禁用" : "启用"}工具 ${name} 成功`);
       }
 
       // 重新获取工具列表以更新状态

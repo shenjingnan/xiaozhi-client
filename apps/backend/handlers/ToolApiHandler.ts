@@ -2438,13 +2438,13 @@ export class ToolApiHandler {
       // 根据不同的 action 执行相应操作
       switch (action) {
         case "enable":
-          return this.handleEnableTool(serverName, toolName, description);
+          return this.handleEnableTool(c, serverName, toolName, description);
         case "disable":
-          return this.handleDisableTool(serverName, toolName);
+          return this.handleDisableTool(c, serverName, toolName);
         case "status":
-          return this.handleGetToolStatus(serverName, toolName);
+          return this.handleGetToolStatus(c, serverName, toolName);
         case "toggle":
-          return this.handleToggleTool(serverName, toolName);
+          return this.handleToggleTool(c, serverName, toolName);
         default: {
           const errorResponse = this.createErrorResponse(
             "INVALID_ACTION",
@@ -2476,11 +2476,11 @@ export class ToolApiHandler {
 
       // 如果指定了服务名，获取该服务的工具列表
       if (serverName) {
-        return this.handleListServerTools(serverName, includeUsageStats);
+        return this.handleListServerTools(c, serverName, includeUsageStats);
       }
 
       // 否则获取所有服务的工具列表
-      return this.handleListAllTools(includeUsageStats);
+      return this.handleListAllTools(c, includeUsageStats);
     } catch (error) {
       this.logger.error("获取工具列表失败:", error);
       const errorResponse = this.createErrorResponse(
@@ -2495,6 +2495,7 @@ export class ToolApiHandler {
    * 处理启用工具
    */
   private async handleEnableTool(
+    c: Context,
     serverName: string,
     toolName: string,
     description?: string
@@ -2528,6 +2529,7 @@ export class ToolApiHandler {
    * 处理禁用工具
    */
   private async handleDisableTool(
+    c: Context,
     serverName: string,
     toolName: string
   ): Promise<Response> {
@@ -2555,6 +2557,7 @@ export class ToolApiHandler {
    * 处理获取工具状态
    */
   private async handleGetToolStatus(
+    c: Context,
     serverName: string,
     toolName: string
   ): Promise<Response> {
@@ -2589,6 +2592,7 @@ export class ToolApiHandler {
    * 处理切换工具状态
    */
   private async handleToggleTool(
+    c: Context,
     serverName: string,
     toolName: string
   ): Promise<Response> {
@@ -2622,6 +2626,7 @@ export class ToolApiHandler {
    * 处理获取指定服务的工具列表
    */
   private async handleListServerTools(
+    c: Context,
     serverName: string,
     includeUsageStats?: boolean
   ): Promise<Response> {
@@ -2673,10 +2678,38 @@ export class ToolApiHandler {
    * 处理获取所有服务的工具列表
    */
   private async handleListAllTools(
+    c: Context,
     includeUsageStats?: boolean
   ): Promise<Response> {
     const mcpServerConfig = configManager.getMcpServerConfig();
-    const result: Record<string, unknown> = {
+
+    // 定义工具信息接口
+    interface ToolInfo {
+      toolName: string;
+      enabled: boolean;
+      description: string;
+      usageCount?: number;
+      lastUsedTime?: string;
+    }
+
+    // 定义服务器工具信息接口
+    interface ServerToolsInfo {
+      serverName: string;
+      tools: ToolInfo[];
+      total: number;
+      enabledCount: number;
+      disabledCount: number;
+    }
+
+    // 定义返回结果接口
+    interface AllToolsResult {
+      servers: ServerToolsInfo[];
+      totalTools: number;
+      totalEnabled: number;
+      totalDisabled: number;
+    }
+
+    const result: AllToolsResult = {
       servers: [],
       totalTools: 0,
       totalEnabled: 0,
@@ -2684,20 +2717,20 @@ export class ToolApiHandler {
     };
 
     for (const [serverName, serverConfig] of Object.entries(mcpServerConfig)) {
-      const tools = Object.entries(serverConfig.tools || {}).map(
+      const tools: ToolInfo[] = Object.entries(serverConfig.tools || {}).map(
         ([toolName, toolConfig]) => {
-          const result: Record<string, unknown> = {
+          const toolInfo: ToolInfo = {
             toolName,
             enabled: toolConfig.enable !== false,
             description: toolConfig.description || "",
           };
 
           if (includeUsageStats) {
-            result.usageCount = toolConfig.usageCount;
-            result.lastUsedTime = toolConfig.lastUsedTime;
+            toolInfo.usageCount = toolConfig.usageCount;
+            toolInfo.lastUsedTime = toolConfig.lastUsedTime;
           }
 
-          return result;
+          return toolInfo;
         }
       );
 
