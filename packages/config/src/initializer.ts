@@ -4,7 +4,7 @@
  */
 
 import path from "node:path";
-import { mkdirSync, existsSync, rmSync, readdirSync, statSync, copyFileSync, mkdirSync as fsMkdirSync } from "node:fs";
+import { mkdirSync, existsSync, rmSync, readdirSync, statSync, copyFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -32,9 +32,9 @@ export class ConfigInitializer {
 
     const xiaozhiClientDir = path.join(homeDir, ".xiaozhi-client");
 
-    // 如果目录已存在，先删除（确保是干净的状态）
+    // 如果目录已存在，直接使用现有配置目录，避免删除用户数据
     if (existsSync(xiaozhiClientDir)) {
-      rmSync(xiaozhiClientDir, { recursive: true, force: true });
+      return xiaozhiClientDir;
     }
 
     // 创建目录
@@ -84,7 +84,7 @@ export class ConfigInitializer {
 
       if (stat.isDirectory()) {
         // 递归复制子目录
-        fsMkdirSync(destPath, { recursive: true });
+        mkdirSync(destPath, { recursive: true });
         this.copyDirectoryRecursive(srcPath, destPath, exclude);
       } else {
         // 复制文件

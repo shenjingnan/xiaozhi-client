@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import * as commentJson from "comment-json";
 import dayjs from "dayjs";
 import { createJson5Writer, parseJson5 } from "./json5-adapter.js";
+import { ConfigResolver } from "./resolver.js";
 
 // 在 ESM 中，需要从 import.meta.url 获取当前文件目录
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -292,7 +293,6 @@ export class ConfigManager {
    */
   private getConfigFilePath(): string {
     // 优先使用 ConfigResolver 解析配置路径
-    const { ConfigResolver } = require("./resolver.js");
     const resolvedPath = ConfigResolver.resolveConfigPath();
 
     if (resolvedPath) {
@@ -344,7 +344,6 @@ export class ConfigManager {
    * 3. 用户家目录/.xiaozhi-client/
    */
   public configExists(): boolean {
-    const { ConfigResolver } = require("./resolver.js");
     return ConfigResolver.resolveConfigPath() !== null;
   }
 
