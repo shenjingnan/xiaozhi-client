@@ -693,54 +693,56 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
   });
 
   describe("checkEnvironment 检查环境", () => {
-    it("如果配置不存在应抛出 ConfigError", () => {
+    it("如果配置不存在应抛出 ConfigError", async () => {
       mockConfigManager.configExists.mockReturnValue(false);
 
-      expect(() => (serviceManager as any).checkEnvironment()).toThrow(
+      await expect((serviceManager as any).checkEnvironment()).rejects.toThrow(
         ConfigError
       );
     });
 
-    it("如果配置无效应抛出 ConfigError", () => {
+    it("如果配置无效应抛出 ConfigError", async () => {
       mockConfigManager.configExists.mockReturnValue(true);
       mockConfigManager.getConfig.mockReturnValue(null);
 
-      expect(() => (serviceManager as any).checkEnvironment()).toThrow(
+      await expect((serviceManager as any).checkEnvironment()).rejects.toThrow(
         ConfigError
       );
     });
 
-    it("如果配置有效应通过", () => {
+    it("如果配置有效应通过", async () => {
       mockConfigManager.configExists.mockReturnValue(true);
       mockConfigManager.getConfig.mockReturnValue({ valid: true });
 
-      expect(() => (serviceManager as any).checkEnvironment()).not.toThrow();
+      await expect(
+        (serviceManager as any).checkEnvironment()
+      ).resolves.not.toThrow();
     });
 
-    it("应处理配置获取时的异常", () => {
+    it("应处理配置获取时的异常", async () => {
       mockConfigManager.configExists.mockReturnValue(true);
       mockConfigManager.getConfig.mockImplementation(() => {
         throw new Error("配置解析失败");
       });
 
-      expect(() => (serviceManager as any).checkEnvironment()).toThrow(
+      await expect((serviceManager as any).checkEnvironment()).rejects.toThrow(
         ConfigError
       );
-      expect(() => (serviceManager as any).checkEnvironment()).toThrow(
+      await expect((serviceManager as any).checkEnvironment()).rejects.toThrow(
         "配置文件错误: 配置解析失败"
       );
     });
 
-    it("应处理非 Error 类型的异常", () => {
+    it("应处理非 Error 类型的异常", async () => {
       mockConfigManager.configExists.mockReturnValue(true);
       mockConfigManager.getConfig.mockImplementation(() => {
         throw "字符串错误";
       });
 
-      expect(() => (serviceManager as any).checkEnvironment()).toThrow(
+      await expect((serviceManager as any).checkEnvironment()).rejects.toThrow(
         ConfigError
       );
-      expect(() => (serviceManager as any).checkEnvironment()).toThrow(
+      await expect((serviceManager as any).checkEnvironment()).rejects.toThrow(
         "配置文件错误: 字符串错误"
       );
     });
