@@ -10,23 +10,35 @@ import { ConfigManager } from "@xiaozhi-client/config";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock fs module
-vi.mock("node:fs", () => ({
-  existsSync: vi.fn(),
-  readFileSync: vi.fn(),
-  writeFileSync: vi.fn(),
-  copyFileSync: vi.fn(),
-}));
+vi.mock("node:fs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs")>();
+  return {
+    ...actual,
+    existsSync: vi.fn(),
+    readFileSync: vi.fn(),
+    writeFileSync: vi.fn(),
+    copyFileSync: vi.fn(),
+  };
+});
 
 // Mock path module
-vi.mock("node:path", () => ({
-  resolve: vi.fn(),
-  dirname: vi.fn(),
-}));
+vi.mock("node:path", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:path")>();
+  return {
+    ...actual,
+    resolve: vi.fn(),
+    dirname: vi.fn(),
+  };
+});
 
 // Mock url module
-vi.mock("node:url", () => ({
-  fileURLToPath: vi.fn(),
-}));
+vi.mock("node:url", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:url")>();
+  return {
+    ...actual,
+    fileURLToPath: vi.fn(),
+  };
+});
 
 // Mock logger
 vi.mock("../Logger", () => ({

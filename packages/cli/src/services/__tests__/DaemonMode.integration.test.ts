@@ -1,3 +1,4 @@
+import consola from "consola";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ServiceStartOptions } from "../../interfaces/Service.js";
 import { PathUtils } from "../../utils/PathUtils.js";
@@ -34,8 +35,10 @@ const mockProcessExit = vi.spyOn(process, "exit").mockImplementation((code) => {
   throw new Error(`process.exit unexpectedly called with "${code}"`);
 });
 
-// Mock console methods
-const mockConsoleLog = vi.spyOn(console, "log").mockImplementation(() => {});
+// Mock consola.success
+const mockConsolaSuccess = vi
+  .spyOn(consola, "success")
+  .mockImplementation(() => {});
 
 describe("Daemon 模式集成测试", () => {
   let serviceManager: ServiceManagerImpl;
@@ -44,13 +47,13 @@ describe("Daemon 模式集成测试", () => {
   beforeEach(async () => {
     // Reset all mocks but preserve implementations
     mockProcessExit.mockClear();
-    mockConsoleLog.mockClear();
+    mockConsolaSuccess.mockClear();
 
     // Re-setup mock implementations
     mockProcessExit.mockImplementation((code) => {
       throw new Error(`process.exit unexpectedly called with "${code}"`);
     });
-    mockConsoleLog.mockImplementation(() => {});
+    mockConsolaSuccess.mockImplementation(() => {});
 
     // Setup PathUtils mocks
     vi.mocked(PathUtils.getWebServerLauncherPath).mockReturnValue(
@@ -144,8 +147,8 @@ describe("Daemon 模式集成测试", () => {
         "daemon"
       );
       expect(mockChild.unref).toHaveBeenCalled();
-      expect(mockConsoleLog).toHaveBeenCalledWith(
-        "✅ 后台服务已启动 (PID: 12345)"
+      expect(mockConsolaSuccess).toHaveBeenCalledWith(
+        "后台服务已启动 (PID: 12345)"
       );
       expect(mockProcessExit).toHaveBeenCalledWith(0);
     });
@@ -187,9 +190,9 @@ describe("Daemon 模式集成测试", () => {
 
   describe("MCP Server Daemon 模式", () => {
     it("应完成完整的 MCP daemon 启动工作流程", async () => {
-      // Re-setup console.log mock for this specific test
-      mockConsoleLog.mockClear();
-      mockConsoleLog.mockImplementation(() => {});
+      // Re-setup consola.success mock for this specific test
+      mockConsolaSuccess.mockClear();
+      mockConsolaSuccess.mockImplementation(() => {});
 
       const { spawn } = await import("node:child_process");
       const mockSpawn = vi.mocked(spawn);
@@ -230,9 +233,9 @@ describe("Daemon 模式集成测试", () => {
       );
       expect(mockChild.unref).toHaveBeenCalled();
 
-      // Verify console.log was called with the success message
-      expect(mockConsoleLog).toHaveBeenCalledWith(
-        "✅ MCP Server 已在后台启动 (PID: 54321, Port: 4000)"
+      // Verify consola.success was called with the success message
+      expect(mockConsolaSuccess).toHaveBeenCalledWith(
+        "MCP Server 已在后台启动 (PID: 54321, Port: 4000)"
       );
     });
   });

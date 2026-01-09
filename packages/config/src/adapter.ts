@@ -3,13 +3,14 @@
  * 将旧的配置格式转换为新的 MCPServiceConfig 格式，确保向后兼容性
  */
 
-import { isAbsolute, resolve } from "node:path";
+import { isAbsolute, resolve, dirname } from "node:path";
 import type {
   LocalMCPServerConfig,
   MCPServerConfig,
   SSEMCPServerConfig,
   StreamableHTTPMCPServerConfig,
 } from "./manager.js";
+import { ConfigResolver } from "./resolver.js";
 
 // 从外部导入 MCP 类型（这些类型将在运行时从 backend 包解析）
 // 为了避免循环依赖，这里使用动态导入的方式
@@ -177,15 +178,29 @@ function convertLocalConfig(
     );
   }
 
-  // 获取用户的工作目录（优先使用环境变量，否则使用当前工作目录）
-  const workingDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();
+  // 获取配置文件所在目录作为工作目录
+  // 优先使用环境变量，否则查找配置文件所在目录，最后回退到当前工作目录
+  let workingDir: string;
+  if (process.env.XIAOZHI_CONFIG_DIR) {
+    workingDir = process.env.XIAOZHI_CONFIG_DIR;
+  } else {
+    // 使用 ConfigResolver 查找配置文件路径
+    const configPath = ConfigResolver.resolveConfigPath();
+    if (configPath) {
+      // 获取配置文件所在目录
+      workingDir = dirname(configPath);
+    } else {
+      // 回退到当前工作目录
+      workingDir = process.cwd();
+    }
+  }
 
   // 解析 args 中的相对路径
   const resolvedArgs = (config.args || []).map((arg) => {
     // 检查是否为相对路径（以 ./ 开头或不以 / 开头且包含文件扩展名）
     if (isRelativePath(arg)) {
       const resolvedPath = resolve(workingDir, arg);
-      console.log("解析相对路径", { arg, resolvedPath });
+      console.log("解析相对路径", { arg, resolvedPath, workingDir });
       return resolvedPath;
     }
     return arg;
