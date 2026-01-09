@@ -20,6 +20,8 @@ function App() {
       {/* Toast 通知容器 */}
       <Toaster
         richColors
+        closeButton={true} // 启用关闭按钮
+        swipeDirections={[]} // 禁用所有方向的滑动手势，只允许点击关闭按钮关闭
         toastOptions={{
           classNames: {
             description: "group-[.toast]:text-muted-foreground",
