@@ -120,14 +120,6 @@ export class CustomMCPHandler {
           this.logger.debug(
             `[CustomMCP] 已加载 Coze 工具: ${tool.name} (workflow_id: ${tool.handler.config.workflow_id})`
           );
-        } else {
-          // 根据是否为 proxy 类型显示不同的警告信息
-          const platformInfo = isProxyHandler(tool.handler)
-            ? `/${tool.handler.platform}`
-            : "";
-          this.logger.warn(
-            `[CustomMCP] 跳过不支持的工具类型: ${tool.name} (${tool.handler.type}${platformInfo})`
-          );
         }
       }
 
