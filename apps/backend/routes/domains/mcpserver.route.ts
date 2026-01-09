@@ -8,7 +8,7 @@ import type { HandlerDependencies, RouteDefinition } from "../types.js";
 
 /**
  * MCP 服务器处理器包装函数
- * 统一处理 MCP Server API Handler 的错误检查
+ * 统一处理 MCP Server API Handler 的初始化检查
  */
 const withMCPServerHandler = async (
   c: Context,

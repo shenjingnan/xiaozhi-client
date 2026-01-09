@@ -153,6 +153,34 @@ export function normalizeRoutes(route: RouteRegistry): RouteDefinition[] {
 }
 
 /**
+ * 创建路由处理器辅助函数
+ * 自动处理依赖注入，减少样板代码
+ *
+ * @example
+ * ```typescript
+ * const h = createHandler("versionApiHandler");
+ * export const routes = [
+ *   {
+ *     method: "GET",
+ *     path: "/api/version",
+ *     handler: h((handler, c) => handler.getVersion(c)),
+ *   }
+ * ];
+ * ```
+ */
+export function createHandler<K extends keyof HandlerDependencies>(
+  dependencyKey: K
+): (
+  method: (handler: HandlerDependencies[K], c: Context) => Promise<Response>
+) => RouteDefinition["handler"] {
+  return (method) => (c: Context) => {
+    const dependencies = c.get("dependencies") as HandlerDependencies;
+    const handler = dependencies[dependencyKey];
+    return method(handler, c);
+  };
+}
+
+/**
  * 路由域配置接口
  * @deprecated 使用 RouteDefinition[] 代替
  */

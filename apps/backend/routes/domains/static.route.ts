@@ -3,21 +3,22 @@
  * 处理静态文件服务相关的路由
  */
 
-import type { Context } from "hono";
-import type { HandlerDependencies, RouteDefinition } from "../types.js";
+import type { RouteDefinition } from "../types.js";
+import { createHandler } from "../types.js";
+
+const h = createHandler("staticFileHandler");
 
 export const staticRoutes: RouteDefinition[] = [
   {
     method: "GET",
     path: "/*",
     name: "static-files",
-    handler: async (c: Context) => {
+    handler: h(async (handler, c) => {
       // 如果路径以 /api/ 开头，不处理静态文件，直接返回 404
       if (c.req.path.startsWith("/api/")) {
         return c.notFound();
       }
-      const dependencies = c.get("dependencies") as HandlerDependencies;
-      return await dependencies.staticFileHandler.handleStaticFile(c);
-    },
+      return await handler.handleStaticFile(c);
+    }),
   },
 ];

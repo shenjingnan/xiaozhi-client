@@ -3,65 +3,49 @@
  * 处理所有工具相关的 API 路由
  */
 
-import type { Context } from "hono";
-import type { HandlerDependencies, RouteDefinition } from "../types.js";
+import type { RouteDefinition } from "../types.js";
+import { createHandler } from "../types.js";
+
+const h = createHandler("toolApiHandler");
 
 /**
- * 工具调用路由定义（扁平化版本）
+ * 工具调用路由定义
  */
 export const toolsRoutes: RouteDefinition[] = [
   {
     method: "POST",
     path: "/api/tools/call",
     name: "tools-call",
-    handler: (c: Context) => {
-      const { toolApiHandler } = c.get("dependencies") as HandlerDependencies;
-      return toolApiHandler.callTool(c);
-    },
+    handler: h((handler, c) => handler.callTool(c)),
   },
   {
     method: "GET",
     path: "/api/tools/list",
     name: "tools-list",
-    handler: (c: Context) => {
-      const { toolApiHandler } = c.get("dependencies") as HandlerDependencies;
-      return toolApiHandler.listTools(c);
-    },
+    handler: h((handler, c) => handler.listTools(c)),
   },
   {
     method: "GET",
     path: "/api/tools/custom",
     name: "custom-tools-get",
-    handler: (c: Context) => {
-      const { toolApiHandler } = c.get("dependencies") as HandlerDependencies;
-      return toolApiHandler.getCustomTools(c);
-    },
+    handler: h((handler, c) => handler.getCustomTools(c)),
   },
   {
     method: "POST",
     path: "/api/tools/custom",
     name: "custom-tools-add",
-    handler: (c: Context) => {
-      const { toolApiHandler } = c.get("dependencies") as HandlerDependencies;
-      return toolApiHandler.addCustomTool(c);
-    },
+    handler: h((handler, c) => handler.addCustomTool(c)),
   },
   {
     method: "PUT",
     path: "/api/tools/custom/:toolName",
     name: "custom-tools-update",
-    handler: (c: Context) => {
-      const { toolApiHandler } = c.get("dependencies") as HandlerDependencies;
-      return toolApiHandler.updateCustomTool(c);
-    },
+    handler: h((handler, c) => handler.updateCustomTool(c)),
   },
   {
     method: "DELETE",
     path: "/api/tools/custom/:toolName",
     name: "custom-tools-delete",
-    handler: (c: Context) => {
-      const { toolApiHandler } = c.get("dependencies") as HandlerDependencies;
-      return toolApiHandler.removeCustomTool(c);
-    },
+    handler: h((handler, c) => handler.removeCustomTool(c)),
   },
 ];
