@@ -1,40 +1,31 @@
 /**
  * MCP 协议路由模块
  * 处理 MCP 协议相关的 API 路由
- * 简化版本：移除继承，直接导出路由配置
  */
 
 import type { Context } from "hono";
-import type { HandlerDependencies, RouteConfig } from "../types.js";
+import type { HandlerDependencies, RouteDefinition } from "../types.js";
 
 /**
- * MCP 协议路由配置
- * 从原有的 MCPRoutes 类迁移而来，保持功能完全一致
+ * MCP 协议路由定义（扁平化版本）
  */
-export const mcpRoutes: RouteConfig = {
-  name: "mcp",
-  path: "/mcp",
-  description: "MCP 协议相关 API",
-  routes: [
-    {
-      method: "POST",
-      path: "",
-      handler: (c: Context) => {
-        const { mcpRouteHandler } = c.get(
-          "dependencies"
-        ) as HandlerDependencies;
-        return mcpRouteHandler.handlePost(c);
-      },
+export const mcpRoutes: RouteDefinition[] = [
+  {
+    method: "POST",
+    path: "/mcp",
+    name: "mcp-post",
+    handler: (c: Context) => {
+      const { mcpRouteHandler } = c.get("dependencies") as HandlerDependencies;
+      return mcpRouteHandler.handlePost(c);
     },
-    {
-      method: "GET",
-      path: "",
-      handler: (c: Context) => {
-        const { mcpRouteHandler } = c.get(
-          "dependencies"
-        ) as HandlerDependencies;
-        return mcpRouteHandler.handleGet(c);
-      },
+  },
+  {
+    method: "GET",
+    path: "/mcp",
+    name: "mcp-get",
+    handler: (c: Context) => {
+      const { mcpRouteHandler } = c.get("dependencies") as HandlerDependencies;
+      return mcpRouteHandler.handleGet(c);
     },
-  ],
-};
+  },
+];

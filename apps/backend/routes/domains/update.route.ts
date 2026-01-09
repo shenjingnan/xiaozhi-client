@@ -4,22 +4,16 @@
  */
 
 import type { Context } from "hono";
-import type { HandlerDependencies, RouteConfig } from "../types.js";
+import type { HandlerDependencies, RouteDefinition } from "../types.js";
 
-export const updateRoutes: RouteConfig = {
-  name: "update",
-  path: "/api",
-  description: "更新管理相关 API",
-  routes: [
-    {
-      method: "POST",
-      path: "/update",
-      handler: (c: Context) => {
-        const { updateApiHandler } = c.get(
-          "dependencies"
-        ) as HandlerDependencies;
-        return updateApiHandler.performUpdate(c);
-      },
+export const updateRoutes: RouteDefinition[] = [
+  {
+    method: "POST",
+    path: "/api/update",
+    name: "update-perform",
+    handler: (c: Context) => {
+      const { updateApiHandler } = c.get("dependencies") as HandlerDependencies;
+      return updateApiHandler.performUpdate(c);
     },
-  ],
-};
+  },
+];

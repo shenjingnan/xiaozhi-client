@@ -97,17 +97,64 @@ export type HTTPMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 export interface RouteDefinition {
   /** HTTP 方法 */
   method: HTTPMethod;
-  /** 路由路径（相对于域路径） */
+  /** 完整路由路径（相对于应用根路径） */
   path: string;
   /** 处理函数 */
   handler: (c: Context) => Promise<Response | undefined>;
   /** 路由级别的中间件 */
   middleware?: MiddlewareHandler[];
+  /** 可选的路由名称（用于日志和调试） */
+  name?: string;
+}
+
+/**
+ * 路由组接口
+ * 用于需要组级别中间件或元数据的场景
+ */
+export interface RouteGroup {
+  /** 路由定义数组 */
+  routes: RouteDefinition[];
+  /** 可选的组名称（用于日志和调试） */
+  name?: string;
+  /** 可选的组描述 */
+  description?: string;
+  /** 组级别的中间件（应用到组内所有路由） */
+  middleware?: MiddlewareHandler[];
+}
+
+/**
+ * 路由注册联合类型
+ * 支持直接注册路由数组或路由组
+ */
+export type RouteRegistry = RouteDefinition[] | RouteGroup;
+
+/**
+ * 判断是否为路由组
+ */
+export function isRouteGroup(route: RouteRegistry): route is RouteGroup {
+  return Array.isArray((route as RouteGroup).routes);
+}
+
+/**
+ * 将路由注册转换为路由数组
+ */
+export function normalizeRoutes(route: RouteRegistry): RouteDefinition[] {
+  if (isRouteGroup(route)) {
+    const { routes, middleware } = route;
+    if (middleware && middleware.length > 0) {
+      return routes.map((r) => ({
+        ...r,
+        middleware: [...middleware, ...(r.middleware || [])],
+      }));
+    }
+    return routes;
+  }
+  return route;
 }
 
 /**
  * 路由域配置接口
- * 定义一个功能域的所有路由配置
+ * @deprecated 使用 RouteDefinition[] 代替
  */
 export interface RouteConfig {
   /** 域名称 */

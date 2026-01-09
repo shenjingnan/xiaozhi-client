@@ -6,7 +6,11 @@
 import type { Context, Hono, Next } from "hono";
 import { createErrorResponse } from "../middlewares/error.middleware.js";
 import type { AppContext } from "../types/hono.context.js";
-import type { RouteConfig } from "./types.js";
+import {
+  type RouteDefinition,
+  type RouteRegistry,
+  normalizeRoutes,
+} from "./types.js";
 
 /**
  * 路由管理器
@@ -14,43 +18,46 @@ import type { RouteConfig } from "./types.js";
  * 注意：依赖注入现在通过 WebServer 的中间件处理，RouteManager 不再直接管理依赖
  */
 export class RouteManager {
-  private routes: Map<string, RouteConfig> = new Map();
+  private routes: Map<string, RouteDefinition[]> = new Map();
 
   /**
    * 注册单个路由模块
    */
-  registerRoute(name: string, config: RouteConfig): void {
+  registerRoute(name: string, routeRegistry: RouteRegistry): void {
+    const routes = normalizeRoutes(routeRegistry);
     if (this.routes.has(name)) {
-      console.warn(`路由域 '${name}' 已存在，将被覆盖`);
+      console.warn(`路由组 '${name}' 已存在，将被覆盖`);
     }
-    this.routes.set(name, config);
-    console.log(`已注册路由域: ${name} (${config.routes.length} 个路由)`);
+    this.routes.set(name, routes);
+    console.log(`已注册路由组: ${name} (${routes.length} 个路由)`);
   }
 
   /**
    * 批量注册路由模块
    */
-  registerRoutes(routeConfigs: Record<string, RouteConfig>): void {
-    console.log(`开始批量注册 ${Object.keys(routeConfigs).length} 个路由域...`);
+  registerRoutes(routeRegistries: Record<string, RouteRegistry>): void {
+    console.log(
+      `开始批量注册 ${Object.keys(routeRegistries).length} 个路由组...`
+    );
 
-    for (const [name, config] of Object.entries(routeConfigs)) {
-      this.registerRoute(name, config);
+    for (const [name, routeRegistry] of Object.entries(routeRegistries)) {
+      this.registerRoute(name, routeRegistry);
     }
 
-    console.log(`批量注册完成，共注册 ${this.routes.size} 个路由域`);
+    console.log(`批量注册完成，共注册 ${this.routes.size} 个路由组`);
   }
 
   /**
    * 获取所有注册的路由配置
    */
-  getAllRoutes(): Map<string, RouteConfig> {
+  getAllRoutes(): Map<string, RouteDefinition[]> {
     return new Map(this.routes);
   }
 
   /**
    * 获取指定名称的路由配置
    */
-  getRoute(name: string): RouteConfig | undefined {
+  getRoute(name: string): RouteDefinition[] | undefined {
     return this.routes.get(name);
   }
 
@@ -58,9 +65,7 @@ export class RouteManager {
    * 将路由应用到 Hono 应用实例
    */
   applyToApp(app: Hono<AppContext>): void {
-    console.log(`开始将 ${this.routes.size} 个路由域应用到 Hono 应用...`);
-
-    // 注意：全局依赖注入中间件已移至 WebServer.ts 的 setupMiddleware()，避免中间件顺序冲突
+    console.log(`开始将 ${this.routes.size} 个路由组应用到 Hono 应用...`);
 
     // 获取所有路由并排序，确保 static 路由最后应用
     const routeEntries = Array.from(this.routes.entries());
@@ -71,70 +76,71 @@ export class RouteManager {
       return 0;
     });
 
-    for (const [domainName, config] of routeEntries) {
+    let totalRouteCount = 0;
+    for (const [groupName, routes] of routeEntries) {
       try {
-        this.applyRouteConfig(app, config);
-        console.log(`✓ 成功应用路由域: ${domainName}`);
+        for (const route of routes) {
+          this.applyRouteDefinition(app, route, groupName);
+          totalRouteCount++;
+        }
+        console.log(`✓ 成功应用路由组: ${groupName} (${routes.length} 个路由)`);
       } catch (error) {
-        console.error(`✗ 应用路由域失败: ${domainName}`, error);
+        console.error(`✗ 应用路由组失败: ${groupName}`, error);
       }
     }
 
-    console.log("路由应用完成");
+    console.log(`路由应用完成，共 ${totalRouteCount} 个路由`);
   }
 
   /**
-   * 应用单个路由配置到 Hono 应用
+   * 应用单个路由定义到 Hono 应用
    */
-  private applyRouteConfig(app: Hono<AppContext>, config: RouteConfig): void {
-    // 注册每个具体的路由
-    for (const route of config.routes) {
-      const fullPath = config.path + route.path;
+  private applyRouteDefinition(
+    app: Hono<AppContext>,
+    route: RouteDefinition,
+    groupName: string
+  ): void {
+    const { method, path, handler, middleware = [] } = route;
 
-      // 应用域级别的中间件和路由级别的中间件
-      const allMiddleware = [
-        ...(config.middleware || []),
-        ...(route.middleware || []),
-      ];
-
-      // 创建包装的处理器，添加错误处理
-      const wrappedHandler = async (c: Context<AppContext>, next: Next) => {
-        try {
-          const result = await route.handler(c);
-          // 直接返回结果，不管是 Response 还是什么
-          // Hono 会处理 Response 对象
-          return result;
-        } catch (error) {
-          console.error(`路由处理错误 [${route.method} ${fullPath}]:`, error);
-          const errorResponse = createErrorResponse(
-            "HANDLER_ERROR",
-            "处理器执行失败",
-            error instanceof Error ? error.message : String(error)
-          );
-          return c.json(errorResponse, 500);
-        }
-      };
-
-      // 使用方法映射简化注册逻辑，减少重复
-      const methodHandlers = {
-        GET: app.get.bind(app),
-        POST: app.post.bind(app),
-        PUT: app.put.bind(app),
-        DELETE: app.delete.bind(app),
-        PATCH: app.patch.bind(app),
-      } as const;
-
-      const handler =
-        methodHandlers[route.method as keyof typeof methodHandlers];
-      if (!handler) {
-        throw new Error(`不支持的 HTTP 方法: ${route.method}`);
+    // 创建包装的处理器，添加错误处理
+    const wrappedHandler = async (c: Context<AppContext>, next: Next) => {
+      try {
+        return await handler(c);
+      } catch (error) {
+        const routeName = route.name || `${groupName}:${path}`;
+        console.error(
+          `路由处理错误 [${method} ${path} - ${routeName}]:`,
+          error
+        );
+        const errorResponse = createErrorResponse(
+          "HANDLER_ERROR",
+          "处理器执行失败",
+          error instanceof Error ? error.message : String(error)
+        );
+        return c.json(errorResponse, 500);
       }
+    };
 
-      if (allMiddleware.length > 0) {
-        handler(fullPath, ...allMiddleware, wrappedHandler);
-      } else {
-        handler(fullPath, wrappedHandler);
-      }
+    // 使用方法映射简化注册逻辑
+    const methodHandlers = {
+      GET: app.get.bind(app),
+      POST: app.post.bind(app),
+      PUT: app.put.bind(app),
+      DELETE: app.delete.bind(app),
+      PATCH: app.patch.bind(app),
+    } as const;
+
+    const registerHandler =
+      methodHandlers[method as keyof typeof methodHandlers];
+    if (!registerHandler) {
+      throw new Error(`不支持的 HTTP 方法: ${method}`);
+    }
+
+    // 直接使用完整路径
+    if (middleware.length > 0) {
+      registerHandler(path, ...middleware, wrappedHandler);
+    } else {
+      registerHandler(path, wrappedHandler);
     }
   }
 

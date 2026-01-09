@@ -4,22 +4,18 @@
  */
 
 import type { Context } from "hono";
-import type { HandlerDependencies, RouteConfig } from "../types.js";
+import type { HandlerDependencies, RouteDefinition } from "../types.js";
 
-export const toolLogsRoutes: RouteConfig = {
-  name: "tool-logs",
-  path: "/api/tool-calls",
-  description: "工具调用日志相关 API",
-  routes: [
-    {
-      method: "GET",
-      path: "/logs",
-      handler: (c: Context) => {
-        const { toolCallLogApiHandler } = c.get(
-          "dependencies"
-        ) as HandlerDependencies;
-        return toolCallLogApiHandler.getToolCallLogs(c);
-      },
+export const toolLogsRoutes: RouteDefinition[] = [
+  {
+    method: "GET",
+    path: "/api/tool-calls/logs",
+    name: "tool-logs-get",
+    handler: (c: Context) => {
+      const { toolCallLogApiHandler } = c.get(
+        "dependencies"
+      ) as HandlerDependencies;
+      return toolCallLogApiHandler.getToolCallLogs(c);
     },
-  ],
-};
+  },
+];

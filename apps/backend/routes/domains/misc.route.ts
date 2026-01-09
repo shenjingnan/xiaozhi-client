@@ -4,23 +4,18 @@
  */
 
 import type { Context } from "hono";
-import type { HandlerDependencies, RouteConfig } from "../types.js";
+import type { HandlerDependencies, RouteDefinition } from "../types.js";
 
-export const miscRoutes: RouteConfig = {
-  name: "misc",
-  path: "/api",
-  description: "通用 API 路由",
-  routes: [
-    {
-      method: "POST",
-      path: "/restart",
-      handler: (c: Context) => {
-        const { serviceApiHandler } = c.get(
-          "dependencies"
-        ) as HandlerDependencies;
-        return serviceApiHandler.restartService(c);
-      },
-      // 注意：此路由是为了向后兼容保留，与 /api/services/restart 功能重复
+export const miscRoutes: RouteDefinition[] = [
+  {
+    method: "POST",
+    path: "/api/restart",
+    name: "misc-restart",
+    handler: (c: Context) => {
+      const { serviceApiHandler } = c.get(
+        "dependencies"
+      ) as HandlerDependencies;
+      return serviceApiHandler.restartService(c);
     },
-  ],
-};
+  },
+];

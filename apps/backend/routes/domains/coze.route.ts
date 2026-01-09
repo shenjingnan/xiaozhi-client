@@ -4,44 +4,43 @@
  */
 
 import type { Context } from "hono";
-import type { HandlerDependencies, RouteConfig } from "../types.js";
+import type { HandlerDependencies, RouteDefinition } from "../types.js";
 
-export const cozeRoutes: RouteConfig = {
-  name: "coze",
-  path: "/api/coze",
-  description: "扣子 API 相关路由",
-  routes: [
-    {
-      method: "GET",
-      path: "/workspaces",
-      handler: (c: Context) => {
-        const { cozeApiHandler } = c.get("dependencies") as HandlerDependencies;
-        return cozeApiHandler.getWorkspaces(c);
-      },
+export const cozeRoutes: RouteDefinition[] = [
+  {
+    method: "GET",
+    path: "/api/coze/workspaces",
+    name: "coze-workspaces",
+    handler: (c: Context) => {
+      const { cozeApiHandler } = c.get("dependencies") as HandlerDependencies;
+      return cozeApiHandler.getWorkspaces(c);
     },
-    {
-      method: "GET",
-      path: "/workflows",
-      handler: (c: Context) => {
-        const { cozeApiHandler } = c.get("dependencies") as HandlerDependencies;
-        return cozeApiHandler.getWorkflows(c);
-      },
+  },
+  {
+    method: "GET",
+    path: "/api/coze/workflows",
+    name: "coze-workflows",
+    handler: (c: Context) => {
+      const { cozeApiHandler } = c.get("dependencies") as HandlerDependencies;
+      return cozeApiHandler.getWorkflows(c);
     },
-    {
-      method: "POST",
-      path: "/cache/clear",
-      handler: (c: Context) => {
-        const { cozeApiHandler } = c.get("dependencies") as HandlerDependencies;
-        return cozeApiHandler.clearCache(c);
-      },
+  },
+  {
+    method: "POST",
+    path: "/api/coze/cache/clear",
+    name: "coze-cache-clear",
+    handler: (c: Context) => {
+      const { cozeApiHandler } = c.get("dependencies") as HandlerDependencies;
+      return cozeApiHandler.clearCache(c);
     },
-    {
-      method: "GET",
-      path: "/cache/stats",
-      handler: (c: Context) => {
-        const { cozeApiHandler } = c.get("dependencies") as HandlerDependencies;
-        return cozeApiHandler.getCacheStats(c);
-      },
+  },
+  {
+    method: "GET",
+    path: "/api/coze/cache/stats",
+    name: "coze-cache-stats",
+    handler: (c: Context) => {
+      const { cozeApiHandler } = c.get("dependencies") as HandlerDependencies;
+      return cozeApiHandler.getCacheStats(c);
     },
-  ],
-};
+  },
+];
