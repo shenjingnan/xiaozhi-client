@@ -2,8 +2,8 @@
  * 服务管理服务单元测试
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import consola from "consola";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigError, ServiceError } from "../../errors/index.js";
 import type {
   ProcessManager,
@@ -249,7 +249,9 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
       mockProcessManager.cleanupPidFile = vi.fn();
 
       // Mock consola.warn 来验证警告信息
-      const mockConsolaWarn = vi.spyOn(consola, "warn").mockImplementation(() => {});
+      const mockConsolaWarn = vi
+        .spyOn(consola, "warn")
+        .mockImplementation(() => {});
 
       await serviceManager.start(defaultOptions);
 

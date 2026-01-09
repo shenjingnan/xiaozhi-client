@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import consola from "consola";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ServiceStartOptions } from "../../interfaces/Service.js";
 import { PathUtils } from "../../utils/PathUtils.js";
 import { ServiceManagerImpl } from "../ServiceManager";
@@ -36,7 +36,9 @@ const mockProcessExit = vi.spyOn(process, "exit").mockImplementation((code) => {
 });
 
 // Mock consola.success
-const mockConsolaSuccess = vi.spyOn(consola, "success").mockImplementation(() => {});
+const mockConsolaSuccess = vi
+  .spyOn(consola, "success")
+  .mockImplementation(() => {});
 
 describe("Daemon 模式集成测试", () => {
   let serviceManager: ServiceManagerImpl;
