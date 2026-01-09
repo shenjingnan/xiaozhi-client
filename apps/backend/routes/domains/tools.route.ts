@@ -1,68 +1,45 @@
 /**
  * 工具调用路由模块
  * 处理所有工具相关的 API 路由
- * 简化版本：移除继承，直接导出路由配置
  */
 
-import type { Context } from "hono";
-import type { HandlerDependencies, RouteConfig } from "../types.js";
+import type { RouteDefinition } from "../types.js";
+import { createHandler } from "../types.js";
+
+const h = createHandler("toolApiHandler");
 
 /**
- * 工具调用路由配置
- * 从原有的 ToolsRoutes 类迁移而来，保持功能完全一致
+ * 工具调用路由定义
  */
-export const toolsRoutes: RouteConfig = {
-  name: "tools",
-  path: "/api/tools",
-  description: "工具调用相关 API",
-  routes: [
-    {
-      method: "POST",
-      path: "/call",
-      handler: (c: Context) => {
-        const { toolApiHandler } = c.get("dependencies") as HandlerDependencies;
-        return toolApiHandler.callTool(c);
-      },
-    },
-    {
-      method: "GET",
-      path: "/list",
-      handler: (c: Context) => {
-        const { toolApiHandler } = c.get("dependencies") as HandlerDependencies;
-        return toolApiHandler.listTools(c);
-      },
-    },
-    {
-      method: "GET",
-      path: "/custom",
-      handler: (c: Context) => {
-        const { toolApiHandler } = c.get("dependencies") as HandlerDependencies;
-        return toolApiHandler.getCustomTools(c);
-      },
-    },
-    {
-      method: "POST",
-      path: "/custom",
-      handler: (c: Context) => {
-        const { toolApiHandler } = c.get("dependencies") as HandlerDependencies;
-        return toolApiHandler.addCustomTool(c);
-      },
-    },
-    {
-      method: "PUT",
-      path: "/custom/:toolName",
-      handler: (c: Context) => {
-        const { toolApiHandler } = c.get("dependencies") as HandlerDependencies;
-        return toolApiHandler.updateCustomTool(c);
-      },
-    },
-    {
-      method: "DELETE",
-      path: "/custom/:toolName",
-      handler: (c: Context) => {
-        const { toolApiHandler } = c.get("dependencies") as HandlerDependencies;
-        return toolApiHandler.removeCustomTool(c);
-      },
-    },
-  ],
-};
+export const toolsRoutes: RouteDefinition[] = [
+  {
+    method: "POST",
+    path: "/api/tools/call",
+    handler: h((handler, c) => handler.callTool(c)),
+  },
+  {
+    method: "GET",
+    path: "/api/tools/list",
+    handler: h((handler, c) => handler.listTools(c)),
+  },
+  {
+    method: "GET",
+    path: "/api/tools/custom",
+    handler: h((handler, c) => handler.getCustomTools(c)),
+  },
+  {
+    method: "POST",
+    path: "/api/tools/custom",
+    handler: h((handler, c) => handler.addCustomTool(c)),
+  },
+  {
+    method: "PUT",
+    path: "/api/tools/custom/:toolName",
+    handler: h((handler, c) => handler.updateCustomTool(c)),
+  },
+  {
+    method: "DELETE",
+    path: "/api/tools/custom/:toolName",
+    handler: h((handler, c) => handler.removeCustomTool(c)),
+  },
+];

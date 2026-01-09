@@ -1,60 +1,35 @@
 /**
  * 版本信息路由模块
  * 处理所有版本相关的 API 路由
- * 简化版本：移除继承，直接导出路由配置
  */
 
-import type { Context } from "hono";
-import type { HandlerDependencies, RouteConfig } from "../types.js";
+import type { RouteDefinition } from "../types.js";
+import { createHandler } from "../types.js";
+
+const h = createHandler("versionApiHandler");
 
 /**
- * 版本信息路由配置
- * 从原有的 VersionRoutes 类迁移而来，保持功能完全一致
+ * 版本信息路由定义
  */
-export const versionRoutes: RouteConfig = {
-  name: "version",
-  path: "/api/version",
-  description: "版本信息相关 API",
-  routes: [
-    {
-      method: "GET",
-      path: "",
-      handler: (c: Context) => {
-        const { versionApiHandler } = c.get(
-          "dependencies"
-        ) as HandlerDependencies;
-        return versionApiHandler.getVersion(c);
-      },
-    },
-    {
-      method: "GET",
-      path: "/simple",
-      handler: (c: Context) => {
-        const { versionApiHandler } = c.get(
-          "dependencies"
-        ) as HandlerDependencies;
-        return versionApiHandler.getVersionSimple(c);
-      },
-    },
-    {
-      method: "DELETE",
-      path: "/cache",
-      handler: (c: Context) => {
-        const { versionApiHandler } = c.get(
-          "dependencies"
-        ) as HandlerDependencies;
-        return versionApiHandler.clearVersionCache(c);
-      },
-    },
-    {
-      method: "GET",
-      path: "/latest",
-      handler: (c: Context) => {
-        const { versionApiHandler } = c.get(
-          "dependencies"
-        ) as HandlerDependencies;
-        return versionApiHandler.checkLatestVersion(c);
-      },
-    },
-  ],
-};
+export const versionRoutes: RouteDefinition[] = [
+  {
+    method: "GET",
+    path: "/api/version",
+    handler: h((handler, c) => handler.getVersion(c)),
+  },
+  {
+    method: "GET",
+    path: "/api/version/simple",
+    handler: h((handler, c) => handler.getVersionSimple(c)),
+  },
+  {
+    method: "DELETE",
+    path: "/api/version/cache",
+    handler: h((handler, c) => handler.clearVersionCache(c)),
+  },
+  {
+    method: "GET",
+    path: "/api/version/latest",
+    handler: h((handler, c) => handler.checkLatestVersion(c)),
+  },
+];

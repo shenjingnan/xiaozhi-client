@@ -5,7 +5,6 @@ export type {
   RouteStatistics,
   HTTPMethod,
   RouteDefinition,
-  RouteConfig,
 } from "./types.js";
 
 // 核心类

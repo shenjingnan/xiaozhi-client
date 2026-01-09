@@ -3,45 +3,30 @@
  * 处理所有扣子相关的 API 路由
  */
 
-import type { Context } from "hono";
-import type { HandlerDependencies, RouteConfig } from "../types.js";
+import type { RouteDefinition } from "../types.js";
+import { createHandler } from "../types.js";
 
-export const cozeRoutes: RouteConfig = {
-  name: "coze",
-  path: "/api/coze",
-  description: "扣子 API 相关路由",
-  routes: [
-    {
-      method: "GET",
-      path: "/workspaces",
-      handler: (c: Context) => {
-        const { cozeApiHandler } = c.get("dependencies") as HandlerDependencies;
-        return cozeApiHandler.getWorkspaces(c);
-      },
-    },
-    {
-      method: "GET",
-      path: "/workflows",
-      handler: (c: Context) => {
-        const { cozeApiHandler } = c.get("dependencies") as HandlerDependencies;
-        return cozeApiHandler.getWorkflows(c);
-      },
-    },
-    {
-      method: "POST",
-      path: "/cache/clear",
-      handler: (c: Context) => {
-        const { cozeApiHandler } = c.get("dependencies") as HandlerDependencies;
-        return cozeApiHandler.clearCache(c);
-      },
-    },
-    {
-      method: "GET",
-      path: "/cache/stats",
-      handler: (c: Context) => {
-        const { cozeApiHandler } = c.get("dependencies") as HandlerDependencies;
-        return cozeApiHandler.getCacheStats(c);
-      },
-    },
-  ],
-};
+const h = createHandler("cozeApiHandler");
+
+export const cozeRoutes: RouteDefinition[] = [
+  {
+    method: "GET",
+    path: "/api/coze/workspaces",
+    handler: h((handler, c) => handler.getWorkspaces(c)),
+  },
+  {
+    method: "GET",
+    path: "/api/coze/workflows",
+    handler: h((handler, c) => handler.getWorkflows(c)),
+  },
+  {
+    method: "POST",
+    path: "/api/coze/cache/clear",
+    handler: h((handler, c) => handler.clearCache(c)),
+  },
+  {
+    method: "GET",
+    path: "/api/coze/cache/stats",
+    handler: h((handler, c) => handler.getCacheStats(c)),
+  },
+];

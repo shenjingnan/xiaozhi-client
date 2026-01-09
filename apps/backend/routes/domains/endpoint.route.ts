@@ -6,7 +6,7 @@
 
 import type { Context } from "hono";
 import type { AppContext } from "../../types/hono.context.js";
-import type { RouteConfig } from "../types.js";
+import type { RouteDefinition } from "../types.js";
 
 /**
  * 端点处理器方法名类型
@@ -64,43 +64,36 @@ const withEndpointHandler = async (
 };
 
 /**
- * 端点管理路由配置
- * 所有端点管理相关 API 的路由定义
+ * 端点管理路由定义（扁平化版本）
  */
-export const endpointRoutes: RouteConfig = {
-  name: "endpoint",
-  path: "/api/endpoint",
-  description: "端点管理相关 API",
-  routes: [
-    {
-      method: "POST",
-      path: "/status",
-      handler: (c: Context<AppContext>) =>
-        withEndpointHandler(c, "getEndpointStatus"),
-    },
-    {
-      method: "POST",
-      path: "/connect",
-      handler: (c: Context<AppContext>) =>
-        withEndpointHandler(c, "connectEndpoint"),
-    },
-    {
-      method: "POST",
-      path: "/disconnect",
-      handler: (c: Context<AppContext>) =>
-        withEndpointHandler(c, "disconnectEndpoint"),
-    },
-    {
-      method: "POST",
-      path: "/add",
-      handler: (c: Context<AppContext>) =>
-        withEndpointHandler(c, "addEndpoint"),
-    },
-    {
-      method: "POST",
-      path: "/remove",
-      handler: (c: Context<AppContext>) =>
-        withEndpointHandler(c, "removeEndpoint"),
-    },
-  ],
-};
+export const endpointRoutes: RouteDefinition[] = [
+  {
+    method: "POST",
+    path: "/api/endpoint/status",
+    handler: (c: Context<AppContext>) =>
+      withEndpointHandler(c, "getEndpointStatus"),
+  },
+  {
+    method: "POST",
+    path: "/api/endpoint/connect",
+    handler: (c: Context<AppContext>) =>
+      withEndpointHandler(c, "connectEndpoint"),
+  },
+  {
+    method: "POST",
+    path: "/api/endpoint/disconnect",
+    handler: (c: Context<AppContext>) =>
+      withEndpointHandler(c, "disconnectEndpoint"),
+  },
+  {
+    method: "POST",
+    path: "/api/endpoint/add",
+    handler: (c: Context<AppContext>) => withEndpointHandler(c, "addEndpoint"),
+  },
+  {
+    method: "POST",
+    path: "/api/endpoint/remove",
+    handler: (c: Context<AppContext>) =>
+      withEndpointHandler(c, "removeEndpoint"),
+  },
+];

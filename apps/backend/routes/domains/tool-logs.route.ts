@@ -3,23 +3,15 @@
  * 处理工具调用日志相关的 API 路由
  */
 
-import type { Context } from "hono";
-import type { HandlerDependencies, RouteConfig } from "../types.js";
+import type { RouteDefinition } from "../types.js";
+import { createHandler } from "../types.js";
 
-export const toolLogsRoutes: RouteConfig = {
-  name: "tool-logs",
-  path: "/api/tool-calls",
-  description: "工具调用日志相关 API",
-  routes: [
-    {
-      method: "GET",
-      path: "/logs",
-      handler: (c: Context) => {
-        const { toolCallLogApiHandler } = c.get(
-          "dependencies"
-        ) as HandlerDependencies;
-        return toolCallLogApiHandler.getToolCallLogs(c);
-      },
-    },
-  ],
-};
+const h = createHandler("toolCallLogApiHandler");
+
+export const toolLogsRoutes: RouteDefinition[] = [
+  {
+    method: "GET",
+    path: "/api/tool-calls/logs",
+    handler: h((handler, c) => handler.getToolCallLogs(c)),
+  },
+];
