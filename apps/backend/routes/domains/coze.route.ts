@@ -12,25 +12,21 @@ export const cozeRoutes: RouteDefinition[] = [
   {
     method: "GET",
     path: "/api/coze/workspaces",
-    name: "coze-workspaces",
     handler: h((handler, c) => handler.getWorkspaces(c)),
   },
   {
     method: "GET",
     path: "/api/coze/workflows",
-    name: "coze-workflows",
     handler: h((handler, c) => handler.getWorkflows(c)),
   },
   {
     method: "POST",
     path: "/api/coze/cache/clear",
-    name: "coze-cache-clear",
     handler: h((handler, c) => handler.clearCache(c)),
   },
   {
     method: "GET",
     path: "/api/coze/cache/stats",
-    name: "coze-cache-stats",
     handler: h((handler, c) => handler.getCacheStats(c)),
   },
 ];

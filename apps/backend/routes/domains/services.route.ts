@@ -12,31 +12,26 @@ export const servicesRoutes: RouteDefinition[] = [
   {
     method: "POST",
     path: "/api/services/restart",
-    name: "services-restart",
     handler: h((handler, c) => handler.restartService(c)),
   },
   {
     method: "POST",
     path: "/api/services/stop",
-    name: "services-stop",
     handler: h((handler, c) => handler.stopService(c)),
   },
   {
     method: "POST",
     path: "/api/services/start",
-    name: "services-start",
     handler: h((handler, c) => handler.startService(c)),
   },
   {
     method: "GET",
     path: "/api/services/status",
-    name: "services-status",
     handler: h((handler, c) => handler.getServiceStatus(c)),
   },
   {
     method: "GET",
     path: "/api/services/health",
-    name: "services-health",
     handler: h((handler, c) => handler.getServiceHealth(c)),
   },
 ];

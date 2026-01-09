@@ -15,13 +15,11 @@ export const mcpRoutes: RouteDefinition[] = [
   {
     method: "POST",
     path: "/mcp",
-    name: "mcp-post",
     handler: h((handler, c) => handler.handlePost(c)),
   },
   {
     method: "GET",
     path: "/mcp",
-    name: "mcp-get",
     handler: h((handler, c) => handler.handleGet(c)),
   },
 ];

@@ -15,37 +15,31 @@ export const toolsRoutes: RouteDefinition[] = [
   {
     method: "POST",
     path: "/api/tools/call",
-    name: "tools-call",
     handler: h((handler, c) => handler.callTool(c)),
   },
   {
     method: "GET",
     path: "/api/tools/list",
-    name: "tools-list",
     handler: h((handler, c) => handler.listTools(c)),
   },
   {
     method: "GET",
     path: "/api/tools/custom",
-    name: "custom-tools-get",
     handler: h((handler, c) => handler.getCustomTools(c)),
   },
   {
     method: "POST",
     path: "/api/tools/custom",
-    name: "custom-tools-add",
     handler: h((handler, c) => handler.addCustomTool(c)),
   },
   {
     method: "PUT",
     path: "/api/tools/custom/:toolName",
-    name: "custom-tools-update",
     handler: h((handler, c) => handler.updateCustomTool(c)),
   },
   {
     method: "DELETE",
     path: "/api/tools/custom/:toolName",
-    name: "custom-tools-delete",
     handler: h((handler, c) => handler.removeCustomTool(c)),
   },
 ];

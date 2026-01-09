@@ -103,8 +103,6 @@ export interface RouteDefinition {
   handler: (c: Context) => Promise<Response | undefined>;
   /** 路由级别的中间件 */
   middleware?: MiddlewareHandler[];
-  /** 可选的路由名称（用于日志和调试） */
-  name?: string;
 }
 
 /**

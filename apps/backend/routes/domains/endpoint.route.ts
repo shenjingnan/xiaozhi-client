@@ -70,34 +70,29 @@ export const endpointRoutes: RouteDefinition[] = [
   {
     method: "POST",
     path: "/api/endpoint/status",
-    name: "endpoint-status",
     handler: (c: Context<AppContext>) =>
       withEndpointHandler(c, "getEndpointStatus"),
   },
   {
     method: "POST",
     path: "/api/endpoint/connect",
-    name: "endpoint-connect",
     handler: (c: Context<AppContext>) =>
       withEndpointHandler(c, "connectEndpoint"),
   },
   {
     method: "POST",
     path: "/api/endpoint/disconnect",
-    name: "endpoint-disconnect",
     handler: (c: Context<AppContext>) =>
       withEndpointHandler(c, "disconnectEndpoint"),
   },
   {
     method: "POST",
     path: "/api/endpoint/add",
-    name: "endpoint-add",
     handler: (c: Context<AppContext>) => withEndpointHandler(c, "addEndpoint"),
   },
   {
     method: "POST",
     path: "/api/endpoint/remove",
-    name: "endpoint-remove",
     handler: (c: Context<AppContext>) =>
       withEndpointHandler(c, "removeEndpoint"),
   },

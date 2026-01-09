@@ -30,27 +30,23 @@ export const mcpserverRoutes: RouteDefinition[] = [
   {
     method: "POST",
     path: "/api/mcp-servers",
-    name: "mcpserver-add",
     handler: (c: Context) => withMCPServerHandler(c, (h) => h.addMCPServer(c)),
   },
   {
     method: "DELETE",
     path: "/api/mcp-servers/:serverName",
-    name: "mcpserver-remove",
     handler: (c: Context) =>
       withMCPServerHandler(c, (h) => h.removeMCPServer(c)),
   },
   {
     method: "GET",
     path: "/api/mcp-servers/:serverName/status",
-    name: "mcpserver-status",
     handler: (c: Context) =>
       withMCPServerHandler(c, (h) => h.getMCPServerStatus(c)),
   },
   {
     method: "GET",
     path: "/api/mcp-servers",
-    name: "mcpserver-list",
     handler: (c: Context) =>
       withMCPServerHandler(c, (h) => h.listMCPServers(c)),
   },

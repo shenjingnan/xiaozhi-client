@@ -12,7 +12,6 @@ export const staticRoutes: RouteDefinition[] = [
   {
     method: "GET",
     path: "/*",
-    name: "static-files",
     handler: h(async (handler, c) => {
       // 如果路径以 /api/ 开头，不处理静态文件，直接返回 404
       if (c.req.path.startsWith("/api/")) {

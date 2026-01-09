@@ -12,7 +12,6 @@ export const toolLogsRoutes: RouteDefinition[] = [
   {
     method: "GET",
     path: "/api/tool-calls/logs",
-    name: "tool-logs-get",
     handler: h((handler, c) => handler.getToolCallLogs(c)),
   },
 ];

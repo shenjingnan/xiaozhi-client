@@ -12,7 +12,6 @@ export const updateRoutes: RouteDefinition[] = [
   {
     method: "POST",
     path: "/api/update",
-    name: "update-perform",
     handler: h((handler, c) => handler.performUpdate(c)),
   },
 ];

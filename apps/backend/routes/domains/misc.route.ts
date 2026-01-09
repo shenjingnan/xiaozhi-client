@@ -12,7 +12,6 @@ export const miscRoutes: RouteDefinition[] = [
   {
     method: "POST",
     path: "/api/restart",
-    name: "misc-restart",
     handler: h((handler, c) => handler.restartService(c)),
   },
 ];

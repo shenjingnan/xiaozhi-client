@@ -107,11 +107,7 @@ export class RouteManager {
       try {
         return await handler(c);
       } catch (error) {
-        const routeName = route.name || `${groupName}:${path}`;
-        console.error(
-          `路由处理错误 [${method} ${path} - ${routeName}]:`,
-          error
-        );
+        console.error(`路由处理错误 [${method} ${path}]:`, error);
         const errorResponse = createErrorResponse(
           "HANDLER_ERROR",
           "处理器执行失败",

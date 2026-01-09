@@ -15,25 +15,21 @@ export const versionRoutes: RouteDefinition[] = [
   {
     method: "GET",
     path: "/api/version",
-    name: "version-get",
     handler: h((handler, c) => handler.getVersion(c)),
   },
   {
     method: "GET",
     path: "/api/version/simple",
-    name: "version-get-simple",
     handler: h((handler, c) => handler.getVersionSimple(c)),
   },
   {
     method: "DELETE",
     path: "/api/version/cache",
-    name: "version-clear-cache",
     handler: h((handler, c) => handler.clearVersionCache(c)),
   },
   {
     method: "GET",
     path: "/api/version/latest",
-    name: "version-check-latest",
     handler: h((handler, c) => handler.checkLatestVersion(c)),
   },
 ];
