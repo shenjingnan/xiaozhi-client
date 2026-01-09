@@ -42,4 +42,18 @@ export const toolsRoutes: RouteDefinition[] = [
     path: "/api/tools/custom/:toolName",
     handler: h((handler, c) => handler.removeCustomTool(c)),
   },
+  /**
+   * MCP 工具管理路由
+   * 用于启用/禁用/查询 MCP 工具的状态
+   */
+  {
+    method: "POST",
+    path: "/api/tools/mcp/manage",
+    handler: h((handler, c) => handler.manageMCPTool(c)),
+  },
+  {
+    method: "POST",
+    path: "/api/tools/mcp/list",
+    handler: h((handler, c) => handler.listMCPTools(c)),
+  },
 ];
