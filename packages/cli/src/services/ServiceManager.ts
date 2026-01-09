@@ -3,6 +3,8 @@
  */
 
 import type { ConfigManager } from "@xiaozhi-client/config";
+import { ConfigInitializer } from "@xiaozhi-client/config";
+import consola from "consola";
 import { ConfigError, ServiceError } from "../errors/index";
 import type {
   ServiceManager as IServiceManager,
@@ -37,7 +39,9 @@ export class ServiceManagerImpl implements IServiceManager {
       const status = this.getStatus();
       if (status.running) {
         // 自动停止现有服务并重新启动
-        console.log(`检测到服务已在运行 (PID: ${status.pid})，正在自动重启...`);
+        consola.info(
+          `检测到服务已在运行 (PID: ${status.pid})，正在自动重启...`
+        );
 
         try {
           // 优雅停止现有进程
@@ -49,9 +53,9 @@ export class ServiceManagerImpl implements IServiceManager {
           // 等待一下确保完全停止
           await new Promise((resolve) => setTimeout(resolve, 1000));
 
-          console.log("现有服务已停止，正在启动新服务...");
+          consola.success("现有服务已停止，正在启动新服务...");
         } catch (stopError) {
-          console.warn(
+          consola.warn(
             `停止现有服务时出现警告: ${stopError instanceof Error ? stopError.message : String(stopError)}`
           );
           // 继续尝试启动新服务，因为旧进程可能已经不存在了
@@ -59,7 +63,7 @@ export class ServiceManagerImpl implements IServiceManager {
       }
 
       // 检查环境配置
-      this.checkEnvironment();
+      await this.checkEnvironment();
 
       // 根据模式启动服务
       switch (options.mode) {
@@ -161,13 +165,34 @@ export class ServiceManagerImpl implements IServiceManager {
   /**
    * 检查环境配置
    */
-  private checkEnvironment(): void {
+  private async checkEnvironment(): Promise<void> {
     // 检查配置文件是否存在
     if (!this.configManager.configExists()) {
-      throw ConfigError.configNotFound();
+      // 尝试初始化默认配置
+      try {
+        consola.info("未找到配置文件，正在创建默认配置...");
+
+        const configPath = await ConfigInitializer.initializeDefaultConfig();
+
+        consola.success(`默认配置已创建: ${configPath}`);
+        consola.info("提示: 您可以稍后编辑此配置文件以自定义设置");
+
+        // 重新加载配置管理器
+        this.configManager.reloadConfig();
+      } catch (error) {
+        // 保留原始错误信息，方便调试
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        consola.error(`创建默认配置失败: ${errorMessage}`);
+
+        // 抛出包含原始错误信息的异常
+        throw new ConfigError(
+          `无法创建默认配置: ${errorMessage}\n请手动运行 'xiaozhi create' 创建配置文件`
+        );
+      }
     }
 
-    // 可以添加更多环境检查
+    // 验证配置文件
     try {
       const config = this.configManager.getConfig();
       if (!config) {
@@ -230,10 +255,10 @@ export class ServiceManagerImpl implements IServiceManager {
       child.unref();
 
       // 输出启动信息后立即退出父进程
-      console.log(
-        `✅ MCP Server 已在后台启动 (PID: ${child.pid}, Port: ${port})`
+      consola.success(
+        `MCP Server 已在后台启动 (PID: ${child.pid}, Port: ${port})`
       );
-      console.log(`💡 使用 'xiaozhi status' 查看状态`);
+      consola.info("使用 'xiaozhi status' 查看状态");
 
       // 立即退出父进程，释放终端控制权
       process.exit(0);
@@ -286,9 +311,9 @@ export class ServiceManagerImpl implements IServiceManager {
     child.unref();
 
     // 输出启动信息后立即退出父进程
-    console.log(`✅ 后台服务已启动 (PID: ${child.pid})`);
-    console.log(`💡 使用 'xiaozhi status' 查看状态`);
-    console.log(`💡 使用 'xiaozhi attach' 查看日志`);
+    consola.success(`后台服务已启动 (PID: ${child.pid})`);
+    consola.info("使用 'xiaozhi status' 查看状态");
+    consola.info("使用 'xiaozhi attach' 查看日志");
 
     // 立即退出父进程，释放终端控制权
     process.exit(0);
