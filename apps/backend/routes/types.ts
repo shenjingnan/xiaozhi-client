@@ -177,20 +177,3 @@ export function createHandler<K extends keyof HandlerDependencies>(
     return method(handler, c);
   };
 }
-
-/**
- * 路由域配置接口
- * @deprecated 使用 RouteDefinition[] 代替
- */
-export interface RouteConfig {
-  /** 域名称 */
-  name: string;
-  /** 域基础路径 */
-  path: string;
-  /** 域描述 */
-  description?: string;
-  /** 路由定义列表 */
-  routes: RouteDefinition[];
-  /** 域级别的中间件 */
-  middleware?: MiddlewareHandler[];
-}
