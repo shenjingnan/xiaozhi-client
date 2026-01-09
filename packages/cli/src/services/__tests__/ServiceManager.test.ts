@@ -3,6 +3,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import consola from "consola";
 import { ConfigError, ServiceError } from "../../errors/index.js";
 import type {
   ProcessManager,
@@ -247,8 +248,8 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
         .mockRejectedValue(stopError);
       mockProcessManager.cleanupPidFile = vi.fn();
 
-      // Mock console.warn 来验证警告信息
-      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      // Mock consola.warn 来验证警告信息
+      const mockConsolaWarn = vi.spyOn(consola, "warn").mockImplementation(() => {});
 
       await serviceManager.start(defaultOptions);
 
@@ -258,14 +259,14 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
       // 这是当前实现的行为，所以我们不应该期望它被调用
 
       // 验证输出了警告信息
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(mockConsolaWarn).toHaveBeenCalledWith(
         "停止现有服务时出现警告: 无法停止进程"
       );
 
       // 验证最终仍然启动了服务
       expect(mockWebServerInstance.start).toHaveBeenCalled();
 
-      consoleSpy.mockRestore();
+      mockConsolaWarn.mockRestore();
     });
 
     it("如果配置不存在应抛出错误", async () => {
