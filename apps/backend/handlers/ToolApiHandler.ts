@@ -5,7 +5,7 @@
 
 import { MCPCacheManager } from "@/lib/mcp";
 import type { MCPServiceManager } from "@/lib/mcp";
-import type { EnhancedToolInfo, JSONSchema } from "@/lib/mcp/types.js";
+import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type {
@@ -20,7 +20,14 @@ import type {
 } from "@root/types/toolApi.js";
 import { ToolType } from "@root/types/toolApi.js";
 import { configManager } from "@xiaozhi-client/config";
-import type { CustomMCPTool, ProxyHandlerConfig } from "@xiaozhi-client/config";
+import type {
+  CustomMCPTool,
+  ProxyHandlerConfig,
+} from "@xiaozhi-client/config";
+import type {
+  CustomMCPToolWithStats,
+  JSONSchema,
+} from "@root/types/toolApi.js";
 import Ajv from "ajv";
 import dayjs from "dayjs";
 import type { Context } from "hono";
@@ -331,8 +338,8 @@ export class ToolApiHandler {
 
       const rawTools: EnhancedToolInfo[] = serviceManager.getAllTools(status);
 
-      // 转换为 CustomMCPTool 格式
-      const tools: CustomMCPTool[] = rawTools.map((tool: EnhancedToolInfo) => ({
+      // 转换为 CustomMCPToolWithStats 格式（使用共享类型）
+      const tools: CustomMCPToolWithStats[] = rawTools.map((tool: EnhancedToolInfo) => ({
         name: tool.name,
         description: tool.description,
         inputSchema: tool.inputSchema,

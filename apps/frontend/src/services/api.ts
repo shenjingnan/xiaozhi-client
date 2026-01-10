@@ -13,29 +13,15 @@ import type {
   MCPServerConfig,
   MCPServerListResponse,
   MCPServerStatus,
+  CustomMCPToolWithStats,
 } from "@xiaozhi-client/shared-types";
 
 /**
  * CustomMCPTool 接口定义
- * 对应后端的 CustomMCPTool 接口
+ * 使用共享类型，与后端保持一致
+ * CustomMCPTool 是 CustomMCPToolWithStats 的别名
  */
-export interface CustomMCPTool {
-  name: string;
-  description: string;
-  inputSchema: any;
-  handler: {
-    type: "mcp" | "proxy";
-    platform?: "coze";
-    config: {
-      serviceName: string;
-      toolName: string;
-    };
-  };
-  stats?: {
-    usageCount?: number;
-    lastUsedTime?: string;
-  };
-}
+export type CustomMCPTool = CustomMCPToolWithStats;
 
 /**
  * API 响应格式

@@ -21,6 +21,10 @@ export type {
   MCPMessage,
   MCPResponse,
   MCPError,
+  CustomMCPTool,
+  CustomMCPToolWithStats,
+  CustomMCPToolConfig,
+  JSONSchema,
 } from "./mcp";
 
 // 工具API相关类型

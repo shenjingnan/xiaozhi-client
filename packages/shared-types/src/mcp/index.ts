@@ -46,3 +46,20 @@ export type {
   ExtendedTransportConfig,
   ConnectionStats,
 } from "./transport";
+
+// 工具定义类型
+export type {
+  CustomMCPTool,
+  CustomMCPToolWithStats,
+  CustomMCPToolConfig,
+  ToolHandlerConfig,
+  MCPHandlerConfig,
+  ProxyHandlerConfig,
+  HttpHandlerConfig,
+  FunctionHandlerConfig,
+} from "./tool-definition";
+
+// JSON Schema 类型
+export type { JSONSchema } from "./schema";
+
+export { isJSONSchema } from "./schema";
