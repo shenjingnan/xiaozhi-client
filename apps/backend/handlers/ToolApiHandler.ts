@@ -340,6 +340,8 @@ export class ToolApiHandler {
           serviceName: string;
           originalName: string;
           enabled: boolean;
+          usageCount: number;
+          lastUsedTime: string;
         }) => ({
           name: tool.name,
           description: tool.description,
@@ -351,6 +353,8 @@ export class ToolApiHandler {
               toolName: tool.originalName,
             },
           },
+          usageCount: tool.usageCount,
+          lastUsedTime: tool.lastUsedTime,
         })
       );
 

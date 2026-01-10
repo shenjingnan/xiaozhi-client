@@ -408,6 +408,8 @@ export class MCPServiceManager extends EventEmitter {
     serviceName: string;
     originalName: string;
     enabled: boolean;
+    usageCount: number;
+    lastUsedTime: string;
   }> {
     const allTools: Array<{
       name: string;
@@ -416,6 +418,8 @@ export class MCPServiceManager extends EventEmitter {
       serviceName: string;
       originalName: string;
       enabled: boolean;
+      usageCount: number;
+      lastUsedTime: string;
     }> = [];
 
     // 1. 收集所有已连接服务的工具（包含启用状态过滤）
@@ -430,6 +434,7 @@ export class MCPServiceManager extends EventEmitter {
                 serviceName,
                 tool.name
               );
+              const toolConfig = configManager.getMcpServerConfig()[serviceName].tools[tool.name];
 
               // 根据 status 参数过滤工具
               if (status === "enabled" && !isEnabled) {
@@ -447,6 +452,8 @@ export class MCPServiceManager extends EventEmitter {
                 serviceName,
                 originalName: tool.name,
                 enabled: isEnabled,
+                usageCount: toolConfig.usageCount ?? 0,
+                lastUsedTime: toolConfig.lastUsedTime ?? '',
               });
             } catch (toolError) {
               console.warn(
@@ -491,6 +498,8 @@ export class MCPServiceManager extends EventEmitter {
             serviceName: this.getServiceNameForTool(tool),
             originalName: tool.name,
             enabled: true, // CustomMCP 工具默认启用
+            usageCount: 0,
+            lastUsedTime: '',
           });
         } catch (toolError) {
           console.warn(

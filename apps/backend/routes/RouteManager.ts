@@ -65,8 +65,6 @@ export class RouteManager {
    * 将路由应用到 Hono 应用实例
    */
   applyToApp(app: Hono<AppContext>): void {
-    console.log(`开始将 ${this.routes.size} 个路由组应用到 Hono 应用...`);
-
     // 获取所有路由并排序，确保 static 路由最后应用
     const routeEntries = Array.from(this.routes.entries());
     routeEntries.sort(([nameA], [nameB]) => {
@@ -83,7 +81,6 @@ export class RouteManager {
           this.applyRouteDefinition(app, route, groupName);
           totalRouteCount++;
         }
-        console.log(`✓ 成功应用路由组: ${groupName} (${routes.length} 个路由)`);
       } catch (error) {
         console.error(`✗ 应用路由组失败: ${groupName}`, error);
       }
