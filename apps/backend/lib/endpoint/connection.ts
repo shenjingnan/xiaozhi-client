@@ -1,14 +1,8 @@
-import type { ToolCallResult } from "@/lib/mcp/types.js";
+import type { EnhancedToolInfo, ToolCallResult } from "@/lib/mcp/types.js";
 
 // 定义接口避免循环依赖
 interface IMCPServiceManager {
-  getAllTools(): Array<{
-    name: string;
-    description: string;
-    inputSchema: import("@/lib/mcp/types.js").JSONSchema;
-    serviceName?: string;
-    originalName?: string;
-  }>;
+  getAllTools(): EnhancedToolInfo[];
   callTool(
     toolName: string,
     arguments_: Record<string, unknown>
@@ -98,7 +92,7 @@ export class EndpointConnection {
 
     try {
       // 直接从 MCPServiceManager 获取所有工具
-      const allTools = this.serviceManager.getAllTools();
+      const allTools: EnhancedToolInfo[] = this.serviceManager.getAllTools();
 
       // 转换为 Tool 格式
       return allTools.map((toolInfo) => ({

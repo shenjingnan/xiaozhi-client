@@ -7,6 +7,7 @@ import type {
   SimpleConnectionStatus,
 } from "@/lib/endpoint/index.js";
 import { MCPServiceManager } from "@/lib/mcp";
+import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import {
   ConfigApiHandler,
@@ -220,7 +221,7 @@ export class WebServer {
       await this.loadMCPServicesFromConfig(config.mcpServers);
 
       // 4. 获取工具列表
-      const rawTools = this.mcpServiceManager.getAllTools();
+      const rawTools: EnhancedToolInfo[] = this.mcpServiceManager.getAllTools();
       this.logger.debug(`已加载 ${rawTools.length} 个工具`);
 
       // 5. 转换工具格式以符合 MCP SDK 要求

@@ -165,7 +165,9 @@ export type HandlerConfig =
   | ChainHandlerConfig
   | MCPHandlerConfig;
 
-// CustomMCP 工具接口（与核心库兼容）
+// CustomMCP 工具接口
+// TODO: 注意：此定义应与 @xiaozhi-client/shared-types 中的 CustomMCPToolConfig 保持一致
+// 未来将迁移到从 shared-types 导入
 export interface CustomMCPTool {
   // 确保必填字段
   name: string;
@@ -180,6 +182,7 @@ export interface CustomMCPTool {
   };
 }
 
+// CustomMCP 配置接口
 export interface CustomMCPConfig {
   tools: CustomMCPTool[];
 }

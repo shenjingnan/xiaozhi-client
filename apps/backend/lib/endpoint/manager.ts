@@ -1,5 +1,6 @@
 import { EventEmitter } from "node:events";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
+import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { ToolCallResult } from "@root/types/mcp.js";
 import type { EventBus } from "@services/EventBus.js";
@@ -11,13 +12,7 @@ import { EndpointConnection } from "./connection.js";
 
 // 使用接口定义避免循环依赖
 interface IMCPServiceManager {
-  getAllTools(): Array<{
-    name: string;
-    description: string;
-    inputSchema: import("@/lib/mcp/types.js").JSONSchema;
-    serviceName?: string;
-    originalName?: string;
-  }>;
+  getAllTools(): EnhancedToolInfo[];
   callTool(
     toolName: string,
     arguments_: Record<string, unknown>
@@ -1096,7 +1091,8 @@ export class EndpointManager extends EventEmitter {
     }
 
     try {
-      const rawTools = this.mcpServiceManager.getAllTools();
+      const rawTools: import("@/lib/mcp/types.js").EnhancedToolInfo[] =
+        this.mcpServiceManager.getAllTools();
       // 转换工具格式以符合 MCP SDK 的 Tool 类型
       return rawTools.map((tool) => ({
         name: tool.name,

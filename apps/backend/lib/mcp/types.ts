@@ -204,7 +204,61 @@ export interface ToolInfo {
 }
 
 // =========================
-// 5. 服务器配置类型
+// 5. 增强工具信息类型
+// =========================
+
+/**
+ * 工具状态过滤选项
+ * 用于 getAllTools() 方法过滤不同状态的工具
+ */
+export type ToolStatusFilter = "enabled" | "disabled" | "all";
+
+/**
+ * 增强的工具信息接口
+ * 扩展自 ToolInfo 概念，包含工具的启用状态和使用统计信息
+ *
+ * @remarks
+ * 此接口用于 MCPServiceManager.getAllTools() 方法的返回值，
+ * 提供比基础 ToolInfo 更丰富的工具元数据信息。
+ *
+ * @example
+ * ```typescript
+ * const tools: EnhancedToolInfo[] = manager.getAllTools('enabled');
+ * tools.forEach(tool => {
+ *   console.log(`工具: ${tool.name}`);
+ *   console.log(`状态: ${tool.enabled ? '已启用' : '已禁用'}`);
+ *   console.log(`使用次数: ${tool.usageCount}`);
+ * });
+ * ```
+ */
+export interface EnhancedToolInfo {
+  /** 工具唯一标识符，格式为 "{serviceName}__{originalName}" */
+  name: string;
+
+  /** 工具描述信息 */
+  description: string;
+
+  /** 工具输入参数的 JSON Schema 定义 */
+  inputSchema: JSONSchema;
+
+  /** 工具所属的 MCP 服务名称 */
+  serviceName: string;
+
+  /** 工具在 MCP 服务中的原始名称 */
+  originalName: string;
+
+  /** 工具是否启用 (true=已启用，false=已禁用) */
+  enabled: boolean;
+
+  /** 工具使用次数统计 */
+  usageCount: number;
+
+  /** 工具最后使用时间 (ISO 8601 格式字符串) */
+  lastUsedTime: string;
+}
+
+// =========================
+// 6. 服务器配置类型
 // =========================
 
 /**

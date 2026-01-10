@@ -11,11 +11,12 @@ import { MCPService } from "@/lib/mcp";
 import { MCPCacheManager } from "@/lib/mcp";
 import type {
   CustomMCPTool,
-  JSONSchema,
+  EnhancedToolInfo,
   MCPServiceConfig,
   ManagerStatus,
   ToolCallResult,
   ToolInfo,
+  ToolStatusFilter,
   UnifiedServerConfig,
   UnifiedServerStatus,
 } from "@/lib/mcp/types";
@@ -397,22 +398,12 @@ export class MCPServiceManager extends EventEmitter {
   }
 
   /**
-   * 获取所有可用工具（优化版本，移除阻塞逻辑，添加工具启用状态过滤）
+   * 获取所有可用工具
+   * @param status 工具状态过滤：'enabled' 仅返回已启用工具，'disabled' 仅返回未启用工具，'all' 返回所有工具
+   * @returns 工具数组，包含工具的启用状态信息
    */
-  getAllTools(): Array<{
-    name: string;
-    description: string;
-    inputSchema: JSONSchema;
-    serviceName: string;
-    originalName: string;
-  }> {
-    const allTools: Array<{
-      name: string;
-      description: string;
-      inputSchema: JSONSchema;
-      serviceName: string;
-      originalName: string;
-    }> = [];
+  getAllTools(status: ToolStatusFilter = "all"): EnhancedToolInfo[] {
+    const allTools: EnhancedToolInfo[] = [];
 
     // 1. 收集所有已连接服务的工具（包含启用状态过滤）
     for (const [serviceName, service] of this.services) {
@@ -426,8 +417,17 @@ export class MCPServiceManager extends EventEmitter {
                 serviceName,
                 tool.name
               );
-              if (!isEnabled) {
-                continue; // 跳过禁用的工具
+              const toolConfig =
+                configManager.getMcpServerConfig()[serviceName].tools[
+                  tool.name
+                ];
+
+              // 根据 status 参数过滤工具
+              if (status === "enabled" && !isEnabled) {
+                continue; // 跳过未启用的工具
+              }
+              if (status === "disabled" && isEnabled) {
+                continue; // 跳过已启用的工具
               }
 
               const toolKey = `${serviceName}__${tool.name}`;
@@ -437,6 +437,9 @@ export class MCPServiceManager extends EventEmitter {
                 inputSchema: tool.inputSchema,
                 serviceName,
                 originalName: tool.name,
+                enabled: isEnabled,
+                usageCount: toolConfig.usageCount ?? 0,
+                lastUsedTime: toolConfig.lastUsedTime ?? "",
               });
             } catch (toolError) {
               console.warn(
@@ -454,7 +457,7 @@ export class MCPServiceManager extends EventEmitter {
       }
     }
 
-    // 2. 添加CustomMCP工具（添加异常处理确保优雅降级）
+    // 2. 添加CustomMCP工具（默认视为已启用）
     let customTools: Tool[] = [];
     try {
       customTools = this.customMCPHandler.getTools();
@@ -470,24 +473,32 @@ export class MCPServiceManager extends EventEmitter {
       customTools = [];
     }
 
-    for (const tool of customTools) {
-      try {
-        allTools.push({
-          name: tool.name,
-          description: tool.description || "",
-          inputSchema: tool.inputSchema,
-          serviceName: this.getServiceNameForTool(tool),
-          originalName: tool.name,
-        });
-      } catch (toolError) {
-        console.warn(
-          `[MCPManager] 处理 CustomMCP 工具 ${tool.name} 失败，跳过该工具:`,
-          toolError
-        );
+    // CustomMCP 工具默认视为已启用
+    if (status !== "disabled") {
+      for (const tool of customTools) {
+        try {
+          allTools.push({
+            name: tool.name,
+            description: tool.description || "",
+            inputSchema: tool.inputSchema,
+            serviceName: this.getServiceNameForTool(tool),
+            originalName: tool.name,
+            enabled: true, // CustomMCP 工具默认启用
+            usageCount: 0,
+            lastUsedTime: "",
+          });
+        } catch (toolError) {
+          console.warn(
+            `[MCPManager] 处理 CustomMCP 工具 ${tool.name} 失败，跳过该工具:`,
+            toolError
+          );
+        }
       }
     }
 
-    console.debug(`[MCPManager] 成功获取 ${allTools.length} 个可用工具`);
+    console.debug(
+      `[MCPManager] 成功获取 ${allTools.length} 个可用工具（status=${status}）`
+    );
     return allTools;
   }
 

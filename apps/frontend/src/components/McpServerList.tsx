@@ -124,8 +124,8 @@ export function McpServerList({
       enable,
       name: tool.name,
       description: tool.description,
-      usageCount: tool.stats?.usageCount,
-      lastUsedTime: tool.stats?.lastUsedTime,
+      usageCount: tool.usageCount,
+      lastUsedTime: tool.lastUsedTime,
       inputSchema: tool.inputSchema,
     };
   }, []);

@@ -3,8 +3,8 @@
  * 支持多种工具类型的添加，包括 MCP 工具、Coze 工作流等
  */
 
-import type { CozeWorkflow } from "../coze";
-import type { WorkflowParameterConfig } from "../coze";
+import type { WorkflowParameterConfig, CozeWorkflow } from "../coze";
+import type { CustomMCPToolWithStats } from "../mcp";
 
 /**
  * 工具类型枚举
@@ -199,18 +199,9 @@ export interface ToolConfigOptions {
 /**
  * 扩展的 CustomMCPTool 接口
  * 包含额外的元数据信息
+ * 扩展自 CustomMCPToolWithStats，添加元数据和配置选项
  */
-export interface ExtendedCustomMCPTool {
-  /** 基础工具配置 */
-  name: string;
-  description: string;
-  inputSchema: any;
-  handler: any;
-  /** 使用统计信息 */
-  stats?: {
-    usageCount?: number;
-    lastUsedTime?: string;
-  };
+export interface ExtendedCustomMCPTool extends CustomMCPToolWithStats {
   /** 工具元数据 */
   metadata?: ToolMetadata;
   /** 配置选项 */
