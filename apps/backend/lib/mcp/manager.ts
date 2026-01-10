@@ -11,11 +11,12 @@ import { MCPService } from "@/lib/mcp";
 import { MCPCacheManager } from "@/lib/mcp";
 import type {
   CustomMCPTool,
-  JSONSchema,
+  EnhancedToolInfo,
   MCPServiceConfig,
   ManagerStatus,
   ToolCallResult,
   ToolInfo,
+  ToolStatusFilter,
   UnifiedServerConfig,
   UnifiedServerStatus,
 } from "@/lib/mcp/types";
@@ -401,26 +402,8 @@ export class MCPServiceManager extends EventEmitter {
    * @param status 工具状态过滤：'enabled' 仅返回已启用工具，'disabled' 仅返回未启用工具，'all' 返回所有工具
    * @returns 工具数组，包含工具的启用状态信息
    */
-  getAllTools(status: "enabled" | "disabled" | "all" = "all"): Array<{
-    name: string;
-    description: string;
-    inputSchema: JSONSchema;
-    serviceName: string;
-    originalName: string;
-    enabled: boolean;
-    usageCount: number;
-    lastUsedTime: string;
-  }> {
-    const allTools: Array<{
-      name: string;
-      description: string;
-      inputSchema: JSONSchema;
-      serviceName: string;
-      originalName: string;
-      enabled: boolean;
-      usageCount: number;
-      lastUsedTime: string;
-    }> = [];
+  getAllTools(status: ToolStatusFilter = "all"): EnhancedToolInfo[] {
+    const allTools: EnhancedToolInfo[] = [];
 
     // 1. 收集所有已连接服务的工具（包含启用状态过滤）
     for (const [serviceName, service] of this.services) {
@@ -434,7 +417,10 @@ export class MCPServiceManager extends EventEmitter {
                 serviceName,
                 tool.name
               );
-              const toolConfig = configManager.getMcpServerConfig()[serviceName].tools[tool.name];
+              const toolConfig =
+                configManager.getMcpServerConfig()[serviceName].tools[
+                  tool.name
+                ];
 
               // 根据 status 参数过滤工具
               if (status === "enabled" && !isEnabled) {
@@ -453,7 +439,7 @@ export class MCPServiceManager extends EventEmitter {
                 originalName: tool.name,
                 enabled: isEnabled,
                 usageCount: toolConfig.usageCount ?? 0,
-                lastUsedTime: toolConfig.lastUsedTime ?? '',
+                lastUsedTime: toolConfig.lastUsedTime ?? "",
               });
             } catch (toolError) {
               console.warn(
@@ -499,7 +485,7 @@ export class MCPServiceManager extends EventEmitter {
             originalName: tool.name,
             enabled: true, // CustomMCP 工具默认启用
             usageCount: 0,
-            lastUsedTime: '',
+            lastUsedTime: "",
           });
         } catch (toolError) {
           console.warn(

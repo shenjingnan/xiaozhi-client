@@ -4,7 +4,7 @@
  * 这是阶段一重构的核心组件，用于消除双层代理架构
  */
 
-import type { MCPServiceManager } from "@/lib/mcp";
+import type { EnhancedToolInfo, MCPServiceManager } from "@/lib/mcp";
 import { validateToolCallParams } from "@/lib/mcp";
 import type {
   ClientCapabilities,
@@ -176,7 +176,7 @@ export class MCPMessageHandler {
     this.logger.debug("处理 tools/list 请求");
 
     try {
-      const tools = this.serviceManager.getAllTools();
+      const tools: EnhancedToolInfo[] = this.serviceManager.getAllTools();
 
       // 转换为 MCP 标准格式
       const mcpTools = tools.map((tool) => ({

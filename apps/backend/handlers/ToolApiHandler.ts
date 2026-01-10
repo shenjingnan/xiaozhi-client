@@ -5,7 +5,7 @@
 
 import { MCPCacheManager } from "@/lib/mcp";
 import type { MCPServiceManager } from "@/lib/mcp";
-import type { JSONSchema } from "@/lib/mcp/types.js";
+import type { EnhancedToolInfo, JSONSchema } from "@/lib/mcp/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type {
@@ -329,35 +329,23 @@ export class ToolApiHandler {
         return c.json(errorResponse, 503);
       }
 
-      const rawTools = serviceManager.getAllTools(status);
+      const rawTools: EnhancedToolInfo[] = serviceManager.getAllTools(status);
 
       // 转换为 CustomMCPTool 格式
-      const tools: CustomMCPTool[] = rawTools.map(
-        (tool: {
-          name: string;
-          description: string;
-          inputSchema: JSONSchema;
-          serviceName: string;
-          originalName: string;
-          enabled: boolean;
-          usageCount: number;
-          lastUsedTime: string;
-        }) => ({
-          name: tool.name,
-          description: tool.description,
-          inputSchema: tool.inputSchema,
-          handler: {
-            type: "mcp",
-            config: {
-              serviceName: tool.serviceName,
-              toolName: tool.originalName,
-            },
+      const tools: CustomMCPTool[] = rawTools.map((tool: EnhancedToolInfo) => ({
+        name: tool.name,
+        description: tool.description,
+        inputSchema: tool.inputSchema,
+        handler: {
+          type: "mcp",
+          config: {
+            serviceName: tool.serviceName,
+            toolName: tool.originalName,
           },
-          usageCount: tool.usageCount,
-          lastUsedTime: tool.lastUsedTime,
-        })
-      );
-
+        },
+        usageCount: tool.usageCount,
+        lastUsedTime: tool.lastUsedTime,
+      }));
 
       // 返回对象格式的响应
       const responseData = {
