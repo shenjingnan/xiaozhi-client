@@ -19,15 +19,12 @@ import type {
   MCPToolData,
 } from "@root/types/toolApi.js";
 import { ToolType } from "@root/types/toolApi.js";
-import { configManager } from "@xiaozhi-client/config";
-import type {
-  CustomMCPTool,
-  ProxyHandlerConfig,
-} from "@xiaozhi-client/config";
 import type {
   CustomMCPToolWithStats,
   JSONSchema,
 } from "@root/types/toolApi.js";
+import { configManager } from "@xiaozhi-client/config";
+import type { CustomMCPTool, ProxyHandlerConfig } from "@xiaozhi-client/config";
 import Ajv from "ajv";
 import dayjs from "dayjs";
 import type { Context } from "hono";
@@ -339,20 +336,22 @@ export class ToolApiHandler {
       const rawTools: EnhancedToolInfo[] = serviceManager.getAllTools(status);
 
       // 转换为 CustomMCPToolWithStats 格式（使用共享类型）
-      const tools: CustomMCPToolWithStats[] = rawTools.map((tool: EnhancedToolInfo) => ({
-        name: tool.name,
-        description: tool.description,
-        inputSchema: tool.inputSchema,
-        handler: {
-          type: "mcp",
-          config: {
-            serviceName: tool.serviceName,
-            toolName: tool.originalName,
+      const tools: CustomMCPToolWithStats[] = rawTools.map(
+        (tool: EnhancedToolInfo) => ({
+          name: tool.name,
+          description: tool.description,
+          inputSchema: tool.inputSchema,
+          handler: {
+            type: "mcp",
+            config: {
+              serviceName: tool.serviceName,
+              toolName: tool.originalName,
+            },
           },
-        },
-        usageCount: tool.usageCount,
-        lastUsedTime: tool.lastUsedTime,
-      }));
+          usageCount: tool.usageCount,
+          lastUsedTime: tool.lastUsedTime,
+        })
+      );
 
       // 返回对象格式的响应
       const responseData = {

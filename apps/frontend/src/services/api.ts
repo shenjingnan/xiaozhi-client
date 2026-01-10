@@ -8,12 +8,12 @@ import type {
   ApiSuccessResponse,
   AppConfig,
   ClientStatus,
+  CustomMCPToolWithStats,
   MCPErrorCode,
   MCPServerAddRequest,
   MCPServerConfig,
   MCPServerListResponse,
   MCPServerStatus,
-  CustomMCPToolWithStats,
 } from "@xiaozhi-client/shared-types";
 
 /**

@@ -3,8 +3,8 @@
  * 支持多种工具类型的添加，包括 MCP 工具、Coze 工作流等
  */
 
-import type { CozeWorkflow, WorkflowParameterConfig } from "./coze.js";
 import type { JSONSchema as LibJSONSchema } from "@/lib/mcp/types.js";
+import type { CozeWorkflow, WorkflowParameterConfig } from "./coze.js";
 
 /**
  * JSON Schema 类型
