@@ -92,8 +92,7 @@ export class EndpointConnection {
 
     try {
       // 直接从 MCPServiceManager 获取所有工具
-      const allTools: EnhancedToolInfo[] =
-        this.serviceManager.getAllTools();
+      const allTools: EnhancedToolInfo[] = this.serviceManager.getAllTools();
 
       // 转换为 Tool 格式
       return allTools.map((toolInfo) => ({
