@@ -1,0 +1,55 @@
+### 启用 MCP 工具
+POST http://localhost:9999/api/tools/mcp/manage
+Content-Type: application/json
+
+{
+  "action": "enable",
+  "serverName": "datetime",
+  "toolName": "get_current_time",
+  "description": "获取当前时间"
+}
+
+### 禁用 MCP 工具
+POST http://localhost:9999/api/tools/mcp/manage
+Content-Type: application/json
+
+{
+  "action": "disable",
+  "serverName": "datetime",
+  "toolName": "format_datetime"
+}
+
+### 查询 MCP 工具状态
+POST http://localhost:9999/api/tools/mcp/manage
+Content-Type: application/json
+
+{
+  "action": "status",
+  "serverName": "datetime",
+  "toolName": "get_current_time"
+}
+
+### 切换 MCP 工具状态
+POST http://localhost:9999/api/tools/mcp/manage
+Content-Type: application/json
+
+{
+  "action": "toggle",
+  "serverName": "calculator",
+  "toolName": "calculator"
+}
+
+### 获取指定服务的工具列表
+POST http://localhost:9999/api/tools/mcp/list
+Content-Type: application/json
+
+{
+  "serverName": "datetime",
+  "includeUsageStats": true
+}
+
+### 获取所有服务的工具列表
+POST http://localhost:9999/api/tools/mcp/list
+Content-Type: application/json
+
+{}
