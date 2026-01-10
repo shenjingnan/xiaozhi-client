@@ -319,27 +319,41 @@ export class ToolApiHandler {
       const status =
         (c.req.query("status") as "enabled" | "disabled" | "all") || "all";
 
-      let tools: CustomMCPTool[] = [];
-
-      switch (status) {
-        case "enabled":
-          // 已启用工具：包括 customMCP 和 mcpServerConfig 中启用的工具
-          tools = this.getEnabledTools();
-          this.logger.debug(`获取已启用工具，共 ${tools.length} 个`);
-          break;
-
-        case "disabled":
-          // 未启用工具：从 mcpServerConfig 中获取禁用的工具
-          tools = await this.getDisabledTools();
-          this.logger.debug(`获取未启用工具，共 ${tools.length} 个`);
-          break;
-
-        default:
-          // 所有工具：包括 customMCP 和 mcpServerConfig 中的所有工具
-          tools = this.getEnabledTools();
-          this.logger.debug(`获取所有工具，共 ${tools.length} 个`);
-          break;
+      // 从 Context 中获取 MCPServiceManager 实例
+      const serviceManager = c.get("mcpServiceManager");
+      if (!serviceManager) {
+        const errorResponse = this.createErrorResponse(
+          "SERVICE_NOT_INITIALIZED",
+          "MCP 服务管理器未初始化。请检查服务状态。"
+        );
+        return c.json(errorResponse, 503);
       }
+
+      const rawTools = serviceManager.getAllTools(status);
+
+      // 转换为 CustomMCPTool 格式
+      const tools: CustomMCPTool[] = rawTools.map(
+        (tool: {
+          name: string;
+          description: string;
+          inputSchema: JSONSchema;
+          serviceName: string;
+          originalName: string;
+          enabled: boolean;
+        }) => ({
+          name: tool.name,
+          description: tool.description,
+          inputSchema: tool.inputSchema,
+          handler: {
+            type: "mcp",
+            config: {
+              serviceName: tool.serviceName,
+              toolName: tool.originalName,
+            },
+          },
+        })
+      );
+
 
       // 返回对象格式的响应
       const responseData = {
@@ -362,109 +376,6 @@ export class ToolApiHandler {
       );
       return c.json(errorResponse, 500);
     }
-  }
-
-  /**
-   * 获取未启用工具
-   * 从 mcpServerConfig 中读取工具配置，过滤掉已启用的工具
-   */
-  private async getDisabledTools(): Promise<CustomMCPTool[]> {
-    try {
-      // 1. 获取 customMCP 中的特殊工具（这些算作启用）
-      const customMCPTools = configManager.getCustomMCPTools();
-      const customMCPToolNames = new Set(
-        customMCPTools.map((tool) => tool.name)
-      );
-
-      // 2. 从 mcpServerConfig 获取所有 MCP 工具配置（权威数据源）
-      const mcpServerConfig = configManager.getMcpServerConfig();
-
-      const disabledTools: CustomMCPTool[] = [];
-
-      // 3. 遍历每个服务的工具配置
-      for (const [serviceName, serverConfig] of Object.entries(
-        mcpServerConfig
-      )) {
-        for (const [toolName, toolConfig] of Object.entries(
-          serverConfig.tools || {}
-        )) {
-          // 构建完整工具名
-          const fullToolName = `${serviceName}__${toolName}`;
-
-          // 跳过已在 customMCP 中的工具
-          if (customMCPToolNames.has(fullToolName)) {
-            continue;
-          }
-
-          // 检查 enable 配置
-          if (toolConfig.enable === true) {
-            // 工具已启用，跳过
-            continue;
-          }
-
-          // enable 为 false 或未定义，加入禁用列表
-          disabledTools.push({
-            name: fullToolName,
-            description: toolConfig.description || "",
-            inputSchema: {}, // TODO: 需要从实际服务获取 inputSchema
-            handler: {
-              type: "mcp",
-              config: {
-                serviceName: serviceName,
-                toolName: toolName,
-              },
-            },
-          });
-        }
-      }
-
-      this.logger.debug(
-        `从 mcpServerConfig 中筛选出 ${disabledTools.length} 个未启用工具`
-      );
-      return disabledTools;
-    } catch (error) {
-      this.logger.error("获取未启用工具失败:", error);
-      // 如果获取失败，返回空数组而不是抛出错误
-      return [];
-    }
-  }
-
-  /**
-   * 获取已启用工具
-   * 包括 customMCP 中的特殊工具和 mcpServerConfig 中标记为启用的工具
-   */
-  private getEnabledTools(): CustomMCPTool[] {
-    const enabledTools: CustomMCPTool[] = [];
-
-    // 1. 添加 customMCP 中的特殊工具
-    enabledTools.push(...configManager.getCustomMCPTools());
-
-    // 2. 从 mcpServerConfig 添加启用工具
-    const mcpServerConfig = configManager.getMcpServerConfig();
-
-    for (const [serviceName, serverConfig] of Object.entries(mcpServerConfig)) {
-      for (const [toolName, toolConfig] of Object.entries(
-        serverConfig.tools || {}
-      )) {
-        // 只添加 enable === true 的工具
-        if (toolConfig.enable === true) {
-          enabledTools.push({
-            name: `${serviceName}__${toolName}`,
-            description: toolConfig.description || "",
-            inputSchema: {}, // TODO: 需要从实际服务获取 inputSchema
-            handler: {
-              type: "mcp",
-              config: {
-                serviceName: serviceName,
-                toolName: toolName,
-              },
-            },
-          });
-        }
-      }
-    }
-
-    return enabledTools;
   }
 
   /**
