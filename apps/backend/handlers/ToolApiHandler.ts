@@ -324,7 +324,7 @@ export class ToolApiHandler {
       switch (status) {
         case "enabled":
           // 已启用工具：包括 customMCP 和 mcpServerConfig 中启用的工具
-          tools = this.getEnabledTools();
+          tools = await this.getEnabledTools();
           this.logger.debug(`获取已启用工具，共 ${tools.length} 个`);
           break;
 
@@ -336,7 +336,7 @@ export class ToolApiHandler {
 
         default:
           // 所有工具：包括 customMCP 和 mcpServerConfig 中的所有工具
-          tools = this.getEnabledTools();
+          tools = await this.getEnabledTools();
           this.logger.debug(`获取所有工具，共 ${tools.length} 个`);
           break;
       }
@@ -361,6 +361,39 @@ export class ToolApiHandler {
         "获取工具列表失败"
       );
       return c.json(errorResponse, 500);
+    }
+  }
+
+  /**
+   * 从 MCPCacheManager 获取工具的 inputSchema
+   * 统一从缓存获取，速度快且资源消耗少
+   */
+  private async getToolInputSchema(
+    serviceName: string,
+    toolName: string
+  ): Promise<JSONSchema> {
+    try {
+      const cacheManager = new MCPCacheManager();
+      const cachedTools = await cacheManager.getAllCachedTools();
+
+      const fullToolName = `${serviceName}__${toolName}`;
+      const cachedTool = cachedTools.find((t) => t.name === fullToolName);
+
+      if (cachedTool?.inputSchema) {
+        return cachedTool.inputSchema;
+      }
+
+      // 缓存中未找到，返回空对象（静默失败）
+      this.logger.debug(
+        `缓存中未找到工具 ${serviceName}/${toolName} 的 inputSchema`
+      );
+      return {};
+    } catch (error) {
+      this.logger.debug(
+        `从缓存获取 ${serviceName}/${toolName} 的 inputSchema 失败:`,
+        error
+      );
+      return {};
     }
   }
 
@@ -406,7 +439,7 @@ export class ToolApiHandler {
           disabledTools.push({
             name: fullToolName,
             description: toolConfig.description || "",
-            inputSchema: {}, // TODO: 需要从实际服务获取 inputSchema
+            inputSchema: await this.getToolInputSchema(serviceName, toolName),
             handler: {
               type: "mcp",
               config: {
@@ -433,7 +466,7 @@ export class ToolApiHandler {
    * 获取已启用工具
    * 包括 customMCP 中的特殊工具和 mcpServerConfig 中标记为启用的工具
    */
-  private getEnabledTools(): CustomMCPTool[] {
+  private async getEnabledTools(): Promise<CustomMCPTool[]> {
     const enabledTools: CustomMCPTool[] = [];
 
     // 1. 添加 customMCP 中的特殊工具
@@ -451,7 +484,7 @@ export class ToolApiHandler {
           enabledTools.push({
             name: `${serviceName}__${toolName}`,
             description: toolConfig.description || "",
-            inputSchema: {}, // TODO: 需要从实际服务获取 inputSchema
+            inputSchema: await this.getToolInputSchema(serviceName, toolName),
             handler: {
               type: "mcp",
               config: {
