@@ -15,8 +15,10 @@ import type { MCPServerConfig } from "@xiaozhi-client/shared-types";
 
 /**
  * 解析命令字符串为 {command, args} 结构
+ * 支持带引号的参数，可以处理包含空格的路径
  * @example "npx -y @z_ai/mcp-server" → {command: "npx", args: ["-y", "@z_ai/mcp-server"]}
  * @example "/usr/local/bin/mcp --config /etc/mcp.json" → {command: "/usr/local/bin/mcp", args: ["--config", "/etc/mcp.json"]}
+ * @example "node \"/path with spaces/server.js\" --arg" → {command: "node", args: ["/path with spaces/server.js", "--arg"]}
  */
 export function parseCommandString(commandStr: string): {
   command: string;
@@ -26,21 +28,87 @@ export function parseCommandString(commandStr: string): {
   if (!trimmed) {
     throw new Error("命令不能为空");
   }
-  // 使用正则表达式按空白字符分割
-  const parts = trimmed.split(/\s+/);
-  return { command: parts[0], args: parts.slice(1) };
+
+  const result: string[] = [];
+  let current = "";
+  let inQuote = false;
+  let quoteChar = "";
+
+  for (let i = 0; i < trimmed.length; i++) {
+    const char = trimmed[i];
+
+    // 处理引号（支持单引号和双引号）
+    if (
+      (char === '"' || char === "'") &&
+      (i === 0 || trimmed[i - 1] !== "\\")
+    ) {
+      if (inQuote && char === quoteChar) {
+        // 结束引号
+        inQuote = false;
+        quoteChar = "";
+      } else if (!inQuote) {
+        // 开始引号
+        inQuote = true;
+        quoteChar = char;
+      } else {
+        // 引号内不同类型的引号，作为普通字符
+        current += char;
+      }
+    } else if (char === " " && !inQuote) {
+      // 空格且不在引号内，分割参数
+      if (current) {
+        result.push(current);
+        current = "";
+      }
+    } else {
+      current += char;
+    }
+  }
+
+  // 添加最后一个参数
+  if (current) {
+    result.push(current);
+  }
+
+  if (result.length === 0) {
+    throw new Error("命令不能为空");
+  }
+
+  return { command: result[0], args: result.slice(1) };
+}
+
+/**
+ * 去除字符串两端的配对引号（单引号或双引号）
+ * @example '"hello"' → 'hello'
+ * @example "'world'" → 'world'
+ * @example '"unclosed' → '"unclosed' (不匹配，不处理)
+ */
+function stripQuotes(str: string): string {
+  if (str.length >= 2) {
+    const firstChar = str[0];
+    const lastChar = str[str.length - 1];
+    if (
+      (firstChar === '"' && lastChar === '"') ||
+      (firstChar === "'" && lastChar === "'")
+    ) {
+      return str.slice(1, -1);
+    }
+  }
+  return str;
 }
 
 /**
  * 解析多行键值对文本为对象
  * 支持格式: KEY=value 或 KEY: value
  * 支持注释行 (# 开头)
+ * 支持值使用引号包裹（引号会被自动去除）
  * @example
  * ACCESS_TOKEN=xxx
  * BASE_URL=yyy
  * # 这是注释
  * ANOTHER: value
- * → {ACCESS_TOKEN: "xxx", BASE_URL: "yyy", ANOTHER: "value"}
+ * PATH="C:\Program Files\app"
+ * → {ACCESS_TOKEN: "xxx", BASE_URL: "yyy", ANOTHER: "value", PATH: "C:\Program Files\app"}
  */
 export function parseKeyValuePairs(text: string): Record<string, string> {
   const result: Record<string, string> = {};
@@ -56,7 +124,9 @@ export function parseKeyValuePairs(text: string): Record<string, string> {
     const eqIndex = trimmed.indexOf("=");
     if (eqIndex > 0) {
       const key = trimmed.slice(0, eqIndex).trim();
-      const value = trimmed.slice(eqIndex + 1).trim();
+      let value = trimmed.slice(eqIndex + 1).trim();
+      // 去除值两端的配对引号
+      value = stripQuotes(value);
       result[key] = value;
       continue;
     }
@@ -65,7 +135,9 @@ export function parseKeyValuePairs(text: string): Record<string, string> {
     const colonIndex = trimmed.indexOf(":");
     if (colonIndex > 0) {
       const key = trimmed.slice(0, colonIndex).trim();
-      const value = trimmed.slice(colonIndex + 1).trim();
+      let value = trimmed.slice(colonIndex + 1).trim();
+      // 去除值两端的配对引号
+      value = stripQuotes(value);
       result[key] = value;
     }
   }
@@ -316,7 +388,7 @@ export function jsonToFormData(jsonString: string): McpServerFormData | null {
       ("command" in parsed || "type" in parsed || "url" in parsed)
     ) {
       // 生成默认名称
-      let defaultName = "mcp-server";
+      let defaultName: string;
       if ("command" in parsed && parsed.command) {
         defaultName = parsed.command.split("/").pop() || "mcp-server";
       } else if ("type" in parsed && parsed.type === "sse") {
@@ -328,7 +400,14 @@ export function jsonToFormData(jsonString: string): McpServerFormData | null {
     }
 
     return null;
-  } catch {
+  } catch (error) {
+    // 仅在非生产环境下输出详细错误日志
+    if (
+      typeof process !== "undefined" &&
+      process.env?.NODE_ENV !== "production"
+    ) {
+      console.error("[jsonToFormData] JSON 解析或转换失败:", error);
+    }
     return null;
   }
 }

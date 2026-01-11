@@ -53,12 +53,14 @@ export function McpServerForm({
   const handleTypeChange = (value: "stdio" | "http" | "sse") => {
     form.setValue("type", value);
     // 切换类型时重置部分字段
+    // 使用类型断言处理不同类型下的字段差异
+    const anyForm = form as unknown as UseFormReturn<Record<string, unknown>>;
     if (value === "stdio") {
-      form.setValue("url", "");
-      form.setValue("headers", "");
+      anyForm.setValue("url", "");
+      anyForm.setValue("headers", "");
     } else {
-      form.setValue("command", "");
-      form.setValue("env", "");
+      anyForm.setValue("command", "");
+      anyForm.setValue("env", "");
     }
   };
 
