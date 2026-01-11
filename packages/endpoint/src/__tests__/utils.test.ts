@@ -44,8 +44,8 @@ describe("工具函数测试", () => {
     });
 
     it("应该保持截断格式一致", () => {
-      const url1 = "ws://a".repeat(50) + ".com/endpoint";
-      const url2 = "ws://b".repeat(50) + ".com/endpoint";
+      const url1 = `ws://${"a".repeat(50)}.com/endpoint`;
+      const url2 = `ws://${"b".repeat(50)}.com/endpoint`;
       const result1 = sliceEndpoint(url1);
       const result2 = sliceEndpoint(url2);
 
@@ -57,7 +57,7 @@ describe("工具函数测试", () => {
     });
 
     it("应该截断超长 URL", () => {
-      const url = "ws://".repeat(20) + "example.com/endpoint";
+      const url = `ws://${"".repeat(20)}example.com/endpoint`;
       const result = sliceEndpoint(url);
       // 前30个字符是 ws://ws://ws://ws://ws://ws:// (30个字符)
       // 后10个字符是 m/endpoint
