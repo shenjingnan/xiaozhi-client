@@ -2,40 +2,73 @@
  * 小智接入点连接管理模块
  *
  * 此模块重新导出 @xiaozhi-client/endpoint 包
- * 保留原有的导出接口以保持向后兼容性
  */
 
 // =========================
 // 从独立包重新导出
 // =========================
 
-// 核心类导出
+// 核心类导出（新 API）
 export {
-  EndpointConnection,
+  Endpoint,
   EndpointManager,
   ToolCallErrorCode,
   ToolCallError,
 } from "@xiaozhi-client/endpoint";
 
 // =========================
-// 类型导出（带别名映射以保持向后兼容）
+// 类型导出
 // =========================
 
 export type {
-  ConnectionOptions as IndependentConnectionOptions,
+  // 工具调用相关
+  ToolCallResult,
+  ToolCallParams,
+  ValidatedToolCallParams,
+  // 服务管理器接口
+  IMCPServiceManager,
+  // 连接状态相关
+  EndpointConnectionStatus,
+  ConnectionOptions,
+  // 管理器状态相关
   SimpleConnectionStatus,
   ConnectionStatus,
   ConfigChangeEvent as EndpointConfigChangeEvent,
   ReconnectResult,
+  // JSON Schema
+  JSONSchema,
+  // 新 API 配置类型
+  MCPServerConfig,
+  LocalMCPServerConfig,
+  SSEMCPServerConfig,
+  StreamableHTTPMCPServerConfig,
+  EndpointConfig,
+  EndpointManagerConfig,
 } from "@xiaozhi-client/endpoint";
 
-// 枚举导出（使用别名保持向后兼容）
-// ConnectionState 既是类型也是值，所以只需要值导出
-export { ConnectionState as XiaozhiConnectionState } from "@xiaozhi-client/endpoint";
-
 // =========================
-// 增强管理器导出
+// 枚举导出
 // =========================
 
-// 如果需要配置持久化功能，可以导入 EnhancedEndpointManager
-// export { EnhancedEndpointManager } from "./EnhancedEndpointManager.js";
+export { ConnectionState } from "@xiaozhi-client/endpoint";
+
+// =========================
+// 工具函数导出
+// =========================
+
+export {
+  sliceEndpoint,
+  validateToolCallParams,
+  isValidEndpointUrl,
+  deepMerge,
+  sleep,
+  formatErrorMessage,
+} from "@xiaozhi-client/endpoint";
+
+export { ensureToolJSONSchema } from "@xiaozhi-client/endpoint";
+
+// =========================
+// MCP 类型导出
+// =========================
+
+export type { MCPMessage, ExtendedMCPMessage } from "@xiaozhi-client/endpoint";
