@@ -33,12 +33,20 @@ vi.mock("@xiaozhi-client/config", () => ({
 // Mock EndpointManager
 const mockConnectionManager = {
   getConnectionStatus: vi.fn(),
+  getEndpoint: vi.fn(),
   connectExistingEndpoint: vi.fn(),
   disconnectEndpoint: vi.fn(),
   triggerReconnect: vi.fn(),
   addEndpoint: vi.fn(),
   removeEndpoint: vi.fn(),
 };
+
+// Mock endpoint instance
+const createMockEndpointInstance = (connected = false) => ({
+  isConnected: vi.fn().mockReturnValue(connected),
+  connect: vi.fn().mockResolvedValue(undefined),
+  disconnect: vi.fn().mockResolvedValue(undefined),
+});
 
 describe("MCPEndpointApiHandler", () => {
   let handler: MCPEndpointApiHandler;
@@ -200,19 +208,13 @@ describe("MCPEndpointApiHandler", () => {
       const endpoint = "ws://localhost:3000";
       mockContext.req.json.mockResolvedValue({ endpoint });
 
-      // 设置初始状态（未连接）
-      mockConnectionManager.getConnectionStatus.mockReturnValueOnce([
-        mockEndpointStatus,
-      ]);
-
-      // 模拟连接成功
-      mockConnectionManager.connectExistingEndpoint.mockResolvedValue(
-        undefined
-      );
+      // 模拟未连接的端点实例
+      const mockEndpointInstance = createMockEndpointInstance(false);
+      mockConnectionManager.getEndpoint.mockReturnValue(mockEndpointInstance);
 
       // 设置连接后的状态（已连接）
       const connectedStatus = { ...mockEndpointStatus, connected: true };
-      mockConnectionManager.getConnectionStatus.mockReturnValueOnce([
+      mockConnectionManager.getConnectionStatus.mockReturnValue([
         connectedStatus,
       ]);
 
@@ -224,9 +226,8 @@ describe("MCPEndpointApiHandler", () => {
       const responseData = await response.json();
       expect(responseData.success).toBe(true);
       expect(responseData.data).toEqual(connectedStatus);
-      expect(
-        mockConnectionManager.connectExistingEndpoint
-      ).toHaveBeenCalledWith(endpoint);
+      expect(mockConnectionManager.getEndpoint).toHaveBeenCalledWith(endpoint);
+      expect(mockEndpointInstance.connect).toHaveBeenCalled();
       expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
         "endpoint:status:changed",
         expect.objectContaining({
@@ -245,6 +246,7 @@ describe("MCPEndpointApiHandler", () => {
       // Arrange
       const endpoint = "ws://nonexistent:3000";
       mockContext.req.json.mockResolvedValue({ endpoint });
+      mockConnectionManager.getEndpoint.mockReturnValue(null);
       mockConnectionManager.getConnectionStatus.mockReturnValue([
         mockEndpointStatus,
       ]);
@@ -267,6 +269,10 @@ describe("MCPEndpointApiHandler", () => {
       mockConnectionManager.getConnectionStatus.mockReturnValue([
         connectedStatus,
       ]);
+
+      // 模拟已连接的端点实例
+      const mockEndpointInstance = createMockEndpointInstance(true);
+      mockConnectionManager.getEndpoint.mockReturnValue(mockEndpointInstance);
 
       // Act
       const response = await handler.connectEndpoint(mockContext);
@@ -298,9 +304,11 @@ describe("MCPEndpointApiHandler", () => {
       mockConnectionManager.getConnectionStatus.mockReturnValue([
         mockEndpointStatus,
       ]);
-      mockConnectionManager.connectExistingEndpoint.mockRejectedValue(
-        new Error("连接失败")
-      );
+
+      // 模拟连接失败的端点实例
+      const mockEndpointInstance = createMockEndpointInstance(false);
+      mockEndpointInstance.connect.mockRejectedValue(new Error("连接失败"));
+      mockConnectionManager.getEndpoint.mockReturnValue(mockEndpointInstance);
 
       // Act
       const response = await handler.connectEndpoint(mockContext);
@@ -316,13 +324,13 @@ describe("MCPEndpointApiHandler", () => {
       // Arrange
       const endpoint = "ws://localhost:3000";
       mockContext.req.json.mockResolvedValue({ endpoint });
-      mockConnectionManager.getConnectionStatus
-        .mockReturnValueOnce([mockEndpointStatus])
-        .mockReturnValueOnce([]);
 
-      mockConnectionManager.connectExistingEndpoint.mockResolvedValue(
-        undefined
-      );
+      // 模拟未连接的端点实例
+      const mockEndpointInstance = createMockEndpointInstance(false);
+      mockConnectionManager.getEndpoint.mockReturnValue(mockEndpointInstance);
+
+      // 设置连接后状态为空
+      mockConnectionManager.getConnectionStatus.mockReturnValue([]);
 
       // Act
       const response = await handler.connectEndpoint(mockContext);
@@ -337,24 +345,50 @@ describe("MCPEndpointApiHandler", () => {
       // Arrange
       const endpoint = "ws://localhost:3000/api";
       mockContext.req.json.mockResolvedValue({ endpoint });
-      mockConnectionManager.getConnectionStatus
-        .mockReturnValueOnce([{ ...mockEndpointStatus, endpoint }])
-        .mockReturnValueOnce([
-          { ...mockEndpointStatus, endpoint, connected: true },
-        ]);
 
-      mockConnectionManager.connectExistingEndpoint.mockResolvedValue(
-        undefined
-      );
+      // 模拟未连接的端点实例
+      const mockEndpointInstance = createMockEndpointInstance(false);
+      mockConnectionManager.getEndpoint.mockReturnValue(mockEndpointInstance);
+
+      // 设置连接后的状态
+      const connectedStatus = {
+        ...mockEndpointStatus,
+        endpoint,
+        connected: true,
+      };
+      mockConnectionManager.getConnectionStatus.mockReturnValue([
+        connectedStatus,
+      ]);
 
       // Act
       const response = await handler.connectEndpoint(mockContext);
 
       // Assert
       expect(response.status).toBe(200);
-      expect(
-        mockConnectionManager.connectExistingEndpoint
-      ).toHaveBeenCalledWith(endpoint);
+      expect(mockConnectionManager.getEndpoint).toHaveBeenCalledWith(endpoint);
+    });
+
+    it("应该正确处理非Error类型的异常", async () => {
+      // Arrange
+      const endpoint = "ws://localhost:3000";
+      mockContext.req.json.mockResolvedValue({ endpoint });
+      mockConnectionManager.getConnectionStatus.mockReturnValue([
+        mockEndpointStatus,
+      ]);
+
+      // 模拟连接时抛出字符串错误
+      const mockEndpointInstance = createMockEndpointInstance(false);
+      mockEndpointInstance.connect.mockRejectedValue("字符串错误");
+      mockConnectionManager.getEndpoint.mockReturnValue(mockEndpointInstance);
+
+      // Act
+      const response = await handler.connectEndpoint(mockContext);
+
+      // Assert
+      expect(response.status).toBe(500);
+      const responseData = await response.json();
+      expect(responseData.error.code).toBe("ENDPOINT_CONNECT_ERROR");
+      expect(responseData.error.message).toBe("接入点连接失败");
     });
   });
 
@@ -367,7 +401,10 @@ describe("MCPEndpointApiHandler", () => {
       mockConnectionManager.getConnectionStatus.mockReturnValue([
         connectedStatus,
       ]);
-      mockConnectionManager.disconnectEndpoint.mockResolvedValue(undefined);
+
+      // 模拟已连接的端点实例
+      const mockEndpointInstance = createMockEndpointInstance(true);
+      mockConnectionManager.getEndpoint.mockReturnValue(mockEndpointInstance);
 
       // Act
       const response = await handler.disconnectEndpoint(mockContext);
@@ -376,9 +413,8 @@ describe("MCPEndpointApiHandler", () => {
       expect(response.status).toBe(200);
       const responseData = await response.json();
       expect(responseData.success).toBe(true);
-      expect(mockConnectionManager.disconnectEndpoint).toHaveBeenCalledWith(
-        endpoint
-      );
+      expect(mockConnectionManager.getEndpoint).toHaveBeenCalledWith(endpoint);
+      expect(mockEndpointInstance.disconnect).toHaveBeenCalled();
       expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
         "endpoint:status:changed",
         expect.objectContaining({
@@ -397,6 +433,7 @@ describe("MCPEndpointApiHandler", () => {
       // Arrange
       const endpoint = "ws://nonexistent:3000";
       mockContext.req.json.mockResolvedValue({ endpoint });
+      mockConnectionManager.getEndpoint.mockReturnValue(null);
       mockConnectionManager.getConnectionStatus.mockReturnValue([
         mockEndpointStatus,
       ]);
@@ -417,6 +454,10 @@ describe("MCPEndpointApiHandler", () => {
       mockConnectionManager.getConnectionStatus.mockReturnValue([
         mockEndpointStatus,
       ]);
+
+      // 模拟未连接的端点实例
+      const mockEndpointInstance = createMockEndpointInstance(false);
+      mockConnectionManager.getEndpoint.mockReturnValue(mockEndpointInstance);
 
       // Act
       const response = await handler.disconnectEndpoint(mockContext);
@@ -449,9 +490,11 @@ describe("MCPEndpointApiHandler", () => {
       mockConnectionManager.getConnectionStatus.mockReturnValue([
         connectedStatus,
       ]);
-      mockConnectionManager.disconnectEndpoint.mockRejectedValue(
-        new Error("断开失败")
-      );
+
+      // 模拟断开失败的端点实例
+      const mockEndpointInstance = createMockEndpointInstance(true);
+      mockEndpointInstance.disconnect.mockRejectedValue(new Error("断开失败"));
+      mockConnectionManager.getEndpoint.mockReturnValue(mockEndpointInstance);
 
       // Act
       const response = await handler.disconnectEndpoint(mockContext);
@@ -468,10 +511,11 @@ describe("MCPEndpointApiHandler", () => {
       const endpoint = "ws://localhost:3000";
       const connectedStatus = { ...mockEndpointStatus, connected: true };
       mockContext.req.json.mockResolvedValue({ endpoint });
-      mockConnectionManager.getConnectionStatus
-        .mockReturnValueOnce([connectedStatus])
-        .mockReturnValueOnce([]);
-      mockConnectionManager.disconnectEndpoint.mockResolvedValue(undefined);
+      mockConnectionManager.getConnectionStatus.mockReturnValue([]);
+
+      // 模拟已连接的端点实例
+      const mockEndpointInstance = createMockEndpointInstance(true);
+      mockConnectionManager.getEndpoint.mockReturnValue(mockEndpointInstance);
 
       // Act
       const response = await handler.disconnectEndpoint(mockContext);
@@ -501,83 +545,40 @@ describe("MCPEndpointApiHandler", () => {
       mockConnectionManager.getConnectionStatus.mockReturnValue([
         connectedStatus,
       ]);
-      mockConnectionManager.disconnectEndpoint.mockResolvedValue(undefined);
+
+      // 模拟已连接的端点实例
+      const mockEndpointInstance = createMockEndpointInstance(true);
+      mockConnectionManager.getEndpoint.mockReturnValue(mockEndpointInstance);
 
       // Act
       const response = await handler.disconnectEndpoint(mockContext);
 
       // Assert
       expect(response.status).toBe(200);
-      expect(mockConnectionManager.disconnectEndpoint).toHaveBeenCalledWith(
-        endpoint
-      );
+      expect(mockConnectionManager.getEndpoint).toHaveBeenCalledWith(endpoint);
     });
   });
 
   describe("addEndpoint", () => {
-    it("应该成功添加新接入点", async () => {
+    it("应该返回501 NOT_SUPPORTED当尝试添加端点时", async () => {
       // Arrange
       const endpoint = "ws://new-endpoint:3000";
-      const requestBody = { endpoint };
-      mockContext.req.json.mockResolvedValue(requestBody);
-
-      // 设置初始状态（不包含新端点）
-      mockConnectionManager.getConnectionStatus.mockReturnValueOnce([
-        mockEndpointStatus,
-      ]);
-
-      // 模拟添加成功
-      mockConnectionManager.addEndpoint.mockResolvedValue(undefined);
-
-      // 设置添加后的状态（包含新端点）
-      const newEndpointStatus = { ...mockEndpointStatus, endpoint };
-      mockConnectionManager.getConnectionStatus.mockReturnValueOnce([
-        mockEndpointStatus,
-        newEndpointStatus,
-      ]);
+      mockContext.req.json.mockResolvedValue({ endpoint });
 
       // Act
       const response = await handler.addEndpoint(mockContext);
 
       // Assert
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(501);
       const responseData = await response.json();
-      expect(responseData.success).toBe(true);
-      expect(mockConnectionManager.addEndpoint).toHaveBeenCalledWith(endpoint);
-      expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
-        "endpoint:status:changed",
-        expect.objectContaining({
-          endpoint,
-          connected: false,
-          operation: "add",
-          success: true,
-          message: "接入点添加成功",
-          timestamp: expect.any(Number),
-          source: "http-api",
-        })
+      expect(responseData.error.code).toBe("NOT_SUPPORTED");
+      expect(responseData.error.message).toContain(
+        "动态添加端点功能在新 API 中不支持"
       );
+      expect(responseData.error.details?.endpoint).toBe(endpoint);
     });
 
-    it("应该返回409当接入点已存在时", async () => {
-      // Arrange
-      const endpoint = "ws://localhost:3000";
-      const requestBody = { endpoint };
-      mockContext.req.json.mockResolvedValue(requestBody);
-      mockConnectionManager.getConnectionStatus.mockReturnValue([
-        mockEndpointStatus,
-      ]);
-
-      // Act
-      const response = await handler.addEndpoint(mockContext);
-
-      // Assert
-      expect(response.status).toBe(409);
-      const responseData = await response.json();
-      expect(responseData.error.code).toBe("ENDPOINT_ALREADY_EXISTS");
-      expect(responseData.error.message).toBe("接入点已存在");
-    });
-
-    it("应该返回400当端点参数无效时", async () => {
+    it("应该返回400当端点参数无效时（参数验证在parseEndpointFromBody中提前处理）", async () => {
       // Arrange
       const requestBody = { endpoint: null };
       mockContext.req.json.mockResolvedValue(requestBody);
@@ -586,12 +587,13 @@ describe("MCPEndpointApiHandler", () => {
       const response = await handler.addEndpoint(mockContext);
 
       // Assert
+      // 参数验证在 parseEndpointFromBody 中提前处理，返回 400
       expect(response.status).toBe(400);
       const responseData = await response.json();
       expect(responseData.error.code).toBe("INVALID_ENDPOINT");
     });
 
-    it("应该返回400当端点参数为空字符串时", async () => {
+    it("应该返回400当端点参数为空字符串时（参数验证在parseEndpointFromBody中提前处理）", async () => {
       // Arrange
       const requestBody = { endpoint: "" };
       mockContext.req.json.mockResolvedValue(requestBody);
@@ -600,94 +602,13 @@ describe("MCPEndpointApiHandler", () => {
       const response = await handler.addEndpoint(mockContext);
 
       // Assert
+      // 参数验证在 parseEndpointFromBody 中提前处理，返回 400
       expect(response.status).toBe(400);
       const responseData = await response.json();
       expect(responseData.error.code).toBe("INVALID_ENDPOINT");
     });
 
-    it("应该返回409当接入点已存在于配置文件中时", async () => {
-      // Arrange
-      const endpoint = "ws://existing-endpoint:3000";
-      const requestBody = { endpoint };
-      mockContext.req.json.mockResolvedValue(requestBody);
-      mockConnectionManager.getConnectionStatus.mockReturnValue([
-        mockEndpointStatus,
-      ]);
-      mockConnectionManager.addEndpoint.mockRejectedValue(
-        new Error("端点已存在于配置文件中")
-      );
-
-      // Act
-      const response = await handler.addEndpoint(mockContext);
-
-      // Assert
-      expect(response.status).toBe(409);
-      const responseData = await response.json();
-      expect(responseData.error.code).toBe("ENDPOINT_ALREADY_IN_CONFIG");
-    });
-
-    it("应该返回400当端点必须是非空字符串错误时", async () => {
-      // Arrange
-      const endpoint = "   ";
-      const requestBody = { endpoint };
-      mockContext.req.json.mockResolvedValue(requestBody);
-      mockConnectionManager.getConnectionStatus.mockReturnValue([
-        mockEndpointStatus,
-      ]);
-      mockConnectionManager.addEndpoint.mockRejectedValue(
-        new Error("端点必须是非空字符串")
-      );
-
-      // Act
-      const response = await handler.addEndpoint(mockContext);
-
-      // Assert
-      expect(response.status).toBe(400);
-      const responseData = await response.json();
-      expect(responseData.error.code).toBe("INVALID_ENDPOINT");
-    });
-
-    it("应该返回500当添加操作失败时", async () => {
-      // Arrange
-      const endpoint = "ws://new-endpoint:3000";
-      const requestBody = { endpoint };
-      mockContext.req.json.mockResolvedValue(requestBody);
-      mockConnectionManager.getConnectionStatus.mockReturnValue([
-        mockEndpointStatus,
-      ]);
-      mockConnectionManager.addEndpoint.mockRejectedValue(
-        new Error("添加失败")
-      );
-
-      // Act
-      const response = await handler.addEndpoint(mockContext);
-
-      // Assert
-      expect(response.status).toBe(500);
-      const responseData = await response.json();
-      expect(responseData.error.code).toBe("ENDPOINT_ADD_ERROR");
-    });
-
-    it("应该返回500当添加后无法获取状态时", async () => {
-      // Arrange
-      const endpoint = "ws://new-endpoint:3000";
-      const requestBody = { endpoint };
-      mockContext.req.json.mockResolvedValue(requestBody);
-      mockConnectionManager.getConnectionStatus
-        .mockReturnValueOnce([mockEndpointStatus])
-        .mockReturnValueOnce([mockEndpointStatus]);
-      mockConnectionManager.addEndpoint.mockResolvedValue(undefined);
-
-      // Act
-      const response = await handler.addEndpoint(mockContext);
-
-      // Assert
-      expect(response.status).toBe(500);
-      const responseData = await response.json();
-      expect(responseData.error.code).toBe("ENDPOINT_STATUS_NOT_FOUND");
-    });
-
-    it("应该正确处理JSON解析错误", async () => {
+    it("应该返回500当JSON解析失败时（JSON解析错误在parseEndpointFromBody中处理）", async () => {
       // Arrange
       mockContext.req.json.mockRejectedValue(new Error("JSON解析失败"));
 
@@ -695,6 +616,7 @@ describe("MCPEndpointApiHandler", () => {
       const response = await handler.addEndpoint(mockContext);
 
       // Assert
+      // JSON 解析错误在 parseEndpointFromBody 中处理，返回 500
       expect(response.status).toBe(500);
       const responseData = await response.json();
       expect(responseData.error.code).toBe("ENDPOINT_ADD_ERROR");
@@ -702,81 +624,25 @@ describe("MCPEndpointApiHandler", () => {
   });
 
   describe("removeEndpoint", () => {
-    it("应该成功移除接入点", async () => {
+    it("应该返回501 NOT_SUPPORTED当尝试移除端点时", async () => {
       // Arrange
       const endpoint = "ws://localhost:3000";
       mockContext.req.json.mockResolvedValue({ endpoint });
-      mockConnectionManager.getConnectionStatus.mockReturnValue([
-        mockEndpointStatus,
-      ]);
-      mockConnectionManager.removeEndpoint.mockResolvedValue(undefined);
 
       // Act
       const response = await handler.removeEndpoint(mockContext);
 
       // Assert
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(501);
       const responseData = await response.json();
-      expect(responseData.success).toBe(true);
-      expect(mockConnectionManager.removeEndpoint).toHaveBeenCalledWith(
-        endpoint
+      expect(responseData.error.code).toBe("NOT_SUPPORTED");
+      expect(responseData.error.message).toContain(
+        "动态移除端点功能在新 API 中不支持"
       );
-      expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
-        "endpoint:status:changed",
-        expect.objectContaining({
-          endpoint,
-          connected: false,
-          operation: "remove",
-          success: true,
-          message: "接入点移除成功",
-          timestamp: expect.any(Number),
-          source: "http-api",
-        })
-      );
+      expect(responseData.error.details?.endpoint).toBe(endpoint);
     });
 
-    it("应该先断开连接再移除已连接的接入点", async () => {
-      // Arrange
-      const endpoint = "ws://localhost:3000";
-      const connectedStatus = { ...mockEndpointStatus, connected: true };
-      mockContext.req.json.mockResolvedValue({ endpoint });
-      mockConnectionManager.getConnectionStatus.mockReturnValue([
-        connectedStatus,
-      ]);
-      mockConnectionManager.disconnectEndpoint.mockResolvedValue(undefined);
-      mockConnectionManager.removeEndpoint.mockResolvedValue(undefined);
-
-      // Act
-      const response = await handler.removeEndpoint(mockContext);
-
-      // Assert
-      expect(response.status).toBe(200);
-      expect(mockConnectionManager.disconnectEndpoint).toHaveBeenCalledWith(
-        endpoint
-      );
-      expect(mockConnectionManager.removeEndpoint).toHaveBeenCalledWith(
-        endpoint
-      );
-    });
-
-    it("应该返回404当接入点不存在时", async () => {
-      // Arrange
-      const endpoint = "ws://nonexistent:3000";
-      mockContext.req.json.mockResolvedValue({ endpoint });
-      mockConnectionManager.getConnectionStatus.mockReturnValue([
-        mockEndpointStatus,
-      ]);
-
-      // Act
-      const response = await handler.removeEndpoint(mockContext);
-
-      // Assert
-      expect(response.status).toBe(404);
-      const responseData = await response.json();
-      expect(responseData.error.code).toBe("ENDPOINT_NOT_FOUND");
-    });
-
-    it("应该返回400当端点参数无效时", async () => {
+    it("应该返回400当端点参数无效时（参数验证在parseEndpointFromBody中提前处理）", async () => {
       // Arrange
       mockContext.req.json.mockResolvedValue({ endpoint: "" });
 
@@ -784,106 +650,40 @@ describe("MCPEndpointApiHandler", () => {
       const response = await handler.removeEndpoint(mockContext);
 
       // Assert
+      // 参数验证在 parseEndpointFromBody 中提前处理，返回 400
       expect(response.status).toBe(400);
       const responseData = await response.json();
       expect(responseData.error.code).toBe("INVALID_ENDPOINT");
     });
 
-    it("应该返回404当端点不存在错误时", async () => {
+    it("应该返回500当JSON解析失败时（JSON解析错误在parseEndpointFromBody中处理）", async () => {
       // Arrange
-      const endpoint = "ws://nonexistent:3000";
-      mockContext.req.json.mockResolvedValue({ endpoint });
-      mockConnectionManager.getConnectionStatus.mockReturnValue([
-        mockEndpointStatus,
-      ]);
-      mockConnectionManager.removeEndpoint.mockRejectedValue(
-        new Error("端点不存在")
-      );
+      mockContext.req.json.mockRejectedValue(new Error("JSON解析失败"));
 
       // Act
       const response = await handler.removeEndpoint(mockContext);
 
       // Assert
-      expect(response.status).toBe(404);
-      const responseData = await response.json();
-      expect(responseData.error.code).toBe("ENDPOINT_NOT_FOUND");
-    });
-
-    it("应该返回400当端点必须是非空字符串错误时", async () => {
-      // Arrange
-      const endpoint = "ws://localhost:3000";
-      mockContext.req.json.mockResolvedValue({ endpoint });
-      mockConnectionManager.getConnectionStatus.mockReturnValue([
-        mockEndpointStatus,
-      ]);
-      mockConnectionManager.removeEndpoint.mockRejectedValue(
-        new Error("端点必须是非空字符串")
-      );
-
-      // Act
-      const response = await handler.removeEndpoint(mockContext);
-
-      // Assert
-      expect(response.status).toBe(400);
-      const responseData = await response.json();
-      expect(responseData.error.code).toBe("INVALID_ENDPOINT");
-    });
-
-    it("应该返回500当移除操作失败时", async () => {
-      // Arrange
-      const endpoint = "ws://localhost:3000";
-      mockContext.req.json.mockResolvedValue({ endpoint });
-      mockConnectionManager.getConnectionStatus.mockReturnValue([
-        mockEndpointStatus,
-      ]);
-      mockConnectionManager.removeEndpoint.mockRejectedValue(
-        new Error("移除失败")
-      );
-
-      // Act
-      const response = await handler.removeEndpoint(mockContext);
-
-      // Assert
+      // JSON 解析错误在 parseEndpointFromBody 中处理，返回 500
       expect(response.status).toBe(500);
       const responseData = await response.json();
       expect(responseData.error.code).toBe("ENDPOINT_REMOVE_ERROR");
     });
-
-    it("应该正确处理URL编码的端点地址", async () => {
-      // Arrange
-      const endpoint = "ws://localhost:3000/api";
-      const endpointStatus = {
-        ...mockEndpointStatus,
-        endpoint,
-      };
-      mockContext.req.json.mockResolvedValue({ endpoint });
-      mockConnectionManager.getConnectionStatus.mockReturnValue([
-        endpointStatus,
-      ]);
-      mockConnectionManager.removeEndpoint.mockResolvedValue(undefined);
-
-      // Act
-      const response = await handler.removeEndpoint(mockContext);
-
-      // Assert
-      expect(response.status).toBe(200);
-      expect(mockConnectionManager.removeEndpoint).toHaveBeenCalledWith(
-        endpoint
-      );
-    });
   });
 
   describe("边界场景和错误处理", () => {
-    it("应该正确处理并返回500错误当连接管理器抛出异常时", async () => {
+    it("应该正确处理并返回500错误当连接操作失败时", async () => {
       // Arrange
       const endpoint = "ws://localhost:3000";
       mockContext.req.json.mockResolvedValue({ endpoint });
       mockConnectionManager.getConnectionStatus.mockReturnValue([
         mockEndpointStatus,
       ]);
-      mockConnectionManager.connectExistingEndpoint.mockRejectedValue(
-        new Error("连接失败")
-      );
+
+      // 模拟连接失败的端点实例
+      const mockEndpointInstance = createMockEndpointInstance(false);
+      mockEndpointInstance.connect.mockRejectedValue(new Error("连接失败"));
+      mockConnectionManager.getEndpoint.mockReturnValue(mockEndpointInstance);
 
       // Act
       const response = await handler.connectEndpoint(mockContext);
@@ -894,7 +694,7 @@ describe("MCPEndpointApiHandler", () => {
       expect(responseData.error.code).toBe("ENDPOINT_CONNECT_ERROR");
     });
 
-    it("应该正确处理并返回500错误当添加接入点抛出异常时", async () => {
+    it("应该返回501当尝试添加接入点时", async () => {
       // Arrange
       const endpoint = "ws://new-endpoint:3000";
       const requestBody = { endpoint };
@@ -902,17 +702,14 @@ describe("MCPEndpointApiHandler", () => {
       mockConnectionManager.getConnectionStatus.mockReturnValue([
         mockEndpointStatus,
       ]);
-      mockConnectionManager.addEndpoint.mockRejectedValue(
-        new Error("添加失败")
-      );
 
       // Act
       const response = await handler.addEndpoint(mockContext);
 
       // Assert
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(501);
       const responseData = await response.json();
-      expect(responseData.error.code).toBe("ENDPOINT_ADD_ERROR");
+      expect(responseData.error.code).toBe("NOT_SUPPORTED");
     });
 
     it("应该正确处理非Error类型的异常", async () => {
@@ -922,9 +719,11 @@ describe("MCPEndpointApiHandler", () => {
       mockConnectionManager.getConnectionStatus.mockReturnValue([
         mockEndpointStatus,
       ]);
-      mockConnectionManager.connectExistingEndpoint.mockRejectedValue(
-        "字符串错误"
-      );
+
+      // 模拟连接时抛出字符串错误
+      const mockEndpointInstance = createMockEndpointInstance(false);
+      mockEndpointInstance.connect.mockRejectedValue("字符串错误");
+      mockConnectionManager.getEndpoint.mockReturnValue(mockEndpointInstance);
 
       // Act
       const response = await handler.connectEndpoint(mockContext);
@@ -951,20 +750,18 @@ describe("MCPEndpointApiHandler", () => {
       expect(responseData.error.code).toBe("ENDPOINT_NOT_FOUND");
     });
 
-    it("应该正确处理连接状态不一致的情况", async () => {
+    it("应该正确处理连接操作失败的情况", async () => {
       // Arrange
       const endpoint = "ws://localhost:3000";
       mockContext.req.json.mockResolvedValue({ endpoint });
-
-      // 初始状态显示未连接
-      mockConnectionManager.getConnectionStatus.mockReturnValueOnce([
+      mockConnectionManager.getConnectionStatus.mockReturnValue([
         mockEndpointStatus,
       ]);
 
-      // 但连接操作失败
-      mockConnectionManager.connectExistingEndpoint.mockRejectedValue(
-        new Error("连接超时")
-      );
+      // 模拟连接失败的端点实例
+      const mockEndpointInstance = createMockEndpointInstance(false);
+      mockEndpointInstance.connect.mockRejectedValue(new Error("连接超时"));
+      mockConnectionManager.getEndpoint.mockReturnValue(mockEndpointInstance);
 
       // Act
       const response = await handler.connectEndpoint(mockContext);
@@ -973,6 +770,7 @@ describe("MCPEndpointApiHandler", () => {
       expect(response.status).toBe(500);
       const responseData = await response.json();
       expect(responseData.error.code).toBe("ENDPOINT_CONNECT_ERROR");
+      expect(responseData.error.message).toBe("连接超时");
     });
   });
 });

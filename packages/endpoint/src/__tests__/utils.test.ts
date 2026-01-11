@@ -1,0 +1,354 @@
+/**
+ * 工具函数单元测试
+ */
+
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  deepMerge,
+  formatErrorMessage,
+  isValidEndpointUrl,
+  sleep,
+  sliceEndpoint,
+  validateToolCallParams,
+} from "../utils.js";
+
+describe("工具函数测试", () => {
+  describe("sliceEndpoint", () => {
+    it("应该正确截断长 URL", () => {
+      const longUrl =
+        "ws://very-long-endpoint-url-here.example.com/very/long/path/endpoint";
+      const result = sliceEndpoint(longUrl);
+      // 前30个字符 + ... + 后10个字符（h/endpoint）
+      expect(result).toBe("ws://very-long-endpoint-url-he...h/endpoint");
+    });
+
+    it("应该正确截断中等长度 URL", () => {
+      const url = "ws://example.com/endpoint";
+      const result = sliceEndpoint(url);
+      // 前30个字符 + ... + 后10个字符（m/endpoint）
+      expect(result).toBe("ws://example.com/endpoint...m/endpoint");
+    });
+
+    it("应该处理短 URL", () => {
+      const url = "ws://localhost:3000";
+      const result = sliceEndpoint(url);
+      // 前30个字符 + ... + 后10个字符（lhost:3000）
+      expect(result).toBe("ws://localhost:3000...lhost:3000");
+    });
+
+    it("应该正确处理 wss 协议", () => {
+      const url = "wss://secure.example.com/endpoint";
+      const result = sliceEndpoint(url);
+      // 前30个字符 + ... + 后10个字符（m/endpoint）
+      expect(result).toBe("wss://secure.example.com/endpo...m/endpoint");
+    });
+
+    it("应该保持截断格式一致", () => {
+      const url1 = "ws://a".repeat(50) + ".com/endpoint";
+      const url2 = "ws://b".repeat(50) + ".com/endpoint";
+      const result1 = sliceEndpoint(url1);
+      const result2 = sliceEndpoint(url2);
+
+      // 验证格式：开头30个字符 + ... + 结尾10个字符
+      expect(result1.length).toBe(30 + 3 + 10);
+      expect(result2.length).toBe(30 + 3 + 10);
+      expect(result1).toContain("...");
+      expect(result2).toContain("...");
+    });
+
+    it("应该截断超长 URL", () => {
+      const url = "ws://".repeat(20) + "example.com/endpoint";
+      const result = sliceEndpoint(url);
+      // 前30个字符是 ws://ws://ws://ws://ws://ws:// (30个字符)
+      // 后10个字符是 m/endpoint
+      expect(result).toBe("ws://ws://ws://ws://ws://ws://...m/endpoint");
+    });
+  });
+
+  describe("validateToolCallParams", () => {
+    it("应该验证有效的工具调用参数", () => {
+      const params = {
+        name: "test_tool",
+        arguments: { foo: "bar" },
+      };
+      const result = validateToolCallParams(params);
+      expect(result.name).toBe("test_tool");
+      expect(result.arguments).toEqual({ foo: "bar" });
+    });
+
+    it("应该验证不带 arguments 的参数", () => {
+      const params = {
+        name: "test_tool",
+      };
+      const result = validateToolCallParams(params);
+      expect(result.name).toBe("test_tool");
+      expect(result.arguments).toBeUndefined();
+    });
+
+    it("应该拒绝 null 参数", () => {
+      expect(() => validateToolCallParams(null)).toThrow("工具调用参数必须是对象");
+    });
+
+    it("应该拒绝 undefined 参数", () => {
+      expect(() => validateToolCallParams(undefined)).toThrow("工具调用参数必须是对象");
+    });
+
+    it("应该拒绝非对象参数", () => {
+      // 字符串不是对象
+      expect(() => validateToolCallParams("string")).toThrow("工具调用参数必须是对象");
+      // 数字不是对象
+      expect(() => validateToolCallParams(123)).toThrow("工具调用参数必须是对象");
+      // 数组虽然 typeof 是 'object'，但没有 name 属性，会抛出"工具名称必须是字符串"
+      expect(() => validateToolCallParams([])).toThrow("工具名称必须是字符串");
+    });
+
+    it("应该拒绝缺少 name 字段的参数", () => {
+      const params = {
+        arguments: { foo: "bar" },
+      };
+      expect(() => validateToolCallParams(params)).toThrow("工具名称必须是字符串");
+    });
+
+    it("应该拒绝非字符串的 name", () => {
+      expect(() =>
+        validateToolCallParams({ name: 123 })
+      ).toThrow("工具名称必须是字符串");
+      expect(() =>
+        validateToolCallParams({ name: null })
+      ).toThrow("工具名称必须是字符串");
+    });
+
+    it("应该拒绝非对象的 arguments", () => {
+      expect(() =>
+        validateToolCallParams({ name: "test", arguments: "string" })
+      ).toThrow("工具参数必须是对象");
+      expect(() =>
+        validateToolCallParams({ name: "test", arguments: null })
+      ).toThrow("工具参数必须是对象");
+    });
+
+    it("应该接受空对象的 arguments", () => {
+      const params = {
+        name: "test_tool",
+        arguments: {},
+      };
+      const result = validateToolCallParams(params);
+      expect(result.arguments).toEqual({});
+    });
+  });
+
+  describe("isValidEndpointUrl", () => {
+    it("应该接受有效的 ws:// URL", () => {
+      expect(isValidEndpointUrl("ws://localhost:3000")).toBe(true);
+      expect(isValidEndpointUrl("ws://example.com/endpoint")).toBe(true);
+      expect(isValidEndpointUrl("ws://192.168.1.1:8080/path")).toBe(true);
+    });
+
+    it("应该接受有效的 wss:// URL", () => {
+      expect(isValidEndpointUrl("wss://secure.example.com/endpoint")).toBe(true);
+      expect(isValidEndpointUrl("wss://api.example.com:443/path")).toBe(true);
+    });
+
+    it("应该拒绝非 WebSocket 协议的 URL", () => {
+      expect(isValidEndpointUrl("http://example.com")).toBe(false);
+      expect(isValidEndpointUrl("https://example.com")).toBe(false);
+      expect(isValidEndpointUrl("ftp://example.com")).toBe(false);
+      expect(isValidEndpointUrl("tcp://example.com")).toBe(false);
+    });
+
+    it("应该拒绝无效的 URL 格式", () => {
+      expect(isValidEndpointUrl("not-a-url")).toBe(false);
+      expect(isValidEndpointUrl("ws://")).toBe(false);
+      expect(isValidEndpointUrl("ws:/example.com")).toBe(false);
+      expect(isValidEndpointUrl("//example.com")).toBe(false);
+    });
+
+    it("应该拒绝空字符串", () => {
+      expect(isValidEndpointUrl("")).toBe(false);
+    });
+
+    it("应该拒绝非字符串参数", () => {
+      expect(isValidEndpointUrl(null as any)).toBe(false);
+      expect(isValidEndpointUrl(undefined as any)).toBe(false);
+      expect(isValidEndpointUrl(123 as any)).toBe(false);
+    });
+
+    it("应该接受带路径和查询参数的 WebSocket URL", () => {
+      expect(isValidEndpointUrl("ws://example.com/path?query=value")).toBe(true);
+      expect(isValidEndpointUrl("wss://example.com/path/to/endpoint?id=123&token=abc")).toBe(
+        true
+      );
+    });
+  });
+
+  describe("deepMerge", () => {
+    it("应该合并简单对象", () => {
+      const target = { a: 1, b: 2 };
+      const source = { b: 3, c: 4 };
+      const result = deepMerge(target, source);
+      expect(result).toEqual({ a: 1, b: 3, c: 4 });
+    });
+
+    it("应该深度合并嵌套对象", () => {
+      const target = {
+        a: 1,
+        b: { x: 1, y: 2 },
+      };
+      const source = {
+        b: { y: 3, z: 4 },
+        c: 5,
+      };
+      const result = deepMerge(target, source);
+      expect(result).toEqual({
+        a: 1,
+        b: { x: 1, y: 3, z: 4 },
+        c: 5,
+      });
+    });
+
+    it("应该处理多个源对象", () => {
+      const target = { a: 1 };
+      const source1 = { b: 2 };
+      const source2 = { c: 3 };
+      const result = deepMerge(target, source1, source2);
+      expect(result).toEqual({ a: 1, b: 2, c: 3 });
+    });
+
+    it("应该处理数组值（直接覆盖）", () => {
+      const target = { arr: [1, 2, 3] };
+      const source = { arr: [4, 5] };
+      const result = deepMerge(target, source);
+      expect(result.arr).toEqual([4, 5]);
+    });
+
+    it("应该处理 null 值", () => {
+      const target = { a: 1, b: { x: 1 } };
+      const source = { b: null as any };
+      const result = deepMerge(target, source);
+      expect(result.b).toBe(null);
+    });
+
+    it("应该返回空对象当没有源对象时", () => {
+      const target = { a: 1 };
+      const result = deepMerge(target);
+      expect(result).toEqual({ a: 1 });
+    });
+
+    it("应该正确处理多个深度嵌套", () => {
+      const target = {
+        level1: {
+          level2: {
+            level3: { a: 1 },
+          },
+        },
+      };
+      const source = {
+        level1: {
+          level2: {
+            level3: { b: 2 },
+          },
+        },
+      };
+      const result = deepMerge(target, source);
+      expect(result.level1.level2.level3).toEqual({ a: 1, b: 2 });
+    });
+  });
+
+  describe("sleep", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    it("应该延迟指定的时间", async () => {
+      const promise = sleep(1000);
+      let resolved = false;
+
+      promise.then(() => {
+        resolved = true;
+      });
+
+      // 前进时间到 999ms，不应该解决
+      vi.advanceTimersByTime(999);
+      await Promise.resolve(); // 让微任务执行
+      expect(resolved).toBe(false);
+
+      // 前进时间到 1000ms，应该解决
+      vi.advanceTimersByTime(1);
+      await Promise.resolve(); // 让微任务执行
+      expect(resolved).toBe(true);
+    });
+
+    it("应该立即处理 0ms 延迟", async () => {
+      const promise = sleep(0);
+      vi.advanceTimersByTime(0);
+      await expect(promise).resolves.toBeUndefined();
+    });
+
+    it("应该正确处理长延迟", async () => {
+      const promise = sleep(10000);
+      vi.advanceTimersByTime(10000);
+      await expect(promise).resolves.toBeUndefined();
+    });
+  });
+
+  describe("formatErrorMessage", () => {
+    it("应该正确格式化 Error 对象", () => {
+      const error = new Error("Test error message");
+      const result = formatErrorMessage(error);
+      expect(result).toBe("Test error message");
+    });
+
+    it("应该正确格式化字符串", () => {
+      const result = formatErrorMessage("String error message");
+      expect(result).toBe("String error message");
+    });
+
+    it("应该将其他类型转换为字符串", () => {
+      expect(formatErrorMessage(123)).toBe("123");
+      expect(formatErrorMessage(null)).toBe("null");
+      expect(formatErrorMessage(undefined)).toBe("undefined");
+      expect(formatErrorMessage({})).toBe("[object Object]");
+    });
+
+    it("应该处理带自定义消息的 Error", () => {
+      class CustomError extends Error {
+        constructor(message: string) {
+          super(message);
+          this.name = "CustomError";
+        }
+      }
+      const error = new CustomError("Custom error message");
+      const result = formatErrorMessage(error);
+      expect(result).toBe("Custom error message");
+    });
+
+    it("应该处理空对象", () => {
+      const result = formatErrorMessage({});
+      expect(result).toBe("[object Object]");
+    });
+  });
+
+  describe("边界情况处理", () => {
+    it("sliceEndpoint 应该处理正好 40 个字符的 URL", () => {
+      const url = "ws://123456789012345678901234567890123.com/abc";
+      expect(url.length).toBe(46); // 46 个字符
+      const result = sliceEndpoint(url);
+      expect(result).toBeDefined();
+      expect(typeof result).toBe("string");
+    });
+
+    it("validateToolCallParams 应该处理空对象", () => {
+      expect(() => validateToolCallParams({})).toThrow("工具名称必须是字符串");
+    });
+
+    it("isValidEndpointUrl 应该处理只有协议的 URL", () => {
+      expect(isValidEndpointUrl("ws://")).toBe(false);
+      expect(isValidEndpointUrl("wss://")).toBe(false);
+    });
+
+    it("deepMerge 应该处理空对象合并", () => {
+      const result = deepMerge({}, {});
+      expect(result).toEqual({});
+    });
+  });
+});
