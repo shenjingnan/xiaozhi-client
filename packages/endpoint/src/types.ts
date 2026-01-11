@@ -262,3 +262,67 @@ export interface ReconnectResult {
     error?: string;
   }>;
 }
+
+// =========================
+// 7. 新 API 配置类型
+// =========================
+
+/**
+ * MCP 服务器配置类型
+ * 支持三种配置方式：
+ * 1. 本地命令 (stdio): { command: string; args: string[]; env?: Record<string, string> }
+ * 2. SSE: { type: "sse"; url: string; headers?: Record<string, string> }
+ * 3. Streamable HTTP: { type?: "streamable-http"; url: string; headers?: Record<string, string> }
+ */
+export type MCPServerConfig =
+  | LocalMCPServerConfig
+  | SSEMCPServerConfig
+  | StreamableHTTPMCPServerConfig;
+
+/**
+ * 本地 MCP 服务器配置
+ */
+export interface LocalMCPServerConfig {
+  command: string;
+  args: string[];
+  env?: Record<string, string>;
+}
+
+/**
+ * SSE MCP 服务器配置
+ */
+export interface SSEMCPServerConfig {
+  type: "sse";
+  url: string;
+  headers?: Record<string, string>;
+}
+
+/**
+ * Streamable HTTP MCP 服务器配置
+ */
+export interface StreamableHTTPMCPServerConfig {
+  type?: "streamable-http"; // 可选，默认就是 streamable-http
+  url: string;
+  headers?: Record<string, string>;
+}
+
+/**
+ * Endpoint 配置接口
+ * 用于新 API：直接在构造函数中传入 MCP 服务器配置
+ */
+export interface EndpointConfig {
+  /** MCP 服务器配置（声明式） */
+  mcpServers: Record<string, MCPServerConfig>;
+  /** 可选：重连延迟（毫秒），默认 2000 */
+  reconnectDelay?: number;
+  /** 可选：ModelScope API Key（全局） */
+  modelscopeApiKey?: string;
+}
+
+/**
+ * EndpointManager 配置接口（新 API 简化版）
+ */
+export interface EndpointManagerConfig {
+  /** 可选：默认重连延迟（毫秒） */
+  defaultReconnectDelay?: number;
+}

@@ -1,0 +1,47 @@
+{
+  "name": "@xiaozhi-client/mcp-core",
+  "version": "1.0.0",
+  "description": "MCP 协议核心实现，提供服务管理和连接功能",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ws": "^8.14.2"
+  },
+  "peerDependencies": {
+    "@modelcontextprotocol/sdk": "^1.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@types/ws": "^8.5.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.9.2",
+    "vitest": "^3.0.5"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "xiaozhi",
+    "mcp",
+    "model-context-protocol",
+    "service-manager"
+  ],
+  "author": "xiaozhi-client",
+  "license": "MIT"
+}

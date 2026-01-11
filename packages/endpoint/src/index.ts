@@ -4,11 +4,23 @@
  * 小智接入点 WebSocket 连接管理库
  *
  * 此库提供了连接小智接入点的完整功能，包括：
- * - EndpointConnection: 单个接入点的 WebSocket 连接管理
- * - EndpointManager: 多个接入点的连接管理
+ * - Endpoint (新 API): 单个接入点的连接管理，配置更简洁
+ * - EndpointManager (新 API): 多个接入点的连接管理
+ * - EndpointConnection (旧 API): 单个接入点的 WebSocket 连接管理（向后兼容）
  *
  * @example
  * ```typescript
+ * // 新 API（推荐）
+ * import { Endpoint, EndpointManager } from '@xiaozhi-client/endpoint';
+ *
+ * const endpoint = new Endpoint("ws://localhost:8080", {
+ *   mcpServers: {
+ *     calculator: { command: "node", args: ["./server.js"] }
+ *   }
+ * });
+ * endpoint.connect();
+ *
+ * // 旧 API（向后兼容）
  * import { EndpointConnection } from '@xiaozhi-client/endpoint';
  *
  * const connection = new EndpointConnection('ws://xiaozhi.example.com/endpoint');
@@ -18,11 +30,18 @@
  */
 
 // =========================
-// 核心类导出
+// 新 API 导出（推荐使用）
+// =========================
+
+export { Endpoint } from "./endpoint.js";
+export { EndpointManager } from "./manager-new.js";
+
+// =========================
+// 旧 API 导出（向后兼容）
 // =========================
 
 export { EndpointConnection } from "./connection.js";
-export { EndpointManager } from "./manager.js";
+export { EndpointManager as EndpointManagerLegacy } from "./manager.js";
 
 // =========================
 // 类型导出
@@ -45,6 +64,13 @@ export type {
   ReconnectResult,
   // JSON Schema
   JSONSchema,
+  // 新 API 配置类型
+  MCPServerConfig,
+  LocalMCPServerConfig,
+  SSEMCPServerConfig,
+  StreamableHTTPMCPServerConfig,
+  EndpointConfig,
+  EndpointManagerConfig,
 } from "./types.js";
 
 // =========================
