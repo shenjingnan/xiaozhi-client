@@ -119,7 +119,7 @@ export function McpServerForm({
               <FormControl>
                 <Input
                   {...field}
-                  placeholder="例如: zai-mcp-server"
+                  placeholder="例如: xxx-mcp"
                   disabled={disabled}
                 />
               </FormControl>
@@ -143,7 +143,7 @@ export function McpServerForm({
                   <FormControl>
                     <Input
                       {...field}
-                      placeholder="例如: npx -y @z_ai/mcp-server"
+                      placeholder="例如: npx -y xxx"
                       disabled={disabled}
                     />
                   </FormControl>
@@ -164,14 +164,13 @@ export function McpServerForm({
                   <FormControl>
                     <Textarea
                       {...field}
-                      placeholder="KEY=value&#10;另一行环境变量"
+                      placeholder="KEY1=value1&#10;KEY2=value2"
                       className="min-h-[100px] font-mono text-sm"
                       disabled={disabled}
                     />
                   </FormControl>
                   <FormDescription>
-                    每行一个环境变量，支持 KEY=value 或 KEY: value 格式，#
-                    开头的行为注释
+                    每行一个环境变量，支持 KEY=value 或 KEY: value 格式
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
