@@ -38,6 +38,9 @@ importers:
       '@xiaozhi-client/endpoint':
         specifier: workspace:*
         version: link:packages/endpoint
+      '@xiaozhi-client/mcp-core':
+        specifier: workspace:*
+        version: link:packages/mcp-core
       ajv:
         specifier: ^8.17.1
         version: 8.17.1
@@ -177,6 +180,9 @@ importers:
       '@xiaozhi-client/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@xiaozhi-client/mcp-core':
+        specifier: workspace:*
+        version: link:../../packages/mcp-core
       ajv:
         specifier: ^8.17.1
         version: 8.17.1
