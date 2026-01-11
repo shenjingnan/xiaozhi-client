@@ -1,176 +1,369 @@
 /**
- * 简化版 MCP 服务管理器
- * 专门为 endpoint 包设计，提供核心 MCP 服务管理功能
+ * MCP 服务管理器
+ * 提供简洁的 API 来管理多个 MCP 服务
  */
 
 import { EventEmitter } from "node:events";
-import type {
-  EnhancedToolInfo,
-  MCPServiceConfig,
-  ManagerStatus,
-  ToolCallResult,
-  ToolStatusFilter,
-} from "./types.js";
-import { ToolCallError, ToolCallErrorCode } from "./types.js";
+import { MCPConnection } from "./connection.js";
+import type { MCPServiceConfig, ToolCallResult } from "./types.js";
+import { MCPTransportType } from "./types.js";
 
 /**
- * 简化版 MCP 服务管理器
- * 提供 MCP 服务的核心管理功能
+ * 用户友好的传输类型
+ * 用于简化和标准化用户输入
  */
-export class MCPServiceManager extends EventEmitter {
-  private configs: Record<string, MCPServiceConfig> = {};
-  private tools: Map<string, EnhancedToolInfo> = new Map();
-  private isInitialized = false;
+type UserFriendlyTransportType =
+  | "stdio"
+  | "sse"
+  | "http"
+  | MCPTransportType;
 
-  constructor(configs?: Record<string, MCPServiceConfig>) {
+/**
+ * MCP 服务管理器
+ * 提供简洁的 API 来管理多个 MCP 服务
+ *
+ * @example
+ * ```typescript
+ * const manager = new MCPManager();
+ *
+ * // 添加服务
+ * manager.addServer('datetime', {
+ *   type: 'stdio',
+ *   command: 'node',
+ *   args: ['datetime.js']
+ * });
+ *
+ * // 连接所有服务
+ * await manager.connect();
+ *
+ * // 调用工具
+ * const result = await manager.callTool('datetime', 'get_current_time', {
+ *   format: 'YYYY-MM-DD HH:mm:ss'
+ * });
+ *
+ * // 断开连接
+ * await manager.disconnect();
+ * ```
+ */
+export class MCPManager extends EventEmitter {
+  private connections: Map<string, MCPConnection> = new Map();
+  private configs: Map<string, MCPServiceConfig> = new Map();
+
+  constructor() {
     super();
-    if (configs) {
-      this.configs = configs;
+  }
+
+  /**
+   * 添加 MCP 服务器配置
+   * @param name 服务器名称
+   * @param config 服务器配置
+   *
+   * @example
+   * ```typescript
+   * // 添加 stdio 服务
+   * manager.addServer('calculator', {
+   *   type: 'stdio',
+   *   command: 'node',
+   *   args: ['calculator.js']
+   * });
+   *
+   * // 添加 HTTP 服务
+   * manager.addServer('web-search', {
+   *   type: 'http',
+   *   url: 'https://api.example.com/mcp',
+   *   headers: {
+   *     Authorization: 'Bearer your-api-key'
+   *   }
+   * });
+   * ```
+   */
+  addServer(
+    name: string,
+    config: Omit<MCPServiceConfig, "name"> & {
+      type?: UserFriendlyTransportType;
     }
-  }
-
-  /**
-   * 添加服务配置
-   */
-  addServiceConfig(name: string, config: MCPServiceConfig): void {
-    this.configs[name] = { ...config, name };
-  }
-
-  /**
-   * 更新服务配置
-   */
-  updateServiceConfig(name: string, config: MCPServiceConfig): void {
-    if (!this.configs[name]) {
-      throw new Error(`服务不存在: ${name}`);
-    }
-    this.configs[name] = { ...config, name };
-  }
-
-  /**
-   * 移除服务配置
-   */
-  removeServiceConfig(name: string): void {
-    delete this.configs[name];
-  }
-
-  /**
-   * 获取所有服务配置
-   */
-  getServiceConfigs(): Record<string, MCPServiceConfig> {
-    return { ...this.configs };
-  }
-
-  /**
-   * 启动所有服务
-   */
-  async startAllServices(): Promise<void> {
-    if (this.isInitialized) {
-      return;
+  ): void {
+    if (this.configs.has(name)) {
+      throw new Error(`服务 ${name} 已存在`);
     }
 
-    // 这里应该创建实际的 MCP 服务连接
-    // 由于 endpoint 包需要独立发布，我们暂时提供一个基础实现
-    this.isInitialized = true;
+    const fullConfig: MCPServiceConfig = {
+      ...config,
+      name,
+    };
 
-    this.emit("initialized");
+    // 标准化 type 字段 - 将用户友好的类型映射到实际的枚举值
+    if (config.type) {
+      // 首先检查用户友好的字符串类型
+      const typeStr = String(config.type);
+      if (typeStr === "http") {
+        fullConfig.type = MCPTransportType.STREAMABLE_HTTP;
+      } else if (typeStr === "sse") {
+        fullConfig.type = MCPTransportType.SSE;
+      } else {
+        // 已经是枚举值或正确格式
+        fullConfig.type = config.type as MCPTransportType;
+      }
+    }
+
+    this.configs.set(name, fullConfig);
   }
 
   /**
-   * 启动单个服务
+   * 移除服务器配置
+   * @param name 服务器名称
    */
-  async startService(serviceName: string): Promise<void> {
-    if (!this.configs[serviceName]) {
-      throw new Error(`服务配置不存在: ${serviceName}`);
-    }
-
-    // 这里应该创建实际的 MCP 服务连接
-    this.emit("serviceStarted", serviceName);
+  removeServer(name: string): boolean {
+    return this.configs.delete(name);
   }
 
   /**
-   * 获取所有工具列表
+   * 连接所有已添加的 MCP 服务
+   * 所有服务并行连接，单个服务失败不会影响其他服务
+   *
+   * @example
+   * ```typescript
+   * await manager.connect();
+   * ```
    */
-  getAllTools(status: ToolStatusFilter = "all"): EnhancedToolInfo[] {
-    const allTools = Array.from(this.tools.values());
+  async connect(): Promise<void> {
+    this.emit("connect");
 
-    if (status === "all") {
-      return allTools;
-    }
+    const promises = Array.from(this.configs.entries()).map(
+      async ([name, config]) => {
+        try {
+          const connection = new MCPConnection(config, {
+            onConnected: (data) => {
+              this.emit("connected", {
+                serverName: data.serviceName,
+                tools: data.tools,
+              });
+            },
+            onDisconnected: (data) => {
+              this.emit("disconnected", {
+                serverName: data.serviceName,
+                reason: data.reason,
+              });
+            },
+            onConnectionFailed: (data) => {
+              this.emit("error", {
+                serverName: data.serviceName,
+                error: data.error,
+              });
+            },
+          });
 
-    return allTools.filter((tool) =>
-      status === "enabled" ? tool.enabled : !tool.enabled
+          await connection.connect();
+          this.connections.set(name, connection);
+        } catch (error) {
+          this.emit("error", { serverName: name, error });
+          throw error;
+        }
+      }
     );
+
+    await Promise.allSettled(promises);
   }
 
   /**
-   * 调用工具
+   * 断开所有 MCP 服务连接
+   *
+   * @example
+   * ```typescript
+   * await manager.disconnect();
+   * ```
+   */
+  async disconnect(): Promise<void> {
+    const promises = Array.from(this.connections.values()).map((conn) =>
+      conn.disconnect()
+    );
+
+    await Promise.allSettled(promises);
+    this.connections.clear();
+
+    this.emit("disconnect");
+  }
+
+  /**
+   * 调用指定服务的工具
+   * @param serverName 服务名称
+   * @param toolName 工具名称
+   * @param args 工具参数
+   *
+   * @example
+   * ```typescript
+   * const result = await manager.callTool('datetime', 'get_current_time', {
+   *   format: 'YYYY-MM-DD HH:mm:ss'
+   * });
+   * ```
    */
   async callTool(
+    serverName: string,
     toolName: string,
-    _arguments_: Record<string, unknown>,
-    _options?: { timeout?: number }
+    args: Record<string, unknown>
   ): Promise<ToolCallResult> {
-    const tool = this.tools.get(toolName);
-
-    if (!tool) {
-      throw new ToolCallError(
-        ToolCallErrorCode.TOOL_NOT_FOUND,
-        `工具不存在: ${toolName}`
-      );
+    const connection = this.connections.get(serverName);
+    if (!connection) {
+      throw new Error(`服务 ${serverName} 不存在`);
     }
 
-    if (!tool.enabled) {
-      throw new ToolCallError(
-        ToolCallErrorCode.SERVICE_UNAVAILABLE,
-        `工具已禁用: ${toolName}`
-      );
+    if (!connection.isConnected()) {
+      throw new Error(`服务 ${serverName} 未连接`);
     }
 
-    // 这里应该调用实际的 MCP 工具
-    // 由于这是一个简化实现，我们返回一个占位结果
+    return connection.callTool(toolName, args);
+  }
+
+  /**
+   * 列出所有可用的工具
+   * @returns 工具列表，格式为 [{ name, serverName, description, inputSchema }]
+   *
+   * @example
+   * ```typescript
+   * const tools = manager.listTools();
+   * console.log('可用工具:', tools.map(t => `${t.serverName}/${t.name}`));
+   * ```
+   */
+  listTools(): Array<{
+    name: string;
+    serverName: string;
+    description: string;
+    inputSchema: unknown;
+  }> {
+    const allTools: Array<{
+      name: string;
+      serverName: string;
+      description: string;
+      inputSchema: unknown;
+    }> = [];
+
+    for (const [serverName, connection] of this.connections) {
+      if (connection.isConnected()) {
+        const tools = connection.getTools();
+        for (const tool of tools) {
+          allTools.push({
+            name: tool.name,
+            serverName,
+            description: tool.description || "",
+            inputSchema: tool.inputSchema,
+          });
+        }
+      }
+    }
+
+    return allTools;
+  }
+
+  /**
+   * 获取服务状态
+   * @param serverName 服务名称
+   * @returns 服务状态，如果服务不存在则返回 null
+   *
+   * @example
+   * ```typescript
+   * const status = manager.getServerStatus('datetime');
+   * if (status) {
+   *   console.log(`已连接: ${status.connected}, 工具数: ${status.toolCount}`);
+   * }
+   * ```
+   */
+  getServerStatus(serverName: string): {
+    connected: boolean;
+    toolCount: number;
+  } | null {
+    const connection = this.connections.get(serverName);
+    if (!connection) {
+      return null;
+    }
+
+    const status = connection.getStatus();
     return {
-      content: [
-        {
-          type: "text",
-          text: `工具 ${toolName} 需要通过实际的 MCP 连接调用`,
-        },
-      ],
-      isError: false,
+      connected: status.connected,
+      toolCount: status.toolCount,
     };
   }
 
   /**
-   * 添加工具（用于测试或自定义工具）
+   * 获取所有服务的状态
+   * @returns 所有服务的状态映射
+   *
+   * @example
+   * ```typescript
+   * const statuses = manager.getAllServerStatus();
+   * console.log(statuses);
+   * // {
+   * //   datetime: { connected: true, toolCount: 3 },
+   * //   calculator: { connected: true, toolCount: 1 }
+   * // }
+   * ```
    */
-  addTool(tool: EnhancedToolInfo): void {
-    this.tools.set(tool.name, tool);
+  getAllServerStatus(): Record<
+    string,
+    { connected: boolean; toolCount: number }
+  > {
+    const statuses: Record<string, { connected: boolean; toolCount: number }> = {};
+
+    for (const [serverName, connection] of this.connections) {
+      const status = connection.getStatus();
+      statuses[serverName] = {
+        connected: status.connected,
+        toolCount: status.toolCount,
+      };
+    }
+
+    return statuses;
   }
 
   /**
-   * 移除工具
+   * 检查服务是否已连接
+   * @param serverName 服务名称
+   *
+   * @example
+   * ```typescript
+   * if (manager.isConnected('datetime')) {
+   *   console.log('datetime 服务已连接');
+   * }
+   * ```
    */
-  removeTool(toolName: string): void {
-    this.tools.delete(toolName);
+  isConnected(serverName: string): boolean {
+    const connection = this.connections.get(serverName);
+    return connection ? connection.isConnected() : false;
   }
 
   /**
-   * 获取管理器状态
+   * 获取已配置的服务列表
+   * @returns 服务名称数组
+   *
+   * @example
+   * ```typescript
+   * const servers = manager.getServerNames();
+   * console.log('已配置的服务:', servers);
+   * ```
    */
-  getStatus(): ManagerStatus {
-    const availableTools = this.getAllTools("enabled").map((t) => t.name);
-
-    return {
-      services: {},
-      totalTools: this.tools.size,
-      availableTools,
-    };
+  getServerNames(): string[] {
+    return Array.from(this.configs.keys());
   }
 
   /**
-   * 清理资源
+   * 获取已连接的服务列表
+   * @returns 已连接的服务名称数组
+   *
+   * @example
+   * ```typescript
+   * const connectedServers = manager.getConnectedServerNames();
+   * console.log('已连接的服务:', connectedServers);
+   * ```
    */
-  async cleanup(): Promise<void> {
-    this.tools.clear();
-    this.isInitialized = false;
+  getConnectedServerNames(): string[] {
+    const connected: string[] = [];
+    for (const [serverName, connection] of this.connections) {
+      if (connection.isConnected()) {
+        connected.push(serverName);
+      }
+    }
+    return connected;
   }
 }
+
+// 为了向后兼容，保留旧的 MCPServiceManager 类名作为别名
+export { MCPManager as MCPServiceManager };

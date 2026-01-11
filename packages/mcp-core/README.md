@@ -64,7 +64,114 @@ npm install @modelcontextprotocol/sdk
 
 ## 快速开始
 
-### 基础用法
+### 使用 MCPManager（推荐）
+
+MCPManager 提供了简洁的 API 来管理多个 MCP 服务：
+
+```typescript
+import { MCPManager } from '@xiaozhi-client/mcp-core';
+
+const manager = new MCPManager();
+
+// 添加 STDIO 服务
+manager.addServer('datetime', {
+  type: 'stdio',
+  command: 'node',
+  args: ['datetime.js']
+});
+
+// 添加 HTTP 服务
+manager.addServer('web-search', {
+  type: 'http',
+  url: 'https://api.example.com/mcp',
+  headers: {
+    Authorization: 'Bearer your-api-key'
+  }
+});
+
+// 添加 SSE 服务
+manager.addServer('sse-server', {
+  type: 'sse',
+  url: 'https://api.example.com/sse'
+});
+
+// 添加带环境变量的 STDIO 服务
+manager.addServer('custom-server', {
+  type: 'stdio',
+  command: 'npx',
+  args: ['-y', '@example/mcp-server'],
+  env: {
+    API_KEY: 'your-api-key',
+    MODE: 'production'
+  }
+});
+
+// 连接所有服务
+await manager.connect();
+
+// 调用工具
+const result = await manager.callTool('datetime', 'get_current_time', {
+  format: 'YYYY-MM-DD HH:mm:ss'
+});
+
+// 列出所有工具
+const tools = manager.listTools();
+console.log('可用工具:', tools.map(t => `${t.serverName}/${t.name}`));
+
+// 获取服务状态
+const status = manager.getServerStatus('datetime');
+console.log('datetime 服务状态:', status);
+
+// 断开连接
+await manager.disconnect();
+```
+
+#### 事件监听
+
+```typescript
+// 监听连接事件
+manager.on('connect', () => {
+  console.log('开始连接所有服务');
+});
+
+manager.on('connected', ({ serverName, tools }) => {
+  console.log(`服务 ${serverName} 已连接，发现 ${tools.length} 个工具`);
+});
+
+manager.on('disconnected', ({ serverName, reason }) => {
+  console.log(`服务 ${serverName} 已断开: ${reason}`);
+});
+
+manager.on('error', ({ serverName, error }) => {
+  console.error(`服务 ${serverName} 出错:`, error.message);
+});
+
+manager.on('disconnect', () => {
+  console.log('所有服务已断开');
+});
+```
+
+#### MCPManager API 方法
+
+| 方法 | 说明 | 返回类型 |
+|------|------|----------|
+| `addServer(name, config)` | 添加服务器配置 | `void` |
+| `removeServer(name)` | 移除服务器配置 | `boolean` |
+| `connect()` | 连接所有服务 | `Promise<void>` |
+| `disconnect()` | 断开所有服务 | `Promise<void>` |
+| `callTool(serverName, toolName, args)` | 调用指定服务的工具 | `Promise<ToolCallResult>` |
+| `listTools()` | 列出所有可用工具 | `ToolInfo[]` |
+| `getServerStatus(name)` | 获取服务状态 | `ServiceStatus \| null` |
+| `getAllServerStatus()` | 获取所有服务状态 | `Record<string, ServiceStatus>` |
+| `isConnected(name)` | 检查服务是否已连接 | `boolean` |
+| `getServerNames()` | 获取已配置的服务名列表 | `string[]` |
+| `getConnectedServerNames()` | 获取已连接的服务名列表 | `string[]` |
+
+### 使用 MCPConnection（底层 API）
+
+如果你需要更细粒度的控制，可以直接使用 `MCPConnection`：
+
+#### 基础用法
 
 ```typescript
 import { MCPConnection, MCPTransportType } from '@xiaozhi-client/mcp-core';
@@ -433,6 +540,9 @@ await client.disconnect();
 ```typescript
 // 连接管理
 export { MCPConnection } from './connection.js';
+
+// 服务管理器
+export { MCPManager, MCPServiceManager } from './manager.js';
 
 // 错误处理
 export { ToolCallError } from './types.js';
