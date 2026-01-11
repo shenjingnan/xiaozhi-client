@@ -72,7 +72,10 @@ export function McpServerForm({
           name="type"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>MCP 类型</FormLabel>
+              <FormLabel>
+                <span className="text-red-500 mr-1">*</span>
+                MCP 类型
+              </FormLabel>
               <Select
                 value={field.value}
                 onValueChange={(value: "stdio" | "http" | "sse") => {
@@ -115,7 +118,10 @@ export function McpServerForm({
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>MCP 名称</FormLabel>
+              <FormLabel>
+                <span className="text-red-500 mr-1">*</span>
+                MCP 名称
+              </FormLabel>
               <FormControl>
                 <Input
                   {...field}
@@ -139,7 +145,10 @@ export function McpServerForm({
               name="command"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>启动命令</FormLabel>
+                  <FormLabel>
+                    <span className="text-red-500 mr-1">*</span>
+                    启动命令
+                  </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
@@ -187,7 +196,10 @@ export function McpServerForm({
               name="url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>服务地址</FormLabel>
+                  <FormLabel>
+                    <span className="text-red-500 mr-1">*</span>
+                    服务地址
+                  </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
