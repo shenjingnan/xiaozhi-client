@@ -180,6 +180,9 @@ importers:
       '@xiaozhi-client/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@xiaozhi-client/endpoint':
+        specifier: workspace:*
+        version: link:../../packages/endpoint
       '@xiaozhi-client/mcp-core':
         specifier: workspace:*
         version: link:../../packages/mcp-core
