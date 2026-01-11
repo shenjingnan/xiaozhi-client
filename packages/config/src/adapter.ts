@@ -195,6 +195,17 @@ function convertLocalConfig(
     }
   }
 
+  // 解析 command 中的相对路径
+  let resolvedCommand = config.command;
+  if (isRelativePath(config.command)) {
+    resolvedCommand = resolve(workingDir, config.command);
+    console.log("解析 command 相对路径", {
+      command: config.command,
+      resolvedCommand,
+      workingDir,
+    });
+  }
+
   // 解析 args 中的相对路径
   const resolvedArgs = (config.args || []).map((arg) => {
     // 检查是否为相对路径（以 ./ 开头或不以 / 开头且包含文件扩展名）
@@ -209,7 +220,7 @@ function convertLocalConfig(
   return {
     name: serviceName,
     type: MCPTransportType.STDIO,
-    command: config.command,
+    command: resolvedCommand,
     args: resolvedArgs,
     env: config.env, // 传递环境变量
     timeout: 30000,
