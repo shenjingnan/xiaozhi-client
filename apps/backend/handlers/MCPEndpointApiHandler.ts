@@ -60,6 +60,9 @@ interface EndpointOperationResponse {
 
 /**
  * MCP 端点 API 处理器
+ * 注意：此 API 处理器与当前的 EndpointManager 设计不兼容
+ * 当前 EndpointManager 不支持通过 API 动态添加/删除端点
+ * 这些端点操作需要在 EndpointManager 初始化时完成
  */
 export class MCPEndpointApiHandler {
   private logger: Logger;
@@ -205,13 +208,10 @@ export class MCPEndpointApiHandler {
     const endpoint = parseResult.endpoint;
     this.logger.info(`处理接入点连接请求: ${endpoint}`);
     try {
-      // 检查端点是否存在
-      const connectionStatus = this.endpointManager.getConnectionStatus();
-      const existingStatus = connectionStatus.find(
-        (status) => status.endpoint === endpoint
-      );
+      // 获取端点实例
+      const endpointInstance = this.endpointManager.getEndpoint(endpoint);
 
-      if (!existingStatus) {
+      if (!endpointInstance) {
         const errorResponse = this.createErrorResponse(
           "ENDPOINT_NOT_FOUND",
           "端点不存在，请先添加接入点",
@@ -220,7 +220,8 @@ export class MCPEndpointApiHandler {
         return c.json(errorResponse, 404);
       }
 
-      if (existingStatus.connected) {
+      // 检查是否已连接
+      if (endpointInstance.isConnected()) {
         const errorResponse = this.createErrorResponse(
           "ENDPOINT_ALREADY_CONNECTED",
           "端点已连接",
@@ -229,8 +230,8 @@ export class MCPEndpointApiHandler {
         return c.json(errorResponse, 409);
       }
 
-      // 执行连接操作 - 连接已存在的端点
-      await this.endpointManager.connectExistingEndpoint(endpoint);
+      // 执行连接操作
+      await endpointInstance.connect();
 
       // 获取连接后的状态
       const updatedConnectionStatus =
@@ -289,13 +290,10 @@ export class MCPEndpointApiHandler {
     const endpoint = parseResult.endpoint;
     this.logger.info(`处理接入点断开请求: ${endpoint}`);
     try {
-      // 检查端点是否存在且已连接
-      const connectionStatus = this.endpointManager.getConnectionStatus();
-      const existingStatus = connectionStatus.find(
-        (status) => status.endpoint === endpoint
-      );
+      // 获取端点实例
+      const endpointInstance = this.endpointManager.getEndpoint(endpoint);
 
-      if (!existingStatus) {
+      if (!endpointInstance) {
         const errorResponse = this.createErrorResponse(
           "ENDPOINT_NOT_FOUND",
           "端点不存在",
@@ -304,7 +302,8 @@ export class MCPEndpointApiHandler {
         return c.json(errorResponse, 404);
       }
 
-      if (!existingStatus.connected) {
+      // 检查是否已连接
+      if (!endpointInstance.isConnected()) {
         const errorResponse = this.createErrorResponse(
           "ENDPOINT_NOT_CONNECTED",
           "端点未连接",
@@ -314,7 +313,7 @@ export class MCPEndpointApiHandler {
       }
 
       // 执行断开操作
-      await this.endpointManager.disconnectEndpoint(endpoint);
+      await endpointInstance.disconnect();
 
       // 获取断开后的状态
       const updatedConnectionStatus =
@@ -358,6 +357,7 @@ export class MCPEndpointApiHandler {
   /**
    * 添加新接入点
    * POST /api/endpoint/add
+   * 注意：此功能在新 API 中不支持，因为 Endpoint 需要在初始化时创建
    */
   async addEndpoint(c: Context): Promise<Response> {
     const parseResult = await this.parseEndpointFromBody(
@@ -369,86 +369,20 @@ export class MCPEndpointApiHandler {
     }
 
     const endpoint = parseResult.endpoint;
-    try {
-      // 检查端点是否已存在
-      const connectionStatus = this.endpointManager.getConnectionStatus();
-      const existingStatus = connectionStatus.find(
-        (status) => status.endpoint === endpoint
-      );
+    this.logger.warn(`添加接入点请求在新 API 中不支持: ${endpoint}`);
 
-      if (existingStatus) {
-        const errorResponse = this.createErrorResponse(
-          "ENDPOINT_ALREADY_EXISTS",
-          "接入点已存在",
-          endpoint
-        );
-        return c.json(errorResponse, 409);
-      }
-
-      // 执行添加操作
-      await this.endpointManager.addEndpoint(endpoint);
-
-      // 获取添加后的状态
-      const updatedConnectionStatus =
-        this.endpointManager.getConnectionStatus();
-      const endpointStatus = updatedConnectionStatus.find(
-        (status) => status.endpoint === endpoint
-      );
-
-      if (!endpointStatus) {
-        const errorResponse = this.createErrorResponse(
-          "ENDPOINT_STATUS_NOT_FOUND",
-          "无法获取端点状态",
-          endpoint
-        );
-        return c.json(errorResponse, 500);
-      }
-
-      // 发送添加成功事件
-      this.eventBus.emitEvent("endpoint:status:changed", {
-        endpoint,
-        connected: false,
-        operation: "add",
-        success: true,
-        message: "接入点添加成功",
-        timestamp: Date.now(),
-        source: "http-api",
-      });
-
-      this.logger.info(`接入点添加成功: ${endpoint}`);
-      const response = this.createSuccessResponse(endpointStatus);
-      return c.json(response);
-    } catch (error) {
-      this.logger.error("接入点添加失败:", error);
-      let errorCode = "ENDPOINT_ADD_ERROR";
-      let httpStatus = 500;
-
-      // 处理特定错误类型
-      if (error instanceof Error) {
-        if (error.message.includes("已存在于配置文件中")) {
-          errorCode = "ENDPOINT_ALREADY_IN_CONFIG";
-          httpStatus = 409;
-        } else if (error.message.includes("已存在")) {
-          errorCode = "ENDPOINT_ALREADY_EXISTS";
-          httpStatus = 409;
-        } else if (error.message.includes("端点必须是非空字符串")) {
-          errorCode = "INVALID_ENDPOINT";
-          httpStatus = 400;
-        }
-      }
-
-      const errorResponse = this.createErrorResponse(
-        errorCode,
-        error instanceof Error ? error.message : "接入点添加失败",
-        undefined
-      );
-      return c.json(errorResponse, httpStatus as HttpStatusCode);
-    }
+    const errorResponse = this.createErrorResponse(
+      "NOT_SUPPORTED",
+      "动态添加端点功能在新 API 中不支持。端点需要在 EndpointManager 初始化时通过配置添加。",
+      endpoint
+    );
+    return c.json(errorResponse, 501);
   }
 
   /**
    * 移除接入点
    * POST /api/endpoint/remove
+   * 注意：此功能在新 API 中不支持
    */
   async removeEndpoint(c: Context): Promise<Response> {
     const parseResult = await this.parseEndpointFromBody(
@@ -460,72 +394,13 @@ export class MCPEndpointApiHandler {
     }
 
     const endpoint = parseResult.endpoint;
-    this.logger.info(`处理接入点移除请求: ${endpoint}`);
-    try {
-      // 检查端点是否存在
-      const connectionStatus = this.endpointManager.getConnectionStatus();
-      const existingStatus = connectionStatus.find(
-        (status) => status.endpoint === endpoint
-      );
+    this.logger.warn(`移除接入点请求在新 API 中不支持: ${endpoint}`);
 
-      if (!existingStatus) {
-        const errorResponse = this.createErrorResponse(
-          "ENDPOINT_NOT_FOUND",
-          "端点不存在",
-          endpoint
-        );
-        return c.json(errorResponse, 404);
-      }
-
-      // 如果端点已连接，先断开连接
-      if (existingStatus.connected) {
-        await this.endpointManager.disconnectEndpoint(endpoint);
-      }
-
-      // 执行移除操作
-      await this.endpointManager.removeEndpoint(endpoint);
-
-      // 发送移除成功事件
-      this.eventBus.emitEvent("endpoint:status:changed", {
-        endpoint,
-        connected: false,
-        operation: "remove",
-        success: true,
-        message: "接入点移除成功",
-        timestamp: Date.now(),
-        source: "http-api",
-      });
-
-      this.logger.info(`接入点移除成功: ${endpoint}`);
-      const response = this.createSuccessResponse({
-        endpoint,
-        operation: "remove",
-        success: true,
-        message: "接入点移除成功",
-      });
-      return c.json(response);
-    } catch (error) {
-      this.logger.error("接入点移除失败:", error);
-      let errorCode = "ENDPOINT_REMOVE_ERROR";
-      let httpStatus = 500;
-
-      // 处理特定错误类型
-      if (error instanceof Error) {
-        if (error.message.includes("不存在")) {
-          errorCode = "ENDPOINT_NOT_FOUND";
-          httpStatus = 404;
-        } else if (error.message.includes("端点必须是非空字符串")) {
-          errorCode = "INVALID_ENDPOINT";
-          httpStatus = 400;
-        }
-      }
-
-      const errorResponse = this.createErrorResponse(
-        errorCode,
-        error instanceof Error ? error.message : "接入点移除失败",
-        endpoint
-      );
-      return c.json(errorResponse, httpStatus as HttpStatusCode);
-    }
+    const errorResponse = this.createErrorResponse(
+      "NOT_SUPPORTED",
+      "动态移除端点功能在新 API 中不支持。端点需要在 EndpointManager 初始化时配置。",
+      endpoint
+    );
+    return c.json(errorResponse, 501);
   }
 }
