@@ -66,7 +66,10 @@ interface ArrayFieldProps {
   name: string;
   schema: any;
   form: any;
-  renderFormField: (fieldName: string, fieldSchema: any) => React.ReactElement | null;
+  renderFormField: (
+    fieldName: string,
+    fieldSchema: any
+  ) => React.ReactElement | null;
 }
 
 const ArrayField = memo(function ArrayField({
@@ -192,7 +195,10 @@ interface ObjectFieldProps {
   name: string;
   schema: any;
   form: any;
-  renderFormField: (fieldName: string, fieldSchema: any) => React.ReactElement | null;
+  renderFormField: (
+    fieldName: string,
+    fieldSchema: any
+  ) => React.ReactElement | null;
   getTypeBadge: (type: string) => string;
 }
 
@@ -291,7 +297,10 @@ const NoParamsMessage = memo(function NoParamsMessage() {
 interface FormRendererProps {
   tool: ToolDebugDialogProps["tool"];
   form: any;
-  renderFormField: (fieldName: string, fieldSchema: any) => React.ReactElement | null;
+  renderFormField: (
+    fieldName: string,
+    fieldSchema: any
+  ) => React.ReactElement | null;
 }
 
 const FormRenderer = memo(function FormRenderer({

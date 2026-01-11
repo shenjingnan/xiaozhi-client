@@ -227,7 +227,10 @@ export class WebServer {
       }));
 
       // 6. 初始化小智接入点连接（传入 mcpServers 配置而非 tools）
-      await this.initializeXiaozhiConnection(config.mcpEndpoint, config.mcpServers);
+      await this.initializeXiaozhiConnection(
+        config.mcpEndpoint,
+        config.mcpServers
+      );
 
       this.logger.debug("所有连接初始化完成");
     } catch (error) {
@@ -341,14 +344,20 @@ export class WebServer {
         await this.endpointManager.connect();
 
         // 设置端点添加事件监听器
-        this.endpointManager.on("endpointAdded", (event: { endpoint: string }) => {
-          this.logger.debug(`端点已添加: ${event.endpoint}`);
-        });
+        this.endpointManager.on(
+          "endpointAdded",
+          (event: { endpoint: string }) => {
+            this.logger.debug(`端点已添加: ${event.endpoint}`);
+          }
+        );
 
         // 设置端点移除事件监听器
-        this.endpointManager.on("endpointRemoved", (event: { endpoint: string }) => {
-          this.logger.debug(`端点已移除: ${event.endpoint}`);
-        });
+        this.endpointManager.on(
+          "endpointRemoved",
+          (event: { endpoint: string }) => {
+            this.logger.debug(`端点已移除: ${event.endpoint}`);
+          }
+        );
 
         this.logger.debug(
           `小智接入点连接管理器初始化完成，管理 ${validEndpoints.length} 个端点`
