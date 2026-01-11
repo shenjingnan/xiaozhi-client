@@ -503,6 +503,9 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.24.0
         version: 1.25.2(hono@4.10.4)(zod@4.2.1)
+      '@xiaozhi-client/config':
+        specifier: workspace:*
+        version: link:../config
       '@xiaozhi-client/mcp-core':
         specifier: workspace:*
         version: link:../mcp-core
