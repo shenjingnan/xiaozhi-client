@@ -320,8 +320,10 @@ export class WebServer {
     try {
       // 创建连接管理器实例（总是创建）
       if (!this.endpointManager) {
-        this.endpointManager = new EndpointManager(configManager, {
+        // 注意：简化版 EndpointManager 不再需要 ConfigManager
+        this.endpointManager = new EndpointManager({
           connectionTimeout: 10000,
+          reconnectDelay: 2000,
         });
         this.logger.debug("✅ 新建连接管理器实例");
       }

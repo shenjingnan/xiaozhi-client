@@ -8,6 +8,8 @@
       "@xiaozhi-client/config": ["packages/config/dist"],
       "@xiaozhi-client/config/*": ["packages/config/dist/*"],
       "@xiaozhi-client/shared-types": ["packages/shared-types/dist"],
+      "@xiaozhi-client/endpoint": ["dist/endpoint"],
+      "@xiaozhi-client/endpoint/*": ["dist/endpoint/*"],
       "@handlers/*": ["apps/backend/handlers/*"],
       "@middlewares/*": ["apps/backend/middlewares/*"],
       "@services/*": ["apps/backend/services/*"],

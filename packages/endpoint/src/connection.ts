@@ -1,0 +1,618 @@
+/**
+ * 小智接入点连接类
+ *
+ * 管理单个 WebSocket 连接到小智接入点
+ * 实现 MCP (Model Context Protocol) 协议通信
+ */
+
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import WebSocket from "ws";
+import type { ExtendedMCPMessage, MCPMessage } from "./mcp.js";
+import type {
+  EndpointConnectionStatus,
+  IMCPServiceManager,
+  ToolCallResult,
+} from "./types.js";
+import {
+  ConnectionState,
+  ToolCallError as ToolCallErrorClass,
+  ToolCallErrorCode as ToolCallErrorCodeEnum,
+  ensureToolJSONSchema as ensureToolJSONSchemaFn,
+} from "./types.js";
+import { validateToolCallParams } from "./utils.js";
+import { sliceEndpoint } from "./utils.js";
+
+// 导出错误类型供外部使用
+export {
+  ToolCallErrorCodeEnum as ToolCallErrorCode,
+  ToolCallErrorClass as ToolCallError,
+};
+
+/**
+ * EndpointConnection 类
+ *
+ * 负责管理单个小智接入点的 WebSocket 连接
+ */
+export class EndpointConnection {
+  private endpointUrl: string;
+  private ws: WebSocket | null = null;
+  private connectionStatus = false;
+  private serverInitialized = false;
+  private serviceManager: IMCPServiceManager | null = null;
+
+  // 连接状态管理
+  private connectionState: ConnectionState = ConnectionState.DISCONNECTED;
+
+  // 最后一次错误信息
+  private lastError: string | null = null;
+
+  // 连接超时定时器
+  private connectionTimeout: NodeJS.Timeout | null = null;
+
+  // 工具调用超时配置
+  private toolCallTimeout = 30000;
+  private reconnectDelay: number; // 重连延迟（毫秒）
+
+  /**
+   * 构造函数
+   *
+   * @param endpointUrl - 小智接入点 URL
+   * @param reconnectDelay - 重连延迟时间（毫秒），默认 2000
+   */
+  constructor(endpointUrl: string, reconnectDelay = 2000) {
+    this.endpointUrl = endpointUrl;
+    this.reconnectDelay = reconnectDelay;
+  }
+
+  /**
+   * 设置 MCP 服务管理器实例
+   *
+   * @param serviceManager - MCP 服务管理器实例
+   */
+  setServiceManager(serviceManager: IMCPServiceManager): void {
+    this.serviceManager = serviceManager;
+  }
+
+  /**
+   * 获取当前所有工具列表
+   *
+   * @returns 工具数组
+   */
+  getTools(): Tool[] {
+    if (!this.serviceManager) {
+      console.debug("MCPServiceManager 未设置，返回空工具列表");
+      return [];
+    }
+
+    try {
+      // 直接从 MCPServiceManager 获取所有工具
+      const allTools = this.serviceManager.getAllTools();
+
+      // 转换为 Tool 格式
+      return allTools.map((toolInfo) => ({
+        name: toolInfo.name,
+        description: toolInfo.description,
+        inputSchema: ensureToolJSONSchemaFn(toolInfo.inputSchema),
+      }));
+    } catch (error) {
+      console.error(
+        `获取工具列表失败: ${error instanceof Error ? error.message : String(error)}`
+      );
+      return [];
+    }
+  }
+
+  /**
+   * 连接小智接入点
+   *
+   * @returns 连接成功后的 Promise
+   */
+  public async connect(): Promise<void> {
+    // 连接前验证
+    if (!this.serviceManager) {
+      throw new Error("MCPServiceManager 未设置。请在连接前先设置服务管理器。");
+    }
+
+    // 如果正在连接中，等待当前连接完成
+    if (this.connectionState === ConnectionState.CONNECTING) {
+      throw new Error("连接正在进行中，请等待连接完成");
+    }
+
+    // 清理之前的连接
+    this.cleanupConnection();
+
+    return this.attemptConnection();
+  }
+
+  /**
+   * 尝试建立连接
+   *
+   * @returns 连接成功后的 Promise
+   */
+  private async attemptConnection(): Promise<void> {
+    this.connectionState = ConnectionState.CONNECTING;
+    console.debug(`正在连接小智接入点: ${sliceEndpoint(this.endpointUrl)}`);
+
+    return new Promise((resolve, reject) => {
+      // 设置连接超时
+      this.connectionTimeout = setTimeout(() => {
+        const error = new Error("连接超时 (10000ms)");
+        this.handleConnectionError(error);
+        reject(error);
+      }, 10000);
+
+      this.ws = new WebSocket(this.endpointUrl);
+
+      this.ws.on("open", () => {
+        this.handleConnectionSuccess();
+        resolve();
+      });
+
+      this.ws.on("message", (data) => {
+        try {
+          const message: MCPMessage = JSON.parse(data.toString());
+          this.handleMessage(message);
+        } catch (error) {
+          console.error("MCP 消息解析错误:", error);
+        }
+      });
+
+      this.ws.on("close", (code, reason) => {
+        this.handleConnectionClose(code, reason.toString());
+      });
+
+      this.ws.on("error", (error) => {
+        this.handleConnectionError(error);
+        reject(error);
+      });
+    });
+  }
+
+  /**
+   * 处理连接成功
+   */
+  private handleConnectionSuccess(): void {
+    // 清理连接超时定时器
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout);
+      this.connectionTimeout = null;
+    }
+
+    this.connectionStatus = true;
+    this.connectionState = ConnectionState.CONNECTED;
+
+    console.debug("MCP WebSocket 连接已建立");
+  }
+
+  /**
+   * 处理连接错误
+   */
+  private handleConnectionError(error: Error): void {
+    // 记录最后一次错误信息
+    this.lastError = error.message;
+
+    // 清理连接超时定时器
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout);
+      this.connectionTimeout = null;
+    }
+
+    console.error("MCP WebSocket 错误:", error.message);
+
+    // 清理当前连接
+    this.cleanupConnection();
+  }
+
+  /**
+   * 处理连接关闭
+   */
+  private handleConnectionClose(code: number, reason: string): void {
+    this.connectionStatus = false;
+    this.serverInitialized = false;
+    this.connectionState = ConnectionState.DISCONNECTED;
+    console.info(`小智连接已关闭 (代码: ${code}, 原因: ${reason})`);
+  }
+
+  /**
+   * 清理连接资源
+   */
+  private cleanupConnection(): void {
+    // 清理 WebSocket
+    if (this.ws) {
+      // 移除所有事件监听器，防止在关闭时触发错误事件
+      this.ws.removeAllListeners();
+
+      // 安全关闭 WebSocket
+      try {
+        if (this.ws.readyState === WebSocket.OPEN) {
+          this.ws.close(1000, "Cleaning up connection");
+        } else if (this.ws.readyState === WebSocket.CONNECTING) {
+          this.ws.terminate(); // 强制终止正在连接的 WebSocket
+        }
+      } catch (error) {
+        // 忽略关闭时的错误
+        console.debug("WebSocket 关闭时出现错误（已忽略）:", error);
+      }
+
+      this.ws = null;
+    }
+
+    // 清理连接超时定时器
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout);
+      this.connectionTimeout = null;
+    }
+
+    // 重置连接状态
+    this.connectionStatus = false;
+    this.serverInitialized = false;
+
+    // 重置连接状态为已断开
+    this.connectionState = ConnectionState.DISCONNECTED;
+  }
+
+  /**
+   * 处理 MCP 消息
+   */
+  private handleMessage(message: MCPMessage): void {
+    console.debug("收到 MCP 消息:", JSON.stringify(message, null, 2));
+
+    // 如果没有 method 字段，忽略该消息
+    if (!message.method) {
+      console.debug("收到没有 method 字段的消息，忽略");
+      return;
+    }
+
+    // 直接处理请求
+    switch (message.method) {
+      case "initialize":
+      case "notifications/initialized":
+        this.sendResponse(message.id, {
+          protocolVersion: "2024-11-05",
+          capabilities: {
+            tools: { listChanged: true },
+            logging: {},
+          },
+          serverInfo: {
+            name: "xiaozhi-mcp-server",
+            version: "1.0.0",
+          },
+        });
+        this.serverInitialized = true;
+        console.debug("MCP 服务器初始化完成");
+        break;
+
+      case "tools/list": {
+        const toolsList = this.getTools();
+        this.sendResponse(message.id, { tools: toolsList });
+        console.debug(`MCP 工具列表已发送 (${toolsList.length}个工具)`);
+        break;
+      }
+
+      case "tools/call": {
+        // 异步处理工具调用，避免阻塞其他消息
+        this.handleToolCall(message).catch((error) => {
+          console.error("处理工具调用时发生未捕获错误:", error);
+        });
+        break;
+      }
+
+      case "ping":
+        this.sendResponse(message.id, {});
+        console.debug("回应 MCP ping 消息");
+        break;
+
+      default:
+        console.warn(`未知的 MCP 请求: ${message.method}`);
+    }
+  }
+
+  /**
+   * 发送响应消息
+   */
+  private sendResponse(id: number | string, result: unknown): void {
+    console.debug(
+      `尝试发送响应: id=${id}, isConnected=${this.connectionStatus}, wsReadyState=${this.ws?.readyState}`
+    );
+
+    if (this.connectionStatus && this.ws?.readyState === WebSocket.OPEN) {
+      const response: ExtendedMCPMessage = {
+        jsonrpc: "2.0",
+        id,
+        result,
+      };
+
+      try {
+        this.ws.send(JSON.stringify(response));
+        console.debug("响应已发送", {
+          id,
+          responseSize: JSON.stringify(response).length,
+        });
+      } catch (error) {
+        console.error("发送响应失败", {
+          id,
+          error,
+        });
+      }
+    } else {
+      console.error("无法发送响应", {
+        id,
+        isConnected: this.connectionStatus,
+        wsReadyState: this.ws?.readyState,
+      });
+    }
+  }
+
+  /**
+   * 获取服务器状态
+   *
+   * @returns 服务器状态
+   */
+  public getStatus(): EndpointConnectionStatus {
+    // 从 MCPServiceManager 获取工具数量
+    const availableTools = this.serviceManager
+      ? this.serviceManager.getAllTools().length
+      : 0;
+
+    return {
+      connected: this.connectionStatus,
+      initialized: this.serverInitialized,
+      url: this.endpointUrl,
+      availableTools,
+      connectionState: this.connectionState,
+      lastError: this.lastError,
+    };
+  }
+
+  /**
+   * 检查连接状态
+   *
+   * @returns 是否已连接
+   */
+  public isConnected(): boolean {
+    return this.connectionStatus;
+  }
+
+  /**
+   * 主动断开小智连接
+   */
+  public disconnect(): void {
+    console.info("主动断开小智连接");
+
+    // 清理连接资源
+    this.cleanupConnection();
+  }
+
+  /**
+   * 重连小智接入点
+   *
+   * @returns 重连成功后的 Promise
+   */
+  public async reconnect(): Promise<void> {
+    console.info(`重连小智接入点: ${sliceEndpoint(this.endpointUrl)}`);
+
+    // 检查服务管理器是否已设置
+    if (!this.serviceManager) {
+      throw new Error("MCPServiceManager 未设置。请在重连前先设置服务管理器。");
+    }
+
+    // 先断开连接
+    this.disconnect();
+
+    // 等待可配置的时间确保连接完全断开
+    await new Promise((resolve) => setTimeout(resolve, this.reconnectDelay));
+
+    // 重新连接
+    await this.connect();
+  }
+
+  /**
+   * 处理工具调用请求
+   */
+  private async handleToolCall(request: MCPMessage): Promise<void> {
+    // 确保 request.id 存在且类型正确
+    if (request.id === undefined || request.id === null) {
+      throw new ToolCallErrorClass(
+        ToolCallErrorCodeEnum.INVALID_PARAMS,
+        "请求 ID 不能为空"
+      );
+    }
+
+    // 保持原始 ID 类型（number | string），不进行类型转换
+    const requestId = request.id;
+    // 记录开始时间用于计算持续时间
+    const startTime = Date.now();
+
+    try {
+      // 1. 验证请求格式
+      const params = validateToolCallParams(request.params);
+
+      console.info("开始处理工具调用", {
+        requestId,
+        toolName: params.name,
+        hasArguments: !!params.arguments,
+      });
+
+      // 2. 检查服务管理器是否可用
+      if (!this.serviceManager) {
+        throw new ToolCallErrorClass(
+          ToolCallErrorCodeEnum.SERVICE_UNAVAILABLE,
+          "MCPServiceManager 未设置"
+        );
+      }
+
+      // 3. 执行工具调用
+      const result = await this.executeToolWithTimeout(
+        params.name,
+        params.arguments || {},
+        this.toolCallTimeout
+      );
+
+      // 4. 发送成功响应
+      this.sendResponse(requestId, {
+        content: result.content || [
+          { type: "text", text: JSON.stringify(result) },
+        ],
+        isError: result.isError || false,
+      });
+
+      // 5. 记录调用成功
+      console.info("工具调用成功", {
+        requestId,
+        toolName: params.name,
+        duration: `${Date.now() - startTime}ms`,
+      });
+    } catch (error) {
+      // 6. 处理错误并发送错误响应
+      this.handleToolCallError(error, requestId, Date.now() - startTime);
+    }
+  }
+
+  /**
+   * 带超时控制的工具执行
+   */
+  private async executeToolWithTimeout(
+    toolName: string,
+    arguments_: Record<string, unknown>,
+    timeoutMs = 30000
+  ): Promise<ToolCallResult> {
+    return new Promise((resolve, reject) => {
+      // 设置超时定时器
+      const timeoutId = setTimeout(() => {
+        reject(
+          new ToolCallErrorClass(
+            ToolCallErrorCodeEnum.TIMEOUT,
+            `工具调用超时 (${timeoutMs}ms): ${toolName}`
+          )
+        );
+      }, timeoutMs);
+
+      // 检查 serviceManager 是否可用
+      if (!this.serviceManager) {
+        clearTimeout(timeoutId);
+        reject(
+          new ToolCallErrorClass(
+            ToolCallErrorCodeEnum.SERVICE_UNAVAILABLE,
+            "MCPServiceManager 未设置"
+          )
+        );
+        return;
+      }
+
+      // 执行工具调用
+      this.serviceManager
+        .callTool(toolName, arguments_)
+        .then((result: ToolCallResult) => {
+          clearTimeout(timeoutId);
+          resolve(result);
+        })
+        .catch((error: unknown) => {
+          clearTimeout(timeoutId);
+
+          // 将内部错误转换为工具调用错误
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+
+          if (errorMessage.includes("未找到工具")) {
+            reject(
+              new ToolCallErrorClass(
+                ToolCallErrorCodeEnum.TOOL_NOT_FOUND,
+                `工具不存在: ${toolName}`
+              )
+            );
+          } else if (
+            errorMessage.includes("服务") &&
+            errorMessage.includes("不可用")
+          ) {
+            reject(
+              new ToolCallErrorClass(
+                ToolCallErrorCodeEnum.SERVICE_UNAVAILABLE,
+                errorMessage
+              )
+            );
+          } else if (errorMessage.includes("暂时不可用")) {
+            reject(
+              new ToolCallErrorClass(
+                ToolCallErrorCodeEnum.SERVICE_UNAVAILABLE,
+                errorMessage
+              )
+            );
+          } else if (errorMessage.includes("持续不可用")) {
+            reject(
+              new ToolCallErrorClass(
+                ToolCallErrorCodeEnum.SERVICE_UNAVAILABLE,
+                errorMessage
+              )
+            );
+          } else {
+            reject(
+              new ToolCallErrorClass(
+                ToolCallErrorCodeEnum.TOOL_EXECUTION_ERROR,
+                `工具执行失败: ${errorMessage}`
+              )
+            );
+          }
+        });
+    });
+  }
+
+  /**
+   * 处理工具调用错误
+   */
+  private handleToolCallError(
+    error: unknown,
+    requestId: string | number | undefined,
+    duration: number
+  ): void {
+    let errorResponse: {
+      code: number;
+      message: string;
+      data?: unknown;
+    };
+
+    if (error instanceof ToolCallErrorClass) {
+      // 标准工具调用错误
+      errorResponse = {
+        code: error.code,
+        message: error.message,
+        data: error.data,
+      };
+    } else {
+      // 未知错误
+      const errorMessage = error instanceof Error ? error.message : "未知错误";
+      errorResponse = {
+        code: ToolCallErrorCodeEnum.TOOL_EXECUTION_ERROR,
+        message: errorMessage,
+        data: { originalError: String(error) || "null" },
+      };
+    }
+
+    // 发送错误响应
+    this.sendErrorResponse(requestId, errorResponse);
+
+    // 记录错误日志
+    console.error("工具调用失败", {
+      requestId,
+      duration: `${duration}ms`,
+      error: errorResponse,
+    });
+  }
+
+  /**
+   * 发送错误响应
+   */
+  private sendErrorResponse(
+    id: string | number | undefined,
+    error: { code: number; message: string; data?: unknown }
+  ): void {
+    if (this.connectionStatus && this.ws?.readyState === WebSocket.OPEN) {
+      const response = {
+        jsonrpc: "2.0",
+        id,
+        error,
+      };
+      this.ws.send(JSON.stringify(response));
+      console.debug("已发送错误响应:", response);
+    }
+  }
+}

@@ -1,25 +1,41 @@
 /**
  * 小智接入点连接管理模块
  *
- * 此模块负责管理小智接入点的连接，包括：
- * - EndpointConnection: 单个 WebSocket 连接实现
- * - EndpointManager: 多个连接的管理器
+ * 此模块重新导出 @xiaozhi-client/endpoint 包
+ * 保留原有的导出接口以保持向后兼容性
  */
 
-// 核心类导出
-export { EndpointConnection } from "./connection.js";
-export { EndpointManager } from "./manager.js";
+// =========================
+// 从独立包重新导出
+// =========================
 
-// 类型导出
+// 核心类导出
+export {
+  EndpointConnection,
+  EndpointManager,
+  ToolCallErrorCode,
+  ToolCallError,
+} from "@xiaozhi-client/endpoint";
+
+// =========================
+// 类型导出（带别名映射以保持向后兼容）
+// =========================
+
 export type {
-  IndependentConnectionOptions,
+  ConnectionOptions as IndependentConnectionOptions,
   SimpleConnectionStatus,
   ConnectionStatus,
   ConfigChangeEvent as EndpointConfigChangeEvent,
-} from "./manager.js";
+  ReconnectResult,
+} from "@xiaozhi-client/endpoint";
 
-// 枚举导出
-export { XiaozhiConnectionState } from "./manager.js";
+// 枚举导出（使用别名保持向后兼容）
+// ConnectionState 既是类型也是值，所以只需要值导出
+export { ConnectionState as XiaozhiConnectionState } from "@xiaozhi-client/endpoint";
 
-// EndpointConnection 相关导出
-export { ToolCallErrorCode, ToolCallError } from "./connection.js";
+// =========================
+// 增强管理器导出
+// =========================
+
+// 如果需要配置持久化功能，可以导入 EnhancedEndpointManager
+// export { EnhancedEndpointManager } from "./EnhancedEndpointManager.js";
