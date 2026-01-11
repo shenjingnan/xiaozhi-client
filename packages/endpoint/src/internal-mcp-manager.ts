@@ -6,10 +6,10 @@
 
 import { MCPManager } from "@xiaozhi-client/mcp-core";
 import type { MCPServiceConfig } from "@xiaozhi-client/mcp-core";
-import { MCPTransportType } from "@xiaozhi-client/mcp-core";
 import type { EnhancedToolInfo, ToolCallResult } from "./types.js";
 import type { IMCPServiceManager } from "./types.js";
 import type { EndpointConfig, MCPServerConfig } from "./types.js";
+import { convertLegacyToNew } from "@xiaozhi-client/config";
 
 /**
  * 内部 MCP 服务管理器适配器
@@ -128,39 +128,22 @@ export class InternalMCPManagerAdapter implements IMCPServiceManager {
 
   /**
    * 将 MCPServerConfig 转换为 MCPServiceConfig
+   * 使用统一的配置适配器，确保路径解析逻辑一致
    */
   private convertToMCPServiceConfig(
     serviceName: string,
     config: MCPServerConfig
   ): Omit<MCPServiceConfig, "name"> {
-    // 本地命令配置
-    if ("command" in config) {
-      return {
-        type: MCPTransportType.STDIO,
-        command: config.command,
-        args: config.args,
-        env: config.env,
-      };
-    }
+    // 使用统一的转换函数，自动处理相对路径解析
+    // convertLegacyToNew 会：
+    // 1. 解析 command 中的相对路径（相对于配置文件目录）
+    // 2. 解析 args 中的相对路径
+    // 3. 返回带有 name 字段的完整配置
+    const converted = convertLegacyToNew(serviceName, config);
 
-    // SSE 配置
-    if ("type" in config && config.type === "sse") {
-      return {
-        type: MCPTransportType.SSE,
-        url: config.url,
-        headers: config.headers,
-      };
-    }
+    // 移除 name 字段（因为 InternalMCPManagerAdapter 不需要）
+    const { name, ...rest } = converted;
 
-    // Streamable HTTP 配置（默认）
-    if ("url" in config) {
-      return {
-        type: MCPTransportType.STREAMABLE_HTTP,
-        url: config.url,
-        headers: config.headers,
-      };
-    }
-
-    throw new Error(`不支持的 MCP 服务器配置: ${serviceName}`);
+    return rest;
   }
 }
