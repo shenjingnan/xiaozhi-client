@@ -353,8 +353,13 @@ export class Endpoint {
   /**
    * 主动断开小智连接
    */
-  public disconnect(): void {
+  public async disconnect(): Promise<void> {
     console.info("主动断开小智连接");
+
+    // 清理 MCP 适配器
+    await this.mcpAdapter.cleanup();
+
+    // 清理 WebSocket 连接
     this.cleanupConnection();
   }
 
