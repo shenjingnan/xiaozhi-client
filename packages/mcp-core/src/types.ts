@@ -4,10 +4,22 @@
  */
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
+import type { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import type { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 
 // =========================
 // 1. 基础传输类型
 // =========================
+
+/**
+ * MCP 传输层联合类型定义
+ * 支持 STDIO、SSE、StreamableHTTP 三种传输协议
+ */
+export type MCPServerTransport =
+  | StdioClientTransport
+  | SSEClientTransport
+  | StreamableHTTPClientTransport;
 
 /**
  * 通信方式枚举
@@ -17,6 +29,35 @@ export enum MCPTransportType {
   STDIO = "stdio",
   SSE = "sse",
   STREAMABLE_HTTP = "streamable-http",
+}
+
+// =========================
+// 1.1 事件回调接口
+// =========================
+
+/**
+ * MCP 服务事件回调接口
+ * 用于替代 EventBus 依赖，提供灵活的事件处理机制
+ */
+export interface MCPServiceEventCallbacks {
+  /** 连接成功回调 */
+  onConnected?: (data: {
+    serviceName: string;
+    tools: Tool[];
+    connectionTime: Date;
+  }) => void;
+  /** 断开连接回调 */
+  onDisconnected?: (data: {
+    serviceName: string;
+    reason?: string;
+    disconnectionTime: Date;
+  }) => void;
+  /** 连接失败回调 */
+  onConnectionFailed?: (data: {
+    serviceName: string;
+    error: Error;
+    attempt: number;
+  }) => void;
 }
 
 // =========================

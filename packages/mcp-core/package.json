@@ -1,14 +1,14 @@
 {
   "name": "@xiaozhi-client/mcp-core",
   "version": "1.9.7-beta.3",
-  "description": "MCP 协议核心实现，提供服务管理和连接功能",
+  "description": "MCP 协议核心实现，提供服务连接和管理功能",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/shenjingnan/xiaozhi-client.git",
-    "directory": "packages/shared-types"
+    "directory": "packages/mcp-core"
   },
   "exports": {
     ".": {
@@ -26,6 +26,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "eventsource": "^4.0.0",
     "ws": "^8.14.2"
   },
   "peerDependencies": {
@@ -45,7 +46,8 @@
     "xiaozhi",
     "mcp",
     "model-context-protocol",
-    "service-manager"
+    "mcp-client",
+    "mcp-connection"
   ],
   "author": "xiaozhi-client",
   "license": "MIT"

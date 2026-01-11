@@ -28,6 +28,10 @@ export type {
   ToolCallValidationOptions,
   CustomMCPTool,
   JSONSchema,
+  // 传输相关
+  MCPServerTransport,
+  // 事件相关
+  MCPServiceEventCallbacks,
 } from "./types.js";
 
 // =========================
@@ -45,10 +49,31 @@ export {
 // =========================
 
 export { ToolCallError } from "./types.js";
-export { MCPServiceManager } from "./manager.js";
+export { MCPConnection } from "./connection.js";
+
+// =========================
+// 传输工厂导出
+// =========================
+
+export { TransportFactory } from "./transport-factory.js";
 
 // =========================
 // 工具函数导出
 // =========================
 
-export { isValidToolJSONSchema, ensureToolJSONSchema } from "./types.js";
+export {
+  TypeFieldNormalizer,
+  normalizeTypeField,
+  validateToolCallParams,
+  inferTransportTypeFromUrl,
+  inferTransportTypeFromConfig,
+} from "./utils/index.js";
+
+// =========================
+// 类型守卫导出
+// =========================
+
+export {
+  isValidToolJSONSchema,
+  ensureToolJSONSchema,
+} from "./types.js";

@@ -21,6 +21,7 @@ export default defineConfig({
   external: [
     // Node.js 内置模块
     "ws",
+    "eventsource",
     "events",
     "node:events",
     "node:fs",
