@@ -1,5 +1,6 @@
 import { mcpServerApi } from "@/services/api";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AddMcpServerButton } from "./AddMcpServerButton";
@@ -40,6 +41,30 @@ vi.mock("@/stores/config", () => ({
     },
   }),
 }));
+
+// ========== 测试辅助函数 ==========
+
+/**
+ * 切换到高级模式（JSON 输入）
+ */
+async function switchToAdvancedMode() {
+  const advancedTab = screen.getByRole("tab", { name: "高级模式" });
+  await userEvent.click(advancedTab);
+
+  // 等待 JSON textarea 出现
+  await waitFor(() => {
+    expect(screen.getByPlaceholderText(/支持三种通信方式/)).toBeInTheDocument();
+  });
+}
+
+/**
+ * 获取高级模式中的 JSON textarea
+ */
+function getAdvancedJsonTextarea() {
+  return screen.getByPlaceholderText(/支持三种通信方式/);
+}
+
+// ========== 测试套件 ==========
 
 describe("添加MCP服务器按钮", () => {
   beforeEach(() => {
@@ -94,12 +119,17 @@ describe("添加MCP服务器按钮", () => {
     fireEvent.click(addButton);
 
     await waitFor(() => {
-      const textarea = screen.getByRole("textbox");
-      fireEvent.change(textarea, { target: { value: "invalid json" } });
-
-      const saveButton = screen.getByRole("button", { name: /保存/ });
-      fireEvent.click(saveButton);
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
     });
+
+    // 切换到高级模式
+    await switchToAdvancedMode();
+
+    const textarea = getAdvancedJsonTextarea();
+    fireEvent.change(textarea, { target: { value: "invalid json" } });
+
+    const saveButton = screen.getByRole("button", { name: /保存/ });
+    fireEvent.click(saveButton);
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith(
@@ -115,23 +145,28 @@ describe("添加MCP服务器按钮", () => {
     fireEvent.click(addButton);
 
     await waitFor(() => {
-      const textarea = screen.getByRole("textbox");
-      fireEvent.change(textarea, {
-        target: {
-          value: JSON.stringify({
-            mcpServers: {
-              "existing-server": {
-                command: "node",
-                args: ["new.js"],
-              },
-            },
-          }),
-        },
-      });
-
-      const saveButton = screen.getByRole("button", { name: /保存/ });
-      fireEvent.click(saveButton);
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
     });
+
+    // 切换到高级模式
+    await switchToAdvancedMode();
+
+    const textarea = getAdvancedJsonTextarea();
+    fireEvent.change(textarea, {
+      target: {
+        value: JSON.stringify({
+          mcpServers: {
+            "existing-server": {
+              command: "node",
+              args: ["new.js"],
+            },
+          },
+        }),
+      },
+    });
+
+    const saveButton = screen.getByRole("button", { name: /保存/ });
+    fireEvent.click(saveButton);
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith(
@@ -147,23 +182,28 @@ describe("添加MCP服务器按钮", () => {
     fireEvent.click(addButton);
 
     await waitFor(() => {
-      const textarea = screen.getByRole("textbox");
-      fireEvent.change(textarea, {
-        target: {
-          value: JSON.stringify({
-            mcpServers: {
-              "new-server": {
-                command: "node",
-                args: ["new.js"],
-              },
-            },
-          }),
-        },
-      });
-
-      const saveButton = screen.getByRole("button", { name: /保存/ });
-      fireEvent.click(saveButton);
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
     });
+
+    // 切换到高级模式
+    await switchToAdvancedMode();
+
+    const textarea = getAdvancedJsonTextarea();
+    fireEvent.change(textarea, {
+      target: {
+        value: JSON.stringify({
+          mcpServers: {
+            "new-server": {
+              command: "node",
+              args: ["new.js"],
+            },
+          },
+        }),
+      },
+    });
+
+    const saveButton = screen.getByRole("button", { name: /保存/ });
+    fireEvent.click(saveButton);
 
     await waitFor(() => {
       expect(mockListServers).toHaveBeenCalled();
@@ -184,23 +224,28 @@ describe("添加MCP服务器按钮", () => {
     fireEvent.click(addButton);
 
     await waitFor(() => {
-      const textarea = screen.getByRole("textbox");
-      fireEvent.change(textarea, {
-        target: {
-          value: JSON.stringify({
-            mcpServers: {
-              "sse-server": {
-                type: "sse",
-                url: "https://example.com/sse",
-              },
-            },
-          }),
-        },
-      });
-
-      const saveButton = screen.getByRole("button", { name: /保存/ });
-      fireEvent.click(saveButton);
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
     });
+
+    // 切换到高级模式
+    await switchToAdvancedMode();
+
+    const textarea = getAdvancedJsonTextarea();
+    fireEvent.change(textarea, {
+      target: {
+        value: JSON.stringify({
+          mcpServers: {
+            "sse-server": {
+              type: "sse",
+              url: "https://example.com/sse",
+            },
+          },
+        }),
+      },
+    });
+
+    const saveButton = screen.getByRole("button", { name: /保存/ });
+    fireEvent.click(saveButton);
 
     await waitFor(() => {
       expect(mockListServers).toHaveBeenCalled();
@@ -221,22 +266,27 @@ describe("添加MCP服务器按钮", () => {
     fireEvent.click(addButton);
 
     await waitFor(() => {
-      const textarea = screen.getByRole("textbox");
-      fireEvent.change(textarea, {
-        target: {
-          value: JSON.stringify({
-            mcpServers: {
-              "http-server": {
-                url: "https://example.com/mcp",
-              },
-            },
-          }),
-        },
-      });
-
-      const saveButton = screen.getByRole("button", { name: /保存/ });
-      fireEvent.click(saveButton);
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
     });
+
+    // 切换到高级模式
+    await switchToAdvancedMode();
+
+    const textarea = getAdvancedJsonTextarea();
+    fireEvent.change(textarea, {
+      target: {
+        value: JSON.stringify({
+          mcpServers: {
+            "http-server": {
+              url: "https://example.com/mcp",
+            },
+          },
+        }),
+      },
+    });
+
+    const saveButton = screen.getByRole("button", { name: /保存/ });
+    fireEvent.click(saveButton);
 
     await waitFor(() => {
       expect(mockListServers).toHaveBeenCalled();
@@ -256,22 +306,27 @@ describe("添加MCP服务器按钮", () => {
     fireEvent.click(addButton);
 
     await waitFor(() => {
-      const textarea = screen.getByRole("textbox");
-      fireEvent.change(textarea, {
-        target: {
-          value: JSON.stringify({
-            mcpServers: {
-              "http-server-no-type": {
-                url: "https://example.com/mcp",
-              },
-            },
-          }),
-        },
-      });
-
-      const saveButton = screen.getByRole("button", { name: /保存/ });
-      fireEvent.click(saveButton);
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
     });
+
+    // 切换到高级模式
+    await switchToAdvancedMode();
+
+    const textarea = getAdvancedJsonTextarea();
+    fireEvent.change(textarea, {
+      target: {
+        value: JSON.stringify({
+          mcpServers: {
+            "http-server-no-type": {
+              url: "https://example.com/mcp",
+            },
+          },
+        }),
+      },
+    });
+
+    const saveButton = screen.getByRole("button", { name: /保存/ });
+    fireEvent.click(saveButton);
 
     await waitFor(() => {
       expect(mockListServers).toHaveBeenCalled();
@@ -292,22 +347,27 @@ describe("添加MCP服务器按钮", () => {
       fireEvent.click(addButton);
 
       await waitFor(() => {
-        const textarea = screen.getByRole("textbox");
-        fireEvent.change(textarea, {
-          target: {
-            value: JSON.stringify({
-              mcpServers: {
-                "invalid-server": {
-                  args: ["test.js"],
-                },
-              },
-            }),
-          },
-        });
-
-        const saveButton = screen.getByRole("button", { name: /保存/ });
-        fireEvent.click(saveButton);
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
       });
+
+      // 切换到高级模式
+      await switchToAdvancedMode();
+
+      const textarea = getAdvancedJsonTextarea();
+      fireEvent.change(textarea, {
+        target: {
+          value: JSON.stringify({
+            mcpServers: {
+              "invalid-server": {
+                args: ["test.js"],
+              },
+            },
+          }),
+        },
+      });
+
+      const saveButton = screen.getByRole("button", { name: /保存/ });
+      fireEvent.click(saveButton);
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
@@ -325,23 +385,28 @@ describe("添加MCP服务器按钮", () => {
       fireEvent.click(addButton);
 
       await waitFor(() => {
-        const textarea = screen.getByRole("textbox");
-        fireEvent.change(textarea, {
-          target: {
-            value: JSON.stringify({
-              mcpServers: {
-                "invalid-server": {
-                  command: "node",
-                  args: "not-an-array",
-                },
-              },
-            }),
-          },
-        });
-
-        const saveButton = screen.getByRole("button", { name: /保存/ });
-        fireEvent.click(saveButton);
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
       });
+
+      // 切换到高级模式
+      await switchToAdvancedMode();
+
+      const textarea = getAdvancedJsonTextarea();
+      fireEvent.change(textarea, {
+        target: {
+          value: JSON.stringify({
+            mcpServers: {
+              "invalid-server": {
+                command: "node",
+                args: "not-an-array",
+              },
+            },
+          }),
+        },
+      });
+
+      const saveButton = screen.getByRole("button", { name: /保存/ });
+      fireEvent.click(saveButton);
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
@@ -357,22 +422,27 @@ describe("添加MCP服务器按钮", () => {
       fireEvent.click(addButton);
 
       await waitFor(() => {
-        const textarea = screen.getByRole("textbox");
-        fireEvent.change(textarea, {
-          target: {
-            value: JSON.stringify({
-              mcpServers: {
-                "invalid-sse": {
-                  type: "sse",
-                },
-              },
-            }),
-          },
-        });
-
-        const saveButton = screen.getByRole("button", { name: /保存/ });
-        fireEvent.click(saveButton);
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
       });
+
+      // 切换到高级模式
+      await switchToAdvancedMode();
+
+      const textarea = getAdvancedJsonTextarea();
+      fireEvent.change(textarea, {
+        target: {
+          value: JSON.stringify({
+            mcpServers: {
+              "invalid-sse": {
+                type: "sse",
+              },
+            },
+          }),
+        },
+      });
+
+      const saveButton = screen.getByRole("button", { name: /保存/ });
+      fireEvent.click(saveButton);
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
@@ -388,18 +458,23 @@ describe("添加MCP服务器按钮", () => {
       fireEvent.click(addButton);
 
       await waitFor(() => {
-        const textarea = screen.getByRole("textbox");
-        fireEvent.change(textarea, {
-          target: {
-            value: JSON.stringify({
-              url: "https://example.com/mcp",
-            }),
-          },
-        });
-
-        const saveButton = screen.getByRole("button", { name: /保存/ });
-        fireEvent.click(saveButton);
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
       });
+
+      // 切换到高级模式
+      await switchToAdvancedMode();
+
+      const textarea = getAdvancedJsonTextarea();
+      fireEvent.change(textarea, {
+        target: {
+          value: JSON.stringify({
+            url: "https://example.com/mcp",
+          }),
+        },
+      });
+
+      const saveButton = screen.getByRole("button", { name: /保存/ });
+      fireEvent.click(saveButton);
 
       await waitFor(() => {
         expect(mockListServers).toHaveBeenCalled();

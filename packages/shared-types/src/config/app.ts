@@ -27,6 +27,8 @@ export interface LocalMCPServerConfig {
 export interface SSEMCPServerConfig {
   type: "sse";
   url: string;
+  /** 请求头 */
+  headers?: Record<string, string>;
 }
 
 /**
@@ -35,6 +37,8 @@ export interface SSEMCPServerConfig {
 export interface StreamableHTTPMCPServerConfig {
   type?: "streamable-http"; // 可选，因为默认就是 streamable-http
   url: string;
+  /** 请求头 */
+  headers?: Record<string, string>;
 }
 
 /**
