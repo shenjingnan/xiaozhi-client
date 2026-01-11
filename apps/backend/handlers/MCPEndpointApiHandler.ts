@@ -167,7 +167,7 @@ export class MCPEndpointApiHandler {
       // 获取连接状态
       const connectionStatus = this.endpointManager.getConnectionStatus();
       const endpointStatus = connectionStatus.find(
-        (status) => status.endpoint === endpoint
+        (status: ConnectionStatus) => status.endpoint === endpoint
       );
 
       if (!endpointStatus) {
@@ -237,7 +237,7 @@ export class MCPEndpointApiHandler {
       const updatedConnectionStatus =
         this.endpointManager.getConnectionStatus();
       const endpointStatus = updatedConnectionStatus.find(
-        (status) => status.endpoint === endpoint
+        (status: ConnectionStatus) => status.endpoint === endpoint
       );
 
       if (!endpointStatus) {
@@ -319,7 +319,7 @@ export class MCPEndpointApiHandler {
       const updatedConnectionStatus =
         this.endpointManager.getConnectionStatus();
       const endpointStatus = updatedConnectionStatus.find(
-        (status) => status.endpoint === endpoint
+        (status: ConnectionStatus) => status.endpoint === endpoint
       );
 
       // 发送断开成功事件
