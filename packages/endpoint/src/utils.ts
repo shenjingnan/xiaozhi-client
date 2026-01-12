@@ -92,11 +92,44 @@ export function isValidEndpointUrl(endpoint: string): boolean {
 }
 
 /**
+ * 检查属性名是否安全，防止原型污染攻击
+ *
+ * @param key - 待检查的属性名
+ * @returns 是否为安全的属性名
+ *
+ * @example
+ * ```typescript
+ * isSafeKey("name") // true
+ * isSafeKey("__proto__") // false
+ * isSafeKey("constructor") // false
+ * ```
+ */
+function isSafeKey(key: string): boolean {
+  // 拒绝已知的危险属性名
+  const dangerousKeys = ["__proto__", "constructor", "prototype"];
+  if (dangerousKeys.includes(key)) {
+    return false;
+  }
+
+  // 确保属性名是普通的字符串（不是 Symbol 等）
+  return typeof key === "string" && key.length > 0;
+}
+
+/**
  * 深度合并对象
  *
  * @param target - 目标对象
  * @param sources - 源对象
  * @returns 合并后的对象
+ *
+ * @example
+ * ```typescript
+ * const result = deepMerge(
+ *   { a: 1, b: { x: 1 } },
+ *   { b: { y: 2 }, c: 3 }
+ * );
+ * // 返回: { a: 1, b: { x: 1, y: 2 }, c: 3 }
+ * ```
  */
 export function deepMerge<T>(
   target: Partial<T>,
@@ -112,21 +145,32 @@ export function deepMerge<T>(
     return target as T;
   }
 
-  for (const key in source) {
+  // 使用 Object.keys() 替代 for...in，只遍历对象自身的可枚举属性
+  const keys = Object.keys(source as Record<string, unknown>);
+
+  for (const key of keys) {
+    // 跳过不安全的 key，防止原型污染攻击
+    if (!isSafeKey(key)) {
+      continue;
+    }
+
+    const sourceValue = (source as Record<string, unknown>)[key];
+    const targetValue = (target as Record<string, unknown>)[key];
+
     if (
-      typeof source[key] === "object" &&
-      source[key] !== null &&
-      !Array.isArray(source[key]) &&
-      typeof target[key] === "object" &&
-      target[key] !== null &&
-      !Array.isArray(target[key])
+      typeof sourceValue === "object" &&
+      sourceValue !== null &&
+      !Array.isArray(sourceValue) &&
+      typeof targetValue === "object" &&
+      targetValue !== null &&
+      !Array.isArray(targetValue)
     ) {
       (target as Record<string, unknown>)[key] = deepMerge(
-        target[key] as Record<string, unknown>,
-        source[key] as Record<string, unknown>
+        targetValue as Record<string, unknown>,
+        sourceValue as Record<string, unknown>
       );
     } else {
-      (target as Record<string, unknown>)[key] = source[key];
+      (target as Record<string, unknown>)[key] = sourceValue;
     }
   }
 

@@ -255,6 +255,80 @@ describe("工具函数测试", () => {
     });
   });
 
+  describe("deepMerge - 原型污染防护", () => {
+    it("应该阻止 __proto__ 污染攻击", () => {
+      const target = { user: "guest" };
+      const malicious = { __proto__: { isAdmin: true } } as any;
+
+      deepMerge(target, malicious);
+
+      // 验证原型未被污染
+      expect(({} as any).isAdmin).toBeUndefined();
+      expect(target).toEqual({ user: "guest" });
+    });
+
+    it("应该阻止 constructor 污染攻击", () => {
+      const target = { config: {} };
+      const malicious = {
+        constructor: { prototype: { polluted: true } },
+      } as any;
+
+      deepMerge(target, malicious);
+
+      // 验证原型未被污染
+      expect(({} as any).polluted).toBeUndefined();
+    });
+
+    it("应该阻止 prototype 污染攻击", () => {
+      const target = { data: {} };
+      const malicious = { prototype: { malicious: true } } as any;
+
+      deepMerge(target, malicious);
+
+      // 验证原型未被污染
+      expect(({} as any).malicious).toBeUndefined();
+    });
+
+    it("应该正常合并合法属性", () => {
+      const target = { a: 1, b: { x: 1 } };
+      const source = { b: { y: 2 }, c: 3 };
+
+      const result = deepMerge(target, source);
+      expect(result).toEqual({ a: 1, b: { x: 1, y: 2 }, c: 3 });
+    });
+
+    it("应该忽略包含危险 key 的嵌套对象", () => {
+      const target = { config: { setting: "value" } };
+      const malicious = {
+        config: { __proto__: { hacked: true } } as any,
+      };
+
+      deepMerge(target, malicious);
+
+      // 验证原型未被污染
+      expect(({} as any).hacked).toBeUndefined();
+      // 验证正常属性不受影响
+      expect(target.config.setting).toBe("value");
+    });
+
+    it("应该处理多个源对象中的危险 key", () => {
+      const target = { safe: true };
+      const source1 = { __proto__: { bad1: true } } as any;
+      const source2 = { constructor: { bad2: true } } as any;
+      const source3 = { prototype: { bad3: true } } as any;
+      const source4 = { normal: "value" };
+
+      const result = deepMerge(target, source1, source2, source3, source4);
+
+      // 验证原型未被污染
+      expect(({} as any).bad1).toBeUndefined();
+      expect(({} as any).bad2).toBeUndefined();
+      expect(({} as any).bad3).toBeUndefined();
+      // 验证正常属性正确合并
+      expect(result).toEqual({ safe: true, normal: "value" });
+    });
+  });
+
   describe("sleep", () => {
     beforeEach(() => {
       vi.useFakeTimers();
