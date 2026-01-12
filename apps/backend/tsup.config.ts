@@ -110,6 +110,7 @@ export default defineConfig({
     // @xiaozhi-client 内部包（运行时从 dist 读取）
     "@xiaozhi-client/config",
     "@xiaozhi-client/config.js",
+    "@xiaozhi-client/endpoint",
     "@xiaozhi-client/mcp-core",
     "@xiaozhi-client/shared-types",
   ],

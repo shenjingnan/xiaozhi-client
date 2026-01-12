@@ -57,11 +57,12 @@ describe("工具函数测试", () => {
     });
 
     it("应该截断超长 URL", () => {
-      const url = `ws://${"".repeat(20)}example.com/endpoint`;
+      const url = `ws://${"a".repeat(50)}.com/endpoint`;
       const result = sliceEndpoint(url);
-      // 前30个字符是 ws://ws://ws://ws://ws://ws:// (30个字符)
-      // 后10个字符是 m/endpoint
-      expect(result).toBe("ws://ws://ws://ws://ws://ws://...m/endpoint");
+      // 前30个字符 + ... + 后10个字符
+      expect(result.length).toBe(30 + 3 + 10);
+      expect(result).toContain("...");
+      expect(result.endsWith("m/endpoint")).toBe(true);
     });
   });
 
