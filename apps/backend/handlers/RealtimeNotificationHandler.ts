@@ -279,7 +279,7 @@ export class RealtimeNotificationHandler {
    * 处理客户端断开连接
    */
   handleClientDisconnect(clientId: string): void {
-    this.logger.info(`客户端断开连接: ${clientId}`);
+    this.logger.debug(`客户端断开连接: ${clientId}`);
     this.notificationService.unregisterClient(clientId);
   }
 
@@ -287,7 +287,7 @@ export class RealtimeNotificationHandler {
    * 处理客户端连接
    */
   handleClientConnect(ws: any, clientId: string): void {
-    this.logger.info(`客户端连接: ${clientId}`);
+    this.logger.debug(`客户端连接: ${clientId}`);
     this.notificationService.registerClient(clientId, ws);
   }
 }

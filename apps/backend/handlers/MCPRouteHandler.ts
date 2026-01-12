@@ -529,7 +529,7 @@ export class MCPRouteHandler {
         c.req.header("x-real-ip") ||
         "unknown";
 
-      this.logger.info(`SSE 客户端连接: ${clientId} (会话: ${sessionId})`, {
+      this.logger.debug(`SSE 客户端连接: ${clientId} (会话: ${sessionId})`, {
         userAgent: userAgent,
         remoteAddress: remoteAddress,
       });
