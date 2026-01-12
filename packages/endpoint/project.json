@@ -1,0 +1,48 @@
+{
+  "name": "endpoint",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/endpoint/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsup",
+        "cwd": "packages/endpoint"
+      },
+      "outputs": ["{workspaceRoot}/packages/endpoint/dist"],
+      "dependsOn": ["mcp-core:build", "config:build"]
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run --coverage.enabled=false",
+        "cwd": "packages/endpoint"
+      },
+      "outputs": ["{workspaceRoot}/coverage"]
+    },
+    "test:coverage": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run --coverage",
+        "cwd": "packages/endpoint"
+      },
+      "outputs": ["{workspaceRoot}/coverage"]
+    },
+    "type-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "packages/endpoint"
+      }
+    },
+    "nx-release-publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm publish --access public --no-git-checks",
+        "cwd": "packages/endpoint"
+      }
+    }
+  },
+  "tags": ["type:lib", "scope:endpoint"]
+}

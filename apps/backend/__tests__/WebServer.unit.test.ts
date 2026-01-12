@@ -29,9 +29,17 @@ vi.mock("@/lib/endpoint/connection.js", () => ({
 }));
 
 vi.mock("@/lib/endpoint/index.js", () => ({
+  Endpoint: vi.fn().mockImplementation((endpointUrl: string, config: any) => ({
+    endpoint: endpointUrl,
+    config,
+    connect: vi.fn().mockResolvedValue(undefined),
+    disconnect: vi.fn().mockResolvedValue(undefined),
+    setServiceManager: vi.fn(),
+  })),
   EndpointManager: vi.fn().mockImplementation(() => ({
     initialize: vi.fn().mockResolvedValue(undefined),
     connect: vi.fn().mockResolvedValue(undefined),
+    addEndpoint: vi.fn(),
     setServiceManager: vi.fn(),
     getConnectionStatus: vi.fn().mockReturnValue([]),
     on: vi.fn(),
@@ -147,33 +155,15 @@ describe("WebServer Unit Tests", () => {
     });
 
     it("should handle single-endpoint fallback", async () => {
-      // Mock EndpointConnection
-      const mockEndpointConnection = {
-        endpoint: "wss://test.example.com",
-        isConnected: false,
-        getStatus: vi.fn().mockReturnValue({
-          connected: false,
-          initialized: false,
-          url: "wss://test.example.com",
-          availableTools: 0,
-          connectionState: "disconnected",
-          reconnectAttempts: 0,
-          lastError: null,
-        }),
-      } as any;
-
-      // 设置 fallback 服务器
-      webServer.endpointConnection = mockEndpointConnection;
-
       // 清空连接管理器（不设置，让它为 undefined）
       (webServer as any).endpointManager = undefined;
 
       const connectionStatus = webServer.getEndpointConnectionStatus();
 
+      // 新实现中，当 endpointManager 为 undefined 时返回 none 状态
       expect(connectionStatus).toMatchObject({
-        type: "single-endpoint",
-        connected: true, // 注意：endpointConnection 存在时总是返回 connected: true
-        endpoint: "unknown", // 注意：返回的是 "unknown"，不是实际 endpoint
+        type: "none",
+        connected: false,
       });
     });
   });
@@ -214,6 +204,7 @@ describe("WebServer Unit Tests", () => {
       mockConnectionManager = {
         initialize: vi.fn().mockResolvedValue(undefined),
         connect: vi.fn().mockResolvedValue(undefined),
+        addEndpoint: vi.fn(),
         setServiceManager: vi.fn(),
         getConnectionStatus: vi.fn().mockReturnValue([]),
         on: vi.fn(),
@@ -239,19 +230,13 @@ describe("WebServer Unit Tests", () => {
       // 调用被测试的方法
       await (webServer as any).initializeXiaozhiConnection(
         "wss://test.example.com",
-        []
+        {}
       );
 
-      // 验证服务管理器已设置
-      expect(mockConnectionManager.setServiceManager).toHaveBeenCalledWith(
-        mockServiceManager
-      );
+      // 验证端点被添加到连接管理器
+      expect(mockConnectionManager.addEndpoint).toHaveBeenCalled();
 
-      // 验证连接管理器被初始化
-      expect(mockConnectionManager.initialize).toHaveBeenCalledWith(
-        ["wss://test.example.com"],
-        []
-      );
+      // 验证连接管理器被连接
       expect(mockConnectionManager.connect).toHaveBeenCalled();
     });
 
@@ -263,15 +248,12 @@ describe("WebServer Unit Tests", () => {
       webServer.mcpServiceManager = mockServiceManager;
 
       // 调用被测试的方法 - 空配置
-      await (webServer as any).initializeXiaozhiConnection("", []);
+      await (webServer as any).initializeXiaozhiConnection("", {});
 
-      // 验证服务管理器已设置
-      expect(mockConnectionManager.setServiceManager).toHaveBeenCalledWith(
-        mockServiceManager
-      );
+      // 验证没有端点被添加（因为配置为空）
+      expect(mockConnectionManager.addEndpoint).not.toHaveBeenCalled();
 
-      // 验证连接管理器被初始化为空管理器
-      expect(mockConnectionManager.initialize).toHaveBeenCalledWith([], []);
+      // 验证连接管理器没有被连接（因为没有有效端点）
       expect(mockConnectionManager.connect).not.toHaveBeenCalled();
     });
 
@@ -284,16 +266,13 @@ describe("WebServer Unit Tests", () => {
       // 调用被测试的方法 - 无效端点
       await (webServer as any).initializeXiaozhiConnection(
         ["<请填写小智接入点>", ""],
-        []
+        {}
       );
 
-      // 验证服务管理器已设置
-      expect(mockConnectionManager.setServiceManager).toHaveBeenCalledWith(
-        mockServiceManager
-      );
+      // 验证没有端点被添加（因为配置无效）
+      expect(mockConnectionManager.addEndpoint).not.toHaveBeenCalled();
 
-      // 验证连接管理器被初始化为空管理器
-      expect(mockConnectionManager.initialize).toHaveBeenCalledWith([], []);
+      // 验证连接管理器没有被连接（因为没有有效端点）
       expect(mockConnectionManager.connect).not.toHaveBeenCalled();
     });
   });

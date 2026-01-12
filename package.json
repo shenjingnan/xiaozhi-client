@@ -1,6 +1,6 @@
 {
   "name": "xiaozhi-client",
-  "version": "1.9.5",
+  "version": "1.9.6",
   "description": "小智 AI 客户端 命令行工具",
   "repository": {
     "type": "git",
@@ -57,6 +57,8 @@
     "@hono/node-server": "^1.17.1",
     "@modelcontextprotocol/sdk": "^1.24.0",
     "@xiaozhi-client/config": "workspace:*",
+    "@xiaozhi-client/endpoint": "workspace:*",
+    "@xiaozhi-client/mcp-core": "workspace:*",
     "ajv": "^8.17.1",
     "chalk": "^5.6.0",
     "cli-table3": "^0.6.5",

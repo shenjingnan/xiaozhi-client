@@ -1,0 +1,55 @@
+{
+  "name": "@xiaozhi-client/endpoint",
+  "version": "1.9.7-beta.3",
+  "description": "小智接入点 WebSocket 连接管理库",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shenjingnan/xiaozhi-client.git",
+    "directory": "packages/shared-types"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ws": "^8.14.2",
+    "@xiaozhi-client/mcp-core": "workspace:*",
+    "@xiaozhi-client/config": "workspace:*"
+  },
+  "peerDependencies": {
+    "@modelcontextprotocol/sdk": "^1.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@types/ws": "^8.5.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.9.2",
+    "vitest": "^3.0.5"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "xiaozhi",
+    "endpoint",
+    "websocket",
+    "mcp",
+    "connection-manager"
+  ],
+  "author": "xiaozhi-client",
+  "license": "MIT"
+}

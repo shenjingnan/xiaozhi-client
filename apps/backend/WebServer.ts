@@ -1,11 +1,7 @@
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
-import type { EndpointConnection } from "@/lib/endpoint/connection.js";
-import { EndpointManager } from "@/lib/endpoint/index.js";
-import type {
-  EndpointConfigChangeEvent,
-  SimpleConnectionStatus,
-} from "@/lib/endpoint/index.js";
+import { Endpoint, EndpointManager } from "@/lib/endpoint/index.js";
+import type { SimpleConnectionStatus } from "@/lib/endpoint/index.js";
 import { MCPServiceManager } from "@/lib/mcp";
 import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
@@ -135,7 +131,6 @@ export class WebServer {
   private routeManager?: RouteManager;
 
   // 连接管理相关属性
-  private endpointConnection: EndpointConnection | undefined;
   private endpointManager: EndpointManager | null = null;
   private mcpServiceManager: MCPServiceManager | null = null; // WebServer 直接管理的实例
 
@@ -231,8 +226,11 @@ export class WebServer {
         inputSchema: ensureToolJSONSchema(tool.inputSchema),
       }));
 
-      // 6. 初始化小智接入点连接
-      await this.initializeXiaozhiConnection(config.mcpEndpoint, tools);
+      // 6. 初始化小智接入点连接（传入 mcpServers 配置而非 tools）
+      await this.initializeXiaozhiConnection(
+        config.mcpEndpoint,
+        config.mcpServers
+      );
 
       this.logger.debug("所有连接初始化完成");
     } catch (error) {
@@ -300,11 +298,11 @@ export class WebServer {
   }
 
   /**
-   * 初始化小智接入点连接
+   * 初始化小智接入点连接（使用新 API）
    */
   private async initializeXiaozhiConnection(
     mcpEndpoint: string | string[],
-    tools: Tool[]
+    mcpServers: Record<string, MCPServerConfig>
   ): Promise<void> {
     // 处理多端点配置
     const endpoints = Array.isArray(mcpEndpoint) ? mcpEndpoint : [mcpEndpoint];
@@ -320,34 +318,44 @@ export class WebServer {
     try {
       // 创建连接管理器实例（总是创建）
       if (!this.endpointManager) {
-        this.endpointManager = new EndpointManager(configManager, {
-          connectionTimeout: 10000,
+        this.endpointManager = new EndpointManager({
+          defaultReconnectDelay: 2000,
         });
         this.logger.debug("✅ 新建连接管理器实例");
       }
 
-      // 设置 MCP 服务管理器
-      if (this.mcpServiceManager) {
-        this.endpointManager.setServiceManager(this.mcpServiceManager);
-      }
-
       this.logger.debug("✅ 连接管理器设置完成");
 
-      // 2. 只有在有有效端点时才进行连接和初始化
+      // 2. 只有在有有效端点时才创建并添加端点
       if (validEndpoints.length > 0) {
         this.logger.debug("有效端点列表:", validEndpoints);
 
-        // 初始化连接管理器（传入端点列表）
-        await this.endpointManager.initialize(validEndpoints, tools);
+        // 为每个端点创建独立的 Endpoint 实例（新 API）
+        for (const endpointUrl of validEndpoints) {
+          const endpoint = new Endpoint(endpointUrl, {
+            mcpServers,
+            reconnectDelay: 2000,
+          });
+          this.endpointManager.addEndpoint(endpoint);
+          this.logger.debug(`✅ 已添加端点: ${endpointUrl}`);
+        }
 
         // 连接所有端点
         await this.endpointManager.connect();
 
-        // 设置配置变更监听器
+        // 设置端点添加事件监听器
         this.endpointManager.on(
-          "configChange",
-          (event: EndpointConfigChangeEvent) => {
-            this.logger.debug(`小智连接配置变更: ${event.type}`, event.data);
+          "endpointAdded",
+          (event: { endpoint: string }) => {
+            this.logger.debug(`端点已添加: ${event.endpoint}`);
+          }
+        );
+
+        // 设置端点移除事件监听器
+        this.endpointManager.on(
+          "endpointRemoved",
+          (event: { endpoint: string }) => {
+            this.logger.debug(`端点已移除: ${event.endpoint}`);
           }
         );
 
@@ -355,8 +363,6 @@ export class WebServer {
           `小智接入点连接管理器初始化完成，管理 ${validEndpoints.length} 个端点`
         );
       } else {
-        // 即使没有端点，也需要调用 initialize 以完成内部设置
-        await this.endpointManager.initialize([], tools);
         this.logger.debug("小智接入点连接管理器初始化完成（无端点）");
       }
     } catch (error) {
@@ -426,24 +432,17 @@ export class WebServer {
    */
   getEndpointConnectionStatus(): XiaozhiConnectionStatusResponse {
     if (this.endpointManager) {
+      const connectionStatuses = this.endpointManager.getConnectionStatus();
       return {
         type: "multi-endpoint",
         manager: {
-          connectedConnections: this.endpointManager
-            .getConnectionStatus()
-            .filter((status) => status.connected).length,
-          totalConnections: this.endpointManager.getConnectionStatus().length,
+          connectedConnections: connectionStatuses.filter(
+            (status: SimpleConnectionStatus) => status.connected
+          ).length,
+          totalConnections: connectionStatuses.length,
           healthCheckStats: {}, // 简化后不再提供复杂的健康检查统计
         },
-        connections: this.endpointManager.getConnectionStatus(),
-      };
-    }
-
-    if (this.endpointConnection) {
-      return {
-        type: "single-endpoint",
-        connected: true,
-        endpoint: "unknown",
+        connections: connectionStatuses,
       };
     }
 
@@ -751,9 +750,6 @@ export class WebServer {
         }
       };
 
-      // 停止 MCP 客户端
-      this.endpointConnection?.disconnect();
-
       // 清理连接管理器和 MCPServiceManager
       (async () => {
         try {
@@ -836,9 +832,6 @@ export class WebServer {
 
     // 销毁事件总线
     destroyEventBus();
-
-    // 断开 MCP 连接
-    this.endpointConnection?.disconnect();
 
     this.logger.debug("WebServer 实例已销毁");
   }

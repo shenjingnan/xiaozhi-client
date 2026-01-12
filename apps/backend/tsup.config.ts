@@ -107,9 +107,12 @@ export default defineConfig({
     "ws",
     "@coze/api",
     "@modelcontextprotocol/*",
-    // @xiaozhi-client/config 包（运行时从 dist/config 读取）
+    // @xiaozhi-client 内部包（运行时从 dist 读取）
     "@xiaozhi-client/config",
     "@xiaozhi-client/config.js",
+    "@xiaozhi-client/endpoint",
+    "@xiaozhi-client/mcp-core",
+    "@xiaozhi-client/shared-types",
   ],
   onSuccess: async () => {
     // 复制配置文件到 dist/backend

@@ -55,6 +55,7 @@ import {
   Trash2,
   Zap,
 } from "lucide-react";
+import type React from "react";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -65,7 +66,10 @@ interface ArrayFieldProps {
   name: string;
   schema: any;
   form: any;
-  renderFormField: (fieldName: string, fieldSchema: any) => JSX.Element | null;
+  renderFormField: (
+    fieldName: string,
+    fieldSchema: any
+  ) => React.ReactElement | null;
 }
 
 const ArrayField = memo(function ArrayField({
@@ -191,7 +195,10 @@ interface ObjectFieldProps {
   name: string;
   schema: any;
   form: any;
-  renderFormField: (fieldName: string, fieldSchema: any) => JSX.Element | null;
+  renderFormField: (
+    fieldName: string,
+    fieldSchema: any
+  ) => React.ReactElement | null;
   getTypeBadge: (type: string) => string;
 }
 
@@ -290,7 +297,10 @@ const NoParamsMessage = memo(function NoParamsMessage() {
 interface FormRendererProps {
   tool: ToolDebugDialogProps["tool"];
   form: any;
-  renderFormField: (fieldName: string, fieldSchema: any) => JSX.Element | null;
+  renderFormField: (
+    fieldName: string,
+    fieldSchema: any
+  ) => React.ReactElement | null;
 }
 
 const FormRenderer = memo(function FormRenderer({
@@ -598,7 +608,7 @@ export function ToolDebugDialog({
       return colors[type] || "bg-gray-100 text-gray-800";
     };
 
-    return (fieldName: string, fieldSchema: any): JSX.Element | null => {
+    return (fieldName: string, fieldSchema: any): React.ReactElement | null => {
       switch (fieldSchema.type) {
         case "string":
           if (fieldSchema.enum) {

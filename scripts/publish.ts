@@ -128,8 +128,10 @@ function parseVersion(version: string): VersionInfo {
  * 发布顺序：按依赖关系排序
  * 1. shared-types (无依赖)
  * 2. config (无内部依赖)
- * 3. cli (依赖 config)
- * 4. xiaozhi-client (根包)
+ * 3. mcp-core (无内部依赖)
+ * 4. endpoint (无内部依赖)
+ * 5. cli (依赖 config)
+ * 6. xiaozhi-client (根包，依赖所有子包)
  *
  * @returns 包列表
  */
@@ -142,6 +144,14 @@ function getPackages(): PackageInfo[] {
     {
       name: "@xiaozhi-client/config",
       path: "packages/config",
+    },
+    {
+      name: "@xiaozhi-client/mcp-core",
+      path: "packages/mcp-core",
+    },
+    {
+      name: "@xiaozhi-client/endpoint",
+      path: "packages/endpoint",
     },
     {
       name: "@xiaozhi-client/cli",

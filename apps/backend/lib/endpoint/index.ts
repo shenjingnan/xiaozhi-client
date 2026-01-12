@@ -1,25 +1,74 @@
 /**
  * 小智接入点连接管理模块
  *
- * 此模块负责管理小智接入点的连接，包括：
- * - EndpointConnection: 单个 WebSocket 连接实现
- * - EndpointManager: 多个连接的管理器
+ * 此模块重新导出 @xiaozhi-client/endpoint 包
  */
 
-// 核心类导出
-export { EndpointConnection } from "./connection.js";
-export { EndpointManager } from "./manager.js";
+// =========================
+// 从独立包重新导出
+// =========================
 
+// 核心类导出（新 API）
+export {
+  Endpoint,
+  EndpointManager,
+  ToolCallErrorCode,
+  ToolCallError,
+} from "@xiaozhi-client/endpoint";
+
+// =========================
 // 类型导出
+// =========================
+
 export type {
-  IndependentConnectionOptions,
+  // 工具调用相关
+  ToolCallResult,
+  ToolCallParams,
+  ValidatedToolCallParams,
+  // 服务管理器接口
+  IMCPServiceManager,
+  // 连接状态相关
+  EndpointConnectionStatus,
+  ConnectionOptions,
+  // 管理器状态相关
   SimpleConnectionStatus,
   ConnectionStatus,
   ConfigChangeEvent as EndpointConfigChangeEvent,
-} from "./manager.js";
+  ReconnectResult,
+  // JSON Schema
+  JSONSchema,
+  // 新 API 配置类型
+  MCPServerConfig,
+  LocalMCPServerConfig,
+  SSEMCPServerConfig,
+  StreamableHTTPMCPServerConfig,
+  EndpointConfig,
+  EndpointManagerConfig,
+} from "@xiaozhi-client/endpoint";
 
+// =========================
 // 枚举导出
-export { XiaozhiConnectionState } from "./manager.js";
+// =========================
 
-// EndpointConnection 相关导出
-export { ToolCallErrorCode, ToolCallError } from "./connection.js";
+export { ConnectionState } from "@xiaozhi-client/endpoint";
+
+// =========================
+// 工具函数导出
+// =========================
+
+export {
+  sliceEndpoint,
+  validateToolCallParams,
+  isValidEndpointUrl,
+  deepMerge,
+  sleep,
+  formatErrorMessage,
+} from "@xiaozhi-client/endpoint";
+
+export { ensureToolJSONSchema } from "@xiaozhi-client/endpoint";
+
+// =========================
+// MCP 类型导出
+// =========================
+
+export type { MCPMessage, ExtendedMCPMessage } from "@xiaozhi-client/endpoint";

@@ -62,7 +62,7 @@
         "command": "tsc --project tsconfig.typecheck.json",
         "cwd": "apps/backend"
       },
-      "dependsOn": ["config:build"]
+      "dependsOn": ["config:build", "endpoint:build"]
     },
     "dev": {
       "executor": "nx:run-commands",
