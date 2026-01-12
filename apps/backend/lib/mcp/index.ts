@@ -7,15 +7,3 @@ export * from "./message.js";
 export * from "@/lib/mcp/cache.js";
 export * from "./custom.js";
 export * from "./log.js";
-// 选择性导出transports，避免重复的ConnectionState
-export {
-  TransportAdapter,
-  StdioAdapter,
-  WebSocketAdapter,
-  type MCPMessage,
-  type MCPResponse,
-  type MCPError,
-  type TransportConfig,
-  type StdioConfig,
-  type WebSocketConfig,
-} from "@/lib/mcp/transports/index.js";
