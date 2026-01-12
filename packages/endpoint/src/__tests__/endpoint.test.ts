@@ -4,7 +4,7 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { ConnectionState, ToolCallErrorCode, ToolCallError } from "../types.js";
+import { ConnectionState } from "../types.js";
 
 // Mock WebSocket
 vi.mock("ws", () => {
