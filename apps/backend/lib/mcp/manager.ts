@@ -9,6 +9,7 @@
 import { EventEmitter } from "node:events";
 import { MCPService } from "@/lib/mcp";
 import { MCPCacheManager } from "@/lib/mcp";
+import { ConnectionState } from "@/lib/mcp/types";
 import type {
   CustomMCPTool,
   EnhancedToolInfo,
@@ -29,8 +30,6 @@ import { configManager } from "@xiaozhi-client/config";
 import { CustomMCPHandler } from "./custom.js";
 import { ToolCallLogger } from "./log.js";
 import { MCPMessageHandler } from "./message.js";
-import { ConnectionState, type TransportAdapter } from "./transports/index.js";
-
 export class MCPServiceManager extends EventEmitter {
   private services: Map<string, MCPService> = new Map();
   private configs: Record<string, MCPServiceConfig> = {};
@@ -42,8 +41,6 @@ export class MCPServiceManager extends EventEmitter {
   private retryTimers: Map<string, NodeJS.Timeout> = new Map(); // 重试定时器
   private failedServices: Set<string> = new Set(); // 失败的服务集合
 
-  // 新增：传输适配器管理
-  private transportAdapters: Map<string, TransportAdapter> = new Map();
   private messageHandler: MCPMessageHandler;
 
   // 新增：服务器状态管理（从 UnifiedMCPServer 移入）
@@ -1553,116 +1550,6 @@ export class MCPServiceManager extends EventEmitter {
     };
   }
 
-  // ===== 传输适配器管理方法（从 UnifiedMCPServer 移入） =====
-
-  /**
-   * 注册传输适配器
-   * @param name 传输适配器名称
-   * @param adapter 传输适配器实例
-   */
-  public async registerTransport(
-    name: string,
-    adapter: TransportAdapter
-  ): Promise<void> {
-    if (this.transportAdapters.has(name)) {
-      throw new Error(`传输适配器 ${name} 已存在`);
-    }
-
-    console.info(`注册传输适配器: ${name}`);
-
-    try {
-      await adapter.initialize();
-      this.transportAdapters.set(name, adapter);
-
-      console.info(`传输适配器 ${name} 注册成功`);
-      this.emit("transportRegistered", { name, adapter });
-    } catch (error) {
-      console.error(`注册传输适配器 ${name} 失败`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * 启动所有传输适配器
-   *
-   * 改进的错误处理策略：
-   * - 单个适配器启动失败不会中断其他适配器的启动
-   * - 记录失败的适配器，但继续启动其他适配器
-   * - 如果所有适配器都失败，则抛出错误
-   * - 如果部分适配器成功，则记录警告但继续运行
-   */
-  public async startTransports(): Promise<void> {
-    console.info("启动所有传输适配器");
-
-    const successfulAdapters: string[] = [];
-    const failedAdapters: string[] = [];
-
-    for (const [name, adapter] of this.transportAdapters) {
-      try {
-        await adapter.start();
-        successfulAdapters.push(name);
-        console.info(`传输适配器 ${name} 启动成功`);
-      } catch (error) {
-        failedAdapters.push(name);
-        console.error(`传输适配器 ${name} 启动失败`, error);
-        // 不立即抛出错误，继续尝试启动其他适配器
-      }
-    }
-
-    // 评估启动结果
-    if (successfulAdapters.length === 0 && failedAdapters.length > 0) {
-      // 所有适配器都失败了
-      const errorMessage = `所有传输适配器启动失败，失败的适配器: ${failedAdapters.join(
-        ", "
-      )}`;
-      console.error(errorMessage);
-      throw new Error(errorMessage);
-    }
-
-    if (failedAdapters.length > 0) {
-      // 部分适配器失败
-      console.warn(
-        `部分传输适配器启动失败，成功: ${successfulAdapters.join(
-          ", "
-        )}, 失败: ${failedAdapters.join(", ")}`
-      );
-      // 继续运行，因为至少有一个适配器成功
-    }
-
-    console.info(
-      `传输适配器启动完成，成功: ${successfulAdapters.length}, 失败: ${failedAdapters.length}`
-    );
-  }
-
-  /**
-   * 停止所有传输适配器
-   */
-  public async stopTransports(): Promise<void> {
-    console.info("停止所有传输适配器");
-
-    try {
-      for (const [name, adapter] of this.transportAdapters) {
-        try {
-          await adapter.stop();
-          console.info(`传输适配器 ${name} 停止成功`);
-        } catch (error) {
-          console.error(`传输适配器 ${name} 停止失败`, error);
-        }
-      }
-    } catch (error) {
-      console.error("传输适配器停止失败", error);
-      throw error;
-    }
-  }
-
-  /**
-   * 获取所有传输适配器
-   * @returns 传输适配器映射表
-   */
-  public getTransportAdapters(): Map<string, TransportAdapter> {
-    return new Map(this.transportAdapters);
-  }
-
   /**
    * 获取消息处理器（供外部使用）
    * @returns 消息处理器实例
@@ -1672,7 +1559,7 @@ export class MCPServiceManager extends EventEmitter {
   }
 
   /**
-   * 启动管理器（包含服务和传输）
+   * 启动管理器
    */
   public async start(): Promise<void> {
     if (this.isRunning) {
@@ -1683,7 +1570,6 @@ export class MCPServiceManager extends EventEmitter {
 
     try {
       await this.startAllServices();
-      await this.startTransports();
       this.isRunning = true;
 
       console.info("MCP 服务管理器启动成功");
@@ -1705,7 +1591,6 @@ export class MCPServiceManager extends EventEmitter {
     console.info("停止 MCP 服务管理器");
 
     try {
-      await this.stopTransports();
       await this.stopAllServices();
       this.isRunning = false;
 
@@ -1743,15 +1628,6 @@ export class MCPServiceManager extends EventEmitter {
       }
     }
 
-    // 收集传输适配器连接
-    for (const [adapterName, adapter] of this.transportAdapters) {
-      connections.push({
-        id: adapter.getConnectionId(),
-        name: adapterName,
-        state: adapter.getState(),
-      });
-    }
-
     return connections;
   }
 
@@ -1775,7 +1651,6 @@ export class MCPServiceManager extends EventEmitter {
     return {
       isRunning: this.isRunning,
       serviceStatus,
-      transportCount: this.getTransportAdapters().size,
       activeConnections: this.getActiveConnectionCount(),
       config: this.config,
       // 便捷访问属性
