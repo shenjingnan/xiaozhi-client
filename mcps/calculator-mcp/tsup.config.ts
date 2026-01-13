@@ -15,9 +15,10 @@ export default defineConfig({
     options.banner = {
       js: "#!/usr/bin/env node",
     };
-    // 生产环境移除 console 和 debugger
+    // 生产环境移除无害日志调用，但保留 console.error 等错误日志
     if (process.env.NODE_ENV === "production") {
-      options.drop = ["console", "debugger"];
+      options.pure = [...(options.pure ?? []), "console.log", "console.debug"];
+      options.drop = ["debugger"];
     }
   },
 });
