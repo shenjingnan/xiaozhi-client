@@ -123,57 +123,154 @@ function parseVersion(version: string): VersionInfo {
 }
 
 /**
- * 获取要发布的包列表
+ * 从 Nx 获取项目的构建依赖关系
  *
- * 发布顺序：按依赖关系排序
- * 1. shared-types (无依赖)
- * 2. config (无内部依赖)
- * 3. mcp-core (无内部依赖)
- * 4. endpoint (无内部依赖)
- * 5. cli (依赖 config)
- * 6. xiaozhi-client (根包，依赖所有子包)
+ * @returns 项目名到依赖项目列表的映射
+ */
+async function getNxDependencies(): Promise<Map<string, string[]>> {
+  const { stdout } = await execaCommand("npx nx show projects --json", {
+    stdio: "pipe",
+  });
+  const projects: string[] = JSON.parse(stdout);
+
+  const deps = new Map<string, string[]>();
+  for (const project of projects) {
+    try {
+      const result = await execaCommand(
+        `npx nx show project ${project} --json`,
+        { stdio: "pipe" }
+      );
+      const data = JSON.parse(result.stdout);
+      const buildDeps: string[] = data?.targets?.build?.dependsOn || [];
+      // 提取项目名（去掉 :build 等后缀）
+      const depProjects = buildDeps
+        .map((d: string) => d.split(":")[0])
+        .filter((d: string) => d);
+      deps.set(project, depProjects);
+    } catch {
+      // 如果项目没有 build target 或无法获取信息，跳过
+      deps.set(project, []);
+    }
+  }
+
+  return deps;
+}
+
+/**
+ * 拓扑排序：根据依赖关系对项目排序
+ *
+ * @param projects - 要排序的项目列表
+ * @param dependencies - 项目依赖关系映射
+ * @returns 排序后的项目列表
+ * @throws 当检测到循环依赖时抛出错误
+ */
+function topologicalSort(
+  projects: string[],
+  dependencies: Map<string, string[]>
+): string[] {
+  const sorted: string[] = [];
+  const visited = new Set<string>();
+  const visiting = new Set<string>();
+
+  function visit(project: string) {
+    if (visited.has(project)) return;
+    if (visiting.has(project)) {
+      throw new Error(`检测到循环依赖：${project}`);
+    }
+
+    visiting.add(project);
+    const deps = dependencies.get(project) || [];
+    for (const dep of deps) {
+      if (projects.includes(dep)) {
+        visit(dep);
+      }
+    }
+    visiting.delete(project);
+    visited.add(project);
+    sorted.push(project);
+  }
+
+  for (const project of projects) {
+    visit(project);
+  }
+
+  return sorted;
+}
+
+/**
+ * 获取要发布的包列表（自动按依赖关系排序）
+ *
+ * 该函数从 Nx 获取项目依赖关系，自动进行拓扑排序，
+ * 确保包按照正确的依赖顺序发布。
  *
  * @returns 包列表
  */
-function getPackages(): PackageInfo[] {
-  return [
-    // 核心包（按依赖顺序）
-    {
+async function getPackages(): Promise<PackageInfo[]> {
+  // Nx 管理的项目（需要发布到 npm 的项目）
+  const nxProjects = [
+    "shared-types",
+    "config",
+    "mcp-core",
+    "endpoint",
+    "calculator-mcp",
+    "datetime-mcp",
+    "cli",
+  ];
+
+  // 从 Nx 获取依赖关系
+  const dependencies = await getNxDependencies();
+
+  // 拓扑排序
+  const sortedProjects = topologicalSort(nxProjects, dependencies);
+
+  // 项目名到包信息的映射（使用 Map 避免 esbuild 对带连字符键的解析问题）
+  const projectToPackage = new Map<string, PackageInfo>([
+    ["shared-types", {
       name: "@xiaozhi-client/shared-types",
       path: "packages/shared-types",
-    },
-    {
+    }],
+    ["config", {
       name: "@xiaozhi-client/config",
       path: "packages/config",
-    },
-    {
+    }],
+    ["mcp-core", {
       name: "@xiaozhi-client/mcp-core",
       path: "packages/mcp-core",
-    },
-    {
+    }],
+    ["endpoint", {
       name: "@xiaozhi-client/endpoint",
       path: "packages/endpoint",
-    },
-    // MCP 服务（无内部依赖，可并行发布）
-    {
+    }],
+    ["calculator-mcp", {
       name: "@xiaozhi-client/calculator-mcp",
       path: "mcps/calculator-mcp",
-    },
-    {
+    }],
+    ["datetime-mcp", {
       name: "@xiaozhi-client/datetime-mcp",
       path: "mcps/datetime-mcp",
-    },
-    // CLI（依赖核心包）
-    {
+    }],
+    ["cli", {
       name: "@xiaozhi-client/cli",
       path: "packages/cli",
-    },
-    // 根包
-    {
-      name: "xiaozhi-client",
-      path: ".",
-    },
-  ];
+    }],
+  ]);
+
+  // 按排序后的顺序构建包列表
+  const packages: PackageInfo[] = [];
+  for (const project of sortedProjects) {
+    const pkgInfo = projectToPackage.get(project);
+    if (pkgInfo) {
+      packages.push(pkgInfo);
+    }
+  }
+
+  // 添加根包（最后发布，因为它依赖所有子包）
+  packages.push({
+    name: "xiaozhi-client",
+    path: ".",
+  });
+
+  return packages;
 }
 
 /**
@@ -334,7 +431,7 @@ async function publishPackage(
  * @param dryRun - 是否为预演模式
  */
 async function publishAllPackages(npmTag: string, dryRun: boolean): Promise<void> {
-  const packages = getPackages();
+  const packages = await getPackages();
 
   log("info", `📚 开始发布所有包 (标签: ${npmTag})`);
 
