@@ -52,13 +52,15 @@
     "skipLibCheck": true,
     "resolveJsonModule": true
   },
-  "include": ["apps/backend/**/*", "packages/**/*"],
+  "include": ["apps/backend/**/*", "packages/**/*", "mcps/**/*"],
   "exclude": ["node_modules", "dist", "scripts/**/*", "templates/**/*"],
   "references": [
     { "path": "./apps/backend" },
     { "path": "./packages/config" },
     { "path": "./packages/shared-types" },
     { "path": "./packages/cli" },
-    { "path": "./packages/endpoint" }
+    { "path": "./packages/endpoint" },
+    { "path": "./mcps/calculator-mcp" },
+    { "path": "./mcps/datetime-mcp" }
   ]
 }

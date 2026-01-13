@@ -137,6 +137,7 @@ function parseVersion(version: string): VersionInfo {
  */
 function getPackages(): PackageInfo[] {
   return [
+    // 核心包（按依赖顺序）
     {
       name: "@xiaozhi-client/shared-types",
       path: "packages/shared-types",
@@ -153,10 +154,21 @@ function getPackages(): PackageInfo[] {
       name: "@xiaozhi-client/endpoint",
       path: "packages/endpoint",
     },
+    // MCP 服务（无内部依赖，可并行发布）
+    {
+      name: "@xiaozhi-client/calculator-mcp",
+      path: "mcps/calculator-mcp",
+    },
+    {
+      name: "@xiaozhi-client/datetime-mcp",
+      path: "mcps/datetime-mcp",
+    },
+    // CLI（依赖核心包）
     {
       name: "@xiaozhi-client/cli",
       path: "packages/cli",
     },
+    // 根包
     {
       name: "xiaozhi-client",
       path: ".",

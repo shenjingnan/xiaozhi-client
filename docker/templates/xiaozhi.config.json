@@ -2,12 +2,12 @@
   "mcpEndpoint": "",
   "mcpServers": {
     "calculator": {
-      "command": "node",
-      "args": ["./mcpServers/calculator.js"]
+      "command": "npx",
+      "args": ["-y", "@xiaozhi-client/calculator-mcp"]
     },
     "datetime": {
-      "command": "node",
-      "args": ["./mcpServers/datetime.js"]
+      "command": "npx",
+      "args": ["-y", "@xiaozhi-client/datetime-mcp"]
     }
   },
   "connection": {

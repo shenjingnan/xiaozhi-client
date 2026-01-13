@@ -8,16 +8,16 @@
 
   // MCP 服务配置
   "mcpServers": {
-    // 计算器服务
+    // 计算器服务（使用 npm 包）
     "calculator": {
-      "command": "node",
-      "args": ["./mcpServers/calculator.js"]
+      "command": "npx",
+      "args": ["-y", "@xiaozhi-client/calculator-mcp"]
     },
 
-    // 日期时间服务
+    // 日期时间服务（使用 npm 包）
     "datetime": {
-      "command": "node",
-      "args": ["./mcpServers/datetime.js"]
+      "command": "npx",
+      "args": ["-y", "@xiaozhi-client/datetime-mcp"]
     }
   },
 

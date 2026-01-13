@@ -49,6 +49,7 @@ ksize
 lhost
 logid
 matplotlib
+mcps
 mcpserver
 modelcontextprotocol
 modelscope
