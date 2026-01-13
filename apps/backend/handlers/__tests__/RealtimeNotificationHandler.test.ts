@@ -965,7 +965,7 @@ describe("RealtimeNotificationHandler", () => {
     it("should handle client connection", () => {
       realtimeHandler.handleClientConnect(mockWebSocket, clientId);
 
-      expect(mockLogger.info).toHaveBeenCalledWith(`客户端连接: ${clientId}`);
+      expect(mockLogger.debug).toHaveBeenCalledWith(`客户端连接: ${clientId}`);
       expect(mockNotificationService.registerClient).toHaveBeenCalledWith(
         clientId,
         mockWebSocket
@@ -979,7 +979,7 @@ describe("RealtimeNotificationHandler", () => {
     it("should handle client disconnection", () => {
       realtimeHandler.handleClientDisconnect(clientId);
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         `客户端断开连接: ${clientId}`
       );
       expect(mockNotificationService.unregisterClient).toHaveBeenCalledWith(
