@@ -24,7 +24,9 @@
     "pnpm-lock.yaml",
     "CHANGELOG.md",
     "**/*.tsbuildinfo",
-    ".cspell/**"
+    ".cspell/**",
+    "xiaozhi.cache.json",
+    "tool-calls.jsonl"
   ],
   "ignoreWords": [],
   "flagWords": []
