@@ -21,6 +21,14 @@ const logger = {
   },
 };
 
+// 安全获取错误信息
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+}
+
 // 创建 MCP 服务器实例
 const server = new McpServer({
   name: "@xiaozhi-client/datetime-mcp",
@@ -72,14 +80,14 @@ server.tool(
         ],
       };
     } catch (error) {
-      logger.error(`获取当前时间错误：${error.message}`);
+      logger.error(`获取当前时间错误：${getErrorMessage(error)}`);
       return {
         content: [
           {
             type: "text",
             text: JSON.stringify({
               success: false,
-              error: error.message,
+              error: getErrorMessage(error),
             }),
           },
         ],
@@ -134,14 +142,14 @@ server.tool(
         ],
       };
     } catch (error) {
-      logger.error(`获取当前日期错误：${error.message}`);
+      logger.error(`获取当前日期错误：${getErrorMessage(error)}`);
       return {
         content: [
           {
             type: "text",
             text: JSON.stringify({
               success: false,
-              error: error.message,
+              error: getErrorMessage(error),
             }),
           },
         ],
@@ -233,14 +241,14 @@ server.tool(
         ],
       };
     } catch (error) {
-      logger.error(`格式化日期时间错误：${error.message}`);
+      logger.error(`格式化日期时间错误：${getErrorMessage(error)}`);
       return {
         content: [
           {
             type: "text",
             text: JSON.stringify({
               success: false,
-              error: error.message,
+              error: getErrorMessage(error),
             }),
           },
         ],
@@ -330,14 +338,14 @@ server.tool(
         ],
       };
     } catch (error) {
-      logger.error(`时间加减错误：${error.message}`);
+      logger.error(`时间加减错误：${getErrorMessage(error)}`);
       return {
         content: [
           {
             type: "text",
             text: JSON.stringify({
               success: false,
-              error: error.message,
+              error: getErrorMessage(error),
             }),
           },
         ],
@@ -355,7 +363,7 @@ async function main() {
 }
 
 main().catch((error) => {
-  logger.error(`启动服务失败：${error.message}`);
+  logger.error(`启动服务失败：${getErrorMessage(error)}`);
   process.exit(1);
 });
 

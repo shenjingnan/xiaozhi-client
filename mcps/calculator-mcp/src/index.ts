@@ -22,6 +22,14 @@ const logger = {
   },
 };
 
+// 安全获取错误信息
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+}
+
 // 创建 MCP 服务器实例
 const server = new McpServer({
   name: "@xiaozhi-client/calculator-mcp",
@@ -53,14 +61,14 @@ server.tool(
         ],
       };
     } catch (error) {
-      logger.error(`计算错误: ${error.message}`);
+      logger.error(`计算错误: ${getErrorMessage(error)}`);
       return {
         content: [
           {
             type: "text",
             text: JSON.stringify({
               success: false,
-              error: error.message,
+              error: getErrorMessage(error),
             }),
           },
         ],
@@ -78,7 +86,7 @@ async function main() {
 }
 
 main().catch((error) => {
-  logger.error(`启动服务失败: ${error.message}`);
+  logger.error(`启动服务失败: ${getErrorMessage(error)}`);
   process.exit(1);
 });
 
