@@ -279,7 +279,6 @@ export interface UnifiedServerConfig {
 export interface UnifiedServerStatus {
   isRunning: boolean;
   serviceStatus: ManagerStatus;
-  transportCount: number;
   activeConnections: number;
   config: UnifiedServerConfig;
   // 添加对 serviceStatus 的便捷访问属性
