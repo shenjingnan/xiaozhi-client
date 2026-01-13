@@ -1,0 +1,85 @@
+#!/usr/bin/env node
+
+/**
+ * MCP Calculator Server
+ * 提供数学计算功能的 MCP 服务
+ */
+
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
+
+// 日志工具
+const logger = {
+  info: (message: string) => {
+    const timestamp = new Date().toISOString();
+    console.error(`${timestamp} - Calculator - INFO - ${message}`);
+  },
+  error: (message: string) => {
+    const timestamp = new Date().toISOString();
+    console.error(`${timestamp} - Calculator - ERROR - ${message}`);
+  },
+};
+
+// 创建 MCP 服务器实例
+const server = new McpServer({
+  name: "@xiaozhi-client/calculator-mcp",
+  version: "1.0.0",
+});
+
+// 注册计算器工具
+server.tool(
+  "calculator",
+  "用于数学计算，计算 JavaScript 表达式的结果",
+  {
+    expression: z.string().describe("要计算的数学表达式"),
+  },
+  async ({ expression }) => {
+    try {
+      // 计算表达式
+      // 注意：生产环境可能需要更安全的计算方式
+      const result = eval(expression);
+      logger.info(`计算表达式: ${expression}, 结果: ${result}`);
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              success: true,
+              result,
+            }),
+          },
+        ],
+      };
+    } catch (error) {
+      logger.error(`计算错误: ${error.message}`);
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              success: false,
+              error: error.message,
+            }),
+          },
+        ],
+        isError: true,
+      };
+    }
+  }
+);
+
+// 启动服务器
+async function main() {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  logger.info("Calculator MCP 服务已启动");
+}
+
+main().catch((error) => {
+  logger.error(`启动服务失败: ${error.message}`);
+  process.exit(1);
+});
+
+export default server;

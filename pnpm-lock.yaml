@@ -463,6 +463,44 @@ importers:
         specifier: ^1.4.0
         version: 1.4.0
 
+  mcps/calculator-mcp:
+    dependencies:
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.0.4
+        version: 1.25.2(hono@4.10.4)(zod@3.25.76)
+      zod:
+        specifier: ^3.22.4
+        version: 3.25.76
+    devDependencies:
+      '@biomejs/biome':
+        specifier: ^1.5.0
+        version: 1.9.4
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.0(jiti@2.6.1)(postcss@8.5.6)(tsx@4.20.6)(typescript@5.9.3)(yaml@2.8.1)
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
+
+  mcps/datetime-mcp:
+    dependencies:
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.0.4
+        version: 1.25.2(hono@4.10.4)(zod@3.25.76)
+      zod:
+        specifier: ^3.22.4
+        version: 3.25.76
+    devDependencies:
+      '@biomejs/biome':
+        specifier: ^1.5.0
+        version: 1.9.4
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.0(jiti@2.6.1)(postcss@8.5.6)(tsx@4.20.6)(typescript@5.9.3)(yaml@2.8.1)
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
+
   packages/cli:
     dependencies:
       '@xiaozhi-client/config':

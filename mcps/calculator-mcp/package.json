@@ -1,0 +1,29 @@
+{
+  "name": "@xiaozhi-client/calculator-mcp",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "小智计算器 MCP 服务，提供数学计算功能",
+  "bin": {
+    "xiaozhi-calculator-mcp": "dist/index.js"
+  },
+  "files": ["dist", "README.md"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "type-check": "tsc --noEmit",
+    "lint": "biome check src/",
+    "lint:fix": "biome check --write src/"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.5.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0"
+  }
+}

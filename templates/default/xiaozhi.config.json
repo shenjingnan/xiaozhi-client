@@ -1,6 +1,15 @@
 {
   "mcpEndpoint": "",
-  "mcpServers": {},
+  "mcpServers": {
+    "calculator": {
+      "command": "npx",
+      "args": ["-y", "@xiaozhi-client/calculator-mcp"]
+    },
+    "datetime": {
+      "command": "npx",
+      "args": ["-y", "@xiaozhi-client/datetime-mcp"]
+    }
+  },
   "connection": {
     "heartbeatInterval": 30000,
     "heartbeatTimeout": 10000,
