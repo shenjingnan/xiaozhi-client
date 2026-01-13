@@ -52,7 +52,6 @@ server.tool(
         case "time-only":
           result = now.toLocaleTimeString();
           break;
-        case "iso":
         default:
           result = now.toISOString();
           break;
@@ -115,7 +114,6 @@ server.tool(
         case "yyyy-mm-dd":
           result = now.toISOString().split("T")[0];
           break;
-        case "iso":
         default:
           result = now.toISOString();
           break;
@@ -175,7 +173,7 @@ server.tool(
       let date: Date;
 
       // 尝试解析输入的日期时间
-      if (!isNaN(Number(datetime))) {
+      if (!Number.isNaN(Number(datetime))) {
         // 是时间戳
         date = new Date(Number(datetime));
       } else {
@@ -183,7 +181,7 @@ server.tool(
         date = new Date(datetime);
       }
 
-      if (isNaN(date.getTime())) {
+      if (Number.isNaN(date.getTime())) {
         throw new Error("无效的日期时间格式");
       }
 
@@ -212,7 +210,6 @@ server.tool(
             result = date.toISOString();
           }
           break;
-        case "iso":
         default:
           result = date.toISOString();
           break;
@@ -271,13 +268,13 @@ server.tool(
       let date: Date;
 
       // 尝试解析输入的日期时间
-      if (!isNaN(Number(datetime))) {
+      if (!Number.isNaN(Number(datetime))) {
         date = new Date(Number(datetime));
       } else {
         date = new Date(datetime);
       }
 
-      if (isNaN(date.getTime())) {
+      if (Number.isNaN(date.getTime())) {
         throw new Error("无效的日期时间格式");
       }
 

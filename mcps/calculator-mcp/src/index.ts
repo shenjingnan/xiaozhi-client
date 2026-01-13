@@ -7,6 +7,7 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { evaluate } from "mathjs";
 import { z } from "zod";
 
 // 日志工具
@@ -37,8 +38,7 @@ server.tool(
   async ({ expression }) => {
     try {
       // 计算表达式
-      // 注意：生产环境可能需要更安全的计算方式
-      const result = eval(expression);
+      const result = evaluate(expression);
       logger.info(`计算表达式: ${expression}, 结果: ${result}`);
 
       return {
