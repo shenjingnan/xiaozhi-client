@@ -15,5 +15,9 @@ export default defineConfig({
     options.banner = {
       js: "#!/usr/bin/env node",
     };
+    // 生产环境移除 console 和 debugger
+    if (process.env.NODE_ENV === "production") {
+      options.drop = ["console", "debugger"];
+    }
   },
 });
