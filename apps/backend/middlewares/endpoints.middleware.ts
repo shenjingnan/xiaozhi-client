@@ -3,9 +3,9 @@
  * 负责创建和管理 MCPEndpointApiHandler 实例
  */
 
-import type { EndpointManager } from "@/lib/endpoint/index.js";
 import { MCPEndpointApiHandler } from "@handlers/MCPEndpointApiHandler.js";
 import { configManager } from "@xiaozhi-client/config";
+import type { EndpointManager } from "@xiaozhi-client/endpoint";
 import type { MiddlewareHandler } from "hono";
 import type { AppContext } from "../types/hono.context.js";
 

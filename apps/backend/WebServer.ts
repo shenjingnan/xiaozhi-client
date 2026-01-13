@@ -1,7 +1,5 @@
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
-import { Endpoint, EndpointManager } from "@/lib/endpoint/index.js";
-import type { SimpleConnectionStatus } from "@/lib/endpoint/index.js";
 import { MCPServiceManager } from "@/lib/mcp";
 import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
@@ -46,6 +44,8 @@ import {
 import { convertLegacyToNew } from "@xiaozhi-client/config";
 import { configManager } from "@xiaozhi-client/config";
 import type { MCPServerConfig } from "@xiaozhi-client/config";
+import { Endpoint, EndpointManager } from "@xiaozhi-client/endpoint";
+import type { SimpleConnectionStatus } from "@xiaozhi-client/endpoint";
 import type { Hono } from "hono";
 import { WebSocketServer } from "ws";
 

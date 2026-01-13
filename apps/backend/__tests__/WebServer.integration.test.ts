@@ -1,5 +1,5 @@
-import { EndpointManager } from "@/lib/endpoint/index.js";
 import { configManager } from "@xiaozhi-client/config";
+import { EndpointManager } from "@xiaozhi-client/endpoint";
 import {
   afterAll,
   afterEach,
@@ -38,16 +38,13 @@ vi.mock("@xiaozhi-client/config", () => ({
   },
 }));
 
-vi.mock("@/lib/endpoint/connection.js", () => ({
+vi.mock("@xiaozhi-client/endpoint", () => ({
   EndpointConnection: vi.fn().mockImplementation((endpoint: string) => ({
     endpoint,
     connect: vi.fn().mockResolvedValue(undefined),
     disconnect: vi.fn(),
     setServiceManager: vi.fn(),
   })),
-}));
-
-vi.mock("@/lib/endpoint/index.js", () => ({
   EndpointManager: vi.fn().mockImplementation(() => ({
     initialize: vi.fn().mockResolvedValue(undefined),
     connect: vi.fn().mockResolvedValue(undefined),
@@ -138,7 +135,7 @@ describe("WebServer Integration Tests", () => {
   describe("连接管理器集成", () => {
     it("应该正确创建和管理连接管理器", async () => {
       // 临时取消 mock 以创建真实实例
-      vi.unmock("@/lib/endpoint/index.js");
+      vi.unmock("@xiaozhi-client/endpoint");
 
       // 创建一个新的 WebServer 实例
       const { WebServer } = await import("../WebServer.js");
@@ -162,7 +159,7 @@ describe("WebServer Integration Tests", () => {
         await realWebServer.stop();
       } finally {
         // 恢复 mock
-        vi.doMock("@/lib/endpoint/index.js", () => ({
+        vi.doMock("@xiaozhi-client/endpoint", () => ({
           EndpointManager: vi.fn().mockImplementation(() => ({
             initialize: vi.fn().mockResolvedValue(undefined),
             connect: vi.fn().mockResolvedValue(undefined),
@@ -237,7 +234,7 @@ describe("WebServer Integration Tests", () => {
   describe("错误处理", () => {
     it("应该处理连接管理器初始化失败", async () => {
       // Mock 初始化失败
-      vi.doMock("@/lib/endpoint/index.js", () => ({
+      vi.doMock("@xiaozhi-client/endpoint", () => ({
         EndpointManager: vi.fn().mockImplementation(() => {
           throw new Error("初始化失败");
         }),
