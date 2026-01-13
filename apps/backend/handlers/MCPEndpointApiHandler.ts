@@ -3,7 +3,10 @@ import { logger } from "@root/Logger.js";
 import type { EventBus } from "@services/EventBus.js";
 import { getEventBus } from "@services/EventBus.js";
 import type { ConfigManager } from "@xiaozhi-client/config";
-import type { ConnectionStatus, EndpointManager } from "@xiaozhi-client/endpoint";
+import type {
+  ConnectionStatus,
+  EndpointManager,
+} from "@xiaozhi-client/endpoint";
 import type { Context } from "hono";
 
 /**
