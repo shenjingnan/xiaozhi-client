@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * MCP DateTime Server
  * 提供日期时间功能的 MCP 服务

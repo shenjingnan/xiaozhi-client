@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * MCP Calculator Server
  * 提供数学计算功能的 MCP 服务
