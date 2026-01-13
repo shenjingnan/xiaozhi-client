@@ -1,5 +1,5 @@
 import { createServer } from "node:http";
-import { EndpointManager } from "@/lib/endpoint/index";
+import { EndpointManager } from "@xiaozhi-client/endpoint";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import WebSocket from "ws";
 import { WebServer } from "./WebServer";
@@ -315,7 +315,7 @@ vi.mock("./handlers/HeartbeatHandler", () => {
   };
 });
 
-vi.mock("@/lib/endpoint/index", () => ({
+vi.mock("@xiaozhi-client/endpoint", () => ({
   EndpointManager: vi.fn().mockImplementation(() => ({
     initialize: vi.fn().mockResolvedValue(undefined),
     connect: vi.fn().mockResolvedValue(undefined),
