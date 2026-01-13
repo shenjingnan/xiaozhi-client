@@ -162,7 +162,9 @@ server.tool(
     format: z
       .string()
       .optional()
-      .describe("输出格式：'iso'、'locale'、'timestamp'、'yyyy-mm-dd'、'custom'"),
+      .describe(
+        "输出格式：'iso'、'locale'、'timestamp'、'yyyy-mm-dd'、'custom'"
+      ),
     custom_format: z
       .string()
       .optional()
@@ -216,7 +218,9 @@ server.tool(
           break;
       }
 
-      logger.info(`格式化日期时间：${datetime} 为格式：${format}，结果：${result}`);
+      logger.info(
+        `格式化日期时间：${datetime} 为格式：${format}，结果：${result}`
+      );
 
       return {
         content: [
@@ -258,7 +262,9 @@ server.tool(
     amount: z.number().describe("要增加（正数）或减少（负数）的数量"),
     unit: z
       .string()
-      .describe("时间单位：'milliseconds'、'seconds'、'minutes'、'hours'、'days'、'weeks'、'months'、'years'"),
+      .describe(
+        "时间单位：'milliseconds'、'seconds'、'minutes'、'hours'、'days'、'weeks'、'months'、'years'"
+      ),
   },
   async ({ datetime, amount, unit }) => {
     try {
@@ -308,7 +314,9 @@ server.tool(
       }
 
       const result = newDate.toISOString();
-      logger.info(`在 ${datetime} 基础上增加 ${amount} ${unit}，结果：${result}`);
+      logger.info(
+        `在 ${datetime} 基础上增加 ${amount} ${unit}，结果：${result}`
+      );
 
       return {
         content: [
