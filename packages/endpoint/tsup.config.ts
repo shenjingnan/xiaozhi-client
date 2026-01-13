@@ -18,6 +18,13 @@ export default defineConfig({
   minify: false,
   keepNames: true,
   platform: "node",
+  esbuildOptions: (options) => {
+    // 在生产环境移除 console 和 debugger
+    if (process.env.NODE_ENV === "production") {
+      options.drop = ["console", "debugger"];
+    }
+    options.resolveExtensions = [".ts", ".js", ".json"];
+  },
   external: [
     // Node.js 内置模块
     "ws",

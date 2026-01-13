@@ -24,6 +24,11 @@ export default defineConfig({
   esbuildOptions: (options) => {
     options.resolveExtensions = [".ts", ".js", ".json"];
 
+    // 在生产环境移除 console 和 debugger
+    if (process.env.NODE_ENV === "production") {
+      options.drop = ["console", "debugger"];
+    }
+
     // 构建时注入版本号常量
     options.define = {
       ...options.define, // 保留已有的 define

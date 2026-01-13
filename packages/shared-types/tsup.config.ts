@@ -18,6 +18,13 @@ export default defineConfig({
   }, // 启用 DTS 生成
   clean: true,
   sourcemap: true,
-  minify: false,
+  minify: process.env.NODE_ENV === "production",
+  esbuildOptions: (options) => {
+    // 在生产环境移除 console 和 debugger
+    if (process.env.NODE_ENV === "production") {
+      options.drop = ["console", "debugger"];
+    }
+    options.resolveExtensions = [".ts", ".js", ".json"];
+  },
   external: [],
 });
