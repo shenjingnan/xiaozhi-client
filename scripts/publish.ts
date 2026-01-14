@@ -18,7 +18,7 @@
  * pnpm release:publish:dry --version 1.0.0-beta.0
  */
 
-import { execaCommand } from "execa";
+import { execa, execaCommand } from "execa";
 import { consola } from "consola";
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -128,27 +128,47 @@ function parseVersion(version: string): VersionInfo {
  * @returns 项目名到依赖项目列表的映射
  */
 async function getNxDependencies(): Promise<Map<string, string[]>> {
-  const { stdout } = await execaCommand("npx nx show projects --json", {
-    stdio: "pipe",
-  });
-  const projects: string[] = JSON.parse(stdout);
+  let projects: string[];
+  try {
+    const { stdout } = await execaCommand("npx nx show projects --json", {
+      stdio: "pipe",
+    });
+    projects = JSON.parse(stdout);
+  } catch (error) {
+    log(
+      "error",
+      "无法获取 Nx 项目列表，请确保 Nx 已正确安装、在当前项目中已配置，并且可以通过 `npx nx show projects --json` 正常执行。"
+    );
+
+    // 保留原始错误信息以便上层日志或调试使用
+    if (error instanceof Error && error.message) {
+      log("error", `Nx 命令错误详情: ${error.message}`);
+    }
+
+    throw new Error(
+      "获取 Nx 项目列表失败，发布流程无法继续，请修复 Nx 配置后重试。"
+    );
+  }
 
   const deps = new Map<string, string[]>();
   for (const project of projects) {
     try {
-      const result = await execaCommand(
-        `npx nx show project ${project} --json`,
-        { stdio: "pipe" }
-      );
+      const result = await execa("npx", ["nx", "show", "project", project, "--json"], {
+        stdio: "pipe",
+      });
       const data = JSON.parse(result.stdout);
       const buildDeps: string[] = data?.targets?.build?.dependsOn || [];
-      // 提取项目名（去掉 :build 等后缀）
+      // 提取项目名（去掉 :build 等后缀），只保留显式项目依赖，忽略 "^build" 等模式依赖
       const depProjects = buildDeps
         .map((d: string) => d.split(":")[0])
-        .filter((d: string) => d);
+        .filter((d: string) => d && !d.startsWith("^"));
       deps.set(project, depProjects);
-    } catch {
-      // 如果项目没有 build target 或无法获取信息，跳过
+    } catch (error) {
+      // 如果项目没有 build target 或无法获取信息，记录警告并将依赖视为空数组
+      log(
+        "warn",
+        `无法获取项目 ${project} 的构建依赖信息：${(error as Error).message ?? String(error)}`
+      );
       deps.set(project, []);
     }
   }
