@@ -18,10 +18,10 @@
  * pnpm release:publish:dry --version 1.0.0-beta.0
  */
 
-import { execaCommand } from "execa";
-import { consola } from "consola";
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { consola } from "consola";
+import { execa, execaCommand } from "execa";
 
 /**
  * 版本类型
@@ -123,57 +123,214 @@ function parseVersion(version: string): VersionInfo {
 }
 
 /**
- * 获取要发布的包列表
+ * 从 nx.json 读取发布项目列表
  *
- * 发布顺序：按依赖关系排序
- * 1. shared-types (无依赖)
- * 2. config (无内部依赖)
- * 3. mcp-core (无内部依赖)
- * 4. endpoint (无内部依赖)
- * 5. cli (依赖 config)
- * 6. xiaozhi-client (根包，依赖所有子包)
+ * @returns 发布项目名称列表
+ * @throws 当 nx.json 不存在或格式错误时抛出错误
+ */
+function getReleaseProjects(): string[] {
+  const nxConfigPath = resolve(process.cwd(), "nx.json");
+  const nxConfig = JSON.parse(readFileSync(nxConfigPath, "utf-8"));
+  const projects = nxConfig.release?.projects || [];
+
+  if (!Array.isArray(projects) || projects.length === 0) {
+    throw new Error("nx.json 中未配置 release.projects");
+  }
+
+  return projects;
+}
+
+/**
+ * 从 Nx 获取项目的发布信息
+ *
+ * @param projectName - Nx 项目名
+ * @returns 项目发布信息（包名和路径）
+ * @throws 当项目信息不完整或获取失败时抛出错误
+ */
+async function getProjectInfo(projectName: string): Promise<{
+  name: string; // npm 包名
+  path: string; // 发布路径
+}> {
+  try {
+    const result = await execa(
+      "npx",
+      ["nx", "show", "project", projectName, "--json"],
+      {
+        stdio: "pipe",
+      }
+    );
+
+    const data = JSON.parse(result.stdout);
+    const packageName = data?.metadata?.js?.packageName;
+    const root = data?.root;
+
+    if (!packageName || !root) {
+      throw new Error(`项目 ${projectName} 信息不完整`);
+    }
+
+    return { name: packageName, path: root };
+  } catch (error) {
+    throw new Error(
+      `获取项目 ${projectName} 信息失败: ${(error as Error).message}`
+    );
+  }
+}
+
+/**
+ * 从 Nx 获取项目的构建依赖关系
+ *
+ * @returns 项目名到依赖项目列表的映射
+ */
+async function getNxDependencies(): Promise<Map<string, string[]>> {
+  let projects: string[];
+  try {
+    const { stdout } = await execaCommand("npx nx show projects --json", {
+      stdio: "pipe",
+    });
+    projects = JSON.parse(stdout);
+  } catch (error) {
+    log(
+      "error",
+      "无法获取 Nx 项目列表，请确保 Nx 已正确安装、在当前项目中已配置，并且可以通过 `npx nx show projects --json` 正常执行。"
+    );
+
+    // 保留原始错误信息以便上层日志或调试使用
+    if (error instanceof Error && error.message) {
+      log("error", `Nx 命令错误详情: ${error.message}`);
+    }
+
+    throw new Error(
+      "获取 Nx 项目列表失败，发布流程无法继续，请修复 Nx 配置后重试。"
+    );
+  }
+
+  const deps = new Map<string, string[]>();
+  for (const project of projects) {
+    try {
+      const result = await execa(
+        "npx",
+        ["nx", "show", "project", project, "--json"],
+        {
+          stdio: "pipe",
+        }
+      );
+      const data = JSON.parse(result.stdout);
+      const buildDeps: string[] = data?.targets?.build?.dependsOn || [];
+      // 提取项目名（去掉 :build 等后缀），只保留显式项目依赖，忽略 "^build" 等模式依赖
+      const depProjects = buildDeps
+        .map((d: string) => d.split(":")[0])
+        .filter((d: string) => d && !d.startsWith("^"));
+      deps.set(project, depProjects);
+    } catch (error) {
+      // 如果项目没有 build target 或无法获取信息，记录警告并将依赖视为空数组
+      log(
+        "warn",
+        `无法获取项目 ${project} 的构建依赖信息：${(error as Error).message ?? String(error)}`
+      );
+      deps.set(project, []);
+    }
+  }
+
+  return deps;
+}
+
+/**
+ * 拓扑排序：根据依赖关系对项目排序
+ *
+ * @param projects - 要排序的项目列表
+ * @param dependencies - 项目依赖关系映射
+ * @returns 排序后的项目列表
+ * @throws 当检测到循环依赖时抛出错误
+ */
+function topologicalSort(
+  projects: string[],
+  dependencies: Map<string, string[]>
+): string[] {
+  const sorted: string[] = [];
+  const visited = new Set<string>();
+  const visiting = new Set<string>();
+
+  function visit(project: string) {
+    if (visited.has(project)) return;
+    if (visiting.has(project)) {
+      throw new Error(`检测到循环依赖：${project}`);
+    }
+
+    visiting.add(project);
+    const deps = dependencies.get(project) || [];
+    for (const dep of deps) {
+      if (projects.includes(dep)) {
+        visit(dep);
+      }
+    }
+    visiting.delete(project);
+    visited.add(project);
+    sorted.push(project);
+  }
+
+  for (const project of projects) {
+    visit(project);
+  }
+
+  return sorted;
+}
+
+/**
+ * 获取要发布的包列表（自动按依赖关系排序）
+ *
+ * 该函数从 nx.json 读取发布项目列表，使用 Nx API 获取项目信息，
+ * 自动进行拓扑排序，确保包按照正确的依赖顺序发布。
  *
  * @returns 包列表
  */
-function getPackages(): PackageInfo[] {
-  return [
-    // 核心包（按依赖顺序）
-    {
-      name: "@xiaozhi-client/shared-types",
-      path: "packages/shared-types",
-    },
-    {
-      name: "@xiaozhi-client/config",
-      path: "packages/config",
-    },
-    {
-      name: "@xiaozhi-client/mcp-core",
-      path: "packages/mcp-core",
-    },
-    {
-      name: "@xiaozhi-client/endpoint",
-      path: "packages/endpoint",
-    },
-    // MCP 服务（无内部依赖，可并行发布）
-    {
-      name: "@xiaozhi-client/calculator-mcp",
-      path: "mcps/calculator-mcp",
-    },
-    {
-      name: "@xiaozhi-client/datetime-mcp",
-      path: "mcps/datetime-mcp",
-    },
-    // CLI（依赖核心包）
-    {
-      name: "@xiaozhi-client/cli",
-      path: "packages/cli",
-    },
-    // 根包
-    {
-      name: "xiaozhi-client",
-      path: ".",
-    },
-  ];
+async function getPackages(): Promise<PackageInfo[]> {
+  // 1. 从 nx.json 读取发布项目列表
+  const releaseProjects = getReleaseProjects();
+  log("info", `📋 从 nx.json 读取到 ${releaseProjects.length} 个需要发布的包`);
+
+  // 2. 获取每个项目的详细信息（包名和路径）
+  const packageInfos: PackageInfo[] = [];
+  for (const project of releaseProjects) {
+    try {
+      const info = await getProjectInfo(project);
+      packageInfos.push({ name: info.name, path: info.path });
+      log("info", `  ✓ ${project} -> ${info.name}`);
+    } catch (error) {
+      log("error", (error as Error).message);
+      throw new Error(`无法获取项目 ${project} 的信息，发布流程无法继续`);
+    }
+  }
+
+  // 3. 构建项目名到包信息的映射（用于拓扑排序后的查找）
+  const projectToPackage = new Map<string, PackageInfo>();
+  for (let i = 0; i < releaseProjects.length; i++) {
+    projectToPackage.set(releaseProjects[i], packageInfos[i]);
+  }
+
+  // 4. 从 Nx 获取依赖关系
+  const dependencies = await getNxDependencies();
+
+  // 5. 拓扑排序
+  const sortedProjects = topologicalSort(releaseProjects, dependencies);
+
+  // 6. 按排序后的顺序构建包列表
+  const sortedPackages: PackageInfo[] = [];
+  for (const project of sortedProjects) {
+    const pkgInfo = projectToPackage.get(project);
+    if (pkgInfo) {
+      sortedPackages.push(pkgInfo);
+    }
+  }
+
+  // 7. 添加根包（最后发布，因为它依赖所有子包）
+  sortedPackages.push({
+    name: "xiaozhi-client",
+    path: ".",
+  });
+
+  log("info", `📦 已获取 ${sortedPackages.length} 个包的发布信息（包括根包）`);
+
+  return sortedPackages;
 }
 
 /**
@@ -194,9 +351,12 @@ async function runCommand(
   const { dryRun = false, extraEnv = {}, cwd } = options;
 
   if (dryRun) {
-    const envPrefix = Object.keys(extraEnv).length > 0
-      ? `${Object.entries(extraEnv).map(([k, v]) => `${k}=${v}`).join(" ")} `
-      : "";
+    const envPrefix =
+      Object.keys(extraEnv).length > 0
+        ? `${Object.entries(extraEnv)
+            .map(([k, v]) => `${k}=${v}`)
+            .join(" ")} `
+        : "";
     const cwdPrefix = cwd ? `(cd ${cwd}) ` : "";
     log("info", `[预演] ${cwdPrefix}${envPrefix}${command}`);
     return;
@@ -229,10 +389,7 @@ async function runCommand(
  * @param version - 目标版本号
  * @param dryRun - 是否为预演模式
  */
-async function updateVersion(
-  version: string,
-  dryRun: boolean
-): Promise<void> {
+async function updateVersion(version: string, dryRun: boolean): Promise<void> {
   log("info", `📦 使用 Nx Release 更新版本号为: ${version}`);
 
   // 使用 Nx Release 更新版本（自动处理所有包和依赖）
@@ -287,9 +444,12 @@ async function pushToRemote(dryRun: boolean): Promise<void> {
 
   try {
     // 获取当前分支
-    const { stdout: currentBranch } = await execaCommand("git branch --show-current", {
-      stdio: "pipe",
-    });
+    const { stdout: currentBranch } = await execaCommand(
+      "git branch --show-current",
+      {
+        stdio: "pipe",
+      }
+    );
     const branch = currentBranch.trim();
 
     // 推送提交和 tag
@@ -333,8 +493,11 @@ async function publishPackage(
  * @param npmTag - npm 标签
  * @param dryRun - 是否为预演模式
  */
-async function publishAllPackages(npmTag: string, dryRun: boolean): Promise<void> {
-  const packages = getPackages();
+async function publishAllPackages(
+  npmTag: string,
+  dryRun: boolean
+): Promise<void> {
+  const packages = await getPackages();
 
   log("info", `📚 开始发布所有包 (标签: ${npmTag})`);
 
@@ -356,7 +519,9 @@ function showSummary(versionInfo: VersionInfo, dryRun: boolean): void {
   console.log("📋 发布摘要");
   console.log("=".repeat(60));
   console.log(`版本号: ${versionInfo.original}`);
-  console.log(`版本类型: ${versionInfo.type === "release" ? "正式版" : "预发布版"}`);
+  console.log(
+    `版本类型: ${versionInfo.type === "release" ? "正式版" : "预发布版"}`
+  );
   console.log(`预发布标识: ${versionInfo.prereleaseId || "无"}`);
   console.log(`npm 标签: ${versionInfo.npmTag}`);
   console.log(`预演模式: ${dryRun ? "是" : "否"}`);
@@ -437,7 +602,10 @@ async function main(version: string, dryRun: boolean): Promise<void> {
     log("info", "💡 这是预演模式，未实际发布到 npm");
   }
   if (versionInfo.isRelease) {
-    log("info", "💡 正式版：CHANGELOG.md 由 Nx Release 自动更新，Git 提交和 tag 已推送到远程");
+    log(
+      "info",
+      "💡 正式版：CHANGELOG.md 由 Nx Release 自动更新，Git 提交和 tag 已推送到远程"
+    );
   }
   console.log(`${"=".repeat(60)}\n`);
 }

@@ -5,7 +5,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/shenjingnan/xiaozhi-client.git",
-    "directory": "packages/shared-types"
+    "directory": "packages/config"
   },
   "publishConfig": {
     "access": "public"
