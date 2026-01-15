@@ -5,9 +5,9 @@
   "type": "module",
   "description": "@xiaozhi-client/mcp-core 可运行示例",
   "scripts": {
-    "start": "tsx stdio.ts",
-    "start:http": "tsx streamable-http.ts",
-    "start:sse": "tsx sse.ts"
+    "connect:stdio": "tsx stdio.ts",
+    "connect:http": "tsx http.ts",
+    "connect:sse": "tsx sse.ts"
   },
   "dependencies": {
     "@xiaozhi-client/mcp-core": "workspace:*",

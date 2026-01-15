@@ -24,7 +24,7 @@ pnpm install
 连接到 stdio 类型的 MCP 服务（如 calculator-mcp）：
 
 ```bash
-pnpm start
+pnpm connect:stdio
 ```
 
 ### streamable-http 示例
@@ -32,7 +32,7 @@ pnpm start
 连接到 streamable-http 类型的 MCP 服务（如 ModelScope 托管的 12306-mcp）：
 
 ```bash
-pnpm start:streamable-http
+pnpm connect:http
 ```
 
 ### SSE 示例
@@ -40,7 +40,7 @@ pnpm start:streamable-http
 连接到 SSE 类型的 MCP 服务（如 ModelScope 托管的 12306-mcp）：
 
 ```bash
-pnpm start:sse
+pnpm connect:sse
 ```
 
 ## 代码说明
