@@ -24,9 +24,9 @@
     "dev": "tsup --watch",
     "test": "vitest",
     "type-check": "tsc --noEmit",
-    "example:single": "tsx examples/single-endpoint.ts",
-    "example:aggregation": "tsx examples/mcp-aggregation.ts",
-    "example:isolation": "tsx examples/endpoint-isolation.ts"
+    "start": "tsx examples/single-endpoint.ts",
+    "start:agg": "tsx examples/mcp-aggregation.ts",
+    "start:iso": "tsx examples/endpoint-isolation.ts"
   },
   "dependencies": {
     "ws": "^8.14.2",
