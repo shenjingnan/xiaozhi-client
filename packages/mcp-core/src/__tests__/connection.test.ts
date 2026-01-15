@@ -546,11 +546,6 @@ describe("MCPConnection", () => {
 
   describe("配置验证", () => {
     it("无效名称时应该抛出错误", () => {
-      const error = new Error("服务名称必须是非空字符串");
-      mockTransportFactory.validateConfig.mockImplementation(() => {
-        throw error;
-      });
-
       expect(() => new MCPConnection("", config, mockCallbacks)).toThrow(
         "服务名称必须是非空字符串"
       );
