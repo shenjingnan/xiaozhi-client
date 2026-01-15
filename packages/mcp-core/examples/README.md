@@ -35,6 +35,14 @@ pnpm start
 pnpm start:streamable-http
 ```
 
+### SSE 示例
+
+连接到 SSE 类型的 MCP 服务（如 ModelScope 托管的 12306-mcp）：
+
+```bash
+pnpm start:sse
+```
+
 ## 代码说明
 
 示例文件 `stdio.ts` 展示了如何使用 `MCPConnection` 连接到 stdio 类型的 MCP 服务：
@@ -146,6 +154,72 @@ const config = {
 **注意**: `type` 字段是可选的，MCPConnection 会根据 URL 自动推断传输类型：
 - URL 以 `/mcp` 结尾 → 自动识别为 `streamable-http` 类型
 - URL 以 `/sse` 结尾 → 自动识别为 `sse` 类型
+
+---
+
+## SSE 示例说明
+
+示例文件 `sse.ts` 展示了如何使用 `MCPConnection` 连接到 SSE 类型的 MCP 服务：
+
+### 1. 创建服务配置
+
+```typescript
+const config = {
+  name: "12306-mcp",                  // 服务名称
+  type: "sse" as const,               // 传输类型：sse
+  url: "https://mcp.api-inference.modelscope.net/ed2b195cc8f94d/sse", // 服务 URL
+};
+```
+
+### 2. 创建连接并建立连接
+
+```typescript
+const connection = new MCPConnection(config);
+await connection.connect();
+```
+
+### 3. 获取工具列表
+
+```typescript
+const tools = connection.getTools();
+```
+
+### 4. 调用工具
+
+```typescript
+const result = await connection.callTool("tool-name", {
+  // 工具参数
+});
+```
+
+### 5. 断开连接
+
+```typescript
+await connection.disconnect();
+```
+
+### 使用 ModelScope SSE 服务
+
+```typescript
+const config = {
+  name: "my-service",
+  url: "https://mcp.api-inference.modelscope.net/xxx/sse",
+  modelScopeAuth: true          // 启用 ModelScope 认证
+};
+```
+
+### 使用自定义请求头
+
+```typescript
+const config = {
+  name: "my-service",
+  url: "https://api.example.com/sse",
+  headers: {                    // 自定义请求头
+    "Authorization": "Bearer token",
+    "X-Custom-Header": "value"
+  }
+};
+```
 
 ---
 
