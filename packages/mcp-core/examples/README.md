@@ -43,6 +43,14 @@ pnpm connect:http
 pnpm connect:sse
 ```
 
+### 多服务管理示例
+
+使用 MCPManager 管理多个 stdio MCP 服务（calculator-mcp 和 datetime-mcp）：
+
+```bash
+pnpm connect:multi
+```
+
 ## 代码说明
 
 示例文件 `stdio.ts` 展示了如何使用 `MCPConnection` 连接到 stdio 类型的 MCP 服务：
@@ -83,6 +91,113 @@ const result = await connection.callTool("calculator", {
 
 ```typescript
 await connection.disconnect();
+```
+
+---
+
+## 多服务管理示例说明
+
+示例文件 `multi-manager.ts` 展示了如何使用 `MCPManager` 管理多个 MCP 服务：
+
+### 1. 创建管理器
+
+```typescript
+const manager = new MCPManager();
+```
+
+### 2. 添加多个服务
+
+```typescript
+// 添加计算器服务
+manager.addServer('calculator', {
+  type: 'stdio',
+  command: 'npx',
+  args: ['-y', '@xiaozhi-client/calculator-mcp']
+});
+
+// 添加日期时间服务
+manager.addServer('datetime', {
+  type: 'stdio',
+  command: 'npx',
+  args: ['-y', '@xiaozhi-client/datetime-mcp']
+});
+```
+
+### 3. 监听事件
+
+```typescript
+manager.on('connected', ({ serverName, tools }) => {
+  console.log(`✅ 服务 ${serverName} 已连接，发现 ${tools.length} 个工具`);
+});
+
+manager.on('error', ({ serverName, error }) => {
+  console.error(`❌ 服务 ${serverName} 出错:`, error.message);
+});
+```
+
+### 4. 连接所有服务
+
+```typescript
+await manager.connect();
+```
+
+### 5. 列出各服务的工具
+
+```typescript
+// 获取所有工具
+const allTools = manager.listTools();
+
+// 按服务分组
+const toolsByServer: Record<string, typeof allTools> = {};
+for (const tool of allTools) {
+  if (!toolsByServer[tool.serverName]) {
+    toolsByServer[tool.serverName] = [];
+  }
+  toolsByServer[tool.serverName].push(tool);
+}
+
+// 打印每个服务的工具
+for (const [serverName, tools] of Object.entries(toolsByServer)) {
+  console.log(`【${serverName}】`);
+  for (const tool of tools) {
+    console.log(`  - ${tool.name}: ${tool.description}`);
+  }
+}
+```
+
+### 6. 调用指定服务的工具
+
+```typescript
+// 调用 calculator 服务的工具
+const calcResult = await manager.callTool('calculator', 'calculator', {
+  expression: '12 * 3 + 4'
+});
+
+// 调用 datetime 服务的工具
+const timeResult = await manager.callTool('datetime', 'get_current_time', {
+  format: 'locale'
+});
+```
+
+### 7. 查询服务状态
+
+```typescript
+// 获取所有服务状态
+const allStatus = manager.getAllServerStatus();
+for (const [serverName, status] of Object.entries(allStatus)) {
+  console.log(`【${serverName}】`);
+  console.log(`  已连接: ${status.connected}`);
+  console.log(`  工具数: ${status.toolCount}`);
+}
+
+// 获取已连接的服务列表
+const connectedServers = manager.getConnectedServerNames();
+```
+
+### 8. 断开所有连接
+
+```typescript
+await manager.disconnect();
 ```
 
 ---
