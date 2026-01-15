@@ -17,8 +17,8 @@
  *
  * manager.addServer('my-service', {
  *   type: 'stdio',                       // 传输类型
- *   command: 'node',                     // 执行命令
- *   args: ['./my-mcp-server.js']         // 命令参数
+ *   command: 'npx',                     // 执行命令
+ *   args: ['-y', '@xiaozhi-client/my-mcp']         // 命令参数
  * });
  *
  * 或者使用 npx 安装远程 MCP 服务：
@@ -26,7 +26,7 @@
  * manager.addServer('my-service', {
  *   type: 'stdio',
  *   command: 'npx',
- *   args: ['-y', '@xiaozhi-client/my-mcp@1.0.0']  // -y 表示自动确认安装
+ *   args: ['-y', '@xiaozhi-client/my-mcp']  // -y 表示自动确认安装
  * });
  */
 
