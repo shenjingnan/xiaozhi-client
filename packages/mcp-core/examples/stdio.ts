@@ -1,65 +1,66 @@
 /**
- * 示例 01：基础连接
+ * stdio MCP 连接示例
  *
  * 功能说明：
- * - 展示如何使用 MCPConnection 连接到单个 MCP 服务
- * - 展示连接、获取工具列表、调用工具、断开连接的基本流程
- * - 展示事件回调的使用
+ * - 展示如何使用 MCPConnection 连接到 stdio 类型的 MCP 服务
+ * - 展示连接、获取工具列表、调用工具、断开连接的完整流程
  *
  * 运行方式：
  * ```bash
- * pnpm run example:01
+ * pnpm start
  * ```
  *
- * 依赖：
- * - @xiaozhi-client/calculator-mcp（通过 npx 自动安装）
+ * 如何修改为自己的 MCP 服务：
+ * 只需要修改 config 变量中的 command 和 args 参数即可。
+ * 例如，如果要使用自己的 MCP 服务，可以将配置改为：
+ *
+ * const config = {
+ *   name: "my-service",           // 服务名称
+ *   type: "stdio" as const,        // 传输类型，stdio 表示通过标准输入输出通信
+ *   command: "node",               // 执行命令
+ *   args: ["./my-mcp-server.js"]   // 命令参数
+ * };
+ *
+ * 或者使用 npx 安装远程 MCP 服务：
+ *
+ * const config = {
+ *   name: "my-service",
+ *   type: "stdio" as const,
+ *   command: "npx",
+ *   args: ["-y", "@xiaozhi-client/my-mcp@1.0.0"]  // -y 表示自动确认安装
+ * };
  */
 
-import { MCPConnection } from "@xiaozhi-client/mcp-core";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { MCPConnection, MCPTransportType } from "@xiaozhi-client/mcp-core";
 
 /**
  * 主函数
  */
 async function main(): Promise<void> {
-  console.log("=== 基础连接示例 ===\n");
+  console.log("=== stdio MCP 连接示例 ===\n");
 
   // 1. 创建服务配置
-  // 优先使用本地 MCP 服务（开发环境），否则使用 npx 安装
-  const useLocal = process.env.USE_LOCAL_MCP === "true";
-  const config = useLocal
-    ? {
-        name: "calculator",
-        type: "stdio" as const,
-        command: "node",
-        args: [join(__dirname, "../../../mcps/calculator-mcp/run.js")],
-      }
-    : {
-        name: "calculator",
-        type: "stdio" as const,
-        command: "npx",
-        args: ["-y", "@xiaozhi-client/calculator-mcp"],
-      };
+  // 这里使用 calculator-mcp 作为示例服务
+  const config = {
+    name: "calculator",
+    type: MCPTransportType.STDIO,
+    command: "npx",
+    args: ["-y", "@xiaozhi-client/calculator-mcp@1.9.7-beta.16"],
+  };
 
   console.log("配置信息:");
   console.log(`  服务名: ${config.name}`);
+  console.log(`  传输类型: ${config.type}`);
   console.log(`  命令: ${config.command}`);
   console.log(`  参数: ${config.args.join(" ")}`);
-  console.log(`  模式: ${useLocal ? "本地开发" : "npx 安装"}`);
   console.log();
 
   // 2. 创建连接实例
-  // 传入事件回调函数来监听连接状态变化
   const connection = new MCPConnection(config, {
     // 连接成功回调
     onConnected: (data) => {
       console.log(`✅ 服务 ${data.serviceName} 已连接`);
       console.log(`   发现 ${data.tools.length} 个工具`);
-      console.log(`   连接时间: ${data.connectionTime.toLocaleString()}`);
       console.log();
     },
 
@@ -67,7 +68,6 @@ async function main(): Promise<void> {
     onConnectionFailed: (data) => {
       console.error(`❌ 服务 ${data.serviceName} 连接失败`);
       console.error(`   错误: ${data.error.message}`);
-      console.error(`   尝试次数: ${data.attempt}`);
     },
 
     // 断开连接回调
@@ -84,15 +84,16 @@ async function main(): Promise<void> {
     console.log();
 
     await connection.connect();
-    console.log();
 
     // 4. 获取工具列表
     const tools = connection.getTools();
     console.log("可用工具:");
-    tools.forEach((tool) => {
+    for (const tool of tools) {
       console.log(`  - ${tool.name}`);
-      console.log(`    描述: ${tool.description}`);
-    });
+      if (tool.description) {
+        console.log(`    描述: ${tool.description}`);
+      }
+    }
     console.log();
 
     // 5. 调用工具

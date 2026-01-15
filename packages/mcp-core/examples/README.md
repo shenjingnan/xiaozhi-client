@@ -1,6 +1,6 @@
 # @xiaozhi-client/mcp-core 可运行示例
 
-本目录包含 `@xiaozhi-client/mcp-core` 包的可运行示例脚本，展示如何连接到 stdio MCP 服务并使用工具。
+本目录包含 `@xiaozhi-client/mcp-core` 包的可运行示例，展示如何连接到 stdio 类型的 MCP 服务并使用工具。
 
 ## 前置要求
 
@@ -19,71 +19,110 @@ pnpm install
 
 ## 运行示例
 
-### 使用 tsx 运行（推荐）
-
 ```bash
-# 示例 01：基础连接
-pnpm run example:01
-
-# 示例 02：计算器服务
-pnpm run example:02
-
-# 示例 03：日期时间服务
-pnpm run example:03
-
-# 示例 04：多服务聚合
-pnpm run example:04
+pnpm start
 ```
 
-## 示例说明
+## 代码说明
 
-| 文件 | 说明 | 难度 |
-|------|------|------|
-| `01-basic-connection.ts` | 最简单的单个服务连接示例，展示连接、获取工具、调用工具的基本流程 | ⭐ |
-| `02-calculator-demo.ts` | 完整的计算器服务示例，展示数学计算功能 | ⭐⭐ |
-| `03-datetime-demo.ts` | 完整的日期时间服务示例，展示时间格式化和计算功能 | ⭐⭐ |
-| `04-multi-service.ts` | 同时管理多个 MCP 服务，展示 MCPManager 的使用 | ⭐⭐⭐ |
+示例文件 `stdio.ts` 展示了如何使用 `MCPConnection` 连接到 stdio 类型的 MCP 服务：
 
-## 示例详情
+### 1. 创建服务配置
 
-### 01 - 基础连接
+```typescript
+const config = {
+  name: "calculator",                    // 服务名称
+  type: "stdio" as const,                 // 传输类型：stdio
+  command: "npx",                         // 执行命令
+  args: ["-y", "@xiaozhi-client/calculator-mcp@1.9.7-beta.16"], // 命令参数
+};
+```
 
-展示如何使用 `MCPConnection` 连接到单个 MCP 服务：
-- 创建连接配置
-- 建立连接并监听事件
-- 获取工具列表
-- 调用工具
-- 断开连接
+### 2. 创建连接并建立连接
 
-### 02 - 计算器服务
+```typescript
+const connection = new MCPConnection(config);
+await connection.connect();
+```
 
-展示 `calculator-mcp` 服务的完整使用：
-- 连接到计算器服务
-- 执行各种数学计算（加减乘除、三角函数、幂运算等）
-- 解析和显示计算结果
+### 3. 获取工具列表
 
-### 03 - 日期时间服务
+```typescript
+const tools = connection.getTools();
+```
 
-展示 `datetime-mcp` 服务的完整使用：
-- 连接到日期时间服务
-- 获取不同格式的时间
-- 执行日期计算（加天数、月份等）
-- 时间格式化
+### 4. 调用工具
 
-### 04 - 多服务聚合
+```typescript
+const result = await connection.callTool("calculator", {
+  expression: "1 + 1",
+});
+```
 
-展示使用 `MCPManager` 管理多个服务：
-- 同时连接多个 MCP 服务
-- 列出所有服务的工具
-- 跨服务调用工具
-- 服务状态监控
+### 5. 断开连接
+
+```typescript
+await connection.disconnect();
+```
+
+## 如何修改为自己的 MCP 服务
+
+只需要修改 `config` 变量即可：
+
+### 使用本地 MCP 服务
+
+```typescript
+const config = {
+  name: "my-service",           // 服务名称
+  type: "stdio" as const,        // 传输类型，stdio 表示通过标准输入输出通信
+  command: "node",               // 执行命令
+  args: ["./my-mcp-server.js"]   // 命令参数
+};
+```
+
+### 使用 npx 安装远程 MCP 服务
+
+```typescript
+const config = {
+  name: "my-service",
+  type: "stdio" as const,
+  command: "npx",
+  args: ["-y", "@xiaozhi-client/my-mcp@1.0.0"]  // -y 表示自动确认安装
+};
+```
+
+### 使用 Python MCP 服务
+
+```typescript
+const config = {
+  name: "my-python-service",
+  type: "stdio" as const,
+  command: "python",
+  args: ["./my-mcp-server.py"]
+};
+```
+
+### 使用带环境变量的 MCP 服务
+
+```typescript
+const config = {
+  name: "my-service",
+  type: "stdio" as const,
+  command: "node",
+  args: ["./my-mcp-server.js"],
+  env: {                           // 环境变量配置
+    API_KEY: "your-api-key",
+    DEBUG: "true"
+  }
+};
+```
 
 ## 注意事项
 
 - 示例脚本会通过 `npx` 启动 MCP 服务，确保网络连接正常
-- 首次运行时，npx 会自动下载 calculator-mcp 和 datetime-mcp 包
-- 某些示例可能需要几秒钟来启动服务
-- 所有示例都包含完整的错误处理和中文注释
+- 首次运行时，npx 会自动下载 calculator-mcp 包
+- 启动服务可能需要几秒钟
+- 示例包含完整的错误处理和中文注释
 
 ## 相关文档
 
