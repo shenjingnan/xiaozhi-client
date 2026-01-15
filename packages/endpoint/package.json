@@ -25,7 +25,8 @@
     "test": "vitest",
     "type-check": "tsc --noEmit",
     "start": "tsx examples/single-endpoint.ts",
-    "start:test": "tsx examples/single-endpoint-with-test.ts"
+    "start:test": "tsx examples/single-endpoint-with-test.ts",
+    "start:test2": "tsx examples/dual-mcp-aggregation.ts"
   },
   "dependencies": {
     "ws": "^8.14.2",
