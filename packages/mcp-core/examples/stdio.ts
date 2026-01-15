@@ -16,7 +16,7 @@
  *
  * const serviceName = "my-service";    // 服务名称
  * const config = {
- *   type: MCPTransportType.STDIO,      // 传输类型，stdio 表示通过标准输入输出通信
+ *   type: "stdio",      // 传输类型，stdio 表示通过标准输入输出通信
  *   command: "node",                   // 执行命令
  *   args: ["./my-mcp-server.js"]       // 命令参数
  * };
@@ -26,13 +26,13 @@
  *
  * const serviceName = "my-service";
  * const config = {
- *   type: MCPTransportType.STDIO,
+ *   type: "stdio",
  *   command: "npx",
  *   args: ["-y", "@xiaozhi-client/my-mcp@1.0.0"]  // -y 表示自动确认安装
  * };
  */
 
-import { MCPConnection, MCPTransportType } from "@xiaozhi-client/mcp-core";
+import { MCPConnection } from "@xiaozhi-client/mcp-core";
 
 /**
  * 主函数
@@ -40,43 +40,35 @@ import { MCPConnection, MCPTransportType } from "@xiaozhi-client/mcp-core";
 async function main(): Promise<void> {
   console.log("=== stdio MCP 连接示例 ===\n");
 
-  // 1. 创建服务配置
-  // 这里使用 calculator-mcp 作为示例服务
-  const serviceName = "calculator";
-  const config = {
-    type: MCPTransportType.STDIO,
-    command: "npx",
-    args: ["-y", "@xiaozhi-client/calculator-mcp"],
-  };
-
-  console.log("配置信息:");
-  console.log(`  服务名: ${serviceName}`);
-  console.log(`  传输类型: ${config.type}`);
-  console.log(`  命令: ${config.command}`);
-  console.log(`  参数: ${config.args.join(" ")}`);
-  console.log();
-
   // 2. 创建连接实例
-  const connection = new MCPConnection(serviceName, config, {
-    // 连接成功回调
-    onConnected: (data) => {
-      console.log(`✅ 服务 ${data.serviceName} 已连接`);
-      console.log(`   发现 ${data.tools.length} 个工具`);
-      console.log();
+  const connection = new MCPConnection(
+    "calculator",
+    {
+      type: "stdio",
+      command: "npx",
+      args: ["-y", "@xiaozhi-client/calculator-mcp"],
     },
+    {
+      // 连接成功回调
+      onConnected: (data) => {
+        console.log(`✅ 服务 ${data.serviceName} 已连接`);
+        console.log(`   发现 ${data.tools.length} 个工具`);
+        console.log();
+      },
 
-    // 连接失败回调
-    onConnectionFailed: (data) => {
-      console.error(`❌ 服务 ${data.serviceName} 连接失败`);
-      console.error(`   错误: ${data.error.message}`);
-    },
+      // 连接失败回调
+      onConnectionFailed: (data) => {
+        console.error(`❌ 服务 ${data.serviceName} 连接失败`);
+        console.error(`   错误: ${data.error.message}`);
+      },
 
-    // 断开连接回调
-    onDisconnected: (data) => {
-      console.log(`👋 服务 ${data.serviceName} 已断开`);
-      console.log(`   原因: ${data.reason || "正常关闭"}`);
-    },
-  });
+      // 断开连接回调
+      onDisconnected: (data) => {
+        console.log(`👋 服务 ${data.serviceName} 已断开`);
+        console.log(`   原因: ${data.reason || "正常关闭"}`);
+      },
+    }
+  );
 
   try {
     // 3. 建立连接

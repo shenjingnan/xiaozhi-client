@@ -17,7 +17,7 @@
  *
  * const serviceName = "my-service";            // 服务名称
  * const config = {
- *   type: MCPTransportType.SSE,                // 传输类型（可选，会根据 URL 自动推断）
+ *   type: "sse",                // 传输类型（可选，会根据 URL 自动推断）
  *   url: "https://my-api.com/sse"              // 服务 URL
  * };
  * const connection = new MCPConnection(serviceName, config);
@@ -42,7 +42,7 @@
  * };
  */
 
-import { MCPConnection, MCPTransportType } from "@xiaozhi-client/mcp-core";
+import { MCPConnection } from "@xiaozhi-client/mcp-core";
 
 /**
  * 主函数
@@ -50,21 +50,11 @@ import { MCPConnection, MCPTransportType } from "@xiaozhi-client/mcp-core";
 async function main(): Promise<void> {
   console.log("=== SSE MCP 连接示例 ===\n");
 
-  // 1. 创建服务配置
-  const serviceName = "12306-mcp";
-  const config = {
-    type: MCPTransportType.SSE,
+  // 1. 创建连接实例
+  const connection = new MCPConnection("12306-mcp", {
+    type: "sse",
     url: "https://mcp.api-inference.modelscope.net/ed2b195cc8f94d/sse",
-  };
-
-  console.log("配置信息:");
-  console.log(`  服务名: ${serviceName}`);
-  console.log(`  传输类型: ${config.type}`);
-  console.log(`  URL: ${config.url}`);
-  console.log();
-
-  // 2. 创建连接实例
-  const connection = new MCPConnection(serviceName, config, {
+  }, {
     // 连接成功回调
     onConnected: (data) => {
       console.log(`✅ 服务 ${data.serviceName} 已连接`);

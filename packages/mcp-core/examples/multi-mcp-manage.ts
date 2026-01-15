@@ -83,15 +83,15 @@ async function main(): Promise<void> {
   // });
   manager.addServer("calculator", {
     type: "stdio",
-    command: "node",
-    args: ["../../../mcps/calculator-mcp/run.js"],
+    command: "npx",
+    args: ["-y", "@xiaozhi-client/calculator-mcp"],
   });
 
   // 添加日期时间服务
   manager.addServer("datetime", {
     type: "stdio",
-    command: "node",
-    args: ["../../../mcps/datetime-mcp/run.js"],
+    command: "npx",
+    args: ["-y", "@xiaozhi-client/datetime-mcp"],
   });
 
   try {
