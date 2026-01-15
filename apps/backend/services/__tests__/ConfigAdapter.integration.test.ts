@@ -429,7 +429,6 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
         const serviceConfig = service.getConfig();
 
         // 验证配置完整性
-        expect(serviceConfig.name).toBe(serviceName);
         expect(serviceConfig.type).toBeDefined();
 
         // 验证类型一致性

@@ -133,7 +133,7 @@ export class InternalMCPManagerAdapter implements IMCPServiceManager {
   private convertToMCPServiceConfig(
     serviceName: string,
     config: MCPServerConfig
-  ): Omit<MCPServiceConfig, "name"> {
+  ): MCPServiceConfig {
     // 使用统一的转换函数，自动处理相对路径解析
     // convertLegacyToNew 会：
     // 1. 解析 command 中的相对路径（相对于配置文件目录）

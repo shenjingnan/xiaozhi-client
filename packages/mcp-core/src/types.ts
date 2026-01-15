@@ -31,6 +31,17 @@ export enum MCPTransportType {
   STREAMABLE_HTTP = "streamable-http",
 }
 
+/**
+ * 传输类型字符串字面量
+ * 方便外部用户直接使用字符串而不需要导入枚举
+ */
+export type MCPTransportTypeString = "stdio" | "sse" | "streamable-http";
+
+/**
+ * 传输类型输入值（枚举或字符串字面量）
+ */
+export type MCPTransportTypeInput = MCPTransportType | MCPTransportTypeString;
+
 // =========================
 // 1.1 事件回调接口
 // =========================
@@ -83,7 +94,7 @@ export interface ModelScopeSSEOptions {
  */
 export interface MCPServiceConfig {
   // name 字段已从配置中移除，应作为独立参数传递
-  type?: MCPTransportType; // 现在是可选的，支持自动推断
+  type?: MCPTransportTypeInput; // 支持枚举或字符串字面量，如 "stdio" | "sse" | "streamable-http"
   // stdio 配置
   command?: string;
   args?: string[];
