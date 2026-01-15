@@ -10,11 +10,9 @@ export default defineConfig({
   bundle: true,
   platform: "node",
   minify: process.env.NODE_ENV === "production",
-  // 保持 shebang
+  // ESM 模块不支持在文件开头添加 shebang
+  // 改为生成单独的可执行文件
   esbuildOptions: (options) => {
-    options.banner = {
-      js: "#!/usr/bin/env node",
-    };
     // 生产环境移除无害日志调用，但保留 console.error 等错误日志
     if (process.env.NODE_ENV === "production") {
       options.pure = [...(options.pure ?? []), "console.log", "console.debug"];

@@ -4,7 +4,7 @@
   "type": "module",
   "description": "小智计算器 MCP 服务，提供数学计算功能",
   "bin": {
-    "xiaozhi-calculator-mcp": "dist/index.js"
+    "xiaozhi-calculator-mcp": "run.js"
   },
   "repository": {
     "type": "git",

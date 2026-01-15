@@ -1,0 +1,21 @@
+{
+  "name": "@xiaozhi-client/mcp-core-examples",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "@xiaozhi-client/mcp-core 可运行示例",
+  "scripts": {
+    "example:01": "tsx 01-basic-connection.ts",
+    "example:02": "tsx 02-calculator-demo.ts",
+    "example:03": "tsx 03-datetime-demo.ts",
+    "example:04": "tsx 04-multi-service.ts",
+    "test:local": "USE_LOCAL_MCP=true tsx 01-basic-connection.ts"
+  },
+  "dependencies": {
+    "@xiaozhi-client/mcp-core": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.24.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
+  }
+}
