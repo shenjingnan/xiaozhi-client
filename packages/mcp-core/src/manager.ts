@@ -9,16 +9,6 @@ import type { MCPServiceConfig, ToolCallResult } from "./types.js";
 import { MCPTransportType } from "./types.js";
 
 /**
- * 用户友好的传输类型
- * 用于简化和标准化用户输入
- */
-type UserFriendlyTransportType =
-  | "stdio"
-  | "sse"
-  | "http"
-  | MCPTransportType;
-
-/**
  * MCP 服务管理器
  * 提供简洁的 API 来管理多个 MCP 服务
  *
@@ -79,9 +69,7 @@ export class MCPManager extends EventEmitter {
    */
   addServer(
     name: string,
-    config: Omit<MCPServiceConfig, "name"> & {
-      type?: UserFriendlyTransportType;
-    }
+    config: MCPServiceConfig
   ): void {
     if (this.configs.has(name)) {
       throw new Error(`服务 ${name} 已存在`);
@@ -299,7 +287,8 @@ export class MCPManager extends EventEmitter {
     string,
     { connected: boolean; toolCount: number }
   > {
-    const statuses: Record<string, { connected: boolean; toolCount: number }> = {};
+    const statuses: Record<string, { connected: boolean; toolCount: number }> =
+      {};
 
     for (const [serverName, connection] of this.connections) {
       const status = connection.getStatus();

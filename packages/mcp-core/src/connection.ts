@@ -11,7 +11,7 @@ import { inferTransportTypeFromConfig } from "./utils/index.js";
  */
 export class MCPConnection {
   private name: string; // 服务名称（独立字段）
-  private config: Omit<MCPServiceConfig, "name">; // 配置（不包含 name）
+  private config: MCPServiceConfig;
   private client: Client | null = null;
   private transport: MCPServerTransport | null = null;
   private tools: Map<string, Tool> = new Map();
@@ -307,11 +307,8 @@ export class MCPConnection {
   /**
    * 获取服务配置
    */
-  getConfig(): MCPServiceConfig & { name: string } {
-    return {
-      name: this.name,
-      ...this.config
-    };
+  getConfig(): MCPServiceConfig {
+    return this.config;
   }
 
   /**
