@@ -1,0 +1,19 @@
+{
+  "name": "@xiaozhi-client/mcp-core-examples",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "@xiaozhi-client/mcp-core 可运行示例",
+  "scripts": {
+    "connect:stdio": "tsx stdio.ts",
+    "connect:http": "tsx http.ts",
+    "connect:sse": "tsx sse.ts"
+  },
+  "dependencies": {
+    "@xiaozhi-client/mcp-core": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.24.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
+  }
+}

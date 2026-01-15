@@ -4,7 +4,7 @@
   "type": "module",
   "description": "小智日期时间 MCP 服务，提供日期时间处理功能",
   "bin": {
-    "xiaozhi-datetime-mcp": "dist/index.js"
+    "xiaozhi-datetime-mcp": "run.js"
   },
   "repository": {
     "type": "git",
