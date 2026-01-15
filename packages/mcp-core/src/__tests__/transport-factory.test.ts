@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { MCPTransportType } from "../types.js";
-import type { MCPServiceConfig } from "../types.js";
+import type { InternalMCPServiceConfig, MCPServiceConfig } from "../types.js";
 import { TransportFactory } from "../transport-factory.js";
 
 describe("TransportFactory", () => {
   describe("validateConfig", () => {
     it("应该验证 stdio 配置", () => {
-      const config: MCPServiceConfig = {
+      const config: InternalMCPServiceConfig = {
         name: "test-stdio",
         type: MCPTransportType.STDIO,
         command: "node",
@@ -17,7 +17,7 @@ describe("TransportFactory", () => {
     });
 
     it("应该验证 SSE 配置", () => {
-      const config: MCPServiceConfig = {
+      const config: InternalMCPServiceConfig = {
         name: "test-sse",
         type: MCPTransportType.SSE,
         url: "https://example.com/sse",
@@ -27,7 +27,7 @@ describe("TransportFactory", () => {
     });
 
     it("应该验证 streamable-http 配置", () => {
-      const config: MCPServiceConfig = {
+      const config: InternalMCPServiceConfig = {
         name: "test-http",
         type: MCPTransportType.STREAMABLE_HTTP,
         url: "https://example.com/mcp",
@@ -36,35 +36,12 @@ describe("TransportFactory", () => {
       expect(() => TransportFactory.validateConfig(config)).not.toThrow();
     });
 
-    it("无效名称时应该抛出错误", () => {
-      const config = {
-        name: "",
-        type: MCPTransportType.STDIO,
-        command: "node",
-      } as MCPServiceConfig;
-
-      expect(() => TransportFactory.validateConfig(config)).toThrow(
-        "配置必须包含有效的 name 字段"
-      );
-    });
-
-    it("名称不是字符串时应该抛出错误", () => {
-      const config = {
-        name: null as unknown as string,
-        type: MCPTransportType.STDIO,
-        command: "node",
-      } as MCPServiceConfig;
-
-      expect(() => TransportFactory.validateConfig(config)).toThrow(
-        "配置必须包含有效的 name 字段"
-      );
-    });
-
+    // name 验证已移至 MCPConnection 构造函数，不再在这里测试
     it("不支持的传输类型时应该抛出错误", () => {
-      const config = {
+      const config: InternalMCPServiceConfig = {
         name: "test",
         type: "unsupported" as MCPTransportType,
-      } as MCPServiceConfig;
+      };
 
       expect(() => TransportFactory.validateConfig(config)).toThrow(
         "不支持的传输类型"
@@ -72,9 +49,9 @@ describe("TransportFactory", () => {
     });
 
     it("缺少类型字段时应该抛出错误", () => {
-      const config = {
+      const config: InternalMCPServiceConfig = {
         name: "test",
-      } as MCPServiceConfig;
+      } as InternalMCPServiceConfig;
 
       expect(() => TransportFactory.validateConfig(config)).toThrow(
         "传输类型未设置"
@@ -82,7 +59,7 @@ describe("TransportFactory", () => {
     });
 
     it("stdio 类型缺少 command 时应该抛出错误", () => {
-      const config: MCPServiceConfig = {
+      const config: InternalMCPServiceConfig = {
         name: "test",
         type: MCPTransportType.STDIO,
       };
@@ -93,7 +70,7 @@ describe("TransportFactory", () => {
     });
 
     it("SSE 类型缺少 url 时应该抛出错误", () => {
-      const config: MCPServiceConfig = {
+      const config: InternalMCPServiceConfig = {
         name: "test",
         type: MCPTransportType.SSE,
       };
@@ -104,7 +81,7 @@ describe("TransportFactory", () => {
     });
 
     it("SSE 类型 url 为 null 时应该抛出错误", () => {
-      const config: MCPServiceConfig = {
+      const config: InternalMCPServiceConfig = {
         name: "test",
         type: MCPTransportType.SSE,
         url: null as unknown as string,
@@ -116,7 +93,7 @@ describe("TransportFactory", () => {
     });
 
     it("streamable-http 类型缺少 url 时应该抛出错误", () => {
-      const config: MCPServiceConfig = {
+      const config: InternalMCPServiceConfig = {
         name: "test",
         type: MCPTransportType.STREAMABLE_HTTP,
       };
@@ -127,7 +104,7 @@ describe("TransportFactory", () => {
     });
 
     it("应该接受带 apiKey 的配置", () => {
-      const config: MCPServiceConfig = {
+      const config: InternalMCPServiceConfig = {
         name: "test",
         type: MCPTransportType.SSE,
         url: "https://example.com/sse",
@@ -138,7 +115,7 @@ describe("TransportFactory", () => {
     });
 
     it("应该接受带 headers 的配置", () => {
-      const config: MCPServiceConfig = {
+      const config: InternalMCPServiceConfig = {
         name: "test",
         type: MCPTransportType.SSE,
         url: "https://example.com/sse",
@@ -149,7 +126,7 @@ describe("TransportFactory", () => {
     });
 
     it("应该接受带 env 的 stdio 配置", () => {
-      const config: MCPServiceConfig = {
+      const config: InternalMCPServiceConfig = {
         name: "test",
         type: MCPTransportType.STDIO,
         command: "node",
@@ -160,7 +137,7 @@ describe("TransportFactory", () => {
     });
 
     it("应该接受带 timeout 的配置", () => {
-      const config: MCPServiceConfig = {
+      const config: InternalMCPServiceConfig = {
         name: "test",
         type: MCPTransportType.SSE,
         url: "https://example.com/sse",
@@ -173,7 +150,7 @@ describe("TransportFactory", () => {
 
   describe("createTransport", () => {
     it("应该创建 stdio transport", () => {
-      const config: MCPServiceConfig = {
+      const config: InternalMCPServiceConfig = {
         name: "test-stdio",
         type: MCPTransportType.STDIO,
         command: "node",
@@ -187,7 +164,7 @@ describe("TransportFactory", () => {
     });
 
     it("应该创建 SSE transport", () => {
-      const config: MCPServiceConfig = {
+      const config: InternalMCPServiceConfig = {
         name: "test-sse",
         type: MCPTransportType.SSE,
         url: "https://example.com/sse",
@@ -199,7 +176,7 @@ describe("TransportFactory", () => {
     });
 
     it("应该创建 streamable-http transport", () => {
-      const config: MCPServiceConfig = {
+      const config: InternalMCPServiceConfig = {
         name: "test-http",
         type: MCPTransportType.STREAMABLE_HTTP,
         url: "https://example.com/mcp",
@@ -211,7 +188,7 @@ describe("TransportFactory", () => {
     });
 
     it("stdio 缺少 command 时应该抛出错误", () => {
-      const config: MCPServiceConfig = {
+      const config: InternalMCPServiceConfig = {
         name: "test",
         type: MCPTransportType.STDIO,
       };
@@ -222,7 +199,7 @@ describe("TransportFactory", () => {
     });
 
     it("SSE 缺少 url 时应该抛出错误", () => {
-      const config: MCPServiceConfig = {
+      const config: InternalMCPServiceConfig = {
         name: "test",
         type: MCPTransportType.SSE,
       };
@@ -233,7 +210,7 @@ describe("TransportFactory", () => {
     });
 
     it("streamable-http 缺少 url 时应该抛出错误", () => {
-      const config: MCPServiceConfig = {
+      const config: InternalMCPServiceConfig = {
         name: "test",
         type: MCPTransportType.STREAMABLE_HTTP,
       };
@@ -247,7 +224,7 @@ describe("TransportFactory", () => {
       const config = {
         name: "test",
         type: "unsupported" as MCPTransportType,
-      } as MCPServiceConfig;
+      } as InternalMCPServiceConfig;
 
       expect(() => TransportFactory.create(config)).toThrow(
         "不支持的传输类型"
@@ -277,7 +254,7 @@ describe("TransportFactory", () => {
 
   describe("配置选项验证", () => {
     it("应该接受空的 args 数组", () => {
-      const config: MCPServiceConfig = {
+      const config: InternalMCPServiceConfig = {
         name: "test",
         type: MCPTransportType.STDIO,
         command: "node",
@@ -288,7 +265,7 @@ describe("TransportFactory", () => {
     });
 
     it("应该接受可选的 retryAttempts 配置", () => {
-      const config: MCPServiceConfig = {
+      const config: InternalMCPServiceConfig = {
         name: "test",
         type: MCPTransportType.SSE,
         url: "https://example.com/sse",
@@ -299,7 +276,7 @@ describe("TransportFactory", () => {
     });
 
     it("应该接受 modelScopeAuth 配置", () => {
-      const config: MCPServiceConfig = {
+      const config: InternalMCPServiceConfig = {
         name: "test",
         type: MCPTransportType.SSE,
         url: "https://mcp.api-inference.modelscope.net/test/sse",
@@ -310,7 +287,7 @@ describe("TransportFactory", () => {
     });
 
     it("应该接受 customSSEOptions 配置", () => {
-      const config: MCPServiceConfig = {
+      const config: InternalMCPServiceConfig = {
         name: "test",
         type: MCPTransportType.SSE,
         url: "https://example.com/sse",

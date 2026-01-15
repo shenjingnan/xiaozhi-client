@@ -1,4 +1,4 @@
-import type { MCPServerTransport, MCPServiceConfig } from "./types.js";
+import type { InternalMCPServiceConfig, MCPServerTransport } from "./types.js";
 import { MCPTransportType } from "./types.js";
 import type { SSEClientTransportOptions } from "@modelcontextprotocol/sdk/client/sse.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
@@ -26,10 +26,10 @@ export interface Transport {
 
 /**
  * 创建 transport 实例
- * @param config MCP 服务配置
+ * @param config MCP 服务配置（包含 name）
  * @returns transport 实例
  */
-export function createTransport(config: MCPServiceConfig): MCPServerTransport {
+export function createTransport(config: InternalMCPServiceConfig): MCPServerTransport {
   console.debug(
     `[TransportFactory] 创建 ${config.type} transport for ${config.name}`
   );
@@ -52,7 +52,7 @@ export function createTransport(config: MCPServiceConfig): MCPServerTransport {
 /**
  * 创建 Stdio transport
  */
-function createStdioTransport(config: MCPServiceConfig): StdioClientTransport {
+function createStdioTransport(config: InternalMCPServiceConfig): StdioClientTransport {
   if (!config.command) {
     throw new Error("stdio transport 需要 command 配置");
   }
@@ -67,7 +67,7 @@ function createStdioTransport(config: MCPServiceConfig): StdioClientTransport {
 /**
  * 创建 SSE transport
  */
-function createSSETransport(config: MCPServiceConfig): SSEClientTransport {
+function createSSETransport(config: InternalMCPServiceConfig): SSEClientTransport {
   if (!config.url) {
     throw new Error("SSE transport 需要 URL 配置");
   }
@@ -79,7 +79,7 @@ function createSSETransport(config: MCPServiceConfig): SSEClientTransport {
 }
 
 function createStreamableHTTPTransport(
-  config: MCPServiceConfig
+  config: InternalMCPServiceConfig
 ): StreamableHTTPClientTransport {
   if (!config.url) {
     throw new Error("StreamableHTTP transport 需要 URL 配置");
@@ -93,7 +93,7 @@ function createStreamableHTTPTransport(
 /**
  * 创建 SSE 选项
  */
-function createSSEOptions(config: MCPServiceConfig): SSEClientTransportOptions {
+function createSSEOptions(config: InternalMCPServiceConfig): SSEClientTransportOptions {
   const options: SSEClientTransportOptions = {};
 
   // 添加认证头
@@ -114,7 +114,7 @@ function createSSEOptions(config: MCPServiceConfig): SSEClientTransportOptions {
 }
 
 function createStreamableHTTPOptions(
-  config: MCPServiceConfig
+  config: InternalMCPServiceConfig
 ): StreamableHTTPClientTransportOptions {
   const options: StreamableHTTPClientTransportOptions = {};
 
@@ -137,11 +137,11 @@ function createStreamableHTTPOptions(
 
 /**
  * 验证配置
+ * 注意：name 验证已在 MCPConnection 构造函数中进行
+ * @param config MCP 服务配置（包含 name）
  */
-export function validateConfig(config: MCPServiceConfig): void {
-  if (!config.name || typeof config.name !== "string") {
-    throw new Error("配置必须包含有效的 name 字段");
-  }
+export function validateConfig(config: InternalMCPServiceConfig): void {
+  // name 验证已移至 MCPConnection 构造函数
 
   // type 字段现在是可选的，由 MCPService 自动推断
   // 这里我们只验证如果 type 存在，必须是有效的类型

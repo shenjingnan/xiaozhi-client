@@ -11,21 +11,22 @@
  * ```
  *
  * 如何修改为自己的 MCP 服务：
- * 只需要修改 config 变量中的 command 和 args 参数即可。
+ * 只需要修改 serviceName 和 config 变量即可。
  * 例如，如果要使用自己的 MCP 服务，可以将配置改为：
  *
+ * const serviceName = "my-service";    // 服务名称
  * const config = {
- *   name: "my-service",           // 服务名称
- *   type: "stdio" as const,        // 传输类型，stdio 表示通过标准输入输出通信
- *   command: "node",               // 执行命令
- *   args: ["./my-mcp-server.js"]   // 命令参数
+ *   type: MCPTransportType.STDIO,      // 传输类型，stdio 表示通过标准输入输出通信
+ *   command: "node",                   // 执行命令
+ *   args: ["./my-mcp-server.js"]       // 命令参数
  * };
+ * const connection = new MCPConnection(serviceName, config);
  *
  * 或者使用 npx 安装远程 MCP 服务：
  *
+ * const serviceName = "my-service";
  * const config = {
- *   name: "my-service",
- *   type: "stdio" as const,
+ *   type: MCPTransportType.STDIO,
  *   command: "npx",
  *   args: ["-y", "@xiaozhi-client/my-mcp@1.0.0"]  // -y 表示自动确认安装
  * };
@@ -41,22 +42,22 @@ async function main(): Promise<void> {
 
   // 1. 创建服务配置
   // 这里使用 calculator-mcp 作为示例服务
+  const serviceName = "calculator";
   const config = {
-    name: "calculator",
     type: MCPTransportType.STDIO,
     command: "npx",
     args: ["-y", "@xiaozhi-client/calculator-mcp"],
   };
 
   console.log("配置信息:");
-  console.log(`  服务名: ${config.name}`);
+  console.log(`  服务名: ${serviceName}`);
   console.log(`  传输类型: ${config.type}`);
   console.log(`  命令: ${config.command}`);
   console.log(`  参数: ${config.args.join(" ")}`);
   console.log();
 
   // 2. 创建连接实例
-  const connection = new MCPConnection(config, {
+  const connection = new MCPConnection(serviceName, config, {
     // 连接成功回调
     onConnected: (data) => {
       console.log(`✅ 服务 ${data.serviceName} 已连接`);

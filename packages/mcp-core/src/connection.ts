@@ -10,7 +10,8 @@ import { inferTransportTypeFromConfig } from "./utils/index.js";
  * 负责管理单个 MCP 服务的连接、工具管理和调用
  */
 export class MCPConnection {
-  private config: MCPServiceConfig;
+  private name: string; // 服务名称（独立字段）
+  private config: Omit<MCPServiceConfig, "name">; // 配置（不包含 name）
   private client: Client | null = null;
   private transport: MCPServerTransport | null = null;
   private tools: Map<string, Tool> = new Map();
@@ -20,11 +21,13 @@ export class MCPConnection {
   private callbacks?: import("./types.js").MCPServiceEventCallbacks;
 
   constructor(
+    name: string,
     config: MCPServiceConfig,
     callbacks?: import("./types.js").MCPServiceEventCallbacks
   ) {
-    // 使用工具方法推断服务类型
-    this.config = inferTransportTypeFromConfig(config);
+    this.name = name;
+    // 使用工具方法推断服务类型（传递服务名称用于日志）
+    this.config = inferTransportTypeFromConfig(config, name);
     this.callbacks = callbacks;
 
     // 验证配置
@@ -35,8 +38,16 @@ export class MCPConnection {
    * 验证配置
    */
   private validateConfig(): void {
-    // 使用 TransportFactory 进行配置验证
-    TransportFactory.validateConfig(this.config);
+    // 验证服务名称
+    if (!this.name || typeof this.name !== "string") {
+      throw new Error("服务名称必须是非空字符串");
+    }
+    // 使用 TransportFactory 进行配置验证（传递包含 name 的完整配置）
+    const fullConfig: import("./types.js").InternalMCPServiceConfig = {
+      name: this.name,
+      ...this.config,
+    };
+    TransportFactory.validateConfig(fullConfig);
   }
 
   /**
@@ -60,7 +71,7 @@ export class MCPConnection {
   private async attemptConnection(): Promise<void> {
     this.connectionState = ConnectionState.CONNECTING;
     console.debug(
-      `[MCP-${this.config.name}] 正在连接 MCP 服务: ${this.config.name}`
+      `[MCP-${this.name}] 正在连接 MCP 服务: ${this.name}`
     );
 
     return new Promise((resolve, reject) => {
@@ -74,7 +85,7 @@ export class MCPConnection {
       try {
         this.client = new Client(
           {
-            name: `xiaozhi-${this.config.name}-client`,
+            name: `xiaozhi-${this.name}-client`,
             version: "1.0.0",
           },
           {
@@ -82,8 +93,12 @@ export class MCPConnection {
           }
         );
 
-        // 使用 TransportFactory 创建传输层
-        this.transport = TransportFactory.create(this.config);
+        // 使用 TransportFactory 创建传输层（传递包含 name 的完整配置）
+        const fullConfig: import("./types.js").InternalMCPServiceConfig = {
+          name: this.name,
+          ...this.config,
+        };
+        this.transport = TransportFactory.create(fullConfig);
 
         // 连接到 MCP 服务
         this.client
@@ -96,7 +111,7 @@ export class MCPConnection {
 
             // 发射连接成功事件
             this.callbacks?.onConnected?.({
-              serviceName: this.config.name,
+              serviceName: this.name,
               tools: this.getTools(),
               connectionTime: new Date(),
             });
@@ -128,7 +143,7 @@ export class MCPConnection {
     this.initialized = true;
 
     console.info(
-      `[MCP-${this.config.name}] MCP 服务 ${this.config.name} 连接已建立`
+      `[MCP-${this.name}] MCP 服务 ${this.name} 连接已建立`
     );
   }
 
@@ -139,7 +154,7 @@ export class MCPConnection {
     this.connectionState = ConnectionState.DISCONNECTED;
     this.initialized = false;
 
-    console.debug(`MCP 服务 ${this.config.name} 连接错误:`, error.message);
+    console.debug(`MCP 服务 ${this.name} 连接错误:`, error.message);
 
     // 清理连接超时定时器
     if (this.connectionTimeout) {
@@ -152,7 +167,7 @@ export class MCPConnection {
 
     // 发射连接失败事件
     this.callbacks?.onConnectionFailed?.({
-      serviceName: this.config.name,
+      serviceName: this.name,
       error,
       attempt: 0,
     });
@@ -208,13 +223,13 @@ export class MCPConnection {
       }
 
       console.debug(
-        `${this.config.name} 服务加载了 ${tools.length} 个工具: ${tools
+        `${this.name} 服务加载了 ${tools.length} 个工具: ${tools
           .map((t) => t.name)
           .join(", ")}`
       );
     } catch (error) {
       console.error(
-        `${this.config.name} 获取工具列表失败:`,
+        `${this.name} 获取工具列表失败:`,
         error instanceof Error ? error.message : String(error)
       );
       throw error;
@@ -225,7 +240,7 @@ export class MCPConnection {
    * 断开连接
    */
   async disconnect(): Promise<void> {
-    console.info(`主动断开 MCP 服务 ${this.config.name} 连接`);
+    console.info(`主动断开 MCP 服务 ${this.name} 连接`);
 
     // 清理连接资源
     this.cleanupConnection();
@@ -235,7 +250,7 @@ export class MCPConnection {
 
     // 发射断开连接事件
     this.callbacks?.onDisconnected?.({
-      serviceName: this.config.name,
+      serviceName: this.name,
       reason: "手动断开",
       disconnectionTime: new Date(),
     });
@@ -256,15 +271,15 @@ export class MCPConnection {
     arguments_: Record<string, unknown>
   ): Promise<ToolCallResult> {
     if (!this.client) {
-      throw new Error(`服务 ${this.config.name} 未连接`);
+      throw new Error(`服务 ${this.name} 未连接`);
     }
 
     if (!this.tools.has(name)) {
-      throw new Error(`工具 ${name} 在服务 ${this.config.name} 中不存在`);
+      throw new Error(`工具 ${name} 在服务 ${this.name} 中不存在`);
     }
 
     console.debug(
-      `调用 ${this.config.name} 服务的工具 ${name}，参数:`,
+      `调用 ${this.name} 服务的工具 ${name}，参数:`,
       JSON.stringify(arguments_)
     );
 
@@ -292,8 +307,11 @@ export class MCPConnection {
   /**
    * 获取服务配置
    */
-  getConfig(): MCPServiceConfig {
-    return this.config;
+  getConfig(): MCPServiceConfig & { name: string } {
+    return {
+      name: this.name,
+      ...this.config
+    };
   }
 
   /**
@@ -301,7 +319,7 @@ export class MCPConnection {
    */
   getStatus(): MCPServiceStatus {
     return {
-      name: this.config.name,
+      name: this.name,
       connected: this.connectionState === ConnectionState.CONNECTED,
       initialized: this.initialized,
       transportType: this.config.type || MCPTransportType.STREAMABLE_HTTP,

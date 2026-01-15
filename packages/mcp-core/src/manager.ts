@@ -87,26 +87,24 @@ export class MCPManager extends EventEmitter {
       throw new Error(`服务 ${name} 已存在`);
     }
 
-    const fullConfig: MCPServiceConfig = {
-      ...config,
-      name,
-    };
-
     // 标准化 type 字段 - 将用户友好的类型映射到实际的枚举值
+    const normalizedConfig: MCPServiceConfig = { ...config };
+
     if (config.type) {
       // 首先检查用户友好的字符串类型
       const typeStr = String(config.type);
       if (typeStr === "http") {
-        fullConfig.type = MCPTransportType.STREAMABLE_HTTP;
+        normalizedConfig.type = MCPTransportType.STREAMABLE_HTTP;
       } else if (typeStr === "sse") {
-        fullConfig.type = MCPTransportType.SSE;
+        normalizedConfig.type = MCPTransportType.SSE;
       } else {
         // 已经是枚举值或正确格式
-        fullConfig.type = config.type as MCPTransportType;
+        normalizedConfig.type = config.type as MCPTransportType;
       }
     }
 
-    this.configs.set(name, fullConfig);
+    // 存储 config（不包含 name，name 已作为 Map 的 key）
+    this.configs.set(name, normalizedConfig);
   }
 
   /**
@@ -132,7 +130,7 @@ export class MCPManager extends EventEmitter {
     const promises = Array.from(this.configs.entries()).map(
       async ([name, config]) => {
         try {
-          const connection = new MCPConnection(config, {
+          const connection = new MCPConnection(name, config, {
             onConnected: (data) => {
               this.emit("connected", {
                 serverName: data.serviceName,

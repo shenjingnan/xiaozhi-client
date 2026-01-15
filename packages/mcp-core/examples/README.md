@@ -50,10 +50,10 @@ pnpm connect:sse
 ### 1. 创建服务配置
 
 ```typescript
+const serviceName = "calculator";              // 服务名称
 const config = {
-  name: "calculator",                    // 服务名称
-  type: "stdio" as const,                 // 传输类型：stdio
-  command: "npx",                         // 执行命令
+  type: MCPTransportType.STDIO,                // 传输类型：stdio
+  command: "npx",                              // 执行命令
   args: ["-y", "@xiaozhi-client/calculator-mcp@1.9.7-beta.16"], // 命令参数
 };
 ```
@@ -61,7 +61,7 @@ const config = {
 ### 2. 创建连接并建立连接
 
 ```typescript
-const connection = new MCPConnection(config);
+const connection = new MCPConnection(serviceName, config);
 await connection.connect();
 ```
 
@@ -94,9 +94,9 @@ await connection.disconnect();
 ### 1. 创建服务配置
 
 ```typescript
+const serviceName = "12306-mcp";                  // 服务名称
 const config = {
-  name: "12306-mcp",                    // 服务名称
-  type: "streamable-http" as const,     // 传输类型：streamable-http
+  type: MCPTransportType.STREAMABLE_HTTP,         // 传输类型：streamable-http
   url: "https://mcp.api-inference.modelscope.net/7521b0f1413b49/mcp", // 服务 URL
 };
 ```
@@ -104,7 +104,7 @@ const config = {
 ### 2. 创建连接并建立连接
 
 ```typescript
-const connection = new MCPConnection(config);
+const connection = new MCPConnection(serviceName, config);
 await connection.connect();
 ```
 
@@ -131,20 +131,20 @@ await connection.disconnect();
 ### 使用 API Key 认证
 
 ```typescript
+const serviceName = "my-service";
 const config = {
-  name: "my-service",
   url: "https://api.example.com/mcp",
-  apiKey: "your-api-key"        // 添加 Bearer 认证
+  apiKey: "your-api-key"                          // 添加 Bearer 认证
 };
 ```
 
 ### 使用自定义请求头
 
 ```typescript
+const serviceName = "my-service";
 const config = {
-  name: "my-service",
   url: "https://api.example.com/mcp",
-  headers: {                    // 自定义请求头
+  headers: {                                      // 自定义请求头
     "Authorization": "Bearer token",
     "X-Custom-Header": "value"
   }
@@ -164,9 +164,9 @@ const config = {
 ### 1. 创建服务配置
 
 ```typescript
+const serviceName = "12306-mcp";                  // 服务名称
 const config = {
-  name: "12306-mcp",                  // 服务名称
-  type: "sse" as const,               // 传输类型：sse
+  type: MCPTransportType.SSE,                     // 传输类型：sse
   url: "https://mcp.api-inference.modelscope.net/ed2b195cc8f94d/sse", // 服务 URL
 };
 ```
@@ -174,7 +174,7 @@ const config = {
 ### 2. 创建连接并建立连接
 
 ```typescript
-const connection = new MCPConnection(config);
+const connection = new MCPConnection(serviceName, config);
 await connection.connect();
 ```
 
@@ -201,20 +201,20 @@ await connection.disconnect();
 ### 使用 ModelScope SSE 服务
 
 ```typescript
+const serviceName = "my-service";
 const config = {
-  name: "my-service",
   url: "https://mcp.api-inference.modelscope.net/xxx/sse",
-  modelScopeAuth: true          // 启用 ModelScope 认证
+  modelScopeAuth: true                          // 启用 ModelScope 认证
 };
 ```
 
 ### 使用自定义请求头
 
 ```typescript
+const serviceName = "my-service";
 const config = {
-  name: "my-service",
   url: "https://api.example.com/sse",
-  headers: {                    // 自定义请求头
+  headers: {                                    // 自定义请求头
     "Authorization": "Bearer token",
     "X-Custom-Header": "value"
   }
@@ -225,54 +225,58 @@ const config = {
 
 ## 如何修改为自己的 MCP 服务
 
-只需要修改 `config` 变量即可：
+只需要修改 `serviceName` 和 `config` 变量即可：
 
 ### 使用本地 MCP 服务
 
 ```typescript
+const serviceName = "my-service";              // 服务名称
 const config = {
-  name: "my-service",           // 服务名称
-  type: "stdio" as const,        // 传输类型，stdio 表示通过标准输入输出通信
-  command: "node",               // 执行命令
-  args: ["./my-mcp-server.js"]   // 命令参数
+  type: MCPTransportType.STDIO,                // 传输类型，stdio 表示通过标准输入输出通信
+  command: "node",                             // 执行命令
+  args: ["./my-mcp-server.js"]                 // 命令参数
 };
+const connection = new MCPConnection(serviceName, config);
 ```
 
 ### 使用 npx 安装远程 MCP 服务
 
 ```typescript
+const serviceName = "my-service";
 const config = {
-  name: "my-service",
-  type: "stdio" as const,
+  type: MCPTransportType.STDIO,
   command: "npx",
-  args: ["-y", "@xiaozhi-client/my-mcp@1.0.0"]  // -y 表示自动确认安装
+  args: ["-y", "@xiaozhi-client/my-mcp@1.0.0"] // -y 表示自动确认安装
 };
+const connection = new MCPConnection(serviceName, config);
 ```
 
 ### 使用 Python MCP 服务
 
 ```typescript
+const serviceName = "my-python-service";
 const config = {
-  name: "my-python-service",
-  type: "stdio" as const,
+  type: MCPTransportType.STDIO,
   command: "python",
   args: ["./my-mcp-server.py"]
 };
+const connection = new MCPConnection(serviceName, config);
 ```
 
 ### 使用带环境变量的 MCP 服务
 
 ```typescript
+const serviceName = "my-service";
 const config = {
-  name: "my-service",
-  type: "stdio" as const,
+  type: MCPTransportType.STDIO,
   command: "node",
   args: ["./my-mcp-server.js"],
-  env: {                           // 环境变量配置
+  env: {                                         // 环境变量配置
     API_KEY: "your-api-key",
     DEBUG: "true"
   }
 };
+const connection = new MCPConnection(serviceName, config);
 ```
 
 ## 注意事项
