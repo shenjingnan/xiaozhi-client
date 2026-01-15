@@ -50,20 +50,20 @@ async function main(): Promise<void> {
   console.log("=== streamable-http MCP 连接示例 ===\n");
 
   // 1. 创建服务配置
+  const serviceName = "12306-mcp";
   const config = {
-    name: "12306-mcp",
     type: MCPTransportType.STREAMABLE_HTTP,
     url: "https://mcp.api-inference.modelscope.net/7521b0f1413b49/mcp",
   };
 
   console.log("配置信息:");
-  console.log(`  服务名: ${config.name}`);
+  console.log(`  服务名: ${serviceName}`);
   console.log(`  传输类型: ${config.type}`);
   console.log(`  URL: ${config.url}`);
   console.log();
 
   // 2. 创建连接实例
-  const connection = new MCPConnection(config, {
+  const connection = new MCPConnection(serviceName, config, {
     // 连接成功回调
     onConnected: (data) => {
       console.log(`✅ 服务 ${data.serviceName} 已连接`);

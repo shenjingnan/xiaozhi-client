@@ -79,10 +79,10 @@ export interface ModelScopeSSEOptions {
 
 /**
  * MCP 服务配置接口
- * 包含所有 MCP 服务的配置选项
+ * 包含所有 MCP 服务的配置选项（不包含服务名称）
  */
 export interface MCPServiceConfig {
-  name: string;
+  // name 字段已从配置中移除，应作为独立参数传递
   type?: MCPTransportType; // 现在是可选的，支持自动推断
   // stdio 配置
   command?: string;
@@ -100,6 +100,22 @@ export interface MCPServiceConfig {
   timeout?: number;
   // 重试配置
   retryAttempts?: number;
+}
+
+/**
+ * 旧版 MCP 服务配置接口（包含 name 字段）
+ * 用于向后兼容
+ */
+export interface LegacyMCPServiceConfig extends MCPServiceConfig {
+  name: string;
+}
+
+/**
+ * 内部使用的 MCP 服务配置接口（包含 name 字段）
+ * 用于 TransportFactory 等内部函数
+ */
+export interface InternalMCPServiceConfig extends MCPServiceConfig {
+  name: string;
 }
 
 // =========================

@@ -17,6 +17,9 @@ export class MCPService {
   private eventBus = getEventBus();
 
   constructor(config: MCPServiceConfig) {
+    // 从配置中解构 name，其余作为连接配置
+    const { name, ...connectionConfig } = config;
+
     // 创建回调适配器，将 mcp-core 的回调转换为 EventBus 事件
     const callbacks = {
       onConnected: (data: {
@@ -42,7 +45,8 @@ export class MCPService {
       },
     };
 
-    this.connection = new MCPConnection(config, callbacks);
+    // 适配新 API：将 name 从 config 中分离
+    this.connection = new MCPConnection(name, connectionConfig, callbacks);
   }
 
   /**

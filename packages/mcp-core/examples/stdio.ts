@@ -41,22 +41,22 @@ async function main(): Promise<void> {
 
   // 1. 创建服务配置
   // 这里使用 calculator-mcp 作为示例服务
+  const serviceName = "calculator";
   const config = {
-    name: "calculator",
     type: MCPTransportType.STDIO,
     command: "npx",
     args: ["-y", "@xiaozhi-client/calculator-mcp"],
   };
 
   console.log("配置信息:");
-  console.log(`  服务名: ${config.name}`);
+  console.log(`  服务名: ${serviceName}`);
   console.log(`  传输类型: ${config.type}`);
   console.log(`  命令: ${config.command}`);
   console.log(`  参数: ${config.args.join(" ")}`);
   console.log();
 
   // 2. 创建连接实例
-  const connection = new MCPConnection(config, {
+  const connection = new MCPConnection(serviceName, config, {
     // 连接成功回调
     onConnected: (data) => {
       console.log(`✅ 服务 ${data.serviceName} 已连接`);

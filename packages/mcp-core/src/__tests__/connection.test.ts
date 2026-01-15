@@ -110,15 +110,14 @@ describe("MCPConnection", () => {
       onConnectionFailed: vi.fn(),
     };
 
-    // Test configuration
+    // Test configuration（不包含 name，name 将作为独立参数传递）
     config = {
-      name: "test-service",
       type: MCPTransportType.STDIO,
       command: "node",
       args: ["test-server.js"],
     };
 
-    connection = new MCPConnection(config, mockCallbacks);
+    connection = new MCPConnection("test-service", config, mockCallbacks);
   });
 
   afterEach(() => {
@@ -146,7 +145,11 @@ describe("MCPConnection", () => {
     it("应该成功连接", async () => {
       await connection.connect();
 
-      expect(mockTransportFactory.create).toHaveBeenCalledWith(config);
+      // TransportFactory.create 接收包含 name 的完整配置
+      expect(mockTransportFactory.create).toHaveBeenCalledWith({
+        name: "test-service",
+        ...config,
+      });
       expect(mockClient.connect).toHaveBeenCalledWith(mockTransport);
       expect(connection.isConnected()).toBe(true);
     });
@@ -415,7 +418,7 @@ describe("MCPConnection", () => {
 
   describe("error handling", () => {
     it("连接失败时应该设置 DISCONNECTED 状态", async () => {
-      const testConnection = new MCPConnection(config, mockCallbacks);
+      const testConnection = new MCPConnection("test-service", config, mockCallbacks);
       mockClient.connect.mockRejectedValue(new Error("Connection failed"));
 
       await testConnection.connect().catch(() => {});
@@ -426,7 +429,7 @@ describe("MCPConnection", () => {
     });
 
     it("应该正确处理连接失败", async () => {
-      const testConnection = new MCPConnection(config, mockCallbacks);
+      const testConnection = new MCPConnection("test-service", config, mockCallbacks);
       mockClient.connect.mockRejectedValue(new Error("Connection failed"));
 
       await expect(testConnection.connect()).rejects.toThrow(
@@ -481,13 +484,12 @@ describe("MCPConnection", () => {
   describe("多协议支持", () => {
     it("应该支持 SSE transport 配置", () => {
       const sseConfig: MCPServiceConfig = {
-        name: "test-sse-service",
         type: MCPTransportType.SSE,
         url: "https://test.example.com/sse",
         apiKey: "test-key",
       };
 
-      const sseConnection = new MCPConnection(sseConfig, mockCallbacks);
+      const sseConnection = new MCPConnection("test-sse-service", sseConfig, mockCallbacks);
       const status = sseConnection.getStatus();
 
       expect(status.name).toBe("test-sse-service");
@@ -496,13 +498,12 @@ describe("MCPConnection", () => {
 
     it("应该支持 streamable-http transport 配置", () => {
       const httpConfig: MCPServiceConfig = {
-        name: "test-http-service",
         type: MCPTransportType.STREAMABLE_HTTP,
         url: "https://test.example.com/mcp",
         headers: { "Custom-Header": "value" },
       };
 
-      const httpConnection = new MCPConnection(httpConfig, mockCallbacks);
+      const httpConnection = new MCPConnection("test-http-service", httpConfig, mockCallbacks);
       const status = httpConnection.getStatus();
 
       expect(status.name).toBe("test-http-service");
@@ -513,40 +514,45 @@ describe("MCPConnection", () => {
       const configs = [
         {
           name: "stdio-service",
-          type: MCPTransportType.STDIO,
-          command: "node",
-          args: ["server.js"],
+          config: {
+            type: MCPTransportType.STDIO,
+            command: "node",
+            args: ["server.js"],
+          } as MCPServiceConfig,
         },
         {
           name: "sse-service",
-          type: MCPTransportType.SSE,
-          url: "https://test.example.com/sse",
-          apiKey: "key123",
+          config: {
+            type: MCPTransportType.SSE,
+            url: "https://test.example.com/sse",
+            apiKey: "key123",
+          } as MCPServiceConfig,
         },
         {
           name: "http-service",
-          type: MCPTransportType.STREAMABLE_HTTP,
-          url: "https://test.example.com/mcp",
-          headers: { Authorization: "Bearer token" },
+          config: {
+            type: MCPTransportType.STREAMABLE_HTTP,
+            url: "https://test.example.com/mcp",
+            headers: { Authorization: "Bearer token" },
+          } as MCPServiceConfig,
         },
       ];
 
-      for (const cfg of configs) {
-        expect(() => new MCPConnection(cfg, mockCallbacks)).not.toThrow();
+      for (const { name, config: cfg } of configs) {
+        expect(() => new MCPConnection(name, cfg, mockCallbacks)).not.toThrow();
       }
     });
   });
 
   describe("配置验证", () => {
     it("无效名称时应该抛出错误", () => {
-      const error = new Error("配置必须包含有效的 name 字段");
+      const error = new Error("服务名称必须是非空字符串");
       mockTransportFactory.validateConfig.mockImplementation(() => {
         throw error;
       });
 
-      const invalidConfig = { ...config, name: "" };
-      expect(() => new MCPConnection(invalidConfig, mockCallbacks)).toThrow(
-        "配置必须包含有效的 name 字段"
+      expect(() => new MCPConnection("", config, mockCallbacks)).toThrow(
+        "服务名称必须是非空字符串"
       );
     });
 
@@ -557,10 +563,9 @@ describe("MCPConnection", () => {
       });
 
       const invalidConfig = {
-        name: "test",
         type: MCPTransportType.SSE,
-      };
-      expect(() => new MCPConnection(invalidConfig, mockCallbacks)).toThrow(
+      } as MCPServiceConfig;
+      expect(() => new MCPConnection("test", invalidConfig, mockCallbacks)).toThrow(
         "sse 类型需要 url 字段"
       );
     });
@@ -572,11 +577,10 @@ describe("MCPConnection", () => {
       });
 
       const invalidConfig = {
-        name: "test",
         type: MCPTransportType.STDIO,
         command: undefined,
-      };
-      expect(() => new MCPConnection(invalidConfig, mockCallbacks)).toThrow(
+      } as MCPServiceConfig;
+      expect(() => new MCPConnection("test", invalidConfig, mockCallbacks)).toThrow(
         "stdio 类型需要 command 字段"
       );
     });
