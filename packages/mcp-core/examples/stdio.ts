@@ -45,7 +45,7 @@ async function main(): Promise<void> {
     name: "calculator",
     type: MCPTransportType.STDIO,
     command: "npx",
-    args: ["-y", "@xiaozhi-client/calculator-mcp@1.9.7-beta.16"],
+    args: ["-y", "@xiaozhi-client/calculator-mcp"],
   };
 
   console.log("配置信息:");
