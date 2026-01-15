@@ -322,7 +322,8 @@ export class MCPConnection {
       name: this.name,
       connected: this.connectionState === ConnectionState.CONNECTED,
       initialized: this.initialized,
-      transportType: this.config.type || MCPTransportType.STREAMABLE_HTTP,
+      transportType:
+        (this.config.type as MCPTransportType) || MCPTransportType.STREAMABLE_HTTP,
       toolCount: this.tools.size,
       connectionState: this.connectionState,
     };
