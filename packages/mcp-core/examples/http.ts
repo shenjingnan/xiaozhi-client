@@ -11,30 +11,31 @@
  * ```
  *
  * 如何修改为自己的 MCP 服务：
- * 只需要修改 config 变量中的 url 参数即可。
+ * 只需要修改 serviceName 和 config 变量中的 url 参数即可。
  *
  * 例如，如果要使用自己的 streamable-http MCP 服务，可以将配置改为：
  *
+ * const serviceName = "my-service";            // 服务名称
  * const config = {
- *   name: "my-service",           // 服务名称
- *   type: "streamable-http" as const,  // 传输类型（可选，会根据 URL 自动推断）
- *   url: "https://my-api.com/mcp"     // 服务 URL
+ *   type: MCPTransportType.STREAMABLE_HTTP,    // 传输类型（可选，会根据 URL 自动推断）
+ *   url: "https://my-api.com/mcp"              // 服务 URL
  * };
+ * const connection = new MCPConnection(serviceName, config);
  *
  * 或者使用 API Key 认证：
  *
+ * const serviceName = "my-service";
  * const config = {
- *   name: "my-service",
  *   url: "https://my-api.com/mcp",
- *   apiKey: "your-api-key"         // Bearer 认证
+ *   apiKey: "your-api-key"                     // Bearer 认证
  * };
  *
  * 或者使用自定义请求头：
  *
+ * const serviceName = "my-service";
  * const config = {
- *   name: "my-service",
  *   url: "https://my-api.com/mcp",
- *   headers: {                     // 自定义请求头
+ *   headers: {                                 // 自定义请求头
  *     "Authorization": "Bearer token",
  *     "X-Custom-Header": "value"
  *   }
