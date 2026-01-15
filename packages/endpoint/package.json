@@ -26,7 +26,8 @@
     "type-check": "tsc --noEmit",
     "start": "tsx examples/single-endpoint.ts",
     "start:agg": "tsx examples/mcp-aggregation.ts",
-    "start:iso": "tsx examples/endpoint-isolation.ts"
+    "start:iso": "tsx examples/endpoint-isolation.ts",
+    "start:manage": "tsx examples/manage-endpoints.ts"
   },
   "dependencies": {
     "ws": "^8.14.2",
