@@ -141,7 +141,6 @@ describe("TransportFactory", () => {
         name: "test",
         type: MCPTransportType.SSE,
         url: "https://example.com/sse",
-        timeout: 5000,
       };
 
       expect(() => TransportFactory.validateConfig(config)).not.toThrow();
@@ -269,7 +268,6 @@ describe("TransportFactory", () => {
         name: "test",
         type: MCPTransportType.SSE,
         url: "https://example.com/sse",
-        retryAttempts: 3,
       };
 
       expect(() => TransportFactory.validateConfig(config)).not.toThrow();
