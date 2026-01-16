@@ -86,7 +86,6 @@ export namespace TypeFieldNormalizer {
       type === "http" ||
       type === "streamable-http" ||
       type === "streamable_http" ||
-      type === "streamablehttp" ||
       type === "streamableHttp"
     ) {
       return "http";
