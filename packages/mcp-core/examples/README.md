@@ -211,7 +211,7 @@ await manager.disconnect();
 ```typescript
 const serviceName = "12306-mcp";                  // 服务名称
 const config = {
-  type: MCPTransportType.STREAMABLE_HTTP,         // 传输类型：http
+  type: MCPTransportType.HTTP,                   // 传输类型：http
   url: "https://mcp.api-inference.modelscope.net/7521b0f1413b49/mcp", // 服务 URL
 };
 ```
