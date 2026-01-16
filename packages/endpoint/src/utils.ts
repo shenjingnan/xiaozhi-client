@@ -4,7 +4,11 @@
  * 内联的必要工具函数，确保包的独立性
  */
 
-import type { ValidatedToolCallParams } from "./types.js";
+import type {
+  ParsedEndpointInfo,
+  ValidatedToolCallParams,
+  XiaozhiTokenPayload,
+} from "./types.js";
 
 /**
  * 截断端点 URL 用于日志显示
@@ -203,4 +207,159 @@ export function formatErrorMessage(error: unknown): string {
   }
 
   return String(error);
+}
+
+// =========================
+// JWT Token 解码相关函数
+// =========================
+
+/**
+ * Base64URL 解码
+ *
+ * @param input - Base64URL 编码的字符串
+ * @returns 解码后的字符串
+ *
+ * @example
+ * ```typescript
+ * base64UrlDecode("SGVsbG8gV29ybGQ") // 返回: "Hello World"
+ * ```
+ */
+function base64UrlDecode(input: string): string {
+  // 将 Base64URL 格式转换为标准 Base64 格式
+  let base64 = input.replace(/-/g, "+").replace(/_/g, "/");
+
+  // 补全 padding
+  while (base64.length % 4) {
+    base64 += "=";
+  }
+
+  // 使用 Node.js Buffer 进行解码
+  return Buffer.from(base64, "base64").toString("utf-8");
+}
+
+/**
+ * 解码 JWT Token（仅解析 payload，不验证签名）
+ *
+ * @param token - JWT Token 字符串
+ * @returns 解码后的 Token Payload，解码失败返回 null
+ *
+ * @example
+ * ```typescript
+ * const payload = decodeJWTToken("eyJ...token...");
+ * if (payload) {
+ *   console.log(payload.endpointId); // "agent_1324149"
+ * }
+ * ```
+ */
+export function decodeJWTToken(token: string): XiaozhiTokenPayload | null {
+  if (!token || typeof token !== "string") {
+    return null;
+  }
+
+  try {
+    // JWT 格式: header.payload.signature
+    const parts = token.split(".");
+    if (parts.length !== 3) {
+      return null;
+    }
+
+    // 解码 payload 部分（第二部分）
+    const payloadStr = base64UrlDecode(parts[1]);
+    const payload = JSON.parse(payloadStr) as unknown;
+
+    // 验证 payload 结构
+    if (
+      typeof payload !== "object" ||
+      payload === null ||
+      !("userId" in payload) ||
+      !("agentId" in payload) ||
+      !("endpointId" in payload) ||
+      !("purpose" in payload) ||
+      !("iat" in payload) ||
+      !("exp" in payload)
+    ) {
+      return null;
+    }
+
+    return payload as XiaozhiTokenPayload;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 从 endpoint URL 中提取 token 参数
+ *
+ * @param url - 完整的 endpoint URL
+ * @returns 提取的 token 字符串，未找到返回 null
+ *
+ * @example
+ * ```typescript
+ * const token = extractTokenFromUrl(
+ *   "wss://api.xiaozhi.me/mcp/?token=eyJ..."
+ * );
+ * ```
+ */
+export function extractTokenFromUrl(url: string): string | null {
+  if (!url || typeof url !== "string") {
+    return null;
+  }
+
+  try {
+    const urlObj = new URL(url);
+    return urlObj.searchParams.get("token");
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 解析 endpoint URL 获取完整信息
+ *
+ * @param url - 完整的 endpoint URL
+ * @returns 解析后的 endpoint 信息，解析失败返回 null
+ *
+ * @example
+ * ```typescript
+ * const info = parseEndpointUrl(
+ *   "wss://api.xiaozhi.me/mcp/?token=eyJ..."
+ * );
+ * if (info) {
+ *   console.log(info.payload.endpointId); // "agent_1324149"
+ *   console.log(info.wsUrl); // "wss://api.xiaozhi.me/mcp/"
+ * }
+ * ```
+ */
+export function parseEndpointUrl(url: string): ParsedEndpointInfo | null {
+  if (!url || typeof url !== "string") {
+    return null;
+  }
+
+  try {
+    // 提取 token
+    const token = extractTokenFromUrl(url);
+    if (!token) {
+      return null;
+    }
+
+    // 解码 token
+    const payload = decodeJWTToken(token);
+    if (!payload) {
+      return null;
+    }
+
+    // 移除 token 参数得到纯净的 WebSocket URL
+    const urlObj = new URL(url);
+    urlObj.searchParams.delete("token");
+    const wsUrl = urlObj.toString();
+
+    return {
+      url,
+      token,
+      payload,
+      wsUrl,
+    };
+  } catch {
+    return null;
+  }
 }

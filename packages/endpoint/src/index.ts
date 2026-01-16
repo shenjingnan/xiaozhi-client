@@ -67,6 +67,9 @@ export type {
   StreamableHTTPMCPServerConfig,
   EndpointConfig,
   EndpointManagerConfig,
+  // JWT Token 相关
+  XiaozhiTokenPayload,
+  ParsedEndpointInfo,
 } from "./types.js";
 
 // =========================
@@ -92,6 +95,10 @@ export {
   deepMerge,
   sleep,
   formatErrorMessage,
+  // JWT Token 解码相关
+  decodeJWTToken,
+  extractTokenFromUrl,
+  parseEndpointUrl,
 } from "./utils.js";
 
 export { ensureToolJSONSchema } from "./types.js";

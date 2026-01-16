@@ -23,7 +23,11 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "start": "tsx examples/single-endpoint.ts",
+    "start:agg": "tsx examples/mcp-aggregation.ts",
+    "start:iso": "tsx examples/endpoint-isolation.ts",
+    "start:manage": "tsx examples/manage-endpoints.ts"
   },
   "dependencies": {
     "ws": "^8.14.2",
@@ -37,6 +41,7 @@
     "@types/node": "^24.3.0",
     "@types/ws": "^8.5.0",
     "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
     "typescript": "^5.9.2",
     "vitest": "^3.0.5"
   },
