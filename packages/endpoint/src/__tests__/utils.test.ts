@@ -5,8 +5,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   deepMerge,
+  decodeJWTToken,
+  extractTokenFromUrl,
   formatErrorMessage,
   isValidEndpointUrl,
+  parseEndpointUrl,
   sleep,
   sliceEndpoint,
   validateToolCallParams,
@@ -424,6 +427,189 @@ describe("工具函数测试", () => {
     it("deepMerge 应该处理空对象合并", () => {
       const result = deepMerge({}, {});
       expect(result).toEqual({});
+    });
+  });
+
+  describe("JWT Token 解码", () => {
+    describe("decodeJWTToken", () => {
+      // 生成一个有效的测试 Token
+      const validPayload = {
+        userId: 302720,
+        agentId: 1324149,
+        endpointId: "agent_1324149",
+        purpose: "mcp-endpoint",
+        iat: 1768480930,
+        exp: 1800038530,
+      };
+      const header = btoa(JSON.stringify({ alg: "ES256", typ: "JWT" }))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=/g, "");
+      const payload = btoa(JSON.stringify(validPayload))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=/g, "");
+      const signature = "test_signature";
+      const validToken = `${header}.${payload}.${signature}`;
+
+      it("应该正确解码有效的 JWT Token", () => {
+        const result = decodeJWTToken(validToken);
+        expect(result).not.toBeNull();
+        expect(result?.userId).toBe(302720);
+        expect(result?.agentId).toBe(1324149);
+        expect(result?.endpointId).toBe("agent_1324149");
+        expect(result?.purpose).toBe("mcp-endpoint");
+      });
+
+      it("应该拒绝空字符串", () => {
+        expect(decodeJWTToken("")).toBeNull();
+      });
+
+      it("应该拒绝 null", () => {
+        expect(decodeJWTToken(null as any)).toBeNull();
+      });
+
+      it("应该拒绝 undefined", () => {
+        expect(decodeJWTToken(undefined as any)).toBeNull();
+      });
+
+      it("应该拒绝格式错误的 Token（缺少部分）", () => {
+        expect(decodeJWTToken("only_one_part")).toBeNull();
+        expect(decodeJWTToken("two.parts")).toBeNull();
+      });
+
+      it("应该拒绝无效的 Base64 编码", () => {
+        expect(decodeJWTToken("header.invalid!base64.signature")).toBeNull();
+      });
+
+      it("应该拒绝无效的 JSON", () => {
+        const header = btoa(JSON.stringify({ alg: "ES256", typ: "JWT" }))
+          .replace(/\+/g, "-")
+          .replace(/\//g, "_")
+          .replace(/=/g, "");
+        const invalidJsonPayload = btoa("not a valid json")
+          .replace(/\+/g, "-")
+          .replace(/\//g, "_")
+          .replace(/=/g, "");
+        const invalidToken = `${header}.${invalidJsonPayload}.signature`;
+        expect(decodeJWTToken(invalidToken)).toBeNull();
+      });
+
+      it("应该拒绝缺少必需字段的 Payload", () => {
+        const header = btoa(JSON.stringify({ alg: "ES256", typ: "JWT" }))
+          .replace(/\+/g, "-")
+          .replace(/\//g, "_")
+          .replace(/=/g, "");
+        const incompletePayload = btoa(JSON.stringify({ userId: 123 }))
+          .replace(/\+/g, "-")
+          .replace(/\//g, "_")
+          .replace(/=/g, "");
+        const incompleteToken = `${header}.${incompletePayload}.signature`;
+        expect(decodeJWTToken(incompleteToken)).toBeNull();
+      });
+    });
+
+    describe("extractTokenFromUrl", () => {
+      it("应该从 URL 中提取 token 参数", () => {
+        const url = "wss://api.xiaozhi.me/mcp/?token=eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.test";
+        const result = extractTokenFromUrl(url);
+        expect(result).toBe("eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.test");
+      });
+
+      it("应该处理包含多个查询参数的 URL", () => {
+        const url = "wss://api.example.com/mcp/?id=123&token=my_token&other=value";
+        const result = extractTokenFromUrl(url);
+        expect(result).toBe("my_token");
+      });
+
+      it("应该处理没有 token 参数的 URL", () => {
+        const url = "wss://api.example.com/mcp/?id=123&other=value";
+        const result = extractTokenFromUrl(url);
+        expect(result).toBeNull();
+      });
+
+      it("应该处理没有查询参数的 URL", () => {
+        const url = "wss://api.example.com/mcp/";
+        const result = extractTokenFromUrl(url);
+        expect(result).toBeNull();
+      });
+
+      it("应该拒绝空字符串", () => {
+        expect(extractTokenFromUrl("")).toBeNull();
+      });
+
+      it("应该拒绝无效的 URL", () => {
+        expect(extractTokenFromUrl("not-a-url")).toBeNull();
+      });
+
+      it("应该处理带端口号的 URL", () => {
+        const url = "wss://api.example.com:8080/mcp/?token=test_token";
+        const result = extractTokenFromUrl(url);
+        expect(result).toBe("test_token");
+      });
+    });
+
+    describe("parseEndpointUrl", () => {
+      // 生成一个有效的测试 Token
+      const validPayload = {
+        userId: 302720,
+        agentId: 1324149,
+        endpointId: "agent_1324149",
+        purpose: "mcp-endpoint",
+        iat: 1768480930,
+        exp: 1800038530,
+      };
+      const header = btoa(JSON.stringify({ alg: "ES256", typ: "JWT" }))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=/g, "");
+      const payload = btoa(JSON.stringify(validPayload))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=/g, "");
+      const signature = "test_signature";
+      const validToken = `${header}.${payload}.${signature}`;
+
+      it("应该正确解析完整的 endpoint URL", () => {
+        const url = `wss://api.xiaozhi.me/mcp/?token=${validToken}`;
+        const result = parseEndpointUrl(url);
+
+        expect(result).not.toBeNull();
+        expect(result?.url).toBe(url);
+        expect(result?.token).toBe(validToken);
+        expect(result?.payload.userId).toBe(302720);
+        expect(result?.payload.agentId).toBe(1324149);
+        expect(result?.payload.endpointId).toBe("agent_1324149");
+        expect(result?.wsUrl).toBe("wss://api.xiaozhi.me/mcp/");
+      });
+
+      it("应该从 wsUrl 中移除 token 参数", () => {
+        const url = `wss://api.example.com:8080/path?token=${validToken}&id=123`;
+        const result = parseEndpointUrl(url);
+
+        expect(result?.wsUrl).toBe("wss://api.example.com:8080/path?id=123");
+        expect(result?.wsUrl).not.toContain("token");
+      });
+
+      it("应该拒绝没有 token 的 URL", () => {
+        const url = "wss://api.example.com/mcp/?id=123";
+        const result = parseEndpointUrl(url);
+        expect(result).toBeNull();
+      });
+
+      it("应该拒绝包含无效 token 的 URL", () => {
+        const url = "wss://api.example.com/mcp/?token=invalid_token";
+        const result = parseEndpointUrl(url);
+        expect(result).toBeNull();
+      });
+
+      it("应该拒绝空字符串", () => {
+        expect(parseEndpointUrl("")).toBeNull();
+      });
+
+      it("应该拒绝无效的 URL 格式", () => {
+        expect(parseEndpointUrl("not-a-url")).toBeNull();
+      });
     });
   });
 });

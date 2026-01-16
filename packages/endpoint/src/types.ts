@@ -326,3 +326,52 @@ export interface EndpointManagerConfig {
   /** 可选：默认重连延迟（毫秒） */
   defaultReconnectDelay?: number;
 }
+
+// =========================
+// 8. JWT Token 类型
+// =========================
+
+/**
+ * 小智平台 JWT Token Payload 接口
+ *
+ * @example
+ * ```typescript
+ * // 从 endpoint URL 解码得到的 payload
+ * const payload: XiaozhiTokenPayload = {
+ *   userId: 302720,
+ *   agentId: 1324149,
+ *   endpointId: "agent_1324149",
+ *   purpose: "mcp-endpoint",
+ *   iat: 1768480930,
+ *   exp: 1800038530
+ * };
+ * ```
+ */
+export interface XiaozhiTokenPayload {
+  /** 用户 ID */
+  userId: number;
+  /** 代理 ID */
+  agentId: number;
+  /** 接入点 ID，格式为 "agent_{agentId}" */
+  endpointId: string;
+  /** Token 用途 */
+  purpose: string;
+  /** 签发时间（Unix 时间戳） */
+  iat: number;
+  /** 过期时间（Unix 时间戳） */
+  exp: number;
+}
+
+/**
+ * 解析后的 Endpoint URL 信息
+ */
+export interface ParsedEndpointInfo {
+  /** 完整的 endpoint URL */
+  url: string;
+  /** 提取的 JWT Token */
+  token: string;
+  /** 解码后的 Token Payload */
+  payload: XiaozhiTokenPayload;
+  /** WebSocket 服务器地址（不含 token 参数） */
+  wsUrl: string;
+}
