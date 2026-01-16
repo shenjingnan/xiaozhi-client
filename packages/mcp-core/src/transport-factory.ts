@@ -41,8 +41,8 @@ export function createTransport(config: InternalMCPServiceConfig): MCPServerTran
     case MCPTransportType.SSE:
       return createSSETransport(config);
 
-    case MCPTransportType.STREAMABLE_HTTP:
-      return createStreamableHTTPTransport(config);
+    case MCPTransportType.HTTP:
+      return createHTTPTransport(config);
 
     default:
       throw new Error(`不支持的传输类型: ${config.type}`);
@@ -78,11 +78,11 @@ function createSSETransport(config: InternalMCPServiceConfig): SSEClientTranspor
   return new SSEClientTransport(url, options);
 }
 
-function createStreamableHTTPTransport(
+function createHTTPTransport(
   config: InternalMCPServiceConfig
 ): StreamableHTTPClientTransport {
   if (!config.url) {
-    throw new Error("StreamableHTTP transport 需要 URL 配置");
+    throw new Error("HTTP transport 需要 URL 配置");
   }
 
   const url = new URL(config.url);
@@ -170,8 +170,8 @@ export function validateConfig(config: InternalMCPServiceConfig): void {
         throw new Error(`${config.type} 类型需要 url 字段`);
       }
       break;
-    case MCPTransportType.STREAMABLE_HTTP:
-      // STREAMABLE_HTTP 允许空 URL，会在后续处理中设置默认值
+    case MCPTransportType.HTTP:
+      // HTTP 允许空 URL，会在后续处理中设置默认值
       if (config.url === undefined || config.url === null) {
         throw new Error(`${config.type} 类型需要 url 字段`);
       }
@@ -189,7 +189,7 @@ export function getSupportedTypes(): MCPTransportType[] {
   return [
     MCPTransportType.STDIO,
     MCPTransportType.SSE,
-    MCPTransportType.STREAMABLE_HTTP,
+    MCPTransportType.HTTP,
   ];
 }
 

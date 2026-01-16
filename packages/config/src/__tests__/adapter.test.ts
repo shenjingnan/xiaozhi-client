@@ -64,16 +64,16 @@ describe("ConfigAdapter 配置适配器测试", () => {
       });
     });
 
-    describe("STREAMABLE_HTTP 类型推断", () => {
-      it("应该根据 /mcp 路径推断为 STREAMABLE_HTTP 类型", () => {
+    describe("HTTP 类型推断", () => {
+      it("应该根据 /mcp 路径推断为 HTTP 类型", () => {
         const config = {
           url: "https://mcp.api-inference.modelscope.net/8928ccc99fa34b/mcp",
         };
         const result = convertLegacyToNew("modelscope-service", config);
-        expect(result.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+        expect(result.type).toBe(MCPTransportType.HTTP);
       });
 
-      it("应该为其他路径推断为 STREAMABLE_HTTP 类型", () => {
+      it("应该为其他路径推断为 HTTP 类型", () => {
         const testCases = [
           "https://example.com/api",
           "https://api.example.com/v1/endpoint",
@@ -82,24 +82,24 @@ describe("ConfigAdapter 配置适配器测试", () => {
 
         for (const url of testCases) {
           const result = convertLegacyToNew("test-service", { url });
-          expect(result.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+          expect(result.type).toBe(MCPTransportType.HTTP);
         }
       });
 
-      it("应该为普通 ModelScope URL（非 /sse 结尾）推断为 STREAMABLE_HTTP", () => {
+      it("应该为普通 ModelScope URL（非 /sse 结尾）推断为 HTTP", () => {
         const config = {
           url: "https://mcp.api-inference.modelscope.net/8928ccc99fa34b/mcp",
         };
         const result = convertLegacyToNew("modelscope-service", config);
-        expect(result.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+        expect(result.type).toBe(MCPTransportType.HTTP);
       });
     });
 
     describe("无效 URL 处理", () => {
-      it("应该为无效 URL 默认推断为 STREAMABLE_HTTP", () => {
+      it("应该为无效 URL 默认推断为 HTTP", () => {
         const config = { url: "not-a-valid-url" };
         const result = convertLegacyToNew("test-service", config);
-        expect(result.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+        expect(result.type).toBe(MCPTransportType.HTTP);
       });
     });
   });
@@ -111,13 +111,13 @@ describe("ConfigAdapter 配置适配器测试", () => {
       expect(result.type).toBe(MCPTransportType.SSE);
     });
 
-    it("应该优先使用显式指定的 streamable-http 类型", () => {
+    it("应该优先使用显式指定的 http 类型（兼容 streamable-http）", () => {
       const config = {
-        type: "streamable-http" as const,
+        type: "http" as const,
         url: "https://example.com/sse",
       };
       const result = convertLegacyToNew("test-service", config);
-      expect(result.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+      expect(result.type).toBe(MCPTransportType.HTTP);
     });
   });
 
@@ -208,7 +208,7 @@ describe("ConfigAdapter 配置适配器测试", () => {
       },
       {
         url: "https://mcp.api-inference.modelscope.net/8928ccc99fa34b/mcp",
-        expected: MCPTransportType.STREAMABLE_HTTP,
+        expected: MCPTransportType.HTTP,
         description: "复杂 ModelScope MCP 路径",
       },
       {
@@ -218,7 +218,7 @@ describe("ConfigAdapter 配置适配器测试", () => {
       },
       {
         url: "https://example.com/api/v1/endpoint",
-        expected: MCPTransportType.STREAMABLE_HTTP,
+        expected: MCPTransportType.HTTP,
         description: "普通 API 端点",
       },
     ];

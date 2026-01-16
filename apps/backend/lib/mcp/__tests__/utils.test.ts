@@ -108,7 +108,7 @@ describe("MCP 传输类型推断工具", () => {
       it("应该根据 /mcp 路径推断为 MCP 类型", () => {
         const url = "https://example.com/mcp";
         const result = inferTransportTypeFromUrl(url);
-        expect(result).toBe(MCPTransportType.STREAMABLE_HTTP);
+        expect(result).toBe(MCPTransportType.HTTP);
       });
 
       it("应该正确推断复杂的 ModelScope MCP 路径", () => {
@@ -120,7 +120,7 @@ describe("MCP 传输类型推断工具", () => {
 
         for (const url of testCases) {
           const result = inferTransportTypeFromUrl(url);
-          expect(result).toBe(MCPTransportType.STREAMABLE_HTTP);
+          expect(result).toBe(MCPTransportType.HTTP);
         }
       });
 
@@ -134,7 +134,7 @@ describe("MCP 传输类型推断工具", () => {
 
         for (const url of testCases) {
           const result = inferTransportTypeFromUrl(url);
-          expect(result).toBe(MCPTransportType.STREAMABLE_HTTP);
+          expect(result).toBe(MCPTransportType.HTTP);
         }
       });
 
@@ -146,13 +146,13 @@ describe("MCP 传输类型推断工具", () => {
 
         for (const url of testCases) {
           const result = inferTransportTypeFromUrl(url);
-          expect(result).toBe(MCPTransportType.STREAMABLE_HTTP);
+          expect(result).toBe(MCPTransportType.HTTP);
         }
       });
     });
 
     describe("默认类型推断", () => {
-      it("对于其他路径应该默认推断为 streamable-http 类型", () => {
+      it("对于其他路径应该默认推断为 http 类型", () => {
         const testCases = [
           "https://example.com/api/v1/tools",
           "https://example.com/endpoint",
@@ -163,11 +163,11 @@ describe("MCP 传输类型推断工具", () => {
 
         for (const url of testCases) {
           const result = inferTransportTypeFromUrl(url);
-          expect(result).toBe(MCPTransportType.STREAMABLE_HTTP);
+          expect(result).toBe(MCPTransportType.HTTP);
         }
       });
 
-      it("对于根路径应该默认推断为 streamable-http 类型", () => {
+      it("对于根路径应该默认推断为 http 类型", () => {
         const testCases = [
           "https://example.com/",
           "https://example.com",
@@ -176,7 +176,7 @@ describe("MCP 传输类型推断工具", () => {
 
         for (const url of testCases) {
           const result = inferTransportTypeFromUrl(url);
-          expect(result).toBe(MCPTransportType.STREAMABLE_HTTP);
+          expect(result).toBe(MCPTransportType.HTTP);
         }
       });
     });
@@ -192,7 +192,7 @@ describe("MCP 传输类型推断工具", () => {
 
         for (const url of testCases) {
           const result = inferTransportTypeFromUrl(url);
-          expect(result).toBe(MCPTransportType.STREAMABLE_HTTP);
+          expect(result).toBe(MCPTransportType.HTTP);
         }
       });
 
@@ -200,16 +200,16 @@ describe("MCP 传输类型推断工具", () => {
         const testCases = [
           {
             url: "https://example.com/SSE",
-            expected: MCPTransportType.STREAMABLE_HTTP,
+            expected: MCPTransportType.HTTP,
           },
           { url: "https://example.com/sse", expected: MCPTransportType.SSE },
           {
             url: "https://example.com/MCP",
-            expected: MCPTransportType.STREAMABLE_HTTP,
+            expected: MCPTransportType.HTTP,
           },
           {
             url: "https://example.com/mcp",
-            expected: MCPTransportType.STREAMABLE_HTTP,
+            expected: MCPTransportType.HTTP,
           },
         ];
 
@@ -223,16 +223,16 @@ describe("MCP 传输类型推断工具", () => {
         const testCases = [
           {
             url: "https://example.com/sse/",
-            expected: MCPTransportType.STREAMABLE_HTTP,
+            expected: MCPTransportType.HTTP,
           },
           { url: "https://example.com/sse", expected: MCPTransportType.SSE },
           {
             url: "https://example.com/mcp/",
-            expected: MCPTransportType.STREAMABLE_HTTP,
+            expected: MCPTransportType.HTTP,
           },
           {
             url: "https://example.com/mcp",
-            expected: MCPTransportType.STREAMABLE_HTTP,
+            expected: MCPTransportType.HTTP,
           },
         ];
 
@@ -246,15 +246,15 @@ describe("MCP 传输类型推断工具", () => {
         const testCases = [
           {
             url: "https://example.com/assess",
-            expected: MCPTransportType.STREAMABLE_HTTP,
+            expected: MCPTransportType.HTTP,
           },
           {
             url: "https://example.com/mcprefix",
-            expected: MCPTransportType.STREAMABLE_HTTP,
+            expected: MCPTransportType.HTTP,
           },
           {
             url: "https://example.com/ssendpoint",
-            expected: MCPTransportType.STREAMABLE_HTTP,
+            expected: MCPTransportType.HTTP,
           },
           {
             url: "https://example.com/mcprefix/sse",
@@ -291,7 +291,7 @@ describe("MCP 传输类型推断工具", () => {
         });
 
         expect(mockConsoleInfo).toHaveBeenCalledWith(
-          `[MCP-${serviceName}] URL 路径 /api/v1/tools 不匹配特定规则，默认推断为 streamable-http 类型`
+          `[MCP-${serviceName}] URL 路径 /api/v1/tools 不匹配特定规则，默认推断为 http 类型`
         );
       });
 
@@ -304,7 +304,7 @@ describe("MCP 传输类型推断工具", () => {
         });
 
         expect(mockConsoleWarn).toHaveBeenCalledWith(
-          `[MCP-${serviceName}] URL 解析失败，默认推断为 streamable-http 类型`,
+          `[MCP-${serviceName}] URL 解析失败，默认推断为 http 类型`,
           expect.any(Error)
         );
       });
@@ -343,12 +343,12 @@ describe("MCP 传输类型推断工具", () => {
       it("应该优先使用显式类型而非URL推断", () => {
         const config = {
           name: "explicit-priority-service",
-          type: MCPTransportType.STREAMABLE_HTTP,
+          type: MCPTransportType.HTTP,
           url: "https://example.com/sse", // 这个URL会推断为SSE，但显式指定为STREAMABLE_HTTP
         };
 
         const result = inferTransportTypeFromConfig(config);
-        expect(result.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+        expect(result.type).toBe(MCPTransportType.HTTP);
       });
 
       it("应该正确处理所有显式类型", () => {
@@ -364,7 +364,7 @@ describe("MCP 传输类型推断工具", () => {
             config: { url: "https://example.com/test" },
           },
           {
-            type: MCPTransportType.STREAMABLE_HTTP,
+            type: MCPTransportType.HTTP,
             name: "http-test",
             config: { url: "https://example.com/test" },
           },
@@ -445,7 +445,7 @@ describe("MCP 传输类型推断工具", () => {
 
         // 验证是否用正确的参数调用了日志记录
         expect(mockConsoleWarn).toHaveBeenCalledWith(
-          `[MCP-${config.name}] URL 解析失败，默认推断为 streamable-http 类型`,
+          `[MCP-${config.name}] URL 解析失败，默认推断为 http 类型`,
           expect.any(Error)
         );
       });
@@ -479,7 +479,7 @@ describe("MCP 传输类型推断工具", () => {
         };
 
         const result = inferTransportTypeFromConfig(config);
-        expect(result.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+        expect(result.type).toBe(MCPTransportType.HTTP);
       });
     });
 
@@ -532,7 +532,6 @@ describe("MCP 传输类型推断工具", () => {
         const originalConfig = {
           name: "complete-service",
           url: "https://example.com/mcp",
-          timeout: 60000,
           apiKey: "test-key",
         };
 
@@ -542,8 +541,7 @@ describe("MCP 传输类型推断工具", () => {
         expect(originalConfig).toEqual(originalConfigCopy);
 
         // 返回的配置应该包含所有原始字段和推断的类型
-        expect(result.type).toBe(MCPTransportType.STREAMABLE_HTTP);
-        expect(result.timeout).toBe(60000);
+        expect(result.type).toBe(MCPTransportType.HTTP);
         expect(result.apiKey).toBe("test-key");
         expect(result.name).toBe("complete-service");
         expect(result.url).toBe("https://example.com/mcp");

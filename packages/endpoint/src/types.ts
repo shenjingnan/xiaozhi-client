@@ -269,15 +269,17 @@ export interface ReconnectResult {
 
 /**
  * MCP 服务器配置类型
- * 支持三种配置方式：
+ * 支持三种配置方式（与 MCP 官方格式保持一致）：
  * 1. 本地命令 (stdio): { command: string; args: string[]; env?: Record<string, string> }
  * 2. SSE: { type: "sse"; url: string; headers?: Record<string, string> }
- * 3. Streamable HTTP: { type?: "streamable-http"; url: string; headers?: Record<string, string> }
+ * 3. HTTP: { type?: "http"; url: string; headers?: Record<string, string> }
+ *
+ * 向后兼容：自动将 streamable-http/streamable_http/streamableHttp 转换为 http
  */
 export type MCPServerConfig =
   | LocalMCPServerConfig
   | SSEMCPServerConfig
-  | StreamableHTTPMCPServerConfig;
+  | HTTPMCPServerConfig;
 
 /**
  * 本地 MCP 服务器配置
@@ -298,13 +300,21 @@ export interface SSEMCPServerConfig {
 }
 
 /**
- * Streamable HTTP MCP 服务器配置
+ * HTTP MCP 服务器配置
+ *
+ * @description
+ * 与 MCP 官方格式保持一致，使用 type: "http"
+ * 向后兼容 streamable-http 写法
  */
-export interface StreamableHTTPMCPServerConfig {
-  type?: "streamable-http"; // 可选，默认就是 streamable-http
+export interface HTTPMCPServerConfig {
+  type?: "http" | "streamable-http"; // 可选，默认就是 http
   url: string;
   headers?: Record<string, string>;
 }
+
+// 向后兼容的别名
+/** @deprecated 使用 HTTPMCPServerConfig 代替 */
+export type StreamableHTTPMCPServerConfig = HTTPMCPServerConfig;
 
 /**
  * Endpoint 配置接口

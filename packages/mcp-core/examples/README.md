@@ -27,9 +27,9 @@ pnpm install
 pnpm connect:stdio
 ```
 
-### streamable-http 示例
+### http 示例
 
-连接到 streamable-http 类型的 MCP 服务（如 ModelScope 托管的 12306-mcp）：
+连接到 http 类型的 MCP 服务（如 ModelScope 托管的 12306-mcp）：
 
 ```bash
 pnpm connect:http
@@ -202,16 +202,16 @@ await manager.disconnect();
 
 ---
 
-## streamable-http 示例说明
+## http 示例说明
 
-示例文件 `streamable-http.ts` 展示了如何使用 `MCPConnection` 连接到 streamable-http 类型的 MCP 服务：
+示例文件 `http.ts` 展示了如何使用 `MCPConnection` 连接到 http 类型的 MCP 服务：
 
 ### 1. 创建服务配置
 
 ```typescript
 const serviceName = "12306-mcp";                  // 服务名称
 const config = {
-  type: MCPTransportType.STREAMABLE_HTTP,         // 传输类型：streamable-http
+  type: MCPTransportType.STREAMABLE_HTTP,         // 传输类型：http
   url: "https://mcp.api-inference.modelscope.net/7521b0f1413b49/mcp", // 服务 URL
 };
 ```
@@ -267,7 +267,7 @@ const config = {
 ```
 
 **注意**: `type` 字段是可选的，MCPConnection 会根据 URL 自动推断传输类型：
-- URL 以 `/mcp` 结尾 → 自动识别为 `streamable-http` 类型
+- URL 以 `/mcp` 结尾 → 自动识别为 `http` 类型
 - URL 以 `/sse` 结尾 → 自动识别为 `sse` 类型
 
 ---

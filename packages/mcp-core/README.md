@@ -10,7 +10,7 @@
 `@xiaozhi-client/mcp-core` 是一个完全独立的 MCP（Model Context Protocol）核心实现库，提供：
 
 - **零业务耦合** - 纯粹的 MCP 协议实现，无任何业务逻辑依赖
-- **多传输协议支持** - 支持 STDIO、SSE、StreamableHTTP 三种传输方式
+- **多传输协议支持** - 支持 STDIO、SSE、HTTP 三种传输方式
 - **灵活的事件系统** - 基于回调的事件机制，易于集成
 - **完整的类型定义** - TypeScript 严格模式，提供完整的类型支持
 - **生产就绪** - 经过充分测试，可直接用于生产环境
@@ -31,7 +31,7 @@
 |------|------|----------|
 | **STDIO** | 标准输入输出通信 | 本地进程通信 |
 | **SSE** | Server-Sent Events | 单向服务器推送 |
-| **StreamableHTTP** | 流式 HTTP 通信 | 现代 HTTP/2 场景 |
+| **HTTP** | HTTP 通信 | 现代 HTTP 场景 |
 
 ## 安装
 
@@ -179,7 +179,7 @@ import { MCPConnection, MCPTransportType } from '@xiaozhi-client/mcp-core';
 // 1. 创建连接配置
 const config = {
   name: 'my-mcp-service',
-  type: MCPTransportType.STREAMABLE_HTTP,
+  type: MCPTransportType.HTTP,
   url: 'https://api.example.com/mcp',
   apiKey: 'your-api-key'
 };
@@ -330,12 +330,6 @@ interface MCPServiceConfig {
   // 认证配置
   apiKey?: string;                       // API 密钥
   headers?: Record<string, string>;      // 自定义请求头
-
-  // 超时配置
-  timeout?: number;                      // 连接超时（毫秒，默认 10000）
-
-  // 重试配置
-  retryAttempts?: number;                // 重试次数
 }
 ```
 
@@ -344,7 +338,7 @@ interface MCPServiceConfig {
 如果不指定 `type`，库会自动根据配置推断：
 
 - 有 `command` 字段 → `MCPTransportType.STDIO`
-- 有 `url` 字段 → `MCPTransportType.STREAMABLE_HTTP` 或 `MCPTransportType.SSE`
+- 有 `url` 字段 → `MCPTransportType.HTTP` 或 `MCPTransportType.SSE`
 
 ## 工具调用
 
@@ -451,10 +445,9 @@ class MyMCPClient {
   constructor(url: string, apiKey: string) {
     const config = {
       name: 'my-service',
-      type: MCPTransportType.STREAMABLE_HTTP,
+      type: MCPTransportType.HTTP,
       url,
-      apiKey,
-      timeout: 30000
+      apiKey
     };
 
     const callbacks = {
@@ -687,7 +680,7 @@ await connection.callTool(name, params); // 可能抛出异常
 const config = {
   name: 'service',
   url: 'https://api.example.com'
-  // type 会自动推断为 STREAMABLE_HTTP
+  // type 会自动推断为 HTTP
 };
 
 // ❌ 避免：手动指定容易出错的类型
@@ -705,17 +698,7 @@ const config = {
 **A:**
 - **本地进程** → 使用 `STDIO`
 - **单向推送** → 使用 `SSE`
-- **现代 HTTP** → 使用 `StreamableHTTP`（推荐）
-
-### Q: 连接超时如何处理？
-
-**A:** 在配置中设置 `timeout` 字段（单位：毫秒）：
-
-```typescript
-{
-  timeout: 30000  // 30 秒超时
-}
-```
+- **现代 HTTP** → 使用 `HTTP`（推荐）
 
 ### Q: 如何处理连接失败？
 

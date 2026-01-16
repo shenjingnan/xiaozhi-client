@@ -1,6 +1,14 @@
 /**
  * MCP 服务器配置 Type 字段标准化工具
- * 支持将各种 type 字段格式转换为标准的中划线格式
+ * 支持将各种 type 字段格式转换为 MCP 官方标准格式
+ *
+ * @description
+ * 标准格式与 MCP 官方保持一致：
+ * - stdio: 本地进程通信
+ * - sse: Server-Sent Events
+ * - http: Streamable HTTP（推荐使用 http 而非 streamable-http）
+ *
+ * 向后兼容：自动转换各种变体格式
  */
 
 /**
@@ -17,8 +25,17 @@ export interface MCPBaseConfig {
  */
 export namespace TypeFieldNormalizer {
   /**
-   * 标准化type字段格式
-   * 支持将各种格式转换为标准的中划线格式
+   * 标准化 type 字段格式
+   *
+   * 支持的转换：
+   * - http 变体：http → http（标准值）
+   * - streamable-http → http
+   * - streamable_http → http
+   * - streamableHttp → http
+   * - sse 变体：sse → sse（标准值）
+   * - s_se → sse
+   * - s-se → sse
+   * - stdio 变体：stdio → stdio（标准值）
    */
   // 函数重载：泛型版本，用于类型安全的调用
   export function normalizeTypeField<T extends MCPBaseConfig>(config: T): T;
@@ -37,7 +54,7 @@ export namespace TypeFieldNormalizer {
     // 创建配置的深拷贝以避免修改原始对象
     const normalizedConfig = JSON.parse(JSON.stringify(config));
 
-    // 如果配置中没有type字段，直接返回
+    // 如果配置中没有 type 字段，直接返回
     if (!("type" in normalizedConfig)) {
       return normalizedConfig;
     }
@@ -45,45 +62,73 @@ export namespace TypeFieldNormalizer {
     const originalType = normalizedConfig.type;
 
     // 如果已经是标准格式，直接返回
-    if (originalType === "sse" || originalType === "streamable-http") {
+    if (originalType === "stdio" || originalType === "sse" || originalType === "http") {
       return normalizedConfig;
     }
 
     // 转换为标准格式
-    let normalizedType: string;
-
-    if (
-      originalType === "streamableHttp" ||
-      originalType === "streamable_http"
-    ) {
-      normalizedType = "streamable-http";
-    } else if (originalType === "s_se" || originalType === "s-se") {
-      normalizedType = "sse";
-    } else {
-      // 对于其他格式，尝试智能转换
-      normalizedType = convertToKebabCase(originalType);
-    }
+    const normalizedType = normalizeTypeValue(originalType);
 
     // 验证转换后的类型是否有效
-    if (normalizedType === "sse" || normalizedType === "streamable-http") {
+    if (normalizedType === "stdio" || normalizedType === "sse" || normalizedType === "http") {
       normalizedConfig.type = normalizedType;
-      // 记录转换日志（如果有的话）
-      if (originalType !== normalizedType) {
-        // 可以在需要时添加日志记录
-      }
     }
 
     return normalizedConfig;
   }
 
   /**
-   * 将字符串转换为kebab-case格式
+   * 标准化单个 type 值
    */
-  function convertToKebabCase(str: string): string {
-    return str
-      .replace(/([a-z])([A-Z])/g, "$1-$2") // 驼峰转中划线
-      .replace(/_/g, "-") // 下划线转中划线
-      .toLowerCase(); // 转小写
+  export function normalizeTypeValue(type: string): string {
+    // http 相关的变体全部转为 http
+    if (
+      type === "http" ||
+      type === "streamable-http" ||
+      type === "streamable_http" ||
+      type === "streamablehttp" ||
+      type === "streamableHttp"
+    ) {
+      return "http";
+    }
+
+    // sse 相关的变体转为 sse
+    if (type === "sse" || type === "s_se" || type === "s-se") {
+      return "sse";
+    }
+
+    // stdio 相关的变体转为 stdio
+    if (type === "stdio") {
+      return "stdio";
+    }
+
+    // 对于其他格式，尝试智能转换（转小写、下划线转中划线等）
+    return convertToStandardFormat(type);
+  }
+
+  /**
+   * 将字符串转换为标准格式
+   */
+  function convertToStandardFormat(str: string): string {
+    const lowered = str.toLowerCase();
+
+    // 处理 http 相关的变体
+    if (lowered.includes("http") || lowered.includes("streamable")) {
+      return "http";
+    }
+
+    // 处理 sse 相关的变体
+    if (lowered.includes("sse")) {
+      return "sse";
+    }
+
+    // 处理 stdio 相关的变体
+    if (lowered.includes("stdio")) {
+      return "stdio";
+    }
+
+    // 无法识别的格式，返回原值
+    return str;
   }
 }
 

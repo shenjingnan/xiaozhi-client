@@ -27,7 +27,7 @@ vi.mock("../transport-factory.js", () => {
     getSupportedTypes: vi.fn().mockReturnValue([
       "stdio",
       "sse",
-      "streamable-http",
+      "http",
     ]),
   };
 
@@ -100,7 +100,7 @@ describe("MCPConnection", () => {
     mockTransportFactory.getSupportedTypes.mockReturnValue([
       MCPTransportType.STDIO,
       MCPTransportType.SSE,
-      MCPTransportType.STREAMABLE_HTTP,
+      MCPTransportType.HTTP,
     ]);
 
     // Mock callbacks
@@ -496,9 +496,9 @@ describe("MCPConnection", () => {
       expect(status.transportType).toBe(MCPTransportType.SSE);
     });
 
-    it("应该支持 streamable-http transport 配置", () => {
+    it("应该支持 http transport 配置", () => {
       const httpConfig: MCPServiceConfig = {
-        type: MCPTransportType.STREAMABLE_HTTP,
+        type: MCPTransportType.HTTP,
         url: "https://test.example.com/mcp",
         headers: { "Custom-Header": "value" },
       };
@@ -507,7 +507,7 @@ describe("MCPConnection", () => {
       const status = httpConnection.getStatus();
 
       expect(status.name).toBe("test-http-service");
-      expect(status.transportType).toBe(MCPTransportType.STREAMABLE_HTTP);
+      expect(status.transportType).toBe(MCPTransportType.HTTP);
     });
 
     it("应该处理不同的 transport 配置", () => {
@@ -531,7 +531,7 @@ describe("MCPConnection", () => {
         {
           name: "http-service",
           config: {
-            type: MCPTransportType.STREAMABLE_HTTP,
+            type: MCPTransportType.HTTP,
             url: "https://test.example.com/mcp",
             headers: { Authorization: "Bearer token" },
           } as MCPServiceConfig,

@@ -30,24 +30,24 @@ export function inferTransportTypeFromUrl(
       return MCPTransportType.SSE;
     }
     if (pathname.endsWith("/mcp")) {
-      return MCPTransportType.STREAMABLE_HTTP;
+      return MCPTransportType.HTTP;
     }
 
     // 默认类型 - 使用 console 输出
     if (options?.serviceName) {
       console.info(
-        `[MCP-${options.serviceName}] URL 路径 ${pathname} 不匹配特定规则，默认推断为 streamable-http 类型`
+        `[MCP-${options.serviceName}] URL 路径 ${pathname} 不匹配特定规则，默认推断为 http 类型`
       );
     }
-    return MCPTransportType.STREAMABLE_HTTP;
+    return MCPTransportType.HTTP;
   } catch (error) {
     if (options?.serviceName) {
       console.warn(
-        `[MCP-${options.serviceName}] URL 解析失败，默认推断为 streamable-http 类型`,
+        `[MCP-${options.serviceName}] URL 解析失败，默认推断为 http 类型`,
         error
       );
     }
-    return MCPTransportType.STREAMABLE_HTTP;
+    return MCPTransportType.HTTP;
   }
 }
 

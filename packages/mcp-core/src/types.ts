@@ -28,14 +28,14 @@ export type MCPServerTransport =
 export enum MCPTransportType {
   STDIO = "stdio",
   SSE = "sse",
-  STREAMABLE_HTTP = "streamable-http",
+  HTTP = "http",
 }
 
 /**
  * 传输类型字符串字面量
  * 方便外部用户直接使用字符串而不需要导入枚举
  */
-export type MCPTransportTypeString = "stdio" | "sse" | "streamable-http";
+export type MCPTransportTypeString = "stdio" | "sse" | "http";
 
 /**
  * 传输类型输入值（枚举或字符串字面量）
@@ -91,10 +91,18 @@ export interface ModelScopeSSEOptions {
 /**
  * MCP 服务配置接口
  * 包含所有 MCP 服务的配置选项（不包含服务名称）
+ *
+ * @description
+ * 与 MCP 官方配置格式保持一致，支持三种传输类型：
+ * - stdio: 本地进程通信 { command, args, env }
+ * - sse: Server-Sent Events { url, headers }
+ * - http: Streamable HTTP { url, headers }
+ *
+ * 向后兼容：自动将 streamable-http/streamable_http/streamableHttp 转换为 http
  */
 export interface MCPServiceConfig {
   // name 字段已从配置中移除，应作为独立参数传递
-  type?: MCPTransportTypeInput; // 支持枚举或字符串字面量，如 "stdio" | "sse" | "streamable-http"
+  type?: MCPTransportTypeInput; // 支持枚举或字符串字面量，如 "stdio" | "sse" | "http"
   // stdio 配置
   command?: string;
   args?: string[];
@@ -104,13 +112,9 @@ export interface MCPServiceConfig {
   // 认证配置
   apiKey?: string;
   headers?: Record<string, string>;
-  // ModelScope 特有配置
+  // ModelScope 内部配置（不暴露给用户配置文件）
   modelScopeAuth?: boolean;
   customSSEOptions?: ModelScopeSSEOptions;
-  // 超时配置
-  timeout?: number;
-  // 重试配置
-  retryAttempts?: number;
 }
 
 /**

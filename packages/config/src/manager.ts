@@ -31,18 +31,22 @@ export interface SSEMCPServerConfig {
   headers?: Record<string, string>;
 }
 
-// Streamable HTTP MCP 服务配置
-export interface StreamableHTTPMCPServerConfig {
-  type?: "streamable-http"; // 可选，因为默认就是 streamable-http
+// HTTP MCP 服务配置（与 MCP 官方格式保持一致）
+export interface HTTPMCPServerConfig {
+  type?: "http" | "streamable-http"; // 可选，默认就是 http
   url: string;
   headers?: Record<string, string>;
 }
+
+// 向后兼容的别名
+/** @deprecated 使用 HTTPMCPServerConfig 代替 */
+export type StreamableHTTPMCPServerConfig = HTTPMCPServerConfig;
 
 // 统一的 MCP 服务配置
 export type MCPServerConfig =
   | LocalMCPServerConfig
   | SSEMCPServerConfig
-  | StreamableHTTPMCPServerConfig;
+  | HTTPMCPServerConfig;
 
 export interface MCPToolConfig {
   description?: string;

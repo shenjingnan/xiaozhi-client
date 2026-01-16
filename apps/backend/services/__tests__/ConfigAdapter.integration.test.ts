@@ -13,6 +13,7 @@ import type {
   LocalMCPServerConfig,
   MCPServerConfig,
   SSEMCPServerConfig,
+  HTTPMCPServerConfig,
   StreamableHTTPMCPServerConfig,
 } from "@xiaozhi-client/config";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -53,22 +54,22 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
         {
           name: "简单 MCP 服务",
           url: "https://example.com/mcp",
-          expectedType: MCPTransportType.STREAMABLE_HTTP,
+          expectedType: MCPTransportType.HTTP,
         },
         {
           name: "复杂 ModelScope MCP 服务",
           url: "https://mcp.api-inference.modelscope.net/8928ccc99fa34b/mcp",
-          expectedType: MCPTransportType.STREAMABLE_HTTP,
+          expectedType: MCPTransportType.HTTP,
         },
         {
           name: "其他 API 服务",
           url: "https://example.com/api/v1/tools",
-          expectedType: MCPTransportType.STREAMABLE_HTTP,
+          expectedType: MCPTransportType.HTTP,
         },
         {
           name: "根路径服务",
           url: "https://example.com/",
-          expectedType: MCPTransportType.STREAMABLE_HTTP,
+          expectedType: MCPTransportType.HTTP,
         },
       ];
 
@@ -182,14 +183,14 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
 
       const mcpServiceConfig = {
         name: "explicit-http",
-        type: MCPTransportType.STREAMABLE_HTTP,
+        type: MCPTransportType.HTTP,
         url: "https://example.com/sse",
       };
       const mcpService = new MCPService(mcpServiceConfig);
       const mcpServiceResult = mcpService.getConfig();
 
-      expect(configAdapterResult.type).toBe(MCPTransportType.STREAMABLE_HTTP);
-      expect(mcpServiceResult.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+      expect(configAdapterResult.type).toBe(MCPTransportType.HTTP);
+      expect(mcpServiceResult.type).toBe(MCPTransportType.HTTP);
       expect(configAdapterResult.type).toBe(mcpServiceResult.type);
     });
   });
@@ -224,7 +225,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
       expect(batchResult["sse-service"].type).toBe(MCPTransportType.SSE);
       expect(batchResult["modelscope-sse"].type).toBe(MCPTransportType.SSE);
       expect(batchResult["modelscope-mcp"].type).toBe(
-        MCPTransportType.STREAMABLE_HTTP
+        MCPTransportType.HTTP
       );
       expect(batchResult["amap-maps"].type).toBe(MCPTransportType.SSE);
 
@@ -243,7 +244,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
             mcpServiceConfig.type =
               legacyConfig.type === "sse"
                 ? MCPTransportType.SSE
-                : MCPTransportType.STREAMABLE_HTTP;
+                : MCPTransportType.HTTP;
           }
         }
 
@@ -277,12 +278,12 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
         },
         {
           config: {
-            type: "streamable-http",
+            type: "http",
             url: "https://example.com/mcp",
-          } as StreamableHTTPMCPServerConfig,
-          expectedType: MCPTransportType.STREAMABLE_HTTP,
+          } as HTTPMCPServerConfig,
+          expectedType: MCPTransportType.HTTP,
           expectedDescriptionIncludes: [
-            "Streamable HTTP",
+            "HTTP",
             "https://example.com/mcp",
           ],
         },
@@ -413,7 +414,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
       expect(convertedConfigs.amap.type).toBe(MCPTransportType.SSE);
       expect(convertedConfigs.search.type).toBe(MCPTransportType.SSE);
       expect(convertedConfigs.inference.type).toBe(
-        MCPTransportType.STREAMABLE_HTTP
+        MCPTransportType.HTTP
       );
       expect(convertedConfigs.explicitSse.type).toBe(MCPTransportType.SSE);
 
@@ -470,9 +471,9 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
       );
       const initialService = new MCPService(initialConverted);
 
-      expect(initialConverted.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+      expect(initialConverted.type).toBe(MCPTransportType.HTTP);
       expect(initialService.getConfig().type).toBe(
-        MCPTransportType.STREAMABLE_HTTP
+        MCPTransportType.HTTP
       );
 
       // 配置更新为 SSE 端点
@@ -546,7 +547,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
           case MCPTransportType.SSE:
             sseCount++;
             break;
-          case MCPTransportType.STREAMABLE_HTTP:
+          case MCPTransportType.HTTP:
             httpCount++;
             break;
         }

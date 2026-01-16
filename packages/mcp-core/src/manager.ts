@@ -82,7 +82,7 @@ export class MCPManager extends EventEmitter {
       // 首先检查用户友好的字符串类型
       const typeStr = String(config.type);
       if (typeStr === "http") {
-        normalizedConfig.type = MCPTransportType.STREAMABLE_HTTP;
+        normalizedConfig.type = MCPTransportType.HTTP;
       } else if (typeStr === "sse") {
         normalizedConfig.type = MCPTransportType.SSE;
       } else {

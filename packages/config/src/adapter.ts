@@ -29,14 +29,14 @@ export class ConfigValidationError extends Error {
   }
 }
 
-// 定义简化的 MCP 传输类型（与 core/mcp/types 保持一致）
+// 定义简化的 MCP 传输类型（与 MCP 官方格式保持一致）
 export enum MCPTransportType {
   STDIO = "stdio",
   SSE = "sse",
-  STREAMABLE_HTTP = "streamable-http",
+  HTTP = "http",
 }
 
-// 定义简化的 MCPServiceConfig 接口
+// 定义简化的 MCPServiceConfig 接口（与 MCP 官方格式保持一致）
 export interface MCPServiceConfig {
   name: string;
   type: MCPTransportType;
@@ -44,14 +44,13 @@ export interface MCPServiceConfig {
   args?: string[];
   env?: Record<string, string>;
   url?: string;
-  timeout?: number;
   headers?: Record<string, string>;
   modelScopeAuth?: boolean;
 }
 
 /**
  * URL 类型推断函数
- * 与 MCPService 的推断逻辑保持一致
+ * 与 MCP 官方格式保持一致
  * 基于 URL 路径末尾推断传输类型
  */
 function inferTransportTypeFromUrl(url: string): MCPTransportType {
@@ -64,14 +63,14 @@ function inferTransportTypeFromUrl(url: string): MCPTransportType {
       return MCPTransportType.SSE;
     }
     if (pathname.endsWith("/mcp")) {
-      return MCPTransportType.STREAMABLE_HTTP;
+      return MCPTransportType.HTTP;
     }
 
     // 默认类型
-    return MCPTransportType.STREAMABLE_HTTP;
+    return MCPTransportType.HTTP;
   } catch (error) {
     // URL 解析失败时使用默认类型
-    return MCPTransportType.STREAMABLE_HTTP;
+    return MCPTransportType.HTTP;
   }
 }
 
@@ -130,8 +129,9 @@ function convertByConfigType(
     switch (legacyConfig.type) {
       case "sse":
         return convertSSEConfig(serviceName, legacyConfig);
-      case "streamable-http":
-        return convertStreamableHTTPConfig(serviceName, legacyConfig);
+      case "http":
+      case "streamable-http": // 向后兼容
+        return convertHTTPConfig(serviceName, legacyConfig);
       default:
         throw new ConfigValidationError(
           `不支持的传输类型: ${legacyConfig.type}`,
@@ -158,9 +158,9 @@ function convertByConfigType(
       const sseConfig = { ...legacyConfig, type: "sse" as const };
       return convertSSEConfig(serviceName, sseConfig);
     }
-    // 为STREAMABLE_HTTP类型添加显式type字段
-    const httpConfig = { ...legacyConfig, type: "streamable-http" as const };
-    return convertStreamableHTTPConfig(serviceName, httpConfig);
+    // 为HTTP类型添加显式type字段
+    const httpConfig = { ...legacyConfig, type: "http" as const };
+    return convertHTTPConfig(serviceName, httpConfig);
   }
 
   throw new ConfigValidationError("无法识别的配置类型", serviceName);
@@ -223,7 +223,6 @@ function convertLocalConfig(
     command: resolvedCommand,
     args: resolvedArgs,
     env: config.env, // 传递环境变量
-    timeout: 30000,
   };
 }
 
@@ -249,7 +248,6 @@ function convertSSEConfig(
     name: serviceName,
     type: inferredType,
     url: config.url,
-    timeout: 30000,
     headers: config.headers,
   };
 
@@ -269,16 +267,16 @@ function convertSSEConfig(
 }
 
 /**
- * 转换 Streamable HTTP 配置
+ * 转换 HTTP 配置
  */
-function convertStreamableHTTPConfig(
+function convertHTTPConfig(
   serviceName: string,
   config: StreamableHTTPMCPServerConfig
 ): MCPServiceConfig {
   // 检查 URL 是否存在
   if (config.url === undefined || config.url === null) {
     throw new ConfigValidationError(
-      "STREAMABLE_HTTP 配置必须包含 url 字段",
+      "HTTP 配置必须包含 url 字段",
       serviceName
     );
   }
@@ -287,9 +285,8 @@ function convertStreamableHTTPConfig(
 
   return {
     name: serviceName,
-    type: MCPTransportType.STREAMABLE_HTTP,
+    type: MCPTransportType.HTTP,
     url,
-    timeout: 30000,
     headers: config.headers,
   };
 }
@@ -403,18 +400,18 @@ function validateNewConfig(config: MCPServiceConfig): void {
       break;
 
     case MCPTransportType.SSE:
-      // SSE 配置必须有 URL（即使是空字符串也会被推断为 STREAMABLE_HTTP）
+      // SSE 配置必须有 URL（即使是空字符串也会被推断为 HTTP）
       if (config.url === undefined || config.url === null) {
         throw new ConfigValidationError("SSE 配置必须包含 url 字段");
       }
       break;
 
-    case MCPTransportType.STREAMABLE_HTTP:
-      // STREAMABLE_HTTP 配置允许空 URL，会在后续处理中设置默认值
+    case MCPTransportType.HTTP:
+      // HTTP 配置允许空 URL，会在后续处理中设置默认值
       // 只有当 URL 完全不存在时才报错
       if (config.url === undefined || config.url === null) {
         throw new ConfigValidationError(
-          "STREAMABLE_HTTP 配置必须包含 url 字段"
+          "HTTP 配置必须包含 url 字段"
         );
       }
       break;
@@ -433,9 +430,9 @@ export function getConfigTypeDescription(config: MCPServerConfig): string {
   }
 
   if ("url" in config) {
-    // 检查是否为显式 streamable-http 配置
-    if ("type" in config && config.type === "streamable-http") {
-      return `Streamable HTTP (${config.url})`;
+    // 检查是否为显式 http 配置
+    if ("type" in config && (config.type === "http" || config.type === "streamable-http")) {
+      return `HTTP (${config.url})`;
     }
 
     // 检查是否为显式 sse 配置
@@ -451,7 +448,7 @@ export function getConfigTypeDescription(config: MCPServerConfig): string {
     if (inferredType === MCPTransportType.SSE) {
       return `SSE${isModelScope ? " (ModelScope)" : ""} (${config.url})`;
     }
-    return `Streamable HTTP (${config.url})`;
+    return `HTTP (${config.url})`;
   }
 
   return "未知类型";

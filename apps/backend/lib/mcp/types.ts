@@ -23,12 +23,12 @@ export type MCPServerTransport =
 
 /**
  * 通信方式枚举
- * 定义 MCP 支持的传输类型
+ * 定义 MCP 支持的传输类型（与 MCP 官方格式保持一致）
  */
 export enum MCPTransportType {
   STDIO = "stdio",
   SSE = "sse",
-  STREAMABLE_HTTP = "streamable-http",
+  HTTP = "http",
 }
 
 // =========================
@@ -51,7 +51,7 @@ export interface ModelScopeSSEOptions {
 
 /**
  * MCP 服务配置接口
- * 包含所有 MCP 服务的配置选项
+ * 与 MCP 官方格式保持一致，包含所有 MCP 服务的配置选项
  */
 export interface MCPServiceConfig {
   name: string;
@@ -65,13 +65,9 @@ export interface MCPServiceConfig {
   // 认证配置
   apiKey?: string;
   headers?: Record<string, string>;
-  // ModelScope 特有配置
+  // ModelScope 内部配置（不暴露给用户配置文件）
   modelScopeAuth?: boolean;
   customSSEOptions?: ModelScopeSSEOptions;
-  // 超时配置
-  timeout?: number;
-  // 重试配置
-  retryAttempts?: number;
 }
 
 // =========================
