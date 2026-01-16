@@ -13,7 +13,7 @@
  * 运行方式：
  * ```bash
  * cd packages/endpoint
- * pnpm start:example dual-endpoint-isolation
+ * pnpm start:iso
  * ```
  *
  * 测试验证：
@@ -45,11 +45,11 @@ async function main(): Promise<void> {
   // 1. 配置两个小智接入点 URL
   // 接入点 1：连接 calculator 服务
   const endpointUrl1 =
-    "wss://api.xiaozhi.me/mcp/?token=eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMwMjcyMCwiYWdlbnRJZCI6MTMyNDE0OSwiZW5kcG9pbnRJZCI6ImFnZW50XzEzMjQxNDkiLCJwdXJwb3NlIjoibWNwLWVuZHBvaW50IiwiaWF0IjoxNzY4NDgwOTMwLCJleHAiOjE4MDAwMzg1MzB9.Oqd2JtoS0dszKdMdCNW67KawYTOgkI7kjqtlJ87dqKxYfZFFRbnyWKsk4S2x2vZAu8p7dBnpIZt8XzXepX2Ncw";
+    "wss://api.xiaozhi.me/mcp/?token=<token>";
 
   // 接入点 2：连接 datetime 服务
   const endpointUrl2 =
-    "wss://api.xiaozhi.me/mcp/?token=eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMwMjcyMCwiYWdlbnRJZCI6MTMyNDMyMCwiZW5kcG9pbnRJZCI6ImFnZW50XzEzMjQzMjAiLCJwdXJwb3NlIjoibWNwLWVuZHBvaW50IiwiaWF0IjoxNzY4NDgyMjYxLCJleHAiOjE4MDAwMzk4NjF9.mujQObddRTRXHmK8T_zX26J_oNI9NjzbH627c9UHW0_dKIaHjoHsYtI6awaFa0IHncYeJM50dMRP2I_Oy122IQ";
+    "wss://api.xiaozhi.me/mcp/?token=<token>";
 
   // 提取 endpoint ID 用于显示
   const endpointId1 = "agent_1324149";
@@ -68,7 +68,7 @@ async function main(): Promise<void> {
     mcpServers: {
       calculator: {
         command: "npx",
-        args: ["-y", "@xiaozhi-client/calculator-mcp@1.9.7-beta.16"],
+        args: ["-y", "@xiaozhi-client/calculator-mcp"],
       },
     },
     reconnectDelay: 2000,
@@ -79,7 +79,7 @@ async function main(): Promise<void> {
     mcpServers: {
       datetime: {
         command: "npx",
-        args: ["-y", "@xiaozhi-client/datetime-mcp@1.9.7-beta.16"],
+        args: ["-y", "@xiaozhi-client/datetime-mcp"],
       },
     },
     reconnectDelay: 2000,

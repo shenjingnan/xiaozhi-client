@@ -9,7 +9,7 @@
  * 运行方式：
  * ```bash
  * cd packages/endpoint
- * pnpm start
+ * pnpm start:agg
  * ```
  *
  * 测试验证：
@@ -44,7 +44,7 @@ async function main(): Promise<void> {
 
   // 1. 配置小智接入点 URL
   // 注意：请将此处的 URL 替换为你自己的接入点地址
-  const endpointUrl = "wss://api.xiaozhi.me/mcp/?token=eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMwMjcyMCwiYWdlbnRJZCI6MTMyNDE0OSwiZW5kcG9pbnRJZCI6ImFnZW50XzEzMjQxNDkiLCJwdXJwb3NlIjoibWNwLWVuZHBvaW50IiwiaWF0IjoxNzY4NDgwOTMwLCJleHAiOjE4MDAwMzg1MzB9.Oqd2JtoS0dszKdMdCNW67KawYTOgkI7kjqtlJ87dqKxYfZFFRbnyWKsk4S2x2vZAu8p7dBnpIZt8XzXepX2Ncw"
+  const endpointUrl = "wss://api.xiaozhi.me/mcp/?token=<token>";
 
   console.log("接入点配置:");
   console.log(`  URL: ${endpointUrl.slice(0, 50)}...`);
@@ -58,12 +58,12 @@ async function main(): Promise<void> {
       // 计算器 MCP 服务（stdio 类型）
       calculator: {
         command: "npx",
-        args: ["-y", "@xiaozhi-client/calculator-mcp@1.9.7-beta.16"],
+        args: ["-y", "@xiaozhi-client/calculator-mcp"],
       },
       // 日期时间 MCP 服务（stdio 类型）
       datetime: {
         command: "npx",
-        args: ["-y", "@xiaozhi-client/datetime-mcp@1.9.7-beta.16"],
+        args: ["-y", "@xiaozhi-client/datetime-mcp"],
       },
     },
     // 可选：重连延迟（毫秒），默认 2000

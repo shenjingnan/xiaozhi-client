@@ -43,7 +43,7 @@ async function main(): Promise<void> {
   // 1. 配置小智接入点 URL
   // 注意：请将此处的 URL 替换为你自己的接入点地址
   const endpointUrl =
-    "wss://api.xiaozhi.me/mcp/?token=eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMwMjcyMCwiYWdlbnRJZCI6MTMyNDE0OSwiZW5kcG9pbnRJZCI6ImFnZW50XzEzMjQxNDkiLCJwdXJwb3NlIjoibWNwLWVuZHBvaW50IiwiaWF0IjoxNzY4NDgwOTMwLCJleHAiOjE4MDAwMzg1MzB9.Oqd2JtoS0dszKdMdCNW67KawYTOgkI7kjqtlJ87dqKxYfZFFRbnyWKsk4S2x2vZAu8p7dBnpIZt8XzXepX2Ncw";
+    "wss://api.xiaozhi.me/mcp/?token=<token>";
 
   console.log("接入点配置:");
   console.log(`  URL: ${endpointUrl.slice(0, 50)}...`);
@@ -59,7 +59,7 @@ async function main(): Promise<void> {
         command: "npx",
         args: [
           "-y",
-          "@xiaozhi-client/calculator-mcp@1.9.7-beta.16",
+          "@xiaozhi-client/calculator-mcp",
         ],
       },
     },
@@ -113,7 +113,7 @@ async function main(): Promise<void> {
     console.log();
 
     // 6. 保持连接供测试使用
-    console.log("=" .repeat(50));
+    console.log("=".repeat(50));
     console.log("连接已建立，服务正在运行...");
     console.log();
     console.log("💡 测试验证方法:");
@@ -130,7 +130,7 @@ async function main(): Promise<void> {
     console.log(`     -H "authorization: Bearer YOUR_TOKEN"`);
     console.log();
     console.log("   预期结果：返回的工具列表应包含 calculator 工具");
-    console.log("=" .repeat(50));
+    console.log("=".repeat(50));
     console.log();
     console.log("按 Ctrl+C 退出...");
 
