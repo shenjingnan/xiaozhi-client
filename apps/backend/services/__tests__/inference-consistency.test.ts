@@ -22,22 +22,22 @@ describe("MCPService 和 ConfigAdapter 推断逻辑一致性测试", () => {
     {
       name: "简单 MCP 路径",
       url: "https://example.com/mcp",
-      expectedType: MCPTransportType.STREAMABLE_HTTP,
+      expectedType: MCPTransportType.HTTP,
     },
     {
       name: "复杂 ModelScope MCP 路径",
       url: "https://mcp.api-inference.modelscope.net/8928ccc99fa34b/mcp",
-      expectedType: MCPTransportType.STREAMABLE_HTTP,
+      expectedType: MCPTransportType.HTTP,
     },
     {
       name: "其他 API 路径",
       url: "https://example.com/api/v1/tools",
-      expectedType: MCPTransportType.STREAMABLE_HTTP,
+      expectedType: MCPTransportType.HTTP,
     },
     {
       name: "根路径",
       url: "https://example.com/",
-      expectedType: MCPTransportType.STREAMABLE_HTTP,
+      expectedType: MCPTransportType.HTTP,
     },
   ];
 
@@ -78,8 +78,8 @@ describe("MCPService 和 ConfigAdapter 推断逻辑一致性测试", () => {
     const mcpServiceResult = mcpService.getConfig();
 
     // 两个组件都应该默认推断为 STREAMABLE_HTTP
-    expect(configAdapterResult.type).toBe(MCPTransportType.STREAMABLE_HTTP);
-    expect(mcpServiceResult.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+    expect(configAdapterResult.type).toBe(MCPTransportType.HTTP);
+    expect(mcpServiceResult.type).toBe(MCPTransportType.HTTP);
     expect(configAdapterResult.type).toBe(mcpServiceResult.type);
   });
 
@@ -87,7 +87,7 @@ describe("MCPService 和 ConfigAdapter 推断逻辑一致性测试", () => {
     const explicitConfig = {
       name: "explicit-service",
       url: "https://example.com/sse", // 这个 URL 应该推断为 SSE
-      type: MCPTransportType.STREAMABLE_HTTP, // 但显式指定为 STREAMABLE_HTTP
+      type: MCPTransportType.HTTP, // 但显式指定为 STREAMABLE_HTTP
     };
 
     // ConfigAdapter 处理显式类型
@@ -105,8 +105,8 @@ describe("MCPService 和 ConfigAdapter 推断逻辑一致性测试", () => {
     const mcpServiceResult = mcpService.getConfig();
 
     // 两个组件都应该使用显式指定的类型
-    expect(configAdapterResult.type).toBe(MCPTransportType.STREAMABLE_HTTP);
-    expect(mcpServiceResult.type).toBe(MCPTransportType.STREAMABLE_HTTP);
+    expect(configAdapterResult.type).toBe(MCPTransportType.HTTP);
+    expect(mcpServiceResult.type).toBe(MCPTransportType.HTTP);
     expect(configAdapterResult.type).toBe(mcpServiceResult.type);
   });
 });

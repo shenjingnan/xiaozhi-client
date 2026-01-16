@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MCPTransportType } from "../types.js";
-import type { InternalMCPServiceConfig, MCPServiceConfig } from "../types.js";
+import type { InternalMCPServiceConfig } from "../types.js";
 import { TransportFactory } from "../transport-factory.js";
 
 describe("TransportFactory", () => {
@@ -26,10 +26,10 @@ describe("TransportFactory", () => {
       expect(() => TransportFactory.validateConfig(config)).not.toThrow();
     });
 
-    it("应该验证 streamable-http 配置", () => {
+    it("应该验证 http 配置", () => {
       const config: InternalMCPServiceConfig = {
         name: "test-http",
-        type: MCPTransportType.STREAMABLE_HTTP,
+        type: MCPTransportType.HTTP,
         url: "https://example.com/mcp",
       };
 
@@ -92,14 +92,14 @@ describe("TransportFactory", () => {
       );
     });
 
-    it("streamable-http 类型缺少 url 时应该抛出错误", () => {
+    it("http 类型缺少 url 时应该抛出错误", () => {
       const config: InternalMCPServiceConfig = {
         name: "test",
-        type: MCPTransportType.STREAMABLE_HTTP,
+        type: MCPTransportType.HTTP,
       };
 
       expect(() => TransportFactory.validateConfig(config)).toThrow(
-        "streamable-http 类型需要 url 字段"
+        "http 类型需要 url 字段"
       );
     });
 
@@ -141,7 +141,6 @@ describe("TransportFactory", () => {
         name: "test",
         type: MCPTransportType.SSE,
         url: "https://example.com/sse",
-        timeout: 5000,
       };
 
       expect(() => TransportFactory.validateConfig(config)).not.toThrow();
@@ -175,10 +174,10 @@ describe("TransportFactory", () => {
       expect(transport).toBeDefined();
     });
 
-    it("应该创建 streamable-http transport", () => {
+    it("应该创建 http transport", () => {
       const config: InternalMCPServiceConfig = {
         name: "test-http",
-        type: MCPTransportType.STREAMABLE_HTTP,
+        type: MCPTransportType.HTTP,
         url: "https://example.com/mcp",
       };
 
@@ -209,14 +208,14 @@ describe("TransportFactory", () => {
       );
     });
 
-    it("streamable-http 缺少 url 时应该抛出错误", () => {
+    it("http 缺少 url 时应该抛出错误", () => {
       const config: InternalMCPServiceConfig = {
         name: "test",
-        type: MCPTransportType.STREAMABLE_HTTP,
+        type: MCPTransportType.HTTP,
       };
 
       expect(() => TransportFactory.create(config)).toThrow(
-        "StreamableHTTP transport 需要 URL 配置"
+        "HTTP transport 需要 URL 配置"
       );
     });
 
@@ -238,7 +237,7 @@ describe("TransportFactory", () => {
 
       expect(types).toContain(MCPTransportType.STDIO);
       expect(types).toContain(MCPTransportType.SSE);
-      expect(types).toContain(MCPTransportType.STREAMABLE_HTTP);
+      expect(types).toContain(MCPTransportType.HTTP);
       expect(types).toHaveLength(3);
     });
   });
@@ -269,7 +268,6 @@ describe("TransportFactory", () => {
         name: "test",
         type: MCPTransportType.SSE,
         url: "https://example.com/sse",
-        retryAttempts: 3,
       };
 
       expect(() => TransportFactory.validateConfig(config)).not.toThrow();

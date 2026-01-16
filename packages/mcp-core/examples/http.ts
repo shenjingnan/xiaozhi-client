@@ -1,19 +1,19 @@
 /**
- * streamable-http MCP 连接示例
+ * http MCP 连接示例
  *
  * 功能说明：
- * - 展示如何使用 MCPConnection 连接到 streamable-http 类型的 MCP 服务
+ * - 展示如何使用 MCPConnection 连接到 http 类型的 MCP 服务
  * - 展示连接、获取工具列表、调用工具、断开连接的完整流程
  *
  * 运行方式：
  * ```bash
- * pnpm start:streamable-http
+ * pnpm start:http
  * ```
  *
  * 如何修改为自己的 MCP 服务：
  * 只需要修改 serviceName 和 config 变量中的 url 参数即可。
  *
- * 例如，如果要使用自己的 streamable-http MCP 服务，可以将配置改为：
+ * 例如，如果要使用自己的 http MCP 服务，可以将配置改为：
  *
  * const serviceName = "my-service";            // 服务名称
  * const config = {
@@ -48,11 +48,11 @@ import { MCPConnection } from "@xiaozhi-client/mcp-core";
  * 主函数
  */
 async function main(): Promise<void> {
-  console.log("=== streamable-http MCP 连接示例 ===\n");
+  console.log("=== http MCP 连接示例 ===\n");
 
   // 1. 创建连接实例
   const connection = new MCPConnection("12306-mcp", {
-    type: "streamable-http",
+    type: "http",
     url: "https://mcp.api-inference.modelscope.net/7521b0f1413b49/mcp",
   }, {
     // 连接成功回调

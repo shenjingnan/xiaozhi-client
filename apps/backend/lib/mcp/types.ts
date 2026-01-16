@@ -28,7 +28,7 @@ export type MCPServerTransport =
 export enum MCPTransportType {
   STDIO = "stdio",
   SSE = "sse",
-  STREAMABLE_HTTP = "streamable-http",
+  HTTP = "http",
 }
 
 // =========================
@@ -65,13 +65,9 @@ export interface MCPServiceConfig {
   // 认证配置
   apiKey?: string;
   headers?: Record<string, string>;
-  // ModelScope 特有配置
+  // ModelScope 内部配置（不暴露给用户配置文件）
   modelScopeAuth?: boolean;
   customSSEOptions?: ModelScopeSSEOptions;
-  // 超时配置
-  timeout?: number;
-  // 重试配置
-  retryAttempts?: number;
 }
 
 // =========================

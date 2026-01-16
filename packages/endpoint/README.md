@@ -370,11 +370,11 @@ interface SSEMCPServerConfig {
 }
 ```
 
-#### Streamable HTTP MCP 服务器
+#### HTTP MCP 服务器
 
 ```typescript
-interface StreamableHTTPMCPServerConfig {
-  type?: "streamable-http";
+interface HTTPMCPServerConfig {
+  type?: "http";
   url: string;
   headers?: Record<string, string>;
 }

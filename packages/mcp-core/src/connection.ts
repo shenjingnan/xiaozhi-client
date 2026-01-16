@@ -75,12 +75,13 @@ export class MCPConnection {
     );
 
     return new Promise((resolve, reject) => {
-      // 设置连接超时
+      // 设置连接超时（使用固定默认值 10 秒）
+      const CONNECTION_TIMEOUT = 10000;
       this.connectionTimeout = setTimeout(() => {
-        const error = new Error(`连接超时 (${this.config.timeout || 10000}ms)`);
+        const error = new Error(`连接超时 (${CONNECTION_TIMEOUT}ms)`);
         this.handleConnectionError(error);
         reject(error);
-      }, this.config.timeout || 10000);
+      }, CONNECTION_TIMEOUT);
 
       try {
         this.client = new Client(
@@ -307,8 +308,11 @@ export class MCPConnection {
   /**
    * 获取服务配置
    */
-  getConfig(): MCPServiceConfig {
-    return this.config;
+  getConfig(): MCPServiceConfig & { name: string } {
+    return {
+      name: this.name,
+      ...this.config,
+    };
   }
 
   /**
@@ -320,7 +324,7 @@ export class MCPConnection {
       connected: this.connectionState === ConnectionState.CONNECTED,
       initialized: this.initialized,
       transportType:
-        (this.config.type as MCPTransportType) || MCPTransportType.STREAMABLE_HTTP,
+        (this.config.type as MCPTransportType) || MCPTransportType.HTTP,
       toolCount: this.tools.size,
       connectionState: this.connectionState,
     };
