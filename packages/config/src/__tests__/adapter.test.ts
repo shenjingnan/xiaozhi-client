@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Mock } from "vitest";
 import {
   ConfigValidationError,
-  convertLegacyToNew,
+  normalizeMCPServerConfig,
   isModelScopeURL,
   MCPTransportType,
 } from "../adapter.js";
@@ -34,13 +34,13 @@ describe("ConfigAdapter 配置适配器测试", () => {
     describe("SSE 类型推断", () => {
       it("应该根据 /sse 路径推断为 SSE 类型", () => {
         const config = { url: "https://example.com/sse" };
-        const result = convertLegacyToNew("test-service", config);
+        const result = normalizeMCPServerConfig("test-service", config);
         expect(result.type).toBe(MCPTransportType.SSE);
       });
 
       it("应该正确处理带有查询参数的 SSE URL", () => {
         const config = { url: "https://mcp.amap.com/sse?key=test&token=abc" };
-        const result = convertLegacyToNew("amap-service", config);
+        const result = normalizeMCPServerConfig("amap-service", config);
         expect(result.type).toBe(MCPTransportType.SSE);
       });
 
@@ -52,14 +52,14 @@ describe("ConfigAdapter 配置适配器测试", () => {
         ];
 
         for (const url of testCases) {
-          const result = convertLegacyToNew("test-service", { url });
+          const result = normalizeMCPServerConfig("test-service", { url });
           expect(result.type).toBe(MCPTransportType.SSE);
         }
       });
 
       it("应该正确处理带端口的 SSE URL", () => {
         const config = { url: "https://localhost:3000/sse" };
-        const result = convertLegacyToNew("local-service", config);
+        const result = normalizeMCPServerConfig("local-service", config);
         expect(result.type).toBe(MCPTransportType.SSE);
       });
     });
@@ -69,7 +69,7 @@ describe("ConfigAdapter 配置适配器测试", () => {
         const config = {
           url: "https://mcp.api-inference.modelscope.net/8928ccc99fa34b/mcp",
         };
-        const result = convertLegacyToNew("modelscope-service", config);
+        const result = normalizeMCPServerConfig("modelscope-service", config);
         expect(result.type).toBe(MCPTransportType.HTTP);
       });
 
@@ -81,7 +81,7 @@ describe("ConfigAdapter 配置适配器测试", () => {
         ];
 
         for (const url of testCases) {
-          const result = convertLegacyToNew("test-service", { url });
+          const result = normalizeMCPServerConfig("test-service", { url });
           expect(result.type).toBe(MCPTransportType.HTTP);
         }
       });
@@ -90,7 +90,7 @@ describe("ConfigAdapter 配置适配器测试", () => {
         const config = {
           url: "https://mcp.api-inference.modelscope.net/8928ccc99fa34b/mcp",
         };
-        const result = convertLegacyToNew("modelscope-service", config);
+        const result = normalizeMCPServerConfig("modelscope-service", config);
         expect(result.type).toBe(MCPTransportType.HTTP);
       });
     });
@@ -98,7 +98,7 @@ describe("ConfigAdapter 配置适配器测试", () => {
     describe("无效 URL 处理", () => {
       it("应该为无效 URL 默认推断为 HTTP", () => {
         const config = { url: "not-a-valid-url" };
-        const result = convertLegacyToNew("test-service", config);
+        const result = normalizeMCPServerConfig("test-service", config);
         expect(result.type).toBe(MCPTransportType.HTTP);
       });
     });
@@ -107,7 +107,7 @@ describe("ConfigAdapter 配置适配器测试", () => {
   describe("显式类型指定", () => {
     it("应该优先使用显式指定的 sse 类型", () => {
       const config = { type: "sse" as const, url: "https://example.com/custom" };
-      const result = convertLegacyToNew("test-service", config);
+      const result = normalizeMCPServerConfig("test-service", config);
       expect(result.type).toBe(MCPTransportType.SSE);
     });
 
@@ -116,7 +116,7 @@ describe("ConfigAdapter 配置适配器测试", () => {
         type: "http" as const,
         url: "https://example.com/sse",
       };
-      const result = convertLegacyToNew("test-service", config);
+      const result = normalizeMCPServerConfig("test-service", config);
       expect(result.type).toBe(MCPTransportType.HTTP);
     });
   });
@@ -136,14 +136,6 @@ describe("ConfigAdapter 配置适配器测试", () => {
       expect(isModelScopeURL("https://example.com/sse")).toBe(false);
       expect(isModelScopeURL("https://mcp.amap.com/sse")).toBe(false);
     });
-
-    it("应该为 ModelScope SSE 服务添加认证标识", () => {
-      const config = {
-        url: "https://mcp.api-inference.modelscope.net/f0fed2f733514b/sse",
-      };
-      const result = convertLegacyToNew("modelscope-service", config);
-      expect(result.modelScopeAuth).toBe(true);
-    });
   });
 
   describe("本地 stdio 配置", () => {
@@ -152,7 +144,7 @@ describe("ConfigAdapter 配置适配器测试", () => {
         command: "node",
         args: ["./server.js"],
       };
-      const result = convertLegacyToNew("local-service", config);
+      const result = normalizeMCPServerConfig("local-service", config);
       expect(result.type).toBe(MCPTransportType.STDIO);
       expect(result.command).toBe("node");
       // 相对路径会被解析为绝对路径
@@ -165,7 +157,7 @@ describe("ConfigAdapter 配置适配器测试", () => {
         command: "python",
         args: ["./script.py", "./config.json"],
       };
-      const result = convertLegacyToNew("local-service", config);
+      const result = normalizeMCPServerConfig("local-service", config);
       // 验证 args 已被解析为绝对路径
       expect(result.args).toBeDefined();
       expect(result.args![0]).toMatch(/\/script\.py$/);
@@ -175,20 +167,20 @@ describe("ConfigAdapter 配置适配器测试", () => {
 
   describe("错误处理", () => {
     it("应该为缺少服务名称的配置抛出错误", () => {
-      expect(() => convertLegacyToNew("", { url: "https://example.com/sse" })).toThrow(
+      expect(() => normalizeMCPServerConfig("", { url: "https://example.com/sse" })).toThrow(
         ConfigValidationError
       );
     });
 
     it("应该为空配置对象抛出错误", () => {
       expect(() =>
-        convertLegacyToNew("test", null as unknown as any)
+        normalizeMCPServerConfig("test", null as unknown as any)
       ).toThrow(ConfigValidationError);
     });
 
     it("应该为无效的传输类型抛出错误", () => {
       const config = { type: "invalid-type" as any, url: "https://example.com" };
-      expect(() => convertLegacyToNew("test-service", config)).toThrow(
+      expect(() => normalizeMCPServerConfig("test-service", config)).toThrow(
         ConfigValidationError
       );
     });
@@ -225,7 +217,7 @@ describe("ConfigAdapter 配置适配器测试", () => {
 
     for (const { url, expected, description } of testCases) {
       it(`应该正确推断: ${description}`, () => {
-        const result = convertLegacyToNew("test-service", { url });
+        const result = normalizeMCPServerConfig("test-service", { url });
         expect(result.type).toBe(expected);
       });
     }

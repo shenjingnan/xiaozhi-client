@@ -12,12 +12,12 @@ vi.mock("@xiaozhi-client/mcp-core", () => ({
 }));
 
 vi.mock("@xiaozhi-client/config", () => ({
-  convertLegacyToNew: vi.fn(),
+  normalizeMCPServerConfig: vi.fn(),
 }));
 
 describe("InternalMCPManagerAdapter", () => {
   let mockMCPManager: any;
-  let mockConvertLegacyToNew: ReturnType<typeof vi.fn>;
+  let mockNormalizeMCPServerConfig: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -27,7 +27,7 @@ describe("InternalMCPManagerAdapter", () => {
     const MCPManagerMock = mcpCore.MCPManager;
 
     const configModule = await import("@xiaozhi-client/config");
-    mockConvertLegacyToNew = configModule.convertLegacyToNew as any;
+    mockNormalizeMCPServerConfig = configModule.normalizeMCPServerConfig as any;
 
     // 设置 mock MCPManager
     mockMCPManager = {
@@ -43,8 +43,8 @@ describe("InternalMCPManagerAdapter", () => {
 
     MCPManagerMock.mockImplementation(() => mockMCPManager);
 
-    // 设置 mock convertLegacyToNew
-    mockConvertLegacyToNew.mockImplementation((name: string, config: any) => ({
+    // 设置 mock normalizeMCPServerConfig
+    mockNormalizeMCPServerConfig.mockImplementation((name: string, config: any) => ({
       name,
       ...config,
     }));
@@ -104,7 +104,7 @@ describe("InternalMCPManagerAdapter", () => {
 
       new InternalMCPManagerAdapter(config);
 
-      expect(mockConvertLegacyToNew).toHaveBeenCalledWith("test-service", {
+      expect(mockNormalizeMCPServerConfig).toHaveBeenCalledWith("test-service", {
         url: "https://example.com/sse",
       });
     });

@@ -453,7 +453,7 @@ export class MCPServerApiHandler {
         name,
         normalizedConfig
       );
-      this.mcpServiceManager.addServiceConfig(mcpServiceConfig);
+      this.mcpServiceManager.addServiceConfig(name, mcpServiceConfig);
       await this.mcpServiceManager.startService(name);
       this.logger.debug("服务已启动", { serverName: name });
 

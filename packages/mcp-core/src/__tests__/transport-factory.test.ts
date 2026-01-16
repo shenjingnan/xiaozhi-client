@@ -273,17 +273,6 @@ describe("TransportFactory", () => {
       expect(() => TransportFactory.validateConfig(config)).not.toThrow();
     });
 
-    it("应该接受 modelScopeAuth 配置", () => {
-      const config: InternalMCPServiceConfig = {
-        name: "test",
-        type: MCPTransportType.SSE,
-        url: "https://mcp.api-inference.modelscope.net/test/sse",
-        modelScopeAuth: true,
-      };
-
-      expect(() => TransportFactory.validateConfig(config)).not.toThrow();
-    });
-
     it("应该接受 customSSEOptions 配置", () => {
       const config: InternalMCPServiceConfig = {
         name: "test",

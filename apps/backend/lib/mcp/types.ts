@@ -54,7 +54,7 @@ export interface ModelScopeSSEOptions {
  * 包含所有 MCP 服务的配置选项
  */
 export interface MCPServiceConfig {
-  name: string;
+  name: string; // 服务名称（向后兼容）
   type?: MCPTransportType; // 现在是可选的，支持自动推断
   // stdio 配置
   command?: string;
@@ -65,8 +65,7 @@ export interface MCPServiceConfig {
   // 认证配置
   apiKey?: string;
   headers?: Record<string, string>;
-  // ModelScope 内部配置（不暴露给用户配置文件）
-  modelScopeAuth?: boolean;
+  // 自定义 SSE 选项
   customSSEOptions?: ModelScopeSSEOptions;
 }
 

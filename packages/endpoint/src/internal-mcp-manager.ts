@@ -9,7 +9,7 @@ import type { MCPServiceConfig } from "@xiaozhi-client/mcp-core";
 import type { EnhancedToolInfo, ToolCallResult } from "./types.js";
 import type { IMCPServiceManager } from "./types.js";
 import type { EndpointConfig, MCPServerConfig } from "./types.js";
-import { convertLegacyToNew } from "@xiaozhi-client/config";
+import { normalizeMCPServerConfig } from "@xiaozhi-client/config";
 
 /**
  * 内部 MCP 服务管理器适配器
@@ -134,16 +134,10 @@ export class InternalMCPManagerAdapter implements IMCPServiceManager {
     serviceName: string,
     config: MCPServerConfig
   ): MCPServiceConfig {
-    // 使用统一的转换函数，自动处理相对路径解析
-    // convertLegacyToNew 会：
-    // 1. 解析 command 中的相对路径（相对于配置文件目录）
-    // 2. 解析 args 中的相对路径
-    // 3. 返回带有 name 字段的完整配置
-    const converted = convertLegacyToNew(serviceName, config);
-
-    // 移除 name 字段（因为 InternalMCPManagerAdapter 不需要）
-    const { name, ...rest } = converted;
-
-    return rest;
+    // 使用统一的规范化函数，自动处理：
+    // 1. 验证配置有效性
+    // 2. 推断传输类型
+    // 3. 解析相对路径（相对于配置文件目录）
+    return normalizeMCPServerConfig(serviceName, config);
   }
 }

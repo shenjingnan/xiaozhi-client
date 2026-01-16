@@ -288,7 +288,7 @@ export class MCPServiceManager extends EventEmitter {
         await this.stopService(serviceName);
       }
 
-      // 创建 MCPService 实例
+      // 创建 MCPService 实例（config 已经包含 name 字段）
       const service = new MCPService(config);
 
       // 连接到服务
@@ -1201,35 +1201,22 @@ export class MCPServiceManager extends EventEmitter {
   }
 
   /**
-   * 添加服务配置（重载方法以支持两种调用方式）
+   * 添加服务配置
+   * 接受不包含 name 字段的配置，内部会自动添加
    */
-  addServiceConfig(name: string, config: MCPServiceConfig): void;
-  addServiceConfig(config: MCPServiceConfig): void;
-  addServiceConfig(
-    nameOrConfig: string | MCPServiceConfig,
-    config?: MCPServiceConfig
-  ): void {
-    let finalConfig: MCPServiceConfig;
-    let serviceName: string;
-
-    if (typeof nameOrConfig === "string" && config) {
-      // 两参数版本
-      serviceName = nameOrConfig;
-      finalConfig = config;
-    } else if (typeof nameOrConfig === "object") {
-      // 单参数版本
-      serviceName = nameOrConfig.name;
-      finalConfig = nameOrConfig;
-    } else {
-      throw new Error("Invalid arguments for addServiceConfig");
-    }
+  addServiceConfig(name: string, config: Partial<MCPServiceConfig>): void {
+    // 添加 name 字段到配置（向后兼容）
+    const configWithName: MCPServiceConfig = {
+      name,
+      ...config,
+    } as MCPServiceConfig;
 
     // 增强配置
-    const enhancedConfig = this.enhanceServiceConfig(finalConfig);
+    const enhancedConfig = this.enhanceServiceConfig(configWithName);
 
     // 存储增强后的配置
-    this.configs[serviceName] = enhancedConfig;
-    console.debug(`[MCPManager] 已添加服务配置: ${serviceName}`);
+    this.configs[name] = enhancedConfig;
+    console.debug(`[MCPManager] 已添加服务配置: ${name}`);
   }
 
   /**

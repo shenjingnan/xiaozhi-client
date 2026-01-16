@@ -329,16 +329,6 @@ const result = await connection.callTool("tool-name", {
 await connection.disconnect();
 ```
 
-### 使用 ModelScope SSE 服务
-
-```typescript
-const serviceName = "my-service";
-const config = {
-  url: "https://mcp.api-inference.modelscope.net/xxx/sse",
-  modelScopeAuth: true                          // 启用 ModelScope 认证
-};
-```
-
 ### 使用自定义请求头
 
 ```typescript

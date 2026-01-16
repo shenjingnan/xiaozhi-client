@@ -37,15 +37,14 @@ export enum MCPTransportType {
 }
 
 // 定义简化的 MCPServiceConfig 接口
+// 与 @xiaozhi-client/mcp-core 中的定义保持一致
 export interface MCPServiceConfig {
-  name: string;
-  type: MCPTransportType;
+  type?: MCPTransportType;
   command?: string;
   args?: string[];
   env?: Record<string, string>;
   url?: string;
   headers?: Record<string, string>;
-  modelScopeAuth?: boolean;
 }
 
 /**
@@ -74,13 +73,14 @@ function inferTransportTypeFromUrl(url: string): MCPTransportType {
 }
 
 /**
- * 将旧的 MCPServerConfig 转换为新的 MCPServiceConfig
+ * 规范化 MCP 服务器配置
+ * 验证配置、推断类型、解析相对路径
  */
-export function convertLegacyToNew(
+export function normalizeMCPServerConfig(
   serviceName: string,
-  legacyConfig: MCPServerConfig
+  config: MCPServerConfig
 ): MCPServiceConfig {
-  console.log("转换配置", { serviceName, legacyConfig });
+  console.log("规范化配置", { serviceName, config });
 
   try {
     // 验证输入参数
@@ -88,24 +88,24 @@ export function convertLegacyToNew(
       throw new ConfigValidationError("服务名称必须是非空字符串");
     }
 
-    if (!legacyConfig || typeof legacyConfig !== "object") {
+    if (!config || typeof config !== "object") {
       throw new ConfigValidationError("配置对象不能为空", serviceName);
     }
 
     // 根据配置类型进行转换
-    const newConfig = convertByConfigType(serviceName, legacyConfig);
+    const normalizedConfig = convertByConfigType(serviceName, config);
 
     // 验证转换后的配置
-    validateNewConfig(newConfig);
+    validateNewConfig(normalizedConfig);
 
-    console.log("配置转换成功", { serviceName, type: newConfig.type });
-    return newConfig;
+    console.log("配置规范化成功", { serviceName, type: normalizedConfig.type });
+    return normalizedConfig;
   } catch (error) {
-    console.error("配置转换失败", { serviceName, error });
+    console.error("配置规范化失败", { serviceName, error });
     throw error instanceof ConfigValidationError
       ? error
       : new ConfigValidationError(
-          `配置转换失败: ${error instanceof Error ? error.message : String(error)}`,
+          `配置规范化失败: ${error instanceof Error ? error.message : String(error)}`,
           serviceName
         );
   }
@@ -217,11 +217,10 @@ function convertLocalConfig(
   });
 
   return {
-    name: serviceName,
     type: MCPTransportType.STDIO,
     command: resolvedCommand,
     args: resolvedArgs,
-    env: config.env, // 传递环境变量
+    env: config.env,
   };
 }
 
@@ -241,25 +240,17 @@ function convertSSEConfig(
     config.type === "sse"
       ? MCPTransportType.SSE
       : inferTransportTypeFromUrl(config.url || "");
-  const isModelScope = config.url ? isModelScopeURL(config.url) : false;
 
   const baseConfig: MCPServiceConfig = {
-    name: serviceName,
     type: inferredType,
     url: config.url,
     headers: config.headers,
   };
 
-  // 如果是 ModelScope 服务，添加特殊配置
-  if (isModelScope) {
-    baseConfig.modelScopeAuth = true;
-  }
-
   console.log("SSE配置转换", {
     serviceName,
     url: config.url,
     inferredType,
-    isModelScope,
   });
 
   return baseConfig;
@@ -283,7 +274,6 @@ function convertHTTPConfig(
   const url = config.url || "";
 
   return {
-    name: serviceName,
     type: MCPTransportType.HTTP,
     url,
     headers: config.headers,
@@ -291,17 +281,17 @@ function convertHTTPConfig(
 }
 
 /**
- * 批量转换配置
+ * 批量规范化配置
  */
-export function convertLegacyConfigBatch(
-  legacyConfigs: Record<string, MCPServerConfig>
+export function normalizeMCPServerConfigBatch(
+  configs: Record<string, MCPServerConfig>
 ): Record<string, MCPServiceConfig> {
-  const newConfigs: Record<string, MCPServiceConfig> = {};
+  const normalizedConfigs: Record<string, MCPServiceConfig> = {};
   const errors: Array<{ serviceName: string; error: Error }> = [];
 
-  for (const [serviceName, legacyConfig] of Object.entries(legacyConfigs)) {
+  for (const [serviceName, config] of Object.entries(configs)) {
     try {
-      newConfigs[serviceName] = convertLegacyToNew(serviceName, legacyConfig);
+      normalizedConfigs[serviceName] = normalizeMCPServerConfig(serviceName, config);
     } catch (error) {
       errors.push({
         serviceName,
@@ -314,11 +304,11 @@ export function convertLegacyConfigBatch(
     const errorMessages = errors
       .map(({ serviceName, error }) => `${serviceName}: ${error.message}`)
       .join("; ");
-    throw new ConfigValidationError(`批量配置转换失败: ${errorMessages}`);
+    throw new ConfigValidationError(`批量配置规范化失败: ${errorMessages}`);
   }
 
-  console.log("批量配置转换成功", { count: Object.keys(newConfigs).length });
-  return newConfigs;
+  console.log("批量配置规范化成功", { count: Object.keys(normalizedConfigs).length });
+  return normalizedConfigs;
 }
 
 /**
@@ -378,10 +368,6 @@ export function isModelScopeURL(url: string): boolean {
  * 验证新配置格式
  */
 function validateNewConfig(config: MCPServiceConfig): void {
-  if (!config.name || typeof config.name !== "string") {
-    throw new ConfigValidationError("配置必须包含有效的 name 字段");
-  }
-
   if (config.type && !Object.values(MCPTransportType).includes(config.type)) {
     throw new ConfigValidationError(`无效的传输类型: ${config.type}`);
   }
