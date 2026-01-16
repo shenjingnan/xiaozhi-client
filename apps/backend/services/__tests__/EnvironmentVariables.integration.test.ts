@@ -22,7 +22,10 @@ describe("环境变量传递集成测试", () => {
       };
 
       // 2. 通过 ConfigAdapter 转换配置
-      const mcpServiceConfig = normalizeMCPServerConfig("amap-maps", userConfig);
+      const mcpServiceConfig = normalizeMCPServerConfig(
+        "amap-maps",
+        userConfig
+      );
 
       // 3. 验证转换后的配置包含环境变量
       expect(mcpServiceConfig).toMatchObject({
@@ -43,7 +46,10 @@ describe("环境变量传递集成测试", () => {
         // 没有 env 字段
       };
 
-      const mcpServiceConfig = normalizeMCPServerConfig("calculator", userConfig);
+      const mcpServiceConfig = normalizeMCPServerConfig(
+        "calculator",
+        userConfig
+      );
 
       expect(mcpServiceConfig.env).toBeUndefined();
       expect(mcpServiceConfig.command).toBe("node");
@@ -59,7 +65,10 @@ describe("环境变量传递集成测试", () => {
         env: {}, // 空的环境变量对象
       };
 
-      const mcpServiceConfig = normalizeMCPServerConfig("python-service", userConfig);
+      const mcpServiceConfig = normalizeMCPServerConfig(
+        "python-service",
+        userConfig
+      );
 
       expect(mcpServiceConfig.env).toEqual({});
       expect(mcpServiceConfig.command).toBe("python");

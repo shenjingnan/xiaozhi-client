@@ -5,9 +5,9 @@
 
 import { MCPService, MCPTransportType } from "@/lib/mcp";
 import {
-  normalizeMCPServerConfigBatch,
-  normalizeMCPServerConfig,
   getConfigTypeDescription,
+  normalizeMCPServerConfig,
+  normalizeMCPServerConfigBatch,
 } from "@xiaozhi-client/config";
 import type {
   HTTPMCPServerConfig,
@@ -564,7 +564,10 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
       const config = { url: longUrl };
 
       // ConfigAdapter 应该能处理
-      const adapterResult = normalizeMCPServerConfig("long-url-service", config);
+      const adapterResult = normalizeMCPServerConfig(
+        "long-url-service",
+        config
+      );
       expect(adapterResult.type).toBe(MCPTransportType.SSE);
 
       // MCPService 应该能处理
