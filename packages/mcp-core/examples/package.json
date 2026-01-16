@@ -8,6 +8,7 @@
     "connect:stdio": "tsx stdio.ts",
     "connect:http": "tsx http.ts",
     "connect:sse": "tsx sse.ts",
+    "connect:streamable-http": "tsx streamable-http.ts",
     "connect:multi": "tsx multi-mcp-manage.ts"
   },
   "dependencies": {

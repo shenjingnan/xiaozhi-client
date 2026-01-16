@@ -43,6 +43,22 @@ pnpm connect:http
 pnpm connect:sse
 ```
 
+### streamable-http 示例
+
+演示 streamable-http 服务的连接，展示 type 字段的多种格式兼容性：
+
+```bash
+pnpm connect:streamable-http
+```
+
+**支持的 type 格式：**
+- `streamable-http` - MCP 官方格式
+- `streamableHttp` - camelCase 格式
+- `streamable_http` - snake_case 格式
+- `http` - 标准格式
+
+所有格式都会被自动规范化为 `http` 类型并正常连接。
+
 ### 多服务管理示例
 
 使用 MCPManager 管理多个 stdio MCP 服务（calculator-mcp 和 datetime-mcp）：
