@@ -10,10 +10,10 @@ import {
   getConfigTypeDescription,
 } from "@xiaozhi-client/config";
 import type {
+  HTTPMCPServerConfig,
   LocalMCPServerConfig,
   MCPServerConfig,
   SSEMCPServerConfig,
-  HTTPMCPServerConfig,
   StreamableHTTPMCPServerConfig,
 } from "@xiaozhi-client/config";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -224,9 +224,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
       expect(batchResult["node-calculator"].type).toBe(MCPTransportType.STDIO);
       expect(batchResult["sse-service"].type).toBe(MCPTransportType.SSE);
       expect(batchResult["modelscope-sse"].type).toBe(MCPTransportType.SSE);
-      expect(batchResult["modelscope-mcp"].type).toBe(
-        MCPTransportType.HTTP
-      );
+      expect(batchResult["modelscope-mcp"].type).toBe(MCPTransportType.HTTP);
       expect(batchResult["amap-maps"].type).toBe(MCPTransportType.SSE);
 
       // 逐个验证与 MCPService 的一致性
@@ -282,10 +280,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
             url: "https://example.com/mcp",
           } as HTTPMCPServerConfig,
           expectedType: MCPTransportType.HTTP,
-          expectedDescriptionIncludes: [
-            "HTTP",
-            "https://example.com/mcp",
-          ],
+          expectedDescriptionIncludes: ["HTTP", "https://example.com/mcp"],
         },
         {
           config: {
@@ -413,9 +408,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
       expect(convertedConfigs.calculator.type).toBe(MCPTransportType.STDIO);
       expect(convertedConfigs.amap.type).toBe(MCPTransportType.SSE);
       expect(convertedConfigs.search.type).toBe(MCPTransportType.SSE);
-      expect(convertedConfigs.inference.type).toBe(
-        MCPTransportType.HTTP
-      );
+      expect(convertedConfigs.inference.type).toBe(MCPTransportType.HTTP);
       expect(convertedConfigs.explicitSse.type).toBe(MCPTransportType.SSE);
 
       // 第二步：使用转换后的配置创建 MCPService 实例
@@ -472,9 +465,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
       const initialService = new MCPService(initialConverted);
 
       expect(initialConverted.type).toBe(MCPTransportType.HTTP);
-      expect(initialService.getConfig().type).toBe(
-        MCPTransportType.HTTP
-      );
+      expect(initialService.getConfig().type).toBe(MCPTransportType.HTTP);
 
       // 配置更新为 SSE 端点
       const updatedConfig = {
