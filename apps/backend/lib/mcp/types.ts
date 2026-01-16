@@ -23,7 +23,7 @@ export type MCPServerTransport =
 
 /**
  * 通信方式枚举
- * 定义 MCP 支持的传输类型（与 MCP 官方格式保持一致）
+ * 定义 MCP 支持的传输类型
  */
 export enum MCPTransportType {
   STDIO = "stdio",
@@ -51,7 +51,7 @@ export interface ModelScopeSSEOptions {
 
 /**
  * MCP 服务配置接口
- * 与 MCP 官方格式保持一致，包含所有 MCP 服务的配置选项
+ * 包含所有 MCP 服务的配置选项
  */
 export interface MCPServiceConfig {
   name: string;

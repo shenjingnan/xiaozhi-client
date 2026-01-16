@@ -31,7 +31,7 @@ export interface SSEMCPServerConfig {
   headers?: Record<string, string>;
 }
 
-// HTTP MCP 服务配置（与 MCP 官方格式保持一致）
+// HTTP MCP 服务配置
 export interface HTTPMCPServerConfig {
   type?: "http" | "streamable-http"; // 可选，默认就是 http
   url: string;

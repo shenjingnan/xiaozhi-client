@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MCPTransportType } from "../types.js";
-import type { InternalMCPServiceConfig, MCPServiceConfig } from "../types.js";
+import type { InternalMCPServiceConfig } from "../types.js";
 import { TransportFactory } from "../transport-factory.js";
 
 describe("TransportFactory", () => {

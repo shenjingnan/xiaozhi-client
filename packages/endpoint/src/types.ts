@@ -269,7 +269,7 @@ export interface ReconnectResult {
 
 /**
  * MCP 服务器配置类型
- * 支持三种配置方式（与 MCP 官方格式保持一致）：
+ * 支持三种配置方式：
  * 1. 本地命令 (stdio): { command: string; args: string[]; env?: Record<string, string> }
  * 2. SSE: { type: "sse"; url: string; headers?: Record<string, string> }
  * 3. HTTP: { type?: "http"; url: string; headers?: Record<string, string> }
@@ -301,9 +301,7 @@ export interface SSEMCPServerConfig {
 
 /**
  * HTTP MCP 服务器配置
- *
- * @description
- * 与 MCP 官方格式保持一致，使用 type: "http"
+ * 使用 type: "http"
  * 向后兼容 streamable-http 写法
  */
 export interface HTTPMCPServerConfig {

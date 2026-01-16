@@ -29,14 +29,14 @@ export class ConfigValidationError extends Error {
   }
 }
 
-// 定义简化的 MCP 传输类型（与 MCP 官方格式保持一致）
+// 定义简化的 MCP 传输类型
 export enum MCPTransportType {
   STDIO = "stdio",
   SSE = "sse",
   HTTP = "http",
 }
 
-// 定义简化的 MCPServiceConfig 接口（与 MCP 官方格式保持一致）
+// 定义简化的 MCPServiceConfig 接口
 export interface MCPServiceConfig {
   name: string;
   type: MCPTransportType;
@@ -50,7 +50,6 @@ export interface MCPServiceConfig {
 
 /**
  * URL 类型推断函数
- * 与 MCP 官方格式保持一致
  * 基于 URL 路径末尾推断传输类型
  */
 function inferTransportTypeFromUrl(url: string): MCPTransportType {
