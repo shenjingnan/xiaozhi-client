@@ -59,11 +59,6 @@ vi.mock("@managers/MCPServiceManagerSingleton.js", () => {
     startAllServices: vi.fn(),
     stopAllServices: vi.fn(),
     getConnectedServices: vi.fn(() => []),
-    getStatus: vi.fn(() => ({
-      services: {},
-      totalTools: 0,
-      availableTools: [],
-    })),
   };
 
   return {
