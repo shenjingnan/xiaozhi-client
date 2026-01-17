@@ -1,33 +1,99 @@
 import { createServer } from "node:http";
-import { configManager } from "@xiaozhi-client/config";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WebServer } from "./WebServer";
 
+// 创建共享的 mockConfigManager 对象
+const mockConfigManager = {
+  configExists: vi.fn(),
+  getConfig: vi.fn(),
+  getMcpEndpoint: vi.fn(),
+  getMcpServers: vi.fn(),
+  updateMcpEndpoint: vi.fn(),
+  updateMcpServer: vi.fn(),
+  removeMcpServer: vi.fn(),
+  updateConnectionConfig: vi.fn(),
+  updateModelScopeConfig: vi.fn(),
+  updateWebUIConfig: vi.fn(),
+  getWebUIPort: vi.fn(),
+  setToolEnabled: vi.fn(),
+  removeServerToolsConfig: vi.fn(),
+  cleanupInvalidServerToolsConfig: vi.fn(),
+  getToolCallLogConfig: vi.fn().mockReturnValue({}),
+  getConfigDir: vi.fn().mockReturnValue("/tmp"),
+  getCustomMCPTools: vi.fn().mockReturnValue([]),
+  clearAllStatsUpdateLocks: vi.fn(),
+  updateMCPServerToolStatsWithLock: vi.fn().mockResolvedValue(undefined),
+  validateConfig: vi.fn(),
+  updateConfig: vi.fn(),
+};
+
 // Mock configManager
 vi.mock("@xiaozhi-client/config", () => ({
-  configManager: {
-    configExists: vi.fn(),
-    getConfig: vi.fn(),
-    getMcpEndpoint: vi.fn(),
-    getMcpServers: vi.fn(),
-    updateMcpEndpoint: vi.fn(),
-    updateMcpServer: vi.fn(),
-    removeMcpServer: vi.fn(),
-    updateConnectionConfig: vi.fn(),
-    updateModelScopeConfig: vi.fn(),
-    updateWebUIConfig: vi.fn(),
-    getWebUIPort: vi.fn(),
-    setToolEnabled: vi.fn(),
-    removeServerToolsConfig: vi.fn(),
-    cleanupInvalidServerToolsConfig: vi.fn(),
-    getToolCallLogConfig: vi.fn().mockReturnValue({}),
-    getConfigDir: vi.fn().mockReturnValue("/tmp"),
-    getCustomMCPTools: vi.fn().mockReturnValue([]),
-    clearAllStatsUpdateLocks: vi.fn(),
-    validateConfig: vi.fn(),
-    updateConfig: vi.fn(),
-  },
+  configManager: mockConfigManager,
+  ConfigManager: vi.fn(() => mockConfigManager),
+  normalizeMCPServerConfig: vi.fn((config) => config),
 }));
+
+// Mock MCPServiceManagerSingleton 防止在模块加载时访问 configManager
+vi.mock("@managers/MCPServiceManagerSingleton.js", () => {
+  const mockMCPServiceManager = {
+    getStatus: vi.fn(() => ({
+      services: {},
+      totalTools: 0,
+      availableTools: [],
+    })),
+    getAllTools: vi.fn(() => []),
+    callTool: vi.fn(),
+    hasTool: vi.fn(() => false),
+    startService: vi.fn(),
+    stopService: vi.fn(),
+    addServiceConfig: vi.fn(),
+    removeServiceConfig: vi.fn(),
+    updateServiceConfig: vi.fn(),
+    startAllServices: vi.fn(),
+    stopAllServices: vi.fn(),
+    getConnectedServices: vi.fn(() => []),
+    stopServiceRetry: vi.fn(),
+    stopAllServiceRetries: vi.fn(),
+  };
+
+  return {
+    mcpServiceManager: mockMCPServiceManager,
+    default: {
+      getInstance: vi.fn(() => mockMCPServiceManager),
+      reset: vi.fn(),
+    },
+  };
+});
+
+// Mock @/lib/mcp 防止 MCPServiceManager 访问 configManager
+vi.mock("@/lib/mcp", () => {
+  const mockMCPServiceManager = {
+    getStatus: vi.fn(() => ({
+      services: {},
+      totalTools: 0,
+      availableTools: [],
+    })),
+    getAllTools: vi.fn(() => []),
+    callTool: vi.fn(),
+    hasTool: vi.fn(() => false),
+    startService: vi.fn(),
+    stopService: vi.fn(),
+    addServiceConfig: vi.fn(),
+    removeServiceConfig: vi.fn(),
+    updateServiceConfig: vi.fn(),
+    startAllServices: vi.fn(),
+    stopAllServices: vi.fn(),
+    getConnectedServices: vi.fn(() => []),
+    stopServiceRetry: vi.fn(),
+    stopAllServiceRetries: vi.fn(),
+  };
+
+  return {
+    MCPServiceManager: vi.fn(() => mockMCPServiceManager),
+    ensureToolJSONSchema: vi.fn((schema) => schema),
+  };
+});
 
 // Mock Logger 模块
 vi.mock("./Logger", () => {
@@ -145,7 +211,6 @@ function getAvailablePort(): Promise<number> {
 }
 
 describe("WebServer 配置清理功能", () => {
-  let mockConfigManager: any;
   let webServer: WebServer;
   let currentPort: number;
 
@@ -154,8 +219,6 @@ describe("WebServer 配置清理功能", () => {
 
     // 获取可用端口
     currentPort = await getAvailablePort();
-
-    mockConfigManager = vi.mocked(configManager);
 
     // 设置默认的 mock 返回值
     mockConfigManager.configExists.mockReturnValue(true);
