@@ -136,14 +136,6 @@ describe("ConfigAdapter 配置适配器测试", () => {
       expect(isModelScopeURL("https://example.com/sse")).toBe(false);
       expect(isModelScopeURL("https://mcp.amap.com/sse")).toBe(false);
     });
-
-    it("应该为 ModelScope SSE 服务添加认证标识", () => {
-      const config = {
-        url: "https://mcp.api-inference.modelscope.net/f0fed2f733514b/sse",
-      };
-      const result = convertLegacyToNew("modelscope-service", config);
-      expect(result.modelScopeAuth).toBe(true);
-    });
   });
 
   describe("本地 stdio 配置", () => {

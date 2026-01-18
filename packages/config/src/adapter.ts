@@ -45,7 +45,6 @@ export interface MCPServiceConfig {
   env?: Record<string, string>;
   url?: string;
   headers?: Record<string, string>;
-  modelScopeAuth?: boolean;
 }
 
 /**
@@ -249,11 +248,6 @@ function convertSSEConfig(
     url: config.url,
     headers: config.headers,
   };
-
-  // 如果是 ModelScope 服务，添加特殊配置
-  if (isModelScope) {
-    baseConfig.modelScopeAuth = true;
-  }
 
   console.log("SSE配置转换", {
     serviceName,
