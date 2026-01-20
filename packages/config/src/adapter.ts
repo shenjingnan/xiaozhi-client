@@ -73,9 +73,9 @@ function inferTransportTypeFromUrl(url: string): MCPTransportType {
 }
 
 /**
- * 将旧的 MCPServerConfig 转换为新的 MCPServiceConfig
+ * 将各种配置格式标准化为统一的服务配置格式
  */
-export function convertLegacyToNew(
+export function normalizeServiceConfig(
   serviceName: string,
   legacyConfig: MCPServerConfig
 ): MCPServiceConfig {
@@ -285,9 +285,9 @@ function convertHTTPConfig(
 }
 
 /**
- * 批量转换配置
+ * 批量标准化配置
  */
-export function convertLegacyConfigBatch(
+export function normalizeServiceConfigBatch(
   legacyConfigs: Record<string, MCPServerConfig>
 ): Record<string, MCPServiceConfig> {
   const newConfigs: Record<string, MCPServiceConfig> = {};
@@ -295,7 +295,7 @@ export function convertLegacyConfigBatch(
 
   for (const [serviceName, legacyConfig] of Object.entries(legacyConfigs)) {
     try {
-      newConfigs[serviceName] = convertLegacyToNew(serviceName, legacyConfig);
+      newConfigs[serviceName] = normalizeServiceConfig(serviceName, legacyConfig);
     } catch (error) {
       errors.push({
         serviceName,

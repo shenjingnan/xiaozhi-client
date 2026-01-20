@@ -12,7 +12,7 @@ vi.mock("@xiaozhi-client/mcp-core", () => ({
 }));
 
 vi.mock("@xiaozhi-client/config", () => ({
-  convertLegacyToNew: vi.fn(),
+  normalizeServiceConfig: vi.fn(),
 }));
 
 describe("InternalMCPManagerAdapter", () => {
@@ -27,7 +27,7 @@ describe("InternalMCPManagerAdapter", () => {
     const MCPManagerMock = mcpCore.MCPManager;
 
     const configModule = await import("@xiaozhi-client/config");
-    mockConvertLegacyToNew = configModule.convertLegacyToNew as any;
+    mockConvertLegacyToNew = configModule.normalizeServiceConfig as any;
 
     // 设置 mock MCPManager
     mockMCPManager = {
@@ -43,7 +43,7 @@ describe("InternalMCPManagerAdapter", () => {
 
     MCPManagerMock.mockImplementation(() => mockMCPManager);
 
-    // 设置 mock convertLegacyToNew
+    // 设置 mock normalizeServiceConfig
     mockConvertLegacyToNew.mockImplementation((name: string, config: any) => ({
       name,
       ...config,

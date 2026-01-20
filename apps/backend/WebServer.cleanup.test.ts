@@ -122,9 +122,9 @@ vi.mock("@/lib/endpoint/index", () => ({
   })),
 }));
 
-// Mock convertLegacyToNew
+// Mock normalizeServiceConfig
 vi.mock("./adapters/ConfigAdapter", () => ({
-  convertLegacyToNew: vi.fn((name, config) => config),
+  normalizeServiceConfig: vi.fn((name, config) => config),
 }));
 
 // 动态端口管理

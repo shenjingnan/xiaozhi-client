@@ -5,9 +5,9 @@
 
 import { MCPService, MCPTransportType } from "@/lib/mcp";
 import {
-  convertLegacyConfigBatch,
-  convertLegacyToNew,
   getConfigTypeDescription,
+  normalizeServiceConfig,
+  normalizeServiceConfigBatch,
 } from "@xiaozhi-client/config";
 import type {
   HTTPMCPServerConfig,
@@ -76,7 +76,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
       for (const testCase of testCases) {
         // ConfigAdapter 推断
         const legacyConfig: MCPServerConfig = { url: testCase.url };
-        const configAdapterResult = convertLegacyToNew(
+        const configAdapterResult = normalizeServiceConfig(
           testCase.name,
           legacyConfig
         );
@@ -121,7 +121,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
           command: testCase.command,
           args: testCase.args,
         };
-        const configAdapterResult = convertLegacyToNew(
+        const configAdapterResult = normalizeServiceConfig(
           testCase.name,
           legacyConfig
         );
@@ -152,7 +152,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
         url: "https://example.com/mcp", // 这个 URL 会推断为 MCP，但显式指定为 SSE
       };
 
-      const configAdapterResult = convertLegacyToNew(
+      const configAdapterResult = normalizeServiceConfig(
         "explicit-sse",
         legacyConfig
       );
@@ -176,7 +176,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
         url: "https://example.com/sse", // 这个 URL 会推断为 SSE，但显式指定为 HTTP
       };
 
-      const configAdapterResult = convertLegacyToNew(
+      const configAdapterResult = normalizeServiceConfig(
         "explicit-http",
         legacyConfig
       );
@@ -218,7 +218,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
       };
 
       // ConfigAdapter 批量转换
-      const batchResult = convertLegacyConfigBatch(legacyConfigs);
+      const batchResult = normalizeServiceConfigBatch(legacyConfigs);
 
       // 验证每个服务的类型推断
       expect(batchResult["node-calculator"].type).toBe(MCPTransportType.STDIO);
@@ -300,7 +300,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
         }
 
         // 通过 ConfigAdapter 验证类型推断
-        const adapterResult = convertLegacyToNew(
+        const adapterResult = normalizeServiceConfig(
           "test-service",
           testCase.config
         );
@@ -323,7 +323,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
         let adapterResult: any = null;
 
         try {
-          adapterResult = convertLegacyToNew(name, config);
+          adapterResult = normalizeServiceConfig(name, config);
         } catch (error) {
           adapterError = error as Error;
         }
@@ -360,7 +360,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
       const config = { url: "https://example.com/sse" };
 
       // ConfigAdapter 应该抛出错误
-      expect(() => convertLegacyToNew("", config)).toThrow();
+      expect(() => normalizeServiceConfig("", config)).toThrow();
 
       // MCPService 应该抛出错误
       expect(
@@ -402,7 +402,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
       };
 
       // 第一步：批量转换配置
-      const convertedConfigs = convertLegacyConfigBatch(userConfigs);
+      const convertedConfigs = normalizeServiceConfigBatch(userConfigs);
 
       // 验证转换结果
       expect(convertedConfigs.calculator.type).toBe(MCPTransportType.STDIO);
@@ -458,7 +458,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
       };
 
       // 初始转换和服务创建
-      const initialConverted = convertLegacyToNew(
+      const initialConverted = normalizeServiceConfig(
         "dynamic-service",
         initialConfig
       );
@@ -472,7 +472,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
         url: "https://example.com/sse",
       };
 
-      const updatedConverted = convertLegacyToNew(
+      const updatedConverted = normalizeServiceConfig(
         "dynamic-service",
         updatedConfig
       );
@@ -516,7 +516,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
 
       // 批量转换应该在合理时间内完成
       const startTime = performance.now();
-      const batchResult = convertLegacyConfigBatch(largeConfigSet);
+      const batchResult = normalizeServiceConfigBatch(largeConfigSet);
       const endTime = performance.now();
 
       // 验证转换时间（应该少于1秒）
@@ -556,7 +556,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
       const config = { url: longUrl };
 
       // ConfigAdapter 应该能处理
-      const adapterResult = convertLegacyToNew("long-url-service", config);
+      const adapterResult = normalizeServiceConfig("long-url-service", config);
       expect(adapterResult.type).toBe(MCPTransportType.SSE);
 
       // MCPService 应该能处理

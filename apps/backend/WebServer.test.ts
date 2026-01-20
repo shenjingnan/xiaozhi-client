@@ -332,7 +332,7 @@ vi.mock("@xiaozhi-client/endpoint", () => ({
 }));
 
 vi.mock("@/lib/config/adapter.js", () => ({
-  convertLegacyToNew: vi.fn((_name, config) => config),
+  normalizeServiceConfig: vi.fn((_name, config) => config),
   isModelScopeURL: vi.fn((url) => url.includes("modelscope")),
 }));
 
