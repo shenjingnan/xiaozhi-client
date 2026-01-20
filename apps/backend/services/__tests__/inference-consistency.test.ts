@@ -1,5 +1,5 @@
 import { MCPService, MCPTransportType } from "@/lib/mcp";
-import { convertLegacyToNew } from "@xiaozhi-client/config";
+import { normalizeServiceConfig } from "@xiaozhi-client/config";
 import { describe, expect, it } from "vitest";
 
 describe("MCPService 和 ConfigAdapter 推断逻辑一致性测试", () => {
@@ -45,7 +45,7 @@ describe("MCPService 和 ConfigAdapter 推断逻辑一致性测试", () => {
     it(`对于 ${name}，两个组件应该推断出相同的类型: ${expectedType}`, () => {
       // ConfigAdapter 推断
       const legacyConfig = { url };
-      const configAdapterResult = convertLegacyToNew(
+      const configAdapterResult = normalizeServiceConfig(
         "test-service",
         legacyConfig
       );
@@ -67,7 +67,7 @@ describe("MCPService 和 ConfigAdapter 推断逻辑一致性测试", () => {
 
     // ConfigAdapter 处理无效 URL
     const legacyConfig = { url: invalidUrl };
-    const configAdapterResult = convertLegacyToNew(
+    const configAdapterResult = normalizeServiceConfig(
       "invalid-service",
       legacyConfig
     );
@@ -95,7 +95,7 @@ describe("MCPService 和 ConfigAdapter 推断逻辑一致性测试", () => {
       url: explicitConfig.url,
       type: "streamable-http" as const,
     };
-    const configAdapterResult = convertLegacyToNew(
+    const configAdapterResult = normalizeServiceConfig(
       "explicit-service",
       legacyConfig
     );

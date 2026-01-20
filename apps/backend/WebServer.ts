@@ -41,7 +41,7 @@ import {
   destroyEventBus,
   getEventBus,
 } from "@services/index.js";
-import { convertLegacyToNew } from "@xiaozhi-client/config";
+import { normalizeServiceConfig } from "@xiaozhi-client/config";
 import { configManager } from "@xiaozhi-client/config";
 import type { MCPServerConfig } from "@xiaozhi-client/config";
 import { Endpoint, EndpointManager } from "@xiaozhi-client/endpoint";
@@ -290,7 +290,7 @@ export class WebServer {
     for (const [name, config] of Object.entries(mcpServers)) {
       this.logger.debug(`添加 MCP 服务配置: ${name}`);
       // 使用配置适配器转换配置格式
-      const serviceConfig = convertLegacyToNew(name, config);
+      const serviceConfig = normalizeServiceConfig(name, config);
       this.mcpServiceManager.addServiceConfig(name, serviceConfig);
     }
 
