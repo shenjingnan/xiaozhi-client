@@ -334,8 +334,8 @@ await connection.disconnect();
 ```typescript
 const serviceName = "my-service";
 const config = {
-  url: "https://mcp.api-inference.modelscope.net/xxx/sse",
-  modelScopeAuth: true                          // 启用 ModelScope 认证
+  url: "https://mcp.api-inference.modelscope.net/xxx/sse"
+  // ModelScope 服务会自动识别，无需额外配置
 };
 ```
 

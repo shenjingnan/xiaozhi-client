@@ -112,8 +112,6 @@ export interface MCPServiceConfig {
   // 认证配置
   apiKey?: string;
   headers?: Record<string, string>;
-  // ModelScope 内部配置（不暴露给用户配置文件）
-  modelScopeAuth?: boolean;
   customSSEOptions?: ModelScopeSSEOptions;
 }
 
