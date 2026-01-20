@@ -32,7 +32,6 @@ export enum MCPTransportType {
 }
 
 // 定义简化的 MCPServiceConfig 接口
-// 符合 @modelcontextprotocol 官方标准，不包含 name 字段
 export interface MCPServiceConfig {
   type: MCPTransportType;
   command?: string;
@@ -204,7 +203,6 @@ function convertLocalConfig(
     return arg;
   });
 
-  // 返回符合 MCP 官方标准的配置（不包含 name 字段）
   return {
     type: MCPTransportType.STDIO,
     command: resolvedCommand,
@@ -240,7 +238,6 @@ function convertSSEConfig(
     isModelScope,
   });
 
-  // 返回符合 MCP 官方标准的配置（不包含 name 字段）
   return {
     type: inferredType,
     url,
@@ -262,7 +259,6 @@ function convertHTTPConfig(
     throw new ConfigValidationError("HTTP 配置必须包含 url 字段");
   }
 
-  // 返回符合 MCP 官方标准的配置（不包含 name 字段）
   return {
     type: MCPTransportType.HTTP,
     url: url || "",
@@ -357,9 +353,6 @@ export function isModelScopeURL(url: string): boolean {
  * 验证新配置格式
  */
 function validateNewConfig(config: MCPServiceConfig): void {
-  // name 字段已从配置中移除，符合 MCP 官方标准
-  // name 应该作为服务标识符独立管理，不是配置的一部分
-
   if (config.type && !Object.values(MCPTransportType).includes(config.type)) {
     throw new ConfigValidationError(`无效的传输类型: ${config.type}`);
   }
