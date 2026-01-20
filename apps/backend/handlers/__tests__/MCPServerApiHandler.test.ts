@@ -38,9 +38,14 @@ const createMockEventBus = (): Partial<EventBus> => ({
   emitEvent: vi.fn(),
 });
 
-// 平台相关的测试配置目录
-const testConfigDir =
-  process.platform === "win32" ? "C:\\test\\config\\dir" : "/test/config/dir";
+// 使用数组格式定义路径片段
+const testConfigDirParts =
+  process.platform === "win32"
+    ? ["C:", "test", "config", "dir"]
+    : ["/", "test", "config", "dir"];
+
+// 使用 path.resolve 生成平台相关的绝对路径
+const testConfigDir = path.resolve(...testConfigDirParts);
 
 // 辅助函数：生成预期的测试路径
 const getExpectedPath = (filename: string) =>
