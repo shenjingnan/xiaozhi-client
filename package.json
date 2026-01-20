@@ -37,7 +37,7 @@
     "dev:docs": "nx run docs:dev",
     "dev:backend": "nx run backend:dev",
     "dev:frontend": "nx run frontend:dev",
-    "test": "nx run-many -t test",
+    "test": "nx run-many -t test --parallel=false",
     "test:coverage": "nx run-many -t test:coverage --parallel=false",
     "lint": "nx run-many -t lint",
     "lint:fix": "nx run-many -t lint:fix",
