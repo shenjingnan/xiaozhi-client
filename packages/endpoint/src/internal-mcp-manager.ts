@@ -124,5 +124,4 @@ export class InternalMCPManagerAdapter implements IMCPServiceManager {
     const actualToolName = parts.slice(1).join("__"); // 支持工具名中包含 __
     return [serviceName, actualToolName];
   }
-
 }
