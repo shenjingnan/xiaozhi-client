@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { MCPServiceManager } from "@/lib/mcp";
 import { MCPErrorCode } from "@errors/MCPErrors.js";
 import type { EventBus } from "@services/EventBus.js";
@@ -36,6 +37,14 @@ const createMockMCPServiceManager = (): Partial<MCPServiceManager> => ({
 const createMockEventBus = (): Partial<EventBus> => ({
   emitEvent: vi.fn(),
 });
+
+// 平台相关的测试配置目录
+const testConfigDir =
+  process.platform === "win32" ? "C:\\test\\config\\dir" : "/test/config/dir";
+
+// 辅助函数：生成预期的测试路径
+const getExpectedPath = (filename: string) =>
+  path.join(testConfigDir, filename);
 
 describe("MCPServerApiHandler", () => {
   let handler: MCPServerApiHandler;
@@ -133,7 +142,7 @@ describe("addMCPServer", () => {
     originalConfigDir = process.env.XIAOZHI_CONFIG_DIR;
 
     // 设置固定的测试配置目录
-    process.env.XIAOZHI_CONFIG_DIR = "/test/config/dir";
+    process.env.XIAOZHI_CONFIG_DIR = testConfigDir;
 
     vi.clearAllMocks();
 
@@ -232,7 +241,7 @@ describe("addMCPServer", () => {
       {
         type: "stdio",
         command: "node",
-        args: ["/test/config/dir/server.js"],
+        args: [getExpectedPath("server.js")],
       }
     );
     expect(mockMCPServiceManager.startService).toHaveBeenCalledWith(
