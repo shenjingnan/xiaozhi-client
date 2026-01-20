@@ -126,8 +126,15 @@ describe("addMCPServer", () => {
   let mockMCPServiceManager: Partial<MCPServiceManager>;
   let mockEventBus: Partial<EventBus>;
   let mockContext: Partial<Context>;
+  let originalConfigDir: string | undefined;
 
   beforeEach(() => {
+    // 保存原始环境变量
+    originalConfigDir = process.env.XIAOZHI_CONFIG_DIR;
+
+    // 设置固定的测试配置目录
+    process.env.XIAOZHI_CONFIG_DIR = "/test/config/dir";
+
     vi.clearAllMocks();
 
     mockConfigManager = createMockConfigManager();
@@ -163,6 +170,15 @@ describe("addMCPServer", () => {
       header: vi.fn(),
       headerValues: vi.fn(),
     } as any;
+  });
+
+  afterEach(() => {
+    // 恢复原始环境变量
+    if (originalConfigDir !== undefined) {
+      process.env.XIAOZHI_CONFIG_DIR = originalConfigDir;
+    } else {
+      delete process.env.XIAOZHI_CONFIG_DIR;
+    }
   });
 
   it("应该成功添加新的 MCP 服务", async () => {
@@ -216,7 +232,7 @@ describe("addMCPServer", () => {
       {
         type: "stdio",
         command: "node",
-        args: ["/Users/nemo/.xiaozhi-client/server.js"],
+        args: ["/test/config/dir/server.js"],
       }
     );
     expect(mockMCPServiceManager.startService).toHaveBeenCalledWith(
