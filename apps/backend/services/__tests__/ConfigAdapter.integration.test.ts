@@ -5,9 +5,9 @@
 
 import { MCPService, MCPTransportType } from "@/lib/mcp";
 import {
-  normalizeServiceConfigBatch,
-  normalizeServiceConfig,
   getConfigTypeDescription,
+  normalizeServiceConfig,
+  normalizeServiceConfigBatch,
 } from "@xiaozhi-client/config";
 import type {
   HTTPMCPServerConfig,

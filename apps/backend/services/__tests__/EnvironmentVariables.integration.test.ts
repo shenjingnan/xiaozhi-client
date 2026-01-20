@@ -61,7 +61,10 @@ describe("环境变量传递集成测试", () => {
         env: {}, // 空的环境变量对象
       };
 
-      const mcpServiceConfig = normalizeServiceConfig("python-service", userConfig);
+      const mcpServiceConfig = normalizeServiceConfig(
+        "python-service",
+        userConfig
+      );
 
       expect(mcpServiceConfig.env).toEqual({});
       expect(mcpServiceConfig.name).toBe("python-service");
