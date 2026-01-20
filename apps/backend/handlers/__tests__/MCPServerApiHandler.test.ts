@@ -216,7 +216,7 @@ describe("addMCPServer", () => {
       {
         type: "stdio",
         command: "node",
-        args: ["/Users/nemo/.xiaozhi-client/server.js"]
+        args: ["/Users/nemo/.xiaozhi-client/server.js"],
       }
     );
     expect(mockMCPServiceManager.startService).toHaveBeenCalledWith(
