@@ -207,7 +207,7 @@ function convertLocalConfig(
     type: MCPTransportType.STDIO,
     command: resolvedCommand,
     args: resolvedArgs,
-    env, // 传递环境变量
+    ...(env !== undefined && { env }), // 只在 env 存在时添加该字段
   };
 }
 

@@ -1,6 +1,5 @@
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { MCPService } from "@/lib/mcp";
-import type { MCPServiceConfig, MCPTransportType } from "@/lib/mcp/types";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
@@ -12,6 +11,7 @@ import {
 import { getEventBus } from "@services/EventBus.js";
 import { TypeFieldNormalizer } from "@utils/TypeFieldNormalizer.js";
 import type { ConfigManager, MCPServerConfig } from "@xiaozhi-client/config";
+import { normalizeServiceConfig } from "@xiaozhi-client/config";
 import type { Context } from "hono";
 
 /**
@@ -254,40 +254,6 @@ export class MCPServerApiHandler {
   }
 
   /**
-   * 创建 MCPServiceConfig 对象
-   */
-  private createMCPServiceConfig(
-    name: string,
-    config: MCPServerConfig
-  ): MCPServiceConfig {
-    // 根据配置类型创建 MCPServiceConfig（符合 MCP 官方标准，不包含 name）
-    if ("command" in config) {
-      // LocalMCPServerConfig
-      return {
-        type: "stdio" as MCPTransportType,
-        command: config.command,
-        args: config.args || [],
-        env: config.env || {},
-      };
-    }
-    if ("type" in config && config.type === "sse") {
-      // SSEMCPServerConfig
-      return {
-        type: "sse" as MCPTransportType,
-        url: config.url,
-      };
-    }
-    if ("url" in config) {
-      // StreamableHTTPMCPServerConfig
-      return {
-        type: "streamable-http" as MCPTransportType,
-        url: config.url,
-      };
-    }
-    throw new Error(`不支持的配置格式: ${JSON.stringify(config)}`);
-  }
-
-  /**
    * 添加 MCP 服务
    * POST /api/mcp-servers
    * 支持两种格式：
@@ -446,10 +412,7 @@ export class MCPServerApiHandler {
       this.logger.debug("服务配置已添加到配置管理器", { serverName: name });
 
       // 6. 添加服务到 MCPServiceManager 并启动服务
-      const mcpServiceConfig = this.createMCPServiceConfig(
-        name,
-        normalizedConfig
-      );
+      const mcpServiceConfig = normalizeServiceConfig(normalizedConfig);
       // 使用两参数形式传递 name 和 config
       this.mcpServiceManager.addServiceConfig(name, mcpServiceConfig);
       await this.mcpServiceManager.startService(name);
