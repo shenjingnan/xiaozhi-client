@@ -139,6 +139,6 @@ export class InternalMCPManagerAdapter implements IMCPServiceManager {
     // 1. 解析 command 中的相对路径（相对于配置文件目录）
     // 2. 解析 args 中的相对路径
     // 3. 返回符合 MCP 官方标准的配置（不包含 name 字段）
-    return normalizeServiceConfig({ name: serviceName, ...config });
+    return normalizeServiceConfig(config);
   }
 }

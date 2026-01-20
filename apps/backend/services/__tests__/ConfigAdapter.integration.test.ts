@@ -76,10 +76,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
       for (const testCase of testCases) {
         // ConfigAdapter 推断
         const legacyConfig: MCPServerConfig = { url: testCase.url };
-        const configAdapterResult = normalizeServiceConfig({
-          name: testCase.name,
-          ...legacyConfig,
-        });
+        const configAdapterResult = normalizeServiceConfig(legacyConfig);
 
         // MCPService 推断
         const mcpServiceConfig = { name: testCase.name, url: testCase.url };
@@ -121,10 +118,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
           command: testCase.command,
           args: testCase.args,
         };
-        const configAdapterResult = normalizeServiceConfig({
-          name: testCase.name,
-          ...legacyConfig,
-        });
+        const configAdapterResult = normalizeServiceConfig(legacyConfig);
 
         // MCPService 处理
         const mcpServiceConfig = {
@@ -152,10 +146,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
         url: "https://example.com/mcp", // 这个 URL 会推断为 MCP，但显式指定为 SSE
       };
 
-      const configAdapterResult = normalizeServiceConfig({
-        name: "explicit-sse",
-        ...legacyConfig,
-      });
+      const configAdapterResult = normalizeServiceConfig(legacyConfig);
 
       const mcpServiceConfig = {
         name: "explicit-sse",
@@ -176,10 +167,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
         url: "https://example.com/sse", // 这个 URL 会推断为 SSE，但显式指定为 HTTP
       };
 
-      const configAdapterResult = normalizeServiceConfig({
-        name: "explicit-http",
-        ...legacyConfig,
-      });
+      const configAdapterResult = normalizeServiceConfig(legacyConfig);
 
       const mcpServiceConfig = {
         name: "explicit-http",
@@ -300,10 +288,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
         }
 
         // 通过 ConfigAdapter 验证类型推断
-        const adapterResult = normalizeServiceConfig({
-          name: "test-service",
-          ...testCase.config,
-        });
+        const adapterResult = normalizeServiceConfig(testCase.config);
         expect(adapterResult.type).toBe(testCase.expectedType);
       }
     });
@@ -323,7 +308,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
         let adapterResult: any = null;
 
         try {
-          adapterResult = normalizeServiceConfig({ name, ...config });
+          adapterResult = normalizeServiceConfig(config);
         } catch (error) {
           adapterError = error as Error;
         }
@@ -354,18 +339,6 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
           throw new Error(`不一致的处理结果: ${name}`);
         }
       }
-    });
-
-    it("应该一致地处理空服务名称", () => {
-      const config = { url: "https://example.com/sse" };
-
-      // ConfigAdapter 应该抛出错误
-      expect(() => normalizeServiceConfig({ name: "", ...config })).toThrow();
-
-      // MCPService 应该抛出错误
-      expect(
-        () => new MCPService({ name: "", url: "https://example.com/sse" })
-      ).toThrow();
     });
   });
 
@@ -460,10 +433,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
       };
 
       // 初始转换和服务创建
-      const initialConverted = normalizeServiceConfig({
-        name: "dynamic-service",
-        ...initialConfig,
-      });
+      const initialConverted = normalizeServiceConfig(initialConfig);
       // 创建包含 name 的配置对象（InternalMCPServiceConfig）
       const initialServiceConfig = {
         name: "dynamic-service",
@@ -479,10 +449,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
         url: "https://example.com/sse",
       };
 
-      const updatedConverted = normalizeServiceConfig({
-        name: "dynamic-service",
-        ...updatedConfig,
-      });
+      const updatedConverted = normalizeServiceConfig(updatedConfig);
       // 创建包含 name 的配置对象（InternalMCPServiceConfig）
       const updatedServiceConfig = {
         name: "dynamic-service",
@@ -568,10 +535,7 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
       const config = { url: longUrl };
 
       // ConfigAdapter 应该能处理
-      const adapterResult = normalizeServiceConfig({
-        name: "long-url-service",
-        ...config,
-      });
+      const adapterResult = normalizeServiceConfig(config);
       expect(adapterResult.type).toBe(MCPTransportType.SSE);
 
       // MCPService 应该能处理

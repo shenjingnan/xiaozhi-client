@@ -7,16 +7,8 @@ import { isAbsolute, resolve, dirname } from "node:path";
 import type {
   LocalMCPServerConfig,
   MCPServerConfig,
-  SSEMCPServerConfig,
-  StreamableHTTPMCPServerConfig,
 } from "./manager.js";
 import { ConfigResolver } from "./resolver.js";
-
-/**
- * 带名称的 MCP 服务配置输入类型
- * 用于 normalizeServiceConfig 函数，让 config 对象自包含 name 字段
- */
-export type MCPServerConfigWithName = MCPServerConfig & { name: string };
 
 // 从外部导入 MCP 类型（这些类型将在运行时从 backend 包解析）
 // 为了避免循环依赖，这里使用动态导入的方式
@@ -26,10 +18,7 @@ export type MCPServerConfigWithName = MCPServerConfig & { name: string };
  * 配置验证错误类
  */
 export class ConfigValidationError extends Error {
-  constructor(
-    message: string,
-    public readonly configName?: string
-  ) {
+  constructor(message: string) {
     super(message);
     this.name = "ConfigValidationError";
   }
@@ -82,20 +71,14 @@ function inferTransportTypeFromUrl(url: string): MCPTransportType {
  * 将各种配置格式标准化为统一的服务配置格式
  */
 export function normalizeServiceConfig(
-  config: MCPServerConfigWithName
+  config: MCPServerConfig
 ): MCPServiceConfig {
-  const { name } = config;
-  const legacyConfig = config as any as MCPServerConfig;
-  console.log("转换配置", { serviceName: name, legacyConfig });
+  console.log("转换配置", { config });
 
   try {
     // 验证输入参数
-    if (!name || typeof name !== "string") {
-      throw new ConfigValidationError("服务名称必须是非空字符串");
-    }
-
-    if (!legacyConfig || typeof legacyConfig !== "object") {
-      throw new ConfigValidationError("配置对象不能为空", name);
+    if (!config || typeof config !== "object") {
+      throw new ConfigValidationError("配置对象不能为空");
     }
 
     // 根据配置类型进行转换
@@ -104,15 +87,14 @@ export function normalizeServiceConfig(
     // 验证转换后的配置
     validateNewConfig(newConfig);
 
-    console.log("配置转换成功", { serviceName: name, type: newConfig.type });
+    console.log("配置转换成功", { type: newConfig.type });
     return newConfig;
   } catch (error) {
-    console.error("配置转换失败", { serviceName: name, error });
+    console.error("配置转换失败", { error });
     throw error instanceof ConfigValidationError
       ? error
       : new ConfigValidationError(
-          `配置转换失败: ${error instanceof Error ? error.message : String(error)}`,
-          name
+          `配置转换失败: ${error instanceof Error ? error.message : String(error)}`
         );
   }
 }
@@ -121,19 +103,16 @@ export function normalizeServiceConfig(
  * 根据配置类型进行转换
  */
 function convertByConfigType(
-  config: MCPServerConfigWithName
+  config: MCPServerConfig
 ): MCPServiceConfig {
-  const { name } = config;
-  const legacyConfig = config as any as MCPServerConfig;
-
   // 检查是否为本地 stdio 配置（最高优先级）
-  if (isLocalConfig(legacyConfig)) {
+  if (isLocalConfig(config)) {
     return convertLocalConfig(config);
   }
 
   // 检查是否有显式指定的类型
-  if ("type" in legacyConfig) {
-    switch (legacyConfig.type) {
+  if ("type" in config) {
+    switch (config.type) {
       case "sse":
         return convertSSEConfig(config);
       case "http":
@@ -141,24 +120,20 @@ function convertByConfigType(
         return convertHTTPConfig(config);
       default:
         throw new ConfigValidationError(
-          `不支持的传输类型: ${legacyConfig.type}`,
-          name
+          `不支持的传输类型: ${config.type}`
         );
     }
   }
 
   // 检查是否为网络配置（自动推断类型）
-  if ("url" in legacyConfig) {
+  if ("url" in config) {
     // 如果 URL 是 undefined 或 null，抛出错误
-    if (legacyConfig.url === undefined || legacyConfig.url === null) {
-      throw new ConfigValidationError(
-        "网络配置必须包含有效的 url 字段",
-        name
-      );
+    if (config.url === undefined || config.url === null) {
+      throw new ConfigValidationError("网络配置必须包含有效的 url 字段");
     }
 
     // 先推断类型，然后根据推断的类型选择正确的转换函数
-    const inferredType = inferTransportTypeFromUrl(legacyConfig.url || "");
+    const inferredType = inferTransportTypeFromUrl(config.url || "");
 
     if (inferredType === MCPTransportType.SSE) {
       // 为SSE类型添加显式type字段
@@ -170,27 +145,24 @@ function convertByConfigType(
     return convertHTTPConfig(httpConfig);
   }
 
-  throw new ConfigValidationError("无法识别的配置类型", name);
+  throw new ConfigValidationError("无法识别的配置类型");
 }
 
 /**
  * 转换本地 stdio 配置
  */
 function convertLocalConfig(
-  config: MCPServerConfigWithName
+  config: MCPServerConfig
 ): MCPServiceConfig {
   // 类型守卫：确保是 LocalMCPServerConfig
   if (!isLocalConfig(config)) {
-    throw new ConfigValidationError("无效的本地配置类型", (config as any).name);
+    throw new ConfigValidationError("无效的本地配置类型");
   }
 
-  const { name, command, args, env } = config;
+  const { command, args, env } = config;
 
   if (!command) {
-    throw new ConfigValidationError(
-      "本地配置必须包含 command 字段",
-      name
-    );
+    throw new ConfigValidationError("本地配置必须包含 command 字段");
   }
 
   // 获取配置文件所在目录作为工作目录
@@ -245,15 +217,14 @@ function convertLocalConfig(
  * 转换 SSE 配置
  */
 function convertSSEConfig(
-  config: MCPServerConfigWithName
+  config: MCPServerConfig
 ): MCPServiceConfig {
-  const { name } = config;
   const url = (config as any).url;
   const type = (config as any).type;
   const headers = (config as any).headers;
 
   if (url === undefined || url === null) {
-    throw new ConfigValidationError("SSE 配置必须包含 url 字段", name);
+    throw new ConfigValidationError("SSE 配置必须包含 url 字段");
   }
 
   // 优先使用显式指定的类型，如果没有则进行推断
@@ -264,7 +235,6 @@ function convertSSEConfig(
   const isModelScope = url ? isModelScopeURL(url) : false;
 
   console.log("SSE配置转换", {
-    serviceName: name,
     url,
     inferredType,
     isModelScope,
@@ -282,18 +252,14 @@ function convertSSEConfig(
  * 转换 HTTP 配置
  */
 function convertHTTPConfig(
-  config: MCPServerConfigWithName
+  config: MCPServerConfig
 ): MCPServiceConfig {
-  const { name } = config;
   const url = (config as any).url;
   const headers = (config as any).headers;
 
   // 检查 URL 是否存在
   if (url === undefined || url === null) {
-    throw new ConfigValidationError(
-      "HTTP 配置必须包含 url 字段",
-      name
-    );
+    throw new ConfigValidationError("HTTP 配置必须包含 url 字段");
   }
 
   // 返回符合 MCP 官方标准的配置（不包含 name 字段）
@@ -311,14 +277,13 @@ export function normalizeServiceConfigBatch(
   legacyConfigs: Record<string, MCPServerConfig>
 ): Record<string, MCPServiceConfig> {
   const newConfigs: Record<string, MCPServiceConfig> = {};
-  const errors: Array<{ serviceName: string; error: Error }> = [];
+  const errors: Array<{ error: Error }> = [];
 
   for (const [name, config] of Object.entries(legacyConfigs)) {
     try {
-      newConfigs[name] = normalizeServiceConfig({ name, ...config });
+      newConfigs[name] = normalizeServiceConfig(config);
     } catch (error) {
       errors.push({
-        serviceName: name,
         error: error instanceof Error ? error : new Error(String(error)),
       });
     }
@@ -326,7 +291,7 @@ export function normalizeServiceConfigBatch(
 
   if (errors.length > 0) {
     const errorMessages = errors
-      .map(({ serviceName, error }) => `${serviceName}: ${error.message}`)
+      .map(({ error }, index) => `[${index}]: ${error.message}`)
       .join("; ");
     throw new ConfigValidationError(`批量配置转换失败: ${errorMessages}`);
   }
