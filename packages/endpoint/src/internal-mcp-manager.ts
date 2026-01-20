@@ -5,10 +5,9 @@
  */
 
 import { MCPManager } from "@xiaozhi-client/mcp-core";
-import type { MCPServiceConfig } from "@xiaozhi-client/mcp-core";
 import type { EnhancedToolInfo, ToolCallResult } from "./types.js";
 import type { IMCPServiceManager } from "./types.js";
-import type { EndpointConfig, MCPServerConfig } from "./types.js";
+import type { EndpointConfig } from "./types.js";
 import { normalizeServiceConfig } from "@xiaozhi-client/config";
 
 /**
@@ -27,7 +26,7 @@ export class InternalMCPManagerAdapter implements IMCPServiceManager {
     for (const [serviceName, serverConfig] of Object.entries(
       config.mcpServers
     )) {
-      const mcpConfig = this.convertToMCPServiceConfig(serviceName, serverConfig);
+      const mcpConfig = normalizeServiceConfig(serverConfig);
       this.mcpManager.addServer(serviceName, mcpConfig);
     }
 
@@ -126,19 +125,4 @@ export class InternalMCPManagerAdapter implements IMCPServiceManager {
     return [serviceName, actualToolName];
   }
 
-  /**
-   * 将 MCPServerConfig 转换为 MCPServiceConfig
-   * 使用统一的配置适配器，确保路径解析逻辑一致
-   */
-  private convertToMCPServiceConfig(
-    serviceName: string,
-    config: MCPServerConfig
-  ): MCPServiceConfig {
-    // 使用统一的转换函数，自动处理相对路径解析
-    // normalizeServiceConfig 会：
-    // 1. 解析 command 中的相对路径（相对于配置文件目录）
-    // 2. 解析 args 中的相对路径
-    // 3. 返回符合 MCP 官方标准的配置（不包含 name 字段）
-    return normalizeServiceConfig(config);
-  }
 }

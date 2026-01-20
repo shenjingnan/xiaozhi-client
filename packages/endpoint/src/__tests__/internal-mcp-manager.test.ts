@@ -105,9 +105,8 @@ describe("InternalMCPManagerAdapter", () => {
 
       new InternalMCPManagerAdapter(config);
 
-      // 重构后 normalizeServiceConfig 接受单个对象参数 { name, ...config }
+      // 直接调用 normalizeServiceConfig 转换配置
       expect(mockConvertLegacyToNew).toHaveBeenCalledWith({
-        name: "test-service",
         url: "https://example.com/sse",
       });
     });
