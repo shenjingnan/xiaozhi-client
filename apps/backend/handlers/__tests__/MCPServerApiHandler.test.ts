@@ -177,7 +177,7 @@ describe("addMCPServer", () => {
     if (originalConfigDir !== undefined) {
       process.env.XIAOZHI_CONFIG_DIR = originalConfigDir;
     } else {
-      delete process.env.XIAOZHI_CONFIG_DIR;
+      process.env.XIAOZHI_CONFIG_DIR = undefined;
     }
   });
 
