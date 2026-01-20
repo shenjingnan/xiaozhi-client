@@ -22,11 +22,13 @@ describe("环境变量传递集成测试", () => {
       };
 
       // 2. 通过 ConfigAdapter 转换配置
-      const mcpServiceConfig = normalizeServiceConfig("amap-maps", userConfig);
-
-      // 3. 验证转换后的配置包含环境变量
-      expect(mcpServiceConfig).toEqual({
+      const mcpServiceConfig = normalizeServiceConfig({
         name: "amap-maps",
+        ...userConfig,
+      });
+
+      // 3. 验证转换后的配置包含环境变量（符合 MCP 官方标准，不包含 name）
+      expect(mcpServiceConfig).toEqual({
         type: MCPTransportType.STDIO,
         command: "npx",
         args: ["-y", "@amap/amap-maps-mcp-server"],
@@ -44,10 +46,12 @@ describe("环境变量传递集成测试", () => {
         // 没有 env 字段
       };
 
-      const mcpServiceConfig = normalizeServiceConfig("calculator", userConfig);
+      const mcpServiceConfig = normalizeServiceConfig({
+        name: "calculator",
+        ...userConfig,
+      });
 
       expect(mcpServiceConfig.env).toBeUndefined();
-      expect(mcpServiceConfig.name).toBe("calculator");
       expect(mcpServiceConfig.command).toBe("node");
       expect(mcpServiceConfig.args).toEqual([
         expect.stringContaining("calculator.js"),
@@ -61,13 +65,12 @@ describe("环境变量传递集成测试", () => {
         env: {}, // 空的环境变量对象
       };
 
-      const mcpServiceConfig = normalizeServiceConfig(
-        "python-service",
-        userConfig
-      );
+      const mcpServiceConfig = normalizeServiceConfig({
+        name: "python-service",
+        ...userConfig,
+      });
 
       expect(mcpServiceConfig.env).toEqual({});
-      expect(mcpServiceConfig.name).toBe("python-service");
       expect(mcpServiceConfig.command).toBe("python");
       expect(mcpServiceConfig.args).toEqual([
         expect.stringContaining("server.py"),
@@ -86,10 +89,10 @@ describe("环境变量传递集成测试", () => {
         },
       };
 
-      const mcpServiceConfig = normalizeServiceConfig(
-        "complex-service",
-        userConfig
-      );
+      const mcpServiceConfig = normalizeServiceConfig({
+        name: "complex-service",
+        ...userConfig,
+      });
 
       expect(mcpServiceConfig.env).toEqual({
         API_KEY: "secret-key",
@@ -97,7 +100,6 @@ describe("环境变量传递集成测试", () => {
         DEBUG: "true",
         PORT: "3000",
       });
-      expect(mcpServiceConfig.name).toBe("complex-service");
       expect(mcpServiceConfig.command).toBe("node");
       expect(mcpServiceConfig.args).toEqual([
         expect.stringContaining("complex-server.js"),
@@ -117,11 +119,13 @@ describe("环境变量传递集成测试", () => {
       };
 
       // 完整的配置转换流程
-      const serviceConfig = normalizeServiceConfig("amap-maps", amapConfig);
-
-      // 验证配置转换结果
-      expect(serviceConfig).toEqual({
+      const serviceConfig = normalizeServiceConfig({
         name: "amap-maps",
+        ...amapConfig,
+      });
+
+      // 验证配置转换结果（符合 MCP 官方标准，不包含 name 字段）
+      expect(serviceConfig).toEqual({
         type: MCPTransportType.STDIO,
         command: "npx",
         args: ["-y", "@amap/amap-maps-mcp-server"],

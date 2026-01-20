@@ -44,10 +44,11 @@ describe("InternalMCPManagerAdapter", () => {
     MCPManagerMock.mockImplementation(() => mockMCPManager);
 
     // 设置 mock normalizeServiceConfig
-    mockConvertLegacyToNew.mockImplementation((name: string, config: any) => ({
-      name,
-      ...config,
-    }));
+    // 重构后接受单个对象参数 { name, ...config }，返回不含 name 的配置
+    mockConvertLegacyToNew.mockImplementation((input: any) => {
+      const { name, ...config } = input;
+      return config;
+    });
   });
 
   describe("构造函数", () => {
@@ -104,7 +105,9 @@ describe("InternalMCPManagerAdapter", () => {
 
       new InternalMCPManagerAdapter(config);
 
-      expect(mockConvertLegacyToNew).toHaveBeenCalledWith("test-service", {
+      // 重构后 normalizeServiceConfig 接受单个对象参数 { name, ...config }
+      expect(mockConvertLegacyToNew).toHaveBeenCalledWith({
+        name: "test-service",
         url: "https://example.com/sse",
       });
     });

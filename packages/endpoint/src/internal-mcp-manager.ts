@@ -138,12 +138,7 @@ export class InternalMCPManagerAdapter implements IMCPServiceManager {
     // normalizeServiceConfig 会：
     // 1. 解析 command 中的相对路径（相对于配置文件目录）
     // 2. 解析 args 中的相对路径
-    // 3. 返回带有 name 字段的完整配置
-    const converted = normalizeServiceConfig(serviceName, config);
-
-    // 移除 name 字段（因为 InternalMCPManagerAdapter 不需要）
-    const { name, ...rest } = converted;
-
-    return rest;
+    // 3. 返回符合 MCP 官方标准的配置（不包含 name 字段）
+    return normalizeServiceConfig({ name: serviceName, ...config });
   }
 }

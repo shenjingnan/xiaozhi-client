@@ -260,11 +260,10 @@ export class MCPServerApiHandler {
     name: string,
     config: MCPServerConfig
   ): MCPServiceConfig {
-    // 根据配置类型创建 MCPServiceConfig
+    // 根据配置类型创建 MCPServiceConfig（符合 MCP 官方标准，不包含 name）
     if ("command" in config) {
       // LocalMCPServerConfig
       return {
-        name,
         type: "stdio" as MCPTransportType,
         command: config.command,
         args: config.args || [],
@@ -274,7 +273,6 @@ export class MCPServerApiHandler {
     if ("type" in config && config.type === "sse") {
       // SSEMCPServerConfig
       return {
-        name,
         type: "sse" as MCPTransportType,
         url: config.url,
       };
@@ -282,7 +280,6 @@ export class MCPServerApiHandler {
     if ("url" in config) {
       // StreamableHTTPMCPServerConfig
       return {
-        name,
         type: "streamable-http" as MCPTransportType,
         url: config.url,
       };
@@ -453,7 +450,8 @@ export class MCPServerApiHandler {
         name,
         normalizedConfig
       );
-      this.mcpServiceManager.addServiceConfig(mcpServiceConfig);
+      // 使用两参数形式传递 name 和 config
+      this.mcpServiceManager.addServiceConfig(name, mcpServiceConfig);
       await this.mcpServiceManager.startService(name);
       this.logger.debug("服务已启动", { serverName: name });
 

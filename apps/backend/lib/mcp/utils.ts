@@ -55,10 +55,12 @@ export function inferTransportTypeFromUrl(
  * 完整的配置类型推断（包括 command 字段）
  *
  * @param config - MCP 服务配置
+ * @param serviceName - 服务名称（用于错误信息）
  * @returns 完整的配置对象，包含推断出的类型
  */
 export function inferTransportTypeFromConfig(
-  config: MCPServiceConfig
+  config: MCPServiceConfig,
+  serviceName: string
 ): MCPServiceConfig {
   // 如果已显式指定类型，先标准化然后返回
   if (config.type) {
@@ -77,7 +79,7 @@ export function inferTransportTypeFromConfig(
   // 基于 URL 字段推断（排除 null 和 undefined）
   if (config.url !== undefined && config.url !== null) {
     const inferredType = inferTransportTypeFromUrl(config.url, {
-      serviceName: config.name,
+      serviceName,
     });
     return {
       ...config,
@@ -86,7 +88,7 @@ export function inferTransportTypeFromConfig(
   }
 
   throw new Error(
-    `无法为服务 ${config.name} 推断传输类型。请显式指定 type 字段，或提供 command/url 配置`
+    `无法为服务 ${serviceName} 推断传输类型。请显式指定 type 字段，或提供 command/url 配置`
   );
 }
 

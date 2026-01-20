@@ -210,13 +210,16 @@ describe("addMCPServer", () => {
       "new-service",
       requestData.config
     );
-    expect(mockMCPServiceManager.addServiceConfig).toHaveBeenCalledWith({
-      name: "new-service",
-      type: "stdio",
-      command: "node",
-      args: ["server.js"],
-      env: {},
-    });
+    // 重构后 addServiceConfig 接受两个参数：name 和 config（config 不包含 name）
+    expect(mockMCPServiceManager.addServiceConfig).toHaveBeenCalledWith(
+      "new-service",
+      {
+        type: "stdio",
+        command: "node",
+        args: ["server.js"],
+        env: {},
+      }
+    );
     expect(mockMCPServiceManager.startService).toHaveBeenCalledWith(
       "new-service"
     );

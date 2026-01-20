@@ -45,10 +45,10 @@ describe("MCPService 和 ConfigAdapter 推断逻辑一致性测试", () => {
     it(`对于 ${name}，两个组件应该推断出相同的类型: ${expectedType}`, () => {
       // ConfigAdapter 推断
       const legacyConfig = { url };
-      const configAdapterResult = normalizeServiceConfig(
-        "test-service",
-        legacyConfig
-      );
+      const configAdapterResult = normalizeServiceConfig({
+        name: "test-service",
+        ...legacyConfig,
+      });
 
       // MCPService 推断
       const mcpServiceConfig = { name: "test-service", url };
@@ -67,10 +67,10 @@ describe("MCPService 和 ConfigAdapter 推断逻辑一致性测试", () => {
 
     // ConfigAdapter 处理无效 URL
     const legacyConfig = { url: invalidUrl };
-    const configAdapterResult = normalizeServiceConfig(
-      "invalid-service",
-      legacyConfig
-    );
+    const configAdapterResult = normalizeServiceConfig({
+      name: "invalid-service",
+      ...legacyConfig,
+    });
 
     // MCPService 处理无效 URL
     const mcpServiceConfig = { name: "invalid-service", url: invalidUrl };
@@ -95,10 +95,10 @@ describe("MCPService 和 ConfigAdapter 推断逻辑一致性测试", () => {
       url: explicitConfig.url,
       type: "streamable-http" as const,
     };
-    const configAdapterResult = normalizeServiceConfig(
-      "explicit-service",
-      legacyConfig
-    );
+    const configAdapterResult = normalizeServiceConfig({
+      name: "explicit-service",
+      ...legacyConfig,
+    });
 
     // MCPService 处理显式类型
     const mcpService = new MCPService(explicitConfig);

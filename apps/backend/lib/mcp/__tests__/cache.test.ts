@@ -10,7 +10,7 @@ import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MCPToolsCache } from "../cache";
 import { MCPCacheManager } from "../cache";
-import type { MCPServiceConfig } from "../types";
+import type { InternalMCPServiceConfig } from "../types";
 import { MCPTransportType } from "../types";
 
 // Mock logger
@@ -62,7 +62,7 @@ describe("MCPCacheManager", () => {
     },
   ];
 
-  const mockConfig: MCPServiceConfig = {
+  const mockConfig: InternalMCPServiceConfig = {
     name: "calculator",
     type: MCPTransportType.STDIO,
     command: "node",
@@ -232,7 +232,7 @@ describe("MCPCacheManager", () => {
       await cacheManager.writeCacheEntry("datetime", [], {
         ...mockConfig,
         name: "datetime",
-      });
+      } as InternalMCPServiceConfig);
 
       const stats = await cacheManager.getStats();
 
@@ -254,14 +254,14 @@ describe("MCPCacheManager", () => {
 
   describe("配置哈希生成", () => {
     it("应该为相同配置生成相同哈希", async () => {
-      const config1: MCPServiceConfig = {
+      const config1: InternalMCPServiceConfig = {
         name: "test",
         type: MCPTransportType.STDIO,
         command: "node",
         args: ["test.js"],
       };
 
-      const config2: MCPServiceConfig = {
+      const config2: InternalMCPServiceConfig = {
         name: "test",
         type: MCPTransportType.STDIO,
         command: "node",
@@ -280,14 +280,14 @@ describe("MCPCacheManager", () => {
     });
 
     it("应该为不同配置生成不同哈希", async () => {
-      const config1: MCPServiceConfig = {
+      const config1: InternalMCPServiceConfig = {
         name: "test",
         type: MCPTransportType.STDIO,
         command: "node",
         args: ["test1.js"],
       };
 
-      const config2: MCPServiceConfig = {
+      const config2: InternalMCPServiceConfig = {
         name: "test",
         type: MCPTransportType.STDIO,
         command: "node",

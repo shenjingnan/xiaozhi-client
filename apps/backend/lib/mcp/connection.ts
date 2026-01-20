@@ -6,7 +6,7 @@
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { getEventBus } from "@root/services/EventBus.js";
 import { MCPConnection } from "@xiaozhi-client/mcp-core";
-import type { MCPServiceConfig } from "./types.js";
+import type { InternalMCPServiceConfig } from "./types.js";
 
 /**
  * MCP 服务类（向后兼容包装器）
@@ -16,9 +16,12 @@ export class MCPService {
   private connection: MCPConnection;
   private eventBus = getEventBus();
 
-  constructor(config: MCPServiceConfig) {
+  constructor(config: InternalMCPServiceConfig) {
     // 从配置中解构 name，其余作为连接配置
-    const { name, ...connectionConfig } = config;
+    const {
+      name,
+      ...connectionConfig
+    }: { name: string } & Omit<InternalMCPServiceConfig, "name"> = config;
 
     // 创建回调适配器，将 mcp-core 的回调转换为 EventBus 事件
     const callbacks = {
