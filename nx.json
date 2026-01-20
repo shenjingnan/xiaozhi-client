@@ -17,20 +17,20 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["production", "^production"],
-      "cache": true
+      "cache": false
     },
     "test": {
       "inputs": ["default", "^production", "sharedGlobals"],
-      "cache": true
+      "cache": false
     },
     "lint": {
       "inputs": ["default", "{workspaceRoot}/biome.json"],
-      "cache": true
+      "cache": false
     },
     "type-check": {
       "dependsOn": ["^build"],
       "inputs": ["default", "^production"],
-      "cache": true
+      "cache": false
     }
   },
   "release": {
