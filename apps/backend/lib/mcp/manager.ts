@@ -13,6 +13,7 @@ import { ConnectionState } from "@/lib/mcp/types";
 import type {
   CustomMCPTool,
   EnhancedToolInfo,
+  InternalMCPServiceConfig,
   MCPServiceConfig,
   ManagerStatus,
   ToolCallResult,
@@ -288,8 +289,12 @@ export class MCPServiceManager extends EventEmitter {
         await this.stopService(serviceName);
       }
 
-      // 创建 MCPService 实例
-      const service = new MCPService(config);
+      // 创建 MCPService 实例（使用 InternalMCPServiceConfig）
+      const serviceConfig: InternalMCPServiceConfig = {
+        name: serviceName,
+        ...config,
+      };
+      const service = new MCPService(serviceConfig);
 
       // 连接到服务
       await service.connect();
@@ -1145,6 +1150,7 @@ export class MCPServiceManager extends EventEmitter {
    * 智能检查现有认证信息，按优先级处理
    */
   private handleModelScopeAuth(
+    serviceName: string,
     originalConfig: MCPServiceConfig,
     enhancedConfig: MCPServiceConfig
   ): void {
@@ -1154,7 +1160,7 @@ export class MCPServiceManager extends EventEmitter {
     if (existingAuthHeader) {
       // 已有认证信息，直接使用
       console.info(
-        `[MCPManager] 服务 ${originalConfig.name} 使用已有的 Authorization header`
+        `[MCPManager] 服务 ${serviceName} 使用已有的 Authorization header`
       );
       return;
     }
@@ -1166,14 +1172,13 @@ export class MCPServiceManager extends EventEmitter {
       // 注入全局 API Key
       enhancedConfig.apiKey = modelScopeApiKey;
       console.info(
-        `[MCPManager] 为 ${originalConfig.name} 服务添加 ModelScope API Key`
+        `[MCPManager] 为 ${serviceName} 服务添加 ModelScope API Key`
       );
       return;
     }
 
     // 3. 无法获取认证信息，提供详细错误信息
     const serviceUrl = originalConfig.url || "未知";
-    const serviceName = originalConfig.name || "未知";
 
     throw new Error(
       `ModelScope 服务 "${serviceName}" 需要认证信息，但未找到有效的认证配置。服务 URL: ${serviceUrl}请选择以下任一方式配置认证：1. 在服务配置中添加 headers.Authorization2. 或者在全局配置中设置 modelscope.apiKey3. 或者设置环境变量 MODELSCOPE_API_TOKEN获取 ModelScope API Key: https://modelscope.cn/my?myInfo=true`
@@ -1184,18 +1189,21 @@ export class MCPServiceManager extends EventEmitter {
    * 增强服务配置
    * 根据服务类型添加必要的全局配置，智能处理认证信息
    */
-  private enhanceServiceConfig(config: MCPServiceConfig): MCPServiceConfig {
+  private enhanceServiceConfig(
+    serviceName: string,
+    config: MCPServiceConfig
+  ): MCPServiceConfig {
     const enhancedConfig = { ...config };
 
     try {
       // 处理 ModelScope 服务（智能认证检查）
       if (this.isModelScopeService(config)) {
-        this.handleModelScopeAuth(config, enhancedConfig);
+        this.handleModelScopeAuth(serviceName, config, enhancedConfig);
       }
 
       return enhancedConfig;
     } catch (error) {
-      console.error(`[MCPManager] 配置增强失败: ${config.name}`, error);
+      console.error(`[MCPManager] 配置增强失败: ${serviceName}`, error);
       throw error;
     }
   }
@@ -1204,9 +1212,9 @@ export class MCPServiceManager extends EventEmitter {
    * 添加服务配置（重载方法以支持两种调用方式）
    */
   addServiceConfig(name: string, config: MCPServiceConfig): void;
-  addServiceConfig(config: MCPServiceConfig): void;
+  addServiceConfig(config: InternalMCPServiceConfig): void;
   addServiceConfig(
-    nameOrConfig: string | MCPServiceConfig,
+    nameOrConfig: string | MCPServiceConfig | InternalMCPServiceConfig,
     config?: MCPServiceConfig
   ): void {
     let finalConfig: MCPServiceConfig;
@@ -1217,15 +1225,16 @@ export class MCPServiceManager extends EventEmitter {
       serviceName = nameOrConfig;
       finalConfig = config;
     } else if (typeof nameOrConfig === "object") {
-      // 单参数版本
-      serviceName = nameOrConfig.name;
-      finalConfig = nameOrConfig;
+      // 单参数版本（使用 InternalMCPServiceConfig）
+      const internalConfig = nameOrConfig as InternalMCPServiceConfig;
+      serviceName = internalConfig.name;
+      finalConfig = internalConfig;
     } else {
       throw new Error("Invalid arguments for addServiceConfig");
     }
 
     // 增强配置
-    const enhancedConfig = this.enhanceServiceConfig(finalConfig);
+    const enhancedConfig = this.enhanceServiceConfig(serviceName, finalConfig);
 
     // 存储增强后的配置
     this.configs[serviceName] = enhancedConfig;
@@ -1237,7 +1246,7 @@ export class MCPServiceManager extends EventEmitter {
    */
   updateServiceConfig(name: string, config: MCPServiceConfig): void {
     // 增强配置
-    const enhancedConfig = this.enhanceServiceConfig(config);
+    const enhancedConfig = this.enhanceServiceConfig(name, config);
 
     // 存储增强后的配置
     this.configs[name] = enhancedConfig;

@@ -290,7 +290,7 @@ export class WebServer {
     for (const [name, config] of Object.entries(mcpServers)) {
       this.logger.debug(`添加 MCP 服务配置: ${name}`);
       // 使用配置适配器转换配置格式
-      const serviceConfig = normalizeServiceConfig(name, config);
+      const serviceConfig = normalizeServiceConfig(config);
       this.mcpServiceManager.addServiceConfig(name, serviceConfig);
     }
 

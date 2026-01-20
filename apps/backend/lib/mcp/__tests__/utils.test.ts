@@ -331,23 +331,21 @@ describe("MCP 传输类型推断工具", () => {
     describe("显式指定类型的情况", () => {
       it("应该使用显式指定的类型", () => {
         const config = {
-          name: "test-service",
           type: MCPTransportType.SSE,
           url: "https://example.com/sse",
         };
 
-        const result = inferTransportTypeFromConfig(config);
+        const result = inferTransportTypeFromConfig(config, "test-service");
         expect(result.type).toBe(MCPTransportType.SSE);
       });
 
       it("应该优先使用显式类型而非URL推断", () => {
         const config = {
-          name: "explicit-priority-service",
           type: MCPTransportType.HTTP,
           url: "https://example.com/sse", // 这个URL会推断为SSE，但显式指定为STREAMABLE_HTTP
         };
 
-        const result = inferTransportTypeFromConfig(config);
+        const result = inferTransportTypeFromConfig(config, "test-service");
         expect(result.type).toBe(MCPTransportType.HTTP);
       });
 
@@ -372,7 +370,10 @@ describe("MCP 传输类型推断工具", () => {
 
         for (const { type, name, config } of testCases) {
           const fullConfig = { name, type, ...config };
-          const result = inferTransportTypeFromConfig(fullConfig);
+          const result = inferTransportTypeFromConfig(
+            fullConfig,
+            "test-service"
+          );
           expect(result.type).toBe(type);
         }
       });
@@ -381,45 +382,41 @@ describe("MCP 传输类型推断工具", () => {
     describe("基于 command 字段推断", () => {
       it("应该根据 command 字段推断为 stdio 类型", () => {
         const config = {
-          name: "stdio-service",
           command: "node",
           args: ["server.js"],
         };
 
-        const result = inferTransportTypeFromConfig(config);
+        const result = inferTransportTypeFromConfig(config, "test-service");
         expect(result.type).toBe(MCPTransportType.STDIO);
       });
 
       it("即使有 url 字段，command 字段也应优先", () => {
         const config = {
-          name: "mixed-service",
           command: "python",
           args: ["server.py"],
           url: "https://example.com/sse",
         };
 
-        const result = inferTransportTypeFromConfig(config);
+        const result = inferTransportTypeFromConfig(config, "test-service");
         expect(result.type).toBe(MCPTransportType.STDIO);
       });
 
       it("应该处理只有 command 没有 args 的情况", () => {
         const config = {
-          name: "command-only-service",
           command: "python",
         };
 
-        const result = inferTransportTypeFromConfig(config);
+        const result = inferTransportTypeFromConfig(config, "test-service");
         expect(result.type).toBe(MCPTransportType.STDIO);
       });
 
       it("应该处理空的 args 数组", () => {
         const config = {
-          name: "empty-args-service",
           command: "node",
           args: [],
         };
 
-        const result = inferTransportTypeFromConfig(config);
+        const result = inferTransportTypeFromConfig(config, "test-service");
         expect(result.type).toBe(MCPTransportType.STDIO);
       });
     });
@@ -427,58 +424,53 @@ describe("MCP 传输类型推断工具", () => {
     describe("基于 URL 字段推断", () => {
       it("应该调用 inferTransportTypeFromUrl 进行类型推断", () => {
         const config = {
-          name: "url-service",
           url: "https://example.com/sse",
         };
 
-        const result = inferTransportTypeFromConfig(config);
+        const result = inferTransportTypeFromConfig(config, "test-service");
         expect(result.type).toBe(MCPTransportType.SSE);
       });
 
       it("应该传递正确的参数给 inferTransportTypeFromUrl", () => {
         const config = {
-          name: "test-service",
           url: "not-a-valid-url",
         };
 
-        inferTransportTypeFromConfig(config);
+        inferTransportTypeFromConfig(config, "test-service");
 
         // 验证是否用正确的参数调用了日志记录
         expect(mockConsoleWarn).toHaveBeenCalledWith(
-          `[MCP-${config.name}] URL 解析失败，默认推断为 http 类型`,
+          "[MCP-test-service] URL 解析失败，默认推断为 http 类型",
           expect.any(Error)
         );
       });
 
       it("应该处理 null URL 值", () => {
         const config = {
-          name: "null-url-service",
           url: null,
         } as unknown as MCPServiceConfig;
 
         expect(() => {
-          inferTransportTypeFromConfig(config);
-        }).toThrow("无法为服务 null-url-service 推断传输类型");
+          inferTransportTypeFromConfig(config, "null-url-service");
+        }).toThrow(/无法为服务 null-url-service 推断传输类型/);
       });
 
       it("应该处理 undefined URL 值", () => {
         const config = {
-          name: "undefined-url-service",
           url: undefined,
         };
 
         expect(() => {
-          inferTransportTypeFromConfig(config);
-        }).toThrow("无法为服务 undefined-url-service 推断传输类型");
+          inferTransportTypeFromConfig(config, "undefined-url-service");
+        }).toThrow(/无法为服务 undefined-url-service 推断传输类型/);
       });
 
       it("应该处理空字符串 URL 值", () => {
         const config = {
-          name: "empty-url-service",
           url: "",
         };
 
-        const result = inferTransportTypeFromConfig(config);
+        const result = inferTransportTypeFromConfig(config, "test-service");
         expect(result.type).toBe(MCPTransportType.HTTP);
       });
     });
@@ -486,25 +478,23 @@ describe("MCP 传输类型推断工具", () => {
     describe("错误处理", () => {
       it("应该在无法推断类型时抛出错误", () => {
         const config = {
-          name: "invalid-service",
           // 没有 type、command 或 url 字段
         };
 
         expect(() => {
-          inferTransportTypeFromConfig(config);
-        }).toThrow("无法为服务 invalid-service 推断传输类型");
+          inferTransportTypeFromConfig(config, "invalid-service");
+        }).toThrow(/无法为服务 invalid-service 推断传输类型/);
       });
 
       it("应该提供清晰的错误信息", () => {
         const config = {
-          name: "another-invalid-service",
           timeout: 60000, // 只有无关字段
-        };
+        } as unknown as MCPServiceConfig;
 
         expect(() => {
-          inferTransportTypeFromConfig(config);
+          inferTransportTypeFromConfig(config, "test-service");
         }).toThrow(
-          "无法为服务 another-invalid-service 推断传输类型。请显式指定 type 字段，或提供 command/url 配置"
+          "无法为服务 test-service 推断传输类型。请显式指定 type 字段，或提供 command/url 配置"
         );
       });
     });
@@ -512,38 +502,42 @@ describe("MCP 传输类型推断工具", () => {
     describe("配置保持不变性", () => {
       it("不应该修改原始配置对象", () => {
         const originalConfig = {
-          name: "original-service",
           url: "https://example.com/sse",
         };
 
         const originalConfigCopy = { ...originalConfig };
-        const result = inferTransportTypeFromConfig(originalConfig);
+        const result = inferTransportTypeFromConfig(
+          originalConfig,
+          "test-service"
+        );
 
         // 原始配置应该保持不变
         expect(originalConfig).toEqual(originalConfigCopy);
 
         // 返回的配置应该包含推断的类型
         expect(result.type).toBe(MCPTransportType.SSE);
-        expect(result.name).toBe("original-service");
+
         expect(result.url).toBe("https://example.com/sse");
       });
 
       it("应该保持配置字段的完整性", () => {
         const originalConfig = {
-          name: "complete-service",
           url: "https://example.com/mcp",
           apiKey: "test-key",
         };
 
         const originalConfigCopy = { ...originalConfig };
-        const result = inferTransportTypeFromConfig(originalConfig);
+        const result = inferTransportTypeFromConfig(
+          originalConfig,
+          "test-service"
+        );
 
         expect(originalConfig).toEqual(originalConfigCopy);
 
         // 返回的配置应该包含所有原始字段和推断的类型
         expect(result.type).toBe(MCPTransportType.HTTP);
         expect(result.apiKey).toBe("test-key");
-        expect(result.name).toBe("complete-service");
+
         expect(result.url).toBe("https://example.com/mcp");
       });
     });
@@ -552,32 +546,38 @@ describe("MCP 传输类型推断工具", () => {
       it("应该正确处理类型推断优先级：显式类型 > command > URL", () => {
         // 1. 显式类型优先级最高
         const explicitConfig = {
-          name: "explicit-priority",
           type: MCPTransportType.SSE,
           command: "node", // command 存在但显式类型优先
           url: "https://example.com/mcp", // URL 推断为 MCP 但显式类型为 SSE
         };
 
-        const explicitResult = inferTransportTypeFromConfig(explicitConfig);
+        const explicitResult = inferTransportTypeFromConfig(
+          explicitConfig,
+          "test-service"
+        );
         expect(explicitResult.type).toBe(MCPTransportType.SSE);
 
         // 2. command 优先级高于 URL
         const commandConfig = {
-          name: "command-priority",
           command: "python", // command 存在
           url: "https://example.com/sse", // URL 推断为 SSE 但 command 优先
         };
 
-        const commandResult = inferTransportTypeFromConfig(commandConfig);
+        const commandResult = inferTransportTypeFromConfig(
+          commandConfig,
+          "test-service"
+        );
         expect(commandResult.type).toBe(MCPTransportType.STDIO);
 
         // 3. 只有 URL 时进行推断
         const urlConfig = {
-          name: "url-inference",
           url: "https://example.com/sse", // 推断为 SSE
         };
 
-        const urlResult = inferTransportTypeFromConfig(urlConfig);
+        const urlResult = inferTransportTypeFromConfig(
+          urlConfig,
+          "test-service"
+        );
         expect(urlResult.type).toBe(MCPTransportType.SSE);
       });
     });

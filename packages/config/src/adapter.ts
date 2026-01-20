@@ -7,8 +7,6 @@ import { isAbsolute, resolve, dirname } from "node:path";
 import type {
   LocalMCPServerConfig,
   MCPServerConfig,
-  SSEMCPServerConfig,
-  StreamableHTTPMCPServerConfig,
 } from "./manager.js";
 import { ConfigResolver } from "./resolver.js";
 
@@ -20,10 +18,7 @@ import { ConfigResolver } from "./resolver.js";
  * 配置验证错误类
  */
 export class ConfigValidationError extends Error {
-  constructor(
-    message: string,
-    public readonly configName?: string
-  ) {
+  constructor(message: string) {
     super(message);
     this.name = "ConfigValidationError";
   }
@@ -38,7 +33,6 @@ export enum MCPTransportType {
 
 // 定义简化的 MCPServiceConfig 接口
 export interface MCPServiceConfig {
-  name: string;
   type: MCPTransportType;
   command?: string;
   args?: string[];
@@ -76,36 +70,30 @@ function inferTransportTypeFromUrl(url: string): MCPTransportType {
  * 将各种配置格式标准化为统一的服务配置格式
  */
 export function normalizeServiceConfig(
-  serviceName: string,
-  legacyConfig: MCPServerConfig
+  config: MCPServerConfig
 ): MCPServiceConfig {
-  console.log("转换配置", { serviceName, legacyConfig });
+  console.log("转换配置", { config });
 
   try {
     // 验证输入参数
-    if (!serviceName || typeof serviceName !== "string") {
-      throw new ConfigValidationError("服务名称必须是非空字符串");
-    }
-
-    if (!legacyConfig || typeof legacyConfig !== "object") {
-      throw new ConfigValidationError("配置对象不能为空", serviceName);
+    if (!config || typeof config !== "object") {
+      throw new ConfigValidationError("配置对象不能为空");
     }
 
     // 根据配置类型进行转换
-    const newConfig = convertByConfigType(serviceName, legacyConfig);
+    const newConfig = convertByConfigType(config);
 
     // 验证转换后的配置
     validateNewConfig(newConfig);
 
-    console.log("配置转换成功", { serviceName, type: newConfig.type });
+    console.log("配置转换成功", { type: newConfig.type });
     return newConfig;
   } catch (error) {
-    console.error("配置转换失败", { serviceName, error });
+    console.error("配置转换失败", { error });
     throw error instanceof ConfigValidationError
       ? error
       : new ConfigValidationError(
-          `配置转换失败: ${error instanceof Error ? error.message : String(error)}`,
-          serviceName
+          `配置转换失败: ${error instanceof Error ? error.message : String(error)}`
         );
   }
 }
@@ -114,66 +102,66 @@ export function normalizeServiceConfig(
  * 根据配置类型进行转换
  */
 function convertByConfigType(
-  serviceName: string,
-  legacyConfig: MCPServerConfig
+  config: MCPServerConfig
 ): MCPServiceConfig {
   // 检查是否为本地 stdio 配置（最高优先级）
-  if (isLocalConfig(legacyConfig)) {
-    return convertLocalConfig(serviceName, legacyConfig);
+  if (isLocalConfig(config)) {
+    return convertLocalConfig(config);
   }
 
   // 检查是否有显式指定的类型
-  if ("type" in legacyConfig) {
-    switch (legacyConfig.type) {
+  if ("type" in config) {
+    switch (config.type) {
       case "sse":
-        return convertSSEConfig(serviceName, legacyConfig);
+        return convertSSEConfig(config);
       case "http":
       case "streamable-http": // 向后兼容
-        return convertHTTPConfig(serviceName, legacyConfig);
+        return convertHTTPConfig(config);
       default:
         throw new ConfigValidationError(
-          `不支持的传输类型: ${legacyConfig.type}`,
-          serviceName
+          `不支持的传输类型: ${config.type}`
         );
     }
   }
 
   // 检查是否为网络配置（自动推断类型）
-  if ("url" in legacyConfig) {
+  if ("url" in config) {
     // 如果 URL 是 undefined 或 null，抛出错误
-    if (legacyConfig.url === undefined || legacyConfig.url === null) {
-      throw new ConfigValidationError(
-        "网络配置必须包含有效的 url 字段",
-        serviceName
-      );
+    if (config.url === undefined || config.url === null) {
+      throw new ConfigValidationError("网络配置必须包含有效的 url 字段");
     }
 
     // 先推断类型，然后根据推断的类型选择正确的转换函数
-    const inferredType = inferTransportTypeFromUrl(legacyConfig.url || "");
+    const inferredType = inferTransportTypeFromUrl(config.url || "");
 
     if (inferredType === MCPTransportType.SSE) {
       // 为SSE类型添加显式type字段
-      const sseConfig = { ...legacyConfig, type: "sse" as const };
-      return convertSSEConfig(serviceName, sseConfig);
+      const sseConfig = { ...config, type: "sse" as const };
+      return convertSSEConfig(sseConfig);
     }
     // 为HTTP类型添加显式type字段
-    const httpConfig = { ...legacyConfig, type: "http" as const };
-    return convertHTTPConfig(serviceName, httpConfig);
+    const httpConfig = { ...config, type: "http" as const };
+    return convertHTTPConfig(httpConfig);
   }
 
-  throw new ConfigValidationError("无法识别的配置类型", serviceName);
+  throw new ConfigValidationError("无法识别的配置类型");
 }
 
-/** * 转换本地 stdio 配置 */
+/**
+ * 转换本地 stdio 配置
+ */
 function convertLocalConfig(
-  serviceName: string,
-  config: LocalMCPServerConfig
+  config: MCPServerConfig
 ): MCPServiceConfig {
-  if (!config.command) {
-    throw new ConfigValidationError(
-      "本地配置必须包含 command 字段",
-      serviceName
-    );
+  // 类型守卫：确保是 LocalMCPServerConfig
+  if (!isLocalConfig(config)) {
+    throw new ConfigValidationError("无效的本地配置类型");
+  }
+
+  const { command, args, env } = config;
+
+  if (!command) {
+    throw new ConfigValidationError("本地配置必须包含 command 字段");
   }
 
   // 获取配置文件所在目录作为工作目录
@@ -194,18 +182,18 @@ function convertLocalConfig(
   }
 
   // 解析 command 中的相对路径
-  let resolvedCommand = config.command;
-  if (isRelativePath(config.command)) {
-    resolvedCommand = resolve(workingDir, config.command);
+  let resolvedCommand = command;
+  if (isRelativePath(command)) {
+    resolvedCommand = resolve(workingDir, command);
     console.log("解析 command 相对路径", {
-      command: config.command,
+      command,
       resolvedCommand,
       workingDir,
     });
   }
 
   // 解析 args 中的相对路径
-  const resolvedArgs = (config.args || []).map((arg) => {
+  const resolvedArgs = (args || []).map((arg: string) => {
     // 检查是否为相对路径（以 ./ 开头或不以 / 开头且包含文件扩展名）
     if (isRelativePath(arg)) {
       const resolvedPath = resolve(workingDir, arg);
@@ -216,11 +204,10 @@ function convertLocalConfig(
   });
 
   return {
-    name: serviceName,
     type: MCPTransportType.STDIO,
     command: resolvedCommand,
     args: resolvedArgs,
-    env: config.env, // 传递环境变量
+    ...(env !== undefined && { env }), // 只在 env 存在时添加该字段
   };
 }
 
@@ -228,59 +215,54 @@ function convertLocalConfig(
  * 转换 SSE 配置
  */
 function convertSSEConfig(
-  serviceName: string,
-  config: SSEMCPServerConfig
+  config: MCPServerConfig
 ): MCPServiceConfig {
-  if (config.url === undefined || config.url === null) {
-    throw new ConfigValidationError("SSE 配置必须包含 url 字段", serviceName);
+  const url = (config as any).url;
+  const type = (config as any).type;
+  const headers = (config as any).headers;
+
+  if (url === undefined || url === null) {
+    throw new ConfigValidationError("SSE 配置必须包含 url 字段");
   }
 
   // 优先使用显式指定的类型，如果没有则进行推断
   const inferredType =
-    config.type === "sse"
+    type === "sse"
       ? MCPTransportType.SSE
-      : inferTransportTypeFromUrl(config.url || "");
-  const isModelScope = config.url ? isModelScopeURL(config.url) : false;
-
-  const baseConfig: MCPServiceConfig = {
-    name: serviceName,
-    type: inferredType,
-    url: config.url,
-    headers: config.headers,
-  };
+      : inferTransportTypeFromUrl(url || "");
+  const isModelScope = url ? isModelScopeURL(url) : false;
 
   console.log("SSE配置转换", {
-    serviceName,
-    url: config.url,
+    url,
     inferredType,
     isModelScope,
   });
 
-  return baseConfig;
+  return {
+    type: inferredType,
+    url,
+    headers,
+  };
 }
 
 /**
  * 转换 HTTP 配置
  */
 function convertHTTPConfig(
-  serviceName: string,
-  config: StreamableHTTPMCPServerConfig
+  config: MCPServerConfig
 ): MCPServiceConfig {
+  const url = (config as any).url;
+  const headers = (config as any).headers;
+
   // 检查 URL 是否存在
-  if (config.url === undefined || config.url === null) {
-    throw new ConfigValidationError(
-      "HTTP 配置必须包含 url 字段",
-      serviceName
-    );
+  if (url === undefined || url === null) {
+    throw new ConfigValidationError("HTTP 配置必须包含 url 字段");
   }
 
-  const url = config.url || "";
-
   return {
-    name: serviceName,
     type: MCPTransportType.HTTP,
-    url,
-    headers: config.headers,
+    url: url || "",
+    headers,
   };
 }
 
@@ -291,14 +273,13 @@ export function normalizeServiceConfigBatch(
   legacyConfigs: Record<string, MCPServerConfig>
 ): Record<string, MCPServiceConfig> {
   const newConfigs: Record<string, MCPServiceConfig> = {};
-  const errors: Array<{ serviceName: string; error: Error }> = [];
+  const errors: Array<{ error: Error }> = [];
 
-  for (const [serviceName, legacyConfig] of Object.entries(legacyConfigs)) {
+  for (const [name, config] of Object.entries(legacyConfigs)) {
     try {
-      newConfigs[serviceName] = normalizeServiceConfig(serviceName, legacyConfig);
+      newConfigs[name] = normalizeServiceConfig(config);
     } catch (error) {
       errors.push({
-        serviceName,
         error: error instanceof Error ? error : new Error(String(error)),
       });
     }
@@ -306,7 +287,7 @@ export function normalizeServiceConfigBatch(
 
   if (errors.length > 0) {
     const errorMessages = errors
-      .map(({ serviceName, error }) => `${serviceName}: ${error.message}`)
+      .map(({ error }, index) => `[${index}]: ${error.message}`)
       .join("; ");
     throw new ConfigValidationError(`批量配置转换失败: ${errorMessages}`);
   }
@@ -372,10 +353,6 @@ export function isModelScopeURL(url: string): boolean {
  * 验证新配置格式
  */
 function validateNewConfig(config: MCPServiceConfig): void {
-  if (!config.name || typeof config.name !== "string") {
-    throw new ConfigValidationError("配置必须包含有效的 name 字段");
-  }
-
   if (config.type && !Object.values(MCPTransportType).includes(config.type)) {
     throw new ConfigValidationError(`无效的传输类型: ${config.type}`);
   }

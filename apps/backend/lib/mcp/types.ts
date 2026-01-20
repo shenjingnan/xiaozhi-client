@@ -52,9 +52,11 @@ export interface ModelScopeSSEOptions {
 /**
  * MCP 服务配置接口
  * 包含所有 MCP 服务的配置选项
+ *
+ * 注意：符合 @modelcontextprotocol 官方标准，不包含 name 字段
+ * name 应该作为服务标识符独立管理，不是配置的一部分
  */
 export interface MCPServiceConfig {
-  name: string;
   type?: MCPTransportType; // 现在是可选的，支持自动推断
   // stdio 配置
   command?: string;
@@ -66,6 +68,14 @@ export interface MCPServiceConfig {
   apiKey?: string;
   headers?: Record<string, string>;
   customSSEOptions?: ModelScopeSSEOptions;
+}
+
+/**
+ * 内部使用的 MCP 服务配置接口（包含 name 字段）
+ * 用于 MCPService 类等内部函数，保持向后兼容
+ */
+export interface InternalMCPServiceConfig extends MCPServiceConfig {
+  name: string;
 }
 
 // =========================

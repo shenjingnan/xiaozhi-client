@@ -1,7 +1,7 @@
 import { existsSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { MCPServiceConfig } from "@/lib/mcp";
+import type { InternalMCPServiceConfig } from "@/lib/mcp";
 import { MCPTransportType } from "@/lib/mcp";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Logger } from "../../Logger.js";
@@ -34,7 +34,7 @@ describe("Advanced Features Integration", () => {
     vi.mocked(Logger).mockImplementation(() => mockLogger);
 
     // Create test configuration
-    const testConfigs: MCPServiceConfig[] = [
+    const testConfigs: InternalMCPServiceConfig[] = [
       {
         name: "test-service",
         type: MCPTransportType.STDIO,
