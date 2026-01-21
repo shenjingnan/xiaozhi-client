@@ -56,11 +56,15 @@ export class MCPEndpointApiHandler {
     } catch (error) {
       this.logger.error("JSON解析失败:", error);
       return {
-        ok: false, response: c.json({
-          success: false,
-          code: errorErrorCode,
-          message: error instanceof Error ? error.message : "JSON解析失败",
-        }, 500)
+        ok: false,
+        response: c.json(
+          {
+            success: false,
+            code: errorErrorCode,
+            message: error instanceof Error ? error.message : "JSON解析失败",
+          },
+          500
+        ),
       };
     }
 
@@ -69,11 +73,15 @@ export class MCPEndpointApiHandler {
     // 验证端点参数
     if (!endpoint || typeof endpoint !== "string") {
       return {
-        ok: false, response: c.json({
-          success: false,
-          code: "INVALID_ENDPOINT",
-          message: "端点参数无效",
-        }, 500)
+        ok: false,
+        response: c.json(
+          {
+            success: false,
+            code: "INVALID_ENDPOINT",
+            message: "端点参数无效",
+          },
+          500
+        ),
       };
     }
 
@@ -141,25 +149,32 @@ export class MCPEndpointApiHandler {
       );
 
       if (!endpointStatus) {
-        return c.json({
-          success: false,
-          code: 'ENDPOINT_NOT_FOUND',
-          message: '端点不存在',
-        }, 500);
+        return c.json(
+          {
+            success: false,
+            code: "ENDPOINT_NOT_FOUND",
+            message: "端点不存在",
+          },
+          500
+        );
       }
 
       this.logger.debug(`获取接入点状态成功: ${endpoint}`);
       return c.json({
         success: true,
         data: endpointStatus,
-      })
+      });
     } catch (error) {
       this.logger.error("获取接入点状态失败:", error);
-      return c.json({
-        success: false,
-        code: 'ENDPOINT_STATUS_READ_ERROR',
-        message: error instanceof Error ? error.message : '获取接入点状态失败',
-      }, 500);
+      return c.json(
+        {
+          success: false,
+          code: "ENDPOINT_STATUS_READ_ERROR",
+          message:
+            error instanceof Error ? error.message : "获取接入点状态失败",
+        },
+        500
+      );
     }
   }
 
@@ -183,20 +198,26 @@ export class MCPEndpointApiHandler {
       const endpointInstance = this.endpointManager.getEndpoint(endpoint);
 
       if (!endpointInstance) {
-        return c.json({
-          success: false,
-          code: 'ENDPOINT_NOT_FOUND',
-          message: '端点不存在，请先添加接入点',
-        }, 500);
+        return c.json(
+          {
+            success: false,
+            code: "ENDPOINT_NOT_FOUND",
+            message: "端点不存在，请先添加接入点",
+          },
+          500
+        );
       }
 
       // 检查是否已连接
       if (endpointInstance.isConnected()) {
-        return c.json({
-          success: false,
-          code: 'ENDPOINT_ALREADY_CONNECTED',
-          message: '端点已连接',
-        }, 500);
+        return c.json(
+          {
+            success: false,
+            code: "ENDPOINT_ALREADY_CONNECTED",
+            message: "端点已连接",
+          },
+          500
+        );
       }
 
       // 执行连接操作
@@ -210,11 +231,14 @@ export class MCPEndpointApiHandler {
       );
 
       if (!endpointStatus) {
-        return c.json({
-          success: false,
-          code: 'ENDPOINT_STATUS_NOT_FOUND',
-          message: '无法获取端点连接状态'
-        }, 500);
+        return c.json(
+          {
+            success: false,
+            code: "ENDPOINT_STATUS_NOT_FOUND",
+            message: "无法获取端点连接状态",
+          },
+          500
+        );
       }
 
       // 发送连接成功事件
@@ -232,11 +256,14 @@ export class MCPEndpointApiHandler {
       return c.json({ success: true, data: endpointStatus });
     } catch (error) {
       this.logger.error("接入点连接失败:", error);
-      return c.json({
-        success: false,
-        code: 'ENDPOINT_CONNECT_ERROR',
-        message: error instanceof Error ? error.message : '接入点连接失败',
-      }, 500);
+      return c.json(
+        {
+          success: false,
+          code: "ENDPOINT_CONNECT_ERROR",
+          message: error instanceof Error ? error.message : "接入点连接失败",
+        },
+        500
+      );
     }
   }
 
@@ -260,20 +287,26 @@ export class MCPEndpointApiHandler {
       const endpointInstance = this.endpointManager.getEndpoint(endpoint);
 
       if (!endpointInstance) {
-        return c.json({
-          success: false,
-          code: 'ENDPOINT_NOT_FOUND',
-          message: '端点不存在',
-        }, 500);
+        return c.json(
+          {
+            success: false,
+            code: "ENDPOINT_NOT_FOUND",
+            message: "端点不存在",
+          },
+          500
+        );
       }
 
       // 检查是否已连接
       if (!endpointInstance.isConnected()) {
-        return c.json({
-          success: false,
-          code: 'ENDPOINT_NOT_CONNECTED',
-          message: '端点未连接',
-        }, 500);
+        return c.json(
+          {
+            success: false,
+            code: "ENDPOINT_NOT_CONNECTED",
+            message: "端点未连接",
+          },
+          500
+        );
       }
 
       // 执行断开操作
@@ -309,11 +342,14 @@ export class MCPEndpointApiHandler {
       });
     } catch (error) {
       this.logger.error("接入点断开失败:", error);
-      return c.json({
-        success: false,
-        code: 'ENDPOINT_DISCONNECT_ERROR',
-        message: error instanceof Error ? error.message : "接入点断开失败",
-      }, 500);
+      return c.json(
+        {
+          success: false,
+          code: "ENDPOINT_DISCONNECT_ERROR",
+          message: error instanceof Error ? error.message : "接入点断开失败",
+        },
+        500
+      );
     }
   }
 
@@ -338,21 +374,27 @@ export class MCPEndpointApiHandler {
       // 1. 验证端点 URL 格式
       const validation = this.validateEndpoint(endpoint);
       if (!validation.isValid) {
-        return c.json({
-          success: false,
-          code: 'INVALID_ENDPOINT_FORMAT',
-          message: validation.errors.join(", "),
-        }, 500);
+        return c.json(
+          {
+            success: false,
+            code: "INVALID_ENDPOINT_FORMAT",
+            message: validation.errors.join(", "),
+          },
+          500
+        );
       }
 
       // 2. 检查端点是否已存在
       const existingEndpoint = this.endpointManager.getEndpoint(endpoint);
       if (existingEndpoint) {
-        return c.json({
-          success: false,
-          code: 'ENDPOINT_ALREADY_EXISTS',
-          message: '端点已存在',
-        }, 500);
+        return c.json(
+          {
+            success: false,
+            code: "ENDPOINT_ALREADY_EXISTS",
+            message: "端点已存在",
+          },
+          500
+        );
       }
 
       // 3. 构建 EndpointConfig
@@ -415,15 +457,18 @@ export class MCPEndpointApiHandler {
       return c.json({
         success: true,
         data: endpointStatus || defaultEndpointStatus,
-        message: '接入点添加成功',
+        message: "接入点添加成功",
       });
     } catch (error) {
       this.logger.error("添加接入点失败:", error);
-      return c.json({
-        success: false,
-        code: 'ENDPOINT_ADD_ERROR',
-        message: error instanceof Error ? error.message : '添加接入点失败',
-      }, 500);
+      return c.json(
+        {
+          success: false,
+          code: "ENDPOINT_ADD_ERROR",
+          message: error instanceof Error ? error.message : "添加接入点失败",
+        },
+        500
+      );
     }
   }
 
@@ -448,11 +493,14 @@ export class MCPEndpointApiHandler {
       // 检查端点是否存在
       const endpointInstance = this.endpointManager.getEndpoint(endpoint);
       if (!endpointInstance) {
-        return c.json({
-          success: false,
-          code: 'ENDPOINT_NOT_FOUND',
-          message: '端点不存在',
-        }, 500);
+        return c.json(
+          {
+            success: false,
+            code: "ENDPOINT_NOT_FOUND",
+            message: "端点不存在",
+          },
+          500
+        );
       }
 
       // 记录断开前的连接状态
@@ -508,16 +556,19 @@ export class MCPEndpointApiHandler {
           operation: "removed",
           wasConnected,
         },
-        message: '接入点移除成功',
+        message: "接入点移除成功",
       });
     } catch (error) {
       this.logger.error("移除接入点失败:", error);
 
-      return c.json({
-        success: false,
-        code: 'ENDPOINT_REMOVE_ERROR',
-        message: error instanceof Error ? error.message : '移除接入点失败',
-      }, 500);
+      return c.json(
+        {
+          success: false,
+          code: "ENDPOINT_REMOVE_ERROR",
+          message: error instanceof Error ? error.message : "移除接入点失败",
+        },
+        500
+      );
     }
   }
 }
