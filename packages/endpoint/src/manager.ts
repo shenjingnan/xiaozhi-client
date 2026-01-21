@@ -264,7 +264,7 @@ export class EndpointManager extends EventEmitter {
   /**
    * 连接单个端点
    */
-  private async connectSingleEndpoint(
+  public async connectSingleEndpoint(
     url: string,
     endpoint: Endpoint
   ): Promise<void> {

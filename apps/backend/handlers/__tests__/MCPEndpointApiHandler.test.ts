@@ -23,6 +23,7 @@ vi.mock("@xiaozhi-client/config", () => ({
     getMcpEndpoints: vi.fn(),
     addMcpEndpoint: vi.fn(),
     removeMcpEndpoint: vi.fn(),
+    getConfig: vi.fn(),
     // 新增的事件回调支持
     eventCallbacks: new Map(),
     on: vi.fn(),
@@ -560,22 +561,54 @@ describe("MCPEndpointApiHandler", () => {
   });
 
   describe("addEndpoint", () => {
-    it("应该返回501 NOT_SUPPORTED当尝试添加端点时", async () => {
+    it("应该成功添加新端点", async () => {
       // Arrange
-      const endpoint = "ws://new-endpoint:3000";
+      const endpoint = "wss://new-endpoint.example.com/mcp";
+      const mockEndpointInstance = createMockEndpointInstance(false);
       mockContext.req.json.mockResolvedValue({ endpoint });
+      mockConnectionManager.getEndpoint.mockReturnValue(undefined); // 端点不存在
+      mockConnectionManager.getConnectionStatus.mockReturnValue([
+        {
+          endpoint,
+          connected: true,
+          initialized: true,
+        },
+      ]);
+      const { configManager } = await import("@xiaozhi-client/config");
+      configManager.getConfig.mockReturnValue({
+        mcpServers: {},
+        connection: { reconnectInterval: 2000 },
+      });
+      configManager.addMcpEndpoint.mockReturnValue(undefined);
 
       // Act
       const response = await handler.addEndpoint(mockContext);
 
       // Assert
-      expect(response.status).toBe(501);
+      expect(response.status).toBe(201);
       const responseData = await response.json();
-      expect(responseData.error.code).toBe("NOT_SUPPORTED");
-      expect(responseData.error.message).toContain(
-        "动态添加端点功能在新 API 中不支持"
-      );
-      expect(responseData.error.details?.endpoint).toBe(endpoint);
+      expect(responseData.success).toBe(true);
+      expect(responseData.data.endpoint).toBe(endpoint);
+      expect(responseData.data.operation).toBe("added");
+      expect(mockConnectionManager.addEndpoint).toHaveBeenCalled();
+      expect(configManager.addMcpEndpoint).toHaveBeenCalledWith(endpoint);
+    });
+
+    it("应该返回409当端点已存在时", async () => {
+      // Arrange
+      const endpoint = "wss://existing-endpoint.example.com/mcp";
+      const mockEndpointInstance = createMockEndpointInstance(false);
+      mockContext.req.json.mockResolvedValue({ endpoint });
+      mockConnectionManager.getEndpoint.mockReturnValue(mockEndpointInstance); // 端点已存在
+
+      // Act
+      const response = await handler.addEndpoint(mockContext);
+
+      // Assert
+      expect(response.status).toBe(409);
+      const responseData = await response.json();
+      expect(responseData.error.code).toBe("ENDPOINT_ALREADY_EXISTS");
+      expect(responseData.error.message).toContain("端点已存在");
     });
 
     it("应该返回400当端点参数无效时（参数验证在parseEndpointFromBody中提前处理）", async () => {
@@ -624,22 +657,100 @@ describe("MCPEndpointApiHandler", () => {
   });
 
   describe("removeEndpoint", () => {
-    it("应该返回501 NOT_SUPPORTED当尝试移除端点时", async () => {
+    it("应该成功移除已连接的端点", async () => {
       // Arrange
       const endpoint = "ws://localhost:3000";
+      const mockEndpointInstance = createMockEndpointInstance(true);
       mockContext.req.json.mockResolvedValue({ endpoint });
+      mockConnectionManager.getEndpoint.mockReturnValue(mockEndpointInstance);
+      const { configManager } = await import("@xiaozhi-client/config");
+      configManager.removeMcpEndpoint.mockReturnValue(undefined);
 
       // Act
       const response = await handler.removeEndpoint(mockContext);
 
       // Assert
-      expect(response.status).toBe(501);
+      expect(response.status).toBe(200);
       const responseData = await response.json();
-      expect(responseData.error.code).toBe("NOT_SUPPORTED");
-      expect(responseData.error.message).toContain(
-        "动态移除端点功能在新 API 中不支持"
+      expect(responseData.success).toBe(true);
+      expect(responseData.data.endpoint).toBe(endpoint);
+      expect(responseData.data.operation).toBe("removed");
+      expect(responseData.data.wasConnected).toBe(true);
+      expect(mockEndpointInstance.disconnect).toHaveBeenCalled();
+      expect(mockConnectionManager.removeEndpoint).toHaveBeenCalledWith(
+        mockEndpointInstance
       );
-      expect(responseData.error.details?.endpoint).toBe(endpoint);
+      expect(configManager.removeMcpEndpoint).toHaveBeenCalledWith(endpoint);
+      expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
+        "endpoint:status:changed",
+        expect.objectContaining({
+          endpoint,
+          connected: false,
+          operation: "remove",
+          success: true,
+        })
+      );
+    });
+
+    it("应该成功移除未连接的端点", async () => {
+      // Arrange
+      const endpoint = "ws://localhost:3000";
+      const mockEndpointInstance = createMockEndpointInstance(false);
+      mockContext.req.json.mockResolvedValue({ endpoint });
+      mockConnectionManager.getEndpoint.mockReturnValue(mockEndpointInstance);
+      const { configManager } = await import("@xiaozhi-client/config");
+      configManager.removeMcpEndpoint.mockReturnValue(undefined);
+
+      // Act
+      const response = await handler.removeEndpoint(mockContext);
+
+      // Assert
+      expect(response.status).toBe(200);
+      const responseData = await response.json();
+      expect(responseData.success).toBe(true);
+      expect(responseData.data.wasConnected).toBe(false);
+      expect(mockEndpointInstance.disconnect).not.toHaveBeenCalled();
+      expect(mockConnectionManager.removeEndpoint).toHaveBeenCalledWith(
+        mockEndpointInstance
+      );
+    });
+
+    it("应该返回404当端点不存在时", async () => {
+      // Arrange
+      const endpoint = "ws://localhost:3000";
+      mockContext.req.json.mockResolvedValue({ endpoint });
+      mockConnectionManager.getEndpoint.mockReturnValue(undefined);
+
+      // Act
+      const response = await handler.removeEndpoint(mockContext);
+
+      // Assert
+      expect(response.status).toBe(404);
+      const responseData = await response.json();
+      expect(responseData.error.code).toBe("ENDPOINT_NOT_FOUND");
+      expect(responseData.error.message).toContain("端点不存在");
+    });
+
+    it("应该在断开连接失败时继续移除操作", async () => {
+      // Arrange
+      const endpoint = "ws://localhost:3000";
+      const mockEndpointInstance = createMockEndpointInstance(true);
+      mockEndpointInstance.disconnect.mockRejectedValue(
+        new Error("断开连接失败")
+      );
+      mockContext.req.json.mockResolvedValue({ endpoint });
+      mockConnectionManager.getEndpoint.mockReturnValue(mockEndpointInstance);
+      const { configManager } = await import("@xiaozhi-client/config");
+      configManager.removeMcpEndpoint.mockReturnValue(undefined);
+
+      // Act
+      const response = await handler.removeEndpoint(mockContext);
+
+      // Assert
+      expect(response.status).toBe(200);
+      expect(mockConnectionManager.removeEndpoint).toHaveBeenCalledWith(
+        mockEndpointInstance
+      );
     });
 
     it("应该返回400当端点参数无效时（参数验证在parseEndpointFromBody中提前处理）", async () => {
@@ -650,7 +761,6 @@ describe("MCPEndpointApiHandler", () => {
       const response = await handler.removeEndpoint(mockContext);
 
       // Assert
-      // 参数验证在 parseEndpointFromBody 中提前处理，返回 400
       expect(response.status).toBe(400);
       const responseData = await response.json();
       expect(responseData.error.code).toBe("INVALID_ENDPOINT");
@@ -664,7 +774,26 @@ describe("MCPEndpointApiHandler", () => {
       const response = await handler.removeEndpoint(mockContext);
 
       // Assert
-      // JSON 解析错误在 parseEndpointFromBody 中处理，返回 500
+      expect(response.status).toBe(500);
+      const responseData = await response.json();
+      expect(responseData.error.code).toBe("ENDPOINT_REMOVE_ERROR");
+    });
+
+    it("应该返回500当配置更新失败时", async () => {
+      // Arrange
+      const endpoint = "ws://localhost:3000";
+      const mockEndpointInstance = createMockEndpointInstance(false);
+      mockContext.req.json.mockResolvedValue({ endpoint });
+      mockConnectionManager.getEndpoint.mockReturnValue(mockEndpointInstance);
+      const { configManager } = await import("@xiaozhi-client/config");
+      configManager.removeMcpEndpoint.mockImplementation(() => {
+        throw new Error("配置更新失败");
+      });
+
+      // Act
+      const response = await handler.removeEndpoint(mockContext);
+
+      // Assert
       expect(response.status).toBe(500);
       const responseData = await response.json();
       expect(responseData.error.code).toBe("ENDPOINT_REMOVE_ERROR");
@@ -694,22 +823,19 @@ describe("MCPEndpointApiHandler", () => {
       expect(responseData.error.code).toBe("ENDPOINT_CONNECT_ERROR");
     });
 
-    it("应该返回501当尝试添加接入点时", async () => {
+    it("应该返回400当端点URL格式无效时", async () => {
       // Arrange
-      const endpoint = "ws://new-endpoint:3000";
-      const requestBody = { endpoint };
-      mockContext.req.json.mockResolvedValue(requestBody);
-      mockConnectionManager.getConnectionStatus.mockReturnValue([
-        mockEndpointStatus,
-      ]);
+      const endpoint = "not-a-valid-url";
+      mockContext.req.json.mockResolvedValue({ endpoint });
+      mockConnectionManager.getEndpoint.mockReturnValue(undefined);
 
       // Act
       const response = await handler.addEndpoint(mockContext);
 
       // Assert
-      expect(response.status).toBe(501);
+      expect(response.status).toBe(400);
       const responseData = await response.json();
-      expect(responseData.error.code).toBe("NOT_SUPPORTED");
+      expect(responseData.error.code).toBe("INVALID_ENDPOINT_FORMAT");
     });
 
     it("应该正确处理非Error类型的异常", async () => {

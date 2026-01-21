@@ -5,8 +5,10 @@ import { getEventBus } from "@services/EventBus.js";
 import type { ConfigManager } from "@xiaozhi-client/config";
 import type {
   ConnectionStatus,
+  EndpointConfig,
   EndpointManager,
 } from "@xiaozhi-client/endpoint";
+import { Endpoint } from "@xiaozhi-client/endpoint";
 import type { Context } from "hono";
 
 /**
@@ -58,6 +60,14 @@ interface EndpointOperationResponse {
     status: ConnectionStatus;
     operation: "connect" | "disconnect" | "reconnect" | "add" | "remove";
   };
+}
+
+/**
+ * 验证结果类型定义
+ */
+interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
 }
 
 /**
@@ -148,6 +158,44 @@ export class MCPEndpointApiHandler {
     }
 
     return { ok: true, endpoint };
+  }
+
+  /**
+   * 验证端点 URL 格式
+   * @param endpoint 端点 URL
+   * @returns 验证结果
+   */
+  private validateEndpoint(endpoint: string): ValidationResult {
+    const errors: string[] = [];
+
+    if (!endpoint || typeof endpoint !== "string") {
+      errors.push("端点必须是非空字符串");
+      return { isValid: false, errors };
+    }
+
+    try {
+      new URL(endpoint);
+    } catch {
+      errors.push("端点 URL 格式无效");
+    }
+
+    return { isValid: errors.length === 0, errors };
+  }
+
+  /**
+   * 构建 Endpoint 配置
+   * 从 ConfigManager 获取 mcpServers 和相关配置
+   * @returns Endpoint 配置对象
+   */
+  private buildEndpointConfig(): EndpointConfig {
+    const config = this.configManager.getConfig();
+    const connectionConfig = config.connection || {};
+
+    return {
+      mcpServers: config.mcpServers || {},
+      reconnectDelay: connectionConfig.reconnectInterval || 2000,
+      modelscopeApiKey: config.modelscope?.apiKey,
+    };
   }
 
   /**
@@ -359,7 +407,7 @@ export class MCPEndpointApiHandler {
   /**
    * 添加新接入点
    * POST /api/endpoint/add
-   * 注意：此功能在新 API 中不支持，因为 Endpoint 需要在初始化时创建
+   * 流程：验证 URL → 检查存在性 → 创建实例 → 添加到管理器 → 连接 → 更新配置
    */
   async addEndpoint(c: Context): Promise<Response> {
     const parseResult = await this.parseEndpointFromBody(
@@ -371,20 +419,111 @@ export class MCPEndpointApiHandler {
     }
 
     const endpoint = parseResult.endpoint;
-    this.logger.warn(`添加接入点请求在新 API 中不支持: ${endpoint}`);
+    this.logger.info(`处理接入点添加请求: ${endpoint}`);
 
-    const errorResponse = this.createErrorResponse(
-      "NOT_SUPPORTED",
-      "动态添加端点功能在新 API 中不支持。端点需要在 EndpointManager 初始化时通过配置添加。",
-      endpoint
-    );
-    return c.json(errorResponse, 501);
+    try {
+      // 1. 验证端点 URL 格式
+      const validation = this.validateEndpoint(endpoint);
+      if (!validation.isValid) {
+        const errorResponse = this.createErrorResponse(
+          "INVALID_ENDPOINT_FORMAT",
+          validation.errors.join(", "),
+          endpoint
+        );
+        return c.json(errorResponse, 400);
+      }
+
+      // 2. 检查端点是否已存在
+      const existingEndpoint = this.endpointManager.getEndpoint(endpoint);
+      if (existingEndpoint) {
+        const errorResponse = this.createErrorResponse(
+          "ENDPOINT_ALREADY_EXISTS",
+          "端点已存在",
+          endpoint
+        );
+        return c.json(errorResponse, 409);
+      }
+
+      // 3. 构建 EndpointConfig
+      const endpointConfig = this.buildEndpointConfig();
+
+      // 4. 创建新的 Endpoint 实例
+      const newEndpoint = new Endpoint(endpoint, endpointConfig);
+
+      // 5. 添加到 EndpointManager
+      this.endpointManager.addEndpoint(newEndpoint);
+      this.logger.debug(`端点已添加到管理器: ${endpoint}`);
+
+      // 6. 连接新端点（Endpoint 内部会自动使用 mcpServers 配置聚合工具）
+      try {
+        this.endpointManager.connectSingleEndpoint(endpoint, newEndpoint);
+        this.logger.debug(`端点已连接: ${endpoint}`);
+      } catch (connectError) {
+        this.logger.warn(
+          `端点连接失败，但已添加到管理器: ${endpoint}`,
+          connectError
+        );
+        // 连接失败不中断流程，端点已添加但未连接
+      }
+
+      // 7. 更新配置文件
+      try {
+        this.configManager.addMcpEndpoint(endpoint);
+        this.logger.debug(`端点已添加到配置文件: ${endpoint}`);
+      } catch (configError) {
+        this.logger.error(`添加端点到配置文件失败: ${endpoint}`, configError);
+        // 配置更新失败，需要回滚：从管理器移除端点
+        this.endpointManager.removeEndpoint(newEndpoint);
+        throw configError;
+      }
+
+      // 8. 获取连接后的状态
+      const connectionStatus = this.endpointManager.getConnectionStatus();
+      const endpointStatus = connectionStatus.find(
+        (status: ConnectionStatus) => status.endpoint === endpoint
+      );
+
+      // 9. 发送事件通知
+      this.eventBus.emitEvent("endpoint:status:changed", {
+        endpoint,
+        connected: endpointStatus?.connected ?? false,
+        operation: "add",
+        success: true,
+        message: "接入点添加成功",
+        timestamp: Date.now(),
+        source: "http-api",
+      });
+
+      this.logger.info(`接入点添加成功: ${endpoint}`);
+
+      const response = this.createSuccessResponse(
+        {
+          endpoint,
+          status: endpointStatus || {
+            endpoint,
+            connected: false,
+            initialized: true,
+          },
+          operation: "added",
+        },
+        "接入点添加成功"
+      );
+      return c.json(response, 201);
+    } catch (error) {
+      this.logger.error("添加接入点失败:", error);
+      const errorResponse = this.createErrorResponse(
+        "ENDPOINT_ADD_ERROR",
+        error instanceof Error ? error.message : "添加接入点失败",
+        endpoint
+      );
+      return c.json(errorResponse, 500);
+    }
   }
 
   /**
    * 移除接入点
    * POST /api/endpoint/remove
-   * 注意：此功能在新 API 中不支持
+   * 流程：断开连接 → 从管理器移除 → 更新配置文件
    */
   async removeEndpoint(c: Context): Promise<Response> {
     const parseResult = await this.parseEndpointFromBody(
@@ -396,13 +535,84 @@ export class MCPEndpointApiHandler {
     }
 
     const endpoint = parseResult.endpoint;
-    this.logger.warn(`移除接入点请求在新 API 中不支持: ${endpoint}`);
+    this.logger.info(`处理接入点移除请求: ${endpoint}`);
 
-    const errorResponse = this.createErrorResponse(
-      "NOT_SUPPORTED",
-      "动态移除端点功能在新 API 中不支持。端点需要在 EndpointManager 初始化时配置。",
-      endpoint
-    );
-    return c.json(errorResponse, 501);
+    try {
+      // 检查端点是否存在
+      const endpointInstance = this.endpointManager.getEndpoint(endpoint);
+      if (!endpointInstance) {
+        const errorResponse = this.createErrorResponse(
+          "ENDPOINT_NOT_FOUND",
+          "端点不存在",
+          endpoint
+        );
+        return c.json(errorResponse, 404);
+      }
+
+      // 记录断开前的连接状态
+      const wasConnected = endpointInstance.isConnected();
+
+      // 先断开连接，即使失败也继续执行移除操作
+      if (wasConnected) {
+        try {
+          await endpointInstance.disconnect();
+          this.logger.debug(`端点已断开连接: ${endpoint}`);
+        } catch (error) {
+          this.logger.warn(
+            `断开端点连接失败，继续移除操作: ${endpoint}`,
+            error
+          );
+          // 继续执行移除操作
+        }
+      }
+
+      // 从管理器移除端点
+      // EndpointManager.removeEndpoint 内部会再次调用 disconnect（幂等操作）
+      // 并清理状态和发射 endpointRemoved 事件
+      this.endpointManager.removeEndpoint(endpointInstance);
+      this.logger.debug(`端点已从管理器中移除: ${endpoint}`);
+
+      // 从配置文件移除端点
+      try {
+        this.configManager.removeMcpEndpoint(endpoint);
+        this.logger.debug(`端点已从配置文件中移除: ${endpoint}`);
+      } catch (error) {
+        this.logger.error(`从配置文件移除端点失败: ${endpoint}`, error);
+        // 配置更新失败是致命错误，需要抛出
+        throw error;
+      }
+
+      // 发送事件通知
+      this.eventBus.emitEvent("endpoint:status:changed", {
+        endpoint,
+        connected: false,
+        operation: "remove",
+        success: true,
+        message: "接入点移除成功",
+        timestamp: Date.now(),
+        source: "http-api",
+      });
+
+      this.logger.info(`接入点移除成功: ${endpoint}`);
+
+      const response = this.createSuccessResponse(
+        {
+          endpoint,
+          operation: "removed",
+          wasConnected,
+        },
+        "接入点移除成功"
+      );
+      return c.json(response, 200);
+    } catch (error) {
+      this.logger.error("移除接入点失败:", error);
+
+      const errorResponse = this.createErrorResponse(
+        "ENDPOINT_REMOVE_ERROR",
+        error instanceof Error ? error.message : "移除接入点失败",
+        endpoint
+      );
+      return c.json(errorResponse, 500);
+    }
   }
 }
