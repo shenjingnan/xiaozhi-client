@@ -66,8 +66,22 @@ describe("MCPEndpointApiHandler", () => {
     // Reset all mocks
     vi.clearAllMocks();
 
-    // Create handler instance
+    // 创建本地 mock 对象，使用 any 类型避免类型检查
+    const mockConfigManager: any = {
+      getMcpEndpoints: vi.fn(),
+      addMcpEndpoint: vi.fn(),
+      removeMcpEndpoint: vi.fn(),
+      getConfig: vi.fn(),
+      eventCallbacks: new Map(),
+      on: vi.fn(),
+      emitEvent: vi.fn(),
+    };
+
+    // 将 mock 注入到导入的 configManager
     const { configManager } = await import("@xiaozhi-client/config");
+    Object.assign(configManager, mockConfigManager);
+
+    // Create handler instance
     handler = new MCPEndpointApiHandler(
       mockConnectionManager as any,
       configManager
@@ -575,11 +589,12 @@ describe("MCPEndpointApiHandler", () => {
         },
       ]);
       const { configManager } = await import("@xiaozhi-client/config");
-      configManager.getConfig.mockReturnValue({
+      const cm = configManager as any;
+      cm.getConfig.mockReturnValue({
         mcpServers: {},
         connection: { reconnectInterval: 2000 },
       });
-      configManager.addMcpEndpoint.mockReturnValue(undefined);
+      cm.addMcpEndpoint.mockReturnValue(undefined);
 
       // Act
       const response = await handler.addEndpoint(mockContext);
@@ -591,7 +606,7 @@ describe("MCPEndpointApiHandler", () => {
       expect(responseData.data.endpoint).toBe(endpoint);
       expect(responseData.data.operation).toBe("added");
       expect(mockConnectionManager.addEndpoint).toHaveBeenCalled();
-      expect(configManager.addMcpEndpoint).toHaveBeenCalledWith(endpoint);
+      expect(cm.addMcpEndpoint).toHaveBeenCalledWith(endpoint);
     });
 
     it("应该返回409当端点已存在时", async () => {
@@ -664,7 +679,8 @@ describe("MCPEndpointApiHandler", () => {
       mockContext.req.json.mockResolvedValue({ endpoint });
       mockConnectionManager.getEndpoint.mockReturnValue(mockEndpointInstance);
       const { configManager } = await import("@xiaozhi-client/config");
-      configManager.removeMcpEndpoint.mockReturnValue(undefined);
+      const cm = configManager as any;
+      cm.removeMcpEndpoint.mockReturnValue(undefined);
 
       // Act
       const response = await handler.removeEndpoint(mockContext);
@@ -680,7 +696,7 @@ describe("MCPEndpointApiHandler", () => {
       expect(mockConnectionManager.removeEndpoint).toHaveBeenCalledWith(
         mockEndpointInstance
       );
-      expect(configManager.removeMcpEndpoint).toHaveBeenCalledWith(endpoint);
+      expect(cm.removeMcpEndpoint).toHaveBeenCalledWith(endpoint);
       expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
         "endpoint:status:changed",
         expect.objectContaining({
@@ -699,7 +715,8 @@ describe("MCPEndpointApiHandler", () => {
       mockContext.req.json.mockResolvedValue({ endpoint });
       mockConnectionManager.getEndpoint.mockReturnValue(mockEndpointInstance);
       const { configManager } = await import("@xiaozhi-client/config");
-      configManager.removeMcpEndpoint.mockReturnValue(undefined);
+      const cm = configManager as any;
+      cm.removeMcpEndpoint.mockReturnValue(undefined);
 
       // Act
       const response = await handler.removeEndpoint(mockContext);
@@ -741,7 +758,8 @@ describe("MCPEndpointApiHandler", () => {
       mockContext.req.json.mockResolvedValue({ endpoint });
       mockConnectionManager.getEndpoint.mockReturnValue(mockEndpointInstance);
       const { configManager } = await import("@xiaozhi-client/config");
-      configManager.removeMcpEndpoint.mockReturnValue(undefined);
+      const cm = configManager as any;
+      cm.removeMcpEndpoint.mockReturnValue(undefined);
 
       // Act
       const response = await handler.removeEndpoint(mockContext);
@@ -786,7 +804,8 @@ describe("MCPEndpointApiHandler", () => {
       mockContext.req.json.mockResolvedValue({ endpoint });
       mockConnectionManager.getEndpoint.mockReturnValue(mockEndpointInstance);
       const { configManager } = await import("@xiaozhi-client/config");
-      configManager.removeMcpEndpoint.mockImplementation(() => {
+      const cm = configManager as any;
+      cm.removeMcpEndpoint.mockImplementation(() => {
         throw new Error("配置更新失败");
       });
 
