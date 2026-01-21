@@ -1,0 +1,121 @@
+/**
+ * 共享 MCP 管理器适配器
+ *
+ * 接收全局 MCPManager 实例的引用，不创建独立连接
+ * 用于多个 Endpoint 共享同一个 MCPManager 实例
+ *
+ * @example
+ * ```typescript
+ * const globalMCPManager = new MCPManager();
+ * await globalMCPManager.connect();
+ *
+ * const adapter = new SharedMCPAdapter(globalMCPManager);
+ * const endpoint = new Endpoint("ws://...", adapter);
+ * ```
+ */
+
+import type {
+  IMCPServiceManager,
+  EnhancedToolInfo,
+  ToolCallResult,
+} from "./types.js";
+import type { MCPManager } from "@xiaozhi-client/mcp-core";
+
+/**
+ * 共享 MCP 管理器适配器
+ * 实现 IMCPServiceManager 接口，将操作委托给全局 MCPManager
+ */
+export class SharedMCPAdapter implements IMCPServiceManager {
+  private isInitialized = false;
+
+  /**
+   * 构造函数
+   *
+   * @param globalMCPManager - 全局 MCPManager 实例
+   */
+  constructor(private globalMCPManager: MCPManager) {
+    if (!globalMCPManager) {
+      throw new Error("全局 MCPManager 不能为空");
+    }
+  }
+
+  /**
+   * 初始化适配器
+   *
+   * 注意：此方法不会连接 MCP 服务，因为全局实例已在外部连接
+   */
+  async initialize(): Promise<void> {
+    if (this.isInitialized) {
+      return;
+    }
+
+    // 全局实例已经在外部连接，这里只标记状态
+    this.isInitialized = true;
+  }
+
+  /**
+   * 获取所有工具列表
+   *
+   * 从全局 MCPManager 获取工具列表，并转换为增强格式
+   */
+  getAllTools(): EnhancedToolInfo[] {
+    const tools = this.globalMCPManager.listTools();
+
+    return tools.map((tool) => ({
+      name: `${tool.serverName}__${tool.name}`,
+      description: tool.description,
+      inputSchema: tool.inputSchema as any,
+      serviceName: tool.serverName,
+      originalName: tool.name,
+      enabled: true,
+      usageCount: 0,
+      lastUsedTime: new Date().toISOString(),
+    }));
+  }
+
+  /**
+   * 调用工具
+   *
+   * 将工具调用委托给全局 MCPManager
+   *
+   * @param toolName - 工具名称（格式：serviceName__toolName）
+   * @param arguments_ - 工具调用参数
+   */
+  async callTool(
+    toolName: string,
+    arguments_: Record<string, unknown>
+  ): Promise<ToolCallResult> {
+    const [serviceName, actualToolName] = this.parseToolName(toolName);
+    return this.globalMCPManager.callTool(
+      serviceName,
+      actualToolName,
+      arguments_
+    );
+  }
+
+  /**
+   * 清理资源
+   *
+   * 注意：此方法不会断开全局 MCPManager，由创建者负责管理
+   */
+  async cleanup(): Promise<void> {
+    this.isInitialized = false;
+    // 不断开全局 MCPManager
+  }
+
+  /**
+   * 解析工具名称：serviceName__toolName
+   *
+   * @param toolName - 完整工具名称
+   * @returns [serviceName, actualToolName]
+   */
+  private parseToolName(toolName: string): [string, string] {
+    const parts = toolName.split("__");
+    if (parts.length < 2) {
+      throw new Error(`无效的工具名称格式: ${toolName}`);
+    }
+    const serviceName = parts[0];
+    const actualToolName = parts.slice(1).join("__");
+    return [serviceName, actualToolName];
+  }
+}

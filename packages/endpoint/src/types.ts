@@ -156,6 +156,12 @@ export interface IMCPServiceManager {
     toolName: string,
     arguments_: Record<string, unknown>
   ): Promise<ToolCallResult>;
+
+  /** 初始化 */
+  initialize(): Promise<void>;
+
+  /** 清理资源 */
+  cleanup(): Promise<void>;
 }
 
 // =========================
@@ -316,7 +322,7 @@ export type StreamableHTTPMCPServerConfig = HTTPMCPServerConfig;
 
 /**
  * Endpoint 配置接口
- * 用于新 API：直接在构造函数中传入 MCP 服务器配置
+ * @deprecated 不再使用，Endpoint 构造函数改为接收 IMCPServiceManager
  */
 export interface EndpointConfig {
   /** MCP 服务器配置（声明式） */
@@ -328,11 +334,13 @@ export interface EndpointConfig {
 }
 
 /**
- * EndpointManager 配置接口（新 API 简化版）
+ * EndpointManager 配置接口
  */
 export interface EndpointManagerConfig {
   /** 可选：默认重连延迟（毫秒） */
   defaultReconnectDelay?: number;
+  /** 可选：MCP 服务器配置 */
+  mcpServers?: Record<string, MCPServerConfig>;
 }
 
 // =========================

@@ -320,6 +320,7 @@ export class WebServer {
       if (!this.endpointManager) {
         this.endpointManager = new EndpointManager({
           defaultReconnectDelay: 2000,
+          mcpServers,
         });
         this.logger.debug("✅ 新建连接管理器实例");
       }
@@ -330,13 +331,9 @@ export class WebServer {
       if (validEndpoints.length > 0) {
         this.logger.debug("有效端点列表:", validEndpoints);
 
-        // 为每个端点创建独立的 Endpoint 实例（新 API）
+        // 直接使用 URL 字符串添加端点（新 API）
         for (const endpointUrl of validEndpoints) {
-          const endpoint = new Endpoint(endpointUrl, {
-            mcpServers,
-            reconnectDelay: 2000,
-          });
-          this.endpointManager.addEndpoint(endpoint);
+          this.endpointManager.addEndpoint(endpointUrl);
           this.logger.debug(`✅ 已添加端点: ${endpointUrl}`);
         }
 

@@ -1,42 +1,140 @@
 /**
- * EndpointManager（新 API）
- * 管理多个小智接入点的连接，每个小智接入点独立运行
+ * EndpointManager
+ * 管理多个小智接入点的连接，共享同一个 MCPManager
  *
- * 与旧 EndpointManager 的区别：
- * - 使用 addEndpoint(endpoint) 添加 Endpoint 实例
- * - 不需要 initialize() 和 setServiceManager()
- * - 配置更简洁直观
+ * 使用方式：
+ * ```typescript
+ * const mcpServers = {
+ *   calculator: { command: "npx", args: ["-y", "calculator-mcp"] },
+ * };
+ * const manager = new EndpointManager({ mcpServers });
+ * manager.addEndpoint("ws://endpoint1");
+ * await manager.connect();
+ * ```
  */
 
 import { EventEmitter } from "node:events";
+import { MCPManager } from "@xiaozhi-client/mcp-core";
+import { normalizeServiceConfig } from "@xiaozhi-client/config";
 import type { Endpoint } from "./endpoint.js";
-import type { EndpointManagerConfig, SimpleConnectionStatus } from "./types.js";
+import type {
+  EndpointManagerConfig,
+  SimpleConnectionStatus,
+  MCPServerConfig,
+} from "./types.js";
 import { sliceEndpoint } from "./utils.js";
+import { SharedMCPAdapter } from "./shared-mcp-adapter.js";
+import { Endpoint as EndpointClass } from "./endpoint.js";
 
 /**
- * 小智接入点管理器（新 API）
- * 负责管理多个小智接入点的连接
+ * 小智接入点管理器
+ * 负责管理多个小智接入点的连接，共享 MCP 服务
  */
 export class EndpointManager extends EventEmitter {
   private endpoints: Map<string, Endpoint> = new Map();
   private connectionStates: Map<string, SimpleConnectionStatus> = new Map();
+  private mcpManager: MCPManager | null = null;
+  private sharedMCPAdapter: SharedMCPAdapter | null = null;
+  private mcpConnected = false;
 
   /**
    * 构造函数
    *
-   * @param config - 可选的配置
+   * @param config - 可选的配置，可包含 mcpServers
    */
   constructor(private config?: EndpointManagerConfig) {
     super();
-    console.debug("[EndpointManager] 实例已创建（新 API）");
+    console.debug("[EndpointManager] 实例已创建");
+
+    // 如果配置中包含 mcpServers，初始化内部 MCPManager
+    if (config?.mcpServers) {
+      this.initializeMCPManager(config.mcpServers);
+    }
   }
 
   /**
-   * 添加 Endpoint 实例
-   *
-   * @param endpoint - Endpoint 实例
+   * 初始化内部 MCPManager
    */
-  addEndpoint(endpoint: Endpoint): void {
+  private initializeMCPManager(
+    mcpServers: Record<string, MCPServerConfig>
+  ): void {
+    console.debug("[EndpointManager] 初始化内部 MCPManager");
+
+    this.mcpManager = new MCPManager();
+
+    // 添加所有服务器配置
+    for (const [serviceName, serverConfig] of Object.entries(mcpServers)) {
+      const mcpConfig = normalizeServiceConfig(serverConfig);
+      this.mcpManager.addServer(serviceName, mcpConfig);
+      console.debug(`[EndpointManager] 已添加 MCP 服务: ${serviceName}`);
+    }
+
+    // 创建共享适配器
+    this.sharedMCPAdapter = new SharedMCPAdapter(this.mcpManager);
+  }
+
+  /**
+   * 连接 MCP 服务（仅一次）
+   */
+  private async connectMCPManager(): Promise<void> {
+    if (this.mcpConnected || !this.mcpManager) {
+      console.debug("[EndpointManager] MCP 服务已连接或未初始化");
+      return;
+    }
+
+    console.debug("[EndpointManager] 开始连接 MCP 服务");
+    await this.mcpManager.connect();
+    await this.sharedMCPAdapter?.initialize();
+    this.mcpConnected = true;
+    console.info("[EndpointManager] MCP 服务连接完成");
+  }
+
+  /**
+   * 断开 MCP 服务
+   */
+  private async disconnectMCPManager(): Promise<void> {
+    if (!this.mcpManager || !this.mcpConnected) {
+      return;
+    }
+
+    console.debug("[EndpointManager] 断开 MCP 服务");
+    await this.mcpManager.disconnect();
+    await this.sharedMCPAdapter?.cleanup();
+    this.mcpConnected = false;
+    console.info("[EndpointManager] MCP 服务已断开");
+  }
+
+  /**
+   * 添加 Endpoint（支持 URL 字符串或 Endpoint 实例）
+   *
+   * @param endpoint - Endpoint URL 字符串或 Endpoint 实例
+   */
+  addEndpoint(endpoint: string | Endpoint): void {
+    // 如果是字符串，创建新的 Endpoint 实例
+    if (typeof endpoint === "string") {
+      if (!this.sharedMCPAdapter) {
+        throw new Error(
+          "MCPManager 未初始化，请在构造函数中传入 mcpServers 配置"
+        );
+      }
+
+      const endpointInstance = new EndpointClass(
+        endpoint,
+        this.sharedMCPAdapter,
+        this.config?.defaultReconnectDelay
+      );
+
+      return this.addEndpointInternal(endpointInstance);
+    }
+
+    // 原有的 Endpoint 实例处理逻辑
+    return this.addEndpointInternal(endpoint);
+  }
+
+  /**
+   * 内部添加 Endpoint 方法
+   */
+  private addEndpointInternal(endpoint: Endpoint): void {
     const url = endpoint.getUrl();
 
     if (this.endpoints.has(url)) {
@@ -91,11 +189,27 @@ export class EndpointManager extends EventEmitter {
    * 连接所有 Endpoint
    */
   async connect(): Promise<void> {
-    console.debug(`[EndpointManager] 开始连接所有接入点，总数: ${this.endpoints.size}`);
+    // 1. 先连接 MCP 服务（仅一次）
+    await this.connectMCPManager();
+
+    // 2. 连接所有未连接的 Endpoint
+    console.debug(
+      `[EndpointManager] 开始连接接入点，总数: ${this.endpoints.size}`
+    );
 
     const promises: Promise<void>[] = [];
 
     for (const [url, endpoint] of this.endpoints) {
+      const status = this.connectionStates.get(url);
+
+      // 跳过已连接的端点
+      if (status?.connected) {
+        console.debug(
+          `[EndpointManager] 接入点已连接，跳过: ${sliceEndpoint(url)}`
+        );
+        continue;
+      }
+
       promises.push(
         this.connectSingleEndpoint(url, endpoint).catch((error) => {
           console.error(`[EndpointManager] 连接失败: ${sliceEndpoint(url)}`, error);
@@ -104,7 +218,8 @@ export class EndpointManager extends EventEmitter {
           if (status) {
             status.connected = false;
             status.initialized = false;
-            status.lastError = error instanceof Error ? error.message : String(error);
+            status.lastError =
+              error instanceof Error ? error.message : String(error);
           }
         })
       );
@@ -117,7 +232,9 @@ export class EndpointManager extends EventEmitter {
       (s) => s.connected
     ).length;
 
-    console.info(`[EndpointManager] 连接完成: 成功 ${connectedCount}/${this.endpoints.size}`);
+    console.info(
+      `[EndpointManager] 连接完成: 成功 ${connectedCount}/${this.endpoints.size}`
+    );
   }
 
   /**
@@ -143,6 +260,9 @@ export class EndpointManager extends EventEmitter {
       status.connected = false;
       status.initialized = false;
     }
+
+    // 断开 MCP 服务
+    await this.disconnectMCPManager();
 
     console.debug("[EndpointManager] 所有接入点已断开连接");
   }
@@ -244,6 +364,11 @@ export class EndpointManager extends EventEmitter {
 
     this.endpoints.clear();
     this.connectionStates.clear();
+
+    // 清理 MCP 服务
+    this.mcpManager = null;
+    this.sharedMCPAdapter = null;
+    this.mcpConnected = false;
 
     console.info("[EndpointManager] 所有接入点已清除");
   }

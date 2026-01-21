@@ -1,18 +1,21 @@
 /**
- * Endpoint 类（新 API）
+ * Endpoint 类
  * 管理单个小智接入点的 WebSocket 连接
  * 实现 MCP (Model Context Protocol) 协议通信
  *
- * 与 EndpointConnection 的区别：
- * - 构造函数直接传入 mcpServers 配置，不需要单独调用 setServiceManager()
- * - 配置更简洁直观
+ * 使用方式：
+ * ```typescript
+ * const mcpManager = new SharedMCPAdapter(globalMCPManager);
+ * const endpoint = new Endpoint("ws://...", mcpManager);
+ * await endpoint.connect();
+ * ```
  */
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import WebSocket from "ws";
 import type { ExtendedMCPMessage, MCPMessage } from "./mcp.js";
 import type {
-  EndpointConfig,
+  IMCPServiceManager,
   EndpointConnectionStatus,
   ToolCallResult,
 } from "./types.js";
@@ -24,7 +27,6 @@ import {
 } from "./types.js";
 import { validateToolCallParams } from "./utils.js";
 import { sliceEndpoint } from "./utils.js";
-import { InternalMCPManagerAdapter } from "./internal-mcp-manager.js";
 
 // 导出错误类型供外部使用
 export {
@@ -42,7 +44,7 @@ export class Endpoint {
   private ws: WebSocket | null = null;
   private connectionStatus = false;
   private serverInitialized = false;
-  private mcpAdapter: InternalMCPManagerAdapter;
+  private mcpAdapter: IMCPServiceManager;
 
   // 连接状态管理
   private connectionState: ConnectionState = ConnectionState.DISCONNECTED;
@@ -61,14 +63,19 @@ export class Endpoint {
    * 构造函数
    *
    * @param endpointUrl - 小智接入点 URL
-   * @param config - Endpoint 配置（包含 mcpServers）
+   * @param mcpManager - MCP 服务管理器（依赖注入）
+   * @param reconnectDelay - 可选的重连延迟（毫秒）
    */
-  constructor(endpointUrl: string, config: EndpointConfig) {
+  constructor(
+    endpointUrl: string,
+    mcpManager: IMCPServiceManager,
+    reconnectDelay?: number
+  ) {
     this.endpointUrl = endpointUrl;
-    this.reconnectDelay = config.reconnectDelay ?? 2000;
+    this.reconnectDelay = reconnectDelay ?? 2000;
 
-    // 创建内部 MCP 适配器
-    this.mcpAdapter = new InternalMCPManagerAdapter(config);
+    // 使用注入的 MCP 管理器
+    this.mcpAdapter = mcpManager;
   }
 
   /**
