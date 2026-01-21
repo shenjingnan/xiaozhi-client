@@ -691,7 +691,8 @@ describe("MCPEndpointApiHandler", () => {
       expect(responseData.data.endpoint).toBe(endpoint);
       expect(responseData.data.operation).toBe("removed");
       expect(responseData.data.wasConnected).toBe(true);
-      expect(mockEndpointInstance.disconnect).toHaveBeenCalled();
+      // 注意：新的实现先更新配置文件，然后由 EndpointManager.removeEndpoint 内部调用 disconnect
+      // 所以这里不期望 mockEndpointInstance.disconnect 被直接调用
       expect(mockConnectionManager.removeEndpoint).toHaveBeenCalledWith(
         mockEndpointInstance
       );

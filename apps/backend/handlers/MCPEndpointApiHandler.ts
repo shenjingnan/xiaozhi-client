@@ -21,9 +21,8 @@ interface ValidationResult {
 
 /**
  * MCP 端点 API 处理器
- * 注意：此 API 处理器与当前的 EndpointManager 设计不兼容
- * 当前 EndpointManager 不支持通过 API 动态添加/删除端点
- * 这些端点操作需要在 EndpointManager 初始化时完成
+ * 支持通过 HTTP API 动态管理端点（添加、删除、连接、断开、查询状态）
+ * 端点变更会自动同步到配置文件，确保重启后状态保持一致
  */
 export class MCPEndpointApiHandler {
   private logger: Logger;
@@ -425,7 +424,18 @@ export class MCPEndpointApiHandler {
         this.logger.debug(`端点已添加到配置文件: ${endpoint}`);
       } catch (configError) {
         this.logger.error(`添加端点到配置文件失败: ${endpoint}`, configError);
-        // 配置更新失败，需要回滚：从管理器移除端点
+        // 配置更新失败，需要回滚：优先尝试断开连接，其次从管理器移除端点
+        try {
+          await newEndpoint.disconnect();
+          this.logger.debug(`回滚时已断开端点连接: ${endpoint}`);
+        } catch (disconnectError) {
+          // 断开失败只记录警告，不影响后续回滚流程
+          this.logger.warn(
+            `回滚时断开端点连接失败，将继续从管理器移除端点: ${endpoint}`,
+            disconnectError
+          );
+        }
+        // 从管理器移除端点
         this.endpointManager.removeEndpoint(newEndpoint);
         throw configError;
       }
@@ -506,35 +516,21 @@ export class MCPEndpointApiHandler {
       // 记录断开前的连接状态
       const wasConnected = endpointInstance.isConnected();
 
-      // 先断开连接，即使失败也继续执行移除操作
-      if (wasConnected) {
-        try {
-          await endpointInstance.disconnect();
-          this.logger.debug(`端点已断开连接: ${endpoint}`);
-        } catch (error) {
-          this.logger.warn(
-            `断开端点连接失败，继续移除操作: ${endpoint}`,
-            error
-          );
-          // 继续执行移除操作
-        }
-      }
-
-      // 从管理器移除端点
-      // EndpointManager.removeEndpoint 内部会再次调用 disconnect（幂等操作）
-      // 并清理状态和发射 endpointRemoved 事件
-      this.endpointManager.removeEndpoint(endpointInstance);
-      this.logger.debug(`端点已从管理器中移除: ${endpoint}`);
-
-      // 从配置文件移除端点
+      // 先从配置文件移除端点，确保配置与运行时状态保持一致
       try {
         this.configManager.removeMcpEndpoint(endpoint);
         this.logger.debug(`端点已从配置文件中移除: ${endpoint}`);
       } catch (error) {
         this.logger.error(`从配置文件移除端点失败: ${endpoint}`, error);
-        // 配置更新失败是致命错误，需要抛出
+        // 配置更新失败是致命错误，中断移除操作
         throw error;
       }
+
+      // 再从管理器移除端点
+      // EndpointManager.removeEndpoint 内部会再次调用 disconnect（幂等操作）
+      // 并清理状态和发射 endpointRemoved 事件
+      this.endpointManager.removeEndpoint(endpointInstance);
+      this.logger.debug(`端点已从管理器中移除: ${endpoint}`);
 
       // 发送事件通知
       this.eventBus.emitEvent("endpoint:status:changed", {
