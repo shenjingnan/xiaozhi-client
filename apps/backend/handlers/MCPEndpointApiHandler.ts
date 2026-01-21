@@ -367,7 +367,7 @@ export class MCPEndpointApiHandler {
 
       // 6. 连接新端点（Endpoint 内部会自动使用 mcpServers 配置聚合工具）
       try {
-        this.endpointManager.connectSingleEndpoint(endpoint, newEndpoint);
+        await this.endpointManager.connectSingleEndpoint(endpoint, newEndpoint);
         this.logger.debug(`端点已连接: ${endpoint}`);
       } catch (connectError) {
         this.logger.warn(
@@ -407,16 +407,14 @@ export class MCPEndpointApiHandler {
 
       this.logger.info(`接入点添加成功: ${endpoint}`);
 
+      const defaultEndpointStatus = {
+        endpoint,
+        connected: false,
+        initialized: true,
+      };
       return c.json({
         success: true,
-        data: {
-          endpoint,
-          status: endpointStatus || {
-            endpoint,
-            connected: false,
-            initialized: true,
-          },
-        },
+        data: endpointStatus || defaultEndpointStatus,
         message: '接入点添加成功',
       });
     } catch (error) {
