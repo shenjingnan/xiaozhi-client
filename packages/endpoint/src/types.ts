@@ -339,8 +339,6 @@ export interface EndpointConfig {
 export interface EndpointManagerConfig {
   /** 可选：默认重连延迟（毫秒） */
   defaultReconnectDelay?: number;
-  /** 可选：MCP 服务器配置 */
-  mcpServers?: Record<string, MCPServerConfig>;
 }
 
 // =========================

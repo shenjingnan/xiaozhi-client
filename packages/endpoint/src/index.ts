@@ -5,25 +5,34 @@
  *
  * 此库提供了连接小智接入点的完整功能，包括：
  * - Endpoint: 单个接入点的连接管理
- * - EndpointManager: 多个接入点的连接管理，共享 MCP 服务
+ * - EndpointManager: 多个接入点的连接管理，共享外部传入的 MCP 服务
  * - SharedMCPAdapter: 共享 MCP 管理器适配器
  *
  * @example
  * ```typescript
- * // 共享 MCP 服务管理（推荐）
+ * // 新的使用方式（推荐）
  * import { EndpointManager } from '@xiaozhi-client/endpoint';
+ * import { MCPManager } from '@xiaozhi-client/mcp-core';
  *
- * const mcpServers = {
- *   calculator: { command: "npx", args: ["-y", "calculator-mcp"] },
- *   datetime: { command: "npx", args: ["-y", "datetime-mcp"] },
- * };
+ * // 1. 先创建并配置 MCPManager
+ * const mcpManager = new MCPManager();
+ * mcpManager.addServer("calculator", {
+ *   command: "npx",
+ *   args: ["-y", "@xiaozhi-client/calculator-mcp@1.9.7-beta.16"]
+ * });
+ * mcpManager.addServer("datetime", {
+ *   command: "npx",
+ *   args: ["-y", "@xiaozhi-client/datetime-mcp@1.9.7-beta.16"]
+ * });
+ * await mcpManager.connect();
  *
- * const manager = new EndpointManager({ mcpServers });
+ * // 2. 创建 EndpointManager 并设置 MCPManager
+ * const endpointManager = new EndpointManager();
+ * endpointManager.setMcpManager(mcpManager);
  *
- * // 添加接入点（共享 MCP 服务）
- * manager.addEndpoint("ws://localhost:8080");
- * manager.addEndpoint("ws://localhost:8081");
- * await manager.connect();
+ * // 3. 添加接入点（共享 MCP 服务）
+ * endpointManager.addEndpoint("wss://api.xiaozhi.me/mcp/?token=...");
+ * await endpointManager.connect();
  * ```
  */
 

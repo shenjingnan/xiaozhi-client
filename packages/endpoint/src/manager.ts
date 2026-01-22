@@ -1,26 +1,30 @@
 /**
  * EndpointManager
- * 管理多个小智接入点的连接，共享同一个 MCPManager
+ * 管理多个小智接入点的连接，共享外部传入的 MCPManager
  *
  * 使用方式：
  * ```typescript
- * const mcpServers = {
- *   calculator: { command: "npx", args: ["-y", "calculator-mcp"] },
- * };
- * const manager = new EndpointManager({ mcpServers });
+ * // 1. 先创建并配置 MCPManager
+ * const mcpManager = new MCPManager();
+ * mcpManager.addServer("calculator", { command: "npx", args: ["-y", "calculator-mcp"] });
+ * await mcpManager.connect();
+ *
+ * // 2. 创建 EndpointManager 并设置 MCPManager
+ * const manager = new EndpointManager();
+ * manager.setMcpManager(mcpManager);
+ *
+ * // 3. 添加接入点
  * manager.addEndpoint("ws://endpoint1");
  * await manager.connect();
  * ```
  */
 
 import { EventEmitter } from "node:events";
-import { MCPManager } from "@xiaozhi-client/mcp-core";
-import { normalizeServiceConfig } from "@xiaozhi-client/config";
+import type { MCPManager } from "@xiaozhi-client/mcp-core";
 import type { Endpoint } from "./endpoint.js";
 import type {
   EndpointManagerConfig,
   SimpleConnectionStatus,
-  MCPServerConfig,
 } from "./types.js";
 import { sliceEndpoint } from "./utils.js";
 import { SharedMCPAdapter } from "./shared-mcp-adapter.js";
@@ -29,79 +33,55 @@ import { Endpoint as EndpointClass } from "./endpoint.js";
 /**
  * 小智接入点管理器
  * 负责管理多个小智接入点的连接，共享 MCP 服务
+ *
+ * 注意：MCPManager 必须通过 setMcpManager() 方法设置，且由外部管理其生命周期
  */
 export class EndpointManager extends EventEmitter {
   private endpoints: Map<string, Endpoint> = new Map();
   private connectionStates: Map<string, SimpleConnectionStatus> = new Map();
   private mcpManager: MCPManager | null = null;
   private sharedMCPAdapter: SharedMCPAdapter | null = null;
-  private mcpConnected = false;
 
   /**
    * 构造函数
    *
-   * @param config - 可选的配置，可包含 mcpServers
+   * @param config - 可选的配置
    */
   constructor(private config?: EndpointManagerConfig) {
     super();
     console.debug("[EndpointManager] 实例已创建");
-
-    // 如果配置中包含 mcpServers，初始化内部 MCPManager
-    if (config?.mcpServers) {
-      this.initializeMCPManager(config.mcpServers);
-    }
   }
 
   /**
-   * 初始化内部 MCPManager
+   * 设置 MCPManager 实例
+   *
+   * 注意：MCPManager 的生命周期由外部管理，EndpointManager 不负责连接和断开
+   *
+   * @param mcpManager - 外部创建并已连接的 MCPManager 实例
    */
-  private initializeMCPManager(
-    mcpServers: Record<string, MCPServerConfig>
-  ): void {
-    console.debug("[EndpointManager] 初始化内部 MCPManager");
-
-    this.mcpManager = new MCPManager();
-
-    // 添加所有服务器配置
-    for (const [serviceName, serverConfig] of Object.entries(mcpServers)) {
-      const mcpConfig = normalizeServiceConfig(serverConfig);
-      this.mcpManager.addServer(serviceName, mcpConfig);
-      console.debug(`[EndpointManager] 已添加 MCP 服务: ${serviceName}`);
+  setMcpManager(mcpManager: MCPManager): void {
+    if (this.sharedMCPAdapter) {
+      throw new Error("MCPManager 已经设置，不能重复设置");
     }
 
-    // 创建共享适配器
-    this.sharedMCPAdapter = new SharedMCPAdapter(this.mcpManager);
-  }
+    this.mcpManager = mcpManager;
+    this.sharedMCPAdapter = new SharedMCPAdapter(mcpManager);
 
-  /**
-   * 连接 MCP 服务（仅一次）
-   */
-  private async connectMCPManager(): Promise<void> {
-    if (this.mcpConnected || !this.mcpManager) {
-      console.debug("[EndpointManager] MCP 服务已连接或未初始化");
-      return;
-    }
+    // 监听 MCP 服务连接事件
+    mcpManager.on("connected", (data) => {
+      console.info(
+        `[EndpointManager] MCP 服务已连接: ${data.serverName}, 工具数: ${data.tools?.length || 0}`
+      );
+    });
 
-    console.debug("[EndpointManager] 开始连接 MCP 服务");
-    await this.mcpManager.connect();
-    await this.sharedMCPAdapter?.initialize();
-    this.mcpConnected = true;
-    console.info("[EndpointManager] MCP 服务连接完成");
-  }
+    mcpManager.on("error", (data) => {
+      console.error(
+        `[EndpointManager] MCP 服务连接失败: ${data.serverName}`,
+        data.error
+      );
+    });
 
-  /**
-   * 断开 MCP 服务
-   */
-  private async disconnectMCPManager(): Promise<void> {
-    if (!this.mcpManager || !this.mcpConnected) {
-      return;
-    }
-
-    console.debug("[EndpointManager] 断开 MCP 服务");
-    await this.mcpManager.disconnect();
-    await this.sharedMCPAdapter?.cleanup();
-    this.mcpConnected = false;
-    console.info("[EndpointManager] MCP 服务已断开");
+    console.info("[EndpointManager] MCPManager 已设置");
   }
 
   /**
@@ -114,7 +94,7 @@ export class EndpointManager extends EventEmitter {
     if (typeof endpoint === "string") {
       if (!this.sharedMCPAdapter) {
         throw new Error(
-          "MCPManager 未初始化，请在构造函数中传入 mcpServers 配置"
+          "MCPManager 未设置，请先调用 setMcpManager() 方法设置 MCPManager"
         );
       }
 
@@ -187,12 +167,11 @@ export class EndpointManager extends EventEmitter {
 
   /**
    * 连接所有 Endpoint
+   *
+   * 注意：此方法不负责连接 MCPManager，MCPManager 必须在调用此方法前已连接
    */
   async connect(): Promise<void> {
-    // 1. 先连接 MCP 服务（仅一次）
-    await this.connectMCPManager();
-
-    // 2. 连接所有未连接的 Endpoint
+    // 连接所有未连接的 Endpoint
     console.debug(
       `[EndpointManager] 开始连接接入点，总数: ${this.endpoints.size}`
     );
@@ -239,6 +218,8 @@ export class EndpointManager extends EventEmitter {
 
   /**
    * 断开所有连接
+   *
+   * 注意：此方法不断开 MCPManager，MCPManager 的生命周期由外部管理
    */
   async disconnect(): Promise<void> {
     console.debug("[EndpointManager] 开始断开所有连接");
@@ -260,9 +241,6 @@ export class EndpointManager extends EventEmitter {
       status.connected = false;
       status.initialized = false;
     }
-
-    // 断开 MCP 服务
-    await this.disconnectMCPManager();
 
     console.debug("[EndpointManager] 所有接入点已断开连接");
   }
@@ -356,6 +334,8 @@ export class EndpointManager extends EventEmitter {
 
   /**
    * 清除所有端点
+   *
+   * 注意：此方法不会清理 MCPManager，MCPManager 的生命周期由外部管理
    */
   async clearEndpoints(): Promise<void> {
     console.debug("[EndpointManager] 清除所有接入点");
@@ -365,16 +345,17 @@ export class EndpointManager extends EventEmitter {
     this.endpoints.clear();
     this.connectionStates.clear();
 
-    // 清理 MCP 服务
-    this.mcpManager = null;
-    this.sharedMCPAdapter = null;
-    this.mcpConnected = false;
+    // 注意：不清理 MCPManager，由外部管理
+    // this.mcpManager = null;
+    // this.sharedMCPAdapter = null;
 
     console.info("[EndpointManager] 所有接入点已清除");
   }
 
   /**
    * 清理资源
+   *
+   * 注意：此方法不会清理 MCPManager，MCPManager 的生命周期由外部管理
    */
   async cleanup(): Promise<void> {
     console.debug("[EndpointManager] 开始清理资源");
