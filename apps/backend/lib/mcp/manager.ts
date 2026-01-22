@@ -1789,6 +1789,15 @@ export class MCPServiceManager extends EventEmitter {
   getConnectionManager(): MCPServiceManager {
     return this;
   }
+
+  /**
+   * 清理资源（实现 IMCPServiceManager 接口）
+   *
+   * 注意：此方法会停止所有 MCP 服务
+   */
+  async cleanup(): Promise<void> {
+    await this.stopAllServices();
+  }
 }
 
 export default MCPServiceManager;

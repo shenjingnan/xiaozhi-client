@@ -3,7 +3,6 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { ConnectionState } from "../types.js";
 
 // Mock WebSocket
@@ -82,25 +81,31 @@ vi.mock("../internal-mcp-manager.js", () => ({
 
 // 导入在 mock 之后
 import { Endpoint } from "../endpoint.js";
+import type { IMCPServiceManager } from "../types.js";
+
+// 创建 mock IMCPServiceManager
+const createMockMCPManager = (): IMCPServiceManager => ({
+  getAllTools: vi.fn(() => []),
+  callTool: vi.fn(async () => ({
+    content: [{ type: "text", text: "调用成功" }],
+  })),
+  initialize: vi.fn(async () => {}),
+  cleanup: vi.fn(async () => {}),
+});
 
 describe("Endpoint", () => {
   let endpoint: Endpoint;
+  let mockMCPManager: IMCPServiceManager;
   const testUrl = "ws://localhost:3000/endpoint";
 
   beforeEach(() => {
     vi.clearAllMocks();
 
-    const config = {
-      mcpServers: {
-        "test-service": {
-          command: "node",
-          args: ["server.js"],
-        },
-      },
-      reconnectDelay: 1000,
-    };
+    // 创建 mock IMCPServiceManager
+    mockMCPManager = createMockMCPManager();
 
-    endpoint = new Endpoint(testUrl, config);
+    // 使用新的 API 创建 Endpoint
+    endpoint = new Endpoint(testUrl, mockMCPManager, 1000);
   });
 
   describe("构造函数", () => {
@@ -134,7 +139,7 @@ describe("Endpoint", () => {
 
     it("应该返回原始 URL 字符串", () => {
       const longUrl = "ws://very-long-endpoint-url.example.com/path";
-      const ep = new Endpoint(longUrl, { mcpServers: {} });
+      const ep = new Endpoint(longUrl, mockMCPManager);
       expect(ep.getUrl()).toBe(longUrl);
     });
   });
@@ -276,12 +281,7 @@ describe("Endpoint", () => {
 
     it("应该记录最后的错误", async () => {
       // 连接失败时会设置 lastError
-      const config = {
-        mcpServers: {
-          "test-service": { command: "node", args: ["server.js"] },
-        },
-      };
-      const ep = new Endpoint("ws://invalid-url", config);
+      const ep = new Endpoint("ws://invalid-url", mockMCPManager);
 
       try {
         await ep.connect();
@@ -349,11 +349,7 @@ describe("Endpoint", () => {
     });
 
     it("应该记录最后错误信息", async () => {
-      const invalidEndpoint = new Endpoint("ws://invalid-host", {
-        mcpServers: {
-          "test-service": { command: "node", args: ["server.js"] },
-        },
-      });
+      const invalidEndpoint = new Endpoint("ws://invalid-host", mockMCPManager);
 
       try {
         await invalidEndpoint.connect();
@@ -415,17 +411,14 @@ describe("Endpoint", () => {
     });
 
     it("应该处理空的 mcpServers 配置", async () => {
-      const ep = new Endpoint(testUrl, { mcpServers: {} });
+      const ep = new Endpoint(testUrl, mockMCPManager);
 
       await ep.connect();
       expect(ep.isConnected()).toBe(true);
     });
 
     it("应该处理自定义重连延迟", async () => {
-      const ep = new Endpoint(testUrl, {
-        mcpServers: {},
-        reconnectDelay: 500,
-      });
+      const ep = new Endpoint(testUrl, mockMCPManager, 500);
 
       await ep.connect();
       await ep.reconnect();

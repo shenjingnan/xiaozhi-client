@@ -5,10 +5,8 @@ import { getEventBus } from "@services/EventBus.js";
 import type { ConfigManager } from "@xiaozhi-client/config";
 import type {
   ConnectionStatus,
-  EndpointConfig,
   EndpointManager,
 } from "@xiaozhi-client/endpoint";
-import { Endpoint } from "@xiaozhi-client/endpoint";
 import type { Context } from "hono";
 
 /**
@@ -107,22 +105,6 @@ export class MCPEndpointApiHandler {
     }
 
     return { isValid: errors.length === 0, errors };
-  }
-
-  /**
-   * 构建 Endpoint 配置
-   * 从 ConfigManager 获取 mcpServers 和相关配置
-   * @returns Endpoint 配置对象
-   */
-  private buildEndpointConfig(): EndpointConfig {
-    const config = this.configManager.getConfig();
-    const connectionConfig = config.connection || {};
-
-    return {
-      mcpServers: config.mcpServers || {},
-      reconnectDelay: connectionConfig.reconnectInterval || 2000,
-      modelscopeApiKey: config.modelscope?.apiKey,
-    };
   }
 
   /**
@@ -396,17 +378,24 @@ export class MCPEndpointApiHandler {
         );
       }
 
-      // 3. 构建 EndpointConfig
-      const endpointConfig = this.buildEndpointConfig();
-
-      // 4. 创建新的 Endpoint 实例
-      const newEndpoint = new Endpoint(endpoint, endpointConfig);
-
-      // 5. 添加到 EndpointManager
-      this.endpointManager.addEndpoint(newEndpoint);
+      // 3. 添加端点到管理器（使用 URL 字符串）
+      this.endpointManager.addEndpoint(endpoint);
       this.logger.debug(`端点已添加到管理器: ${endpoint}`);
 
-      // 6. 连接新端点（Endpoint 内部会自动使用 mcpServers 配置聚合工具）
+      // 4. 获取新添加的端点实例
+      const newEndpoint = this.endpointManager.getEndpoint(endpoint);
+      if (!newEndpoint) {
+        return c.json(
+          {
+            success: false,
+            code: "ENDPOINT_NOT_FOUND_AFTER_ADD",
+            message: "端点添加后未找到",
+          },
+          500
+        );
+      }
+
+      // 5. 连接新端点
       try {
         await this.endpointManager.connectSingleEndpoint(endpoint, newEndpoint);
         this.logger.debug(`端点已连接: ${endpoint}`);
@@ -418,7 +407,7 @@ export class MCPEndpointApiHandler {
         // 连接失败不中断流程，端点已添加但未连接
       }
 
-      // 7. 更新配置文件
+      // 6. 更新配置文件
       try {
         this.configManager.addMcpEndpoint(endpoint);
         this.logger.debug(`端点已添加到配置文件: ${endpoint}`);

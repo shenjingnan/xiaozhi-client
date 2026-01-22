@@ -44,7 +44,7 @@ import {
 import { normalizeServiceConfig } from "@xiaozhi-client/config";
 import { configManager } from "@xiaozhi-client/config";
 import type { MCPServerConfig } from "@xiaozhi-client/config";
-import { Endpoint, EndpointManager } from "@xiaozhi-client/endpoint";
+import { EndpointManager } from "@xiaozhi-client/endpoint";
 import type { SimpleConnectionStatus } from "@xiaozhi-client/endpoint";
 import type { Hono } from "hono";
 import { WebSocketServer } from "ws";
@@ -226,11 +226,8 @@ export class WebServer {
         inputSchema: ensureToolJSONSchema(tool.inputSchema),
       }));
 
-      // 6. 初始化小智接入点连接（传入 mcpServers 配置而非 tools）
-      await this.initializeXiaozhiConnection(
-        config.mcpEndpoint,
-        config.mcpServers
-      );
+      // 6. 初始化小智接入点连接
+      await this.initializeXiaozhiConnection(config.mcpEndpoint);
 
       this.logger.debug("所有连接初始化完成");
     } catch (error) {
@@ -301,8 +298,7 @@ export class WebServer {
    * 初始化小智接入点连接（使用新 API）
    */
   private async initializeXiaozhiConnection(
-    mcpEndpoint: string | string[],
-    mcpServers: Record<string, MCPServerConfig>
+    mcpEndpoint: string | string[]
   ): Promise<void> {
     // 处理多端点配置
     const endpoints = Array.isArray(mcpEndpoint) ? mcpEndpoint : [mcpEndpoint];
@@ -321,6 +317,8 @@ export class WebServer {
         this.endpointManager = new EndpointManager({
           defaultReconnectDelay: 2000,
         });
+        // ✅ 传入 mcpServiceManager 实例
+        this.endpointManager.setMcpManager(this.mcpServiceManager!);
         this.logger.debug("✅ 新建连接管理器实例");
       }
 
@@ -330,13 +328,9 @@ export class WebServer {
       if (validEndpoints.length > 0) {
         this.logger.debug("有效端点列表:", validEndpoints);
 
-        // 为每个端点创建独立的 Endpoint 实例（新 API）
+        // 直接使用 URL 字符串添加端点（新 API）
         for (const endpointUrl of validEndpoints) {
-          const endpoint = new Endpoint(endpointUrl, {
-            mcpServers,
-            reconnectDelay: 2000,
-          });
-          this.endpointManager.addEndpoint(endpoint);
+          this.endpointManager.addEndpoint(endpointUrl);
           this.logger.debug(`✅ 已添加端点: ${endpointUrl}`);
         }
 

@@ -4,45 +4,44 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { EndpointManager } from "../manager.js";
+import { Endpoint } from "../endpoint.js";
 
-// Mock Endpoint 类
-class MockEndpoint {
-  private _connected = false;
-  private _initialized = false;
-
-  constructor(private url: string) {}
-
-  getUrl(): string {
-    return this.url;
-  }
-
-  async connect(): Promise<void> {
-    this._connected = true;
-    this._initialized = true;
-  }
-
-  async disconnect(): Promise<void> {
-    this._connected = false;
-    this._initialized = false;
-  }
-
-  async reconnect(): Promise<void> {
-    this._connected = true;
-    this._initialized = true;
-  }
-
-  isConnected(): boolean {
-    return this._connected;
-  }
-}
-
+// Mock Endpoint 类，内联定义到 vi.mock() 中以符合 Vitest 规范
 vi.mock("../endpoint.js", () => ({
-  Endpoint: MockEndpoint,
+  Endpoint: class {
+    private _connected = false;
+    private _initialized = false;
+
+    constructor(private url: string) {}
+
+    getUrl(): string {
+      return this.url;
+    }
+
+    async connect(): Promise<void> {
+      this._connected = true;
+      this._initialized = true;
+    }
+
+    async disconnect(): Promise<void> {
+      this._connected = false;
+      this._initialized = false;
+    }
+
+    async reconnect(): Promise<void> {
+      this._connected = true;
+      this._initialized = true;
+    }
+
+    isConnected(): boolean {
+      return this._connected;
+    }
+  },
 }));
 
 describe("EndpointManager", () => {
   let manager: EndpointManager;
-  let mockEndpoints: MockEndpoint[];
+  let mockEndpoints: Endpoint[];
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -52,9 +51,9 @@ describe("EndpointManager", () => {
     });
 
     mockEndpoints = [
-      new MockEndpoint("ws://endpoint1.example.com"),
-      new MockEndpoint("ws://endpoint2.example.com"),
-      new MockEndpoint("ws://endpoint3.example.com"),
+      new Endpoint("ws://endpoint1.example.com"),
+      new Endpoint("ws://endpoint2.example.com"),
+      new Endpoint("ws://endpoint3.example.com"),
     ];
   });
 
@@ -146,7 +145,7 @@ describe("EndpointManager", () => {
     });
 
     it("移除不存在的端点不应该报错", () => {
-      const nonexistentEndpoint = new MockEndpoint("ws://nonexistent.com");
+      const nonexistentEndpoint = new Endpoint("ws://nonexistent.com");
 
       expect(() => {
         manager.removeEndpoint(nonexistentEndpoint);
@@ -157,7 +156,7 @@ describe("EndpointManager", () => {
       const eventSpy = vi.fn();
       manager.on("endpointRemoved", eventSpy);
 
-      const nonexistentEndpoint = new MockEndpoint("ws://nonexistent.com");
+      const nonexistentEndpoint = new Endpoint("ws://nonexistent.com");
       manager.removeEndpoint(nonexistentEndpoint);
 
       expect(eventSpy).not.toHaveBeenCalled();
@@ -188,7 +187,7 @@ describe("EndpointManager", () => {
 
     it("应该处理连接失败", async () => {
       // 创建一个会失败的端点
-      const failingEndpoint = new MockEndpoint("ws://failing.com");
+      const failingEndpoint = new Endpoint("ws://failing.com");
       vi.spyOn(failingEndpoint, "connect").mockRejectedValue(new Error("连接失败"));
 
       manager.addEndpoint(failingEndpoint);
@@ -485,7 +484,7 @@ describe("EndpointManager", () => {
     it("清除后可以添加新端点", async () => {
       await manager.clearEndpoints();
 
-      const newEndpoint = new MockEndpoint("ws://new.com");
+      const newEndpoint = new Endpoint("ws://new.com");
       manager.addEndpoint(newEndpoint);
 
       expect(manager.getEndpoints()).toHaveLength(1);
@@ -510,6 +509,40 @@ describe("EndpointManager", () => {
     it("可以多次调用 cleanup", async () => {
       await manager.cleanup();
       await expect(manager.cleanup()).resolves.toBeUndefined();
+    });
+  });
+
+  describe("setMcpManager", () => {
+    it("应该成功设置 MCPManager", () => {
+      const mockMcpManager = {
+        getAllTools: vi.fn(),
+        callTool: vi.fn(),
+      };
+
+      manager.setMcpManager(mockMcpManager);
+
+      expect(manager["sharedMCPAdapter"]).toBeDefined();
+    });
+
+    it("重复设置应该抛出错误", () => {
+      const mockMcpManager = {
+        getAllTools: vi.fn(),
+        callTool: vi.fn(),
+      };
+
+      manager.setMcpManager(mockMcpManager);
+
+      expect(() => {
+        manager.setMcpManager(mockMcpManager);
+      }).toThrow("MCPManager 已经设置，不能重复设置");
+    });
+
+    it("未设置 MCPManager 时添加字符串端点应该抛出错误", () => {
+      const managerWithoutMcp = new EndpointManager();
+
+      expect(() => {
+        managerWithoutMcp.addEndpoint("ws://example.com");
+      }).toThrow("MCPManager 未设置");
     });
   });
 
@@ -560,9 +593,9 @@ describe("EndpointManager", () => {
 
   describe("边界情况", () => {
     it("应该处理大量端点", async () => {
-      const endpoints: MockEndpoint[] = [];
+      const endpoints: Endpoint[] = [];
       for (let i = 0; i < 100; i++) {
-        const endpoint = new MockEndpoint(`ws://endpoint${i}.com`);
+        const endpoint = new Endpoint(`ws://endpoint${i}.com`);
         endpoints.push(endpoint);
         manager.addEndpoint(endpoint);
       }
@@ -575,7 +608,7 @@ describe("EndpointManager", () => {
 
     it("应该处理快速添加和移除", () => {
       for (let i = 0; i < 10; i++) {
-        manager.addEndpoint(new MockEndpoint(`ws://endpoint${i}.com`));
+        manager.addEndpoint(new Endpoint(`ws://endpoint${i}.com`));
       }
 
       for (let i = 0; i < 10; i++) {
