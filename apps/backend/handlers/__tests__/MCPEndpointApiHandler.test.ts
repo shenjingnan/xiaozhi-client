@@ -40,6 +40,7 @@ const mockConnectionManager = {
   triggerReconnect: vi.fn(),
   addEndpoint: vi.fn(),
   removeEndpoint: vi.fn(),
+  connectSingleEndpoint: vi.fn().mockResolvedValue(undefined),
 };
 
 // Mock endpoint instance
@@ -580,7 +581,8 @@ describe("MCPEndpointApiHandler", () => {
       const endpoint = "wss://new-endpoint.example.com/mcp";
       const mockEndpointInstance = createMockEndpointInstance(false);
       mockContext.req.json.mockResolvedValue({ endpoint });
-      mockConnectionManager.getEndpoint.mockReturnValue(undefined); // 端点不存在
+      // 第一次调用返回 undefined（端点不存在），之后返回实例
+      mockConnectionManager.getEndpoint.mockReturnValueOnce(undefined).mockReturnValue(mockEndpointInstance);
       mockConnectionManager.getConnectionStatus.mockReturnValue([
         {
           endpoint,
