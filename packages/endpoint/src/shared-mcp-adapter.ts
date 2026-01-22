@@ -19,7 +19,6 @@ import type {
   EnhancedToolInfo,
   ToolCallResult,
 } from "./types.js";
-import type { MCPManager } from "@xiaozhi-client/mcp-core";
 
 /**
  * 共享 MCP 管理器适配器
@@ -33,7 +32,7 @@ export class SharedMCPAdapter implements IMCPServiceManager {
    *
    * @param globalMCPManager - 全局 MCPManager 实例
    */
-  constructor(private globalMCPManager: MCPManager) {
+  constructor(private globalMCPManager: IMCPServiceManager) {
     if (!globalMCPManager) {
       throw new Error("全局 MCPManager 不能为空");
     }
@@ -59,18 +58,8 @@ export class SharedMCPAdapter implements IMCPServiceManager {
    * 从全局 MCPManager 获取工具列表，并转换为增强格式
    */
   getAllTools(): EnhancedToolInfo[] {
-    const tools = this.globalMCPManager.listTools();
-
-    return tools.map((tool) => ({
-      name: `${tool.serverName}__${tool.name}`,
-      description: tool.description,
-      inputSchema: tool.inputSchema as any,
-      serviceName: tool.serverName,
-      originalName: tool.name,
-      enabled: true,
-      usageCount: 0,
-      lastUsedTime: new Date().toISOString(),
-    }));
+    // 直接使用 IMCPServiceManager 接口的 getAllTools() 方法
+    return this.globalMCPManager.getAllTools();
   }
 
   /**
@@ -85,12 +74,9 @@ export class SharedMCPAdapter implements IMCPServiceManager {
     toolName: string,
     arguments_: Record<string, unknown>
   ): Promise<ToolCallResult> {
-    const [serviceName, actualToolName] = this.parseToolName(toolName);
-    return this.globalMCPManager.callTool(
-      serviceName,
-      actualToolName,
-      arguments_
-    );
+    // 直接使用 IMCPServiceManager 接口的 callTool() 方法
+    // toolName 已经是完整格式（serviceName__toolName）
+    return this.globalMCPManager.callTool(toolName, arguments_);
   }
 
   /**
@@ -101,21 +87,5 @@ export class SharedMCPAdapter implements IMCPServiceManager {
   async cleanup(): Promise<void> {
     this.isInitialized = false;
     // 不断开全局 MCPManager
-  }
-
-  /**
-   * 解析工具名称：serviceName__toolName
-   *
-   * @param toolName - 完整工具名称
-   * @returns [serviceName, actualToolName]
-   */
-  private parseToolName(toolName: string): [string, string] {
-    const parts = toolName.split("__");
-    if (parts.length < 2) {
-      throw new Error(`无效的工具名称格式: ${toolName}`);
-    }
-    const serviceName = parts[0];
-    const actualToolName = parts.slice(1).join("__");
-    return [serviceName, actualToolName];
   }
 }

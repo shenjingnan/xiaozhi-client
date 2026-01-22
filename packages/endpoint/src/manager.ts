@@ -20,11 +20,11 @@
  */
 
 import { EventEmitter } from "node:events";
-import type { MCPManager } from "@xiaozhi-client/mcp-core";
 import type { Endpoint } from "./endpoint.js";
 import type {
   EndpointManagerConfig,
   SimpleConnectionStatus,
+  IMCPServiceManager,
 } from "./types.js";
 import { sliceEndpoint } from "./utils.js";
 import { SharedMCPAdapter } from "./shared-mcp-adapter.js";
@@ -39,7 +39,7 @@ import { Endpoint as EndpointClass } from "./endpoint.js";
 export class EndpointManager extends EventEmitter {
   private endpoints: Map<string, Endpoint> = new Map();
   private connectionStates: Map<string, SimpleConnectionStatus> = new Map();
-  private mcpManager: MCPManager | null = null;
+  private mcpManager: IMCPServiceManager | null = null;
   private sharedMCPAdapter: SharedMCPAdapter | null = null;
 
   /**
@@ -59,7 +59,7 @@ export class EndpointManager extends EventEmitter {
    *
    * @param mcpManager - 外部创建并已连接的 MCPManager 实例
    */
-  setMcpManager(mcpManager: MCPManager): void {
+  setMcpManager(mcpManager: IMCPServiceManager): void {
     if (this.sharedMCPAdapter) {
       throw new Error("MCPManager 已经设置，不能重复设置");
     }
@@ -67,19 +67,21 @@ export class EndpointManager extends EventEmitter {
     this.mcpManager = mcpManager;
     this.sharedMCPAdapter = new SharedMCPAdapter(mcpManager);
 
-    // 监听 MCP 服务连接事件
-    mcpManager.on("connected", (data) => {
-      console.info(
-        `[EndpointManager] MCP 服务已连接: ${data.serverName}, 工具数: ${data.tools?.length || 0}`
-      );
-    });
+    // 监听 MCP 服务连接事件（如果支持 EventEmitter）
+    if ("on" in mcpManager && typeof mcpManager.on === "function") {
+      mcpManager.on("connected", (data: any) => {
+        console.info(
+          `[EndpointManager] MCP 服务已连接: ${data.serverName}, 工具数: ${data.tools?.length || 0}`
+        );
+      });
 
-    mcpManager.on("error", (data) => {
-      console.error(
-        `[EndpointManager] MCP 服务连接失败: ${data.serverName}`,
-        data.error
-      );
-    });
+      mcpManager.on("error", (data: any) => {
+        console.error(
+          `[EndpointManager] MCP 服务连接失败: ${data.serverName}`,
+          data.error
+        );
+      });
+    }
 
     console.info("[EndpointManager] MCPManager 已设置");
   }

@@ -226,11 +226,8 @@ export class WebServer {
         inputSchema: ensureToolJSONSchema(tool.inputSchema),
       }));
 
-      // 6. 初始化小智接入点连接（传入 mcpServers 配置而非 tools）
-      await this.initializeXiaozhiConnection(
-        config.mcpEndpoint,
-        config.mcpServers
-      );
+      // 6. 初始化小智接入点连接
+      await this.initializeXiaozhiConnection(config.mcpEndpoint);
 
       this.logger.debug("所有连接初始化完成");
     } catch (error) {
@@ -301,8 +298,7 @@ export class WebServer {
    * 初始化小智接入点连接（使用新 API）
    */
   private async initializeXiaozhiConnection(
-    mcpEndpoint: string | string[],
-    mcpServers: Record<string, MCPServerConfig>
+    mcpEndpoint: string | string[]
   ): Promise<void> {
     // 处理多端点配置
     const endpoints = Array.isArray(mcpEndpoint) ? mcpEndpoint : [mcpEndpoint];
@@ -320,8 +316,9 @@ export class WebServer {
       if (!this.endpointManager) {
         this.endpointManager = new EndpointManager({
           defaultReconnectDelay: 2000,
-          mcpServers,
         });
+        // ✅ 传入 mcpServiceManager 实例
+        this.endpointManager.setMcpManager(this.mcpServiceManager!);
         this.logger.debug("✅ 新建连接管理器实例");
       }
 
