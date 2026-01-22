@@ -582,7 +582,9 @@ describe("MCPEndpointApiHandler", () => {
       const mockEndpointInstance = createMockEndpointInstance(false);
       mockContext.req.json.mockResolvedValue({ endpoint });
       // 第一次调用返回 undefined（端点不存在），之后返回实例
-      mockConnectionManager.getEndpoint.mockReturnValueOnce(undefined).mockReturnValue(mockEndpointInstance);
+      mockConnectionManager.getEndpoint
+        .mockReturnValueOnce(undefined)
+        .mockReturnValue(mockEndpointInstance);
       mockConnectionManager.getConnectionStatus.mockReturnValue([
         {
           endpoint,
