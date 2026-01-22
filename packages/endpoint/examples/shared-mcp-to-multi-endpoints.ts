@@ -20,12 +20,12 @@ async function main(): Promise<void> {
   const tools = mcpManager.listTools();
   console.log(tools);
 
-  // 接入点 1
+  // 接入点 1（示例占位符，请替换为你自己的有效 token）
   const endpointUrl1 =
-    "wss://api.xiaozhi.me/mcp/?token=eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMwMjcyMCwiYWdlbnRJZCI6MTMyNDE3OCwiZW5kcG9pbnRJZCI6ImFnZW50XzEzMjQxNzgiLCJwdXJwb3NlIjoibWNwLWVuZHBvaW50IiwiaWF0IjoxNzY4OTY2NzU4LCJleHAiOjE4MDA1MjQzNTh9.SDQqxD9Tz_MxA58KLAze2nnpA3Vhae1pWyzNguXT5Wv7DOulbhunO6Lz1XiKodntJOAmvU8fIf6mI7pytnFAzw";
-  // 接入点 2
+    "wss://api.xiaozhi.me/mcp/?token=YOUR_ENDPOINT_1_TOKEN_HERE";
+  // 接入点 2（示例占位符，请替换为你自己的有效 token）
   const endpointUrl2 =
-    "wss://api.xiaozhi.me/mcp/?token=eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMwMjcyMCwiYWdlbnRJZCI6MTMyNDMyMCwiZW5kcG9pbnRJZCI6ImFnZW50XzEzMjQzMjAiLCJwdXJwb3NlIjoibWNwLWVuZHBvaW50IiwiaWF0IjoxNzY4OTY2Nzc5LCJleHAiOjE4MDA1MjQzNzl9.VD43K8YEjhUVR1n4QX-PA9u_2P-jRA3vvwPxNKt7dM-lAUk73kCIaacpf3_I9wHYxYmAJwRDUFtFbWEPDVHBeg";
+    "wss://api.xiaozhi.me/mcp/?token=YOUR_ENDPOINT_2_TOKEN_HERE";
 
   // 创建 EndpointManager 并配置 MCP 服务
   const endpointManager = new EndpointManager();
@@ -38,9 +38,21 @@ async function main(): Promise<void> {
   // 只调用一次 connect()，确保 MCP 服务只连接一次
   await endpointManager.connect();
 
-  // 保持程序运行
+  // 保持程序运行，等待退出信号（如 Ctrl+C）
   console.log("服务运行中，按 Ctrl+C 退出");
-  await new Promise(() => {});
+  await new Promise<void>((resolve) => {
+    const handleSignal = () => {
+      resolve();
+    };
+
+    process.once("SIGINT", handleSignal);
+    process.once("SIGTERM", handleSignal);
+  });
+
+  // 收到退出信号后，优雅关闭所有连接
+  console.log("\n正在关闭服务...");
+  await endpointManager.disconnect();
+  await mcpManager.cleanup();
 }
 
 // 运行主函数

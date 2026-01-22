@@ -512,6 +512,40 @@ describe("EndpointManager", () => {
     });
   });
 
+  describe("setMcpManager", () => {
+    it("应该成功设置 MCPManager", () => {
+      const mockMcpManager = {
+        getAllTools: vi.fn(),
+        callTool: vi.fn(),
+      };
+
+      manager.setMcpManager(mockMcpManager);
+
+      expect(manager["sharedMCPAdapter"]).toBeDefined();
+    });
+
+    it("重复设置应该抛出错误", () => {
+      const mockMcpManager = {
+        getAllTools: vi.fn(),
+        callTool: vi.fn(),
+      };
+
+      manager.setMcpManager(mockMcpManager);
+
+      expect(() => {
+        manager.setMcpManager(mockMcpManager);
+      }).toThrow("MCPManager 已经设置，不能重复设置");
+    });
+
+    it("未设置 MCPManager 时添加字符串端点应该抛出错误", () => {
+      const managerWithoutMcp = new EndpointManager();
+
+      expect(() => {
+        managerWithoutMcp.addEndpoint("ws://example.com");
+      }).toThrow("MCPManager 未设置");
+    });
+  });
+
   describe("事件发射", () => {
     it("应该正确发射 endpointAdded 事件", () => {
       const spy = vi.fn();
@@ -559,7 +593,7 @@ describe("EndpointManager", () => {
 
   describe("边界情况", () => {
     it("应该处理大量端点", async () => {
-      const endpoints: MockEndpoint[] = [];
+      const endpoints: Endpoint[] = [];
       for (let i = 0; i < 100; i++) {
         const endpoint = new Endpoint(`ws://endpoint${i}.com`);
         endpoints.push(endpoint);

@@ -41,7 +41,7 @@ export class SharedMCPAdapter implements IMCPServiceManager {
   /**
    * 初始化适配器
    *
-   * 注意：此方法不会连接 MCP 服务，因为全局实例已在外部连接
+   * 注意：此方法不执行任何连接操作，仅标记初始化状态，因为全局 MCPManager 的生命周期由外部管理
    */
   async initialize(): Promise<void> {
     if (this.isInitialized) {
