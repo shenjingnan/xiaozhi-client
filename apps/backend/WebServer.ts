@@ -44,7 +44,7 @@ import {
 import { normalizeServiceConfig } from "@xiaozhi-client/config";
 import { configManager } from "@xiaozhi-client/config";
 import type { MCPServerConfig } from "@xiaozhi-client/config";
-import { Endpoint, EndpointManager } from "@xiaozhi-client/endpoint";
+import { EndpointManager } from "@xiaozhi-client/endpoint";
 import type { SimpleConnectionStatus } from "@xiaozhi-client/endpoint";
 import type { Hono } from "hono";
 import { WebSocketServer } from "ws";
