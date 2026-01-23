@@ -1,6 +1,6 @@
 import type { ConnectionStatus } from "@xiaozhi-client/endpoint";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { MCPEndpointApiHandler } from "../MCPEndpointApiHandler.js";
+import { EndpointHandler } from "../endpoint.handler.js";
 
 // Mock dependencies
 vi.mock("../../Logger.js", () => ({
@@ -51,8 +51,8 @@ const createMockEndpointInstance = (connected = false) => ({
   disconnect: vi.fn().mockResolvedValue(undefined),
 });
 
-describe("MCPEndpointApiHandler", () => {
-  let handler: MCPEndpointApiHandler;
+describe("EndpointHandler", () => {
+  let handler: EndpointHandler;
   let mockContext: any;
   let mockEventBus: any;
 
@@ -89,10 +89,7 @@ describe("MCPEndpointApiHandler", () => {
     Object.assign(configManager, mockConfigManager);
 
     // Create handler instance
-    handler = new MCPEndpointApiHandler(
-      mockConnectionManager as any,
-      configManager
-    );
+    handler = new EndpointHandler(mockConnectionManager as any, configManager);
 
     // Create mock context - 修复 mock 配置，返回真实的 Response 对象
     mockContext = {

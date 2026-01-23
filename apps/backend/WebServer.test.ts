@@ -458,8 +458,8 @@ vi.mock("./handlers/MCPRouteHandler", () => {
   };
 });
 
-vi.mock("./handlers/MCPEndpointApiHandler", () => {
-  const mockMCPEndpointApiHandler = {
+vi.mock("./handlers/endpoint.handler", () => {
+  const mockEndpointHandler = {
     getEndpointStatus: vi.fn((c) =>
       c.json({
         success: true,
@@ -512,7 +512,7 @@ vi.mock("./handlers/MCPEndpointApiHandler", () => {
     ),
   };
   return {
-    MCPEndpointApiHandler: vi.fn(() => mockMCPEndpointApiHandler),
+    EndpointHandler: vi.fn(() => mockEndpointHandler),
   };
 });
 

@@ -1,7 +1,7 @@
 export * from "./ConfigApiHandler.js";
 export * from "./CozeApiHandler.js";
 export * from "./HeartbeatHandler.js";
-export * from "./MCPEndpointApiHandler.js";
+export { EndpointHandler } from "./endpoint.handler.js";
 export * from "./MCPRouteHandler.js";
 export * from "./MCPServerApiHandler.js";
 export * from "./RealtimeNotificationHandler.js";

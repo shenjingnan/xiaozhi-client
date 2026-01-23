@@ -8,10 +8,7 @@ import type { Logger } from "@root/Logger.js";
 import type { EndpointManager } from "@xiaozhi-client/endpoint";
 import type { Context } from "hono";
 import { Hono } from "hono";
-import type {
-  HandlerDependencies,
-  MCPEndpointApiHandler,
-} from "../routes/index.js";
+import type { EndpointHandler, HandlerDependencies } from "../routes/index.js";
 
 // 导出 API 响应类型供其他模块使用
 export type {
@@ -86,7 +83,7 @@ export type AppContextVariables = {
    * 端点处理器实例
    * 由 endpointsMiddleware 注入
    */
-  endpointHandler?: MCPEndpointApiHandler | null;
+  endpointHandler?: EndpointHandler | null;
 };
 
 /**

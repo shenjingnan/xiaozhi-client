@@ -18,11 +18,11 @@ interface ValidationResult {
 }
 
 /**
- * MCP 端点 API 处理器
+ * 端点 API 处理器
  * 支持通过 HTTP API 动态管理端点（添加、删除、连接、断开、查询状态）
  * 端点变更会自动同步到配置文件，确保重启后状态保持一致
  */
-export class MCPEndpointApiHandler {
+export class EndpointHandler {
   private logger: Logger;
   private endpointManager: EndpointManager;
   private configManager: ConfigManager;
