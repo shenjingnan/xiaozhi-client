@@ -32,6 +32,11 @@ vi.mock("@xiaozhi-client/config", () => ({
     configExists: vi.fn(),
     validateConfig: vi.fn(),
     updateConfig: vi.fn(),
+    getToolCallLogConfig: vi.fn().mockReturnValue({
+      maxRecords: 100,
+      logFilePath: undefined,
+    }),
+    getConfigDir: vi.fn().mockReturnValue(process.cwd()),
   },
 }));
 
@@ -96,6 +101,11 @@ describe("ConfigApiHandler", () => {
       configExists: vi.fn(),
       validateConfig: vi.fn(),
       updateConfig: vi.fn(),
+      getToolCallLogConfig: vi.fn().mockReturnValue({
+        maxRecords: 100,
+        logFilePath: undefined,
+      }),
+      getConfigDir: vi.fn().mockReturnValue(process.cwd()),
     };
     const { configManager } = await import("@xiaozhi-client/config");
     Object.assign(configManager, mockConfigManager);
