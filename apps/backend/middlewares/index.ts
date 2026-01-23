@@ -6,6 +6,7 @@ export {
   createErrorResponse,
   createSuccessResponse,
 } from "./error.middleware.js";
+export { responseEnhancerMiddleware } from "./response-enhancer.middleware.js";
 export {
   mcpServiceManagerMiddleware,
   hasMCPServiceManager,
