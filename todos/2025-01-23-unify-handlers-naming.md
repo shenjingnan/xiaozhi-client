@@ -4,8 +4,8 @@
 
 在之前的架构演进中，我们成功将 `MCPEndpointApiHandler.ts` 重命名为 `endpoint.handler.ts`，确立了新的命名规范：使用 `*.handler.ts` 后缀和中划线命名（kebab-case），与项目的 `.middleware.ts` 和 `.route.ts` 保持一致。
 
-目前 `apps/backend/handlers/` 目录下仍有 13 个 handler 文件使用旧的命名规范：
-- `*ApiHandler.ts` 格式（8 个）
+目前 `apps/backend/handlers/` 目录下仍有 14 个 handler 文件使用旧的命名规范：
+- `*ApiHandler.ts` 格式（9 个）
 - `*Handler.ts` 格式（4 个）
 - 基础类（1 个）
 
@@ -134,7 +134,7 @@ pnpm check:all
 
 ### 具体文件清单
 
-**Handler 文件（13 个）：**
+**Handler 文件（14 个）：**
 1. `ConfigApiHandler.ts`
 2. `CozeApiHandler.ts`
 3. `HeartbeatHandler.ts`
