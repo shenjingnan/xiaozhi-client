@@ -6,10 +6,8 @@ services:
 
     # 端口映射（支持 IPv4 和 IPv6）
     ports:
-      - "0.0.0.0:9999:9999"    # IPv4 - Web UI 端口
-      - "[::]:9999:9999"       # IPv6 - Web UI 端口
-      - "0.0.0.0:3000:3000"    # IPv4 - 备用端口
-      - "[::]:3000:3000"       # IPv6 - 备用端口
+      - "9999:9999"    # Web UI 端口
+      - "3000:3000"    # 备用端口
 
     # 环境变量
     environment:
@@ -53,8 +51,10 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 172.20.0.0/24    # IPv4 子网
-        - subnet: fd00:abcd::/64   # IPv6 子网（ULA 地址）
+        - subnet: 172.20.0.0/24
+          gateway: 172.20.0.1
+        - subnet: fd00:abcd::/64
+          gateway: fd00:abcd::1
 
 # 卷配置
 volumes:
