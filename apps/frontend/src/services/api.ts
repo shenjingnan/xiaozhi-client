@@ -29,7 +29,11 @@ export type CustomMCPTool = CustomMCPToolWithStats;
 interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
-  message?: string;
+  error?: {
+    code: string;
+    message: string;
+    details?: unknown;
+  };
 }
 
 /**
@@ -226,7 +230,7 @@ export class ApiClient {
     });
 
     if (!response.success) {
-      throw new Error(response.message || "配置更新失败");
+      throw new Error(response.error?.message || "配置更新失败");
     }
   }
 
@@ -405,7 +409,7 @@ export class ApiClient {
     });
 
     if (!response.success) {
-      throw new Error(response.message || "更新客户端状态失败");
+      throw new Error(response.error?.message || "更新客户端状态失败");
     }
   }
 
@@ -422,7 +426,7 @@ export class ApiClient {
     );
 
     if (!response.success) {
-      throw new Error(response.message || "设置活跃 MCP 服务器失败");
+      throw new Error(response.error?.message || "设置活跃 MCP 服务器失败");
     }
   }
 
@@ -435,7 +439,7 @@ export class ApiClient {
     });
 
     if (!response.success) {
-      throw new Error(response.message || "重置状态失败");
+      throw new Error(response.error?.message || "重置状态失败");
     }
   }
 
@@ -479,7 +483,7 @@ export class ApiClient {
       );
 
       if (!response.success || !response.data) {
-        throw new Error(response.message || "添加自定义工具失败");
+        throw new Error(response.error?.message || "添加自定义工具失败");
       }
       return response.data.tool;
     }
@@ -499,7 +503,7 @@ export class ApiClient {
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.message || "添加自定义工具失败");
+      throw new Error(response.error?.message || "添加自定义工具失败");
     }
     return response.data.tool;
   }
@@ -525,7 +529,7 @@ export class ApiClient {
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.message || "更新自定义工具失败");
+      throw new Error(response.error?.message || "更新自定义工具失败");
     }
     return response.data.tool;
   }
@@ -542,7 +546,7 @@ export class ApiClient {
     );
 
     if (!response.success) {
-      throw new Error(response.message || "删除自定义工具失败");
+      throw new Error(response.error?.message || "删除自定义工具失败");
     }
   }
 
@@ -595,7 +599,7 @@ export class ApiClient {
     });
 
     if (!response.success) {
-      throw new Error(response.message || "重启服务失败");
+      throw new Error(response.error?.message || "重启服务失败");
     }
   }
 
@@ -608,7 +612,7 @@ export class ApiClient {
     });
 
     if (!response.success) {
-      throw new Error(response.message || "停止服务失败");
+      throw new Error(response.error?.message || "停止服务失败");
     }
   }
 
@@ -621,7 +625,7 @@ export class ApiClient {
     });
 
     if (!response.success) {
-      throw new Error(response.message || "启动服务失败");
+      throw new Error(response.error?.message || "启动服务失败");
     }
   }
 
@@ -745,7 +749,7 @@ export class ApiClient {
       }
     );
     if (!response.success) {
-      throw new Error(response.message || "清除版本缓存失败");
+      throw new Error(response.error?.message || "清除版本缓存失败");
     }
   }
 
@@ -759,7 +763,7 @@ export class ApiClient {
     });
 
     if (!response.success) {
-      throw new Error(response.message || "版本更新失败");
+      throw new Error(response.error?.message || "版本更新失败");
     }
 
     return response.data;
@@ -793,7 +797,7 @@ export class ApiClient {
       body: JSON.stringify({ endpoint }),
     });
     if (!response.success) {
-      throw new Error(response.message || "连接接入点失败");
+      throw new Error(response.error?.message || "连接接入点失败");
     }
   }
 
@@ -806,7 +810,7 @@ export class ApiClient {
       { method: "POST", body: JSON.stringify({ endpoint }) }
     );
     if (!response.success) {
-      throw new Error(response.message || "断开接入点失败");
+      throw new Error(response.error?.message || "断开接入点失败");
     }
   }
 
@@ -819,7 +823,7 @@ export class ApiClient {
       { method: "POST", body: JSON.stringify({ endpoint }) }
     );
     if (!response.success) {
-      throw new Error(response.message || "重连接入点失败");
+      throw new Error(response.error?.message || "重连接入点失败");
     }
   }
 
@@ -835,7 +839,7 @@ export class ApiClient {
       }
     );
     if (!response.success || !response.data) {
-      throw new Error(response.message || "添加接入点失败");
+      throw new Error(response.error?.message || "添加接入点失败");
     }
     return response.data;
   }
@@ -849,7 +853,7 @@ export class ApiClient {
       body: JSON.stringify({ endpoint }),
     });
     if (!response.success) {
-      throw new Error(response.message || "移除接入点失败");
+      throw new Error(response.error?.message || "移除接入点失败");
     }
   }
 
@@ -865,7 +869,7 @@ export class ApiClient {
   ): Promise<MCPServerStatus> {
     const requestData: MCPServerAddRequest = { name, config };
 
-    const response: ApiSuccessResponse<MCPServerStatus> = await this.request(
+    const response: ApiResponse<MCPServerStatus> = await this.request(
       "/api/mcp-servers",
       {
         method: "POST",
@@ -874,7 +878,7 @@ export class ApiClient {
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.message || "添加 MCP 服务器失败");
+      throw new Error(response.error?.message || "添加 MCP 服务器失败");
     }
 
     return response.data;
@@ -887,7 +891,7 @@ export class ApiClient {
   async removeMCPServer(
     serverName: string
   ): Promise<{ name: string; operation: string; affectedTools: string[] }> {
-    const response: ApiSuccessResponse<{
+    const response: ApiResponse<{
       name: string;
       operation: string;
       affectedTools: string[];
@@ -899,7 +903,7 @@ export class ApiClient {
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.message || "删除 MCP 服务器失败");
+      throw new Error(response.error?.message || "删除 MCP 服务器失败");
     }
 
     return response.data;
@@ -910,12 +914,12 @@ export class ApiClient {
    * GET /api/mcp-servers/:serverName/status
    */
   async getMCPServerStatus(serverName: string): Promise<MCPServerStatus> {
-    const response: ApiSuccessResponse<MCPServerStatus> = await this.request(
+    const response: ApiResponse<MCPServerStatus> = await this.request(
       `/api/mcp-servers/${encodeURIComponent(serverName)}/status`
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.message || "获取 MCP 服务器状态失败");
+      throw new Error(response.error?.message || "获取 MCP 服务器状态失败");
     }
 
     return response.data;
@@ -926,11 +930,11 @@ export class ApiClient {
    * GET /api/mcp-servers
    */
   async listMCPServers(): Promise<MCPServerListResponse> {
-    const response: ApiSuccessResponse<MCPServerListResponse> =
+    const response: ApiResponse<MCPServerListResponse> =
       await this.request("/api/mcp-servers");
 
     if (!response.success || !response.data) {
-      throw new Error(response.message || "获取 MCP 服务器列表失败");
+      throw new Error(response.error?.message || "获取 MCP 服务器列表失败");
     }
 
     return response.data;
@@ -942,10 +946,9 @@ export class ApiClient {
    */
   async checkMCPServerExists(serverName: string): Promise<boolean> {
     try {
-      const response: ApiSuccessResponse<{ exists: boolean }> =
-        await this.request(
-          `/api/mcp-servers/${encodeURIComponent(serverName)}/exists`
-        );
+      const response: ApiResponse<{ exists: boolean }> = await this.request(
+        `/api/mcp-servers/${encodeURIComponent(serverName)}/exists`
+      );
 
       return response.success ? response.data?.exists || false : false;
     } catch (error) {
@@ -965,7 +968,7 @@ export class ApiClient {
     serverName: string,
     config: MCPServerConfig
   ): Promise<MCPServerStatus> {
-    const response: ApiSuccessResponse<MCPServerStatus> = await this.request(
+    const response: ApiResponse<MCPServerStatus> = await this.request(
       `/api/mcp-servers/${encodeURIComponent(serverName)}`,
       {
         method: "PUT",
@@ -974,7 +977,7 @@ export class ApiClient {
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.message || "更新 MCP 服务器配置失败");
+      throw new Error(response.error?.message || "更新 MCP 服务器配置失败");
     }
 
     return response.data;
@@ -999,7 +1002,7 @@ export class ApiClient {
     });
 
     if (!response.success) {
-      throw new Error(response.message || "调用工具失败");
+      throw new Error(response.error?.message || "调用工具失败");
     }
 
     return response.data;
@@ -1010,7 +1013,7 @@ export class ApiClient {
    * POST /api/mcp-servers/:serverName/restart
    */
   async restartMCPServer(serverName: string): Promise<MCPServerStatus> {
-    const response: ApiSuccessResponse<MCPServerStatus> = await this.request(
+    const response: ApiResponse<MCPServerStatus> = await this.request(
       `/api/mcp-servers/${encodeURIComponent(serverName)}/restart`,
       {
         method: "POST",
@@ -1018,7 +1021,7 @@ export class ApiClient {
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.message || "重启 MCP 服务器失败");
+      throw new Error(response.error?.message || "重启 MCP 服务器失败");
     }
 
     return response.data;
@@ -1044,7 +1047,7 @@ export class ApiClient {
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.message || "MCP 工具管理操作失败");
+      throw new Error(response.error?.message || "MCP 工具管理操作失败");
     }
 
     return response.data;
@@ -1068,7 +1071,7 @@ export class ApiClient {
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.message || "获取 MCP 工具列表失败");
+      throw new Error(response.error?.message || "获取 MCP 工具列表失败");
     }
 
     return response.data;
