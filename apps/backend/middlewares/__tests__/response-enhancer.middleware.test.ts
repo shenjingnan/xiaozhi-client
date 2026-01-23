@@ -62,8 +62,9 @@ describe("response-enhancer.middleware", () => {
       expect(json).toEqual({
         success: true,
         data: { id: 1 },
-        message: undefined,
       });
+      // message 字段不应该存在于 JSON 响应中
+      expect(json).not.toHaveProperty("message");
     });
 
     it("应该正确推断数据类型", async () => {
@@ -104,9 +105,10 @@ describe("response-enhancer.middleware", () => {
         error: {
           code: "NOT_FOUND",
           message: "资源不存在",
-          details: undefined,
         },
       });
+      // details 字段不应该存在于 JSON 响应中
+      expect(json.error).not.toHaveProperty("details");
     });
 
     it("应该支持自定义状态码", async () => {
@@ -225,8 +227,9 @@ describe("response-enhancer.middleware", () => {
           hasNext: true,
           hasPrev: false,
         },
-        message: undefined,
       });
+      // message 字段不应该存在于 JSON 响应中
+      expect(json).not.toHaveProperty("message");
     });
 
     it("应该支持自定义消息", async () => {

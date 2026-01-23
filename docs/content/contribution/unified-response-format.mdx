@@ -117,9 +117,9 @@ app.get("/api/status", (c) => {
 // 响应：
 // {
 //   "success": true,
-//   "data": { "status": "running", "version": "1.0.0" },
-//   "message": undefined
+//   "data": { "status": "running", "version": "1.0.0" }
 // }
+// 注意：未提供 message 参数时，响应中不包含 message 字段
 ```
 
 ### 常见状态码
@@ -156,13 +156,25 @@ c.fail(code: string, message: string, details?: unknown, status?: number): Respo
   "success": false,
   "error": {
     "code": "ERROR_CODE",
+    "message": "错误描述"
+  }
+}
+```
+
+当提供 `details` 参数时，响应格式为：
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
     "message": "错误描述",
     "details": { /* 错误详情 */ }
   }
 }
 ```
 
-**注意**：当 `details` 为 `undefined` 时，响应中不会包含 `details` 字段。
+**注意**：当 `details` 参数为 `undefined` 或未提供时，响应中不会包含 `details` 字段。
 
 ### 使用示例
 
@@ -351,10 +363,29 @@ interface PaginationInfo {
     "totalPages": 10,
     "hasNext": true,
     "hasPrev": false
+  }
+}
+```
+
+当提供 `message` 参数时，响应格式为：
+
+```json
+{
+  "success": true,
+  "data": [ /* 数据列表 */ ],
+  "pagination": {
+    "page": 1,
+    "pageSize": 10,
+    "total": 100,
+    "totalPages": 10,
+    "hasNext": true,
+    "hasPrev": false
   },
   "message": "查询成功"
 }
 ```
+
+**注意**：当 `message` 参数为 `undefined` 或未提供时，响应中不会包含 `message` 字段。
 
 ### 使用示例
 
