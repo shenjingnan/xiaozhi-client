@@ -13,6 +13,15 @@ import type {
   MCPEndpointApiHandler,
 } from "../routes/index.js";
 
+// 导出 API 响应类型供其他模块使用
+export type {
+  ApiErrorResponse,
+  ApiPaginatedResponse,
+  ApiSuccessResponse,
+  PaginationInfo,
+  ApiResponse,
+} from "./api.response.js";
+
 /**
  * WebServer 实例类型定义
  * 避免与 WebServer 实现类的循环引用

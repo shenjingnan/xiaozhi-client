@@ -28,6 +28,7 @@ import {
   loggerMiddleware,
   mcpServiceManagerMiddleware,
   notFoundHandlerMiddleware,
+  responseEnhancerMiddleware,
 } from "@middlewares/index.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
@@ -493,6 +494,10 @@ export class WebServer {
   private setupMiddleware() {
     // Logger 中间件 - 必须在最前面
     this.app?.use("*", loggerMiddleware);
+
+    // 响应增强中间件 - 在 logger 之后，其他中间件之前
+    // 这样所有路由都可以使用 c.success、c.fail、c.paginate 方法
+    this.app?.use("*", responseEnhancerMiddleware);
 
     // 注入 WebServer 实例到上下文
     // 使用类型断言避免循环引用问题
