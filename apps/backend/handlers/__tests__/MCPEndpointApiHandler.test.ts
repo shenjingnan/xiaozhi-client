@@ -65,8 +65,13 @@ describe("MCPEndpointApiHandler", () => {
   };
 
   beforeEach(async () => {
-    // Reset all mocks
+    // 清除所有 mock 的调用记录，同时恢复 mock 实现到定义时的默认值
     vi.clearAllMocks();
+
+    // 确保 connect 和 disconnect 的默认行为正确设置
+    // 这样可以防止测试用例之间的 mock 污染
+    mockConnectionManager.connect.mockResolvedValue(undefined);
+    mockConnectionManager.disconnect.mockResolvedValue(undefined);
 
     // 创建本地 mock 对象，使用 any 类型避免类型检查
     const mockConfigManager: any = {
@@ -354,8 +359,8 @@ describe("MCPEndpointApiHandler", () => {
       expect(response.status).toBe(500);
       expect(mockConnectionManager.connect).toHaveBeenCalledWith(endpoint);
       const responseData = await response.json();
-      // 由于连接操作本身会抛出错误（因为无法获取状态），返回的是 CONNECT_ERROR
-      expect(responseData.code).toBe("ENDPOINT_CONNECT_ERROR");
+      // 源代码在连接成功但找不到状态时返回 ENDPOINT_STATUS_NOT_FOUND
+      expect(responseData.code).toBe("ENDPOINT_STATUS_NOT_FOUND");
     });
 
     it("应该正确处理URL编码的端点地址", async () => {
@@ -523,7 +528,7 @@ describe("MCPEndpointApiHandler", () => {
       expect(responseData.message).toBe("断开失败");
     });
 
-    it("应该返回500当断开后无法获取状态时", async () => {
+    it("应该返回200当断开后无法获取状态时（使用fallback状态）", async () => {
       // Arrange
       const endpoint = "ws://localhost:3000";
       const connectedStatus = { ...mockEndpointStatus, connected: true };
@@ -537,12 +542,17 @@ describe("MCPEndpointApiHandler", () => {
       // Act
       const response = await handler.disconnectEndpoint(mockContext);
 
-      // Assert - disconnect 调用后找不到状态时会返回 500
-      expect(response.status).toBe(500);
+      // Assert - disconnect 调用后找不到状态时，源代码会返回 fallbackStatus
+      expect(response.status).toBe(200);
       expect(mockConnectionManager.disconnect).toHaveBeenCalledWith(endpoint);
       const responseData = await response.json();
-      // 由于断开操作本身会抛出错误（因为无法获取状态），返回的是 DISCONNECT_ERROR
-      expect(responseData.code).toBe("ENDPOINT_DISCONNECT_ERROR");
+      expect(responseData.success).toBe(true);
+      // 源代码会返回一个 fallbackStatus，而不是错误
+      expect(responseData.data).toEqual({
+        endpoint,
+        connected: false,
+        initialized: true,
+      });
     });
 
     it("应该正确处理URL编码的端点地址", async () => {
