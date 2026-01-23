@@ -201,11 +201,32 @@ export class EndpointManager extends EventEmitter {
   }
 
   /**
-   * 连接所有 Endpoint
+   * 连接 Endpoint
    *
    * 注意：此方法不负责连接 MCPManager，MCPManager 必须在调用此方法前已连接
+   *
+   * @param endpoint - 可选，指定要连接的端点 URL。如果不传入，则连接所有端点
    */
-  async connect(): Promise<void> {
+  async connect(endpoint?: string): Promise<void> {
+    // 如果指定了端点，只连接该端点
+    if (endpoint) {
+      const endpointInstance = this.endpoints.get(endpoint);
+      if (!endpointInstance) {
+        throw new Error(`接入点不存在: ${sliceEndpoint(endpoint)}`);
+      }
+
+      const status = this.connectionStates.get(endpoint);
+      if (status?.connected) {
+        console.debug(
+          `[EndpointManager] 接入点已连接，跳过: ${sliceEndpoint(endpoint)}`
+        );
+        return;
+      }
+
+      await this.connectSingleEndpoint(endpoint, endpointInstance);
+      return;
+    }
+
     // 连接所有未连接的 Endpoint
     console.debug(
       `[EndpointManager] 开始连接接入点，总数: ${this.endpoints.size}`
@@ -252,11 +273,33 @@ export class EndpointManager extends EventEmitter {
   }
 
   /**
-   * 断开所有连接
+   * 断开连接
    *
    * 注意：此方法不断开 MCPManager，MCPManager 的生命周期由外部管理
+   *
+   * @param endpoint - 可选，指定要断开的端点 URL。如果不传入，则断开所有端点
    */
-  async disconnect(): Promise<void> {
+  async disconnect(endpoint?: string): Promise<void> {
+    // 如果指定了端点，只断开该端点
+    if (endpoint) {
+      const endpointInstance = this.endpoints.get(endpoint);
+      if (!endpointInstance) {
+        throw new Error(`接入点不存在: ${sliceEndpoint(endpoint)}`);
+      }
+
+      endpointInstance.disconnect();
+
+      const status = this.connectionStates.get(endpoint);
+      if (status) {
+        status.connected = false;
+        status.initialized = false;
+      }
+
+      console.debug(`[EndpointManager] 接入点已断开: ${sliceEndpoint(endpoint)}`);
+      return;
+    }
+
+    // 断开所有连接
     console.debug("[EndpointManager] 开始断开所有连接");
 
     const promises: Promise<void>[] = [];
@@ -414,7 +457,7 @@ export class EndpointManager extends EventEmitter {
   /**
    * 连接单个端点
    */
-  public async connectSingleEndpoint(
+  private async connectSingleEndpoint(
     url: string,
     endpoint: Endpoint
   ): Promise<void> {

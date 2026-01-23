@@ -189,20 +189,8 @@ export class MCPEndpointApiHandler {
         );
       }
 
-      // 检查是否已连接
-      if (endpointInstance.isConnected()) {
-        return c.json(
-          {
-            success: false,
-            code: "ENDPOINT_ALREADY_CONNECTED",
-            message: "端点已连接",
-          },
-          500
-        );
-      }
-
       // 执行连接操作
-      await endpointInstance.connect();
+      await this.endpointManager.connect(endpoint);
 
       // 获取连接后的状态
       const updatedConnectionStatus =
@@ -278,20 +266,8 @@ export class MCPEndpointApiHandler {
         );
       }
 
-      // 检查是否已连接
-      if (!endpointInstance.isConnected()) {
-        return c.json(
-          {
-            success: false,
-            code: "ENDPOINT_NOT_CONNECTED",
-            message: "端点未连接",
-          },
-          500
-        );
-      }
-
       // 执行断开操作
-      await endpointInstance.disconnect();
+      await this.endpointManager.disconnect(endpoint);
 
       // 获取断开后的状态
       const updatedConnectionStatus =
@@ -397,7 +373,7 @@ export class MCPEndpointApiHandler {
 
       // 5. 连接新端点
       try {
-        await this.endpointManager.connectSingleEndpoint(endpoint, newEndpoint);
+        await this.endpointManager.connect(endpoint);
         this.logger.debug(`端点已连接: ${endpoint}`);
       } catch (connectError) {
         this.logger.warn(
