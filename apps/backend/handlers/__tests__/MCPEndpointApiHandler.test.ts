@@ -119,19 +119,29 @@ describe("MCPEndpointApiHandler", () => {
           headers: { "Content-Type": "application/json" },
         });
       }),
-      fail: vi.fn().mockImplementation((code: string, message: string, details?: unknown, status = 400) => {
-        const response = {
-          success: false,
-          error: { code, message },
-        };
-        if (details !== undefined) {
-          (response.error as { code: string; message: string; details: unknown }).details = details;
-        }
-        return new Response(JSON.stringify(response), {
-          status,
-          headers: { "Content-Type": "application/json" },
-        });
-      }),
+      fail: vi
+        .fn()
+        .mockImplementation(
+          (code: string, message: string, details?: unknown, status = 400) => {
+            const response = {
+              success: false,
+              error: { code, message },
+            };
+            if (details !== undefined) {
+              (
+                response.error as {
+                  code: string;
+                  message: string;
+                  details: unknown;
+                }
+              ).details = details;
+            }
+            return new Response(JSON.stringify(response), {
+              status,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+        ),
       req: {
         param: vi.fn(),
         json: vi.fn(),
