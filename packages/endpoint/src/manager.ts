@@ -21,14 +21,14 @@
 
 import { EventEmitter } from "node:events";
 import type { Endpoint } from "./endpoint.js";
+import { Endpoint as EndpointClass } from "./endpoint.js";
+import { SharedMCPAdapter } from "./shared-mcp-adapter.js";
 import type {
   EndpointManagerConfig,
-  SimpleConnectionStatus,
   IMCPServiceManager,
+  SimpleConnectionStatus,
 } from "./types.js";
 import { sliceEndpoint } from "./utils.js";
-import { SharedMCPAdapter } from "./shared-mcp-adapter.js";
-import { Endpoint as EndpointClass } from "./endpoint.js";
 
 /**
  * MCP 服务连接事件数据
@@ -247,7 +247,10 @@ export class EndpointManager extends EventEmitter {
 
       promises.push(
         this.connectSingleEndpoint(url, endpoint).catch((error) => {
-          console.error(`[EndpointManager] 连接失败: ${sliceEndpoint(url)}`, error);
+          console.error(
+            `[EndpointManager] 连接失败: ${sliceEndpoint(url)}`,
+            error
+          );
           // 更新失败状态
           const status = this.connectionStates.get(url);
           if (status) {
@@ -295,7 +298,9 @@ export class EndpointManager extends EventEmitter {
         status.initialized = false;
       }
 
-      console.debug(`[EndpointManager] 接入点已断开: ${sliceEndpoint(endpoint)}`);
+      console.debug(
+        `[EndpointManager] 接入点已断开: ${sliceEndpoint(endpoint)}`
+      );
       return;
     }
 
@@ -378,6 +383,28 @@ export class EndpointManager extends EventEmitter {
   }
 
   /**
+   * 重连
+   *
+   * @param endpoint - 可选，指定要重连的端点 URL。如果不传入，则重连所有端点
+   * @param delay - 可选，重连前的延迟时间（毫秒），默认为 1000ms
+   */
+  async reconnect(endpoint?: string, delay = 1000): Promise<void> {
+    console.info("[EndpointManager] 开始重连");
+
+    // 先断开连接
+    await this.disconnect(endpoint);
+
+    // 等待一段时间
+    console.debug(`[EndpointManager] 等待 ${delay}ms 后重连`);
+    await new Promise((resolve) => setTimeout(resolve, delay));
+
+    // 再重新连接
+    await this.connect(endpoint);
+
+    console.info("[EndpointManager] 重连完成");
+  }
+
+  /**
    * 重连所有端点
    */
   async reconnectAll(): Promise<void> {
@@ -388,7 +415,10 @@ export class EndpointManager extends EventEmitter {
     for (const [url, endpoint] of this.endpoints) {
       promises.push(
         this.reconnectSingleEndpoint(url, endpoint).catch((error) => {
-          console.error(`[EndpointManager] 重连失败: ${sliceEndpoint(url)}`, error);
+          console.error(
+            `[EndpointManager] 重连失败: ${sliceEndpoint(url)}`,
+            error
+          );
         })
       );
     }
@@ -439,7 +469,11 @@ export class EndpointManager extends EventEmitter {
     console.debug("[EndpointManager] 开始清理资源");
 
     // 移除 MCP 服务事件监听器
-    if (this.mcpManager && "removeListener" in this.mcpManager && typeof this.mcpManager.removeListener === "function") {
+    if (
+      this.mcpManager &&
+      "removeListener" in this.mcpManager &&
+      typeof this.mcpManager.removeListener === "function"
+    ) {
       for (const listener of this.mcpEventListeners) {
         this.mcpManager.removeListener("connected", listener);
         this.mcpManager.removeListener("error", listener);
