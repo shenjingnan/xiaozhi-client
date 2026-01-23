@@ -1,9 +1,9 @@
 /**
  * 小智端点处理器中间件
- * 负责创建和管理 MCPEndpointApiHandler 实例
+ * 负责创建和管理 EndpointHandler 实例
  */
 
-import { MCPEndpointApiHandler } from "@handlers/MCPEndpointApiHandler.js";
+import { EndpointHandler } from "@handlers/endpoint.handler.js";
 import { configManager } from "@xiaozhi-client/config";
 import type { EndpointManager } from "@xiaozhi-client/endpoint";
 import type { MiddlewareHandler } from "hono";
@@ -11,11 +11,11 @@ import type { AppContext } from "../types/hono.context.js";
 
 /**
  * 小智端点处理器中间件
- * 创建单例的 MCPEndpointApiHandler 并注入到上下文中
+ * 创建单例的 EndpointHandler 并注入到上下文中
  */
 export const endpointsMiddleware = (): MiddlewareHandler<AppContext> => {
   // 使用闭包缓存 handler 实例和 manager
-  let endpointHandler: MCPEndpointApiHandler | null = null;
+  let endpointHandler: EndpointHandler | null = null;
   let lastManager: EndpointManager | null | undefined = undefined;
 
   return async (c, next) => {
@@ -28,10 +28,7 @@ export const endpointsMiddleware = (): MiddlewareHandler<AppContext> => {
     if (endpointManager !== lastManager) {
       lastManager = endpointManager;
       if (endpointManager) {
-        endpointHandler = new MCPEndpointApiHandler(
-          endpointManager,
-          configManager
-        );
+        endpointHandler = new EndpointHandler(endpointManager, configManager);
       } else {
         endpointHandler = null;
       }

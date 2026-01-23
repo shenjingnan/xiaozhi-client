@@ -44,6 +44,7 @@ vi.mock("../../managers/MCPServiceManagerSingleton.js", () => ({
 }));
 
 vi.mock("node:child_process", () => ({
+  exec: vi.fn(),
   spawn: vi.fn(),
 }));
 
