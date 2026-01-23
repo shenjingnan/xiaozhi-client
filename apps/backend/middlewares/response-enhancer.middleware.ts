@@ -3,8 +3,8 @@
  * 为 Hono Context 添加便捷的响应方法：c.success、c.fail、c.paginate
  */
 
-import type { PaginationInfo } from "../types/api.response.js";
 import type { MiddlewareHandler } from "hono";
+import type { PaginationInfo } from "../types/api.response.js";
 
 /**
  * 扩展 Hono Context 接口
@@ -34,11 +34,7 @@ declare module "hono" {
      * return c.success(undefined, "删除成功");
      * ```
      */
-    success<T>(
-      data?: T,
-      message?: string,
-      status?: number
-    ): Response;
+    success<T>(data?: T, message?: string, status?: number): Response;
 
     /**
      * 返回失败响应
@@ -106,7 +102,10 @@ declare module "hono" {
  * 响应增强中间件
  * 为所有请求添加便捷的响应方法
  */
-export const responseEnhancerMiddleware: MiddlewareHandler = async (c, next) => {
+export const responseEnhancerMiddleware: MiddlewareHandler = async (
+  c,
+  next
+) => {
   // 成功响应方法
   c.success = <T>(data?: T, message?: string, status = 200) => {
     const response: {
@@ -127,12 +126,7 @@ export const responseEnhancerMiddleware: MiddlewareHandler = async (c, next) => 
   };
 
   // 失败响应方法
-  c.fail = (
-    code: string,
-    message: string,
-    details?: unknown,
-    status = 400
-  ) => {
+  c.fail = (code: string, message: string, details?: unknown, status = 400) => {
     const response: {
       success: false;
       error: {

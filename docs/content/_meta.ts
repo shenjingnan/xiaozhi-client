@@ -6,6 +6,7 @@ const meta: MetaRecord = {
   usage: "使用姿势",
   reference: "参考手册",
   release: "发布方法",
+  contribution: "贡献指南",
 };
 
 export default meta;

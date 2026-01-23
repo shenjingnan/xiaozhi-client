@@ -1,0 +1,597 @@
+---
+title: "统一响应格式"
+description: "详细说明 c.success、c.fail、c.paginate 三个响应增强方法的使用方式和参数配置"
+---
+
+# 统一响应格式
+
+## 概述
+
+xiaozhi-client 通过自定义中间件 `responseEnhancerMiddleware` 增强了 Hono Context，提供了三个统一的 API 响应方法：
+
+- **c.success()** - 返回成功响应
+- **c.fail()** - 返回失败响应
+- **c.paginate()** - 返回分页响应
+
+这些方法确保了 API 响应格式的一致性，简化了路由处理器的代码，并提供了完整的类型安全支持。
+
+### 中间件注册
+
+响应增强中间件已在 WebServer 中自动注册，所有路由都可以直接使用这些方法：
+
+```typescript
+import { responseEnhancerMiddleware } from "@/middlewares";
+```
+
+## c.success() - 成功响应
+
+返回成功操作的响应，支持可选的响应数据、消息和自定义 HTTP 状态码。
+
+### 方法签名
+
+```typescript
+c.success<T>(data?: T, message?: string, status?: number): Response
+```
+
+### 参数说明
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| data | `T` | 否 | `undefined` | 响应数据，可以是任意类型 |
+| message | `string` | 否 | `undefined` | 响应消息，描述操作结果 |
+| status | `number` | 否 | `200` | HTTP 状态码 |
+
+### 响应格式
+
+```json
+{
+  "success": true,
+  "data": { /* 响应数据 */ },
+  "message": "操作成功"
+}
+```
+
+**注意**：当 `data` 为 `undefined` 时，响应中不会包含 `data` 字段，保持 JSON 响应的简洁性。
+
+### 使用示例
+
+#### 示例 1：带数据的成功响应
+
+```typescript
+import { createApp } from "@/types/hono.context";
+
+const app = createApp();
+
+app.get("/api/users/:id", (c) => {
+  const user = { id: 1, name: "张三", email: "zhangsan@example.com" };
+  return c.success(user, "获取用户成功");
+});
+
+// 响应：
+// {
+//   "success": true,
+//   "data": { "id": 1, "name": "张三", "email": "zhangsan@example.com" },
+//   "message": "获取用户成功"
+// }
+```
+
+#### 示例 2：创建资源（201 状态码）
+
+```typescript
+app.post("/api/users", async (c) => {
+  const newUser = await create_user(c.req.json());
+  return c.success(newUser, "创建成功", 201);
+});
+
+// 响应：
+// {
+//   "success": true,
+//   "data": { "id": 2, "name": "李四" },
+//   "message": "创建成功"
+// }
+```
+
+#### 示例 3：无数据响应（删除操作）
+
+```typescript
+app.delete("/api/users/:id", async (c) => {
+  await delete_user(c.param("id"));
+  return c.success(undefined, "删除成功");
+});
+
+// 响应：
+// {
+//   "success": true,
+//   "message": "删除成功"
+// }
+// 注意：没有 data 字段
+```
+
+#### 示例 4：仅返回数据
+
+```typescript
+app.get("/api/status", (c) => {
+  return c.success({ status: "running", version: "1.0.0" });
+});
+
+// 响应：
+// {
+//   "success": true,
+//   "data": { "status": "running", "version": "1.0.0" },
+//   "message": undefined
+// }
+```
+
+### 常见状态码
+
+| 状态码 | 使用场景 |
+|--------|----------|
+| 200 | 默认成功响应 |
+| 201 | 资源创建成功 |
+| 204 | 删除成功（无返回内容） |
+
+## c.fail() - 失败响应
+
+返回错误响应，包含错误码、错误消息和可选的错误详情。
+
+### 方法签名
+
+```typescript
+c.fail(code: string, message: string, details?: unknown, status?: number): Response
+```
+
+### 参数说明
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| code | `string` | 是 | - | 错误码，用于程序识别错误类型 |
+| message | `string` | 是 | - | 错误消息，面向用户的错误描述 |
+| details | `unknown` | 否 | `undefined` | 错误详情，可以是任意类型的附加信息 |
+| status | `number` | 否 | `400` | HTTP 状态码 |
+
+### 响应格式
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "错误描述",
+    "details": { /* 错误详情 */ }
+  }
+}
+```
+
+**注意**：当 `details` 为 `undefined` 时，响应中不会包含 `details` 字段。
+
+### 使用示例
+
+#### 示例 1：简单错误响应
+
+```typescript
+app.get("/api/users/:id", (c) => {
+  const user = find_user(c.param("id"));
+  if (!user) {
+    return c.fail("USER_NOT_FOUND", "用户不存在");
+  }
+  return c.success(user);
+});
+
+// 响应：
+// {
+//   "success": false,
+//   "error": {
+//     "code": "USER_NOT_FOUND",
+//     "message": "用户不存在"
+//   }
+// }
+```
+
+#### 示例 2：404 错误
+
+```typescript
+app.get("/api/resources/:id", (c) => {
+  const resource = find_resource(c.param("id"));
+  if (!resource) {
+    return c.fail("NOT_FOUND", "资源不存在", undefined, 404);
+  }
+  return c.success(resource);
+});
+```
+
+#### 示例 3：带详情的验证错误
+
+```typescript
+app.post("/api/users", async (c) => {
+  const body = await c.req.json();
+  const validation = validate_user(body);
+
+  if (!validation.valid) {
+    return c.fail("VALIDATION_ERROR", "数据验证失败", {
+      field: validation.field,
+      message: validation.message,
+    });
+  }
+
+  return c.success(await create_user(body));
+});
+
+// 响应：
+// {
+//   "success": false,
+//   "error": {
+//     "code": "VALIDATION_ERROR",
+//     "message": "数据验证失败",
+//     "details": {
+//       "field": "email",
+//       "message": "邮箱格式不正确"
+//     }
+//   }
+// }
+```
+
+#### 示例 4：多字段验证错误
+
+```typescript
+app.post("/api/users", async (c) => {
+  const body = await c.req.json();
+  const errors = validate_user(body);
+
+  if (errors.length > 0) {
+    return c.fail("VALIDATION_ERROR", "数据验证失败", {
+      errors: errors.map(e => ({
+        field: e.field,
+        message: e.message
+      }))
+    }, 400);
+  }
+
+  return c.success(await create_user(body));
+});
+
+// 响应：
+// {
+//   "success": false,
+//   "error": {
+//     "code": "VALIDATION_ERROR",
+//     "message": "数据验证失败",
+//     "details": {
+//       "errors": [
+//         { "field": "email", "message": "邮箱格式不正确" },
+//         { "field": "password", "message": "密码长度不能少于 8 位" }
+//       ]
+//     }
+//   }
+// }
+```
+
+#### 示例 5：401 未授权错误
+
+```typescript
+app.delete("/api/users/:id", (c) => {
+  if (!is_authenticated(c)) {
+    return c.fail("UNAUTHORIZED", "未授权访问", undefined, 401);
+  }
+  // ...
+});
+```
+
+#### 示例 6：500 服务器错误
+
+```typescript
+app.get("/api/data", async (c) => {
+  try {
+    const data = await fetch_external_data();
+    return c.success(data);
+  } catch (error) {
+    return c.fail(
+      "INTERNAL_ERROR",
+      "服务器内部错误",
+      { originalError: error.message },
+      500
+    );
+  }
+});
+```
+
+### 常见错误码和状态码映射
+
+| 错误码 | HTTP 状态码 | 使用场景 |
+|--------|-------------|----------|
+| VALIDATION_ERROR | 400 | 请求数据验证失败 |
+| UNAUTHORIZED | 401 | 未授权访问 |
+| FORBIDDEN | 403 | 权限不足 |
+| NOT_FOUND | 404 | 资源不存在 |
+| CONFLICT | 409 | 资源冲突 |
+| RATE_LIMIT_EXCEEDED | 429 | 请求频率超限 |
+| INTERNAL_ERROR | 500 | 服务器内部错误 |
+| SERVICE_UNAVAILABLE | 503 | 服务不可用 |
+
+## c.paginate() - 分页响应
+
+返回分页列表数据，包含数据列表和分页信息。
+
+### 方法签名
+
+```typescript
+c.paginate<T>(data: T[], pagination: PaginationInfo, message?: string): Response
+```
+
+### 参数说明
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| data | `T[]` | 是 | - | 数据列表 |
+| pagination | `PaginationInfo` | 是 | - | 分页信息对象 |
+| message | `string` | 否 | `undefined` | 响应消息 |
+
+### PaginationInfo 接口
+
+```typescript
+interface PaginationInfo {
+  page: number;        // 当前页码（从 1 开始）
+  pageSize: number;    // 每页数量
+  total: number;       // 总记录数
+  totalPages: number;  // 总页数
+  hasNext: boolean;    // 是否有下一页
+  hasPrev: boolean;    // 是否有上一页
+}
+```
+
+### 响应格式
+
+```json
+{
+  "success": true,
+  "data": [ /* 数据列表 */ ],
+  "pagination": {
+    "page": 1,
+    "pageSize": 10,
+    "total": 100,
+    "totalPages": 10,
+    "hasNext": true,
+    "hasPrev": false
+  },
+  "message": "查询成功"
+}
+```
+
+### 使用示例
+
+#### 示例 1：基本分页查询
+
+```typescript
+app.get("/api/users", async (c) => {
+  const page = Number(c.req.query("page") || "1");
+  const pageSize = Number(c.req.query("pageSize") || "10");
+
+  const [users, total] = await get_users(page, pageSize);
+
+  const pagination = {
+    page,
+    pageSize,
+    total,
+    totalPages: Math.ceil(total / pageSize),
+    hasNext: page < Math.ceil(total / pageSize),
+    hasPrev: page > 1,
+  };
+
+  return c.paginate(users, pagination, "查询成功");
+});
+
+// 响应：
+// {
+//   "success": true,
+//   "data": [
+//     { "id": 1, "name": "张三" },
+//     { "id": 2, "name": "李四" }
+//   ],
+//   "pagination": {
+//     "page": 1,
+//     "pageSize": 10,
+//     "total": 100,
+//     "totalPages": 10,
+//     "hasNext": true,
+//     "hasPrev": false
+//   },
+//   "message": "查询成功"
+// }
+```
+
+#### 示例 2：空数据分页
+
+```typescript
+app.get("/api/users", async (c) => {
+  const users = [];
+  const total = 0;
+
+  const pagination = {
+    page: 1,
+    pageSize: 10,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false,
+  };
+
+  return c.paginate(users, pagination);
+});
+
+// 响应：
+// {
+//   "success": true,
+//   "data": [],
+//   "pagination": {
+//     "page": 1,
+//     "pageSize": 10,
+//     "total": 0,
+//     "totalPages": 0,
+//     "hasNext": false,
+//     "hasPrev": false
+//   }
+// }
+```
+
+#### 示例 3：单页数据（最后一页）
+
+```typescript
+app.get("/api/users", async (c) => {
+  const page = 10;
+  const pageSize = 10;
+  const total = 95;
+
+  const users = await get_users(page, pageSize);
+
+  const pagination = {
+    page,
+    pageSize,
+    total,
+    totalPages: Math.ceil(total / pageSize),
+    hasNext: false,  // 最后一页
+    hasPrev: true,
+  };
+
+  return c.paginate(users, pagination, "查询成功");
+});
+
+// 响应：
+// {
+//   "success": true,
+//   "data": [ /* 5 条数据 */ ],
+//   "pagination": {
+//     "page": 10,
+//     "pageSize": 10,
+//     "total": 95,
+//     "totalPages": 10,
+//     "hasNext": false,
+//     "hasPrev": true
+//   },
+//   "message": "查询成功"
+// }
+```
+
+### 分页计算建议
+
+```typescript
+// 推荐的分页计算工具函数
+function calculatePagination(page: number, pageSize: number, total: number) {
+  const totalPages = Math.ceil(total / pageSize);
+  return {
+    page,
+    pageSize,
+    total,
+    totalPages,
+    hasNext: page < totalPages,
+    hasPrev: page > 1,
+  };
+}
+
+// 使用示例
+const [users, total] = await get_users(page, pageSize);
+const pagination = calculatePagination(page, pageSize, total);
+return c.paginate(users, pagination);
+```
+
+## 最佳实践
+
+### 选择合适的响应方法
+
+| 场景 | 推荐方法 | 说明 |
+|------|----------|------|
+| 单个资源查询/创建/更新 | `c.success()` | 返回资源对象 |
+| 删除操作 | `c.success(undefined, message)` | 无需返回数据 |
+| 列表查询（分页） | `c.paginate()` | 返回列表和分页信息 |
+| 列表查询（全部） | `c.success(array)` | 小量数据可不分页 |
+| 资源不存在 | `c.fail(code, message, undefined, 404)` | 明确的 404 错误 |
+| 验证失败 | `c.fail(code, message, details)` | 提供详细的验证错误 |
+| 服务器错误 | `c.fail(code, message, details, 500)` | 记录并返回错误信息 |
+
+### 类型安全使用
+
+```typescript
+import type { ApiSuccessResponse, ApiErrorResponse, ApiPaginatedResponse } from "@/types";
+
+// c.success 返回的类型
+type UserResponse = ApiSuccessResponse<User>;
+
+// c.fail 返回的类型
+type ErrorResponse = ApiErrorResponse;
+
+// c.paginate 返回的类型
+type UsersResponse = ApiPaginatedResponse<User>;
+```
+
+### 错误处理建议
+
+```typescript
+// 推荐的错误处理模式
+app.post("/api/users", async (c) => {
+  try {
+    const body = await c.req.json();
+
+    // 验证
+    const validation = validate_user(body);
+    if (!validation.valid) {
+      return c.fail("VALIDATION_ERROR", "数据验证失败", {
+        field: validation.field,
+        message: validation.message,
+      });
+    }
+
+    // 业务逻辑
+    const user = await create_user(body);
+    return c.success(user, "创建成功", 201);
+
+  } catch (error) {
+    // 服务器错误
+    return c.fail(
+      "INTERNAL_ERROR",
+      "服务器内部错误",
+      process.env.NODE_ENV === "development" ? { error: error.message } : undefined,
+      500
+    );
+  }
+});
+```
+
+### 统一错误码
+
+建议在项目中定义统一的错误码常量：
+
+```typescript
+// constants/error-codes.ts
+export const ErrorCodes = {
+  VALIDATION_ERROR: "VALIDATION_ERROR",
+  UNAUTHORIZED: "UNAUTHORIZED",
+  FORBIDDEN: "FORBIDDEN",
+  NOT_FOUND: "NOT_FOUND",
+  CONFLICT: "CONFLICT",
+  INTERNAL_ERROR: "INTERNAL_ERROR",
+} as const;
+
+// 使用
+import { ErrorCodes } from "@/constants/error-codes";
+
+return c.fail(ErrorCodes.NOT_FOUND, "用户不存在");
+```
+
+### 响应格式一致性
+
+始终使用这三个响应方法，避免直接使用 `c.json()`：
+
+```typescript
+// ✅ 推荐
+return c.success(data, "操作成功");
+return c.fail("ERROR_CODE", "错误消息");
+return c.paginate(data, pagination);
+
+// ❌ 不推荐
+return c.json({ success: true, data });
+return c.json({ success: false, error: { code, message } });
+```
+
+## 相关文档
+
+- [Hono 官方文档](https://hono.dev/)
+- [xiaozhi-client 中间件系统](/docs/reference/middleware)
+- [API 路由开发指南](/docs/development/api-routes)

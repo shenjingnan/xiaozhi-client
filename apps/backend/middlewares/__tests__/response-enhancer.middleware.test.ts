@@ -2,8 +2,8 @@
  * 响应增强中间件单元测试
  */
 
-import { describe, it, expect } from "vitest";
 import { Hono } from "hono";
+import { describe, expect, it } from "vitest";
 import { responseEnhancerMiddleware } from "../response-enhancer.middleware.js";
 
 describe("response-enhancer.middleware", () => {
@@ -112,9 +112,7 @@ describe("response-enhancer.middleware", () => {
     it("应该支持自定义状态码", async () => {
       const app = new Hono();
       app.use("*", responseEnhancerMiddleware);
-      app.get("/test", (c) =>
-        c.fail("UNAUTHORIZED", "未授权", undefined, 401)
-      );
+      app.get("/test", (c) => c.fail("UNAUTHORIZED", "未授权", undefined, 401));
 
       const res = await app.request("/test");
 
@@ -124,7 +122,9 @@ describe("response-enhancer.middleware", () => {
     it("应该支持 404 状态码", async () => {
       const app = new Hono();
       app.use("*", responseEnhancerMiddleware);
-      app.get("/test", (c) => c.fail("NOT_FOUND", "资源不存在", undefined, 404));
+      app.get("/test", (c) =>
+        c.fail("NOT_FOUND", "资源不存在", undefined, 404)
+      );
 
       const res = await app.request("/test");
 
