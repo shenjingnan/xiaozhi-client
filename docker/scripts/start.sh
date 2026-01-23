@@ -150,8 +150,10 @@ docker pull "$IMAGE_NAME:$IMAGE_TAG"
 echo -e "${YELLOW}🚀 启动 Xiaozhi Client 容器${NC}"
 docker run -d \
     --name "$CONTAINER_NAME" \
-    -p "$WEB_PORT:9999" \
-    -p "$HTTP_PORT:3000" \
+    -p "0.0.0.0:$WEB_PORT:9999" \
+    -p "[::]:$WEB_PORT:9999" \
+    -p "0.0.0.0:$HTTP_PORT:3000" \
+    -p "[::]:$HTTP_PORT:3000" \
     -v "$WORKSPACE_DIR:/workspaces" \
     --restart unless-stopped \
     "$IMAGE_NAME:$IMAGE_TAG"

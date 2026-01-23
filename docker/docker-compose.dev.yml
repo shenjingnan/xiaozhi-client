@@ -9,10 +9,12 @@ services:
     container_name: xiaozhi-client-dev
     restart: unless-stopped
 
-    # 端口映射
+    # 端口映射（支持 IPv4 和 IPv6）
     ports:
-      - "9999:9999"  # Web UI 端口
-      - "3000:3000"  # 备用端口
+      - "0.0.0.0:9999:9999"    # IPv4 - Web UI 端口
+      - "[::]:9999:9999"       # IPv6 - Web UI 端口
+      - "0.0.0.0:3000:3000"    # IPv4 - 备用端口
+      - "[::]:3000:3000"       # IPv6 - 备用端口
 
     # 环境变量
     environment:
@@ -64,10 +66,16 @@ services:
           memory: 1G
           cpus: '1.0'
 
-# 网络配置
+# 网络配置（支持 IPv4 和 IPv6）
 networks:
   xiaozhi-network:
     driver: bridge
+    enable_ipv6: true
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.21.0.0/24    # IPv4 子网（dev 使用不同范围）
+        - subnet: fd00:efgh::/64   # IPv6 子网（ULA 地址）
 
 # 卷配置
 volumes:
