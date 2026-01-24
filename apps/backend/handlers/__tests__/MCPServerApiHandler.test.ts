@@ -172,12 +172,12 @@ describe("addMCPServer", () => {
             success: true;
             data?: unknown;
             message?: string;
-          } = { success: true };
+          } = {
+            success: true,
+            message,
+          };
           if (data !== undefined) {
             response.data = data;
-          }
-          if (message) {
-            response.message = message;
           }
           return new Response(JSON.stringify(response), {
             status,
@@ -465,12 +465,12 @@ describe("removeMCPServer", () => {
             success: true;
             data?: unknown;
             message?: string;
-          } = { success: true };
+          } = {
+            success: true,
+            message,
+          };
           if (data !== undefined) {
             response.data = data;
-          }
-          if (message) {
-            response.message = message;
           }
           return new Response(JSON.stringify(response), {
             status,
@@ -867,12 +867,12 @@ describe("getMCPServerStatus", () => {
             success: true;
             data?: unknown;
             message?: string;
-          } = { success: true };
+          } = {
+            success: true,
+            message,
+          };
           if (data !== undefined) {
             response.data = data;
-          }
-          if (message) {
-            response.message = message;
           }
           return new Response(JSON.stringify(response), {
             status,
@@ -1021,12 +1021,12 @@ describe("listMCPServers", () => {
             success: true;
             data?: unknown;
             message?: string;
-          } = { success: true };
+          } = {
+            success: true,
+            message,
+          };
           if (data !== undefined) {
             response.data = data;
-          }
-          if (message) {
-            response.message = message;
           }
           return new Response(JSON.stringify(response), {
             status,
@@ -1340,12 +1340,12 @@ describe("addMCPServer with type field normalization", () => {
             success: true;
             data?: unknown;
             message?: string;
-          } = { success: true };
+          } = {
+            success: true,
+            message,
+          };
           if (data !== undefined) {
             response.data = data;
-          }
-          if (message) {
-            response.message = message;
           }
           return new Response(JSON.stringify(response), {
             status,
