@@ -389,7 +389,7 @@ export class EndpointManager extends EventEmitter {
    * @param delay - 可选，disconnect 和 connect 之间的等待时间（毫秒），默认为 1000ms。
    *               注意：此参数只控制断开和重新连接之间的等待时间，不影响底层 Endpoint 实例的重连延迟
    */
-  async reconnect(endpoint?: string, delay = 1000): Promise<void> {
+  async reconnect(endpoint?: string, delay = 5000): Promise<void> {
     console.info("[EndpointManager] 开始重连");
 
     // 先断开连接
