@@ -36,13 +36,13 @@ export interface EventBusEvents {
     trigger: "mcp_server_added" | "mcp_server_batch_added" | "manual" | "other";
     serverName?: string;
     endpointCount: number;
-    timestamp: Date;
+    timestamp: number;
   };
   "endpoint:reconnect:failed": {
     trigger: "mcp_server_added" | "mcp_server_batch_added" | "manual" | "other";
     serverName?: string;
     error: string;
-    timestamp: Date;
+    timestamp: number;
   };
 
   // 服务相关事件

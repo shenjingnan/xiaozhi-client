@@ -715,14 +715,16 @@ export class WebServer {
         try {
           // 获取当前连接的端点数量
           const connectionStatuses = this.endpointManager.getConnectionStatus();
-          const endpointCount = connectionStatuses.length;
+          const connectedEndpointCount = connectionStatuses.filter(
+            (status) => status.connected
+          ).length;
 
-          if (endpointCount === 0) {
+          if (connectedEndpointCount === 0) {
             this.logger.debug("当前没有已连接的端点，跳过重连");
             return;
           }
 
-          this.logger.info(`开始重连 ${endpointCount} 个接入点...`);
+          this.logger.info(`开始重连 ${connectedEndpointCount} 个接入点...`);
 
           // 重连所有端点
           await this.endpointManager.reconnect();
@@ -733,8 +735,8 @@ export class WebServer {
           this.eventBus.emitEvent("endpoint:reconnect:completed", {
             trigger: "mcp_server_added",
             serverName: eventData.serverName,
-            endpointCount,
-            timestamp: new Date(),
+            endpointCount: connectedEndpointCount,
+            timestamp: Date.now(),
           });
         } catch (error) {
           this.logger.error("接入点重连失败:", error);
@@ -744,7 +746,7 @@ export class WebServer {
             trigger: "mcp_server_added",
             serverName: eventData.serverName,
             error: error instanceof Error ? error.message : String(error),
-            timestamp: new Date(),
+            timestamp: Date.now(),
           });
         }
       }
@@ -765,14 +767,16 @@ export class WebServer {
         try {
           // 获取当前连接的端点数量
           const connectionStatuses = this.endpointManager.getConnectionStatus();
-          const endpointCount = connectionStatuses.length;
+          const connectedEndpointCount = connectionStatuses.filter(
+            (status) => status.connected
+          ).length;
 
-          if (endpointCount === 0) {
+          if (connectedEndpointCount === 0) {
             this.logger.debug("当前没有已连接的端点，跳过重连");
             return;
           }
 
-          this.logger.info(`开始重连 ${endpointCount} 个接入点...`);
+          this.logger.info(`开始重连 ${connectedEndpointCount} 个接入点...`);
 
           // 重连所有端点
           await this.endpointManager.reconnect();
@@ -783,8 +787,8 @@ export class WebServer {
           this.eventBus.emitEvent("endpoint:reconnect:completed", {
             trigger: "mcp_server_batch_added",
             serverName: undefined,
-            endpointCount,
-            timestamp: new Date(),
+            endpointCount: connectedEndpointCount,
+            timestamp: Date.now(),
           });
         } catch (error) {
           this.logger.error("接入点重连失败:", error);
@@ -794,7 +798,7 @@ export class WebServer {
             trigger: "mcp_server_batch_added",
             serverName: undefined,
             error: error instanceof Error ? error.message : String(error),
-            timestamp: new Date(),
+            timestamp: Date.now(),
           });
         }
       }
