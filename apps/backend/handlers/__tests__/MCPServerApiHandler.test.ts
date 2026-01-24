@@ -167,18 +167,22 @@ describe("addMCPServer", () => {
       // 添加 c.success 方法
       success: vi
         .fn()
-        .mockImplementation((data: any, message?: string, status = 200) => {
-          return new Response(
-            JSON.stringify({
-              success: true,
-              data,
-              message,
-            }),
-            {
-              status,
-              headers: { "Content-Type": "application/json" },
-            }
-          );
+        .mockImplementation((data: unknown, message?: string, status = 200) => {
+          const response: {
+            success: true;
+            data?: unknown;
+            message?: string;
+          } = { success: true };
+          if (data !== undefined) {
+            response.data = data;
+          }
+          if (message) {
+            response.message = message;
+          }
+          return new Response(JSON.stringify(response), {
+            status,
+            headers: { "Content-Type": "application/json" },
+          });
         }),
       // 添加 c.fail 方法
       fail: vi
@@ -456,18 +460,22 @@ describe("removeMCPServer", () => {
       // 添加 c.success 方法
       success: vi
         .fn()
-        .mockImplementation((data: any, message?: string, status = 200) => {
-          return new Response(
-            JSON.stringify({
-              success: true,
-              data,
-              message,
-            }),
-            {
-              status,
-              headers: { "Content-Type": "application/json" },
-            }
-          );
+        .mockImplementation((data: unknown, message?: string, status = 200) => {
+          const response: {
+            success: true;
+            data?: unknown;
+            message?: string;
+          } = { success: true };
+          if (data !== undefined) {
+            response.data = data;
+          }
+          if (message) {
+            response.message = message;
+          }
+          return new Response(JSON.stringify(response), {
+            status,
+            headers: { "Content-Type": "application/json" },
+          });
         }),
       // 添加 c.fail 方法
       fail: vi
@@ -854,18 +862,22 @@ describe("getMCPServerStatus", () => {
       // 添加 c.success 方法
       success: vi
         .fn()
-        .mockImplementation((data: any, message?: string, status = 200) => {
-          return new Response(
-            JSON.stringify({
-              success: true,
-              data,
-              message,
-            }),
-            {
-              status,
-              headers: { "Content-Type": "application/json" },
-            }
-          );
+        .mockImplementation((data: unknown, message?: string, status = 200) => {
+          const response: {
+            success: true;
+            data?: unknown;
+            message?: string;
+          } = { success: true };
+          if (data !== undefined) {
+            response.data = data;
+          }
+          if (message) {
+            response.message = message;
+          }
+          return new Response(JSON.stringify(response), {
+            status,
+            headers: { "Content-Type": "application/json" },
+          });
         }),
       // 添加 c.fail 方法
       fail: vi
@@ -1004,18 +1016,22 @@ describe("listMCPServers", () => {
       // 添加 c.success 方法
       success: vi
         .fn()
-        .mockImplementation((data: any, message?: string, status = 200) => {
-          return new Response(
-            JSON.stringify({
-              success: true,
-              data,
-              message,
-            }),
-            {
-              status,
-              headers: { "Content-Type": "application/json" },
-            }
-          );
+        .mockImplementation((data: unknown, message?: string, status = 200) => {
+          const response: {
+            success: true;
+            data?: unknown;
+            message?: string;
+          } = { success: true };
+          if (data !== undefined) {
+            response.data = data;
+          }
+          if (message) {
+            response.message = message;
+          }
+          return new Response(JSON.stringify(response), {
+            status,
+            headers: { "Content-Type": "application/json" },
+          });
         }),
       // 添加 c.fail 方法
       fail: vi
@@ -1319,18 +1335,22 @@ describe("addMCPServer with type field normalization", () => {
       // 添加 c.success 方法
       success: vi
         .fn()
-        .mockImplementation((data: any, message?: string, status = 200) => {
-          return new Response(
-            JSON.stringify({
-              success: true,
-              data,
-              message,
-            }),
-            {
-              status,
-              headers: { "Content-Type": "application/json" },
-            }
-          );
+        .mockImplementation((data: unknown, message?: string, status = 200) => {
+          const response: {
+            success: true;
+            data?: unknown;
+            message?: string;
+          } = { success: true };
+          if (data !== undefined) {
+            response.data = data;
+          }
+          if (message) {
+            response.message = message;
+          }
+          return new Response(JSON.stringify(response), {
+            status,
+            headers: { "Content-Type": "application/json" },
+          });
         }),
       // 添加 c.fail 方法
       fail: vi
