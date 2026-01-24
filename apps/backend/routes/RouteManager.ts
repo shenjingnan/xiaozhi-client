@@ -4,7 +4,6 @@
  */
 
 import type { Context, Hono, Next } from "hono";
-import { createErrorResponse } from "../middlewares/error.middleware.js";
 import type { AppContext } from "../types/hono.context.js";
 import {
   type RouteDefinition,
@@ -105,12 +104,12 @@ export class RouteManager {
         return await handler(c);
       } catch (error) {
         console.error(`路由处理错误 [${method} ${path}]:`, error);
-        const errorResponse = createErrorResponse(
+        return c.fail(
           "HANDLER_ERROR",
           "处理器执行失败",
-          error instanceof Error ? error.message : String(error)
+          error instanceof Error ? error.message : String(error),
+          500
         );
-        return c.json(errorResponse, 500);
       }
     };
 
