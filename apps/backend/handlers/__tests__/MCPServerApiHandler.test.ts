@@ -164,6 +164,31 @@ describe("addMCPServer", () => {
 
     // 创建模拟 Context - 修复 mock 配置，返回真实的 Response 对象
     mockContext = {
+      // 添加 c.success 方法
+      success: vi.fn().mockImplementation((data: any, message?: string, status = 200) => {
+        return new Response(JSON.stringify({
+          success: true,
+          data,
+          message,
+        }), {
+          status,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+      // 添加 c.fail 方法
+      fail: vi.fn().mockImplementation((code: string, message: string, details?: any, status = 400) => {
+        return new Response(JSON.stringify({
+          success: false,
+          error: {
+            code,
+            message,
+            ...(details !== undefined && { details }),
+          },
+        }), {
+          status,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
       json: vi.fn().mockImplementation((data: any, status?: number) => {
         return new Response(JSON.stringify(data), {
           status: status || 200,
@@ -416,6 +441,31 @@ describe("removeMCPServer", () => {
 
     // 创建模拟 Context
     mockContext = {
+      // 添加 c.success 方法
+      success: vi.fn().mockImplementation((data: any, message?: string, status = 200) => {
+        return new Response(JSON.stringify({
+          success: true,
+          data,
+          message,
+        }), {
+          status,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+      // 添加 c.fail 方法
+      fail: vi.fn().mockImplementation((code: string, message: string, details?: any, status = 400) => {
+        return new Response(JSON.stringify({
+          success: false,
+          error: {
+            code,
+            message,
+            ...(details !== undefined && { details }),
+          },
+        }), {
+          status,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
       json: vi.fn().mockImplementation((data: any, status?: number) => {
         return new Response(JSON.stringify(data), {
           status: status || 200,
@@ -777,6 +827,31 @@ describe("getMCPServerStatus", () => {
 
     // 设置模拟的 Context
     mockContext = {
+      // 添加 c.success 方法
+      success: vi.fn().mockImplementation((data: any, message?: string, status = 200) => {
+        return new Response(JSON.stringify({
+          success: true,
+          data,
+          message,
+        }), {
+          status,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+      // 添加 c.fail 方法
+      fail: vi.fn().mockImplementation((code: string, message: string, details?: any, status = 400) => {
+        return new Response(JSON.stringify({
+          success: false,
+          error: {
+            code,
+            message,
+            ...(details !== undefined && { details }),
+          },
+        }), {
+          status,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
       req: {
         param: vi.fn(),
         // 添加 HonoRequest 所需的其他属性
@@ -890,6 +965,31 @@ describe("listMCPServers", () => {
 
     // 设置模拟的 Context
     mockContext = {
+      // 添加 c.success 方法
+      success: vi.fn().mockImplementation((data: any, message?: string, status = 200) => {
+        return new Response(JSON.stringify({
+          success: true,
+          data,
+          message,
+        }), {
+          status,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+      // 添加 c.fail 方法
+      fail: vi.fn().mockImplementation((code: string, message: string, details?: any, status = 400) => {
+        return new Response(JSON.stringify({
+          success: false,
+          error: {
+            code,
+            message,
+            ...(details !== undefined && { details }),
+          },
+        }), {
+          status,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
       json: vi.fn().mockImplementation((data, status) => ({
         status: status || 200,
         json: async () => data,
@@ -1168,6 +1268,31 @@ describe("addMCPServer with type field normalization", () => {
     );
 
     mockContext = {
+      // 添加 c.success 方法
+      success: vi.fn().mockImplementation((data: any, message?: string, status = 200) => {
+        return new Response(JSON.stringify({
+          success: true,
+          data,
+          message,
+        }), {
+          status,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+      // 添加 c.fail 方法
+      fail: vi.fn().mockImplementation((code: string, message: string, details?: any, status = 400) => {
+        return new Response(JSON.stringify({
+          success: false,
+          error: {
+            code,
+            message,
+            ...(details !== undefined && { details }),
+          },
+        }), {
+          status,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
       json: vi.fn().mockImplementation((data: any, status?: number) => {
         return new Response(JSON.stringify(data), {
           status: status || 200,

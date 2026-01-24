@@ -100,26 +100,12 @@ export interface MCPServerListResponse {
 
 /**
  * 统一响应格式接口
+ * 从 @middlewares/index.js 导入，保持类型一致性
  */
-export interface ApiErrorResponse {
-  error: {
-    code: MCPErrorCode;
-    message: string;
-    details?: {
-      serverName?: string;
-      config?: MCPServerConfig;
-      tools?: string[];
-      timestamp?: string;
-      [key: string]: unknown;
-    };
-  };
-}
-
-export interface ApiSuccessResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  message?: string;
-}
+export type {
+  ApiErrorResponse,
+  ApiSuccessResponse,
+} from "@middlewares/index.js";
 
 /**
  * 配置验证结果接口
@@ -144,24 +130,6 @@ export class MCPServerApiHandler {
     this.logger = logger;
     this.mcpServiceManager = mcpServiceManager;
     this.configManager = configManager;
-  }
-
-  /**
-   * 创建统一的错误响应
-   */
-  protected createErrorResponse(
-    code: MCPErrorCode,
-    message: string,
-    serverName?: string,
-    details?: Record<string, unknown>
-  ): ApiErrorResponse {
-    return {
-      error: {
-        code,
-        message,
-        details: serverName ? { serverName, ...details } : details,
-      },
-    };
   }
 
   /**
@@ -240,20 +208,6 @@ export class MCPServerApiHandler {
   }
 
   /**
-   * 创建统一的成功响应
-   */
-  protected createSuccessResponse<T>(
-    data?: T,
-    message?: string
-  ): ApiSuccessResponse<T> {
-    return {
-      success: true,
-      data,
-      message,
-    };
-  }
-
-  /**
    * 添加 MCP 服务
    * POST /api/mcp-servers
    * 支持两种格式：
@@ -285,7 +239,7 @@ export class MCPServerApiHandler {
           duration,
         });
 
-        return c.json(this.createSuccessResponse(result, result.message), 201);
+        return c.success(result, result.message, 201);
       }
       // 单服务格式
       const singleRequest = requestData as MCPServerAddRequest;
@@ -301,22 +255,11 @@ export class MCPServerApiHandler {
         status: result.status,
       });
 
-      const successResponse = this.createSuccessResponse(
-        result,
-        "MCP 服务添加成功"
-      );
-      return c.json(successResponse, 201);
+      return c.success(result, "MCP 服务添加成功", 201);
     } catch (error) {
       const mcpError = this.handleError(error, "addMCPServer", {
         requestData,
       });
-
-      const errorResponse = this.createErrorResponse(
-        mcpError.code,
-        mcpError.message,
-        undefined,
-        { error: mcpError.details }
-      );
 
       // 根据错误类型确定HTTP状态码
       let statusCode = 500;
@@ -332,7 +275,12 @@ export class MCPServerApiHandler {
         statusCode = 500; // 测试期望连接失败返回500而不是503
       }
 
-      return c.json(errorResponse, statusCode as 400 | 404 | 409 | 500);
+      return c.fail(
+        mcpError.code,
+        mcpError.message,
+        { error: mcpError.details },
+        statusCode
+      );
     }
   }
 
@@ -610,12 +558,12 @@ export class MCPServerApiHandler {
       const nameValidation =
         MCPServerConfigValidator.validateServiceName(serverName);
       if (!nameValidation.isValid) {
-        const errorResponse = this.createErrorResponse(
+        return c.fail(
           MCPErrorCode.INVALID_SERVICE_NAME,
           nameValidation.errors.join(", "),
-          serverName
+          { serverName },
+          400
         );
-        return c.json(errorResponse, 400);
       }
 
       // 3. 检查服务是否存在
@@ -625,12 +573,12 @@ export class MCPServerApiHandler {
           this.configManager
         )
       ) {
-        const errorResponse = this.createErrorResponse(
+        return c.fail(
           MCPErrorCode.SERVER_NOT_FOUND,
           "MCP 服务不存在",
-          serverName
+          { serverName },
+          404
         );
-        return c.json(errorResponse, 404);
       }
 
       // 4. 获取服务当前的工具列表（用于事件通知）
@@ -658,7 +606,7 @@ export class MCPServerApiHandler {
       });
 
       // 8. 返回成功响应
-      const successResponse = this.createSuccessResponse(
+      return c.success(
         {
           name: serverName,
           operation: "removed",
@@ -666,37 +614,37 @@ export class MCPServerApiHandler {
         },
         "MCP 服务移除成功"
       );
-      return c.json(successResponse, 200);
     } catch (error) {
       this.logger.error("移除 MCP 服务失败:", error);
 
       // 处理不同类型的错误
       if (error instanceof Error) {
         if (error.message.includes("服务不存在")) {
-          const errorResponse = this.createErrorResponse(
+          return c.fail(
             MCPErrorCode.SERVER_NOT_FOUND,
-            error.message
+            error.message,
+            undefined,
+            404
           );
-          return c.json(errorResponse, 404);
         }
 
         if (error.message.includes("配置更新")) {
-          const errorResponse = this.createErrorResponse(
+          return c.fail(
             MCPErrorCode.CONFIG_UPDATE_FAILED,
-            error.message
+            error.message,
+            undefined,
+            500
           );
-          return c.json(errorResponse, 500);
         }
       }
 
       // 其他未知错误
-      const errorResponse = this.createErrorResponse(
+      return c.fail(
         MCPErrorCode.REMOVE_FAILED,
         "移除 MCP 服务时发生错误",
-        undefined,
-        { error: error instanceof Error ? error.message : String(error) }
+        { error: error instanceof Error ? error.message : String(error) },
+        500
       );
-      return c.json(errorResponse, 500);
     }
   }
 
@@ -713,12 +661,12 @@ export class MCPServerApiHandler {
       const nameValidation =
         MCPServerConfigValidator.validateServiceName(serverName);
       if (!nameValidation.isValid) {
-        const errorResponse = this.createErrorResponse(
+        return c.fail(
           MCPErrorCode.INVALID_SERVICE_NAME,
           nameValidation.errors.join(", "),
-          serverName
+          { serverName },
+          400
         );
-        return c.json(errorResponse, 400);
       }
 
       // 3. 检查服务是否存在
@@ -728,45 +676,41 @@ export class MCPServerApiHandler {
           this.configManager
         )
       ) {
-        const errorResponse = this.createErrorResponse(
+        return c.fail(
           MCPErrorCode.SERVER_NOT_FOUND,
           "MCP 服务不存在",
-          serverName
+          { serverName },
+          404
         );
-        return c.json(errorResponse, 404);
       }
 
       // 4. 获取服务状态
       const serviceStatus = this.getServiceStatus(serverName);
 
       // 5. 返回成功响应
-      const successResponse = this.createSuccessResponse(
-        serviceStatus,
-        "MCP 服务状态获取成功"
-      );
-      return c.json(successResponse, 200);
+      return c.success(serviceStatus, "MCP 服务状态获取成功");
     } catch (error) {
       this.logger.error("获取 MCP 服务状态失败:", error);
 
       // 处理不同类型的错误
       if (error instanceof Error) {
         if (error.message.includes("服务不存在")) {
-          const errorResponse = this.createErrorResponse(
+          return c.fail(
             MCPErrorCode.SERVER_NOT_FOUND,
-            error.message
+            error.message,
+            undefined,
+            404
           );
-          return c.json(errorResponse, 404);
         }
       }
 
       // 其他未知错误
-      const errorResponse = this.createErrorResponse(
+      return c.fail(
         MCPErrorCode.INTERNAL_ERROR,
         "获取 MCP 服务状态时发生内部错误",
-        undefined,
-        { error: error instanceof Error ? error.message : String(error) }
+        { error: error instanceof Error ? error.message : String(error) },
+        500
       );
-      return c.json(errorResponse, 500);
     }
   }
 
@@ -795,22 +739,17 @@ export class MCPServerApiHandler {
       };
 
       // 4. 返回成功响应
-      const successResponse = this.createSuccessResponse(
-        listResponse,
-        "MCP 服务列表获取成功"
-      );
-      return c.json(successResponse, 200);
+      return c.success(listResponse, "MCP 服务列表获取成功");
     } catch (error) {
       this.logger.error("列出 MCP 服务失败:", error);
 
       // 其他未知错误
-      const errorResponse = this.createErrorResponse(
+      return c.fail(
         MCPErrorCode.INTERNAL_ERROR,
         "列出 MCP 服务时发生内部错误",
-        undefined,
-        { error: error instanceof Error ? error.message : String(error) }
+        { error: error instanceof Error ? error.message : String(error) },
+        500
       );
-      return c.json(errorResponse, 500);
     }
   }
 

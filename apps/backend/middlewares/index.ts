@@ -5,6 +5,8 @@ export {
   notFoundHandlerMiddleware,
   createErrorResponse,
   createSuccessResponse,
+  ApiErrorResponse,
+  ApiSuccessResponse,
 } from "./error.middleware.js";
 export { responseEnhancerMiddleware } from "./response-enhancer.middleware.js";
 export {

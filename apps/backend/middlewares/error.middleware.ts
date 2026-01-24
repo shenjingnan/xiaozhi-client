@@ -19,6 +19,7 @@ export interface ApiSuccessResponse<T> {
 
 /**
  * 创建统一的错误响应
+ * @deprecated 请使用 c.fail() 方法代替
  */
 export const createErrorResponse = (
   code: string,
@@ -36,6 +37,7 @@ export const createErrorResponse = (
 
 /**
  * 创建统一的成功响应
+ * @deprecated 请使用 c.success() 方法代替
  */
 export const createSuccessResponse = <T>(
   data?: T,
@@ -77,12 +79,12 @@ export const errorHandlerMiddleware = (err: Error, c: Context) => {
   }
 
   loggerInstance.error("HTTP request error:", err);
-  const errorResponse = createErrorResponse(
+  return c.fail(
     "INTERNAL_SERVER_ERROR",
     "服务器内部错误",
-    process.env.NODE_ENV === "development" ? err.stack : undefined
+    process.env.NODE_ENV === "development" ? err.stack : undefined,
+    500
   );
-  return c.json(errorResponse, 500);
 };
 
 /**
@@ -91,21 +93,25 @@ export const errorHandlerMiddleware = (err: Error, c: Context) => {
 export const notFoundHandlerMiddleware = (c: Context) => {
   // 如果是 API 路径，返回 API_NOT_FOUND
   if (c.req.path.startsWith("/api/")) {
-    const errorResponse = createErrorResponse(
+    return c.fail(
       "API_NOT_FOUND",
       "请求的资源不存在",
       {
         path: c.req.path,
         method: c.req.method,
-      }
+      },
+      404
     );
-    return c.json(errorResponse, 404);
   }
 
   // 非 API 路径返回通用的 NOT_FOUND
-  const errorResponse = createErrorResponse("NOT_FOUND", "请求的资源不存在", {
-    path: c.req.path,
-    method: c.req.method,
-  });
-  return c.json(errorResponse, 404);
+  return c.fail(
+    "NOT_FOUND",
+    "请求的资源不存在",
+    {
+      path: c.req.path,
+      method: c.req.method,
+    },
+    404
+  );
 };
