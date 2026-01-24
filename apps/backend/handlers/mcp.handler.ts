@@ -23,9 +23,9 @@ interface MCPServiceManagerAccess {
 }
 
 /**
- * MCPServerApiHandler 扩展接口，用于动态状态缓存
+ * MCPHandler 扩展接口，用于动态状态缓存
  */
-interface MCPServerApiHandlerWithCache {
+interface MCPHandlerWithCache {
   statusCache?: Map<string, MCPServerStatus>;
 }
 
@@ -118,7 +118,7 @@ export interface ValidationResult {
 /**
  * MCP 服务 API 处理器
  */
-export class MCPServerApiHandler {
+export class MCPHandler {
   protected logger: Logger;
   private mcpServiceManager: MCPServiceManager;
   private configManager: ConfigManager;
@@ -508,7 +508,7 @@ export class MCPServerApiHandler {
   private getPreviousStatus(serverName: string): MCPServerStatus | null {
     // 这里使用一个简单的Map来缓存状态
     // 在实际生产环境中，可能需要更持久化的缓存方案
-    const handlerWithCache = this as MCPServerApiHandlerWithCache;
+    const handlerWithCache = this as MCPHandlerWithCache;
     if (!handlerWithCache.statusCache) {
       handlerWithCache.statusCache = new Map();
     }
@@ -519,7 +519,7 @@ export class MCPServerApiHandler {
    * 更新状态缓存
    */
   private updateStatusCache(serverName: string, status: MCPServerStatus): void {
-    const handlerWithCache = this as MCPServerApiHandlerWithCache;
+    const handlerWithCache = this as MCPHandlerWithCache;
     if (!handlerWithCache.statusCache) {
       handlerWithCache.statusCache = new Map();
     }

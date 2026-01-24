@@ -7,10 +7,7 @@ import type { ConfigManager } from "@xiaozhi-client/config";
 import type { MCPServerConfig } from "@xiaozhi-client/config";
 import type { Context } from "hono";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  MCPServerApiHandler,
-  MCPServerConfigValidator,
-} from "../MCPServerApiHandler.js";
+import { MCPHandler, MCPServerConfigValidator } from "../mcp.handler.js";
 
 // 创建模拟对象
 const createMockConfigManager = (): Partial<ConfigManager> => ({
@@ -51,8 +48,8 @@ const testConfigDir = path.resolve(...testConfigDirParts);
 const getExpectedPath = (filename: string) =>
   path.join(testConfigDir, filename);
 
-describe("MCPServerApiHandler", () => {
-  let handler: MCPServerApiHandler;
+describe("MCPHandler", () => {
+  let handler: MCPHandler;
   let mockConfigManager: Partial<ConfigManager>;
   let mockMCPServiceManager: Partial<MCPServiceManager>;
   let mockEventBus: Partial<EventBus>;
@@ -66,7 +63,7 @@ describe("MCPServerApiHandler", () => {
     mockEventBus = createMockEventBus();
 
     // 创建处理器实例
-    handler = new MCPServerApiHandler(
+    handler = new MCPHandler(
       mockMCPServiceManager as MCPServiceManager,
       mockConfigManager as ConfigManager
     );
@@ -74,14 +71,14 @@ describe("MCPServerApiHandler", () => {
 
   describe("构造函数和依赖注入", () => {
     it("应该正确创建处理器实例", () => {
-      expect(handler).toBeInstanceOf(MCPServerApiHandler);
+      expect(handler).toBeInstanceOf(MCPHandler);
       expect(handler).toBeDefined();
     });
 
     it("应该正确注入依赖", () => {
       // 通过测试处理器创建成功间接验证依赖注入成功
       expect(handler).toBeDefined();
-      expect(handler).toBeInstanceOf(MCPServerApiHandler);
+      expect(handler).toBeInstanceOf(MCPHandler);
     });
   });
 
@@ -135,7 +132,7 @@ describe("MCPServerApiHandler", () => {
 });
 
 describe("addMCPServer", () => {
-  let handler: MCPServerApiHandler;
+  let handler: MCPHandler;
   let mockConfigManager: Partial<ConfigManager>;
   let mockMCPServiceManager: Partial<MCPServiceManager>;
   let mockEventBus: Partial<EventBus>;
@@ -157,7 +154,7 @@ describe("addMCPServer", () => {
 
     // mockConfigManager 和 mockMCPServiceManager 已经在 createMock 函数中配置了
 
-    handler = new MCPServerApiHandler(
+    handler = new MCPHandler(
       mockMCPServiceManager as MCPServiceManager,
       mockConfigManager as ConfigManager
     );
@@ -437,7 +434,7 @@ describe("addMCPServer", () => {
 });
 
 describe("removeMCPServer", () => {
-  let handler: MCPServerApiHandler;
+  let handler: MCPHandler;
   let mockConfigManager: Partial<ConfigManager>;
   let mockMCPServiceManager: Partial<MCPServiceManager>;
   let mockEventBus: Partial<EventBus>;
@@ -450,7 +447,7 @@ describe("removeMCPServer", () => {
     mockMCPServiceManager = createMockMCPServiceManager();
     mockEventBus = createMockEventBus();
 
-    handler = new MCPServerApiHandler(
+    handler = new MCPHandler(
       mockMCPServiceManager as MCPServiceManager,
       mockConfigManager as ConfigManager
     );
@@ -844,7 +841,7 @@ describe("MCPServerConfigValidator", () => {
 
 // 测试 getMCPServerStatus 方法
 describe("getMCPServerStatus", () => {
-  let handler: MCPServerApiHandler;
+  let handler: MCPHandler;
   let mockMCPServiceManager: Partial<MCPServiceManager>;
   let mockConfigManager: Partial<ConfigManager>;
   let mockContext: Partial<Context>;
@@ -852,7 +849,7 @@ describe("getMCPServerStatus", () => {
   beforeEach(() => {
     mockMCPServiceManager = createMockMCPServiceManager();
     mockConfigManager = createMockConfigManager();
-    handler = new MCPServerApiHandler(
+    handler = new MCPHandler(
       mockMCPServiceManager as MCPServiceManager,
       mockConfigManager as ConfigManager
     );
@@ -998,7 +995,7 @@ describe("getMCPServerStatus", () => {
 
 // 测试 listMCPServers 方法
 describe("listMCPServers", () => {
-  let handler: MCPServerApiHandler;
+  let handler: MCPHandler;
   let mockMCPServiceManager: Partial<MCPServiceManager>;
   let mockConfigManager: Partial<ConfigManager>;
   let mockContext: Partial<Context>;
@@ -1006,7 +1003,7 @@ describe("listMCPServers", () => {
   beforeEach(() => {
     mockMCPServiceManager = createMockMCPServiceManager();
     mockConfigManager = createMockConfigManager();
-    handler = new MCPServerApiHandler(
+    handler = new MCPHandler(
       mockMCPServiceManager as MCPServiceManager,
       mockConfigManager as ConfigManager
     );
@@ -1313,7 +1310,7 @@ describe("TypeFieldNormalizer", () => {
 
 // 测试集成：验证 addMCPServer 中的 type 字段标准化
 describe("addMCPServer with type field normalization", () => {
-  let handler: MCPServerApiHandler;
+  let handler: MCPHandler;
   let mockConfigManager: Partial<ConfigManager>;
   let mockMCPServiceManager: Partial<MCPServiceManager>;
   let mockEventBus: Partial<EventBus>;
@@ -1326,7 +1323,7 @@ describe("addMCPServer with type field normalization", () => {
     mockMCPServiceManager = createMockMCPServiceManager();
     mockEventBus = createMockEventBus();
 
-    handler = new MCPServerApiHandler(
+    handler = new MCPHandler(
       mockMCPServiceManager as MCPServiceManager,
       mockConfigManager as ConfigManager
     );
