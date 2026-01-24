@@ -461,6 +461,75 @@ describe("EndpointManager", () => {
     });
   });
 
+  describe("reconnect", () => {
+    beforeEach(async () => {
+      manager.addEndpoint(mockEndpoints[0]);
+      manager.addEndpoint(mockEndpoints[1]);
+
+      await manager.connect();
+    });
+
+    it("应该重连所有端点（不传参数）", async () => {
+      await manager.reconnect();
+
+      expect(manager.isAnyConnected()).toBe(true);
+      const status = manager.getConnectionStatus();
+      expect(status[0].connected).toBe(true);
+      expect(status[1].connected).toBe(true);
+    });
+
+    it("应该重连单个端点（传入 endpoint 参数）", async () => {
+      await manager.reconnect("ws://endpoint1.example.com");
+
+      expect(manager.isEndpointConnected("ws://endpoint1.example.com")).toBe(true);
+    });
+
+    it("应该支持自定义延迟参数", async () => {
+      const startTime = Date.now();
+
+      await manager.reconnect("ws://endpoint1.example.com", 100);
+
+      const elapsed = Date.now() - startTime;
+      expect(elapsed).toBeGreaterThanOrEqual(100);
+      expect(manager.isEndpointConnected("ws://endpoint1.example.com")).toBe(true);
+    });
+
+    it("重连不存在的端点应该抛出错误", async () => {
+      await expect(manager.reconnect("ws://nonexistent.com")).rejects.toThrow(
+        "接入点不存在"
+      );
+    });
+
+    it("重连所有端点后应该更新状态", async () => {
+      // 先断开所有连接
+      await manager.disconnect();
+
+      // 重连所有端点
+      await manager.reconnect();
+
+      const status = manager.getConnectionStatus();
+      expect(status[0].connected).toBe(true);
+      expect(status[1].connected).toBe(true);
+      expect(status[0].initialized).toBe(true);
+      expect(status[1].initialized).toBe(true);
+      expect(status[0].lastConnected).toBeInstanceOf(Date);
+      expect(status[1].lastConnected).toBeInstanceOf(Date);
+    });
+
+    it("重连单个端点后应该更新状态", async () => {
+      // 先断开单个端点
+      await manager.disconnect("ws://endpoint1.example.com");
+
+      // 重连该端点
+      await manager.reconnect("ws://endpoint1.example.com");
+
+      const status = manager.getEndpointStatus("ws://endpoint1.example.com");
+      expect(status?.connected).toBe(true);
+      expect(status?.initialized).toBe(true);
+      expect(status?.lastConnected).toBeInstanceOf(Date);
+    });
+  });
+
   describe("clearEndpoints", () => {
     beforeEach(async () => {
       manager.addEndpoint(mockEndpoints[0]);
