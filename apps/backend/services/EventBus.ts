@@ -31,6 +31,20 @@ export interface EventBusEvents {
     source: string;
   };
 
+  // 接入点重连事件
+  "endpoint:reconnect:completed": {
+    trigger: "mcp_server_added" | "mcp_server_batch_added" | "manual" | "other";
+    serverName?: string;
+    endpointCount: number;
+    timestamp: Date;
+  };
+  "endpoint:reconnect:failed": {
+    trigger: "mcp_server_added" | "mcp_server_batch_added" | "manual" | "other";
+    serverName?: string;
+    error: string;
+    timestamp: Date;
+  };
+
   // 服务相关事件
   "service:restart:requested": {
     serviceName: string;
