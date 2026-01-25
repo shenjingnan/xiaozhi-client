@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MCPRouteHandler } from "../MCPRouteHandler.js";
+import { MCPRouteHandler } from "../mcp.handler.js";
 
 // Mock MCPServiceManager - 在 Context 中提供
 const mockServiceManager = {
