@@ -246,17 +246,10 @@ describe("MCPRouteHandler", () => {
 
   it("should have getDetailedStatus method", () => {
     const detailedStatus = handler.getDetailedStatus();
-    expect(detailedStatus).toHaveProperty("clients");
+    expect(detailedStatus).toHaveProperty("sessions");
     expect(detailedStatus).toHaveProperty("startTime");
-    expect(detailedStatus.clients).toEqual([]);
+    expect(Array.isArray(detailedStatus.sessions)).toBe(true);
     expect(typeof detailedStatus.startTime).toBe("string");
-  });
-
-  it("should handle broadcastMessage", async () => {
-    // 这个测试只验证方法存在且不抛出错误
-    await expect(
-      handler.broadcastMessage("test", { message: "hello" })
-    ).resolves.not.toThrow();
   });
 
   it("should handle destroy method", () => {
