@@ -436,7 +436,7 @@ vi.mock("./handlers/CozeApiHandler", () => {
   };
 });
 
-vi.mock("./handlers/MCPRouteHandler", () => {
+vi.mock("./handlers/mcp.handler", () => {
   const mockMCPRouteHandler = {
     handlePost: vi.fn((c) =>
       c.json({
