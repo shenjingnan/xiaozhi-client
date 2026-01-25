@@ -6,3 +6,4 @@ export * from "./message.js";
 export * from "@/lib/mcp/cache.js";
 export * from "./custom.js";
 export * from "./log.js";
+export * from "./session-manager.js";

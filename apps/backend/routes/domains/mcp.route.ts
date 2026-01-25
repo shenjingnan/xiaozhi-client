@@ -22,4 +22,9 @@ export const mcpRoutes: RouteDefinition[] = [
     path: "/mcp",
     handler: h((handler, c) => handler.handleGet(c)),
   },
+  {
+    method: "DELETE",
+    path: "/mcp",
+    handler: h((handler, c) => handler.handleDelete(c)),
+  },
 ];
