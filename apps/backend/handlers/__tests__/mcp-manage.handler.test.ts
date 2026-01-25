@@ -7,7 +7,7 @@ import type { ConfigManager } from "@xiaozhi-client/config";
 import type { MCPServerConfig } from "@xiaozhi-client/config";
 import type { Context } from "hono";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { MCPHandler, MCPServerConfigValidator } from "../mcp.handler.js";
+import { MCPHandler, MCPServerConfigValidator } from "../mcp-manage.handler.js";
 
 // 创建模拟对象
 const createMockConfigManager = (): Partial<ConfigManager> => ({
