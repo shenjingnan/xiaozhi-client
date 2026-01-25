@@ -7,8 +7,8 @@ import type {
   ConfigApiHandler,
   CozeApiHandler,
   EndpointHandler,
+  MCPHandler,
   MCPRouteHandler,
-  MCPServerApiHandler,
   ServiceApiHandler,
   StaticFileHandler,
   StatusApiHandler,
@@ -41,7 +41,7 @@ export interface HandlerDependencies {
   /** MCP 路由处理器 */
   mcpRouteHandler: MCPRouteHandler;
   /** MCP 服务器管理处理器（可选） */
-  mcpServerApiHandler?: MCPServerApiHandler;
+  mcpHandler?: MCPHandler;
   /** 更新管理处理器 */
   updateApiHandler: UpdateApiHandler;
   /** 扣子 API 处理器 */

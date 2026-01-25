@@ -13,11 +13,11 @@ import type { HandlerDependencies, RouteDefinition } from "../types.js";
 const withMCPServerHandler = async (
   c: Context,
   handlerFn: (
-    handler: NonNullable<HandlerDependencies["mcpServerApiHandler"]>
+    handler: NonNullable<HandlerDependencies["mcpHandler"]>
   ) => Promise<Response>
 ): Promise<Response> => {
   const dependencies = c.get("dependencies") as HandlerDependencies;
-  const handler = dependencies.mcpServerApiHandler;
+  const handler = dependencies.mcpHandler;
 
   if (!handler) {
     return c.json({ error: "MCP Server API Handler not initialized" }, 503);

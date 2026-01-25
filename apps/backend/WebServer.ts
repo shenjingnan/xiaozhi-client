@@ -7,8 +7,8 @@ import {
   ConfigApiHandler,
   CozeApiHandler,
   HeartbeatHandler,
+  MCPHandler,
   MCPRouteHandler,
-  MCPServerApiHandler,
   RealtimeNotificationHandler,
   ServiceApiHandler,
   StaticFileHandler,
@@ -117,7 +117,7 @@ export class WebServer {
   private versionApiHandler: VersionApiHandler;
   private staticFileHandler: StaticFileHandler;
   private mcpRouteHandler: MCPRouteHandler;
-  private mcpServerApiHandler?: MCPServerApiHandler;
+  private mcpHandler?: MCPHandler;
   private updateApiHandler: UpdateApiHandler;
   private cozeApiHandler: CozeApiHandler;
 
@@ -210,10 +210,7 @@ export class WebServer {
       const config = await this.loadConfiguration();
 
       // 2.1. 初始化 MCP 服务器 API 处理器
-      this.mcpServerApiHandler = new MCPServerApiHandler(
-        this.mcpServiceManager,
-        configManager
-      );
+      this.mcpHandler = new MCPHandler(this.mcpServiceManager, configManager);
 
       // 3. 从配置加载 MCP 服务
       await this.loadMCPServicesFromConfig(config.mcpServers);
@@ -549,7 +546,7 @@ export class WebServer {
       versionApiHandler: this.versionApiHandler,
       staticFileHandler: this.staticFileHandler,
       mcpRouteHandler: this.mcpRouteHandler,
-      mcpServerApiHandler: this.mcpServerApiHandler,
+      mcpHandler: this.mcpHandler,
       updateApiHandler: this.updateApiHandler,
       cozeApiHandler: this.cozeApiHandler,
       // endpointHandler 通过中间件动态注入，不在此初始化
