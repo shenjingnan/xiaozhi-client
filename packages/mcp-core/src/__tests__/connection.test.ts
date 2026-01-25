@@ -180,8 +180,8 @@ describe("MCPConnection", () => {
 
       const connectionPromise = connection.connect();
 
-      // 快进时间以触发超时
-      vi.advanceTimersByTime(10000);
+      // 运行所有待处理的计时器以触发超时
+      vi.runOnlyPendingTimers();
 
       await expect(connectionPromise).rejects.toThrow("连接超时");
     });
