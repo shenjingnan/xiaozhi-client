@@ -1584,15 +1584,6 @@ describe("WebServer", () => {
       expect(data.jsonrpc).toBe("2.0");
       expect(data.id).toBe(1);
     });
-
-    it("应该处理 MCP GET 请求", async () => {
-      const response = await fetch(`http://localhost:${currentPort}/mcp`);
-      expect(response.status).toBe(200);
-
-      const data = await response.json();
-      expect(data.jsonrpc).toBe("2.0");
-      expect(data.result.status).toBe("ok");
-    });
   });
 
   describe("MCP 端点管理测试", () => {

@@ -1,6 +1,6 @@
 /**
  * MCP 协议路由模块
- * 处理 MCP 协议相关的 API 路由
+ * 处理 MCP 协议相关的 API 路由（仅 POST 模式）
  */
 
 import type { RouteDefinition } from "../types.js";
@@ -16,10 +16,5 @@ export const mcpRoutes: RouteDefinition[] = [
     method: "POST",
     path: "/mcp",
     handler: h((handler, c) => handler.handlePost(c)),
-  },
-  {
-    method: "GET",
-    path: "/mcp",
-    handler: h((handler, c) => handler.handleGet(c)),
   },
 ];

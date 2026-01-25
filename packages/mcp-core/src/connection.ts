@@ -75,8 +75,8 @@ export class MCPConnection {
     );
 
     return new Promise((resolve, reject) => {
-      // 设置连接超时（使用固定默认值 10 秒）
-      const CONNECTION_TIMEOUT = 10000;
+      // 设置连接超时（使用固定默认值 30 秒）
+      const CONNECTION_TIMEOUT = 30000;
       this.connectionTimeout = setTimeout(() => {
         const error = new Error(`连接超时 (${CONNECTION_TIMEOUT}ms)`);
         this.handleConnectionError(error);
