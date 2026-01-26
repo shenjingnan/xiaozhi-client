@@ -10,11 +10,11 @@ import {
   MCPHandler,
   MCPRouteHandler,
   MCPToolHandler,
+  MCPToolLogHandler,
   RealtimeNotificationHandler,
   ServiceApiHandler,
   StaticFileHandler,
   StatusApiHandler,
-  ToolCallLogApiHandler,
   UpdateApiHandler,
   VersionApiHandler,
 } from "@handlers/index.js";
@@ -113,7 +113,7 @@ export class WebServer {
   private statusApiHandler: StatusApiHandler;
   private serviceApiHandler: ServiceApiHandler;
   private mcpToolHandler: MCPToolHandler;
-  private toolCallLogApiHandler: ToolCallLogApiHandler;
+  private mcpToolLogHandler: MCPToolLogHandler;
   private versionApiHandler: VersionApiHandler;
   private staticFileHandler: StaticFileHandler;
   private mcpRouteHandler: MCPRouteHandler;
@@ -157,7 +157,7 @@ export class WebServer {
     this.statusApiHandler = new StatusApiHandler(this.statusService);
     this.serviceApiHandler = new ServiceApiHandler(this.statusService);
     this.mcpToolHandler = new MCPToolHandler();
-    this.toolCallLogApiHandler = new ToolCallLogApiHandler();
+    this.mcpToolLogHandler = new MCPToolLogHandler();
     this.versionApiHandler = new VersionApiHandler();
     this.staticFileHandler = new StaticFileHandler();
     this.mcpRouteHandler = new MCPRouteHandler();
@@ -542,7 +542,7 @@ export class WebServer {
       statusApiHandler: this.statusApiHandler,
       serviceApiHandler: this.serviceApiHandler,
       mcpToolHandler: this.mcpToolHandler,
-      toolCallLogApiHandler: this.toolCallLogApiHandler,
+      mcpToolLogHandler: this.mcpToolLogHandler,
       versionApiHandler: this.versionApiHandler,
       staticFileHandler: this.staticFileHandler,
       mcpRouteHandler: this.mcpRouteHandler,

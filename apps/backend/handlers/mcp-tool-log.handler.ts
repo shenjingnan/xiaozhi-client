@@ -81,7 +81,7 @@ const ToolCallQuerySchema = z
 /**
  * 工具调用日志 API 处理器
  */
-export class ToolCallLogApiHandler {
+export class MCPToolLogHandler {
   private toolCallLogService: ToolCallLogService;
 
   constructor() {
