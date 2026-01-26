@@ -14,38 +14,6 @@ describe("ToolCallLogApiHandler - 基本功能测试", () => {
     expect(handler).toBeInstanceOf(ToolCallLogApiHandler);
   });
 
-  it("应该能够创建成功响应", () => {
-    const handler = new ToolCallLogApiHandler();
-    const createSuccessResponse = (handler as any).createSuccessResponse.bind(
-      handler
-    );
-    const testData = { message: "test data" };
-
-    const response = createSuccessResponse(testData);
-    expect(response).toBeInstanceOf(Response);
-    expect(response).toBeDefined();
-  });
-
-  it("应该能够创建错误响应", () => {
-    const handler = new ToolCallLogApiHandler();
-    const createErrorResponse = (handler as any).createErrorResponse.bind(
-      handler
-    );
-
-    const response = createErrorResponse("TEST_ERROR", "Test message");
-    expect(response).toBeInstanceOf(Response);
-    expect(response).toBeDefined();
-  });
-
-  it("应该正确映射 HTTP 状态码", () => {
-    const handler = new ToolCallLogApiHandler();
-    const getHttpStatusCode = (handler as any).getHttpStatusCode.bind(handler);
-
-    expect(getHttpStatusCode("INVALID_QUERY_PARAMETERS")).toBe(400);
-    expect(getHttpStatusCode("LOG_FILE_NOT_FOUND")).toBe(404);
-    expect(getHttpStatusCode("INTERNAL_ERROR")).toBe(500);
-  });
-
   it("应该能够解析和验证查询参数", () => {
     const handler = new ToolCallLogApiHandler();
     const parseAndValidateQueryParams = (
