@@ -78,19 +78,21 @@ describe("ToolApiHandler - 集成测试", () => {
           }),
         };
       }),
-      fail: vi.fn((code: string, message: string, details?: unknown, status?: number) => {
-        return {
-          status: status || 500,
-          json: () => ({
-            success: false,
-            error: {
-              code,
-              message,
-              details,
-            },
-          }),
-        };
-      }),
+      fail: vi.fn(
+        (code: string, message: string, details?: unknown, status?: number) => {
+          return {
+            status: status || 500,
+            json: () => ({
+              success: false,
+              error: {
+                code,
+                message,
+                details,
+              },
+            }),
+          };
+        }
+      ),
       // 添加其他可能需要的 Hono Context 方法
       set: vi.fn(),
       has: vi.fn(),

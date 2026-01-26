@@ -82,19 +82,21 @@ describe("ToolApiHandler - 参数配置功能", () => {
           }),
         };
       }),
-      fail: vi.fn((code: string, message: string, details?: unknown, status?: number) => {
-        return {
-          status: status || 500,
-          json: () => ({
-            success: false,
-            error: {
-              code,
-              message,
-              details,
-            },
-          }),
-        };
-      }),
+      fail: vi.fn(
+        (code: string, message: string, details?: unknown, status?: number) => {
+          return {
+            status: status || 500,
+            json: () => ({
+              success: false,
+              error: {
+                code,
+                message,
+                details,
+              },
+            }),
+          };
+        }
+      ),
     } as any;
     vi.clearAllMocks();
   });

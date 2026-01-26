@@ -80,19 +80,21 @@ describe("ToolApiHandler - 核心功能测试", () => {
           }),
         };
       }),
-      fail: vi.fn((code: string, message: string, details?: unknown, status?: number) => {
-        return {
-          status: status || 500,
-          json: () => ({
-            success: false,
-            error: {
-              code,
-              message,
-              details,
-            },
-          }),
-        };
-      }),
+      fail: vi.fn(
+        (code: string, message: string, details?: unknown, status?: number) => {
+          return {
+            status: status || 500,
+            json: () => ({
+              success: false,
+              error: {
+                code,
+                message,
+                details,
+              },
+            }),
+          };
+        }
+      ),
     } as any;
     vi.clearAllMocks();
   });
