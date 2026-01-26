@@ -59,13 +59,55 @@ describe("ToolApiHandler - 集成测试", () => {
       req: {
         json: vi.fn(),
       },
-      json: vi.fn(),
+      // json 是底层方法，需要被 success/fail 调用
+      json: vi.fn((data: any, status?: number) => ({
+        status: status || 200,
+        data,
+      })),
       // 添加依赖注入支持
       get: vi.fn((key: string) => {
         if (key === "mcpServiceManager") {
           return mockServiceManager;
         }
         return undefined;
+      }),
+      // success 方法会调用 json
+      success: vi.fn(function (
+        this: any,
+        data: unknown,
+        message?: string,
+        status = 200
+      ) {
+        const response: any = {
+          success: true,
+          message,
+        };
+        if (data !== undefined) {
+          response.data = data;
+        }
+        // 调用被 mock 的 json 方法
+        return this.json(response, status);
+      }),
+      // fail 方法会调用 json
+      fail: vi.fn(function (
+        this: any,
+        code: string,
+        message: string,
+        details?: unknown,
+        status = 400
+      ) {
+        const response: any = {
+          success: false,
+          error: {
+            code,
+            message,
+          },
+        };
+        if (details !== undefined) {
+          response.error.details = details;
+        }
+        // 调用被 mock 的 json 方法
+        return this.json(response, status);
       }),
       // 添加其他可能需要的 Hono Context 方法
       set: vi.fn(),
@@ -134,14 +176,13 @@ describe("ToolApiHandler - 集成测试", () => {
         { input: "测试输入" },
         { timeout: 60000 }
       );
-      expect(mockContext.json).toHaveBeenCalledWith({
-        success: true,
-        data: {
+      expect(mockContext.success).toHaveBeenCalledWith(
+        {
           content: [{ type: "text", text: "代理工具调用成功" }],
           isError: false,
         },
-        message: "工具调用成功",
-      });
+        "工具调用成功"
+      );
     });
 
     it("应该支持 http 类型的 handler", async () => {
@@ -199,14 +240,13 @@ describe("ToolApiHandler - 集成测试", () => {
         { url: "https://test.com", method: "GET" },
         { timeout: 60000 }
       );
-      expect(mockContext.json).toHaveBeenCalledWith({
-        success: true,
-        data: {
+      expect(mockContext.success).toHaveBeenCalledWith(
+        {
           content: [{ type: "text", text: "HTTP工具调用成功" }],
           isError: false,
         },
-        message: "工具调用成功",
-      });
+        "工具调用成功"
+      );
     });
 
     it("应该支持 function 类型的 handler", async () => {
@@ -263,14 +303,13 @@ describe("ToolApiHandler - 集成测试", () => {
         { x: 5, y: 3 },
         { timeout: 60000 }
       );
-      expect(mockContext.json).toHaveBeenCalledWith({
-        success: true,
-        data: {
+      expect(mockContext.success).toHaveBeenCalledWith(
+        {
           content: [{ type: "text", text: "8" }],
           isError: false,
         },
-        message: "工具调用成功",
-      });
+        "工具调用成功"
+      );
     });
   });
 
@@ -339,14 +378,10 @@ describe("ToolApiHandler - 集成测试", () => {
       await toolApiHandler.callTool(mockContext);
 
       // Assert
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          success: false,
-          error: {
-            code: "INVALID_ARGUMENTS",
-            message: expect.stringContaining("参数验证失败"),
-          },
-        },
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "INVALID_ARGUMENTS",
+        expect.stringContaining("参数验证失败"),
+        undefined,
         500
       );
     });
@@ -429,14 +464,13 @@ describe("ToolApiHandler - 集成测试", () => {
         },
         { timeout: 60000 }
       );
-      expect(mockContext.json).toHaveBeenCalledWith({
-        success: true,
-        data: {
+      expect(mockContext.success).toHaveBeenCalledWith(
+        {
           content: [{ type: "text", text: "connected" }],
           isError: false,
         },
-        message: "工具调用成功",
-      });
+        "工具调用成功"
+      );
     });
   });
 
@@ -486,15 +520,10 @@ describe("ToolApiHandler - 集成测试", () => {
         })
       );
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: true,
-          data: expect.objectContaining({
-            tool: expect.any(Object),
-          }),
-          message: expect.stringContaining("添加成功"),
-        })
-      );
+      expect(mockContext.success).toHaveBeenCalled();
+      const successCall = mockContext.success.mock.calls[0];
+      expect(successCall[0]).toHaveProperty("tool");
+      expect(successCall[1]).toContain("添加成功");
     });
 
     it("应该在工作流参数不完整时返回错误", async () => {
@@ -507,14 +536,10 @@ describe("ToolApiHandler - 集成测试", () => {
 
       const response = await toolApiHandler.addCustomTool(mockContext);
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: expect.objectContaining({
-            code: "INVALID_REQUEST",
-            message: expect.stringContaining("workflow_id 不能为空"),
-          }),
-        }),
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "INVALID_REQUEST",
+        expect.stringContaining("workflow_id 不能为空"),
+        undefined,
         400
       );
     });
@@ -526,14 +551,10 @@ describe("ToolApiHandler - 集成测试", () => {
 
       const response = await toolApiHandler.removeCustomTool(mockContext);
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: expect.objectContaining({
-            code: "INVALID_REQUEST",
-            message: "工具名称不能为空",
-          }),
-        }),
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "INVALID_REQUEST",
+        "工具名称不能为空",
+        undefined,
         400
       );
     });
@@ -551,11 +572,12 @@ describe("ToolApiHandler - 集成测试", () => {
 
       const response = await toolApiHandler.removeCustomTool(mockContext);
 
-      const call = mockContext.json.mock.calls[0];
-      expect(call[1]).toBe(404);
-      expect(call[0].success).toBe(false);
-      expect(call[0].error.code).toBe("TOOL_NOT_FOUND");
-      expect(call[0].error.message).toContain("不存在");
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "TOOL_NOT_FOUND",
+        expect.stringContaining("不存在"),
+        undefined,
+        404
+      );
     });
   });
 
@@ -665,13 +687,10 @@ describe("ToolApiHandler - 集成测试", () => {
 
         const response = await toolApiHandler.addCustomTool(mockContext);
 
-        expect(mockContext.json).toHaveBeenCalledWith(
-          expect.objectContaining({
-            success: false,
-            error: expect.objectContaining({
-              message: expect.stringContaining("workflow_id"),
-            }),
-          }),
+        expect(mockContext.fail).toHaveBeenCalledWith(
+          "INVALID_REQUEST",
+          "workflow_id 不能为空且必须是非空字符串",
+          undefined,
           400
         );
       });
@@ -694,13 +713,10 @@ describe("ToolApiHandler - 集成测试", () => {
 
         const response = await toolApiHandler.addCustomTool(mockContext);
 
-        expect(mockContext.json).toHaveBeenCalledWith(
-          expect.objectContaining({
-            success: false,
-            error: expect.objectContaining({
-              message: expect.stringContaining("工作流ID应为数字格式"),
-            }),
-          }),
+        expect(mockContext.fail).toHaveBeenCalledWith(
+          "VALIDATION_ERROR",
+          expect.stringContaining("工作流ID应为数字格式"),
+          undefined,
           400
         );
       });
@@ -726,13 +742,10 @@ describe("ToolApiHandler - 集成测试", () => {
 
         const response = await toolApiHandler.addCustomTool(mockContext);
 
-        expect(mockContext.json).toHaveBeenCalledWith(
-          expect.objectContaining({
-            success: false,
-            error: expect.objectContaining({
-              message: expect.stringContaining("扣子API Token"),
-            }),
-          }),
+        expect(mockContext.fail).toHaveBeenCalledWith(
+          "CONFIGURATION_ERROR",
+          expect.stringContaining("扣子API Token"),
+          undefined,
           422
         );
       });
@@ -752,13 +765,10 @@ describe("ToolApiHandler - 集成测试", () => {
 
         const response = await toolApiHandler.addCustomTool(mockContext);
 
-        expect(mockContext.json).toHaveBeenCalledWith(
-          expect.objectContaining({
-            success: false,
-            error: expect.objectContaining({
-              message: expect.stringContaining("应用ID"),
-            }),
-          }),
+        expect(mockContext.fail).toHaveBeenCalledWith(
+          "VALIDATION_ERROR",
+          expect.stringContaining("应用ID"),
+          undefined,
           400
         );
       });
@@ -781,15 +791,10 @@ describe("ToolApiHandler - 集成测试", () => {
 
         const response = await toolApiHandler.addCustomTool(mockContext);
 
-        expect(mockContext.json).toHaveBeenCalledWith(
-          expect.objectContaining({
-            success: false,
-            error: expect.objectContaining({
-              message: expect.stringContaining(
-                "应用ID只能包含字母、数字、下划线和连字符"
-              ),
-            }),
-          }),
+        expect(mockContext.fail).toHaveBeenCalledWith(
+          "VALIDATION_ERROR",
+          expect.stringContaining("应用ID只能包含字母、数字、下划线和连字符"),
+          undefined,
           400
         );
       });
@@ -812,13 +817,10 @@ describe("ToolApiHandler - 集成测试", () => {
 
         const response = await toolApiHandler.addCustomTool(mockContext);
 
-        expect(mockContext.json).toHaveBeenCalledWith(
-          expect.objectContaining({
-            success: false,
-            error: expect.objectContaining({
-              message: expect.stringContaining("工作流名称不能超过100个字符"),
-            }),
-          }),
+        expect(mockContext.fail).toHaveBeenCalledWith(
+          "VALIDATION_ERROR",
+          expect.stringContaining("工作流名称不能超过100个字符"),
+          undefined,
           400
         );
       });
@@ -841,13 +843,10 @@ describe("ToolApiHandler - 集成测试", () => {
 
         const response = await toolApiHandler.addCustomTool(mockContext);
 
-        expect(mockContext.json).toHaveBeenCalledWith(
-          expect.objectContaining({
-            success: false,
-            error: expect.objectContaining({
-              message: expect.stringContaining("工作流的时间信息有误"),
-            }),
-          }),
+        expect(mockContext.fail).toHaveBeenCalledWith(
+          "VALIDATION_ERROR",
+          expect.stringContaining("工作流的时间信息有误"),
+          undefined,
           400
         );
       });
@@ -870,13 +869,10 @@ describe("ToolApiHandler - 集成测试", () => {
 
         const response = await toolApiHandler.addCustomTool(mockContext);
 
-        expect(mockContext.json).toHaveBeenCalledWith(
-          expect.objectContaining({
-            success: false,
-            error: expect.objectContaining({
-              message: expect.stringContaining("敏感词"),
-            }),
-          }),
+        expect(mockContext.fail).toHaveBeenCalledWith(
+          "VALIDATION_ERROR",
+          expect.stringContaining("敏感词"),
+          undefined,
           400
         );
       });
@@ -904,13 +900,10 @@ describe("ToolApiHandler - 集成测试", () => {
 
         const response = await toolApiHandler.addCustomTool(mockContext);
 
-        expect(mockContext.json).toHaveBeenCalledWith(
-          expect.objectContaining({
-            success: false,
-            error: expect.objectContaining({
-              message: expect.stringContaining("生成的工具配置验证失败"),
-            }),
-          }),
+        expect(mockContext.fail).toHaveBeenCalledWith(
+          "VALIDATION_ERROR",
+          expect.stringContaining("工具配置验证失败"),
+          undefined,
           400
         );
       });
@@ -924,13 +917,10 @@ describe("ToolApiHandler - 集成测试", () => {
 
         const response = await toolApiHandler.addCustomTool(mockContext);
 
-        expect(mockContext.json).toHaveBeenCalledWith(
-          expect.objectContaining({
-            success: false,
-            error: expect.objectContaining({
-              message: expect.stringContaining("缺少 workflow 参数"),
-            }),
-          }),
+        expect(mockContext.fail).toHaveBeenCalledWith(
+          "INVALID_REQUEST",
+          expect.stringContaining("缺少 workflow 参数"),
+          undefined,
           400
         );
       });
@@ -942,13 +932,10 @@ describe("ToolApiHandler - 集成测试", () => {
 
         const response = await toolApiHandler.addCustomTool(mockContext);
 
-        expect(mockContext.json).toHaveBeenCalledWith(
-          expect.objectContaining({
-            success: false,
-            error: expect.objectContaining({
-              message: expect.stringContaining("必须是对象类型"),
-            }),
-          }),
+        expect(mockContext.fail).toHaveBeenCalledWith(
+          "INVALID_REQUEST",
+          expect.stringContaining("必须是对象类型"),
+          undefined,
           400
         );
       });
@@ -964,13 +951,10 @@ describe("ToolApiHandler - 集成测试", () => {
 
         const response = await toolApiHandler.addCustomTool(mockContext);
 
-        expect(mockContext.json).toHaveBeenCalledWith(
-          expect.objectContaining({
-            success: false,
-            error: expect.objectContaining({
-              message: expect.stringContaining("workflow_id 不能为空"),
-            }),
-          }),
+        expect(mockContext.fail).toHaveBeenCalledWith(
+          "INVALID_REQUEST",
+          expect.stringContaining("workflow_id 不能为空"),
+          undefined,
           400
         );
       });
@@ -994,15 +978,10 @@ describe("ToolApiHandler - 集成测试", () => {
 
         const response = await toolApiHandler.addCustomTool(mockContext);
 
-        expect(mockContext.json).toHaveBeenCalledWith(
-          expect.objectContaining({
-            success: false,
-            error: expect.objectContaining({
-              message: expect.stringContaining(
-                "customName 长度不能超过50个字符"
-              ),
-            }),
-          }),
+        expect(mockContext.fail).toHaveBeenCalledWith(
+          "INVALID_REQUEST",
+          expect.stringContaining("customName 长度不能超过50个字符"),
+          undefined,
           400
         );
       });
@@ -1026,15 +1005,10 @@ describe("ToolApiHandler - 集成测试", () => {
 
         const response = await toolApiHandler.addCustomTool(mockContext);
 
-        expect(mockContext.json).toHaveBeenCalledWith(
-          expect.objectContaining({
-            success: false,
-            error: expect.objectContaining({
-              message: expect.stringContaining(
-                "customDescription 长度不能超过200个字符"
-              ),
-            }),
-          }),
+        expect(mockContext.fail).toHaveBeenCalledWith(
+          "INVALID_REQUEST",
+          expect.stringContaining("customDescription 长度不能超过200个字符"),
+          undefined,
           400
         );
       });
@@ -1071,13 +1045,10 @@ describe("ToolApiHandler - 集成测试", () => {
 
         const response = await toolApiHandler.addCustomTool(mockContext);
 
-        expect(mockContext.json).toHaveBeenCalledWith(
-          expect.objectContaining({
-            success: false,
-            error: expect.objectContaining({
-              message: expect.stringContaining("最大工具数量限制"),
-            }),
-          }),
+        expect(mockContext.fail).toHaveBeenCalledWith(
+          "RESOURCE_LIMIT_EXCEEDED",
+          expect.stringContaining("最大工具数量限制"),
+          undefined,
           429
         );
       });
@@ -1094,13 +1065,10 @@ describe("ToolApiHandler - 集成测试", () => {
 
         const response = await toolApiHandler.addCustomTool(mockContext);
 
-        expect(mockContext.json).toHaveBeenCalledWith(
-          expect.objectContaining({
-            success: false,
-            error: expect.objectContaining({
-              message: expect.stringContaining("customName 必须是字符串类型"),
-            }),
-          }),
+        expect(mockContext.fail).toHaveBeenCalledWith(
+          "INVALID_REQUEST",
+          expect.stringContaining("customName 必须是字符串类型"),
+          undefined,
           400
         );
       });

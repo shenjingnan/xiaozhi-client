@@ -72,6 +72,31 @@ describe("ToolApiHandler - 参数配置功能", () => {
         json: vi.fn(),
       } as any,
       json: vi.fn(),
+      success: vi.fn((data: unknown, message?: string, status?: number) => {
+        return {
+          status: status || 200,
+          json: () => ({
+            success: true,
+            data,
+            message,
+          }),
+        };
+      }),
+      fail: vi.fn(
+        (code: string, message: string, details?: unknown, status?: number) => {
+          return {
+            status: status || 500,
+            json: () => ({
+              success: false,
+              error: {
+                code,
+                message,
+                details,
+              },
+            }),
+          };
+        }
+      ),
     } as any;
     vi.clearAllMocks();
   });
