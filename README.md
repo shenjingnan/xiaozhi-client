@@ -1,4 +1,4 @@
-<div align="center">
+<div align="center" style="margin: 20px auto;">
   <img style="height: 50px;" src="./docs/public/images/logo.png" alt="xiaozhi-client logo" />
 </div>
 
