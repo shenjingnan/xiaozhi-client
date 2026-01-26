@@ -136,7 +136,7 @@ export class ToolCallLogApiHandler {
       );
 
       logger.debug(`API: 返回 ${result.records.length} 条工具调用日志记录`);
-      return c.success(result, "获取工具调用日志成功");
+      return c.success(result);
     } catch (error) {
       logger.error("获取工具调用日志失败:", error);
 
@@ -148,7 +148,12 @@ export class ToolCallLogApiHandler {
         return c.fail("LOG_FILE_READ_ERROR", message, undefined, 500);
       }
 
-      return c.fail("INTERNAL_ERROR", "获取工具调用日志失败", message, 500);
+      return c.fail(
+        "INTERNAL_ERROR",
+        "获取工具调用日志失败",
+        { details: message },
+        500
+      );
     }
   }
 }
