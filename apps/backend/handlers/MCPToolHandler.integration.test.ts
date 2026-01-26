@@ -9,7 +9,7 @@ import {
   it,
   vi,
 } from "vitest";
-import { ToolApiHandler } from "./ToolApiHandler.js";
+import { MCPToolHandler } from "./mcp-tool.handler.js";
 
 // Mock dependencies
 vi.mock("../Logger.js", () => ({
@@ -21,8 +21,8 @@ vi.mock("../Logger.js", () => ({
   },
 }));
 
-describe("ToolApiHandler - 集成测试", () => {
-  let toolApiHandler: ToolApiHandler;
+describe("MCPToolHandler - 集成测试", () => {
+  let mcpToolHandler: MCPToolHandler;
   let mockContext: any;
   let mockServiceManager: any;
   let originalConfig: any;
@@ -41,7 +41,7 @@ describe("ToolApiHandler - 集成测试", () => {
   });
 
   beforeEach(() => {
-    toolApiHandler = new ToolApiHandler();
+    mcpToolHandler = new MCPToolHandler();
 
     // 初始化 Mock ServiceManager
     mockServiceManager = {
@@ -168,7 +168,7 @@ describe("ToolApiHandler - 集成测试", () => {
       });
 
       // Act
-      await toolApiHandler.callTool(mockContext);
+      await mcpToolHandler.callTool(mockContext);
 
       // Assert
       expect(mockServiceManager.callTool).toHaveBeenCalledWith(
@@ -232,7 +232,7 @@ describe("ToolApiHandler - 集成测试", () => {
       });
 
       // Act
-      await toolApiHandler.callTool(mockContext);
+      await mcpToolHandler.callTool(mockContext);
 
       // Assert
       expect(mockServiceManager.callTool).toHaveBeenCalledWith(
@@ -295,7 +295,7 @@ describe("ToolApiHandler - 集成测试", () => {
       });
 
       // Act
-      await toolApiHandler.callTool(mockContext);
+      await mcpToolHandler.callTool(mockContext);
 
       // Assert
       expect(mockServiceManager.callTool).toHaveBeenCalledWith(
@@ -375,7 +375,7 @@ describe("ToolApiHandler - 集成测试", () => {
       mockServiceManager.getCustomMCPTools.mockReturnValue([complexToolConfig]);
 
       // Act
-      await toolApiHandler.callTool(mockContext);
+      await mcpToolHandler.callTool(mockContext);
 
       // Assert
       expect(mockContext.fail).toHaveBeenCalledWith(
@@ -449,7 +449,7 @@ describe("ToolApiHandler - 集成测试", () => {
       });
 
       // Act
-      await toolApiHandler.callTool(mockContext);
+      await mcpToolHandler.callTool(mockContext);
 
       // Assert
       expect(mockServiceManager.callTool).toHaveBeenCalledWith(
@@ -500,7 +500,7 @@ describe("ToolApiHandler - 集成测试", () => {
         workflow: mockWorkflow,
       });
 
-      const response = await toolApiHandler.addCustomTool(mockContext);
+      const response = await mcpToolHandler.addCustomTool(mockContext);
 
       expect(configManager.addCustomMCPTool).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -534,7 +534,7 @@ describe("ToolApiHandler - 集成测试", () => {
         },
       });
 
-      const response = await toolApiHandler.addCustomTool(mockContext);
+      const response = await mcpToolHandler.addCustomTool(mockContext);
 
       expect(mockContext.fail).toHaveBeenCalledWith(
         "INVALID_REQUEST",
@@ -549,7 +549,7 @@ describe("ToolApiHandler - 集成测试", () => {
     it("应该在工具名称为空时返回错误", async () => {
       mockContext.req.param = vi.fn().mockReturnValue("");
 
-      const response = await toolApiHandler.removeCustomTool(mockContext);
+      const response = await mcpToolHandler.removeCustomTool(mockContext);
 
       expect(mockContext.fail).toHaveBeenCalledWith(
         "INVALID_REQUEST",
@@ -570,7 +570,7 @@ describe("ToolApiHandler - 集成测试", () => {
         throw new Error('工具 "non_existent_tool" 不存在');
       });
 
-      const response = await toolApiHandler.removeCustomTool(mockContext);
+      const response = await mcpToolHandler.removeCustomTool(mockContext);
 
       expect(mockContext.fail).toHaveBeenCalledWith(
         "TOOL_NOT_FOUND",
@@ -601,7 +601,7 @@ describe("ToolApiHandler - 集成测试", () => {
         workflow: incompleteWorkflow,
       });
 
-      const response = await toolApiHandler.addCustomTool(mockContext);
+      const response = await mcpToolHandler.addCustomTool(mockContext);
 
       expect(mockContext.fail).toHaveBeenCalledWith(
         "INVALID_REQUEST",
@@ -627,7 +627,7 @@ describe("ToolApiHandler - 集成测试", () => {
         workflow: invalidWorkflow,
       });
 
-      const response = await toolApiHandler.addCustomTool(mockContext);
+      const response = await mcpToolHandler.addCustomTool(mockContext);
 
       expect(mockContext.fail).toHaveBeenCalledWith(
         "VALIDATION_ERROR",
@@ -656,7 +656,7 @@ describe("ToolApiHandler - 集成测试", () => {
         workflow: mockWorkflow,
       });
 
-      const response = await toolApiHandler.addCustomTool(mockContext);
+      const response = await mcpToolHandler.addCustomTool(mockContext);
 
       expect(mockContext.fail).toHaveBeenCalledWith(
         "CONFIGURATION_ERROR",
@@ -688,7 +688,7 @@ describe("ToolApiHandler - 集成测试", () => {
         workflow: incompleteWorkflow,
       });
 
-      const response = await toolApiHandler.addCustomTool(mockContext);
+      const response = await mcpToolHandler.addCustomTool(mockContext);
 
       expect(mockContext.fail).toHaveBeenCalledWith(
         "VALIDATION_ERROR",
@@ -714,7 +714,7 @@ describe("ToolApiHandler - 集成测试", () => {
         workflow: invalidWorkflow,
       });
 
-      const response = await toolApiHandler.addCustomTool(mockContext);
+      const response = await mcpToolHandler.addCustomTool(mockContext);
 
       expect(mockContext.fail).toHaveBeenCalledWith(
         "VALIDATION_ERROR",
@@ -740,7 +740,7 @@ describe("ToolApiHandler - 集成测试", () => {
         workflow: longNameWorkflow,
       });
 
-      const response = await toolApiHandler.addCustomTool(mockContext);
+      const response = await mcpToolHandler.addCustomTool(mockContext);
 
       expect(mockContext.fail).toHaveBeenCalledWith(
         "VALIDATION_ERROR",
@@ -766,7 +766,7 @@ describe("ToolApiHandler - 集成测试", () => {
         workflow: invalidTimeWorkflow,
       });
 
-      const response = await toolApiHandler.addCustomTool(mockContext);
+      const response = await mcpToolHandler.addCustomTool(mockContext);
 
       expect(mockContext.fail).toHaveBeenCalledWith(
         "VALIDATION_ERROR",

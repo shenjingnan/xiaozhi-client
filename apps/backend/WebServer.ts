@@ -9,11 +9,11 @@ import {
   HeartbeatHandler,
   MCPHandler,
   MCPRouteHandler,
+  MCPToolHandler,
   RealtimeNotificationHandler,
   ServiceApiHandler,
   StaticFileHandler,
   StatusApiHandler,
-  ToolApiHandler,
   ToolCallLogApiHandler,
   UpdateApiHandler,
   VersionApiHandler,
@@ -112,7 +112,7 @@ export class WebServer {
   private configApiHandler: ConfigApiHandler;
   private statusApiHandler: StatusApiHandler;
   private serviceApiHandler: ServiceApiHandler;
-  private toolApiHandler: ToolApiHandler;
+  private mcpToolHandler: MCPToolHandler;
   private toolCallLogApiHandler: ToolCallLogApiHandler;
   private versionApiHandler: VersionApiHandler;
   private staticFileHandler: StaticFileHandler;
@@ -156,7 +156,7 @@ export class WebServer {
     this.configApiHandler = new ConfigApiHandler();
     this.statusApiHandler = new StatusApiHandler(this.statusService);
     this.serviceApiHandler = new ServiceApiHandler(this.statusService);
-    this.toolApiHandler = new ToolApiHandler();
+    this.mcpToolHandler = new MCPToolHandler();
     this.toolCallLogApiHandler = new ToolCallLogApiHandler();
     this.versionApiHandler = new VersionApiHandler();
     this.staticFileHandler = new StaticFileHandler();
@@ -541,7 +541,7 @@ export class WebServer {
       configApiHandler: this.configApiHandler,
       statusApiHandler: this.statusApiHandler,
       serviceApiHandler: this.serviceApiHandler,
-      toolApiHandler: this.toolApiHandler,
+      mcpToolHandler: this.mcpToolHandler,
       toolCallLogApiHandler: this.toolCallLogApiHandler,
       versionApiHandler: this.versionApiHandler,
       staticFileHandler: this.staticFileHandler,

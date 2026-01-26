@@ -1,5 +1,5 @@
 /**
- * ToolApiHandler 核心功能测试
+ * MCPToolHandler 核心功能测试
  * 测试核心业务逻辑和边界条件处理
  */
 
@@ -7,7 +7,7 @@ import { ToolType } from "@root/types/toolApi.js";
 import { configManager } from "@xiaozhi-client/config";
 import type { Context } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ToolApiHandler } from "../ToolApiHandler.js";
+import { MCPToolHandler } from "../mcp-tool.handler.js";
 
 // Mock configManager
 vi.mock("@xiaozhi-client/config", () => ({
@@ -50,12 +50,12 @@ vi.mock("@/lib/mcp", () => ({
   })) as any,
 }));
 
-describe("ToolApiHandler - 核心功能测试", () => {
-  let handler: ToolApiHandler;
+describe("MCPToolHandler - 核心功能测试", () => {
+  let handler: MCPToolHandler;
   let mockContext: Partial<Context>;
 
   beforeEach(() => {
-    handler = new ToolApiHandler();
+    handler = new MCPToolHandler();
     mockContext = {
       req: {
         json: vi.fn(),
