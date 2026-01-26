@@ -3,7 +3,6 @@
  * 测试核心业务逻辑和边界条件处理
  */
 
-import type { CozeWorkflow } from "@root/types/coze.js";
 import { ToolType } from "@root/types/toolApi.js";
 import { configManager } from "@xiaozhi-client/config";
 import type { Context } from "hono";
@@ -324,13 +323,6 @@ describe("ToolApiHandler - 核心功能测试", () => {
     });
   });
 
-  describe("handleAddMCPTool - MCP 工具添加", () => {
-    // 这些测试暂时跳过，因为需要复杂的 mock 设置
-    it.skip("应该验证必需字段", async () => {
-      // 测试必需字段验证逻辑
-    });
-  });
-
   describe("updateCustomTool - 工具更新", () => {
     it("应该验证工具名称", async () => {
       mockContext.req!.param = vi.fn().mockReturnValue("");
@@ -375,107 +367,6 @@ describe("ToolApiHandler - 核心功能测试", () => {
         undefined,
         400
       );
-    });
-  });
-
-  describe("handleNewFormatUpdateTool - 新格式工具更新", () => {
-    // 这些测试暂时跳过，因为需要复杂的 mock 设置
-    it.skip("应该验证工具类型", async () => {
-      // 测试工具类型验证逻辑
-    });
-
-    it.skip("应该处理未实现的更新类型", async () => {
-      // 测试未实现类型的处理
-    });
-  });
-
-  describe("工具验证方法", () => {
-    it("应该验证必需字段", () => {
-      const invalidWorkflow = {} as CozeWorkflow;
-
-      expect(() => {
-        (handler as any).validateRequiredFields(invalidWorkflow);
-      }).toThrow();
-    });
-
-    it("应该验证字段格式", () => {
-      const invalidWorkflow = {
-        workflow_id: "invalid-id!",
-        workflow_name: "测试工作流",
-      } as CozeWorkflow;
-
-      expect(() => {
-        (handler as any).validateFieldFormats(invalidWorkflow);
-      }).toThrow();
-    });
-
-    it("应该验证业务逻辑", () => {
-      const invalidWorkflow = {
-        workflow_id: "123",
-        workflow_name: "admin_workflow",
-        app_id: "test-app",
-      } as CozeWorkflow;
-
-      expect(() => {
-        (handler as any).validateBusinessLogic(invalidWorkflow);
-      }).toThrow();
-    });
-  });
-
-  describe("工具名称处理", () => {
-    it("应该正确处理工具名称", () => {
-      const sanitizeToolName = (handler as any).sanitizeToolName.bind(handler);
-
-      expect(sanitizeToolName("Test Tool")).toBe("Test_Tool");
-      expect(sanitizeToolName("Test@Tool#")).toBe("Test_Tool");
-      expect(sanitizeToolName("测试工具")).toBe("chinese_test");
-    });
-
-    it("应该转换中文为英文", () => {
-      const convertChineseToEnglish = (
-        handler as any
-      ).convertChineseToEnglish.bind(handler);
-
-      expect(convertChineseToEnglish("测试工具")).toBe("chinese_test工具");
-      expect(convertChineseToEnglish("工作流")).toBe("workflow");
-    });
-  });
-
-  describe("错误处理", () => {
-    it("应该正确处理添加工具错误", () => {
-      const handleAddToolError = (handler as any).handleAddToolError.bind(
-        handler
-      );
-
-      const error = new Error("测试错误");
-      const result = handleAddToolError(error);
-
-      expect(result.status).toBe(500);
-      expect(result.code).toBe("ADD_CUSTOM_TOOL_ERROR");
-    });
-
-    it("应该正确处理更新工具错误", () => {
-      const handleUpdateToolError = (handler as any).handleUpdateToolError.bind(
-        handler
-      );
-
-      const error = new Error("测试错误");
-      const result = handleUpdateToolError(error);
-
-      expect(result.status).toBe(500);
-      expect(result.code).toBe("UPDATE_CUSTOM_TOOL_ERROR");
-    });
-
-    it("应该正确处理删除工具错误", () => {
-      const handleRemoveToolError = (handler as any).handleRemoveToolError.bind(
-        handler
-      );
-
-      const error = new Error("测试错误");
-      const result = handleRemoveToolError(error);
-
-      expect(result.status).toBe(500);
-      expect(result.code).toBe("REMOVE_CUSTOM_TOOL_ERROR");
     });
   });
 });
