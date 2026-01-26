@@ -1,4 +1,6 @@
-<img style="height: 50px; display: block; margin: 20px auto;" src="./docs/public/images/logo.png" alt="xiaozhi-client logo" />
+<div align="center">
+  <img style="height: 50px;" src="./docs/public/images/logo.png" alt="xiaozhi-client logo" />
+</div>
 
 [![npm version](https://img.shields.io/npm/v/xiaozhi-client)](https://www.npmjs.com/package/xiaozhi-client)
 [![codecov](https://codecov.io/gh/shenjingnan/xiaozhi-client/branch/main/graph/badge.svg)](https://codecov.io/gh/shenjingnan/xiaozhi-client)
