@@ -1,6 +1,6 @@
 <br />
 <div align="center">
-  <img style="height: 50px;" src="./docs/public/images/logo.png" alt="xiaozhi-client logo" />
+  <img style="height: 80px;" src="./docs/public/images/logo.png" alt="xiaozhi-client logo" />
 </div>
 <br />
 
