@@ -1,5 +1,5 @@
 /**
- * ToolApiHandler 参数配置功能测试
+ * MCPToolHandler 参数配置功能测试
  * 测试第二阶段新增的参数配置功能
  */
 
@@ -10,7 +10,7 @@ import type {
 import { configManager } from "@xiaozhi-client/config";
 import type { Context } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ToolApiHandler } from "../ToolApiHandler.js";
+import { MCPToolHandler } from "../mcp-tool.handler.js";
 
 // Mock configManager
 vi.mock("@xiaozhi-client/config", () => ({
@@ -22,8 +22,8 @@ vi.mock("@xiaozhi-client/config", () => ({
   },
 }));
 
-describe("ToolApiHandler - 参数配置功能", () => {
-  let handler: ToolApiHandler;
+describe("MCPToolHandler - 参数配置功能", () => {
+  let handler: MCPToolHandler;
   let mockContext: Partial<Context>;
 
   // 测试用的工作流数据
@@ -66,7 +66,7 @@ describe("ToolApiHandler - 参数配置功能", () => {
   };
 
   beforeEach(() => {
-    handler = new ToolApiHandler();
+    handler = new MCPToolHandler();
     mockContext = {
       req: {
         json: vi.fn(),

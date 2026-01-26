@@ -8,7 +8,7 @@ export * from "./RealtimeNotificationHandler.js";
 export * from "./ServiceApiHandler.js";
 export * from "./StaticFileHandler.js";
 export * from "./StatusApiHandler.js";
-export * from "./ToolApiHandler.js";
+export * from "./mcp-tool.handler.js";
 export * from "./ToolCallLogApiHandler.js";
 export * from "./UpdateApiHandler.js";
 export * from "./VersionApiHandler.js";

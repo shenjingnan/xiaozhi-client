@@ -357,8 +357,8 @@ vi.mock("./handlers/VersionApiHandler", () => {
   };
 });
 
-vi.mock("./handlers/ToolApiHandler", () => {
-  const mockToolApiHandler = {
+vi.mock("./handlers/mcp-tool.handler", () => {
+  const mockMCPToolHandler = {
     callTool: vi.fn((c) =>
       c.json({
         success: true,
@@ -400,7 +400,7 @@ vi.mock("./handlers/ToolApiHandler", () => {
     ),
   };
   return {
-    ToolApiHandler: vi.fn(() => mockToolApiHandler),
+    MCPToolHandler: vi.fn(() => mockMCPToolHandler),
   };
 });
 

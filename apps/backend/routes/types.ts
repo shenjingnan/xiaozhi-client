@@ -9,10 +9,10 @@ import type {
   EndpointHandler,
   MCPHandler,
   MCPRouteHandler,
+  MCPToolHandler,
   ServiceApiHandler,
   StaticFileHandler,
   StatusApiHandler,
-  ToolApiHandler,
   ToolCallLogApiHandler,
   UpdateApiHandler,
   VersionApiHandler,
@@ -30,8 +30,8 @@ export interface HandlerDependencies {
   statusApiHandler: StatusApiHandler;
   /** 服务管理处理器 */
   serviceApiHandler: ServiceApiHandler;
-  /** 工具调用处理器 */
-  toolApiHandler: ToolApiHandler;
+  /** MCP 工具处理器 */
+  mcpToolHandler: MCPToolHandler;
   /** 工具调用日志处理器 */
   toolCallLogApiHandler: ToolCallLogApiHandler;
   /** 版本信息处理器 */

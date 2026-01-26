@@ -6,7 +6,7 @@
 import type { RouteDefinition } from "../types.js";
 import { createHandler } from "../types.js";
 
-const h = createHandler("toolApiHandler");
+const h = createHandler("mcpToolHandler");
 
 /**
  * 工具调用路由定义

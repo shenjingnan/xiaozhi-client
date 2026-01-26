@@ -1,5 +1,5 @@
 /**
- * 工具调用 API 处理器
+ * MCP 工具调用 API 处理器
  * 处理通过 HTTP API 调用 MCP 工具的请求
  */
 
@@ -50,9 +50,9 @@ interface LegacyAddCustomToolRequest {
 }
 
 /**
- * 工具调用 API 处理器
+ * MCP 工具调用 API 处理器
  */
-export class ToolApiHandler {
+export class MCPToolHandler {
   private logger: Logger;
   private ajv: Ajv;
 
