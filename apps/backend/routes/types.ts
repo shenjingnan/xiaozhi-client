@@ -10,10 +10,10 @@ import type {
   MCPHandler,
   MCPRouteHandler,
   MCPToolHandler,
+  MCPToolLogHandler,
   ServiceApiHandler,
   StaticFileHandler,
   StatusApiHandler,
-  ToolCallLogApiHandler,
   UpdateApiHandler,
   VersionApiHandler,
 } from "@handlers/index.js";
@@ -33,7 +33,7 @@ export interface HandlerDependencies {
   /** MCP 工具处理器 */
   mcpToolHandler: MCPToolHandler;
   /** 工具调用日志处理器 */
-  toolCallLogApiHandler: ToolCallLogApiHandler;
+  mcpToolLogHandler: MCPToolLogHandler;
   /** 版本信息处理器 */
   versionApiHandler: VersionApiHandler;
   /** 静态文件处理器 */

@@ -6,7 +6,7 @@
 import type { RouteDefinition } from "../types.js";
 import { createHandler } from "../types.js";
 
-const h = createHandler("toolCallLogApiHandler");
+const h = createHandler("mcpToolLogHandler");
 
 export const toolLogsRoutes: RouteDefinition[] = [
   {
