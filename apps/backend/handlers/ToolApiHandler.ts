@@ -28,7 +28,6 @@ import type { CustomMCPTool, ProxyHandlerConfig } from "@xiaozhi-client/config";
 import Ajv from "ajv";
 import dayjs from "dayjs";
 import type { Context } from "hono";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
 
 /**
  * 工具调用请求接口
@@ -37,19 +36,6 @@ interface ToolCallRequest {
   serviceName: string;
   toolName: string;
   args: Record<string, unknown>;
-}
-
-/**
- * 工具调用响应接口
- */
-interface ToolCallResponse {
-  success: boolean;
-  data?: unknown | CustomMCPTool[] | { list: CustomMCPTool[]; total: number };
-  error?: {
-    code: string;
-    message: string;
-  };
-  message?: string;
 }
 
 /**
@@ -76,56 +62,6 @@ export class ToolApiHandler {
   }
 
   /**
-   * 创建成功响应
-   */
-  private createSuccessResponse(
-    data: unknown,
-    message?: string
-  ): ToolCallResponse {
-    return {
-      success: true,
-      data,
-      message,
-    };
-  }
-
-  /**
-   * 创建错误响应
-   */
-  private createErrorResponse(code: string, message: string): ToolCallResponse {
-    return {
-      success: false,
-      error: {
-        code,
-        message,
-      },
-    };
-  }
-
-  /**
-   * 确保 HTTP 状态码是有效的
-   */
-  private ensureValidStatusCode(code: number): number {
-    // 确保状态码是有效的 HTTP 状态码
-    if (code >= 100 && code < 600) {
-      return code;
-    }
-    // 默认返回 500
-    return 500;
-  }
-
-  /**
-   * 创建 Hono 响应，正确处理状态码类型
-   */
-  private createHonoResponse(
-    c: Context,
-    data: ToolCallResponse,
-    statusCode: number
-  ): Response {
-    return c.json(data, statusCode as ContentfulStatusCode);
-  }
-
-  /**
    * 调用 MCP 工具
    * POST /api/tools/call
    */
@@ -139,11 +75,12 @@ export class ToolApiHandler {
 
       // 验证请求参数
       if (!serviceName || !toolName) {
-        const errorResponse = this.createErrorResponse(
+        return c.fail(
           "INVALID_REQUEST",
-          "serviceName 和 toolName 是必需的参数"
+          "serviceName 和 toolName 是必需的参数",
+          undefined,
+          400
         );
-        return c.json(errorResponse, 400);
       }
 
       this.logger.info(
@@ -154,11 +91,12 @@ export class ToolApiHandler {
       // 从 Context 中获取 MCPServiceManager 实例
       const serviceManager = c.get("mcpServiceManager");
       if (!serviceManager) {
-        const errorResponse = this.createErrorResponse(
+        return c.fail(
           "SERVICE_NOT_INITIALIZED",
-          "MCP 服务管理器未初始化。请检查服务状态。"
+          "MCP 服务管理器未初始化。请检查服务状态。",
+          undefined,
+          503
         );
-        return c.json(errorResponse, 503);
       }
 
       // 验证服务和工具是否存在
@@ -188,7 +126,7 @@ export class ToolApiHandler {
 
       // this.logger.debug(`工具调用成功: ${serviceName}/${toolName}`);
 
-      return c.json(this.createSuccessResponse(result, "工具调用成功"));
+      return c.success(result, "工具调用成功");
     } catch (error) {
       this.logger.error("工具调用失败:", error);
 
@@ -222,8 +160,7 @@ export class ToolApiHandler {
         errorCode = "TIMEOUT_ERROR";
       }
 
-      const errorResponse = this.createErrorResponse(errorCode, errorMessage);
-      return c.json(errorResponse, 500);
+      return c.fail(errorCode, errorMessage, undefined, 500);
     }
   }
 
@@ -237,11 +174,12 @@ export class ToolApiHandler {
 
       // 检查配置文件是否存在
       if (!configManager.configExists()) {
-        const errorResponse = this.createErrorResponse(
+        return c.fail(
           "CONFIG_NOT_FOUND",
-          "配置文件不存在，请先运行 'xiaozhi init' 初始化配置"
+          "配置文件不存在，请先运行 'xiaozhi init' 初始化配置",
+          undefined,
+          404
         );
-        return c.json(errorResponse, 404);
       }
 
       // 获取自定义 MCP 工具列表
@@ -253,25 +191,24 @@ export class ToolApiHandler {
         configPath = configManager.getConfigPath();
       } catch (error) {
         this.logger.error("读取自定义 MCP 工具配置失败:", error);
-        const errorResponse = this.createErrorResponse(
+        return c.fail(
           "CONFIG_PARSE_ERROR",
-          `配置文件解析失败: ${error instanceof Error ? error.message : "未知错误"}`
+          `配置文件解析失败: ${error instanceof Error ? error.message : "未知错误"}`,
+          undefined,
+          500
         );
-        return c.json(errorResponse, 500);
       }
 
       // 检查是否配置了自定义 MCP 工具
       if (!customTools || customTools.length === 0) {
         this.logger.info("未配置自定义 MCP 工具");
-        return c.json(
-          this.createSuccessResponse(
-            {
-              tools: [],
-              totalTools: 0,
-              configPath,
-            },
-            "未配置自定义 MCP 工具"
-          )
+        return c.success(
+          {
+            tools: [],
+            totalTools: 0,
+            configPath,
+          },
+          "未配置自定义 MCP 工具"
         );
       }
 
@@ -279,35 +216,35 @@ export class ToolApiHandler {
       const isValid = configManager.validateCustomMCPTools(customTools);
       if (!isValid) {
         this.logger.warn("自定义 MCP 工具配置验证失败");
-        const errorResponse = this.createErrorResponse(
+        return c.fail(
           "INVALID_TOOL_CONFIG",
-          "自定义 MCP 工具配置验证失败，请检查配置文件中的工具定义"
+          "自定义 MCP 工具配置验证失败，请检查配置文件中的工具定义",
+          undefined,
+          400
         );
-        return c.json(errorResponse, 400);
       }
 
       this.logger.info(
         `获取自定义 MCP 工具列表成功，共 ${customTools.length} 个工具`
       );
 
-      return c.json(
-        this.createSuccessResponse(
-          {
-            tools: customTools,
-            totalTools: customTools.length,
-            configPath,
-          },
-          "获取自定义 MCP 工具列表成功"
-        )
+      return c.success(
+        {
+          tools: customTools,
+          totalTools: customTools.length,
+          configPath,
+        },
+        "获取自定义 MCP 工具列表成功"
       );
     } catch (error) {
       this.logger.error("获取自定义 MCP 工具列表失败:", error);
 
-      const errorResponse = this.createErrorResponse(
+      return c.fail(
         "GET_CUSTOM_TOOLS_ERROR",
-        error instanceof Error ? error.message : "获取自定义 MCP 工具列表失败"
+        error instanceof Error ? error.message : "获取自定义 MCP 工具列表失败",
+        undefined,
+        500
       );
-      return c.json(errorResponse, 500);
     }
   }
 
@@ -326,11 +263,12 @@ export class ToolApiHandler {
       // 从 Context 中获取 MCPServiceManager 实例
       const serviceManager = c.get("mcpServiceManager");
       if (!serviceManager) {
-        const errorResponse = this.createErrorResponse(
+        return c.fail(
           "SERVICE_NOT_INITIALIZED",
-          "MCP 服务管理器未初始化。请检查服务状态。"
+          "MCP 服务管理器未初始化。请检查服务状态。",
+          undefined,
+          503
         );
-        return c.json(errorResponse, 503);
       }
 
       const rawTools: EnhancedToolInfo[] = serviceManager.getAllTools(status);
@@ -359,20 +297,11 @@ export class ToolApiHandler {
         total: tools.length,
       };
 
-      return c.json(
-        this.createSuccessResponse(
-          responseData,
-          `获取工具列表成功（${status}）`
-        )
-      );
+      return c.success(responseData, `获取工具列表成功（${status}）`);
     } catch (error) {
       this.logger.error("获取工具列表失败:", error);
 
-      const errorResponse = this.createErrorResponse(
-        "GET_TOOLS_FAILED",
-        "获取工具列表失败"
-      );
-      return c.json(errorResponse, 500);
+      return c.fail("GET_TOOLS_FAILED", "获取工具列表失败", undefined, 500);
     }
   }
 
@@ -535,12 +464,8 @@ export class ToolApiHandler {
       this.logger.error("添加自定义工具失败:", error);
 
       // 根据错误类型返回不同的HTTP状态码和错误信息
-      const { statusCode, errorResponse } = this.handleAddToolError(error);
-      return this.createHonoResponse(
-        c,
-        errorResponse,
-        this.ensureValidStatusCode(statusCode)
-      );
+      const { code, message, status } = this.handleAddToolError(error);
+      return c.fail(code, message, undefined, status);
     }
   }
 
@@ -570,11 +495,12 @@ export class ToolApiHandler {
 
     // 验证工具类型
     if (!Object.values(ToolType).includes(type)) {
-      const errorResponse = this.createErrorResponse(
+      return c.fail(
         "INVALID_TOOL_TYPE",
-        `不支持的工具类型: ${type}。支持的类型: ${Object.values(ToolType).join(", ")}`
+        `不支持的工具类型: ${type}。支持的类型: ${Object.values(ToolType).join(", ")}`,
+        undefined,
+        400
       );
-      return c.json(errorResponse, 400);
     }
 
     // 根据工具类型分发处理
@@ -587,19 +513,21 @@ export class ToolApiHandler {
 
       case ToolType.HTTP:
       case ToolType.FUNCTION: {
-        const httpErrorResponse = this.createErrorResponse(
+        return c.fail(
           "TOOL_TYPE_NOT_IMPLEMENTED",
-          `工具类型 ${type} 暂未实现，请使用 MCP 或 Coze 类型`
+          `工具类型 ${type} 暂未实现，请使用 MCP 或 Coze 类型`,
+          undefined,
+          501
         );
-        return c.json(httpErrorResponse, 501);
       }
 
       default: {
-        const defaultErrorResponse = this.createErrorResponse(
+        return c.fail(
           "UNKNOWN_TOOL_TYPE",
-          `未知的工具类型: ${type}`
+          `未知的工具类型: ${type}`,
+          undefined,
+          400
         );
-        return c.json(defaultErrorResponse, 400);
       }
     }
   }
@@ -623,10 +551,11 @@ export class ToolApiHandler {
       customDescription
     );
     if (preCheckResult) {
-      return this.createHonoResponse(
-        c,
-        preCheckResult.errorResponse,
-        this.ensureValidStatusCode(preCheckResult.statusCode)
+      return c.fail(
+        preCheckResult.code,
+        preCheckResult.message,
+        undefined,
+        preCheckResult.status
       );
     }
 
@@ -643,9 +572,7 @@ export class ToolApiHandler {
 
     this.logger.info(`成功添加自定义工具: ${tool.name}`);
 
-    return c.json(
-      this.createSuccessResponse({ tool }, `工具 "${tool.name}" 添加成功`)
-    );
+    return c.success({ tool }, `工具 "${tool.name}" 添加成功`);
   }
 
   /**
@@ -661,21 +588,23 @@ export class ToolApiHandler {
 
     // 验证必需字段
     if (!serviceName || !toolName) {
-      const errorResponse = this.createErrorResponse(
+      return c.fail(
         "MISSING_REQUIRED_FIELD",
-        "serviceName 和 toolName 是必需字段"
+        "serviceName 和 toolName 是必需字段",
+        undefined,
+        400
       );
-      return c.json(errorResponse, 400);
     }
 
     // 从 Context 中获取 MCPServiceManager 实例
     const serviceManager = c.get("mcpServiceManager");
     if (!serviceManager) {
-      const errorResponse = this.createErrorResponse(
+      return c.fail(
         "SERVICE_NOT_INITIALIZED",
-        "MCP 服务管理器未初始化。请检查服务状态。"
+        "MCP 服务管理器未初始化。请检查服务状态。",
+        undefined,
+        503
       );
-      return c.json(errorResponse, 503);
     }
 
     // 验证服务和工具是否存在
@@ -684,11 +613,7 @@ export class ToolApiHandler {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      const errorResponse = this.createErrorResponse(
-        "SERVICE_OR_TOOL_NOT_FOUND",
-        errorMessage
-      );
-      return c.json(errorResponse, 404);
+      return c.fail("SERVICE_OR_TOOL_NOT_FOUND", errorMessage, undefined, 404);
     }
 
     // 从缓存中获取工具信息
@@ -700,11 +625,12 @@ export class ToolApiHandler {
     const cachedTool = cachedTools.find((tool) => tool.name === fullToolName);
 
     if (!cachedTool) {
-      const errorResponse = this.createErrorResponse(
+      return c.fail(
         "TOOL_NOT_FOUND",
-        `在缓存中未找到工具: ${serviceName}/${toolName}`
+        `在缓存中未找到工具: ${serviceName}/${toolName}`,
+        undefined,
+        404
       );
-      return c.json(errorResponse, 404);
     }
 
     // 生成工具名称
@@ -715,11 +641,12 @@ export class ToolApiHandler {
     const existingNames = new Set(existingTools.map((tool) => tool.name));
 
     if (existingNames.has(finalToolName)) {
-      const errorResponse = this.createErrorResponse(
+      return c.fail(
         "TOOL_NAME_CONFLICT",
-        `工具名称 "${finalToolName}" 已存在，请使用不同的自定义名称`
+        `工具名称 "${finalToolName}" 已存在，请使用不同的自定义名称`,
+        undefined,
+        409
       );
-      return c.json(errorResponse, 409);
     }
 
     // 创建 CustomMCPTool 配置
@@ -775,12 +702,7 @@ export class ToolApiHandler {
       addedAt: dayjs().format("YYYY-MM-DD HH:mm:ss"),
     };
 
-    return c.json(
-      this.createSuccessResponse(
-        responseData,
-        `MCP 工具 "${finalToolName}" 添加成功`
-      )
-    );
+    return c.success(responseData, `MCP 工具 "${finalToolName}" 添加成功`);
   }
 
   /**
@@ -801,10 +723,11 @@ export class ToolApiHandler {
       customDescription
     );
     if (preCheckResult) {
-      return this.createHonoResponse(
-        c,
-        preCheckResult.errorResponse,
-        this.ensureValidStatusCode(preCheckResult.statusCode)
+      return c.fail(
+        preCheckResult.code,
+        preCheckResult.message,
+        undefined,
+        preCheckResult.status
       );
     }
 
@@ -828,12 +751,7 @@ export class ToolApiHandler {
       addedAt: dayjs().format("YYYY-MM-DD HH:mm:ss"),
     };
 
-    return c.json(
-      this.createSuccessResponse(
-        responseData,
-        `Coze 工具 "${tool.name}" 添加成功`
-      )
-    );
+    return c.success(responseData, `Coze 工具 "${tool.name}" 添加成功`);
   }
 
   /**
@@ -845,11 +763,7 @@ export class ToolApiHandler {
       const toolName = c.req.param("toolName");
 
       if (!toolName) {
-        const errorResponse = this.createErrorResponse(
-          "INVALID_REQUEST",
-          "工具名称不能为空"
-        );
-        return c.json(errorResponse, 400);
+        return c.fail("INVALID_REQUEST", "工具名称不能为空", undefined, 400);
       }
 
       this.logger.info(`处理更新自定义工具配置请求: ${toolName}`);
@@ -858,11 +772,12 @@ export class ToolApiHandler {
 
       // 验证请求体
       if (!requestBody || typeof requestBody !== "object") {
-        const errorResponse = this.createErrorResponse(
+        return c.fail(
           "INVALID_REQUEST",
-          "请求体必须是有效对象"
+          "请求体必须是有效对象",
+          undefined,
+          400
         );
-        return c.json(errorResponse, 400);
       }
 
       // 检查是否为新格式的请求
@@ -876,21 +791,18 @@ export class ToolApiHandler {
       }
 
       // 旧格式不支持更新操作
-      const errorResponse = this.createErrorResponse(
+      return c.fail(
         "INVALID_REQUEST",
-        "更新操作只支持新格式的请求"
+        "更新操作只支持新格式的请求",
+        undefined,
+        400
       );
-      return c.json(errorResponse, 400);
     } catch (error) {
       this.logger.error("更新自定义工具配置失败:", error);
 
       // 根据错误类型返回不同的HTTP状态码和错误信息
-      const { statusCode, errorResponse } = this.handleUpdateToolError(error);
-      return this.createHonoResponse(
-        c,
-        errorResponse,
-        this.ensureValidStatusCode(statusCode)
-      );
+      const { code, message, status } = this.handleUpdateToolError(error);
+      return c.fail(code, message, undefined, status);
     }
   }
 
@@ -908,11 +820,12 @@ export class ToolApiHandler {
 
     // 验证工具类型
     if (!Object.values(ToolType).includes(type)) {
-      const errorResponse = this.createErrorResponse(
+      return c.fail(
         "INVALID_TOOL_TYPE",
-        `不支持的工具类型: ${type}。支持的类型: ${Object.values(ToolType).join(", ")}`
+        `不支持的工具类型: ${type}。支持的类型: ${Object.values(ToolType).join(", ")}`,
+        undefined,
+        400
       );
-      return c.json(errorResponse, 400);
     }
 
     // 根据工具类型分发处理
@@ -927,19 +840,21 @@ export class ToolApiHandler {
       case ToolType.MCP:
       case ToolType.HTTP:
       case ToolType.FUNCTION: {
-        const errorResponse = this.createErrorResponse(
+        return c.fail(
           "TOOL_TYPE_NOT_IMPLEMENTED",
-          `工具类型 ${type} 暂不支持更新操作，目前仅支持 Coze 类型`
+          `工具类型 ${type} 暂不支持更新操作，目前仅支持 Coze 类型`,
+          undefined,
+          501
         );
-        return c.json(errorResponse, 501);
       }
 
       default: {
-        const errorResponse = this.createErrorResponse(
+        return c.fail(
           "UNKNOWN_TOOL_TYPE",
-          `未知的工具类型: ${type}`
+          `未知的工具类型: ${type}`,
+          undefined,
+          400
         );
-        return c.json(errorResponse, 400);
       }
     }
   }
@@ -961,11 +876,12 @@ export class ToolApiHandler {
     const existingTool = existingTools.find((tool) => tool.name === toolName);
 
     if (!existingTool) {
-      const errorResponse = this.createErrorResponse(
+      return c.fail(
         "TOOL_NOT_FOUND",
-        `工具 "${toolName}" 不存在`
+        `工具 "${toolName}" 不存在`,
+        undefined,
+        404
       );
-      return c.json(errorResponse, 404);
     }
 
     // 验证是否为 Coze 工具
@@ -973,11 +889,12 @@ export class ToolApiHandler {
       existingTool.handler.type !== "proxy" ||
       existingTool.handler.platform !== "coze"
     ) {
-      const errorResponse = this.createErrorResponse(
+      return c.fail(
         "INVALID_TOOL_TYPE",
-        `工具 "${toolName}" 不是 Coze 工作流工具，不支持参数配置更新`
+        `工具 "${toolName}" 不是 Coze 工作流工具，不支持参数配置更新`,
+        undefined,
+        400
       );
-      return c.json(errorResponse, 400);
     }
 
     // 如果前端提供的 workflow 中没有 workflow_id，尝试从现有工具中获取
@@ -1022,20 +939,16 @@ export class ToolApiHandler {
       updatedAt: dayjs().format("YYYY-MM-DD HH:mm:ss"),
     };
 
-    return c.json(
-      this.createSuccessResponse(
-        responseData,
-        `Coze 工具 "${toolName}" 配置更新成功`
-      )
-    );
+    return c.success(responseData, `Coze 工具 "${toolName}" 配置更新成功`);
   }
 
   /**
    * 处理更新工具时的错误
    */
   private handleUpdateToolError(error: unknown): {
-    statusCode: number;
-    errorResponse: ToolCallResponse;
+    code: string;
+    message: string;
+    status: number;
   } {
     const errorMessage =
       error instanceof Error ? error.message : "更新自定义工具配置失败";
@@ -1043,11 +956,9 @@ export class ToolApiHandler {
     // 工具不存在错误 (404)
     if (errorMessage.includes("不存在") || errorMessage.includes("未找到")) {
       return {
-        statusCode: 404,
-        errorResponse: this.createErrorResponse(
-          "TOOL_NOT_FOUND",
-          `${errorMessage}。请检查工具名称是否正确`
-        ),
+        code: "TOOL_NOT_FOUND",
+        message: `${errorMessage}。请检查工具名称是否正确`,
+        status: 404,
       };
     }
 
@@ -1057,33 +968,27 @@ export class ToolApiHandler {
       errorMessage.includes("INVALID_TOOL_TYPE")
     ) {
       return {
-        statusCode: 400,
-        errorResponse: this.createErrorResponse(
-          "INVALID_TOOL_TYPE",
-          errorMessage
-        ),
+        code: "INVALID_TOOL_TYPE",
+        message: errorMessage,
+        status: 400,
       };
     }
 
     // 参数错误 (400)
     if (errorMessage.includes("不能为空") || errorMessage.includes("无效")) {
       return {
-        statusCode: 400,
-        errorResponse: this.createErrorResponse(
-          "INVALID_REQUEST",
-          `${errorMessage}。请提供有效的工具配置数据`
-        ),
+        code: "INVALID_REQUEST",
+        message: `${errorMessage}。请提供有效的工具配置数据`,
+        status: 400,
       };
     }
 
     // 配置错误 (422)
     if (errorMessage.includes("配置") || errorMessage.includes("权限")) {
       return {
-        statusCode: 422,
-        errorResponse: this.createErrorResponse(
-          "CONFIGURATION_ERROR",
-          `${errorMessage}。请检查配置文件权限和格式是否正确`
-        ),
+        code: "CONFIGURATION_ERROR",
+        message: `${errorMessage}。请检查配置文件权限和格式是否正确`,
+        status: 422,
       };
     }
 
@@ -1093,21 +998,17 @@ export class ToolApiHandler {
       errorMessage.includes("NOT_IMPLEMENTED")
     ) {
       return {
-        statusCode: 501,
-        errorResponse: this.createErrorResponse(
-          "TOOL_TYPE_NOT_IMPLEMENTED",
-          errorMessage
-        ),
+        code: "TOOL_TYPE_NOT_IMPLEMENTED",
+        message: errorMessage,
+        status: 501,
       };
     }
 
     // 系统错误 (500)
     return {
-      statusCode: 500,
-      errorResponse: this.createErrorResponse(
-        "UPDATE_CUSTOM_TOOL_ERROR",
-        `更新工具配置失败：${errorMessage}。请稍后重试，如问题持续存在请联系管理员`
-      ),
+      code: "UPDATE_CUSTOM_TOOL_ERROR",
+      message: `更新工具配置失败：${errorMessage}。请稍后重试，如问题持续存在请联系管理员`,
+      status: 500,
     };
   }
 
@@ -1120,11 +1021,7 @@ export class ToolApiHandler {
       const toolName = c.req.param("toolName");
 
       if (!toolName) {
-        const errorResponse = this.createErrorResponse(
-          "INVALID_REQUEST",
-          "工具名称不能为空"
-        );
-        return c.json(errorResponse, 400);
+        return c.fail("INVALID_REQUEST", "工具名称不能为空", undefined, 400);
       }
 
       this.logger.info(`处理删除自定义工具请求: ${toolName}`);
@@ -1168,19 +1065,13 @@ export class ToolApiHandler {
 
       this.logger.info(`成功删除自定义工具: ${toolName}`);
 
-      return c.json(
-        this.createSuccessResponse(null, `工具 "${toolName}" 删除成功`)
-      );
+      return c.success(null, `工具 "${toolName}" 删除成功`);
     } catch (error) {
       this.logger.error("删除自定义工具失败:", error);
 
       // 根据错误类型返回不同的HTTP状态码和错误信息
-      const { statusCode, errorResponse } = this.handleRemoveToolError(error);
-      return this.createHonoResponse(
-        c,
-        errorResponse,
-        this.ensureValidStatusCode(statusCode)
-      );
+      const { code, message, status } = this.handleRemoveToolError(error);
+      return c.fail(code, message, undefined, status);
     }
   }
 
@@ -1829,8 +1720,9 @@ export class ToolApiHandler {
    * 处理添加工具时的错误
    */
   private handleAddToolError(error: unknown): {
-    statusCode: number;
-    errorResponse: ToolCallResponse;
+    code: string;
+    message: string;
+    status: number;
   } {
     const errorMessage =
       error instanceof Error ? error.message : "添加自定义工具失败";
@@ -1841,11 +1733,9 @@ export class ToolApiHandler {
       errorMessage.includes("TOOL_TYPE")
     ) {
       return {
-        statusCode: 400,
-        errorResponse: this.createErrorResponse(
-          "INVALID_TOOL_TYPE",
-          errorMessage
-        ),
+        code: "INVALID_TOOL_TYPE",
+        message: errorMessage,
+        status: 400,
       };
     }
 
@@ -1855,11 +1745,9 @@ export class ToolApiHandler {
       errorMessage.includes("MISSING_REQUIRED_FIELD")
     ) {
       return {
-        statusCode: 400,
-        errorResponse: this.createErrorResponse(
-          "MISSING_REQUIRED_FIELD",
-          errorMessage
-        ),
+        code: "MISSING_REQUIRED_FIELD",
+        message: errorMessage,
+        status: 400,
       };
     }
 
@@ -1870,11 +1758,9 @@ export class ToolApiHandler {
       errorMessage.includes("未找到")
     ) {
       return {
-        statusCode: 404,
-        errorResponse: this.createErrorResponse(
-          "SERVICE_OR_TOOL_NOT_FOUND",
-          errorMessage
-        ),
+        code: "SERVICE_OR_TOOL_NOT_FOUND",
+        message: errorMessage,
+        status: 404,
       };
     }
 
@@ -1884,11 +1770,9 @@ export class ToolApiHandler {
       errorMessage.includes("SERVICE_NOT_INITIALIZED")
     ) {
       return {
-        statusCode: 503,
-        errorResponse: this.createErrorResponse(
-          "SERVICE_NOT_INITIALIZED",
-          errorMessage
-        ),
+        code: "SERVICE_NOT_INITIALIZED",
+        message: errorMessage,
+        status: 503,
       };
     }
 
@@ -1899,22 +1783,18 @@ export class ToolApiHandler {
       errorMessage.includes("TOOL_NAME_CONFLICT")
     ) {
       return {
-        statusCode: 409,
-        errorResponse: this.createErrorResponse(
-          "TOOL_NAME_CONFLICT",
-          `${errorMessage}。建议：1) 使用自定义名称；2) 删除现有同名工具后重试`
-        ),
+        code: "TOOL_NAME_CONFLICT",
+        message: `${errorMessage}。建议：1) 使用自定义名称；2) 删除现有同名工具后重试`,
+        status: 409,
       };
     }
 
     // 数据验证错误 (400)
     if (this.isValidationError(errorMessage)) {
       return {
-        statusCode: 400,
-        errorResponse: this.createErrorResponse(
-          "VALIDATION_ERROR",
-          this.formatValidationError(errorMessage)
-        ),
+        code: "VALIDATION_ERROR",
+        message: this.formatValidationError(errorMessage),
+        status: 400,
       };
     }
 
@@ -1926,11 +1806,9 @@ export class ToolApiHandler {
       errorMessage.includes("CONFIGURATION_ERROR")
     ) {
       return {
-        statusCode: 422,
-        errorResponse: this.createErrorResponse(
-          "CONFIGURATION_ERROR",
-          `${errorMessage}。请检查：1) 相关配置是否正确；2) 网络连接是否正常；3) 配置文件权限是否正确`
-        ),
+        code: "CONFIGURATION_ERROR",
+        message: `${errorMessage}。请检查：1) 相关配置是否正确；2) 网络连接是否正常；3) 配置文件权限是否正确`,
+        status: 422,
       };
     }
 
@@ -1940,11 +1818,9 @@ export class ToolApiHandler {
       errorMessage.includes("RESOURCE_LIMIT_EXCEEDED")
     ) {
       return {
-        statusCode: 429,
-        errorResponse: this.createErrorResponse(
-          "RESOURCE_LIMIT_EXCEEDED",
-          errorMessage
-        ),
+        code: "RESOURCE_LIMIT_EXCEEDED",
+        message: errorMessage,
+        status: 429,
       };
     }
 
@@ -1954,21 +1830,17 @@ export class ToolApiHandler {
       errorMessage.includes("NOT_IMPLEMENTED")
     ) {
       return {
-        statusCode: 501,
-        errorResponse: this.createErrorResponse(
-          "TOOL_TYPE_NOT_IMPLEMENTED",
-          errorMessage
-        ),
+        code: "TOOL_TYPE_NOT_IMPLEMENTED",
+        message: errorMessage,
+        status: 501,
       };
     }
 
     // 系统错误 (500)
     return {
-      statusCode: 500,
-      errorResponse: this.createErrorResponse(
-        "ADD_CUSTOM_TOOL_ERROR",
-        `添加工具失败：${errorMessage}。请稍后重试，如问题持续存在请联系管理员`
-      ),
+      code: "ADD_CUSTOM_TOOL_ERROR",
+      message: `添加工具失败：${errorMessage}。请稍后重试，如问题持续存在请联系管理员`,
+      status: 500,
     };
   }
 
@@ -1976,8 +1848,9 @@ export class ToolApiHandler {
    * 处理删除工具时的错误
    */
   private handleRemoveToolError(error: unknown): {
-    statusCode: number;
-    errorResponse: ToolCallResponse;
+    code: string;
+    message: string;
+    status: number;
   } {
     const errorMessage =
       error instanceof Error ? error.message : "删除自定义工具失败";
@@ -1985,43 +1858,35 @@ export class ToolApiHandler {
     // 工具不存在错误 (404)
     if (errorMessage.includes("不存在") || errorMessage.includes("未找到")) {
       return {
-        statusCode: 404,
-        errorResponse: this.createErrorResponse(
-          "TOOL_NOT_FOUND",
-          `${errorMessage}。请检查工具名称是否正确，或刷新页面查看最新的工具列表`
-        ),
+        code: "TOOL_NOT_FOUND",
+        message: `${errorMessage}。请检查工具名称是否正确，或刷新页面查看最新的工具列表`,
+        status: 404,
       };
     }
 
     // 参数错误 (400)
     if (errorMessage.includes("不能为空") || errorMessage.includes("无效")) {
       return {
-        statusCode: 400,
-        errorResponse: this.createErrorResponse(
-          "INVALID_REQUEST",
-          `${errorMessage}。请提供有效的工具名称`
-        ),
+        code: "INVALID_REQUEST",
+        message: `${errorMessage}。请提供有效的工具名称`,
+        status: 400,
       };
     }
 
     // 配置错误 (422)
     if (errorMessage.includes("配置") || errorMessage.includes("权限")) {
       return {
-        statusCode: 422,
-        errorResponse: this.createErrorResponse(
-          "CONFIGURATION_ERROR",
-          `${errorMessage}。请检查配置文件权限和格式是否正确`
-        ),
+        code: "CONFIGURATION_ERROR",
+        message: `${errorMessage}。请检查配置文件权限和格式是否正确`,
+        status: 422,
       };
     }
 
     // 系统错误 (500)
     return {
-      statusCode: 500,
-      errorResponse: this.createErrorResponse(
-        "REMOVE_CUSTOM_TOOL_ERROR",
-        `删除工具失败：${errorMessage}。请稍后重试，如问题持续存在请联系管理员`
-      ),
+      code: "REMOVE_CUSTOM_TOOL_ERROR",
+      message: `删除工具失败：${errorMessage}。请稍后重试，如问题持续存在请联系管理员`,
+      status: 500,
     };
   }
 
@@ -2083,7 +1948,7 @@ export class ToolApiHandler {
     workflow: unknown,
     customName?: string,
     customDescription?: string
-  ): { statusCode: number; errorResponse: ToolCallResponse } | null {
+  ): { code: string; message: string; status: number } | null {
     // 检查基础参数
     const basicCheckResult = this.checkBasicParameters(
       workflow,
@@ -2110,25 +1975,21 @@ export class ToolApiHandler {
     workflow: unknown,
     customName?: string,
     customDescription?: string
-  ): { statusCode: number; errorResponse: ToolCallResponse } | null {
+  ): { code: string; message: string; status: number } | null {
     // 检查workflow参数
     if (!workflow) {
       return {
-        statusCode: 400,
-        errorResponse: this.createErrorResponse(
-          "INVALID_REQUEST",
-          "请求体中缺少 workflow 参数"
-        ),
+        code: "INVALID_REQUEST",
+        message: "请求体中缺少 workflow 参数",
+        status: 400,
       };
     }
 
     if (typeof workflow !== "object") {
       return {
-        statusCode: 400,
-        errorResponse: this.createErrorResponse(
-          "INVALID_REQUEST",
-          "workflow 参数必须是对象类型"
-        ),
+        code: "INVALID_REQUEST",
+        message: "workflow 参数必须是对象类型",
+        status: 400,
       };
     }
 
@@ -2143,11 +2004,9 @@ export class ToolApiHandler {
         !workflowObj.workflow_id.trim()
       ) {
         return {
-          statusCode: 400,
-          errorResponse: this.createErrorResponse(
-            "INVALID_REQUEST",
-            "workflow_id 不能为空且必须是非空字符串"
-          ),
+          code: "INVALID_REQUEST",
+          message: "workflow_id 不能为空且必须是非空字符串",
+          status: 400,
         };
       }
 
@@ -2157,11 +2016,9 @@ export class ToolApiHandler {
         !workflowObj.workflow_name.trim()
       ) {
         return {
-          statusCode: 400,
-          errorResponse: this.createErrorResponse(
-            "INVALID_REQUEST",
-            "workflow_name 不能为空且必须是非空字符串"
-          ),
+          code: "INVALID_REQUEST",
+          message: "workflow_name 不能为空且必须是非空字符串",
+          status: 400,
         };
       }
     }
@@ -2170,31 +2027,25 @@ export class ToolApiHandler {
     if (customName !== undefined) {
       if (typeof customName !== "string") {
         return {
-          statusCode: 400,
-          errorResponse: this.createErrorResponse(
-            "INVALID_REQUEST",
-            "customName 必须是字符串类型"
-          ),
+          code: "INVALID_REQUEST",
+          message: "customName 必须是字符串类型",
+          status: 400,
         };
       }
 
       if (customName.trim() === "") {
         return {
-          statusCode: 400,
-          errorResponse: this.createErrorResponse(
-            "INVALID_REQUEST",
-            "customName 不能为空字符串"
-          ),
+          code: "INVALID_REQUEST",
+          message: "customName 不能为空字符串",
+          status: 400,
         };
       }
 
       if (customName.length > 50) {
         return {
-          statusCode: 400,
-          errorResponse: this.createErrorResponse(
-            "INVALID_REQUEST",
-            "customName 长度不能超过50个字符"
-          ),
+          code: "INVALID_REQUEST",
+          message: "customName 长度不能超过50个字符",
+          status: 400,
         };
       }
     }
@@ -2202,21 +2053,17 @@ export class ToolApiHandler {
     if (customDescription !== undefined) {
       if (typeof customDescription !== "string") {
         return {
-          statusCode: 400,
-          errorResponse: this.createErrorResponse(
-            "INVALID_REQUEST",
-            "customDescription 必须是字符串类型"
-          ),
+          code: "INVALID_REQUEST",
+          message: "customDescription 必须是字符串类型",
+          status: 400,
         };
       }
 
       if (customDescription.length > 200) {
         return {
-          statusCode: 400,
-          errorResponse: this.createErrorResponse(
-            "INVALID_REQUEST",
-            "customDescription 长度不能超过200个字符"
-          ),
+          code: "INVALID_REQUEST",
+          message: "customDescription 长度不能超过200个字符",
+          status: 400,
         };
       }
     }
@@ -2228,19 +2075,19 @@ export class ToolApiHandler {
    * 检查系统状态
    */
   private checkSystemStatus(): {
-    statusCode: number;
-    errorResponse: ToolCallResponse;
+    code: string;
+    message: string;
+    status: number;
   } | null {
     // 检查扣子API配置
     try {
       const cozeConfig = configManager.getCozePlatformConfig();
       if (!cozeConfig || !cozeConfig.token) {
         return {
-          statusCode: 422,
-          errorResponse: this.createErrorResponse(
-            "CONFIGURATION_ERROR",
-            "未配置扣子API Token。请在系统设置中配置 platforms.coze.token"
-          ),
+          code: "CONFIGURATION_ERROR",
+          message:
+            "未配置扣子API Token。请在系统设置中配置 platforms.coze.token",
+          status: 422,
         };
       }
 
@@ -2250,20 +2097,16 @@ export class ToolApiHandler {
         cozeConfig.token.trim() === ""
       ) {
         return {
-          statusCode: 422,
-          errorResponse: this.createErrorResponse(
-            "CONFIGURATION_ERROR",
-            "扣子API Token格式无效。请检查配置中的 platforms.coze.token"
-          ),
+          code: "CONFIGURATION_ERROR",
+          message: "扣子API Token格式无效。请检查配置中的 platforms.coze.token",
+          status: 422,
         };
       }
     } catch (error) {
       return {
-        statusCode: 500,
-        errorResponse: this.createErrorResponse(
-          "SYSTEM_ERROR",
-          "系统配置检查失败，请稍后重试"
-        ),
+        code: "SYSTEM_ERROR",
+        message: "系统配置检查失败，请稍后重试",
+        status: 500,
       };
     }
 
@@ -2274,8 +2117,9 @@ export class ToolApiHandler {
    * 检查资源限制
    */
   private checkResourceLimits(): {
-    statusCode: number;
-    errorResponse: ToolCallResponse;
+    code: string;
+    message: string;
+    status: number;
   } | null {
     try {
       // 检查现有工具数量限制
@@ -2284,11 +2128,9 @@ export class ToolApiHandler {
 
       if (existingTools.length >= maxTools) {
         return {
-          statusCode: 429,
-          errorResponse: this.createErrorResponse(
-            "RESOURCE_LIMIT_EXCEEDED",
-            `已达到最大工具数量限制 (${maxTools})。请删除一些不需要的工具后重试`
-          ),
+          code: "RESOURCE_LIMIT_EXCEEDED",
+          message: `已达到最大工具数量限制 (${maxTools})。请删除一些不需要的工具后重试`,
+          status: 429,
         };
       }
 
@@ -2298,11 +2140,9 @@ export class ToolApiHandler {
 
       if (configSizeEstimate > maxConfigSize) {
         return {
-          statusCode: 413,
-          errorResponse: this.createErrorResponse(
-            "PAYLOAD_TOO_LARGE",
-            "配置文件过大。请删除一些不需要的工具以释放空间"
-          ),
+          code: "PAYLOAD_TOO_LARGE",
+          message: "配置文件过大。请删除一些不需要的工具以释放空间",
+          status: 413,
         };
       }
     } catch (error) {
@@ -2325,20 +2165,22 @@ export class ToolApiHandler {
 
       // 验证 action 参数
       if (!action || typeof action !== "string") {
-        const errorResponse = this.createErrorResponse(
+        return c.fail(
           "INVALID_REQUEST",
-          "action 参数不能为空且必须是字符串"
+          "action 参数不能为空且必须是字符串",
+          undefined,
+          400
         );
-        return c.json(errorResponse, 400);
       }
 
       const validActions = ["enable", "disable", "status", "toggle"];
       if (!validActions.includes(action)) {
-        const errorResponse = this.createErrorResponse(
+        return c.fail(
           "INVALID_ACTION",
-          `无效的 action: ${action}。支持的 action: ${validActions.join(", ")}`
+          `无效的 action: ${action}。支持的 action: ${validActions.join(", ")}`,
+          undefined,
+          400
         );
-        return c.json(errorResponse, 400);
       }
 
       // 验证服务名和工具名
@@ -2355,22 +2197,19 @@ export class ToolApiHandler {
         case "toggle":
           return this.handleToggleTool(c, serverName, toolName);
         default: {
-          const errorResponse = this.createErrorResponse(
+          return c.fail(
             "INVALID_ACTION",
-            `未实现的 action: ${action}`
+            `未实现的 action: ${action}`,
+            undefined,
+            400
           );
-          return c.json(errorResponse, 400);
         }
       }
     } catch (error) {
       this.logger.error("管理 MCP 工具失败:", error);
       const errorMessage =
         error instanceof Error ? error.message : "管理 MCP 工具失败";
-      const errorResponse = this.createErrorResponse(
-        "TOOL_MANAGE_ERROR",
-        errorMessage
-      );
-      return c.json(errorResponse, 500);
+      return c.fail("TOOL_MANAGE_ERROR", errorMessage, undefined, 500);
     }
   }
 
@@ -2392,11 +2231,12 @@ export class ToolApiHandler {
       return this.handleListAllTools(c, includeUsageStats);
     } catch (error) {
       this.logger.error("获取工具列表失败:", error);
-      const errorResponse = this.createErrorResponse(
+      return c.fail(
         "GET_TOOL_LIST_ERROR",
-        error instanceof Error ? error.message : "获取工具列表失败"
+        error instanceof Error ? error.message : "获取工具列表失败",
+        undefined,
+        500
       );
-      return c.json(errorResponse, 500);
     }
   }
 
@@ -2421,16 +2261,14 @@ export class ToolApiHandler {
 
     this.logger.info(`工具已启用: ${serverName}/${toolName}`);
 
-    return c.json(
-      this.createSuccessResponse(
-        {
-          serverName,
-          toolName,
-          enabled: true,
-          description: toolConfig?.description || description || "",
-        },
-        `工具 "${serverName}__${toolName}" 启用成功`
-      )
+    return c.success(
+      {
+        serverName,
+        toolName,
+        enabled: true,
+        description: toolConfig?.description || description || "",
+      },
+      `工具 "${serverName}__${toolName}" 启用成功`
     );
   }
 
@@ -2450,15 +2288,13 @@ export class ToolApiHandler {
 
     this.logger.info(`工具已禁用: ${serverName}/${toolName}`);
 
-    return c.json(
-      this.createSuccessResponse(
-        {
-          serverName,
-          toolName,
-          enabled: false,
-        },
-        `工具 "${serverName}__${toolName}" 禁用成功`
-      )
+    return c.success(
+      {
+        serverName,
+        toolName,
+        enabled: false,
+      },
+      `工具 "${serverName}__${toolName}" 禁用成功`
     );
   }
 
@@ -2475,25 +2311,24 @@ export class ToolApiHandler {
     const toolConfig = toolsConfig[toolName];
 
     if (!toolConfig) {
-      const errorResponse = this.createErrorResponse(
+      return c.fail(
         "TOOL_NOT_FOUND",
-        `工具 "${serverName}__${toolName}" 不存在或未配置`
+        `工具 "${serverName}__${toolName}" 不存在或未配置`,
+        undefined,
+        404
       );
-      return c.json(errorResponse, 404);
     }
 
-    return c.json(
-      this.createSuccessResponse(
-        {
-          serverName,
-          toolName,
-          enabled: toolConfig.enable !== false,
-          description: toolConfig.description || "",
-          usageCount: toolConfig.usageCount,
-          lastUsedTime: toolConfig.lastUsedTime,
-        },
-        "工具状态获取成功"
-      )
+    return c.success(
+      {
+        serverName,
+        toolName,
+        enabled: toolConfig.enable !== false,
+        description: toolConfig.description || "",
+        usageCount: toolConfig.usageCount,
+        lastUsedTime: toolConfig.lastUsedTime,
+      },
+      "工具状态获取成功"
     );
   }
 
@@ -2519,15 +2354,13 @@ export class ToolApiHandler {
       `工具状态已切换: ${serverName}/${toolName} -> ${newEnabled}`
     );
 
-    return c.json(
-      this.createSuccessResponse(
-        {
-          serverName,
-          toolName,
-          enabled: newEnabled,
-        },
-        `工具 "${serverName}__${toolName}" 已${newEnabled ? "启用" : "禁用"}`
-      )
+    return c.success(
+      {
+        serverName,
+        toolName,
+        enabled: newEnabled,
+      },
+      `工具 "${serverName}__${toolName}" 已${newEnabled ? "启用" : "禁用"}`
     );
   }
 
@@ -2542,11 +2375,12 @@ export class ToolApiHandler {
     // 检查服务是否存在
     const mcpServers = configManager.getMcpServers();
     if (!mcpServers[serverName]) {
-      const errorResponse = this.createErrorResponse(
+      return c.fail(
         "SERVICE_NOT_FOUND",
-        `MCP 服务 "${serverName}" 不存在`
+        `MCP 服务 "${serverName}" 不存在`,
+        undefined,
+        404
       );
-      return c.json(errorResponse, 404);
     }
 
     // 获取工具配置
@@ -2569,17 +2403,15 @@ export class ToolApiHandler {
     const enabledCount = tools.filter((t) => t.enabled).length;
     const disabledCount = tools.length - enabledCount;
 
-    return c.json(
-      this.createSuccessResponse(
-        {
-          serverName,
-          tools,
-          total: tools.length,
-          enabledCount,
-          disabledCount,
-        },
-        "获取工具列表成功"
-      )
+    return c.success(
+      {
+        serverName,
+        tools,
+        total: tools.length,
+        enabledCount,
+        disabledCount,
+      },
+      "获取工具列表成功"
     );
   }
 
@@ -2658,7 +2490,7 @@ export class ToolApiHandler {
       result.totalDisabled += tools.length - enabledCount;
     }
 
-    return c.json(this.createSuccessResponse(result, "获取所有工具列表成功"));
+    return c.success(result, "获取所有工具列表成功");
   }
 
   /**

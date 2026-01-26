@@ -67,6 +67,30 @@ describe("ToolApiHandler - 集成测试", () => {
         }
         return undefined;
       }),
+      // 添加响应增强方法
+      success: vi.fn((data: unknown, message?: string, status?: number) => {
+        return {
+          status: status || 200,
+          json: () => ({
+            success: true,
+            data,
+            message,
+          }),
+        };
+      }),
+      fail: vi.fn((code: string, message: string, details?: unknown, status?: number) => {
+        return {
+          status: status || 500,
+          json: () => ({
+            success: false,
+            error: {
+              code,
+              message,
+              details,
+            },
+          }),
+        };
+      }),
       // 添加其他可能需要的 Hono Context 方法
       set: vi.fn(),
       has: vi.fn(),
@@ -551,7 +575,7 @@ describe("ToolApiHandler - 集成测试", () => {
 
       const response = await toolApiHandler.removeCustomTool(mockContext);
 
-      const call = mockContext.json.mock.calls[0];
+      // const call = mockContext.json.mock.calls[0];
       expect(call[1]).toBe(404);
       expect(call[0].success).toBe(false);
       expect(call[0].error.code).toBe("TOOL_NOT_FOUND");

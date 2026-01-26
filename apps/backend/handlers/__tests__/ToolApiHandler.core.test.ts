@@ -70,6 +70,29 @@ describe("ToolApiHandler - 核心功能测试", () => {
         }
         return undefined;
       }),
+      success: vi.fn((data: unknown, message?: string, status?: number) => {
+        return {
+          status: status || 200,
+          json: () => ({
+            success: true,
+            data,
+            message,
+          }),
+        };
+      }),
+      fail: vi.fn((code: string, message: string, details?: unknown, status?: number) => {
+        return {
+          status: status || 500,
+          json: () => ({
+            success: false,
+            error: {
+              code,
+              message,
+              details,
+            },
+          }),
+        };
+      }),
     } as any;
     vi.clearAllMocks();
   });
@@ -103,15 +126,14 @@ describe("ToolApiHandler - 核心功能测试", () => {
 
       await handler.getCustomTools(mockContext as Context);
 
-      expect(mockContext.json).toHaveBeenCalledWith({
-        success: true,
-        data: {
+      expect(mockContext.success).toHaveBeenCalledWith(
+        {
           tools: mockTools,
           totalTools: 1,
           configPath: "/test/config.json",
         },
-        message: "获取自定义 MCP 工具列表成功",
-      });
+        "获取自定义 MCP 工具列表成功"
+      );
     });
 
     it("应该处理配置文件不存在的情况", async () => {
@@ -119,14 +141,10 @@ describe("ToolApiHandler - 核心功能测试", () => {
 
       await handler.getCustomTools(mockContext as Context);
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: {
-            code: "CONFIG_NOT_FOUND",
-            message: "配置文件不存在，请先运行 'xiaozhi init' 初始化配置",
-          },
-        }),
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "CONFIG_NOT_FOUND",
+        "配置文件不存在，请先运行 'xiaozhi init' 初始化配置",
+        undefined,
         404
       );
     });
@@ -138,14 +156,10 @@ describe("ToolApiHandler - 核心功能测试", () => {
 
       await handler.getCustomTools(mockContext as Context);
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: {
-            code: "CONFIG_PARSE_ERROR",
-            message: "配置文件解析失败: 配置解析失败",
-          },
-        }),
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "CONFIG_PARSE_ERROR",
+        "配置文件解析失败: 配置解析失败",
+        undefined,
         500
       );
     });
@@ -171,14 +185,10 @@ describe("ToolApiHandler - 核心功能测试", () => {
 
       await handler.getCustomTools(mockContext as Context);
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: {
-            code: "INVALID_TOOL_CONFIG",
-            message: "自定义 MCP 工具配置验证失败，请检查配置文件中的工具定义",
-          },
-        }),
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "INVALID_TOOL_CONFIG",
+        "自定义 MCP 工具配置验证失败，请检查配置文件中的工具定义",
+        undefined,
         400
       );
     });
@@ -188,15 +198,14 @@ describe("ToolApiHandler - 核心功能测试", () => {
 
       await handler.getCustomTools(mockContext as Context);
 
-      expect(mockContext.json).toHaveBeenCalledWith({
-        success: true,
-        data: {
+      expect(mockContext.success).toHaveBeenCalledWith(
+        {
           tools: [],
           totalTools: 0,
           configPath: "/test/config.json",
         },
-        message: "未配置自定义 MCP 工具",
-      });
+        "未配置自定义 MCP 工具"
+      );
     });
   });
 
@@ -237,15 +246,13 @@ describe("ToolApiHandler - 核心功能测试", () => {
 
       await handler.addCustomTool(mockContext as Context);
 
-      // Verify the request was processed correctly by checking the json response
-      expect(mockContext.json).toHaveBeenCalledWith(
+      // Verify the request was processed correctly by checking the success response
+      expect(mockContext.success).toHaveBeenCalledWith(
         expect.objectContaining({
-          success: true, // Should succeed with proper mocks
-          data: expect.objectContaining({
-            toolName: "test-service__test-tool",
-            toolType: "mcp",
-          }),
-        })
+          toolName: "test-service__test-tool",
+          toolType: "mcp",
+        }),
+        expect.stringContaining("添加成功")
       );
     });
 
@@ -268,15 +275,13 @@ describe("ToolApiHandler - 核心功能测试", () => {
 
       await handler.addCustomTool(mockContext as Context);
 
-      // Verify the request was processed correctly by checking the json response
-      expect(mockContext.json).toHaveBeenCalledWith(
+      // Verify the request was processed correctly by checking the success response
+      expect(mockContext.success).toHaveBeenCalledWith(
         expect.objectContaining({
-          success: true, // Should succeed with proper test data
-          data: expect.objectContaining({
-            toolName: expect.any(String),
-            toolType: "coze",
-          }),
-        })
+          toolName: expect.any(String),
+          toolType: "coze",
+        }),
+        expect.stringContaining("添加成功")
       );
     });
 
@@ -290,14 +295,10 @@ describe("ToolApiHandler - 核心功能测试", () => {
 
       await handler.addCustomTool(mockContext as Context);
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: {
-            code: "INVALID_TOOL_TYPE",
-            message: expect.stringContaining("不支持的工具类型"),
-          },
-        }),
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "INVALID_TOOL_TYPE",
+        expect.stringContaining("不支持的工具类型"),
+        undefined,
         400
       );
     });
@@ -312,14 +313,10 @@ describe("ToolApiHandler - 核心功能测试", () => {
 
       await handler.addCustomTool(mockContext as Context);
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: {
-            code: "TOOL_TYPE_NOT_IMPLEMENTED",
-            message: expect.stringContaining("暂未实现"),
-          },
-        }),
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "TOOL_TYPE_NOT_IMPLEMENTED",
+        expect.stringContaining("暂未实现"),
+        undefined,
         501
       );
     });
@@ -338,14 +335,10 @@ describe("ToolApiHandler - 核心功能测试", () => {
 
       await handler.updateCustomTool(mockContext as Context);
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: {
-            code: "INVALID_REQUEST",
-            message: "工具名称不能为空",
-          },
-        }),
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "INVALID_REQUEST",
+        "工具名称不能为空",
+        undefined,
         400
       );
     });
@@ -356,14 +349,10 @@ describe("ToolApiHandler - 核心功能测试", () => {
 
       await handler.updateCustomTool(mockContext as Context);
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: {
-            code: "INVALID_REQUEST",
-            message: "请求体必须是有效对象",
-          },
-        }),
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "INVALID_REQUEST",
+        "请求体必须是有效对象",
+        undefined,
         400
       );
     });
@@ -378,14 +367,10 @@ describe("ToolApiHandler - 核心功能测试", () => {
 
       await handler.updateCustomTool(mockContext as Context);
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: {
-            code: "INVALID_REQUEST",
-            message: "更新操作只支持新格式的请求",
-          },
-        }),
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "INVALID_REQUEST",
+        "更新操作只支持新格式的请求",
+        undefined,
         400
       );
     });
@@ -463,8 +448,8 @@ describe("ToolApiHandler - 核心功能测试", () => {
       const error = new Error("测试错误");
       const result = handleAddToolError(error);
 
-      expect(result.statusCode).toBe(500);
-      expect(result.errorResponse.error.code).toBe("ADD_CUSTOM_TOOL_ERROR");
+      expect(result.status).toBe(500);
+      expect(result.code).toBe("ADD_CUSTOM_TOOL_ERROR");
     });
 
     it("应该正确处理更新工具错误", () => {
@@ -475,8 +460,8 @@ describe("ToolApiHandler - 核心功能测试", () => {
       const error = new Error("测试错误");
       const result = handleUpdateToolError(error);
 
-      expect(result.statusCode).toBe(500);
-      expect(result.errorResponse.error.code).toBe("UPDATE_CUSTOM_TOOL_ERROR");
+      expect(result.status).toBe(500);
+      expect(result.code).toBe("UPDATE_CUSTOM_TOOL_ERROR");
     });
 
     it("应该正确处理删除工具错误", () => {
@@ -487,8 +472,8 @@ describe("ToolApiHandler - 核心功能测试", () => {
       const error = new Error("测试错误");
       const result = handleRemoveToolError(error);
 
-      expect(result.statusCode).toBe(500);
-      expect(result.errorResponse.error.code).toBe("REMOVE_CUSTOM_TOOL_ERROR");
+      expect(result.status).toBe(500);
+      expect(result.code).toBe("REMOVE_CUSTOM_TOOL_ERROR");
     });
   });
 });
