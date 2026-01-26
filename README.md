@@ -5,18 +5,18 @@
 <br />
 
 <div align="center">
-  <a href="https://www.npmjs.com/package/xiaozhi-client" target="_blank"><img src="https://img.shields.io/npm/v/xiaozhi-client" alt="npm version" /></a>
-  <a href="https://codecov.io/gh/shenjingnan/xiaozhi-client" target="_blank"><img src="https://codecov.io/gh/shenjingnan/xiaozhi-client/branch/main/graph/badge.svg" alt="codecov" /></a>
-  <a href="https://github.com/shenjingnan/xiaozhi-client/actions" target="_blank"><img src="https://github.com/shenjingnan/xiaozhi-client/workflows/Release/badge.svg" alt="ci" /></a>
-  <a href="https://hub.docker.com/r/shenjingnan/xiaozhi-client" target="_blank"><img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker: Ready" /></a>
-  <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT" /></a>
-  <a href="https://img.shields.io/badge/AI%20Code-90%25%2B-84cc16" target="_blank"><img src="https://img.shields.io/badge/AI%20Code-90%25%2B-84cc16" alt="AI Code: 80%" /></a>
-  <br />
-  <a href="http://xiaozhi.me" target="_blank"><img src="https://img.shields.io/badge/小智AI-Supported-84cc16?style=flat" alt="Xiaozhi AI: Supported" /></a>
-  <a href="https://www.modelscope.cn/mcp" target="_blank"><img src="https://img.shields.io/badge/ModelScope-Supported-84cc16?style=flat" alt="ModelScope: Supported" /></a>
-  <a href="https://www.coze.cn/" target="_blank"><img src="https://img.shields.io/badge/Coze-Supported-84cc16?style=flat" alt="Coze: Supported" /></a>
-  <a href="https://dify.ai/" target="_blank"><img src="https://img.shields.io/badge/Dify-Supported-84cc16?style=flat" alt="Dify: Supported" /></a>
-  <a href="https://img.shields.io/badge/MCP%20Client-Supported-84cc16?style=flat" target="_blank"><img src="" alt="MCP Client: Supported" /></a>
+<a href="https://www.npmjs.com/package/xiaozhi-client" target="_blank"><img src="https://img.shields.io/npm/v/xiaozhi-client" alt="npm version" /></a>
+<a href="https://codecov.io/gh/shenjingnan/xiaozhi-client" target="_blank"><img src="https://codecov.io/gh/shenjingnan/xiaozhi-client/branch/main/graph/badge.svg" alt="codecov" /></a>
+<a href="https://github.com/shenjingnan/xiaozhi-client/actions" target="_blank"><img src="https://github.com/shenjingnan/xiaozhi-client/workflows/Release/badge.svg" alt="ci" /></a>
+<a href="https://hub.docker.com/r/shenjingnan/xiaozhi-client" target="_blank"><img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker: Ready" /></a>
+<a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT" /></a>
+<a href="https://img.shields.io/badge/AI%20Code-90%25%2B-84cc16" target="_blank"><img src="https://img.shields.io/badge/AI%20Code-90%25%2B-84cc16" alt="AI Code: 80%" /></a>
+<br />
+<a href="http://xiaozhi.me" target="_blank"><img src="https://img.shields.io/badge/小智AI-Supported-84cc16?style=flat" alt="Xiaozhi AI: Supported" /></a>
+<a href="https://www.modelscope.cn/mcp" target="_blank"><img src="https://img.shields.io/badge/ModelScope-Supported-84cc16?style=flat" alt="ModelScope: Supported" /></a>
+<a href="https://www.coze.cn/" target="_blank"><img src="https://img.shields.io/badge/Coze-Supported-84cc16?style=flat" alt="Coze: Supported" /></a>
+<a href="https://dify.ai/" target="_blank"><img src="https://img.shields.io/badge/Dify-Supported-84cc16?style=flat" alt="Dify: Supported" /></a>
+<a href="https://img.shields.io/badge/MCP%20Client-Supported-84cc16?style=flat" target="_blank"><img src="https://img.shields.io/badge/MCP%20Client-Supported-84cc16?style=flat" alt="MCP Client: Supported" /></a>
 </div>
 
 ## 功能特色
