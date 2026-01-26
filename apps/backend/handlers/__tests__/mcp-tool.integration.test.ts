@@ -1,3 +1,18 @@
+/**
+ * MCPToolHandler 单元测试
+ *
+ * ⚠️ 注意：这些是单元测试，不是真正的集成测试
+ * - 使用了大量的 Mock，不涉及真实的 HTTP 请求
+ * - 主要测试 handler 的基本调用流程
+ * - 不应作为防止回归 Bug 的唯一保障
+ *
+ * 真正的集成测试应该：
+ * - 启动真实的 WebServer
+ * - 发送真实的 HTTP 请求
+ * - 测试完整的端到端场景
+ * - 参考：mcp.handler.integration.test.ts
+ */
+
 import { configManager } from "@xiaozhi-client/config";
 import {
   afterAll,
@@ -9,10 +24,10 @@ import {
   it,
   vi,
 } from "vitest";
-import { MCPToolHandler } from "./mcp-tool.handler.js";
+import { MCPToolHandler } from "../mcp-tool.handler.js";
 
 // Mock dependencies
-vi.mock("../Logger.js", () => ({
+vi.mock("../../Logger.js", () => ({
   logger: {
     info: vi.fn(),
     error: vi.fn(),
@@ -21,7 +36,7 @@ vi.mock("../Logger.js", () => ({
   },
 }));
 
-describe("MCPToolHandler - 集成测试", () => {
+describe("MCPToolHandler - 单元测试", () => {
   let mcpToolHandler: MCPToolHandler;
   let mockContext: any;
   let mockServiceManager: any;
