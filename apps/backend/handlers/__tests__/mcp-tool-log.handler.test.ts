@@ -5,7 +5,7 @@
 
 import { PAGINATION_CONSTANTS } from "@constants/ApiConstants.js";
 import { describe, expect, it } from "vitest";
-import { MCPToolLogHandler } from "./mcp-tool-log.handler.js";
+import { MCPToolLogHandler } from "../mcp-tool-log.handler.js";
 
 describe("MCPToolLogHandler - 基本功能测试", () => {
   it("应该能够创建处理器实例", () => {
