@@ -11,27 +11,6 @@ import type { Context } from "hono";
 import { z } from "zod";
 
 /**
- * 统一响应接口
- */
-interface ApiResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  error?: {
-    code: string;
-    message: string;
-    details?: unknown;
-  };
-}
-
-/**
- * Zod 验证错误详细信息
- */
-interface ValidationErrorDetail {
-  field: string;
-  message: string;
-}
-
-/**
  * 工具调用查询参数 Zod Schema
  */
 const ToolCallQuerySchema = z
@@ -110,58 +89,12 @@ export class ToolCallLogApiHandler {
   }
 
   /**
-   * 创建成功响应
-   */
-  private createSuccessResponse<T>(data?: T): Response {
-    const response: ApiResponse<T> = {
-      success: true,
-      data,
-    };
-    return Response.json(response);
-  }
-
-  /**
-   * 创建错误响应
-   */
-  private createErrorResponse(
-    code: string,
-    message: string,
-    details?: unknown
-  ): Response {
-    const response: ApiResponse = {
-      success: false,
-      error: {
-        code,
-        message,
-        details,
-      },
-    };
-    return Response.json(response, { status: this.getHttpStatusCode(code) });
-  }
-
-  /**
-   * 根据错误代码获取 HTTP 状态码
-   */
-  private getHttpStatusCode(code: string): number {
-    switch (code) {
-      case "INVALID_QUERY_PARAMETERS":
-        return 400;
-      case "LOG_FILE_NOT_FOUND":
-        return 404;
-      case "LOG_FILE_READ_ERROR":
-        return 500;
-      default:
-        return 500;
-    }
-  }
-
-  /**
    * 解析和验证查询参数
    */
   private parseAndValidateQueryParams(c: Context): {
     success: boolean;
     data?: ToolCallQuery;
-    error?: ValidationErrorDetail[];
+    error?: Array<{ field: string; message: string }>;
   } {
     const query = c.req.query();
     const result = ToolCallQuerySchema.safeParse(query);
@@ -190,10 +123,11 @@ export class ToolCallLogApiHandler {
       const validation = this.parseAndValidateQueryParams(c);
 
       if (!validation.success) {
-        return this.createErrorResponse(
+        return c.fail(
           "INVALID_QUERY_PARAMETERS",
           "查询参数格式错误",
-          validation.error
+          validation.error,
+          400
         );
       }
 
@@ -202,25 +136,19 @@ export class ToolCallLogApiHandler {
       );
 
       logger.debug(`API: 返回 ${result.records.length} 条工具调用日志记录`);
-      return this.createSuccessResponse(result);
+      return c.success(result, "获取工具调用日志成功");
     } catch (error) {
       logger.error("获取工具调用日志失败:", error);
 
       const message = error instanceof Error ? error.message : "未知错误";
       if (message.includes("不存在")) {
-        return this.createErrorResponse("LOG_FILE_NOT_FOUND", message);
+        return c.fail("LOG_FILE_NOT_FOUND", message, undefined, 404);
       }
       if (message.includes("无法读取")) {
-        return this.createErrorResponse("LOG_FILE_READ_ERROR", message);
+        return c.fail("LOG_FILE_READ_ERROR", message, undefined, 500);
       }
 
-      return this.createErrorResponse(
-        "INTERNAL_ERROR",
-        "获取工具调用日志失败",
-        {
-          details: message,
-        }
-      );
+      return c.fail("INTERNAL_ERROR", "获取工具调用日志失败", message, 500);
     }
   }
 }
