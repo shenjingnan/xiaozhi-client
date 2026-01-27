@@ -21,7 +21,7 @@ export class VersionApiHandler extends BaseHandler {
 
       logger.debug("获取版本信息成功:", versionInfo);
 
-      return this.success(c, versionInfo);
+      return c.success(versionInfo);
     } catch (error) {
       return this.handleError(c, error, "获取版本信息", "VERSION_READ_ERROR");
     }
@@ -39,7 +39,7 @@ export class VersionApiHandler extends BaseHandler {
       const version = VersionUtils.getVersion();
       logger.debug(`获取版本号成功: ${version}`);
 
-      return this.success(c, { version });
+      return c.success({ version });
     } catch (error) {
       return this.handleError(c, error, "获取版本号", "VERSION_READ_ERROR");
     }
@@ -57,7 +57,7 @@ export class VersionApiHandler extends BaseHandler {
       VersionUtils.clearCache();
       logger.info("版本缓存已清除");
 
-      return this.success(c, undefined, "版本缓存已清除");
+      return c.success(undefined, "版本缓存已清除");
     } catch (error) {
       return this.handleError(c, error, "清除版本缓存", "CACHE_CLEAR_ERROR");
     }
@@ -78,8 +78,7 @@ export class VersionApiHandler extends BaseHandler {
       // 验证版本类型参数
       const validTypes = ["stable", "rc", "beta", "all"];
       if (!validTypes.includes(type as string)) {
-        return this.fail(
-          c,
+        return c.fail(
           "INVALID_VERSION_TYPE",
           `无效的版本类型: ${type}。支持的类型: ${validTypes.join(", ")}`,
           undefined,
@@ -92,7 +91,7 @@ export class VersionApiHandler extends BaseHandler {
 
       logger.debug(`获取到 ${versions.length} 个可用版本 (类型: ${type})`);
 
-      return this.success(c, {
+      return c.success({
         versions,
         type,
         total: versions.length,
@@ -123,7 +122,7 @@ export class VersionApiHandler extends BaseHandler {
 
       if (result.error) {
         // 如果有错误，但仍返回部分信息
-        return this.success(c, {
+        return c.success({
           currentVersion: result.currentVersion,
           latestVersion: result.latestVersion,
           hasUpdate: result.hasUpdate,
@@ -131,7 +130,7 @@ export class VersionApiHandler extends BaseHandler {
         });
       }
 
-      return this.success(c, {
+      return c.success({
         currentVersion: result.currentVersion,
         latestVersion: result.latestVersion,
         hasUpdate: result.hasUpdate,

@@ -38,8 +38,7 @@ export class UpdateApiHandler extends BaseHandler {
       // 使用 zod 进行参数验证
       const parseResult = UpdateRequestSchema.safeParse(body);
       if (!parseResult.success) {
-        return this.fail(
-          c,
+        return c.fail(
           "INVALID_VERSION",
           "请求参数格式错误",
           parseResult.error.errors.map((err) => ({
@@ -57,8 +56,7 @@ export class UpdateApiHandler extends BaseHandler {
         (v) => v
       );
       if (hasActiveInstall) {
-        return this.fail(
-          c,
+        return c.fail(
           "INSTALL_IN_PROGRESS",
           "已有安装进程正在进行，请等待完成后再试",
           undefined,
@@ -71,8 +69,7 @@ export class UpdateApiHandler extends BaseHandler {
         logger.error("安装过程失败:", error);
       });
 
-      return this.success(
-        c,
+      return c.success(
         {
           version: version,
           message: "安装已启动，请查看实时日志",

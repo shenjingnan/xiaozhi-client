@@ -3,7 +3,7 @@ import type { Context } from "hono";
 
 /**
  * 抽象 API Handler 基类
- * 提供统一的 Logger 获取方法和便捷的响应方法
+ * 提供统一的 Logger 获取方法和便捷的辅助方法
  */
 export abstract class BaseHandler {
   /**
@@ -20,45 +20,6 @@ export abstract class BaseHandler {
       );
     }
     return logger as Logger;
-  }
-
-  /**
-   * 返回成功响应（Context.success 的包装器）
-   * @param c - Hono context
-   * @param data - 响应数据
-   * @param message - 响应消息
-   * @param status - HTTP 状态码（默认 200）
-   * @returns JSON 响应
-   */
-  protected success<T>(
-    c: Context,
-    data?: T,
-    message?: string,
-    status?: number
-  ): Response {
-    // 只有当 status 明确指定时才传递，否则使用默认值
-    return status !== undefined
-      ? c.success(data, message, status)
-      : c.success(data, message);
-  }
-
-  /**
-   * 返回错误响应（Context.fail 的包装器）
-   * @param c - Hono context
-   * @param code - 错误码
-   * @param message - 错误消息
-   * @param details - 错误详情
-   * @param statusCode - HTTP 状态码（默认 400）
-   * @returns JSON 响应
-   */
-  protected fail(
-    c: Context,
-    code: string,
-    message: string,
-    details?: unknown,
-    statusCode?: number
-  ): Response {
-    return c.fail(code, message, details, statusCode);
   }
 
   /**
@@ -89,8 +50,7 @@ export abstract class BaseHandler {
 
     logger.error(`${operation}失败:`, error);
 
-    return this.fail(
-      c,
+    return c.fail(
       errorCode,
       errorMessage || defaultMessage,
       undefined,
