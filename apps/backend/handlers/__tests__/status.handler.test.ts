@@ -1,6 +1,6 @@
 import type { StatusService } from "@services/StatusService.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { StatusApiHandler } from "../StatusApiHandler.js";
+import { StatusApiHandler } from "../status.handler.js";
 
 // Mock dependencies
 vi.mock("../../Logger.js", () => ({

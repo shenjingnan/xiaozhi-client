@@ -1,6 +1,6 @@
 import type { AppConfig } from "@xiaozhi-client/config";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ConfigApiHandler } from "../ConfigApiHandler.js";
+import { ConfigApiHandler } from "../config.handler.js";
 
 // 模拟依赖项
 vi.mock("../../Logger.js", () => ({

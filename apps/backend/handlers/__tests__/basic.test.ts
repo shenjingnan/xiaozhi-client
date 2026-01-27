@@ -64,12 +64,12 @@ describe("Handlers Basic Tests", () => {
   it("should be able to import handler modules", async () => {
     // Test that all handler modules can be imported without errors
     const modules = [
-      () => import("../ConfigApiHandler.js"),
-      () => import("../HeartbeatHandler.js"),
-      () => import("../RealtimeNotificationHandler.js"),
-      () => import("../ServiceApiHandler.js"),
+      () => import("../config.handler.js"),
+      () => import("../heartbeat.handler.js"),
+      () => import("../realtime-notification.handler.js"),
+      () => import("../service.handler.js"),
       () => import("../static-file.handler.js"),
-      () => import("../StatusApiHandler.js"),
+      () => import("../status.handler.js"),
     ];
 
     for (const importModule of modules) {
@@ -78,10 +78,10 @@ describe("Handlers Basic Tests", () => {
   });
 
   it("should have proper class constructors", async () => {
-    const { ConfigApiHandler } = await import("../ConfigApiHandler.js");
+    const { ConfigApiHandler } = await import("../config.handler.js");
     const { StaticFileHandler } = await import("../static-file.handler.js");
-    const { ServiceApiHandler } = await import("../ServiceApiHandler.js");
-    const { StatusApiHandler } = await import("../StatusApiHandler.js");
+    const { ServiceApiHandler } = await import("../service.handler.js");
+    const { StatusApiHandler } = await import("../status.handler.js");
     const { StatusService } = await import("@services/StatusService.js");
 
     const mockStatusService = new StatusService();
