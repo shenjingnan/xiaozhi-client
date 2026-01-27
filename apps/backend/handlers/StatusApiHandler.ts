@@ -1,66 +1,16 @@
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
 import type { StatusService } from "@services/StatusService.js";
 import type { Context } from "hono";
-
-/**
- * 统一响应格式接口
- */
-interface ApiErrorResponse {
-  error: {
-    code: string;
-    message: string;
-    details?: any;
-  };
-}
-
-interface ApiSuccessResponse<T = any> {
-  success: boolean;
-  data?: T;
-  message?: string;
-}
+import { AbstractApiHandler } from "./AbstractApiHandler.js";
 
 /**
  * 状态 API 处理器
  */
-export class StatusApiHandler {
-  private logger: Logger;
+export class StatusApiHandler extends AbstractApiHandler {
   private statusService: StatusService;
 
   constructor(statusService: StatusService) {
-    this.logger = logger;
+    super();
     this.statusService = statusService;
-  }
-
-  /**
-   * 创建统一的错误响应
-   */
-  private createErrorResponse(
-    code: string,
-    message: string,
-    details?: any
-  ): ApiErrorResponse {
-    return {
-      error: {
-        code,
-        message,
-        details,
-      },
-    };
-  }
-
-  /**
-   * 创建统一的成功响应
-   */
-  private createSuccessResponse<T>(
-    data?: T,
-    message?: string
-  ): ApiSuccessResponse<T> {
-    return {
-      success: true,
-      data,
-      message,
-    };
   }
 
   /**
@@ -68,18 +18,14 @@ export class StatusApiHandler {
    * GET /api/status
    */
   async getStatus(c: Context): Promise<Response> {
+    const logger = this.getLogger(c);
     try {
-      this.logger.debug("处理获取状态请求");
+      logger.debug("处理获取状态请求");
       const status = this.statusService.getFullStatus();
-      this.logger.debug("获取状态成功");
-      return c.json(this.createSuccessResponse(status));
+      logger.debug("获取状态成功");
+      return this.success(c, status);
     } catch (error) {
-      this.logger.error("获取状态失败:", error);
-      const errorResponse = this.createErrorResponse(
-        "STATUS_READ_ERROR",
-        error instanceof Error ? error.message : "获取状态失败"
-      );
-      return c.json(errorResponse, 500);
+      return this.handleError(c, error, "获取状态", "STATUS_READ_ERROR");
     }
   }
 
@@ -88,18 +34,19 @@ export class StatusApiHandler {
    * GET /api/status/client
    */
   async getClientStatus(c: Context): Promise<Response> {
+    const logger = this.getLogger(c);
     try {
-      this.logger.debug("处理获取客户端状态请求");
+      logger.debug("处理获取客户端状态请求");
       const clientStatus = this.statusService.getClientStatus();
-      this.logger.debug("获取客户端状态成功");
-      return c.json(this.createSuccessResponse(clientStatus));
+      logger.debug("获取客户端状态成功");
+      return this.success(c, clientStatus);
     } catch (error) {
-      this.logger.error("获取客户端状态失败:", error);
-      const errorResponse = this.createErrorResponse(
-        "CLIENT_STATUS_READ_ERROR",
-        error instanceof Error ? error.message : "获取客户端状态失败"
+      return this.handleError(
+        c,
+        error,
+        "获取客户端状态",
+        "CLIENT_STATUS_READ_ERROR"
       );
-      return c.json(errorResponse, 500);
     }
   }
 
@@ -108,18 +55,19 @@ export class StatusApiHandler {
    * GET /api/status/restart
    */
   async getRestartStatus(c: Context): Promise<Response> {
+    const logger = this.getLogger(c);
     try {
-      this.logger.debug("处理获取重启状态请求");
+      logger.debug("处理获取重启状态请求");
       const restartStatus = this.statusService.getRestartStatus();
-      this.logger.debug("获取重启状态成功");
-      return c.json(this.createSuccessResponse(restartStatus));
+      logger.debug("获取重启状态成功");
+      return this.success(c, restartStatus);
     } catch (error) {
-      this.logger.error("获取重启状态失败:", error);
-      const errorResponse = this.createErrorResponse(
-        "RESTART_STATUS_READ_ERROR",
-        error instanceof Error ? error.message : "获取重启状态失败"
+      return this.handleError(
+        c,
+        error,
+        "获取重启状态",
+        "RESTART_STATUS_READ_ERROR"
       );
-      return c.json(errorResponse, 500);
     }
   }
 
@@ -128,18 +76,19 @@ export class StatusApiHandler {
    * GET /api/status/connected
    */
   async checkClientConnected(c: Context): Promise<Response> {
+    const logger = this.getLogger(c);
     try {
-      this.logger.debug("处理检查客户端连接请求");
+      logger.debug("处理检查客户端连接请求");
       const connected = this.statusService.isClientConnected();
-      this.logger.debug(`客户端连接状态: ${connected}`);
-      return c.json(this.createSuccessResponse({ connected }));
+      logger.debug(`客户端连接状态: ${connected}`);
+      return this.success(c, { connected });
     } catch (error) {
-      this.logger.error("检查客户端连接失败:", error);
-      const errorResponse = this.createErrorResponse(
-        "CLIENT_CONNECTION_CHECK_ERROR",
-        error instanceof Error ? error.message : "检查客户端连接失败"
+      return this.handleError(
+        c,
+        error,
+        "检查客户端连接",
+        "CLIENT_CONNECTION_CHECK_ERROR"
       );
-      return c.json(errorResponse, 500);
     }
   }
 
@@ -148,18 +97,19 @@ export class StatusApiHandler {
    * GET /api/status/heartbeat
    */
   async getLastHeartbeat(c: Context): Promise<Response> {
+    const logger = this.getLogger(c);
     try {
-      this.logger.debug("处理获取最后心跳时间请求");
+      logger.debug("处理获取最后心跳时间请求");
       const lastHeartbeat = this.statusService.getLastHeartbeat();
-      this.logger.debug("获取最后心跳时间成功");
-      return c.json(this.createSuccessResponse({ lastHeartbeat }));
+      logger.debug("获取最后心跳时间成功");
+      return this.success(c, { lastHeartbeat });
     } catch (error) {
-      this.logger.error("获取最后心跳时间失败:", error);
-      const errorResponse = this.createErrorResponse(
-        "HEARTBEAT_READ_ERROR",
-        error instanceof Error ? error.message : "获取最后心跳时间失败"
+      return this.handleError(
+        c,
+        error,
+        "获取最后心跳时间",
+        "HEARTBEAT_READ_ERROR"
       );
-      return c.json(errorResponse, 500);
     }
   }
 
@@ -168,18 +118,19 @@ export class StatusApiHandler {
    * GET /api/status/mcp-servers
    */
   async getActiveMCPServers(c: Context): Promise<Response> {
+    const logger = this.getLogger(c);
     try {
-      this.logger.debug("处理获取活跃 MCP 服务器请求");
+      logger.debug("处理获取活跃 MCP 服务器请求");
       const servers = this.statusService.getActiveMCPServers();
-      this.logger.debug("获取活跃 MCP 服务器成功");
-      return c.json(this.createSuccessResponse({ servers }));
+      logger.debug("获取活跃 MCP 服务器成功");
+      return this.success(c, { servers });
     } catch (error) {
-      this.logger.error("获取活跃 MCP 服务器失败:", error);
-      const errorResponse = this.createErrorResponse(
-        "ACTIVE_MCP_SERVERS_READ_ERROR",
-        error instanceof Error ? error.message : "获取活跃 MCP 服务器失败"
+      return this.handleError(
+        c,
+        error,
+        "获取活跃 MCP 服务器",
+        "ACTIVE_MCP_SERVERS_READ_ERROR"
       );
-      return c.json(errorResponse, 500);
     }
   }
 
@@ -188,30 +139,38 @@ export class StatusApiHandler {
    * PUT /api/status/client
    */
   async updateClientStatus(c: Context): Promise<Response> {
+    const logger = this.getLogger(c);
     try {
-      this.logger.debug("处理更新客户端状态请求");
-      const statusUpdate = await c.req.json();
+      logger.debug("处理更新客户端状态请求");
+      const statusUpdate = await this.parseJsonBody<Record<string, unknown>>(
+        c,
+        "请求体必须是有效的状态对象"
+      );
 
       // 验证请求体
       if (!statusUpdate || typeof statusUpdate !== "object") {
-        const errorResponse = this.createErrorResponse(
+        return this.fail(
+          c,
           "INVALID_REQUEST_BODY",
-          "请求体必须是有效的状态对象"
+          "请求体必须是有效的状态对象",
+          undefined,
+          400
         );
-        return c.json(errorResponse, 400);
       }
 
       this.statusService.updateClientInfo(statusUpdate, "http-api");
-      this.logger.info("客户端状态更新成功");
+      logger.info("客户端状态更新成功");
 
-      return c.json(this.createSuccessResponse(null, "客户端状态更新成功"));
+      return this.success(c, undefined, "客户端状态更新成功");
     } catch (error) {
-      this.logger.error("更新客户端状态失败:", error);
-      const errorResponse = this.createErrorResponse(
+      return this.handleError(
+        c,
+        error,
+        "更新客户端状态",
         "CLIENT_STATUS_UPDATE_ERROR",
-        error instanceof Error ? error.message : "更新客户端状态失败"
+        "更新客户端状态失败",
+        400
       );
-      return c.json(errorResponse, 400);
     }
   }
 
@@ -220,32 +179,38 @@ export class StatusApiHandler {
    * PUT /api/status/mcp-servers
    */
   async setActiveMCPServers(c: Context): Promise<Response> {
+    const logger = this.getLogger(c);
     try {
-      this.logger.debug("处理设置活跃 MCP 服务器请求");
-      const { servers } = await c.req.json();
+      logger.debug("处理设置活跃 MCP 服务器请求");
+      const { servers } = await this.parseJsonBody<{ servers: string[] }>(
+        c,
+        "请求体格式错误"
+      );
 
       // 验证请求体
       if (!Array.isArray(servers)) {
-        const errorResponse = this.createErrorResponse(
+        return this.fail(
+          c,
           "INVALID_REQUEST_BODY",
-          "servers 必须是字符串数组"
+          "servers 必须是字符串数组",
+          undefined,
+          400
         );
-        return c.json(errorResponse, 400);
       }
 
       this.statusService.setActiveMCPServers(servers);
-      this.logger.info("活跃 MCP 服务器设置成功");
+      logger.info("活跃 MCP 服务器设置成功");
 
-      return c.json(
-        this.createSuccessResponse(null, "活跃 MCP 服务器设置成功")
-      );
+      return this.success(c, undefined, "活跃 MCP 服务器设置成功");
     } catch (error) {
-      this.logger.error("设置活跃 MCP 服务器失败:", error);
-      const errorResponse = this.createErrorResponse(
+      return this.handleError(
+        c,
+        error,
+        "设置活跃 MCP 服务器",
         "ACTIVE_MCP_SERVERS_UPDATE_ERROR",
-        error instanceof Error ? error.message : "设置活跃 MCP 服务器失败"
+        "设置活跃 MCP 服务器失败",
+        400
       );
-      return c.json(errorResponse, 400);
     }
   }
 
@@ -254,18 +219,14 @@ export class StatusApiHandler {
    * POST /api/status/reset
    */
   async resetStatus(c: Context): Promise<Response> {
+    const logger = this.getLogger(c);
     try {
-      this.logger.info("处理重置状态请求");
+      logger.info("处理重置状态请求");
       this.statusService.reset();
-      this.logger.info("状态重置成功");
-      return c.json(this.createSuccessResponse(null, "状态重置成功"));
+      logger.info("状态重置成功");
+      return this.success(c, undefined, "状态重置成功");
     } catch (error) {
-      this.logger.error("重置状态失败:", error);
-      const errorResponse = this.createErrorResponse(
-        "STATUS_RESET_ERROR",
-        error instanceof Error ? error.message : "重置状态失败"
-      );
-      return c.json(errorResponse, 500);
+      return this.handleError(c, error, "重置状态", "STATUS_RESET_ERROR");
     }
   }
 }

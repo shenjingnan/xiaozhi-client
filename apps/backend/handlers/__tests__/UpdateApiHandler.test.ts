@@ -26,18 +26,52 @@ interface MockEventBus {
   onEvent: ReturnType<typeof vi.fn>;
 }
 
-interface MockContext {
-  req: {
-    json: ReturnType<typeof vi.fn>;
-  };
-  json: ReturnType<typeof vi.fn>;
-}
-
 describe("UpdateApiHandler", () => {
   let updateApiHandler: UpdateApiHandler;
   let mockNPMManager: MockNPMManager;
   let mockLogger: MockLogger;
   let mockEventBus: MockEventBus;
+
+  const createMockContext = (overrides = {}) => ({
+    get: vi.fn((key: string) => {
+      if (key === "logger") {
+        return mockLogger;
+      }
+      return undefined;
+    }),
+    req: {
+      json: vi.fn(),
+    },
+    json: vi.fn(),
+    success: vi.fn((data?: unknown, message?: string, status = 200) => {
+      const response = {
+        success: true,
+        data,
+        message,
+      };
+      return new Response(JSON.stringify(response), {
+        status,
+        headers: { "Content-Type": "application/json" },
+      });
+    }),
+    fail: vi.fn(
+      (code: string, message: string, details?: unknown, statusCode = 400) => {
+        const response = {
+          success: false,
+          error: {
+            code,
+            message,
+            ...(details !== undefined && { details }),
+          },
+        };
+        return new Response(JSON.stringify(response), {
+          status: statusCode,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    ),
+    ...overrides,
+  });
 
   beforeEach(async () => {
     // Reset all mocks
@@ -81,12 +115,11 @@ describe("UpdateApiHandler", () => {
   describe("performUpdate", () => {
     test("应该成功安装指定版本", async () => {
       // Arrange
-      const mockContext = {
+      const mockContext = createMockContext({
         req: {
           json: vi.fn().mockResolvedValue({ version: "1.7.9" }),
         },
-        json: vi.fn(),
-      };
+      } as any);
 
       mockNPMManager.installVersion.mockResolvedValue(undefined);
 
@@ -95,43 +128,36 @@ describe("UpdateApiHandler", () => {
 
       // Assert
       expect(mockNPMManager.installVersion).toHaveBeenCalledWith("1.7.9");
-      expect(mockContext.json).toHaveBeenCalledWith({
-        success: true,
-        data: {
+      expect(mockContext.success).toHaveBeenCalledWith(
+        {
           version: "1.7.9",
           message: "安装已启动，请查看实时日志",
         },
-        message: "安装请求已接受",
-      });
+        "安装请求已接受"
+      );
     });
 
     test("应该拒绝空的版本号", async () => {
       // Arrange
-      const mockContext = {
+      const mockContext = createMockContext({
         req: {
           json: vi.fn().mockResolvedValue({ version: "" }),
         },
-        json: vi.fn(),
-      };
+      } as any);
 
       // Act
       await updateApiHandler.performUpdate(mockContext as unknown as Context);
 
       // Assert
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          success: false,
-          error: {
-            code: "INVALID_VERSION",
-            message: "请求参数格式错误",
-            details: [
-              {
-                field: "version",
-                message: "版本号不能为空",
-              },
-            ],
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "INVALID_VERSION",
+        "请求参数格式错误",
+        [
+          {
+            field: "version",
+            message: "版本号不能为空",
           },
-        },
+        ],
         400
       );
       expect(mockNPMManager.installVersion).not.toHaveBeenCalled();
@@ -139,31 +165,25 @@ describe("UpdateApiHandler", () => {
 
     test("应该拒绝缺少 version 字段的请求", async () => {
       // Arrange
-      const mockContext = {
+      const mockContext = createMockContext({
         req: {
           json: vi.fn().mockResolvedValue({}),
         },
-        json: vi.fn(),
-      };
+      } as any);
 
       // Act
       await updateApiHandler.performUpdate(mockContext as unknown as Context);
 
       // Assert
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          success: false,
-          error: {
-            code: "INVALID_VERSION",
-            message: "请求参数格式错误",
-            details: [
-              {
-                field: "version",
-                message: "Required",
-              },
-            ],
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "INVALID_VERSION",
+        "请求参数格式错误",
+        [
+          {
+            field: "version",
+            message: "Required",
           },
-        },
+        ],
         400
       );
       expect(mockNPMManager.installVersion).not.toHaveBeenCalled();
@@ -171,31 +191,25 @@ describe("UpdateApiHandler", () => {
 
     test("应该拒绝 version 字段为 null 的请求", async () => {
       // Arrange
-      const mockContext = {
+      const mockContext = createMockContext({
         req: {
           json: vi.fn().mockResolvedValue({ version: null }),
         },
-        json: vi.fn(),
-      };
+      } as any);
 
       // Act
       await updateApiHandler.performUpdate(mockContext as unknown as Context);
 
       // Assert
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          success: false,
-          error: {
-            code: "INVALID_VERSION",
-            message: "请求参数格式错误",
-            details: [
-              {
-                field: "version",
-                message: "Expected string, received null",
-              },
-            ],
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "INVALID_VERSION",
+        "请求参数格式错误",
+        [
+          {
+            field: "version",
+            message: "Expected string, received null",
           },
-        },
+        ],
         400
       );
       expect(mockNPMManager.installVersion).not.toHaveBeenCalled();
@@ -203,12 +217,11 @@ describe("UpdateApiHandler", () => {
 
     test("应该处理 npm 安装失败的情况", async () => {
       // Arrange
-      const mockContext = {
+      const mockContext = createMockContext({
         req: {
           json: vi.fn().mockResolvedValue({ version: "1.7.9" }),
         },
-        json: vi.fn(),
-      };
+      } as any);
 
       const installError = new Error("npm 安装失败");
       mockNPMManager.installVersion.mockRejectedValue(installError);
@@ -225,25 +238,23 @@ describe("UpdateApiHandler", () => {
         installError
       );
       // 由于安装是异步的，响应应该仍然是成功的
-      expect(mockContext.json).toHaveBeenCalledWith({
-        success: true,
-        data: {
+      expect(mockContext.success).toHaveBeenCalledWith(
+        {
           version: "1.7.9",
           message: "安装已启动，请查看实时日志",
         },
-        message: "安装请求已接受",
-      });
+        "安装请求已接受"
+      );
     });
 
     test("应该处理 JSON 解析错误", async () => {
       // Arrange
       const jsonError = new Error("Invalid JSON");
-      const mockContext = {
+      const mockContext = createMockContext({
         req: {
           json: vi.fn().mockRejectedValue(jsonError),
         },
-        json: vi.fn(),
-      };
+      } as any);
 
       // Act
       await updateApiHandler.performUpdate(mockContext as unknown as Context);
@@ -251,28 +262,23 @@ describe("UpdateApiHandler", () => {
       // Assert
       expect(mockLogger.error).toHaveBeenCalledWith(
         "处理安装请求失败:",
-        jsonError
+        expect.any(Error)
       );
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          success: false,
-          error: {
-            code: "REQUEST_FAILED",
-            message: "Invalid JSON",
-          },
-        },
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "REQUEST_FAILED",
+        "请求体格式错误: Invalid JSON",
+        undefined,
         500
       );
     });
 
     test("应该处理非 Error 类型的错误", async () => {
       // Arrange
-      const mockContext = {
+      const mockContext = createMockContext({
         req: {
           json: vi.fn().mockResolvedValue({ version: "1.7.9" }),
         },
-        json: vi.fn(),
-      };
+      } as any);
 
       const installError = "String error";
       mockNPMManager.installVersion.mockRejectedValue(installError);
@@ -289,14 +295,13 @@ describe("UpdateApiHandler", () => {
         installError
       );
       // 由于安装是异步的，响应应该仍然是成功的
-      expect(mockContext.json).toHaveBeenCalledWith({
-        success: true,
-        data: {
+      expect(mockContext.success).toHaveBeenCalledWith(
+        {
           version: "1.7.9",
           message: "安装已启动，请查看实时日志",
         },
-        message: "安装请求已接受",
-      });
+        "安装请求已接受"
+      );
     });
   });
 });
