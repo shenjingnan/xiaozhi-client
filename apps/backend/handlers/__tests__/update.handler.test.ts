@@ -2,7 +2,7 @@ import { NPMManager } from "@/lib/npm";
 import type { Context } from "hono";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { logger } from "../../Logger.js";
-import { UpdateApiHandler } from "../UpdateApiHandler.js";
+import { UpdateApiHandler } from "../update.handler.js";
 
 // Mock dependencies
 vi.mock("@/lib/npm");

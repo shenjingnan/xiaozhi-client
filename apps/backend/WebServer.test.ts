@@ -122,7 +122,7 @@ vi.mock("@services/NotificationService", () => {
 });
 
 // Mock API 处理器
-vi.mock("./handlers/ConfigApiHandler", () => {
+vi.mock("./handlers/config.handler", () => {
   const mockConfigApiHandler = {
     getConfig: vi.fn((c) =>
       c.json({
@@ -195,7 +195,7 @@ vi.mock("./handlers/ConfigApiHandler", () => {
   };
 });
 
-vi.mock("./handlers/StatusApiHandler", () => {
+vi.mock("./handlers/status.handler", () => {
   const mockStatusApiHandler = {
     getStatus: vi.fn((c) =>
       c.json({
@@ -218,7 +218,7 @@ vi.mock("./handlers/StatusApiHandler", () => {
   };
 });
 
-vi.mock("./handlers/ServiceApiHandler", () => {
+vi.mock("./handlers/service.handler", () => {
   const mockServiceApiHandler = {
     restartService: vi.fn((c) =>
       c.json({
@@ -290,7 +290,7 @@ vi.mock("./handlers/static-file.handler", () => {
 });
 
 // Mock WebSocket 处理器
-vi.mock("./handlers/RealtimeNotificationHandler", () => {
+vi.mock("./handlers/realtime-notification.handler", () => {
   const mockRealtimeNotificationHandler = {
     handleClientConnect: vi.fn(),
     handleClientDisconnect: vi.fn(),
@@ -302,7 +302,7 @@ vi.mock("./handlers/RealtimeNotificationHandler", () => {
   };
 });
 
-vi.mock("./handlers/HeartbeatHandler", () => {
+vi.mock("./handlers/heartbeat.handler", () => {
   const mockHeartbeatHandler = {
     handleClientConnect: vi.fn(),
     handleClientDisconnect: vi.fn(),
@@ -336,7 +336,7 @@ vi.mock("@/lib/config/adapter.js", () => ({
   isModelScopeURL: vi.fn((url) => url.includes("modelscope")),
 }));
 
-vi.mock("./handlers/VersionApiHandler", () => {
+vi.mock("./handlers/version.handler", () => {
   const mockVersionApiHandler = {
     getVersion: vi.fn((c) =>
       c.json({

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { HeartbeatHandler } from "../HeartbeatHandler.js";
+import { HeartbeatHandler } from "../heartbeat.handler.js";
 
 // Mock dependencies
 vi.mock("../../Logger.js", () => ({

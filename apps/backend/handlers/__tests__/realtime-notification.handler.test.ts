@@ -1,6 +1,6 @@
 import type { AppConfig } from "@xiaozhi-client/config";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { RealtimeNotificationHandler } from "../RealtimeNotificationHandler.js";
+import { RealtimeNotificationHandler } from "../realtime-notification.handler.js";
 
 // Mock dependencies
 vi.mock("../../Logger.js", () => ({
