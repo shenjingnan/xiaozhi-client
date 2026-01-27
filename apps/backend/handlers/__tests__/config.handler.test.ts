@@ -112,6 +112,47 @@ describe("ConfigApiHandler", () => {
 
     // 模拟 Hono 上下文
     mockContext = {
+      // 添加 c.success 方法
+      success: vi
+        .fn()
+        .mockImplementation((data: unknown, message?: string, status = 200) => {
+          const response: {
+            success: true;
+            data?: unknown;
+            message?: string;
+          } = {
+            success: true,
+            message,
+          };
+          if (data !== undefined) {
+            response.data = data;
+          }
+          return new Response(JSON.stringify(response), {
+            status,
+            headers: { "Content-Type": "application/json" },
+          });
+        }),
+      // 添加 c.fail 方法
+      fail: vi
+        .fn()
+        .mockImplementation(
+          (code: string, message: string, details?: any, status = 400) => {
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: {
+                  code,
+                  message,
+                  ...(details !== undefined && { details }),
+                },
+              }),
+              {
+                status,
+                headers: { "Content-Type": "application/json" },
+              }
+            );
+          }
+        ),
       json: vi.fn().mockReturnValue(new Response()),
       req: {
         json: vi.fn(),
@@ -147,11 +188,7 @@ describe("ConfigApiHandler", () => {
       expect(mockConfigManager.getConfig).toHaveBeenCalledTimes(1);
       expect(mockLogger.debug).toHaveBeenCalledWith("处理获取配置请求");
       expect(mockLogger.info).toHaveBeenCalledWith("获取配置成功");
-      expect(mockContext.json).toHaveBeenCalledWith({
-        success: true,
-        data: mockConfig,
-        message: undefined,
-      });
+      expect(mockContext.success).toHaveBeenCalledWith(mockConfig);
     });
 
     it("should handle config service error", async () => {
@@ -163,14 +200,10 @@ describe("ConfigApiHandler", () => {
       await configApiHandler.getConfig(mockContext);
 
       expect(mockLogger.error).toHaveBeenCalledWith("获取配置失败:", error);
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "CONFIG_READ_ERROR",
-            message: "Config read failed",
-            details: undefined,
-          },
-        },
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "CONFIG_READ_ERROR",
+        "Config read failed",
+        undefined,
         500
       );
     });
@@ -182,14 +215,10 @@ describe("ConfigApiHandler", () => {
 
       await configApiHandler.getConfig(mockContext);
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "CONFIG_READ_ERROR",
-            message: "获取配置失败",
-            details: undefined,
-          },
-        },
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "CONFIG_READ_ERROR",
+        "获取配置失败",
+        undefined,
         500
       );
     });
@@ -208,11 +237,10 @@ describe("ConfigApiHandler", () => {
       expect(mockContext.req.json).toHaveBeenCalledTimes(1);
       expect(mockLogger.debug).toHaveBeenCalledWith("处理更新配置请求");
       expect(mockLogger.info).toHaveBeenCalledWith("配置更新成功");
-      expect(mockContext.json).toHaveBeenCalledWith({
-        success: true,
-        data: null,
-        message: "配置更新成功",
-      });
+      expect(mockContext.success).toHaveBeenCalledWith(
+        undefined,
+        "配置更新成功"
+      );
     });
 
     it("should handle invalid request body - null", async () => {
@@ -224,15 +252,9 @@ describe("ConfigApiHandler", () => {
       await configApiHandler.updateConfig(mockContext);
 
       expect(mockConfigManager.updateConfig).not.toHaveBeenCalled();
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "CONFIG_UPDATE_ERROR",
-            message: "配置必须是有效的对象",
-            details: undefined,
-          },
-        },
-        400
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "CONFIG_UPDATE_ERROR",
+        "配置必须是有效的对象"
       );
     });
 
@@ -245,15 +267,9 @@ describe("ConfigApiHandler", () => {
       await configApiHandler.updateConfig(mockContext);
 
       expect(mockConfigManager.updateConfig).not.toHaveBeenCalled();
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "CONFIG_UPDATE_ERROR",
-            message: "配置必须是有效的对象",
-            details: undefined,
-          },
-        },
-        400
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "CONFIG_UPDATE_ERROR",
+        "配置必须是有效的对象"
       );
     });
 
@@ -267,15 +283,9 @@ describe("ConfigApiHandler", () => {
       await configApiHandler.updateConfig(mockContext);
 
       expect(mockLogger.error).toHaveBeenCalledWith("配置更新失败:", error);
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "CONFIG_UPDATE_ERROR",
-            message: "Config update failed",
-            details: undefined,
-          },
-        },
-        400
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "CONFIG_UPDATE_ERROR",
+        "Config update failed"
       );
     });
 
@@ -286,15 +296,9 @@ describe("ConfigApiHandler", () => {
       await configApiHandler.updateConfig(mockContext);
 
       expect(mockLogger.error).toHaveBeenCalledWith("配置更新失败:", jsonError);
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "CONFIG_UPDATE_ERROR",
-            message: "Invalid JSON",
-            details: undefined,
-          },
-        },
-        400
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "CONFIG_UPDATE_ERROR",
+        "Invalid JSON"
       );
     });
   });
@@ -309,11 +313,7 @@ describe("ConfigApiHandler", () => {
       expect(mockConfigManager.getMcpEndpoint).toHaveBeenCalledTimes(1);
       expect(mockLogger.debug).toHaveBeenCalledWith("处理获取 MCP 端点请求");
       expect(mockLogger.debug).toHaveBeenCalledWith("获取 MCP 端点成功");
-      expect(mockContext.json).toHaveBeenCalledWith({
-        success: true,
-        data: { endpoint },
-        message: undefined,
-      });
+      expect(mockContext.success).toHaveBeenCalledWith({ endpoint });
     });
 
     it("should handle MCP endpoint error", async () => {
@@ -328,14 +328,10 @@ describe("ConfigApiHandler", () => {
         "获取 MCP 端点失败:",
         error
       );
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "MCP_ENDPOINT_READ_ERROR",
-            message: "MCP endpoint read failed",
-            details: undefined,
-          },
-        },
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "MCP_ENDPOINT_READ_ERROR",
+        "MCP endpoint read failed",
+        undefined,
         500
       );
     });
@@ -353,11 +349,7 @@ describe("ConfigApiHandler", () => {
         "处理获取 MCP 端点列表请求"
       );
       expect(mockLogger.debug).toHaveBeenCalledWith("获取 MCP 端点列表成功");
-      expect(mockContext.json).toHaveBeenCalledWith({
-        success: true,
-        data: { endpoints },
-        message: undefined,
-      });
+      expect(mockContext.success).toHaveBeenCalledWith({ endpoints });
     });
 
     it("should handle MCP endpoints error", async () => {
@@ -372,14 +364,10 @@ describe("ConfigApiHandler", () => {
         "获取 MCP 端点列表失败:",
         error
       );
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "MCP_ENDPOINTS_READ_ERROR",
-            message: "MCP endpoints read failed",
-            details: undefined,
-          },
-        },
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "MCP_ENDPOINTS_READ_ERROR",
+        "MCP endpoints read failed",
+        undefined,
         500
       );
     });
@@ -400,11 +388,7 @@ describe("ConfigApiHandler", () => {
         "处理获取 MCP 服务配置请求"
       );
       expect(mockLogger.debug).toHaveBeenCalledWith("获取 MCP 服务配置成功");
-      expect(mockContext.json).toHaveBeenCalledWith({
-        success: true,
-        data: { servers },
-        message: undefined,
-      });
+      expect(mockContext.success).toHaveBeenCalledWith({ servers });
     });
 
     it("should handle MCP servers error", async () => {
@@ -419,14 +403,10 @@ describe("ConfigApiHandler", () => {
         "获取 MCP 服务配置失败:",
         error
       );
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "MCP_SERVERS_READ_ERROR",
-            message: "MCP servers read failed",
-            details: undefined,
-          },
-        },
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "MCP_SERVERS_READ_ERROR",
+        "MCP servers read failed",
+        undefined,
         500
       );
     });
@@ -446,11 +426,7 @@ describe("ConfigApiHandler", () => {
       expect(mockConfigManager.getConnectionConfig).toHaveBeenCalledTimes(1);
       expect(mockLogger.debug).toHaveBeenCalledWith("处理获取连接配置请求");
       expect(mockLogger.debug).toHaveBeenCalledWith("获取连接配置成功");
-      expect(mockContext.json).toHaveBeenCalledWith({
-        success: true,
-        data: { connection },
-        message: undefined,
-      });
+      expect(mockContext.success).toHaveBeenCalledWith({ connection });
     });
 
     it("should handle connection config error", async () => {
@@ -462,14 +438,10 @@ describe("ConfigApiHandler", () => {
       await configApiHandler.getConnectionConfig(mockContext);
 
       expect(mockLogger.error).toHaveBeenCalledWith("获取连接配置失败:", error);
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "CONNECTION_CONFIG_READ_ERROR",
-            message: "Connection config read failed",
-            details: undefined,
-          },
-        },
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "CONNECTION_CONFIG_READ_ERROR",
+        "Connection config read failed",
+        undefined,
         500
       );
     });
@@ -485,11 +457,10 @@ describe("ConfigApiHandler", () => {
       expect(mockConfigManager.getConfig).toHaveBeenCalledTimes(1);
       expect(mockLogger.info).toHaveBeenCalledWith("处理重新加载配置请求");
       expect(mockLogger.info).toHaveBeenCalledWith("重新加载配置成功");
-      expect(mockContext.json).toHaveBeenCalledWith({
-        success: true,
-        data: mockConfig,
-        message: "配置重新加载成功",
-      });
+      expect(mockContext.success).toHaveBeenCalledWith(
+        mockConfig,
+        "配置重新加载成功"
+      );
     });
 
     it("should handle reload config error", async () => {
@@ -501,14 +472,10 @@ describe("ConfigApiHandler", () => {
       await configApiHandler.reloadConfig(mockContext);
 
       expect(mockLogger.error).toHaveBeenCalledWith("重新加载配置失败:", error);
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "CONFIG_RELOAD_ERROR",
-            message: "Config reload failed",
-            details: undefined,
-          },
-        },
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "CONFIG_RELOAD_ERROR",
+        "Config reload failed",
+        undefined,
         500
       );
     });
@@ -524,11 +491,7 @@ describe("ConfigApiHandler", () => {
       expect(mockConfigManager.getConfigPath).toHaveBeenCalledTimes(1);
       expect(mockLogger.debug).toHaveBeenCalledWith("处理获取配置文件路径请求");
       expect(mockLogger.debug).toHaveBeenCalledWith("获取配置文件路径成功");
-      expect(mockContext.json).toHaveBeenCalledWith({
-        success: true,
-        data: { path },
-        message: undefined,
-      });
+      expect(mockContext.success).toHaveBeenCalledWith({ path });
     });
 
     it("should handle config path error", async () => {
@@ -543,14 +506,10 @@ describe("ConfigApiHandler", () => {
         "获取配置文件路径失败:",
         error
       );
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "CONFIG_PATH_READ_ERROR",
-            message: "Config path read failed",
-            details: undefined,
-          },
-        },
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "CONFIG_PATH_READ_ERROR",
+        "Config path read failed",
+        undefined,
         500
       );
     });
@@ -565,11 +524,7 @@ describe("ConfigApiHandler", () => {
       expect(mockConfigManager.configExists).toHaveBeenCalledTimes(1);
       expect(mockLogger.debug).toHaveBeenCalledWith("处理检查配置是否存在请求");
       expect(mockLogger.debug).toHaveBeenCalledWith("配置存在检查结果: true");
-      expect(mockContext.json).toHaveBeenCalledWith({
-        success: true,
-        data: { exists: true },
-        message: undefined,
-      });
+      expect(mockContext.success).toHaveBeenCalledWith({ exists: true });
     });
 
     it("should return false when config does not exist", async () => {
@@ -580,11 +535,7 @@ describe("ConfigApiHandler", () => {
       expect(mockConfigManager.configExists).toHaveBeenCalledTimes(1);
       expect(mockLogger.debug).toHaveBeenCalledWith("处理检查配置是否存在请求");
       expect(mockLogger.debug).toHaveBeenCalledWith("配置存在检查结果: false");
-      expect(mockContext.json).toHaveBeenCalledWith({
-        success: true,
-        data: { exists: false },
-        message: undefined,
-      });
+      expect(mockContext.success).toHaveBeenCalledWith({ exists: false });
     });
 
     it("should handle config exists check error", async () => {
@@ -599,14 +550,10 @@ describe("ConfigApiHandler", () => {
         "检查配置是否存在失败:",
         error
       );
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "CONFIG_EXISTS_CHECK_ERROR",
-            message: "Config exists check failed",
-            details: undefined,
-          },
-        },
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "CONFIG_EXISTS_CHECK_ERROR",
+        "Config exists check failed",
+        undefined,
         500
       );
     });
