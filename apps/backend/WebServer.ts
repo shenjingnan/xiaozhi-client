@@ -5,7 +5,7 @@ import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import {
   ConfigApiHandler,
-  CozeApiHandler,
+  CozeHandler,
   HeartbeatHandler,
   MCPHandler,
   MCPRouteHandler,
@@ -119,7 +119,7 @@ export class WebServer {
   private mcpRouteHandler: MCPRouteHandler;
   private mcpHandler?: MCPHandler;
   private updateApiHandler: UpdateApiHandler;
-  private cozeApiHandler: CozeApiHandler;
+  private cozeHandler: CozeHandler;
 
   // WebSocket 处理器
   private realtimeNotificationHandler: RealtimeNotificationHandler;
@@ -162,7 +162,7 @@ export class WebServer {
     this.staticFileHandler = new StaticFileHandler();
     this.mcpRouteHandler = new MCPRouteHandler();
     this.updateApiHandler = new UpdateApiHandler();
-    this.cozeApiHandler = new CozeApiHandler();
+    this.cozeHandler = new CozeHandler();
 
     // MCPServerApiHandler 将在 start() 方法中初始化，因为它需要 mcpServiceManager
 
@@ -548,7 +548,7 @@ export class WebServer {
       mcpRouteHandler: this.mcpRouteHandler,
       mcpHandler: this.mcpHandler,
       updateApiHandler: this.updateApiHandler,
-      cozeApiHandler: this.cozeApiHandler,
+      cozeHandler: this.cozeHandler,
       // endpointHandler 通过中间件动态注入，不在此初始化
     };
   }

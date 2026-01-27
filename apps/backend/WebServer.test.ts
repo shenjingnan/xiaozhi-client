@@ -404,8 +404,8 @@ vi.mock("./handlers/mcp-tool.handler", () => {
   };
 });
 
-vi.mock("./handlers/CozeApiHandler", () => {
-  const mockCozeApiHandler = {
+vi.mock("./handlers/coze.handler", () => {
+  const mockCozeHandler = {
     getWorkspaces: vi.fn((c) =>
       c.json({
         success: true,
@@ -432,7 +432,7 @@ vi.mock("./handlers/CozeApiHandler", () => {
     ),
   };
   return {
-    CozeApiHandler: vi.fn(() => mockCozeApiHandler),
+    CozeHandler: vi.fn(() => mockCozeHandler),
   };
 });
 
