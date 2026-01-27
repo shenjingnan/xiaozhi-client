@@ -68,7 +68,7 @@ describe("Handlers Basic Tests", () => {
       () => import("../HeartbeatHandler.js"),
       () => import("../RealtimeNotificationHandler.js"),
       () => import("../ServiceApiHandler.js"),
-      () => import("../StaticFileHandler.js"),
+      () => import("../static-file.handler.js"),
       () => import("../StatusApiHandler.js"),
     ];
 
@@ -79,7 +79,7 @@ describe("Handlers Basic Tests", () => {
 
   it("should have proper class constructors", async () => {
     const { ConfigApiHandler } = await import("../ConfigApiHandler.js");
-    const { StaticFileHandler } = await import("../StaticFileHandler.js");
+    const { StaticFileHandler } = await import("../static-file.handler.js");
     const { ServiceApiHandler } = await import("../ServiceApiHandler.js");
     const { StatusApiHandler } = await import("../StatusApiHandler.js");
     const { StatusService } = await import("@services/StatusService.js");

@@ -6,7 +6,7 @@ export * from "./mcp.handler.js";
 export { MCPHandler } from "./mcp-manage.handler.js";
 export * from "./RealtimeNotificationHandler.js";
 export * from "./ServiceApiHandler.js";
-export * from "./StaticFileHandler.js";
+export { StaticFileHandler } from "./static-file.handler.js";
 export * from "./StatusApiHandler.js";
 export * from "./mcp-tool.handler.js";
 export * from "./mcp-tool-log.handler.js";
