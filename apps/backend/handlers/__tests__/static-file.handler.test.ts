@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { StaticFileHandler } from "../StaticFileHandler.js";
+import { StaticFileHandler } from "../static-file.handler.js";
 
 // Mock dependencies
 vi.mock("node:fs", () => ({

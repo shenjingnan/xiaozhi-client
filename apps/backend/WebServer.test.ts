@@ -276,7 +276,7 @@ vi.mock("node:child_process", () => ({
 }));
 
 // Mock 静态文件处理器
-vi.mock("./handlers/StaticFileHandler", () => {
+vi.mock("./handlers/static-file.handler", () => {
   const mockStaticFileHandler = {
     handleStaticFile: vi.fn((c) =>
       c.text("<!DOCTYPE html><html><body>Test</body></html>", 200, {
