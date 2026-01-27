@@ -6,9 +6,9 @@
 import type { ToolCallQuery } from "@/lib/mcp/log.js";
 import { ToolCallLogService } from "@/lib/mcp/log.js";
 import { PAGINATION_CONSTANTS } from "@constants/ApiConstants.js";
-import { logger } from "@root/Logger.js";
 import type { Context } from "hono";
 import { z } from "zod";
+import { BaseHandler } from "./base.handler.js";
 
 /**
  * 工具调用查询参数 Zod Schema
@@ -81,10 +81,11 @@ const ToolCallQuerySchema = z
 /**
  * 工具调用日志 API 处理器
  */
-export class MCPToolLogHandler {
+export class MCPToolLogHandler extends BaseHandler {
   private toolCallLogService: ToolCallLogService;
 
   constructor() {
+    super();
     this.toolCallLogService = new ToolCallLogService();
   }
 
@@ -119,6 +120,7 @@ export class MCPToolLogHandler {
    * 获取工具调用日志
    */
   async getToolCallLogs(c: Context): Promise<Response> {
+    const logger = this.getLogger(c);
     try {
       const validation = this.parseAndValidateQueryParams(c);
 
