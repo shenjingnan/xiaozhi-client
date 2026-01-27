@@ -57,6 +57,8 @@ describe("ServiceApiHandler", () => {
     // Mock Hono Context
     mockContext = {
       json: vi.fn().mockReturnValue(new Response()),
+      success: vi.fn().mockReturnValue(new Response()),
+      fail: vi.fn().mockReturnValue(new Response()),
       req: {
         json: vi.fn(),
       },
@@ -111,10 +113,7 @@ describe("ServiceApiHandler", () => {
       await handler.getServiceStatus(mockContext);
 
       expect(mockMcpServiceManager.getStatus).toHaveBeenCalledOnce();
-      expect(mockContext.json).toHaveBeenCalledWith({
-        success: true,
-        data: mockStatus,
-      });
+      expect(mockContext.success).toHaveBeenCalledWith(mockStatus);
     });
 
     it("should handle service status error", async () => {
@@ -123,13 +122,10 @@ describe("ServiceApiHandler", () => {
 
       await handler.getServiceStatus(mockContext);
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "SERVICE_STATUS_READ_ERROR",
-            message: "Status check failed",
-          },
-        },
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "SERVICE_STATUS_READ_ERROR",
+        "Status check failed",
+        undefined,
         500
       );
     });
@@ -139,13 +135,10 @@ describe("ServiceApiHandler", () => {
 
       await handler.getServiceStatus(mockContext);
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "SERVICE_STATUS_READ_ERROR",
-            message: "获取服务状态失败",
-          },
-        },
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "SERVICE_STATUS_READ_ERROR",
+        "获取服务状态失败",
+        undefined,
         500
       );
     });
@@ -172,22 +165,18 @@ describe("ServiceApiHandler", () => {
 
       await handler.getServiceHealth(mockContext);
 
-      expect(mockContext.json).toHaveBeenCalledWith({
-        success: true,
-        data: {
-          status: "healthy",
-          timestamp: expect.any(Number),
-          uptime: 3600,
-          memory: {
-            rss: 50000000,
-            heapUsed: 30000000,
-            heapTotal: 40000000,
-            external: 5000000,
-            arrayBuffers: 1000000,
-          },
-          version: "v18.0.0",
+      expect(mockContext.success).toHaveBeenCalledWith({
+        status: "healthy",
+        timestamp: expect.any(Number),
+        uptime: 3600,
+        memory: {
+          rss: 50000000,
+          heapUsed: 30000000,
+          heapTotal: 40000000,
+          external: 5000000,
+          arrayBuffers: 1000000,
         },
-        message: undefined,
+        version: "v18.0.0",
       });
 
       // Restore original functions
@@ -207,13 +196,10 @@ describe("ServiceApiHandler", () => {
 
       await handler.getServiceHealth(mockContext);
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "SERVICE_HEALTH_READ_ERROR",
-            message: "Uptime error",
-          },
-        },
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "SERVICE_HEALTH_READ_ERROR",
+        "Uptime error",
+        undefined,
         500
       );
 
@@ -234,11 +220,7 @@ describe("ServiceApiHandler", () => {
         }),
       });
 
-      expect(mockContext.json).toHaveBeenCalledWith({
-        success: true,
-        data: null,
-        message: "启动请求已接收",
-      });
+      expect(mockContext.success).toHaveBeenCalledWith(null, "启动请求已接收");
     });
 
     it("should handle start service error", async () => {
@@ -249,13 +231,10 @@ describe("ServiceApiHandler", () => {
 
       await handler.startService(mockContext);
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "START_REQUEST_ERROR",
-            message: "Start failed",
-          },
-        },
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "START_REQUEST_ERROR",
+        "Start failed",
+        undefined,
         500
       );
     });
@@ -267,13 +246,10 @@ describe("ServiceApiHandler", () => {
 
       await handler.startService(mockContext);
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "START_REQUEST_ERROR",
-            message: "处理启动请求失败",
-          },
-        },
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "START_REQUEST_ERROR",
+        "处理启动请求失败",
+        undefined,
         500
       );
     });
@@ -345,11 +321,7 @@ describe("ServiceApiHandler", () => {
         }),
       });
 
-      expect(mockContext.json).toHaveBeenCalledWith({
-        success: true,
-        data: null,
-        message: "停止请求已接收",
-      });
+      expect(mockContext.success).toHaveBeenCalledWith(null, "停止请求已接收");
     });
 
     it("should handle stop service error", async () => {
@@ -360,13 +332,10 @@ describe("ServiceApiHandler", () => {
 
       await handler.stopService(mockContext);
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "STOP_REQUEST_ERROR",
-            message: "Stop failed",
-          },
-        },
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "STOP_REQUEST_ERROR",
+        "Stop failed",
+        undefined,
         500
       );
     });
@@ -378,13 +347,10 @@ describe("ServiceApiHandler", () => {
 
       await handler.stopService(mockContext);
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "STOP_REQUEST_ERROR",
-            message: "处理停止请求失败",
-          },
-        },
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "STOP_REQUEST_ERROR",
+        "处理停止请求失败",
+        undefined,
         500
       );
     });
@@ -409,11 +375,7 @@ describe("ServiceApiHandler", () => {
         "restarting"
       );
 
-      expect(mockContext.json).toHaveBeenCalledWith({
-        success: true,
-        data: null,
-        message: "重启请求已接收",
-      });
+      expect(mockContext.success).toHaveBeenCalledWith(null, "重启请求已接收");
     });
 
     it("should handle restart service error", async () => {
@@ -424,13 +386,10 @@ describe("ServiceApiHandler", () => {
 
       await handler.restartService(mockContext);
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "RESTART_REQUEST_ERROR",
-            message: "Restart failed",
-          },
-        },
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "RESTART_REQUEST_ERROR",
+        "Restart failed",
+        undefined,
         500
       );
     });
@@ -442,13 +401,10 @@ describe("ServiceApiHandler", () => {
 
       await handler.restartService(mockContext);
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "RESTART_REQUEST_ERROR",
-            message: "处理重启请求失败",
-          },
-        },
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "RESTART_REQUEST_ERROR",
+        "处理重启请求失败",
+        undefined,
         500
       );
     });
@@ -547,64 +503,6 @@ describe("ServiceApiHandler", () => {
     });
   });
 
-  describe("helper methods", () => {
-    it("should create success response correctly", () => {
-      // Access private method through type assertion
-      const response = (handler as any).createSuccessResponse(
-        { test: "data" },
-        "Success message"
-      );
-
-      expect(response).toEqual({
-        success: true,
-        data: { test: "data" },
-        message: "Success message",
-      });
-    });
-
-    it("should create success response without data", () => {
-      const response = (handler as any).createSuccessResponse();
-
-      expect(response).toEqual({
-        success: true,
-        data: undefined,
-        message: undefined,
-      });
-    });
-
-    it("should create error response correctly", () => {
-      const response = (handler as any).createErrorResponse(
-        "TEST_ERROR",
-        "Test error message"
-      );
-
-      expect(response).toEqual({
-        error: {
-          code: "TEST_ERROR",
-          message: "Test error message",
-          details: undefined,
-        },
-      });
-    });
-
-    it("should create error response with details", () => {
-      const details = { stack: "error stack", line: 42 };
-      const response = (handler as any).createErrorResponse(
-        "TEST_ERROR",
-        "Test error message",
-        details
-      );
-
-      expect(response).toEqual({
-        error: {
-          code: "TEST_ERROR",
-          message: "Test error message",
-          details,
-        },
-      });
-    });
-  });
-
   describe("environment handling", () => {
     it("should preserve existing environment variables", async () => {
       const originalPath = process.env.PATH;
@@ -635,14 +533,10 @@ describe("ServiceApiHandler", () => {
 
       await handler.startService(mockContext);
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "START_REQUEST_ERROR",
-            message: "Cannot read properties of null (reading 'unref')",
-            details: undefined,
-          },
-        },
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "START_REQUEST_ERROR",
+        "Cannot read properties of null (reading 'unref')",
+        undefined,
         500
       );
     });
@@ -652,14 +546,10 @@ describe("ServiceApiHandler", () => {
 
       await handler.startService(mockContext);
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "START_REQUEST_ERROR",
-            message: "child.unref is not a function",
-            details: undefined,
-          },
-        },
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "START_REQUEST_ERROR",
+        "child.unref is not a function",
+        undefined,
         500
       );
     });
@@ -673,14 +563,10 @@ describe("ServiceApiHandler", () => {
 
       await handler.startService(mockContext);
 
-      expect(mockContext.json).toHaveBeenCalledWith(
-        {
-          error: {
-            code: "START_REQUEST_ERROR",
-            message: "Unref failed",
-            details: undefined,
-          },
-        },
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "START_REQUEST_ERROR",
+        "Unref failed",
+        undefined,
         500
       );
     });
@@ -695,7 +581,7 @@ describe("ServiceApiHandler", () => {
 
       expect(mockEventBus.emitEvent).toHaveBeenCalledTimes(2);
       expect(mockStatusService.updateRestartStatus).toHaveBeenCalledTimes(2);
-      expect(mockContext.json).toHaveBeenCalledTimes(2);
+      expect(mockContext.success).toHaveBeenCalledTimes(2);
     });
 
     it("should handle service manager returning undefined status", async () => {

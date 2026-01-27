@@ -8,23 +8,6 @@ import type { StatusService } from "@services/StatusService.js";
 import type { Context } from "hono";
 
 /**
- * 统一响应格式接口
- */
-interface ApiErrorResponse {
-  error: {
-    code: string;
-    message: string;
-    details?: any;
-  };
-}
-
-interface ApiSuccessResponse<T = any> {
-  success: boolean;
-  data?: T;
-  message?: string;
-}
-
-/**
  * 服务 API 处理器
  */
 export class ServiceApiHandler {
@@ -36,37 +19,6 @@ export class ServiceApiHandler {
     this.logger = logger;
     this.statusService = statusService;
     this.eventBus = getEventBus();
-  }
-
-  /**
-   * 创建统一的错误响应
-   */
-  private createErrorResponse(
-    code: string,
-    message: string,
-    details?: any
-  ): ApiErrorResponse {
-    return {
-      error: {
-        code,
-        message,
-        details,
-      },
-    };
-  }
-
-  /**
-   * 创建统一的成功响应
-   */
-  private createSuccessResponse<T>(
-    data?: T,
-    message?: string
-  ): ApiSuccessResponse<T> {
-    return {
-      success: true,
-      data,
-      message,
-    };
   }
 
   /**
@@ -106,14 +58,15 @@ export class ServiceApiHandler {
         }
       }, 500);
 
-      return c.json(this.createSuccessResponse(null, "重启请求已接收"));
+      return c.success(null, "重启请求已接收");
     } catch (error) {
       this.logger.error("处理重启请求失败:", error);
-      const errorResponse = this.createErrorResponse(
+      return c.fail(
         "RESTART_REQUEST_ERROR",
-        error instanceof Error ? error.message : "处理重启请求失败"
+        error instanceof Error ? error.message : "处理重启请求失败",
+        undefined,
+        500
       );
-      return c.json(errorResponse, 500);
     }
   }
 
@@ -188,14 +141,15 @@ export class ServiceApiHandler {
       child.unref();
       this.logger.info("MCP 服务停止命令已发送");
 
-      return c.json(this.createSuccessResponse(null, "停止请求已接收"));
+      return c.success(null, "停止请求已接收");
     } catch (error) {
       this.logger.error("处理停止请求失败:", error);
-      const errorResponse = this.createErrorResponse(
+      return c.fail(
         "STOP_REQUEST_ERROR",
-        error instanceof Error ? error.message : "处理停止请求失败"
+        error instanceof Error ? error.message : "处理停止请求失败",
+        undefined,
+        500
       );
-      return c.json(errorResponse, 500);
     }
   }
 
@@ -221,14 +175,15 @@ export class ServiceApiHandler {
       child.unref();
       this.logger.info("MCP 服务启动命令已发送");
 
-      return c.json(this.createSuccessResponse(null, "启动请求已接收"));
+      return c.success(null, "启动请求已接收");
     } catch (error) {
       this.logger.error("处理启动请求失败:", error);
-      const errorResponse = this.createErrorResponse(
+      return c.fail(
         "START_REQUEST_ERROR",
-        error instanceof Error ? error.message : "处理启动请求失败"
+        error instanceof Error ? error.message : "处理启动请求失败",
+        undefined,
+        500
       );
-      return c.json(errorResponse, 500);
     }
   }
 
@@ -243,14 +198,15 @@ export class ServiceApiHandler {
       const status = await mcpServiceManager.getStatus();
 
       this.logger.debug("获取服务状态成功");
-      return c.json(this.createSuccessResponse(status));
+      return c.success(status);
     } catch (error) {
       this.logger.error("获取服务状态失败:", error);
-      const errorResponse = this.createErrorResponse(
+      return c.fail(
         "SERVICE_STATUS_READ_ERROR",
-        error instanceof Error ? error.message : "获取服务状态失败"
+        error instanceof Error ? error.message : "获取服务状态失败",
+        undefined,
+        500
       );
-      return c.json(errorResponse, 500);
     }
   }
 
@@ -272,14 +228,15 @@ export class ServiceApiHandler {
       };
 
       this.logger.debug("获取服务健康状态成功");
-      return c.json(this.createSuccessResponse(health));
+      return c.success(health);
     } catch (error) {
       this.logger.error("获取服务健康状态失败:", error);
-      const errorResponse = this.createErrorResponse(
+      return c.fail(
         "SERVICE_HEALTH_READ_ERROR",
-        error instanceof Error ? error.message : "获取服务健康状态失败"
+        error instanceof Error ? error.message : "获取服务健康状态失败",
+        undefined,
+        500
       );
-      return c.json(errorResponse, 500);
     }
   }
 }
