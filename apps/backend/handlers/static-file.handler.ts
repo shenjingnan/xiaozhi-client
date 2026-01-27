@@ -128,9 +128,7 @@ export class StaticFileHandler extends BaseHandler {
       // 确定 Content-Type
       const contentType = this.getContentType(fullPath);
 
-      logger.debug(
-        `服务静态文件: ${fullPath}, Content-Type: ${contentType}`
-      );
+      logger.debug(`服务静态文件: ${fullPath}, Content-Type: ${contentType}`);
       return this.serveFile(c, fullPath, contentType);
     } catch (error) {
       logger.error(`服务静态文件错误 (${pathname}):`, error);

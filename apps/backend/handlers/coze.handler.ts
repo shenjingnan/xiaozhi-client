@@ -4,10 +4,10 @@
  */
 
 import { CozeApiService } from "@/lib/coze";
-import { BaseHandler } from "./base.handler.js";
 import type { CozeWorkflowsParams } from "@root/types/coze";
 import { configManager } from "@xiaozhi-client/config";
 import type { Context } from "hono";
+import { BaseHandler } from "./base.handler.js";
 
 /**
  * 错误代码类型
