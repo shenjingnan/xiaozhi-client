@@ -12,7 +12,7 @@ export class VersionApiHandler extends BaseHandler {
    * GET /api/version
    */
   async getVersion(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.debug("处理获取版本信息请求");
 
@@ -32,7 +32,7 @@ export class VersionApiHandler extends BaseHandler {
    * GET /api/version/simple
    */
   async getVersionSimple(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.debug("处理获取版本号请求");
 
@@ -50,7 +50,7 @@ export class VersionApiHandler extends BaseHandler {
    * POST /api/version/cache/clear
    */
   async clearVersionCache(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.debug("处理清除版本缓存请求");
 
@@ -68,7 +68,7 @@ export class VersionApiHandler extends BaseHandler {
    * GET /api/version/available?type=stable|rc|beta|all
    */
   async getAvailableVersions(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.debug("处理获取可用版本列表请求");
 
@@ -111,7 +111,7 @@ export class VersionApiHandler extends BaseHandler {
    * GET /api/version/latest
    */
   async checkLatestVersion(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.debug("处理检查最新版本请求");
 

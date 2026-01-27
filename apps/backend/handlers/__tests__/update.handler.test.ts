@@ -33,12 +33,7 @@ describe("UpdateApiHandler", () => {
   let mockEventBus: MockEventBus;
 
   const createMockContext = (overrides = {}) => ({
-    get: vi.fn((key: string) => {
-      if (key === "logger") {
-        return mockLogger;
-      }
-      return undefined;
-    }),
+    logger: mockLogger,
     req: {
       json: vi.fn(),
     },

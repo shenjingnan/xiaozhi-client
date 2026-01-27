@@ -16,7 +16,7 @@ export class ConfigApiHandler extends BaseHandler {
    * GET /api/config
    */
   async getConfig(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.debug("处理获取配置请求");
       const config = configManager.getConfig();
@@ -38,7 +38,7 @@ export class ConfigApiHandler extends BaseHandler {
    * PUT /api/config
    */
   async updateConfig(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.debug("处理更新配置请求");
       const newConfig: AppConfig = await c.req.json();
@@ -82,7 +82,7 @@ export class ConfigApiHandler extends BaseHandler {
    * GET /api/config/mcp-endpoint
    */
   async getMcpEndpoint(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.debug("处理获取 MCP 端点请求");
       const endpoint = configManager.getMcpEndpoint();
@@ -104,7 +104,7 @@ export class ConfigApiHandler extends BaseHandler {
    * GET /api/config/mcp-endpoints
    */
   async getMcpEndpoints(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.debug("处理获取 MCP 端点列表请求");
       const endpoints = configManager.getMcpEndpoints();
@@ -126,7 +126,7 @@ export class ConfigApiHandler extends BaseHandler {
    * GET /api/config/mcp-servers
    */
   async getMcpServers(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.debug("处理获取 MCP 服务配置请求");
       const servers = configManager.getMcpServers();
@@ -148,7 +148,7 @@ export class ConfigApiHandler extends BaseHandler {
    * GET /api/config/connection
    */
   async getConnectionConfig(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.debug("处理获取连接配置请求");
       const connection = configManager.getConnectionConfig();
@@ -170,7 +170,7 @@ export class ConfigApiHandler extends BaseHandler {
    * POST /api/config/reload
    */
   async reloadConfig(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.info("处理重新加载配置请求");
       configManager.reloadConfig();
@@ -193,7 +193,7 @@ export class ConfigApiHandler extends BaseHandler {
    * GET /api/config/path
    */
   async getConfigPath(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.debug("处理获取配置文件路径请求");
       const path = configManager.getConfigPath();
@@ -215,7 +215,7 @@ export class ConfigApiHandler extends BaseHandler {
    * GET /api/config/exists
    */
   async checkConfigExists(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.debug("处理检查配置是否存在请求");
       const exists = configManager.configExists();

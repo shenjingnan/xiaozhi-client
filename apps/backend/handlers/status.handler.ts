@@ -18,7 +18,7 @@ export class StatusApiHandler extends BaseHandler {
    * GET /api/status
    */
   async getStatus(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.debug("处理获取状态请求");
       const status = this.statusService.getFullStatus();
@@ -34,7 +34,7 @@ export class StatusApiHandler extends BaseHandler {
    * GET /api/status/client
    */
   async getClientStatus(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.debug("处理获取客户端状态请求");
       const clientStatus = this.statusService.getClientStatus();
@@ -55,7 +55,7 @@ export class StatusApiHandler extends BaseHandler {
    * GET /api/status/restart
    */
   async getRestartStatus(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.debug("处理获取重启状态请求");
       const restartStatus = this.statusService.getRestartStatus();
@@ -76,7 +76,7 @@ export class StatusApiHandler extends BaseHandler {
    * GET /api/status/connected
    */
   async checkClientConnected(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.debug("处理检查客户端连接请求");
       const connected = this.statusService.isClientConnected();
@@ -97,7 +97,7 @@ export class StatusApiHandler extends BaseHandler {
    * GET /api/status/heartbeat
    */
   async getLastHeartbeat(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.debug("处理获取最后心跳时间请求");
       const lastHeartbeat = this.statusService.getLastHeartbeat();
@@ -118,7 +118,7 @@ export class StatusApiHandler extends BaseHandler {
    * GET /api/status/mcp-servers
    */
   async getActiveMCPServers(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.debug("处理获取活跃 MCP 服务器请求");
       const servers = this.statusService.getActiveMCPServers();
@@ -139,7 +139,7 @@ export class StatusApiHandler extends BaseHandler {
    * PUT /api/status/client
    */
   async updateClientStatus(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.debug("处理更新客户端状态请求");
       const statusUpdate = await this.parseJsonBody<Record<string, unknown>>(
@@ -178,7 +178,7 @@ export class StatusApiHandler extends BaseHandler {
    * PUT /api/status/mcp-servers
    */
   async setActiveMCPServers(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.debug("处理设置活跃 MCP 服务器请求");
       const { servers } = await this.parseJsonBody<{ servers: string[] }>(
@@ -217,7 +217,7 @@ export class StatusApiHandler extends BaseHandler {
    * POST /api/status/reset
    */
   async resetStatus(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.info("处理重置状态请求");
       this.statusService.reset();

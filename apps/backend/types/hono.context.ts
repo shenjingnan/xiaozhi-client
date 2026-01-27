@@ -4,7 +4,6 @@
  */
 
 import type { MCPServiceManager } from "@/lib/mcp";
-import type { Logger } from "@root/Logger.js";
 import type { EndpointManager } from "@xiaozhi-client/endpoint";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -47,12 +46,6 @@ export interface IWebServer {
  * 定义了项目中所有通过中间件注入的变量
  */
 export type AppContextVariables = {
-  /**
-   * 日志记录器实例
-   * 由 loggerMiddleware 注入
-   */
-  logger?: Logger;
-
   /**
    * MCP 服务管理器实例
    * 由 mcpServiceManagerMiddleware 注入
@@ -100,13 +93,6 @@ export type AppContext = {
  */
 export const createApp = (): Hono<AppContext> => {
   return new Hono<AppContext>();
-};
-
-/**
- * 从 Context 中获取日志记录器的类型安全方法
- */
-export const getLogger = (c: Context<AppContext>): Logger | undefined => {
-  return c.get("logger");
 };
 
 /**

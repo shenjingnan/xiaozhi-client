@@ -4,7 +4,6 @@
  * 提供统一的依赖注入模式，从 WebServer 获取实例而非 Singleton
  */
 
-import { logger } from "@root/Logger.js";
 import type { Context, Next } from "hono";
 import {
   MCPServiceManagerNotInitializedError,
@@ -32,10 +31,7 @@ export const mcpServiceManagerMiddleware = async (
   // 检查是否已经注入，避免重复初始化
   if (!c.get("mcpServiceManager")) {
     try {
-      // 尝试从 Context 获取 logger，如果不存在则使用全局 logger
-      const contextLogger = c.get("logger") || logger;
-
-      contextLogger.debug(
+      c.logger.debug(
         "[MCPMiddleware] 正在从 WebServer 获取 MCPServiceManager 实例"
       );
 
@@ -50,27 +46,24 @@ export const mcpServiceManagerMiddleware = async (
       // 将实例注入到 Context
       c.set("mcpServiceManager", serviceManager);
 
-      contextLogger.debug(
+      c.logger.debug(
         "[MCPMiddleware] MCPServiceManager 实例已成功注入到 Context"
       );
     } catch (error) {
-      // 记录错误但不阻断请求处理
-      const errorLogger = c.get("logger") || logger;
-
       // 根据错误类型进行不同的处理
       if (error instanceof MCPServiceManagerNotInitializedError) {
         // MCPServiceManager 未初始化是临时状态，允许通过
-        errorLogger.debug(
+        c.logger.debug(
           "[MCPMiddleware] MCPServiceManager 尚未初始化，允许通过"
         );
         // 不设置实例，Handler 中需要处理未初始化的情况
       } else if (error instanceof WebServerNotAvailableError) {
         // WebServer 未注入是配置错误，应该抛出
-        errorLogger.error("[MCPMiddleware] WebServer 配置错误:", error.message);
+        c.logger.error("[MCPMiddleware] WebServer 配置错误:", error.message);
         throw error;
       } else {
         // 其他未知错误，记录并抛出
-        errorLogger.error(
+        c.logger.error(
           "[MCPMiddleware] 获取 MCPServiceManager 时发生未知错误:",
           error
         );
