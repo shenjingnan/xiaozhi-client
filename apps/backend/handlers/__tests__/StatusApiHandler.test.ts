@@ -34,6 +34,12 @@ describe("StatusApiHandler 状态 API 处理器", () => {
 
     // Setup mock Context
     mockContext = {
+      get: vi.fn((key: string) => {
+        if (key === "logger") {
+          return mockLogger;
+        }
+        return undefined;
+      }),
       json: vi.fn((data, status) => {
         const response = new Response(JSON.stringify(data), {
           status: status || 200,
@@ -41,6 +47,33 @@ describe("StatusApiHandler 状态 API 处理器", () => {
         });
         return response;
       }),
+      success: vi.fn((data?: unknown, message?: string, status = 200) => {
+        const response = {
+          success: true,
+          data,
+          message,
+        };
+        return new Response(JSON.stringify(response), {
+          status,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+      fail: vi.fn(
+        (code: string, message: string, details?: unknown, status = 400) => {
+          const response = {
+            success: false,
+            error: {
+              code,
+              message,
+              ...(details !== undefined && { details }),
+            },
+          };
+          return new Response(JSON.stringify(response), {
+            status,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+      ),
       req: {
         json: vi.fn(),
       },
@@ -100,6 +133,7 @@ describe("StatusApiHandler 状态 API 处理器", () => {
 
       expect(mockLogger.error).toHaveBeenCalledWith("获取状态失败:", error);
       expect(responseData).toEqual({
+        success: false,
         error: {
           code: "STATUS_READ_ERROR",
           message: "状态服务不可用",
@@ -116,10 +150,12 @@ describe("StatusApiHandler 状态 API 处理器", () => {
       const response = await statusApiHandler.getStatus(mockContext);
       const responseData = await response.json();
 
+      // handleError 会将非 Error 类型转换为字符串
       expect(responseData).toEqual({
+        success: false,
         error: {
           code: "STATUS_READ_ERROR",
-          message: "获取状态失败",
+          message: "字符串错误",
         },
       });
       expect(response.status).toBe(500);
@@ -162,6 +198,7 @@ describe("StatusApiHandler 状态 API 处理器", () => {
         error
       );
       expect(responseData).toEqual({
+        success: false,
         error: {
           code: "CLIENT_STATUS_READ_ERROR",
           message: "客户端状态不可用",
@@ -200,6 +237,7 @@ describe("StatusApiHandler 状态 API 处理器", () => {
       const responseData = await response.json();
 
       expect(responseData).toEqual({
+        success: false,
         error: {
           code: "RESTART_STATUS_READ_ERROR",
           message: "重启状态不可用",
@@ -248,6 +286,7 @@ describe("StatusApiHandler 状态 API 处理器", () => {
       const responseData = await response.json();
 
       expect(responseData).toEqual({
+        success: false,
         error: {
           code: "CLIENT_CONNECTION_CHECK_ERROR",
           message: "连接检查失败",
@@ -283,6 +322,7 @@ describe("StatusApiHandler 状态 API 处理器", () => {
       const responseData = await response.json();
 
       expect(responseData).toEqual({
+        success: false,
         error: {
           code: "HEARTBEAT_READ_ERROR",
           message: "心跳数据不可用",
@@ -318,6 +358,7 @@ describe("StatusApiHandler 状态 API 处理器", () => {
       const responseData = await response.json();
 
       expect(responseData).toEqual({
+        success: false,
         error: {
           code: "ACTIVE_MCP_SERVERS_READ_ERROR",
           message: "MCP 服务器数据不可用",
@@ -345,9 +386,9 @@ describe("StatusApiHandler 状态 API 处理器", () => {
         "http-api"
       );
       expect(mockLogger.info).toHaveBeenCalledWith("客户端状态更新成功");
+      // data 为 undefined 时不会添加 data 字段
       expect(responseData).toEqual({
         success: true,
-        data: null,
         message: "客户端状态更新成功",
       });
       expect(response.status).toBe(200);
@@ -361,6 +402,7 @@ describe("StatusApiHandler 状态 API 处理器", () => {
 
       expect(mockStatusService.updateClientInfo).not.toHaveBeenCalled();
       expect(responseData).toEqual({
+        success: false,
         error: {
           code: "INVALID_REQUEST_BODY",
           message: "请求体必须是有效的状态对象",
@@ -377,6 +419,7 @@ describe("StatusApiHandler 状态 API 处理器", () => {
 
       expect(mockStatusService.updateClientInfo).not.toHaveBeenCalled();
       expect(responseData).toEqual({
+        success: false,
         error: {
           code: "INVALID_REQUEST_BODY",
           message: "请求体必须是有效的状态对象",
@@ -401,6 +444,7 @@ describe("StatusApiHandler 状态 API 处理器", () => {
         error
       );
       expect(responseData).toEqual({
+        success: false,
         error: {
           code: "CLIENT_STATUS_UPDATE_ERROR",
           message: "状态更新失败",
@@ -410,16 +454,18 @@ describe("StatusApiHandler 状态 API 处理器", () => {
     });
 
     it("应该处理 JSON 解析错误", async () => {
-      const error = new Error("JSON 解析失败");
+      const error = new Error("Invalid JSON");
       mockContext.req.json.mockRejectedValue(error);
 
       const response = await statusApiHandler.updateClientStatus(mockContext);
       const responseData = await response.json();
 
+      // parseJsonBody 会添加前缀："请求体必须是有效的状态对象: Invalid JSON"
       expect(responseData).toEqual({
+        success: false,
         error: {
           code: "CLIENT_STATUS_UPDATE_ERROR",
-          message: "JSON 解析失败",
+          message: "请求体必须是有效的状态对象: Invalid JSON",
         },
       });
       expect(response.status).toBe(400);
@@ -439,9 +485,9 @@ describe("StatusApiHandler 状态 API 处理器", () => {
         servers
       );
       expect(mockLogger.info).toHaveBeenCalledWith("活跃 MCP 服务器设置成功");
+      // data 为 undefined 时不会添加 data 字段
       expect(responseData).toEqual({
         success: true,
-        data: null,
         message: "活跃 MCP 服务器设置成功",
       });
       expect(response.status).toBe(200);
@@ -455,6 +501,7 @@ describe("StatusApiHandler 状态 API 处理器", () => {
 
       expect(mockStatusService.setActiveMCPServers).not.toHaveBeenCalled();
       expect(responseData).toEqual({
+        success: false,
         error: {
           code: "INVALID_REQUEST_BODY",
           message: "servers 必须是字符串数组",
@@ -471,6 +518,7 @@ describe("StatusApiHandler 状态 API 处理器", () => {
 
       expect(mockStatusService.setActiveMCPServers).not.toHaveBeenCalled();
       expect(responseData).toEqual({
+        success: false,
         error: {
           code: "INVALID_REQUEST_BODY",
           message: "servers 必须是字符串数组",
@@ -495,6 +543,7 @@ describe("StatusApiHandler 状态 API 处理器", () => {
         error
       );
       expect(responseData).toEqual({
+        success: false,
         error: {
           code: "ACTIVE_MCP_SERVERS_UPDATE_ERROR",
           message: "设置服务器失败",
@@ -504,16 +553,18 @@ describe("StatusApiHandler 状态 API 处理器", () => {
     });
 
     it("应该处理 JSON 解析错误", async () => {
-      const error = new Error("JSON 解析失败");
+      const error = new Error("Invalid JSON");
       mockContext.req.json.mockRejectedValue(error);
 
       const response = await statusApiHandler.setActiveMCPServers(mockContext);
       const responseData = await response.json();
 
+      // parseJsonBody 会添加前缀："请求体格式错误: Invalid JSON"
       expect(responseData).toEqual({
+        success: false,
         error: {
           code: "ACTIVE_MCP_SERVERS_UPDATE_ERROR",
-          message: "JSON 解析失败",
+          message: "请求体格式错误: Invalid JSON",
         },
       });
       expect(response.status).toBe(400);
@@ -529,9 +580,9 @@ describe("StatusApiHandler 状态 API 处理器", () => {
       expect(mockStatusService.setActiveMCPServers).toHaveBeenCalledWith(
         servers
       );
+      // data 为 undefined 时不会添加 data 字段
       expect(responseData).toEqual({
         success: true,
-        data: null,
         message: "活跃 MCP 服务器设置成功",
       });
       expect(response.status).toBe(200);
@@ -546,9 +597,9 @@ describe("StatusApiHandler 状态 API 处理器", () => {
       expect(mockStatusService.reset).toHaveBeenCalled();
       expect(mockLogger.info).toHaveBeenCalledWith("处理重置状态请求");
       expect(mockLogger.info).toHaveBeenCalledWith("状态重置成功");
+      // data 为 undefined 时不会添加 data 字段
       expect(responseData).toEqual({
         success: true,
-        data: null,
         message: "状态重置成功",
       });
       expect(response.status).toBe(200);
@@ -565,6 +616,7 @@ describe("StatusApiHandler 状态 API 处理器", () => {
 
       expect(mockLogger.error).toHaveBeenCalledWith("重置状态失败:", error);
       expect(responseData).toEqual({
+        success: false,
         error: {
           code: "STATUS_RESET_ERROR",
           message: "重置失败",
@@ -581,10 +633,12 @@ describe("StatusApiHandler 状态 API 处理器", () => {
       const response = await statusApiHandler.resetStatus(mockContext);
       const responseData = await response.json();
 
+      // handleError 会将非 Error 类型转换为字符串
       expect(responseData).toEqual({
+        success: false,
         error: {
           code: "STATUS_RESET_ERROR",
-          message: "重置状态失败",
+          message: "字符串错误",
         },
       });
       expect(response.status).toBe(500);
@@ -613,11 +667,10 @@ describe("StatusApiHandler 状态 API 处理器", () => {
       const response = await statusApiHandler.getStatus(mockContext);
       const responseData = await response.json();
 
+      expect(responseData).toHaveProperty("success", false);
       expect(responseData).toHaveProperty("error");
       expect(responseData.error).toHaveProperty("code");
       expect(responseData.error).toHaveProperty("message");
-      expect(responseData).not.toHaveProperty("success");
-      expect(responseData).not.toHaveProperty("data");
     });
 
     it("成功响应可以包含消息", async () => {
@@ -626,7 +679,8 @@ describe("StatusApiHandler 状态 API 处理器", () => {
 
       expect(responseData).toHaveProperty("success", true);
       expect(responseData).toHaveProperty("message", "状态重置成功");
-      expect(responseData).toHaveProperty("data", null);
+      // data 为 undefined 时不会添加 data 字段
+      expect(responseData).not.toHaveProperty("data");
     });
   });
 
@@ -805,9 +859,10 @@ describe("StatusApiHandler 状态 API 处理器", () => {
 
     it("应该处理 Context 对象异常", async () => {
       const brokenContext = {
-        json: vi.fn(() => {
+        get: vi.fn(() => {
           throw new Error("Context 错误");
         }),
+        json: vi.fn(),
         req: { json: vi.fn() },
       } as any;
 
