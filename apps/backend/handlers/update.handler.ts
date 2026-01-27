@@ -28,7 +28,7 @@ export class UpdateApiHandler extends BaseHandler {
    * Body: { version: string }
    */
   async performUpdate(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       const body = await this.parseJsonBody<{ version: string }>(
         c,

@@ -76,7 +76,7 @@ export class CozeHandler extends BaseHandler {
    * GET /api/coze/workspaces
    */
   async getWorkspaces(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.info("处理获取工作空间列表请求");
 
@@ -143,7 +143,7 @@ export class CozeHandler extends BaseHandler {
    * GET /api/coze/workflows?workspace_id=xxx&page_num=1&page_size=20
    */
   async getWorkflows(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.info("处理获取工作流列表请求");
 
@@ -288,7 +288,7 @@ export class CozeHandler extends BaseHandler {
    * POST /api/coze/cache/clear
    */
   async clearCache(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.info("处理清除扣子 API 缓存请求");
 
@@ -348,7 +348,7 @@ export class CozeHandler extends BaseHandler {
    * GET /api/coze/cache/stats
    */
   async getCacheStats(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       logger.info("处理获取缓存统计信息请求");
 

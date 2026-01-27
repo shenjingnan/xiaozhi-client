@@ -75,12 +75,7 @@ describe("StaticFileHandler", () => {
       req: {
         url: "http://localhost:3000/",
       },
-      get: vi.fn().mockImplementation((key: string) => {
-        if (key === "logger") {
-          return mockLogger;
-        }
-        return undefined;
-      }),
+      logger: mockLogger,
       text: vi.fn().mockImplementation((text, status, headers) => ({
         status,
         text,

@@ -120,7 +120,7 @@ export class MCPToolLogHandler extends BaseHandler {
    * 获取工具调用日志
    */
   async getToolCallLogs(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     try {
       const validation = this.parseAndValidateQueryParams(c);
 

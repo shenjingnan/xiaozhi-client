@@ -88,7 +88,7 @@ export class StaticFileHandler extends BaseHandler {
    * GET /*
    */
   async handleStaticFile(c: Context): Promise<Response> {
-    const logger = this.getLogger(c);
+    const logger = c.logger;
     const pathname = new URL(c.req.url).pathname;
 
     try {

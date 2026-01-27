@@ -19,6 +19,16 @@ describe("StatusApiHandler 状态 API 处理器", () => {
   let mockLogger: any;
 
   beforeEach(async () => {
+    // Setup mock logger first
+    const { logger } = await import("../../Logger.js");
+    mockLogger = {
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    };
+    Object.assign(logger, mockLogger);
+
     // Setup mock StatusService
     mockStatusService = {
       getFullStatus: vi.fn(),
@@ -34,12 +44,7 @@ describe("StatusApiHandler 状态 API 处理器", () => {
 
     // Setup mock Context
     mockContext = {
-      get: vi.fn((key: string) => {
-        if (key === "logger") {
-          return mockLogger;
-        }
-        return undefined;
-      }),
+      logger: mockLogger,
       json: vi.fn((data, status) => {
         const response = new Response(JSON.stringify(data), {
           status: status || 200,
@@ -78,16 +83,6 @@ describe("StatusApiHandler 状态 API 处理器", () => {
         json: vi.fn(),
       },
     } as any;
-
-    // Setup mock logger
-    const { logger } = await import("../../Logger.js");
-    mockLogger = {
-      debug: vi.fn(),
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-    };
-    Object.assign(logger, mockLogger);
 
     // Create handler instance
     statusApiHandler = new StatusApiHandler(mockStatusService);
@@ -858,10 +853,15 @@ describe("StatusApiHandler 状态 API 处理器", () => {
     });
 
     it("应该处理 Context 对象异常", async () => {
-      const brokenContext = {
-        get: vi.fn(() => {
+      const brokenLogger = {
+        get error() {
           throw new Error("Context 错误");
-        }),
+        },
+      };
+      const brokenContext = {
+        logger: brokenLogger,
+        success: vi.fn(),
+        fail: vi.fn(),
         json: vi.fn(),
         req: { json: vi.fn() },
       } as any;
