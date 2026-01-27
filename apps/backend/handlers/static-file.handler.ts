@@ -5,15 +5,17 @@ import { fileURLToPath } from "node:url";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type { Context } from "hono";
+import { BaseHandler } from "./base.handler.js";
 
 /**
  * 静态文件处理器
  */
-export class StaticFileHandler {
+export class StaticFileHandler extends BaseHandler {
   private logger: Logger;
   private webPath: string | null = null;
 
   constructor() {
+    super();
     this.logger = logger;
     this.initializeWebPath();
   }
@@ -26,7 +28,7 @@ export class StaticFileHandler {
       // 获取当前文件所在目录
       const __dirname = dirname(fileURLToPath(import.meta.url));
 
-      this.logger.debug(`当前文件目录: ${__dirname}`);
+      logger.debug(`当前文件目录: ${__dirname}`);
 
       // 确定web目录路径
       // 支持 Nx 构建的 dist/frontend 目录结构
@@ -66,18 +68,18 @@ export class StaticFileHandler {
       this.webPath =
         possibleWebPaths.find((p) => {
           const exists = existsSync(p);
-          this.logger.debug(`检查路径 ${p}: ${exists ? "存在" : "不存在"}`);
+          logger.debug(`检查路径 ${p}: ${exists ? "存在" : "不存在"}`);
           return exists;
         }) || null;
 
       if (this.webPath) {
-        this.logger.debug(`静态文件服务路径: ${this.webPath}`);
+        logger.debug(`静态文件服务路径: ${this.webPath}`);
       } else {
-        this.logger.warn("未找到静态文件目录");
-        this.logger.debug("尝试的路径:", possibleWebPaths);
+        logger.warn("未找到静态文件目录");
+        logger.debug("尝试的路径:", possibleWebPaths);
       }
     } catch (error) {
-      this.logger.error("初始化静态文件路径失败:", error);
+      logger.error("初始化静态文件路径失败:", error);
     }
   }
 
@@ -86,10 +88,11 @@ export class StaticFileHandler {
    * GET /*
    */
   async handleStaticFile(c: Context): Promise<Response> {
+    const logger = this.getLogger(c);
     const pathname = new URL(c.req.url).pathname;
 
     try {
-      this.logger.debug(`处理静态文件请求: ${pathname}`);
+      logger.debug(`处理静态文件请求: ${pathname}`);
 
       if (!this.webPath) {
         return this.createErrorPage(c, "找不到前端资源文件");
@@ -103,7 +106,7 @@ export class StaticFileHandler {
 
       // 安全性检查：防止路径遍历
       if (filePath.includes("..")) {
-        this.logger.warn(`路径遍历攻击尝试: ${filePath}`);
+        logger.warn(`路径遍历攻击尝试: ${filePath}`);
         return c.text("Forbidden", 403);
       }
 
@@ -114,23 +117,21 @@ export class StaticFileHandler {
         // 对于 SPA，返回 index.html
         const indexPath = join(this.webPath, "index.html");
         if (existsSync(indexPath)) {
-          this.logger.debug(`SPA 回退到 index.html: ${pathname}`);
+          logger.debug(`SPA 回退到 index.html: ${pathname}`);
           return this.serveFile(c, indexPath, "text/html");
         }
 
-        this.logger.debug(`文件不存在: ${fullPath}`);
+        logger.debug(`文件不存在: ${fullPath}`);
         return c.text("Not Found", 404);
       }
 
       // 确定 Content-Type
       const contentType = this.getContentType(fullPath);
 
-      this.logger.debug(
-        `服务静态文件: ${fullPath}, Content-Type: ${contentType}`
-      );
+      logger.debug(`服务静态文件: ${fullPath}, Content-Type: ${contentType}`);
       return this.serveFile(c, fullPath, contentType);
     } catch (error) {
-      this.logger.error(`服务静态文件错误 (${pathname}):`, error);
+      logger.error(`服务静态文件错误 (${pathname}):`, error);
       return c.text("Internal Server Error", 500);
     }
   }
@@ -159,7 +160,7 @@ export class StaticFileHandler {
         "Content-Type": contentType,
       });
     } catch (error) {
-      this.logger.error(`读取文件失败: ${filePath}`, error);
+      logger.error(`读取文件失败: ${filePath}`, error);
       throw error;
     }
   }

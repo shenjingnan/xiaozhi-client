@@ -4,10 +4,10 @@
  */
 
 import { CozeApiService } from "@/lib/coze";
-import { logger } from "@root/Logger";
 import type { CozeWorkflowsParams } from "@root/types/coze";
 import { configManager } from "@xiaozhi-client/config";
 import type { Context } from "hono";
+import { BaseHandler } from "./base.handler.js";
 
 /**
  * 错误代码类型
@@ -67,12 +67,16 @@ function getCozeApiService(): CozeApiService {
 /**
  * 扣子 API 路由处理器类
  */
-export class CozeHandler {
+export class CozeHandler extends BaseHandler {
+  constructor() {
+    super();
+  }
   /**
    * 获取工作空间列表
    * GET /api/coze/workspaces
    */
   async getWorkspaces(c: Context): Promise<Response> {
+    const logger = this.getLogger(c);
     try {
       logger.info("处理获取工作空间列表请求");
 
@@ -139,6 +143,7 @@ export class CozeHandler {
    * GET /api/coze/workflows?workspace_id=xxx&page_num=1&page_size=20
    */
   async getWorkflows(c: Context): Promise<Response> {
+    const logger = this.getLogger(c);
     try {
       logger.info("处理获取工作流列表请求");
 
@@ -283,6 +288,7 @@ export class CozeHandler {
    * POST /api/coze/cache/clear
    */
   async clearCache(c: Context): Promise<Response> {
+    const logger = this.getLogger(c);
     try {
       logger.info("处理清除扣子 API 缓存请求");
 
@@ -342,6 +348,7 @@ export class CozeHandler {
    * GET /api/coze/cache/stats
    */
   async getCacheStats(c: Context): Promise<Response> {
+    const logger = this.getLogger(c);
     try {
       logger.info("处理获取缓存统计信息请求");
 
