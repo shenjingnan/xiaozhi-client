@@ -5,7 +5,7 @@ import type { Context } from "hono";
  * 抽象 API Handler 基类
  * 提供统一的 Logger 获取方法和便捷的响应方法
  */
-export abstract class AbstractApiHandler {
+export abstract class BaseHandler {
   /**
    * 从 context 获取 logger 实例
    * @param c - Hono context

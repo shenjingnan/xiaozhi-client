@@ -5,12 +5,12 @@ import {
 import type { AppConfig } from "@xiaozhi-client/config";
 import { configManager } from "@xiaozhi-client/config";
 import type { Context } from "hono";
-import { AbstractApiHandler } from "./AbstractApiHandler.js";
+import { BaseHandler } from "./base.handler.js";
 
 /**
  * 配置 API 处理器
  */
-export class ConfigApiHandler extends AbstractApiHandler {
+export class ConfigApiHandler extends BaseHandler {
   constructor() {
     super();
   }

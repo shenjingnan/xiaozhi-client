@@ -1,11 +1,11 @@
 import type { StatusService } from "@services/StatusService.js";
 import type { Context } from "hono";
-import { AbstractApiHandler } from "./AbstractApiHandler.js";
+import { BaseHandler } from "./base.handler.js";
 
 /**
  * 状态 API 处理器
  */
-export class StatusApiHandler extends AbstractApiHandler {
+export class StatusApiHandler extends BaseHandler {
   private statusService: StatusService;
 
   constructor(statusService: StatusService) {

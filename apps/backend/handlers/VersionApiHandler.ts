@@ -1,12 +1,12 @@
 import { NPMManager } from "@/lib/npm";
 import { VersionUtils } from "@utils/VersionUtils.js";
 import type { Context } from "hono";
-import { AbstractApiHandler } from "./AbstractApiHandler.js";
+import { BaseHandler } from "./base.handler.js";
 
 /**
  * 版本 API 处理器
  */
-export class VersionApiHandler extends AbstractApiHandler {
+export class VersionApiHandler extends BaseHandler {
   /**
    * 获取版本信息
    * GET /api/version

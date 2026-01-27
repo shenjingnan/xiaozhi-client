@@ -2,7 +2,7 @@ import { NPMManager } from "@/lib/npm";
 import { getEventBus } from "@services/EventBus.js";
 import type { Context } from "hono";
 import { z } from "zod";
-import { AbstractApiHandler } from "./AbstractApiHandler.js";
+import { BaseHandler } from "./base.handler.js";
 
 // 版本号请求格式验证
 const UpdateRequestSchema = z.object({
@@ -12,7 +12,7 @@ const UpdateRequestSchema = z.object({
 /**
  * 更新 API 处理器
  */
-export class UpdateApiHandler extends AbstractApiHandler {
+export class UpdateApiHandler extends BaseHandler {
   private npmManager: NPMManager;
   private eventBus = getEventBus();
   private activeInstalls: Map<string, boolean> = new Map();
