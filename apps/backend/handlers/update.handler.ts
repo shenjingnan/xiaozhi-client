@@ -28,7 +28,6 @@ export class UpdateApiHandler extends BaseHandler {
    * Body: { version: string }
    */
   async performUpdate(c: Context): Promise<Response> {
-    const logger = c.logger;
     try {
       const body = await this.parseJsonBody<{ version: string }>(
         c,
@@ -66,7 +65,7 @@ export class UpdateApiHandler extends BaseHandler {
 
       // 立即返回响应，安装过程通过 WebSocket 推送
       this.npmManager.installVersion(version).catch((error) => {
-        logger.error("安装过程失败:", error);
+        c.logger.error("安装过程失败:", error);
       });
 
       return c.success(

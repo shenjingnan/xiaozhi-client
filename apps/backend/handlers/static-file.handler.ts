@@ -88,11 +88,10 @@ export class StaticFileHandler extends BaseHandler {
    * GET /*
    */
   async handleStaticFile(c: Context): Promise<Response> {
-    const logger = c.logger;
     const pathname = new URL(c.req.url).pathname;
 
     try {
-      logger.debug(`处理静态文件请求: ${pathname}`);
+      c.logger.debug(`处理静态文件请求: ${pathname}`);
 
       if (!this.webPath) {
         return this.createErrorPage(c, "找不到前端资源文件");
@@ -106,7 +105,7 @@ export class StaticFileHandler extends BaseHandler {
 
       // 安全性检查：防止路径遍历
       if (filePath.includes("..")) {
-        logger.warn(`路径遍历攻击尝试: ${filePath}`);
+        c.logger.warn(`路径遍历攻击尝试: ${filePath}`);
         return c.text("Forbidden", 403);
       }
 
@@ -117,21 +116,21 @@ export class StaticFileHandler extends BaseHandler {
         // 对于 SPA，返回 index.html
         const indexPath = join(this.webPath, "index.html");
         if (existsSync(indexPath)) {
-          logger.debug(`SPA 回退到 index.html: ${pathname}`);
+          c.logger.debug(`SPA 回退到 index.html: ${pathname}`);
           return this.serveFile(c, indexPath, "text/html");
         }
 
-        logger.debug(`文件不存在: ${fullPath}`);
+        c.logger.debug(`文件不存在: ${fullPath}`);
         return c.text("Not Found", 404);
       }
 
       // 确定 Content-Type
       const contentType = this.getContentType(fullPath);
 
-      logger.debug(`服务静态文件: ${fullPath}, Content-Type: ${contentType}`);
+      c.logger.debug(`服务静态文件: ${fullPath}, Content-Type: ${contentType}`);
       return this.serveFile(c, fullPath, contentType);
     } catch (error) {
-      logger.error(`服务静态文件错误 (${pathname}):`, error);
+      c.logger.error(`服务静态文件错误 (${pathname}):`, error);
       return c.text("Internal Server Error", 500);
     }
   }
