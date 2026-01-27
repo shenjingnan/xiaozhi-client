@@ -1,5 +1,5 @@
 export * from "./ConfigApiHandler.js";
-export * from "./CozeApiHandler.js";
+export { CozeHandler } from "./coze.handler.js";
 export * from "./HeartbeatHandler.js";
 export { EndpointHandler } from "./endpoint.handler.js";
 export * from "./mcp.handler.js";

@@ -6,7 +6,7 @@
 import type { RouteDefinition } from "../types.js";
 import { createHandler } from "../types.js";
 
-const h = createHandler("cozeApiHandler");
+const h = createHandler("cozeHandler");
 
 export const cozeRoutes: RouteDefinition[] = [
   {

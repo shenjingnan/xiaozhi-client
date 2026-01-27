@@ -67,7 +67,7 @@ function getCozeApiService(): CozeApiService {
 /**
  * 扣子 API 路由处理器类
  */
-export class CozeApiHandler {
+export class CozeHandler {
   /**
    * 获取工作空间列表
    * GET /api/coze/workspaces
