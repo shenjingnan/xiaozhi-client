@@ -29,7 +29,7 @@ vi.mock("@xiaozhi-client/config", () => ({
   },
 }));
 
-vi.mock("@services/EventBus.js", () => ({
+vi.mock("@services/event-bus.service.js", () => ({
   getEventBus: vi.fn().mockReturnValue({
     emitEvent: vi.fn(),
     onEvent: vi.fn(),
@@ -113,7 +113,7 @@ describe("RealtimeNotificationHandler", () => {
       emitEvent: vi.fn(),
       onEvent: vi.fn(),
     };
-    const { getEventBus } = await import("@services/EventBus.js");
+    const { getEventBus } = await import("@services/event-bus.service.js");
     vi.mocked(getEventBus).mockReturnValue(mockEventBus);
 
     // Mock NotificationService

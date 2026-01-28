@@ -4,11 +4,11 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 vi.mock("node:child_process");
 vi.mock("node:util");
 vi.mock("semver");
-vi.mock("../../../services/EventBus.js");
+vi.mock("../../../services/event-bus.service.js");
 
 import { NPMManager } from "@/lib/npm";
 // Import after mocking
-import type { EventBus } from "@services/EventBus.js";
+import type { EventBus } from "@services/event-bus.service.js";
 
 /**
  * Mock EventBus 类型接口
@@ -71,7 +71,9 @@ describe("NPMManager", () => {
     mockExecAsync = vi.fn();
 
     // Mock the imports
-    const { getEventBus } = await import("../../../services/EventBus.js");
+    const { getEventBus } = await import(
+      "../../../services/event-bus.service.js"
+    );
     vi.mocked(getEventBus).mockReturnValue(mockEventBus as never);
 
     const { spawn } = await import("node:child_process");

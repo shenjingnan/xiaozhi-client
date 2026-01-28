@@ -4,7 +4,7 @@
  */
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { getEventBus } from "@root/services/EventBus.js";
+import { getEventBus } from "@root/services/event-bus.service.js";
 import { MCPConnection } from "@xiaozhi-client/mcp-core";
 import type { InternalMCPServiceConfig } from "./types.js";
 

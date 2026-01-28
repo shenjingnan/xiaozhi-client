@@ -7,7 +7,7 @@ import { UpdateApiHandler } from "../update.handler.js";
 // Mock dependencies
 vi.mock("@/lib/npm");
 vi.mock("../../Logger.js");
-vi.mock("@services/EventBus.js");
+vi.mock("@services/event-bus.service.js");
 
 // Mock 类型定义
 interface MockNPMManager {
@@ -90,7 +90,7 @@ describe("UpdateApiHandler", () => {
       emitEvent: vi.fn(),
       onEvent: vi.fn(),
     };
-    const { getEventBus } = await import("@services/EventBus.js");
+    const { getEventBus } = await import("@services/event-bus.service.js");
     vi.mocked(getEventBus).mockReturnValue(
       mockEventBus as unknown as ReturnType<typeof getEventBus>
     );

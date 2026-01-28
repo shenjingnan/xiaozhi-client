@@ -5,7 +5,7 @@
  * 验证 ConcurrencyController 移除后的 ServiceRestartManager 功能完整性
  */
 
-import { getEventBus } from "@services/EventBus.js";
+import { getEventBus } from "@services/event-bus.service.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   RestartStrategy,
