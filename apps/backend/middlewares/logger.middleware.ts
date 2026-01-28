@@ -1,6 +1,6 @@
+import type { AppContext } from "@/types/hono.context.js";
 import { logger } from "@root/Logger.js";
 import type { Logger } from "@root/Logger.js";
-import type { AppContext } from "@/types/hono.context.js";
 import type { Context, Next } from "hono";
 
 /**
