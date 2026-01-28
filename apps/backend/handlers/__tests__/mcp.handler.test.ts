@@ -50,8 +50,13 @@ describe("MCPRouteHandler", () => {
     const mockContext = {
       req: {
         header: vi.fn((name: string) => {
-          if (name === "content-type") return "application/json";
-          if (name === "mcp-protocol-version") return "2024-11-05";
+          if (name === "content-type" || name === "Content-Type")
+            return "application/json";
+          if (
+            name === "mcp-protocol-version" ||
+            name === "MCP-Protocol-Version"
+          )
+            return "2024-11-05";
           return undefined;
         }),
         query: vi.fn(() => undefined),

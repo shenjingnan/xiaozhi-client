@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { HTTP_CONTENT_TYPES, HTTP_STATUS_CODES } from "@constants/index.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type { Context } from "hono";
@@ -106,7 +107,7 @@ export class StaticFileHandler extends BaseHandler {
       // 安全性检查：防止路径遍历
       if (filePath.includes("..")) {
         c.logger.warn(`路径遍历攻击尝试: ${filePath}`);
-        return c.text("Forbidden", 403);
+        return c.text("Forbidden", HTTP_STATUS_CODES.FORBIDDEN);
       }
 
       const fullPath = join(this.webPath, filePath);
@@ -117,11 +118,11 @@ export class StaticFileHandler extends BaseHandler {
         const indexPath = join(this.webPath, "index.html");
         if (existsSync(indexPath)) {
           c.logger.debug(`SPA 回退到 index.html: ${pathname}`);
-          return this.serveFile(c, indexPath, "text/html");
+          return this.serveFile(c, indexPath, HTTP_CONTENT_TYPES.TEXT_HTML);
         }
 
         c.logger.debug(`文件不存在: ${fullPath}`);
-        return c.text("Not Found", 404);
+        return c.text("Not Found", HTTP_STATUS_CODES.NOT_FOUND);
       }
 
       // 确定 Content-Type
@@ -131,7 +132,10 @@ export class StaticFileHandler extends BaseHandler {
       return this.serveFile(c, fullPath, contentType);
     } catch (error) {
       c.logger.error(`服务静态文件错误 (${pathname}):`, error);
-      return c.text("Internal Server Error", 500);
+      return c.text(
+        "Internal Server Error",
+        HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
@@ -171,12 +175,12 @@ export class StaticFileHandler extends BaseHandler {
     const ext = filePath.split(".").pop()?.toLowerCase();
 
     const contentTypes: Record<string, string> = {
-      html: "text/html",
-      htm: "text/html",
-      js: "application/javascript",
-      mjs: "application/javascript",
-      css: "text/css",
-      json: "application/json",
+      html: HTTP_CONTENT_TYPES.TEXT_HTML,
+      htm: HTTP_CONTENT_TYPES.TEXT_HTML,
+      js: HTTP_CONTENT_TYPES.APPLICATION_JAVASCRIPT,
+      mjs: HTTP_CONTENT_TYPES.APPLICATION_JAVASCRIPT,
+      css: HTTP_CONTENT_TYPES.TEXT_CSS,
+      json: HTTP_CONTENT_TYPES.APPLICATION_JSON,
       png: "image/png",
       jpg: "image/jpeg",
       jpeg: "image/jpeg",
@@ -187,15 +191,17 @@ export class StaticFileHandler extends BaseHandler {
       woff2: "font/woff2",
       ttf: "font/ttf",
       eot: "application/vnd.ms-fontobject",
-      pdf: "application/pdf",
-      txt: "text/plain",
-      xml: "application/xml",
-      zip: "application/zip",
+      pdf: HTTP_CONTENT_TYPES.APPLICATION_PDF,
+      txt: HTTP_CONTENT_TYPES.TEXT_PLAIN,
+      xml: HTTP_CONTENT_TYPES.APPLICATION_XML,
+      zip: HTTP_CONTENT_TYPES.APPLICATION_ZIP,
       tar: "application/x-tar",
       gz: "application/gzip",
     };
 
-    return contentTypes[ext || ""] || "application/octet-stream";
+    return (
+      contentTypes[ext || ""] || HTTP_CONTENT_TYPES.APPLICATION_OCTET_STREAM
+    );
   }
 
   /**

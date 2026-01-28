@@ -3,6 +3,7 @@
  * 包装 @xiaozhi-client/mcp-core 的 MCPConnection，使用 EventBus 发射事件
  */
 
+import { MCP_SERVICE_EVENTS } from "@constants/index.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { getEventBus } from "@root/services/event-bus.service.js";
 import { MCPConnection } from "@xiaozhi-client/mcp-core";
@@ -30,21 +31,21 @@ export class MCPService {
         tools: Tool[];
         connectionTime: Date;
       }) => {
-        this.eventBus.emitEvent("mcp:service:connected", data);
+        this.eventBus.emitEvent(MCP_SERVICE_EVENTS.CONNECTED, data);
       },
       onDisconnected: (data: {
         serviceName: string;
         reason?: string;
         disconnectionTime: Date;
       }) => {
-        this.eventBus.emitEvent("mcp:service:disconnected", data);
+        this.eventBus.emitEvent(MCP_SERVICE_EVENTS.DISCONNECTED, data);
       },
       onConnectionFailed: (data: {
         serviceName: string;
         error: Error;
         attempt: number;
       }) => {
-        this.eventBus.emitEvent("mcp:service:connection:failed", data);
+        this.eventBus.emitEvent(MCP_SERVICE_EVENTS.CONNECTION_FAILED, data);
       },
     };
 
