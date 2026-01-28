@@ -1,5 +1,6 @@
 import { logger } from "@root/Logger.js";
 import type { Logger } from "@root/Logger.js";
+import type { AppContext } from "@/types/hono.context.js";
 import type { Context, Next } from "hono";
 
 /**
@@ -19,7 +20,7 @@ declare module "hono" {
  * 1. c.get("logger") - Hono 推荐做法
  * 2. c.logger - 向后兼容
  */
-export const loggerMiddleware = async (c: Context, next: Next) => {
+export const loggerMiddleware = async (c: Context<AppContext>, next: Next) => {
   // Hono 推荐做法
   c.set("logger", logger);
 
