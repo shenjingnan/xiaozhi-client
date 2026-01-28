@@ -11,7 +11,7 @@ import {
   clearErrorHistory,
   getErrorStatistics,
   shouldAlert,
-} from "../ErrorHandler.js";
+} from "../ErrorHelper.js";
 
 // Mock dependencies
 vi.mock("../../Logger.js");
