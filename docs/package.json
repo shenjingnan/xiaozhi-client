@@ -17,7 +17,7 @@
   "packageManager": "pnpm@10.13.1",
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.15",
-    "next": "^15.5.8",
+    "next": "^16.1.5",
     "nextra": "^4.6.0",
     "nextra-theme-docs": "^4.6.0",
     "postcss": "^8.5.6",
