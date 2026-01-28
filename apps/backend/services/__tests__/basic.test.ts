@@ -4,9 +4,9 @@ describe("Services Basic Tests", () => {
   it("should be able to import service modules", async () => {
     // Test that all service modules can be imported without errors
     const modules = [
-      () => import("../EventBus.js"),
-      () => import("../NotificationService.js"),
-      () => import("../StatusService.js"),
+      () => import("../event-bus.service.js"),
+      () => import("../notification.service.js"),
+      () => import("../status.service.js"),
     ];
 
     for (const importModule of modules) {
@@ -15,9 +15,9 @@ describe("Services Basic Tests", () => {
   });
 
   it("should have proper class constructors", async () => {
-    const { EventBus } = await import("../EventBus.js");
-    const { NotificationService } = await import("../NotificationService.js");
-    const { StatusService } = await import("../StatusService.js");
+    const { EventBus } = await import("../event-bus.service.js");
+    const { NotificationService } = await import("../notification.service.js");
+    const { StatusService } = await import("../status.service.js");
 
     expect(() => new EventBus()).not.toThrow();
     expect(() => new NotificationService()).not.toThrow();

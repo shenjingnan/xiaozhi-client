@@ -23,7 +23,7 @@ import type {
   UnifiedServerStatus,
 } from "@/lib/mcp/types";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { getEventBus } from "@root/services/EventBus.js";
+import { getEventBus } from "@root/services/event-bus.service.js";
 import type { MCPMessage } from "@root/types/mcp.js";
 import { isModelScopeURL } from "@xiaozhi-client/config";
 import type { MCPToolConfig } from "@xiaozhi-client/config";

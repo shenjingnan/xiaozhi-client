@@ -1,4 +1,4 @@
-import type { StatusService } from "@services/StatusService.js";
+import type { StatusService } from "@services/status.service.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { StatusApiHandler } from "../status.handler.js";
 

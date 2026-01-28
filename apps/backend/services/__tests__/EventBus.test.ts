@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { EventBus, destroyEventBus, getEventBus } from "../EventBus.js";
+import {
+  EventBus,
+  destroyEventBus,
+  getEventBus,
+} from "../event-bus.service.js";
 
 // Mock dependencies
 vi.mock("../../Logger.js", () => ({

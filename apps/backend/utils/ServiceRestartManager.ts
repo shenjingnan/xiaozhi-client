@@ -6,7 +6,7 @@
  */
 
 import { logger } from "@root/Logger.js";
-import { getEventBus } from "@services/EventBus.js";
+import { getEventBus } from "@services/event-bus.service.js";
 
 /**
  * 重启策略枚举

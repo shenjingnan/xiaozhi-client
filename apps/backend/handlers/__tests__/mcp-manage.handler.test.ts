@@ -1,7 +1,7 @@
 import path from "node:path";
 import type { MCPServiceManager } from "@/lib/mcp";
 import { MCPErrorCode } from "@errors/MCPErrors.js";
-import type { EventBus } from "@services/EventBus.js";
+import type { EventBus } from "@services/event-bus.service.js";
 import { TypeFieldNormalizer } from "@utils/TypeFieldNormalizer.js";
 import type { ConfigManager } from "@xiaozhi-client/config";
 import type { MCPServerConfig } from "@xiaozhi-client/config";

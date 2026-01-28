@@ -936,7 +936,7 @@ describe("WebServer", () => {
       webServer = new WebServer(currentPort);
 
       // 验证事件总线被正确获取
-      const { getEventBus } = await import("@services/EventBus");
+      const { getEventBus } = await import("@services/event-bus.service.js");
       expect(getEventBus).toHaveBeenCalled();
     });
   });
@@ -1727,7 +1727,7 @@ describe("WebServer", () => {
       webServer = new WebServer(currentPort);
 
       // 验证事件总线 onEvent 方法被调用
-      const { getEventBus } = await import("@services/EventBus.js");
+      const { getEventBus } = await import("@services/event-bus.service.js");
       const mockEventBus = getEventBus();
       expect(mockEventBus.onEvent).toHaveBeenCalledWith(
         "endpoint:status:changed",
@@ -1740,7 +1740,7 @@ describe("WebServer", () => {
       await webServer.start();
 
       // 获取事件总线并触发事件
-      const { getEventBus } = await import("@services/EventBus.js");
+      const { getEventBus } = await import("@services/event-bus.service.js");
       const mockEventBus = getEventBus() as any;
 
       // 模拟事件回调 - 使用 vi.mocked 来访问 mock 属性
@@ -1753,7 +1753,7 @@ describe("WebServer", () => {
       if (eventCallback) {
         // 获取通知服务实例
         const { NotificationService } = await import(
-          "@services/NotificationService.js"
+          "@services/notification.service.js"
         );
         const mockNotificationService = vi.mocked(NotificationService);
         const mockInstance = mockNotificationService.mock.results[0]?.value;
