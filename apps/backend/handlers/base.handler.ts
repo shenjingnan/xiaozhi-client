@@ -1,12 +1,19 @@
 import type { AppContext } from "@/types/hono.context.js";
+import type { Logger } from "@root/Logger.js";
+import { logger } from "@root/Logger.js";
 import type { Context } from "hono";
 
 /**
  * 抽象 API Handler 基类
  * 提供便捷的辅助方法
- * logger 通过 c.get("logger") 访问（Hono 推荐做法）
+ * logger 通过依赖注入方式访问
  */
 export abstract class BaseHandler {
+  protected logger: Logger;
+
+  constructor() {
+    this.logger = logger;
+  }
   /**
    * 统一错误处理方法
    * 记录错误日志并返回格式化的错误响应
@@ -32,7 +39,7 @@ export abstract class BaseHandler {
         ? String((error as { code: unknown }).code)
         : defaultCode;
 
-    c.get("logger").error(`${operation}失败:`, error);
+    this.logger.error(`${operation}失败:`, error);
 
     return c.fail(
       errorCode,

@@ -2,7 +2,6 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type { Context } from "hono";
 import { BaseHandler } from "./base.handler.js";
@@ -11,12 +10,10 @@ import { BaseHandler } from "./base.handler.js";
  * 静态文件处理器
  */
 export class StaticFileHandler extends BaseHandler {
-  private logger: Logger;
   private webPath: string | null = null;
 
   constructor() {
     super();
-    this.logger = logger;
     this.initializeWebPath();
   }
 

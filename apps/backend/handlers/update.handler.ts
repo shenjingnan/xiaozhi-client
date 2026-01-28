@@ -64,10 +64,9 @@ export class UpdateApiHandler extends BaseHandler {
         );
       }
 
-      const logger = c.get("logger");
       // 立即返回响应，安装过程通过 WebSocket 推送
       this.npmManager.installVersion(version).catch((error) => {
-        logger.error("安装过程失败:", error);
+        this.logger.error("安装过程失败:", error);
       });
 
       return c.success(

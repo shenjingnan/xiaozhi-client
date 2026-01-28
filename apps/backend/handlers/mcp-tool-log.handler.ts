@@ -137,12 +137,12 @@ export class MCPToolLogHandler extends BaseHandler {
         validation.data!
       );
 
-      c.get("logger").debug(
+      this.logger.debug(
         `API: 返回 ${result.records.length} 条工具调用日志记录`
       );
       return c.success(result);
     } catch (error) {
-      c.get("logger").error("获取工具调用日志失败:", error);
+      this.logger.error("获取工具调用日志失败:", error);
 
       const message = error instanceof Error ? error.message : "未知错误";
       if (message.includes("不存在")) {
