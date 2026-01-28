@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import type { MCPServiceManager } from "@/lib/mcp";
+import type { AppContext } from "@/types/hono.context.js";
 import { logger } from "@root/Logger.js";
 import type { Logger } from "@root/Logger.js";
 import type { EventBus } from "@services/EventBus.js";
@@ -26,7 +27,7 @@ export class ServiceApiHandler {
    * 重启服务
    * POST /api/services/restart
    */
-  async restartService(c: Context): Promise<Response> {
+  async restartService(c: Context<AppContext>): Promise<Response> {
     try {
       this.logger.info("处理服务重启请求");
 
@@ -198,7 +199,7 @@ export class ServiceApiHandler {
    * 获取服务状态
    * GET /api/services/status
    */
-  async getServiceStatus(c: Context): Promise<Response> {
+  async getServiceStatus(c: Context<AppContext>): Promise<Response> {
     try {
       this.logger.debug("处理获取服务状态请求");
 

@@ -6,6 +6,7 @@
 import { MCPCacheManager } from "@/lib/mcp";
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
+import type { AppContext } from "@/types/hono.context.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type {
@@ -65,7 +66,7 @@ export class MCPToolHandler {
    * 调用 MCP 工具
    * POST /api/tools/call
    */
-  async callTool(c: Context): Promise<Response> {
+  async callTool(c: Context<AppContext>): Promise<Response> {
     try {
       this.logger.info("处理工具调用请求");
 
@@ -90,6 +91,7 @@ export class MCPToolHandler {
 
       // 从 Context 中获取 MCPServiceManager 实例
       const serviceManager = c.get("mcpServiceManager");
+
       if (!serviceManager) {
         return c.fail(
           "SERVICE_NOT_INITIALIZED",
@@ -252,7 +254,7 @@ export class MCPToolHandler {
    * 获取可用工具列表
    * GET /api/tools/list?status=enabled|disabled|all
    */
-  async listTools(c: Context): Promise<Response> {
+  async listTools(c: Context<AppContext>): Promise<Response> {
     try {
       this.logger.debug("处理获取工具列表请求");
 
@@ -579,7 +581,7 @@ export class MCPToolHandler {
    * 处理添加 MCP 工具
    */
   private async handleAddMCPTool(
-    c: Context,
+    c: Context<AppContext>,
     data: MCPToolData
   ): Promise<Response> {
     const { serviceName, toolName, customName, customDescription } = data;
