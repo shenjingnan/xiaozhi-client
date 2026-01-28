@@ -14,6 +14,12 @@ import {
 } from "node:fs";
 import { dirname, resolve } from "node:path";
 import type { MCPServiceConfig } from "@/lib/mcp/types";
+import {
+  CACHE_FILE_CONFIG,
+  CACHE_TIMEOUTS,
+  MCP_CACHE_VERSIONS,
+  TOOL_NAME_SEPARATORS,
+} from "@constants/index.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
@@ -65,10 +71,10 @@ export type {
 export class MCPCacheManager {
   private cachePath: string;
   private logger: Logger;
-  private readonly CACHE_VERSION = "1.0.0";
-  private readonly CACHE_ENTRY_VERSION = "1.0.0";
+  private readonly CACHE_VERSION = MCP_CACHE_VERSIONS.CACHE_VERSION;
+  private readonly CACHE_ENTRY_VERSION = MCP_CACHE_VERSIONS.CACHE_ENTRY_VERSION;
   private cleanupInterval?: NodeJS.Timeout;
-  private readonly CLEANUP_INTERVAL = 60000; // 1分钟清理间隔
+  private readonly CLEANUP_INTERVAL = CACHE_TIMEOUTS.CLEANUP_INTERVAL;
 
   constructor(customCachePath?: string) {
     this.logger = logger;
@@ -90,11 +96,11 @@ export class MCPCacheManager {
   private getCacheFilePath(): string {
     try {
       const configDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();
-      return resolve(configDir, "xiaozhi.cache.json");
+      return resolve(configDir, CACHE_FILE_CONFIG.FILENAME);
     } catch (error) {
       // 在某些测试环境中 process.cwd() 可能不可用，使用默认路径
       const configDir = process.env.XIAOZHI_CONFIG_DIR || "/tmp";
-      return resolve(configDir, "xiaozhi.cache.json");
+      return resolve(configDir, CACHE_FILE_CONFIG.FILENAME);
     }
   }
 
@@ -352,7 +358,7 @@ export class MCPCacheManager {
           // 为每个工具添加服务名称信息
           allTools.push({
             ...tool,
-            name: `${serverName}__${tool.name}`, // 格式: serviceName__toolName
+            name: `${serverName}${TOOL_NAME_SEPARATORS.SERVICE_TOOL_SEPARATOR}${tool.name}`, // 格式: serviceName__toolName
           });
         }
       }

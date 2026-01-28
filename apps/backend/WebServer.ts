@@ -50,6 +50,7 @@ import type { SimpleConnectionStatus } from "@xiaozhi-client/endpoint";
 import type { Hono } from "hono";
 import { WebSocketServer } from "ws";
 
+import { HTTP_SERVER_CONFIG } from "@constants/index.js";
 import { MCPServiceManagerNotInitializedError } from "./errors/MCPErrors.middleware.js";
 // 路由系统导入
 import {
@@ -138,10 +139,11 @@ export class WebServer {
   constructor(port?: number) {
     // 端口配置
     try {
-      this.port = port ?? configManager.getWebUIPort() ?? 9999;
+      this.port =
+        port ?? configManager.getWebUIPort() ?? HTTP_SERVER_CONFIG.DEFAULT_PORT;
     } catch (error) {
       // 配置读取失败时使用默认端口
-      this.port = port ?? 9999;
+      this.port = port ?? HTTP_SERVER_CONFIG.DEFAULT_PORT;
     }
     this.logger = logger;
 
@@ -270,7 +272,7 @@ export class WebServer {
     return {
       mcpEndpoint: config.mcpEndpoint,
       mcpServers: config.mcpServers,
-      webUIPort: config.webUI?.port ?? 9999,
+      webUIPort: config.webUI?.port ?? HTTP_SERVER_CONFIG.DEFAULT_PORT,
     };
   }
 
@@ -821,7 +823,7 @@ export class WebServer {
     const server = serve({
       fetch: this.app.fetch,
       port: this.port,
-      hostname: "0.0.0.0", // 绑定到所有网络接口，支持 Docker 部署
+      hostname: HTTP_SERVER_CONFIG.DEFAULT_BIND_ADDRESS, // 绑定到所有网络接口，支持 Docker 部署
       createServer,
     });
 
@@ -844,7 +846,9 @@ export class WebServer {
     this.heartbeatMonitorInterval =
       this.heartbeatHandler.startHeartbeatMonitoring();
 
-    this.logger.info(`Web server listening on http://0.0.0.0:${this.port}`);
+    this.logger.info(
+      `Web server listening on http://${HTTP_SERVER_CONFIG.DEFAULT_BIND_ADDRESS}:${this.port}`
+    );
     this.logger.info(`Local access: http://localhost:${this.port}`);
   }
 

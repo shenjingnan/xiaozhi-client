@@ -6,6 +6,13 @@
 
 import type { EnhancedToolInfo, MCPServiceManager } from "@/lib/mcp";
 import { validateToolCallParams } from "@/lib/mcp";
+import {
+  JSONRPC_VERSION,
+  MCP_METHODS,
+  MCP_PROTOCOL_VERSIONS,
+  MCP_SERVER_INFO,
+  MCP_SUPPORTED_PROTOCOL_VERSIONS,
+} from "@constants/index.js";
 import type {
   ClientCapabilities,
   InitializedNotification,
@@ -71,27 +78,27 @@ export class MCPMessageHandler {
       const isNotification = message.id === undefined;
 
       switch (message.method) {
-        case "initialize":
+        case MCP_METHODS.INITIALIZE:
           return await this.handleInitialize(
             message.params as InitializeParams,
             message.id
           );
-        case "notifications/initialized":
+        case MCP_METHODS.INITIALIZED:
           return await this.handleInitializedNotification(
             message.params as InitializedNotification["params"]
           );
-        case "tools/list":
+        case MCP_METHODS.TOOLS_LIST:
           return await this.handleToolsList(message.id);
-        case "tools/call":
+        case MCP_METHODS.TOOLS_CALL:
           return await this.handleToolCall(
             message.params as ToolCallParams,
             message.id
           );
-        case "resources/list":
+        case MCP_METHODS.RESOURCES_LIST:
           return await this.handleResourcesList(message.id);
-        case "prompts/list":
+        case MCP_METHODS.PROMPTS_LIST:
           return await this.handlePromptsList(message.id);
-        case "ping":
+        case MCP_METHODS.PING:
           return await this.handlePing(message.id);
         default:
           if (isNotification) {
@@ -124,22 +131,23 @@ export class MCPMessageHandler {
     this.logger.debug("处理 initialize 请求", params);
 
     // 支持多个协议版本，优先使用客户端请求的版本
-    const supportedVersions = ["2024-11-05", "2025-06-18"];
     const clientVersion = params.protocolVersion;
-    const responseVersion = supportedVersions.includes(clientVersion)
+    const responseVersion = MCP_SUPPORTED_PROTOCOL_VERSIONS.includes(
+      clientVersion as (typeof MCP_SUPPORTED_PROTOCOL_VERSIONS)[number]
+    )
       ? clientVersion
-      : "2024-11-05";
+      : MCP_PROTOCOL_VERSIONS.DEFAULT;
 
     this.logger.debug(
       `协议版本协商: 客户端=${clientVersion}, 服务器响应=${responseVersion}`
     );
 
     return {
-      jsonrpc: "2.0",
+      jsonrpc: JSONRPC_VERSION,
       result: {
         serverInfo: {
-          name: "xiaozhi-mcp-server",
-          version: "1.0.0",
+          name: MCP_SERVER_INFO.NAME,
+          version: MCP_SERVER_INFO.VERSION,
         },
         capabilities: {
           tools: {},
@@ -186,7 +194,7 @@ export class MCPMessageHandler {
       }));
 
       return {
-        jsonrpc: "2.0",
+        jsonrpc: JSONRPC_VERSION,
         result: {
           tools: mcpTools,
         },
@@ -218,7 +226,7 @@ export class MCPMessageHandler {
       );
 
       return {
-        jsonrpc: "2.0",
+        jsonrpc: JSONRPC_VERSION,
         result: {
           content: result.content,
           isError: result.isError || false,
@@ -240,7 +248,7 @@ export class MCPMessageHandler {
     this.logger.debug("处理 ping 请求");
 
     return {
-      jsonrpc: "2.0",
+      jsonrpc: JSONRPC_VERSION,
       result: {
         status: "ok",
         timestamp: new Date().toISOString(),
@@ -266,7 +274,7 @@ export class MCPMessageHandler {
     this.logger.debug(`返回 ${resources.length} 个资源`);
 
     return {
-      jsonrpc: "2.0",
+      jsonrpc: JSONRPC_VERSION,
       result: {
         resources: resources,
       },
@@ -289,7 +297,7 @@ export class MCPMessageHandler {
     this.logger.debug(`返回 ${prompts.length} 个提示模板`);
 
     return {
-      jsonrpc: "2.0",
+      jsonrpc: JSONRPC_VERSION,
       result: {
         prompts: prompts,
       },
@@ -320,7 +328,7 @@ export class MCPMessageHandler {
     }
 
     return {
-      jsonrpc: "2.0",
+      jsonrpc: JSONRPC_VERSION,
       error: {
         code: errorCode,
         message: error.message,
