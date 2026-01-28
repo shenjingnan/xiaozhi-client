@@ -50,18 +50,54 @@ vi.mock("./Logger", () => {
   };
 });
 
-// Mock EventBus 服务
-vi.mock("@services/EventBus", () => {
+// Mock @services/index.js
+// 注意：WebServer.ts 从 @services/index.js 导入多个模块，必须全部 Mock
+vi.mock("@services/index.js", () => {
   const mockEventBus = {
-    onEvent: vi.fn(),
+    onEvent: vi.fn().mockReturnThis(),
     emit: vi.fn(),
+    emitEvent: vi.fn(),
     removeAllListeners: vi.fn(),
     destroy: vi.fn(),
   };
+
+  // 从其他 mock 获取实例
+  const mockStatusServiceInstance = {
+    getStatus: vi.fn(() => ({
+      client: {
+        status: "connected",
+        mcpEndpoint: "wss://test.endpoint",
+        activeMCPServers: ["test"],
+      },
+    })),
+    updateClientInfo: vi.fn(),
+    getClientInfo: vi.fn(() => ({
+      status: "connected",
+      mcpEndpoint: "wss://test.endpoint",
+      activeMCPServers: ["test"],
+    })),
+    destroy: vi.fn(),
+  };
+
+  const mockNotificationServiceInstance = {
+    registerClient: vi.fn(),
+    unregisterClient: vi.fn(),
+    broadcast: vi.fn(),
+    sendToClient: vi.fn(),
+    getConnectedClients: vi.fn(() => []),
+    cleanupDisconnectedClients: vi.fn(),
+    destroy: vi.fn(),
+  };
+
   return {
+    // EventBus 相关
     getEventBus: vi.fn(() => mockEventBus),
     destroyEventBus: vi.fn(),
     EventBus: vi.fn(() => mockEventBus),
+    // StatusService 相关
+    StatusService: vi.fn(() => mockStatusServiceInstance),
+    // NotificationService 相关
+    NotificationService: vi.fn(() => mockNotificationServiceInstance),
   };
 });
 
@@ -84,42 +120,7 @@ vi.mock("@services/ConfigService", () => {
   };
 });
 
-vi.mock("@services/StatusService", () => {
-  const mockStatusService = {
-    getStatus: vi.fn(() => ({
-      client: {
-        status: "connected",
-        mcpEndpoint: "wss://test.endpoint",
-        activeMCPServers: ["test"],
-      },
-    })),
-    updateClientInfo: vi.fn(),
-    getClientInfo: vi.fn(() => ({
-      status: "connected",
-      mcpEndpoint: "wss://test.endpoint",
-      activeMCPServers: ["test"],
-    })),
-    destroy: vi.fn(),
-  };
-  return {
-    StatusService: vi.fn(() => mockStatusService),
-  };
-});
-
-vi.mock("@services/NotificationService", () => {
-  const mockNotificationService = {
-    registerClient: vi.fn(),
-    unregisterClient: vi.fn(),
-    broadcast: vi.fn(),
-    sendToClient: vi.fn(),
-    getConnectedClients: vi.fn(() => []),
-    cleanupDisconnectedClients: vi.fn(),
-    destroy: vi.fn(),
-  };
-  return {
-    NotificationService: vi.fn(() => mockNotificationService),
-  };
-});
+// StatusService 和 NotificationService 已在 @services/index.js mock 中定义
 
 // Mock API 处理器
 vi.mock("./handlers/config.handler", () => {
@@ -936,7 +937,7 @@ describe("WebServer", () => {
       webServer = new WebServer(currentPort);
 
       // 验证事件总线被正确获取
-      const { getEventBus } = await import("@services/event-bus.service.js");
+      const { getEventBus } = await import("@services/index.js");
       expect(getEventBus).toHaveBeenCalled();
     });
   });
@@ -1727,7 +1728,7 @@ describe("WebServer", () => {
       webServer = new WebServer(currentPort);
 
       // 验证事件总线 onEvent 方法被调用
-      const { getEventBus } = await import("@services/event-bus.service.js");
+      const { getEventBus } = await import("@services/index.js");
       const mockEventBus = getEventBus();
       expect(mockEventBus.onEvent).toHaveBeenCalledWith(
         "endpoint:status:changed",
@@ -1740,7 +1741,7 @@ describe("WebServer", () => {
       await webServer.start();
 
       // 获取事件总线并触发事件
-      const { getEventBus } = await import("@services/event-bus.service.js");
+      const { getEventBus } = await import("@services/index.js");
       const mockEventBus = getEventBus() as any;
 
       // 模拟事件回调 - 使用 vi.mocked 来访问 mock 属性
@@ -1751,10 +1752,8 @@ describe("WebServer", () => {
       )?.[1];
 
       if (eventCallback) {
-        // 获取通知服务实例
-        const { NotificationService } = await import(
-          "@services/notification.service.js"
-        );
+        // 从 @services/index.js 导入 NotificationService（与 mock 路径一致）
+        const { NotificationService } = await import("@services/index.js");
         const mockNotificationService = vi.mocked(NotificationService);
         const mockInstance = mockNotificationService.mock.results[0]?.value;
 
