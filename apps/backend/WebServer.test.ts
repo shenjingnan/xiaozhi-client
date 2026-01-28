@@ -775,21 +775,9 @@ describe("WebServer", () => {
   });
 
   describe("自动重启功能", () => {
-    let mockServiceManager: any;
     let mockSpawn: any;
 
     beforeEach(async () => {
-      // 直接 mock mcpServiceManager
-      const { mcpServiceManager } = await import(
-        "@managers/MCPServiceManagerSingleton.js"
-      );
-      mockServiceManager = {
-        getStatus: vi.fn(),
-      };
-      // 将 getStatus 方法绑定到 mockServiceManager
-      mcpServiceManager.getStatus =
-        mockServiceManager.getStatus.bind(mockServiceManager);
-      vi.mocked(mcpServiceManager.getStatus);
       const { spawn } = await import("node:child_process");
       mockSpawn = vi.mocked(spawn);
     });
@@ -886,19 +874,6 @@ describe("WebServer", () => {
         messages.push(JSON.parse(data.toString()));
       });
 
-      // Mock service status
-      mockServiceManager.getStatus.mockResolvedValue({
-        isRunning: true,
-        serviceStatus: {
-          services: {},
-          totalTools: 5,
-          availableTools: ["tool1", "tool2"],
-        },
-        transportCount: 1,
-        activeConnections: 1,
-        config: {},
-      });
-
       // 使用 HTTP API 发送重启请求（新架构）
       const response = await fetch(
         `http://localhost:${currentPort}/api/services/restart`,
@@ -923,19 +898,6 @@ describe("WebServer", () => {
     it("应该在手动重启时启动服务", async () => {
       webServer = new WebServer(currentPort);
       await webServer.start();
-
-      // Mock service as not running
-      mockServiceManager.getStatus.mockResolvedValue({
-        isRunning: false,
-        serviceStatus: {
-          services: {},
-          totalTools: 0,
-          availableTools: [],
-        },
-        transportCount: 0,
-        activeConnections: 0,
-        config: {},
-      });
 
       // 使用 HTTP API 发送重启请求（新架构）
       const response = await fetch(

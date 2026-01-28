@@ -1,11 +1,12 @@
 import { spawn } from "node:child_process";
-import { mcpServiceManager } from "@managers/MCPServiceManagerSingleton.js";
-import type { Logger } from "@root/Logger.js";
+import type { MCPServiceManager } from "@/lib/mcp";
 import { logger } from "@root/Logger.js";
+import type { Logger } from "@root/Logger.js";
 import type { EventBus } from "@services/EventBus.js";
 import { getEventBus } from "@services/EventBus.js";
 import type { StatusService } from "@services/StatusService.js";
 import type { Context } from "hono";
+import { requireMCPServiceManager } from "../types/hono.context.js";
 
 /**
  * 服务 API 处理器
@@ -41,10 +42,13 @@ export class ServiceApiHandler {
       // 更新重启状态
       this.statusService.updateRestartStatus("restarting");
 
+      // 从 Context 获取 MCP 服务管理器
+      const mcpServiceManager = requireMCPServiceManager(c);
+
       // 异步执行重启，不阻塞响应
       setTimeout(async () => {
         try {
-          await this.executeRestart();
+          await this.executeRestart(mcpServiceManager);
           // 服务重启需要一些时间，延迟发送成功状态
           setTimeout(() => {
             this.statusService.updateRestartStatus("completed");
@@ -72,13 +76,16 @@ export class ServiceApiHandler {
 
   /**
    * 执行服务重启
+   * @param mcpServiceManager MCP 服务管理器实例
    */
-  private async executeRestart(): Promise<void> {
+  private async executeRestart(
+    mcpServiceManager: MCPServiceManager
+  ): Promise<void> {
     this.logger.info("正在重启 MCP 服务...");
 
     try {
       // 获取当前服务状态
-      const status = await mcpServiceManager.getStatus();
+      const status = mcpServiceManager.getStatus();
 
       if (!status.isRunning) {
         this.logger.warn("MCP 服务未运行，尝试启动服务");
@@ -195,7 +202,8 @@ export class ServiceApiHandler {
     try {
       this.logger.debug("处理获取服务状态请求");
 
-      const status = await mcpServiceManager.getStatus();
+      const mcpServiceManager = requireMCPServiceManager(c);
+      const status = mcpServiceManager.getStatus();
 
       this.logger.debug("获取服务状态成功");
       return c.success(status);

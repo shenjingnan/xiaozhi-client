@@ -37,12 +37,6 @@ vi.mock("@xiaozhi-client/config", () => ({
   },
 }));
 
-vi.mock("../../managers/MCPServiceManagerSingleton.js", () => ({
-  mcpServiceManager: {
-    getStatus: vi.fn(),
-  },
-}));
-
 vi.mock("node:child_process", () => ({
   exec: vi.fn(),
   spawn: vi.fn(),
