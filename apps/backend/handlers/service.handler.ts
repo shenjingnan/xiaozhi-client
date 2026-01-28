@@ -28,8 +28,9 @@ export class ServiceApiHandler {
    * POST /api/services/restart
    */
   async restartService(c: Context<AppContext>): Promise<Response> {
+    const logger = c.get("logger");
     try {
-      c.get("logger").info("处理服务重启请求");
+      logger.info("处理服务重启请求");
 
       // 发射重启请求事件
       this.eventBus.emitEvent("service:restart:requested", {
@@ -55,7 +56,7 @@ export class ServiceApiHandler {
             this.statusService.updateRestartStatus("completed");
           }, 5000);
         } catch (error) {
-          c.get("logger").error("服务重启失败:", error);
+          logger.error("服务重启失败:", error);
           this.statusService.updateRestartStatus(
             "failed",
             error instanceof Error ? error.message : "未知错误"
@@ -65,7 +66,7 @@ export class ServiceApiHandler {
 
       return c.success(null, "重启请求已接收");
     } catch (error) {
-      c.get("logger").error("处理重启请求失败:", error);
+      logger.error("处理重启请求失败:", error);
       return c.fail(
         "RESTART_REQUEST_ERROR",
         error instanceof Error ? error.message : "处理重启请求失败",
@@ -132,8 +133,9 @@ export class ServiceApiHandler {
    * POST /api/services/stop
    */
   async stopService(c: Context<AppContext>): Promise<Response> {
+    const logger = c.get("logger");
     try {
-      c.get("logger").info("处理服务停止请求");
+      logger.info("处理服务停止请求");
 
       // 执行停止命令
       const stopArgs = ["stop"];
@@ -147,11 +149,11 @@ export class ServiceApiHandler {
       });
 
       child.unref();
-      c.get("logger").info("MCP 服务停止命令已发送");
+      logger.info("MCP 服务停止命令已发送");
 
       return c.success(null, "停止请求已接收");
     } catch (error) {
-      c.get("logger").error("处理停止请求失败:", error);
+      logger.error("处理停止请求失败:", error);
       return c.fail(
         "STOP_REQUEST_ERROR",
         error instanceof Error ? error.message : "处理停止请求失败",
@@ -166,8 +168,9 @@ export class ServiceApiHandler {
    * POST /api/services/start
    */
   async startService(c: Context<AppContext>): Promise<Response> {
+    const logger = c.get("logger");
     try {
-      c.get("logger").info("处理服务启动请求");
+      logger.info("处理服务启动请求");
 
       // 执行启动命令
       const startArgs = ["start", "--daemon"];
@@ -181,11 +184,11 @@ export class ServiceApiHandler {
       });
 
       child.unref();
-      c.get("logger").info("MCP 服务启动命令已发送");
+      logger.info("MCP 服务启动命令已发送");
 
       return c.success(null, "启动请求已接收");
     } catch (error) {
-      c.get("logger").error("处理启动请求失败:", error);
+      logger.error("处理启动请求失败:", error);
       return c.fail(
         "START_REQUEST_ERROR",
         error instanceof Error ? error.message : "处理启动请求失败",
@@ -200,16 +203,17 @@ export class ServiceApiHandler {
    * GET /api/services/status
    */
   async getServiceStatus(c: Context<AppContext>): Promise<Response> {
+    const logger = c.get("logger");
     try {
-      c.get("logger").debug("处理获取服务状态请求");
+      logger.debug("处理获取服务状态请求");
 
       const mcpServiceManager = requireMCPServiceManager(c);
       const status = mcpServiceManager.getStatus();
 
-      c.get("logger").debug("获取服务状态成功");
+      logger.debug("获取服务状态成功");
       return c.success(status);
     } catch (error) {
-      c.get("logger").error("获取服务状态失败:", error);
+      logger.error("获取服务状态失败:", error);
       return c.fail(
         "SERVICE_STATUS_READ_ERROR",
         error instanceof Error ? error.message : "获取服务状态失败",
@@ -224,8 +228,9 @@ export class ServiceApiHandler {
    * GET /api/services/health
    */
   async getServiceHealth(c: Context<AppContext>): Promise<Response> {
+    const logger = c.get("logger");
     try {
-      c.get("logger").debug("处理获取服务健康状态请求");
+      logger.debug("处理获取服务健康状态请求");
 
       // 简单的健康检查
       const health = {
@@ -236,10 +241,10 @@ export class ServiceApiHandler {
         version: process.version,
       };
 
-      c.get("logger").debug("获取服务健康状态成功");
+      logger.debug("获取服务健康状态成功");
       return c.success(health);
     } catch (error) {
-      c.get("logger").error("获取服务健康状态失败:", error);
+      logger.error("获取服务健康状态失败:", error);
       return c.fail(
         "SERVICE_HEALTH_READ_ERROR",
         error instanceof Error ? error.message : "获取服务健康状态失败",

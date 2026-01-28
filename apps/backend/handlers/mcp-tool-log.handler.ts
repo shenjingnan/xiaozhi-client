@@ -121,6 +121,7 @@ export class MCPToolLogHandler extends BaseHandler {
    * 获取工具调用日志
    */
   async getToolCallLogs(c: Context<AppContext>): Promise<Response> {
+    const logger = c.get("logger");
     try {
       const validation = this.parseAndValidateQueryParams(c);
 
@@ -137,12 +138,12 @@ export class MCPToolLogHandler extends BaseHandler {
         validation.data!
       );
 
-      c.get("logger").debug(
+      logger.debug(
         `API: 返回 ${result.records.length} 条工具调用日志记录`
       );
       return c.success(result);
     } catch (error) {
-      c.get("logger").error("获取工具调用日志失败:", error);
+      logger.error("获取工具调用日志失败:", error);
 
       const message = error instanceof Error ? error.message : "未知错误";
       if (message.includes("不存在")) {

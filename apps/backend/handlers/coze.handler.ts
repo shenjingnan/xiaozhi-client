@@ -77,12 +77,13 @@ export class CozeHandler extends BaseHandler {
    * GET /api/coze/workspaces
    */
   async getWorkspaces(c: Context<AppContext>): Promise<Response> {
+    const logger = c.get("logger");
     try {
-      c.get("logger").info("处理获取工作空间列表请求");
+      logger.info("处理获取工作空间列表请求");
 
       // 检查扣子配置
       if (!configManager.isCozeConfigValid()) {
-        c.get("logger").debug("扣子配置无效");
+        logger.debug("扣子配置无效");
         return c.fail(
           "CONFIG_INVALID",
           "扣子配置无效，请检查 platforms.coze.token 配置",
@@ -93,13 +94,13 @@ export class CozeHandler extends BaseHandler {
 
       const cozeApiService = getCozeApiService();
 
-      c.get("logger").info("调用 Coze API 获取工作空间列表");
+      logger.info("调用 Coze API 获取工作空间列表");
       const workspaces = await cozeApiService.getWorkspaces();
-      c.get("logger").info(`成功获取 ${workspaces.length} 个工作空间`);
+      logger.info(`成功获取 ${workspaces.length} 个工作空间`);
 
       return c.success({ workspaces });
     } catch (error) {
-      c.get("logger").error("获取工作空间列表失败:", error);
+      logger.error("获取工作空间列表失败:", error);
 
       // 根据错误类型返回不同的响应
       if (isErrorWithCode(error) && error.code === "AUTH_FAILED") {
@@ -143,12 +144,13 @@ export class CozeHandler extends BaseHandler {
    * GET /api/coze/workflows?workspace_id=xxx&page_num=1&page_size=20
    */
   async getWorkflows(c: Context<AppContext>): Promise<Response> {
+    const logger = c.get("logger");
     try {
-      c.get("logger").info("处理获取工作流列表请求");
+      logger.info("处理获取工作流列表请求");
 
       // 检查扣子配置
       if (!configManager.isCozeConfigValid()) {
-        c.get("logger").debug("扣子配置无效");
+        logger.debug("扣子配置无效");
         return c.fail(
           "CONFIG_INVALID",
           "扣子配置无效，请检查 platforms.coze.token 配置",
@@ -164,7 +166,7 @@ export class CozeHandler extends BaseHandler {
 
       // 验证必需参数
       if (!workspace_id) {
-        c.get("logger").warn("缺少 workspace_id 参数");
+        logger.warn("缺少 workspace_id 参数");
         return c.fail(
           "MISSING_PARAMETER",
           "缺少必需参数: workspace_id",
@@ -200,11 +202,11 @@ export class CozeHandler extends BaseHandler {
 
       const cozeApiService = getCozeApiService();
 
-      c.get("logger").info(
+      logger.info(
         `开始获取工作空间 ${workspace_id} 的工作流列表，页码: ${page_num}，每页: ${page_size}`
       );
       const result = await cozeApiService.getWorkflows(params);
-      c.get("logger").info(
+      logger.info(
         `成功获取工作空间 ${workspace_id} 的 ${result.items.length} 个工作流`
       );
 
@@ -228,7 +230,7 @@ export class CozeHandler extends BaseHandler {
         };
       });
 
-      c.get("logger").info(
+      logger.info(
         `工作流工具状态检查完成，共 ${enhancedItems.filter((item) => item.isAddedAsTool).length} 个工作流已添加为工具`
       );
 
@@ -243,7 +245,7 @@ export class CozeHandler extends BaseHandler {
         `成功获取 ${enhancedItems.length} 个工作流`
       );
     } catch (error) {
-      c.get("logger").error("获取工作流列表失败:", error);
+      logger.error("获取工作流列表失败:", error);
 
       // 根据错误类型返回不同的响应
       if (isErrorWithCode(error) && error.code === "AUTH_FAILED") {
@@ -287,12 +289,13 @@ export class CozeHandler extends BaseHandler {
    * POST /api/coze/cache/clear
    */
   async clearCache(c: Context<AppContext>): Promise<Response> {
+    const logger = c.get("logger");
     try {
-      c.get("logger").info("处理清除扣子 API 缓存请求");
+      logger.info("处理清除扣子 API 缓存请求");
 
       // 检查扣子配置
       if (!configManager.isCozeConfigValid()) {
-        c.get("logger").debug("扣子配置无效");
+        logger.debug("扣子配置无效");
         return c.fail(
           "CONFIG_INVALID",
           "扣子配置无效，请检查 platforms.coze.token 配置",
@@ -306,7 +309,7 @@ export class CozeHandler extends BaseHandler {
       const cozeApiService = getCozeApiService();
 
       const statsBefore = cozeApiService.getCacheStats();
-      c.get("logger").info(
+      logger.info(
         `开始清除缓存${pattern ? ` (模式: ${pattern})` : ""}`
       );
 
@@ -314,7 +317,7 @@ export class CozeHandler extends BaseHandler {
 
       const statsAfter = cozeApiService.getCacheStats();
 
-      c.get("logger").info(
+      logger.info(
         `缓存清除完成，清除前: ${statsBefore.size} 项，清除后: ${statsAfter.size} 项`
       );
 
@@ -327,7 +330,7 @@ export class CozeHandler extends BaseHandler {
         "缓存清除成功"
       );
     } catch (error) {
-      c.get("logger").error("清除缓存失败:", error);
+      logger.error("清除缓存失败:", error);
 
       const details =
         process.env.NODE_ENV === "development" && error instanceof Error
@@ -348,12 +351,13 @@ export class CozeHandler extends BaseHandler {
    * GET /api/coze/cache/stats
    */
   async getCacheStats(c: Context<AppContext>): Promise<Response> {
+    const logger = c.get("logger");
     try {
-      c.get("logger").info("处理获取缓存统计信息请求");
+      logger.info("处理获取缓存统计信息请求");
 
       // 检查扣子配置
       if (!configManager.isCozeConfigValid()) {
-        c.get("logger").debug("扣子配置无效");
+        logger.debug("扣子配置无效");
         return c.fail(
           "CONFIG_INVALID",
           "扣子配置无效，请检查 platforms.coze.token 配置",
@@ -367,7 +371,7 @@ export class CozeHandler extends BaseHandler {
 
       return c.success(stats);
     } catch (error) {
-      c.get("logger").error("获取缓存统计信息失败:", error);
+      logger.error("获取缓存统计信息失败:", error);
 
       const details =
         process.env.NODE_ENV === "development" && error instanceof Error

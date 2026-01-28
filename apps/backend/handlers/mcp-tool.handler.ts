@@ -67,8 +67,9 @@ export class MCPToolHandler {
    * POST /api/tools/call
    */
   async callTool(c: Context<AppContext>): Promise<Response> {
+    const logger = c.get("logger");
     try {
-      c.get("logger").info("处理工具调用请求");
+      logger.info("处理工具调用请求");
 
       // 解析请求体
       const requestBody: ToolCallRequest = await c.req.json();
@@ -84,7 +85,7 @@ export class MCPToolHandler {
         );
       }
 
-      c.get("logger").info(
+      logger.info(
         `准备调用工具: ${serviceName}/${toolName}，参数:`,
         JSON.stringify(args)
       );
@@ -126,11 +127,9 @@ export class MCPToolHandler {
         result = await serviceManager.callTool(toolKey, args || {});
       }
 
-      // c.get("logger").debug(`工具调用成功: ${serviceName}/${toolName}`);
-
       return c.success(result, "工具调用成功");
     } catch (error) {
-      c.get("logger").error("工具调用失败:", error);
+      logger.error("工具调用失败:", error);
 
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -171,8 +170,9 @@ export class MCPToolHandler {
    * GET /api/tools/custom
    */
   async getCustomTools(c: Context<AppContext>): Promise<Response> {
+    const logger = c.get("logger");
     try {
-      c.get("logger").info("处理获取自定义 MCP 工具列表请求");
+      logger.info("处理获取自定义 MCP 工具列表请求");
 
       // 检查配置文件是否存在
       if (!configManager.configExists()) {
@@ -192,7 +192,7 @@ export class MCPToolHandler {
         customTools = configManager.getCustomMCPTools();
         configPath = configManager.getConfigPath();
       } catch (error) {
-        c.get("logger").error("读取自定义 MCP 工具配置失败:", error);
+        logger.error("读取自定义 MCP 工具配置失败:", error);
         return c.fail(
           "CONFIG_PARSE_ERROR",
           `配置文件解析失败: ${error instanceof Error ? error.message : "未知错误"}`,
@@ -203,7 +203,7 @@ export class MCPToolHandler {
 
       // 检查是否配置了自定义 MCP 工具
       if (!customTools || customTools.length === 0) {
-        c.get("logger").info("未配置自定义 MCP 工具");
+        logger.info("未配置自定义 MCP 工具");
         return c.success(
           {
             tools: [],
@@ -217,7 +217,7 @@ export class MCPToolHandler {
       // 验证工具配置的有效性
       const isValid = configManager.validateCustomMCPTools(customTools);
       if (!isValid) {
-        c.get("logger").warn("自定义 MCP 工具配置验证失败");
+        logger.warn("自定义 MCP 工具配置验证失败");
         return c.fail(
           "INVALID_TOOL_CONFIG",
           "自定义 MCP 工具配置验证失败，请检查配置文件中的工具定义",
@@ -226,7 +226,7 @@ export class MCPToolHandler {
         );
       }
 
-      c.get("logger").info(
+      logger.info(
         `获取自定义 MCP 工具列表成功，共 ${customTools.length} 个工具`
       );
 
@@ -239,7 +239,7 @@ export class MCPToolHandler {
         "获取自定义 MCP 工具列表成功"
       );
     } catch (error) {
-      c.get("logger").error("获取自定义 MCP 工具列表失败:", error);
+      logger.error("获取自定义 MCP 工具列表失败:", error);
 
       return c.fail(
         "GET_CUSTOM_TOOLS_ERROR",
@@ -255,8 +255,9 @@ export class MCPToolHandler {
    * GET /api/tools/list?status=enabled|disabled|all
    */
   async listTools(c: Context<AppContext>): Promise<Response> {
+    const logger = c.get("logger");
     try {
-      c.get("logger").debug("处理获取工具列表请求");
+      logger.debug("处理获取工具列表请求");
 
       // 获取筛选参数
       const status =
@@ -301,7 +302,7 @@ export class MCPToolHandler {
 
       return c.success(responseData, `获取工具列表成功（${status}）`);
     } catch (error) {
-      c.get("logger").error("获取工具列表失败:", error);
+      logger.error("获取工具列表失败:", error);
 
       return c.fail("GET_TOOLS_FAILED", "获取工具列表失败", undefined, 500);
     }
@@ -444,8 +445,9 @@ export class MCPToolHandler {
    * 支持多种工具类型：MCP 工具、Coze 工作流等
    */
   async addCustomTool(c: Context<AppContext>): Promise<Response> {
+    const logger = c.get("logger");
     try {
-      c.get("logger").info("处理添加自定义工具请求");
+      logger.info("处理添加自定义工具请求");
 
       const requestBody = await c.req.json();
 
@@ -463,7 +465,7 @@ export class MCPToolHandler {
         requestBody as LegacyAddCustomToolRequest
       );
     } catch (error) {
-      c.get("logger").error("添加自定义工具失败:", error);
+      logger.error("添加自定义工具失败:", error);
 
       // 根据错误类型返回不同的HTTP状态码和错误信息
       const { code, message, status } = this.handleAddToolError(error);
@@ -493,7 +495,7 @@ export class MCPToolHandler {
   ): Promise<Response> {
     const { type, data } = request;
 
-    c.get("logger").info(`处理新格式工具添加请求，类型: ${type}`);
+    logger.info(`处理新格式工具添加请求，类型: ${type}`);
 
     // 验证工具类型
     if (!Object.values(ToolType).includes(type)) {
@@ -541,7 +543,7 @@ export class MCPToolHandler {
     c: Context<AppContext>,
     request: LegacyAddCustomToolRequest
   ): Promise<Response> {
-    c.get("logger").info("处理旧格式工具添加请求（向后兼容）");
+    logger.info("处理旧格式工具添加请求（向后兼容）");
 
     const { workflow, customName, customDescription, parameterConfig } =
       request;
@@ -572,7 +574,7 @@ export class MCPToolHandler {
     // 添加工具到配置
     configManager.addCustomMCPTool(tool);
 
-    c.get("logger").info(`成功添加自定义工具: ${tool.name}`);
+    logger.info(`成功添加自定义工具: ${tool.name}`);
 
     return c.success({ tool }, `工具 "${tool.name}" 添加成功`);
   }
@@ -584,9 +586,10 @@ export class MCPToolHandler {
     c: Context<AppContext>,
     data: MCPToolData
   ): Promise<Response> {
+    const logger = c.get("logger");
     const { serviceName, toolName, customName, customDescription } = data;
 
-    c.get("logger").info(`处理添加 MCP 工具: ${serviceName}/${toolName}`);
+    logger.info(`处理添加 MCP 工具: ${serviceName}/${toolName}`);
 
     // 验证必需字段
     if (!serviceName || !toolName) {
@@ -676,7 +679,7 @@ export class MCPToolHandler {
     configManager.addCustomMCPTool(tool);
 
     // 对于 MCP 工具，需要在 mcpServerConfig 中同步启用
-    c.get("logger").info(
+    logger.info(
       `检测到 MCP 工具添加，同步启用 mcpServerConfig 中的工具: ${serviceName}/${toolName}`
     );
 
@@ -690,12 +693,12 @@ export class MCPToolHandler {
       // 保存更新后的配置
       configManager.updateServerToolsConfig(serviceName, serverToolsConfig);
 
-      c.get("logger").info(
+      logger.info(
         `已同步启用 mcpServerConfig 中的工具: ${serviceName}/${toolName}`
       );
     }
 
-    c.get("logger").info(`成功添加 MCP 工具: ${finalToolName}`);
+    logger.info(`成功添加 MCP 工具: ${finalToolName}`);
 
     const responseData: AddToolResponse = {
       tool,
@@ -714,9 +717,10 @@ export class MCPToolHandler {
     c: Context<AppContext>,
     data: CozeWorkflowData
   ): Promise<Response> {
+    const logger = c.get("logger");
     const { workflow, customName, customDescription, parameterConfig } = data;
 
-    c.get("logger").info(`处理添加 Coze 工具: ${workflow.workflow_name}`);
+    logger.info(`处理添加 Coze 工具: ${workflow.workflow_name}`);
 
     // 边界条件预检查
     const preCheckResult = this.performPreChecks(
@@ -744,7 +748,7 @@ export class MCPToolHandler {
     // 添加工具到配置
     configManager.addCustomMCPTool(tool);
 
-    c.get("logger").info(`成功添加 Coze 工具: ${tool.name}`);
+    logger.info(`成功添加 Coze 工具: ${tool.name}`);
 
     const responseData: AddToolResponse = {
       tool,
@@ -761,6 +765,7 @@ export class MCPToolHandler {
    * PUT /api/tools/custom/:toolName
    */
   async updateCustomTool(c: Context<AppContext>): Promise<Response> {
+    const logger = c.get("logger");
     try {
       const toolName = c.req.param("toolName");
 
@@ -768,7 +773,7 @@ export class MCPToolHandler {
         return c.fail("INVALID_REQUEST", "工具名称不能为空", undefined, 400);
       }
 
-      c.get("logger").info(`处理更新自定义工具配置请求: ${toolName}`);
+      logger.info(`处理更新自定义工具配置请求: ${toolName}`);
 
       const requestBody = await c.req.json();
 
@@ -800,7 +805,7 @@ export class MCPToolHandler {
         400
       );
     } catch (error) {
-      c.get("logger").error("更新自定义工具配置失败:", error);
+      logger.error("更新自定义工具配置失败:", error);
 
       // 根据错误类型返回不同的HTTP状态码和错误信息
       const { code, message, status } = this.handleUpdateToolError(error);
@@ -818,7 +823,7 @@ export class MCPToolHandler {
   ): Promise<Response> {
     const { type, data } = request;
 
-    c.get("logger").info(`处理新格式工具更新请求，类型: ${type}`);
+    logger.info(`处理新格式工具更新请求，类型: ${type}`);
 
     // 验证工具类型
     if (!Object.values(ToolType).includes(type)) {
@@ -869,9 +874,10 @@ export class MCPToolHandler {
     toolName: string,
     data: CozeWorkflowData
   ): Promise<Response> {
+    const logger = c.get("logger");
     const { workflow, customName, customDescription, parameterConfig } = data;
 
-    c.get("logger").info(`处理更新 Coze 工具: ${toolName}`);
+    logger.info(`处理更新 Coze 工具: ${toolName}`);
 
     // 验证工具是否存在
     const existingTools = configManager.getCustomMCPTools();
@@ -908,7 +914,7 @@ export class MCPToolHandler {
     if (!workflow.workflow_id && workflow.app_id) {
       // 对于某些场景，app_id 可以作为替代标识
       // 但我们仍然需要 workflow_id 用于 Coze API 调用
-      c.get("logger").warn(
+      logger.warn(
         `工作流 ${toolName} 缺少 workflow_id，这可能会影响某些功能`
       );
     }
@@ -932,7 +938,7 @@ export class MCPToolHandler {
     // 更新工具配置
     configManager.updateCustomMCPTool(toolName, updatedTool);
 
-    c.get("logger").info(`成功更新 Coze 工具: ${toolName}`);
+    logger.info(`成功更新 Coze 工具: ${toolName}`);
 
     const responseData = {
       tool: updatedTool,
@@ -1019,6 +1025,7 @@ export class MCPToolHandler {
    * DELETE /api/tools/custom/:toolName
    */
   async removeCustomTool(c: Context<AppContext>): Promise<Response> {
+    const logger = c.get("logger");
     try {
       const toolName = c.req.param("toolName");
 
@@ -1026,7 +1033,7 @@ export class MCPToolHandler {
         return c.fail("INVALID_REQUEST", "工具名称不能为空", undefined, 400);
       }
 
-      c.get("logger").info(`处理删除自定义工具请求: ${toolName}`);
+      logger.info(`处理删除自定义工具请求: ${toolName}`);
 
       // 在删除之前，检查是否为 MCP 工具，如果是则需要在 mcpServerConfig 中同步禁用
       const existingTools = configManager.getCustomMCPTools();
@@ -1036,7 +1043,7 @@ export class MCPToolHandler {
         // 这是 MCP 工具，需要在 mcpServerConfig 中同步禁用
         const mcpConfig = toolToDelete.handler.config;
         if (mcpConfig.serviceName && mcpConfig.toolName) {
-          c.get("logger").info(
+          logger.info(
             `检测到 MCP 工具删除，同步禁用 mcpServerConfig 中的工具: ${mcpConfig.serviceName}/${mcpConfig.toolName}`
           );
 
@@ -1055,7 +1062,7 @@ export class MCPToolHandler {
               serverToolsConfig
             );
 
-            c.get("logger").info(
+            logger.info(
               `已同步禁用 mcpServerConfig 中的工具: ${mcpConfig.serviceName}/${mcpConfig.toolName}`
             );
           }
@@ -1065,11 +1072,11 @@ export class MCPToolHandler {
       // 从配置中删除工具
       configManager.removeCustomMCPTool(toolName);
 
-      c.get("logger").info(`成功删除自定义工具: ${toolName}`);
+      logger.info(`成功删除自定义工具: ${toolName}`);
 
       return c.success(null, `工具 "${toolName}" 删除成功`);
     } catch (error) {
-      c.get("logger").error("删除自定义工具失败:", error);
+      logger.error("删除自定义工具失败:", error);
 
       // 根据错误类型返回不同的HTTP状态码和错误信息
       const { code, message, status } = this.handleRemoveToolError(error);
@@ -2208,7 +2215,7 @@ export class MCPToolHandler {
         }
       }
     } catch (error) {
-      c.get("logger").error("管理 MCP 工具失败:", error);
+      logger.error("管理 MCP 工具失败:", error);
       const errorMessage =
         error instanceof Error ? error.message : "管理 MCP 工具失败";
       return c.fail("TOOL_MANAGE_ERROR", errorMessage, undefined, 500);
@@ -2220,6 +2227,7 @@ export class MCPToolHandler {
    * POST /api/tools/mcp/list
    */
   async listMCPTools(c: Context<AppContext>): Promise<Response> {
+    const logger = c.get("logger");
     try {
       const requestBody = await c.req.json();
       const { serverName, includeUsageStats } = requestBody;
@@ -2232,7 +2240,7 @@ export class MCPToolHandler {
       // 否则获取所有服务的工具列表
       return this.handleListAllTools(c, includeUsageStats);
     } catch (error) {
-      c.get("logger").error("获取工具列表失败:", error);
+      logger.error("获取工具列表失败:", error);
       return c.fail(
         "GET_TOOL_LIST_ERROR",
         error instanceof Error ? error.message : "获取工具列表失败",
@@ -2251,6 +2259,7 @@ export class MCPToolHandler {
     toolName: string,
     description?: string
   ): Promise<Response> {
+    const logger = c.get("logger");
     // 验证服务存在性
     await this.validateServiceAndToolExistence(serverName, toolName);
 
@@ -2261,7 +2270,7 @@ export class MCPToolHandler {
     const toolsConfig = configManager.getServerToolsConfig(serverName);
     const toolConfig = toolsConfig[toolName];
 
-    c.get("logger").info(`工具已启用: ${serverName}/${toolName}`);
+    logger.info(`工具已启用: ${serverName}/${toolName}`);
 
     return c.success(
       {
@@ -2282,13 +2291,14 @@ export class MCPToolHandler {
     serverName: string,
     toolName: string
   ): Promise<Response> {
+    const logger = c.get("logger");
     // 验证服务存在性
     await this.validateServiceAndToolExistence(serverName, toolName);
 
     // 设置工具为禁用状态
     configManager.setToolEnabled(serverName, toolName, false);
 
-    c.get("logger").info(`工具已禁用: ${serverName}/${toolName}`);
+    logger.info(`工具已禁用: ${serverName}/${toolName}`);
 
     return c.success(
       {
@@ -2308,6 +2318,7 @@ export class MCPToolHandler {
     serverName: string,
     toolName: string
   ): Promise<Response> {
+    const logger = c.get("logger");
     // 获取工具配置
     const toolsConfig = configManager.getServerToolsConfig(serverName);
     const toolConfig = toolsConfig[toolName];
@@ -2352,7 +2363,7 @@ export class MCPToolHandler {
     const newEnabled = !currentEnabled;
     configManager.setToolEnabled(serverName, toolName, newEnabled);
 
-    c.get("logger").info(
+    logger.info(
       `工具状态已切换: ${serverName}/${toolName} -> ${newEnabled}`
     );
 
@@ -2374,6 +2385,7 @@ export class MCPToolHandler {
     serverName: string,
     includeUsageStats?: boolean
   ): Promise<Response> {
+    const logger = c.get("logger");
     // 检查服务是否存在
     const mcpServers = configManager.getMcpServers();
     if (!mcpServers[serverName]) {

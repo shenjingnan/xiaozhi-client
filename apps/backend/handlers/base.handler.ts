@@ -4,7 +4,6 @@ import type { Context } from "hono";
 /**
  * 抽象 API Handler 基类
  * 提供便捷的辅助方法
- * logger 通过 c.get("logger") 访问（Hono 推荐做法）
  */
 export abstract class BaseHandler {
   /**
@@ -32,7 +31,8 @@ export abstract class BaseHandler {
         ? String((error as { code: unknown }).code)
         : defaultCode;
 
-    c.get("logger").error(`${operation}失败:`, error);
+    const logger = c.get("logger");
+    logger.error(`${operation}失败:`, error);
 
     return c.fail(
       errorCode,

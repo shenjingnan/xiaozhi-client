@@ -13,13 +13,14 @@ export class VersionApiHandler extends BaseHandler {
    * GET /api/version
    */
   async getVersion(c: Context<AppContext>): Promise<Response> {
+    const logger = c.get("logger");
     try {
-      c.get("logger").debug("处理获取版本信息请求");
+      logger.debug("处理获取版本信息请求");
 
       // 使用 VersionUtils 获取完整版本信息
       const versionInfo = VersionUtils.getVersionInfo();
 
-      c.get("logger").debug("获取版本信息成功:", versionInfo);
+      logger.debug("获取版本信息成功:", versionInfo);
 
       return c.success(versionInfo);
     } catch (error) {
@@ -32,11 +33,12 @@ export class VersionApiHandler extends BaseHandler {
    * GET /api/version/simple
    */
   async getVersionSimple(c: Context<AppContext>): Promise<Response> {
+    const logger = c.get("logger");
     try {
-      c.get("logger").debug("处理获取版本号请求");
+      logger.debug("处理获取版本号请求");
 
       const version = VersionUtils.getVersion();
-      c.get("logger").debug(`获取版本号成功: ${version}`);
+      logger.debug(`获取版本号成功: ${version}`);
 
       return c.success({ version });
     } catch (error) {
@@ -49,11 +51,12 @@ export class VersionApiHandler extends BaseHandler {
    * POST /api/version/cache/clear
    */
   async clearVersionCache(c: Context<AppContext>): Promise<Response> {
+    const logger = c.get("logger");
     try {
-      c.get("logger").debug("处理清除版本缓存请求");
+      logger.debug("处理清除版本缓存请求");
 
       VersionUtils.clearCache();
-      c.get("logger").info("版本缓存已清除");
+      logger.info("版本缓存已清除");
 
       return c.success(undefined, "版本缓存已清除");
     } catch (error) {
@@ -66,8 +69,9 @@ export class VersionApiHandler extends BaseHandler {
    * GET /api/version/available?type=stable|rc|beta|all
    */
   async getAvailableVersions(c: Context<AppContext>): Promise<Response> {
+    const logger = c.get('logger');
     try {
-      c.get("logger").debug("处理获取可用版本列表请求");
+      logger.debug("处理获取可用版本列表请求");
 
       // 获取查询参数
       const type = (c.req.query("type") as unknown) || "stable";
@@ -86,7 +90,7 @@ export class VersionApiHandler extends BaseHandler {
       const npmManager = new NPMManager();
       const versions = await npmManager.getAvailableVersions(type as string);
 
-      c.get("logger").debug(
+      logger.debug(
         `获取到 ${versions.length} 个可用版本 (类型: ${type})`
       );
 
@@ -110,13 +114,14 @@ export class VersionApiHandler extends BaseHandler {
    * GET /api/version/latest
    */
   async checkLatestVersion(c: Context<AppContext>): Promise<Response> {
+    const logger = c.get("logger");
     try {
-      c.get("logger").debug("处理检查最新版本请求");
+      logger.debug("处理检查最新版本请求");
 
       const npmManager = new NPMManager();
       const result = await npmManager.checkForLatestVersion();
 
-      c.get("logger").debug("版本检查结果:", result);
+      logger.debug("版本检查结果:", result);
 
       if (result.error) {
         // 如果有错误，但仍返回部分信息
