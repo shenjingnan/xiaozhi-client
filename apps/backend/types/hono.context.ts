@@ -97,6 +97,8 @@ export const createApp = (): Hono<AppContext> => {
 
 /**
  * 从 Context 中获取 MCPServiceManager 的类型安全方法
+ * @deprecated 使用 c.mcpServiceManager 直接访问
+ * 保留此函数以保持向后兼容
  */
 export const getMCPServiceManager = (
   c: Context<AppContext>
@@ -106,6 +108,8 @@ export const getMCPServiceManager = (
 
 /**
  * 要求必须存在 MCPServiceManager 的类型安全方法
+ * @deprecated 使用 c.mcpServiceManager 直接访问
+ * 保留此函数以保持向后兼容
  */
 export const requireMCPServiceManager = (
   c: Context<AppContext>

@@ -66,7 +66,7 @@ export class MCPRouteHandler {
    */
   private getMCPServiceManager(c: Context): MCPServiceManager {
     // 首先尝试从 Context 获取
-    const serviceManager = c.get("mcpServiceManager");
+    const serviceManager = c.mcpServiceManager;
     if (serviceManager) {
       return serviceManager;
     }

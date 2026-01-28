@@ -89,7 +89,7 @@ export class MCPToolHandler {
       );
 
       // 从 Context 中获取 MCPServiceManager 实例
-      const serviceManager = c.get("mcpServiceManager");
+      const serviceManager = c.mcpServiceManager;
       if (!serviceManager) {
         return c.fail(
           "SERVICE_NOT_INITIALIZED",
@@ -261,7 +261,7 @@ export class MCPToolHandler {
         (c.req.query("status") as "enabled" | "disabled" | "all") || "all";
 
       // 从 Context 中获取 MCPServiceManager 实例
-      const serviceManager = c.get("mcpServiceManager");
+      const serviceManager = c.mcpServiceManager;
       if (!serviceManager) {
         return c.fail(
           "SERVICE_NOT_INITIALIZED",
@@ -597,7 +597,7 @@ export class MCPToolHandler {
     }
 
     // 从 Context 中获取 MCPServiceManager 实例
-    const serviceManager = c.get("mcpServiceManager");
+    const serviceManager = c.mcpServiceManager;
     if (!serviceManager) {
       return c.fail(
         "SERVICE_NOT_INITIALIZED",

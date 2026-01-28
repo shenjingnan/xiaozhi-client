@@ -4,12 +4,36 @@
  * 提供统一的依赖注入模式，从 WebServer 获取实例而非 Singleton
  */
 
+import type { MCPServiceManager } from "@/lib/mcp";
 import type { Context, Next } from "hono";
 import {
   MCPServiceManagerNotInitializedError,
   WebServerNotAvailableError,
 } from "../errors/MCPErrors.middleware.js";
 import type { AppContextVariables } from "../types/hono.context.js";
+
+/**
+ * 扩展 Hono Context 接口
+ * 添加 mcpServiceManager 属性
+ */
+declare module "hono" {
+  interface Context {
+    /**
+     * MCP 服务管理器实例
+     * 由 mcpServiceManagerMiddleware 注入
+     *
+     * @example
+     * ```typescript
+     * // 在 Handler 中直接访问
+     * const mcpServiceManager = c.mcpServiceManager;
+     * if (!mcpServiceManager) {
+     *   return c.fail("SERVICE_NOT_INITIALIZED", "MCP 服务未初始化");
+     * }
+     * ```
+     */
+    mcpServiceManager?: MCPServiceManager;
+  }
+}
 
 /**
  * MCP Service Manager 中间件
@@ -29,7 +53,7 @@ export const mcpServiceManagerMiddleware = async (
   next: Next
 ): Promise<void> => {
   // 检查是否已经注入，避免重复初始化
-  if (!c.get("mcpServiceManager")) {
+  if (!c.mcpServiceManager) {
     try {
       c.logger.debug(
         "[MCPMiddleware] 正在从 WebServer 获取 MCPServiceManager 实例"
@@ -43,8 +67,8 @@ export const mcpServiceManagerMiddleware = async (
 
       const serviceManager = webServer.getMCPServiceManager();
 
-      // 将实例注入到 Context
-      c.set("mcpServiceManager", serviceManager);
+      // 直接赋值到 Context 属性
+      c.mcpServiceManager = serviceManager;
 
       c.logger.debug(
         "[MCPMiddleware] MCPServiceManager 实例已成功注入到 Context"
@@ -84,5 +108,5 @@ export const mcpServiceManagerMiddleware = async (
 export const hasMCPServiceManager = (
   c: Context<{ Variables: AppContextVariables }>
 ): boolean => {
-  return c.get("mcpServiceManager") !== undefined;
+  return c.mcpServiceManager !== undefined;
 };

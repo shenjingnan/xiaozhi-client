@@ -6,7 +6,6 @@ import type { EventBus } from "@services/EventBus.js";
 import { getEventBus } from "@services/EventBus.js";
 import type { StatusService } from "@services/StatusService.js";
 import type { Context } from "hono";
-import { requireMCPServiceManager } from "../types/hono.context.js";
 
 /**
  * 服务 API 处理器
@@ -43,7 +42,15 @@ export class ServiceApiHandler {
       this.statusService.updateRestartStatus("restarting");
 
       // 从 Context 获取 MCP 服务管理器
-      const mcpServiceManager = requireMCPServiceManager(c);
+      const mcpServiceManager = c.mcpServiceManager;
+      if (!mcpServiceManager) {
+        return c.fail(
+          "SERVICE_NOT_INITIALIZED",
+          "MCP 服务管理器未初始化",
+          undefined,
+          503
+        );
+      }
 
       // 异步执行重启，不阻塞响应
       setTimeout(async () => {
@@ -202,7 +209,16 @@ export class ServiceApiHandler {
     try {
       this.logger.debug("处理获取服务状态请求");
 
-      const mcpServiceManager = requireMCPServiceManager(c);
+      const mcpServiceManager = c.mcpServiceManager;
+      if (!mcpServiceManager) {
+        return c.fail(
+          "SERVICE_NOT_INITIALIZED",
+          "MCP 服务管理器未初始化",
+          undefined,
+          503
+        );
+      }
+
       const status = mcpServiceManager.getStatus();
 
       this.logger.debug("获取服务状态成功");
