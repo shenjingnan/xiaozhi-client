@@ -138,9 +138,7 @@ export class MCPToolLogHandler extends BaseHandler {
         validation.data!
       );
 
-      logger.debug(
-        `API: 返回 ${result.records.length} 条工具调用日志记录`
-      );
+      logger.debug(`API: 返回 ${result.records.length} 条工具调用日志记录`);
       return c.success(result);
     } catch (error) {
       logger.error("获取工具调用日志失败:", error);

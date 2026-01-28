@@ -914,9 +914,7 @@ export class MCPToolHandler {
     if (!workflow.workflow_id && workflow.app_id) {
       // 对于某些场景，app_id 可以作为替代标识
       // 但我们仍然需要 workflow_id 用于 Coze API 调用
-      logger.warn(
-        `工作流 ${toolName} 缺少 workflow_id，这可能会影响某些功能`
-      );
+      logger.warn(`工作流 ${toolName} 缺少 workflow_id，这可能会影响某些功能`);
     }
 
     // 验证工作流数据完整性
@@ -2363,9 +2361,7 @@ export class MCPToolHandler {
     const newEnabled = !currentEnabled;
     configManager.setToolEnabled(serverName, toolName, newEnabled);
 
-    logger.info(
-      `工具状态已切换: ${serverName}/${toolName} -> ${newEnabled}`
-    );
+    logger.info(`工具状态已切换: ${serverName}/${toolName} -> ${newEnabled}`);
 
     return c.success(
       {

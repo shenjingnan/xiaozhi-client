@@ -69,7 +69,7 @@ export class VersionApiHandler extends BaseHandler {
    * GET /api/version/available?type=stable|rc|beta|all
    */
   async getAvailableVersions(c: Context<AppContext>): Promise<Response> {
-    const logger = c.get('logger');
+    const logger = c.get("logger");
     try {
       logger.debug("处理获取可用版本列表请求");
 
@@ -90,9 +90,7 @@ export class VersionApiHandler extends BaseHandler {
       const npmManager = new NPMManager();
       const versions = await npmManager.getAvailableVersions(type as string);
 
-      logger.debug(
-        `获取到 ${versions.length} 个可用版本 (类型: ${type})`
-      );
+      logger.debug(`获取到 ${versions.length} 个可用版本 (类型: ${type})`);
 
       return c.success({
         versions,

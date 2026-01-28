@@ -309,9 +309,7 @@ export class CozeHandler extends BaseHandler {
       const cozeApiService = getCozeApiService();
 
       const statsBefore = cozeApiService.getCacheStats();
-      logger.info(
-        `开始清除缓存${pattern ? ` (模式: ${pattern})` : ""}`
-      );
+      logger.info(`开始清除缓存${pattern ? ` (模式: ${pattern})` : ""}`);
 
       cozeApiService.clearCache(pattern);
 
