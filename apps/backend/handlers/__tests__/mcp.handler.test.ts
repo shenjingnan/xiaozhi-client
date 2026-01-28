@@ -76,6 +76,14 @@ describe("MCPRouteHandler", () => {
         if (key === "mcpServiceManager") {
           return mockServiceManager;
         }
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
+        }
         return undefined;
       }),
     };
@@ -94,6 +102,14 @@ describe("MCPRouteHandler", () => {
       get: vi.fn((key: string) => {
         if (key === "mcpServiceManager") {
           return mockServiceManager;
+        }
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
         }
         return undefined;
       }),
@@ -117,6 +133,14 @@ describe("MCPRouteHandler", () => {
       get: vi.fn((key: string) => {
         if (key === "mcpServiceManager") {
           return mockServiceManager;
+        }
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
         }
         return undefined;
       }),
@@ -146,6 +170,14 @@ describe("MCPRouteHandler", () => {
         if (key === "mcpServiceManager") {
           return mockServiceManager;
         }
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
+        }
         return undefined;
       }),
     };
@@ -170,6 +202,14 @@ describe("MCPRouteHandler", () => {
       get: vi.fn((key: string) => {
         if (key === "mcpServiceManager") {
           return mockServiceManager;
+        }
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
         }
         return undefined;
       }),

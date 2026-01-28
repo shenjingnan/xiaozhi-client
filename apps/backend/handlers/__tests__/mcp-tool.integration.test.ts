@@ -84,6 +84,14 @@ describe("MCPToolHandler - 单元测试", () => {
         if (key === "mcpServiceManager") {
           return mockServiceManager;
         }
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
+        }
         return undefined;
       }),
       // success 方法会调用 json

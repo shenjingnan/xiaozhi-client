@@ -93,6 +93,18 @@ describe("EndpointHandler", () => {
 
     // Create mock context - 修复 mock 配置，返回真实的 Response 对象
     mockContext = {
+      // 添加 c.get 方法支持依赖注入
+      get: vi.fn((key: string) => {
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
+        }
+        return undefined;
+      }),
       json: vi.fn().mockImplementation((data, status) => {
         return new Response(JSON.stringify(data), {
           status: status || 200,

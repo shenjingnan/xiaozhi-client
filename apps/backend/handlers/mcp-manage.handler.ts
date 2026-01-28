@@ -1,5 +1,6 @@
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { MCPService } from "@/lib/mcp";
+import type { AppContext } from "@/types/hono.context.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
@@ -214,7 +215,7 @@ export class MCPHandler {
    * 1. 单服务格式：{ name: string, config: MCPServerConfig }
    * 2. 批量格式：{ mcpServers: Record<string, MCPServerConfig> }
    */
-  async addMCPServer(c: Context): Promise<Response> {
+  async addMCPServer(c: Context<AppContext>): Promise<Response> {
     const startTime = Date.now();
     const requestData = await c.req.json();
 
@@ -549,7 +550,7 @@ export class MCPHandler {
    * 移除 MCP 服务
    * DELETE /api/mcp-servers/:serverName
    */
-  async removeMCPServer(c: Context): Promise<Response> {
+  async removeMCPServer(c: Context<AppContext>): Promise<Response> {
     try {
       // 1. 从路径参数获取服务名称
       const serverName = c.req.param("serverName");
@@ -652,7 +653,7 @@ export class MCPHandler {
    * 获取 MCP 服务状态
    * GET /api/mcp-servers/:serverName/status
    */
-  async getMCPServerStatus(c: Context): Promise<Response> {
+  async getMCPServerStatus(c: Context<AppContext>): Promise<Response> {
     try {
       // 1. 从路径参数获取服务名称
       const serverName = c.req.param("serverName");
@@ -718,7 +719,7 @@ export class MCPHandler {
    * 列出所有 MCP 服务
    * GET /api/mcp-servers
    */
-  async listMCPServers(c: Context): Promise<Response> {
+  async listMCPServers(c: Context<AppContext>): Promise<Response> {
     try {
       // 1. 获取所有配置的 MCP 服务
       const config = this.configManager.getConfig();

@@ -1,4 +1,5 @@
 import { NPMManager } from "@/lib/npm";
+import type { AppContext } from "@/types/hono.context.js";
 import { getEventBus } from "@services/EventBus.js";
 import type { Context } from "hono";
 import { z } from "zod";
@@ -27,7 +28,7 @@ export class UpdateApiHandler extends BaseHandler {
    * POST /api/update
    * Body: { version: string }
    */
-  async performUpdate(c: Context): Promise<Response> {
+  async performUpdate(c: Context<AppContext>): Promise<Response> {
     try {
       const body = await this.parseJsonBody<{ version: string }>(
         c,
@@ -65,7 +66,7 @@ export class UpdateApiHandler extends BaseHandler {
 
       // 立即返回响应，安装过程通过 WebSocket 推送
       this.npmManager.installVersion(version).catch((error) => {
-        c.logger.error("安装过程失败:", error);
+        c.get("logger").error("安装过程失败:", error);
       });
 
       return c.success(

@@ -5,6 +5,7 @@
 
 import type { ToolCallQuery } from "@/lib/mcp/log.js";
 import { ToolCallLogService } from "@/lib/mcp/log.js";
+import type { AppContext } from "@/types/hono.context.js";
 import { PAGINATION_CONSTANTS } from "@constants/ApiConstants.js";
 import type { Context } from "hono";
 import { z } from "zod";
@@ -92,7 +93,7 @@ export class MCPToolLogHandler extends BaseHandler {
   /**
    * 解析和验证查询参数
    */
-  private parseAndValidateQueryParams(c: Context): {
+  private parseAndValidateQueryParams(c: Context<AppContext>): {
     success: boolean;
     data?: ToolCallQuery;
     error?: Array<{ field: string; message: string }>;
@@ -119,7 +120,7 @@ export class MCPToolLogHandler extends BaseHandler {
   /**
    * 获取工具调用日志
    */
-  async getToolCallLogs(c: Context): Promise<Response> {
+  async getToolCallLogs(c: Context<AppContext>): Promise<Response> {
     try {
       const validation = this.parseAndValidateQueryParams(c);
 
@@ -136,10 +137,12 @@ export class MCPToolLogHandler extends BaseHandler {
         validation.data!
       );
 
-      c.logger.debug(`API: 返回 ${result.records.length} 条工具调用日志记录`);
+      c.get("logger").debug(
+        `API: 返回 ${result.records.length} 条工具调用日志记录`
+      );
       return c.success(result);
     } catch (error) {
-      c.logger.error("获取工具调用日志失败:", error);
+      c.get("logger").error("获取工具调用日志失败:", error);
 
       const message = error instanceof Error ? error.message : "未知错误";
       if (message.includes("不存在")) {
