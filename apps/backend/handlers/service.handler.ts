@@ -1,11 +1,11 @@
 import { spawn } from "node:child_process";
+import type { MCPServiceManager } from "@/lib/mcp";
 import { logger } from "@root/Logger.js";
 import type { Logger } from "@root/Logger.js";
 import type { EventBus } from "@services/EventBus.js";
 import { getEventBus } from "@services/EventBus.js";
 import type { StatusService } from "@services/StatusService.js";
 import type { Context } from "hono";
-import type { MCPServiceManager } from "@/lib/mcp";
 import { requireMCPServiceManager } from "../types/hono.context.js";
 
 /**
@@ -78,7 +78,9 @@ export class ServiceApiHandler {
    * 执行服务重启
    * @param mcpServiceManager MCP 服务管理器实例
    */
-  private async executeRestart(mcpServiceManager: MCPServiceManager): Promise<void> {
+  private async executeRestart(
+    mcpServiceManager: MCPServiceManager
+  ): Promise<void> {
     this.logger.info("正在重启 MCP 服务...");
 
     try {
