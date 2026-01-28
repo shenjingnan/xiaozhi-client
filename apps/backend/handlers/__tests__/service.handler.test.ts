@@ -16,12 +16,6 @@ vi.mock("node:child_process", () => ({
   spawn: vi.fn(),
 }));
 
-vi.mock("../../managers/MCPServiceManagerSingleton.js", () => ({
-  mcpServiceManager: {
-    getStatus: vi.fn(),
-  },
-}));
-
 vi.mock("@services/EventBus.js", () => ({
   getEventBus: vi.fn().mockReturnValue({
     emitEvent: vi.fn(),
@@ -47,7 +41,7 @@ describe("ServiceApiHandler", () => {
 
     // Mock MCPServiceManager
     mockMcpServiceManager = {
-      getStatus: vi.fn().mockResolvedValue({
+      getStatus: vi.fn().mockReturnValue({
         isRunning: true,
         mode: "daemon",
         pid: 12345,
@@ -62,6 +56,12 @@ describe("ServiceApiHandler", () => {
       req: {
         json: vi.fn(),
       },
+      get: vi.fn((key: string) => {
+        if (key === "mcpServiceManager") {
+          return mockMcpServiceManager;
+        }
+        return undefined;
+      }),
     };
 
     // Mock spawn
@@ -70,12 +70,6 @@ describe("ServiceApiHandler", () => {
     });
     const { spawn } = await import("node:child_process");
     vi.mocked(spawn).mockImplementation(mockSpawn);
-
-    // Mock mcpServiceManager
-    const { mcpServiceManager } = await import(
-      "../../managers/MCPServiceManagerSingleton.js"
-    );
-    vi.mocked(mcpServiceManager).getStatus = mockMcpServiceManager.getStatus;
 
     // Mock EventBus
     mockEventBus = {
@@ -108,7 +102,7 @@ describe("ServiceApiHandler", () => {
         memory: { rss: 50000000 },
         mode: "daemon",
       };
-      mockMcpServiceManager.getStatus.mockResolvedValue(mockStatus);
+      mockMcpServiceManager.getStatus.mockReturnValue(mockStatus);
 
       await handler.getServiceStatus(mockContext);
 
@@ -118,7 +112,9 @@ describe("ServiceApiHandler", () => {
 
     it("should handle service status error", async () => {
       const error = new Error("Status check failed");
-      mockMcpServiceManager.getStatus.mockRejectedValue(error);
+      mockMcpServiceManager.getStatus.mockImplementation(() => {
+        throw error;
+      });
 
       await handler.getServiceStatus(mockContext);
 
@@ -131,7 +127,9 @@ describe("ServiceApiHandler", () => {
     });
 
     it("should handle non-Error exceptions", async () => {
-      mockMcpServiceManager.getStatus.mockRejectedValue("String error");
+      mockMcpServiceManager.getStatus.mockImplementation(() => {
+        throw "String error";
+      });
 
       await handler.getServiceStatus(mockContext);
 
@@ -410,7 +408,7 @@ describe("ServiceApiHandler", () => {
     });
 
     it("should execute restart asynchronously for running service", async () => {
-      mockMcpServiceManager.getStatus.mockResolvedValue({
+      mockMcpServiceManager.getStatus.mockReturnValue({
         isRunning: true,
         mode: "daemon",
         pid: 12345,
@@ -439,7 +437,7 @@ describe("ServiceApiHandler", () => {
     });
 
     it("should start service when not running during restart", async () => {
-      mockMcpServiceManager.getStatus.mockResolvedValue({
+      mockMcpServiceManager.getStatus.mockReturnValue({
         isRunning: false,
         mode: "daemon",
         pid: null,
@@ -461,9 +459,9 @@ describe("ServiceApiHandler", () => {
     });
 
     it("should handle restart execution error", async () => {
-      mockMcpServiceManager.getStatus.mockRejectedValue(
-        new Error("Service manager error")
-      );
+      mockMcpServiceManager.getStatus.mockImplementation(() => {
+        throw new Error("Service manager error");
+      });
 
       await handler.restartService(mockContext);
 
@@ -480,7 +478,7 @@ describe("ServiceApiHandler", () => {
     });
 
     it("should handle non-daemon mode restart", async () => {
-      mockMcpServiceManager.getStatus.mockResolvedValue({
+      mockMcpServiceManager.getStatus.mockReturnValue({
         isRunning: true,
         mode: "standalone",
         pid: 12345,
@@ -585,7 +583,7 @@ describe("ServiceApiHandler", () => {
     });
 
     it("should handle service manager returning undefined status", async () => {
-      mockMcpServiceManager.getStatus.mockResolvedValue(undefined);
+      mockMcpServiceManager.getStatus.mockReturnValue(undefined);
 
       await handler.restartService(mockContext);
 
