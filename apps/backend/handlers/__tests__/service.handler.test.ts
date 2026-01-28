@@ -60,6 +60,14 @@ describe("ServiceApiHandler", () => {
         if (key === "mcpServiceManager") {
           return mockMcpServiceManager;
         }
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
+        }
         return undefined;
       }),
     };

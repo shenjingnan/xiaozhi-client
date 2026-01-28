@@ -112,6 +112,11 @@ describe("ConfigApiHandler", () => {
 
     // 模拟 Hono 上下文
     mockContext = {
+      // 添加 c.get 方法支持依赖注入
+      get: vi.fn((key: string) => {
+        if (key === "logger") return mockLogger;
+        return undefined;
+      }),
       // 添加 c.success 方法
       success: vi
         .fn()
@@ -157,7 +162,7 @@ describe("ConfigApiHandler", () => {
       req: {
         json: vi.fn(),
       },
-      logger: mockLogger,
+      logger: mockLogger, // 向后兼容
     };
 
     configApiHandler = new ConfigApiHandler();

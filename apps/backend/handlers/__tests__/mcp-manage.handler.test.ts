@@ -161,6 +161,18 @@ describe("addMCPServer", () => {
 
     // 创建模拟 Context - 修复 mock 配置，返回真实的 Response 对象
     mockContext = {
+      // 添加 c.get 方法支持依赖注入
+      get: vi.fn((key: string) => {
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
+        }
+        return undefined;
+      }),
       // 添加 c.success 方法
       success: vi
         .fn()
@@ -454,6 +466,18 @@ describe("removeMCPServer", () => {
 
     // 创建模拟 Context
     mockContext = {
+      // 添加 c.get 方法支持依赖注入
+      get: vi.fn((key: string) => {
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
+        }
+        return undefined;
+      }),
       // 添加 c.success 方法
       success: vi
         .fn()
@@ -856,6 +880,18 @@ describe("getMCPServerStatus", () => {
 
     // 设置模拟的 Context
     mockContext = {
+      // 添加 c.get 方法支持依赖注入
+      get: vi.fn((key: string) => {
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
+        }
+        return undefined;
+      }),
       // 添加 c.success 方法
       success: vi
         .fn()
@@ -1010,6 +1046,18 @@ describe("listMCPServers", () => {
 
     // 设置模拟的 Context
     mockContext = {
+      // 添加 c.get 方法支持依赖注入
+      get: vi.fn((key: string) => {
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
+        }
+        return undefined;
+      }),
       // 添加 c.success 方法
       success: vi
         .fn()
@@ -1329,6 +1377,18 @@ describe("addMCPServer with type field normalization", () => {
     );
 
     mockContext = {
+      // 添加 c.get 方法支持依赖注入
+      get: vi.fn((key: string) => {
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
+        }
+        return undefined;
+      }),
       // 添加 c.success 方法
       success: vi
         .fn()

@@ -28,6 +28,17 @@ describe("MCPToolLogHandler - 基本功能测试", () => {
           success: "true",
         }),
       },
+      get: vi.fn((key: string) => {
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
+        }
+        return undefined;
+      }),
     };
 
     // 测试有效参数
@@ -46,6 +57,17 @@ describe("MCPToolLogHandler - 基本功能测试", () => {
           limit: "300", // 超出范围
         }),
       },
+      get: vi.fn((key: string) => {
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
+        }
+        return undefined;
+      }),
     };
 
     const invalidResult = parseAndValidateQueryParams(invalidContext);

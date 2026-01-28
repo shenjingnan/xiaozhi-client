@@ -6,6 +6,7 @@
 
 import type { MCPServiceManager } from "@/lib/mcp";
 import { MCPMessageHandler } from "@/lib/mcp";
+import type { AppContext } from "@/types/hono.context.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type { MCPMessage } from "@root/types/mcp.js";
@@ -108,7 +109,7 @@ export class MCPRouteHandler {
    * 处理 POST 请求（JSON-RPC 消息）
    * 符合 MCP Streamable HTTP 规范
    */
-  async handlePost(c: Context): Promise<Response> {
+  async handlePost(c: Context<AppContext>): Promise<Response> {
     const startTime = Date.now();
     let messageId: string | number | null = null;
 

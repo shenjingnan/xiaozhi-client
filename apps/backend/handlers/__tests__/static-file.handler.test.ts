@@ -75,7 +75,12 @@ describe("StaticFileHandler", () => {
       req: {
         url: "http://localhost:3000/",
       },
-      logger: mockLogger,
+      // 添加 c.get 方法支持依赖注入
+      get: vi.fn((key: string) => {
+        if (key === "logger") return mockLogger;
+        return undefined;
+      }),
+      logger: mockLogger, // 向后兼容
       text: vi.fn().mockImplementation((text, status, headers) => ({
         status,
         text,
