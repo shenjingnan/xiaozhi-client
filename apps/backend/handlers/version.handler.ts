@@ -1,6 +1,6 @@
 import { NPMManager } from "@/lib/npm";
 import type { AppContext } from "@/types/hono.context.js";
-import { VersionUtils } from "@utils/VersionUtils.js";
+import { VersionUtils } from "@utils/version-utils.js";
 import type { Context } from "hono";
 import { BaseHandler } from "./base.handler.js";
 

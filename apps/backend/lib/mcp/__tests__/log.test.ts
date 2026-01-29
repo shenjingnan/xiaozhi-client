@@ -13,7 +13,7 @@ import {
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import { PathUtils } from "@utils/PathUtils.js";
+import { PathUtils } from "@utils/path-utils.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   type ToolCallLogConfig,
