@@ -1,4 +1,4 @@
-import { TypeFieldNormalizer } from "@utils/TypeFieldNormalizer.js";
+import { TypeFieldNormalizer } from "@utils/type-field-normalizer.js";
 import { MCPTransportType, ToolCallError, ToolCallErrorCode } from "./types.js";
 import type {
   MCPServiceConfig,

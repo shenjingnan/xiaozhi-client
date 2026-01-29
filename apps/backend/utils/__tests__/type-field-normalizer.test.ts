@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TypeFieldNormalizer } from "../TypeFieldNormalizer";
+import { TypeFieldNormalizer } from "../type-field-normalizer.js";
 
 describe("TypeFieldNormalizer", () => {
   describe("normalizeTypeField", () => {
