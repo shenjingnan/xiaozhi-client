@@ -1,4 +1,4 @@
-import { TypeFieldNormalizer } from "@utils/TypeFieldNormalizer.js";
+import { TypeFieldNormalizer } from "@xiaozhi-client/mcp-core";
 import { MCPTransportType, ToolCallError, ToolCallErrorCode } from "./types.js";
 import type {
   MCPServiceConfig,
