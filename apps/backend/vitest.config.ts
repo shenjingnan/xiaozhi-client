@@ -1,7 +1,6 @@
 import { resolve } from "node:path";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { codecovVitePlugin } from "@codecov/vite-plugin";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
 
@@ -11,12 +10,6 @@ const __dirname = dirname(__filename);
 
 export default defineConfig({
   plugins: [
-    // 添加 Codecov 插件
-    codecovVitePlugin({
-      enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
-      bundleName: "xiaozhi-client",
-      uploadToken: process.env.CODECOV_TOKEN,
-    }),
     // 添加 tsconfig 路径解析插件
     tsconfigPaths(),
   ],
