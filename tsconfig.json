@@ -19,6 +19,8 @@
       "@xiaozhi-client/mcp-core/*": ["packages/mcp-core/dist/*"],
       "@xiaozhi-client/shared-types": ["packages/shared-types/dist"],
       "@xiaozhi-client/shared-types/*": ["packages/shared-types/dist/*"],
+      "@xiaozhi-client/version": ["packages/version/dist"],
+      "@xiaozhi-client/version/*": ["packages/version/dist/*"],
       "@handlers/*": ["apps/backend/handlers/*"],
       "@middlewares/*": ["apps/backend/middlewares/*"],
       "@services/*": ["apps/backend/services/*"],
@@ -61,6 +63,7 @@
     { "path": "./packages/shared-types" },
     { "path": "./packages/cli" },
     { "path": "./packages/endpoint" },
+    { "path": "./packages/version" },
     { "path": "./mcps/calculator-mcp" },
     { "path": "./mcps/datetime-mcp" }
   ]
