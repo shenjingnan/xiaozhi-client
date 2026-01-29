@@ -10,9 +10,9 @@ import {
   MCPErrorCode,
 } from "@root/errors/MCPErrors.js";
 import { getEventBus } from "@services/event-bus.service.js";
-import { TypeFieldNormalizer } from "@utils/type-field-normalizer.js";
 import type { ConfigManager, MCPServerConfig } from "@xiaozhi-client/config";
 import { normalizeServiceConfig } from "@xiaozhi-client/config";
+import { TypeFieldNormalizer } from "@xiaozhi-client/mcp-core";
 import type { Context } from "hono";
 
 /**

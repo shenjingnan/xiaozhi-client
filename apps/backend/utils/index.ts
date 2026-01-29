@@ -4,5 +4,4 @@
  */
 
 export { PathUtils } from "./path-utils.js";
-export { TypeFieldNormalizer } from "./type-field-normalizer.js";
 export { VersionUtils } from "./version-utils.js";
