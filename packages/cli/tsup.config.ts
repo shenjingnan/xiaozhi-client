@@ -62,6 +62,9 @@ export default defineConfig({
     // @xiaozhi-client/config 包（运行时从 dist/config 读取）
     "@xiaozhi-client/config",
     "@xiaozhi-client/config.js",
+    // @xiaozhi-client/version 包（运行时从 dist/version 读取）
+    "@xiaozhi-client/version",
+    "@xiaozhi-client/version.js",
     // Backend 模块（运行时从 dist/backend 读取）
     "@root/WebServer",
     "@root/WebServer.js",

@@ -34,7 +34,7 @@
     }
   },
   "release": {
-    "projects": ["cli", "config", "shared-types", "mcp-core", "endpoint", "calculator-mcp", "datetime-mcp"],
+    "projects": ["cli", "config", "shared-types", "mcp-core", "endpoint", "version", "calculator-mcp", "datetime-mcp"],
     "projectsRelationship": "fixed",
     "version": {
       "conventionalCommits": true,

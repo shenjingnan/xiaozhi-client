@@ -3,6 +3,7 @@
  */
 
 import { configManager } from "@xiaozhi-client/config";
+import { VersionUtils } from "@xiaozhi-client/version";
 import { ErrorHandler } from "./errors/ErrorHandlers";
 import type { IDIContainer } from "./interfaces/Config";
 import { FileUtils } from "./utils/FileUtils";
@@ -10,7 +11,6 @@ import { FormatUtils } from "./utils/FormatUtils";
 import { PathUtils } from "./utils/PathUtils";
 import { PlatformUtils } from "./utils/PlatformUtils";
 import { Validation } from "./utils/Validation";
-import { VersionUtils } from "./utils/VersionUtils";
 
 /**
  * 依赖注入容器实现

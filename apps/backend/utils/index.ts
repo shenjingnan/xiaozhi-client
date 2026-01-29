@@ -4,4 +4,5 @@
  */
 
 export { PathUtils } from "./path-utils.js";
-export { VersionUtils } from "./version-utils.js";
+// 重新导出 @xiaozhi-client/version 以保持向后兼容
+export { VersionUtils } from "@xiaozhi-client/version";

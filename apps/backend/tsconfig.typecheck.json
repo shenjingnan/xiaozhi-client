@@ -10,6 +10,8 @@
       "@xiaozhi-client/shared-types": ["packages/shared-types/dist"],
       "@xiaozhi-client/endpoint": ["packages/endpoint/dist"],
       "@xiaozhi-client/endpoint/*": ["packages/endpoint/dist/*"],
+      "@xiaozhi-client/version": ["packages/version/dist"],
+      "@xiaozhi-client/version/*": ["packages/version/dist/*"],
       "@handlers/*": ["apps/backend/handlers/*"],
       "@middlewares/*": ["apps/backend/middlewares/*"],
       "@services/*": ["apps/backend/services/*"],

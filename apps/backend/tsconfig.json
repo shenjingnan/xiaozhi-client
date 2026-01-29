@@ -5,7 +5,12 @@
     "declaration": true,
     "declarationMap": true,
     "outDir": "../../dist/backend",
-    "rootDir": "."
+    "rootDir": ".",
+    "paths": {
+      "@xiaozhi-client/version": ["../../dist/version"],
+      "@xiaozhi-client/version/*": ["../../dist/version/*"],
+      "@constants/*": ["./constants/*"]
+    }
   },
   "include": ["./**/*.ts"],
   "exclude": [
