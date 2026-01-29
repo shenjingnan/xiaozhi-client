@@ -2,7 +2,7 @@
  * VersionUtils 单元测试
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { VersionUtils } from "../VersionUtils.js";
 
 describe("VersionUtils", () => {
@@ -67,7 +67,7 @@ describe("VersionUtils", () => {
       const info = VersionUtils.getVersionInfo();
       // author 可能存在也可能不存在
       if (info.author) {
-        expect(typeof info.author).toBe("string" || typeof info.author === "object");
+        expect(["string", "object"]).toContain(typeof info.author);
       }
     });
 
