@@ -2,9 +2,9 @@ import path from "node:path";
 import type { MCPServiceManager } from "@/lib/mcp";
 import { MCPErrorCode } from "@errors/MCPErrors.js";
 import type { EventBus } from "@services/event-bus.service.js";
-import { TypeFieldNormalizer } from "@utils/type-field-normalizer.js";
 import type { ConfigManager } from "@xiaozhi-client/config";
 import type { MCPServerConfig } from "@xiaozhi-client/config";
+import { TypeFieldNormalizer } from "@xiaozhi-client/mcp-core";
 import type { Context } from "hono";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MCPHandler, MCPServerConfigValidator } from "../mcp-manage.handler.js";
@@ -1221,7 +1221,7 @@ describe("TypeFieldNormalizer", () => {
       [key: string]: any;
     }
 
-    it("应该将 streamableHttp 转换为 streamable-http", () => {
+    it("应该将 streamableHttp 转换为 http", () => {
       const config: TestConfig = {
         type: "streamableHttp",
         url: "https://example.com/mcp",
@@ -1229,11 +1229,11 @@ describe("TypeFieldNormalizer", () => {
 
       const normalizedConfig = TypeFieldNormalizer.normalizeTypeField(config);
 
-      expect(normalizedConfig.type).toBe("streamable-http");
+      expect(normalizedConfig.type).toBe("http");
       expect(normalizedConfig.url).toBe("https://example.com/mcp");
     });
 
-    it("应该将 streamable_http 转换为 streamable-http", () => {
+    it("应该将 streamable_http 转换为 http", () => {
       const config: TestConfig = {
         type: "streamable_http",
         url: "https://example.com/mcp",
@@ -1241,11 +1241,11 @@ describe("TypeFieldNormalizer", () => {
 
       const normalizedConfig = TypeFieldNormalizer.normalizeTypeField(config);
 
-      expect(normalizedConfig.type).toBe("streamable-http");
+      expect(normalizedConfig.type).toBe("http");
       expect(normalizedConfig.url).toBe("https://example.com/mcp");
     });
 
-    it("应该保持 streamable-http 格式不变", () => {
+    it("应该将 streamable-http 转换为 http", () => {
       const config: TestConfig = {
         type: "streamable-http",
         url: "https://example.com/mcp",
@@ -1253,7 +1253,7 @@ describe("TypeFieldNormalizer", () => {
 
       const normalizedConfig = TypeFieldNormalizer.normalizeTypeField(config);
 
-      expect(normalizedConfig.type).toBe("streamable-http");
+      expect(normalizedConfig.type).toBe("http");
       expect(normalizedConfig.url).toBe("https://example.com/mcp");
     });
 
@@ -1314,7 +1314,7 @@ describe("TypeFieldNormalizer", () => {
         TypeFieldNormalizer.normalizeTypeField(originalConfig);
 
       // 验证转换结果
-      expect(normalizedConfig.type).toBe("streamable-http");
+      expect(normalizedConfig.type).toBe("http");
       // 验证原始对象未被修改
       expect(originalConfig.type).toBe("streamableHttp");
       // 验证嵌套对象被正确拷贝
@@ -1325,10 +1325,10 @@ describe("TypeFieldNormalizer", () => {
     it("应该处理混合格式的其他 type 字段", () => {
       // 测试其他可能的格式转换
       const testCases = [
-        { input: "streamableHttp", expected: "streamable-http" },
-        { input: "streamable_http", expected: "streamable-http" },
-        { input: "STREAMABLE_HTTP", expected: "streamable-http" },
-        { input: "StreamableHttp", expected: "streamable-http" },
+        { input: "streamableHttp", expected: "http" },
+        { input: "streamable_http", expected: "http" },
+        { input: "STREAMABLE_HTTP", expected: "http" },
+        { input: "StreamableHttp", expected: "http" },
       ];
 
       for (const { input, expected } of testCases) {
@@ -1450,7 +1450,7 @@ describe("addMCPServer with type field normalization", () => {
     } as any;
   });
 
-  it("应该自动转换 streamableHttp 为 streamable-http", async () => {
+  it("应该自动转换 streamableHttp 为 http", async () => {
     const requestData = {
       name: "test-service",
       config: {
@@ -1480,7 +1480,7 @@ describe("addMCPServer with type field normalization", () => {
     expect(mockConfigManager.updateMcpServer).toHaveBeenCalledWith(
       "test-service",
       expect.objectContaining({
-        type: "streamable-http", // 验证type字段被标准化
+        type: "http", // 验证type字段被标准化
         url: "https://example.com/mcp",
       })
     );
@@ -1490,7 +1490,7 @@ describe("addMCPServer with type field normalization", () => {
     expect(responseData.success).toBe(true);
   });
 
-  it("应该自动转换 streamable_http 为 streamable-http", async () => {
+  it("应该自动转换 streamable_http 为 http", async () => {
     const requestData = {
       name: "test-service",
       config: {
@@ -1520,7 +1520,7 @@ describe("addMCPServer with type field normalization", () => {
     expect(mockConfigManager.updateMcpServer).toHaveBeenCalledWith(
       "test-service",
       expect.objectContaining({
-        type: "streamable-http", // 验证type字段被标准化
+        type: "http", // 验证type字段被标准化
         url: "https://example.com/mcp",
       })
     );
@@ -1594,7 +1594,7 @@ describe("addMCPServer with type field normalization", () => {
     expect(responseData.success).toBe(true);
     expect(responseData.data.addedCount).toBe(2);
 
-    // 验证两个服务都成功添加（说明type字段被正确标准化）
+    // 验证两个服务都成功添加（说明type字段被正确标准化为http）
     expect(responseData.data.results).toHaveLength(2);
     expect(responseData.data.results[0].success).toBe(true);
     expect(responseData.data.results[1].success).toBe(true);
