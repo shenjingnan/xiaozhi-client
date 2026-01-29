@@ -1,4 +1,10 @@
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
+
+// ESM 兼容的 __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export default defineConfig({
   test: {
@@ -12,6 +18,7 @@ export default defineConfig({
       enabled: true,
       provider: "v8",
       reporter: ["text", "json", "html", "lcov"],
+      include: [resolve(__dirname, "src/**/*.ts")],
       exclude: [
         "node_modules/**",
         "dist/**",
