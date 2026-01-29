@@ -77,6 +77,8 @@ export default defineConfig({
       "@types": resolve(__dirname, "types"),
       "@/lib": resolve(__dirname, "lib"),
       "@root": __dirname,
+      "@constants": resolve(__dirname, "constants"),
+      "@constants/": resolve(__dirname, "constants/"),
     },
   },
 });

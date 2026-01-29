@@ -8,7 +8,8 @@
     "rootDir": ".",
     "paths": {
       "@xiaozhi-client/version": ["../../dist/version"],
-      "@xiaozhi-client/version/*": ["../../dist/version/*"]
+      "@xiaozhi-client/version/*": ["../../dist/version/*"],
+      "@constants/*": ["./constants/*"]
     }
   },
   "include": ["./**/*.ts"],
