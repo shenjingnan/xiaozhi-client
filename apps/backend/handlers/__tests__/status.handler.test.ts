@@ -1,4 +1,4 @@
-import type { StatusService } from "@services/StatusService.js";
+import type { StatusService } from "@services/status.service.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { StatusApiHandler } from "../status.handler.js";
 
@@ -44,7 +44,11 @@ describe("StatusApiHandler 状态 API 处理器", () => {
 
     // Setup mock Context
     mockContext = {
-      logger: mockLogger,
+      get: vi.fn((key: string) => {
+        if (key === "logger") return mockLogger;
+        return undefined;
+      }),
+      logger: mockLogger, // 向后兼容
       json: vi.fn((data, status) => {
         const response = new Response(JSON.stringify(data), {
           status: status || 200,
@@ -859,6 +863,9 @@ describe("StatusApiHandler 状态 API 处理器", () => {
         },
       };
       const brokenContext = {
+        get: vi.fn(() => {
+          throw new Error("Context 错误");
+        }),
         logger: brokenLogger,
         success: vi.fn(),
         fail: vi.fn(),

@@ -67,6 +67,14 @@ describe("MCPToolHandler - 核心功能测试", () => {
         if (key === "mcpServiceManager") {
           return mockServiceManager;
         }
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
+        }
         return undefined;
       }),
       success: vi.fn((data: unknown, message?: string, status?: number) => {

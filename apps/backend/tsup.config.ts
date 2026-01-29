@@ -40,7 +40,6 @@ export default defineConfig({
     "apps/backend/WebServer.ts",
     "apps/backend/WebServerLauncher.ts",
     "apps/backend/Logger.ts",
-    "apps/backend/managers/MCPServiceManagerSingleton.ts"
   ],
   format: ["esm"],
   target: "node18",

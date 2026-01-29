@@ -1,7 +1,8 @@
+import { HEARTBEAT_MONITORING } from "@constants/index.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
-import type { NotificationService } from "@services/NotificationService.js";
-import type { StatusService } from "@services/StatusService.js";
+import type { NotificationService } from "@services/notification.service.js";
+import type { StatusService } from "@services/status.service.js";
 import { configManager } from "@xiaozhi-client/config";
 
 /**
@@ -115,9 +116,11 @@ export class HeartbeatHandler {
   checkHeartbeatTimeout(): void {
     const lastHeartbeat = this.statusService.getLastHeartbeat();
     const now = Date.now();
-    const HEARTBEAT_TIMEOUT = 35000; // 35 seconds
 
-    if (lastHeartbeat && now - lastHeartbeat > HEARTBEAT_TIMEOUT) {
+    if (
+      lastHeartbeat &&
+      now - lastHeartbeat > HEARTBEAT_MONITORING.TIMEOUT_THRESHOLD
+    ) {
       this.logger.warn("客户端心跳超时，标记为断开连接");
       this.statusService.updateClientInfo(
         { status: "disconnected" },
@@ -130,14 +133,12 @@ export class HeartbeatHandler {
    * 启动心跳监控
    */
   startHeartbeatMonitoring(): NodeJS.Timeout {
-    const MONITOR_INTERVAL = 10000; // 10 seconds
-
     this.logger.debug("启动心跳监控");
 
     return setInterval(() => {
       this.checkHeartbeatTimeout();
       this.cleanupDisconnectedClients();
-    }, MONITOR_INTERVAL);
+    }, HEARTBEAT_MONITORING.MONITOR_INTERVAL);
   }
 
   /**

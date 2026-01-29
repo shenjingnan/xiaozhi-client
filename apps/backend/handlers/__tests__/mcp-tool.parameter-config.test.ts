@@ -72,6 +72,17 @@ describe("MCPToolHandler - 参数配置功能", () => {
         json: vi.fn(),
       } as any,
       json: vi.fn(),
+      get: vi.fn((key: string) => {
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
+        }
+        return undefined;
+      }),
       success: vi.fn((data: unknown, message?: string, status?: number) => {
         return {
           status: status || 200,

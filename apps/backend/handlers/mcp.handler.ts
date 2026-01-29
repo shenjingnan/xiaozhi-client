@@ -6,6 +6,17 @@
 
 import type { MCPServiceManager } from "@/lib/mcp";
 import { MCPMessageHandler } from "@/lib/mcp";
+import type { AppContext } from "@/types/hono.context.js";
+import {
+  HTTP_CONTENT_TYPES,
+  HTTP_ERROR_MESSAGES,
+  HTTP_HEADERS,
+  HTTP_STATUS_CODES,
+  JSONRPC_VERSION,
+  MCP_PROTOCOL_VERSIONS,
+  MCP_SUPPORTED_PROTOCOL_VERSIONS,
+  MESSAGE_SIZE_LIMITS,
+} from "@constants/index.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type { MCPMessage } from "@root/types/mcp.js";
@@ -44,7 +55,7 @@ export class MCPRouteHandler {
   constructor(config: MCPRouteHandlerConfig = {}) {
     this.logger = logger;
     this.config = {
-      maxMessageSize: config.maxMessageSize ?? 1024 * 1024, // 1MB
+      maxMessageSize: config.maxMessageSize ?? MESSAGE_SIZE_LIMITS.DEFAULT,
       enableMetrics: config.enableMetrics ?? true,
     };
 
@@ -108,7 +119,7 @@ export class MCPRouteHandler {
    * 处理 POST 请求（JSON-RPC 消息）
    * 符合 MCP Streamable HTTP 规范
    */
-  async handlePost(c: Context): Promise<Response> {
+  async handlePost(c: Context<AppContext>): Promise<Response> {
     const startTime = Date.now();
     let messageId: string | number | null = null;
 
@@ -116,7 +127,7 @@ export class MCPRouteHandler {
       this.logger.debug("处理 MCP POST 请求");
 
       // 验证请求大小
-      const contentLength = c.req.header("content-length");
+      const contentLength = c.req.header(HTTP_HEADERS.CONTENT_LENGTH);
       if (
         contentLength &&
         Number.parseInt(contentLength) > this.config.maxMessageSize
@@ -124,17 +135,17 @@ export class MCPRouteHandler {
         this.metrics.errorCount++;
         return this.createErrorResponse(
           -32600,
-          `Request too large: Maximum size is ${this.config.maxMessageSize} bytes`
+          `${HTTP_ERROR_MESSAGES.REQUEST_TOO_LARGE}: Maximum size is ${this.config.maxMessageSize} bytes`
         );
       }
 
       // 验证 Content-Type
-      const contentType = c.req.header("content-type");
-      if (!contentType?.includes("application/json")) {
+      const contentType = c.req.header(HTTP_HEADERS.CONTENT_TYPE);
+      if (!contentType?.includes(HTTP_CONTENT_TYPES.APPLICATION_JSON)) {
         this.metrics.errorCount++;
         return this.createErrorResponse(
           -32600,
-          "Invalid Request: Content-Type must be application/json"
+          `${HTTP_ERROR_MESSAGES.INVALID_REQUEST}: ${HTTP_ERROR_MESSAGES.INVALID_CONTENT_TYPE}`
         );
       }
 
@@ -142,12 +153,16 @@ export class MCPRouteHandler {
       // 支持多种大小写格式的协议版本头
       const protocolVersion =
         c.req.header("mcp-protocol-version") ||
-        c.req.header("MCP-Protocol-Version") ||
+        c.req.header(HTTP_HEADERS.MCP_PROTOCOL_VERSION) ||
         c.req.header("Mcp-Protocol-Version");
-      const supportedVersions = ["2024-11-05", "2025-06-18"];
-      if (protocolVersion && !supportedVersions.includes(protocolVersion)) {
+      if (
+        protocolVersion &&
+        !MCP_SUPPORTED_PROTOCOL_VERSIONS.includes(
+          protocolVersion as (typeof MCP_SUPPORTED_PROTOCOL_VERSIONS)[number]
+        )
+      ) {
         this.logger.warn(
-          `不支持的 MCP 协议版本: ${protocolVersion}，支持的版本: ${supportedVersions.join(
+          `不支持的 MCP 协议版本: ${protocolVersion}，支持的版本: ${MCP_SUPPORTED_PROTOCOL_VERSIONS.join(
             ", "
           )}`
         );
@@ -169,7 +184,10 @@ export class MCPRouteHandler {
         messageId = message.id || null;
       } catch (error) {
         this.metrics.errorCount++;
-        return this.createErrorResponse(-32700, "Parse error: Invalid JSON");
+        return this.createErrorResponse(
+          -32700,
+          HTTP_ERROR_MESSAGES.PARSE_ERROR
+        );
       }
 
       // 验证 JSON-RPC 格式
@@ -177,7 +195,7 @@ export class MCPRouteHandler {
         this.metrics.errorCount++;
         return this.createErrorResponse(
           -32600,
-          "Invalid Request: Message does not conform to JSON-RPC 2.0",
+          `${HTTP_ERROR_MESSAGES.INVALID_REQUEST}: Message does not conform to JSON-RPC ${JSONRPC_VERSION}`,
           messageId
         );
       }
@@ -209,19 +227,19 @@ export class MCPRouteHandler {
       // 对于通知消息，返回 204 No Content
       if (response === null) {
         return new Response(null, {
-          status: 204,
+          status: HTTP_STATUS_CODES.NO_CONTENT,
           headers: {
-            "MCP-Protocol-Version": "2024-11-05",
-            "X-Response-Time": responseTime.toString(),
+            [HTTP_HEADERS.MCP_PROTOCOL_VERSION]: MCP_PROTOCOL_VERSIONS.DEFAULT,
+            [HTTP_HEADERS.X_RESPONSE_TIME]: responseTime.toString(),
           },
         });
       }
 
       // 返回 JSON-RPC 响应
-      return c.json(response, 200, {
-        "Content-Type": "application/json",
-        "MCP-Protocol-Version": "2024-11-05",
-        "X-Response-Time": responseTime.toString(),
+      return c.json(response, HTTP_STATUS_CODES.OK, {
+        [HTTP_HEADERS.CONTENT_TYPE]: HTTP_CONTENT_TYPES.APPLICATION_JSON,
+        [HTTP_HEADERS.MCP_PROTOCOL_VERSION]: MCP_PROTOCOL_VERSIONS.DEFAULT,
+        [HTTP_HEADERS.X_RESPONSE_TIME]: responseTime.toString(),
       });
     } catch (error) {
       this.metrics.errorCount++;
@@ -238,7 +256,7 @@ export class MCPRouteHandler {
         error instanceof Error ? error.message : String(error);
       return this.createErrorResponse(
         -32603,
-        `Internal error: ${errorMessage}`,
+        `${HTTP_ERROR_MESSAGES.INTERNAL_ERROR}: ${errorMessage}`,
         messageId
       );
     }
@@ -256,7 +274,7 @@ export class MCPRouteHandler {
     // 类型守卫：确保 message 是对象类型
     const msg = message as Record<string, unknown>;
 
-    if (msg.jsonrpc !== "2.0") {
+    if (msg.jsonrpc !== JSONRPC_VERSION) {
       this.logger.debug("消息验证失败: jsonrpc 版本不正确", {
         jsonrpc: msg.jsonrpc,
       });
@@ -304,7 +322,7 @@ export class MCPRouteHandler {
     const responseId = id ?? `error-${Date.now()}`;
 
     const errorResponse = {
-      jsonrpc: "2.0",
+      jsonrpc: JSONRPC_VERSION,
       error: {
         code,
         message,
@@ -313,10 +331,10 @@ export class MCPRouteHandler {
     };
 
     return new Response(JSON.stringify(errorResponse), {
-      status: 400,
+      status: HTTP_STATUS_CODES.BAD_REQUEST,
       headers: {
-        "Content-Type": "application/json",
-        "MCP-Protocol-Version": "2024-11-05",
+        [HTTP_HEADERS.CONTENT_TYPE]: HTTP_CONTENT_TYPES.APPLICATION_JSON,
+        [HTTP_HEADERS.MCP_PROTOCOL_VERSION]: MCP_PROTOCOL_VERSIONS.DEFAULT,
       },
     });
   }

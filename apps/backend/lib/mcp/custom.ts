@@ -7,7 +7,7 @@ import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
-import { getEventBus } from "@root/services/EventBus.js";
+import { getEventBus } from "@root/services/event-bus.service.js";
 import type {
   EnhancedToolResultCache,
   ExtendedMCPToolsCache,

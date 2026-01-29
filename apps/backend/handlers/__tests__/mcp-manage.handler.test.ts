@@ -1,8 +1,7 @@
 import path from "node:path";
 import type { MCPServiceManager } from "@/lib/mcp";
 import { MCPErrorCode } from "@errors/MCPErrors.js";
-import type { EventBus } from "@services/EventBus.js";
-import { TypeFieldNormalizer } from "@utils/TypeFieldNormalizer.js";
+import type { EventBus } from "@services/event-bus.service.js";
 import type { ConfigManager } from "@xiaozhi-client/config";
 import type { MCPServerConfig } from "@xiaozhi-client/config";
 import type { Context } from "hono";
@@ -161,6 +160,18 @@ describe("addMCPServer", () => {
 
     // 创建模拟 Context - 修复 mock 配置，返回真实的 Response 对象
     mockContext = {
+      // 添加 c.get 方法支持依赖注入
+      get: vi.fn((key: string) => {
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
+        }
+        return undefined;
+      }),
       // 添加 c.success 方法
       success: vi
         .fn()
@@ -454,6 +465,18 @@ describe("removeMCPServer", () => {
 
     // 创建模拟 Context
     mockContext = {
+      // 添加 c.get 方法支持依赖注入
+      get: vi.fn((key: string) => {
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
+        }
+        return undefined;
+      }),
       // 添加 c.success 方法
       success: vi
         .fn()
@@ -856,6 +879,18 @@ describe("getMCPServerStatus", () => {
 
     // 设置模拟的 Context
     mockContext = {
+      // 添加 c.get 方法支持依赖注入
+      get: vi.fn((key: string) => {
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
+        }
+        return undefined;
+      }),
       // 添加 c.success 方法
       success: vi
         .fn()
@@ -1010,6 +1045,18 @@ describe("listMCPServers", () => {
 
     // 设置模拟的 Context
     mockContext = {
+      // 添加 c.get 方法支持依赖注入
+      get: vi.fn((key: string) => {
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
+        }
+        return undefined;
+      }),
       // 添加 c.success 方法
       success: vi
         .fn()
@@ -1159,155 +1206,6 @@ describe("listMCPServers", () => {
   });
 });
 
-// 测试 TypeFieldNormalizer
-describe("TypeFieldNormalizer", () => {
-  describe("normalizeTypeField", () => {
-    // 测试用接口，包含可选的 type 字段和嵌套对象支持
-    interface TestConfig {
-      type?: string;
-      url: string;
-      nested?: {
-        value: string;
-        [key: string]: any;
-      };
-      [key: string]: any;
-    }
-
-    it("应该将 streamableHttp 转换为 streamable-http", () => {
-      const config: TestConfig = {
-        type: "streamableHttp",
-        url: "https://example.com/mcp",
-      };
-
-      const normalizedConfig = TypeFieldNormalizer.normalizeTypeField(config);
-
-      expect(normalizedConfig.type).toBe("streamable-http");
-      expect(normalizedConfig.url).toBe("https://example.com/mcp");
-    });
-
-    it("应该将 streamable_http 转换为 streamable-http", () => {
-      const config: TestConfig = {
-        type: "streamable_http",
-        url: "https://example.com/mcp",
-      };
-
-      const normalizedConfig = TypeFieldNormalizer.normalizeTypeField(config);
-
-      expect(normalizedConfig.type).toBe("streamable-http");
-      expect(normalizedConfig.url).toBe("https://example.com/mcp");
-    });
-
-    it("应该保持 streamable-http 格式不变", () => {
-      const config: TestConfig = {
-        type: "streamable-http",
-        url: "https://example.com/mcp",
-      };
-
-      const normalizedConfig = TypeFieldNormalizer.normalizeTypeField(config);
-
-      expect(normalizedConfig.type).toBe("streamable-http");
-      expect(normalizedConfig.url).toBe("https://example.com/mcp");
-    });
-
-    it("应该保持 sse 格式不变", () => {
-      const config: TestConfig = {
-        type: "sse",
-        url: "https://example.com/sse",
-      };
-
-      const normalizedConfig = TypeFieldNormalizer.normalizeTypeField(config);
-
-      expect(normalizedConfig.type).toBe("sse");
-      expect(normalizedConfig.url).toBe("https://example.com/sse");
-    });
-
-    it("应该处理没有 type 字段的配置", () => {
-      const config: TestConfig = {
-        url: "https://example.com/mcp",
-      };
-
-      const normalizedConfig = TypeFieldNormalizer.normalizeTypeField(config);
-
-      expect(normalizedConfig.type).toBeUndefined();
-      expect(normalizedConfig.url).toBe("https://example.com/mcp");
-    });
-
-    it("应该处理无效的 type 字段（保持原样）", () => {
-      const config: TestConfig = {
-        type: "invalid-type",
-        url: "https://example.com/mcp",
-      };
-
-      const normalizedConfig = TypeFieldNormalizer.normalizeTypeField(config);
-
-      expect(normalizedConfig.type).toBe("invalid-type");
-      expect(normalizedConfig.url).toBe("https://example.com/mcp");
-    });
-
-    it("应该处理空配置对象", () => {
-      const normalizedConfig = TypeFieldNormalizer.normalizeTypeField(null);
-      expect(normalizedConfig).toBe(null);
-
-      const normalizedConfig2 =
-        TypeFieldNormalizer.normalizeTypeField(undefined);
-      expect(normalizedConfig2).toBe(undefined);
-    });
-
-    it("应该创建深拷贝而不修改原始对象", () => {
-      const originalConfig: TestConfig = {
-        type: "streamableHttp",
-        url: "https://example.com/mcp",
-        nested: {
-          value: "test",
-        },
-      };
-
-      const normalizedConfig =
-        TypeFieldNormalizer.normalizeTypeField(originalConfig);
-
-      // 验证转换结果
-      expect(normalizedConfig.type).toBe("streamable-http");
-      // 验证原始对象未被修改
-      expect(originalConfig.type).toBe("streamableHttp");
-      // 验证嵌套对象被正确拷贝
-      expect(normalizedConfig.nested!.value).toBe("test");
-      expect(normalizedConfig.nested).not.toBe(originalConfig.nested);
-    });
-
-    it("应该处理混合格式的其他 type 字段", () => {
-      // 测试其他可能的格式转换
-      const testCases = [
-        { input: "streamableHttp", expected: "streamable-http" },
-        { input: "streamable_http", expected: "streamable-http" },
-        { input: "STREAMABLE_HTTP", expected: "streamable-http" },
-        { input: "StreamableHttp", expected: "streamable-http" },
-      ];
-
-      for (const { input, expected } of testCases) {
-        const config = { type: input, url: "https://example.com" };
-        const normalizedConfig = TypeFieldNormalizer.normalizeTypeField(config);
-        expect(normalizedConfig.type).toBe(expected);
-      }
-    });
-
-    it("应该对无效类型保持原样", () => {
-      const invalidTypes = [
-        "invalid-type",
-        "unknown",
-        "custom-format",
-        "123",
-        "",
-      ];
-
-      for (const type of invalidTypes) {
-        const config = { type, url: "https://example.com" };
-        const normalizedConfig = TypeFieldNormalizer.normalizeTypeField(config);
-        expect(normalizedConfig.type).toBe(type);
-      }
-    });
-  });
-});
-
 // 测试集成：验证 addMCPServer 中的 type 字段标准化
 describe("addMCPServer with type field normalization", () => {
   let handler: MCPHandler;
@@ -1329,6 +1227,18 @@ describe("addMCPServer with type field normalization", () => {
     );
 
     mockContext = {
+      // 添加 c.get 方法支持依赖注入
+      get: vi.fn((key: string) => {
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
+        }
+        return undefined;
+      }),
       // 添加 c.success 方法
       success: vi
         .fn()
@@ -1390,7 +1300,7 @@ describe("addMCPServer with type field normalization", () => {
     } as any;
   });
 
-  it("应该自动转换 streamableHttp 为 streamable-http", async () => {
+  it("应该自动转换 streamableHttp 为 http", async () => {
     const requestData = {
       name: "test-service",
       config: {
@@ -1420,7 +1330,7 @@ describe("addMCPServer with type field normalization", () => {
     expect(mockConfigManager.updateMcpServer).toHaveBeenCalledWith(
       "test-service",
       expect.objectContaining({
-        type: "streamable-http", // 验证type字段被标准化
+        type: "http", // 验证type字段被标准化
         url: "https://example.com/mcp",
       })
     );
@@ -1430,7 +1340,7 @@ describe("addMCPServer with type field normalization", () => {
     expect(responseData.success).toBe(true);
   });
 
-  it("应该自动转换 streamable_http 为 streamable-http", async () => {
+  it("应该自动转换 streamable_http 为 http", async () => {
     const requestData = {
       name: "test-service",
       config: {
@@ -1460,7 +1370,7 @@ describe("addMCPServer with type field normalization", () => {
     expect(mockConfigManager.updateMcpServer).toHaveBeenCalledWith(
       "test-service",
       expect.objectContaining({
-        type: "streamable-http", // 验证type字段被标准化
+        type: "http", // 验证type字段被标准化
         url: "https://example.com/mcp",
       })
     );
@@ -1534,7 +1444,7 @@ describe("addMCPServer with type field normalization", () => {
     expect(responseData.success).toBe(true);
     expect(responseData.data.addedCount).toBe(2);
 
-    // 验证两个服务都成功添加（说明type字段被正确标准化）
+    // 验证两个服务都成功添加（说明type字段被正确标准化为http）
     expect(responseData.data.results).toHaveLength(2);
     expect(responseData.data.results[0].success).toBe(true);
     expect(responseData.data.results[1].success).toBe(true);

@@ -9,7 +9,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Mock } from "vitest";
-import { EventBus } from "../EventBus.js";
+import { EventBus } from "../event-bus.service.js";
 
 describe("事件系统边界情况测试", () => {
   let eventBus: EventBus;

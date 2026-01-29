@@ -12,10 +12,14 @@ vi.mock("../../Logger.js", () => ({
   },
 }));
 
+// 创建全局的 mockEventBus 实例，以便在测试中使用
+const mockEventBusInstance = {
+  emitEvent: vi.fn(),
+};
+
+// Mock EventBus 模块
 vi.mock("@services/EventBus.js", () => ({
-  getEventBus: vi.fn().mockReturnValue({
-    emitEvent: vi.fn(),
-  }),
+  getEventBus: vi.fn(() => mockEventBusInstance),
 }));
 
 vi.mock("@xiaozhi-client/config", () => ({
@@ -54,7 +58,7 @@ const createMockEndpointInstance = (connected = false) => ({
 describe("EndpointHandler", () => {
   let handler: EndpointHandler;
   let mockContext: any;
-  let mockEventBus: any;
+  let mockEmitEvent: ReturnType<typeof vi.fn>;
 
   const mockEndpointStatus: ConnectionStatus = {
     endpoint: "ws://localhost:3000",
@@ -88,11 +92,31 @@ describe("EndpointHandler", () => {
     const { configManager } = await import("@xiaozhi-client/config");
     Object.assign(configManager, mockConfigManager);
 
-    // Create handler instance
+    // 获取 mockEventBus 的 emitEvent 方法
+    mockEmitEvent = mockEventBusInstance.emitEvent;
+
+    // Create handler instance - getEventBus 已经在模块级别被 mock
     handler = new EndpointHandler(mockConnectionManager as any, configManager);
+
+    // 手动替换 handler 的 eventBus，确保使用 mock 实例
+    // biome-ignore lint/complexity/useLiteralKeys: Need to access private property for testing
+    // biome-ignore lint/suspicious/noExplicitAny: Need to assign mock instance
+    handler["eventBus"] = mockEventBusInstance as any;
 
     // Create mock context - 修复 mock 配置，返回真实的 Response 对象
     mockContext = {
+      // 添加 c.get 方法支持依赖注入
+      get: vi.fn((key: string) => {
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
+        }
+        return undefined;
+      }),
       json: vi.fn().mockImplementation((data, status) => {
         return new Response(JSON.stringify(data), {
           status: status || 200,
@@ -144,10 +168,6 @@ describe("EndpointHandler", () => {
         json: vi.fn(),
       },
     };
-
-    // Get mock event bus
-    // biome-ignore lint/complexity/useLiteralKeys: Need to access private property for testing
-    mockEventBus = handler["eventBus"];
   });
 
   describe("getEndpointStatus", () => {
@@ -287,7 +307,7 @@ describe("EndpointHandler", () => {
       expect(responseData.data).toEqual(connectedStatus);
       expect(mockConnectionManager.getEndpoint).toHaveBeenCalledWith(endpoint);
       expect(mockConnectionManager.connect).toHaveBeenCalledWith(endpoint);
-      expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
+      expect(mockEmitEvent).toHaveBeenCalledWith(
         "endpoint:status:changed",
         expect.objectContaining({
           endpoint,
@@ -476,7 +496,7 @@ describe("EndpointHandler", () => {
       expect(responseData.success).toBe(true);
       expect(mockConnectionManager.getEndpoint).toHaveBeenCalledWith(endpoint);
       expect(mockConnectionManager.disconnect).toHaveBeenCalledWith(endpoint);
-      expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
+      expect(mockEmitEvent).toHaveBeenCalledWith(
         "endpoint:status:changed",
         expect.objectContaining({
           endpoint,
@@ -745,7 +765,7 @@ describe("EndpointHandler", () => {
         mockEndpointInstance
       );
       expect(cm.removeMcpEndpoint).toHaveBeenCalledWith(endpoint);
-      expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
+      expect(mockEmitEvent).toHaveBeenCalledWith(
         "endpoint:status:changed",
         expect.objectContaining({
           endpoint,

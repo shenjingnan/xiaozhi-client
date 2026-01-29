@@ -1,7 +1,8 @@
+import type { AppContext } from "@/types/hono.context.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
-import type { EventBus } from "@services/EventBus.js";
-import { getEventBus } from "@services/EventBus.js";
+import type { EventBus } from "@services/event-bus.service.js";
+import { getEventBus } from "@services/event-bus.service.js";
 import type { ConfigManager } from "@xiaozhi-client/config";
 import type {
   ConnectionStatus,
@@ -42,7 +43,7 @@ export class EndpointHandler {
    * @returns 解析结果，成功时包含 endpoint，失败时包含可直接返回的 Response
    */
   private async parseEndpointFromBody(
-    c: Context,
+    c: Context<AppContext>,
     errorErrorCode: string
   ): Promise<
     { ok: true; endpoint: string } | { ok: false; response: Response }
@@ -102,7 +103,7 @@ export class EndpointHandler {
    * 获取接入点状态
    * POST /api/endpoint/status
    */
-  async getEndpointStatus(c: Context): Promise<Response> {
+  async getEndpointStatus(c: Context<AppContext>): Promise<Response> {
     const parseResult = await this.parseEndpointFromBody(
       c,
       "ENDPOINT_STATUS_READ_ERROR"
@@ -141,7 +142,7 @@ export class EndpointHandler {
    * 连接指定接入点
    * POST /api/endpoint/connect
    */
-  async connectEndpoint(c: Context): Promise<Response> {
+  async connectEndpoint(c: Context<AppContext>): Promise<Response> {
     const parseResult = await this.parseEndpointFromBody(
       c,
       "ENDPOINT_CONNECT_ERROR"
@@ -212,7 +213,7 @@ export class EndpointHandler {
    * 断开指定接入点
    * POST /api/endpoint/disconnect
    */
-  async disconnectEndpoint(c: Context): Promise<Response> {
+  async disconnectEndpoint(c: Context<AppContext>): Promise<Response> {
     const parseResult = await this.parseEndpointFromBody(
       c,
       "ENDPOINT_DISCONNECT_ERROR"
@@ -275,7 +276,7 @@ export class EndpointHandler {
    * POST /api/endpoint/add
    * 流程：验证 URL → 检查存在性 → 创建实例 → 添加到管理器 → 连接 → 更新配置
    */
-  async addEndpoint(c: Context): Promise<Response> {
+  async addEndpoint(c: Context<AppContext>): Promise<Response> {
     const parseResult = await this.parseEndpointFromBody(
       c,
       "ENDPOINT_ADD_ERROR"
@@ -398,7 +399,7 @@ export class EndpointHandler {
    * POST /api/endpoint/remove
    * 流程：断开连接 → 从管理器移除 → 更新配置文件
    */
-  async removeEndpoint(c: Context): Promise<Response> {
+  async removeEndpoint(c: Context<AppContext>): Promise<Response> {
     const parseResult = await this.parseEndpointFromBody(
       c,
       "ENDPOINT_REMOVE_ERROR"

@@ -1,11 +1,11 @@
 import type { AppConfig } from "@xiaozhi-client/config";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { NotificationService } from "../NotificationService.js";
-import type { WebSocketClient } from "../NotificationService.js";
-import type { ClientInfo } from "../StatusService.js";
+import { NotificationService } from "../notification.service.js";
+import type { WebSocketClient } from "../notification.service.js";
+import type { ClientInfo } from "../status.service.js";
 
 // Mock EventBus
-vi.mock("../EventBus.js", () => ({
+vi.mock("../event-bus.service.js", () => ({
   getEventBus: vi.fn().mockReturnValue({
     onEvent: vi.fn(),
     emitEvent: vi.fn(),
@@ -86,7 +86,7 @@ describe("NotificationService", () => {
       onEvent: vi.fn(),
       emitEvent: vi.fn(),
     };
-    const { getEventBus } = await import("../EventBus.js");
+    const { getEventBus } = await import("../event-bus.service.js");
     (getEventBus as any).mockReturnValue(mockEventBus);
 
     // Mock Logger

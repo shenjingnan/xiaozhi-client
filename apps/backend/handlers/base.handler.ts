@@ -1,9 +1,10 @@
+import type { AppContext } from "@/types/hono.context.js";
 import type { Context } from "hono";
 
 /**
  * 抽象 API Handler 基类
  * 提供便捷的辅助方法
- * logger 通过 c.logger 直接访问
+ * logger 通过 c.get("logger") 访问（Hono 推荐做法）
  */
 export abstract class BaseHandler {
   /**
@@ -18,7 +19,7 @@ export abstract class BaseHandler {
    * @returns JSON 错误响应
    */
   protected handleError(
-    c: Context,
+    c: Context<AppContext>,
     error: unknown,
     operation: string,
     defaultCode = "OPERATION_FAILED",
@@ -31,7 +32,7 @@ export abstract class BaseHandler {
         ? String((error as { code: unknown }).code)
         : defaultCode;
 
-    c.logger.error(`${operation}失败:`, error);
+    c.get("logger").error(`${operation}失败:`, error);
 
     return c.fail(
       errorCode,
@@ -49,7 +50,7 @@ export abstract class BaseHandler {
    * @throws 如果请求体不是有效的 JSON
    */
   protected async parseJsonBody<T>(
-    c: Context,
+    c: Context<AppContext>,
     errorMessage = "请求体格式错误"
   ): Promise<T> {
     try {

@@ -50,8 +50,13 @@ describe("MCPRouteHandler", () => {
     const mockContext = {
       req: {
         header: vi.fn((name: string) => {
-          if (name === "content-type") return "application/json";
-          if (name === "mcp-protocol-version") return "2024-11-05";
+          if (name === "content-type" || name === "Content-Type")
+            return "application/json";
+          if (
+            name === "mcp-protocol-version" ||
+            name === "MCP-Protocol-Version"
+          )
+            return "2024-11-05";
           return undefined;
         }),
         query: vi.fn(() => undefined),
@@ -76,6 +81,14 @@ describe("MCPRouteHandler", () => {
         if (key === "mcpServiceManager") {
           return mockServiceManager;
         }
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
+        }
         return undefined;
       }),
     };
@@ -94,6 +107,14 @@ describe("MCPRouteHandler", () => {
       get: vi.fn((key: string) => {
         if (key === "mcpServiceManager") {
           return mockServiceManager;
+        }
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
         }
         return undefined;
       }),
@@ -117,6 +138,14 @@ describe("MCPRouteHandler", () => {
       get: vi.fn((key: string) => {
         if (key === "mcpServiceManager") {
           return mockServiceManager;
+        }
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
         }
         return undefined;
       }),
@@ -146,6 +175,14 @@ describe("MCPRouteHandler", () => {
         if (key === "mcpServiceManager") {
           return mockServiceManager;
         }
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
+        }
         return undefined;
       }),
     };
@@ -170,6 +207,14 @@ describe("MCPRouteHandler", () => {
       get: vi.fn((key: string) => {
         if (key === "mcpServiceManager") {
           return mockServiceManager;
+        }
+        if (key === "logger") {
+          return {
+            debug: vi.fn(),
+            info: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+          };
         }
         return undefined;
       }),

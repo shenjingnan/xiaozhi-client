@@ -202,7 +202,7 @@ vi.mock("@/lib/mcp", () => {
 import { MCPServiceManager } from "@/lib/mcp";
 
 // Mock logger
-vi.mock("../../Logger.js", () => ({
+vi.mock("@/utils/Logger.js", () => ({
   logger: {
     debug: vi.fn(),
     info: vi.fn(),
@@ -235,7 +235,7 @@ vi.mock("@xiaozhi-client/config", async () => {
 });
 
 // Mock CustomMCPHandler
-vi.mock("../CustomMCPHandler.js", () => {
+vi.mock("@services/CustomMCPHandler.js", () => {
   class MockCustomMCPHandler {
     initialize() {}
 
@@ -262,7 +262,7 @@ vi.mock("../CustomMCPHandler.js", () => {
 });
 
 // Mock MCPCacheManager
-vi.mock("../MCPCacheManager.js", () => {
+vi.mock("@services/MCPCacheManager.js", () => {
   class MockMCPCacheManager {
     async writeCacheEntry() {}
     async readCacheEntry() {

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ClientInfo } from "../StatusService.js";
-import { StatusService } from "../StatusService.js";
+import type { ClientInfo } from "../status.service.js";
+import { StatusService } from "../status.service.js";
 
 // Mock dependencies
 vi.mock("../../Logger.js", () => ({
@@ -12,7 +12,7 @@ vi.mock("../../Logger.js", () => ({
   },
 }));
 
-vi.mock("../EventBus.js", () => ({
+vi.mock("../event-bus.service.js", () => ({
   getEventBus: vi.fn().mockReturnValue({
     emitEvent: vi.fn(),
     onEvent: vi.fn(),
@@ -46,7 +46,7 @@ describe("StatusService", () => {
       emitEvent: vi.fn(),
       onEvent: vi.fn(),
     };
-    const { getEventBus } = await import("../EventBus.js");
+    const { getEventBus } = await import("../event-bus.service.js");
     vi.mocked(getEventBus).mockReturnValue(mockEventBus);
 
     statusService = new StatusService();
