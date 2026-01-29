@@ -21,11 +21,4 @@ export class PathUtils {
   static getTempDir(): string {
     return process.env.TMPDIR || process.env.TEMP || tmpdir();
   }
-
-  /**
-   * 获取用户主目录路径
-   */
-  static getHomeDir(): string {
-    return process.env.HOME || process.env.USERPROFILE || "";
-  }
 }
