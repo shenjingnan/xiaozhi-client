@@ -20,8 +20,6 @@
       "@adapters/*": ["./adapters/*"],
       "@managers/*": ["./managers/*"],
       "@types/*": ["./types/*"],
-      "@/types/*": ["./types/*"],
-      "@/lib/*": ["./lib/*"],
       "@root/*": ["./*"],
       "@routes/*": ["./routes/*"],
       "@constants/*": ["./constants/*"]
