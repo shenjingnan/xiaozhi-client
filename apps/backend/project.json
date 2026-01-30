@@ -62,7 +62,7 @@
         "command": "pnpm check:type",
         "cwd": "apps/backend"
       },
-      "dependsOn": ["config:build", "endpoint:build"]
+      "dependsOn": ["config:build", "endpoint:build", "version:build"]
     },
     "dev": {
       "executor": "nx:run-commands",
