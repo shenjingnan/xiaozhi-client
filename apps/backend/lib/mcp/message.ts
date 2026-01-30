@@ -4,8 +4,6 @@
  * 这是阶段一重构的核心组件，用于消除双层代理架构
  */
 
-import type { EnhancedToolInfo, MCPServiceManager } from "@/lib/mcp";
-import { validateToolCallParams } from "@/lib/mcp";
 import {
   JSONRPC_VERSION,
   MCP_METHODS,
@@ -13,6 +11,8 @@ import {
   MCP_SERVER_INFO,
   MCP_SUPPORTED_PROTOCOL_VERSIONS,
 } from "@/constants/index.js";
+import type { EnhancedToolInfo, MCPServiceManager } from "@/lib/mcp";
+import { validateToolCallParams } from "@/lib/mcp";
 import type {
   ClientCapabilities,
   InitializedNotification,

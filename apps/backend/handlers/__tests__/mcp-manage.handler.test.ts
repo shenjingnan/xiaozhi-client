@@ -1,7 +1,7 @@
 import path from "node:path";
+import { MCPErrorCode } from "@/errors/MCPErrors.js";
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { EventBus } from "@/services/event-bus.service.js";
-import { MCPErrorCode } from "@/errors/MCPErrors.js";
 import type { ConfigManager } from "@xiaozhi-client/config";
 import type { MCPServerConfig } from "@xiaozhi-client/config";
 import type { Context } from "hono";
