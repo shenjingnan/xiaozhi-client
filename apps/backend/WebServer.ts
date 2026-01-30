@@ -18,15 +18,6 @@ import {
 import { MCPServiceManager } from "@/lib/mcp";
 import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
-import type { EventBus, EventBusEvents } from "@/services/index.js";
-import {
-  NotificationService,
-  StatusService,
-  destroyEventBus,
-  getEventBus,
-} from "@/services/index.js";
-import type { ServerType } from "@hono/node-server";
-import { serve } from "@hono/node-server";
 import {
   corsMiddleware,
   endpointManagerMiddleware,
@@ -36,7 +27,16 @@ import {
   mcpServiceManagerMiddleware,
   notFoundHandlerMiddleware,
   responseEnhancerMiddleware,
-} from "@middlewares/index.js";
+} from "@/middlewares/index.js";
+import type { EventBus, EventBusEvents } from "@/services/index.js";
+import {
+  NotificationService,
+  StatusService,
+  destroyEventBus,
+  getEventBus,
+} from "@/services/index.js";
+import type { ServerType } from "@hono/node-server";
+import { serve } from "@hono/node-server";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";

@@ -64,8 +64,6 @@ export default defineConfig({
       "@root": __dirname,
       "@constants": resolve(__dirname, "constants"),
       "@constants/": resolve(__dirname, "constants/"),
-      "@middlewares": resolve(__dirname, "middlewares"),
-      "@middlewares/": resolve(__dirname, "middlewares/"),
       "@routes": resolve(__dirname, "routes"),
       "@routes/": resolve(__dirname, "routes/"),
     },

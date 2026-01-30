@@ -106,7 +106,7 @@ export interface MCPServerListResponse {
 export type {
   ApiErrorResponse,
   ApiSuccessResponse,
-} from "@middlewares/index.js";
+} from "@/middlewares/index.js";
 
 /**
  * 配置验证结果接口
