@@ -48,19 +48,5 @@ export default defineConfig({
       },
     },
   },
-  resolve: {
-    alias: {
-      "@handlers": resolve(__dirname, "handlers"),
-      "@services": resolve(__dirname, "services"),
-      "@utils": resolve(__dirname, "utils"),
-      "@core": resolve(__dirname, "core"),
-      "@transports": resolve(__dirname, "transports"),
-      "@adapters": resolve(__dirname, "adapters"),
-      "@managers": resolve(__dirname, "managers"),
-      "@/lib": resolve(__dirname, "lib"),
-      "@": __dirname,
-      "@routes": resolve(__dirname, "routes"),
-      "@routes/": resolve(__dirname, "routes/"),
-    },
-  },
+  resolve: {},
 });
