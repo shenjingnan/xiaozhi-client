@@ -16,7 +16,7 @@ import {
   MCP_PROTOCOL_VERSIONS,
   MCP_SUPPORTED_PROTOCOL_VERSIONS,
   MESSAGE_SIZE_LIMITS,
-} from "@constants/index.js";
+} from "@/constants/index.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type { MCPMessage } from "@root/types/mcp.js";

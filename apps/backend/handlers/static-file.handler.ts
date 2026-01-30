@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { HTTP_CONTENT_TYPES, HTTP_STATUS_CODES } from "@constants/index.js";
+import { HTTP_CONTENT_TYPES, HTTP_STATUS_CODES } from "@/constants/index.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type { Context } from "hono";

@@ -19,7 +19,7 @@ import {
   CACHE_TIMEOUTS,
   MCP_CACHE_VERSIONS,
   TOOL_NAME_SEPARATORS,
-} from "@constants/index.js";
+} from "@/constants/index.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";

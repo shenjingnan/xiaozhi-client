@@ -12,7 +12,7 @@ import {
   MCP_PROTOCOL_VERSIONS,
   MCP_SERVER_INFO,
   MCP_SUPPORTED_PROTOCOL_VERSIONS,
-} from "@constants/index.js";
+} from "@/constants/index.js";
 import type {
   ClientCapabilities,
   InitializedNotification,

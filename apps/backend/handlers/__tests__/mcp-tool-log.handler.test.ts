@@ -3,7 +3,7 @@
  * 专注于基本功能验证
  */
 
-import { PAGINATION_CONSTANTS } from "@constants/api.constants.js";
+import { PAGINATION_CONSTANTS } from "@/constants/api.constants.js";
 import { describe, expect, it } from "vitest";
 import { MCPToolLogHandler } from "../mcp-tool-log.handler.js";
 
