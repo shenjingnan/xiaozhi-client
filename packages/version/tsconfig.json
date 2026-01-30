@@ -20,6 +20,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "skipLibCheck": true,
+    "composite": true,
     "resolveJsonModule": true
   },
   "include": ["src/**/*"],
