@@ -6,9 +6,27 @@
     "declarationMap": true,
     "outDir": "../../dist/backend",
     "rootDir": ".",
+    "baseUrl": ".",
     "paths": {
+      // 包引用（从根配置继承）
       "@xiaozhi-client/version": ["../../dist/version"],
       "@xiaozhi-client/version/*": ["../../dist/version/*"],
+
+      // backend 内部别名
+      "@handlers/*": ["./handlers/*"],
+      "@middlewares/*": ["./middlewares/*"],
+      "@services/*": ["./services/*"],
+      "@errors/*": ["./errors/*"],
+      "@utils/*": ["./utils/*"],
+      "@core/*": ["./core/*"],
+      "@transports/*": ["./lib/mcp/transports/*"],
+      "@adapters/*": ["./adapters/*"],
+      "@managers/*": ["./managers/*"],
+      "@types/*": ["./types/*"],
+      "@/types/*": ["./types/*"],
+      "@/lib/*": ["./lib/*"],
+      "@root/*": ["./*"],
+      "@routes/*": ["./routes/*"],
       "@constants/*": ["./constants/*"]
     }
   },
