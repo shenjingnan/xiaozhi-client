@@ -546,10 +546,11 @@ describe("PathUtils 路径工具", () => {
 
       const result = PathUtils.getTemplatesDir();
 
-      expect(result).toHaveLength(3);
+      expect(result).toHaveLength(4);
       expect(result[0]).toContain("templates");
       expect(result[1]).toContain("templates");
       expect(result[2]).toContain("templates");
+      expect(result[3]).toContain("templates");
     });
 
     it("应该处理不同的脚本位置", () => {
@@ -559,10 +560,9 @@ describe("PathUtils 路径工具", () => {
 
       const result = PathUtils.getTemplatesDir();
 
-      expect(result).toHaveLength(3);
-      expect(result[0]).toBe(
-        path.join("/different/path/cli/utils", "templates")
-      );
+      expect(result).toHaveLength(4);
+      // 第一个路径: scriptDir + ".." + "templates" = /different/path/cli/utils/../templates
+      expect(result[0]).toBe(path.join("/different/path/cli", "templates"));
     });
   });
 
@@ -584,7 +584,7 @@ describe("PathUtils 路径工具", () => {
       const result = PathUtils.findTemplatesDir();
 
       expect(result).toBeNull();
-      expect(mockFileExists).toHaveBeenCalledTimes(3);
+      expect(mockFileExists).toHaveBeenCalledTimes(4);
     });
 
     it("应该返回第一个匹配的目录", () => {
