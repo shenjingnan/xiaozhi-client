@@ -52,6 +52,7 @@ export default defineConfig({
   bundle: true,
   keepNames: true,
   platform: "node",
+  tsconfig: "apps/backend/tsconfig.json",
   esbuildOptions: (options) => {
     // 在生产环境移除 console 和 debugger
     if (process.env.NODE_ENV === "production") {
