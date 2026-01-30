@@ -47,10 +47,14 @@ function copyDirectory(
 }
 
 export default defineConfig({
-  entry: ["./WebServer.ts", "./WebServerLauncher.ts", "./Logger.ts"],
+  entry: [
+    join(__dirname, "WebServer.ts"),
+    join(__dirname, "WebServerLauncher.ts"),
+    join(__dirname, "Logger.ts"),
+  ],
   format: ["esm"],
   target: "node18",
-  outDir: "../../dist/backend",
+  outDir: join(__dirname, "../../dist/backend"),
   clean: true,
   sourcemap: true,
   dts: false, // 禁用 DTS 以避免类型错误
@@ -59,7 +63,7 @@ export default defineConfig({
   bundle: true,
   keepNames: true,
   platform: "node",
-  tsconfig: "./tsconfig.json",
+  tsconfig: join(__dirname, "tsconfig.json"),
   esbuildOptions: (options) => {
     // 在生产环境移除 console 和 debugger
     if (process.env.NODE_ENV === "production") {
