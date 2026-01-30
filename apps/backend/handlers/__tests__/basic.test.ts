@@ -42,13 +42,13 @@ vi.mock("node:child_process", () => ({
   spawn: vi.fn(),
 }));
 
-vi.mock("@services/EventBus.js", () => ({
+vi.mock("@/services/EventBus.js", () => ({
   getEventBus: vi.fn().mockReturnValue({
     emitEvent: vi.fn(),
   }),
 }));
 
-vi.mock("@services/StatusService.js", () => ({
+vi.mock("@/services/StatusService.js", () => ({
   StatusService: vi.fn().mockImplementation(() => ({
     updateRestartStatus: vi.fn(),
   })),
@@ -76,7 +76,7 @@ describe("Handlers Basic Tests", () => {
     const { StaticFileHandler } = await import("../static-file.handler.js");
     const { ServiceApiHandler } = await import("../service.handler.js");
     const { StatusApiHandler } = await import("../status.handler.js");
-    const { StatusService } = await import("@services/status.service.js");
+    const { StatusService } = await import("@/services/status.service.js");
 
     const mockStatusService = new StatusService();
 

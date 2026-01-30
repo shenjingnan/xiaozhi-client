@@ -41,7 +41,7 @@ vi.mock("../Logger.js", () => ({
 }));
 
 // Mock EventBus
-vi.mock("@services/EventBus.js", () => ({
+vi.mock("@/services/EventBus.js", () => ({
   getEventBus: vi.fn().mockReturnValue({
     onEvent: vi.fn(),
     emitEvent: vi.fn(),

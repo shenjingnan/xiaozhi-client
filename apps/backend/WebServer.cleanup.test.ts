@@ -45,7 +45,7 @@ vi.mock("./Logger", () => {
 });
 
 // Mock EventBus 服务
-vi.mock("@services/EventBus", () => {
+vi.mock("@/services/EventBus", () => {
   const mockEventBus = {
     onEvent: vi.fn(),
     emitEvent: vi.fn(),
@@ -68,13 +68,13 @@ const mockConfigServiceInstance = {
   updateMcpEndpoint: vi.fn(),
 };
 
-vi.mock("@services/ConfigService", () => {
+vi.mock("@/services/ConfigService", () => {
   return {
     ConfigService: vi.fn(() => mockConfigServiceInstance),
   };
 });
 
-vi.mock("@services/StatusService", () => {
+vi.mock("@/services/StatusService", () => {
   const mockStatusService = {
     getStatus: vi.fn(),
     updateClientInfo: vi.fn(),
@@ -85,7 +85,7 @@ vi.mock("@services/StatusService", () => {
   };
 });
 
-vi.mock("@services/NotificationService", () => {
+vi.mock("@/services/NotificationService", () => {
   const mockNotificationService = {
     addClient: vi.fn(),
     removeClient: vi.fn(),

@@ -235,7 +235,7 @@ vi.mock("@xiaozhi-client/config", async () => {
 });
 
 // Mock CustomMCPHandler
-vi.mock("@services/CustomMCPHandler.js", () => {
+vi.mock("@/services/CustomMCPHandler.js", () => {
   class MockCustomMCPHandler {
     initialize() {}
 
@@ -262,7 +262,7 @@ vi.mock("@services/CustomMCPHandler.js", () => {
 });
 
 // Mock MCPCacheManager
-vi.mock("@services/MCPCacheManager.js", () => {
+vi.mock("@/services/MCPCacheManager.js", () => {
   class MockMCPCacheManager {
     async writeCacheEntry() {}
     async readCacheEntry() {
