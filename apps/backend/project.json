@@ -59,7 +59,7 @@
     "type-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc --project tsconfig.typecheck.json",
+        "command": "pnpm check:type",
         "cwd": "apps/backend"
       },
       "dependsOn": ["config:build", "endpoint:build"]

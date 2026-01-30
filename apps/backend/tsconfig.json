@@ -7,12 +7,16 @@
     "outDir": "../../dist/backend",
     "rootDir": ".",
     "baseUrl": ".",
+    "noImplicitAny": false,
+    "types": ["vitest/globals"],
     "paths": {
-      // 包引用（从根配置继承）
-      "@xiaozhi-client/version": ["../../dist/version"],
-      "@xiaozhi-client/version/*": ["../../dist/version/*"],
-
-      // backend 内部别名
+      "@xiaozhi-client/config": ["../../packages/config/dist"],
+      "@xiaozhi-client/config/*": ["../../packages/config/dist/*"],
+      "@xiaozhi-client/shared-types": ["../../packages/shared-types/dist"],
+      "@xiaozhi-client/endpoint": ["../../packages/endpoint/dist"],
+      "@xiaozhi-client/endpoint/*": ["../../packages/endpoint/dist/*"],
+      "@xiaozhi-client/version": ["../../packages/version/dist"],
+      "@xiaozhi-client/version/*": ["../../packages/version/dist/*"],
       "@handlers/*": ["./handlers/*"],
       "@middlewares/*": ["./middlewares/*"],
       "@services/*": ["./services/*"],
@@ -36,8 +40,6 @@
     "dist",
     "scripts/**/*",
     "templates/**/*",
-    "**/*.config.ts",
-    "vitest.d.ts",
-    "**/*.test.ts"
+    "**/*.config.ts"
   ]
 }

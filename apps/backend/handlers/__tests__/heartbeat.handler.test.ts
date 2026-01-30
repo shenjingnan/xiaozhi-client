@@ -888,7 +888,7 @@ describe("HeartbeatHandler", () => {
     });
 
     it("should handle concurrent heartbeat processing", async () => {
-      const promises = [];
+      const promises: Promise<void>[] = [];
 
       // Simulate concurrent heartbeat messages
       for (let i = 0; i < 10; i++) {
