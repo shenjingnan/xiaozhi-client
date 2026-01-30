@@ -1,6 +1,6 @@
 import { NPMManager } from "@/lib/npm";
+import { getEventBus } from "@/services/event-bus.service.js";
 import type { AppContext } from "@/types/hono.context.js";
-import { getEventBus } from "@services/event-bus.service.js";
 import type { Context } from "hono";
 import { z } from "zod";
 import { BaseHandler } from "./base.handler.js";

@@ -18,7 +18,7 @@ const mockEventBusInstance = {
 };
 
 // Mock EventBus 模块
-vi.mock("@services/EventBus.js", () => ({
+vi.mock("@/services/EventBus.js", () => ({
   getEventBus: vi.fn(() => mockEventBusInstance),
 }));
 

@@ -1,11 +1,11 @@
 import { spawn } from "node:child_process";
 import type { MCPServiceManager } from "@/lib/mcp";
+import type { EventBus } from "@/services/event-bus.service.js";
+import { getEventBus } from "@/services/event-bus.service.js";
+import type { StatusService } from "@/services/status.service.js";
 import type { AppContext } from "@/types/hono.context.js";
 import { logger } from "@root/Logger.js";
 import type { Logger } from "@root/Logger.js";
-import type { EventBus } from "@services/event-bus.service.js";
-import { getEventBus } from "@services/event-bus.service.js";
-import type { StatusService } from "@services/status.service.js";
 import type { Context } from "hono";
 import { requireMCPServiceManager } from "../types/hono.context.js";
 

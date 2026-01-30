@@ -12,16 +12,9 @@
     "paths": {
       "@/*": ["./*"],
       "@middlewares/*": ["./middlewares/*"],
-      "@services/*": ["./services/*"],
       "@errors/*": ["./errors/*"],
-      "@utils/*": ["./utils/*"],
-      "@core/*": ["./core/*"],
-      "@transports/*": ["./lib/mcp/transports/*"],
-      "@adapters/*": ["./adapters/*"],
-      "@managers/*": ["./managers/*"],
       "@types/*": ["./types/*"],
       "@root/*": ["./*"],
-      "@routes/*": ["./routes/*"],
       "@constants/*": ["./constants/*"]
     }
   },

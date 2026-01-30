@@ -5,7 +5,7 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { PathUtils } from "@utils/path-utils.js";
+import { PathUtils } from "@/utils/path-utils.js";
 import pino from "pino";
 import type { Logger as PinoLogger } from "pino";
 

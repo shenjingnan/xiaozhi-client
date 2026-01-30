@@ -18,6 +18,13 @@ import {
 import { MCPServiceManager } from "@/lib/mcp";
 import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
+import type { EventBus, EventBusEvents } from "@/services/index.js";
+import {
+  NotificationService,
+  StatusService,
+  destroyEventBus,
+  getEventBus,
+} from "@/services/index.js";
 import type { ServerType } from "@hono/node-server";
 import { serve } from "@hono/node-server";
 import {
@@ -35,13 +42,6 @@ import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
 import type { AppContext } from "@root/types/index.js";
 import { createApp } from "@root/types/index.js";
-import type { EventBus, EventBusEvents } from "@services/index.js";
-import {
-  NotificationService,
-  StatusService,
-  destroyEventBus,
-  getEventBus,
-} from "@services/index.js";
 import { normalizeServiceConfig } from "@xiaozhi-client/config";
 import { configManager } from "@xiaozhi-client/config";
 import type { MCPServerConfig } from "@xiaozhi-client/config";
