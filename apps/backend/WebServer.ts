@@ -1,8 +1,5 @@
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
-import { MCPServiceManager } from "@/lib/mcp";
-import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
-import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import {
   ConfigApiHandler,
   CozeHandler,
@@ -17,7 +14,10 @@ import {
   StatusApiHandler,
   UpdateApiHandler,
   VersionApiHandler,
-} from "@handlers/index.js";
+} from "@/handlers/index.js";
+import { MCPServiceManager } from "@/lib/mcp";
+import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
+import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import type { ServerType } from "@hono/node-server";
 import { serve } from "@hono/node-server";
 import {
