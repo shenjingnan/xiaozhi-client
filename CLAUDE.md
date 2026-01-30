@@ -344,8 +344,7 @@ xiaozhi-client 是一个务实的开源 MCP 客户端：
   "@transports/*": ["apps/backend/transports/*"], // 传输层适配器
   "@adapters/*": ["apps/backend/adapters/*"],     // 适配器模式
   "@managers/*": ["apps/backend/managers/*"],     // 管理器服务
-  "@types/*": ["apps/backend/types/*"],           // 类型定义
-  "@root/*": ["apps/backend/*"]                   // 根目录别名
+  "@types/*": ["apps/backend/types/*"]            // 类型定义
 }
 ```
 
@@ -354,7 +353,7 @@ xiaozhi-client 是一个务实的开源 MCP 客户端：
 **CLI 迁移到 packages/cli**：
 - CLI 代码已从 `apps/backend/cli/` 迁移到 `packages/cli/`
 - CLI 包使用相对路径进行内部导入
-- CLI 包通过 external 依赖引用 `@root/*` 和 `@/lib/config/*` 模块
+- CLI 包通过 external 依赖引用 `@/*` 和 `@/lib/config/*` 模块
 - 构建产物：`packages/cli` → `dist/cli/index.js`
 - CLI 包是项目入口点，不是独立发布的 npm 包
 

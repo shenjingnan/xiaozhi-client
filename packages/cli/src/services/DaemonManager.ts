@@ -5,7 +5,7 @@
 import type { ChildProcess } from "node:child_process";
 import { spawn } from "node:child_process";
 import fs from "node:fs";
-import type { WebServer } from "@root/WebServer";
+import type { WebServer } from "@/WebServer";
 import consola from "consola";
 import { ProcessError, ServiceError } from "../errors/index";
 import type {

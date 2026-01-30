@@ -49,7 +49,7 @@ packages/cli/
 
 CLI 包通过 external 配置引用 backend 模块：
 
-- `@root/WebServer` → `dist/backend/WebServer.js` (通过 WebServerLauncher)
+- `@/WebServer` → `dist/backend/WebServer.js` (通过 WebServerLauncher)
 - `@/lib/config/manager` → `dist/backend/lib/config/manager.js`
 
 ## 导入方式

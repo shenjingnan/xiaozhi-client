@@ -1,5 +1,7 @@
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
+import type { Logger } from "@/Logger.js";
+import { logger } from "@/Logger.js";
 import {
   ConfigApiHandler,
   CozeHandler,
@@ -35,13 +37,11 @@ import {
   destroyEventBus,
   getEventBus,
 } from "@/services/index.js";
+import type { AppContext } from "@/types/index.js";
+import { createApp } from "@/types/index.js";
 import type { ServerType } from "@hono/node-server";
 import { serve } from "@hono/node-server";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
-import type { AppContext } from "@root/types/index.js";
-import { createApp } from "@root/types/index.js";
 import { normalizeServiceConfig } from "@xiaozhi-client/config";
 import { configManager } from "@xiaozhi-client/config";
 import type { MCPServerConfig } from "@xiaozhi-client/config";

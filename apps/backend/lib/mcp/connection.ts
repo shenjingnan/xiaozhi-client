@@ -4,8 +4,8 @@
  */
 
 import { MCP_SERVICE_EVENTS } from "@/constants/index.js";
+import { getEventBus } from "@/services/event-bus.service.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { getEventBus } from "@root/services/event-bus.service.js";
 import { MCPConnection } from "@xiaozhi-client/mcp-core";
 import type { InternalMCPServiceConfig } from "./types.js";
 

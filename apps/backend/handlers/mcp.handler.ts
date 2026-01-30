@@ -4,6 +4,8 @@
  * 支持 POST 请求（JSON-RPC 消息）
  */
 
+import type { Logger } from "@/Logger.js";
+import { logger } from "@/Logger.js";
 import {
   HTTP_CONTENT_TYPES,
   HTTP_ERROR_MESSAGES,
@@ -17,9 +19,7 @@ import {
 import type { MCPServiceManager } from "@/lib/mcp";
 import { MCPMessageHandler } from "@/lib/mcp";
 import type { AppContext } from "@/types/hono.context.js";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
-import type { MCPMessage } from "@root/types/mcp.js";
+import type { MCPMessage } from "@/types/mcp.js";
 import type { Context } from "hono";
 
 /**

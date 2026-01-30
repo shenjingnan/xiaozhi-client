@@ -50,7 +50,6 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": __dirname,
       "@handlers": resolve(__dirname, "handlers"),
       "@services": resolve(__dirname, "services"),
       "@utils": resolve(__dirname, "utils"),
@@ -59,7 +58,7 @@ export default defineConfig({
       "@adapters": resolve(__dirname, "adapters"),
       "@managers": resolve(__dirname, "managers"),
       "@/lib": resolve(__dirname, "lib"),
-      "@root": __dirname,
+      "@": __dirname,
       "@routes": resolve(__dirname, "routes"),
       "@routes/": resolve(__dirname, "routes/"),
     },

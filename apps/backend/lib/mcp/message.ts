@@ -4,6 +4,8 @@
  * 这是阶段一重构的核心组件，用于消除双层代理架构
  */
 
+import type { Logger } from "@/Logger.js";
+import { logger } from "@/Logger.js";
 import {
   JSONRPC_VERSION,
   MCP_METHODS,
@@ -13,13 +15,11 @@ import {
 } from "@/constants/index.js";
 import type { EnhancedToolInfo, MCPServiceManager } from "@/lib/mcp";
 import { validateToolCallParams } from "@/lib/mcp";
+import type { MCPMessage, MCPResponse } from "@/types/mcp.js";
 import type {
   ClientCapabilities,
   InitializedNotification,
 } from "@modelcontextprotocol/sdk/types.js";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
-import type { MCPMessage, MCPResponse } from "@root/types/mcp.js";
 
 // 初始化参数接口
 interface InitializeParams {

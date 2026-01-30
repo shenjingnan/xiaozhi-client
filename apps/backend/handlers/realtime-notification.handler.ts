@@ -1,9 +1,9 @@
+import type { Logger } from "@/Logger.js";
+import { logger } from "@/Logger.js";
 import type { EventBus } from "@/services/event-bus.service.js";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { NotificationService } from "@/services/notification.service.js";
 import type { StatusService } from "@/services/status.service.js";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
 import type { AppConfig } from "@xiaozhi-client/config";
 import { configManager } from "@xiaozhi-client/config";
 
