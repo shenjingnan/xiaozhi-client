@@ -1,6 +1,17 @@
-import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "tsup";
+
+// 获取当前文件所在目录（ESM 环境下获取 __dirname 的方式）
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /**
  * 递归复制目录 - 跨平台实现
@@ -36,14 +47,10 @@ function copyDirectory(
 }
 
 export default defineConfig({
-  entry: [
-    "apps/backend/WebServer.ts",
-    "apps/backend/WebServerLauncher.ts",
-    "apps/backend/Logger.ts",
-  ],
+  entry: ["./WebServer.ts", "./WebServerLauncher.ts", "./Logger.ts"],
   format: ["esm"],
   target: "node18",
-  outDir: "dist/backend",
+  outDir: "../../dist/backend",
   clean: true,
   sourcemap: true,
   dts: false, // 禁用 DTS 以避免类型错误
@@ -52,7 +59,7 @@ export default defineConfig({
   bundle: true,
   keepNames: true,
   platform: "node",
-  tsconfig: "apps/backend/tsconfig.json",
+  tsconfig: "./tsconfig.json",
   esbuildOptions: (options) => {
     // 在生产环境移除 console 和 debugger
     if (process.env.NODE_ENV === "production") {
@@ -60,7 +67,7 @@ export default defineConfig({
     }
 
     // 添加路径别名支持
-    options.resolveExtensions = ['.ts', '.js', '.json'];
+    options.resolveExtensions = [".ts", ".js", ".json"];
 
     // 确保能够解析路径别名
     if (!options.external) {
@@ -116,7 +123,7 @@ export default defineConfig({
   ],
   onSuccess: async () => {
     // 复制配置文件到 dist/backend
-    const distDir = "dist/backend";
+    const distDir = join(__dirname, "../../dist/backend");
 
     // 确保 dist/backend 目录存在
     if (!existsSync(distDir)) {
@@ -124,24 +131,27 @@ export default defineConfig({
     }
 
     // 复制 xiaozhi.config.default.json
-    if (existsSync("xiaozhi.config.default.json")) {
+    const defaultConfigPath = join(__dirname, "xiaozhi.config.default.json");
+    if (existsSync(defaultConfigPath)) {
       copyFileSync(
-        "xiaozhi.config.default.json",
+        defaultConfigPath,
         join(distDir, "xiaozhi.config.default.json")
       );
       console.log("✅ 已复制 xiaozhi.config.default.json 到 dist/backend/");
     }
 
     // 复制 package.json 到 dist/backend 目录，以便运行时能读取版本号
-    if (existsSync("package.json")) {
-      copyFileSync("package.json", join(distDir, "package.json"));
+    const packageJsonPath = join(__dirname, "package.json");
+    if (existsSync(packageJsonPath)) {
+      copyFileSync(packageJsonPath, join(distDir, "package.json"));
       console.log("✅ 已复制 package.json 到 dist/backend/");
     }
 
     // 复制 templates 目录到 dist/backend 目录
-    if (existsSync("templates")) {
+    const templatesPath = join(__dirname, "templates");
+    if (existsSync(templatesPath)) {
       try {
-        copyDirectory("templates", join(distDir, "templates"));
+        copyDirectory(templatesPath, join(distDir, "templates"));
         console.log("✅ 已复制 templates 目录到 dist/backend/");
       } catch (error) {
         console.warn("⚠️ 复制 templates 目录失败:", error);
@@ -151,7 +161,10 @@ export default defineConfig({
     console.log("✅ 构建完成，产物现在为 ESM 格式");
 
     // 创建向后兼容的 dist/WebServerLauncher.js
-    const compatLauncherPath = "dist/WebServerLauncher.js";
+    const compatLauncherPath = join(
+      __dirname,
+      "../../dist/WebServerLauncher.js"
+    );
     writeFileSync(
       compatLauncherPath,
       `// 向后兼容包装脚本 - 重定向到新的路径
