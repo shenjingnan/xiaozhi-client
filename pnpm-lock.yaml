@@ -188,6 +188,9 @@ importers:
       '@xiaozhi-client/mcp-core':
         specifier: workspace:*
         version: link:../../packages/mcp-core
+      '@xiaozhi-client/version':
+        specifier: workspace:*
+        version: link:../../packages/version
       ajv:
         specifier: ^8.17.1
         version: 8.17.1
