@@ -4,7 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check:type": "tsc --noEmit"
+    "build": "cross-env NODE_ENV=${NODE_ENV:-production} tsup --config apps/backend/tsup.config.ts",
+    "test": "vitest run --coverage.enabled=false",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "biome check apps/backend",
+    "lint:fix": "biome check --write apps/backend",
+    "format": "biome format --write apps/backend",
+    "check:type": "tsc --noEmit",
+    "dev": "cross-env NODE_ENV=development tsup --config apps/backend/tsup.config.ts --watch"
   },
   "dependencies": {
     "@coze/api": "^1.3.9",

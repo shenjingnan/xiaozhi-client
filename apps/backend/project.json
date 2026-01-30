@@ -7,7 +7,8 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "cross-env NODE_ENV=${NODE_ENV:-production} tsup --config apps/backend/tsup.config.ts",
+        "command": "pnpm run build",
+        "cwd": "apps/backend",
         "env": {
           "PWD": "{workspaceRoot}"
         }
@@ -18,7 +19,7 @@
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vitest run --coverage.enabled=false",
+        "command": "pnpm run test",
         "cwd": "apps/backend"
       },
       "outputs": ["{workspaceRoot}/coverage"]
@@ -26,14 +27,14 @@
     "test:watch": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vitest",
+        "command": "pnpm run test:watch",
         "cwd": "apps/backend"
       }
     },
     "test:coverage": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vitest run --coverage",
+        "command": "pnpm run test:coverage",
         "cwd": "apps/backend"
       },
       "outputs": ["{workspaceRoot}/coverage"]
@@ -41,25 +42,28 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "biome check apps/backend"
+        "command": "pnpm run lint",
+        "cwd": "apps/backend"
       }
     },
     "lint:fix": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "biome check --write apps/backend"
+        "command": "pnpm run lint:fix",
+        "cwd": "apps/backend"
       }
     },
     "format": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "biome format --write apps/backend"
+        "command": "pnpm run format",
+        "cwd": "apps/backend"
       }
     },
     "type-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm check:type",
+        "command": "pnpm run check:type",
         "cwd": "apps/backend"
       },
       "dependsOn": ["config:build", "endpoint:build", "version:build"]
@@ -67,7 +71,8 @@
     "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "cross-env NODE_ENV=development tsup --config apps/backend/tsup.config.ts --watch",
+        "command": "pnpm run dev",
+        "cwd": "apps/backend",
         "env": {
           "PWD": "{workspaceRoot}"
         }
