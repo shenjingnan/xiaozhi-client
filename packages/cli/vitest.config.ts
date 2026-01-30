@@ -54,8 +54,6 @@ export default defineConfig({
       // Backend 路径别名（从 packages/cli 向上到项目根目录）
       "@handlers": resolve(__dirname, "../../apps/backend/handlers"),
       "@handlers/*": resolve(__dirname, "../../apps/backend/handlers/*"),
-      "@middlewares": resolve(__dirname, "../../apps/backend/middlewares"),
-      "@middlewares/*": resolve(__dirname, "../../apps/backend/middlewares/*"),
       "@services": resolve(__dirname, "../../apps/backend/services"),
       "@services/*": resolve(__dirname, "../../apps/backend/services/*"),
       "@errors": resolve(__dirname, "../../apps/backend/errors"),
