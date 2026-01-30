@@ -11,10 +11,7 @@
     "types": ["vitest/globals"],
     "paths": {
       "@/*": ["./*"],
-      "@errors/*": ["./errors/*"],
-      "@types/*": ["./types/*"],
-      "@root/*": ["./*"],
-      "@constants/*": ["./constants/*"]
+      "@root/*": ["./*"]
     }
   },
   "include": ["./**/*.ts"],

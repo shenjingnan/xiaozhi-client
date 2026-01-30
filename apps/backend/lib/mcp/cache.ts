@@ -13,13 +13,13 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, resolve } from "node:path";
-import type { MCPServiceConfig } from "@/lib/mcp/types";
 import {
   CACHE_FILE_CONFIG,
   CACHE_TIMEOUTS,
   MCP_CACHE_VERSIONS,
   TOOL_NAME_SEPARATORS,
-} from "@constants/index.js";
+} from "@/constants/index.js";
+import type { MCPServiceConfig } from "@/lib/mcp/types";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@root/Logger.js";
 import { logger } from "@root/Logger.js";
