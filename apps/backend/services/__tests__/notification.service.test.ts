@@ -12,7 +12,7 @@ vi.mock("../event-bus.service.js", () => ({
   }),
 }));
 
-// Mock Logger
+// Mock Logger - 使用简单的对象字面量
 vi.mock("@/root/Logger.js", () => ({
   logger: {
     debug: vi.fn(),
@@ -20,7 +20,20 @@ vi.mock("@/root/Logger.js", () => ({
     warn: vi.fn(),
     error: vi.fn(),
     success: vi.fn(),
+    log: vi.fn(),
+    initLogFile: vi.fn(),
+    enableFileLogging: vi.fn(),
+    close: vi.fn(),
+    setLevel: vi.fn(),
+    getLevel: vi.fn(),
+    setLogFileOptions: vi.fn(),
+    cleanupOldLogs: vi.fn(),
   },
+  getLogger: vi.fn(() => ({})),
+  createLogger: vi.fn(() => ({})),
+  setGlobalLogger: vi.fn(),
+  setGlobalLogLevel: vi.fn(),
+  getGlobalLogLevel: vi.fn(),
 }));
 
 // Mock ConfigManager
@@ -45,6 +58,9 @@ vi.mock("@xiaozhi-client/config", () => ({
     }),
   },
 }));
+
+// 在顶层导入 logger mock
+import { logger } from "@/root/Logger.js";
 
 describe("NotificationService", () => {
   let notificationService: NotificationService;
@@ -79,8 +95,6 @@ describe("NotificationService", () => {
   };
 
   beforeEach(async () => {
-    vi.clearAllMocks();
-
     // Mock EventBus
     mockEventBus = {
       onEvent: vi.fn(),
@@ -89,16 +103,8 @@ describe("NotificationService", () => {
     const { getEventBus } = await import("../event-bus.service.js");
     (getEventBus as any).mockReturnValue(mockEventBus);
 
-    // Mock Logger
-    mockLogger = {
-      debug: vi.fn(),
-      info: vi.fn(),
-      error: vi.fn(),
-      warn: vi.fn(),
-      success: vi.fn(),
-    };
-    const { logger } = await import("../../Logger.js");
-    Object.assign(logger, mockLogger);
+    // 使用顶层导入的 logger mock
+    mockLogger = logger as any;
 
     // Mock ConfigManager
     const { configManager } = await import("@xiaozhi-client/config");
@@ -121,6 +127,7 @@ describe("NotificationService", () => {
   });
 
   afterEach(() => {
+    // 清除所有 mock 的调用记录，但不重置 mock 函数本身
     vi.clearAllMocks();
   });
 
@@ -271,9 +278,6 @@ describe("NotificationService", () => {
 
       // Register client to create the queue
       notificationService.registerClient("test-client-123", mockWebSocket);
-
-      // Clear previous mock calls
-      vi.clearAllMocks();
 
       // Unregister client
       notificationService.unregisterClient("test-client-123");

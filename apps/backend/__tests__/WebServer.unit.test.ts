@@ -1,5 +1,30 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// Mock Logger 模块（在所有导入之前）
+vi.mock("@/root/Logger.js", () => ({
+  logger: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    success: vi.fn(),
+  },
+}));
+
+// Mock EventBus 模块
+vi.mock("@/root/services/event-bus.service.js", () => ({
+  EventBus: vi.fn().mockImplementation(() => ({
+    on: vi.fn(),
+    off: vi.fn(),
+    emitEvent: vi.fn(),
+  })),
+  getEventBus: vi.fn(() => ({
+    on: vi.fn(),
+    off: vi.fn(),
+    emitEvent: vi.fn(),
+  })),
+}));
+
 // Mock CLI to prevent process.exit
 vi.mock("@cli.js", () => ({}));
 

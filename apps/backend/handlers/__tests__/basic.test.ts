@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 // Mock dependencies to avoid triggering real config loading
-vi.mock("../../Logger.js", () => ({
+vi.mock("@/root/Logger.js", () => ({
   logger: {
     debug: vi.fn(),
     info: vi.fn(),
