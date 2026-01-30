@@ -50,9 +50,9 @@ vi.mock("./Logger", () => {
   };
 });
 
-// Mock @services/index.js
-// 注意：WebServer.ts 从 @services/index.js 导入多个模块，必须全部 Mock
-vi.mock("@services/index.js", () => {
+// Mock @/services/index.js
+// 注意：WebServer.ts 从 @/services/index.js 导入多个模块，必须全部 Mock
+vi.mock("@/services/index.js", () => {
   const mockEventBus = {
     onEvent: vi.fn().mockReturnThis(),
     emit: vi.fn(),
@@ -114,13 +114,13 @@ const mockConfigServiceInstance = {
   updateMcpEndpoint: vi.fn().mockResolvedValue(undefined),
 };
 
-vi.mock("@services/ConfigService", () => {
+vi.mock("@/services/ConfigService", () => {
   return {
     ConfigService: vi.fn(() => mockConfigServiceInstance),
   };
 });
 
-// StatusService 和 NotificationService 已在 @services/index.js mock 中定义
+// StatusService 和 NotificationService 已在 @/services/index.js mock 中定义
 
 // Mock API 处理器
 vi.mock("./handlers/config.handler", () => {
@@ -937,7 +937,7 @@ describe("WebServer", () => {
       webServer = new WebServer(currentPort);
 
       // 验证事件总线被正确获取
-      const { getEventBus } = await import("@services/index.js");
+      const { getEventBus } = await import("@/services/index.js");
       expect(getEventBus).toHaveBeenCalled();
     });
   });
@@ -1728,7 +1728,7 @@ describe("WebServer", () => {
       webServer = new WebServer(currentPort);
 
       // 验证事件总线 onEvent 方法被调用
-      const { getEventBus } = await import("@services/index.js");
+      const { getEventBus } = await import("@/services/index.js");
       const mockEventBus = getEventBus();
       expect(mockEventBus.onEvent).toHaveBeenCalledWith(
         "endpoint:status:changed",
@@ -1741,7 +1741,7 @@ describe("WebServer", () => {
       await webServer.start();
 
       // 获取事件总线并触发事件
-      const { getEventBus } = await import("@services/index.js");
+      const { getEventBus } = await import("@/services/index.js");
       const mockEventBus = getEventBus() as any;
 
       // 模拟事件回调 - 使用 vi.mocked 来访问 mock 属性
@@ -1752,8 +1752,8 @@ describe("WebServer", () => {
       )?.[1];
 
       if (eventCallback) {
-        // 从 @services/index.js 导入 NotificationService（与 mock 路径一致）
-        const { NotificationService } = await import("@services/index.js");
+        // 从 @/services/index.js 导入 NotificationService（与 mock 路径一致）
+        const { NotificationService } = await import("@/services/index.js");
         const mockNotificationService = vi.mocked(NotificationService);
         const mockInstance = mockNotificationService.mock.results[0]?.value;
 

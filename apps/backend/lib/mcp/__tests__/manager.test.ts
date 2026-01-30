@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomMCPHandler } from "../custom.js";
 
 // Mock dependencies
-vi.mock("@root/Logger.js", () => ({
+vi.mock("@/root/Logger.js", () => ({
   logger: {
     info: vi.fn(),
     error: vi.fn(),

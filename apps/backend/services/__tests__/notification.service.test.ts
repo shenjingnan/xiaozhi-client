@@ -13,7 +13,7 @@ vi.mock("../event-bus.service.js", () => ({
 }));
 
 // Mock Logger
-vi.mock("@root/Logger.js", () => ({
+vi.mock("@/root/Logger.js", () => ({
   logger: {
     debug: vi.fn(),
     info: vi.fn(),

@@ -1,15 +1,15 @@
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { MCPService } from "@/lib/mcp";
-import type { AppContext } from "@/types/hono.context.js";
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
+import type { Logger } from "@/root/Logger.js";
+import { logger } from "@/root/Logger.js";
 import {
   ErrorCategory,
   MCPError,
   MCPErrorCode,
-} from "@root/errors/MCPErrors.js";
-import { getEventBus } from "@services/event-bus.service.js";
+} from "@/root/errors/MCPErrors.js";
+import { getEventBus } from "@/services/event-bus.service.js";
+import type { AppContext } from "@/types/hono.context.js";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { ConfigManager, MCPServerConfig } from "@xiaozhi-client/config";
 import { normalizeServiceConfig } from "@xiaozhi-client/config";
 import { TypeFieldNormalizer } from "@xiaozhi-client/mcp-core";
@@ -101,12 +101,12 @@ export interface MCPServerListResponse {
 
 /**
  * 统一响应格式接口
- * 从 @middlewares/index.js 导入，保持类型一致性
+ * 从 @/middlewares/index.js 导入，保持类型一致性
  */
 export type {
   ApiErrorResponse,
   ApiSuccessResponse,
-} from "@middlewares/index.js";
+} from "@/middlewares/index.js";
 
 /**
  * 配置验证结果接口

@@ -3,7 +3,7 @@
  * 负责创建和管理 EndpointHandler 实例
  */
 
-import { EndpointHandler } from "@handlers/endpoint.handler.js";
+import { EndpointHandler } from "@/handlers/endpoint.handler.js";
 import { configManager } from "@xiaozhi-client/config";
 import type { EndpointManager } from "@xiaozhi-client/endpoint";
 import type { MiddlewareHandler } from "hono";

@@ -4,23 +4,23 @@ import type { RunWorkflowData } from "@/lib/coze";
 import type { MCPServiceManager } from "@/lib/mcp";
 import { MCPCacheManager } from "@/lib/mcp";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
-import { getEventBus } from "@root/services/event-bus.service.js";
+import type { Logger } from "@/root/Logger.js";
+import { logger } from "@/root/Logger.js";
+import { getEventBus } from "@/root/services/event-bus.service.js";
 import type {
   EnhancedToolResultCache,
   ExtendedMCPToolsCache,
   ToolCallResponse,
   ToolCallResult,
-} from "@root/types/mcp.js";
+} from "@/root/types/mcp.js";
 import {
   DEFAULT_CONFIG,
   generateCacheKey,
   isCacheExpired,
   shouldCleanupCache,
-} from "@root/types/mcp.js";
-import { TimeoutError, createTimeoutResponse } from "@root/types/timeout.js";
+} from "@/root/types/mcp.js";
+import { TimeoutError, createTimeoutResponse } from "@/root/types/timeout.js";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type {
   CustomMCPTool,
   HandlerConfig,

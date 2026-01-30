@@ -1,8 +1,5 @@
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
-import { MCPServiceManager } from "@/lib/mcp";
-import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
-import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import {
   ConfigApiHandler,
   CozeHandler,
@@ -17,9 +14,10 @@ import {
   StatusApiHandler,
   UpdateApiHandler,
   VersionApiHandler,
-} from "@handlers/index.js";
-import type { ServerType } from "@hono/node-server";
-import { serve } from "@hono/node-server";
+} from "@/handlers/index.js";
+import { MCPServiceManager } from "@/lib/mcp";
+import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
+import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import {
   corsMiddleware,
   endpointManagerMiddleware,
@@ -29,19 +27,21 @@ import {
   mcpServiceManagerMiddleware,
   notFoundHandlerMiddleware,
   responseEnhancerMiddleware,
-} from "@middlewares/index.js";
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
-import type { AppContext } from "@root/types/index.js";
-import { createApp } from "@root/types/index.js";
-import type { EventBus, EventBusEvents } from "@services/index.js";
+} from "@/middlewares/index.js";
+import type { Logger } from "@/root/Logger.js";
+import { logger } from "@/root/Logger.js";
+import type { AppContext } from "@/root/types/index.js";
+import { createApp } from "@/root/types/index.js";
+import type { EventBus, EventBusEvents } from "@/services/index.js";
 import {
   NotificationService,
   StatusService,
   destroyEventBus,
   getEventBus,
-} from "@services/index.js";
+} from "@/services/index.js";
+import type { ServerType } from "@hono/node-server";
+import { serve } from "@hono/node-server";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { normalizeServiceConfig } from "@xiaozhi-client/config";
 import { configManager } from "@xiaozhi-client/config";
 import type { MCPServerConfig } from "@xiaozhi-client/config";
@@ -50,7 +50,7 @@ import type { SimpleConnectionStatus } from "@xiaozhi-client/endpoint";
 import type { Hono } from "hono";
 import { WebSocketServer } from "ws";
 
-import { HTTP_SERVER_CONFIG } from "@constants/index.js";
+import { HTTP_SERVER_CONFIG } from "@/constants/index.js";
 import { MCPServiceManagerNotInitializedError } from "./errors/MCPErrors.middleware.js";
 // 路由系统导入
 import {

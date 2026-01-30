@@ -1,7 +1,7 @@
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
-import type { EventBus } from "@services/event-bus.service.js";
-import { getEventBus } from "@services/event-bus.service.js";
+import type { Logger } from "@/root/Logger.js";
+import { logger } from "@/root/Logger.js";
+import type { EventBus } from "@/services/event-bus.service.js";
+import { getEventBus } from "@/services/event-bus.service.js";
 
 /**
  * 客户端信息接口

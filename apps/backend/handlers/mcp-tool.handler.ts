@@ -6,24 +6,24 @@
 import { MCPCacheManager } from "@/lib/mcp";
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
-import type { AppContext } from "@/types/hono.context.js";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
+import type { Logger } from "@/root/Logger.js";
+import { logger } from "@/root/Logger.js";
 import type {
   CozeWorkflow,
   WorkflowParameterConfig,
-} from "@root/types/coze.js";
+} from "@/root/types/coze.js";
 import type {
   AddCustomToolRequest,
   AddToolResponse,
   CozeWorkflowData,
   MCPToolData,
-} from "@root/types/toolApi.js";
-import { ToolType } from "@root/types/toolApi.js";
+} from "@/root/types/toolApi.js";
+import { ToolType } from "@/root/types/toolApi.js";
 import type {
   CustomMCPToolWithStats,
   JSONSchema,
-} from "@root/types/toolApi.js";
+} from "@/root/types/toolApi.js";
+import type { AppContext } from "@/types/hono.context.js";
 import { configManager } from "@xiaozhi-client/config";
 import type { CustomMCPTool, ProxyHandlerConfig } from "@xiaozhi-client/config";
 import Ajv from "ajv";

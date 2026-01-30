@@ -3,7 +3,7 @@
  * 测试核心业务逻辑和边界条件处理
  */
 
-import { ToolType } from "@root/types/toolApi.js";
+import { ToolType } from "@/root/types/toolApi.js";
 import { configManager } from "@xiaozhi-client/config";
 import type { Context } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

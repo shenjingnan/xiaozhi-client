@@ -16,7 +16,7 @@ import type {
   StatusApiHandler,
   UpdateApiHandler,
   VersionApiHandler,
-} from "@handlers/index.js";
+} from "@/handlers/index.js";
 import type { Context, MiddlewareHandler } from "hono";
 
 /**

@@ -6,7 +6,7 @@
 import type {
   CozeWorkflow,
   WorkflowParameterConfig,
-} from "@root/types/coze.js";
+} from "@/root/types/coze.js";
 import { configManager } from "@xiaozhi-client/config";
 import type { Context } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

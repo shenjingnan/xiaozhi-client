@@ -1,4 +1,4 @@
-import type { StatusService } from "@services/status.service.js";
+import type { StatusService } from "@/services/status.service.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ServiceApiHandler } from "../service.handler.js";
 
@@ -16,7 +16,7 @@ vi.mock("node:child_process", () => ({
   spawn: vi.fn(),
 }));
 
-vi.mock("@services/event-bus.service.js", () => ({
+vi.mock("@/services/event-bus.service.js", () => ({
   getEventBus: vi.fn().mockReturnValue({
     emitEvent: vi.fn(),
   }),
@@ -83,7 +83,7 @@ describe("ServiceApiHandler", () => {
     mockEventBus = {
       emitEvent: vi.fn(),
     };
-    const { getEventBus } = await import("@services/event-bus.service.js");
+    const { getEventBus } = await import("@/services/event-bus.service.js");
     vi.mocked(getEventBus).mockReturnValue(mockEventBus);
 
     handler = new ServiceApiHandler(mockStatusService);

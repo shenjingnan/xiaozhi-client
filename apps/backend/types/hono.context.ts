@@ -4,7 +4,7 @@
  */
 
 import type { MCPServiceManager } from "@/lib/mcp";
-import type { Logger } from "@root/Logger.js";
+import type { Logger } from "@/root/Logger.js";
 import type { EndpointManager } from "@xiaozhi-client/endpoint";
 import type { Context } from "hono";
 import { Hono } from "hono";

@@ -6,10 +6,10 @@
  * @example
  * ```typescript
  * // 导入所有常量
- * import * as Constants from "@constants/index.js";
+ * import * as Constants from "@/constants/index.js";
  *
  * // 或使用命名导入
- * import { HTTP_CONTENT_TYPES, MCP_METHODS } from "@constants/index.js";
+ * import { HTTP_CONTENT_TYPES, MCP_METHODS } from "@/constants/index.js";
  * ```
  */
 
