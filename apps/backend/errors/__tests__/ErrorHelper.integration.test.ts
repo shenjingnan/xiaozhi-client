@@ -5,6 +5,7 @@ import type { InternalMCPServiceConfig } from "@/lib/mcp";
 import { MCPTransportType } from "@/lib/mcp";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Logger } from "../../Logger.js";
+import type { MCPError } from "../ErrorHelper.js";
 import {
   ErrorCategory,
   categorizeError,
@@ -86,7 +87,7 @@ describe("Advanced Features Integration", () => {
       const serviceName = "test-service-2";
 
       // Generate multiple errors to trigger alert
-      const errors = [];
+      const errors: MCPError[] = [];
       for (let i = 0; i < 12; i++) {
         const error = new Error(`Error ${i}`);
         const mcpError = categorizeError(error, serviceName);

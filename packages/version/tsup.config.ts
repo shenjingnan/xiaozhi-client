@@ -19,7 +19,12 @@ export default defineConfig({
   outDir: "dist",
   clean: true,
   sourcemap: true,
-  dts: true,
+  dts: {
+    entry: ['src/index.ts'],
+    compilerOptions: {
+      composite: false
+    }
+  },
   minify: false,
   splitting: false,
   bundle: true,
