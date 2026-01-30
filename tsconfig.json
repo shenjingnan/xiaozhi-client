@@ -10,18 +10,6 @@
     "outDir": "./dist",
     "rootDir": "./apps/backend",
     "baseUrl": ".",
-    "paths": {
-      "@xiaozhi-client/config": ["packages/config/dist"],
-      "@xiaozhi-client/config/*": ["packages/config/dist/*"],
-      "@xiaozhi-client/endpoint": ["packages/endpoint/dist"],
-      "@xiaozhi-client/endpoint/*": ["packages/endpoint/dist/*"],
-      "@xiaozhi-client/mcp-core": ["packages/mcp-core/dist"],
-      "@xiaozhi-client/mcp-core/*": ["packages/mcp-core/dist/*"],
-      "@xiaozhi-client/shared-types": ["packages/shared-types/dist"],
-      "@xiaozhi-client/shared-types/*": ["packages/shared-types/dist/*"],
-      "@xiaozhi-client/version": ["packages/version/dist"],
-      "@xiaozhi-client/version/*": ["packages/version/dist/*"]
-    },
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
