@@ -4,13 +4,13 @@
  */
 
 import type { EventBus } from "@/services/event-bus.service.js";
-import { getEventBus } from "@root/services/event-bus.service.js";
+import { getEventBus } from "@/services/event-bus.service.js";
 import type { CustomMCPTool } from "@xiaozhi-client/config";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CustomMCPHandler } from "../custom.js";
 
 // Mock logger
-vi.mock("@root/Logger.js", () => ({
+vi.mock("@/Logger.js", () => ({
   logger: {
     debug: vi.fn(),
     info: vi.fn(),
@@ -309,7 +309,7 @@ describe("CustomMCPHandler 基础功能测试", () => {
 
   describe("配置更新响应测试", () => {
     it("应该在配置更新处理失败时记录错误", async () => {
-      const { logger } = await import("@root/Logger.js");
+      const { logger } = await import("@/Logger.js");
 
       // Mock initialize 方法抛出异常
       vi.spyOn(customMCPHandler, "initialize").mockImplementation(() => {

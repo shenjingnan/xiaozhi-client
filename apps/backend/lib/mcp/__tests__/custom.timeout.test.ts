@@ -17,7 +17,7 @@ type TestableCustomMCPHandler = {
 };
 
 // Mock logger
-vi.mock("@root/Logger.js", () => ({
+vi.mock("@/Logger.js", () => ({
   logger: {
     debug: vi.fn(),
     info: vi.fn(),

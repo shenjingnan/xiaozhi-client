@@ -1,5 +1,5 @@
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
+import type { Logger } from "@/Logger.js";
+import { logger } from "@/Logger.js";
 
 /**
  * 错误分类枚举

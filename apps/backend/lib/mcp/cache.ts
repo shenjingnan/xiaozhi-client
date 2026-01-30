@@ -13,6 +13,8 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, resolve } from "node:path";
+import type { Logger } from "@/Logger.js";
+import { logger } from "@/Logger.js";
 import {
   CACHE_FILE_CONFIG,
   CACHE_TIMEOUTS,
@@ -20,17 +22,15 @@ import {
   TOOL_NAME_SEPARATORS,
 } from "@/constants/index.js";
 import type { MCPServiceConfig } from "@/lib/mcp/types";
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
 import type {
   CacheStatistics,
   EnhancedToolResultCache,
   ExtendedMCPToolsCache,
   TaskStatus,
   ToolCallResult,
-} from "@root/types/index.js";
-import { generateCacheKey, shouldCleanupCache } from "@root/types/index.js";
+} from "@/types/index.js";
+import { generateCacheKey, shouldCleanupCache } from "@/types/index.js";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import dayjs from "dayjs";
 
 // 缓存条目接口
@@ -66,7 +66,7 @@ export type {
   CacheStatistics,
   EnhancedToolResultCache,
   ExtendedMCPToolsCache,
-} from "@root/types/index.js";
+} from "@/types/index.js";
 
 export class MCPCacheManager {
   private cachePath: string;

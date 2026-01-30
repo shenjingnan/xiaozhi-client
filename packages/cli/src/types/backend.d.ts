@@ -39,10 +39,10 @@ declare module "@/lib/config/manager.js" {
   export const configManager: any;
 }
 
-declare module "@root/WebServer" {
+declare module "@/WebServer" {
   export class WebServer {}
 }
 
-declare module "@root/WebServer.js" {
+declare module "@/WebServer.js" {
   export class WebServer {}
 }

@@ -1,8 +1,8 @@
+import type { Logger } from "@/Logger.js";
+import { logger } from "@/Logger.js";
 import { HEARTBEAT_MONITORING } from "@/constants/index.js";
 import type { NotificationService } from "@/services/notification.service.js";
 import type { StatusService } from "@/services/status.service.js";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
 import { configManager } from "@xiaozhi-client/config";
 
 /**

@@ -1,15 +1,11 @@
+import type { Logger } from "@/Logger.js";
+import { logger } from "@/Logger.js";
+import { ErrorCategory, MCPError, MCPErrorCode } from "@/errors/MCPErrors.js";
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { MCPService } from "@/lib/mcp";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { AppContext } from "@/types/hono.context.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
-import {
-  ErrorCategory,
-  MCPError,
-  MCPErrorCode,
-} from "@root/errors/MCPErrors.js";
 import type { ConfigManager, MCPServerConfig } from "@xiaozhi-client/config";
 import { normalizeServiceConfig } from "@xiaozhi-client/config";
 import { TypeFieldNormalizer } from "@xiaozhi-client/mcp-core";

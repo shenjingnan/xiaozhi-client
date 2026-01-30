@@ -1,7 +1,7 @@
 import { EventEmitter } from "node:events";
+import type { Logger } from "@/Logger.js";
+import { logger } from "@/Logger.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { Logger } from "@root/Logger.js";
-import { logger } from "@root/Logger.js";
 
 /**
  * 事件类型定义

@@ -85,8 +85,7 @@ argument-hint: [scope] [target]
   "@transports/*": ["apps/backend/transports/*"], // 传输层适配器
   "@adapters/*": ["apps/backend/adapters/*"],     // 适配器模式
   "@managers/*": ["apps/backend/managers/*"],     // 管理器服务
-  "@types/*": ["apps/backend/types/*"],           // 类型定义
-  "@root/*": ["apps/backend/*"]                   // 根目录别名
+  "@types/*": ["apps/backend/types/*"]            // 类型定义
 }
 ```
 

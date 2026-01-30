@@ -40,7 +40,7 @@ const mockMCPServerInstance = {
   stop: vi.fn().mockResolvedValue(undefined),
 };
 
-vi.mock("@root/WebServer.js", () => ({
+vi.mock("@/WebServer.js", () => ({
   WebServer: vi.fn().mockImplementation(() => mockWebServerInstance),
 }));
 
@@ -184,7 +184,7 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
     );
 
     // Mock dynamic import for WebServer
-    vi.doMock("@root/WebServer.js", () => ({
+    vi.doMock("@/WebServer.js", () => ({
       WebServer: vi.fn().mockImplementation(() => mockWebServerInstance),
     }));
   });

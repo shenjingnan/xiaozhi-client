@@ -121,6 +121,6 @@ export const setupCommonMocks = (
   // 这些 mock 需要在测试文件中手动设置，因为 Vitest 的限制
   // 使用示例：
   // import { setupCommonMocks, createMockConfigManager, createMockLogger } from "./utils/index.js";
-  // vi.mock("@root/Logger.js", () => ({ logger: createMockLogger(loggerOverrides) }));
+  // vi.mock("@/Logger.js", () => ({ logger: createMockLogger(loggerOverrides) }));
   // vi.mock("@xiaozhi-client/config", () => ({ configManager: createMockConfigManager(configOverrides) }));
 };

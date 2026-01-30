@@ -10,8 +10,7 @@
     "noImplicitAny": false,
     "types": ["vitest/globals"],
     "paths": {
-      "@/*": ["./*"],
-      "@root/*": ["./*"]
+      "@/*": ["./*"]
     }
   },
   "include": ["./**/*.ts"],

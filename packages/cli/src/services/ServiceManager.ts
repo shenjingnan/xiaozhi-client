@@ -264,7 +264,7 @@ export class ServiceManagerImpl implements IServiceManager {
       process.exit(0);
     } else {
       // 前台模式 - 直接启动 Web Server
-      const { WebServer } = await import("@root/WebServer.js");
+      const { WebServer } = await import("@/WebServer.js");
       const server = new WebServer(port);
 
       // 处理退出信号
@@ -323,7 +323,7 @@ export class ServiceManagerImpl implements IServiceManager {
    * 前台模式启动 WebServer
    */
   private async startWebServerInForeground(): Promise<void> {
-    const { WebServer } = await import("@root/WebServer.js");
+    const { WebServer } = await import("@/WebServer.js");
     const server = new WebServer();
 
     // 处理退出信号

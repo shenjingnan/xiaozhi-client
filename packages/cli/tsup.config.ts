@@ -66,8 +66,8 @@ export default defineConfig({
     "@xiaozhi-client/version",
     "@xiaozhi-client/version.js",
     // Backend 模块（运行时从 dist/backend 读取）
-    "@root/WebServer",
-    "@root/WebServer.js",
+    "@/WebServer",
+    "@/WebServer.js",
   ],
   outExtension: () => ({
     js: ".js",
@@ -77,24 +77,21 @@ export default defineConfig({
     const filePath = resolve("../../dist/cli/index.js");
     let content = readFileSync(filePath, "utf-8");
 
-    // 替换 @root/* 为指向正确位置的相对路径
+    // 替换 @/* 为指向正确位置的相对路径
     // 注意：@xiaozhi-client/config 现在从 node_modules 解析，不需要替换
     content = content
       .replace(
-        /from\s*["']@root\/WebServer\.js["']/g,
+        /from\s*["']@\/WebServer\.js["']/g,
         'from "../backend/WebServer.js"'
       )
+      .replace(/from\s*["']@\/WebServer["']/g, 'from "../backend/WebServer.js"')
+      // 替换动态导入中的 @/WebServer.js
       .replace(
-        /from\s*["']@root\/WebServer["']/g,
-        'from "../backend/WebServer.js"'
-      )
-      // 替换动态导入中的 @root/WebServer.js
-      .replace(
-        /import\(["']@root\/WebServer\.js["']\)/g,
+        /import\(["']@\/WebServer\.js["']\)/g,
         'import("../backend/WebServer.js")'
       )
       .replace(
-        /import\(["']@root\/WebServer["']\)/g,
+        /import\(["']@\/WebServer["']\)/g,
         'import("../backend/WebServer.js")'
       );
 

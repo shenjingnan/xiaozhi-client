@@ -8,7 +8,7 @@ import type {
   CozeWorkflowsData,
   CozeWorkflowsParams,
   CozeWorkflowsResponse,
-} from "@root/types/coze";
+} from "@/types/coze";
 import NodeCache from "node-cache";
 import { createCozeClient } from "./client";
 
