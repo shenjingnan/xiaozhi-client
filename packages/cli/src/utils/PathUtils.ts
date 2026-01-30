@@ -60,7 +60,9 @@ export class PathUtils {
     const scriptDir = path.dirname(__filename);
 
     return [
-      // 构建后的环境：dist/cli.js -> dist/templates
+      // 构建后的本地开发环境：dist/cli/index.js -> dist/templates
+      path.join(scriptDir, "..", PATH_CONSTANTS.TEMPLATES_DIR),
+      // dist/cli.js -> dist/cli/templates（保留向后兼容）
       path.join(scriptDir, PATH_CONSTANTS.TEMPLATES_DIR),
       // 构建环境：dist/cli/index.js -> dist/backend/templates
       path.join(scriptDir, "..", "backend", PATH_CONSTANTS.TEMPLATES_DIR),
