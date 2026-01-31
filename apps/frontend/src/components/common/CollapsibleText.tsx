@@ -89,7 +89,7 @@ export function CollapsibleText({
         <button
           type="button"
           onClick={toggleExpanded}
-          className="text-sm text-primary hover:underline flex items-center gap-1 w-fit"
+          className="text-xs text-primary hover:underline flex items-center gap-1 w-fit"
         >
           {isExpanded ? (
             <>
