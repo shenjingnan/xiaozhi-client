@@ -209,4 +209,25 @@ describe("CollapsibleText", () => {
     expect(screen.getByText("收起")).toBeInTheDocument();
     expect(screen.queryByText("展开")).not.toBeInTheDocument();
   });
+
+  it("应该使用默认文字大小 text-sm", () => {
+    const { container } = render(
+      <CollapsibleText text="测试文本" maxLength={100} />
+    );
+
+    const textElement = container.querySelector("p");
+    expect(textElement).toHaveClass("text-sm");
+  });
+
+  it("应该支持自定义文字大小", () => {
+    const { container: containerXs } = render(
+      <CollapsibleText text="测试文本" maxLength={100} textSize="text-xs" />
+    );
+    const { container: containerBase } = render(
+      <CollapsibleText text="测试文本" maxLength={100} textSize="text-base" />
+    );
+
+    expect(containerXs.querySelector("p")).toHaveClass("text-xs");
+    expect(containerBase.querySelector("p")).toHaveClass("text-base");
+  });
 });

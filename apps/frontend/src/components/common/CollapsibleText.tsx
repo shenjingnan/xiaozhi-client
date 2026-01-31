@@ -16,6 +16,8 @@ interface CollapsibleTextProps {
   storageKey?: string;
   /** 自定义样式类 */
   className?: string;
+  /** 文字大小（默认：text-sm） */
+  textSize?: "text-xs" | "text-sm" | "text-base" | "text-lg" | "text-xl";
 }
 
 /**
@@ -33,6 +35,7 @@ export function CollapsibleText({
   maxLength = 100,
   storageKey,
   className,
+  textSize = "text-sm",
 }: CollapsibleTextProps) {
   // 从 localStorage 读取初始状态
   const getInitialExpandedState = (): boolean => {
@@ -76,9 +79,9 @@ export function CollapsibleText({
     <div className={cn("flex flex-col gap-1", className)}>
       {/* 文本内容 */}
       {isExpanded || !needsCollapsing ? (
-        <p className="break-words">{displayText}</p>
+        <p className={cn("break-words", textSize)}>{displayText}</p>
       ) : (
-        <p className="break-words">
+        <p className={cn("break-words", textSize)}>
           {displayText.slice(0, maxLength)}
           <span className="text-muted-foreground">...</span>
         </p>
@@ -89,7 +92,7 @@ export function CollapsibleText({
         <button
           type="button"
           onClick={toggleExpanded}
-          className="text-xs text-primary hover:underline flex items-center gap-1 w-fit"
+          className={cn("text-primary hover:underline flex items-center gap-1 w-fit", textSize)}
         >
           {isExpanded ? (
             <>

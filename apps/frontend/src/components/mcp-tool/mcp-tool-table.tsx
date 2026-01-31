@@ -429,6 +429,7 @@ export function McpToolTable({
                       <CollapsibleText
                         text={tool.description}
                         maxLength={100}
+                        textSize="text-xs"
                         storageKey={`mcp-tool-desc-${tool.name}`}
                       />
                     </TableCell>
