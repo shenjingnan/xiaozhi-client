@@ -10,7 +10,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { apiClient } from "@/services/api";
 import {
@@ -26,11 +25,6 @@ import type {
 } from "@xiaozhi-client/shared-types";
 import {
   CoffeeIcon,
-  MinusIcon,
-  PlusIcon,
-  Settings,
-  Wrench,
-  ZapIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -47,10 +41,12 @@ const CUSTOM_SERVICE_NAME = "自定义服务";
 
 interface McpServerListProps {
   updateConfig?: (config: any) => Promise<void>;
+  className?: string;
 }
 
 export function McpServerList({
   updateConfig: _updateConfig,
+  className,
 }: McpServerListProps) {
   const mcpServerConfig = useMcpServerConfig();
   const mcpServers = useMcpServers();
@@ -489,16 +485,13 @@ export function McpServerList({
   }
 
   return (
-    <div>
-      <div className="*:data-[slot=card]:shadow-xs @xl/main:grid-cols-8 @5xl/main:grid-cols-8 grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card">
-        <div className="transition-all duration-200 gap-4 flex flex-col col-span-2">
-          <div className="flex flex-col gap-2">
+    <div className={className}>
+        <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <AddMcpServerButton />
               <RestartButton />
             </div>
             <CozeWorkflowIntegration onToolAdded={refreshToolLists} />
-          </div>
           {Object.entries(mcpServers || {}).map(
             ([mcpServerName, mcpServer]) => (
               <Card
@@ -542,7 +535,6 @@ export function McpServerList({
             )
           )}
         </div>
-      </div>
 
       {/* Coze 工具移除确认对话框 */}
       <AlertDialog

@@ -29,7 +29,6 @@ import {
   Loader2,
   MinusIcon,
   PlusIcon,
-  RefreshCw,
   ZapIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
