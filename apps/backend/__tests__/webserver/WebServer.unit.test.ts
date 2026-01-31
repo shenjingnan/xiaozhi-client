@@ -81,6 +81,23 @@ vi.mock("@/lib/mcp", () => ({
   })),
 }));
 
+/**
+ * 创建 Mock EndpointManager 的工厂函数
+ * 使用 Partial 类型配合 as any 断言来绕过完整类型检查
+ */
+function createMockEndpointManager(): any {
+  return {
+    initialize: vi.fn().mockResolvedValue(undefined),
+    connect: vi.fn().mockResolvedValue(undefined),
+    cleanup: vi.fn().mockResolvedValue(undefined),
+    setServiceManager: vi.fn(),
+    getConnectionStatus: vi.fn().mockReturnValue([]),
+    on: vi.fn(),
+    addEndpoint: vi.fn(),
+    getEndpoints: vi.fn().mockReturnValue([]),
+  };
+}
+
 describe("WebServer 单元测试", () => {
   let webServer: WebServer;
   const mockPort = 3001;
@@ -107,11 +124,8 @@ describe("WebServer 单元测试", () => {
     });
 
     it("应该在无连接时返回 none 状态", () => {
-      // 创建一个 mock 连接管理器
-      const mockManager = {
-        getConnectionStatus: vi.fn().mockReturnValue([]),
-        cleanup: vi.fn().mockResolvedValue(undefined),
-      };
+      // 使用工厂函数创建 mock 连接管理器
+      const mockManager = createMockEndpointManager();
       webServer.setXiaozhiConnectionManager(mockManager);
 
       const connectionStatus = webServer.getEndpointConnectionStatus();
@@ -128,14 +142,13 @@ describe("WebServer 单元测试", () => {
     });
 
     it("应该处理多端点配置", () => {
-      // Mock 成功的连接管理器
-      const mockManager = {
-        getConnectionStatus: vi.fn().mockReturnValue([
-          { endpoint: "wss://test1.example.com", connected: true },
-          { endpoint: "wss://test2.example.com", connected: true },
-        ]),
-        cleanup: vi.fn().mockResolvedValue(undefined),
-      };
+      // 使用工厂函数创建 mock 连接管理器
+      const mockManager = createMockEndpointManager();
+      // 配置特定的返回值
+      mockManager.getConnectionStatus = vi.fn().mockReturnValue([
+        { endpoint: "wss://test1.example.com", connected: true },
+        { endpoint: "wss://test2.example.com", connected: true },
+      ]);
 
       // 使用依赖注入设置 mock 连接管理器
       webServer.setXiaozhiConnectionManager(mockManager);
@@ -224,7 +237,7 @@ describe("WebServer 单元测试", () => {
       webServer.setXiaozhiConnectionManager(mockConnectionManager);
 
       // 设置 mcpServiceManager
-      webServer.mcpServiceManager = mockServiceManager;
+      webServer.setMCPServiceManager(mockServiceManager);
 
       // 调用被测试的方法
       await (webServer as any).initializeXiaozhiConnection(
@@ -244,7 +257,7 @@ describe("WebServer 单元测试", () => {
       webServer.setXiaozhiConnectionManager(mockConnectionManager);
 
       // 设置 mcpServiceManager
-      webServer.mcpServiceManager = mockServiceManager;
+      webServer.setMCPServiceManager(mockServiceManager);
 
       // 调用被测试的方法 - 空配置
       await (webServer as any).initializeXiaozhiConnection("", {});
@@ -260,7 +273,7 @@ describe("WebServer 单元测试", () => {
       // 使用依赖注入设置 mock 连接管理器
       webServer.setXiaozhiConnectionManager(mockConnectionManager);
 
-      webServer.mcpServiceManager = mockServiceManager;
+      webServer.setMCPServiceManager(mockServiceManager);
 
       // 调用被测试的方法 - 无效端点
       await (webServer as any).initializeXiaozhiConnection(
