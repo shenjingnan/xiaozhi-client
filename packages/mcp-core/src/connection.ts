@@ -325,8 +325,13 @@ export class MCPConnection {
     }
     const interval = this.heartbeatConfig?.interval ?? 30 * 1000;
 
-    this.heartbeatTimer = setInterval(async () => {
-      await this.performHeartbeat();
+    this.heartbeatTimer = setInterval(() => {
+      this.performHeartbeat().catch((error) => {
+        console.error(
+          `[MCP-${this.name}] 心跳检测执行异常：`,
+          error instanceof Error ? error.message : String(error)
+        );
+      });
     }, interval);
 
     console.debug(

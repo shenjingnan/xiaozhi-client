@@ -12,6 +12,7 @@ interface MockClient {
   close: ReturnType<typeof vi.fn>;
   listTools: ReturnType<typeof vi.fn>;
   callTool: ReturnType<typeof vi.fn>;
+  ping: ReturnType<typeof vi.fn>;
 }
 
 // Mock 依赖

@@ -92,7 +92,7 @@ export interface ModelScopeSSEOptions {
  * 心跳检测配置接口
  */
 export interface HeartbeatConfig {
-  /** 是否启用心跳检测（默认 false） */
+  /** 是否启用心跳检测（默认 true） */
   enabled?: boolean;
   /** 心跳间隔（毫秒，默认 30000 = 30秒） */
   interval?: number;
