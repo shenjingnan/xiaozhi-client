@@ -33,10 +33,10 @@ export class MCPConnection {
     // 使用工具方法推断服务类型（传递服务名称用于日志）
     this.config = inferTransportTypeFromConfig(config, name);
     this.callbacks = callbacks;
-    // 保存心跳配置
+    // 保存心跳配置 - 优先使用用户配置
     this.heartbeatConfig = {
-      enabled: true,
-      interval: 30 * 1000,
+      enabled: config.heartbeat?.enabled ?? true,  // 默认启用
+      interval: config.heartbeat?.interval ?? 30 * 1000,  // 默认 30 秒
     };
 
     // 验证配置
