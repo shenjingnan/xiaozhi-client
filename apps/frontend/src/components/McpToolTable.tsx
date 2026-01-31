@@ -1,6 +1,7 @@
 "use client";
 
 import { ToolDebugDialog } from "@/components/ToolDebugDialog";
+import { ToolSearchInput } from "@/components/ToolSearchInput";
 import { ToolSortSelector } from "@/components/ToolSortSelector";
 import {
   AlertDialog,
@@ -23,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useToolSearch } from "@/hooks/useToolSearch";
 import { useToolSortPersistence } from "@/hooks/useToolSortPersistence";
 import { cn } from "@/lib/utils";
 import { apiClient } from "@/services/api";
@@ -35,7 +37,7 @@ import { toast } from "sonner";
 const UNKNOWN_SERVICE_NAME = "未知服务";
 const CUSTOM_SERVICE_NAME = "自定义服务";
 
-interface ToolRowData {
+export interface ToolRowData {
   name: string;
   serverName: string;
   toolName: string;
@@ -90,6 +92,10 @@ export function McpToolTable({
   const { sortConfig, setSortConfig } = useToolSortPersistence();
 
   const [tools, setTools] = useState<ToolRowData[]>([]);
+
+  // 使用搜索 Hook
+  const { searchValue, setSearchValue, filteredTools, clearSearch } =
+    useToolSearch(tools);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [_refreshing, setRefreshing] = useState(false);
@@ -326,10 +332,31 @@ export function McpToolTable({
 
   return (
     <div className={cn("flex flex-col gap-4", className)}>
-      {/* 排序选择器 */}
-      <div className="flex items-center justify-between">
+      {/* 排序选择器和搜索框 */}
+      <div className="flex items-center justify-between gap-4">
         <ToolSortSelector value={sortConfig} onChange={setSortConfig} />
+        <ToolSearchInput
+          value={searchValue}
+          onChange={setSearchValue}
+          placeholder="搜索服务名、工具名..."
+        />
       </div>
+
+      {/* 搜索结果提示 */}
+      {searchValue && (
+        <div className="text-sm text-muted-foreground">
+          找到 {filteredTools.length} 个结果
+          {filteredTools.length > 0 && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="ml-2 text-primary hover:underline"
+            >
+              清除搜索
+            </button>
+          )}
+        </div>
+      )}
 
       {/* 表格容器 */}
       <div className="rounded-md border">
@@ -349,16 +376,23 @@ export function McpToolTable({
               重试
             </Button>
           </div>
-        ) : tools.length === 0 ? (
+        ) : filteredTools.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 gap-4">
             <CoffeeIcon className="h-12 w-12 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">
-              {initialStatus === "enabled"
-                ? "没有已启用的工具"
-                : initialStatus === "disabled"
-                  ? "没有已禁用的工具"
-                  : "暂无可用工具"}
+              {searchValue
+                ? "没有找到匹配的工具"
+                : initialStatus === "enabled"
+                  ? "没有已启用的工具"
+                  : initialStatus === "disabled"
+                    ? "没有已禁用的工具"
+                    : "暂无可用工具"}
             </span>
+            {searchValue && (
+              <Button variant="outline" size="sm" onClick={clearSearch}>
+                清除搜索
+              </Button>
+            )}
           </div>
         ) : (
           <Table size="compact">
@@ -374,7 +408,7 @@ export function McpToolTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tools.map((tool) => (
+              {filteredTools.map((tool) => (
                 <TableRow key={tool.name}>
                   <TableCell>
                     <Badge variant="secondary" className="rounded-md">
