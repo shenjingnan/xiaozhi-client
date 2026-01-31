@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { configManager } from "@xiaozhi-client/config";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { WebServer } from "./WebServer";
+import { WebServer } from "../../WebServer";
 
 // Mock configManager
 vi.mock("@xiaozhi-client/config", () => ({
@@ -30,7 +30,7 @@ vi.mock("@xiaozhi-client/config", () => ({
 }));
 
 // Mock Logger 模块
-vi.mock("./Logger", () => {
+vi.mock("../../Logger", () => {
   const mockLogger = {
     debug: vi.fn(),
     info: vi.fn(),
@@ -123,7 +123,7 @@ vi.mock("@/lib/endpoint/index", () => ({
 }));
 
 // Mock normalizeServiceConfig
-vi.mock("./adapters/ConfigAdapter", () => ({
+vi.mock("../../adapters/ConfigAdapter", () => ({
   normalizeServiceConfig: vi.fn((name, config) => config),
 }));
 

@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Logger, logger } from "./Logger.js";
+import { Logger, logger } from "../Logger.js";
 
 // Mock dependencies
 vi.mock("node:fs", () => ({
@@ -123,14 +123,14 @@ describe("Logger", async () => {
   });
 
   describe("constructor", () => {
-    it("should create logger instance with default settings", () => {
+    it("应该创建 logger 实例（默认设置）", () => {
       const testLogger = new Logger();
 
       expect(mockPino).toHaveBeenCalled();
       expect(testLogger).toBeInstanceOf(Logger);
     });
 
-    it("should detect daemon mode from environment", () => {
+    it("应该从环境变量检测守护进程模式", () => {
       process.env.XIAOZHI_DAEMON = "true";
       const testLogger = new Logger();
 
@@ -138,7 +138,7 @@ describe("Logger", async () => {
       expect(testLogger).toBeInstanceOf(Logger);
     });
 
-    it("should detect non-daemon mode", () => {
+    it("应该检测非守护进程模式", () => {
       process.env.XIAOZHI_DAEMON = "false";
       const testLogger = new Logger();
 
@@ -148,7 +148,7 @@ describe("Logger", async () => {
   });
 
   describe("initLogFile", () => {
-    it("should initialize log file when it does not exist", () => {
+    it("应该在日志文件不存在时初始化", () => {
       const testLogger = new Logger();
       mockFs.existsSync.mockReturnValue(false);
 
@@ -166,7 +166,7 @@ describe("Logger", async () => {
       expect(mockPino).toHaveBeenCalledTimes(2); // 一次构造函数，一次 initLogFile
     });
 
-    it("should initialize log file when it already exists", () => {
+    it("应该在日志文件已存在时初始化", () => {
       const testLogger = new Logger();
       mockFs.existsSync.mockReturnValue(true);
 
@@ -178,8 +178,8 @@ describe("Logger", async () => {
     });
   });
 
-  describe("file logging", () => {
-    it("should automatically enable file logging when log file is initialized", () => {
+  describe("文件日志记录", () => {
+    it("应该在初始化日志文件时自动启用文件日志记录", () => {
       const testLogger = new Logger();
 
       testLogger.initLogFile("/test/project");
@@ -193,14 +193,14 @@ describe("Logger", async () => {
       });
     });
 
-    it("should not create file stream when no log file path is set", () => {
+    it("应该在没有设置日志文件路径时不创建文件流", () => {
       const testLogger = new Logger();
 
       // 只应该创建控制台流，不创建文件流
       expect(mockPino.destination).not.toHaveBeenCalled();
     });
 
-    it("should handle file logging in daemon mode", () => {
+    it("应该在守护进程模式下处理文件日志记录", () => {
       process.env.XIAOZHI_DAEMON = "true";
       const testLogger = new Logger();
       testLogger.initLogFile("/test/project");
@@ -210,7 +210,7 @@ describe("Logger", async () => {
       expect(mockPino.destination).toHaveBeenCalled();
     });
 
-    it("should handle close method", () => {
+    it("应该处理 close 方法", () => {
       const testLogger = new Logger();
 
       // close 方法应该存在且不抛出错误
@@ -218,7 +218,7 @@ describe("Logger", async () => {
     });
   });
 
-  describe("logging methods", () => {
+  describe("日志记录方法", () => {
     let testLogger: Logger;
 
     beforeEach(() => {
@@ -226,7 +226,7 @@ describe("Logger", async () => {
       testLogger.initLogFile("/test/project");
     });
 
-    it("should log info messages", () => {
+    it("应该记录 info 消息", () => {
       testLogger.info("Test info message", "arg1", "arg2");
 
       expect(mockPinoInstance.info).toHaveBeenCalledWith(
@@ -235,7 +235,7 @@ describe("Logger", async () => {
       );
     });
 
-    it("should log info messages with structured data", () => {
+    it("应该记录带结构化数据的 info 消息", () => {
       testLogger.info({ userId: 123, action: "test" }, "User action");
 
       expect(mockPinoInstance.info).toHaveBeenCalledWith(
@@ -244,13 +244,13 @@ describe("Logger", async () => {
       );
     });
 
-    it("should log info messages without arguments", () => {
+    it("应该记录不带参数的 info 消息", () => {
       testLogger.info("Simple message");
 
       expect(mockPinoInstance.info).toHaveBeenCalledWith("Simple message");
     });
 
-    it("should log success messages (mapped to info)", () => {
+    it("应该记录 success 消息（映射到 info）", () => {
       testLogger.success("Test success message");
 
       expect(mockPinoInstance.info).toHaveBeenCalledWith(
@@ -258,7 +258,7 @@ describe("Logger", async () => {
       );
     });
 
-    it("should log warning messages", () => {
+    it("应该记录 warning 消息", () => {
       testLogger.warn("Test warning message");
 
       expect(mockPinoInstance.warn).toHaveBeenCalledWith(
@@ -266,13 +266,13 @@ describe("Logger", async () => {
       );
     });
 
-    it("should log error messages", () => {
+    it("应该记录 error 消息", () => {
       testLogger.error("Test error message");
 
       expect(mockPinoInstance.error).toHaveBeenCalledWith("Test error message");
     });
 
-    it("should log error messages with Error objects", () => {
+    it("应该记录带 Error 对象的 error 消息", () => {
       const error = new Error("Test error");
       testLogger.error("Operation failed", error);
 
@@ -291,13 +291,13 @@ describe("Logger", async () => {
       );
     });
 
-    it("should log debug messages", () => {
+    it("应该记录 debug 消息", () => {
       testLogger.debug("Test debug message");
 
       expect(mockPinoInstance.debug).toHaveBeenCalledWith("Test debug message");
     });
 
-    it("should log general messages (mapped to info)", () => {
+    it("应该记录常规消息（映射到 info）", () => {
       testLogger.log("Test log message");
 
       expect(mockPinoInstance.info).toHaveBeenCalledWith("Test log message");
@@ -305,7 +305,7 @@ describe("Logger", async () => {
   });
 
   describe("close", () => {
-    it("should handle close gracefully", () => {
+    it("应该优雅地处理 close", () => {
       const testLogger = new Logger();
       testLogger.initLogFile("/test/project");
 
@@ -313,7 +313,7 @@ describe("Logger", async () => {
       expect(() => testLogger.close()).not.toThrow();
     });
 
-    it("should handle close when no log file exists", () => {
+    it("应该在日志文件不存在时处理 close", () => {
       const testLogger = new Logger();
 
       // Should not throw error
@@ -321,34 +321,34 @@ describe("Logger", async () => {
     });
   });
 
-  describe("singleton instance", () => {
-    it("should export a singleton logger instance", () => {
+  describe("单例实例", () => {
+    it("应该导出单例 logger 实例", () => {
       expect(logger).toBeInstanceOf(Logger);
     });
   });
 
-  describe("file management", () => {
+  describe("文件管理", () => {
     let testLogger: Logger;
 
     beforeEach(() => {
       testLogger = new Logger();
     });
 
-    it("should set log file options", () => {
+    it("应该设置日志文件选项", () => {
       testLogger.setLogFileOptions(5 * 1024 * 1024, 10);
 
       // Should not throw error
       expect(() => testLogger.setLogFileOptions(1024, 3)).not.toThrow();
     });
 
-    it("should clean up old logs", () => {
+    it("应该清理旧日志", () => {
       testLogger.initLogFile("/test/project");
 
       // Should not throw error
       expect(() => testLogger.cleanupOldLogs()).not.toThrow();
     });
 
-    it("should handle log rotation", () => {
+    it("应该处理日志轮转", () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.statSync.mockReturnValue({
         size: BigInt(20 * 1024 * 1024),
@@ -385,8 +385,8 @@ describe("Logger", async () => {
     });
   });
 
-  describe("utility functions", () => {
-    it("should handle safe write operations", () => {
+  describe("工具函数", () => {
+    it("应该处理安全的写入操作", () => {
       const testLogger = new Logger();
 
       // Test that logging works even in edge cases
@@ -394,7 +394,7 @@ describe("Logger", async () => {
       expect(() => testLogger.error("Test error")).not.toThrow();
     });
 
-    it("should enhance error objects", () => {
+    it("应该增强错误对象", () => {
       const testLogger = new Logger();
       const error = new Error("Test error");
       error.cause = new Error("Root cause");
