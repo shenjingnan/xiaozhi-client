@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "cross-env NODE_ENV=${NODE_ENV:-production} tsup --config tsup.config.ts",
+    "build": "cross-env NODE_ENV=production tsup --config tsup.config.ts",
     "test": "vitest run --coverage.enabled=false",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
