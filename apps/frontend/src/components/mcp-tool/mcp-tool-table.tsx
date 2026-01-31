@@ -1,8 +1,6 @@
 "use client";
 
 import { ToolDebugDialog } from "@/components/ToolDebugDialog";
-import { ToolSearchInput } from "./tool-search-input";
-import { ToolSortSelector } from "./tool-sort-selector";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,16 +13,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 import { Switch } from "@/components/ui/switch";
+import { ToolPagination } from "./tool-pagination";
+import { ToolSearchInput } from "./tool-search-input";
+import { ToolSortSelector } from "./tool-sort-selector";
 import {
   Table,
   TableBody,
@@ -110,7 +102,6 @@ export function McpToolTable({
   // 使用分页 Hook
   const {
     currentPage,
-    pageSize,
     totalPages,
     paginatedTools,
     setPage,
@@ -484,90 +475,11 @@ export function McpToolTable({
             </Table>
 
             {/* 分页控件 */}
-            {filteredTools.length > pageSize && (
-              <div className="flex items-end justify-start py-4">
-                {/* 分页按钮 */}
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        onClick={() => setPage(currentPage - 1)}
-                        className={cn(
-                          "cursor-pointer",
-                          currentPage === 1 && "pointer-events-none opacity-50"
-                        )}
-                      />
-                    </PaginationItem>
-
-                    {/* 页码生成 - 使用智能省略逻辑 */}
-                    {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                      let pageNum: number | -1 | -2;
-                      if (totalPages <= 7) {
-                        pageNum = i + 1;
-                      } else if (currentPage <= 4) {
-                        // 前 4 页：显示 1,2,3,4,5,...,last
-                        pageNum = i < 5 ? i + 1 : i === 5 ? -2 : totalPages;
-                      } else if (currentPage >= totalPages - 3) {
-                        // 后 4 页：显示 1,...,last-4,last-3,last-2,last-1,last
-                        pageNum =
-                          i < 1 ? i + 1 : i === 1 ? -1 : totalPages - 5 + i;
-                      } else {
-                        // 中间页：显示 1,...,cur-1,cur,cur+1,...,last
-                        pageNum =
-                          i === 0
-                            ? 1
-                            : i === 1
-                              ? -1
-                              : i === 5
-                                ? -2
-                                : i === 6
-                                  ? totalPages
-                                  : currentPage - 2 + i;
-                      }
-
-                      if (pageNum === -1) {
-                        return (
-                          <PaginationItem key="ellipsis-start">
-                            <PaginationEllipsis />
-                          </PaginationItem>
-                        );
-                      }
-
-                      if (pageNum === -2) {
-                        return (
-                          <PaginationItem key="ellipsis-end">
-                            <PaginationEllipsis />
-                          </PaginationItem>
-                        );
-                      }
-
-                      return (
-                        <PaginationItem key={`page-${pageNum}`}>
-                          <PaginationLink
-                            onClick={() => setPage(pageNum)}
-                            isActive={currentPage === pageNum}
-                            className="cursor-pointer"
-                          >
-                            {pageNum}
-                          </PaginationLink>
-                        </PaginationItem>
-                      );
-                    })}
-
-                    <PaginationItem>
-                      <PaginationNext
-                        onClick={() => setPage(currentPage + 1)}
-                        className={cn(
-                          "cursor-pointer",
-                          currentPage === totalPages &&
-                            "pointer-events-none opacity-50"
-                        )}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </div>
-            )}
+            <ToolPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              setPage={setPage}
+            />
           </>
         )}
       </div>
