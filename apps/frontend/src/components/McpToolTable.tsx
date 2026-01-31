@@ -1,6 +1,7 @@
 "use client";
 
 import { ToolDebugDialog } from "@/components/ToolDebugDialog";
+import { ToolSortSelector } from "@/components/ToolSortSelector";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useToolSortPersistence } from "@/hooks/useToolSortPersistence";
 import { cn } from "@/lib/utils";
 import { apiClient } from "@/services/api";
 import type { CustomMCPToolWithStats } from "@xiaozhi-client/shared-types";
@@ -84,6 +86,9 @@ export function McpToolTable({
   initialStatus = "all",
   className,
 }: McpToolTableProps) {
+  // 使用持久化 Hook，自动保存和恢复排序配置
+  const { sortConfig, setSortConfig } = useToolSortPersistence();
+
   const [tools, setTools] = useState<ToolRowData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -154,26 +159,27 @@ export function McpToolTable({
     setError(null);
 
     try {
-      const [enabledToolsList, disabledToolsList] = await Promise.all([
-        apiClient.getToolsList("enabled"),
-        apiClient.getToolsList("disabled"),
-      ]);
-
-      // 根据初始状态过滤
       let allTools: CustomMCPToolWithStats[] = [];
-      if (initialStatus === "enabled" || initialStatus === "all") {
-        allTools = [...allTools, ...enabledToolsList];
-      }
-      if (initialStatus === "disabled" || initialStatus === "all") {
-        allTools = [...allTools, ...disabledToolsList];
-      }
 
-      // 构建已启用工具的 Set 用于快速查找
-      const enabledSet = new Set(enabledToolsList.map((t) => t.name));
-      const formattedTools = allTools.map((tool) =>
-        formatTool(tool, enabledSet.has(tool.name))
-      );
-      setTools(formattedTools);
+      if (initialStatus === "all") {
+        // 获取所有工具并统一排序（后端会按 sortBy 排序）
+        allTools = await apiClient.getToolsList("all", sortConfig);
+        // API 已返回 enabled 字段，直接使用
+        const formattedTools = allTools.map((tool) =>
+          formatTool(tool, tool.enabled ?? false)
+        );
+        setTools(formattedTools);
+      } else {
+        // 分别获取已启用或已禁用工具
+        const toolsList = await apiClient.getToolsList(
+          initialStatus,
+          sortConfig
+        );
+        const formattedTools = toolsList.map((tool) =>
+          formatTool(tool, initialStatus === "enabled")
+        );
+        setTools(formattedTools);
+      }
     } catch (err) {
       console.error("获取工具列表失败:", err);
       setError(err instanceof Error ? err.message : "获取工具列表失败");
@@ -181,34 +187,37 @@ export function McpToolTable({
     } finally {
       setLoading(false);
     }
-  }, [initialStatus, formatTool]);
+  }, [initialStatus, formatTool, sortConfig]);
 
   // 刷新工具列表（用于启用/禁用后更新）
   const refreshToolLists = useCallback(async () => {
     try {
-      const [enabledToolsList, disabledToolsList] = await Promise.all([
-        apiClient.getToolsList("enabled"),
-        apiClient.getToolsList("disabled"),
-      ]);
-
       let allTools: CustomMCPToolWithStats[] = [];
-      if (initialStatus === "enabled" || initialStatus === "all") {
-        allTools = [...allTools, ...enabledToolsList];
-      }
-      if (initialStatus === "disabled" || initialStatus === "all") {
-        allTools = [...allTools, ...disabledToolsList];
-      }
 
-      const enabledSet = new Set(enabledToolsList.map((t) => t.name));
-      const formattedTools = allTools.map((tool) =>
-        formatTool(tool, enabledSet.has(tool.name))
-      );
-      setTools(formattedTools);
+      if (initialStatus === "all") {
+        // 获取所有工具并统一排序（后端会按 sortBy 排序）
+        allTools = await apiClient.getToolsList("all", sortConfig);
+        // API 已返回 enabled 字段，直接使用
+        const formattedTools = allTools.map((tool) =>
+          formatTool(tool, tool.enabled ?? false)
+        );
+        setTools(formattedTools);
+      } else {
+        // 分别获取已启用或已禁用工具
+        const toolsList = await apiClient.getToolsList(
+          initialStatus,
+          sortConfig
+        );
+        const formattedTools = toolsList.map((tool) =>
+          formatTool(tool, initialStatus === "enabled")
+        );
+        setTools(formattedTools);
+      }
     } catch (err) {
       console.error("刷新工具列表失败:", err);
       toast.error("刷新工具列表失败");
     }
-  }, [initialStatus, formatTool]);
+  }, [initialStatus, formatTool, sortConfig]);
 
   // 手动刷新
   const handleRefresh = useCallback(async () => {
@@ -317,6 +326,11 @@ export function McpToolTable({
 
   return (
     <div className={cn("flex flex-col gap-4", className)}>
+      {/* 排序选择器 */}
+      <div className="flex items-center justify-between">
+        <ToolSortSelector value={sortConfig} onChange={setSortConfig} />
+      </div>
+
       {/* 表格容器 */}
       <div className="rounded-md border">
         {loading ? (

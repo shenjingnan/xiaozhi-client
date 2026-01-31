@@ -81,6 +81,8 @@ export interface CustomMCPTool {
  * 用于 API 响应，使用扁平的统计信息结构
  */
 export interface CustomMCPToolWithStats extends CustomMCPTool {
+  /** 工具是否启用 (true=已启用，false=已禁用) */
+  enabled?: boolean;
   /** 工具使用次数（扁平结构，与 API 响应格式一致） */
   usageCount?: number;
   /** 最后使用时间（ISO 8601 格式） */
