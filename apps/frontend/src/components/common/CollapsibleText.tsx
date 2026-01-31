@@ -92,7 +92,10 @@ export function CollapsibleText({
         <button
           type="button"
           onClick={toggleExpanded}
-          className={cn("text-primary hover:underline flex items-center gap-1 w-fit", textSize)}
+          className={cn(
+            "text-primary hover:underline flex items-center gap-1 w-fit",
+            textSize
+          )}
         >
           {isExpanded ? (
             <>
