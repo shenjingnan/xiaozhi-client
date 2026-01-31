@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -24,13 +25,7 @@ import {
 import { cn } from "@/lib/utils";
 import { apiClient } from "@/services/api";
 import type { CustomMCPToolWithStats } from "@xiaozhi-client/shared-types";
-import {
-  CoffeeIcon,
-  Loader2,
-  MinusIcon,
-  PlusIcon,
-  ZapIcon,
-} from "lucide-react";
+import { CoffeeIcon, Loader2, ZapIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -358,9 +353,10 @@ export function McpToolTable({
                 <TableHead>服务名</TableHead>
                 <TableHead>工具名</TableHead>
                 <TableHead>描述</TableHead>
-                <TableHead className="text-right">使用次数</TableHead>
-                <TableHead className="text-right">最近使用</TableHead>
-                <TableHead className="text-right">操作</TableHead>
+                <TableHead>使用次数</TableHead>
+                <TableHead>最近使用</TableHead>
+                <TableHead>状态</TableHead>
+                <TableHead>操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -381,7 +377,17 @@ export function McpToolTable({
                   <TableCell className="text-right text-muted-foreground">
                     {formatTime(tool.lastUsedTime)}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell>
+                    <div className="flex justify-end">
+                      <Switch
+                        checked={tool.enabled}
+                        onCheckedChange={(checked) =>
+                          handleToggleTool(tool.name, !checked)
+                        }
+                      />
+                    </div>
+                  </TableCell>
+                  <TableCell>
                     <div className="flex items-center justify-end gap-2">
                       <Button
                         variant="ghost"
@@ -392,27 +398,6 @@ export function McpToolTable({
                       >
                         <ZapIcon className="h-4 w-4" />
                       </Button>
-                      {tool.enabled ? (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => handleToggleTool(tool.name, true)}
-                          title="禁用工具"
-                        >
-                          <MinusIcon className="h-4 w-4" />
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-green-500 hover:text-green-700 hover:bg-green-50"
-                          onClick={() => handleToggleTool(tool.name, false)}
-                          title="启用工具"
-                        >
-                          <PlusIcon className="h-4 w-4" />
-                        </Button>
-                      )}
                     </div>
                   </TableCell>
                 </TableRow>
