@@ -21,7 +21,7 @@ export class MCPConnection {
   private callbacks?: import("./types.js").MCPServiceEventCallbacks;
   // 心跳检测相关
   private heartbeatTimer: NodeJS.Timeout | null = null;
-  // private heartbeatConfig?: import("./types.js").HeartbeatConfig;
+  private heartbeatConfig?: import("./types.js").HeartbeatConfig;
 
   constructor(
     name: string,
@@ -33,7 +33,10 @@ export class MCPConnection {
     this.config = inferTransportTypeFromConfig(config, name);
     this.callbacks = callbacks;
     // 保存心跳配置
-    // this.heartbeatConfig = this.config.heartbeat;
+    this.heartbeatConfig = {
+      enabled: true,
+      interval: 30 * 1000,
+    };
 
     // 验证配置
     this.validateConfig();
@@ -316,7 +319,10 @@ export class MCPConnection {
       return;
     }
 
-    const interval = 30 * 1000;
+    if (!this.heartbeatConfig?.enabled) {
+      return;
+    }
+    const interval = this.heartbeatConfig?.interval ?? 30 * 1000;
 
     this.heartbeatTimer = setInterval(async () => {
       await this.performHeartbeat();
