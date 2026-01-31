@@ -6,11 +6,9 @@
 import type { EnhancedToolInfo } from "@/lib/mcp";
 
 export type ToolSortField = "name" | "enabled";
-export type SortOrder = "asc" | "desc";
 
 export interface ToolSortConfig {
   field: ToolSortField;
-  order: SortOrder;
 }
 
 /**
@@ -74,12 +72,5 @@ export function sortTools(
     return tools;
   }
 
-  const sorted = [...tools].sort(sorter);
-
-  // 如果是降序，反转结果
-  if (config.order === "desc") {
-    sorted.reverse();
-  }
-
-  return sorted;
+  return [...tools].sort(sorter);
 }

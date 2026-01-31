@@ -18,11 +18,7 @@ import type {
 } from "@/types/toolApi.js";
 import { ToolType } from "@/types/toolApi.js";
 import type { CustomMCPToolWithStats, JSONSchema } from "@/types/toolApi.js";
-import {
-  type SortOrder,
-  type ToolSortField,
-  sortTools,
-} from "@/utils/toolSorters";
+import { type ToolSortField, sortTools } from "@/utils/toolSorters";
 import { configManager } from "@xiaozhi-client/config";
 import type { CustomMCPTool, ProxyHandlerConfig } from "@xiaozhi-client/config";
 import Ajv from "ajv";
@@ -263,7 +259,6 @@ export class MCPToolHandler {
 
       // 解析排序参数
       const sortBy = (c.req.query("sortBy") as ToolSortField) || "name";
-      const order = (c.req.query("order") as SortOrder) || "asc";
 
       // 从 Context 中获取 MCPServiceManager 实例
       const serviceManager = c.get("mcpServiceManager");
@@ -279,7 +274,7 @@ export class MCPToolHandler {
       let rawTools: EnhancedToolInfo[] = serviceManager.getAllTools(status);
 
       // 应用排序
-      rawTools = sortTools(rawTools, { field: sortBy, order });
+      rawTools = sortTools(rawTools, { field: sortBy });
 
       // 转换为 CustomMCPToolWithStats 格式（使用共享类型）
       const tools: CustomMCPToolWithStats[] = rawTools.map(

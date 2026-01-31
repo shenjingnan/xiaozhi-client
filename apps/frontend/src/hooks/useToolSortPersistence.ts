@@ -7,7 +7,6 @@ const STORAGE_KEY = "mcp-tool-sort-config";
 
 const DEFAULT_CONFIG: ToolSortConfig = {
   field: "name",
-  order: "asc",
 };
 
 /**
