@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { EndpointManager } from "@xiaozhi-client/endpoint";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import WebSocket from "ws";
-import { WebServer } from "./WebServer";
+import { WebServer } from "../../WebServer";
 
 vi.mock("@xiaozhi-client/config", () => {
   const mockConfigManager = {
@@ -36,7 +36,7 @@ vi.mock("@xiaozhi-client/config", () => {
   };
 });
 // Mock Logger 模块 - 注意路径和大小写
-vi.mock("./Logger", () => {
+vi.mock("../../Logger", () => {
   const mockLogger = {
     debug: vi.fn(),
     info: vi.fn(),
@@ -123,7 +123,7 @@ vi.mock("@/services/ConfigService", () => {
 // StatusService 和 NotificationService 已在 @services/index.js mock 中定义
 
 // Mock API 处理器
-vi.mock("./handlers/config.handler", () => {
+vi.mock("../../handlers/config.handler", () => {
   const mockConfigApiHandler = {
     getConfig: vi.fn((c) =>
       c.json({
@@ -196,7 +196,7 @@ vi.mock("./handlers/config.handler", () => {
   };
 });
 
-vi.mock("./handlers/status.handler", () => {
+vi.mock("../../handlers/status.handler", () => {
   const mockStatusApiHandler = {
     getStatus: vi.fn((c) =>
       c.json({
@@ -219,7 +219,7 @@ vi.mock("./handlers/status.handler", () => {
   };
 });
 
-vi.mock("./handlers/service.handler", () => {
+vi.mock("../../handlers/service.handler", () => {
   const mockServiceApiHandler = {
     restartService: vi.fn((c) =>
       c.json({
@@ -277,7 +277,7 @@ vi.mock("node:child_process", () => ({
 }));
 
 // Mock 静态文件处理器
-vi.mock("./handlers/static-file.handler", () => {
+vi.mock("../../handlers/static-file.handler", () => {
   const mockStaticFileHandler = {
     handleStaticFile: vi.fn((c) =>
       c.text("<!DOCTYPE html><html><body>Test</body></html>", 200, {
@@ -291,7 +291,7 @@ vi.mock("./handlers/static-file.handler", () => {
 });
 
 // Mock WebSocket 处理器
-vi.mock("./handlers/realtime-notification.handler", () => {
+vi.mock("../../handlers/realtime-notification.handler", () => {
   const mockRealtimeNotificationHandler = {
     handleClientConnect: vi.fn(),
     handleClientDisconnect: vi.fn(),
@@ -303,7 +303,7 @@ vi.mock("./handlers/realtime-notification.handler", () => {
   };
 });
 
-vi.mock("./handlers/heartbeat.handler", () => {
+vi.mock("../../handlers/heartbeat.handler", () => {
   const mockHeartbeatHandler = {
     handleClientConnect: vi.fn(),
     handleClientDisconnect: vi.fn(),
@@ -337,7 +337,7 @@ vi.mock("@/lib/config/adapter.js", () => ({
   isModelScopeURL: vi.fn((url) => url.includes("modelscope")),
 }));
 
-vi.mock("./handlers/version.handler", () => {
+vi.mock("../../handlers/version.handler", () => {
   const mockVersionApiHandler = {
     getVersion: vi.fn((c) =>
       c.json({
@@ -358,7 +358,7 @@ vi.mock("./handlers/version.handler", () => {
   };
 });
 
-vi.mock("./handlers/mcp-tool.handler", () => {
+vi.mock("../../handlers/mcp-tool.handler", () => {
   const mockMCPToolHandler = {
     callTool: vi.fn((c) =>
       c.json({
@@ -405,7 +405,7 @@ vi.mock("./handlers/mcp-tool.handler", () => {
   };
 });
 
-vi.mock("./handlers/coze.handler", () => {
+vi.mock("../../handlers/coze.handler", () => {
   const mockCozeHandler = {
     getWorkspaces: vi.fn((c) =>
       c.json({
@@ -437,7 +437,7 @@ vi.mock("./handlers/coze.handler", () => {
   };
 });
 
-vi.mock("./handlers/mcp.handler", () => {
+vi.mock("../../handlers/mcp.handler", () => {
   const mockMCPRouteHandler = {
     handlePost: vi.fn((c) =>
       c.json({
@@ -459,7 +459,7 @@ vi.mock("./handlers/mcp.handler", () => {
   };
 });
 
-vi.mock("./handlers/endpoint.handler", () => {
+vi.mock("../../handlers/endpoint.handler", () => {
   const mockEndpointHandler = {
     getEndpointStatus: vi.fn((c) =>
       c.json({
@@ -556,7 +556,7 @@ const getAvailablePort = async (): Promise<number> => {
   });
 };
 
-describe("WebServer", () => {
+describe("WebServer 集成测试", () => {
   let webServer: WebServer;
   let mockConfigManager: any;
   let currentPort: number;
