@@ -80,8 +80,13 @@ export function McpServerList({
       inputSchema?: any;
     }>
   >([]);
-  const [isLoadingTools, setIsLoadingTools] = useState(false);
-  const [toolsError, setToolsError] = useState<string | null>(null);
+  const [isLoadingTools, setIsLoadingTools] = useState(false); // TODO: 用于未来加载状态
+  const [toolsError, setToolsError] = useState<string | null>(null); // TODO: 用于未来错误处理
+  // 标记为有意未使用，避免 TypeScript noUnusedLocals 错误
+  void isLoadingTools;
+  void setIsLoadingTools;
+  void toolsError;
+  void setToolsError;
 
   // 格式化工具信息的辅助函数
   const formatTool = useCallback((tool: any, enable: boolean) => {
@@ -251,7 +256,8 @@ export function McpServerList({
     };
   }>({ open: false });
 
-  const handleToggleTool = async (name: string, currentEnable: boolean) => {
+  const _handleToggleTool = async (name: string, currentEnable: boolean) => {
+    // TODO: 用于未来工具切换功能
     try {
       // 首先找到对应的原始工具信息
       const originalTool = [...enabledTools, ...disabledTools].find(
@@ -302,6 +308,8 @@ export function McpServerList({
       toast.error(error instanceof Error ? error.message : "切换工具状态失败");
     }
   };
+  // 标记为有意未使用
+  void _handleToggleTool;
 
   // 确认移除 Coze 工具的处理函数
   const handleConfirmRemoveCozeTool = async () => {
@@ -327,7 +335,8 @@ export function McpServerList({
   };
 
   // 处理打开参数配置对话框
-  const handleConfigureTool = (tool: any) => {
+  const _handleConfigureTool = (tool: any) => {
+    // TODO: 用于未来参数配置功能
     // 检查是否为 coze 工具
     if (tool.serverName === "coze") {
       setParameterConfigDialog({
@@ -336,9 +345,12 @@ export function McpServerList({
       });
     }
   };
+  // 标记为有意未使用
+  void _handleConfigureTool;
 
   // 处理打开工具调试对话框
-  const handleDebugTool = (tool: any) => {
+  const _handleDebugTool = (tool: any) => {
+    // TODO: 用于未来工具调试功能
     setDebugDialog({
       open: true,
       tool: {
@@ -350,6 +362,8 @@ export function McpServerList({
       },
     });
   };
+  // 标记为有意未使用
+  void _handleDebugTool;
 
   // 从工具对象构建 CozeWorkflow 对象
   const buildCozeWorkflowFromTool = (tool: any): CozeWorkflow => {

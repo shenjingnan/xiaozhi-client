@@ -352,7 +352,7 @@ export function McpToolTable({
             </span>
           </div>
         ) : (
-          <Table>
+          <Table size="compact">
             <TableHeader>
               <TableRow>
                 <TableHead>服务名</TableHead>
