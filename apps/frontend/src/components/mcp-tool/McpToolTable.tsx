@@ -1,8 +1,8 @@
 "use client";
 
 import { ToolDebugDialog } from "@/components/ToolDebugDialog";
-import { ToolSearchInput } from "@/components/ToolSearchInput";
-import { ToolSortSelector } from "@/components/ToolSortSelector";
+import { ToolSearchInput } from "./ToolSearchInput";
+import { ToolSortSelector } from "./ToolSortSelector";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -114,7 +114,6 @@ export function McpToolTable({
     totalPages,
     paginatedTools,
     setPage,
-    setPageSize,
     resetPage,
   } = useToolPagination(filteredTools, 10);
 

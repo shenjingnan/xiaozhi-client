@@ -1,6 +1,6 @@
 "use client";
 
-import type { ToolSortConfig } from "@/components/ToolSortSelector";
+import type { ToolSortConfig } from "@/components/mcp-tool/ToolSortSelector";
 import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "mcp-tool-sort-config";
