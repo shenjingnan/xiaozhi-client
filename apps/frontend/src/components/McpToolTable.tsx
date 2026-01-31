@@ -15,6 +15,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { Switch } from "@/components/ui/switch";
 import {
   Table,
@@ -24,6 +33,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useToolPagination } from "@/hooks/useToolPagination";
 import { useToolSearch } from "@/hooks/useToolSearch";
 import { useToolSortPersistence } from "@/hooks/useToolSortPersistence";
 import { cn } from "@/lib/utils";
@@ -96,6 +106,18 @@ export function McpToolTable({
   // 使用搜索 Hook
   const { searchValue, setSearchValue, filteredTools, clearSearch } =
     useToolSearch(tools);
+
+  // 使用分页 Hook
+  const {
+    currentPage,
+    pageSize,
+    totalPages,
+    paginatedTools,
+    setPage,
+    setPageSize,
+    resetPage,
+  } = useToolPagination(filteredTools, 10);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [_refreshing, setRefreshing] = useState(false);
@@ -330,6 +352,12 @@ export function McpToolTable({
     fetchTools();
   }, [fetchTools]);
 
+  // 搜索条件变化时重置分页
+  // biome-ignore lint/correctness/useExhaustiveDependencies: 需要在搜索值变化时重置分页
+  useEffect(() => {
+    resetPage();
+  }, [searchValue, resetPage]);
+
   return (
     <div className={cn("flex flex-col gap-4", className)}>
       {/* 排序选择器和搜索框 */}
@@ -395,63 +423,153 @@ export function McpToolTable({
             )}
           </div>
         ) : (
-          <Table size="compact">
-            <TableHeader>
-              <TableRow>
-                <TableHead>服务名</TableHead>
-                <TableHead>工具名</TableHead>
-                <TableHead>描述</TableHead>
-                <TableHead>使用次数</TableHead>
-                <TableHead>最近使用</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead>操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredTools.map((tool) => (
-                <TableRow key={tool.name}>
-                  <TableCell>
-                    <Badge variant="secondary" className="rounded-md">
-                      {tool.serverName}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="font-medium">{tool.toolName}</TableCell>
-                  <TableCell className="text-muted-foreground max-w-[300px] truncate">
-                    {truncateDescription(tool.description)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {tool.usageCount}
-                  </TableCell>
-                  <TableCell className="text-right text-muted-foreground">
-                    {formatTime(tool.lastUsedTime)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end">
-                      <Switch
-                        checked={tool.enabled}
-                        onCheckedChange={(checked) =>
-                          handleToggleTool(tool.name, !checked)
-                        }
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => handleDebugTool(tool)}
-                        title="调试工具"
-                      >
-                        <ZapIcon className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          <>
+            <Table size="compact">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>服务名</TableHead>
+                  <TableHead>工具名</TableHead>
+                  <TableHead>描述</TableHead>
+                  <TableHead>使用次数</TableHead>
+                  <TableHead>最近使用</TableHead>
+                  <TableHead>状态</TableHead>
+                  <TableHead>操作</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {paginatedTools.map((tool) => (
+                  <TableRow key={tool.name}>
+                    <TableCell>
+                      <Badge variant="secondary" className="rounded-md">
+                        {tool.serverName}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {tool.toolName}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground max-w-[300px] truncate">
+                      {truncateDescription(tool.description)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {tool.usageCount}
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      {formatTime(tool.lastUsedTime)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-end">
+                        <Switch
+                          checked={tool.enabled}
+                          onCheckedChange={(checked) =>
+                            handleToggleTool(tool.name, !checked)
+                          }
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleDebugTool(tool)}
+                          title="调试工具"
+                        >
+                          <ZapIcon className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            {/* 分页控件 */}
+            {filteredTools.length > pageSize && (
+              <div className="flex items-end justify-start py-4">
+                {/* 分页按钮 */}
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() => setPage(currentPage - 1)}
+                        className={cn(
+                          "cursor-pointer",
+                          currentPage === 1 && "pointer-events-none opacity-50"
+                        )}
+                      />
+                    </PaginationItem>
+
+                    {/* 页码生成 - 使用智能省略逻辑 */}
+                    {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                      let pageNum: number | -1 | -2;
+                      if (totalPages <= 7) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 4) {
+                        // 前 4 页：显示 1,2,3,4,5,...,last
+                        pageNum = i < 5 ? i + 1 : i === 5 ? -2 : totalPages;
+                      } else if (currentPage >= totalPages - 3) {
+                        // 后 4 页：显示 1,...,last-4,last-3,last-2,last-1,last
+                        pageNum =
+                          i < 1 ? i + 1 : i === 1 ? -1 : totalPages - 5 + i;
+                      } else {
+                        // 中间页：显示 1,...,cur-1,cur,cur+1,...,last
+                        pageNum =
+                          i === 0
+                            ? 1
+                            : i === 1
+                              ? -1
+                              : i === 5
+                                ? -2
+                                : i === 6
+                                  ? totalPages
+                                  : currentPage - 2 + i;
+                      }
+
+                      if (pageNum === -1) {
+                        return (
+                          <PaginationItem key="ellipsis-start">
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        );
+                      }
+
+                      if (pageNum === -2) {
+                        return (
+                          <PaginationItem key="ellipsis-end">
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        );
+                      }
+
+                      return (
+                        <PaginationItem key={`page-${pageNum}`}>
+                          <PaginationLink
+                            onClick={() => setPage(pageNum)}
+                            isActive={currentPage === pageNum}
+                            className="cursor-pointer"
+                          >
+                            {pageNum}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    })}
+
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() => setPage(currentPage + 1)}
+                        className={cn(
+                          "cursor-pointer",
+                          currentPage === totalPages &&
+                            "pointer-events-none opacity-50"
+                        )}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
+          </>
         )}
       </div>
 
