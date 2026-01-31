@@ -5,7 +5,7 @@
 
 import type { EnhancedToolInfo } from "@/lib/mcp";
 
-export type ToolSortField = "name" | "enabled";
+export type ToolSortField = "name" | "enabled" | "usageCount" | "lastUsedTime";
 
 export interface ToolSortConfig {
   field: ToolSortField;
@@ -51,12 +51,39 @@ export const toolSorters: Record<ToolSortField, SortFn> = {
     return a.originalName.localeCompare(b.originalName, "zh-CN");
   },
 
-  // 未来扩展：按使用次数排序
-  // usageCount: (a, b) => b.usageCount - a.usageCount,
+  /**
+   * 按使用次数排序
+   * 规则：使用次数多的在前；同次数时按名称排序
+   */
+  usageCount: (a, b) => {
+    // 按使用次数降序排序（次数多的在前）
+    const countCompare = b.usageCount - a.usageCount;
+    if (countCompare !== 0) return countCompare;
+    // 使用次数相同时，按服务名和工具名排序
+    if (a.serviceName !== b.serviceName) {
+      return a.serviceName.localeCompare(b.serviceName, "zh-CN");
+    }
+    return a.originalName.localeCompare(b.originalName, "zh-CN");
+  },
 
-  // 未来扩展：按最近使用时间排序
-  // lastUsedTime: (a, b) =>
-  //   new Date(b.lastUsedTime).getTime() - new Date(a.lastUsedTime).getTime(),
+  /**
+   * 按最近使用时间排序
+   * 规则：最近使用的在前；未使用时间的工具排在后面
+   */
+  lastUsedTime: (a, b) => {
+    // 未使用时间的工具排在后面
+    if (!a.lastUsedTime) return 1;
+    if (!b.lastUsedTime) return -1;
+    // 按时间降序排序（最近的在前）
+    const timeCompare =
+      new Date(b.lastUsedTime).getTime() - new Date(a.lastUsedTime).getTime();
+    if (timeCompare !== 0) return timeCompare;
+    // 时间相同时，按服务名和工具名排序
+    if (a.serviceName !== b.serviceName) {
+      return a.serviceName.localeCompare(b.serviceName, "zh-CN");
+    }
+    return a.originalName.localeCompare(b.originalName, "zh-CN");
+  },
 };
 
 /**

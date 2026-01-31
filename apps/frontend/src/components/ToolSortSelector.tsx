@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export type ToolSortField = "name" | "enabled";
+export type ToolSortField = "name" | "enabled" | "usageCount" | "lastUsedTime";
 
 export interface ToolSortConfig {
   field: ToolSortField;
@@ -22,6 +22,8 @@ interface ToolSortSelectorProps {
 const SORT_OPTIONS = [
   { value: "name", label: "按名称排序" },
   { value: "enabled", label: "按状态排序" },
+  { value: "usageCount", label: "按使用次数排序" },
+  { value: "lastUsedTime", label: "按最近使用排序" },
 ];
 
 export function ToolSortSelector({ value, onChange }: ToolSortSelectorProps) {
@@ -31,7 +33,7 @@ export function ToolSortSelector({ value, onChange }: ToolSortSelectorProps) {
         value={value.field}
         onValueChange={(field) => onChange({ field: field as ToolSortField })}
       >
-        <SelectTrigger id="sort-field" className="w-32">
+        <SelectTrigger id="sort-field" className="w-40">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
