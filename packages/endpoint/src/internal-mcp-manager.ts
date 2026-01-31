@@ -77,7 +77,11 @@ export class InternalMCPManagerAdapter implements IMCPServiceManager {
     const [serviceName, actualToolName] = this.parseToolName(toolName);
 
     // 调用真实的 MCP 工具
-    return this.mcpManager.callTool(serviceName, actualToolName, arguments_);
+    return (await this.mcpManager.callTool(
+      serviceName,
+      actualToolName,
+      arguments_
+    )) as ToolCallResult;
   }
 
   /**

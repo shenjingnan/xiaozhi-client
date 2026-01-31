@@ -32,6 +32,7 @@ export interface TimeoutResponse {
   status: "timeout";
   message: string;
   nextAction: string;
+  [key: string]: unknown; // 支持其他未知字段，与 ToolCallResult 保持兼容
 }
 
 /**

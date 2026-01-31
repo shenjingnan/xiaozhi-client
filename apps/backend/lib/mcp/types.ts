@@ -115,7 +115,8 @@ export interface MCPServiceStatus {
 
 /**
  * 工具调用结果接口
- * 统一了 connection.ts、manager.ts 和 CustomMCPHandler.ts 中的定义
+ * 使用简化的类型定义，保持向后兼容性
+ * 注意：这与 @xiaozhi-client/mcp-core 中的 ToolCallResult 类型不同
  */
 export interface ToolCallResult {
   content: Array<{
@@ -123,6 +124,7 @@ export interface ToolCallResult {
     text: string;
   }>;
   isError?: boolean;
+  [key: string]: unknown; // 支持其他未知字段，与 endpoint 包保持兼容
 }
 
 /**

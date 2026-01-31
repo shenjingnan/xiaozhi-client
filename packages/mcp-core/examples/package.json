@@ -9,7 +9,8 @@
     "connect:http": "tsx http.ts",
     "connect:sse": "tsx sse.ts",
     "connect:streamable-http": "tsx streamable-http.ts",
-    "connect:multi": "tsx multi-mcp-manage.ts"
+    "connect:multi": "tsx multi-mcp-manage.ts",
+    "connect:call-tool": "tsx call-tool-2.ts"
   },
   "dependencies": {
     "@xiaozhi-client/mcp-core": "workspace:*",
