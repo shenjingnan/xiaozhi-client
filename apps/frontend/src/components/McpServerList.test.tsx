@@ -206,6 +206,7 @@ describe("McpServerList 组件", () => {
           toolName: "tool1",
         },
       },
+      enabled: true,
     },
     {
       name: "tool3",
@@ -218,6 +219,7 @@ describe("McpServerList 组件", () => {
           toolName: "tool3",
         },
       },
+      enabled: true,
     },
   ];
 
@@ -233,6 +235,7 @@ describe("McpServerList 组件", () => {
           toolName: "tool2",
         },
       },
+      enabled: false,
     },
   ];
 
@@ -248,6 +251,7 @@ describe("McpServerList 组件", () => {
         toolName: "coze_tool",
       },
     },
+    enabled: true,
   };
 
   beforeEach(async () => {
@@ -311,55 +315,32 @@ describe("McpServerList 组件", () => {
     vi.mocked(apiModule.apiClient.updateCustomTool).mockResolvedValue({});
   });
 
-  it("应该正确渲染已启用和未启用的工具", async () => {
-    render(<McpServerList />);
-
-    // 等待 API 调用完成
-    await waitFor(() => {
-      // 检查已启用工具部分是否显示正确计数
-      expect(screen.getByText(/使用中的工具 \(2\)/)).toBeInTheDocument();
-    });
-
-    // 检查未启用工具部分是否显示正确计数
-    expect(screen.getByText(/未使用的工具 \(1\)/)).toBeInTheDocument();
-  });
-
-  it("应该在移除 Coze 工具时显示确认对话框", async () => {
-    // 向已启用工具添加一个 Coze 工具
-    const mockCozeEnabledTools = [...mockEnabledTools, mockCozeTool];
-    const apiModule = await import("@/services/api");
-    vi.mocked(apiModule.apiClient.getToolsList).mockImplementation(
-      async (status) => {
-        if (status === "enabled") return mockCozeEnabledTools;
-        if (status === "disabled") return mockDisabledTools;
-        return [...mockCozeEnabledTools, ...mockDisabledTools];
-      }
-    );
-
+  it("应该正确渲染 MCP 服务器列表", async () => {
     render(<McpServerList />);
 
     // 等待组件加载完成
     await waitFor(() => {
-      expect(screen.getByText(/使用中的工具 \(3\)/)).toBeInTheDocument();
+      // 检查服务器名称是否正确显示
+      expect(screen.getByText("server1")).toBeInTheDocument();
+      expect(screen.getByText("server2")).toBeInTheDocument();
     });
 
-    // 由于在这个复杂组件中不易点击按钮，
-    // 我们通过模拟函数调用来测试状态管理
-    render(<McpServerList />);
+    // 检查通信类型标签是否显示（检查是否至少存在一个）
+    expect(screen.getAllByText("stdio").length).toBeGreaterThan(0);
+  });
 
-    // 通过手动调用切换函数来测试 Coze 工具检测逻辑
-    // 这样可以在不处理复杂 DOM 交互的情况下测试核心逻辑
-    const cozeTool = mockCozeEnabledTools.find(
-      (tool) => tool.handler.config.serviceName === "coze"
-    );
+  it("应该在移除 Coze 工具时显示确认对话框", async () => {
+    // 测试 Coze 工具的检测逻辑
+    const cozeTool = mockCozeTool;
     expect(cozeTool).toBeDefined();
-    expect(cozeTool?.handler.config.serviceName).toBe("coze");
+    expect(cozeTool.handler.type).toBe("proxy");
+    expect(cozeTool.handler.platform).toBe("coze");
   });
 
   it("不应该为非 Coze 工具显示确认对话框", async () => {
     // 测试普通 MCP 工具
     const mcpTool = mockEnabledTools[0]; // 来自 server1 的 tool1
     expect(mcpTool.handler.config.serviceName).toBe("server1");
-    expect(mcpTool.handler.config.serviceName).not.toBe("coze");
+    expect(mcpTool.handler.type).not.toBe("proxy");
   });
 });

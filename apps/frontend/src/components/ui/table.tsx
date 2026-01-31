@@ -1,19 +1,85 @@
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
+import { type VariantProps, cva } from "class-variance-authority";
 
-const Table = React.forwardRef<
-  HTMLTableElement,
-  React.HTMLAttributes<HTMLTableElement>
->(({ className, ...props }, ref) => (
-  <div className="relative w-full overflow-auto">
-    <table
-      ref={ref}
-      className={cn("w-full caption-bottom text-sm", className)}
-      {...props}
-    />
-  </div>
-));
+// Context 类型定义
+interface TableSizeContextValue {
+  size: "default" | "compact";
+}
+
+const TableSizeContext = React.createContext<TableSizeContextValue>({
+  size: "default",
+});
+
+// Table 变体
+const tableVariants = cva("w-full caption-bottom text-sm", {
+  variants: {
+    size: {
+      default: "text-sm",
+      compact: "text-xs",
+    },
+  },
+  defaultVariants: {
+    size: "default",
+  },
+});
+
+// TableHead 变体
+const tableHeadVariants = cva(
+  "text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0",
+  {
+    variants: {
+      size: {
+        default: "h-12 px-4",
+        compact: "h-10 p-4",
+      },
+    },
+    defaultVariants: {
+      size: "default",
+    },
+  }
+);
+
+// TableCell 变体
+const tableCellVariants = cva("align-middle [&:has([role=checkbox])]:pr-0", {
+  variants: {
+    size: {
+      default: "p-4",
+      compact: "py-2 px-4",
+    },
+  },
+  defaultVariants: {
+    size: "default",
+  },
+});
+
+// 类型导出
+export type TableProps = React.HTMLAttributes<HTMLTableElement> &
+  VariantProps<typeof tableVariants>;
+
+export type TableHeadProps = React.ThHTMLAttributes<HTMLTableCellElement>;
+
+export type TableCellProps = React.TdHTMLAttributes<HTMLTableCellElement>;
+
+const Table = React.forwardRef<HTMLTableElement, TableProps>(
+  ({ className, size, children, ...props }, ref) => {
+    const tableSize = size ?? "default";
+    return (
+      <TableSizeContext.Provider value={{ size: tableSize }}>
+        <div className="relative w-full overflow-auto">
+          <table
+            ref={ref}
+            className={cn(tableVariants({ size: tableSize, className }))}
+            {...props}
+          >
+            {children}
+          </table>
+        </div>
+      </TableSizeContext.Provider>
+    );
+  }
+);
 Table.displayName = "Table";
 
 const TableHeader = React.forwardRef<
@@ -66,31 +132,32 @@ const TableRow = React.forwardRef<
 ));
 TableRow.displayName = "TableRow";
 
-const TableHead = React.forwardRef<
-  HTMLTableCellElement,
-  React.ThHTMLAttributes<HTMLTableCellElement>
->(({ className, ...props }, ref) => (
-  <th
-    ref={ref}
-    className={cn(
-      "h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0",
-      className
-    )}
-    {...props}
-  />
-));
+const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(
+  ({ className, ...props }, ref) => {
+    const { size } = React.useContext(TableSizeContext);
+    return (
+      <th
+        ref={ref}
+        className={cn(tableHeadVariants({ size, className }))}
+        {...props}
+      />
+    );
+  }
+);
 TableHead.displayName = "TableHead";
 
-const TableCell = React.forwardRef<
-  HTMLTableCellElement,
-  React.TdHTMLAttributes<HTMLTableCellElement>
->(({ className, ...props }, ref) => (
-  <td
-    ref={ref}
-    className={cn("p-4 align-middle [&:has([role=checkbox])]:pr-0", className)}
-    {...props}
-  />
-));
+const TableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(
+  ({ className, ...props }, ref) => {
+    const { size } = React.useContext(TableSizeContext);
+    return (
+      <td
+        ref={ref}
+        className={cn(tableCellVariants({ size, className }))}
+        {...props}
+      />
+    );
+  }
+);
 TableCell.displayName = "TableCell";
 
 const TableCaption = React.forwardRef<
