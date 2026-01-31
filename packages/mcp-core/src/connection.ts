@@ -4,6 +4,7 @@ import type { MCPServerTransport, MCPServiceConfig, MCPServiceStatus, ToolCallRe
 import { ConnectionState, MCPTransportType } from "./types.js";
 import { TransportFactory } from "./transport-factory.js";
 import { inferTransportTypeFromConfig } from "./utils/index.js";
+import type { HeartbeatConfig, MCPServiceEventCallbacks, InternalMCPServiceConfig } from './types.js';
 
 /**
  * MCP 连接类
@@ -18,15 +19,15 @@ export class MCPConnection {
   private connectionState: ConnectionState = ConnectionState.DISCONNECTED;
   private connectionTimeout: NodeJS.Timeout | null = null;
   private initialized = false;
-  private callbacks?: import("./types.js").MCPServiceEventCallbacks;
+  private callbacks?: MCPServiceEventCallbacks;
   // 心跳检测相关
   private heartbeatTimer: NodeJS.Timeout | null = null;
-  private heartbeatConfig?: import("./types.js").HeartbeatConfig;
+  private heartbeatConfig?: HeartbeatConfig;
 
   constructor(
     name: string,
     config: MCPServiceConfig,
-    callbacks?: import("./types.js").MCPServiceEventCallbacks
+    callbacks?: MCPServiceEventCallbacks
   ) {
     this.name = name;
     // 使用工具方法推断服务类型（传递服务名称用于日志）
@@ -51,7 +52,7 @@ export class MCPConnection {
       throw new Error("服务名称必须是非空字符串");
     }
     // 使用 TransportFactory 进行配置验证（传递包含 name 的完整配置）
-    const fullConfig: import("./types.js").InternalMCPServiceConfig = {
+    const fullConfig: InternalMCPServiceConfig = {
       name: this.name,
       ...this.config,
     };
@@ -103,7 +104,7 @@ export class MCPConnection {
         );
 
         // 使用 TransportFactory 创建传输层（传递包含 name 的完整配置）
-        const fullConfig: import("./types.js").InternalMCPServiceConfig = {
+        const fullConfig: InternalMCPServiceConfig = {
           name: this.name,
           ...this.config,
         };
