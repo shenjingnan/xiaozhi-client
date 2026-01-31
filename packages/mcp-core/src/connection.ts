@@ -4,6 +4,7 @@ import type { MCPServerTransport, MCPServiceConfig, MCPServiceStatus, ToolCallRe
 import { ConnectionState, MCPTransportType } from "./types.js";
 import { TransportFactory } from "./transport-factory.js";
 import { inferTransportTypeFromConfig } from "./utils/index.js";
+import type { HeartbeatConfig, MCPServiceEventCallbacks, InternalMCPServiceConfig } from './types.js';
 
 /**
  * MCP 连接类
@@ -18,17 +19,25 @@ export class MCPConnection {
   private connectionState: ConnectionState = ConnectionState.DISCONNECTED;
   private connectionTimeout: NodeJS.Timeout | null = null;
   private initialized = false;
-  private callbacks?: import("./types.js").MCPServiceEventCallbacks;
+  private callbacks?: MCPServiceEventCallbacks;
+  // 心跳检测相关
+  private heartbeatTimer: NodeJS.Timeout | null = null;
+  private heartbeatConfig?: HeartbeatConfig;
 
   constructor(
     name: string,
     config: MCPServiceConfig,
-    callbacks?: import("./types.js").MCPServiceEventCallbacks
+    callbacks?: MCPServiceEventCallbacks
   ) {
     this.name = name;
     // 使用工具方法推断服务类型（传递服务名称用于日志）
     this.config = inferTransportTypeFromConfig(config, name);
     this.callbacks = callbacks;
+    // 保存心跳配置 - 优先使用用户配置
+    this.heartbeatConfig = {
+      enabled: config.heartbeat?.enabled ?? true,  // 默认启用
+      interval: config.heartbeat?.interval ?? 30 * 1000,  // 默认 30 秒
+    };
 
     // 验证配置
     this.validateConfig();
@@ -43,7 +52,7 @@ export class MCPConnection {
       throw new Error("服务名称必须是非空字符串");
     }
     // 使用 TransportFactory 进行配置验证（传递包含 name 的完整配置）
-    const fullConfig: import("./types.js").InternalMCPServiceConfig = {
+    const fullConfig: InternalMCPServiceConfig = {
       name: this.name,
       ...this.config,
     };
@@ -95,7 +104,7 @@ export class MCPConnection {
         );
 
         // 使用 TransportFactory 创建传输层（传递包含 name 的完整配置）
-        const fullConfig: import("./types.js").InternalMCPServiceConfig = {
+        const fullConfig: InternalMCPServiceConfig = {
           name: this.name,
           ...this.config,
         };
@@ -146,6 +155,9 @@ export class MCPConnection {
     console.info(
       `[MCP-${this.name}] MCP 服务 ${this.name} 连接已建立`
     );
+
+    // 启动心跳检测
+    this.startHeartbeat();
   }
 
   /**
@@ -178,6 +190,9 @@ export class MCPConnection {
    * 清理连接资源
    */
   private cleanupConnection(): void {
+    // 停止心跳
+    this.stopHeartbeat();
+
     // 清理客户端
     if (this.client) {
       try {
@@ -265,6 +280,99 @@ export class MCPConnection {
   }
 
   /**
+   * 检测是否为会话过期错误
+   */
+  private isSessionExpiredError(error: unknown): boolean {
+    if (error instanceof Error) {
+      const message = error.message.toLowerCase();
+      return (
+        message.includes("session expired") ||
+        message.includes("会话过期") ||
+        message.includes("401") ||
+        message.includes("unauthorized")
+      );
+    }
+    return false;
+  }
+
+  /**
+   * 自动重连
+   */
+  private async reconnect(): Promise<void> {
+    this.connectionState = ConnectionState.RECONNECTING;
+    console.debug(
+      `[MCP-${this.name}] 检测到会话过期，正在重新连接...`
+    );
+
+    // 清理旧连接
+    this.cleanupConnection();
+
+    // 建立新连接
+    return this.attemptConnection();
+  }
+
+  /**
+   * 启动心跳检测
+   */
+  private async startHeartbeat(): Promise<void> {
+    // STDIO 不需要心跳（进程级连接稳定）
+    if (this.config.type === "stdio") {
+      return;
+    }
+
+    if (!this.heartbeatConfig?.enabled) {
+      return;
+    }
+    const interval = this.heartbeatConfig?.interval ?? 30 * 1000;
+
+    this.heartbeatTimer = setInterval(() => {
+      this.performHeartbeat().catch((error) => {
+        console.error(
+          `[MCP-${this.name}] 心跳检测执行异常：`,
+          error instanceof Error ? error.message : String(error)
+        );
+      });
+    }, interval);
+
+    console.debug(
+      `[MCP-${this.name}] 心跳检测已启动，间隔: ${interval}ms`
+    );
+  }
+
+  /**
+   * 执行一次心跳检查
+   */
+  private async performHeartbeat(): Promise<void> {
+    if (!this.client) {
+      return;
+    }
+
+    try {
+      // 调用 MCP SDK 的 ping() 方法
+      await this.client.ping();
+      console.debug(`[MCP-${this.name}] 心跳检测成功`);
+    } catch (error) {
+      console.warn(
+        `[MCP-${this.name}] 心跳检测失败，尝试重连...`,
+        error instanceof Error ? error.message : String(error)
+      );
+      // 心跳失败，尝试重连
+      await this.reconnect();
+    }
+  }
+
+  /**
+   * 停止心跳检测
+   */
+  private stopHeartbeat(): void {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+      console.debug(`[MCP-${this.name}] 心跳检测已停止`);
+    }
+  }
+
+  /**
    * 调用工具
    */
   async callTool(
@@ -297,6 +405,23 @@ export class MCPConnection {
 
       return result as ToolCallResult;
     } catch (error) {
+      // 检测是否为会话过期错误
+      if (this.isSessionExpiredError(error)) {
+        console.warn(
+          `[MCP-${this.name}] 检测到会话过期，尝试重新连接并重试...`
+        );
+
+        // 自动重连
+        await this.reconnect();
+
+        // 重试工具调用
+        return await this.client.callTool({
+          name,
+          arguments: arguments_ || {},
+        });
+      }
+
+      // 其他错误正常抛出
       console.error(
         `工具 ${name} 调用失败:`,
         error instanceof Error ? error.message : String(error)

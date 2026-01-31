@@ -89,6 +89,16 @@ export interface ModelScopeSSEOptions {
 }
 
 /**
+ * 心跳检测配置接口
+ */
+export interface HeartbeatConfig {
+  /** 是否启用心跳检测（默认 true） */
+  enabled?: boolean;
+  /** 心跳间隔（毫秒，默认 30000 = 30秒） */
+  interval?: number;
+}
+
+/**
  * MCP 服务配置接口
  * 包含所有 MCP 服务的配置选项（不包含服务名称）
  *
@@ -113,6 +123,8 @@ export interface MCPServiceConfig {
   apiKey?: string;
   headers?: Record<string, string>;
   customSSEOptions?: ModelScopeSSEOptions;
+  // 心跳配置
+  heartbeat?: HeartbeatConfig;
 }
 
 /**
@@ -164,16 +176,9 @@ export interface MCPServiceStatus {
 // 4. 工具调用相关类型
 // =========================
 
-/**
- * 工具调用结果接口
- */
-export interface ToolCallResult {
-  content: Array<{
-    type: string;
-    text: string;
-  }>;
-  isError?: boolean;
-}
+// 从 MCP SDK 重新导出工具调用结果类型
+// 使用 CompatibilityCallToolResult 以支持新旧协议版本
+export type { CompatibilityCallToolResult as ToolCallResult } from "@modelcontextprotocol/sdk/types.js";
 
 /**
  * JSON Schema 类型定义

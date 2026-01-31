@@ -13,6 +13,7 @@ export interface ToolCallResult {
     text: string;
   }>;
   isError?: boolean;
+  [key: string]: unknown; // 支持其他未知字段，与 lib/mcp/types 保持兼容
 }
 
 // MCP 消息接口 - 定义 JSON-RPC 2.0 标准消息格式

@@ -649,10 +649,10 @@ export class MCPServiceManager extends EventEmitter {
           throw new Error(`服务 ${toolInfo.serviceName} 未连接`);
         }
 
-        result = await service.callTool(
+        result = (await service.callTool(
           toolInfo.originalName,
           arguments_ || {}
-        );
+        )) as ToolCallResult;
 
         console.debug("[MCPManager] 工具调用成功", {
           toolName: toolName,

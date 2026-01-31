@@ -4,13 +4,14 @@
 
 /**
  * 工具调用结果接口
+ * 使用更宽松的类型定义以兼容不同来源的 ToolCallResult
  */
 export interface ToolCallResult {
-  content: Array<{
-    type: string;
-    text: string;
-  }>;
+  content: Array<Record<string, unknown>>;
   isError?: boolean;
+  _meta?: Record<string, unknown>;
+  toolResult?: unknown; // 支持旧协议版本
+  [key: string]: unknown; // 支持其他未知字段
 }
 
 /**

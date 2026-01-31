@@ -12,6 +12,7 @@ interface MockClient {
   close: ReturnType<typeof vi.fn>;
   listTools: ReturnType<typeof vi.fn>;
   callTool: ReturnType<typeof vi.fn>;
+  ping: ReturnType<typeof vi.fn>;
 }
 
 // Mock 依赖
@@ -79,6 +80,7 @@ describe("MCPConnection", () => {
       callTool: vi.fn().mockResolvedValue({
         content: [{ type: "text", text: "Success" }],
       }),
+      ping: vi.fn().mockResolvedValue(undefined),
     };
     vi.mocked(Client).mockImplementation(() => mockClient as unknown as Client);
 
@@ -578,6 +580,185 @@ describe("MCPConnection", () => {
       expect(() => new MCPConnection("test", invalidConfig, mockCallbacks)).toThrow(
         "stdio 类型需要 command 字段"
       );
+    });
+  });
+
+  describe("心跳检测", () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it("应该在连接成功后启动心跳（SSE 类型，启用心跳）", async () => {
+      const sseConfig: MCPServiceConfig = {
+        type: MCPTransportType.SSE,
+        url: "https://test.example.com/sse",
+        heartbeat: {
+          enabled: true,
+          interval: 5000,
+        },
+      };
+
+      const sseConnection = new MCPConnection("test-sse", sseConfig, mockCallbacks);
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [] });
+
+      await sseConnection.connect();
+
+      // 快进时间，触发心跳
+      vi.advanceTimersByTime(5000);
+
+      expect(mockClient.ping).toHaveBeenCalled();
+    });
+
+    it("应该在断开连接时停止心跳", async () => {
+      const sseConfig: MCPServiceConfig = {
+        type: MCPTransportType.SSE,
+        url: "https://test.example.com/sse",
+        heartbeat: {
+          enabled: true,
+          interval: 5000,
+        },
+      };
+
+      const sseConnection = new MCPConnection("test-sse", sseConfig, mockCallbacks);
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [] });
+      mockClient.close.mockResolvedValue(undefined);
+
+      await sseConnection.connect();
+
+      // 快进时间，触发心跳
+      vi.advanceTimersByTime(5000);
+      expect(mockClient.ping).toHaveBeenCalledTimes(1);
+
+      // 断开连接
+      await sseConnection.disconnect();
+
+      // 重置 mock
+      mockClient.ping.mockClear();
+
+      // 再次快进时间，心跳应该不再执行
+      vi.advanceTimersByTime(5000);
+      expect(mockClient.ping).not.toHaveBeenCalled();
+    });
+
+    it("STDIO 类型不应该启动心跳", async () => {
+      const stdioConfig: MCPServiceConfig = {
+        type: MCPTransportType.STDIO,
+        command: "node",
+        args: ["server.js"],
+        heartbeat: {
+          enabled: true,
+          interval: 5000,
+        },
+      };
+
+      const stdioConnection = new MCPConnection("test-stdio", stdioConfig, mockCallbacks);
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [] });
+
+      await stdioConnection.connect();
+
+      // 快进时间，不应该触发心跳
+      vi.advanceTimersByTime(5000);
+      expect(mockClient.ping).not.toHaveBeenCalled();
+    });
+
+    it("心跳禁用时不应该启动心跳", async () => {
+      const sseConfig: MCPServiceConfig = {
+        type: MCPTransportType.SSE,
+        url: "https://test.example.com/sse",
+        heartbeat: {
+          enabled: false,
+          interval: 5000,
+        },
+      };
+
+      const sseConnection = new MCPConnection("test-sse", sseConfig, mockCallbacks);
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [] });
+
+      await sseConnection.connect();
+
+      // 快进时间，不应该触发心跳
+      vi.advanceTimersByTime(5000);
+      expect(mockClient.ping).not.toHaveBeenCalled();
+    });
+
+    it("心跳未配置时应该使用默认间隔", async () => {
+      const sseConfig: MCPServiceConfig = {
+        type: MCPTransportType.SSE,
+        url: "https://test.example.com/sse",
+        heartbeat: {
+          enabled: true,
+        },
+      };
+
+      const sseConnection = new MCPConnection("test-sse", sseConfig, mockCallbacks);
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [] });
+
+      await sseConnection.connect();
+
+      // 默认间隔是 30000ms，快进到该时间
+      vi.advanceTimersByTime(30000);
+
+      expect(mockClient.ping).toHaveBeenCalled();
+    });
+
+    it("应该在心跳失败时自动重连", async () => {
+      const sseConfig: MCPServiceConfig = {
+        type: MCPTransportType.SSE,
+        url: "https://test.example.com/sse",
+        heartbeat: {
+          enabled: true,
+          interval: 5000,
+        },
+      };
+
+      const sseConnection = new MCPConnection("test-sse", sseConfig, mockCallbacks);
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [] });
+
+      await sseConnection.connect();
+
+      // 心跳失败
+      mockClient.ping.mockRejectedValue(new Error("Ping failed"));
+
+      // 快进时间，触发心跳
+      vi.advanceTimersByTime(5000);
+
+      // 应该尝试重连
+      expect(mockClient.connect).toHaveBeenCalled();
+    });
+
+    it("应该按照配置的间隔定期执行心跳", async () => {
+      const sseConfig: MCPServiceConfig = {
+        type: MCPTransportType.SSE,
+        url: "https://test.example.com/sse",
+        heartbeat: {
+          enabled: true,
+          interval: 3000,
+        },
+      };
+
+      const sseConnection = new MCPConnection("test-sse", sseConfig, mockCallbacks);
+      mockClient.connect.mockResolvedValue(undefined);
+      mockClient.listTools.mockResolvedValue({ tools: [] });
+
+      await sseConnection.connect();
+
+      // 快进时间，触发第一次心跳
+      vi.advanceTimersByTime(3000);
+      expect(mockClient.ping).toHaveBeenCalledTimes(1);
+
+      // 快进更多时间，触发第二次心跳
+      vi.advanceTimersByTime(3000);
+      expect(mockClient.ping).toHaveBeenCalledTimes(2);
+
+      // 快进更多时间，触发第三次心跳
+      vi.advanceTimersByTime(3000);
+      expect(mockClient.ping).toHaveBeenCalledTimes(3);
     });
   });
 });
