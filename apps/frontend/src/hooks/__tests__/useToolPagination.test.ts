@@ -1,4 +1,4 @@
-import type { ToolRowData } from "@/components/mcp-tool/McpToolTable";
+import type { ToolRowData } from "@/components/mcp-tool/mcp-tool-table";
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { useToolPagination } from "../useToolPagination";

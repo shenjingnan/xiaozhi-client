@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ToolSearchInput } from "../ToolSearchInput";
+import { ToolSearchInput } from "../tool-search-input";
 
 describe("ToolSearchInput", () => {
   const mockOnChange = vi.fn();

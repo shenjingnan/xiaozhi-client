@@ -1,8 +1,8 @@
 "use client";
 
 import { ToolDebugDialog } from "@/components/ToolDebugDialog";
-import { ToolSearchInput } from "./ToolSearchInput";
-import { ToolSortSelector } from "./ToolSortSelector";
+import { ToolSearchInput } from "./tool-search-input";
+import { ToolSortSelector } from "./tool-sort-selector";
 import {
   AlertDialog,
   AlertDialogAction,

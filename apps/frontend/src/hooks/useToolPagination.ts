@@ -1,4 +1,4 @@
-import type { ToolRowData } from "@/components/mcp-tool/McpToolTable";
+import type { ToolRowData } from "@/components/mcp-tool/mcp-tool-table";
 import { useCallback, useMemo, useState } from "react";
 
 interface UseToolPaginationResult {
