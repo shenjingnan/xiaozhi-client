@@ -1,6 +1,7 @@
 "use client";
 
 import { ToolDebugDialog } from "@/components/ToolDebugDialog";
+import { CollapsibleText } from "@/components/common/CollapsibleText";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,9 +15,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { ToolPagination } from "./tool-pagination";
-import { ToolSearchInput } from "./tool-search-input";
-import { ToolSortSelector } from "./tool-sort-selector";
 import {
   Table,
   TableBody,
@@ -34,6 +32,9 @@ import type { CustomMCPToolWithStats } from "@xiaozhi-client/shared-types";
 import { CoffeeIcon, Loader2, ZapIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ToolPagination } from "./tool-pagination";
+import { ToolSearchInput } from "./tool-search-input";
+import { ToolSortSelector } from "./tool-sort-selector";
 
 // 服务名称常量
 const UNKNOWN_SERVICE_NAME = "未知服务";
@@ -78,14 +79,6 @@ function formatTime(timeStr?: string): string {
   }
 }
 
-/**
- * 截断描述文本
- */
-function truncateDescription(text: string, maxLength = 50): string {
-  if (!text) return "-";
-  return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
-}
-
 export function McpToolTable({
   initialStatus = "all",
   className,
@@ -100,13 +93,8 @@ export function McpToolTable({
     useToolSearch(tools);
 
   // 使用分页 Hook
-  const {
-    currentPage,
-    totalPages,
-    paginatedTools,
-    setPage,
-    resetPage,
-  } = useToolPagination(filteredTools, 10);
+  const { currentPage, totalPages, paginatedTools, setPage, resetPage } =
+    useToolPagination(filteredTools, 10);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -437,8 +425,12 @@ export function McpToolTable({
                     <TableCell className="font-medium">
                       {tool.toolName}
                     </TableCell>
-                    <TableCell className="text-muted-foreground max-w-[300px] truncate">
-                      {truncateDescription(tool.description)}
+                    <TableCell className="text-muted-foreground max-w-[300px]">
+                      <CollapsibleText
+                        text={tool.description}
+                        maxLength={100}
+                        storageKey={`mcp-tool-desc-${tool.name}`}
+                      />
                     </TableCell>
                     <TableCell className="text-right">
                       {tool.usageCount}

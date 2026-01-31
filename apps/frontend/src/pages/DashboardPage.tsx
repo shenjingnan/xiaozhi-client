@@ -1,8 +1,8 @@
 import { AppSidebar } from "@/components/AppSidebar";
 import { DashboardStatusCard } from "@/components/DashboardStatusCard";
 import { McpServerList } from "@/components/McpServerList";
-import { McpToolTable } from "@/components/mcp-tool/mcp-tool-table";
 import { SiteHeader } from "@/components/SiteHeder";
+import { McpToolTable } from "@/components/mcp-tool/mcp-tool-table";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useWebSocketActions } from "@/providers/WebSocketProvider";
 
