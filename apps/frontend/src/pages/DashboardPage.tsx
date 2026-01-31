@@ -20,8 +20,12 @@ export default function DashboardPage() {
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               <DashboardStatusCard />
               <div className="flex flex-row gap-4 px-4 lg:px-6">
-                <McpToolTable initialStatus="all" showRefreshButton className="flex-[1_1_0%] min-w-0" />
-                <McpServerList updateConfig={updateConfig} className="w-80 shrink-0" />
+                <McpToolTable
+                  initialStatus="all"
+                  showRefreshButton
+                  className="flex-[1_1_0%] min-w-0"
+                />
+                <McpServerList updateConfig={updateConfig} />
               </div>
             </div>
           </div>

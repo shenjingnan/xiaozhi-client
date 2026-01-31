@@ -23,9 +23,7 @@ import type {
   MCPServerConfig,
   WorkflowParameter,
 } from "@xiaozhi-client/shared-types";
-import {
-  CoffeeIcon,
-} from "lucide-react";
+import { CoffeeIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AddMcpServerButton } from "./AddMcpServerButton";
@@ -486,55 +484,50 @@ export function McpServerList({
 
   return (
     <div className={className}>
-        <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <AddMcpServerButton />
-              <RestartButton />
-            </div>
-            <CozeWorkflowIntegration onToolAdded={refreshToolLists} />
-          {Object.entries(mcpServers || {}).map(
-            ([mcpServerName, mcpServer]) => (
-              <Card
-                key={mcpServerName}
-                className={"transition-all duration-200"}
-              >
-                <CardContent className="p-0">
-                  <div className="p-4 pb-2">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-4 flex-1">
-                        {/* <div className="mt-1">{getStatusIcon(service.status)}</div> */}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="text-lg font-semibold">
-                              {mcpServerName}
-                            </h3>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 ml-4">
-                        <McpServerSettingButton
-                          mcpServerName={mcpServerName}
-                          mcpServer={mcpServer as MCPServerConfig}
-                        />
-                        <RemoveMcpServerButton
-                          mcpServerName={mcpServerName}
-                          onRemoveSuccess={handleRefreshData}
-                          disabled={isRefreshing}
-                        />
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <AddMcpServerButton />
+          <RestartButton />
+        </div>
+        <CozeWorkflowIntegration onToolAdded={refreshToolLists} />
+        {Object.entries(mcpServers || {}).map(([mcpServerName, mcpServer]) => (
+          <Card key={mcpServerName} className={"transition-all duration-200"}>
+            <CardContent className="p-0">
+              <div className="p-4 pb-2">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-4 flex-1">
+                    {/* <div className="mt-1">{getStatusIcon(service.status)}</div> */}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-lg font-semibold">
+                          {mcpServerName}
+                        </h3>
                       </div>
                     </div>
                   </div>
-                </CardContent>
-                <CardFooter className="p-4 pt-2">
-                  <Badge variant="outline" className="text-xs">
-                    {getMcpServerCommunicationType(mcpServer)}
-                  </Badge>
-                </CardFooter>
-              </Card>
-            )
-          )}
-        </div>
+
+                  <div className="flex items-center gap-2 ml-4">
+                    <McpServerSettingButton
+                      mcpServerName={mcpServerName}
+                      mcpServer={mcpServer as MCPServerConfig}
+                    />
+                    <RemoveMcpServerButton
+                      mcpServerName={mcpServerName}
+                      onRemoveSuccess={handleRefreshData}
+                      disabled={isRefreshing}
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="p-4 pt-2">
+              <Badge variant="outline" className="text-xs">
+                {getMcpServerCommunicationType(mcpServer)}
+              </Badge>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
 
       {/* Coze 工具移除确认对话框 */}
       <AlertDialog

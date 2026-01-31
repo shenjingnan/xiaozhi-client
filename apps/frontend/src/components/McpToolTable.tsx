@@ -53,6 +53,7 @@ interface McpToolTableProps {
   initialStatus?: "enabled" | "disabled" | "all";
   showRefreshButton?: boolean;
   className?: string;
+  variant?: "default" | "compact";
 }
 
 /**
@@ -91,7 +92,7 @@ export function McpToolTable({
   const [tools, setTools] = useState<ToolRowData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
+  const [_refreshing, setRefreshing] = useState(false);
 
   // Coze 工具确认对话框状态
   const [cozeToolToRemove, setCozeToolToRemove] = useState<string | null>(null);
