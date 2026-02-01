@@ -49,12 +49,14 @@ export function useServerSearch(
     const keyword = searchValue.toLowerCase();
     return safeServers.filter((server) => {
       const nameMatch = (server?.name?.toLowerCase() || "").includes(keyword);
-      const typeMatch =
-        (server?.communicationType?.toLowerCase() || "").includes(keyword);
-      const typeLabelMatch =
-        (getCommunicationTypeLabel(server.communicationType) || "")
-          .toLowerCase()
-          .includes(keyword);
+      const typeMatch = (
+        server?.communicationType?.toLowerCase() || ""
+      ).includes(keyword);
+      const typeLabelMatch = (
+        getCommunicationTypeLabel(server.communicationType) || ""
+      )
+        .toLowerCase()
+        .includes(keyword);
       return nameMatch || typeMatch || typeLabelMatch;
     });
   }, [safeServers, searchValue]);

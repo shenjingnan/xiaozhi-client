@@ -1,10 +1,13 @@
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 /**
  * MCP 服务器状态类型
  */
-export type MCPServerStatusType = "connected" | "disconnected" | "connecting" | "error";
+export type MCPServerStatusType =
+  | "connected"
+  | "disconnected"
+  | "connecting"
+  | "error";
 
 /**
  * 状态徽章组件属性
@@ -34,7 +37,10 @@ export function StatusBadge({ status }: StatusBadgeProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <span className={cn("flex size-2 rounded-full", color[status])} title={labels[status]} />
+      <span
+        className={cn("flex size-2 rounded-full", color[status])}
+        title={labels[status]}
+      />
       {labels[status]}
     </div>
   );

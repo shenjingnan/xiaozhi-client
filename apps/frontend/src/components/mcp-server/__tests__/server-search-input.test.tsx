@@ -11,7 +11,11 @@ describe("ServerSearchInput", () => {
   it("应该正确渲染搜索输入框", () => {
     const mockOnChange = vi.fn();
     render(
-      <ServerSearchInput value="" onChange={mockOnChange} placeholder="搜索..." />
+      <ServerSearchInput
+        value=""
+        onChange={mockOnChange}
+        placeholder="搜索..."
+      />
     );
 
     const input = screen.getByPlaceholderText("搜索...");
@@ -31,7 +35,11 @@ describe("ServerSearchInput", () => {
     const user = userEvent.setup();
     const mockOnChange = vi.fn();
     render(
-      <ServerSearchInput value="" onChange={mockOnChange} placeholder="搜索..." />
+      <ServerSearchInput
+        value=""
+        onChange={mockOnChange}
+        placeholder="搜索..."
+      />
     );
 
     const input = screen.getByPlaceholderText("搜索...");

@@ -10,22 +10,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useToolPagination } from "@/hooks/useToolPagination";
 import { useServerSearch } from "@/hooks/useServerSearch";
 import { useServerSortPersistence } from "@/hooks/useServerSortPersistence";
-import { useMcpServersWithStatus } from "@/stores/config";
+import { useToolPagination } from "@/hooks/useToolPagination";
 import { cn } from "@/lib/utils";
+import { useMcpServersWithStatus } from "@/stores/config";
 import type { MCPServerConfig } from "@xiaozhi-client/shared-types";
 import { CoffeeIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { McpServerSettingButton } from "../McpServerSettingButton";
 import { RemoveMcpServerButton } from "../RemoveMcpServerButton";
-import { RestartButton } from "../RestartButton";
-import { StatusBadge } from "./status-badge";
 import { ServerPagination } from "./server-pagination";
 import { ServerSearchInput } from "./server-search-input";
 import { ServerSortSelector } from "./server-sort-selector";
+import { StatusBadge } from "./status-badge";
 
 /** 服务器行数据 */
 export interface ServerRowData {
@@ -217,24 +216,25 @@ export function McpServerTable({ className }: McpServerTableProps) {
                   <TableHead>服务器名称</TableHead>
                   <TableHead className="w-[100px]">状态</TableHead>
                   <TableHead className="w-[120px]">通信类型</TableHead>
-                  <TableHead className="w-[100px] text-right">工具数量</TableHead>
+                  <TableHead className="w-[100px] text-right">
+                    工具数量
+                  </TableHead>
                   <TableHead className="w-[220px] text-right">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paginatedServers.map((server) => (
                   <TableRow key={server.name}>
-                    <TableCell className="font-medium">
-                      {server.name}
+                    <TableCell className="font-medium">{server.name}</TableCell>
+                    <TableCell>
+                      {server.status ? (
+                        <StatusBadge status={server.status} />
+                      ) : (
+                        "-"
+                      )}
                     </TableCell>
                     <TableCell>
-                      {server.status ? <StatusBadge status={server.status} /> : "-"}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="secondary"
-                        className="rounded-md"
-                      >
+                      <Badge variant="secondary" className="rounded-md">
                         {COMMUNICATION_TYPE_LABELS[server.communicationType]}
                       </Badge>
                     </TableCell>

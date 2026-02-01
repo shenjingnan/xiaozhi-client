@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { mcpServerApi } from "@/services/api";
 import {
@@ -47,7 +46,7 @@ export function RemoveMcpServerButton({
     } catch (error) {
       console.error("删除 MCP 服务失败:", error);
       toast.error(
-        `删除 MCP 服务失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        `删除 MCP 服务失败: ${error instanceof Error ? error.message : "未知错误"}`
       );
     } finally {
       setIsLoading(false);
@@ -60,7 +59,7 @@ export function RemoveMcpServerButton({
         <div
           className={cn(
             "flex items-center gap-1 hover:cursor-pointer text-destructive hover:text-red-700 transition-all duration-100",
-            (disabled || isLoading) && "opacity-50 cursor-not-allowed",
+            (disabled || isLoading) && "opacity-50 cursor-not-allowed"
           )}
         >
           <TrashIcon size={14} />

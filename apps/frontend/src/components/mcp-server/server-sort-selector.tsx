@@ -40,9 +40,7 @@ export function ServerSortSelector({
     <div className="flex items-center gap-2">
       <Select
         value={value.field}
-        onValueChange={(field) =>
-          onChange({ field: field as ServerSortField })
-        }
+        onValueChange={(field) => onChange({ field: field as ServerSortField })}
       >
         <SelectTrigger id="server-sort-field" className="w-40">
           <SelectValue />

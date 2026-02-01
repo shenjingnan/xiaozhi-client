@@ -177,7 +177,9 @@ describe("McpServerTable", () => {
       render(<McpServerTable />);
 
       // 输入搜索关键词
-      const searchInput = screen.getByPlaceholderText("搜索服务器名称、通信类型...");
+      const searchInput = screen.getByPlaceholderText(
+        "搜索服务器名称、通信类型..."
+      );
       await user.type(searchInput, "server-1");
 
       // 应该显示搜索结果提示
@@ -195,7 +197,9 @@ describe("McpServerTable", () => {
       render(<McpServerTable />);
 
       // 搜索通信类型
-      const searchInput = screen.getByPlaceholderText("搜索服务器名称、通信类型...");
+      const searchInput = screen.getByPlaceholderText(
+        "搜索服务器名称、通信类型..."
+      );
       await user.type(searchInput, "stdio");
 
       // 应该显示搜索结果提示
@@ -212,7 +216,9 @@ describe("McpServerTable", () => {
       render(<McpServerTable />);
 
       // 输入搜索关键词
-      const searchInput = screen.getByPlaceholderText("搜索服务器名称、通信类型...");
+      const searchInput = screen.getByPlaceholderText(
+        "搜索服务器名称、通信类型..."
+      );
       await user.type(searchInput, "server-1");
 
       await waitFor(() => {
@@ -237,7 +243,9 @@ describe("McpServerTable", () => {
       render(<McpServerTable />);
 
       // 输入不存在的搜索关键词
-      const searchInput = screen.getByPlaceholderText("搜索服务器名称、通信类型...");
+      const searchInput = screen.getByPlaceholderText(
+        "搜索服务器名称、通信类型..."
+      );
       await user.type(searchInput, "nonexistent-server");
 
       // 应该显示无结果提示
