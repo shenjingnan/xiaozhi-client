@@ -56,7 +56,8 @@ export function RemoveMcpServerButton({
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <div
+        <button
+          type="button"
           className={cn(
             "flex items-center gap-1 hover:cursor-pointer text-destructive hover:text-red-700 transition-all duration-100",
             (disabled || isLoading) && "opacity-50 cursor-not-allowed"
@@ -64,7 +65,7 @@ export function RemoveMcpServerButton({
         >
           <TrashIcon size={14} />
           <span>卸载</span>
-        </div>
+        </button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>

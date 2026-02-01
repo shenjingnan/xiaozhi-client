@@ -31,9 +31,9 @@ describe("RemoveMcpServerButton", () => {
   it("应该正确渲染删除按钮", () => {
     render(<RemoveMcpServerButton mcpServerName="test-server" />);
 
-    const button = screen.getByRole("button", { name: "" });
+    const button = screen.getByRole("button", { name: "卸载" });
     expect(button).toBeInTheDocument();
-    expect(button).toHaveClass("size-8");
+    expect(button).toHaveClass("flex", "items-center", "gap-1", "text-destructive");
   });
 
   it("应该显示确认对话框", async () => {

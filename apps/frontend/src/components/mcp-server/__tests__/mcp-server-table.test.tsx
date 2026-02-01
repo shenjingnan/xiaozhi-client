@@ -49,27 +49,6 @@ vi.mock("../../RemoveMcpServerButton", () => ({
   ),
 }));
 
-vi.mock("../../RestartButton", () => ({
-  RestartButton: ({
-    variant,
-    className,
-    defaultText,
-  }: {
-    variant?: string;
-    className?: string;
-    defaultText?: string;
-  }) => (
-    <button
-      type="button"
-      data-testid="restart-button"
-      data-variant={variant}
-      className={className}
-    >
-      {defaultText || "重启"}
-    </button>
-  ),
-}));
-
 import { useMcpServersWithStatus } from "@/stores/config";
 
 const mockServers = [
@@ -149,12 +128,9 @@ describe("McpServerTable", () => {
     it("应该显示操作按钮", () => {
       render(<McpServerTable />);
 
-      // 应该有设置、删除、重启按钮
+      // 应该有设置和删除按钮
       expect(screen.getByTestId("setting-test-server-1")).toBeInTheDocument();
       expect(screen.getByTestId("remove-test-server-1")).toBeInTheDocument();
-      // 每个服务器行都有一个重启按钮
-      const restartButtons = screen.getAllByTestId("restart-button");
-      expect(restartButtons.length).toBe(3);
     });
 
     it("没有服务器时应该显示空状态", () => {
