@@ -53,9 +53,7 @@ export interface ToolRowData {
 
 interface McpToolTableProps {
   initialStatus?: "enabled" | "disabled" | "all";
-  showRefreshButton?: boolean;
   className?: string;
-  variant?: "default" | "compact";
 }
 
 /**
@@ -181,8 +179,9 @@ export function McpToolTable({
           initialStatus,
           sortConfig
         );
+        // API 已返回 enabled 字段，使用 API 返回值
         const formattedTools = toolsList.map((tool) =>
-          formatTool(tool, initialStatus === "enabled")
+          formatTool(tool, tool.enabled ?? false)
         );
         setTools(formattedTools);
       }
@@ -214,8 +213,9 @@ export function McpToolTable({
           initialStatus,
           sortConfig
         );
+        // API 已返回 enabled 字段，使用 API 返回值
         const formattedTools = toolsList.map((tool) =>
-          formatTool(tool, initialStatus === "enabled")
+          formatTool(tool, tool.enabled ?? false)
         );
         setTools(formattedTools);
       }

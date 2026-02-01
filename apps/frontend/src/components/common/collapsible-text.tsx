@@ -64,6 +64,14 @@ export function CollapsibleText({
     }
   }, [isExpanded, storageKey]);
 
+  // 当 storageKey 变化时，重新读取 localStorage
+  useEffect(() => {
+    if (storageKey) {
+      const stored = localStorage.getItem(storageKey);
+      setIsExpanded(stored === "true");
+    }
+  }, [storageKey]);
+
   // 切换展开/收起状态
   const toggleExpanded = () => {
     setIsExpanded((prev) => !prev);

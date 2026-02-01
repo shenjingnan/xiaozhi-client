@@ -21,12 +21,12 @@ export default function DashboardPage() {
               <DashboardStatusCard />
               <div className="flex flex-row gap-4 px-4 lg:px-6">
                 <McpToolTable
-                  variant="compact"
                   initialStatus="all"
-                  showRefreshButton
                   className="flex-[1_1_0%] min-w-0"
                 />
-                <McpServerList updateConfig={updateConfig} />
+                <div className="flex-[1_1_0%] min-w-0">
+                  <McpServerList updateConfig={updateConfig} />
+                </div>
               </div>
             </div>
           </div>

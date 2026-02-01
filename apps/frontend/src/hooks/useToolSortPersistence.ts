@@ -1,6 +1,7 @@
 "use client";
 
 import type { ToolSortConfig } from "@/components/mcp-tool/tool-sort-selector";
+import type { ToolSortField } from "@/components/mcp-tool/tool-sort-selector";
 import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "mcp-tool-sort-config";
@@ -8,6 +9,14 @@ const STORAGE_KEY = "mcp-tool-sort-config";
 const DEFAULT_CONFIG: ToolSortConfig = {
   field: "name",
 };
+
+// 有效的排序字段列表
+const VALID_SORT_FIELDS: ToolSortField[] = [
+  "name",
+  "enabled",
+  "usageCount",
+  "lastUsedTime",
+];
 
 /**
  * 排序配置持久化 Hook
@@ -20,7 +29,13 @@ export function useToolSortPersistence() {
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
-          return JSON.parse(saved) as ToolSortConfig;
+          const parsed = JSON.parse(saved) as ToolSortConfig;
+          // 验证 field 是否有效
+          if (parsed && VALID_SORT_FIELDS.includes(parsed.field)) {
+            return parsed;
+          }
+          // 无效数据，使用默认配置
+          console.warn("[useToolSortPersistence] 无效的排序字段，使用默认配置");
         }
       } catch (error) {
         console.warn("[useToolSortPersistence] 读取排序配置失败:", error);

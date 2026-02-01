@@ -247,7 +247,7 @@ export class MCPToolHandler {
 
   /**
    * 获取可用工具列表
-   * GET /api/tools/list?status=enabled|disabled|all&sortBy=name&order=asc
+   * GET /api/tools/list?status=enabled|disabled|all&sortBy=name
    */
   async listTools(c: Context<AppContext>): Promise<Response> {
     try {
