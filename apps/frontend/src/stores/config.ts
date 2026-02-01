@@ -9,12 +9,13 @@
  * - 集成 WebSocket 事件监听
  */
 
-import { apiClient } from "@services/api";
+import { apiClient, mcpServerApi } from "@services/api";
 import { webSocketManager } from "@services/websocket";
 import type {
   AppConfig,
   ConnectionConfig,
   MCPServerConfig,
+  MCPServerStatus,
   ModelScopeConfig,
   WebUIConfig,
 } from "@xiaozhi-client/shared-types";
@@ -45,6 +46,11 @@ interface ConfigState {
 
   // 配置来源追踪
   lastSource: "http" | "websocket" | "initial" | null;
+
+  // MCP 服务器状态缓存
+  mcpServerStatuses: MCPServerStatus[];
+  mcpServerStatusLoading: boolean;
+  mcpServerStatusLastUpdate: number | null;
 }
 
 /**
@@ -75,6 +81,12 @@ interface ConfigActions {
   // 工具方法
   reset: () => void;
   initialize: () => Promise<void>;
+
+  // MCP 服务器状态管理
+  setMcpServerStatuses: (statuses: MCPServerStatus[]) => void;
+  setMcpServerStatusLoading: (loading: boolean) => void;
+  refreshMcpServerStatuses: () => Promise<MCPServerStatus[]>;
+  getMcpServerStatus: (name: string) => MCPServerStatus | undefined;
 }
 
 /**
@@ -95,6 +107,9 @@ const initialState: ConfigState = {
     lastError: null,
   },
   lastSource: null,
+  mcpServerStatuses: [],
+  mcpServerStatusLoading: false,
+  mcpServerStatusLastUpdate: null,
 };
 
 /**
@@ -328,6 +343,59 @@ export const useConfigStore = create<ConfigStore>()(
           setLoading({ isLoading: false });
         }
       },
+
+      // ==================== MCP 服务器状态管理 ====================
+
+      setMcpServerStatuses: (statuses: MCPServerStatus[]) => {
+        set(
+          () => ({
+            mcpServerStatuses: statuses,
+            mcpServerStatusLastUpdate: Date.now(),
+          }),
+          false,
+          "setMcpServerStatuses"
+        );
+      },
+
+      setMcpServerStatusLoading: (loading: boolean) => {
+        set(
+          () => ({
+            mcpServerStatusLoading: loading,
+          }),
+          false,
+          "setMcpServerStatusLoading"
+        );
+      },
+
+      refreshMcpServerStatuses: async (): Promise<MCPServerStatus[]> => {
+        const { setMcpServerStatuses, setMcpServerStatusLoading } = get();
+
+        try {
+          setMcpServerStatusLoading(true);
+          console.log("[ConfigStore] 开始刷新 MCP 服务器状态");
+
+          const response = await mcpServerApi.listServers();
+          setMcpServerStatuses(response.servers);
+
+          console.log(
+            `[ConfigStore] MCP 服务器状态刷新成功，共 ${response.servers.length} 个服务器`
+          );
+          return response.servers;
+        } catch (error) {
+          const err =
+            error instanceof Error
+              ? error
+              : new Error("MCP 服务器状态刷新失败");
+          console.error("[ConfigStore] MCP 服务器状态刷新失败:", err);
+          throw err;
+        } finally {
+          setMcpServerStatusLoading(false);
+        }
+      },
+
+      getMcpServerStatus: (name: string): MCPServerStatus | undefined => {
+        return get().mcpServerStatuses.find((s) => s.name === name);
+      },
     }),
     {
       name: "config-store",
@@ -372,12 +440,6 @@ export const useConfigError = () =>
  */
 export const useMcpEndpoint = () =>
   useConfigStore((state) => state.config?.mcpEndpoint);
-
-/**
- * 获取 MCP 服务配置
- */
-export const useMcpServers = () =>
-  useConfigStore((state) => state.config?.mcpServers);
 
 /**
  * 获取 MCP 服务工具配置
@@ -482,5 +544,27 @@ export const useConfigUpdaters = () =>
       updateConnectionConfig: state.updateConnectionConfig,
       updateModelScopeConfig: state.updateModelScopeConfig,
       updateWebUIConfig: state.updateWebUIConfig,
+    }))
+  );
+
+// ==================== MCP 服务器状态 Hooks ====================
+
+/**
+ * 获取 MCP 服务器配置（向后兼容，仅配置）
+ */
+export const useMcpServers = () =>
+  useConfigStore((state) => state.config?.mcpServers);
+
+/**
+ * 获取 MCP 服务器状态（新增，包含连接状态）
+ * @returns { servers, loading, refresh, lastUpdate }
+ */
+export const useMcpServersWithStatus = () =>
+  useConfigStore(
+    useShallow((state) => ({
+      servers: state.mcpServerStatuses,
+      loading: state.mcpServerStatusLoading,
+      refresh: state.refreshMcpServerStatuses,
+      lastUpdate: state.mcpServerStatusLastUpdate,
     }))
   );

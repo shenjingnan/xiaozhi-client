@@ -13,15 +13,16 @@ import {
 import { useToolPagination } from "@/hooks/useToolPagination";
 import { useServerSearch } from "@/hooks/useServerSearch";
 import { useServerSortPersistence } from "@/hooks/useServerSortPersistence";
-import { useMcpServers } from "@/stores/config";
+import { useMcpServersWithStatus } from "@/stores/config";
 import { cn } from "@/lib/utils";
 import type { MCPServerConfig } from "@xiaozhi-client/shared-types";
 import { CoffeeIcon } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { McpServerSettingButton } from "../McpServerSettingButton";
 import { RemoveMcpServerButton } from "../RemoveMcpServerButton";
 import { RestartButton } from "../RestartButton";
+import { StatusBadge } from "./status-badge";
 import { ServerPagination } from "./server-pagination";
 import { ServerSearchInput } from "./server-search-input";
 import { ServerSortSelector } from "./server-sort-selector";
@@ -36,6 +37,8 @@ export interface ServerRowData {
   communicationType: "stdio" | "sse" | "streamable-http";
   /** 工具数量（可选） */
   toolCount?: number;
+  /** 服务器状态 */
+  status?: "connected" | "disconnected" | "connecting" | "error";
 }
 
 interface McpServerTableProps {
@@ -50,14 +53,31 @@ function formatServer(
   name: string,
   config: MCPServerConfig,
   communicationType: "stdio" | "sse" | "streamable-http",
-  toolCount?: number
+  toolCount?: number,
+  status?: "connected" | "disconnected" | "connecting" | "error"
 ): ServerRowData {
   return {
     name,
     config,
     communicationType,
     toolCount,
+    status,
   };
+}
+
+/**
+ * 获取通信类型
+ */
+function getCommunicationType(
+  config: MCPServerConfig
+): "stdio" | "sse" | "streamable-http" {
+  if ("command" in config && typeof config.command === "string") {
+    return "stdio";
+  }
+  if ("type" in config && config.type === "sse") {
+    return "sse";
+  }
+  return "streamable-http";
 }
 
 /**
@@ -77,31 +97,28 @@ const COMMUNICATION_TYPE_LABELS: Record<
  * 提供服务器列表展示、搜索、排序和分页功能
  */
 export function McpServerTable({ className }: McpServerTableProps) {
-  const mcpServers = useMcpServers();
+  const { servers, loading, refresh } = useMcpServersWithStatus();
 
   // 使用持久化排序 Hook
   const { sortConfig, setSortConfig } = useServerSortPersistence();
 
+  // 组件挂载时刷新服务器状态
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
   // 格式化服务器数据
   const serverList = useMemo(() => {
-    if (!mcpServers) return [];
-
-    return Object.entries(mcpServers).map(([name, config]) => {
-      // 判断通信类型
-      let communicationType: ServerRowData["communicationType"] =
-        "streamable-http";
-      if ("command" in config && typeof config.command === "string") {
-        communicationType = "stdio";
-      } else if ("type" in config && config.type === "sse") {
-        communicationType = "sse";
-      }
-
-      // 尝试获取工具数量
-      const toolCount = Object.keys((config as any)?.tools || {}).length;
-
-      return formatServer(name, config, communicationType, toolCount);
-    });
-  }, [mcpServers]);
+    return servers.map((server) =>
+      formatServer(
+        server.name,
+        server.config,
+        getCommunicationType(server.config),
+        server.tools.length,
+        server.status
+      )
+    );
+  }, [servers]);
 
   // 排序后的服务器列表
   const sortedServers = useMemo(() => {
@@ -134,22 +151,15 @@ export function McpServerTable({ className }: McpServerTableProps) {
 
   const paginatedServers = paginatedTools as unknown as ServerRowData[];
 
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
   // 手动刷新
   const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
     try {
-      // 触发重新加载可以通过 store 或回调实现
-      // 这里简化为提示用户刷新页面或等待其他操作
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await refresh();
       toast.success("刷新成功");
     } catch {
       toast.error("刷新失败");
-    } finally {
-      setIsRefreshing(false);
     }
-  }, []);
+  }, [refresh]);
 
   // 搜索条件变化时重置分页
   // biome-ignore lint/correctness/useExhaustiveDependencies: 需要在搜索值变化时重置分页
@@ -158,7 +168,7 @@ export function McpServerTable({ className }: McpServerTableProps) {
   }, [searchValue, resetPage]);
 
   return (
-    <div className={cn("flex flex-col gap-4", className)}>
+    <div className={cn("flex flex-col gap-4 w-full", className)}>
       {/* 排序选择器和搜索框 */}
       <div className="flex items-center justify-between gap-4">
         <ServerSortSelector value={sortConfig} onChange={setSortConfig} />
@@ -205,9 +215,10 @@ export function McpServerTable({ className }: McpServerTableProps) {
               <TableHeader>
                 <TableRow>
                   <TableHead>服务器名称</TableHead>
+                  <TableHead className="w-[100px]">状态</TableHead>
                   <TableHead className="w-[120px]">通信类型</TableHead>
                   <TableHead className="w-[100px] text-right">工具数量</TableHead>
-                  <TableHead className="w-[180px] text-right">操作</TableHead>
+                  <TableHead className="w-[220px] text-right">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -215,6 +226,9 @@ export function McpServerTable({ className }: McpServerTableProps) {
                   <TableRow key={server.name}>
                     <TableCell className="font-medium">
                       {server.name}
+                    </TableCell>
+                    <TableCell>
+                      {server.status ? <StatusBadge status={server.status} /> : "-"}
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -236,13 +250,7 @@ export function McpServerTable({ className }: McpServerTableProps) {
                         <RemoveMcpServerButton
                           mcpServerName={server.name}
                           onRemoveSuccess={handleRefresh}
-                          disabled={isRefreshing}
-                        />
-                        <RestartButton
-                          variant="outline"
-                          className="w-[80px]"
-                          defaultText="重启"
-                          restartingText="重启中"
+                          disabled={loading}
                         />
                       </div>
                     </TableCell>

@@ -9,6 +9,7 @@ import { McpServerTable } from "../mcp-server-table";
 
 // Mock stores
 vi.mock("@/stores/config", () => ({
+  useMcpServersWithStatus: vi.fn(),
   useMcpServers: vi.fn(),
   useConfig: vi.fn(() => ({
     mcpServers: {},
@@ -69,35 +70,52 @@ vi.mock("../../RestartButton", () => ({
   ),
 }));
 
-import { useMcpServers } from "@/stores/config";
+import { useMcpServersWithStatus } from "@/stores/config";
 
-const mockServers = {
-  "test-server-1": {
-    command: "node",
-    args: ["server.js"],
-    env: {},
-    tools: {
-      tool1: { description: "测试工具1" },
-      tool2: { description: "测试工具2" },
+const mockServers = [
+  {
+    name: "test-server-1",
+    status: "connected" as const,
+    connected: true,
+    tools: ["tool1", "tool2"],
+    config: {
+      command: "node",
+      args: ["server.js"],
+      env: {},
     },
   },
-  "test-server-2": {
-    type: "sse" as const,
-    url: "https://example.com/sse",
-    tools: {
-      tool3: { description: "测试工具3" },
+  {
+    name: "test-server-2",
+    status: "disconnected" as const,
+    connected: false,
+    tools: ["tool3"],
+    config: {
+      type: "sse" as const,
+      url: "https://example.com/sse",
     },
   },
-  "test-server-3": {
-    url: "https://example.com/mcp",
-    tools: {},
+  {
+    name: "test-server-3",
+    status: "connecting" as const,
+    connected: false,
+    tools: [],
+    config: {
+      url: "https://example.com/mcp",
+    },
   },
-};
+];
+
+const mockRefresh = vi.fn();
 
 describe("McpServerTable", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useMcpServers).mockReturnValue(mockServers);
+    vi.mocked(useMcpServersWithStatus).mockReturnValue({
+      servers: mockServers,
+      loading: false,
+      refresh: mockRefresh,
+      lastUpdate: null,
+    });
   });
 
   describe("组件加载和服务器列表显示", () => {
@@ -114,9 +132,9 @@ describe("McpServerTable", () => {
       render(<McpServerTable />);
 
       // 应该显示通信类型 Badge
-      expect(screen.getByText("本地进程")).toBeInTheDocument();
-      expect(screen.getByText("服务器推送")).toBeInTheDocument();
-      expect(screen.getByText("流式 HTTP")).toBeInTheDocument();
+      expect(screen.getByText("stdio")).toBeInTheDocument();
+      expect(screen.getByText("sse")).toBeInTheDocument();
+      expect(screen.getByText("http")).toBeInTheDocument();
     });
 
     it("应该正确显示工具数量", () => {
@@ -140,7 +158,12 @@ describe("McpServerTable", () => {
     });
 
     it("没有服务器时应该显示空状态", () => {
-      vi.mocked(useMcpServers).mockReturnValue({});
+      vi.mocked(useMcpServersWithStatus).mockReturnValue({
+        servers: [],
+        loading: false,
+        refresh: mockRefresh,
+        lastUpdate: null,
+      });
 
       render(<McpServerTable />);
 
@@ -173,7 +196,7 @@ describe("McpServerTable", () => {
 
       // 搜索通信类型
       const searchInput = screen.getByPlaceholderText("搜索服务器名称、通信类型...");
-      await user.type(searchInput, "本地进程");
+      await user.type(searchInput, "stdio");
 
       // 应该显示搜索结果提示
       await waitFor(() => {
