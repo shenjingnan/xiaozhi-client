@@ -31,11 +31,6 @@ vi.mock("@/pages/DashboardPage", () => ({
   default: () => <div data-testid="dashboard-page">Dashboard Page</div>,
 }));
 
-// Mock the settings page component to avoid complex dependencies
-vi.mock("@/pages/SettingsPage", () => ({
-  default: () => <div data-testid="settings-page">Settings Page</div>,
-}));
-
 // Mock the utils import to avoid side effects
 vi.mock("../utils/testInfiniteLoop", () => ({}));
 
@@ -91,18 +86,6 @@ describe("App Routing", () => {
     await waitFor(
       () => {
         expect(screen.getByTestId("dashboard-page")).toBeInTheDocument();
-      },
-      { timeout: 5000 }
-    );
-  });
-
-  it("renders Settings page when navigating to /settings", async () => {
-    renderWithRouter(<App />, ["/settings"]);
-
-    // Wait for the app to initialize and render the settings page
-    await waitFor(
-      () => {
-        expect(screen.getByTestId("settings-page")).toBeInTheDocument();
       },
       { timeout: 5000 }
     );

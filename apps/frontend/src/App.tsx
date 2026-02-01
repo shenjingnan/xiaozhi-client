@@ -1,7 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
 import { RestartNotificationProvider } from "@/hooks/useRestartNotifications";
 import DashboardPage from "@/pages/DashboardPage";
-import SettingsPage from "@/pages/SettingsPage";
 import { WebSocketProvider } from "@/providers/WebSocketProvider";
 import { Navigate, Route, Routes } from "react-router-dom";
 
@@ -14,7 +13,6 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" />} />
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
       </Routes>
 
       {/* Toast 通知容器 */}
