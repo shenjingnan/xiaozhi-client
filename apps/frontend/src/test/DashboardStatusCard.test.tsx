@@ -9,6 +9,17 @@ const mockUseMcpEndpoint = vi.hoisted(() =>
 const mockUseMcpServers = vi.hoisted(() =>
   vi.fn(() => ({ server1: { command: "test" } }))
 );
+const mockUseConfig = vi.hoisted(() =>
+  vi.fn(() => ({
+    modelscope: { apiKey: "test-key" },
+    platforms: { coze: { token: "test-token" } },
+    connection: {
+      heartbeatInterval: 30000,
+      heartbeatTimeout: 5000,
+      reconnectInterval: 5000,
+    },
+  }))
+);
 const mockUseWebSocketConnected = vi.hoisted(() => vi.fn(() => true));
 const mockUseWebSocketUrl = vi.hoisted(() =>
   vi.fn(() => "ws://localhost:3000")
@@ -17,6 +28,7 @@ const mockUseWebSocketUrl = vi.hoisted(() =>
 vi.mock("@/stores/config", () => ({
   useMcpEndpoint: mockUseMcpEndpoint,
   useMcpServers: mockUseMcpServers,
+  useConfig: mockUseConfig,
 }));
 
 vi.mock("@/stores/websocket", () => ({
@@ -39,12 +51,25 @@ vi.mock("@/components/ToolCallLogsDialog", () => ({
   ToolCallLogsDialog: () => <div data-testid="tool-call-logs-dialog" />,
 }));
 
+vi.mock("@/components/SystemSettingDialog", () => ({
+  SystemSettingDialog: () => <div data-testid="system-setting-dialog" />,
+}));
+
 describe("DashboardStatusCard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // 恢复默认mock值
     mockUseMcpEndpoint.mockReturnValue(["http://localhost:3000"]);
     mockUseMcpServers.mockReturnValue({ server1: { command: "test" } });
+    mockUseConfig.mockReturnValue({
+      modelscope: { apiKey: "test-key" },
+      platforms: { coze: { token: "test-token" } },
+      connection: {
+        heartbeatInterval: 30000,
+        heartbeatTimeout: 5000,
+        reconnectInterval: 5000,
+      },
+    });
     mockUseWebSocketConnected.mockReturnValue(true);
     mockUseWebSocketUrl.mockReturnValue("ws://localhost:3000");
   });
