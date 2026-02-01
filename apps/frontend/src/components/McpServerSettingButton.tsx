@@ -247,9 +247,13 @@ export function McpServerSettingButton({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="secondary" size="icon" className="size-8">
-          <SettingsIcon className="h-4 w-4" />
-        </Button>
+        <button
+          type="button"
+          className="flex items-center gap-1 hover:cursor-pointer hover:text-primary transition-all duration-100"
+        >
+          <SettingsIcon size={14} />
+          <span>配置</span>
+        </button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader className="mb-4">

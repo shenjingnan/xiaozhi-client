@@ -1,0 +1,4 @@
+@baseUrl = http://localhost:9999
+
+### 获取工具列表
+GET {{baseUrl}}/api/mcp-servers

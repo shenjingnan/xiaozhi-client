@@ -1,15 +1,13 @@
+import { AddMcpServerButton } from "@/components/AddMcpServerButton";
 import { AppSidebar } from "@/components/AppSidebar";
 import { DashboardStatusCard } from "@/components/DashboardStatusCard";
-import { McpServerList } from "@/components/McpServerList";
+import { RestartButton } from "@/components/RestartButton";
 import { SiteHeader } from "@/components/SiteHeder";
+import { McpServerTable } from "@/components/mcp-server/mcp-server-table";
 import { McpToolTable } from "@/components/mcp-tool/mcp-tool-table";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { useWebSocketActions } from "@/providers/WebSocketProvider";
 
 export default function DashboardPage() {
-  // 从 WebSocketProvider 获取操作方法
-  const { updateConfig } = useWebSocketActions();
-
   return (
     <SidebarProvider>
       <AppSidebar variant="inset" />
@@ -25,7 +23,13 @@ export default function DashboardPage() {
                   className="flex-[1_1_0%] min-w-0"
                 />
                 <div className="flex-[1_1_0%] min-w-0">
-                  <McpServerList updateConfig={updateConfig} />
+                  <div className="flex items-center gap-4 flex-col">
+                    <div className="flex items-center gap-2 w-full">
+                      <AddMcpServerButton />
+                      <RestartButton />
+                    </div>
+                    <McpServerTable />
+                  </div>
                 </div>
               </div>
             </div>
