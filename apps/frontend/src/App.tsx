@@ -13,6 +13,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" />} />
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
 
       {/* Toast 通知容器 */}
