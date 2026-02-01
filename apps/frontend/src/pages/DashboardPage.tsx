@@ -23,7 +23,7 @@ export default function DashboardPage() {
                   className="flex-[1_1_0%] min-w-0"
                 />
                 <div className="flex-[1_1_0%] min-w-0">
-                  <div className="flex items-center gap-2 flex-col">
+                  <div className="flex items-center gap-4 flex-col">
                     <div className="flex items-center gap-2 w-full">
                       <AddMcpServerButton />
                       <RestartButton />
