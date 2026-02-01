@@ -248,7 +248,7 @@ export function McpServerSettingButton({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="secondary" size="icon" className="size-8">
-          <SettingsIcon className="h-4 w-4" />
+          <SettingsIcon className="size-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px]">
