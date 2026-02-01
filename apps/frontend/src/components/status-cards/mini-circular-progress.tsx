@@ -23,6 +23,8 @@ export interface MiniCircularProgressProps {
   inactiveColor?: string;
   /** 数值后缀符号（如 "%"） */
   symbol?: string;
+  /** 可访问性标签 */
+  ariaLabel?: string;
 }
 
 /**
@@ -50,6 +52,7 @@ export function MiniCircularProgress({
   activeColor = "#3b82f6",
   inactiveColor = "#e5e7eb",
   symbol = "%",
+  ariaLabel,
 }: MiniCircularProgressProps) {
   const radius = (size - 6) / 2;
   const circumference = radius * 2 * Math.PI;
@@ -61,7 +64,15 @@ export function MiniCircularProgress({
       : circumference - (value / maxValue) * circumference;
 
   return (
-    <div className="relative inline-flex items-center justify-center">
+    <div
+      className="relative inline-flex items-center justify-center"
+      role="progressbar"
+      tabIndex={0}
+      aria-valuenow={value}
+      aria-valuemin={0}
+      aria-valuemax={maxValue}
+      aria-label={ariaLabel || `进度：${value}/${maxValue}`}
+    >
       <svg width={size} height={size} className="transform -rotate-90">
         <circle
           cx={size / 2}
