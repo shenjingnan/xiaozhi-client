@@ -145,7 +145,7 @@ export function McpServerTable({ className }: McpServerTableProps) {
     useServerSearch(sortedServers);
 
   // 使用分页 Hook（复用工具分页，泛型兼容）
-  const { currentPage, totalPages, paginatedTools, setPage, resetPage } =
+  const { currentPage, totalPages, paginatedTools, setPage } =
     useToolPagination(filteredServers as unknown as any, 10);
 
   const paginatedServers = paginatedTools as unknown as ServerRowData[];
@@ -162,9 +162,9 @@ export function McpServerTable({ className }: McpServerTableProps) {
 
   // 搜索条件变化时重置分页
   // biome-ignore lint/correctness/useExhaustiveDependencies: 需要在搜索值变化时重置分页
-  useMemo(() => {
-    resetPage();
-  }, [searchValue, resetPage]);
+  useEffect(() => {
+    setPage(1);
+  }, [searchValue, setPage]);
 
   return (
     <div className={cn("flex flex-col gap-4 w-full", className)}>

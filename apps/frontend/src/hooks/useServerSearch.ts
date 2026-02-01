@@ -52,11 +52,11 @@ export function useServerSearch(
       const typeMatch = (
         server?.communicationType?.toLowerCase() || ""
       ).includes(keyword);
-      const typeLabelMatch = (
-        getCommunicationTypeLabel(server.communicationType) || ""
-      )
-        .toLowerCase()
-        .includes(keyword);
+      const typeLabelMatch = server?.communicationType
+        ? getCommunicationTypeLabel(server.communicationType)
+            .toLowerCase()
+            .includes(keyword)
+        : false;
       return nameMatch || typeMatch || typeLabelMatch;
     });
   }, [safeServers, searchValue]);

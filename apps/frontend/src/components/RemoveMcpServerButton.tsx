@@ -58,6 +58,7 @@ export function RemoveMcpServerButton({
       <AlertDialogTrigger asChild>
         <button
           type="button"
+          disabled={disabled || isLoading}
           className={cn(
             "flex items-center gap-1 hover:cursor-pointer text-destructive hover:text-red-700 transition-all duration-100",
             (disabled || isLoading) && "opacity-50 cursor-not-allowed"

@@ -387,6 +387,8 @@ export const useConfigStore = create<ConfigStore>()(
               ? error
               : new Error("MCP 服务器状态刷新失败");
           console.error("[ConfigStore] MCP 服务器状态刷新失败:", err);
+          // 刷新失败时清空状态数据，避免显示过时信息
+          setMcpServerStatuses([]);
           throw err;
         } finally {
           setMcpServerStatusLoading(false);
