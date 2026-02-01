@@ -1,19 +1,20 @@
 /**
  * 仪表板状态卡片容器组件
  *
- * 组合显示小智接入点、客户端连接和 MCP 服务的状态卡片。
+ * 组合显示小智接入点、客户端连接、MCP 服务和系统设置的状态卡片。
  */
 
 import {
   ClientStatusCard,
   EndpointStatusCard,
   ServerStatusCard,
+  SystemStatusCard,
 } from "@/components/status-cards";
 
 /**
  * 仪表板状态卡片组件
  *
- * 按网格布局排列三个状态卡片：小智接入点、Xiaozhi Client 连接状态、MCP 服务数量。
+ * 按网格布局排列四个状态卡片：小智接入点、Xiaozhi Client 连接状态、MCP 服务数量、系统设置。
  */
 export function DashboardStatusCard() {
   return (
@@ -21,6 +22,7 @@ export function DashboardStatusCard() {
       <EndpointStatusCard />
       <ClientStatusCard />
       <ServerStatusCard />
+      <SystemStatusCard />
     </div>
   );
 }
