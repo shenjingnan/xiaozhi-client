@@ -80,13 +80,6 @@ export function McpServerList({
       inputSchema?: any;
     }>
   >([]);
-  const [isLoadingTools, setIsLoadingTools] = useState(false); // TODO: 用于未来加载状态
-  const [toolsError, setToolsError] = useState<string | null>(null); // TODO: 用于未来错误处理
-  // 标记为有意未使用，避免 TypeScript noUnusedLocals 错误
-  void isLoadingTools;
-  void setIsLoadingTools;
-  void toolsError;
-  void setToolsError;
 
   // 格式化工具信息的辅助函数
   const formatTool = useCallback((tool: any, enable: boolean) => {
@@ -131,9 +124,6 @@ export function McpServerList({
 
   // 获取工具列表
   const fetchTools = useCallback(async () => {
-    setIsLoadingTools(true);
-    setToolsError(null);
-
     try {
       // 并行获取已启用和未启用的工具列表
       const [enabledToolsList, disabledToolsList] = await Promise.all([
@@ -157,7 +147,6 @@ export function McpServerList({
       console.error("获取工具列表失败:", error);
       const errorMessage =
         error instanceof Error ? error.message : "获取工具列表失败";
-      setToolsError(errorMessage);
       toast.error(errorMessage);
 
       // 发生错误时回退到使用 mcpServerConfig
@@ -180,8 +169,6 @@ export function McpServerList({
         setEnabledTools(enabled);
         setDisabledTools(disabled);
       }
-    } finally {
-      setIsLoadingTools(false);
     }
   }, [mcpServerConfig, formatTool]);
 

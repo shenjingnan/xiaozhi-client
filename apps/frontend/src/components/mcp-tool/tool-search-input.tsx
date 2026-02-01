@@ -48,6 +48,7 @@ export function ToolSearchInput({
           onChange={handleInputChange}
           placeholder={placeholder}
           className="pl-9 pr-9 w-64"
+          aria-label="搜索工具"
         />
         {value && (
           <button

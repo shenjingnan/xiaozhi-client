@@ -18,6 +18,52 @@ export interface ToolPaginationProps {
 }
 
 /**
+ * 生成页码数组，使用智能省略逻辑
+ * @param currentPage 当前页码
+ * @param totalPages 总页数
+ * @returns 页码数组，-1 表示前省略号，-2 表示后省略号
+ */
+function getPageNumbers(
+  currentPage: number,
+  totalPages: number
+): Array<number | -1 | -2> {
+  const pageNumbers: Array<number | -1 | -2> = [];
+  const maxVisible = 7;
+
+  if (totalPages <= maxVisible) {
+    // 总页数 ≤ 7：显示所有页码
+    for (let i = 1; i <= totalPages; i++) {
+      pageNumbers.push(i);
+    }
+  } else if (currentPage <= 4) {
+    // 前 4 页：显示 1,2,3,4,5,...,last
+    for (let i = 1; i <= 5; i++) {
+      pageNumbers.push(i);
+    }
+    pageNumbers.push(-2, totalPages);
+  } else if (currentPage >= totalPages - 3) {
+    // 后 4 页：显示 1,...,last-3,last-2,last-1,last
+    pageNumbers.push(1, -1);
+    for (let i = totalPages - 3; i <= totalPages; i++) {
+      pageNumbers.push(i);
+    }
+  } else {
+    // 中间页：显示 1,...,cur-1,cur,cur+1,...,last
+    pageNumbers.push(
+      1,
+      -1,
+      currentPage - 1,
+      currentPage,
+      currentPage + 1,
+      -2,
+      totalPages
+    );
+  }
+
+  return pageNumbers;
+}
+
+/**
  * 工具表格分页组件
  * 提供智能省略的分页导航 UI
  */
@@ -32,6 +78,8 @@ export function ToolPagination({
   if (!shouldShowPagination) {
     return null;
   }
+
+  const pageNumbers = getPageNumbers(currentPage, totalPages);
 
   return (
     <div className="flex items-end justify-start py-4">
@@ -48,33 +96,8 @@ export function ToolPagination({
             />
           </PaginationItem>
 
-          {/* 页码生成 - 使用智能省略逻辑 */}
-          {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-            let pageNum: number | -1 | -2;
-
-            if (totalPages <= 7) {
-              // 总页数 ≤ 7：显示所有页码
-              pageNum = i + 1;
-            } else if (currentPage <= 4) {
-              // 前 4 页：显示 1,2,3,4,5,...,last
-              pageNum = i < 5 ? i + 1 : i === 5 ? -2 : totalPages;
-            } else if (currentPage >= totalPages - 3) {
-              // 后 4 页：显示 1,...,last-4,last-3,last-2,last-1,last
-              pageNum = i < 1 ? i + 1 : i === 1 ? -1 : totalPages - 5 + i;
-            } else {
-              // 中间页：显示 1,...,cur-1,cur,cur+1,...,last
-              pageNum =
-                i === 0
-                  ? 1
-                  : i === 1
-                    ? -1
-                    : i === 5
-                      ? -2
-                      : i === 6
-                        ? totalPages
-                        : currentPage - 2 + i;
-            }
-
+          {/* 页码生成 */}
+          {pageNumbers.map((pageNum) => {
             // 前省略号
             if (pageNum === -1) {
               return (

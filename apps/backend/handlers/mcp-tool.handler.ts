@@ -248,6 +248,9 @@ export class MCPToolHandler {
   /**
    * 获取可用工具列表
    * GET /api/tools/list?status=enabled|disabled|all&sortBy=name
+   *
+   * @param status 筛选状态：'enabled'（已启用）、'disabled'（未启用）、'all'（全部，默认）
+   * @param sortBy 排序字段：'name'（工具名称，默认）、'enabled'（启用状态）、'usageCount'（使用次数）、'lastUsedTime'（最近使用时间）
    */
   async listTools(c: Context<AppContext>): Promise<Response> {
     try {
@@ -257,8 +260,30 @@ export class MCPToolHandler {
       const status =
         (c.req.query("status") as "enabled" | "disabled" | "all") || "all";
 
-      // 解析排序参数
-      const sortBy = (c.req.query("sortBy") as ToolSortField) || "name";
+      // 解析排序参数并验证
+      const sortByParam = c.req.query("sortBy");
+      const validSortFields: ToolSortField[] = [
+        "name",
+        "enabled",
+        "usageCount",
+        "lastUsedTime",
+      ];
+      const sortBy = validSortFields.includes(sortByParam as ToolSortField)
+        ? (sortByParam as ToolSortField)
+        : "name";
+
+      // 如果提供了无效的排序字段，返回错误
+      if (
+        sortByParam &&
+        !validSortFields.includes(sortByParam as ToolSortField)
+      ) {
+        return c.fail(
+          "INVALID_SORT_FIELD",
+          `无效的排序字段: ${sortByParam}。支持的排序字段: ${validSortFields.join(", ")}`,
+          undefined,
+          400
+        );
+      }
 
       // 从 Context 中获取 MCPServiceManager 实例
       const serviceManager = c.get("mcpServiceManager");

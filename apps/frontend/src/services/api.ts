@@ -571,7 +571,7 @@ export class ApiClient {
   async getToolsList(
     status: "enabled" | "disabled" | "all" = "all",
     sortConfig?: { field: string }
-  ): Promise<CustomMCPTool[]> {
+  ): Promise<CustomMCPToolWithStats[]> {
     // 构建查询参数
     const queryParams = new URLSearchParams();
     if (status !== "all") {

@@ -96,7 +96,7 @@ export function McpToolTable({
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [_refreshing, setRefreshing] = useState(false);
+  const [, setRefreshing] = useState(false);
 
   // Coze 工具确认对话框状态
   const [cozeToolToRemove, setCozeToolToRemove] = useState<string | null>(null);
@@ -157,34 +157,22 @@ export function McpToolTable({
     []
   );
 
+  // 加载工具数据的辅助函数
+  const loadToolsData = useCallback(async () => {
+    const toolsList = await apiClient.getToolsList(initialStatus, sortConfig);
+    const formattedTools = toolsList.map((tool) =>
+      formatTool(tool, tool.enabled ?? false)
+    );
+    setTools(formattedTools);
+  }, [initialStatus, sortConfig, formatTool]);
+
   // 获取工具列表
   const fetchTools = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      let allTools: CustomMCPToolWithStats[] = [];
-
-      if (initialStatus === "all") {
-        // 获取所有工具并统一排序（后端会按 sortBy 排序）
-        allTools = await apiClient.getToolsList("all", sortConfig);
-        // API 已返回 enabled 字段，直接使用
-        const formattedTools = allTools.map((tool) =>
-          formatTool(tool, tool.enabled ?? false)
-        );
-        setTools(formattedTools);
-      } else {
-        // 分别获取已启用或已禁用工具
-        const toolsList = await apiClient.getToolsList(
-          initialStatus,
-          sortConfig
-        );
-        // API 已返回 enabled 字段，使用 API 返回值
-        const formattedTools = toolsList.map((tool) =>
-          formatTool(tool, tool.enabled ?? false)
-        );
-        setTools(formattedTools);
-      }
+      await loadToolsData();
     } catch (err) {
       console.error("获取工具列表失败:", err);
       setError(err instanceof Error ? err.message : "获取工具列表失败");
@@ -192,38 +180,17 @@ export function McpToolTable({
     } finally {
       setLoading(false);
     }
-  }, [initialStatus, formatTool, sortConfig]);
+  }, [loadToolsData]);
 
   // 刷新工具列表（用于启用/禁用后更新）
   const refreshToolLists = useCallback(async () => {
     try {
-      let allTools: CustomMCPToolWithStats[] = [];
-
-      if (initialStatus === "all") {
-        // 获取所有工具并统一排序（后端会按 sortBy 排序）
-        allTools = await apiClient.getToolsList("all", sortConfig);
-        // API 已返回 enabled 字段，直接使用
-        const formattedTools = allTools.map((tool) =>
-          formatTool(tool, tool.enabled ?? false)
-        );
-        setTools(formattedTools);
-      } else {
-        // 分别获取已启用或已禁用工具
-        const toolsList = await apiClient.getToolsList(
-          initialStatus,
-          sortConfig
-        );
-        // API 已返回 enabled 字段，使用 API 返回值
-        const formattedTools = toolsList.map((tool) =>
-          formatTool(tool, tool.enabled ?? false)
-        );
-        setTools(formattedTools);
-      }
+      await loadToolsData();
     } catch (err) {
       console.error("刷新工具列表失败:", err);
       toast.error("刷新工具列表失败");
     }
-  }, [initialStatus, formatTool, sortConfig]);
+  }, [loadToolsData]);
 
   // 手动刷新
   const handleRefresh = useCallback(async () => {
