@@ -10,7 +10,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { apiClient } from "@/services/api";
 import {
@@ -24,14 +23,7 @@ import type {
   MCPServerConfig,
   WorkflowParameter,
 } from "@xiaozhi-client/shared-types";
-import {
-  CoffeeIcon,
-  MinusIcon,
-  PlusIcon,
-  Settings,
-  Wrench,
-  ZapIcon,
-} from "lucide-react";
+import { CoffeeIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AddMcpServerButton } from "./AddMcpServerButton";
@@ -47,10 +39,12 @@ const CUSTOM_SERVICE_NAME = "自定义服务";
 
 interface McpServerListProps {
   updateConfig?: (config: any) => Promise<void>;
+  className?: string;
 }
 
 export function McpServerList({
   updateConfig: _updateConfig,
+  className,
 }: McpServerListProps) {
   const mcpServerConfig = useMcpServerConfig();
   const mcpServers = useMcpServers();
@@ -86,8 +80,6 @@ export function McpServerList({
       inputSchema?: any;
     }>
   >([]);
-  const [isLoadingTools, setIsLoadingTools] = useState(false);
-  const [toolsError, setToolsError] = useState<string | null>(null);
 
   // 格式化工具信息的辅助函数
   const formatTool = useCallback((tool: any, enable: boolean) => {
@@ -132,9 +124,6 @@ export function McpServerList({
 
   // 获取工具列表
   const fetchTools = useCallback(async () => {
-    setIsLoadingTools(true);
-    setToolsError(null);
-
     try {
       // 并行获取已启用和未启用的工具列表
       const [enabledToolsList, disabledToolsList] = await Promise.all([
@@ -158,7 +147,6 @@ export function McpServerList({
       console.error("获取工具列表失败:", error);
       const errorMessage =
         error instanceof Error ? error.message : "获取工具列表失败";
-      setToolsError(errorMessage);
       toast.error(errorMessage);
 
       // 发生错误时回退到使用 mcpServerConfig
@@ -181,8 +169,6 @@ export function McpServerList({
         setEnabledTools(enabled);
         setDisabledTools(disabled);
       }
-    } finally {
-      setIsLoadingTools(false);
     }
   }, [mcpServerConfig, formatTool]);
 
@@ -257,7 +243,8 @@ export function McpServerList({
     };
   }>({ open: false });
 
-  const handleToggleTool = async (name: string, currentEnable: boolean) => {
+  const _handleToggleTool = async (name: string, currentEnable: boolean) => {
+    // TODO: 用于未来工具切换功能
     try {
       // 首先找到对应的原始工具信息
       const originalTool = [...enabledTools, ...disabledTools].find(
@@ -308,6 +295,8 @@ export function McpServerList({
       toast.error(error instanceof Error ? error.message : "切换工具状态失败");
     }
   };
+  // 标记为有意未使用
+  void _handleToggleTool;
 
   // 确认移除 Coze 工具的处理函数
   const handleConfirmRemoveCozeTool = async () => {
@@ -333,7 +322,8 @@ export function McpServerList({
   };
 
   // 处理打开参数配置对话框
-  const handleConfigureTool = (tool: any) => {
+  const _handleConfigureTool = (tool: any) => {
+    // TODO: 用于未来参数配置功能
     // 检查是否为 coze 工具
     if (tool.serverName === "coze") {
       setParameterConfigDialog({
@@ -342,9 +332,12 @@ export function McpServerList({
       });
     }
   };
+  // 标记为有意未使用
+  void _handleConfigureTool;
 
   // 处理打开工具调试对话框
-  const handleDebugTool = (tool: any) => {
+  const _handleDebugTool = (tool: any) => {
+    // TODO: 用于未来工具调试功能
     setDebugDialog({
       open: true,
       tool: {
@@ -356,6 +349,8 @@ export function McpServerList({
       },
     });
   };
+  // 标记为有意未使用
+  void _handleDebugTool;
 
   // 从工具对象构建 CozeWorkflow 对象
   const buildCozeWorkflowFromTool = (tool: any): CozeWorkflow => {
@@ -489,269 +484,50 @@ export function McpServerList({
   }
 
   return (
-    <div className="flex flex-col gap-4 px-4 lg:px-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">你的聚合 MCP 服务</h2>
-          <p className="text-sm text-muted-foreground">
-            你可以在这里管理你的 MCP
-            服务，包括启用/禁用工具，以及查看工具的详细信息。
-          </p>
+    <div className={className}>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <AddMcpServerButton />
+          <RestartButton />
         </div>
-        {isRefreshing && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
-            刷新中...
-          </div>
-        )}
-      </div>
-      <div className="*:data-[slot=card]:shadow-xs @xl/main:grid-cols-8 @5xl/main:grid-cols-8 grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card">
-        {/* <div>{JSON.stringify(enabledTools, null, 2)}</div> */}
-        <Card className="transition-all duration-200 col-span-3">
-          <CardContent className="p-4">
-            <div className="flex-col">
-              <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
-                <Wrench className="h-4 w-4" />
-                使用中的工具 ({enabledTools.length})
-                {isLoadingTools && (
-                  <span className="text-xs text-muted-foreground">
-                    (加载中...)
-                  </span>
-                )}
-              </h4>
-              <div className="flex-1 space-y-2">
-                {isLoadingTools ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="text-sm text-muted-foreground">
-                      加载工具列表中...
-                    </div>
-                  </div>
-                ) : toolsError ? (
-                  <div className="flex flex-col items-center justify-center py-8 px-4">
-                    <div className="text-sm text-red-500 mb-2">
-                      {toolsError}
-                    </div>
-                    <Button variant="outline" size="sm" onClick={fetchTools}>
-                      重试
-                    </Button>
-                  </div>
-                ) : (
-                  enabledTools.map((tool) => (
-                    <div
-                      key={tool.toolName}
-                      className="flex items-start justify-between p-4 bg-slate-50 rounded-md font-mono"
-                    >
-                      <div className="text-md flex flex-col gap-2">
-                        <div className="flex items-center gap-2 justify-start">
-                          <Badge variant="secondary" className="rounded-md">
-                            {tool.serverName}
-                          </Badge>
-                          <span>{tool.toolName}</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground my-2">
-                          {tool.description}
-                        </p>
-                        <div className="flex items-center gap-4">
-                          <span className="text-sm text-muted-foreground">
-                            <span className="text-muted-foreground">
-                              使用次数:
-                            </span>{" "}
-                            <span className="text-primary font-bold">
-                              {tool.usageCount || 0}
-                            </span>
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            <span className="text-muted-foreground">
-                              最后使用:
-                            </span>{" "}
-                            <span className="text-primary font-bold">
-                              {tool.lastUsedTime || "-"}
-                            </span>
-                          </span>
-                        </div>
+        <CozeWorkflowIntegration onToolAdded={refreshToolLists} />
+        {Object.entries(mcpServers || {}).map(([mcpServerName, mcpServer]) => (
+          <Card key={mcpServerName} className={"transition-all duration-200"}>
+            <CardContent className="p-0">
+              <div className="p-4 pb-2">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-4 flex-1">
+                    {/* <div className="mt-1">{getStatusIcon(service.status)}</div> */}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-lg font-semibold">
+                          {mcpServerName}
+                        </h3>
                       </div>
+                    </div>
+                  </div>
 
-                      <div className="flex items-center gap-2 ml-4">
-                        {tool.serverName === "customMCP" && (
-                          <Button
-                            variant="secondary"
-                            size="icon"
-                            className="size-8 hover:bg-blue-500 hover:text-white"
-                            onClick={() => handleConfigureTool(tool)}
-                            title="配置参数"
-                          >
-                            <Settings size={16} />
-                          </Button>
-                        )}
-                        <Button
-                          variant="secondary"
-                          size="icon"
-                          className="size-8 hover:bg-blue-500 hover:text-white"
-                          onClick={() => handleDebugTool(tool)}
-                          title="调试工具"
-                        >
-                          <ZapIcon size={18} />
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="icon"
-                          className="size-8 hover:bg-red-500 hover:text-white"
-                          onClick={() => handleToggleTool(tool.name, true)}
-                        >
-                          <MinusIcon size={18} />
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="transition-all duration-200 col-span-3">
-          <CardContent className="p-4">
-            <div className="flex-col">
-              <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
-                <Wrench className="h-4 w-4" />
-                未使用的工具 ({disabledTools.length})
-                {isLoadingTools && (
-                  <span className="text-xs text-muted-foreground">
-                    (加载中...)
-                  </span>
-                )}
-              </h4>
-              <div className="flex-1 space-y-2">
-                {isLoadingTools ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="text-sm text-muted-foreground">
-                      加载工具列表中...
-                    </div>
-                  </div>
-                ) : toolsError ? (
-                  <div className="flex flex-col items-center justify-center py-8 px-4">
-                    <div className="text-sm text-red-500 mb-2">
-                      {toolsError}
-                    </div>
-                    <Button variant="outline" size="sm" onClick={fetchTools}>
-                      重试
-                    </Button>
-                  </div>
-                ) : disabledTools.length === 0 ? (
-                  // 保持原有的空状态显示
-                  <div className="flex-1 flex flex-col items-center gap-4 py-20 px-4 bg-slate-50 rounded-md font-mono h-full">
-                    <CoffeeIcon
-                      strokeWidth={1.5}
-                      size={48}
-                      className="text-muted-foreground"
+                  <div className="flex items-center gap-2 ml-4">
+                    <McpServerSettingButton
+                      mcpServerName={mcpServerName}
+                      mcpServer={mcpServer as MCPServerConfig}
                     />
-                    <span className="text-sm text-muted-foreground">
-                      全部工具都已经启用
-                    </span>
+                    <RemoveMcpServerButton
+                      mcpServerName={mcpServerName}
+                      onRemoveSuccess={handleRefreshData}
+                      disabled={isRefreshing}
+                    />
                   </div>
-                ) : (
-                  disabledTools.map((tool) => (
-                    <div
-                      key={tool.toolName}
-                      className="flex items-start justify-between p-4 bg-slate-50 rounded-md font-mono"
-                    >
-                      <div className="text-md flex flex-col gap-2">
-                        <div className="flex items-center gap-2 justify-start">
-                          <Badge variant="secondary" className="rounded-md">
-                            {tool.serverName}
-                          </Badge>
-                          <span>{tool.toolName}</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {tool.description}
-                        </p>
-                        <div className="flex items-center gap-4">
-                          <span className="text-sm text-muted-foreground">
-                            <span className="text-muted-foreground">
-                              使用次数:
-                            </span>{" "}
-                            <span className="text-primary font-bold">
-                              {tool.usageCount || 0}
-                            </span>
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            <span className="text-muted-foreground">
-                              最后使用:
-                            </span>{" "}
-                            <span className="text-primary font-bold">
-                              {tool.lastUsedTime || "-"}
-                            </span>
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 ml-4">
-                        <Button
-                          variant="secondary"
-                          size="icon"
-                          className="size-8 hover:bg-green-500 hover:text-white"
-                          onClick={() => handleToggleTool(tool.name, false)}
-                        >
-                          <PlusIcon className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                )}
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <div className="transition-all duration-200 gap-4 flex flex-col col-span-2">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <AddMcpServerButton />
-              <RestartButton />
-            </div>
-            <CozeWorkflowIntegration onToolAdded={refreshToolLists} />
-          </div>
-          {Object.entries(mcpServers || {}).map(
-            ([mcpServerName, mcpServer]) => (
-              <Card
-                key={mcpServerName}
-                className={"transition-all duration-200"}
-              >
-                <CardContent className="p-0">
-                  <div className="p-4 pb-2">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-4 flex-1">
-                        {/* <div className="mt-1">{getStatusIcon(service.status)}</div> */}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="text-lg font-semibold">
-                              {mcpServerName}
-                            </h3>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 ml-4">
-                        <McpServerSettingButton
-                          mcpServerName={mcpServerName}
-                          mcpServer={mcpServer as MCPServerConfig}
-                        />
-                        <RemoveMcpServerButton
-                          mcpServerName={mcpServerName}
-                          onRemoveSuccess={handleRefreshData}
-                          disabled={isRefreshing}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="p-4 pt-2">
-                  <Badge variant="outline" className="text-xs">
-                    {getMcpServerCommunicationType(mcpServer)}
-                  </Badge>
-                </CardFooter>
-              </Card>
-            )
-          )}
-        </div>
+            </CardContent>
+            <CardFooter className="p-4 pt-2">
+              <Badge variant="outline" className="text-xs">
+                {getMcpServerCommunicationType(mcpServer)}
+              </Badge>
+            </CardFooter>
+          </Card>
+        ))}
       </div>
 
       {/* Coze 工具移除确认对话框 */}

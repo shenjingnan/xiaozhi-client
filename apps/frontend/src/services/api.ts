@@ -566,14 +566,21 @@ export class ApiClient {
    * 获取工具列表
    * 调用 /api/tools/list 端点，返回 { list: CustomMCPTool[], total: number } 格式
    * @param status 筛选状态：'enabled'（已启用）、'disabled'（未启用）、'all'（全部，默认）
+   * @param sortConfig 排序配置：可选的排序字段
    */
   async getToolsList(
-    status: "enabled" | "disabled" | "all" = "all"
-  ): Promise<CustomMCPTool[]> {
+    status: "enabled" | "disabled" | "all" = "all",
+    sortConfig?: { field: string }
+  ): Promise<CustomMCPToolWithStats[]> {
     // 构建查询参数
     const queryParams = new URLSearchParams();
     if (status !== "all") {
       queryParams.append("status", status);
+    }
+
+    // 添加排序参数
+    if (sortConfig) {
+      queryParams.append("sortBy", sortConfig.field);
     }
 
     const url = `/api/tools/list${
