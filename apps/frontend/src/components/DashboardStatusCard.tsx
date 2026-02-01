@@ -1,161 +1,26 @@
-import { McpEndpointSettingButton } from "@/components/McpEndpointSettingButton";
-import { ToolCallLogsDialog } from "@/components/ToolCallLogsDialog";
-import { WebUrlSettingButton } from "@/components/WebUrlSettingButton";
+/**
+ * 仪表板状态卡片容器组件
+ *
+ * 组合显示小智接入点、客户端连接和 MCP 服务的状态卡片。
+ */
+
 import {
-  Card,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { useMcpEndpoint, useMcpServers } from "@/stores/config";
-import { useWebSocketConnected, useWebSocketUrl } from "@/stores/websocket";
+  ClientStatusCard,
+  EndpointStatusCard,
+  ServerStatusCard,
+} from "@/components/status-cards";
 
-const MiniCircularProgress = ({
-  showValue = true,
-  value = 0,
-  maxValue = 100,
-  size = 60,
-  activeColor = "#3b82f6",
-  inactiveColor = "#e5e7eb",
-  symbol = "%",
-}) => {
-  const radius = (size - 6) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const strokeDasharray = circumference;
-  // 防止除零错误，当maxValue为0时，将strokeDashoffset设为circumference（显示为空）
-  const strokeDashoffset =
-    maxValue === 0
-      ? circumference
-      : circumference - (value / maxValue) * circumference;
-
-  return (
-    <div className="relative inline-flex items-center justify-center">
-      <svg width={size} height={size} className="transform -rotate-90">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={inactiveColor}
-          strokeWidth={6}
-          fill="none"
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={activeColor}
-          strokeWidth={6}
-          fill="none"
-          strokeDasharray={strokeDasharray}
-          strokeDashoffset={strokeDashoffset}
-          strokeLinecap="round"
-          className="transition-all duration-300 ease-in-out"
-        />
-      </svg>
-      {showValue && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-xs font-medium">
-            {value}
-            {symbol}
-          </span>
-        </div>
-      )}
-    </div>
-  );
-};
-
+/**
+ * 仪表板状态卡片组件
+ *
+ * 按网格布局排列三个状态卡片：小智接入点、Xiaozhi Client 连接状态、MCP 服务数量。
+ */
 export function DashboardStatusCard() {
-  const mcpServers = useMcpServers();
-  const connected = useWebSocketConnected();
-  const mcpServerCount = Object.keys(mcpServers || {}).length;
-  const wsUrl = useWebSocketUrl();
-  const mcpEndpoint = useMcpEndpoint();
   return (
     <div className="*:data-[slot=card]:shadow-xs @xl/main:grid-cols-2 @5xl/main:grid-cols-4 grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card lg:px-6">
-      <Card className="@container/card">
-        <CardHeader className="relative">
-          <CardDescription>小智接入点</CardDescription>
-          <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
-            {Array.isArray(mcpEndpoint)
-              ? mcpEndpoint.length
-              : mcpEndpoint
-                ? 1
-                : 0}
-          </CardTitle>
-          <div className="absolute right-4 top-4 flex flex-col items-center">
-            <MiniCircularProgress
-              showValue={false}
-              value={
-                Array.isArray(mcpEndpoint)
-                  ? mcpEndpoint.length
-                  : mcpEndpoint
-                    ? 1
-                    : 0
-              }
-              maxValue={Math.max(
-                Array.isArray(mcpEndpoint) ? mcpEndpoint.length : 1,
-                1
-              )}
-              activeColor="#16a34a"
-              inactiveColor="#f87171"
-              size={30}
-              symbol=""
-            />
-          </div>
-        </CardHeader>
-        <CardFooter className="flex-col items-end gap-1 text-sm">
-          <McpEndpointSettingButton />
-        </CardFooter>
-      </Card>
-      <Card className="@container/card">
-        <CardHeader className="relative">
-          <CardDescription>Xiaozhi Client</CardDescription>
-          <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
-            {connected ? "已连接" : "未连接"}
-          </CardTitle>
-          <div className="absolute right-4 top-4">
-            <MiniCircularProgress
-              showValue={false}
-              value={1}
-              maxValue={1}
-              activeColor={connected ? "#16a34a" : "#f87171"}
-              inactiveColor={connected ? "#16a34a" : "#f87171"}
-              size={30}
-              symbol=""
-            />
-          </div>
-        </CardHeader>
-        <CardFooter className="flex items-center justify-between gap-1 text-sm">
-          <div className="text-muted-foreground">{wsUrl}</div>
-          <WebUrlSettingButton />
-        </CardFooter>
-      </Card>
-      <Card className="@container/card">
-        <CardHeader className="relative">
-          <CardDescription>MCP服务</CardDescription>
-          <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
-            {mcpServerCount}
-          </CardTitle>
-          <div className="absolute right-4 top-4">
-            <MiniCircularProgress
-              showValue={false}
-              value={mcpServerCount}
-              maxValue={Math.max(mcpServerCount, 1)}
-              activeColor="#16a34a"
-              inactiveColor="#f87171"
-              size={30}
-              symbol=""
-            />
-          </div>
-        </CardHeader>
-        <CardFooter className="flex items-center justify-between gap-1 text-sm">
-          <div className="text-muted-foreground">
-            共 {mcpServerCount} 个服务
-          </div>
-          <ToolCallLogsDialog />
-        </CardFooter>
-      </Card>
+      <EndpointStatusCard />
+      <ClientStatusCard />
+      <ServerStatusCard />
     </div>
   );
 }
