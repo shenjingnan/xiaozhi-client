@@ -473,7 +473,7 @@ describe("HeartbeatHandler", () => {
     it("should handle client connection", () => {
       heartbeatHandler.handleClientConnect(clientId);
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         `客户端连接建立: ${clientId}`
       );
       expect(mockStatusService.updateClientInfo).toHaveBeenCalledWith(
