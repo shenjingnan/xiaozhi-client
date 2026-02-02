@@ -41,7 +41,6 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_code_oauth_token: ${{ secrets.ANTHROPIC_AUTH_TOKEN }}
-          ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL || vars.ANTHROPIC_BASE_URL }}
           show_full_output: ${{ vars.CLAUDE_FULL_OUTPUT || 'false' }}
 
           # Optional: Customize the trigger phrase (default: @claude)
@@ -51,10 +50,9 @@ jobs:
           # assignee_trigger: "claude-bot"
 
           # Optional: Configure Claude's behavior with CLI arguments
-          claude_args: |
-            --model glm-4.7
-            --max-turns 10
-            --system-prompt "Follow our coding standards. Ensure all new code has tests. Use TypeScript for new files."
+          # claude_args: |
+          #   --model glm-4.7
+          #   --system-prompt "Follow our coding standards. Ensure all new code has tests. Use TypeScript for new files."
 
           # Optional: Advanced settings configuration
           # settings: |
