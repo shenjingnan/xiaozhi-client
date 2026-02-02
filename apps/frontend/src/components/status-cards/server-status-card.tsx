@@ -4,8 +4,8 @@
  * 显示当前连接的 MCP 服务数量，并提供服务器列表和工具调用日志查看入口。
  */
 
-import { McpServerTableDialog } from "@/components/McpServerTableDialog";
 import { ToolCallLogsDialog } from "@/components/ToolCallLogsDialog";
+import { McpServerTableDialog } from "@/components/mcp-server/mcp-server-table-dialog";
 import {
   Card,
   CardDescription,
