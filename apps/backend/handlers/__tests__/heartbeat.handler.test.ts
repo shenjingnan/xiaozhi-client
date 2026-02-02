@@ -416,7 +416,7 @@ describe("HeartbeatHandler", () => {
 
       heartbeatHandler.stopHeartbeatMonitoring(mockIntervalId);
 
-      expect(mockLogger.info).toHaveBeenCalledWith("停止心跳监控");
+      expect(mockLogger.debug).toHaveBeenCalledWith("停止心跳监控");
       expect(clearIntervalSpy).toHaveBeenCalledWith(mockIntervalId);
     });
   });
@@ -492,7 +492,7 @@ describe("HeartbeatHandler", () => {
     it("should handle client disconnection", () => {
       heartbeatHandler.handleClientDisconnect(clientId);
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         `客户端连接断开: ${clientId}`
       );
       expect(mockStatusService.updateClientInfo).toHaveBeenCalledWith(
@@ -697,7 +697,7 @@ describe("HeartbeatHandler", () => {
 
       // Stop monitoring
       heartbeatHandler.stopHeartbeatMonitoring(intervalId);
-      expect(mockLogger.info).toHaveBeenCalledWith("停止心跳监控");
+      expect(mockLogger.debug).toHaveBeenCalledWith("停止心跳监控");
     });
 
     it("should handle mixed success and error scenarios", async () => {

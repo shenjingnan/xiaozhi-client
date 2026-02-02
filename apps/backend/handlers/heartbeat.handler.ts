@@ -156,7 +156,7 @@ export class HeartbeatHandler {
    * 停止心跳监控
    */
   stopHeartbeatMonitoring(intervalId: NodeJS.Timeout): void {
-    this.logger.info("停止心跳监控");
+    this.logger.debug("停止心跳监控");
     clearInterval(intervalId);
   }
 
@@ -199,7 +199,7 @@ export class HeartbeatHandler {
    * 处理客户端连接断开
    */
   handleClientDisconnect(clientId: string): void {
-    this.logger.info(`客户端连接断开: ${clientId}`);
+    this.logger.debug(`客户端连接断开: ${clientId}`);
 
     // 更新状态为断开连接
     this.statusService.updateClientInfo(
