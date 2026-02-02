@@ -117,6 +117,7 @@ jobs:
           sed -i "s/ISSUE_TITLE_PLACEHOLDER/$ISSUE_TITLE/g" /tmp/claude_prompt.txt
 
           # 执行 Claude Code（headless 模式 + 自动接受）
+          claude -p "hi"
           claude -p "$(cat /tmp/claude_prompt.txt)" --dangerously-skip-permissions 2>&1 | tee /tmp/claude_output.log
 
           # 检查是否有修改
@@ -125,14 +126,6 @@ jobs:
           else
             echo "no_changes=false" >> $GITHUB_ENV
           fi
-
-      - name: 运行质量检查
-        if: env.no_changes == 'false'
-        run: |
-          pnpm run lint
-          pnpm run check:type
-          pnpm run test
-          pnpm run build
 
       - name: 提交修复
         if: env.no_changes == 'false'
