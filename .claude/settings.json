@@ -39,10 +39,12 @@
       "Bash(xargs:*)",
       "Bash(ls:*)",
       "Bash(grep:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
       "WebFetch",
       "WebSearch"
     ],
-    "deny": ["Bash(git commit:*)", "Bash(git push:*)"],
+    "deny": [],
     "ask": []
   }
 }
