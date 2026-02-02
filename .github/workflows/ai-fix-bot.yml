@@ -1,0 +1,252 @@
+# .github/workflows/ai-fix-bot.yml
+name: AI Fix Bot (Claude Code + GLM-4.7)
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+on:
+  issue_comment:
+    types: [created]
+  issues:
+    types: [opened]
+
+jobs:
+  ai-fix:
+    # 只在被 @fixit 提及时触发
+    if: |
+      contains(github.event.comment.body, '@xiaozhi') ||
+      contains(github.event.issue.body, '@xiaozhi')
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 启用 Corepack
+        run: corepack enable
+
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.19.2'
+          cache: 'pnpm'
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 安装 Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: 配置 Claude Code 使用 GLM-4.7
+        env:
+          ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
+        run: |
+          mkdir -p ~/.claude
+          cat > ~/.claude/settings.json << 'EOF'
+          {
+            "env": {
+              "ANTHROPIC_AUTH_TOKEN": "${ZHIPU_API_KEY}",
+              "ANTHROPIC_BASE_URL": "https://open.bigmodel.cn/api/anthropic",
+              "API_TIMEOUT_MS": "3000000",
+              "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": 1
+            }
+          }
+          EOF
+
+          cat > ~/.claude.json << 'EOF'
+          {
+            "hasCompletedOnboarding": true
+          }
+          EOF
+
+      - name: 提取 Issue 内容
+        id: extract
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          # 合并 Issue body 和 comment body
+          BODY="${ISSUE_BODY:-}"
+          if [ -n "${COMMENT_BODY:-}" ]; then
+            BODY="$BODY"$'\n\n'"$COMMENT_BODY"
+          fi
+
+          # 移除 @fixit 触发词
+          CONTENT=$(echo "$BODY" | sed 's/@fixit//g')
+
+          # 保存到文件
+          printf '%s' "$CONTENT" > /tmp/issue_request.md
+
+          # 设置输出变量（使用 GITHUB_OUTPUT 文件）
+          {
+            echo 'title<<EOF'
+            printf '%s' "${{ github.event.issue.title }}"
+            echo 'EOF'
+            echo 'content_file=/tmp/issue_request.md'
+            echo 'issue_number='"$ISSUE_NUMBER"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: 创建功能分支
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          BRANCH_NAME="ai-fix/issue-${ISSUE_NUMBER}-$(date +%s)"
+          git checkout -b "$BRANCH_NAME"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
+
+      - name: 使用 Claude Code 分析和修复
+        id: ai_fix
+        env:
+          ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+        run: |
+          # 创建安全的提示词文件
+          cat > /tmp/claude_prompt.txt << 'PROMPT_EOF'
+          你是一个专业的代码修复助手。请分析以下 GitHub Issue 并修复相关问题：
+
+          Issue 标题：ISSUE_TITLE_PLACEHOLDER
+
+          Issue 内容请查看文件：/tmp/issue_request.md
+
+          请按照以下步骤操作：
+          1. 先使用 /init 命令初始化项目理解
+          2. 分析问题根因
+          3. 制定修复计划
+          4. 实施修复
+          5. 运行 pnpm lint、pnpm check:type、pnpm test 验证修复
+          6. 确保所有检查通过
+
+          注意：
+          - 只修改必要的文件
+          - 遵循项目的编码规范（参见 CLAUDE.md）
+          - 所有注释和用户界面文本必须使用中文
+          - 使用项目路径别名系统
+          PROMPT_EOF
+
+          # 替换标题占位符（使用 sed，避免变量替换问题）
+          sed -i "s/ISSUE_TITLE_PLACEHOLDER/$ISSUE_TITLE/g" /tmp/claude_prompt.txt
+
+          # 执行 Claude Code（headless 模式 + 自动接受）
+          claude -p "$(cat /tmp/claude_prompt.txt)" --dangerously-skip-permissions 2>&1 | tee /tmp/claude_output.log
+
+          # 检查是否有修改
+          if git diff --quiet; then
+            echo "no_changes=true" >> $GITHUB_ENV
+          else
+            echo "no_changes=false" >> $GITHUB_ENV
+          fi
+
+      - name: 运行质量检查
+        if: env.no_changes == 'false'
+        run: |
+          pnpm run lint
+          pnpm run check:type
+          pnpm run test
+          pnpm run build
+
+      - name: 提交修复
+        if: env.no_changes == 'false'
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+        run: |
+          git config user.email "noreply@anthropic.com"
+          git config user.name "Claude Bot"
+
+          git add -A
+
+          # 使用 heredoc 创建安全的提交消息
+          git commit -m "$(cat <<COMMIT_EOF
+          fix: 由 AI 修复 Issue #${ISSUE_NUMBER}
+
+          - 使用 Claude Code + GLM-4.7 自动修复
+          - Issue: ${ISSUE_TITLE}
+
+          Co-Authored-By: Claude Code <noreply@anthropic.com>
+          COMMIT_EOF
+          )"
+
+          git push origin "${{ env.branch_name }}"
+
+      - name: 创建 Pull Request
+        id: create_pr
+        if: env.no_changes == 'false'
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: ${{ env.branch_name }}
+          title: "🤖 AI Fix: ${{ env.issue_title }}"
+          body: |
+            ## AI 自动修复 PR
+
+            此 PR 由 Claude Code + GLM-4.7 自动生成并修复。
+
+            ### 关联 Issue
+            Closes #${{ env.issue_number }}
+
+            ### Issue 标题
+            ${{ env.issue_title }}
+
+            ### 修复说明
+            - 使用 Claude Code CLI 分析问题
+            - 模型：GLM-4.7 (智谱 AI)
+            - 已通过完整的质量检查：lint、type-check、test、build
+
+            ### 检查清单
+            - [x] 代码通过 lint 检查
+            - [x] 代码通过类型检查
+            - [x] 所有测试通过
+            - [x] 构建成功
+            - [x] 遵循项目编码规范
+          draft: false
+
+      - name: 添加成功评论
+        if: env.no_changes == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prUrl = '${{ steps.create_pr.outputs.pull-request-url }}';
+            const body = `✅ **AI 修复成功**\n\n已创建 PR：${prUrl}\n\n请人工审查修复内容后合并。`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+      - name: 添加无修改评论
+        if: env.no_changes == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = `ℹ️ **AI 分析完成**\n\nClaude Code 已分析该问题，但未进行任何修改。\n\n可能原因：\n- 问题不需要代码修改\n- 配置或环境问题\n- 需要更多信息才能修复\n\n请查看完整的工作流日志。`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+      - name: 添加失败评论
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = `❌ **AI 修复失败**\n\n请查看工作流日志获取详细错误信息。`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
