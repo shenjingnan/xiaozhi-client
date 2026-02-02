@@ -73,6 +73,7 @@ jobs:
           ISSUE_BODY: ${{ github.event.issue.body }}
           COMMENT_BODY: ${{ github.event.comment.body }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
         run: |
           # 合并 Issue body 和 comment body
           BODY="${ISSUE_BODY:-}"
@@ -80,19 +81,21 @@ jobs:
             BODY="$BODY"$'\n\n'"$COMMENT_BODY"
           fi
 
-          # 移除 @fixit 触发词
-          CONTENT=$(echo "$BODY" | sed 's/@fixit//g')
+          # 移除 @xiaozhi 触发词
+          CONTENT=$(echo "$BODY" | sed 's/@xiaozhi//g')
 
           # 保存到文件
           printf '%s' "$CONTENT" > /tmp/issue_request.md
 
           # 设置输出变量（使用 GITHUB_OUTPUT 文件）
+          # 使用 heredoc 语法确保多行值正确处理
           {
-            echo 'title<<EOF'
-            printf '%s' "${{ github.event.issue.title }}"
-            echo 'EOF'
-            echo 'content_file=/tmp/issue_request.md'
-            echo 'issue_number='"$ISSUE_NUMBER"
+            echo "title<<EOF"
+            printf '%s' "$ISSUE_TITLE"
+            echo ""
+            echo "EOF"
+            echo "content_file=/tmp/issue_request.md"
+            echo "issue_number=${ISSUE_NUMBER}"
           } >> "$GITHUB_OUTPUT"
 
       - name: 创建功能分支
