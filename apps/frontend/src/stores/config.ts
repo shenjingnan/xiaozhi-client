@@ -369,7 +369,8 @@ export const useConfigStore = create<ConfigStore>()(
 
       refreshMcpServerStatuses: async (): Promise<MCPServerStatus[]> => {
         const state = get();
-        const { setMcpServerStatuses, setMcpServerStatusLoading, setConfig } = state;
+        const { setMcpServerStatuses, setMcpServerStatusLoading, setConfig } =
+          state;
 
         try {
           setMcpServerStatusLoading(true);
