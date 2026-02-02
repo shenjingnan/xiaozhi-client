@@ -30,6 +30,46 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Create MCP Config
+        env:
+          ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
+        run: |
+          cat > /tmp/mcp-config.json << EOF
+          {
+            "mcpServers": {
+              "zai-mcp-server": {
+                "type": "stdio",
+                "command": "npx",
+                "args": ["-y", "@z_ai/mcp-server"],
+                "env": {
+                  "Z_AI_MODE": "ZHIPU",
+                  "Z_AI_API_KEY": "$ZHIPU_API_KEY"
+                }
+              },
+              "web-search-prime": {
+                "type": "http",
+                "url": "https://open.bigmodel.cn/api/mcp/web_search_prime/mcp",
+                "headers": {
+                  "Authorization": "Bearer $ZHIPU_API_KEY"
+                }
+              },
+              "web-reader": {
+                "type": "http",
+                "url": "https://open.bigmodel.cn/api/mcp/web_reader/mcp",
+                "headers": {
+                  "Authorization": "Bearer $ZHIPU_API_KEY"
+                }
+              },
+              "zread": {
+                "type": "http",
+                "url": "https://open.bigmodel.cn/api/mcp/zread/mcp",
+                "headers": {
+                  "Authorization": "Bearer $ZHIPU_API_KEY"
+                }
+              }
+            }
+          }
+          EOF
       - name: Run Claude Code
         id: claude
         uses: anthropics/claude-code-action@v1
@@ -42,3 +82,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           show_full_output: ${{ vars.CLAUDE_FULL_OUTPUT || 'false' }}
+          claude_args: "--mcp-config /tmp/mcp-config.json"

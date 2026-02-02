@@ -418,15 +418,15 @@ export function McpToolTable({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
+                        <button
+                          type="button"
+                          className="flex items-center gap-1 hover:cursor-pointer hover:text-primary transition-all duration-100"
                           onClick={() => handleDebugTool(tool)}
                           title="调试工具"
                         >
-                          <ZapIcon className="h-4 w-4" />
-                        </Button>
+                          <ZapIcon size={14} />
+                          <span>调试</span>
+                        </button>
                       </div>
                     </TableCell>
                   </TableRow>
