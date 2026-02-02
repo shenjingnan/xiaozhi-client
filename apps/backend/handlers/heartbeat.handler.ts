@@ -183,7 +183,7 @@ export class HeartbeatHandler {
    * 处理客户端连接建立
    */
   handleClientConnect(clientId: string): void {
-    this.logger.info(`客户端连接建立: ${clientId}`);
+    this.logger.debug(`客户端连接建立: ${clientId}`);
 
     // 更新状态为连接
     this.statusService.updateClientInfo(
