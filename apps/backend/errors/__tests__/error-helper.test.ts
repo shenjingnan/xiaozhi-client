@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Logger } from "../../Logger.js";
-import type { MCPError } from "../ErrorHelper.js";
+import type { MCPError } from "../error-helper.js";
 import {
   ErrorCategory,
   RecoveryStrategy,
@@ -9,7 +9,7 @@ import {
   formatUserFriendlyMessage,
   getErrorStatistics,
   shouldAlert,
-} from "../ErrorHelper.js";
+} from "../error-helper.js";
 
 // Mock dependencies
 vi.mock("../../Logger.js");

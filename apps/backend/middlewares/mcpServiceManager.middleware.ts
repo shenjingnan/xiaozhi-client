@@ -8,7 +8,7 @@ import type { Context, Next } from "hono";
 import {
   MCPServiceManagerNotInitializedError,
   WebServerNotAvailableError,
-} from "../errors/MCPErrors.middleware.js";
+} from "../errors/mcp-errors.middleware.js";
 import type { AppContextVariables } from "../types/hono.context.js";
 
 /**

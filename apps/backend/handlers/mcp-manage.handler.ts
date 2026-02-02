@@ -1,6 +1,6 @@
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
-import { ErrorCategory, MCPError, MCPErrorCode } from "@/errors/MCPErrors.js";
+import { ErrorCategory, MCPError, MCPErrorCode } from "@/errors/mcp-errors.js";
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { MCPService } from "@/lib/mcp";
 import { getEventBus } from "@/services/event-bus.service.js";
