@@ -103,3 +103,5 @@ Xiaozhi
 XIAOZHI
 XVCJ
 xzcli
+ZHIPU
+zread
