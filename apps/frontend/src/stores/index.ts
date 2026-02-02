@@ -28,7 +28,11 @@ export async function initializeStores(): Promise<void> {
     console.log("[Stores] 初始化配置 store");
     await useConfigStore.getState().initialize();
 
-    // 3. 初始化状态 store（设置状态数据管理和 WebSocket 监听）
+    // 3. 初始化 MCP 服务器状态
+    console.log("[Stores] 初始化 MCP 服务器状态");
+    await useConfigStore.getState().refreshMcpServerStatuses();
+
+    // 4. 初始化状态 store（设置状态数据管理和 WebSocket 监听）
     console.log("[Stores] 初始化状态 store");
     await useStatusStore.getState().initialize();
 
