@@ -1,4 +1,4 @@
-import { apiClient } from "@services/api";
+import { apiClient, mcpServerApi } from "@services/api";
 import type { AppConfig } from "@xiaozhi-client/shared-types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useConfigStore } from "../config";
@@ -9,6 +9,9 @@ vi.mock("@services/api", () => ({
     getConfig: vi.fn(),
     updateConfig: vi.fn(),
     reloadConfig: vi.fn(),
+  },
+  mcpServerApi: {
+    listServers: vi.fn(),
   },
 }));
 
@@ -179,6 +182,108 @@ describe("Config Store", () => {
       expect(state.config).toBeNull();
       expect(state.loading.lastError).toBeNull();
       expect(state.loading.isLoading).toBe(false);
+    });
+  });
+
+  describe("MCP 服务器状态管理", () => {
+    it("refreshMcpServerStatuses 应该刷新状态并同步更新 config.mcpServers", async () => {
+      const initialConfig: AppConfig = {
+        mcpEndpoint: "test-endpoint",
+        mcpServers: {
+          oldServer: { command: "old", args: [] },
+        },
+      };
+
+      const mockServerStatuses = [
+        {
+          name: "server1",
+          status: "connected" as const,
+          connected: true,
+          tools: ["tool1", "tool2"],
+          config: { command: "node", args: ["server1.js"] },
+        },
+        {
+          name: "server2",
+          status: "disconnected" as const,
+          connected: false,
+          tools: [],
+          config: { command: "python", args: ["-m", "server2"] },
+        },
+      ];
+
+      const store = useConfigStore.getState();
+      store.setConfig(initialConfig);
+
+      vi.mocked(mcpServerApi.listServers).mockResolvedValue({
+        servers: mockServerStatuses,
+        total: 2,
+      });
+
+      const result = await store.refreshMcpServerStatuses();
+
+      // 验证 API 被调用
+      expect(mcpServerApi.listServers).toHaveBeenCalled();
+
+      // 验证返回的状态数据
+      expect(result).toEqual(mockServerStatuses);
+      expect(useConfigStore.getState().mcpServerStatuses).toEqual(
+        mockServerStatuses
+      );
+
+      // 验证 config.mcpServers 被同步更新
+      const updatedConfig = useConfigStore.getState().config;
+      expect(updatedConfig?.mcpServers).toEqual({
+        server1: { command: "node", args: ["server1.js"] },
+        server2: { command: "python", args: ["-m", "server2"] },
+      });
+
+      // 验证其他配置字段保持不变
+      expect(updatedConfig?.mcpEndpoint).toBe("test-endpoint");
+    });
+
+    it("refreshMcpServerStatuses 在没有 config 时不应该更新 mcpServers", async () => {
+      const mockServerStatuses = [
+        {
+          name: "server1",
+          status: "connected" as const,
+          connected: true,
+          tools: ["tool1"],
+          config: { command: "node", args: ["server1.js"] },
+        },
+      ];
+
+      // 确保 config 为 null
+      const store = useConfigStore.getState();
+      store.reset();
+
+      vi.mocked(mcpServerApi.listServers).mockResolvedValue({
+        servers: mockServerStatuses,
+        total: 1,
+      });
+
+      await store.refreshMcpServerStatuses();
+
+      // 验证状态被更新
+      expect(useConfigStore.getState().mcpServerStatuses).toEqual(
+        mockServerStatuses
+      );
+
+      // 验证 config 仍为 null
+      expect(useConfigStore.getState().config).toBeNull();
+    });
+
+    it("refreshMcpServerStatuses 应该正确处理错误", async () => {
+      const error = new Error("状态刷新失败");
+      vi.mocked(mcpServerApi.listServers).mockRejectedValue(error);
+
+      const store = useConfigStore.getState();
+
+      await expect(store.refreshMcpServerStatuses()).rejects.toThrow(
+        "状态刷新失败"
+      );
+
+      // 验证状态数据被清空
+      expect(useConfigStore.getState().mcpServerStatuses).toEqual([]);
     });
   });
 });

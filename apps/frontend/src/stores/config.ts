@@ -368,7 +368,8 @@ export const useConfigStore = create<ConfigStore>()(
       },
 
       refreshMcpServerStatuses: async (): Promise<MCPServerStatus[]> => {
-        const { setMcpServerStatuses, setMcpServerStatusLoading } = get();
+        const state = get();
+        const { setMcpServerStatuses, setMcpServerStatusLoading, setConfig } = state;
 
         try {
           setMcpServerStatusLoading(true);
@@ -376,6 +377,17 @@ export const useConfigStore = create<ConfigStore>()(
 
           const response = await mcpServerApi.listServers();
           setMcpServerStatuses(response.servers);
+
+          // 智能合并：从状态数据派生 mcpServers 配置，同步更新 config.mcpServers
+          // 这样可以避免重复调用 /api/config 获取相同的配置数据
+          if (state.config) {
+            const mcpServers: Record<string, MCPServerConfig> = {};
+            for (const server of response.servers) {
+              mcpServers[server.name] = server.config;
+            }
+            // 同步更新 config.mcpServers，保持数据一致性
+            setConfig({ ...state.config, mcpServers }, "http");
+          }
 
           console.log(
             `[ConfigStore] MCP 服务器状态刷新成功，共 ${response.servers.length} 个服务器`
