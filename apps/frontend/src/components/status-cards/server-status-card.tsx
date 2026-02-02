@@ -1,9 +1,10 @@
 /**
  * MCP 服务状态卡片组件
  *
- * 显示当前连接的 MCP 服务数量，并提供工具调用日志查看入口。
+ * 显示当前连接的 MCP 服务数量，并提供服务器列表和工具调用日志查看入口。
  */
 
+import { McpServerTableDialog } from "@/components/McpServerTableDialog";
 import { ToolCallLogsDialog } from "@/components/ToolCallLogsDialog";
 import {
   Card,
@@ -45,7 +46,10 @@ export function ServerStatusCard() {
       </CardHeader>
       <CardFooter className="flex items-center justify-between gap-1 text-sm">
         <div className="text-muted-foreground">共 {mcpServerCount} 个服务</div>
-        <ToolCallLogsDialog />
+        <div className="flex gap-2">
+          <McpServerTableDialog />
+          <ToolCallLogsDialog />
+        </div>
       </CardFooter>
     </Card>
   );
