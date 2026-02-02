@@ -4,6 +4,7 @@
  * 显示系统配置完成度和快速打开设置对话框的入口。
  */
 
+import { RestartButton } from "@/components/RestartButton";
 import { SystemSettingDialog } from "@/components/SystemSettingDialog";
 import {
   Card,
@@ -77,7 +78,10 @@ export function SystemStatusCard() {
               ? `还差 ${TOTAL_CONFIG_ITEMS - configuredCount} 项配置`
               : "请完善系统配置"}
         </div>
-        <SystemSettingDialog />
+        <div className="flex gap-2">
+          <RestartButton iconMode />
+          <SystemSettingDialog />
+        </div>
       </CardFooter>
     </Card>
   );
