@@ -124,9 +124,8 @@ export function ToolCallLogsDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <FileText className="h-4 w-4" />
-          调用日志
+        <Button variant="secondary" size="icon" className="size-8" aria-label="MCP工具调用日志" title="MCP工具调用日志">
+          <FileText className="size-4" />
         </Button>
       </DialogTrigger>
       <DialogContent

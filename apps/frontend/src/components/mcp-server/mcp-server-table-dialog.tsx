@@ -27,9 +27,8 @@ export function McpServerTableDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Server className="h-4 w-4" />
-          服务器列表
+        <Button variant="secondary" size="icon" className="size-8" aria-label="MCP服务列表" title="MCP服务列表">
+          <Server className="size-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-5xl max-h-[85vh]">

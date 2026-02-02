@@ -59,7 +59,7 @@ describe("ToolCallLogsDialog", () => {
 
     const triggerButton = screen.getByRole("button", { name: /调用日志/ });
     expect(triggerButton).toBeInTheDocument();
-    expect(triggerButton).toHaveClass("gap-2");
+    expect(triggerButton).toHaveClass("size-8");
   });
 
   it("点击按钮应该打开对话框", async () => {

@@ -9,6 +9,22 @@ const mockUseMcpEndpoint = vi.hoisted(() =>
 const mockUseMcpServers = vi.hoisted(() =>
   vi.fn(() => ({ server1: { command: "test" } }))
 );
+const mockUseMcpServersWithStatus = vi.hoisted(() =>
+  vi.fn(() => ({
+    servers: [
+      {
+        name: "server1",
+        connected: true,
+        status: "connected",
+        tools: [],
+        config: { command: "test" },
+      },
+    ],
+    loading: false,
+    refresh: vi.fn(),
+    lastUpdate: Date.now(),
+  }))
+);
 const mockUseConfig = vi.hoisted(() =>
   vi.fn(() => ({
     modelscope: { apiKey: "test-key" },
@@ -28,6 +44,7 @@ const mockUseWebSocketUrl = vi.hoisted(() =>
 vi.mock("@/stores/config", () => ({
   useMcpEndpoint: mockUseMcpEndpoint,
   useMcpServers: mockUseMcpServers,
+  useMcpServersWithStatus: mockUseMcpServersWithStatus,
   useConfig: mockUseConfig,
 }));
 
@@ -61,6 +78,20 @@ describe("DashboardStatusCard", () => {
     // 恢复默认mock值
     mockUseMcpEndpoint.mockReturnValue(["http://localhost:3000"]);
     mockUseMcpServers.mockReturnValue({ server1: { command: "test" } });
+    mockUseMcpServersWithStatus.mockReturnValue({
+      servers: [
+        {
+          name: "server1",
+          connected: true,
+          status: "connected",
+          tools: [],
+          config: { command: "test" },
+        },
+      ],
+      loading: false,
+      refresh: vi.fn(),
+      lastUpdate: Date.now(),
+    });
     mockUseConfig.mockReturnValue({
       modelscope: { apiKey: "test-key" },
       platforms: { coze: { token: "test-token" } },
@@ -79,17 +110,18 @@ describe("DashboardStatusCard", () => {
 
     // 检查小智接入点卡片
     expect(screen.getByText("小智接入点")).toBeInTheDocument();
-    // 通过getAllByText来找到所有的"1"，我们期望至少有2个（端点数和服务数）
-    const allOnes = screen.getAllByText("1");
-    expect(allOnes.length).toBeGreaterThanOrEqual(2);
+    // 检查端点数量显示
+    expect(screen.getByText("1")).toBeInTheDocument(); // 小智接入点: 1
 
     // 检查Xiaozhi Client卡片
     expect(screen.getByText("Xiaozhi Client")).toBeInTheDocument();
     expect(screen.getByText("已连接")).toBeInTheDocument();
 
-    // 检查MCP服务卡片
+    // 检查MCP服务卡片 - 新格式为 "已连接 X 个，共 Y 个服务"
     expect(screen.getByText("MCP服务")).toBeInTheDocument();
-    expect(screen.getByText("共 1 个服务")).toBeInTheDocument();
+    expect(screen.getByText("已连接 1 个，共 1 个服务")).toBeInTheDocument();
+    // 检查服务数量显示格式为 "1/1"
+    expect(screen.getByText("1/1")).toBeInTheDocument();
   });
 
   it("应该正确渲染设置按钮", () => {
@@ -134,12 +166,17 @@ describe("DashboardStatusCard", () => {
 
   it("应该正确处理空MCP服务器", () => {
     // Mock空服务器
-    (mockUseMcpServers as any).mockReturnValue({});
+    mockUseMcpServersWithStatus.mockReturnValue({
+      servers: [],
+      loading: false,
+      refresh: vi.fn(),
+      lastUpdate: Date.now(),
+    });
 
     render(<DashboardStatusCard />);
 
-    expect(screen.getByText("0")).toBeInTheDocument();
-    expect(screen.getByText("共 0 个服务")).toBeInTheDocument();
+    expect(screen.getByText("0/0")).toBeInTheDocument();
+    expect(screen.getByText("已连接 0 个，共 0 个服务")).toBeInTheDocument();
   });
 
   it("应该正确处理空MCP端点", () => {
