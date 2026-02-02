@@ -1,5 +1,5 @@
-import { DashboardStatusCard } from "@/components/DashboardStatusCard";
-import { SiteHeader } from "@/components/SiteHeder";
+import { DashboardStatusCard } from "@/components/dashboard-status-card";
+import { SiteHeader } from "@/components/site-header";
 import { McpToolTable } from "@/components/mcp-tool/mcp-tool-table";
 
 export default function DashboardPage() {

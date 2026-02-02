@@ -3,7 +3,7 @@
  * 测试工作流添加功能的完整流程和API集成
  */
 
-import { CozeWorkflowIntegration } from "@/components/CozeWorkflowIntegration";
+import { CozeWorkflowIntegration } from "@/components/coze-workflow-integration";
 import { apiClient } from "@/services/api";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { CozeWorkflow } from "@xiaozhi-client/shared-types";

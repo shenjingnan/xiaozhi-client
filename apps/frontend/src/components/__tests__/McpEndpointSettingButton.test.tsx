@@ -1,7 +1,7 @@
 import * as api from "@/services/api";
 import * as websocket from "@/services/websocket";
 import * as stores from "@/stores/config";
-import { McpEndpointSettingButton } from "@components/McpEndpointSettingButton";
+import { McpEndpointSettingButton } from "@components/mcp-endpoint-setting-button";
 import {
   act,
   fireEvent,

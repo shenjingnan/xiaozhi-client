@@ -4,7 +4,7 @@
  * 显示 Xiaozhi Client 的连接状态和 WebSocket URL。
  */
 
-import { WebUrlSettingButton } from "@/components/WebUrlSettingButton";
+import { WebUrlSettingButton } from "@/components/web-url-setting-button";
 import {
   Card,
   CardDescription,

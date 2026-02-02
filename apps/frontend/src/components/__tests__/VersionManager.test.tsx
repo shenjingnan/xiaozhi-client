@@ -2,7 +2,7 @@
  * VersionManager 组件测试
  */
 
-import { VersionManager } from "@components/VersionManager";
+import { VersionManager } from "@components/version-manager";
 import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 

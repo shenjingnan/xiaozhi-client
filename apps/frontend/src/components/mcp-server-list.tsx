@@ -1,4 +1,4 @@
-import { WorkflowParameterConfigDialog } from "@/components/common/WorkflowParameterConfigDialog";
+import { WorkflowParameterConfigDialog } from "@/components/common/workflow-parameter-config-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,12 +26,12 @@ import type {
 import { CoffeeIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { AddMcpServerButton } from "./AddMcpServerButton";
-import { CozeWorkflowIntegration } from "./CozeWorkflowIntegration";
-import { McpServerSettingButton } from "./McpServerSettingButton";
-import { RemoveMcpServerButton } from "./RemoveMcpServerButton";
-import { RestartButton } from "./RestartButton";
-import { ToolDebugDialog } from "./ToolDebugDialog";
+import { AddMcpServerButton } from "./add-mcp-server-button";
+import { CozeWorkflowIntegration } from "./coze-workflow-integration";
+import { McpServerSettingButton } from "./mcp-server-setting-button";
+import { RemoveMcpServerButton } from "./remove-mcp-server-button";
+import { RestartButton } from "./restart-button";
+import { ToolDebugDialog } from "./tool-debug-dialog";
 
 // 服务名称常量
 const UNKNOWN_SERVICE_NAME = "未知服务";

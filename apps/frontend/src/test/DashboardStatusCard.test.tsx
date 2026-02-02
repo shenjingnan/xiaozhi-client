@@ -1,4 +1,4 @@
-import { DashboardStatusCard } from "@/components/DashboardStatusCard";
+import { DashboardStatusCard } from "@/components/dashboard-status-card";
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -54,21 +54,21 @@ vi.mock("@/stores/websocket", () => ({
 }));
 
 // Mock child components
-vi.mock("@/components/McpEndpointSettingButton", () => ({
+vi.mock("@/components/mcp-endpoint-setting-button", () => ({
   McpEndpointSettingButton: () => (
     <div data-testid="mcp-endpoint-setting-button" />
   ),
 }));
 
-vi.mock("@/components/WebUrlSettingButton", () => ({
+vi.mock("@/components/web-url-setting-button", () => ({
   WebUrlSettingButton: () => <div data-testid="web-url-setting-button" />,
 }));
 
-vi.mock("@/components/ToolCallLogsDialog", () => ({
+vi.mock("@/components/tool-call-logs-dialog", () => ({
   ToolCallLogsDialog: () => <div data-testid="tool-call-logs-dialog" />,
 }));
 
-vi.mock("@/components/SystemSettingDialog", () => ({
+vi.mock("@/components/system-setting-dialog", () => ({
   SystemSettingDialog: () => <div data-testid="system-setting-dialog" />,
 }));
 

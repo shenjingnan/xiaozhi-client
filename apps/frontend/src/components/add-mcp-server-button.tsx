@@ -1,4 +1,4 @@
-import { McpServerForm } from "@/components/McpServerForm";
+import { McpServerForm } from "@/components/mcp-server-form";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,11 +18,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useNetworkServiceActions } from "@/providers/WebSocketProvider";
 import { mcpFormSchema } from "@/schemas/mcp-form";
-import { useConfig } from "@/stores/config";
+import { mcpServerApi } from "@/services/api";
 import {
-  apiConfigToForm,
   formToApiConfig,
   formToJson,
   jsonToFormData,
@@ -30,8 +28,7 @@ import {
 import { validateMCPConfig } from "@/utils/mcpValidation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Textarea } from "@ui/textarea";
-import type { MCPServerConfig } from "@xiaozhi-client/shared-types";
-import { SettingsIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -44,38 +41,28 @@ const jsonFormSchema = z.object({
   }),
 });
 
-export function McpServerSettingButton({
-  mcpServer,
-  mcpServerName,
-}: {
-  mcpServer: MCPServerConfig;
-  mcpServerName: string;
-}) {
+export function AddMcpServerButton() {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [inputMode, setInputMode] = useState<"form" | "json">("form");
   const [jsonInput, setJsonInput] = useState<string>("");
-  const config = useConfig();
-  const { updateConfig } = useNetworkServiceActions();
-
-  // 将现有配置转换为表单数据
-  const defaultFormValues = apiConfigToForm(mcpServerName, mcpServer);
 
   // 表单模式的表单实例
   const form = useForm<z.infer<typeof mcpFormSchema>>({
     resolver: zodResolver(mcpFormSchema),
-    defaultValues: defaultFormValues,
+    defaultValues: {
+      type: "stdio",
+      name: "",
+      command: "",
+      env: "",
+    },
   });
 
   // 高级模式的表单实例（保持原有验证逻辑）
   const advancedForm = useForm<z.infer<typeof jsonFormSchema>>({
     resolver: zodResolver(jsonFormSchema),
     defaultValues: {
-      config: JSON.stringify(
-        { mcpServers: { [mcpServerName]: mcpServer } },
-        null,
-        2
-      ),
+      config: "",
     },
   });
 
@@ -84,14 +71,14 @@ export function McpServerSettingButton({
     (newOpen: boolean) => {
       if (!newOpen) {
         // 重置表单和状态
-        form.reset(defaultFormValues);
+        form.reset();
         advancedForm.reset();
         setJsonInput("");
         setInputMode("form");
       }
       setOpen(newOpen);
     },
-    [form, advancedForm, defaultFormValues]
+    [form, advancedForm]
   );
 
   // 处理模式切换
@@ -124,44 +111,28 @@ export function McpServerSettingButton({
   // 表单模式提交处理
   const handleFormSubmit = useCallback(
     async (values: z.infer<typeof mcpFormSchema>) => {
-      if (!config) {
-        toast.error("配置数据未加载，请稍后重试");
-        return;
-      }
-
       setIsLoading(true);
       try {
         // 转换表单数据为 API 配置
-        const { name, config: newServerConfig } = formToApiConfig(values);
+        const { name, config } = formToApiConfig(values);
 
-        // 构建更新后的配置
-        let updatedConfig = { ...config };
-
-        // 如果名称改变，删除旧名称的配置
-        if (name !== mcpServerName) {
-          const { [mcpServerName]: _removed, ...remainingServers } =
-            updatedConfig.mcpServers;
-          updatedConfig.mcpServers = remainingServers;
+        // 检查重名
+        const existingServers = await mcpServerApi.listServers();
+        if (existingServers.servers.some((server) => server.name === name)) {
+          toast.error(`服务名称 "${name}" 已存在`);
+          return;
         }
 
-        // 添加新名称的配置
-        updatedConfig = {
-          ...updatedConfig,
-          mcpServers: {
-            ...updatedConfig.mcpServers,
-            [name]: newServerConfig,
-          },
-        };
+        // 调用API添加服务器
+        const result = await mcpServerApi.addServer(name, config);
+        if (!result) {
+          throw new Error("添加服务器失败");
+        }
 
-        await updateConfig(updatedConfig);
+        toast.success(`已添加 MCP 服务 "${name}"`);
 
-        const nameChanged = name !== mcpServerName;
-        toast.success(
-          nameChanged
-            ? `MCP 服务 "${mcpServerName}" 已重命名为 "${name}"`
-            : `MCP 服务 "${name}" 配置已更新`
-        );
-
+        // 重置表单并关闭对话框
+        form.reset();
         setOpen(false);
       } catch (error) {
         console.error("更新配置失败:", error);
@@ -170,17 +141,12 @@ export function McpServerSettingButton({
         setIsLoading(false);
       }
     },
-    [config, mcpServerName, updateConfig]
+    [form]
   );
 
   // 高级模式提交处理
   const handleAdvancedSubmit = useCallback(
     async (values: z.infer<typeof jsonFormSchema>) => {
-      if (!config) {
-        toast.error("配置数据未加载，请稍后重试");
-        return;
-      }
-
       setIsLoading(true);
       try {
         // 验证用户输入的配置
@@ -193,46 +159,38 @@ export function McpServerSettingButton({
 
         const parsedServers = validation.data!;
 
-        // 高级模式只允许编辑单个服务
-        const serverEntries = Object.entries(parsedServers);
-        if (serverEntries.length !== 1) {
-          toast.error("编辑模式只能修改单个 MCP 服务配置");
+        // 检查重名
+        const existingServers = await mcpServerApi.listServers();
+        const existingNames = Object.keys(parsedServers).filter((name) =>
+          existingServers.servers.some((server) => server.name === name)
+        );
+        if (existingNames.length > 0) {
+          toast.error(
+            `服务名称冲突: 以下服务已存在: ${existingNames.join(", ")}`
+          );
           return;
         }
 
-        const [newName, newServerConfig] = serverEntries[0] as [
-          string,
-          MCPServerConfig,
-        ];
-
-        // 构建更新后的配置
-        let updatedConfig = { ...config };
-
-        // 如果名称改变，删除旧名称的配置
-        if (newName !== mcpServerName) {
-          const { [mcpServerName]: _removed, ...remainingServers } =
-            updatedConfig.mcpServers;
-          updatedConfig.mcpServers = remainingServers;
+        // 调用API添加服务器
+        for (const [serverName, serverConfig] of Object.entries(
+          parsedServers
+        )) {
+          const result = await mcpServerApi.addServer(serverName, serverConfig);
+          if (!result) {
+            throw new Error("添加服务器失败");
+          }
         }
 
-        // 添加新名称的配置
-        updatedConfig = {
-          ...updatedConfig,
-          mcpServers: {
-            ...updatedConfig.mcpServers,
-            [newName]: newServerConfig,
-          },
-        };
-
-        await updateConfig(updatedConfig);
-
-        const nameChanged = newName !== mcpServerName;
+        // 成功反馈
+        const addedCount = Object.keys(parsedServers).length;
         toast.success(
-          nameChanged
-            ? `MCP 服务 "${mcpServerName}" 已重命名为 "${newName}"`
-            : `MCP 服务 "${newName}" 配置已更新`
+          addedCount === 1
+            ? `已添加 MCP 服务 "${Object.keys(parsedServers)[0]}"`
+            : `已添加 ${addedCount} 个 MCP 服务`
         );
 
+        // 重置表单并关闭对话框
+        advancedForm.reset();
         setOpen(false);
       } catch (error) {
         console.error("更新配置失败:", error);
@@ -241,43 +199,42 @@ export function McpServerSettingButton({
         setIsLoading(false);
       }
     },
-    [config, mcpServerName, updateConfig]
+    [advancedForm]
   );
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <button
-          type="button"
-          className="flex items-center gap-1 hover:cursor-pointer hover:text-primary transition-all duration-100"
+        <Button
+          variant="secondary"
+          size="icon"
+          className="size-8"
+          aria-label="添加MCP服务"
+          title="添加MCP服务"
         >
-          <SettingsIcon size={14} />
-          <span>配置</span>
-        </button>
+          <PlusIcon className="size-4" />
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader className="mb-4">
-          <DialogTitle>配置 {mcpServerName} MCP</DialogTitle>
-          <DialogDescription>
-            点击保存后，需要重启服务才会生效。
-          </DialogDescription>
+          <DialogTitle>添加MCP服务</DialogTitle>
+          <DialogDescription>添加后，需要重启服务才会生效。</DialogDescription>
         </DialogHeader>
 
         {/* 模式切换 */}
         <Tabs value={inputMode} onValueChange={handleModeChange}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="form">表单模式</TabsTrigger>
-            <TabsTrigger value="json">高级模式 (JSON)</TabsTrigger>
+            <TabsTrigger value="json">高级模式</TabsTrigger>
           </TabsList>
 
           {/* 表单模式 */}
           <TabsContent value="form" className="mt-4">
             <McpServerForm
               form={form}
-              defaultValues={defaultFormValues}
               onSubmit={handleFormSubmit}
               disabled={isLoading}
-              submitText={isLoading ? "保存中..." : "保存"}
+              submitText={isLoading ? "保存中..." : "保存配置"}
             />
           </TabsContent>
 

@@ -4,8 +4,8 @@
  * 显示系统配置完成度和快速打开设置对话框的入口。
  */
 
-import { RestartButton } from "@/components/RestartButton";
-import { SystemSettingDialog } from "@/components/SystemSettingDialog";
+import { RestartButton } from "@/components/restart-button";
+import { SystemSettingDialog } from "@/components/system-setting-dialog";
 import {
   Card,
   CardDescription,
