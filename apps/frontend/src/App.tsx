@@ -1,10 +1,57 @@
+import { CommandPalette, useCommandPalette } from "@/components/CommandPalette";
+import { ToolDebugDialog } from "@/components/ToolDebugDialog";
 import { Toaster } from "@/components/ui/sonner";
 import { RestartNotificationProvider } from "@/hooks/useRestartNotifications";
 import DashboardPage from "@/pages/DashboardPage";
 import { WebSocketProvider } from "@/providers/WebSocketProvider";
+import { useCallback, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
+/**
+ * 格式化工具信息接口
+ */
+interface FormattedTool {
+  name: string;
+  serverName: string;
+  toolName: string;
+  description: string;
+  enabled: boolean;
+  inputSchema: any;
+}
+
 function App() {
+  // 命令面板状态
+  const { open: commandPaletteOpen, setOpen: setCommandPaletteOpen } =
+    useCommandPalette();
+
+  // 工具调试对话框状态
+  const [debugDialog, setDebugDialog] = useState<{
+    open: boolean;
+    tool?: {
+      name: string;
+      serverName: string;
+      toolName: string;
+      description?: string;
+      inputSchema?: any;
+    };
+  }>({ open: false });
+
+  /**
+   * 处理工具选择 - 打开工具调试对话框
+   */
+  const handleToolSelect = useCallback((tool: FormattedTool) => {
+    setDebugDialog({
+      open: true,
+      tool: {
+        name: tool.name,
+        serverName: tool.serverName,
+        toolName: tool.toolName,
+        description: tool.description,
+        inputSchema: tool.inputSchema,
+      },
+    });
+  }, []);
+
   return (
     <WebSocketProvider>
       {/* 重启通知管理器 - 全局监听重启状态变化 */}
@@ -15,6 +62,20 @@ function App() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
+
+      {/* 命令面板 - 快捷键 Cmd+K / Ctrl+K 唤起 */}
+      <CommandPalette
+        open={commandPaletteOpen}
+        onOpenChange={setCommandPaletteOpen}
+        onToolSelect={handleToolSelect}
+      />
+
+      {/* 工具调试对话框 */}
+      <ToolDebugDialog
+        open={debugDialog.open}
+        onOpenChange={(open) => setDebugDialog((prev) => ({ ...prev, open }))}
+        tool={debugDialog.tool || null}
+      />
 
       {/* Toast 通知容器 */}
       <Toaster
