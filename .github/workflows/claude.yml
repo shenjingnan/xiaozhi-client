@@ -70,6 +70,7 @@ jobs:
             }
           }
           EOF
+
       - name: Run Claude Code
         id: claude
         uses: anthropics/claude-code-action@v1
@@ -82,4 +83,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           show_full_output: ${{ vars.CLAUDE_FULL_OUTPUT || 'false' }}
-          claude_args: "--mcp-config /tmp/mcp-config.json"
+          claude_args: "--dangerously-skip-permissions --mcp-config /tmp/mcp-config.json"
