@@ -5,8 +5,8 @@
  */
 
 import { AddMcpServerButton } from "@/components/add-mcp-server-button";
-import { ToolCallLogsDialog } from "@/components/tool-call-logs-dialog";
 import { McpServerTableDialog } from "@/components/mcp-server/mcp-server-table-dialog";
+import { ToolCallLogsDialog } from "@/components/tool-call-logs-dialog";
 import {
   Card,
   CardDescription,
