@@ -34,6 +34,8 @@ export interface RestartButtonProps {
   restartingText?: string;
   /** 默认文本 */
   defaultText?: string;
+  /** 图标模式（纯 icon 按钮，用于卡片中） */
+  iconMode?: boolean;
 }
 
 /**
@@ -46,6 +48,7 @@ export function RestartButton({
   className = "",
   restartingText = "重启中...",
   defaultText = "重启服务",
+  iconMode = false,
 }: RestartButtonProps) {
   const {
     loading: { isRestarting },
@@ -76,6 +79,29 @@ export function RestartButton({
     return restartingText;
   };
 
+  // 图标模式：纯 icon 按钮，与卡片样式一致
+  if (iconMode) {
+    return (
+      <Button
+        type="button"
+        onClick={handleRestart}
+        variant="secondary"
+        size="icon"
+        className="size-8"
+        disabled={isRestarting || disabled}
+        aria-label="重启服务"
+        title="重启服务"
+      >
+        {!isRestarting ? (
+          <PowerIcon className="size-4" />
+        ) : (
+          <LoaderCircleIcon className="size-4 animate-spin" />
+        )}
+      </Button>
+    );
+  }
+
+  // 默认模式：带文字的按钮
   return (
     <Button
       type="button"

@@ -205,9 +205,14 @@ export function AddMcpServerButton() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button size="icon" className="w-full">
-          <PlusIcon className="h-4 w-4" />
-          <span>添加MCP服务</span>
+        <Button
+          variant="secondary"
+          size="icon"
+          className="size-8"
+          aria-label="添加MCP服务"
+          title="添加MCP服务"
+        >
+          <PlusIcon className="size-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px]">

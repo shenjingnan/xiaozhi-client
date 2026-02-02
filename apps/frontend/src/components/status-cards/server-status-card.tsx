@@ -4,6 +4,7 @@
  * 显示当前连接的 MCP 服务数量，并提供服务器列表和工具调用日志查看入口。
  */
 
+import { AddMcpServerButton } from "@/components/AddMcpServerButton";
 import { ToolCallLogsDialog } from "@/components/ToolCallLogsDialog";
 import { McpServerTableDialog } from "@/components/mcp-server/mcp-server-table-dialog";
 import {
@@ -51,6 +52,7 @@ export function ServerStatusCard() {
           已连接 {connectedServers} 个，共 {totalServers} 个服务
         </div>
         <div className="flex gap-2">
+          <AddMcpServerButton />
           <McpServerTableDialog />
           <ToolCallLogsDialog />
         </div>
