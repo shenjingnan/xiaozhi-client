@@ -162,7 +162,7 @@ describe("NotificationService", () => {
     it("should register client successfully", () => {
       notificationService.registerClient("test-client-123", mockWebSocket);
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         "WebSocket 客户端已注册: test-client-123"
       );
       expect(mockLogger.debug).toHaveBeenCalledWith("当前客户端数量: 1");
@@ -187,7 +187,7 @@ describe("NotificationService", () => {
       expect(mockWebSocket.send).toHaveBeenCalledWith(
         expect.stringContaining('"type":"testMessage"')
       );
-      expect(mockLogger.info).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         "发送 1 条排队消息给客户端 test-client-123"
       );
     });
@@ -241,7 +241,7 @@ describe("NotificationService", () => {
       // Then unregister it
       notificationService.unregisterClient("test-client-123");
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         "WebSocket 客户端已注销: test-client-123"
       );
       expect(mockLogger.debug).toHaveBeenCalledWith("剩余客户端数量: 0");
@@ -258,7 +258,7 @@ describe("NotificationService", () => {
       notificationService.unregisterClient("non-existent-client");
 
       // Should not throw error or log anything for non-existent client
-      expect(mockLogger.info).not.toHaveBeenCalledWith(
+      expect(mockLogger.debug).not.toHaveBeenCalledWith(
         expect.stringContaining("WebSocket 客户端已注销")
       );
     });
@@ -794,7 +794,7 @@ describe("NotificationService", () => {
 
       notificationService.cleanupDisconnectedClients();
 
-      expect(mockLogger.info).toHaveBeenCalledWith("清理了 1 个断开的客户端");
+      expect(mockLogger.debug).toHaveBeenCalledWith("清理了 1 个断开的客户端");
 
       const stats = notificationService.getClientStats();
       expect(stats.totalClients).toBe(1);
@@ -809,7 +809,7 @@ describe("NotificationService", () => {
 
       notificationService.cleanupDisconnectedClients();
 
-      expect(mockLogger.info).not.toHaveBeenCalledWith(
+      expect(mockLogger.debug).not.toHaveBeenCalledWith(
         expect.stringContaining("清理了")
       );
 
@@ -820,7 +820,7 @@ describe("NotificationService", () => {
     it("should handle cleanup with no clients", () => {
       notificationService.cleanupDisconnectedClients();
 
-      expect(mockLogger.info).not.toHaveBeenCalledWith(
+      expect(mockLogger.debug).not.toHaveBeenCalledWith(
         expect.stringContaining("清理了")
       );
     });
@@ -845,7 +845,7 @@ describe("NotificationService", () => {
 
       notificationService.cleanupDisconnectedClients();
 
-      expect(mockLogger.info).toHaveBeenCalledWith("清理了 2 个断开的客户端");
+      expect(mockLogger.debug).toHaveBeenCalledWith("清理了 2 个断开的客户端");
 
       const stats = notificationService.getClientStats();
       expect(stats.totalClients).toBe(1);
@@ -862,7 +862,7 @@ describe("NotificationService", () => {
 
       notificationService.destroy();
 
-      expect(mockLogger.info).toHaveBeenCalledWith("销毁通知服务");
+      expect(mockLogger.debug).toHaveBeenCalledWith("销毁通知服务");
 
       const stats = notificationService.getClientStats();
       expect(stats.totalClients).toBe(0);
@@ -872,7 +872,7 @@ describe("NotificationService", () => {
     it("should handle destroy with no clients", () => {
       notificationService.destroy();
 
-      expect(mockLogger.info).toHaveBeenCalledWith("销毁通知服务");
+      expect(mockLogger.debug).toHaveBeenCalledWith("销毁通知服务");
 
       const stats = notificationService.getClientStats();
       expect(stats.totalClients).toBe(0);
@@ -895,7 +895,7 @@ describe("NotificationService", () => {
 
       // Should send both queued messages
       expect(mockWebSocket.send).toHaveBeenCalledTimes(2);
-      expect(mockLogger.info).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         "发送 2 条排队消息给客户端 test-client"
       );
 
@@ -913,7 +913,7 @@ describe("NotificationService", () => {
 
       // Should only send the new message
       expect(newMockWebSocket.send).toHaveBeenCalledTimes(1);
-      expect(mockLogger.info).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         "发送 1 条排队消息给客户端 test-client"
       );
     });

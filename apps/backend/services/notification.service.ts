@@ -115,7 +115,7 @@ export class NotificationService {
       };
 
       this.clients.set(clientId, client);
-      this.logger.info(`WebSocket 客户端已注册: ${clientId}`);
+      this.logger.debug(`WebSocket 客户端已注册: ${clientId}`);
       this.logger.debug(`当前客户端数量: ${this.clients.size}`);
 
       // 发送排队的消息
@@ -143,7 +143,7 @@ export class NotificationService {
       if (this.clients.has(clientId)) {
         this.clients.delete(clientId);
         this.messageQueue.delete(clientId);
-        this.logger.info(`WebSocket 客户端已注销: ${clientId}`);
+        this.logger.debug(`WebSocket 客户端已注销: ${clientId}`);
         this.logger.debug(`剩余客户端数量: ${this.clients.size}`);
 
         // 发射客户端断开事件
@@ -254,7 +254,7 @@ export class NotificationService {
       return;
     }
 
-    this.logger.info(`发送 ${queue.length} 条排队消息给客户端 ${clientId}`);
+    this.logger.debug(`发送 ${queue.length} 条排队消息给客户端 ${clientId}`);
 
     for (const message of queue) {
       this.sendMessageToClient(client, message, clientId);
@@ -337,7 +337,7 @@ export class NotificationService {
     }
 
     if (disconnectedClients.length > 0) {
-      this.logger.info(`清理了 ${disconnectedClients.length} 个断开的客户端`);
+      this.logger.debug(`清理了 ${disconnectedClients.length} 个断开的客户端`);
     }
   }
 
@@ -345,7 +345,7 @@ export class NotificationService {
    * 销毁通知服务
    */
   destroy(): void {
-    this.logger.info("销毁通知服务");
+    this.logger.debug("销毁通知服务");
     this.clients.clear();
     this.messageQueue.clear();
   }

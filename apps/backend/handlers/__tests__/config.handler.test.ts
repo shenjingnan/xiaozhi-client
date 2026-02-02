@@ -187,7 +187,7 @@ describe("ConfigApiHandler", () => {
 
       expect(mockConfigManager.getConfig).toHaveBeenCalledTimes(1);
       expect(mockLogger.debug).toHaveBeenCalledWith("处理获取配置请求");
-      expect(mockLogger.info).toHaveBeenCalledWith("获取配置成功");
+      expect(mockLogger.debug).toHaveBeenCalledWith("获取配置成功");
       expect(mockContext.success).toHaveBeenCalledWith(mockConfig);
     });
 

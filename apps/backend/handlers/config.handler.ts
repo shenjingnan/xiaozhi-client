@@ -17,13 +17,14 @@ export class ConfigApiHandler extends BaseHandler {
    * GET /api/config
    */
   async getConfig(c: Context<AppContext>): Promise<Response> {
+    const logger = c.get("logger");
     try {
-      c.get("logger").debug("处理获取配置请求");
+      logger.debug("处理获取配置请求");
       const config = configManager.getConfig();
-      c.get("logger").info("获取配置成功");
+      logger.debug("获取配置成功");
       return c.success(config);
     } catch (error) {
-      c.get("logger").error("获取配置失败:", error);
+      logger.error("获取配置失败:", error);
       return c.fail(
         "CONFIG_READ_ERROR",
         error instanceof Error ? error.message : "获取配置失败",
