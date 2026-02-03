@@ -1,3 +1,8 @@
+---
+name: localization-validator
+description: 本地化验证技能，用于验证项目的本地化质量
+---
+
 # 本地化验证技能
 
 ## 技能描述

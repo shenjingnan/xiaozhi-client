@@ -1,4 +1,5 @@
 ---
+name: todo-manager
 description: Todo 管理技能，用于管理架构演进过程中的待办事项
 ---
 

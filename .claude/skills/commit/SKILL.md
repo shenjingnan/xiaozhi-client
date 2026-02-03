@@ -1,4 +1,5 @@
 ---
+name: commit
 description: 生成代码评审友好的 commit 信息
 ---
 

@@ -1,4 +1,5 @@
 ---
+name: ci-validator
 description: CI检查验证和质量保障
 ---
 

@@ -1,4 +1,5 @@
 ---
+name: api-docs
 description: 文档自动生成
 ---
 

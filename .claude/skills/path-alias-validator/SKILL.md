@@ -1,4 +1,5 @@
 ---
+name: path-alias-validator
 description: 路径别名系统检查与修复
 ---
 
