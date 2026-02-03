@@ -33,7 +33,7 @@ vi.mock("sonner", () => ({
 }));
 
 // Mock 按钮组件
-vi.mock("../../McpServerSettingButton", () => ({
+vi.mock("../../mcp-server-setting-button", () => ({
   McpServerSettingButton: ({ mcpServerName }: { mcpServerName: string }) => (
     <button type="button" data-testid={`setting-${mcpServerName}`}>
       设置
@@ -41,7 +41,7 @@ vi.mock("../../McpServerSettingButton", () => ({
   ),
 }));
 
-vi.mock("../../RemoveMcpServerButton", () => ({
+vi.mock("../../remove-mcp-server-button", () => ({
   RemoveMcpServerButton: ({ mcpServerName }: { mcpServerName: string }) => (
     <button type="button" data-testid={`remove-${mcpServerName}`}>
       删除

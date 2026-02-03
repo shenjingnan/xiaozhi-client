@@ -10,7 +10,7 @@ import { apiClient } from "@/services/api";
 import { Button } from "@ui/button";
 import { CopyIcon, InfoIcon, RocketIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { VersionUpgradeDialog } from "./VersionUpgradeDialog";
+import { VersionUpgradeDialog } from "./version-upgrade-dialog";
 
 interface VersionDisplayProps {
   className?: string;

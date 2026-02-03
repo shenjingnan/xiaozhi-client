@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AddMcpServerButton } from "./AddMcpServerButton";
+import { AddMcpServerButton } from "./add-mcp-server-button";
 
 // Mock dependencies
 vi.mock("sonner", () => ({
