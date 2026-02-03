@@ -100,11 +100,16 @@ export class NPMManager {
    * 获取当前版本
    */
   async getCurrentVersion(): Promise<string> {
-    const { stdout } = await execAsync(
-      "npm list -g xiaozhi-client --depth=0 --json --registry=https://registry.npmmirror.com"
-    );
-    const info = JSON.parse(stdout);
-    return info.dependencies?.["xiaozhi-client"]?.version || "unknown";
+    try {
+      const { stdout } = await execAsync(
+        "npm list -g xiaozhi-client --depth=0 --json --registry=https://registry.npmmirror.com"
+      );
+      const info = JSON.parse(stdout);
+      return info.dependencies?.["xiaozhi-client"]?.version || "unknown";
+    } catch (error) {
+      console.error("获取当前版本失败:", error);
+      return "unknown";
+    }
   }
 
   /**
@@ -126,7 +131,13 @@ export class NPMManager {
         "npm view xiaozhi-client versions --json --registry=https://registry.npmmirror.com"
       );
 
-      const versions = JSON.parse(stdout) as string[];
+      let versions: string[];
+      try {
+        versions = JSON.parse(stdout) as string[];
+      } catch (parseError) {
+        console.error("解析版本列表 JSON 失败:", parseError);
+        return [];
+      }
 
       // 使用 semver 验证并过滤有效版本
       let filteredVersions = versions.filter((version) => {
