@@ -4,7 +4,7 @@
  * 显示当前配置的小智接入点数量，并提供设置按钮。
  */
 
-import { McpEndpointSettingButton } from "@/components/McpEndpointSettingButton";
+import { McpEndpointSettingButton } from "@/components/mcp-endpoint-setting-button";
 import {
   Card,
   CardDescription,

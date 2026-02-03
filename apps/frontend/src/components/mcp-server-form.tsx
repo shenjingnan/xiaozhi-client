@@ -7,7 +7,7 @@
 import {
   renderFormField,
   renderSelectFieldWithHandler,
-} from "@/components/FormFields";
+} from "@/components/form-fields";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { mcpFormFields } from "@/config/mcp-form-fields";

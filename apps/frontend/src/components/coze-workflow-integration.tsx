@@ -1,4 +1,4 @@
-import { WorkflowParameterConfigDialog } from "@/components/common/WorkflowParameterConfigDialog";
+import { WorkflowParameterConfigDialog } from "@/components/common/workflow-parameter-config-dialog";
 import {
   AlertDialog,
   AlertDialogAction,

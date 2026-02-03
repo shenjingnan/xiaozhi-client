@@ -1,7 +1,7 @@
 "use client";
 
-import { ToolDebugDialog } from "@/components/ToolDebugDialog";
 import { CollapsibleText } from "@/components/common/collapsible-text";
+import { ToolDebugDialog } from "@/components/tool-debug-dialog";
 import {
   AlertDialog,
   AlertDialogAction,

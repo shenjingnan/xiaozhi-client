@@ -2,7 +2,7 @@
  * CozeWorkflowIntegration 组件测试
  */
 
-import { CozeWorkflowIntegration } from "@components/CozeWorkflowIntegration";
+import { CozeWorkflowIntegration } from "@components/coze-workflow-integration";
 import * as useCozeWorkflowsModule from "@hooks/useCozeWorkflows";
 import * as toolsApiModule from "@services/api";
 import { render, screen, waitFor } from "@testing-library/react";

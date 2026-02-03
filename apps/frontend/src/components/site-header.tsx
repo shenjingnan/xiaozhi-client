@@ -1,5 +1,5 @@
 import { GithubIcon, QQIcon } from "@/components/icons";
-import { VersionDisplay } from "./VersionDisplay";
+import { VersionDisplay } from "./version-display";
 
 export function SiteHeader({ title }: { title: string }) {
   return (

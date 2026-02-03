@@ -4,7 +4,6 @@
  * 显示 Xiaozhi Client 的连接状态和 WebSocket URL。
  */
 
-import { WebUrlSettingButton } from "@/components/WebUrlSettingButton";
 import {
   Card,
   CardDescription,
@@ -12,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { WebUrlSettingButton } from "@/components/web-url-setting-button";
 import { useWebSocketConnected, useWebSocketUrl } from "@/stores/websocket";
 import { MiniCircularProgress } from "./mini-circular-progress";
 
