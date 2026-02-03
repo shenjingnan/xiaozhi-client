@@ -410,9 +410,9 @@ gh issue create \
 
 **步骤 4.1**: 获取创建的 Issue 编号
 
-**步骤 4.2**: 自动评论 @claude
+**步骤 4.2**: 自动评论 @claude 请根据issue描述修复问题
 ```bash
-gh issue comment $ISSUE_NUMBER --body "@claude"
+gh issue comment $ISSUE_NUMBER --body "@claude 请根据issue描述修复问题"
 ```
 
 这将触发 `.github/workflows/claude.yml`，让 Claude Code 开始处理该 issue。
