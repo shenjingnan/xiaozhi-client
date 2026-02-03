@@ -177,10 +177,12 @@ export function CommandPalette({
       loadTools();
       setSearchValue("");
       setSelectedIndex(0);
-      // 聚焦输入框
-      setTimeout(() => {
+      // 聚焦输入框，注意清理 timeout 以避免内存泄漏
+      const timerId = setTimeout(() => {
         inputRef.current?.focus();
       }, 100);
+
+      return () => clearTimeout(timerId);
     }
   }, [open, loadTools]);
 
@@ -202,6 +204,15 @@ export function CommandPalette({
   }, [tools, searchValue]);
 
   /**
+   * 当过滤后的工具列表长度变化时，确保 selectedIndex 仍然在有效范围内
+   */
+  useEffect(() => {
+    if (selectedIndex >= filteredTools.length && filteredTools.length > 0) {
+      setSelectedIndex(0);
+    }
+  }, [filteredTools.length, selectedIndex]);
+
+  /**
    * 处理工具选择
    */
   const handleToolSelect = useCallback(
@@ -217,8 +228,18 @@ export function CommandPalette({
    */
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
+      // 空列表时不处理键盘导航
+      if (filteredTools.length === 0) {
+        // ESC 键仍然可用
+        if (event.key === "Escape") {
+          event.preventDefault();
+          onOpenChange(false);
+        }
+        return;
+      }
+
       // 回车键：选中当前工具
-      if (event.key === "Enter" && filteredTools.length > 0) {
+      if (event.key === "Enter") {
         event.preventDefault();
         handleToolSelect(filteredTools[selectedIndex]);
         return;
@@ -256,18 +277,23 @@ export function CommandPalette({
    * 当选中索引变化时滚动到对应项
    */
   useEffect(() => {
-    if (listRef.current) {
-      const selectedItem = listRef.current.children[
-        selectedIndex
-      ] as HTMLElement;
-      if (selectedItem) {
-        selectedItem.scrollIntoView({
-          block: "nearest",
-          behavior: "smooth",
-        });
-      }
+    // 仅在有实际工具项且列表容器存在时才尝试滚动
+    if (!listRef.current) return;
+    if (!filteredTools || filteredTools.length === 0) return;
+
+    const children = listRef.current.children;
+    if (selectedIndex < 0 || selectedIndex >= children.length) {
+      return;
     }
-  }, [selectedIndex]);
+
+    const selectedItem = children[selectedIndex] as HTMLElement | undefined;
+    if (selectedItem) {
+      selectedItem.scrollIntoView({
+        block: "nearest",
+        behavior: "smooth",
+      });
+    }
+  }, [selectedIndex, filteredTools]);
 
   /**
    * 获取快捷键文本
@@ -385,8 +411,19 @@ export function useCommandPalette() {
         : event.ctrlKey && event.key === "k";
 
       if (isShortcutKey) {
-        event.preventDefault();
-        setOpen((prev) => !prev);
+        // 检查当前焦点是否在输入框或可编辑元素中
+        const activeElement = document.activeElement as HTMLElement | null;
+        const tagName = activeElement?.tagName;
+        const isInputFocused =
+          tagName === "INPUT" ||
+          tagName === "TEXTAREA" ||
+          activeElement?.hasAttribute("contenteditable");
+
+        // 只有在非输入状态下才触发命令面板
+        if (!isInputFocused) {
+          event.preventDefault();
+          setOpen((prev) => !prev);
+        }
       }
     };
 
