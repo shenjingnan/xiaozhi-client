@@ -284,11 +284,13 @@ export class ToolsApiService {
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         // 设置超时
+        let timeoutId!: ReturnType<typeof setTimeout>;
         const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error("请求超时")), this.REQUEST_TIMEOUT);
+          timeoutId = setTimeout(() => reject(new Error("请求超时")), this.REQUEST_TIMEOUT);
         });
 
         const result = await Promise.race([operation(), timeoutPromise]);
+        clearTimeout(timeoutId); // 操作成功，清除定时器
         return result;
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
