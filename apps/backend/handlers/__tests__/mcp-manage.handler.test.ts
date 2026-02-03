@@ -1,5 +1,5 @@
 import path from "node:path";
-import { MCPErrorCode } from "@/errors/MCPErrors.js";
+import { MCPErrorCode } from "@/errors/mcp-errors.js";
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { EventBus } from "@/services/event-bus.service.js";
 import type { ConfigManager } from "@xiaozhi-client/config";

@@ -9,7 +9,7 @@
  * - 可扩展的错误处理器
  * - 错误转换和格式化工具
  *
- * @module MCPErrors
+ * @module mcp-errors
  */
 
 /**
