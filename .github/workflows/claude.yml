@@ -113,4 +113,4 @@ jobs:
           prompt: ${{ github.event.comment.body || github.event.review.body || github.event.issue.body }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           show_full_output: ${{ vars.CLAUDE_FULL_OUTPUT || 'false' }}
-          claude_args: "--permission-mode plan --dangerously-skip-permissions --mcp-config /tmp/mcp-config.json"
+          claude_args: "--dangerously-skip-permissions --mcp-config /tmp/mcp-config.json"
