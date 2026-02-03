@@ -1,4 +1,5 @@
 ---
+name: type-validator
 description: TypeScript严格模式检查
 ---
 

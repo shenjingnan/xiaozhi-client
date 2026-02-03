@@ -1,4 +1,5 @@
 ---
+name: practical-development-validator
 description: 务实开发原则检查和验证
 ---
 
