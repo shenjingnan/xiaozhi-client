@@ -427,6 +427,32 @@ import { helperFunction } from "./helpers";
 - **API 文档生成器** - 从源码自动生成 Nextra 格式文档
 - **开发流程检查器** - 确保代码修改后执行必要的质量检查命令
 
+### GitHub Issue 工作流
+
+项目支持通过 GitHub Issue 评论触发 Claude Code 自动修复问题：
+
+- **触发方式**：在 GitHub Issue 或 PR 评论中使用 `@claude`
+- **工作流文件**：`.github/workflows/claude.yml`
+- **修复流程**：
+  1. 在 Issue 中描述问题并提及 `@claude`
+  2. Claude Code 分析问题并修复代码
+  3. 修复完成后，使用 `./scripts/create-pr.ts` 创建 PR
+
+**创建 PR 的步骤**：
+```bash
+# 设置 GitHub Token（必需）
+export GITHUB_TOKEN=$(gh auth token)
+
+# 使用脚本创建 PR
+tsx scripts/create-pr.ts
+
+# 或使用自定义标题
+tsx scripts/create-pr.ts --title "fix: 修复 xxx 问题"
+
+# 创建草稿 PR
+tsx scripts/create-pr.ts --draft
+```
+
 ### 重要说明
 
 - 项目完全使用 ESM 模块
