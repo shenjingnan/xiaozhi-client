@@ -1,0 +1,109 @@
+name: Issue Hunter
+
+on:
+  workflow_dispatch:  # 手动触发
+  schedule:
+    - cron: '*/10 * * * *'  # 每10分钟执行一次
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  issue-hunter:
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read # Required for Claude to read CI results on PRs
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: 启用 Corepack
+        run: corepack enable
+
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/iron'
+          cache: 'pnpm'
+
+      - name: 安装依赖
+        uses: nick-invision/retry@v3
+        with:
+          timeout_minutes: 5
+          max_attempts: 2
+          retry_on: error
+          command: pnpm install
+
+      - name: Create MCP Config
+        env:
+          ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
+          CONTEXT7_API_KEY: ${{ secrets.CONTEXT7_API_KEY }}
+        run: |
+          cat > /tmp/mcp-config.json << EOF
+          {
+            "mcpServers": {
+              "zai-mcp-server": {
+                "type": "stdio",
+                "command": "npx",
+                "args": ["-y", "@z_ai/mcp-server"],
+                "env": {
+                  "Z_AI_MODE": "ZHIPU",
+                  "Z_AI_API_KEY": "$ZHIPU_API_KEY"
+                }
+              },
+              "web-search-prime": {
+                "type": "http",
+                "url": "https://open.bigmodel.cn/api/mcp/web_search_prime/mcp",
+                "headers": {
+                  "Authorization": "Bearer $ZHIPU_API_KEY"
+                }
+              },
+              "web-reader": {
+                "type": "http",
+                "url": "https://open.bigmodel.cn/api/mcp/web_reader/mcp",
+                "headers": {
+                  "Authorization": "Bearer $ZHIPU_API_KEY"
+                }
+              },
+              "zread": {
+                "type": "http",
+                "url": "https://open.bigmodel.cn/api/mcp/zread/mcp",
+                "headers": {
+                  "Authorization": "Bearer $ZHIPU_API_KEY"
+                }
+              }
+            }
+          }
+          EOF
+
+      - name: Run Claude Code
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        env:
+          ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL || vars.ANTHROPIC_BASE_URL }}
+          ANTHROPIC_DEFAULT_OPUS_MODEL: ${{ inputs.model || vars.ANTHROPIC_DEFAULT_OPUS_MODEL || vars.CLAUDE_DEFAULT_MODEL }}
+          ANTHROPIC_DEFAULT_HAIKU_MODEL: ${{ inputs.model || vars.ANTHROPIC_DEFAULT_HAIKU_MODEL || vars.CLAUDE_DEFAULT_MODEL }}
+          ANTHROPIC_DEFAULT_SONNET_MODEL: ${{ inputs.model || vars.ANTHROPIC_DEFAULT_SONNET_MODEL || vars.CLAUDE_DEFAULT_MODEL }}
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: "/issue-hunter"
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          show_full_output: ${{ vars.CLAUDE_FULL_OUTPUT || 'false' }}
+          claude_args: "--dangerously-skip-permissions --mcp-config /tmp/mcp-config.json"
