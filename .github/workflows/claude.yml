@@ -110,6 +110,7 @@ jobs:
           ANTHROPIC_DEFAULT_SONNET_MODEL: ${{ inputs.model || vars.ANTHROPIC_DEFAULT_SONNET_MODEL || vars.CLAUDE_DEFAULT_MODEL }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: ${{ github.event.comment.body || github.event.review.body || github.event.issue.body }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           show_full_output: ${{ vars.CLAUDE_FULL_OUTPUT || 'false' }}
           claude_args: "--dangerously-skip-permissions --mcp-config /tmp/mcp-config.json"
