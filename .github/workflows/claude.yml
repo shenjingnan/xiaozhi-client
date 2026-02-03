@@ -57,7 +57,7 @@ jobs:
           ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
           CONTEXT7_API_KEY: ${{ secrets.CONTEXT7_API_KEY }}
         run: |
-          cat > /tmp/mcp-config.json << EOF
+          cat > /tmp/mcp-config.json << 'EOF'
           {
             "mcpServers": {
               "zai-mcp-server": {
@@ -104,7 +104,6 @@ jobs:
           ANTHROPIC_DEFAULT_SONNET_MODEL: ${{ inputs.model || vars.ANTHROPIC_DEFAULT_SONNET_MODEL || vars.CLAUDE_DEFAULT_MODEL }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          prompt: "${{ github.event.comment.body || github.event.review.body || github.event.issue.body }} 我希望你完成任务之后判断一下是否需要提交PR，如果需要请提交PR"
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           show_full_output: ${{ vars.CLAUDE_FULL_OUTPUT || 'false' }}
           claude_args: "--dangerously-skip-permissions --mcp-config /tmp/mcp-config.json"
