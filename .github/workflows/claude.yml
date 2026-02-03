@@ -102,6 +102,7 @@ jobs:
           ANTHROPIC_DEFAULT_OPUS_MODEL: ${{ inputs.model || vars.ANTHROPIC_DEFAULT_OPUS_MODEL || vars.CLAUDE_DEFAULT_MODEL }}
           ANTHROPIC_DEFAULT_HAIKU_MODEL: ${{ inputs.model || vars.ANTHROPIC_DEFAULT_HAIKU_MODEL || vars.CLAUDE_DEFAULT_MODEL }}
           ANTHROPIC_DEFAULT_SONNET_MODEL: ${{ inputs.model || vars.ANTHROPIC_DEFAULT_SONNET_MODEL || vars.CLAUDE_DEFAULT_MODEL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
