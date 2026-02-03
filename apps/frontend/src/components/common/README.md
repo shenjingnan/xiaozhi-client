@@ -24,7 +24,7 @@ pnpm add react-hook-form @hookform/resolvers zod
 ## 基本用法
 
 ```tsx
-import { WorkflowParameterConfigDialog } from "@/components/common/WorkflowParameterConfigDialog";
+import { WorkflowParameterConfigDialog } from "@/components/common/workflow-parameter-config-dialog";
 import type { CozeWorkflow, WorkflowParameter } from "@/types";
 
 function MyComponent() {

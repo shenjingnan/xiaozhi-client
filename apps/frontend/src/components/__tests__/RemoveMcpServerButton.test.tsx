@@ -1,4 +1,4 @@
-import { RemoveMcpServerButton } from "@components/RemoveMcpServerButton";
+import { RemoveMcpServerButton } from "@components/remove-mcp-server-button";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { act } from "react";
 import { vi } from "vitest";

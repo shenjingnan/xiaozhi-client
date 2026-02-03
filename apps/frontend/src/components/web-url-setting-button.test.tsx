@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { WebUrlSettingButton } from "./WebUrlSettingButton";
+import { WebUrlSettingButton } from "./web-url-setting-button";
 
 // 模拟 react-hook-form
 vi.mock("react-hook-form", () => ({

@@ -28,8 +28,8 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { InstallLogDialog } from "./InstallLogDialog";
-import { VersionDisplay } from "./VersionDisplay";
+import { InstallLogDialog } from "./install-log-dialog";
+import { VersionDisplay } from "./version-display";
 
 interface VersionInfo {
   name: string;
