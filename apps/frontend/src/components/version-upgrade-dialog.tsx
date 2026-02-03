@@ -29,7 +29,7 @@ import { Alert, AlertDescription, AlertTitle } from "@ui/alert";
 import { DownloadIcon, ShieldAlertIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import semver from "semver";
-import { InstallLogDialog } from "./InstallLogDialog";
+import { InstallLogDialog } from "./install-log-dialog";
 
 interface VersionUpgradeDialogProps {
   children?: React.ReactNode;

@@ -6,7 +6,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { CozeWorkflow } from "@xiaozhi-client/shared-types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { WorkflowParameterConfigDialog } from "./WorkflowParameterConfigDialog";
+import { WorkflowParameterConfigDialog } from "./workflow-parameter-config-dialog";
 
 // Mock workflow data
 const mockWorkflow: CozeWorkflow = {
