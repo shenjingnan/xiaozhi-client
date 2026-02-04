@@ -64,51 +64,30 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           result=$(npx tsx scripts/parse-claude-reply.ts --issue "$ISSUE_NUMBER")
-          echo "$result"
+          echo "branch_name=$(echo "$result" | jq -r .branchName)" >> $GITHUB_OUTPUT
 
       # - name: Configure Git
       #   run: |
       #     git config user.name "github-actions[bot]"
       #     git config user.email "github-actions[bot]@users.noreply.github.com"
       #
-                # echo "branch_name=$(echo "$result" | jq -r .branchName)" >> $GITHUB_OUTPUT
-          # echo "pr_title=$(echo "$result" | jq -r .title)" >> $GITHUB_OUTPUT
-          # echo "pr_body=$(echo "$result" | jq -r .body)" >> $GITHUB_OUTPUT
-          # echo "✅ 解析成功"
-          # echo "  分支: $(echo "$result" | jq -r .branchName)"
-          # echo "  标题: $(echo "$result" | jq -r .title)"
+      # echo "pr_title=$(echo "$result" | jq -r .title)" >> $GITHUB_OUTPUT
+      # echo "pr_body=$(echo "$result" | jq -r .body)" >> $GITHUB_OUTPUT
+      # echo "✅ 解析成功"
+      # echo "  分支: $(echo "$result" | jq -r .branchName)"
+      # echo "  标题: $(echo "$result" | jq -r .title)"
 
-      # - name: Checkout target branch
-      #   env:
-      #     PARSED_BRANCH: ${{ steps.parse.outputs.branch_name }}
-      #     INPUT_BRANCH: ${{ github.event.inputs.branch_name }}
-      #   run: |
-      #     if [ -n "$PARSED_BRANCH" ]; then
-      #       # 从 Issue 解析的分支，尝试直接检出远程分支
-      #       git fetch origin "$PARSED_BRANCH" || echo "分支不存在于远程"
-      #       git checkout "$PARSED_BRANCH" || git checkout -b "$PARSED_BRANCH"
-      #     elif [ -n "$INPUT_BRANCH" ]; then
-      #       # 手动指定的分支名，创建新分支
-      #       git checkout -b "$INPUT_BRANCH"
-      #       git push origin "$INPUT_BRANCH"
-      #     else
-      #       echo "❌ 错误: 必须提供 issue_number 或 branch_name"
-      #       exit 1
-      #     fi
+      - name: Checkout target branch
+        env:
+          BRANCH_NAME: ${{ steps.parse.outputs.branch_name }}
+        run: |
+          git fetch origin "$BRANCH_NAME" || echo "分支不存在于远程"
+          git checkout "$BRANCH_NAME" || git checkout -b "$BRANCH_NAME"
 
-      # - name: Create Pull Request
-      #   uses: peter-evans/create-pull-request@v5
-      #   with:
-      #     token: ${{ secrets.GITHUB_TOKEN }}
-      #     branch: ${{ steps.parse.outputs.branch_name || github.event.inputs.branch_name }}
-      #     base: main
-      #     title: ${{ steps.parse.outputs.pr_title || github.event.inputs.pr_title || github.event.inputs.branch_name }}
-      #     body: ${{ steps.parse.outputs.pr_body || github.event.inputs.pr_body }}
-      #     labels: |
-      #       automated-pr
-      #     draft: false
-
-      # - name: Output PR URL
-      #   run: |
-      #     echo "✅ 分支已创建并推送"
-      #     echo "✅ Pull Request 已创建"
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ steps.parse.outputs.branch_name }}
+          base: main
+          draft: false
