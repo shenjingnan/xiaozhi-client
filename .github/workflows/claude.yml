@@ -108,26 +108,37 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           show_full_output: ${{ vars.CLAUDE_FULL_OUTPUT || 'false' }}
           claude_args: "--dangerously-skip-permissions --mcp-config /tmp/mcp-config.json"
-      - name: Trigger Create PR Workflow
+
+      - name: 创建PR
+        id: parse
         if: |
           success() &&
           (github.event_name == 'issues' || github.event_name == 'issue_comment')
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          # 获取 issue number
-          if [ "${{ github.event_name }}" = "issues" ]; then
-            ISSUE_NUMBER="${{ github.event.issue.number }}"
-          elif [ "${{ github.event_name }}" = "issue_comment" ]; then
-            ISSUE_NUMBER="${{ github.event.issue.number }}"
-          fi
-
-          echo "🚀 触发 Create PR workflow for issue #$ISSUE_NUMBER"
-
-          # 等待几秒确保 Claude 的更改已经推送
           sleep 10
+          output=$(npx tsx scripts/parse-claude-reply.ts --issue "$ISSUE_NUMBER" 2>&1)
+          echo "$output"
+          result=$(echo "$output" | sed -n '/^{/,/^}/p')
+          echo "$result"
 
-          gh workflow run create-pr.yml \
-            -f issue_number="$ISSUE_NUMBER"
+          # 提取各个字段
+          branch_name=$(echo "$result" | jq -r .branchName)
+          pr_title=$(echo "$result" | jq -r .title)
+          pr_body=$(echo "$result" | jq -r .body)
 
-          echo "✅ Create PR workflow 已触发"
+          # 输出到 GITHUB_OUTPUT（使用 heredoc 处理多行）
+          echo "branch_name=$branch_name" >> $GITHUB_OUTPUT
+          echo "pr_title=$pr_title" >> $GITHUB_OUTPUT
+
+          # 使用 heredoc 处理多行 body
+          echo "pr_body<<EOF" >> $GITHUB_OUTPUT
+          echo "$pr_body" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          gh pr create \
+            --base main \
+            --head "$branch_name" \
+            --title "$pr_title" \
+            --body "$pr_body" \
