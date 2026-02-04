@@ -59,18 +59,15 @@ jobs:
 
               # 使用 repository_dispatch 触发 claude.yml workflow
               # 这是 GitHub 官方支持的 workflow 间通信方式
-              gh api \
-                --method POST \
-                -H "Accept: application/vnd.github.v3+json" \
-                "/repos/${GITHUB_REPOSITORY}/dispatches" \
-                --input - << EOF
-              {
-                "event_type": "claude_issue_trigger",
-                "client_payload": {
-                  "issue_number": $issue_number
-                }
-              }
-              EOF
+              jq -n \
+                --arg event_type "claude_issue_trigger" \
+                --argjson issue_number "$issue_number" \
+                '{event_type: $event_type, client_payload: {issue_number: $issue_number}}' \
+              | gh api \
+                  --method POST \
+                  -H "Accept: application/vnd.github.v3+json" \
+                  "/repos/${GITHUB_REPOSITORY}/dispatches" \
+                  --input -
             else
               echo "issue #$issue_number 已有 @claude 评论，跳过"
             fi
