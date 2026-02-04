@@ -3,8 +3,8 @@
  * 为 Hono Context 添加便捷的响应方法：c.success、c.fail、c.paginate
  */
 
+import type { PaginationInfo } from "@/types/api.response.js";
 import type { MiddlewareHandler } from "hono";
-import type { PaginationInfo } from "../types/api.response.js";
 
 /**
  * 扩展 Hono Context 接口
