@@ -71,5 +71,5 @@ jobs:
           gh pr create \
             --base main \
             --head "$branch_name" \
-            --title "$title" \
-            --body "$body" \
+            --title "$pr_title" \
+            --body "$pr_body" \
