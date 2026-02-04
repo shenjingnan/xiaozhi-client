@@ -20,13 +20,6 @@ interface MCPServiceManagerAccess {
 }
 
 /**
- * MCPHandler 扩展接口，用于动态状态缓存
- */
-interface MCPHandlerWithCache {
-  statusCache?: Map<string, MCPServerStatus>;
-}
-
-/**
  * 配置详情接口，包含时间戳
  */
 interface ConfigDetails {
@@ -119,6 +112,7 @@ export class MCPHandler {
   protected logger: Logger;
   private mcpServiceManager: MCPServiceManager;
   private configManager: ConfigManager;
+  private statusCache: Map<string, MCPServerStatus>;
 
   constructor(
     mcpServiceManager: MCPServiceManager,
@@ -127,6 +121,7 @@ export class MCPHandler {
     this.logger = logger;
     this.mcpServiceManager = mcpServiceManager;
     this.configManager = configManager;
+    this.statusCache = new Map();
   }
 
   /**
@@ -505,22 +500,14 @@ export class MCPHandler {
   private getPreviousStatus(serverName: string): MCPServerStatus | null {
     // 这里使用一个简单的Map来缓存状态
     // 在实际生产环境中，可能需要更持久化的缓存方案
-    const handlerWithCache = this as MCPHandlerWithCache;
-    if (!handlerWithCache.statusCache) {
-      handlerWithCache.statusCache = new Map();
-    }
-    return handlerWithCache.statusCache.get(serverName) || null;
+    return this.statusCache.get(serverName) || null;
   }
 
   /**
    * 更新状态缓存
    */
   private updateStatusCache(serverName: string, status: MCPServerStatus): void {
-    const handlerWithCache = this as MCPHandlerWithCache;
-    if (!handlerWithCache.statusCache) {
-      handlerWithCache.statusCache = new Map();
-    }
-    handlerWithCache.statusCache.set(serverName, status);
+    this.statusCache.set(serverName, status);
   }
 
   /**
