@@ -3,9 +3,13 @@ name: Create Branch and PR
 on:
   workflow_dispatch:
     inputs:
+      issue_number:
+        description: 'Issue 编号（从 Claude 回复中解析 PR 信息）'
+        required: false
+        type: string
       branch_name:
-        description: '新分支名称'
-        required: true
+        description: '新分支名称（不提供 issue_number 时必需）'
+        required: false
         type: string
       pr_title:
         description: 'PR 标题（可选，默认使用分支名）'
@@ -31,24 +35,51 @@ jobs:
           ref: main
           fetch-depth: 0
 
+      - name: Parse Claude reply
+        id: parse
+        if: ${{ github.event.inputs.issue_number != '' }}
+        env:
+          ISSUE_NUMBER: ${{ github.event.inputs.issue_number }}
+        run: |
+          result=$(npx tsx scripts/parse-claude-reply.ts --issue "$ISSUE_NUMBER")
+          echo "branch_name=$(echo "$result" | jq -r .branchName)" >> $GITHUB_OUTPUT
+          echo "pr_title=$(echo "$result" | jq -r .title)" >> $GITHUB_OUTPUT
+          echo "pr_body=$(echo "$result" | jq -r .body)" >> $GITHUB_OUTPUT
+          echo "✅ 解析成功"
+          echo "  分支: $(echo "$result" | jq -r .branchName)"
+          echo "  标题: $(echo "$result" | jq -r .title)"
+
       - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Create and push new branch
+      - name: Checkout target branch
+        env:
+          PARSED_BRANCH: ${{ steps.parse.outputs.branch_name }}
+          INPUT_BRANCH: ${{ github.event.inputs.branch_name }}
         run: |
-          git checkout -b ${{ github.event.inputs.branch_name }}
-          git push origin ${{ github.event.inputs.branch_name }}
+          if [ -n "$PARSED_BRANCH" ]; then
+            # 从 Issue 解析的分支，尝试直接检出远程分支
+            git fetch origin "$PARSED_BRANCH" || echo "分支不存在于远程"
+            git checkout "$PARSED_BRANCH" || git checkout -b "$PARSED_BRANCH"
+          elif [ -n "$INPUT_BRANCH" ]; then
+            # 手动指定的分支名，创建新分支
+            git checkout -b "$INPUT_BRANCH"
+            git push origin "$INPUT_BRANCH"
+          else
+            echo "❌ 错误: 必须提供 issue_number 或 branch_name"
+            exit 1
+          fi
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.event.inputs.branch_name }}
+          branch: ${{ steps.parse.outputs.branch_name || github.event.inputs.branch_name }}
           base: main
-          title: ${{ github.event.inputs.pr_title || github.event.inputs.branch_name }}
-          body: ${{ github.event.inputs.pr_body }}
+          title: ${{ steps.parse.outputs.pr_title || github.event.inputs.pr_title || github.event.inputs.branch_name }}
+          body: ${{ steps.parse.outputs.pr_body || github.event.inputs.pr_body }}
           labels: |
             automated-pr
           draft: false
