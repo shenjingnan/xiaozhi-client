@@ -635,19 +635,37 @@ export class McpCommandHandler extends BaseCommandHandler {
   }
 
   /**
+   * 验证服务是否存在
+   * @param serverName 服务名称
+   * @param spinner Ora 加载动画实例
+   * @returns 服务是否存在
+   * @private
+   */
+  private validateServerExists(
+    serverName: string,
+    spinner: ReturnType<typeof ora>
+  ): boolean {
+    const mcpServers = configManager.getMcpServers();
+
+    if (!mcpServers[serverName]) {
+      spinner.fail(`服务 '${serverName}' 不存在`);
+      console.log(
+        chalk.yellow("💡 提示: 使用 'xiaozhi mcp list' 查看所有可用服务")
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
    * 列出指定服务的工具
    */
   private async handleServerInternal(serverName: string): Promise<void> {
     const spinner = ora(`获取 ${serverName} 服务的工具列表...`).start();
 
     try {
-      const mcpServers = configManager.getMcpServers();
-
-      if (!mcpServers[serverName]) {
-        spinner.fail(`服务 '${serverName}' 不存在`);
-        console.log(
-          chalk.yellow("💡 提示: 使用 'xiaozhi mcp list' 查看所有可用服务")
-        );
+      if (!this.validateServerExists(serverName, spinner)) {
         return;
       }
 
@@ -729,13 +747,7 @@ export class McpCommandHandler extends BaseCommandHandler {
     const spinner = ora(`${action}工具 ${serverName}/${toolName}...`).start();
 
     try {
-      const mcpServers = configManager.getMcpServers();
-
-      if (!mcpServers[serverName]) {
-        spinner.fail(`服务 '${serverName}' 不存在`);
-        console.log(
-          chalk.yellow("💡 提示: 使用 'xiaozhi mcp list' 查看所有可用服务")
-        );
+      if (!this.validateServerExists(serverName, spinner)) {
         return;
       }
 
