@@ -36,24 +36,78 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Create and push new branch
+      - name: Create new branch and modify README
         run: |
+          # 创建并切换到新分支
           git checkout -b ${{ github.event.inputs.branch_name }}
-          git push origin ${{ github.event.inputs.branch_name }}
+
+          # 获取当前时间
+          TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+
+          # 在 README.md 末尾追加分支信息
+          echo "" >> README.md
+          echo "---" >> README.md
+          echo "**Branch:** \`${{ github.event.inputs.branch_name }}\`" >> README.md
+          echo "**Created:** $TIMESTAMP" >> README.md
+          echo "**Created by:** GitHub Actions" >> README.md
+
+          # 显示修改内容
+          echo "📝 README.md 修改内容："
+          tail -5 README.md
+
+          # 提交更改
+          git add README.md
+          git commit -m "chore: add branch info to README [skip ci]"
+
+          # 推送到远程仓库
+          git push -u origin ${{ github.event.inputs.branch_name }}
+
+          echo "✅ 分支 ${{ github.event.inputs.branch_name }} 已创建并推送"
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.event.inputs.branch_name }}
-          base: main
-          title: ${{ github.event.inputs.pr_title || github.event.inputs.branch_name }}
-          body: ${{ github.event.inputs.pr_body }}
-          labels: |
-            automated-pr
-          draft: false
-
-      - name: Output PR URL
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "✅ 分支已创建并推送"
+          PR_TITLE="${{ github.event.inputs.pr_title }}"
+          if [ -z "$PR_TITLE" ]; then
+            PR_TITLE="feat: ${{ github.event.inputs.branch_name }}"
+          fi
+
+          PR_BODY="${{ github.event.inputs.pr_body }}"
+          if [ -z "$PR_BODY" ]; then
+            PR_BODY="## 📋 变更说明
+
+          自动从 \`main\` 分支创建的 Pull Request
+
+          ### 🔖 分支信息
+          - **分支名:** \`${{ github.event.inputs.branch_name }}\`
+          - **基于分支:** \`main\`
+          - **创建时间:** $(date '+%Y-%m-%d %H:%M:%S')
+
+          ### ✅ 已完成
+          - [x] 创建新分支
+          - [x] 更新 README.md
+          - [x] 推送到远程仓库
+
+          ---
+          🤖 此 PR 由 GitHub Actions 自动创建"
+          fi
+
+          # 创建 PR
+          PR_URL=$(gh pr create \
+            --base main \
+            --head ${{ github.event.inputs.branch_name }} \
+            --title "$PR_TITLE" \
+            --body "$PR_BODY" \
+            --label "automated-pr")
+
           echo "✅ Pull Request 已创建"
+          echo "🔗 PR 链接: $PR_URL"
+
+      - name: Summary
+        run: |
+          echo "## 🎉 工作流执行完成" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ 分支: \`${{ github.event.inputs.branch_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ README.md 已更新" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Pull Request 已创建" >> $GITHUB_STEP_SUMMARY
