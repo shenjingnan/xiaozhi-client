@@ -53,6 +53,7 @@ jobs:
           output=$(npx tsx scripts/parse-claude-reply.ts --issue "$ISSUE_NUMBER" 2>&1)
           echo "$output"
           result=$(echo "$output" | sed -n '/^{/,/^}/p')
+          echo "$result"
           echo "$result" | jq -r .branchName
           echo "$result" | jq -r .title
           echo "$result" | jq -r .body
