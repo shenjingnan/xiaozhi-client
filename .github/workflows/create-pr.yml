@@ -54,12 +54,21 @@ jobs:
           echo "$output"
           result=$(echo "$output" | sed -n '/^{/,/^}/p')
           echo "$result"
-          echo "$result" | jq -r .branchName
-          echo "$result" | jq -r .title
-          echo "$result" | jq -r .body
-          echo "branch_name=$(echo "$result" | jq -r .branchName)" >> $GITHUB_OUTPUT
-          echo "pr_title=$(echo "$result" | jq -r .title)" >> $GITHUB_OUTPUT
-          echo "pr_body=$(echo "$result" | jq -r .body)" >> $GITHUB_OUTPUT
+
+          # 提取各个字段
+          branch_name=$(echo "$result" | jq -r .branchName)
+          pr_title=$(echo "$result" | jq -r .title)
+          pr_body=$(echo "$result" | jq -r .body)
+
+          # 输出到 GITHUB_OUTPUT（使用 heredoc 处理多行）
+          echo "branch_name=$branch_name" >> $GITHUB_OUTPUT
+          echo "pr_title=$pr_title" >> $GITHUB_OUTPUT
+
+          # 使用 heredoc 处理多行 body
+          echo "pr_body<<EOF" >> $GITHUB_OUTPUT
+          echo "$pr_body" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
 
       # - name: Checkout target branch
       #   env:
