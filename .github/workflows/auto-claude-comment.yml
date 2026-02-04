@@ -42,7 +42,7 @@ jobs:
 
       - name: 检查并触发 Claude 处理
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           # 获取最新的10个打开的 issue
           issues=$(gh issue list --limit 10 --state open --json number)
@@ -56,18 +56,6 @@ jobs:
               echo "为 issue #$issue_number 添加 @claude 评论并触发 Claude workflow"
               # 添加评论（作为记录）
               gh issue comment "$issue_number" --body "@claude"
-
-              # 使用 repository_dispatch 触发 claude.yml workflow
-              # 这是 GitHub 官方支持的 workflow 间通信方式
-              jq -n \
-                --arg event_type "claude_issue_trigger" \
-                --argjson issue_number "$issue_number" \
-                '{event_type: $event_type, client_payload: {issue_number: $issue_number}}' \
-              | gh api \
-                  --method POST \
-                  -H "Accept: application/vnd.github.v3+json" \
-                  "/repos/${GITHUB_REPOSITORY}/dispatches" \
-                  --input -
             else
               echo "issue #$issue_number 已有 @claude 评论，跳过"
             fi
