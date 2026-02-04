@@ -376,7 +376,7 @@ async function main(options: ParseOptions): Promise<void> {
   // log("success", `  标题: ${result.title}`);
 
   // // 输出 JSON 到 stdout
-  // console.log(JSON.stringify(result, null, 2));
+  console.log(JSON.stringify({ claudeReply, x: 'test' }, null, 2));
 }
 
 // 错误处理
