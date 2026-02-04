@@ -1,6 +1,6 @@
 import type { StatusService } from "@/services/status.service.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ServiceApiHandler } from "../service.handler.js";
+import { ServiceHandler } from "../service.handler.js";
 
 // Mock dependencies
 vi.mock("../../Logger.js", () => ({
@@ -22,8 +22,8 @@ vi.mock("@/services/event-bus.service.js", () => ({
   }),
 }));
 
-describe("ServiceApiHandler", () => {
-  let handler: ServiceApiHandler;
+describe("ServiceHandler", () => {
+  let handler: ServiceHandler;
   let mockStatusService: StatusService;
   let mockContext: any;
   let mockSpawn: any;
@@ -86,7 +86,7 @@ describe("ServiceApiHandler", () => {
     const { getEventBus } = await import("@/services/event-bus.service.js");
     vi.mocked(getEventBus).mockReturnValue(mockEventBus);
 
-    handler = new ServiceApiHandler(mockStatusService);
+    handler = new ServiceHandler(mockStatusService);
   });
 
   afterEach(() => {
@@ -96,7 +96,7 @@ describe("ServiceApiHandler", () => {
 
   describe("constructor", () => {
     it("should initialize with correct dependencies", () => {
-      expect(handler).toBeInstanceOf(ServiceApiHandler);
+      expect(handler).toBeInstanceOf(ServiceHandler);
       expect(mockEventBus).toBeDefined();
     });
   });

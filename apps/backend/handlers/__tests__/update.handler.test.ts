@@ -2,7 +2,7 @@ import { NPMManager } from "@/lib/npm";
 import type { Context } from "hono";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { logger } from "../../Logger.js";
-import { UpdateApiHandler } from "../update.handler.js";
+import { UpdateHandler } from "../update.handler.js";
 
 // Mock dependencies
 vi.mock("@/lib/npm");
@@ -26,8 +26,8 @@ interface MockEventBus {
   onEvent: ReturnType<typeof vi.fn>;
 }
 
-describe("UpdateApiHandler", () => {
-  let updateApiHandler: UpdateApiHandler;
+describe("UpdateHandler", () => {
+  let updateApiHandler: UpdateHandler;
   let mockNPMManager: MockNPMManager;
   let mockLogger: MockLogger;
   let mockEventBus: MockEventBus;
@@ -104,7 +104,7 @@ describe("UpdateApiHandler", () => {
     );
 
     // Create handler instance
-    updateApiHandler = new UpdateApiHandler();
+    updateApiHandler = new UpdateHandler();
   });
 
   afterEach(() => {

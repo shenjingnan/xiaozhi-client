@@ -13,7 +13,7 @@ const UpdateRequestSchema = z.object({
 /**
  * 更新 API 处理器
  */
-export class UpdateApiHandler extends BaseHandler {
+export class UpdateHandler extends BaseHandler {
   private npmManager: NPMManager;
   private eventBus = getEventBus();
   private activeInstalls: Map<string, boolean> = new Map();

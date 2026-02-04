@@ -4,18 +4,18 @@
  */
 
 import type {
-  ConfigApiHandler,
+  ConfigHandler,
   CozeHandler,
   EndpointHandler,
   MCPHandler,
   MCPRouteHandler,
   MCPToolHandler,
   MCPToolLogHandler,
-  ServiceApiHandler,
+  ServiceHandler,
   StaticFileHandler,
-  StatusApiHandler,
-  UpdateApiHandler,
-  VersionApiHandler,
+  StatusHandler,
+  UpdateHandler,
+  VersionHandler,
 } from "@/handlers/index.js";
 import type { Context, MiddlewareHandler } from "hono";
 
@@ -25,17 +25,17 @@ import type { Context, MiddlewareHandler } from "hono";
  */
 export interface HandlerDependencies {
   /** 配置管理处理器 */
-  configApiHandler: ConfigApiHandler;
+  configApiHandler: ConfigHandler;
   /** 状态查询处理器 */
-  statusApiHandler: StatusApiHandler;
+  statusApiHandler: StatusHandler;
   /** 服务管理处理器 */
-  serviceApiHandler: ServiceApiHandler;
+  serviceApiHandler: ServiceHandler;
   /** MCP 工具处理器 */
   mcpToolHandler: MCPToolHandler;
   /** 工具调用日志处理器 */
   mcpToolLogHandler: MCPToolLogHandler;
   /** 版本信息处理器 */
-  versionApiHandler: VersionApiHandler;
+  versionApiHandler: VersionHandler;
   /** 静态文件处理器 */
   staticFileHandler: StaticFileHandler;
   /** MCP 路由处理器 */
@@ -43,7 +43,7 @@ export interface HandlerDependencies {
   /** MCP 服务器管理处理器（可选） */
   mcpHandler?: MCPHandler;
   /** 更新管理处理器 */
-  updateApiHandler: UpdateApiHandler;
+  updateApiHandler: UpdateHandler;
   /** 扣子 API 处理器 */
   cozeHandler: CozeHandler;
   /** 小智接入点处理器（通过中间件动态注入） */

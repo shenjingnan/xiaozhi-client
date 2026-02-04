@@ -7,7 +7,7 @@ import { BaseHandler } from "./base.handler.js";
 /**
  * 版本 API 处理器
  */
-export class VersionApiHandler extends BaseHandler {
+export class VersionHandler extends BaseHandler {
   /**
    * 获取版本信息
    * GET /api/version

@@ -7,7 +7,7 @@ import { BaseHandler } from "./base.handler.js";
 /**
  * 配置 API 处理器
  */
-export class ConfigApiHandler extends BaseHandler {
+export class ConfigHandler extends BaseHandler {
   constructor() {
     super();
   }

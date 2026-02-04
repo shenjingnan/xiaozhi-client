@@ -6,7 +6,7 @@ import { BaseHandler } from "./base.handler.js";
 /**
  * 状态 API 处理器
  */
-export class StatusApiHandler extends BaseHandler {
+export class StatusHandler extends BaseHandler {
   private statusService: StatusService;
 
   constructor(statusService: StatusService) {

@@ -1,6 +1,6 @@
 import type { StatusService } from "@/services/status.service.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { StatusApiHandler } from "../status.handler.js";
+import { StatusHandler } from "../status.handler.js";
 
 // Mock dependencies
 vi.mock("../../Logger.js", () => ({
@@ -12,8 +12,8 @@ vi.mock("../../Logger.js", () => ({
   },
 }));
 
-describe("StatusApiHandler 状态 API 处理器", () => {
-  let statusApiHandler: StatusApiHandler;
+describe("StatusHandler 状态 API 处理器", () => {
+  let statusApiHandler: StatusHandler;
   let mockStatusService: any;
   let mockContext: any;
   let mockLogger: any;
@@ -89,12 +89,12 @@ describe("StatusApiHandler 状态 API 处理器", () => {
     } as any;
 
     // Create handler instance
-    statusApiHandler = new StatusApiHandler(mockStatusService);
+    statusApiHandler = new StatusHandler(mockStatusService);
   });
 
   describe("构造函数", () => {
     it("应该正确初始化处理器", () => {
-      expect(statusApiHandler).toBeInstanceOf(StatusApiHandler);
+      expect(statusApiHandler).toBeInstanceOf(StatusHandler);
       expect(mockLogger).toBeDefined();
     });
   });
@@ -847,7 +847,7 @@ describe("StatusApiHandler 状态 API 处理器", () => {
     it("应该正确处理状态服务方法不存在的情况", async () => {
       // 模拟方法不存在
       const brokenService = {} as StatusService;
-      const brokenHandler = new StatusApiHandler(brokenService);
+      const brokenHandler = new StatusHandler(brokenService);
 
       const response = await brokenHandler.getStatus(mockContext);
       const responseData = await response.json();

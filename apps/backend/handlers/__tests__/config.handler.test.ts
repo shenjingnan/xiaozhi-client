@@ -1,6 +1,6 @@
 import type { AppConfig } from "@xiaozhi-client/config";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ConfigApiHandler } from "../config.handler.js";
+import { ConfigHandler } from "../config.handler.js";
 
 // 模拟依赖项
 vi.mock("../../Logger.js", () => ({
@@ -40,8 +40,8 @@ vi.mock("@xiaozhi-client/config", () => ({
   },
 }));
 
-describe("ConfigApiHandler", () => {
-  let configApiHandler: ConfigApiHandler;
+describe("ConfigHandler", () => {
+  let configApiHandler: ConfigHandler;
   let mockConfigManager: any;
   let mockLogger: any;
   let mockContext: any;
@@ -165,7 +165,7 @@ describe("ConfigApiHandler", () => {
       logger: mockLogger, // 向后兼容
     };
 
-    configApiHandler = new ConfigApiHandler();
+    configApiHandler = new ConfigHandler();
   });
 
   afterEach(() => {
@@ -174,7 +174,7 @@ describe("ConfigApiHandler", () => {
 
   describe("constructor", () => {
     it("should initialize with correct dependencies", () => {
-      expect(configApiHandler).toBeInstanceOf(ConfigApiHandler);
+      expect(configApiHandler).toBeInstanceOf(ConfigHandler);
       expect(mockLogger.debug).not.toHaveBeenCalled();
     });
   });

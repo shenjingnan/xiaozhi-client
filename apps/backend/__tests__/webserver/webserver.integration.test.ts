@@ -192,7 +192,7 @@ vi.mock("../../handlers/config.handler", () => {
     ),
   };
   return {
-    ConfigApiHandler: vi.fn(() => mockConfigApiHandler),
+    ConfigHandler: vi.fn(() => mockConfigApiHandler),
   };
 });
 
@@ -215,7 +215,7 @@ vi.mock("../../handlers/status.handler", () => {
     resetStatus: vi.fn((c) => c.json({ success: true })),
   };
   return {
-    StatusApiHandler: vi.fn(() => mockStatusApiHandler),
+    StatusHandler: vi.fn(() => mockStatusApiHandler),
   };
 });
 
@@ -254,7 +254,7 @@ vi.mock("../../handlers/service.handler", () => {
     ),
   };
   return {
-    ServiceApiHandler: vi.fn(() => mockServiceApiHandler),
+    ServiceHandler: vi.fn(() => mockServiceApiHandler),
   };
 });
 vi.mock("@cli/Container", () => ({
@@ -354,7 +354,7 @@ vi.mock("../../handlers/version.handler", () => {
     ),
   };
   return {
-    VersionApiHandler: vi.fn(() => mockVersionApiHandler),
+    VersionHandler: vi.fn(() => mockVersionApiHandler),
   };
 });
 

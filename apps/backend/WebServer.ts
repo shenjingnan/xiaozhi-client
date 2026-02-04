@@ -3,7 +3,7 @@ import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import {
-  ConfigApiHandler,
+  ConfigHandler,
   CozeHandler,
   HeartbeatHandler,
   MCPHandler,
@@ -11,11 +11,11 @@ import {
   MCPToolHandler,
   MCPToolLogHandler,
   RealtimeNotificationHandler,
-  ServiceApiHandler,
+  ServiceHandler,
   StaticFileHandler,
-  StatusApiHandler,
-  UpdateApiHandler,
-  VersionApiHandler,
+  StatusHandler,
+  UpdateHandler,
+  VersionHandler,
 } from "@/handlers/index.js";
 import { MCPServiceManager } from "@/lib/mcp";
 import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
@@ -110,16 +110,16 @@ export class WebServer {
   private notificationService: NotificationService;
 
   // HTTP API 处理器
-  private configApiHandler: ConfigApiHandler;
-  private statusApiHandler: StatusApiHandler;
-  private serviceApiHandler: ServiceApiHandler;
+  private configApiHandler: ConfigHandler;
+  private statusApiHandler: StatusHandler;
+  private serviceApiHandler: ServiceHandler;
   private mcpToolHandler: MCPToolHandler;
   private mcpToolLogHandler: MCPToolLogHandler;
-  private versionApiHandler: VersionApiHandler;
+  private versionApiHandler: VersionHandler;
   private staticFileHandler: StaticFileHandler;
   private mcpRouteHandler: MCPRouteHandler;
   private mcpHandler?: MCPHandler;
-  private updateApiHandler: UpdateApiHandler;
+  private updateApiHandler: UpdateHandler;
   private cozeHandler: CozeHandler;
 
   // WebSocket 处理器
@@ -155,15 +155,15 @@ export class WebServer {
     this.notificationService = new NotificationService();
 
     // 初始化 HTTP API 处理器
-    this.configApiHandler = new ConfigApiHandler();
-    this.statusApiHandler = new StatusApiHandler(this.statusService);
-    this.serviceApiHandler = new ServiceApiHandler(this.statusService);
+    this.configApiHandler = new ConfigHandler();
+    this.statusApiHandler = new StatusHandler(this.statusService);
+    this.serviceApiHandler = new ServiceHandler(this.statusService);
     this.mcpToolHandler = new MCPToolHandler();
     this.mcpToolLogHandler = new MCPToolLogHandler();
-    this.versionApiHandler = new VersionApiHandler();
+    this.versionApiHandler = new VersionHandler();
     this.staticFileHandler = new StaticFileHandler();
     this.mcpRouteHandler = new MCPRouteHandler();
-    this.updateApiHandler = new UpdateApiHandler();
+    this.updateApiHandler = new UpdateHandler();
     this.cozeHandler = new CozeHandler();
 
     // MCPServerApiHandler 将在 start() 方法中初始化，因为它需要 mcpServiceManager

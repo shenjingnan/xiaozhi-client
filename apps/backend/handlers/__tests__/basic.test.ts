@@ -72,17 +72,17 @@ describe("Handlers Basic Tests", () => {
   });
 
   it("should have proper class constructors", async () => {
-    const { ConfigApiHandler } = await import("../config.handler.js");
+    const { ConfigHandler } = await import("../config.handler.js");
     const { StaticFileHandler } = await import("../static-file.handler.js");
-    const { ServiceApiHandler } = await import("../service.handler.js");
-    const { StatusApiHandler } = await import("../status.handler.js");
+    const { ServiceHandler } = await import("../service.handler.js");
+    const { StatusHandler } = await import("../status.handler.js");
     const { StatusService } = await import("@/services/status.service.js");
 
     const mockStatusService = new StatusService();
 
-    expect(() => new ConfigApiHandler()).not.toThrow();
+    expect(() => new ConfigHandler()).not.toThrow();
     expect(() => new StaticFileHandler()).not.toThrow();
-    expect(() => new ServiceApiHandler(mockStatusService)).not.toThrow();
-    expect(() => new StatusApiHandler(mockStatusService)).not.toThrow();
+    expect(() => new ServiceHandler(mockStatusService)).not.toThrow();
+    expect(() => new StatusHandler(mockStatusService)).not.toThrow();
   });
 });

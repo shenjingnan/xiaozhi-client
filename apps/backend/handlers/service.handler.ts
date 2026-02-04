@@ -12,7 +12,7 @@ import { requireMCPServiceManager } from "../types/hono.context.js";
 /**
  * 服务 API 处理器
  */
-export class ServiceApiHandler {
+export class ServiceHandler {
   private logger: Logger;
   private statusService: StatusService;
   private eventBus: EventBus;
