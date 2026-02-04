@@ -64,6 +64,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           result=$(npx tsx scripts/parse-claude-reply.ts --issue "$ISSUE_NUMBER")
+          echo "branch_name=$(echo "$result" | jq -r .branchName)"
           echo "branch_name=$(echo "$result" | jq -r .branchName)" >> $GITHUB_OUTPUT
 
       # - name: Configure Git
@@ -77,17 +78,17 @@ jobs:
       # echo "  分支: $(echo "$result" | jq -r .branchName)"
       # echo "  标题: $(echo "$result" | jq -r .title)"
 
-      - name: Checkout target branch
-        env:
-          BRANCH_NAME: ${{ steps.parse.outputs.branch_name }}
-        run: |
-          git fetch origin "$BRANCH_NAME" || echo "分支不存在于远程"
-          git checkout "$BRANCH_NAME" || git checkout -b "$BRANCH_NAME"
+      # - name: Checkout target branch
+      #   env:
+      #     BRANCH_NAME: ${{ steps.parse.outputs.branch_name }}
+      #   run: |
+      #     git fetch origin "$BRANCH_NAME" || echo "分支不存在于远程"
+      #     git checkout "$BRANCH_NAME" || git checkout -b "$BRANCH_NAME"
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ steps.parse.outputs.branch_name }}
-          base: main
-          draft: false
+      # - name: Create Pull Request
+      #   uses: peter-evans/create-pull-request@v5
+      #   with:
+      #     token: ${{ secrets.GITHUB_TOKEN }}
+      #     branch: ${{ steps.parse.outputs.branch_name }}
+      #     base: main
+      #     draft: false
