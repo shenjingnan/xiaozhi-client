@@ -1,0 +1,33 @@
+name: Auto Claude Comment
+
+on:
+  workflow_dispatch:  # 手动触发
+  schedule:
+    - cron: '*/10 * * * *'  # 每10分钟执行一次
+
+permissions:
+  issues: write
+
+jobs:
+  auto-comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检查并添加 Claude 评论
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 获取最新的10个打开的 issue
+          issues=$(gh issue list --limit 10 --state open --json number)
+
+          # 遍历每个 issue
+          echo "$issues" | jq -r '.[].number' | while read -r issue_number; do
+            # 检查是否已有 @claude 评论
+            has_claude=$(gh issue view "$issue_number" --json comments -q '.comments[].body' | grep -c "@claude" || true)
+
+            if [ "$has_claude" -eq 0 ]; then
+              echo "为 issue #$issue_number 添加 @claude 评论"
+              gh issue comment "$issue_number" --body "@claude"
+            else
+              echo "issue #$issue_number 已有 @claude 评论，跳过"
+            fi
+          done

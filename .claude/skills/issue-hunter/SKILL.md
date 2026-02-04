@@ -406,16 +406,7 @@ gh issue create \
   --label "bug,code-quality"
 ```
 
-### 阶段 4: 触发工作流
-
-**步骤 4.1**: 获取创建的 Issue 编号
-
-**步骤 4.2**: 自动评论 @claude 请根据issue描述修复问题
-```bash
-gh issue comment $ISSUE_NUMBER --body "@claude 请根据issue描述修复问题"
-```
-
-这将触发 `.github/workflows/claude.yml`，让 Claude Code 开始处理该 issue。
+> 创建 Issue 后，`.github/workflows/auto-claude-comment.yml` workflow 会自动添加 "@claude" 评论来触发处理流程。
 
 ## 使用方法
 
@@ -438,8 +429,7 @@ gh issue comment $ISSUE_NUMBER --body "@claude 请根据issue描述修复问题"
 1. **去重检查**：获取 open issues 和 todos，建立已知问题集合
 2. **随机选择**：随机选择一类问题进行检查
 3. **问题发现**：针对选定类型执行检测，发现最高优先级问题
-4. **单问题提交**：只提交一个最高优先级问题
-5. **触发工作流**：自动评论 @claude 触发处理流程
+4. **单问题提交**：只提交一个最高优先级问题（后续自动添加 @claude 评论由 workflow 处理）
 
 ### 输出格式
 技能执行后会返回：
@@ -468,10 +458,6 @@ gh issue comment $ISSUE_NUMBER --body "@claude 请根据issue描述修复问题"
 ### Issue 已创建
 
 🔗 [Issue #XXX: 标题](https://github.com/shenjingnan/xiaozhi-client/issues/XXX)
-
-### 下一步
-
-✅ 已自动评论 @claude 触发处理流程
 ```
 
 ## 最佳实践
@@ -554,8 +540,6 @@ catch (error) {
 
 📮 Issue 已创建：
 🔗 [Issue #123: Claude: [BUG] WebSocket 连接未正确关闭导致资源泄漏](...)
-
-✅ 已自动评论 @claude 触发处理流程
 ```
 
 ### 示例 2：发现类型安全问题
@@ -590,8 +574,6 @@ function processData(options: ProcessOptions): Result {
 
 📮 Issue 已创建：
 🔗 [Issue #124: Claude: [CODE] 非测试文件中 any 类型使用不当](...)
-
-✅ 已自动评论 @claude 触发处理流程
 ```
 
 ### 示例 3：发现架构问题
@@ -630,8 +612,6 @@ class StatusService {
 
 📮 Issue 已创建：
 🔗 [Issue #125: Claude: [ARCH] StatusService 职责不清晰](...)
-
-✅ 已自动评论 @claude 触发处理流程
 ```
 
 ## 务实开发指导
