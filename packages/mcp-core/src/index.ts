@@ -74,7 +74,4 @@ export {
 // 类型守卫导出
 // =========================
 
-export {
-  isValidToolJSONSchema,
-  ensureToolJSONSchema,
-} from "./types.js";
+export { ensureToolJSONSchema } from "./types.js";

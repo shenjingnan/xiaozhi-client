@@ -558,6 +558,9 @@ importers:
       '@xiaozhi-client/mcp-core':
         specifier: workspace:*
         version: link:../mcp-core
+      '@xiaozhi-client/shared-types':
+        specifier: workspace:*
+        version: link:../shared-types
       ws:
         specifier: ^8.14.2
         version: 8.19.0
@@ -586,6 +589,9 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.24.0
         version: 1.25.3(hono@4.11.7)(zod@4.3.6)
+      '@xiaozhi-client/shared-types':
+        specifier: workspace:*
+        version: link:../shared-types
       eventsource:
         specifier: ^4.0.0
         version: 4.1.0

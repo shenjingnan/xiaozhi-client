@@ -1,5 +1,27 @@
 // =========================
-// 1. 工具调用相关类型
+// 1. 从 shared-types 导入共享类型
+// =========================
+
+import type {
+  ToolCallParams,
+  ValidatedToolCallParams,
+  ToolJSONSchema,
+  EnhancedToolInfo as SharedEnhancedToolInfo,
+} from "@xiaozhi-client/shared-types/mcp";
+import {
+  ToolCallErrorCode,
+  ToolCallError,
+  ConnectionState,
+  ensureToolJSONSchema,
+} from "@xiaozhi-client/shared-types/mcp";
+
+// 重新导出共享类型
+export type { ToolCallParams, ValidatedToolCallParams };
+export type { ToolJSONSchema as JSONSchema };
+export { ToolCallErrorCode, ToolCallError, ConnectionState, ensureToolJSONSchema };
+
+// =========================
+// 2. 工具调用结果接口（endpoint 特有）
 // =========================
 
 /**
@@ -14,135 +36,15 @@ export interface ToolCallResult {
   [key: string]: unknown; // 支持其他未知字段
 }
 
-/**
- * 工具调用参数接口
- */
-export interface ToolCallParams {
-  name: string;
-  arguments?: Record<string, unknown>;
-}
-
-/**
- * 验证后的工具调用参数
- */
-export interface ValidatedToolCallParams {
-  name: string;
-  arguments?: Record<string, unknown>;
-}
-
-/**
- * 工具调用错误码枚举
- */
-export enum ToolCallErrorCode {
-  /** 无效参数 */
-  INVALID_PARAMS = -32602,
-  /** 工具不存在 */
-  TOOL_NOT_FOUND = -32601,
-  /** 服务不可用 */
-  SERVICE_UNAVAILABLE = -32001,
-  /** 调用超时 */
-  TIMEOUT = -32002,
-  /** 工具执行错误 */
-  TOOL_EXECUTION_ERROR = -32000,
-}
-
-/**
- * 工具调用错误类
- */
-export class ToolCallError extends Error {
-  constructor(
-    public code: ToolCallErrorCode,
-    message: string,
-    public data?: unknown
-  ) {
-    super(message);
-    this.name = "ToolCallError";
-  }
-}
-
-// =========================
-// 2. JSON Schema 类型
-// =========================
-
-/**
- * JSON Schema 类型定义
- * 兼容 MCP SDK 的 JSON Schema 格式
- */
-export type JSONSchema =
-  | (Record<string, unknown> & {
-      type: "object";
-      properties?: Record<string, unknown>;
-      required?: string[];
-      additionalProperties?: boolean;
-    })
-  | Record<string, unknown>;
-
-/**
- * 确保对象符合 MCP Tool JSON Schema 格式
- * 返回类型兼容 MCP SDK 的 Tool 类型
- */
-export function ensureToolJSONSchema(schema: JSONSchema): {
-  type: "object";
-  properties?: Record<string, object>;
-  required?: string[];
-  additionalProperties?: boolean;
-} {
-  if (
-    typeof schema === "object" &&
-    schema !== null &&
-    "type" in schema &&
-    schema.type === "object"
-  ) {
-    return schema as {
-      type: "object";
-      properties?: Record<string, object>;
-      required?: string[];
-      additionalProperties?: boolean;
-    };
-  }
-
-  // 如果不符合标准格式，返回默认的空对象 schema
-  return {
-    type: "object",
-    properties: {},
-    required: [],
-    additionalProperties: true,
-  };
-}
-
 // =========================
 // 3. 工具信息类型
 // =========================
 
 /**
  * 增强的工具信息接口
- * 包含工具的启用状态和使用统计信息
+ * 重新导出共享类型
  */
-export interface EnhancedToolInfo {
-  /** 工具唯一标识符，格式为 "{serviceName}__{originalName}" */
-  name: string;
-
-  /** 工具描述信息 */
-  description: string;
-
-  /** 工具输入参数的 JSON Schema 定义 */
-  inputSchema: JSONSchema;
-
-  /** 工具所属的 MCP 服务名称 */
-  serviceName: string;
-
-  /** 工具在 MCP 服务中的原始名称 */
-  originalName: string;
-
-  /** 工具是否启用 */
-  enabled: boolean;
-
-  /** 工具使用次数统计 */
-  usageCount: number;
-
-  /** 工具最后使用时间 (ISO 8601 格式字符串) */
-  lastUsedTime: string;
-}
+export type { SharedEnhancedToolInfo as EnhancedToolInfo };
 
 /**
  * MCP 服务管理器接口
@@ -150,7 +52,7 @@ export interface EnhancedToolInfo {
  */
 export interface IMCPServiceManager {
   /** 获取所有工具列表 */
-  getAllTools(): EnhancedToolInfo[];
+  getAllTools(): SharedEnhancedToolInfo[];
 
   /** 调用工具 */
   callTool(
@@ -166,18 +68,8 @@ export interface IMCPServiceManager {
 }
 
 // =========================
-// 4. 连接状态类型
+// 4. 连接选项接口
 // =========================
-
-/**
- * 连接状态枚举
- */
-export enum ConnectionState {
-  DISCONNECTED = "disconnected",
-  CONNECTING = "connecting",
-  CONNECTED = "connected",
-  FAILED = "failed",
-}
 
 /**
  * 连接选项接口

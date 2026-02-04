@@ -35,6 +35,7 @@ export default defineConfig({
     // 工作区依赖
     "@xiaozhi-client/config",
     "@xiaozhi-client/mcp-core",
+    "@xiaozhi-client/shared-types",
   ],
   outExtension() {
     return { js: ".js" };

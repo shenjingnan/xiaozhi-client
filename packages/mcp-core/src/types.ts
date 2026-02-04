@@ -8,6 +8,23 @@ import type { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js
 import type { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import type { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 
+// 从 shared-types 导入共享类型
+import type {
+  ToolCallParams,
+  ValidatedToolCallParams,
+  ToolJSONSchema,
+  EnhancedToolInfo,
+} from "@xiaozhi-client/shared-types/mcp";
+import {
+  ToolCallErrorCode,
+  ToolCallError,
+  ConnectionState,
+  ensureToolJSONSchema as sharedEnsureToolJSONSchema,
+} from "@xiaozhi-client/shared-types/mcp";
+
+// 创建本地类型别名以便在当前文件中使用
+type JSONSchema = ToolJSONSchema;
+
 // =========================
 // 1. 基础传输类型
 // =========================
@@ -149,15 +166,9 @@ export interface InternalMCPServiceConfig extends MCPServiceConfig {
 
 /**
  * 连接状态枚举
+ * 从 shared-types 重新导出
  */
-export enum ConnectionState {
-  DISCONNECTED = "disconnected",
-  CONNECTING = "connecting",
-  CONNECTED = "connected",
-  RECONNECTING = "reconnecting",
-  FAILED = "failed",
-  ERROR = "error",
-}
+export { ConnectionState };
 
 /**
  * MCP 服务状态接口
@@ -180,60 +191,9 @@ export interface MCPServiceStatus {
 // 使用 CompatibilityCallToolResult 以支持新旧协议版本
 export type { CompatibilityCallToolResult as ToolCallResult } from "@modelcontextprotocol/sdk/types.js";
 
-/**
- * JSON Schema 类型定义
- */
-export type JSONSchema =
-  | (Record<string, unknown> & {
-      type: "object";
-      properties?: Record<string, unknown>;
-      required?: string[];
-      additionalProperties?: boolean;
-    })
-  | Record<string, unknown>;
-
-/**
- * 类型守卫：检查对象是否为有效的 MCP Tool JSON Schema
- */
-export function isValidToolJSONSchema(obj: unknown): obj is {
-  type: "object";
-  properties?: Record<string, unknown>;
-  required?: string[];
-  additionalProperties?: boolean;
-} {
-  return (
-    typeof obj === "object" &&
-    obj !== null &&
-    "type" in obj &&
-    (obj as { type?: unknown }).type === "object"
-  );
-}
-
-/**
- * 确保对象符合 MCP Tool JSON Schema 格式
- */
-export function ensureToolJSONSchema(schema: JSONSchema): {
-  type: "object";
-  properties?: Record<string, object>;
-  required?: string[];
-  additionalProperties?: boolean;
-} {
-  if (isValidToolJSONSchema(schema)) {
-    return schema as {
-      type: "object";
-      properties?: Record<string, object>;
-      required?: string[];
-      additionalProperties?: boolean;
-    };
-  }
-
-  return {
-    type: "object",
-    properties: {} as Record<string, object>,
-    required: [],
-    additionalProperties: true,
-  };
-}
+// 从 shared-types 重新导出 JSON Schema 相关类型和函数
+export type { ToolJSONSchema as JSONSchema };
+export { sharedEnsureToolJSONSchema as ensureToolJSONSchema };
 
 /**
  * CustomMCP 工具类型定义
@@ -268,25 +228,9 @@ export type ToolStatusFilter = "enabled" | "disabled" | "all";
 
 /**
  * 增强的工具信息接口
+ * 从 shared-types 重新导出
  */
-export interface EnhancedToolInfo {
-  /** 工具唯一标识符，格式为 "{serviceName}__{originalName}" */
-  name: string;
-  /** 工具描述信息 */
-  description: string;
-  /** 工具输入参数的 JSON Schema 定义 */
-  inputSchema: JSONSchema;
-  /** 工具所属的 MCP 服务名称 */
-  serviceName: string;
-  /** 工具在 MCP 服务中的原始名称 */
-  originalName: string;
-  /** 工具是否启用 */
-  enabled: boolean;
-  /** 工具使用次数统计 */
-  usageCount: number;
-  /** 工具最后使用时间 */
-  lastUsedTime: string;
-}
+export type { EnhancedToolInfo };
 
 // =========================
 // 6. 服务器配置类型
@@ -343,19 +287,9 @@ export interface ManagerStatus {
 
 /**
  * 工具调用参数接口
+ * 从 shared-types 重新导出
  */
-export interface ToolCallParams {
-  name: string;
-  arguments?: Record<string, unknown>;
-}
-
-/**
- * 验证后的工具调用参数
- */
-export interface ValidatedToolCallParams {
-  name: string;
-  arguments?: Record<string, unknown>;
-}
+export type { ToolCallParams, ValidatedToolCallParams };
 
 /**
  * 工具调用验证选项
@@ -369,25 +303,6 @@ export interface ToolCallValidationOptions {
 
 /**
  * 工具调用错误码枚举
+ * 从 shared-types 重新导出
  */
-export enum ToolCallErrorCode {
-  INVALID_PARAMS = -32602,
-  TOOL_NOT_FOUND = -32601,
-  SERVICE_UNAVAILABLE = -32001,
-  TIMEOUT = -32002,
-  TOOL_EXECUTION_ERROR = -32000,
-}
-
-/**
- * 工具调用错误类
- */
-export class ToolCallError extends Error {
-  constructor(
-    public code: ToolCallErrorCode,
-    message: string,
-    public data?: unknown
-  ) {
-    super(message);
-    this.name = "ToolCallError";
-  }
-}
+export { ToolCallErrorCode, ToolCallError };
