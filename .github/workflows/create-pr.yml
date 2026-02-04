@@ -68,17 +68,8 @@ jobs:
           result=$(echo "$output" | sed -n '/^{/,/^}/p')
           echo "branch_name=$(echo "$result" | jq -r .branchName)"
           echo "branch_name=$(echo "$result" | jq -r .branchName)" >> $GITHUB_OUTPUT
-
-      # - name: Configure Git
-      #   run: |
-      #     git config user.name "github-actions[bot]"
-      #     git config user.email "github-actions[bot]@users.noreply.github.com"
-      #
-      # echo "pr_title=$(echo "$result" | jq -r .title)" >> $GITHUB_OUTPUT
-      # echo "pr_body=$(echo "$result" | jq -r .body)" >> $GITHUB_OUTPUT
-      # echo "✅ 解析成功"
-      # echo "  分支: $(echo "$result" | jq -r .branchName)"
-      # echo "  标题: $(echo "$result" | jq -r .title)"
+          echo "pr_title=$(echo "$result" | jq -r .title)" >> $GITHUB_OUTPUT
+          echo "pr_body=$(echo "$result" | jq -r .body)" >> $GITHUB_OUTPUT
 
       - name: Checkout target branch
         env:
@@ -92,5 +83,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ steps.parse.outputs.branch_name }}
+          title: ${{ steps.parse.outputs.pr_title }}
+          body: ${{ steps.parse.outputs.pr_body }}
           base: main
           draft: false
