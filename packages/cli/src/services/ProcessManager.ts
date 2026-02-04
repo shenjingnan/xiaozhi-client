@@ -1,3 +1,15 @@
+/**
+ * 进程管理服务
+ *
+ * 负责管理 xiaozhi 服务的进程生命周期，包括：
+ * - 进程启动和停止
+ * - PID 文件管理
+ * - 进程状态查询
+ * - 优雅关闭进程
+ *
+ * @module packages/cli/src/services/ProcessManager
+ */
+
 import { FileError, ProcessError } from "../errors/index";
 import type {
   ProcessManager as IProcessManager,
