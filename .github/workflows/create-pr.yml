@@ -43,7 +43,7 @@ jobs:
           retry_on: error
           command: pnpm install
 
-      - name: Parse Claude reply
+      - name: 创建PR
         id: parse
         if: ${{ github.event.inputs.issue_number != '' }}
         env:
