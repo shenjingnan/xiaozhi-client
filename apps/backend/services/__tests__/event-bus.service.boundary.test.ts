@@ -10,6 +10,27 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Mock } from "vitest";
 import { EventBus } from "../event-bus.service.js";
+import type { EventBusTestEvents } from "./event-bus.test-types.js";
+
+/**
+ * 为 EventBus 添加测试事件支持
+ * 这些事件仅在测试中使用，不包含在生产代码的 EventBusEvents 接口中
+ */
+function onTestEvent<K extends keyof EventBusTestEvents>(
+  eventBus: EventBus,
+  eventName: K,
+  listener: (data: EventBusTestEvents[K]) => void
+): void {
+  eventBus.on(eventName as never, listener as never);
+}
+
+function emitTestEvent<K extends keyof EventBusTestEvents>(
+  eventBus: EventBus,
+  eventName: K,
+  data: EventBusTestEvents[K]
+): boolean {
+  return eventBus.emit(eventName as never, data);
+}
 
 describe("事件系统边界情况测试", () => {
   let eventBus: EventBus;
@@ -25,13 +46,13 @@ describe("事件系统边界情况测试", () => {
   describe("高频事件处理测试", () => {
     it("应该处理高频事件发送", async () => {
       const handler = vi.fn();
-      eventBus.onEvent("high-frequency", handler);
+      onTestEvent(eventBus, "high-frequency", handler);
 
       // 快速发送100个事件
       const eventPromises = Array(100)
         .fill(0)
         .map((_, index) =>
-          eventBus.emitEvent("high-frequency", {
+          emitTestEvent(eventBus, "high-frequency", {
             id: index,
             timestamp: Date.now(),
           })
@@ -52,11 +73,11 @@ describe("事件系统边界情况测试", () => {
       for (let i = 0; i < 60; i++) {
         const handler = vi.fn();
         handlers.push(handler);
-        eventBus.onEvent("bulk-test", handler);
+        onTestEvent(eventBus, "bulk-test", handler);
       }
 
       // 发送一个事件
-      eventBus.emitEvent("bulk-test", {
+      emitTestEvent(eventBus, "bulk-test", {
         id: 1,
         timestamp: Date.now(),
       });
@@ -75,11 +96,11 @@ describe("事件系统边界情况测试", () => {
       });
       const normalHandler = vi.fn();
 
-      eventBus.onEvent("error-test", throwingHandler);
-      eventBus.onEvent("error-test", normalHandler);
+      onTestEvent(eventBus, "error-test", throwingHandler);
+      onTestEvent(eventBus, "error-test", normalHandler);
 
       // 发送事件（EventBus.emitEvent会在监听器抛出异常时返回false）
-      const result = eventBus.emitEvent("error-test", {
+      const result = emitTestEvent(eventBus, "error-test", {
         error: "test error",
         timestamp: Date.now(),
       });
@@ -92,7 +113,7 @@ describe("事件系统边界情况测试", () => {
 
     it("应该处理大型事件数据", () => {
       const handler = vi.fn();
-      eventBus.onEvent("large-data-test", handler);
+      onTestEvent(eventBus, "large-data-test", handler);
 
       // 创建大型数据对象
       const largeData = {
@@ -112,7 +133,7 @@ describe("事件系统边界情况测试", () => {
       };
 
       expect(() => {
-        eventBus.emitEvent("large-data-test", {
+        emitTestEvent(eventBus, "large-data-test", {
           data: largeData,
           timestamp: Date.now(),
         });
@@ -130,11 +151,11 @@ describe("事件系统边界情况测试", () => {
   describe("内存管理测试", () => {
     it("应该正确清理已销毁的事件总线", () => {
       const handler = vi.fn();
-      eventBus.onEvent("destroy-test", handler);
+      onTestEvent(eventBus, "destroy-test", handler);
       eventBus.destroy();
 
       // 销毁后发送事件应该不会调用监听器
-      eventBus.emitEvent("destroy-test", {
+      emitTestEvent(eventBus, "destroy-test", {
         message: "test",
         timestamp: Date.now(),
       });
@@ -142,7 +163,7 @@ describe("事件系统边界情况测试", () => {
 
       // 销毁后应该可以正常添加监听器（EventBus的destroy方法只是清理监听器和状态，不会阻止后续操作）
       expect(() => {
-        eventBus.onEvent("test:remove", vi.fn());
+        onTestEvent(eventBus, "test:remove", vi.fn());
       }).not.toThrow();
     });
 
@@ -151,7 +172,7 @@ describe("事件系统边界情况测试", () => {
 
       const handler1 = vi.fn().mockImplementation(() => {
         executionOrder.push("handler1");
-        eventBus.emitEvent("chain-event-2", {
+        emitTestEvent(eventBus, "chain-event-2", {
           value: 2,
           timestamp: Date.now(),
         });
@@ -159,7 +180,7 @@ describe("事件系统边界情况测试", () => {
 
       const handler2 = vi.fn().mockImplementation(() => {
         executionOrder.push("handler2");
-        eventBus.emitEvent("chain-event-3", {
+        emitTestEvent(eventBus, "chain-event-3", {
           value: 3,
           timestamp: Date.now(),
         });
@@ -169,12 +190,12 @@ describe("事件系统边界情况测试", () => {
         executionOrder.push("handler3");
       });
 
-      eventBus.onEvent("chain:start", handler1);
-      eventBus.onEvent("chain-event-2", handler2);
-      eventBus.onEvent("chain-event-3", handler3);
+      onTestEvent(eventBus, "chain:start", handler1);
+      onTestEvent(eventBus, "chain-event-2", handler2);
+      onTestEvent(eventBus, "chain-event-3", handler3);
 
       // 触发事件链
-      eventBus.emitEvent("chain:start", {
+      emitTestEvent(eventBus, "chain:start", {
         value: 1,
         timestamp: Date.now(),
       });
@@ -186,13 +207,13 @@ describe("事件系统边界情况测试", () => {
   describe("性能边界测试", () => {
     it("应该测量事件发送性能", () => {
       const handler = vi.fn();
-      eventBus.onEvent("test:performance", handler);
+      onTestEvent(eventBus, "test:performance", handler);
 
       const iterations = 1000;
       const startTime = performance.now();
 
       for (let i = 0; i < iterations; i++) {
-        eventBus.emitEvent("test:performance", {
+        emitTestEvent(eventBus, "test:performance", {
           id: i,
           timestamp: Date.now(),
         });

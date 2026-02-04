@@ -2,6 +2,9 @@ import { EventEmitter } from "node:events";
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type { MCPServerConfig } from "@xiaozhi-client/config";
+import type { ClientInfo } from "./status.service.js";
+import type { MCPServerAddResult } from "@/handlers/mcp-manage.handler.js";
 
 /**
  * 事件类型定义
@@ -17,7 +20,7 @@ export interface EventBusEvents {
   "config:error": { error: Error; operation: string };
 
   // 状态相关事件
-  "status:updated": { status: any; source: string };
+  "status:updated": { status: ClientInfo; source: string };
   "status:error": { error: Error; operation: string };
 
   // 接入点状态变更事件
@@ -88,10 +91,10 @@ export interface EventBusEvents {
   // WebSocket 相关事件
   "websocket:client:connected": { clientId: string; timestamp: number };
   "websocket:client:disconnected": { clientId: string; timestamp: number };
-  "websocket:message:received": { type: string; data: any; clientId: string };
+  "websocket:message:received": { type: string; data: unknown; clientId: string };
 
   // 通知相关事件
-  "notification:broadcast": { type: string; data: any; target?: string };
+  "notification:broadcast": { type: string; data: unknown; target?: string };
   "notification:error": { error: Error; type: string };
 
   // MCP服务相关事件
@@ -112,7 +115,7 @@ export interface EventBusEvents {
   };
   "mcp:server:added": {
     serverName: string;
-    config: any;
+    config: MCPServerConfig;
     tools: string[];
     timestamp: Date;
   };
@@ -146,7 +149,7 @@ export interface EventBusEvents {
     addedCount: number;
     failedCount: number;
     successfullyAddedServers: string[];
-    results: any[];
+    results: MCPServerAddResult[];
     timestamp: Date;
   };
   "mcp:server:rollback": {
@@ -186,68 +189,6 @@ export interface EventBusEvents {
     installId: string;
     error: string;
     duration: number;
-    timestamp: number;
-  };
-
-  // 测试相关事件（仅用于测试）
-  "high-frequency": {
-    id: number;
-    timestamp: number;
-  };
-  "bulk-test": {
-    id: number;
-    timestamp: number;
-  };
-  "error-test": {
-    error: string;
-    timestamp: number;
-  };
-  "large-data-test": {
-    data: any;
-    timestamp: number;
-  };
-  "destroy-test": {
-    message: string;
-    timestamp: number;
-  };
-  "chain-event-1": {
-    value: number;
-    timestamp: number;
-  };
-  "chain-event-2": {
-    value: number;
-    timestamp: number;
-  };
-  "chain-event-3": {
-    value: number;
-    timestamp: number;
-  };
-  "performance-test": {
-    data: any;
-    timestamp: number;
-  };
-  "test:performance": {
-    id: number;
-    timestamp: number;
-  };
-  "chain:start": {
-    value: number;
-    timestamp: number;
-  };
-  "chain:middle": {
-    value: number;
-    timestamp: number;
-  };
-  "chain:end": {
-    value: number;
-    timestamp: number;
-  };
-  "test:error": {
-    error: boolean;
-    timestamp: number;
-  };
-  "test:remove": {
-    id: number;
     timestamp: number;
   };
 }
