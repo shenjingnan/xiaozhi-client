@@ -341,6 +341,9 @@ export class MCPServiceManager extends EventEmitter {
       await service.disconnect();
       this.services.delete(serviceName);
 
+      // 清理该服务的重试定时器
+      this.stopServiceRetry(serviceName);
+
       // 更新工具缓存
       await this.refreshToolsCache();
 
