@@ -117,3 +117,8 @@ docker-compose down
 ## 贡献者
 
 ![Contributors](https://contrib.rocks/image?repo=shenjingnan/xiaozhi-client&max=100&columns=10)
+
+---
+**Branch:** `tt3`
+**Created:** 2026-02-04 00:13:08
+**Created by:** GitHub Actions
