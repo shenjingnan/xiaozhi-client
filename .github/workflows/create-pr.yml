@@ -43,7 +43,7 @@ jobs:
           retry_on: error
           command: pnpm install
 
-      - name: 创建PR
+      - name: Parse Claude reply
         id: parse
         if: ${{ github.event.inputs.issue_number != '' }}
         env:
@@ -51,7 +51,25 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           output=$(npx tsx scripts/parse-claude-reply.ts --issue "$ISSUE_NUMBER" 2>&1)
+          echo "$output"
           result=$(echo "$output" | sed -n '/^{/,/^}/p')
+          echo "$result"
+
+          # 提取各个字段
           branch_name=$(echo "$result" | jq -r .branchName)
+          pr_title=$(echo "$result" | jq -r .title)
+          pr_body=$(echo "$result" | jq -r .body)
+
+          # 输出到 GITHUB_OUTPUT（使用 heredoc 处理多行）
           echo "branch_name=$branch_name" >> $GITHUB_OUTPUT
-          gh pr create --base main --head "$branch_name" --fill --label "automated-pr"
+          echo "pr_title=$pr_title" >> $GITHUB_OUTPUT
+
+          # 使用 heredoc 处理多行 body
+          echo "pr_body<<EOF" >> $GITHUB_OUTPUT
+          echo "$pr_body" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          gh pr create \
+            --base main \
+            --head "$branch_name" \
+            --title "$title" \
+            --body "$body" \
