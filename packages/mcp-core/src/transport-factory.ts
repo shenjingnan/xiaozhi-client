@@ -91,48 +91,42 @@ function createHTTPTransport(
 }
 
 /**
+ * 创建通用的请求初始化选项
+ */
+function createRequestInit(config: InternalMCPServiceConfig): RequestInit {
+  const requestInit: RequestInit = {};
+
+  // 添加认证头
+  if (config.apiKey) {
+    requestInit.headers = {
+      Authorization: `Bearer ${config.apiKey}`,
+      ...config.headers,
+    };
+  } else if (config.headers) {
+    requestInit.headers = config.headers;
+  }
+
+  return requestInit;
+}
+
+/**
  * 创建 SSE 选项
  */
 function createSSEOptions(config: InternalMCPServiceConfig): SSEClientTransportOptions {
-  const options: SSEClientTransportOptions = {};
-
-  // 添加认证头
-  if (config.apiKey) {
-    options.requestInit = {
-      headers: {
-        Authorization: `Bearer ${config.apiKey}`,
-        ...config.headers,
-      },
-    };
-  } else if (config.headers) {
-    options.requestInit = {
-      headers: config.headers,
-    };
-  }
-
-  return options;
+  return {
+    requestInit: createRequestInit(config),
+  };
 }
 
+/**
+ * 创建 StreamableHTTP 选项
+ */
 function createStreamableHTTPOptions(
   config: InternalMCPServiceConfig
 ): StreamableHTTPClientTransportOptions {
-  const options: StreamableHTTPClientTransportOptions = {};
-
-  // 添加认证头
-  if (config.apiKey) {
-    options.requestInit = {
-      headers: {
-        Authorization: `Bearer ${config.apiKey}`,
-        ...config.headers,
-      },
-    };
-  } else if (config.headers) {
-    options.requestInit = {
-      headers: config.headers,
-    };
-  }
-
-  return options;
+  return {
+    requestInit: createRequestInit(config),
+  };
 }
 
 /**
