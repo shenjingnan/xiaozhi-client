@@ -108,30 +108,26 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           show_full_output: ${{ vars.CLAUDE_FULL_OUTPUT || 'false' }}
           claude_args: "--dangerously-skip-permissions --mcp-config /tmp/mcp-config.json"
+      - name: Trigger Create PR Workflow
+        if: |
+          success() &&
+          (github.event_name == 'issues' || github.event_name == 'issue_comment')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 获取 issue number
+          if [ "${{ github.event_name }}" = "issues" ]; then
+            ISSUE_NUMBER="${{ github.event.issue.number }}"
+          elif [ "${{ github.event_name }}" = "issue_comment" ]; then
+            ISSUE_NUMBER="${{ github.event.issue.number }}"
+          fi
 
-      # # 仅在 issue 触发时创建 PR（不在 PR 评论触发时创建）
-      # - name: 创建 Pull Request
-      #   if: github.event_name == 'issues' || github.event_name == 'issue_comment'
-      #   uses: peter-evans/create-pull-request@v5
-      #   with:
-      #     token: ${{ secrets.GITHUB_TOKEN }}
-      #     # 生成分支名：claude/fix-{issue-number}
-      #     branch: claude/fix-${{ github.event.issue.number }}
-      #     base: ${{ github.event.repository.default_branch }}
-      #     # 生成 PR 标题：fix: #{issue-number} {issue-title}
-      #     title: fix: #${{ github.event.issue.number }} ${{ github.event.issue.title }}
-      #     # 生成 PR 描述，引用原 issue
-      #     body: |
-      #       ## 说明
-      #       此 PR 由 Claude Code 自动创建，用于修复 issue #${{ github.event.issue.number }}
+          echo "🚀 触发 Create PR workflow for issue #$ISSUE_NUMBER"
 
-      #       ## 原始 Issue
-      #       #${{ github.event.issue.number }}
+          # 等待几秒确保 Claude 的更改已经推送
+          sleep 10
 
-      #       ---
-      #       🤖 由 [Claude Code](https://claude.com/claude-code) 自动生成
-      #     labels: |
-      #       automated-pr
-      #       claude-generated
-      #     # 设为草稿，需要人工审核后再发布
-      #     draft: true
+          gh workflow run create-pr.yml \
+            -f issue_number="$ISSUE_NUMBER"
+
+          echo "✅ Create PR workflow 已触发"

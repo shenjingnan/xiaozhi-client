@@ -315,22 +315,58 @@ function parseClaudeReply(body: string): ParseResult {
     };
   }
 
-  // 提取 URL 参数
-  const urlParams = extractUrlParams(body);
-  if (!urlParams) {
-    return {
-      success: false,
-      error: "无法从回复中提取 PR 标题或描述",
-    };
-  }
-
   return {
     success: true,
     branchName,
-    title: urlParams.title,
-    body: urlParams.body,
   };
 }
+
+/**
+ * 获取分支最后一次 commit 信息
+ *
+ * @param repo - 仓库路径（owner/repo）
+ * @param branchName - 分支名称
+ * @returns commit 标题和描述
+ */
+async function getCommitInfo(
+  repo: string,
+  branchName: string
+): Promise<{ title: string; body: string }> {
+  try {
+    // 获取分支信息
+    const { stdout: branchInfo } = await execa("gh", [
+      "api",
+      `repos/${repo}/branches/${branchName}`,
+      "--jq",
+      ".commit.sha",
+    ]);
+
+    const commitSha = branchInfo.trim();
+
+    // 获取 commit 详细信息
+    const { stdout: commitInfo } = await execa("gh", [
+      "api",
+      `repos/${repo}/commits/${commitSha}`,
+      "--jq",
+      ".commit.message",
+    ]);
+
+    // 解析 commit 消息（第一行是标题，后面是 body）
+    const lines = commitInfo.trim().split("\n");
+    const title = lines[0];
+    const body = lines.slice(2).join("\n").trim(); // 跳过空行
+
+    return {
+      title,
+      body: body || `Commit from branch ${branchName}`,
+    };
+  } catch (error) {
+    throw new Error(
+      `获取 commit 信息失败: ${(error as Error).message}`
+    );
+  }
+}
+
 
 /**
  * 主函数
@@ -364,19 +400,21 @@ async function main(options: ParseOptions): Promise<void> {
 
   // 解析回复内容
   const result = parseClaudeReply(claudeReply.body);
-
-  if (!result.success) {
-    log("error", `解析失败: ${result.error}`);
+  if (!result.branchName) {
+    log("error", '无法从回复中提取分支名');
     console.log(JSON.stringify(result, null, 2));
     process.exit(1);
     return;
   }
-
-  log("success", `  分支: ${result.branchName}`);
-  log("success", `  标题: ${result.title}`);
-
+  const commitInfo = await getCommitInfo(repo, result.branchName);
+  if (!commitInfo.title || !commitInfo.body) {
+    log("error", '无法从回复中提取 commit 信息');
+    console.log(JSON.stringify(commitInfo, null, 2));
+    process.exit(1);
+    return;
+  }
   // 输出 JSON 到 stdout
-  console.log(JSON.stringify(result, null, 2));
+  console.log(JSON.stringify({ branchName: result.branchName, title: commitInfo.title, body: commitInfo.body }, null, 2));
 }
 
 // 错误处理
