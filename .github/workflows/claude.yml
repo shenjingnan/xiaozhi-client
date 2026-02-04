@@ -109,12 +109,6 @@ jobs:
           show_full_output: ${{ vars.CLAUDE_FULL_OUTPUT || 'false' }}
           claude_args: "--dangerously-skip-permissions --mcp-config /tmp/mcp-config.json"
 
-      - name: Get Claude branch name
-        run: |
-          echo "Claude created branch: ${{ steps.claude.outputs.branch }}"
-          echo "Pull Request URL: ${{ steps.claude.outputs.pull_request_url }}"
-          echo "Pull Request Number: ${{ steps.claude.outputs.pull_request_number }}"
-
       # # 仅在 issue 触发时创建 PR（不在 PR 评论触发时创建）
       # - name: 创建 Pull Request
       #   if: github.event_name == 'issues' || github.event_name == 'issue_comment'
