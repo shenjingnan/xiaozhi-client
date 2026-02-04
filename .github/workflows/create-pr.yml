@@ -53,23 +53,26 @@ jobs:
           output=$(npx tsx scripts/parse-claude-reply.ts --issue "$ISSUE_NUMBER" 2>&1)
           echo "$output"
           result=$(echo "$output" | sed -n '/^{/,/^}/p')
+          echo "$result" | jq -r .branchName
+          echo "$result" | jq -r .title
+          echo "$result" | jq -r .body
           echo "branch_name=$(echo "$result" | jq -r .branchName)" >> $GITHUB_OUTPUT
           echo "pr_title=$(echo "$result" | jq -r .title)" >> $GITHUB_OUTPUT
           echo "pr_body=$(echo "$result" | jq -r .body)" >> $GITHUB_OUTPUT
 
-      - name: Checkout target branch
-        env:
-          BRANCH_NAME: ${{ steps.parse.outputs.branch_name }}
-        run: |
-          git fetch origin "$BRANCH_NAME" || echo "分支不存在于远程"
-          git checkout "$BRANCH_NAME" || git checkout -b "$BRANCH_NAME"
+      # - name: Checkout target branch
+      #   env:
+      #     BRANCH_NAME: ${{ steps.parse.outputs.branch_name }}
+      #   run: |
+      #     git fetch origin "$BRANCH_NAME" || echo "分支不存在于远程"
+      #     git checkout "$BRANCH_NAME" || git checkout -b "$BRANCH_NAME"
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ steps.parse.outputs.branch_name }}
-          title: ${{ steps.parse.outputs.pr_title }}
-          body: ${{ steps.parse.outputs.pr_body }}
-          base: main
-          draft: false
+      # - name: Create Pull Request
+      #   uses: peter-evans/create-pull-request@v5
+      #   with:
+      #     token: ${{ secrets.GITHUB_TOKEN }}
+      #     branch: ${{ steps.parse.outputs.branch_name }}
+      #     title: ${{ steps.parse.outputs.pr_title }}
+      #     body: ${{ steps.parse.outputs.pr_body }}
+      #     base: main
+      #     draft: false
