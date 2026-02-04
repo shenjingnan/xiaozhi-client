@@ -98,8 +98,7 @@ jobs:
             --base main \
             --head ${{ github.event.inputs.branch_name }} \
             --title "$PR_TITLE" \
-            --body "$PR_BODY" \
-            --label "automated-pr")
+            --body "$PR_BODY"
 
           echo "✅ Pull Request 已创建"
           echo "🔗 PR 链接: $PR_URL"
