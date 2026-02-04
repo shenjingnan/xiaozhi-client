@@ -362,21 +362,21 @@ async function main(options: ParseOptions): Promise<void> {
 
   log("success", `  找到 Claude 回复（创建于 ${claudeReply.created_at}）`);
 
-  // 解析回复内容
-  const result = parseClaudeReply(claudeReply.body);
+  // // 解析回复内容
+  // const result = parseClaudeReply(claudeReply.body);
 
-  if (!result.success) {
-    log("error", `解析失败: ${result.error}`);
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(1);
-    return;
-  }
+  // if (!result.success) {
+  //   log("error", `解析失败: ${result.error}`);
+  //   console.log(JSON.stringify(result, null, 2));
+  //   process.exit(1);
+  //   return;
+  // }
 
-  log("success", `  分支: ${result.branchName}`);
-  log("success", `  标题: ${result.title}`);
+  // log("success", `  分支: ${result.branchName}`);
+  // log("success", `  标题: ${result.title}`);
 
-  // 输出 JSON 到 stdout
-  console.log(JSON.stringify(result, null, 2));
+  // // 输出 JSON 到 stdout
+  // console.log(JSON.stringify(result, null, 2));
 }
 
 // 错误处理
