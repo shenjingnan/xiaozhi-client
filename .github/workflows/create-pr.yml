@@ -64,6 +64,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           result=$(npx tsx scripts/parse-claude-reply.ts --issue "$ISSUE_NUMBER")
+          echo "$result"
           echo "branch_name=$(echo "$result" | jq -r .branchName)"
           echo "branch_name=$(echo "$result" | jq -r .branchName)" >> $GITHUB_OUTPUT
 
