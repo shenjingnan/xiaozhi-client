@@ -64,17 +64,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           result=$(npx tsx scripts/parse-claude-reply.ts --issue "$ISSUE_NUMBER")
-          echo "branch_name=$(echo "$result" | jq -r .branchName)" >> $GITHUB_OUTPUT
-          echo "pr_title=$(echo "$result" | jq -r .title)" >> $GITHUB_OUTPUT
-          echo "pr_body=$(echo "$result" | jq -r .body)" >> $GITHUB_OUTPUT
-          echo "✅ 解析成功"
-          echo "  分支: $(echo "$result" | jq -r .branchName)"
-          echo "  标题: $(echo "$result" | jq -r .title)"
+          echo "$result"
 
       # - name: Configure Git
       #   run: |
       #     git config user.name "github-actions[bot]"
       #     git config user.email "github-actions[bot]@users.noreply.github.com"
+      #
+                # echo "branch_name=$(echo "$result" | jq -r .branchName)" >> $GITHUB_OUTPUT
+          # echo "pr_title=$(echo "$result" | jq -r .title)" >> $GITHUB_OUTPUT
+          # echo "pr_body=$(echo "$result" | jq -r .body)" >> $GITHUB_OUTPUT
+          # echo "✅ 解析成功"
+          # echo "  分支: $(echo "$result" | jq -r .branchName)"
+          # echo "  标题: $(echo "$result" | jq -r .title)"
 
       # - name: Checkout target branch
       #   env:
