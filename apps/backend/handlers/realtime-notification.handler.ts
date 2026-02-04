@@ -1,3 +1,15 @@
+/**
+ * 实时通知处理器
+ *
+ * 负责处理 WebSocket 实时通知相关的消息
+ * - 处理获取配置请求（已废弃，建议使用 GET /api/config）
+ * - 处理更新配置请求（已废弃，建议使用 PUT /api/config）
+ * - 处理获取状态请求（已废弃，建议使用 GET /api/status）
+ * - 处理重启服务请求（已废弃，建议使用 POST /api/services/restart）
+ * - 发送初始数据给新连接的客户端
+ * - 处理客户端连接和断开
+ */
+
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import type { EventBus } from "@/services/event-bus.service.js";

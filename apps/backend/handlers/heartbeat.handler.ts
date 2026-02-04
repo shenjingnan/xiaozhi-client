@@ -1,3 +1,14 @@
+/**
+ * 心跳处理器
+ *
+ * 负责处理客户端心跳相关的 WebSocket 消息
+ * - 处理客户端状态更新（心跳消息）
+ * - 检查客户端心跳超时
+ * - 启动/停止心跳监控
+ * - 获取心跳统计信息
+ * - 处理客户端连接建立和断开
+ */
+
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import { HEARTBEAT_MONITORING } from "@/constants/index.js";

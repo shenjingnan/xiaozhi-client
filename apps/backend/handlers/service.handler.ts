@@ -1,3 +1,14 @@
+/**
+ * 服务 API 处理器
+ *
+ * 提供服务管理相关的 HTTP API 接口
+ * - 重启服务 (POST /api/services/restart)
+ * - 停止服务 (POST /api/services/stop)
+ * - 启动服务 (POST /api/services/start)
+ * - 获取服务状态 (GET /api/services/status)
+ * - 获取服务健康状态 (GET /api/services/health)
+ */
+
 import { spawn } from "node:child_process";
 import { logger } from "@/Logger.js";
 import type { Logger } from "@/Logger.js";

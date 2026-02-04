@@ -1,3 +1,18 @@
+/**
+ * 配置 API 处理器
+ *
+ * 提供配置相关的 HTTP API 接口
+ * - 获取配置 (GET /api/config)
+ * - 更新配置 (PUT /api/config)
+ * - 获取 MCP 端点 (GET /api/config/mcp-endpoint)
+ * - 获取 MCP 端点列表 (GET /api/config/mcp-endpoints)
+ * - 获取 MCP 服务配置 (GET /api/config/mcp-servers)
+ * - 获取连接配置 (GET /api/config/connection)
+ * - 重新加载配置 (POST /api/config/reload)
+ * - 获取配置文件路径 (GET /api/config/path)
+ * - 检查配置是否存在 (GET /api/config/exists)
+ */
+
 import type { AppContext } from "@/types/hono.context.js";
 import type { AppConfig } from "@xiaozhi-client/config";
 import { configManager } from "@xiaozhi-client/config";

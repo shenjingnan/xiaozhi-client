@@ -1,3 +1,14 @@
+/**
+ * 版本 API 处理器
+ *
+ * 提供版本信息相关的 HTTP API 接口
+ * - 获取版本信息 (GET /api/version)
+ * - 获取版本号（简化接口）(GET /api/version/simple)
+ * - 清除版本缓存 (POST /api/version/cache/clear)
+ * - 获取可用版本列表 (GET /api/version/available)
+ * - 检查最新版本 (GET /api/version/latest)
+ */
+
 import { NPMManager } from "@/lib/npm";
 import type { AppContext } from "@/types/hono.context.js";
 import { VersionUtils } from "@xiaozhi-client/version";

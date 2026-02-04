@@ -1,3 +1,15 @@
+/**
+ * MCP 服务管理 API 处理器
+ *
+ * 提供 MCP 服务管理相关的 HTTP API 接口
+ * - 添加 MCP 服务 (POST /api/mcp-servers)
+ * - 移除 MCP 服务 (DELETE /api/mcp-servers/:serverName)
+ * - 获取 MCP 服务状态 (GET /api/mcp-servers/:serverName/status)
+ * - 列出所有 MCP 服务 (GET /api/mcp-servers)
+ *
+ * 支持单服务和批量添加两种格式
+ */
+
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import { ErrorCategory, MCPError, MCPErrorCode } from "@/errors/mcp-errors.js";

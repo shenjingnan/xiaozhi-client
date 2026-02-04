@@ -1,3 +1,12 @@
+/**
+ * 更新 API 处理器
+ *
+ * 提供版本更新相关的 HTTP API 接口
+ * - 执行版本更新 (POST /api/update)
+ *
+ * 安装过程通过 WebSocket 推送实时日志
+ */
+
 import { NPMManager } from "@/lib/npm";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { AppContext } from "@/types/hono.context.js";

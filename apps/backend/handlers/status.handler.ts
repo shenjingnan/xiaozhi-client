@@ -1,3 +1,18 @@
+/**
+ * 状态 API 处理器
+ *
+ * 提供状态查询相关的 HTTP API 接口
+ * - 获取完整状态 (GET /api/status)
+ * - 获取客户端状态 (GET /api/status/client)
+ * - 获取重启状态 (GET /api/status/restart)
+ * - 检查客户端是否连接 (GET /api/status/connected)
+ * - 获取最后心跳时间 (GET /api/status/heartbeat)
+ * - 获取活跃的 MCP 服务器列表 (GET /api/status/mcp-servers)
+ * - 更新客户端状态 (PUT /api/status/client)
+ * - 设置活跃的 MCP 服务器列表 (PUT /api/status/mcp-servers)
+ * - 重置状态 (POST /api/status/reset)
+ */
+
 import type { StatusService } from "@/services/status.service.js";
 import type { AppContext } from "@/types/hono.context.js";
 import type { Context } from "hono";
