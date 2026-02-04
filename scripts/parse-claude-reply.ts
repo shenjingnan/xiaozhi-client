@@ -315,20 +315,9 @@ function parseClaudeReply(body: string): ParseResult {
     };
   }
 
-  // 提取 URL 参数
-  const urlParams = extractUrlParams(body);
-  if (!urlParams) {
-    return {
-      success: false,
-      error: "无法从回复中提取 PR 标题或描述",
-    };
-  }
-
   return {
     success: true,
     branchName,
-    title: urlParams.title,
-    body: urlParams.body,
   };
 }
 
@@ -365,18 +354,15 @@ async function main(options: ParseOptions): Promise<void> {
   // 解析回复内容
   const result = parseClaudeReply(claudeReply.body);
 
-  // if (!result.success) {
-  //   log("error", `解析失败: ${result.error}`);
-  //   console.log(JSON.stringify(result, null, 2));
-  //   process.exit(1);
-  //   return;
-  // }
+  if (!result.success) {
+    log("error", `解析失败: ${result.error}`);
+    console.log(JSON.stringify(result, null, 2));
+    process.exit(1);
+    return;
+  }
 
-  // log("success", `  分支: ${result.branchName}`);
-  // log("success", `  标题: ${result.title}`);
-
-  // // 输出 JSON 到 stdout
-  console.log(JSON.stringify({ result, claudeReply, x: 'test' }, null, 2));
+  // 输出 JSON 到 stdout
+  console.log(JSON.stringify(result , null, 2));
 }
 
 // 错误处理
