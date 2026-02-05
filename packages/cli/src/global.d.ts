@@ -16,8 +16,4 @@ declare global {
   }
 }
 
-// 构建时注入的版本号常量
-declare const __VERSION__: string;
-declare const __APP_NAME__: string;
-
 export {};
