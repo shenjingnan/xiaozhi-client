@@ -44,6 +44,7 @@ vi.mock("../../Logger.js", () => ({
 vi.mock("@/services/EventBus.js", () => ({
   getEventBus: vi.fn().mockReturnValue({
     onEvent: vi.fn(),
+    offEvent: vi.fn(),
     emitEvent: vi.fn(),
     removeAllListeners: vi.fn(),
   }),
@@ -320,6 +321,88 @@ describe("WebServer 单元测试", () => {
 
       // 验证清理被调用
       expect(mockManager.cleanup).toHaveBeenCalled();
+    });
+
+    it("应该在停止时清理 EventBus 监听器", async () => {
+      // 获取 mock EventBus
+      const { getEventBus } = await import("@/services/EventBus.js");
+      const mockEventBus = getEventBus();
+
+      // 创建 mock HTTP 服务器
+      const mockHttpServer = {
+        close: vi.fn().mockImplementation((callback: () => void) => {
+          callback();
+        }),
+      };
+
+      // 设置内部属性
+      (webServer as any).httpServer = mockHttpServer;
+      (webServer as any).wss = {
+        clients: new Set(),
+        close: vi.fn().mockImplementation((callback: () => void) => {
+          callback();
+        }),
+      };
+      (webServer as any).endpointManager = {
+        cleanup: vi.fn().mockResolvedValue(undefined),
+      };
+      (webServer as any).mcpServiceManager = {
+        stopAllServices: vi.fn().mockResolvedValue(undefined),
+      };
+
+      // 手动添加一些取消函数来模拟监听器注册
+      const mockHandler1 = vi.fn();
+      const mockHandler2 = vi.fn();
+      (webServer as any).eventBusUnsubscribers = [
+        () => mockEventBus.offEvent("test:event1", mockHandler1),
+        () => mockEventBus.offEvent("test:event2", mockHandler2),
+      ];
+
+      // 调用 stop 方法
+      await webServer.stop();
+
+      // 验证 offEvent 被调用来清理监听器
+      expect(mockEventBus.offEvent).toHaveBeenCalledWith(
+        "test:event1",
+        mockHandler1
+      );
+      expect(mockEventBus.offEvent).toHaveBeenCalledWith(
+        "test:event2",
+        mockHandler2
+      );
+
+      // 验证取消函数数组被清空
+      expect((webServer as any).eventBusUnsubscribers).toHaveLength(0);
+    });
+
+    it("应该处理空的取消函数数组", async () => {
+      // 创建 mock HTTP 服务器
+      const mockHttpServer = {
+        close: vi.fn().mockImplementation((callback: () => void) => {
+          callback();
+        }),
+      };
+
+      // 设置内部属性
+      (webServer as any).httpServer = mockHttpServer;
+      (webServer as any).wss = {
+        clients: new Set(),
+        close: vi.fn().mockImplementation((callback: () => void) => {
+          callback();
+        }),
+      };
+      (webServer as any).endpointManager = {
+        cleanup: vi.fn().mockResolvedValue(undefined),
+      };
+      (webServer as any).mcpServiceManager = {
+        stopAllServices: vi.fn().mockResolvedValue(undefined),
+      };
+
+      // 确保取消函数数组为空
+      (webServer as any).eventBusUnsubscribers = [];
+
+      // 调用 stop 方法不应该抛出错误
+      await expect(webServer.stop()).resolves.toBeUndefined();
     });
   });
 });
