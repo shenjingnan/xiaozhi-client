@@ -27,7 +27,7 @@ import {
   Package,
   RefreshCw,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { InstallLogDialog } from "./install-log-dialog";
 import { VersionDisplay } from "./version-display";
 
@@ -55,6 +55,9 @@ export function VersionManager() {
   const [error, setError] = useState<string | null>(null);
   const [showInstallDialog, setShowInstallDialog] = useState(false);
   const [targetVersion, setTargetVersion] = useState<string>("");
+
+  // 保存重新加载定时器引用，用于清理
+  const reloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 加载当前版本信息
   const loadCurrentVersion = useCallback(async () => {
@@ -118,9 +121,14 @@ export function VersionManager() {
   const handleInstallDialogClose = () => {
     setShowInstallDialog(false);
     setTargetVersion("");
+    // 清理之前的定时器
+    if (reloadTimerRef.current) {
+      clearTimeout(reloadTimerRef.current);
+    }
     // 重新加载版本信息
-    setTimeout(() => {
+    reloadTimerRef.current = setTimeout(() => {
       loadCurrentVersion();
+      reloadTimerRef.current = null;
     }, 1000);
   };
 
@@ -128,6 +136,15 @@ export function VersionManager() {
   useEffect(() => {
     loadCurrentVersion();
   }, [loadCurrentVersion]);
+
+  // 组件卸载时清理定时器
+  useEffect(() => {
+    return () => {
+      if (reloadTimerRef.current) {
+        clearTimeout(reloadTimerRef.current);
+      }
+    };
+  }, []);
 
   return (
     <Card className="w-full max-w-2xl">
