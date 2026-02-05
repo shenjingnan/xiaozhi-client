@@ -59,6 +59,13 @@ export { MCPManager, MCPServiceManager } from "./manager.js";
 export { TransportFactory } from "./transport-factory.js";
 
 // =========================
+// Logger 导出
+// =========================
+
+export { logger, getLogger, setLogger } from "./logger.js";
+export type { ILogger } from "./logger.js";
+
+// =========================
 // 工具函数导出
 // =========================
 

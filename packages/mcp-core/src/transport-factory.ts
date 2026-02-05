@@ -9,6 +9,7 @@
 
 import type { InternalMCPServiceConfig, MCPServerTransport } from "./types.js";
 import { MCPTransportType } from "./types.js";
+import { logger } from "./logger.js";
 import type { SSEClientTransportOptions } from "@modelcontextprotocol/sdk/client/sse.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
@@ -39,7 +40,7 @@ export interface Transport {
  * @returns transport 实例
  */
 export function createTransport(config: InternalMCPServiceConfig): MCPServerTransport {
-  console.debug(
+  logger.debug(
     `[TransportFactory] 创建 ${config.type} transport for ${config.name}`
   );
 
