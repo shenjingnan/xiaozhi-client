@@ -5,7 +5,7 @@
 
 import { EventEmitter } from "node:events";
 import { MCPConnection } from "./connection.js";
-import type { MCPServiceConfig, ToolCallResult } from "./types.js";
+import type { MCPServiceConfig, ToolCallResult, JSONSchema } from "./types.js";
 import { MCPTransportType } from "./types.js";
 
 /**
@@ -214,13 +214,13 @@ export class MCPManager extends EventEmitter {
     name: string;
     serverName: string;
     description: string;
-    inputSchema: unknown;
+    inputSchema: JSONSchema;
   }> {
     const allTools: Array<{
       name: string;
       serverName: string;
       description: string;
-      inputSchema: unknown;
+      inputSchema: JSONSchema;
     }> = [];
 
     for (const [serverName, connection] of this.connections) {

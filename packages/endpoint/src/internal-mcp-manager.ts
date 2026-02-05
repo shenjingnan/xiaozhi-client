@@ -4,7 +4,7 @@
  * 使用 @xiaozhi-client/mcp-core 的 MCPManager 实现真实的 MCP 功能
  */
 
-import { MCPManager } from "@xiaozhi-client/mcp-core";
+import { MCPManager, type JSONSchema } from "@xiaozhi-client/mcp-core";
 import type { EnhancedToolInfo, ToolCallResult } from "./types.js";
 import type { IMCPServiceManager } from "./types.js";
 import type { EndpointConfig } from "./types.js";
@@ -105,7 +105,7 @@ export class InternalMCPManagerAdapter implements IMCPServiceManager {
       const enhancedTool: EnhancedToolInfo = {
         name: `${mcpTool.serverName}__${mcpTool.name}`,
         description: mcpTool.description,
-        inputSchema: mcpTool.inputSchema as any,
+        inputSchema: mcpTool.inputSchema,
         serviceName: mcpTool.serverName,
         originalName: mcpTool.name,
         enabled: true,
