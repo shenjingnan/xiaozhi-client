@@ -16,6 +16,10 @@ import type {
   StatusApiHandler,
   UpdateApiHandler,
   VersionApiHandler,
+  // 新的工具处理器
+  CustomToolHandler,
+  MCPToolManagementHandler,
+  ToolCallingHandler,
 } from "@/handlers/index.js";
 import type { Context, MiddlewareHandler } from "hono";
 
@@ -30,7 +34,7 @@ export interface HandlerDependencies {
   statusApiHandler: StatusApiHandler;
   /** 服务管理处理器 */
   serviceApiHandler: ServiceApiHandler;
-  /** MCP 工具处理器 */
+  /** MCP 工具处理器（旧版，向后兼容） */
   mcpToolHandler: MCPToolHandler;
   /** 工具调用日志处理器 */
   mcpToolLogHandler: MCPToolLogHandler;
@@ -48,6 +52,12 @@ export interface HandlerDependencies {
   cozeHandler: CozeHandler;
   /** 小智接入点处理器（通过中间件动态注入） */
   endpointHandler?: EndpointHandler;
+  /** 新的工具调用处理器 */
+  toolCallingHandler: ToolCallingHandler;
+  /** 自定义工具管理处理器 */
+  customToolHandler: CustomToolHandler;
+  /** MCP 工具管理处理器 */
+  mcpToolManagementHandler: MCPToolManagementHandler;
 }
 
 /**

@@ -213,7 +213,8 @@ describe("MCPToolHandler - 核心功能测试", () => {
           totalTools: 0,
           configPath: "/test/config.json",
         },
-        "未配置自定义 MCP 工具"
+        "未配置自定义 MCP 工具",
+        204
       );
     });
   });
