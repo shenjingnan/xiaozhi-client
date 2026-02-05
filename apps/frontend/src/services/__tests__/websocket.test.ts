@@ -55,7 +55,7 @@ class MockWebSocket {
     }
   }
 
-  mockMessage(data: any): void {
+  mockMessage(data: unknown): void {
     if (this.onmessage) {
       this.onmessage({ data: JSON.stringify(data) } as MessageEvent);
     }
