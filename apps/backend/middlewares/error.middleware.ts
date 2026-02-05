@@ -1,3 +1,15 @@
+/**
+ * 错误处理中间件和统一响应格式
+ *
+ * 提供统一的 API 响应格式和错误处理中间件：
+ * - ApiErrorResponse: 统一的错误响应格式
+ * - ApiSuccessResponse: 统一的成功响应格式
+ * - errorHandlerMiddleware: 全局错误处理中间件
+ * - notFoundHandlerMiddleware: 404 处理中间件
+ *
+ * @module middlewares/error.middleware
+ */
+
 import type { Context } from "hono";
 
 // 统一错误响应格式
