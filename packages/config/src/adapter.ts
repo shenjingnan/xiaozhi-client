@@ -11,6 +11,7 @@ import type {
   SSEMCPServerConfig,
 } from "./manager.js";
 import { ConfigResolver } from "./resolver.js";
+import { MCPTransportType, inferTransportTypeFromUrl } from "@xiaozhi-client/mcp-core";
 
 // 从外部导入 MCP 类型（这些类型将在运行时从 backend 包解析）
 // 为了避免循环依赖，这里使用动态导入的方式
@@ -26,14 +27,8 @@ export class ConfigValidationError extends Error {
   }
 }
 
-// 定义简化的 MCP 传输类型
-export enum MCPTransportType {
-  STDIO = "stdio",
-  SSE = "sse",
-  HTTP = "http",
-}
-
 // 定义简化的 MCPServiceConfig 接口
+// 重新导出 MCPTransportType 以保持向后兼容
 export interface MCPServiceConfig {
   type: MCPTransportType;
   command?: string;
@@ -41,31 +36,6 @@ export interface MCPServiceConfig {
   env?: Record<string, string>;
   url?: string;
   headers?: Record<string, string>;
-}
-
-/**
- * URL 类型推断函数
- * 基于 URL 路径末尾推断传输类型
- */
-function inferTransportTypeFromUrl(url: string): MCPTransportType {
-  try {
-    const parsedUrl = new URL(url);
-    const pathname = parsedUrl.pathname;
-
-    // 检查路径末尾
-    if (pathname.endsWith("/sse")) {
-      return MCPTransportType.SSE;
-    }
-    if (pathname.endsWith("/mcp")) {
-      return MCPTransportType.HTTP;
-    }
-
-    // 默认类型
-    return MCPTransportType.HTTP;
-  } catch (error) {
-    // URL 解析失败时使用默认类型
-    return MCPTransportType.HTTP;
-  }
 }
 
 /**
@@ -427,3 +397,6 @@ export function getConfigTypeDescription(config: MCPServerConfig): string {
 
   return "未知类型";
 }
+
+// 重新导出 MCPTransportType 以保持向后兼容
+export { MCPTransportType };
