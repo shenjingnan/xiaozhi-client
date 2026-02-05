@@ -10,7 +10,7 @@ export default defineConfig({
     utils: "src/utils/index.ts",
   },
   format: ["esm"],
-  outDir: "../../dist/shared-types",
+  outDir: "./dist",
   dts: {
     compilerOptions: {
       composite: false

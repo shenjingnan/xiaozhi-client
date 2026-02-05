@@ -28,7 +28,21 @@ export type {
   TransportConfig,
 } from "./message";
 
-export { ConnectionState } from "./message";
+export { ConnectionState } from "./tool-call";
+
+// 工具调用相关类型
+export type {
+  ToolCallParams,
+  ValidatedToolCallParams,
+  ToolJSONSchema,
+  EnhancedToolInfo,
+} from "./tool-call";
+
+export {
+  ToolCallErrorCode,
+  ToolCallError,
+  ensureToolJSONSchema,
+} from "./tool-call";
 
 // 工具相关类型
 export type {
