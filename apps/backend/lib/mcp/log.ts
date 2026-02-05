@@ -230,11 +230,25 @@ export class ToolCallLogger {
 // ==================== ToolCallLogService 类（查询功能）====================
 
 /**
+ * 日志文件缓存接口
+ */
+interface LogFileCache {
+  records: ToolCallRecord[];
+  lastModified: number;
+  filePath: string;
+}
+
+/**
  * 工具调用日志服务类
  * 负责读取和查询工具调用日志
  */
 export class ToolCallLogService {
   private configDir: string;
+  private cache: LogFileCache = {
+    records: [],
+    lastModified: 0,
+    filePath: "",
+  };
 
   constructor(configDir?: string) {
     this.configDir = configDir || PathUtils.getConfigDir();
@@ -259,12 +273,28 @@ export class ToolCallLogService {
   }
 
   /**
-   * 读取并解析工具调用日志
+   * 读取并解析工具调用日志（带缓存）
    */
-  private parseLogFile(): ToolCallRecord[] {
+  private async parseLogFile(): Promise<ToolCallRecord[]> {
     const logFilePath = this.getLogFilePath();
 
     try {
+      // 获取文件状态信息
+      const stats = await fs.promises.stat(logFilePath);
+
+      // 检查缓存是否有效
+      if (
+        this.cache.records.length > 0 &&
+        this.cache.filePath === logFilePath &&
+        this.cache.lastModified === stats.mtimeMs
+      ) {
+        console.log("使用缓存的日志记录", {
+          count: this.cache.records.length,
+        });
+        return this.cache.records;
+      }
+
+      // 缓存无效，读取并解析文件
       const content = fs.readFileSync(logFilePath, "utf8");
       const lines = content
         .trim()
@@ -292,6 +322,18 @@ export class ToolCallLogService {
 
       // 按时间戳倒序排列（最新的在前）
       records.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+      // 更新缓存
+      this.cache = {
+        records,
+        lastModified: stats.mtimeMs,
+        filePath: logFilePath,
+      };
+
+      console.log("已缓存日志记录", {
+        count: records.length,
+        lastModified: stats.mtimeMs,
+      });
 
       return records;
     } catch (error) {
@@ -360,7 +402,7 @@ export class ToolCallLogService {
   }> {
     this.checkLogFile();
 
-    const records = this.parseLogFile();
+    const records = await this.parseLogFile();
     const filtered = this.filterRecords(records, query);
     const total = filtered.length;
 
