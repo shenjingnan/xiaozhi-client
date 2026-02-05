@@ -140,7 +140,7 @@ export interface ToolValidationErrorDetail {
   /** 错误消息 */
   message: string;
   /** 错误详情 */
-  details?: any;
+  details?: Record<string, unknown>;
   /** 建议的解决方案 */
   suggestions?: string[];
 }
@@ -150,7 +150,7 @@ export interface ToolValidationErrorDetail {
  */
 export interface AddToolResponse {
   /** 成功添加的工具 */
-  tool: any;
+  tool: ExtendedCustomMCPTool;
   /** 工具名称 */
   toolName: string;
   /** 工具类型 */
