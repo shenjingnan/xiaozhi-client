@@ -5,6 +5,7 @@
  * 返回连接状态、错误信息、连接控制方法
  */
 
+import type { WebSocketMessage } from "@services/websocket";
 import { ConnectionState, webSocketManager } from "@services/websocket";
 import {
   useWebSocketActions,
@@ -60,7 +61,7 @@ export function useWebSocketConnection() {
   }, [reconnect]);
 
   const sendMessage = useCallback(
-    (message: any) => {
+    (message: WebSocketMessage) => {
       try {
         return send(message);
       } catch (error) {
