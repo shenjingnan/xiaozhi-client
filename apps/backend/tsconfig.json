@@ -7,7 +7,6 @@
     "outDir": "../../dist/backend",
     "rootDir": ".",
     "baseUrl": ".",
-    "noImplicitAny": false,
     "types": ["vitest/globals"],
     "paths": {
       "@/*": ["./*"]
