@@ -170,7 +170,7 @@ export class StatusService {
 
     // Set new timeout
     this.heartbeatTimeout = setTimeout(() => {
-      this.logger.warn("客户端心跳超时，标记为断开连接");
+      this.logger.debug("客户端心跳超时，标记为断开连接");
       this.updateClientInfo({ status: "disconnected" }, "heartbeat-timeout");
     }, this.HEARTBEAT_TIMEOUT);
   }

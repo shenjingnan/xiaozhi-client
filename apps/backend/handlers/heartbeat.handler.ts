@@ -104,7 +104,7 @@ export class HeartbeatHandler {
       lastHeartbeat &&
       now - lastHeartbeat > HEARTBEAT_MONITORING.TIMEOUT_THRESHOLD
     ) {
-      this.logger.warn("客户端心跳超时，标记为断开连接");
+      this.logger.debug("客户端心跳超时，标记为断开连接");
       this.statusService.updateClientInfo(
         { status: "disconnected" },
         "heartbeat-timeout"
