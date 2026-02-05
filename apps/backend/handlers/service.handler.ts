@@ -101,6 +101,12 @@ export class ServiceApiHandler {
             XIAOZHI_CONFIG_DIR: process.env.XIAOZHI_CONFIG_DIR || process.cwd(),
           },
         });
+
+        // 添加 error 事件监听器
+        child.on("error", (error) => {
+          this.logger.error(`启动 xiaozhi 服务失败: ${error.message}`);
+        });
+
         child.unref();
         this.logger.info("MCP 服务启动命令已发送");
         return;
@@ -117,6 +123,11 @@ export class ServiceApiHandler {
           ...process.env,
           XIAOZHI_CONFIG_DIR: process.env.XIAOZHI_CONFIG_DIR || process.cwd(),
         },
+      });
+
+      // 添加 error 事件监听器
+      child.on("error", (error) => {
+        this.logger.error(`重启 xiaozhi 服务失败: ${error.message}`);
       });
 
       child.unref();
@@ -144,6 +155,11 @@ export class ServiceApiHandler {
           ...process.env,
           XIAOZHI_CONFIG_DIR: process.env.XIAOZHI_CONFIG_DIR || process.cwd(),
         },
+      });
+
+      // 添加 error 事件监听器
+      child.on("error", (error) => {
+        c.get("logger").error(`停止 xiaozhi 服务失败: ${error.message}`);
       });
 
       child.unref();
@@ -178,6 +194,11 @@ export class ServiceApiHandler {
           ...process.env,
           XIAOZHI_CONFIG_DIR: process.env.XIAOZHI_CONFIG_DIR || process.cwd(),
         },
+      });
+
+      // 添加 error 事件监听器
+      child.on("error", (error) => {
+        c.get("logger").error(`启动 xiaozhi 服务失败: ${error.message}`);
       });
 
       child.unref();
