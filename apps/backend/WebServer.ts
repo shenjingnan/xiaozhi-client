@@ -943,6 +943,9 @@ export class WebServer {
     this.statusService.destroy();
     this.notificationService.destroy();
 
+    // 清理处理器的定时器资源
+    this.serviceApiHandler.cleanup();
+
     // 销毁事件总线
     destroyEventBus();
 
