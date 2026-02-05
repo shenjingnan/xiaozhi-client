@@ -56,7 +56,7 @@ import {
   Zap,
 } from "lucide-react";
 import type React from "react";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -405,6 +405,18 @@ export function ToolDebugDialog({
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // 用于管理定时器引用，防止内存泄漏
+  const copiedTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 组件卸载时清理定时器
+  useEffect(() => {
+    return () => {
+      if (copiedTimerRef.current) {
+        clearTimeout(copiedTimerRef.current);
+      }
+    };
+  }, []);
+
   // 创建动态 schema
   const formSchema = useMemo(() => {
     if (!tool?.inputSchema) return z.object({});
@@ -562,7 +574,14 @@ export function ToolDebugDialog({
       await navigator.clipboard.writeText(content);
       setCopied(true);
       toast.success("已复制到剪贴板");
-      setTimeout(() => setCopied(false), 2000);
+
+      // 清除之前的定时器
+      if (copiedTimerRef.current) {
+        clearTimeout(copiedTimerRef.current);
+      }
+
+      // 保存新的定时器引用
+      copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error("复制失败");
     }
