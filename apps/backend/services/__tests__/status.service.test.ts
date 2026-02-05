@@ -449,7 +449,7 @@ describe("StatusService", () => {
       // Fast-forward time to trigger timeout
       vi.advanceTimersByTime(35000);
 
-      expect(mockLogger.warn).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         "客户端心跳超时，标记为断开连接"
       );
 
