@@ -7,5 +7,9 @@
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"],
-  "references": [{ "path": "../../apps/backend" }, { "path": "../config" }]
+  "references": [
+    { "path": "../../apps/backend" },
+    { "path": "../config" },
+    { "path": "../version" }
+  ]
 }
