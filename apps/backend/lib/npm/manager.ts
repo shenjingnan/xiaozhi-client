@@ -1,3 +1,20 @@
+/**
+ * NPM 管理器
+ *
+ * 提供与 NPM 交互的功能，包括：
+ * - 安装指定版本
+ * - 获取当前版本
+ * - 获取可用版本列表
+ * - 检查最新版本
+ *
+ * @example
+ * ```typescript
+ * const npmManager = new NPMManager();
+ * const versions = await npmManager.getAvailableVersions('stable');
+ * await npmManager.installVersion('1.0.0');
+ * ```
+ */
+
 import { exec, spawn } from "node:child_process";
 import { promisify } from "node:util";
 import type { EventBus } from "@/services/event-bus.service.js";
