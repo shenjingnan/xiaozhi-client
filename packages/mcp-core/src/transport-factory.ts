@@ -1,3 +1,12 @@
+/**
+ * MCP 传输层工厂模块
+ *
+ * 提供创建不同类型传输层实例的工厂函数
+ * 支持 STDIO、SSE、StreamableHTTP 三种传输协议
+ *
+ * @module transport-factory
+ */
+
 import type { InternalMCPServiceConfig, MCPServerTransport } from "./types.js";
 import { MCPTransportType } from "./types.js";
 import type { SSEClientTransportOptions } from "@modelcontextprotocol/sdk/client/sse.js";
