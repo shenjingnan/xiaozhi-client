@@ -51,30 +51,31 @@ export namespace TypeFieldNormalizer {
       return config;
     }
 
-    // 创建配置的深拷贝以避免修改原始对象
-    const normalizedConfig = JSON.parse(JSON.stringify(config));
-
-    // 如果配置中没有 type 字段，直接返回
-    if (!("type" in normalizedConfig)) {
-      return normalizedConfig;
+    // 如果配置中没有 type 字段，直接返回原始对象（无需拷贝）
+    if (!("type" in config)) {
+      return config;
     }
 
-    const originalType = normalizedConfig.type;
+    const originalType = (config as Record<string, unknown>).type;
 
-    // 如果已经是标准格式，直接返回
+    // 如果已经是标准格式，直接返回原始对象（无需拷贝）
     if (originalType === "stdio" || originalType === "sse" || originalType === "http") {
-      return normalizedConfig;
+      return config;
     }
 
     // 转换为标准格式
-    const normalizedType = normalizeTypeValue(originalType);
+    const normalizedType = normalizeTypeValue(originalType as string);
 
     // 验证转换后的类型是否有效
     if (normalizedType === "stdio" || normalizedType === "sse" || normalizedType === "http") {
-      normalizedConfig.type = normalizedType;
+      // 只在需要修改时创建浅拷贝，使用展开运算符只修改 type 字段
+      return {
+        ...config,
+        type: normalizedType,
+      };
     }
 
-    return normalizedConfig;
+    return config;
   }
 
   /**
