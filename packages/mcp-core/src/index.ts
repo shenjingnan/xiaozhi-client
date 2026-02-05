@@ -14,6 +14,8 @@ export type {
   MCPServiceConfig,
   ModelScopeSSEOptions,
   UnifiedServerConfig,
+  HeartbeatConfig,
+  ConnectionConfig,
   // 状态相关
   MCPServiceStatus,
   MCPServiceConnectionStatus,
