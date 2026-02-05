@@ -193,11 +193,16 @@ describe("NotificationService", () => {
     });
 
     it("should handle registration error", () => {
-      const errorWebSocket = {
-        get readyState() {
+      // 创建一个会抛出错误的 WebSocket 对象
+      // 使用 Object.defineProperty 来创建 getter，类型断言为 any 以绕过类型检查
+      const errorWebSocket: any = {
+        send: vi.fn(),
+      };
+      Object.defineProperty(errorWebSocket, "readyState", {
+        get: () => {
           throw new Error("WebSocket error");
         },
-      };
+      });
 
       notificationService.registerClient("error-client", errorWebSocket);
 
@@ -215,11 +220,16 @@ describe("NotificationService", () => {
     });
 
     it("should handle non-Error exceptions during registration", () => {
-      const errorWebSocket = {
-        get readyState() {
+      // 创建一个会抛出错误的 WebSocket 对象
+      // 使用 Object.defineProperty 来创建 getter，类型断言为 any 以绕过类型检查
+      const errorWebSocket: any = {
+        send: vi.fn(),
+      };
+      Object.defineProperty(errorWebSocket, "readyState", {
+        get: () => {
           throw "String error";
         },
-      };
+      });
 
       notificationService.registerClient("error-client", errorWebSocket);
 
