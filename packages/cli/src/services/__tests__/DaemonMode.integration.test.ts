@@ -112,6 +112,7 @@ describe("Daemon 模式集成测试", () => {
       const mockChild = {
         pid: 12345,
         unref: vi.fn(),
+        on: vi.fn(),
         stdout: null,
         stderr: null,
       };
@@ -160,6 +161,7 @@ describe("Daemon 模式集成测试", () => {
       const mockChild = {
         pid: 12346,
         unref: vi.fn(),
+        on: vi.fn(),
       };
       mockSpawn.mockReturnValue(mockChild as any);
 
@@ -200,6 +202,7 @@ describe("Daemon 模式集成测试", () => {
       const mockChild = {
         pid: 54321,
         unref: vi.fn(),
+        on: vi.fn(),
       };
       mockSpawn.mockReturnValue(mockChild as any);
 
@@ -288,6 +291,7 @@ describe("Daemon 模式集成测试", () => {
       const mockChild = {
         pid: 99999,
         unref: vi.fn(),
+        on: vi.fn(),
         stdout: { pipe: vi.fn() },
         stderr: { pipe: vi.fn() },
       };

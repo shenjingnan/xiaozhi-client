@@ -248,6 +248,13 @@ export class ServiceManagerImpl implements IServiceManager {
         }
       );
 
+      // 监听 error 事件，处理子进程启动失败的情况
+      child.on("error", (err) => {
+        consola.error(`启动 MCP Server 失败: ${err.message}`);
+        this.processManager.cleanupPidFile();
+        process.exit(1);
+      });
+
       // 保存 PID 信息
       this.processManager.savePidInfo(child.pid || 0, "daemon");
 
@@ -302,6 +309,13 @@ export class ServiceManagerImpl implements IServiceManager {
         XIAOZHI_CONFIG_DIR: PathUtils.getConfigDir(),
         XIAOZHI_DAEMON: "true",
       },
+    });
+
+    // 监听 error 事件，处理子进程启动失败的情况
+    child.on("error", (err) => {
+      consola.error(`启动 WebServer 失败: ${err.message}`);
+      this.processManager.cleanupPidFile();
+      process.exit(1);
     });
 
     // 保存 PID 信息
