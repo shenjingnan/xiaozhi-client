@@ -44,6 +44,25 @@ export class MCPServiceManager extends EventEmitter {
 
   private messageHandler: MCPMessageHandler;
 
+  // 事件监听器引用（用于清理）
+  private eventListeners: {
+    serviceConnected: (data: {
+      serviceName: string;
+      tools: Tool[];
+      connectionTime: Date;
+    }) => void;
+    serviceDisconnected: (data: {
+      serviceName: string;
+      reason?: string;
+      disconnectionTime: Date;
+    }) => void;
+    serviceConnectionFailed: (data: {
+      serviceName: string;
+      error: Error;
+      attempt: number;
+    }) => void;
+  };
+
   // 新增：服务器状态管理（从 UnifiedMCPServer 移入）
   private isRunning = false;
   private config: UnifiedServerConfig;
@@ -94,6 +113,19 @@ export class MCPServiceManager extends EventEmitter {
     const configDir = configManager.getConfigDir();
     this.toolCallLogger = new ToolCallLogger(toolCallLogConfig, configDir);
 
+    // 初始化事件监听器引用
+    this.eventListeners = {
+      serviceConnected: async (data) => {
+        await this.handleServiceConnected(data);
+      },
+      serviceDisconnected: async (data) => {
+        await this.handleServiceDisconnected(data);
+      },
+      serviceConnectionFailed: async (data) => {
+        await this.handleServiceConnectionFailed(data);
+      },
+    };
+
     // 设置事件监听器
     this.setupEventListeners();
 
@@ -106,19 +138,22 @@ export class MCPServiceManager extends EventEmitter {
    */
   private setupEventListeners(): void {
     // 监听MCP服务连接成功事件
-    this.eventBus.onEvent("mcp:service:connected", async (data) => {
-      await this.handleServiceConnected(data);
-    });
+    this.eventBus.onEvent(
+      "mcp:service:connected",
+      this.eventListeners.serviceConnected
+    );
 
     // 监听MCP服务断开连接事件
-    this.eventBus.onEvent("mcp:service:disconnected", async (data) => {
-      await this.handleServiceDisconnected(data);
-    });
+    this.eventBus.onEvent(
+      "mcp:service:disconnected",
+      this.eventListeners.serviceDisconnected
+    );
 
     // 监听MCP服务连接失败事件
-    this.eventBus.onEvent("mcp:service:connection:failed", async (data) => {
-      await this.handleServiceConnectionFailed(data);
-    });
+    this.eventBus.onEvent(
+      "mcp:service:connection:failed",
+      this.eventListeners.serviceConnectionFailed
+    );
   }
 
   /**
@@ -1797,6 +1832,20 @@ export class MCPServiceManager extends EventEmitter {
    */
   async cleanup(): Promise<void> {
     await this.stopAllServices();
+
+    // 清理事件监听器，防止内存泄漏
+    this.eventBus.offEvent(
+      "mcp:service:connected",
+      this.eventListeners.serviceConnected
+    );
+    this.eventBus.offEvent(
+      "mcp:service:disconnected",
+      this.eventListeners.serviceDisconnected
+    );
+    this.eventBus.offEvent(
+      "mcp:service:connection:failed",
+      this.eventListeners.serviceConnectionFailed
+    );
   }
 }
 
