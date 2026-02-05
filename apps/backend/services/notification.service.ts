@@ -7,21 +7,41 @@ import type { AppConfig } from "@xiaozhi-client/config";
 import { configManager } from "@xiaozhi-client/config";
 
 /**
+ * WebSocket 类接口
+ * 定义了 WebSocket 实例需要具备的基本属性和方法
+ */
+export interface WebSocketLike {
+  readyState: number;
+  send(data: string): void;
+}
+
+/**
  * WebSocket 客户端接口
  */
 export interface WebSocketClient {
   id: string;
-  ws: any; // WebSocket 实例
+  ws: WebSocketLike;
   readyState: number;
   send: (data: string) => void;
 }
+
+/**
+ * 通知数据类型
+ * 定义了通知消息中可能包含的数据类型
+ */
+export type NotificationData =
+  | AppConfig
+  | ClientInfo
+  | RestartStatus
+  | { message: string }
+  | { [key: string]: unknown };
 
 /**
  * 通知消息接口
  */
 export interface NotificationMessage {
   type: string;
-  data?: any;
+  data?: NotificationData;
   timestamp?: number;
 }
 
@@ -100,7 +120,7 @@ export class NotificationService {
   /**
    * 注册 WebSocket 客户端
    */
-  registerClient(clientId: string, ws: any): void {
+  registerClient(clientId: string, ws: WebSocketLike): void {
     try {
       const client: WebSocketClient = {
         id: clientId,
@@ -160,7 +180,7 @@ export class NotificationService {
   /**
    * 广播消息给所有客户端
    */
-  broadcast(type: string, data?: any): void {
+  broadcast(type: string, data?: NotificationData): void {
     const message: NotificationMessage = {
       type,
       data,
@@ -177,7 +197,7 @@ export class NotificationService {
   /**
    * 发送消息给特定客户端
    */
-  sendToClient(clientId: string, type: string, data?: any): void {
+  sendToClient(clientId: string, type: string, data?: NotificationData): void {
     const message: NotificationMessage = {
       type,
       data,

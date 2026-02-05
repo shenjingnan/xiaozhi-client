@@ -22,7 +22,11 @@
   },
   "dependencies": {
     "@xiaozhi-client/config": "workspace:*",
-    "consola": "^3.4.2"
+    "chalk": "^5.6.0",
+    "cli-table3": "^0.6.5",
+    "commander": "^14.0.0",
+    "consola": "^3.4.2",
+    "ora": "^8.2.0"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
