@@ -14,7 +14,7 @@ import type { InternalMCPServiceConfig } from "./types.js";
  * 负责管理单个 MCP 服务的连接、工具管理和调用
  */
 export class MCPService {
-  private connection: MCPConnection;
+  private connection: InstanceType<typeof MCPConnection>;
   private eventBus = getEventBus();
 
   constructor(config: InternalMCPServiceConfig) {
