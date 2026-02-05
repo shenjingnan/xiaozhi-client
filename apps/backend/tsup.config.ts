@@ -10,28 +10,35 @@ function copyDirectory(
   dest: string,
   excludePatterns: string[] = []
 ): void {
-  // 创建目标目录
-  if (!existsSync(dest)) {
-    mkdirSync(dest, { recursive: true });
-  }
-
-  const items = readdirSync(src);
-
-  for (const item of items) {
-    // 检查是否应该排除此项
-    if (excludePatterns.some((pattern) => item.includes(pattern))) {
-      continue;
+  try {
+    // 创建目标目录
+    if (!existsSync(dest)) {
+      mkdirSync(dest, { recursive: true });
     }
 
-    const srcPath = join(src, item);
-    const destPath = join(dest, item);
-    const stat = statSync(srcPath);
+    const items = readdirSync(src);
 
-    if (stat.isDirectory()) {
-      copyDirectory(srcPath, destPath, excludePatterns);
-    } else {
-      copyFileSync(srcPath, destPath);
+    for (const item of items) {
+      // 检查是否应该排除此项
+      if (excludePatterns.some((pattern) => item.includes(pattern))) {
+        continue;
+      }
+
+      const srcPath = join(src, item);
+      const destPath = join(dest, item);
+      const stat = statSync(srcPath);
+
+      if (stat.isDirectory()) {
+        copyDirectory(srcPath, destPath, excludePatterns);
+      } else {
+        copyFileSync(srcPath, destPath);
+      }
     }
+  } catch (error) {
+    throw new Error(
+      `复制目录失败: ${src} -> ${dest}\n` +
+      `错误: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
 
