@@ -3,6 +3,7 @@
  * 提供可扩展的排序策略，支持多种排序方式
  */
 
+import { logger } from "@/Logger.js";
 import type { EnhancedToolInfo } from "@/lib/mcp";
 
 export type ToolSortField = "name" | "enabled" | "usageCount" | "lastUsedTime";
@@ -95,7 +96,7 @@ export function sortTools(
 ): EnhancedToolInfo[] {
   const sorter = toolSorters[config.field];
   if (!sorter) {
-    console.warn(`[sortTools] 未知的排序字段: ${config.field}`);
+    logger.warn(`[sortTools] 未知的排序字段: ${config.field}`);
     return tools;
   }
 
