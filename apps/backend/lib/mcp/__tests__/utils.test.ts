@@ -1,5 +1,5 @@
+import { logger } from "@/Logger.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Mock } from "vitest";
 import { MCPTransportType } from "../types.js";
 import type { MCPServiceConfig } from "../types.js";
 import {
@@ -7,26 +7,29 @@ import {
   inferTransportTypeFromUrl,
 } from "../utils.js";
 
-// Mock console 方法
-let mockConsoleInfo: Mock;
-let mockConsoleWarn: Mock;
+// Mock Logger
+vi.mock("@/Logger.js");
+
+interface MockLogger {
+  info: ReturnType<typeof vi.fn>;
+  warn: ReturnType<typeof vi.fn>;
+  error: ReturnType<typeof vi.fn>;
+  debug: ReturnType<typeof vi.fn>;
+}
+
+let mockLogger: MockLogger;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockConsoleInfo = vi.fn();
-  mockConsoleWarn = vi.fn();
 
-  // Mock console 方法
-  const originalConsoleInfo = console.info;
-  const originalConsoleWarn = console.warn;
-  console.info = mockConsoleInfo;
-  console.warn = mockConsoleWarn;
-
-  // 恢复原始方法（在测试结束时）
-  return () => {
-    console.info = originalConsoleInfo;
-    console.warn = originalConsoleWarn;
+  // Setup mock logger
+  mockLogger = {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
   };
+  Object.assign(logger, mockLogger);
 });
 
 describe("MCP 传输类型推断工具", () => {
@@ -290,7 +293,7 @@ describe("MCP 传输类型推断工具", () => {
           serviceName,
         });
 
-        expect(mockConsoleInfo).toHaveBeenCalledWith(
+        expect(mockLogger.info).toHaveBeenCalledWith(
           `[MCP-${serviceName}] URL 路径 /api/v1/tools 不匹配特定规则，默认推断为 http 类型`
         );
       });
@@ -303,7 +306,7 @@ describe("MCP 传输类型推断工具", () => {
           serviceName,
         });
 
-        expect(mockConsoleWarn).toHaveBeenCalledWith(
+        expect(mockLogger.warn).toHaveBeenCalledWith(
           `[MCP-${serviceName}] URL 解析失败，默认推断为 http 类型`,
           expect.any(Error)
         );
@@ -321,8 +324,8 @@ describe("MCP 传输类型推断工具", () => {
           serviceName: "test-service",
         });
 
-        expect(mockConsoleInfo).not.toHaveBeenCalled();
-        expect(mockConsoleWarn).not.toHaveBeenCalled();
+        expect(mockLogger.info).not.toHaveBeenCalled();
+        expect(mockLogger.warn).not.toHaveBeenCalled();
       });
     });
   });
@@ -439,7 +442,7 @@ describe("MCP 传输类型推断工具", () => {
         inferTransportTypeFromConfig(config, "test-service");
 
         // 验证是否用正确的参数调用了日志记录
-        expect(mockConsoleWarn).toHaveBeenCalledWith(
+        expect(mockLogger.warn).toHaveBeenCalledWith(
           "[MCP-test-service] URL 解析失败，默认推断为 http 类型",
           expect.any(Error)
         );
