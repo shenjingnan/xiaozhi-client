@@ -56,7 +56,7 @@ import {
   Zap,
 } from "lucide-react";
 import type React from "react";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -404,6 +404,7 @@ export function ToolDebugDialog({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 创建动态 schema
   const formSchema = useMemo(() => {
@@ -439,6 +440,14 @@ export function ToolDebugDialog({
       setJsonInput("{\n  \n}");
     }
   }, [tool?.inputSchema, defaultValues, form]); // 添加 form 依赖以满足 linter 要求
+
+  useEffect(() => {
+    return () => {
+      if (copiedTimerRef.current) {
+        clearTimeout(copiedTimerRef.current);
+      }
+    };
+  }, []);
 
   // 重置状态
   const resetState = useCallback(() => {
@@ -562,7 +571,10 @@ export function ToolDebugDialog({
       await navigator.clipboard.writeText(content);
       setCopied(true);
       toast.success("已复制到剪贴板");
-      setTimeout(() => setCopied(false), 2000);
+      if (copiedTimerRef.current) {
+        clearTimeout(copiedTimerRef.current);
+      }
+      copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error("复制失败");
     }

@@ -1,3 +1,12 @@
+/**
+ * MCP 连接管理模块
+ *
+ * 提供 MCPConnection 类，负责管理单个 MCP 服务的连接生命周期
+ * 包括连接建立、工具列表管理、工具调用、心跳检测等功能
+ *
+ * @module connection
+ */
+
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { MCPServerTransport, MCPServiceConfig, MCPServiceStatus, ToolCallResult } from "./types.js";

@@ -19,7 +19,10 @@ import {
 } from "@/stores/config";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
 import type {
+  AppConfig,
   CozeWorkflow,
+  CustomMCPToolWithStats,
+  JSONSchema,
   MCPServerConfig,
   WorkflowParameter,
 } from "@xiaozhi-client/shared-types";
@@ -37,8 +40,25 @@ import { ToolDebugDialog } from "./tool-debug-dialog";
 const UNKNOWN_SERVICE_NAME = "未知服务";
 const CUSTOM_SERVICE_NAME = "自定义服务";
 
+// 工具类型别名
+type ToolWithServerInfo = {
+  name: string;
+  serverName: string;
+  toolName: string;
+  enable: boolean;
+  description?: string;
+  usageCount?: number;
+  lastUsedTime?: string;
+  inputSchema?: JSONSchema;
+  handler?: {
+    type: string;
+    platform: string;
+    config?: Record<string, unknown>;
+  };
+};
+
 interface McpServerListProps {
-  updateConfig?: (config: any) => Promise<void>;
+  updateConfig?: (config: AppConfig) => Promise<void>;
   className?: string;
 }
 
@@ -52,75 +72,57 @@ export function McpServerList({
   // const config = useConfig(); // 不再使用配置更新，改为使用 API
 
   // 添加工具列表状态管理
-  const [enabledTools, setEnabledTools] = useState<
-    Array<{
-      name: string;
-      serverName: string;
-      handler?: {
-        type: string;
-        platform: string;
-      };
-      toolName: string;
-      enable: boolean;
-      description?: string;
-      usageCount?: number;
-      lastUsedTime?: string;
-      inputSchema?: any;
-    }>
-  >([]);
-  const [disabledTools, setDisabledTools] = useState<
-    Array<{
-      name: string;
-      serverName: string;
-      toolName: string;
-      enable: boolean;
-      description?: string;
-      usageCount?: number;
-      lastUsedTime?: string;
-      inputSchema?: any;
-    }>
-  >([]);
+  const [enabledTools, setEnabledTools] = useState<Array<ToolWithServerInfo>>(
+    []
+  );
+  const [disabledTools, setDisabledTools] = useState<Array<ToolWithServerInfo>>(
+    []
+  );
 
   // 格式化工具信息的辅助函数
-  const formatTool = useCallback((tool: any, enable: boolean) => {
-    const { serviceName, toolName } = (() => {
-      // 安全检查：确保 handler 存在
-      if (!tool || !tool.handler) {
-        return {
-          serviceName: UNKNOWN_SERVICE_NAME,
-          toolName: tool?.name || UNKNOWN_SERVICE_NAME,
-        };
-      }
+  const formatTool = useCallback(
+    (tool: CustomMCPToolWithStats, enable: boolean) => {
+      const { serviceName, toolName } = (() => {
+        // 安全检查：确保 handler 存在
+        if (!tool || !tool.handler) {
+          return {
+            serviceName: UNKNOWN_SERVICE_NAME,
+            toolName: tool?.name || UNKNOWN_SERVICE_NAME,
+          };
+        }
 
-      if (tool.handler.type === "mcp") {
+        if (tool.handler.type === "mcp") {
+          return {
+            serviceName:
+              tool.handler.config?.serviceName || UNKNOWN_SERVICE_NAME,
+            toolName: tool.handler.config?.toolName || tool.name,
+          };
+        }
+        if (tool.handler.type === "proxy" && tool.handler.platform === "coze") {
+          return {
+            serviceName: "customMCP",
+            toolName: tool.name,
+          };
+        }
         return {
-          serviceName: tool.handler.config?.serviceName || UNKNOWN_SERVICE_NAME,
-          toolName: tool.handler.config?.toolName || tool.name,
-        };
-      }
-      if (tool.handler.type === "proxy" && tool.handler.platform === "coze") {
-        return {
-          serviceName: "customMCP",
+          serviceName: CUSTOM_SERVICE_NAME,
           toolName: tool.name,
         };
-      }
-      return {
-        serviceName: CUSTOM_SERVICE_NAME,
-        toolName: tool.name,
-      };
-    })();
+      })();
 
-    return {
-      serverName: serviceName,
-      toolName,
-      enable,
-      name: tool.name,
-      description: tool.description,
-      usageCount: tool.usageCount,
-      lastUsedTime: tool.lastUsedTime,
-      inputSchema: tool.inputSchema,
-    };
-  }, []);
+      return {
+        serverName: serviceName,
+        toolName,
+        enable,
+        name: tool.name,
+        description: tool.description,
+        usageCount: tool.usageCount,
+        lastUsedTime: tool.lastUsedTime,
+        inputSchema: tool.inputSchema,
+      };
+    },
+    []
+  );
 
   // 获取工具列表
   const fetchTools = useCallback(async () => {
@@ -228,7 +230,7 @@ export function McpServerList({
   // 添加状态来管理参数配置对话框
   const [parameterConfigDialog, setParameterConfigDialog] = useState<{
     open: boolean;
-    tool?: any;
+    tool?: ToolWithServerInfo;
   }>({ open: false });
 
   // 添加状态来管理工具调试对话框
@@ -239,7 +241,7 @@ export function McpServerList({
       serverName: string;
       toolName: string;
       description?: string;
-      inputSchema?: any;
+      inputSchema?: JSONSchema;
     };
   }>({ open: false });
 
@@ -322,7 +324,7 @@ export function McpServerList({
   };
 
   // 处理打开参数配置对话框
-  const _handleConfigureTool = (tool: any) => {
+  const _handleConfigureTool = (tool: ToolWithServerInfo) => {
     // TODO: 用于未来参数配置功能
     // 检查是否为 coze 工具
     if (tool.serverName === "coze") {
@@ -336,7 +338,7 @@ export function McpServerList({
   void _handleConfigureTool;
 
   // 处理打开工具调试对话框
-  const _handleDebugTool = (tool: any) => {
+  const _handleDebugTool = (tool: ToolWithServerInfo) => {
     // TODO: 用于未来工具调试功能
     setDebugDialog({
       open: true,
@@ -353,21 +355,25 @@ export function McpServerList({
   void _handleDebugTool;
 
   // 从工具对象构建 CozeWorkflow 对象
-  const buildCozeWorkflowFromTool = (tool: any): CozeWorkflow => {
+  const buildCozeWorkflowFromTool = (
+    tool: ToolWithServerInfo
+  ): CozeWorkflow => {
     // 如果是 coze 工具，尝试从 handler 中提取信息
     if (tool.serverName === "coze" && tool.handler?.type === "proxy") {
+      const workflowId = tool.handler.config?.workflow_id;
+      const appId = tool.handler.config?.app_id;
       return {
-        workflow_id: tool.handler.config?.workflow_id || "",
+        workflow_id: typeof workflowId === "string" ? workflowId : "",
         workflow_name: tool.toolName,
         description: tool.description || "",
         icon_url: "",
-        app_id: tool.handler.config?.app_id || "",
+        app_id: typeof appId === "string" ? appId : "",
         creator: { id: "", name: "" },
         created_at: 0,
         updated_at: 0,
         isAddedAsTool: true,
         toolName: tool.name,
-        inputSchema: tool.inputSchema,
+        inputSchema: tool.inputSchema || {},
       };
     }
 
@@ -383,7 +389,7 @@ export function McpServerList({
       updated_at: 0,
       isAddedAsTool: true,
       toolName: tool.name,
-      inputSchema: tool.inputSchema,
+      inputSchema: tool.inputSchema || {},
     };
   };
 
@@ -564,7 +570,7 @@ export function McpServerList({
           onOpenChange={(open) =>
             setParameterConfigDialog((prev) => ({ ...prev, open }))
           }
-          workflow={parameterConfigDialog.tool}
+          workflow={buildCozeWorkflowFromTool(parameterConfigDialog.tool)}
           onConfirm={handleParameterConfigConfirm}
           onCancel={handleParameterConfigCancel}
           title="配置工作流参数"

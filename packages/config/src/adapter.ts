@@ -3,10 +3,12 @@
  * 将旧的配置格式转换为新的 MCPServiceConfig 格式，确保向后兼容性
  */
 
-import { isAbsolute, resolve, dirname } from "node:path";
+import { dirname, isAbsolute, resolve } from "node:path";
 import type {
+  HTTPMCPServerConfig,
   LocalMCPServerConfig,
   MCPServerConfig,
+  SSEMCPServerConfig,
 } from "./manager.js";
 import { ConfigResolver } from "./resolver.js";
 import { MCPTransportType, inferTransportTypeFromUrl } from "@xiaozhi-client/mcp-core";
@@ -71,9 +73,7 @@ export function normalizeServiceConfig(
 /**
  * 根据配置类型进行转换
  */
-function convertByConfigType(
-  config: MCPServerConfig
-): MCPServiceConfig {
+function convertByConfigType(config: MCPServerConfig): MCPServiceConfig {
   // 检查是否为本地 stdio 配置（最高优先级）
   if (isLocalConfig(config)) {
     return convertLocalConfig(config);
@@ -88,9 +88,7 @@ function convertByConfigType(
       case "streamable-http": // 向后兼容
         return convertHTTPConfig(config);
       default:
-        throw new ConfigValidationError(
-          `不支持的传输类型: ${config.type}`
-        );
+        throw new ConfigValidationError(`不支持的传输类型: ${config.type}`);
     }
   }
 
@@ -120,9 +118,7 @@ function convertByConfigType(
 /**
  * 转换本地 stdio 配置
  */
-function convertLocalConfig(
-  config: MCPServerConfig
-): MCPServiceConfig {
+function convertLocalConfig(config: MCPServerConfig): MCPServiceConfig {
   // 类型守卫：确保是 LocalMCPServerConfig
   if (!isLocalConfig(config)) {
     throw new ConfigValidationError("无效的本地配置类型");
@@ -184,16 +180,15 @@ function convertLocalConfig(
 /**
  * 转换 SSE 配置
  */
-function convertSSEConfig(
-  config: MCPServerConfig
-): MCPServiceConfig {
-  const url = (config as any).url;
-  const type = (config as any).type;
-  const headers = (config as any).headers;
-
-  if (url === undefined || url === null) {
+function convertSSEConfig(config: MCPServerConfig): MCPServiceConfig {
+  // 使用类型守卫确保 config 包含必要的属性
+  if (!isURLConfig(config)) {
     throw new ConfigValidationError("SSE 配置必须包含 url 字段");
   }
+
+  const url = config.url;
+  const type = "type" in config ? config.type : undefined;
+  const headers = "headers" in config ? config.headers : undefined;
 
   // 优先使用显式指定的类型，如果没有则进行推断
   const inferredType =
@@ -218,16 +213,14 @@ function convertSSEConfig(
 /**
  * 转换 HTTP 配置
  */
-function convertHTTPConfig(
-  config: MCPServerConfig
-): MCPServiceConfig {
-  const url = (config as any).url;
-  const headers = (config as any).headers;
-
-  // 检查 URL 是否存在
-  if (url === undefined || url === null) {
+function convertHTTPConfig(config: MCPServerConfig): MCPServiceConfig {
+  // 使用类型守卫确保 config 包含必要的属性
+  if (!isURLConfig(config)) {
     throw new ConfigValidationError("HTTP 配置必须包含 url 字段");
   }
+
+  const url = config.url;
+  const headers = "headers" in config ? config.headers : undefined;
 
   return {
     type: MCPTransportType.HTTP,
@@ -301,6 +294,16 @@ function isLocalConfig(
 }
 
 /**
+ * 检查是否为 URL 配置（SSE 或 HTTP）
+ * 类型守卫函数，用于验证配置包含 url 属性
+ */
+function isURLConfig(
+  config: MCPServerConfig
+): config is (SSEMCPServerConfig | HTTPMCPServerConfig) & { url: string } {
+  return "url" in config && typeof config.url === "string";
+}
+
+/**
  * 检查是否为 ModelScope URL
  * 使用 URL hostname 检查而非简单的字符串包含检查，防止安全绕过
  */
@@ -350,9 +353,7 @@ function validateNewConfig(config: MCPServiceConfig): void {
       // HTTP 配置允许空 URL，会在后续处理中设置默认值
       // 只有当 URL 完全不存在时才报错
       if (config.url === undefined || config.url === null) {
-        throw new ConfigValidationError(
-          "HTTP 配置必须包含 url 字段"
-        );
+        throw new ConfigValidationError("HTTP 配置必须包含 url 字段");
       }
       break;
 
@@ -371,7 +372,10 @@ export function getConfigTypeDescription(config: MCPServerConfig): string {
 
   if ("url" in config) {
     // 检查是否为显式 http 配置
-    if ("type" in config && (config.type === "http" || config.type === "streamable-http")) {
+    if (
+      "type" in config &&
+      (config.type === "http" || config.type === "streamable-http")
+    ) {
       return `HTTP (${config.url})`;
     }
 

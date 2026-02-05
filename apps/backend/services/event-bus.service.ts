@@ -259,11 +259,15 @@ export class EventBus extends EventEmitter {
   private logger: Logger;
   private eventStats: Map<string, { count: number; lastEmitted: Date }> =
     new Map();
-  private maxListeners = 50; // 增加最大监听器数量
+  private maxListeners: number;
 
   constructor() {
     super();
     this.logger = logger;
+    // 测试环境下增加监听器限制，避免 MaxListenersExceededWarning
+    const isTest =
+      process.env.NODE_ENV === "test" || process.env.VITEST === "true";
+    this.maxListeners = isTest ? 200 : 50;
     this.setMaxListeners(this.maxListeners);
     this.setupErrorHandling();
   }

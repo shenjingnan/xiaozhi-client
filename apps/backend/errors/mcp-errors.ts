@@ -89,13 +89,13 @@ export enum ErrorCategory {
  */
 export interface ErrorDetails {
   serverName?: string;
-  config?: any;
+  config?: unknown;
   tools?: string[];
   timestamp: string;
   severity: ErrorSeverity;
   category: ErrorCategory;
   stack?: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   operation?: string;
   errors?: string[];
 }
@@ -265,7 +265,7 @@ export class MCPError extends Error {
  */
 export interface ErrorHandler {
   canHandle(error: Error): boolean;
-  handle(error: Error, context?: any): MCPError | null;
+  handle(error: Error, context?: Record<string, unknown>): MCPError | null;
 }
 
 /**
@@ -276,7 +276,7 @@ export class DefaultErrorHandler implements ErrorHandler {
     return !(error instanceof MCPError);
   }
 
-  handle(error: Error, context?: any): MCPError {
+  handle(error: Error, context?: Record<string, unknown>): MCPError {
     return MCPError.fromError(
       error,
       MCPErrorCode.INTERNAL_ERROR,
@@ -298,7 +298,7 @@ export class ConfigErrorHandler implements ErrorHandler {
     );
   }
 
-  handle(error: Error, context?: any): MCPError {
+  handle(error: Error, context?: Record<string, unknown>): MCPError {
     return MCPError.configError(
       MCPErrorCode.INVALID_CONFIG,
       `配置错误: ${error.message}`,
@@ -321,7 +321,7 @@ export class ConnectionErrorHandler implements ErrorHandler {
     );
   }
 
-  handle(error: Error, context?: any): MCPError {
+  handle(error: Error, context?: Record<string, unknown>): MCPError {
     return MCPError.connectionError(
       MCPErrorCode.CONNECTION_FAILED,
       `连接失败: ${error.message}`,
@@ -353,7 +353,7 @@ export class ErrorHandlerRegistry {
   /**
    * 处理错误
    */
-  handleError(error: Error, context?: any): MCPError {
+  handleError(error: Error, context?: Record<string, unknown>): MCPError {
     // 如果已经是MCPError，直接返回
     if (error instanceof MCPError) {
       return error;

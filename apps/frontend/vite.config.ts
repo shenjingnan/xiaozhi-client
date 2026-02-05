@@ -106,10 +106,8 @@ export default defineConfig({
             return "utils";
           }
 
-          // 其他 node_modules 中的库
-          if (id.includes("node_modules")) {
-            return "vendor";
-          }
+          // 移除兜底的 vendor chunk，让 Vite 自动处理剩余模块
+          // 这样可以避免 circular chunk 警告
         },
         // 优化 chunk 文件名
         chunkFileNames: "assets/[name]-[hash].js",
