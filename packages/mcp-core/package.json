@@ -26,11 +26,9 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "eventsource": "^4.0.0",
     "ws": "^8.14.2"
-  },
-  "peerDependencies": {
-    "@modelcontextprotocol/sdk": "^1.24.0"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
