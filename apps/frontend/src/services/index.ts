@@ -19,6 +19,7 @@ export class NetworkService {
   private apiClient: ApiClient;
   private webSocketManager: WebSocketManager;
   private initialized = false;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     this.apiClient = apiClient;
@@ -46,6 +47,11 @@ export class NetworkService {
    * 销毁网络服务
    */
   destroy(): void {
+    // 清理重连定时器
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     console.log("[NetworkService] 销毁网络服务");
     this.webSocketManager.disconnect();
     this.initialized = false;
@@ -254,9 +260,16 @@ export class NetworkService {
    * 重新连接 WebSocket
    */
   reconnectWebSocket(): void {
+    // 清除已有的重连定时器
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
     this.webSocketManager.disconnect();
-    setTimeout(() => {
+    this.reconnectTimer = setTimeout(() => {
       this.webSocketManager.connect();
+      this.reconnectTimer = null;
     }, 1000);
   }
 
