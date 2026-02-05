@@ -39,10 +39,6 @@ export interface Transport {
  * @returns transport 实例
  */
 export function createTransport(config: InternalMCPServiceConfig): MCPServerTransport {
-  console.debug(
-    `[TransportFactory] 创建 ${config.type} transport for ${config.name}`
-  );
-
   switch (config.type) {
     case MCPTransportType.STDIO:
       return createStdioTransport(config);
