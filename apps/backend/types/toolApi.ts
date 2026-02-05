@@ -1,71 +1,23 @@
 /**
  * 工具添加 API 相关类型定义
  * 支持多种工具类型的添加，包括 MCP 工具、Coze 工作流等
+ *
+ * @deprecated 此文件中的类型定义已迁移到 @xiaozhi-client/shared-types
+ * 请直接从 shared-types 导入相关类型
+ * 此文件保留用于向后兼容
  */
 
 import type { JSONSchema as LibJSONSchema } from "@/lib/mcp/types.js";
 import type { CozeWorkflow, WorkflowParameterConfig } from "./coze.js";
 
-/**
- * JSON Schema 类型
- * 重新导出 @/lib/mcp/types.js 中的 JSONSchema
- */
-export type JSONSchema = LibJSONSchema;
-
-/**
- * 工具处理器配置联合类型
- */
-export type ToolHandlerConfig =
-  | MCPHandlerConfig
-  | ProxyHandlerConfig
-  | HttpHandlerConfig
-  | FunctionHandlerConfig;
-
-/**
- * MCP 处理器配置
- */
-export interface MCPHandlerConfig {
-  type: "mcp";
-  config: {
-    serviceName: string;
-    toolName: string;
-  };
-}
-
-/**
- * 代理处理器配置
- */
-export interface ProxyHandlerConfig {
-  type: "proxy";
-  platform: "coze" | "openai" | "anthropic" | "custom";
-  config: Record<string, unknown>;
-}
-
-/**
- * HTTP 处理器配置
- */
-export interface HttpHandlerConfig {
-  type: "http";
-  config: {
-    url: string;
-    method?: string;
-    headers?: Record<string, string>;
-  };
-}
-
-/**
- * 函数处理器配置
- */
-export interface FunctionHandlerConfig {
-  type: "function";
-  config: {
-    module: string;
-    function: string;
-  };
-}
+// 从 shared-types 重新导出核心类型（使用类型导入避免运行时依赖）
+// 注意：由于构建系统的限制，这里使用本地类型定义而非导入
+// 在使用时应该从 @xiaozhi-client/shared-types 导入
 
 /**
  * CustomMCP 工具基础接口
+ *
+ * @deprecated 请从 @xiaozhi-client/shared-types 导入
  */
 export interface CustomMCPToolBase {
   /** 工具唯一标识符 */
@@ -80,7 +32,8 @@ export interface CustomMCPToolBase {
 
 /**
  * 带统计信息的 CustomMCP 工具
- * 用于 API 响应，使用扁平的统计信息结构
+ *
+ * @deprecated 请从 @xiaozhi-client/shared-types 导入
  */
 export interface CustomMCPToolWithStats extends CustomMCPToolBase {
   /** 工具使用次数（扁平结构，与 API 响应格式一致） */
@@ -88,6 +41,66 @@ export interface CustomMCPToolWithStats extends CustomMCPToolBase {
   /** 最后使用时间（ISO 8601 格式） */
   lastUsedTime?: string;
 }
+
+/**
+ * 配置文件中的 CustomMCP 工具
+ *
+ * @deprecated 请从 @xiaozhi-client/shared-types 导入
+ */
+export interface CustomMCPToolConfig extends CustomMCPToolBase {
+  /** 使用统计信息（嵌套结构，仅用于配置文件） */
+  stats?: {
+    usageCount?: number;
+    lastUsedTime?: string;
+  };
+}
+
+// 向后兼容的类型别名
+export type CustomMCPTool = CustomMCPToolBase;
+
+// 本地定义处理器配置类型，用于向后兼容
+export interface MCPHandlerConfig {
+  type: "mcp";
+  config: {
+    serviceName: string;
+    toolName: string;
+  };
+}
+
+export interface ProxyHandlerConfig {
+  type: "proxy";
+  platform: "coze" | "openai" | "anthropic" | "custom";
+  config: Record<string, unknown>;
+}
+
+export interface HttpHandlerConfig {
+  type: "http";
+  config: {
+    url: string;
+    method?: string;
+    headers?: Record<string, string>;
+  };
+}
+
+export interface FunctionHandlerConfig {
+  type: "function";
+  config: {
+    module: string;
+    function: string;
+  };
+}
+
+export type ToolHandlerConfig =
+  | MCPHandlerConfig
+  | ProxyHandlerConfig
+  | HttpHandlerConfig
+  | FunctionHandlerConfig;
+
+/**
+ * JSON Schema 类型
+ * 重新导出 @/lib/mcp/types.js 中的 JSONSchema
+ */
+export type JSONSchema = LibJSONSchema;
 
 /**
  * 工具类型枚举
@@ -173,7 +186,7 @@ export interface FunctionToolData {
   /** 函数描述 */
   description: string;
   /** 函数执行上下文 */
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   /** 超时时间 */
   timeout?: number;
   /** 可选的自定义名称 */
@@ -223,7 +236,7 @@ export interface ToolValidationErrorDetail {
   /** 错误消息 */
   message: string;
   /** 错误详情 */
-  details?: any;
+  details?: unknown;
   /** 建议的解决方案 */
   suggestions?: string[];
 }
@@ -233,7 +246,7 @@ export interface ToolValidationErrorDetail {
  */
 export interface AddToolResponse {
   /** 成功添加的工具 */
-  tool: any;
+  tool: unknown;
   /** 工具名称 */
   toolName: string;
   /** 工具类型 */
@@ -282,13 +295,15 @@ export interface ToolConfigOptions {
 /**
  * 扩展的 CustomMCPTool 接口
  * 包含额外的元数据信息
+ *
+ * @deprecated 使用 CustomMCPToolWithStats 或 CustomMCPToolConfig 代替
  */
 export interface ExtendedCustomMCPTool {
   /** 基础工具配置 */
   name: string;
   description: string;
-  inputSchema: any;
-  handler: any;
+  inputSchema: unknown;
+  handler: unknown;
   /** 使用统计信息 */
   stats?: {
     usageCount?: number;

@@ -187,7 +187,9 @@ export function ensureToolJSONSchema(schema: JSONSchema): {
 
 /**
  * CustomMCP 工具类型定义
- * 统一了 manager.ts 和 configManager.ts 中的定义
+ *
+ * @deprecated 请从 @xiaozhi-client/shared-types 导入
+ * 此处保留用于向后兼容
  */
 export interface CustomMCPTool {
   name: string;
