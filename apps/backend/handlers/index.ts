@@ -12,3 +12,5 @@ export * from "./mcp-tool.handler.js";
 export * from "./mcp-tool-log.handler.js";
 export * from "./update.handler.js";
 export * from "./version.handler.js";
+// 新的工具处理器模块
+export * from "./tool/index.js";

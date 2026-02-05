@@ -16,6 +16,10 @@ import {
   StatusApiHandler,
   UpdateApiHandler,
   VersionApiHandler,
+  // 新的工具处理器
+  CustomToolHandler,
+  MCPToolManagementHandler,
+  ToolCallingHandler,
 } from "@/handlers/index.js";
 import { MCPServiceManager } from "@/lib/mcp";
 import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
@@ -113,7 +117,7 @@ export class WebServer {
   private configApiHandler: ConfigApiHandler;
   private statusApiHandler: StatusApiHandler;
   private serviceApiHandler: ServiceApiHandler;
-  private mcpToolHandler: MCPToolHandler;
+  private mcpToolHandler: MCPToolHandler; // 旧版处理器，保持向后兼容
   private mcpToolLogHandler: MCPToolLogHandler;
   private versionApiHandler: VersionApiHandler;
   private staticFileHandler: StaticFileHandler;
@@ -121,6 +125,10 @@ export class WebServer {
   private mcpHandler?: MCPHandler;
   private updateApiHandler: UpdateApiHandler;
   private cozeHandler: CozeHandler;
+  // 新的工具处理器
+  private toolCallingHandler: ToolCallingHandler;
+  private customToolHandler: CustomToolHandler;
+  private mcpToolManagementHandler: MCPToolManagementHandler;
 
   // WebSocket 处理器
   private realtimeNotificationHandler: RealtimeNotificationHandler;
@@ -158,13 +166,17 @@ export class WebServer {
     this.configApiHandler = new ConfigApiHandler();
     this.statusApiHandler = new StatusApiHandler(this.statusService);
     this.serviceApiHandler = new ServiceApiHandler(this.statusService);
-    this.mcpToolHandler = new MCPToolHandler();
+    this.mcpToolHandler = new MCPToolHandler(); // 旧版处理器，保持向后兼容
     this.mcpToolLogHandler = new MCPToolLogHandler();
     this.versionApiHandler = new VersionApiHandler();
     this.staticFileHandler = new StaticFileHandler();
     this.mcpRouteHandler = new MCPRouteHandler();
     this.updateApiHandler = new UpdateApiHandler();
     this.cozeHandler = new CozeHandler();
+    // 初始化新的工具处理器
+    this.toolCallingHandler = new ToolCallingHandler();
+    this.customToolHandler = new CustomToolHandler();
+    this.mcpToolManagementHandler = new MCPToolManagementHandler();
 
     // MCPServerApiHandler 将在 start() 方法中初始化，因为它需要 mcpServiceManager
 
@@ -543,7 +555,7 @@ export class WebServer {
       configApiHandler: this.configApiHandler,
       statusApiHandler: this.statusApiHandler,
       serviceApiHandler: this.serviceApiHandler,
-      mcpToolHandler: this.mcpToolHandler,
+      mcpToolHandler: this.mcpToolHandler, // 旧版处理器，保持向后兼容
       mcpToolLogHandler: this.mcpToolLogHandler,
       versionApiHandler: this.versionApiHandler,
       staticFileHandler: this.staticFileHandler,
@@ -551,6 +563,10 @@ export class WebServer {
       mcpHandler: this.mcpHandler,
       updateApiHandler: this.updateApiHandler,
       cozeHandler: this.cozeHandler,
+      // 新的工具处理器
+      toolCallingHandler: this.toolCallingHandler,
+      customToolHandler: this.customToolHandler,
+      mcpToolManagementHandler: this.mcpToolManagementHandler,
       // endpointHandler 通过中间件动态注入，不在此初始化
     };
   }
