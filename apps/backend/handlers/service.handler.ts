@@ -16,6 +16,8 @@ export class ServiceApiHandler {
   private logger: Logger;
   private statusService: StatusService;
   private eventBus: EventBus;
+  // 用于跟踪重启操作的定时器，避免资源泄漏
+  private restartTimeouts: Set<NodeJS.Timeout> = new Set();
 
   constructor(statusService: StatusService) {
     this.logger = logger;
@@ -47,21 +49,26 @@ export class ServiceApiHandler {
       const mcpServiceManager = requireMCPServiceManager(c);
 
       // 异步执行重启，不阻塞响应
-      setTimeout(async () => {
+      const outerTimeout = setTimeout(async () => {
         try {
           await this.executeRestart(mcpServiceManager);
           // 服务重启需要一些时间，延迟发送成功状态
-          setTimeout(() => {
+          const innerTimeout = setTimeout(() => {
             this.statusService.updateRestartStatus("completed");
+            this.restartTimeouts.delete(innerTimeout);
           }, 5000);
+          this.restartTimeouts.add(innerTimeout);
         } catch (error) {
           c.get("logger").error("服务重启失败:", error);
           this.statusService.updateRestartStatus(
             "failed",
             error instanceof Error ? error.message : "未知错误"
           );
+        } finally {
+          this.restartTimeouts.delete(outerTimeout);
         }
       }, 500);
+      this.restartTimeouts.add(outerTimeout);
 
       return c.success(null, "重启请求已接收");
     } catch (error) {
@@ -247,5 +254,17 @@ export class ServiceApiHandler {
         500
       );
     }
+  }
+
+  /**
+   * 清理所有待处理的定时器
+   * 用于防止内存泄漏和僵尸进程执行
+   */
+  cleanup(): void {
+    for (const timeout of this.restartTimeouts) {
+      clearTimeout(timeout);
+    }
+    this.restartTimeouts.clear();
+    this.logger.debug("服务处理器定时器已清理");
   }
 }

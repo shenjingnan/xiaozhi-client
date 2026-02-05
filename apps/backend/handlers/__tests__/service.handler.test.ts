@@ -602,4 +602,115 @@ describe("ServiceApiHandler", () => {
       expect(mockMcpServiceManager.getStatus).toHaveBeenCalled();
     });
   });
+
+  describe("资源清理", () => {
+    it("cleanup 应该清除所有待处理的定时器", async () => {
+      // 创建多个重启请求，每个都会创建定时器
+      await handler.restartService(mockContext);
+      await handler.restartService(mockContext);
+
+      // 调用清理方法
+      handler.cleanup();
+
+      // 快进时间，验证状态更新没有被触发
+      await vi.advanceTimersByTimeAsync(6000);
+
+      // 验证只调用了初始的 "restarting" 状态，没有后续的 "completed" 状态
+      expect(mockStatusService.updateRestartStatus).toHaveBeenCalledWith(
+        "restarting"
+      );
+    });
+
+    it("cleanup 后新的重启请求应该正常工作", async () => {
+      // 创建一个重启请求
+      await handler.restartService(mockContext);
+
+      // 清理所有定时器
+      handler.cleanup();
+
+      // 重置 mock
+      vi.mocked(mockStatusService.updateRestartStatus).mockClear();
+      vi.mocked(mockEventBus.emitEvent).mockClear();
+
+      // 创建新的重启请求
+      await handler.restartService(mockContext);
+
+      expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
+        "service:restart:requested",
+        expect.objectContaining({
+          source: "http-api",
+        })
+      );
+      expect(mockStatusService.updateRestartStatus).toHaveBeenCalledWith(
+        "restarting"
+      );
+    });
+
+    it("cleanup 应该可以安全地多次调用", () => {
+      // 多次调用 cleanup 不应该抛出错误
+      handler.cleanup();
+      handler.cleanup();
+      handler.cleanup();
+
+      expect(true).toBe(true);
+    });
+
+    it("在定时器触发前调用 cleanup 应该阻止状态更新", async () => {
+      await handler.restartService(mockContext);
+
+      // 重置 mock 以清除初始的 "restarting" 调用
+      vi.mocked(mockStatusService.updateRestartStatus).mockClear();
+
+      // 在定时器触发前清理
+      handler.cleanup();
+
+      // 快进时间
+      await vi.advanceTimersByTimeAsync(6000);
+
+      // 验证 updateRestartStatus 没有被调用
+      expect(mockStatusService.updateRestartStatus).not.toHaveBeenCalled();
+    });
+
+    it("定时器执行完成后应该自动从集合中移除", async () => {
+      await handler.restartService(mockContext);
+
+      // 快进时间让外层定时器执行
+      await vi.advanceTimersByTimeAsync(500);
+
+      // 内层定时器应该已添加
+      // 再次快进让内层定时器执行
+      await vi.advanceTimersByTimeAsync(5000);
+
+      // 验证状态更新正确完成
+      expect(mockStatusService.updateRestartStatus).toHaveBeenCalledWith(
+        "completed"
+      );
+    });
+
+    it("重启失败时定时器也应该被清理", async () => {
+      mockMcpServiceManager.getStatus.mockImplementation(() => {
+        throw new Error("重启失败");
+      });
+
+      await handler.restartService(mockContext);
+
+      // 快进时间让外层定时器执行
+      await vi.advanceTimersByTimeAsync(500);
+
+      // 验证错误状态被设置
+      expect(mockStatusService.updateRestartStatus).toHaveBeenCalledWith(
+        "failed",
+        "重启失败"
+      );
+
+      // 现在调用 cleanup 应该不会有遗留的定时器
+      handler.cleanup();
+
+      // 再次快进，确保没有额外的状态更新
+      vi.mocked(mockStatusService.updateRestartStatus).mockClear();
+      await vi.advanceTimersByTimeAsync(6000);
+
+      expect(mockStatusService.updateRestartStatus).not.toHaveBeenCalled();
+    });
+  });
 });
