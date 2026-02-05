@@ -9,7 +9,13 @@
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { MCPServerTransport, MCPServiceConfig, MCPServiceStatus, ToolCallResult } from "./types.js";
+import type {
+  MCPServerTransport,
+  MCPServiceConfig,
+  MCPServiceStatus,
+  ToolCallResult,
+  ILogger,
+} from "./types.js";
 import { ConnectionState, MCPTransportType } from "./types.js";
 import { TransportFactory } from "./transport-factory.js";
 import { inferTransportTypeFromConfig } from "./utils/index.js";
@@ -29,6 +35,8 @@ export class MCPConnection {
   private connectionTimeout: NodeJS.Timeout | null = null;
   private initialized = false;
   private callbacks?: MCPServiceEventCallbacks;
+  // 日志记录器（支持依赖注入）
+  private logger: ILogger;
   // 心跳检测相关
   private heartbeatTimer: NodeJS.Timeout | null = null;
   private heartbeatConfig?: HeartbeatConfig;
@@ -36,12 +44,15 @@ export class MCPConnection {
   constructor(
     name: string,
     config: MCPServiceConfig,
-    callbacks?: MCPServiceEventCallbacks
+    callbacks?: MCPServiceEventCallbacks,
+    logger?: ILogger
   ) {
     this.name = name;
     // 使用工具方法推断服务类型（传递服务名称用于日志）
     this.config = inferTransportTypeFromConfig(config, name);
     this.callbacks = callbacks;
+    // 初始化日志记录器（使用依赖注入或默认 console）
+    this.logger = logger ?? this.createDefaultLogger();
     // 保存心跳配置 - 优先使用用户配置
     this.heartbeatConfig = {
       enabled: config.heartbeat?.enabled ?? true,  // 默认启用
@@ -50,6 +61,27 @@ export class MCPConnection {
 
     // 验证配置
     this.validateConfig();
+  }
+
+  /**
+   * 创建默认日志记录器（使用 console）
+   * 当没有提供 logger 时使用
+   */
+  private createDefaultLogger(): ILogger {
+    return {
+      debug: (message: string, ...args: unknown[]) => {
+        console.debug(message, ...args);
+      },
+      info: (message: string, ...args: unknown[]) => {
+        console.info(message, ...args);
+      },
+      warn: (message: string, ...args: unknown[]) => {
+        console.warn(message, ...args);
+      },
+      error: (message: string, ...args: unknown[]) => {
+        console.error(message, ...args);
+      },
+    };
   }
 
   /**
@@ -88,7 +120,7 @@ export class MCPConnection {
    */
   private async attemptConnection(): Promise<void> {
     this.connectionState = ConnectionState.CONNECTING;
-    console.debug(
+    this.logger.debug(
       `[MCP-${this.name}] 正在连接 MCP 服务: ${this.name}`
     );
 
@@ -161,7 +193,7 @@ export class MCPConnection {
     this.connectionState = ConnectionState.CONNECTED;
     this.initialized = true;
 
-    console.info(
+    this.logger.info(
       `[MCP-${this.name}] MCP 服务 ${this.name} 连接已建立`
     );
 
@@ -176,7 +208,7 @@ export class MCPConnection {
     this.connectionState = ConnectionState.DISCONNECTED;
     this.initialized = false;
 
-    console.debug(`MCP 服务 ${this.name} 连接错误:`, error.message);
+    this.logger.debug(`MCP 服务 ${this.name} 连接错误:`, error.message);
 
     // 清理连接超时定时器
     if (this.connectionTimeout) {
@@ -247,13 +279,13 @@ export class MCPConnection {
         this.tools.set(tool.name, tool);
       }
 
-      console.debug(
+      this.logger.debug(
         `${this.name} 服务加载了 ${tools.length} 个工具: ${tools
           .map((t) => t.name)
           .join(", ")}`
       );
     } catch (error) {
-      console.error(
+      this.logger.error(
         `${this.name} 获取工具列表失败:`,
         error instanceof Error ? error.message : String(error)
       );
@@ -265,7 +297,7 @@ export class MCPConnection {
    * 断开连接
    */
   async disconnect(): Promise<void> {
-    console.info(`主动断开 MCP 服务 ${this.name} 连接`);
+    this.logger.info(`主动断开 MCP 服务 ${this.name} 连接`);
 
     // 清理连接资源
     this.cleanupConnection();
@@ -309,7 +341,7 @@ export class MCPConnection {
    */
   private async reconnect(): Promise<void> {
     this.connectionState = ConnectionState.RECONNECTING;
-    console.debug(
+    this.logger.debug(
       `[MCP-${this.name}] 检测到会话过期，正在重新连接...`
     );
 
@@ -336,14 +368,14 @@ export class MCPConnection {
 
     this.heartbeatTimer = setInterval(() => {
       this.performHeartbeat().catch((error) => {
-        console.error(
+        this.logger.error(
           `[MCP-${this.name}] 心跳检测执行异常：`,
           error instanceof Error ? error.message : String(error)
         );
       });
     }, interval);
 
-    console.debug(
+    this.logger.debug(
       `[MCP-${this.name}] 心跳检测已启动，间隔: ${interval}ms`
     );
   }
@@ -359,9 +391,9 @@ export class MCPConnection {
     try {
       // 调用 MCP SDK 的 ping() 方法
       await this.client.ping();
-      console.debug(`[MCP-${this.name}] 心跳检测成功`);
+      this.logger.debug(`[MCP-${this.name}] 心跳检测成功`);
     } catch (error) {
-      console.warn(
+      this.logger.warn(
         `[MCP-${this.name}] 心跳检测失败，尝试重连...`,
         error instanceof Error ? error.message : String(error)
       );
@@ -377,7 +409,7 @@ export class MCPConnection {
     if (this.heartbeatTimer) {
       clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = null;
-      console.debug(`[MCP-${this.name}] 心跳检测已停止`);
+      this.logger.debug(`[MCP-${this.name}] 心跳检测已停止`);
     }
   }
 
@@ -396,7 +428,7 @@ export class MCPConnection {
       throw new Error(`工具 ${name} 在服务 ${this.name} 中不存在`);
     }
 
-    console.debug(
+    this.logger.debug(
       `调用 ${this.name} 服务的工具 ${name}，参数:`,
       JSON.stringify(arguments_)
     );
@@ -407,7 +439,7 @@ export class MCPConnection {
         arguments: arguments_ || {},
       });
 
-      console.debug(
+      this.logger.debug(
         `工具 ${name} 调用成功，结果:`,
         `${JSON.stringify(result).substring(0, 500)}...`
       );
@@ -416,7 +448,7 @@ export class MCPConnection {
     } catch (error) {
       // 检测是否为会话过期错误
       if (this.isSessionExpiredError(error)) {
-        console.warn(
+        this.logger.warn(
           `[MCP-${this.name}] 检测到会话过期，尝试重新连接并重试...`
         );
 
@@ -431,7 +463,7 @@ export class MCPConnection {
       }
 
       // 其他错误正常抛出
-      console.error(
+      this.logger.error(
         `工具 ${name} 调用失败:`,
         error instanceof Error ? error.message : String(error)
       );

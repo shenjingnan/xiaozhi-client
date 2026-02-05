@@ -5,6 +5,7 @@
 
 import { MCP_SERVICE_EVENTS } from "@/constants/index.js";
 import { getEventBus } from "@/services/event-bus.service.js";
+import { logger } from "@/Logger.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { MCPConnection } from "@xiaozhi-client/mcp-core";
 import type { InternalMCPServiceConfig } from "./types.js";
@@ -49,8 +50,8 @@ export class MCPService {
       },
     };
 
-    // 适配新 API：将 name 从 config 中分离
-    this.connection = new MCPConnection(name, connectionConfig, callbacks);
+    // 适配新 API：将 name 从 config 中分离，并传入 logger
+    this.connection = new MCPConnection(name, connectionConfig, callbacks, logger);
   }
 
   /**

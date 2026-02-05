@@ -4,6 +4,35 @@
  */
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+
+// =========================
+// 0. 日志接口
+// =========================
+
+/**
+ * 日志级别枚举
+ */
+export enum LogLevel {
+  DEBUG = "debug",
+  INFO = "info",
+  WARN = "warn",
+  ERROR = "error",
+}
+
+/**
+ * 日志接口
+ * 用于依赖注入，支持外部 Logger 实现
+ */
+export interface ILogger {
+  /** 记录调试级别日志 */
+  debug(message: string, ...args: unknown[]): void;
+  /** 记录信息级别日志 */
+  info(message: string, ...args: unknown[]): void;
+  /** 记录警告级别日志 */
+  warn(message: string, ...args: unknown[]): void;
+  /** 记录错误级别日志 */
+  error(message: string, ...args: unknown[]): void;
+}
 import type { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import type { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import type { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
