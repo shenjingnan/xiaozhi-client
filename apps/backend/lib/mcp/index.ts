@@ -6,3 +6,7 @@ export * from "./message.js";
 export * from "@/lib/mcp/cache.js";
 export * from "./custom.js";
 export * from "./log.js";
+export * from "./lifecycle-manager.js";
+export * from "./tool-invoker.js";
+export * from "./retry-manager.js";
+export * from "./config-sync-manager.js";
