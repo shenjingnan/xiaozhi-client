@@ -5,6 +5,7 @@
 
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
+import { MCPError, MCPErrorCode } from "@/errors/mcp-errors.js";
 import { MCPCacheManager } from "@/lib/mcp";
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
@@ -352,12 +353,14 @@ export class MCPToolHandler {
           .map((tool) => tool.name);
 
         if (availableTools.length === 0) {
-          throw new Error(
+          throw MCPError.validationError(
+            MCPErrorCode.TOOL_NOT_FOUND,
             `customMCP 工具 '${toolName}' 不存在。当前没有配置任何 customMCP 工具。请检查 xiaozhi.config.json 中的 customMCP 配置。`
           );
         }
 
-        throw new Error(
+        throw MCPError.validationError(
+          MCPErrorCode.TOOL_NOT_FOUND,
           `customMCP 工具 '${toolName}' 不存在。可用的 customMCP 工具: ${availableTools.join(", ")}。请使用 'xiaozhi mcp list' 查看所有可用工具。`
         );
       }
@@ -379,7 +382,8 @@ export class MCPToolHandler {
           `验证 customMCP 工具 '${toolName}' 配置时出错:`,
           error
         );
-        throw new Error(
+        throw MCPError.validationError(
+          MCPErrorCode.TOOL_VALIDATION_FAILED,
           `customMCP 工具 '${toolName}' 配置验证失败。请检查配置文件中的工具定义。`
         );
       }
@@ -403,7 +407,10 @@ export class MCPToolHandler {
       const targetTool = customTools.find((tool) => tool.name === toolName);
 
       if (!targetTool) {
-        throw new Error(`customMCP 工具 '${toolName}' 不存在`);
+        throw MCPError.validationError(
+          MCPErrorCode.TOOL_NOT_FOUND,
+          `customMCP 工具 '${toolName}' 不存在`
+        );
       }
 
       // 如果工具没有定义 inputSchema，跳过验证
@@ -449,7 +456,10 @@ export class MCPToolHandler {
           errorMessage
         );
 
-        throw new Error(errorMessage);
+        throw MCPError.validationError(
+          MCPErrorCode.TOOL_VALIDATION_FAILED,
+          errorMessage
+        );
       }
 
       this.logger.debug(`customMCP 工具 '${toolName}' 参数验证通过`);
@@ -459,7 +469,8 @@ export class MCPToolHandler {
       }
 
       this.logger.error(`验证 customMCP 工具 '${toolName}' 参数时出错:`, error);
-      throw new Error(
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
         `参数验证过程中发生错误: ${error instanceof Error ? error.message : "未知错误"}`
       );
     }
@@ -1258,7 +1269,10 @@ export class MCPToolHandler {
    */
   private validateWorkflowData(workflow: CozeWorkflow): void {
     if (!workflow) {
-      throw new Error("工作流数据不能为空");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "工作流数据不能为空"
+      );
     }
 
     // 验证必需字段
@@ -1280,7 +1294,10 @@ export class MCPToolHandler {
    */
   private validateWorkflowUpdateData(workflow: Partial<CozeWorkflow>): void {
     if (!workflow) {
-      throw new Error("工作流数据不能为空");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "工作流数据不能为空"
+      );
     }
 
     // 对于更新操作，我们采用更灵活的验证策略
@@ -1292,12 +1309,18 @@ export class MCPToolHandler {
         typeof workflow.workflow_id !== "string" ||
         workflow.workflow_id.trim() === ""
       ) {
-        throw new Error("工作流ID必须是非空字符串");
+        throw MCPError.validationError(
+          MCPErrorCode.TOOL_VALIDATION_FAILED,
+          "工作流ID必须是非空字符串"
+        );
       }
 
       // 验证工作流ID格式（数字字符串）
       if (!/^\d+$/.test(workflow.workflow_id)) {
-        throw new Error("工作流ID格式无效，应为数字字符串");
+        throw MCPError.validationError(
+          MCPErrorCode.TOOL_VALIDATION_FAILED,
+          "工作流ID格式无效，应为数字字符串"
+        );
       }
     }
 
@@ -1307,12 +1330,18 @@ export class MCPToolHandler {
         typeof workflow.workflow_name !== "string" ||
         workflow.workflow_name.trim() === ""
       ) {
-        throw new Error("工作流名称必须是非空字符串");
+        throw MCPError.validationError(
+          MCPErrorCode.TOOL_VALIDATION_FAILED,
+          "工作流名称必须是非空字符串"
+        );
       }
 
       // 验证工作流名称长度
       if (workflow.workflow_name.length > 100) {
-        throw new Error("工作流名称过长，不能超过100个字符");
+        throw MCPError.validationError(
+          MCPErrorCode.TOOL_VALIDATION_FAILED,
+          "工作流名称过长，不能超过100个字符"
+        );
       }
     }
 
@@ -1322,17 +1351,26 @@ export class MCPToolHandler {
         typeof workflow.app_id !== "string" ||
         workflow.app_id.trim() === ""
       ) {
-        throw new Error("应用ID必须是非空字符串");
+        throw MCPError.validationError(
+          MCPErrorCode.TOOL_VALIDATION_FAILED,
+          "应用ID必须是非空字符串"
+        );
       }
 
       // 验证应用ID格式
       if (!/^[a-zA-Z0-9_-]+$/.test(workflow.app_id)) {
-        throw new Error("应用ID格式无效，只能包含字母、数字、下划线和连字符");
+        throw MCPError.validationError(
+          MCPErrorCode.TOOL_VALIDATION_FAILED,
+          "应用ID格式无效，只能包含字母、数字、下划线和连字符"
+        );
       }
 
       // 验证应用ID长度
       if (workflow.app_id.length > 50) {
-        throw new Error("应用ID过长，不能超过50个字符");
+        throw MCPError.validationError(
+          MCPErrorCode.TOOL_VALIDATION_FAILED,
+          "应用ID过长，不能超过50个字符"
+        );
       }
     }
 
@@ -1354,7 +1392,10 @@ export class MCPToolHandler {
     for (const { field, name } of requiredFields) {
       const value = workflow[field as keyof CozeWorkflow];
       if (!value || typeof value !== "string" || value.trim() === "") {
-        throw new Error(`${name}不能为空且必须是非空字符串`);
+        throw MCPError.validationError(
+          MCPErrorCode.TOOL_VALIDATION_FAILED,
+          `${name}不能为空且必须是非空字符串`
+        );
       }
     }
   }
@@ -1365,12 +1406,18 @@ export class MCPToolHandler {
   private validateFieldFormats(workflow: CozeWorkflow): void {
     // 验证工作流ID格式（数字字符串）
     if (!/^\d+$/.test(workflow.workflow_id)) {
-      throw new Error("工作流ID格式无效，应为数字字符串");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "工作流ID格式无效，应为数字字符串"
+      );
     }
 
     // 验证应用ID格式
     if (!/^[a-zA-Z0-9_-]+$/.test(workflow.app_id)) {
-      throw new Error("应用ID格式无效，只能包含字母、数字、下划线和连字符");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "应用ID格式无效，只能包含字母、数字、下划线和连字符"
+      );
     }
 
     // 验证图标URL格式（如果存在）
@@ -1378,7 +1425,10 @@ export class MCPToolHandler {
       try {
         new URL(workflow.icon_url);
       } catch {
-        throw new Error("图标URL格式无效");
+        throw MCPError.validationError(
+          MCPErrorCode.TOOL_VALIDATION_FAILED,
+          "图标URL格式无效"
+        );
       }
     }
 
@@ -1387,14 +1437,20 @@ export class MCPToolHandler {
       workflow.created_at &&
       (!Number.isInteger(workflow.created_at) || workflow.created_at <= 0)
     ) {
-      throw new Error("创建时间格式无效，应为正整数时间戳");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "创建时间格式无效，应为正整数时间戳"
+      );
     }
 
     if (
       workflow.updated_at &&
       (!Number.isInteger(workflow.updated_at) || workflow.updated_at <= 0)
     ) {
-      throw new Error("更新时间格式无效，应为正整数时间戳");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "更新时间格式无效，应为正整数时间戳"
+      );
     }
   }
 
@@ -1411,7 +1467,10 @@ export class MCPToolHandler {
     for (const { field, name, max } of lengthLimits) {
       const value = workflow[field as keyof CozeWorkflow] as string;
       if (value && value.length > max) {
-        throw new Error(`${name}过长，不能超过${max}个字符`);
+        throw MCPError.validationError(
+          MCPErrorCode.TOOL_VALIDATION_FAILED,
+          `${name}过长，不能超过${max}个字符`
+        );
       }
     }
   }
@@ -1423,10 +1482,16 @@ export class MCPToolHandler {
     // 验证创建者信息
     if (workflow.creator) {
       if (!workflow.creator.id || typeof workflow.creator.id !== "string") {
-        throw new Error("创建者ID不能为空且必须是字符串");
+        throw MCPError.validationError(
+          MCPErrorCode.TOOL_VALIDATION_FAILED,
+          "创建者ID不能为空且必须是字符串"
+        );
       }
       if (!workflow.creator.name || typeof workflow.creator.name !== "string") {
-        throw new Error("创建者名称不能为空且必须是字符串");
+        throw MCPError.validationError(
+          MCPErrorCode.TOOL_VALIDATION_FAILED,
+          "创建者名称不能为空且必须是字符串"
+        );
       }
     }
 
@@ -1436,7 +1501,10 @@ export class MCPToolHandler {
       workflow.updated_at &&
       workflow.updated_at < workflow.created_at
     ) {
-      throw new Error("更新时间不能早于创建时间");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "更新时间不能早于创建时间"
+      );
     }
 
     // 验证工作流名称不能包含敏感词
@@ -1451,7 +1519,10 @@ export class MCPToolHandler {
     const lowerName = workflow.workflow_name.toLowerCase();
     for (const word of sensitiveWords) {
       if (lowerName.includes(word)) {
-        throw new Error(`工作流名称不能包含敏感词: ${word}`);
+        throw MCPError.validationError(
+          MCPErrorCode.TOOL_VALIDATION_FAILED,
+          `工作流名称不能包含敏感词: ${word}`
+        );
       }
     }
   }
@@ -1473,7 +1544,10 @@ export class MCPToolHandler {
 
       // 防止无限循环
       if (counter > 999) {
-        throw new Error(`无法为工具生成唯一名称，基础名称: ${baseName}`);
+        throw MCPError.operationError(
+          MCPErrorCode.OPERATION_FAILED,
+          `无法为工具生成唯一名称，基础名称: ${baseName}`
+        );
       }
     }
 
@@ -1522,7 +1596,8 @@ export class MCPToolHandler {
     // 检查是否配置了扣子token
     const cozeConfig = configManager.getCozePlatformConfig();
     if (!cozeConfig || !cozeConfig.token) {
-      throw new Error(
+      throw MCPError.configError(
+        MCPErrorCode.INVALID_CONFIG,
         "未配置扣子API Token，请先在配置中设置 platforms.coze.token"
       );
     }
@@ -1537,7 +1612,10 @@ export class MCPToolHandler {
 
     // 使用configManager的验证方法
     if (!configManager.validateCustomMCPTools([tool])) {
-      throw new Error("生成的工具配置验证失败，请检查工具定义");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "生成的工具配置验证失败，请检查工具定义"
+      );
     }
 
     // JSON Schema验证
@@ -1554,35 +1632,53 @@ export class MCPToolHandler {
    */
   private validateToolStructure(tool: CustomMCPTool): void {
     if (!tool || typeof tool !== "object") {
-      throw new Error("工具配置必须是有效对象");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "工具配置必须是有效对象"
+      );
     }
 
     // 验证必需字段
     const requiredFields = ["name", "description", "inputSchema", "handler"];
     for (const field of requiredFields) {
       if (!(field in tool) || tool[field as keyof CustomMCPTool] == null) {
-        throw new Error(`工具配置缺少必需字段: ${field}`);
+        throw MCPError.validationError(
+          MCPErrorCode.TOOL_VALIDATION_FAILED,
+          `工具配置缺少必需字段: ${field}`
+        );
       }
     }
 
     // 验证字段类型
     if (typeof tool.name !== "string" || tool.name.trim() === "") {
-      throw new Error("工具名称必须是非空字符串");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "工具名称必须是非空字符串"
+      );
     }
 
     if (
       typeof tool.description !== "string" ||
       tool.description.trim() === ""
     ) {
-      throw new Error("工具描述必须是非空字符串");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "工具描述必须是非空字符串"
+      );
     }
 
     if (typeof tool.inputSchema !== "object") {
-      throw new Error("输入参数结构必须是对象");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "输入参数结构必须是对象"
+      );
     }
 
     if (typeof tool.handler !== "object") {
-      throw new Error("处理器配置必须是对象");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "处理器配置必须是对象"
+      );
     }
   }
 
@@ -1591,20 +1687,32 @@ export class MCPToolHandler {
    */
   private validateProxyHandler(handler: ProxyHandlerConfig): void {
     if (!handler || typeof handler !== "object") {
-      throw new Error("HTTP处理器配置不能为空");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "HTTP处理器配置不能为空"
+      );
     }
 
     // 验证处理器类型
     if (handler.type !== "proxy") {
-      throw new Error("处理器类型必须是'proxy'");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "处理器类型必须是'proxy'"
+      );
     }
 
     if (handler.platform === "coze") {
       if (!handler.config.workflow_id) {
-        throw new Error("Coze处理器必须包含有效的workflow_id");
+        throw MCPError.validationError(
+          MCPErrorCode.TOOL_VALIDATION_FAILED,
+          "Coze处理器必须包含有效的workflow_id"
+        );
       }
     } else {
-      throw new Error("不支持的工作流平台");
+      throw MCPError.configError(
+        MCPErrorCode.INVALID_CONFIG,
+        "不支持的工作流平台"
+      );
     }
   }
 
@@ -1613,22 +1721,34 @@ export class MCPToolHandler {
    */
   private validateAuthConfig(auth: { type: string; token?: string }): void {
     if (!auth || typeof auth !== "object") {
-      throw new Error("认证配置必须是对象");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "认证配置必须是对象"
+      );
     }
 
     if (!auth.type || typeof auth.type !== "string") {
-      throw new Error("认证类型不能为空");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "认证类型不能为空"
+      );
     }
 
     const validAuthTypes = ["bearer", "basic", "api_key"];
     if (!validAuthTypes.includes(auth.type)) {
-      throw new Error(`认证类型必须是以下之一: ${validAuthTypes.join(", ")}`);
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        `认证类型必须是以下之一: ${validAuthTypes.join(", ")}`
+      );
     }
 
     // 验证token格式
     if (auth.type === "bearer") {
       if (!auth.token || typeof auth.token !== "string") {
-        throw new Error("Bearer认证必须包含有效的token");
+        throw MCPError.validationError(
+          MCPErrorCode.TOOL_VALIDATION_FAILED,
+          "Bearer认证必须包含有效的token"
+        );
       }
 
       // 验证token格式（应该是环境变量引用或实际token）
@@ -1636,7 +1756,10 @@ export class MCPToolHandler {
         !auth.token.startsWith("${") &&
         !auth.token.match(/^[a-zA-Z0-9_-]+$/)
       ) {
-        throw new Error("Bearer token格式无效");
+        throw MCPError.validationError(
+          MCPErrorCode.TOOL_VALIDATION_FAILED,
+          "Bearer token格式无效"
+        );
       }
     }
   }
@@ -1646,13 +1769,19 @@ export class MCPToolHandler {
    */
   private validateBodyTemplate(bodyTemplate: string): void {
     if (typeof bodyTemplate !== "string") {
-      throw new Error("请求体模板必须是字符串");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "请求体模板必须是字符串"
+      );
     }
 
     try {
       JSON.parse(bodyTemplate);
     } catch {
-      throw new Error("请求体模板必须是有效的JSON格式");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "请求体模板必须是有效的JSON格式"
+      );
     }
 
     // 验证模板变量格式
@@ -1661,7 +1790,10 @@ export class MCPToolHandler {
       for (const templateVar of templateVars) {
         const varName = templateVar.slice(2, -2).trim();
         if (!varName || !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(varName)) {
-          throw new Error(`模板变量格式无效: ${templateVar}`);
+          throw MCPError.validationError(
+            MCPErrorCode.TOOL_VALIDATION_FAILED,
+            `模板变量格式无效: ${templateVar}`
+          );
         }
       }
     }
@@ -1672,20 +1804,32 @@ export class MCPToolHandler {
    */
   private validateJsonSchema(schema: JSONSchema): void {
     if (!schema || typeof schema !== "object") {
-      throw new Error("输入参数结构必须是有效的对象");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "输入参数结构必须是有效的对象"
+      );
     }
 
     if (!schema.type || schema.type !== "object") {
-      throw new Error("输入参数结构的type必须是'object'");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "输入参数结构的type必须是'object'"
+      );
     }
 
     if (!schema.properties || typeof schema.properties !== "object") {
-      throw new Error("输入参数结构必须包含properties字段");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "输入参数结构必须包含properties字段"
+      );
     }
 
     // 验证required字段
     if (schema.required && !Array.isArray(schema.required)) {
-      throw new Error("输入参数结构的required字段必须是数组");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "输入参数结构的required字段必须是数组"
+      );
     }
   }
 
@@ -2531,21 +2675,33 @@ export class MCPToolHandler {
       typeof serverName !== "string" ||
       serverName.trim() === ""
     ) {
-      throw new Error("服务名称不能为空");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "服务名称不能为空"
+      );
     }
 
     if (!toolName || typeof toolName !== "string" || toolName.trim() === "") {
-      throw new Error("工具名称不能为空");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "工具名称不能为空"
+      );
     }
 
     // 验证服务名称格式
     if (!/^[a-zA-Z0-9_-]+$/.test(serverName)) {
-      throw new Error("服务名称格式无效，只能包含字母、数字、下划线和连字符");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "服务名称格式无效，只能包含字母、数字、下划线和连字符"
+      );
     }
 
     // 验证工具名称格式
     if (!/^[a-zA-Z0-9_-]+$/.test(toolName)) {
-      throw new Error("工具名称格式无效，只能包含字母、数字、下划线和连字符");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "工具名称格式无效，只能包含字母、数字、下划线和连字符"
+      );
     }
   }
 
@@ -2559,13 +2715,17 @@ export class MCPToolHandler {
     // 检查服务是否存在
     const mcpServers = configManager.getMcpServers();
     if (!mcpServers[serverName]) {
-      throw new Error(`MCP 服务 "${serverName}" 不存在`);
+      throw MCPError.validationError(
+        MCPErrorCode.SERVER_NOT_FOUND,
+        `MCP 服务 "${serverName}" 不存在`
+      );
     }
 
     // 检查工具是否在服务中存在
     const toolsConfig = configManager.getServerToolsConfig(serverName);
     if (!toolsConfig[toolName]) {
-      throw new Error(
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_NOT_FOUND,
         `工具 "${toolName}" 在服务 "${serverName}" 中不存在或未配置`
       );
     }
