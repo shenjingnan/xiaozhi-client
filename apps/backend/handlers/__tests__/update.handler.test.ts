@@ -302,5 +302,150 @@ describe("UpdateApiHandler", () => {
         "安装请求已接受"
       );
     });
+
+    describe("并发安装防护", () => {
+      test("应该阻止同一版本的并发安装请求", async () => {
+        // Arrange
+        const mockContext1 = createMockContext({
+          req: {
+            json: vi.fn().mockResolvedValue({ version: "1.7.9" }),
+          },
+        } as any);
+
+        const mockContext2 = createMockContext({
+          req: {
+            json: vi.fn().mockResolvedValue({ version: "1.7.9" }),
+          },
+        } as any);
+
+        // 创建一个不会自动完成的 Promise
+        let resolveInstall: () => void;
+        const installPromise = new Promise<void>((resolve) => {
+          resolveInstall = resolve;
+        });
+        mockNPMManager.installVersion.mockReturnValue(installPromise);
+
+        // Act - 第一个请求
+        const firstRequest = updateApiHandler.performUpdate(
+          mockContext1 as unknown as Context
+        );
+
+        // 等待第一个请求开始安装
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        // 第二个请求（相同版本）
+        const secondRequest = updateApiHandler.performUpdate(
+          mockContext2 as unknown as Context
+        );
+
+        // Assert - 第一个请求应该成功
+        await firstRequest;
+        expect(mockContext1.success).toHaveBeenCalledWith(
+          {
+            version: "1.7.9",
+            message: "安装已启动，请查看实时日志",
+          },
+          "安装请求已接受"
+        );
+
+        // 第二个请求应该被拒绝
+        await secondRequest;
+        expect(mockContext2.fail).toHaveBeenCalledWith(
+          "INSTALL_IN_PROGRESS",
+          "已有安装进程正在进行，请等待完成后再试",
+          undefined,
+          409
+        );
+
+        // 只有一个安装被调用
+        expect(mockNPMManager.installVersion).toHaveBeenCalledTimes(1);
+
+        // 清理
+        resolveInstall!();
+      });
+
+      test("应该允许不同版本的并发安装请求", async () => {
+        // Arrange
+        const mockContext1 = createMockContext({
+          req: {
+            json: vi.fn().mockResolvedValue({ version: "1.7.9" }),
+          },
+        } as any);
+
+        const mockContext2 = createMockContext({
+          req: {
+            json: vi.fn().mockResolvedValue({ version: "1.8.0" }),
+          },
+        } as any);
+
+        mockNPMManager.installVersion.mockResolvedValue(undefined);
+
+        // Act - 两个不同版本的请求
+        const [result1, result2] = await Promise.all([
+          updateApiHandler.performUpdate(mockContext1 as unknown as Context),
+          updateApiHandler.performUpdate(mockContext2 as unknown as Context),
+        ]);
+
+        // Assert - 两个请求都应该成功
+        expect(mockContext1.success).toHaveBeenCalledWith(
+          {
+            version: "1.7.9",
+            message: "安装已启动，请查看实时日志",
+          },
+          "安装请求已接受"
+        );
+        expect(mockContext2.success).toHaveBeenCalledWith(
+          {
+            version: "1.8.0",
+            message: "安装已启动，请查看实时日志",
+          },
+          "安装请求已接受"
+        );
+
+        // 两个安装都被调用
+        expect(mockNPMManager.installVersion).toHaveBeenCalledWith("1.7.9");
+        expect(mockNPMManager.installVersion).toHaveBeenCalledWith("1.8.0");
+      });
+
+      test("安装完成后应该清理标记，允许重新安装", async () => {
+        // Arrange
+        const mockContext1 = createMockContext({
+          req: {
+            json: vi.fn().mockResolvedValue({ version: "1.7.9" }),
+          },
+        } as any);
+
+        const mockContext2 = createMockContext({
+          req: {
+            json: vi.fn().mockResolvedValue({ version: "1.7.9" }),
+          },
+        } as any);
+
+        mockNPMManager.installVersion.mockResolvedValue(undefined);
+
+        // Act - 第一个请求
+        await updateApiHandler.performUpdate(
+          mockContext1 as unknown as Context
+        );
+
+        // 等待安装完成
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        // 第二个请求（相同版本，但在安装完成后）
+        await updateApiHandler.performUpdate(
+          mockContext2 as unknown as Context
+        );
+
+        // 等待第二个安装完成
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        // Assert - 两个请求都应该成功
+        expect(mockContext1.success).toHaveBeenCalled();
+        expect(mockContext2.success).toHaveBeenCalled();
+
+        // 两个安装都被调用
+        expect(mockNPMManager.installVersion).toHaveBeenCalledTimes(2);
+      });
+    });
   });
 });

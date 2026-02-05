@@ -50,12 +50,10 @@ export class UpdateApiHandler extends BaseHandler {
       }
 
       const { version } = parseResult.data;
+      const installKey = `install-${version}`;
 
       // 检查是否有正在进行的安装
-      const hasActiveInstall = Array.from(this.activeInstalls.values()).some(
-        (v) => v
-      );
-      if (hasActiveInstall) {
+      if (this.activeInstalls.has(installKey)) {
         return c.fail(
           "INSTALL_IN_PROGRESS",
           "已有安装进程正在进行，请等待完成后再试",
@@ -64,11 +62,20 @@ export class UpdateApiHandler extends BaseHandler {
         );
       }
 
+      // 标记安装开始
+      this.activeInstalls.set(installKey, true);
+
       const logger = c.get("logger");
-      // 立即返回响应，安装过程通过 WebSocket 推送
-      this.npmManager.installVersion(version).catch((error) => {
-        logger.error("安装过程失败:", error);
-      });
+      // 异步执行安装，完成后清理标记
+      this.npmManager
+        .installVersion(version)
+        .catch((error) => {
+          logger.error("安装过程失败:", error);
+        })
+        .finally(() => {
+          // 清理安装标记
+          this.activeInstalls.delete(installKey);
+        });
 
       return c.success(
         {
