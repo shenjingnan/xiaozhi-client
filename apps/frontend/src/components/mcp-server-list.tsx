@@ -72,49 +72,57 @@ export function McpServerList({
   // const config = useConfig(); // 不再使用配置更新，改为使用 API
 
   // 添加工具列表状态管理
-  const [enabledTools, setEnabledTools] = useState<Array<ToolWithServerInfo>>([]);
-  const [disabledTools, setDisabledTools] = useState<Array<ToolWithServerInfo>>([]);
+  const [enabledTools, setEnabledTools] = useState<Array<ToolWithServerInfo>>(
+    []
+  );
+  const [disabledTools, setDisabledTools] = useState<Array<ToolWithServerInfo>>(
+    []
+  );
 
   // 格式化工具信息的辅助函数
-  const formatTool = useCallback((tool: CustomMCPToolWithStats, enable: boolean) => {
-    const { serviceName, toolName } = (() => {
-      // 安全检查：确保 handler 存在
-      if (!tool || !tool.handler) {
-        return {
-          serviceName: UNKNOWN_SERVICE_NAME,
-          toolName: tool?.name || UNKNOWN_SERVICE_NAME,
-        };
-      }
+  const formatTool = useCallback(
+    (tool: CustomMCPToolWithStats, enable: boolean) => {
+      const { serviceName, toolName } = (() => {
+        // 安全检查：确保 handler 存在
+        if (!tool || !tool.handler) {
+          return {
+            serviceName: UNKNOWN_SERVICE_NAME,
+            toolName: tool?.name || UNKNOWN_SERVICE_NAME,
+          };
+        }
 
-      if (tool.handler.type === "mcp") {
+        if (tool.handler.type === "mcp") {
+          return {
+            serviceName:
+              tool.handler.config?.serviceName || UNKNOWN_SERVICE_NAME,
+            toolName: tool.handler.config?.toolName || tool.name,
+          };
+        }
+        if (tool.handler.type === "proxy" && tool.handler.platform === "coze") {
+          return {
+            serviceName: "customMCP",
+            toolName: tool.name,
+          };
+        }
         return {
-          serviceName: tool.handler.config?.serviceName || UNKNOWN_SERVICE_NAME,
-          toolName: tool.handler.config?.toolName || tool.name,
-        };
-      }
-      if (tool.handler.type === "proxy" && tool.handler.platform === "coze") {
-        return {
-          serviceName: "customMCP",
+          serviceName: CUSTOM_SERVICE_NAME,
           toolName: tool.name,
         };
-      }
-      return {
-        serviceName: CUSTOM_SERVICE_NAME,
-        toolName: tool.name,
-      };
-    })();
+      })();
 
-    return {
-      serverName: serviceName,
-      toolName,
-      enable,
-      name: tool.name,
-      description: tool.description,
-      usageCount: tool.usageCount,
-      lastUsedTime: tool.lastUsedTime,
-      inputSchema: tool.inputSchema,
-    };
-  }, []);
+      return {
+        serverName: serviceName,
+        toolName,
+        enable,
+        name: tool.name,
+        description: tool.description,
+        usageCount: tool.usageCount,
+        lastUsedTime: tool.lastUsedTime,
+        inputSchema: tool.inputSchema,
+      };
+    },
+    []
+  );
 
   // 获取工具列表
   const fetchTools = useCallback(async () => {
@@ -347,7 +355,9 @@ export function McpServerList({
   void _handleDebugTool;
 
   // 从工具对象构建 CozeWorkflow 对象
-  const buildCozeWorkflowFromTool = (tool: ToolWithServerInfo): CozeWorkflow => {
+  const buildCozeWorkflowFromTool = (
+    tool: ToolWithServerInfo
+  ): CozeWorkflow => {
     // 如果是 coze 工具，尝试从 handler 中提取信息
     if (tool.serverName === "coze" && tool.handler?.type === "proxy") {
       const workflowId = tool.handler.config?.workflow_id;

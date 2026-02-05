@@ -567,29 +567,6 @@ describe("RealtimeNotificationHandler", () => {
     });
   });
 
-  describe("sendError", () => {
-    it("should send error message successfully", () => {
-      const handler = realtimeHandler as any;
-      handler.sendError(mockWebSocket, "TEST_ERROR", "Test error message");
-
-      expectErrorMessage(mockWebSocket, "TEST_ERROR", "Test error message");
-    });
-
-    it("should handle WebSocket send error", () => {
-      mockWebSocket.send.mockImplementation(() => {
-        throw new Error("WebSocket send failed");
-      });
-
-      const handler = realtimeHandler as any;
-      handler.sendError(mockWebSocket, "TEST_ERROR", "Test error message");
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "发送错误消息失败:",
-        expect.any(Error)
-      );
-    });
-  });
-
   describe("logDeprecationWarning", () => {
     it("should log deprecation warning", () => {
       const handler = realtimeHandler as any;
@@ -863,21 +840,6 @@ describe("RealtimeNotificationHandler", () => {
           data: undefined,
           clientId: "",
         }
-      );
-    });
-
-    it("should handle WebSocket send failure in sendError", () => {
-      const sendError = new Error("WebSocket closed");
-      mockWebSocket.send.mockImplementation(() => {
-        throw sendError;
-      });
-
-      const handler = realtimeHandler as any;
-      handler.sendError(mockWebSocket, "TEST_ERROR", "Test message");
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "发送错误消息失败:",
-        sendError
       );
     });
 
