@@ -1,18 +1,24 @@
 /**
  * CustomMCP 工具类型定义
  * 前后端共享的权威类型定义
+ *
+ * 这是项目中 CustomMCPTool 相关类型的唯一权威来源。
+ * 所有其他包都应该从此文件导入类型，而不是定义自己的版本。
  */
 
 import type { JSONSchema } from "./schema.js";
 
 /**
  * 工具处理器配置联合类型
+ * 支持多种工具处理器类型
  */
 export type ToolHandlerConfig =
   | MCPHandlerConfig
   | ProxyHandlerConfig
   | HttpHandlerConfig
-  | FunctionHandlerConfig;
+  | FunctionHandlerConfig
+  | ScriptHandlerConfig
+  | ChainHandlerConfig;
 
 /**
  * MCP 处理器配置
@@ -33,7 +39,19 @@ export interface MCPHandlerConfig {
 export interface ProxyHandlerConfig {
   type: "proxy";
   platform: "coze" | "openai" | "anthropic" | "custom";
-  config: Record<string, unknown>;
+  config: {
+    // Coze 平台配置
+    workflow_id?: string;
+    bot_id?: string;
+    api_key?: string;
+    base_url?: string;
+    // 通用配置
+    timeout?: number;
+    retry_count?: number;
+    retry_delay?: number;
+    headers?: Record<string, string>;
+    params?: Record<string, unknown>;
+  };
 }
 
 /**
@@ -44,8 +62,25 @@ export interface HttpHandlerConfig {
   type: "http";
   config: {
     url: string;
-    method?: string;
+    method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
     headers?: Record<string, string>;
+    timeout?: number;
+    retry_count?: number;
+    retry_delay?: number;
+    auth?: {
+      type: "bearer" | "basic" | "api_key";
+      token?: string;
+      username?: string;
+      password?: string;
+      api_key?: string;
+      api_key_header?: string;
+    };
+    body_template?: string;
+    response_mapping?: {
+      success_path?: string;
+      error_path?: string;
+      data_path?: string;
+    };
   };
 }
 
@@ -58,6 +93,35 @@ export interface FunctionHandlerConfig {
   config: {
     module: string;
     function: string;
+    timeout?: number;
+    context?: Record<string, unknown>;
+  };
+}
+
+/**
+ * 脚本处理器配置
+ * 用于脚本工具
+ */
+export interface ScriptHandlerConfig {
+  type: "script";
+  config: {
+    script: string;
+    interpreter?: "node" | "python" | "bash";
+    timeout?: number;
+    env?: Record<string, string>;
+  };
+}
+
+/**
+ * 链式处理器配置
+ * 用于链式调用多个工具
+ */
+export interface ChainHandlerConfig {
+  type: "chain";
+  config: {
+    tools: string[];
+    mode: "sequential" | "parallel";
+    error_handling: "stop" | "continue" | "retry";
   };
 }
 

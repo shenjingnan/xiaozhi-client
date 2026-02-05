@@ -237,6 +237,15 @@ export function ensureToolJSONSchema(schema: JSONSchema): {
 
 /**
  * CustomMCP 工具类型定义
+ *
+ * @deprecated 请从 @xiaozhi-client/shared-types 导入
+ * 此处保留用于向后兼容
+ */
+/**
+ * CustomMCP 工具类型定义
+ *
+ * 注意：此定义应与 @xiaozhi-client/shared-types 中的 CustomMCPTool 保持一致
+ * @deprecated 请从 @xiaozhi-client/shared-types 导入（仅在使用此包的项目中）
  */
 export interface CustomMCPTool {
   name: string;
