@@ -55,6 +55,7 @@ vi.mock("../../Logger", () => {
 vi.mock("@/services/index.js", () => {
   const mockEventBus = {
     onEvent: vi.fn().mockReturnThis(),
+    offEvent: vi.fn().mockReturnThis(),
     emit: vi.fn(),
     emitEvent: vi.fn(),
     removeAllListeners: vi.fn(),
@@ -1727,6 +1728,9 @@ describe("WebServer 集成测试", () => {
     it("应该设置接入点状态变更监听器", async () => {
       webServer = new WebServer(currentPort);
 
+      // 必须先启动 WebServer，监听器才会注册
+      await webServer.start();
+
       // 验证事件总线 onEvent 方法被调用
       const { getEventBus } = await import("@/services/index.js");
       const mockEventBus = getEventBus();
@@ -1734,6 +1738,8 @@ describe("WebServer 集成测试", () => {
         "endpoint:status:changed",
         expect.any(Function)
       );
+
+      await webServer.stop();
     });
 
     it("应该在端点状态变更时广播事件", async () => {
