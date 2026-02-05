@@ -22,17 +22,18 @@
  *
  * 如何修改为自己的服务：
  * 1. 替换 `endpointUrl` 为你的小智接入点地址
- * 2. 在 `mcpServers` 中添加或修改你的 MCP 服务配置
+ * 2. 使用 `mcpManager.addServer()` 添加或修改你的 MCP 服务配置
  * 3. stdio 类型配置示例：
  *    ```typescript
- *    myService: {
+ *    mcpManager.addServer("myService", {
  *      command: "npx",
  *      args: ["-y", "@your-org/your-mcp@version"]
- *    }
+ *    });
  *    ```
  */
 
-import { Endpoint } from "@xiaozhi-client/endpoint";
+import { Endpoint, SharedMCPAdapter } from "@xiaozhi-client/endpoint";
+import { MCPManager } from "@xiaozhi-client/mcp-core";
 
 /**
  * 主函数
@@ -49,22 +50,16 @@ async function main(): Promise<void> {
   console.log(`  URL: ${endpointUrl.slice(0, 50)}...`);
   console.log();
 
-  // 2. 创建 Endpoint 实例
-  // 配置要聚合的 MCP 服务器
-  const endpoint = new Endpoint(endpointUrl, {
-    // MCP 服务器配置
-    mcpServers: {
-      // 计算器 MCP 服务（stdio 类型）
-      calculator: {
-        command: "npx",
-        args: [
-          "-y",
-          "@xiaozhi-client/calculator-mcp",
-        ],
-      },
-    },
-    // 可选：重连延迟（毫秒），默认 2000
-    reconnectDelay: 2000,
+  // 2. 创建并配置 MCPManager
+  const mcpManager = new MCPManager();
+
+  // 添加计算器 MCP 服务（stdio 类型）
+  mcpManager.addServer("calculator", {
+    command: "npx",
+    args: [
+      "-y",
+      "@xiaozhi-client/calculator-mcp",
+    ],
   });
 
   console.log("MCP 服务配置:");
@@ -72,10 +67,28 @@ async function main(): Promise<void> {
   console.log("    提供数学表达式计算功能");
   console.log();
 
+  // 3. 连接所有 MCP 服务
+  console.log("正在连接 MCP 服务...");
+  console.log("(首次运行可能需要下载 MCP 服务包，请耐心等待...)");
+  console.log();
+
+  await mcpManager.connect();
+
+  console.log("✅ MCP 服务已连接");
+  console.log();
+
+  // 4. 创建 SharedMCPAdapter
+  const adapter = new SharedMCPAdapter(mcpManager);
+
+  // 5. 创建 Endpoint 实例（传入适配器）
+  const endpoint = new Endpoint(endpointUrl, adapter, {
+    // 可选：重连延迟（毫秒），默认 2000
+    reconnectDelay: 2000,
+  });
+
   try {
-    // 3. 连接到小智接入点
+    // 6. 连接到小智接入点
     console.log("正在连接到小智接入点...");
-    console.log("(首次运行可能需要下载 MCP 服务包，请耐心等待...)");
     console.log();
 
     await endpoint.connect();
@@ -83,7 +96,7 @@ async function main(): Promise<void> {
     console.log("✅ WebSocket 连接已建立");
     console.log();
 
-    // 4. 获取连接状态
+    // 7. 获取连接状态
     const status = endpoint.getStatus();
     console.log("连接状态:");
     console.log(`  已连接: ${status.connected ? "是" : "否"}`);
@@ -92,7 +105,7 @@ async function main(): Promise<void> {
     console.log(`  可用工具数: ${status.availableTools}`);
     console.log();
 
-    // 5. 获取工具列表
+    // 8. 获取工具列表
     const tools = endpoint.getTools();
     console.log(`发现 ${tools.length} 个工具:`);
     console.log();
@@ -112,7 +125,7 @@ async function main(): Promise<void> {
     }
     console.log();
 
-    // 6. 保持连接供测试使用
+    // 9. 保持连接供测试使用
     console.log("=".repeat(50));
     console.log("连接已建立，服务正在运行...");
     console.log();
@@ -162,7 +175,7 @@ async function main(): Promise<void> {
       // 忽略获取状态的错误
     }
   } finally {
-    // 7. 断开连接
+    // 10. 断开连接
     console.log();
     console.log("正在断开连接...");
     await endpoint.disconnect();
