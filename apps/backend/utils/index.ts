@@ -6,3 +6,6 @@
 export { PathUtils } from "./path-utils.js";
 // 重新导出 @xiaozhi-client/version 以保持向后兼容
 export { VersionUtils } from "@xiaozhi-client/version";
+// WebSocket 辅助工具
+export { sendWebSocketError } from "./websocket-helper.js";
+export type { WebSocketLike } from "./websocket-helper.js";
