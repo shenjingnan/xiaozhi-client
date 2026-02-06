@@ -1,6 +1,18 @@
+import { configManager } from "@xiaozhi-client/config";
 import type { ConnectionStatus } from "@xiaozhi-client/endpoint";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { EndpointHandler } from "../endpoint.handler.js";
+
+// Mock requireEndpointManager 和 requireConfigManager 函数
+vi.mock("@/types/hono.context.js", () => ({
+  requireMCPServiceManager: vi.fn(),
+  getMCPServiceManager: vi.fn(),
+  requireEndpointManager: vi.fn((c: any) => c.get("endpointManager")),
+  getEndpointManager: vi.fn((c: any) => c.get("endpointManager")),
+  requireConfigManager: vi.fn(() => configManager),
+  getConfigManager: vi.fn(() => configManager),
+  createApp: vi.fn(),
+}));
 
 // Mock dependencies
 vi.mock("../../Logger.js", () => ({
@@ -95,8 +107,8 @@ describe("EndpointHandler", () => {
     // 获取 mockEventBus 的 emitEvent 方法
     mockEmitEvent = mockEventBusInstance.emitEvent;
 
-    // Create handler instance - getEventBus 已经在模块级别被 mock
-    handler = new EndpointHandler(mockConnectionManager as any, configManager);
+    // Create handler instance - 使用 Context-based 模式，不需要构造函数参数
+    handler = new EndpointHandler();
 
     // 手动替换 handler 的 eventBus，确保使用 mock 实例
     // biome-ignore lint/complexity/useLiteralKeys: Need to access private property for testing
@@ -114,6 +126,12 @@ describe("EndpointHandler", () => {
             error: vi.fn(),
             warn: vi.fn(),
           };
+        }
+        if (key === "endpointManager") {
+          return mockConnectionManager;
+        }
+        if (key === "configManager") {
+          return configManager;
         }
         return undefined;
       }),

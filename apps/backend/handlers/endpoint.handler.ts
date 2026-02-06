@@ -3,6 +3,10 @@ import { logger } from "@/Logger.js";
 import type { EventBus } from "@/services/event-bus.service.js";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { AppContext } from "@/types/hono.context.js";
+import {
+  requireConfigManager,
+  requireEndpointManager,
+} from "@/types/hono.context.js";
 import type { ConfigManager } from "@xiaozhi-client/config";
 import type {
   ConnectionStatus,
@@ -22,18 +26,29 @@ interface ValidationResult {
  * 端点 API 处理器
  * 支持通过 HTTP API 动态管理端点（添加、删除、连接、断开、查询状态）
  * 端点变更会自动同步到配置文件，确保重启后状态保持一致
+ * 使用 Context-based 依赖注入模式，从 Hono Context 获取依赖
  */
 export class EndpointHandler {
   private logger: Logger;
-  private endpointManager: EndpointManager;
-  private configManager: ConfigManager;
   private eventBus: EventBus;
 
-  constructor(endpointManager: EndpointManager, configManager: ConfigManager) {
+  constructor() {
     this.logger = logger;
-    this.endpointManager = endpointManager;
-    this.configManager = configManager;
     this.eventBus = getEventBus();
+  }
+
+  /**
+   * 从 Context 获取 EndpointManager 实例
+   */
+  private getEndpointManager(c: Context<AppContext>): EndpointManager {
+    return requireEndpointManager(c);
+  }
+
+  /**
+   * 从 Context 获取 ConfigManager 实例
+   */
+  private getConfigManager(_c: Context<AppContext>): ConfigManager {
+    return requireConfigManager();
   }
 
   /**
@@ -104,6 +119,7 @@ export class EndpointHandler {
    * POST /api/endpoint/status
    */
   async getEndpointStatus(c: Context<AppContext>): Promise<Response> {
+    const endpointManager = this.getEndpointManager(c);
     const parseResult = await this.parseEndpointFromBody(
       c,
       "ENDPOINT_STATUS_READ_ERROR"
@@ -116,7 +132,7 @@ export class EndpointHandler {
     this.logger.debug(`处理获取接入点状态请求: ${endpoint}`);
     try {
       // 获取连接状态
-      const connectionStatus = this.endpointManager.getConnectionStatus();
+      const connectionStatus = endpointManager.getConnectionStatus();
       const endpointStatus = connectionStatus.find(
         (status: ConnectionStatus) => status.endpoint === endpoint
       );
@@ -143,6 +159,7 @@ export class EndpointHandler {
    * POST /api/endpoint/connect
    */
   async connectEndpoint(c: Context<AppContext>): Promise<Response> {
+    const endpointManager = this.getEndpointManager(c);
     const parseResult = await this.parseEndpointFromBody(
       c,
       "ENDPOINT_CONNECT_ERROR"
@@ -155,7 +172,7 @@ export class EndpointHandler {
     this.logger.info(`处理接入点连接请求: ${endpoint}`);
     try {
       // 获取端点实例
-      const endpointInstance = this.endpointManager.getEndpoint(endpoint);
+      const endpointInstance = endpointManager.getEndpoint(endpoint);
 
       if (!endpointInstance) {
         return c.fail(
@@ -167,11 +184,10 @@ export class EndpointHandler {
       }
 
       // 执行连接操作
-      await this.endpointManager.connect(endpoint);
+      await endpointManager.connect(endpoint);
 
       // 获取连接后的状态
-      const updatedConnectionStatus =
-        this.endpointManager.getConnectionStatus();
+      const updatedConnectionStatus = endpointManager.getConnectionStatus();
       const endpointStatus = updatedConnectionStatus.find(
         (status: ConnectionStatus) => status.endpoint === endpoint
       );
@@ -214,6 +230,7 @@ export class EndpointHandler {
    * POST /api/endpoint/disconnect
    */
   async disconnectEndpoint(c: Context<AppContext>): Promise<Response> {
+    const endpointManager = this.getEndpointManager(c);
     const parseResult = await this.parseEndpointFromBody(
       c,
       "ENDPOINT_DISCONNECT_ERROR"
@@ -226,18 +243,17 @@ export class EndpointHandler {
     this.logger.info(`处理接入点断开请求: ${endpoint}`);
     try {
       // 获取端点实例
-      const endpointInstance = this.endpointManager.getEndpoint(endpoint);
+      const endpointInstance = endpointManager.getEndpoint(endpoint);
 
       if (!endpointInstance) {
         return c.fail("ENDPOINT_NOT_FOUND", "端点不存在", undefined, 500);
       }
 
       // 执行断开操作
-      await this.endpointManager.disconnect(endpoint);
+      await endpointManager.disconnect(endpoint);
 
       // 获取断开后的状态
-      const updatedConnectionStatus =
-        this.endpointManager.getConnectionStatus();
+      const updatedConnectionStatus = endpointManager.getConnectionStatus();
       const endpointStatus = updatedConnectionStatus.find(
         (status: ConnectionStatus) => status.endpoint === endpoint
       );
@@ -277,6 +293,8 @@ export class EndpointHandler {
    * 流程：验证 URL → 检查存在性 → 创建实例 → 添加到管理器 → 连接 → 更新配置
    */
   async addEndpoint(c: Context<AppContext>): Promise<Response> {
+    const endpointManager = this.getEndpointManager(c);
+    const configManager = this.getConfigManager(c);
     const parseResult = await this.parseEndpointFromBody(
       c,
       "ENDPOINT_ADD_ERROR"
@@ -301,17 +319,17 @@ export class EndpointHandler {
       }
 
       // 2. 检查端点是否已存在
-      const existingEndpoint = this.endpointManager.getEndpoint(endpoint);
+      const existingEndpoint = endpointManager.getEndpoint(endpoint);
       if (existingEndpoint) {
         return c.fail("ENDPOINT_ALREADY_EXISTS", "端点已存在", undefined, 500);
       }
 
       // 3. 添加端点到管理器（使用 URL 字符串）
-      this.endpointManager.addEndpoint(endpoint);
+      endpointManager.addEndpoint(endpoint);
       this.logger.debug(`端点已添加到管理器: ${endpoint}`);
 
       // 4. 获取新添加的端点实例
-      const newEndpoint = this.endpointManager.getEndpoint(endpoint);
+      const newEndpoint = endpointManager.getEndpoint(endpoint);
       if (!newEndpoint) {
         return c.fail(
           "ENDPOINT_NOT_FOUND_AFTER_ADD",
@@ -323,7 +341,7 @@ export class EndpointHandler {
 
       // 5. 连接新端点
       try {
-        await this.endpointManager.connect(endpoint);
+        await endpointManager.connect(endpoint);
         this.logger.debug(`端点已连接: ${endpoint}`);
       } catch (connectError) {
         this.logger.warn(
@@ -335,7 +353,7 @@ export class EndpointHandler {
 
       // 6. 更新配置文件
       try {
-        this.configManager.addMcpEndpoint(endpoint);
+        configManager.addMcpEndpoint(endpoint);
         this.logger.debug(`端点已添加到配置文件: ${endpoint}`);
       } catch (configError) {
         this.logger.error(`添加端点到配置文件失败: ${endpoint}`, configError);
@@ -351,12 +369,12 @@ export class EndpointHandler {
           );
         }
         // 从管理器移除端点
-        this.endpointManager.removeEndpoint(newEndpoint);
+        endpointManager.removeEndpoint(newEndpoint);
         throw configError;
       }
 
       // 8. 获取连接后的状态
-      const connectionStatus = this.endpointManager.getConnectionStatus();
+      const connectionStatus = endpointManager.getConnectionStatus();
       const endpointStatus = connectionStatus.find(
         (status: ConnectionStatus) => status.endpoint === endpoint
       );
@@ -400,6 +418,8 @@ export class EndpointHandler {
    * 流程：断开连接 → 从管理器移除 → 更新配置文件
    */
   async removeEndpoint(c: Context<AppContext>): Promise<Response> {
+    const endpointManager = this.getEndpointManager(c);
+    const configManager = this.getConfigManager(c);
     const parseResult = await this.parseEndpointFromBody(
       c,
       "ENDPOINT_REMOVE_ERROR"
@@ -413,7 +433,7 @@ export class EndpointHandler {
 
     try {
       // 检查端点是否存在
-      const endpointInstance = this.endpointManager.getEndpoint(endpoint);
+      const endpointInstance = endpointManager.getEndpoint(endpoint);
       if (!endpointInstance) {
         return c.fail("ENDPOINT_NOT_FOUND", "端点不存在", undefined, 500);
       }
@@ -423,7 +443,7 @@ export class EndpointHandler {
 
       // 先从配置文件移除端点，确保配置与运行时状态保持一致
       try {
-        this.configManager.removeMcpEndpoint(endpoint);
+        configManager.removeMcpEndpoint(endpoint);
         this.logger.debug(`端点已从配置文件中移除: ${endpoint}`);
       } catch (error) {
         this.logger.error(`从配置文件移除端点失败: ${endpoint}`, error);
@@ -434,7 +454,7 @@ export class EndpointHandler {
       // 再从管理器移除端点
       // EndpointManager.removeEndpoint 内部会再次调用 disconnect（幂等操作）
       // 并清理状态和发射 endpointRemoved 事件
-      this.endpointManager.removeEndpoint(endpointInstance);
+      endpointManager.removeEndpoint(endpointInstance);
       this.logger.debug(`端点已从管理器中移除: ${endpoint}`);
 
       // 发送事件通知
