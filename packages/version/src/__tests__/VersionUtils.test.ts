@@ -2,7 +2,7 @@
  * VersionUtils 单元测试
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { VersionUtils } from "../VersionUtils.js";
 
 describe("VersionUtils", () => {
@@ -21,8 +21,7 @@ describe("VersionUtils", () => {
     it("应该返回有效的版本号格式", () => {
       const version = VersionUtils.getVersion();
       // 版本号应该是数字点分隔格式，或者 "unknown"
-      const isValid =
-        version === "unknown" || /^\d+\.\d+\.\d+/.test(version);
+      const isValid = version === "unknown" || /^\d+\.\d+\.\d+/.test(version);
       expect(isValid).toBe(true);
     });
 
@@ -151,7 +150,9 @@ describe("VersionUtils", () => {
 
     it("应该接受带预发布和构建元数据的版本号", () => {
       expect(VersionUtils.isValidVersion("1.0.0-alpha+001")).toBe(true);
-      expect(VersionUtils.isValidVersion("1.0.0-beta+exp.sha.5114f85")).toBe(true);
+      expect(VersionUtils.isValidVersion("1.0.0-beta+exp.sha.5114f85")).toBe(
+        true
+      );
     });
 
     it("应该拒绝无效的版本号", () => {
@@ -208,7 +209,9 @@ describe("VersionUtils", () => {
       // 获取版本号，即使在某些环境中无法读取 package.json
       // 也应该返回 "unknown" 或有效的版本号
       const version = VersionUtils.getVersion();
-      expect(["unknown", "1.9.7"].includes(version) || /^\d+\.\d+\.\d+/.test(version)).toBe(true);
+      expect(
+        ["unknown", "1.9.7"].includes(version) || /^\d+\.\d+\.\d+/.test(version)
+      ).toBe(true);
     });
 
     it("应该处理 getRuntimeVersionInfo 的错误情况", () => {
