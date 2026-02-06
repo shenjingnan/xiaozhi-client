@@ -1,3 +1,17 @@
+/**
+ * MCP 服务管理 API 处理器
+ *
+ * 负责处理 MCP 服务的动态管理操作，包括：
+ * - 服务的添加、删除、更新
+ * - 服务的启动、停止、重启
+ * - 服务状态查询
+ * - 工具列表管理和查询
+ * - 配置验证和持久化
+ *
+ * 该处理器通过 MCPServiceManager 管理多个 MCP 服务实例，
+ * 并通过 EventBus 响应服务状态变化事件。
+ */
+
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import { ErrorCategory, MCPError, MCPErrorCode } from "@/errors/mcp-errors.js";
