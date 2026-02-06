@@ -27,6 +27,7 @@ import {
 } from "./types.js";
 import { validateToolCallParams } from "./utils.js";
 import { sliceEndpoint } from "./utils.js";
+import { createLogger, type Logger } from "./logger.js";
 
 // 导出错误类型供外部使用
 export {
@@ -45,6 +46,7 @@ export class Endpoint {
   private connectionStatus = false;
   private serverInitialized = false;
   private mcpAdapter: IMCPServiceManager;
+  private logger: Logger;
 
   // 连接状态管理
   private connectionState: ConnectionState = ConnectionState.DISCONNECTED;
@@ -76,6 +78,9 @@ export class Endpoint {
 
     // 使用注入的 MCP 管理器
     this.mcpAdapter = mcpManager;
+
+    // 初始化 Logger
+    this.logger = createLogger("Endpoint");
   }
 
   /**
@@ -98,7 +103,7 @@ export class Endpoint {
         inputSchema: ensureToolJSONSchemaFn(toolInfo.inputSchema),
       }));
     } catch (error) {
-      console.error(
+      this.logger.error(
         `获取工具列表失败: ${error instanceof Error ? error.message : String(error)}`
       );
       return [];
@@ -128,7 +133,7 @@ export class Endpoint {
    */
   private async attemptConnection(): Promise<void> {
     this.connectionState = ConnectionState.CONNECTING;
-    console.debug(`正在连接小智接入点: ${sliceEndpoint(this.endpointUrl)}`);
+    this.logger.debug(`正在连接小智接入点: ${sliceEndpoint(this.endpointUrl)}`);
 
     return new Promise((resolve, reject) => {
       // 设置连接超时
@@ -150,7 +155,7 @@ export class Endpoint {
           const message: MCPMessage = JSON.parse(data.toString());
           this.handleMessage(message);
         } catch (error) {
-          console.error("MCP 消息解析错误:", error);
+          this.logger.error("MCP 消息解析错误:", error);
         }
       });
 
@@ -178,7 +183,7 @@ export class Endpoint {
     this.connectionStatus = true;
     this.connectionState = ConnectionState.CONNECTED;
 
-    console.debug("MCP WebSocket 连接已建立");
+    this.logger.debug("MCP WebSocket 连接已建立");
   }
 
   /**
@@ -194,7 +199,7 @@ export class Endpoint {
       this.connectionTimeout = null;
     }
 
-    console.error("MCP WebSocket 错误:", error.message);
+    this.logger.error("MCP WebSocket 错误:", error.message);
 
     // 清理当前连接
     this.cleanupConnection();
@@ -207,7 +212,7 @@ export class Endpoint {
     this.connectionStatus = false;
     this.serverInitialized = false;
     this.connectionState = ConnectionState.DISCONNECTED;
-    console.info(`小智连接已关闭 (代码: ${code}, 原因: ${reason})`);
+    this.logger.info(`小智连接已关闭 (代码: ${code}, 原因: ${reason})`);
   }
 
   /**
@@ -225,7 +230,7 @@ export class Endpoint {
           this.ws.terminate();
         }
       } catch (error) {
-        console.debug("WebSocket 关闭时出现错误（已忽略）:", error);
+        this.logger.debug("WebSocket 关闭时出现错误（已忽略）:", error);
       }
 
       this.ws = null;
@@ -249,10 +254,10 @@ export class Endpoint {
    * 处理 MCP 消息
    */
   private handleMessage(message: MCPMessage): void {
-    console.debug("收到 MCP 消息:", JSON.stringify(message, null, 2));
+    this.logger.debug("收到 MCP 消息:", JSON.stringify(message, null, 2));
 
     if (!message.method) {
-      console.debug("收到没有 method 字段的消息，忽略");
+      this.logger.debug("收到没有 method 字段的消息，忽略");
       return;
     }
 
@@ -271,30 +276,30 @@ export class Endpoint {
           },
         });
         this.serverInitialized = true;
-        console.debug("MCP 服务器初始化完成");
+        this.logger.debug("MCP 服务器初始化完成");
         break;
 
       case "tools/list": {
         const toolsList = this.getTools();
         this.sendResponse(message.id, { tools: toolsList });
-        console.debug(`MCP 工具列表已发送 (${toolsList.length}个工具)`);
+        this.logger.debug(`MCP 工具列表已发送 (${toolsList.length}个工具)`);
         break;
       }
 
       case "tools/call": {
         this.handleToolCall(message).catch((error) => {
-          console.error("处理工具调用时发生未捕获错误:", error);
+          this.logger.error("处理工具调用时发生未捕获错误:", error);
         });
         break;
       }
 
       case "ping":
         this.sendResponse(message.id, {});
-        console.debug("回应 MCP ping 消息");
+        this.logger.debug("回应 MCP ping 消息");
         break;
 
       default:
-        console.warn(`未知的 MCP 请求: ${message.method}`);
+        this.logger.warn(`未知的 MCP 请求: ${message.method}`);
     }
   }
 
@@ -302,7 +307,7 @@ export class Endpoint {
    * 发送响应消息
    */
   private sendResponse(id: number | string, result: unknown): void {
-    console.debug(
+    this.logger.debug(
       `尝试发送响应: id=${id}, isConnected=${this.connectionStatus}, wsReadyState=${this.ws?.readyState}`
     );
 
@@ -315,18 +320,18 @@ export class Endpoint {
 
       try {
         this.ws.send(JSON.stringify(response));
-        console.debug("响应已发送", {
+        this.logger.debug("响应已发送", {
           id,
           responseSize: JSON.stringify(response).length,
         });
       } catch (error) {
-        console.error("发送响应失败", {
+        this.logger.error("发送响应失败", {
           id,
           error,
         });
       }
     } else {
-      console.error("无法发送响应", {
+      this.logger.error("无法发送响应", {
         id,
         isConnected: this.connectionStatus,
         wsReadyState: this.ws?.readyState,
@@ -361,7 +366,7 @@ export class Endpoint {
    * 主动断开小智连接
    */
   public async disconnect(): Promise<void> {
-    console.info("主动断开小智连接");
+    this.logger.info("主动断开小智连接");
 
     // 清理 MCP 适配器
     await this.mcpAdapter.cleanup();
@@ -374,7 +379,7 @@ export class Endpoint {
    * 重连小智接入点
    */
   public async reconnect(): Promise<void> {
-    console.info(`重连小智接入点: ${sliceEndpoint(this.endpointUrl)}`);
+    this.logger.info(`重连小智接入点: ${sliceEndpoint(this.endpointUrl)}`);
 
     // 先断开连接
     this.disconnect();
@@ -403,7 +408,7 @@ export class Endpoint {
     try {
       const params = validateToolCallParams(request.params);
 
-      console.info("开始处理工具调用", {
+      this.logger.info("开始处理工具调用", {
         requestId,
         toolName: params.name,
         hasArguments: !!params.arguments,
@@ -422,7 +427,7 @@ export class Endpoint {
         isError: result.isError || false,
       });
 
-      console.info("工具调用成功", {
+      this.logger.info("工具调用成功", {
         requestId,
         toolName: params.name,
         duration: `${Date.now() - startTime}ms`,
@@ -512,7 +517,7 @@ export class Endpoint {
 
     this.sendErrorResponse(requestId, errorResponse);
 
-    console.error("工具调用失败", {
+    this.logger.error("工具调用失败", {
       requestId,
       duration: `${duration}ms`,
       error: errorResponse,
@@ -533,7 +538,7 @@ export class Endpoint {
         error,
       };
       this.ws.send(JSON.stringify(response));
-      console.debug("已发送错误响应:", response);
+      this.logger.debug("已发送错误响应:", response);
     }
   }
 }
