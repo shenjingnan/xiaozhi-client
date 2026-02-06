@@ -892,6 +892,9 @@ export class WebServer {
           this.heartbeatMonitorInterval = undefined;
         }
 
+        // 清理状态服务中的心跳超时定时器
+        this.statusService.clearHeartbeatTimeout();
+
         // 强制断开所有 WebSocket 客户端连接
         if (this.wss) {
           for (const client of this.wss.clients) {
