@@ -1,10 +1,11 @@
 /**
- * 新的网络服务 Hook
- * 使用统一的网络服务管理器，实现 HTTP 和 WebSocket 的协调使用
+ * 网络服务 Hook
+ * 直接使用 apiClient 和 webSocketManager，移除无效的抽象层
  */
 
 import { ConnectionState, networkService } from "@services/index";
 import type { RestartStatus } from "@services/websocket";
+import { apiClient } from "@services/api";
 import { useConfigStore } from "@stores/config";
 import { useStatusStore } from "@stores/status";
 import { useWebSocketActions } from "@stores/websocket";
@@ -27,7 +28,7 @@ export function useNetworkService() {
     console.log("[NetworkService] 初始化网络服务");
     initializationRef.current = true;
 
-    // 初始化网络服务
+    // 初始化网络服务（只初始化 WebSocket）
     networkService.initialize().catch((error) => {
       console.error("[NetworkService] 初始化失败:", error);
     });
@@ -127,10 +128,10 @@ export function useNetworkService() {
     try {
       console.log("[NetworkService] 加载初始数据");
 
-      // 并行获取配置和状态
+      // 并行获取配置和状态（直接使用 apiClient）
       const [config, status] = await Promise.all([
-        networkService.getConfig(),
-        networkService.getClientStatus(),
+        apiClient.getConfig(),
+        apiClient.getClientStatus(),
       ]);
 
       console.log("[NetworkService] 初始数据加载成功");
@@ -146,7 +147,7 @@ export function useNetworkService() {
    */
   const getConfig = useCallback(async (): Promise<AppConfig> => {
     try {
-      const config = await networkService.getConfig();
+      const config = await apiClient.getConfig();
       useConfigStore.getState().setConfig(config, "http");
       return config;
     } catch (error) {
@@ -161,7 +162,7 @@ export function useNetworkService() {
   const updateConfig = useCallback(async (config: AppConfig): Promise<void> => {
     try {
       console.log("[NetworkService] 更新配置");
-      await networkService.updateConfig(config);
+      await apiClient.updateConfig(config);
 
       // 立即更新本地状态，WebSocket 通知会进一步确认
       useConfigStore.getState().setConfig(config, "http");
@@ -177,7 +178,7 @@ export function useNetworkService() {
    */
   const getStatus = useCallback(async () => {
     try {
-      const status = await networkService.getStatus();
+      const status = await apiClient.getStatus();
       useStatusStore.getState().setClientStatus(status.client, "http");
       return status;
     } catch (error) {
@@ -203,7 +204,7 @@ export function useNetworkService() {
   const restartService = useCallback(async (): Promise<void> => {
     try {
       console.log("[NetworkService] 重启服务");
-      await networkService.restartService();
+      await apiClient.restartService();
       console.log("[NetworkService] 重启请求已发送");
     } catch (error) {
       console.error("[NetworkService] 重启服务失败:", error);
@@ -212,7 +213,7 @@ export function useNetworkService() {
   }, []);
 
   /**
-   * 重启服务并等待完成通知
+   * 重启服务并等待完成通知（混合模式，使用 NetworkService）
    */
   const restartServiceWithNotification = useCallback(
     async (timeout = 30000): Promise<void> => {
@@ -229,7 +230,7 @@ export function useNetworkService() {
   );
 
   /**
-   * 更新配置并等待通知
+   * 更新配置并等待通知（混合模式，使用 NetworkService）
    */
   const updateConfigWithNotification = useCallback(
     async (config: AppConfig, timeout = 5000): Promise<void> => {
@@ -320,14 +321,14 @@ export function useNetworkService() {
   }, []);
 
   return {
-    // 数据操作方法 (HTTP)
+    // 数据操作方法 (HTTP，直接使用 apiClient)
     getConfig,
     updateConfig,
     getStatus,
     refreshStatus,
     restartService,
 
-    // 混合模式方法 (HTTP + WebSocket)
+    // 混合模式方法 (HTTP + WebSocket，使用 NetworkService)
     updateConfigWithNotification,
     restartServiceWithNotification,
 
