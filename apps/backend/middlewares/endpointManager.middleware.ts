@@ -30,7 +30,7 @@ export const endpointManagerMiddleware = (): MiddlewareHandler<AppContext> => {
     } catch (error) {
       // 记录错误但不阻断请求
       if (error instanceof Error && error.message.includes("未初始化")) {
-        console.warn("小智连接管理器未初始化，使用 null 值:", error.message);
+        c.logger.warn("小智连接管理器未初始化，使用 null 值:", error.message);
         c.set("endpointManager", null);
       } else {
         throw error;
