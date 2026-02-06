@@ -87,7 +87,14 @@ describe("EventBus", () => {
     });
 
     it("should emit status:updated event successfully", () => {
-      const eventData = { status: { connected: true }, source: "test" };
+      const eventData = {
+        status: {
+          status: "connected" as const,
+          mcpEndpoint: "test-endpoint",
+          activeMCPServers: ["server1"],
+        },
+        source: "test",
+      };
       const listener = vi.fn();
 
       eventBus.onEvent("status:updated", listener);
@@ -486,7 +493,14 @@ describe("EventBus", () => {
 
       eventBus.emitEvent("config:updated", eventData);
       eventBus.emitEvent("config:updated", eventData);
-      eventBus.emitEvent("status:updated", { status: {}, source: "test" });
+      eventBus.emitEvent("status:updated", {
+        status: {
+          status: "connected" as const,
+          mcpEndpoint: "test-endpoint",
+          activeMCPServers: [],
+        },
+        source: "test",
+      });
 
       const stats = eventBus.getEventStats();
 
@@ -537,7 +551,14 @@ describe("EventBus", () => {
     it("should clear all event statistics", () => {
       const eventData = { type: "customMCP", timestamp: new Date() };
       eventBus.emitEvent("config:updated", eventData);
-      eventBus.emitEvent("status:updated", { status: {}, source: "test" });
+      eventBus.emitEvent("status:updated", {
+        status: {
+          status: "connected" as const,
+          mcpEndpoint: "test-endpoint",
+          activeMCPServers: [],
+        },
+        source: "test",
+      });
 
       let stats = eventBus.getEventStats();
       expect(Object.keys(stats)).toHaveLength(2);
@@ -562,7 +583,14 @@ describe("EventBus", () => {
         type: "customMCP",
         timestamp: new Date(),
       });
-      eventBus.emitEvent("status:updated", { status: {}, source: "test" });
+      eventBus.emitEvent("status:updated", {
+        status: {
+          status: "connected" as const,
+          mcpEndpoint: "test-endpoint",
+          activeMCPServers: [],
+        },
+        source: "test",
+      });
 
       const status = eventBus.getStatus();
 
