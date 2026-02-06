@@ -33,6 +33,8 @@ import { Callout, Steps, Tabs } from "nextra/components";
 - `xiaozhi-client` - 主包，CLI 工具
 - `@xiaozhi-client/cli` - CLI 核心库
 - `@xiaozhi-client/config` - 配置管理库
+- `@xiaozhi-client/mcp-core` - MCP 核心库
+- `@xiaozhi-client/endpoint` - Endpoint 管理库
 - `@xiaozhi-client/shared-types` - 共享类型定义
 
 所有包使用相同的版本号，由 nx release 自动管理。
@@ -113,6 +115,8 @@ import { Callout, Steps, Tabs } from "nextra/components";
 4. 验证子包是否正确发布：
    - [@xiaozhi-client/cli](https://www.npmjs.com/package/@xiaozhi-client/cli)
    - [@xiaozhi-client/config](https://www.npmjs.com/package/@xiaozhi-client/config)
+   - [@xiaozhi-client/mcp-core](https://www.npmjs.com/package/@xiaozhi-client/mcp-core)
+   - [@xiaozhi-client/endpoint](https://www.npmjs.com/package/@xiaozhi-client/endpoint)
    - [@xiaozhi-client/shared-types](https://www.npmjs.com/package/@xiaozhi-client/shared-types)
 
 </Steps>
@@ -169,6 +173,8 @@ ls -la dist/
 npm deprecate xiaozhi-client@VERSION "This version has issues"
 npm deprecate @xiaozhi-client/cli@VERSION "This version has issues"
 npm deprecate @xiaozhi-client/config@VERSION "This version has issues"
+npm deprecate @xiaozhi-client/mcp-core@VERSION "This version has issues"
+npm deprecate @xiaozhi-client/endpoint@VERSION "This version has issues"
 npm deprecate @xiaozhi-client/shared-types@VERSION "This version has issues"
 ```
 
