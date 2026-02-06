@@ -75,6 +75,7 @@ describe("ServiceApiHandler", () => {
     // Mock spawn
     mockSpawn = vi.fn().mockReturnValue({
       unref: vi.fn(),
+      on: vi.fn(),
     });
     const { spawn } = await import("node:child_process");
     vi.mocked(spawn).mockImplementation(mockSpawn);
@@ -541,7 +542,7 @@ describe("ServiceApiHandler", () => {
 
       expect(mockContext.fail).toHaveBeenCalledWith(
         "START_REQUEST_ERROR",
-        "Cannot read properties of null (reading 'unref')",
+        "Cannot read properties of null (reading 'on')",
         undefined,
         500
       );
@@ -554,7 +555,7 @@ describe("ServiceApiHandler", () => {
 
       expect(mockContext.fail).toHaveBeenCalledWith(
         "START_REQUEST_ERROR",
-        "child.unref is not a function",
+        "child.on is not a function",
         undefined,
         500
       );
@@ -562,6 +563,7 @@ describe("ServiceApiHandler", () => {
 
     it("should handle unref method throwing error", async () => {
       mockSpawn.mockReturnValue({
+        on: vi.fn(),
         unref: vi.fn().mockImplementation(() => {
           throw new Error("Unref failed");
         }),
