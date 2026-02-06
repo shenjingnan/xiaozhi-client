@@ -5,6 +5,7 @@
 
 import type { Logger } from "@/Logger.js";
 import type { MCPServiceManager } from "@/lib/mcp";
+import type { ConfigManager } from "@xiaozhi-client/config";
 import type { EndpointManager } from "@xiaozhi-client/endpoint";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -126,4 +127,52 @@ export const requireMCPServiceManager = (
   }
 
   return serviceManager;
+};
+
+/**
+ * 从 Context 中获取 EndpointManager 的类型安全方法
+ */
+export const getEndpointManager = (
+  c: Context<AppContext>
+): EndpointManager | null => {
+  return c.get("endpointManager");
+};
+
+/**
+ * 要求必须存在 EndpointManager 的类型安全方法
+ */
+export const requireEndpointManager = (
+  c: Context<AppContext>
+): EndpointManager => {
+  const endpointManager = c.get("endpointManager");
+
+  if (!endpointManager) {
+    throw new Error(
+      "EndpointManager 未初始化，请检查 endpointManagerMiddleware 是否正确配置"
+    );
+  }
+
+  return endpointManager;
+};
+
+/**
+ * 从 Context 中获取 ConfigManager 的类型安全方法
+ * ConfigManager 通过单例模式提供，始终可用
+ */
+export const getConfigManager = (): ConfigManager => {
+  // 延迟导入避免循环依赖
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { configManager } = require("@xiaozhi-client/config");
+  return configManager;
+};
+
+/**
+ * 要求必须存在 ConfigManager 的类型安全方法
+ * ConfigManager 通过单例模式提供，始终可用
+ */
+export const requireConfigManager = (): ConfigManager => {
+  // 延迟导入避免循环依赖
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { configManager } = require("@xiaozhi-client/config");
+  return configManager;
 };
