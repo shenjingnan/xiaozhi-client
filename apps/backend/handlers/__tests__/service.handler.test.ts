@@ -510,26 +510,54 @@ describe("ServiceApiHandler", () => {
   });
 
   describe("environment handling", () => {
-    it("should preserve existing environment variables", async () => {
+    it("should only pass whitelisted environment variables for security", async () => {
       const originalPath = process.env.PATH;
-      process.env.CUSTOM_VAR = "test-value";
+      const originalNodeEnv = process.env.NODE_ENV;
+      process.env.CUSTOM_VAR = "test-value"; // 非白名单变量，不应被传递
+      process.env.API_KEY = "secret-key"; // 模拟敏感变量，不应被传递
 
       await handler.startService(mockContext);
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        "xiaozhi",
-        ["start", "--daemon"],
-        expect.objectContaining({
-          env: expect.objectContaining({
-            PATH: originalPath,
-            CUSTOM_VAR: "test-value",
-            XIAOZHI_CONFIG_DIR: expect.any(String),
-          }),
-        })
-      );
+      const spawnCall = mockSpawn.mock.calls[0];
+      const spawnEnv = spawnCall[2].env;
+
+      // 验证白名单中的环境变量被传递
+      expect(spawnEnv).toHaveProperty("PATH", originalPath);
+      if (originalNodeEnv) {
+        expect(spawnEnv).toHaveProperty("NODE_ENV", originalNodeEnv);
+      }
+      expect(spawnEnv).toHaveProperty("XIAOZHI_CONFIG_DIR");
+
+      // 验证非白名单环境变量未被传递（安全检查）
+      expect(spawnEnv).not.toHaveProperty("CUSTOM_VAR");
+      expect(spawnEnv).not.toHaveProperty("API_KEY");
 
       // Cleanup
       process.env.CUSTOM_VAR = undefined;
+      process.env.API_KEY = undefined;
+    });
+
+    it("should handle missing whitelisted environment variables gracefully", async () => {
+      const originalPath = process.env.PATH;
+      const originalNodeEnv = process.env.NODE_ENV;
+
+      // 临时删除白名单中的环境变量
+      delete process.env.PATH;
+      delete process.env.NODE_ENV;
+
+      await handler.startService(mockContext);
+
+      const spawnCall = mockSpawn.mock.calls[0];
+      const spawnEnv = spawnCall[2].env;
+
+      // 验证即使变量不存在也能正常工作
+      expect(spawnEnv).not.toHaveProperty("PATH");
+      expect(spawnEnv).not.toHaveProperty("NODE_ENV");
+      expect(spawnEnv).toHaveProperty("XIAOZHI_CONFIG_DIR");
+
+      // Restore
+      if (originalPath) process.env.PATH = originalPath;
+      if (originalNodeEnv) process.env.NODE_ENV = originalNodeEnv;
     });
   });
 
