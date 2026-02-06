@@ -54,6 +54,7 @@ export class CustomMCPHandler {
   private mcpServiceManager?: MCPServiceManager;
   private readonly TIMEOUT = DEFAULT_CONFIG.TIMEOUT; // 统一8秒超时
   private readonly CACHE_TTL = DEFAULT_CONFIG.CACHE_TTL; // 5分钟缓存过期
+  private configUpdateListener: ((data: unknown) => void) | null = null; // 配置更新监听器引用
 
   constructor(
     cacheManager?: MCPCacheManager,
@@ -87,8 +88,13 @@ export class CustomMCPHandler {
     const eventBus = getEventBus();
 
     // 监听配置更新事件
-    eventBus.onEvent("config:updated", async (data) => {
-      if (data.type === "customMCP") {
+    this.configUpdateListener = async (data) => {
+      if (
+        data &&
+        typeof data === "object" &&
+        "type" in data &&
+        data.type === "customMCP"
+      ) {
         this.logger.info("[CustomMCP] 检测到配置更新，重新初始化...");
         try {
           this.reinitialize();
@@ -96,7 +102,9 @@ export class CustomMCPHandler {
           this.logger.error("[CustomMCP] 配置更新处理失败:", error);
         }
       }
-    });
+    };
+
+    eventBus.onEvent("config:updated", this.configUpdateListener);
   }
 
   /**
@@ -510,6 +518,14 @@ export class CustomMCPHandler {
    */
   public cleanup(): void {
     this.logger.info("[CustomMCP] 清理 CustomMCP 处理器资源");
+
+    // 移除事件监听器
+    if (this.configUpdateListener) {
+      const eventBus = getEventBus();
+      eventBus.offEvent("config:updated", this.configUpdateListener);
+      this.configUpdateListener = null;
+    }
+
     this.tools.clear();
     this.cacheManager.cleanup();
   }
