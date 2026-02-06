@@ -5,6 +5,27 @@ import * as commentJson from "comment-json";
 import dayjs from "dayjs";
 import { createJson5Writer, parseJson5 } from "./json5-adapter.js";
 import { ConfigResolver } from "./resolver.js";
+import { ConfigEventManager } from "./event-manager.js";
+import { ConfigStatsManager } from "./stats-manager.js";
+import { ConfigValidator } from "./validator.js";
+import type {
+  ConnectionConfig,
+  AppConfig,
+  MCPServerConfig,
+  MCPServerToolsConfig,
+  MCPToolConfig,
+  ModelScopeConfig,
+  WebUIConfig,
+  ToolCallLogConfig,
+  CustomMCPConfig,
+  CustomMCPTool,
+  PlatformConfig,
+  CozePlatformConfig,
+  WebServerInstance,
+  HandlerConfig,
+} from "./types.js";
+// 重新导出所有类型定义以保持向后兼容
+export * from "./types.js";
 
 // 在 ESM 中，需要从 import.meta.url 获取当前文件目录
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -16,217 +37,12 @@ const DEFAULT_CONNECTION_CONFIG: Required<ConnectionConfig> = {
   reconnectInterval: 5000, // 5秒重连间隔
 };
 
-// 配置文件接口定义
-// 本地 MCP 服务配置
-export interface LocalMCPServerConfig {
-  command: string;
-  args: string[];
-  env?: Record<string, string>;
-}
-
-// SSE MCP 服务配置
-export interface SSEMCPServerConfig {
-  type: "sse";
-  url: string;
-  headers?: Record<string, string>;
-}
-
-// HTTP MCP 服务配置
-export interface HTTPMCPServerConfig {
-  type?: "http" | "streamable-http"; // 可选，默认就是 http
-  url: string;
-  headers?: Record<string, string>;
-}
-
-// 向后兼容的别名
-/** @deprecated 使用 HTTPMCPServerConfig 代替 */
-export type StreamableHTTPMCPServerConfig = HTTPMCPServerConfig;
-
-// 统一的 MCP 服务配置
-export type MCPServerConfig =
-  | LocalMCPServerConfig
-  | SSEMCPServerConfig
-  | HTTPMCPServerConfig;
-
-export interface MCPToolConfig {
-  description?: string;
-  enable: boolean;
-  usageCount?: number; // 工具使用次数
-  lastUsedTime?: string; // 最后使用时间（ISO 8601 格式）
-}
-
-export interface MCPServerToolsConfig {
-  tools: Record<string, MCPToolConfig>;
-}
-
-export interface ConnectionConfig {
-  heartbeatInterval?: number; // 心跳检测间隔（毫秒），默认30000
-  heartbeatTimeout?: number; // 心跳超时时间（毫秒），默认10000
-  reconnectInterval?: number; // 重连间隔（毫秒），默认5000
-}
-
-export interface ModelScopeConfig {
-  apiKey?: string; // ModelScope API 密钥
-}
-
-export interface WebUIConfig {
-  port?: number; // Web UI 端口号，默认 9999
-  autoRestart?: boolean; // 是否在配置更新后自动重启服务，默认 true
-}
-
-// 工具调用日志配置接口
-export interface ToolCallLogConfig {
-  maxRecords?: number; // 最大记录条数，默认 100
-  logFilePath?: string; // 自定义日志文件路径（可选）
-}
-
-// CustomMCP 相关接口定义
-
-// 代理处理器配置
-export interface ProxyHandlerConfig {
-  type: "proxy";
-  platform: "coze" | "openai" | "anthropic" | "custom";
-  config: {
-    // Coze 平台配置
-    workflow_id?: string;
-    bot_id?: string;
-    api_key?: string;
-    base_url?: string;
-    // 通用配置
-    timeout?: number;
-    retry_count?: number;
-    retry_delay?: number;
-    headers?: Record<string, string>;
-    params?: Record<string, unknown>;
-  };
-}
-
-// HTTP 处理器配置
-export interface HttpHandlerConfig {
-  type: "http";
-  url: string;
-  method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-  headers?: Record<string, string>;
-  timeout?: number;
-  retry_count?: number;
-  retry_delay?: number;
-  auth?: {
-    type: "bearer" | "basic" | "api_key";
-    token?: string;
-    username?: string;
-    password?: string;
-    api_key?: string;
-    api_key_header?: string;
-  };
-  body_template?: string; // 支持模板变量替换
-  response_mapping?: {
-    success_path?: string; // JSONPath 表达式
-    error_path?: string;
-    data_path?: string;
-  };
-}
-
-// 函数处理器配置
-export interface FunctionHandlerConfig {
-  type: "function";
-  module: string; // 模块路径
-  function: string; // 函数名
-  timeout?: number;
-  context?: Record<string, unknown>; // 函数执行上下文
-}
-
-// 脚本处理器配置
-export interface ScriptHandlerConfig {
-  type: "script";
-  script: string; // 脚本内容或文件路径
-  interpreter?: "node" | "python" | "bash";
-  timeout?: number;
-  env?: Record<string, string>; // 环境变量
-}
-
-// 链式处理器配置
-export interface ChainHandlerConfig {
-  type: "chain";
-  tools: string[]; // 要链式调用的工具名称
-  mode: "sequential" | "parallel"; // 执行模式
-  error_handling: "stop" | "continue" | "retry"; // 错误处理策略
-}
-
-// MCP 处理器配置（用于同步的工具）
-export interface MCPHandlerConfig {
-  type: "mcp";
-  config: {
-    serviceName: string;
-    toolName: string;
-  };
-}
-
-export type HandlerConfig =
-  | ProxyHandlerConfig
-  | HttpHandlerConfig
-  | FunctionHandlerConfig
-  | ScriptHandlerConfig
-  | ChainHandlerConfig
-  | MCPHandlerConfig;
-
-// CustomMCP 工具接口
-// TODO: 注意：此定义应与 @xiaozhi-client/shared-types 中的 CustomMCPToolConfig 保持一致
-// 未来将迁移到从 shared-types 导入
-export interface CustomMCPTool {
-  // 确保必填字段
-  name: string;
-  description: string;
-  inputSchema: Record<string, unknown>;
-  handler: HandlerConfig;
-
-  // 使用统计信息（可选）
-  stats?: {
-    usageCount?: number; // 工具使用次数
-    lastUsedTime?: string; // 最后使用时间（ISO 8601格式）
-  };
-}
-
-// CustomMCP 配置接口
-export interface CustomMCPConfig {
-  tools: CustomMCPTool[];
-}
-
-// Web 服务器实例接口（用于配置更新通知）
-export interface WebServerInstance {
-  broadcastConfigUpdate(config: AppConfig): void;
-}
-
-export interface PlatformsConfig {
-  [platformName: string]: PlatformConfig;
-}
-
-export interface PlatformConfig {
-  token?: string;
-}
-
-/**
- * 扣子平台配置接口
- */
-export interface CozePlatformConfig extends PlatformConfig {
-  /** 扣子 API Token */
-  token: string;
-}
-
-export interface AppConfig {
-  mcpEndpoint: string | string[];
-  mcpServers: Record<string, MCPServerConfig>;
-  mcpServerConfig?: Record<string, MCPServerToolsConfig>;
-  customMCP?: CustomMCPConfig; // 新增 customMCP 配置支持
-  connection?: ConnectionConfig; // 连接配置（可选，用于向后兼容）
-  modelscope?: ModelScopeConfig; // ModelScope 配置（可选）
-  webUI?: WebUIConfig; // Web UI 配置（可选）
-  platforms?: PlatformsConfig; // 平台配置（可选）
-  toolCallLog?: ToolCallLogConfig; // 工具调用日志配置（可选）
-}
+// 类型定义已移至 types.ts，通过 export * 重新导出以保持向后兼容
 
 /**
  * 配置管理类
  * 负责管理应用配置，提供只读访问和安全的配置更新功能
+ * 通过组合事件管理器、统计管理器和验证器来实现单一职责原则
  */
 export class ConfigManager {
   private static instance: ConfigManager;
@@ -238,15 +54,17 @@ export class ConfigManager {
     toSource(): string;
   } | null = null; // json5-writer 实例，用于保留 JSON5 注释
 
-  // 统计更新并发控制
-  private statsUpdateLocks: Map<string, Promise<void>> = new Map();
-  private statsUpdateLockTimeouts: Map<string, NodeJS.Timeout> = new Map();
-  private readonly STATS_UPDATE_TIMEOUT = 5000; // 5秒超时
-
-  // 事件回调（用于解耦 EventBus 依赖）
-  private eventCallbacks: Map<string, Array<(data: unknown) => void>> = new Map();
+  // 使用组合模式引入管理器
+  private eventManager: ConfigEventManager;
+  private statsManager: ConfigStatsManager;
+  private validator: ConfigValidator;
 
   private constructor() {
+    // 初始化管理器
+    this.eventManager = new ConfigEventManager();
+    this.statsManager = new ConfigStatsManager();
+    this.validator = new ConfigValidator();
+
     // 使用模板目录中的默认配置文件
     // 在不同环境中尝试不同的路径
     const possiblePaths = [
@@ -264,29 +82,24 @@ export class ConfigManager {
   }
 
   /**
-   * 注册事件监听器
+   * 注册事件监听器（委托给事件管理器）
    */
   public on(eventName: string, callback: (data: unknown) => void): void {
-    if (!this.eventCallbacks.has(eventName)) {
-      this.eventCallbacks.set(eventName, []);
-    }
-    this.eventCallbacks.get(eventName)?.push(callback);
+    this.eventManager.on(eventName, callback);
   }
 
   /**
-   * 发射事件
+   * 取消事件监听器（委托给事件管理器）
+   */
+  public off(eventName: string, callback: (data: unknown) => void): void {
+    this.eventManager.off(eventName, callback);
+  }
+
+  /**
+   * 发射事件（委托给事件管理器）
    */
   private emitEvent(eventName: string, data: unknown): void {
-    const callbacks = this.eventCallbacks.get(eventName);
-    if (callbacks) {
-      for (const callback of callbacks) {
-        try {
-          callback(data);
-        } catch (error) {
-          console.error(`事件回调执行失败 [${eventName}]:`, error);
-        }
-      }
-    }
+    this.eventManager.emit(eventName, data);
   }
 
   /**
@@ -443,49 +256,10 @@ export class ConfigManager {
   }
 
   /**
-   * 验证配置文件结构
+   * 验证配置文件结构（委托给验证器）
    */
   public validateConfig(config: unknown): void {
-    if (!config || typeof config !== "object") {
-      throw new Error("配置文件格式错误：根对象无效");
-    }
-
-    const configObj = config as Record<string, unknown>;
-
-    if (configObj.mcpEndpoint === undefined || configObj.mcpEndpoint === null) {
-      throw new Error("配置文件格式错误：mcpEndpoint 字段无效");
-    }
-
-    // 验证 mcpEndpoint 类型（字符串或字符串数组）
-    if (typeof configObj.mcpEndpoint === "string") {
-      // 空字符串是允许的，getMcpEndpoints 会返回空数组
-    } else if (Array.isArray(configObj.mcpEndpoint)) {
-      for (const endpoint of configObj.mcpEndpoint) {
-        if (typeof endpoint !== "string" || endpoint.trim() === "") {
-          throw new Error(
-            "配置文件格式错误：mcpEndpoint 数组中的每个元素必须是非空字符串"
-          );
-        }
-      }
-    } else {
-      throw new Error("配置文件格式错误：mcpEndpoint 必须是字符串或字符串数组");
-    }
-
-    if (!configObj.mcpServers || typeof configObj.mcpServers !== "object") {
-      throw new Error("配置文件格式错误：mcpServers 字段无效");
-    }
-
-    // 验证每个 MCP 服务配置
-    for (const [serverName, serverConfig] of Object.entries(
-      configObj.mcpServers as Record<string, unknown>
-    )) {
-      if (!serverConfig || typeof serverConfig !== "object") {
-        throw new Error(`配置文件格式错误：mcpServers.${serverName} 无效`);
-      }
-
-      // 基本验证：确保配置有效
-      // 更详细的验证应该由调用方完成
-    }
+    this.validator.validateConfig(config);
   }
 
   /**
@@ -1283,295 +1057,10 @@ export class ConfigManager {
   }
 
   /**
-   * 验证 customMCP 工具配置
+   * 验证 customMCP 工具配置（委托给验证器）
    */
   public validateCustomMCPTools(tools: CustomMCPTool[]): boolean {
-    if (!Array.isArray(tools)) {
-      return false;
-    }
-
-    for (const tool of tools) {
-      // 检查必需字段
-      if (!tool.name || typeof tool.name !== "string") {
-        console.warn("CustomMCP 工具缺少有效的 name 字段", { tool });
-        return false;
-      }
-
-      if (!tool.description || typeof tool.description !== "string") {
-        console.warn("CustomMCP 工具缺少有效的 description 字段", {
-          toolName: tool.name,
-        });
-        return false;
-      }
-
-      if (!tool.inputSchema || typeof tool.inputSchema !== "object") {
-        console.warn("CustomMCP 工具缺少有效的 inputSchema 字段", {
-          toolName: tool.name,
-        });
-        return false;
-      }
-
-      if (!tool.handler || typeof tool.handler !== "object") {
-        console.warn("CustomMCP 工具缺少有效的 handler 字段", {
-          toolName: tool.name,
-        });
-        return false;
-      }
-
-      // 检查 handler 类型
-      if (
-        !["proxy", "function", "http", "script", "chain", "mcp"].includes(
-          tool.handler.type
-        )
-      ) {
-        console.warn("CustomMCP 工具的 handler.type 类型无效", {
-          toolName: tool.name,
-          type: tool.handler.type,
-        });
-        return false;
-      }
-
-      // 根据处理器类型进行特定验证
-      if (!this.validateHandlerConfig(tool.name, tool.handler)) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  /**
-   * 验证处理器配置
-   */
-  private validateHandlerConfig(
-    toolName: string,
-    handler: HandlerConfig
-  ): boolean {
-    switch (handler.type) {
-      case "proxy":
-        return this.validateProxyHandler(toolName, handler);
-      case "http":
-        return this.validateHttpHandler(toolName, handler);
-      case "function":
-        return this.validateFunctionHandler(toolName, handler);
-      case "script":
-        return this.validateScriptHandler(toolName, handler);
-      case "chain":
-        return this.validateChainHandler(toolName, handler);
-      case "mcp":
-        return this.validateMCPHandler(toolName, handler);
-      default:
-        console.warn("CustomMCP 工具使用了未知的处理器类型", {
-          toolName,
-          handlerType: (handler as HandlerConfig).type,
-        });
-        return false;
-    }
-  }
-
-  /**
-   * 验证代理处理器配置
-   */
-  private validateProxyHandler(
-    toolName: string,
-    handler: ProxyHandlerConfig
-  ): boolean {
-    if (!handler.platform) {
-      console.warn("CustomMCP 工具的 proxy 处理器缺少 platform 字段", {
-        toolName,
-      });
-      return false;
-    }
-
-    if (!["coze", "openai", "anthropic", "custom"].includes(handler.platform)) {
-      console.warn("CustomMCP 工具的 proxy 处理器使用了不支持的平台", {
-        toolName,
-        platform: handler.platform,
-      });
-      return false;
-    }
-
-    if (!handler.config || typeof handler.config !== "object") {
-      console.warn("CustomMCP 工具的 proxy 处理器缺少 config 字段", {
-        toolName,
-      });
-      return false;
-    }
-
-    // Coze 平台特定验证
-    if (handler.platform === "coze") {
-      if (!handler.config.workflow_id && !handler.config.bot_id) {
-        console.warn(
-          "CustomMCP 工具的 Coze 处理器必须提供 workflow_id 或 bot_id",
-          { toolName }
-        );
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  /**
-   * 验证 HTTP 处理器配置
-   */
-  private validateHttpHandler(
-    toolName: string,
-    handler: HttpHandlerConfig
-  ): boolean {
-    if (!handler.url || typeof handler.url !== "string") {
-      console.warn("CustomMCP 工具的 http 处理器缺少有效的 url 字段", {
-        toolName,
-      });
-      return false;
-    }
-
-    try {
-      new URL(handler.url);
-    } catch {
-      console.warn("CustomMCP 工具的 http 处理器 url 格式无效", {
-        toolName,
-        url: handler.url,
-      });
-      return false;
-    }
-
-    if (
-      handler.method &&
-      !["GET", "POST", "PUT", "DELETE", "PATCH"].includes(handler.method)
-    ) {
-      console.warn("CustomMCP 工具的 http 处理器使用了不支持的 HTTP 方法", {
-        toolName,
-        method: handler.method,
-      });
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
-   * 验证函数处理器配置
-   */
-  private validateFunctionHandler(
-    toolName: string,
-    handler: FunctionHandlerConfig
-  ): boolean {
-    if (!handler.module || typeof handler.module !== "string") {
-      console.warn("CustomMCP 工具的 function 处理器缺少有效的 module 字段", {
-        toolName,
-      });
-      return false;
-    }
-
-    if (!handler.function || typeof handler.function !== "string") {
-      console.warn("CustomMCP 工具的 function 处理器缺少有效的 function 字段", {
-        toolName,
-      });
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
-   * 验证脚本处理器配置
-   */
-  private validateScriptHandler(
-    toolName: string,
-    handler: ScriptHandlerConfig
-  ): boolean {
-    if (!handler.script || typeof handler.script !== "string") {
-      console.warn("CustomMCP 工具的 script 处理器缺少有效的 script 字段", {
-        toolName,
-      });
-      return false;
-    }
-
-    if (
-      handler.interpreter &&
-      !["node", "python", "bash"].includes(handler.interpreter)
-    ) {
-      console.warn("CustomMCP 工具的 script 处理器使用了不支持的解释器", {
-        toolName,
-        interpreter: handler.interpreter,
-      });
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
-   * 验证链式处理器配置
-   */
-  private validateChainHandler(
-    toolName: string,
-    handler: ChainHandlerConfig
-  ): boolean {
-    if (
-      !handler.tools ||
-      !Array.isArray(handler.tools) ||
-      handler.tools.length === 0
-    ) {
-      console.warn("CustomMCP 工具的 chain 处理器缺少有效的 tools 数组", {
-        toolName,
-      });
-      return false;
-    }
-
-    if (!["sequential", "parallel"].includes(handler.mode)) {
-      console.warn("CustomMCP 工具的 chain 处理器使用了不支持的执行模式", {
-        toolName,
-        mode: handler.mode,
-      });
-      return false;
-    }
-
-    if (!["stop", "continue", "retry"].includes(handler.error_handling)) {
-      console.warn("CustomMCP 工具的 chain 处理器使用了不支持的错误处理策略", {
-        toolName,
-        errorHandling: handler.error_handling,
-      });
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
-   * 验证 MCP 处理器配置
-   */
-  private validateMCPHandler(
-    toolName: string,
-    handler: MCPHandlerConfig
-  ): boolean {
-    if (!handler.config || typeof handler.config !== "object") {
-      console.warn("CustomMCP 工具的 mcp 处理器缺少 config 字段", { toolName });
-      return false;
-    }
-
-    if (
-      !handler.config.serviceName ||
-      typeof handler.config.serviceName !== "string"
-    ) {
-      console.warn("CustomMCP 工具的 mcp 处理器缺少有效的 serviceName", {
-        toolName,
-      });
-      return false;
-    }
-
-    if (
-      !handler.config.toolName ||
-      typeof handler.config.toolName !== "string"
-    ) {
-      console.warn("CustomMCP 工具的 mcp 处理器缺少有效的 toolName", {
-        toolName,
-      });
-      return false;
-    }
-
-    return true;
+    return this.validator.validateCustomMCPTools(tools);
   }
 
   /**
@@ -1922,7 +1411,7 @@ export class ConfigManager {
   }
 
   /**
-   * 更新 mcpServerConfig 中的工具使用统计信息（内部实现）
+   * 更新 mcpServerConfig 中的工具使用统计信息（内部实现，委托给统计管理器）
    * @param serverName 服务名称
    * @param toolName 工具名称
    * @param callTime 调用时间（ISO 8601 格式）
@@ -1936,43 +1425,13 @@ export class ConfigManager {
     incrementUsageCount = true
   ): Promise<void> {
     const config = this.getMutableConfig();
-
-    // 确保 mcpServerConfig 存在
-    if (!config.mcpServerConfig) {
-      config.mcpServerConfig = {};
-    }
-
-    // 确保服务配置存在
-    if (!config.mcpServerConfig[serverName]) {
-      config.mcpServerConfig[serverName] = { tools: {} };
-    }
-
-    // 确保工具配置存在
-    if (!config.mcpServerConfig[serverName].tools[toolName]) {
-      config.mcpServerConfig[serverName].tools[toolName] = {
-        enable: true, // 默认启用
-      };
-    }
-
-    const toolConfig = config.mcpServerConfig[serverName].tools[toolName];
-    const currentUsageCount = toolConfig.usageCount || 0;
-    const currentLastUsedTime = toolConfig.lastUsedTime;
-
-    // 根据参数决定是否更新使用次数
-    if (incrementUsageCount) {
-      toolConfig.usageCount = currentUsageCount + 1;
-    }
-
-    // 时间校验：只有新时间晚于现有时间才更新 lastUsedTime
-    if (
-      !currentLastUsedTime ||
-      new Date(callTime) > new Date(currentLastUsedTime)
-    ) {
-      // 使用 dayjs 格式化时间为更易读的格式
-      toolConfig.lastUsedTime = dayjs(callTime).format("YYYY-MM-DD HH:mm:ss");
-    }
-
-    // 保存配置
+    this.statsManager.updateMCPServerToolStats(
+      config,
+      serverName,
+      toolName,
+      callTime,
+      incrementUsageCount
+    );
     this.saveConfig(config);
   }
 
@@ -2003,7 +1462,7 @@ export class ConfigManager {
   ): Promise<void>;
 
   /**
-   * 更新 customMCP 工具使用统计信息的实现
+   * 更新 customMCP 工具使用统计信息的实现（委托给统计管理器）
    * @private
    */
   private async updateCustomMCPToolStats(
@@ -2015,7 +1474,6 @@ export class ConfigManager {
       let toolName: string;
       let callTime: string;
       let incrementUsageCount = true;
-      let logPrefix: string;
 
       // 判断参数类型来区分不同的重载
       if (typeof arg3 === "string") {
@@ -2023,13 +1481,11 @@ export class ConfigManager {
         const serverName = arg1;
         toolName = `${serverName}__${arg2}`;
         callTime = arg3;
-        logPrefix = `${serverName}/${arg2}`;
       } else {
         // 两个或三个参数的情况：updateCustomMCPToolStats(toolName, callTime, incrementUsageCount?)
         toolName = arg1;
         callTime = arg2;
         incrementUsageCount = (arg3 as boolean) || true;
-        logPrefix = toolName;
       }
 
       const customTools = this.getCustomMCPTools();
@@ -2041,28 +1497,14 @@ export class ConfigManager {
       }
 
       const updatedTools = [...customTools];
-      const tool = updatedTools[toolIndex];
 
-      // 确保 stats 对象存在
-      if (!tool.stats) {
-        tool.stats = {};
-      }
-
-      const currentUsageCount = tool.stats.usageCount || 0;
-      const currentLastUsedTime = tool.stats.lastUsedTime;
-
-      // 根据参数决定是否更新使用次数
-      if (incrementUsageCount) {
-        tool.stats.usageCount = currentUsageCount + 1;
-      }
-
-      // 时间校验：只有新时间晚于现有时间才更新 lastUsedTime
-      if (
-        !currentLastUsedTime ||
-        new Date(callTime) > new Date(currentLastUsedTime)
-      ) {
-        tool.stats.lastUsedTime = dayjs(callTime).format("YYYY-MM-DD HH:mm:ss");
-      }
+      // 使用统计管理器更新统计信息
+      this.statsManager.updateCustomMCPToolStats(
+        updatedTools,
+        toolName,
+        callTime,
+        incrementUsageCount
+      );
 
       // 保存更新后的工具配置
       await this.updateCustomMCPTools(updatedTools);
@@ -2085,47 +1527,21 @@ export class ConfigManager {
   }
 
   /**
-   * 获取统计更新锁（确保同一工具的统计更新串行执行）
+   * 获取统计更新锁（确保同一工具的统计更新串行执行，委托给统计管理器）
    * @param toolKey 工具键
    * @private
    */
   private async acquireStatsUpdateLock(toolKey: string): Promise<boolean> {
-    if (this.statsUpdateLocks.has(toolKey)) {
-      console.log("工具统计更新正在进行中，跳过本次更新", { toolKey });
-      return false;
-    }
-
-    const updatePromise = new Promise<void>((resolve) => {
-      // 锁定逻辑在调用者中实现
-    });
-
-    this.statsUpdateLocks.set(toolKey, updatePromise);
-
-    // 设置超时自动释放锁
-    const timeout = setTimeout(() => {
-      this.releaseStatsUpdateLock(toolKey);
-    }, this.STATS_UPDATE_TIMEOUT);
-
-    this.statsUpdateLockTimeouts.set(toolKey, timeout);
-
-    return true;
+    return this.statsManager.acquireStatsUpdateLock(toolKey);
   }
 
   /**
-   * 释放统计更新锁
+   * 释放统计更新锁（委托给统计管理器）
    * @param toolKey 工具键
    * @private
    */
   private releaseStatsUpdateLock(toolKey: string): void {
-    this.statsUpdateLocks.delete(toolKey);
-
-    const timeout = this.statsUpdateLockTimeouts.get(toolKey);
-    if (timeout) {
-      clearTimeout(timeout);
-      this.statsUpdateLockTimeouts.delete(toolKey);
-    }
-
-    console.log("已释放工具的统计更新锁", { toolKey });
+    this.statsManager.releaseStatsUpdateLock(toolKey);
   }
 
   /**
@@ -2194,28 +1610,17 @@ export class ConfigManager {
   }
 
   /**
-   * 清理所有统计更新锁（用于异常恢复）
+   * 清理所有统计更新锁（用于异常恢复，委托给统计管理器）
    */
   public clearAllStatsUpdateLocks(): void {
-    const lockCount = this.statsUpdateLocks.size;
-    this.statsUpdateLocks.clear();
-
-    // 清理所有超时定时器
-    for (const timeout of this.statsUpdateLockTimeouts.values()) {
-      clearTimeout(timeout);
-    }
-    this.statsUpdateLockTimeouts.clear();
-
-    if (lockCount > 0) {
-      console.log("已清理统计更新锁", { count: lockCount });
-    }
+    this.statsManager.clearAllStatsUpdateLocks();
   }
 
   /**
-   * 获取统计更新锁状态（用于调试和监控）
+   * 获取统计更新锁状态（用于调试和监控，委托给统计管理器）
    */
   public getStatsUpdateLocks(): string[] {
-    return Array.from(this.statsUpdateLocks.keys());
+    return this.statsManager.getStatsUpdateLocks();
   }
 
   /**
