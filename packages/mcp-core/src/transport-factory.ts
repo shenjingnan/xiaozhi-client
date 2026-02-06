@@ -7,22 +7,20 @@
  * @module transport-factory
  */
 
-import type { InternalMCPServiceConfig, MCPServerTransport } from "./types.js";
-import { MCPTransportType } from "./types.js";
 import type { SSEClientTransportOptions } from "@modelcontextprotocol/sdk/client/sse.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import type { StreamableHTTPClientTransportOptions } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { EventSource } from "eventsource";
+import type { InternalMCPServiceConfig, MCPServerTransport } from "./types.js";
+import { MCPTransportType } from "./types.js";
 
 // 全局 polyfill EventSource（用于 SSE）
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const globalThisAny: any = typeof globalThis !== "undefined" ? globalThis : global;
-if (
-  typeof globalThisAny !== "undefined" &&
-  !globalThisAny.EventSource
-) {
+const globalThisAny: any =
+  typeof globalThis !== "undefined" ? globalThis : global;
+if (typeof globalThisAny !== "undefined" && !globalThisAny.EventSource) {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   globalThisAny.EventSource = EventSource;
 }
@@ -38,7 +36,9 @@ export interface Transport {
  * @param config MCP 服务配置（包含 name）
  * @returns transport 实例
  */
-export function createTransport(config: InternalMCPServiceConfig): MCPServerTransport {
+export function createTransport(
+  config: InternalMCPServiceConfig
+): MCPServerTransport {
   console.debug(
     `[TransportFactory] 创建 ${config.type} transport for ${config.name}`
   );
@@ -61,7 +61,9 @@ export function createTransport(config: InternalMCPServiceConfig): MCPServerTran
 /**
  * 创建 Stdio transport
  */
-function createStdioTransport(config: InternalMCPServiceConfig): StdioClientTransport {
+function createStdioTransport(
+  config: InternalMCPServiceConfig
+): StdioClientTransport {
   if (!config.command) {
     throw new Error("stdio transport 需要 command 配置");
   }
@@ -76,7 +78,9 @@ function createStdioTransport(config: InternalMCPServiceConfig): StdioClientTran
 /**
  * 创建 SSE transport
  */
-function createSSETransport(config: InternalMCPServiceConfig): SSEClientTransport {
+function createSSETransport(
+  config: InternalMCPServiceConfig
+): SSEClientTransport {
   if (!config.url) {
     throw new Error("SSE transport 需要 URL 配置");
   }
@@ -100,22 +104,32 @@ function createHTTPTransport(
 }
 
 /**
+ * 创建认证请求头
+ */
+function createAuthHeaders(
+  config: InternalMCPServiceConfig
+): Record<string, string> | undefined {
+  if (config.apiKey) {
+    return {
+      Authorization: `Bearer ${config.apiKey}`,
+      ...config.headers,
+    };
+  }
+  return config.headers;
+}
+
+/**
  * 创建 SSE 选项
  */
-function createSSEOptions(config: InternalMCPServiceConfig): SSEClientTransportOptions {
+function createSSEOptions(
+  config: InternalMCPServiceConfig
+): SSEClientTransportOptions {
   const options: SSEClientTransportOptions = {};
 
-  // 添加认证头
-  if (config.apiKey) {
+  const headers = createAuthHeaders(config);
+  if (headers) {
     options.requestInit = {
-      headers: {
-        Authorization: `Bearer ${config.apiKey}`,
-        ...config.headers,
-      },
-    };
-  } else if (config.headers) {
-    options.requestInit = {
-      headers: config.headers,
+      headers,
     };
   }
 
@@ -127,17 +141,10 @@ function createStreamableHTTPOptions(
 ): StreamableHTTPClientTransportOptions {
   const options: StreamableHTTPClientTransportOptions = {};
 
-  // 添加认证头
-  if (config.apiKey) {
+  const headers = createAuthHeaders(config);
+  if (headers) {
     options.requestInit = {
-      headers: {
-        Authorization: `Bearer ${config.apiKey}`,
-        ...config.headers,
-      },
-    };
-  } else if (config.headers) {
-    options.requestInit = {
-      headers: config.headers,
+      headers,
     };
   }
 
@@ -195,11 +202,7 @@ export function validateConfig(config: InternalMCPServiceConfig): void {
  * 获取支持的传输类型列表
  */
 export function getSupportedTypes(): MCPTransportType[] {
-  return [
-    MCPTransportType.STDIO,
-    MCPTransportType.SSE,
-    MCPTransportType.HTTP,
-  ];
+  return [MCPTransportType.STDIO, MCPTransportType.SSE, MCPTransportType.HTTP];
 }
 
 /**
