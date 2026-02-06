@@ -6,6 +6,7 @@
 import type {
   ConfigApiHandler,
   CozeHandler,
+  ESP32Handler,
   EndpointHandler,
   MCPHandler,
   MCPRouteHandler,
@@ -48,6 +49,8 @@ export interface HandlerDependencies {
   cozeHandler: CozeHandler;
   /** 小智接入点处理器（通过中间件动态注入） */
   endpointHandler?: EndpointHandler;
+  /** ESP32 设备处理器 */
+  esp32Handler: ESP32Handler;
 }
 
 /**
