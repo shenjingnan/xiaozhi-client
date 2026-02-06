@@ -239,6 +239,7 @@ export class WebSocketManager {
   private reconnectInterval: number;
   private reconnectTimer?: NodeJS.Timeout;
   private heartbeatTimer?: NodeJS.Timeout;
+  private urlChangeTimer?: NodeJS.Timeout;
   private heartbeatInterval: number;
   private heartbeatTimeout: number;
   private lastHeartbeat = 0;
@@ -400,7 +401,15 @@ export class WebSocketManager {
       // 如果当前已连接，重新连接到新 URL
       if (this.isConnected()) {
         this.disconnect();
-        setTimeout(() => this.connect(), 1000);
+        // 清理已有的 URL 变更定时器
+        if (this.urlChangeTimer) {
+          clearTimeout(this.urlChangeTimer);
+        }
+        // 保存定时器引用
+        this.urlChangeTimer = setTimeout(() => {
+          this.urlChangeTimer = undefined;
+          this.connect();
+        }, 1000);
       }
     }
   }
@@ -624,6 +633,12 @@ export class WebSocketManager {
    * 安排重连
    */
   private scheduleReconnect(): void {
+    // 清理已有的重连定时器
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = undefined;
+    }
+
     this.reconnectAttempts++;
     this.state = ConnectionState.RECONNECTING;
 
@@ -693,6 +708,11 @@ export class WebSocketManager {
     if (this.heartbeatTimer) {
       clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = undefined;
+    }
+
+    if (this.urlChangeTimer) {
+      clearTimeout(this.urlChangeTimer);
+      this.urlChangeTimer = undefined;
     }
   }
 }
