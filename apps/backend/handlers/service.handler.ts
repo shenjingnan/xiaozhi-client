@@ -6,8 +6,8 @@ import type { EventBus } from "@/services/event-bus.service.js";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { StatusService } from "@/services/status.service.js";
 import type { AppContext } from "@/types/hono.context.js";
+import { requireMCPServiceManager } from "@/types/hono.context.js";
 import type { Context } from "hono";
-import { requireMCPServiceManager } from "../types/hono.context.js";
 
 /**
  * 服务 API 处理器
