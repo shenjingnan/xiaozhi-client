@@ -72,6 +72,81 @@ export class CozeHandler extends BaseHandler {
   constructor() {
     super();
   }
+
+  /**
+   * 处理扣子 API 错误并返回适当的响应
+   * @param c 请求上下文
+   * @param error 错误对象
+   * @param defaultErrorMessage 默认错误消息
+   * @param operationContext 操作上下文（用于日志记录）
+   * @returns 错误响应
+   */
+  private handleCozeError(
+    c: Context<AppContext>,
+    error: unknown,
+    defaultErrorMessage: string,
+    operationContext: string
+  ): Response {
+    c.get("logger").error(`${operationContext}失败:`, error);
+
+    // 根据错误类型返回不同的响应
+    if (isErrorWithCode(error) && error.code === "AUTH_FAILED") {
+      return c.fail(
+        "AUTH_FAILED",
+        "扣子 API 认证失败，请检查 Token 配置",
+        undefined,
+        401
+      );
+    }
+
+    if (isErrorWithCode(error) && error.code === "RATE_LIMITED") {
+      return c.fail("RATE_LIMITED", "请求过于频繁，请稍后重试", undefined, 429);
+    }
+
+    if (isErrorWithCode(error) && error.code === "TIMEOUT") {
+      return c.fail("TIMEOUT", "请求超时，请稍后重试", undefined, 408);
+    }
+
+    const details =
+      process.env.NODE_ENV === "development" && error instanceof Error
+        ? error.stack
+        : undefined;
+
+    return c.fail(
+      "INTERNAL_ERROR",
+      error instanceof Error ? error.message : defaultErrorMessage,
+      details,
+      500
+    );
+  }
+
+  /**
+   * 验证扣子配置
+   * @param c 请求上下文
+   * @returns 如果配置有效返回 true，否则返回 false
+   */
+  private validateCozeConfig(c: Context<AppContext>): boolean {
+    if (configManager.isCozeConfigValid()) {
+      return true;
+    }
+
+    c.get("logger").debug("扣子配置无效");
+    return false;
+  }
+
+  /**
+   * 返回配置无效的错误响应
+   * @param c 请求上下文
+   * @returns 配置无效的错误响应
+   */
+  private returnConfigInvalidResponse(c: Context<AppContext>): Response {
+    return c.fail(
+      "CONFIG_INVALID",
+      "扣子配置无效，请检查 platforms.coze.token 配置",
+      undefined,
+      400
+    );
+  }
   /**
    * 获取工作空间列表
    * GET /api/coze/workspaces
@@ -80,15 +155,9 @@ export class CozeHandler extends BaseHandler {
     try {
       c.get("logger").info("处理获取工作空间列表请求");
 
-      // 检查扣子配置
-      if (!configManager.isCozeConfigValid()) {
-        c.get("logger").debug("扣子配置无效");
-        return c.fail(
-          "CONFIG_INVALID",
-          "扣子配置无效，请检查 platforms.coze.token 配置",
-          undefined,
-          400
-        );
+      // 验证扣子配置
+      if (!this.validateCozeConfig(c)) {
+        return this.returnConfigInvalidResponse(c);
       }
 
       const cozeApiService = getCozeApiService();
@@ -99,41 +168,11 @@ export class CozeHandler extends BaseHandler {
 
       return c.success({ workspaces });
     } catch (error) {
-      c.get("logger").error("获取工作空间列表失败:", error);
-
-      // 根据错误类型返回不同的响应
-      if (isErrorWithCode(error) && error.code === "AUTH_FAILED") {
-        return c.fail(
-          "AUTH_FAILED",
-          "扣子 API 认证失败，请检查 Token 配置",
-          undefined,
-          401
-        );
-      }
-
-      if (isErrorWithCode(error) && error.code === "RATE_LIMITED") {
-        return c.fail(
-          "RATE_LIMITED",
-          "请求过于频繁，请稍后重试",
-          undefined,
-          429
-        );
-      }
-
-      if (isErrorWithCode(error) && error.code === "TIMEOUT") {
-        return c.fail("TIMEOUT", "请求超时，请稍后重试", undefined, 408);
-      }
-
-      const details =
-        process.env.NODE_ENV === "development" && error instanceof Error
-          ? error.stack
-          : undefined;
-
-      return c.fail(
-        "INTERNAL_ERROR",
-        error instanceof Error ? error.message : "获取工作空间列表失败",
-        details,
-        500
+      return this.handleCozeError(
+        c,
+        error,
+        "获取工作空间列表失败",
+        "获取工作空间列表"
       );
     }
   }
@@ -146,15 +185,9 @@ export class CozeHandler extends BaseHandler {
     try {
       c.get("logger").info("处理获取工作流列表请求");
 
-      // 检查扣子配置
-      if (!configManager.isCozeConfigValid()) {
-        c.get("logger").debug("扣子配置无效");
-        return c.fail(
-          "CONFIG_INVALID",
-          "扣子配置无效，请检查 platforms.coze.token 配置",
-          undefined,
-          400
-        );
+      // 验证扣子配置
+      if (!this.validateCozeConfig(c)) {
+        return this.returnConfigInvalidResponse(c);
       }
 
       // 解析查询参数
@@ -243,41 +276,11 @@ export class CozeHandler extends BaseHandler {
         `成功获取 ${enhancedItems.length} 个工作流`
       );
     } catch (error) {
-      c.get("logger").error("获取工作流列表失败:", error);
-
-      // 根据错误类型返回不同的响应
-      if (isErrorWithCode(error) && error.code === "AUTH_FAILED") {
-        return c.fail(
-          "AUTH_FAILED",
-          "扣子 API 认证失败，请检查 Token 配置",
-          undefined,
-          401
-        );
-      }
-
-      if (isErrorWithCode(error) && error.code === "RATE_LIMITED") {
-        return c.fail(
-          "RATE_LIMITED",
-          "请求过于频繁，请稍后重试",
-          undefined,
-          429
-        );
-      }
-
-      if (isErrorWithCode(error) && error.code === "TIMEOUT") {
-        return c.fail("TIMEOUT", "请求超时，请稍后重试", undefined, 408);
-      }
-
-      const details =
-        process.env.NODE_ENV === "development" && error instanceof Error
-          ? error.stack
-          : undefined;
-
-      return c.fail(
-        "INTERNAL_ERROR",
-        error instanceof Error ? error.message : "获取工作流列表失败",
-        details,
-        500
+      return this.handleCozeError(
+        c,
+        error,
+        "获取工作流列表失败",
+        "获取工作流列表"
       );
     }
   }
@@ -290,15 +293,9 @@ export class CozeHandler extends BaseHandler {
     try {
       c.get("logger").info("处理清除扣子 API 缓存请求");
 
-      // 检查扣子配置
-      if (!configManager.isCozeConfigValid()) {
-        c.get("logger").debug("扣子配置无效");
-        return c.fail(
-          "CONFIG_INVALID",
-          "扣子配置无效，请检查 platforms.coze.token 配置",
-          undefined,
-          400
-        );
+      // 验证扣子配置
+      if (!this.validateCozeConfig(c)) {
+        return this.returnConfigInvalidResponse(c);
       }
 
       const pattern = c.req.query("pattern"); // 可选的缓存模式参数
@@ -327,19 +324,7 @@ export class CozeHandler extends BaseHandler {
         "缓存清除成功"
       );
     } catch (error) {
-      c.get("logger").error("清除缓存失败:", error);
-
-      const details =
-        process.env.NODE_ENV === "development" && error instanceof Error
-          ? error.stack
-          : undefined;
-
-      return c.fail(
-        "INTERNAL_ERROR",
-        error instanceof Error ? error.message : "清除缓存失败",
-        details,
-        500
-      );
+      return this.handleCozeError(c, error, "清除缓存失败", "清除缓存");
     }
   }
 
@@ -351,15 +336,9 @@ export class CozeHandler extends BaseHandler {
     try {
       c.get("logger").info("处理获取缓存统计信息请求");
 
-      // 检查扣子配置
-      if (!configManager.isCozeConfigValid()) {
-        c.get("logger").debug("扣子配置无效");
-        return c.fail(
-          "CONFIG_INVALID",
-          "扣子配置无效，请检查 platforms.coze.token 配置",
-          undefined,
-          400
-        );
+      // 验证扣子配置
+      if (!this.validateCozeConfig(c)) {
+        return this.returnConfigInvalidResponse(c);
       }
 
       const cozeApiService = getCozeApiService();
@@ -367,18 +346,11 @@ export class CozeHandler extends BaseHandler {
 
       return c.success(stats);
     } catch (error) {
-      c.get("logger").error("获取缓存统计信息失败:", error);
-
-      const details =
-        process.env.NODE_ENV === "development" && error instanceof Error
-          ? error.stack
-          : undefined;
-
-      return c.fail(
-        "INTERNAL_ERROR",
-        error instanceof Error ? error.message : "获取缓存统计信息失败",
-        details,
-        500
+      return this.handleCozeError(
+        c,
+        error,
+        "获取缓存统计信息失败",
+        "获取缓存统计信息"
       );
     }
   }
