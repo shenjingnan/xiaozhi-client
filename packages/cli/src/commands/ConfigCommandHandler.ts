@@ -7,6 +7,10 @@ import chalk from "chalk";
 import ora from "ora";
 import type { SubCommand } from "../interfaces/Command";
 import { BaseCommandHandler } from "../interfaces/Command";
+import type {
+  CommandArguments,
+  CommandOptions,
+} from "../interfaces/CommandTypes";
 import type { IDIContainer } from "../interfaces/Config";
 
 /**
@@ -27,14 +31,14 @@ export class ConfigCommandHandler extends BaseCommandHandler {
           defaultValue: "json",
         },
       ],
-      execute: async (args: any[], options: any) => {
+      execute: async (args: CommandArguments, options: CommandOptions) => {
         await this.handleInit(options);
       },
     },
     {
       name: "get",
       description: "查看配置值",
-      execute: async (args: any[], options: any) => {
+      execute: async (args: CommandArguments, options: CommandOptions) => {
         this.validateArgs(args, 1);
         await this.handleGet(args[0]);
       },
@@ -42,7 +46,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
     {
       name: "set",
       description: "设置配置值",
-      execute: async (args: any[], options: any) => {
+      execute: async (args: CommandArguments, options: CommandOptions) => {
         this.validateArgs(args, 2);
         await this.handleSet(args[0], args[1]);
       },
@@ -56,14 +60,17 @@ export class ConfigCommandHandler extends BaseCommandHandler {
   /**
    * 主命令执行（显示帮助）
    */
-  async execute(args: any[], options: any): Promise<void> {
+  override async execute(
+    args: CommandArguments,
+    options: CommandOptions
+  ): Promise<void> {
     console.log("配置管理命令。使用 --help 查看可用的子命令。");
   }
 
   /**
    * 处理初始化命令
    */
-  private async handleInit(options: any): Promise<void> {
+  private async handleInit(options: CommandOptions): Promise<void> {
     const spinner = ora("初始化配置...").start();
 
     try {

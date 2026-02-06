@@ -7,6 +7,10 @@ import chalk from "chalk";
 import ora from "ora";
 import type { CommandOption } from "../interfaces/Command";
 import { BaseCommandHandler } from "../interfaces/Command";
+import type {
+  CommandArguments,
+  CommandOptions,
+} from "../interfaces/CommandTypes";
 import type { IDIContainer } from "../interfaces/Config";
 
 /**
@@ -30,7 +34,10 @@ export class ProjectCommandHandler extends BaseCommandHandler {
   /**
    * 执行创建项目命令
    */
-  async execute(args: any[], options: any): Promise<void> {
+  override async execute(
+    args: CommandArguments,
+    options: CommandOptions
+  ): Promise<void> {
     this.validateArgs(args, 1);
     const projectName = args[0];
 
@@ -42,7 +49,7 @@ export class ProjectCommandHandler extends BaseCommandHandler {
    */
   protected async handleCreate(
     projectName: string,
-    options: any
+    options: CommandOptions
   ): Promise<void> {
     const spinner = ora("初始化项目...").start();
 

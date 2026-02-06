@@ -6,6 +6,10 @@ import chalk from "chalk";
 import ora from "ora";
 import type { SubCommand } from "../interfaces/Command";
 import { BaseCommandHandler } from "../interfaces/Command";
+import type {
+  CommandArguments,
+  CommandOptions,
+} from "../interfaces/CommandTypes";
 import type { IDIContainer } from "../interfaces/Config";
 
 /**
@@ -19,14 +23,14 @@ export class EndpointCommandHandler extends BaseCommandHandler {
     {
       name: "list",
       description: "列出所有 MCP 端点",
-      execute: async (args: any[], options: any) => {
+      execute: async (args: CommandArguments, options: CommandOptions) => {
         await this.handleList();
       },
     },
     {
       name: "add",
       description: "添加新的 MCP 端点",
-      execute: async (args: any[], options: any) => {
+      execute: async (args: CommandArguments, options: CommandOptions) => {
         this.validateArgs(args, 1);
         await this.handleAdd(args[0]);
       },
@@ -34,7 +38,7 @@ export class EndpointCommandHandler extends BaseCommandHandler {
     {
       name: "remove",
       description: "移除指定的 MCP 端点",
-      execute: async (args: any[], options: any) => {
+      execute: async (args: CommandArguments, options: CommandOptions) => {
         this.validateArgs(args, 1);
         await this.handleRemove(args[0]);
       },
@@ -42,7 +46,7 @@ export class EndpointCommandHandler extends BaseCommandHandler {
     {
       name: "set",
       description: "设置 MCP 端点（可以是单个或多个）",
-      execute: async (args: any[], options: any) => {
+      execute: async (args: CommandArguments, options: CommandOptions) => {
         this.validateArgs(args, 1);
         await this.handleSet(args);
       },
@@ -56,7 +60,10 @@ export class EndpointCommandHandler extends BaseCommandHandler {
   /**
    * 主命令执行（显示帮助）
    */
-  async execute(args: any[], options: any): Promise<void> {
+  override async execute(
+    args: CommandArguments,
+    options: CommandOptions
+  ): Promise<void> {
     console.log("MCP 端点管理命令。使用 --help 查看可用的子命令。");
   }
 
