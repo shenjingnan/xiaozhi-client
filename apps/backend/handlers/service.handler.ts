@@ -10,6 +10,32 @@ import type { Context } from "hono";
 import { requireMCPServiceManager } from "../types/hono.context.js";
 
 /**
+ * 允许传递给子进程的环境变量白名单
+ * 仅包含必要的、非敏感的环境变量，避免泄露敏感信息
+ */
+const ALLOWED_ENV_VARS = [
+  "PATH", // 系统路径，必需
+  "NODE_ENV", // Node.js 运行环境
+  "XIAOZHI_CONFIG_DIR", // 小智配置目录
+] as const;
+
+/**
+ * 创建安全的环境变量对象
+ * 仅包含白名单中定义的环境变量
+ */
+function createSafeEnv(): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = {};
+
+  for (const key of ALLOWED_ENV_VARS) {
+    if (process.env[key] !== undefined) {
+      env[key] = process.env[key];
+    }
+  }
+
+  return env;
+}
+
+/**
  * 服务 API 处理器
  */
 export class ServiceApiHandler {
@@ -97,7 +123,7 @@ export class ServiceApiHandler {
           detached: true,
           stdio: "ignore",
           env: {
-            ...process.env,
+            ...createSafeEnv(),
             XIAOZHI_CONFIG_DIR: process.env.XIAOZHI_CONFIG_DIR || process.cwd(),
           },
         });
@@ -114,7 +140,7 @@ export class ServiceApiHandler {
         detached: true,
         stdio: "ignore",
         env: {
-          ...process.env,
+          ...createSafeEnv(),
           XIAOZHI_CONFIG_DIR: process.env.XIAOZHI_CONFIG_DIR || process.cwd(),
         },
       });
@@ -141,7 +167,7 @@ export class ServiceApiHandler {
         detached: true,
         stdio: "ignore",
         env: {
-          ...process.env,
+          ...createSafeEnv(),
           XIAOZHI_CONFIG_DIR: process.env.XIAOZHI_CONFIG_DIR || process.cwd(),
         },
       });
@@ -175,7 +201,7 @@ export class ServiceApiHandler {
         detached: true,
         stdio: "ignore",
         env: {
-          ...process.env,
+          ...createSafeEnv(),
           XIAOZHI_CONFIG_DIR: process.env.XIAOZHI_CONFIG_DIR || process.cwd(),
         },
       });
