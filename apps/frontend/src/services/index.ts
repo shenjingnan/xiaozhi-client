@@ -1,29 +1,24 @@
 /**
- * 统一的网络服务管理器
- * 整合 HTTP API 客户端和 WebSocket 管理器
+ * 服务模块统一导出
  */
 
-import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
-import { type ApiClient, apiClient } from "./api";
+import type { AppConfig } from "@xiaozhi-client/shared-types";
+import { apiClient } from "./api";
 import {
   type ConnectionState,
-  type WebSocketManager,
-  type WebSocketMessage,
+  type EventBusEvents,
+  type EventListener,
   webSocketManager,
 } from "./websocket";
 
 /**
  * 网络服务管理器类
+ * 只保留有价值的混合模式方法和 WebSocket 代理方法
  */
 export class NetworkService {
-  private apiClient: ApiClient;
-  private webSocketManager: WebSocketManager;
+  private apiClient = apiClient;
+  private webSocketManager = webSocketManager;
   private initialized = false;
-
-  constructor() {
-    this.apiClient = apiClient;
-    this.webSocketManager = webSocketManager;
-  }
 
   /**
    * 初始化网络服务
@@ -49,169 +44,6 @@ export class NetworkService {
     console.log("[NetworkService] 销毁网络服务");
     this.webSocketManager.disconnect();
     this.initialized = false;
-  }
-
-  // ==================== HTTP API 方法 ====================
-
-  /**
-   * 获取配置 (HTTP)
-   */
-  async getConfig(): Promise<AppConfig> {
-    return this.apiClient.getConfig();
-  }
-
-  /**
-   * 更新配置 (HTTP)
-   */
-  async updateConfig(config: AppConfig): Promise<void> {
-    return this.apiClient.updateConfig(config);
-  }
-
-  /**
-   * 获取状态 (HTTP)
-   */
-  async getStatus(): Promise<any> {
-    return this.apiClient.getStatus();
-  }
-
-  /**
-   * 获取客户端状态 (HTTP)
-   */
-  async getClientStatus(): Promise<ClientStatus> {
-    return this.apiClient.getClientStatus();
-  }
-
-  /**
-   * 重启服务 (HTTP)
-   */
-  async restartService(): Promise<void> {
-    return this.apiClient.restartService();
-  }
-
-  /**
-   * 停止服务 (HTTP)
-   */
-  async stopService(): Promise<void> {
-    return this.apiClient.stopService();
-  }
-
-  /**
-   * 启动服务 (HTTP)
-   */
-  async startService(): Promise<void> {
-    return this.apiClient.startService();
-  }
-
-  /**
-   * 获取服务状态 (HTTP)
-   */
-  async getServiceStatus(): Promise<any> {
-    return this.apiClient.getServiceStatus();
-  }
-
-  /**
-   * 获取服务健康状态 (HTTP)
-   */
-  async getServiceHealth(): Promise<any> {
-    return this.apiClient.getServiceHealth();
-  }
-
-  /**
-   * 获取 MCP 端点 (HTTP)
-   */
-  async getMcpEndpoint(): Promise<string> {
-    return this.apiClient.getMcpEndpoint();
-  }
-
-  /**
-   * 获取 MCP 端点列表 (HTTP)
-   */
-  async getMcpEndpoints(): Promise<string[]> {
-    return this.apiClient.getMcpEndpoints();
-  }
-
-  /**
-   * 获取 MCP 服务配置 (HTTP)
-   */
-  async getMcpServers(): Promise<Record<string, any>> {
-    return this.apiClient.getMcpServers();
-  }
-
-  /**
-   * 获取连接配置 (HTTP)
-   */
-  async getConnectionConfig(): Promise<any> {
-    return this.apiClient.getConnectionConfig();
-  }
-
-  /**
-   * 重新加载配置 (HTTP)
-   */
-  async reloadConfig(): Promise<AppConfig> {
-    return this.apiClient.reloadConfig();
-  }
-
-  /**
-   * 获取配置文件路径 (HTTP)
-   */
-  async getConfigPath(): Promise<string> {
-    return this.apiClient.getConfigPath();
-  }
-
-  /**
-   * 检查配置是否存在 (HTTP)
-   */
-  async checkConfigExists(): Promise<boolean> {
-    return this.apiClient.checkConfigExists();
-  }
-
-  /**
-   * 获取重启状态 (HTTP)
-   */
-  async getRestartStatus(): Promise<any> {
-    return this.apiClient.getRestartStatus();
-  }
-
-  /**
-   * 检查客户端是否连接 (HTTP)
-   */
-  async checkClientConnected(): Promise<boolean> {
-    return this.apiClient.checkClientConnected();
-  }
-
-  /**
-   * 获取最后心跳时间 (HTTP)
-   */
-  async getLastHeartbeat(): Promise<number | null> {
-    return this.apiClient.getLastHeartbeat();
-  }
-
-  /**
-   * 获取活跃的 MCP 服务器列表 (HTTP)
-   */
-  async getActiveMCPServers(): Promise<string[]> {
-    return this.apiClient.getActiveMCPServers();
-  }
-
-  /**
-   * 更新客户端状态 (HTTP)
-   */
-  async updateClientStatus(status: Partial<ClientStatus>): Promise<void> {
-    return this.apiClient.updateClientStatus(status);
-  }
-
-  /**
-   * 设置活跃的 MCP 服务器列表 (HTTP)
-   */
-  async setActiveMCPServers(servers: string[]): Promise<void> {
-    return this.apiClient.setActiveMCPServers(servers);
-  }
-
-  /**
-   * 重置状态 (HTTP)
-   */
-  async resetStatus(): Promise<void> {
-    return this.apiClient.resetStatus();
   }
 
   // ==================== WebSocket 方法 ====================
@@ -241,11 +73,9 @@ export class NetworkService {
    * 监听 WebSocket 事件
    * @returns 取消订阅的函数
    */
-  onWebSocketEvent<K extends keyof import("./websocket").EventBusEvents>(
+  onWebSocketEvent<K extends keyof EventBusEvents>(
     event: K,
-    listener: import("./websocket").EventListener<
-      import("./websocket").EventBusEvents[K]
-    >
+    listener: EventListener<EventBusEvents[K]>
   ): () => void {
     return this.webSocketManager.subscribe(event, listener);
   }
@@ -263,31 +93,11 @@ export class NetworkService {
   /**
    * 通过 WebSocket 发送消息
    */
-  send(message: WebSocketMessage): boolean {
+  send(message: import("./websocket").WebSocketMessage): boolean {
     return this.webSocketManager.send(message);
   }
 
-  // ==================== 便捷方法 ====================
-
-  /**
-   * 获取完整的应用状态 (HTTP + WebSocket)
-   */
-  async getFullAppState(): Promise<{
-    config: AppConfig;
-    status: any;
-    webSocketConnected: boolean;
-  }> {
-    const [config, status] = await Promise.all([
-      this.getConfig(),
-      this.getStatus(),
-    ]);
-
-    return {
-      config,
-      status,
-      webSocketConnected: this.isWebSocketConnected(),
-    };
-  }
+  // ==================== 混合模式方法 (HTTP + WebSocket) ====================
 
   /**
    * 更新配置并等待 WebSocket 通知 (混合模式)
@@ -313,7 +123,7 @@ export class NetworkService {
       }, timeout);
 
       // 通过 HTTP API 更新配置
-      this.updateConfig(config).catch((error) => {
+      this.apiClient.updateConfig(config).catch((error) => {
         clearTimeout(timeoutId);
         unsubscribe?.();
         reject(error);
@@ -328,15 +138,18 @@ export class NetworkService {
     return new Promise((resolve, reject) => {
       const unsubscribe = this.webSocketManager.subscribe(
         "data:restartStatus",
-        (status) => {
-          if (status.status === "completed") {
-            clearTimeout(timeoutId);
-            unsubscribe();
-            resolve();
-          } else if (status.status === "failed") {
-            clearTimeout(timeoutId);
-            unsubscribe();
-            reject(new Error(status.error || "服务重启失败"));
+        (status: unknown) => {
+          if (typeof status === "object" && status !== null && "status" in status) {
+            const statusObj = status as { status: string; error?: string };
+            if (statusObj.status === "completed") {
+              clearTimeout(timeoutId);
+              unsubscribe();
+              resolve();
+            } else if (statusObj.status === "failed") {
+              clearTimeout(timeoutId);
+              unsubscribe();
+              reject(new Error(statusObj.error || "服务重启失败"));
+            }
           }
         }
       );
@@ -347,7 +160,7 @@ export class NetworkService {
       }, timeout);
 
       // 通过 HTTP API 重启服务
-      this.restartService().catch((error) => {
+      this.apiClient.restartService().catch((error) => {
         clearTimeout(timeoutId);
         unsubscribe?.();
         reject(error);
@@ -365,4 +178,5 @@ export { ConnectionState } from "./websocket";
 export { cozeApiClient, CozeApiClient } from "./cozeApi";
 
 // 导出类型
-export type { ApiClient, WebSocketManager };
+export type { ApiClient } from "./api";
+export type { WebSocketManager } from "./websocket";

@@ -3,6 +3,7 @@
  */
 
 import { ConnectionState, networkService } from "@services/index";
+import { apiClient } from "@services/api";
 import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useNetworkService } from "../useNetworkService";
@@ -12,11 +13,6 @@ vi.mock("@services/index", () => ({
   networkService: {
     initialize: vi.fn(),
     destroy: vi.fn(),
-    getConfig: vi.fn(),
-    updateConfig: vi.fn(),
-    getStatus: vi.fn(),
-    getClientStatus: vi.fn(),
-    restartService: vi.fn(),
     updateConfigWithNotification: vi.fn(),
     restartServiceWithNotification: vi.fn(),
     setWebSocketUrl: vi.fn(),
@@ -29,6 +25,16 @@ vi.mock("@services/index", () => ({
     CONNECTING: "connecting",
     CONNECTED: "connected",
     RECONNECTING: "reconnecting",
+  },
+}));
+
+vi.mock("@services/api", () => ({
+  apiClient: {
+    getConfig: vi.fn(),
+    updateConfig: vi.fn(),
+    getStatus: vi.fn(),
+    getClientStatus: vi.fn(),
+    restartService: vi.fn(),
   },
 }));
 
@@ -60,20 +66,21 @@ vi.mock("@stores/websocket", () => ({
 
 describe("useNetworkService", () => {
   const mockNetworkService = vi.mocked(networkService);
+  const mockApiClient = vi.mocked(apiClient);
 
   beforeEach(() => {
     vi.clearAllMocks();
     // 重置所有 mock 的实现
     mockNetworkService.initialize.mockResolvedValue(undefined);
-    mockNetworkService.getConfig.mockResolvedValue({ version: "1.0.0" } as any);
-    mockNetworkService.getClientStatus.mockResolvedValue({
+    mockApiClient.getConfig.mockResolvedValue({ version: "1.0.0" } as any);
+    mockApiClient.getClientStatus.mockResolvedValue({
       status: "connected",
     } as any);
-    mockNetworkService.getStatus.mockResolvedValue({
+    mockApiClient.getStatus.mockResolvedValue({
       client: { status: "connected" },
     } as any);
-    mockNetworkService.updateConfig.mockResolvedValue(undefined);
-    mockNetworkService.restartService.mockResolvedValue(undefined);
+    mockApiClient.updateConfig.mockResolvedValue(undefined);
+    mockApiClient.restartService.mockResolvedValue(undefined);
     mockNetworkService.updateConfigWithNotification.mockResolvedValue(
       undefined
     );
@@ -147,26 +154,26 @@ describe("useNetworkService", () => {
     });
   });
 
-  describe("HTTP API 方法", () => {
+  describe("HTTP API 方法（直接使用 apiClient）", () => {
     it("getConfig 应该正确获取配置", async () => {
       const config = { version: "1.0.0" };
-      mockNetworkService.getConfig.mockResolvedValue(config as any);
+      mockApiClient.getConfig.mockResolvedValue(config as any);
 
       const { result } = renderHook(() => useNetworkService());
 
       const resultConfig = await result.current.getConfig();
-      expect(mockNetworkService.getConfig).toHaveBeenCalled();
+      expect(mockApiClient.getConfig).toHaveBeenCalled();
       expect(resultConfig).toBe(config);
     });
 
     it("getStatus 应该正确获取状态", async () => {
       const status = { client: { status: "connected" } };
-      mockNetworkService.getStatus.mockResolvedValue(status as any);
+      mockApiClient.getStatus.mockResolvedValue(status as any);
 
       const { result } = renderHook(() => useNetworkService());
 
       const resultStatus = await result.current.getStatus();
-      expect(mockNetworkService.getStatus).toHaveBeenCalled();
+      expect(mockApiClient.getStatus).toHaveBeenCalled();
       expect(resultStatus).toBe(status);
     });
 
@@ -177,7 +184,7 @@ describe("useNetworkService", () => {
 
       await result.current.updateConfig(config as any);
 
-      expect(mockNetworkService.updateConfig).toHaveBeenCalledWith(config);
+      expect(mockApiClient.updateConfig).toHaveBeenCalledWith(config);
     });
 
     it("restartService 应该正确重启服务", async () => {
@@ -185,22 +192,22 @@ describe("useNetworkService", () => {
 
       await result.current.restartService();
 
-      expect(mockNetworkService.restartService).toHaveBeenCalled();
+      expect(mockApiClient.restartService).toHaveBeenCalled();
     });
 
     it("refreshStatus 应该正确刷新状态", async () => {
       const status = { client: { status: "connected" } };
-      mockNetworkService.getStatus.mockResolvedValue(status as any);
+      mockApiClient.getStatus.mockResolvedValue(status as any);
 
       const { result } = renderHook(() => useNetworkService());
 
       await result.current.refreshStatus();
 
-      expect(mockNetworkService.getStatus).toHaveBeenCalled();
+      expect(mockApiClient.getStatus).toHaveBeenCalled();
     });
   });
 
-  describe("混合模式方法", () => {
+  describe("混合模式方法（使用 NetworkService）", () => {
     it("updateConfigWithNotification 应该正确工作", async () => {
       const config = { version: "1.0.0" };
 
@@ -294,7 +301,7 @@ describe("useNetworkService", () => {
   describe("错误处理", () => {
     it("getConfig 应该处理获取配置失败", async () => {
       const error = new Error("获取配置失败");
-      mockNetworkService.getConfig.mockRejectedValue(error);
+      mockApiClient.getConfig.mockRejectedValue(error);
       const consoleSpy = vi
         .spyOn(console, "error")
         .mockImplementation(() => {});
@@ -312,7 +319,7 @@ describe("useNetworkService", () => {
 
     it("updateConfig 应该处理更新配置失败", async () => {
       const error = new Error("更新配置失败");
-      mockNetworkService.updateConfig.mockRejectedValue(error);
+      mockApiClient.updateConfig.mockRejectedValue(error);
       const consoleSpy = vi
         .spyOn(console, "error")
         .mockImplementation(() => {});
@@ -332,7 +339,7 @@ describe("useNetworkService", () => {
 
     it("restartService 应该处理重启服务失败", async () => {
       const error = new Error("重启服务失败");
-      mockNetworkService.restartService.mockRejectedValue(error);
+      mockApiClient.restartService.mockRejectedValue(error);
       const consoleSpy = vi
         .spyOn(console, "error")
         .mockImplementation(() => {});
@@ -431,20 +438,20 @@ describe("useNetworkService", () => {
     it("loadInitialData 应该正确加载初始数据", async () => {
       const config = { version: "1.0.0" };
       const status = { status: "connected" };
-      mockNetworkService.getConfig.mockResolvedValue(config as any);
-      mockNetworkService.getClientStatus.mockResolvedValue(status as any);
+      mockApiClient.getConfig.mockResolvedValue(config as any);
+      mockApiClient.getClientStatus.mockResolvedValue(status as any);
 
       const { result } = renderHook(() => useNetworkService());
 
       await result.current.loadInitialData();
 
-      expect(mockNetworkService.getConfig).toHaveBeenCalled();
-      expect(mockNetworkService.getClientStatus).toHaveBeenCalled();
+      expect(mockApiClient.getConfig).toHaveBeenCalled();
+      expect(mockApiClient.getClientStatus).toHaveBeenCalled();
     });
 
     it("loadInitialData 应该处理加载失败", async () => {
       const error = new Error("加载初始数据失败");
-      mockNetworkService.getConfig.mockRejectedValue(error);
+      mockApiClient.getConfig.mockRejectedValue(error);
       const consoleSpy = vi
         .spyOn(console, "error")
         .mockImplementation(() => {});
@@ -464,7 +471,7 @@ describe("useNetworkService", () => {
   describe("端口切换功能", () => {
     it("changePort 应该处理切换失败", async () => {
       const error = new Error("切换失败");
-      mockNetworkService.restartService.mockRejectedValue(error);
+      mockApiClient.restartService.mockRejectedValue(error);
 
       const { result } = renderHook(() => useNetworkService());
 
@@ -479,6 +486,35 @@ describe("useNetworkService", () => {
       unmount();
 
       expect(mockNetworkService.destroy).toHaveBeenCalled();
+    });
+  });
+
+  describe("务实开发验证", () => {
+    it("HTTP 方法应该直接使用 apiClient", () => {
+      const { result } = renderHook(() => useNetworkService());
+
+      // 验证 getConfig 直接使用 apiClient
+      result.current.getConfig();
+      expect(mockApiClient.getConfig).toHaveBeenCalled();
+
+      // 验证 updateConfig 直接使用 apiClient
+      result.current.updateConfig({} as any);
+      expect(mockApiClient.updateConfig).toHaveBeenCalled();
+
+      // 验证 restartService 直接使用 apiClient
+      result.current.restartService();
+      expect(mockApiClient.restartService).toHaveBeenCalled();
+    });
+
+    it("混合模式方法应该使用 NetworkService", () => {
+      const { result } = renderHook(() => useNetworkService());
+
+      // 验证混合模式方法使用 NetworkService
+      result.current.updateConfigWithNotification({} as any);
+      expect(mockNetworkService.updateConfigWithNotification).toHaveBeenCalled();
+
+      result.current.restartServiceWithNotification();
+      expect(mockNetworkService.restartServiceWithNotification).toHaveBeenCalled();
     });
   });
 });
