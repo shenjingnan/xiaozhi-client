@@ -4,7 +4,7 @@
 
 ## 前置要求
 
-- Node.js 18+
+- Node.js 20+
 - pnpm 或 npm
 
 ## 安装依赖
