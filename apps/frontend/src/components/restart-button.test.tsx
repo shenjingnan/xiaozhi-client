@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { vi } from "vitest";
-import { RestartButton, type RestartStatus } from "./restart-button";
+import { RestartButton } from "./restart-button";
+import type { RestartStatus } from "@xiaozhi-client/shared-types";
 
 // Mock status store
 const mockRestartService = vi.fn();

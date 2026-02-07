@@ -14,6 +14,7 @@ import type {
   MCPServerConfig,
   MCPServerListResponse,
   MCPServerStatus,
+  RestartStatus,
 } from "@xiaozhi-client/shared-types";
 
 /**
@@ -70,15 +71,6 @@ interface VersionInfo {
   version: string;
   description: string;
   author: string;
-}
-
-/**
- * 重启状态接口
- */
-interface RestartStatus {
-  status: "restarting" | "completed" | "failed";
-  error?: string;
-  timestamp: number;
 }
 
 /**
@@ -1159,7 +1151,6 @@ export type {
   ApiErrorResponse,
   ServiceStatus,
   ServiceHealth,
-  RestartStatus,
   FullStatus,
   VersionInfo,
   EndpointStatusResponse,

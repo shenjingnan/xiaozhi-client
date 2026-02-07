@@ -44,6 +44,9 @@ export type {
   MCPServerConfig,
   SSEMCPServerConfig,
   StreamableHTTPMCPServerConfig,
+  ClientStatus,
+  ServerInfo,
+  RestartStatus,
 } from "./config";
 
 // 前端相关类型

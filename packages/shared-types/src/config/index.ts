@@ -26,6 +26,7 @@ export type {
 
 // 服务器配置相关类型
 export type {
+  ClientStatus,
   ClientStatus as ConfigClientStatus,
   ServerInfo,
   RestartStatus,
