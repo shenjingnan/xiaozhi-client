@@ -18,6 +18,7 @@ export { toolLogsRoutes } from "./tool-logs.route.js";
 export { mcpserverRoutes } from "./mcpserver.route.js";
 export { endpointRoutes } from "./endpoint.route.js";
 export { miscRoutes } from "./misc.route.js";
+export { esp32Routes } from "./esp32.route.js";
 
 /**
  * 路由域名列表
@@ -36,6 +37,7 @@ export const routeNames = [
   "mcpserver",
   "endpoint",
   "misc",
+  "esp32",
 ] as const;
 
 /**

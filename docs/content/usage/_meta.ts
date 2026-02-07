@@ -6,6 +6,7 @@ const meta: MetaRecord = {
   "coze-workflow": "集成扣子工作流",
   "multi-endpoint": "配置多个小智接入点",
   "as-mcp": "作为 MCP 服务使用",
+  "device-binding": "小智硬件设备绑定",
 };
 
 export default meta;

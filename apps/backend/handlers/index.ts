@@ -12,3 +12,4 @@ export * from "./mcp-tool.handler.js";
 export * from "./mcp-tool-log.handler.js";
 export * from "./update.handler.js";
 export * from "./version.handler.js";
+export { ESP32Handler } from "./esp32.handler.js";

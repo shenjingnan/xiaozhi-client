@@ -89,6 +89,66 @@ vi.mock("@/services/index.js", () => {
     destroy: vi.fn(),
   };
 
+  // DeviceRegistryService mock
+  const mockDeviceRegistryServiceInstance = {
+    getDevice: vi.fn(() => null),
+    getAllDevices: vi.fn(() => []),
+    generateActivationCode: vi.fn(() => ({
+      code: "123456",
+      challenge: "test-challenge",
+    })),
+    activateDevice: vi.fn(() => ({
+      deviceId: "test-device-id",
+      macAddress: "AA:BB:CC:DD:EE:FF",
+      board: "ESP32-S3-BOX",
+      appVersion: "1.0.0",
+      status: "active",
+      createdAt: new Date(),
+      lastSeenAt: new Date(),
+    })),
+    updateDeviceStatus: vi.fn(),
+    updateLastSeen: vi.fn(),
+    deleteDevice: vi.fn(() => false),
+    getPendingDevice: vi.fn(() => null),
+    destroy: vi.fn(),
+  };
+
+  // ESP32Service mock
+  const mockESP32ServiceInstance = {
+    handleOTARequest: vi.fn(() => ({
+      activation: {
+        code: "123456",
+        challenge: "test-challenge",
+        message: "请在Web界面输入激活码完成设备绑定",
+        timeoutMs: 5 * 60 * 1000,
+      },
+      serverTime: {
+        timestamp: Date.now(),
+        timezoneOffset: new Date().getTimezoneOffset() * -60 * 1000,
+      },
+    })),
+    bindDevice: vi.fn(() => ({
+      deviceId: "test-device-id",
+      macAddress: "AA:BB:CC:DD:EE:FF",
+      board: "ESP32-S3-BOX",
+      appVersion: "1.0.0",
+      status: "active",
+      createdAt: new Date(),
+      lastSeenAt: new Date(),
+    })),
+    handleWebSocketConnection: vi.fn(),
+    sendToDevice: vi.fn(),
+    listDevices: vi.fn(() => ({
+      devices: [],
+      total: 0,
+    })),
+    getDevice: vi.fn(() => null),
+    deleteDevice: vi.fn(),
+    disconnectDevice: vi.fn(),
+    getConnectedDeviceCount: vi.fn(() => 0),
+    destroy: vi.fn(),
+  };
+
   return {
     // EventBus 相关
     getEventBus: vi.fn(() => mockEventBus),
@@ -98,6 +158,10 @@ vi.mock("@/services/index.js", () => {
     StatusService: vi.fn(() => mockStatusServiceInstance),
     // NotificationService 相关
     NotificationService: vi.fn(() => mockNotificationServiceInstance),
+    // DeviceRegistryService 相关
+    DeviceRegistryService: vi.fn(() => mockDeviceRegistryServiceInstance),
+    // ESP32Service 相关
+    ESP32Service: vi.fn(() => mockESP32ServiceInstance),
   };
 });
 
