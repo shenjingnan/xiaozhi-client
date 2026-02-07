@@ -9,7 +9,9 @@ import { ConnectionState } from "@services/websocket";
 import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
 import { useConfigStore } from "./config";
 import { useStatusStore } from "./status";
+import type { RestartStatus } from "./status";
 import { useWebSocketStore } from "./websocket";
+import type { PortChangeStatus } from "./websocket";
 
 /**
  * 向后兼容的配置选择器
@@ -86,7 +88,7 @@ export function useWebSocketConnected(): boolean {
  * 向后兼容的重启状态选择器
  * @deprecated 请使用 useRestartStatus() from "./status"
  */
-export function useWebSocketRestartStatus(): any {
+export function useWebSocketRestartStatus(): RestartStatus | null {
   console.warn(
     '[useWebSocketRestartStatus] 此选择器已废弃，请使用 useRestartStatus() from "./status"'
   );
@@ -108,7 +110,7 @@ export function useWebSocketWsUrl(): string {
  * 向后兼容的端口切换状态选择器
  * @deprecated 请使用 usePortChangeStatus() from "./websocket"
  */
-export function useWebSocketPortChangeStatus(): any {
+export function useWebSocketPortChangeStatus(): PortChangeStatus | undefined {
   console.warn(
     '[useWebSocketPortChangeStatus] 此选择器已废弃，请使用 usePortChangeStatus() from "./websocket"'
   );
