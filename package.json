@@ -8,6 +8,9 @@
   },
   "author": "shenjingnan <sjn.code@gmail.com>",
   "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "keywords": [
     "xiaozhi",
     "mcp",

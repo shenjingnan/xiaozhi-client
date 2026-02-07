@@ -227,7 +227,7 @@ xiaozhi-client 是一个务实的开源 MCP 客户端：
 ### 构建过程
 
 - 使用 tsup 进行打包
-- 输出 Node.js 18+ 的 ESM 格式
+- 输出 Node.js 20+ 的 ESM 格式
 - 包含源映射和 TypeScript 声明文件
 - 将模板和配置文件复制到 dist 目录
 
