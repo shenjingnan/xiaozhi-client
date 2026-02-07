@@ -1,6 +1,9 @@
 /**
  * 工具管理 API 服务
  * 专门处理自定义工具的添加、删除和管理操作
+ *
+ * 注意：此服务使用旧的 Coze 工作流 API 格式以保持向后兼容性。
+ * 新代码应使用 @xiaozhi-client/shared-types 中定义的统一类型格式。
  */
 
 import type {
@@ -8,35 +11,6 @@ import type {
   WorkflowParameterConfig,
 } from "@xiaozhi-client/shared-types";
 import { apiClient } from "./api";
-
-/**
- * 添加工具请求参数
- */
-export interface AddToolRequest {
-  workflow: CozeWorkflow;
-  customName?: string;
-  customDescription?: string;
-  parameterConfig?: WorkflowParameterConfig;
-}
-
-/**
- * 添加工具响应
- */
-export interface AddToolResponse {
-  name: string;
-  description: string;
-  inputSchema: any;
-  handler: any;
-}
-
-/**
- * API错误类型
- */
-export interface ApiError {
-  code: string;
-  message: string;
-  details?: any;
-}
 
 /**
  * 工具管理服务类
@@ -53,7 +27,12 @@ export class ToolsApiService {
     customName?: string,
     customDescription?: string,
     parameterConfig?: WorkflowParameterConfig
-  ): Promise<AddToolResponse> {
+  ): Promise<{
+    name: string;
+    description: string;
+    inputSchema: unknown;
+    handler: unknown;
+  }> {
     // 请求参数验证
     this.validateAddToolRequest(
       workflow,
