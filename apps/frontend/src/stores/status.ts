@@ -12,19 +12,10 @@
 
 import { apiClient } from "@services/api";
 import { webSocketManager } from "@services/websocket";
-import type { ClientStatus } from "@xiaozhi-client/shared-types";
+import type { ClientStatus, RestartStatus } from "@xiaozhi-client/shared-types";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
-
-/**
- * 重启状态接口
- */
-interface RestartStatus {
-  status: "restarting" | "completed" | "failed";
-  error?: string;
-  timestamp: number;
-}
 
 /**
  * 服务状态接口

@@ -5,6 +5,7 @@ import { getEventBus } from "@/services/event-bus.service.js";
 
 /**
  * 客户端信息接口
+ * 与 shared-types 中的 ClientStatus 保持一致
  */
 export interface ClientInfo {
   status: "connected" | "disconnected";
@@ -15,12 +16,18 @@ export interface ClientInfo {
 
 /**
  * 重启状态接口
+ * 与 shared-types 中的 RestartStatus 保持一致
  */
 export interface RestartStatus {
+  /** 重启状态 */
   status: "restarting" | "completed" | "failed";
+  /** 错误信息 */
   error?: string;
+  /** 时间戳 */
   timestamp: number;
+  /** 服务名称（可选） */
   serviceName?: string;
+  /** 重试次数（可选） */
   attempt?: number;
 }
 

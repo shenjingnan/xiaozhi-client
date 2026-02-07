@@ -1,16 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { useRestartPollingStatus, useStatusStore } from "@/stores/status";
+import type { RestartStatus } from "@xiaozhi-client/shared-types";
 import clsx from "clsx";
 import { LoaderCircleIcon, PowerIcon } from "lucide-react";
-
-/**
- * 重启状态接口
- */
-export interface RestartStatus {
-  status: "restarting" | "completed" | "failed";
-  error?: string;
-  timestamp: number;
-}
 
 /**
  * RestartButton 组件属性接口

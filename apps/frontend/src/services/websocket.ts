@@ -7,7 +7,7 @@
  * - 支持多个 store 订阅 WebSocket 事件
  */
 
-import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
+import type { AppConfig, ClientStatus, RestartStatus } from "@xiaozhi-client/shared-types";
 
 /**
  * WebSocket 消息类型
@@ -21,15 +21,6 @@ interface WebSocketMessage {
     message: string;
     timestamp?: number;
   };
-}
-
-/**
- * 重启状态接口
- */
-interface RestartStatus {
-  status: "restarting" | "completed" | "failed";
-  error?: string;
-  timestamp: number;
 }
 
 /**
@@ -704,7 +695,6 @@ export const webSocketManager = WebSocketManager.getInstance();
 export { ConnectionState };
 export type {
   WebSocketMessage,
-  RestartStatus,
   WebSocketManagerConfig,
   EventBusEvents,
   EventListener,

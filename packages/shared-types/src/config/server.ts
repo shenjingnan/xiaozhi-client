@@ -36,12 +36,14 @@ export interface ServerInfo {
  * 重启状态
  */
 export interface RestartStatus {
-  /** 是否正在重启 */
-  restarting: boolean;
-  /** 重启时间 */
-  restartTime?: string;
-  /** 重启原因 */
-  reason?: string;
-  /** 预计完成时间 */
-  estimatedCompletion?: string;
+  /** 重启状态 */
+  status: "restarting" | "completed" | "failed";
+  /** 错误信息 */
+  error?: string;
+  /** 时间戳 */
+  timestamp: number;
+  /** 服务名称（可选） */
+  serviceName?: string;
+  /** 重试次数（可选） */
+  attempt?: number;
 }
