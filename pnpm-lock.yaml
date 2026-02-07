@@ -189,6 +189,9 @@ importers:
       '@xiaozhi-client/mcp-core':
         specifier: workspace:*
         version: link:../../packages/mcp-core
+      '@xiaozhi-client/shared-types':
+        specifier: workspace:*
+        version: link:../../packages/shared-types
       '@xiaozhi-client/version':
         specifier: workspace:*
         version: link:../../packages/version

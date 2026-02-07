@@ -31,11 +31,6 @@ export interface CozeUIState {
 }
 
 /**
- * 客户端状态
+ * 客户端状态（从 config/server 重新导出）
  */
-export interface ClientStatus {
-  status: "connected" | "disconnected";
-  mcpEndpoint: string;
-  activeMCPServers: string[];
-  lastHeartbeat?: number;
-}
+export type { ClientStatus } from "../config/server";
