@@ -27,6 +27,12 @@ export enum RecoveryStrategy {
 }
 
 /**
+ * 错误上下文基础类型
+ * 所有错误上下文都应使用此类型，而非 any
+ */
+export type ErrorContext = Record<string, unknown>;
+
+/**
  * MCP 错误接口
  */
 export interface MCPError {
@@ -38,7 +44,7 @@ export interface MCPError {
   recoverable: boolean;
   recoveryStrategy: RecoveryStrategy;
   originalError?: Error;
-  context?: Record<string, any>;
+  context?: ErrorContext;
 }
 
 /**
@@ -67,7 +73,7 @@ function getLogger(): Logger {
 export function categorizeError(
   error: Error,
   serviceName: string,
-  context?: Record<string, any>
+  context?: ErrorContext
 ): MCPError {
   const timestamp = new Date();
   const message = error.message.toLowerCase();
