@@ -96,10 +96,30 @@ export class MCPManager extends EventEmitter {
   }
 
   /**
-   * 移除服务器配置
+   * 移除服务器配置并断开连接
    * @param name 服务器名称
+   * @returns 如果服务存在并被移除则返回 true，否则返回 false
+   *
+   * @example
+   * ```typescript
+   * // 移除已连接的服务
+   * await manager.removeServer('datetime');
+   * // 连接会被断开，配置会被删除
+   *
+   * // 移除未连接的服务
+   * await manager.removeServer('unused');
+   * // 只删除配置
+   * ```
    */
-  removeServer(name: string): boolean {
+  async removeServer(name: string): Promise<boolean> {
+    // 先断开并清理连接
+    const connection = this.connections.get(name);
+    if (connection) {
+      await connection.disconnect();
+      this.connections.delete(name);
+    }
+
+    // 再删除配置
     return this.configs.delete(name);
   }
 
