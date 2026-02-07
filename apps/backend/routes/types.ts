@@ -154,8 +154,11 @@ export function normalizeRoutes(route: RouteRegistry): RouteDefinition[] {
  * 创建路由处理器辅助函数
  * 自动处理依赖注入，减少样板代码
  *
+ * 支持必需和可选依赖，可选依赖在未初始化时返回 503 错误
+ *
  * @example
  * ```typescript
+ * // 必需依赖
  * const h = createHandler("versionApiHandler");
  * export const routes = [
  *   {
@@ -164,16 +167,44 @@ export function normalizeRoutes(route: RouteRegistry): RouteDefinition[] {
  *     handler: h((handler, c) => handler.getVersion(c)),
  *   }
  * ];
+ *
+ * // 可选依赖
+ * const mcpH = createHandler("mcpHandler", {
+ *   errorCode: "MCP_HANDLER_NOT_AVAILABLE",
+ *   errorMessage: "MCP 服务器处理器尚未初始化",
+ * });
  * ```
  */
 export function createHandler<K extends keyof HandlerDependencies>(
-  dependencyKey: K
+  dependencyKey: K,
+  options?: {
+    /** 可选依赖的错误代码 */
+    errorCode?: string;
+    /** 可选依赖的错误信息 */
+    errorMessage?: string;
+  }
 ): (
-  method: (handler: HandlerDependencies[K], c: Context) => Promise<Response>
+  method: (
+    handler: NonNullable<HandlerDependencies[K]>,
+    c: Context
+  ) => Promise<Response>
 ) => RouteDefinition["handler"] {
+  const { errorCode, errorMessage } = options ?? {};
   return (method) => (c: Context) => {
     const dependencies = c.get("dependencies") as HandlerDependencies;
     const handler = dependencies[dependencyKey];
-    return method(handler, c);
+
+    // 处理可选依赖未初始化的情况
+    if (!handler) {
+      const errorResponse = {
+        error: {
+          code: errorCode ?? "HANDLER_NOT_AVAILABLE",
+          message: errorMessage ?? "Handler not initialized",
+        },
+      };
+      return Promise.resolve(c.json(errorResponse, 503));
+    }
+
+    return method(handler as NonNullable<HandlerDependencies[K]>, c);
   };
 }
