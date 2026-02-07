@@ -1848,5 +1848,3 @@ export class MCPServiceManager extends EventEmitter {
     );
   }
 }
-
-export default MCPServiceManager;
