@@ -5,13 +5,8 @@
  */
 
 import { createHash } from "node:crypto";
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  renameSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { rename, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
@@ -247,15 +242,15 @@ export class MCPCacheManager {
   private async atomicWrite(filePath: string, data: string): Promise<void> {
     const tempPath = `${filePath}.tmp`;
     try {
-      // 写入临时文件
-      writeFileSync(tempPath, data, "utf8");
-      // 原子性重命名
-      renameSync(tempPath, filePath);
+      // 使用异步写入临时文件
+      await writeFile(tempPath, data, "utf8");
+      // 使用异步原子性重命名
+      await rename(tempPath, filePath);
     } catch (error) {
       // 清理临时文件
       try {
         if (existsSync(tempPath)) {
-          writeFileSync(tempPath, "", "utf8"); // 清空后删除
+          await writeFile(tempPath, "", "utf8"); // 清空后删除
         }
       } catch {
         // 忽略清理错误
