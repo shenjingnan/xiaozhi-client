@@ -4,14 +4,23 @@ import type { EventBus } from "@/services/event-bus.service.js";
 import { getEventBus } from "@/services/event-bus.service.js";
 
 /**
- * 客户端信息接口
+ * 客户端状态信息
+ *
+ * 注意：此类型定义应与 @xiaozhi-client/shared-types 中的 ClientStatus 保持一致
+ * 这里为了后端独立运行而重复定义，避免对 shared-types 包的依赖
  */
-export interface ClientInfo {
+export interface ClientStatus {
   status: "connected" | "disconnected";
   mcpEndpoint: string;
   activeMCPServers: string[];
   lastHeartbeat?: number;
 }
+
+/**
+ * 为了向后兼容，保留 ClientInfo 作为 ClientStatus 的别名
+ * @deprecated 请直接使用 ClientStatus 类型
+ */
+export type ClientInfo = ClientStatus;
 
 /**
  * 重启状态接口
@@ -30,7 +39,7 @@ export interface RestartStatus {
 export class StatusService {
   private logger: Logger;
   private eventBus: EventBus;
-  private clientInfo: ClientInfo = {
+  private clientInfo: ClientStatus = {
     status: "disconnected",
     mcpEndpoint: "",
     activeMCPServers: [],
@@ -47,14 +56,14 @@ export class StatusService {
   /**
    * 获取客户端状态
    */
-  getClientStatus(): ClientInfo {
+  getClientStatus(): ClientStatus {
     return { ...this.clientInfo };
   }
 
   /**
    * 更新客户端信息
    */
-  updateClientInfo(info: Partial<ClientInfo>, source = "unknown"): void {
+  updateClientInfo(info: Partial<ClientStatus>, source = "unknown"): void {
     try {
       const oldStatus = { ...this.clientInfo };
       this.clientInfo = { ...this.clientInfo, ...info };
@@ -148,7 +157,7 @@ export class StatusService {
    * 获取完整状态信息
    */
   getFullStatus(): {
-    client: ClientInfo;
+    client: ClientStatus;
     restart?: RestartStatus;
     timestamp: number;
   } {
