@@ -98,7 +98,8 @@ export class ESP32Handler extends BaseHandler {
         c.req.header("host") // 传递 Host 头用于构建完整 WebSocket URL
       );
 
-      return c.success(response);
+      console.log(response);
+      return c.json(response);
     } catch (error) {
       return this.handleError(c, error, "处理OTA请求");
     }
