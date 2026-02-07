@@ -37,7 +37,6 @@ export default defineConfig({
         "coverage/**",
       ],
       include: [resolve(__dirname, "**/*.ts")],
-      all: true,
       thresholds: {
         global: {
           branches: 80,
