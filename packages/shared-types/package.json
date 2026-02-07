@@ -3,8 +3,8 @@
   "version": "1.9.7",
   "description": "小智项目的共享类型定义",
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "../../dist/shared-types/index.js",
+  "types": "../../dist/shared-types/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

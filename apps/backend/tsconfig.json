@@ -10,9 +10,13 @@
     "noImplicitAny": false,
     "types": ["vitest/globals"],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@xiaozhi-client/shared-types": ["../../packages/shared-types/src"]
     }
   },
+  "references": [
+    { "path": "../../packages/shared-types" }
+  ],
   "include": ["./**/*.ts"],
   "exclude": [
     "node_modules",
