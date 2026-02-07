@@ -130,6 +130,20 @@ export interface CozeWorkflowsParams {
 }
 
 /**
+ * 扣子 API 错误响应结构
+ */
+export interface CozeApiErrorResponse {
+  /** 错误代码 */
+  code?: number;
+  /** 错误消息 */
+  msg?: string;
+  /** 请求ID */
+  logid?: string;
+  /** 其他未知字段 */
+  [key: string]: unknown;
+}
+
+/**
  * 扣子 API 错误响应
  */
 export interface CozeApiError extends Error {
@@ -138,7 +152,7 @@ export interface CozeApiError extends Error {
   /** HTTP 状态码 */
   statusCode?: number;
   /** 原始响应数据 */
-  response?: any;
+  response?: CozeApiErrorResponse;
 }
 
 /**

@@ -11,6 +11,7 @@ export type {
   CozeApiResponse,
   CozeWorkspacesResponse,
   CozeWorkflowsResponse,
+  CozeApiErrorResponse,
   CozeApiError,
   CacheItem,
   CozeWorkflowsData,
