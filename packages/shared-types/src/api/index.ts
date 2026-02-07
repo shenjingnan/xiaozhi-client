@@ -34,6 +34,7 @@ export {
 export type {
   ApiError,
   ToolValidationError as ApiValidationToolValidationError,
+  CozeApiErrorResponse,
   CozeApiError as ApiCozeApiError,
 } from "./errors";
 
