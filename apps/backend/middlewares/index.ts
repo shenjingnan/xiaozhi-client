@@ -13,8 +13,7 @@ export {
   mcpServiceManagerMiddleware,
   hasMCPServiceManager,
 } from "./mcpServiceManager.middleware.js";
-export { endpointManagerMiddleware } from "./endpointManager.middleware.js";
-export { endpointsMiddleware } from "./endpoints.middleware.js";
+export { endpointMiddleware } from "./endpoint.middleware.js";
 
 // 重新导出 context 相关函数
 export {

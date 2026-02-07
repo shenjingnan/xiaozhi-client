@@ -27,7 +27,7 @@ export type {
 export interface IWebServer {
   /**
    * 获取小智连接管理器实例
-   * 在 endpointManagerMiddleware 中使用
+   * 在 endpointMiddleware 中使用
    * WebServer 启动后始终返回有效的连接管理器实例
    * 如果在启动前调用，会抛出错误
    */
@@ -73,7 +73,7 @@ export type AppContextVariables = {
 
   /**
    * 小智连接管理器实例
-   * 由 endpointManagerMiddleware 注入
+   * 由 endpointMiddleware 注入
    * WebServer 启动后始终可用的连接管理器实例
    * 可能为 null（初始化失败时）
    */
@@ -81,7 +81,7 @@ export type AppContextVariables = {
 
   /**
    * 端点处理器实例
-   * 由 endpointsMiddleware 注入
+   * 由 endpointMiddleware 注入
    */
   endpointHandler?: EndpointHandler | null;
 };
