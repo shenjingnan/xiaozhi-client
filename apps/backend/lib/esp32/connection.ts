@@ -198,11 +198,17 @@ export class ESP32Connection {
       `收到设备Hello消息: deviceId=${this.deviceId}, version=${message.version}`
     );
 
-    // 发送ServerHello响应
+    // 发送ServerHello响应（添加 audio_params）
     const serverHello: ESP32ServerHelloMessage = {
       type: "hello",
       version: 1,
       sessionId: this.sessionId,
+      audioParams: {
+        format: "opus",
+        sampleRate: 24000,
+        channels: 1,
+        frameDuration: 60,
+      },
     };
 
     await this.send(serverHello);

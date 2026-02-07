@@ -620,7 +620,7 @@ export class WebServer {
       const url = req.url
         ? new URL(req.url, `http://${req.headers.host}`)
         : null;
-      const isESP32Device = url?.pathname === "/api/esp32/ws";
+      const isESP32Device = url?.pathname === "/ws";
 
       if (isESP32Device) {
         // 处理ESP32设备连接

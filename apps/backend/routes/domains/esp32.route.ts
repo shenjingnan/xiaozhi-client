@@ -1,6 +1,16 @@
 /**
  * ESP32设备路由模块
  * 处理所有ESP32设备相关的API路由
+ *
+ * 硬件API定义：
+ * - POST /              # OTA/配置获取（根路径，按硬件定义）
+ * - POST /activate      # 设备激活
+ * - WebSocket /ws       # WebSocket连接
+ *
+ * 管理API（保留 /api/esp32 前缀）：
+ * - GET    /api/esp32/devices              # 设备列表
+ * - GET    /api/esp32/devices/:deviceId     # 获取设备
+ * - DELETE /api/esp32/devices/:deviceId     # 删除设备
  */
 
 import type { RouteDefinition } from "../types.js";
@@ -12,19 +22,41 @@ const h = createHandler("esp32Handler");
  * ESP32设备路由定义
  */
 export const esp32Routes: RouteDefinition[] = [
-  // 设备激活/OTA接口
+  // ========== 硬件API（按硬件定义的路径） ==========
+
+  // 硬件 OTA/配置接口（根路径）
   {
     method: "POST",
-    path: "/api/esp32/ota",
+    path: "/",
     handler: h((handler, c) => handler.handleOTA(c)),
   },
 
-  // 设备绑定接口
+  // 小智硬件官方 OTA 路径（兼容硬件默认配置）
   {
     method: "POST",
-    path: "/api/esp32/bind/:code",
-    handler: h((handler, c) => handler.bindDevice(c)),
+    path: "/xiaozhi/ota/",
+    handler: h((handler, c) => handler.handleOTA(c)),
   },
+
+  // 硬件激活接口
+  {
+    method: "POST",
+    path: "/activate",
+    handler: h((handler, c) => handler.handleActivate(c)),
+  },
+
+  // WebSocket端点（由WebServer直接处理，这里仅作为占位符）
+  {
+    method: "GET",
+    path: "/ws",
+    handler: h(async (handler, c) => {
+      c.get("logger").debug("ESP32 WebSocket端点访问");
+      // WebSocket升级由WebServer的ws服务器处理
+      return c.json({ message: "WebSocket endpoint" });
+    }),
+  },
+
+  // ========== 管理API（保留 /api/esp32 前缀） ==========
 
   // 获取设备列表
   {
@@ -59,16 +91,5 @@ export const esp32Routes: RouteDefinition[] = [
     method: "DELETE",
     path: "/api/esp32/devices/:deviceId",
     handler: h((handler, c) => handler.deleteDevice(c)),
-  },
-
-  // WebSocket升级（由WebServer直接处理，这里仅作为占位符）
-  {
-    method: "GET",
-    path: "/api/esp32/ws",
-    handler: h(async (handler, c) => {
-      c.get("logger").debug("ESP32 WebSocket端点访问");
-      // WebSocket升级由WebServer的ws服务器处理
-      return c.json({ message: "WebSocket endpoint" });
-    }),
   },
 ];

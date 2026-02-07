@@ -212,6 +212,17 @@ export interface ESP32ServerHelloMessage extends ESP32WSMessageBase {
   version: number;
   /** 会话ID */
   sessionId: string;
+  /** 音频参数 */
+  audioParams: {
+    /** 音频格式 */
+    format: "opus" | "pcm";
+    /** 采样率 */
+    sampleRate: number;
+    /** 声道数 */
+    channels: number;
+    /** 帧时长（毫秒） */
+    frameDuration: number;
+  };
 }
 
 /**

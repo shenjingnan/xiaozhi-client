@@ -23,11 +23,14 @@ export class ESP32Handler extends BaseHandler {
   }
 
   /**
-   * 处理OTA/激活请求
-   * POST /api/esp32/ota
+   * 处理OTA/配置请求
+   * POST /
+   *
+   * 硬件API定义：根路径OTA接口
    *
    * 请求头：
    * - Device-Id: 设备MAC地址
+   * - Client-Id: 设备UUID
    *
    * 请求体：
    * ```json
@@ -45,12 +48,24 @@ export class ESP32Handler extends BaseHandler {
     const logger = c.get("logger");
 
     try {
-      // 获取设备ID
+      // 获取设备ID和客户端ID
       const deviceId = c.req.header("Device-Id") || c.req.header("device-id");
+      const clientId = c.req.header("Client-Id") || c.req.header("client-id");
+
       if (!deviceId) {
         return c.fail(
           ESP32ErrorCode.MISSING_DEVICE_ID,
-          "缺少Device-Id请求头",
+          "缺少 Device-Id 请求头",
+          undefined,
+          400
+        );
+      }
+
+      // Client-Id 强制要求
+      if (!clientId) {
+        return c.fail(
+          ESP32ErrorCode.MISSING_DEVICE_ID,
+          "缺少 Client-Id 请求头",
           undefined,
           400
         );
@@ -62,17 +77,83 @@ export class ESP32Handler extends BaseHandler {
         "请求体格式错误"
       );
 
-      logger.debug(`收到OTA请求: deviceId=${deviceId}`);
+      logger.debug(`收到OTA请求: deviceId=${deviceId}, clientId=${clientId}`);
 
       // 委托给服务层处理
       const response = await this.esp32Service.handleOTARequest(
         deviceId,
+        clientId,
         report
       );
 
       return c.success(response);
     } catch (error) {
       return this.handleError(c, error, "处理OTA请求");
+    }
+  }
+
+  /**
+   * 处理设备激活请求
+   * POST /activate
+   *
+   * 硬件API定义：设备激活接口
+   *
+   * 请求头：
+   * - Device-Id: 设备MAC地址
+   * - Client-Id: 设备UUID
+   *
+   * 请求体：
+   * ```json
+   * {
+   *   "code": "123456"
+   * }
+   * ```
+   */
+  async handleActivate(c: Context<AppContext>): Promise<Response> {
+    const logger = c.get("logger");
+
+    try {
+      // 验证请求头
+      const deviceId = c.req.header("Device-Id") || c.req.header("device-id");
+      const clientId = c.req.header("Client-Id") || c.req.header("client-id");
+
+      if (!deviceId || !clientId) {
+        return c.fail(
+          ESP32ErrorCode.MISSING_DEVICE_ID,
+          "缺少 Device-Id 或 Client-Id 请求头",
+          undefined,
+          400
+        );
+      }
+
+      // 解析请求体
+      const body = await this.parseJsonBody<{ code?: string }>(
+        c,
+        "请求体格式错误"
+      );
+
+      // 获取激活码（支持从路径参数或请求体获取）
+      const code = body.code;
+
+      if (!code) {
+        return c.fail(
+          ESP32ErrorCode.INVALID_ACTIVATION_CODE,
+          "缺少激活码",
+          undefined,
+          400
+        );
+      }
+
+      logger.debug(
+        `设备激活请求: deviceId=${deviceId}, clientId=${clientId}, code=${code}`
+      );
+
+      // 委托给服务层处理
+      const device = await this.esp32Service.bindDevice(code);
+
+      return c.success(device, "设备激活成功");
+    } catch (error) {
+      return this.handleError(c, error, "激活设备");
     }
   }
 

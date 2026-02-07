@@ -60,14 +60,16 @@ export class ESP32Service {
   /**
    * 处理OTA请求
    * @param deviceId - 设备ID（MAC地址）
+   * @param clientId - 客户端ID（设备UUID）
    * @param report - 设备上报信息
    * @returns OTA响应
    */
   async handleOTARequest(
     deviceId: string,
+    clientId: string,
     report: ESP32DeviceReport
   ): Promise<ESP32OTAResponse> {
-    logger.info(`收到OTA请求: deviceId=${deviceId}`);
+    logger.info(`收到OTA请求: deviceId=${deviceId}, clientId=${clientId}`);
 
     const { application, chipModelName } = report;
     const { version: appVersion, board } = application;
@@ -83,10 +85,12 @@ export class ESP32Service {
       const expiresAt = Date.now() + TOKEN_EXPIRY_MS;
       this.tokenToDeviceId.set(token, { deviceId, expiresAt });
 
-      // 构建WebSocket URL
-      const wsUrl = "/api/esp32/ws";
+      // 构建WebSocket URL（使用相对路径，硬件会使用当前域名）
+      const wsUrl = "/ws";
 
-      logger.info(`设备已激活，返回WebSocket配置: deviceId=${deviceId}`);
+      logger.info(
+        `设备已激活，返回WebSocket配置: deviceId=${deviceId}, clientId=${clientId}`
+      );
 
       return {
         websocket: {
@@ -109,7 +113,9 @@ export class ESP32Service {
         appVersion
       );
 
-      logger.info(`设备未激活，生成激活码: deviceId=${deviceId}, code=${code}`);
+      logger.info(
+        `设备未激活，生成激活码: deviceId=${deviceId}, clientId=${clientId}, code=${code}`
+      );
 
       return {
         activation: {
@@ -128,7 +134,7 @@ export class ESP32Service {
       const pendingDevice = this.deviceRegistry.getPendingDevice(deviceId);
       if (pendingDevice) {
         logger.info(
-          `设备待激活中，返回现有激活码: deviceId=${deviceId}, code=${pendingDevice.code}`
+          `设备待激活中，返回现有激活码: deviceId=${deviceId}, clientId=${clientId}, code=${pendingDevice.code}`
         );
 
         return {
