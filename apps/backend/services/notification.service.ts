@@ -1,10 +1,10 @@
+import type { AppConfig } from "@xiaozhi-client/config";
+import { configManager } from "@xiaozhi-client/config";
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import type { EventBus } from "@/services/event-bus.service.js";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { ClientInfo, RestartStatus } from "@/services/status.service.js";
-import type { AppConfig } from "@xiaozhi-client/config";
-import { configManager } from "@xiaozhi-client/config";
 
 /**
  * WebSocket 类接口
@@ -66,7 +66,7 @@ export class NotificationService {
    */
   private setupEventListeners(): void {
     // 监听配置更新事件
-    this.eventBus.onEvent("config:updated", (data) => {
+    this.eventBus.onEvent("config:updated", (_data) => {
       // 获取最新的配置
       const config = configManager.getConfig();
       this.broadcastConfigUpdate(config);

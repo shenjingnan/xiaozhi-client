@@ -18,7 +18,7 @@ async function importModules() {
 }
 
 async function main() {
-  const args = process.argv.slice(2);
+  const _args = process.argv.slice(2);
 
   try {
     // 动态导入模块

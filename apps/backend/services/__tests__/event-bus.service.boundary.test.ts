@@ -7,8 +7,8 @@
  * 确保系统在极端情况下仍能稳定运行。
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Mock } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EventBus } from "../event-bus.service.js";
 
 describe("事件系统边界情况测试", () => {

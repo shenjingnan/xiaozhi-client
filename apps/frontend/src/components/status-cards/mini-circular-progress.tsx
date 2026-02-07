@@ -67,7 +67,6 @@ export function MiniCircularProgress({
     <div
       className="relative inline-flex items-center justify-center"
       role="progressbar"
-      tabIndex={0}
       aria-valuenow={value}
       aria-valuemin={0}
       aria-valuemax={maxValue}

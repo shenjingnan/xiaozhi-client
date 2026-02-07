@@ -161,7 +161,7 @@ describe("StaticFileHandler", () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFile.mockResolvedValue(Buffer.from("<html>Index</html>"));
 
-      const response = await staticFileHandler.handleStaticFile(mockContext);
+      const _response = await staticFileHandler.handleStaticFile(mockContext);
 
       expect(mockLogger.debug).toHaveBeenCalledWith("处理静态文件请求: /");
       expect(mockReadFile).toHaveBeenCalledWith(
@@ -177,7 +177,7 @@ describe("StaticFileHandler", () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFile.mockResolvedValue(Buffer.from("body { color: red; }"));
 
-      const response = await staticFileHandler.handleStaticFile(mockContext);
+      const _response = await staticFileHandler.handleStaticFile(mockContext);
 
       expect(mockContext.text).toHaveBeenCalledWith(
         "body { color: red; }",
@@ -191,7 +191,7 @@ describe("StaticFileHandler", () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFile.mockResolvedValue(Buffer.from("console.log('hello');"));
 
-      const response = await staticFileHandler.handleStaticFile(mockContext);
+      const _response = await staticFileHandler.handleStaticFile(mockContext);
 
       expect(mockContext.text).toHaveBeenCalledWith(
         "console.log('hello');",
@@ -206,7 +206,7 @@ describe("StaticFileHandler", () => {
       const binaryData = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
       mockReadFile.mockResolvedValue(binaryData);
 
-      const response = await staticFileHandler.handleStaticFile(mockContext);
+      const _response = await staticFileHandler.handleStaticFile(mockContext);
 
       expect(mockContext.body).toHaveBeenCalledWith(
         new Uint8Array(binaryData),
@@ -221,7 +221,7 @@ describe("StaticFileHandler", () => {
       mockExistsSync.mockReturnValue(false); // No web path found
       staticFileHandler = new StaticFileHandler();
 
-      const response = await staticFileHandler.handleStaticFile(mockContext);
+      const _response = await staticFileHandler.handleStaticFile(mockContext);
 
       expect(mockContext.html).toHaveBeenCalledWith(
         expect.stringContaining("找不到前端资源文件")
@@ -235,7 +235,7 @@ describe("StaticFileHandler", () => {
         .mockReturnValueOnce(true); // index.html exists
       mockReadFile.mockResolvedValue(Buffer.from("<html>SPA</html>"));
 
-      const response = await staticFileHandler.handleStaticFile(mockContext);
+      const _response = await staticFileHandler.handleStaticFile(mockContext);
 
       expect(mockLogger.debug).toHaveBeenCalledWith(
         expect.stringContaining("SPA 回退到 index.html")
@@ -249,7 +249,7 @@ describe("StaticFileHandler", () => {
       mockContext.req.url = "http://localhost:3000/nonexistent.html";
       mockExistsSync.mockReturnValue(false);
 
-      const response = await staticFileHandler.handleStaticFile(mockContext);
+      const _response = await staticFileHandler.handleStaticFile(mockContext);
 
       expect(mockLogger.debug).toHaveBeenCalledWith(
         expect.stringContaining("文件不存在:")
@@ -382,7 +382,7 @@ describe("StaticFileHandler", () => {
       const handler = staticFileHandler as any;
       const message = "Custom error message";
 
-      const response = handler.createErrorPage(mockContext, message);
+      const _response = handler.createErrorPage(mockContext, message);
 
       expect(mockContext.html).toHaveBeenCalledWith(
         expect.stringContaining(message)
@@ -800,7 +800,7 @@ describe("StaticFileHandler", () => {
 
     it("应该处理路径遍历检测", () => {
       // Test the path traversal detection logic directly
-      const handler = staticFileHandler as any;
+      const _handler = staticFileHandler as any;
 
       expect("../../../etc/passwd".includes("..")).toBe(true);
       expect("normal/path/file.html".includes("..")).toBe(false);

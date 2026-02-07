@@ -1,2 +1,2 @@
-export * from "./QQ";
 export * from "./Github";
+export * from "./QQ";

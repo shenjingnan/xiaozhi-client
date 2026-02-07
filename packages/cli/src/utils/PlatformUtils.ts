@@ -4,8 +4,8 @@
 
 import { execSync } from "node:child_process";
 import { TIMEOUT_CONSTANTS } from "../Constants";
-import type { Platform } from "../Types";
 import { ProcessError } from "../errors/index";
+import type { Platform } from "../Types";
 
 /**
  * 平台工具类
@@ -83,12 +83,12 @@ export class PlatformUtils {
 
         // 检查是否包含 node 或 xiaozhi 相关关键词
         return cmdline.includes("node") || cmdline.includes("xiaozhi");
-      } catch (error) {
+      } catch (_error) {
         // 如果无法获取进程信息，回退到简单的 PID 检查
         process.kill(pid, 0);
         return true;
       }
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }

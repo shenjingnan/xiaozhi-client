@@ -1,5 +1,5 @@
-import type { ServerRowData } from "@/components/mcp-server/mcp-server-table";
 import { useCallback, useMemo, useState } from "react";
+import type { ServerRowData } from "@/components/mcp-server/mcp-server-table";
 
 interface UseServerSearchResult {
   /** 搜索关键词 */

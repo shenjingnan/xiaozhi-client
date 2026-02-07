@@ -1,15 +1,14 @@
-import type { Logger } from "@/Logger.js";
-import { logger } from "@/Logger.js";
-import { ErrorCategory, MCPError, MCPErrorCode } from "@/errors/mcp-errors.js";
-import type { MCPServiceManager } from "@/lib/mcp";
-import type { MCPService } from "@/lib/mcp";
-import { getEventBus } from "@/services/event-bus.service.js";
-import type { AppContext } from "@/types/hono.context.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { ConfigManager, MCPServerConfig } from "@xiaozhi-client/config";
 import { normalizeServiceConfig } from "@xiaozhi-client/config";
 import { TypeFieldNormalizer } from "@xiaozhi-client/mcp-core";
 import type { Context } from "hono";
+import { ErrorCategory, MCPError, MCPErrorCode } from "@/errors/mcp-errors.js";
+import type { Logger } from "@/Logger.js";
+import { logger } from "@/Logger.js";
+import type { MCPService, MCPServiceManager } from "@/lib/mcp";
+import { getEventBus } from "@/services/event-bus.service.js";
+import type { AppContext } from "@/types/hono.context.js";
 
 /**
  * MCPServiceManager 扩展接口，用于访问私有属性
@@ -711,7 +710,7 @@ export class MCPHandler {
       // 2. 构建服务列表
       const servers: MCPServerStatus[] = [];
 
-      for (const [serverName, serverConfig] of Object.entries(mcpServers)) {
+      for (const [serverName, _serverConfig] of Object.entries(mcpServers)) {
         const serviceStatus = this.getServiceStatus(serverName);
         servers.push(serviceStatus);
       }

@@ -85,7 +85,7 @@ describe("DaemonManagerImpl", () => {
     (mockProcessManager.getServiceStatus as any).mockReturnValue({
       running: false,
     });
-    mockChild.on.mockImplementation((event, callback) => {
+    mockChild.on.mockImplementation((_event, _callback) => {
       // 不立即调用回调，让测试控制
       return mockChild;
     });

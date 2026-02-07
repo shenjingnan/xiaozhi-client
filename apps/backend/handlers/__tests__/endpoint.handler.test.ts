@@ -588,7 +588,7 @@ describe("EndpointHandler", () => {
     it("应该返回200当断开后无法获取状态时（使用fallback状态）", async () => {
       // Arrange
       const endpoint = "ws://localhost:3000";
-      const connectedStatus = { ...mockEndpointStatus, connected: true };
+      const _connectedStatus = { ...mockEndpointStatus, connected: true };
       mockContext.req.json.mockResolvedValue({ endpoint });
       mockConnectionManager.getConnectionStatus.mockReturnValue([]);
 

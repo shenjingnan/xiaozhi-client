@@ -61,14 +61,14 @@ export class TemplateManagerImpl implements ITemplateManager {
           if (templateInfo) {
             templates.push(templateInfo);
           }
-        } catch (error) {
+        } catch (_error) {
           // 跳过无效的模板目录
           console.warn(`跳过无效模板: ${templateName}`);
         }
       }
 
       return templates;
-    } catch (error) {
+    } catch (_error) {
       throw new FileError(
         "无法读取模板目录",
         PathUtils.findTemplatesDir() || ""
@@ -102,7 +102,7 @@ export class TemplateManagerImpl implements ITemplateManager {
         try {
           const configContent = FileUtils.readFile(configPath);
           config = JSON.parse(configContent);
-        } catch (error) {
+        } catch (_error) {
           console.warn(`模板配置文件解析失败: ${templateName}`);
         }
       }
@@ -263,7 +263,7 @@ export class TemplateManagerImpl implements ITemplateManager {
   private async copyTemplateFiles(
     templateInfo: TemplateInfo,
     targetPath: string,
-    options: TemplateCreateOptions
+    _options: TemplateCreateOptions
   ): Promise<void> {
     try {
       // 复制所有模板文件

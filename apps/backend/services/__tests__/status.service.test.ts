@@ -145,7 +145,7 @@ describe("StatusService", () => {
     });
 
     it("should reset heartbeat timeout when status is connected", () => {
-      const clearTimeoutSpy = vi.spyOn(global, "clearTimeout");
+      const _clearTimeoutSpy = vi.spyOn(global, "clearTimeout");
       const setTimeoutSpy = vi.spyOn(global, "setTimeout");
 
       statusService.updateClientInfo({ status: "connected" });

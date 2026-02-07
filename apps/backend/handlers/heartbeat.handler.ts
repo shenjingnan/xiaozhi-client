@@ -1,10 +1,10 @@
+import { configManager } from "@xiaozhi-client/config";
+import { HEARTBEAT_MONITORING } from "@/constants/index.js";
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
-import { HEARTBEAT_MONITORING } from "@/constants/index.js";
 import type { NotificationService } from "@/services/notification.service.js";
 import type { StatusService } from "@/services/status.service.js";
 import { sendWebSocketError } from "@/utils/websocket-helper.js";
-import { configManager } from "@xiaozhi-client/config";
 
 /**
  * 心跳消息接口

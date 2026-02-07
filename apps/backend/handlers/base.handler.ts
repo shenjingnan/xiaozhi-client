@@ -1,5 +1,5 @@
-import type { AppContext } from "@/types/hono.context.js";
 import type { Context } from "hono";
+import type { AppContext } from "@/types/hono.context.js";
 
 /**
  * 抽象 API Handler 基类

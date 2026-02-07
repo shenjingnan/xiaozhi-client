@@ -1,11 +1,10 @@
 import path from "node:path";
+import type { ConfigManager, MCPServerConfig } from "@xiaozhi-client/config";
+import type { Context } from "hono";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MCPErrorCode } from "@/errors/mcp-errors.js";
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { EventBus } from "@/services/event-bus.service.js";
-import type { ConfigManager } from "@xiaozhi-client/config";
-import type { MCPServerConfig } from "@xiaozhi-client/config";
-import type { Context } from "hono";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MCPHandler, MCPServerConfigValidator } from "../mcp-manage.handler.js";
 
 // 创建模拟对象
@@ -51,7 +50,7 @@ describe("MCPHandler", () => {
   let handler: MCPHandler;
   let mockConfigManager: Partial<ConfigManager>;
   let mockMCPServiceManager: Partial<MCPServiceManager>;
-  let mockEventBus: Partial<EventBus>;
+  let _mockEventBus: Partial<EventBus>;
 
   beforeEach(() => {
     // 重置所有模拟对象
@@ -59,7 +58,7 @@ describe("MCPHandler", () => {
 
     mockConfigManager = createMockConfigManager();
     mockMCPServiceManager = createMockMCPServiceManager();
-    mockEventBus = createMockEventBus();
+    _mockEventBus = createMockEventBus();
 
     // 创建处理器实例
     handler = new MCPHandler(
@@ -134,7 +133,7 @@ describe("addMCPServer", () => {
   let handler: MCPHandler;
   let mockConfigManager: Partial<ConfigManager>;
   let mockMCPServiceManager: Partial<MCPServiceManager>;
-  let mockEventBus: Partial<EventBus>;
+  let _mockEventBus: Partial<EventBus>;
   let mockContext: Partial<Context>;
   let originalConfigDir: string | undefined;
 
@@ -149,7 +148,7 @@ describe("addMCPServer", () => {
 
     mockConfigManager = createMockConfigManager();
     mockMCPServiceManager = createMockMCPServiceManager();
-    mockEventBus = createMockEventBus();
+    _mockEventBus = createMockEventBus();
 
     // mockConfigManager 和 mockMCPServiceManager 已经在 createMock 函数中配置了
 
@@ -448,7 +447,7 @@ describe("removeMCPServer", () => {
   let handler: MCPHandler;
   let mockConfigManager: Partial<ConfigManager>;
   let mockMCPServiceManager: Partial<MCPServiceManager>;
-  let mockEventBus: Partial<EventBus>;
+  let _mockEventBus: Partial<EventBus>;
   let mockContext: Partial<Context>;
 
   beforeEach(() => {
@@ -456,7 +455,7 @@ describe("removeMCPServer", () => {
 
     mockConfigManager = createMockConfigManager();
     mockMCPServiceManager = createMockMCPServiceManager();
-    mockEventBus = createMockEventBus();
+    _mockEventBus = createMockEventBus();
 
     handler = new MCPHandler(
       mockMCPServiceManager as MCPServiceManager,
@@ -1211,7 +1210,7 @@ describe("addMCPServer with type field normalization", () => {
   let handler: MCPHandler;
   let mockConfigManager: Partial<ConfigManager>;
   let mockMCPServiceManager: Partial<MCPServiceManager>;
-  let mockEventBus: Partial<EventBus>;
+  let _mockEventBus: Partial<EventBus>;
   let mockContext: Partial<Context>;
 
   beforeEach(() => {
@@ -1219,7 +1218,7 @@ describe("addMCPServer with type field normalization", () => {
 
     mockConfigManager = createMockConfigManager();
     mockMCPServiceManager = createMockMCPServiceManager();
-    mockEventBus = createMockEventBus();
+    _mockEventBus = createMockEventBus();
 
     handler = new MCPHandler(
       mockMCPServiceManager as MCPServiceManager,

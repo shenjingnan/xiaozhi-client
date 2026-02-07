@@ -5,8 +5,8 @@
 import fs from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import type { FileOperationOptions } from "../Types";
 import { FileError } from "../errors/index";
+import type { FileOperationOptions } from "../Types";
 
 /**
  * 文件工具类
@@ -31,7 +31,7 @@ export class FileUtils {
       if (!fs.existsSync(dirPath)) {
         fs.mkdirSync(dirPath, { recursive: true });
       }
-    } catch (error) {
+    } catch (_error) {
       throw new FileError("无法创建目录", dirPath);
     }
   }
@@ -117,7 +117,7 @@ export class FileUtils {
       if (FileUtils.exists(filePath)) {
         fs.unlinkSync(filePath);
       }
-    } catch (error) {
+    } catch (_error) {
       throw new FileError("无法删除文件", filePath);
     }
   }
@@ -182,7 +182,7 @@ export class FileUtils {
           force: true,
         });
       }
-    } catch (error) {
+    } catch (_error) {
       throw new FileError("无法删除目录", dirPath);
     }
   }

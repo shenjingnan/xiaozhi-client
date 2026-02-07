@@ -206,7 +206,7 @@ export class PathUtils {
     let realCliPath: string;
     try {
       realCliPath = realpathSync(cliPath);
-    } catch (error) {
+    } catch (_error) {
       // 如果无法解析符号链接，使用原路径
       realCliPath = cliPath;
     }

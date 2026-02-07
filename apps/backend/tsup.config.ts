@@ -1,4 +1,11 @@
-import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync, readFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import { defineConfig } from "tsup";
 
@@ -60,7 +67,7 @@ export default defineConfig({
     }
 
     // 添加路径别名支持
-    options.resolveExtensions = ['.ts', '.js', '.json'];
+    options.resolveExtensions = [".ts", ".js", ".json"];
 
     // 确保能够解析路径别名
     if (!options.external) {

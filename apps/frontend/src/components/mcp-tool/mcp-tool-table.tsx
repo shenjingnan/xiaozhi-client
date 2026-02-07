@@ -1,5 +1,9 @@
 "use client";
 
+import type { CustomMCPToolWithStats } from "@xiaozhi-client/shared-types";
+import { CoffeeIcon, Loader2, ZapIcon } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { CollapsibleText } from "@/components/common/collapsible-text";
 import { ToolDebugDialog } from "@/components/tool-debug-dialog";
 import {
@@ -28,10 +32,6 @@ import { useToolSearch } from "@/hooks/useToolSearch";
 import { useToolSortPersistence } from "@/hooks/useToolSortPersistence";
 import { cn } from "@/lib/utils";
 import { apiClient } from "@/services/api";
-import type { CustomMCPToolWithStats } from "@xiaozhi-client/shared-types";
-import { CoffeeIcon, Loader2, ZapIcon } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
 import { ToolPagination } from "./tool-pagination";
 import { ToolSearchInput } from "./tool-search-input";
 import { ToolSortSelector } from "./tool-sort-selector";

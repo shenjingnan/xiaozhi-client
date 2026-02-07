@@ -26,21 +26,21 @@ export class ServiceCommandHandler extends BaseCommandHandler {
           description: "以 stdio 模式运行 MCP Server (用于 Cursor 等客户端)",
         },
       ],
-      execute: async (args: any[], options: any) => {
+      execute: async (_args: any[], options: any) => {
         await this.handleStart(options);
       },
     },
     {
       name: "stop",
       description: "停止服务",
-      execute: async (args: any[], options: any) => {
+      execute: async (_args: any[], _options: any) => {
         await this.handleStop();
       },
     },
     {
       name: "status",
       description: "检查服务状态",
-      execute: async (args: any[], options: any) => {
+      execute: async (_args: any[], _options: any) => {
         await this.handleStatus();
       },
     },
@@ -48,14 +48,14 @@ export class ServiceCommandHandler extends BaseCommandHandler {
       name: "restart",
       description: "重启服务",
       options: [{ flags: "-d, --daemon", description: "在后台运行服务" }],
-      execute: async (args: any[], options: any) => {
+      execute: async (_args: any[], options: any) => {
         await this.handleRestart(options);
       },
     },
     {
       name: "attach",
       description: "连接到后台服务查看日志",
-      execute: async (args: any[], options: any) => {
+      execute: async (_args: any[], _options: any) => {
         await this.handleAttach();
       },
     },
@@ -68,7 +68,7 @@ export class ServiceCommandHandler extends BaseCommandHandler {
   /**
    * 主命令执行（显示帮助）
    */
-  async execute(args: any[], options: any): Promise<void> {
+  async execute(_args: any[], _options: any): Promise<void> {
     console.log("服务管理命令。使用 --help 查看可用的子命令。");
   }
 

@@ -7,6 +7,10 @@
  * - 集成安装日志显示
  */
 
+import { Alert, AlertDescription, AlertTitle } from "@ui/alert";
+import { DownloadIcon, ShieldAlertIcon } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import semver from "semver";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,10 +29,6 @@ import {
 } from "@/components/ui/select";
 import { useNPMInstall } from "@/hooks/useNPMInstall";
 import { apiClient } from "@/services/api";
-import { Alert, AlertDescription, AlertTitle } from "@ui/alert";
-import { DownloadIcon, ShieldAlertIcon } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import semver from "semver";
 import { InstallLogDialog } from "./install-log-dialog";
 
 interface VersionUpgradeDialogProps {

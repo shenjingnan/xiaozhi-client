@@ -53,7 +53,7 @@ vi.mock("node:child_process", () => ({
     on: vi.fn(),
     unref: vi.fn(),
   }),
-  exec: vi.fn().mockImplementation((cmd: string, callback: any) => {
+  exec: vi.fn().mockImplementation((_cmd: string, callback: any) => {
     callback(null, { stdout: "", stderr: "" });
   }),
 }));
