@@ -22,8 +22,7 @@ import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import {
   corsMiddleware,
-  endpointManagerMiddleware,
-  endpointsMiddleware,
+  endpointMiddleware,
   errorHandlerMiddleware,
   loggerMiddleware,
   mcpServiceManagerMiddleware,
@@ -513,11 +512,8 @@ export class WebServer {
     // MCP Service Manager 中间件 - 必须在 WebServer 注入之后
     this.app?.use("*", mcpServiceManagerMiddleware);
 
-    // 小智连接管理器中间件
-    this.app?.use("*", endpointManagerMiddleware());
-
-    // 小智接入点处理器中间件（在连接管理器中间件之后）
-    this.app?.use("*", endpointsMiddleware());
+    // 端点中间件 - 统一管理 EndpointManager 和 EndpointHandler
+    this.app?.use("*", endpointMiddleware());
 
     // CORS 中间件
     this.app?.use("*", corsMiddleware);
