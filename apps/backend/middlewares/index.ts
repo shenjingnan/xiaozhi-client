@@ -20,4 +20,4 @@ export { endpointsMiddleware } from "./endpoints.middleware.js";
 export {
   getMCPServiceManager,
   requireMCPServiceManager,
-} from "../types/hono.context.js";
+} from "@/types/hono.context.js";
