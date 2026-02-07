@@ -129,7 +129,16 @@ export class NotificationService {
         send: (data: string) => {
           if (ws.readyState === 1) {
             // WebSocket.OPEN
-            ws.send(data);
+            try {
+              ws.send(data);
+            } catch (error) {
+              this.logger.error(`发送消息给客户端 ${clientId} 失败:`, error);
+              this.eventBus.emitEvent("notification:error", {
+                error:
+                  error instanceof Error ? error : new Error(String(error)),
+                type: "client:send",
+              });
+            }
           }
         },
       };
