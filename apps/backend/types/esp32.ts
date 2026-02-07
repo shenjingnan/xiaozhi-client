@@ -169,7 +169,11 @@ export interface ESP32MQTTConfig {
   /** 密码 */
   password: string;
   /** 保活时间（秒） */
-  keepalive: number;
+  keepalive?: number;
+  /** 发布主题 */
+  publish_topic?: string;
+  /** 订阅主题 */
+  subscribe_topic?: string;
 }
 
 /**

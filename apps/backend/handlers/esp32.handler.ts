@@ -172,15 +172,13 @@ export class ESP32Handler extends BaseHandler {
 
   /**
    * 绑定设备
-   * POST /api/esp32/bind/:code
+   * POST /api/esp32/bind
    *
-   * 路径参数：
-   * - code: 6位激活码
-   *
-   * 请求体（可选）：
+   * 请求体：
    * ```json
    * {
-   *   "userId": "user123"
+   *   "code": "123456",
+   *   "userId": "user123"  // 可选
    * }
    * ```
    */
@@ -188,7 +186,14 @@ export class ESP32Handler extends BaseHandler {
     const logger = c.get("logger");
 
     try {
-      const code = c.req.param("code");
+      // 从请求体获取激活码和用户ID
+      const body = await this.parseJsonBody<{ code?: string; userId?: string }>(
+        c,
+        "请求体格式错误"
+      );
+
+      const { code, userId } = body;
+
       if (!code) {
         return c.fail(
           ESP32ErrorCode.INVALID_ACTIVATION_CODE,
@@ -198,17 +203,9 @@ export class ESP32Handler extends BaseHandler {
         );
       }
 
-      // 尝试解析请求体（userId可选）
-      let userId: string | undefined;
-      try {
-        const body = await c.req.json();
-        userId = body.userId;
-      } catch {
-        // 忽略，userId是可选的
-      }
-
       logger.debug(`设备绑定请求: code=${code}, userId=${userId ?? "未指定"}`);
 
+      // 委托给服务层处理
       const device = await this.esp32Service.bindDevice(code, userId);
 
       return c.success(device, "设备绑定成功");

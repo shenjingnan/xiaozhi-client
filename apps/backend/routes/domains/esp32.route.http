@@ -222,6 +222,15 @@ Content-Type: application/json
   }
 }
 
+### 步骤4: 设备再次连接，获取 WebSocket 配置
+# 预期: 返回 websocket.url 和 websocket.token
+POST {{baseUrl}}/api/esp32/bind
+Content-Type: application/json
+
+{
+  "code": "755873"
+}
+
 ### 步骤5: 使用返回的 Token 建立 WebSocket 连接
 # 注意: 需要使用 WebSocket 客户端工具
 # 连接 URL: ws://localhost:9999/ws

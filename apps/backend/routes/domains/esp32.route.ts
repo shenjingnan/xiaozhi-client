@@ -58,6 +58,13 @@ export const esp32Routes: RouteDefinition[] = [
 
   // ========== 管理API（保留 /api/esp32 前缀） ==========
 
+  // 绑定设备（通过验证码激活设备）
+  {
+    method: "POST",
+    path: "/api/esp32/bind",
+    handler: h((handler, c) => handler.bindDevice(c)),
+  },
+
   // 获取设备列表
   {
     method: "GET",

@@ -129,6 +129,10 @@ export class ESP32Service {
           timestamp: Date.now(),
           timezoneOffset: new Date().getTimezoneOffset() * -60 * 1000,
         },
+        firmware: {
+          version: "2.2.2", // 固件版本
+          url: "", // OTA固件下载地址（可选）
+        },
       };
 
       // 转换为下划线命名后返回
