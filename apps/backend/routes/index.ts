@@ -1,3 +1,11 @@
+/**
+ * 路由管理模块统一导出入口
+ *
+ * 导出路由管理器、类型定义和路由域相关功能
+ *
+ * @packageDocumentation
+ */
+
 // 类型定义
 export type {
   HandlerDependencies,
