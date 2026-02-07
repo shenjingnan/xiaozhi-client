@@ -70,6 +70,7 @@ export class ESP32Handler extends BaseHandler {
           400
         );
       }
+      debugger;
 
       // 解析请求体
       const report: ESP32DeviceReport = await this.parseJsonBody(
