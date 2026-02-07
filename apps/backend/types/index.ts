@@ -1,3 +1,10 @@
+/**
+ * 类型定义模块统一导出入口
+ *
+ * 导出 MCP 协议相关类型、Coze 相关类型、超时配置和 Hono 上下文类型
+ *
+ * @packageDocumentation
+ */
 export type {
   MCPMessage,
   MCPResponse,
