@@ -8,16 +8,18 @@ import type { StatusService } from "@/services/status.service.js";
 import type { AppContext } from "@/types/hono.context.js";
 import type { Context } from "hono";
 import { requireMCPServiceManager } from "../types/hono.context.js";
+import { BaseHandler } from "./base.handler.js";
 
 /**
  * 服务 API 处理器
  */
-export class ServiceApiHandler {
+export class ServiceApiHandler extends BaseHandler {
   private logger: Logger;
   private statusService: StatusService;
   private eventBus: EventBus;
 
   constructor(statusService: StatusService) {
+    super();
     this.logger = logger;
     this.statusService = statusService;
     this.eventBus = getEventBus();
@@ -65,12 +67,11 @@ export class ServiceApiHandler {
 
       return c.success(null, "重启请求已接收");
     } catch (error) {
-      c.get("logger").error("处理重启请求失败:", error);
-      return c.fail(
-        "RESTART_REQUEST_ERROR",
-        error instanceof Error ? error.message : "处理重启请求失败",
-        undefined,
-        500
+      return this.handleError(
+        c,
+        error,
+        "处理重启请求",
+        "RESTART_REQUEST_ERROR"
       );
     }
   }
@@ -151,13 +152,7 @@ export class ServiceApiHandler {
 
       return c.success(null, "停止请求已接收");
     } catch (error) {
-      c.get("logger").error("处理停止请求失败:", error);
-      return c.fail(
-        "STOP_REQUEST_ERROR",
-        error instanceof Error ? error.message : "处理停止请求失败",
-        undefined,
-        500
-      );
+      return this.handleError(c, error, "处理停止请求", "STOP_REQUEST_ERROR");
     }
   }
 
@@ -185,13 +180,7 @@ export class ServiceApiHandler {
 
       return c.success(null, "启动请求已接收");
     } catch (error) {
-      c.get("logger").error("处理启动请求失败:", error);
-      return c.fail(
-        "START_REQUEST_ERROR",
-        error instanceof Error ? error.message : "处理启动请求失败",
-        undefined,
-        500
-      );
+      return this.handleError(c, error, "处理启动请求", "START_REQUEST_ERROR");
     }
   }
 
@@ -209,12 +198,11 @@ export class ServiceApiHandler {
       c.get("logger").debug("获取服务状态成功");
       return c.success(status);
     } catch (error) {
-      c.get("logger").error("获取服务状态失败:", error);
-      return c.fail(
-        "SERVICE_STATUS_READ_ERROR",
-        error instanceof Error ? error.message : "获取服务状态失败",
-        undefined,
-        500
+      return this.handleError(
+        c,
+        error,
+        "获取服务状态",
+        "SERVICE_STATUS_READ_ERROR"
       );
     }
   }
@@ -239,12 +227,11 @@ export class ServiceApiHandler {
       c.get("logger").debug("获取服务健康状态成功");
       return c.success(health);
     } catch (error) {
-      c.get("logger").error("获取服务健康状态失败:", error);
-      return c.fail(
-        "SERVICE_HEALTH_READ_ERROR",
-        error instanceof Error ? error.message : "获取服务健康状态失败",
-        undefined,
-        500
+      return this.handleError(
+        c,
+        error,
+        "获取服务健康状态",
+        "SERVICE_HEALTH_READ_ERROR"
       );
     }
   }

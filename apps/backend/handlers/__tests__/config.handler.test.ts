@@ -217,7 +217,7 @@ describe("ConfigApiHandler", () => {
 
       expect(mockContext.fail).toHaveBeenCalledWith(
         "CONFIG_READ_ERROR",
-        "获取配置失败",
+        "String error",
         undefined,
         500
       );
@@ -254,7 +254,9 @@ describe("ConfigApiHandler", () => {
       expect(mockConfigManager.updateConfig).not.toHaveBeenCalled();
       expect(mockContext.fail).toHaveBeenCalledWith(
         "CONFIG_UPDATE_ERROR",
-        "配置必须是有效的对象"
+        "配置必须是有效的对象",
+        undefined,
+        500
       );
     });
 
@@ -269,7 +271,9 @@ describe("ConfigApiHandler", () => {
       expect(mockConfigManager.updateConfig).not.toHaveBeenCalled();
       expect(mockContext.fail).toHaveBeenCalledWith(
         "CONFIG_UPDATE_ERROR",
-        "配置必须是有效的对象"
+        "配置必须是有效的对象",
+        undefined,
+        500
       );
     });
 
@@ -285,7 +289,9 @@ describe("ConfigApiHandler", () => {
       expect(mockLogger.error).toHaveBeenCalledWith("配置更新失败:", error);
       expect(mockContext.fail).toHaveBeenCalledWith(
         "CONFIG_UPDATE_ERROR",
-        "Config update failed"
+        "Config update failed",
+        undefined,
+        500
       );
     });
 
@@ -298,7 +304,9 @@ describe("ConfigApiHandler", () => {
       expect(mockLogger.error).toHaveBeenCalledWith("配置更新失败:", jsonError);
       expect(mockContext.fail).toHaveBeenCalledWith(
         "CONFIG_UPDATE_ERROR",
-        "Invalid JSON"
+        "Invalid JSON",
+        undefined,
+        500
       );
     });
   });
