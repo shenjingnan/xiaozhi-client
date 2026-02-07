@@ -54,10 +54,9 @@ export class NPMManager {
     ]);
 
     return new Promise((resolve, reject) => {
-      npmProcess.stdout.on("data", (data) => {
+      // 保存监听器引用以便清理
+      const stdoutHandler = (data: Buffer) => {
         const message = data.toString();
-
-        // 发射日志事件
         this.eventBus.emitEvent("npm:install:log", {
           version,
           installId,
@@ -65,12 +64,10 @@ export class NPMManager {
           message,
           timestamp: Date.now(),
         });
-      });
+      };
 
-      npmProcess.stderr.on("data", (data) => {
+      const stderrHandler = (data: Buffer) => {
         const message = data.toString();
-
-        // 发射日志事件
         this.eventBus.emitEvent("npm:install:log", {
           version,
           installId,
@@ -78,13 +75,18 @@ export class NPMManager {
           message,
           timestamp: Date.now(),
         });
-      });
+      };
 
-      npmProcess.on("close", (code) => {
+      const closeHandler = (code: number | null) => {
         const duration = Date.now() - startTime;
 
+        // 清理事件监听器
+        npmProcess.stdout.off("data", stdoutHandler);
+        npmProcess.stderr.off("data", stderrHandler);
+        npmProcess.off("close", closeHandler);
+        npmProcess.off("error", errorHandler);
+
         if (code === 0) {
-          // 发射安装完成事件
           this.eventBus.emitEvent("npm:install:completed", {
             version,
             installId,
@@ -92,13 +94,10 @@ export class NPMManager {
             duration,
             timestamp: Date.now(),
           });
-
           resolve();
         } else {
           const error = `安装失败，退出码: ${code}`;
           console.log(error);
-
-          // 发射安装失败事件
           this.eventBus.emitEvent("npm:install:failed", {
             version,
             installId,
@@ -106,10 +105,35 @@ export class NPMManager {
             duration,
             timestamp: Date.now(),
           });
-
           reject(new Error(error));
         }
-      });
+      };
+
+      const errorHandler = (error: Error) => {
+        const errorMessage = `无法启动 npm 进程: ${error.message}`;
+
+        // 清理事件监听器
+        npmProcess.stdout.off("data", stdoutHandler);
+        npmProcess.stderr.off("data", stderrHandler);
+        npmProcess.off("close", closeHandler);
+        npmProcess.off("error", errorHandler);
+
+        console.log(errorMessage);
+        this.eventBus.emitEvent("npm:install:failed", {
+          version,
+          installId,
+          error: errorMessage,
+          duration: Date.now() - startTime,
+          timestamp: Date.now(),
+        });
+        reject(new Error(errorMessage));
+      };
+
+      // 添加事件监听器
+      npmProcess.on("error", errorHandler);
+      npmProcess.stdout.on("data", stdoutHandler);
+      npmProcess.stderr.on("data", stderrHandler);
+      npmProcess.on("close", closeHandler);
     });
   }
 
