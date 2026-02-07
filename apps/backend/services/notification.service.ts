@@ -1,6 +1,6 @@
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
-import type { EventBus } from "@/services/event-bus.service.js";
+import type { EventBus, EventBusEvents } from "@/services/event-bus.service.js";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { ClientInfo, RestartStatus } from "@/services/status.service.js";
 import type { AppConfig } from "@xiaozhi-client/config";
@@ -54,6 +54,8 @@ export class NotificationService {
   private clients: Map<string, WebSocketClient> = new Map();
   private messageQueue: Map<string, NotificationMessage[]> = new Map();
   private maxQueueSize = 100;
+  /** 存储事件监听器的清理函数 */
+  private eventUnsubscribers: Array<() => void> = [];
 
   constructor() {
     this.logger = logger;
@@ -66,55 +68,121 @@ export class NotificationService {
    */
   private setupEventListeners(): void {
     // 监听配置更新事件
-    this.eventBus.onEvent("config:updated", (data) => {
+    const configUpdatedHandler = (data: EventBusEvents["config:updated"]) => {
       // 获取最新的配置
       const config = configManager.getConfig();
       this.broadcastConfigUpdate(config);
-    });
+    };
+    this.eventBus.onEvent("config:updated", configUpdatedHandler);
+    this.eventUnsubscribers.push(() =>
+      this.eventBus.offEvent("config:updated", configUpdatedHandler)
+    );
 
     // 监听状态更新事件
-    this.eventBus.onEvent("status:updated", (data) => {
+    const statusUpdatedHandler = (data: EventBusEvents["status:updated"]) => {
       this.broadcastStatusUpdate(data.status);
-    });
+    };
+    this.eventBus.onEvent("status:updated", statusUpdatedHandler);
+    this.eventUnsubscribers.push(() =>
+      this.eventBus.offEvent("status:updated", statusUpdatedHandler)
+    );
 
     // 监听重启状态事件
-    this.eventBus.onEvent("service:restart:started", (data) => {
+    const restartStartedHandler = (
+      data: EventBusEvents["service:restart:started"]
+    ) => {
       this.broadcastRestartStatus("restarting", undefined, data.timestamp);
-    });
+    };
+    this.eventBus.onEvent("service:restart:started", restartStartedHandler);
+    this.eventUnsubscribers.push(() =>
+      this.eventBus.offEvent("service:restart:started", restartStartedHandler)
+    );
 
-    this.eventBus.onEvent("service:restart:completed", (data) => {
+    const restartCompletedHandler = (
+      data: EventBusEvents["service:restart:completed"]
+    ) => {
       this.broadcastRestartStatus("completed", undefined, data.timestamp);
-    });
+    };
+    this.eventBus.onEvent("service:restart:completed", restartCompletedHandler);
+    this.eventUnsubscribers.push(() =>
+      this.eventBus.offEvent(
+        "service:restart:completed",
+        restartCompletedHandler
+      )
+    );
 
-    this.eventBus.onEvent("service:restart:failed", (data) => {
+    const restartFailedHandler = (
+      data: EventBusEvents["service:restart:failed"]
+    ) => {
       this.broadcastRestartStatus("failed", data.error.message, data.timestamp);
-    });
+    };
+    this.eventBus.onEvent("service:restart:failed", restartFailedHandler);
+    this.eventUnsubscribers.push(() =>
+      this.eventBus.offEvent("service:restart:failed", restartFailedHandler)
+    );
 
     // 监听 NPM 安装事件
-    this.eventBus.onEvent("npm:install:started", (data) => {
+    const npmInstallStartedHandler = (
+      data: EventBusEvents["npm:install:started"]
+    ) => {
       this.broadcast("npm:install:started", data);
-    });
+    };
+    this.eventBus.onEvent("npm:install:started", npmInstallStartedHandler);
+    this.eventUnsubscribers.push(() =>
+      this.eventBus.offEvent("npm:install:started", npmInstallStartedHandler)
+    );
 
-    this.eventBus.onEvent("npm:install:log", (data) => {
+    const npmInstallLogHandler = (data: EventBusEvents["npm:install:log"]) => {
       this.broadcast("npm:install:log", data);
-    });
+    };
+    this.eventBus.onEvent("npm:install:log", npmInstallLogHandler);
+    this.eventUnsubscribers.push(() =>
+      this.eventBus.offEvent("npm:install:log", npmInstallLogHandler)
+    );
 
-    this.eventBus.onEvent("npm:install:completed", (data) => {
+    const npmInstallCompletedHandler = (
+      data: EventBusEvents["npm:install:completed"]
+    ) => {
       this.broadcast("npm:install:completed", data);
-    });
+    };
+    this.eventBus.onEvent("npm:install:completed", npmInstallCompletedHandler);
+    this.eventUnsubscribers.push(() =>
+      this.eventBus.offEvent(
+        "npm:install:completed",
+        npmInstallCompletedHandler
+      )
+    );
 
-    this.eventBus.onEvent("npm:install:failed", (data) => {
+    const npmInstallFailedHandler = (
+      data: EventBusEvents["npm:install:failed"]
+    ) => {
       this.broadcast("npm:install:failed", data);
-    });
+    };
+    this.eventBus.onEvent("npm:install:failed", npmInstallFailedHandler);
+    this.eventUnsubscribers.push(() =>
+      this.eventBus.offEvent("npm:install:failed", npmInstallFailedHandler)
+    );
 
     // 监听通知广播事件
-    this.eventBus.onEvent("notification:broadcast", (data) => {
+    const notificationBroadcastHandler = (
+      data: EventBusEvents["notification:broadcast"]
+    ) => {
       if (data.target) {
         this.sendToClient(data.target, data.type, data.data);
       } else {
         this.broadcast(data.type, data.data);
       }
-    });
+    };
+    this.eventBus.onEvent(
+      "notification:broadcast",
+      notificationBroadcastHandler
+    );
+    this.eventUnsubscribers.push(() =>
+      this.eventBus.offEvent(
+        "notification:broadcast",
+        notificationBroadcastHandler
+      )
+    );
   }
 
   /**
@@ -366,6 +434,13 @@ export class NotificationService {
    */
   destroy(): void {
     this.logger.debug("销毁通知服务");
+
+    // 清理事件监听器
+    for (const unsubscribe of this.eventUnsubscribers) {
+      unsubscribe();
+    }
+    this.eventUnsubscribers = [];
+
     this.clients.clear();
     this.messageQueue.clear();
   }
