@@ -27,6 +27,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import type {
   CozeWorkflow,
+  JSONSchema,
   WorkflowParameter,
 } from "@xiaozhi-client/shared-types";
 import { Plus, Trash2 } from "lucide-react";
@@ -91,7 +92,7 @@ export interface WorkflowParameterConfigDialogProps {
 /**
  * 从 inputSchema 提取现有参数配置
  */
-function extractParametersFromSchema(inputSchema: any): FormData["parameters"] {
+function extractParametersFromSchema(inputSchema: JSONSchema): FormData["parameters"] {
   if (!inputSchema || !inputSchema.properties) {
     return [];
   }
@@ -100,7 +101,7 @@ function extractParametersFromSchema(inputSchema: any): FormData["parameters"] {
   const required = inputSchema.required || [];
 
   return Object.entries(properties).map(
-    ([fieldName, schema]: [string, any]) => {
+    ([fieldName, schema]: [string, JSONSchema]) => {
       let type: "string" | "number" | "boolean" = "string";
 
       if (schema.type === "integer" || schema.type === "number") {
