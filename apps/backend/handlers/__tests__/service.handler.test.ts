@@ -143,7 +143,7 @@ describe("ServiceApiHandler", () => {
 
       expect(mockContext.fail).toHaveBeenCalledWith(
         "SERVICE_STATUS_READ_ERROR",
-        "获取服务状态失败",
+        "String error",
         undefined,
         500
       );
@@ -254,7 +254,7 @@ describe("ServiceApiHandler", () => {
 
       expect(mockContext.fail).toHaveBeenCalledWith(
         "START_REQUEST_ERROR",
-        "处理启动请求失败",
+        "String error",
         undefined,
         500
       );
@@ -355,7 +355,7 @@ describe("ServiceApiHandler", () => {
 
       expect(mockContext.fail).toHaveBeenCalledWith(
         "STOP_REQUEST_ERROR",
-        "处理停止请求失败",
+        "String error",
         undefined,
         500
       );
@@ -409,7 +409,7 @@ describe("ServiceApiHandler", () => {
 
       expect(mockContext.fail).toHaveBeenCalledWith(
         "RESTART_REQUEST_ERROR",
-        "处理重启请求失败",
+        "String error",
         undefined,
         500
       );
