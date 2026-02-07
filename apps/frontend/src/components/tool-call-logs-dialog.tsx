@@ -68,6 +68,11 @@ export function ToolCallLogsDialog() {
       try {
         await new Promise((resolve) => setTimeout(resolve, 1000));
         const response = await fetch(`/api/tool-calls/logs?limit=${limit}`);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
         const data: ApiResponse<ToolCallLogsResponse> = await response.json();
 
         if (data.success && data.data) {
@@ -77,7 +82,7 @@ export function ToolCallLogsDialog() {
           setError(data.error?.message || "获取日志失败");
         }
       } catch (err) {
-        setError("网络请求失败");
+        setError(err instanceof Error ? err.message : "网络请求失败");
         console.error("Failed to fetch tool call logs:", err);
       } finally {
         if (isRefresh) {

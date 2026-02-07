@@ -50,6 +50,7 @@ describe("ToolCallLogsDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (fetch as any).mockResolvedValue({
+      ok: true,
       json: vi.fn().mockResolvedValue(mockSuccessResponse),
     });
   });
@@ -96,6 +97,7 @@ describe("ToolCallLogsDialog", () => {
           setTimeout(
             () =>
               resolve({
+                ok: true,
                 json: vi.fn().mockResolvedValue(mockSuccessResponse),
               }),
             100
@@ -158,6 +160,7 @@ describe("ToolCallLogsDialog", () => {
     };
 
     (fetch as any).mockResolvedValue({
+      ok: true,
       json: vi.fn().mockResolvedValue(mockErrorResponse),
     });
 
@@ -186,6 +189,7 @@ describe("ToolCallLogsDialog", () => {
     };
 
     (fetch as any).mockResolvedValue({
+      ok: true,
       json: vi.fn().mockResolvedValue(mockEmptyResponse),
     });
 
@@ -284,5 +288,27 @@ describe("ToolCallLogsDialog", () => {
     // 这个测试需要更复杂的mock设置，包括定时器控制
     // 在实际使用中，重试功能是正常的
     expect(true).toBe(true);
+  });
+
+  it("应该正确处理 HTTP 错误状态码", async () => {
+    // 模拟 500 服务器错误
+    (fetch as any).mockResolvedValue({
+      ok: false,
+      status: 500,
+      statusText: "Internal Server Error",
+    });
+
+    render(<ToolCallLogsDialog />);
+
+    const triggerButton = screen.getByRole("button", { name: /调用日志/ });
+    fireEvent.click(triggerButton);
+
+    await waitFor(
+      () => {
+        expect(screen.getByText("加载失败")).toBeInTheDocument();
+        expect(screen.getByText("HTTP 500: Internal Server Error")).toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
   });
 });
