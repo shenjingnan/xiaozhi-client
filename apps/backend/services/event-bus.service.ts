@@ -1,3 +1,16 @@
+/**
+ * 事件总线服务
+ * 提供统一的事件发布订阅机制，用于解耦各个模块之间的通信
+ * 支持配置更新、状态变更、接入点状态、服务重启、MCP 服务、工具调用等多种事件类型
+ *
+ * 主要功能：
+ * - 事件的发布和订阅
+ * - 事件类型的类型安全检查
+ * - 统一的事件命名规范
+ *
+ * @module apps/backend/services/event-bus.service
+ */
+
 import { EventEmitter } from "node:events";
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
