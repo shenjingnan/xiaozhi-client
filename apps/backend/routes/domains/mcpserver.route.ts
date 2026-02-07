@@ -3,51 +3,38 @@
  * 处理 MCP 服务器管理相关的 API 路由
  */
 
-import type { Context } from "hono";
-import type { HandlerDependencies, RouteDefinition } from "../types.js";
+import type { RouteDefinition } from "../types.js";
+import { createHandler } from "../types.js";
 
 /**
- * MCP 服务器处理器包装函数
- * 统一处理 MCP Server API Handler 的初始化检查
+ * MCP 服务器处理器包装器
+ * 使用 createHandler 工厂函数统一处理依赖注入
+ * 当 mcpHandler 未初始化时返回中文错误信息
  */
-const withMCPServerHandler = async (
-  c: Context,
-  handlerFn: (
-    handler: NonNullable<HandlerDependencies["mcpHandler"]>
-  ) => Promise<Response>
-): Promise<Response> => {
-  const dependencies = c.get("dependencies") as HandlerDependencies;
-  const handler = dependencies.mcpHandler;
-
-  if (!handler) {
-    return c.json({ error: "MCP Server API Handler not initialized" }, 503);
-  }
-
-  return await handlerFn(handler);
-};
+const h = createHandler("mcpHandler", {
+  errorCode: "MCP_HANDLER_NOT_AVAILABLE",
+  errorMessage: "MCP 服务器处理器尚未初始化，请稍后再试",
+});
 
 export const mcpserverRoutes: RouteDefinition[] = [
   {
     method: "POST",
     path: "/api/mcp-servers",
-    handler: (c: Context) => withMCPServerHandler(c, (h) => h.addMCPServer(c)),
+    handler: h((handler, c) => handler.addMCPServer(c)),
   },
   {
     method: "DELETE",
     path: "/api/mcp-servers/:serverName",
-    handler: (c: Context) =>
-      withMCPServerHandler(c, (h) => h.removeMCPServer(c)),
+    handler: h((handler, c) => handler.removeMCPServer(c)),
   },
   {
     method: "GET",
     path: "/api/mcp-servers/:serverName/status",
-    handler: (c: Context) =>
-      withMCPServerHandler(c, (h) => h.getMCPServerStatus(c)),
+    handler: h((handler, c) => handler.getMCPServerStatus(c)),
   },
   {
     method: "GET",
     path: "/api/mcp-servers",
-    handler: (c: Context) =>
-      withMCPServerHandler(c, (h) => h.listMCPServers(c)),
+    handler: h((handler, c) => handler.listMCPServers(c)),
   },
 ];
