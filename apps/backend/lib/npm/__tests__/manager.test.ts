@@ -28,11 +28,14 @@ interface MockEventBus extends Partial<EventBus> {
 interface MockChildProcess {
   stdout: {
     on: ReturnType<typeof vi.fn>;
+    off: ReturnType<typeof vi.fn>;
   };
   stderr: {
     on: ReturnType<typeof vi.fn>;
+    off: ReturnType<typeof vi.fn>;
   };
   on: ReturnType<typeof vi.fn>;
+  off: ReturnType<typeof vi.fn>;
 }
 
 /**
@@ -124,6 +127,7 @@ describe("NPMManager", () => {
               callback(mockStdoutData);
             }
           }),
+          off: vi.fn(),
         },
         stderr: {
           on: vi.fn((event, callback) => {
@@ -131,12 +135,14 @@ describe("NPMManager", () => {
               callback(mockStderrData);
             }
           }),
+          off: vi.fn(),
         },
         on: vi.fn((event, callback) => {
           if (event === "close") {
             callback(0); // 成功退出码
           }
         }),
+        off: vi.fn(),
       };
 
       mockSpawn.mockReturnValue(mockProcess);
@@ -195,6 +201,7 @@ describe("NPMManager", () => {
               callback(mockStdoutData);
             }
           }),
+          off: vi.fn(),
         },
         stderr: {
           on: vi.fn((event, callback) => {
@@ -202,12 +209,14 @@ describe("NPMManager", () => {
               callback(mockStderrData);
             }
           }),
+          off: vi.fn(),
         },
         on: vi.fn((event, callback) => {
           if (event === "close") {
             callback(1); // 失败退出码
           }
         }),
+        off: vi.fn(),
       };
 
       mockSpawn.mockReturnValue(mockProcess);
@@ -244,6 +253,7 @@ describe("NPMManager", () => {
               callback(mockStdoutData);
             }
           }),
+          off: vi.fn(),
         },
         stderr: {
           on: vi.fn((event, callback) => {
@@ -251,12 +261,14 @@ describe("NPMManager", () => {
               callback(mockStderrData);
             }
           }),
+          off: vi.fn(),
         },
         on: vi.fn((event, callback) => {
           if (event === "close") {
             callback(0); // 成功退出码
           }
         }),
+        off: vi.fn(),
       };
 
       mockSpawn.mockReturnValue(mockProcess);
@@ -278,11 +290,12 @@ describe("NPMManager", () => {
       // Arrange
       const version = "1.7.9";
       const mockProcess = {
-        stdout: { on: vi.fn() },
-        stderr: { on: vi.fn() },
+        stdout: { on: vi.fn(), off: vi.fn() },
+        stderr: { on: vi.fn(), off: vi.fn() },
         on: vi.fn((event, callback) => {
           if (event === "close") callback(0);
         }),
+        off: vi.fn(),
       };
       mockSpawn.mockReturnValue(mockProcess);
 
@@ -301,6 +314,78 @@ describe("NPMManager", () => {
       expect(installId).toMatch(/^install-\d+-[a-z0-9]+$/);
       expect(typeof installId).toBe("string");
       expect(installId?.length).toBeGreaterThan(10);
+    });
+
+    test("应该处理进程启动错误事件", async () => {
+      // Arrange
+      const version = "1.7.9";
+      const mockError = new Error("ENOENT: npm command not found");
+
+      const mockProcess = {
+        stdout: { on: vi.fn(), off: vi.fn() },
+        stderr: { on: vi.fn(), off: vi.fn() },
+        on: vi.fn((event, callback) => {
+          if (event === "error") {
+            callback(mockError);
+          }
+        }),
+        off: vi.fn(),
+      };
+      mockSpawn.mockReturnValue(mockProcess);
+
+      // Act & Assert
+      await expect(npmManager.installVersion(version)).rejects.toThrow(
+        "无法启动 npm 进程: ENOENT: npm command not found"
+      );
+
+      // 验证失败事件发射
+      expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
+        "npm:install:failed",
+        {
+          version: "1.7.9",
+          installId: expect.stringMatching(/^install-\d+-[a-z0-9]+$/),
+          error: "无法启动 npm 进程: ENOENT: npm command not found",
+          duration: expect.any(Number),
+          timestamp: expect.any(Number),
+        }
+      );
+    });
+
+    test("应该在进程结束时清理所有事件监听器", async () => {
+      // Arrange
+      const version = "1.7.9";
+      const mockProcess = {
+        stdout: {
+          on: vi.fn(),
+          off: vi.fn(),
+        },
+        stderr: {
+          on: vi.fn(),
+          off: vi.fn(),
+        },
+        on: vi.fn((event, callback) => {
+          if (event === "close") {
+            callback(0); // 成功退出码
+          }
+        }),
+        off: vi.fn(),
+      };
+      mockSpawn.mockReturnValue(mockProcess);
+
+      // Act
+      await npmManager.installVersion(version);
+
+      // Assert - 验证所有事件监听器都被清理
+      expect(mockProcess.stdout.off).toHaveBeenCalled();
+      expect(mockProcess.stderr.off).toHaveBeenCalled();
+      expect(mockProcess.off).toHaveBeenCalledWith(
+        "close",
+        expect.any(Function)
+      );
+      expect(mockProcess.off).toHaveBeenCalledWith(
+        "error",
+        expect.any(Function)
+      );
     });
   });
 
