@@ -4,10 +4,6 @@
 
 /**
  * 分页相关常量
+ * 从 @xiaozhi-client/shared-types 重新导出
  */
-export const PAGINATION_CONSTANTS = {
-  /** 默认每页记录数 */
-  DEFAULT_LIMIT: 50,
-  /** 最大每页记录数 */
-  MAX_LIMIT: 200,
-} as const;
+export { PAGINATION_CONSTANTS } from "@xiaozhi-client/shared-types";

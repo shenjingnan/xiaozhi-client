@@ -51,3 +51,6 @@ export * from "./frontend";
 
 // 工具类型
 export { TimeoutError } from "./utils";
+
+// 分页相关常量
+export { PAGINATION_CONSTANTS } from "./config/pagination.constants.js";
