@@ -118,7 +118,10 @@ export function useNetworkService() {
       networkService.destroy();
       initializationRef.current = false;
     };
-  }, [webSocketActions]);
+  }, [
+    webSocketActions, // 连接成功后立即获取初始数据
+    loadInitialData,
+  ]);
 
   /**
    * 加载初始数据

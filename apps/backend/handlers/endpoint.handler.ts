@@ -1,14 +1,14 @@
-import type { Logger } from "@/Logger.js";
-import { logger } from "@/Logger.js";
-import type { EventBus } from "@/services/event-bus.service.js";
-import { getEventBus } from "@/services/event-bus.service.js";
-import type { AppContext } from "@/types/hono.context.js";
 import type { ConfigManager } from "@xiaozhi-client/config";
 import type {
   ConnectionStatus,
   EndpointManager,
 } from "@xiaozhi-client/endpoint";
 import type { Context } from "hono";
+import type { Logger } from "@/Logger.js";
+import { logger } from "@/Logger.js";
+import type { EventBus } from "@/services/event-bus.service.js";
+import { getEventBus } from "@/services/event-bus.service.js";
+import type { AppContext } from "@/types/hono.context.js";
 
 /**
  * 验证结果类型定义

@@ -1,6 +1,6 @@
+import type { Context } from "hono";
 import type { StatusService } from "@/services/status.service.js";
 import type { AppContext } from "@/types/hono.context.js";
-import type { Context } from "hono";
 import { BaseHandler } from "./base.handler.js";
 
 /**

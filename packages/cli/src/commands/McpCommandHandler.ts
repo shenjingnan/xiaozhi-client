@@ -150,14 +150,14 @@ export class McpCommandHandler extends BaseCommandHandler {
       name: "list",
       description: "列出 MCP 服务",
       options: [{ flags: "--tools", description: "显示所有服务的工具列表" }],
-      execute: async (args: CommandArguments, options: CommandOptions) => {
+      execute: async (_args: CommandArguments, options: CommandOptions) => {
         await this.handleList(options as ListOptions);
       },
     },
     {
       name: "server",
       description: "管理指定的 MCP 服务",
-      execute: async (args: CommandArguments, options: CommandOptions) => {
+      execute: async (args: CommandArguments, _options: CommandOptions) => {
         this.validateArgs(args, 1);
         await this.handleServer(args[0]);
       },
@@ -165,7 +165,7 @@ export class McpCommandHandler extends BaseCommandHandler {
     {
       name: "tool",
       description: "启用或禁用指定服务的工具",
-      execute: async (args: CommandArguments, options: CommandOptions) => {
+      execute: async (args: CommandArguments, _options: CommandOptions) => {
         this.validateArgs(args, 3);
         const [serverName, toolName, action] = args;
 
@@ -204,8 +204,8 @@ export class McpCommandHandler extends BaseCommandHandler {
    * 主命令执行（显示帮助）
    */
   async execute(
-    args: CommandArguments,
-    options: CommandOptions
+    _args: CommandArguments,
+    _options: CommandOptions
   ): Promise<void> {
     console.log("MCP 服务和工具管理命令。使用 --help 查看可用的子命令。");
   }

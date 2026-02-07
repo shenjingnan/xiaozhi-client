@@ -1,11 +1,11 @@
 import { TypeFieldNormalizer } from "@xiaozhi-client/mcp-core";
-import { MCPTransportType, ToolCallError, ToolCallErrorCode } from "./types.js";
 import type {
   MCPServiceConfig,
   ToolCallParams,
   ToolCallValidationOptions,
   ValidatedToolCallParams,
 } from "./types.js";
+import { MCPTransportType, ToolCallError, ToolCallErrorCode } from "./types.js";
 
 /**
  * 根据 URL 路径推断传输类型

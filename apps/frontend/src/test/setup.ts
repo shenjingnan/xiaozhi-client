@@ -35,7 +35,7 @@ beforeEach(() => {
     if (navigator && "clipboard" in navigator) {
       (navigator as any).clipboard = undefined;
     }
-  } catch (e) {
+  } catch (_e) {
     // Ignore errors when cleaning up clipboard
   }
 
@@ -197,7 +197,7 @@ beforeEach(() => {
         }
       }
     }
-  } catch (e) {
+  } catch (_e) {
     // Ignore errors during cleanup
   }
 });
@@ -267,7 +267,7 @@ afterEach(() => {
     if (document.body.style) {
       document.body.style.pointerEvents = "auto";
     }
-  } catch (e) {
+  } catch (_e) {
     // Ignore errors during cleanup
   }
 });

@@ -27,14 +27,14 @@ export class ConfigCommandHandler extends BaseCommandHandler {
           defaultValue: "json",
         },
       ],
-      execute: async (args: any[], options: any) => {
+      execute: async (_args: any[], options: any) => {
         await this.handleInit(options);
       },
     },
     {
       name: "get",
       description: "查看配置值",
-      execute: async (args: any[], options: any) => {
+      execute: async (args: any[], _options: any) => {
         this.validateArgs(args, 1);
         await this.handleGet(args[0]);
       },
@@ -42,7 +42,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
     {
       name: "set",
       description: "设置配置值",
-      execute: async (args: any[], options: any) => {
+      execute: async (args: any[], _options: any) => {
         this.validateArgs(args, 2);
         await this.handleSet(args[0], args[1]);
       },
@@ -56,7 +56,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
   /**
    * 主命令执行（显示帮助）
    */
-  async execute(args: any[], options: any): Promise<void> {
+  async execute(_args: any[], _options: any): Promise<void> {
     console.log("配置管理命令。使用 --help 查看可用的子命令。");
   }
 
@@ -235,7 +235,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
           spinner.succeed(`MCP 端点已设置为: ${value}`);
           break;
         case "heartbeatInterval": {
-          const interval = Number.parseInt(value);
+          const interval = Number.parseInt(value, 10);
           if (Number.isNaN(interval) || interval <= 0) {
             throw new Error("心跳检测间隔必须是正整数");
           }
@@ -244,7 +244,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
           break;
         }
         case "heartbeatTimeout": {
-          const timeout = Number.parseInt(value);
+          const timeout = Number.parseInt(value, 10);
           if (Number.isNaN(timeout) || timeout <= 0) {
             throw new Error("心跳超时时间必须是正整数");
           }
@@ -253,7 +253,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
           break;
         }
         case "reconnectInterval": {
-          const interval = Number.parseInt(value);
+          const interval = Number.parseInt(value, 10);
           if (Number.isNaN(interval) || interval <= 0) {
             throw new Error("重连间隔必须是正整数");
           }

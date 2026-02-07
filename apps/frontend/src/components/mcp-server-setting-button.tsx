@@ -1,3 +1,11 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Textarea } from "@ui/textarea";
+import type { MCPServerConfig } from "@xiaozhi-client/shared-types";
+import { SettingsIcon } from "lucide-react";
+import { useCallback, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import z from "zod";
 import { McpServerForm } from "@/components/mcp-server-form";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,14 +36,6 @@ import {
   jsonToFormData,
 } from "@/utils/mcpFormConverter";
 import { validateMCPConfig } from "@/utils/mcpValidation";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Textarea } from "@ui/textarea";
-import type { MCPServerConfig } from "@xiaozhi-client/shared-types";
-import { SettingsIcon } from "lucide-react";
-import { useCallback, useState } from "react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import z from "zod";
 
 // 高级模式的 JSON 表单 schema
 const jsonFormSchema = z.object({

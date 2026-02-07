@@ -1,5 +1,5 @@
-import { MCPServiceManager } from "@/lib/mcp";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MCPServiceManager } from "@/lib/mcp";
 import { WebServer } from "../../WebServer";
 
 // Mock configManager to avoid triggering real config loading
@@ -111,7 +111,7 @@ describe("WebServer 单元测试", () => {
     if (webServer?.stop) {
       try {
         await webServer.stop();
-      } catch (error) {
+      } catch (_error) {
         // 忽略停止错误
       }
     }

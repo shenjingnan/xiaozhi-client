@@ -1,7 +1,7 @@
-import { NPMManager } from "@/lib/npm";
-import type { AppContext } from "@/types/hono.context.js";
 import { VersionUtils } from "@xiaozhi-client/version";
 import type { Context } from "hono";
+import { NPMManager } from "@/lib/npm";
+import type { AppContext } from "@/types/hono.context.js";
 import { BaseHandler } from "./base.handler.js";
 
 /**

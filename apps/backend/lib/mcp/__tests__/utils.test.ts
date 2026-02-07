@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Mock } from "vitest";
-import { MCPTransportType } from "../types.js";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { MCPServiceConfig } from "../types.js";
+import { MCPTransportType } from "../types.js";
 import {
   inferTransportTypeFromConfig,
   inferTransportTypeFromUrl,

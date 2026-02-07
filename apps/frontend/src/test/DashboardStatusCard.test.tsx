@@ -1,6 +1,6 @@
-import { DashboardStatusCard } from "@/components/dashboard-status-card";
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DashboardStatusCard } from "@/components/dashboard-status-card";
 
 // Mock stores with hoisted mocks
 const mockUseMcpEndpoint = vi.hoisted(() =>

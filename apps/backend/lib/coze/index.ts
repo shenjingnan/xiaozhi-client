@@ -18,7 +18,8 @@
  * const client = createCozeClient('your-token', 'zh');
  * ```
  */
-export { default as config } from "./config";
+
 export * from "@coze/api";
 export { createCozeClient } from "./client";
+export { default as config } from "./config";
 export { CozeApiService } from "./service";
