@@ -5,32 +5,17 @@
 import fs from "node:fs";
 import path from "node:path";
 import { FileError, ValidationError } from "../errors/index";
-import type { TemplateManager as ITemplateManager } from "../interfaces/Service";
+import type {
+  TemplateManager as ITemplateManager,
+  TemplateCreateOptions,
+  TemplateInfo,
+} from "../interfaces/Service";
 import { FileUtils } from "../utils/FileUtils";
 import { PathUtils } from "../utils/PathUtils";
 import { Validation } from "../utils/Validation";
 
-/**
- * 模板信息接口
- */
-export interface TemplateInfo {
-  name: string;
-  path: string;
-  description?: string;
-  version?: string;
-  author?: string;
-  files: string[];
-}
-
-/**
- * 模板创建选项
- */
-export interface TemplateCreateOptions {
-  templateName?: string;
-  targetPath: string;
-  projectName: string;
-  variables?: Record<string, string>;
-}
+// 重新导出类型以保持向后兼容
+export type { TemplateInfo, TemplateCreateOptions };
 
 /**
  * 模板管理器实现

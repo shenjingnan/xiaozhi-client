@@ -81,19 +81,41 @@ export interface DaemonManager {
 }
 
 /**
+ * 模板信息接口
+ */
+export interface TemplateInfo {
+  name: string;
+  path: string;
+  description?: string;
+  version?: string;
+  author?: string;
+  files: string[];
+}
+
+/**
+ * 模板创建选项
+ */
+export interface TemplateCreateOptions {
+  templateName?: string;
+  targetPath: string;
+  projectName: string;
+  variables?: Record<string, string>;
+}
+
+/**
  * 模板管理器接口
  */
 export interface TemplateManager {
   /** 获取可用模板列表 */
-  getAvailableTemplates(): Promise<any[]>;
+  getAvailableTemplates(): Promise<TemplateInfo[]>;
   /** 复制模板到目标目录 */
   copyTemplate(templateName: string, targetPath: string): Promise<void>;
   /** 验证模板是否存在 */
   validateTemplate(templateName: string): Promise<boolean>;
   /** 获取模板信息 */
-  getTemplateInfo(templateName: string): Promise<any | null>;
+  getTemplateInfo(templateName: string): Promise<TemplateInfo | null>;
   /** 创建项目 */
-  createProject(options: any): Promise<void>;
+  createProject(options: TemplateCreateOptions): Promise<void>;
   /** 清除模板缓存 */
   clearCache(): void;
 }
