@@ -66,20 +66,82 @@ export interface ESP32Activation {
 /**
  * 设备上报信息
  * ESP32设备在OTA接口上报的设备信息
+ * 与 xiaozhi-esp32-server 的数据结构保持一致
+ *
+ * 支持两种格式：
+ * 1. 新格式：board 在顶层
+ * 2. 旧格式：board 嵌套在 application 下（兼容老设备）
  */
 export interface ESP32DeviceReport {
+  /** 协议版本 */
+  version?: number;
+  /** 语言设置 */
+  language?: string;
+  /** Flash大小 */
+  flash_size?: number;
+  /** 最小空闲堆大小 */
+  minimum_free_heap_size?: string;
+  /** MAC地址 */
+  mac_address?: string;
+  /** 设备UUID */
+  uuid?: string;
+  /** 芯片型号名称 */
+  chip_model_name?: string;
+  /** 芯片信息 */
+  chip_info?: {
+    model: number;
+    cores: number;
+    revision: number;
+    features: number;
+  };
   /** 应用程序信息 */
   application: {
-    /** 版本号 */
+    name?: string;
     version: string;
-    /** 硬件板信息 */
-    board: {
+    compile_time?: string;
+    idf_version?: string;
+    elf_sha256?: string;
+    /** 旧格式：硬件板信息可能嵌套在这里（兼容老设备） */
+    board?: {
       /** 板型号 */
       type: string;
     };
   };
-  /** 芯片型号名称（可选） */
-  chipModelName?: string;
+  /** 分区表 */
+  partition_table?: Array<{
+    label: string;
+    type: number;
+    subtype: number;
+    address: number;
+    size: number;
+  }>;
+  /** OTA信息 */
+  ota?: {
+    label: string;
+  };
+  /** 显示屏信息 */
+  display?: {
+    monochrome: boolean;
+    width: number;
+    height: number;
+  };
+  /** 新格式：硬件板信息在顶层（推荐格式） */
+  board?: {
+    /** 板型号 */
+    type: string;
+    /** 板名称 */
+    name?: string;
+    /** WiFi SSID */
+    ssid?: string;
+    /** WiFi信号强度 */
+    rssi?: number;
+    /** WiFi信道 */
+    channel?: number;
+    /** IP地址 */
+    ip?: string;
+    /** MAC地址 */
+    mac?: string;
+  };
 }
 
 /**
@@ -154,6 +216,7 @@ export interface ESP32OTAResponse {
  */
 export type ESP32WSMessageType =
   | "hello"
+  | "listen"
   | "audio"
   | "text"
   | "stt"
@@ -200,6 +263,21 @@ export interface ESP32HelloMessage extends ESP32WSMessageBase {
     /** 帧时长（毫秒） */
     frameDuration: number;
   };
+}
+
+/**
+ * 设备Listen消息
+ * ESP32设备发送的监听状态消息
+ * 用于报告唤醒词检测和监听状态变化
+ */
+export interface ESP32ListenMessage extends ESP32WSMessageBase {
+  type: "listen";
+  /** 监听状态 */
+  state: "detect" | "start" | "stop";
+  /** 监听模式 */
+  mode?: "auto" | "manual" | "realtime";
+  /** 唤醒词文本（state=detect时包含） */
+  text?: string;
 }
 
 /**
@@ -262,6 +340,7 @@ export interface ESP32ErrorMessage extends ESP32WSMessageBase {
  */
 export type ESP32WSMessage =
   | ESP32HelloMessage
+  | ESP32ListenMessage
   | ESP32ServerHelloMessage
   | ESP32AudioMessage
   | ESP32TextMessage

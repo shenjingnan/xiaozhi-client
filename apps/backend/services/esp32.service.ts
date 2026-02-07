@@ -10,9 +10,11 @@ import {
   type ESP32DeviceListResponse,
   type ESP32DeviceReport,
   ESP32ErrorCode,
+  type ESP32ListenMessage,
   type ESP32OTAResponse,
   type ESP32WSMessage,
 } from "@/types/esp32.js";
+import { camelToSnakeCase, extractDeviceInfo } from "@/utils/esp32-utils.js";
 import type WebSocket from "ws";
 import type { DeviceRegistryService } from "./device-registry.service.js";
 
@@ -62,17 +64,22 @@ export class ESP32Service {
    * @param deviceId - 设备ID（MAC地址）
    * @param clientId - 客户端ID（设备UUID）
    * @param report - 设备上报信息
+   * @param headerInfo - 从请求头获取的设备信息（优先级高于 body）
+   * @param host - 请求的 Host 头（格式：IP:PORT 或 DOMAIN:PORT）
    * @returns OTA响应
    */
   async handleOTARequest(
     deviceId: string,
     clientId: string,
-    report: ESP32DeviceReport
+    report: ESP32DeviceReport,
+    headerInfo?: { deviceModel?: string; deviceVersion?: string },
+    host?: string
   ): Promise<ESP32OTAResponse> {
     logger.info(`收到OTA请求: deviceId=${deviceId}, clientId=${clientId}`);
 
-    const { application, chipModelName } = report;
-    const { version: appVersion, board } = application;
+    // 使用工具方法提取设备信息（支持多级回退机制）
+    const { boardType, appVersion } = extractDeviceInfo(report, headerInfo);
+    const chipModelName = report.chip_model_name;
 
     // 检查设备是否已激活
     const existingDevice = this.deviceRegistry.getDevice(deviceId);
@@ -85,31 +92,54 @@ export class ESP32Service {
       const expiresAt = Date.now() + TOKEN_EXPIRY_MS;
       this.tokenToDeviceId.set(token, { deviceId, expiresAt });
 
-      // 构建WebSocket URL（使用相对路径，硬件会使用当前域名）
-      const wsUrl = "/ws";
+      // 获取服务器地址（从请求中获取）
+      if (!host) {
+        throw new Error("无法获取服务器地址：缺少 Host 头", {
+          cause: "MISSING_HOST_HEADER",
+        });
+      }
+
+      // 如果 host 不包含端口，添加默认端口
+      const serverAddress = host.includes(":") ? host : `${host}:9999`;
+
+      // 构建完整的 WebSocket URL
+      const wsUrl = `ws://${serverAddress}/ws`;
+
+      // 构建 MQTT 配置（使用默认占位值）
+      const mqttConfig = {
+        endpoint: serverAddress.replace(":9999", ":8883"),
+        clientId: `xiaozhi_${deviceId.substring(0, 8)}`,
+        username: "xiaozhi",
+        password: "",
+        keepalive: 240,
+      };
 
       logger.info(
-        `设备已激活，返回WebSocket配置: deviceId=${deviceId}, clientId=${clientId}`
+        `设备已激活，返回WebSocket配置: deviceId=${deviceId}, clientId=${clientId}, wsUrl=${wsUrl}`
       );
 
-      return {
+      const response = {
         websocket: {
           url: wsUrl,
           token,
-          version: 1,
+          version: 2, // 更新版本号为 2
         },
+        mqtt: mqttConfig,
         serverTime: {
           timestamp: Date.now(),
           timezoneOffset: new Date().getTimezoneOffset() * -60 * 1000,
         },
       };
+
+      // 转换为下划线命名后返回
+      return camelToSnakeCase(response) as ESP32OTAResponse;
     }
 
     // 设备未激活，生成激活码
     try {
       const { code, challenge } = this.deviceRegistry.generateActivationCode(
         deviceId,
-        board.type,
+        boardType,
         appVersion
       );
 
@@ -117,7 +147,7 @@ export class ESP32Service {
         `设备未激活，生成激活码: deviceId=${deviceId}, clientId=${clientId}, code=${code}`
       );
 
-      return {
+      const response = {
         activation: {
           code,
           challenge,
@@ -129,6 +159,9 @@ export class ESP32Service {
           timezoneOffset: new Date().getTimezoneOffset() * -60 * 1000,
         },
       };
+
+      // 转换为下划线命名后返回
+      return camelToSnakeCase(response) as ESP32OTAResponse;
     } catch (error) {
       // 如果设备已在待激活列表中，返回现有激活码
       const pendingDevice = this.deviceRegistry.getPendingDevice(deviceId);
@@ -137,7 +170,7 @@ export class ESP32Service {
           `设备待激活中，返回现有激活码: deviceId=${deviceId}, clientId=${clientId}, code=${pendingDevice.code}`
         );
 
-        return {
+        const response = {
           activation: {
             code: pendingDevice.code,
             challenge: pendingDevice.challenge,
@@ -149,6 +182,9 @@ export class ESP32Service {
             timezoneOffset: new Date().getTimezoneOffset() * -60 * 1000,
           },
         };
+
+        // 转换为下划线命名后返回
+        return camelToSnakeCase(response) as ESP32OTAResponse;
       }
 
       throw error;
@@ -297,14 +333,17 @@ export class ESP32Service {
     this.deviceRegistry.updateLastSeen(deviceId);
 
     // 根据消息类型处理
-    // 这里可以扩展不同的消息处理逻辑
     switch (message.type) {
       case "hello":
         // Hello消息在连接层处理
         break;
+      case "listen":
+        // Listen消息处理（唤醒词检测和监听状态）
+        await this.handleListenMessage(deviceId, message as ESP32ListenMessage);
+        break;
       case "audio":
         // 音频消息处理
-        logger.debug(`收到音频消息: deviceId=${deviceId}`);
+        await this.handleAudioMessage(deviceId, message);
         break;
       case "text":
       case "stt":
@@ -320,6 +359,77 @@ export class ESP32Service {
         break;
       default:
         logger.warn(`未知消息类型: ${message.type}`);
+    }
+  }
+
+  /**
+   * 处理Listen消息（唤醒词检测和监听状态）
+   * @param deviceId - 设备ID
+   * @param message - Listen消息
+   */
+  private async handleListenMessage(
+    deviceId: string,
+    message: ESP32ListenMessage
+  ): Promise<void> {
+    const { state, mode, text } = message;
+
+    switch (state) {
+      case "detect":
+        // 检测到唤醒词
+        logger.info(
+          `设备检测到唤醒词: deviceId=${deviceId}, word=${text ?? "(未知)"}, mode=${mode ?? "auto"}`
+        );
+        // TODO: 开始新的对话会话
+        break;
+      case "start":
+        // 开始监听
+        logger.debug(
+          `设备开始监听: deviceId=${deviceId}, mode=${mode ?? "auto"}`
+        );
+        break;
+      case "stop":
+        // 停止监听
+        logger.debug(
+          `设备停止监听: deviceId=${deviceId}, mode=${mode ?? "auto"}`
+        );
+        break;
+      default:
+        logger.warn(`未知的监听状态: ${state}`);
+    }
+  }
+
+  /**
+   * 处理音频消息
+   * @param deviceId - 设备ID
+   * @param message - 音频消息
+   */
+  private async handleAudioMessage(
+    deviceId: string,
+    message: ESP32WSMessage
+  ): Promise<void> {
+    // 类型守卫：确保消息是音频消息
+    if (message.type !== "audio") {
+      logger.warn(`handleAudioMessage 收到非音频消息: type=${message.type}`);
+      return;
+    }
+
+    // 检查是否有解析信息（来自 BinaryProtocol2）
+    const parsedInfo = (message as { _parsed?: unknown })._parsed as
+      | { protocolVersion: number; dataType: string; timestamp: number }
+      | undefined;
+
+    if (parsedInfo) {
+      logger.debug(
+        `收到解析后的音频消息: deviceId=${deviceId}, protocolVersion=${parsedInfo.protocolVersion}, dataType=${parsedInfo.dataType}, timestamp=${parsedInfo.timestamp}, payloadSize=${(message as { data?: Uint8Array }).data?.length ?? 0}`
+      );
+      // TODO: 处理音频数据（转发给AI服务等）
+    } else {
+      // 原始音频数据
+      const audioData = (message as { data?: Uint8Array }).data;
+      logger.debug(
+        `收到原始音频消息: deviceId=${deviceId}, size=${audioData?.length ?? 0}`
+      );
+      // TODO: 处理原始音频数据
     }
   }
 

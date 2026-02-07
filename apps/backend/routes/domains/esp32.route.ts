@@ -41,7 +41,7 @@ export const esp32Routes: RouteDefinition[] = [
   // 硬件激活接口
   {
     method: "POST",
-    path: "/activate",
+    path: "/xiaozhi/ota/activate",
     handler: h((handler, c) => handler.handleActivate(c)),
   },
 

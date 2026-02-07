@@ -70,7 +70,6 @@ export class ESP32Handler extends BaseHandler {
           400
         );
       }
-      debugger;
 
       // 解析请求体
       const report: ESP32DeviceReport = await this.parseJsonBody(
@@ -80,11 +79,23 @@ export class ESP32Handler extends BaseHandler {
 
       logger.debug(`收到OTA请求: deviceId=${deviceId}, clientId=${clientId}`);
 
-      // 委托给服务层处理
+      // 委托给服务层处理（支持从请求头获取设备型号，与 xiaozhi-esp32-server 保持一致）
       const response = await this.esp32Service.handleOTARequest(
         deviceId,
         clientId,
-        report
+        report,
+        // 可选：从请求头获取设备信息（优先级高于 body）
+        {
+          deviceModel:
+            c.req.header("device-model") ||
+            c.req.header("Device-Model") ||
+            undefined,
+          deviceVersion:
+            c.req.header("device-version") ||
+            c.req.header("Device-Version") ||
+            undefined,
+        },
+        c.req.header("host") // 传递 Host 头用于构建完整 WebSocket URL
       );
 
       return c.success(response);

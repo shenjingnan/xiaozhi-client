@@ -5,6 +5,10 @@
 
 import { logger } from "@/Logger.js";
 import {
+  isBinaryProtocol2,
+  parseBinaryProtocol2,
+} from "@/lib/esp32/audio-protocol.js";
+import {
   type ESP32ConnectionState,
   ESP32ErrorCode,
   type ESP32HelloMessage,
@@ -169,7 +173,31 @@ export class ESP32Connection {
         logger.debug(
           `收到二进制消息: deviceId=${this.deviceId}, size=${data.length}`
         );
-        // 处理为音频消息
+
+        // 尝试解析为 BinaryProtocol2 音频协议
+        if (isBinaryProtocol2(data)) {
+          const parsed = parseBinaryProtocol2(data);
+          if (parsed) {
+            logger.debug(
+              `解析音频包成功: type=${parsed.type}, timestamp=${parsed.timestamp}, payloadSize=${parsed.payload.length}`
+            );
+            // 处理为解析后的音频消息（附加解析信息）
+            await this.config.onMessage({
+              type: "audio",
+              data: parsed.payload,
+              // 附加解析信息供服务层使用
+              _parsed: {
+                protocolVersion: parsed.protocolVersion,
+                dataType: parsed.type,
+                timestamp: parsed.timestamp,
+              },
+            } as ESP32WSMessage);
+            return;
+          }
+          logger.debug("音频协议解析失败，作为原始数据处理");
+        }
+
+        // 处理为原始音频消息
         await this.config.onMessage({
           type: "audio",
           data: new Uint8Array(data),
