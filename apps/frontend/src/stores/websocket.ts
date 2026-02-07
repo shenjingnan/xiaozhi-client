@@ -20,7 +20,7 @@ import { useShallow } from "zustand/react/shallow";
 /**
  * 端口变更状态接口（保留用于端口切换功能）
  */
-interface PortChangeStatus {
+export interface PortChangeStatus {
   status:
     | "idle"
     | "checking"
