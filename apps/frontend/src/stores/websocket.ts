@@ -65,6 +65,9 @@ interface WebSocketState {
   // 连接时间戳
   connectedAt: number | null;
   disconnectedAt: number | null;
+
+  // WebSocket 事件订阅清理函数
+  cleanupFunctions: Array<() => void>;
 }
 
 /**
@@ -131,6 +134,9 @@ const initialState: WebSocketState = {
   // 连接时间戳
   connectedAt: null,
   disconnectedAt: null,
+
+  // WebSocket 事件订阅清理函数
+  cleanupFunctions: [],
 };
 
 /**
@@ -255,6 +261,13 @@ export const useWebSocketStore = create<WebSocketStore>()(
 
       reset: () => {
         console.log("[WebSocketStore] 重置状态");
+
+        // 清理所有订阅
+        const { cleanupFunctions } = get();
+        for (const cleanup of cleanupFunctions) {
+          cleanup();
+        }
+
         set(initialState, false, "reset");
       },
 
@@ -263,33 +276,56 @@ export const useWebSocketStore = create<WebSocketStore>()(
       initialize: () => {
         console.log("[WebSocketStore] 初始化 WebSocket Store");
 
+        // 清理旧的订阅（如果存在）
+        const { cleanupFunctions } = get();
+        for (const cleanup of cleanupFunctions) {
+          cleanup();
+        }
+
+        const unsubscribers: Array<() => void> = [];
+
         // 设置 WebSocket 事件监听
-        webSocketManager.subscribe("connection:connecting", () => {
-          get().setConnectionState(ConnectionState.CONNECTING);
-        });
+        unsubscribers.push(
+          webSocketManager.subscribe("connection:connecting", () => {
+            get().setConnectionState(ConnectionState.CONNECTING);
+          })
+        );
 
-        webSocketManager.subscribe("connection:connected", () => {
-          get().setConnectionState(ConnectionState.CONNECTED);
-        });
+        unsubscribers.push(
+          webSocketManager.subscribe("connection:connected", () => {
+            get().setConnectionState(ConnectionState.CONNECTED);
+          })
+        );
 
-        webSocketManager.subscribe("connection:disconnected", () => {
-          get().setConnectionState(ConnectionState.DISCONNECTED);
-        });
+        unsubscribers.push(
+          webSocketManager.subscribe("connection:disconnected", () => {
+            get().setConnectionState(ConnectionState.DISCONNECTED);
+          })
+        );
 
-        webSocketManager.subscribe("connection:reconnecting", () => {
-          get().setConnectionState(ConnectionState.RECONNECTING);
-          const stats = webSocketManager.getConnectionStats();
-          get().setConnectionStats(stats);
-        });
+        unsubscribers.push(
+          webSocketManager.subscribe("connection:reconnecting", () => {
+            get().setConnectionState(ConnectionState.RECONNECTING);
+            const stats = webSocketManager.getConnectionStats();
+            get().setConnectionStats(stats);
+          })
+        );
 
-        webSocketManager.subscribe("connection:error", ({ error }) => {
-          get().setLastError(error);
-        });
+        unsubscribers.push(
+          webSocketManager.subscribe("connection:error", ({ error }) => {
+            get().setLastError(error);
+          })
+        );
 
-        webSocketManager.subscribe("system:heartbeat", () => {
-          const stats = webSocketManager.getConnectionStats();
-          get().setConnectionStats(stats);
-        });
+        unsubscribers.push(
+          webSocketManager.subscribe("system:heartbeat", () => {
+            const stats = webSocketManager.getConnectionStats();
+            get().setConnectionStats(stats);
+          })
+        );
+
+        // 保存取消订阅函数
+        set({ cleanupFunctions: unsubscribers });
 
         // 初始化连接状态
         const initialStats = webSocketManager.getConnectionStats();
