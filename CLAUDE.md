@@ -329,52 +329,33 @@ xiaozhi-client 是一个务实的开源 MCP 客户端：
 
 ### 路径别名系统
 
-项目使用复杂的路径别名系统以实现清晰的模块导入和代码组织：
+项目使用路径别名实现清晰的模块导入和代码组织。
 
-#### 完整别名映射
+#### 别名映射
+
 ```json
 {
-  "@/*": ["apps/backend/*"],                    // 后端根目录快速访问
-  "@handlers/*": ["apps/backend/handlers/*"],     // 请求处理器
-  "@services/*": ["apps/backend/services/*"],     // 业务服务（重新导出层）
-  "@errors/*": ["apps/backend/errors/*"],         // 错误定义
-  "@utils/*": ["apps/backend/utils/*"],           // 工具函数
-  "@/lib/*": ["apps/backend/lib/*"],             // 核心库模块
-  "@core/*": ["apps/backend/core/*"],             // 核心 MCP 功能
-  "@transports/*": ["apps/backend/transports/*"], // 传输层适配器
-  "@adapters/*": ["apps/backend/adapters/*"],     // 适配器模式
-  "@managers/*": ["apps/backend/managers/*"],     // 管理器服务
-  "@types/*": ["apps/backend/types/*"]            // 类型定义
+  "@/*": ["./*"]  // 后端根目录访问（相对于 apps/backend/）
 }
 ```
 
-#### 新架构说明（2024年12月迁移）
+#### 使用说明
 
-**CLI 迁移到 packages/cli**：
-- CLI 代码已从 `apps/backend/cli/` 迁移到 `packages/cli/`
-- CLI 包使用相对路径进行内部导入
-- CLI 包通过 external 依赖引用 `@/*` 和 `@/lib/config/*` 模块
-- 构建产物：`packages/cli` → `dist/cli/index.js`
-- CLI 包是项目入口点，不是独立发布的 npm 包
-
-**MCP 核心库迁移**：
-- `MCPService` 已迁移至 `@/lib/mcp/connection.js`
-- `MCPServiceManager` 已迁移至 `@/lib/mcp/manager.js`
-- 原路径通过重新导出保持向后兼容
-- 建议新代码直接使用 `@/lib/mcp/*` 路径
+**当前配置**：项目仅配置了 `@/*` 别名，映射到 `apps/backend/` 目录。
 
 **推荐导入方式**：
 ```typescript
-// ✅ 新代码推荐方式
-import { MCPService } from "@/lib/mcp";
-import { MCPServiceManager } from "@/lib/mcp";
+// ✅ 推荐（使用路径别名）
+import { MCPService } from "@/lib/mcp/connection";
+import { WebSocketAdapter } from "@/transports/WebSocketAdapter";
+import { ConfigService } from "@/services/ConfigService";
 
-// ✅ 向后兼容方式（仍然支持）
-import { MCPService } from "@/lib/mcp";
-import { MCPServiceManager } from "@services/MCPServiceManager.js";
+// ❌ 避免（相对路径）
+import { MCPService } from "../lib/mcp/connection";
 ```
 
 #### 导入顺序最佳实践
+
 ```typescript
 // 1. Node.js 内置模块
 import { fs } from "node:fs";
@@ -384,30 +365,30 @@ import { path } from "node:path";
 import express from "express";
 import { Command } from "commander";
 
-// 3. xiaozhi-client 路径别名导入（按分组排序）
-// 核心模块
-import { UnifiedMCPServer } from "@core";
-import type { MCPMessage } from "@types";
-
-// 传输和适配器
-import { WebSocketAdapter } from "@transports";
-import { HTTPAdapter } from "@adapters";
-
-// 管理器和服务
-import { ConnectionManager } from "@managers";
-import { ConfigService } from "@/services";
-
-// CLI相关
-import { StartCommand } from "@cli/commands";
-import { Container } from "@cli";
-
-// 工具和错误
-import { formatConfig } from "@/utils";
-import { ConfigError } from "@errors";
+// 3. 项目内部导入（使用 @/ 别名）
+import { UnifiedMCPServer } from "@/core/UnifiedMCPServer";
+import type { MCPMessage } from "@/types";
+import { WebSocketAdapter } from "@/transports/WebSocketAdapter";
+import { ConfigService } from "@/services/ConfigService";
 
 // 4. 相对路径（仅在必要时）
 import { helperFunction } from "./helpers";
 ```
+
+#### 新架构说明（2024年12月迁移）
+
+**CLI 迁移到 packages/cli**：
+- CLI 代码已从 `apps/backend/cli/` 迁移到 `packages/cli/`
+- CLI 包使用相对路径进行内部导入
+- CLI 包通过 external 依赖引用 `@/*` 模块
+- 构建产物：`packages/cli` → `dist/cli/index.js`
+- CLI 包是项目入口点，不是独立发布的 npm 包
+
+**MCP 核心库迁移**：
+- `MCPService` 已迁移至 `@/lib/mcp/connection`
+- `MCPServiceManager` 已迁移至 `@/lib/mcp/manager`
+- 原路径通过重新导出保持向后兼容
+- 建议新代码直接使用 `@/lib/mcp/*` 路径
 
 ## Claude Code 技能和命令
 
@@ -456,7 +437,7 @@ tsx scripts/create-pr.ts --draft
 ### 重要说明
 
 - 项目完全使用 ESM 模块
-- 使用复杂的路径别名系统（见上表）进行模块导入
+- 使用路径别名（@/）进行模块导入
 - 外部依赖不打包（ws、express、commander 等）
 - 模板目录复制到 dist 用于项目脚手架
 - Web UI 在 `web/` 目录中单独构建
