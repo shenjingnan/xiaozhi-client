@@ -189,22 +189,43 @@ export class ApiClient {
       },
     };
 
-    const response = await fetch(url, { ...defaultOptions, ...options });
+    try {
+      const response = await fetch(url, { ...defaultOptions, ...options });
 
-    if (!response.ok) {
-      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
 
-      try {
-        const errorData: ApiErrorResponse = await response.json();
-        errorMessage = errorData.error?.message || errorMessage;
-      } catch {
-        // 如果无法解析错误响应，使用默认错误消息
+        try {
+          const errorData: ApiErrorResponse = await response.json();
+          errorMessage = errorData.error?.message || errorMessage;
+        } catch {
+          // 如果无法解析错误响应，使用默认错误消息
+        }
+
+        throw new Error(errorMessage);
       }
 
-      throw new Error(errorMessage);
+      // 处理响应解析错误
+      try {
+        return await response.json();
+      } catch (parseError) {
+        throw new Error(
+          `响应解析失败: ${parseError instanceof Error ? parseError.message : String(parseError)}`
+        );
+      }
+    } catch (error) {
+      // 处理网络错误和其他异常
+      if (error instanceof TypeError) {
+        // 通常表示网络错误（DNS 失败、连接超时等）
+        throw new Error(`网络连接失败，请检查网络设置: ${error.message}`);
+      }
+      if (error instanceof Error && error.name === "AbortError") {
+        // 请求被取消
+        throw new Error("请求已取消");
+      }
+      // 重新抛出其他已知错误
+      throw error;
     }
-
-    return response.json();
   }
 
   // ==================== 配置管理 API ====================
