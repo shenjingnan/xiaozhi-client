@@ -29,6 +29,55 @@ Object.defineProperty(document, "execCommand", {
 });
 
 // Global test setup and cleanup
+
+/**
+ * 清理 DOM 中的 Radix UI 残留元素和样式
+ * 移除对话框、门户、焦点守卫等元素，并重置可能导致问题的属性和样式
+ */
+function cleanupRadixUIRemnants(): void {
+  try {
+    const elementsToRemove = document.querySelectorAll("*");
+    for (const el of elementsToRemove) {
+      // 移除 dialog、portal 和 focus guard 元素
+      if (
+        el.getAttribute("role") === "dialog" ||
+        el.hasAttribute("data-radix-focus-guard") ||
+        el.hasAttribute("aria-hidden") ||
+        el.getAttribute("data-state") === "open" ||
+        (el.classList.contains("fixed") && el.classList.contains("inset-0"))
+      ) {
+        el.remove();
+      }
+      // 重置可能导致问题的属性和样式
+      if (el.hasAttribute("data-scroll-locked")) {
+        el.removeAttribute("data-scroll-locked");
+      }
+      if (el.hasAttribute("data-aria-hidden")) {
+        el.removeAttribute("data-aria-hidden");
+      }
+      if (el.hasAttribute("aria-hidden")) {
+        el.removeAttribute("aria-hidden");
+      }
+      if (el instanceof HTMLElement) {
+        if (el.style.pointerEvents === "none") {
+          el.style.pointerEvents = "auto";
+        }
+        if (el.style.position === "fixed") {
+          el.style.position = "";
+        }
+        if (el.style.opacity === "0") {
+          el.style.opacity = "";
+        }
+        if (el.style.visibility === "hidden") {
+          el.style.visibility = "visible";
+        }
+      }
+    }
+  } catch (e) {
+    // 清理过程中忽略错误
+  }
+}
+
 beforeEach(() => {
   // Clean up clipboard before each test to avoid conflicts with userEvent.setup()
   try {
@@ -159,90 +208,16 @@ beforeEach(() => {
     .getElementById("modal-root")
     ?.setAttribute("data-testid", "test-modal-root");
 
-  // Aggressively clean up any radix dialogs, portals, or focus guards
-  try {
-    const elementsToRemove = document.querySelectorAll("*");
-    for (const el of elementsToRemove) {
-      if (
-        el.getAttribute("role") === "dialog" ||
-        el.hasAttribute("data-radix-focus-guard") ||
-        el.hasAttribute("aria-hidden") ||
-        el.getAttribute("data-state") === "open" ||
-        (el.classList.contains("fixed") && el.classList.contains("inset-0"))
-      ) {
-        el.remove();
-      }
-      // 重置可能导致问题的属性和样式
-      if (el.hasAttribute("data-scroll-locked")) {
-        el.removeAttribute("data-scroll-locked");
-      }
-      if (el.hasAttribute("data-aria-hidden")) {
-        el.removeAttribute("data-aria-hidden");
-      }
-      if (el.hasAttribute("aria-hidden")) {
-        el.removeAttribute("aria-hidden");
-      }
-      if (el instanceof HTMLElement) {
-        if (el.style.pointerEvents === "none") {
-          el.style.pointerEvents = "auto";
-        }
-        if (el.style.position === "fixed") {
-          el.style.position = "";
-        }
-        if (el.style.opacity === "0") {
-          el.style.opacity = "";
-        }
-        if (el.style.visibility === "hidden") {
-          el.style.visibility = "visible";
-        }
-      }
-    }
-  } catch (e) {
-    // Ignore errors during cleanup
-  }
+  // 清理 Radix UI 对话框、门户或焦点守卫
+  cleanupRadixUIRemnants();
 });
 
 afterEach(() => {
-  // Clean up all dynamically created elements after each test
-  try {
-    const elementsToRemove = document.querySelectorAll("*");
-    for (const el of elementsToRemove) {
-      if (
-        el.getAttribute("role") === "dialog" ||
-        el.hasAttribute("data-radix-focus-guard") ||
-        el.hasAttribute("aria-hidden") ||
-        el.getAttribute("data-state") === "open" ||
-        (el.classList.contains("fixed") && el.classList.contains("inset-0"))
-      ) {
-        el.remove();
-      }
-      // 重置可能导致问题的属性和样式
-      if (el.hasAttribute("data-scroll-locked")) {
-        el.removeAttribute("data-scroll-locked");
-      }
-      if (el.hasAttribute("data-aria-hidden")) {
-        el.removeAttribute("data-aria-hidden");
-      }
-      if (el.hasAttribute("aria-hidden")) {
-        el.removeAttribute("aria-hidden");
-      }
-      if (el instanceof HTMLElement) {
-        if (el.style.pointerEvents === "none") {
-          el.style.pointerEvents = "auto";
-        }
-        if (el.style.position === "fixed") {
-          el.style.position = "";
-        }
-        if (el.style.opacity === "0") {
-          el.style.opacity = "";
-        }
-        if (el.style.visibility === "hidden") {
-          el.style.visibility = "visible";
-        }
-      }
-    }
+  // 在每个测试后清理所有动态创建的元素
+  cleanupRadixUIRemnants();
 
-    // Reset body state after each test
+  // 在每个测试后重置 body 状态
+  try {
     if (document.body?.attributes) {
       while (document.body.attributes.length > 0) {
         document.body.removeAttribute(document.body.attributes[0].name);
@@ -268,7 +243,7 @@ afterEach(() => {
       document.body.style.pointerEvents = "auto";
     }
   } catch (e) {
-    // Ignore errors during cleanup
+    // 清理过程中忽略错误
   }
 });
 
