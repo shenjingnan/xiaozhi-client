@@ -2,10 +2,12 @@
  * 依赖注入容器
  */
 
+import type { ConfigManager } from "@xiaozhi-client/config";
 import { configManager } from "@xiaozhi-client/config";
 import { VersionUtils } from "@xiaozhi-client/version";
 import { ErrorHandler } from "./errors/ErrorHandlers";
 import type { IDIContainer } from "./interfaces/Config";
+import type { ProcessManagerImpl } from "./services/ProcessManager";
 import { FileUtils } from "./utils/FileUtils";
 import { FormatUtils } from "./utils/FormatUtils";
 import { PathUtils } from "./utils/PathUtils";
@@ -16,9 +18,9 @@ import { Validation } from "./utils/Validation";
  * 依赖注入容器实现
  */
 export class DIContainer implements IDIContainer {
-  private instances = new Map<string, any>();
-  private factories = new Map<string, () => any>();
-  private asyncFactories = new Map<string, () => Promise<any>>();
+  private instances = new Map<string, unknown>();
+  private factories = new Map<string, () => unknown>();
+  private asyncFactories = new Map<string, () => Promise<unknown>>();
   private singletons = new Set<string>();
 
   /**
@@ -146,14 +148,16 @@ export class DIContainer implements IDIContainer {
 
     container.registerSingleton("daemonManager", () => {
       const DaemonManagerModule = require("./services/DaemonManager.js");
-      const processManager = container.get("processManager") as any;
+      const processManager =
+        container.get<ProcessManagerImpl>("processManager");
       return new DaemonManagerModule.DaemonManagerImpl(processManager);
     });
 
     container.registerSingleton("serviceManager", () => {
       const ServiceManagerModule = require("./services/ServiceManager.js");
-      const processManager = container.get("processManager") as any;
-      const configManager = container.get("configManager") as any;
+      const processManager =
+        container.get<ProcessManagerImpl>("processManager");
+      const configManager = container.get<ConfigManager>("configManager");
       return new ServiceManagerModule.ServiceManagerImpl(
         processManager,
         configManager
