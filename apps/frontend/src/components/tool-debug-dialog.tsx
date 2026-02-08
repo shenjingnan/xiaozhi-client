@@ -41,6 +41,7 @@ import {
   createZodSchemaFromJsonSchema,
 } from "@/lib/schema-utils";
 import { apiClient } from "@/services/api";
+import type { JSONSchema } from "@xiaozhi-client/shared-types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AlertCircle,
@@ -57,6 +58,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { UseFormReturn } from "react-hook-form";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -64,11 +66,11 @@ import { z } from "zod";
 // 数组字段渲染器组件
 interface ArrayFieldProps {
   name: string;
-  schema: any;
-  form: any;
+  schema: JSONSchema;
+  form: UseFormReturn<any>; // eslint-disable-line @typescript-eslint/no-explicit-any -- 动态表单类型
   renderFormField: (
     fieldName: string,
-    fieldSchema: any
+    fieldSchema: JSONSchema
   ) => React.ReactElement | null;
 }
 
@@ -80,12 +82,14 @@ const ArrayField = memo(function ArrayField({
 }: ArrayFieldProps) {
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: name as any,
+    name: name as any, // eslint-disable-line @typescript-eslint/no-explicit-any -- 动态字段名称，运行时确定
   });
 
   const addItem = () => {
     const itemSchema = schema.items;
-    let newItem: any;
+    if (!itemSchema) return;
+
+    let newItem: unknown;
 
     switch (itemSchema.type) {
       case "string":
@@ -173,10 +177,12 @@ const ArrayField = memo(function ArrayField({
                             </div>
                           );
                         }
-                        return renderFormField(
-                          `${name}.${index}`,
-                          schema.items
-                        );
+                        return schema.items !== undefined
+                          ? renderFormField(
+                              `${name}.${index}`,
+                              schema.items
+                            )
+                          : null;
                       })()}
                     </FormItem>
                   )}
@@ -193,11 +199,11 @@ const ArrayField = memo(function ArrayField({
 // 对象字段渲染器组件
 interface ObjectFieldProps {
   name: string;
-  schema: any;
-  form: any;
+  schema: JSONSchema;
+  form: UseFormReturn<any>; // eslint-disable-line @typescript-eslint/no-explicit-any -- 动态表单类型
   renderFormField: (
     fieldName: string,
-    fieldSchema: any
+    fieldSchema: JSONSchema
   ) => React.ReactElement | null;
   getTypeBadge: (type: string) => string;
 }
@@ -296,10 +302,10 @@ const NoParamsMessage = memo(function NoParamsMessage() {
 // 表单渲染器组件
 interface FormRendererProps {
   tool: ToolDebugDialogProps["tool"];
-  form: any;
+  form: UseFormReturn<any>; // eslint-disable-line @typescript-eslint/no-explicit-any -- 动态表单类型
   renderFormField: (
     fieldName: string,
-    fieldSchema: any
+    fieldSchema: JSONSchema
   ) => React.ReactElement | null;
 }
 
@@ -322,16 +328,16 @@ const FormRenderer = memo(function FormRenderer({
       <ScrollArea className="h-full">
         <div className="space-y-4 p-2">
           {Object.entries(tool.inputSchema.properties).map(
-            ([fieldName, fieldSchema]: [string, any]) => (
+            ([fieldName, fieldSchema]: [string, JSONSchema]) => (
               <FormField
                 key={`${tool.name}-${fieldName}`} // 添加工具名称作为前缀，确保 key 的唯一性和稳定性
                 control={form.control}
-                name={fieldName as any}
+                name={fieldName as Parameters<typeof useFieldArray>[0]["name"]}
                 render={() => (
                   <FormItem>
                     <div className="flex items-center gap-2">
                       <FormLabel>
-                        {tool.inputSchema.required?.includes(fieldName) && (
+                        {tool.inputSchema?.required?.includes(fieldName) && (
                           <span className="text-red-500 mr-1">*</span>
                         )}
                         {fieldName}
@@ -389,7 +395,7 @@ interface ToolDebugDialogProps {
     serverName: string;
     toolName: string;
     description?: string;
-    inputSchema?: any;
+    inputSchema?: JSONSchema;
   } | null;
 }
 
@@ -400,7 +406,7 @@ export function ToolDebugDialog({
 }: ToolDebugDialogProps) {
   const [inputMode, setInputMode] = useState<"form" | "json">("form");
   const [jsonInput, setJsonInput] = useState<string>("{\n  \n}");
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<unknown>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -620,7 +626,10 @@ export function ToolDebugDialog({
       return colors[type] || "bg-gray-100 text-gray-800";
     };
 
-    return (fieldName: string, fieldSchema: any): React.ReactElement | null => {
+    return (
+      fieldName: string,
+      fieldSchema: JSONSchema
+    ): React.ReactElement | null => {
       switch (fieldSchema.type) {
         case "string":
           if (fieldSchema.enum) {
@@ -636,11 +645,13 @@ export function ToolDebugDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {fieldSchema.enum.map((option: string) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
+                      {fieldSchema.enum?.map((option: unknown) =>
+                        typeof option === "string" ? (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ) : null
+                      )}
                     </SelectContent>
                   </Select>
                 )}
@@ -750,7 +761,7 @@ export function ToolDebugDialog({
   }, [form]);
 
   // 格式化结果显示
-  const formatResult = useCallback((data: any) => {
+  const formatResult = useCallback((data: unknown) => {
     try {
       return JSON.stringify(data, null, 2);
     } catch {

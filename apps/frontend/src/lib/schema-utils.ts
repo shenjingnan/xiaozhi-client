@@ -1,9 +1,10 @@
+import type { JSONSchema } from "@xiaozhi-client/shared-types";
 import { z } from "zod";
 
 /**
  * 根据 JSON Schema 动态生成 Zod schema
  */
-export function createZodSchemaFromJsonSchema(jsonSchema: any): z.ZodTypeAny {
+export function createZodSchemaFromJsonSchema(jsonSchema: JSONSchema): z.ZodTypeAny {
   if (!jsonSchema || typeof jsonSchema !== "object") {
     return z.any();
   }
@@ -14,13 +15,13 @@ export function createZodSchemaFromJsonSchema(jsonSchema: any): z.ZodTypeAny {
         return z.enum(jsonSchema.enum as [string, ...string[]]);
       }
       let stringSchema = z.string();
-      if (jsonSchema.minLength) {
+      if (typeof jsonSchema.minLength === "number") {
         stringSchema = stringSchema.min(jsonSchema.minLength);
       }
-      if (jsonSchema.maxLength) {
+      if (typeof jsonSchema.maxLength === "number") {
         stringSchema = stringSchema.max(jsonSchema.maxLength);
       }
-      if (jsonSchema.pattern) {
+      if (typeof jsonSchema.pattern === "string") {
         stringSchema = stringSchema.regex(new RegExp(jsonSchema.pattern));
       }
       return stringSchema;
@@ -92,7 +93,7 @@ export function createZodSchemaFromJsonSchema(jsonSchema: any): z.ZodTypeAny {
 /**
  * 获取字段的默认值
  */
-export function getDefaultValueForSchema(schema: any): any {
+export function getDefaultValueForSchema(schema: JSONSchema): unknown {
   if (!schema) return undefined;
 
   switch (schema.type) {
@@ -128,7 +129,7 @@ export function getDefaultValueForSchema(schema: any): any {
 /**
  * 根据 JSON Schema 生成默认值对象
  */
-export function createDefaultValues(jsonSchema: any): Record<string, any> {
+export function createDefaultValues(jsonSchema: JSONSchema): Record<string, unknown> {
   if (!jsonSchema || !jsonSchema.properties) return {};
 
   const defaults: Record<string, any> = {};
