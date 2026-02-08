@@ -8,13 +8,15 @@ const mockServiceManager = {
 
 // Mock MCPMessageHandler
 vi.mock("@/lib/mcp", () => ({
-  MCPMessageHandler: vi.fn().mockImplementation(() => ({
-    handleMessage: vi.fn().mockResolvedValue({
-      jsonrpc: "2.0",
-      result: { test: "response" },
-      id: 1,
-    }),
-  })),
+  MCPMessageHandler: vi.fn().mockImplementation(function mockConstructor() {
+    return {
+      handleMessage: vi.fn().mockResolvedValue({
+        jsonrpc: "2.0",
+        result: { test: "response" },
+        id: 1,
+      }),
+    };
+  }),
 }));
 
 describe("MCPRouteHandler", () => {

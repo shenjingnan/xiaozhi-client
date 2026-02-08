@@ -17,7 +17,9 @@ interface MockClient {
 
 // Mock 依赖
 vi.mock("@modelcontextprotocol/sdk/client/index.js", () => ({
-  Client: vi.fn(),
+  Client: vi.fn().mockImplementation(function mockConstructor() {
+    return {};
+  }),
 }));
 
 // Mock transport-factory - 返回一个对象，包含 mock 函数
@@ -82,7 +84,9 @@ describe("MCPConnection", () => {
       }),
       ping: vi.fn().mockResolvedValue(undefined),
     };
-    vi.mocked(Client).mockImplementation(() => mockClient as unknown as Client);
+    vi.mocked(Client).mockImplementation(function mockConstructor() {
+      return mockClient as unknown as Client;
+    });
 
     // Mock Transport - 创建一个具有必要方法的 mock transport
     mockTransport = {

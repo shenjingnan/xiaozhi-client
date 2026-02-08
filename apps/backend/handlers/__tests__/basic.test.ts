@@ -49,9 +49,11 @@ vi.mock("@/services/EventBus.js", () => ({
 }));
 
 vi.mock("@/services/StatusService.js", () => ({
-  StatusService: vi.fn().mockImplementation(() => ({
-    updateRestartStatus: vi.fn(),
-  })),
+  StatusService: vi.fn().mockImplementation(function mockConstructor() {
+    return {
+      updateRestartStatus: vi.fn(),
+    };
+  }),
 }));
 
 describe("Handlers Basic Tests", () => {

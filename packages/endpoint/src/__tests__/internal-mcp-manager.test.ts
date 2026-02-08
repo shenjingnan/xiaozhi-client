@@ -8,11 +8,13 @@ import { InternalMCPManagerAdapter } from "../internal-mcp-manager.js";
 
 // Mock 依赖
 vi.mock("@xiaozhi-client/mcp-core", () => ({
-  MCPManager: vi.fn(),
+  MCPManager: vi.fn().mockImplementation(function mockConstructor() {
+    return {};
+  }),
 }));
 
 vi.mock("@xiaozhi-client/config", () => ({
-  normalizeServiceConfig: vi.fn(),
+  normalizeServiceConfig: vi.fn().mockReturnValue({}),
 }));
 
 describe("InternalMCPManagerAdapter", () => {
@@ -41,7 +43,9 @@ describe("InternalMCPManagerAdapter", () => {
       on: vi.fn(),
     };
 
-    MCPManagerMock.mockImplementation(() => mockMCPManager);
+    MCPManagerMock.mockImplementation(function mockConstructor() {
+      return mockMCPManager;
+    });
 
     // 设置 mock normalizeServiceConfig
     // 重构后接受单个对象参数 { name, ...config }，返回不含 name 的配置

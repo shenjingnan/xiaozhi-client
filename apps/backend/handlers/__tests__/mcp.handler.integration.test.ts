@@ -26,21 +26,23 @@ vi.mock("@xiaozhi-client/config", () => ({
 
 // Mock MCPMessageHandler 和 MCPServiceManager
 vi.mock("@/lib/mcp", () => ({
-  MCPMessageHandler: vi.fn().mockImplementation(() => ({
-    handleMessage: vi.fn().mockImplementation((message) => {
-      return Promise.resolve({
-        jsonrpc: "2.0",
-        result: {
-          protocolVersion: "2024-11-05",
-          capabilities: {},
-          serverInfo: { name: "xiaozhi-client", version: "1.0.0" },
-        },
-        id: message.id, // 返回请求中的ID
-      });
-    }),
-  })),
+  MCPMessageHandler: vi.fn().mockImplementation(function mockConstructor() {
+    return {
+      handleMessage: vi.fn().mockImplementation((message) => {
+        return Promise.resolve({
+          jsonrpc: "2.0",
+          result: {
+            protocolVersion: "2024-11-05",
+            capabilities: {},
+            serverInfo: { name: "xiaozhi-client", version: "1.0.0" },
+          },
+          id: message.id, // 返回请求中的ID
+        });
+      }),
+    };
+  }),
 
-  MCPServiceManager: vi.fn().mockImplementation(() => {
+  MCPServiceManager: vi.fn().mockImplementation(function mockConstructor() {
     const instance = {
       start: vi.fn().mockResolvedValue(undefined),
       stop: vi.fn().mockResolvedValue(undefined),
