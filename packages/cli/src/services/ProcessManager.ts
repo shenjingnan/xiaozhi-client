@@ -150,36 +150,11 @@ export class ProcessManagerImpl implements IProcessManager {
 
   /**
    * 优雅停止进程
+   * 委托给 PlatformUtils.killProcess 实现
    */
   async gracefulKillProcess(pid: number): Promise<void> {
     try {
-      // 尝试优雅停止
-      process.kill(pid, "SIGTERM");
-
-      // 等待进程停止
-      let attempts = 0;
-      const maxAttempts = 30; // 3秒超时
-
-      while (attempts < maxAttempts) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        try {
-          process.kill(pid, 0);
-          attempts++;
-        } catch {
-          // 进程已停止
-          return;
-        }
-      }
-
-      // 如果还在运行，强制停止
-      try {
-        process.kill(pid, 0);
-        process.kill(pid, "SIGKILL");
-        await new Promise((resolve) => setTimeout(resolve, 500));
-      } catch {
-        // 进程已停止
-      }
+      await PlatformUtils.killProcess(pid, "SIGTERM");
     } catch (error) {
       throw new ProcessError(
         `无法停止进程: ${error instanceof Error ? error.message : String(error)}`,
