@@ -363,16 +363,17 @@ export class MCPHandler {
       const tools = this.getServiceTools(name);
 
       // 7. 发送事件通知
+      const toolNames = tools.map((tool) => tool.name);
       getEventBus().emitEvent("mcp:server:added", {
         serverName: name,
         config: normalizedConfig,
-        tools: tools.map((tool) => tool.name),
+        tools: toolNames,
         timestamp: new Date(),
       });
 
       return {
         ...serviceStatus,
-        tools: tools.map((tool) => tool.name),
+        tools: toolNames,
       };
     } catch (error) {
       const mcpError = this.handleError(error, "addMCPServerSingle", {
