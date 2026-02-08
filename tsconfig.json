@@ -8,7 +8,6 @@
     "allowJs": true,
     "checkJs": false,
     "outDir": "./dist",
-    "rootDir": "./apps/backend",
     "baseUrl": ".",
     "strict": true,
     "noImplicitAny": true,
