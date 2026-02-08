@@ -15,6 +15,7 @@ import {
   type ESP32ServerHelloMessage,
   type ESP32WSMessage,
 } from "@/types/esp32.js";
+import { camelToSnakeCase } from "@/utils/esp32-utils.js";
 import type WebSocket from "ws";
 
 /**
@@ -226,10 +227,11 @@ export class ESP32Connection {
       `收到设备Hello消息: deviceId=${this.deviceId}, version=${message.version}`
     );
 
-    // 发送ServerHello响应（添加 audio_params）
+    // 发送ServerHello响应
     const serverHello: ESP32ServerHelloMessage = {
       type: "hello",
       version: 1,
+      transport: "websocket",
       sessionId: this.sessionId,
       audioParams: {
         format: "opus",
@@ -257,7 +259,9 @@ export class ESP32Connection {
     }
 
     try {
-      const data = JSON.stringify(message);
+      // 转换为 snake_case 以匹配硬件期望
+      const snakeCaseMessage = camelToSnakeCase(message);
+      const data = JSON.stringify(snakeCaseMessage);
       this.ws.send(data);
       this.updateActivity();
       logger.debug(
@@ -267,6 +271,46 @@ export class ESP32Connection {
       logger.error(`发送消息失败: deviceId=${this.deviceId}`, error);
       throw error;
     }
+  }
+
+  /**
+   * 发送二进制数据到设备
+   * @param data - 二进制数据
+   */
+  async sendBinary(data: Uint8Array): Promise<void> {
+    if (this.state === "disconnected") {
+      throw new Error(`连接已断开: ${this.deviceId}`);
+    }
+
+    try {
+      const buffer = Buffer.from(data);
+      this.ws.send(buffer);
+      this.updateActivity();
+      logger.debug(
+        `二进制数据已发送: deviceId=${this.deviceId}, size=${data.length}`
+      );
+    } catch (error) {
+      logger.error(`发送二进制数据失败: deviceId=${this.deviceId}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 发送BinaryProtocol2格式的音频数据到设备
+   * @param data - 音频载荷数据
+   * @param timestamp - 时间戳（毫秒）
+   */
+  async sendBinaryProtocol2(
+    data: Uint8Array,
+    timestamp?: number
+  ): Promise<void> {
+    const { encodeBinaryProtocol2 } = await import(
+      "@/lib/esp32/audio-protocol.js"
+    );
+
+    const packet = encodeBinaryProtocol2(data, timestamp ?? Date.now(), "opus");
+
+    await this.sendBinary(new Uint8Array(packet));
   }
 
   /**

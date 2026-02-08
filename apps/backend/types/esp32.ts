@@ -237,6 +237,8 @@ export type ESP32WSMessageType =
 export interface ESP32WSMessageBase {
   /** 消息类型 */
   type: ESP32WSMessageType;
+  /** 会话ID（可选，用于关联同一会话的消息） */
+  session_id?: string;
 }
 
 /**
@@ -292,6 +294,8 @@ export interface ESP32ServerHelloMessage extends ESP32WSMessageBase {
   type: "hello";
   /** 协议版本 */
   version: number;
+  /** 传输类型 */
+  transport: "websocket";
   /** 会话ID */
   sessionId: string;
   /** 音频参数 */
@@ -318,11 +322,44 @@ export interface ESP32AudioMessage extends ESP32WSMessageBase {
 }
 
 /**
+ * STT（语音转文本）消息
+ * 服务端发送给设备的语音识别结果
+ */
+export interface ESP32STTMessage extends ESP32WSMessageBase {
+  type: "stt";
+  /** 识别出的文本内容 */
+  text: string;
+}
+
+/**
+ * TTS（文本转语音）消息
+ * 服务端发送给设备的语音合成消息
+ */
+export interface ESP32TTSMessage extends ESP32WSMessageBase {
+  type: "tts";
+  /** TTS状态 */
+  state: "start" | "sentence_start" | "stop";
+  /** 要播放的文本（state=sentence_start时包含） */
+  text?: string;
+}
+
+/**
+ * LLM（大语言模型）消息
+ * 服务端发送给设备的LLM生成结果
+ */
+export interface ESP32LLMMessage extends ESP32WSMessageBase {
+  type: "llm";
+  /** LLM生成的文本 */
+  text: string;
+}
+
+/**
  * 文本消息
- * 用于传输文本数据
+ * 用于传输通用文本数据（已废弃，使用具体类型）
+ * @deprecated 使用具体的消息类型（ESP32STTMessage、ESP32TTSMessage等）
  */
 export interface ESP32TextMessage extends ESP32WSMessageBase {
-  type: "text" | "stt" | "tts" | "llm" | "mcp" | "system" | "custom";
+  type: "text" | "mcp" | "system" | "custom";
   /** 消息数据 */
   data?: unknown;
 }
@@ -348,6 +385,9 @@ export type ESP32WSMessage =
   | ESP32ServerHelloMessage
   | ESP32AudioMessage
   | ESP32TextMessage
+  | ESP32STTMessage
+  | ESP32TTSMessage
+  | ESP32LLMMessage
   | ESP32ErrorMessage;
 
 /**

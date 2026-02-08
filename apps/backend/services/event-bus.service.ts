@@ -189,6 +189,49 @@ export interface EventBusEvents {
     timestamp: number;
   };
 
+  // 语音会话相关事件
+  "voice:session:started": {
+    deviceId: string;
+    sessionId: string;
+    mode: "auto" | "manual" | "realtime";
+    timestamp: Date;
+  };
+  "voice:session:ended": {
+    deviceId: string;
+    sessionId: string;
+    reason: "completed" | "aborted" | "error";
+    timestamp: Date;
+  };
+  "voice:stt:completed": {
+    deviceId: string;
+    sessionId: string;
+    text: string;
+    timestamp: Date;
+  };
+  "voice:tts:started": {
+    deviceId: string;
+    sessionId: string;
+    text: string;
+    timestamp: Date;
+  };
+  "voice:tts:completed": {
+    deviceId: string;
+    sessionId: string;
+    timestamp: Date;
+  };
+  "voice:audio:received": {
+    deviceId: string;
+    sessionId: string;
+    size: number;
+    timestamp: Date;
+  };
+  "voice:wake-word:detected": {
+    deviceId: string;
+    wakeWord: string;
+    mode: "auto" | "manual" | "realtime";
+    timestamp: Date;
+  };
+
   // 测试相关事件（仅用于测试）
   "high-frequency": {
     id: number;

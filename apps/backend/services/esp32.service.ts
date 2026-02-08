@@ -12,11 +12,16 @@ import {
   ESP32ErrorCode,
   type ESP32ListenMessage,
   type ESP32OTAResponse,
+  type ESP32STTMessage,
+  type ESP32TTSMessage,
   type ESP32WSMessage,
 } from "@/types/esp32.js";
 import { camelToSnakeCase, extractDeviceInfo } from "@/utils/esp32-utils.js";
 import type WebSocket from "ws";
+import { MockAIService, MockTTSService } from "./ai/index.js";
 import type { DeviceRegistryService } from "./device-registry.service.js";
+import { getEventBus } from "./event-bus.service.js";
+import { VoiceSessionService } from "./voice-session.service.js";
 
 /**
  * WebSocket认证Token有效期（毫秒）
@@ -48,6 +53,9 @@ export class ESP32Service {
   /** Token到设备ID的映射（用于WebSocket认证） */
   private tokenToDeviceId: Map<string, { deviceId: string; expiresAt: number }>;
 
+  /** 语音会话服务 */
+  private voiceSessionService: VoiceSessionService;
+
   /**
    * 构造函数
    * @param deviceRegistry - 设备注册服务
@@ -57,6 +65,36 @@ export class ESP32Service {
     this.connections = new Map();
     this.clientIdToDeviceId = new Map();
     this.tokenToDeviceId = new Map();
+
+    // 初始化AI服务
+    const aiService = new MockAIService();
+    const ttsService = new MockTTSService();
+    const eventBus = getEventBus();
+
+    // 初始化语音会话服务
+    this.voiceSessionService = new VoiceSessionService(
+      aiService,
+      ttsService,
+      eventBus,
+      // 发送消息回调
+      async (deviceId: string, message: ESP32STTMessage | ESP32TTSMessage) => {
+        await this.sendToDevice(deviceId, message);
+      },
+      // 发送二进制数据回调
+      async (deviceId: string, data: Uint8Array) => {
+        const connection = this.connections.get(deviceId);
+        if (connection) {
+          await connection.sendBinary(data);
+        } else {
+          logger.warn(`发送二进制数据时设备未连接: ${deviceId}`);
+        }
+      },
+      // 会话配置
+      {
+        audioTimeoutMs: 2000, // 2秒无新音频则触发STT
+        maxAudioSize: 65536, // 64KB
+      }
+    );
   }
 
   /**
@@ -105,15 +143,7 @@ export class ESP32Service {
       // 构建完整的 WebSocket URL
       const wsUrl = `ws://${serverAddress}/ws`;
 
-      // 构建 MQTT 配置（使用默认占位值）
-      const mqttConfig = {
-        endpoint: serverAddress.replace(":9999", ":8883"),
-        clientId: `xiaozhi_${deviceId.substring(0, 8)}`,
-        username: "xiaozhi",
-        password: "",
-        keepalive: 240,
-      };
-
+      // 不返回MQTT配置，让ESP32使用WebSocket连接
       logger.info(
         `设备已激活，返回WebSocket配置: deviceId=${deviceId}, clientId=${clientId}, wsUrl=${wsUrl}`
       );
@@ -124,7 +154,6 @@ export class ESP32Service {
           token,
           version: 2, // 更新版本号为 2
         },
-        mqtt: mqttConfig,
         serverTime: {
           timestamp: Date.now(),
           timezoneOffset: new Date().getTimezoneOffset() * -60 * 1000,
@@ -379,23 +408,20 @@ export class ESP32Service {
 
     switch (state) {
       case "detect":
-        // 检测到唤醒词
-        logger.info(
-          `设备检测到唤醒词: deviceId=${deviceId}, word=${text ?? "(未知)"}, mode=${mode ?? "auto"}`
-        );
-        // TODO: 开始新的对话会话
+        // 检测到唤醒词，交给VoiceSessionService处理
+        if (text && mode) {
+          await this.voiceSessionService.handleWakeWord(deviceId, text, mode);
+        }
         break;
       case "start":
-        // 开始监听
-        logger.debug(
-          `设备开始监听: deviceId=${deviceId}, mode=${mode ?? "auto"}`
-        );
+        // 开始监听（如果是手动模式，直接开始会话）
+        if (mode === "manual" || mode === "realtime") {
+          await this.voiceSessionService.startSession(deviceId, mode);
+        }
         break;
       case "stop":
-        // 停止监听
-        logger.debug(
-          `设备停止监听: deviceId=${deviceId}, mode=${mode ?? "auto"}`
-        );
+        // 停止监听，中断当前会话
+        await this.voiceSessionService.abortSession(deviceId, "用户停止");
         break;
       default:
         logger.warn(`未知的监听状态: ${state}`);
@@ -417,6 +443,13 @@ export class ESP32Service {
       return;
     }
 
+    // 提取音频数据
+    const audioData = (message as { data?: Uint8Array }).data;
+    if (!audioData) {
+      logger.warn(`音频消息无数据: deviceId=${deviceId}`);
+      return;
+    }
+
     // 检查是否有解析信息（来自 BinaryProtocol2）
     const parsedInfo = (message as { _parsed?: unknown })._parsed as
       | { protocolVersion: number; dataType: string; timestamp: number }
@@ -424,17 +457,16 @@ export class ESP32Service {
 
     if (parsedInfo) {
       logger.debug(
-        `收到解析后的音频消息: deviceId=${deviceId}, protocolVersion=${parsedInfo.protocolVersion}, dataType=${parsedInfo.dataType}, timestamp=${parsedInfo.timestamp}, payloadSize=${(message as { data?: Uint8Array }).data?.length ?? 0}`
+        `收到解析后的音频消息: deviceId=${deviceId}, protocolVersion=${parsedInfo.protocolVersion}, dataType=${parsedInfo.dataType}, timestamp=${parsedInfo.timestamp}, size=${audioData.length}`
       );
-      // TODO: 处理音频数据（转发给AI服务等）
     } else {
-      // 原始音频数据
-      const audioData = (message as { data?: Uint8Array }).data;
       logger.debug(
-        `收到原始音频消息: deviceId=${deviceId}, size=${audioData?.length ?? 0}`
+        `收到原始音频消息: deviceId=${deviceId}, size=${audioData.length}`
       );
-      // TODO: 处理原始音频数据
     }
+
+    // 交给VoiceSessionService处理
+    await this.voiceSessionService.handleAudioData(deviceId, audioData);
   }
 
   /**
@@ -526,6 +558,9 @@ export class ESP32Service {
     this.connections.clear();
     this.clientIdToDeviceId.clear();
     this.tokenToDeviceId.clear();
+
+    // 销毁语音会话服务
+    this.voiceSessionService.destroy();
 
     logger.debug("ESP32服务已销毁");
   }
