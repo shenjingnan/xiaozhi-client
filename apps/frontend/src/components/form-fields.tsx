@@ -22,7 +22,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import type { FieldConfig } from "@/types/form-config";
 import type { UseFormReturn } from "react-hook-form";
-import type { z } from "zod";
 
 /**
  * 渲染单个表单字段
@@ -30,9 +29,9 @@ import type { z } from "zod";
  * @param form - React Hook Form 实例
  * @param disabled - 是否禁用（覆盖配置中的 disabled）
  */
-export function renderFormField<T extends z.ZodType>(
-  config: FieldConfig<T>,
-  form: UseFormReturn<z.infer<T>>,
+export function renderFormField(
+  config: FieldConfig<any>,
+  form: UseFormReturn<any>,
   disabled?: boolean
 ) {
   const {
@@ -135,11 +134,10 @@ export function renderFormField<T extends z.ZodType>(
  * @param disabled - 是否禁用
  */
 export function renderSelectFieldWithHandler<
-  T extends z.ZodType,
   V extends string = string,
 >(
-  config: FieldConfig<T>,
-  form: UseFormReturn<z.infer<T>>,
+  config: FieldConfig<any>,
+  form: UseFormReturn<any>,
   onValueChange: (value: V) => void,
   disabled?: boolean
 ) {

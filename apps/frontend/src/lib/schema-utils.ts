@@ -30,7 +30,8 @@ export function createZodSchemaFromJsonSchema(jsonSchema: any): z.ZodTypeAny {
     case "integer": {
       let numberSchema = z.number();
       if (jsonSchema.type === "integer") {
-        numberSchema = numberSchema.int();
+        // zod 4.x 使用 z.int() 替代 .int()
+        numberSchema = z.int();
       }
       if (typeof jsonSchema.minimum === "number") {
         numberSchema = numberSchema.min(jsonSchema.minimum);
