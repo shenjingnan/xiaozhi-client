@@ -12,6 +12,7 @@
  * - 状态数据管理已迁移到 stores/status.ts
  */
 
+import { WEBSOCKET_RECONNECT_DELAY } from "@/constants/timeouts";
 import { ConnectionState, webSocketManager } from "@services/websocket";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
@@ -211,7 +212,9 @@ export const useWebSocketStore = create<WebSocketStore>()(
         try {
           console.log("[WebSocketStore] 重新连接 WebSocket");
           webSocketManager.disconnect();
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+          await new Promise((resolve) =>
+            setTimeout(resolve, WEBSOCKET_RECONNECT_DELAY)
+          );
           webSocketManager.connect();
         } catch (error) {
           const err = error instanceof Error ? error : new Error("重连失败");

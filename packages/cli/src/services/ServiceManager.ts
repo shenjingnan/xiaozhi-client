@@ -5,6 +5,7 @@
 import type { ConfigManager } from "@xiaozhi-client/config";
 import { ConfigInitializer } from "@xiaozhi-client/config";
 import consola from "consola";
+import { RETRY_CONSTANTS } from "../Constants";
 import { ConfigError, ServiceError } from "../errors/index";
 import type {
   ServiceManager as IServiceManager,
@@ -51,7 +52,9 @@ export class ServiceManagerImpl implements IServiceManager {
           this.processManager.cleanupPidFile();
 
           // 等待一下确保完全停止
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+          await new Promise((resolve) =>
+            setTimeout(resolve, RETRY_CONSTANTS.DEFAULT_INTERVAL)
+          );
 
           consola.success("现有服务已停止，正在启动新服务...");
         } catch (stopError) {
