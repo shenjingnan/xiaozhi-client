@@ -1,0 +1,52 @@
+{
+  "name": "datetime-mcp",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "mcps/datetime-mcp/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsup",
+        "cwd": "mcps/datetime-mcp"
+      },
+      "outputs": ["{workspaceRoot}/mcps/datetime-mcp/dist"]
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsup --watch",
+        "cwd": "mcps/datetime-mcp"
+      }
+    },
+    "type-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "mcps/datetime-mcp"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "biome check src/",
+        "cwd": "mcps/datetime-mcp"
+      }
+    },
+    "lint:fix": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "biome check --write src/",
+        "cwd": "mcps/datetime-mcp"
+      }
+    },
+    "nx-release-publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm publish --access public --no-git-checks",
+        "cwd": "mcps/datetime-mcp"
+      }
+    }
+  },
+  "tags": ["type:mcp", "scope:datetime"]
+}

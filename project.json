@@ -1,0 +1,15 @@
+{
+  "name": "xiaozhi-client",
+  "$schema": "./node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "targets": {
+    "nx-release-publish": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["cli:build", "backend:build"],
+      "options": {
+        "command": "pnpm publish --access public --no-git-checks",
+        "cwd": "."
+      }
+    }
+  }
+}
