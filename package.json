@@ -31,8 +31,8 @@
     "xiaozhi-client": "dist/cli/index.js"
   },
   "scripts": {
-    "build": "nx reset && pnpm run clean:dist && nx run-many -t build --exclude=docs --parallel=false",
-    "dev": "nx run-many -t build --exclude=docs --parallel=false && concurrently \"nx run backend:dev\" \"nx run cli:dev\" \"nx run frontend:dev\" --prefix \"[{name}]\" --names \"BACKEND,CLI,FRONTEND\"",
+    "build": "nx reset && pnpm run clean:dist && nx run-many -t build --exclude=docs,xiaozhi-client --parallel=false",
+    "dev": "nx run-many -t build --exclude=docs,xiaozhi-client --parallel=false && concurrently \"nx run backend:dev\" \"nx run cli:dev\" \"nx run frontend:dev\" --prefix \"[{name}]\" --names \"BACKEND,CLI,FRONTEND\"",
     "dev:cli": "nx run cli:dev",
     "dev:docs": "nx run docs:dev",
     "dev:backend": "nx run backend:dev",
@@ -41,7 +41,7 @@
     "test:coverage": "nx run-many -t test:coverage --parallel=false --exclude=xiaozhi-client",
     "lint": "nx run-many -t lint --exclude=xiaozhi-client",
     "lint:fix": "nx run-many -t lint:fix --exclude=xiaozhi-client",
-    "check:type": "nx run-many -t type-check --exclude=docs",
+    "check:type": "nx run-many -t type-check --exclude=docs,xiaozhi-client",
     "check:all": "pnpm run lint && pnpm run check:type && pnpm run check:spell && pnpm run check:cpd",
     "check:spell": "cspell .",
     "check:cpd": "jscpd apps/ packages/",
