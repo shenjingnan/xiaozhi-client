@@ -7,6 +7,7 @@
  * - 支持多个 store 订阅 WebSocket 事件
  */
 
+import { DEFAULT_CONNECTION_PARAMS } from "@/constants/connection";
 import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
 
 /**
@@ -246,9 +247,12 @@ export class WebSocketManager {
   private constructor(config: WebSocketManagerConfig = {}) {
     this.url = config.url || this.getDefaultWebSocketUrl();
     this.maxReconnectAttempts = config.maxReconnectAttempts || 5;
-    this.reconnectInterval = config.reconnectInterval || 3000;
-    this.heartbeatInterval = config.heartbeatInterval || 30000; // 30秒
-    this.heartbeatTimeout = config.heartbeatTimeout || 35000; // 35秒
+    this.reconnectInterval =
+      config.reconnectInterval ?? DEFAULT_CONNECTION_PARAMS.RECONNECT_INTERVAL;
+    this.heartbeatInterval =
+      config.heartbeatInterval ?? DEFAULT_CONNECTION_PARAMS.HEARTBEAT_INTERVAL;
+    this.heartbeatTimeout =
+      config.heartbeatTimeout ?? DEFAULT_CONNECTION_PARAMS.HEARTBEAT_TIMEOUT;
   }
 
   /**

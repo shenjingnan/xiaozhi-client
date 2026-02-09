@@ -24,6 +24,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { DEFAULT_CONNECTION_PARAMS } from "@/constants/connection";
 import { useWebSocketActions } from "@/providers/WebSocketProvider";
 import { useConfig } from "@/stores/config";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -79,9 +80,15 @@ export function SystemSettingDialog() {
         apiKey: config?.modelscope?.apiKey || "",
       },
       connection: {
-        heartbeatInterval: config?.connection?.heartbeatInterval || 30000,
-        heartbeatTimeout: config?.connection?.heartbeatTimeout || 10000,
-        reconnectInterval: config?.connection?.reconnectInterval || 5000,
+        heartbeatInterval:
+          config?.connection?.heartbeatInterval ??
+          DEFAULT_CONNECTION_PARAMS.HEARTBEAT_INTERVAL,
+        heartbeatTimeout:
+          config?.connection?.heartbeatTimeout ??
+          DEFAULT_CONNECTION_PARAMS.HEARTBEAT_TIMEOUT,
+        reconnectInterval:
+          config?.connection?.reconnectInterval ??
+          DEFAULT_CONNECTION_PARAMS.RECONNECT_INTERVAL,
       },
     },
   });
@@ -93,9 +100,15 @@ export function SystemSettingDialog() {
         apiKey: config?.modelscope?.apiKey || "",
       },
       connection: {
-        heartbeatInterval: config?.connection?.heartbeatInterval || 30000,
-        heartbeatTimeout: config?.connection?.heartbeatTimeout || 10000,
-        reconnectInterval: config?.connection?.reconnectInterval || 5000,
+        heartbeatInterval:
+          config?.connection?.heartbeatInterval ??
+          DEFAULT_CONNECTION_PARAMS.HEARTBEAT_INTERVAL,
+        heartbeatTimeout:
+          config?.connection?.heartbeatTimeout ??
+          DEFAULT_CONNECTION_PARAMS.HEARTBEAT_TIMEOUT,
+        reconnectInterval:
+          config?.connection?.reconnectInterval ??
+          DEFAULT_CONNECTION_PARAMS.RECONNECT_INTERVAL,
       },
     });
   }, [config, form]);
