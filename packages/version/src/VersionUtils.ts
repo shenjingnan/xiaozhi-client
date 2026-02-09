@@ -7,7 +7,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { VERSION, APP_NAME } from "./version-constants.js";
+import { APP_NAME, VERSION } from "./version-constants.js";
 
 /**
  * 版本信息接口
@@ -102,14 +102,11 @@ export class VersionUtils {
   }
 
   /**
-   * 运行时从 package.json 读取版本号
+   * 查找并读取 package.json 文件
+   *
+   * @returns package.json 内容的 JSON 对象，如果找不到则返回 null
    */
-  private static getRuntimeVersion(): string {
-    // 如果有缓存，直接返回
-    if (VersionUtils.cachedVersion) {
-      return VersionUtils.cachedVersion;
-    }
-
+  private static findPackageJson(): Record<string, unknown> | null {
     try {
       // 在 ES 模块环境中获取当前目录
       const __filename = fileURLToPath(import.meta.url);
@@ -127,58 +124,53 @@ export class VersionUtils {
 
       for (const packagePath of possiblePaths) {
         if (fs.existsSync(packagePath)) {
-          const packageJson = JSON.parse(fs.readFileSync(packagePath, "utf8"));
-          if (packageJson.version) {
-            VersionUtils.cachedVersion = packageJson.version;
-            return packageJson.version;
-          }
+          return JSON.parse(fs.readFileSync(packagePath, "utf8"));
         }
       }
 
-      // 如果都找不到，返回默认版本
-      VersionUtils.cachedVersion = "unknown";
-      return "unknown";
+      return null;
     } catch (error) {
-      console.warn("无法从 package.json 读取版本信息:", error);
-      VersionUtils.cachedVersion = "unknown";
-      return "unknown";
+      console.warn("无法读取 package.json:", error);
+      return null;
     }
+  }
+
+  /**
+   * 运行时从 package.json 读取版本号
+   */
+  private static getRuntimeVersion(): string {
+    // 如果有缓存，直接返回
+    if (VersionUtils.cachedVersion) {
+      return VersionUtils.cachedVersion;
+    }
+
+    const packageJson = VersionUtils.findPackageJson();
+    if (packageJson?.version && typeof packageJson.version === "string") {
+      VersionUtils.cachedVersion = packageJson.version;
+      return packageJson.version;
+    }
+
+    // 如果都找不到，返回默认版本
+    VersionUtils.cachedVersion = "unknown";
+    return "unknown";
   }
 
   /**
    * 运行时从 package.json 读取完整版本信息
    */
   private static getRuntimeVersionInfo(): VersionInfo {
-    try {
-      const __filename = fileURLToPath(import.meta.url);
-      const currentDir = path.dirname(__filename);
+    const packageJson = VersionUtils.findPackageJson();
 
-      const possiblePaths = [
-        // 从 packages/version/dist/version/index.js 到项目根目录的 package.json
-        path.join(currentDir, "..", "..", "..", "package.json"),
-        // 从 dist/version/index.js 到项目根目录的 package.json
-        path.join(currentDir, "..", "..", "package.json"),
-        // 全局安装环境
-        path.join(currentDir, "..", "..", "..", "..", "package.json"),
-      ];
-
-      for (const packagePath of possiblePaths) {
-        if (fs.existsSync(packagePath)) {
-          const packageJson = JSON.parse(fs.readFileSync(packagePath, "utf8"));
-          return {
-            version: packageJson.version || "unknown",
-            name: packageJson.name,
-            description: packageJson.description,
-            author: packageJson.author,
-          };
-        }
-      }
-
-      return { version: "unknown" };
-    } catch (error) {
-      console.warn("无法读取版本信息:", error);
-      return { version: "unknown" };
+    if (packageJson) {
+      return {
+        version: (packageJson.version as string) || "unknown",
+        name: packageJson.name as string | undefined,
+        description: packageJson.description as string | undefined,
+        author: packageJson.author as string | undefined,
+      };
     }
+
+    return { version: "unknown" };
   }
 
   /**
