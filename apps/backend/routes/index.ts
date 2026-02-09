@@ -27,4 +27,4 @@ export type { Context } from "hono";
 export type { AppContext } from "../types/hono.context.js";
 
 // 重新导出处理器类型
-export type { EndpointHandler } from "../handlers/index.js";
+export type { EndpointHandler } from "../types/handlers.types.js";
