@@ -1,7 +1,6 @@
 {
   "name": "@xiaozhi-client/endpoint",
-  "version": "1.10.6-beta.0",
-  "private": false,
+  "version": "1.10.7",
   "description": "小智接入点 WebSocket 连接管理库",
   "type": "module",
   "main": "./dist/index.js",

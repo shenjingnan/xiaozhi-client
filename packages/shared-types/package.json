@@ -1,7 +1,6 @@
 {
   "name": "@xiaozhi-client/shared-types",
-  "version": "1.10.6-beta.0",
-  "private": false,
+  "version": "1.10.7",
   "description": "小智项目的共享类型定义",
   "type": "module",
   "main": "dist/index.js",
