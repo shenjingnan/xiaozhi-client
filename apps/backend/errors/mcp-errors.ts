@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * MCP服务错误类型定义
  *
