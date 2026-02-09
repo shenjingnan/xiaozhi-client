@@ -5,19 +5,19 @@
 /**
  * MCP 消息接口
  */
-export interface MCPMessage {
+export interface MCPMessage<TParams = unknown> {
   jsonrpc: "2.0";
   method: string;
-  params?: any;
+  params?: TParams;
   id?: string | number;
 }
 
 /**
  * MCP 响应接口
  */
-export interface MCPResponse {
+export interface MCPResponse<TResult = unknown> {
   jsonrpc: "2.0";
-  result?: any;
+  result?: TResult;
   error?: MCPError;
   id: string | number | null;
 }
@@ -25,10 +25,10 @@ export interface MCPResponse {
 /**
  * MCP 错误接口
  */
-export interface MCPError {
+export interface MCPError<TData = unknown> {
   code: number;
   message: string;
-  data?: any;
+  data?: TData;
 }
 
 /**
