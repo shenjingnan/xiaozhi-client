@@ -1,16 +1,18 @@
 name: NPM Publish
 
+# 主要触发方式：检测到 version tag 时自动发布
+# 备用触发方式：手动触发（用于测试或紧急发布）
 on:
-  workflow_dispatch:
+  push:
+    tags:
+      - 'v*.*.*'           # 正式版：v1.0.0, v2.1.3 等
+      - 'v*.*.*-*'         # 预发布版：v1.0.0-beta.0, v1.0.0-rc.1 等
+  workflow_dispatch:       # 手动触发作为备用
     inputs:
-      target_version:
-        description: "目标版本号 (例如: 1.0.0, 1.0.0-beta.0, 1.0.0-rc.0)"
-        required: true
-        type: string
       dry_run:
-        description: "预演模式"
-        required: true
-        default: true
+        description: '预演模式（不实际发布）'
+        required: false
+        default: 'false'
         type: boolean
 
 permissions:
@@ -35,28 +37,41 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 验证
+      - name: 提取版本信息
+        id: version-info
         run: |
-          echo "当前分支: ${{ github.ref_name }}"
-          echo "目标版本: ${{ github.event.inputs.target_version }}"
-          echo "预演模式: ${{ github.event.inputs.dry_run }}"
+          # 从 GitHub 环境变量获取 tag 信息
+          REF_NAME="${{ github.ref_name }}"
+          REF_TYPE="${{ github.ref_type }}"
 
-          # 验证版本号格式
-          TARGET_VERSION="${{ github.event.inputs.target_version }}"
-          if [[ ! "$TARGET_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-(beta|rc)\.[0-9]+)?$ ]]; then
-            echo "❌ 版本号格式无效，请使用以下格式之一："
-            echo "   - 正式版: 1.0.0"
-            echo "   - Beta版: 1.0.0-beta.0"
-            echo "   - RC版: 1.0.0-rc.0"
-            exit 1
-          fi
+          if [[ "$REF_TYPE" == "tag" ]]; then
+            # 从 tag 名称提取版本号（去掉 v 前缀）
+            VERSION="${REF_NAME#v}"
 
-          # 检查分支权限（允许在feature分支进行测试发布）
-          if [[ "$TARGET_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] && [ "${{ github.event.inputs.dry_run }}" != "true" ]; then
-            if [ "${{ github.ref_name }}" != "main" ]; then
-              echo "❌ 正式版发布必须在主分支进行"
-              exit 1
+            echo "📦 检测到版本标签: $REF_NAME"
+            echo "📋 版本号: $VERSION"
+
+            # 判断版本类型
+            if [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              VERSION_TYPE="release"
+              echo "类型: 正式版"
+            elif [[ "$VERSION" =~ -beta\. ]]; then
+              VERSION_TYPE="prerelease"
+              echo "类型: Beta 版"
+            elif [[ "$VERSION" =~ -rc\. ]]; then
+              VERSION_TYPE="prerelease"
+              echo "类型: RC 版"
+            else
+              VERSION_TYPE="other"
+              echo "类型: 其他"
             fi
+
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "version_type=$VERSION_TYPE" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ 非标签触发，跳过版本信息提取"
+            echo "version=manual" >> $GITHUB_OUTPUT
+            echo "version_type=manual" >> $GITHUB_OUTPUT
           fi
 
       - name: 安装 pnpm
@@ -76,86 +91,48 @@ jobs:
           npm install -g npm@latest
           pnpm install --frozen-lockfile
 
-      - name: 配置 Git 用户
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: 配置 Git 认证
+      - name: 发布到 npm
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # 配置 Git 使用 token 认证
-          git config --global credential.helper store
-          echo "https://x-access-token:${GITHUB_TOKEN}@github.com" > ~/.git-credentials
-
-      - name: 解析版本号参数
-        id: parse-version
-        run: |
-          TARGET_VERSION="${{ github.event.inputs.target_version }}"
-
-          if [[ "$TARGET_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            # 正式版: 1.0.0
-            VERSION_TYPE="release"
-            PRERELEASE_ID=""
-            echo "检测到正式版版本号: $TARGET_VERSION"
-          elif [[ "$TARGET_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$ ]]; then
-            # Beta 版: 1.0.0-beta.0
-            VERSION_TYPE="prerelease"
-            PRERELEASE_ID="beta"
-            echo "检测到Beta版本号: $TARGET_VERSION"
-          elif [[ "$TARGET_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$ ]]; then
-            # RC 版: 1.0.0-rc.0
-            VERSION_TYPE="prerelease"
-            PRERELEASE_ID="rc"
-            echo "检测到RC版本号: $TARGET_VERSION"
-          else
-            echo "❌ 版本号格式无法识别"
-            exit 1
-          fi
-
-          echo "version_type=$VERSION_TYPE" >> $GITHUB_OUTPUT
-          echo "target_version=$TARGET_VERSION" >> $GITHUB_OUTPUT
-          echo "prerelease_id=$PRERELEASE_ID" >> $GITHUB_OUTPUT
-
-      - name: 发布
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          TARGET_VERSION="${{ steps.parse-version.outputs.target_version }}"
-          DRY_RUN="${{ github.event.inputs.dry_run }}"
+          VERSION="${{ steps.version-info.outputs.version }}"
+          VERSION_TYPE="${{ steps.version-info.outputs.version_type }}"
+          EVENT_NAME="${{ github.event_name }}"
 
           echo "📦 开始发布流程..."
           echo "📋 版本信息："
-          echo "   - 目标版本: $TARGET_VERSION"
-          echo "   - 版本类型: ${{ steps.parse-version.outputs.version_type }}"
-          echo "   - 预发布ID: ${{ steps.parse-version.outputs.prerelease_id }}"
-          echo "   - 当前分支: ${{ github.ref_name }}"
-          echo "   - 预演模式: $DRY_RUN"
+          echo "   - 版本: $VERSION"
+          echo "   - 类型: $VERSION_TYPE"
+          echo "   - 触发方式: $EVENT_NAME"
           echo ""
 
           # 检查环境
           echo "🔍 环境检查："
           echo "   - Node版本: $(node --version)"
           echo "   - pnpm版本: $(pnpm --version)"
-          echo "   - Git状态: $(git status --porcelain | wc -l) 个文件有修改"
-          echo "   - 当前分支: $(git branch --show-current)"
-          echo "   - 最新标签: $(git describe --tags --match='v*' --abbrev=0 || echo '无标签')"
+          echo "   - 当前分支: ${GITHUB_REF#refs/heads/}"
+          echo "   - 当前标签: ${GITHUB_REF#refs/tags/}"
           echo ""
 
-          # 执行发布命令
-          echo "🚀 执行发布命令..."
-          if [ "$DRY_RUN" = "true" ]; then
-            # 预演模式：只验证发布流程，不实际发布
-            pnpm exec nx release --dry-run --version "$TARGET_VERSION"
-          else
-            # 正式发布：分两步执行
-            # 步骤 1: 更新版本号（更新 package.json、创建 commit、创建 tag）
-            echo "📝 步骤 1/2: 更新版本号..."
-            pnpm exec nx release version "$TARGET_VERSION"
+          # 检查是否为手动触发的预演模式
+          MANUAL_DRY_RUN="${{ github.event.inputs.dry_run }}"
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]] && [[ "$MANUAL_DRY_RUN" == "true" ]]; then
+            echo "⚠️ 预演模式：跳过实际发布"
+            exit 0
+          fi
 
-            # 步骤 2: 发布到 npm
-            echo "📦 步骤 2/2: 发布到 npm..."
-            pnpm exec nx release publish
+          # 执行发布
+          echo "🚀 执行发布命令..."
+          pnpm exec nx release publish
+
+      - name: 发布结果
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ 发布成功！"
+          else
+            echo "❌ 发布失败，请检查日志"
+            exit 1
           fi

@@ -41,20 +41,56 @@
 
 ### 发布
 
-- `pnpm release --version <版本号>` - 发布到 npm（支持正式版、beta、rc）
-- `pnpm release:dry --version <版本号>` - 预演发布流程（不实际发布）
+项目使用 Nx 官方推荐的 CI/CD 发布流程：
 
-使用示例：
+#### 标准发布流程
+
+1. **本地准备发布**
+   ```bash
+   # 更新版本号和变更日志，但不发布
+   pnpm release:skip-publish --version 1.10.7
+
+   # 或使用特定版本类型
+   pnpm release:skip-publish version minor
+   ```
+
+2. **推送到远端**
+   ```bash
+   git push origin main
+   git push origin --tags
+   ```
+
+3. **自动发布**
+   - GitHub Actions 检测到 tag `v1.10.7`
+   - 自动执行 `nx release publish`
+   - 自动创建 GitHub Release
+
+#### 本地测试（预演模式）
+
 ```bash
-# 发布正式版
-pnpm release --version 1.0.0
-
-# 发布 beta 版
-pnpm release --version 1.0.0-beta.0
-
-# 预演
-pnpm release:dry --version 1.0.0
+# 预演发布流程
+pnpm release:dry --version 1.10.7-beta.0
 ```
+
+#### 版本 tag 格式
+
+根据固定版本策略，tag 格式为：
+
+- **正式版**：`v1.10.7`
+- **Beta 版**：`v1.10.8-beta.0`
+- **RC 版**：`v1.10.8-rc.0`
+
+#### 手动触发发布（备用）
+
+如需手动触发发布，可在 GitHub Actions 页面手动运行 `npm-publish` 工作流。
+
+#### 可用脚本
+
+- `pnpm release` - 交互式发布流程
+- `pnpm release:skip-publish` - 跳过发布步骤（仅更新版本和创建 tag）
+- `pnpm release:version` - 仅更新版本号
+- `pnpm release:publish` - 仅执行发布
+- `pnpm release:dry` - 预演模式（不修改任何内容）
 
 ### 文档开发
 
