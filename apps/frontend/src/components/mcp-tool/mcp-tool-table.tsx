@@ -29,6 +29,8 @@ import { useToolSortPersistence } from "@/hooks/useToolSortPersistence";
 import { cn } from "@/lib/utils";
 import { apiClient } from "@/services/api";
 import type { CustomMCPToolWithStats } from "@xiaozhi-client/shared-types";
+import { formatToolInfo } from "@/utils/toolFormatter";
+import type { FormattedToolInfo } from "@/utils/toolFormatter";
 import { CoffeeIcon, Loader2, ZapIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -36,16 +38,11 @@ import { ToolPagination } from "./tool-pagination";
 import { ToolSearchInput } from "./tool-search-input";
 import { ToolSortSelector } from "./tool-sort-selector";
 
-// 服务名称常量
-const UNKNOWN_SERVICE_NAME = "未知服务";
-const CUSTOM_SERVICE_NAME = "自定义服务";
-
-export interface ToolRowData {
-  name: string;
-  serverName: string;
-  toolName: string;
-  description: string;
-  enabled: boolean;
+export interface ToolRowData
+  extends Pick<
+    FormattedToolInfo,
+    "name" | "serverName" | "toolName" | "description" | "enabled"
+  > {
   usageCount: number;
   lastUsedTime: string;
   inputSchema: any;
@@ -116,42 +113,16 @@ export function McpToolTable({
   // 格式化工具信息的辅助函数
   const formatTool = useCallback(
     (tool: CustomMCPToolWithStats, enabled: boolean): ToolRowData => {
-      const { serviceName, toolName } = (() => {
-        if (!tool || !tool.handler) {
-          return {
-            serviceName: UNKNOWN_SERVICE_NAME,
-            toolName: tool?.name || UNKNOWN_SERVICE_NAME,
-          };
-        }
-
-        if (tool.handler.type === "mcp") {
-          return {
-            serviceName:
-              tool.handler.config?.serviceName || UNKNOWN_SERVICE_NAME,
-            toolName: tool.handler.config?.toolName || tool.name,
-          };
-        }
-        if (tool.handler.type === "proxy" && tool.handler.platform === "coze") {
-          return {
-            serviceName: "customMCP",
-            toolName: tool.name,
-          };
-        }
-        return {
-          serviceName: CUSTOM_SERVICE_NAME,
-          toolName: tool.name,
-        };
-      })();
-
+      const formatted = formatToolInfo(tool, enabled);
       return {
-        name: tool.name,
-        serverName: serviceName,
-        toolName,
-        description: tool.description || "",
+        name: formatted.name,
+        serverName: formatted.serverName,
+        toolName: formatted.toolName,
+        description: formatted.description || "",
         enabled,
-        usageCount: tool.usageCount || 0,
-        lastUsedTime: tool.lastUsedTime || "",
-        inputSchema: tool.inputSchema,
+        usageCount: formatted.usageCount || 0,
+        lastUsedTime: formatted.lastUsedTime || "",
+        inputSchema: formatted.inputSchema,
       };
     },
     []

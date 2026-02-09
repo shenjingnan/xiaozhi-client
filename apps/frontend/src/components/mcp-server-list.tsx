@@ -26,6 +26,8 @@ import type {
   MCPServerConfig,
   WorkflowParameter,
 } from "@xiaozhi-client/shared-types";
+import { formatToolInfo } from "@/utils/toolFormatter";
+import type { FormattedToolInfo } from "@/utils/toolFormatter";
 import { CoffeeIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -36,20 +38,8 @@ import { RemoveMcpServerButton } from "./remove-mcp-server-button";
 import { RestartButton } from "./restart-button";
 import { ToolDebugDialog } from "./tool-debug-dialog";
 
-// 服务名称常量
-const UNKNOWN_SERVICE_NAME = "未知服务";
-const CUSTOM_SERVICE_NAME = "自定义服务";
-
 // 工具类型别名
-type ToolWithServerInfo = {
-  name: string;
-  serverName: string;
-  toolName: string;
-  enable: boolean;
-  description?: string;
-  usageCount?: number;
-  lastUsedTime?: string;
-  inputSchema?: JSONSchema;
+type ToolWithServerInfo = FormattedToolInfo & {
   handler?: {
     type: string;
     platform: string;
@@ -81,45 +71,8 @@ export function McpServerList({
 
   // 格式化工具信息的辅助函数
   const formatTool = useCallback(
-    (tool: CustomMCPToolWithStats, enable: boolean) => {
-      const { serviceName, toolName } = (() => {
-        // 安全检查：确保 handler 存在
-        if (!tool || !tool.handler) {
-          return {
-            serviceName: UNKNOWN_SERVICE_NAME,
-            toolName: tool?.name || UNKNOWN_SERVICE_NAME,
-          };
-        }
-
-        if (tool.handler.type === "mcp") {
-          return {
-            serviceName:
-              tool.handler.config?.serviceName || UNKNOWN_SERVICE_NAME,
-            toolName: tool.handler.config?.toolName || tool.name,
-          };
-        }
-        if (tool.handler.type === "proxy" && tool.handler.platform === "coze") {
-          return {
-            serviceName: "customMCP",
-            toolName: tool.name,
-          };
-        }
-        return {
-          serviceName: CUSTOM_SERVICE_NAME,
-          toolName: tool.name,
-        };
-      })();
-
-      return {
-        serverName: serviceName,
-        toolName,
-        enable,
-        name: tool.name,
-        description: tool.description,
-        usageCount: tool.usageCount,
-        lastUsedTime: tool.lastUsedTime,
-        inputSchema: tool.inputSchema,
-      };
+    (tool: CustomMCPToolWithStats, enable: boolean): ToolWithServerInfo => {
+      return formatToolInfo(tool, enable);
     },
     []
   );
