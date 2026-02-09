@@ -41,6 +41,8 @@ export default defineConfig({
     "node:net",
     // 外部依赖（peer dependencies）
     "@modelcontextprotocol/sdk",
+    // 工作区依赖
+    "@xiaozhi-client/shared-types",
   ],
   outExtension() {
     return { js: ".js" };

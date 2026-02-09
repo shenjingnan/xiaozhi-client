@@ -7,6 +7,11 @@ import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import type { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import type { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import type { JSONSchema } from "@xiaozhi-client/shared-types/mcp";
+import {
+  isValidToolJSONSchema,
+  ensureToolJSONSchema as ensureToolJSONSchemaUtil,
+} from "@xiaozhi-client/shared-types/mcp";
 
 // =========================
 // 1. 基础传输类型
@@ -182,58 +187,21 @@ export type { CompatibilityCallToolResult as ToolCallResult } from "@modelcontex
 
 /**
  * JSON Schema 类型定义
+ * 从 shared-types 包重新导出
  */
-export type JSONSchema =
-  | (Record<string, unknown> & {
-      type: "object";
-      properties?: Record<string, unknown>;
-      required?: string[];
-      additionalProperties?: boolean;
-    })
-  | Record<string, unknown>;
+export type { JSONSchema };
 
 /**
  * 类型守卫：检查对象是否为有效的 MCP Tool JSON Schema
+ * 从 shared-types 包重新导出
  */
-export function isValidToolJSONSchema(obj: unknown): obj is {
-  type: "object";
-  properties?: Record<string, unknown>;
-  required?: string[];
-  additionalProperties?: boolean;
-} {
-  return (
-    typeof obj === "object" &&
-    obj !== null &&
-    "type" in obj &&
-    (obj as { type?: unknown }).type === "object"
-  );
-}
+export { isValidToolJSONSchema };
 
 /**
  * 确保对象符合 MCP Tool JSON Schema 格式
+ * 从 shared-types 包重新导出
  */
-export function ensureToolJSONSchema(schema: JSONSchema): {
-  type: "object";
-  properties?: Record<string, object>;
-  required?: string[];
-  additionalProperties?: boolean;
-} {
-  if (isValidToolJSONSchema(schema)) {
-    return schema as {
-      type: "object";
-      properties?: Record<string, object>;
-      required?: string[];
-      additionalProperties?: boolean;
-    };
-  }
-
-  return {
-    type: "object",
-    properties: {} as Record<string, object>,
-    required: [],
-    additionalProperties: true,
-  };
-}
+export const ensureToolJSONSchema = ensureToolJSONSchemaUtil;
 
 /**
  * CustomMCP 工具类型定义
