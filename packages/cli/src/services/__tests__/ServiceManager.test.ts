@@ -35,11 +35,6 @@ const mockWebServerInstance = {
   stop: vi.fn().mockResolvedValue(undefined),
 };
 
-const mockMCPServerInstance = {
-  start: vi.fn().mockResolvedValue(undefined),
-  stop: vi.fn().mockResolvedValue(undefined),
-};
-
 vi.mock("@/WebServer.js", () => ({
   WebServer: vi.fn().mockImplementation(() => mockWebServerInstance),
 }));
@@ -56,10 +51,6 @@ vi.mock("node:child_process", () => ({
   exec: vi.fn().mockImplementation((cmd: string, callback: any) => {
     callback(null, { stdout: "", stderr: "" });
   }),
-}));
-
-vi.mock("@services/MCPServer.js", () => ({
-  MCPServer: vi.fn().mockImplementation(() => mockMCPServerInstance),
 }));
 
 // Mock PathUtils
@@ -170,8 +161,6 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
     // 重置 mock 实例
     mockWebServerInstance.start.mockClear();
     mockWebServerInstance.stop.mockClear();
-    mockMCPServerInstance.start.mockClear();
-    mockMCPServerInstance.stop.mockClear();
 
     // 设置默认 mock 返回值
     mockConfigManager.configExists.mockReturnValue(true);
