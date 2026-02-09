@@ -1833,6 +1833,9 @@ export class MCPServiceManager extends EventEmitter {
   async cleanup(): Promise<void> {
     await this.stopAllServices();
 
+    // 清理缓存管理器的定时器，防止资源泄漏
+    this.cacheManager.cleanup();
+
     // 清理事件监听器，防止内存泄漏
     this.eventBus.offEvent(
       "mcp:service:connected",
