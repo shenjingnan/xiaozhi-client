@@ -18,6 +18,8 @@ overrides:
   glob@>=11.0.0 <11.1.0: '>=11.1.0'
   body-parser@>=2.2.0 <2.2.1: '>=2.2.1'
   mdast-util-to-hast@>=13.0.0 <13.2.1: '>=13.2.1'
+  lodash-es@>=4.0.0 <=4.17.22: '>=4.17.23'
+  '@modelcontextprotocol/sdk@>=1.10.0 <=1.25.3': '>=1.26.0'
 
 importers:
 
@@ -30,7 +32,7 @@ importers:
         specifier: ^1.17.1
         version: 1.19.9(hono@4.11.7)
       '@modelcontextprotocol/sdk':
-        specifier: ^1.24.0
+        specifier: '>=1.26.0'
         version: 1.26.0(zod@3.25.76)
       '@xiaozhi-client/config':
         specifier: workspace:*
@@ -178,7 +180,7 @@ importers:
         specifier: ^1.17.1
         version: 1.19.9(hono@4.11.7)
       '@modelcontextprotocol/sdk':
-        specifier: ^1.24.0
+        specifier: '>=1.26.0'
         version: 1.26.0(zod@3.25.76)
       '@xiaozhi-client/config':
         specifier: workspace:*
@@ -472,7 +474,7 @@ importers:
   mcps/calculator-mcp:
     dependencies:
       '@modelcontextprotocol/sdk':
-        specifier: ^1.0.4
+        specifier: '>=1.26.0'
         version: 1.26.0(zod@3.25.76)
       mathjs:
         specifier: ^15.1.0
@@ -494,7 +496,7 @@ importers:
   mcps/datetime-mcp:
     dependencies:
       '@modelcontextprotocol/sdk':
-        specifier: ^1.0.4
+        specifier: '>=1.26.0'
         version: 1.26.0(zod@3.25.76)
       zod:
         specifier: ^3.22.4
@@ -563,8 +565,8 @@ importers:
   packages/endpoint:
     dependencies:
       '@modelcontextprotocol/sdk':
-        specifier: ^1.24.0
-        version: 1.25.3(hono@4.11.7)(zod@4.3.6)
+        specifier: '>=1.26.0'
+        version: 1.26.0(zod@4.3.6)
       '@xiaozhi-client/config':
         specifier: workspace:*
         version: link:../config
@@ -597,8 +599,8 @@ importers:
   packages/mcp-core:
     dependencies:
       '@modelcontextprotocol/sdk':
-        specifier: ^1.24.0
-        version: 1.25.3(hono@4.11.7)(zod@4.3.6)
+        specifier: '>=1.26.0'
+        version: 1.26.0(zod@4.3.6)
       eventsource:
         specifier: ^4.0.0
         version: 4.1.0
@@ -2145,16 +2147,6 @@ packages:
 
   '@mermaid-js/parser@0.6.3':
     resolution: {integrity: sha512-lnjOhe7zyHjc+If7yT4zoedx2vo4sHaTmtkl1+or8BRTnCtDmcTpAjpzDSfCZrshM5bCoz0GyidzadJAH1xobA==}
-
-  '@modelcontextprotocol/sdk@1.25.3':
-    resolution: {integrity: sha512-vsAMBMERybvYgKbg/l4L1rhS7VXV1c0CtyJg72vwxONVX0l4ZfKVAnZEWTQixJGTzKnELjQ59e4NbdFDALRiAQ==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      '@cfworker/json-schema': ^4.1.1
-      zod: ^3.25 || ^4.0
-    peerDependenciesMeta:
-      '@cfworker/json-schema':
-        optional: true
 
   '@modelcontextprotocol/sdk@1.26.0':
     resolution: {integrity: sha512-Y5RmPncpiDtTXDbLKswIJzTqu2hyBKxTNsgKqKclDbhIgg1wgtf1fRuvxgTnRfcnxtvvgbIEcqUOzZrJ6iSReg==}
@@ -4719,12 +4711,6 @@ packages:
     resolution: {integrity: sha512-knvyeauYhqjOYvQ66MznSMs83wmHrCycNEN6Ao+2AeYEfxUIkuiVxdEa1qlGEPK+We3n0THiDciYSsCcgW/DoA==}
     engines: {node: '>=12.0.0'}
 
-  express-rate-limit@7.5.1:
-    resolution: {integrity: sha512-7iN8iPMDzOMHPUYllBEsQdWVB6fPDMPqwjBaFrgr4Jgr/+okjvzAy+UHlYYL/Vs0OsOrMkwS6PJDkFlJwoxUnw==}
-    engines: {node: '>= 16'}
-    peerDependencies:
-      express: '>= 4.11'
-
   express-rate-limit@8.2.1:
     resolution: {integrity: sha512-PCZEIEIxqwhzw4KF0n7QF4QqruVTcF73O5kFKUnGOyjbCCgizBBiFaYpd/fnBLUMPw/BWw9OsiN7GgrNYr7j6g==}
     engines: {node: '>= 16'}
@@ -5425,9 +5411,6 @@ packages:
   load-tsconfig@0.2.5:
     resolution: {integrity: sha512-IXO6OCs9yg8tMKzfPZ1YmheJbZCiEsnBdcB03l0OcfK9prKnJb96siuHCr5Fl37/yo9DnKU+TLpxzTUspw9shg==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
-
-  lodash-es@4.17.21:
-    resolution: {integrity: sha512-mKnC+QJ9pWVzv+C4/U3rRsHapFfHvQFoFB92e52xeyGMcX6/OlIl78je1u8vePzYZSkkogMPJ2yjxxsb89cxyw==}
 
   lodash-es@4.17.23:
     resolution: {integrity: sha512-kVI48u3PZr38HdYz98UmfPnXl2DXrpdctLrFLCd3kOx1xUkOmpFPx7gCWWM5MPkL/fD8zb+Ph0QzjGFs4+hHWg==}
@@ -8227,12 +8210,12 @@ snapshots:
     dependencies:
       '@chevrotain/gast': 11.0.3
       '@chevrotain/types': 11.0.3
-      lodash-es: 4.17.21
+      lodash-es: 4.17.23
 
   '@chevrotain/gast@11.0.3':
     dependencies:
       '@chevrotain/types': 11.0.3
-      lodash-es: 4.17.21
+      lodash-es: 4.17.23
 
   '@chevrotain/regexp-to-ast@11.0.3': {}
 
@@ -8950,28 +8933,6 @@ snapshots:
     dependencies:
       langium: 3.3.1
 
-  '@modelcontextprotocol/sdk@1.25.3(hono@4.11.7)(zod@4.3.6)':
-    dependencies:
-      '@hono/node-server': 1.19.9(hono@4.11.7)
-      ajv: 8.17.1
-      ajv-formats: 3.0.1(ajv@8.17.1)
-      content-type: 1.0.5
-      cors: 2.8.6
-      cross-spawn: 7.0.6
-      eventsource: 3.0.7
-      eventsource-parser: 3.0.6
-      express: 5.2.1
-      express-rate-limit: 7.5.1(express@5.2.1)
-      jose: 6.1.3
-      json-schema-typed: 8.0.2
-      pkce-challenge: 5.0.1
-      raw-body: 3.0.2
-      zod: 4.3.6
-      zod-to-json-schema: 3.25.1(zod@4.3.6)
-    transitivePeerDependencies:
-      - hono
-      - supports-color
-
   '@modelcontextprotocol/sdk@1.26.0(zod@3.25.76)':
     dependencies:
       '@hono/node-server': 1.19.9(hono@4.11.7)
@@ -8991,6 +8952,28 @@ snapshots:
       raw-body: 3.0.2
       zod: 3.25.76
       zod-to-json-schema: 3.25.1(zod@3.25.76)
+    transitivePeerDependencies:
+      - supports-color
+
+  '@modelcontextprotocol/sdk@1.26.0(zod@4.3.6)':
+    dependencies:
+      '@hono/node-server': 1.19.9(hono@4.11.7)
+      ajv: 8.17.1
+      ajv-formats: 3.0.1(ajv@8.17.1)
+      content-type: 1.0.5
+      cors: 2.8.6
+      cross-spawn: 7.0.6
+      eventsource: 3.0.7
+      eventsource-parser: 3.0.6
+      express: 5.2.1
+      express-rate-limit: 8.2.1(express@5.2.1)
+      hono: 4.11.7
+      jose: 6.1.3
+      json-schema-typed: 8.0.2
+      pkce-challenge: 5.0.1
+      raw-body: 3.0.2
+      zod: 4.3.6
+      zod-to-json-schema: 3.25.1(zod@4.3.6)
     transitivePeerDependencies:
       - supports-color
 
@@ -10855,7 +10838,7 @@ snapshots:
       '@chevrotain/regexp-to-ast': 11.0.3
       '@chevrotain/types': 11.0.3
       '@chevrotain/utils': 11.0.3
-      lodash-es: 4.17.21
+      lodash-es: 4.17.23
 
   chokidar@3.6.0:
     dependencies:
@@ -11662,10 +11645,6 @@ snapshots:
 
   expect-type@1.3.0: {}
 
-  express-rate-limit@7.5.1(express@5.2.1):
-    dependencies:
-      express: 5.2.1
-
   express-rate-limit@8.2.1(express@5.2.1):
     dependencies:
       express: 5.2.1
@@ -12415,8 +12394,6 @@ snapshots:
   lines-and-columns@2.0.3: {}
 
   load-tsconfig@0.2.5: {}
-
-  lodash-es@4.17.21: {}
 
   lodash-es@4.17.23: {}
 
