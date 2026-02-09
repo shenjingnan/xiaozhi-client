@@ -302,6 +302,72 @@ describe("NPMManager", () => {
       expect(typeof installId).toBe("string");
       expect(installId?.length).toBeGreaterThan(10);
     });
+
+    test("应该处理进程启动失败的情况（npm 命令不存在）", async () => {
+      // Arrange
+      const version = "1.7.9";
+      const spawnError = new Error("spawn npm ENOENT");
+      const mockProcess = {
+        stdout: { on: vi.fn() },
+        stderr: { on: vi.fn() },
+        on: vi.fn((event, callback) => {
+          if (event === "error") {
+            callback(spawnError);
+          }
+        }),
+      };
+      mockSpawn.mockReturnValue(mockProcess);
+
+      // Act & Assert
+      await expect(npmManager.installVersion(version)).rejects.toThrow(
+        "启动 npm 进程失败: spawn npm ENOENT"
+      );
+
+      // 验证失败事件发射
+      expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
+        "npm:install:failed",
+        {
+          version: "1.7.9",
+          installId: expect.stringMatching(/^install-\d+-[a-z0-9]+$/),
+          error: "启动 npm 进程失败: spawn npm ENOENT",
+          duration: expect.any(Number),
+          timestamp: expect.any(Number),
+        }
+      );
+    });
+
+    test("应该处理权限不足导致的进程启动失败", async () => {
+      // Arrange
+      const version = "1.7.9";
+      const spawnError = new Error("EACCES: permission denied");
+      const mockProcess = {
+        stdout: { on: vi.fn() },
+        stderr: { on: vi.fn() },
+        on: vi.fn((event, callback) => {
+          if (event === "error") {
+            callback(spawnError);
+          }
+        }),
+      };
+      mockSpawn.mockReturnValue(mockProcess);
+
+      // Act & Assert
+      await expect(npmManager.installVersion(version)).rejects.toThrow(
+        "启动 npm 进程失败: EACCES: permission denied"
+      );
+
+      // 验证失败事件发射
+      expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
+        "npm:install:failed",
+        {
+          version: "1.7.9",
+          installId: expect.stringMatching(/^install-\d+-[a-z0-9]+$/),
+          error: "启动 npm 进程失败: EACCES: permission denied",
+          duration: expect.any(Number),
+          timestamp: expect.any(Number),
+        }
+      );
+    });
   });
 
   describe("getCurrentVersion", () => {
