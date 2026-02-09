@@ -1,6 +1,6 @@
 {
   "name": "@xiaozhi-client/cli",
-  "version": "1.10.7",
+  "version": "1.10.8-beta.1",
   "private": false,
   "repository": {
     "type": "git",
