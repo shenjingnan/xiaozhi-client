@@ -1,3 +1,13 @@
+## 1.11.1 (2026-02-09)
+
+### 🩹 Fixes
+
+- 移除 mcp-errors.ts 中不合适的 shebang ([#1230](https://github.com/shenjingnan/xiaozhi-client/pull/1230), [#1229](https://github.com/shenjingnan/xiaozhi-client/issues/1229))
+
+### ❤️ Thank You
+
+- shenjingnan @shenjingnan
+
 ## 1.11.0 (2026-02-09)
 
 ### 🚀 Features
