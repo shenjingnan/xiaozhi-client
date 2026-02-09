@@ -60,6 +60,6 @@ export type {
 } from "./tool-definition";
 
 // JSON Schema 类型
-export type { JSONSchema } from "./schema";
+export type { JSONSchema, StrictJSONSchema } from "./schema";
 
-export { isJSONSchema } from "./schema";
+export { isJSONSchema, isValidToolJSONSchema, ensureToolJSONSchema } from "./schema";

@@ -36,6 +36,7 @@
     { "path": "./packages/shared-types" },
     { "path": "./packages/cli" },
     { "path": "./packages/endpoint" },
+    { "path": "./packages/mcp-core" },
     { "path": "./packages/version" },
     { "path": "./mcps/calculator-mcp" },
     { "path": "./mcps/datetime-mcp" }
