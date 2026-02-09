@@ -1,3 +1,110 @@
+/**
+ * 日志系统模块
+ *
+ * 提供统一的日志记录功能，基于 Pino 日志库实现。
+ *
+ * ## 主要特性
+ *
+ * - **多种日志级别**：支持 fatal、error、warn、info、debug、trace 六个级别
+ * - **双重输出**：支持控制台和文件双重输出，控制台输出带彩色格式化
+ * - **守护进程模式**：支持守护进程模式（仅文件输出，无控制台输出）
+ * - **结构化日志**：支持结构化日志记录，便于日志分析和查询
+ * - **自动日志轮转**：自动日志文件轮转和管理，防止日志文件过大
+ * - **高性能**：基于 Pino 的高性能异步写入，对应用性能影响极小
+ * - **错误堆栈跟踪**：完整的错误堆栈跟踪，便于问题定位
+ * - **动态日志级别**：支持动态设置日志级别，无需重启应用
+ *
+ * ## 日志级别
+ *
+ * - `trace` (10)：最详细的日志级别，用于跟踪详细的执行流程
+ * - `debug` (20)：调试信息，用于开发调试
+ * - `info` (30)：一般信息，记录正常运行状态
+ * - `warn` (40)：警告信息，表示可能出现的问题
+ * - `error` (50)：错误信息，表示发生了错误
+ * - `fatal` (60)：致命错误，表示应用可能无法继续运行
+ *
+ * ## 使用示例
+ *
+ * ### 基本使用
+ *
+ * ```typescript
+ * import { logger } from '@/Logger.js';
+ *
+ * // 记录信息
+ * logger.info('服务启动成功');
+ * logger.error('发生错误', error);
+ * logger.debug('调试信息', { data: 'value' });
+ * ```
+ *
+ * ### 结构化日志
+ *
+ * ```typescript
+ * // 结构化日志支持
+ * logger.info({ userId: 12345, action: 'login' }, '用户登录');
+ * logger.error({ error: err, requestId: 'abc123' }, '请求处理失败');
+ * ```
+ *
+ * ### 创建自定义 Logger 实例
+ *
+ * ```typescript
+ * import { createLogger } from '@/Logger.js';
+ *
+ * // 创建指定级别的 Logger
+ * const customLogger = createLogger('debug');
+ * customLogger.debug('这是一条调试日志');
+ * ```
+ *
+ * ### 动态设置日志级别
+ *
+ * ```typescript
+ * import { setGlobalLogLevel } from '@/Logger.js';
+ *
+ * // 设置全局日志级别
+ * setGlobalLogLevel('debug');
+ * ```
+ *
+ * ### 文件日志配置
+ *
+ * ```typescript
+ * import { logger } from '@/Logger.js';
+ *
+ * // 初始化日志文件
+ * logger.initLogFile('/path/to/project');
+ *
+ * // 配置日志文件管理参数
+ * logger.setLogFileOptions(10 * 1024 * 1024, 5); // 10MB，最多5个文件
+ * ```
+ *
+ * ## 与 Pino 的集成
+ *
+ * 本模块基于 [Pino](https://getpino.io/) 日志库实现，提供了以下增强：
+ *
+ * - 控制台输出的彩色格式化
+ * - 简化的 API 设计
+ * - 自动日志文件轮转
+ * - 守护进程模式支持
+ * - 结构化日志支持
+ * - 动态日志级别控制
+ *
+ * ## 守护进程模式
+ *
+ * 当环境变量 `XIAOZHI_DAEMON=true` 时，Logger 自动进入守护进程模式：
+ *
+ * - 仅输出到日志文件，不输出到控制台
+ * - 适用于后台服务运行场景
+ *
+ * @module apps/backend/Logger
+ *
+ * @example
+ * ```typescript
+ * import { logger } from '@/Logger.js';
+ *
+ * logger.info('服务启动成功');
+ * logger.error('发生错误', error);
+ * logger.debug('调试信息', { data: 'value' });
+ * ```
+ */
+
 import * as fs from "node:fs";
 import * as path from "node:path";
 import chalk from "chalk";
