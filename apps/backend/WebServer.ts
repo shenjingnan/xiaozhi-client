@@ -876,7 +876,8 @@ export class WebServer {
 
         try {
           if (this.mcpServiceManager) {
-            await this.mcpServiceManager.stopAllServices();
+            // 使用 cleanup 方法确保完整清理所有资源，包括事件监听器和重试定时器
+            await this.mcpServiceManager.cleanup();
             this.mcpServiceManager = null;
             this.logger.debug("MCPServiceManager 已清理");
           }
