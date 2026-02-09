@@ -1,3 +1,14 @@
+## 1.10.8-beta.7 (2026-02-09)
+
+### 🩹 Fixes
+
+- 移除 mcp-errors.ts 中不合适的 shebang ([#1230](https://github.com/shenjingnan/xiaozhi-client/pull/1230), [#1229](https://github.com/shenjingnan/xiaozhi-client/issues/1229))
+- **endpoint:** 为 sendErrorResponse 方法添加错误处理 ([#1225](https://github.com/shenjingnan/xiaozhi-client/pull/1225))
+
+### ❤️ Thank You
+
+- shenjingnan @shenjingnan
+
 ## 1.11.0 (2026-02-09)
 
 ### 🚀 Features
