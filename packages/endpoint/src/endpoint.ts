@@ -539,10 +539,18 @@ export class Endpoint {
         // 发送错误响应失败，记录日志但不抛出异常
         console.error("发送错误响应失败:", {
           id,
-          originalError: error,
-          sendError,
+          errorResponse: error,
+          sendError: sendError instanceof Error
+            ? { message: sendError.message, stack: sendError.stack }
+            : sendError,
         });
       }
+    } else {
+      console.error("无法发送错误响应", {
+        id,
+        isConnected: this.connectionStatus,
+        wsReadyState: this.ws?.readyState,
+      });
     }
   }
 }
