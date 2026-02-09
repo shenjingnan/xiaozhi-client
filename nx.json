@@ -33,7 +33,7 @@
       "cache": false
     },
     "nx-release-publish": {
-      "dependsOn": ["^nx-release-publish"],
+      "dependsOn": ["^nx-release-publish", "build"],
       "inputs": ["default", "^production"]
     }
   },
