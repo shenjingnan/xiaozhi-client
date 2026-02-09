@@ -1,6 +1,6 @@
 {
   "name": "@xiaozhi-client/calculator-mcp",
-  "version": "1.9.7",
+  "version": "1.10.6-beta.0",
   "private": false,
   "type": "module",
   "description": "小智计算器 MCP 服务，提供数学计算功能",
