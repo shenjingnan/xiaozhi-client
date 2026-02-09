@@ -66,6 +66,7 @@ export function InstallLogDialog({
   }, [isOpen, version, startInstall, clearStatus]);
 
   // 自动滚动到最新日志
+  // biome-ignore lint/correctness/useExhaustiveDependencies: 需要在日志变化时触发滚动
   useEffect(() => {
     const timer = setTimeout(() => {
       if (logContainerRef.current) {
@@ -74,7 +75,7 @@ export function InstallLogDialog({
       }
     }, 100);
     return () => clearTimeout(timer);
-  });
+  }, [installStatus.logs]);
 
   // 计算进度条进度
   const getProgressValue = () => {
