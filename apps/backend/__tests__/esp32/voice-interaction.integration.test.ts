@@ -3,13 +3,13 @@
  * 测试完整的ESP32语音交互流程
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { WebSocket } from "ws";
-import type { EventBus } from "@/services/event-bus.service.js";
-import { getEventBus, destroyEventBus } from "@/services/event-bus.service.js";
 import { DeviceRegistryService } from "@/services/device-registry.service.js";
 import { ESP32Service } from "@/services/esp32.service.js";
-import type { ESP32WSMessage, ESP32DeviceReport } from "@/types/esp32.js";
+import type { EventBus } from "@/services/event-bus.service.js";
+import { destroyEventBus, getEventBus } from "@/services/event-bus.service.js";
+import type { ESP32DeviceReport, ESP32WSMessage } from "@/types/esp32.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { WebSocket } from "ws";
 
 describe("语音交互集成测试", () => {
   let eventBus: EventBus;

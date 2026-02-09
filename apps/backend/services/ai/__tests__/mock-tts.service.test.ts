@@ -2,7 +2,7 @@
  * MockTTSService 单元测试
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { MockTTSService } from "../mock-tts.service.js";
 
 describe("MockTTSService", () => {

@@ -219,12 +219,18 @@ export class ESP32Connection {
    */
   private async handleHello(message: ESP32HelloMessage): Promise<void> {
     if (this.helloCompleted) {
-      logger.warn(`重复的Hello消息: deviceId=${this.deviceId}`);
+      logger.warn(`[HELLO] 重复的Hello消息: deviceId=${this.deviceId}`);
       return;
     }
 
     logger.info(
-      `收到设备Hello消息: deviceId=${this.deviceId}, version=${message.version}`
+      `[HELLO] 收到设备Hello消息: deviceId=${this.deviceId}, version=${message.version}`
+    );
+    logger.info(
+      `[HELLO] 音频参数: format=${message.audioParams?.format}, sampleRate=${message.audioParams?.sampleRate}, channels=${message.audioParams?.channels}, frameDuration=${message.audioParams?.frameDuration}`
+    );
+    logger.info(
+      `[HELLO] 特性: mcp=${message.features?.mcp}, transport=${message.transport}`
     );
 
     // 发送ServerHello响应
@@ -241,12 +247,16 @@ export class ESP32Connection {
       },
     };
 
+    logger.info(`[HELLO] 准备发送ServerHello响应: sessionId=${this.sessionId}`);
     await this.send(serverHello);
+    logger.info("[HELLO] ServerHello响应已发送");
 
     this.helloCompleted = true;
     this.state = "connected";
 
-    logger.info(`Hello握手完成: deviceId=${this.deviceId}`);
+    logger.info(
+      `[HELLO] Hello握手完成: deviceId=${this.deviceId}, state=${this.state}`
+    );
   }
 
   /**
@@ -255,6 +265,9 @@ export class ESP32Connection {
    */
   async send(message: ESP32WSMessage): Promise<void> {
     if (this.state === "disconnected") {
+      logger.error(
+        `[SEND] 连接已断开，无法发送消息: deviceId=${this.deviceId}, type=${message.type}`
+      );
       throw new Error(`连接已断开: ${this.deviceId}`);
     }
 
@@ -262,13 +275,22 @@ export class ESP32Connection {
       // 转换为 snake_case 以匹配硬件期望
       const snakeCaseMessage = camelToSnakeCase(message);
       const data = JSON.stringify(snakeCaseMessage);
+
+      logger.info(
+        `[SEND] 发送消息: deviceId=${this.deviceId}, type=${message.type}, data=${data}`
+      );
+
       this.ws.send(data);
       this.updateActivity();
+
       logger.debug(
-        `消息已发送: deviceId=${this.deviceId}, type=${message.type}`
+        `[SEND] 消息已发送: deviceId=${this.deviceId}, type=${message.type}`
       );
     } catch (error) {
-      logger.error(`发送消息失败: deviceId=${this.deviceId}`, error);
+      logger.error(
+        `[SEND] 发送消息失败: deviceId=${this.deviceId}, type=${message.type}`,
+        error
+      );
       throw error;
     }
   }
@@ -298,17 +320,34 @@ export class ESP32Connection {
   /**
    * 发送BinaryProtocol2格式的音频数据到设备
    * @param data - 音频载荷数据
-   * @param timestamp - 时间戳（毫秒）
+   * @param timestamp - 时间戳（毫秒，将转换为秒级时间戳以避免uint32溢出）
    */
   async sendBinaryProtocol2(
     data: Uint8Array,
     timestamp?: number
   ): Promise<void> {
+    logger.debug(
+      `[ESP32Connection] sendBinaryProtocol2: deviceId=${this.deviceId}, dataSize=${data.length}`
+    );
+
     const { encodeBinaryProtocol2 } = await import(
       "@/lib/esp32/audio-protocol.js"
     );
 
-    const packet = encodeBinaryProtocol2(data, timestamp ?? Date.now(), "opus");
+    // 使用秒级时间戳，避免 uint32 溢出
+    // Date.now() 返回毫秒时间戳（约1.77万亿），远超 uint32 最大值（约42.9亿）
+    const originalTimestamp = timestamp ?? Date.now();
+    const timestampInSeconds = Math.floor(originalTimestamp / 1000);
+
+    logger.debug(
+      `[ESP32Connection] 时间戳转换: original=${originalTimestamp}ms, converted=${timestampInSeconds}s`
+    );
+
+    const packet = encodeBinaryProtocol2(data, timestampInSeconds, "opus");
+
+    logger.debug(
+      `[ESP32Connection] 协议编码完成: deviceId=${this.deviceId}, packetSize=${packet.length}`
+    );
 
     await this.sendBinary(new Uint8Array(packet));
   }

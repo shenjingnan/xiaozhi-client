@@ -14,7 +14,7 @@ export interface ParsedAudioPacket {
   protocolVersion: 2;
   /** 数据类型（0=Opus音频, 1=JSON数据） */
   type: "opus" | "json";
-  /** 时间戳（毫秒，用于AEC回声消除） */
+  /** 时间戳（秒级，用于AEC回声消除） */
   timestamp: number;
   /** 音频载荷数据 */
   payload: Uint8Array;
@@ -27,7 +27,7 @@ export interface ParsedAudioPacket {
  *     uint16_t version;       // = 2 (小端序)
  *     uint16_t type;          // 0=Opus, 1=JSON (小端序)
  *     uint32_t reserved;      // 保留字段 (小端序)
- *     uint32_t timestamp;     // 时间戳毫秒 (小端序)
+ *     uint32_t timestamp;     // 时间戳（秒级，避免uint32溢出） (小端序)
  *     uint32_t payload_size;  // 载荷大小 (小端序)
  *     uint8_t payload[];      // 载荷数据
  * }
@@ -111,7 +111,7 @@ export function isBinaryProtocol2(data: Buffer): boolean {
 /**
  * 创建 BinaryProtocol2 音频数据包
  * @param payload - 音频载荷数据
- * @param timestamp - 时间戳（毫秒）
+ * @param timestamp - 时间戳（秒级，避免 uint32 溢出）
  * @param type - 数据类型
  * @returns 编码后的二进制数据
  */
@@ -122,6 +122,11 @@ export function encodeBinaryProtocol2(
 ): Buffer {
   const typeValue = type === "json" ? 1 : 0;
   const payloadSize = payload.length;
+
+  // 添加协议头字段日志
+  logger.debug(
+    `[BinaryProtocol2] 编码协议头: version=${PROTOCOL_VERSION}, type=${type}(${typeValue}), timestamp=${timestamp}, payloadSize=${payloadSize}`
+  );
 
   // 分配缓冲区（协议头 + 载荷）
   const buffer = Buffer.allocUnsafe(PROTOCOL_HEADER_SIZE + payloadSize);
@@ -135,7 +140,7 @@ export function encodeBinaryProtocol2(
   // 写入保留字段（小端序，uint32_t）
   buffer.writeUInt32LE(0, 4);
 
-  // 写入时间戳（小端序，uint32_t）
+  // 写入时间戳（小端序，uint32_t）- 秒级时间戳，避免溢出
   buffer.writeUInt32LE(timestamp, 8);
 
   // 写入载荷大小（小端序，uint32_t）
@@ -143,6 +148,10 @@ export function encodeBinaryProtocol2(
 
   // 写入载荷数据
   buffer.set(payload, PROTOCOL_HEADER_SIZE);
+
+  logger.debug(
+    `[BinaryProtocol2] 编码完成: totalSize=${buffer.length}, headerSize=${PROTOCOL_HEADER_SIZE}`
+  );
 
   return buffer;
 }

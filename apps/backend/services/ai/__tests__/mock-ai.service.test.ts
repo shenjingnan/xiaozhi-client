@@ -2,7 +2,7 @@
  * MockAIService 单元测试
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { MockAIService } from "../mock-ai.service.js";
 
 describe("MockAIService", () => {

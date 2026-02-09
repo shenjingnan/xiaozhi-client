@@ -26,7 +26,7 @@ export class MockTTSService implements ITTSService {
 
   constructor() {
     // 测试音频文件路径（相对于当前文件）
-    this.audioFilePath = join(__dirname, "../test.ogg");
+    this.audioFilePath = join(__dirname, "../../assets/audio/test.opus");
   }
 
   /**

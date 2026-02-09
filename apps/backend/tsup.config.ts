@@ -155,6 +155,16 @@ export default defineConfig({
       }
     }
 
+    // 复制 assets 目录到 dist/backend 目录
+    if (existsSync("apps/backend/assets")) {
+      try {
+        copyDirectory("apps/backend/assets", join(distDir, "assets"));
+        console.log("✅ 已复制 assets 目录到 dist/backend/");
+      } catch (error) {
+        console.warn("⚠️ 复制 assets 目录失败:", error);
+      }
+    }
+
     console.log("✅ 构建完成，产物现在为 ESM 格式");
 
     // 创建向后兼容的 dist/WebServerLauncher.js

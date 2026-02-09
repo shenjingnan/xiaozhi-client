@@ -134,7 +134,7 @@ export class VoiceSessionService {
     const existingSession = this.sessions.get(deviceId);
     if (existingSession) {
       logger.warn(
-        `设备已有活跃会话，先结束旧会话: deviceId=${deviceId}, sessionId=${existingSession.sessionId}`
+        `[VoiceSession] 设备已有活跃会话，先结束旧会话: deviceId=${deviceId}, sessionId=${existingSession.sessionId}, state=${existingSession.state}`
       );
       await this.endSession(deviceId, "aborted");
     }
@@ -162,7 +162,7 @@ export class VoiceSessionService {
     });
 
     logger.info(
-      `语音会话已开始: deviceId=${deviceId}, sessionId=${sessionId}, mode=${mode}`
+      `[VoiceSession] 语音会话已开始: deviceId=${deviceId}, sessionId=${sessionId}, mode=${mode}, timeoutMs=${this.config.audioTimeoutMs}, maxSize=${this.config.maxAudioSize}`
     );
 
     // 启动音频超时检测
@@ -183,7 +183,7 @@ export class VoiceSessionService {
     const session = this.sessions.get(deviceId);
     if (!session || session.state !== "LISTENING") {
       logger.debug(
-        `设备无活跃会话或状态不是LISTENING，忽略音频数据: deviceId=${deviceId}`
+        `[VoiceSession] 设备无活跃会话或状态不是LISTENING，忽略音频数据: deviceId=${deviceId}, hasSession=${!!session}, state=${session?.state}`
       );
       return;
     }
@@ -203,7 +203,7 @@ export class VoiceSessionService {
     });
 
     logger.debug(
-      `收到音频数据: deviceId=${deviceId}, sessionId=${session.sessionId}, size=${audioData.length}, bufferCount=${session.audioBuffer.length}`
+      `[VoiceSession] 收到音频数据: deviceId=${deviceId}, sessionId=${session.sessionId}, size=${audioData.length}, bufferCount=${session.audioBuffer.length}`
     );
 
     // 重置超时定时器
@@ -215,8 +215,8 @@ export class VoiceSessionService {
       0
     );
     if (totalSize >= this.config.maxAudioSize) {
-      logger.debug(
-        `达到最大音频数据量，触发STT: deviceId=${deviceId}, size=${totalSize}`
+      logger.info(
+        `[VoiceSession] 达到最大音频数据量，触发STT: deviceId=${deviceId}, size=${totalSize}/${this.config.maxAudioSize}`
       );
       await this.processAudio(deviceId);
     }
@@ -234,7 +234,7 @@ export class VoiceSessionService {
     mode: "auto" | "manual" | "realtime"
   ): Promise<void> {
     logger.info(
-      `检测到唤醒词: deviceId=${deviceId}, word=${wakeWord}, mode=${mode}`
+      `[VoiceSession] 检测到唤醒词: deviceId=${deviceId}, word="${wakeWord}", mode=${mode}`
     );
 
     // 发射唤醒词检测事件
@@ -402,11 +402,14 @@ export class VoiceSessionService {
   ): Promise<void> {
     const session = this.sessions.get(deviceId);
     if (!session) {
-      logger.warn(`发送TTS时设备无会话: deviceId=${deviceId}`);
+      logger.warn(`[VoiceSession] 发送TTS时设备无会话: deviceId=${deviceId}`);
       return;
     }
 
     session.state = "SPEAKING";
+    logger.info(
+      `[VoiceSession] 开始TTS流程: deviceId=${deviceId}, sessionId=${sessionId}, text="${text}"`
+    );
 
     // 发射TTS开始事件
     this.eventBus.emitEvent("voice:tts:started", {
@@ -423,7 +426,7 @@ export class VoiceSessionService {
       state: "start",
     };
     await this.sendMessageCallback(deviceId, startMessage);
-    logger.debug(`TTS开始消息已发送: deviceId=${deviceId}`);
+    logger.info(`[VoiceSession] TTS开始消息已发送: deviceId=${deviceId}`);
 
     // 发送TTS句子消息
     const sentenceMessage: ESP32TTSMessage = {
@@ -433,15 +436,21 @@ export class VoiceSessionService {
       text,
     };
     await this.sendMessageCallback(deviceId, sentenceMessage);
-    logger.debug(`TTS句子消息已发送: deviceId=${deviceId}, text="${text}"`);
+    logger.info(
+      `[VoiceSession] TTS句子消息已发送: deviceId=${deviceId}, text="${text}"`
+    );
 
     // 获取音频数据
+    logger.debug(`[VoiceSession] 开始合成音频: text="${text}"`);
     const audioData = await this.ttsService.synthesize(text);
+    logger.info(
+      `[VoiceSession] 音频合成完成: deviceId=${deviceId}, size=${audioData.length} 字节`
+    );
 
     // 发送二进制音频数据
     await this.sendBinaryCallback(deviceId, audioData);
-    logger.debug(
-      `TTS音频数据已发送: deviceId=${deviceId}, size=${audioData.length}`
+    logger.info(
+      `[VoiceSession] TTS音频数据已发送: deviceId=${deviceId}, size=${audioData.length}`
     );
 
     // 发送TTS结束消息
@@ -451,7 +460,7 @@ export class VoiceSessionService {
       state: "stop",
     };
     await this.sendMessageCallback(deviceId, stopMessage);
-    logger.debug(`TTS结束消息已发送: deviceId=${deviceId}`);
+    logger.info(`[VoiceSession] TTS结束消息已发送: deviceId=${deviceId}`);
 
     // 发射TTS完成事件
     this.eventBus.emitEvent("voice:tts:completed", {

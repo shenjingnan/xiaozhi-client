@@ -18,7 +18,7 @@ import {
 } from "@/types/esp32.js";
 import { camelToSnakeCase, extractDeviceInfo } from "@/utils/esp32-utils.js";
 import type WebSocket from "ws";
-import { MockAIService, MockTTSService } from "./ai/index.js";
+import { MockAIService, OggOpusTTSService } from "./ai/index.js";
 import type { DeviceRegistryService } from "./device-registry.service.js";
 import { getEventBus } from "./event-bus.service.js";
 import { VoiceSessionService } from "./voice-session.service.js";
@@ -68,7 +68,11 @@ export class ESP32Service {
 
     // 初始化AI服务
     const aiService = new MockAIService();
-    const ttsService = new MockTTSService();
+    // 使用 OggOpusTTSService 替代 MockTTSService
+    // 支持 Ogg 容器解封装，提取纯 Opus 数据
+    const ttsService = new OggOpusTTSService({
+      enableDemuxing: true, // 启用 Ogg 解封装
+    });
     const eventBus = getEventBus();
 
     // 初始化语音会话服务
@@ -84,7 +88,8 @@ export class ESP32Service {
       async (deviceId: string, data: Uint8Array) => {
         const connection = this.connections.get(deviceId);
         if (connection) {
-          await connection.sendBinary(data);
+          // 使用 BinaryProtocol2 格式发送音频数据
+          await connection.sendBinaryProtocol2(data, Date.now());
         } else {
           logger.warn(`发送二进制数据时设备未连接: ${deviceId}`);
         }
@@ -260,29 +265,35 @@ export class ESP32Service {
     token?: string
   ): Promise<void> {
     logger.info(
-      `ESP32设备WebSocket连接: deviceId=${deviceId}, clientId=${clientId}`
+      `[ESP32Service] 收到WebSocket连接请求: deviceId=${deviceId}, clientId=${clientId}, hasToken=${!!token}`
     );
 
     // 验证设备是否已激活
     const device = this.deviceRegistry.getDevice(deviceId);
     if (!device) {
-      logger.warn(`设备未激活，拒绝连接: deviceId=${deviceId}`);
+      logger.warn(`[ESP32Service] 设备未激活，拒绝连接: deviceId=${deviceId}`);
       ws.close(1008, "Device not activated");
       return;
     }
+
+    logger.info(
+      `[ESP32Service] 设备已激活: deviceId=${deviceId}, status=${device.status}`
+    );
 
     // 如果提供了Token，验证Token
     if (token) {
       const tokenInfo = this.tokenToDeviceId.get(token);
       if (!tokenInfo) {
-        logger.warn(`Token无效，拒绝连接: deviceId=${deviceId}`);
+        logger.warn(`[ESP32Service] Token无效，拒绝连接: deviceId=${deviceId}`);
         ws.close(1008, "Invalid token");
         return;
       }
 
       // 检查Token是否过期
       if (Date.now() > tokenInfo.expiresAt) {
-        logger.warn(`Token已过期，拒绝连接: deviceId=${deviceId}`);
+        logger.warn(
+          `[ESP32Service] Token已过期，拒绝连接: deviceId=${deviceId}`
+        );
         this.tokenToDeviceId.delete(token);
         ws.close(1008, "Token expired");
         return;
@@ -290,19 +301,24 @@ export class ESP32Service {
 
       // 验证Token对应的设备ID
       if (tokenInfo.deviceId !== deviceId) {
-        logger.warn(`Token与设备ID不匹配，拒绝连接: deviceId=${deviceId}`);
+        logger.warn(
+          `[ESP32Service] Token与设备ID不匹配，拒绝连接: deviceId=${deviceId}, tokenDeviceId=${tokenInfo.deviceId}`
+        );
         ws.close(1008, "Token mismatch");
         return;
       }
 
       // Token验证通过，删除Token（一次性使用）
       this.tokenToDeviceId.delete(token);
+      logger.debug(`[ESP32Service] Token验证通过: deviceId=${deviceId}`);
     }
 
     // 检查设备是否已有连接
     const existingConnection = this.connections.get(deviceId);
     if (existingConnection) {
-      logger.info(`设备已有连接，断开旧连接: deviceId=${deviceId}`);
+      logger.info(
+        `[ESP32Service] 设备已有连接，断开旧连接: deviceId=${deviceId}`
+      );
       await existingConnection.close();
       this.connections.delete(deviceId);
     }
@@ -320,7 +336,10 @@ export class ESP32Service {
         this.handleDeviceDisconnect(deviceId, clientId);
       },
       onError: (error) => {
-        logger.error(`设备连接错误: deviceId=${deviceId}`, error);
+        logger.error(
+          `[ESP32Service] 设备连接错误: deviceId=${deviceId}`,
+          error
+        );
       },
     });
 
@@ -328,7 +347,7 @@ export class ESP32Service {
     this.clientIdToDeviceId.set(clientId, deviceId);
 
     logger.info(
-      `ESP32设备连接已建立: deviceId=${deviceId}, clientId=${clientId}`
+      `[ESP32Service] ESP32设备连接已建立: deviceId=${deviceId}, clientId=${clientId}`
     );
   }
 
@@ -406,25 +425,50 @@ export class ESP32Service {
   ): Promise<void> {
     const { state, mode, text } = message;
 
+    logger.info(
+      `[ESP32Service] 收到Listen消息: deviceId=${deviceId}, state=${state}, mode=${mode}, text="${text ?? ""}"`
+    );
+
     switch (state) {
       case "detect":
         // 检测到唤醒词，交给VoiceSessionService处理
-        if (text && mode) {
-          await this.voiceSessionService.handleWakeWord(deviceId, text, mode);
+        if (text) {
+          // 使用默认模式 auto（如果没有提供 mode）
+          const listenMode = mode ?? "auto";
+          logger.info(
+            `[ESP32Service] 处理唤醒词检测: deviceId=${deviceId}, word="${text}", mode=${listenMode}`
+          );
+          await this.voiceSessionService.handleWakeWord(
+            deviceId,
+            text,
+            listenMode
+          );
+        } else {
+          logger.warn(
+            `[ESP32Service] 唤醒词消息缺少必要字段: text="${text}", mode=${mode}`
+          );
         }
         break;
       case "start":
         // 开始监听（如果是手动模式，直接开始会话）
         if (mode === "manual" || mode === "realtime") {
+          logger.info(
+            `[ESP32Service] 开始手动/实时监听会话: deviceId=${deviceId}, mode=${mode}`
+          );
           await this.voiceSessionService.startSession(deviceId, mode);
+        } else {
+          logger.debug(
+            `[ESP32Service] 忽略auto模式的start状态: deviceId=${deviceId}`
+          );
         }
         break;
       case "stop":
         // 停止监听，中断当前会话
+        logger.info(`[ESP32Service] 停止监听，中断会话: deviceId=${deviceId}`);
         await this.voiceSessionService.abortSession(deviceId, "用户停止");
         break;
       default:
-        logger.warn(`未知的监听状态: ${state}`);
+        logger.warn(`[ESP32Service] 未知的监听状态: ${state}`);
     }
   }
 

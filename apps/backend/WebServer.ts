@@ -647,21 +647,35 @@ export class WebServer {
     // 提取Bearer token
     const authToken = token?.replace("Bearer ", "");
 
+    this.logger.info(
+      `[WS-ESP32] 收到ESP32设备连接请求: deviceId=${deviceId}, clientId=${clientId}, url=${req.url}`
+    );
+
     if (!deviceId || !clientId) {
-      this.logger.warn("ESP32连接缺少必要的请求头");
+      this.logger.warn(
+        `[WS-ESP32] 连接缺少必要的请求头: device-id="${deviceId}", client-id="${clientId}"`
+      );
       ws.close(1008, "Missing required headers");
       return;
     }
 
     this.logger.info(
-      `ESP32设备WebSocket连接: deviceId=${deviceId}, clientId=${clientId}`
+      `[WS-ESP32] ESP32设备WebSocket连接: deviceId=${deviceId}, clientId=${clientId}`
     );
 
     // 委托给ESP32Service处理
     this.esp32Service
       .handleWebSocketConnection(ws, deviceId, clientId, authToken)
+      .then(() => {
+        this.logger.info(
+          `[WS-ESP32] ESP32设备连接处理成功: deviceId=${deviceId}`
+        );
+      })
       .catch((error) => {
-        this.logger.error(`ESP32设备连接处理失败: ${deviceId}`, error);
+        this.logger.error(
+          `[WS-ESP32] ESP32设备连接处理失败: deviceId=${deviceId}`,
+          error
+        );
         ws.close(1011, "Connection handling failed");
       });
   }

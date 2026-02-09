@@ -2,18 +2,21 @@
  * VoiceSessionService 单元测试
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { VoiceSessionService } from "../voice-session.service.js";
+import type { ESP32STTMessage, ESP32TTSMessage } from "@/types/esp32.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IAIService, ITTSService } from "../ai/index.js";
 import type { EventBus } from "../event-bus.service.js";
-import type { ESP32STTMessage, ESP32TTSMessage } from "@/types/esp32.js";
+import { VoiceSessionService } from "../voice-session.service.js";
 
 describe("VoiceSessionService", () => {
   let service: VoiceSessionService;
   let mockAIService: IAIService;
   let mockTTSService: ITTSService;
   let mockEventBus: EventBus;
-  let sentMessages: Array<{ deviceId: string; message: ESP32STTMessage | ESP32TTSMessage }>;
+  let sentMessages: Array<{
+    deviceId: string;
+    message: ESP32STTMessage | ESP32TTSMessage;
+  }>;
   let sentBinaryData: Array<{ deviceId: string; data: Uint8Array }>;
 
   beforeEach(() => {
