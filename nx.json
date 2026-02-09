@@ -41,17 +41,20 @@
     "projects": ["cli", "config", "shared-types", "mcp-core", "endpoint", "version", "calculator-mcp", "datetime-mcp", "xiaozhi-client"],
     "projectsRelationship": "fixed",
     "version": {
-      "conventionalCommits": true
-    },
-    "git": {
-      "commit": true,
-      "tag": true
+      "conventionalCommits": true,
+      "git": {
+        "commit": true,
+        "tag": true
+      }
     },
     "changelog": {
       "workspaceChangelog": {
         "file": "CHANGELOG.md"
       },
-      "projectChangelogs": false
+      "projectChangelogs": false,
+      "git": {
+        "commit": true
+      }
     },
     "github": true,
     "githubRelease": true
