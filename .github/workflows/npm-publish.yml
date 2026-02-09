@@ -148,8 +148,14 @@ jobs:
           echo "🚀 执行发布命令..."
           if [ "$DRY_RUN" = "true" ]; then
             # 预演模式：只验证发布流程，不实际发布
-            pnpm release:dry --version $TARGET_VERSION
+            pnpm exec nx release --dry-run --version "$TARGET_VERSION"
           else
-            # 正式发布：更新版本、构建、发布所有包
-            pnpm release --version $TARGET_VERSION
+            # 正式发布：分两步执行
+            # 步骤 1: 更新版本号（更新 package.json、创建 commit、创建 tag）
+            echo "📝 步骤 1/2: 更新版本号..."
+            pnpm exec nx release version "$TARGET_VERSION"
+
+            # 步骤 2: 发布到 npm
+            echo "📦 步骤 2/2: 发布到 npm..."
+            pnpm exec nx release publish
           fi

@@ -46,6 +46,8 @@
     "check:spell": "cspell .",
     "check:cpd": "jscpd apps/ packages/",
     "release": "nx release",
+    "release:version": "nx release version",
+    "release:publish": "nx release publish",
     "release:dry": "nx release --dry-run",
     "clean:dist": "rimraf dist || rm -rf dist",
     "link": "pnpm link --global",
