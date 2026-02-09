@@ -1,3 +1,14 @@
+## 1.11.0 (2026-02-09)
+
+### 🚀 Features
+
+- 迁移到 Nx Release 发布流程 ([#1223](https://github.com/shenjingnan/xiaozhi-client/pull/1223))
+
+### ❤️ Thank You
+
+- Claude
+- shenjingnan @shenjingnan
+
 # 更新日志
 
 ## [1.9.3](https://github.com/shenjingnan/xiaozhi-client/compare/v1.9.3-rc.0...v1.9.3) (2025-12-21)

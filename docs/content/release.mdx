@@ -46,74 +46,67 @@ import { Callout, Steps, Tabs } from "nextra/components";
 2. 检查 `CHANGELOG.md` 或 `docs/changelog.mdx` 是否需要更新
 3. 确认要发布的版本号
 
-### 触发 GitHub Actions
+### 本地准备发布
 
-1. 进入项目的 [GitHub Actions 页面](https://github.com/shenjingnan/xiaozhi-client/actions)
-2. 选择 `NPM 发布` 工作流
-3. 点击 `Run workflow` 按钮
-4. 选择要发布的分支（正式版必须选择 `main` 分支）
-
-### 填写发布参数
-
-在工作流触发页面填写以下信息：
-
-- **目标版本号**: 如 `1.0.0`、`1.0.0-beta.0`、`1.0.0-rc.0`
-- **预演模式**: 首次发布建议勾选，进行预演测试
+在本地执行以下命令，更新版本号和变更日志：
 
 <Tabs items={['正式版', 'Beta版', 'RC版']}>
   <Tabs.Tab>
 
-  ```yaml
-  # 正式版示例
-  目标版本号: 1.9.5
-  预演模式: false (首次建议先 true)
+  ```bash
+  # 正式版发布
+  pnpm release:skip-publish --version 1.10.7
   ```
 
   </Tabs.Tab>
   <Tabs.Tab>
 
-  ```yaml
-  # Beta版示例
-  目标版本号: 1.9.5-beta.0
-  预演模式: false (首次建议先 true)
+  ```bash
+  # Beta版发布
+  pnpm release:skip-publish --version 1.10.8-beta.0
   ```
 
   </Tabs.Tab>
   <Tabs.Tab>
 
-  ```yaml
-  # RC版示例
-  目标版本号: 1.9.5-rc.0
-  预演模式: false (首次建议先 true)
+  ```bash
+  # RC版发布
+  pnpm release:skip-publish --version 1.10.8-rc.0
   ```
 
   </Tabs.Tab>
 </Tabs>
 
-### 执行发布
+此命令会：
+- ✅ 更新所有包的版本号
+- ✅ 生成/更新 CHANGELOG.md
+- ✅ 创建 Git commit
+- ✅ 创建 Git tag（如 `v1.10.7`）
 
-点击 `Run workflow` 开始发布流程，系统会自动：
+### 推送到远端
 
-1. 验证版本号格式
-2. 检查分支权限
-3. 运行代码质量检查
-4. 同步所有包的版本号
-5. 构建项目
-6. 发布到 npm
-7. 创建 Git 标签
-8. 创建 GitHub Release
+将 commit 和 tag 推送到 GitHub：
+
+```bash
+git push origin main
+git push origin --tags
+```
+
+### 自动发布
+
+推送 tag 后，GitHub Actions 会自动：
+1. 检测到新的 version tag
+2. 构建所有包
+3. 发布到 npm
+4. 创建 GitHub Release
 
 ### 验证发布结果
 
 发布完成后，验证以下内容：
 
-1. 检查 [GitHub Actions](https://github.com/shenjingnan/xiaozhi-client/actions) 执行状态
-2. 在 [npm](https://www.npmjs.com/package/xiaozhi-client) 确认包版本
-3. 检查 [GitHub Releases](https://github.com/shenjingnan/xiaozhi-client/releases) 是否创建
-4. 验证子包是否正确发布：
-   - [@xiaozhi-client/cli](https://www.npmjs.com/package/@xiaozhi-client/cli)
-   - [@xiaozhi-client/config](https://www.npmjs.com/package/@xiaozhi-client/config)
-   - [@xiaozhi-client/shared-types](https://www.npmjs.com/package/@xiaozhi-client/shared-types)
+- [ ] 检查 [GitHub Actions](https://github.com/shenjingnan/xiaozhi-client/actions) 执行状态
+- [ ] 在 [npm](https://www.npmjs.com/package/xiaozhi-client) 确认包版本
+- [ ] 检查 [GitHub Releases](https://github.com/shenjingnan/xiaozhi-client/releases) 是否创建
 
 </Steps>
 
@@ -121,31 +114,30 @@ import { Callout, Steps, Tabs } from "nextra/components";
 
 <Callout type="info">
   **预演模式（Dry Run）**:
-  预演模式会执行完整的发布流程，但不会实际发布到 npm 或创建 Git 标签。
-  强烈建议在正式发布前先运行一次预演模式。
+  预演模式会模拟发布流程，查看将要发布的版本信息，但不会实际修改任何文件。
 </Callout>
 
-预演模式下，系统会：
-- ✅ 验证版本号格式
-- ✅ 运行代码质量检查
-- ✅ 同步版本号到所有包
-- ✅ 构建项目
-- ❌ 不会发布到 npm
-- ❌ 不会创建 Git 标签
-- ❌ 不会创建 GitHub Release
+```bash
+# 预演模式：查看将要发布的版本（不实际修改）
+pnpm release:dry --version 1.10.8-beta.0
+```
 
 ## 本地测试
 
 在正式发布前，你可以在本地进行测试：
 
-### 测试 nx release
+### 测试发布流程
 
 ```bash
 # 预演模式：查看将要发布的版本（不实际修改）
-pnpm release:dry
+pnpm release:dry --version 1.10.8-beta.0
 
-# 或者直接使用 nx 命令
-nx release version --dry-run
+# 准备发布（更新版本和 tag，但不推送）
+pnpm release:skip-publish --version 1.10.8-beta.0
+
+# 检查生成的 commit 和 tag
+git log --oneline -3
+git tag -l
 ```
 
 ### 测试本地构建
@@ -207,5 +199,19 @@ nx release version --version 1.9.4
 
 <Callout type="info" emoji="ℹ️">
   **版本同步**
-  nx release 会自动同步所有包的版本号，你只需要在 GitHub Actions 中填写一次版本号即可。所有包将使用相同的版本号（固定版本模式）。
+  nx release 会自动同步所有包的版本号，所有包将使用相同的版本号（固定版本模式）。
+</Callout>
+
+## 手动触发发布（备用）
+
+除标准流程外，也支持手动触发 GitHub Actions：
+
+1. 进入项目的 [GitHub Actions 页面](https://github.com/shenjingnan/xiaozhi-client/actions)
+2. 选择 `NPM 发布` 工作流
+3. 点击 `Run workflow`
+4. 选择预演模式（可选）
+
+<Callout type="info">
+  **推荐使用标准流程**
+  标准流程（本地命令 + 自动发布）更符合 Nx 最佳实践，可以预览版本变更后再推送。
 </Callout>
