@@ -15,6 +15,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { EventSource } from "eventsource";
 import type { InternalMCPServiceConfig, MCPServerTransport } from "./types.js";
 import { MCPTransportType } from "./types.js";
+import { logger } from "./utils/logger.js";
 
 // 全局 polyfill EventSource（用于 SSE）
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -39,7 +40,7 @@ export interface Transport {
 export function createTransport(
   config: InternalMCPServiceConfig
 ): MCPServerTransport {
-  console.debug(
+  logger.debug(
     `[TransportFactory] 创建 ${config.type} transport for ${config.name}`
   );
 
