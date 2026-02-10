@@ -112,8 +112,8 @@ async function getBaseBranch(): Promise<string> {
 /**
  * 检查工作目录是否干净
  *
- * @returns 是否干净
- * @throws 当有未提交的更改时抛出错误
+ * @returns 是否干净（干净为 true，有未提交更改为 false）
+ * @throws 当检查工作目录失败时抛出错误
  */
 async function checkWorkingTreeClean(): Promise<boolean> {
   try {
@@ -139,7 +139,7 @@ async function runNxRelease(version: string, dryRun = false): Promise<void> {
   }
 
   try {
-    await execa("npx", args, {
+    await execa("npx", ["nx", ...args], {
       stdio: "inherit",
     });
   } catch (error) {
@@ -151,14 +151,19 @@ async function runNxRelease(version: string, dryRun = false): Promise<void> {
  * 推送代码和 tag 到远程仓库
  *
  * @param version - 版本号
+ * @param baseBranch - 主分支名称
  * @param dryRun - 是否预演模式
  * @throws 当推送失败时抛出错误
  */
-async function pushToRemote(version: string, dryRun = false): Promise<void> {
+async function pushToRemote(
+  version: string,
+  baseBranch: string,
+  dryRun = false
+): Promise<void> {
   const tagName = `v${version}`;
 
   if (dryRun) {
-    log("info", `[预演] git push origin main`);
+    log("info", `[预演] git push origin ${baseBranch}`);
     log("info", `[预演] git push origin ${tagName}`);
     return;
   }
@@ -166,7 +171,7 @@ async function pushToRemote(version: string, dryRun = false): Promise<void> {
   try {
     // 推送主分支
     log("info", `推送主分支到远程...`);
-    await execa("git", ["push", "origin", "main"], {
+    await execa("git", ["push", "origin", baseBranch], {
       stdio: "inherit",
     });
 
@@ -219,7 +224,7 @@ async function main(options: ReleaseOptions): Promise<void> {
   log("info", "🔍 验证版本号格式...");
   if (!validateVersion(options.version)) {
     log("error", `无效的版本号: ${options.version}`);
-    log("info", "版本号格式应为: major.minor_patch 或 major.minor.patch-prerelease");
+    log("info", "版本号格式应为: major.minor.patch 或 major.minor.patch-prerelease");
     log("info", "示例: 1.10.7, 1.10.8-beta.0, 1.10.8-rc.0");
     process.exit(1);
     return;
@@ -277,7 +282,7 @@ async function main(options: ReleaseOptions): Promise<void> {
   if (!options.skipPush) {
     log("info", "📤 推送代码和 tag 到远程...");
     try {
-      await pushToRemote(options.version, options.dryRun);
+      await pushToRemote(options.version, baseBranch, options.dryRun);
       log("success", "推送成功");
     } catch (error) {
       log("error", (error as Error).message);
@@ -369,7 +374,7 @@ function showHelp(): void {
 
 选项：
   -n, --dry-run         预演模式，不实际执行
-  --skip-push           跳过推送步骤（仅更新版本号和变更日志）
+  --skip-push           跳过推送步骤（仍会在本地创建 commit/tag）
   -h, --help            显示帮助信息
 
 示例：
