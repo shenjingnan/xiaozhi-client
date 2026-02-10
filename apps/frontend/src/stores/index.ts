@@ -157,6 +157,7 @@ export {
   useStatusError,
   usePollingConfig,
   usePollingEnabled,
+  useRestartPollingStatus,
   useStatusSource,
   useConnectionStatus,
   useStatusMcpEndpoint,
