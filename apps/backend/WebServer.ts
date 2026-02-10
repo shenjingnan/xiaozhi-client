@@ -148,6 +148,9 @@ export class WebServer {
   // 心跳监控
   private heartbeatMonitorInterval?: NodeJS.Timeout;
 
+  // 服务器关闭定时器
+  private serverShutdownTimer: ReturnType<typeof setTimeout> | undefined;
+
   // 路由系统
   private routeManager?: RouteManager;
 
@@ -931,7 +934,7 @@ export class WebServer {
             }
 
             // 设置超时，如果 2 秒内没有关闭则强制退出
-            setTimeout(() => {
+            this.serverShutdownTimer = setTimeout(() => {
               this.logger.info("Web 服务器已强制停止");
               doResolve();
             }, 2000);
@@ -945,10 +948,23 @@ export class WebServer {
   }
 
   /**
+   * 清理服务器关闭定时器
+   */
+  private clearShutdownTimer(): void {
+    if (this.serverShutdownTimer) {
+      clearTimeout(this.serverShutdownTimer);
+      this.serverShutdownTimer = undefined;
+    }
+  }
+
+  /**
    * 销毁 WebServer 实例，清理所有资源
    */
   public destroy(): void {
     this.logger.debug("销毁 WebServer 实例");
+
+    // 清理服务器关闭定时器
+    this.clearShutdownTimer();
 
     // 停止心跳监控
     if (this.heartbeatMonitorInterval) {
