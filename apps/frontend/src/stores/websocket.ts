@@ -370,50 +370,81 @@ export const useWebSocketConnectionTimes = () =>
 
 // ==================== 向后兼容的选择器（废弃） ====================
 
-// 导入兼容性选择器
-import {
-  useWebSocketConfig as useWebSocketConfigCompat,
-  useWebSocketMcpEndpoint as useWebSocketMcpEndpointCompat,
-  useWebSocketMcpServerConfig as useWebSocketMcpServerConfigCompat,
-  useWebSocketMcpServers as useWebSocketMcpServersCompat,
-  useWebSocketRestartStatus as useWebSocketRestartStatusCompat,
-  useWebSocketStatus as useWebSocketStatusCompat,
-} from "./websocket-compat";
+/**
+ * 导入新的 stores 用于兼容性选择器
+ */
+import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
+
+import { useConfigStore } from "./config";
+import { useStatusStore } from "./status";
 
 /**
  * @deprecated 配置数据已迁移到 stores/config.ts，请使用 useConfig()
  */
-export const useWebSocketConfig = useWebSocketConfigCompat;
+export const useWebSocketConfig = (): AppConfig | null => {
+  console.warn(
+    '[useWebSocketConfig] 此选择器已废弃，请使用 useConfig() from "./config"'
+  );
+  return useConfigStore((state) => state.config);
+};
 
 /**
  * @deprecated 状态数据已迁移到 stores/status.ts，请使用 useClientStatus()
  */
-export const useWebSocketStatus = useWebSocketStatusCompat;
+export const useWebSocketStatus = (): ClientStatus | null => {
+  console.warn(
+    '[useWebSocketStatus] 此选择器已废弃，请使用 useClientStatus() from "./status"'
+  );
+  return useStatusStore((state) => state.clientStatus);
+};
 
 /**
  * @deprecated 重启状态已迁移到 stores/status.ts，请使用 useRestartStatus()
  */
-export const useWebSocketRestartStatus = useWebSocketRestartStatusCompat;
+export const useWebSocketRestartStatus = () => {
+  console.warn(
+    '[useWebSocketRestartStatus] 此选择器已废弃，请使用 useRestartStatus() from "./status"'
+  );
+  return useStatusStore((state) => state.restartStatus);
+};
 
 /**
  * @deprecated MCP 服务器数据已迁移到 stores/config.ts，请使用 useMcpServers()
  */
-export const useWebSocketMcpServers = useWebSocketMcpServersCompat;
+export const useWebSocketMcpServers = (): Record<string, any> | null => {
+  console.warn(
+    '[useWebSocketMcpServers] 此选择器已废弃，请使用 useMcpServers() from "./config"'
+  );
+  const config = useConfigStore((state) => state.config);
+  return config?.mcpServers || null;
+};
 
 /**
  * @deprecated MCP 服务器配置已迁移到 stores/config.ts，请使用 useMcpServerConfig()
  */
-export const useWebSocketMcpServerConfig = useWebSocketMcpServerConfigCompat;
+export const useWebSocketMcpServerConfig = (): Record<string, any> | null => {
+  console.warn(
+    '[useWebSocketMcpServerConfig] 此选择器已废弃，请使用 useMcpServerConfig() from "./config"'
+  );
+  const config = useConfigStore((state) => state.config);
+  return config?.mcpServerConfig || null;
+};
 
 /**
  * @deprecated MCP 端点已迁移到 stores/config.ts，请使用 useMcpEndpoint()
  */
-export const useWebSocketMcpEndpoint = useWebSocketMcpEndpointCompat;
+export const useWebSocketMcpEndpoint = (): string | string[] => {
+  console.warn(
+    '[useWebSocketMcpEndpoint] 此选择器已废弃，请使用 useMcpEndpoint() from "./config"'
+  );
+  const config = useConfigStore((state) => state.config);
+  return config?.mcpEndpoint || "";
+};
 
 /**
  * @deprecated MCP 端点已迁移到 stores/config.ts，请使用 useMcpEndpoint()
  */
-export const useMcpEndpoint = useWebSocketMcpEndpointCompat;
+export const useMcpEndpoint = useWebSocketMcpEndpoint;
 
 // ==================== 复合选择器 ====================
 
