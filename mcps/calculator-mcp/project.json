@@ -1,0 +1,52 @@
+{
+  "name": "calculator-mcp",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "mcps/calculator-mcp/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsup",
+        "cwd": "mcps/calculator-mcp"
+      },
+      "outputs": ["{workspaceRoot}/mcps/calculator-mcp/dist"]
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsup --watch",
+        "cwd": "mcps/calculator-mcp"
+      }
+    },
+    "type-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "mcps/calculator-mcp"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "biome check src/",
+        "cwd": "mcps/calculator-mcp"
+      }
+    },
+    "lint:fix": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "biome check --write src/",
+        "cwd": "mcps/calculator-mcp"
+      }
+    },
+    "nx-release-publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "../../scripts/publish-with-tag.sh",
+        "cwd": "mcps/calculator-mcp"
+      }
+    }
+  },
+  "tags": ["type:mcp", "scope:calculator"]
+}

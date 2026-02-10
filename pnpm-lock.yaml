@@ -9,7 +9,7 @@ overrides:
   form-data: ^4.0.4
   braces: '>=3.0.3'
   micromatch: '>=4.0.8'
-  axios: '>=1.12.0'
+  axios: '>=1.13.5'
   '@conventional-changelog/git-client': '>=2.0.0'
   hono@>=1.1.0 <4.10.3: '>=4.10.3'
   js-yaml@<4.1.1: '>=4.1.1'
@@ -27,12 +27,12 @@ importers:
     dependencies:
       '@coze/api':
         specifier: ^1.3.9
-        version: 1.3.9(axios@1.13.4)
+        version: 1.3.9(axios@1.13.5)
       '@hono/node-server':
         specifier: ^1.17.1
         version: 1.19.9(hono@4.11.7)
       '@modelcontextprotocol/sdk':
-        specifier: '>=1.26.0'
+        specifier: ^1.26.0
         version: 1.26.0(zod@3.25.76)
       '@xiaozhi-client/config':
         specifier: workspace:*
@@ -175,12 +175,12 @@ importers:
     dependencies:
       '@coze/api':
         specifier: ^1.3.9
-        version: 1.3.9(axios@1.13.4)
+        version: 1.3.9(axios@1.13.5)
       '@hono/node-server':
         specifier: ^1.17.1
         version: 1.19.9(hono@4.11.7)
       '@modelcontextprotocol/sdk':
-        specifier: '>=1.26.0'
+        specifier: ^1.26.0
         version: 1.26.0(zod@3.25.76)
       '@xiaozhi-client/config':
         specifier: workspace:*
@@ -474,7 +474,7 @@ importers:
   mcps/calculator-mcp:
     dependencies:
       '@modelcontextprotocol/sdk':
-        specifier: '>=1.26.0'
+        specifier: ^1.26.0
         version: 1.26.0(zod@3.25.76)
       mathjs:
         specifier: ^15.1.0
@@ -487,7 +487,7 @@ importers:
         specifier: ^1.5.0
         version: 1.9.4
       tsup:
-        specifier: ^8.0.0
+        specifier: ^8.3.5
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
       typescript:
         specifier: ^5.3.0
@@ -496,7 +496,7 @@ importers:
   mcps/datetime-mcp:
     dependencies:
       '@modelcontextprotocol/sdk':
-        specifier: '>=1.26.0'
+        specifier: ^1.26.0
         version: 1.26.0(zod@3.25.76)
       zod:
         specifier: ^3.22.4
@@ -506,7 +506,7 @@ importers:
         specifier: ^1.5.0
         version: 1.9.4
       tsup:
-        specifier: ^8.0.0
+        specifier: ^8.3.5
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
       typescript:
         specifier: ^5.3.0
@@ -536,6 +536,9 @@ importers:
       '@types/node':
         specifier: ^24.3.0
         version: 24.10.9
+      tsup:
+        specifier: ^8.5.0
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
       typescript:
         specifier: ^5.9.2
         version: 5.9.3
@@ -555,17 +558,20 @@ importers:
       '@types/node':
         specifier: ^24.3.0
         version: 24.10.9
+      tsup:
+        specifier: ^8.5.0
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
       typescript:
         specifier: ^5.9.2
         version: 5.9.3
       vitest:
-        specifier: ^3.0.5
+        specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(happy-dom@20.4.0)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2)
 
   packages/endpoint:
     dependencies:
       '@modelcontextprotocol/sdk':
-        specifier: '>=1.26.0'
+        specifier: ^1.26.0
         version: 1.26.0(zod@4.3.6)
       '@xiaozhi-client/config':
         specifier: workspace:*
@@ -593,13 +599,13 @@ importers:
         specifier: ^5.9.2
         version: 5.9.3
       vitest:
-        specifier: ^3.0.5
+        specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(happy-dom@20.4.0)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2)
 
   packages/mcp-core:
     dependencies:
       '@modelcontextprotocol/sdk':
-        specifier: '>=1.26.0'
+        specifier: ^1.26.0
         version: 1.26.0(zod@4.3.6)
       eventsource:
         specifier: ^4.0.0
@@ -621,7 +627,7 @@ importers:
         specifier: ^5.9.2
         version: 5.9.3
       vitest:
-        specifier: ^3.0.5
+        specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(happy-dom@20.4.0)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2)
 
   packages/shared-types:
@@ -648,7 +654,7 @@ importers:
         specifier: ^5.9.2
         version: 5.9.3
       vitest:
-        specifier: ^3.0.5
+        specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(happy-dom@20.4.0)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2)
 
 packages:
@@ -1311,7 +1317,7 @@ packages:
   '@coze/api@1.3.9':
     resolution: {integrity: sha512-wDotCNH66yqEOQP1oDM7ujm9LKCg2ONfriODBSC4trjdrQfuUIaq21riuYnsKWgjKALz1jSNpjbQqJ5psOXFYQ==}
     peerDependencies:
-      axios: '>=1.12.0'
+      axios: '>=1.13.5'
 
   '@cspell/cspell-bundled-dicts@9.6.2':
     resolution: {integrity: sha512-s5u/3nhQUftKibPIbRLLAf4M5JG1NykqkPCxS0STMmri0hzVMZbAOCyHjdLoOCqPUn0xZzLA8fgeYg3b7QuHpg==}
@@ -3819,8 +3825,8 @@ packages:
     peerDependencies:
       postcss: ^8.1.0
 
-  axios@1.13.4:
-    resolution: {integrity: sha512-1wVkUaAO6WyaYtCkcYCOx12ZgpGf9Zif+qXa4n+oYzK558YryKqiL6UWwd5DqiH3VRW0GYhTZQ/vlgJrCoNQlg==}
+  axios@1.13.5:
+    resolution: {integrity: sha512-cz4ur7Vb0xS4/KUN0tPWe44eqxrIu31me+fbang3ijiNscE129POzipJJA6zniq2C/Z6sJCjMimjS8Lc/GAs8Q==}
 
   babel-plugin-const-enum@1.2.0:
     resolution: {integrity: sha512-o1m/6iyyFnp9MRsK1dHF3bneqyf3AlM2q3A/YbgQr2pCat6B6XJVDv2TXqzfY2RYUi4mak6WAksSBPlyYGx9dg==}
@@ -7408,7 +7414,7 @@ snapshots:
       '@agora-js/report': 4.23.2-1
       '@agora-js/shared': 4.23.2-1
       agora-rte-extension: 1.2.4
-      axios: 1.13.4
+      axios: 1.13.5
       webrtc-adapter: 8.2.0
     transitivePeerDependencies:
       - debug
@@ -7416,13 +7422,13 @@ snapshots:
   '@agora-js/report@4.23.2-1':
     dependencies:
       '@agora-js/shared': 4.23.2-1
-      axios: 1.13.4
+      axios: 1.13.5
     transitivePeerDependencies:
       - debug
 
   '@agora-js/shared@4.23.2-1':
     dependencies:
-      axios: 1.13.4
+      axios: 1.13.5
       ua-parser-js: 0.7.41
     transitivePeerDependencies:
       - debug
@@ -8226,12 +8232,12 @@ snapshots:
   '@colors/colors@1.5.0':
     optional: true
 
-  '@coze/api@1.3.9(axios@1.13.4)':
+  '@coze/api@1.3.9(axios@1.13.5)':
     dependencies:
       agora-extension-ai-denoiser: 1.1.0(agora-rtc-sdk-ng@4.23.2-1)
       agora-rtc-sdk-ng: 4.23.2-1
       agora-rte-extension: 1.2.4
-      axios: 1.13.4
+      axios: 1.13.5
       jsonwebtoken: 9.0.3
       node-fetch: 2.7.0
       opus-encdec: 0.1.1
@@ -10547,7 +10553,7 @@ snapshots:
       '@agora-js/report': 4.23.2-1
       '@agora-js/shared': 4.23.2-1
       agora-rte-extension: 1.2.4
-      axios: 1.13.4
+      axios: 1.13.5
       formdata-polyfill: 4.0.10
       pako: 2.1.0
       ua-parser-js: 0.7.41
@@ -10636,7 +10642,7 @@ snapshots:
       postcss: 8.5.6
       postcss-value-parser: 4.2.0
 
-  axios@1.13.4:
+  axios@1.13.5:
     dependencies:
       follow-redirects: 1.15.11
       form-data: 4.0.5
@@ -13203,7 +13209,7 @@ snapshots:
       '@yarnpkg/lockfile': 1.1.0
       '@yarnpkg/parsers': 3.0.2
       '@zkochan/js-yaml': 0.0.7
-      axios: 1.13.4
+      axios: 1.13.5
       chalk: 4.1.2
       cli-cursor: 3.1.0
       cli-spinners: 2.6.1

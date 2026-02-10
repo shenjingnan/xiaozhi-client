@@ -31,27 +31,30 @@
       "dependsOn": ["^build"],
       "inputs": ["default", "^production"],
       "cache": false
+    },
+    "nx-release-publish": {
+      "dependsOn": ["^nx-release-publish", "build"],
+      "inputs": ["default", "^production"]
     }
   },
   "release": {
-    "projects": ["cli", "config", "shared-types", "mcp-core", "endpoint", "version", "calculator-mcp", "datetime-mcp"],
+    "projects": ["cli", "config", "shared-types", "mcp-core", "endpoint", "version", "calculator-mcp", "datetime-mcp", "xiaozhi-client"],
     "projectsRelationship": "fixed",
+    "git": {
+      "commit": true,
+      "tag": true
+    },
     "version": {
-      "conventionalCommits": true,
-      "git": {
-        "commit": true,
-        "tag": true
-      }
+      "conventionalCommits": true
     },
     "changelog": {
       "workspaceChangelog": {
         "file": "CHANGELOG.md"
       },
-      "projectChangelogs": false,
-      "git": {
-        "commit": true
-      }
-    }
+      "projectChangelogs": false
+    },
+    "github": true,
+    "githubRelease": true
   },
   "plugins": [
     {

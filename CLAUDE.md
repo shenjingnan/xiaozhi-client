@@ -41,20 +41,60 @@
 
 ### 发布
 
-- `pnpm release --version <版本号>` - 发布到 npm（支持正式版、beta、rc）
-- `pnpm release:dry --version <版本号>` - 预演发布流程（不实际发布）
+项目使用简化的发布流程，通过 `scripts/release.ts` 脚本进行版本发布。
 
-使用示例：
+#### 标准发布流程
+
+1. **执行发布命令**
+   ```bash
+   # 发布正式版本
+   pnpm release 1.10.7
+
+   # 发布 Beta 版本
+   pnpm release 1.10.8-beta.0
+
+   # 发布 RC 版本
+   pnpm release 1.10.8-rc.0
+   ```
+
+2. **自动执行**
+   - 验证版本号格式
+   - 检查工作目录状态
+   - 更新所有包的版本号
+   - 生成/更新 CHANGELOG.md
+   - 创建 Git commit 和 tag
+   - 推送代码和 tag 到远程仓库
+
+3. **自动发布**
+   - GitHub Actions 检测到 tag
+   - 自动执行构建和发布
+   - 创建 GitHub Release
+
+#### 预演模式
+
 ```bash
-# 发布正式版
-pnpm release --version 1.0.0
-
-# 发布 beta 版
-pnpm release --version 1.0.0-beta.0
-
-# 预演
-pnpm release:dry --version 1.0.0
+# 预演发布流程（不实际执行）
+pnpm release 1.10.7-beta.0 --dry-run
 ```
+
+#### 仅更新版本号
+
+```bash
+# 仅更新版本号和变更日志，不推送
+pnpm release 1.10.7 --skip-push
+```
+
+#### 版本 tag 格式
+
+- **正式版**：`v1.10.7`
+- **Beta 版**：`v1.10.8-beta.0`
+- **RC 版**：`v1.10.8-rc.0`
+
+#### 可用参数
+
+- `pnpm release <version>` - 标准发布
+- `pnpm release <version> --dry-run` - 预演模式
+- `pnpm release <version> --skip-push` - 仅更新版本号
 
 ### 文档开发
 

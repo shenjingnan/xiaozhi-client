@@ -1,6 +1,6 @@
 {
   "name": "@xiaozhi-client/mcp-core",
-  "version": "1.10.5",
+  "version": "1.10.8-beta.9",
   "description": "MCP 协议核心实现，提供服务连接和管理功能",
   "type": "module",
   "main": "./dist/index.js",
@@ -30,14 +30,14 @@
     "ws": "^8.14.2"
   },
   "peerDependencies": {
-    "@modelcontextprotocol/sdk": "^1.24.0"
+    "@modelcontextprotocol/sdk": "^1.26.0"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
     "@types/ws": "^8.5.0",
     "tsup": "^8.3.5",
     "typescript": "^5.9.2",
-    "vitest": "^3.0.5"
+    "vitest": "^3.2.4"
   },
   "publishConfig": {
     "access": "public"
