@@ -27,6 +27,9 @@ const createMockMCPServiceManager = (): Partial<MCPServiceManager> => ({
   startService: vi.fn(),
   stopService: vi.fn(),
   removeServiceConfig: vi.fn(),
+  // 新增的公共方法 - 默认返回未连接状态（返回 undefined 表示服务不存在/未启动）
+  getServiceState: vi.fn().mockReturnValue(undefined),
+  getServiceTools: vi.fn().mockReturnValue([]),
   // MCPServiceManager 的其他模拟方法将在后续里程碑中添加
 });
 
@@ -255,14 +258,16 @@ describe("addMCPServer", () => {
 
     (mockContext.req as any).json = vi.fn().mockResolvedValue(requestData);
 
-    // 模拟成功的服务启动
-    const mockService = {
-      isConnected: vi.fn().mockReturnValue(true),
-      getTools: vi.fn().mockReturnValue([{ name: "tool1" }, { name: "tool2" }]),
-    };
-    (mockMCPServiceManager as any).services = new Map([
-      ["new-service", mockService],
-    ]);
+    // 模拟成功的服务启动 - 使用新的公共方法
+    mockMCPServiceManager.getServiceState = vi
+      .fn()
+      .mockReturnValue({
+        isConnected: true,
+        tools: [{ name: "tool1" }, { name: "tool2" }],
+      });
+    mockMCPServiceManager.getServiceTools = vi
+      .fn()
+      .mockReturnValue([{ name: "tool1" }, { name: "tool2" }]);
 
     // 修复 mock 配置 - 确保初始配置不包含新服务，但 updateMcpServer 后包含
     const currentConfig = {
@@ -542,14 +547,10 @@ describe("removeMCPServer", () => {
     const serverName = "existingService";
     (mockContext as any).req = { param: vi.fn().mockReturnValue(serverName) };
 
-    // 模拟服务存在且有工具
-    const mockService = {
-      isConnected: vi.fn().mockReturnValue(true),
-      getTools: vi.fn().mockReturnValue([{ name: "tool1" }, { name: "tool2" }]),
-    };
-    (mockMCPServiceManager as any).services = new Map([
-      [serverName, mockService],
-    ]);
+    // 模拟服务存在且有工具 - 使用新的公共方法
+    mockMCPServiceManager.getServiceTools = vi
+      .fn()
+      .mockReturnValue([{ name: "tool1" }, { name: "tool2" }]);
 
     const response = await handler.removeMCPServer(mockContext as Context);
 
@@ -955,14 +956,13 @@ describe("getMCPServerStatus", () => {
     const serverName = "existingService";
     (mockContext as any).req = { param: vi.fn().mockReturnValue(serverName) };
 
-    // 模拟已连接的服务
-    const mockService = {
-      isConnected: vi.fn().mockReturnValue(true),
-      getTools: vi.fn().mockReturnValue([{ name: "tool1" }, { name: "tool2" }]),
-    };
-    (mockMCPServiceManager as any).services = new Map([
-      [serverName, mockService],
-    ]);
+    // 模拟已连接的服务 - 使用新的公共方法
+    mockMCPServiceManager.getServiceState = vi
+      .fn()
+      .mockReturnValue({
+        isConnected: true,
+        tools: [{ name: "tool1" }, { name: "tool2" }],
+      });
 
     const response = await handler.getMCPServerStatus(mockContext as Context);
 
@@ -1115,20 +1115,25 @@ describe("listMCPServers", () => {
       },
     });
 
-    // 模拟服务状态
-    const mockService1 = {
-      isConnected: vi.fn().mockReturnValue(true),
-      getTools: vi.fn().mockReturnValue([{ name: "tool1" }]),
-    };
-    const mockService2 = {
-      isConnected: vi.fn().mockReturnValue(false),
-      getTools: vi.fn().mockReturnValue([]),
-    };
-    // service3 不在 services Map 中（未启动）
-    (mockMCPServiceManager as any).services = new Map([
-      ["service1", mockService1],
-      ["service2", mockService2],
-    ]);
+    // 模拟服务状态 - 使用新的公共方法
+    mockMCPServiceManager.getServiceState = vi
+      .fn()
+      .mockImplementation((serverName: string) => {
+        if (serverName === "service1") {
+          return {
+            isConnected: true,
+            tools: [{ name: "tool1" }],
+          };
+        }
+        if (serverName === "service2") {
+          return {
+            isConnected: false,
+            tools: [],
+          };
+        }
+        // service3 返回 undefined（未启动）
+        return undefined;
+      });
 
     const response = await handler.listMCPServers(mockContext as Context);
 

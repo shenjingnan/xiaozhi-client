@@ -12,14 +12,6 @@ import { TypeFieldNormalizer } from "@xiaozhi-client/mcp-core";
 import type { Context } from "hono";
 
 /**
- * MCPServiceManager 扩展接口，用于访问私有属性
- * 这个接口定义了我们需要访问但实际上是私有的属性
- */
-interface MCPServiceManagerAccess {
-  services: Map<string, MCPService>;
-}
-
-/**
  * 配置详情接口，包含时间戳
  */
 interface ConfigDetails {
@@ -364,7 +356,6 @@ export class MCPHandler {
       const toolNames = tools.map((tool) => tool.name);
 
       // 7. 发送事件通知
-      const toolNames = tools.map((tool) => tool.name);
       getEventBus().emitEvent("mcp:server:added", {
         serverName: name,
         config: normalizedConfig,
@@ -408,12 +399,10 @@ export class MCPHandler {
 
     // 尝试从 MCPServiceManager 获取实际状态
     try {
-      const managerAccess = this
-        .mcpServiceManager as unknown as MCPServiceManagerAccess;
-      const service = managerAccess.services.get(serverName);
+      const serviceState = this.mcpServiceManager.getServiceState(serverName);
 
-      if (service?.isConnected?.()) {
-        const currentTools = service.getTools().map((tool: Tool) => tool.name);
+      if (serviceState?.isConnected) {
+        const currentTools = serviceState.tools.map((tool: Tool) => tool.name);
         const status = {
           name: serverName,
           status: "connected" as const,
@@ -517,18 +506,11 @@ export class MCPHandler {
    */
   private getServiceTools(serverName: string): Tool[] {
     try {
-      const managerAccess = this
-        .mcpServiceManager as unknown as MCPServiceManagerAccess;
-      const service = managerAccess.services.get(serverName);
-
-      if (service?.getTools) {
-        return service.getTools();
-      }
+      return this.mcpServiceManager.getServiceTools(serverName);
     } catch (error) {
       this.logger.debug(`获取服务 ${serverName} 工具列表时出错:`, error);
+      return [];
     }
-
-    return [];
   }
 
   /**

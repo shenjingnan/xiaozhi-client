@@ -1088,6 +1088,40 @@ export class MCPServiceManager extends EventEmitter {
   }
 
   /**
+   * 获取服务状态信息
+   * @param serverName 服务名称
+   * @returns 服务状态对象，包含连接状态和工具列表，如果服务不存在则返回 undefined
+   */
+  public getServiceState(serverName: string): {
+    isConnected: boolean;
+    tools: Tool[];
+  } | undefined {
+    const service = this.services.get(serverName);
+    if (!service) {
+      return undefined;
+    }
+
+    return {
+      isConnected: service.isConnected(),
+      tools: service.getTools(),
+    };
+  }
+
+  /**
+   * 获取服务的工具列表
+   * @param serverName 服务名称
+   * @returns 工具列表，如果服务不存在或未连接则返回空数组
+   */
+  public getServiceTools(serverName: string): Tool[] {
+    const service = this.services.get(serverName);
+    if (!service || !service.isConnected()) {
+      return [];
+    }
+
+    return service.getTools();
+  }
+
+  /**
    * 获取所有已连接的服务名称
    */
   getConnectedServices(): string[] {
