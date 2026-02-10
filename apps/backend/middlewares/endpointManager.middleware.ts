@@ -3,6 +3,7 @@
  * 负责将 endpointManager 注入到请求上下文中
  */
 
+import { logger } from "@/Logger.js";
 import type { MiddlewareHandler } from "hono";
 import type { AppContext } from "../types/hono.context.js";
 
@@ -30,7 +31,9 @@ export const endpointManagerMiddleware = (): MiddlewareHandler<AppContext> => {
     } catch (error) {
       // 记录错误但不阻断请求
       if (error instanceof Error && error.message.includes("未初始化")) {
-        console.warn("小智连接管理器未初始化，使用 null 值:", error.message);
+        logger.warn("小智连接管理器未初始化，使用 null 值", {
+          message: error.message,
+        });
         c.set("endpointManager", null);
       } else {
         throw error;
