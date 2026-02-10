@@ -3,8 +3,8 @@
  * 处理所有扣子相关的 API 路由
  */
 
-import type { RouteDefinition } from "../types.js";
-import { createHandler } from "../types.js";
+import type { RouteDefinition } from "@/routes/types.js";
+import { createHandler } from "@/routes/types.js";
 
 const h = createHandler("cozeHandler");
 
