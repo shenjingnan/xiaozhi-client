@@ -8,6 +8,9 @@ lerna-debug.log*
 .pnpm-debug.log*
 .pnpm-store
 
+# 忽略 workspace 级别的 lockfile（仅使用根目录的 pnpm-lock.yaml）
+apps/*/pnpm-lock.yaml
+
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
