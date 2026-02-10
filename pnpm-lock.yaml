@@ -32,7 +32,7 @@ importers:
         specifier: ^1.17.1
         version: 1.19.9(hono@4.11.7)
       '@modelcontextprotocol/sdk':
-        specifier: '>=1.26.0'
+        specifier: ^1.26.0
         version: 1.26.0(zod@3.25.76)
       '@xiaozhi-client/config':
         specifier: workspace:*
@@ -180,7 +180,7 @@ importers:
         specifier: ^1.17.1
         version: 1.19.9(hono@4.11.7)
       '@modelcontextprotocol/sdk':
-        specifier: '>=1.26.0'
+        specifier: ^1.26.0
         version: 1.26.0(zod@3.25.76)
       '@xiaozhi-client/config':
         specifier: workspace:*
@@ -474,7 +474,7 @@ importers:
   mcps/calculator-mcp:
     dependencies:
       '@modelcontextprotocol/sdk':
-        specifier: '>=1.26.0'
+        specifier: ^1.26.0
         version: 1.26.0(zod@3.25.76)
       mathjs:
         specifier: ^15.1.0
@@ -496,7 +496,7 @@ importers:
   mcps/datetime-mcp:
     dependencies:
       '@modelcontextprotocol/sdk':
-        specifier: '>=1.26.0'
+        specifier: ^1.26.0
         version: 1.26.0(zod@3.25.76)
       zod:
         specifier: ^3.22.4
@@ -571,7 +571,7 @@ importers:
   packages/endpoint:
     dependencies:
       '@modelcontextprotocol/sdk':
-        specifier: '>=1.26.0'
+        specifier: ^1.26.0
         version: 1.26.0(zod@4.3.6)
       '@xiaozhi-client/config':
         specifier: workspace:*
@@ -605,7 +605,7 @@ importers:
   packages/mcp-core:
     dependencies:
       '@modelcontextprotocol/sdk':
-        specifier: '>=1.26.0'
+        specifier: ^1.26.0
         version: 1.26.0(zod@4.3.6)
       eventsource:
         specifier: ^4.0.0
