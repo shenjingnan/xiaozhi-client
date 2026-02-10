@@ -1,3 +1,23 @@
+/**
+ * MCP 服务管理处理器
+ *
+ * 负责处理 MCP 服务的完整生命周期管理，包括：
+ * - 服务添加：支持单个服务或批量添加 MCP 服务器
+ * - 服务删除：移除已配置的 MCP 服务
+ * - 服务列表：获取所有已配置的 MCP 服务信息
+ * - 服务状态：查询服务的连接状态和可用工具
+ * - 配置验证：验证 MCP 服务器配置的有效性
+ *
+ * @module mcp-manage.handler
+ *
+ * @example
+ * ```typescript
+ * import { MCPHandler } from '@/handlers/mcp-manage.handler';
+ *
+ * const handler = new MCPHandler(mcpServiceManager, configManager);
+ * await handler.addMCPServer(context, request);
+ * ```
+ */
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import { ErrorCategory, MCPError, MCPErrorCode } from "@/errors/mcp-errors.js";
@@ -358,13 +378,12 @@ export class MCPHandler {
       await this.mcpServiceManager.startService(name);
       this.logger.debug("服务已启动", { serverName: name });
 
-      // 6. 获取服务状态和工具列表
+      // 7. 获取服务状态和工具列表
       const serviceStatus = this.getServiceStatus(name);
       const tools = this.getServiceTools(name);
       const toolNames = tools.map((tool) => tool.name);
 
-      // 7. 发送事件通知
-      const toolNames = tools.map((tool) => tool.name);
+      // 8. 发送事件通知
       getEventBus().emitEvent("mcp:server:added", {
         serverName: name,
         config: normalizedConfig,
