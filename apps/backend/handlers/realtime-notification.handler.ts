@@ -2,7 +2,7 @@ import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import type { EventBus } from "@/services/event-bus.service.js";
 import { getEventBus } from "@/services/event-bus.service.js";
-import type { NotificationService } from "@/services/notification.service.js";
+import type { NotificationService, WebSocketLike } from "@/services/notification.service.js";
 import type { StatusService } from "@/services/status.service.js";
 import { sendWebSocketError } from "@/utils/websocket-helper.js";
 import type { AppConfig } from "@xiaozhi-client/config";
@@ -13,7 +13,7 @@ import { configManager } from "@xiaozhi-client/config";
  */
 interface WebSocketMessage {
   type: string;
-  data?: any;
+  data?: unknown;
   clientId?: string;
 }
 
@@ -41,7 +41,7 @@ export class RealtimeNotificationHandler {
    * @deprecated 部分消息类型已废弃，建议使用 HTTP API
    */
   async handleMessage(
-    ws: any,
+    ws: WebSocketLike,
     message: WebSocketMessage,
     clientId: string
   ): Promise<void> {
@@ -61,7 +61,7 @@ export class RealtimeNotificationHandler {
           break;
 
         case "updateConfig":
-          await this.handleUpdateConfig(ws, message.data, clientId);
+          await this.handleUpdateConfig(ws, message.data as AppConfig, clientId);
           break;
 
         case "getStatus":
@@ -98,7 +98,7 @@ export class RealtimeNotificationHandler {
    * 处理获取配置请求
    * @deprecated 使用 GET /api/config 替代
    */
-  private async handleGetConfig(ws: any, clientId: string): Promise<void> {
+  private async handleGetConfig(ws: WebSocketLike, clientId: string): Promise<void> {
     this.logDeprecationWarning("WebSocket getConfig", "GET /api/config");
 
     try {
@@ -121,7 +121,7 @@ export class RealtimeNotificationHandler {
    * @deprecated 使用 PUT /api/config 替代
    */
   private async handleUpdateConfig(
-    ws: any,
+    ws: WebSocketLike,
     configData: AppConfig,
     clientId: string
   ): Promise<void> {
@@ -168,7 +168,7 @@ export class RealtimeNotificationHandler {
    * 处理获取状态请求
    * @deprecated 使用 GET /api/status 替代
    */
-  private async handleGetStatus(ws: any, clientId: string): Promise<void> {
+  private async handleGetStatus(ws: WebSocketLike, clientId: string): Promise<void> {
     this.logDeprecationWarning("WebSocket getStatus", "GET /api/status");
 
     try {
@@ -190,7 +190,7 @@ export class RealtimeNotificationHandler {
    * 处理重启服务请求
    * @deprecated 使用 POST /api/services/restart 替代
    */
-  private async handleRestartService(ws: any, clientId: string): Promise<void> {
+  private async handleRestartService(ws: WebSocketLike, clientId: string): Promise<void> {
     this.logDeprecationWarning(
       "WebSocket restartService",
       "POST /api/services/restart"
@@ -233,7 +233,7 @@ export class RealtimeNotificationHandler {
   /**
    * 发送初始数据给新连接的客户端
    */
-  async sendInitialData(ws: any, clientId: string): Promise<void> {
+  async sendInitialData(ws: WebSocketLike, clientId: string): Promise<void> {
     try {
       this.logger.debug("发送初始数据给客户端", { clientId });
 
@@ -275,7 +275,7 @@ export class RealtimeNotificationHandler {
   /**
    * 处理客户端连接
    */
-  handleClientConnect(ws: any, clientId: string): void {
+  handleClientConnect(ws: WebSocketLike, clientId: string): void {
     this.logger.debug(`客户端连接: ${clientId}`);
     this.notificationService.registerClient(clientId, ws);
   }
