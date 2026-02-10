@@ -474,7 +474,7 @@ importers:
   mcps/calculator-mcp:
     dependencies:
       '@modelcontextprotocol/sdk':
-        specifier: '>=1.26.0'
+        specifier: ^1.26.0
         version: 1.26.0(zod@3.25.76)
       mathjs:
         specifier: ^15.1.0
@@ -496,7 +496,7 @@ importers:
   mcps/datetime-mcp:
     dependencies:
       '@modelcontextprotocol/sdk':
-        specifier: '>=1.26.0'
+        specifier: ^1.26.0
         version: 1.26.0(zod@3.25.76)
       zod:
         specifier: ^3.22.4
