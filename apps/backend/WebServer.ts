@@ -70,7 +70,7 @@ import type { Hono } from "hono";
 import { WebSocketServer } from "ws";
 
 import { HTTP_SERVER_CONFIG } from "@/constants/index.js";
-import { MCPServiceManagerNotInitializedError } from "./errors/mcp-errors.middleware.js";
+import { MCPServiceManagerNotInitializedError } from "@/errors/mcp-errors.middleware.js";
 // 路由系统导入
 import {
   type HandlerDependencies,
