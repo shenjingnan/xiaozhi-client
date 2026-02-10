@@ -51,19 +51,16 @@ export namespace TypeFieldNormalizer {
       return config;
     }
 
-    // 创建配置的深拷贝以避免修改原始对象
-    const normalizedConfig = JSON.parse(JSON.stringify(config));
-
-    // 如果配置中没有 type 字段，直接返回
-    if (!("type" in normalizedConfig)) {
-      return normalizedConfig;
+    // 如果配置中没有 type 字段，直接返回原对象
+    if (!("type" in config)) {
+      return config;
     }
 
-    const originalType = normalizedConfig.type;
+    const originalType = (config as MCPBaseConfig).type;
 
-    // 如果已经是标准格式，直接返回
+    // 如果已经是标准格式，直接返回原对象
     if (originalType === "stdio" || originalType === "sse" || originalType === "http") {
-      return normalizedConfig;
+      return config;
     }
 
     // 转换为标准格式
@@ -71,10 +68,11 @@ export namespace TypeFieldNormalizer {
 
     // 验证转换后的类型是否有效
     if (normalizedType === "stdio" || normalizedType === "sse" || normalizedType === "http") {
-      normalizedConfig.type = normalizedType;
+      // 创建浅拷贝并只修改 type 字段（务实方案：性能优化，避免不必要的深拷贝）
+      return { ...config, type: normalizedType };
     }
 
-    return normalizedConfig;
+    return config;
   }
 
   /**

@@ -141,11 +141,11 @@ describe("TypeFieldNormalizer.normalizeTypeValue", () => {
 
 describe("TypeFieldNormalizer.normalizeTypeField", () => {
   describe("标准配置对象处理", () => {
-    it("应该处理包含标准 http 类型的配置", () => {
+    it("应该处理包含标准 http 类型的配置（不创建副本）", () => {
       const config = { type: "http", url: "https://example.com" };
       const result = TypeFieldNormalizer.normalizeTypeField(config);
       expect(result).toEqual(config);
-      expect(result).not.toBe(config); // 应该是深拷贝
+      expect(result).toBe(config); // 务实方案：无需创建副本
     });
 
     it("应该转换 streamable-http 为 http", () => {
@@ -153,12 +153,14 @@ describe("TypeFieldNormalizer.normalizeTypeField", () => {
       const result = TypeFieldNormalizer.normalizeTypeField(config);
       expect(result.type).toBe("http");
       expect(result.url).toBe("https://example.com");
+      expect(result).not.toBe(config); // 创建新对象
     });
 
     it("应该转换 s_se 为 sse", () => {
       const config = { type: "s_se", url: "https://example.com" };
       const result = TypeFieldNormalizer.normalizeTypeField(config);
       expect(result.type).toBe("sse");
+      expect(result).not.toBe(config); // 创建新对象
     });
   });
 
@@ -184,11 +186,11 @@ describe("TypeFieldNormalizer.normalizeTypeField", () => {
   });
 
   describe("无 type 字段的配置", () => {
-    it("应该保持无 type 字段的配置不变", () => {
+    it("应该保持无 type 字段的配置不变（不创建副本）", () => {
       const config = { url: "https://example.com", name: "test" };
       const result = TypeFieldNormalizer.normalizeTypeField(config);
       expect(result).toEqual(config);
-      expect(result).not.toBe(config); // 应该是深拷贝
+      expect(result).toBe(config); // 务实方案：无需创建副本
     });
   });
 
