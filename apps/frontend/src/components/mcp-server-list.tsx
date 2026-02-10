@@ -71,10 +71,12 @@ export function McpServerList({
   const { refreshConfig } = useConfigActions();
   // const config = useConfig(); // 不再使用配置更新，改为使用 API
 
-  // 添加工具列表状态管理
+  // 工具列表状态 - 用于 Coze 工作流集成功能
+  // @ts-expect-error - 状态由 refreshToolLists 间接使用，保留用于未来工具管理功能
   const [enabledTools, setEnabledTools] = useState<Array<ToolWithServerInfo>>(
     []
   );
+  // @ts-expect-error - 状态由 refreshToolLists 间接使用，保留用于未来工具管理功能
   const [disabledTools, setDisabledTools] = useState<Array<ToolWithServerInfo>>(
     []
   );
@@ -245,61 +247,6 @@ export function McpServerList({
     };
   }>({ open: false });
 
-  const _handleToggleTool = async (name: string, currentEnable: boolean) => {
-    // TODO: 用于未来工具切换功能
-    try {
-      // 首先找到对应的原始工具信息
-      const originalTool = [...enabledTools, ...disabledTools].find(
-        (tool) => tool.name === name
-      );
-
-      if (!originalTool) {
-        toast.error("找不到对应的工具信息");
-        return;
-      }
-
-      // 检查是否为 Coze 工作流工具
-      if (originalTool.serverName === "coze") {
-        if (currentEnable) {
-          // Coze 工作流工具需要确认对话框
-          setCozeToolToRemove(name);
-          return; // 等待用户确认
-        }
-        // 添加 Coze 工作流工具
-        await apiClient.addCustomTool(
-          {
-            workflow_id: "", // Coze 工具不需要 workflow_id
-            workflow_name: name,
-            description: originalTool.description || "",
-            icon_url: "",
-            app_id: "",
-          },
-          name,
-          originalTool.description || ""
-        );
-        toast.success(`添加工具 ${name} 成功`);
-      } else {
-        // 普通 MCP 工具 - 使用新的 MCP 工具管理 API
-        const action = currentEnable ? "disable" : "enable";
-        await apiClient.manageMCPTool({
-          action,
-          serverName: originalTool.serverName,
-          toolName: originalTool.toolName,
-          description: originalTool.description,
-        });
-        toast.success(`${currentEnable ? "禁用" : "启用"}工具 ${name} 成功`);
-      }
-
-      // 重新获取工具列表以更新状态
-      await refreshToolLists();
-    } catch (error) {
-      console.error("切换工具状态失败:", error);
-      toast.error(error instanceof Error ? error.message : "切换工具状态失败");
-    }
-  };
-  // 标记为有意未使用
-  void _handleToggleTool;
-
   // 确认移除 Coze 工具的处理函数
   const handleConfirmRemoveCozeTool = async () => {
     if (!cozeToolToRemove) return;
@@ -322,37 +269,6 @@ export function McpServerList({
   const handleCancelRemoveCozeTool = () => {
     setCozeToolToRemove(null);
   };
-
-  // 处理打开参数配置对话框
-  const _handleConfigureTool = (tool: ToolWithServerInfo) => {
-    // TODO: 用于未来参数配置功能
-    // 检查是否为 coze 工具
-    if (tool.serverName === "coze") {
-      setParameterConfigDialog({
-        open: true,
-        tool,
-      });
-    }
-  };
-  // 标记为有意未使用
-  void _handleConfigureTool;
-
-  // 处理打开工具调试对话框
-  const _handleDebugTool = (tool: ToolWithServerInfo) => {
-    // TODO: 用于未来工具调试功能
-    setDebugDialog({
-      open: true,
-      tool: {
-        name: tool.name,
-        serverName: tool.serverName,
-        toolName: tool.toolName,
-        description: tool.description,
-        inputSchema: tool.inputSchema,
-      },
-    });
-  };
-  // 标记为有意未使用
-  void _handleDebugTool;
 
   // 从工具对象构建 CozeWorkflow 对象
   const buildCozeWorkflowFromTool = (
