@@ -54,6 +54,23 @@ export class NPMManager {
     ]);
 
     return new Promise((resolve, reject) => {
+      // 监听进程启动失败事件
+      npmProcess.on("error", (error) => {
+        const errorMessage = `进程启动失败: ${error.message}`;
+        console.log(errorMessage, { error });
+
+        // 发射安装失败事件
+        this.eventBus.emitEvent("npm:install:failed", {
+          version,
+          installId,
+          error: errorMessage,
+          duration: Date.now() - startTime,
+          timestamp: Date.now(),
+        });
+
+        reject(error);
+      });
+
       npmProcess.stdout.on("data", (data) => {
         const message = data.toString();
 
