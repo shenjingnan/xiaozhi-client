@@ -5,6 +5,10 @@
 import consola from "consola";
 import type { SubCommand } from "../interfaces/Command";
 import { BaseCommandHandler } from "../interfaces/Command";
+import type {
+  CommandArguments,
+  CommandOptions,
+} from "../interfaces/CommandTypes";
 import type { IDIContainer } from "../interfaces/Config";
 
 /**
@@ -26,21 +30,21 @@ export class ServiceCommandHandler extends BaseCommandHandler {
           description: "以 stdio 模式运行 MCP Server (用于 Cursor 等客户端)",
         },
       ],
-      execute: async (args: any[], options: any) => {
+      execute: async (args: CommandArguments, options: CommandOptions) => {
         await this.handleStart(options);
       },
     },
     {
       name: "stop",
       description: "停止服务",
-      execute: async (args: any[], options: any) => {
+      execute: async (args: CommandArguments, options: CommandOptions) => {
         await this.handleStop();
       },
     },
     {
       name: "status",
       description: "检查服务状态",
-      execute: async (args: any[], options: any) => {
+      execute: async (args: CommandArguments, options: CommandOptions) => {
         await this.handleStatus();
       },
     },
@@ -48,14 +52,14 @@ export class ServiceCommandHandler extends BaseCommandHandler {
       name: "restart",
       description: "重启服务",
       options: [{ flags: "-d, --daemon", description: "在后台运行服务" }],
-      execute: async (args: any[], options: any) => {
+      execute: async (args: CommandArguments, options: CommandOptions) => {
         await this.handleRestart(options);
       },
     },
     {
       name: "attach",
       description: "连接到后台服务查看日志",
-      execute: async (args: any[], options: any) => {
+      execute: async (args: CommandArguments, options: CommandOptions) => {
         await this.handleAttach();
       },
     },
@@ -68,14 +72,17 @@ export class ServiceCommandHandler extends BaseCommandHandler {
   /**
    * 主命令执行（显示帮助）
    */
-  async execute(args: any[], options: any): Promise<void> {
+  override async execute(
+    args: CommandArguments,
+    options: CommandOptions
+  ): Promise<void> {
     console.log("服务管理命令。使用 --help 查看可用的子命令。");
   }
 
   /**
    * 处理启动命令
    */
-  private async handleStart(options: any): Promise<void> {
+  private async handleStart(options: CommandOptions): Promise<void> {
     try {
       // 处理--debug参数
       if (options.debug) {
@@ -138,7 +145,7 @@ export class ServiceCommandHandler extends BaseCommandHandler {
   /**
    * 处理重启命令
    */
-  private async handleRestart(options: any): Promise<void> {
+  private async handleRestart(options: CommandOptions): Promise<void> {
     try {
       const serviceManager = this.getService<any>("serviceManager");
       await serviceManager.restart({
