@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@xiaozhi-client/mcp-core": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.24.0"
+    "@modelcontextprotocol/sdk": "^1.26.0"
   },
   "devDependencies": {
     "tsx": "^4.19.2"

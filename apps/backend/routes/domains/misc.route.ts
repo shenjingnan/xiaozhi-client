@@ -3,8 +3,8 @@
  * 处理不特定于某个模块的通用 API 路由
  */
 
-import type { RouteDefinition } from "../types.js";
-import { createHandler } from "../types.js";
+import type { RouteDefinition } from "@/routes/types.js";
+import { createHandler } from "@/routes/types.js";
 
 const h = createHandler("serviceApiHandler");
 
