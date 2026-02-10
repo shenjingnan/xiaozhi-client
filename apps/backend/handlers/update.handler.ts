@@ -1,3 +1,7 @@
+/**
+ * 更新 API HTTP 路由处理器
+ * 提供版本更新和 NPM 包安装相关的 RESTful API 接口
+ */
 import { NPMManager } from "@/lib/npm";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { AppContext } from "@/types/hono.context.js";
