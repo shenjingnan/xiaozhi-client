@@ -9,7 +9,7 @@ import type {
   LocalMCPServerConfig,
   MCPServerConfig,
   SSEMCPServerConfig,
-} from "./manager.js";
+} from "./types.js";
 import { ConfigResolver } from "./resolver.js";
 
 // 从外部导入 MCP 类型（这些类型将在运行时从 backend 包解析）
