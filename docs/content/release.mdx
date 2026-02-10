@@ -48,46 +48,37 @@ import { Callout, Steps, Tabs } from "nextra/components";
 
 ### 本地准备发布
 
-在本地执行以下命令，更新版本号和变更日志：
+```bash
+# 标准发布
+pnpm release 1.10.7
 
-<Tabs items={['正式版', 'Beta版', 'RC版']}>
-  <Tabs.Tab>
+# Beta 版本
+pnpm release 1.10.8-beta.0
 
-  ```bash
-  # 正式版发布
-  pnpm release:skip-publish --version 1.10.7
-  ```
-
-  </Tabs.Tab>
-  <Tabs.Tab>
-
-  ```bash
-  # Beta版发布
-  pnpm release:skip-publish --version 1.10.8-beta.0
-  ```
-
-  </Tabs.Tab>
-  <Tabs.Tab>
-
-  ```bash
-  # RC版发布
-  pnpm release:skip-publish --version 1.10.8-rc.0
-  ```
-
-  </Tabs.Tab>
-</Tabs>
+# RC 版本
+pnpm release 1.10.8-rc.0
+```
 
 此命令会：
+- ✅ 验证版本号格式
+- ✅ 检查工作目录状态
 - ✅ 更新所有包的版本号
 - ✅ 生成/更新 CHANGELOG.md
 - ✅ 创建 Git commit
 - ✅ 创建 Git tag（如 `v1.10.7`）
+- ✅ 推送代码和 tag 到远程仓库
 
 ### 推送到远端
 
-将 commit 和 tag 推送到 GitHub：
+新的发布命令已自动包含推送步骤，无需手动推送。
+
+如果使用 `--skip-push` 参数，则只更新版本号，不推送：
 
 ```bash
+# 仅更新版本号，不推送
+pnpm release 1.10.7 --skip-push
+
+# 稍后手动推送
 git push origin main
 git push origin --tags
 ```
@@ -119,7 +110,7 @@ git push origin --tags
 
 ```bash
 # 预演模式：查看将要发布的版本（不实际修改）
-pnpm release:dry --version 1.10.8-beta.0
+pnpm release 1.10.9-beta.0 --dry-run
 ```
 
 ## 本地测试
@@ -129,11 +120,11 @@ pnpm release:dry --version 1.10.8-beta.0
 ### 测试发布流程
 
 ```bash
-# 预演模式：查看将要发布的版本（不实际修改）
-pnpm release:dry --version 1.10.8-beta.0
+# 预演模式
+pnpm release 1.10.9-beta.0 --dry-run
 
-# 准备发布（更新版本和 tag，但不推送）
-pnpm release:skip-publish --version 1.10.8-beta.0
+# 准备发布（不推送）
+pnpm release 1.10.9-beta.0 --skip-push
 
 # 检查生成的 commit 和 tag
 git log --oneline -3
