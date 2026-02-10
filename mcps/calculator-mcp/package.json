@@ -1,6 +1,6 @@
 {
   "name": "@xiaozhi-client/calculator-mcp",
-  "version": "1.9.7",
+  "version": "1.10.8-beta.9",
   "type": "module",
   "description": "小智计算器 MCP 服务，提供数学计算功能",
   "bin": {
@@ -32,7 +32,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.5.0",
-    "tsup": "^8.0.0",
+    "tsup": "^8.3.5",
     "typescript": "^5.3.0"
   }
 }
