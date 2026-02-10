@@ -3,8 +3,8 @@
  * 提供直接、高效的路由注册和管理功能
  */
 
+import type { AppContext } from "@/types/hono.context.js";
 import type { Context, Hono, Next } from "hono";
-import type { AppContext } from "../types/hono.context.js";
 import {
   type RouteDefinition,
   type RouteRegistry,
