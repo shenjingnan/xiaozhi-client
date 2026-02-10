@@ -32,8 +32,9 @@
   },
   "dependencies": {
     "ws": "^8.14.2",
+    "@xiaozhi-client/config": "workspace:*",
     "@xiaozhi-client/mcp-core": "workspace:*",
-    "@xiaozhi-client/config": "workspace:*"
+    "@xiaozhi-client/shared-types": "workspace:*"
   },
   "peerDependencies": {
     "@modelcontextprotocol/sdk": "^1.26.0"

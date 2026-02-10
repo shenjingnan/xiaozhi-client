@@ -33,11 +33,14 @@ export interface MCPError {
 
 /**
  * 连接状态枚举
+ * 统一定义所有 MCP 服务连接状态
  */
 export enum ConnectionState {
   DISCONNECTED = "disconnected",
   CONNECTING = "connecting",
   CONNECTED = "connected",
+  RECONNECTING = "reconnecting",
+  FAILED = "failed",
   ERROR = "error",
 }
 

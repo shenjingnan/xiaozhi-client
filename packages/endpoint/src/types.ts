@@ -171,13 +171,12 @@ export interface IMCPServiceManager {
 
 /**
  * 连接状态枚举
+ * 从 @xiaozhi-client/shared-types 重新导出，保持类型一致性
  */
-export enum ConnectionState {
-  DISCONNECTED = "disconnected",
-  CONNECTING = "connecting",
-  CONNECTED = "connected",
-  FAILED = "failed",
-}
+import { ConnectionState } from "@xiaozhi-client/shared-types/mcp";
+
+// 重新导出以保持向后兼容
+export { ConnectionState };
 
 /**
  * 连接选项接口

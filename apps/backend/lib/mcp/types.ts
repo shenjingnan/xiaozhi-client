@@ -84,16 +84,12 @@ export interface InternalMCPServiceConfig extends MCPServiceConfig {
 
 /**
  * 连接状态枚举
- * 合并了 connection.ts 和 TransportAdapter.ts 中的定义
+ * 从 @xiaozhi-client/shared-types 重新导出，保持类型一致性
  */
-export enum ConnectionState {
-  DISCONNECTED = "disconnected",
-  CONNECTING = "connecting",
-  CONNECTED = "connected",
-  RECONNECTING = "reconnecting",
-  FAILED = "failed",
-  ERROR = "error", // 从 TransportAdapter.ts 合并的额外状态
-}
+import { ConnectionState } from "@xiaozhi-client/shared-types/mcp";
+
+// 重新导出以保持向后兼容
+export { ConnectionState };
 
 /**
  * MCP 服务状态接口

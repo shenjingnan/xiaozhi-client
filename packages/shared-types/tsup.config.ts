@@ -11,7 +11,7 @@ export default defineConfig({
   },
   format: ["esm"],
   target: "node18",
-  outDir: "../../dist/shared-types",
+  outDir: "./dist",
   dts: {
     compilerOptions: {
       composite: false
