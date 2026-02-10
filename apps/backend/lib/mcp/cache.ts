@@ -13,14 +13,16 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, resolve } from "node:path";
-import type { Logger } from "@/Logger.js";
-import { logger } from "@/Logger.js";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import dayjs from "dayjs";
 import {
   CACHE_FILE_CONFIG,
   CACHE_TIMEOUTS,
   MCP_CACHE_VERSIONS,
   TOOL_NAME_SEPARATORS,
 } from "@/constants/index.js";
+import type { Logger } from "@/Logger.js";
+import { logger } from "@/Logger.js";
 import type { MCPServiceConfig } from "@/lib/mcp/types";
 import type {
   CacheStatistics,
@@ -30,8 +32,6 @@ import type {
   ToolCallResult,
 } from "@/types/index.js";
 import { generateCacheKey, shouldCleanupCache } from "@/types/index.js";
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import dayjs from "dayjs";
 
 // 缓存条目接口
 export interface MCPToolsCacheEntry {
@@ -97,7 +97,7 @@ export class MCPCacheManager {
     try {
       const configDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();
       return resolve(configDir, CACHE_FILE_CONFIG.FILENAME);
-    } catch (error) {
+    } catch (_error) {
       // 在某些测试环境中 process.cwd() 可能不可用，使用默认路径
       const configDir = process.env.XIAOZHI_CONFIG_DIR || "/tmp";
       return resolve(configDir, CACHE_FILE_CONFIG.FILENAME);

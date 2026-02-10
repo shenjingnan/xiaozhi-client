@@ -1,3 +1,9 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { SettingsIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import z from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,12 +29,6 @@ import {
   useWebSocketConnected,
   useWebSocketPortChangeStatus,
 } from "@/stores/websocket";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { SettingsIcon } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import z from "zod";
 
 const formSchema = z.object({
   port: z

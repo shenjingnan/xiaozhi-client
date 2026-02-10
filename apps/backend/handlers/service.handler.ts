@@ -1,13 +1,13 @@
 import { spawn } from "node:child_process";
-import { logger } from "@/Logger.js";
+import type { Context } from "hono";
 import type { Logger } from "@/Logger.js";
+import { logger } from "@/Logger.js";
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { EventBus } from "@/services/event-bus.service.js";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { StatusService } from "@/services/status.service.js";
 import type { AppContext } from "@/types/hono.context.js";
 import { requireMCPServiceManager } from "@/types/hono.context.js";
-import type { Context } from "hono";
 
 /**
  * 服务 API 处理器

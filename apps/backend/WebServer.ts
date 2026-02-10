@@ -17,10 +17,19 @@
  * @module WebServer
  */
 
-import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
-import type { Logger } from "@/Logger.js";
-import { logger } from "@/Logger.js";
+import { createServer } from "node:http";
+import type { ServerType } from "@hono/node-server";
+import { serve } from "@hono/node-server";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type { MCPServerConfig } from "@xiaozhi-client/config";
+import { configManager, normalizeServiceConfig } from "@xiaozhi-client/config";
+import type { SimpleConnectionStatus } from "@xiaozhi-client/endpoint";
+import { EndpointManager } from "@xiaozhi-client/endpoint";
+import type { Hono } from "hono";
+import { WebSocketServer } from "ws";
+import { HTTP_SERVER_CONFIG } from "@/constants/index.js";
+import { MCPServiceManagerNotInitializedError } from "@/errors/mcp-errors.middleware.js";
 import {
   ConfigApiHandler,
   CozeHandler,
@@ -36,6 +45,8 @@ import {
   UpdateApiHandler,
   VersionApiHandler,
 } from "@/handlers/index.js";
+import type { Logger } from "@/Logger.js";
+import { logger } from "@/Logger.js";
 import { MCPServiceManager } from "@/lib/mcp";
 import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
@@ -51,37 +62,24 @@ import {
 } from "@/middlewares/index.js";
 import type { EventBus, EventBusEvents } from "@/services/index.js";
 import {
-  NotificationService,
-  StatusService,
   destroyEventBus,
   getEventBus,
+  NotificationService,
+  StatusService,
 } from "@/services/index.js";
 import type { AppContext } from "@/types/index.js";
 import { createApp } from "@/types/index.js";
-import type { ServerType } from "@hono/node-server";
-import { serve } from "@hono/node-server";
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { normalizeServiceConfig } from "@xiaozhi-client/config";
-import { configManager } from "@xiaozhi-client/config";
-import type { MCPServerConfig } from "@xiaozhi-client/config";
-import { EndpointManager } from "@xiaozhi-client/endpoint";
-import type { SimpleConnectionStatus } from "@xiaozhi-client/endpoint";
-import type { Hono } from "hono";
-import { WebSocketServer } from "ws";
-
-import { HTTP_SERVER_CONFIG } from "@/constants/index.js";
-import { MCPServiceManagerNotInitializedError } from "@/errors/mcp-errors.middleware.js";
 // 路由系统导入
 import {
-  type HandlerDependencies,
-  RouteManager,
   // 导入所有路由配置
   configRoutes,
   cozeRoutes,
   endpointRoutes,
+  type HandlerDependencies,
   mcpRoutes,
   mcpserverRoutes,
   miscRoutes,
+  RouteManager,
   servicesRoutes,
   staticRoutes,
   statusRoutes,
@@ -160,7 +158,7 @@ export class WebServer {
     try {
       this.port =
         port ?? configManager.getWebUIPort() ?? HTTP_SERVER_CONFIG.DEFAULT_PORT;
-    } catch (error) {
+    } catch (_error) {
       // 配置读取失败时使用默认端口
       this.port = port ?? HTTP_SERVER_CONFIG.DEFAULT_PORT;
     }
@@ -241,7 +239,7 @@ export class WebServer {
       this.logger.debug(`已加载 ${rawTools.length} 个工具`);
 
       // 5. 转换工具格式以符合 MCP SDK 要求
-      const tools: Tool[] = rawTools.map((tool) => ({
+      const _tools: Tool[] = rawTools.map((tool) => ({
         name: tool.name,
         description: tool.description || "",
         inputSchema: ensureToolJSONSchema(tool.inputSchema),
@@ -465,50 +463,6 @@ export class WebServer {
       type: "none",
       connected: false,
     };
-  }
-
-  /**
-   * 带重试的连接方法
-   */
-  private async connectWithRetry<T>(
-    connectionFn: () => Promise<T>,
-    context: string,
-    maxAttempts = 5,
-    initialDelay = 1000,
-    maxDelay = 30000,
-    backoffMultiplier = 2
-  ): Promise<T> {
-    let lastError: Error | null = null;
-
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      try {
-        this.logger.info(`${context} - 尝试连接 (${attempt}/${maxAttempts})`);
-        return await connectionFn();
-      } catch (error) {
-        lastError = error as Error;
-        this.logger.warn(`${context} - 连接失败:`, error);
-
-        if (attempt < maxAttempts) {
-          const delay = Math.min(
-            initialDelay * backoffMultiplier ** (attempt - 1),
-            maxDelay
-          );
-          this.logger.info(`${context} - ${delay}ms 后重试...`);
-          await this.sleep(delay);
-        }
-      }
-    }
-
-    throw new Error(
-      `${context} - 连接失败，已达到最大重试次数: ${lastError?.message}`
-    );
-  }
-
-  /**
-   * 延迟工具方法
-   */
-  private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private setupMiddleware() {

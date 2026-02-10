@@ -3,10 +3,10 @@
  * 测试核心业务逻辑和边界条件处理
  */
 
-import { ToolType } from "@/types/toolApi.js";
 import { configManager } from "@xiaozhi-client/config";
 import type { Context } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ToolType } from "@/types/toolApi.js";
 import { MCPToolHandler } from "../mcp-tool.handler.js";
 
 // Mock configManager

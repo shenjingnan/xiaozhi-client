@@ -4,6 +4,9 @@
  * 采用配置驱动的方式自动生成表单字段
  */
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { type UseFormReturn, useForm } from "react-hook-form";
+import type { z } from "zod";
 import {
   renderFormField,
   renderSelectFieldWithHandler,
@@ -12,9 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { mcpFormFields } from "@/config/mcp-form-fields";
 import { mcpFormSchema } from "@/schemas/mcp-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { type UseFormReturn, useForm } from "react-hook-form";
-import type { z } from "zod";
 
 interface McpServerFormProps {
   /** 表单实例（可选，如果不提供则内部创建） */

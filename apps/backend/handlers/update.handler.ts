@@ -1,8 +1,8 @@
+import type { Context } from "hono";
+import { z } from "zod";
 import { NPMManager } from "@/lib/npm";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { AppContext } from "@/types/hono.context.js";
-import type { Context } from "hono";
-import { z } from "zod";
 import { BaseHandler } from "./base.handler.js";
 
 // 版本号请求格式验证

@@ -1,7 +1,7 @@
-import type { AppContext } from "@/types/hono.context.js";
 import type { AppConfig } from "@xiaozhi-client/config";
 import { configManager } from "@xiaozhi-client/config";
 import type { Context } from "hono";
+import type { AppContext } from "@/types/hono.context.js";
 import { BaseHandler } from "./base.handler.js";
 
 /**

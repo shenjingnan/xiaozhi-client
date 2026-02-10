@@ -6,18 +6,18 @@
 
 // 导入所有可用的路由配置
 export { configRoutes } from "./config.route.js";
-export { statusRoutes } from "./status.route.js";
-export { toolsRoutes } from "./tools.route.js";
-export { mcpRoutes } from "./mcp.route.js";
-export { versionRoutes } from "./version.route.js";
-export { servicesRoutes } from "./services.route.js";
-export { updateRoutes } from "./update.route.js";
-export { staticRoutes } from "./static.route.js";
 export { cozeRoutes } from "./coze.route.js";
-export { toolLogsRoutes } from "./tool-logs.route.js";
-export { mcpserverRoutes } from "./mcpserver.route.js";
 export { endpointRoutes } from "./endpoint.route.js";
+export { mcpRoutes } from "./mcp.route.js";
+export { mcpserverRoutes } from "./mcpserver.route.js";
 export { miscRoutes } from "./misc.route.js";
+export { servicesRoutes } from "./services.route.js";
+export { staticRoutes } from "./static.route.js";
+export { statusRoutes } from "./status.route.js";
+export { toolLogsRoutes } from "./tool-logs.route.js";
+export { toolsRoutes } from "./tools.route.js";
+export { updateRoutes } from "./update.route.js";
+export { versionRoutes } from "./version.route.js";
 
 /**
  * 路由域名列表

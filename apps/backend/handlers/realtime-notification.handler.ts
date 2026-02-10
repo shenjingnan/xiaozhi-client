@@ -1,3 +1,5 @@
+import type { AppConfig } from "@xiaozhi-client/config";
+import { configManager } from "@xiaozhi-client/config";
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import type { EventBus } from "@/services/event-bus.service.js";
@@ -5,8 +7,6 @@ import { getEventBus } from "@/services/event-bus.service.js";
 import type { NotificationService } from "@/services/notification.service.js";
 import type { StatusService } from "@/services/status.service.js";
 import { sendWebSocketError } from "@/utils/websocket-helper.js";
-import type { AppConfig } from "@xiaozhi-client/config";
-import { configManager } from "@xiaozhi-client/config";
 
 /**
  * WebSocket 消息接口

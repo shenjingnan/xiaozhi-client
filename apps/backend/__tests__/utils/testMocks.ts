@@ -96,7 +96,7 @@ export const mockLogger = {
  * 为测试文件设置configManager mock
  * 注意：由于 Vitest 的限制，需要在测试文件中手动设置
  */
-export const setupConfigManagerMock = (overrides = {}) => {
+export const setupConfigManagerMock = (_overrides = {}) => {
   // 需要在测试文件中手动设置：
   // vi.mock("@xiaozhi-client/config", () => ({ configManager: createMockConfigManager(overrides) }));
 };
@@ -105,7 +105,7 @@ export const setupConfigManagerMock = (overrides = {}) => {
  * 为测试文件设置logger mock
  * 注意：由于 Vitest 的限制，需要在测试文件中手动设置
  */
-export const setupLoggerMock = (overrides = {}) => {
+export const setupLoggerMock = (_overrides = {}) => {
   // 需要在测试文件中手动设置：
   // vi.mock("../../Logger.js", () => ({ logger: createMockLogger(overrides) }));
 };
@@ -115,8 +115,8 @@ export const setupLoggerMock = (overrides = {}) => {
  * 注意：由于 Vitest 的限制，需要在测试文件顶部直接使用 vi.mock
  */
 export const setupCommonMocks = (
-  configOverrides = {},
-  loggerOverrides = {}
+  _configOverrides = {},
+  _loggerOverrides = {}
 ) => {
   // 这些 mock 需要在测试文件中手动设置，因为 Vitest 的限制
   // 使用示例：

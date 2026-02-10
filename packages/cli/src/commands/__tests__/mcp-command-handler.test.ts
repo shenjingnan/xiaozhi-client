@@ -1,9 +1,9 @@
-import { configManager } from "@xiaozhi-client/config";
 import type {
   MCPServerConfig,
   MCPServerToolsConfig,
   MCPToolConfig,
 } from "@xiaozhi-client/config";
+import { configManager } from "@xiaozhi-client/config";
 import ora from "ora";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IDIContainer } from "../../interfaces/Config.js";

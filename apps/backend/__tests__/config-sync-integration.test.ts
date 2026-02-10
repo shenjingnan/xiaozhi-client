@@ -62,7 +62,7 @@ describe("配置同步集成测试", () => {
     vi.clearAllMocks();
 
     // Reset singleton instance
-    // @ts-ignore - accessing private static property for testing
+    // @ts-expect-error - accessing private static property for testing
     ConfigManager.instance = undefined;
 
     configManager = ConfigManager.getInstance();

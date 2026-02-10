@@ -180,7 +180,7 @@ export class FormatUtils {
   static formatJson(obj: any, indent = 2): string {
     try {
       return JSON.stringify(obj, null, indent);
-    } catch (error) {
+    } catch (_error) {
       return String(obj);
     }
   }

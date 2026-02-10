@@ -1,10 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import type {
   ServerSortConfig,
   ServerSortField,
 } from "@/components/mcp-server/server-sort-selector";
-import { useEffect, useState } from "react";
 
 /** localStorage 存储键 */
 const STORAGE_KEY = "mcp-server-sort-config";

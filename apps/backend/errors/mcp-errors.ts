@@ -274,7 +274,7 @@ export class DefaultErrorHandler implements ErrorHandler {
     return !(error instanceof MCPError);
   }
 
-  handle(error: Error, context?: Record<string, unknown>): MCPError {
+  handle(error: Error, _context?: Record<string, unknown>): MCPError {
     return MCPError.fromError(
       error,
       MCPErrorCode.INTERNAL_ERROR,

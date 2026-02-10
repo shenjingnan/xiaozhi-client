@@ -4,6 +4,13 @@
  * 在对话框中展示和编辑系统配置，包括平台认证和连接参数。
  */
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import type { AppConfig } from "@xiaozhi-client/shared-types";
+import { SettingsIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import z from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -26,13 +33,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { useWebSocketActions } from "@/providers/WebSocketProvider";
 import { useConfig } from "@/stores/config";
-import { zodResolver } from "@hookform/resolvers/zod";
-import type { AppConfig } from "@xiaozhi-client/shared-types";
-import { SettingsIcon } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import z from "zod";
 
 const formSchema = z.object({
   modelscope: z.object({

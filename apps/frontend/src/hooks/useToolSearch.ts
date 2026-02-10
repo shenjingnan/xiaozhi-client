@@ -1,5 +1,5 @@
-import type { ToolRowData } from "@/components/mcp-tool/mcp-tool-table";
 import { useCallback, useMemo, useState } from "react";
+import type { ToolRowData } from "@/components/mcp-tool/mcp-tool-table";
 
 interface UseToolSearchResult {
   /** 搜索关键词 */
