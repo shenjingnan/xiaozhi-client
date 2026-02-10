@@ -13,13 +13,13 @@ import type {
   ToolCallResponse,
   ToolCallResult,
 } from "@/types/mcp.js";
+import { MCP_DEFAULT_CONFIG } from "@/constants/mcp.constants.js";
 import {
-  DEFAULT_CONFIG,
   generateCacheKey,
   isCacheExpired,
   shouldCleanupCache,
-} from "@/types/mcp.js";
-import { TimeoutError, createTimeoutResponse } from "@/types/timeout.js";
+} from "@/utils/mcp-helpers.js";
+import { TimeoutError, createTimeoutResponse } from "@/utils/timeout-helpers.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type {
   CustomMCPTool,
@@ -52,8 +52,10 @@ export class CustomMCPHandler {
   private tools: Map<string, CustomMCPTool> = new Map();
   private cacheManager: MCPCacheManager;
   private mcpServiceManager?: MCPServiceManager;
-  private readonly TIMEOUT = DEFAULT_CONFIG.TIMEOUT; // 统一8秒超时
-  private readonly CACHE_TTL = DEFAULT_CONFIG.CACHE_TTL; // 5分钟缓存过期
+  /** 统一8秒超时 */
+  private readonly TIMEOUT = MCP_DEFAULT_CONFIG.TIMEOUT;
+  /** 5分钟缓存过期 */
+  private readonly CACHE_TTL = MCP_DEFAULT_CONFIG.CACHE_TTL;
 
   constructor(
     cacheManager?: MCPCacheManager,

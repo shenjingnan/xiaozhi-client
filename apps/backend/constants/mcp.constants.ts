@@ -116,3 +116,19 @@ export const MCP_SERVICE_STATUS = {
   /** 错误 */
   ERROR: "error",
 } as const;
+
+/**
+ * MCP 默认配置常量
+ */
+export const MCP_DEFAULT_CONFIG = {
+  /** 超时时间（8秒） */
+  TIMEOUT: 8000,
+  /** 缓存 TTL（5分钟） */
+  CACHE_TTL: 300000,
+  /** 清理间隔（1分钟） */
+  CLEANUP_INTERVAL: 60000,
+  /** 最大缓存条目数 */
+  MAX_CACHE_SIZE: 1000,
+  /** 启用一次性缓存 */
+  ENABLE_ONE_TIME_CACHE: true,
+} as const;

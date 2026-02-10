@@ -29,7 +29,7 @@ import type {
   TaskStatus,
   ToolCallResult,
 } from "@/types/index.js";
-import { generateCacheKey, shouldCleanupCache } from "@/types/index.js";
+import { generateCacheKey, shouldCleanupCache } from "@/utils/mcp-helpers.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import dayjs from "dayjs";
 
