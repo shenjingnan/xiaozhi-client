@@ -23,7 +23,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { type EndpointStatusResponse, apiClient } from "@/services/api";
-import { webSocketManager } from "@/services/websocket";
+import {
+  type EndpointStatusChangedEvent,
+  webSocketManager,
+} from "@/services/websocket";
 import { useConfig, useConfigActions, useMcpEndpoint } from "@/stores/config";
 import {
   BadgeInfoIcon,
@@ -386,7 +389,7 @@ export function McpEndpointSettingButton() {
     const unsubscribers = mcpEndpoints.map((endpoint) => {
       const unsubscribe = webSocketManager.subscribe(
         "data:endpointStatusChanged",
-        (event: any) => {
+        (event: EndpointStatusChangedEvent) => {
           // 只处理当前端点的事件
           if (event.endpoint === endpoint) {
             console.log(
