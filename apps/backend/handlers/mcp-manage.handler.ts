@@ -364,6 +364,7 @@ export class MCPHandler {
       const toolNames = tools.map((tool) => tool.name);
 
       // 7. 发送事件通知
+      const toolNames = tools.map((tool) => tool.name);
       getEventBus().emitEvent("mcp:server:added", {
         serverName: name,
         config: normalizedConfig,
