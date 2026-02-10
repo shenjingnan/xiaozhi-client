@@ -82,11 +82,14 @@ vi.mock("../internal-mcp-manager.js", () => ({
 // 导入在 mock 之后
 import { Endpoint } from "../endpoint.js";
 import type { IMCPServiceManager } from "../types.js";
+import { ToolCallError as ToolCallErrorClass } from "../types.js";
 
 // 创建 mock IMCPServiceManager
-const createMockMCPManager = (): IMCPServiceManager => ({
+const createMockMCPManager = (
+  callToolFn?: (name: string, args: Record<string, unknown>) => Promise<any>
+): IMCPServiceManager => ({
   getAllTools: vi.fn(() => []),
-  callTool: vi.fn(async () => ({
+  callTool: callToolFn || vi.fn(async () => ({
     content: [{ type: "text", text: "调用成功" }],
   })),
   initialize: vi.fn(async () => {}),
@@ -424,6 +427,204 @@ describe("Endpoint", () => {
       await ep.reconnect();
 
       expect(ep.isConnected()).toBe(true);
+    });
+  });
+
+  describe("sendErrorResponse", () => {
+    it("应该成功发送错误响应", async () => {
+      const consoleErrorSpy = vi.spyOn(console, "error");
+      const consoleDebugSpy = vi.spyOn(console, "debug");
+
+      // 创建一个会抛出错误的 MCP 管理器
+      const errorMCPManager = createMockMCPManager(
+        async () => {
+          throw new ToolCallErrorClass(
+            -32601,
+            "工具不存在",
+            { toolName: "test-tool" }
+          );
+        }
+      );
+
+      const errorEndpoint = new Endpoint(testUrl, errorMCPManager, 1000);
+      await errorEndpoint.connect();
+
+      // 模拟接收到工具调用请求
+      const toolCallMessage = {
+        jsonrpc: "2.0",
+        id: "test-1",
+        method: "tools/call",
+        params: {
+          name: "test-tool",
+          arguments: {},
+        },
+      };
+
+      // 触发消息处理
+      (errorEndpoint as any).handleMessage(toolCallMessage);
+
+      // 等待异步处理
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // 验证有错误日志输出
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "工具调用失败",
+        expect.any(Object)
+      );
+
+      consoleErrorSpy.mockRestore();
+      consoleDebugSpy.mockRestore();
+    });
+
+    it("应该在 ws.send 抛出异常时记录错误", async () => {
+      const consoleErrorSpy = vi.spyOn(console, "error");
+
+      // 创建一个会抛出错误的 MCP 管理器
+      const errorMCPManager = createMockMCPManager(
+        async () => {
+          throw new ToolCallErrorClass(-32603, "工具执行失败");
+        }
+      );
+
+      const errorEndpoint = new Endpoint(testUrl, errorMCPManager, 1000);
+      await errorEndpoint.connect();
+
+      // 获取内部的 WebSocket 实例
+      const ws = (errorEndpoint as any).ws;
+      if (ws) {
+        // 模拟 ws.send 抛出异常
+        const originalSend = ws.send.bind(ws);
+        ws.send = vi.fn(() => {
+          throw new Error("WebSocket send failed");
+        });
+
+        // 触发工具调用错误
+        const toolCallMessage = {
+          jsonrpc: "2.0",
+          id: "test-2",
+          method: "tools/call",
+          params: {
+            name: "error-tool",
+            arguments: {},
+          },
+        };
+
+        (errorEndpoint as any).handleMessage(toolCallMessage);
+
+        // 等待异步处理
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // 验证错误被记录
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          "发送错误响应失败:",
+          expect.objectContaining({
+            id: "test-2",
+            errorResponse: expect.any(Object),
+            sendError: expect.objectContaining({
+              message: "WebSocket send failed",
+            }),
+          })
+        );
+
+        // 恢复原始 send 方法
+        ws.send = originalSend;
+      }
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    it("应该在连接未建立时记录错误", async () => {
+      const consoleErrorSpy = vi.spyOn(console, "error");
+
+      // 创建一个会抛出错误的 MCP 管理器
+      const errorMCPManager = createMockMCPManager(
+        async () => {
+          throw new ToolCallErrorClass(-32601, "工具不存在");
+        }
+      );
+
+      const errorEndpoint = new Endpoint(testUrl, errorMCPManager, 1000);
+      // 不连接，直接触发错误
+
+      // 触发工具调用错误
+      const toolCallMessage = {
+        jsonrpc: "2.0",
+        id: "test-3",
+        method: "tools/call",
+        params: {
+          name: "test-tool",
+          arguments: {},
+        },
+      };
+
+      // 在未连接状态下处理消息
+      (errorEndpoint as any).handleMessage(toolCallMessage);
+
+      // 等待异步处理
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // 验证无法发送错误响应的日志
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "无法发送错误响应",
+        expect.objectContaining({
+          id: "test-3",
+          isConnected: false,
+        })
+      );
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    it("应该在 WebSocket 非 OPEN 状态时记录错误", async () => {
+      const consoleErrorSpy = vi.spyOn(console, "error");
+
+      // 创建一个会抛出错误的 MCP 管理器
+      const errorMCPManager = createMockMCPManager(
+        async () => {
+          throw new ToolCallErrorClass(-32601, "工具不存在");
+        }
+      );
+
+      const errorEndpoint = new Endpoint(testUrl, errorMCPManager, 1000);
+      await errorEndpoint.connect();
+
+      // 获取内部的 WebSocket 实例并设置为非 OPEN 状态
+      const ws = (errorEndpoint as any).ws;
+      if (ws) {
+        const originalReadyState = ws.readyState;
+        ws.readyState = 2; // CLOSING
+
+        // 触发工具调用错误
+        const toolCallMessage = {
+          jsonrpc: "2.0",
+          id: "test-4",
+          method: "tools/call",
+          params: {
+            name: "test-tool",
+            arguments: {},
+          },
+        };
+
+        (errorEndpoint as any).handleMessage(toolCallMessage);
+
+        // 等待异步处理
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // 验证无法发送错误响应的日志
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          "无法发送错误响应",
+          expect.objectContaining({
+            id: "test-4",
+            isConnected: true,
+            wsReadyState: 2,
+          })
+        );
+
+        // 恢复原始状态
+        ws.readyState = originalReadyState;
+      }
+
+      consoleErrorSpy.mockRestore();
     });
   });
 });
