@@ -81,6 +81,8 @@ export interface ToolCallLogConfig {
 }
 
 // CustomMCP 相关接口定义
+// 注意：以下类型定义与 @xiaozhi-client/shared-types 包中的类型保持一致
+// 当修改这些类型时，请同步更新 shared-types/src/mcp/tool-definition.ts 中的对应类型
 
 // 代理处理器配置
 export interface ProxyHandlerConfig {
@@ -170,8 +172,8 @@ export type HandlerConfig =
   | MCPHandlerConfig;
 
 // CustomMCP 工具接口
-// TODO: 注意：此定义应与 @xiaozhi-client/shared-types 中的 CustomMCPToolConfig 保持一致
-// 未来将迁移到从 shared-types 导入
+// 注意：此定义与 @xiaozhi-client/shared-types 中的 CustomMCPToolConfig 保持一致
+// 当修改此接口时，请同步更新 shared-types/src/mcp/tool-definition.ts 中的 CustomMCPToolConfig
 export interface CustomMCPTool {
   // 确保必填字段
   name: string;
