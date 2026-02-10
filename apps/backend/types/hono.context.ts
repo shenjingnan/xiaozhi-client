@@ -8,7 +8,7 @@ import type { MCPServiceManager } from "@/lib/mcp";
 import type { EndpointManager } from "@xiaozhi-client/endpoint";
 import type { Context } from "hono";
 import { Hono } from "hono";
-import type { EndpointHandler, HandlerDependencies } from "../routes/index.js";
+import type { EndpointHandler, HandlerDependencies } from "./handlers.types.js";
 
 // 导出 API 响应类型供其他模块使用
 export type {
