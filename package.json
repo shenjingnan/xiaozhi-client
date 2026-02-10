@@ -103,7 +103,7 @@
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",
     "vite": "^7.1.11",
-    "vite-tsconfig-paths": "^5.1.4",
+    "vite-tsconfig-paths": "^6.1.0",
     "vitest": "^3.2.4"
   },
   "pnpm": {
