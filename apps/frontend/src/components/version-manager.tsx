@@ -75,7 +75,7 @@ export function VersionManager() {
   }, []);
 
   // 检查更新
-  const checkForUpdates = async () => {
+  const checkForUpdates = useCallback(async () => {
     if (!currentVersion) return;
 
     try {
@@ -108,17 +108,17 @@ export function VersionManager() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentVersion]);
 
   // 开始更新
-  const startUpdate = (version: string) => {
+  const startUpdate = useCallback((version: string) => {
     console.log("[VersionManager] 开始更新到版本:", version);
     setTargetVersion(version);
     setShowInstallDialog(true);
-  };
+  }, []);
 
   // 处理安装对话框关闭
-  const handleInstallDialogClose = () => {
+  const handleInstallDialogClose = useCallback(() => {
     setShowInstallDialog(false);
     setTargetVersion("");
     // 清理之前的定时器
@@ -130,7 +130,7 @@ export function VersionManager() {
       loadCurrentVersion();
       reloadTimerRef.current = null;
     }, 1000);
-  };
+  }, [loadCurrentVersion]);
 
   // 组件初始化时加载版本信息
   useEffect(() => {
