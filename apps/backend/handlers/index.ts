@@ -40,7 +40,7 @@ export * from "./realtime-notification.handler.js";
 export * from "./service.handler.js";
 export { StaticFileHandler } from "./static-file.handler.js";
 export * from "./status.handler.js";
-export * from "./mcp-tool.handler.js";
+export * from "./tools/index.js";
 export * from "./mcp-tool-log.handler.js";
 export * from "./update.handler.js";
 export * from "./version.handler.js";

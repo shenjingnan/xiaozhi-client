@@ -358,7 +358,7 @@ vi.mock("../../handlers/version.handler", () => {
   };
 });
 
-vi.mock("../../handlers/mcp-tool.handler", () => {
+vi.mock("../../handlers/tools/index", () => {
   const mockMCPToolHandler = {
     callTool: vi.fn((c) =>
       c.json({
