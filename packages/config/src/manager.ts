@@ -1,3 +1,29 @@
+/**
+ * 配置管理器
+ *
+ * 核心配置管理模块，负责：
+ * - 配置文件的读取和解析（支持 JSON、JSON5、JSONC 格式）
+ * - 配置验证和类型检查
+ * - 配置更新和持久化
+ * - 配置变更事件通知
+ * - 配置文件路径解析
+ *
+ * @example
+ * ```typescript
+ * import { configManager } from '@xiaozhi-client/config';
+ *
+ * // 获取配置
+ * const config = configManager.getConfig();
+ *
+ * // 更新配置
+ * configManager.updateConfig({ mcpEndpoint: 'wss://...' });
+ *
+ * // 监听配置变更
+ * configManager.on('change', (newConfig) => {
+ *   console.log('配置已更新:', newConfig);
+ * });
+ * ```
+ */
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
