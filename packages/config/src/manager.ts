@@ -238,8 +238,8 @@ export class ConfigManager {
     toSource(): string;
   } | null = null; // json5-writer 实例，用于保留 JSON5 注释
 
-  // 统计更新并发控制
-  private statsUpdateLocks: Map<string, Promise<void>> = new Map();
+  // 统计更新并发控制（使用简单标记而非 Promise，实际并发控制由调用者的 try-finally 块实现）
+  private statsUpdateLocks: Map<string, string> = new Map();
   private statsUpdateLockTimeouts: Map<string, NodeJS.Timeout> = new Map();
   private readonly STATS_UPDATE_TIMEOUT = 5000; // 5秒超时
 
@@ -2086,20 +2086,18 @@ export class ConfigManager {
 
   /**
    * 获取统计更新锁（确保同一工具的统计更新串行执行）
+   * 使用简单标记机制，实际的并发控制由调用者的 try-finally 块实现
    * @param toolKey 工具键
    * @private
    */
-  private async acquireStatsUpdateLock(toolKey: string): Promise<boolean> {
+  private acquireStatsUpdateLock(toolKey: string): boolean {
     if (this.statsUpdateLocks.has(toolKey)) {
       console.log("工具统计更新正在进行中，跳过本次更新", { toolKey });
       return false;
     }
 
-    const updatePromise = new Promise<void>((resolve) => {
-      // 锁定逻辑在调用者中实现
-    });
-
-    this.statsUpdateLocks.set(toolKey, updatePromise);
+    // 使用工具键作为标记，实际锁机制由调用者的 try-finally 块实现
+    this.statsUpdateLocks.set(toolKey, toolKey);
 
     // 设置超时自动释放锁
     const timeout = setTimeout(() => {
@@ -2139,7 +2137,7 @@ export class ConfigManager {
   ): Promise<void> {
     const toolKey = `custommcp_${toolName}`;
 
-    if (!(await this.acquireStatsUpdateLock(toolKey))) {
+    if (!this.acquireStatsUpdateLock(toolKey)) {
       return; // 已有其他更新在进行
     }
 
@@ -2169,7 +2167,7 @@ export class ConfigManager {
   ): Promise<void> {
     const toolKey = `mcpserver_${serviceName}_${toolName}`;
 
-    if (!(await this.acquireStatsUpdateLock(toolKey))) {
+    if (!this.acquireStatsUpdateLock(toolKey)) {
       return; // 已有其他更新在进行
     }
 
