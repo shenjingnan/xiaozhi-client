@@ -645,14 +645,25 @@ export class MCPCacheManager {
         };
       }
 
-      const entries = Object.values(cache.customMCPResults);
+      const entries: EnhancedToolResultCache[] = Object.values(
+        cache.customMCPResults
+      );
       const totalEntries = entries.length;
-      const pendingTasks = entries.filter((e) => e.status === "pending").length;
-      const completedTasks = entries.filter(
-        (e) => e.status === "completed"
-      ).length;
-      const failedTasks = entries.filter((e) => e.status === "failed").length;
-      const consumedEntries = entries.filter((e) => e.consumed).length;
+
+      // 单次遍历统计所有状态，避免多次遍历的性能开销
+      let pendingTasks = 0;
+      let completedTasks = 0;
+      let failedTasks = 0;
+      let consumedEntries = 0;
+
+      for (const entry of entries) {
+        if (entry.status === "pending") pendingTasks++;
+        if (entry.status === "completed") {
+          completedTasks++;
+        }
+        if (entry.status === "failed") failedTasks++;
+        if (entry.consumed) consumedEntries++;
+      }
 
       // 计算缓存命中率
       const cacheHitRate =
