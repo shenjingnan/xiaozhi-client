@@ -11,6 +11,13 @@ export type {
   PaginatedResponse,
 } from "./common";
 
+// 前端 API 特定响应类型
+export type {
+  ConnectionConfigResponse,
+  UpdateVersionResponse,
+  CallToolResponse,
+} from "./frontend-responses";
+
 // 工具 API 相关类型
 export type {
   MCPToolData,

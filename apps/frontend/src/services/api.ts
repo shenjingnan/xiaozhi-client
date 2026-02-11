@@ -7,13 +7,16 @@ import type {
   ApiErrorResponse,
   ApiSuccessResponse,
   AppConfig,
+  CallToolResponse,
   ClientStatus,
+  ConnectionConfig,
   CustomMCPToolWithStats,
   MCPErrorCode,
   MCPServerAddRequest,
   MCPServerConfig,
   MCPServerListResponse,
   MCPServerStatus,
+  UpdateVersionResponse,
 } from "@xiaozhi-client/shared-types";
 
 /**
@@ -263,8 +266,8 @@ export class ApiClient {
   /**
    * 获取 MCP 服务配置
    */
-  async getMcpServers(): Promise<Record<string, any>> {
-    const response: ApiResponse<{ servers: Record<string, any> }> =
+  async getMcpServers(): Promise<Record<string, MCPServerConfig>> {
+    const response: ApiResponse<{ servers: Record<string, MCPServerConfig> }> =
       await this.request("/api/config/mcp-servers");
     if (!response.success || !response.data) {
       throw new Error("获取 MCP 服务配置失败");
@@ -275,10 +278,9 @@ export class ApiClient {
   /**
    * 获取连接配置
    */
-  async getConnectionConfig(): Promise<any> {
-    const response: ApiResponse<{ connection: any }> = await this.request(
-      "/api/config/connection"
-    );
+  async getConnectionConfig(): Promise<ConnectionConfig> {
+    const response: ApiResponse<{ connection: ConnectionConfig }> =
+      await this.request("/api/config/connection");
     if (!response.success || !response.data) {
       throw new Error("获取连接配置失败");
     }
@@ -450,11 +452,11 @@ export class ApiClient {
    * 支持新的类型化格式和向后兼容的旧格式
    */
   async addCustomTool(
-    workflow: any,
+    workflow: unknown,
     customName?: string,
     customDescription?: string,
-    parameterConfig?: any
-  ): Promise<any>;
+    parameterConfig?: unknown
+  ): Promise<CustomMCPTool>;
 
   /**
    * 添加自定义工具（新格式）
@@ -462,19 +464,19 @@ export class ApiClient {
    */
   async addCustomTool(request: {
     type: "mcp" | "coze" | "http" | "function";
-    data: any;
-  }): Promise<any>;
+    data: unknown;
+  }): Promise<CustomMCPTool>;
 
   async addCustomTool(
-    param1: any,
+    param1: unknown,
     customName?: string,
     customDescription?: string,
-    parameterConfig?: any
-  ): Promise<any> {
+    parameterConfig?: unknown
+  ): Promise<CustomMCPTool> {
     // 判断是否为新格式调用
-    if (typeof param1 === "object" && "type" in param1 && "data" in param1) {
+    if (typeof param1 === "object" && param1 !== null && "type" in param1 && "data" in param1) {
       // 新格式：类型化请求
-      const response: ApiResponse<{ tool: any }> = await this.request(
+      const response: ApiResponse<{ tool: CustomMCPTool }> = await this.request(
         "/api/tools/custom",
         {
           method: "POST",
@@ -489,7 +491,7 @@ export class ApiClient {
     }
     // 旧格式：向后兼容
     const workflow = param1;
-    const response: ApiResponse<{ tool: any }> = await this.request(
+    const response: ApiResponse<{ tool: CustomMCPTool }> = await this.request(
       "/api/tools/custom",
       {
         method: "POST",
@@ -517,10 +519,10 @@ export class ApiClient {
     toolName: string,
     updateRequest: {
       type: "mcp" | "coze" | "http" | "function";
-      data: any;
+      data: unknown;
     }
-  ): Promise<any> {
-    const response: ApiResponse<{ tool: any }> = await this.request(
+  ): Promise<CustomMCPTool> {
+    const response: ApiResponse<{ tool: CustomMCPTool }> = await this.request(
       `/api/tools/custom/${encodeURIComponent(toolName)}`,
       {
         method: "PUT",
@@ -553,8 +555,8 @@ export class ApiClient {
   /**
    * 获取自定义工具列表
    */
-  async getCustomTools(): Promise<any[]> {
-    const response: ApiResponse<{ tools: any[] }> =
+  async getCustomTools(): Promise<CustomMCPTool[]> {
+    const response: ApiResponse<{ tools: CustomMCPTool[] }> =
       await this.request("/api/tools/custom");
     if (!response.success || !response.data) {
       throw new Error("获取自定义工具列表失败");
@@ -763,13 +765,14 @@ export class ApiClient {
   /**
    * 更新版本
    */
-  async updateVersion(version: string): Promise<any> {
-    const response: ApiResponse = await this.request("/api/update", {
-      method: "POST",
-      body: JSON.stringify({ version }),
-    });
+  async updateVersion(version: string): Promise<UpdateVersionResponse> {
+    const response: ApiResponse<UpdateVersionResponse> =
+      await this.request("/api/update", {
+        method: "POST",
+        body: JSON.stringify({ version }),
+      });
 
-    if (!response.success) {
+    if (!response.success || !response.data) {
       throw new Error(response.error?.message || "版本更新失败");
     }
 
@@ -997,22 +1000,25 @@ export class ApiClient {
   async callTool(
     serviceName: string,
     toolName: string,
-    args: any = {}
-  ): Promise<any> {
-    const response: ApiResponse = await this.request("/api/tools/call", {
-      method: "POST",
-      body: JSON.stringify({
-        serviceName,
-        toolName,
-        args,
-      }),
-    });
+    args: Record<string, unknown> = {}
+  ): Promise<CallToolResponse["result"]> {
+    const response: ApiResponse<CallToolResponse> = await this.request(
+      "/api/tools/call",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          serviceName,
+          toolName,
+          args,
+        }),
+      }
+    );
 
-    if (!response.success) {
+    if (!response.success || !response.data) {
       throw new Error(response.error?.message || "调用工具失败");
     }
 
-    return response.data;
+    return response.data.result;
   }
 
   /**
