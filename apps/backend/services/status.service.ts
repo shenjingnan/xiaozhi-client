@@ -63,7 +63,7 @@ export class StatusService {
         this.clientInfo.lastHeartbeat = Date.now();
       }
 
-      // Reset heartbeat timeout when receiving client status
+      // 接收到客户端状态时重置心跳超时
       if (info.status === "connected") {
         this.resetHeartbeatTimeout();
       }
@@ -163,12 +163,12 @@ export class StatusService {
    * 重置心跳超时
    */
   private resetHeartbeatTimeout(): void {
-    // Clear existing timeout
+    // 清除现有的超时定时器
     if (this.heartbeatTimeout) {
       clearTimeout(this.heartbeatTimeout);
     }
 
-    // Set new timeout
+    // 设置新的超时定时器
     this.heartbeatTimeout = setTimeout(() => {
       this.logger.debug("客户端心跳超时，标记为断开连接");
       this.updateClientInfo({ status: "disconnected" }, "heartbeat-timeout");
