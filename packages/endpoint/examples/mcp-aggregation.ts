@@ -50,35 +50,36 @@ async function main(): Promise<void> {
   console.log(`  URL: ${endpointUrl.slice(0, 50)}...`);
   console.log();
 
-  // 2. 创建 Endpoint 实例（使用工厂方法）
-  // 配置要聚合的 MCP 服务器
-  const endpoint = await Endpoint.create({
-    endpointUrl,
-    // MCP 服务器配置
-    mcpServers: {
-      // 计算器 MCP 服务（stdio 类型）
-      calculator: {
-        command: "npx",
-        args: ["-y", "@xiaozhi-client/calculator-mcp"],
-      },
-      // 日期时间 MCP 服务（stdio 类型）
-      datetime: {
-        command: "npx",
-        args: ["-y", "@xiaozhi-client/datetime-mcp"],
-      },
-    },
-    // 可选：重连延迟（毫秒），默认 2000
-    reconnectDelay: 2000,
-  });
-
-  console.log("MCP 服务配置:");
-  console.log("  - calculator: 计算器服务");
-  console.log("    提供数学表达式计算功能");
-  console.log("  - datetime: 日期时间服务");
-  console.log("    提供当前日期时间查询功能");
-  console.log();
+  let endpoint: Endpoint | undefined;
 
   try {
+    // 2. 创建 Endpoint 实例（使用工厂方法）
+    // 配置要聚合的 MCP 服务器
+    endpoint = await Endpoint.create({
+      endpointUrl,
+      // MCP 服务器配置
+      mcpServers: {
+        // 计算器 MCP 服务（stdio 类型）
+        calculator: {
+          command: "npx",
+          args: ["-y", "@xiaozhi-client/calculator-mcp"],
+        },
+        // 日期时间 MCP 服务（stdio 类型）
+        datetime: {
+          command: "npx",
+          args: ["-y", "@xiaozhi-client/datetime-mcp"],
+        },
+      },
+      // 可选：重连延迟（毫秒），默认 2000
+      reconnectDelay: 2000,
+    });
+
+    console.log("MCP 服务配置:");
+    console.log("  - calculator: 计算器服务");
+    console.log("    提供数学表达式计算功能");
+    console.log("  - datetime: 日期时间服务");
+    console.log("    提供当前日期时间查询功能");
+    console.log();
     // 3. 连接到小智接入点
     console.log("正在连接到小智接入点...");
     console.log("(首次运行可能需要下载 MCP 服务包，请耐心等待...)");
@@ -177,23 +178,27 @@ async function main(): Promise<void> {
     console.error();
 
     // 显示连接状态（如果可能）
-    try {
-      const status = endpoint.getStatus();
-      console.error("当前连接状态:");
-      console.error(`  已连接: ${status.connected ? "是" : "否"}`);
-      console.error(`  连接状态: ${status.connectionState}`);
-      if (status.lastError) {
-        console.error(`  最后错误: ${status.lastError}`);
+    if (endpoint) {
+      try {
+        const status = endpoint.getStatus();
+        console.error("当前连接状态:");
+        console.error(`  已连接: ${status.connected ? "是" : "否"}`);
+        console.error(`  连接状态: ${status.connectionState}`);
+        if (status.lastError) {
+          console.error(`  最后错误: ${status.lastError}`);
+        }
+      } catch {
+        // 忽略获取状态的错误
       }
-    } catch {
-      // 忽略获取状态的错误
     }
   } finally {
     // 7. 断开连接
     console.log();
     console.log("正在断开连接...");
-    await endpoint.disconnect();
-    console.log("✅ 连接已断开");
+    if (endpoint) {
+      await endpoint.disconnect();
+      console.log("✅ 连接已断开");
+    }
     console.log();
     console.log("=== 示例结束 ===");
   }

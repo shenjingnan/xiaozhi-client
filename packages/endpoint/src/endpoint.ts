@@ -35,6 +35,18 @@ export {
 };
 
 /**
+ * Endpoint.create() 工厂方法配置接口
+ */
+export interface EndpointCreateConfig {
+  /** 小智接入点 URL */
+  endpointUrl: string;
+  /** MCP 服务器配置（声明式） */
+  mcpServers: Record<string, import("./types.js").MCPServerConfig>;
+  /** 可选：重连延迟（毫秒），默认 2000 */
+  reconnectDelay?: number;
+}
+
+/**
  * Endpoint 类
  * 负责管理单个小智接入点的 WebSocket 连接
  *
@@ -120,14 +132,7 @@ export class Endpoint {
    * });
    * ```
    */
-  static async create(config: {
-    /** 小智接入点 URL */
-    endpointUrl: string;
-    /** MCP 服务器配置（声明式） */
-    mcpServers: Record<string, import("./types.js").MCPServerConfig>;
-    /** 可选：重连延迟（毫秒），默认 2000 */
-    reconnectDelay?: number;
-  }): Promise<Endpoint> {
+  static async create(config: EndpointCreateConfig): Promise<Endpoint> {
     // 动态导入相关模块
     const { InternalMCPManagerAdapter } = await import("./internal-mcp-manager.js");
 
@@ -140,8 +145,14 @@ export class Endpoint {
     // 使用 InternalMCPManagerAdapter 创建 MCP 管理器
     const internalMCPManager = new InternalMCPManagerAdapter(endpointConfig);
 
-    // 初始化 MCP 管理器（这会连接所有 MCP 服务）
-    await internalMCPManager.initialize();
+    try {
+      // 初始化 MCP 管理器（这会连接所有 MCP 服务）
+      await internalMCPManager.initialize();
+    } catch (error) {
+      // 清理已启动的资源
+      await internalMCPManager.cleanup();
+      throw error;
+    }
 
     // 创建并返回 Endpoint 实例
     return new Endpoint(

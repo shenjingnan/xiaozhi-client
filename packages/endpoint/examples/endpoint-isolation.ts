@@ -62,41 +62,43 @@ async function main(): Promise<void> {
   console.log(`    URL: ${endpointUrl2.slice(0, 60)}...`);
   console.log();
 
-  // 2. 创建两个独立的 Endpoint 实例（使用工厂方法）
-  // 接入点 1：配置 calculator 服务
-  const endpoint1 = await Endpoint.create({
-    endpointUrl: endpointUrl1,
-    mcpServers: {
-      calculator: {
-        command: "npx",
-        args: ["-y", "@xiaozhi-client/calculator-mcp"],
-      },
-    },
-    reconnectDelay: 2000,
-  });
-
-  // 接入点 2：配置 datetime 服务
-  const endpoint2 = await Endpoint.create({
-    endpointUrl: endpointUrl2,
-    mcpServers: {
-      datetime: {
-        command: "npx",
-        args: ["-y", "@xiaozhi-client/datetime-mcp"],
-      },
-    },
-    reconnectDelay: 2000,
-  });
-
-  console.log("MCP 服务配置:");
-  console.log("  接入点 1:");
-  console.log("    - calculator: 计算器服务");
-  console.log("      提供数学表达式计算功能");
-  console.log("  接入点 2:");
-  console.log("    - datetime: 日期时间服务");
-  console.log("      提供当前日期时间查询功能");
-  console.log();
+  let endpoint1: Endpoint | undefined;
+  let endpoint2: Endpoint | undefined;
 
   try {
+    // 2. 创建两个独立的 Endpoint 实例（使用工厂方法）
+    // 接入点 1：配置 calculator 服务
+    endpoint1 = await Endpoint.create({
+      endpointUrl: endpointUrl1,
+      mcpServers: {
+        calculator: {
+          command: "npx",
+          args: ["-y", "@xiaozhi-client/calculator-mcp"],
+        },
+      },
+      reconnectDelay: 2000,
+    });
+
+    // 接入点 2：配置 datetime 服务
+    endpoint2 = await Endpoint.create({
+      endpointUrl: endpointUrl2,
+      mcpServers: {
+        datetime: {
+          command: "npx",
+          args: ["-y", "@xiaozhi-client/datetime-mcp"],
+        },
+      },
+      reconnectDelay: 2000,
+    });
+
+    console.log("MCP 服务配置:");
+    console.log("  接入点 1:");
+    console.log("    - calculator: 计算器服务");
+    console.log("      提供数学表达式计算功能");
+    console.log("  接入点 2:");
+    console.log("    - datetime: 日期时间服务");
+    console.log("      提供当前日期时间查询功能");
+    console.log();
     // 3. 创建 EndpointManager 并添加端点
     const manager = new EndpointManager({
       defaultReconnectDelay: 2000,
@@ -271,14 +273,22 @@ async function main(): Promise<void> {
     console.error();
 
     // 显示连接状态（如果可能）
-    try {
-      const status1 = endpoint1.getStatus();
-      const status2 = endpoint2.getStatus();
-      console.error("当前连接状态:");
-      console.error(`  接入点 1 - 已连接: ${status1.connected ? "是" : "否"}`);
-      console.error(`  接入点 2 - 已连接: ${status2.connected ? "是" : "否"}`);
-    } catch {
-      // 忽略获取状态的错误
+    if (endpoint1) {
+      try {
+        const status1 = endpoint1.getStatus();
+        console.error("当前连接状态:");
+        console.error(`  接入点 1 - 已连接: ${status1.connected ? "是" : "否"}`);
+      } catch {
+        // 忽略获取状态的错误
+      }
+    }
+    if (endpoint2) {
+      try {
+        const status2 = endpoint2.getStatus();
+        console.error(`  接入点 2 - 已连接: ${status2.connected ? "是" : "否"}`);
+      } catch {
+        // 忽略获取状态的错误
+      }
     }
   } finally {
     // 11. 断开连接
@@ -286,8 +296,12 @@ async function main(): Promise<void> {
     console.log("正在断开连接...");
 
     try {
-      await endpoint1.disconnect();
-      await endpoint2.disconnect();
+      if (endpoint1) {
+        await endpoint1.disconnect();
+      }
+      if (endpoint2) {
+        await endpoint2.disconnect();
+      }
       console.log("✅ 连接已断开");
     } catch {
       console.log("⚠️  断开连接时出现错误（可能已断开）");

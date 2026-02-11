@@ -73,16 +73,19 @@ async function main(): Promise<void> {
   console.log("    提供当前日期时间查询功能");
   console.log();
 
+  let endpoint1: Endpoint | undefined;
+  let endpoint2: Endpoint | undefined;
+
   try {
     // 3. 创建两个独立的 Endpoint 实例（使用工厂方法）
     // 关键点：两个接入点使用相同的 mcpServers 配置
-    const endpoint1 = await Endpoint.create({
+    endpoint1 = await Endpoint.create({
       endpointUrl: endpointUrl1,
       mcpServers: sharedMcpServers,
       reconnectDelay: 2000,
     });
 
-    const endpoint2 = await Endpoint.create({
+    endpoint2 = await Endpoint.create({
       endpointUrl: endpointUrl2,
       mcpServers: sharedMcpServers,
       reconnectDelay: 2000,
@@ -221,6 +224,19 @@ async function main(): Promise<void> {
     // 13. 断开连接
     console.log();
     console.log("正在断开连接...");
+
+    try {
+      if (endpoint1) {
+        await endpoint1.disconnect();
+      }
+      if (endpoint2) {
+        await endpoint2.disconnect();
+      }
+      console.log("✅ 连接已断开");
+    } catch {
+      console.log("⚠️  断开连接时出现错误（可能已断开）");
+    }
+
     console.log();
     console.log("=== 示例结束 ===");
   }
