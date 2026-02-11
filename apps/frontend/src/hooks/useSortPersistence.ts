@@ -62,6 +62,7 @@ export function useSortPersistence<T extends { field: string }>(
   });
 
   // 当配置变化时，保存到 localStorage
+  // biome-ignore lint/correctness/useExhaustiveDependencies: loggerName 是从 options 解构的常量，不会在组件生命周期中改变
   useEffect(() => {
     if (typeof window !== "undefined") {
       try {
@@ -70,7 +71,7 @@ export function useSortPersistence<T extends { field: string }>(
         console.warn(`[${loggerName}] 保存排序配置失败:`, error);
       }
     }
-  }, [sortConfig, storageKey, loggerName]);
+  }, [sortConfig, storageKey]);
 
   return { sortConfig, setSortConfig };
 }

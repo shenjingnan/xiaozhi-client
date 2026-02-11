@@ -20,7 +20,7 @@ const VALID_SORT_FIELDS: ServerSortField[] = [
 export function useServerSortPersistence() {
   return useSortPersistence<ServerSortConfig>({
     storageKey: "mcp-server-sort-config",
-    defaultConfig: { field: "name" } as ServerSortConfig,
+    defaultConfig: { field: "name" },
     validFields: VALID_SORT_FIELDS,
     loggerName: "useServerSortPersistence",
   });

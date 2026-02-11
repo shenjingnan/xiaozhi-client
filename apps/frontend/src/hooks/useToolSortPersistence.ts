@@ -19,7 +19,7 @@ const VALID_SORT_FIELDS: ToolSortField[] = [
 export function useToolSortPersistence() {
   return useSortPersistence<ToolSortConfig>({
     storageKey: "mcp-tool-sort-config",
-    defaultConfig: { field: "name" } as ToolSortConfig,
+    defaultConfig: { field: "name" },
     validFields: VALID_SORT_FIELDS,
     loggerName: "useToolSortPersistence",
   });
