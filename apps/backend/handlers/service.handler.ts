@@ -47,21 +47,9 @@ export class ServiceApiHandler {
       const mcpServiceManager = requireMCPServiceManager(c);
 
       // 异步执行重启，不阻塞响应
-      setTimeout(async () => {
-        try {
-          await this.executeRestart(mcpServiceManager);
-          // 服务重启需要一些时间，延迟发送成功状态
-          setTimeout(() => {
-            this.statusService.updateRestartStatus("completed");
-          }, 5000);
-        } catch (error) {
-          c.get("logger").error("服务重启失败:", error);
-          this.statusService.updateRestartStatus(
-            "failed",
-            error instanceof Error ? error.message : "未知错误"
-          );
-        }
-      }, 500);
+      this.executeRestartWithDelay(mcpServiceManager, c).catch((error) => {
+        c.get("logger").error("服务重启失败:", error);
+      });
 
       return c.success(null, "重启请求已接收");
     } catch (error) {
@@ -72,6 +60,32 @@ export class ServiceApiHandler {
         undefined,
         500
       );
+    }
+  }
+
+  /**
+   * 执行带延迟的服务重启
+   * @param mcpServiceManager MCP 服务管理器实例
+   * @param c Hono Context 实例，用于获取 logger
+   */
+  private async executeRestartWithDelay(
+    mcpServiceManager: MCPServiceManager,
+    c: Context<AppContext>
+  ): Promise<void> {
+    // 初始延迟后执行重启
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    try {
+      await this.executeRestart(mcpServiceManager);
+      // 服务重启需要一些时间，延迟发送成功状态
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+      this.statusService.updateRestartStatus("completed");
+    } catch (error) {
+      this.statusService.updateRestartStatus(
+        "failed",
+        error instanceof Error ? error.message : "未知错误"
+      );
+      throw error;
     }
   }
 
