@@ -130,7 +130,9 @@ export class ServiceManagerImpl implements IServiceManager {
       if (status.running) {
         await this.stop();
         // 等待一下确保完全停止
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) =>
+          setTimeout(resolve, RETRY_CONSTANTS.DEFAULT_INTERVAL)
+        );
       }
 
       // 重新启动服务
