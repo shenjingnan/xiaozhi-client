@@ -282,20 +282,6 @@ export interface ToolConfigOptions {
 /**
  * 扩展的 CustomMCPTool 接口
  * 包含额外的元数据信息
+ * 重新导出自共享类型包以保持类型定义的单一来源
  */
-export interface ExtendedCustomMCPTool {
-  /** 基础工具配置 */
-  name: string;
-  description: string;
-  inputSchema: any;
-  handler: any;
-  /** 使用统计信息 */
-  stats?: {
-    usageCount?: number;
-    lastUsedTime?: string;
-  };
-  /** 工具元数据 */
-  metadata?: ToolMetadata;
-  /** 配置选项 */
-  config?: ToolConfigOptions;
-}
+export type { ExtendedCustomMCPTool } from "@xiaozhi-client/shared-types";
