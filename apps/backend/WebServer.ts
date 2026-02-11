@@ -916,8 +916,17 @@ export class WebServer {
             client.terminate();
           }
 
+          // 保存超时定时器引用，用于在正常关闭时清除
+          let forceShutdownTimeout: NodeJS.Timeout | undefined;
+
           // 关闭 WebSocket 服务器
           this.wss.close(() => {
+            // 如果正常关闭，清除强制退出的定时器
+            if (forceShutdownTimeout) {
+              clearTimeout(forceShutdownTimeout);
+              forceShutdownTimeout = undefined;
+            }
+
             // 强制关闭 HTTP 服务器，不等待现有连接
             if (this.httpServer) {
               this.httpServer.close(() => {
@@ -928,13 +937,13 @@ export class WebServer {
               this.logger.info("Web 服务器已停止");
               doResolve();
             }
-
-            // 设置超时，如果 2 秒内没有关闭则强制退出
-            setTimeout(() => {
-              this.logger.info("Web 服务器已强制停止");
-              doResolve();
-            }, 2000);
           });
+
+          // 设置超时，如果 2 秒内没有关闭则强制退出
+          forceShutdownTimeout = setTimeout(() => {
+            this.logger.info("Web 服务器已强制停止");
+            doResolve();
+          }, 2000);
         } else {
           this.logger.info("Web 服务器已停止");
           doResolve();
