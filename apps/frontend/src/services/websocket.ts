@@ -700,7 +700,8 @@ export class WebSocketManager {
         },
       };
 
-      this.ws?.send(JSON.stringify(heartbeatMessage));
+      // 使用 send 方法而非直接调用 ws.send，以复用错误处理逻辑
+      this.send(heartbeatMessage);
     }
   }
 
