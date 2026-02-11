@@ -137,7 +137,7 @@ export class Endpoint {
     const { InternalMCPManagerAdapter } = await import("./internal-mcp-manager.js");
 
     // 创建内部 MCP 管理器适配器配置
-    const endpointConfig: import("./types.js").EndpointConfig = {
+    const endpointConfig = {
       mcpServers: config.mcpServers,
       reconnectDelay: config.reconnectDelay,
     };
