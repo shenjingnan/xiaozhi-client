@@ -50,9 +50,10 @@ async function main(): Promise<void> {
   console.log(`  URL: ${endpointUrl.slice(0, 50)}...`);
   console.log();
 
-  // 2. 创建 Endpoint 实例
+  // 2. 创建 Endpoint 实例（使用工厂方法）
   // 配置要聚合的 MCP 服务器
-  const endpoint = new Endpoint(endpointUrl, {
+  const endpoint = await Endpoint.create({
+    endpointUrl,
     // MCP 服务器配置
     mcpServers: {
       // 计算器 MCP 服务（stdio 类型）

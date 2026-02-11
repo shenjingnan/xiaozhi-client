@@ -62,9 +62,10 @@ async function main(): Promise<void> {
   console.log(`    URL: ${endpointUrl2.slice(0, 60)}...`);
   console.log();
 
-  // 2. 创建两个独立的 Endpoint 实例
+  // 2. 创建两个独立的 Endpoint 实例（使用工厂方法）
   // 接入点 1：配置 calculator 服务
-  const endpoint1 = new Endpoint(endpointUrl1, {
+  const endpoint1 = await Endpoint.create({
+    endpointUrl: endpointUrl1,
     mcpServers: {
       calculator: {
         command: "npx",
@@ -75,7 +76,8 @@ async function main(): Promise<void> {
   });
 
   // 接入点 2：配置 datetime 服务
-  const endpoint2 = new Endpoint(endpointUrl2, {
+  const endpoint2 = await Endpoint.create({
+    endpointUrl: endpointUrl2,
     mcpServers: {
       datetime: {
         command: "npx",

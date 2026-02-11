@@ -74,14 +74,16 @@ async function main(): Promise<void> {
   console.log();
 
   try {
-    // 3. 创建两个独立的 Endpoint 实例
+    // 3. 创建两个独立的 Endpoint 实例（使用工厂方法）
     // 关键点：两个接入点使用相同的 mcpServers 配置
-    const endpoint1 = new Endpoint(endpointUrl1, {
+    const endpoint1 = await Endpoint.create({
+      endpointUrl: endpointUrl1,
       mcpServers: sharedMcpServers,
       reconnectDelay: 2000,
     });
 
-    const endpoint2 = new Endpoint(endpointUrl2, {
+    const endpoint2 = await Endpoint.create({
+      endpointUrl: endpointUrl2,
       mcpServers: sharedMcpServers,
       reconnectDelay: 2000,
     });
