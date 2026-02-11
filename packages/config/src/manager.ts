@@ -244,7 +244,8 @@ export class ConfigManager {
   private readonly STATS_UPDATE_TIMEOUT = 5000; // 5秒超时
 
   // 事件回调（用于解耦 EventBus 依赖）
-  private eventCallbacks: Map<string, Array<(data: unknown) => void>> = new Map();
+  private eventCallbacks: Map<string, Array<(data: unknown) => void>> =
+    new Map();
 
   private constructor() {
     // 使用模板目录中的默认配置文件
@@ -492,7 +493,10 @@ export class ConfigManager {
    * 获取配置（只读）
    */
   public getConfig(): Readonly<AppConfig> {
-    this.config = this.loadConfig();
+    // 使用缓存避免重复从文件系统加载配置
+    if (!this.config) {
+      this.config = this.loadConfig();
+    }
 
     // 返回深度只读副本
     return JSON.parse(JSON.stringify(this.config));
