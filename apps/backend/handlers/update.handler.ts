@@ -45,7 +45,7 @@ export class UpdateApiHandler extends BaseHandler {
         return c.fail(
           "INVALID_VERSION",
           "请求参数格式错误",
-          parseResult.error.errors.map((err) => ({
+          parseResult.error.issues.map((err) => ({
             field: err.path.join("."),
             message: err.message,
           })),
