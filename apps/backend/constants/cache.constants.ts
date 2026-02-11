@@ -23,16 +23,6 @@ export const MESSAGE_SIZE_LIMITS = {
 } as const;
 
 /**
- * 分页限制常量
- */
-export const PAGINATION_LIMITS = {
-  /** 默认每页记录数 */
-  DEFAULT_LIMIT: 50,
-  /** 最大每页记录数 */
-  MAX_LIMIT: 200,
-} as const;
-
-/**
  * 缓存文件相关常量
  */
 export const CACHE_FILE_CONFIG = {
