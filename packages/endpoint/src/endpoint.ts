@@ -35,16 +35,6 @@ export {
 };
 
 /**
- * Endpoint 配置接口（用于工厂方法）
- */
-interface EndpointCreateConfig {
-  /** MCP 服务器配置（声明式） */
-  mcpServers: Record<string, import("./types.js").MCPServerConfig>;
-  /** 可选：重连延迟（毫秒），默认 2000 */
-  reconnectDelay?: number;
-}
-
-/**
  * Endpoint 类
  * 负责管理单个小智接入点的 WebSocket 连接
  *
@@ -138,13 +128,11 @@ export class Endpoint {
     /** 可选：重连延迟（毫秒），默认 2000 */
     reconnectDelay?: number;
   }): Promise<Endpoint> {
-    // 动态导入 MCPManager 和相关模块
-    const { MCPManager } = await import("@xiaozhi-client/mcp-core");
-    const { normalizeServiceConfig } = await import("@xiaozhi-client/config");
+    // 动态导入相关模块
     const { InternalMCPManagerAdapter } = await import("./internal-mcp-manager.js");
 
     // 创建内部 MCP 管理器适配器配置
-    const endpointConfig: EndpointCreateConfig = {
+    const endpointConfig: import("./types.js").EndpointConfig = {
       mcpServers: config.mcpServers,
       reconnectDelay: config.reconnectDelay,
     };
