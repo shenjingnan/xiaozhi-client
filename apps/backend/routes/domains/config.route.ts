@@ -1,3 +1,8 @@
+/**
+ * 配置管理路由配置
+ * 处理所有配置管理相关的 API 路由
+ */
+
 import type { RouteDefinition } from "@/routes/types.js";
 import { createHandler } from "@/routes/types.js";
 
