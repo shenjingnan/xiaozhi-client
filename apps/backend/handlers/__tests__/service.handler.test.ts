@@ -596,7 +596,7 @@ describe("ServiceApiHandler", () => {
       await handler.restartService(mockContext);
 
       // Fast-forward the initial timeout
-      vi.advanceTimersByTime(500);
+      await vi.advanceTimersByTimeAsync(500);
 
       // Should still attempt to execute restart
       expect(mockMcpServiceManager.getStatus).toHaveBeenCalled();
