@@ -9,3 +9,5 @@ export { VersionUtils } from "@xiaozhi-client/version";
 // WebSocket 辅助工具
 export { sendWebSocketError } from "./websocket-helper.js";
 export type { WebSocketLike } from "./websocket-helper.js";
+// Zod Schema 工具函数
+export { createDateSchema } from "./schema-utils.js";

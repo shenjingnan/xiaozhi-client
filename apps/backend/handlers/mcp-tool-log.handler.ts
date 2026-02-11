@@ -7,6 +7,7 @@ import { PAGINATION_CONSTANTS } from "@/constants/api.constants.js";
 import type { ToolCallQuery } from "@/lib/mcp/log.js";
 import { ToolCallLogService } from "@/lib/mcp/log.js";
 import type { AppContext } from "@/types/hono.context.js";
+import { createDateSchema } from "@/utils/index.js";
 import type { Context } from "hono";
 import { z } from "zod";
 import { BaseHandler } from "./base.handler.js";
@@ -41,32 +42,8 @@ const ToolCallQuerySchema = z
       .string()
       .optional()
       .transform((val) => (val ? val.toLowerCase() === "true" : undefined)),
-    startDate: z
-      .string()
-      .optional()
-      .refine(
-        (val) => {
-          if (!val) return true;
-          const date = Date.parse(val);
-          return !Number.isNaN(date);
-        },
-        {
-          message: "startDate 参数格式无效",
-        }
-      ),
-    endDate: z
-      .string()
-      .optional()
-      .refine(
-        (val) => {
-          if (!val) return true;
-          const date = Date.parse(val);
-          return !Number.isNaN(date);
-        },
-        {
-          message: "endDate 参数格式无效",
-        }
-      ),
+    startDate: createDateSchema("startDate"),
+    endDate: createDateSchema("endDate"),
   })
   .refine(
     (data) => {
