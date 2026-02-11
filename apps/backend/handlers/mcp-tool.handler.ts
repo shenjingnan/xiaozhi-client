@@ -5,6 +5,7 @@
 
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
+import { HTTP_TIMEOUTS } from "@/constants/timeout.constants.js";
 import { MCPError, MCPErrorCode } from "@/errors/mcp-errors.js";
 import { MCPCacheManager } from "@/lib/mcp";
 import type { MCPServiceManager } from "@/lib/mcp";
@@ -112,9 +113,9 @@ export class MCPToolHandler {
       // 调用工具 - 特殊处理 customMCP 服务
       let result: unknown;
       if (serviceName === "customMCP") {
-        // 对于 customMCP 服务，直接使用 toolName 调用，传递60秒超时
+        // 对于 customMCP 服务，直接使用 toolName 调用，传递长运行任务超时
         result = await serviceManager.callTool(toolName, args || {}, {
-          timeout: 60000,
+          timeout: HTTP_TIMEOUTS.LONG_RUNNING,
         });
       } else {
         // 对于标准 MCP 服务，使用 serviceName__toolName 格式，保持8秒超时
