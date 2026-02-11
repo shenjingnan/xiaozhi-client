@@ -239,7 +239,7 @@ export function shouldCleanupCache(cache: EnhancedToolResultCache): boolean {
   const cachedTime = new Date(cache.timestamp).getTime();
 
   // 已消费且超过清理时间（1分钟）
-  if (cache.consumed && now - cachedTime > 60000) {
+  if (cache.consumed && now - cachedTime > DEFAULT_CONFIG.CLEANUP_INTERVAL) {
     return true;
   }
 

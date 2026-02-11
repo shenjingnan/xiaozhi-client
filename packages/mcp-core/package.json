@@ -30,7 +30,7 @@
     "ws": "^8.14.2"
   },
   "peerDependencies": {
-    "@modelcontextprotocol/sdk": "^1.24.0"
+    "@modelcontextprotocol/sdk": "^1.26.0"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
