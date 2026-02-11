@@ -579,9 +579,8 @@ export class WebServer {
    * 设置路由系统
    */
   private setupRouteSystem(): void {
-    // 初始化路由管理器
-    // 注意：RouteManager 不再需要依赖参数，因为依赖通过中间件动态注入
-    this.routeManager = new RouteManager();
+    // 初始化路由管理器，注入 Logger 实例
+    this.routeManager = new RouteManager(this.logger);
   }
 
   /**

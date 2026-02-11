@@ -3,6 +3,7 @@
  * 提供直接、高效的路由注册和管理功能
  */
 
+import type { Logger } from "@/Logger.js";
 import type { Context, Hono, Next } from "hono";
 import type { AppContext } from "../types/hono.context.js";
 import {
@@ -14,10 +15,12 @@ import {
 /**
  * 路由管理器
  * 直接管理路由配置，提供路由注册和应用功能
- * 注意：依赖注入现在通过 WebServer 的中间件处理，RouteManager 不再直接管理依赖
+ * 通过依赖注入接收 Logger 实例，保持与项目日志系统的一致性
  */
 export class RouteManager {
   private routes: Map<string, RouteDefinition[]> = new Map();
+
+  constructor(private logger: Logger) {}
 
   /**
    * 注册单个路由模块
@@ -25,17 +28,17 @@ export class RouteManager {
   registerRoute(name: string, routeRegistry: RouteRegistry): void {
     const routes = normalizeRoutes(routeRegistry);
     if (this.routes.has(name)) {
-      console.warn(`路由组 '${name}' 已存在，将被覆盖`);
+      this.logger.warn(`路由组 '${name}' 已存在，将被覆盖`);
     }
     this.routes.set(name, routes);
-    console.log(`已注册路由组: ${name} (${routes.length} 个路由)`);
+    this.logger.info(`已注册路由组: ${name} (${routes.length} 个路由)`);
   }
 
   /**
    * 批量注册路由模块
    */
   registerRoutes(routeRegistries: Record<string, RouteRegistry>): void {
-    console.log(
+    this.logger.info(
       `开始批量注册 ${Object.keys(routeRegistries).length} 个路由组...`
     );
 
@@ -43,7 +46,7 @@ export class RouteManager {
       this.registerRoute(name, routeRegistry);
     }
 
-    console.log(`批量注册完成，共注册 ${this.routes.size} 个路由组`);
+    this.logger.info(`批量注册完成，共注册 ${this.routes.size} 个路由组`);
   }
 
   /**
@@ -81,11 +84,11 @@ export class RouteManager {
           totalRouteCount++;
         }
       } catch (error) {
-        console.error(`✗ 应用路由组失败: ${groupName}`, error);
+        this.logger.error(`✗ 应用路由组失败: ${groupName}`, error);
       }
     }
 
-    console.log(`路由应用完成，共 ${totalRouteCount} 个路由`);
+    this.logger.info(`路由应用完成，共 ${totalRouteCount} 个路由`);
   }
 
   /**
@@ -103,7 +106,7 @@ export class RouteManager {
       try {
         return await handler(c);
       } catch (error) {
-        console.error(`路由处理错误 [${method} ${path}]:`, error);
+        this.logger.error(`路由处理错误 [${method} ${path}]:`, error);
         return c.fail(
           "HANDLER_ERROR",
           "处理器执行失败",
@@ -166,7 +169,7 @@ export class RouteManager {
    */
   clear(): void {
     this.routes.clear();
-    console.log("已清除所有路由配置");
+    this.logger.info("已清除所有路由配置");
   }
 
   /**
