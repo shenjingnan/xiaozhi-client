@@ -1,3 +1,22 @@
+/**
+ * WebServer - 主控制器，协调各个服务和处理器
+ *
+ * WebServer 是 xiaozhi-client 的核心服务器类，负责：
+ * - 启动和管理 HTTP 服务器
+ * - 管理 WebSocket 连接
+ * - 初始化和协调各种服务（MCP、Endpoint、Notification 等）
+ * - 注册和管理路由系统
+ * - 处理事件总线和状态管理
+ *
+ * 使用方式：
+ * ```typescript
+ * const server = new WebServer(3000);
+ * await server.start();
+ * ```
+ *
+ * @module WebServer
+ */
+
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import type { Logger } from "@/Logger.js";
@@ -55,7 +74,7 @@ import { WebSocketServer } from "ws";
 import type WebSocket from "ws";
 
 import { HTTP_SERVER_CONFIG } from "@/constants/index.js";
-import { MCPServiceManagerNotInitializedError } from "./errors/mcp-errors.middleware.js";
+import { MCPServiceManagerNotInitializedError } from "@/errors/mcp-errors.middleware.js";
 // 路由系统导入
 import {
   type HandlerDependencies,
@@ -571,9 +590,8 @@ export class WebServer {
    * 设置路由系统
    */
   private setupRouteSystem(): void {
-    // 初始化路由管理器
-    // 注意：RouteManager 不再需要依赖参数，因为依赖通过中间件动态注入
-    this.routeManager = new RouteManager();
+    // 初始化路由管理器，注入 Logger 实例
+    this.routeManager = new RouteManager(this.logger);
   }
 
   /**

@@ -65,6 +65,7 @@ nonexistenttool
 npmjs
 numpy
 nums
+oneline
 phantomjs
 postbuild
 pydantic
