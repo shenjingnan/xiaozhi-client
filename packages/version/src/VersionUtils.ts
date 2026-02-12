@@ -102,6 +102,41 @@ export class VersionUtils {
   }
 
   /**
+   * 查找并读取 package.json 文件
+   *
+   * @returns package.json 内容，如果找不到则返回 null
+   */
+  private static findAndReadPackageJson(): Record<string, unknown> | null {
+    try {
+      const __filename = fileURLToPath(import.meta.url);
+      const currentDir = path.dirname(__filename);
+
+      const possiblePaths = [
+        // 从 packages/version/dist/version/index.js 到项目根目录的 package.json
+        path.join(currentDir, "..", "..", "..", "package.json"),
+        // 从 dist/version/index.js 到项目根目录的 package.json
+        path.join(currentDir, "..", "..", "package.json"),
+        // 全局安装环境
+        path.join(currentDir, "..", "..", "..", "..", "package.json"),
+      ];
+
+      for (const packagePath of possiblePaths) {
+        if (fs.existsSync(packagePath)) {
+          const packageJson = JSON.parse(
+            fs.readFileSync(packagePath, "utf8"),
+          ) as Record<string, unknown>;
+          return packageJson;
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.warn("无法读取 package.json:", error);
+      return null;
+    }
+  }
+
+  /**
    * 运行时从 package.json 读取版本号
    */
   private static getRuntimeVersion(): string {
@@ -110,75 +145,42 @@ export class VersionUtils {
       return VersionUtils.cachedVersion;
     }
 
-    try {
-      // 在 ES 模块环境中获取当前目录
-      const __filename = fileURLToPath(import.meta.url);
-      const currentDir = path.dirname(__filename);
-
-      // 尝试多个可能的 package.json 路径
-      const possiblePaths = [
-        // 从 packages/version/dist/version/index.js 到项目根目录的 package.json
-        path.join(currentDir, "..", "..", "..", "package.json"),
-        // 从 dist/version/index.js 到项目根目录的 package.json
-        path.join(currentDir, "..", "..", "package.json"),
-        // 全局安装环境
-        path.join(currentDir, "..", "..", "..", "..", "package.json"),
-      ];
-
-      for (const packagePath of possiblePaths) {
-        if (fs.existsSync(packagePath)) {
-          const packageJson = JSON.parse(fs.readFileSync(packagePath, "utf8"));
-          if (packageJson.version) {
-            VersionUtils.cachedVersion = packageJson.version;
-            return packageJson.version;
-          }
-        }
-      }
-
-      // 如果都找不到，返回默认版本
-      VersionUtils.cachedVersion = "unknown";
-      return "unknown";
-    } catch (error) {
-      console.warn("无法从 package.json 读取版本信息:", error);
-      VersionUtils.cachedVersion = "unknown";
-      return "unknown";
+    const packageJson = VersionUtils.findAndReadPackageJson();
+    if (packageJson?.version && typeof packageJson.version === "string") {
+      VersionUtils.cachedVersion = packageJson.version;
+      return packageJson.version;
     }
+
+    // 如果都找不到，返回默认版本
+    VersionUtils.cachedVersion = "unknown";
+    return "unknown";
   }
 
   /**
    * 运行时从 package.json 读取完整版本信息
    */
   private static getRuntimeVersionInfo(): VersionInfo {
-    try {
-      const __filename = fileURLToPath(import.meta.url);
-      const currentDir = path.dirname(__filename);
+    const packageJson = VersionUtils.findAndReadPackageJson();
 
-      const possiblePaths = [
-        // 从 packages/version/dist/version/index.js 到项目根目录的 package.json
-        path.join(currentDir, "..", "..", "..", "package.json"),
-        // 从 dist/version/index.js 到项目根目录的 package.json
-        path.join(currentDir, "..", "..", "package.json"),
-        // 全局安装环境
-        path.join(currentDir, "..", "..", "..", "..", "package.json"),
-      ];
-
-      for (const packagePath of possiblePaths) {
-        if (fs.existsSync(packagePath)) {
-          const packageJson = JSON.parse(fs.readFileSync(packagePath, "utf8"));
-          return {
-            version: packageJson.version || "unknown",
-            name: packageJson.name,
-            description: packageJson.description,
-            author: packageJson.author,
-          };
-        }
-      }
-
-      return { version: "unknown" };
-    } catch (error) {
-      console.warn("无法读取版本信息:", error);
-      return { version: "unknown" };
+    if (packageJson) {
+      return {
+        version:
+          typeof packageJson.version === "string"
+            ? packageJson.version
+            : "unknown",
+        name: typeof packageJson.name === "string" ? packageJson.name : undefined,
+        description:
+          typeof packageJson.description === "string"
+            ? packageJson.description
+            : undefined,
+        author:
+          typeof packageJson.author === "string"
+            ? packageJson.author
+            : undefined,
+      };
     }
+
+    return { version: "unknown" };
   }
 
   /**
