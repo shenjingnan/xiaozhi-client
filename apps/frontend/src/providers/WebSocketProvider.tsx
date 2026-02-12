@@ -1,4 +1,6 @@
 import { useNetworkService } from "@hooks/useNetworkService";
+import type { FullStatus } from "@services/api";
+import type { ConnectionState } from "@services/websocket";
 import { initializeStores } from "@stores/index";
 import type { AppConfig } from "@xiaozhi-client/shared-types";
 import {
@@ -13,7 +15,7 @@ interface NetworkServiceContextType {
   // HTTP API 方法
   getConfig: () => Promise<AppConfig>;
   updateConfig: (config: AppConfig) => Promise<void>;
-  getStatus: () => Promise<any>;
+  getStatus: () => Promise<FullStatus>;
   refreshStatus: () => Promise<void>;
   restartService: () => Promise<void>;
 
@@ -34,7 +36,7 @@ interface NetworkServiceContextType {
   // 工具方法
   loadInitialData: () => Promise<void>;
   isWebSocketConnected: () => boolean;
-  getWebSocketState: () => any;
+  getWebSocketState: () => ConnectionState;
 }
 
 const NetworkServiceContext = createContext<NetworkServiceContextType | null>(
