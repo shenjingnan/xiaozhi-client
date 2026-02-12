@@ -13,6 +13,35 @@ import type { IDIContainer } from "../interfaces/Config";
 import { CommandHandlerFactory } from "./CommandHandlerFactory";
 
 /**
+ * 命令执行器类型
+ */
+type CommandExecutor = (
+  args: string[],
+  options: Record<string, unknown>
+) => Promise<void>;
+
+/**
+ * 创建带有错误处理的命令处理函数
+ * @param executor - 执行器函数
+ * @returns 带有错误处理的异步函数
+ */
+function createCommandHandler(
+  executor: CommandExecutor
+): (...args: unknown[]) => Promise<void> {
+  return async (...args) => {
+    try {
+      const command = args[args.length - 1] as {
+        opts(): Record<string, unknown>;
+      };
+      const options = command.opts();
+      await executor(args.slice(0, -1) as string[], options);
+    } catch (error) {
+      ErrorHandler.handle(error as Error);
+    }
+  };
+}
+
+/**
  * 命令注册器实现
  */
 export class CommandRegistry implements ICommandRegistry {
@@ -87,28 +116,19 @@ export class CommandRegistry implements ICommandRegistry {
         }
 
         // 设置子命令处理函数
-        cmd.action(async (...args) => {
-          try {
-            // Commander.js 传递的最后一个参数是 Command 对象，包含选项值
-            const command = args[args.length - 1];
-            const options = command.opts(); // 获取解析后的选项
-            await subcommand.execute(args.slice(0, -1), options);
-          } catch (error) {
-            ErrorHandler.handle(error as Error);
-          }
-        });
+        cmd.action(
+          createCommandHandler(async (args, options) => {
+            await subcommand.execute(args, options);
+          })
+        );
       }
 
       // 设置主命令的默认行为
-      commandGroup.action(async (...args) => {
-        try {
-          const command = args[args.length - 1];
-          const options = command.opts(); // 获取解析后的选项
-          await handler.execute(args.slice(0, -1), options);
-        } catch (error) {
-          ErrorHandler.handle(error as Error);
-        }
-      });
+      commandGroup.action(
+        createCommandHandler(async (args, options) => {
+          await handler.execute(args, options);
+        })
+      );
     } else {
       // 没有子命令，注册为普通命令
       let commandName = handler.name;
@@ -130,15 +150,11 @@ export class CommandRegistry implements ICommandRegistry {
       }
 
       // 设置主命令处理函数
-      command.action(async (...args) => {
-        try {
-          const command = args[args.length - 1];
-          const options = command.opts(); // 获取解析后的选项
-          await handler.execute(args.slice(0, -1), options);
-        } catch (error) {
-          ErrorHandler.handle(error as Error);
-        }
-      });
+      command.action(
+        createCommandHandler(async (args, options) => {
+          await handler.execute(args, options);
+        })
+      );
     }
   }
 
@@ -208,16 +224,11 @@ export class CommandRegistry implements ICommandRegistry {
       }
 
       // 设置命令处理函数
-      command.action(async (...args) => {
-        try {
-          // Commander.js 传递的最后一个参数是 Command 对象，包含选项值
-          const command = args[args.length - 1];
-          const options = command.opts(); // 获取解析后的选项
-          await subcommand.execute(args.slice(0, -1), options);
-        } catch (error) {
-          ErrorHandler.handle(error as Error);
-        }
-      });
+      command.action(
+        createCommandHandler(async (args, options) => {
+          await subcommand.execute(args, options);
+        })
+      );
     }
   }
 
