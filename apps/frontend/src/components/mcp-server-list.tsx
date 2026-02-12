@@ -17,12 +17,12 @@ import {
   useMcpServerConfig,
   useMcpServers,
 } from "@/stores/config";
+import type { ToolInputSchema } from "@/types/json-schema";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
 import type {
   AppConfig,
   CozeWorkflow,
   CustomMCPToolWithStats,
-  JSONSchema,
   MCPServerConfig,
   WorkflowParameter,
 } from "@xiaozhi-client/shared-types";
@@ -49,7 +49,7 @@ type ToolWithServerInfo = {
   description?: string;
   usageCount?: number;
   lastUsedTime?: string;
-  inputSchema?: JSONSchema;
+  inputSchema?: ToolInputSchema;
   handler?: {
     type: string;
     platform: string;
@@ -118,7 +118,9 @@ export function McpServerList({
         description: tool.description,
         usageCount: tool.usageCount,
         lastUsedTime: tool.lastUsedTime,
-        inputSchema: tool.inputSchema,
+        // 类型转换：JSONSchema 转 ToolInputSchema
+        // 确保有 properties 字段
+        inputSchema: tool.inputSchema as ToolInputSchema | undefined,
       };
     },
     []
@@ -241,7 +243,7 @@ export function McpServerList({
       serverName: string;
       toolName: string;
       description?: string;
-      inputSchema?: JSONSchema;
+      inputSchema?: ToolInputSchema;
     };
   }>({ open: false });
 
