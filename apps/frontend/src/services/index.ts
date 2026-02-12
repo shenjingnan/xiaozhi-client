@@ -4,6 +4,7 @@
  */
 
 import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
+import type { FullStatus } from "./api";
 import { type ApiClient, apiClient } from "./api";
 import {
   type ConnectionState,
@@ -70,7 +71,7 @@ export class NetworkService {
   /**
    * 获取状态 (HTTP)
    */
-  async getStatus(): Promise<any> {
+  async getStatus(): Promise<FullStatus> {
     return this.apiClient.getStatus();
   }
 
