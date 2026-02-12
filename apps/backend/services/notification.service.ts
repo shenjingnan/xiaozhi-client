@@ -347,7 +347,7 @@ export class NotificationService {
 
     for (const [clientId, client] of this.clients) {
       if (client.ws.readyState !== 1) {
-        // Not WebSocket.OPEN
+        // 非 WebSocket.OPEN 状态（已断开连接）
         disconnectedClients.push(clientId);
       }
     }
