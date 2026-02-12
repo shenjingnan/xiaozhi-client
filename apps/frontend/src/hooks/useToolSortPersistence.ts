@@ -1,5 +1,11 @@
 "use client";
 
+/**
+ * 工具排序配置持久化 Hook
+ *
+ * 自动将用户选择的工具排序方式保存到 localStorage，支持按名称、启用状态、使用次数、最后使用时间等字段排序
+ */
+
 import type { ToolSortConfig } from "@/components/mcp-tool/tool-sort-selector";
 import type { ToolSortField } from "@/components/mcp-tool/tool-sort-selector";
 import { useSortPersistence } from "@/hooks/useSortPersistence";
