@@ -14,7 +14,7 @@ export interface ParsedAudioPacket {
   protocolVersion: 2;
   /** 数据类型（0=Opus音频, 1=JSON数据） */
   type: "opus" | "json";
-  /** 时间戳（秒级，用于AEC回声消除） */
+  /** 时间戳（毫秒级，用于AEC回声消除） */
   timestamp: number;
   /** 音频载荷数据 */
   payload: Uint8Array;
@@ -24,11 +24,11 @@ export interface ParsedAudioPacket {
  * BinaryProtocol2 协议头结构（16字节）
  *
  * struct BinaryProtocol2 {
- *     uint16_t version;       // = 2 (小端序)
- *     uint16_t type;          // 0=Opus, 1=JSON (小端序)
- *     uint32_t reserved;      // 保留字段 (小端序)
- *     uint32_t timestamp;     // 时间戳（秒级，避免uint32溢出） (小端序)
- *     uint32_t payload_size;  // 载荷大小 (小端序)
+ *     uint16_t version;       // = 2 (大端序/网络字节序)
+ *     uint16_t type;          // 0=Opus, 1=JSON (大端序/网络字节序)
+ *     uint32_t reserved;      // 保留字段 (大端序/网络字节序)
+ *     uint32_t timestamp;     // 时间戳（毫秒级，使用模运算避免uint32溢出） (大端序/网络字节序)
+ *     uint32_t payload_size;  // 载荷大小 (大端序/网络字节序)
  *     uint8_t payload[];      // 载荷数据
  * }
  */
@@ -49,22 +49,22 @@ export function parseBinaryProtocol2(data: Buffer): ParsedAudioPacket | null {
     return null;
   }
 
-  // 读取协议版本（小端序，uint16_t）
-  const version = data.readUInt16LE(0);
+  // 读取协议版本（大端序/网络字节序，uint16_t）
+  const version = data.readUInt16BE(0);
   if (version !== PROTOCOL_VERSION) {
     logger.debug(`不支持的协议版本: ${version}`);
     return null;
   }
 
-  // 读取数据类型（小端序，uint16_t）
-  const typeValue = data.readUInt16LE(2);
+  // 读取数据类型（大端序/网络字节序，uint16_t）
+  const typeValue = data.readUInt16BE(2);
 
   // 跳过保留字段（uint32_t，偏移4-7）
-  // 读取时间戳（小端序，uint32_t，偏移8-11）
-  const timestamp = data.readUInt32LE(8);
+  // 读取时间戳（大端序/网络字节序，uint32_t，偏移8-11）
+  const timestamp = data.readUInt32BE(8);
 
-  // 读取载荷大小（小端序，uint32_t，偏移12-15）
-  const payloadSize = data.readUInt32LE(12);
+  // 读取载荷大小（大端序/网络字节序，uint32_t，偏移12-15）
+  const payloadSize = data.readUInt32BE(12);
 
   // 检查载荷大小是否与实际数据匹配
   const expectedTotalSize = PROTOCOL_HEADER_SIZE + payloadSize;
@@ -103,15 +103,15 @@ export function isBinaryProtocol2(data: Buffer): boolean {
     return false;
   }
 
-  // 检查协议版本是否为2
-  const version = data.readUInt16LE(0);
+  // 检查协议版本是否为2（大端序/网络字节序）
+  const version = data.readUInt16BE(0);
   return version === PROTOCOL_VERSION;
 }
 
 /**
  * 创建 BinaryProtocol2 音频数据包
  * @param payload - 音频载荷数据
- * @param timestamp - 时间戳（秒级，避免 uint32 溢出）
+ * @param timestamp - 时间戳（毫秒级，将使用模运算避免 uint32 溢出）
  * @param type - 数据类型
  * @returns 编码后的二进制数据
  */
@@ -131,20 +131,22 @@ export function encodeBinaryProtocol2(
   // 分配缓冲区（协议头 + 载荷）
   const buffer = Buffer.allocUnsafe(PROTOCOL_HEADER_SIZE + payloadSize);
 
-  // 写入协议版本（小端序，uint16_t）
-  buffer.writeUInt16LE(PROTOCOL_VERSION, 0);
+  // 写入协议版本（大端序/网络字节序，uint16_t）
+  buffer.writeUInt16BE(PROTOCOL_VERSION, 0);
 
-  // 写入数据类型（小端序，uint16_t）
-  buffer.writeUInt16LE(typeValue, 2);
+  // 写入数据类型（大端序/网络字节序，uint16_t）
+  buffer.writeUInt16BE(typeValue, 2);
 
-  // 写入保留字段（小端序，uint32_t）
-  buffer.writeUInt32LE(0, 4);
+  // 写入保留字段（大端序/网络字节序，uint32_t）
+  buffer.writeUInt32BE(0, 4);
 
-  // 写入时间戳（小端序，uint32_t）- 秒级时间戳，避免溢出
-  buffer.writeUInt32LE(timestamp, 8);
+  // 写入时间戳（大端序/网络字节序，uint32_t）
+  // 使用模运算将毫秒时间戳限制在 uint32 范围内
+  const safeTimestamp = timestamp % 4294967296;
+  buffer.writeUInt32BE(safeTimestamp, 8);
 
-  // 写入载荷大小（小端序，uint32_t）
-  buffer.writeUInt32LE(payloadSize, 12);
+  // 写入载荷大小（大端序/网络字节序，uint32_t）
+  buffer.writeUInt32BE(payloadSize, 12);
 
   // 写入载荷数据
   buffer.set(payload, PROTOCOL_HEADER_SIZE);

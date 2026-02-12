@@ -320,7 +320,7 @@ export class ESP32Connection {
   /**
    * 发送BinaryProtocol2格式的音频数据到设备
    * @param data - 音频载荷数据
-   * @param timestamp - 时间戳（毫秒，将转换为秒级时间戳以避免uint32溢出）
+   * @param timestamp - 时间戳（毫秒级，将使用模运算避免uint32溢出）
    */
   async sendBinaryProtocol2(
     data: Uint8Array,
@@ -334,16 +334,15 @@ export class ESP32Connection {
       "@/lib/esp32/audio-protocol.js"
     );
 
-    // 使用秒级时间戳，避免 uint32 溢出
-    // Date.now() 返回毫秒时间戳（约1.77万亿），远超 uint32 最大值（约42.9亿）
-    const originalTimestamp = timestamp ?? Date.now();
-    const timestampInSeconds = Math.floor(originalTimestamp / 1000);
+    // 使用毫秒级时间戳，通过模运算避免 uint32 溢出
+    // uint32 最大值为 4294967295（约 4294967296 毫秒 ≈ 49.7 天）
+    const timestampInMs = (timestamp ?? Date.now()) % 4294967296;
 
     logger.debug(
-      `[ESP32Connection] 时间戳转换: original=${originalTimestamp}ms, converted=${timestampInSeconds}s`
+      `[ESP32Connection] 时间戳: ${timestampInMs}ms (uint32范围内)`
     );
 
-    const packet = encodeBinaryProtocol2(data, timestampInSeconds, "opus");
+    const packet = encodeBinaryProtocol2(data, timestampInMs, "opus");
 
     logger.debug(
       `[ESP32Connection] 协议编码完成: deviceId=${this.deviceId}, packetSize=${packet.length}`

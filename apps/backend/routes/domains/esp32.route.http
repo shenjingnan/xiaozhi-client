@@ -228,7 +228,7 @@ POST {{baseUrl}}/api/esp32/bind
 Content-Type: application/json
 
 {
-  "code": "734260"
+  "code": "386765"
 }
 
 ### 步骤5: 使用返回的 Token 建立 WebSocket 连接
