@@ -2,6 +2,10 @@ import { EventEmitter } from "node:events";
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type { ClientInfo, RestartStatus } from "@/services/status.service.js";
+import type { NotificationData } from "@/services/notification.service.js";
+import type { MCPServerAddResult } from "@/handlers/mcp-manage.handler.js";
+import type { MCPServerConfig } from "@xiaozhi-client/config";
 
 /**
  * 事件类型定义
@@ -17,7 +21,7 @@ export interface EventBusEvents {
   "config:error": { error: Error; operation: string };
 
   // 状态相关事件
-  "status:updated": { status: any; source: string };
+  "status:updated": { status: ClientInfo | RestartStatus; source: string };
   "status:error": { error: Error; operation: string };
 
   // 接入点状态变更事件
@@ -88,10 +92,10 @@ export interface EventBusEvents {
   // WebSocket 相关事件
   "websocket:client:connected": { clientId: string; timestamp: number };
   "websocket:client:disconnected": { clientId: string; timestamp: number };
-  "websocket:message:received": { type: string; data: any; clientId: string };
+  "websocket:message:received": { type: string; data: NotificationData; clientId: string };
 
   // 通知相关事件
-  "notification:broadcast": { type: string; data: any; target?: string };
+  "notification:broadcast": { type: string; data: NotificationData; target?: string };
   "notification:error": { error: Error; type: string };
 
   // MCP服务相关事件
@@ -112,7 +116,7 @@ export interface EventBusEvents {
   };
   "mcp:server:added": {
     serverName: string;
-    config: any;
+    config: MCPServerConfig;
     tools: string[];
     timestamp: Date;
   };
@@ -146,7 +150,7 @@ export interface EventBusEvents {
     addedCount: number;
     failedCount: number;
     successfullyAddedServers: string[];
-    results: any[];
+    results: MCPServerAddResult[];
     timestamp: Date;
   };
   "mcp:server:rollback": {

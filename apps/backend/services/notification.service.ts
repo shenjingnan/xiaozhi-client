@@ -74,7 +74,10 @@ export class NotificationService {
 
     // 监听状态更新事件
     this.eventBus.onEvent("status:updated", (data) => {
-      this.broadcastStatusUpdate(data.status);
+      // 仅处理 ClientInfo 类型的状态更新
+      if ("status" in data.status && "mcpEndpoint" in data.status) {
+        this.broadcastStatusUpdate(data.status);
+      }
     });
 
     // 监听重启状态事件
