@@ -42,7 +42,7 @@ export default defineConfig({
     "apps/backend/Logger.ts",
   ],
   format: ["esm"],
-  target: "node18",
+  target: "node20",
   outDir: "dist/backend",
   clean: true,
   sourcemap: true,
