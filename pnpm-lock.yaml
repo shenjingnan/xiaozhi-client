@@ -545,6 +545,9 @@ importers:
 
   packages/config:
     dependencies:
+      '@xiaozhi-client/mcp-core':
+        specifier: workspace:*
+        version: link:../mcp-core
       comment-json:
         specifier: ^4.2.5
         version: 4.5.1
