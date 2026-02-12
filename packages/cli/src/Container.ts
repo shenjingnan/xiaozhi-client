@@ -100,7 +100,7 @@ export class DIContainer implements IDIContainer {
   /**
    * 创建默认容器实例
    */
-  static create(): DIContainer {
+  static async create(): Promise<DIContainer> {
     const container = new DIContainer();
 
     // 注册工具类（单例）
@@ -138,63 +138,68 @@ export class DIContainer implements IDIContainer {
       return ErrorHandler;
     });
 
-    // 注册服务层
+    // 使用 ESM 标准动态 import 并行加载所有服务模块
+    const [
+      { ProcessManagerImpl },
+      { DaemonManagerImpl },
+      { ServiceManagerImpl },
+      { TemplateManagerImpl },
+    ] = await Promise.all([
+      import("./services/ProcessManager.js"),
+      import("./services/DaemonManager.js"),
+      import("./services/ServiceManager.js"),
+      import("./services/TemplateManager.js"),
+    ]);
+
+    // 注册服务层（使用预加载的模块）
     container.registerSingleton("processManager", () => {
-      const ProcessManagerModule = require("./services/ProcessManager.js");
-      return new ProcessManagerModule.ProcessManagerImpl();
+      return new ProcessManagerImpl();
     });
 
     container.registerSingleton("daemonManager", () => {
-      const DaemonManagerModule = require("./services/DaemonManager.js");
-      const processManager = container.get("processManager") as any;
-      return new DaemonManagerModule.DaemonManagerImpl(processManager);
+      const processManager = container.get("processManager");
+      return new DaemonManagerImpl(processManager);
     });
 
     container.registerSingleton("serviceManager", () => {
-      const ServiceManagerModule = require("./services/ServiceManager.js");
-      const processManager = container.get("processManager") as any;
-      const configManager = container.get("configManager") as any;
-      return new ServiceManagerModule.ServiceManagerImpl(
-        processManager,
-        configManager
-      );
+      const processManager = container.get("processManager");
+      const configManager = container.get("configManager");
+      return new ServiceManagerImpl(processManager, configManager);
     });
 
     container.registerSingleton("templateManager", () => {
-      // 使用动态导入的同步版本
-      const TemplateManagerModule = require("./services/TemplateManager.js");
-      return new TemplateManagerModule.TemplateManagerImpl();
+      return new TemplateManagerImpl();
     });
 
     // 注册命令层（稍后在命令层实现时添加）
     // container.register('serviceCommand', () => {
-    //   const { ServiceCommand } = require('./commands/ServiceCommand.js');
+    //   const { ServiceCommand } = await import('./commands/ServiceCommand.js');
     //   const serviceManager = container.get('serviceManager');
     //   const processManager = container.get('processManager');
     //   return new ServiceCommand(serviceManager, processManager);
     // });
 
     // container.register('configCommand', () => {
-    //   const { ConfigCommand } = require('./commands/ConfigCommand.js');
+    //   const { ConfigCommand } = await import('./commands/ConfigCommand.js');
     //   const configManager = container.get('configManager');
     //   const validation = container.get('validation');
     //   return new ConfigCommand(configManager, validation);
     // });
 
     // container.register('projectCommand', () => {
-    //   const { ProjectCommand } = require('./commands/ProjectCommand.js');
+    //   const { ProjectCommand } = await import('./commands/ProjectCommand.js');
     //   const templateManager = container.get('templateManager');
     //   const fileUtils = container.get('fileUtils');
     //   return new ProjectCommand(templateManager, fileUtils);
     // });
 
     // container.register('mcpCommand', () => {
-    //   const { McpCommand } = require('./commands/McpCommand.js');
+    //   const { McpCommand } = await import('./commands/McpCommand.js');
     //   return new McpCommand();
     // });
 
     // container.register('infoCommand', () => {
-    //   const { InfoCommand } = require('./commands/InfoCommand.js');
+    //   const { InfoCommand } = await import('./commands/InfoCommand.js');
     //   const versionUtils = container.get('versionUtils');
     //   const platformUtils = container.get('platformUtils');
     //   return new InfoCommand(versionUtils, platformUtils);
@@ -208,5 +213,5 @@ export class DIContainer implements IDIContainer {
  * 创建并配置 DI 容器
  */
 export async function createContainer(): Promise<IDIContainer> {
-  return DIContainer.create();
+  return await DIContainer.create();
 }
