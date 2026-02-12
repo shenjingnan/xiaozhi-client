@@ -20,7 +20,7 @@
  *
  * // 创建服务管理器
  * const manager = new MCPServiceManager(config);
- * await manager.connectAll();
+ * await manager.startAllServices();
  *
  * // 获取所有工具
  * const tools = manager.getAllTools();
