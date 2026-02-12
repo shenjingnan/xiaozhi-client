@@ -2,10 +2,17 @@
  * 依赖注入容器
  */
 
+import type { ConfigManager } from "@xiaozhi-client/config";
 import { configManager } from "@xiaozhi-client/config";
 import { VersionUtils } from "@xiaozhi-client/version";
 import { ErrorHandler } from "./errors/ErrorHandlers";
 import type { IDIContainer } from "./interfaces/Config";
+import type {
+  DaemonManager,
+  ProcessManager,
+  ServiceManager,
+  TemplateManager,
+} from "./interfaces/Service";
 import { FileUtils } from "./utils/FileUtils";
 import { FormatUtils } from "./utils/FormatUtils";
 import { PathUtils } from "./utils/PathUtils";
@@ -13,18 +20,52 @@ import { PlatformUtils } from "./utils/PlatformUtils";
 import { Validation } from "./utils/Validation";
 
 /**
+ * 服务类型映射
+ * 定义每个服务键对应的类型，确保类型安全
+ */
+export interface ServiceMap {
+  versionUtils: typeof VersionUtils;
+  platformUtils: typeof PlatformUtils;
+  formatUtils: typeof FormatUtils;
+  fileUtils: typeof FileUtils;
+  pathUtils: typeof PathUtils;
+  validation: typeof Validation;
+  configManager: ConfigManager;
+  errorHandler: typeof ErrorHandler;
+  processManager: ProcessManager;
+  daemonManager: DaemonManager;
+  serviceManager: ServiceManager;
+  templateManager: TemplateManager;
+}
+
+/**
+ * 服务键类型
+ */
+export type ServiceKey = keyof ServiceMap;
+
+/**
  * 依赖注入容器实现
  */
 export class DIContainer implements IDIContainer {
-  private instances = new Map<string, any>();
-  private factories = new Map<string, () => any>();
-  private asyncFactories = new Map<string, () => Promise<any>>();
-  private singletons = new Set<string>();
+  private instances = new Map<ServiceKey, ServiceMap[ServiceKey]>();
+  private factories = new Map<
+    ServiceKey,
+    () => ServiceMap[ServiceKey]
+  >();
+  private asyncFactories = new Map<
+    ServiceKey,
+    () => Promise<ServiceMap[ServiceKey]>
+  >();
+  private singletons = new Set<ServiceKey>();
 
   /**
    * 注册服务工厂
    */
-  register<T>(key: string, factory: () => T, singleton = false): void {
+  register<K extends ServiceKey>(
+    key: K,
+    factory: () => ServiceMap[K],
+    singleton = false
+  ): void {
     this.factories.set(key, factory);
     if (singleton) {
       this.singletons.add(key);
@@ -34,25 +75,31 @@ export class DIContainer implements IDIContainer {
   /**
    * 注册单例服务
    */
-  registerSingleton<T>(key: string, factory: () => T): void {
+  registerSingleton<K extends ServiceKey>(
+    key: K,
+    factory: () => ServiceMap[K]
+  ): void {
     this.register(key, factory, true);
   }
 
   /**
    * 注册实例
    */
-  registerInstance<T>(key: string, instance: T): void {
+  registerInstance<K extends ServiceKey>(
+    key: K,
+    instance: ServiceMap[K]
+  ): void {
     this.instances.set(key, instance);
     this.singletons.add(key);
   }
 
   /**
-   * 获取服务实例
+   * 获取服务实例（类型安全）
    */
-  get<T>(key: string): T {
+  get<K extends ServiceKey>(key: K): ServiceMap[K] {
     // 如果是单例且已经创建过实例，直接返回
     if (this.singletons.has(key) && this.instances.has(key)) {
-      return this.instances.get(key);
+      return this.instances.get(key) as ServiceMap[K];
     }
 
     // 获取工厂函数
@@ -75,7 +122,7 @@ export class DIContainer implements IDIContainer {
   /**
    * 检查服务是否已注册
    */
-  has(key: string): boolean {
+  has(key: ServiceKey): boolean {
     return this.factories.has(key) || this.instances.has(key);
   }
 
@@ -91,7 +138,7 @@ export class DIContainer implements IDIContainer {
   /**
    * 获取所有已注册的服务键
    */
-  getRegisteredKeys(): string[] {
+  getRegisteredKeys(): ServiceKey[] {
     const factoryKeys = Array.from(this.factories.keys());
     const instanceKeys = Array.from(this.instances.keys());
     return [...new Set([...factoryKeys, ...instanceKeys])];
@@ -146,14 +193,14 @@ export class DIContainer implements IDIContainer {
 
     container.registerSingleton("daemonManager", () => {
       const DaemonManagerModule = require("./services/DaemonManager.js");
-      const processManager = container.get("processManager") as any;
+      const processManager = container.get("processManager");
       return new DaemonManagerModule.DaemonManagerImpl(processManager);
     });
 
     container.registerSingleton("serviceManager", () => {
       const ServiceManagerModule = require("./services/ServiceManager.js");
-      const processManager = container.get("processManager") as any;
-      const configManager = container.get("configManager") as any;
+      const processManager = container.get("processManager");
+      const configManager = container.get("configManager");
       return new ServiceManagerModule.ServiceManagerImpl(
         processManager,
         configManager
