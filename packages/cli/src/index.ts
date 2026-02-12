@@ -17,8 +17,8 @@ const program = new Command();
  */
 async function initializeCLI(): Promise<void> {
   try {
-    // 创建依赖注入容器
-    const container = DIContainer.create();
+    // 创建依赖注入容器（使用异步创建以支持 ESM 动态导入）
+    const container = await DIContainer.create();
 
     // 创建命令注册器
     const commandRegistry = new CommandRegistry(container);
