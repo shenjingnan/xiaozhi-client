@@ -11,28 +11,29 @@
       "import": "./dist/index.js"
     },
     "./mcp": {
-      "types": "./dist/mcp/index.d.ts",
-      "import": "./dist/mcp/index.js"
+      "types": "./dist/mcp.d.ts",
+      "import": "./dist/mcp.js"
     },
     "./coze": {
-      "types": "./dist/coze/index.d.ts",
-      "import": "./dist/coze/index.js"
+      "types": "./dist/coze.d.ts",
+      "import": "./dist/coze.js"
     },
     "./api": {
-      "types": "./dist/api/index.d.ts",
-      "import": "./dist/api/index.js"
+      "types": "./dist/api.d.ts",
+      "import": "./dist/api.js"
     },
     "./config": {
-      "types": "./dist/config/index.d.ts",
-      "import": "./dist/config/index.js"
+      "types": "./dist/config.d.ts",
+      "import": "./dist/config.js"
     },
     "./utils": {
-      "types": "./dist/utils/index.d.ts",
-      "import": "./dist/utils/index.js"
+      "types": "./dist/utils.d.ts",
+      "import": "./dist/utils.js"
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "scripts": {
     "build": "tsup",
