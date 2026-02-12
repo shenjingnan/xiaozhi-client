@@ -16,6 +16,7 @@ import type { ClientStatus } from "@xiaozhi-client/shared-types";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
+import { type LoadingState, createLoadingActions } from "./utils";
 
 /**
  * 重启状态接口
@@ -63,13 +64,12 @@ interface FullStatus {
 
 /**
  * 状态加载状态
+ * 复用 LoadingState 基础类型，确保与其他 store 一致
  */
-interface StatusLoadingState {
+interface StatusLoadingState extends LoadingState {
   isLoading: boolean;
   isRefreshing: boolean;
   isRestarting: boolean;
-  lastUpdated: number | null;
-  lastError: Error | null;
 }
 
 /**
@@ -283,25 +283,8 @@ export const useStatusStore = create<StatusStore>()(
         );
       },
 
-      setLoading: (loading: Partial<StatusLoadingState>) => {
-        set(
-          (state) => ({
-            loading: { ...state.loading, ...loading },
-          }),
-          false,
-          "setLoading"
-        );
-      },
-
-      setError: (error: Error | null) => {
-        set(
-          (state) => ({
-            loading: { ...state.loading, lastError: error },
-          }),
-          false,
-          "setError"
-        );
-      },
+      // 使用共享的 loading 操作方法
+      ...createLoadingActions<StatusStore>(set),
 
       // ==================== 异步操作 ====================
 
