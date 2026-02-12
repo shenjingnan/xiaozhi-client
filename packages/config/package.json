@@ -25,6 +25,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@xiaozhi-client/mcp-core": "workspace:*",
     "comment-json": "^4.2.5",
     "dayjs": "^1.11.13",
     "json5": "^2.2.3"
