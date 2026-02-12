@@ -68,3 +68,13 @@ export const RETRY_CONFIG = {
   /** 退避乘数 */
   BACKOFF_MULTIPLIER: 2,
 } as const;
+
+/**
+ * 服务重启相关延迟常量
+ */
+export const SERVICE_RESTART_DELAYS = {
+  /** 重启执行延迟 */
+  EXECUTION_DELAY: 500,
+  /** 成功状态通知延迟 */
+  SUCCESS_NOTIFICATION_DELAY: 5000,
+} as const;
