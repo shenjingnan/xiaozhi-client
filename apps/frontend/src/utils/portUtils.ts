@@ -18,7 +18,7 @@ export async function checkPortAvailability(
 
     // 尝试连接到服务端的健康检查端点
     // 先尝试 WebServer 的 /api/status 端点，如果失败再尝试 MCPServer 的 /health 端点
-    let response: Response;
+    let response: Response | undefined;
     try {
       response = await fetch(`http://localhost:${port}/api/status`, {
         method: "GET",
@@ -26,14 +26,18 @@ export async function checkPortAvailability(
       });
     } catch {
       // 如果 /api/status 失败，尝试 /health 端点
-      response = await fetch(`http://localhost:${port}/health`, {
-        method: "GET",
-        signal: controller.signal,
-      });
+      try {
+        response = await fetch(`http://localhost:${port}/health`, {
+          method: "GET",
+          signal: controller.signal,
+        });
+      } catch {
+        // 两个端点都失败，response 保持为 undefined
+      }
     }
 
     clearTimeout(timeoutId);
-    return response.ok;
+    return response?.ok ?? false;
   } catch (error) {
     // 连接失败或超时
     return false;
