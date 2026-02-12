@@ -67,6 +67,23 @@ export class ErrorHandler {
   }
 
   /**
+   * 错误处理包装器
+   */
+  private static wrapError(error: unknown, context: string): CLIError {
+    if (error instanceof CLIError) {
+      return error;
+    }
+    if (error instanceof Error) {
+      return new CLIError(
+        `${context}失败: ${error.message}`,
+        "OPERATION_FAILED",
+        1
+      );
+    }
+    return new CLIError(`${context}失败: 未知错误`, "OPERATION_FAILED", 1);
+  }
+
+  /**
    * 异步操作错误处理包装器
    */
   static async handleAsync<T>(
@@ -76,17 +93,7 @@ export class ErrorHandler {
     try {
       return await operation();
     } catch (error) {
-      if (error instanceof CLIError) {
-        throw error;
-      }
-      if (error instanceof Error) {
-        throw new CLIError(
-          `${context}失败: ${error.message}`,
-          "OPERATION_FAILED",
-          1
-        );
-      }
-      throw new CLIError(`${context}失败: 未知错误`, "OPERATION_FAILED", 1);
+      throw ErrorHandler.wrapError(error, context);
     }
   }
 
@@ -97,17 +104,7 @@ export class ErrorHandler {
     try {
       return operation();
     } catch (error) {
-      if (error instanceof CLIError) {
-        throw error;
-      }
-      if (error instanceof Error) {
-        throw new CLIError(
-          `${context}失败: ${error.message}`,
-          "OPERATION_FAILED",
-          1
-        );
-      }
-      throw new CLIError(`${context}失败: 未知错误`, "OPERATION_FAILED", 1);
+      throw ErrorHandler.wrapError(error, context);
     }
   }
 
