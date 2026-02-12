@@ -6,7 +6,7 @@ import * as RechartsPrimitive from "recharts";
 
 import { cn } from "@/lib/utils";
 
-// Format: { THEME_NAME: CSS_SELECTOR }
+// 格式：{ 主题名称: CSS 选择器 }
 const THEMES = { light: "", dark: ".dark" } as const;
 
 export type ChartConfig = {

@@ -3,7 +3,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { type VariantProps, cva } from "class-variance-authority";
 
-// Context 类型定义
+// 上下文类型定义
 interface TableSizeContextValue {
   size: "default" | "compact";
 }
@@ -12,7 +12,7 @@ const TableSizeContext = React.createContext<TableSizeContextValue>({
   size: "default",
 });
 
-// Table 变体
+// Table 组件变体样式
 const tableVariants = cva("w-full caption-bottom text-sm", {
   variants: {
     size: {
@@ -25,7 +25,7 @@ const tableVariants = cva("w-full caption-bottom text-sm", {
   },
 });
 
-// TableHead 变体
+// TableHead 组件变体样式
 const tableHeadVariants = cva(
   "text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0",
   {
@@ -41,7 +41,7 @@ const tableHeadVariants = cva(
   }
 );
 
-// TableCell 变体
+// TableCell 组件变体样式
 const tableCellVariants = cva("align-middle [&:has([role=checkbox])]:pr-0", {
   variants: {
     size: {
