@@ -35,7 +35,7 @@ export class NPMManager {
    * 安装指定版本 - 这是核心功能
    */
   async installVersion(version: string): Promise<void> {
-    const installId = `install-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const installId = `install-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     const startTime = Date.now();
 
     logger.info("开始安装", { version, installId });
