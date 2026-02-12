@@ -155,6 +155,12 @@ export class WebServer {
   private endpointManager: EndpointManager | null = null;
   private mcpServiceManager: MCPServiceManager | null = null; // WebServer 直接管理的实例
 
+  // 事件监听器引用（用于清理）
+  private endpointEventListeners = new Map<
+    string,
+    (...args: unknown[]) => void
+  >();
+
   constructor(port?: number) {
     // 端口配置
     try {
@@ -359,19 +365,22 @@ export class WebServer {
         await this.endpointManager.connect();
 
         // 设置端点添加事件监听器
-        this.endpointManager.on(
-          "endpointAdded",
-          (event: { endpoint: string }) => {
-            this.logger.debug(`端点已添加: ${event.endpoint}`);
-          }
-        );
+        const endpointAddedHandler = (...args: unknown[]) => {
+          const event = args[0] as { endpoint: string };
+          this.logger.debug(`端点已添加: ${event.endpoint}`);
+        };
+        this.endpointManager.on("endpointAdded", endpointAddedHandler);
+        this.endpointEventListeners.set("endpointAdded", endpointAddedHandler);
 
         // 设置端点移除事件监听器
-        this.endpointManager.on(
+        const endpointRemovedHandler = (...args: unknown[]) => {
+          const event = args[0] as { endpoint: string };
+          this.logger.debug(`端点已移除: ${event.endpoint}`);
+        };
+        this.endpointManager.on("endpointRemoved", endpointRemovedHandler);
+        this.endpointEventListeners.set(
           "endpointRemoved",
-          (event: { endpoint: string }) => {
-            this.logger.debug(`端点已移除: ${event.endpoint}`);
-          }
+          endpointRemovedHandler
         );
 
         this.logger.debug(
@@ -884,7 +893,14 @@ export class WebServer {
       // 清理连接管理器和 MCPServiceManager
       (async () => {
         try {
+          // 移除端点事件监听器
           if (this.endpointManager) {
+            for (const [event, listener] of this.endpointEventListeners) {
+              this.endpointManager.removeListener(event, listener);
+            }
+            this.endpointEventListeners.clear();
+            this.logger.debug("端点事件监听器已移除");
+
             await this.endpointManager.cleanup();
             this.logger.debug("连接管理器已清理");
           }
