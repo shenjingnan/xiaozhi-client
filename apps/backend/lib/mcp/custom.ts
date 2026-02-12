@@ -55,6 +55,11 @@ export class CustomMCPHandler {
   private readonly TIMEOUT = DEFAULT_CONFIG.TIMEOUT; // 统一8秒超时
   private readonly CACHE_TTL = DEFAULT_CONFIG.CACHE_TTL; // 5分钟缓存过期
 
+  // 事件监听器引用（用于清理）
+  private eventListeners: {
+    configUpdated: (data: { type: string }) => void;
+  };
+
   constructor(
     cacheManager?: MCPCacheManager,
     mcpServiceManager?: MCPServiceManager
@@ -63,8 +68,31 @@ export class CustomMCPHandler {
     this.cacheManager = cacheManager || new MCPCacheManager();
     this.mcpServiceManager = mcpServiceManager;
 
+    // 初始化事件监听器引用
+    this.eventListeners = {
+      configUpdated: async (data) => {
+        await this.handleConfigUpdated(data);
+      },
+    };
+
     // 设置事件监听器
     this.setupEventListeners();
+  }
+
+  /**
+   * 处理配置更新事件
+   */
+  private async handleConfigUpdated(data: {
+    type: string;
+  }): Promise<void> {
+    if (data.type === "customMCP") {
+      this.logger.info("[CustomMCP] 检测到配置更新，重新初始化...");
+      try {
+        this.reinitialize();
+      } catch (error) {
+        this.logger.error("[CustomMCP] 配置更新处理失败:", error);
+      }
+    }
   }
 
   /**
@@ -87,16 +115,7 @@ export class CustomMCPHandler {
     const eventBus = getEventBus();
 
     // 监听配置更新事件
-    eventBus.onEvent("config:updated", async (data) => {
-      if (data.type === "customMCP") {
-        this.logger.info("[CustomMCP] 检测到配置更新，重新初始化...");
-        try {
-          this.reinitialize();
-        } catch (error) {
-          this.logger.error("[CustomMCP] 配置更新处理失败:", error);
-        }
-      }
-    });
+    eventBus.onEvent("config:updated", this.eventListeners.configUpdated);
   }
 
   /**
@@ -510,6 +529,11 @@ export class CustomMCPHandler {
    */
   public cleanup(): void {
     this.logger.info("[CustomMCP] 清理 CustomMCP 处理器资源");
+
+    // 移除事件监听器，防止内存泄漏
+    const eventBus = getEventBus();
+    eventBus.offEvent("config:updated", this.eventListeners.configUpdated);
+
     this.tools.clear();
     this.cacheManager.cleanup();
   }
