@@ -35,6 +35,7 @@ export interface DaemonOptions {
  */
 export class DaemonManagerImpl implements IDaemonManager {
   private currentDaemon: ChildProcess | null = null;
+  private logStream: fs.WriteStream | null = null;
 
   constructor(private processManager: ProcessManager) {}
 
@@ -230,16 +231,18 @@ export class DaemonManagerImpl implements IDaemonManager {
         fs.mkdirSync(logDir, { recursive: true });
       }
 
-      // 创建日志流
-      const logStream = fs.createWriteStream(logFilePath, { flags: "a" });
+      // 创建日志流并保存引用
+      this.logStream = fs.createWriteStream(logFilePath, { flags: "a" });
 
       // 重定向标准输出和错误输出
-      child.stdout?.pipe(logStream);
-      child.stderr?.pipe(logStream);
+      child.stdout?.pipe(this.logStream);
+      child.stderr?.pipe(this.logStream);
 
       // 写入启动日志
       const timestamp = new Date().toISOString();
-      logStream.write(`\n[${timestamp}] 守护进程启动 (PID: ${child.pid})\n`);
+      this.logStream.write(
+        `\n[${timestamp}] 守护进程启动 (PID: ${child.pid})\n`
+      );
     } catch (error) {
       consola.warn(
         `设置日志重定向失败: ${error instanceof Error ? error.message : String(error)}`
@@ -316,6 +319,18 @@ export class DaemonManagerImpl implements IDaemonManager {
         );
       }
       this.currentDaemon = null;
+    }
+
+    // 关闭日志流
+    if (this.logStream) {
+      try {
+        this.logStream.end();
+        this.logStream = null;
+      } catch (error) {
+        consola.warn(
+          `关闭日志流失败: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
     }
   }
 }
