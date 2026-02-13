@@ -8,6 +8,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import { createLogger } from "@utils/logger";
 
 interface NetworkServiceContextType {
   // HTTP API 方法
@@ -45,6 +46,9 @@ interface NetworkServiceProviderProps {
   children: ReactNode;
 }
 
+// 创建 Logger 实例
+const logger = createLogger("WebSocketProvider");
+
 export function NetworkServiceProvider({
   children,
 }: NetworkServiceProviderProps) {
@@ -57,15 +61,15 @@ export function NetworkServiceProvider({
 
     const initStores = async () => {
       try {
-        console.log("[WebSocketProvider] 开始初始化 stores");
+        logger.info("开始初始化 stores");
         await initializeStores();
 
         if (mounted) {
           setStoresInitialized(true);
-          console.log("[WebSocketProvider] Stores 初始化完成");
+          logger.info("Stores 初始化完成");
         }
       } catch (error) {
-        console.error("[WebSocketProvider] Stores 初始化失败:", error);
+        logger.error("Stores 初始化失败:", error);
         // 即使初始化失败，也允许应用继续运行
         if (mounted) {
           setStoresInitialized(true);
