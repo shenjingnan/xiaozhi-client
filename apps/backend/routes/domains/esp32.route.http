@@ -5,7 +5,7 @@
 @baseUrl = http://localhost:9999
 @deviceId = AA:BB:CC:DD:EE:FF
 @clientId = esp32-234567890abcdef0
-@activationCode = 957396
+@activationCode = 534806
 
 ##############################################
 # 硬件 API 测试
@@ -228,7 +228,7 @@ POST {{baseUrl}}/api/esp32/bind
 Content-Type: application/json
 
 {
-  "code": "065281"
+  "code": "{{activationCode}}"
 }
 
 ### 步骤5: 使用返回的 Token 建立 WebSocket 连接

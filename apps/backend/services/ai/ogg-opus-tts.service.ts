@@ -144,7 +144,9 @@ export class OggOpusTTSService implements ITTSService {
       // 使用预处理的Opus文件模式（带元数据）
       if (this.usePreprocessed) {
         // 尝试加载元数据文件
-        const metadataPath = this.metadataFilePath ?? this.audioFilePath.replace(/\.opus$/, ".json");
+        const metadataPath =
+          this.metadataFilePath ??
+          this.audioFilePath.replace(/\.opus$/, ".json");
 
         if (existsSync(metadataPath)) {
           logger.info(`[OggOpusTTS] 加载元数据文件: ${metadataPath}`);
@@ -152,25 +154,43 @@ export class OggOpusTTSService implements ITTSService {
           this.metadata = JSON.parse(metadataContent) as AudioMetadata;
 
           // 根据元数据分割帧
-          this.frames = this.splitIntoFrames(this.oggData, this.metadata.frames);
+          this.frames = this.splitIntoFrames(
+            this.oggData,
+            this.metadata.frames
+          );
           this.opusData = this.oggData;
 
           logger.info(
             `[OggOpusTTS] 预处理模式完成: 帧数=${this.frames.length}, 总大小=${this.opusData.length} 字节, 时长=${this.metadata.estimatedDuration}ms`
           );
         } else {
-          // 没有元数据文件，将整个数据作为单帧
+          // 没有元数据文件，尝试使用 Ogg 解封装
           logger.warn(
-            `[OggOpusTTS] 未找到元数据文件: ${metadataPath}，将整个数据作为单帧`
+            `[OggOpusTTS] 未找到元数据文件: ${metadataPath}，尝试 Ogg 解封装...`
           );
-          this.opusData = this.oggData;
-          this.frames = [
-            {
-              data: this.opusData,
-              size: this.opusData.length,
-              duration: 60, // 默认 60ms
-            },
-          ];
+
+          if (this.enableDemuxing && isOgg) {
+            // 执行 Ogg 解封装
+            const result = this.demuxOggToOpus(this.oggData);
+            this.opusData = result.opusData;
+            this.frames = result.frames;
+            logger.info(
+              `[OggOpusTTS] 解封装完成: 帧数=${this.frames.length}, 总大小=${this.opusData.length} 字节`
+            );
+          } else {
+            // 无法解封装，将整个数据作为单帧（兼容模式）
+            logger.warn(
+              "[OggOpusTTS] 无法解封装，将整个数据作为单帧（可能导致硬件解码失败）"
+            );
+            this.opusData = this.oggData;
+            this.frames = [
+              {
+                data: this.opusData,
+                size: this.opusData.length,
+                duration: 60,
+              },
+            ];
+          }
         }
 
         this.initialized = true;
@@ -215,7 +235,10 @@ export class OggOpusTTSService implements ITTSService {
   /**
    * 根据元数据分割 Opus 数据为帧数组
    */
-  private splitIntoFrames(data: Uint8Array, frameMetadata: FrameMetadata[]): OpusFrame[] {
+  private splitIntoFrames(
+    data: Uint8Array,
+    frameMetadata: FrameMetadata[]
+  ): OpusFrame[] {
     const frames: OpusFrame[] = [];
     let offset = 0;
 
@@ -298,7 +321,10 @@ export class OggOpusTTSService implements ITTSService {
    * 获取估计时长（毫秒）
    */
   getEstimatedDuration(): number {
-    return this.metadata?.estimatedDuration ?? this.frames.reduce((sum, f) => sum + f.duration, 0);
+    return (
+      this.metadata?.estimatedDuration ??
+      this.frames.reduce((sum, f) => sum + f.duration, 0)
+    );
   }
 
   /**
@@ -320,7 +346,10 @@ export class OggOpusTTSService implements ITTSService {
    * @param oggData - Ogg文件数据
    * @returns Opus数据和帧数组
    */
-  private demuxOggToOpus(oggData: Uint8Array): { opusData: Uint8Array; frames: OpusFrame[] } {
+  private demuxOggToOpus(oggData: Uint8Array): {
+    opusData: Uint8Array;
+    frames: OpusFrame[];
+  } {
     logger.info("[OggOpusTTS] 开始解封装Ogg文件...");
 
     const opusFrames: OpusFrame[] = [];
@@ -397,10 +426,7 @@ export class OggOpusTTSService implements ITTSService {
       }
 
       // 合并所有Opus帧
-      const totalSize = opusFrames.reduce(
-        (sum, frame) => sum + frame.size,
-        0
-      );
+      const totalSize = opusFrames.reduce((sum, frame) => sum + frame.size, 0);
       const combinedOpus = new Uint8Array(totalSize);
       let writeOffset = 0;
       for (const frame of opusFrames) {
