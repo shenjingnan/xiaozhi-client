@@ -1,20 +1,21 @@
 /**
- * WebServer - 主控制器，协调各个服务和处理器
+ * Web 服务器
  *
- * WebServer 是 xiaozhi-client 的核心服务器类，负责：
- * - 启动和管理 HTTP 服务器
+ * 负责：
+ * - 启动和管理 HTTP/HTTPS 服务器
+ * - 注册和管理路由
+ * - 集成中间件（CORS、日志、错误处理等）
  * - 管理 WebSocket 连接
- * - 初始化和协调各种服务（MCP、Endpoint、Notification 等）
- * - 注册和管理路由系统
- * - 处理事件总线和状态管理
+ * - 集成 MCP 服务和端点管理器
+ * - 生命周期管理（启动、停止、清理）
  *
- * 使用方式：
+ * @example
  * ```typescript
- * const server = new WebServer(3000);
+ * import { WebServer } from './WebServer';
+ *
+ * const server = new WebServer();
  * await server.start();
  * ```
- *
- * @module WebServer
  */
 
 import { createServer } from "node:http";
