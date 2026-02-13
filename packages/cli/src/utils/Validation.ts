@@ -37,7 +37,10 @@ export class Validation {
   /**
    * 验证必填字段
    */
-  static validateRequired(value: any, fieldName: string): void {
+  static validateRequired(
+    value: string | number | boolean | object | null | undefined,
+    fieldName: string
+  ): void {
     if (value === undefined || value === null || value === "") {
       throw ValidationError.requiredField(fieldName);
     }
@@ -169,7 +172,7 @@ export class Validation {
   /**
    * 验证 JSON 格式
    */
-  static validateJson(jsonString: string, fieldName = "json"): any {
+  static validateJson(jsonString: string, fieldName = "json"): unknown {
     try {
       return JSON.parse(jsonString);
     } catch (error) {
@@ -206,8 +209,8 @@ export class Validation {
   /**
    * 验证数组长度
    */
-  static validateArrayLength(
-    array: any[],
+  static validateArrayLength<T>(
+    array: T[],
     fieldName: string,
     options: { min?: number; max?: number } = {}
   ): void {
@@ -230,7 +233,7 @@ export class Validation {
    * 验证对象属性
    */
   static validateObjectProperties(
-    obj: Record<string, any>,
+    obj: Record<string, unknown>,
     requiredProps: string[],
     fieldName = "object"
   ): void {

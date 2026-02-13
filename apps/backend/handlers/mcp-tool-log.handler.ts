@@ -104,7 +104,7 @@ export class MCPToolLogHandler extends BaseHandler {
     if (!result.success) {
       return {
         success: false,
-        error: result.error.errors.map((err) => ({
+        error: result.error.issues.map((err) => ({
           field: err.path.join("."),
           message: err.message,
         })),

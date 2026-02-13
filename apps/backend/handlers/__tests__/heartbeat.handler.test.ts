@@ -310,7 +310,7 @@ describe("HeartbeatHandler", () => {
 
       heartbeatHandler.checkHeartbeatTimeout();
 
-      expect(mockLogger.warn).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         "客户端心跳超时，标记为断开连接"
       );
       expect(mockStatusService.updateClientInfo).toHaveBeenCalledWith(
@@ -336,7 +336,7 @@ describe("HeartbeatHandler", () => {
 
       heartbeatHandler.checkHeartbeatTimeout();
 
-      expect(mockLogger.warn).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         "客户端心跳超时，标记为断开连接"
       );
       expect(mockStatusService.updateClientInfo).toHaveBeenCalledWith(

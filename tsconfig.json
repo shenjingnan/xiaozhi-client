@@ -8,7 +8,6 @@
     "allowJs": true,
     "checkJs": false,
     "outDir": "./dist",
-    "rootDir": "./apps/backend",
     "baseUrl": ".",
     "strict": true,
     "noImplicitAny": true,
@@ -33,6 +32,7 @@
   "references": [
     { "path": "./apps/backend" },
     { "path": "./packages/config" },
+    { "path": "./packages/mcp-core" },
     { "path": "./packages/shared-types" },
     { "path": "./packages/cli" },
     { "path": "./packages/endpoint" },

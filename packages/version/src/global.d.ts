@@ -3,5 +3,9 @@
  *
  * 这些常量由构建工具在构建时注入
  */
-declare const __VERSION__: string;
-declare const __APP_NAME__: string;
+declare global {
+  const __VERSION__: string;
+  const __APP_NAME__: string;
+}
+
+export {};
