@@ -338,9 +338,7 @@ export class ESP32Connection {
     // uint32 最大值为 4294967295（约 4294967296 毫秒 ≈ 49.7 天）
     const timestampInMs = (timestamp ?? Date.now()) % 4294967296;
 
-    logger.debug(
-      `[ESP32Connection] 时间戳: ${timestampInMs}ms (uint32范围内)`
-    );
+    logger.debug(`[ESP32Connection] 时间戳: ${timestampInMs}ms (uint32范围内)`);
 
     const packet = encodeBinaryProtocol2(data, timestampInMs, "opus");
 

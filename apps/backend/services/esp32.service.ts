@@ -3,6 +3,7 @@
  * 负责ESP32设备的连接管理和消息路由
  */
 
+import { join } from "node:path";
 import { logger } from "@/Logger.js";
 import { ESP32Connection } from "@/lib/esp32/connection.js";
 import {
@@ -18,7 +19,7 @@ import {
 } from "@/types/esp32.js";
 import { camelToSnakeCase, extractDeviceInfo } from "@/utils/esp32-utils.js";
 import type WebSocket from "ws";
-import { MockAIService, OggOpusTTSService } from "./ai/index.js";
+import { MockAIService, PCOpusTTSService } from "./ai/index.js";
 import type { DeviceRegistryService } from "./device-registry.service.js";
 import { getEventBus } from "./event-bus.service.js";
 import { VoiceSessionService } from "./voice-session.service.js";
@@ -68,10 +69,10 @@ export class ESP32Service {
 
     // 初始化AI服务
     const aiService = new MockAIService();
-    // 使用 OggOpusTTSService 替代 MockTTSService
-    // 支持 Ogg 容器解封装，提取纯 Opus 数据
-    const ttsService = new OggOpusTTSService({
-      enableDemuxing: true, // 启用 Ogg 解封装
+    // 使用 PCOpusTTSService 将 PCM 编码为 Opus
+    // PCM 文件：16kHz, mono, 16bit, 将被编码为 60ms 帧
+    const ttsService = new PCOpusTTSService({
+      audioFilePath: join(__dirname, "../../assets/audio/test.pcm"),
     });
     const eventBus = getEventBus();
 

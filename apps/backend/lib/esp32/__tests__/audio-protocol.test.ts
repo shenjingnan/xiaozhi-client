@@ -273,7 +273,11 @@ describe("BinaryProtocol2 音频协议", () => {
         const payload = new Uint8Array([0x01]);
         const overflowTimestamp = 4294967296 + 123; // 2^32 + 123
 
-        const buffer = encodeBinaryProtocol2(payload, overflowTimestamp, "opus");
+        const buffer = encodeBinaryProtocol2(
+          payload,
+          overflowTimestamp,
+          "opus"
+        );
 
         // 验证时间戳被模运算截断
         expect(buffer.readUInt32BE(8)).toBe(123);

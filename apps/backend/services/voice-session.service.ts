@@ -445,9 +445,16 @@ export class VoiceSessionService {
     logger.debug(`[VoiceSession] 开始合成音频: text="${text}"`);
 
     // 检查 TTS 服务是否支持逐帧合成
-    if ("synthesizeFrames" in this.ttsService && typeof this.ttsService.synthesizeFrames === "function") {
+    if (
+      "synthesizeFrames" in this.ttsService &&
+      typeof this.ttsService.synthesizeFrames === "function"
+    ) {
       // 使用逐帧发送模式
-      const frames = await (this.ttsService as ITTSService & { synthesizeFrames: (text: string) => Promise<OpusFrame[]> }).synthesizeFrames(text);
+      const frames = await (
+        this.ttsService as ITTSService & {
+          synthesizeFrames: (text: string) => Promise<OpusFrame[]>;
+        }
+      ).synthesizeFrames(text);
       logger.info(
         `[VoiceSession] 音频帧合成完成: deviceId=${deviceId}, frameCount=${frames.length}`
       );

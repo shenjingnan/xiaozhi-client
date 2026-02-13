@@ -7,3 +7,4 @@ export * from "./ai-service.interface.js";
 export * from "./mock-ai.service.js";
 export * from "./mock-tts.service.js";
 export * from "./ogg-opus-tts.service.js";
+export * from "./pcm-opus-tts.service.js";
