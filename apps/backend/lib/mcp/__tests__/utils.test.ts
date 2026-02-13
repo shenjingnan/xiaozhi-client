@@ -8,28 +8,23 @@ import {
 } from "../utils.js";
 
 // Mock Logger
-vi.mock("@/Logger.js");
-
-interface MockLogger {
-  info: ReturnType<typeof vi.fn>;
-  warn: ReturnType<typeof vi.fn>;
-  error: ReturnType<typeof vi.fn>;
-  debug: ReturnType<typeof vi.fn>;
-}
-
-let mockLogger: MockLogger;
-
-beforeEach(() => {
-  vi.clearAllMocks();
-
-  // Setup mock logger
-  mockLogger = {
+vi.mock("@/Logger.js", () => ({
+  logger: {
+    debug: vi.fn(),
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
-    debug: vi.fn(),
-  };
-  Object.assign(logger, mockLogger);
+    withTag: vi.fn().mockReturnValue({
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+    }),
+  },
+}));
+
+beforeEach(() => {
+  vi.clearAllMocks();
 });
 
 describe("MCP 传输类型推断工具", () => {
@@ -293,7 +288,7 @@ describe("MCP 传输类型推断工具", () => {
           serviceName,
         });
 
-        expect(mockLogger.info).toHaveBeenCalledWith(
+        expect(logger.info).toHaveBeenCalledWith(
           `[MCP-${serviceName}] URL 路径 /api/v1/tools 不匹配特定规则，默认推断为 http 类型`
         );
       });
@@ -306,7 +301,7 @@ describe("MCP 传输类型推断工具", () => {
           serviceName,
         });
 
-        expect(mockLogger.warn).toHaveBeenCalledWith(
+        expect(logger.warn).toHaveBeenCalledWith(
           `[MCP-${serviceName}] URL 解析失败，默认推断为 http 类型`,
           expect.any(Error)
         );
@@ -324,8 +319,8 @@ describe("MCP 传输类型推断工具", () => {
           serviceName: "test-service",
         });
 
-        expect(mockLogger.info).not.toHaveBeenCalled();
-        expect(mockLogger.warn).not.toHaveBeenCalled();
+        expect(logger.info).not.toHaveBeenCalled();
+        expect(logger.warn).not.toHaveBeenCalled();
       });
     });
   });
@@ -442,7 +437,7 @@ describe("MCP 传输类型推断工具", () => {
         inferTransportTypeFromConfig(config, "test-service");
 
         // 验证是否用正确的参数调用了日志记录
-        expect(mockLogger.warn).toHaveBeenCalledWith(
+        expect(logger.warn).toHaveBeenCalledWith(
           "[MCP-test-service] URL 解析失败，默认推断为 http 类型",
           expect.any(Error)
         );
