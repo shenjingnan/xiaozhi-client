@@ -8,7 +8,7 @@
 export interface MCPMessage {
   jsonrpc: "2.0";
   method: string;
-  params?: any;
+  params?: unknown;
   id?: string | number;
 }
 
@@ -17,7 +17,7 @@ export interface MCPMessage {
  */
 export interface MCPResponse {
   jsonrpc: "2.0";
-  result?: any;
+  result?: unknown;
   error?: MCPError;
   id: string | number | null;
 }
@@ -28,7 +28,7 @@ export interface MCPResponse {
 export interface MCPError {
   code: number;
   message: string;
-  data?: any;
+  data?: unknown;
 }
 
 /**

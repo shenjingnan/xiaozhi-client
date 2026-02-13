@@ -1,3 +1,17 @@
+/**
+ * MCP 服务管理 API 处理器
+ *
+ * 负责处理 MCP 服务的动态管理操作，包括：
+ * - 服务的添加和删除（若需更新服务配置，请先删除后重新添加）
+ * - 服务的停止和资源清理
+ * - 服务状态查询
+ * - 服务工具信息查询
+ * - 配置验证和持久化
+ *
+ * 该处理器通过 MCPServiceManager 管理多个 MCP 服务实例，
+ * 并通过 EventBus 发布（发射）服务状态变化事件。
+ */
+
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import { ErrorCategory, MCPError, MCPErrorCode } from "@/errors/mcp-errors.js";
@@ -361,18 +375,19 @@ export class MCPHandler {
       // 6. 获取服务状态和工具列表
       const serviceStatus = this.getServiceStatus(name);
       const tools = this.getServiceTools(name);
+      const toolNames = tools.map((tool) => tool.name);
 
       // 7. 发送事件通知
       getEventBus().emitEvent("mcp:server:added", {
         serverName: name,
         config: normalizedConfig,
-        tools: tools.map((tool) => tool.name),
+        tools: toolNames,
         timestamp: new Date(),
       });
 
       return {
         ...serviceStatus,
-        tools: tools.map((tool) => tool.name),
+        tools: toolNames,
       };
     } catch (error) {
       const mcpError = this.handleError(error, "addMCPServerSingle", {

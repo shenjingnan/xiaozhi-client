@@ -42,7 +42,7 @@ packages/cli/
 
 - **入口点**：`src/index.ts` → `../../dist/cli/index.js`
 - **格式**：ESM (ES Modules)
-- **目标**：Node.js 18+
+- **目标**：Node.js 20+
 - **打包工具**：tsup (esbuild)
 
 ## 外部依赖

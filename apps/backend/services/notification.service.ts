@@ -1,3 +1,25 @@
+/**
+ * 通知服务
+ *
+ * 负责管理 WebSocket 客户端连接和消息推送，实现实时通知功能。
+ *
+ * ## 核心功能
+ * - WebSocket 客户端管理：注册、移除、连接状态跟踪
+ * - 消息队列：离线消息缓存，重连后自动推送
+ * - 事件广播：监听 EventBus 事件并推送给所有连接的客户端
+ * - 消息类型：配置更新、状态变更、服务重启、NPM 安装日志等
+ *
+ * ## 使用方式
+ * - 由 WebServer 在初始化阶段创建实例
+ * - 当前主要由 WebSocket 相关 handler（如 RealtimeNotificationHandler / HeartbeatHandler）持有并使用
+ * - 如需在 HTTP handler 中使用，可通过自定义中间件将其实例注入到 Hono Context
+ *
+ * ## 注意事项
+ * - 消息队列最大容量：100 条/客户端
+ * - 客户断开连接时会自动清理资源
+ * - 与 EventBus 紧密集成，监听系统事件并广播
+ */
+
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import type { EventBus } from "@/services/event-bus.service.js";
