@@ -41,7 +41,7 @@ import {
   RefreshCw,
   Workflow,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 interface CozeWorkflowIntegrationProps {
@@ -130,275 +130,284 @@ export function CozeWorkflowIntegration({
     selectWorkspace,
   ]);
 
-  const handleWorkspaceChange = (workspaceId: string) => {
-    // 用户手动选择工作空间时，标记为已进行手动选择
-    // 这样自动选择逻辑就不会再次触发
-    setHasAutoSelected(true);
-    selectWorkspace(workspaceId);
-  };
+  const handleWorkspaceChange = useCallback(
+    (workspaceId: string) => {
+      // 用户手动选择工作空间时，标记为已进行手动选择
+      // 这样自动选择逻辑就不会再次触发
+      setHasAutoSelected(true);
+      selectWorkspace(workspaceId);
+    },
+    [selectWorkspace]
+  );
 
-  const handleAddWorkflow = (workflow: CozeWorkflow) => {
-    // 检查网络状态
-    if (!isOnline) {
-      toast.error("网络连接已断开，请检查网络后重试");
-      return;
-    }
+  const handleAddWorkflow = useCallback(
+    (workflow: CozeWorkflow) => {
+      // 检查网络状态
+      if (!isOnline) {
+        toast.error("网络连接已断开，请检查网络后重试");
+        return;
+      }
 
-    // 检查是否已有相同操作在进行
-    const operationKey = `add_${workflow.workflow_id}`;
-    if (pendingOperations.has(operationKey)) {
-      toast.warning("该工作流正在添加中，请勿重复操作");
-      return;
-    }
+      // 检查是否已有相同操作在进行
+      const operationKey = `add_${workflow.workflow_id}`;
+      if (pendingOperations.has(operationKey)) {
+        toast.warning("该工作流正在添加中，请勿重复操作");
+        return;
+      }
 
-    // 显示参数配置对话框
-    setParameterConfigDialog({
-      open: true,
-      workflow,
-    });
-  };
+      // 显示参数配置对话框
+      setParameterConfigDialog({
+        open: true,
+        workflow,
+      });
+    },
+    [isOnline, pendingOperations]
+  );
 
   // 处理参数配置确认
-  const handleParameterConfigConfirm = async (
-    workflow: CozeWorkflow,
-    parameters: WorkflowParameter[]
-  ) => {
-    const operationKey = `add_${workflow.workflow_id}`;
+  const handleParameterConfigConfirm = useCallback(
+    async (workflow: CozeWorkflow, parameters: WorkflowParameter[]) => {
+      const operationKey = `add_${workflow.workflow_id}`;
 
-    setIsAddingWorkflow(true);
-    setPendingOperations((prev) => new Set(prev).add(operationKey));
+      setIsAddingWorkflow(true);
+      setPendingOperations((prev) => new Set(prev).add(operationKey));
 
-    try {
-      // 验证工作流数据完整性
-      if (
-        !workflow.workflow_id ||
-        !workflow.workflow_name ||
-        !workflow.app_id
-      ) {
-        throw new Error("工作流数据不完整，缺少必要字段");
-      }
-
-      // 再次检查网络状态
-      if (!isOnline) {
-        throw new Error("网络连接已断开，请检查网络后重试");
-      }
-
-      // 构建参数配置
-      const parameterConfig =
-        parameters.length > 0 ? { parameters } : undefined;
-
-      const request = {
-        type: "coze" as const,
-        data: {
-          workflow,
-          customName: undefined,
-          customDescription: undefined,
-          parameterConfig,
-        },
-      };
-      const addedTool = await apiClient.addCustomTool(request);
-
-      toast.success(
-        `已添加工作流 "${workflow.workflow_name}" 为 MCP 工具 "${
-          addedTool.name
-        }"${
-          parameters.length > 0 ? `，配置了 ${parameters.length} 个参数` : ""
-        }`
-      );
-
-      // 立即更新本地工作流状态，标记为已添加
-      setWorkflows((prevWorkflows) =>
-        prevWorkflows.map((w) =>
-          w.workflow_id === workflow.workflow_id
-            ? {
-                ...w,
-                isAddedAsTool: true,
-                toolName: addedTool.name,
-              }
-            : w
-        )
-      );
-
-      // 通知父组件工具已添加，触发工具列表刷新
-      onToolAdded?.();
-
-      // 刷新工作流列表以确保状态同步
-      await refreshWorkflows();
-    } catch (error) {
-      console.error("添加工作流失败:", error);
-
-      // 根据错误类型显示不同的错误信息
-      let errorMessage = "添加工作流失败，请重试";
-
-      if (error instanceof Error) {
+      try {
+        // 验证工作流数据完整性
         if (
-          error.message.includes("已存在") ||
-          error.message.includes("冲突")
+          !workflow.workflow_id ||
+          !workflow.workflow_name ||
+          !workflow.app_id
         ) {
-          errorMessage = `工作流 "${workflow.workflow_name}" 已存在，请勿重复添加`;
-        } else if (
-          error.message.includes("配置") ||
-          error.message.includes("token")
-        ) {
-          errorMessage = "系统配置错误，请检查扣子API配置";
-        } else if (
-          error.message.includes("验证失败") ||
-          error.message.includes("格式")
-        ) {
-          errorMessage = "工作流数据格式错误，请联系管理员";
-        } else if (
-          error.message.includes("网络") ||
-          error.message.includes("超时") ||
-          error.message.includes("连接")
-        ) {
-          errorMessage = "网络连接失败，请检查网络后重试";
-        } else if (error.message.includes("权限")) {
-          errorMessage = "权限不足，请检查API权限配置";
-        } else if (error.message.includes("频繁")) {
-          errorMessage = "操作过于频繁，请稍后重试";
-        } else {
-          errorMessage = error.message;
+          throw new Error("工作流数据不完整，缺少必要字段");
         }
-      }
 
-      toast.error(errorMessage);
-    } finally {
-      setIsAddingWorkflow(false);
-      setPendingOperations((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(operationKey);
-        return newSet;
-      });
-      setParameterConfigDialog({ open: false });
-    }
-  };
+        // 再次检查网络状态
+        if (!isOnline) {
+          throw new Error("网络连接已断开，请检查网络后重试");
+        }
+
+        // 构建参数配置
+        const parameterConfig =
+          parameters.length > 0 ? { parameters } : undefined;
+
+        const request = {
+          type: "coze" as const,
+          data: {
+            workflow,
+            customName: undefined,
+            customDescription: undefined,
+            parameterConfig,
+          },
+        };
+        const addedTool = await apiClient.addCustomTool(request);
+
+        toast.success(
+          `已添加工作流 "${workflow.workflow_name}" 为 MCP 工具 "${
+            addedTool.name
+          }"${
+            parameters.length > 0 ? `，配置了 ${parameters.length} 个参数` : ""
+          }`
+        );
+
+        // 立即更新本地工作流状态，标记为已添加
+        setWorkflows((prevWorkflows) =>
+          prevWorkflows.map((w) =>
+            w.workflow_id === workflow.workflow_id
+              ? {
+                  ...w,
+                  isAddedAsTool: true,
+                  toolName: addedTool.name,
+                }
+              : w
+          )
+        );
+
+        // 通知父组件工具已添加，触发工具列表刷新
+        onToolAdded?.();
+
+        // 刷新工作流列表以确保状态同步
+        await refreshWorkflows();
+      } catch (error) {
+        console.error("添加工作流失败:", error);
+
+        // 根据错误类型显示不同的错误信息
+        let errorMessage = "添加工作流失败，请重试";
+
+        if (error instanceof Error) {
+          if (
+            error.message.includes("已存在") ||
+            error.message.includes("冲突")
+          ) {
+            errorMessage = `工作流 "${workflow.workflow_name}" 已存在，请勿重复添加`;
+          } else if (
+            error.message.includes("配置") ||
+            error.message.includes("token")
+          ) {
+            errorMessage = "系统配置错误，请检查扣子API配置";
+          } else if (
+            error.message.includes("验证失败") ||
+            error.message.includes("格式")
+          ) {
+            errorMessage = "工作流数据格式错误，请联系管理员";
+          } else if (
+            error.message.includes("网络") ||
+            error.message.includes("超时") ||
+            error.message.includes("连接")
+          ) {
+            errorMessage = "网络连接失败，请检查网络后重试";
+          } else if (error.message.includes("权限")) {
+            errorMessage = "权限不足，请检查API权限配置";
+          } else if (error.message.includes("频繁")) {
+            errorMessage = "操作过于频繁，请稍后重试";
+          } else {
+            errorMessage = error.message;
+          }
+        }
+
+        toast.error(errorMessage);
+      } finally {
+        setIsAddingWorkflow(false);
+        setPendingOperations((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(operationKey);
+          return newSet;
+        });
+        setParameterConfigDialog({ open: false });
+      }
+    },
+    [isOnline, onToolAdded, refreshWorkflows, setWorkflows]
+  );
 
   // 处理参数配置取消
-  const handleParameterConfigCancel = () => {
+  const handleParameterConfigCancel = useCallback(() => {
     setParameterConfigDialog({ open: false });
-  };
+  }, []);
 
-  const handleConfirmAddWorkflow = async (workflow: CozeWorkflow) => {
-    const operationKey = `add_${workflow.workflow_id}`;
+  const handleConfirmAddWorkflow = useCallback(
+    async (workflow: CozeWorkflow) => {
+      const operationKey = `add_${workflow.workflow_id}`;
 
-    setIsAddingWorkflow(true);
-    setPendingOperations((prev) => new Set(prev).add(operationKey));
+      setIsAddingWorkflow(true);
+      setPendingOperations((prev) => new Set(prev).add(operationKey));
 
-    try {
-      // 验证工作流数据完整性
-      if (
-        !workflow.workflow_id ||
-        !workflow.workflow_name ||
-        !workflow.app_id
-      ) {
-        throw new Error("工作流数据不完整，缺少必要字段");
-      }
-
-      // 再次检查网络状态
-      if (!isOnline) {
-        throw new Error("网络连接已断开，请检查网络后重试");
-      }
-
-      // 使用新的统一数据格式添加工具
-      const request = {
-        type: "coze" as const,
-        data: {
-          workflow,
-          customName: undefined,
-          customDescription: undefined,
-          parameterConfig: undefined,
-        },
-      };
-      const addedTool = await apiClient.addCustomTool(request);
-
-      toast.success(
-        `已添加工作流 "${workflow.workflow_name}" 为 MCP 工具 "${addedTool.name}"`
-      );
-
-      // 立即更新本地工作流状态，标记为已添加
-      setWorkflows((prevWorkflows) =>
-        prevWorkflows.map((w) =>
-          w.workflow_id === workflow.workflow_id
-            ? {
-                ...w,
-                isAddedAsTool: true,
-                toolName: addedTool.name,
-              }
-            : w
-        )
-      );
-
-      // 通知父组件工具已添加，触发工具列表刷新
-      onToolAdded?.();
-
-      // 刷新工作流列表以确保状态同步
-      await refreshWorkflows();
-    } catch (error) {
-      console.error("添加工作流失败:", error);
-
-      // 根据错误类型显示不同的错误信息
-      let errorMessage = "添加工作流失败，请重试";
-
-      if (error instanceof Error) {
+      try {
+        // 验证工作流数据完整性
         if (
-          error.message.includes("已存在") ||
-          error.message.includes("冲突")
+          !workflow.workflow_id ||
+          !workflow.workflow_name ||
+          !workflow.app_id
         ) {
-          errorMessage = `工作流 "${workflow.workflow_name}" 已存在，请勿重复添加`;
-        } else if (
-          error.message.includes("配置") ||
-          error.message.includes("token")
-        ) {
-          errorMessage = "系统配置错误，请检查扣子API配置";
-        } else if (
-          error.message.includes("验证失败") ||
-          error.message.includes("格式")
-        ) {
-          errorMessage = "工作流数据格式错误，请联系管理员";
-        } else if (
-          error.message.includes("网络") ||
-          error.message.includes("超时") ||
-          error.message.includes("连接")
-        ) {
-          errorMessage = "网络连接失败，请检查网络后重试";
-        } else if (error.message.includes("权限")) {
-          errorMessage = "权限不足，请检查API权限配置";
-        } else if (error.message.includes("频繁")) {
-          errorMessage = "操作过于频繁，请稍后重试";
-        } else {
-          errorMessage = error.message;
+          throw new Error("工作流数据不完整，缺少必要字段");
         }
+
+        // 再次检查网络状态
+        if (!isOnline) {
+          throw new Error("网络连接已断开，请检查网络后重试");
+        }
+
+        // 使用新的统一数据格式添加工具
+        const request = {
+          type: "coze" as const,
+          data: {
+            workflow,
+            customName: undefined,
+            customDescription: undefined,
+            parameterConfig: undefined,
+          },
+        };
+        const addedTool = await apiClient.addCustomTool(request);
+
+        toast.success(
+          `已添加工作流 "${workflow.workflow_name}" 为 MCP 工具 "${addedTool.name}"`
+        );
+
+        // 立即更新本地工作流状态，标记为已添加
+        setWorkflows((prevWorkflows) =>
+          prevWorkflows.map((w) =>
+            w.workflow_id === workflow.workflow_id
+              ? {
+                  ...w,
+                  isAddedAsTool: true,
+                  toolName: addedTool.name,
+                }
+              : w
+          )
+        );
+
+        // 通知父组件工具已添加，触发工具列表刷新
+        onToolAdded?.();
+
+        // 刷新工作流列表以确保状态同步
+        await refreshWorkflows();
+      } catch (error) {
+        console.error("添加工作流失败:", error);
+
+        // 根据错误类型显示不同的错误信息
+        let errorMessage = "添加工作流失败，请重试";
+
+        if (error instanceof Error) {
+          if (
+            error.message.includes("已存在") ||
+            error.message.includes("冲突")
+          ) {
+            errorMessage = `工作流 "${workflow.workflow_name}" 已存在，请勿重复添加`;
+          } else if (
+            error.message.includes("配置") ||
+            error.message.includes("token")
+          ) {
+            errorMessage = "系统配置错误，请检查扣子API配置";
+          } else if (
+            error.message.includes("验证失败") ||
+            error.message.includes("格式")
+          ) {
+            errorMessage = "工作流数据格式错误，请联系管理员";
+          } else if (
+            error.message.includes("网络") ||
+            error.message.includes("超时") ||
+            error.message.includes("连接")
+          ) {
+            errorMessage = "网络连接失败，请检查网络后重试";
+          } else if (error.message.includes("权限")) {
+            errorMessage = "权限不足，请检查API权限配置";
+          } else if (error.message.includes("频繁")) {
+            errorMessage = "操作过于频繁，请稍后重试";
+          } else {
+            errorMessage = error.message;
+          }
+        }
+
+        toast.error(errorMessage);
+      } finally {
+        setIsAddingWorkflow(false);
+        setPendingOperations((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(operationKey);
+          return newSet;
+        });
+        setConfirmDialog({ open: false, action: "add" });
       }
+    },
+    [isOnline, onToolAdded, refreshWorkflows, setWorkflows]
+  );
 
-      toast.error(errorMessage);
-    } finally {
-      setIsAddingWorkflow(false);
-      setPendingOperations((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(operationKey);
-        return newSet;
-      });
-      setConfirmDialog({ open: false, action: "add" });
-    }
-  };
-
-  const handlePrevPage = () => {
+  const handlePrevPage = useCallback(() => {
     if (currentPage > 1) {
       setPage(currentPage - 1);
     }
-  };
+  }, [currentPage, setPage]);
 
-  const handleNextPage = () => {
+  const handleNextPage = useCallback(() => {
     if (hasMoreWorkflows) {
       setPage(currentPage + 1);
     }
-  };
+  }, [currentPage, hasMoreWorkflows, setPage]);
 
-  const handleRefreshWorkflows = () => {
+  const handleRefreshWorkflows = useCallback(() => {
     if (selectedWorkspace) {
       refreshWorkflows();
     }
-  };
+  }, [selectedWorkspace, refreshWorkflows]);
 
   // 渲染工作空间选择器
   const renderWorkspaceSelector = () => (
