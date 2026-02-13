@@ -9,7 +9,7 @@
  * - 配置验证和持久化
  *
  * 该处理器通过 MCPServiceManager 管理多个 MCP 服务实例，
- * 并通过 EventBus 响应服务状态变化事件。
+ * 并通过 EventBus 发布（发射）服务状态变化事件。
  */
 
 import type { Logger } from "@/Logger.js";
