@@ -406,8 +406,8 @@ xiaozhi-client 是一个务实的开源 MCP 客户端：
 **推荐导入方式**：
 ```typescript
 // ✅ 新代码推荐方式
-import { MCPService } from "@/lib/mcp";
-import { MCPServiceManager } from "@/lib/mcp";
+import { MCPConnection, MCPServiceManager } from "@xiaozhi-client/mcp-core";
+import { configManager } from "@xiaozhi-client/config";
 
 // ✅ 向后兼容方式（仍然支持）
 import { MCPService } from "@/lib/mcp";
@@ -434,8 +434,8 @@ import { WebSocketAdapter } from "@transports";
 import { HTTPAdapter } from "@adapters";
 
 // 管理器和服务
-import { ConnectionManager } from "@managers";
-import { ConfigService } from "@/services";
+import { ConfigApiHandler, StatusApiHandler } from "@/handlers";
+import { StatusService } from "@/services";
 
 // CLI相关
 import { StartCommand } from "@cli/commands";
