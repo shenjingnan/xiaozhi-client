@@ -1,3 +1,17 @@
+/**
+ * Logger 中间件
+ *
+ * 将 logger 实例注入到 Hono Context 中，提供统一的日志记录功能。
+ * 支持两种访问方式：
+ * 1. c.get("logger") - Hono 推荐做法
+ * 2. c.logger - 向后兼容方式
+ *
+ * @example
+ * ```typescript
+ * app.use("/*", loggerMiddleware);
+ * ```
+ */
+
 import { logger } from "@/Logger.js";
 import type { Logger } from "@/Logger.js";
 import type { AppContext } from "@/types/hono.context.js";
