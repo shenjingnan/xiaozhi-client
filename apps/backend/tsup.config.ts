@@ -104,7 +104,6 @@ export default defineConfig({
     "@hono/*",
     "node-cache",
     "jsonc-parser",
-    "ws",
     "@coze/api",
     "@modelcontextprotocol/*",
     // @xiaozhi-client 内部包（运行时从 dist 读取）
