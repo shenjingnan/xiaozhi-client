@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Switch } from "@/components/ui/switch";
 import {
   Table,
@@ -343,30 +344,35 @@ export function McpToolTable({
             </div>
           </div>
         ) : error ? (
-          <div className="flex flex-col items-center justify-center py-12 gap-4">
-            <div className="text-red-500 text-sm">{error}</div>
-            <Button variant="outline" size="sm" onClick={handleRefresh}>
-              重试
-            </Button>
-          </div>
+          <EmptyState
+            title="加载失败"
+            description={error}
+            action={
+              <Button variant="outline" size="sm" onClick={handleRefresh}>
+                重试
+              </Button>
+            }
+          />
         ) : filteredTools.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 gap-4">
-            <CoffeeIcon className="h-12 w-12 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">
-              {searchValue
+          <EmptyState
+            icon={<CoffeeIcon className="h-12 w-12 text-muted-foreground" />}
+            title={
+              searchValue
                 ? "没有找到匹配的工具"
                 : initialStatus === "enabled"
                   ? "没有已启用的工具"
                   : initialStatus === "disabled"
                     ? "没有已禁用的工具"
-                    : "暂无可用工具"}
-            </span>
-            {searchValue && (
-              <Button variant="outline" size="sm" onClick={clearSearch}>
-                清除搜索
-              </Button>
-            )}
-          </div>
+                    : "暂无可用工具"
+            }
+            action={
+              searchValue && (
+                <Button variant="outline" size="sm" onClick={clearSearch}>
+                  清除搜索
+                </Button>
+              )
+            }
+          />
         ) : (
           <>
             <Table size="compact">

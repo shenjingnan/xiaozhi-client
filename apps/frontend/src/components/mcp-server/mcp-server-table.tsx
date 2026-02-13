@@ -2,6 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Table,
   TableBody,
@@ -197,17 +198,17 @@ export function McpServerTable({ className }: McpServerTableProps) {
       {/* 表格容器 */}
       <div className="rounded-md border">
         {paginatedServers.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 gap-4">
-            <CoffeeIcon className="h-12 w-12 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">
-              {searchValue ? "没有找到匹配的服务器" : "暂无可用服务器"}
-            </span>
-            {searchValue && (
-              <Button variant="outline" size="sm" onClick={clearSearch}>
-                清除搜索
-              </Button>
-            )}
-          </div>
+          <EmptyState
+            icon={<CoffeeIcon className="h-12 w-12 text-muted-foreground" />}
+            title={searchValue ? "没有找到匹配的服务器" : "暂无可用服务器"}
+            action={
+              searchValue && (
+                <Button variant="outline" size="sm" onClick={clearSearch}>
+                  清除搜索
+                </Button>
+              )
+            }
+          />
         ) : (
           <>
             <Table size="compact">

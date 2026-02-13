@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Select,
   SelectContent,
@@ -437,27 +438,27 @@ export function CozeWorkflowIntegration({
   const renderWorkflowList = () => {
     if (!selectedWorkspace) {
       return (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <Workflow className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">请先选择工作空间</h3>
-          <p className="text-sm text-muted-foreground">
-            选择一个工作空间后，将显示该空间下的工作流列表
-          </p>
-        </div>
+        <EmptyState
+          icon={<Workflow className="h-12 w-12 text-muted-foreground" />}
+          title="请先选择工作空间"
+          description="选择一个工作空间后，将显示该空间下的工作流列表"
+        />
       );
     }
 
     if (workflowsError) {
       return (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
-          <h3 className="text-lg font-medium mb-2">加载工作流失败</h3>
-          <p className="text-sm text-muted-foreground mb-4">{workflowsError}</p>
-          <Button onClick={handleRefreshWorkflows} variant="outline">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            重试
-          </Button>
-        </div>
+        <EmptyState
+          icon={<AlertCircle className="h-12 w-12 text-red-500" />}
+          title="加载工作流失败"
+          description={workflowsError}
+          action={
+            <Button onClick={handleRefreshWorkflows} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              重试
+            </Button>
+          }
+        />
       );
     }
 
@@ -486,13 +487,11 @@ export function CozeWorkflowIntegration({
 
     if (workflows.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <Workflow className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">暂无工作流</h3>
-          <p className="text-sm text-muted-foreground">
-            当前工作空间下没有可用的工作流
-          </p>
-        </div>
+        <EmptyState
+          icon={<Workflow className="h-12 w-12 text-muted-foreground" />}
+          title="暂无工作流"
+          description="当前工作空间下没有可用的工作流"
+        />
       );
     }
 
