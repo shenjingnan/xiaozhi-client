@@ -349,15 +349,15 @@ export class EventBus extends EventEmitter {
 
     // 创建包装器来实现一次性监听
     const onceListener = (data: EventBusEvents[K]) => {
+      // 先移除监听器，确保在任何情况下都清理
+      this.offEvent(eventName, onceListener);
+
       try {
         listener(data);
       } catch (error) {
         // 监听器抛出错误，发射到错误事件
         this.emit("error", error);
         throw error;
-      } finally {
-        // 在任何情况下都移除监听器
-        this.offEvent(eventName, onceListener);
       }
     };
 

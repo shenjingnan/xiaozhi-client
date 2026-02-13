@@ -432,6 +432,93 @@ describe("EventBus", () => {
       expect(listener2).toHaveBeenCalledTimes(1);
       expect(eventBus.listenerCount("config:updated")).toBe(0);
     });
+
+    it("应该在错误抛出前移除监听器", () => {
+      const testError = new Error("测试错误");
+      const errorListener = vi.fn().mockImplementation(() => {
+        throw testError;
+      });
+
+      eventBus.onceEvent("config:updated", errorListener);
+
+      // 验证监听器已添加
+      expect(eventBus.listenerCount("config:updated")).toBe(1);
+
+      // 直接使用 emit 测试原始错误行为（emitEvent 会捕获错误）
+      expect(() => {
+        eventBus.emit("config:updated", {
+          type: "customMCP",
+          timestamp: new Date(),
+        });
+      }).toThrow(testError);
+
+      // 验证监听器已被移除（即使抛出了错误）
+      expect(eventBus.listenerCount("config:updated")).toBe(0);
+
+      // 验证监听器被调用了一次
+      expect(errorListener).toHaveBeenCalledTimes(1);
+    });
+
+    it("应该只调用一次，即使抛出错误", () => {
+      const testError = new Error("测试错误");
+      const errorListener = vi.fn().mockImplementation(() => {
+        throw testError;
+      });
+
+      eventBus.onceEvent("config:updated", errorListener);
+
+      // 第一次发射事件（使用原始 emit，因为 emitEvent 会捕获错误）
+      expect(() => {
+        eventBus.emit("config:updated", {
+          type: "customMCP",
+          timestamp: new Date(),
+        });
+      }).toThrow(testError);
+
+      // 验证监听器只被调用一次
+      expect(errorListener).toHaveBeenCalledTimes(1);
+
+      // 验证监听器已被移除
+      expect(eventBus.listenerCount("config:updated")).toBe(0);
+
+      // 第二次发射事件，监听器不应该再被调用
+      eventBus.emit("config:updated", {
+        type: "customMCP",
+        timestamp: new Date(),
+      });
+
+      expect(errorListener).toHaveBeenCalledTimes(1);
+    });
+
+    it("应该通过 emitEvent 正确处理错误", () => {
+      const testError = new Error("测试错误");
+      const errorListener = vi.fn().mockImplementation(() => {
+        throw testError;
+      });
+
+      eventBus.onceEvent("config:updated", errorListener);
+
+      // 验证监听器已添加
+      expect(eventBus.listenerCount("config:updated")).toBe(1);
+
+      // 使用 emitEvent 发射事件（它不会抛出错误，而是发射到 error 事件）
+      eventBus.emitEvent("config:updated", {
+        type: "customMCP",
+        timestamp: new Date(),
+      });
+
+      // 验证监听器被调用
+      expect(errorListener).toHaveBeenCalledTimes(1);
+
+      // 验证监听器已被移除
+      expect(eventBus.listenerCount("config:updated")).toBe(0);
+
+      // 验证错误已被发射到 error 事件
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        "EventBus 内部错误:",
+        testError
+      );
+    });
   });
 
   describe("offEvent", () => {
