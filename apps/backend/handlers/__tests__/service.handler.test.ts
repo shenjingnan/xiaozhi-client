@@ -72,10 +72,19 @@ describe("ServiceApiHandler", () => {
       }),
     };
 
-    // Mock spawn - 返回带有 on 和 unref 方法的子进程对象
-    mockSpawn = vi.fn().mockReturnValue({
-      on: vi.fn(),
-      unref: vi.fn(),
+    // Mock spawn - 返回带有 on、spawn 事件和 unref 方法的子进程对象
+    mockSpawn = vi.fn().mockImplementation(() => {
+      const callbacks: Record<string, (...args: unknown[]) => void> = {};
+      return {
+        on: vi.fn((event: string, callback: (...args: unknown[]) => void) => {
+          callbacks[event] = callback;
+          // 同步触发 spawn 事件
+          if (event === "spawn") {
+            callback();
+          }
+        }),
+        unref: vi.fn(),
+      };
     });
     const { spawn } = await import("node:child_process");
     vi.mocked(spawn).mockImplementation(mockSpawn);
@@ -562,11 +571,20 @@ describe("ServiceApiHandler", () => {
     });
 
     it("should handle unref method throwing error", async () => {
-      mockSpawn.mockReturnValue({
-        on: vi.fn(),
-        unref: vi.fn().mockImplementation(() => {
-          throw new Error("Unref failed");
-        }),
+      const { spawn } = await import("node:child_process");
+      // 临时覆盖 mock 实现来模拟 unref 抛出错误
+      vi.mocked(spawn).mockImplementation(() => {
+        return {
+          on: vi.fn((event: string, callback: (...args: unknown[]) => void) => {
+            // 同步触发 spawn 事件
+            if (event === "spawn") {
+              callback();
+            }
+          }),
+          unref: vi.fn().mockImplementation(() => {
+            throw new Error("Unref failed");
+          }),
+        };
       });
 
       await handler.startService(mockContext);
