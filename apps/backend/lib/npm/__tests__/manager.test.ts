@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 // Mock all external dependencies first
 vi.mock("node:child_process");
-vi.mock("node:util");
 vi.mock("semver");
 vi.mock("../../../services/event-bus.service.js");
 
@@ -79,11 +78,8 @@ describe("NPMManager", () => {
     const { spawn } = await import("node:child_process");
     vi.mocked(spawn).mockImplementation(mockSpawn as never);
 
-    const { promisify } = await import("node:util");
-    vi.mocked(promisify).mockReturnValue(mockExecAsync as never);
-
-    // Create NPMManager instance
-    npmManager = new NPMManager(mockEventBus as never);
+    // Create NPMManager instance with mock execAsync
+    npmManager = new NPMManager(mockEventBus as never, mockExecAsync as never);
   });
 
   afterEach(() => {
@@ -93,15 +89,18 @@ describe("NPMManager", () => {
   describe("constructor", () => {
     test("应该使用注入的 EventBus", () => {
       // Act
-      const manager = new NPMManager(mockEventBus as never);
+      const manager = new NPMManager(
+        mockEventBus as never,
+        mockExecAsync as never
+      );
 
       // Assert
       expect(manager).toBeInstanceOf(NPMManager);
     });
 
     test("应该使用默认 EventBus 当没有注入时", () => {
-      // Act
-      const manager = new NPMManager();
+      // Act - 使用 mock execAsync 避免实际调用 promisify
+      const manager = new NPMManager(undefined, mockExecAsync as never);
 
       // Assert - 应该成功创建（不抛出错误）
       expect(manager).toBeInstanceOf(NPMManager);
@@ -338,26 +337,71 @@ describe("NPMManager", () => {
   });
 
   describe("getCurrentVersion", () => {
-    // Skip getCurrentVersion tests for now due to top-level const execAsync mocking issues
-    // These tests require deeper refactoring of the source code or more sophisticated mocking
-    test.skip("应该成功获取当前版本", async () => {
-      // TODO: Fix top-level const execAsync mocking
+    test("应该成功获取当前版本", async () => {
+      // Arrange
+      const mockStdout = JSON.stringify({
+        dependencies: {
+          "xiaozhi-client": {
+            version: "1.7.9",
+          },
+        },
+      });
+      mockExecAsync.mockResolvedValue({ stdout: mockStdout });
+
+      // Act
+      const version = await npmManager.getCurrentVersion();
+
+      // Assert
+      expect(version).toBe("1.7.9");
+      expect(mockExecAsync).toHaveBeenCalledWith(
+        "npm list -g xiaozhi-client --depth=0 --json --registry=https://registry.npmmirror.com"
+      );
     });
 
-    test.skip("应该处理包未安装的情况", async () => {
-      // TODO: Fix top-level const execAsync mocking
+    test("应该处理包未安装的情况", async () => {
+      // Arrange
+      const mockStdout = JSON.stringify({
+        dependencies: {},
+      });
+      mockExecAsync.mockResolvedValue({ stdout: mockStdout });
+
+      // Act
+      const version = await npmManager.getCurrentVersion();
+
+      // Assert
+      expect(version).toBe("unknown");
     });
 
-    test.skip("应该处理 npm list 输出中没有 dependencies 字段的情况", async () => {
-      // TODO: Fix top-level const execAsync mocking
+    test("应该处理 npm list 输出中没有 dependencies 字段的情况", async () => {
+      // Arrange
+      const mockStdout = JSON.stringify({});
+      mockExecAsync.mockResolvedValue({ stdout: mockStdout });
+
+      // Act
+      const version = await npmManager.getCurrentVersion();
+
+      // Assert
+      expect(version).toBe("unknown");
     });
 
-    test.skip("应该处理 npm list 命令失败的情况", async () => {
-      // TODO: Fix top-level const execAsync mocking
+    test("应该处理 npm list 命令失败的情况", async () => {
+      // Arrange
+      const mockError = new Error("npm list failed");
+      mockExecAsync.mockRejectedValue(mockError);
+
+      // Act & Assert
+      await expect(npmManager.getCurrentVersion()).rejects.toThrow(
+        "npm list failed"
+      );
     });
 
-    test.skip("应该处理无效的 JSON 输出", async () => {
-      // TODO: Fix top-level const execAsync mocking
+    test("应该处理无效的 JSON 输出", async () => {
+      // Arrange
+      const mockStdout = "invalid json output";
+      mockExecAsync.mockResolvedValue({ stdout: mockStdout });
+
+      // Act & Assert
+      await expect(npmManager.getCurrentVersion()).rejects.toThrow();
     });
   });
 });

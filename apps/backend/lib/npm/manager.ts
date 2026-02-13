@@ -22,13 +22,21 @@ import type { EventBus } from "@/services/event-bus.service.js";
 import { getEventBus } from "@/services/event-bus.service.js";
 import semver from "semver";
 
-const execAsync = promisify(exec);
+/**
+ * execAsync 函数类型
+ * 用于执行 shell 命令并返回 stdout
+ */
+type ExecAsyncFunction = (command: string) => Promise<{ stdout: string }>;
 
 export class NPMManager {
   private eventBus: EventBus;
+  private execAsync: ExecAsyncFunction;
 
-  constructor(eventBus?: EventBus) {
+  constructor(eventBus?: EventBus, execAsyncOverride?: ExecAsyncFunction) {
     this.eventBus = eventBus || getEventBus();
+    this.execAsync =
+      execAsyncOverride ||
+      (promisify(exec) as unknown as ExecAsyncFunction);
   }
 
   /**
@@ -135,7 +143,7 @@ export class NPMManager {
    * 获取当前版本
    */
   async getCurrentVersion(): Promise<string> {
-    const { stdout } = await execAsync(
+    const { stdout } = await this.execAsync(
       "npm list -g xiaozhi-client --depth=0 --json --registry=https://registry.npmmirror.com"
     );
     const info = JSON.parse(stdout);
@@ -157,7 +165,7 @@ export class NPMManager {
    */
   async getAvailableVersions(type = "stable"): Promise<string[]> {
     try {
-      const { stdout } = await execAsync(
+      const { stdout } = await this.execAsync(
         "npm view xiaozhi-client versions --json --registry=https://registry.npmmirror.com"
       );
 
