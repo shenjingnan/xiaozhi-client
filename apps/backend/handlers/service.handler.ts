@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { logger } from "@/Logger.js";
 import type { Logger } from "@/Logger.js";
+import { BaseHandler } from "./base.handler.js";
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { EventBus } from "@/services/event-bus.service.js";
 import { getEventBus } from "@/services/event-bus.service.js";
@@ -12,12 +13,13 @@ import type { Context } from "hono";
 /**
  * 服务 API 处理器
  */
-export class ServiceApiHandler {
+export class ServiceApiHandler extends BaseHandler {
   private logger: Logger;
   private statusService: StatusService;
   private eventBus: EventBus;
 
   constructor(statusService: StatusService) {
+    super();
     this.logger = logger;
     this.statusService = statusService;
     this.eventBus = getEventBus();
@@ -58,20 +60,14 @@ export class ServiceApiHandler {
           c.get("logger").error("服务重启失败:", error);
           this.statusService.updateRestartStatus(
             "failed",
-            error instanceof Error ? error.message : "未知错误"
+            this.getErrorMessage(error)
           );
         }
       }, 500);
 
       return c.success(null, "重启请求已接收");
     } catch (error) {
-      c.get("logger").error("处理重启请求失败:", error);
-      return c.fail(
-        "RESTART_REQUEST_ERROR",
-        error instanceof Error ? error.message : "处理重启请求失败",
-        undefined,
-        500
-      );
+      return this.logAndFail(c, error, "处理重启请求", "RESTART_REQUEST_ERROR");
     }
   }
 

@@ -1,5 +1,6 @@
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
+import { BaseHandler } from "./base.handler.js";
 import type { EventBus } from "@/services/event-bus.service.js";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { NotificationService } from "@/services/notification.service.js";
@@ -20,7 +21,7 @@ interface WebSocketMessage {
 /**
  * 实时通知处理器
  */
-export class RealtimeNotificationHandler {
+export class RealtimeNotificationHandler extends BaseHandler {
   private logger: Logger;
   private notificationService: NotificationService;
   private statusService: StatusService;
@@ -30,6 +31,7 @@ export class RealtimeNotificationHandler {
     notificationService: NotificationService,
     statusService: StatusService
   ) {
+    super();
     this.logger = logger;
     this.notificationService = notificationService;
     this.statusService = statusService;

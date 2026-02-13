@@ -6,6 +6,7 @@
 
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
+import { BaseHandler } from "./base.handler.js";
 import {
   HTTP_CONTENT_TYPES,
   HTTP_ERROR_MESSAGES,
@@ -43,7 +44,7 @@ interface ConnectionMetrics {
  * MCP 路由处理器
  * 实现符合 MCP Streamable HTTP 规范的单一端点处理（仅 POST 模式）
  */
-export class MCPRouteHandler {
+export class MCPRouteHandler extends BaseHandler {
   private logger: Logger;
   private mcpMessageHandler: MCPMessageHandler | null = null;
   private config: {
@@ -53,6 +54,7 @@ export class MCPRouteHandler {
   private metrics: ConnectionMetrics;
 
   constructor(config: MCPRouteHandlerConfig = {}) {
+    super();
     this.logger = logger;
     this.config = {
       maxMessageSize: config.maxMessageSize ?? MESSAGE_SIZE_LIMITS.DEFAULT,

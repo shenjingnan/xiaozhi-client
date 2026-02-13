@@ -1,5 +1,6 @@
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
+import { BaseHandler } from "./base.handler.js";
 import { HEARTBEAT_MONITORING } from "@/constants/index.js";
 import type { NotificationService } from "@/services/notification.service.js";
 import type { StatusService } from "@/services/status.service.js";
@@ -22,7 +23,7 @@ interface HeartbeatMessage {
 /**
  * 心跳处理器
  */
-export class HeartbeatHandler {
+export class HeartbeatHandler extends BaseHandler {
   private logger: Logger;
   private statusService: StatusService;
   private notificationService: NotificationService;
@@ -31,6 +32,7 @@ export class HeartbeatHandler {
     statusService: StatusService,
     notificationService: NotificationService
   ) {
+    super();
     this.logger = logger;
     this.statusService = statusService;
     this.notificationService = notificationService;

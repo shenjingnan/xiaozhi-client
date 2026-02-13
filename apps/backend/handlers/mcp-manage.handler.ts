@@ -14,6 +14,7 @@
 
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
+import { BaseHandler } from "./base.handler.js";
 import { ErrorCategory, MCPError, MCPErrorCode } from "@/errors/mcp-errors.js";
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { MCPService } from "@/lib/mcp";
@@ -122,7 +123,7 @@ export interface ValidationResult {
 /**
  * MCP 服务 API 处理器
  */
-export class MCPHandler {
+export class MCPHandler extends BaseHandler {
   protected logger: Logger;
   private mcpServiceManager: MCPServiceManager;
   private configManager: ConfigManager;
@@ -132,6 +133,7 @@ export class MCPHandler {
     mcpServiceManager: MCPServiceManager,
     configManager: ConfigManager
   ) {
+    super();
     this.logger = logger;
     this.mcpServiceManager = mcpServiceManager;
     this.configManager = configManager;
@@ -139,9 +141,9 @@ export class MCPHandler {
   }
 
   /**
-   * 处理错误并返回MCPError
+   * 处理错误并返回MCPError（重命名以避免与BaseHandler冲突）
    */
-  protected handleError(
+  protected handleMCPError(
     error: unknown,
     operation: string,
     context?: Record<string, unknown>
@@ -263,7 +265,7 @@ export class MCPHandler {
 
       return c.success(result, "MCP 服务添加成功", 201);
     } catch (error) {
-      const mcpError = this.handleError(error, "addMCPServer", {
+      const mcpError = this.handleMCPError(error, "addMCPServer", {
         requestData,
       });
 
@@ -390,7 +392,7 @@ export class MCPHandler {
         tools: toolNames,
       };
     } catch (error) {
-      const mcpError = this.handleError(error, "addMCPServerSingle", {
+      const mcpError = this.handleMCPError(error, "addMCPServerSingle", {
         serverName: name,
         config: normalizedConfig,
       });
@@ -814,7 +816,7 @@ export class MCPHandler {
             toolsCount: result.tools?.length || 0,
           });
         } catch (error) {
-          const mcpError = this.handleError(error, "addMCPServersBatch", {
+          const mcpError = this.handleMCPError(error, "addMCPServersBatch", {
             serverName,
             serverConfig: normalizedServerConfig,
           });
@@ -987,7 +989,7 @@ export class MCPHandler {
           timestamp: new Date(),
         });
       } catch (error) {
-        const mcpError = this.handleError(error, "rollbackBatchAdd", {
+        const mcpError = this.handleMCPError(error, "rollbackBatchAdd", {
           serverName,
         });
         rollbackFailures.push(serverName);

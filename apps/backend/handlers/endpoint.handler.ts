@@ -1,5 +1,6 @@
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
+import { BaseHandler } from "./base.handler.js";
 import type { EventBus } from "@/services/event-bus.service.js";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { AppContext } from "@/types/hono.context.js";
@@ -23,13 +24,14 @@ interface ValidationResult {
  * 支持通过 HTTP API 动态管理端点（添加、删除、连接、断开、查询状态）
  * 端点变更会自动同步到配置文件，确保重启后状态保持一致
  */
-export class EndpointHandler {
+export class EndpointHandler extends BaseHandler {
   private logger: Logger;
   private endpointManager: EndpointManager;
   private configManager: ConfigManager;
   private eventBus: EventBus;
 
   constructor(endpointManager: EndpointManager, configManager: ConfigManager) {
+    super();
     this.logger = logger;
     this.endpointManager = endpointManager;
     this.configManager = configManager;
@@ -52,15 +54,9 @@ export class EndpointHandler {
     try {
       body = await c.req.json();
     } catch (error) {
-      this.logger.error("JSON解析失败:", error);
       return {
         ok: false,
-        response: c.fail(
-          errorErrorCode,
-          "JSON解析失败",
-          error instanceof Error ? error.message : undefined,
-          500
-        ),
+        response: this.logAndFail(c, error, "JSON解析", errorErrorCode, "JSON解析失败", 500),
       };
     }
 
@@ -128,13 +124,7 @@ export class EndpointHandler {
       this.logger.debug(`获取接入点状态成功: ${endpoint}`);
       return c.success(endpointStatus);
     } catch (error) {
-      this.logger.error("获取接入点状态失败:", error);
-      return c.fail(
-        "ENDPOINT_STATUS_READ_ERROR",
-        error instanceof Error ? error.message : "获取接入点状态失败",
-        undefined,
-        500
-      );
+      return this.logAndFail(c, error, "获取接入点状态", "ENDPOINT_STATUS_READ_ERROR");
     }
   }
 
@@ -199,13 +189,7 @@ export class EndpointHandler {
       this.logger.info(`接入点连接成功: ${endpoint}`);
       return c.success(endpointStatus);
     } catch (error) {
-      this.logger.error("接入点连接失败:", error);
-      return c.fail(
-        "ENDPOINT_CONNECT_ERROR",
-        error instanceof Error ? error.message : "接入点连接失败",
-        undefined,
-        500
-      );
+      return this.logAndFail(c, error, "接入点连接", "ENDPOINT_CONNECT_ERROR");
     }
   }
 

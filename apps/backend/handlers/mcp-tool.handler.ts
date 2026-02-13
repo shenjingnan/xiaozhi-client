@@ -3,6 +3,7 @@
  * 处理通过 HTTP API 调用 MCP 工具的请求
  */
 
+import { BaseHandler } from "./base.handler.js";
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import { HTTP_TIMEOUTS } from "@/constants/timeout.constants.js";
@@ -50,11 +51,12 @@ interface LegacyAddCustomToolRequest {
 /**
  * MCP 工具调用 API 处理器
  */
-export class MCPToolHandler {
+export class MCPToolHandler extends BaseHandler {
   private logger: Logger;
   private ajv: Ajv;
 
   constructor() {
+    super();
     this.logger = logger;
     this.ajv = new Ajv({ allErrors: true, verbose: true });
   }
@@ -72,13 +74,13 @@ export class MCPToolHandler {
       const { serviceName, toolName, args } = requestBody;
 
       // 验证请求参数
-      if (!serviceName || !toolName) {
-        return c.fail(
-          "INVALID_REQUEST",
-          "serviceName 和 toolName 是必需的参数",
-          undefined,
-          400
-        );
+      const params = { serviceName, toolName, args } as Record<string, unknown>;
+      const validationError = this.validateRequired(c, params, [
+        "serviceName",
+        "toolName",
+      ]);
+      if (validationError) {
+        return validationError;
       }
 
       c.get("logger").info(
@@ -127,10 +129,7 @@ export class MCPToolHandler {
 
       return c.success(result, "工具调用成功");
     } catch (error) {
-      c.get("logger").error("工具调用失败:", error);
-
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = this.getErrorMessage(error);
       let errorCode = "TOOL_CALL_ERROR";
 
       // 根据错误类型设置不同的错误码
@@ -159,7 +158,7 @@ export class MCPToolHandler {
         errorCode = "TIMEOUT_ERROR";
       }
 
-      return c.fail(errorCode, errorMessage, undefined, 500);
+      return this.logAndFail(c, error, "工具调用", errorCode, undefined, 500);
     }
   }
 
@@ -189,12 +188,11 @@ export class MCPToolHandler {
         customTools = configManager.getCustomMCPTools();
         configPath = configManager.getConfigPath();
       } catch (error) {
-        c.get("logger").error("读取自定义 MCP 工具配置失败:", error);
-        return c.fail(
-          "CONFIG_PARSE_ERROR",
-          `配置文件解析失败: ${error instanceof Error ? error.message : "未知错误"}`,
-          undefined,
-          500
+        return this.logAndFail(
+          c,
+          error,
+          "读取自定义 MCP 工具配置",
+          "CONFIG_PARSE_ERROR"
         );
       }
 
@@ -236,14 +234,7 @@ export class MCPToolHandler {
         "获取自定义 MCP 工具列表成功"
       );
     } catch (error) {
-      c.get("logger").error("获取自定义 MCP 工具列表失败:", error);
-
-      return c.fail(
-        "GET_CUSTOM_TOOLS_ERROR",
-        error instanceof Error ? error.message : "获取自定义 MCP 工具列表失败",
-        undefined,
-        500
-      );
+      return this.logAndFail(c, error, "获取自定义 MCP 工具列表", "GET_CUSTOM_TOOLS_ERROR");
     }
   }
 
