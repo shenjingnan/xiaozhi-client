@@ -3,8 +3,8 @@
  * 处理 MCP 服务器管理相关的 API 路由
  */
 
+import type { HandlerDependencies, RouteDefinition } from "@/routes/types.js";
 import type { Context } from "hono";
-import type { HandlerDependencies, RouteDefinition } from "../types.js";
 
 /**
  * MCP 服务器处理器包装函数
