@@ -531,8 +531,9 @@ export class ConfigManager {
   public getConfig(): Readonly<AppConfig> {
     this.config = this.loadConfig();
 
-    // 返回深度只读副本
-    return JSON.parse(JSON.stringify(this.config));
+    // 使用 structuredClone API 进行深拷贝（性能优于 JSON.parse(JSON.stringify())）
+    // structuredClone 是原生 API，支持更多类型（如 Date、RegExp、Map、Set 等）
+    return structuredClone(this.config) as Readonly<AppConfig>;
   }
 
   /**
