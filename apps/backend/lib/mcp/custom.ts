@@ -1,4 +1,13 @@
 #!/usr/bin/env node
+/**
+ * 自定义 MCP 工具处理器
+ *
+ * 负责处理自定义 MCP 工具（如 Coze 工作流、Dify、n8n 等）的调用
+ * 提供超时友好的响应机制和缓存功能
+ *
+ * @module apps/backend/lib/mcp/custom
+ */
+
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import { CozeApiService } from "@/lib/coze";
