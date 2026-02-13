@@ -627,4 +627,91 @@ describe("Endpoint", () => {
       consoleErrorSpy.mockRestore();
     });
   });
+
+  describe("Endpoint.create", () => {
+    it("应该成功创建 Endpoint 实例", async () => {
+      const endpoint = await Endpoint.create({
+        endpointUrl: "ws://localhost:3000/endpoint",
+        mcpServers: {
+          calculator: {
+            command: "npx",
+            args: ["-y", "@xiaozhi-client/calculator-mcp"],
+          },
+        },
+      });
+
+      expect(endpoint).toBeInstanceOf(Endpoint);
+      expect(endpoint.getUrl()).toBe("ws://localhost:3000/endpoint");
+
+      // 清理
+      await endpoint.disconnect();
+    });
+
+    it("应该在 initialize 失败时清理资源", async () => {
+      // Mock InternalMCPManagerAdapter.initialize() to throw
+      const { InternalMCPManagerAdapter } = await import("../internal-mcp-manager.js");
+      const cleanupSpy = vi.spyOn(
+        InternalMCPManagerAdapter.prototype,
+        "cleanup"
+      );
+
+      // 让 initialize 抛出错误
+      vi.spyOn(
+        InternalMCPManagerAdapter.prototype,
+        "initialize"
+      ).mockRejectedValueOnce(new Error("初始化失败"));
+
+      await expect(
+        Endpoint.create({
+          endpointUrl: "ws://localhost:3000/endpoint",
+          mcpServers: {
+            calculator: {
+              command: "npx",
+              args: ["-y", "@xiaozhi-client/calculator-mcp"],
+            },
+          },
+        })
+      ).rejects.toThrow("初始化失败");
+
+      // 验证 cleanup() 被调用
+      expect(cleanupSpy).toHaveBeenCalled();
+
+      cleanupSpy.mockRestore();
+    });
+
+    it("应该使用默认重连延迟", async () => {
+      const endpoint = await Endpoint.create({
+        endpointUrl: "ws://localhost:3000/endpoint",
+        mcpServers: {
+          calculator: {
+            command: "npx",
+            args: ["-y", "@xiaozhi-client/calculator-mcp"],
+          },
+        },
+      });
+
+      expect(endpoint).toBeInstanceOf(Endpoint);
+
+      // 清理
+      await endpoint.disconnect();
+    });
+
+    it("应该使用自定义重连延迟", async () => {
+      const endpoint = await Endpoint.create({
+        endpointUrl: "ws://localhost:3000/endpoint",
+        mcpServers: {
+          calculator: {
+            command: "npx",
+            args: ["-y", "@xiaozhi-client/calculator-mcp"],
+          },
+        },
+        reconnectDelay: 5000,
+      });
+
+      expect(endpoint).toBeInstanceOf(Endpoint);
+
+      // 清理
+      await endpoint.disconnect();
+    });
+  });
 });

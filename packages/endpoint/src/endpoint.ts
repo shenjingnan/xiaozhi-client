@@ -35,9 +35,40 @@ export {
 };
 
 /**
+ * Endpoint.create() 工厂方法配置接口
+ */
+export interface EndpointCreateConfig {
+  /** 小智接入点 URL */
+  endpointUrl: string;
+  /** MCP 服务器配置（声明式） */
+  mcpServers: Record<string, import("./types.js").MCPServerConfig>;
+  /** 可选：重连延迟（毫秒），默认 2000 */
+  reconnectDelay?: number;
+}
+
+/**
  * Endpoint 类
  * 负责管理单个小智接入点的 WebSocket 连接
- * 使用新的配置方式：直接在构造函数中传入 mcpServers 配置
+ *
+ * 使用方式 1：直接使用构造函数（需要先创建 MCPManager）
+ * ```typescript
+ * const mcpManager = new MCPManager();
+ * mcpManager.addServer("calculator", { command: "npx", args: ["-y", "@xiaozhi-client/calculator-mcp"] });
+ * await mcpManager.connect();
+ * const mcpAdapter = new SharedMCPAdapter(mcpManager);
+ * const endpoint = new Endpoint("ws://...", mcpAdapter, 2000);
+ * ```
+ *
+ * 使用方式 2：使用工厂方法（推荐，更简洁）
+ * ```typescript
+ * const endpoint = await Endpoint.create({
+ *   endpointUrl: "ws://...",
+ *   mcpServers: {
+ *     calculator: { command: "npx", args: ["-y", "@xiaozhi-client/calculator-mcp"] }
+ *   },
+ *   reconnectDelay: 2000,
+ * });
+ * ```
  */
 export class Endpoint {
   private endpointUrl: string;
@@ -76,6 +107,59 @@ export class Endpoint {
 
     // 使用注入的 MCP 管理器
     this.mcpAdapter = mcpManager;
+  }
+
+  /**
+   * 工厂方法：使用声明式配置创建 Endpoint 实例
+   *
+   * 这是一个便捷方法，用于简化 Endpoint 的创建流程。
+   * 内部会自动创建并配置 MCPManager，然后创建 Endpoint 实例。
+   *
+   * @param config - 配置对象
+   * @returns Promise<Endpoint> - 已创建的 Endpoint 实例
+   *
+   * @example
+   * ```typescript
+   * const endpoint = await Endpoint.create({
+   *   endpointUrl: "wss://api.xiaozhi.me/mcp/?token=...",
+   *   mcpServers: {
+   *     calculator: {
+   *       command: "npx",
+   *       args: ["-y", "@xiaozhi-client/calculator-mcp"]
+   *     }
+   *   },
+   *   reconnectDelay: 2000
+   * });
+   * ```
+   */
+  static async create(config: EndpointCreateConfig): Promise<Endpoint> {
+    // 动态导入相关模块
+    const { InternalMCPManagerAdapter } = await import("./internal-mcp-manager.js");
+
+    // 创建内部 MCP 管理器适配器配置
+    const endpointConfig = {
+      mcpServers: config.mcpServers,
+      reconnectDelay: config.reconnectDelay,
+    };
+
+    // 使用 InternalMCPManagerAdapter 创建 MCP 管理器
+    const internalMCPManager = new InternalMCPManagerAdapter(endpointConfig);
+
+    try {
+      // 初始化 MCP 管理器（这会连接所有 MCP 服务）
+      await internalMCPManager.initialize();
+    } catch (error) {
+      // 清理已启动的资源
+      await internalMCPManager.cleanup();
+      throw error;
+    }
+
+    // 创建并返回 Endpoint 实例
+    return new Endpoint(
+      config.endpointUrl,
+      internalMCPManager,
+      config.reconnectDelay
+    );
   }
 
   /**
