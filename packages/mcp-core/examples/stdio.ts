@@ -33,6 +33,13 @@
  */
 
 import { MCPConnection } from "@xiaozhi-client/mcp-core";
+import {
+  createStandardCallbacks,
+  handleStandardError,
+  printConnectionStatus,
+  printTools,
+  runMain,
+} from "./shared.js";
 
 /**
  * 主函数
@@ -48,26 +55,7 @@ async function main(): Promise<void> {
       command: "npx",
       args: ["-y", "@xiaozhi-client/calculator-mcp"],
     },
-    {
-      // 连接成功回调
-      onConnected: (data) => {
-        console.log(`✅ 服务 ${data.serviceName} 已连接`);
-        console.log(`   发现 ${data.tools.length} 个工具`);
-        console.log();
-      },
-
-      // 连接失败回调
-      onConnectionFailed: (data) => {
-        console.error(`❌ 服务 ${data.serviceName} 连接失败`);
-        console.error(`   错误: ${data.error.message}`);
-      },
-
-      // 断开连接回调
-      onDisconnected: (data) => {
-        console.log(`👋 服务 ${data.serviceName} 已断开`);
-        console.log(`   原因: ${data.reason || "正常关闭"}`);
-      },
-    }
+    createStandardCallbacks()
   );
 
   try {
@@ -80,14 +68,7 @@ async function main(): Promise<void> {
 
     // 4. 获取工具列表
     const tools = connection.getTools();
-    console.log("可用工具:");
-    for (const tool of tools) {
-      console.log(`  - ${tool.name}`);
-      if (tool.description) {
-        console.log(`    描述: ${tool.description}`);
-      }
-    }
-    console.log();
+    printTools(tools);
 
     // 5. 调用工具
     console.log("调用工具: calculator");
@@ -102,7 +83,10 @@ async function main(): Promise<void> {
     // 工具调用结果是一个包含 content 数组的对象
     // content[0].text 包含实际的结果文本
     if (result.content && result.content.length > 0) {
-      console.log(`  ${result.content[0].text}`);
+      const firstItem = result.content[0];
+      if (firstItem.type === "text" && firstItem.text) {
+        console.log(`  ${firstItem.text}`);
+      }
     }
     console.log();
 
@@ -117,20 +101,17 @@ async function main(): Promise<void> {
     console.log();
     console.log("结果:");
     if (result2.content && result2.content.length > 0) {
-      console.log(`  ${result2.content[0].text}`);
+      const firstItem = result2.content[0];
+      if (firstItem.type === "text" && firstItem.text) {
+        console.log(`  ${firstItem.text}`);
+      }
     }
     console.log();
 
     // 7. 检查连接状态
-    console.log("连接状态:");
-    console.log(`  是否已连接: ${connection.isConnected()}`);
-    const status = connection.getStatus();
-    console.log(`  状态: ${status.connectionState}`);
+    printConnectionStatus(connection);
   } catch (error) {
-    console.error("执行过程中出错:");
-    if (error instanceof Error) {
-      console.error(`  ${error.message}`);
-    }
+    handleStandardError(error);
   } finally {
     // 8. 断开连接
     console.log();
@@ -142,7 +123,4 @@ async function main(): Promise<void> {
 }
 
 // 运行主函数
-main().catch((error) => {
-  console.error("未捕获的错误:", error);
-  process.exit(1);
-});
+runMain(main);
