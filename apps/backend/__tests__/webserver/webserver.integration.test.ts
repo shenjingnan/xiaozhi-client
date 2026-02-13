@@ -273,6 +273,7 @@ vi.mock("node:child_process", () => ({
   exec: vi.fn(),
   spawn: vi.fn(() => ({
     unref: vi.fn(),
+    on: vi.fn(),
   })),
 }));
 
