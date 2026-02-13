@@ -935,16 +935,18 @@ export class WebServer {
                 this.logger.info("Web 服务器已停止");
                 cleanupAndResolve();
               });
+
+              // 设置超时，如果 2 秒内没有关闭则强制退出
+              forceCloseTimer = setTimeout(() => {
+                // 超时触发后标记定时器已失效，保持与 cleanupAndResolve 中的语义一致
+                forceCloseTimer = undefined;
+                this.logger.info("Web 服务器已强制停止");
+                doResolve();
+              }, 2000);
             } else {
               this.logger.info("Web 服务器已停止");
               cleanupAndResolve();
             }
-
-            // 设置超时，如果 2 秒内没有关闭则强制退出
-            forceCloseTimer = setTimeout(() => {
-              this.logger.info("Web 服务器已强制停止");
-              doResolve();
-            }, 2000);
           });
         } else {
           this.logger.info("Web 服务器已停止");
