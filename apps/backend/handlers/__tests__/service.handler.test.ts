@@ -548,7 +548,7 @@ describe("ServiceApiHandler", () => {
       );
     });
 
-    it("should handle spawn child without unref method", async () => {
+    it("should handle spawn child without on method", async () => {
       mockSpawn.mockReturnValue({});
 
       await handler.startService(mockContext);

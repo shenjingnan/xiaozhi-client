@@ -104,7 +104,7 @@ export class ServiceApiHandler {
 
         // 添加 error 事件监听器
         child.on("error", (error) => {
-          this.logger.error(`启动 xiaozhi 服务失败: ${error.message}`);
+          this.logger.error(`启动 xiaozhi 服务失败: ${error.message}`, error);
         });
 
         child.unref();
@@ -127,7 +127,7 @@ export class ServiceApiHandler {
 
       // 添加 error 事件监听器
       child.on("error", (error) => {
-        this.logger.error(`重启 xiaozhi 服务失败: ${error.message}`);
+        this.logger.error(`重启 xiaozhi 服务失败: ${error.message}`, error);
       });
 
       child.unref();
@@ -157,9 +157,10 @@ export class ServiceApiHandler {
         },
       });
 
-      // 添加 error 事件监听器
+      // 预先获取 logger，避免闭包持有整个 Context
+      const reqLogger = c.get("logger");
       child.on("error", (error) => {
-        c.get("logger").error(`停止 xiaozhi 服务失败: ${error.message}`);
+        reqLogger.error(`停止 xiaozhi 服务失败: ${error.message}`, error);
       });
 
       child.unref();
@@ -196,9 +197,10 @@ export class ServiceApiHandler {
         },
       });
 
-      // 添加 error 事件监听器
+      // 预先获取 logger，避免闭包持有整个 Context
+      const reqLogger = c.get("logger");
       child.on("error", (error) => {
-        c.get("logger").error(`启动 xiaozhi 服务失败: ${error.message}`);
+        reqLogger.error(`启动 xiaozhi 服务失败: ${error.message}`, error);
       });
 
       child.unref();
