@@ -1,4 +1,25 @@
 #!/usr/bin/env node
+/**
+ * 自定义 MCP 工具处理器模块
+ *
+ * 本模块提供了处理自定义 MCP 工具的核心功能，特别是针对 Coze 工作流工具。
+ * 主要功能包括：
+ * - CustomMCPHandler：简化的自定义 MCP 工具处理器
+ * - 支持代理处理器配置（ProxyHandlerConfig）
+ * - 工具调用超时处理
+ * - 工具调用缓存机制
+ * - 与 Coze API 服务集成
+ *
+ * @module custom
+ *
+ * @example
+ * ```typescript
+ * import { CustomMCPHandler } from '@/lib/mcp/custom.js';
+ *
+ * const handler = new CustomMCPHandler(mcpServiceManager);
+ * const result = await handler.callTool(toolName, arguments, options);
+ * ```
+ */
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import { CozeApiService } from "@/lib/coze";
