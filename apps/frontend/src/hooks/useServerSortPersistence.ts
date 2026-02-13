@@ -1,5 +1,11 @@
 "use client";
 
+/**
+ * 服务器排序配置持久化 Hook
+ *
+ * 自动将用户选择的服务器排序方式保存到 localStorage，支持按名称、通信类型、工具数量等字段排序
+ */
+
 import type {
   ServerSortConfig,
   ServerSortField,
