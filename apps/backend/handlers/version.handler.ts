@@ -1,12 +1,28 @@
+/**
+ * 版本 API 处理器
+ * 提供版本信息查询和缓存管理功能
+ *
+ * ## 核心功能
+ * - 获取完整版本信息（包括 package.json 版本、构建时间等）
+ * - 获取简化版本号
+ * - 清除版本缓存
+ * - 获取可用版本列表（支持 stable、rc、beta 等类型）
+ * - 检查最新版本
+ *
+ * ## 端点
+ * - GET /api/version - 获取完整版本信息
+ * - GET /api/version/simple - 获取简化版本号
+ * - POST /api/version/cache/clear - 清除版本缓存
+ * - GET /api/version/available - 获取可用版本列表
+ * - GET /api/version/latest - 检查最新版本
+ */
+
 import { NPMManager } from "@/lib/npm";
 import type { AppContext } from "@/types/hono.context.js";
 import { VersionUtils } from "@xiaozhi-client/version";
 import type { Context } from "hono";
 import { BaseHandler } from "./base.handler.js";
 
-/**
- * 版本 API 处理器
- */
 export class VersionApiHandler extends BaseHandler {
   /**
    * 获取版本信息

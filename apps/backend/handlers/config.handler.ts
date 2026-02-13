@@ -1,12 +1,36 @@
+/**
+ * 配置 API 处理器
+ * 提供应用配置的读取和更新功能
+ *
+ * ## 核心功能
+ * - 读取当前应用配置
+ * - 更新应用配置（包含验证）
+ * - 重新加载配置
+ * - 获取配置文件路径
+ * - 检查配置是否存在
+ *
+ * ## 端点
+ * - GET /api/config - 获取当前配置
+ * - PUT /api/config - 更新配置
+ * - POST /api/config/reload - 重新加载配置
+ * - GET /api/config/mcp-endpoint - 获取 MCP 端点
+ * - GET /api/config/mcp-endpoints - 获取 MCP 端点列表
+ * - GET /api/config/mcp-servers - 获取 MCP 服务配置
+ * - GET /api/config/connection - 获取连接配置
+ * - GET /api/config/path - 获取配置文件路径
+ * - GET /api/config/exists - 检查配置是否存在
+ *
+ * ## 注意事项
+ * - 配置更新会自动验证
+ * - 更新后会自动保存到配置文件
+ */
+
 import type { AppContext } from "@/types/hono.context.js";
 import type { AppConfig } from "@xiaozhi-client/config";
 import { configManager } from "@xiaozhi-client/config";
 import type { Context } from "hono";
 import { BaseHandler } from "./base.handler.js";
 
-/**
- * 配置 API 处理器
- */
 export class ConfigApiHandler extends BaseHandler {
   constructor() {
     super();
