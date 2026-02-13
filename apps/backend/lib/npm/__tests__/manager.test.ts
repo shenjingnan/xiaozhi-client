@@ -302,6 +302,39 @@ describe("NPMManager", () => {
       expect(typeof installId).toBe("string");
       expect(installId?.length).toBeGreaterThan(10);
     });
+
+    test("应该处理进程启动失败（error 事件）", async () => {
+      // Arrange
+      const version = "1.7.9";
+      const mockError = new Error("spawn npm ENOENT");
+      const mockProcess = {
+        stdout: { on: vi.fn() },
+        stderr: { on: vi.fn() },
+        on: vi.fn((event, callback) => {
+          if (event === "error") {
+            callback(mockError);
+          }
+        }),
+      };
+      mockSpawn.mockReturnValue(mockProcess);
+
+      // Act & Assert
+      await expect(npmManager.installVersion(version)).rejects.toThrow(
+        "spawn npm ENOENT"
+      );
+
+      // 验证失败事件发射
+      expect(mockEventBus.emitEvent).toHaveBeenCalledWith(
+        "npm:install:failed",
+        {
+          version: "1.7.9",
+          installId: expect.stringMatching(/^install-\d+-[a-z0-9]+$/),
+          error: "进程启动失败: spawn npm ENOENT",
+          duration: expect.any(Number),
+          timestamp: expect.any(Number),
+        }
+      );
+    });
   });
 
   describe("getCurrentVersion", () => {

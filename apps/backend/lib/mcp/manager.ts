@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * MCP 服务管理器
  * 使用 MCPService 实例管理多个 MCP 服务
@@ -1848,5 +1846,3 @@ export class MCPServiceManager extends EventEmitter {
     );
   }
 }
-
-export default MCPServiceManager;

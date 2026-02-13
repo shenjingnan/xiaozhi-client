@@ -1,0 +1,15 @@
+{
+  "name": "xiaozhi-client",
+  "$schema": "./node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "targets": {
+    "nx-release-publish": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "command": "./scripts/publish-with-tag.sh",
+        "cwd": "."
+      }
+    }
+  }
+}

@@ -1,3 +1,23 @@
+/**
+ * Web 服务器
+ *
+ * 负责：
+ * - 启动和管理 HTTP/HTTPS 服务器
+ * - 注册和管理路由
+ * - 集成中间件（CORS、日志、错误处理等）
+ * - 管理 WebSocket 连接
+ * - 集成 MCP 服务和端点管理器
+ * - 生命周期管理（启动、停止、清理）
+ *
+ * @example
+ * ```typescript
+ * import { WebServer } from './WebServer';
+ *
+ * const server = new WebServer();
+ * await server.start();
+ * ```
+ */
+
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import type { Logger } from "@/Logger.js";
@@ -51,7 +71,7 @@ import type { Hono } from "hono";
 import { WebSocketServer } from "ws";
 
 import { HTTP_SERVER_CONFIG } from "@/constants/index.js";
-import { MCPServiceManagerNotInitializedError } from "./errors/mcp-errors.middleware.js";
+import { MCPServiceManagerNotInitializedError } from "@/errors/mcp-errors.middleware.js";
 // 路由系统导入
 import {
   type HandlerDependencies,
@@ -559,9 +579,8 @@ export class WebServer {
    * 设置路由系统
    */
   private setupRouteSystem(): void {
-    // 初始化路由管理器
-    // 注意：RouteManager 不再需要依赖参数，因为依赖通过中间件动态注入
-    this.routeManager = new RouteManager();
+    // 初始化路由管理器，注入 Logger 实例
+    this.routeManager = new RouteManager(this.logger);
   }
 
   /**
@@ -900,22 +919,34 @@ export class WebServer {
 
           // 关闭 WebSocket 服务器
           this.wss.close(() => {
+            let forceCloseTimer: NodeJS.Timeout | undefined;
+
+            const cleanupAndResolve = () => {
+              if (forceCloseTimer) {
+                clearTimeout(forceCloseTimer);
+                forceCloseTimer = undefined;
+              }
+              doResolve();
+            };
+
             // 强制关闭 HTTP 服务器，不等待现有连接
             if (this.httpServer) {
               this.httpServer.close(() => {
                 this.logger.info("Web 服务器已停止");
-                doResolve();
+                cleanupAndResolve();
               });
+
+              // 设置超时，如果 2 秒内没有关闭则强制退出
+              forceCloseTimer = setTimeout(() => {
+                // 超时触发后标记定时器已失效，保持与 cleanupAndResolve 中的语义一致
+                forceCloseTimer = undefined;
+                this.logger.info("Web 服务器已强制停止");
+                doResolve();
+              }, 2000);
             } else {
               this.logger.info("Web 服务器已停止");
-              doResolve();
+              cleanupAndResolve();
             }
-
-            // 设置超时，如果 2 秒内没有关闭则强制退出
-            setTimeout(() => {
-              this.logger.info("Web 服务器已强制停止");
-              doResolve();
-            }, 2000);
           });
         } else {
           this.logger.info("Web 服务器已停止");
