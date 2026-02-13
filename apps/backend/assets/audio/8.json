@@ -1,0 +1,13 @@
+{
+  "audioId": "8",
+  "frameCount": 1,
+  "totalBytes": 8657,
+  "estimatedDuration": 60,
+  "sampleRate": 24000,
+  "frames": [
+    {
+      "size": 8657,
+      "duration": 60
+    }
+  ]
+}

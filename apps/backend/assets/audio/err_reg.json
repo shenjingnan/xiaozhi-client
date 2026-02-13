@@ -1,0 +1,25 @@
+{
+  "audioId": "err_reg",
+  "frameCount": 4,
+  "totalBytes": 32121,
+  "estimatedDuration": 240,
+  "sampleRate": 24000,
+  "frames": [
+    {
+      "size": 8981,
+      "duration": 60
+    },
+    {
+      "size": 8746,
+      "duration": 60
+    },
+    {
+      "size": 8531,
+      "duration": 60
+    },
+    {
+      "size": 5863,
+      "duration": 60
+    }
+  ]
+}

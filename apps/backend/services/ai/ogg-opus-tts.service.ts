@@ -1,8 +1,9 @@
 /**
  * OggOpus TTS服务
- * 提供Ogg格式Opus音频的TTS服务，支持Ogg解封装
+ * 提供Ogg格式Opus音频的TTS服务，支持Ogg解封装和帧元数据
  */
 
+import { existsSync } from "node:fs";
 import { promises as fs } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,6 +12,46 @@ import type { ITTSService } from "./ai-service.interface.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+/**
+ * 帧元数据
+ */
+interface FrameMetadata {
+  /** 帧大小（字节） */
+  size: number;
+  /** 帧时长（毫秒） */
+  duration: number;
+}
+
+/**
+ * 音频元数据文件结构
+ */
+interface AudioMetadata {
+  /** 音频ID */
+  audioId: string;
+  /** 帧数量 */
+  frameCount: number;
+  /** 总字节数 */
+  totalBytes: number;
+  /** 估计时长（毫秒） */
+  estimatedDuration: number;
+  /** 采样率 */
+  sampleRate: number;
+  /** 帧元数据列表 */
+  frames: FrameMetadata[];
+}
+
+/**
+ * Opus 帧数据
+ */
+export interface OpusFrame {
+  /** 帧数据 */
+  data: Uint8Array;
+  /** 帧大小（字节） */
+  size: number;
+  /** 帧时长（毫秒） */
+  duration: number;
+}
 
 /**
  * Ogg页头结构（用于解析Ogg容器）
@@ -38,7 +79,7 @@ interface OggPageHeader {
 
 /**
  * OggOpus TTS服务
- * 从Ogg容器中提取纯Opus音频数据
+ * 从Ogg容器中提取纯Opus音频数据，支持逐帧发送
  */
 export class OggOpusTTSService implements ITTSService {
   /** 纯Opus音频数据（解封装后或直接加载） */
@@ -47,17 +88,24 @@ export class OggOpusTTSService implements ITTSService {
   private oggData: Uint8Array | null = null;
   /** 音频文件路径 */
   private readonly audioFilePath: string;
+  /** 元数据文件路径 */
+  private readonly metadataFilePath: string | null;
   /** 是否已初始化 */
   private initialized = false;
   /** 是否启用Ogg解封装 */
   private enableDemuxing: boolean;
-  /** 是否使用预处理的Opus文件 */
+  /** 是否使用预处理的Opus文件（带元数据） */
   private usePreprocessed: boolean;
+  /** 解析后的帧数组 */
+  private frames: OpusFrame[] = [];
+  /** 音频元数据 */
+  private metadata: AudioMetadata | null = null;
 
   constructor(options?: {
     enableDemuxing?: boolean;
     audioFilePath?: string;
     usePreprocessed?: boolean;
+    metadataFilePath?: string;
   }) {
     // 默认启用解封装
     this.enableDemuxing = options?.enableDemuxing ?? true;
@@ -65,7 +113,9 @@ export class OggOpusTTSService implements ITTSService {
     this.audioFilePath =
       options?.audioFilePath ?? join(__dirname, "../../assets/audio/test.opus");
     // 是否使用预处理的Opus文件
-    this.usePreprocessed = options?.usePreprocessed ?? false;
+    this.usePreprocessed = options?.usePreprocessed ?? true;
+    // 元数据文件路径（默认与音频文件同名，扩展名改为 .json）
+    this.metadataFilePath = options?.metadataFilePath ?? null;
 
     logger.info(
       `[OggOpusTTS] 初始化: usePreprocessed=${this.usePreprocessed}, enableDemuxing=${this.enableDemuxing}, audioPath=${this.audioFilePath}`
@@ -87,27 +137,55 @@ export class OggOpusTTSService implements ITTSService {
       const buffer = await fs.readFile(this.audioFilePath);
       this.oggData = new Uint8Array(buffer);
 
-      // 使用预处理的Opus文件模式
-      if (this.usePreprocessed) {
-        logger.info("[OggOpusTTS] 使用预处理Opus文件，跳过解封装");
-        this.opusData = this.oggData;
-        this.initialized = true;
-        logger.info(
-          `[OggOpusTTS] 初始化完成，音频数据大小: ${this.opusData.length} 字节`
-        );
-        return;
-      }
-
-      // 检查是否为Ogg文件
+      // 检查音频文件格式
       const isOgg = this.checkOggFormat(this.oggData);
       logger.info(`[OggOpusTTS] 文件格式检查: isOgg=${isOgg}`);
 
+      // 使用预处理的Opus文件模式（带元数据）
+      if (this.usePreprocessed) {
+        // 尝试加载元数据文件
+        const metadataPath = this.metadataFilePath ?? this.audioFilePath.replace(/\.opus$/, ".json");
+
+        if (existsSync(metadataPath)) {
+          logger.info(`[OggOpusTTS] 加载元数据文件: ${metadataPath}`);
+          const metadataContent = await fs.readFile(metadataPath, "utf-8");
+          this.metadata = JSON.parse(metadataContent) as AudioMetadata;
+
+          // 根据元数据分割帧
+          this.frames = this.splitIntoFrames(this.oggData, this.metadata.frames);
+          this.opusData = this.oggData;
+
+          logger.info(
+            `[OggOpusTTS] 预处理模式完成: 帧数=${this.frames.length}, 总大小=${this.opusData.length} 字节, 时长=${this.metadata.estimatedDuration}ms`
+          );
+        } else {
+          // 没有元数据文件，将整个数据作为单帧
+          logger.warn(
+            `[OggOpusTTS] 未找到元数据文件: ${metadataPath}，将整个数据作为单帧`
+          );
+          this.opusData = this.oggData;
+          this.frames = [
+            {
+              data: this.opusData,
+              size: this.opusData.length,
+              duration: 60, // 默认 60ms
+            },
+          ];
+        }
+
+        this.initialized = true;
+        return;
+      }
+
+      // Ogg 解封装模式
       if (this.enableDemuxing && isOgg) {
-        // 执行Ogg解封装，提取纯Opus数据
+        // 执行Ogg解封装，提取纯Opus数据和帧
         logger.info("[OggOpusTTS] 开始Ogg解封装...");
-        this.opusData = await this.demuxOggToOpus(this.oggData);
+        const result = this.demuxOggToOpus(this.oggData);
+        this.opusData = result.opusData;
+        this.frames = result.frames;
         logger.info(
-          `[OggOpusTTS] 解封装完成: 原始=${this.oggData.length} 字节, Opus=${this.opusData.length} 字节`
+          `[OggOpusTTS] 解封装完成: 原始=${this.oggData.length} 字节, Opus=${this.opusData.length} 字节, 帧数=${this.frames.length}`
         );
       } else {
         // 直接使用原始数据
@@ -115,11 +193,18 @@ export class OggOpusTTSService implements ITTSService {
           "[OggOpusTTS] 解封装未启用或文件非Ogg格式，直接使用原始数据"
         );
         this.opusData = this.oggData;
+        this.frames = [
+          {
+            data: this.opusData,
+            size: this.opusData.length,
+            duration: 60,
+          },
+        ];
       }
 
       this.initialized = true;
       logger.info(
-        `[OggOpusTTS] 初始化完成，音频数据大小: ${this.opusData.length} 字节`
+        `[OggOpusTTS] 初始化完成，音频数据大小: ${this.opusData.length} 字节, 帧数: ${this.frames.length}`
       );
     } catch (error) {
       logger.error("[OggOpusTTS] 初始化失败:", error);
@@ -128,8 +213,34 @@ export class OggOpusTTSService implements ITTSService {
   }
 
   /**
+   * 根据元数据分割 Opus 数据为帧数组
+   */
+  private splitIntoFrames(data: Uint8Array, frameMetadata: FrameMetadata[]): OpusFrame[] {
+    const frames: OpusFrame[] = [];
+    let offset = 0;
+
+    for (const meta of frameMetadata) {
+      if (offset + meta.size > data.length) {
+        logger.warn(
+          `[OggOpusTTS] 帧数据溢出: offset=${offset}, size=${meta.size}, total=${data.length}`
+        );
+        break;
+      }
+
+      frames.push({
+        data: data.slice(offset, offset + meta.size),
+        size: meta.size,
+        duration: meta.duration,
+      });
+      offset += meta.size;
+    }
+
+    return frames;
+  }
+
+  /**
    * 文本转语音（TTS）
-   * 返回预加载的音频数据
+   * 返回预加载的音频数据（兼容旧接口）
    * @param text - 要转换的文本（此参数未使用，仅用于模拟）
    * @returns Opus音频数据
    */
@@ -143,13 +254,51 @@ export class OggOpusTTSService implements ITTSService {
     }
 
     logger.debug(
-      `[OggOpusTTS] 模拟TTS合成: input="${text}", outputSize=${this.opusData.length} 字节, demuxed=${this.enableDemuxing}`
+      `[OggOpusTTS] 模拟TTS合成: input="${text}", outputSize=${this.opusData.length} 字节, frameCount=${this.frames.length}`
     );
 
     // 模拟网络延迟
     await this.delay(100);
 
     return this.opusData;
+  }
+
+  /**
+   * 获取 Opus 帧数组（用于逐帧发送）
+   * @param text - 要转换的文本（此参数未使用，仅用于模拟）
+   * @returns Opus 帧数组
+   */
+  async synthesizeFrames(text: string): Promise<OpusFrame[]> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
+    if (this.frames.length === 0) {
+      throw new Error("Opus帧数据未初始化");
+    }
+
+    logger.debug(
+      `[OggOpusTTS] 获取帧数组: input="${text}", frameCount=${this.frames.length}`
+    );
+
+    // 模拟网络延迟
+    await this.delay(100);
+
+    return this.frames;
+  }
+
+  /**
+   * 获取帧数量
+   */
+  getFrameCount(): number {
+    return this.frames.length;
+  }
+
+  /**
+   * 获取估计时长（毫秒）
+   */
+  getEstimatedDuration(): number {
+    return this.metadata?.estimatedDuration ?? this.frames.reduce((sum, f) => sum + f.duration, 0);
   }
 
   /**
@@ -167,14 +316,14 @@ export class OggOpusTTSService implements ITTSService {
   }
 
   /**
-   * 解封装Ogg文件，提取纯Opus数据
+   * 解封装Ogg文件，提取纯Opus数据和帧数组
    * @param oggData - Ogg文件数据
-   * @returns 纯Opus音频数据
+   * @returns Opus数据和帧数组
    */
-  private async demuxOggToOpus(oggData: Uint8Array): Promise<Uint8Array> {
+  private demuxOggToOpus(oggData: Uint8Array): { opusData: Uint8Array; frames: OpusFrame[] } {
     logger.info("[OggOpusTTS] 开始解封装Ogg文件...");
 
-    const opusFrames: Uint8Array[] = [];
+    const opusFrames: OpusFrame[] = [];
     let offset = 0;
 
     try {
@@ -233,7 +382,11 @@ export class OggOpusTTSService implements ITTSService {
         );
 
         // 将页数据添加到Opus帧列表
-        opusFrames.push(pageData);
+        opusFrames.push({
+          data: pageData,
+          size: dataSize,
+          duration: 60, // Opus 帧时长通常为 60ms
+        });
         logger.debug(
           `[OggOpusTTS] 提取Opus数据: 页=${pageCount}, size=${dataSize}`
         );
@@ -245,25 +398,28 @@ export class OggOpusTTSService implements ITTSService {
 
       // 合并所有Opus帧
       const totalSize = opusFrames.reduce(
-        (sum, frame) => sum + frame.length,
+        (sum, frame) => sum + frame.size,
         0
       );
       const combinedOpus = new Uint8Array(totalSize);
       let writeOffset = 0;
       for (const frame of opusFrames) {
-        combinedOpus.set(frame, writeOffset);
-        writeOffset += frame.length;
+        combinedOpus.set(frame.data, writeOffset);
+        writeOffset += frame.size;
       }
 
       logger.info(
         `[OggOpusTTS] 解封装完成: 总页数=${pageCount}, Opus帧=${opusFrames.length}, 总大小=${combinedOpus.length}`
       );
 
-      return combinedOpus;
+      return { opusData: combinedOpus, frames: opusFrames };
     } catch (error) {
       logger.error("[OggOpusTTS] 解封装失败:", error);
-      // 失败时返回原始数据
-      return oggData;
+      // 失败时返回原始数据作为单帧
+      return {
+        opusData: oggData,
+        frames: [{ data: oggData, size: oggData.length, duration: 60 }],
+      };
     }
   }
 
@@ -375,6 +531,8 @@ export class OggOpusTTSService implements ITTSService {
     this.initialized = false;
     this.opusData = null;
     this.oggData = null;
+    this.frames = [];
+    this.metadata = null;
     logger.debug("[OggOpusTTS] 服务已重置");
   }
 }

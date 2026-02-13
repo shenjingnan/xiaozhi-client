@@ -1,0 +1,21 @@
+{
+  "audioId": "err_pin",
+  "frameCount": 3,
+  "totalBytes": 18463,
+  "estimatedDuration": 180,
+  "sampleRate": 24000,
+  "frames": [
+    {
+      "size": 9545,
+      "duration": 60
+    },
+    {
+      "size": 8423,
+      "duration": 60
+    },
+    {
+      "size": 495,
+      "duration": 60
+    }
+  ]
+}

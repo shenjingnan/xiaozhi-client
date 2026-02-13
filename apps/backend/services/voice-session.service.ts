@@ -6,6 +6,7 @@
 import { logger } from "@/Logger.js";
 import type { ESP32STTMessage, ESP32TTSMessage } from "@/types/esp32.js";
 import type { IAIService, ITTSService } from "./ai/index.js";
+import type { OpusFrame } from "./ai/ogg-opus-tts.service.js";
 import type { EventBus } from "./event-bus.service.js";
 
 /**
@@ -390,7 +391,7 @@ export class VoiceSessionService {
   }
 
   /**
-   * 发送TTS完整流程到设备
+   * 发送TTS完整流程到设备（逐帧发送）
    * @param deviceId - 设备ID
    * @param sessionId - 会话ID
    * @param text - 要播放的文本
@@ -440,18 +441,47 @@ export class VoiceSessionService {
       `[VoiceSession] TTS句子消息已发送: deviceId=${deviceId}, text="${text}"`
     );
 
-    // 获取音频数据
+    // 获取音频帧数据
     logger.debug(`[VoiceSession] 开始合成音频: text="${text}"`);
-    const audioData = await this.ttsService.synthesize(text);
-    logger.info(
-      `[VoiceSession] 音频合成完成: deviceId=${deviceId}, size=${audioData.length} 字节`
-    );
 
-    // 发送二进制音频数据
-    await this.sendBinaryCallback(deviceId, audioData);
-    logger.info(
-      `[VoiceSession] TTS音频数据已发送: deviceId=${deviceId}, size=${audioData.length}`
-    );
+    // 检查 TTS 服务是否支持逐帧合成
+    if ("synthesizeFrames" in this.ttsService && typeof this.ttsService.synthesizeFrames === "function") {
+      // 使用逐帧发送模式
+      const frames = await (this.ttsService as ITTSService & { synthesizeFrames: (text: string) => Promise<OpusFrame[]> }).synthesizeFrames(text);
+      logger.info(
+        `[VoiceSession] 音频帧合成完成: deviceId=${deviceId}, frameCount=${frames.length}`
+      );
+
+      // 逐帧发送音频数据
+      let totalBytes = 0;
+      for (let i = 0; i < frames.length; i++) {
+        const frame = frames[i];
+        await this.sendBinaryCallback(deviceId, frame.data);
+        totalBytes += frame.size;
+
+        // 帧间延迟，模拟实时播放节奏
+        // 使用较小的延迟（1ms）避免阻塞，实际播放节奏由 ESP32 控制
+        if (i < frames.length - 1) {
+          await this.delay(1);
+        }
+      }
+
+      logger.info(
+        `[VoiceSession] TTS音频帧已全部发送: deviceId=${deviceId}, frameCount=${frames.length}, totalBytes=${totalBytes}`
+      );
+    } else {
+      // 降级为一次性发送（兼容旧版 TTS 服务）
+      const audioData = await this.ttsService.synthesize(text);
+      logger.info(
+        `[VoiceSession] 音频合成完成（兼容模式）: deviceId=${deviceId}, size=${audioData.length} 字节`
+      );
+
+      // 发送二进制音频数据
+      await this.sendBinaryCallback(deviceId, audioData);
+      logger.info(
+        `[VoiceSession] TTS音频数据已发送: deviceId=${deviceId}, size=${audioData.length}`
+      );
+    }
 
     // 发送TTS结束消息
     const stopMessage: ESP32TTSMessage = {
@@ -468,6 +498,13 @@ export class VoiceSessionService {
       sessionId,
       timestamp: new Date(),
     });
+  }
+
+  /**
+   * 延迟函数
+   */
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
