@@ -154,7 +154,7 @@ export class DaemonManagerImpl implements IDaemonManager {
       const tail = spawn(command, args, { stdio: "inherit" });
 
       // 处理中断信号
-      process.on("SIGINT", () => {
+      process.once("SIGINT", () => {
         console.log("\n断开连接，服务继续在后台运行");
         tail.kill();
         process.exit(0);
