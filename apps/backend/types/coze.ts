@@ -129,17 +129,8 @@ export interface CozeWorkflowsParams {
   workflow_mode?: "workflow";
 }
 
-/**
- * 扣子 API 错误响应
- */
-export interface CozeApiError extends Error {
-  /** 错误代码 */
-  code: string;
-  /** HTTP 状态码 */
-  statusCode?: number;
-  /** 原始响应数据 */
-  response?: any;
-}
+// 从共享类型重新导出 CozeApiError，避免重复定义
+export type { CozeApiError } from "@xiaozhi-client/shared-types";
 
 /**
  * 扣子平台配置接口

@@ -13,7 +13,7 @@ export interface CozeApiDetail {
 /**
  * 扣子 API 基础响应接口
  */
-export interface CozeApiResponse<T = any> {
+export interface CozeApiResponse<T = unknown> {
   /** 响应状态码，0表示成功 */
   code: number;
   /** 响应数据 */
@@ -37,21 +37,9 @@ export interface CozeWorkflowsResponse
   extends CozeApiResponse<CozeWorkflowsData> {}
 
 /**
- * 扣子 API 错误响应
- */
-export interface CozeApiError extends Error {
-  /** 错误代码 */
-  code: string;
-  /** HTTP 状态码 */
-  statusCode?: number;
-  /** 原始响应数据 */
-  response?: any;
-}
-
-/**
  * 缓存项接口
  */
-export interface CacheItem<T = any> {
+export interface CacheItem<T = unknown> {
   /** 缓存数据 */
   data: T;
   /** 缓存时间戳 */
@@ -66,3 +54,6 @@ import type { CozeWorkspacesData } from "./workspace";
 
 // 重新导出这些类型，便于外部使用
 export type { CozeWorkspacesData, CozeWorkflowsParams, CozeWorkflowsData };
+
+// 从共享类型重新导出 CozeApiError，避免重复定义
+export type { CozeApiError } from "../api/errors";

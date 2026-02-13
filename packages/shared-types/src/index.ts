@@ -11,6 +11,7 @@ export type {
   WorkflowParameter,
   WorkflowParameterConfig,
   CozeWorkflowsParams,
+  CozeApiError,
 } from "./coze";
 
 // MCP 相关类型

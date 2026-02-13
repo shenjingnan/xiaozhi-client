@@ -9,7 +9,8 @@
     "baseUrl": ".",
     "types": ["vitest/globals"],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@xiaozhi-client/shared-types": ["../../packages/shared-types/src"]
     }
   },
   "include": ["./**/*.ts"],
