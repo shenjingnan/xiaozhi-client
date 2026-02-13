@@ -127,17 +127,11 @@ export function useCozeWorkflows(
   }, []);
 
   /**
-   * 加载工作流列表
+   * 核心工作流数据获取函数
+   * 提取此函数以避免在 loadWorkflows 和 useEffect 中重复代码
    */
-  const loadWorkflows = useCallback(
-    async (params: Partial<CozeWorkflowsParams> = {}) => {
-      const workspaceId = params.workspace_id || selectedWorkspaceId;
-
-      if (!workspaceId) {
-        console.warn("无法加载工作流：未选择工作空间");
-        return;
-      }
-
+  const fetchWorkflowsData = useCallback(
+    async (workspaceId: string, pageNum: number, pageSizeValue: number) => {
       setUiState((prev) => ({
         ...prev,
         workflowsLoading: true,
@@ -147,8 +141,8 @@ export function useCozeWorkflows(
       try {
         const requestParams: CozeWorkflowsParams = {
           workspace_id: workspaceId,
-          page_num: params.page_num || currentPage,
-          page_size: params.page_size || pageSize,
+          page_num: pageNum,
+          page_size: pageSizeValue,
         };
 
         const result = await cozeApiClient.fetchWorkflows(requestParams);
@@ -166,7 +160,28 @@ export function useCozeWorkflows(
         console.error("加载工作流失败:", error);
       }
     },
-    [selectedWorkspaceId, currentPage, pageSize]
+    []
+  );
+
+  /**
+   * 加载工作流列表
+   */
+  const loadWorkflows = useCallback(
+    async (params: Partial<CozeWorkflowsParams> = {}) => {
+      const workspaceId = params.workspace_id || selectedWorkspaceId;
+
+      if (!workspaceId) {
+        console.warn("无法加载工作流：未选择工作空间");
+        return;
+      }
+
+      await fetchWorkflowsData(
+        workspaceId,
+        params.page_num || currentPage,
+        params.page_size || pageSize
+      );
+    },
+    [selectedWorkspaceId, currentPage, pageSize, fetchWorkflowsData]
   );
 
   /**
@@ -275,40 +290,10 @@ export function useCozeWorkflows(
   // 当选择工作空间变化时，如果启用自动加载则加载工作流
   useEffect(() => {
     if (autoLoadWorkflows && selectedWorkspaceId) {
-      // 直接调用 API 而不是使用 loadWorkflows 回调，避免依赖循环
-      const loadInitialWorkflows = async () => {
-        setUiState((prev) => ({
-          ...prev,
-          workflowsLoading: true,
-          workflowsError: null,
-        }));
-
-        try {
-          const requestParams = {
-            workspace_id: selectedWorkspaceId,
-            page_num: 1,
-            page_size: pageSize,
-          };
-
-          const result = await cozeApiClient.fetchWorkflows(requestParams);
-          setWorkflows(result.items);
-          setHasMoreWorkflows(result.hasMore);
-          setUiState((prev) => ({ ...prev, workflowsLoading: false }));
-        } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : "加载工作流失败";
-          setUiState((prev) => ({
-            ...prev,
-            workflowsLoading: false,
-            workflowsError: errorMessage,
-          }));
-          console.error("加载工作流失败:", error);
-        }
-      };
-
-      loadInitialWorkflows();
+      // 使用共享的 fetchWorkflowsData 函数，避免依赖循环和代码重复
+      fetchWorkflowsData(selectedWorkspaceId, 1, pageSize);
     }
-  }, [autoLoadWorkflows, selectedWorkspaceId, pageSize]);
+  }, [autoLoadWorkflows, selectedWorkspaceId, pageSize, fetchWorkflowsData]);
 
   return {
     // 数据状态
