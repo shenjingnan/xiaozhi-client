@@ -30,6 +30,18 @@
  *   - {@link generateCacheKey} - 生成缓存键
  *   - {@link formatTimestamp} - 格式化时间戳
  *   - {@link isCacheExpired} - 检查缓存是否过期
+ *   - {@link shouldCleanupCache} - 判断是否需要清理缓存
+ *   - {@link isToolCallResult} - 类型守卫函数，判断是否为工具调用结果
+ *   - {@link isEnhancedToolResultCache} - 类型守卫函数，判断是否为增强工具结果缓存
+ *   - {@link isExtendedMCPToolsCache} - 类型守卫函数，判断是否为扩展 MCP 工具缓存
+ *
+ * - **常量**：
+ *   - {@link DEFAULT_CONFIG} - 后端默认配置
+ *
+ * - **其他导出**：
+ *   - 从 coze.js 导出的所有类型
+ *   - 从 timeout.js 导出的所有类型和函数
+ *   - 从 hono.context.js 导出的所有类型和函数
  *
  * @example
  * ```typescript
