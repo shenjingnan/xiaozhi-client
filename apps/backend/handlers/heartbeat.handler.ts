@@ -1,7 +1,7 @@
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import { HEARTBEAT_MONITORING } from "@/constants/index.js";
-import type { NotificationService } from "@/services/notification.service.js";
+import type { NotificationService, WebSocketLike } from "@/services/notification.service.js";
 import type { StatusService } from "@/services/status.service.js";
 import { sendWebSocketError } from "@/utils/websocket-helper.js";
 import { configManager } from "@xiaozhi-client/config";
@@ -40,7 +40,7 @@ export class HeartbeatHandler {
    * 处理客户端状态更新（心跳）
    */
   async handleClientStatus(
-    ws: any,
+    ws: WebSocketLike,
     message: HeartbeatMessage,
     clientId: string
   ): Promise<void> {
@@ -76,7 +76,7 @@ export class HeartbeatHandler {
   /**
    * 发送最新配置给客户端
    */
-  private async sendLatestConfig(ws: any, clientId: string): Promise<void> {
+  private async sendLatestConfig(ws: WebSocketLike, clientId: string): Promise<void> {
     try {
       const latestConfig = configManager.getConfig();
       const message = {
@@ -194,7 +194,7 @@ export class HeartbeatHandler {
   /**
    * 发送心跳响应
    */
-  sendHeartbeatResponse(ws: any, clientId: string): void {
+  sendHeartbeatResponse(ws: WebSocketLike, clientId: string): void {
     try {
       const response = {
         type: "heartbeatResponse",
