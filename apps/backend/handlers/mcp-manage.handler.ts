@@ -361,18 +361,19 @@ export class MCPHandler {
       // 6. 获取服务状态和工具列表
       const serviceStatus = this.getServiceStatus(name);
       const tools = this.getServiceTools(name);
+      const toolNames = tools.map((tool) => tool.name);
 
       // 7. 发送事件通知
       getEventBus().emitEvent("mcp:server:added", {
         serverName: name,
         config: normalizedConfig,
-        tools: tools.map((tool) => tool.name),
+        tools: toolNames,
         timestamp: new Date(),
       });
 
       return {
         ...serviceStatus,
-        tools: tools.map((tool) => tool.name),
+        tools: toolNames,
       };
     } catch (error) {
       const mcpError = this.handleError(error, "addMCPServerSingle", {

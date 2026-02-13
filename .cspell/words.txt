@@ -65,6 +65,7 @@ nonexistenttool
 npmjs
 numpy
 nums
+oneline
 phantomjs
 postbuild
 pydantic
@@ -98,6 +99,7 @@ venv
 verylongstring
 vsize
 webui
+worktrees
 xiaozhi
 Xiaozhi
 XIAOZHI
