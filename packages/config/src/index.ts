@@ -7,8 +7,8 @@
  * - ConfigManager: 配置管理器，负责配置文件的加载、保存和验证
  * - ConfigResolver: 配置解析器，按优先级查找配置文件
  * - ConfigInitializer: 配置初始化器，负责创建默认配置
- * - ConfigAdapter: 配置适配器，处理旧格式到新格式的转换
- * - Json5Writer: JSON5 写入器，支持注释保留
+ * - 配置适配与转换工具: 提供旧配置向新格式迁移、规范化（例如 normalizeServiceConfig 等）
+ * - JSON5 读写工具: 提供 JSON5 格式的读写支持
  *
  * @example
  * ```typescript
@@ -17,8 +17,8 @@
  * // 获取配置
  * const config = configManager.getConfig();
  *
- * // 更新配置
- * configManager.set('mcpEndpoint', 'wss://api.example.com/mcp');
+ * // 更新 MCP 端点配置
+ * configManager.updateMcpEndpoint('wss://api.example.com/mcp');
  * ```
  */
 
