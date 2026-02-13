@@ -44,6 +44,8 @@ export default defineConfig({
   },
   build: {
     outDir: "../../dist/frontend",
+    emptyOutDir: true,
+    allowEmptyOutDir: true,
     sourcemap: true,
     // 代码分割优化配置
     rollupOptions: {
