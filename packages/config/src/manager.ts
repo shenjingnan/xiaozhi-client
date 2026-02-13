@@ -449,21 +449,29 @@ export class ConfigManager {
       switch (configFileFormat) {
         case "json5":
           // 使用 JSON5 解析配置对象，同时使用适配器保留注释信息
-          config = parseJson5(configData) as AppConfig;
+          const parsedJson5 = parseJson5(configData) as unknown;
           // 创建适配器实例用于后续保存时保留注释
           this.json5Writer = createJson5Writer(configData);
+          // 验证配置后断言，确保类型安全
+          this.validateConfig(parsedJson5);
+          config = parsedJson5 as AppConfig;
           break;
         case "jsonc":
           // 使用 comment-json 解析 JSONC 格式，保留注释信息
-          config = commentJson.parse(configData) as unknown as AppConfig;
+          // comment-json 返回 CommentObject 类型，包含特殊的 [commentSymbol] 属性
+          // 先通过 unknown 中间类型接收，验证后再断言为 AppConfig
+          const parsedJsonc = commentJson.parse(configData) as unknown;
+          // 验证配置结构，确保断言的安全性
+          this.validateConfig(parsedJsonc);
+          config = parsedJsonc as AppConfig;
           break;
         default:
-          config = JSON.parse(configData) as AppConfig;
+          const parsedJson = JSON.parse(configData) as unknown;
+          // 验证配置后断言，确保类型安全
+          this.validateConfig(parsedJson);
+          config = parsedJson as AppConfig;
           break;
       }
-
-      // 验证配置结构
-      this.validateConfig(config);
 
       return config;
     } catch (error) {
