@@ -1,5 +1,13 @@
 /**
  * MCP 相关类型定义
+ *
+ * 定义了与 MCP（Model Context Protocol）相关的所有类型，包括：
+ * - 工具调用结果和响应格式
+ * - JSON-RPC 2.0 消息和错误类型
+ * - MCP 工具缓存相关类型和工具函数
+ * - 超时处理和任务状态管理
+ *
+ * @module types/mcp
  */
 
 import { createHash } from "node:crypto";
