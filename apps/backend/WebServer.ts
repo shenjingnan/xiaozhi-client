@@ -1,20 +1,21 @@
 /**
- * WebServer - 主控制器，协调各个服务和处理器
+ * Web 服务器
  *
- * WebServer 是 xiaozhi-client 的核心服务器类，负责：
- * - 启动和管理 HTTP 服务器
+ * 负责：
+ * - 启动和管理 HTTP/HTTPS 服务器
+ * - 注册和管理路由
+ * - 集成中间件（CORS、日志、错误处理等）
  * - 管理 WebSocket 连接
- * - 初始化和协调各种服务（MCP、Endpoint、Notification 等）
- * - 注册和管理路由系统
- * - 处理事件总线和状态管理
+ * - 集成 MCP 服务和端点管理器
+ * - 生命周期管理（启动、停止、清理）
  *
- * 使用方式：
+ * @example
  * ```typescript
- * const server = new WebServer(3000);
+ * import { WebServer } from './WebServer';
+ *
+ * const server = new WebServer();
  * await server.start();
  * ```
- *
- * @module WebServer
  */
 
 import { createServer } from "node:http";
@@ -996,22 +997,34 @@ export class WebServer {
 
           // 关闭 WebSocket 服务器
           this.wss.close(() => {
+            let forceCloseTimer: NodeJS.Timeout | undefined;
+
+            const cleanupAndResolve = () => {
+              if (forceCloseTimer) {
+                clearTimeout(forceCloseTimer);
+                forceCloseTimer = undefined;
+              }
+              doResolve();
+            };
+
             // 强制关闭 HTTP 服务器，不等待现有连接
             if (this.httpServer) {
               this.httpServer.close(() => {
                 this.logger.info("Web 服务器已停止");
-                doResolve();
+                cleanupAndResolve();
               });
+
+              // 设置超时，如果 2 秒内没有关闭则强制退出
+              forceCloseTimer = setTimeout(() => {
+                // 超时触发后标记定时器已失效，保持与 cleanupAndResolve 中的语义一致
+                forceCloseTimer = undefined;
+                this.logger.info("Web 服务器已强制停止");
+                doResolve();
+              }, 2000);
             } else {
               this.logger.info("Web 服务器已停止");
-              doResolve();
+              cleanupAndResolve();
             }
-
-            // 设置超时，如果 2 秒内没有关闭则强制退出
-            setTimeout(() => {
-              this.logger.info("Web 服务器已强制停止");
-              doResolve();
-            }, 2000);
           });
         } else {
           this.logger.info("Web 服务器已停止");

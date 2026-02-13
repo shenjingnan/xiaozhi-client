@@ -1,3 +1,9 @@
+/**
+ * 服务器搜索 Hook
+ *
+ * 提供服务器列表搜索和筛选功能，支持根据通信类型和关键词进行筛选
+ */
+
 import type { ServerRowData } from "@/components/mcp-server/mcp-server-table";
 import { useCallback, useMemo, useState } from "react";
 
