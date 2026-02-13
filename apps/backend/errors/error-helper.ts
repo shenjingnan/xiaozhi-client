@@ -12,15 +12,16 @@
  *
  * @example
  * ```typescript
- * import { categorizeError, ErrorCategory, RecoveryStrategy } from "@/errors/error-helper.js";
+ * // 推荐：通过错误模块入口以命名空间方式导入，避免与 mcp-errors 命名冲突
+ * import * as ErrorHelper from "@/errors/index.js";
  *
- * const error = categorizeError(
+ * const error = ErrorHelper.categorizeError(
  *   new Error("Connection failed"),
  *   "my-service"
  * );
- * // error.category === ErrorCategory.CONNECTION
+ * // error.category === ErrorHelper.ErrorCategory.CONNECTION
  * // error.recoverable === true
- * // error.recoveryStrategy === RecoveryStrategy.RECONNECT
+ * // error.recoveryStrategy === ErrorHelper.RecoveryStrategy.RECONNECT
  * ```
  */
 
@@ -315,6 +316,13 @@ export function clearErrorHistory(serviceName?: string): void {
     errorHistory.clear();
     getLogger().info("[ErrorHandler] 已清理所有错误历史");
   }
+}
+
+/**
+ * 判断错误是否可恢复
+ */
+export function isRecoverable(error: MCPError): boolean {
+  return error.recoverable;
 }
 
 /**
