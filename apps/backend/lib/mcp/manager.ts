@@ -1263,7 +1263,9 @@ export class MCPServiceManager extends EventEmitter {
       serviceName = internalConfig.name;
       finalConfig = internalConfig;
     } else {
-      throw new Error("Invalid arguments for addServiceConfig");
+      throw new Error(
+        "addServiceConfig 参数无效：期望 (name: string, config: MCPServiceConfig) 或 (config: InternalMCPServiceConfig)"
+      );
     }
 
     // 增强配置
