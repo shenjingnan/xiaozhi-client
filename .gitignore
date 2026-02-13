@@ -149,3 +149,4 @@ tool-calls.jsonl
 .nx
 .claude/settings.local.json
 .worktrees
+worktrees
