@@ -1,3 +1,30 @@
+/**
+ * MCP 错误处理辅助工具模块
+ *
+ * 本模块提供 MCP 服务错误处理的核心类型定义和工具函数，包括：
+ *
+ * - **错误分类**：通过 ErrorCategory 枚举对错误进行分类
+ * - **恢复策略**：定义错误的恢复策略（重试、重连等）
+ * - **错误创建**：统一的错误创建工厂函数
+ * - **错误判断**：判断错误是否可恢复的工具函数
+ * - **错误格式化**：将错误格式化为用户友好的消息
+ * - **错误统计**：跟踪和统计错误历史记录
+ *
+ * @example
+ * ```typescript
+ * // 推荐：通过错误模块入口以命名空间方式导入，避免与 mcp-errors 命名冲突
+ * import * as ErrorHelper from "@/errors/index.js";
+ *
+ * const error = ErrorHelper.categorizeError(
+ *   new Error("Connection failed"),
+ *   "my-service"
+ * );
+ * // error.category === ErrorHelper.ErrorCategory.CONNECTION
+ * // error.recoverable === true
+ * // error.recoveryStrategy === ErrorHelper.RecoveryStrategy.RECONNECT
+ * ```
+ */
+
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 
@@ -289,6 +316,13 @@ export function clearErrorHistory(serviceName?: string): void {
     errorHistory.clear();
     getLogger().info("[ErrorHandler] 已清理所有错误历史");
   }
+}
+
+/**
+ * 判断错误是否可恢复
+ */
+export function isRecoverable(error: MCPError): boolean {
+  return error.recoverable;
 }
 
 /**
