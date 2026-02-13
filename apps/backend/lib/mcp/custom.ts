@@ -225,15 +225,23 @@ export class CustomMCPHandler {
 
     try {
       const timeout = options?.timeout || this.TIMEOUT;
-      const result = await Promise.race([
-        this.callCozeWorkflow(tool, arguments_),
-        this.createTimeoutPromise(toolName, timeout),
-      ]);
+      const { promise: timeoutPromise, cleanup: cleanupTimeout } =
+        this.createTimeoutPromise(toolName, timeout);
 
-      // 缓存结果（标记为未消费）
-      await this.cacheResult(toolName, arguments_, result);
+      try {
+        const result = await Promise.race([
+          this.callCozeWorkflow(tool, arguments_),
+          timeoutPromise,
+        ]);
 
-      return result;
+        // 缓存结果（标记为未消费）
+        await this.cacheResult(toolName, arguments_, result);
+
+        return result;
+      } finally {
+        // 确保定时器被清理
+        cleanupTimeout();
+      }
     } catch (error) {
       // 如果是超时错误，返回友好提示
       if (error instanceof TimeoutError) {
@@ -250,16 +258,28 @@ export class CustomMCPHandler {
 
   /**
    * 创建超时 Promise
+   * 返回一个包含 Promise 和清理函数的对象
    */
-  private async createTimeoutPromise(
+  private createTimeoutPromise(
     toolName: string,
     timeout: number
-  ): Promise<never> {
-    return new Promise((_, reject) => {
-      setTimeout(() => {
+  ): { promise: Promise<never>; cleanup: () => void } {
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    const promise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
         reject(new TimeoutError(`工具调用超时: ${toolName}`));
       }, timeout);
     });
+
+    const cleanup = () => {
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+    };
+
+    return { promise, cleanup };
   }
 
   /**
