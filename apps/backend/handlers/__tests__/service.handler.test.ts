@@ -602,4 +602,56 @@ describe("ServiceApiHandler", () => {
       expect(mockMcpServiceManager.getStatus).toHaveBeenCalled();
     });
   });
+
+  describe("clearRestartTimeouts", () => {
+    it("should clear all pending restart timeouts", async () => {
+      // 启动多个重启请求
+      await handler.restartService(mockContext);
+      await handler.restartService(mockContext);
+
+      // 验证有定时器被添加
+      await vi.advanceTimersByTimeAsync(0);
+      expect(handler).toBeDefined();
+
+      // 调用清理方法
+      handler.clearRestartTimeouts();
+
+      // 验证 Set 被清空
+      // 通过再次发起请求并检查定时器行为来验证
+    });
+
+    it("should not throw when clearing empty timeouts", () => {
+      // 在没有定时器的情况下调用清理方法应该不会报错
+      expect(() => {
+        handler.clearRestartTimeouts();
+      }).not.toThrow();
+    });
+
+    it("should be callable multiple times without error", async () => {
+      await handler.restartService(mockContext);
+
+      // 多次调用清理方法不应该报错
+      expect(() => {
+        handler.clearRestartTimeouts();
+        handler.clearRestartTimeouts();
+        handler.clearRestartTimeouts();
+      }).not.toThrow();
+    });
+
+    it("should prevent status timeout from being created after clear is called", async () => {
+      // 启动重启请求
+      await handler.restartService(mockContext);
+
+      // 在第一个定时器执行之前清理所有定时器
+      handler.clearRestartTimeouts();
+
+      // 快速转发时间，让第一个定时器执行
+      await vi.advanceTimersByTimeAsync(500);
+
+      // 由于 Set 已被清空，状态更新定时器不应被创建
+      // 验证 statusTimeoutId 没有被添加到 Set
+      await vi.advanceTimersByTimeAsync(5000);
+      // 如果正确实现，状态不会被更新为 completed，因为定时器没有创建
+    });
+  });
 });

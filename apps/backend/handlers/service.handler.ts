@@ -53,6 +53,10 @@ export class ServiceApiHandler {
         try {
           await this.executeRestart(mcpServiceManager);
           // 服务重启需要一些时间，延迟发送成功状态
+          // 检查 Set 是否已被清空，如果已清空则不创建新的定时器（避免竞态条件）
+          if (this.restartTimeouts.size === 0) {
+            return;
+          }
           const statusTimeoutId = setTimeout(() => {
             this.statusService.updateRestartStatus("completed");
             this.restartTimeouts.delete(statusTimeoutId);

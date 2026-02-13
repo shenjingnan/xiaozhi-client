@@ -939,6 +939,9 @@ export class WebServer {
       this.heartbeatMonitorInterval = undefined;
     }
 
+    // 清理服务重启定时器
+    this.serviceApiHandler.clearRestartTimeouts();
+
     // 销毁服务层
     this.statusService.destroy();
     this.notificationService.destroy();
