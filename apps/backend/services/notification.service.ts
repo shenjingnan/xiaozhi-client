@@ -10,7 +10,9 @@
  * - 消息类型：配置更新、状态变更、服务重启、NPM 安装日志等
  *
  * ## 使用方式
- * 服务自动在 WebServer 中初始化，通过中间件注入到 Hono Context
+ * - 由 WebServer 在初始化阶段创建实例
+ * - 当前主要由 WebSocket 相关 handler（如 RealtimeNotificationHandler / HeartbeatHandler）持有并使用
+ * - 如需在 HTTP handler 中使用，可通过自定义中间件将其实例注入到 Hono Context
  *
  * ## 注意事项
  * - 消息队列最大容量：100 条/客户端
