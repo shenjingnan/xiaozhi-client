@@ -1,5 +1,45 @@
 # 常用命令
 
+## 服务管理
+
+| 命令                                          | 说明                        |
+| --------------------------------------------- | --------------------------- |
+| xiaozhi service start [-d, --daemon] [--debug] [--stdio] | 启动服务                    |
+| xiaozhi service stop                           | 停止服务                    |
+| xiaozhi service status                        | 检查服务状态                |
+| xiaozhi service restart [-d, --daemon]        | 重启服务                    |
+| xiaozhi service attach                        | 连接到后台服务查看日志      |
+
+## 端点管理
+
+| 命令                                          | 说明                        |
+| --------------------------------------------- | --------------------------- |
+| xiaozhi endpoint list                         | 列出所有 MCP 端点           |
+| xiaozhi endpoint add <url>                    | 添加新的 MCP 端点           |
+| xiaozhi endpoint remove <url>                 | 移除指定的 MCP 端点         |
+| xiaozhi endpoint set <url...>                 | 设置 MCP 端点（可以是单个或多个） |
+
+## MCP 工具管理
+
+| 命令                                          | 说明                        |
+| --------------------------------------------- | --------------------------- |
+| xiaozhi mcp list                              | 列出所有 MCP 服务           |
+| xiaozhi mcp list --tools                      | 列出所有正在使用的 MCP 工具 |
+| xiaozhi mcp call <serviceName> <toolName> [--args <json>] | 调用 MCP 工具              |
+| xiaozhi mcp <serviceName> list                | 查看指定服务的工具列表      |
+| xiaozhi mcp <serviceName> <toolName> enable   | 启用指定工具                |
+| xiaozhi mcp <serviceName> <toolName> disable  | 禁用指定工具                |
+
+## 配置管理
+
+| 命令                                          | 说明                        |
+| --------------------------------------------- | --------------------------- |
+| xiaozhi config mcpEndpoint <小智接入点地址>   | 设置小智接入点              |
+| xiaozhi config get <key>                      | 获取配置项                  |
+| xiaozhi config set <key> <value>              | 设置配置项                  |
+
+## 其他命令
+
 | 命令                                          | 说明                        |
 | --------------------------------------------- | --------------------------- |
 | xiaozhi help                                  | 帮助信息                    |
@@ -7,6 +47,3 @@
 | xiaozhi start                                 | 启动服务                    |
 | xiaozhi stop                                  | 停止服务                    |
 | xiaozhi status                                | 查看服务状态                |
-| xiaozhi config mcpEndpoint \<小智接入点地址\> | 设置小智接入点              |
-| xiaozhi mcp list                              | 列出所有 MCP 服务           |
-| xiaozhi mcp list --tools                      | 列出所有正在使用的 MCP 工具 |
