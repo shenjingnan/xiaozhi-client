@@ -234,7 +234,7 @@ export class FileUtils {
       }
 
       const items = fs.readdirSync(dirPath);
-      let result: string[] = [];
+      const result: string[] = [];
 
       for (const item of items) {
         // 跳过隐藏文件（除非明确要求包含）
@@ -248,7 +248,7 @@ export class FileUtils {
         // 递归处理子目录
         if (options.recursive && fs.statSync(itemPath).isDirectory()) {
           const subItems = FileUtils.listDirectory(itemPath, options);
-          result = result.concat(subItems);
+          result.push(...subItems);
         }
       }
 
