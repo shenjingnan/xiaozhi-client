@@ -83,10 +83,37 @@ export function useWebSocketConnected(): boolean {
 }
 
 /**
+ * 重启状态接口
+ */
+interface RestartStatus {
+  status: "restarting" | "completed" | "failed";
+  error?: string;
+  timestamp: number;
+}
+
+/**
+ * 端口变更状态接口
+ */
+interface PortChangeStatus {
+  status:
+    | "idle"
+    | "checking"
+    | "polling"
+    | "connecting"
+    | "completed"
+    | "failed";
+  targetPort?: number;
+  currentAttempt?: number;
+  maxAttempts?: number;
+  error?: string;
+  timestamp: number;
+}
+
+/**
  * 向后兼容的重启状态选择器
  * @deprecated 请使用 useRestartStatus() from "./status"
  */
-export function useWebSocketRestartStatus(): any {
+export function useWebSocketRestartStatus(): RestartStatus | null {
   console.warn(
     '[useWebSocketRestartStatus] 此选择器已废弃，请使用 useRestartStatus() from "./status"'
   );
@@ -108,7 +135,7 @@ export function useWebSocketWsUrl(): string {
  * 向后兼容的端口切换状态选择器
  * @deprecated 请使用 usePortChangeStatus() from "./websocket"
  */
-export function useWebSocketPortChangeStatus(): any {
+export function useWebSocketPortChangeStatus(): PortChangeStatus | undefined {
   console.warn(
     '[useWebSocketPortChangeStatus] 此选择器已废弃，请使用 usePortChangeStatus() from "./websocket"'
   );

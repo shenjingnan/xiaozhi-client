@@ -61,7 +61,18 @@ import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
-// 数组字段渲染器组件
+/**
+ * 数组字段渲染器组件
+ *
+ * @private
+ * @description 这是 ToolDebugDialog 的专用内部组件，用于渲染数组类型的 JSON Schema 字段。
+ * 该组件针对工具调试场景进行了优化，支持嵌套对象和数组。
+ *
+ * 务实开发说明：此组件未作为独立组件导出，因为：
+ * 1. 当前项目中只有 ToolDebugDialog 需要这种特定的 JSON Schema 数组渲染逻辑
+ * 2. 其他组件（如 WorkflowParameterConfigDialog）的用途是配置元数据，而非渲染动态表单
+ * 3. 避免预防性设计 - 如果未来其他组件需要类似功能，再考虑提取
+ */
 interface ArrayFieldProps {
   name: string;
   schema: any;
@@ -190,7 +201,18 @@ const ArrayField = memo(function ArrayField({
   );
 });
 
-// 对象字段渲染器组件
+/**
+ * 对象字段渲染器组件
+ *
+ * @private
+ * @description 这是 ToolDebugDialog 的专用内部组件，用于渲染对象类型的 JSON Schema 字段。
+ * 该组件支持嵌套属性、必填标记和类型徽章显示。
+ *
+ * 务实开发说明：此组件未作为独立组件导出，因为：
+ * 1. 当前项目中只有 ToolDebugDialog 需要这种特定的 JSON Schema 对象渲染逻辑
+ * 2. 其他组件（如 WorkflowParameterConfigDialog）的用途是配置元数据，而非渲染动态表单
+ * 3. 避免预防性设计 - 如果未来其他组件需要类似功能，再考虑提取
+ */
 interface ObjectFieldProps {
   name: string;
   schema: any;
@@ -272,7 +294,17 @@ const ObjectField = memo(function ObjectField({
   );
 });
 
-// 无参数提示组件
+/**
+ * 无参数提示组件
+ *
+ * @private
+ * @description 这是 ToolDebugDialog 的专用内部组件，用于显示无需输入参数的提示信息。
+ *
+ * 务实开发说明：此组件未作为独立组件导出，因为：
+ * 1. 这是一个简单的 UI 组件，复制成本极低
+ * 2. 其他场景的"无参数"提示可能需要不同的文案和样式
+ * 3. 避免预防性设计 - 如果未来其他组件需要类似功能，再考虑提取
+ */
 const NoParamsMessage = memo(function NoParamsMessage() {
   return (
     <div className="h-full flex items-center justify-center">
@@ -293,7 +325,18 @@ const NoParamsMessage = memo(function NoParamsMessage() {
   );
 });
 
-// 表单渲染器组件
+/**
+ * 表单渲染器组件
+ *
+ * @private
+ * @description 这是 ToolDebugDialog 的专用内部组件，用于根据 JSON Schema 渲染完整的表单界面。
+ * 该组件遍历工具的 inputSchema 属性，使用 renderFormField 函数渲染每个字段。
+ *
+ * 务实开发说明：此组件未作为独立组件导出，因为：
+ * 1. 当前项目中只有 ToolDebugDialog 需要 JSON Schema 表单渲染
+ * 2. 其他组件（如 WorkflowParameterConfigDialog）使用的是固定的参数配置表单，不需要动态 Schema 渲染
+ * 3. 避免预防性设计 - 如果未来其他组件需要类似功能，再考虑提取
+ */
 interface FormRendererProps {
   tool: ToolDebugDialogProps["tool"];
   form: any;
