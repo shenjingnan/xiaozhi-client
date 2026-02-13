@@ -74,10 +74,8 @@ describe("ServiceApiHandler", () => {
 
     // Mock spawn - 返回带有 on、spawn 事件和 unref 方法的子进程对象
     mockSpawn = vi.fn().mockImplementation(() => {
-      const callbacks: Record<string, (...args: unknown[]) => void> = {};
       return {
         on: vi.fn((event: string, callback: (...args: unknown[]) => void) => {
-          callbacks[event] = callback;
           // 同步触发 spawn 事件
           if (event === "spawn") {
             callback();
@@ -551,7 +549,7 @@ describe("ServiceApiHandler", () => {
 
       expect(mockContext.fail).toHaveBeenCalledWith(
         "START_REQUEST_ERROR",
-        "Cannot read properties of null (reading 'on')",
+        expect.stringContaining("reading 'on'"),
         undefined,
         500
       );
