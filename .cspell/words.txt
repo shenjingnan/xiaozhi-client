@@ -99,6 +99,7 @@ venv
 verylongstring
 vsize
 webui
+worktrees
 xiaozhi
 Xiaozhi
 XIAOZHI
