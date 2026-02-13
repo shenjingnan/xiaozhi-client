@@ -35,6 +35,13 @@
  */
 
 import { Endpoint } from "@xiaozhi-client/endpoint";
+import {
+  cleanupConnections,
+  displayConnectionStatus,
+  displayTools,
+  handleError,
+  handleUncaughtError,
+} from "./shared/endpoint-helpers";
 
 /**
  * 主函数
@@ -91,13 +98,7 @@ async function main(): Promise<void> {
     console.log();
 
     // 4. 获取连接状态
-    const status = endpoint.getStatus();
-    console.log("连接状态:");
-    console.log(`  已连接: ${status.connected ? "是" : "否"}`);
-    console.log(`  已初始化: ${status.initialized ? "是" : "否"}`);
-    console.log(`  连接状态: ${status.connectionState}`);
-    console.log(`  可用工具数: ${status.availableTools}`);
-    console.log();
+    displayConnectionStatus(endpoint);
 
     // 5. 获取工具列表
     const tools = endpoint.getTools();
@@ -108,37 +109,8 @@ async function main(): Promise<void> {
     const calculatorTools = tools.filter((tool) => tool.name.startsWith("calculator_"));
     const datetimeTools = tools.filter((tool) => tool.name.startsWith("datetime_"));
 
-    console.log("📦 计算器服务工具:");
-    for (const tool of calculatorTools) {
-      console.log(`  - ${tool.name}`);
-      if (tool.description) {
-        console.log(`    描述: ${tool.description}`);
-      }
-      // 显示输入参数 schema（如果有的话）
-      if (tool.inputSchema && Object.keys(tool.inputSchema).length > 0) {
-        const properties = (tool.inputSchema as { properties?: Record<string, unknown> }).properties;
-        if (properties && Object.keys(properties).length > 0) {
-          console.log(`    参数: ${Object.keys(properties).join(", ")}`);
-        }
-      }
-    }
-    console.log();
-
-    console.log("📦 日期时间服务工具:");
-    for (const tool of datetimeTools) {
-      console.log(`  - ${tool.name}`);
-      if (tool.description) {
-        console.log(`    描述: ${tool.description}`);
-      }
-      // 显示输入参数 schema（如果有的话）
-      if (tool.inputSchema && Object.keys(tool.inputSchema).length > 0) {
-        const properties = (tool.inputSchema as { properties?: Record<string, unknown> }).properties;
-        if (properties && Object.keys(properties).length > 0) {
-          console.log(`    参数: ${Object.keys(properties).join(", ")}`);
-        }
-      }
-    }
-    console.log();
+    displayTools(calculatorTools, "计算器服务工具");
+    displayTools(datetimeTools, "日期时间服务工具");
 
     // 6. 保持连接供测试使用
     console.log("=".repeat(50));
@@ -167,45 +139,12 @@ async function main(): Promise<void> {
       // 无限期保持，直到用户中断
     });
   } catch (error) {
-    console.error();
-    console.error("❌ 执行过程中出错:");
-    if (error instanceof Error) {
-      console.error(`   错误信息: ${error.message}`);
-      if (error.stack) {
-        console.error(`   堆栈: ${error.stack.split("\n").slice(1, 3).join("\n")}`);
-      }
-    }
-    console.error();
-
-    // 显示连接状态（如果可能）
-    if (endpoint) {
-      try {
-        const status = endpoint.getStatus();
-        console.error("当前连接状态:");
-        console.error(`  已连接: ${status.connected ? "是" : "否"}`);
-        console.error(`  连接状态: ${status.connectionState}`);
-        if (status.lastError) {
-          console.error(`  最后错误: ${status.lastError}`);
-        }
-      } catch {
-        // 忽略获取状态的错误
-      }
-    }
+    handleError(error, endpoint);
   } finally {
     // 7. 断开连接
-    console.log();
-    console.log("正在断开连接...");
-    if (endpoint) {
-      await endpoint.disconnect();
-      console.log("✅ 连接已断开");
-    }
-    console.log();
-    console.log("=== 示例结束 ===");
+    await cleanupConnections([endpoint]);
   }
 }
 
 // 运行主函数
-main().catch((error) => {
-  console.error("未捕获的错误:", error);
-  process.exit(1);
-});
+main().catch(handleUncaughtError);

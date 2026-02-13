@@ -26,6 +26,12 @@
  */
 
 import { Endpoint, EndpointManager } from "@xiaozhi-client/endpoint";
+import {
+  cleanupConnections,
+  displayTools,
+  handleError,
+  handleUncaughtError,
+} from "./shared/endpoint-helpers";
 
 /**
  * 主函数
@@ -132,24 +138,10 @@ async function main(): Promise<void> {
     console.log();
 
     // 8. 显示接入点 1 的工具
-    console.log("📦 接入点 1 - 工具列表:");
-    for (const tool of tools1) {
-      console.log(`  - ${tool.name}`);
-      if (tool.description) {
-        console.log(`    描述: ${tool.description}`);
-      }
-    }
-    console.log();
+    displayTools(tools1, "接入点 1 - 工具列表");
 
     // 9. 显示接入点 2 的工具
-    console.log("📦 接入点 2 - 工具列表:");
-    for (const tool of tools2) {
-      console.log(`  - ${tool.name}`);
-      if (tool.description) {
-        console.log(`    描述: ${tool.description}`);
-      }
-    }
-    console.log();
+    displayTools(tools2, "接入点 2 - 工具列表");
 
     // 10. 验证一致性
     const hasCalculatorInEndpoint1 = tools1.some((t) =>
@@ -209,41 +201,12 @@ async function main(): Promise<void> {
       // 无限期保持，直到用户中断
     });
   } catch (error) {
-    console.error();
-    console.error("❌ 执行过程中出错:");
-    if (error instanceof Error) {
-      console.error(`   错误信息: ${error.message}`);
-      if (error.stack) {
-        console.error(
-          `   堆栈: ${error.stack.split("\n").slice(1, 3).join("\n")}`
-        );
-      }
-    }
-    console.error();
+    handleError(error, [endpoint1, endpoint2].filter((e): e is Endpoint => e !== undefined), [`${endpointId1}`, `${endpointId2}`]);
   } finally {
     // 13. 断开连接
-    console.log();
-    console.log("正在断开连接...");
-
-    try {
-      if (endpoint1) {
-        await endpoint1.disconnect();
-      }
-      if (endpoint2) {
-        await endpoint2.disconnect();
-      }
-      console.log("✅ 连接已断开");
-    } catch {
-      console.log("⚠️  断开连接时出现错误（可能已断开）");
-    }
-
-    console.log();
-    console.log("=== 示例结束 ===");
+    await cleanupConnections([endpoint1, endpoint2]);
   }
 }
 
 // 运行主函数
-main().catch((error) => {
-  console.error("未捕获的错误:", error);
-  process.exit(1);
-});
+main().catch(handleUncaughtError);

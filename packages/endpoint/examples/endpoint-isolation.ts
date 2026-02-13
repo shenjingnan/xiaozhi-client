@@ -35,6 +35,12 @@
  */
 
 import { Endpoint, EndpointManager } from "@xiaozhi-client/endpoint";
+import {
+  cleanupConnections,
+  displayTools,
+  handleError,
+  handleUncaughtError,
+} from "./shared/endpoint-helpers";
 
 /**
  * 主函数
@@ -144,44 +150,10 @@ async function main(): Promise<void> {
     console.log();
 
     // 7. 显示接入点 1 的工具（calculator）
-    console.log("📦 接入点 1 - 计算器服务工具:");
-    for (const tool of tools1) {
-      console.log(`  - ${tool.name}`);
-      if (tool.description) {
-        console.log(`    描述: ${tool.description}`);
-      }
-      if (tool.inputSchema && Object.keys(tool.inputSchema).length > 0) {
-        const properties = (
-          tool.inputSchema as {
-            properties?: Record<string, unknown>;
-          }
-        ).properties;
-        if (properties && Object.keys(properties).length > 0) {
-          console.log(`    参数: ${Object.keys(properties).join(", ")}`);
-        }
-      }
-    }
-    console.log();
+    displayTools(tools1, "接入点 1 - 计算器服务工具");
 
     // 8. 显示接入点 2 的工具（datetime）
-    console.log("📦 接入点 2 - 日期时间服务工具:");
-    for (const tool of tools2) {
-      console.log(`  - ${tool.name}`);
-      if (tool.description) {
-        console.log(`    描述: ${tool.description}`);
-      }
-      if (tool.inputSchema && Object.keys(tool.inputSchema).length > 0) {
-        const properties = (
-          tool.inputSchema as {
-            properties?: Record<string, unknown>;
-          }
-        ).properties;
-        if (properties && Object.keys(properties).length > 0) {
-          console.log(`    参数: ${Object.keys(properties).join(", ")}`);
-        }
-      }
-    }
-    console.log();
+    displayTools(tools2, "接入点 2 - 日期时间服务工具");
 
     // 9. 验证隔离性
     const hasCalculatorInEndpoint1 = tools1.some((t) =>
@@ -260,60 +232,12 @@ async function main(): Promise<void> {
       // 无限期保持，直到用户中断
     });
   } catch (error) {
-    console.error();
-    console.error("❌ 执行过程中出错:");
-    if (error instanceof Error) {
-      console.error(`   错误信息: ${error.message}`);
-      if (error.stack) {
-        console.error(
-          `   堆栈: ${error.stack.split("\n").slice(1, 3).join("\n")}`
-        );
-      }
-    }
-    console.error();
-
-    // 显示连接状态（如果可能）
-    if (endpoint1) {
-      try {
-        const status1 = endpoint1.getStatus();
-        console.error("当前连接状态:");
-        console.error(`  接入点 1 - 已连接: ${status1.connected ? "是" : "否"}`);
-      } catch {
-        // 忽略获取状态的错误
-      }
-    }
-    if (endpoint2) {
-      try {
-        const status2 = endpoint2.getStatus();
-        console.error(`  接入点 2 - 已连接: ${status2.connected ? "是" : "否"}`);
-      } catch {
-        // 忽略获取状态的错误
-      }
-    }
+    handleError(error, [endpoint1, endpoint2].filter((e): e is Endpoint => e !== undefined), [`${endpointId1}`, `${endpointId2}`]);
   } finally {
     // 11. 断开连接
-    console.log();
-    console.log("正在断开连接...");
-
-    try {
-      if (endpoint1) {
-        await endpoint1.disconnect();
-      }
-      if (endpoint2) {
-        await endpoint2.disconnect();
-      }
-      console.log("✅ 连接已断开");
-    } catch {
-      console.log("⚠️  断开连接时出现错误（可能已断开）");
-    }
-
-    console.log();
-    console.log("=== 示例结束 ===");
+    await cleanupConnections([endpoint1, endpoint2]);
   }
 }
 
 // 运行主函数
-main().catch((error) => {
-  console.error("未捕获的错误:", error);
-  process.exit(1);
-});
+main().catch(handleUncaughtError);
