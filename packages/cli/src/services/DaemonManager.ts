@@ -7,6 +7,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import type { WebServer } from "@/WebServer";
 import consola from "consola";
+import { RETRY_CONSTANTS } from "../Constants";
 import { ProcessError, ServiceError } from "../errors/index";
 import type {
   DaemonManager as IDaemonManager,
@@ -116,7 +117,9 @@ export class DaemonManagerImpl implements IDaemonManager {
       if (status.running) {
         await this.stopDaemon();
         // 等待一下确保完全停止
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) =>
+          setTimeout(resolve, RETRY_CONSTANTS.DEFAULT_INTERVAL)
+        );
       }
 
       // 重新启动守护进程

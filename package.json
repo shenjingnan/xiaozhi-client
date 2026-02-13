@@ -1,6 +1,6 @@
 {
   "name": "xiaozhi-client",
-  "version": "1.9.7",
+  "version": "1.10.8-beta.9",
   "description": "小智 AI 客户端 命令行工具",
   "repository": {
     "type": "git",
@@ -8,6 +8,9 @@
   },
   "author": "shenjingnan <sjn.code@gmail.com>",
   "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "keywords": [
     "xiaozhi",
     "mcp",
@@ -31,22 +34,21 @@
     "xiaozhi-client": "dist/cli/index.js"
   },
   "scripts": {
-    "build": "nx reset && pnpm run clean:dist && nx run-many -t build --exclude=docs --parallel=false",
-    "dev": "nx run-many -t build --exclude=docs --parallel=false && concurrently \"nx run backend:dev\" \"nx run cli:dev\" \"nx run frontend:dev\" --prefix \"[{name}]\" --names \"BACKEND,CLI,FRONTEND\"",
+    "build": "nx reset && pnpm run clean:dist && nx run-many -t build --exclude=docs,xiaozhi-client --parallel=false",
+    "dev": "nx run-many -t build --exclude=docs,xiaozhi-client --parallel=false && concurrently \"nx run backend:dev\" \"nx run cli:dev\" \"nx run frontend:dev\" --prefix \"[{name}]\" --names \"BACKEND,CLI,FRONTEND\"",
     "dev:cli": "nx run cli:dev",
     "dev:docs": "nx run docs:dev",
     "dev:backend": "nx run backend:dev",
     "dev:frontend": "nx run frontend:dev",
-    "test": "nx run-many -t test --parallel=false",
-    "test:coverage": "nx run-many -t test:coverage --parallel=false",
-    "lint": "nx run-many -t lint",
-    "lint:fix": "nx run-many -t lint:fix",
-    "check:type": "nx run-many -t type-check --exclude=docs",
+    "test": "nx run-many -t test --parallel=false --exclude=xiaozhi-client",
+    "test:coverage": "nx run-many -t test:coverage --parallel=false --exclude=xiaozhi-client",
+    "lint": "nx run-many -t lint --exclude=xiaozhi-client",
+    "lint:fix": "nx run-many -t lint:fix --exclude=xiaozhi-client",
+    "check:type": "nx run-many -t type-check --exclude=docs,xiaozhi-client",
     "check:all": "pnpm run lint && pnpm run check:type && pnpm run check:spell && pnpm run check:cpd",
     "check:spell": "cspell .",
     "check:cpd": "jscpd apps/ packages/",
-    "release": "tsx scripts/publish.ts",
-    "release:dry": "tsx scripts/publish.ts --dry-run",
+    "release": "tsx scripts/release.ts",
     "clean:dist": "rimraf dist || rm -rf dist",
     "link": "pnpm link --global",
     "unlink": "pnpm unlink --global",
@@ -55,7 +57,7 @@
   "dependencies": {
     "@coze/api": "^1.3.9",
     "@hono/node-server": "^1.17.1",
-    "@modelcontextprotocol/sdk": "^1.24.0",
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "@xiaozhi-client/config": "workspace:*",
     "@xiaozhi-client/endpoint": "workspace:*",
     "@xiaozhi-client/mcp-core": "workspace:*",
@@ -73,10 +75,10 @@
     "hono": "^4.10.3",
     "node-cache": "^5.1.2",
     "ora": "^8.2.0",
-    "pino": "^8.0.0",
+    "pino": "^10.3.1",
     "pino-pretty": "^13.1.1",
     "ws": "^8.14.2",
-    "zod": "^3.25.62"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
@@ -101,15 +103,16 @@
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",
     "vite": "^7.1.11",
-    "vite-tsconfig-paths": "^5.1.4",
+    "vite-tsconfig-paths": "^6.1.0",
     "vitest": "^3.2.4"
   },
   "pnpm": {
     "overrides": {
+      "@isaacs/brace-expansion": ">=5.0.1",
       "form-data": "^4.0.4",
       "braces": ">=3.0.3",
       "micromatch": ">=4.0.8",
-      "axios": ">=1.12.0",
+      "axios": ">=1.13.5",
       "@conventional-changelog/git-client": ">=2.0.0",
       "hono@>=1.1.0 <4.10.3": ">=4.10.3",
       "js-yaml@<4.1.1": ">=4.1.1",
@@ -117,7 +120,9 @@
       "glob@>=10.2.0 <10.5.0": ">=10.5.0",
       "glob@>=11.0.0 <11.1.0": ">=11.1.0",
       "body-parser@>=2.2.0 <2.2.1": ">=2.2.1",
-      "mdast-util-to-hast@>=13.0.0 <13.2.1": ">=13.2.1"
+      "mdast-util-to-hast@>=13.0.0 <13.2.1": ">=13.2.1",
+      "lodash-es@>=4.0.0 <=4.17.22": ">=4.17.23",
+      "@modelcontextprotocol/sdk@>=1.10.0 <=1.25.3": ">=1.26.0"
     }
   },
   "packageManager": "pnpm@10.13.1"

@@ -180,7 +180,7 @@ describe("UpdateApiHandler", () => {
         [
           {
             field: "version",
-            message: "Required",
+            message: "Invalid input: expected string, received undefined",
           },
         ],
         400
@@ -206,7 +206,7 @@ describe("UpdateApiHandler", () => {
         [
           {
             field: "version",
-            message: "Expected string, received null",
+            message: "Invalid input: expected string, received null",
           },
         ],
         400

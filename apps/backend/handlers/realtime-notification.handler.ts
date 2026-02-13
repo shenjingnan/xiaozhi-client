@@ -4,6 +4,7 @@ import type { EventBus } from "@/services/event-bus.service.js";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { NotificationService } from "@/services/notification.service.js";
 import type { StatusService } from "@/services/status.service.js";
+import { sendWebSocketError } from "@/utils/websocket-helper.js";
 import type { AppConfig } from "@xiaozhi-client/config";
 import { configManager } from "@xiaozhi-client/config";
 
@@ -75,18 +76,20 @@ export class RealtimeNotificationHandler {
           this.logger.warn(`未知的 WebSocket 消息类型: ${message.type}`, {
             clientId,
           });
-          this.sendError(
+          sendWebSocketError(
             ws,
             "UNKNOWN_MESSAGE_TYPE",
-            `未知的消息类型: ${message.type}`
+            `未知的消息类型: ${message.type}`,
+            this.logger
           );
       }
     } catch (error) {
       this.logger.error(`处理 WebSocket 消息失败: ${message.type}`, error);
-      this.sendError(
+      sendWebSocketError(
         ws,
         "MESSAGE_PROCESSING_ERROR",
-        error instanceof Error ? error.message : "消息处理失败"
+        error instanceof Error ? error.message : "消息处理失败",
+        this.logger
       );
     }
   }
@@ -104,10 +107,11 @@ export class RealtimeNotificationHandler {
       ws.send(JSON.stringify({ type: "config", data: config }));
     } catch (error) {
       this.logger.error("WebSocket: getConfig 请求处理失败", error);
-      this.sendError(
+      sendWebSocketError(
         ws,
         "CONFIG_READ_ERROR",
-        error instanceof Error ? error.message : "获取配置失败"
+        error instanceof Error ? error.message : "获取配置失败",
+        this.logger
       );
     }
   }
@@ -151,10 +155,11 @@ export class RealtimeNotificationHandler {
       ws.send(JSON.stringify({ type: "config:updated", success: true }));
     } catch (error) {
       this.logger.error("WebSocket: 配置更新失败", error);
-      this.sendError(
+      sendWebSocketError(
         ws,
         "CONFIG_UPDATE_ERROR",
-        error instanceof Error ? error.message : String(error)
+        error instanceof Error ? error.message : String(error),
+        this.logger
       );
     }
   }
@@ -172,10 +177,11 @@ export class RealtimeNotificationHandler {
       this.logger.debug("WebSocket: getStatus 请求处理成功", { clientId });
     } catch (error) {
       this.logger.error("WebSocket: getStatus 请求处理失败", error);
-      this.sendError(
+      sendWebSocketError(
         ws,
         "STATUS_READ_ERROR",
-        error instanceof Error ? error.message : "获取状态失败"
+        error instanceof Error ? error.message : "获取状态失败",
+        this.logger
       );
     }
   }
@@ -206,30 +212,12 @@ export class RealtimeNotificationHandler {
       this.statusService.updateRestartStatus("restarting");
     } catch (error) {
       this.logger.error("WebSocket: 处理重启请求失败", error);
-      this.sendError(
+      sendWebSocketError(
         ws,
         "RESTART_REQUEST_ERROR",
-        error instanceof Error ? error.message : "处理重启请求失败"
+        error instanceof Error ? error.message : "处理重启请求失败",
+        this.logger
       );
-    }
-  }
-
-  /**
-   * 发送错误消息
-   */
-  private sendError(ws: any, code: string, message: string): void {
-    try {
-      const errorResponse = {
-        type: "error",
-        error: {
-          code,
-          message,
-          timestamp: Date.now(),
-        },
-      };
-      ws.send(JSON.stringify(errorResponse));
-    } catch (error) {
-      this.logger.error("发送错误消息失败:", error);
     }
   }
 
@@ -267,10 +255,11 @@ export class RealtimeNotificationHandler {
       this.logger.debug("初始数据发送完成", { clientId });
     } catch (error) {
       this.logger.error("发送初始数据失败:", error);
-      this.sendError(
+      sendWebSocketError(
         ws,
         "INITIAL_DATA_ERROR",
-        error instanceof Error ? error.message : "发送初始数据失败"
+        error instanceof Error ? error.message : "发送初始数据失败",
+        this.logger
       );
     }
   }

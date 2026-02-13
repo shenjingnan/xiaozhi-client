@@ -48,7 +48,8 @@ describe("EventBus", () => {
     });
 
     it("should set max listeners", () => {
-      expect(eventBus.getMaxListeners()).toBe(50);
+      // 测试环境下 maxListeners 应该是 200，避免 MaxListenersExceededWarning
+      expect(eventBus.getMaxListeners()).toBe(200);
     });
 
     it("should setup error handling", () => {

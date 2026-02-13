@@ -1,3 +1,11 @@
+/**
+ * MCP 工具函数模块
+ *
+ * 提供 MCP 服务配置和工具调用的工具函数：
+ * - 传输类型推断（基于 URL 或配置）
+ * - 工具调用参数验证
+ */
+
 import { TypeFieldNormalizer } from "@xiaozhi-client/mcp-core";
 import { MCPTransportType, ToolCallError, ToolCallErrorCode } from "./types.js";
 import type {

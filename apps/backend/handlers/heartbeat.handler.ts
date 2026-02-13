@@ -3,6 +3,7 @@ import { logger } from "@/Logger.js";
 import { HEARTBEAT_MONITORING } from "@/constants/index.js";
 import type { NotificationService } from "@/services/notification.service.js";
 import type { StatusService } from "@/services/status.service.js";
+import { sendWebSocketError } from "@/utils/websocket-helper.js";
 import { configManager } from "@xiaozhi-client/config";
 
 /**
@@ -63,10 +64,11 @@ export class HeartbeatHandler {
       this.logger.debug(`客户端状态更新成功: ${clientId}`);
     } catch (error) {
       this.logger.error(`处理客户端状态更新失败: ${clientId}`, error);
-      this.sendError(
+      sendWebSocketError(
         ws,
         "CLIENT_STATUS_ERROR",
-        error instanceof Error ? error.message : "客户端状态更新失败"
+        error instanceof Error ? error.message : "客户端状态更新失败",
+        this.logger
       );
     }
   }
@@ -92,25 +94,6 @@ export class HeartbeatHandler {
   }
 
   /**
-   * 发送错误消息
-   */
-  private sendError(ws: any, code: string, message: string): void {
-    try {
-      const errorResponse = {
-        type: "error",
-        error: {
-          code,
-          message,
-          timestamp: Date.now(),
-        },
-      };
-      ws.send(JSON.stringify(errorResponse));
-    } catch (error) {
-      this.logger.error("发送错误消息失败:", error);
-    }
-  }
-
-  /**
    * 检查客户端心跳超时
    */
   checkHeartbeatTimeout(): void {
@@ -121,7 +104,7 @@ export class HeartbeatHandler {
       lastHeartbeat &&
       now - lastHeartbeat > HEARTBEAT_MONITORING.TIMEOUT_THRESHOLD
     ) {
-      this.logger.warn("客户端心跳超时，标记为断开连接");
+      this.logger.debug("客户端心跳超时，标记为断开连接");
       this.statusService.updateClientInfo(
         { status: "disconnected" },
         "heartbeat-timeout"

@@ -1,8 +1,29 @@
+import type { NotificationService } from "@/services/notification.service.js";
+import type { StatusService } from "@/services/status.service.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { HeartbeatHandler } from "../heartbeat.handler.js";
 
+/**
+ * Mock 服务类型定义
+ */
+interface MockStatusService extends Partial<StatusService> {
+  updateClientInfo: ReturnType<typeof vi.fn>;
+  getLastHeartbeat: ReturnType<typeof vi.fn>;
+  isClientConnected: ReturnType<typeof vi.fn>;
+}
+
+interface MockNotificationService extends Partial<NotificationService> {
+  cleanupDisconnectedClients: ReturnType<typeof vi.fn>;
+  getClientStats: ReturnType<typeof vi.fn>;
+}
+
+interface MockWebSocket {
+  send: ReturnType<typeof vi.fn>;
+  readyState?: number;
+}
+
 // Mock dependencies
-vi.mock("../../Logger.js", () => ({
+vi.mock("@/Logger.js", () => ({
   logger: {
     debug: vi.fn(),
     info: vi.fn(),
@@ -22,11 +43,18 @@ vi.useFakeTimers();
 
 describe("HeartbeatHandler", () => {
   let heartbeatHandler: HeartbeatHandler;
-  let mockStatusService: any;
-  let mockNotificationService: any;
-  let mockConfigService: any;
-  let mockLogger: any;
-  let mockWebSocket: any;
+  let mockStatusService: MockStatusService;
+  let mockNotificationService: MockNotificationService;
+  let mockConfigService: {
+    getConfig: ReturnType<typeof vi.fn>;
+  };
+  let mockLogger: {
+    debug: ReturnType<typeof vi.fn>;
+    info: ReturnType<typeof vi.fn>;
+    error: ReturnType<typeof vi.fn>;
+    warn: ReturnType<typeof vi.fn>;
+  };
+  let mockWebSocket: MockWebSocket;
 
   const mockConfig = {
     mcpEndpoint: "ws://localhost:3000",
@@ -64,7 +92,7 @@ describe("HeartbeatHandler", () => {
       error: vi.fn(),
       warn: vi.fn(),
     };
-    const { logger } = await import("../../Logger.js");
+    const { logger } = await import("@/Logger.js");
     Object.assign(logger, mockLogger);
 
     // Mock ConfigManager
@@ -94,8 +122,8 @@ describe("HeartbeatHandler", () => {
     };
 
     heartbeatHandler = new HeartbeatHandler(
-      mockStatusService,
-      mockNotificationService
+      mockStatusService as unknown as StatusService,
+      mockNotificationService as unknown as NotificationService
     );
   });
 
@@ -252,46 +280,6 @@ describe("HeartbeatHandler", () => {
     });
   });
 
-  describe("sendError", () => {
-    const clientId = "test-client-123";
-
-    beforeEach(() => {
-      vi.spyOn(Date, "now").mockReturnValue(1234567890);
-    });
-
-    it("should send error message successfully", () => {
-      // Access private method through type assertion for testing
-      const handler = heartbeatHandler as any;
-      handler.sendError(mockWebSocket, "TEST_ERROR", "Test error message");
-
-      expect(mockWebSocket.send).toHaveBeenCalledWith(
-        JSON.stringify({
-          type: "error",
-          error: {
-            code: "TEST_ERROR",
-            message: "Test error message",
-            timestamp: 1234567890,
-          },
-        })
-      );
-    });
-
-    it("should handle WebSocket send error", () => {
-      const sendError = new Error("WebSocket send failed");
-      mockWebSocket.send.mockImplementation(() => {
-        throw sendError;
-      });
-
-      const handler = heartbeatHandler as any;
-      handler.sendError(mockWebSocket, "TEST_ERROR", "Test error message");
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "发送错误消息失败:",
-        sendError
-      );
-    });
-  });
-
   describe("checkHeartbeatTimeout", () => {
     beforeEach(() => {
       vi.spyOn(Date, "now").mockReturnValue(1234567890);
@@ -322,7 +310,7 @@ describe("HeartbeatHandler", () => {
 
       heartbeatHandler.checkHeartbeatTimeout();
 
-      expect(mockLogger.warn).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         "客户端心跳超时，标记为断开连接"
       );
       expect(mockStatusService.updateClientInfo).toHaveBeenCalledWith(
@@ -348,7 +336,7 @@ describe("HeartbeatHandler", () => {
 
       heartbeatHandler.checkHeartbeatTimeout();
 
-      expect(mockLogger.warn).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         "客户端心跳超时，标记为断开连接"
       );
       expect(mockStatusService.updateClientInfo).toHaveBeenCalledWith(

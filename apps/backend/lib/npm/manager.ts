@@ -1,5 +1,23 @@
+/**
+ * NPM 管理器
+ *
+ * 提供与 NPM 交互的功能，包括：
+ * - 安装指定版本
+ * - 获取当前版本
+ * - 获取可用版本列表
+ * - 检查最新版本
+ *
+ * @example
+ * ```typescript
+ * const npmManager = new NPMManager();
+ * const versions = await npmManager.getAvailableVersions('stable');
+ * await npmManager.installVersion('1.0.0');
+ * ```
+ */
+
 import { exec, spawn } from "node:child_process";
 import { promisify } from "node:util";
+import { logger } from "@/Logger.js";
 import type { EventBus } from "@/services/event-bus.service.js";
 import { getEventBus } from "@/services/event-bus.service.js";
 import semver from "semver";
@@ -20,7 +38,7 @@ export class NPMManager {
     const installId = `install-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const startTime = Date.now();
 
-    console.log("开始安装", { version, installId });
+    logger.info("开始安装", { version, installId });
 
     // 发射安装开始事件
     this.eventBus.emitEvent("npm:install:started", {
@@ -37,6 +55,23 @@ export class NPMManager {
     ]);
 
     return new Promise((resolve, reject) => {
+      // 监听进程启动失败事件
+      npmProcess.on("error", (error) => {
+        const errorMessage = `进程启动失败: ${error.message}`;
+        console.log(errorMessage, { error });
+
+        // 发射安装失败事件
+        this.eventBus.emitEvent("npm:install:failed", {
+          version,
+          installId,
+          error: errorMessage,
+          duration: Date.now() - startTime,
+          timestamp: Date.now(),
+        });
+
+        reject(error);
+      });
+
       npmProcess.stdout.on("data", (data) => {
         const message = data.toString();
 
@@ -79,7 +114,7 @@ export class NPMManager {
           resolve();
         } else {
           const error = `安装失败，退出码: ${code}`;
-          console.log(error);
+          logger.error("安装失败", { code });
 
           // 发射安装失败事件
           this.eventBus.emitEvent("npm:install:failed", {
@@ -168,7 +203,7 @@ export class NPMManager {
       // 进行降序排列（最新的在前）
       return filteredVersions.sort((a, b) => semver.rcompare(a, b));
     } catch (error) {
-      console.log("获取版本列表失败", { error });
+      logger.error("获取版本列表失败", { error });
       // 如果获取失败，返回一些默认版本
       return [];
     }
@@ -219,12 +254,16 @@ export class NPMManager {
         // 使用 semver 比较版本
         hasUpdate = semver.gt(latestVersion, currentVersion);
       } catch (error) {
-        console.log("版本比较失败", { error });
+        logger.warn("版本比较失败，回退到字符串比较", { error });
         // 如果比较失败，尝试字符串比较
         hasUpdate = latestVersion !== currentVersion;
       }
 
-      console.log("版本检查完成", { currentVersion, latestVersion, hasUpdate });
+      logger.debug("版本检查完成", {
+        currentVersion,
+        latestVersion,
+        hasUpdate,
+      });
 
       return {
         currentVersion,
@@ -232,7 +271,7 @@ export class NPMManager {
         hasUpdate,
       };
     } catch (error) {
-      console.log("检查最新版本失败", { error });
+      logger.error("检查最新版本失败", { error });
       return {
         currentVersion: "unknown",
         latestVersion: null,
