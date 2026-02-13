@@ -3,6 +3,7 @@ import { logger } from "@/Logger.js";
 import type { EventBus } from "@/services/event-bus.service.js";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { NotificationService } from "@/services/notification.service.js";
+import type { WebSocketLike } from "@/services/notification.service.js";
 import type { StatusService } from "@/services/status.service.js";
 import { sendWebSocketError } from "@/utils/websocket-helper.js";
 import type { AppConfig } from "@xiaozhi-client/config";
@@ -41,7 +42,7 @@ export class RealtimeNotificationHandler {
    * @deprecated 部分消息类型已废弃，建议使用 HTTP API
    */
   async handleMessage(
-    ws: any,
+    ws: WebSocketLike,
     message: WebSocketMessage,
     clientId: string
   ): Promise<void> {
@@ -121,7 +122,7 @@ export class RealtimeNotificationHandler {
    * @deprecated 使用 PUT /api/config 替代
    */
   private async handleUpdateConfig(
-    ws: any,
+    ws: WebSocketLike,
     configData: AppConfig,
     clientId: string
   ): Promise<void> {
