@@ -134,7 +134,7 @@ jobs:
               github.event_name == 'repository_dispatch' && github.event.client_payload.issue_number ||
               github.event.issue.number
             }}
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           sleep 10
           output=$(npx tsx scripts/parse-claude-reply.ts --issue "$ISSUE_NUMBER" 2>&1)

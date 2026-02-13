@@ -30,9 +30,12 @@ import type { z } from "zod";
  * @param form - React Hook Form 实例
  * @param disabled - 是否禁用（覆盖配置中的 disabled）
  */
-export function renderFormField<T extends z.ZodType>(
-  config: FieldConfig<T>,
-  form: UseFormReturn<z.infer<T>>,
+export function renderFormField<
+  T extends z.ZodType,
+  Output extends Record<string, any> = z.infer<T> & Record<string, any>,
+>(
+  config: FieldConfig<T, Output>,
+  form: UseFormReturn<Output>,
   disabled?: boolean
 ) {
   const {
@@ -136,10 +139,11 @@ export function renderFormField<T extends z.ZodType>(
  */
 export function renderSelectFieldWithHandler<
   T extends z.ZodType,
+  Output extends Record<string, any> = z.infer<T> & Record<string, any>,
   V extends string = string,
 >(
-  config: FieldConfig<T>,
-  form: UseFormReturn<z.infer<T>>,
+  config: FieldConfig<T, Output>,
+  form: UseFormReturn<Output>,
   onValueChange: (value: V) => void,
   disabled?: boolean
 ) {
