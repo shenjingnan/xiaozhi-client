@@ -41,20 +41,60 @@
 
 ### 发布
 
-- `pnpm release --version <版本号>` - 发布到 npm（支持正式版、beta、rc）
-- `pnpm release:dry --version <版本号>` - 预演发布流程（不实际发布）
+项目使用简化的发布流程，通过 `scripts/release.ts` 脚本进行版本发布。
 
-使用示例：
+#### 标准发布流程
+
+1. **执行发布命令**
+   ```bash
+   # 发布正式版本
+   pnpm release 1.10.7
+
+   # 发布 Beta 版本
+   pnpm release 1.10.8-beta.0
+
+   # 发布 RC 版本
+   pnpm release 1.10.8-rc.0
+   ```
+
+2. **自动执行**
+   - 验证版本号格式
+   - 检查工作目录状态
+   - 更新所有包的版本号
+   - 生成/更新 CHANGELOG.md
+   - 创建 Git commit 和 tag
+   - 推送代码和 tag 到远程仓库
+
+3. **自动发布**
+   - GitHub Actions 检测到 tag
+   - 自动执行构建和发布
+   - 创建 GitHub Release
+
+#### 预演模式
+
 ```bash
-# 发布正式版
-pnpm release --version 1.0.0
-
-# 发布 beta 版
-pnpm release --version 1.0.0-beta.0
-
-# 预演
-pnpm release:dry --version 1.0.0
+# 预演发布流程（不实际执行）
+pnpm release 1.10.7-beta.0 --dry-run
 ```
+
+#### 仅更新版本号
+
+```bash
+# 仅更新版本号和变更日志，不推送
+pnpm release 1.10.7 --skip-push
+```
+
+#### 版本 tag 格式
+
+- **正式版**：`v1.10.7`
+- **Beta 版**：`v1.10.8-beta.0`
+- **RC 版**：`v1.10.8-rc.0`
+
+#### 可用参数
+
+- `pnpm release <version>` - 标准发布
+- `pnpm release <version> --dry-run` - 预演模式
+- `pnpm release <version> --skip-push` - 仅更新版本号
 
 ### 文档开发
 
@@ -110,33 +150,25 @@ xiaozhi-client 是一个务实的开源 MCP 客户端：
    - `MCPServer.ts` - 兼容性包装器，提供向后兼容的 API
    - 其他业务服务和工具类
 
-3. **核心 MCP 层** (`apps/backend/core/`) - MCP 协议实现
+3. **处理器层** (`apps/backend/handlers/`) - 请求处理器
 
-   - `ServerFactory.ts` - 用于创建不同服务器类型的工厂
-   - `MCPMessageHandler.ts` - 消息处理和路由
+   - 处理各种 API 请求和业务逻辑
 
-4. **传输层** (`apps/backend/transports/`) - 通信适配器
+4. **路由层** (`apps/backend/routes/`) - 路由定义
 
-   - `WebSocketAdapter.ts` - WebSocket 通信
-   - `HTTPAdapter.ts` - HTTP 通信
-   - `StdioAdapter.ts` - 标准 I/O 通信
+   - API 路由配置和映射
 
-5. **连接管理器** (`apps/backend/services/`) - 连接管理
+5. **中间件层** (`apps/backend/middlewares/`) - 中间件
 
-   - `IndependentXiaozhiConnectionManager.ts` - 独立多接入点连接管理器
-   - `XiaozhiConnectionManagerSingleton.ts` - 全局单例管理器
+   - 请求/响应处理中间件
 
-5. **工具层** (`apps/backend/utils/`) - 共享工具和辅助函数
+6. **工具层** (`apps/backend/utils/`) - 共享工具和辅助函数
 
-6. **类型定义** (`apps/backend/types/`) - TypeScript 类型定义
+7. **类型定义** (`apps/backend/types/`) - TypeScript 类型定义
 
-7. **错误处理** (`apps/backend/errors/`) - 统一错误定义和处理
+8. **错误处理** (`apps/backend/errors/`) - 统一错误定义和处理
 
-8. **管理器服务** (`apps/backend/managers/`) - 各种管理器实现
-
-9. **适配器模式** (`apps/backend/adapters/`) - 适配器实现
-
-10. **处理器层** (`apps/backend/handlers/`) - 请求处理器
+9. **常量定义** (`apps/backend/constants/`) - 常量定义
 
 ### 主要功能
 
@@ -227,7 +259,7 @@ xiaozhi-client 是一个务实的开源 MCP 客户端：
 ### 构建过程
 
 - 使用 tsup 进行打包
-- 输出 Node.js 18+ 的 ESM 格式
+- 输出 Node.js 20+ 的 ESM 格式
 - 包含源映射和 TypeScript 声明文件
 - 将模板和配置文件复制到 dist 目录
 
@@ -329,52 +361,57 @@ xiaozhi-client 是一个务实的开源 MCP 客户端：
 
 ### 路径别名系统
 
-项目使用复杂的路径别名系统以实现清晰的模块导入和代码组织：
+项目使用简单的路径别名系统以实现清晰的模块导入和代码组织。
 
-#### 完整别名映射
+#### 实际路径别名配置
+
+根据 `apps/backend/tsconfig.json`，项目仅定义了一个路径别名：
+
 ```json
 {
-  "@/*": ["apps/backend/*"],                    // 后端根目录快速访问
-  "@handlers/*": ["apps/backend/handlers/*"],     // 请求处理器
-  "@services/*": ["apps/backend/services/*"],     // 业务服务（重新导出层）
-  "@errors/*": ["apps/backend/errors/*"],         // 错误定义
-  "@utils/*": ["apps/backend/utils/*"],           // 工具函数
-  "@/lib/*": ["apps/backend/lib/*"],             // 核心库模块
-  "@core/*": ["apps/backend/core/*"],             // 核心 MCP 功能
-  "@transports/*": ["apps/backend/transports/*"], // 传输层适配器
-  "@adapters/*": ["apps/backend/adapters/*"],     // 适配器模式
-  "@managers/*": ["apps/backend/managers/*"],     // 管理器服务
-  "@types/*": ["apps/backend/types/*"]            // 类型定义
+  "@/*": ["./*"]
 }
 ```
 
-#### 新架构说明（2024年12月迁移）
+这意味着在 `apps/backend/` 目录下，可以使用 `@/` 来引用该目录下的文件。
 
-**CLI 迁移到 packages/cli**：
-- CLI 代码已从 `apps/backend/cli/` 迁移到 `packages/cli/`
-- CLI 包使用相对路径进行内部导入
-- CLI 包通过 external 依赖引用 `@/*` 和 `@/lib/config/*` 模块
-- 构建产物：`packages/cli` → `dist/cli/index.js`
-- CLI 包是项目入口点，不是独立发布的 npm 包
+#### 实际目录结构
 
-**MCP 核心库迁移**：
-- `MCPService` 已迁移至 `@/lib/mcp/connection.js`
-- `MCPServiceManager` 已迁移至 `@/lib/mcp/manager.js`
-- 原路径通过重新导出保持向后兼容
-- 建议新代码直接使用 `@/lib/mcp/*` 路径
+```
+apps/backend/
+├── handlers/        # 请求处理器
+├── services/        # 业务服务
+├── lib/            # 核心库（mcp、coze、npm）
+├── routes/         # 路由定义
+├── middlewares/    # 中间件
+├── types/          # 类型定义
+├── utils/          # 工具函数
+├── errors/         # 错误定义
+└── constants/      # 常量定义
+```
 
-**推荐导入方式**：
+#### 推荐导入方式
+
+**在 apps/backend/ 内部**：
 ```typescript
-// ✅ 新代码推荐方式
-import { MCPService } from "@/lib/mcp";
-import { MCPServiceManager } from "@/lib/mcp";
+// 使用 @/ 别名引用同目录下的模块
+import { HandlerManager } from "@/handlers/HandlerManager";
+import { ConfigService } from "@/services/ConfigService";
+import type { AppConfig } from "@/types";
 
-// ✅ 向后兼容方式（仍然支持）
-import { MCPService } from "@/lib/mcp";
-import { MCPServiceManager } from "@services/MCPServiceManager.js";
+// 使用相对路径引用同层级的文件
+import { helperFunction } from "./helpers";
+```
+
+**从其他包引用 backend 模块**：
+```typescript
+// 使用 workspace 包名引用
+import { someExport } from "@xiaozhi-client/mcp-core";
+import { getConfig } from "@xiaozhi-client/config";
 ```
 
 #### 导入顺序最佳实践
+
 ```typescript
 // 1. Node.js 内置模块
 import { fs } from "node:fs";
@@ -384,30 +421,31 @@ import { path } from "node:path";
 import express from "express";
 import { Command } from "commander";
 
-// 3. xiaozhi-client 路径别名导入（按分组排序）
-// 核心模块
-import { UnifiedMCPServer } from "@core";
-import type { MCPMessage } from "@types";
+// 3. Workspace 包依赖
+import { MCPService } from "@xiaozhi-client/mcp-core";
+import { getConfig } from "@xiaozhi-client/config";
 
-// 传输和适配器
-import { WebSocketAdapter } from "@transports";
-import { HTTPAdapter } from "@adapters";
+// 4. 本地路径别名（@/）
+import { HandlerManager } from "@/handlers/HandlerManager";
+import type { AppConfig } from "@/types";
 
-// 管理器和服务
-import { ConnectionManager } from "@managers";
-import { ConfigService } from "@/services";
-
-// CLI相关
-import { StartCommand } from "@cli/commands";
-import { Container } from "@cli";
-
-// 工具和错误
-import { formatConfig } from "@/utils";
-import { ConfigError } from "@errors";
-
-// 4. 相对路径（仅在必要时）
+// 5. 相对路径（仅在必要时）
 import { helperFunction } from "./helpers";
 ```
+
+#### 新架构说明（2024年12月迁移）
+
+**CLI 迁移到 packages/cli**：
+- CLI 代码已从 `apps/backend/cli/` 迁移到 `packages/cli/`
+- CLI 包使用相对路径进行内部导入
+- CLI 包通过 external 依赖引用 `@xiaozhi-client/*` workspace 包
+- 构建产物：`packages/cli` → `dist/cli/index.js`
+- CLI 包是项目入口点，不是独立发布的 npm 包
+
+**MCP 核心库迁移**：
+- MCP 核心功能已迁移至 `@xiaozhi-client/mcp-core` 包
+- 原路径通过重新导出保持向后兼容
+- 建议新代码直接使用 `@xiaozhi-client/mcp-core` 包
 
 ## Claude Code 技能和命令
 
