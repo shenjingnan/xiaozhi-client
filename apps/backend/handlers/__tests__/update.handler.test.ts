@@ -381,7 +381,7 @@ describe("UpdateApiHandler", () => {
         mockNPMManager.installVersion.mockResolvedValue(undefined);
 
         // Act - 两个不同版本的请求
-        const [result1, result2] = await Promise.all([
+        await Promise.all([
           updateApiHandler.performUpdate(mockContext1 as unknown as Context),
           updateApiHandler.performUpdate(mockContext2 as unknown as Context),
         ]);
@@ -428,16 +428,16 @@ describe("UpdateApiHandler", () => {
           mockContext1 as unknown as Context
         );
 
-        // 等待安装完成
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        // 等待安装流程完成
+        await Promise.resolve();
 
         // 第二个请求（相同版本，但在安装完成后）
         await updateApiHandler.performUpdate(
           mockContext2 as unknown as Context
         );
 
-        // 等待第二个安装完成
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        // 等待第二个安装流程完成
+        await Promise.resolve();
 
         // Assert - 两个请求都应该成功
         expect(mockContext1.success).toHaveBeenCalled();
