@@ -482,6 +482,9 @@ export class EndpointManager extends EventEmitter {
     }
     this.mcpEventListeners = [];
 
+    // 清理所有事件监听器（防止内存泄漏）
+    this.removeAllListeners();
+
     await this.clearEndpoints();
 
     console.debug("[EndpointManager] 资源清理完成");
