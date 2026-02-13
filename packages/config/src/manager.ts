@@ -18,9 +18,20 @@
  * // 更新配置
  * configManager.updateConfig({ mcpEndpoint: 'wss://...' });
  *
- * // 监听配置变更
- * configManager.on('change', (newConfig) => {
- *   console.log('配置已更新:', newConfig);
+ * // 监听配置更新事件
+ * configManager.on('config:updated', (payload) => {
+ *   // payload 示例结构：
+ *   // {
+ *   //   type: 'endpoint' | 'customMCP' | 'config' | 'serverTools' | 'connection' | 'modelscope' | 'webui' | 'platform';
+ *   //   timestamp: Date;
+ *   //   serviceName?: string;
+ *   //   platformName?: string;
+ *   // }
+ *   console.log('配置已更新事件:', payload);
+ *
+ *   // 如果需要获取最新的完整配置对象，可在回调中调用 getConfig()
+ *   const latestConfig = configManager.getConfig();
+ *   console.log('最新配置对象:', latestConfig);
  * });
  * ```
  */
