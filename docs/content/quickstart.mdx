@@ -104,9 +104,17 @@ import { Callout, Steps, Tabs } from "nextra/components";
 
 ## 设置小智接入点
     小智AI配置MCP接入点的 [使用说明](https://ccnphfhqs21z.feishu.cn/wiki/HiPEwZ37XiitnwktX13cEM5KnSb)
+
+    `xiaozhi config set` 命令用于设置配置项，格式为 `<配置键名> <配置值>`。
+
     ```bash
-    xiaozhi config set mcpEndpoint "<从小智服务端获取到的接入点地址>"
+    # 设置 MCP 端点配置
+    xiaozhi config set mcpEndpoint "wss://api.xiaozhi.me/mcp/?token=YOUR_TOKEN"
     ```
+
+    <Callout type="info">
+      **提示**: 请从小智服务端获取实际的接入点地址，替换上面的示例 URL。
+    </Callout>
 
 ## 启动服务
     ```bash
