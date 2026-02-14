@@ -5,12 +5,14 @@
 
 import type { mcpFormSchema } from "@/schemas/mcp-form";
 import type { FieldConfig } from "@/types/form-config";
-import type { UseFormReturn } from "react-hook-form";
+import type { FieldPath } from "react-hook-form";
 import type { z } from "zod";
+
+type McpFormValues = z.infer<typeof mcpFormSchema>;
 
 /**
  * MCP 服务表单字段配置数组
- * 使用类型断言处理 discriminated union 的类型推断限制
+ * 使用 satisfies 进行类型验证，同时保持值的推断
  */
 export const mcpFormFields = [
   {
@@ -19,7 +21,7 @@ export const mcpFormFields = [
     label: "MCP 类型",
     required: true,
     placeholder: "选择 MCP 类型",
-    description: (form: UseFormReturn<z.infer<typeof mcpFormSchema>>) => {
+    description: (form) => {
       const mcpType = form.watch("type");
       if (mcpType === "stdio") return "本地通过命令行启动的 MCP 服务";
       if (mcpType === "http") return "通过 HTTP 协议访问的远程 MCP 服务";
@@ -47,8 +49,7 @@ export const mcpFormFields = [
     required: true,
     placeholder: "例如: npx -y xxx",
     description: "完整的启动命令，空格分隔命令和参数",
-    condition: (form: UseFormReturn<z.infer<typeof mcpFormSchema>>) =>
-      form.watch("type") === "stdio",
+    condition: (form) => form.watch("type") === "stdio",
   },
   {
     name: "env",
@@ -57,8 +58,7 @@ export const mcpFormFields = [
     placeholder: "KEY1=value1\nKEY2=value2",
     description: "每行一个环境变量，支持 KEY=value 或 KEY: value 格式",
     className: "min-h-[100px] font-mono text-sm",
-    condition: (form: UseFormReturn<z.infer<typeof mcpFormSchema>>) =>
-      form.watch("type") === "stdio",
+    condition: (form) => form.watch("type") === "stdio",
   },
   {
     name: "url",
@@ -68,8 +68,7 @@ export const mcpFormFields = [
     inputType: "url",
     placeholder: "https://example.com/mcp",
     description: "MCP 服务的完整 URL 地址",
-    condition: (form: UseFormReturn<z.infer<typeof mcpFormSchema>>) =>
-      form.watch("type") === "http" || form.watch("type") === "sse",
+    condition: (form) => form.watch("type") === "http" || form.watch("type") === "sse",
   },
   {
     name: "headers",
@@ -79,7 +78,6 @@ export const mcpFormFields = [
       "Authorization: Bearer your-key\nContent-Type: application/json",
     description: "每行一个请求头，格式: Header-Name: value",
     className: "min-h-[100px] font-mono text-sm",
-    condition: (form: UseFormReturn<z.infer<typeof mcpFormSchema>>) =>
-      form.watch("type") === "http" || form.watch("type") === "sse",
+    condition: (form) => form.watch("type") === "http" || form.watch("type") === "sse",
   },
-] as FieldConfig<typeof mcpFormSchema>[];
+] satisfies FieldConfig<McpFormValues, FieldPath<McpFormValues>>[];

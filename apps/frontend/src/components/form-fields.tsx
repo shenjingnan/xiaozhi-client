@@ -21,8 +21,12 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { FieldConfig } from "@/types/form-config";
-import type { UseFormReturn } from "react-hook-form";
-import type { z } from "zod";
+import type {
+  ControllerRenderProps,
+  FieldPath,
+  FieldValues,
+  UseFormReturn,
+} from "react-hook-form";
 
 /**
  * 渲染单个表单字段
@@ -31,11 +35,11 @@ import type { z } from "zod";
  * @param disabled - 是否禁用（覆盖配置中的 disabled）
  */
 export function renderFormField<
-  T extends z.ZodType,
-  Output extends Record<string, any> = z.infer<T> & Record<string, any>,
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues>,
 >(
-  config: FieldConfig<T, Output>,
-  form: UseFormReturn<Output>,
+  config: FieldConfig<TFieldValues, TName>,
+  form: UseFormReturn<TFieldValues>,
   disabled?: boolean
 ) {
   const {
@@ -60,7 +64,7 @@ export function renderFormField<
   // 辅助函数：根据类型渲染输入组件
   // 必须在 FormControl 外部提前决定渲染哪个组件
   // 因为 FormControl 使用的 Slot 组件通过 React.Children.only 严格要求只有一个子元素
-  const renderInput = (field: any) => {
+  const renderInput = (field: ControllerRenderProps<TFieldValues, TName>) => {
     switch (type) {
       case "text":
         return (
@@ -93,7 +97,7 @@ export function renderFormField<
               <SelectValue placeholder={placeholder} />
             </SelectTrigger>
             <SelectContent>
-              {options?.map((option) => (
+              {options?.map((option: { value: string; label: string }) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
@@ -110,7 +114,7 @@ export function renderFormField<
     <FormField
       key={String(name)}
       control={form.control}
-      name={String(name) as any}
+      name={name}
       render={({ field }) => (
         <FormItem>
           <FormLabel>
@@ -138,12 +142,12 @@ export function renderFormField<
  * @param disabled - 是否禁用
  */
 export function renderSelectFieldWithHandler<
-  T extends z.ZodType,
-  Output extends Record<string, any> = z.infer<T> & Record<string, any>,
-  V extends string = string,
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues>,
+  V extends string,
 >(
-  config: FieldConfig<T, Output>,
-  form: UseFormReturn<Output>,
+  config: FieldConfig<TFieldValues, TName>,
+  form: UseFormReturn<TFieldValues>,
   onValueChange: (value: V) => void,
   disabled?: boolean
 ) {
@@ -159,7 +163,7 @@ export function renderSelectFieldWithHandler<
     <FormField
       key={String(name)}
       control={form.control}
-      name={String(name) as any}
+      name={name}
       render={({ field }) => (
         <FormItem>
           <FormLabel>
@@ -176,7 +180,7 @@ export function renderSelectFieldWithHandler<
                 <SelectValue placeholder={placeholder} />
               </SelectTrigger>
               <SelectContent>
-                {options?.map((option) => (
+                {options?.map((option: { value: string; label: string }) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
