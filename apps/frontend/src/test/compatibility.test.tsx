@@ -11,7 +11,7 @@ import {
   useWebSocketMcpServers,
   useWebSocketRestartStatus,
   useWebSocketStatus,
-} from "@stores/websocket";
+} from "@stores/websocket-compat";
 import { render } from "@testing-library/react";
 import type React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

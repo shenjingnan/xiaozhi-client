@@ -100,6 +100,16 @@ export { useWebSocketStore } from "./websocket";
 export { useConfigStore } from "./config";
 export { useStatusStore } from "./status";
 
+// 导出废弃的兼容性选择器（从 websocket-compat.ts 直接导入以避免循环依赖）
+export {
+  useWebSocketConfig,
+  useWebSocketStatus,
+  useWebSocketMcpEndpoint,
+  useWebSocketMcpServers,
+  useWebSocketMcpServerConfig,
+  useWebSocketRestartStatus,
+} from "./websocket-compat";
+
 // 导出所有选择器 hooks（避免命名冲突）
 export {
   // WebSocket store exports
@@ -115,12 +125,6 @@ export {
   useWebSocketActions,
   useWebSocketControls,
   useWebSocketData,
-  // 废弃的导出（向后兼容）
-  useWebSocketConfig,
-  useWebSocketStatus,
-  useWebSocketRestartStatus,
-  useWebSocketMcpServers,
-  useWebSocketMcpServerConfig,
 } from "./websocket";
 
 export {
