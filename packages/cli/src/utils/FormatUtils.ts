@@ -195,4 +195,48 @@ export class FormatUtils {
   ): string {
     return value ? trueText : falseText;
   }
+
+  /**
+   * 计算两个字符串的相似度（使用编辑距离算法）
+   * 返回值范围 [0, 1]，1 表示完全相同
+   */
+  static calculateSimilarity(str1: string, str2: string): number {
+    // 简单的字符串相似度计算
+    const len1 = str1.length;
+    const len2 = str2.length;
+
+    if (len1 === 0) return len2 === 0 ? 1 : 0;
+    if (len2 === 0) return 0;
+
+    // 使用 Levenshtein 距离算法
+    const matrix: number[][] = [];
+
+    // 初始化矩阵
+    for (let i = 0; i <= len2; i++) {
+      matrix[i] = [i];
+    }
+
+    for (let j = 0; j <= len1; j++) {
+      matrix[0][j] = j;
+    }
+
+    // 填充矩阵
+    for (let i = 1; i <= len2; i++) {
+      for (let j = 1; j <= len1; j++) {
+        if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1, // 替换
+            matrix[i][j - 1] + 1, // 插入
+            matrix[i - 1][j] + 1 // 删除
+          );
+        }
+      }
+    }
+
+    // 计算相似度：1 - (编辑距离 / 最大长度)
+    const maxLen = Math.max(len1, len2);
+    return 1 - matrix[len2][len1] / maxLen;
+  }
 }

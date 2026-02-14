@@ -12,6 +12,7 @@ import type {
   CommandOptions,
 } from "../interfaces/CommandTypes";
 import type { IDIContainer } from "../interfaces/Config";
+import type { ServiceType } from "../interfaces/ServiceTypes";
 
 /**
  * 配置管理命令处理器
@@ -79,7 +80,8 @@ export class ConfigCommandHandler extends BaseCommandHandler {
         throw new Error("格式必须是 json, json5 或 jsonc");
       }
 
-      const configManager = this.getService<any>("configManager");
+      const configManager =
+        this.getService<ServiceType<"configManager">>("configManager");
 
       if (configManager.configExists()) {
         spinner.warn("配置文件已存在");
@@ -117,7 +119,8 @@ export class ConfigCommandHandler extends BaseCommandHandler {
     const spinner = ora("读取配置...").start();
 
     try {
-      const configManager = this.getService<any>("configManager");
+      const configManager =
+        this.getService<ServiceType<"configManager">>("configManager");
 
       if (!configManager.configExists()) {
         spinner.fail("配置文件不存在");
@@ -226,7 +229,8 @@ export class ConfigCommandHandler extends BaseCommandHandler {
     const spinner = ora("更新配置...").start();
 
     try {
-      const configManager = this.getService<any>("configManager");
+      const configManager =
+        this.getService<ServiceType<"configManager">>("configManager");
 
       if (!configManager.configExists()) {
         spinner.fail("配置文件不存在");
@@ -246,7 +250,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
           if (Number.isNaN(interval) || interval <= 0) {
             throw new Error("心跳检测间隔必须是正整数");
           }
-          configManager.updateHeartbeatInterval(interval);
+          configManager.setHeartbeatInterval(interval);
           spinner.succeed(`心跳检测间隔已设置为: ${interval}ms`);
           break;
         }
@@ -255,7 +259,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
           if (Number.isNaN(timeout) || timeout <= 0) {
             throw new Error("心跳超时时间必须是正整数");
           }
-          configManager.updateHeartbeatTimeout(timeout);
+          configManager.setHeartbeatTimeout(timeout);
           spinner.succeed(`心跳超时时间已设置为: ${timeout}ms`);
           break;
         }
@@ -264,7 +268,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
           if (Number.isNaN(interval) || interval <= 0) {
             throw new Error("重连间隔必须是正整数");
           }
-          configManager.updateReconnectInterval(interval);
+          configManager.setReconnectInterval(interval);
           spinner.succeed(`重连间隔已设置为: ${interval}ms`);
           break;
         }

@@ -12,6 +12,7 @@ import type {
   CommandOptions,
 } from "../interfaces/CommandTypes";
 import type { IDIContainer } from "../interfaces/Config";
+import type { ServiceType } from "../interfaces/ServiceTypes";
 
 /**
  * 项目管理命令处理器
@@ -54,8 +55,9 @@ export class ProjectCommandHandler extends BaseCommandHandler {
     const spinner = ora("初始化项目...").start();
 
     try {
-      const templateManager = this.getService<any>("templateManager");
-      const fileUtils = this.getService<any>("fileUtils");
+      const templateManager =
+        this.getService<ServiceType<"templateManager">>("templateManager");
+      const fileUtils = this.getService<ServiceType<"fileUtils">>("fileUtils");
 
       // 确定目标目录
       const targetPath = path.join(process.cwd(), projectName);
@@ -73,7 +75,7 @@ export class ProjectCommandHandler extends BaseCommandHandler {
         // 使用模板创建项目
         await this.createFromTemplate(
           projectName,
-          options.template,
+          options.template as string, // 已通过 if 检查
           targetPath,
           spinner,
           templateManager
@@ -219,7 +221,8 @@ export class ProjectCommandHandler extends BaseCommandHandler {
     input: string,
     templates: string[]
   ): string | null {
-    const formatUtils = this.getService<any>("formatUtils");
+    const formatUtils =
+      this.getService<ServiceType<"formatUtils">>("formatUtils");
 
     let bestMatch = null;
     let bestSimilarity = 0;
