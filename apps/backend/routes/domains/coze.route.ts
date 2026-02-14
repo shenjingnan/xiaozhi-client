@@ -29,4 +29,18 @@ export const cozeRoutes: RouteDefinition[] = [
     path: "/api/coze/cache/stats",
     handler: h((handler, c) => handler.getCacheStats(c)),
   },
+  /**
+   * Coze 工具管理路由
+   * 用于添加/更新 Coze 工作流工具
+   */
+  {
+    method: "POST",
+    path: "/api/coze/tools",
+    handler: h((handler, c) => handler.addTool(c)),
+  },
+  {
+    method: "PUT",
+    path: "/api/coze/tools/:toolName",
+    handler: h((handler, c) => handler.updateTool(c)),
+  },
 ];

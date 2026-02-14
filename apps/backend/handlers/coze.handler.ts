@@ -4,9 +4,20 @@
  */
 
 import { CozeApiService } from "@/lib/coze";
-import type { CozeWorkflowsParams } from "@/types/coze";
+import {
+  CozeWorkflowConverter,
+  CozeWorkflowValidator,
+} from "@/lib/coze";
+import type { CozeWorkflow, CozeWorkflowsParams, WorkflowParameterConfig } from "@/types/coze";
 import type { AppContext } from "@/types/hono.context.js";
+import type {
+  AddToolResponse,
+  CozeWorkflowData,
+} from "@/types/toolApi.js";
+import { ToolType } from "@/types/toolApi.js";
 import { configManager } from "@xiaozhi-client/config";
+import type { CustomMCPTool } from "@xiaozhi-client/config";
+import dayjs from "dayjs";
 import type { Context } from "hono";
 import { BaseHandler } from "./base.handler.js";
 
@@ -69,8 +80,13 @@ function getCozeApiService(): CozeApiService {
  * 扣子 API 路由处理器类
  */
 export class CozeHandler extends BaseHandler {
+  private validator: CozeWorkflowValidator;
+  private converter: CozeWorkflowConverter;
+
   constructor() {
     super();
+    this.validator = new CozeWorkflowValidator();
+    this.converter = new CozeWorkflowConverter();
   }
   /**
    * 获取工作空间列表
@@ -381,5 +397,305 @@ export class CozeHandler extends BaseHandler {
         500
       );
     }
+  }
+
+  /**
+   * 添加 Coze 工作流工具
+   * POST /api/coze/tools
+   */
+  async addTool(c: Context<AppContext>): Promise<Response> {
+    try {
+      c.get("logger").info("处理添加 Coze 工具请求");
+
+      const requestBody = await c.req.json();
+      const { workflow, customName, customDescription, parameterConfig } =
+        requestBody as CozeWorkflowData;
+
+      // 验证工作流数据
+      this.validator.validateWorkflowData(workflow);
+
+      // 转换工作流为工具配置
+      const tool = this.converter.convertToCustomMCPTool(
+        workflow,
+        customName,
+        customDescription,
+        parameterConfig
+      );
+
+      // 添加工具到配置
+      configManager.addCustomMCPTool(tool);
+
+      c.get("logger").info(`成功添加 Coze 工具: ${tool.name}`);
+
+      const responseData: AddToolResponse = {
+        tool,
+        toolName: tool.name,
+        toolType: ToolType.COZE,
+        addedAt: dayjs().format("YYYY-MM-DD HH:mm:ss"),
+      };
+
+      return c.success(responseData, `Coze 工具 "${tool.name}" 添加成功`);
+    } catch (error) {
+      c.get("logger").error("添加 Coze 工具失败:", error);
+
+      const { code, message, status } = this.handleAddToolError(error);
+      return c.fail(code, message, undefined, status);
+    }
+  }
+
+  /**
+   * 更新 Coze 工作流工具
+   * PUT /api/coze/tools/:toolName
+   */
+  async updateTool(c: Context<AppContext>): Promise<Response> {
+    try {
+      const toolName = c.req.param("toolName");
+
+      if (!toolName) {
+        return c.fail("INVALID_REQUEST", "工具名称不能为空", undefined, 400);
+      }
+
+      c.get("logger").info(`处理更新 Coze 工具请求: ${toolName}`);
+
+      const requestBody = await c.req.json();
+      const { workflow, customName, customDescription, parameterConfig } =
+        requestBody as CozeWorkflowData;
+
+      // 验证工具是否存在
+      const existingTools = configManager.getCustomMCPTools();
+      const existingTool = existingTools.find((tool) => tool.name === toolName);
+
+      if (!existingTool) {
+        return c.fail(
+          "TOOL_NOT_FOUND",
+          `工具 "${toolName}" 不存在`,
+          undefined,
+          404
+        );
+      }
+
+      // 验证是否为 Coze 工具
+      if (
+        existingTool.handler.type !== "proxy" ||
+        existingTool.handler.platform !== "coze"
+      ) {
+        return c.fail(
+          "INVALID_TOOL_TYPE",
+          `工具 "${toolName}" 不是 Coze 工作流工具，不支持参数配置更新`,
+          undefined,
+          400
+        );
+      }
+
+      // 如果前端提供的 workflow 中没有 workflow_id，尝试从现有工具中获取
+      if (!workflow.workflow_id && existingTool.handler?.config?.workflow_id) {
+        workflow.workflow_id = existingTool.handler.config.workflow_id;
+      }
+
+      // 如果还没有 workflow_id，尝试从其他字段获取
+      if (!workflow.workflow_id && workflow.app_id) {
+        // 对于某些场景，app_id 可以作为替代标识
+        // 但我们仍然需要 workflow_id 用于 Coze API 调用
+        c.get("logger").warn(
+          `工作流 ${toolName} 缺少 workflow_id，这可能会影响某些功能`
+        );
+      }
+
+      // 验证工作流数据完整性
+      this.validator.validateWorkflowUpdateData(workflow);
+
+      // 更新工具的 inputSchema
+      const updatedInputSchema = this.generateInputSchema(
+        workflow,
+        parameterConfig
+      );
+
+      // 构建更新后的工具配置
+      const updatedTool: CustomMCPTool = {
+        ...existingTool,
+        description: customDescription || existingTool.description,
+        inputSchema: updatedInputSchema,
+      };
+
+      // 更新工具配置
+      configManager.updateCustomMCPTool(toolName, updatedTool);
+
+      c.get("logger").info(`成功更新 Coze 工具: ${toolName}`);
+
+      const responseData = {
+        tool: updatedTool,
+        toolName: toolName,
+        toolType: ToolType.COZE,
+        updatedAt: dayjs().format("YYYY-MM-DD HH:mm:ss"),
+      };
+
+      return c.success(responseData, `Coze 工具 "${toolName}" 配置更新成功`);
+    } catch (error) {
+      c.get("logger").error("更新 Coze 工具失败:", error);
+
+      const { code, message, status } = this.handleUpdateToolError(error);
+      return c.fail(code, message, undefined, status);
+    }
+  }
+
+  /**
+   * 生成输入参数结构
+   */
+  private generateInputSchema(
+    workflow: Partial<CozeWorkflow>,
+    parameterConfig?: WorkflowParameterConfig
+  ): CustomMCPTool["inputSchema"] {
+    // 如果提供了参数配置，使用参数配置生成schema
+    if (parameterConfig && parameterConfig.parameters.length > 0) {
+      return this.generateInputSchemaFromConfig(parameterConfig);
+    }
+
+    // 否则使用默认的基础参数结构
+    const baseSchema = {
+      type: "object",
+      properties: {
+        input: {
+          type: "string",
+          description: "输入内容",
+        },
+      },
+      required: ["input"],
+      additionalProperties: false,
+    };
+
+    return baseSchema;
+  }
+
+  /**
+   * 根据参数配置生成输入参数结构
+   */
+  private generateInputSchemaFromConfig(
+    parameterConfig: WorkflowParameterConfig
+  ): CustomMCPTool["inputSchema"] {
+    const properties: Record<string, unknown> = {};
+    const required: string[] = [];
+
+    for (const param of parameterConfig.parameters) {
+      properties[param.fieldName] = {
+        type: param.type,
+        description: param.description,
+      };
+
+      if (param.required) {
+        required.push(param.fieldName);
+      }
+    }
+
+    return {
+      type: "object",
+      properties,
+      required: required.length > 0 ? required : undefined,
+      additionalProperties: false,
+    };
+  }
+
+  /**
+   * 处理添加工具时的错误
+   */
+  private handleAddToolError(error: unknown): {
+    code: string;
+    message: string;
+    status: number;
+  } {
+    const errorMessage =
+      error instanceof Error ? error.message : "添加 Coze 工具失败";
+
+    // 数据验证错误 (400)
+    if (
+      errorMessage.includes("不能为空") ||
+      errorMessage.includes("格式无效") ||
+      errorMessage.includes("过长") ||
+      errorMessage.includes("敏感词") ||
+      errorMessage.includes("验证失败")
+    ) {
+      return {
+        code: "VALIDATION_ERROR",
+        message: errorMessage,
+        status: 400,
+      };
+    }
+
+    // 配置错误 (422)
+    if (
+      errorMessage.includes("配置") ||
+      errorMessage.includes("token") ||
+      errorMessage.includes("API")
+    ) {
+      return {
+        code: "CONFIGURATION_ERROR",
+        message: `${errorMessage}。请检查：1) 相关配置是否正确；2) 网络连接是否正常；3) 配置文件权限是否正确`,
+        status: 422,
+      };
+    }
+
+    // 系统错误 (500)
+    return {
+      code: "ADD_COZE_TOOL_ERROR",
+      message: `添加 Coze 工具失败：${errorMessage}。请稍后重试，如问题持续存在请联系管理员`,
+      status: 500,
+    };
+  }
+
+  /**
+   * 处理更新工具时的错误
+   */
+  private handleUpdateToolError(error: unknown): {
+    code: string;
+    message: string;
+    status: number;
+  } {
+    const errorMessage =
+      error instanceof Error ? error.message : "更新 Coze 工具失败";
+
+    // 工具不存在错误 (404)
+    if (errorMessage.includes("不存在") || errorMessage.includes("未找到")) {
+      return {
+        code: "TOOL_NOT_FOUND",
+        message: `${errorMessage}。请检查工具名称是否正确`,
+        status: 404,
+      };
+    }
+
+    // 工具类型错误 (400)
+    if (
+      errorMessage.includes("工具类型") ||
+      errorMessage.includes("INVALID_TOOL_TYPE")
+    ) {
+      return {
+        code: "INVALID_TOOL_TYPE",
+        message: errorMessage,
+        status: 400,
+      };
+    }
+
+    // 参数错误 (400)
+    if (errorMessage.includes("不能为空") || errorMessage.includes("无效")) {
+      return {
+        code: "INVALID_REQUEST",
+        message: `${errorMessage}。请提供有效的工具配置数据`,
+        status: 400,
+      };
+    }
+
+    // 配置错误 (422)
+    if (errorMessage.includes("配置") || errorMessage.includes("权限")) {
+      return {
+        code: "CONFIGURATION_ERROR",
+        message: `${errorMessage}。请检查配置文件权限和格式是否正确`,
+        status: 422,
+      };
+    }
+
+    // 系统错误 (500)
+    return {
+      code: "UPDATE_COZE_TOOL_ERROR",
+      message: `更新 Coze 工具失败：${errorMessage}。请稍后重试，如问题持续存在请联系管理员`,
+      status: 500,
+    };
   }
 }
