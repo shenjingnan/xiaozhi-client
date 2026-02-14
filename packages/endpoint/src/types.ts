@@ -67,15 +67,12 @@ export class ToolCallError extends Error {
 /**
  * JSON Schema 类型定义
  * 兼容 MCP SDK 的 JSON Schema 格式
+ * 从 @xiaozhi-client/mcp-core 重新导出，避免重复定义
  */
-export type JSONSchema =
-  | (Record<string, unknown> & {
-      type: "object";
-      properties?: Record<string, unknown>;
-      required?: string[];
-      additionalProperties?: boolean;
-    })
-  | Record<string, unknown>;
+import type { JSONSchema } from "@xiaozhi-client/mcp-core";
+
+// 重新导出 JSONSchema 类型，供外部使用
+export type { JSONSchema };
 
 /**
  * 确保对象符合 MCP Tool JSON Schema 格式
