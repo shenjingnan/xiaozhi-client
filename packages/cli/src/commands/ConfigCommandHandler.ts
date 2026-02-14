@@ -111,21 +111,32 @@ export class ConfigCommandHandler extends BaseCommandHandler {
   }
 
   /**
+   * 确保配置文件存在
+   * @returns configManager 实例
+   * @throws 如果配置文件不存在
+   */
+  private ensureConfigExists(spinner: ora.Ora): any {
+    const configManager = this.getService<any>("configManager");
+
+    if (!configManager.configExists()) {
+      spinner.fail("配置文件不存在");
+      console.log(
+        chalk.yellow('💡 提示: 请先运行 "xiaozhi config init" 初始化配置')
+      );
+      throw new Error("配置文件不存在");
+    }
+
+    return configManager;
+  }
+
+  /**
    * 处理获取配置命令
    */
   private async handleGet(key: string): Promise<void> {
     const spinner = ora("读取配置...").start();
 
     try {
-      const configManager = this.getService<any>("configManager");
-
-      if (!configManager.configExists()) {
-        spinner.fail("配置文件不存在");
-        console.log(
-          chalk.yellow('💡 提示: 请先运行 "xiaozhi config init" 初始化配置')
-        );
-        return;
-      }
+      const configManager = this.ensureConfigExists(spinner);
 
       const config = configManager.getConfig();
 
@@ -226,15 +237,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
     const spinner = ora("更新配置...").start();
 
     try {
-      const configManager = this.getService<any>("configManager");
-
-      if (!configManager.configExists()) {
-        spinner.fail("配置文件不存在");
-        console.log(
-          chalk.yellow('💡 提示: 请先运行 "xiaozhi config init" 初始化配置')
-        );
-        return;
-      }
+      const configManager = this.ensureConfigExists(spinner);
 
       switch (key) {
         case "mcpEndpoint":
