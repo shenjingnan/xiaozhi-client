@@ -10,6 +10,7 @@ import { apiClient } from "@/services/api";
 import { Button } from "@ui/button";
 import { CopyIcon, InfoIcon, RocketIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { VersionUpgradeDialog } from "./version-upgrade-dialog";
 
 interface VersionDisplayProps {
@@ -42,7 +43,6 @@ export function VersionDisplay({ className }: VersionDisplayProps) {
         setVersionInfo(info);
       } catch (err) {
         setError(err instanceof Error ? err.message : "获取版本信息失败");
-        console.error("获取版本信息失败:", err);
       } finally {
         setLoading(false);
       }
@@ -66,7 +66,6 @@ export function VersionDisplay({ className }: VersionDisplayProps) {
         const updateInfo = await apiClient.getLatestVersion();
         setLatestVersionInfo(updateInfo);
       } catch (err) {
-        console.error("检查更新失败:", err);
         // 设置默认值，不显示错误给用户
         setLatestVersionInfo({
           currentVersion: versionInfo?.version || "unknown",
@@ -95,7 +94,9 @@ export function VersionDisplay({ className }: VersionDisplayProps) {
         }
         copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
       } catch (err) {
-        console.error("复制版本号失败:", err);
+        toast.error("复制版本号失败", {
+          description: err instanceof Error ? err.message : "未知错误",
+        });
       }
     }
   };
