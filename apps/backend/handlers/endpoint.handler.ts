@@ -1,3 +1,15 @@
+/**
+ * 接入点管理 Handler
+ *
+ * 负责处理接入点相关的 HTTP 请求，包括：
+ * - 接入点连接状态查询
+ * - 接入点连接和断开
+ * - 接入点状态管理
+ * - 接入点重连
+ * - 接入点验证
+ *
+ * @see @xiaozhi-client/endpoint - EndpointManager 实现
+ */
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import type { EventBus } from "@/services/event-bus.service.js";
