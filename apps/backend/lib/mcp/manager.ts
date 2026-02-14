@@ -861,11 +861,12 @@ export class MCPServiceManager extends EventEmitter {
       await configManager.updateToolUsageStatsWithLock(toolName, true);
       console.debug(`[MCPManager] 已更新 customMCP 工具 ${toolName} 使用统计`);
     } catch (error) {
-      console.error(
-        `[MCPManager] 更新 customMCP 工具 ${toolName} 统计失败:`,
+      // 统计更新失败不应该影响主流程
+      console.warn(
+        `[MCPManager] 更新 customMCP 工具 ${toolName} 统计失败，跳过统计更新:`,
         error
       );
-      throw error;
+      // 不重新抛出错误，允许主流程继续
     }
   }
 
