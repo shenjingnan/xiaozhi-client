@@ -77,8 +77,8 @@ export class MCPConnection {
       throw new Error("连接正在进行中，请等待连接完成");
     }
 
-    // 清理之前的连接
-    this.cleanupConnection();
+    // 清理之前的连接（不等待，在连接新服务前快速清理）
+    void this.cleanupConnection();
 
     return this.attemptConnection();
   }
@@ -184,8 +184,8 @@ export class MCPConnection {
       this.connectionTimeout = null;
     }
 
-    // 清理当前连接
-    this.cleanupConnection();
+    // 清理当前连接（不等待，错误处理中快速清理）
+    void this.cleanupConnection();
 
     // 发射连接失败事件
     this.callbacks?.onConnectionFailed?.({
@@ -198,18 +198,17 @@ export class MCPConnection {
   /**
    * 清理连接资源
    */
-  private cleanupConnection(): void {
+  private async cleanupConnection(): Promise<void> {
     // 停止心跳
     this.stopHeartbeat();
 
     // 清理客户端
     if (this.client) {
       try {
-        this.client.close().catch(() => {
-          // 忽略关闭时的错误
-        });
+        await this.client.close();
       } catch (error) {
         // 忽略关闭时的错误
+        console.debug('client.close 错误（已忽略）:', error);
       }
       this.client = null;
     }
@@ -268,7 +267,7 @@ export class MCPConnection {
     console.info(`主动断开 MCP 服务 ${this.name} 连接`);
 
     // 清理连接资源
-    this.cleanupConnection();
+    await this.cleanupConnection();
 
     // 设置状态为已断开
     this.connectionState = ConnectionState.DISCONNECTED;
@@ -313,8 +312,8 @@ export class MCPConnection {
       `[MCP-${this.name}] 检测到会话过期，正在重新连接...`
     );
 
-    // 清理旧连接
-    this.cleanupConnection();
+    // 清理旧连接（不等待，重连前快速清理）
+    void this.cleanupConnection();
 
     // 建立新连接
     return this.attemptConnection();
