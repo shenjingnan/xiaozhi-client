@@ -10,6 +10,11 @@
  * @module mcp-errors
  */
 
+import { ErrorCategory } from "./error-helper.js";
+
+// 重新导出 ErrorCategory 以保持向后兼容性
+export { ErrorCategory };
+
 /**
  * MCP错误代码枚举
  *
@@ -68,18 +73,6 @@ export enum ErrorSeverity {
   MEDIUM = "medium", // 中等错误，影响部分功能
   HIGH = "high", // 严重错误，影响核心功能
   CRITICAL = "critical", // 致命错误，系统无法继续运行
-}
-
-/**
- * MCP错误类别
- */
-export enum ErrorCategory {
-  CONFIGURATION = "configuration", // 配置相关错误
-  CONNECTION = "connection", // 连接相关错误
-  VALIDATION = "validation", // 验证相关错误
-  OPERATION = "operation", // 操作相关错误
-  SYSTEM = "system", // 系统相关错误
-  EXTERNAL = "external", // 外部服务错误
 }
 
 /**
