@@ -5,7 +5,7 @@
  * - config: 扣子 API 环境配置（中英文环境）
  * - @coze/api: 扣子官方 SDK 的完整导出
  * - createCozeClient: 创建扣子 API 客户端的工厂函数
- * - CozeApiService: 扣子 API 服务的封装类
+ * - CozeApiService: 扣子 API 服务的封装类（重新导出，实际位于 @/services）
  *
  * @example
  * ```typescript
@@ -21,4 +21,5 @@
 export { default as config } from "./config";
 export * from "@coze/api";
 export { createCozeClient } from "./client";
-export { CozeApiService } from "./service";
+// 向后兼容：从 services/ 重新导出 CozeApiService
+export { CozeApiService } from "@/services/coze-api.service.js";

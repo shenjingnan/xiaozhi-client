@@ -4,8 +4,8 @@
  */
 
 import { PAGINATION_CONSTANTS } from "@/constants/api.constants.js";
-import type { ToolCallQuery } from "@/lib/mcp/log.js";
-import { ToolCallLogService } from "@/lib/mcp/log.js";
+import type { ToolCallQuery } from "@/services/tool-call-log.service.js";
+import { ToolCallLogService } from "@/services/tool-call-log.service.js";
 import type { AppContext } from "@/types/hono.context.js";
 import type { Context } from "hono";
 import { z } from "zod";
