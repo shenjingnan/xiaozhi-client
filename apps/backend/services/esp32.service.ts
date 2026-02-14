@@ -3,7 +3,13 @@
  * 负责ESP32设备的连接管理和消息路由
  */
 
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { join } from "node:path";
+
+// ESM 兼容的 __dirname
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
 import { logger } from "@/Logger.js";
 import { ESP32Connection } from "@/lib/esp32/connection.js";
 import {

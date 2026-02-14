@@ -8,6 +8,7 @@ import { promises as fs } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { logger } from "@/Logger.js";
+import Opus from "@discordjs/opus";
 import type { ITTSService } from "./ai-service.interface.js";
 import type { OpusFrame } from "./ogg-opus-tts.service.js";
 
@@ -66,7 +67,6 @@ export class PCOpusTTSService implements ITTSService {
 
     try {
       // 动态导入Opus编码器
-      const Opus = await import("@discordjs/opus");
       this.encoder = new Opus.OpusEncoder(this.sampleRate, this.channels);
 
       logger.info(`[PCOpusTTS] 加载PCM音频: ${this.audioFilePath}`);

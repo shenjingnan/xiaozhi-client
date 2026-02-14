@@ -114,6 +114,7 @@ export default defineConfig({
     "ws",
     "@coze/api",
     "@modelcontextprotocol/*",
+    "@discordjs/opus",
     // @xiaozhi-client 内部包（运行时从 dist 读取）
     "@xiaozhi-client/config",
     "@xiaozhi-client/config.js",
