@@ -9,9 +9,9 @@ vi.mock("lucide-react", () => ({
 }));
 
 // Mock the services/api module
-const { mcpServerApi } = await import("@/services/api");
+const { apiClient } = await import("@/services/api");
 const mockRemoveServer = vi.fn();
-mcpServerApi.removeServer = mockRemoveServer;
+apiClient.removeMCPServer = mockRemoveServer;
 
 // Mock sonner
 const { toast } = await import("sonner");
