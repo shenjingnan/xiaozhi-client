@@ -90,7 +90,7 @@ export interface FunctionToolData {
   /** 函数描述 */
   description: string;
   /** 函数执行上下文 */
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   /** 超时时间 */
   timeout?: number;
   /** 可选的自定义名称 */
@@ -132,6 +132,14 @@ export enum ToolValidationError {
 }
 
 /**
+ * 工具验证错误详情类型
+ */
+export type ValidationErrorDetails =
+  | { field: string; expected: string; received: unknown }
+  | { reason: string; context: Record<string, unknown> }
+  | unknown;
+
+/**
  * 工具验证错误详情
  */
 export interface ToolValidationErrorDetail {
@@ -140,7 +148,7 @@ export interface ToolValidationErrorDetail {
   /** 错误消息 */
   message: string;
   /** 错误详情 */
-  details?: any;
+  details?: ValidationErrorDetails;
   /** 建议的解决方案 */
   suggestions?: string[];
 }
@@ -150,7 +158,7 @@ export interface ToolValidationErrorDetail {
  */
 export interface AddToolResponse {
   /** 成功添加的工具 */
-  tool: any;
+  tool: CustomMCPToolWithStats;
   /** 工具名称 */
   toolName: string;
   /** 工具类型 */
