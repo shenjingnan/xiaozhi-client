@@ -1,3 +1,9 @@
+/**
+ * 心跳处理器
+ *
+ * 负责处理客户端心跳消息，维护客户端连接状态，
+ * 并监控 MCP 端点的连接状态。
+ */
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import { HEARTBEAT_MONITORING } from "@/constants/index.js";
