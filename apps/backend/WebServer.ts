@@ -625,7 +625,7 @@ export class WebServer {
       // 生成客户端 ID
       const clientId = `client-${Date.now()}-${Math.random()
         .toString(36)
-        .substr(2, 9)}`;
+        .slice(2, 11)}`;
 
       this.logger.debug(`WebSocket 客户端已连接: ${clientId}`);
       this.logger.debug(
