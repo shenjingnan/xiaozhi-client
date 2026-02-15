@@ -23,6 +23,11 @@
       "inputs": ["default", "^production", "sharedGlobals"],
       "cache": false
     },
+    "test:coverage": {
+      "inputs": ["default", "^production", "sharedGlobals"],
+      "cache": false,
+      "dependsOn": ["^build"]
+    },
     "lint": {
       "inputs": ["default", "{workspaceRoot}/biome.json"],
       "cache": false
