@@ -351,7 +351,7 @@ export class EndpointHandler {
           );
         }
         // 从管理器移除端点
-        this.endpointManager.removeEndpoint(newEndpoint);
+        await this.endpointManager.removeEndpoint(newEndpoint);
         throw configError;
       }
 
@@ -434,7 +434,7 @@ export class EndpointHandler {
       // 再从管理器移除端点
       // EndpointManager.removeEndpoint 内部会再次调用 disconnect（幂等操作）
       // 并清理状态和发射 endpointRemoved 事件
-      this.endpointManager.removeEndpoint(endpointInstance);
+      await this.endpointManager.removeEndpoint(endpointInstance);
       this.logger.debug(`端点已从管理器中移除: ${endpoint}`);
 
       // 发送事件通知

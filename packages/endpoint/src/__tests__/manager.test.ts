@@ -126,38 +126,38 @@ describe("EndpointManager", () => {
       manager.addEndpoint(mockEndpoints[1]);
     });
 
-    it("应该成功移除端点", () => {
-      manager.removeEndpoint(mockEndpoints[0]);
+    it("应该成功移除端点", async () => {
+      await manager.removeEndpoint(mockEndpoints[0]);
 
       expect(manager.getEndpoints()).toHaveLength(1);
       expect(manager.getEndpoints()[0]).toBe("ws://endpoint2.example.com");
     });
 
-    it("应该发射 endpointRemoved 事件", () => {
+    it("应该发射 endpointRemoved 事件", async () => {
       const eventSpy = vi.fn();
       manager.on("endpointRemoved", eventSpy);
 
-      manager.removeEndpoint(mockEndpoints[0]);
+      await manager.removeEndpoint(mockEndpoints[0]);
 
       expect(eventSpy).toHaveBeenCalledWith({
         endpoint: "ws://endpoint1.example.com",
       });
     });
 
-    it("移除不存在的端点不应该报错", () => {
+    it("移除不存在的端点不应该报错", async () => {
       const nonexistentEndpoint = new Endpoint("ws://nonexistent.com");
 
-      expect(() => {
-        manager.removeEndpoint(nonexistentEndpoint);
-      }).not.toThrow();
+      await expect(
+        manager.removeEndpoint(nonexistentEndpoint)
+      ).resolves.not.toThrow();
     });
 
-    it("移除不存在的端点时不应该发射事件", () => {
+    it("移除不存在的端点时不应该发射事件", async () => {
       const eventSpy = vi.fn();
       manager.on("endpointRemoved", eventSpy);
 
       const nonexistentEndpoint = new Endpoint("ws://nonexistent.com");
-      manager.removeEndpoint(nonexistentEndpoint);
+      await manager.removeEndpoint(nonexistentEndpoint);
 
       expect(eventSpy).not.toHaveBeenCalled();
     });
@@ -632,13 +632,13 @@ describe("EndpointManager", () => {
       });
     });
 
-    it("应该正确发射 endpointRemoved 事件", () => {
+    it("应该正确发射 endpointRemoved 事件", async () => {
       const spy = vi.fn();
       manager.on("endpointRemoved", spy);
 
       manager.addEndpoint(mockEndpoints[0]);
       manager.addEndpoint(mockEndpoints[1]);
-      manager.removeEndpoint(mockEndpoints[0]);
+      await manager.removeEndpoint(mockEndpoints[0]);
 
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy).toHaveBeenCalledWith({
@@ -675,14 +675,14 @@ describe("EndpointManager", () => {
       expect(manager.isAnyConnected()).toBe(true);
     });
 
-    it("应该处理快速添加和移除", () => {
+    it("应该处理快速添加和移除", async () => {
       for (let i = 0; i < 10; i++) {
         manager.addEndpoint(new Endpoint(`ws://endpoint${i}.com`));
       }
 
       for (let i = 0; i < 10; i++) {
         if (i % 2 === 0) {
-          manager.removeEndpoint(mockEndpoints[0] || mockEndpoints[i]);
+          await manager.removeEndpoint(mockEndpoints[0] || mockEndpoints[i]);
         }
       }
 
