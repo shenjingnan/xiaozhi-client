@@ -56,7 +56,11 @@ export async function synthesizeSpeech(
 
   await new Promise((resolve, reject) => {
     ws.on("open", resolve);
-    ws.on("error", reject);
+    ws.on("error", (err) => {
+      // 确保在错误时关闭 WebSocket 连接，避免资源泄漏
+      ws.close();
+      reject(err);
+    });
   });
 
   const request = {
