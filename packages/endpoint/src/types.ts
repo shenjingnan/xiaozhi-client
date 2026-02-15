@@ -80,8 +80,9 @@ export type JSONSchema =
 /**
  * 确保对象符合 MCP Tool JSON Schema 格式
  * 返回类型兼容 MCP SDK 的 Tool 类型
+ * 接受 unknown 类型，在运行时进行类型检查
  */
-export function ensureToolJSONSchema(schema: JSONSchema): {
+export function ensureToolJSONSchema(schema: unknown): {
   type: "object";
   properties?: Record<string, object>;
   required?: string[];
