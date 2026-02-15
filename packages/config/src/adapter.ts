@@ -17,6 +17,33 @@ import { ConfigResolver } from "./resolver.js";
 // 在实际使用时，adapter 将作为 config 包的一部分被使用
 
 /**
+ * 轻量级日志记录器
+ * 为了避免循环依赖，在 config 包内部实现简单的日志功能
+ */
+const logger = {
+  /**
+   * 记录调试级别的日志
+   */
+  debug: (message: string, meta?: unknown) => {
+    if (process.env.XIAOZHI_DEBUG === "true") {
+      console.log(`[ConfigAdapter] ${message}`, meta || "");
+    }
+  },
+  /**
+   * 记录信息级别的日志
+   */
+  info: (message: string, meta?: unknown) => {
+    console.log(`[ConfigAdapter] ${message}`, meta || "");
+  },
+  /**
+   * 记录错误级别的日志
+   */
+  error: (message: string, meta?: unknown) => {
+    console.error(`[ConfigAdapter] ${message}`, meta || "");
+  },
+};
+
+/**
  * 配置验证错误类
  */
 export class ConfigValidationError extends Error {
@@ -74,7 +101,7 @@ function inferTransportTypeFromUrl(url: string): MCPTransportType {
 export function normalizeServiceConfig(
   config: MCPServerConfig
 ): MCPServiceConfig {
-  console.log("转换配置", { config });
+  logger.debug("转换配置", { config });
 
   try {
     // 验证输入参数
@@ -88,10 +115,10 @@ export function normalizeServiceConfig(
     // 验证转换后的配置
     validateNewConfig(newConfig);
 
-    console.log("配置转换成功", { type: newConfig.type });
+    logger.debug("配置转换成功", { type: newConfig.type });
     return newConfig;
   } catch (error) {
-    console.error("配置转换失败", { error });
+    logger.error("配置转换失败", { error });
     throw error instanceof ConfigValidationError
       ? error
       : new ConfigValidationError(
@@ -181,7 +208,7 @@ function convertLocalConfig(config: MCPServerConfig): MCPServiceConfig {
   let resolvedCommand = command;
   if (isRelativePath(command)) {
     resolvedCommand = resolve(workingDir, command);
-    console.log("解析 command 相对路径", {
+    logger.debug("解析 command 相对路径", {
       command,
       resolvedCommand,
       workingDir,
@@ -193,7 +220,7 @@ function convertLocalConfig(config: MCPServerConfig): MCPServiceConfig {
     // 检查是否为相对路径（以 ./ 开头或不以 / 开头且包含文件扩展名）
     if (isRelativePath(arg)) {
       const resolvedPath = resolve(workingDir, arg);
-      console.log("解析相对路径", { arg, resolvedPath, workingDir });
+      logger.debug("解析相对路径", { arg, resolvedPath, workingDir });
       return resolvedPath;
     }
     return arg;
@@ -227,7 +254,7 @@ function convertSSEConfig(config: MCPServerConfig): MCPServiceConfig {
       : inferTransportTypeFromUrl(url || "");
   const isModelScope = url ? isModelScopeURL(url) : false;
 
-  console.log("SSE配置转换", {
+  logger.debug("SSE配置转换", {
     url,
     inferredType,
     isModelScope,
@@ -285,7 +312,7 @@ export function normalizeServiceConfigBatch(
     throw new ConfigValidationError(`批量配置转换失败: ${errorMessages}`);
   }
 
-  console.log("批量配置转换成功", { count: Object.keys(newConfigs).length });
+  logger.debug("批量配置转换成功", { count: Object.keys(newConfigs).length });
   return newConfigs;
 }
 
