@@ -292,7 +292,7 @@ function getWriters(msg: Message): Array<(msg: Message) => Uint8Array | null> {
   const writers: Array<(msg: Message) => Uint8Array | null> = [];
 
   if (msg.flag === MsgTypeFlagBits.WithEvent) {
-    writers.push(writeEvent, writeSessionId);
+    writers.push(writeEvent, writeSessionId, writeConnectId);
   }
 
   switch (msg.type) {
@@ -383,6 +383,31 @@ function writeSessionId(msg: Message): Uint8Array | null {
   const result = new Uint8Array(4 + sessionIdBytes.length);
   result.set(new Uint8Array(sizeBuffer), 0);
   result.set(sessionIdBytes, 4);
+
+  return result;
+}
+
+function writeConnectId(msg: Message): Uint8Array | null {
+  if (msg.event === undefined) return null;
+
+  switch (msg.event) {
+    case EventType.ConnectionStarted:
+    case EventType.ConnectionFailed:
+    case EventType.ConnectionFinished:
+      break;
+    default:
+      return null;
+  }
+
+  const connectId = msg.connectId || "";
+  const connectIdBytes = Buffer.from(connectId, "utf8");
+  const sizeBuffer = new ArrayBuffer(4);
+  const sizeView = new DataView(sizeBuffer);
+  sizeView.setUint32(0, connectIdBytes.length, false);
+
+  const result = new Uint8Array(4 + connectIdBytes.length);
+  result.set(new Uint8Array(sizeBuffer), 0);
+  result.set(connectIdBytes, 4);
 
   return result;
 }

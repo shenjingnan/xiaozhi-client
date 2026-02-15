@@ -25,7 +25,7 @@ export interface TTSOptions {
 /**
  * 根据声音类型自动判断集群类型
  */
-function VoiceToCluster(voice: string): string {
+export function VoiceToCluster(voice: string): string {
   if (voice.startsWith("S_")) {
     return "volcano_icl";
   }
