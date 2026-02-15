@@ -3,6 +3,7 @@
  * 提供语音合成 RESTful API 接口
  */
 
+import fs from "node:fs";
 import { type TTSOptions, synthesizeSpeech } from "@/lib/tts/binary.js";
 import type { AppContext } from "@/types/hono.context.js";
 import { configManager } from "@xiaozhi-client/config";
@@ -117,6 +118,7 @@ export class TTSApiHandler extends BaseHandler {
 
       // 调用 TTS 合成
       const audioData = await synthesizeSpeech(options);
+      fs.writeFileSync("audio.wav", Buffer.from(audioData));
 
       c.get("logger").info(`语音合成成功: audioSize=${audioData.length} bytes`);
 
