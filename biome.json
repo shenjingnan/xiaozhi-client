@@ -15,7 +15,8 @@
       "pnpm-lock.yaml",
       "templates/**/*.js",
       "apps/backend/tsup.config.ts",
-      "package.json"
+      "package.json",
+      "worktrees/**"
     ]
   },
   "formatter": {
