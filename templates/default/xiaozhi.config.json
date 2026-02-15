@@ -17,5 +17,11 @@
   },
   "webUI": {
     "port": 9999
+  },
+  "tts": {
+    "appid": "your-appid",
+    "accessToken": "your-access-token",
+    "voice_type": "BV001_streaming",
+    "encoding": "wav"
   }
 }

@@ -5,9 +5,9 @@
 
 import { type TTSOptions, synthesizeSpeech } from "@/lib/tts/binary.js";
 import type { AppContext } from "@/types/hono.context.js";
+import { configManager } from "@xiaozhi-client/config";
 import type { Context } from "hono";
 import { BaseHandler } from "./base.handler.js";
-import fs from "node:fs";
 
 /**
  * TTS 合成请求体
@@ -15,12 +15,12 @@ import fs from "node:fs";
 interface TTSRequestBody {
   /** 要转换的文本 */
   text: string;
-  /** 应用 ID */
-  appid: string;
-  /** 访问令牌 */
-  accessToken: string;
-  /** 声音类型（如 S_xx） */
-  voice_type: string;
+  /** 应用 ID（可选，从配置读取） */
+  appid?: string;
+  /** 访问令牌（可选，从配置读取） */
+  accessToken?: string;
+  /** 声音类型（可选，从配置读取） */
+  voice_type?: string;
   /** 编码格式（可选，默认 wav） */
   encoding?: string;
   /** 集群类型（可选） */
@@ -59,48 +59,60 @@ export class TTSApiHandler extends BaseHandler {
         );
       }
 
-      if (!body.appid) {
+      // 获取 TTS 配置作为默认值
+      const ttsConfig = configManager.getTTSConfig();
+
+      // 优先从请求参数读取，否则从配置读取
+      const appid = body.appid || ttsConfig.appid;
+      const accessToken = body.accessToken || ttsConfig.accessToken;
+      const voice_type = body.voice_type || ttsConfig.voice_type;
+      const cluster = body.cluster || ttsConfig.cluster;
+      const endpoint = body.endpoint || ttsConfig.endpoint;
+      const encoding = body.encoding || ttsConfig.encoding || "wav";
+
+      // 验证必需的 TTS 参数
+      if (!appid) {
         c.get("logger").warn("缺少 appid 参数");
         return c.fail(
           "MISSING_PARAMETER",
-          "缺少必需参数: appid",
+          "缺少 appid 参数，请提供或配置 tts.appid",
           undefined,
           400
         );
       }
 
-      if (!body.accessToken) {
+      if (!accessToken) {
         c.get("logger").warn("缺少 accessToken 参数");
         return c.fail(
           "MISSING_PARAMETER",
-          "缺少必需参数: accessToken",
+          "缺少 accessToken 参数，请提供或配置 tts.accessToken",
           undefined,
           400
         );
       }
 
-      if (!body.voice_type) {
+      if (!voice_type) {
         c.get("logger").warn("缺少 voice_type 参数");
         return c.fail(
           "MISSING_PARAMETER",
-          "缺少必需参数: voice_type",
+          "缺少 voice_type 参数，请提供或配置 tts.voice_type",
           undefined,
           400
         );
       }
 
       const options: TTSOptions = {
-        appid: body.appid,
-        accessToken: body.accessToken,
+        appid,
+        accessToken,
         text: body.text,
-        voice_type: body.voice_type,
-        encoding: body.encoding || "wav",
-        cluster: body.cluster,
-        endpoint: body.endpoint,
+        voice_type,
+        encoding,
+        cluster,
+        endpoint,
       };
 
       c.get("logger").info(
-        `开始语音合成: text=${body.text.substring(0, 20)}..., voice_type=${body.voice_type}`
+        `开始语音合成: text=${body.text.substring(0, 20)}..., voice_type=${voice_type}`
       );
 
       // 调用 TTS 合成
@@ -108,13 +120,11 @@ export class TTSApiHandler extends BaseHandler {
 
       c.get("logger").info(`语音合成成功: audioSize=${audioData.length} bytes`);
 
-      fs.writeFileSync("audio.wav", audioData);
-
       // 返回音频数据
       return new Response(Buffer.from(audioData), {
         headers: {
-          "Content-Type": "audio/wav",
-          "Content-Disposition": `attachment; filename="tts_${Date.now()}.wav"`,
+          "Content-Type": `audio/${encoding}`,
+          "Content-Disposition": `attachment; filename="tts_${Date.now()}.${encoding}"`,
         },
       });
     } catch (error) {
