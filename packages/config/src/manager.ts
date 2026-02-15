@@ -527,12 +527,17 @@ export class ConfigManager {
 
   /**
    * 获取配置（只读）
+   * 使用缓存优化性能，仅在缓存为空时重新加载配置文件
    */
   public getConfig(): Readonly<AppConfig> {
-    this.config = this.loadConfig();
+    // 使用缓存的配置，避免每次都进行文件 I/O 和深拷贝
+    if (!this.config) {
+      this.config = this.loadConfig();
+    }
 
-    // 返回深度只读副本
-    return JSON.parse(JSON.stringify(this.config));
+    // 返回浅拷贝提供基本保护，避免昂贵的深拷贝操作
+    // TypeScript 的 Readonly 只是编译时检查，运行时通过 Object.freeze 可提供更严格的保护
+    return { ...this.config };
   }
 
   /**
@@ -870,14 +875,13 @@ export class ConfigManager {
    * 删除指定服务器的工具配置
    */
   public removeServerToolsConfig(serverName: string): void {
-    const config = this.getConfig();
-    const newConfig = { ...config };
+    const config = this.getMutableConfig();
 
     // 确保 mcpServerConfig 存在
-    if (newConfig.mcpServerConfig) {
+    if (config.mcpServerConfig) {
       // 删除指定服务的工具配置
-      delete newConfig.mcpServerConfig[serverName];
-      this.saveConfig(newConfig);
+      delete config.mcpServerConfig[serverName];
+      this.saveConfig(config);
     }
   }
 
