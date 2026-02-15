@@ -7,6 +7,7 @@ import { type TTSOptions, synthesizeSpeech } from "@/lib/tts/binary.js";
 import type { AppContext } from "@/types/hono.context.js";
 import type { Context } from "hono";
 import { BaseHandler } from "./base.handler.js";
+import fs from "node:fs";
 
 /**
  * TTS 合成请求体
@@ -106,6 +107,8 @@ export class TTSApiHandler extends BaseHandler {
       const audioData = await synthesizeSpeech(options);
 
       c.get("logger").info(`语音合成成功: audioSize=${audioData.length} bytes`);
+
+      fs.writeFileSync("audio.wav", audioData);
 
       // 返回音频数据
       return new Response(Buffer.from(audioData), {

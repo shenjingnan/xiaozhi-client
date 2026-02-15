@@ -5,9 +5,9 @@ POST {{baseUrl}}/api/tts
 Content-Type: application/json
 
 {
-  "text": "你好，这是语音合成测试",
-  "appid": "your_appid",
-  "accessToken": "your_access_token",
-  "voice_type": "S_xx",
+  "text": "你好，这是语音合成测试1234",
+  "appid": "6033701380",
+  "accessToken": "6TeIdZlXkY-Q5SQSiFkm-7NxS8BeVtf8",
+  "voice_type": "BV001_streaming",
   "encoding": "wav"
 }
