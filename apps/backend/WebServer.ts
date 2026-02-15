@@ -3,11 +3,15 @@
  *
  * 负责：
  * - 启动和管理 HTTP/HTTPS 服务器
- * - 注册和管理路由
- * - 集成中间件（CORS、日志、错误处理等）
- * - 管理 WebSocket 连接
+ * - 协调各个管理器和处理器
  * - 集成 MCP 服务和端点管理器
  * - 生命周期管理（启动、停止、清理）
+ *
+ * 重构说明：
+ * - 原本的中间件配置已移至 MiddlewareManager
+ * - 原本的 WebSocket 管理已移至 WebSocketManager
+ * - 原本的事件监听器协调已移至 EventCoordinator
+ * - 原本的 Handler 依赖管理已移至 HandlerRegistry
  *
  * @example
  * ```typescript
@@ -41,16 +45,6 @@ import {
 import { MCPServiceManager } from "@/lib/mcp";
 import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
-import {
-  corsMiddleware,
-  endpointManagerMiddleware,
-  endpointsMiddleware,
-  errorHandlerMiddleware,
-  loggerMiddleware,
-  mcpServiceManagerMiddleware,
-  notFoundHandlerMiddleware,
-  responseEnhancerMiddleware,
-} from "@/middlewares/index.js";
 import type { EventBus, EventBusEvents } from "@/services/index.js";
 import {
   NotificationService,
@@ -69,7 +63,6 @@ import type { MCPServerConfig } from "@xiaozhi-client/config";
 import { EndpointManager } from "@xiaozhi-client/endpoint";
 import type { SimpleConnectionStatus } from "@xiaozhi-client/endpoint";
 import type { Hono } from "hono";
-import { WebSocketServer } from "ws";
 
 import { HTTP_SERVER_CONFIG } from "@/constants/index.js";
 import { MCPServiceManagerNotInitializedError } from "@/errors/mcp-errors.middleware.js";
@@ -94,6 +87,14 @@ import {
   versionRoutes,
 } from "./routes/index.js";
 
+// 管理器导入
+import {
+  EventCoordinator,
+  HandlerRegistry,
+  MiddlewareManager,
+  WebSocketManager,
+} from "./managers/index.js";
+
 // 统一成功响应格式
 interface ApiSuccessResponse<T = unknown> {
   success: boolean;
@@ -115,14 +116,20 @@ interface XiaozhiConnectionStatusResponse {
 }
 
 /**
- * WebServer - 主控制器，协调各个服务和处理器
+ * WebServer - 主控制器，协调各个管理器和处理器
  */
 export class WebServer {
   private app: Hono<AppContext>;
   private httpServer: ServerType | null = null;
-  private wss: WebSocketServer | null = null;
   private logger: Logger;
   private port: number;
+
+  // 管理器
+  private middlewareManager: MiddlewareManager;
+  private webSocketManager: WebSocketManager;
+  private eventCoordinator: EventCoordinator;
+  private handlerRegistry: HandlerRegistry;
+  private routeManager?: RouteManager;
 
   // 事件总线
   private eventBus: EventBus;
@@ -131,20 +138,6 @@ export class WebServer {
   private statusService: StatusService;
   private notificationService: NotificationService;
 
-  // HTTP API 处理器
-  private configApiHandler: ConfigApiHandler;
-  private statusApiHandler: StatusApiHandler;
-  private serviceApiHandler: ServiceApiHandler;
-  private mcpToolHandler: MCPToolHandler;
-  private mcpToolLogHandler: MCPToolLogHandler;
-  private versionApiHandler: VersionApiHandler;
-  private staticFileHandler: StaticFileHandler;
-  private mcpRouteHandler: MCPRouteHandler;
-  private mcpHandler?: MCPHandler;
-  private updateApiHandler: UpdateApiHandler;
-  private cozeHandler: CozeHandler;
-  private ttsApiHandler: TTSApiHandler;
-
   // WebSocket 处理器
   private realtimeNotificationHandler: RealtimeNotificationHandler;
   private heartbeatHandler: HeartbeatHandler;
@@ -152,12 +145,9 @@ export class WebServer {
   // 心跳监控
   private heartbeatMonitorInterval?: NodeJS.Timeout;
 
-  // 路由系统
-  private routeManager?: RouteManager;
-
   // 连接管理相关属性
   private endpointManager: EndpointManager | null = null;
-  private mcpServiceManager: MCPServiceManager | null = null; // WebServer 直接管理的实例
+  private mcpServiceManager: MCPServiceManager | null = null;
 
   constructor(port?: number) {
     // 端口配置
@@ -177,21 +167,6 @@ export class WebServer {
     this.statusService = new StatusService();
     this.notificationService = new NotificationService();
 
-    // 初始化 HTTP API 处理器
-    this.configApiHandler = new ConfigApiHandler();
-    this.statusApiHandler = new StatusApiHandler(this.statusService);
-    this.serviceApiHandler = new ServiceApiHandler(this.statusService);
-    this.mcpToolHandler = new MCPToolHandler();
-    this.mcpToolLogHandler = new MCPToolLogHandler();
-    this.versionApiHandler = new VersionApiHandler();
-    this.staticFileHandler = new StaticFileHandler();
-    this.mcpRouteHandler = new MCPRouteHandler();
-    this.updateApiHandler = new UpdateApiHandler();
-    this.cozeHandler = new CozeHandler();
-    this.ttsApiHandler = new TTSApiHandler();
-
-    // MCPServerApiHandler 将在 start() 方法中初始化，因为它需要 mcpServiceManager
-
     // 初始化 WebSocket 处理器
     this.realtimeNotificationHandler = new RealtimeNotificationHandler(
       this.notificationService,
@@ -202,17 +177,96 @@ export class WebServer {
       this.notificationService
     );
 
+    // 初始化 Handler 注册表
+    this.handlerRegistry = new HandlerRegistry();
+    this.initializeHandlers();
+
+    // 初始化管理器
     // 初始化 Hono 应用
     this.app = createApp();
-    this.setupMiddleware();
+
+    // 初始化中间件管理器
+    this.middlewareManager = new MiddlewareManager({
+      app: this.app,
+      webServer: this as unknown as import("./types/hono.context.js").IWebServer,
+      createHandlerDependencies: () => this.handlerRegistry.createDependencies(),
+    });
+
+    // 初始化 WebSocket 管理器
+    this.webSocketManager = new WebSocketManager({
+      logger: this.logger,
+      realtimeNotificationHandler: this.realtimeNotificationHandler,
+      heartbeatHandler: this.heartbeatHandler,
+    });
+
+    // 初始化事件协调器
+    this.eventCoordinator = new EventCoordinator({
+      eventBus: this.eventBus,
+      notificationService: this.notificationService,
+      logger: this.logger,
+    });
+
+    // 设置中间件
+    this.middlewareManager.setup();
 
     // 在所有路由设置完成后，设置 404 处理
-    this.app.notFound(notFoundHandlerMiddleware);
+    this.middlewareManager.setupNotFoundHandler();
 
-    // 监听接入点状态变更事件
-    this.setupEndpointStatusListener();
-    // 监听 MCP 服务添加事件
-    this.setupMCPServerAddedListener();
+    // 设置事件监听器
+    this.eventCoordinator.setup();
+  }
+
+  /**
+   * 初始化所有 Handler
+   */
+  private initializeHandlers(): void {
+    // 初始化 HTTP API 处理器
+    this.handlerRegistry.register(
+      "configApiHandler",
+      new ConfigApiHandler()
+    );
+    this.handlerRegistry.register(
+      "statusApiHandler",
+      new StatusApiHandler(this.statusService)
+    );
+    this.handlerRegistry.register(
+      "serviceApiHandler",
+      new ServiceApiHandler(this.statusService)
+    );
+    this.handlerRegistry.register(
+      "mcpToolHandler",
+      new MCPToolHandler()
+    );
+    this.handlerRegistry.register(
+      "mcpToolLogHandler",
+      new MCPToolLogHandler()
+    );
+    this.handlerRegistry.register(
+      "versionApiHandler",
+      new VersionApiHandler()
+    );
+    this.handlerRegistry.register(
+      "staticFileHandler",
+      new StaticFileHandler()
+    );
+    this.handlerRegistry.register(
+      "mcpRouteHandler",
+      new MCPRouteHandler()
+    );
+    this.handlerRegistry.register(
+      "updateApiHandler",
+      new UpdateApiHandler()
+    );
+    this.handlerRegistry.register(
+      "cozeHandler",
+      new CozeHandler()
+    );
+    this.handlerRegistry.register(
+      "ttsApiHandler",
+      new TTSApiHandler()
+    );
+
+    // MCPServerApiHandler 将在 start() 方法中初始化，因为它需要 mcpServiceManager
   }
 
   /**
@@ -236,7 +290,8 @@ export class WebServer {
       const config = await this.loadConfiguration();
 
       // 2.1. 初始化 MCP 服务器 API 处理器
-      this.mcpHandler = new MCPHandler(this.mcpServiceManager, configManager);
+      const mcpHandler = new MCPHandler(this.mcpServiceManager, configManager);
+      this.handlerRegistry.register("mcpHandler", mcpHandler);
 
       // 3. 从配置加载 MCP 服务
       await this.loadMCPServicesFromConfig(config.mcpServers);
@@ -346,6 +401,9 @@ export class WebServer {
         // ✅ 传入 mcpServiceManager 实例
         this.endpointManager.setMcpManager(this.mcpServiceManager!);
         this.logger.debug("✅ 新建连接管理器实例");
+
+        // 更新事件协调器的端点管理器引用
+        this.eventCoordinator.setEndpointManager(this.endpointManager);
       }
 
       this.logger.debug("✅ 连接管理器设置完成");
@@ -397,6 +455,7 @@ export class WebServer {
    */
   public setXiaozhiConnectionManager(manager: EndpointManager): void {
     this.endpointManager = manager;
+    this.eventCoordinator.setEndpointManager(manager);
   }
 
   /**
@@ -473,114 +532,6 @@ export class WebServer {
   }
 
   /**
-   * 带重试的连接方法
-   */
-  private async connectWithRetry<T>(
-    connectionFn: () => Promise<T>,
-    context: string,
-    maxAttempts = 5,
-    initialDelay = 1000,
-    maxDelay = 30000,
-    backoffMultiplier = 2
-  ): Promise<T> {
-    let lastError: Error | null = null;
-
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      try {
-        this.logger.info(`${context} - 尝试连接 (${attempt}/${maxAttempts})`);
-        return await connectionFn();
-      } catch (error) {
-        lastError = error as Error;
-        this.logger.warn(`${context} - 连接失败:`, error);
-
-        if (attempt < maxAttempts) {
-          const delay = Math.min(
-            initialDelay * backoffMultiplier ** (attempt - 1),
-            maxDelay
-          );
-          this.logger.info(`${context} - ${delay}ms 后重试...`);
-          await this.sleep(delay);
-        }
-      }
-    }
-
-    throw new Error(
-      `${context} - 连接失败，已达到最大重试次数: ${lastError?.message}`
-    );
-  }
-
-  /**
-   * 延迟工具方法
-   */
-  private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
-  private setupMiddleware() {
-    // Logger 中间件 - 必须在最前面
-    this.app?.use("*", loggerMiddleware);
-
-    // 响应增强中间件 - 在 logger 之后，其他中间件之前
-    // 这样所有路由都可以使用 c.success、c.fail、c.paginate 方法
-    this.app?.use("*", responseEnhancerMiddleware);
-
-    // 注入 WebServer 实例到上下文
-    // 使用类型断言避免循环引用问题
-    this.app?.use("*", async (c, next) => {
-      c.set(
-        "webServer",
-        this as unknown as import("./types/hono.context.js").IWebServer
-      );
-      await next();
-    });
-
-    // MCP Service Manager 中间件 - 必须在 WebServer 注入之后
-    this.app?.use("*", mcpServiceManagerMiddleware);
-
-    // 小智连接管理器中间件
-    this.app?.use("*", endpointManagerMiddleware());
-
-    // 小智接入点处理器中间件（在连接管理器中间件之后）
-    this.app?.use("*", endpointsMiddleware());
-
-    // CORS 中间件
-    this.app?.use("*", corsMiddleware);
-
-    // 错误处理中间件
-    this.app?.onError(errorHandlerMiddleware);
-
-    // 注入路由系统依赖
-    // 注意：这个中间件必须在路由注册之前设置
-    this.app?.use("*", async (c, next) => {
-      const dependencies = this.createHandlerDependencies();
-      c.set("dependencies", dependencies);
-      await next();
-    });
-  }
-
-  /**
-   * 创建处理器依赖对象
-   * 统一管理依赖对象的创建，避免代码重复
-   */
-  private createHandlerDependencies(): HandlerDependencies {
-    return {
-      configApiHandler: this.configApiHandler,
-      statusApiHandler: this.statusApiHandler,
-      serviceApiHandler: this.serviceApiHandler,
-      mcpToolHandler: this.mcpToolHandler,
-      mcpToolLogHandler: this.mcpToolLogHandler,
-      versionApiHandler: this.versionApiHandler,
-      staticFileHandler: this.staticFileHandler,
-      mcpRouteHandler: this.mcpRouteHandler,
-      mcpHandler: this.mcpHandler,
-      updateApiHandler: this.updateApiHandler,
-      cozeHandler: this.cozeHandler,
-      ttsApiHandler: this.ttsApiHandler,
-      // endpointHandler 通过中间件动态注入，不在此初始化
-    };
-  }
-
-  /**
    * 设置路由系统
    */
   private setupRouteSystem(): void {
@@ -624,211 +575,6 @@ export class WebServer {
     }
   }
 
-  private setupWebSocket() {
-    if (!this.wss) return;
-
-    this.wss.on("connection", (ws) => {
-      // 生成客户端 ID
-      const clientId = `client-${Date.now()}-${Math.random()
-        .toString(36)
-        .substr(2, 9)}`;
-
-      this.logger.debug(`WebSocket 客户端已连接: ${clientId}`);
-      this.logger.debug(
-        `当前 WebSocket 连接数: ${this.wss?.clients.size || 0}`
-      );
-
-      // 注册客户端到通知服务
-      this.realtimeNotificationHandler.handleClientConnect(ws, clientId);
-      this.heartbeatHandler.handleClientConnect(clientId);
-
-      ws.on("message", async (message) => {
-        try {
-          const data = JSON.parse(message.toString());
-
-          // 根据消息类型分发到不同的处理器
-          if (data.type === "clientStatus") {
-            await this.heartbeatHandler.handleClientStatus(ws, data, clientId);
-          } else {
-            await this.realtimeNotificationHandler.handleMessage(
-              ws,
-              data,
-              clientId
-            );
-          }
-        } catch (error) {
-          this.logger.error("WebSocket message error:", error);
-          const errorResponse = {
-            type: "error",
-            error: {
-              code: "MESSAGE_PARSE_ERROR",
-              message: error instanceof Error ? error.message : "消息解析失败",
-              timestamp: Date.now(),
-            },
-          };
-          ws.send(JSON.stringify(errorResponse));
-        }
-      });
-
-      ws.on("close", () => {
-        this.logger.debug(`WebSocket 客户端已断开连接: ${clientId}`);
-        this.logger.debug(
-          `剩余 WebSocket 连接数: ${this.wss?.clients.size || 0}`
-        );
-
-        // 处理客户端断开连接
-        this.realtimeNotificationHandler.handleClientDisconnect(clientId);
-        this.heartbeatHandler.handleClientDisconnect(clientId);
-      });
-
-      ws.on("error", (error) => {
-        this.logger.error(`WebSocket 连接错误 (${clientId}):`, error);
-      });
-
-      // 发送初始数据
-      this.realtimeNotificationHandler.sendInitialData(ws, clientId);
-    });
-  }
-
-  /**
-   * 设置接入点状态变更事件监听
-   */
-  private setupEndpointStatusListener(): void {
-    this.eventBus.onEvent(
-      "endpoint:status:changed",
-      (eventData: EventBusEvents["endpoint:status:changed"]) => {
-        // 向所有连接的 WebSocket 客户端广播接入点状态变更事件
-        const message = {
-          type: "endpoint_status_changed",
-          data: {
-            endpoint: eventData.endpoint,
-            connected: eventData.connected,
-            operation: eventData.operation,
-            success: eventData.success,
-            message: eventData.message,
-            timestamp: eventData.timestamp,
-          },
-        };
-
-        this.notificationService.broadcast("endpoint_status_changed", message);
-        this.logger.debug(
-          `广播接入点状态变更事件: ${eventData.endpoint} - ${eventData.operation}`
-        );
-      }
-    );
-  }
-
-  /**
-   * 设置 MCP 服务添加事件监听
-   * 当添加新的 MCP 服务后，自动重连接入点以同步服务列表
-   */
-  private setupMCPServerAddedListener(): void {
-    // 监听单个服务添加事件
-    this.eventBus.onEvent(
-      "mcp:server:added",
-      async (eventData: EventBusEvents["mcp:server:added"]) => {
-        this.logger.info(
-          `检测到 MCP 服务添加: ${eventData.serverName}，工具数量: ${eventData.tools.length}`
-        );
-
-        if (!this.endpointManager) {
-          this.logger.warn("EndpointManager 未初始化，跳过重连");
-          return;
-        }
-
-        try {
-          // 获取当前连接的端点数量
-          const connectionStatuses = this.endpointManager.getConnectionStatus();
-          const connectedEndpointCount = connectionStatuses.filter(
-            (status) => status.connected
-          ).length;
-
-          if (connectedEndpointCount === 0) {
-            this.logger.debug("当前没有已连接的端点，跳过重连");
-            return;
-          }
-
-          this.logger.info(`开始重连 ${connectedEndpointCount} 个接入点...`);
-
-          // 重连所有端点
-          await this.endpointManager.reconnect();
-
-          this.logger.info("接入点重连成功，新服务工具已同步");
-
-          // 发送重连完成事件
-          this.eventBus.emitEvent("endpoint:reconnect:completed", {
-            trigger: "mcp_server_added",
-            serverName: eventData.serverName,
-            endpointCount: connectedEndpointCount,
-            timestamp: Date.now(),
-          });
-        } catch (error) {
-          this.logger.error("接入点重连失败:", error);
-
-          // 发送重连失败事件
-          this.eventBus.emitEvent("endpoint:reconnect:failed", {
-            trigger: "mcp_server_added",
-            serverName: eventData.serverName,
-            error: error instanceof Error ? error.message : String(error),
-            timestamp: Date.now(),
-          });
-        }
-      }
-    );
-
-    // 监听批量服务添加事件
-    this.eventBus.onEvent(
-      "mcp:server:batch_added",
-      async (eventData: EventBusEvents["mcp:server:batch_added"]) => {
-        this.logger.info(
-          `检测到批量 MCP 服务添加: ${eventData.addedCount} 个成功，${eventData.failedCount} 个失败`
-        );
-
-        if (!this.endpointManager || eventData.addedCount === 0) {
-          return;
-        }
-
-        try {
-          // 获取当前连接的端点数量
-          const connectionStatuses = this.endpointManager.getConnectionStatus();
-          const connectedEndpointCount = connectionStatuses.filter(
-            (status) => status.connected
-          ).length;
-
-          if (connectedEndpointCount === 0) {
-            this.logger.debug("当前没有已连接的端点，跳过重连");
-            return;
-          }
-
-          this.logger.info(`开始重连 ${connectedEndpointCount} 个接入点...`);
-
-          // 重连所有端点
-          await this.endpointManager.reconnect();
-
-          this.logger.info("接入点重连成功，批量服务工具已同步");
-
-          // 发送重连完成事件
-          this.eventBus.emitEvent("endpoint:reconnect:completed", {
-            trigger: "mcp_server_batch_added",
-            serverName: undefined,
-            endpointCount: connectedEndpointCount,
-            timestamp: Date.now(),
-          });
-        } catch (error) {
-          this.logger.error("接入点重连失败:", error);
-
-          // 发送重连失败事件
-          this.eventBus.emitEvent("endpoint:reconnect:failed", {
-            trigger: "mcp_server_batch_added",
-            serverName: undefined,
-            error: error instanceof Error ? error.message : String(error),
-            timestamp: Date.now(),
-          });
-        }
-      }
-    );
-  }
-
   public async start(): Promise<void> {
     // 检查服务器是否已经启动
     if (this.httpServer) {
@@ -859,17 +605,16 @@ export class WebServer {
     if (!this.httpServer) {
       throw new Error("HTTP server 未初始化");
     }
-    this.wss = new WebSocketServer({
-      server: this.httpServer as Server<
+    await this.webSocketManager.start(
+      this.httpServer as Server<
         typeof IncomingMessage,
         typeof ServerResponse
-      >,
-    });
-    this.setupWebSocket();
+      >
+    );
 
     // 启动心跳监控
     this.heartbeatMonitorInterval =
-      this.heartbeatHandler.startHeartbeatMonitoring();
+      this.webSocketManager.startHeartbeatMonitoring();
 
     this.logger.info(
       `Web server listening on http://${HTTP_SERVER_CONFIG.DEFAULT_BIND_ADDRESS}:${this.port}`
@@ -911,49 +656,25 @@ export class WebServer {
 
         // 停止心跳监控
         if (this.heartbeatMonitorInterval) {
-          this.heartbeatHandler.stopHeartbeatMonitoring(
-            this.heartbeatMonitorInterval
-          );
+          this.webSocketManager.stopHeartbeatMonitoring();
           this.heartbeatMonitorInterval = undefined;
         }
 
-        // 强制断开所有 WebSocket 客户端连接
-        if (this.wss) {
-          for (const client of this.wss.clients) {
-            client.terminate();
-          }
+        // 停止 WebSocket 服务器
+        this.webSocketManager.stop();
 
-          // 关闭 WebSocket 服务器
-          this.wss.close(() => {
-            let forceCloseTimer: NodeJS.Timeout | undefined;
-
-            const cleanupAndResolve = () => {
-              if (forceCloseTimer) {
-                clearTimeout(forceCloseTimer);
-                forceCloseTimer = undefined;
-              }
-              doResolve();
-            };
-
-            // 强制关闭 HTTP 服务器，不等待现有连接
-            if (this.httpServer) {
-              this.httpServer.close(() => {
-                this.logger.info("Web 服务器已停止");
-                cleanupAndResolve();
-              });
-
-              // 设置超时，如果 2 秒内没有关闭则强制退出
-              forceCloseTimer = setTimeout(() => {
-                // 超时触发后标记定时器已失效，保持与 cleanupAndResolve 中的语义一致
-                forceCloseTimer = undefined;
-                this.logger.info("Web 服务器已强制停止");
-                doResolve();
-              }, 2000);
-            } else {
-              this.logger.info("Web 服务器已停止");
-              cleanupAndResolve();
-            }
+        // 强制关闭 HTTP 服务器，不等待现有连接
+        if (this.httpServer) {
+          this.httpServer.close(() => {
+            this.logger.info("Web 服务器已停止");
+            doResolve();
           });
+
+          // 设置超时，如果 2 秒内没有关闭则强制退出
+          setTimeout(() => {
+            this.logger.info("Web 服务器已强制停止");
+            doResolve();
+          }, 2000);
         } else {
           this.logger.info("Web 服务器已停止");
           doResolve();
@@ -970,9 +691,7 @@ export class WebServer {
 
     // 停止心跳监控
     if (this.heartbeatMonitorInterval) {
-      this.heartbeatHandler.stopHeartbeatMonitoring(
-        this.heartbeatMonitorInterval
-      );
+      this.webSocketManager.stopHeartbeatMonitoring();
       this.heartbeatMonitorInterval = undefined;
     }
 
@@ -983,6 +702,41 @@ export class WebServer {
     // 销毁事件总线
     destroyEventBus();
 
+    // 清理管理器
+    this.handlerRegistry.clear();
+
     this.logger.debug("WebServer 实例已销毁");
+  }
+
+  /**
+   * 获取 Handler 注册表
+   * 用于测试和依赖注入
+   */
+  getHandlerRegistry(): HandlerRegistry {
+    return this.handlerRegistry;
+  }
+
+  /**
+   * 获取事件协调器
+   * 用于测试和依赖注入
+   */
+  getEventCoordinator(): EventCoordinator {
+    return this.eventCoordinator;
+  }
+
+  /**
+   * 获取 WebSocket 管理器
+   * 用于测试和依赖注入
+   */
+  getWebSocketManager(): WebSocketManager {
+    return this.webSocketManager;
+  }
+
+  /**
+   * 获取中间件管理器
+   * 用于测试和依赖注入
+   */
+  getMiddlewareManager(): MiddlewareManager {
+    return this.middlewareManager;
   }
 }
