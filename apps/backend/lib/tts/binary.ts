@@ -55,8 +55,19 @@ export async function synthesizeSpeech(
   });
 
   await new Promise((resolve, reject) => {
-    ws.on("open", resolve);
-    ws.on("error", reject);
+    const onError = (error: Error) => {
+      // 关闭 WebSocket 连接（如果已连接或正在连接）
+      if (
+        ws.readyState === WebSocket.OPEN ||
+        ws.readyState === WebSocket.CONNECTING
+      ) {
+        ws.close();
+      }
+      reject(error);
+    };
+
+    ws.once("open", resolve);
+    ws.once("error", onError);
   });
 
   const request = {
