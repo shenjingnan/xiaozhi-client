@@ -2,7 +2,7 @@ import { Buffer } from "node:buffer";
 import type WebSocket from "ws";
 
 /**
- * Event type definitions, corresponding to protobuf generated event types
+ * 事件类型定义，对应 protobuf 生成的事件类型
  */
 export enum EventType {
   // Default event, used when no events are needed
@@ -66,7 +66,7 @@ export enum EventType {
 }
 
 /**
- * Message protocol related definitions
+ * 消息协议相关定义
  */
 export enum MsgType {
   Invalid = 0,
@@ -116,7 +116,7 @@ export enum CompressionBits {
 }
 
 /**
- * Protocol message structure
+ * 协议消息结构
  */
 export interface Message {
   version: VersionBits;
@@ -142,7 +142,7 @@ export function getMsgTypeName(msgType: MsgType): string {
 }
 
 /**
- * Convert Message object to a readable string representation
+ * 将消息对象转换为可读字符串表示
  */
 export function messageToString(msg: Message): string {
   const eventStr =
@@ -204,7 +204,7 @@ export function createMessage(
 }
 
 /**
- * Message serialization
+ * 消息序列化
  */
 export function marshalMessage(msg: Message): Uint8Array {
   const buffers: Uint8Array[] = [];
@@ -240,7 +240,7 @@ export function marshalMessage(msg: Message): Uint8Array {
 }
 
 /**
- * Message deserialization
+ * 消息反序列化
  */
 export function unmarshalMessage(data: Uint8Array): Message {
   if (data.length < 3) {
