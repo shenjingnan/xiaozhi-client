@@ -156,6 +156,10 @@ export class WebServer {
   private endpointManager: EndpointManager | null = null;
   private mcpServiceManager: MCPServiceManager | null = null; // WebServer 直接管理的实例
 
+  // 事件监听器引用（用于清理）
+  private endpointAddedListener?: (event: { endpoint: string }) => void;
+  private endpointRemovedListener?: (event: { endpoint: string }) => void;
+
   constructor(port?: number) {
     // 端口配置
     try {
@@ -360,19 +364,18 @@ export class WebServer {
         await this.endpointManager.connect();
 
         // 设置端点添加事件监听器
-        this.endpointManager.on(
-          "endpointAdded",
-          (event: { endpoint: string }) => {
-            this.logger.debug(`端点已添加: ${event.endpoint}`);
-          }
-        );
+        this.endpointAddedListener = (event: { endpoint: string }) => {
+          this.logger.debug(`端点已添加: ${event.endpoint}`);
+        };
+        this.endpointManager.on("endpointAdded", this.endpointAddedListener);
 
         // 设置端点移除事件监听器
+        this.endpointRemovedListener = (event: { endpoint: string }) => {
+          this.logger.debug(`端点已移除: ${event.endpoint}`);
+        };
         this.endpointManager.on(
           "endpointRemoved",
-          (event: { endpoint: string }) => {
-            this.logger.debug(`端点已移除: ${event.endpoint}`);
-          }
+          this.endpointRemovedListener
         );
 
         this.logger.debug(
@@ -961,6 +964,21 @@ export class WebServer {
    */
   public destroy(): void {
     this.logger.debug("销毁 WebServer 实例");
+
+    // 移除 endpointManager 事件监听器
+    if (this.endpointManager) {
+      if (this.endpointAddedListener) {
+        this.endpointManager.off("endpointAdded", this.endpointAddedListener);
+        this.endpointAddedListener = undefined;
+      }
+      if (this.endpointRemovedListener) {
+        this.endpointManager.off(
+          "endpointRemoved",
+          this.endpointRemovedListener
+        );
+        this.endpointRemovedListener = undefined;
+      }
+    }
 
     // 停止心跳监控
     if (this.heartbeatMonitorInterval) {

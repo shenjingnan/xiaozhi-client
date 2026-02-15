@@ -324,6 +324,7 @@ vi.mock("@xiaozhi-client/endpoint", () => ({
     setServiceManager: vi.fn(),
     getConnectionStatus: vi.fn().mockReturnValue([]),
     on: vi.fn(),
+    off: vi.fn(),
   })),
   EndpointConnection: vi.fn().mockImplementation(() => ({
     setServiceManager: vi.fn(),

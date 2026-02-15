@@ -58,6 +58,7 @@ vi.mock("@/lib/endpoint/index.js", () => ({
     setServiceManager: vi.fn(),
     getConnectionStatus: vi.fn().mockReturnValue([]),
     on: vi.fn(),
+    off: vi.fn(),
   })),
 }));
 
@@ -93,6 +94,7 @@ function createMockEndpointManager(): any {
     setServiceManager: vi.fn(),
     getConnectionStatus: vi.fn().mockReturnValue([]),
     on: vi.fn(),
+    off: vi.fn(),
     addEndpoint: vi.fn(),
     getEndpoints: vi.fn().mockReturnValue([]),
   };
