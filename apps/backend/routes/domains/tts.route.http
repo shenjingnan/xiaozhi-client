@@ -1,0 +1,13 @@
+@baseUrl = http://localhost:9999
+
+### 语音合成
+POST {{baseUrl}}/api/tts
+Content-Type: application/json
+
+{
+  "text": "你好，这是语音合成测试",
+  "appid": "your_appid",
+  "accessToken": "your_access_token",
+  "voice_type": "S_xx",
+  "encoding": "wav"
+}
