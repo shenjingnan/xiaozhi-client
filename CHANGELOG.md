@@ -1,3 +1,74 @@
+## 1.10.9 (2026-02-15)
+
+### 🚀 Features
+
+- 优化 github-comment-fixer 技能使用 worktree ([#1496](https://github.com/shenjingnan/xiaozhi-client/pull/1496))
+
+### 🩹 Fixes
+
+- 移除 mcp-errors.ts 中不合适的 shebang ([#1230](https://github.com/shenjingnan/xiaozhi-client/pull/1230), [#1229](https://github.com/shenjingnan/xiaozhi-client/issues/1229))
+- 在 shared-types 的 tsup.config.ts 中添加 target: "node18" ([#1285](https://github.com/shenjingnan/xiaozhi-client/pull/1285), [#1282](https://github.com/shenjingnan/xiaozhi-client/issues/1282))
+- 修复 routes/domains 目录下路径别名一致性问题 ([#1277](https://github.com/shenjingnan/xiaozhi-client/pull/1277), [#1274](https://github.com/shenjingnan/xiaozhi-client/issues/1274))
+- 移除 apps/backend/lib/mcp/manager.ts 中不必要的 shebang ([#1273](https://github.com/shenjingnan/xiaozhi-client/pull/1273), [#1270](https://github.com/shenjingnan/xiaozhi-client/issues/1270))
+- 更新 axios 依赖至 >=1.13.5 以修复 CVE-2026-25639 ([#1259](https://github.com/shenjingnan/xiaozhi-client/pull/1259))
+- 升级 calculator-mcp 和 datetime-mcp 包中的 tsup 版本至 ^8.3.5 ([#1248](https://github.com/shenjingnan/xiaozhi-client/pull/1248), [#1247](https://github.com/shenjingnan/xiaozhi-client/issues/1247))
+- 将 @modelcontextprotocol/sdk 升级到 ^1.26.0 以修复 CVE-2026-25536 ([#1217](https://github.com/shenjingnan/xiaozhi-client/pull/1217))
+- 移除 apps/backend 中覆盖 noImplicitAny 的配置 ([#1221](https://github.com/shenjingnan/xiaozhi-client/pull/1221), [#1220](https://github.com/shenjingnan/xiaozhi-client/issues/1220))
+- 统一 TypeScript 版本为 ^5.9.2 ([#1199](https://github.com/shenjingnan/xiaozhi-client/pull/1199), [#1198](https://github.com/shenjingnan/xiaozhi-client/issues/1198))
+- 统一 shared-types package.json 中的路径格式，添加 ./ 前缀 ([#1133](https://github.com/shenjingnan/xiaozhi-client/pull/1133), [#1132](https://github.com/shenjingnan/xiaozhi-client/issues/1132))
+- 统一 shared-types 包的 TypeScript 版本至 ^5.9.2 ([#1114](https://github.com/shenjingnan/xiaozhi-client/pull/1114), [#1113](https://github.com/shenjingnan/xiaozhi-client/issues/1113))
+- 修复 shared-types 包配置中 main 和 types 字段路径格式 ([#1110](https://github.com/shenjingnan/xiaozhi-client/pull/1110), [#1109](https://github.com/shenjingnan/xiaozhi-client/issues/1109))
+- 使用统一的 Logger 系统替换 console.warn ([#1107](https://github.com/shenjingnan/xiaozhi-client/pull/1107), [#1106](https://github.com/shenjingnan/xiaozhi-client/issues/1106))
+- 统一 Node.js 版本要求为 20+ ([#1059](https://github.com/shenjingnan/xiaozhi-client/pull/1059), [#1058](https://github.com/shenjingnan/xiaozhi-client/issues/1058))
+- 修复 TemplateManager 接口使用 any 类型的问题 ([#1030](https://github.com/shenjingnan/xiaozhi-client/pull/1030), [#1029](https://github.com/shenjingnan/xiaozhi-client/issues/1029))
+- 统一 service.handler.ts 中的路径别名导入 ([#1307](https://github.com/shenjingnan/xiaozhi-client/pull/1307), [#1305](https://github.com/shenjingnan/xiaozhi-client/issues/1305))
+- 修复 websocket-compat.ts 中废弃函数的 any 类型问题 ([#1266](https://github.com/shenjingnan/xiaozhi-client/pull/1266), [#1264](https://github.com/shenjingnan/xiaozhi-client/issues/1264))
+- 在 shouldCleanupCache 中使用 DEFAULT_CONFIG.CLEANUP_INTERVAL 常量 ([#1254](https://github.com/shenjingnan/xiaozhi-client/pull/1254), [#1251](https://github.com/shenjingnan/xiaozhi-client/issues/1251))
+- 在根 tsconfig.json 中添加 packages/mcp-core 的 project reference ([#1189](https://github.com/shenjingnan/xiaozhi-client/pull/1189))
+- 修复 hono.context.ts 中使用相对路径导入类型的问题 ([#1163](https://github.com/shenjingnan/xiaozhi-client/pull/1163), [#1161](https://github.com/shenjingnan/xiaozhi-client/issues/1161))
+- 将 shared-types MCP 协议类型中的 any 替换为 unknown ([#1162](https://github.com/shenjingnan/xiaozhi-client/pull/1162), [#1160](https://github.com/shenjingnan/xiaozhi-client/issues/1160))
+- shared-types 添加 target 字段以确保构建配置一致性 ([#1139](https://github.com/shenjingnan/xiaozhi-client/pull/1139), [#1136](https://github.com/shenjingnan/xiaozhi-client/issues/1136))
+- 改进 Validation.ts 中的类型安全性，移除 any 类型 ([#1074](https://github.com/shenjingnan/xiaozhi-client/pull/1074), [#1072](https://github.com/shenjingnan/xiaozhi-client/issues/1072))
+- 使用路径别名替换相对路径导入错误类型 ([#1071](https://github.com/shenjingnan/xiaozhi-client/pull/1071))
+- 移除 error-helper.ts 中的 any 类型以提升类型安全性 ([#1070](https://github.com/shenjingnan/xiaozhi-client/pull/1070))
+- 修复 middlewares/index.ts 中的路径别名一致性 ([#1026](https://github.com/shenjingnan/xiaozhi-client/pull/1026))
+- 修复 service.handler.ts 中导入不一致问题 ([#1002](https://github.com/shenjingnan/xiaozhi-client/pull/1002), [#1001](https://github.com/shenjingnan/xiaozhi-client/issues/1001))
+- RouteManager 使用统一的 Logger 系统替代 console ([#987](https://github.com/shenjingnan/xiaozhi-client/pull/987), [#984](https://github.com/shenjingnan/xiaozhi-client/issues/984))
+- 将 endpointManager 中间件的 console.warn 替换为统一的 Logger 系统 ([#978](https://github.com/shenjingnan/xiaozhi-client/pull/978), [#976](https://github.com/shenjingnan/xiaozhi-client/issues/976))
+- 更新 @modelcontextprotocol/sdk 版本范围至 ^1.26.0 以修复 CVE-2026-25536 安全漏洞 ([#959](https://github.com/shenjingnan/xiaozhi-client/pull/959), [#958](https://github.com/shenjingnan/xiaozhi-client/issues/958))
+- 使用 CommandArguments 和 CommandOptions 替换 any 类型 ([#957](https://github.com/shenjingnan/xiaozhi-client/pull/957))
+- 修复 version-manager.tsx 中 setTimeout 定时器资源泄漏 ([#930](https://github.com/shenjingnan/xiaozhi-client/pull/930), [#927](https://github.com/shenjingnan/xiaozhi-client/issues/927))
+- npm/manager.ts 使用统一的 Logger 系统 ([#880](https://github.com/shenjingnan/xiaozhi-client/pull/880), [#879](https://github.com/shenjingnan/xiaozhi-client/issues/879))
+- 将 packages/mcp-core/tsconfig.json 的 composite 设置为 true ([#1197](https://github.com/shenjingnan/xiaozhi-client/pull/1197))
+- 移除根 tsconfig.json 中与 monorepo 结构不一致的 rootDir 配置 ([#1165](https://github.com/shenjingnan/xiaozhi-client/pull/1165), [#1164](https://github.com/shenjingnan/xiaozhi-client/issues/1164))
+- 修复 tool-call-logs-dialog.tsx 中 CopyButton 组件的资源泄漏风险 ([#983](https://github.com/shenjingnan/xiaozhi-client/pull/983))
+- 将 WebSocket 服务中的 any 类型替换为 unknown 提升类型安全性 ([#888](https://github.com/shenjingnan/xiaozhi-client/pull/888), [#887](https://github.com/shenjingnan/xiaozhi-client/issues/887))
+- 移除 mcp-manage.handler.ts 中重复的 toolNames 声明 ([#1354](https://github.com/shenjingnan/xiaozhi-client/pull/1354))
+- 使用 HTTP_TIMEOUTS.LONG_RUNNING 常量替换硬编码的超时值 ([#1356](https://github.com/shenjingnan/xiaozhi-client/pull/1356))
+- 修复 packages/endpoint 示例代码使用过时的 API 导致无法运行 ([#1363](https://github.com/shenjingnan/xiaozhi-client/pull/1363))
+- 移除 default export of MCPServiceManager ([#1045](https://github.com/shenjingnan/xiaozhi-client/pull/1045))
+- 修复 WebServer.stop 方法中 setTimeout 定时器未清理导致 doResolve 多次调用的问题 ([#871](https://github.com/shenjingnan/xiaozhi-client/pull/871))
+- 移除 apps/backend/tsconfig.json 中的 noImplicitAny: false 配置 ([#894](https://github.com/shenjingnan/xiaozhi-client/pull/894), [#891](https://github.com/shenjingnan/xiaozhi-client/issues/891))
+- 移除 tsup.config.ts 中重复的 ws 模块声明 ([#901](https://github.com/shenjingnan/xiaozhi-client/pull/901), [#903](https://github.com/shenjingnan/xiaozhi-client/pull/903))
+- 禁用 nx-release-publish 任务缓存 ([#1639](https://github.com/shenjingnan/xiaozhi-client/pull/1639))
+- **deps:** 为 packages/cli 和 packages/config 添加缺失的 tsup 依赖 ([#1287](https://github.com/shenjingnan/xiaozhi-client/pull/1287), [#1286](https://github.com/shenjingnan/xiaozhi-client/issues/1286))
+- **deps:** 统一 vitest 版本为 ^3.2.4 ([#1228](https://github.com/shenjingnan/xiaozhi-client/pull/1228), [#1227](https://github.com/shenjingnan/xiaozhi-client/issues/1227))
+- **endpoint:** 为 sendErrorResponse 方法添加错误处理 ([#1225](https://github.com/shenjingnan/xiaozhi-client/pull/1225))
+- **npm:** 添加 spawn 进程 error 事件监听器 ([#1255](https://github.com/shenjingnan/xiaozhi-client/pull/1255), [#1252](https://github.com/shenjingnan/xiaozhi-client/issues/1252))
+- **release:** 确保 nx-release-publish 在发布前执行构建 ([#1241](https://github.com/shenjingnan/xiaozhi-client/pull/1241))
+- **status:** 将 status.service.ts 中的英文注释翻译为中文 ([#1268](https://github.com/shenjingnan/xiaozhi-client/pull/1268))
+
+### 🔥 Performance
+
+- 缓存 tools.map 结果避免重复映射操作 ([#1290](https://github.com/shenjingnan/xiaozhi-client/pull/1290))
+- 优化 mcp-manage.handler.ts 中重复的 map 调用 ([#1193](https://github.com/shenjingnan/xiaozhi-client/pull/1193), [#1191](https://github.com/shenjingnan/xiaozhi-client/issues/1191))
+
+### ❤️ Thank You
+
+- Claude
+- GeoDaoyu @GeoDaoyu
+- shenjingnan @shenjingnan
+
 ## 1.10.8 (2026-02-15)
 
 ### 🚀 Features
