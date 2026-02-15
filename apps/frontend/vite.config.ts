@@ -3,6 +3,21 @@ import react from "@vitejs/plugin-react";
 import { visualizer } from "rollup-plugin-visualizer";
 import { defineConfig } from "vite";
 
+// 导出共享的路径别名配置
+export const pathAliases = {
+  "@": path.resolve(__dirname, "./src"),
+  "@components": path.resolve(__dirname, "./src/components"),
+  "@hooks": path.resolve(__dirname, "./src/hooks"),
+  "@services": path.resolve(__dirname, "./src/services"),
+  "@stores": path.resolve(__dirname, "./src/stores"),
+  "@utils": path.resolve(__dirname, "./src/utils"),
+  "@types": path.resolve(__dirname, "./src/types"),
+  "@lib": path.resolve(__dirname, "./src/lib"),
+  "@pages": path.resolve(__dirname, "./src/pages"),
+  "@providers": path.resolve(__dirname, "./src/providers"),
+  "@ui": path.resolve(__dirname, "./src/components/ui"),
+};
+
 export default defineConfig({
   plugins: [
     react(),
@@ -15,21 +30,7 @@ export default defineConfig({
         brotliSize: true,
       }),
   ].filter(Boolean),
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-      "@components": path.resolve(__dirname, "./src/components"),
-      "@hooks": path.resolve(__dirname, "./src/hooks"),
-      "@services": path.resolve(__dirname, "./src/services"),
-      "@stores": path.resolve(__dirname, "./src/stores"),
-      "@utils": path.resolve(__dirname, "./src/utils"),
-      "@types": path.resolve(__dirname, "./src/types"),
-      "@lib": path.resolve(__dirname, "./src/lib"),
-      "@pages": path.resolve(__dirname, "./src/pages"),
-      "@providers": path.resolve(__dirname, "./src/providers"),
-      "@ui": path.resolve(__dirname, "./src/components/ui"),
-    },
-  },
+  resolve: { alias: pathAliases },
   server: {
     port: 5173,
     proxy: {
