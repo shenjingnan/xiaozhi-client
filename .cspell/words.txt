@@ -104,6 +104,7 @@ verylongstring
 vsize
 webui
 worktrees
+Xiaoxuan
 xiaozhi
 Xiaozhi
 XIAOZHI
