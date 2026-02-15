@@ -10,7 +10,22 @@ import { requireMCPServiceManager } from "@/types/hono.context.js";
 import type { Context } from "hono";
 
 /**
- * 服务 API 处理器
+ * 服务 API HTTP 路由处理器
+ * 提供服务重启、停止等管理相关的 RESTful API 接口
+ *
+ * ## 核心功能
+ * - 服务重启：POST /api/services/restart
+ * - 服务停止：POST /api/services/stop
+ * - 服务启动：POST /api/services/start
+ * - 服务状态查询：GET /api/services/status
+ * - 服务健康检查：GET /api/services/health
+ * - 与 EventBus 集成：监听服务重启请求事件
+ * - 状态更新：通过 StatusService 更新服务重启状态
+ *
+ * ## 注意事项
+ * - 重启操作异步执行，不阻塞 HTTP 响应
+ * - 从 Hono Context 获取 MCPServiceManager 实例
+ * - 服务操作使用 child_process.spawn 执行系统命令
  */
 export class ServiceApiHandler {
   private logger: Logger;
