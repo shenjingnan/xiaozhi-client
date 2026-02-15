@@ -1,4 +1,4 @@
-import { Buffer } from "buffer";
+import { Buffer } from "node:buffer";
 import type WebSocket from "ws";
 
 /**
@@ -444,17 +444,19 @@ function readSessionId(msg: Message, data: Uint8Array, offset: number): number {
 
   const view = new DataView(data.buffer, data.byteOffset + offset, 4);
   const size = view.getUint32(0, false);
-  offset += 4;
+  let currentOffset = offset + 4;
 
   if (size > 0) {
-    if (offset + size > data.length) {
+    if (currentOffset + size > data.length) {
       throw new Error("insufficient data for session ID");
     }
-    msg.sessionId = new TextDecoder().decode(data.slice(offset, offset + size));
-    offset += size;
+    msg.sessionId = new TextDecoder().decode(
+      data.slice(currentOffset, currentOffset + size)
+    );
+    currentOffset += size;
   }
 
-  return offset;
+  return currentOffset;
 }
 
 function readConnectId(msg: Message, data: Uint8Array, offset: number): number {
@@ -475,17 +477,19 @@ function readConnectId(msg: Message, data: Uint8Array, offset: number): number {
 
   const view = new DataView(data.buffer, data.byteOffset + offset, 4);
   const size = view.getUint32(0, false);
-  offset += 4;
+  let currentOffset = offset + 4;
 
   if (size > 0) {
-    if (offset + size > data.length) {
+    if (currentOffset + size > data.length) {
       throw new Error("insufficient data for connect ID");
     }
-    msg.connectId = new TextDecoder().decode(data.slice(offset, offset + size));
-    offset += size;
+    msg.connectId = new TextDecoder().decode(
+      data.slice(currentOffset, currentOffset + size)
+    );
+    currentOffset += size;
   }
 
-  return offset;
+  return currentOffset;
 }
 
 function readSequence(msg: Message, data: Uint8Array, offset: number): number {
@@ -513,17 +517,17 @@ function readPayload(msg: Message, data: Uint8Array, offset: number): number {
 
   const view = new DataView(data.buffer, data.byteOffset + offset, 4);
   const size = view.getUint32(0, false);
-  offset += 4;
+  let currentOffset = offset + 4;
 
   if (size > 0) {
-    if (offset + size > data.length) {
+    if (currentOffset + size > data.length) {
       throw new Error("insufficient data for payload");
     }
-    msg.payload = data.slice(offset, offset + size);
-    offset += size;
+    msg.payload = data.slice(currentOffset, currentOffset + size);
+    currentOffset += size;
   }
 
-  return offset;
+  return currentOffset;
 }
 
 const messageQueues = new Map<WebSocket, Message[]>();
