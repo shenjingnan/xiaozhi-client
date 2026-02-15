@@ -1,0 +1,271 @@
+##############################################
+# 变量定义区
+##############################################
+
+@baseUrl = http://localhost:9999
+@deviceId = AA:BB:CC:DD:EE:FF
+@clientId = esp32-234567890abcdef0
+@activationCode = 534806
+
+##############################################
+# 硬件 API 测试
+##############################################
+
+### 场景1: 设备首次连接 - 获取激活码（未激活设备）
+# 说明: 设备首次连接时，OTA接口返回激活信息
+# 请求头: Device-Id（MAC地址）, Client-Id（设备UUID）
+# 请求体: 设备硬件信息
+# 预期响应: 包含 activation.code, activation.challenge, serverTime
+POST {{baseUrl}}/
+Device-Id: {{deviceId}}
+Client-Id: {{clientId}}
+Content-Type: application/json
+
+{
+  "application": {
+    "version": "1.0.0",
+    "board": {
+      "type": "ESP32-S3-BOX"
+    }
+  },
+  "chipModelName": "ESP32-S3"
+}
+
+### 场景2: 使用小智硬件官方 OTA 路径（兼容硬件默认配置）
+# 说明: 硬件默认配置使用 /xiaozhi/ota/ 路径
+# 功能与根路径 OTA 接口完全相同
+POST {{baseUrl}}/xiaozhi/ota/
+Device-Id: {{deviceId}}
+Client-Id: {{clientId}}
+Content-Type: application/json
+
+{
+  "application": {
+    "version": "1.0.0",
+    "board": {
+      "type": "ESP32-S3-BOX"
+    }
+  },
+  "chipModelName": "ESP32-S3"
+}
+
+### 场景3: 设备激活请求
+# 说明: 使用激活码完成设备绑定
+# 请求头: Device-Id, Client-Id
+# 请求体: 激活码
+# 预期响应: 返回已激活的设备信息
+POST {{baseUrl}}/activate
+Device-Id: {{deviceId}}
+Client-Id: {{clientId}}
+Content-Type: application/json
+
+{
+  "code": "{{activationCode}}"
+}
+
+### 场景4: 设备已激活后再次 OTA 请求
+# 说明: 设备激活后，OTA接口返回 WebSocket 配置
+# 预期响应: 包含 websocket.url, websocket.token, serverTime
+# 注意: 需要先执行激活操作，否则仍返回激活信息
+POST {{baseUrl}}/
+Device-Id: {{deviceId}}
+Client-Id: {{clientId}}
+Content-Type: application/json
+
+{
+  "application": {
+    "version": "1.0.0",
+    "board": {
+      "type": "ESP32-S3-BOX"
+    }
+  },
+  "chipModelName": "ESP32-S3"
+}
+
+### 场景5: WebSocket 端点测试
+# 说明: WebSocket 连接端点
+# 注意: 实际 WebSocket 连接需要使用专门的客户端工具
+# HTTP GET 请求仅用于验证端点可访问性
+GET {{baseUrl}}/ws
+
+##############################################
+# 管理 API 测试（保留 /api/esp32 前缀）
+##############################################
+
+### 获取设备列表
+# 说明: 获取所有已注册的 ESP32 设备
+# 预期响应: { devices: ESP32Device[], total: number }
+GET {{baseUrl}}/api/esp32/devices
+
+### 获取单个设备信息
+# 说明: 根据 deviceId 获取设备详细信息
+# 预期响应: ESP32Device 对象
+GET {{baseUrl}}/api/esp32/devices/{{deviceId}}
+
+### 获取设备状态
+# 说明: 获取设备的连接状态和最后活跃时间
+# 预期响应: { deviceId, status, lastSeenAt, connected }
+GET {{baseUrl}}/api/esp32/devices/{{deviceId}}/status
+
+### 断开设备连接
+# 说明: 强制断开设备的 WebSocket 连接
+# 预期响应: 成功消息
+POST {{baseUrl}}/api/esp32/devices/{{deviceId}}/disconnect
+
+### 删除设备
+# 说明: 从设备注册表中删除设备
+# 预期响应: 成功消息
+# 注意: 删除操作会先断开连接，然后删除设备记录
+DELETE {{baseUrl}}/api/esp32/devices/{{deviceId}}
+
+##############################################
+# 错误场景测试
+##############################################
+
+### 错误场景1: 缺少 Device-Id 请求头
+# 预期响应: 400 错误，错误代码 MISSING_DEVICE_ID
+POST {{baseUrl}}/
+Client-Id: {{clientId}}
+Content-Type: application/json
+
+{
+  "application": {
+    "version": "1.0.0",
+    "board": {
+      "type": "ESP32-S3-BOX"
+    }
+  }
+}
+
+### 错误场景2: 缺少 Client-Id 请求头
+# 预期响应: 400 错误，错误代码 MISSING_DEVICE_ID
+POST {{baseUrl}}/
+Device-Id: {{deviceId}}
+Content-Type: application/json
+
+{
+  "application": {
+    "version": "1.0.0",
+    "board": {
+      "type": "ESP32-S3-BOX"
+    }
+  }
+}
+
+### 错误场景3: 无效的激活码
+# 预期响应: 400 错误，错误代码 INVALID_ACTIVATION_CODE
+POST {{baseUrl}}/activate
+Device-Id: {{deviceId}}
+Client-Id: {{clientId}}
+Content-Type: application/json
+
+{
+  "code": "000000"
+}
+
+### 错误场景4: 设备不存在
+# 预期响应: 404 错误，错误代码 DEVICE_NOT_FOUND
+GET {{baseUrl}}/api/esp32/devices/00:00:00:00:00:00
+
+### 错误场景5: 删除不存在的设备
+# 预期响应: 404 错误，错误代码 DEVICE_NOT_FOUND
+DELETE {{baseUrl}}/api/esp32/devices/00:00:00:00:00:00
+
+##############################################
+# 完整激活流程演示
+##############################################
+
+### 步骤1: 设备首次连接，获取激活码
+# 记录返回的 activation.code 和 activation.challenge
+POST {{baseUrl}}/
+Device-Id: {{deviceId}}
+Client-Id: {{clientId}}
+Content-Type: application/json
+
+{
+  "application": {
+    "version": "1.0.0",
+    "board": {
+      "type": "ESP32-S3-BOX"
+    }
+  }
+}
+
+### 步骤2: 使用激活码激活设备（替换为实际激活码）
+# 将步骤1返回的 code 填入此处
+POST {{baseUrl}}/activate
+Device-Id: {{deviceId}}
+Client-Id: {{clientId}}
+Content-Type: application/json
+
+{
+  "code": "{{activationCode}}"
+}
+
+### 步骤3: 验证设备已激活
+# 预期: 可以看到设备状态为 "active"
+GET {{baseUrl}}/api/esp32/devices/{{deviceId}}
+
+### 步骤4: 设备再次连接，获取 WebSocket 配置
+# 预期: 返回 websocket.url 和 websocket.token
+POST {{baseUrl}}/
+Device-Id: {{deviceId}}
+Client-Id: {{clientId}}
+Content-Type: application/json
+
+{
+  "application": {
+    "version": "1.0.0",
+    "board": {
+      "type": "ESP32-S3-BOX"
+    }
+  }
+}
+
+### 步骤4: 设备再次连接，获取 WebSocket 配置
+# 预期: 返回 websocket.url 和 websocket.token
+POST {{baseUrl}}/api/esp32/bind
+Content-Type: application/json
+
+{
+  "code": "075622"
+}
+
+### 步骤5: 使用返回的 Token 建立 WebSocket 连接
+# 注意: 需要使用 WebSocket 客户端工具
+# 连接 URL: ws://localhost:9999/ws
+# 请求头: Device-Id, Client-Id, Token（从步骤4获取）
+
+##############################################
+# WebSocket 消息格式示例（供参考）
+##############################################
+
+# 设备 Hello 消息（设备连接后首先发送）
+# {
+#   "type": "hello",
+#   "version": 1,
+#   "features": {
+#     "aec": true,
+#     "mcp": true
+#   },
+#   "transport": "websocket",
+#   "audioParams": {
+#     "format": "opus",
+#     "sampleRate": 24000,
+#     "channels": 1,
+#     "frameDuration": 60
+#   }
+# }
+
+# 服务器 Hello 响应
+# {
+#   "type": "hello",
+#   "version": 1,
+#   "sessionId": "AA:BB:CC:DD:EE:FF-1234567890-abc123",
+#   "audioParams": {
+#     "format": "opus",
+#     "sampleRate": 24000,
+#     "channels": 1,
+#     "frameDuration": 60
+#   }
+# }

@@ -86,3 +86,4 @@ export {
 export * from "./coze.js";
 export * from "./timeout.js";
 export * from "./hono.context.js";
+export * from "./esp32.js";
