@@ -5,5 +5,5 @@ POST {{baseUrl}}/api/tts
 Content-Type: application/json
 
 {
-  "text": "你好，这是语音合成测试1234"
+  "text": "你好世界"
 }
