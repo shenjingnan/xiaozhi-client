@@ -22,11 +22,11 @@
  */
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
-import { CozeApiService } from "@/lib/coze";
 import type { RunWorkflowData } from "@/lib/coze";
 import type { MCPServiceManager } from "@/lib/mcp";
 import { MCPCacheManager } from "@/lib/mcp";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
+import { CozeApiService } from "@/services/coze-api.service.js";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type {
   EnhancedToolResultCache,

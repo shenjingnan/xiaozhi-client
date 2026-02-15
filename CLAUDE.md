@@ -145,30 +145,34 @@ xiaozhi-client 是一个务实的开源 MCP 客户端：
 
 3. **服务层** (`apps/backend/services/`) - 业务服务和工具
 
-   - `MCPServiceManager.ts` - **重新导出**，指向 `@/lib/mcp/manager.js`（向后兼容）
-   - `MCPService.ts` - **重新导出**，指向 `@/lib/mcp/connection.js`（向后兼容）
-   - `MCPServer.ts` - 兼容性包装器，提供向后兼容的 API
-   - 其他业务服务和工具类
+   - `event-bus.service.ts` - 事件总线服务，提供发布-订阅模式的事件处理机制
+   - `notification.service.ts` - 通知服务，处理系统通知和消息推送
+   - `status.service.ts` - 统一的状态管理服务，管理客户端连接状态、MCP 服务状态等
+   - `coze-api.service.ts` - 扣子 API 服务，负责与扣子 API 的交互
+   - `tool-call-log.service.ts` - 工具调用日志服务，负责读取和查询工具调用日志
+   - `index.ts` - 统一导出接口
 
-3. **处理器层** (`apps/backend/handlers/`) - 请求处理器
+   注：MCPServiceManager 和 MCPService 保留在 `lib/mcp/` 作为核心 MCP 协议实现，通过 `lib/mcp/index.ts` 统一导出
+
+4. **处理器层** (`apps/backend/handlers/`) - 请求处理器
 
    - 处理各种 API 请求和业务逻辑
 
-4. **路由层** (`apps/backend/routes/`) - 路由定义
+5. **路由层** (`apps/backend/routes/`) - 路由定义
 
    - API 路由配置和映射
 
-5. **中间件层** (`apps/backend/middlewares/`) - 中间件
+6. **中间件层** (`apps/backend/middlewares/`) - 中间件
 
    - 请求/响应处理中间件
 
-6. **工具层** (`apps/backend/utils/`) - 共享工具和辅助函数
+7. **工具层** (`apps/backend/utils/`) - 共享工具和辅助函数
 
-7. **类型定义** (`apps/backend/types/`) - TypeScript 类型定义
+8. **类型定义** (`apps/backend/types/`) - TypeScript 类型定义
 
-8. **错误处理** (`apps/backend/errors/`) - 统一错误定义和处理
+9. **错误处理** (`apps/backend/errors/`) - 统一错误定义和处理
 
-9. **常量定义** (`apps/backend/constants/`) - 常量定义
+10. **常量定义** (`apps/backend/constants/`) - 常量定义
 
 ### 主要功能
 
