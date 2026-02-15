@@ -15,6 +15,7 @@ import type {
   ServiceApiHandler,
   StaticFileHandler,
   StatusApiHandler,
+  TTSApiHandler,
   UpdateApiHandler,
   VersionApiHandler,
 } from "@/handlers/index.js";
@@ -47,6 +48,8 @@ export interface HandlerDependencies {
   updateApiHandler: UpdateApiHandler;
   /** 扣子 API 处理器 */
   cozeHandler: CozeHandler;
+  /** TTS API 处理器 */
+  ttsApiHandler: TTSApiHandler;
   /** 小智接入点处理器（通过中间件动态注入） */
   endpointHandler?: EndpointHandler;
   /** ESP32 设备处理器 */

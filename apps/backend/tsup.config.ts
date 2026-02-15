@@ -111,7 +111,6 @@ export default defineConfig({
     "@hono/*",
     "node-cache",
     "jsonc-parser",
-    "ws",
     "@coze/api",
     "@modelcontextprotocol/*",
     "@discordjs/opus",

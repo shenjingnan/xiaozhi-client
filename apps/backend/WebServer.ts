@@ -35,6 +35,7 @@ import {
   ServiceApiHandler,
   StaticFileHandler,
   StatusApiHandler,
+  TTSApiHandler,
   UpdateApiHandler,
   VersionApiHandler,
 } from "@/handlers/index.js";
@@ -93,6 +94,7 @@ import {
   statusRoutes,
   toolLogsRoutes,
   toolsRoutes,
+  ttsRoutes,
   updateRoutes,
   versionRoutes,
 } from "./routes/index.js";
@@ -148,6 +150,7 @@ export class WebServer {
   private mcpHandler?: MCPHandler;
   private updateApiHandler: UpdateApiHandler;
   private cozeHandler: CozeHandler;
+  private ttsApiHandler: TTSApiHandler;
   private esp32Handler: ESP32Handler;
 
   // WebSocket 处理器
@@ -195,6 +198,7 @@ export class WebServer {
     this.mcpRouteHandler = new MCPRouteHandler();
     this.updateApiHandler = new UpdateApiHandler();
     this.cozeHandler = new CozeHandler();
+    this.ttsApiHandler = new TTSApiHandler();
     this.esp32Handler = new ESP32Handler(this.esp32Service);
 
     // MCPServerApiHandler 将在 start() 方法中初始化，因为它需要 mcpServiceManager
@@ -582,6 +586,7 @@ export class WebServer {
       mcpHandler: this.mcpHandler,
       updateApiHandler: this.updateApiHandler,
       cozeHandler: this.cozeHandler,
+      ttsApiHandler: this.ttsApiHandler,
       esp32Handler: this.esp32Handler,
       // endpointHandler 通过中间件动态注入，不在此初始化
     };
@@ -618,6 +623,7 @@ export class WebServer {
         mcpserver: mcpserverRoutes,
         endpoint: endpointRoutes,
         misc: miscRoutes,
+        tts: ttsRoutes,
         esp32: esp32Routes,
         static: staticRoutes, // 放在最后作为回退
       });

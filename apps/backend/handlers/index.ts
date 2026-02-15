@@ -14,6 +14,7 @@
  * - StatusApiHandler: 状态查询处理器
  * - MCPToolHandler: MCP 工具调用处理器
  * - MCPToolLogHandler: MCP 工具调用日志处理器
+ * - TTSApiHandler: TTS 语音合成处理器
  * - UpdateApiHandler: 更新管理处理器
  * - VersionApiHandler: 版本信息处理器
  *
@@ -44,4 +45,5 @@ export * from "./mcp-tool.handler.js";
 export * from "./mcp-tool-log.handler.js";
 export * from "./update.handler.js";
 export * from "./version.handler.js";
+export { TTSApiHandler } from "./tts.handler.js";
 export { ESP32Handler } from "./esp32.handler.js";

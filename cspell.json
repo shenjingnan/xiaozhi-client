@@ -26,7 +26,8 @@
     "**/*.tsbuildinfo",
     ".cspell/**",
     "xiaozhi.cache.json",
-    "tool-calls.jsonl"
+    "tool-calls.jsonl",
+    "worktrees/**"
   ],
   "ignoreWords": [],
   "flagWords": []

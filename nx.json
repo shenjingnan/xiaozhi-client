@@ -34,7 +34,8 @@
     },
     "nx-release-publish": {
       "dependsOn": ["^nx-release-publish", "build"],
-      "inputs": ["default", "^production"]
+      "inputs": ["default", "^production"],
+      "cache": false
     }
   },
   "release": {
