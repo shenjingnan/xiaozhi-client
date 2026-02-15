@@ -112,6 +112,16 @@ export interface WebUIConfig {
 }
 
 // 工具调用日志配置接口
+// TTS 配置接口
+export interface TTSConfig {
+  appid?: string; // 应用 ID
+  accessToken?: string; // 访问令牌
+  voice_type?: string; // 声音类型
+  encoding?: string; // 编码格式（默认 wav）
+  cluster?: string; // 集群类型
+  endpoint?: string; // WebSocket 端点
+}
+
 export interface ToolCallLogConfig {
   maxRecords?: number; // 最大记录条数，默认 100
   logFilePath?: string; // 自定义日志文件路径（可选）
@@ -259,6 +269,7 @@ export interface AppConfig {
   webUI?: WebUIConfig; // Web UI 配置（可选）
   platforms?: PlatformsConfig; // 平台配置（可选）
   toolCallLog?: ToolCallLogConfig; // 工具调用日志配置（可选）
+  tts?: TTSConfig; // TTS 配置（可选）
 }
 
 /**
@@ -2287,6 +2298,36 @@ export class ConfigManager {
   public getConfigDir(): string {
     // 配置文件路径 - 优先使用环境变量指定的目录，否则使用当前工作目录
     return process.env.XIAOZHI_CONFIG_DIR || process.cwd();
+  }
+
+  /**
+   * 获取 TTS 配置
+   */
+  public getTTSConfig(): Readonly<TTSConfig> {
+    const config = this.getConfig();
+    return config.tts || {};
+  }
+
+  /**
+   * 更新 TTS 配置
+   */
+  public updateTTSConfig(ttsConfig: Partial<TTSConfig>): void {
+    const config = this.getMutableConfig();
+
+    // 确保 tts 对象存在
+    if (!config.tts) {
+      config.tts = {};
+    }
+
+    // 直接修改现有的 tts 对象以保留注释
+    Object.assign(config.tts, ttsConfig);
+    this.saveConfig(config);
+
+    // 发射配置更新事件
+    this.emitEvent("config:updated", {
+      type: "tts",
+      timestamp: new Date(),
+    });
   }
 }
 

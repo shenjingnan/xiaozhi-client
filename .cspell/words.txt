@@ -10,6 +10,7 @@ appender
 Appender
 appenders
 buildx
+bytedance
 cdnurl
 chdir
 choco
@@ -66,6 +67,7 @@ npmjs
 numpy
 nums
 oneline
+openspeech
 phantomjs
 postbuild
 pydantic
@@ -74,6 +76,7 @@ pypi
 rcompare
 reinit
 releaserc
+reqid
 retryable
 REUSEPORT
 rollbacked
@@ -90,6 +93,7 @@ testpass
 testuser
 Turborepo
 uids
+unmarshal
 unref
 unstub
 unsubscribers
@@ -100,6 +104,7 @@ verylongstring
 vsize
 webui
 worktrees
+Xiaoxuan
 xiaozhi
 Xiaozhi
 XIAOZHI

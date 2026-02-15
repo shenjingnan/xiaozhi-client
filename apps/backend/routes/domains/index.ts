@@ -18,6 +18,7 @@ export { toolLogsRoutes } from "./tool-logs.route.js";
 export { mcpserverRoutes } from "./mcpserver.route.js";
 export { endpointRoutes } from "./endpoint.route.js";
 export { miscRoutes } from "./misc.route.js";
+export { ttsRoutes } from "./tts.route.js";
 
 /**
  * 路由域名列表
@@ -36,6 +37,7 @@ export const routeNames = [
   "mcpserver",
   "endpoint",
   "misc",
+  "tts",
 ] as const;
 
 /**
