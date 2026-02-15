@@ -589,7 +589,8 @@ function setupMessageHandler(ws: WebSocket) {
           queue.push(msg);
         }
       } catch (error) {
-        throw new Error(`Error processing message: ${error}`);
+        // 通过 WebSocket error 事件发射错误，以便 ReceiveMessage 中的 errorHandler 能被触发
+        ws.emit("error", error);
       }
     });
 
