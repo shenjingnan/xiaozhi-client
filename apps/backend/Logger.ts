@@ -252,7 +252,15 @@ export class Logger {
         base: null, // 不包含 pid 和 hostname
         serializers: {
           // 优化错误序列化，在测试环境中安全处理
-          err: pino.stdSerializers?.err || ((err: any) => err),
+          err:
+            pino.stdSerializers?.err ||
+            ((err: Error) => {
+              return {
+                message: err.message,
+                stack: err.stack,
+                name: err.name,
+              };
+            }),
         },
       },
       pino.multistream(streams, { dedupe: true })
@@ -301,7 +309,13 @@ export class Logger {
   }
 
   private formatConsoleMessageOptimized(
-    logObj: any,
+    logObj: {
+      level: number;
+      msg: string;
+      args?: unknown[];
+      time?: number;
+      [key: string]: unknown;
+    },
     levelMap: Map<number, { name: string; color: (text: string) => string }>
   ): string {
     const timestamp = formatDateTime(new Date());
@@ -316,7 +330,7 @@ export class Logger {
     let message = logObj.msg;
     if (logObj.args && Array.isArray(logObj.args)) {
       const argsStr = logObj.args
-        .map((arg: any) =>
+        .map((arg: unknown) =>
           typeof arg === "object" ? JSON.stringify(arg) : String(arg)
         )
         .join(" ");
@@ -439,7 +453,9 @@ export class Logger {
       }
     } else {
       // 结构化错误日志，自动提取错误信息
-      const enhancedObj = this.enhanceErrorObject(messageOrObj);
+      const enhancedObj = this.enhanceErrorObject(
+        messageOrObj as Record<string, unknown>
+      );
       this.pinoInstance.error(enhancedObj, args[0] || "");
     }
   }
@@ -476,8 +492,10 @@ export class Logger {
   /**
    * 增强错误对象，提取更多错误信息
    */
-  private enhanceErrorObject(obj: any): any {
-    const enhanced = { ...obj };
+  private enhanceErrorObject(
+    obj: Record<string, unknown>
+  ): Record<string, unknown> {
+    const enhanced: Record<string, unknown> = { ...obj };
 
     // 遍历对象属性，查找 Error 实例
     for (const [key, value] of Object.entries(enhanced)) {
