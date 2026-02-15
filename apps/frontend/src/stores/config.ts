@@ -51,6 +51,9 @@ interface ConfigState {
   mcpServerStatuses: MCPServerStatus[];
   mcpServerStatusLoading: boolean;
   mcpServerStatusLastUpdate: number | null;
+
+  // 事件监听器清理函数数组（内部使用）
+  _cleanupFns: Array<() => void>;
 }
 
 /**
@@ -81,6 +84,7 @@ interface ConfigActions {
   // 工具方法
   reset: () => void;
   initialize: () => Promise<void>;
+  cleanup: () => void;
 
   // MCP 服务器状态管理
   setMcpServerStatuses: (statuses: MCPServerStatus[]) => void;
@@ -110,6 +114,7 @@ const initialState: ConfigState = {
   mcpServerStatuses: [],
   mcpServerStatusLoading: false,
   mcpServerStatusLastUpdate: null,
+  _cleanupFns: [],
 };
 
 /**
@@ -320,17 +325,29 @@ export const useConfigStore = create<ConfigStore>()(
       },
 
       initialize: async (): Promise<void> => {
-        const { setLoading, refreshConfig } = get();
+        const { setLoading, refreshConfig, _cleanupFns } = get();
 
         try {
           setLoading({ isLoading: true });
           console.log("[ConfigStore] 初始化配置 Store");
 
+          // 清理旧的监听器（防止重复初始化）
+          for (const fn of _cleanupFns) {
+            fn();
+          }
+
+          const cleanupFns: Array<() => void> = [];
+
           // 设置 WebSocket 事件监听
-          webSocketManager.subscribe("data:configUpdate", (config) => {
-            console.log("[ConfigStore] 收到 WebSocket 配置更新");
-            get().setConfig(config, "websocket");
-          });
+          cleanupFns.push(
+            webSocketManager.subscribe("data:configUpdate", (config) => {
+              console.log("[ConfigStore] 收到 WebSocket 配置更新");
+              get().setConfig(config, "websocket");
+            })
+          );
+
+          // 保存清理函数
+          set({ _cleanupFns: cleanupFns }, false, "initialize");
 
           // 获取初始配置
           await refreshConfig();
@@ -342,6 +359,18 @@ export const useConfigStore = create<ConfigStore>()(
         } finally {
           setLoading({ isLoading: false });
         }
+      },
+
+      cleanup: () => {
+        console.log("[ConfigStore] 清理配置 Store");
+
+        const { _cleanupFns } = get();
+        for (const fn of _cleanupFns) {
+          fn();
+        }
+        set({ _cleanupFns: [] }, false, "cleanup");
+
+        console.log("[ConfigStore] 配置 Store 清理完成");
       },
 
       // ==================== MCP 服务器状态管理 ====================
