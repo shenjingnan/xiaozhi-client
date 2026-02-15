@@ -212,7 +212,30 @@ describe("PlatformUtils", () => {
       expect(result).toBe(false);
     });
 
-    it("应在Windows上检查进程命令行", () => {
+    it("非严格模式下应使用简单的 PID 检查而不调用 execSync", () => {
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, "platform", {
+        value: "linux",
+        writable: true,
+      });
+
+      vi.stubEnv("XIAOZHI_CONTAINER", "false");
+      vi.stubEnv("NODE_ENV", "production");
+
+      // 默认非严格模式
+      const result = PlatformUtils.isXiaozhiProcess(testPid);
+
+      expect(result).toBe(true);
+      expect(process.kill).toHaveBeenCalledWith(testPid, 0);
+      expect(mockedExecSync).not.toHaveBeenCalled();
+
+      Object.defineProperty(process, "platform", {
+        value: originalPlatform,
+        writable: true,
+      });
+    });
+
+    it("严格模式下应在Windows上检查进程命令行", () => {
       const originalPlatform = process.platform;
       Object.defineProperty(process, "platform", {
         value: "win32",
@@ -223,7 +246,7 @@ describe("PlatformUtils", () => {
       vi.stubEnv("NODE_ENV", "production");
       mockedExecSync.mockReturnValue('"node.exe","xiaozhi-client.js"\r\n');
 
-      const result = PlatformUtils.isXiaozhiProcess(testPid);
+      const result = PlatformUtils.isXiaozhiProcess(testPid, true);
 
       expect(result).toBe(true);
       expect(mockedExecSync).toHaveBeenCalledWith(
@@ -240,7 +263,7 @@ describe("PlatformUtils", () => {
       });
     });
 
-    it("应在类Unix系统上检查进程命令行", () => {
+    it("严格模式下应在类Unix系统上检查进程命令行", () => {
       const originalPlatform = process.platform;
       Object.defineProperty(process, "platform", {
         value: "linux",
@@ -251,7 +274,7 @@ describe("PlatformUtils", () => {
       vi.stubEnv("NODE_ENV", "production");
       mockedExecSync.mockReturnValue("node\n");
 
-      const result = PlatformUtils.isXiaozhiProcess(testPid);
+      const result = PlatformUtils.isXiaozhiProcess(testPid, true);
 
       expect(result).toBe(true);
       expect(mockedExecSync).toHaveBeenCalledWith(`ps -p ${testPid} -o comm=`, {
@@ -265,7 +288,7 @@ describe("PlatformUtils", () => {
       });
     });
 
-    it("命令行检查失败时应回退到简单PID检查", () => {
+    it("严格模式下命令行检查失败时应回退到简单PID检查", () => {
       const originalPlatform = process.platform;
       Object.defineProperty(process, "platform", {
         value: "linux",
@@ -278,7 +301,7 @@ describe("PlatformUtils", () => {
         throw new Error("Command failed");
       });
 
-      const result = PlatformUtils.isXiaozhiProcess(testPid);
+      const result = PlatformUtils.isXiaozhiProcess(testPid, true);
 
       expect(result).toBe(true);
       expect(process.kill).toHaveBeenCalledWith(testPid, 0);
@@ -304,7 +327,7 @@ describe("PlatformUtils", () => {
       expect(result).toBe(false);
     });
 
-    it("应在进程名中检测到小智", () => {
+    it("严格模式下应在进程名中检测到小智", () => {
       const originalPlatform = process.platform;
       Object.defineProperty(process, "platform", {
         value: "linux",
@@ -315,7 +338,7 @@ describe("PlatformUtils", () => {
       vi.stubEnv("NODE_ENV", "production");
       mockedExecSync.mockReturnValue("xiaozhi\n");
 
-      const result = PlatformUtils.isXiaozhiProcess(testPid);
+      const result = PlatformUtils.isXiaozhiProcess(testPid, true);
 
       expect(result).toBe(true);
 
@@ -325,7 +348,7 @@ describe("PlatformUtils", () => {
       });
     });
 
-    it("对于非小智进程应返回 false", () => {
+    it("严格模式下对于非小智进程应返回 false", () => {
       const originalPlatform = process.platform;
       Object.defineProperty(process, "platform", {
         value: "linux",
@@ -336,7 +359,7 @@ describe("PlatformUtils", () => {
       vi.stubEnv("NODE_ENV", "production");
       mockedExecSync.mockReturnValue("other-process\n");
 
-      const result = PlatformUtils.isXiaozhiProcess(testPid);
+      const result = PlatformUtils.isXiaozhiProcess(testPid, true);
 
       expect(result).toBe(false);
 

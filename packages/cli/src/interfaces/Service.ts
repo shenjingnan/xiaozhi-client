@@ -55,7 +55,7 @@ export interface ProcessManager {
   /** 清理 PID 文件 */
   cleanupPidFile(): void;
   /** 检查是否为 xiaozhi 进程 */
-  isXiaozhiProcess(pid: number): boolean;
+  isXiaozhiProcess(pid: number, strict?: boolean): boolean;
   /** 保存进程信息 */
   savePidInfo(pid: number, mode: "foreground" | "daemon"): void;
   /** 优雅停止进程 */

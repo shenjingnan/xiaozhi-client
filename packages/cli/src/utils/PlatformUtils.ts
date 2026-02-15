@@ -48,8 +48,11 @@ export class PlatformUtils {
 
   /**
    * 检查进程是否为 xiaozhi-client 进程
+   * @param pid 进程 ID
+   * @param strict 是否进行严格的进程名称检查（默认 false，使用简单的 PID 存在性检查）
+   * @returns 进程是否为 xiaozhi-client 进程
    */
-  static isXiaozhiProcess(pid: number): boolean {
+  static isXiaozhiProcess(pid: number, strict = false): boolean {
     try {
       // 在容器环境或测试环境中，使用更宽松的检查策略
       if (
@@ -62,7 +65,14 @@ export class PlatformUtils {
         return true;
       }
 
-      // 非容器环境中，尝试更严格的进程检查
+      // 非严格模式下，使用简单的 PID 存在性检查
+      // 这避免了 execSync 阻塞事件循环，提升性能
+      if (!strict) {
+        process.kill(pid, 0);
+        return true;
+      }
+
+      // 严格模式下，尝试更严格的进程名称检查
       try {
         let cmdline = "";
         if (PlatformUtils.isWindows()) {

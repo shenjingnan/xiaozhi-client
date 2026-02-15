@@ -90,9 +90,12 @@ export class ProcessManagerImpl implements IProcessManager {
 
   /**
    * 检查是否为 xiaozhi 进程
+   * @param pid 进程 ID
+   * @param strict 是否进行严格的进程名称检查（默认 false）
+   * @returns 进程是否为 xiaozhi 进程
    */
-  isXiaozhiProcess(pid: number): boolean {
-    return PlatformUtils.isXiaozhiProcess(pid);
+  isXiaozhiProcess(pid: number, strict = false): boolean {
+    return PlatformUtils.isXiaozhiProcess(pid, strict);
   }
 
   /**

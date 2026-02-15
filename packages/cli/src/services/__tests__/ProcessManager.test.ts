@@ -39,7 +39,7 @@ describe("ProcessManagerImpl", () => {
   });
 
   describe("getServiceStatus", () => {
-    it("should return not running when PID file does not exist", () => {
+    it("PID 文件不存在时应返回未运行状态", () => {
       mockFileUtils.exists.mockReturnValue(false);
 
       const status = processManager.getServiceStatus();
@@ -49,7 +49,7 @@ describe("ProcessManagerImpl", () => {
       expect(status.uptime).toBeUndefined();
     });
 
-    it("should return not running when PID file is corrupted", () => {
+    it("PID 文件损坏时应返回未运行状态", () => {
       mockFileUtils.exists.mockReturnValue(true);
       mockFileUtils.readFile.mockReturnValue("invalid-content");
 
@@ -59,7 +59,7 @@ describe("ProcessManagerImpl", () => {
       expect(mockFileUtils.deleteFile).toHaveBeenCalledWith(mockPidFilePath);
     });
 
-    it("should return not running when process is not xiaozhi process", () => {
+    it("进程不是小智进程时应返回未运行状态", () => {
       mockFileUtils.exists.mockReturnValue(true);
       mockFileUtils.readFile.mockReturnValue("1234|1640000000000|daemon");
       mockPlatformUtils.isXiaozhiProcess.mockReturnValue(false);
@@ -70,7 +70,7 @@ describe("ProcessManagerImpl", () => {
       expect(mockFileUtils.deleteFile).toHaveBeenCalledWith(mockPidFilePath);
     });
 
-    it("should return running status when process is valid", () => {
+    it("进程有效时应返回运行状态", () => {
       const startTime = Date.now() - 60000; // 1 minute ago
       mockFileUtils.exists.mockReturnValue(true);
       mockFileUtils.readFile.mockReturnValue(`1234|${startTime}|daemon`);
@@ -84,7 +84,7 @@ describe("ProcessManagerImpl", () => {
       expect(status.uptime).toBeDefined();
     });
 
-    it("should handle missing mode in PID file", () => {
+    it("应处理 PID 文件中缺失的模式", () => {
       const startTime = Date.now() - 60000;
       mockFileUtils.exists.mockReturnValue(true);
       mockFileUtils.readFile.mockReturnValue(`1234|${startTime}`);
@@ -98,7 +98,7 @@ describe("ProcessManagerImpl", () => {
   });
 
   describe("savePidInfo", () => {
-    it("should save PID info to file", () => {
+    it("应将 PID 信息保存到文件", () => {
       const pid = 1234;
       const mode = "daemon";
 
@@ -111,7 +111,7 @@ describe("ProcessManagerImpl", () => {
       );
     });
 
-    it("should throw error when file write fails", () => {
+    it("文件写入失败时应抛出错误", () => {
       mockFileUtils.writeFile.mockImplementation(() => {
         throw new Error("Write failed");
       });
@@ -121,7 +121,7 @@ describe("ProcessManagerImpl", () => {
   });
 
   describe("killProcess", () => {
-    it("should kill process successfully", async () => {
+    it("应成功杀死进程", async () => {
       mockPlatformUtils.killProcess.mockResolvedValue();
 
       await processManager.killProcess(1234);
@@ -129,7 +129,7 @@ describe("ProcessManagerImpl", () => {
       expect(mockPlatformUtils.killProcess).toHaveBeenCalledWith(1234);
     });
 
-    it("should throw ProcessError when kill fails", async () => {
+    it("杀死失败时应抛出 ProcessError", async () => {
       mockPlatformUtils.killProcess.mockRejectedValue(new Error("Kill failed"));
 
       await expect(processManager.killProcess(1234)).rejects.toThrow(
@@ -150,7 +150,7 @@ describe("ProcessManagerImpl", () => {
       process.kill = originalKill;
     });
 
-    it("should gracefully kill process", async () => {
+    it("应优雅地杀死进程", async () => {
       let killCallCount = 0;
       (process.kill as any).mockImplementation((pid: number, signal: any) => {
         killCallCount++;
@@ -164,7 +164,7 @@ describe("ProcessManagerImpl", () => {
       expect(process.kill).toHaveBeenCalledWith(1234, "SIGTERM");
     });
 
-    it("should force kill if graceful kill fails", async () => {
+    it("优雅杀死失败时应强制杀死", async () => {
       (process.kill as any).mockImplementation((pid: number, signal: any) => {
         if (signal === "SIGKILL") {
           throw new Error("ESRCH"); // Process stopped
@@ -180,7 +180,7 @@ describe("ProcessManagerImpl", () => {
   });
 
   describe("cleanupPidFile", () => {
-    it("should delete PID file if it exists", () => {
+    it("应删除存在的 PID 文件", () => {
       mockFileUtils.exists.mockReturnValue(true);
 
       processManager.cleanupPidFile();
@@ -188,13 +188,13 @@ describe("ProcessManagerImpl", () => {
       expect(mockFileUtils.deleteFile).toHaveBeenCalledWith(mockPidFilePath);
     });
 
-    it("should not throw error if file does not exist", () => {
+    it("文件不存在时不应抛出错误", () => {
       mockFileUtils.exists.mockReturnValue(false);
 
       expect(() => processManager.cleanupPidFile()).not.toThrow();
     });
 
-    it("should not throw error if delete fails", () => {
+    it("删除失败时不应抛出错误", () => {
       mockFileUtils.exists.mockReturnValue(true);
       mockFileUtils.deleteFile.mockImplementation(() => {
         throw new Error("Delete failed");
@@ -205,18 +205,36 @@ describe("ProcessManagerImpl", () => {
   });
 
   describe("isXiaozhiProcess", () => {
-    it("should delegate to PlatformUtils", () => {
+    it("应使用默认非严格模式委托给 PlatformUtils", () => {
       mockPlatformUtils.isXiaozhiProcess.mockReturnValue(true);
 
       const result = processManager.isXiaozhiProcess(1234);
 
       expect(result).toBe(true);
-      expect(mockPlatformUtils.isXiaozhiProcess).toHaveBeenCalledWith(1234);
+      expect(mockPlatformUtils.isXiaozhiProcess).toHaveBeenCalledWith(1234, false);
+    });
+
+    it("应支持 strict 参数", () => {
+      mockPlatformUtils.isXiaozhiProcess.mockReturnValue(true);
+
+      const result = processManager.isXiaozhiProcess(1234, true);
+
+      expect(result).toBe(true);
+      expect(mockPlatformUtils.isXiaozhiProcess).toHaveBeenCalledWith(1234, true);
+    });
+
+    it("非严格模式下应避免调用 execSync", () => {
+      mockPlatformUtils.isXiaozhiProcess.mockReturnValue(true);
+
+      const result = processManager.isXiaozhiProcess(1234);
+
+      expect(result).toBe(true);
+      expect(mockPlatformUtils.isXiaozhiProcess).toHaveBeenCalledWith(1234, false);
     });
   });
 
   describe("processExists", () => {
-    it("should delegate to PlatformUtils", () => {
+    it("应委托给 PlatformUtils", () => {
       mockPlatformUtils.processExists.mockReturnValue(true);
 
       const result = processManager.processExists(1234);
@@ -227,7 +245,7 @@ describe("ProcessManagerImpl", () => {
   });
 
   describe("cleanupContainerState", () => {
-    it("should cleanup PID file in container environment", () => {
+    it("应在容器环境中清理 PID 文件", () => {
       mockPlatformUtils.isContainerEnvironment.mockReturnValue(true);
       mockFileUtils.exists.mockReturnValue(true);
 
@@ -236,7 +254,7 @@ describe("ProcessManagerImpl", () => {
       expect(mockFileUtils.deleteFile).toHaveBeenCalledWith(mockPidFilePath);
     });
 
-    it("should not cleanup in non-container environment", () => {
+    it("在非容器环境中不应清理", () => {
       mockPlatformUtils.isContainerEnvironment.mockReturnValue(false);
 
       processManager.cleanupContainerState();
@@ -246,7 +264,7 @@ describe("ProcessManagerImpl", () => {
   });
 
   describe("getProcessInfo", () => {
-    it("should return process information", () => {
+    it("应返回进程信息", () => {
       mockPlatformUtils.processExists.mockReturnValue(true);
       mockPlatformUtils.isXiaozhiProcess.mockReturnValue(true);
 
@@ -256,7 +274,7 @@ describe("ProcessManagerImpl", () => {
       expect(info.isXiaozhi).toBe(true);
     });
 
-    it("should return false for non-existent process", () => {
+    it("对于不存在的进程应返回 false", () => {
       mockPlatformUtils.processExists.mockReturnValue(false);
 
       const info = processManager.getProcessInfo(1234);
@@ -267,7 +285,7 @@ describe("ProcessManagerImpl", () => {
   });
 
   describe("validatePidFile", () => {
-    it("should return true for valid PID file", () => {
+    it("有效的 PID 文件应返回 true", () => {
       mockFileUtils.exists.mockReturnValue(true);
       mockFileUtils.readFile.mockReturnValue("1234|1640000000000|daemon");
 
@@ -276,7 +294,7 @@ describe("ProcessManagerImpl", () => {
       expect(isValid).toBe(true);
     });
 
-    it("should return false for invalid PID file", () => {
+    it("无效的 PID 文件应返回 false", () => {
       mockFileUtils.exists.mockReturnValue(true);
       mockFileUtils.readFile.mockReturnValue("invalid");
 
@@ -285,7 +303,7 @@ describe("ProcessManagerImpl", () => {
       expect(isValid).toBe(false);
     });
 
-    it("should return false when PID file does not exist", () => {
+    it("PID 文件不存在应返回 false", () => {
       mockFileUtils.exists.mockReturnValue(false);
 
       const isValid = processManager.validatePidFile();
