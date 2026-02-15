@@ -9,7 +9,8 @@
     "**/*.test.ts",
     "**/*.test.js",
     "**/*.spec.ts",
-    "**/*.spec.js"
+    "**/*.spec.js",
+    "worktrees/**"
   ],
   "format": ["typescript", "javascript"],
   "absolute": false
