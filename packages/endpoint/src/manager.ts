@@ -177,7 +177,7 @@ export class EndpointManager extends EventEmitter {
    *
    * @param endpoint - Endpoint 实例
    */
-  removeEndpoint(endpoint: Endpoint): void {
+  async removeEndpoint(endpoint: Endpoint): Promise<void> {
     const url = endpoint.getUrl();
 
     if (!this.endpoints.has(url)) {
@@ -190,7 +190,7 @@ export class EndpointManager extends EventEmitter {
     console.debug(`[EndpointManager] 移除接入点: ${sliceEndpoint(url)}`);
 
     // 断开连接
-    endpoint.disconnect();
+    await endpoint.disconnect();
 
     // 清理状态
     this.endpoints.delete(url);
