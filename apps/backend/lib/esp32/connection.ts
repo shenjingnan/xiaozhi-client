@@ -3,6 +3,7 @@
  * 管理单个ESP32设备的WebSocket连接
  */
 
+import { randomBytes } from "node:crypto";
 import { logger } from "@/Logger.js";
 import {
   isBinaryProtocol2,
@@ -100,7 +101,8 @@ export class ESP32Connection {
    * @returns 会话ID
    */
   private generateSessionId(): string {
-    return `${this.deviceId}-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+    const randomPart = randomBytes(8).toString("hex");
+    return `${this.deviceId}-${Date.now()}-${randomPart}`;
   }
 
   /**
@@ -455,10 +457,15 @@ export class ESP32Connection {
 function isValidUTF8(buffer: Buffer): boolean {
   try {
     // 尝试解码为UTF-8字符串
-    buffer.toString("utf-8");
-    // 如果解码后能重新编码回相同的Buffer，则认为是有效的
     const text = buffer.toString("utf-8");
-    return Buffer.from(text, "utf-8").equals(buffer);
+    // 如果解码后能重新编码回相同的Buffer，则认为是有效的
+    const reencoded = Buffer.from(text, "utf-8");
+    if (!reencoded.equals(buffer)) {
+      return false;
+    }
+    // 检查是否包含 UTF-8 替换字符 \uFFFD
+    // 如果存在替换字符，说明原始数据包含无效的 UTF-8 序列
+    return !text.includes("\uFFFD");
   } catch {
     return false;
   }

@@ -61,8 +61,8 @@ export const esp32Routes: RouteDefinition[] = [
     path: "/ws",
     handler: createESP32Handler(async (handler, c) => {
       c.get("logger").debug("ESP32 WebSocket端点访问");
-      // WebSocket升级由WebServer的ws服务器处理
-      return c.json({ message: "WebSocket endpoint" });
+      // 返回 426 Upgrade Required，明确提示需要 WebSocket 升级
+      return c.text("WebSocket Upgrade Required", 426);
     }),
   },
 ];

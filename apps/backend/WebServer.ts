@@ -1058,6 +1058,8 @@ export class WebServer {
     this.statusService.destroy();
     this.notificationService.destroy();
     this.deviceRegistryService.destroy();
+    // 异步销毁 ESP32 服务（fire and forget）
+    this.esp32Service.destroy();
 
     // 销毁事件总线
     destroyEventBus();

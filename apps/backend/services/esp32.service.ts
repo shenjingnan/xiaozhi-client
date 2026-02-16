@@ -3,6 +3,7 @@
  * 负责ESP32设备的连接管理和消息路由
  */
 
+import { randomBytes } from "node:crypto";
 import { logger } from "@/Logger.js";
 import { ESP32Connection } from "@/lib/esp32/connection.js";
 import type {
@@ -28,8 +29,19 @@ const TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24小时
  * 生成认证Token
  * @returns 随机Token
  */
-function generateToken(): string {
-  return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+function generateToken(
+  tokenMap: Map<string, { deviceId: string; expiresAt: number }>
+): string {
+  // 清理过期的 Token
+  const now = Date.now();
+  for (const [token, info] of tokenMap.entries()) {
+    if (now > info.expiresAt) {
+      tokenMap.delete(token);
+    }
+  }
+
+  const randomPart = randomBytes(16).toString("hex");
+  return `${Date.now()}-${randomPart}`;
 }
 
 /**
@@ -110,7 +122,7 @@ export class ESP32Service {
     this.deviceRegistry.updateLastSeen(deviceId);
 
     // 生成新的WebSocket认证Token
-    const token = generateToken();
+    const token = generateToken(this.tokenToDeviceId);
     const expiresAt = Date.now() + TOKEN_EXPIRY_MS;
     this.tokenToDeviceId.set(token, { deviceId, expiresAt });
 
@@ -144,6 +156,7 @@ export class ESP32Service {
       firmware: {
         version: "2.2.2",
         url: "",
+        force: false,
       },
     };
 
