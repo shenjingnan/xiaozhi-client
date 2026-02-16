@@ -10,15 +10,10 @@ export enum EventType {
 
   // Connection events (1-99)
   StartConnection = 1,
-  // StartTask = 1,
   FinishConnection = 2,
-  // FinishTask = 2,
   ConnectionStarted = 50,
-  // TaskStarted = 50,
   ConnectionFailed = 51,
-  // TaskFailed = 51,
   ConnectionFinished = 52,
-  // TaskFinished = 52,
 
   // Session events (100-199)
   StartSession = 100,
@@ -29,7 +24,6 @@ export enum EventType {
   SessionFinished = 152,
   SessionFailed = 153,
   UsageResponse = 154,
-  // ChargeData = 154,
 
   // General events (200-299)
   TaskRequest = 200,
