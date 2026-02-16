@@ -4,6 +4,7 @@
  * 使用中间件动态注入的 endpointHandler
  */
 
+import { logger } from "@/Logger.js";
 import type { RouteDefinition } from "@/routes/types.js";
 import type { AppContext } from "@/types/hono.context.js";
 import type { Context } from "hono";
@@ -54,7 +55,7 @@ const withEndpointHandler = async (
     // 使用类型安全的方式调用方法
     return await endpointHandler[handlerName](c);
   } catch (error) {
-    console.error(`端点处理器错误 [${handlerName}]:`, error);
+    logger.error(`端点处理器错误 [${handlerName}]`, error);
     const errorResponse = createErrorResponse(
       "ENDPOINT_HANDLER_ERROR",
       error instanceof Error ? error.message : "端点处理失败"
