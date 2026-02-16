@@ -24,6 +24,28 @@ export class CommandRegistry implements ICommandRegistry {
   }
 
   /**
+   * 包装命令处理函数，统一处理错误
+   * @param handler 命令处理函数
+   * @returns 包装后的处理函数
+   */
+  private wrapCommandHandler(
+    handler: (args: string[], options: Record<string, unknown>) => Promise<void>
+  ) {
+    return async (...args: unknown[]) => {
+      try {
+        // Commander.js 传递的最后一个参数是 Command 对象，包含选项值
+        const command = args[args.length - 1] as {
+          opts: () => Record<string, unknown>;
+        };
+        const options = command.opts();
+        await handler(args.slice(0, -1) as string[], options);
+      } catch (error) {
+        ErrorHandler.handle(error as Error);
+      }
+    };
+  }
+
+  /**
    * 注册所有命令到 Commander 程序
    */
   async registerCommands(program: Command): Promise<void> {
@@ -87,28 +109,19 @@ export class CommandRegistry implements ICommandRegistry {
         }
 
         // 设置子命令处理函数
-        cmd.action(async (...args) => {
-          try {
-            // Commander.js 传递的最后一个参数是 Command 对象，包含选项值
-            const command = args[args.length - 1];
-            const options = command.opts(); // 获取解析后的选项
-            await subcommand.execute(args.slice(0, -1), options);
-          } catch (error) {
-            ErrorHandler.handle(error as Error);
-          }
-        });
+        cmd.action(
+          this.wrapCommandHandler(async (args, options) => {
+            await subcommand.execute(args, options);
+          })
+        );
       }
 
       // 设置主命令的默认行为
-      commandGroup.action(async (...args) => {
-        try {
-          const command = args[args.length - 1];
-          const options = command.opts(); // 获取解析后的选项
-          await handler.execute(args.slice(0, -1), options);
-        } catch (error) {
-          ErrorHandler.handle(error as Error);
-        }
-      });
+      commandGroup.action(
+        this.wrapCommandHandler(async (args, options) => {
+          await handler.execute(args, options);
+        })
+      );
     } else {
       // 没有子命令，注册为普通命令
       let commandName = handler.name;
@@ -130,15 +143,11 @@ export class CommandRegistry implements ICommandRegistry {
       }
 
       // 设置主命令处理函数
-      command.action(async (...args) => {
-        try {
-          const command = args[args.length - 1];
-          const options = command.opts(); // 获取解析后的选项
-          await handler.execute(args.slice(0, -1), options);
-        } catch (error) {
-          ErrorHandler.handle(error as Error);
-        }
-      });
+      command.action(
+        this.wrapCommandHandler(async (args, options) => {
+          await handler.execute(args, options);
+        })
+      );
     }
   }
 
@@ -208,16 +217,11 @@ export class CommandRegistry implements ICommandRegistry {
       }
 
       // 设置命令处理函数
-      command.action(async (...args) => {
-        try {
-          // Commander.js 传递的最后一个参数是 Command 对象，包含选项值
-          const command = args[args.length - 1];
-          const options = command.opts(); // 获取解析后的选项
-          await subcommand.execute(args.slice(0, -1), options);
-        } catch (error) {
-          ErrorHandler.handle(error as Error);
-        }
-      });
+      command.action(
+        this.wrapCommandHandler(async (args, options) => {
+          await subcommand.execute(args, options);
+        })
+      );
     }
   }
 
