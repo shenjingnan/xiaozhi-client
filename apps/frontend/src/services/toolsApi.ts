@@ -5,6 +5,7 @@
 
 import type {
   CozeWorkflow,
+  JSONSchema,
   WorkflowParameterConfig,
 } from "@xiaozhi-client/shared-types";
 import { apiClient } from "./api";
@@ -25,8 +26,8 @@ export interface AddToolRequest {
 export interface AddToolResponse {
   name: string;
   description: string;
-  inputSchema: any;
-  handler: any;
+  inputSchema: JSONSchema;
+  handler: unknown;
 }
 
 /**
@@ -35,7 +36,7 @@ export interface AddToolResponse {
 export interface ApiError {
   code: string;
   message: string;
-  details?: any;
+  details?: unknown;
 }
 
 /**
@@ -101,7 +102,7 @@ export class ToolsApiService {
   /**
    * 获取自定义工具列表
    */
-  async getCustomTools(): Promise<any[]> {
+  async getCustomTools(): Promise<unknown[]> {
     try {
       const tools = await this.executeWithRetry(async () => {
         return await apiClient.getCustomTools();
