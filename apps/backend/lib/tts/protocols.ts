@@ -129,10 +129,20 @@ export interface Message {
   payload: Uint8Array;
 }
 
+/**
+ * 获取事件类型名称
+ * @param eventType - 事件类型枚举值
+ * @returns 事件类型对应的字符串名称，如果无效则返回错误提示
+ */
 export function getEventTypeName(eventType: EventType): string {
   return EventType[eventType] || `invalid event type: ${eventType}`;
 }
 
+/**
+ * 获取消息类型名称
+ * @param msgType - 消息类型枚举值
+ * @returns 消息类型对应的字符串名称，如果无效则返回错误提示
+ */
 export function getMsgTypeName(msgType: MsgType): string {
   return MsgType[msgType] || `invalid message type: ${msgType}`;
 }
@@ -628,6 +638,14 @@ export async function ReceiveMessage(ws: WebSocket): Promise<Message> {
   });
 }
 
+/**
+ * 等待并验证特定类型的消息
+ * @param ws - WebSocket 连接实例
+ * @param msgType - 期望的消息类型
+ * @param eventType - 期望的事件类型
+ * @returns 验证后的消息对象
+ * @throws 如果接收到的消息类型或事件类型与期望不符
+ */
 export async function WaitForEvent(
   ws: WebSocket,
   msgType: MsgType,
@@ -642,6 +660,12 @@ export async function WaitForEvent(
   return msg;
 }
 
+/**
+ * 发送完整的客户端请求
+ * @param ws - WebSocket 连接实例
+ * @param payload - 请求负载数据
+ * @returns Promise，发送成功后 resolve，失败后 reject
+ */
 export async function FullClientRequest(
   ws: WebSocket,
   payload: Uint8Array
@@ -658,6 +682,13 @@ export async function FullClientRequest(
   });
 }
 
+/**
+ * 发送仅音频的客户端请求
+ * @param ws - WebSocket 连接实例
+ * @param payload - 请求负载数据
+ * @param flag - 消息标志位
+ * @returns Promise，发送成功后 resolve，失败后 reject
+ */
 export async function AudioOnlyClient(
   ws: WebSocket,
   payload: Uint8Array,
@@ -675,6 +706,11 @@ export async function AudioOnlyClient(
   });
 }
 
+/**
+ * 发送启动连接事件
+ * @param ws - WebSocket 连接实例
+ * @returns Promise，发送成功后 resolve，失败后 reject
+ */
 export async function StartConnection(ws: WebSocket): Promise<void> {
   const msg = createMessage(
     MsgType.FullClientRequest,
@@ -692,6 +728,11 @@ export async function StartConnection(ws: WebSocket): Promise<void> {
   });
 }
 
+/**
+ * 发送完成连接事件
+ * @param ws - WebSocket 连接实例
+ * @returns Promise，发送成功后 resolve，失败后 reject
+ */
 export async function FinishConnection(ws: WebSocket): Promise<void> {
   const msg = createMessage(
     MsgType.FullClientRequest,
@@ -709,6 +750,13 @@ export async function FinishConnection(ws: WebSocket): Promise<void> {
   });
 }
 
+/**
+ * 发送启动会话事件
+ * @param ws - WebSocket 连接实例
+ * @param payload - 请求负载数据
+ * @param sessionId - 会话 ID
+ * @returns Promise，发送成功后 resolve，失败后 reject
+ */
 export async function StartSession(
   ws: WebSocket,
   payload: Uint8Array,
@@ -731,6 +779,12 @@ export async function StartSession(
   });
 }
 
+/**
+ * 发送完成会话事件
+ * @param ws - WebSocket 连接实例
+ * @param sessionId - 会话 ID
+ * @returns Promise，发送成功后 resolve，失败后 reject
+ */
 export async function FinishSession(
   ws: WebSocket,
   sessionId: string
@@ -752,6 +806,12 @@ export async function FinishSession(
   });
 }
 
+/**
+ * 发送取消会话事件
+ * @param ws - WebSocket 连接实例
+ * @param sessionId - 会话 ID
+ * @returns Promise，发送成功后 resolve，失败后 reject
+ */
 export async function CancelSession(
   ws: WebSocket,
   sessionId: string
@@ -773,6 +833,13 @@ export async function CancelSession(
   });
 }
 
+/**
+ * 发送任务请求事件
+ * @param ws - WebSocket 连接实例
+ * @param payload - 请求负载数据
+ * @param sessionId - 会话 ID
+ * @returns Promise，发送成功后 resolve，失败后 reject
+ */
 export async function TaskRequest(
   ws: WebSocket,
   payload: Uint8Array,
