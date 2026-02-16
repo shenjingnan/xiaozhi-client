@@ -552,9 +552,6 @@ importers:
       dayjs:
         specifier: ^1.11.13
         version: 1.11.19
-      json5:
-        specifier: ^2.2.3
-        version: 2.2.3
     devDependencies:
       '@types/node':
         specifier: ^24.3.0

@@ -26,8 +26,7 @@
   },
   "dependencies": {
     "comment-json": "^4.2.5",
-    "dayjs": "^1.11.13",
-    "json5": "^2.2.3"
+    "dayjs": "^1.11.13"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
