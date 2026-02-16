@@ -151,12 +151,15 @@ jobs:
           echo "branch_name=$branch_name" >> $GITHUB_OUTPUT
           echo "pr_title=$pr_title" >> $GITHUB_OUTPUT
 
+          # 在 pr_body 后添加 issue 关联
+          pr_body_with_issue="$pr_body\n\nFixes issue: #$ISSUE_NUMBER"
+
           # 使用 heredoc 处理多行 body
           echo "pr_body<<EOF" >> $GITHUB_OUTPUT
-          echo "$pr_body" >> $GITHUB_OUTPUT
+          echo "$pr_body_with_issue" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
           gh pr create \
             --base main \
             --head "$branch_name" \
             --title "$pr_title" \
-            --body "$pr_body" \
+            --body "$pr_body_with_issue" \
