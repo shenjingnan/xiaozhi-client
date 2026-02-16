@@ -34,48 +34,60 @@ export class CozeApiService {
    * 获取工作空间列表
    */
   async getWorkspaces(): Promise<WorkSpace[]> {
-    const cacheKey = "workspaces";
-    const cached = this.cache.get<WorkSpace[]>(cacheKey);
-    if (cached) return cached;
+    try {
+      const cacheKey = "workspaces";
+      const cached = this.cache.get<WorkSpace[]>(cacheKey);
+      if (cached) return cached;
 
-    const { workspaces = [] } = await this.client.workspaces.list();
+      const { workspaces = [] } = await this.client.workspaces.list();
 
-    // 设置缓存，过期时间30分钟
-    this.cache.set(cacheKey, workspaces, 30 * 60);
+      // 设置缓存，过期时间30分钟
+      this.cache.set(cacheKey, workspaces, 30 * 60);
 
-    return workspaces;
+      return workspaces;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new Error(`获取工作空间列表失败: ${errorMessage}`);
+    }
   }
 
   /**
    * 获取工作流列表
    */
   async getWorkflows(params: CozeWorkflowsParams): Promise<CozeWorkflowsData> {
-    const { workspace_id, page_num = 1, page_size = 20 } = params;
+    try {
+      const { workspace_id, page_num = 1, page_size = 20 } = params;
 
-    if (!workspace_id || typeof workspace_id !== "string") {
-      throw new Error("工作空间ID不能为空");
+      if (!workspace_id || typeof workspace_id !== "string") {
+        throw new Error("工作空间ID不能为空");
+      }
+
+      const cacheKey = `workflows:${workspace_id}:${page_num}:${page_size}`;
+      const cached = this.cache.get<CozeWorkflowsData>(cacheKey);
+      if (cached) return cached;
+
+      const response = await this.client.get<
+        CozeWorkflowsParams,
+        CozeWorkflowsResponse
+      >("/v1/workflows", {
+        workspace_id,
+        page_num,
+        page_size,
+        workflow_mode: "workflow",
+      });
+
+      const result = response.data;
+
+      // 设置缓存，使用默认的5分钟过期时间
+      this.cache.set(cacheKey, result);
+
+      return result;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new Error(`获取工作流列表失败: ${errorMessage}`);
     }
-
-    const cacheKey = `workflows:${workspace_id}:${page_num}:${page_size}`;
-    const cached = this.cache.get<CozeWorkflowsData>(cacheKey);
-    if (cached) return cached;
-
-    const response = await this.client.get<
-      CozeWorkflowsParams,
-      CozeWorkflowsResponse
-    >("/v1/workflows", {
-      workspace_id,
-      page_num: page_num,
-      page_size: page_size,
-      workflow_mode: "workflow",
-    });
-
-    const result = response.data;
-
-    // 设置缓存，使用默认的5分钟过期时间
-    this.cache.set(cacheKey, result);
-
-    return result;
   }
 
   /**
@@ -84,14 +96,20 @@ export class CozeApiService {
    * @param parameters - 参数
    * @returns 运行工作流数据
    */
-  callWorkflow(
+  async callWorkflow(
     workflowId: string,
     parameters: Record<string, unknown>
   ): Promise<RunWorkflowData> {
-    return this.client.workflows.runs.create({
-      workflow_id: workflowId,
-      parameters,
-    });
+    try {
+      return await this.client.workflows.runs.create({
+        workflow_id: workflowId,
+        parameters,
+      });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new Error(`运行工作流失败: ${errorMessage}`);
+    }
   }
 
   /**

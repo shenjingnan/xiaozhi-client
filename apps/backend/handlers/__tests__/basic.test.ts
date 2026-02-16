@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-// Mock dependencies to avoid triggering real config loading
+// 模拟依赖以避免触发真实的配置加载
 vi.mock("../../Logger.js", () => ({
   logger: {
     debug: vi.fn(),
@@ -54,9 +54,9 @@ vi.mock("@/services/StatusService.js", () => ({
   })),
 }));
 
-describe("Handlers Basic Tests", () => {
-  it("should be able to import handler modules", async () => {
-    // Test that all handler modules can be imported without errors
+describe("处理器基础测试", () => {
+  it("应该能够导入处理器模块", async () => {
+    // 测试所有处理器模块都可以无错误导入
     const modules = [
       () => import("../config.handler.js"),
       () => import("../heartbeat.handler.js"),
@@ -71,7 +71,7 @@ describe("Handlers Basic Tests", () => {
     }
   });
 
-  it("should have proper class constructors", async () => {
+  it("应该具有正确的类构造函数", async () => {
     const { ConfigApiHandler } = await import("../config.handler.js");
     const { StaticFileHandler } = await import("../static-file.handler.js");
     const { ServiceApiHandler } = await import("../service.handler.js");

@@ -64,51 +64,13 @@ export class ToolCallError extends Error {
 // 2. JSON Schema 类型
 // =========================
 
-/**
- * JSON Schema 类型定义
- * 兼容 MCP SDK 的 JSON Schema 格式
- */
-export type JSONSchema =
-  | (Record<string, unknown> & {
-      type: "object";
-      properties?: Record<string, unknown>;
-      required?: string[];
-      additionalProperties?: boolean;
-    })
-  | Record<string, unknown>;
+// 从 mcp-core 重新导出 JSONSchema 类型和相关函数，避免重复定义
+import type { JSONSchema } from "@xiaozhi-client/mcp-core";
+import { ensureToolJSONSchema } from "@xiaozhi-client/mcp-core";
 
-/**
- * 确保对象符合 MCP Tool JSON Schema 格式
- * 返回类型兼容 MCP SDK 的 Tool 类型
- */
-export function ensureToolJSONSchema(schema: JSONSchema): {
-  type: "object";
-  properties?: Record<string, object>;
-  required?: string[];
-  additionalProperties?: boolean;
-} {
-  if (
-    typeof schema === "object" &&
-    schema !== null &&
-    "type" in schema &&
-    schema.type === "object"
-  ) {
-    return schema as {
-      type: "object";
-      properties?: Record<string, object>;
-      required?: string[];
-      additionalProperties?: boolean;
-    };
-  }
-
-  // 如果不符合标准格式，返回默认的空对象 schema
-  return {
-    type: "object",
-    properties: {},
-    required: [],
-    additionalProperties: true,
-  };
-}
+// 重新导出供外部使用
+export type { JSONSchema };
+export { ensureToolJSONSchema };
 
 // =========================
 // 3. 工具信息类型

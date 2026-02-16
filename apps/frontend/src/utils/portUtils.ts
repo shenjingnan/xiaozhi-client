@@ -12,10 +12,10 @@ export async function checkPortAvailability(
   port: number,
   timeout = 3000
 ): Promise<boolean> {
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
 
+  try {
     // 尝试连接到服务端的健康检查端点
     // 先尝试 WebServer 的 /api/status 端点，如果失败再尝试 MCPServer 的 /health 端点
     let response: Response;
@@ -32,11 +32,13 @@ export async function checkPortAvailability(
       });
     }
 
-    clearTimeout(timeoutId);
     return response.ok;
   } catch (error) {
     // 连接失败或超时
     return false;
+  } finally {
+    // 确保清理定时器
+    clearTimeout(timeoutId);
   }
 }
 

@@ -8,7 +8,7 @@
  * - 支持安装操作触发
  */
 
-import { webSocketManager } from "@services/websocket";
+import { webSocketManager } from "@/services/websocket";
 import { useCallback, useEffect, useState } from "react";
 
 /**

@@ -1,3 +1,15 @@
+/**
+ * 接入点管理 Handler
+ *
+ * 负责处理接入点相关的 HTTP 请求，包括：
+ * - 接入点连接状态查询
+ * - 接入点连接和断开
+ * - 接入点状态管理
+ * - 接入点重连
+ * - 接入点验证
+ *
+ * @see @xiaozhi-client/endpoint - EndpointManager 实现
+ */
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import type { EventBus } from "@/services/event-bus.service.js";
@@ -351,7 +363,7 @@ export class EndpointHandler {
           );
         }
         // 从管理器移除端点
-        this.endpointManager.removeEndpoint(newEndpoint);
+        await this.endpointManager.removeEndpoint(newEndpoint);
         throw configError;
       }
 
@@ -434,7 +446,7 @@ export class EndpointHandler {
       // 再从管理器移除端点
       // EndpointManager.removeEndpoint 内部会再次调用 disconnect（幂等操作）
       // 并清理状态和发射 endpointRemoved 事件
-      this.endpointManager.removeEndpoint(endpointInstance);
+      await this.endpointManager.removeEndpoint(endpointInstance);
       this.logger.debug(`端点已从管理器中移除: ${endpoint}`);
 
       // 发送事件通知

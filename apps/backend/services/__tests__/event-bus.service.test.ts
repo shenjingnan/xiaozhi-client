@@ -5,7 +5,7 @@ import {
   getEventBus,
 } from "../event-bus.service.js";
 
-// Mock dependencies
+// 模拟依赖
 vi.mock("../../Logger.js", () => ({
   logger: {
     debug: vi.fn(),
@@ -22,7 +22,7 @@ describe("EventBus", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
 
-    // Mock Logger
+    // 模拟 Logger
     mockLogger = {
       debug: vi.fn(),
       info: vi.fn(),
@@ -42,25 +42,25 @@ describe("EventBus", () => {
   });
 
   describe("constructor", () => {
-    it("should initialize with correct dependencies", () => {
+    it("应该使用正确的依赖项初始化", () => {
       expect(eventBus).toBeInstanceOf(EventBus);
       expect(mockLogger.debug).not.toHaveBeenCalled();
     });
 
-    it("should set max listeners", () => {
+    it("应该设置最大监听器数量", () => {
       // 测试环境下 maxListeners 应该是 200，避免 MaxListenersExceededWarning
       expect(eventBus.getMaxListeners()).toBe(200);
     });
 
-    it("should setup error handling", () => {
-      // Verify error event listener is set up
+    it("应该设置错误处理", () => {
+      // 验证错误事件监听器已设置
       expect(eventBus.listenerCount("error")).toBe(1);
       expect(eventBus.listenerCount("newListener")).toBe(1);
     });
   });
 
   describe("emitEvent", () => {
-    it("should emit config:updated event successfully", () => {
+    it("应该成功发射 config:updated 事件", () => {
       const eventData = { type: "customMCP", timestamp: new Date() };
       const listener = vi.fn();
 

@@ -278,8 +278,8 @@ export class ServiceManagerImpl implements IServiceManager {
         process.exit(0);
       };
 
-      process.on("SIGINT", cleanup);
-      process.on("SIGTERM", cleanup);
+      process.once("SIGINT", cleanup);
+      process.once("SIGTERM", cleanup);
 
       await server.start();
     }
@@ -338,8 +338,8 @@ export class ServiceManagerImpl implements IServiceManager {
       process.exit(0);
     };
 
-    process.on("SIGINT", cleanup);
-    process.on("SIGTERM", cleanup);
+    process.once("SIGINT", cleanup);
+    process.once("SIGTERM", cleanup);
 
     // 保存 PID 信息
     this.processManager.savePidInfo(process.pid, "foreground");

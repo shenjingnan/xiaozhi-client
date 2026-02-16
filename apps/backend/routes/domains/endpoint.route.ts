@@ -19,18 +19,6 @@ type EndpointHandlerMethod =
   | "removeEndpoint";
 
 /**
- * 统一的错误响应函数
- */
-const createErrorResponse = (code: string, message: string) => {
-  return {
-    error: {
-      code,
-      message,
-    },
-  };
-};
-
-/**
  * 端点处理器包装函数
  * 从中间件获取 endpointHandler 并调用相应方法
  */
@@ -42,11 +30,12 @@ const withEndpointHandler = async (
   const endpointHandler = c.get("endpointHandler");
 
   if (!endpointHandler) {
-    const errorResponse = createErrorResponse(
+    return c.fail(
       "ENDPOINT_HANDLER_NOT_AVAILABLE",
-      "端点处理器尚未初始化，请稍后再试"
+      "端点处理器尚未初始化，请稍后再试",
+      undefined,
+      503
     );
-    return c.json(errorResponse, 503);
   }
 
   // 调用对应的处理方法
@@ -55,11 +44,12 @@ const withEndpointHandler = async (
     return await endpointHandler[handlerName](c);
   } catch (error) {
     console.error(`端点处理器错误 [${handlerName}]:`, error);
-    const errorResponse = createErrorResponse(
+    return c.fail(
       "ENDPOINT_HANDLER_ERROR",
-      error instanceof Error ? error.message : "端点处理失败"
+      error instanceof Error ? error.message : "端点处理失败",
+      undefined,
+      500
     );
-    return c.json(errorResponse, 500);
   }
 };
 

@@ -7,7 +7,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { VERSION, APP_NAME } from "./version-constants.js";
+import { APP_NAME, VERSION } from "./version-constants.js";
 
 /**
  * 版本信息接口
@@ -102,6 +102,35 @@ export class VersionUtils {
   }
 
   /**
+   * 查找 package.json 文件路径
+   *
+   * 尝试从多个可能的路径中查找 package.json 文件
+   *
+   * @returns package.json 文件路径，如果找不到则返回 null
+   */
+  private static findPackageJsonPath(): string | null {
+    const __filename = fileURLToPath(import.meta.url);
+    const currentDir = path.dirname(__filename);
+
+    const possiblePaths = [
+      // 从 packages/version/dist/version/index.js 到项目根目录的 package.json
+      path.join(currentDir, "..", "..", "..", "package.json"),
+      // 从 dist/version/index.js 到项目根目录的 package.json
+      path.join(currentDir, "..", "..", "package.json"),
+      // 全局安装环境
+      path.join(currentDir, "..", "..", "..", "..", "package.json"),
+    ];
+
+    for (const packagePath of possiblePaths) {
+      if (fs.existsSync(packagePath)) {
+        return packagePath;
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * 运行时从 package.json 读取版本号
    */
   private static getRuntimeVersion(): string {
@@ -111,27 +140,12 @@ export class VersionUtils {
     }
 
     try {
-      // 在 ES 模块环境中获取当前目录
-      const __filename = fileURLToPath(import.meta.url);
-      const currentDir = path.dirname(__filename);
-
-      // 尝试多个可能的 package.json 路径
-      const possiblePaths = [
-        // 从 packages/version/dist/version/index.js 到项目根目录的 package.json
-        path.join(currentDir, "..", "..", "..", "package.json"),
-        // 从 dist/version/index.js 到项目根目录的 package.json
-        path.join(currentDir, "..", "..", "package.json"),
-        // 全局安装环境
-        path.join(currentDir, "..", "..", "..", "..", "package.json"),
-      ];
-
-      for (const packagePath of possiblePaths) {
-        if (fs.existsSync(packagePath)) {
-          const packageJson = JSON.parse(fs.readFileSync(packagePath, "utf8"));
-          if (packageJson.version) {
-            VersionUtils.cachedVersion = packageJson.version;
-            return packageJson.version;
-          }
+      const packagePath = VersionUtils.findPackageJsonPath();
+      if (packagePath) {
+        const packageJson = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+        if (packageJson.version) {
+          VersionUtils.cachedVersion = packageJson.version;
+          return packageJson.version;
         }
       }
 
@@ -150,28 +164,15 @@ export class VersionUtils {
    */
   private static getRuntimeVersionInfo(): VersionInfo {
     try {
-      const __filename = fileURLToPath(import.meta.url);
-      const currentDir = path.dirname(__filename);
-
-      const possiblePaths = [
-        // 从 packages/version/dist/version/index.js 到项目根目录的 package.json
-        path.join(currentDir, "..", "..", "..", "package.json"),
-        // 从 dist/version/index.js 到项目根目录的 package.json
-        path.join(currentDir, "..", "..", "package.json"),
-        // 全局安装环境
-        path.join(currentDir, "..", "..", "..", "..", "package.json"),
-      ];
-
-      for (const packagePath of possiblePaths) {
-        if (fs.existsSync(packagePath)) {
-          const packageJson = JSON.parse(fs.readFileSync(packagePath, "utf8"));
-          return {
-            version: packageJson.version || "unknown",
-            name: packageJson.name,
-            description: packageJson.description,
-            author: packageJson.author,
-          };
-        }
+      const packagePath = VersionUtils.findPackageJsonPath();
+      if (packagePath) {
+        const packageJson = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+        return {
+          version: packageJson.version || "unknown",
+          name: packageJson.name,
+          description: packageJson.description,
+          author: packageJson.author,
+        };
       }
 
       return { version: "unknown" };

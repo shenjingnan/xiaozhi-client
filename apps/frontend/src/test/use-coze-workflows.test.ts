@@ -2,8 +2,8 @@
  * useCozeWorkflows Hook 测试
  */
 
-import { useCozeWorkflows } from "@hooks/useCozeWorkflows";
-import { cozeApiClient } from "@services/cozeApi";
+import { useCozeWorkflows } from "@/hooks/useCozeWorkflows";
+import { cozeApiClient } from "@/services/cozeApi";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type {
   CozeWorkflowsResult,
@@ -12,7 +12,7 @@ import type {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock cozeApiClient
-vi.mock("@services/cozeApi", () => {
+vi.mock("@/services/cozeApi", () => {
   const mockCozeApiClient = {
     fetchWorkspaces: vi.fn(),
     fetchWorkflows: vi.fn(),

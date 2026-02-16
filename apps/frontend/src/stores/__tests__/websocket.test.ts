@@ -1,4 +1,4 @@
-import { ConnectionState } from "@services/websocket";
+import { ConnectionState } from "@/services/websocket";
 import { beforeEach, describe, expect, it } from "vitest";
 import { useWebSocketStore } from "../websocket";
 

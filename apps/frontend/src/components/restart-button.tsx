@@ -4,20 +4,9 @@ import clsx from "clsx";
 import { LoaderCircleIcon, PowerIcon } from "lucide-react";
 
 /**
- * 重启状态接口
- */
-export interface RestartStatus {
-  status: "restarting" | "completed" | "failed";
-  error?: string;
-  timestamp: number;
-}
-
-/**
  * RestartButton 组件属性接口
  */
 export interface RestartButtonProps {
-  /** 重启状态 */
-  restartStatus?: RestartStatus;
   /** 是否禁用按钮 */
   disabled?: boolean;
   /** 按钮样式变体 */

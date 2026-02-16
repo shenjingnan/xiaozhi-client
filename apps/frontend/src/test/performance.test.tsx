@@ -7,17 +7,17 @@ import {
   useConfigStore,
   useMcpEndpoint,
   useMcpServers,
-} from "@stores/config";
+} from "@/stores/config";
 import {
   useClientStatus,
   useRestartStatus,
   useStatusStore,
-} from "@stores/status";
+} from "@/stores/status";
 import {
   useWebSocketConnected,
   useWebSocketStore,
   useWebSocketUrl,
-} from "@stores/websocket";
+} from "@/stores/websocket";
 import { act, render } from "@testing-library/react";
 import type React from "react";
 import { useEffect } from "react";
@@ -178,7 +178,7 @@ describe("性能优化验证", () => {
   });
 
   it("应该验证 WebSocket 单例模式的性能优势", async () => {
-    const { webSocketManager } = await import("@services/websocket");
+    const { webSocketManager } = await import("@/services/websocket");
 
     // 多次获取实例应该返回同一个对象
     const instance1 = webSocketManager;

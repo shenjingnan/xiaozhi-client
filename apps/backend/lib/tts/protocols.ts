@@ -1,8 +1,10 @@
 import { Buffer } from "node:buffer";
 import type WebSocket from "ws";
 
+import { logger } from "@/Logger.js";
+
 /**
- * Event type definitions, corresponding to protobuf generated event types
+ * 事件类型定义，对应 protobuf 生成的事件类型
  */
 export enum EventType {
   // Default event, used when no events are needed
@@ -10,15 +12,10 @@ export enum EventType {
 
   // Connection events (1-99)
   StartConnection = 1,
-  // StartTask = 1,
   FinishConnection = 2,
-  // FinishTask = 2,
   ConnectionStarted = 50,
-  // TaskStarted = 50,
   ConnectionFailed = 51,
-  // TaskFailed = 51,
   ConnectionFinished = 52,
-  // TaskFinished = 52,
 
   // Session events (100-199)
   StartSession = 100,
@@ -29,7 +26,6 @@ export enum EventType {
   SessionFinished = 152,
   SessionFailed = 153,
   UsageResponse = 154,
-  // ChargeData = 154,
 
   // General events (200-299)
   TaskRequest = 200,
@@ -66,7 +62,7 @@ export enum EventType {
 }
 
 /**
- * Message protocol related definitions
+ * 消息协议相关定义
  */
 export enum MsgType {
   Invalid = 0,
@@ -116,7 +112,7 @@ export enum CompressionBits {
 }
 
 /**
- * Protocol message structure
+ * 协议消息结构
  */
 export interface Message {
   version: VersionBits;
@@ -142,7 +138,7 @@ export function getMsgTypeName(msgType: MsgType): string {
 }
 
 /**
- * Convert Message object to a readable string representation
+ * 将消息对象转换为可读字符串表示
  */
 export function messageToString(msg: Message): string {
   const eventStr =
@@ -204,7 +200,7 @@ export function createMessage(
 }
 
 /**
- * Message serialization
+ * 消息序列化
  */
 export function marshalMessage(msg: Message): Uint8Array {
   const buffers: Uint8Array[] = [];
@@ -240,7 +236,7 @@ export function marshalMessage(msg: Message): Uint8Array {
 }
 
 /**
- * Message deserialization
+ * 消息反序列化
  */
 export function unmarshalMessage(data: Uint8Array): Message {
   if (data.length < 3) {
@@ -652,7 +648,7 @@ export async function FullClientRequest(
 ): Promise<void> {
   const msg = createMessage(MsgType.FullClientRequest, MsgTypeFlagBits.NoSeq);
   msg.payload = payload;
-  console.log(`${msg.toString()}`);
+  logger.debug(`${msg.toString()}`);
   const data = marshalMessage(msg);
   return new Promise((resolve, reject) => {
     ws.send(data, (error?: Error) => {
@@ -669,7 +665,7 @@ export async function AudioOnlyClient(
 ): Promise<void> {
   const msg = createMessage(MsgType.AudioOnlyClient, flag);
   msg.payload = payload;
-  console.log(`${msg.toString()}`);
+  logger.debug(`${msg.toString()}`);
   const data = marshalMessage(msg);
   return new Promise((resolve, reject) => {
     ws.send(data, (error?: Error) => {
@@ -686,7 +682,7 @@ export async function StartConnection(ws: WebSocket): Promise<void> {
   );
   msg.event = EventType.StartConnection;
   msg.payload = new TextEncoder().encode("{}");
-  console.log(`${msg.toString()}`);
+  logger.debug(`${msg.toString()}`);
   const data = marshalMessage(msg);
   return new Promise((resolve, reject) => {
     ws.send(data, (error?: Error) => {
@@ -703,7 +699,7 @@ export async function FinishConnection(ws: WebSocket): Promise<void> {
   );
   msg.event = EventType.FinishConnection;
   msg.payload = new TextEncoder().encode("{}");
-  console.log(`${msg.toString()}`);
+  logger.debug(`${msg.toString()}`);
   const data = marshalMessage(msg);
   return new Promise((resolve, reject) => {
     ws.send(data, (error?: Error) => {
@@ -725,7 +721,7 @@ export async function StartSession(
   msg.event = EventType.StartSession;
   msg.sessionId = sessionId;
   msg.payload = payload;
-  console.log(`${msg.toString()}`);
+  logger.debug(`${msg.toString()}`);
   const data = marshalMessage(msg);
   return new Promise((resolve, reject) => {
     ws.send(data, (error?: Error) => {
@@ -746,7 +742,7 @@ export async function FinishSession(
   msg.event = EventType.FinishSession;
   msg.sessionId = sessionId;
   msg.payload = new TextEncoder().encode("{}");
-  console.log(`${msg.toString()}`);
+  logger.debug(`${msg.toString()}`);
   const data = marshalMessage(msg);
   return new Promise((resolve, reject) => {
     ws.send(data, (error?: Error) => {
@@ -767,7 +763,7 @@ export async function CancelSession(
   msg.event = EventType.CancelSession;
   msg.sessionId = sessionId;
   msg.payload = new TextEncoder().encode("{}");
-  console.log(`${msg.toString()}`);
+  logger.debug(`${msg.toString()}`);
   const data = marshalMessage(msg);
   return new Promise((resolve, reject) => {
     ws.send(data, (error?: Error) => {
@@ -789,7 +785,7 @@ export async function TaskRequest(
   msg.event = EventType.TaskRequest;
   msg.sessionId = sessionId;
   msg.payload = payload;
-  console.log(`${msg.toString()}`);
+  logger.debug(`${msg.toString()}`);
   const data = marshalMessage(msg);
   return new Promise((resolve, reject) => {
     ws.send(data, (error?: Error) => {

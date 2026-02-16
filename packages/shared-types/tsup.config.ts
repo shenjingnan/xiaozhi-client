@@ -10,7 +10,7 @@ export default defineConfig({
     utils: "src/utils/index.ts",
   },
   format: ["esm"],
-  target: "node18",
+  target: "node20",
   outDir: "../../dist/shared-types",
   dts: {
     compilerOptions: {

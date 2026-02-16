@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { logger } from "../../Logger.js";
 import { UpdateApiHandler } from "../update.handler.js";
 
-// Mock dependencies
+// 模拟依赖
 vi.mock("@/lib/npm");
 vi.mock("../../Logger.js");
 vi.mock("@/services/event-bus.service.js");
@@ -76,7 +76,7 @@ describe("UpdateApiHandler", () => {
     // Reset all mocks
     vi.clearAllMocks();
 
-    // Setup mock logger
+    // 设置模拟 logger
     mockLogger = {
       info: vi.fn(),
       error: vi.fn(),
@@ -85,7 +85,7 @@ describe("UpdateApiHandler", () => {
     };
     Object.assign(logger, mockLogger);
 
-    // Setup mock event bus
+    // 设置模拟 event bus
     mockEventBus = {
       emitEvent: vi.fn(),
       onEvent: vi.fn(),
@@ -95,7 +95,7 @@ describe("UpdateApiHandler", () => {
       mockEventBus as unknown as ReturnType<typeof getEventBus>
     );
 
-    // Setup mock NPMManager
+    // 设置模拟 NPMManager
     mockNPMManager = {
       installVersion: vi.fn(),
     };
@@ -103,7 +103,7 @@ describe("UpdateApiHandler", () => {
       () => mockNPMManager as unknown as NPMManager
     );
 
-    // Create handler instance
+    // 创建处理器实例
     updateApiHandler = new UpdateApiHandler();
   });
 
@@ -113,7 +113,7 @@ describe("UpdateApiHandler", () => {
 
   describe("performUpdate", () => {
     test("应该成功安装指定版本", async () => {
-      // Arrange
+      // 准备
       const mockContext = createMockContext({
         req: {
           json: vi.fn().mockResolvedValue({ version: "1.7.9" }),
@@ -122,10 +122,10 @@ describe("UpdateApiHandler", () => {
 
       mockNPMManager.installVersion.mockResolvedValue(undefined);
 
-      // Act
+      // 执行
       await updateApiHandler.performUpdate(mockContext as unknown as Context);
 
-      // Assert
+      // 断言
       expect(mockNPMManager.installVersion).toHaveBeenCalledWith("1.7.9");
       expect(mockContext.success).toHaveBeenCalledWith(
         {
@@ -137,17 +137,17 @@ describe("UpdateApiHandler", () => {
     });
 
     test("应该拒绝空的版本号", async () => {
-      // Arrange
+      // 准备
       const mockContext = createMockContext({
         req: {
           json: vi.fn().mockResolvedValue({ version: "" }),
         },
       } as any);
 
-      // Act
+      // 执行
       await updateApiHandler.performUpdate(mockContext as unknown as Context);
 
-      // Assert
+      // 断言
       expect(mockContext.fail).toHaveBeenCalledWith(
         "INVALID_VERSION",
         "请求参数格式错误",

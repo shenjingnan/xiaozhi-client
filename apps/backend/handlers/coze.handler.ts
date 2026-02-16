@@ -72,6 +72,52 @@ export class CozeHandler extends BaseHandler {
   constructor() {
     super();
   }
+
+  /**
+   * 处理 Coze API 错误并返回标准化的响应
+   * @param c - Hono 上下文对象
+   * @param error - 捕获的错误对象
+   * @param operationName - 操作名称，用于日志和错误消息
+   * @returns 标准化的错误响应
+   */
+  private handleCozeApiError(
+    c: Context<AppContext>,
+    error: unknown,
+    operationName: string
+  ): Response {
+    c.get("logger").error(`${operationName}失败:`, error);
+
+    // 根据错误类型返回不同的响应
+    if (isErrorWithCode(error) && error.code === "AUTH_FAILED") {
+      return c.fail(
+        "AUTH_FAILED",
+        "扣子 API 认证失败，请检查 Token 配置",
+        undefined,
+        401
+      );
+    }
+
+    if (isErrorWithCode(error) && error.code === "RATE_LIMITED") {
+      return c.fail("RATE_LIMITED", "请求过于频繁，请稍后重试", undefined, 429);
+    }
+
+    if (isErrorWithCode(error) && error.code === "TIMEOUT") {
+      return c.fail("TIMEOUT", "请求超时，请稍后重试", undefined, 408);
+    }
+
+    const details =
+      process.env.NODE_ENV === "development" && error instanceof Error
+        ? error.stack
+        : undefined;
+
+    return c.fail(
+      "INTERNAL_ERROR",
+      error instanceof Error ? error.message : `${operationName}失败`,
+      details,
+      500
+    );
+  }
+
   /**
    * 获取工作空间列表
    * GET /api/coze/workspaces
@@ -99,42 +145,7 @@ export class CozeHandler extends BaseHandler {
 
       return c.success({ workspaces });
     } catch (error) {
-      c.get("logger").error("获取工作空间列表失败:", error);
-
-      // 根据错误类型返回不同的响应
-      if (isErrorWithCode(error) && error.code === "AUTH_FAILED") {
-        return c.fail(
-          "AUTH_FAILED",
-          "扣子 API 认证失败，请检查 Token 配置",
-          undefined,
-          401
-        );
-      }
-
-      if (isErrorWithCode(error) && error.code === "RATE_LIMITED") {
-        return c.fail(
-          "RATE_LIMITED",
-          "请求过于频繁，请稍后重试",
-          undefined,
-          429
-        );
-      }
-
-      if (isErrorWithCode(error) && error.code === "TIMEOUT") {
-        return c.fail("TIMEOUT", "请求超时，请稍后重试", undefined, 408);
-      }
-
-      const details =
-        process.env.NODE_ENV === "development" && error instanceof Error
-          ? error.stack
-          : undefined;
-
-      return c.fail(
-        "INTERNAL_ERROR",
-        error instanceof Error ? error.message : "获取工作空间列表失败",
-        details,
-        500
-      );
+      return this.handleCozeApiError(c, error, "获取工作空间列表");
     }
   }
 
@@ -243,42 +254,7 @@ export class CozeHandler extends BaseHandler {
         `成功获取 ${enhancedItems.length} 个工作流`
       );
     } catch (error) {
-      c.get("logger").error("获取工作流列表失败:", error);
-
-      // 根据错误类型返回不同的响应
-      if (isErrorWithCode(error) && error.code === "AUTH_FAILED") {
-        return c.fail(
-          "AUTH_FAILED",
-          "扣子 API 认证失败，请检查 Token 配置",
-          undefined,
-          401
-        );
-      }
-
-      if (isErrorWithCode(error) && error.code === "RATE_LIMITED") {
-        return c.fail(
-          "RATE_LIMITED",
-          "请求过于频繁，请稍后重试",
-          undefined,
-          429
-        );
-      }
-
-      if (isErrorWithCode(error) && error.code === "TIMEOUT") {
-        return c.fail("TIMEOUT", "请求超时，请稍后重试", undefined, 408);
-      }
-
-      const details =
-        process.env.NODE_ENV === "development" && error instanceof Error
-          ? error.stack
-          : undefined;
-
-      return c.fail(
-        "INTERNAL_ERROR",
-        error instanceof Error ? error.message : "获取工作流列表失败",
-        details,
-        500
-      );
+      return this.handleCozeApiError(c, error, "获取工作流列表");
     }
   }
 

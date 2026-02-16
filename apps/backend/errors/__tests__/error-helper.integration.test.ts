@@ -14,17 +14,17 @@ import {
   shouldAlert,
 } from "../error-helper.js";
 
-// Mock dependencies
+// 模拟依赖
 vi.mock("../../Logger.js");
 
-describe("Advanced Features Integration", () => {
+describe("高级功能集成测试", () => {
   let mockLogger: any;
   let testConfigPath: string;
 
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Mock Logger
+    // 模拟 Logger
     mockLogger = {
       info: vi.fn(),
       error: vi.fn(),
@@ -34,7 +34,7 @@ describe("Advanced Features Integration", () => {
     };
     vi.mocked(Logger).mockImplementation(() => mockLogger);
 
-    // Create test configuration
+    // 创建测试配置
     const testConfigs: InternalMCPServiceConfig[] = [
       {
         name: "test-service",
@@ -58,17 +58,17 @@ describe("Advanced Features Integration", () => {
     vi.clearAllMocks();
     clearErrorHistory();
 
-    // Clean up test file
+    // 清理测试文件
     if (existsSync(testConfigPath)) {
       unlinkSync(testConfigPath);
     }
   });
 
-  describe("Error Handling Integration", () => {
-    it("should categorize errors correctly", () => {
+  describe("错误处理集成", () => {
+    it("应该正确分类错误", () => {
       const serviceName = "test-service";
 
-      // Simulate different types of errors
+      // 模拟不同类型的错误
       const toolError = new Error("Tool call failed");
       const connectionError = new Error("Connection failed");
       const configError = new Error("Invalid configuration");
@@ -77,16 +77,16 @@ describe("Advanced Features Integration", () => {
       const mcpConnectionError = categorizeError(connectionError, serviceName);
       const mcpConfigError = categorizeError(configError, serviceName);
 
-      // Verify error categorization
+      // 验证错误分类
       expect(mcpToolError.category).toBe(ErrorCategory.TOOL_CALL);
       expect(mcpConnectionError.category).toBe(ErrorCategory.CONNECTION);
       expect(mcpConfigError.category).toBe(ErrorCategory.CONFIGURATION);
     });
 
-    it("should trigger alerts for high error rates", () => {
+    it("应该为高错误率触发警报", () => {
       const serviceName = "test-service-2";
 
-      // Generate multiple errors to trigger alert
+      // 生成多个错误以触发警报
       const errors: MCPError[] = [];
       for (let i = 0; i < 12; i++) {
         const error = new Error(`Error ${i}`);
@@ -94,12 +94,12 @@ describe("Advanced Features Integration", () => {
         errors.push(mcpError);
 
         if (i === 11) {
-          // Last error should trigger alert
+          // 最后一个错误应该触发警报
           expect(shouldAlert(mcpError)).toBe(true);
         }
       }
 
-      // Verify error statistics
+      // 验证错误统计
       const errorStats = getErrorStatistics(serviceName);
       expect(errorStats.totalErrors).toBe(12);
     });

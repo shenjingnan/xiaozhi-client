@@ -1,3 +1,7 @@
+/**
+ * 静态文件 HTTP 路由处理器
+ * 负责处理前端静态资源的请求和响应，支持多种构建路径的自动识别和文件访问
+ */
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";

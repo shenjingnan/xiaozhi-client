@@ -3,7 +3,7 @@ import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Logger, logger } from "../Logger.js";
 
-// Mock dependencies
+// 模拟依赖
 vi.mock("node:fs", () => ({
   existsSync: vi.fn(),
   writeFileSync: vi.fn(),
@@ -28,7 +28,7 @@ vi.mock("chalk", () => ({
   },
 }));
 
-// Mock pino with proper structure
+// 使用正确结构模拟 pino
 vi.mock("pino", () => {
   const mockDestination = vi.fn(() => ({
     write: vi.fn(),
@@ -64,7 +64,7 @@ vi.mock("pino", () => {
   };
 });
 
-// Mock console.error to avoid actual output during tests
+// 模拟 console.error 以避免测试期间的实际输出
 const originalConsoleError = console.error;
 const mockConsoleError = vi.fn();
 
@@ -80,13 +80,13 @@ describe("Logger", async () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Mock pino destination
+    // 模拟 pino destination
     mockDestination = {
       write: vi.fn(),
       end: vi.fn(),
     };
 
-    // Mock pino instance
+    // 模拟 pino 实例
     mockPinoInstance = {
       info: vi.fn(),
       warn: vi.fn(),
@@ -95,12 +95,12 @@ describe("Logger", async () => {
       fatal: vi.fn(),
     };
 
-    // Setup pino mocks
+    // 设置 pino 模拟
     mockPino.mockReturnValue(mockPinoInstance);
     (mockPino as any).multistream = vi.fn().mockReturnValue(mockPinoInstance);
     (mockPino as any).destination = vi.fn().mockReturnValue(mockDestination);
 
-    // Setup fs mocks
+    // 设置 fs 模拟
     mockPath.join.mockImplementation((...args) => args.join("/"));
     mockPath.dirname.mockImplementation((p) =>
       p.split("/").slice(0, -1).join("/")
@@ -110,10 +110,10 @@ describe("Logger", async () => {
       return ext ? name.replace(ext, "") : name;
     });
 
-    // Mock console.error
+    // 模拟 console.error
     console.error = mockConsoleError;
 
-    // Reset environment
+    // 重置环境
     process.env.XIAOZHI_DAEMON = undefined;
   });
 
@@ -309,14 +309,14 @@ describe("Logger", async () => {
       const testLogger = new Logger();
       testLogger.initLogFile("/test/project");
 
-      // Should not throw error
+      // 不应该抛出错误
       expect(() => testLogger.close()).not.toThrow();
     });
 
     it("应该在日志文件不存在时处理 close", () => {
       const testLogger = new Logger();
 
-      // Should not throw error
+      // 不应该抛出错误
       expect(() => testLogger.close()).not.toThrow();
     });
   });
@@ -337,14 +337,14 @@ describe("Logger", async () => {
     it("应该设置日志文件选项", () => {
       testLogger.setLogFileOptions(5 * 1024 * 1024, 10);
 
-      // Should not throw error
+      // 不应该抛出错误
       expect(() => testLogger.setLogFileOptions(1024, 3)).not.toThrow();
     });
 
     it("应该清理旧日志", () => {
       testLogger.initLogFile("/test/project");
 
-      // Should not throw error
+      // 不应该抛出错误
       expect(() => testLogger.cleanupOldLogs()).not.toThrow();
     });
 
@@ -376,11 +376,11 @@ describe("Logger", async () => {
         mtime: new Date(),
         ctime: new Date(),
         birthtime: new Date(),
-      } as any); // 20MB file
+      } as any); // 20MB 文件
 
       testLogger.initLogFile("/test/project");
 
-      // Should not throw error during rotation
+      // 轮转期间不应该抛出错误
       expect(() => testLogger.initLogFile("/test/project")).not.toThrow();
     });
   });
@@ -389,7 +389,7 @@ describe("Logger", async () => {
     it("应该处理安全的写入操作", () => {
       const testLogger = new Logger();
 
-      // Test that logging works even in edge cases
+      // 测试日志记录即使在边缘情况下也能工作
       expect(() => testLogger.info("Test message")).not.toThrow();
       expect(() => testLogger.error("Test error")).not.toThrow();
     });

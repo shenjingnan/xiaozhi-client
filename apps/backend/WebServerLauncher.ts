@@ -43,8 +43,8 @@ async function main() {
       process.exit(0);
     };
 
-    process.on("SIGINT", cleanup);
-    process.on("SIGTERM", cleanup);
+    process.once("SIGINT", cleanup);
+    process.once("SIGTERM", cleanup);
   } catch (error) {
     console.error("WebServer 启动失败:", error);
     process.exit(1);

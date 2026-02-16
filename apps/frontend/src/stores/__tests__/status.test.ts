@@ -1,13 +1,13 @@
-import { apiClient } from "@services/api";
+import { apiClient } from "@/services/api";
 import type { ClientStatus } from "@xiaozhi-client/shared-types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useStatusStore } from "../status";
 
 // 导入 API 中的 FullStatus 类型
-import type { FullStatus } from "@services/api";
+import type { FullStatus } from "@/services/api";
 
 // Mock API client
-vi.mock("@services/api", () => ({
+vi.mock("@/services/api", () => ({
   apiClient: {
     getStatus: vi.fn(),
     restartService: vi.fn(),

@@ -13,7 +13,7 @@
  */
 
 import { WEBSOCKET_RECONNECT_DELAY } from "@/constants/timeouts";
-import { ConnectionState, webSocketManager } from "@services/websocket";
+import { ConnectionState, webSocketManager } from "@/services/websocket";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
@@ -372,51 +372,17 @@ export const useWebSocketConnectionTimes = () =>
   );
 
 // ==================== 向后兼容的选择器（废弃） ====================
-
-// 导入兼容性选择器
-import {
-  useWebSocketConfig as useWebSocketConfigCompat,
-  useWebSocketMcpEndpoint as useWebSocketMcpEndpointCompat,
-  useWebSocketMcpServerConfig as useWebSocketMcpServerConfigCompat,
-  useWebSocketMcpServers as useWebSocketMcpServersCompat,
-  useWebSocketRestartStatus as useWebSocketRestartStatusCompat,
-  useWebSocketStatus as useWebSocketStatusCompat,
-} from "./websocket-compat";
-
-/**
- * @deprecated 配置数据已迁移到 stores/config.ts，请使用 useConfig()
- */
-export const useWebSocketConfig = useWebSocketConfigCompat;
-
-/**
- * @deprecated 状态数据已迁移到 stores/status.ts，请使用 useClientStatus()
- */
-export const useWebSocketStatus = useWebSocketStatusCompat;
-
-/**
- * @deprecated 重启状态已迁移到 stores/status.ts，请使用 useRestartStatus()
- */
-export const useWebSocketRestartStatus = useWebSocketRestartStatusCompat;
-
-/**
- * @deprecated MCP 服务器数据已迁移到 stores/config.ts，请使用 useMcpServers()
- */
-export const useWebSocketMcpServers = useWebSocketMcpServersCompat;
-
-/**
- * @deprecated MCP 服务器配置已迁移到 stores/config.ts，请使用 useMcpServerConfig()
- */
-export const useWebSocketMcpServerConfig = useWebSocketMcpServerConfigCompat;
-
-/**
- * @deprecated MCP 端点已迁移到 stores/config.ts，请使用 useMcpEndpoint()
- */
-export const useWebSocketMcpEndpoint = useWebSocketMcpEndpointCompat;
-
-/**
- * @deprecated MCP 端点已迁移到 stores/config.ts，请使用 useMcpEndpoint()
- */
-export const useMcpEndpoint = useWebSocketMcpEndpointCompat;
+//
+// 注意：这些选择器已迁移到 ./websocket-compat.ts 以避免循环依赖
+// 请从 @/stores/websocket-compat 或 @/stores 导入这些废弃的选择器
+//
+// 迁移指南：
+// - useWebSocketConfig → useConfig from "./config"
+// - useWebSocketStatus → useClientStatus from "./status"
+// - useWebSocketMcpEndpoint → useMcpEndpoint from "./config"
+// - useWebSocketMcpServers → useMcpServers from "./config"
+// - useWebSocketMcpServerConfig → useMcpServerConfig from "./config"
+// - useWebSocketRestartStatus → useRestartStatus from "./status"
 
 // ==================== 复合选择器 ====================
 

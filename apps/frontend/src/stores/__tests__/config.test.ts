@@ -1,17 +1,15 @@
-import { apiClient, mcpServerApi } from "@services/api";
+import { apiClient } from "@/services/api";
 import type { AppConfig } from "@xiaozhi-client/shared-types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useConfigStore } from "../config";
 
 // Mock API client
-vi.mock("@services/api", () => ({
+vi.mock("@/services/api", () => ({
   apiClient: {
     getConfig: vi.fn(),
     updateConfig: vi.fn(),
     reloadConfig: vi.fn(),
-  },
-  mcpServerApi: {
-    listServers: vi.fn(),
+    listMCPServers: vi.fn(),
   },
 }));
 
@@ -214,7 +212,7 @@ describe("Config Store", () => {
       const store = useConfigStore.getState();
       store.setConfig(initialConfig);
 
-      vi.mocked(mcpServerApi.listServers).mockResolvedValue({
+      vi.mocked(apiClient.listMCPServers).mockResolvedValue({
         servers: mockServerStatuses,
         total: 2,
       });
@@ -222,7 +220,7 @@ describe("Config Store", () => {
       const result = await store.refreshMcpServerStatuses();
 
       // 验证 API 被调用
-      expect(mcpServerApi.listServers).toHaveBeenCalled();
+      expect(apiClient.listMCPServers).toHaveBeenCalled();
 
       // 验证返回的状态数据
       expect(result).toEqual(mockServerStatuses);
@@ -256,7 +254,7 @@ describe("Config Store", () => {
       const store = useConfigStore.getState();
       store.reset();
 
-      vi.mocked(mcpServerApi.listServers).mockResolvedValue({
+      vi.mocked(apiClient.listMCPServers).mockResolvedValue({
         servers: mockServerStatuses,
         total: 1,
       });
@@ -274,7 +272,7 @@ describe("Config Store", () => {
 
     it("refreshMcpServerStatuses 应该正确处理错误", async () => {
       const error = new Error("状态刷新失败");
-      vi.mocked(mcpServerApi.listServers).mockRejectedValue(error);
+      vi.mocked(apiClient.listMCPServers).mockRejectedValue(error);
 
       const store = useConfigStore.getState();
 

@@ -18,8 +18,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { mcpFormSchema } from "@/schemas/mcp-form";
-import { mcpServerApi } from "@/services/api";
+import { apiClient } from "@/services/api";
 import {
   formToApiConfig,
   formToJson,
@@ -27,7 +28,6 @@ import {
 } from "@/utils/mcpFormConverter";
 import { validateMCPConfig } from "@/utils/mcpValidation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Textarea } from "@ui/textarea";
 import { PlusIcon } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -117,14 +117,14 @@ export function AddMcpServerButton() {
         const { name, config } = formToApiConfig(values);
 
         // 检查重名
-        const existingServers = await mcpServerApi.listServers();
+        const existingServers = await apiClient.listMCPServers();
         if (existingServers.servers.some((server) => server.name === name)) {
           toast.error(`服务名称 "${name}" 已存在`);
           return;
         }
 
         // 调用API添加服务器
-        const result = await mcpServerApi.addServer(name, config);
+        const result = await apiClient.addMCPServer(name, config);
         if (!result) {
           throw new Error("添加服务器失败");
         }
@@ -160,7 +160,7 @@ export function AddMcpServerButton() {
         const parsedServers = validation.data!;
 
         // 检查重名
-        const existingServers = await mcpServerApi.listServers();
+        const existingServers = await apiClient.listMCPServers();
         const existingNames = Object.keys(parsedServers).filter((name) =>
           existingServers.servers.some((server) => server.name === name)
         );
@@ -175,7 +175,7 @@ export function AddMcpServerButton() {
         for (const [serverName, serverConfig] of Object.entries(
           parsedServers
         )) {
-          const result = await mcpServerApi.addServer(serverName, serverConfig);
+          const result = await apiClient.addMCPServer(serverName, serverConfig);
           if (!result) {
             throw new Error("添加服务器失败");
           }

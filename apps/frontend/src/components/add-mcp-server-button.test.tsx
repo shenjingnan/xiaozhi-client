@@ -1,4 +1,4 @@
-import { mcpServerApi } from "@/services/api";
+import { apiClient } from "@/services/api";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { toast } from "sonner";
@@ -13,14 +13,14 @@ vi.mock("sonner", () => ({
   },
 }));
 
-// Mock mcpServerApi
+// Mock apiClient
 const mockListServers = vi.fn();
 const mockAddServer = vi.fn();
 
 vi.mock("@/services/api", () => ({
-  mcpServerApi: {
-    listServers: vi.fn(),
-    addServer: vi.fn(),
+  apiClient: {
+    listMCPServers: vi.fn(),
+    addMCPServer: vi.fn(),
   },
 }));
 
@@ -87,8 +87,8 @@ describe("添加MCP服务器按钮", () => {
     });
 
     // Assign mocks to the imported module
-    (mcpServerApi.listServers as any) = mockListServers;
-    (mcpServerApi.addServer as any) = mockAddServer;
+    (apiClient.listMCPServers as any) = mockListServers;
+    (apiClient.addMCPServer as any) = mockAddServer;
   });
 
   it("应该渲染添加按钮", () => {

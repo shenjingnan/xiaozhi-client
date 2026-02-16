@@ -40,6 +40,11 @@ export enum ErrorCategory {
   AUTHENTICATION = "authentication",
   NETWORK = "network",
   UNKNOWN = "unknown",
+  // 以下值用于向后兼容 mcp-errors.ts 中的原有枚举值
+  VALIDATION = "validation",
+  OPERATION = "operation",
+  SYSTEM = "system",
+  EXTERNAL = "external",
 }
 
 /**

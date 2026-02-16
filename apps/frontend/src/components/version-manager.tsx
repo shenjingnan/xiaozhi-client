@@ -8,16 +8,16 @@
  * - 显示实时安装日志
  */
 
-import { apiClient } from "@services/api";
-import { Badge } from "@ui/badge";
-import { Button } from "@ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@ui/card";
+} from "@/components/ui/card";
+import { apiClient } from "@/services/api";
 import {
   AlertCircle,
   Calendar,
