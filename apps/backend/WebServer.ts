@@ -25,6 +25,7 @@ import { logger } from "@/Logger.js";
 import {
   ConfigApiHandler,
   CozeHandler,
+  ESP32Handler,
   HeartbeatHandler,
   MCPHandler,
   MCPRouteHandler,
@@ -53,6 +54,8 @@ import {
 } from "@/middlewares/index.js";
 import type { EventBus, EventBusEvents } from "@/services/index.js";
 import {
+  DeviceRegistryService,
+  ESP32Service,
   NotificationService,
   StatusService,
   destroyEventBus,
@@ -70,6 +73,7 @@ import { EndpointManager } from "@xiaozhi-client/endpoint";
 import type { SimpleConnectionStatus } from "@xiaozhi-client/endpoint";
 import type { Hono } from "hono";
 import { WebSocketServer } from "ws";
+import type WebSocket from "ws";
 
 import { HTTP_SERVER_CONFIG } from "@/constants/index.js";
 import { MCPServiceManagerNotInitializedError } from "@/errors/mcp-errors.middleware.js";
@@ -81,6 +85,7 @@ import {
   configRoutes,
   cozeRoutes,
   endpointRoutes,
+  esp32Routes,
   mcpRoutes,
   mcpserverRoutes,
   miscRoutes,
@@ -130,6 +135,8 @@ export class WebServer {
   // 服务层
   private statusService: StatusService;
   private notificationService: NotificationService;
+  private deviceRegistryService: DeviceRegistryService;
+  private esp32Service: ESP32Service;
 
   // HTTP API 处理器
   private configApiHandler: ConfigApiHandler;
@@ -144,6 +151,7 @@ export class WebServer {
   private updateApiHandler: UpdateApiHandler;
   private cozeHandler: CozeHandler;
   private ttsApiHandler: TTSApiHandler;
+  private esp32Handler: ESP32Handler;
 
   // WebSocket 处理器
   private realtimeNotificationHandler: RealtimeNotificationHandler;
@@ -176,6 +184,8 @@ export class WebServer {
     // 初始化服务层
     this.statusService = new StatusService();
     this.notificationService = new NotificationService();
+    this.deviceRegistryService = new DeviceRegistryService();
+    this.esp32Service = new ESP32Service(this.deviceRegistryService);
 
     // 初始化 HTTP API 处理器
     this.configApiHandler = new ConfigApiHandler();
@@ -189,6 +199,7 @@ export class WebServer {
     this.updateApiHandler = new UpdateApiHandler();
     this.cozeHandler = new CozeHandler();
     this.ttsApiHandler = new TTSApiHandler();
+    this.esp32Handler = new ESP32Handler(this.esp32Service);
 
     // MCPServerApiHandler 将在 start() 方法中初始化，因为它需要 mcpServiceManager
 
@@ -576,6 +587,7 @@ export class WebServer {
       updateApiHandler: this.updateApiHandler,
       cozeHandler: this.cozeHandler,
       ttsApiHandler: this.ttsApiHandler,
+      esp32Handler: this.esp32Handler,
       // endpointHandler 通过中间件动态注入，不在此初始化
     };
   }
@@ -612,6 +624,7 @@ export class WebServer {
         endpoint: endpointRoutes,
         misc: miscRoutes,
         tts: ttsRoutes,
+        esp32: esp32Routes,
         static: staticRoutes, // 放在最后作为回退
       });
 
@@ -627,67 +640,136 @@ export class WebServer {
   private setupWebSocket() {
     if (!this.wss) return;
 
-    this.wss.on("connection", (ws) => {
-      // 生成客户端 ID
-      const clientId = `client-${Date.now()}-${Math.random()
-        .toString(36)
-        .substr(2, 9)}`;
+    this.wss.on("connection", (ws, req) => {
+      // 检查是否是ESP32设备连接
+      const url = req.url
+        ? new URL(req.url, `http://${req.headers.host}`)
+        : null;
+      const isESP32Device = url?.pathname === "/ws";
 
-      this.logger.debug(`WebSocket 客户端已连接: ${clientId}`);
-      this.logger.debug(
-        `当前 WebSocket 连接数: ${this.wss?.clients.size || 0}`
+      if (isESP32Device) {
+        // 处理ESP32设备连接
+        this.handleESP32DeviceConnection(ws, req);
+        return;
+      }
+
+      // 处理Web客户端连接
+      this.handleWebClientConnection(ws, req);
+    });
+  }
+
+  /**
+   * 处理ESP32设备WebSocket连接
+   */
+  private handleESP32DeviceConnection(
+    ws: WebSocket,
+    req: IncomingMessage
+  ): void {
+    const deviceId = req.headers["device-id"] as string;
+    const clientId = req.headers["client-id"] as string;
+    const token = req.headers.authorization as string | undefined;
+
+    // 提取Bearer token
+    const authToken = token?.replace("Bearer ", "");
+
+    this.logger.info(
+      `[WS-ESP32] 收到ESP32设备连接请求: deviceId=${deviceId}, clientId=${clientId}, url=${req.url}`
+    );
+
+    if (!deviceId || !clientId) {
+      this.logger.warn(
+        `[WS-ESP32] 连接缺少必要的请求头: device-id="${deviceId}", client-id="${clientId}"`
       );
+      ws.close(1008, "Missing required headers");
+      return;
+    }
 
-      // 注册客户端到通知服务
-      this.realtimeNotificationHandler.handleClientConnect(ws, clientId);
-      this.heartbeatHandler.handleClientConnect(clientId);
+    this.logger.info(
+      `[WS-ESP32] ESP32设备WebSocket连接: deviceId=${deviceId}, clientId=${clientId}`
+    );
 
-      ws.on("message", async (message) => {
-        try {
-          const data = JSON.parse(message.toString());
-
-          // 根据消息类型分发到不同的处理器
-          if (data.type === "clientStatus") {
-            await this.heartbeatHandler.handleClientStatus(ws, data, clientId);
-          } else {
-            await this.realtimeNotificationHandler.handleMessage(
-              ws,
-              data,
-              clientId
-            );
-          }
-        } catch (error) {
-          this.logger.error("WebSocket message error:", error);
-          const errorResponse = {
-            type: "error",
-            error: {
-              code: "MESSAGE_PARSE_ERROR",
-              message: error instanceof Error ? error.message : "消息解析失败",
-              timestamp: Date.now(),
-            },
-          };
-          ws.send(JSON.stringify(errorResponse));
+    // 委托给ESP32Service处理
+    this.esp32Service
+      .handleWebSocketConnection(ws, deviceId, clientId, authToken)
+      .then(() => {
+        this.logger.info(
+          `[WS-ESP32] ESP32设备连接处理成功: deviceId=${deviceId}`
+        );
+      })
+      .catch((error) => {
+        this.logger.error(
+          `[WS-ESP32] ESP32设备连接处理失败: deviceId=${deviceId}`,
+          error
+        );
+        // 只有在 WebSocket 处于可关闭状态时才关闭
+        // ws.OPEN = 1, ws.CONNECTING = 0
+        if (ws.readyState === 1 || ws.readyState === 0) {
+          ws.close(1011, "Connection handling failed");
         }
       });
+  }
 
-      ws.on("close", () => {
-        this.logger.debug(`WebSocket 客户端已断开连接: ${clientId}`);
-        this.logger.debug(
-          `剩余 WebSocket 连接数: ${this.wss?.clients.size || 0}`
-        );
+  /**
+   * 处理Web客户端WebSocket连接
+   */
+  private handleWebClientConnection(ws: WebSocket, req: IncomingMessage): void {
+    // 生成客户端 ID
+    const clientId = `client-${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
 
-        // 处理客户端断开连接
-        this.realtimeNotificationHandler.handleClientDisconnect(clientId);
-        this.heartbeatHandler.handleClientDisconnect(clientId);
-      });
+    this.logger.debug(`WebSocket 客户端已连接: ${clientId}`);
+    this.logger.debug(`当前 WebSocket 连接数: ${this.wss?.clients.size || 0}`);
 
-      ws.on("error", (error) => {
-        this.logger.error(`WebSocket 连接错误 (${clientId}):`, error);
-      });
+    // 注册客户端到通知服务
+    this.realtimeNotificationHandler.handleClientConnect(ws, clientId);
+    this.heartbeatHandler.handleClientConnect(clientId);
 
-      // 发送初始数据
-      this.realtimeNotificationHandler.sendInitialData(ws, clientId);
+    ws.on("message", async (message) => {
+      try {
+        const data = JSON.parse(message.toString());
+
+        // 根据消息类型分发到不同的处理器
+        if (data.type === "clientStatus") {
+          await this.heartbeatHandler.handleClientStatus(ws, data, clientId);
+        } else {
+          await this.realtimeNotificationHandler.handleMessage(
+            ws,
+            data,
+            clientId
+          );
+        }
+      } catch (error) {
+        this.logger.error("WebSocket message error:", error);
+        const errorResponse = {
+          type: "error",
+          error: {
+            code: "MESSAGE_PARSE_ERROR",
+            message: error instanceof Error ? error.message : "消息解析失败",
+            timestamp: Date.now(),
+          },
+        };
+        ws.send(JSON.stringify(errorResponse));
+      }
     });
+
+    ws.on("close", () => {
+      this.logger.debug(`WebSocket 客户端已断开连接: ${clientId}`);
+      this.logger.debug(
+        `剩余 WebSocket 连接数: ${this.wss?.clients.size || 0}`
+      );
+
+      // 处理客户端断开连接
+      this.realtimeNotificationHandler.handleClientDisconnect(clientId);
+      this.heartbeatHandler.handleClientDisconnect(clientId);
+    });
+
+    ws.on("error", (error) => {
+      this.logger.error(`WebSocket 连接错误 (${clientId}):`, error);
+    });
+
+    // 发送初始数据
+    this.realtimeNotificationHandler.sendInitialData(ws, clientId);
   }
 
   /**
@@ -979,6 +1061,9 @@ export class WebServer {
     // 销毁服务层
     this.statusService.destroy();
     this.notificationService.destroy();
+    this.deviceRegistryService.destroy();
+    // 异步销毁 ESP32 服务（fire and forget）
+    this.esp32Service.destroy();
 
     // 销毁事件总线
     destroyEventBus();

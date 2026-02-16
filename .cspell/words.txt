@@ -80,6 +80,7 @@ reqid
 retryable
 REUSEPORT
 rollbacked
+rssi
 Segoe
 shadcn
 Shen
