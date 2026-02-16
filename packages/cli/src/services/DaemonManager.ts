@@ -153,20 +153,37 @@ export class DaemonManagerImpl implements IDaemonManager {
       const { command, args } = PlatformUtils.getTailCommand(logFilePath);
       const tail = spawn(command, args, { stdio: "inherit" });
 
-      // 处理中断信号
-      process.on("SIGINT", () => {
+      // 定义清理函数
+      const cleanup = () => {
+        // 移除所有监听器
+        process.off("SIGINT", handleSigInt);
+        tail.off("exit", handleExit);
+        tail.off("error", handleError);
+      };
+
+      // 保存监听器引用
+      const handleSigInt = () => {
         console.log("\n断开连接，服务继续在后台运行");
+        cleanup();
         tail.kill();
         process.exit(0);
-      });
+      };
 
-      tail.on("exit", () => {
+      const handleExit = () => {
+        cleanup();
         process.exit(0);
-      });
+      };
 
-      tail.on("error", (error) => {
+      const handleError = (error: Error) => {
+        cleanup();
         throw new ServiceError(`连接日志失败: ${error.message}`);
-      });
+      };
+
+      // 处理中断信号
+      process.on("SIGINT", handleSigInt);
+
+      tail.on("exit", handleExit);
+      tail.on("error", handleError);
     } catch (error) {
       throw new ServiceError(
         `连接日志失败: ${error instanceof Error ? error.message : String(error)}`
