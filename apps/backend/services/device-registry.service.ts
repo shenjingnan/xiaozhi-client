@@ -92,14 +92,6 @@ export class DeviceRegistryService {
   }
 
   /**
-   * 获取已激活设备数量
-   * @returns 已激活设备数量
-   */
-  getActiveDeviceCount(): number {
-    return this.activeDevices.size;
-  }
-
-  /**
    * 销毁服务
    */
   destroy(): void {

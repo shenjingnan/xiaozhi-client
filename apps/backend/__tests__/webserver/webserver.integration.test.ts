@@ -97,7 +97,6 @@ vi.mock("@/services/index.js", () => {
     updateDeviceStatus: vi.fn(),
     updateLastSeen: vi.fn(),
     deleteDevice: vi.fn(),
-    getActiveDeviceCount: vi.fn(() => 0),
     destroy: vi.fn(),
   };
 
@@ -105,12 +104,10 @@ vi.mock("@/services/index.js", () => {
   const mockESP32ServiceInstance = {
     handleOTARequest: vi.fn(),
     handleWebSocketConnection: vi.fn(),
-    sendToDevice: vi.fn(),
     listDevices: vi.fn(() => ({ devices: [], total: 0 })),
     getDevice: vi.fn(),
     deleteDevice: vi.fn(),
     disconnectDevice: vi.fn(),
-    getConnectedDeviceCount: vi.fn(() => 0),
     destroy: vi.fn(),
   };
 

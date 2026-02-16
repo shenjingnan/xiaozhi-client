@@ -5,12 +5,11 @@
 
 import { logger } from "@/Logger.js";
 import { ESP32Connection } from "@/lib/esp32/connection.js";
-import {
-  type ESP32DeviceReport,
-  ESP32ErrorCode,
-  type ESP32ListenMessage,
-  type ESP32OTAResponse,
-  type ESP32WSMessage,
+import type {
+  ESP32DeviceReport,
+  ESP32ListenMessage,
+  ESP32OTAResponse,
+  ESP32WSMessage,
 } from "@/types/esp32.js";
 import { camelToSnakeCase, extractDeviceInfo } from "@/utils/esp32-utils.js";
 import type WebSocket from "ws";
@@ -253,25 +252,6 @@ export class ESP32Service {
   }
 
   /**
-   * 发送消息到设备
-   * @param deviceId - 设备ID
-   * @param message - 消息内容
-   */
-  async sendToDevice(deviceId: string, message: ESP32WSMessage): Promise<void> {
-    const connection = this.connections.get(deviceId);
-    if (!connection) {
-      throw new Error(`设备未连接: ${deviceId}`, {
-        cause: ESP32ErrorCode.DEVICE_OFFLINE,
-      });
-    }
-
-    await connection.send(message);
-    logger.debug(
-      `消息已发送到设备: deviceId=${deviceId}, type=${message.type}`
-    );
-  }
-
-  /**
    * 处理设备消息
    * @param deviceId - 设备ID
    * @param message - 消息内容
@@ -427,14 +407,6 @@ export class ESP32Service {
 
     // 更新设备状态
     this.deviceRegistry.updateDeviceStatus(deviceId, "offline");
-  }
-
-  /**
-   * 获取连接的设备数量
-   * @returns 连接的设备数量
-   */
-  getConnectedDeviceCount(): number {
-    return this.connections.size;
   }
 
   /**
