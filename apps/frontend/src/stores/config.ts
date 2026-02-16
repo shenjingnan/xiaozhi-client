@@ -9,7 +9,7 @@
  * - 集成 WebSocket 事件监听
  */
 
-import { apiClient, mcpServerApi } from "@services/api";
+import { apiClient } from "@services/api";
 import { webSocketManager } from "@services/websocket";
 import type {
   AppConfig,
@@ -376,7 +376,7 @@ export const useConfigStore = create<ConfigStore>()(
           setMcpServerStatusLoading(true);
           console.log("[ConfigStore] 开始刷新 MCP 服务器状态");
 
-          const response = await mcpServerApi.listServers();
+          const response = await apiClient.listMCPServers();
           setMcpServerStatuses(response.servers);
 
           // 智能合并：从状态数据派生 mcpServers 配置，同步更新 config.mcpServers

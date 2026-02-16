@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { mcpServerApi } from "@/services/api";
+import { apiClient } from "@/services/api";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,7 +31,7 @@ export function RemoveMcpServerButton({
       setIsLoading(true);
 
       // 调用API删除服务器
-      const result = await mcpServerApi.removeServer(mcpServerName);
+      const result = await apiClient.removeMCPServer(mcpServerName);
 
       if (!result) {
         throw new Error("删除服务器失败");
