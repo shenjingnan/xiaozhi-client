@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import type { ChildProcess } from "node:child_process";
 import { logger } from "@/Logger.js";
 import type { Logger } from "@/Logger.js";
 import type { MCPServiceManager } from "@/lib/mcp";
@@ -21,6 +22,27 @@ export class ServiceApiHandler {
     this.logger = logger;
     this.statusService = statusService;
     this.eventBus = getEventBus();
+  }
+
+  /**
+   * 通用的 xiaozhi 进程启动方法
+   * @param args 命令行参数（如 ["start", "--daemon"]）
+   * @returns 启动的子进程
+   */
+  private spawnXiaozhiProcess(args: string[]): ChildProcess {
+    const child = spawn("xiaozhi", args, {
+      detached: true,
+      stdio: "ignore",
+      env: {
+        ...process.env,
+        XIAOZHI_CONFIG_DIR: process.env.XIAOZHI_CONFIG_DIR || process.cwd(),
+      },
+    });
+
+    child.unref();
+    this.logger.info(`MCP 服务命令已发送: xiaozhi ${args.join(" ")}`);
+
+    return child;
   }
 
   /**
@@ -92,35 +114,12 @@ export class ServiceApiHandler {
         this.logger.warn("MCP 服务未运行，尝试启动服务");
 
         // 如果服务未运行，尝试启动服务
-        const startArgs = ["start", "--daemon"];
-        const child = spawn("xiaozhi", startArgs, {
-          detached: true,
-          stdio: "ignore",
-          env: {
-            ...process.env,
-            XIAOZHI_CONFIG_DIR: process.env.XIAOZHI_CONFIG_DIR || process.cwd(),
-          },
-        });
-        child.unref();
-        this.logger.info("MCP 服务启动命令已发送");
+        this.spawnXiaozhiProcess(["start", "--daemon"]);
         return;
       }
 
       // 执行重启命令，始终使用 daemon 模式
-      const restartArgs = ["restart", "--daemon"];
-
-      // 在子进程中执行重启命令
-      const child = spawn("xiaozhi", restartArgs, {
-        detached: true,
-        stdio: "ignore",
-        env: {
-          ...process.env,
-          XIAOZHI_CONFIG_DIR: process.env.XIAOZHI_CONFIG_DIR || process.cwd(),
-        },
-      });
-
-      child.unref();
-      this.logger.info("MCP 服务重启命令已发送");
+      this.spawnXiaozhiProcess(["restart", "--daemon"]);
     } catch (error) {
       this.logger.error("重启服务失败:", error);
       throw error;
@@ -136,18 +135,7 @@ export class ServiceApiHandler {
       c.get("logger").info("处理服务停止请求");
 
       // 执行停止命令
-      const stopArgs = ["stop"];
-      const child = spawn("xiaozhi", stopArgs, {
-        detached: true,
-        stdio: "ignore",
-        env: {
-          ...process.env,
-          XIAOZHI_CONFIG_DIR: process.env.XIAOZHI_CONFIG_DIR || process.cwd(),
-        },
-      });
-
-      child.unref();
-      c.get("logger").info("MCP 服务停止命令已发送");
+      this.spawnXiaozhiProcess(["stop"]);
 
       return c.success(null, "停止请求已接收");
     } catch (error) {
@@ -170,18 +158,7 @@ export class ServiceApiHandler {
       c.get("logger").info("处理服务启动请求");
 
       // 执行启动命令
-      const startArgs = ["start", "--daemon"];
-      const child = spawn("xiaozhi", startArgs, {
-        detached: true,
-        stdio: "ignore",
-        env: {
-          ...process.env,
-          XIAOZHI_CONFIG_DIR: process.env.XIAOZHI_CONFIG_DIR || process.cwd(),
-        },
-      });
-
-      child.unref();
-      c.get("logger").info("MCP 服务启动命令已发送");
+      this.spawnXiaozhiProcess(["start", "--daemon"]);
 
       return c.success(null, "启动请求已接收");
     } catch (error) {
