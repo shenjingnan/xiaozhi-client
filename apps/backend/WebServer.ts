@@ -1065,6 +1065,9 @@ export class WebServer {
     // 异步销毁 ESP32 服务（fire and forget）
     this.esp32Service.destroy();
 
+    // 清理服务处理器中的待处理定时器
+    this.serviceApiHandler.cleanupPendingRestarts();
+
     // 销毁事件总线
     destroyEventBus();
 

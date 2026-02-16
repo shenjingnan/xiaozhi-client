@@ -602,4 +602,69 @@ describe("ServiceApiHandler", () => {
       expect(mockMcpServiceManager.getStatus).toHaveBeenCalled();
     });
   });
+
+  describe("cleanupPendingRestarts", () => {
+    it("应该清理所有待处理的重启定时器", async () => {
+      // 发起多个重启请求
+      await handler.restartService(mockContext);
+      await handler.restartService(mockContext);
+      await handler.restartService(mockContext);
+
+      // 调用清理方法
+      handler.cleanupPendingRestarts();
+
+      // 验证定时器已被清理
+      // 由于 cleanupPendingRestarts 清除了所有定时器
+      // 即使推进时间也不应触发 executeRestart
+      await vi.advanceTimersByTimeAsync(500);
+
+      // 验证没有调用 spawn（因为定时器已被清除）
+      expect(mockSpawn).not.toHaveBeenCalled();
+    });
+
+    it("应该在没有待处理定时器时正常工作", () => {
+      // 没有重启请求的情况下调用清理
+      expect(() => handler.cleanupPendingRestarts()).not.toThrow();
+    });
+
+    it("应该清理成功通知定时器", async () => {
+      await handler.restartService(mockContext);
+
+      // 推进到重启执行完成
+      await vi.advanceTimersByTimeAsync(500);
+
+      // 在成功通知发送前清理
+      handler.cleanupPendingRestarts();
+
+      // 推进到成功通知应该触发的时间
+      await vi.advanceTimersByTimeAsync(5000);
+
+      // 验证成功状态未被更新（因为定时器已被清理）
+      // 检查是否只有 "restarting" 状态被调用，没有 "completed"
+      const updateRestartStatusMock =
+        mockStatusService.updateRestartStatus as ReturnType<typeof vi.fn>;
+      const restartCalls = updateRestartStatusMock.mock.calls;
+      const hasCompleted = restartCalls.some(
+        (call: unknown[]) => call[0] === "completed"
+      );
+      expect(hasCompleted).toBe(false);
+    });
+
+    it("应该在清理后允许新的重启请求", async () => {
+      // 第一次重启
+      await handler.restartService(mockContext);
+      handler.cleanupPendingRestarts();
+
+      // 重置 mock 以跟踪新的调用
+      const updateRestartStatusMock =
+        mockStatusService.updateRestartStatus as ReturnType<typeof vi.fn>;
+      updateRestartStatusMock.mockClear();
+
+      // 清理后的新重启请求应该正常工作
+      await handler.restartService(mockContext);
+      expect(mockStatusService.updateRestartStatus).toHaveBeenCalledWith(
+        "restarting"
+      );
+    });
+  });
 });
