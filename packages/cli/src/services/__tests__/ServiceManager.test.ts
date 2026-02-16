@@ -338,6 +338,10 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
         const mockChild = {
           pid: 1234,
           unref: vi.fn(),
+          on: vi.fn(),
+          stderr: {
+            on: vi.fn(),
+          },
         };
         mockSpawn.mockReturnValue(mockChild as any);
 
@@ -357,7 +361,7 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
           ["/mock/path/WebServerLauncher.js"],
           {
             detached: true,
-            stdio: ["ignore", "ignore", "ignore"],
+            stdio: ["ignore", "pipe", "pipe"],
             env: expect.objectContaining({
               XIAOZHI_CONFIG_DIR: "/mock/config",
               XIAOZHI_DAEMON: "true",
@@ -388,6 +392,10 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
         const mockChild = {
           pid: 1234,
           unref: vi.fn(),
+          on: vi.fn(),
+          stderr: {
+            on: vi.fn(),
+          },
         };
         mockSpawn.mockReturnValue(mockChild as any);
 
@@ -405,7 +413,7 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
           ["/mock/path/WebServerLauncher.js"],
           {
             detached: true,
-            stdio: ["ignore", "ignore", "ignore"],
+            stdio: ["ignore", "pipe", "pipe"],
             env: expect.objectContaining({
               XIAOZHI_CONFIG_DIR: "/mock/config",
               XIAOZHI_DAEMON: "true",
@@ -424,6 +432,10 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
         const mockChild = {
           pid: 5678,
           unref: vi.fn(),
+          on: vi.fn(),
+          stderr: {
+            on: vi.fn(),
+          },
         };
         mockSpawn.mockReturnValue(mockChild as any);
 
@@ -443,7 +455,7 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
           ["/mock/path/cli.js", "start", "--server", "3000"],
           {
             detached: true,
-            stdio: ["ignore", "ignore", "ignore"],
+            stdio: ["ignore", "pipe", "pipe"],
             env: expect.objectContaining({
               XIAOZHI_CONFIG_DIR: "/mock/config",
               XIAOZHI_DAEMON: "true",
@@ -508,6 +520,10 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
         const mockChild = {
           pid: undefined,
           unref: vi.fn(),
+          on: vi.fn(),
+          stderr: {
+            on: vi.fn(),
+          },
         };
         mockSpawn.mockReturnValue(mockChild as any);
 
@@ -516,14 +532,12 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
           daemon: true,
         };
 
-        // Should handle undefined PID gracefully
+        // Should handle undefined PID gracefully by exiting with error
         await expect(serviceManager.start(daemonOptions)).rejects.toThrow(
           /process\.exit/
         );
-        expect(mockProcessManager.savePidInfo).toHaveBeenCalledWith(
-          0,
-          "daemon"
-        );
+        // 当 PID 为 undefined 时，新代码会在保存 PID 之前就退出
+        expect(mockProcessManager.savePidInfo).not.toHaveBeenCalled();
       });
 
       it("应传递正确的环境变量", async () => {
@@ -536,6 +550,10 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
         const mockChild = {
           pid: 1234,
           unref: vi.fn(),
+          on: vi.fn(),
+          stderr: {
+            on: vi.fn(),
+          },
         };
         mockSpawn.mockReturnValue(mockChild as any);
 

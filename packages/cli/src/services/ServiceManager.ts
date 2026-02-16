@@ -238,12 +238,19 @@ export class ServiceManagerImpl implements IServiceManager {
     if (options.daemon) {
       // 后台模式
       const scriptPath = PathUtils.getExecutablePath("cli");
+
+      // 检查脚本文件是否存在
+      const fs = await import("node:fs");
+      if (!fs.default.existsSync(scriptPath)) {
+        throw new ServiceError(`CLI 脚本文件不存在: ${scriptPath}`);
+      }
+
       const child = spawn(
         "node",
         [scriptPath, "start", "--server", port.toString()],
         {
           detached: true,
-          stdio: ["ignore", "ignore", "ignore"], // 完全忽略所有 stdio，避免阻塞
+          stdio: ["ignore", "pipe", "pipe"], // 保留 stdout 和 stderr 以捕获错误
           env: {
             ...process.env,
             XIAOZHI_CONFIG_DIR: PathUtils.getConfigDir(),
@@ -253,8 +260,35 @@ export class ServiceManagerImpl implements IServiceManager {
         }
       );
 
+      // 检查子进程是否成功创建
+      if (!child.pid) {
+        consola.error("启动 MCP Server 失败：无法创建子进程");
+        process.exit(1);
+      }
+
+      // 监听子进程错误事件
+      child.on("error", (error) => {
+        consola.error("启动 MCP Server 失败:", error);
+        process.exit(1);
+      });
+
+      // 监听子进程退出事件（如果立即退出说明启动失败）
+      child.on("exit", (code, signal) => {
+        if (code !== null && code !== 0) {
+          consola.error(`MCP Server 启动失败 (退出码: ${code})`);
+          process.exit(1);
+        }
+      });
+
+      // 捕获 stderr 输出以便调试
+      if (child.stderr) {
+        child.stderr.on("data", (data) => {
+          consola.error(`MCP Server 错误: ${data.toString()}`);
+        });
+      }
+
       // 保存 PID 信息
-      this.processManager.savePidInfo(child.pid || 0, "daemon");
+      this.processManager.savePidInfo(child.pid, "daemon");
 
       // 完全分离子进程
       child.unref();
@@ -301,7 +335,7 @@ export class ServiceManagerImpl implements IServiceManager {
 
     const child = spawn("node", args, {
       detached: true,
-      stdio: ["ignore", "ignore", "ignore"], // 完全忽略所有 stdio，避免阻塞
+      stdio: ["ignore", "pipe", "pipe"], // 保留 stdout 和 stderr 以捕获错误
       env: {
         ...process.env,
         XIAOZHI_CONFIG_DIR: PathUtils.getConfigDir(),
@@ -309,8 +343,35 @@ export class ServiceManagerImpl implements IServiceManager {
       },
     });
 
+    // 检查子进程是否成功创建
+    if (!child.pid) {
+      consola.error("启动后台服务失败：无法创建子进程");
+      process.exit(1);
+    }
+
+    // 监听子进程错误事件
+    child.on("error", (error) => {
+      consola.error("启动后台服务失败:", error);
+      process.exit(1);
+    });
+
+    // 监听子进程退出事件（如果立即退出说明启动失败）
+    child.on("exit", (code, signal) => {
+      if (code !== null && code !== 0) {
+        consola.error(`后台服务启动失败 (退出码: ${code})`);
+        process.exit(1);
+      }
+    });
+
+    // 捕获 stderr 输出以便调试
+    if (child.stderr) {
+      child.stderr.on("data", (data) => {
+        consola.error(`后台服务错误: ${data.toString()}`);
+      });
+    }
+
     // 保存 PID 信息
-    this.processManager.savePidInfo(child.pid || 0, "daemon");
+    this.processManager.savePidInfo(child.pid, "daemon");
 
     // 完全分离子进程
     child.unref();
