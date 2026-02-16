@@ -4,13 +4,14 @@
  *
  * 硬件API定义：
  * - POST /              # OTA/配置获取（根路径，按硬件定义）
- * - POST /activate      # 设备激活
  * - WebSocket /ws       # WebSocket连接
  *
  * 管理API（保留 /api/esp32 前缀）：
  * - GET    /api/esp32/devices              # 设备列表
  * - GET    /api/esp32/devices/:deviceId     # 获取设备
  * - DELETE /api/esp32/devices/:deviceId     # 删除设备
+ *
+ * 注意：设备激活已改为自动激活，不再需要激活码
  */
 
 import type { Context } from "hono";
@@ -58,13 +59,6 @@ export const esp32Routes: RouteDefinition[] = [
     handler: createESP32Handler((handler, c) => handler.handleOTA(c)),
   },
 
-  // 硬件激活接口
-  {
-    method: "POST",
-    path: "/xiaozhi/ota/activate",
-    handler: createESP32Handler((handler, c) => handler.handleActivate(c)),
-  },
-
   // WebSocket端点（由WebServer直接处理，这里仅作为占位符）
   {
     method: "GET",
@@ -77,13 +71,6 @@ export const esp32Routes: RouteDefinition[] = [
   },
 
   // ========== 管理API（保留 /api/esp32 前缀） ==========
-
-  // 绑定设备（通过验证码激活设备）
-  {
-    method: "POST",
-    path: "/api/esp32/bind",
-    handler: createESP32Handler((handler, c) => handler.bindDevice(c)),
-  },
 
   // 获取设备列表
   {

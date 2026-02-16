@@ -12,7 +12,9 @@ import { BaseHandler } from "./base.handler.js";
 
 /**
  * ESP32设备处理器
- * 处理ESP32设备的激活、绑定、管理等操作
+ * 处理ESP32设备的管理操作
+ *
+ * 注意：设备激活已改为自动激活，不再需要手动输入激活码
  */
 export class ESP32Handler extends BaseHandler {
   private esp32Service: ESP32Service;
@@ -102,128 +104,6 @@ export class ESP32Handler extends BaseHandler {
       return c.json(response);
     } catch (error) {
       return this.handleError(c, error, "处理OTA请求");
-    }
-  }
-
-  /**
-   * 处理设备激活请求
-   * POST /activate
-   *
-   * 硬件API定义：设备激活接口
-   *
-   * 请求头：
-   * - Device-Id: 设备MAC地址
-   * - Client-Id: 设备UUID
-   *
-   * 请求体：
-   * ```json
-   * {
-   *   "code": "123456"
-   * }
-   * ```
-   */
-  async handleActivate(c: Context<AppContext>): Promise<Response> {
-    const logger = c.get("logger");
-
-    try {
-      // 验证请求头
-      const deviceId = c.req.header("Device-Id") || c.req.header("device-id");
-      const clientId = c.req.header("Client-Id") || c.req.header("client-id");
-
-      if (!deviceId || !clientId) {
-        return c.fail(
-          ESP32ErrorCode.MISSING_DEVICE_ID,
-          "缺少 Device-Id 或 Client-Id 请求头",
-          undefined,
-          400
-        );
-      }
-
-      // 解析请求体
-      const body = await this.parseJsonBody<{ code?: string }>(
-        c,
-        "请求体格式错误"
-      );
-
-      // 获取激活码（支持从路径参数或请求体获取）
-      const code = body.code;
-
-      if (!code) {
-        return c.fail(
-          ESP32ErrorCode.INVALID_ACTIVATION_CODE,
-          "缺少激活码",
-          undefined,
-          400
-        );
-      }
-
-      logger.debug(
-        `设备激活请求: deviceId=${deviceId}, clientId=${clientId}, code=${code}`
-      );
-
-      // 委托给服务层处理
-      const device = await this.esp32Service.bindDevice(code);
-
-      return c.success(device, "设备激活成功");
-    } catch (error) {
-      return this.handleError(c, error, "激活设备");
-    }
-  }
-
-  /**
-   * 绑定设备
-   * POST /api/esp32/bind
-   *
-   * 请求体：
-   * ```json
-   * {
-   *   "code": "123456",
-   *   "userId": "user123"  // 可选
-   * }
-   * ```
-   */
-  async bindDevice(c: Context<AppContext>): Promise<Response> {
-    const logger = c.get("logger");
-
-    try {
-      // 从请求体获取激活码和用户ID
-      const body = await this.parseJsonBody<{ code?: string; userId?: string }>(
-        c,
-        "请求体格式错误"
-      );
-
-      const { code, userId } = body;
-
-      if (!code) {
-        return c.fail(
-          ESP32ErrorCode.INVALID_ACTIVATION_CODE,
-          "缺少激活码",
-          undefined,
-          400
-        );
-      }
-
-      logger.debug(`设备绑定请求: code=${code}, userId=${userId ?? "未指定"}`);
-
-      // 委托给服务层处理
-      const device = await this.esp32Service.bindDevice(code, userId);
-
-      return c.success(device, "设备绑定成功");
-    } catch (error) {
-      // 检查是否是激活码错误
-      if (
-        error instanceof Error &&
-        error.cause === ESP32ErrorCode.INVALID_ACTIVATION_CODE
-      ) {
-        return c.fail(
-          ESP32ErrorCode.INVALID_ACTIVATION_CODE,
-          "激活码无效或已过期",
-          undefined,
-          400
-        );
-      }
-
-      return this.handleError(c, error, "绑定设备");
     }
   }
 

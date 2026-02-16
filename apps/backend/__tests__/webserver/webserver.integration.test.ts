@@ -89,6 +89,31 @@ vi.mock("@/services/index.js", () => {
     destroy: vi.fn(),
   };
 
+  // Mock DeviceRegistryService
+  const mockDeviceRegistryServiceInstance = {
+    getDevice: vi.fn(),
+    getAllDevices: vi.fn(() => []),
+    createDevice: vi.fn(),
+    updateDeviceStatus: vi.fn(),
+    updateLastSeen: vi.fn(),
+    deleteDevice: vi.fn(),
+    getActiveDeviceCount: vi.fn(() => 0),
+    destroy: vi.fn(),
+  };
+
+  // Mock ESP32Service
+  const mockESP32ServiceInstance = {
+    handleOTARequest: vi.fn(),
+    handleWebSocketConnection: vi.fn(),
+    sendToDevice: vi.fn(),
+    listDevices: vi.fn(() => ({ devices: [], total: 0 })),
+    getDevice: vi.fn(),
+    deleteDevice: vi.fn(),
+    disconnectDevice: vi.fn(),
+    getConnectedDeviceCount: vi.fn(() => 0),
+    destroy: vi.fn(),
+  };
+
   return {
     // EventBus 相关
     getEventBus: vi.fn(() => mockEventBus),
@@ -98,6 +123,10 @@ vi.mock("@/services/index.js", () => {
     StatusService: vi.fn(() => mockStatusServiceInstance),
     // NotificationService 相关
     NotificationService: vi.fn(() => mockNotificationServiceInstance),
+    // DeviceRegistryService 相关
+    DeviceRegistryService: vi.fn(() => mockDeviceRegistryServiceInstance),
+    // ESP32Service 相关
+    ESP32Service: vi.fn(() => mockESP32ServiceInstance),
   };
 });
 

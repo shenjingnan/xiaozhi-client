@@ -30,40 +30,6 @@ export interface ESP32Device {
 }
 
 /**
- * 待激活设备信息
- * 存储在设备注册表中的临时设备信息
- */
-export interface ESP32PendingDevice {
-  /** 设备ID（MAC地址） */
-  deviceId: string;
-  /** 激活码（6位） */
-  code: string;
-  /** 挑战字符串 */
-  challenge: string;
-  /** 硬件型号 */
-  board: string;
-  /** 固件版本 */
-  appVersion: string;
-  /** 创建时间 */
-  createdAt: Date;
-}
-
-/**
- * 设备激活信息
- * 返回给ESP32设备的激活响应
- */
-export interface ESP32Activation {
-  /** 6位激活码 */
-  code: string;
-  /** 挑战字符串 */
-  challenge: string;
-  /** 显示消息 */
-  message: string;
-  /** 超时时间（毫秒） */
-  timeoutMs?: number;
-}
-
-/**
  * 设备上报信息
  * ESP32设备在OTA接口上报的设备信息
  * 与 xiaozhi-esp32-server 的数据结构保持一致
@@ -201,15 +167,15 @@ export interface ESP32FirmwareInfo {
 /**
  * OTA响应
  * POST /api/esp32/ota 接口的响应类型
+ *
+ * 注意：设备激活已改为自动激活，不再返回 activation 字段
  */
 export interface ESP32OTAResponse {
-  /** 设备激活信息（未激活设备返回） */
-  activation?: ESP32Activation;
-  /** WebSocket配置（已激活设备返回） */
+  /** WebSocket配置 */
   websocket?: ESP32WebSocketConfig;
   /** MQTT配置（可选） */
   mqtt?: ESP32MQTTConfig;
-  /** 服务器时间（可选） */
+  /** 服务器时间 */
   serverTime?: ESP32ServerTime;
   /** 固件信息（可选） */
   firmware?: ESP32FirmwareInfo;
@@ -396,16 +362,6 @@ export type ESP32WSMessage =
 export type ESP32ConnectionState = "connecting" | "connected" | "disconnected";
 
 /**
- * 设备绑定请求
- */
-export interface ESP32BindRequest {
-  /** 激活码 */
-  code: string;
-  /** 用户ID（可选） */
-  userId?: string;
-}
-
-/**
  * 设备列表响应
  */
 export interface ESP32DeviceListResponse {
@@ -423,14 +379,6 @@ export enum ESP32ErrorCode {
   MISSING_DEVICE_ID = "MISSING_DEVICE_ID",
   /** 设备不存在 */
   DEVICE_NOT_FOUND = "DEVICE_NOT_FOUND",
-  /** 设备已激活 */
-  DEVICE_ALREADY_ACTIVATED = "DEVICE_ALREADY_ACTIVATED",
-  /** 设备未激活 */
-  DEVICE_NOT_ACTIVATED = "DEVICE_NOT_ACTIVATED",
-  /** 激活码无效 */
-  INVALID_ACTIVATION_CODE = "INVALID_ACTIVATION_CODE",
-  /** 激活码过期 */
-  ACTIVATION_CODE_EXPIRED = "ACTIVATION_CODE_EXPIRED",
   /** 设备离线 */
   DEVICE_OFFLINE = "DEVICE_OFFLINE",
   /** 无效的设备状态 */

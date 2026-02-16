@@ -76,6 +76,7 @@ export class ESP32Service {
 
   /**
    * 处理OTA请求
+   * 设备首次连接时自动激活，直接返回WebSocket配置
    * @param deviceId - 设备ID（MAC地址）
    * @param clientId - 客户端ID（设备UUID）
    * @param report - 设备上报信息
@@ -94,133 +95,59 @@ export class ESP32Service {
 
     // 使用工具方法提取设备信息（支持多级回退机制）
     const { boardType, appVersion } = extractDeviceInfo(report, headerInfo);
-    const chipModelName = report.chip_model_name;
 
-    // 检查设备是否已激活
-    const existingDevice = this.deviceRegistry.getDevice(deviceId);
-    if (existingDevice) {
-      // 设备已激活，更新最后活跃时间
-      this.deviceRegistry.updateLastSeen(deviceId);
+    // 检查设备是否已存在
+    let device = this.deviceRegistry.getDevice(deviceId);
 
-      // 生成新的WebSocket认证Token
-      const token = generateToken();
-      const expiresAt = Date.now() + TOKEN_EXPIRY_MS;
-      this.tokenToDeviceId.set(token, { deviceId, expiresAt });
-
-      // 获取服务器地址（从请求中获取）
-      if (!host) {
-        throw new Error("无法获取服务器地址：缺少 Host 头", {
-          cause: "MISSING_HOST_HEADER",
-        });
-      }
-
-      // 如果 host 不包含端口，添加默认端口
-      const serverAddress = host.includes(":") ? host : `${host}:9999`;
-
-      // 构建完整的 WebSocket URL
-      const wsUrl = `ws://${serverAddress}/ws`;
-
-      // 不返回MQTT配置，让ESP32使用WebSocket连接
-      logger.info(
-        `设备已激活，返回WebSocket配置: deviceId=${deviceId}, clientId=${clientId}, wsUrl=${wsUrl}`
-      );
-
-      const response = {
-        websocket: {
-          url: wsUrl,
-          token,
-          version: 2, // 更新版本号为 2
-        },
-        serverTime: {
-          timestamp: Date.now(),
-          timezoneOffset: new Date().getTimezoneOffset() * -60 * 1000,
-        },
-        firmware: {
-          version: "2.2.2", // 固件版本
-          url: "", // OTA固件下载地址（可选）
-        },
-      };
-
-      // 转换为下划线命名后返回
-      return camelToSnakeCase(response) as ESP32OTAResponse;
-    }
-
-    // 设备未激活，生成激活码
-    try {
-      const { code, challenge } = this.deviceRegistry.generateActivationCode(
-        deviceId,
-        boardType,
-        appVersion
-      );
-
-      logger.info(
-        `设备未激活，生成激活码: deviceId=${deviceId}, clientId=${clientId}, code=${code}`
-      );
-
-      const response = {
-        activation: {
-          code,
-          challenge,
-          message: "请在Web界面输入激活码完成设备绑定",
-          timeoutMs: 5 * 60 * 1000, // 5分钟
-        },
-        serverTime: {
-          timestamp: Date.now(),
-          timezoneOffset: new Date().getTimezoneOffset() * -60 * 1000,
-        },
-      };
-
-      // 转换为下划线命名后返回
-      return camelToSnakeCase(response) as ESP32OTAResponse;
-    } catch (error) {
-      // 如果设备已在待激活列表中，返回现有激活码
-      const pendingDevice = this.deviceRegistry.getPendingDevice(deviceId);
-      if (pendingDevice) {
-        logger.info(
-          `设备待激活中，返回现有激活码: deviceId=${deviceId}, clientId=${clientId}, code=${pendingDevice.code}`
-        );
-
-        const response = {
-          activation: {
-            code: pendingDevice.code,
-            challenge: pendingDevice.challenge,
-            message: "请在Web界面输入激活码完成设备绑定",
-            timeoutMs: 5 * 60 * 1000,
-          },
-          serverTime: {
-            timestamp: Date.now(),
-            timezoneOffset: new Date().getTimezoneOffset() * -60 * 1000,
-          },
-        };
-
-        // 转换为下划线命名后返回
-        return camelToSnakeCase(response) as ESP32OTAResponse;
-      }
-
-      throw error;
-    }
-  }
-
-  /**
-   * 绑定设备
-   * @param code - 激活码
-   * @param userId - 用户ID（可选）
-   * @returns 已激活的设备信息
-   * @throws 如果激活码无效
-   */
-  async bindDevice(code: string, userId?: string): Promise<ESP32Device> {
-    logger.info(`设备绑定请求: code=${code}, userId=${userId ?? "未指定"}`);
-
-    const device = this.deviceRegistry.activateDevice(code, userId);
     if (!device) {
-      throw new Error("激活码无效或已过期", {
-        cause: ESP32ErrorCode.INVALID_ACTIVATION_CODE,
+      // 设备不存在，自动创建并激活
+      device = this.deviceRegistry.createDevice(deviceId, boardType, appVersion);
+      logger.info(`新设备自动激活: deviceId=${deviceId}`);
+    }
+
+    // 更新最后活跃时间
+    this.deviceRegistry.updateLastSeen(deviceId);
+
+    // 生成新的WebSocket认证Token
+    const token = generateToken();
+    const expiresAt = Date.now() + TOKEN_EXPIRY_MS;
+    this.tokenToDeviceId.set(token, { deviceId, expiresAt });
+
+    // 获取服务器地址（从请求中获取）
+    if (!host) {
+      throw new Error("无法获取服务器地址：缺少 Host 头", {
+        cause: "MISSING_HOST_HEADER",
       });
     }
 
-    logger.info(`设备绑定成功: deviceId=${device.deviceId}`);
+    // 如果 host 不包含端口，添加默认端口
+    const serverAddress = host.includes(":") ? host : `${host}:9999`;
 
-    return device;
+    // 构建完整的 WebSocket URL
+    const wsUrl = `ws://${serverAddress}/ws`;
+
+    logger.info(
+      `返回WebSocket配置: deviceId=${deviceId}, clientId=${clientId}, wsUrl=${wsUrl}`
+    );
+
+    const response = {
+      websocket: {
+        url: wsUrl,
+        token,
+        version: 2,
+      },
+      serverTime: {
+        timestamp: Date.now(),
+        timezoneOffset: new Date().getTimezoneOffset() * -60 * 1000,
+      },
+      firmware: {
+        version: "2.2.2",
+        url: "",
+      },
+    };
+
+    // 转换为下划线命名后返回
+    return camelToSnakeCase(response) as ESP32OTAResponse;
   }
 
   /**
@@ -240,16 +167,16 @@ export class ESP32Service {
       `[ESP32Service] 收到WebSocket连接请求: deviceId=${deviceId}, clientId=${clientId}, hasToken=${!!token}`
     );
 
-    // 验证设备是否已激活
+    // 验证设备是否存在
     const device = this.deviceRegistry.getDevice(deviceId);
     if (!device) {
-      logger.warn(`[ESP32Service] 设备未激活，拒绝连接: deviceId=${deviceId}`);
-      ws.close(1008, "Device not activated");
+      logger.warn(`[ESP32Service] 设备未注册，拒绝连接: deviceId=${deviceId}`);
+      ws.close(1008, "Device not registered");
       return;
     }
 
     logger.info(
-      `[ESP32Service] 设备已激活: deviceId=${deviceId}, status=${device.status}`
+      `[ESP32Service] 设备已注册: deviceId=${deviceId}, status=${device.status}`
     );
 
     // 如果提供了Token，验证Token
