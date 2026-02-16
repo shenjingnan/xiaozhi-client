@@ -3,9 +3,14 @@
  * 负责在用户家目录创建默认配置
  */
 
-import path from "node:path";
-import { mkdirSync, existsSync, rmSync, readdirSync, statSync, copyFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  statSync,
+} from "node:fs";
+import path, { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -41,19 +46,17 @@ export class ConfigInitializer {
     mkdirSync(xiaozhiClientDir, { recursive: true });
 
     // 获取默认模板目录路径
-    const defaultTemplateDir = this.getDefaultTemplateDir();
+    const defaultTemplateDir = ConfigInitializer.getDefaultTemplateDir();
     if (!defaultTemplateDir) {
-      throw new Error(
-        "默认配置模板不存在，请检查项目模板文件是否存在"
-      );
+      throw new Error("默认配置模板不存在，请检查项目模板文件是否存在");
     }
 
     // 复制整个模板目录
-    this.copyDirectoryRecursive(defaultTemplateDir, xiaozhiClientDir, [
-      "template.json",
-      ".git",
-      "node_modules",
-    ]);
+    ConfigInitializer.copyDirectoryRecursive(
+      defaultTemplateDir,
+      xiaozhiClientDir,
+      ["template.json", ".git", "node_modules"]
+    );
 
     return xiaozhiClientDir;
   }
@@ -85,7 +88,7 @@ export class ConfigInitializer {
       if (stat.isDirectory()) {
         // 递归复制子目录
         mkdirSync(destPath, { recursive: true });
-        this.copyDirectoryRecursive(srcPath, destPath, exclude);
+        ConfigInitializer.copyDirectoryRecursive(srcPath, destPath, exclude);
       } else {
         // 复制文件
         copyFileSync(srcPath, destPath);

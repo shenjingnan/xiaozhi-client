@@ -1,4 +1,10 @@
-import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  statSync,
+} from "node:fs";
 import { join, resolve } from "node:path";
 import { defineConfig } from "tsup";
 
@@ -33,10 +39,10 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   dts: {
-    entry: ['src/index.ts'],
+    entry: ["src/index.ts"],
     compilerOptions: {
-      composite: false
-    }
+      composite: false,
+    },
   },
   minify: process.env.NODE_ENV === "production",
   splitting: false,

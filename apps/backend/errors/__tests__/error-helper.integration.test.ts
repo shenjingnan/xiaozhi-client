@@ -1,15 +1,15 @@
 import { existsSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { InternalMCPServiceConfig } from "@/lib/mcp";
 import { MCPTransportType } from "@/lib/mcp";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Logger } from "../../Logger.js";
 import type { MCPError } from "../error-helper.js";
 import {
-  ErrorCategory,
   categorizeError,
   clearErrorHistory,
+  ErrorCategory,
   getErrorStatistics,
   shouldAlert,
 } from "../error-helper.js";

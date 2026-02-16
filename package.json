@@ -81,7 +81,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.9.4",
+    "@biomejs/biome": "2.4.1",
     "@nx/vite": "^22.5.1",
     "@nx/vitest": "^22.5.1",
     "@nx/workspace": "^22.5.1",

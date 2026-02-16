@@ -248,7 +248,7 @@ function findLatestClaudeReply(comments: IssueComment[]): IssueComment | null {
  */
 function extractBranchName(body: string): string | null {
   // 匹配格式：`claude/issue-761-20260204-0158`
-  const branchRegex = /`([a-z\/\-0-9]+)`/g;
+  const branchRegex = /`([a-z/\-0-9]+)`/g;
   const matches = body.matchAll(branchRegex);
 
   for (const match of matches) {
@@ -268,7 +268,9 @@ function extractBranchName(body: string): string | null {
  * @param body - 回复内容
  * @returns 包含 title 和 body 的对象，如果没有找到则返回 null
  */
-function extractUrlParams(body: string): { title: string; body: string } | null {
+function extractUrlParams(
+  body: string
+): { title: string; body: string } | null {
   // 查找 Create PR 链接
   // 格式：[Create PR ➔](https://github.com/.../compare/main...branch?quick_pull=1&title=xxx&body=xxx)
   // 使用非贪婪匹配来获取完整的 URL，匹配任意字符（包括箭头等特殊字符）
@@ -361,12 +363,9 @@ async function getCommitInfo(
       body: body || `Commit from branch ${branchName}`,
     };
   } catch (error) {
-    throw new Error(
-      `获取 commit 信息失败: ${(error as Error).message}`
-    );
+    throw new Error(`获取 commit 信息失败: ${(error as Error).message}`);
   }
 }
-
 
 /**
  * 主函数
@@ -401,20 +400,30 @@ async function main(options: ParseOptions): Promise<void> {
   // 解析回复内容
   const result = parseClaudeReply(claudeReply.body);
   if (!result.branchName) {
-    log("error", '无法从回复中提取分支名');
+    log("error", "无法从回复中提取分支名");
     console.log(JSON.stringify(result, null, 2));
     process.exit(1);
     return;
   }
   const commitInfo = await getCommitInfo(repo, result.branchName);
   if (!commitInfo.title || !commitInfo.body) {
-    log("error", '无法从回复中提取 commit 信息');
+    log("error", "无法从回复中提取 commit 信息");
     console.log(JSON.stringify(commitInfo, null, 2));
     process.exit(1);
     return;
   }
   // 输出 JSON 到 stdout
-  console.log(JSON.stringify({ branchName: result.branchName, title: commitInfo.title, body: commitInfo.body }, null, 2));
+  console.log(
+    JSON.stringify(
+      {
+        branchName: result.branchName,
+        title: commitInfo.title,
+        body: commitInfo.body,
+      },
+      null,
+      2
+    )
+  );
 }
 
 // 错误处理
@@ -432,7 +441,8 @@ process.on("unhandledRejection", (reason: unknown) => {
 });
 
 // 检查是否直接运行此脚本
-const isMainModule = process.argv[1]?.endsWith("parse-claude-reply.ts") ?? false;
+const isMainModule =
+  process.argv[1]?.endsWith("parse-claude-reply.ts") ?? false;
 if (isMainModule) {
   const options = parseArgs();
   main(options).catch((error: Error) => {

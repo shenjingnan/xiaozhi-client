@@ -1,19 +1,35 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "root": false,
+  "$schema": "https://biomejs.dev/schemas/2.4.1/schema.json",
   "extends": ["../../biome.json"],
   "files": {
-    "include": ["src/**/*.ts", "src/**/*.tsx", "*.ts", "*.js"],
-    "ignore": ["node_modules/**", "dist/**", "coverage/**"]
+    "includes": ["**", "!**/node_modules/**", "!**/dist/**", "!**/coverage/**"]
   },
   "linter": {
     "rules": {
       "a11y": {
         "useValidAnchor": "off",
-        "noSvgWithoutTitle": "off"
+        "noSvgWithoutTitle": "off",
+        "useSemanticElements": "off",
+        "noStaticElementInteractions": "warn"
+      },
+      "correctness": {
+        "noInvalidUseBeforeDeclaration": "warn",
+        "useHookAtTopLevel": "warn"
+      },
+      "suspicious": {
+        "noUnknownAtRules": "off",
+        "noDocumentCookie": "warn"
       },
       "style": {
         "useImportType": "error"
       }
+    }
+  },
+  "css": {
+    "parser": {
+      "cssModules": false,
+      "tailwindDirectives": true
     }
   },
   "javascript": {

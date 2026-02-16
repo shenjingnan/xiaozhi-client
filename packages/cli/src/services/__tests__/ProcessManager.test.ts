@@ -152,7 +152,7 @@ describe("ProcessManagerImpl", () => {
 
     it("should gracefully kill process", async () => {
       let killCallCount = 0;
-      (process.kill as any).mockImplementation((pid: number, signal: any) => {
+      (process.kill as any).mockImplementation((_pid: number, _signal: any) => {
         killCallCount++;
         if (killCallCount > 1) {
           throw new Error("ESRCH"); // Process stopped
@@ -165,7 +165,7 @@ describe("ProcessManagerImpl", () => {
     });
 
     it("should force kill if graceful kill fails", async () => {
-      (process.kill as any).mockImplementation((pid: number, signal: any) => {
+      (process.kill as any).mockImplementation((_pid: number, signal: any) => {
         if (signal === "SIGKILL") {
           throw new Error("ESRCH"); // Process stopped
         }

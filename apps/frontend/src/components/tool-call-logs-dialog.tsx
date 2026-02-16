@@ -1,5 +1,22 @@
 "use client";
 
+import type {
+  ApiResponse,
+  ToolCallLogsResponse,
+  ToolCallRecord,
+} from "@xiaozhi-client/shared-types";
+import {
+  CheckCircle,
+  CheckIcon,
+  Code,
+  CopyIcon,
+  FileText,
+  Loader2,
+  RefreshCw,
+  RotateCwIcon,
+  XCircle,
+} from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -27,23 +44,6 @@ import {
   formatTimestamp,
   generateStableKey,
 } from "@/utils/formatUtils";
-import type {
-  ApiResponse,
-  ToolCallLogsResponse,
-  ToolCallRecord,
-} from "@xiaozhi-client/shared-types";
-import {
-  CheckCircle,
-  CheckIcon,
-  Code,
-  CopyIcon,
-  FileText,
-  Loader2,
-  RefreshCw,
-  RotateCwIcon,
-  XCircle,
-} from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
 
 export function ToolCallLogsDialog() {
   const [open, setOpen] = useState(false);
@@ -376,7 +376,7 @@ function CallLogDetail({ log }: CallLogDetailProps) {
   const formatRawData = (log: ToolCallRecord) => {
     try {
       return JSON.stringify(log, null, 2);
-    } catch (error) {
+    } catch (_error) {
       return String(log);
     }
   };

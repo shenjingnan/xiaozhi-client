@@ -42,8 +42,7 @@ async function main(): Promise<void> {
 
   // 1. 配置小智接入点 URL
   // 注意：请将此处的 URL 替换为你自己的接入点地址
-  const endpointUrl =
-    "wss://api.xiaozhi.me/mcp/?token=<token>";
+  const endpointUrl = "wss://api.xiaozhi.me/mcp/?token=<token>";
 
   console.log("接入点配置:");
   console.log(`  URL: ${endpointUrl.slice(0, 50)}...`);
@@ -61,10 +60,7 @@ async function main(): Promise<void> {
         // 计算器 MCP 服务（stdio 类型）
         calculator: {
           command: "npx",
-          args: [
-            "-y",
-            "@xiaozhi-client/calculator-mcp",
-          ],
+          args: ["-y", "@xiaozhi-client/calculator-mcp"],
         },
       },
       // 可选：重连延迟（毫秒），默认 2000
@@ -106,7 +102,9 @@ async function main(): Promise<void> {
       }
       // 显示输入参数 schema（如果有的话）
       if (tool.inputSchema && Object.keys(tool.inputSchema).length > 0) {
-        const properties = (tool.inputSchema as { properties?: Record<string, unknown> }).properties;
+        const properties = (
+          tool.inputSchema as { properties?: Record<string, unknown> }
+        ).properties;
         if (properties && Object.keys(properties).length > 0) {
           console.log(`     参数: ${Object.keys(properties).join(", ")}`);
         }
@@ -121,14 +119,18 @@ async function main(): Promise<void> {
     console.log("💡 测试验证方法:");
     console.log("   使用以下 API 验证工具列表:");
     console.log();
-    console.log("   fetch(\"https://api.xiaozhi.me/mcp/endpoints/list?endpoint_ids=agent_1324149\", {");
+    console.log(
+      '   fetch("https://api.xiaozhi.me/mcp/endpoints/list?endpoint_ids=agent_1324149", {'
+    );
     console.log("     headers: {");
-    console.log("       \"authorization\": \"Bearer YOUR_TOKEN\"");
+    console.log('       "authorization": "Bearer YOUR_TOKEN"');
     console.log("     }");
     console.log("   });");
     console.log();
     console.log("   或使用 curl:");
-    console.log(`   curl "https://api.xiaozhi.me/mcp/endpoints/list?endpoint_ids=agent_1324149" \\`);
+    console.log(
+      `   curl "https://api.xiaozhi.me/mcp/endpoints/list?endpoint_ids=agent_1324149" \\`
+    );
     console.log(`     -H "authorization: Bearer YOUR_TOKEN"`);
     console.log();
     console.log("   预期结果：返回的工具列表应包含 calculator 工具");
@@ -146,7 +148,9 @@ async function main(): Promise<void> {
     if (error instanceof Error) {
       console.error(`   错误信息: ${error.message}`);
       if (error.stack) {
-        console.error(`   堆栈: ${error.stack.split("\n").slice(1, 3).join("\n")}`);
+        console.error(
+          `   堆栈: ${error.stack.split("\n").slice(1, 3).join("\n")}`
+        );
       }
     }
     console.error();

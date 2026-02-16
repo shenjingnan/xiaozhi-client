@@ -7,8 +7,8 @@
  * - 支持多个 store 订阅 WebSocket 事件
  */
 
-import { WEBSOCKET_RECONNECT_DELAY } from "@/constants/timeouts";
 import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
+import { WEBSOCKET_RECONNECT_DELAY } from "@/constants/timeouts";
 
 /**
  * WebSocket 消息类型

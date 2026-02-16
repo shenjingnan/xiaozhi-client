@@ -14,8 +14,8 @@ export default defineConfig({
   outDir: "../../dist/shared-types",
   dts: {
     compilerOptions: {
-      composite: false
-    }
+      composite: false,
+    },
   }, // 启用 DTS 生成
   clean: true,
   sourcemap: true,

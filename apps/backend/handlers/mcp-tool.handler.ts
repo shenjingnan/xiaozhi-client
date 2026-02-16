@@ -3,12 +3,17 @@
  * 处理通过 HTTP API 调用 MCP 工具的请求
  */
 
-import type { Logger } from "@/Logger.js";
-import { logger } from "@/Logger.js";
+import type { CustomMCPTool, ProxyHandlerConfig } from "@xiaozhi-client/config";
+import { configManager } from "@xiaozhi-client/config";
+import Ajv from "ajv";
+import dayjs from "dayjs";
+import type { Context } from "hono";
 import { HTTP_TIMEOUTS } from "@/constants/timeout.constants.js";
 import { MCPError, MCPErrorCode } from "@/errors/mcp-errors.js";
-import { MCPCacheManager } from "@/lib/mcp";
+import type { Logger } from "@/Logger.js";
+import { logger } from "@/Logger.js";
 import type { MCPServiceManager } from "@/lib/mcp";
+import { MCPCacheManager } from "@/lib/mcp";
 import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
 import type { CozeWorkflow, WorkflowParameterConfig } from "@/types/coze.js";
 import type { AppContext } from "@/types/hono.context.js";
@@ -16,16 +21,12 @@ import type {
   AddCustomToolRequest,
   AddToolResponse,
   CozeWorkflowData,
+  CustomMCPToolWithStats,
+  JSONSchema,
   MCPToolData,
 } from "@/types/toolApi.js";
 import { ToolType } from "@/types/toolApi.js";
-import type { CustomMCPToolWithStats, JSONSchema } from "@/types/toolApi.js";
-import { type ToolSortField, sortTools } from "@/utils/toolSorters";
-import { configManager } from "@xiaozhi-client/config";
-import type { CustomMCPTool, ProxyHandlerConfig } from "@xiaozhi-client/config";
-import Ajv from "ajv";
-import dayjs from "dayjs";
-import type { Context } from "hono";
+import { sortTools, type ToolSortField } from "@/utils/toolSorters";
 
 /**
  * 工具调用请求接口
@@ -1718,89 +1719,6 @@ export class MCPToolHandler {
   }
 
   /**
-   * 验证认证配置
-   */
-  private validateAuthConfig(auth: { type: string; token?: string }): void {
-    if (!auth || typeof auth !== "object") {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "认证配置必须是对象"
-      );
-    }
-
-    if (!auth.type || typeof auth.type !== "string") {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "认证类型不能为空"
-      );
-    }
-
-    const validAuthTypes = ["bearer", "basic", "api_key"];
-    if (!validAuthTypes.includes(auth.type)) {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        `认证类型必须是以下之一: ${validAuthTypes.join(", ")}`
-      );
-    }
-
-    // 验证token格式
-    if (auth.type === "bearer") {
-      if (!auth.token || typeof auth.token !== "string") {
-        throw MCPError.validationError(
-          MCPErrorCode.TOOL_VALIDATION_FAILED,
-          "Bearer认证必须包含有效的token"
-        );
-      }
-
-      // 验证token格式（应该是环境变量引用或实际token）
-      if (
-        !auth.token.startsWith("${") &&
-        !auth.token.match(/^[a-zA-Z0-9_-]+$/)
-      ) {
-        throw MCPError.validationError(
-          MCPErrorCode.TOOL_VALIDATION_FAILED,
-          "Bearer token格式无效"
-        );
-      }
-    }
-  }
-
-  /**
-   * 验证请求体模板
-   */
-  private validateBodyTemplate(bodyTemplate: string): void {
-    if (typeof bodyTemplate !== "string") {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "请求体模板必须是字符串"
-      );
-    }
-
-    try {
-      JSON.parse(bodyTemplate);
-    } catch {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "请求体模板必须是有效的JSON格式"
-      );
-    }
-
-    // 验证模板变量格式
-    const templateVars = bodyTemplate.match(/\{\{[^}]+\}\}/g);
-    if (templateVars) {
-      for (const templateVar of templateVars) {
-        const varName = templateVar.slice(2, -2).trim();
-        if (!varName || !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(varName)) {
-          throw MCPError.validationError(
-            MCPErrorCode.TOOL_VALIDATION_FAILED,
-            `模板变量格式无效: ${templateVar}`
-          );
-        }
-      }
-    }
-  }
-
-  /**
    * 验证JSON Schema格式
    */
   private validateJsonSchema(schema: JSONSchema): void {
@@ -1838,7 +1756,7 @@ export class MCPToolHandler {
    * 生成输入参数结构
    */
   private generateInputSchema(
-    workflow: CozeWorkflow,
+    _workflow: CozeWorkflow,
     parameterConfig?: WorkflowParameterConfig
   ): JSONSchema {
     // 如果提供了参数配置，使用参数配置生成schema
@@ -2276,7 +2194,7 @@ export class MCPToolHandler {
           status: 422,
         };
       }
-    } catch (error) {
+    } catch (_error) {
       return {
         code: "SYSTEM_ERROR",
         message: "系统配置检查失败，请稍后重试",

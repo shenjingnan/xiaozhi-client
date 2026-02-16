@@ -3,11 +3,11 @@
  */
 
 // 类型标准化
-export { TypeFieldNormalizer, normalizeTypeField } from "./type-normalizer.js";
+export { normalizeTypeField, TypeFieldNormalizer } from "./type-normalizer.js";
 
 // 参数校验和类型推断
 export {
-  validateToolCallParams,
-  inferTransportTypeFromUrl,
   inferTransportTypeFromConfig,
+  inferTransportTypeFromUrl,
+  validateToolCallParams,
 } from "./validators.js";

@@ -2,11 +2,11 @@
  * 集成测试 - 验证 WebSocket 架构重构后的功能
  */
 
+import { beforeEach, describe, expect, it } from "vitest";
 import { ConnectionState, webSocketManager } from "@/services/websocket";
 import { useConfigStore } from "@/stores/config";
 import { useStatusStore } from "@/stores/status";
 import { useWebSocketStore } from "@/stores/websocket";
-import { beforeEach, describe, expect, it } from "vitest";
 
 describe("WebSocket 架构集成测试", () => {
   beforeEach(() => {

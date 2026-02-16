@@ -62,7 +62,11 @@ export namespace TypeFieldNormalizer {
     const originalType = normalizedConfig.type;
 
     // 如果已经是标准格式，直接返回
-    if (originalType === "stdio" || originalType === "sse" || originalType === "http") {
+    if (
+      originalType === "stdio" ||
+      originalType === "sse" ||
+      originalType === "http"
+    ) {
       return normalizedConfig;
     }
 
@@ -70,7 +74,11 @@ export namespace TypeFieldNormalizer {
     const normalizedType = normalizeTypeValue(originalType);
 
     // 验证转换后的类型是否有效
-    if (normalizedType === "stdio" || normalizedType === "sse" || normalizedType === "http") {
+    if (
+      normalizedType === "stdio" ||
+      normalizedType === "sse" ||
+      normalizedType === "http"
+    ) {
       normalizedConfig.type = normalizedType;
     }
 
@@ -134,9 +142,7 @@ export namespace TypeFieldNormalizer {
 /**
  * 导出便捷函数
  */
-export function normalizeTypeField<T extends MCPBaseConfig>(
-  config: T
-): T;
+export function normalizeTypeField<T extends MCPBaseConfig>(config: T): T;
 export function normalizeTypeField(config: unknown): unknown;
 export function normalizeTypeField<T extends MCPBaseConfig>(
   config: T | unknown

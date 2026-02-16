@@ -6,8 +6,8 @@
 import { describe, expect, it } from "vitest";
 import {
   type MCPBaseConfig,
-  TypeFieldNormalizer,
   normalizeTypeField,
+  TypeFieldNormalizer,
 } from "../type-normalizer.js";
 
 describe("TypeFieldNormalizer.normalizeTypeValue", () => {

@@ -4,10 +4,10 @@
  */
 
 import fs from "node:fs";
-import { type TTSOptions, synthesizeSpeech } from "@/lib/tts/binary.js";
-import type { AppContext } from "@/types/hono.context.js";
 import { configManager } from "@xiaozhi-client/config";
 import type { Context } from "hono";
+import { synthesizeSpeech, type TTSOptions } from "@/lib/tts/binary.js";
+import type { AppContext } from "@/types/hono.context.js";
 import { BaseHandler } from "./base.handler.js";
 
 /**

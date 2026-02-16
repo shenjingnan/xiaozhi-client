@@ -62,7 +62,7 @@ function inferTransportTypeFromUrl(url: string): MCPTransportType {
 
     // 默认类型
     return MCPTransportType.HTTP;
-  } catch (error) {
+  } catch (_error) {
     // URL 解析失败时使用默认类型
     return MCPTransportType.HTTP;
   }

@@ -292,7 +292,8 @@ export class ConfigManager {
   private readonly STATS_UPDATE_TIMEOUT = 5000; // 5秒超时
 
   // 事件回调（用于解耦 EventBus 依赖）
-  private eventCallbacks: Map<string, Array<(data: unknown) => void>> = new Map();
+  private eventCallbacks: Map<string, Array<(data: unknown) => void>> =
+    new Map();
 
   private constructor() {
     // 使用模板目录中的默认配置文件
@@ -2063,7 +2064,7 @@ export class ConfigManager {
       let toolName: string;
       let callTime: string;
       let incrementUsageCount = true;
-      let logPrefix: string;
+      let _logPrefix: string;
 
       // 判断参数类型来区分不同的重载
       if (typeof arg3 === "string") {
@@ -2071,13 +2072,13 @@ export class ConfigManager {
         const serverName = arg1;
         toolName = `${serverName}__${arg2}`;
         callTime = arg3;
-        logPrefix = `${serverName}/${arg2}`;
+        _logPrefix = `${serverName}/${arg2}`;
       } else {
         // 两个或三个参数的情况：updateCustomMCPToolStats(toolName, callTime, incrementUsageCount?)
         toolName = arg1;
         callTime = arg2;
         incrementUsageCount = (arg3 as boolean) || true;
-        logPrefix = toolName;
+        _logPrefix = toolName;
       }
 
       const customTools = this.getCustomMCPTools();
@@ -2143,7 +2144,7 @@ export class ConfigManager {
       return false;
     }
 
-    const updatePromise = new Promise<void>((resolve) => {
+    const updatePromise = new Promise<void>((_resolve) => {
       // 锁定逻辑在调用者中实现
     });
 

@@ -611,7 +611,7 @@ export async function ReceiveMessage(ws: WebSocket): Promise<Message> {
 
     // Otherwise, wait for the next message
     const errorHandler = (error: WebSocket.ErrorEvent) => {
-      const index = callbacks.findIndex((cb) => cb === resolver);
+      const index = callbacks.indexOf(resolver);
       if (index !== -1) {
         callbacks.splice(index, 1);
       }

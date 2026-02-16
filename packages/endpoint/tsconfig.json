@@ -10,8 +10,5 @@
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],
-  "references": [
-    { "path": "../mcp-core" },
-    { "path": "../config" }
-  ]
+  "references": [{ "path": "../mcp-core" }, { "path": "../config" }]
 }

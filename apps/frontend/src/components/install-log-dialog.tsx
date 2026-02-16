@@ -8,6 +8,16 @@
  * - 安装完成后提供操作选项
  */
 
+import {
+  CheckCircleIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  TerminalIcon,
+  XCircleIcon,
+} from "lucide-react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,16 +31,6 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNPMInstall } from "@/hooks/useNPMInstall";
-import {
-  CheckCircleIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-  TerminalIcon,
-  XCircleIcon,
-} from "lucide-react";
-import type React from "react";
-import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
 
 interface InstallLogDialogProps {
   isOpen: boolean;

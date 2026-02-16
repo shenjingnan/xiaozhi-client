@@ -4,12 +4,12 @@
  * 提供统一的依赖注入模式，从 WebServer 获取实例而非 Singleton
  */
 
+import type { Context, Next } from "hono";
 import {
   MCPServiceManagerNotInitializedError,
   WebServerNotAvailableError,
 } from "@/errors/mcp-errors.middleware.js";
 import type { AppContextVariables } from "@/types/hono.context.js";
-import type { Context, Next } from "hono";
 
 /**
  * MCP Service Manager 中间件

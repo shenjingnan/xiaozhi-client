@@ -12,9 +12,9 @@
 
 import type { Context } from "hono";
 import type { RouteDefinition } from "../types.js";
-import { type HandlerDependencies, createHandler } from "../types.js";
+import { createHandler, type HandlerDependencies } from "../types.js";
 
-const h = createHandler("esp32Handler");
+const _h = createHandler("esp32Handler");
 
 /**
  * 创建 ESP32 路由处理器（带可选检查）
@@ -59,7 +59,7 @@ export const esp32Routes: RouteDefinition[] = [
   {
     method: "GET",
     path: "/ws",
-    handler: createESP32Handler(async (handler, c) => {
+    handler: createESP32Handler(async (_handler, c) => {
       c.get("logger").debug("ESP32 WebSocket端点访问");
       // 返回 426 Upgrade Required，明确提示需要 WebSocket 升级
       return c.text("WebSocket Upgrade Required", 426);

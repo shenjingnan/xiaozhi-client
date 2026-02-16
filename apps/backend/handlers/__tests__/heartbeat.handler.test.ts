@@ -1,6 +1,6 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { NotificationService } from "@/services/notification.service.js";
 import type { StatusService } from "@/services/status.service.js";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { HeartbeatHandler } from "../heartbeat.handler.js";
 
 /**

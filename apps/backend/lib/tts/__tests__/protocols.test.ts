@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
   CompressionBits,
+  createMessage,
   EventType,
+  getEventTypeName,
+  getMsgTypeName,
   HeaderSizeBits,
   MsgType,
   MsgTypeFlagBits,
+  marshalMessage,
   ReceiveMessage,
   SerializationBits,
-  VersionBits,
-  createMessage,
-  getEventTypeName,
-  getMsgTypeName,
-  marshalMessage,
   unmarshalMessage,
+  VersionBits,
 } from "../protocols.js";
 
 describe("protocols - 辅助函数测试", () => {

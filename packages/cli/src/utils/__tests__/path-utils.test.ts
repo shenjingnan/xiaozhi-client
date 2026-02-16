@@ -855,7 +855,7 @@ describe("PathUtils 路径工具", () => {
 
     it("应该拒绝包含危险字符的路径", () => {
       // 测试会导致规范化后包含 ".." 的路径
-      const dangerousSegments = [
+      const _dangerousSegments = [
         ["dir", "..", "file.txt"], // 规范化后: dir/../file.txt -> file.txt (不包含 "..")
         ["~", "file.txt"], // 规范化后: ~/file.txt (包含 "~")
         ["dir", "subdir", "../../../etc/passwd"], // 规范化后: ../etc/passwd (包含 "..")

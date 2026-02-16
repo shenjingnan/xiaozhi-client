@@ -2,9 +2,10 @@
  * 状态 API HTTP 路由处理器
  * 提供客户端状态、服务状态、心跳等状态相关的 RESTful API 接口
  */
+
+import type { Context } from "hono";
 import type { StatusService } from "@/services/status.service.js";
 import type { AppContext } from "@/types/hono.context.js";
-import type { Context } from "hono";
 import { BaseHandler } from "./base.handler.js";
 
 /**

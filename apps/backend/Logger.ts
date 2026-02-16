@@ -128,8 +128,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import chalk from "chalk";
-import pino from "pino";
 import type { Logger as PinoLogger } from "pino";
+import pino from "pino";
 import { z } from "zod";
 
 const LogLevelSchema = z.enum([
@@ -276,7 +276,7 @@ export class Logger {
           const message = this.formatConsoleMessageOptimized(logObj, levelMap);
           // 在测试环境中安全地写入
           this.safeWrite(`${message}\n`);
-        } catch (error) {
+        } catch (_error) {
           // 如果解析失败，直接输出原始内容
           this.safeWrite(chunk);
         }
@@ -295,7 +295,7 @@ export class Logger {
         // 在测试环境中回退到 console.error
         console.error(content.trim());
       }
-    } catch (error) {
+    } catch (_error) {
       // 在极端情况下静默失败，避免测试中断
     }
   }
@@ -507,7 +507,7 @@ export class Logger {
       if (stats.size > this.maxLogFileSize) {
         this.rotateLogFile();
       }
-    } catch (error) {
+    } catch (_error) {
       // 忽略文件状态检查错误
     }
   }
@@ -540,7 +540,7 @@ export class Logger {
       // 将当前日志文件重命名为 .1.log
       const firstRotatedFile = path.join(logDir, `${logName}.1.log`);
       fs.renameSync(this.logFilePath, firstRotatedFile);
-    } catch (error) {
+    } catch (_error) {
       // 轮转失败时忽略错误，继续使用当前文件
     }
   }
@@ -562,7 +562,7 @@ export class Logger {
           fs.unlinkSync(oldFile);
         }
       }
-    } catch (error) {
+    } catch (_error) {
       // 忽略清理错误
     }
   }

@@ -382,7 +382,7 @@ describe("PlatformUtils", () => {
     it("如果进程不停止应使用SIGKILL强制终止", async () => {
       // Process keeps running for all 30 checks, then gets SIGKILLed
       let callCount = 0;
-      vi.spyOn(process, "kill").mockImplementation((pid, signal) => {
+      vi.spyOn(process, "kill").mockImplementation((_pid, signal) => {
         callCount++;
 
         // 第一次调用：发送 SIGTERM

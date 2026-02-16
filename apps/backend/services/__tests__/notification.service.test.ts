@@ -1,7 +1,7 @@
 import type { AppConfig } from "@xiaozhi-client/config";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { NotificationService } from "../notification.service.js";
 import type { WebSocketClient } from "../notification.service.js";
+import { NotificationService } from "../notification.service.js";
 import type { ClientInfo } from "../status.service.js";
 
 // 模拟 EventBus
@@ -51,7 +51,7 @@ describe("NotificationService", () => {
   let mockEventBus: any;
   let mockLogger: any;
   let mockWebSocket: any;
-  let mockClient: WebSocketClient;
+  let _mockClient: WebSocketClient;
 
   const mockConfig: AppConfig = {
     mcpEndpoint: "ws://localhost:3000",
@@ -110,7 +110,7 @@ describe("NotificationService", () => {
       readyState: 1, // WebSocket.OPEN
     };
 
-    mockClient = {
+    _mockClient = {
       id: "test-client-123",
       ws: mockWebSocket,
       readyState: 1,

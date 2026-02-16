@@ -10,12 +10,12 @@
  * - 集成 WebSocket 事件监听
  */
 
-import { apiClient } from "@/services/api";
-import { webSocketManager } from "@/services/websocket";
 import type { ClientStatus } from "@xiaozhi-client/shared-types";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
+import { apiClient } from "@/services/api";
+import { webSocketManager } from "@/services/websocket";
 
 /**
  * 重启状态接口

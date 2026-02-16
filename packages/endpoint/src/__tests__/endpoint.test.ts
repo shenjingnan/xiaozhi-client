@@ -15,7 +15,7 @@ vi.mock("ws", () => {
     static CLOSING = 2;
     static CLOSED = 3;
 
-    constructor(private url: string) {
+    constructor(_url: string) {
       super();
       // 模拟异步连接
       setImmediate(() => {
@@ -24,7 +24,7 @@ vi.mock("ws", () => {
       });
     }
 
-    send(data: string): void {
+    send(_data: string): void {
       if (this.readyState !== MockWebSocket.OPEN) {
         throw new Error("WebSocket is not open");
       }
@@ -68,7 +68,10 @@ vi.mock("../internal-mcp-manager.js", () => ({
       return this.tools;
     }
 
-    async callTool(toolName: string, args: Record<string, unknown>): Promise<any> {
+    async callTool(
+      toolName: string,
+      _args: Record<string, unknown>
+    ): Promise<any> {
       if (toolName === "not-found-tool") {
         throw new Error("未找到工具");
       }
@@ -89,9 +92,11 @@ const createMockMCPManager = (
   callToolFn?: (name: string, args: Record<string, unknown>) => Promise<any>
 ): IMCPServiceManager => ({
   getAllTools: vi.fn(() => []),
-  callTool: callToolFn || vi.fn(async () => ({
-    content: [{ type: "text", text: "调用成功" }],
-  })),
+  callTool:
+    callToolFn ||
+    vi.fn(async () => ({
+      content: [{ type: "text", text: "调用成功" }],
+    })),
   initialize: vi.fn(async () => {}),
   cleanup: vi.fn(async () => {}),
 });
@@ -342,13 +347,19 @@ describe("Endpoint", () => {
 
   describe("连接状态管理", () => {
     it("应该正确跟踪连接状态变化", async () => {
-      expect(endpoint.getStatus().connectionState).toBe(ConnectionState.DISCONNECTED);
+      expect(endpoint.getStatus().connectionState).toBe(
+        ConnectionState.DISCONNECTED
+      );
 
       await endpoint.connect();
-      expect(endpoint.getStatus().connectionState).toBe(ConnectionState.CONNECTED);
+      expect(endpoint.getStatus().connectionState).toBe(
+        ConnectionState.CONNECTED
+      );
 
       await endpoint.disconnect();
-      expect(endpoint.getStatus().connectionState).toBe(ConnectionState.DISCONNECTED);
+      expect(endpoint.getStatus().connectionState).toBe(
+        ConnectionState.DISCONNECTED
+      );
     });
 
     it("应该记录最后错误信息", async () => {
@@ -436,15 +447,11 @@ describe("Endpoint", () => {
       const consoleDebugSpy = vi.spyOn(console, "debug");
 
       // 创建一个会抛出错误的 MCP 管理器
-      const errorMCPManager = createMockMCPManager(
-        async () => {
-          throw new ToolCallErrorClass(
-            -32601,
-            "工具不存在",
-            { toolName: "test-tool" }
-          );
-        }
-      );
+      const errorMCPManager = createMockMCPManager(async () => {
+        throw new ToolCallErrorClass(-32601, "工具不存在", {
+          toolName: "test-tool",
+        });
+      });
 
       const errorEndpoint = new Endpoint(testUrl, errorMCPManager, 1000);
       await errorEndpoint.connect();
@@ -480,11 +487,9 @@ describe("Endpoint", () => {
       const consoleErrorSpy = vi.spyOn(console, "error");
 
       // 创建一个会抛出错误的 MCP 管理器
-      const errorMCPManager = createMockMCPManager(
-        async () => {
-          throw new ToolCallErrorClass(-32603, "工具执行失败");
-        }
-      );
+      const errorMCPManager = createMockMCPManager(async () => {
+        throw new ToolCallErrorClass(-32603, "工具执行失败");
+      });
 
       const errorEndpoint = new Endpoint(testUrl, errorMCPManager, 1000);
       await errorEndpoint.connect();
@@ -537,11 +542,9 @@ describe("Endpoint", () => {
       const consoleErrorSpy = vi.spyOn(console, "error");
 
       // 创建一个会抛出错误的 MCP 管理器
-      const errorMCPManager = createMockMCPManager(
-        async () => {
-          throw new ToolCallErrorClass(-32601, "工具不存在");
-        }
-      );
+      const errorMCPManager = createMockMCPManager(async () => {
+        throw new ToolCallErrorClass(-32601, "工具不存在");
+      });
 
       const errorEndpoint = new Endpoint(testUrl, errorMCPManager, 1000);
       // 不连接，直接触发错误
@@ -579,11 +582,9 @@ describe("Endpoint", () => {
       const consoleErrorSpy = vi.spyOn(console, "error");
 
       // 创建一个会抛出错误的 MCP 管理器
-      const errorMCPManager = createMockMCPManager(
-        async () => {
-          throw new ToolCallErrorClass(-32601, "工具不存在");
-        }
-      );
+      const errorMCPManager = createMockMCPManager(async () => {
+        throw new ToolCallErrorClass(-32601, "工具不存在");
+      });
 
       const errorEndpoint = new Endpoint(testUrl, errorMCPManager, 1000);
       await errorEndpoint.connect();
@@ -649,7 +650,9 @@ describe("Endpoint", () => {
 
     it("应该在 initialize 失败时清理资源", async () => {
       // Mock InternalMCPManagerAdapter.initialize() to throw
-      const { InternalMCPManagerAdapter } = await import("../internal-mcp-manager.js");
+      const { InternalMCPManagerAdapter } = await import(
+        "../internal-mcp-manager.js"
+      );
       const cleanupSpy = vi.spyOn(
         InternalMCPManagerAdapter.prototype,
         "cleanup"

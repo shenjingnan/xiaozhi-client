@@ -120,7 +120,7 @@ async function getRepoInfo(): Promise<{ owner: string; repo: string }> {
     // 解析 URL 格式：
     // - https: //github.com/owner/repo.git
     // - git@github.com:owner/repo.git
-    let match = remoteUrl.match(/github\.com[/:]([^/]+)\/([^/]+?)(\.git)?$/);
+    const match = remoteUrl.match(/github\.com[/:]([^/]+)\/([^/]+?)(\.git)?$/);
     if (!match) {
       throw new Error(`无法解析仓库 URL: ${remoteUrl}`);
     }
@@ -372,7 +372,10 @@ async function createPullRequest(
       throw new Error(`GitHub API 错误 (${response.status}): ${errorMessage}`);
     }
 
-    const data = (await response.json()) as { html_url: string; number: number };
+    const data = (await response.json()) as {
+      html_url: string;
+      number: number;
+    };
     return data;
   } catch (error) {
     if (error instanceof Error) {
@@ -424,10 +427,7 @@ async function main(options: CreatePROptions): Promise<void> {
 
   // 检查是否在主分支上
   if (gitInfo.currentBranch === gitInfo.baseBranch) {
-    log(
-      "error",
-      `当前分支是主分支 (${gitInfo.baseBranch})，无法创建 PR。`
-    );
+    log("error", `当前分支是主分支 (${gitInfo.baseBranch})，无法创建 PR。`);
     log("info", "请先创建并切换到一个新分支:");
     log("info", "  git checkout -b feature/my-feature");
     process.exit(1);
@@ -436,10 +436,7 @@ async function main(options: CreatePROptions): Promise<void> {
 
   // 检查是否有 commits
   if (gitInfo.commits.length === 0) {
-    log(
-      "warn",
-      `当前分支与 ${gitInfo.baseBranch} 没有差异，无法创建 PR。`
-    );
+    log("warn", `当前分支与 ${gitInfo.baseBranch} 没有差异，无法创建 PR。`);
     log("info", "请先进行一些提交:");
     log("info", "  git add .");
     log("info", "  git commit -m 'feat: 添加新功能'");

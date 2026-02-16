@@ -51,29 +51,33 @@ async function main(): Promise<void> {
   console.log("=== SSE MCP 连接示例 ===\n");
 
   // 1. 创建连接实例
-  const connection = new MCPConnection("12306-mcp", {
-    type: "sse",
-    url: "https://mcp.api-inference.modelscope.net/ed2b195cc8f94d/sse",
-  }, {
-    // 连接成功回调
-    onConnected: (data) => {
-      console.log(`✅ 服务 ${data.serviceName} 已连接`);
-      console.log(`   发现 ${data.tools.length} 个工具`);
-      console.log();
+  const connection = new MCPConnection(
+    "12306-mcp",
+    {
+      type: "sse",
+      url: "https://mcp.api-inference.modelscope.net/ed2b195cc8f94d/sse",
     },
+    {
+      // 连接成功回调
+      onConnected: (data) => {
+        console.log(`✅ 服务 ${data.serviceName} 已连接`);
+        console.log(`   发现 ${data.tools.length} 个工具`);
+        console.log();
+      },
 
-    // 连接失败回调
-    onConnectionFailed: (data) => {
-      console.error(`❌ 服务 ${data.serviceName} 连接失败`);
-      console.error(`   错误: ${data.error.message}`);
-    },
+      // 连接失败回调
+      onConnectionFailed: (data) => {
+        console.error(`❌ 服务 ${data.serviceName} 连接失败`);
+        console.error(`   错误: ${data.error.message}`);
+      },
 
-    // 断开连接回调
-    onDisconnected: (data) => {
-      console.log(`👋 服务 ${data.serviceName} 已断开`);
-      console.log(`   原因: ${data.reason || "正常关闭"}`);
-    },
-  });
+      // 断开连接回调
+      onDisconnected: (data) => {
+        console.log(`👋 服务 ${data.serviceName} 已断开`);
+        console.log(`   原因: ${data.reason || "正常关闭"}`);
+      },
+    }
+  );
 
   try {
     // 3. 建立连接

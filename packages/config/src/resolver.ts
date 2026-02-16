@@ -3,8 +3,8 @@
  * 负责按优先级查找配置文件
  */
 
-import path from "node:path";
 import { existsSync } from "node:fs";
+import path from "node:path";
 
 /**
  * 配置解析器类
@@ -24,14 +24,16 @@ export class ConfigResolver {
   static resolveConfigPath(): string | null {
     // 优先级 1: 环境变量指定（向后兼容）
     if (process.env.XIAOZHI_CONFIG_DIR) {
-      const configPath = this.findConfigInDir(process.env.XIAOZHI_CONFIG_DIR);
+      const configPath = ConfigResolver.findConfigInDir(
+        process.env.XIAOZHI_CONFIG_DIR
+      );
       if (configPath) {
         return configPath;
       }
     }
 
     // 优先级 2: 当前目录
-    const currentDirConfig = this.findConfigInDir(process.cwd());
+    const currentDirConfig = ConfigResolver.findConfigInDir(process.cwd());
     if (currentDirConfig) {
       return currentDirConfig;
     }
@@ -40,7 +42,7 @@ export class ConfigResolver {
     const homeDir = process.env.HOME || process.env.USERPROFILE;
     if (homeDir) {
       const xiaozhiClientDir = path.join(homeDir, ".xiaozhi-client");
-      const homeDirConfig = this.findConfigInDir(xiaozhiClientDir);
+      const homeDirConfig = ConfigResolver.findConfigInDir(xiaozhiClientDir);
       if (homeDirConfig) {
         return homeDirConfig;
       }

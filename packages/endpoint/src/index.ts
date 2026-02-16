@@ -49,39 +49,39 @@ export { SharedMCPAdapter } from "./shared-mcp-adapter.js";
 // =========================
 
 export type {
-  // 工具调用相关
-  ToolCallResult,
-  ToolCallParams,
-  ValidatedToolCallParams,
-  // 服务管理器接口
-  IMCPServiceManager,
+  ConfigChangeEvent,
+  ConnectionOptions,
+  ConnectionStatus,
+  EndpointConfig,
   // 连接状态相关
   EndpointConnectionStatus,
-  ConnectionOptions,
-  // 管理器状态相关
-  SimpleConnectionStatus,
-  ConnectionStatus,
-  ConfigChangeEvent,
-  ReconnectResult,
+  EndpointManagerConfig,
+  // 服务管理器接口
+  IMCPServiceManager,
   // JSON Schema
   JSONSchema,
+  LocalMCPServerConfig,
   // 新 API 配置类型
   MCPServerConfig,
-  LocalMCPServerConfig,
+  ParsedEndpointInfo,
+  ReconnectResult,
+  // 管理器状态相关
+  SimpleConnectionStatus,
   SSEMCPServerConfig,
   StreamableHTTPMCPServerConfig,
-  EndpointConfig,
-  EndpointManagerConfig,
+  ToolCallParams,
+  // 工具调用相关
+  ToolCallResult,
+  ValidatedToolCallParams,
   // JWT Token 相关
   XiaozhiTokenPayload,
-  ParsedEndpointInfo,
 } from "./types.js";
 
 // =========================
 // 枚举导出
 // =========================
 
-export { ToolCallErrorCode, ConnectionState } from "./types.js";
+export { ConnectionState, ToolCallErrorCode } from "./types.js";
 
 // =========================
 // 错误类导出
@@ -93,23 +93,22 @@ export { ToolCallError } from "./types.js";
 // 工具函数导出
 // =========================
 
+export { ensureToolJSONSchema } from "./types.js";
 export {
-  sliceEndpoint,
-  validateToolCallParams,
-  isValidEndpointUrl,
-  deepMerge,
-  sleep,
-  formatErrorMessage,
   // JWT Token 解码相关
   decodeJWTToken,
+  deepMerge,
   extractTokenFromUrl,
+  formatErrorMessage,
+  isValidEndpointUrl,
   parseEndpointUrl,
+  sleep,
+  sliceEndpoint,
+  validateToolCallParams,
 } from "./utils.js";
-
-export { ensureToolJSONSchema } from "./types.js";
 
 // =========================
 // MCP 类型导出
 // =========================
 
-export type { MCPMessage, ExtendedMCPMessage } from "./mcp.js";
+export type { ExtendedMCPMessage, MCPMessage } from "./mcp.js";

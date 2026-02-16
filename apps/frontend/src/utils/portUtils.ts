@@ -33,7 +33,7 @@ export async function checkPortAvailability(
     }
 
     return response.ok;
-  } catch (error) {
+  } catch (_error) {
     // 连接失败或超时
     return false;
   } finally {
@@ -104,7 +104,7 @@ export function buildWebSocketUrl(port: number, hostname?: string): string {
 export function extractPortFromUrl(url: string): number | null {
   try {
     const urlObj = new URL(url);
-    const port = Number.parseInt(urlObj.port);
+    const port = Number.parseInt(urlObj.port, 10);
     return Number.isNaN(port) ? null : port;
   } catch {
     return null;

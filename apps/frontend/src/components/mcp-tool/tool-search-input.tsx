@@ -1,9 +1,9 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 import { Search, X } from "lucide-react";
 import * as React from "react";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 interface ToolSearchInputProps {
   /** 搜索框的值 */

@@ -3,11 +3,11 @@
  * 负责创建和管理 EndpointHandler 实例
  */
 
-import { EndpointHandler } from "@/handlers/endpoint.handler.js";
-import type { AppContext } from "@/types/hono.context.js";
 import { configManager } from "@xiaozhi-client/config";
 import type { EndpointManager } from "@xiaozhi-client/endpoint";
 import type { MiddlewareHandler } from "hono";
+import { EndpointHandler } from "@/handlers/endpoint.handler.js";
+import type { AppContext } from "@/types/hono.context.js";
 
 /**
  * 小智端点处理器中间件
@@ -16,7 +16,7 @@ import type { MiddlewareHandler } from "hono";
 export const endpointsMiddleware = (): MiddlewareHandler<AppContext> => {
   // 使用闭包缓存 handler 实例和 manager
   let endpointHandler: EndpointHandler | null = null;
-  let lastManager: EndpointManager | null | undefined = undefined;
+  let lastManager: EndpointManager | null | undefined;
 
   return async (c, next) => {
     const endpointManager = c.get("endpointManager");

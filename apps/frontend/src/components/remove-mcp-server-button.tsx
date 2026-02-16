@@ -1,3 +1,6 @@
+import { TrashIcon } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,9 +14,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { apiClient } from "@/services/api";
-import { TrashIcon } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
 
 export function RemoveMcpServerButton({
   mcpServerName,

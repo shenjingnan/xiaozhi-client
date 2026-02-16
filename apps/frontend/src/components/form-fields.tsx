@@ -3,6 +3,8 @@
  * 根据配置自动渲染不同类型的表单字段
  */
 
+import type { UseFormReturn } from "react-hook-form";
+import type { z } from "zod";
 import {
   FormControl,
   FormDescription,
@@ -21,8 +23,6 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { FieldConfig } from "@/types/form-config";
-import type { UseFormReturn } from "react-hook-form";
-import type { z } from "zod";
 
 /**
  * 渲染单个表单字段

@@ -2,52 +2,48 @@
  * 小智项目共享类型定义主入口
  */
 
+// 工具API相关类型
+export type { MCPToolData, ToolType } from "./api";
+// 配置相关类型
+export type {
+  AppConfig,
+  ConnectionConfig,
+  LocalMCPServerConfig,
+  MCPServerConfig,
+  MCPServerToolsConfig,
+  MCPToolConfig,
+  ModelScopeConfig,
+  PlatformConfig,
+  PlatformsConfig,
+  SSEMCPServerConfig,
+  StreamableHTTPMCPServerConfig,
+  WebUIConfig,
+} from "./config";
 // 扣子平台相关类型
 export type {
-  CozeWorkspace,
   CozeApiResponse,
   CozeWorkflow,
   CozeWorkflowCreator,
+  CozeWorkflowsParams,
+  CozeWorkspace,
   WorkflowParameter,
   WorkflowParameterConfig,
-  CozeWorkflowsParams,
 } from "./coze";
-
-// MCP 相关类型
-export type {
-  ExtendedMCPToolsCache,
-  EnhancedToolResultCache,
-  TaskStatus,
-  MCPMessage,
-  MCPResponse,
-  MCPError,
-  CustomMCPTool,
-  CustomMCPToolWithStats,
-  CustomMCPToolConfig,
-  JSONSchema,
-} from "./mcp";
-
-// 工具API相关类型
-export type { ToolType, MCPToolData } from "./api";
-
-// 配置相关类型
-export type {
-  LocalMCPServerConfig,
-  MCPToolConfig,
-  MCPServerToolsConfig,
-  ConnectionConfig,
-  AppConfig,
-  ModelScopeConfig,
-  WebUIConfig,
-  PlatformsConfig,
-  PlatformConfig,
-  MCPServerConfig,
-  SSEMCPServerConfig,
-  StreamableHTTPMCPServerConfig,
-} from "./config";
-
 // 前端相关类型
 export * from "./frontend";
+// MCP 相关类型
+export type {
+  CustomMCPTool,
+  CustomMCPToolConfig,
+  CustomMCPToolWithStats,
+  EnhancedToolResultCache,
+  ExtendedMCPToolsCache,
+  JSONSchema,
+  MCPError,
+  MCPMessage,
+  MCPResponse,
+  TaskStatus,
+} from "./mcp";
 
 // 工具类型
 export { TimeoutError } from "./utils";

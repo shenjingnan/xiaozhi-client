@@ -20,10 +20,10 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   dts: {
-    entry: ['src/index.ts'],
+    entry: ["src/index.ts"],
     compilerOptions: {
-      composite: false
-    }
+      composite: false,
+    },
   },
   minify: false,
   splitting: false,

@@ -54,8 +54,8 @@ export class ProcessManagerImpl implements IProcessManager {
       const pidContent = FileUtils.readFile(pidFilePath).trim();
       const [pidStr, startTimeStr, mode] = pidContent.split("|");
 
-      const pid = Number.parseInt(pidStr);
-      const startTime = Number.parseInt(startTimeStr);
+      const pid = Number.parseInt(pidStr, 10);
+      const startTime = Number.parseInt(startTimeStr, 10);
 
       if (Number.isNaN(pid) || Number.isNaN(startTime)) {
         // PID 文件损坏，删除它
@@ -68,7 +68,7 @@ export class ProcessManagerImpl implements IProcessManager {
         startTime,
         mode: (mode as "foreground" | "daemon") || "foreground",
       };
-    } catch (error) {
+    } catch (_error) {
       // 读取失败，可能文件损坏
       this.cleanupPidFile();
       return null;
@@ -83,7 +83,7 @@ export class ProcessManagerImpl implements IProcessManager {
       const pidInfo = `${pid}|${Date.now()}|${mode}`;
       const pidFilePath = this.getPidFilePath();
       FileUtils.writeFile(pidFilePath, pidInfo, { overwrite: true });
-    } catch (error) {
+    } catch (_error) {
       throw new FileError("无法写入 PID 文件", this.getPidFilePath());
     }
   }
@@ -122,7 +122,7 @@ export class ProcessManagerImpl implements IProcessManager {
         uptime,
         mode: pidInfo.mode,
       };
-    } catch (error) {
+    } catch (_error) {
       return { running: false };
     }
   }
@@ -217,7 +217,7 @@ export class ProcessManagerImpl implements IProcessManager {
     if (PlatformUtils.isContainerEnvironment()) {
       try {
         this.cleanupPidFile();
-      } catch (error) {
+      } catch (_error) {
         // 忽略清理错误
       }
     }

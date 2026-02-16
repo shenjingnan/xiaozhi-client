@@ -2,12 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Logger } from "../../Logger.js";
 import type { MCPError } from "../error-helper.js";
 import {
-  ErrorCategory,
-  RecoveryStrategy,
   categorizeError,
   clearErrorHistory,
+  ErrorCategory,
   formatUserFriendlyMessage,
   getErrorStatistics,
+  RecoveryStrategy,
   shouldAlert,
 } from "../error-helper.js";
 

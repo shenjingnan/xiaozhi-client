@@ -101,12 +101,18 @@ async function main(): Promise<void> {
 
     // 5. 获取工具列表
     const tools = endpoint.getTools();
-    console.log(`发现 ${tools.length} 个工具（来自 calculator 和 datetime 服务）:`);
+    console.log(
+      `发现 ${tools.length} 个工具（来自 calculator 和 datetime 服务）:`
+    );
     console.log();
 
     // 按服务分组显示工具
-    const calculatorTools = tools.filter((tool) => tool.name.startsWith("calculator_"));
-    const datetimeTools = tools.filter((tool) => tool.name.startsWith("datetime_"));
+    const calculatorTools = tools.filter((tool) =>
+      tool.name.startsWith("calculator_")
+    );
+    const datetimeTools = tools.filter((tool) =>
+      tool.name.startsWith("datetime_")
+    );
 
     console.log("📦 计算器服务工具:");
     for (const tool of calculatorTools) {
@@ -116,7 +122,9 @@ async function main(): Promise<void> {
       }
       // 显示输入参数 schema（如果有的话）
       if (tool.inputSchema && Object.keys(tool.inputSchema).length > 0) {
-        const properties = (tool.inputSchema as { properties?: Record<string, unknown> }).properties;
+        const properties = (
+          tool.inputSchema as { properties?: Record<string, unknown> }
+        ).properties;
         if (properties && Object.keys(properties).length > 0) {
           console.log(`    参数: ${Object.keys(properties).join(", ")}`);
         }
@@ -132,7 +140,9 @@ async function main(): Promise<void> {
       }
       // 显示输入参数 schema（如果有的话）
       if (tool.inputSchema && Object.keys(tool.inputSchema).length > 0) {
-        const properties = (tool.inputSchema as { properties?: Record<string, unknown> }).properties;
+        const properties = (
+          tool.inputSchema as { properties?: Record<string, unknown> }
+        ).properties;
         if (properties && Object.keys(properties).length > 0) {
           console.log(`    参数: ${Object.keys(properties).join(", ")}`);
         }
@@ -147,17 +157,23 @@ async function main(): Promise<void> {
     console.log("💡 测试验证方法:");
     console.log("   使用以下 API 验证工具列表:");
     console.log();
-    console.log('   fetch("https://api.xiaozhi.me/mcp/endpoints/list?endpoint_ids=agent_1324149", {');
+    console.log(
+      '   fetch("https://api.xiaozhi.me/mcp/endpoints/list?endpoint_ids=agent_1324149", {'
+    );
     console.log("     headers: {");
     console.log('       "authorization": "Bearer YOUR_TOKEN"');
     console.log("     }");
     console.log("   });");
     console.log();
     console.log("   或使用 curl:");
-    console.log('   curl "https://api.xiaozhi.me/mcp/endpoints/list?endpoint_ids=agent_1324149" \\');
+    console.log(
+      '   curl "https://api.xiaozhi.me/mcp/endpoints/list?endpoint_ids=agent_1324149" \\'
+    );
     console.log('     -H "authorization: Bearer YOUR_TOKEN"');
     console.log();
-    console.log("   预期结果：返回的工具列表应包含 calculator 和 datetime 两个服务的工具");
+    console.log(
+      "   预期结果：返回的工具列表应包含 calculator 和 datetime 两个服务的工具"
+    );
     console.log("=".repeat(50));
     console.log();
     console.log("按 Ctrl+C 退出...");
@@ -172,7 +188,9 @@ async function main(): Promise<void> {
     if (error instanceof Error) {
       console.error(`   错误信息: ${error.message}`);
       if (error.stack) {
-        console.error(`   堆栈: ${error.stack.split("\n").slice(1, 3).join("\n")}`);
+        console.error(
+          `   堆栈: ${error.stack.split("\n").slice(1, 3).join("\n")}`
+        );
       }
     }
     console.error();

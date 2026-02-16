@@ -15,18 +15,17 @@ import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import WebSocket from "ws";
 import type { ExtendedMCPMessage, MCPMessage } from "./mcp.js";
 import type {
-  IMCPServiceManager,
   EndpointConnectionStatus,
+  IMCPServiceManager,
   ToolCallResult,
 } from "./types.js";
 import {
   ConnectionState,
+  ensureToolJSONSchema as ensureToolJSONSchemaFn,
   ToolCallError as ToolCallErrorClass,
   ToolCallErrorCode as ToolCallErrorCodeEnum,
-  ensureToolJSONSchema as ensureToolJSONSchemaFn,
 } from "./types.js";
-import { validateToolCallParams } from "./utils.js";
-import { sliceEndpoint } from "./utils.js";
+import { sliceEndpoint, validateToolCallParams } from "./utils.js";
 
 // 导出错误类型供外部使用
 export {
@@ -134,7 +133,9 @@ export class Endpoint {
    */
   static async create(config: EndpointCreateConfig): Promise<Endpoint> {
     // 动态导入相关模块
-    const { InternalMCPManagerAdapter } = await import("./internal-mcp-manager.js");
+    const { InternalMCPManagerAdapter } = await import(
+      "./internal-mcp-manager.js"
+    );
 
     // 创建内部 MCP 管理器适配器配置
     const endpointConfig = {
@@ -624,9 +625,10 @@ export class Endpoint {
         console.error("发送错误响应失败:", {
           id,
           errorResponse: error,
-          sendError: sendError instanceof Error
-            ? { message: sendError.message, stack: sendError.stack }
-            : sendError,
+          sendError:
+            sendError instanceof Error
+              ? { message: sendError.message, stack: sendError.stack }
+              : sendError,
         });
       }
     } else {

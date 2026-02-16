@@ -57,7 +57,7 @@ export const formatJson = (data: unknown): string | null => {
   if (!data) return null;
   try {
     return JSON.stringify(data, null, 2);
-  } catch (error) {
+  } catch (_error) {
     return String(data);
   }
 };

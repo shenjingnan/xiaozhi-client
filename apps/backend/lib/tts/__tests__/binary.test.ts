@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  synthesizeSpeech,
   type TTSOptions,
   VoiceToCluster,
-  synthesizeSpeech,
 } from "../binary.js";
 
 // 只测试 VoiceToCluster 函数
