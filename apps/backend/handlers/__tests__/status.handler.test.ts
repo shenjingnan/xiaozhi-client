@@ -2,7 +2,7 @@ import type { StatusService } from "@/services/status.service.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { StatusApiHandler } from "../status.handler.js";
 
-// Mock dependencies
+// 模拟依赖
 vi.mock("../../Logger.js", () => ({
   logger: {
     debug: vi.fn(),
@@ -19,7 +19,7 @@ describe("StatusApiHandler 状态 API 处理器", () => {
   let mockLogger: any;
 
   beforeEach(async () => {
-    // Setup mock logger first
+    // 首先设置模拟 logger
     const { logger } = await import("../../Logger.js");
     mockLogger = {
       debug: vi.fn(),
@@ -29,7 +29,7 @@ describe("StatusApiHandler 状态 API 处理器", () => {
     };
     Object.assign(logger, mockLogger);
 
-    // Setup mock StatusService
+    // 设置模拟 StatusService
     mockStatusService = {
       getFullStatus: vi.fn(),
       getClientStatus: vi.fn(),
@@ -42,7 +42,7 @@ describe("StatusApiHandler 状态 API 处理器", () => {
       reset: vi.fn(),
     } as any;
 
-    // Setup mock Context
+    // 设置模拟 Context
     mockContext = {
       get: vi.fn((key: string) => {
         if (key === "logger") return mockLogger;
@@ -88,7 +88,7 @@ describe("StatusApiHandler 状态 API 处理器", () => {
       },
     } as any;
 
-    // Create handler instance
+    // 创建处理器实例
     statusApiHandler = new StatusApiHandler(mockStatusService);
   });
 

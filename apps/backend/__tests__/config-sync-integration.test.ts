@@ -9,7 +9,7 @@ import type { AppConfig } from "@xiaozhi-client/config";
 import { ConfigManager } from "@xiaozhi-client/config";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock fs module
+// 模拟 fs 模块
 vi.mock("node:fs", async (importOriginal) => {
   const actual = await importOriginal<typeof import("node:fs")>();
   return {
@@ -21,7 +21,7 @@ vi.mock("node:fs", async (importOriginal) => {
   };
 });
 
-// Mock path module
+// 模拟 path 模块
 vi.mock("node:path", async (importOriginal) => {
   const actual = await importOriginal<typeof import("node:path")>();
   return {
@@ -31,7 +31,7 @@ vi.mock("node:path", async (importOriginal) => {
   };
 });
 
-// Mock url module
+// 模拟 url 模块
 vi.mock("node:url", async (importOriginal) => {
   const actual = await importOriginal<typeof import("node:url")>();
   return {
@@ -40,7 +40,7 @@ vi.mock("node:url", async (importOriginal) => {
   };
 });
 
-// Mock logger
+// 模拟 logger
 vi.mock("../Logger", () => ({
   logger: {
     info: vi.fn(),
@@ -61,13 +61,13 @@ describe("配置同步集成测试", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Reset singleton instance
+    // 重置单例实例
     // @ts-ignore - accessing private static property for testing
     ConfigManager.instance = undefined;
 
     configManager = ConfigManager.getInstance();
 
-    // Setup default mocks
+    // 设置默认模拟
     mockResolve.mockImplementation(
       (dir: string, file: string) => `${dir}/${file}`
     );

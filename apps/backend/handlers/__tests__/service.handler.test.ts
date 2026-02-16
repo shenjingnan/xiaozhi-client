@@ -2,7 +2,7 @@ import type { StatusService } from "@/services/status.service.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ServiceApiHandler } from "../service.handler.js";
 
-// Mock dependencies
+// 模拟依赖
 vi.mock("../../Logger.js", () => ({
   logger: {
     debug: vi.fn(),
@@ -34,12 +34,12 @@ describe("ServiceApiHandler", () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
 
-    // Mock StatusService
+    // 模拟 StatusService
     mockStatusService = {
       updateRestartStatus: vi.fn(),
     } as any;
 
-    // Mock MCPServiceManager
+    // 模拟 MCPServiceManager
     mockMcpServiceManager = {
       getStatus: vi.fn().mockReturnValue({
         isRunning: true,
@@ -48,7 +48,7 @@ describe("ServiceApiHandler", () => {
       }),
     };
 
-    // Mock Hono Context
+    // 模拟 Hono Context
     mockContext = {
       json: vi.fn().mockReturnValue(new Response()),
       success: vi.fn().mockReturnValue(new Response()),
@@ -72,14 +72,14 @@ describe("ServiceApiHandler", () => {
       }),
     };
 
-    // Mock spawn
+    // 模拟 spawn
     mockSpawn = vi.fn().mockReturnValue({
       unref: vi.fn(),
     });
     const { spawn } = await import("node:child_process");
     vi.mocked(spawn).mockImplementation(mockSpawn);
 
-    // Mock EventBus
+    // 模拟 EventBus
     mockEventBus = {
       emitEvent: vi.fn(),
     };
@@ -95,14 +95,14 @@ describe("ServiceApiHandler", () => {
   });
 
   describe("constructor", () => {
-    it("should initialize with correct dependencies", () => {
+    it("应该使用正确的依赖项初始化", () => {
       expect(handler).toBeInstanceOf(ServiceApiHandler);
       expect(mockEventBus).toBeDefined();
     });
   });
 
   describe("getServiceStatus", () => {
-    it("should return service status successfully", async () => {
+    it("应该成功返回服务状态", async () => {
       const mockStatus = {
         isRunning: true,
         pid: 12345,
@@ -118,7 +118,7 @@ describe("ServiceApiHandler", () => {
       expect(mockContext.success).toHaveBeenCalledWith(mockStatus);
     });
 
-    it("should handle service status error", async () => {
+    it("应该处理服务状态错误", async () => {
       const error = new Error("Status check failed");
       mockMcpServiceManager.getStatus.mockImplementation(() => {
         throw error;
@@ -134,7 +134,7 @@ describe("ServiceApiHandler", () => {
       );
     });
 
-    it("should handle non-Error exceptions", async () => {
+    it("应该处理非 Error 异常", async () => {
       mockMcpServiceManager.getStatus.mockImplementation(() => {
         throw "String error";
       });
@@ -151,7 +151,7 @@ describe("ServiceApiHandler", () => {
   });
 
   describe("getServiceHealth", () => {
-    it("should return service health successfully", async () => {
+    it("应该成功返回服务健康状态", async () => {
       const originalUptime = process.uptime;
       const originalMemoryUsage = process.memoryUsage;
       const originalVersion = process.version;
@@ -185,7 +185,7 @@ describe("ServiceApiHandler", () => {
         version: "v18.0.0",
       });
 
-      // Restore original functions
+      // 恢复原始函数
       process.uptime = originalUptime;
       process.memoryUsage = originalMemoryUsage;
       Object.defineProperty(process, "version", {
@@ -194,7 +194,7 @@ describe("ServiceApiHandler", () => {
       });
     });
 
-    it("should handle health check error", async () => {
+    it("应该处理健康检查错误", async () => {
       const originalUptime = process.uptime;
       process.uptime = vi.fn().mockImplementation(() => {
         throw new Error("Uptime error");
@@ -209,13 +209,13 @@ describe("ServiceApiHandler", () => {
         500
       );
 
-      // Restore original function
+      // 恢复原始函数
       process.uptime = originalUptime;
     });
   });
 
   describe("startService", () => {
-    it("should start service successfully", async () => {
+    it("应该成功启动服务", async () => {
       await handler.startService(mockContext);
 
       expect(mockSpawn).toHaveBeenCalledWith("xiaozhi", ["start", "--daemon"], {
@@ -229,7 +229,7 @@ describe("ServiceApiHandler", () => {
       expect(mockContext.success).toHaveBeenCalledWith(null, "启动请求已接收");
     });
 
-    it("should handle start service error", async () => {
+    it("应该处理启动服务错误", async () => {
       const error = new Error("Start failed");
       mockSpawn.mockImplementation(() => {
         throw error;
@@ -245,7 +245,7 @@ describe("ServiceApiHandler", () => {
       );
     });
 
-    it("should handle non-Error exceptions in start", async () => {
+    it("应该处理启动时的非 Error 异常", async () => {
       mockSpawn.mockImplementation(() => {
         throw "String error";
       });
@@ -260,7 +260,7 @@ describe("ServiceApiHandler", () => {
       );
     });
 
-    it("should use correct environment variables", async () => {
+    it("应该使用正确的环境变量", async () => {
       const originalEnv = process.env.XIAOZHI_CONFIG_DIR;
       process.env.XIAOZHI_CONFIG_DIR = "/custom/config/dir";
 
@@ -528,13 +528,13 @@ describe("ServiceApiHandler", () => {
         })
       );
 
-      // Cleanup
+      // 清理
       process.env.CUSTOM_VAR = undefined;
     });
   });
 
   describe("error handling edge cases", () => {
-    it("should handle spawn returning null", async () => {
+    it("应该处理 spawn 返回 null", async () => {
       mockSpawn.mockReturnValue(null);
 
       await handler.startService(mockContext);
@@ -547,7 +547,7 @@ describe("ServiceApiHandler", () => {
       );
     });
 
-    it("should handle spawn child without unref method", async () => {
+    it("应该处理没有 unref 方法的 spawn 子进程", async () => {
       mockSpawn.mockReturnValue({});
 
       await handler.startService(mockContext);
@@ -560,7 +560,7 @@ describe("ServiceApiHandler", () => {
       );
     });
 
-    it("should handle unref method throwing error", async () => {
+    it("应该处理 unref 方法抛出错误", async () => {
       mockSpawn.mockReturnValue({
         unref: vi.fn().mockImplementation(() => {
           throw new Error("Unref failed");
@@ -579,7 +579,7 @@ describe("ServiceApiHandler", () => {
   });
 
   describe("integration scenarios", () => {
-    it("should handle multiple concurrent restart requests", async () => {
+    it("应该处理多个并发的重启请求", async () => {
       const promise1 = handler.restartService(mockContext);
       const promise2 = handler.restartService(mockContext);
 
@@ -590,7 +590,7 @@ describe("ServiceApiHandler", () => {
       expect(mockContext.success).toHaveBeenCalledTimes(2);
     });
 
-    it("should handle service manager returning undefined status", async () => {
+    it("应该处理服务管理器返回未定义状态", async () => {
       mockMcpServiceManager.getStatus.mockReturnValue(undefined);
 
       await handler.restartService(mockContext);

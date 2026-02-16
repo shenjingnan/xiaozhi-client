@@ -11,7 +11,7 @@ import {
   shouldAlert,
 } from "../error-helper.js";
 
-// Mock dependencies
+// 模拟依赖
 vi.mock("../../Logger.js");
 
 describe("ErrorHandler", () => {
@@ -20,7 +20,7 @@ describe("ErrorHandler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Mock Logger
+    // 模拟 Logger
     mockLogger = {
       info: vi.fn(),
       error: vi.fn(),
@@ -30,7 +30,7 @@ describe("ErrorHandler", () => {
     };
     vi.mocked(Logger).mockImplementation(() => mockLogger);
 
-    // Clear error history
+    // 清除错误历史
     clearErrorHistory();
   });
 

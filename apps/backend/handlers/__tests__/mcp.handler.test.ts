@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MCPRouteHandler } from "../mcp.handler.js";
 
-// Mock MCPServiceManager - 在 Context 中提供
+// 模拟 MCPServiceManager - 在 Context 中提供
 const mockServiceManager = {
-  // Mock service manager
+  // 模拟服务管理器
 };
 
-// Mock MCPMessageHandler
+// 模拟 MCPMessageHandler
 vi.mock("@/lib/mcp", () => ({
   MCPMessageHandler: vi.fn().mockImplementation(() => ({
     handleMessage: vi.fn().mockResolvedValue({
@@ -46,7 +46,7 @@ describe("MCPRouteHandler", () => {
   });
 
   it("应该处理有效的 JSON-RPC 消息的 POST 请求", async () => {
-    // Mock Context object
+    // 模拟 Context 对象
     const mockContext = {
       req: {
         header: vi.fn((name: string) => {
@@ -193,7 +193,7 @@ describe("MCPRouteHandler", () => {
   });
 
   it("应该拒绝超过最大消息大小的 POST 请求", async () => {
-    const largeMessage = "x".repeat(2 * 1024 * 1024); // 2MB message
+    const largeMessage = "x".repeat(2 * 1024 * 1024); // 2MB 消息
     const mockContext = {
       req: {
         header: vi.fn((name: string) => {

@@ -2,7 +2,7 @@ import type { AppConfig } from "@xiaozhi-client/config";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RealtimeNotificationHandler } from "../realtime-notification.handler.js";
 
-// Mock dependencies
+// 模拟依赖
 vi.mock("../../Logger.js", () => ({
   logger: {
     debug: vi.fn(),
@@ -79,7 +79,7 @@ describe("RealtimeNotificationHandler", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
 
-    // Mock Logger
+    // 模拟 Logger
     mockLogger = {
       debug: vi.fn(),
       info: vi.fn(),
@@ -89,7 +89,7 @@ describe("RealtimeNotificationHandler", () => {
     const { logger } = await import("../../Logger.js");
     Object.assign(logger, mockLogger);
 
-    // Mock ConfigManager
+    // 模拟 ConfigManager
     mockConfigService = {
       getConfig: vi.fn().mockReturnValue(mockConfig),
       getMcpEndpoint: vi.fn().mockReturnValue(mockConfig.mcpEndpoint),
@@ -108,7 +108,7 @@ describe("RealtimeNotificationHandler", () => {
     const { configManager } = await import("@xiaozhi-client/config");
     Object.assign(configManager, mockConfigService);
 
-    // Mock EventBus
+    // 模拟 EventBus
     mockEventBus = {
       emitEvent: vi.fn(),
       onEvent: vi.fn(),
@@ -116,7 +116,7 @@ describe("RealtimeNotificationHandler", () => {
     const { getEventBus } = await import("@/services/event-bus.service.js");
     vi.mocked(getEventBus).mockReturnValue(mockEventBus);
 
-    // Mock NotificationService
+    // 模拟 NotificationService
     mockNotificationService = {
       registerClient: vi.fn(),
       unregisterClient: vi.fn(),
@@ -124,13 +124,13 @@ describe("RealtimeNotificationHandler", () => {
       broadcast: vi.fn(),
     };
 
-    // Mock StatusService
+    // 模拟 StatusService
     mockStatusService = {
       getFullStatus: vi.fn(),
       updateRestartStatus: vi.fn(),
     };
 
-    // Mock WebSocket
+    // 模拟 WebSocket
     mockWebSocket = {
       send: vi.fn(),
       readyState: 1, // WebSocket.OPEN
@@ -146,7 +146,7 @@ describe("RealtimeNotificationHandler", () => {
     vi.clearAllMocks();
   });
 
-  // Helper function to verify error messages
+  // 辅助函数：验证错误消息
   const expectErrorMessage = (
     mockWebSocket: any,
     code: string,
@@ -347,7 +347,7 @@ describe("RealtimeNotificationHandler", () => {
     });
 
     it("should handle getConfig success", async () => {
-      // Access private method through type assertion for testing
+      // 通过类型断言访问私有方法进行测试
       const handler = realtimeHandler as any;
       await handler.handleGetConfig(mockWebSocket, clientId);
 
@@ -595,17 +595,17 @@ describe("RealtimeNotificationHandler", () => {
       expect(mockConfigService.getConfig).toHaveBeenCalledTimes(1);
       expect(mockStatusService.getFullStatus).toHaveBeenCalledTimes(1);
 
-      // Should send config update
+      // 应该发送配置更新
       expect(mockWebSocket.send).toHaveBeenCalledWith(
         JSON.stringify({ type: "configUpdate", data: mockConfig })
       );
 
-      // Should send status update
+      // 应该发送状态更新
       expect(mockWebSocket.send).toHaveBeenCalledWith(
         JSON.stringify({ type: "statusUpdate", data: mockStatus.client })
       );
 
-      // Should send restart status if available
+      // 如果可用，应该发送重启状态
       expect(mockWebSocket.send).toHaveBeenCalledWith(
         JSON.stringify({ type: "restartStatus", data: mockStatus.restart })
       );
@@ -625,7 +625,7 @@ describe("RealtimeNotificationHandler", () => {
 
       await realtimeHandler.sendInitialData(mockWebSocket, clientId);
 
-      // Should send config and status updates
+      // 应该发送配置和状态更新
       expect(mockWebSocket.send).toHaveBeenCalledTimes(2);
       expect(mockWebSocket.send).toHaveBeenCalledWith(
         JSON.stringify({ type: "configUpdate", data: mockConfig })
@@ -634,7 +634,7 @@ describe("RealtimeNotificationHandler", () => {
         JSON.stringify({ type: "statusUpdate", data: mockStatus.client })
       );
 
-      // Should not send restart status
+      // 不应该发送重启状态
       expect(mockWebSocket.send).not.toHaveBeenCalledWith(
         expect.stringContaining("restartStatus")
       );
@@ -675,25 +675,25 @@ describe("RealtimeNotificationHandler", () => {
     const clientId = "test-client-123";
 
     it("should handle complete message workflow", async () => {
-      // Setup mocks
+      // 设置模拟
       mockConfigService.getConfig.mockReturnValue(mockConfig);
       mockStatusService.getFullStatus.mockReturnValue(mockStatus);
 
-      // Test getConfig message
+      // 测试 getConfig 消息
       await realtimeHandler.handleMessage(
         mockWebSocket,
         { type: "getConfig" },
         clientId
       );
 
-      // Test getStatus message
+      // 测试 getStatus 消息
       await realtimeHandler.handleMessage(
         mockWebSocket,
         { type: "getStatus" },
         clientId
       );
 
-      // Test updateConfig message
+      // 测试 updateConfig 消息
       const configData = {
         mcpEndpoint: "ws://localhost:4000",
         mcpServers: {},
@@ -709,14 +709,14 @@ describe("RealtimeNotificationHandler", () => {
         clientId
       );
 
-      // Test restartService message
+      // 测试 restartService 消息
       await realtimeHandler.handleMessage(
         mockWebSocket,
         { type: "restartService" },
         clientId
       );
 
-      // Verify all operations were called
+      // 验证所有操作都被调用
       expect(mockConfigService.getConfig).toHaveBeenCalledTimes(1);
       expect(mockStatusService.getFullStatus).toHaveBeenCalledTimes(1);
       // 验证 validateConfig 和 updateConfig 被调用
@@ -735,7 +735,7 @@ describe("RealtimeNotificationHandler", () => {
     });
 
     it("should handle mixed success and error scenarios", async () => {
-      // First message succeeds
+      // 第一条消息成功
       mockConfigService.getConfig.mockReturnValue(mockConfig);
       await realtimeHandler.handleMessage(
         mockWebSocket,
@@ -743,7 +743,7 @@ describe("RealtimeNotificationHandler", () => {
         clientId
       );
 
-      // Second message fails
+      // 第二条消息失败
       const error = new Error("Status failed");
       mockStatusService.getFullStatus.mockImplementation(() => {
         throw error;
@@ -754,19 +754,19 @@ describe("RealtimeNotificationHandler", () => {
         clientId
       );
 
-      // Third message is unknown type
+      // 第三条消息是未知类型
       await realtimeHandler.handleMessage(
         mockWebSocket,
         { type: "unknownType" },
         clientId
       );
 
-      // Verify success response
+      // 验证成功响应
       expect(mockWebSocket.send).toHaveBeenCalledWith(
         JSON.stringify({ type: "config", data: mockConfig })
       );
 
-      // Verify error responses
+      // 验证错误响应
       expect(mockWebSocket.send).toHaveBeenCalledWith(
         expect.stringContaining('"code":"STATUS_READ_ERROR"')
       );
@@ -776,7 +776,7 @@ describe("RealtimeNotificationHandler", () => {
     });
 
     it("should handle sendInitialData with partial failures", async () => {
-      // Config succeeds, status fails
+      // 配置成功，状态失败
       mockConfigService.getConfig.mockReturnValue(mockConfig);
       mockStatusService.getFullStatus.mockImplementation(() => {
         throw new Error("Status failed");
@@ -784,7 +784,7 @@ describe("RealtimeNotificationHandler", () => {
 
       await realtimeHandler.sendInitialData(mockWebSocket, clientId);
 
-      // Should still send error message
+      // 仍应发送错误消息
       expect(mockWebSocket.send).toHaveBeenCalledWith(
         expect.stringContaining('"code":"INITIAL_DATA_ERROR"')
       );
@@ -805,7 +805,7 @@ describe("RealtimeNotificationHandler", () => {
         clientId
       );
 
-      // Should handle error gracefully
+      // 应该优雅地处理错误
       expect(mockLogger.error).toHaveBeenCalled();
     });
 
@@ -820,7 +820,7 @@ describe("RealtimeNotificationHandler", () => {
         clientId
       );
 
-      // Should handle error gracefully
+      // 应该优雅地处理错误
       expect(mockLogger.error).toHaveBeenCalled();
     });
 
@@ -855,7 +855,7 @@ describe("RealtimeNotificationHandler", () => {
         clientId
       );
 
-      // Should log the WebSocket send error
+      // 应该记录 WebSocket 发送错误
       expect(mockLogger.error).toHaveBeenCalledWith(
         "发送错误消息失败:",
         expect.any(Error)
@@ -879,7 +879,7 @@ describe("RealtimeNotificationHandler", () => {
 
       await realtimeHandler.sendInitialData(mockWebSocket, clientId);
 
-      // Should send the empty config
+      // 应该发送空配置
       expect(mockWebSocket.send).toHaveBeenCalledWith(
         JSON.stringify({ type: "configUpdate", data: {} })
       );

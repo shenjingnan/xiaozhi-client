@@ -9,7 +9,7 @@ import type { Context } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MCPToolHandler } from "../mcp-tool.handler.js";
 
-// Mock configManager
+// 模拟 configManager
 vi.mock("@xiaozhi-client/config", () => ({
   configManager: {
     addCustomMCPTool: vi.fn(),
@@ -25,7 +25,7 @@ vi.mock("@xiaozhi-client/config", () => ({
   },
 }));
 
-// Mock MCPServiceManager - 在 Context 中提供
+// 模拟 MCPServiceManager - 在 Context 中提供
 const mockServiceManager = {
   hasTool: vi.fn(() => false),
   hasCustomMCPTool: vi.fn(() => false),
@@ -43,7 +43,7 @@ const mockServiceManager = {
   startService: vi.fn(),
 };
 
-// Mock MCPCacheManager
+// 模拟 MCPCacheManager
 vi.mock("@/lib/mcp", () => ({
   MCPCacheManager: vi.fn().mockImplementation(() => ({
     getAllCachedTools: vi.fn().mockResolvedValue([]),
@@ -230,14 +230,14 @@ describe("MCPToolHandler - 核心功能测试", () => {
 
       mockContext.req!.json = vi.fn().mockResolvedValue(requestBody);
 
-      // Mock configManager methods to avoid complex dependencies
+      // 模拟 configManager 方法以避免复杂的依赖
       vi.mocked(configManager.addCustomMCPTool).mockImplementation(() => {});
       vi.mocked(configManager.getServerToolsConfig).mockReturnValue({});
       vi.mocked(configManager.updateServerToolsConfig).mockImplementation(
         () => {}
       );
 
-      // Mock MCPCacheManager
+      // 模拟 MCPCacheManager
       const { MCPCacheManager } = await import("@/lib/mcp");
       const mockMCPCacheManager = vi.mocked(MCPCacheManager);
       mockMCPCacheManager.mockImplementation(
@@ -255,7 +255,7 @@ describe("MCPToolHandler - 核心功能测试", () => {
 
       await handler.addCustomTool(mockContext as Context);
 
-      // Verify the request was processed correctly by checking the success response
+      // 通过检查成功响应验证请求是否正确处理
       expect(mockContext.success).toHaveBeenCalledWith(
         expect.objectContaining({
           toolName: "test-service__test-tool",
@@ -279,12 +279,12 @@ describe("MCPToolHandler - 核心功能测试", () => {
 
       mockContext.req!.json = vi.fn().mockResolvedValue(requestBody);
 
-      // Mock configManager methods for Coze workflow processing
+      // 为 Coze 工作流处理模拟 configManager 方法
       vi.mocked(configManager.addCustomMCPTool).mockImplementation(() => {});
 
       await handler.addCustomTool(mockContext as Context);
 
-      // Verify the request was processed correctly by checking the success response
+      // 通过检查成功响应验证请求是否正确处理
       expect(mockContext.success).toHaveBeenCalledWith(
         expect.objectContaining({
           toolName: expect.any(String),

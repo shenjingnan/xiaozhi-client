@@ -13,7 +13,7 @@ import { MCPCacheManager } from "../cache";
 import type { InternalMCPServiceConfig } from "../types";
 import { MCPTransportType } from "../types";
 
-// Mock logger
+// 模拟 logger
 vi.mock("../../Logger.js", () => ({
   logger: {
     debug: vi.fn(),

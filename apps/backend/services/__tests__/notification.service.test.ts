@@ -4,7 +4,7 @@ import { NotificationService } from "../notification.service.js";
 import type { WebSocketClient } from "../notification.service.js";
 import type { ClientInfo } from "../status.service.js";
 
-// Mock EventBus
+// 模拟 EventBus
 vi.mock("../event-bus.service.js", () => ({
   getEventBus: vi.fn().mockReturnValue({
     onEvent: vi.fn(),
@@ -12,7 +12,7 @@ vi.mock("../event-bus.service.js", () => ({
   }),
 }));
 
-// Mock Logger
+// 模拟 Logger
 vi.mock("@/Logger.js", () => ({
   logger: {
     debug: vi.fn(),
@@ -23,7 +23,7 @@ vi.mock("@/Logger.js", () => ({
   },
 }));
 
-// Mock ConfigManager
+// 模拟 ConfigManager
 vi.mock("@xiaozhi-client/config", () => ({
   configManager: {
     getConfig: vi.fn().mockReturnValue({
@@ -81,7 +81,7 @@ describe("NotificationService", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
 
-    // Mock EventBus
+    // 模拟 EventBus
     mockEventBus = {
       onEvent: vi.fn(),
       emitEvent: vi.fn(),
@@ -89,7 +89,7 @@ describe("NotificationService", () => {
     const { getEventBus } = await import("../event-bus.service.js");
     (getEventBus as any).mockReturnValue(mockEventBus);
 
-    // Mock Logger
+    // 模拟 Logger
     mockLogger = {
       debug: vi.fn(),
       info: vi.fn(),

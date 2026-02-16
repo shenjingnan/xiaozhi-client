@@ -9,7 +9,7 @@ import type { Context } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MCPToolHandler } from "../mcp-tool.handler.js";
 
-// Mock configManager
+// 模拟 configManager
 vi.mock("@xiaozhi-client/config", () => ({
   configManager: {
     addCustomMCPTool: vi.fn(),
