@@ -58,6 +58,11 @@ vi.mock("@/providers/WebSocketProvider", () => ({
 }));
 
 vi.mock("@/stores/websocket", () => ({
+  useWebSocketConnected: vi.fn(() => false),
+  useWebSocketPortChangeStatus: vi.fn(() => undefined),
+}));
+
+vi.mock("@/stores/websocket-compat", () => ({
   useWebSocketConfig: vi.fn(() => ({
     webUI: {
       port: 9999,
@@ -66,8 +71,6 @@ vi.mock("@/stores/websocket", () => ({
     mcpEndpoint: "test-endpoint",
     mcpServers: {},
   })),
-  useWebSocketConnected: vi.fn(() => false),
-  useWebSocketPortChangeStatus: vi.fn(() => undefined),
 }));
 
 // 模拟 sonner toast 组件
