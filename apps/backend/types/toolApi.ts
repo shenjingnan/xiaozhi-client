@@ -278,24 +278,3 @@ export interface ToolConfigOptions {
   /** 工具分组 */
   group?: string;
 }
-
-/**
- * 扩展的 CustomMCPTool 接口
- * 包含额外的元数据信息
- */
-export interface ExtendedCustomMCPTool {
-  /** 基础工具配置 */
-  name: string;
-  description: string;
-  inputSchema: any;
-  handler: any;
-  /** 使用统计信息 */
-  stats?: {
-    usageCount?: number;
-    lastUsedTime?: string;
-  };
-  /** 工具元数据 */
-  metadata?: ToolMetadata;
-  /** 配置选项 */
-  config?: ToolConfigOptions;
-}
