@@ -70,6 +70,18 @@ export class MCPConnection {
 
   /**
    * 连接到 MCP 服务
+   *
+   * 建立与 MCP 服务的连接，并自动获取工具列表。连接成功后会触发 onConnected 回调。
+   *
+   * @throws {Error} 当连接正在进行中时抛出错误
+   * @throws {Error} 当连接超时（默认 30 秒）时抛出错误
+   * @throws {Error} 当配置无效时抛出错误
+   *
+   * @example
+   * ```typescript
+   * const connection = new MCPConnection('my-service', config);
+   * await connection.connect();
+   * ```
    */
   async connect(): Promise<void> {
     // 如果正在连接中，等待当前连接完成
@@ -262,7 +274,17 @@ export class MCPConnection {
   }
 
   /**
-   * 断开连接
+   * 断开与服务器的连接
+   *
+   * 主动断开与 MCP 服务的连接，清理所有相关资源（包括客户端、传输层、定时器等）。
+   * 断开后会触发 onDisconnected 回调，且会停止心跳检测。
+   *
+   * @throws 无抛出异常，即使断开失败也会忽略错误
+   *
+   * @example
+   * ```typescript
+   * await connection.disconnect();
+   * ```
    */
   async disconnect(): Promise<void> {
     console.info(`主动断开 MCP 服务 ${this.name} 连接`);
@@ -282,7 +304,20 @@ export class MCPConnection {
   }
 
   /**
-   * 获取工具列表
+   * 获取可用工具列表
+   *
+   * 返回当前 MCP 服务提供的所有工具。只有在成功连接后才能获取工具列表。
+   *
+   * @returns 工具数组，每个工具包含 name、description、inputSchema 等属性
+   *
+   * @example
+   * ```typescript
+   * const tools = connection.getTools();
+   * tools.forEach(tool => {
+   *   console.log(`工具名: ${tool.name}`);
+   *   console.log(`描述: ${tool.description}`);
+   * });
+   * ```
    */
   getTools(): Tool[] {
     return Array.from(this.tools.values());
@@ -382,7 +417,33 @@ export class MCPConnection {
   }
 
   /**
-   * 调用工具
+   * 调用 MCP 工具
+   *
+   * 向 MCP 服务发起工具调用请求，执行指定的工具并返回结果。
+   * 如果检测到会话过期错误，会自动重连并重试调用。
+   *
+   * @param name - 工具名称，必须在服务中存在（可通过 getTools() 查看）
+   * @param arguments_ - 工具调用参数，必须符合工具的 JSON Schema 定义
+   * @returns 返回工具调用的结果，包含 content 和 isError 等字段
+   *
+   * @throws {Error} 当服务未连接时抛出错误
+   * @throws {Error} 当工具不存在时抛出错误
+   * @throws {Error} 当工具调用失败时抛出原始错误
+   *
+   * @example
+   * ```typescript
+   * const result = await connection.callTool('calculator', {
+   *   operation: 'add',
+   *   a: 1,
+   *   b: 2
+   * });
+   *
+   * if (result.isError) {
+   *   console.error('调用失败:', result.content);
+   * } else {
+   *   console.log('调用结果:', result.content);
+   * }
+   * ```
    */
   async callTool(
     name: string,
@@ -441,6 +502,18 @@ export class MCPConnection {
 
   /**
    * 获取服务配置
+   *
+   * 返回当前 MCP 服务的配置信息，包含服务名称和完整配置。
+   *
+   * @returns 服务配置对象，包含 name 字段和原始 MCPServiceConfig 配置
+   *
+   * @example
+   * ```typescript
+   * const config = connection.getConfig();
+   * console.log(`服务名称: ${config.name}`);
+   * console.log(`服务类型: ${config.type}`);
+   * console.log(`服务端点: ${config.endpoint}`);
+   * ```
    */
   getConfig(): MCPServiceConfig & { name: string } {
     return {
@@ -451,6 +524,26 @@ export class MCPConnection {
 
   /**
    * 获取服务状态
+   *
+   * 返回当前 MCP 服务的实时状态信息，包括连接状态、工具数量等。
+   *
+   * @returns 服务状态对象，包含以下字段：
+   * - `name`: 服务名称
+   * - `connected`: 是否已连接
+   * - `initialized`: 是否已初始化完成
+   * - `transportType`: 传输层类型（stdio、http、websocket）
+   * - `toolCount`: 可用工具数量
+   * - `connectionState`: 详细连接状态（DISCONNECTED、CONNECTING、CONNECTED、RECONNECTING）
+   *
+   * @example
+   * ```typescript
+   * const status = connection.getStatus();
+   * if (status.connected) {
+   *   console.log(`服务 ${status.name} 已连接，共有 ${status.toolCount} 个工具`);
+   * } else {
+   *   console.log(`服务 ${status.name} 未连接，当前状态: ${status.connectionState}`);
+   * }
+   * ```
    */
   getStatus(): MCPServiceStatus {
     return {
@@ -465,7 +558,21 @@ export class MCPConnection {
   }
 
   /**
-   * 检查是否已连接
+   * 检查服务是否已连接
+   *
+   * 判断当前 MCP 服务是否处于已连接且已初始化的状态。
+   *
+   * @returns 如果服务已连接且初始化完成返回 true，否则返回 false
+   *
+   * @example
+   * ```typescript
+   * if (connection.isConnected()) {
+   *   // 安全地调用工具
+   *   const result = await connection.callTool('my-tool', {});
+   * } else {
+   *   console.log('服务未连接，请先调用 connect()');
+   * }
+   * ```
    */
   isConnected(): boolean {
     return (
