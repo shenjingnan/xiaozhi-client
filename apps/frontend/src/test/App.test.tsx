@@ -62,9 +62,9 @@ describe("App Routing", () => {
 
     // Reset stores using dynamic imports
     try {
-      const { useConfigStore } = await import("@stores/config");
-      const { useStatusStore } = await import("@stores/status");
-      const { useWebSocketStore } = await import("@stores/websocket");
+      const { useConfigStore } = await import("@/stores/config");
+      const { useStatusStore } = await import("@/stores/status");
+      const { useWebSocketStore } = await import("@/stores/websocket");
 
       useConfigStore.getState().reset();
       useStatusStore.getState().reset();

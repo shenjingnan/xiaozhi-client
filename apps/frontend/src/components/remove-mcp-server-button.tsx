@@ -1,5 +1,3 @@
-import { cn } from "@/lib/utils";
-import { apiClient } from "@/services/api";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,7 +8,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@ui/alert-dialog";
+} from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
+import { apiClient } from "@/services/api";
 import { TrashIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";

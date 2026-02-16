@@ -2,8 +2,8 @@
  * 兼容性测试 - 验证废弃选择器仍然正常工作
  */
 
-import { useConfigStore } from "@stores/config";
-import { useStatusStore } from "@stores/status";
+import { useConfigStore } from "@/stores/config";
+import { useStatusStore } from "@/stores/status";
 import {
   useWebSocketConfig,
   useWebSocketMcpEndpoint,
@@ -11,7 +11,7 @@ import {
   useWebSocketMcpServers,
   useWebSocketRestartStatus,
   useWebSocketStatus,
-} from "@stores/websocket-compat";
+} from "@/stores/websocket-compat";
 import { render } from "@testing-library/react";
 import type React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -42,8 +42,8 @@ const LegacyComponent: React.FC = () => {
 };
 
 // 导入新的选择器
-import { useConfig } from "@stores/config";
-import { useClientStatus } from "@stores/status";
+import { useConfig } from "@/stores/config";
+import { useClientStatus } from "@/stores/status";
 
 // 混合使用新旧选择器的组件
 const MixedComponent: React.FC = () => {

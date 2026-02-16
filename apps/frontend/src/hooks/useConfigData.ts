@@ -22,7 +22,7 @@ import {
   useModelScopeConfig,
   useSystemConfig,
   useWebUIConfig,
-} from "@stores/config";
+} from "@/stores/config";
 import type {
   AppConfig,
   ConnectionConfig,

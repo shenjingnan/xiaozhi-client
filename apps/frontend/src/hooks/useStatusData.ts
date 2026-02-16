@@ -26,7 +26,7 @@ import {
   useStatusLoading,
   useStatusMcpEndpoint,
   useStatusWithLoading,
-} from "@stores/status";
+} from "@/stores/status";
 import { useCallback } from "react";
 
 /**

@@ -2,13 +2,13 @@
  * useNetworkService Hook 测试
  */
 
-import { ConnectionState, networkService } from "@services/index";
+import { ConnectionState, networkService } from "@/services/index";
 import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useNetworkService } from "../useNetworkService";
 
 // Mock 依赖
-vi.mock("@services/index", () => ({
+vi.mock("@/services/index", () => ({
   networkService: {
     initialize: vi.fn(),
     destroy: vi.fn(),
@@ -32,7 +32,7 @@ vi.mock("@services/index", () => ({
   },
 }));
 
-vi.mock("@stores/config", () => ({
+vi.mock("@/stores/config", () => ({
   useConfigStore: {
     getState: vi.fn(() => ({
       setConfig: vi.fn(),
@@ -40,7 +40,7 @@ vi.mock("@stores/config", () => ({
   },
 }));
 
-vi.mock("@stores/status", () => ({
+vi.mock("@/stores/status", () => ({
   useStatusStore: {
     getState: vi.fn(() => ({
       setClientStatus: vi.fn(),
@@ -50,7 +50,7 @@ vi.mock("@stores/status", () => ({
   },
 }));
 
-vi.mock("@stores/websocket", () => ({
+vi.mock("@/stores/websocket", () => ({
   useWebSocketActions: () => ({
     setConnectionState: vi.fn(),
     setWsUrl: vi.fn(),

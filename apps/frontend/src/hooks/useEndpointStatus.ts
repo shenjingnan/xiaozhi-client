@@ -1,7 +1,7 @@
 import {
   type EndpointStatusChangedEvent,
   webSocketManager,
-} from "@services/websocket";
+} from "@/services/websocket";
 /**
  * 端点状态变更 Hook
  * 用于订阅和处理端点连接状态的实时变更

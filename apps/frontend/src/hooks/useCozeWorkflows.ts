@@ -3,7 +3,7 @@
  * 提供工作空间和工作流数据的状态管理
  */
 
-import { cozeApiClient } from "@services/cozeApi";
+import { cozeApiClient } from "@/services/cozeApi";
 import type {
   CozeUIState,
   CozeWorkflow,

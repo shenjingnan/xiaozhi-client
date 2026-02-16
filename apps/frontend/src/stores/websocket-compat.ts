@@ -5,7 +5,7 @@
  * 这些选择器将数据从新的专门 stores 中获取并以旧格式返回
  */
 
-import { ConnectionState } from "@services/websocket";
+import { ConnectionState } from "@/services/websocket";
 import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
 import { useConfigStore } from "./config";
 import { useStatusStore } from "./status";

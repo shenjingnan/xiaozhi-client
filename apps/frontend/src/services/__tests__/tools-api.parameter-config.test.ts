@@ -11,7 +11,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ToolsApiService } from "../toolsApi";
 
 // Mock apiClient
-vi.mock("@services/api", () => ({
+vi.mock("@/services/api", () => ({
   apiClient: {
     addCustomTool: vi.fn(),
     removeCustomTool: vi.fn(),
@@ -19,7 +19,7 @@ vi.mock("@services/api", () => ({
   },
 }));
 
-import { apiClient } from "@services/api";
+import { apiClient } from "@/services/api";
 
 describe("ToolsApiService - 参数配置功能", () => {
   let service: ToolsApiService;
