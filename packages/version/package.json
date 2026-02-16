@@ -24,12 +24,11 @@
     "test": "vitest",
     "type-check": "tsc --noEmit"
   },
-  "dependencies": {},
   "devDependencies": {
     "@types/node": "^24.3.0",
+    "tsup": "^8.3.5",
     "typescript": "^5.9.2",
-    "vitest": "^3.2.4",
-    "tsup": "^8.3.5"
+    "vitest": "^4.0.18"
   },
   "nx": {
     "targets": {

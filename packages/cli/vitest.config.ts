@@ -38,7 +38,7 @@ export default defineConfig({
         "coverage/**",
       ],
       include: [resolve(__dirname, "src/**/*.ts")],
-      all: true,
+      // all: true 选项在 Vitest v4 中已移除，现在默认只包含测试中加载的文件
       thresholds: {
         global: {
           branches: 80,
