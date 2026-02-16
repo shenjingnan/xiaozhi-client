@@ -41,6 +41,14 @@ import {
   createZodSchemaFromJsonSchema,
 } from "@/lib/schema-utils";
 import { apiClient } from "@/services/api";
+import type {
+  ArrayJSONSchema,
+  JSONSchema,
+  ObjectJSONSchema,
+  StringJSONSchema,
+  ToolInputSchema,
+} from "@/types/json-schema";
+import { isStringSchema } from "@/types/json-schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AlertCircle,
@@ -57,6 +65,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { FieldPath, FieldValues, UseFormReturn } from "react-hook-form";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -73,34 +82,39 @@ import { z } from "zod";
  * 2. 其他组件（如 WorkflowParameterConfigDialog）的用途是配置元数据，而非渲染动态表单
  * 3. 避免预防性设计 - 如果未来其他组件需要类似功能，再考虑提取
  */
-interface ArrayFieldProps {
-  name: string;
-  schema: any;
-  form: any;
+interface ArrayFieldProps<
+  TFieldValues extends FieldValues = FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+> {
+  name: TName;
+  schema: ArrayJSONSchema;
+  form: UseFormReturn<TFieldValues>;
   renderFormField: (
     fieldName: string,
-    fieldSchema: any
+    fieldSchema: JSONSchema
   ) => React.ReactElement | null;
 }
 
-const ArrayField = memo(function ArrayField({
+const ArrayField = memo(function ArrayField<TFieldValues extends FieldValues>({
   name,
   schema,
   form,
   renderFormField,
-}: ArrayFieldProps) {
+}: ArrayFieldProps<TFieldValues>) {
   const { fields, append, remove } = useFieldArray({
     control: form.control,
+    // 使用 as any 绕过 useFieldArray 的严格类型检查
+    // 因为动态字段路径无法在编译时确定
     name: name as any,
   });
 
   const addItem = () => {
     const itemSchema = schema.items;
-    let newItem: any;
+    let newItem: unknown;
 
-    switch (itemSchema.type) {
+    switch (itemSchema?.type) {
       case "string":
-        newItem = itemSchema.enum ? itemSchema.enum[0] : "";
+        newItem = (itemSchema as StringJSONSchema).enum?.[0] ?? "";
         break;
       case "number":
       case "integer":
@@ -119,7 +133,9 @@ const ArrayField = memo(function ArrayField({
         newItem = "";
     }
 
-    append(newItem);
+    // 使用 as any 绕过 useFieldArray 的严格类型检查
+    // 因为动态字段路径无法在编译时确定
+    append(newItem as any);
   };
 
   return (
@@ -186,7 +202,7 @@ const ArrayField = memo(function ArrayField({
                         }
                         return renderFormField(
                           `${name}.${index}`,
-                          schema.items
+                          schema.items ?? { type: "string" }
                         );
                       })()}
                     </FormItem>
@@ -213,24 +229,29 @@ const ArrayField = memo(function ArrayField({
  * 2. 其他组件（如 WorkflowParameterConfigDialog）的用途是配置元数据，而非渲染动态表单
  * 3. 避免预防性设计 - 如果未来其他组件需要类似功能，再考虑提取
  */
-interface ObjectFieldProps {
-  name: string;
-  schema: any;
-  form: any;
+interface ObjectFieldProps<
+  TFieldValues extends FieldValues = FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+> {
+  name: TName;
+  schema: ObjectJSONSchema;
+  form: UseFormReturn<TFieldValues>;
   renderFormField: (
     fieldName: string,
-    fieldSchema: any
+    fieldSchema: JSONSchema
   ) => React.ReactElement | null;
   getTypeBadge: (type: string) => string;
 }
 
-const ObjectField = memo(function ObjectField({
+const ObjectField = memo(function ObjectField<
+  TFieldValues extends FieldValues,
+>({
   name,
   schema,
   form,
   renderFormField,
   getTypeBadge,
-}: ObjectFieldProps) {
+}: ObjectFieldProps<TFieldValues>) {
   if (!schema.properties || Object.keys(schema.properties).length === 0) {
     return (
       <div className="text-center py-4 border border-dashed rounded-md">
@@ -242,8 +263,8 @@ const ObjectField = memo(function ObjectField({
   return (
     <div className="space-y-4">
       <span className="text-sm font-medium">对象字段</span>
-      {Object.entries(schema.properties).map(
-        ([fieldName, fieldSchema]: [string, any]) => (
+      {Object.entries(schema.properties || {}).map(
+        ([fieldName, fieldSchema]: [string, JSONSchema]) => (
           <div
             key={`${name}-${fieldName}`}
             className="ml-6 border-l-2 border-muted pl-4"
@@ -337,21 +358,20 @@ const NoParamsMessage = memo(function NoParamsMessage() {
  * 2. 其他组件（如 WorkflowParameterConfigDialog）使用的是固定的参数配置表单，不需要动态 Schema 渲染
  * 3. 避免预防性设计 - 如果未来其他组件需要类似功能，再考虑提取
  */
-interface FormRendererProps {
+interface FormRendererProps<TFieldValues extends FieldValues = FieldValues> {
   tool: ToolDebugDialogProps["tool"];
-  form: any;
+  form: UseFormReturn<TFieldValues>;
   renderFormField: (
     fieldName: string,
-    fieldSchema: any
+    fieldSchema: JSONSchema
   ) => React.ReactElement | null;
 }
 
-const FormRenderer = memo(function FormRenderer({
-  tool,
-  form,
-  renderFormField,
-}: FormRendererProps) {
-  if (!tool?.inputSchema?.properties) {
+const FormRenderer = memo(function FormRenderer<
+  TFieldValues extends FieldValues,
+>({ tool, form, renderFormField }: FormRendererProps<TFieldValues>) {
+  const inputSchema = tool?.inputSchema;
+  if (!inputSchema?.properties) {
     return (
       <div className="text-center py-8">
         <Code className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -364,17 +384,17 @@ const FormRenderer = memo(function FormRenderer({
     <Form {...form}>
       <ScrollArea className="h-full">
         <div className="space-y-4 p-2">
-          {Object.entries(tool.inputSchema.properties).map(
-            ([fieldName, fieldSchema]: [string, any]) => (
+          {Object.entries(inputSchema.properties).map(
+            ([fieldName, fieldSchema]: [string, JSONSchema]) => (
               <FormField
-                key={`${tool.name}-${fieldName}`} // 添加工具名称作为前缀，确保 key 的唯一性和稳定性
+                key={`${tool?.name ?? "tool"}-${fieldName}`} // 添加工具名称作为前缀，确保 key 的唯一性和稳定性
                 control={form.control}
                 name={fieldName as any}
                 render={() => (
                   <FormItem>
                     <div className="flex items-center gap-2">
                       <FormLabel>
-                        {tool.inputSchema.required?.includes(fieldName) && (
+                        {inputSchema.required?.includes(fieldName) && (
                           <span className="text-red-500 mr-1">*</span>
                         )}
                         {fieldName}
@@ -432,7 +452,7 @@ interface ToolDebugDialogProps {
     serverName: string;
     toolName: string;
     description?: string;
-    inputSchema?: any;
+    inputSchema?: ToolInputSchema;
   } | null;
 }
 
@@ -443,7 +463,7 @@ export function ToolDebugDialog({
 }: ToolDebugDialogProps) {
   const [inputMode, setInputMode] = useState<"form" | "json">("form");
   const [jsonInput, setJsonInput] = useState<string>("{\n  \n}");
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<unknown>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -462,7 +482,9 @@ export function ToolDebugDialog({
   }, [tool?.inputSchema]);
 
   // 初始化表单
-  const form = useForm({
+  const form = useForm<Record<string, unknown>>({
+    // 使用 as any 绕过 zodResolver 的复杂类型推断
+    // 动态生成的 schema 类型无法在编译时确定
     resolver: zodResolver(formSchema as any),
     defaultValues,
     mode: "onChange",
@@ -522,7 +544,10 @@ export function ToolDebugDialog({
           const parsedData = JSON.parse(jsonInput);
           // 使用 setValue 而不是 reset 来避免表单重新初始化导致的失焦
           for (const key of Object.keys(parsedData)) {
-            form.setValue(key as any, parsedData[key]);
+            form.setValue(
+              key as FieldPath<Record<string, unknown>>,
+              parsedData[key]
+            );
           }
         } catch {
           // JSON 解析失败，保持表单数据不变
@@ -558,7 +583,7 @@ export function ToolDebugDialog({
   const handleCallTool = useCallback(async () => {
     if (!tool) return;
 
-    let args: any;
+    let args: Record<string, unknown>;
 
     // 检查是否无参数工具
     const hasNoParams =
@@ -663,23 +688,29 @@ export function ToolDebugDialog({
       return colors[type] || "bg-gray-100 text-gray-800";
     };
 
-    return (fieldName: string, fieldSchema: any): React.ReactElement | null => {
+    return (
+      fieldName: string,
+      fieldSchema: JSONSchema
+    ): React.ReactElement | null => {
       switch (fieldSchema.type) {
         case "string":
-          if (fieldSchema.enum) {
+          if (isStringSchema(fieldSchema) && fieldSchema.enum) {
             return (
               <Controller
-                name={fieldName as any}
+                name={fieldName as FieldPath<Record<string, unknown>>}
                 control={form.control}
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select
+                    value={field.value as string}
+                    onValueChange={field.onChange}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={`选择${fieldName}`} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {fieldSchema.enum.map((option: string) => (
+                      {fieldSchema.enum?.map((option: string) => (
                         <SelectItem key={option} value={option}>
                           {option}
                         </SelectItem>
@@ -692,15 +723,18 @@ export function ToolDebugDialog({
           }
           return (
             <Controller
-              name={fieldName as any}
+              name={fieldName as FieldPath<Record<string, unknown>>}
               control={form.control}
               render={({ field }) => (
                 <FormControl>
                   <Input
                     {...field}
+                    value={(field.value as string) ?? ""}
                     placeholder={`输入${fieldName}`}
                     type={
-                      fieldSchema.format === "password" ? "password" : "text"
+                      (fieldSchema as StringJSONSchema).format === "password"
+                        ? "password"
+                        : "text"
                     }
                   />
                 </FormControl>
@@ -712,7 +746,7 @@ export function ToolDebugDialog({
         case "integer":
           return (
             <Controller
-              name={fieldName as any}
+              name={fieldName as FieldPath<Record<string, unknown>>}
               control={form.control}
               render={({ field }) => (
                 <FormControl>
@@ -721,6 +755,7 @@ export function ToolDebugDialog({
                     type="number"
                     placeholder={`输入${fieldName}`}
                     step={fieldSchema.type === "integer" ? "1" : "0.1"}
+                    value={(field.value as number) ?? 0}
                     onChange={(e) => {
                       const value = e.target.value;
                       field.onChange(value === "" ? "" : Number(value));
@@ -734,7 +769,7 @@ export function ToolDebugDialog({
         case "boolean":
           return (
             <Controller
-              name={fieldName as any}
+              name={fieldName as FieldPath<Record<string, unknown>>}
               control={form.control}
               render={({ field }) => (
                 <Select
@@ -758,9 +793,9 @@ export function ToolDebugDialog({
         case "array":
           return (
             <ArrayField
-              name={fieldName}
-              schema={fieldSchema}
-              form={form}
+              name={fieldName as FieldPath<Record<string, unknown>>}
+              schema={fieldSchema as ArrayJSONSchema}
+              form={form as UseFormReturn<Record<string, unknown>>}
               renderFormField={renderFormField}
             />
           );
@@ -768,9 +803,9 @@ export function ToolDebugDialog({
         case "object":
           return (
             <ObjectField
-              name={fieldName}
-              schema={fieldSchema}
-              form={form}
+              name={fieldName as FieldPath<Record<string, unknown>>}
+              schema={fieldSchema as ObjectJSONSchema}
+              form={form as UseFormReturn<Record<string, unknown>>}
               renderFormField={renderFormField}
               getTypeBadge={getTypeBadge}
             />
@@ -779,11 +814,15 @@ export function ToolDebugDialog({
         default:
           return (
             <Controller
-              name={fieldName as any}
+              name={fieldName as FieldPath<Record<string, unknown>>}
               control={form.control}
               render={({ field }) => (
                 <FormControl>
-                  <Input {...field} placeholder={`输入${fieldName}`} />
+                  <Input
+                    {...field}
+                    value={(field.value as string) ?? ""}
+                    placeholder={`输入${fieldName}`}
+                  />
                 </FormControl>
               )}
             />
@@ -793,7 +832,7 @@ export function ToolDebugDialog({
   }, [form]);
 
   // 格式化结果显示
-  const formatResult = useCallback((data: any) => {
+  const formatResult = useCallback((data: unknown) => {
     try {
       return JSON.stringify(data, null, 2);
     } catch {
@@ -925,7 +964,9 @@ export function ToolDebugDialog({
                         >
                           <FormRenderer
                             tool={tool}
-                            form={form}
+                            form={
+                              form as UseFormReturn<Record<string, unknown>>
+                            }
                             renderFormField={renderFormField}
                           />
                         </TabsContent>
