@@ -151,6 +151,8 @@ export class ESP32Service {
       },
       serverTime: {
         timestamp: Date.now(),
+        // getTimezoneOffset() 返回本地时区与 UTC 的分钟差
+        // 乘以 -60 * 1000 转换为毫秒，并取负值使偏移量为正（东时区为正）
         timezoneOffset: new Date().getTimezoneOffset() * -60 * 1000,
       },
       firmware: {

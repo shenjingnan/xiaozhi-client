@@ -338,6 +338,8 @@ export class ESP32Connection {
 
     // 使用毫秒级时间戳，通过模运算避免 uint32 溢出
     // uint32 最大值为 4294967295（约 4294967296 毫秒 ≈ 49.7 天）
+    // 当时间戳超过 49.7 天后会周期性回绕（重置为 0），
+    // 这是预期行为，模运算确保时间戳始终在 uint32 范围内
     const timestampInMs = (timestamp ?? Date.now()) % 4294967296;
 
     logger.debug(`[ESP32Connection] 时间戳: ${timestampInMs}ms (uint32范围内)`);
@@ -400,16 +402,35 @@ export class ESP32Connection {
 
     logger.info(`关闭连接: deviceId=${this.deviceId}`);
 
+    // 如果连接已断开，直接返回
+    if (
+      this.ws.readyState !== this.ws.OPEN &&
+      this.ws.readyState !== this.ws.CONNECTING
+    ) {
+      this.state = "disconnected";
+      return;
+    }
+
     this.state = "disconnected";
 
+    // 等待实际的 close 事件，而不是依赖 setTimeout
     return new Promise<void>((resolve) => {
-      if (this.ws.readyState === this.ws.OPEN) {
-        this.ws.close(1000, "Normal closure");
-        // 等待close事件触发
-        setTimeout(resolve, 100);
-      } else {
+      // 监听 close 事件
+      const onClose = () => {
+        this.ws.removeListener("close", onClose);
         resolve();
-      }
+      };
+
+      this.ws.once("close", onClose);
+
+      // 发起关闭
+      this.ws.close(1000, "Normal closure");
+
+      // 设置超时以防 close 事件未触发
+      setTimeout(() => {
+        this.ws.removeListener("close", onClose);
+        resolve();
+      }, 1000);
     });
   }
 

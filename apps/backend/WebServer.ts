@@ -701,7 +701,11 @@ export class WebServer {
           `[WS-ESP32] ESP32设备连接处理失败: deviceId=${deviceId}`,
           error
         );
-        ws.close(1011, "Connection handling failed");
+        // 只有在 WebSocket 处于可关闭状态时才关闭
+        // ws.OPEN = 1, ws.CONNECTING = 0
+        if (ws.readyState === 1 || ws.readyState === 0) {
+          ws.close(1011, "Connection handling failed");
+        }
       });
   }
 

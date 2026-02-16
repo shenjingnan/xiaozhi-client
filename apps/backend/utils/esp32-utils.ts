@@ -109,10 +109,15 @@ function extractAppVersion(
 
 /**
  * 递归将对象的键从驼峰命名转换为下划线命名
+ * 使用 WeakSet 追踪已访问的对象以检测循环引用
  * @param obj - 要转换的对象
+ * @param visited - 已访问对象的集合（用于循环引用检测）
  * @returns 转换后的对象
  */
-export function camelToSnakeCase(obj: unknown): unknown {
+export function camelToSnakeCase(
+  obj: unknown,
+  visited = new WeakSet()
+): unknown {
   // 处理 null 和 undefined
   if (obj === null || obj === undefined) {
     return obj;
@@ -123,16 +128,27 @@ export function camelToSnakeCase(obj: unknown): unknown {
     return obj;
   }
 
+  // 检测循环引用：如果对象已访问过，返回原对象避免无限递归
+  if (visited.has(obj as object)) {
+    return obj;
+  }
+
+  // 记录当前对象为已访问
+  visited.add(obj as object);
+
   // 处理数组
   if (Array.isArray(obj)) {
-    return obj.map(camelToSnakeCase);
+    return obj.map((item) => camelToSnakeCase(item, visited));
   }
 
   // 处理普通对象
   const result: Record<string, unknown> = {};
   for (const key of Object.keys(obj)) {
     const snakeKey = key.replace(/([A-Z])/g, "_$1").toLowerCase();
-    result[snakeKey] = camelToSnakeCase((obj as Record<string, unknown>)[key]);
+    result[snakeKey] = camelToSnakeCase(
+      (obj as Record<string, unknown>)[key],
+      visited
+    );
   }
   return result;
 }
