@@ -71,7 +71,7 @@ describe("ConfigApiHandler", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
 
-    // Mock Logger
+    // 模拟 Logger
     mockLogger = {
       debug: vi.fn(),
       info: vi.fn(),
@@ -81,7 +81,7 @@ describe("ConfigApiHandler", () => {
     const { logger } = await import("../../Logger.js");
     Object.assign(logger, mockLogger);
 
-    // Mock ConfigManager
+    // 模拟 ConfigManager
     mockConfigManager = {
       getConfig: vi.fn(),
       updateMcpEndpoint: vi.fn(),
@@ -173,14 +173,14 @@ describe("ConfigApiHandler", () => {
   });
 
   describe("constructor", () => {
-    it("should initialize with correct dependencies", () => {
+    it("应该使用正确的依赖项初始化", () => {
       expect(configApiHandler).toBeInstanceOf(ConfigApiHandler);
       expect(mockLogger.debug).not.toHaveBeenCalled();
     });
   });
 
   describe("getConfig", () => {
-    it("should return config successfully", async () => {
+    it("应该成功返回配置", async () => {
       mockConfigManager.getConfig.mockReturnValue(mockConfig);
 
       await configApiHandler.getConfig(mockContext);
@@ -191,7 +191,7 @@ describe("ConfigApiHandler", () => {
       expect(mockContext.success).toHaveBeenCalledWith(mockConfig);
     });
 
-    it("should handle config service error", async () => {
+    it("应该处理配置服务错误", async () => {
       const error = new Error("Config read failed");
       mockConfigManager.getConfig.mockImplementation(() => {
         throw error;
@@ -208,7 +208,7 @@ describe("ConfigApiHandler", () => {
       );
     });
 
-    it("should handle non-Error exceptions", async () => {
+    it("应该处理非 Error 异常", async () => {
       mockConfigManager.getConfig.mockImplementation(() => {
         throw "String error";
       });
@@ -225,7 +225,7 @@ describe("ConfigApiHandler", () => {
   });
 
   describe("updateConfig", () => {
-    it("should update config successfully", async () => {
+    it("应该成功更新配置", async () => {
       mockContext.req.json.mockResolvedValue(mockConfig);
 
       await configApiHandler.updateConfig(mockContext);
@@ -243,7 +243,7 @@ describe("ConfigApiHandler", () => {
       );
     });
 
-    it("should handle invalid request body - null", async () => {
+    it("应该处理无效请求体 - null", async () => {
       mockContext.req.json.mockResolvedValue(null);
       mockConfigManager.validateConfig.mockImplementation(() => {
         throw new Error("配置必须是有效的对象");
@@ -258,7 +258,7 @@ describe("ConfigApiHandler", () => {
       );
     });
 
-    it("should handle invalid request body - string", async () => {
+    it("应该处理无效请求体 - string", async () => {
       mockContext.req.json.mockResolvedValue("invalid config");
       mockConfigManager.validateConfig.mockImplementation(() => {
         throw new Error("配置必须是有效的对象");
@@ -273,7 +273,7 @@ describe("ConfigApiHandler", () => {
       );
     });
 
-    it("should handle config update error", async () => {
+    it("应该处理配置更新错误", async () => {
       const error = new Error("Config update failed");
       mockContext.req.json.mockResolvedValue(mockConfig);
       mockConfigManager.validateConfig.mockImplementation(() => {
@@ -289,7 +289,7 @@ describe("ConfigApiHandler", () => {
       );
     });
 
-    it("should handle JSON parsing error", async () => {
+    it("应该处理 JSON 解析错误", async () => {
       const jsonError = new Error("Invalid JSON");
       mockContext.req.json.mockRejectedValue(jsonError);
 
@@ -304,7 +304,7 @@ describe("ConfigApiHandler", () => {
   });
 
   describe("getMcpEndpoint", () => {
-    it("should return MCP endpoint successfully", async () => {
+    it("应该成功返回 MCP 端点", async () => {
       const endpoint = "ws://localhost:3000";
       mockConfigManager.getMcpEndpoint.mockReturnValue(endpoint);
 
@@ -316,7 +316,7 @@ describe("ConfigApiHandler", () => {
       expect(mockContext.success).toHaveBeenCalledWith({ endpoint });
     });
 
-    it("should handle MCP endpoint error", async () => {
+    it("应该处理 MCP 端点错误", async () => {
       const error = new Error("MCP endpoint read failed");
       mockConfigManager.getMcpEndpoint.mockImplementation(() => {
         throw error;
@@ -338,7 +338,7 @@ describe("ConfigApiHandler", () => {
   });
 
   describe("getMcpEndpoints", () => {
-    it("should return MCP endpoints list successfully", async () => {
+    it("应该成功返回 MCP 端点列表", async () => {
       const endpoints = ["ws://localhost:3000", "ws://localhost:3001"];
       mockConfigManager.getMcpEndpoints.mockReturnValue(endpoints);
 

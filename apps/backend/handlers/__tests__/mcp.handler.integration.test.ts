@@ -2,7 +2,7 @@ import { EventEmitter } from "node:events";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { WebServer } from "../../WebServer.js";
 
-// Mock configManager
+// 模拟 configManager
 vi.mock("@xiaozhi-client/config", () => ({
   configManager: {
     configExists: vi.fn().mockReturnValue(true),
@@ -35,7 +35,7 @@ vi.mock("@/lib/mcp", () => ({
           capabilities: {},
           serverInfo: { name: "xiaozhi-client", version: "1.0.0" },
         },
-        id: message.id, // 返回请求中的ID
+        id: message.id, // 返回请求中的 ID
       });
     }),
   })),
@@ -243,7 +243,7 @@ describe("MCPRouteHandler 集成测试", () => {
   describe("性能和限制", () => {
     it("应该处理合理大小的消息", async () => {
       const largeParams = {
-        data: "x".repeat(1000), // 1KB of data
+        data: "x".repeat(1000), // 1KB 数据
       };
 
       const response = await fetch(`${baseUrl}/mcp`, {
@@ -264,7 +264,7 @@ describe("MCPRouteHandler 集成测试", () => {
 
     it("应该拒绝过大的消息", async () => {
       const oversizedParams = {
-        data: "x".repeat(2 * 1024 * 1024), // 2MB of data
+        data: "x".repeat(2 * 1024 * 1024), // 2MB 数据
       };
 
       const response = await fetch(`${baseUrl}/mcp`, {

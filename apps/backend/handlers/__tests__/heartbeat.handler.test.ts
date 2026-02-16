@@ -22,7 +22,7 @@ interface MockWebSocket {
   readyState?: number;
 }
 
-// Mock dependencies
+// 模拟依赖
 vi.mock("@/Logger.js", () => ({
   logger: {
     debug: vi.fn(),
@@ -38,7 +38,7 @@ vi.mock("@xiaozhi-client/config", () => ({
   },
 }));
 
-// Mock timers
+// 模拟定时器
 vi.useFakeTimers();
 
 describe("HeartbeatHandler", () => {
@@ -85,7 +85,7 @@ describe("HeartbeatHandler", () => {
     vi.clearAllMocks();
     vi.clearAllTimers();
 
-    // Mock Logger
+    // 模拟 Logger
     mockLogger = {
       debug: vi.fn(),
       info: vi.fn(),
@@ -95,27 +95,27 @@ describe("HeartbeatHandler", () => {
     const { logger } = await import("@/Logger.js");
     Object.assign(logger, mockLogger);
 
-    // Mock ConfigManager
+    // 模拟 ConfigManager
     mockConfigService = {
       getConfig: vi.fn().mockReturnValue(mockConfig),
     };
     const { configManager } = await import("@xiaozhi-client/config");
     Object.assign(configManager, mockConfigService);
 
-    // Mock StatusService
+    // 模拟 StatusService
     mockStatusService = {
       updateClientInfo: vi.fn(),
       getLastHeartbeat: vi.fn(),
       isClientConnected: vi.fn(),
     };
 
-    // Mock NotificationService
+    // 模拟 NotificationService
     mockNotificationService = {
       cleanupDisconnectedClients: vi.fn(),
       getClientStats: vi.fn(),
     };
 
-    // Mock WebSocket
+    // 模拟 WebSocket
     mockWebSocket = {
       send: vi.fn(),
       readyState: 1, // WebSocket.OPEN
@@ -133,7 +133,7 @@ describe("HeartbeatHandler", () => {
   });
 
   describe("constructor", () => {
-    it("should initialize with correct dependencies", () => {
+    it("应该使用正确的依赖项初始化", () => {
       expect(heartbeatHandler).toBeInstanceOf(HeartbeatHandler);
       expect(mockLogger.debug).not.toHaveBeenCalled();
     });
@@ -147,7 +147,7 @@ describe("HeartbeatHandler", () => {
       vi.spyOn(Date, "now").mockReturnValue(1234567890);
     });
 
-    it("should handle client status update successfully", async () => {
+    it("应该成功处理客户端状态更新", async () => {
       await heartbeatHandler.handleClientStatus(
         mockWebSocket,
         mockHeartbeatMessage,
@@ -184,7 +184,7 @@ describe("HeartbeatHandler", () => {
       );
     });
 
-    it("should handle status service error", async () => {
+    it("应该处理状态服务错误", async () => {
       const error = new Error("Status update failed");
       mockStatusService.updateClientInfo.mockImplementation(() => {
         throw error;
@@ -213,7 +213,7 @@ describe("HeartbeatHandler", () => {
       );
     });
 
-    it("should handle non-Error exceptions", async () => {
+    it("应该处理非 Error 异常", async () => {
       mockStatusService.updateClientInfo.mockImplementation(() => {
         throw "String error";
       });
@@ -236,7 +236,7 @@ describe("HeartbeatHandler", () => {
       );
     });
 
-    it("should handle config service error gracefully", async () => {
+    it("应该优雅地处理配置服务错误", async () => {
       const configError = new Error("Config fetch failed");
       mockConfigService.getConfig.mockImplementation(() => {
         throw configError;
@@ -248,20 +248,20 @@ describe("HeartbeatHandler", () => {
         clientId
       );
 
-      // Should still update status successfully
+      // 仍然应该成功更新状态
       expect(mockStatusService.updateClientInfo).toHaveBeenCalled();
       expect(mockLogger.debug).toHaveBeenCalledWith(
         `客户端状态更新成功: ${clientId}`
       );
 
-      // Should log config error but not fail the heartbeat
+      // 应该记录配置错误，但不应该导致心跳失败
       expect(mockLogger.error).toHaveBeenCalledWith(
         `发送最新配置失败: ${clientId}`,
         configError
       );
     });
 
-    it("should handle WebSocket send error in config update", async () => {
+    it("应该处理配置更新中的 WebSocket 发送错误", async () => {
       const sendError = new Error("WebSocket send failed");
       mockWebSocket.send.mockImplementation(() => {
         throw sendError;
@@ -285,7 +285,7 @@ describe("HeartbeatHandler", () => {
       vi.spyOn(Date, "now").mockReturnValue(1234567890);
     });
 
-    it("should not trigger timeout when no heartbeat exists", () => {
+    it("在没有心跳时不应该触发超时", () => {
       mockStatusService.getLastHeartbeat.mockReturnValue(undefined);
 
       heartbeatHandler.checkHeartbeatTimeout();
@@ -294,8 +294,8 @@ describe("HeartbeatHandler", () => {
       expect(mockLogger.warn).not.toHaveBeenCalled();
     });
 
-    it("should not trigger timeout when heartbeat is recent", () => {
-      const recentHeartbeat = 1234567890 - 30000; // 30 seconds ago
+    it("在心跳最近时不应该触发超时", () => {
+      const recentHeartbeat = 1234567890 - 30000; // 30 秒前
       mockStatusService.getLastHeartbeat.mockReturnValue(recentHeartbeat);
 
       heartbeatHandler.checkHeartbeatTimeout();
@@ -304,8 +304,8 @@ describe("HeartbeatHandler", () => {
       expect(mockLogger.warn).not.toHaveBeenCalled();
     });
 
-    it("should trigger timeout when heartbeat is old", () => {
-      const oldHeartbeat = 1234567890 - 40000; // 40 seconds ago (> 35s timeout)
+    it("在心跳过旧时应该触发超时", () => {
+      const oldHeartbeat = 1234567890 - 40000; // 40 秒前（> 35 秒超时）
       mockStatusService.getLastHeartbeat.mockReturnValue(oldHeartbeat);
 
       heartbeatHandler.checkHeartbeatTimeout();
@@ -319,19 +319,19 @@ describe("HeartbeatHandler", () => {
       );
     });
 
-    it("should handle exact timeout boundary", () => {
-      const exactTimeoutHeartbeat = 1234567890 - 35000; // Exactly 35 seconds ago
+    it("应该处理精确超时边界", () => {
+      const exactTimeoutHeartbeat = 1234567890 - 35000; // 正好 35 秒前
       mockStatusService.getLastHeartbeat.mockReturnValue(exactTimeoutHeartbeat);
 
       heartbeatHandler.checkHeartbeatTimeout();
 
-      // Should not trigger timeout at exact boundary
+      // 在精确边界时不应该触发超时
       expect(mockStatusService.updateClientInfo).not.toHaveBeenCalled();
       expect(mockLogger.warn).not.toHaveBeenCalled();
     });
 
-    it("should handle timeout boundary + 1ms", () => {
-      const timeoutHeartbeat = 1234567890 - 35001; // 35.001 seconds ago
+    it("应该处理超时边界 + 1ms", () => {
+      const timeoutHeartbeat = 1234567890 - 35001; // 35.001 秒前
       mockStatusService.getLastHeartbeat.mockReturnValue(timeoutHeartbeat);
 
       heartbeatHandler.checkHeartbeatTimeout();
@@ -347,7 +347,7 @@ describe("HeartbeatHandler", () => {
   });
 
   describe("startHeartbeatMonitoring", () => {
-    it("should start heartbeat monitoring with correct interval", () => {
+    it("应该以正确的时间间隔启动心跳监控", () => {
       const setIntervalSpy = vi.spyOn(global, "setInterval");
 
       const intervalId = heartbeatHandler.startHeartbeatMonitoring();
@@ -355,12 +355,12 @@ describe("HeartbeatHandler", () => {
       expect(mockLogger.debug).toHaveBeenCalledWith("启动心跳监控");
       expect(setIntervalSpy).toHaveBeenCalledWith(
         expect.any(Function),
-        10000 // 10 seconds
+        10000 // 10 秒
       );
       expect(intervalId).toBeDefined();
     });
 
-    it("should execute monitoring tasks on interval", () => {
+    it("应该在时间间隔执行监控任务", () => {
       mockStatusService.getLastHeartbeat.mockReturnValue(undefined);
       mockNotificationService.cleanupDisconnectedClients.mockImplementation(
         () => {}
@@ -368,7 +368,7 @@ describe("HeartbeatHandler", () => {
 
       heartbeatHandler.startHeartbeatMonitoring();
 
-      // Fast-forward time to trigger interval
+      // 快进时间以触发间隔
       vi.advanceTimersByTime(10000);
 
       expect(mockStatusService.getLastHeartbeat).toHaveBeenCalled();
@@ -377,7 +377,7 @@ describe("HeartbeatHandler", () => {
       ).toHaveBeenCalled();
     });
 
-    it("should handle cleanup error gracefully", () => {
+    it("应该优雅地处理清理错误", () => {
       const cleanupError = new Error("Cleanup failed");
       mockNotificationService.cleanupDisconnectedClients.mockImplementation(
         () => {
@@ -387,7 +387,7 @@ describe("HeartbeatHandler", () => {
 
       heartbeatHandler.startHeartbeatMonitoring();
 
-      // Fast-forward time to trigger interval
+      // 快进时间以触发间隔
       vi.advanceTimersByTime(10000);
 
       expect(mockLogger.error).toHaveBeenCalledWith(
@@ -398,7 +398,7 @@ describe("HeartbeatHandler", () => {
   });
 
   describe("stopHeartbeatMonitoring", () => {
-    it("should stop heartbeat monitoring", () => {
+    it("应该停止心跳监控", () => {
       const clearIntervalSpy = vi.spyOn(global, "clearInterval");
       const mockIntervalId = 12345 as any;
 
@@ -410,7 +410,7 @@ describe("HeartbeatHandler", () => {
   });
 
   describe("getHeartbeatStats", () => {
-    it("should return heartbeat statistics", () => {
+    it("应该返回心跳统计信息", () => {
       const mockStats = {
         totalClients: 5,
         connectedClients: 3,
@@ -430,7 +430,7 @@ describe("HeartbeatHandler", () => {
       });
     });
 
-    it("should handle undefined last heartbeat", () => {
+    it("应该处理未定义的最后一次心跳", () => {
       const mockStats = {
         totalClients: 0,
         connectedClients: 0,
@@ -458,7 +458,7 @@ describe("HeartbeatHandler", () => {
       vi.spyOn(Date, "now").mockReturnValue(1234567890);
     });
 
-    it("should handle client connection", () => {
+    it("应该处理客户端连接", () => {
       heartbeatHandler.handleClientConnect(clientId);
 
       expect(mockLogger.debug).toHaveBeenCalledWith(
@@ -477,7 +477,7 @@ describe("HeartbeatHandler", () => {
   describe("handleClientDisconnect", () => {
     const clientId = "test-client-123";
 
-    it("should handle client disconnection", () => {
+    it("应该处理客户端断开连接", () => {
       heartbeatHandler.handleClientDisconnect(clientId);
 
       expect(mockLogger.debug).toHaveBeenCalledWith(
@@ -497,7 +497,7 @@ describe("HeartbeatHandler", () => {
       vi.spyOn(Date, "now").mockReturnValue(1234567890);
     });
 
-    it("should send heartbeat response successfully", () => {
+    it("应该成功发送心跳响应", () => {
       heartbeatHandler.sendHeartbeatResponse(mockWebSocket, clientId);
 
       expect(mockWebSocket.send).toHaveBeenCalledWith(
@@ -514,7 +514,7 @@ describe("HeartbeatHandler", () => {
       );
     });
 
-    it("should handle WebSocket send error", () => {
+    it("应该处理 WebSocket 发送错误", () => {
       const sendError = new Error("WebSocket send failed");
       mockWebSocket.send.mockImplementation(() => {
         throw sendError;
@@ -530,7 +530,7 @@ describe("HeartbeatHandler", () => {
   });
 
   describe("validateHeartbeatMessage", () => {
-    it("should validate correct heartbeat message", () => {
+    it("应该验证正确的心跳消息", () => {
       const validMessage = {
         type: "clientStatus",
         data: {
@@ -546,7 +546,7 @@ describe("HeartbeatHandler", () => {
       expect(result).toBe(true);
     });
 
-    it("should validate minimal heartbeat message", () => {
+    it("应该验证最小心跳消息", () => {
       const minimalMessage = {
         type: "clientStatus",
         data: {},
@@ -557,25 +557,25 @@ describe("HeartbeatHandler", () => {
       expect(result).toBe(true);
     });
 
-    it("should reject null message", () => {
+    it("应该拒绝 null 消息", () => {
       const result = heartbeatHandler.validateHeartbeatMessage(null);
 
       expect(result).toBeFalsy();
     });
 
-    it("should reject undefined message", () => {
+    it("应该拒绝 undefined 消息", () => {
       const result = heartbeatHandler.validateHeartbeatMessage(undefined);
 
       expect(result).toBeFalsy();
     });
 
-    it("should reject non-object message", () => {
+    it("应该拒绝非对象消息", () => {
       const result = heartbeatHandler.validateHeartbeatMessage("invalid");
 
       expect(result).toBe(false);
     });
 
-    it("should reject message with wrong type", () => {
+    it("应该拒绝类型错误的消息", () => {
       const invalidMessage = {
         type: "wrongType",
         data: {},
@@ -586,7 +586,7 @@ describe("HeartbeatHandler", () => {
       expect(result).toBe(false);
     });
 
-    it("should reject message without data", () => {
+    it("应该拒绝没有 data 的消息", () => {
       const invalidMessage = {
         type: "clientStatus",
       };
@@ -596,7 +596,7 @@ describe("HeartbeatHandler", () => {
       expect(result).toBeFalsy();
     });
 
-    it("should reject message with non-object data", () => {
+    it("应该拒绝 data 为非对象的消息", () => {
       const invalidMessage = {
         type: "clientStatus",
         data: "invalid",
@@ -607,7 +607,7 @@ describe("HeartbeatHandler", () => {
       expect(result).toBe(false);
     });
 
-    it("should reject message with null data", () => {
+    it("应该拒绝 data 为 null 的消息", () => {
       const invalidMessage = {
         type: "clientStatus",
         data: null,
@@ -627,8 +627,8 @@ describe("HeartbeatHandler", () => {
       mockConfigService.getConfig.mockReturnValue(mockConfig);
     });
 
-    it("should handle complete client lifecycle", async () => {
-      // Client connects
+    it("应该处理完整的客户端生命周期", async () => {
+      // 客户端连接
       heartbeatHandler.handleClientConnect(clientId);
       expect(mockStatusService.updateClientInfo).toHaveBeenCalledWith(
         {
@@ -638,7 +638,7 @@ describe("HeartbeatHandler", () => {
         `websocket-connect-${clientId}`
       );
 
-      // Client sends heartbeat
+      // 客户端发送心跳
       await heartbeatHandler.handleClientStatus(
         mockWebSocket,
         mockHeartbeatMessage,
@@ -652,13 +652,13 @@ describe("HeartbeatHandler", () => {
         `websocket-${clientId}`
       );
 
-      // Send heartbeat response
+      // 发送心跳响应
       heartbeatHandler.sendHeartbeatResponse(mockWebSocket, clientId);
       expect(mockWebSocket.send).toHaveBeenCalledWith(
         expect.stringContaining('"type":"heartbeatResponse"')
       );
 
-      // Client disconnects
+      // 客户端断开连接
       heartbeatHandler.handleClientDisconnect(clientId);
       expect(mockStatusService.updateClientInfo).toHaveBeenCalledWith(
         { status: "disconnected" },
@@ -666,12 +666,12 @@ describe("HeartbeatHandler", () => {
       );
     });
 
-    it("should handle monitoring workflow", () => {
-      // Start monitoring
+    it("应该处理监控工作流程", () => {
+      // 启动监控
       const intervalId = heartbeatHandler.startHeartbeatMonitoring();
       expect(mockLogger.debug).toHaveBeenCalledWith("启动心跳监控");
 
-      // Simulate monitoring cycle
+      // 模拟监控周期
       mockStatusService.getLastHeartbeat.mockReturnValue(1234567890 - 40000);
       vi.advanceTimersByTime(10000);
 
@@ -683,13 +683,13 @@ describe("HeartbeatHandler", () => {
         mockNotificationService.cleanupDisconnectedClients
       ).toHaveBeenCalled();
 
-      // Stop monitoring
+      // 停止监控
       heartbeatHandler.stopHeartbeatMonitoring(intervalId);
       expect(mockLogger.debug).toHaveBeenCalledWith("停止心跳监控");
     });
 
-    it("should handle mixed success and error scenarios", async () => {
-      // First heartbeat succeeds
+    it("应该处理混合成功和错误场景", async () => {
+      // 第一次心跳成功
       await heartbeatHandler.handleClientStatus(
         mockWebSocket,
         mockHeartbeatMessage,
@@ -697,7 +697,7 @@ describe("HeartbeatHandler", () => {
       );
       expect(mockStatusService.updateClientInfo).toHaveBeenCalled();
 
-      // Second heartbeat fails due to status service error
+      // 第二次心跳因状态服务错误而失败
       const error = new Error("Status service failed");
       mockStatusService.updateClientInfo.mockImplementationOnce(() => {
         throw error;
@@ -713,7 +713,7 @@ describe("HeartbeatHandler", () => {
         error
       );
 
-      // Third heartbeat succeeds again
+      // 第三次心跳再次成功
       mockStatusService.updateClientInfo.mockImplementation(() => {});
       await heartbeatHandler.handleClientStatus(
         mockWebSocket,
@@ -734,7 +734,7 @@ describe("HeartbeatHandler", () => {
       mockConfigService.getConfig.mockReturnValue(mockConfig);
     });
 
-    it("should handle heartbeat message with minimal data", async () => {
+    it("应该处理具有最小数据的心跳消息", async () => {
       const minimalMessage = {
         type: "clientStatus" as const,
         data: {},
@@ -752,7 +752,7 @@ describe("HeartbeatHandler", () => {
       );
     });
 
-    it("should handle heartbeat message with all optional fields", async () => {
+    it("应该处理包含所有可选字段的心跳消息", async () => {
       const fullMessage = {
         type: "clientStatus" as const,
         data: {
@@ -778,7 +778,7 @@ describe("HeartbeatHandler", () => {
       );
     });
 
-    it("should handle very long client ID", async () => {
+    it("应该处理非常长的客户端 ID", async () => {
       const longClientId = "a".repeat(1000);
 
       await heartbeatHandler.handleClientStatus(
@@ -793,7 +793,7 @@ describe("HeartbeatHandler", () => {
       );
     });
 
-    it("should handle special characters in client ID", async () => {
+    it("应该处理客户端 ID 中的特殊字符", async () => {
       const specialClientId = "client-123_测试@#$%^&*()";
 
       await heartbeatHandler.handleClientStatus(
@@ -808,7 +808,7 @@ describe("HeartbeatHandler", () => {
       );
     });
 
-    it("should handle empty client ID", async () => {
+    it("应该处理空的客户端 ID", async () => {
       const emptyClientId = "";
 
       await heartbeatHandler.handleClientStatus(
@@ -823,7 +823,7 @@ describe("HeartbeatHandler", () => {
       );
     });
 
-    it("should handle large number of active MCP servers", async () => {
+    it("应该处理大量活动的 MCP 服务器", async () => {
       const largeServerList = Array.from(
         { length: 100 },
         (_, i) => `server-${i}`
@@ -851,8 +851,8 @@ describe("HeartbeatHandler", () => {
       );
     });
 
-    it("should handle Date.now() returning edge values", () => {
-      // Test with timestamp 0
+    it("应该处理 Date.now() 返回边缘值", () => {
+      // 测试时间戳为 0
       vi.spyOn(Date, "now").mockReturnValue(0);
       heartbeatHandler.handleClientConnect(clientId);
       expect(mockStatusService.updateClientInfo).toHaveBeenCalledWith(
@@ -863,7 +863,7 @@ describe("HeartbeatHandler", () => {
         `websocket-connect-${clientId}`
       );
 
-      // Test with maximum safe integer
+      // 测试最大安全整数
       vi.spyOn(Date, "now").mockReturnValue(Number.MAX_SAFE_INTEGER);
       heartbeatHandler.handleClientConnect(clientId);
       expect(mockStatusService.updateClientInfo).toHaveBeenCalledWith(
@@ -875,10 +875,10 @@ describe("HeartbeatHandler", () => {
       );
     });
 
-    it("should handle concurrent heartbeat processing", async () => {
+    it("应该处理并发心跳处理", async () => {
       const promises: Promise<void>[] = [];
 
-      // Simulate concurrent heartbeat messages
+      // 模拟并发心跳消息
       for (let i = 0; i < 10; i++) {
         promises.push(
           heartbeatHandler.handleClientStatus(
@@ -895,17 +895,17 @@ describe("HeartbeatHandler", () => {
       expect(mockConfigService.getConfig).toHaveBeenCalledTimes(10);
     });
 
-    it("should handle monitoring with rapid timer advances", () => {
+    it("应该处理快速定时器推进的监控", () => {
       mockStatusService.getLastHeartbeat.mockReturnValue(1234567890 - 40000);
 
       heartbeatHandler.startHeartbeatMonitoring();
 
-      // Rapidly advance timers multiple times
+      // 快速多次推进定时器
       for (let i = 0; i < 5; i++) {
         vi.advanceTimersByTime(10000);
       }
 
-      // Should have been called 5 times
+      // 应该被调用 5 次
       expect(mockStatusService.updateClientInfo).toHaveBeenCalledTimes(5);
       expect(
         mockNotificationService.cleanupDisconnectedClients

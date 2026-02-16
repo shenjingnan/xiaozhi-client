@@ -26,7 +26,7 @@ import {
 } from "vitest";
 import { MCPToolHandler } from "../mcp-tool.handler.js";
 
-// Mock dependencies
+// 模拟依赖
 vi.mock("../../Logger.js", () => ({
   logger: {
     info: vi.fn(),
@@ -148,7 +148,7 @@ describe("MCPToolHandler - 单元测试", () => {
 
   describe("不同类型的 customMCP handler 测试", () => {
     it("应该支持 proxy 类型的 handler", async () => {
-      // Arrange
+      // 准备
       const proxyToolConfig = {
         name: "test_proxy_tool",
         description: "测试代理工具",
@@ -176,7 +176,7 @@ describe("MCPToolHandler - 单元测试", () => {
 
       mockContext.req.json.mockResolvedValue(requestBody);
 
-      // Mock configManager
+      // 模拟 configManager
       configManager.getCustomMCPTools = vi
         .fn()
         .mockReturnValue([proxyToolConfig]);
@@ -190,10 +190,10 @@ describe("MCPToolHandler - 单元测试", () => {
         isError: false,
       });
 
-      // Act
+      // 执行
       await mcpToolHandler.callTool(mockContext);
 
-      // Assert
+      // 断言
       expect(mockServiceManager.callTool).toHaveBeenCalledWith(
         "test_proxy_tool",
         { input: "测试输入" },

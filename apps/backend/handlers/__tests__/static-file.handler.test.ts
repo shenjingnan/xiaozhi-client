@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { StaticFileHandler } from "../static-file.handler.js";
 
-// Mock dependencies
+// 模拟依赖
 vi.mock("node:fs", () => ({
   existsSync: vi.fn(),
 }));
@@ -41,7 +41,7 @@ describe("StaticFileHandler", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
 
-    // Mock Logger
+    // 模拟 Logger
     mockLogger = {
       debug: vi.fn(),
       info: vi.fn(),
@@ -51,7 +51,7 @@ describe("StaticFileHandler", () => {
     const { logger } = await import("../../Logger.js");
     Object.assign(logger, mockLogger);
 
-    // Mock fs functions
+    // 模拟 fs 函数
     const fs = await import("node:fs");
     const fsPromises = await import("node:fs/promises");
     const path = await import("node:path");
@@ -63,14 +63,14 @@ describe("StaticFileHandler", () => {
     mockJoin = vi.mocked(path.join);
     mockFileURLToPath = vi.mocked(url.fileURLToPath);
 
-    // Setup default mocks
+    // 设置默认模拟
     mockFileURLToPath.mockReturnValue(
       "/project/dist/handlers/StaticFileHandler.js"
     );
     mockDirname.mockReturnValue("/project/dist/handlers");
     mockJoin.mockImplementation((...args: string[]) => args.join("/"));
 
-    // Mock Context
+    // 模拟 Context
     mockContext = {
       req: {
         url: "http://localhost:3000/",
@@ -80,7 +80,7 @@ describe("StaticFileHandler", () => {
         if (key === "logger") return mockLogger;
         return undefined;
       }),
-      logger: mockLogger, // 向后兼容
+      logger: mockLogger, // 向后兼容支持
       text: vi.fn().mockImplementation((text, status, headers) => ({
         status,
         text,
@@ -105,7 +105,7 @@ describe("StaticFileHandler", () => {
 
   describe("constructor", () => {
     it("应该使用正确的依赖项初始化", () => {
-      // Mock existsSync to return true for the first path
+      // 模拟 existsSync 为第一个路径返回 true
       mockExistsSync.mockReturnValueOnce(true);
 
       staticFileHandler = new StaticFileHandler();
@@ -218,7 +218,7 @@ describe("StaticFileHandler", () => {
     });
 
     it("当 web 路径不可用时应该返回错误页面", async () => {
-      mockExistsSync.mockReturnValue(false); // No web path found
+      mockExistsSync.mockReturnValue(false); // 未找到 web 路径
       staticFileHandler = new StaticFileHandler();
 
       const response = await staticFileHandler.handleStaticFile(mockContext);
@@ -231,8 +231,8 @@ describe("StaticFileHandler", () => {
     it("应该为 SPA 路由回退到 index.html", async () => {
       mockContext.req.url = "http://localhost:3000/app/dashboard";
       mockExistsSync
-        .mockReturnValueOnce(false) // File doesn't exist
-        .mockReturnValueOnce(true); // index.html exists
+        .mockReturnValueOnce(false) // 文件不存在
+        .mockReturnValueOnce(true); // index.html 存在
       mockReadFile.mockResolvedValue(Buffer.from("<html>SPA</html>"));
 
       const response = await staticFileHandler.handleStaticFile(mockContext);
@@ -258,8 +258,8 @@ describe("StaticFileHandler", () => {
     });
 
     it("应该处理 URL 解析错误", async () => {
-      // URL parsing error happens before try-catch, so we need to test differently
-      // The error will be thrown and caught by the outer try-catch
+      // URL 解析错误发生在 try-catch 之前，所以我们需要以不同方式测试
+      // 错误将被抛出并由外部 try-catch 捕获
       mockContext.req.url = "invalid-url";
 
       try {
@@ -278,7 +278,7 @@ describe("StaticFileHandler", () => {
     });
 
     it("应该为 HTML 文件返回正确的内容类型", () => {
-      // Access private method through type assertion for testing
+      // 通过类型断言访问私有方法进行测试
       const handler = staticFileHandler as any;
 
       expect(handler.getContentType("index.html")).toBe("text/html");
@@ -481,12 +481,12 @@ describe("StaticFileHandler", () => {
       mockExistsSync.mockReturnValue(false);
       staticFileHandler = new StaticFileHandler();
 
-      // Clear previous calls
+      // 清除之前的调用
       mockLogger.debug.mockClear();
       mockLogger.info.mockClear();
       mockLogger.warn.mockClear();
 
-      // Mock to return true on reinitialize
+      // 模拟重新初始化时返回 true
       mockExistsSync.mockReturnValueOnce(true);
 
       staticFileHandler.reinitializeWebPath();
@@ -592,7 +592,7 @@ describe("StaticFileHandler", () => {
     });
 
     it("应该处理完整的静态文件服务工作流程", async () => {
-      // Test serving different file types
+      // 测试提供不同文件类型
       const testCases = [
         {
           url: "http://localhost:3000/index.html",
@@ -634,8 +634,8 @@ describe("StaticFileHandler", () => {
       for (const route of spaRoutes) {
         mockContext.req.url = `http://localhost:3000${route}`;
         mockExistsSync
-          .mockReturnValueOnce(false) // Route file doesn't exist
-          .mockReturnValueOnce(true); // index.html exists
+          .mockReturnValueOnce(false) // 路由文件不存在
+          .mockReturnValueOnce(true); // index.html 存在
         mockReadFile.mockResolvedValue(Buffer.from("<html>SPA App</html>"));
 
         await staticFileHandler.handleStaticFile(mockContext);
@@ -647,7 +647,7 @@ describe("StaticFileHandler", () => {
     });
 
     it("应该优雅地处理错误场景", async () => {
-      // Test various error conditions
+      // 测试各种错误条件
       const errorCases = [
         {
           description: "file not found",
@@ -799,7 +799,7 @@ describe("StaticFileHandler", () => {
     });
 
     it("应该处理路径遍历检测", () => {
-      // Test the path traversal detection logic directly
+      // 直接测试路径遍历检测逻辑
       const handler = staticFileHandler as any;
 
       expect("../../../etc/passwd".includes("..")).toBe(true);

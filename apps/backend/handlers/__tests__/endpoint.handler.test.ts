@@ -2,7 +2,7 @@ import type { ConnectionStatus } from "@xiaozhi-client/endpoint";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { EndpointHandler } from "../endpoint.handler.js";
 
-// Mock dependencies
+// 模拟依赖
 vi.mock("../../Logger.js", () => ({
   logger: {
     debug: vi.fn(),
@@ -95,7 +95,7 @@ describe("EndpointHandler", () => {
     // 获取 mockEventBus 的 emitEvent 方法
     mockEmitEvent = mockEventBusInstance.emitEvent;
 
-    // Create handler instance - getEventBus 已经在模块级别被 mock
+    // 创建处理器实例 - getEventBus 已经在模块级别被 mock
     handler = new EndpointHandler(mockConnectionManager as any, configManager);
 
     // 手动替换 handler 的 eventBus，确保使用 mock 实例
