@@ -48,7 +48,9 @@ export class TemplateManagerImpl implements ITemplateManager {
           }
         } catch (error) {
           // 跳过无效的模板目录
-          console.warn(`跳过无效模板: ${templateName}`);
+          const errorMsg =
+            error instanceof Error ? error.message : String(error);
+          console.warn(`⚠️  跳过无效模板: ${templateName}. 原因: ${errorMsg}`);
         }
       }
 
@@ -88,7 +90,10 @@ export class TemplateManagerImpl implements ITemplateManager {
           const configContent = FileUtils.readFile(configPath);
           config = JSON.parse(configContent);
         } catch (error) {
-          console.warn(`模板配置文件解析失败: ${templateName}`);
+          throw new FileError(
+            `模板配置文件解析失败: ${templateName}. 错误: ${error instanceof Error ? error.message : String(error)}`,
+            configPath
+          );
         }
       }
 
@@ -110,6 +115,9 @@ export class TemplateManagerImpl implements ITemplateManager {
       return templateInfo;
     } catch (error) {
       if (error instanceof ValidationError) {
+        throw error;
+      }
+      if (error instanceof FileError) {
         throw error;
       }
       throw new FileError(`无法获取模板信息: ${templateName}`, "");
@@ -187,7 +195,9 @@ export class TemplateManagerImpl implements ITemplateManager {
       for (const requiredFile of requiredFiles) {
         const filePath = path.join(templateInfo.path, requiredFile);
         if (!FileUtils.exists(filePath)) {
-          console.warn(`模板缺少必要文件: ${requiredFile}`);
+          console.warn(
+            `⚠️  模板 "${templateName}" 缺少必要文件: ${requiredFile}`
+          );
           return false;
         }
       }
@@ -298,9 +308,8 @@ export class TemplateManagerImpl implements ITemplateManager {
         }
       }
     } catch (error) {
-      console.warn(
-        `处理模板变量失败: ${error instanceof Error ? error.message : String(error)}`
-      );
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.warn(`⚠️  处理模板变量失败: ${errorMsg}`);
     }
   }
 
@@ -359,9 +368,8 @@ export class TemplateManagerImpl implements ITemplateManager {
         FileUtils.writeFile(filePath, content, { overwrite: true });
       }
     } catch (error) {
-      console.warn(
-        `替换文件变量失败 ${filePath}: ${error instanceof Error ? error.message : String(error)}`
-      );
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.warn(`⚠️  替换文件变量失败 (${filePath}): ${errorMsg}`);
     }
   }
 }
