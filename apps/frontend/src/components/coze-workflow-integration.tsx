@@ -113,7 +113,6 @@ export function CozeWorkflowIntegration({
       !hasAutoSelected
     ) {
       const firstWorkspace = workspaces[0];
-      console.log(`自动选择第一个工作空间: ${firstWorkspace.name}`);
       selectWorkspace(firstWorkspace.id);
       setHasAutoSelected(true);
     }
@@ -225,8 +224,6 @@ export function CozeWorkflowIntegration({
       // 刷新工作流列表以确保状态同步
       await refreshWorkflows();
     } catch (error) {
-      console.error("添加工作流失败:", error);
-
       // 根据错误类型显示不同的错误信息
       let errorMessage = "添加工作流失败，请重试";
 
@@ -334,8 +331,6 @@ export function CozeWorkflowIntegration({
       // 刷新工作流列表以确保状态同步
       await refreshWorkflows();
     } catch (error) {
-      console.error("添加工作流失败:", error);
-
       // 根据错误类型显示不同的错误信息
       let errorMessage = "添加工作流失败，请重试";
 
