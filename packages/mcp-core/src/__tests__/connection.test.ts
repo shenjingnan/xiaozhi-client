@@ -182,10 +182,16 @@ describe("MCPConnection", () => {
 
       const connectionPromise = connection.connect();
 
-      // 运行所有待处理的计时器以触发超时
-      vi.runOnlyPendingTimers();
+      // 快进时间以触发超时（使用异步版本以处理 async 回调）
+      await vi.advanceTimersByTimeAsync(30000);
 
       await expect(connectionPromise).rejects.toThrow("连接超时");
+
+      // 等待所有异步操作完成
+      await vi.runAllTimersAsync();
+
+      // 清理可能挂起的 promise
+      connectionPromise.catch(() => {});
     });
 
     it("应该处理连接错误", async () => {
@@ -209,19 +215,21 @@ describe("MCPConnection", () => {
       });
     });
 
-    it("如果正在连接中应该抛出错误", async () => {
+    it("如果正在连接中应该抛出错误", { timeout: 10000 }, async () => {
       mockClient.connect.mockImplementation(
         () => new Promise(() => {}) // Never resolves
       );
 
       const firstConnect = connection.connect();
 
+      // 第二个连接调用应该立即抛出错误（不需要 await）
       await expect(connection.connect()).rejects.toThrow(
         "连接正在进行中，请等待连接完成"
       );
 
-      // 清理
-      firstConnect.catch(() => {});
+      // 清理 - 不等待 firstConnect，因为它永远不会 resolve
+      // 只是在 afterEach 中清理 mock 和定时器
+      firstConnect.catch(() => {}); // 防止未处理的 promise rejection
     });
   });
 

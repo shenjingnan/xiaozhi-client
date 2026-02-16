@@ -77,8 +77,18 @@ export class MCPConnection {
       throw new Error("连接正在进行中，请等待连接完成");
     }
 
-    // 清理之前的连接
-    this.cleanupConnection();
+    // 设置连接状态为 CONNECTING（在 await 之前）
+    // 这样可以防止在 cleanup 期间的竞争条件
+    this.connectionState = ConnectionState.CONNECTING;
+
+    try {
+      // 清理之前的连接
+      await this.cleanupConnection();
+    } catch (error) {
+      // 如果清理失败，重置状态
+      this.connectionState = ConnectionState.DISCONNECTED;
+      throw error;
+    }
 
     return this.attemptConnection();
   }
@@ -87,7 +97,6 @@ export class MCPConnection {
    * 尝试建立连接
    */
   private async attemptConnection(): Promise<void> {
-    this.connectionState = ConnectionState.CONNECTING;
     console.debug(
       `[MCP-${this.name}] 正在连接 MCP 服务: ${this.name}`
     );
@@ -95,9 +104,9 @@ export class MCPConnection {
     return new Promise((resolve, reject) => {
       // 设置连接超时（使用固定默认值 30 秒）
       const CONNECTION_TIMEOUT = 30000;
-      this.connectionTimeout = setTimeout(() => {
+      this.connectionTimeout = setTimeout(async () => {
         const error = new Error(`连接超时 (${CONNECTION_TIMEOUT}ms)`);
-        this.handleConnectionError(error);
+        await this.handleConnectionError(error);
         reject(error);
       }, CONNECTION_TIMEOUT);
 
@@ -137,11 +146,12 @@ export class MCPConnection {
 
             resolve();
           })
-          .catch((error) => {
-            this.handleConnectionError(error);
+          .catch(async (error) => {
+            await this.handleConnectionError(error);
             reject(error);
           });
       } catch (error) {
+        // 同步错误，直接调用 cleanupConnection 并不等待
         this.handleConnectionError(error as Error);
         reject(error);
       }
@@ -172,7 +182,7 @@ export class MCPConnection {
   /**
    * 处理连接错误
    */
-  private handleConnectionError(error: Error): void {
+  private async handleConnectionError(error: Error): Promise<void> {
     this.connectionState = ConnectionState.DISCONNECTED;
     this.initialized = false;
 
@@ -185,7 +195,7 @@ export class MCPConnection {
     }
 
     // 清理当前连接
-    this.cleanupConnection();
+    await this.cleanupConnection();
 
     // 发射连接失败事件
     this.callbacks?.onConnectionFailed?.({
@@ -198,16 +208,14 @@ export class MCPConnection {
   /**
    * 清理连接资源
    */
-  private cleanupConnection(): void {
+  private async cleanupConnection(): Promise<void> {
     // 停止心跳
     this.stopHeartbeat();
 
     // 清理客户端
     if (this.client) {
       try {
-        this.client.close().catch(() => {
-          // 忽略关闭时的错误
-        });
+        await this.client.close();
       } catch (error) {
         // 忽略关闭时的错误
       }
@@ -268,7 +276,7 @@ export class MCPConnection {
     console.info(`主动断开 MCP 服务 ${this.name} 连接`);
 
     // 清理连接资源
-    this.cleanupConnection();
+    await this.cleanupConnection();
 
     // 设置状态为已断开
     this.connectionState = ConnectionState.DISCONNECTED;
@@ -314,7 +322,7 @@ export class MCPConnection {
     );
 
     // 清理旧连接
-    this.cleanupConnection();
+    await this.cleanupConnection();
 
     // 建立新连接
     return this.attemptConnection();
