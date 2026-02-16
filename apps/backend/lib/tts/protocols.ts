@@ -642,20 +642,64 @@ export async function WaitForEvent(
   return msg;
 }
 
-export async function FullClientRequest(
+/**
+ * 发送 TTS 协议消息的辅助函数
+ * @param ws WebSocket 连接
+ * @param msgType 消息类型
+ * @param flag 消息标志位
+ * @param event 事件类型（可选）
+ * @param payload 消息负载（可选）
+ * @param sessionId 会话 ID（可选）
+ */
+async function sendTTSMessage(
   ws: WebSocket,
-  payload: Uint8Array
+  msgType: MsgType,
+  flag: MsgTypeFlagBits,
+  event?: EventType,
+  payload?: Uint8Array,
+  sessionId?: string
 ): Promise<void> {
-  const msg = createMessage(MsgType.FullClientRequest, MsgTypeFlagBits.NoSeq);
-  msg.payload = payload;
+  const msg = createMessage(msgType, flag);
+
+  if (event !== undefined) {
+    msg.event = event;
+  }
+
+  if (sessionId !== undefined) {
+    msg.sessionId = sessionId;
+  }
+
+  // 如果 payload 未提供且存在 event，则使用 "{}"
+  if (payload === undefined && event !== undefined) {
+    msg.payload = new TextEncoder().encode("{}");
+  } else if (payload !== undefined) {
+    msg.payload = payload;
+  } else {
+    msg.payload = new Uint8Array(0);
+  }
+
   logger.debug(`${msg.toString()}`);
   const data = marshalMessage(msg);
+
   return new Promise((resolve, reject) => {
     ws.send(data, (error?: Error) => {
       if (error) reject(error);
       else resolve();
     });
   });
+}
+
+export async function FullClientRequest(
+  ws: WebSocket,
+  payload: Uint8Array
+): Promise<void> {
+  return sendTTSMessage(
+    ws,
+    MsgType.FullClientRequest,
+    MsgTypeFlagBits.NoSeq,
+    undefined,
+    payload
+  );
 }
 
 export async function AudioOnlyClient(
@@ -663,50 +707,27 @@ export async function AudioOnlyClient(
   payload: Uint8Array,
   flag: MsgTypeFlagBits
 ): Promise<void> {
-  const msg = createMessage(MsgType.AudioOnlyClient, flag);
-  msg.payload = payload;
-  logger.debug(`${msg.toString()}`);
-  const data = marshalMessage(msg);
-  return new Promise((resolve, reject) => {
-    ws.send(data, (error?: Error) => {
-      if (error) reject(error);
-      else resolve();
-    });
-  });
+  return sendTTSMessage(ws, MsgType.AudioOnlyClient, flag, undefined, payload);
 }
 
 export async function StartConnection(ws: WebSocket): Promise<void> {
-  const msg = createMessage(
+  return sendTTSMessage(
+    ws,
     MsgType.FullClientRequest,
-    MsgTypeFlagBits.WithEvent
+    MsgTypeFlagBits.WithEvent,
+    EventType.StartConnection,
+    undefined
   );
-  msg.event = EventType.StartConnection;
-  msg.payload = new TextEncoder().encode("{}");
-  logger.debug(`${msg.toString()}`);
-  const data = marshalMessage(msg);
-  return new Promise((resolve, reject) => {
-    ws.send(data, (error?: Error) => {
-      if (error) reject(error);
-      else resolve();
-    });
-  });
 }
 
 export async function FinishConnection(ws: WebSocket): Promise<void> {
-  const msg = createMessage(
+  return sendTTSMessage(
+    ws,
     MsgType.FullClientRequest,
-    MsgTypeFlagBits.WithEvent
+    MsgTypeFlagBits.WithEvent,
+    EventType.FinishConnection,
+    undefined
   );
-  msg.event = EventType.FinishConnection;
-  msg.payload = new TextEncoder().encode("{}");
-  logger.debug(`${msg.toString()}`);
-  const data = marshalMessage(msg);
-  return new Promise((resolve, reject) => {
-    ws.send(data, (error?: Error) => {
-      if (error) reject(error);
-      else resolve();
-    });
-  });
 }
 
 export async function StartSession(
@@ -714,63 +735,42 @@ export async function StartSession(
   payload: Uint8Array,
   sessionId: string
 ): Promise<void> {
-  const msg = createMessage(
+  return sendTTSMessage(
+    ws,
     MsgType.FullClientRequest,
-    MsgTypeFlagBits.WithEvent
+    MsgTypeFlagBits.WithEvent,
+    EventType.StartSession,
+    payload,
+    sessionId
   );
-  msg.event = EventType.StartSession;
-  msg.sessionId = sessionId;
-  msg.payload = payload;
-  logger.debug(`${msg.toString()}`);
-  const data = marshalMessage(msg);
-  return new Promise((resolve, reject) => {
-    ws.send(data, (error?: Error) => {
-      if (error) reject(error);
-      else resolve();
-    });
-  });
 }
 
 export async function FinishSession(
   ws: WebSocket,
   sessionId: string
 ): Promise<void> {
-  const msg = createMessage(
+  return sendTTSMessage(
+    ws,
     MsgType.FullClientRequest,
-    MsgTypeFlagBits.WithEvent
+    MsgTypeFlagBits.WithEvent,
+    EventType.FinishSession,
+    undefined,
+    sessionId
   );
-  msg.event = EventType.FinishSession;
-  msg.sessionId = sessionId;
-  msg.payload = new TextEncoder().encode("{}");
-  logger.debug(`${msg.toString()}`);
-  const data = marshalMessage(msg);
-  return new Promise((resolve, reject) => {
-    ws.send(data, (error?: Error) => {
-      if (error) reject(error);
-      else resolve();
-    });
-  });
 }
 
 export async function CancelSession(
   ws: WebSocket,
   sessionId: string
 ): Promise<void> {
-  const msg = createMessage(
+  return sendTTSMessage(
+    ws,
     MsgType.FullClientRequest,
-    MsgTypeFlagBits.WithEvent
+    MsgTypeFlagBits.WithEvent,
+    EventType.CancelSession,
+    undefined,
+    sessionId
   );
-  msg.event = EventType.CancelSession;
-  msg.sessionId = sessionId;
-  msg.payload = new TextEncoder().encode("{}");
-  logger.debug(`${msg.toString()}`);
-  const data = marshalMessage(msg);
-  return new Promise((resolve, reject) => {
-    ws.send(data, (error?: Error) => {
-      if (error) reject(error);
-      else resolve();
-    });
-  });
 }
 
 export async function TaskRequest(
@@ -778,19 +778,12 @@ export async function TaskRequest(
   payload: Uint8Array,
   sessionId: string
 ): Promise<void> {
-  const msg = createMessage(
+  return sendTTSMessage(
+    ws,
     MsgType.FullClientRequest,
-    MsgTypeFlagBits.WithEvent
+    MsgTypeFlagBits.WithEvent,
+    EventType.TaskRequest,
+    payload,
+    sessionId
   );
-  msg.event = EventType.TaskRequest;
-  msg.sessionId = sessionId;
-  msg.payload = payload;
-  logger.debug(`${msg.toString()}`);
-  const data = marshalMessage(msg);
-  return new Promise((resolve, reject) => {
-    ws.send(data, (error?: Error) => {
-      if (error) reject(error);
-      else resolve();
-    });
-  });
 }
