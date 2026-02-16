@@ -66,7 +66,6 @@ export function ToolCallLogsDialog() {
       setError(null);
 
       try {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
         const response = await fetch(`/api/tool-calls/logs?limit=${limit}`);
         const data: ApiResponse<ToolCallLogsResponse> = await response.json();
 
