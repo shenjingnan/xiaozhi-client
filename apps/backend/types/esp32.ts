@@ -362,16 +362,6 @@ export type ESP32WSMessage =
 export type ESP32ConnectionState = "connecting" | "connected" | "disconnected";
 
 /**
- * 设备列表响应
- */
-export interface ESP32DeviceListResponse {
-  /** 设备列表 */
-  devices: ESP32Device[];
-  /** 设备总数 */
-  total: number;
-}
-
-/**
  * ESP32错误代码
  */
 export enum ESP32ErrorCode {

@@ -44,7 +44,9 @@ export class DeviceRegistryService {
     };
 
     this.activeDevices.set(deviceId, device);
-    logger.info(`自动激活新设备: deviceId=${deviceId}, board=${board}, appVersion=${appVersion}`);
+    logger.info(
+      `自动激活新设备: deviceId=${deviceId}, board=${board}, appVersion=${appVersion}`
+    );
 
     return device;
   }
@@ -56,14 +58,6 @@ export class DeviceRegistryService {
    */
   getDevice(deviceId: string): ESP32Device | null {
     return this.activeDevices.get(deviceId) ?? null;
-  }
-
-  /**
-   * 获取所有已激活设备
-   * @returns 所有已激活设备列表
-   */
-  getAllDevices(): ESP32Device[] {
-    return Array.from(this.activeDevices.values());
   }
 
   /**
@@ -95,19 +89,6 @@ export class DeviceRegistryService {
 
     device.lastSeenAt = new Date();
     logger.debug(`设备最后活跃时间已更新: deviceId=${deviceId}`);
-  }
-
-  /**
-   * 删除设备
-   * @param deviceId - 设备ID
-   * @returns 是否删除成功
-   */
-  deleteDevice(deviceId: string): boolean {
-    const result = this.activeDevices.delete(deviceId);
-    if (result) {
-      logger.info(`设备已删除: ${deviceId}`);
-    }
-    return result;
   }
 
   /**

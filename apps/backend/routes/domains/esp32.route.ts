@@ -1,17 +1,13 @@
 /**
  * ESP32设备路由模块
- * 处理所有ESP32设备相关的API路由
+ * 处理ESP32设备相关的API路由
  *
  * 硬件API定义：
  * - POST /              # OTA/配置获取（根路径，按硬件定义）
+ * - POST /xiaozhi/ota/  # 小智硬件官方OTA路径（兼容）
  * - WebSocket /ws       # WebSocket连接
  *
- * 管理API（保留 /api/esp32 前缀）：
- * - GET    /api/esp32/devices              # 设备列表
- * - GET    /api/esp32/devices/:deviceId     # 获取设备
- * - DELETE /api/esp32/devices/:deviceId     # 删除设备
- *
- * 注意：设备激活已改为自动激活，不再需要激活码
+ * 注意：设备采用自动激活模式，无需管理API
  */
 
 import type { Context } from "hono";
@@ -68,42 +64,5 @@ export const esp32Routes: RouteDefinition[] = [
       // WebSocket升级由WebServer的ws服务器处理
       return c.json({ message: "WebSocket endpoint" });
     }),
-  },
-
-  // ========== 管理API（保留 /api/esp32 前缀） ==========
-
-  // 获取设备列表
-  {
-    method: "GET",
-    path: "/api/esp32/devices",
-    handler: createESP32Handler((handler, c) => handler.listDevices(c)),
-  },
-
-  // 获取单个设备信息
-  {
-    method: "GET",
-    path: "/api/esp32/devices/:deviceId",
-    handler: createESP32Handler((handler, c) => handler.getDevice(c)),
-  },
-
-  // 获取设备状态
-  {
-    method: "GET",
-    path: "/api/esp32/devices/:deviceId/status",
-    handler: createESP32Handler((handler, c) => handler.getDeviceStatus(c)),
-  },
-
-  // 断开设备连接
-  {
-    method: "POST",
-    path: "/api/esp32/devices/:deviceId/disconnect",
-    handler: createESP32Handler((handler, c) => handler.disconnectDevice(c)),
-  },
-
-  // 删除设备
-  {
-    method: "DELETE",
-    path: "/api/esp32/devices/:deviceId",
-    handler: createESP32Handler((handler, c) => handler.deleteDevice(c)),
   },
 ];

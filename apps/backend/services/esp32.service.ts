@@ -6,8 +6,6 @@
 import { logger } from "@/Logger.js";
 import { ESP32Connection } from "@/lib/esp32/connection.js";
 import {
-  type ESP32Device,
-  type ESP32DeviceListResponse,
   type ESP32DeviceReport,
   ESP32ErrorCode,
   type ESP32ListenMessage,
@@ -101,7 +99,11 @@ export class ESP32Service {
 
     if (!device) {
       // 设备不存在，自动创建并激活
-      device = this.deviceRegistry.createDevice(deviceId, boardType, appVersion);
+      device = this.deviceRegistry.createDevice(
+        deviceId,
+        boardType,
+        appVersion
+      );
       logger.info(`新设备自动激活: deviceId=${deviceId}`);
     }
 
@@ -425,57 +427,6 @@ export class ESP32Service {
 
     // 更新设备状态
     this.deviceRegistry.updateDeviceStatus(deviceId, "offline");
-  }
-
-  /**
-   * 断开设备连接
-   * @param deviceId - 设备ID
-   */
-  async disconnectDevice(deviceId: string): Promise<void> {
-    const connection = this.connections.get(deviceId);
-    if (connection) {
-      await connection.close();
-      this.connections.delete(deviceId);
-      logger.info(`设备连接已断开: ${deviceId}`);
-    }
-  }
-
-  /**
-   * 获取设备列表
-   * @returns 设备列表响应
-   */
-  async listDevices(): Promise<ESP32DeviceListResponse> {
-    const devices = this.deviceRegistry.getAllDevices();
-    return {
-      devices,
-      total: devices.length,
-    };
-  }
-
-  /**
-   * 获取单个设备信息
-   * @param deviceId - 设备ID
-   * @returns 设备信息，如果不存在则返回null
-   */
-  async getDevice(deviceId: string): Promise<ESP32Device | null> {
-    return this.deviceRegistry.getDevice(deviceId);
-  }
-
-  /**
-   * 删除设备
-   * @param deviceId - 设备ID
-   */
-  async deleteDevice(deviceId: string): Promise<void> {
-    // 先断开连接
-    await this.disconnectDevice(deviceId);
-
-    // 删除设备
-    const deleted = this.deviceRegistry.deleteDevice(deviceId);
-    if (!deleted) {
-      throw new Error(`设备不存在: ${deviceId}`, {
-        cause: ESP32ErrorCode.DEVICE_NOT_FOUND,
-      });
-    }
   }
 
   /**
