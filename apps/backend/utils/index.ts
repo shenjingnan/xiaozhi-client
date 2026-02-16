@@ -9,3 +9,10 @@ export { VersionUtils } from "@xiaozhi-client/version";
 // WebSocket 辅助工具
 export { sendWebSocketError } from "./websocket-helper.js";
 export type { WebSocketLike } from "./websocket-helper.js";
+// ESP32 设备信息提取工具
+export {
+  extractDeviceInfo,
+  camelToSnakeCase,
+  type DeviceInfoFromHeaders,
+  type ExtractedDeviceInfo,
+} from "./esp32-utils.js";
