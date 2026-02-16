@@ -30,6 +30,16 @@ export function useNetworkService() {
     // 初始化网络服务
     networkService.initialize().catch((error) => {
       console.error("[NetworkService] 初始化失败:", error);
+
+      // 更新连接状态为已断开
+      webSocketActions.setConnectionState(ConnectionState.DISCONNECTED);
+
+      // 设置错误状态供 UI 展示
+      useStatusStore.getState().setError(
+        error instanceof Error
+          ? error
+          : new Error(`网络初始化失败: ${String(error)}`)
+      );
     });
 
     // 保存所有事件监听器的取消订阅函数
