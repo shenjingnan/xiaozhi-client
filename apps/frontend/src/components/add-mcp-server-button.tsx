@@ -18,6 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { mcpFormSchema } from "@/schemas/mcp-form";
 import { apiClient } from "@/services/api";
 import {
@@ -27,7 +28,6 @@ import {
 } from "@/utils/mcpFormConverter";
 import { validateMCPConfig } from "@/utils/mcpValidation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Textarea } from "@ui/textarea";
 import { PlusIcon } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";

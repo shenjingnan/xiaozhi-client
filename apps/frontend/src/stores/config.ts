@@ -9,8 +9,8 @@
  * - 集成 WebSocket 事件监听
  */
 
-import { apiClient } from "@services/api";
-import { webSocketManager } from "@services/websocket";
+import { apiClient } from "@/services/api";
+import { webSocketManager } from "@/services/websocket";
 import type {
   AppConfig,
   ConnectionConfig,

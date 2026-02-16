@@ -8,19 +8,19 @@
  * - 安装完成后提供操作选项
  */
 
-import { useNPMInstall } from "@hooks/useNPMInstall";
-import { Alert, AlertDescription } from "@ui/alert";
-import { Badge } from "@ui/badge";
-import { Button } from "@ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@ui/dialog";
-import { Progress } from "@ui/progress";
-import { ScrollArea } from "@ui/scroll-area";
+} from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useNPMInstall } from "@/hooks/useNPMInstall";
 import {
   CheckCircleIcon,
   ChevronDownIcon,

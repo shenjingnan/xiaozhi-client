@@ -5,7 +5,7 @@
 import {
   RestartNotificationProvider,
   useRestartNotifications,
-} from "@hooks/useRestartNotifications";
+} from "@/hooks/useRestartNotifications";
 import { render, waitFor } from "@testing-library/react";
 import { vi } from "vitest";
 

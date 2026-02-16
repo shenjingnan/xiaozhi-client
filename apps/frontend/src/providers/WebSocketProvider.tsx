@@ -1,5 +1,5 @@
-import { useNetworkService } from "@hooks/useNetworkService";
-import { initializeStores } from "@stores/index";
+import { useNetworkService } from "@/hooks/useNetworkService";
+import { initializeStores } from "@/stores/index";
 import type { AppConfig } from "@xiaozhi-client/shared-types";
 import {
   type ReactNode,

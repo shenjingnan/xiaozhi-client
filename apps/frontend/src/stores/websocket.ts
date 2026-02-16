@@ -13,7 +13,7 @@
  */
 
 import { WEBSOCKET_RECONNECT_DELAY } from "@/constants/timeouts";
-import { ConnectionState, webSocketManager } from "@services/websocket";
+import { ConnectionState, webSocketManager } from "@/services/websocket";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
