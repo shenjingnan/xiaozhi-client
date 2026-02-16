@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import type { ChildProcess } from "node:child_process";
 import { logger } from "@/Logger.js";
 import type { Logger } from "@/Logger.js";
+import { SERVICE_RESTART_DELAYS } from "@/constants/timeout.constants.js";
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { EventBus } from "@/services/event-bus.service.js";
 import { getEventBus } from "@/services/event-bus.service.js";
@@ -75,7 +76,7 @@ export class ServiceApiHandler {
           // 服务重启需要一些时间，延迟发送成功状态
           setTimeout(() => {
             this.statusService.updateRestartStatus("completed");
-          }, 5000);
+          }, SERVICE_RESTART_DELAYS.SUCCESS_NOTIFICATION_DELAY);
         } catch (error) {
           c.get("logger").error("服务重启失败:", error);
           this.statusService.updateRestartStatus(
@@ -83,7 +84,7 @@ export class ServiceApiHandler {
             error instanceof Error ? error.message : "未知错误"
           );
         }
-      }, 500);
+      }, SERVICE_RESTART_DELAYS.EXECUTION_DELAY);
 
       return c.success(null, "重启请求已接收");
     } catch (error) {
