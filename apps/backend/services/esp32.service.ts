@@ -26,20 +26,15 @@ import {
 const TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24小时
 
 /**
+ * Token清理间隔（毫秒）
+ */
+const TOKEN_CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // 5分钟
+
+/**
  * 生成认证Token
  * @returns 随机Token
  */
-function generateToken(
-  tokenMap: Map<string, { deviceId: string; expiresAt: number }>
-): string {
-  // 清理过期的 Token
-  const now = Date.now();
-  for (const [token, info] of tokenMap.entries()) {
-    if (now > info.expiresAt) {
-      tokenMap.delete(token);
-    }
-  }
-
+function generateToken(): string {
   const randomPart = randomBytes(16).toString("hex");
   return `${Date.now()}-${randomPart}`;
 }
@@ -64,6 +59,9 @@ export class ESP32Service {
   /** 语音会话服务（可选） */
   private voiceSessionService: IVoiceSessionService;
 
+  /** Token清理定时器 */
+  private tokenCleanupTimer: ReturnType<typeof setInterval> | undefined;
+
   /**
    * 构造函数
    * @param deviceRegistry - 设备注册服务
@@ -81,6 +79,54 @@ export class ESP32Service {
     // 使用传入的语音会话服务或空实现
     this.voiceSessionService =
       voiceSessionService ?? new NoOpVoiceSessionService();
+
+    // 启动Token清理定时器
+    this.startTokenCleanupTimer();
+  }
+
+  /**
+   * 清理过期的Token
+   */
+  private cleanupExpiredTokens(): void {
+    const now = Date.now();
+    let cleanedCount = 0;
+
+    for (const [token, info] of this.tokenToDeviceId.entries()) {
+      if (now > info.expiresAt) {
+        this.tokenToDeviceId.delete(token);
+        cleanedCount++;
+      }
+    }
+
+    if (cleanedCount > 0) {
+      logger.debug(
+        `[ESP32Service] 清理了 ${cleanedCount} 个过期Token，剩余 ${this.tokenToDeviceId.size} 个有效Token`
+      );
+    }
+  }
+
+  /**
+   * 启动Token清理定时器
+   */
+  private startTokenCleanupTimer(): void {
+    this.tokenCleanupTimer = setInterval(() => {
+      this.cleanupExpiredTokens();
+    }, TOKEN_CLEANUP_INTERVAL_MS);
+
+    logger.debug(
+      `[ESP32Service] Token清理定时器已启动，间隔：${TOKEN_CLEANUP_INTERVAL_MS / 1000}秒`
+    );
+  }
+
+  /**
+   * 停止Token清理定时器
+   */
+  private stopTokenCleanupTimer(): void {
+    if (this.tokenCleanupTimer) {
+      clearInterval(this.tokenCleanupTimer);
+      this.tokenCleanupTimer = undefined;
+      logger.debug("[ESP32Service] Token清理定时器已停止");
+    }
   }
 
   /**
@@ -122,7 +168,7 @@ export class ESP32Service {
     this.deviceRegistry.updateLastSeen(deviceId);
 
     // 生成新的WebSocket认证Token
-    const token = generateToken(this.tokenToDeviceId);
+    const token = generateToken();
     const expiresAt = Date.now() + TOKEN_EXPIRY_MS;
     this.tokenToDeviceId.set(token, { deviceId, expiresAt });
 
@@ -428,6 +474,9 @@ export class ESP32Service {
    * 销毁服务
    */
   async destroy(): Promise<void> {
+    // 停止Token清理定时器
+    this.stopTokenCleanupTimer();
+
     // 断开所有设备连接
     const disconnectPromises = Array.from(
       this.connections.values(),
