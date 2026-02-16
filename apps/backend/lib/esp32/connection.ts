@@ -459,8 +459,8 @@ function isValidUTF8(buffer: Buffer): boolean {
     // 尝试解码为UTF-8字符串
     const text = buffer.toString("utf-8");
     // 如果解码后能重新编码回相同的Buffer，则认为是有效的
-    const reencoded = Buffer.from(text, "utf-8");
-    if (!reencoded.equals(buffer)) {
+    const reEncoded = Buffer.from(text, "utf-8");
+    if (!reEncoded.equals(buffer)) {
       return false;
     }
     // 检查是否包含 UTF-8 替换字符 \uFFFD
