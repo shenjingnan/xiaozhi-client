@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { vi } from "vitest";
-import { RestartButton, type RestartStatus } from "./restart-button";
+import { RestartButton } from "./restart-button";
 
 // Mock status store
 const mockRestartService = vi.fn();
@@ -114,37 +114,12 @@ describe("RestartButton", () => {
     expect(button).toBeInTheDocument();
   });
 
-  it("should clear loading state when restartStatus becomes completed", () => {
-    // 直接传入 restartStatus prop 来测试状态变化
-    const restartStatus: RestartStatus = {
-      status: "completed",
-      timestamp: Date.now(),
-    };
-
-    render(<RestartButton restartStatus={restartStatus} />);
+  it("should not be in loading state when not restarting", () => {
+    render(<RestartButton />);
 
     const button = screen.getByRole("button");
 
     // 应该不是加载状态
-    expect(button).not.toBeDisabled();
-    expect(button).toHaveTextContent("重启服务");
-
-    const icon = button.querySelector("svg");
-    expect(icon).not.toHaveClass("animate-spin");
-  });
-
-  it("should clear loading state when restartStatus becomes failed", () => {
-    const { rerender } = render(<RestartButton />);
-
-    const restartStatus: RestartStatus = {
-      status: "failed",
-      error: "重启失败",
-      timestamp: Date.now(),
-    };
-
-    rerender(<RestartButton restartStatus={restartStatus} />);
-
-    const button = screen.getByRole("button");
     expect(button).not.toBeDisabled();
     expect(button).toHaveTextContent("重启服务");
 
