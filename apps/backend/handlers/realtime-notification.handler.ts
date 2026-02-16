@@ -1,3 +1,8 @@
+/**
+ * 实时通知 HTTP 路由处理器
+ * 提供 WebSocket 实时通知相关的消息处理接口，处理配置更新、状态变化和服务重启等实时通知
+ */
+
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import type { EventBus } from "@/services/event-bus.service.js";
