@@ -15,7 +15,7 @@ export default defineConfig({
     index: resolve(__dirname, "src/index.ts"),
   },
   format: ["esm"],
-  target: "node18",
+  target: "node20",
   outDir: "dist",
   clean: true,
   sourcemap: true,
