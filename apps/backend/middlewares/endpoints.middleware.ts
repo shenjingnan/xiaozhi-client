@@ -4,10 +4,10 @@
  */
 
 import { EndpointHandler } from "@/handlers/endpoint.handler.js";
+import type { AppContext } from "@/types/hono.context.js";
 import { configManager } from "@xiaozhi-client/config";
 import type { EndpointManager } from "@xiaozhi-client/endpoint";
 import type { MiddlewareHandler } from "hono";
-import type { AppContext } from "../types/hono.context.js";
 
 /**
  * 小智端点处理器中间件
