@@ -1,3 +1,14 @@
+/**
+ * MCP 工具函数验证器
+ *
+ * 提供传输类型推断和工具调用参数验证功能：
+ * - 根据 URL 路径自动推断传输类型（STDIO/SSE/HTTP）
+ * - 基于 MCP 服务配置自动推断传输类型
+ * - 验证工具调用参数的完整性和格式
+ *
+ * @module validators
+ */
+
 import { MCPTransportType, ToolCallError, ToolCallErrorCode } from "../types.js";
 import { TypeFieldNormalizer } from "./type-normalizer.js";
 import type {
