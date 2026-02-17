@@ -486,8 +486,18 @@ describe("ESP32Service", () => {
       const client1 = "client-1";
       const client2 = "client-2";
 
-      const mockWs1 = { close: vi.fn(), readyState: 1, on: vi.fn(), removeListener: vi.fn() };
-      const mockWs2 = { close: vi.fn(), readyState: 1, on: vi.fn(), removeListener: vi.fn() };
+      const mockWs1 = {
+        close: vi.fn(),
+        readyState: 1,
+        on: vi.fn(),
+        removeListener: vi.fn(),
+      };
+      const mockWs2 = {
+        close: vi.fn(),
+        readyState: 1,
+        on: vi.fn(),
+        removeListener: vi.fn(),
+      };
 
       // 注册并连接设备1
       deviceRegistry.createDevice(device1, "esp32-s3-korvo-1", "2.2.0");
