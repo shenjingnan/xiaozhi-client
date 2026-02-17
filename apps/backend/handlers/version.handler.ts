@@ -1,3 +1,7 @@
+/**
+ * 版本 API HTTP 路由处理器
+ * 提供版本信息查询、版本更新、可用版本列表等 RESTful API 接口
+ */
 import { NPMManager } from "@/lib/npm";
 import type { AppContext } from "@/types/hono.context.js";
 import { VersionUtils } from "@xiaozhi-client/version";
