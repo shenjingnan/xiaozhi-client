@@ -24,6 +24,7 @@ describe("ESP32Service", () => {
   let esp32Service: ESP32Service;
   let deviceRegistry: DeviceRegistryService;
   let mockLogger: any;
+  // mockWebSocket 是测试用的 WebSocket mock 对象，使用 any 类型是务实的做法
   let mockWebSocket: any;
 
   beforeEach(async () => {
@@ -198,7 +199,7 @@ describe("ESP32Service", () => {
 
     it("应该接受已注册设备的连接（无Token）", async () => {
       await esp32Service.handleWebSocketConnection(
-        mockWebSocket as WebSocket,
+        mockWebSocket as any,
         deviceId,
         clientId
       );
@@ -213,7 +214,7 @@ describe("ESP32Service", () => {
       const oldToken = "some-old-token";
 
       await esp32Service.handleWebSocketConnection(
-        mockWebSocket as WebSocket,
+        mockWebSocket as any,
         deviceId,
         clientId,
         oldToken
@@ -232,7 +233,7 @@ describe("ESP32Service", () => {
       const unregisteredDeviceId = "11:22:33:44:55:66";
 
       await esp32Service.handleWebSocketConnection(
-        mockWebSocket as WebSocket,
+        mockWebSocket as any,
         unregisteredDeviceId,
         clientId
       );
@@ -248,7 +249,7 @@ describe("ESP32Service", () => {
 
     it("应该处理空字符串Token（向后兼容）", async () => {
       await esp32Service.handleWebSocketConnection(
-        mockWebSocket as WebSocket,
+        mockWebSocket as any,
         deviceId,
         clientId,
         ""
@@ -275,7 +276,7 @@ describe("ESP32Service", () => {
       });
 
       await esp32Service.handleWebSocketConnection(
-        mockWebSocket as WebSocket,
+        mockWebSocket as any,
         deviceId,
         clientId
       );
@@ -298,7 +299,7 @@ describe("ESP32Service", () => {
     it("应该允许设备重连而无需新的Token", async () => {
       // 首次连接
       await esp32Service.handleWebSocketConnection(
-        mockWebSocket as WebSocket,
+        mockWebSocket as any,
         deviceId,
         clientId
       );
@@ -318,7 +319,7 @@ describe("ESP32Service", () => {
 
       // 重连（不提供Token）
       await esp32Service.handleWebSocketConnection(
-        newMockWebSocket as WebSocket,
+        newMockWebSocket as any,
         deviceId,
         clientId
       );
@@ -334,7 +335,7 @@ describe("ESP32Service", () => {
 
       // 首次连接（带Token）
       await esp32Service.handleWebSocketConnection(
-        mockWebSocket as WebSocket,
+        mockWebSocket as any,
         deviceId,
         clientId,
         oldToken
@@ -352,7 +353,7 @@ describe("ESP32Service", () => {
 
       // 重连（使用相同的旧Token）
       await esp32Service.handleWebSocketConnection(
-        newMockWebSocket as WebSocket,
+        newMockWebSocket as any,
         deviceId,
         clientId,
         oldToken
@@ -377,7 +378,7 @@ describe("ESP32Service", () => {
       const legacyToken = "legacy-device-token";
 
       await esp32Service.handleWebSocketConnection(
-        mockWebSocket as WebSocket,
+        mockWebSocket as any,
         deviceId,
         clientId,
         legacyToken
@@ -391,7 +392,7 @@ describe("ESP32Service", () => {
 
     it("新设备不发送Token应该正常工作", async () => {
       await esp32Service.handleWebSocketConnection(
-        mockWebSocket as WebSocket,
+        mockWebSocket as any,
         deviceId,
         clientId
       );
@@ -472,7 +473,7 @@ describe("ESP32Service", () => {
 
       // 2. 设备建立WebSocket连接
       await esp32Service.handleWebSocketConnection(
-        mockWebSocket as WebSocket,
+        mockWebSocket as any,
         deviceId,
         clientId
       );
