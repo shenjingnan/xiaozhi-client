@@ -359,6 +359,29 @@ export class Logger {
   }
 
   /**
+   * 私有辅助方法：使用指定级别记录日志
+   * @param level Pino 日志级别方法名
+   * @param messageOrObj 日志消息或结构化对象
+   * @param args 额外参数
+   */
+  private logWithLevel(
+    level: "info" | "warn" | "debug" | "error",
+    messageOrObj: string | object,
+    ...args: any[]
+  ): void {
+    if (typeof messageOrObj === "string") {
+      if (args.length === 0) {
+        this.pinoInstance[level](messageOrObj);
+      } else {
+        this.pinoInstance[level]({ args }, messageOrObj);
+      }
+    } else {
+      // 结构化日志支持
+      this.pinoInstance[level](messageOrObj, args[0] || "");
+    }
+  }
+
+  /**
    * 记录信息级别日志
    * @param message 日志消息
    * @param args 额外参数
@@ -374,45 +397,20 @@ export class Logger {
    */
   info(obj: object, message?: string): void;
   info(messageOrObj: string | object, ...args: any[]): void {
-    if (typeof messageOrObj === "string") {
-      if (args.length === 0) {
-        this.pinoInstance.info(messageOrObj);
-      } else {
-        this.pinoInstance.info({ args }, messageOrObj);
-      }
-    } else {
-      // 结构化日志支持
-      this.pinoInstance.info(messageOrObj, args[0] || "");
-    }
+    this.logWithLevel("info", messageOrObj, ...args);
   }
 
   success(message: string, ...args: any[]): void;
   success(obj: object, message?: string): void;
   success(messageOrObj: string | object, ...args: any[]): void {
     // success 映射为 info 级别，保持 API 兼容性
-    if (typeof messageOrObj === "string") {
-      if (args.length === 0) {
-        this.pinoInstance.info(messageOrObj);
-      } else {
-        this.pinoInstance.info({ args }, messageOrObj);
-      }
-    } else {
-      this.pinoInstance.info(messageOrObj, args[0] || "");
-    }
+    this.logWithLevel("info", messageOrObj, ...args);
   }
 
   warn(message: string, ...args: any[]): void;
   warn(obj: object, message?: string): void;
   warn(messageOrObj: string | object, ...args: any[]): void {
-    if (typeof messageOrObj === "string") {
-      if (args.length === 0) {
-        this.pinoInstance.warn(messageOrObj);
-      } else {
-        this.pinoInstance.warn({ args }, messageOrObj);
-      }
-    } else {
-      this.pinoInstance.warn(messageOrObj, args[0] || "");
-    }
+    this.logWithLevel("warn", messageOrObj, ...args);
   }
 
   error(message: string, ...args: any[]): void;
@@ -447,30 +445,14 @@ export class Logger {
   debug(message: string, ...args: any[]): void;
   debug(obj: object, message?: string): void;
   debug(messageOrObj: string | object, ...args: any[]): void {
-    if (typeof messageOrObj === "string") {
-      if (args.length === 0) {
-        this.pinoInstance.debug(messageOrObj);
-      } else {
-        this.pinoInstance.debug({ args }, messageOrObj);
-      }
-    } else {
-      this.pinoInstance.debug(messageOrObj, args[0] || "");
-    }
+    this.logWithLevel("debug", messageOrObj, ...args);
   }
 
   log(message: string, ...args: any[]): void;
   log(obj: object, message?: string): void;
   log(messageOrObj: string | object, ...args: any[]): void {
     // log 方法使用 info 级别
-    if (typeof messageOrObj === "string") {
-      if (args.length === 0) {
-        this.pinoInstance.info(messageOrObj);
-      } else {
-        this.pinoInstance.info({ args }, messageOrObj);
-      }
-    } else {
-      this.pinoInstance.info(messageOrObj, args[0] || "");
-    }
+    this.logWithLevel("info", messageOrObj, ...args);
   }
 
   /**
