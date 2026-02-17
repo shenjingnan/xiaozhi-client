@@ -195,6 +195,7 @@ export type ESP32WSMessageType =
   | "mcp"
   | "system"
   | "custom"
+  | "abort"
   | "error";
 
 /**
@@ -315,7 +316,9 @@ export interface ESP32TTSMessage extends ESP32WSMessageBase {
  */
 export interface ESP32LLMMessage extends ESP32WSMessageBase {
   type: "llm";
-  /** LLM生成的文本 */
+  /** 表情/情绪 */
+  emotion?: string;
+  /** LLM生成的文本或表情符号 */
   text: string;
 }
 
@@ -325,9 +328,58 @@ export interface ESP32LLMMessage extends ESP32WSMessageBase {
  * @deprecated 使用具体的消息类型（ESP32STTMessage、ESP32TTSMessage等）
  */
 export interface ESP32TextMessage extends ESP32WSMessageBase {
-  type: "text" | "mcp" | "system" | "custom";
+  type: "text";
   /** 消息数据 */
   data?: unknown;
+}
+
+/**
+ * MCP消息
+ * 用于传输 MCP 协议的 JSON-RPC 消息
+ */
+export interface ESP32MCPMessage extends ESP32WSMessageBase {
+  type: "mcp";
+  /** JSON-RPC 2.0 payload */
+  payload: {
+    jsonrpc: "2.0";
+    id?: number | string;
+    method?: string;
+    params?: unknown;
+    result?: unknown;
+    error?: unknown;
+  };
+}
+
+/**
+ * System消息
+ * 服务端发送给设备的系统控制命令
+ */
+export interface ESP32SystemMessage extends ESP32WSMessageBase {
+  type: "system";
+  /** 系统命令：reboot, shutdown 等 */
+  command: string;
+  /** 命令参数（可选） */
+  args?: Record<string, unknown>;
+}
+
+/**
+ * Abort消息
+ * 设备端发送的终止请求，或服务端发送的终止通知
+ */
+export interface ESP32AbortMessage extends ESP32WSMessageBase {
+  type: "abort";
+  /** 终止原因 */
+  reason: string;
+}
+
+/**
+ * Custom消息
+ * 自定义消息类型
+ */
+export interface ESP32CustomMessage extends ESP32WSMessageBase {
+  type: "custom";
+  /** 自定义数据 */
+  payload: Record<string, unknown>;
 }
 
 /**
@@ -354,6 +406,10 @@ export type ESP32WSMessage =
   | ESP32STTMessage
   | ESP32TTSMessage
   | ESP32LLMMessage
+  | ESP32MCPMessage
+  | ESP32SystemMessage
+  | ESP32AbortMessage
+  | ESP32CustomMessage
   | ESP32ErrorMessage;
 
 /**

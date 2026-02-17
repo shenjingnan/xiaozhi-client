@@ -8,7 +8,7 @@ import { logger } from "@/Logger.js";
 import {
   isBinaryProtocol2,
   parseBinaryProtocol2,
-} from "@/lib/esp32/audio-protocol-stub.js";
+} from "@/lib/esp32/audio-protocol.js";
 import {
   type ESP32ConnectionState,
   ESP32ErrorCode,
@@ -333,7 +333,7 @@ export class ESP32Connection {
     );
 
     const { encodeBinaryProtocol2 } = await import(
-      "@/lib/esp32/audio-protocol-stub.js"
+      "@/lib/esp32/audio-protocol.js"
     );
 
     // 使用毫秒级时间戳，通过模运算避免 uint32 溢出

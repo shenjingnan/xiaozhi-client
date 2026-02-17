@@ -19,6 +19,7 @@ compbash
 compzsh
 cpus
 custommcp
+demux
 dify
 dotenv
 EACCES
