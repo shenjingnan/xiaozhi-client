@@ -2,7 +2,7 @@
  * BinaryProtocol2 音频协议实现
  * 用于 ESP32 设备与服务端之间的音频数据传输
  *
- * 协议格式（小端序）：
+ * 协议格式（大端序/网络字节序）：
  * +--------+--------+--------+--------+--------+--------+--------+--------+
  * | Version (16)  |   Type (16)   |           Reserved (32)          |
  * +--------+--------+--------+--------+--------+--------+--------+--------+
@@ -53,20 +53,20 @@ export function encodeBinaryProtocol2(
 ): Buffer {
   const buffer = Buffer.allocUnsafe(HEADER_SIZE + payload.length);
 
-  // 写入协议版本（uint16，小端序）
-  buffer.writeUInt16LE(2, 0);
+  // 写入协议版本（uint16，大端序）
+  buffer.writeUInt16BE(2, 0);
 
-  // 写入数据类型（uint16，小端序）
-  buffer.writeUInt16LE(type === "opus" ? 0 : 1, 2);
+  // 写入数据类型（uint16，大端序）
+  buffer.writeUInt16BE(type === "opus" ? 0 : 1, 2);
 
-  // 写入保留字段（uint32，小端序）
-  buffer.writeUInt32LE(0, 4);
+  // 写入保留字段（uint32，大端序）
+  buffer.writeUInt32BE(0, 4);
 
-  // 写入时间戳（uint32，小端序）
-  buffer.writeUInt32LE(timestamp, 8);
+  // 写入时间戳（uint32，大端序）
+  buffer.writeUInt32BE(timestamp, 8);
 
-  // 写入载荷大小（uint32，小端序）
-  buffer.writeUInt32LE(payload.length, 12);
+  // 写入载荷大小（uint32，大端序）
+  buffer.writeUInt32BE(payload.length, 12);
 
   // 写入载荷数据
   buffer.set(payload, HEADER_SIZE);
@@ -88,20 +88,20 @@ export function parseBinaryProtocol2(
   }
 
   // 读取协议版本
-  const version = data.readUInt16LE(0);
+  const version = data.readUInt16BE(0);
   if (version !== 2) {
     return null;
   }
 
   // 读取数据类型
-  const typeValue = data.readUInt16LE(2);
+  const typeValue = data.readUInt16BE(2);
   const type = typeValue === 0 ? ("opus" as const) : ("json" as const);
 
   // 读取时间戳
-  const timestamp = data.readUInt32LE(8);
+  const timestamp = data.readUInt32BE(8);
 
   // 读取载荷大小
-  const payloadSize = data.readUInt32LE(12);
+  const payloadSize = data.readUInt32BE(12);
 
   // 检查载荷大小是否与实际数据长度匹配
   if (data.length < HEADER_SIZE + payloadSize) {
@@ -135,13 +135,13 @@ export function isBinaryProtocol2(data: Buffer): boolean {
   }
 
   // 检查协议版本是否为 2
-  const version = data.readUInt16LE(0);
+  const version = data.readUInt16BE(0);
   if (version !== 2) {
     return false;
   }
 
   // 读取载荷大小
-  const payloadSize = data.readUInt32LE(12);
+  const payloadSize = data.readUInt32BE(12);
 
   // 检查载荷大小是否合理（不超过数据长度）
   if (data.length < HEADER_SIZE + payloadSize) {
@@ -149,7 +149,7 @@ export function isBinaryProtocol2(data: Buffer): boolean {
   }
 
   // 检查数据类型是否有效（0 或 1）
-  const typeValue = data.readUInt16LE(2);
+  const typeValue = data.readUInt16BE(2);
   if (typeValue !== 0 && typeValue !== 1) {
     return false;
   }

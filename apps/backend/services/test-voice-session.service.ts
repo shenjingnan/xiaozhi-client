@@ -5,13 +5,16 @@
  * 功能：
  * 1. 检测硬件端开始发送音频数据
  * 2. 首次收到音频数据时触发流式 TTS
- * 3. 使用 synthesizeSpeechStream() 边收边发
- * 4. 每个 Ogg Opus 块解封装后立即下发
+ * 3. 收集所有 Ogg 数据块并合并存储
+ * 4. 完整合并后再按顺序逐个音频块下发到硬件端
  */
 
+import { promises as fs } from "node:fs";
+import { join as pathJoin } from "node:path";
 import { logger } from "@/Logger.js";
-import { demuxOggOpusChunk } from "@/lib/opus/ogg-demuxer.js";
+import { demuxOggOpus } from "@/lib/opus/ogg-demuxer.js";
 import { synthesizeSpeechStream } from "@/lib/tts/binary.js";
+import { PathUtils } from "@/utils/path-utils.js";
 import { configManager } from "@xiaozhi-client/config";
 import type { ESP32Service } from "./esp32.service.js";
 import type { IVoiceSessionService } from "./voice-session.interface.js";
@@ -27,6 +30,9 @@ export class TestVoiceSessionService implements IVoiceSessionService {
 
   /** 每个设备是否已触发 TTS（避免重复触发） */
   private readonly ttsTriggered = new Map<string, boolean>();
+
+  /** 每个设备收集的 Ogg 数据块 */
+  private readonly oggChunks = new Map<string, Uint8Array[]>();
 
   /**
    * 设置 ESP32 服务引用
@@ -75,59 +81,36 @@ export class TestVoiceSessionService implements IVoiceSessionService {
         return;
       }
 
-      // 调用流式 TTS（边收边发）
-      try {
-        // 发送 TTS start 消息
-        await connection.send({
-          type: "tts",
-          session_id: connection.getSessionId(),
-          state: "start",
-        });
-        logger.debug(
-          `[TestVoiceSessionService] 发送 TTS start 消息: deviceId=${deviceId}`
-        );
+      // 初始化数据收集数组
+      this.oggChunks.set(deviceId, []);
 
+      // 调用流式 TTS，收集所有数据
+      try {
         await synthesizeSpeechStream(
           {
             appid: ttsConfig.appid,
             accessToken: ttsConfig.accessToken,
             voice_type: ttsConfig.voice_type,
-            text: "测试一下",
+            text: "你好啊，我是小智客户端，我正在做测试",
             encoding: "ogg_opus",
             cluster: ttsConfig.cluster,
             endpoint: ttsConfig.endpoint,
           },
-          // 每收到一个音频块立即处理
+          // 收集所有 Ogg 数据块
           async (oggOpusChunk, isLast) => {
-            // 使用 prism-media 解封装 Ogg，提取纯 Opus 数据
-            const opusChunks = await demuxOggOpusChunk(oggOpusChunk);
-
-            logger.debug(
-              `[TestVoiceSessionService] 解封装 Ogg 块: deviceId=${deviceId}, opusChunks=${opusChunks.length}, isLast=${isLast}`
-            );
-
-            // 每个 Opus 块立即下发给硬件端
-            for (const opusData of opusChunks) {
-              await connection.sendBinaryProtocol2(opusData, Date.now());
+            const chunks = this.oggChunks.get(deviceId);
+            if (chunks) {
+              chunks.push(oggOpusChunk);
             }
 
-            // 最后一块时记录日志
+            // 所有数据收集完成后，处理并发送
             if (isLast) {
               logger.info(
-                `[TestVoiceSessionService] TTS 流式下发完成: deviceId=${deviceId}`
+                `[TestVoiceSessionService] TTS 数据收集完成，开始处理: deviceId=${deviceId}`
               );
+              await this.processAndSendAudio(deviceId, connection);
             }
           }
-        );
-
-        // 发送 TTS stop 消息
-        await connection.send({
-          type: "tts",
-          session_id: connection.getSessionId(),
-          state: "stop",
-        });
-        logger.debug(
-          `[TestVoiceSessionService] 发送 TTS stop 消息: deviceId=${deviceId}`
         );
       } catch (error) {
         logger.error(
@@ -153,10 +136,104 @@ export class TestVoiceSessionService implements IVoiceSessionService {
   }
 
   /**
+   * 处理并发送音频数据
+   * 1. 合并所有 Ogg 数据块
+   * 2. 存储到临时目录
+   * 3. 解封装为 Opus 数据后分块下发
+   * @param deviceId - 设备 ID
+   * @param connection - ESP32 连接实例
+   */
+  private async processAndSendAudio(
+    deviceId: string,
+    connection: any
+  ): Promise<void> {
+    const chunks = this.oggChunks.get(deviceId);
+    if (!chunks || chunks.length === 0) {
+      logger.warn(
+        `[TestVoiceSessionService] 无音频数据可处理: deviceId=${deviceId}`
+      );
+      return;
+    }
+
+    try {
+      // 1. 合并所有 Ogg 数据块
+      const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+      const mergedOgg = new Uint8Array(totalLength);
+      let offset = 0;
+      for (const chunk of chunks) {
+        mergedOgg.set(chunk, offset);
+        offset += chunk.length;
+      }
+      logger.debug(
+        `[TestVoiceSessionService] 合并 Ogg 数据: deviceId=${deviceId}, totalSize=${totalLength}`
+      );
+
+      // 2. 存储到临时目录
+      const tempDir = PathUtils.getTempDir();
+      logger.info(`[TestVoiceSessionService] 临时目录: ${tempDir}`);
+      const fileName = `tts-${deviceId}-${Date.now()}.ogg`;
+      const filePath = pathJoin(tempDir, fileName);
+      await fs.writeFile(filePath, mergedOgg);
+      logger.info(`[TestVoiceSessionService] 已存储 TTS 音频到: ${filePath}`);
+
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // 3. 发送 TTS start 消息
+      await connection.send({
+        type: "tts",
+        session_id: connection.getSessionId(),
+        state: "start",
+      });
+      logger.debug(
+        `[TestVoiceSessionService] 发送 TTS start 消息: deviceId=${deviceId}`
+      );
+
+      // 4. 解封装为纯 Opus 数据
+      const opusData = await demuxOggOpus(mergedOgg);
+      logger.debug(
+        `[TestVoiceSessionService] 解封装 Ogg 数据: deviceId=${deviceId}, opusSize=${opusData.length}`
+      );
+
+      // 5. 分块下发 Opus 数据
+      const chunkSize = 1024;
+      let timestamp = 0;
+      for (let i = 0; i < opusData.length; i += chunkSize) {
+        const chunk = opusData.slice(i, i + chunkSize);
+        await connection.sendBinaryProtocol2(chunk, timestamp);
+        timestamp += 60; // 每帧间隔 60ms
+      }
+
+      // 6. 发送 TTS stop 消息
+      await connection.send({
+        type: "tts",
+        session_id: connection.getSessionId(),
+        state: "stop",
+      });
+      logger.debug(
+        `[TestVoiceSessionService] 发送 TTS stop 消息: deviceId=${deviceId}`
+      );
+
+      logger.info(
+        `[TestVoiceSessionService] TTS 音频下发完成: deviceId=${deviceId}, totalChunks=${Math.ceil(
+          opusData.length / chunkSize
+        )}`
+      );
+    } catch (error) {
+      logger.error(
+        `[TestVoiceSessionService] 处理音频数据失败: deviceId=${deviceId}`,
+        error
+      );
+    } finally {
+      // 清理数据
+      this.oggChunks.delete(deviceId);
+    }
+  }
+
+  /**
    * 销毁服务
    */
   destroy(): void {
     this.ttsTriggered.clear();
+    this.oggChunks.clear();
     logger.debug("[TestVoiceSessionService] 服务已销毁");
   }
 }
