@@ -100,7 +100,7 @@ export function McpEndpointSettingButton() {
       try {
         return await apiClient.getEndpointStatus(endpoint);
       } catch (error) {
-        console.error(`获取接入点状态失败: ${endpoint}`, error);
+        console.error(`[McpEndpointSettingButton] 获取接入点状态失败: ${endpoint}`, error);
         // 返回默认状态
         return {
           endpoint,
@@ -251,7 +251,7 @@ export function McpEndpointSettingButton() {
         }
       }
     } catch (error) {
-      console.error("复制失败:", error);
+      console.error("[McpEndpointSettingButton] 复制失败:", error);
       toast.error("复制失败，请手动复制");
     }
   };
@@ -277,7 +277,7 @@ export function McpEndpointSettingButton() {
       setDeleteConfirmOpen(false);
       setEndpointToDelete("");
     } catch (error) {
-      console.error("删除接入点失败:", error);
+      console.error("[McpEndpointSettingButton] 删除接入点失败:", error);
       toast.error(error instanceof Error ? error.message : "删除接入点失败");
     } finally {
       setIsDeleting(false);
@@ -334,7 +334,7 @@ export function McpEndpointSettingButton() {
       setNewEndpoint("");
       setValidationError("");
     } catch (error) {
-      console.error("添加接入点失败:", error);
+      console.error("[McpEndpointSettingButton] 添加接入点失败:", error);
       toast.error(error instanceof Error ? error.message : "添加接入点失败");
     } finally {
       setIsAdding(false);
