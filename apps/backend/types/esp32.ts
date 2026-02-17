@@ -116,7 +116,7 @@ export interface ESP32DeviceReport {
 export interface ESP32WebSocketConfig {
   /** WebSocket URL */
   url: string;
-  /** 认证Token */
+  /** 认证Token（已废弃，保留用于向后兼容） */
   token: string;
   /** 协议版本 */
   version: number;
