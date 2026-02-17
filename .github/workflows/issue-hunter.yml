@@ -24,26 +24,47 @@ jobs:
       id-token: write
       actions: read # Required for Claude to read CI results on PRs
     steps:
+      - name: 检查执行时间
+        id: check_time
+        if: github.event_name == 'schedule'
+        run: |
+          # 获取当前 UTC 时间的小时数 (0-23)
+          HOUR=$(date -u +"%H")
+          # 北京时间 00:00-06:00 对应 UTC 16:00-22:00
+          # 检查是否在允许的时间范围内
+          if [ "$HOUR" -ge 16 ] && [ "$HOUR" -lt 22 ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "当前时间 UTC ${HOUR}:xx (北京时间 $(($HOUR+8))%24:xx)，允许执行"
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            echo "当前时间 UTC ${HOUR}:xx (北京时间 $(($HOUR+8))%24:xx)，不在执行时间范围内"
+          fi
+
       - name: 检出代码
+        if: github.event_name != 'schedule' || steps.check_time.outputs.should_run == 'true'
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
 
       - name: 启用 Corepack
+        if: github.event_name != 'schedule' || steps.check_time.outputs.should_run == 'true'
         run: corepack enable
 
       - name: 安装 pnpm
+        if: github.event_name != 'schedule' || steps.check_time.outputs.should_run == 'true'
         uses: pnpm/action-setup@v4
         with:
           version: 10.13.1
 
       - name: 设置 Node.js
+        if: github.event_name != 'schedule' || steps.check_time.outputs.should_run == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 'lts/iron'
           cache: 'pnpm'
 
       - name: 安装依赖
+        if: github.event_name != 'schedule' || steps.check_time.outputs.should_run == 'true'
         uses: nick-invision/retry@v3
         with:
           timeout_minutes: 5
@@ -52,6 +73,7 @@ jobs:
           command: pnpm install
 
       - name: Create MCP Config
+        if: github.event_name != 'schedule' || steps.check_time.outputs.should_run == 'true'
         env:
           ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
           CONTEXT7_API_KEY: ${{ secrets.CONTEXT7_API_KEY }}
@@ -95,6 +117,7 @@ jobs:
 
       - name: Run Claude Code
         id: claude
+        if: github.event_name != 'schedule' || steps.check_time.outputs.should_run == 'true'
         uses: anthropics/claude-code-action@v1
         env:
           ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL || vars.ANTHROPIC_BASE_URL }}
