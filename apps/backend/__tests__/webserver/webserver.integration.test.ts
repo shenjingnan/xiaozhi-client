@@ -55,6 +55,7 @@ vi.mock("../../Logger", () => {
 vi.mock("@/services/index.js", () => {
   const mockEventBus = {
     onEvent: vi.fn().mockReturnThis(),
+    offEvent: vi.fn().mockReturnThis(),
     emit: vi.fn(),
     emitEvent: vi.fn(),
     removeAllListeners: vi.fn(),
