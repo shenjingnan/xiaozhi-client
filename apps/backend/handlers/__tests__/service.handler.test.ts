@@ -74,6 +74,7 @@ describe("ServiceApiHandler", () => {
 
     // 模拟 spawn
     mockSpawn = vi.fn().mockReturnValue({
+      on: vi.fn(),
       unref: vi.fn(),
     });
     const { spawn } = await import("node:child_process");
@@ -541,40 +542,68 @@ describe("ServiceApiHandler", () => {
 
       expect(mockContext.fail).toHaveBeenCalledWith(
         "START_REQUEST_ERROR",
-        "Cannot read properties of null (reading 'unref')",
+        "Cannot read properties of null (reading 'on')",
         undefined,
         500
       );
     });
 
-    it("应该处理没有 unref 方法的 spawn 子进程", async () => {
-      mockSpawn.mockReturnValue({});
-
-      await handler.startService(mockContext);
-
-      expect(mockContext.fail).toHaveBeenCalledWith(
-        "START_REQUEST_ERROR",
-        "child.unref is not a function",
-        undefined,
-        500
-      );
-    });
-
-    it("应该处理 unref 方法抛出错误", async () => {
+    it("应该处理没有 on 方法的 spawn 子进程", async () => {
       mockSpawn.mockReturnValue({
-        unref: vi.fn().mockImplementation(() => {
-          throw new Error("Unref failed");
-        }),
+        unref: vi.fn(),
       });
 
       await handler.startService(mockContext);
 
       expect(mockContext.fail).toHaveBeenCalledWith(
         "START_REQUEST_ERROR",
-        "Unref failed",
+        "child.on is not a function",
         undefined,
         500
       );
+    });
+
+    it("应该处理 on 方法抛出错误", async () => {
+      mockSpawn.mockReturnValue({
+        on: vi.fn().mockImplementation(() => {
+          throw new Error("Event listener setup failed");
+        }),
+        unref: vi.fn(),
+      });
+
+      await handler.startService(mockContext);
+
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "START_REQUEST_ERROR",
+        "Event listener setup failed",
+        undefined,
+        500
+      );
+    });
+
+    it("应该为子进程设置错误和退出事件监听器", async () => {
+      const mockChild = {
+        on: vi.fn(),
+        unref: vi.fn(),
+      };
+      mockSpawn.mockReturnValue(mockChild);
+
+      await handler.startService(mockContext);
+
+      // 验证 error 事件监听器被设置
+      expect(mockChild.on).toHaveBeenCalledWith(
+        "error",
+        expect.any(Function)
+      );
+
+      // 验证 exit 事件监听器被设置
+      expect(mockChild.on).toHaveBeenCalledWith(
+        "exit",
+        expect.any(Function)
+      );
+
+      // 验证 unref 被调用
+      expect(mockChild.unref).toHaveBeenCalled();
     });
   });
 

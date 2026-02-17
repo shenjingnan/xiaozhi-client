@@ -40,6 +40,20 @@ export class ServiceApiHandler {
       },
     });
 
+    // 监听子进程错误事件，确保启动失败时能够记录日志
+    child.on("error", (error) => {
+      this.logger.error(`启动 xiaozhi 进程失败: ${error.message}`, error);
+    });
+
+    // 监听子进程退出事件，检测非正常退出
+    child.on("exit", (code, signal) => {
+      if (code !== null && code !== 0) {
+        this.logger.warn(
+          `xiaozhi 进程异常退出 (退出码: ${code}, 信号: ${signal})`
+        );
+      }
+    });
+
     child.unref();
     this.logger.info(`MCP 服务命令已发送: xiaozhi ${args.join(" ")}`);
 
