@@ -5,6 +5,7 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { logger } from "@/Logger.js";
 import { PathUtils } from "@/utils/path-utils.js";
 import pino from "pino";
 import type { Logger as PinoLogger } from "pino";
@@ -84,7 +85,7 @@ export class ToolCallLogger {
     // 创建 Pino 实例
     this.pinoLogger = this.createPinoLogger(this.logFilePath);
 
-    console.log("ToolCallLogger 初始化", {
+    logger.info("ToolCallLogger 初始化", {
       maxRecords: this.maxRecords,
       path: this.logFilePath,
     });
@@ -125,7 +126,7 @@ export class ToolCallLogger {
       });
     } catch (error) {
       // 如果文件路径无效，记录错误但不抛出异常
-      console.error("无法创建工具调用日志文件", { error });
+      logger.error("无法创建工具调用日志文件", { error });
     }
 
     return pino(
@@ -187,12 +188,12 @@ export class ToolCallLogger {
         linesToKeep.join("\n") + (linesToKeep.length > 0 ? "\n" : "");
       fs.writeFileSync(this.logFilePath, newContent, "utf8");
 
-      console.log("已清理旧的工具调用记录", {
+      logger.info("已清理旧的工具调用记录", {
         recordsToRemove,
         maxRecords: this.maxRecords,
       });
     } catch (error) {
-      console.error("清理旧工具调用记录失败", { error });
+      logger.error("清理旧工具调用记录失败", { error });
     }
   }
 
@@ -208,7 +209,7 @@ export class ToolCallLogger {
       this.pinoLogger.info(record, record.toolName);
     } catch (error) {
       // 记录失败不应该影响主流程，只记录错误日志
-      console.error("记录工具调用失败", { error });
+      logger.error("记录工具调用失败", { error });
     }
   }
 
@@ -282,11 +283,11 @@ export class ToolCallLogService {
           }
           // 如果没有时间戳，记录警告信息提示数据质量问题
           if (!record.timestamp) {
-            console.warn("日志记录缺少时间戳", { line });
+            logger.warn("日志记录缺少时间戳", { line });
           }
           records.push(record);
         } catch {
-          console.warn("跳过无效的日志行", { line });
+          logger.warn("跳过无效的日志行", { line });
         }
       }
 
@@ -295,7 +296,7 @@ export class ToolCallLogService {
 
       return records;
     } catch (error) {
-      console.error("读取日志文件失败", { error });
+      logger.error("读取日志文件失败", { error });
       throw new Error("无法读取工具调用日志文件");
     }
   }
@@ -373,7 +374,7 @@ export class ToolCallLogService {
     const paginated = filtered.slice(offset, offset + limit);
     const hasMore = offset + limit < total;
 
-    console.log("返回工具调用日志", {
+    logger.info("返回工具调用日志", {
       count: paginated.length,
       total,
     });
