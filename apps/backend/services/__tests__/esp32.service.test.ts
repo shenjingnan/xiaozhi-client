@@ -5,7 +5,6 @@
 
 import type { ESP32DeviceReport } from "@/types/esp32.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { WebSocket } from "ws";
 import { DeviceRegistryService } from "../device-registry.service.js";
 import { ESP32Service } from "../esp32.service.js";
 import { NoOpVoiceSessionService } from "../voice-session.interface.js";
