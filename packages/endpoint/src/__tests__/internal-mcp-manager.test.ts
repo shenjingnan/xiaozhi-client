@@ -9,6 +9,7 @@ import { InternalMCPManagerAdapter } from "../internal-mcp-manager.js";
 // Mock 依赖
 vi.mock("@xiaozhi-client/mcp-core", () => ({
   MCPManager: vi.fn(),
+  ensureToolJSONSchema: vi.fn((schema: unknown) => schema),
 }));
 
 vi.mock("@xiaozhi-client/config", () => ({
