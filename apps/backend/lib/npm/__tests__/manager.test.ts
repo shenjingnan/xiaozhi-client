@@ -28,11 +28,16 @@ interface MockEventBus extends Partial<EventBus> {
 interface MockChildProcess {
   stdout: {
     on: ReturnType<typeof vi.fn>;
+    removeAllListeners: ReturnType<typeof vi.fn>;
+    destroy: ReturnType<typeof vi.fn>;
   };
   stderr: {
     on: ReturnType<typeof vi.fn>;
+    removeAllListeners: ReturnType<typeof vi.fn>;
+    destroy: ReturnType<typeof vi.fn>;
   };
   on: ReturnType<typeof vi.fn>;
+  removeAllListeners: ReturnType<typeof vi.fn>;
 }
 
 /**
@@ -124,6 +129,8 @@ describe("NPMManager", () => {
               callback(mockStdoutData);
             }
           }),
+          removeAllListeners: vi.fn(),
+          destroy: vi.fn(),
         },
         stderr: {
           on: vi.fn((event, callback) => {
@@ -131,12 +138,15 @@ describe("NPMManager", () => {
               callback(mockStderrData);
             }
           }),
+          removeAllListeners: vi.fn(),
+          destroy: vi.fn(),
         },
         on: vi.fn((event, callback) => {
           if (event === "close") {
             callback(0); // 成功退出码
           }
         }),
+        removeAllListeners: vi.fn(),
       };
 
       mockSpawn.mockReturnValue(mockProcess);
@@ -195,6 +205,8 @@ describe("NPMManager", () => {
               callback(mockStdoutData);
             }
           }),
+          removeAllListeners: vi.fn(),
+          destroy: vi.fn(),
         },
         stderr: {
           on: vi.fn((event, callback) => {
@@ -202,12 +214,15 @@ describe("NPMManager", () => {
               callback(mockStderrData);
             }
           }),
+          removeAllListeners: vi.fn(),
+          destroy: vi.fn(),
         },
         on: vi.fn((event, callback) => {
           if (event === "close") {
             callback(1); // 失败退出码
           }
         }),
+        removeAllListeners: vi.fn(),
       };
 
       mockSpawn.mockReturnValue(mockProcess);
@@ -244,6 +259,8 @@ describe("NPMManager", () => {
               callback(mockStdoutData);
             }
           }),
+          removeAllListeners: vi.fn(),
+          destroy: vi.fn(),
         },
         stderr: {
           on: vi.fn((event, callback) => {
@@ -251,12 +268,15 @@ describe("NPMManager", () => {
               callback(mockStderrData);
             }
           }),
+          removeAllListeners: vi.fn(),
+          destroy: vi.fn(),
         },
         on: vi.fn((event, callback) => {
           if (event === "close") {
             callback(0); // 成功退出码
           }
         }),
+        removeAllListeners: vi.fn(),
       };
 
       mockSpawn.mockReturnValue(mockProcess);
@@ -278,11 +298,20 @@ describe("NPMManager", () => {
       // Arrange
       const version = "1.7.9";
       const mockProcess = {
-        stdout: { on: vi.fn() },
-        stderr: { on: vi.fn() },
+        stdout: {
+          on: vi.fn(),
+          removeAllListeners: vi.fn(),
+          destroy: vi.fn(),
+        },
+        stderr: {
+          on: vi.fn(),
+          removeAllListeners: vi.fn(),
+          destroy: vi.fn(),
+        },
         on: vi.fn((event, callback) => {
           if (event === "close") callback(0);
         }),
+        removeAllListeners: vi.fn(),
       };
       mockSpawn.mockReturnValue(mockProcess);
 
@@ -308,13 +337,22 @@ describe("NPMManager", () => {
       const version = "1.7.9";
       const mockError = new Error("spawn npm ENOENT");
       const mockProcess = {
-        stdout: { on: vi.fn() },
-        stderr: { on: vi.fn() },
+        stdout: {
+          on: vi.fn(),
+          removeAllListeners: vi.fn(),
+          destroy: vi.fn(),
+        },
+        stderr: {
+          on: vi.fn(),
+          removeAllListeners: vi.fn(),
+          destroy: vi.fn(),
+        },
         on: vi.fn((event, callback) => {
           if (event === "error") {
             callback(mockError);
           }
         }),
+        removeAllListeners: vi.fn(),
       };
       mockSpawn.mockReturnValue(mockProcess);
 
