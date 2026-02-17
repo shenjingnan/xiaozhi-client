@@ -2,6 +2,8 @@
  * 扣子工作流相关类型定义
  */
 
+import type { JSONSchema } from "../mcp/schema.js";
+
 /**
  * 扣子工作流创建者信息
  */
@@ -35,7 +37,7 @@ export interface CozeWorkflow {
   /** 是否已添加为工具（前端运行时属性） */
   isAddedAsTool?: boolean;
   /** 输入参数Schema（前端运行时属性） */
-  inputSchema?: any;
+  inputSchema?: JSONSchema;
   /** 工具名称（前端运行时属性） */
   toolName?: string | null;
 }
