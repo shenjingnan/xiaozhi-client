@@ -5,6 +5,7 @@
  */
 
 import { EventEmitter } from "node:events";
+import { logger } from "@/Logger.js";
 import { MCPService } from "@/lib/mcp";
 import { MCPCacheManager } from "@/lib/mcp";
 import { ConnectionState } from "@/lib/mcp/types";
@@ -162,7 +163,7 @@ export class MCPServiceManager extends EventEmitter {
     tools: Tool[];
     connectionTime: Date;
   }): Promise<void> {
-    console.debug(`服务 ${data.serviceName} 连接成功，开始刷新工具缓存`);
+    logger.debug(`服务 ${data.serviceName} 连接成功，开始刷新工具缓存`);
 
     try {
       // 获取最新的工具列表
@@ -171,10 +172,10 @@ export class MCPServiceManager extends EventEmitter {
         // 重新初始化CustomMCPHandler
         await this.refreshCustomMCPHandlerPublic();
 
-        console.info(`服务 ${data.serviceName} 工具缓存刷新完成`);
+        logger.info(`服务 ${data.serviceName} 工具缓存刷新完成`);
       }
     } catch (error) {
-      console.error(`刷新服务 ${data.serviceName} 工具缓存失败:`, error);
+      logger.error(`刷新服务 ${data.serviceName} 工具缓存失败`, { error });
     }
   }
 
@@ -186,7 +187,7 @@ export class MCPServiceManager extends EventEmitter {
     reason?: string;
     disconnectionTime: Date;
   }): Promise<void> {
-    console.info(
+    logger.info(
       `服务 ${data.serviceName} 断开连接，原因: ${data.reason || "未知"}`
     );
 
@@ -197,9 +198,9 @@ export class MCPServiceManager extends EventEmitter {
       // 重新初始化CustomMCPHandler
       await this.refreshCustomMCPHandlerPublic();
 
-      console.info(`服务 ${data.serviceName} 断开连接处理完成`);
+      logger.info(`服务 ${data.serviceName} 断开连接处理完成`);
     } catch (error) {
-      console.error(`服务 ${data.serviceName} 断开连接处理失败:`, error);
+      logger.error(`服务 ${data.serviceName} 断开连接处理失败`, { error });
     }
   }
 
@@ -214,7 +215,7 @@ export class MCPServiceManager extends EventEmitter {
     try {
       await this.refreshCustomMCPHandlerPublic();
     } catch (error) {
-      console.error("刷新CustomMCPHandler失败:", error);
+      logger.error("刷新CustomMCPHandler失败", { error });
     }
   }
 
@@ -222,20 +223,20 @@ export class MCPServiceManager extends EventEmitter {
    * 启动所有 MCP 服务
    */
   async startAllServices(): Promise<void> {
-    console.debug("[MCPManager] 正在启动所有 MCP 服务...");
+    logger.debug("[MCPManager] 正在启动所有 MCP 服务...");
 
     // 初始化 CustomMCP 处理器
     try {
       this.customMCPHandler.initialize();
-      console.debug("[MCPManager] CustomMCP 处理器初始化完成");
+      logger.debug("[MCPManager] CustomMCP 处理器初始化完成");
     } catch (error) {
-      console.error("[MCPManager] CustomMCP 处理器初始化失败:", error);
+      logger.error("[MCPManager] CustomMCP 处理器初始化失败", { error });
       // CustomMCP 初始化失败不应该阻止标准 MCP 服务启动
     }
 
     const configEntries = Object.entries(this.configs);
     if (configEntries.length === 0) {
-      console.warn(
+      logger.warn(
         "[MCPManager] 没有配置任何 MCP 服务，请使用 addServiceConfig() 添加服务配置"
       );
       // 即使没有标准 MCP 服务，也可能有 CustomMCP 工具
@@ -243,7 +244,7 @@ export class MCPServiceManager extends EventEmitter {
     }
 
     // 记录启动开始
-    console.info(
+    logger.info(
       `[MCPManager] 开始并行启动 ${configEntries.length} 个 MCP 服务`
     );
 
@@ -283,19 +284,19 @@ export class MCPServiceManager extends EventEmitter {
     }
 
     // 记录启动完成统计
-    console.info(
+    logger.info(
       `[MCPManager] 服务启动完成 - 成功: ${successCount}, 失败: ${failureCount}`
     );
 
     // 记录失败的服务列表
     if (failedServices.length > 0) {
-      console.warn(
+      logger.warn(
         `[MCPManager] 以下服务启动失败: ${failedServices.join(", ")}`
       );
 
       // 如果所有服务都失败了，发出警告但系统继续运行以便重试
       if (failureCount === configEntries.length) {
-        console.warn(
+        logger.warn(
           "[MCPManager] 所有 MCP 服务启动失败，但系统将继续运行以便重试"
         );
       }
@@ -343,15 +344,14 @@ export class MCPServiceManager extends EventEmitter {
       // 事件监听器会自动触发工具缓存刷新和CustomMCPHandler刷新
 
       const tools = service.getTools();
-      console.debug(
+      logger.debug(
         `[MCPManager] ${serviceName} 服务启动成功，加载了 ${tools.length} 个工具:`,
         tools.map((t) => t.name).join(", ")
       );
     } catch (error) {
-      console.error(
-        `[MCPManager] 启动 ${serviceName} 服务失败:`,
-        (error as Error).message
-      );
+      logger.error(`[MCPManager] 启动 ${serviceName} 服务失败`, {
+        error: (error as Error).message,
+      });
       // 清理可能的部分状态
       this.services.delete(serviceName);
       throw error;
@@ -362,11 +362,11 @@ export class MCPServiceManager extends EventEmitter {
    * 停止单个服务
    */
   async stopService(serviceName: string): Promise<void> {
-    console.info(`[MCPManager] 停止 MCP 服务: ${serviceName}`);
+    logger.info(`[MCPManager] 停止 MCP 服务: ${serviceName}`);
 
     const service = this.services.get(serviceName);
     if (!service) {
-      console.warn(`[MCPManager] 服务 ${serviceName} 不存在或未启动`);
+      logger.warn(`[MCPManager] 服务 ${serviceName} 不存在或未启动`);
       return;
     }
 
@@ -377,12 +377,11 @@ export class MCPServiceManager extends EventEmitter {
       // 更新工具缓存
       await this.refreshToolsCache();
 
-      console.info(`[MCPManager] ${serviceName} 服务已停止`);
+      logger.info(`[MCPManager] ${serviceName} 服务已停止`);
     } catch (error) {
-      console.error(
-        `[MCPManager] 停止 ${serviceName} 服务失败:`,
-        (error as Error).message
-      );
+      logger.error(`[MCPManager] 停止 ${serviceName} 服务失败`, {
+        error: (error as Error).message,
+      });
       throw error;
     }
   }
@@ -403,12 +402,10 @@ export class MCPServiceManager extends EventEmitter {
           this.cacheManager
             .writeCacheEntry(serviceName, tools, config)
             .then(() => {
-              console.debug(
-                `[MCPManager] 已将 ${serviceName} 工具列表写入缓存`
-              );
+              logger.debug(`[MCPManager] 已将 ${serviceName} 工具列表写入缓存`);
             })
             .catch((error) => {
-              console.warn(
+              logger.warn(
                 `[MCPManager] 写入缓存失败: ${serviceName}, 错误: ${
                   error instanceof Error ? error.message : String(error)
                 }`
@@ -477,17 +474,17 @@ export class MCPServiceManager extends EventEmitter {
                 lastUsedTime: toolConfig.lastUsedTime ?? "",
               });
             } catch (toolError) {
-              console.warn(
-                `[MCPManager] 检查工具 ${serviceName}.${tool.name} 启用状态失败，跳过该工具:`,
-                toolError
+              logger.warn(
+                `[MCPManager] 检查工具 ${serviceName}.${tool.name} 启用状态失败，跳过该工具`,
+                { error: toolError }
               );
             }
           }
         }
       } catch (serviceError) {
-        console.warn(
-          `[MCPManager] 获取服务 ${serviceName} 的工具失败，跳过该服务:`,
-          serviceError
+        logger.warn(
+          `[MCPManager] 获取服务 ${serviceName} 的工具失败，跳过该服务`,
+          { error: serviceError }
         );
       }
     }
@@ -496,13 +493,13 @@ export class MCPServiceManager extends EventEmitter {
     let customTools: Tool[] = [];
     try {
       customTools = this.customMCPHandler.getTools();
-      console.debug(
+      logger.debug(
         `[MCPManager] 成功获取 ${customTools.length} 个 customMCP 工具`
       );
     } catch (error) {
-      console.warn(
-        "[MCPManager] 获取 CustomMCP 工具失败，将只返回标准 MCP 工具:",
-        error
+      logger.warn(
+        "[MCPManager] 获取 CustomMCP 工具失败，将只返回标准 MCP 工具",
+        { error }
       );
       // 根据技术方案要求，CustomMCP 工具获取失败时不应该影响标准 MCP 工具的返回
       customTools = [];
@@ -523,15 +520,15 @@ export class MCPServiceManager extends EventEmitter {
             lastUsedTime: "",
           });
         } catch (toolError) {
-          console.warn(
-            `[MCPManager] 处理 CustomMCP 工具 ${tool.name} 失败，跳过该工具:`,
-            toolError
+          logger.warn(
+            `[MCPManager] 处理 CustomMCP 工具 ${tool.name} 失败，跳过该工具`,
+            { error: toolError }
           );
         }
       }
     }
 
-    console.debug(
+    logger.debug(
       `[MCPManager] 成功获取 ${allTools.length} 个可用工具（status=${status}）`
     );
     return allTools;
@@ -657,7 +654,7 @@ export class MCPServiceManager extends EventEmitter {
             arguments_,
             options
           );
-          console.info(`[MCPManager] CustomMCP 工具 ${toolName} 调用成功`);
+          logger.info(`[MCPManager] CustomMCP 工具 ${toolName} 调用成功`);
 
           // 异步更新工具调用统计（成功调用）
           this.updateToolStatsSafe(toolName, "customMCP", toolName, true);
@@ -687,7 +684,7 @@ export class MCPServiceManager extends EventEmitter {
           arguments_ || {}
         )) as ToolCallResult;
 
-        console.debug("[MCPManager] 工具调用成功", {
+        logger.debug("[MCPManager] 工具调用成功", {
           toolName: toolName,
           result: result,
         });
@@ -736,10 +733,9 @@ export class MCPServiceManager extends EventEmitter {
           );
         } else {
           this.updateToolStatsSafe(toolName, "customMCP", toolName, false);
-          console.error(
-            `[MCPManager] CustomMCP 工具 ${toolName} 调用失败:`,
-            (error as Error).message
-          );
+          logger.error(`[MCPManager] CustomMCP 工具 ${toolName} 调用失败`, {
+            error: (error as Error).message,
+          });
         }
       } else {
         const toolInfo = this.tools.get(toolName);
@@ -750,10 +746,9 @@ export class MCPServiceManager extends EventEmitter {
             toolInfo.originalName,
             false
           );
-          console.error(
-            `[MCPManager] 工具 ${toolName} 调用失败:`,
-            (error as Error).message
-          );
+          logger.error(`[MCPManager] 工具 ${toolName} 调用失败`, {
+            error: (error as Error).message,
+          });
         }
       }
 
@@ -791,7 +786,7 @@ export class MCPServiceManager extends EventEmitter {
           );
         }
 
-        console.debug(`[MCPManager] 已更新工具 ${toolName} 的统计信息`);
+        logger.debug(`[MCPManager] 已更新工具 ${toolName} 的统计信息`);
       } else {
         // 失败调用：只更新最后使用时间
         await this.updateCustomMCPToolLastUsedTime(toolName, currentTime);
@@ -805,12 +800,12 @@ export class MCPServiceManager extends EventEmitter {
           );
         }
 
-        console.debug("[MCPManager] 已更新工具的失败调用统计信息", {
+        logger.debug("[MCPManager] 已更新工具的失败调用统计信息", {
           toolName,
         });
       }
     } catch (error) {
-      console.error("[MCPManager] 更新工具统计信息失败:", { toolName, error });
+      logger.error("[MCPManager] 更新工具统计信息失败", { toolName, error });
       throw error;
     }
   }
@@ -838,7 +833,7 @@ export class MCPServiceManager extends EventEmitter {
       );
     } catch (error) {
       const action = isSuccess ? "统计信息" : "失败统计信息";
-      console.warn("[MCPManager] 更新工具统计信息失败:", {
+      logger.warn("[MCPManager] 更新工具统计信息失败", {
         toolName,
         action,
         error,
@@ -859,12 +854,11 @@ export class MCPServiceManager extends EventEmitter {
   ): Promise<void> {
     try {
       await configManager.updateToolUsageStatsWithLock(toolName, true);
-      console.debug(`[MCPManager] 已更新 customMCP 工具 ${toolName} 使用统计`);
+      logger.debug(`[MCPManager] 已更新 customMCP 工具 ${toolName} 使用统计`);
     } catch (error) {
-      console.error(
-        `[MCPManager] 更新 customMCP 工具 ${toolName} 统计失败:`,
-        error
-      );
+      logger.error(`[MCPManager] 更新 customMCP 工具 ${toolName} 统计失败`, {
+        error,
+      });
       throw error;
     }
   }
@@ -881,13 +875,13 @@ export class MCPServiceManager extends EventEmitter {
   ): Promise<void> {
     try {
       await configManager.updateToolUsageStatsWithLock(toolName, false); // 只更新时间，不增加计数
-      console.debug(
+      logger.debug(
         `[MCPManager] 已更新 customMCP 工具 ${toolName} 最后使用时间`
       );
     } catch (error) {
-      console.error(
-        `[MCPManager] 更新 customMCP 工具 ${toolName} 最后使用时间失败:`,
-        error
+      logger.error(
+        `[MCPManager] 更新 customMCP 工具 ${toolName} 最后使用时间失败`,
+        { error }
       );
       throw error;
     }
@@ -912,13 +906,13 @@ export class MCPServiceManager extends EventEmitter {
         currentTime,
         true
       );
-      console.debug(
+      logger.debug(
         `[MCPManager] 已更新 MCP 服务工具 ${serviceName}/${toolName} 统计`
       );
     } catch (error) {
-      console.error(
-        `[MCPManager] 更新 MCP 服务工具 ${serviceName}/${toolName} 统计失败:`,
-        error
+      logger.error(
+        `[MCPManager] 更新 MCP 服务工具 ${serviceName}/${toolName} 统计失败`,
+        { error }
       );
       throw error;
     }
@@ -943,13 +937,13 @@ export class MCPServiceManager extends EventEmitter {
         currentTime,
         false
       ); // 只更新时间，不增加计数
-      console.debug(
+      logger.debug(
         `[MCPManager] 已更新 MCP 服务工具 ${serviceName}/${toolName} 最后使用时间`
       );
     } catch (error) {
-      console.error(
-        `[MCPManager] 更新 MCP 服务工具 ${serviceName}/${toolName} 最后使用时间失败:`,
-        error
+      logger.error(
+        `[MCPManager] 更新 MCP 服务工具 ${serviceName}/${toolName} 最后使用时间失败`,
+        { error }
       );
       throw error;
     }
@@ -968,7 +962,7 @@ export class MCPServiceManager extends EventEmitter {
   ): Promise<ToolCallResult> {
     const { serviceName, toolName: originalToolName } = config;
 
-    console.debug(
+    logger.debug(
       `[MCPManager] 调用 MCP 同步工具 ${toolName} -> ${serviceName}.${originalToolName}`
     );
 
@@ -983,13 +977,12 @@ export class MCPServiceManager extends EventEmitter {
 
     try {
       const result = await service.callTool(originalToolName, arguments_ || {});
-      console.debug(`[MCPManager] MCP 同步工具 ${toolName} 调用成功`);
+      logger.debug(`[MCPManager] MCP 同步工具 ${toolName} 调用成功`);
       return result as ToolCallResult;
     } catch (error) {
-      console.error(
-        `[MCPManager] MCP 同步工具 ${toolName} 调用失败:`,
-        (error as Error).message
-      );
+      logger.error(`[MCPManager] MCP 同步工具 ${toolName} 调用失败`, {
+        error: (error as Error).message,
+      });
       throw error;
     }
   }
@@ -1011,7 +1004,7 @@ export class MCPServiceManager extends EventEmitter {
    * 停止所有服务
    */
   async stopAllServices(): Promise<void> {
-    console.info("[MCPManager] 正在停止所有 MCP 服务...");
+    logger.info("[MCPManager] 正在停止所有 MCP 服务...");
 
     // 停止所有服务重试
     this.stopAllServiceRetries();
@@ -1020,35 +1013,34 @@ export class MCPServiceManager extends EventEmitter {
     for (const [serviceName, service] of this.services) {
       try {
         await service.disconnect();
-        console.info(`[MCPManager] ${serviceName} 服务已停止`);
+        logger.info(`[MCPManager] ${serviceName} 服务已停止`);
       } catch (error) {
-        console.error(
-          `[MCPManager] 停止 ${serviceName} 服务失败:`,
-          (error as Error).message
-        );
+        logger.error(`[MCPManager] 停止 ${serviceName} 服务失败`, {
+          error: (error as Error).message,
+        });
       }
     }
 
     // 清理 CustomMCP 处理器
     try {
       this.customMCPHandler.cleanup();
-      console.info("[MCPManager] CustomMCP 处理器已清理");
+      logger.info("[MCPManager] CustomMCP 处理器已清理");
     } catch (error) {
-      console.error("[MCPManager] CustomMCP 处理器清理失败:", error);
+      logger.error("[MCPManager] CustomMCP 处理器清理失败", { error });
     }
 
     // 清理统计更新锁
     try {
       configManager.clearAllStatsUpdateLocks();
-      console.info("[MCPManager] 统计更新锁已清理");
+      logger.info("[MCPManager] 统计更新锁已清理");
     } catch (error) {
-      console.error("[MCPManager] 清理统计更新锁失败:", error);
+      logger.error("[MCPManager] 清理统计更新锁失败", { error });
     }
 
     this.services.clear();
     this.tools.clear();
 
-    console.info("[MCPManager] 所有 MCP 服务已停止");
+    logger.info("[MCPManager] 所有 MCP 服务已停止");
   }
 
   /**
@@ -1072,7 +1064,7 @@ export class MCPServiceManager extends EventEmitter {
         totalLocks: activeLocks.length,
       };
     } catch (error) {
-      console.warn("[MCPManager] 获取统计更新监控信息失败:", error);
+      logger.warn("[MCPManager] 获取统计更新监控信息失败", { error });
       return {
         activeLocks: [],
         totalLocks: 0,
@@ -1105,11 +1097,11 @@ export class MCPServiceManager extends EventEmitter {
    */
   private async refreshCustomMCPHandler(): Promise<void> {
     try {
-      console.debug("重新初始化CustomMCPHandler");
+      logger.debug("重新初始化CustomMCPHandler");
       this.customMCPHandler.initialize();
-      console.debug("CustomMCPHandler重新初始化完成");
+      logger.debug("CustomMCPHandler重新初始化完成");
     } catch (error) {
-      console.error("CustomMCPHandler重新初始化失败:", error);
+      logger.error("CustomMCPHandler重新初始化失败", { error });
       throw error;
     }
   }
@@ -1144,10 +1136,9 @@ export class MCPServiceManager extends EventEmitter {
     try {
       return this.customMCPHandler.hasTool(toolName);
     } catch (error) {
-      console.warn(
-        `[MCPManager] 检查 CustomMCP 工具 ${toolName} 是否存在失败:`,
-        error
-      );
+      logger.warn(`[MCPManager] 检查 CustomMCP 工具 ${toolName} 是否存在失败`, {
+        error,
+      });
       // 异常情况下返回 false，表示工具不存在
       return false;
     }
@@ -1161,10 +1152,9 @@ export class MCPServiceManager extends EventEmitter {
     try {
       return this.customMCPHandler.getTools();
     } catch (error) {
-      console.warn(
-        "[MCPManager] 获取 CustomMCP 工具列表失败，返回空数组:",
-        error
-      );
+      logger.warn("[MCPManager] 获取 CustomMCP 工具列表失败，返回空数组", {
+        error,
+      });
       // 异常情况下返回空数组，避免影响调用方
       return [];
     }
@@ -1192,7 +1182,7 @@ export class MCPServiceManager extends EventEmitter {
 
     if (existingAuthHeader) {
       // 已有认证信息，直接使用
-      console.info(
+      logger.info(
         `[MCPManager] 服务 ${serviceName} 使用已有的 Authorization header`
       );
       return;
@@ -1204,9 +1194,7 @@ export class MCPServiceManager extends EventEmitter {
     if (modelScopeApiKey) {
       // 注入全局 API Key
       enhancedConfig.apiKey = modelScopeApiKey;
-      console.info(
-        `[MCPManager] 为 ${serviceName} 服务添加 ModelScope API Key`
-      );
+      logger.info(`[MCPManager] 为 ${serviceName} 服务添加 ModelScope API Key`);
       return;
     }
 
@@ -1236,7 +1224,7 @@ export class MCPServiceManager extends EventEmitter {
 
       return enhancedConfig;
     } catch (error) {
-      console.error(`[MCPManager] 配置增强失败: ${serviceName}`, error);
+      logger.error(`[MCPManager] 配置增强失败: ${serviceName}`, { error });
       throw error;
     }
   }
@@ -1271,7 +1259,7 @@ export class MCPServiceManager extends EventEmitter {
 
     // 存储增强后的配置
     this.configs[serviceName] = enhancedConfig;
-    console.debug(`[MCPManager] 已添加服务配置: ${serviceName}`);
+    logger.debug(`[MCPManager] 已添加服务配置: ${serviceName}`);
   }
 
   /**
@@ -1283,7 +1271,7 @@ export class MCPServiceManager extends EventEmitter {
 
     // 存储增强后的配置
     this.configs[name] = enhancedConfig;
-    console.debug(`[MCPManager] 已更新并增强服务配置: ${name}`);
+    logger.debug(`[MCPManager] 已更新并增强服务配置: ${name}`);
   }
 
   /**
@@ -1291,7 +1279,7 @@ export class MCPServiceManager extends EventEmitter {
    */
   removeServiceConfig(name: string): void {
     delete this.configs[name];
-    console.debug(`[MCPManager] 已移除服务配置: ${name}`);
+    logger.debug(`[MCPManager] 已移除服务配置: ${name}`);
   }
 
   /**
@@ -1300,7 +1288,7 @@ export class MCPServiceManager extends EventEmitter {
    */
   private async syncToolsConfigToFile(): Promise<void> {
     try {
-      console.debug("[MCPManager] 开始同步工具配置到配置文件");
+      logger.debug("[MCPManager] 开始同步工具配置到配置文件");
 
       // 获取当前配置文件中的 mcpServerConfig
       const currentServerConfigs = configManager.getMcpServerConfig();
@@ -1350,7 +1338,7 @@ export class MCPServiceManager extends EventEmitter {
         );
 
         if (removedTools.length > 0) {
-          console.info(
+          logger.info(
             `[MCPManager] 检测到服务 ${serviceName} 移除了 ${
               removedTools.length
             } 个工具: ${removedTools.join(", ")}`
@@ -1376,22 +1364,22 @@ export class MCPServiceManager extends EventEmitter {
             return current && current.description !== updated.description;
           });
 
-          console.debug(`[MCPManager] 已同步服务 ${serviceName} 的工具配置:`);
+          logger.debug(`[MCPManager] 已同步服务 ${serviceName} 的工具配置:`);
           if (addedTools.length > 0) {
-            console.debug(`  - 新增工具: ${addedTools.join(", ")}`);
+            logger.debug(`  - 新增工具: ${addedTools.join(", ")}`);
           }
           if (updatedTools.length > 0) {
-            console.debug(`  - 更新工具: ${updatedTools.join(", ")}`);
+            logger.debug(`  - 更新工具: ${updatedTools.join(", ")}`);
           }
           if (removedTools.length > 0) {
-            console.debug(`  - 移除工具: ${removedTools.join(", ")}`);
+            logger.debug(`  - 移除工具: ${removedTools.join(", ")}`);
           }
         }
       }
 
-      console.debug("[MCPManager] 工具配置同步完成");
+      logger.debug("[MCPManager] 工具配置同步完成");
     } catch (error) {
-      console.error("[MCPManager] 同步工具配置到配置文件失败:", error);
+      logger.error("[MCPManager] 同步工具配置到配置文件失败", { error });
       // 不抛出错误，避免影响服务正常运行
     }
   }
@@ -1440,7 +1428,7 @@ export class MCPServiceManager extends EventEmitter {
     if (failedServices.length === 0) return;
 
     // 记录重试安排
-    console.info(`[MCPManager] 安排 ${failedServices.length} 个失败服务的重试`);
+    logger.info(`[MCPManager] 安排 ${failedServices.length} 个失败服务的重试`);
 
     // 初始重试延迟：30秒
     const initialDelay = 30000;
@@ -1464,7 +1452,7 @@ export class MCPServiceManager extends EventEmitter {
       this.retryTimers.delete(serviceName);
     }
 
-    console.debug(`[MCPManager] 安排服务 ${serviceName} 在 ${delay}ms 后重试`);
+    logger.debug(`[MCPManager] 安排服务 ${serviceName} 在 ${delay}ms 后重试`);
 
     const timer = setTimeout(async () => {
       this.retryTimers.delete(serviceName);
@@ -1488,25 +1476,24 @@ export class MCPServiceManager extends EventEmitter {
 
       // 重试成功
       this.failedServices.delete(serviceName);
-      console.info(`[MCPManager] 服务 ${serviceName} 重试启动成功`);
+      logger.info(`[MCPManager] 服务 ${serviceName} 重试启动成功`);
 
       // 重新初始化CustomMCPHandler以包含新启动的服务工具
       try {
         await this.refreshCustomMCPHandlerPublic();
       } catch (error) {
-        console.error("[MCPManager] 刷新CustomMCPHandler失败:", error);
+        logger.error("[MCPManager] 刷新CustomMCPHandler失败", { error });
       }
     } catch (error) {
-      console.error(
-        `[MCPManager] 服务 ${serviceName} 重试启动失败:`,
-        (error as Error).message
-      );
+      logger.error(`[MCPManager] 服务 ${serviceName} 重试启动失败`, {
+        error: (error as Error).message,
+      });
 
       // 指数退避重试策略：延迟时间翻倍，最大不超过5分钟
       const currentDelay = this.getRetryDelay(serviceName);
       const nextDelay = Math.min(currentDelay * 2, 300000); // 最大5分钟
 
-      console.debug(
+      logger.debug(
         `[MCPManager] 服务 ${serviceName} 下次重试将在 ${nextDelay}ms 后进行`
       );
 
@@ -1537,7 +1524,7 @@ export class MCPServiceManager extends EventEmitter {
     if (timer) {
       clearTimeout(timer);
       this.retryTimers.delete(serviceName);
-      console.debug(`[MCPManager] 已停止服务 ${serviceName} 的重试`);
+      logger.debug(`[MCPManager] 已停止服务 ${serviceName} 的重试`);
     }
     this.failedServices.delete(serviceName);
   }
@@ -1546,11 +1533,11 @@ export class MCPServiceManager extends EventEmitter {
    * 停止所有服务的重试
    */
   public stopAllServiceRetries(): void {
-    console.info("[MCPManager] 停止所有服务重试");
+    logger.info("[MCPManager] 停止所有服务重试");
 
     for (const [serviceName, timer] of this.retryTimers) {
       clearTimeout(timer);
-      console.debug(`[MCPManager] 已停止服务 ${serviceName} 的重试`);
+      logger.debug(`[MCPManager] 已停止服务 ${serviceName} 的重试`);
     }
 
     this.retryTimers.clear();
@@ -1608,16 +1595,16 @@ export class MCPServiceManager extends EventEmitter {
       throw new Error("服务器已在运行");
     }
 
-    console.info("启动 MCP 服务管理器");
+    logger.info("启动 MCP 服务管理器");
 
     try {
       await this.startAllServices();
       this.isRunning = true;
 
-      console.info("MCP 服务管理器启动成功");
+      logger.info("MCP 服务管理器启动成功");
       this.emit("started");
     } catch (error) {
-      console.error("MCP 服务管理器启动失败", error);
+      logger.error("MCP 服务管理器启动失败", { error });
       throw error;
     }
   }
@@ -1630,16 +1617,16 @@ export class MCPServiceManager extends EventEmitter {
       return;
     }
 
-    console.info("停止 MCP 服务管理器");
+    logger.info("停止 MCP 服务管理器");
 
     try {
       await this.stopAllServices();
       this.isRunning = false;
 
-      console.info("MCP 服务管理器停止成功");
+      logger.info("MCP 服务管理器停止成功");
       this.emit("stopped");
     } catch (error) {
-      console.error("MCP 服务管理器停止失败", error);
+      logger.error("MCP 服务管理器停止失败", { error });
       throw error;
     }
   }
@@ -1713,13 +1700,13 @@ export class MCPServiceManager extends EventEmitter {
     try {
       customMCPToolCount = this.customMCPHandler.getToolCount();
       customToolNames = this.customMCPHandler.getToolNames();
-      console.debug(
+      logger.debug(
         `[MCPManager] 成功获取 customMCP 状态: ${customMCPToolCount} 个工具`
       );
     } catch (error) {
-      console.warn(
-        "[MCPManager] 获取 CustomMCP 状态失败，将只包含标准 MCP 工具:",
-        error
+      logger.warn(
+        "[MCPManager] 获取 CustomMCP 状态失败，将只包含标准 MCP 工具",
+        { error }
       );
       // 异常情况下，customMCP 工具数量为0，不影响标准 MCP 工具
       customMCPToolCount = 0;

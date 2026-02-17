@@ -54,11 +54,27 @@ export class NPMManager {
       "--registry=https://registry.npmmirror.com",
     ]);
 
+    /**
+     * 清理进程资源
+     * 移除事件监听器并关闭流，防止资源泄漏
+     */
+    const cleanup = () => {
+      npmProcess.removeAllListeners("error");
+      npmProcess.removeAllListeners("close");
+      npmProcess.stdout?.removeAllListeners("data");
+      npmProcess.stderr?.removeAllListeners("data");
+      npmProcess.stdout?.destroy();
+      npmProcess.stderr?.destroy();
+    };
+
     return new Promise((resolve, reject) => {
       // 监听进程启动失败事件
       npmProcess.on("error", (error) => {
         const errorMessage = `进程启动失败: ${error.message}`;
         console.log(errorMessage, { error });
+
+        // 清理资源
+        cleanup();
 
         // 发射安装失败事件
         this.eventBus.emitEvent("npm:install:failed", {
@@ -100,6 +116,9 @@ export class NPMManager {
 
       npmProcess.on("close", (code) => {
         const duration = Date.now() - startTime;
+
+        // 清理资源（移除事件监听器并关闭流）
+        cleanup();
 
         if (code === 0) {
           // 发射安装完成事件
