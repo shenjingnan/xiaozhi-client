@@ -34,10 +34,10 @@ jobs:
           # 检查是否在允许的时间范围内
           if [ "$HOUR" -ge 16 ] && [ "$HOUR" -lt 22 ]; then
             echo "should_run=true" >> $GITHUB_OUTPUT
-            echo "当前时间 UTC ${HOUR}:xx (北京时间 $(($HOUR+8))%24:xx)，允许执行"
+            echo "当前时间 UTC ${HOUR}:xx (北京时间 $(( ($HOUR + 8) % 24 )):xx)，允许执行"
           else
             echo "should_run=false" >> $GITHUB_OUTPUT
-            echo "当前时间 UTC ${HOUR}:xx (北京时间 $(($HOUR+8))%24:xx)，不在执行时间范围内"
+            echo "当前时间 UTC ${HOUR}:xx (北京时间 $(( ($HOUR + 8) % 24 )):xx)，不在执行时间范围内"
           fi
 
       - name: 检出代码
