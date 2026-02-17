@@ -166,40 +166,6 @@ export class DIContainer implements IDIContainer {
       return new TemplateManagerModule.TemplateManagerImpl();
     });
 
-    // 注册命令层（稍后在命令层实现时添加）
-    // container.register('serviceCommand', () => {
-    //   const { ServiceCommand } = require('./commands/ServiceCommand.js');
-    //   const serviceManager = container.get('serviceManager');
-    //   const processManager = container.get('processManager');
-    //   return new ServiceCommand(serviceManager, processManager);
-    // });
-
-    // container.register('configCommand', () => {
-    //   const { ConfigCommand } = require('./commands/ConfigCommand.js');
-    //   const configManager = container.get('configManager');
-    //   const validation = container.get('validation');
-    //   return new ConfigCommand(configManager, validation);
-    // });
-
-    // container.register('projectCommand', () => {
-    //   const { ProjectCommand } = require('./commands/ProjectCommand.js');
-    //   const templateManager = container.get('templateManager');
-    //   const fileUtils = container.get('fileUtils');
-    //   return new ProjectCommand(templateManager, fileUtils);
-    // });
-
-    // container.register('mcpCommand', () => {
-    //   const { McpCommand } = require('./commands/McpCommand.js');
-    //   return new McpCommand();
-    // });
-
-    // container.register('infoCommand', () => {
-    //   const { InfoCommand } = require('./commands/InfoCommand.js');
-    //   const versionUtils = container.get('versionUtils');
-    //   const platformUtils = container.get('platformUtils');
-    //   return new InfoCommand(versionUtils, platformUtils);
-    // });
-
     return container;
   }
 }
