@@ -9,17 +9,21 @@
  * 4. 完整合并后再按顺序逐个音频块下发到硬件端
  */
 
+import { exec } from "node:child_process";
 import { promises as fs } from "node:fs";
 import { join as pathJoin } from "node:path";
+import { Readable } from "node:stream";
+import { promisify } from "node:util";
 import { logger } from "@/Logger.js";
 import { demuxOggOpus } from "@/lib/opus/ogg-demuxer.js";
 import { synthesizeSpeechStream } from "@/lib/tts/binary.js";
 import { PathUtils } from "@/utils/path-utils.js";
 import { configManager } from "@xiaozhi-client/config";
+import * as prism from "prism-media";
 import type { ESP32Service } from "./esp32.service.js";
 import type { IVoiceSessionService } from "./voice-session.interface.js";
-import { Readable } from "node:stream";
-import * as prism from "prism-media";
+
+const execAsync = promisify(exec);
 
 /**
  * 计算单个 Opus 数据包的时长（毫秒）
@@ -34,20 +38,33 @@ function getOpusPacketDuration(opusPacket: Buffer) {
   const toc = opusPacket[0];
 
   // 提取配置信息
-  const config = (toc >> 3) & 0x1F;
+  const config = (toc >> 3) & 0x1f;
   const frameCount = toc & 0x03;
 
   // 根据 config 确定单帧时长（毫秒）
   const frameSizes = [
-    10, 20, 40, 60,  // SILK-only: NB, MB, WB
-    10, 20, 40, 60,  // Hybrid: SWB, FB
-    10, 20, 40, 60,  // CELT-only: NB, WB
-    10, 20,          // CELT-only: SWB, FB
-    2.5, 5, 10, 20   // CELT-only: NB, MB, WB, SWB, FB
+    10,
+    20,
+    40,
+    60, // SILK-only: NB, MB, WB
+    10,
+    20,
+    40,
+    60, // Hybrid: SWB, FB
+    10,
+    20,
+    40,
+    60, // CELT-only: NB, WB
+    10,
+    20, // CELT-only: SWB, FB
+    2.5,
+    5,
+    10,
+    20, // CELT-only: NB, MB, WB, SWB, FB
   ];
 
   // 简化版：大多数情况下的帧时长
-  let frameDuration;
+  let frameDuration: number;
 
   if (config < 12) {
     frameDuration = 10;
@@ -58,7 +75,7 @@ function getOpusPacketDuration(opusPacket: Buffer) {
   }
 
   // 计算帧数量
-  let numFrames;
+  let numFrames: number;
   switch (frameCount) {
     case 0: // 1 帧
       numFrames = 1;
@@ -69,7 +86,7 @@ function getOpusPacketDuration(opusPacket: Buffer) {
       break;
     case 3: // 多帧（需要读取第二个字节）
       if (opusPacket.length > 1) {
-        numFrames = opusPacket[1] & 0x3F;
+        numFrames = opusPacket[1] & 0x3f;
       } else {
         numFrames = 1;
       }
@@ -95,9 +112,6 @@ export class TestVoiceSessionService implements IVoiceSessionService {
 
   /** 每个设备收集的 Ogg 数据块 */
   private readonly oggChunks = new Map<string, Uint8Array[]>();
-
-  /** 每个设备收集的音频数据总时长 */
-  private totalDuration = 0;
 
   /**
    * 设置 ESP32 服务引用
@@ -201,13 +215,13 @@ export class TestVoiceSessionService implements IVoiceSessionService {
   }
 
   /**
- * 计算单个包的时长
- */
+   * 计算单个包的时长
+   */
   getPacketDuration(opusPacket: Buffer) {
     if (!opusPacket || opusPacket.length === 0) return 0;
 
     const toc = opusPacket[0];
-    const config = (toc >> 3) & 0x1F;
+    const config = (toc >> 3) & 0x1f;
     const c = toc & 0x03;
 
     // 单帧时长
@@ -223,11 +237,18 @@ export class TestVoiceSessionService implements IVoiceSessionService {
     // 帧数
     let frameCount: number;
     switch (c) {
-      case 0: frameCount = 1; break;
+      case 0:
+        frameCount = 1;
+        break;
       case 1:
-      case 2: frameCount = 2; break;
-      case 3: frameCount = opusPacket.length > 1 ? (opusPacket[1] & 0x3F) : 1; break;
-      default: frameCount = 1;
+      case 2:
+        frameCount = 2;
+        break;
+      case 3:
+        frameCount = opusPacket.length > 1 ? opusPacket[1] & 0x3f : 1;
+        break;
+      default:
+        frameCount = 1;
     }
 
     return frameSize * frameCount;
@@ -238,18 +259,35 @@ export class TestVoiceSessionService implements IVoiceSessionService {
    * @param {Buffer} audioBuffer - 完整的 OGG Opus 数据
    * @param {Function} sendCallback - 发送到硬件的回调函数
    */
-  async processAudioBuffer(audioBuffer: Buffer, sendCallback: (opusPacket: Buffer, metadata: { index: number, size: number, duration: number, timestamp: number }) => Promise<void>) {
+  async processAudioBuffer(
+    audioBuffer: Buffer,
+    sendCallback: (
+      opusPacket: Buffer,
+      metadata: {
+        index: number;
+        size: number;
+        duration: number;
+        timestamp: number;
+      }
+    ) => Promise<void>
+  ) {
     return new Promise((resolve, reject) => {
       const demuxer = new prism.opus.OggDemuxer();
 
       // 将 Buffer 转换为可读流
       const stream = Readable.from(audioBuffer);
+      console.log(stream.readableLength)
+      console.log(audioBuffer.length)
 
       let packetIndex = 0;
+      // 使用累积时间戳，确保每个包的时间戳连续递增
+      let cumulativeTimestamp = 0;
+      // 使用局部变量记录总时长，避免跨设备累积
+      let totalDuration = 0;
 
       stream
         .pipe(demuxer)
-        .on('data', async (opusPacket) => {
+        .on("data", async (opusPacket) => {
           const duration = this.getPacketDuration(opusPacket);
 
           // 暂停流，等待硬件发送完成
@@ -260,14 +298,14 @@ export class TestVoiceSessionService implements IVoiceSessionService {
               index: packetIndex,
               size: opusPacket.length,
               duration: duration,
-              timestamp: (packetIndex + 1) * duration
+              timestamp: cumulativeTimestamp,
             });
 
-            // console.log(`✅ 发送包 ${packetIndex + 1}: ${opusPacket.length} bytes, ${duration}ms`);
+            // console.log(`✅ 发送包 ${packetIndex + 1}: ${opusPacket.length} bytes, ${duration}ms, timestamp=${cumulativeTimestamp}ms`);
 
             packetIndex++;
-            this.totalDuration += duration;
-
+            cumulativeTimestamp += duration;
+            totalDuration += duration;
           } catch (error) {
             console.error(`❌ 发送包 ${packetIndex} 失败:`, error);
           }
@@ -275,17 +313,18 @@ export class TestVoiceSessionService implements IVoiceSessionService {
           // 恢复流
           demuxer.resume();
         })
-        .on('end', () => {
-          console.log(`✅ 处理完成，共 ${packetIndex} 个包，总时长 ${(this.totalDuration / 1000).toFixed(2)}s`);
+        .on("end", () => {
+          console.log(
+            `✅ 处理完成，共 ${packetIndex} 个包，总时长 ${(totalDuration / 1000).toFixed(2)}s`
+          );
           resolve({
             packetCount: packetIndex,
-            totalDuration: this.totalDuration
+            totalDuration: totalDuration,
           });
         })
-        .on('error', reject);
+        .on("error", reject);
     });
   }
-
 
   /**
    * 处理并发送音频数据
@@ -340,21 +379,93 @@ export class TestVoiceSessionService implements IVoiceSessionService {
       );
 
       // 4. 解封装为纯 Opus 数据
-      const opusData = await demuxOggOpus(mergedOgg);
-      logger.debug(
-        `[TestVoiceSessionService] 解封装 Ogg 数据: deviceId=${deviceId}, opusSize=${opusData.length}`
-      );
+      // const opusData = await demuxOggOpus(mergedOgg);
+      // logger.debug(
+      //   `[TestVoiceSessionService] 解封装 Ogg 数据: deviceId=${deviceId}, opusSize=${opusData.length}`
+      // );
 
       // 5. 分块下发 Opus 数据
       // @ts-ignore
-      const oggData = await fs.readFile(filePath);
+      // const oggData = await fs.readFile(filePath);
+      // const oggData = await fs.readFile('~/Downloads/activation.ogg'); // 可以播放 frame_duration:10ms
+      // const oggData = await fs.readFile('~/Downloads/activation-20ms.ogg'); // 可以播放 frame_duration:10ms
+      // const oggData = await fs.readFile('~/Downloads/activation-60ms.ogg'); // 可以播放 frame_duration:10ms
+      // const oggData = await fs.readFile('~/Downloads/activation-24khz-2.ogg'); // 可以播放 frame_duration:10ms
+      // const oggData = await fs.readFile('~/Downloads/activation-60ms-24khz.ogg'); // 可以播放 frame_duration:10ms
+      // const oggData = await fs.readFile('~/Downloads/activation-60ms-16khz.ogg'); // 可以播放 frame_duration:10ms
+      // const oggData = await fs.readFile('~/Downloads/music.ogg'); // 可以播放 frame_duration:10ms ****
+      // const oggData = await fs.readFile('~/Downloads/music-20ms-24khz.ogg'); // 可以播放 frame_duration:10ms ****
+      // const oggData = await fs.readFile('~/Downloads/welcome-ar-sa.ogg'); // 可以播放
+      // const oggData = await fs.readFile('~/Downloads/welcome-ar-sa-20ms.ogg');
+      // const oggData = await fs.readFile('~/Downloads/welcome-ar-sa-24.ogg');
+      // const oggData = await fs.readFile('~/Downloads/tts-24.ogg');
       // logger.debug(
       //   `[TestVoiceSessionService] 读取 Ogg 数据: deviceId=${deviceId}, oggSize=${oggData.length}`
       // );
 
-      await this.processAudioBuffer(oggData, async (opusPacket, metadata) => {
+      // let cumulativeTimestamp = 0;
+      // for (const chunk of chunks) {
+      //   const duration = this.getPacketDuration(Buffer.from(chunk));
+      //   await connection.sendBinaryProtocol2(Buffer.from(chunk), cumulativeTimestamp);
+      //   cumulativeTimestamp += duration;
+      // }
+      // return;
+      // logger.info(`[TestVoiceSessionService] oggData size: ${oggData.length}`);
+      // // 用于收集重新组装的 opus 包
+      // const reassembledPackets: Buffer[] = [];
+
+      await this.processAudioBuffer(Buffer.from(mergedOgg), async (opusPacket, metadata) => {
+        console.log(metadata, opusPacket.length)
+        // if (metadata.index < 30) return;
+        // 原有逻辑：发送到硬件
         await connection.sendBinaryProtocol2(opusPacket, metadata.timestamp);
+        await new Promise((resolve) => setTimeout(resolve, metadata.duration * 0.8));
+
+        // 新增：收集包用于验证
+        // reassembledPackets.push(opusPacket);
       });
+
+      // // 6. 重新封装成 ogg 文件进行验证
+      // if (reassembledPackets.length > 0) {
+      //   const outputPath = pathJoin(
+      //     PathUtils.getTempDir(),
+      //     `reassembled_${Date.now()}.ogg`
+      //   );
+      //   const rawOpusPath = pathJoin(
+      //     PathUtils.getTempDir(),
+      //     `raw_${Date.now()}.opus`
+      //   );
+
+      //   // 将所有 opus 包合并成一个原始 opus 文件
+      //   const mergedOpus = Buffer.concat(reassembledPackets);
+      //   await fs.writeFile(rawOpusPath, mergedOpus);
+
+      //   // 使用 ffmpeg 将原始 opus 转换为 ogg
+      //   try {
+      //     await execAsync(
+      //       `ffmpeg -y -acodec opus -i "${rawOpusPath}" -acodec copy "${outputPath}" 2>/dev/null`
+      //     );
+
+      //     // 获取文件大小
+      //     const stats = await fs.stat(outputPath);
+
+      //     logger.info(
+      //       `[Test] 重新封装 ogg 文件完成: ${outputPath}, 原始文件大小=${oggData.length}, 重新封装后大小=${stats.size}, 包数量=${reassembledPackets.length}`
+      //     );
+      //   } catch (error) {
+      //     logger.warn(
+      //       `[Test] ffmpeg 转换失败，直接使用原始 opus 文件: ${rawOpusPath}`,
+      //       error
+      //     );
+      //   } finally {
+      //     // 清理临时原始 opus 文件
+      //     try {
+      //       await fs.unlink(rawOpusPath);
+      //     } catch {
+      //       // 忽略删除错误
+      //     }
+      //   }
+      // }
       // await connection.sendBinaryProtocol2(opusData, 3000);
       // const chunkSize = 1024;
       // let timestamp = 0;
@@ -374,11 +485,11 @@ export class TestVoiceSessionService implements IVoiceSessionService {
         `[TestVoiceSessionService] 发送 TTS stop 消息: deviceId=${deviceId}`
       );
 
-      logger.info(
-        `[TestVoiceSessionService] TTS 音频下发完成: deviceId=${deviceId}, totalChunks=${Math.ceil(
-          getOpusPacketDuration(opusData as Buffer)
-        )}`
-      );
+      // logger.info(
+      //   `[TestVoiceSessionService] TTS 音频下发完成: deviceId=${deviceId}, totalChunks=${Math.ceil(
+      //     getOpusPacketDuration(opusData as Buffer)
+      //   )}`
+      // );
     } catch (error) {
       logger.error(
         `[TestVoiceSessionService] 处理音频数据失败: deviceId=${deviceId}`,
