@@ -77,7 +77,7 @@ export function ToolCallLogsDialog() {
         }
       } catch (err) {
         setError("网络请求失败");
-        console.error("Failed to fetch tool call logs:", err);
+        console.error("获取工具调用日志失败:", err);
       } finally {
         if (isRefresh) {
           setRefreshing(false);
