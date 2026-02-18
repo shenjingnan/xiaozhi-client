@@ -68,8 +68,10 @@ export const mcpFormFields = [
     inputType: "url",
     placeholder: "https://example.com/mcp",
     description: "MCP 服务的完整 URL 地址",
-    condition: (form: UseFormReturn<z.infer<typeof mcpFormSchema>>) =>
-      form.watch("type") === "http" || form.watch("type") === "sse",
+    condition: (form: UseFormReturn<z.infer<typeof mcpFormSchema>>) => {
+      const type = form.watch("type");
+      return type === "http" || type === "sse";
+    },
   },
   {
     name: "headers",
@@ -79,7 +81,9 @@ export const mcpFormFields = [
       "Authorization: Bearer your-key\nContent-Type: application/json",
     description: "每行一个请求头，格式: Header-Name: value",
     className: "min-h-[100px] font-mono text-sm",
-    condition: (form: UseFormReturn<z.infer<typeof mcpFormSchema>>) =>
-      form.watch("type") === "http" || form.watch("type") === "sse",
+    condition: (form: UseFormReturn<z.infer<typeof mcpFormSchema>>) => {
+      const type = form.watch("type");
+      return type === "http" || type === "sse";
+    },
   },
 ] as FieldConfig<typeof mcpFormSchema>[];
