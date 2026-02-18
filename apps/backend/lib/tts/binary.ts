@@ -1,3 +1,38 @@
+/**
+ * TTS 语音合成二进制协议模块
+ *
+ * 负责通过 WebSocket 与字节跳动 TTS 服务进行二进制协议通信，实现文本转语音功能。
+ *
+ * ## 核心功能
+ * - 建立 WebSocket 连接到 TTS 服务
+ * - 发送完整的客户端请求（FullClientRequest）
+ * - 接收并解析音频数据响应
+ * - 处理流式音频数据块并合并
+ *
+ * ## 依赖关系
+ * - `./protocols` - TTS 协议定义和消息处理
+ * - `ws` - WebSocket 客户端
+ * - `node:crypto` - UUID 生成
+ *
+ * ## 使用示例
+ * ```typescript
+ * import { synthesizeSpeech } from './lib/tts/binary';
+ *
+ * const audioData = await synthesizeSpeech({
+ *   appid: 'your-app-id',
+ *   accessToken: 'your-token',
+ *   voice_type: 'S_1',
+ *   text: '你好，世界',
+ *   encoding: 'wav'
+ * });
+ * ```
+ *
+ * ## 注意事项
+ * - 需要有效的字节跳动 TTS 服务凭证
+ * - WebSocket 连接需要处理网络错误
+ * - 音频数据按序列号顺序接收，负序列号表示结束
+ */
+
 import { randomUUID } from "node:crypto";
 import WebSocket from "ws";
 import { FullClientRequest, MsgType, ReceiveMessage } from "./protocols";
