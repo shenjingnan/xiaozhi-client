@@ -65,6 +65,12 @@ export class ESP32Connection {
   /** 是否已完成Hello握手 */
   private helloCompleted = false;
 
+  /** 事件监听器引用 */
+  private messageHandler?: (data: Buffer) => Promise<void>;
+  private closeHandler?: () => void;
+  private errorHandler?: (error: Error) => void;
+  private pongHandler?: () => void;
+
   /**
    * 构造函数
    * @param deviceId - 设备ID
@@ -109,24 +115,31 @@ export class ESP32Connection {
    * 设置WebSocket事件监听
    */
   private setupWebSocket(): void {
-    this.ws.on("message", async (data: Buffer) => {
+    // 保存监听器引用以便后续清理
+    this.messageHandler = async (data: Buffer) => {
       await this.handleMessage(data);
-    });
+    };
 
-    this.ws.on("close", () => {
+    this.closeHandler = () => {
       logger.debug(`WebSocket连接关闭: deviceId=${this.deviceId}`);
       this.state = "disconnected";
       this.config.onClose();
-    });
+    };
 
-    this.ws.on("error", (error: Error) => {
+    this.errorHandler = (error: Error) => {
       logger.error(`WebSocket连接错误: deviceId=${this.deviceId}`, error);
       this.config.onError(error);
-    });
+    };
 
-    this.ws.on("pong", () => {
+    this.pongHandler = () => {
       this.updateActivity();
-    });
+    };
+
+    // 注册事件监听器
+    this.ws.on("message", this.messageHandler);
+    this.ws.on("close", this.closeHandler);
+    this.ws.on("error", this.errorHandler);
+    this.ws.on("pong", this.pongHandler);
   }
 
   /**
@@ -408,6 +421,7 @@ export class ESP32Connection {
       this.ws.readyState !== this.ws.CONNECTING
     ) {
       this.state = "disconnected";
+      this.cleanupEventListeners();
       return;
     }
 
@@ -418,6 +432,7 @@ export class ESP32Connection {
       // 监听 close 事件
       const onClose = () => {
         this.ws.removeListener("close", onClose);
+        this.cleanupEventListeners();
         resolve();
       };
 
@@ -427,11 +442,39 @@ export class ESP32Connection {
       this.ws.close(1000, "Normal closure");
 
       // 设置超时以防 close 事件未触发
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         this.ws.removeListener("close", onClose);
+        this.cleanupEventListeners();
         resolve();
       }, 1000);
+
+      // 清理超时定时器，避免内存泄漏（Issue #1806）
+      this.ws.once("close", () => {
+        clearTimeout(timeoutId);
+      });
     });
+  }
+
+  /**
+   * 清理事件监听器
+   */
+  private cleanupEventListeners(): void {
+    if (this.messageHandler) {
+      this.ws.removeListener("message", this.messageHandler);
+      this.messageHandler = undefined;
+    }
+    if (this.closeHandler) {
+      this.ws.removeListener("close", this.closeHandler);
+      this.closeHandler = undefined;
+    }
+    if (this.errorHandler) {
+      this.ws.removeListener("error", this.errorHandler);
+      this.errorHandler = undefined;
+    }
+    if (this.pongHandler) {
+      this.ws.removeListener("pong", this.pongHandler);
+      this.pongHandler = undefined;
+    }
   }
 
   /**
