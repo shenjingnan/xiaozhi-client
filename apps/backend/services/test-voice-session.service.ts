@@ -258,7 +258,7 @@ export class TestVoiceSessionService implements IVoiceSessionService {
       const timestamp = this.cumulativeTimestamps.get(deviceId) || 0;
       const duration = this.getPacketDuration(opusPacket);
 
-      console.log('>>>>>', timestamp, duration, opusPacket.length);
+      logger.info(`[TestVoiceSessionService] 发送 Opus 包: deviceId=${deviceId}, timestamp=${timestamp}, duration=${duration}, opusPacketLength=${opusPacket.length}`);
       // 发送 Opus 包到硬件
       await connection.sendBinaryProtocol2(opusPacket, timestamp);
 

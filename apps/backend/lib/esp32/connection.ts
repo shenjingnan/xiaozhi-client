@@ -337,10 +337,10 @@ export class ESP32Connection {
     // uint32 最大值为 4294967295（约 4294967296 毫秒 ≈ 49.7 天）
     // 当时间戳超过 49.7 天后会周期性回绕（重置为 0），
     // 这是预期行为，模运算确保时间戳始终在 uint32 范围内
-    logger.info(`[ESP32Connection] 时间戳: ${timestamp}ms`);
+    // logger.info(`[ESP32Connection] 时间戳: ${timestamp}ms`);
     const timestampInMs = timestamp ?? 0;
 
-    logger.debug(`[ESP32Connection] 时间戳: ${timestampInMs}ms (uint32范围内)`);
+    // logger.debug(`[ESP32Connection] 时间戳: ${timestampInMs}ms (uint32范围内)`);
 
     const packet = encodeBinaryProtocol2(data, timestampInMs, "opus");
 
