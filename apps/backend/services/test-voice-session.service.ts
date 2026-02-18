@@ -18,6 +18,8 @@ import { PathUtils } from "@/utils/path-utils.js";
 import { configManager } from "@xiaozhi-client/config";
 import type { ESP32Service } from "./esp32.service.js";
 import type { IVoiceSessionService } from "./voice-session.interface.js";
+import { Readable } from "node:stream";
+import * as prism from "prism-media";
 
 /**
  * 计算单个 Opus 数据包的时长（毫秒）
@@ -93,6 +95,9 @@ export class TestVoiceSessionService implements IVoiceSessionService {
 
   /** 每个设备收集的 Ogg 数据块 */
   private readonly oggChunks = new Map<string, Uint8Array[]>();
+
+  /** 每个设备收集的音频数据总时长 */
+  private totalDuration = 0;
 
   /**
    * 设置 ESP32 服务引用
@@ -196,6 +201,93 @@ export class TestVoiceSessionService implements IVoiceSessionService {
   }
 
   /**
+ * 计算单个包的时长
+ */
+  getPacketDuration(opusPacket: Buffer) {
+    if (!opusPacket || opusPacket.length === 0) return 0;
+
+    const toc = opusPacket[0];
+    const config = (toc >> 3) & 0x1F;
+    const c = toc & 0x03;
+
+    // 单帧时长
+    let frameSize: number;
+    if (config < 12) {
+      frameSize = 10;
+    } else if (config < 16) {
+      frameSize = 20;
+    } else {
+      frameSize = [2.5, 5, 10, 20][config & 0x03];
+    }
+
+    // 帧数
+    let frameCount: number;
+    switch (c) {
+      case 0: frameCount = 1; break;
+      case 1:
+      case 2: frameCount = 2; break;
+      case 3: frameCount = opusPacket.length > 1 ? (opusPacket[1] & 0x3F) : 1; break;
+      default: frameCount = 1;
+    }
+
+    return frameSize * frameCount;
+  }
+
+  /**
+   * 处理从 WebSocket 接收的完整音频数据
+   * @param {Buffer} audioBuffer - 完整的 OGG Opus 数据
+   * @param {Function} sendCallback - 发送到硬件的回调函数
+   */
+  async processAudioBuffer(audioBuffer: Buffer, sendCallback: (opusPacket: Buffer, metadata: { index: number, size: number, duration: number, timestamp: number }) => Promise<void>) {
+    return new Promise((resolve, reject) => {
+      const demuxer = new prism.opus.OggDemuxer();
+
+      // 将 Buffer 转换为可读流
+      const stream = Readable.from(audioBuffer);
+
+      let packetIndex = 0;
+
+      stream
+        .pipe(demuxer)
+        .on('data', async (opusPacket) => {
+          const duration = this.getPacketDuration(opusPacket);
+
+          // 暂停流，等待硬件发送完成
+          demuxer.pause();
+
+          try {
+            await sendCallback(opusPacket, {
+              index: packetIndex,
+              size: opusPacket.length,
+              duration: duration,
+              timestamp: (packetIndex + 1) * duration
+            });
+
+            // console.log(`✅ 发送包 ${packetIndex + 1}: ${opusPacket.length} bytes, ${duration}ms`);
+
+            packetIndex++;
+            this.totalDuration += duration;
+
+          } catch (error) {
+            console.error(`❌ 发送包 ${packetIndex} 失败:`, error);
+          }
+
+          // 恢复流
+          demuxer.resume();
+        })
+        .on('end', () => {
+          console.log(`✅ 处理完成，共 ${packetIndex} 个包，总时长 ${(this.totalDuration / 1000).toFixed(2)}s`);
+          resolve({
+            packetCount: packetIndex,
+            totalDuration: this.totalDuration
+          });
+        })
+        .on('error', reject);
+    });
+  }
+
+
+  /**
    * 处理并发送音频数据
    * 1. 合并所有 Ogg 数据块
    * 2. 存储到临时目录
@@ -254,13 +346,21 @@ export class TestVoiceSessionService implements IVoiceSessionService {
       );
 
       // 5. 分块下发 Opus 数据
-      const chunkSize = 1024;
-      let timestamp = 0;
-      for (let i = 0; i < opusData.length; i += chunkSize) {
-        const chunk = opusData.slice(i, i + chunkSize);
-        await connection.sendBinaryProtocol2(chunk, timestamp);
-        timestamp += 60; // 每帧间隔 60ms
-      }
+      // let timestamp = 0;
+      // @ts-ignore
+      await this.processAudioBuffer(Buffer.from(mergedOgg), async (opusPacket, metadata) => {
+        // timestamp += metadata.duration;
+        console.log(`✅ 发送包 ${metadata.index + 1}: ${opusPacket.length} bytes, duration: ${metadata.duration}ms timestamp: ${metadata.timestamp}ms`);
+        await connection.sendBinaryProtocol2(opusPacket, metadata.timestamp);
+      });
+      // await connection.sendBinaryProtocol2(opusData, 3000);
+      // const chunkSize = 1024;
+      // let timestamp = 0;
+      // for (let i = 0; i < opusData.length; i += chunkSize) {
+      //   const chunk = opusData.slice(i, i + chunkSize);
+      //   await connection.sendBinaryProtocol2(chunk, timestamp);
+      //   timestamp += 60; // 每帧间隔 60ms
+      // }
 
       // 6. 发送 TTS stop 消息
       await connection.send({
@@ -274,7 +374,7 @@ export class TestVoiceSessionService implements IVoiceSessionService {
 
       logger.info(
         `[TestVoiceSessionService] TTS 音频下发完成: deviceId=${deviceId}, totalChunks=${Math.ceil(
-          opusData.length / chunkSize
+          getOpusPacketDuration(opusData as Buffer)
         )}`
       );
     } catch (error) {
