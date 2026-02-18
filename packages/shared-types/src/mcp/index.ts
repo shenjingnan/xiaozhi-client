@@ -63,3 +63,9 @@ export type {
 export type { JSONSchema } from "./schema";
 
 export { isJSONSchema } from "./schema";
+
+// URL 工具函数
+export {
+  inferTransportTypeFromUrl,
+  MCPTransportType,
+} from "./url-utils";

@@ -1,4 +1,5 @@
 import { defineConfig } from "tsup";
+import { copyDirectory } from "./scripts/copy-dist";
 
 export default defineConfig({
   entry: {
@@ -11,7 +12,7 @@ export default defineConfig({
   },
   format: ["esm"],
   target: "node20",
-  outDir: "../../dist/shared-types",
+  outDir: "./dist",
   dts: {
     compilerOptions: {
       composite: false
@@ -28,4 +29,8 @@ export default defineConfig({
     options.resolveExtensions = [".ts", ".js", ".json"];
   },
   external: [],
+  onSuccess: async () => {
+    // 复制构建产物到根目录 dist/shared-types
+    await copyDirectory();
+  },
 });

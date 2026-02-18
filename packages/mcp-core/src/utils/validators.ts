@@ -11,6 +11,7 @@
 
 import { MCPTransportType, ToolCallError, ToolCallErrorCode } from "../types.js";
 import { TypeFieldNormalizer } from "./type-normalizer.js";
+import { inferTransportTypeFromUrl as inferTransportTypeFromUrlShared } from "@xiaozhi-client/shared-types/mcp";
 import type {
   MCPServiceConfig,
   ToolCallParams,
@@ -22,6 +23,8 @@ import type {
  * 根据 URL 路径推断传输类型
  * 基于路径末尾推断，支持包含多个 / 的复杂路径
  *
+ * 从 @xiaozhi-client/shared-types 重新导出，保持向后兼容
+ *
  * @param url - 要推断的 URL
  * @param options - 可选配置项
  * @returns 推断出的传输类型
@@ -32,34 +35,7 @@ export function inferTransportTypeFromUrl(
     serviceName?: string;
   }
 ): MCPTransportType {
-  try {
-    const parsedUrl = new URL(url);
-    const pathname = parsedUrl.pathname;
-
-    // 检查路径末尾
-    if (pathname.endsWith("/sse")) {
-      return MCPTransportType.SSE;
-    }
-    if (pathname.endsWith("/mcp")) {
-      return MCPTransportType.HTTP;
-    }
-
-    // 默认类型 - 使用 console 输出
-    if (options?.serviceName) {
-      console.info(
-        `[MCP-${options.serviceName}] URL 路径 ${pathname} 不匹配特定规则，默认推断为 http 类型`
-      );
-    }
-    return MCPTransportType.HTTP;
-  } catch (error) {
-    if (options?.serviceName) {
-      console.warn(
-        `[MCP-${options.serviceName}] URL 解析失败，默认推断为 http 类型`,
-        error
-      );
-    }
-    return MCPTransportType.HTTP;
-  }
+  return inferTransportTypeFromUrlShared(url, options);
 }
 
 /**
