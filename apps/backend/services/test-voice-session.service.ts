@@ -346,11 +346,13 @@ export class TestVoiceSessionService implements IVoiceSessionService {
       );
 
       // 5. 分块下发 Opus 数据
-      // let timestamp = 0;
       // @ts-ignore
-      await this.processAudioBuffer(Buffer.from(mergedOgg), async (opusPacket, metadata) => {
-        // timestamp += metadata.duration;
-        console.log(`✅ 发送包 ${metadata.index + 1}: ${opusPacket.length} bytes, duration: ${metadata.duration}ms timestamp: ${metadata.timestamp}ms`);
+      const oggData = await fs.readFile(filePath);
+      // logger.debug(
+      //   `[TestVoiceSessionService] 读取 Ogg 数据: deviceId=${deviceId}, oggSize=${oggData.length}`
+      // );
+
+      await this.processAudioBuffer(oggData, async (opusPacket, metadata) => {
         await connection.sendBinaryProtocol2(opusPacket, metadata.timestamp);
       });
       // await connection.sendBinaryProtocol2(opusData, 3000);
