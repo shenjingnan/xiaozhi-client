@@ -6,11 +6,9 @@ import { Buffer } from "node:buffer";
 import { EventEmitter } from "node:events";
 import { v4 as uuidv4 } from "uuid";
 import WebSocket from "ws";
+import { AudioFormat } from "../audio";
 import { AudioProcessor } from "../audio/index.js";
-import { AudioFormat } from "../audio/types.js";
-import { SignatureAuth } from "../auth/SignatureAuth.js";
-import { TokenAuth } from "../auth/TokenAuth.js";
-import { AuthMethod } from "../auth/types.js";
+import { AuthMethod, SignatureAuth, TokenAuth } from "../auth";
 import {
   MessageType,
   compressGzipSync,
@@ -174,11 +172,10 @@ export class ASR extends EventEmitter {
   private getAuthHeaders(requestData?: Buffer): Record<string, string> {
     if (this.authMethod === AuthMethod.TOKEN) {
       return new TokenAuth(this.token).getHeaders();
-    } else {
-      return new SignatureAuth(this.token, this.secret, this.wsUrl).getHeaders(
-        requestData
-      );
     }
+    return new SignatureAuth(this.token, this.secret, this.wsUrl).getHeaders(
+      requestData
+    );
   }
 
   /**

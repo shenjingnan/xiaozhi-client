@@ -63,12 +63,11 @@ export class AudioProcessor {
     if (this.format === AudioFormat.WAV) {
       const data = this.readAudioFile();
       return readWavInfo(data);
-    } else {
-      // Convert to WAV first, then read info
-      const wavPath = this.convertToWav();
-      const data = readFileSync(wavPath);
-      return readWavInfo(data);
     }
+    // Convert to WAV first, then read info
+    const wavPath = this.convertToWav();
+    const data = readFileSync(wavPath);
+    return readWavInfo(data);
   }
 
   /**

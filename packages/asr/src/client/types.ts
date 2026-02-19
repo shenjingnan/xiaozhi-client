@@ -2,8 +2,8 @@
  * Client type definitions
  */
 
-import type { AudioFormat } from "../audio/types.js";
-import type { AuthMethod } from "../auth/types.js";
+import type { AudioFormat } from "../audio";
+import type { AuthMethod } from "../auth";
 
 // Request configuration
 export interface ASRRequestConfig {

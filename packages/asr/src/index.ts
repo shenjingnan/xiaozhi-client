@@ -18,10 +18,10 @@ export * from "./client/index.js";
 export * from "./utils/index.js";
 
 // Main client
-export { ASR, executeOne } from "./client/ASR.js";
+export { ASR, executeOne } from "./client";
 export type {
   ASROption,
   ASRResult,
   ASREventType,
   ASREventData,
-} from "./client/types.js";
+} from "./client";
