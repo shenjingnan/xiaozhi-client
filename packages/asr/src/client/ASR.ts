@@ -254,73 +254,85 @@ export class ASR extends EventEmitter {
   }
 
   /**
-   * Process audio data
+   * 通用的音频数据处理方法
+   * @param audioData - 音频数据（WAV 或 Opus）
+   * @param segmentSize - 音频分块大小
+   * @returns ASR 识别结果
    */
-  private async processAudioData(wavData: Buffer): Promise<ASRResult> {
+  private async processAudioDataCommon(
+    audioData: Buffer,
+    segmentSize: number
+  ): Promise<ASRResult> {
     const reqid = uuidv4();
 
-    // Construct request
+    // 构造请求
     const requestParams = this.constructRequest(reqid);
     const payloadBytes = Buffer.from(JSON.stringify(requestParams), "utf-8");
     const compressedPayload = compressGzipSync(payloadBytes);
 
-    // Build full client request: header + payload size (4 bytes) + payload
+    // 构建完整的客户端请求：header + payload size (4 bytes) + payload
     const fullRequest = Buffer.alloc(compressedPayload.length + 8);
     generateFullDefaultHeader().copy(fullRequest, 0);
     fullRequest.writeUInt32BE(compressedPayload.length, 4);
     compressedPayload.copy(fullRequest, 8);
 
-    // Connect
+    // 连接
     await this._connect();
 
-    // Send full request
+    // 发送完整请求
     await this.sendMessage(fullRequest);
 
-    // Receive response
+    // 接收响应
     await this.receiveMessage();
 
-    // Process audio chunks
-    const segmentSize =
-      this.format === AudioFormat.MP3
-        ? this.mp3SegSize
-        : this.calculateSegmentSize(wavData);
-
-    for (const { chunk, last } of this.sliceData(wavData, segmentSize)) {
-      // Compress audio data
+    // 处理音频分块
+    for (const { chunk, last } of this.sliceData(audioData, segmentSize)) {
+      // 压缩音频数据
       const compressedChunk = compressGzipSync(chunk);
 
-      // Generate header
+      // 生成头部
       const header = last
         ? generateLastAudioDefaultHeader()
         : generateAudioDefaultHeader();
 
-      // Build audio-only request
+      // 构建音频请求
       const audioRequest = Buffer.alloc(compressedChunk.length + 8);
       header.copy(audioRequest, 0);
       audioRequest.writeUInt32BE(compressedChunk.length, 4);
       compressedChunk.copy(audioRequest, 8);
 
-      // Send audio
+      // 发送音频
       await this.sendMessage(audioRequest);
 
-      // Receive response
+      // 接收响应
       const result = await this.receiveMessage();
 
-      // Check for errors
+      // 检查错误
       if (result.code && result.code !== this.successCode) {
         return result;
       }
 
-      // Emit audio end event for last chunk
+      // 为最后一个分块触发音频结束事件
       if (last) {
         this.emit("audio_end");
       }
     }
 
-    // Close connection
+    // 关闭连接
     this.close();
 
     return { code: this.successCode };
+  }
+
+  /**
+   * Process audio data
+   */
+  private async processAudioData(wavData: Buffer): Promise<ASRResult> {
+    const segmentSize =
+      this.format === AudioFormat.MP3
+        ? this.mp3SegSize
+        : this.calculateSegmentSize(wavData);
+    return this.processAudioDataCommon(wavData, segmentSize);
   }
 
   /**
@@ -419,67 +431,8 @@ export class ASR extends EventEmitter {
    * Process Opus data for OGG format
    */
   private async processOpusData(opusData: Buffer): Promise<ASRResult> {
-    const reqid = uuidv4();
-
-    // Construct request
-    const requestParams = this.constructRequest(reqid);
-    const payloadBytes = Buffer.from(JSON.stringify(requestParams), "utf-8");
-    const compressedPayload = compressGzipSync(payloadBytes);
-
-    // Build full client request: header + payload size (4 bytes) + payload
-    const fullRequest = Buffer.alloc(compressedPayload.length + 8);
-    generateFullDefaultHeader().copy(fullRequest, 0);
-    fullRequest.writeUInt32BE(compressedPayload.length, 4);
-    compressedPayload.copy(fullRequest, 8);
-
-    // Connect
-    await this._connect();
-
-    // Send full request
-    await this.sendMessage(fullRequest);
-
-    // Receive response
-    await this.receiveMessage();
-
-    // Process audio chunks - use smaller chunk size for Opus
     const segmentSize = 3200; // ~100ms at 16kHz
-
-    for (const { chunk, last } of this.sliceData(opusData, segmentSize)) {
-      // Compress audio data
-      const compressedChunk = compressGzipSync(chunk);
-
-      // Generate header
-      const header = last
-        ? generateLastAudioDefaultHeader()
-        : generateAudioDefaultHeader();
-
-      // Build audio-only request
-      const audioRequest = Buffer.alloc(compressedChunk.length + 8);
-      header.copy(audioRequest, 0);
-      audioRequest.writeUInt32BE(compressedChunk.length, 4);
-      compressedChunk.copy(audioRequest, 8);
-
-      // Send audio
-      await this.sendMessage(audioRequest);
-
-      // Receive response
-      const result = await this.receiveMessage();
-
-      // Check for errors
-      if (result.code && result.code !== this.successCode) {
-        return result;
-      }
-
-      // Emit audio end event for last chunk
-      if (last) {
-        this.emit("audio_end");
-      }
-    }
-
-    // Close connection
-    this.close();
-
-    return { code: this.successCode };
+    return this.processAudioDataCommon(opusData, segmentSize);
   }
 
   /**
