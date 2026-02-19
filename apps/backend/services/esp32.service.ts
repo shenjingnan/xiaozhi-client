@@ -286,7 +286,9 @@ export class ESP32Service {
         }
         break;
       case "start":
-        logger.info(`[ESP32Service] 收到start消息: message=${JSON.stringify(message)}`);
+        logger.info(
+          `[ESP32Service] 收到start消息: message=${JSON.stringify(message)}`
+        );
         // 开始监听（如果是手动模式，直接开始会话）
         if (mode === "manual" || mode === "realtime") {
           logger.info(
