@@ -20,10 +20,14 @@
     "test": "vitest run --coverage.enabled=false",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "type-check": "tsc --noEmit",
+    "check:type": "tsc --noEmit",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
-    "demo": "tsx examples/demo.ts"
+    "demo": "tsx examples/demo.ts",
+    "check:spell": "cspell .",
+    "check:cpd": "jscpd . --ignore 'node_modules'",
+    "check:all": "pnpm run lint && pnpm run check:type && pnpm run check:spell && pnpm run check:cpd",
+    "clean:dist": "rimraf dist"
   },
   "keywords": [
     "asr",
