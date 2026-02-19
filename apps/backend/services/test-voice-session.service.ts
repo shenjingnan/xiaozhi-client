@@ -9,78 +9,13 @@
  * 4. 逐个 Opus 包发送到硬件端
  */
 
-import { exec } from "node:child_process";
 import { Readable } from "node:stream";
-import { promisify } from "node:util";
 import { logger } from "@/Logger.js";
 import { synthesizeSpeechStream } from "@/lib/tts/binary.js";
 import { configManager } from "@xiaozhi-client/config";
 import * as prism from "prism-media";
 import type { ESP32Service } from "./esp32.service.js";
 import type { IVoiceSessionService } from "./voice-session.interface.js";
-
-const execAsync = promisify(exec);
-
-/**
- * 计算单个 Opus 数据包的时长（毫秒）
- * @param {Buffer} opusPacket - Opus 数据包
- * @returns {number} 时长（毫秒）
- */
-function getOpusPacketDuration(opusPacket: Buffer) {
-  if (!opusPacket || opusPacket.length === 0) {
-    return 0;
-  }
-
-  const toc = opusPacket[0];
-
-  // 提取配置信息
-  const config = (toc >> 3) & 0x1f;
-  const frameCount = toc & 0x03;
-
-  // 根据 config 确定单帧时长（毫秒）
-  // biome-ignore format: 便于阅读
-  const frameSizes = [
-    10, 20, 40, 60, // SILK-only: NB, MB, WB
-    10, 20, 40, 60, // Hybrid: SWB, FB
-    10, 20, 40, 60, // CELT-only: NB, WB
-    10, 20, // CELT-only: SWB, FB
-    2.5, 5, 10, 20, // CELT-only: NB, MB, WB, SWB, FB
-  ];
-
-  // 简化版：大多数情况下的帧时长
-  let frameDuration: number;
-
-  if (config < 12) {
-    frameDuration = 10;
-  } else if (config < 16) {
-    frameDuration = 20;
-  } else {
-    frameDuration = [2.5, 5, 10, 20][config & 0x03];
-  }
-
-  // 计算帧数量
-  let numFrames: number;
-  switch (frameCount) {
-    case 0: // 1 帧
-      numFrames = 1;
-      break;
-    case 1: // 2 帧
-    case 2: // 2 帧（不等长）
-      numFrames = 2;
-      break;
-    case 3: // 多帧（需要读取第二个字节）
-      if (opusPacket.length > 1) {
-        numFrames = opusPacket[1] & 0x3f;
-      } else {
-        numFrames = 1;
-      }
-      break;
-    default:
-      numFrames = 1;
-  }
-
-  return frameDuration * numFrames;
-}
 
 /**
  * 测试语音会话服务
@@ -93,9 +28,6 @@ export class TestVoiceSessionService implements IVoiceSessionService {
 
   /** 每个设备是否已触发 TTS（避免重复触发） */
   private readonly ttsTriggered = new Map<string, boolean>();
-
-  /** 每个设备收集的 Ogg 数据块 */
-  private readonly oggChunks = new Map<string, Uint8Array[]>();
 
   /** 每个设备对应一个流式 demuxer */
   private readonly audioDemuxers = new Map<string, prism.opus.OggDemuxer>();
@@ -434,7 +366,6 @@ export class TestVoiceSessionService implements IVoiceSessionService {
     this.packetIndices.delete(deviceId);
     this.ttsStarted.delete(deviceId);
     this.ttsTriggered.delete(deviceId);
-    this.oggChunks.delete(deviceId);
     this.opusPacketBuffer.delete(deviceId);
     this.isProcessingBuffer.delete(deviceId);
     this.deviceConnections.delete(deviceId);
@@ -529,12 +460,12 @@ export class TestVoiceSessionService implements IVoiceSessionService {
             cumulativeTimestamp += duration;
             totalDuration += duration;
           } catch (error) {
-            console.error(`❌ 发送包 ${packetIndex} 失败:`, error);
+            logger.error(`发送包 ${packetIndex} 失败:`, error);
           }
         })
         .on("end", () => {
-          console.log(
-            `✅ 处理完成，共 ${packetIndex} 个包，总时长 ${(totalDuration / 1000).toFixed(2)}s`
+          logger.info(
+            `处理完成，共 ${packetIndex} 个包，总时长 ${(totalDuration / 1000).toFixed(2)}s`
           );
           resolve({
             packetCount: packetIndex,
@@ -730,7 +661,6 @@ export class TestVoiceSessionService implements IVoiceSessionService {
    */
   destroy(): void {
     this.ttsTriggered.clear();
-    this.oggChunks.clear();
     this.audioDemuxers.clear();
     this.cumulativeTimestamps.clear();
     this.packetIndices.clear();

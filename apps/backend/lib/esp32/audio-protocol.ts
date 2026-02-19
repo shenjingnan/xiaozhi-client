@@ -15,7 +15,7 @@
  *
  * - Version: 2 (协议版本)
  * - Type: 0 = Opus 音频, 1 = JSON
- * - Timestamp: 毫秒级时间戳（uint32，使用模运算避免溢出）
+ * - Timestamp: 毫秒级累加值（每帧递增，非真实时间戳，用于音频播放顺序）
  * - Payload Size: 负载字节数
  * - Payload: 实际音频数据
  */
