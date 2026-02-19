@@ -19,12 +19,12 @@ import { AudioFormat } from "../audio/types.js";
 import { TokenAuth } from "../auth/TokenAuth.js";
 import { SignatureAuth } from "../auth/SignatureAuth.js";
 import { AuthMethod } from "../auth/types.js";
-import { AsrClientOptions, AsrRequestConfig, AsrResult } from "./types.js";
+import { ASROption, ASRRequestConfig, ASRResult } from "./types.js";
 
 /**
  * Streaming ASR WebSocket Client
  */
-export class AsrWsClient extends EventEmitter {
+export class ASR extends EventEmitter {
   // Server config
   private wsUrl: string;
   private cluster: string;
@@ -69,7 +69,7 @@ export class AsrWsClient extends EventEmitter {
   // Connection state
   private connected: boolean = false;
 
-  constructor(options: AsrClientOptions) {
+  constructor(options: ASROption) {
     super();
 
     // Server config
@@ -131,7 +131,7 @@ export class AsrWsClient extends EventEmitter {
   /**
    * Construct ASR request
    */
-  private constructRequest(reqid: string): AsrRequestConfig {
+  private constructRequest(reqid: string): ASRRequestConfig {
     return {
       app: {
         appid: this.appid,
@@ -226,7 +226,7 @@ export class AsrWsClient extends EventEmitter {
     // Handle ACK
     if (result.messageType === MessageType.SERVER_ACK || result.messageType === MessageType.SERVER_FULL_RESPONSE) {
       if (result.payloadMsg) {
-        this.emit("result", result.payloadMsg as AsrResult);
+        this.emit("result", result.payloadMsg as ASRResult);
       }
     }
   }
@@ -266,7 +266,7 @@ export class AsrWsClient extends EventEmitter {
   /**
    * Process audio data
    */
-  private async processAudioData(wavData: Buffer): Promise<AsrResult> {
+  private async processAudioData(wavData: Buffer): Promise<ASRResult> {
     const reqid = uuidv4();
 
     // Construct request
@@ -331,7 +331,7 @@ export class AsrWsClient extends EventEmitter {
   /**
    * Receive message from server
    */
-  private receiveMessage(): Promise<AsrResult> {
+  private receiveMessage(): Promise<ASRResult> {
     return new Promise((resolve, reject) => {
       if (!this.ws) {
         reject(new Error("WebSocket is not connected"));
@@ -347,7 +347,7 @@ export class AsrWsClient extends EventEmitter {
           return;
         }
 
-        resolve(result.payloadMsg as AsrResult);
+        resolve(result.payloadMsg as ASRResult);
       };
 
       this.ws.on("message", messageHandler);
@@ -382,7 +382,7 @@ export class AsrWsClient extends EventEmitter {
   /**
    * Execute ASR request
    */
-  async execute(): Promise<AsrResult> {
+  async execute(): Promise<ASRResult> {
     // Check required parameters
     if (!this.audioPath) {
       throw new Error("Audio path is required");
@@ -419,7 +419,7 @@ export class AsrWsClient extends EventEmitter {
   /**
    * Process Opus data for OGG format
    */
-  private async processOpusData(opusData: Buffer): Promise<AsrResult> {
+  private async processOpusData(opusData: Buffer): Promise<ASRResult> {
     const reqid = uuidv4();
 
     // Construct request
@@ -495,9 +495,9 @@ export class AsrWsClient extends EventEmitter {
 export async function executeOne(
   audioPath: string,
   cluster: string,
-  options: AsrClientOptions
-): Promise<AsrResult> {
-  const client = new AsrWsClient({
+  options: ASROption
+): Promise<ASRResult> {
+  const client = new ASR({
     ...options,
     audioPath,
     cluster,

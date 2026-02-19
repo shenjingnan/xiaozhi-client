@@ -3,4 +3,4 @@
  */
 
 export * from "./types.js";
-export * from "./AsrWsClient.js";
+export * from "./ASR.js";

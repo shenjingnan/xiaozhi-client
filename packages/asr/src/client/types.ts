@@ -6,7 +6,7 @@ import { AudioFormat } from "../audio/types.js";
 import { AuthMethod } from "../auth/types.js";
 
 // Request configuration
-export interface AsrRequestConfig {
+export interface ASRRequestConfig {
   app: {
     appid: string;
     cluster: string;
@@ -35,7 +35,7 @@ export interface AsrRequestConfig {
 }
 
 // Client options
-export interface AsrClientOptions {
+export interface ASROption {
   // Server
   wsUrl?: string;
   cluster?: string;
@@ -76,7 +76,7 @@ export interface AsrClientOptions {
 }
 
 // Result callback
-export interface AsrResult {
+export interface ASRResult {
   code: number;
   message?: string;
   seq?: number;
@@ -91,7 +91,7 @@ export interface AsrResult {
 }
 
 // Event types
-export type AsrEventType =
+export type ASREventType =
   | "open"
   | "close"
   | "error"
@@ -100,7 +100,7 @@ export type AsrEventType =
   | "full_response";
 
 // Event data
-export interface AsrEventData {
-  type: AsrEventType;
+export interface ASREventData {
+  type: ASREventType;
   data?: unknown;
 }

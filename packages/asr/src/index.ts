@@ -18,5 +18,5 @@ export * from "./client/index.js";
 export * from "./utils/index.js";
 
 // Main client
-export { AsrWsClient, executeOne } from "./client/AsrWsClient.js";
-export type { AsrClientOptions, AsrResult, AsrEventType, AsrEventData } from "./client/types.js";
+export { ASR, executeOne } from "./client/ASR.js";
+export type { ASROption, ASRResult, ASREventType, ASREventData } from "./client/types.js";
