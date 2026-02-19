@@ -7,7 +7,7 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsup",
+        "command": "pnpm --filter asr run build",
         "cwd": "packages/asr"
       },
       "outputs": ["{workspaceRoot}/packages/asr/dist"]
@@ -15,7 +15,7 @@
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vitest run --coverage.enabled=false",
+        "command": "pnpm --filter asr run test",
         "cwd": "packages/asr"
       },
       "outputs": ["{workspaceRoot}/coverage"]
@@ -23,14 +23,14 @@
     "test:watch": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vitest",
+        "command": "pnpm --filter asr run test:watch",
         "cwd": "packages/asr"
       }
     },
     "test:coverage": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vitest run --coverage",
+        "command": "pnpm --filter asr run test:coverage",
         "cwd": "packages/asr"
       },
       "outputs": ["{workspaceRoot}/coverage"]
@@ -38,26 +38,26 @@
     "type-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc --noEmit",
+        "command": "pnpm --filter asr run type-check",
         "cwd": "packages/asr"
       }
     },
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "biome check packages/asr"
+        "command": "pnpm --filter asr run lint"
       }
     },
     "lint:fix": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "biome check --write packages/asr"
+        "command": "pnpm --filter asr run lint:fix"
       }
     },
     "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsup --watch",
+        "command": "pnpm --filter asr run dev",
         "cwd": "packages/asr"
       }
     }
