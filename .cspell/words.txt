@@ -1,5 +1,6 @@
 1
 24
+acodec
 addgroup
 addre
 adduser
@@ -19,6 +20,9 @@ compbash
 compzsh
 cpus
 custommcp
+demux
+demuxer
+Demuxers
 dify
 dotenv
 EACCES

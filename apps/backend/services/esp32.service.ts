@@ -365,6 +365,15 @@ export class ESP32Service {
   }
 
   /**
+   * 获取设备连接
+   * @param deviceId - 设备ID
+   * @returns 设备连接实例，如果不存在则返回 undefined
+   */
+  getConnection(deviceId: string): ESP32Connection | undefined {
+    return this.connections.get(deviceId);
+  }
+
+  /**
    * 销毁服务
    */
   async destroy(): Promise<void> {

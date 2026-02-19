@@ -130,3 +130,86 @@ export async function synthesizeSpeech(
 
   return result;
 }
+
+/**
+ * 流式合成语音
+ * 连接 WebSocket 并发送 TTS 请求，每个音频块通过回调实时处理
+ * @param options - TTS 合成选项
+ * @param onAudioChunk - 音频块回调函数，收到每个 payload 后立即调用
+ * @returns Promise，音频流结束时 resolve
+ */
+export async function synthesizeSpeechStream(
+  options: TTSOptions,
+  onAudioChunk: (chunk: Uint8Array, isLast: boolean) => Promise<void>
+): Promise<void> {
+  const endpoint =
+    options.endpoint || "wss://openspeech.bytedance.com/api/v1/tts/ws_binary";
+  const encoding = options.encoding || "wav";
+
+  const headers = {
+    Authorization: `Bearer;${options.accessToken}`,
+  };
+
+  const ws = new WebSocket(endpoint, {
+    headers,
+    skipUTF8Validation: true,
+  });
+
+  await new Promise((resolve, reject) => {
+    ws.on("open", resolve);
+    ws.on("error", reject);
+  });
+
+  const request = {
+    app: {
+      appid: options.appid,
+      token: options.accessToken,
+      cluster: options.cluster?.trim() || VoiceToCluster(options.voice_type),
+    },
+    user: {
+      uid: randomUUID(),
+    },
+    audio: {
+      voice_type: options.voice_type,
+      encoding: encoding,
+    },
+    request: {
+      reqid: randomUUID(),
+      text: options.text,
+      operation: "submit",
+      extra_param: JSON.stringify({
+        disable_markdown_filter: false,
+      }),
+      with_timestamp: "1",
+    },
+  };
+
+  await FullClientRequest(
+    ws,
+    new TextEncoder().encode(JSON.stringify(request))
+  );
+
+  while (true) {
+    const msg = await ReceiveMessage(ws);
+
+    switch (msg.type) {
+      case MsgType.FrontEndResultServer:
+        break;
+      case MsgType.AudioOnlyServer: {
+        // 每收到一个音频块立即调用回调处理
+        const isLast = msg.sequence !== undefined && msg.sequence < 0;
+        await onAudioChunk(msg.payload, isLast);
+
+        if (isLast) {
+          // 最后一块，结束循环
+          ws.close();
+          return;
+        }
+        break;
+      }
+      default:
+        ws.close();
+        throw new Error(`${msg.toString()}`);
+    }
+  }
+}

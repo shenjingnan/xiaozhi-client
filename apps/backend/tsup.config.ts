@@ -113,6 +113,7 @@ export default defineConfig({
     "jsonc-parser",
     "@coze/api",
     "@modelcontextprotocol/*",
+    "prism-media",
     // @xiaozhi-client 内部包（运行时从 dist 读取）
     "@xiaozhi-client/config",
     "@xiaozhi-client/config.js",
