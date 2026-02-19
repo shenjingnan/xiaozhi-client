@@ -38,25 +38,13 @@ function getOpusPacketDuration(opusPacket: Buffer) {
   const frameCount = toc & 0x03;
 
   // 根据 config 确定单帧时长（毫秒）
+  // biome-ignore format: 便于阅读
   const frameSizes = [
-    10,
-    20,
-    40,
-    60, // SILK-only: NB, MB, WB
-    10,
-    20,
-    40,
-    60, // Hybrid: SWB, FB
-    10,
-    20,
-    40,
-    60, // CELT-only: NB, WB
-    10,
-    20, // CELT-only: SWB, FB
-    2.5,
-    5,
-    10,
-    20, // CELT-only: NB, MB, WB, SWB, FB
+    10, 20, 40, 60, // SILK-only: NB, MB, WB
+    10, 20, 40, 60, // Hybrid: SWB, FB
+    10, 20, 40, 60, // CELT-only: NB, WB
+    10, 20, // CELT-only: SWB, FB
+    2.5, 5, 10, 20, // CELT-only: NB, MB, WB, SWB, FB
   ];
 
   // 简化版：大多数情况下的帧时长
