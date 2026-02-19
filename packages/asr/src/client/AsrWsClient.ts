@@ -6,7 +6,6 @@ import WebSocket from "ws";
 import { EventEmitter } from "node:events";
 import { v4 as uuidv4 } from "uuid";
 import { Buffer } from "node:buffer";
-import { URL } from "node:url";
 import {
   generateFullDefaultHeader,
   generateAudioDefaultHeader,
@@ -281,9 +280,6 @@ export class AsrWsClient extends EventEmitter {
     fullRequest.writeUInt32BE(compressedPayload.length, 4);
     compressedPayload.copy(fullRequest, 8);
 
-    // Get auth headers with request data
-    const headers = this.getAuthHeaders(fullRequest);
-
     // Connect
     await this.connect();
 
@@ -436,9 +432,6 @@ export class AsrWsClient extends EventEmitter {
     generateFullDefaultHeader().copy(fullRequest, 0);
     fullRequest.writeUInt32BE(compressedPayload.length, 4);
     compressedPayload.copy(fullRequest, 8);
-
-    // Get auth headers with request data
-    const headers = this.getAuthHeaders(fullRequest);
 
     // Connect
     await this.connect();

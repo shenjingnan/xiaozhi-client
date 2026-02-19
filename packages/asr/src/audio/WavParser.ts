@@ -49,7 +49,7 @@ export function readWavInfo(data: Buffer): WavInfo {
   }
 
   // Parse fmt chunk
-  const audioFormat = fmtChunk.readUInt16LE(0);
+  fmtChunk.readUInt16LE(0); // audio format (1=PCM)
   const nchannels = fmtChunk.readUInt16LE(2);
   const framerate = fmtChunk.readUInt32LE(4);
   const sampwidth = fmtChunk.readUInt16LE(14);
@@ -71,8 +71,6 @@ export function readWavInfo(data: Buffer): WavInfo {
  * Read WAV audio data (skipping header)
  */
 export function readWavData(data: Buffer): Buffer {
-  const info = readWavInfo(data);
-
   // Find data chunk
   let offset = 12;
   while (offset < data.length - 8) {

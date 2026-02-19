@@ -4,7 +4,8 @@
 
 import { readFileSync } from "node:fs";
 import { Buffer } from "node:buffer";
-import type { AudioFormat, AudioConfig, WavInfo } from "./types.js";
+import type { AudioConfig, WavInfo } from "./types.js";
+import { AudioFormat } from "./types.js";
 import { readWavInfo, createWavFile } from "./WavParser.js";
 import { convertOggToWav, convertMp3ToWav, convertAudioToWav } from "./OggConverter.js";
 
@@ -113,8 +114,6 @@ export class AudioProcessor {
    * Extract PCM data from WAV file (skip header)
    */
   private extractPcmFromWav(wavData: Buffer): Buffer {
-    const info = readWavInfo(wavData);
-
     // Find data chunk
     let offset = 12;
     while (offset < wavData.length - 8) {

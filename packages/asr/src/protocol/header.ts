@@ -2,7 +2,7 @@
  * Binary protocol header generation and parsing
  */
 
-import { gzip, gunzip, gzipSync, gunzipSync } from "node:zlib";
+import { gzip, gzipSync, gunzipSync } from "node:zlib";
 import { Buffer } from "node:buffer";
 import {
   MessageType,
@@ -14,7 +14,6 @@ import {
 } from "./types.js";
 import {
   PROTOCOL_VERSION,
-  DEFAULT_HEADER_SIZE,
 } from "./constants.js";
 
 /**
