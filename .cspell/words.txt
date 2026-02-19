@@ -66,6 +66,7 @@ multistream
 myproject
 mytool
 nbest
+NOTW
 nchannels
 nemo
 nextra
@@ -112,8 +113,10 @@ uvicorn
 vaul
 venv
 verylongstring
+volc
 volcengine
 vsize
+yxxx
 webui
 worktrees
 Xiaoxuan
