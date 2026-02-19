@@ -10,13 +10,10 @@
  */
 
 import { exec } from "node:child_process";
-import { promises as fs } from "node:fs";
-import { join as pathJoin } from "node:path";
 import { Readable } from "node:stream";
 import { promisify } from "node:util";
 import { logger } from "@/Logger.js";
 import { synthesizeSpeechStream } from "@/lib/tts/binary.js";
-import { PathUtils } from "@/utils/path-utils.js";
 import { configManager } from "@xiaozhi-client/config";
 import * as prism from "prism-media";
 import type { ESP32Service } from "./esp32.service.js";
@@ -124,6 +121,15 @@ export class TestVoiceSessionService implements IVoiceSessionService {
   /** 每个设备是否已发送 start 消息 */
   private readonly ttsStarted = new Map<string, boolean>();
 
+  /** 每个设备的 Opus 包缓冲区 */
+  private readonly opusPacketBuffer = new Map<string, Buffer[]>();
+
+  /** 每个设备是否正在处理缓冲区 */
+  private readonly isProcessingBuffer = new Map<string, boolean>();
+
+  /** 每个设备的连接引用（用于缓冲区处理） */
+  private readonly deviceConnections = new Map<string, any>();
+
   /**
    * 设置 ESP32 服务引用
    * @param esp32Service - ESP32 服务实例
@@ -176,6 +182,9 @@ export class TestVoiceSessionService implements IVoiceSessionService {
       this.cumulativeTimestamps.set(deviceId, 0);
       this.packetIndices.set(deviceId, 0);
       this.ttsStarted.set(deviceId, false);
+      this.opusPacketBuffer.set(deviceId, []);
+      this.isProcessingBuffer.set(deviceId, false);
+      this.deviceConnections.set(deviceId, connection);
 
       // 创建 demuxer 并设置事件处理
       const demuxer = this.audioDemuxers.get(deviceId)!;
@@ -232,6 +241,7 @@ export class TestVoiceSessionService implements IVoiceSessionService {
 
   /**
    * 设置 demuxer 事件处理
+   * 使用缓冲区模式避免并发问题
    * @param deviceId - 设备 ID
    * @param demuxer - Ogg Demuxer 实例
    * @param connection - ESP32 连接实例
@@ -241,49 +251,23 @@ export class TestVoiceSessionService implements IVoiceSessionService {
     demuxer: prism.opus.OggDemuxer,
     connection: any
   ) {
-    demuxer.on("data", async (opusPacket: Buffer) => {
-      // 首次收到 Opus 包时发送 start 消息
-      if (!this.ttsStarted.get(deviceId)) {
-        await connection.send({
-          type: "tts",
-          session_id: connection.getSessionId(),
-          state: "start",
-        });
-        this.ttsStarted.set(deviceId, true);
-        logger.debug(
-          `[TestVoiceSessionService] 发送 TTS start 消息: deviceId=${deviceId}`
-        );
+    demuxer.on("data", (opusPacket: Buffer) => {
+      // 只负责将包推入缓冲区，不做异步操作
+      const buffer = this.opusPacketBuffer.get(deviceId);
+      if (buffer) {
+        buffer.push(opusPacket);
       }
 
-      const timestamp = this.cumulativeTimestamps.get(deviceId) || 0;
-      const duration = this.getPacketDuration(opusPacket);
-
-      logger.info(`[TestVoiceSessionService] 发送 Opus 包: deviceId=${deviceId}, timestamp=${timestamp}, duration=${duration}, opusPacketLength=${opusPacket.length}`);
-      // 发送 Opus 包到硬件
-      await connection.sendBinaryProtocol2(opusPacket, timestamp);
-
-      // 更新状态
-      const packetIndex = (this.packetIndices.get(deviceId) || 0) + 1;
-      this.packetIndices.set(deviceId, packetIndex);
-      this.cumulativeTimestamps.set(deviceId, timestamp + duration);
-
-      // 流控：等待硬件处理
-      await new Promise((resolve) => setTimeout(resolve, duration * 0.8));
+      // 触发缓冲区处理（如果尚未在处理中）
+      this.processBuffer(deviceId);
     });
 
-    demuxer.on("end", async () => {
-      // 发送 stop 消息
-      await connection.send({
-        type: "tts",
-        session_id: connection.getSessionId(),
-        state: "stop",
-      });
-
-      // 清理状态
-      this.cleanupDeviceState(deviceId);
-      logger.info(
-        `[TestVoiceSessionService] TTS 音频流发送完成: deviceId=${deviceId}`
-      );
+    demuxer.on("end", () => {
+      // 标记 demuxer 已结束，等待缓冲区处理完成后再发送 stop
+      // 使用 setTimeout 确保缓冲区处理完成
+      setTimeout(() => {
+        this.sendStopAndCleanup(deviceId);
+      }, 100);
     });
 
     demuxer.on("error", (err: Error) => {
@@ -291,8 +275,108 @@ export class TestVoiceSessionService implements IVoiceSessionService {
         `[TestVoiceSessionService] Demuxer 错误: deviceId=${deviceId}`,
         err
       );
-      this.cleanupDeviceState(deviceId);
+      this.sendStopAndCleanup(deviceId);
     });
+  }
+
+  /**
+   * 处理缓冲区中的 Opus 包
+   * 使用顺序处理避免并发问题
+   * @param deviceId - 设备 ID
+   */
+  private async processBuffer(deviceId: string): Promise<void> {
+    // 防止并发处理
+    if (this.isProcessingBuffer.get(deviceId)) {
+      return;
+    }
+
+    const buffer = this.opusPacketBuffer.get(deviceId);
+    const connection = this.deviceConnections.get(deviceId);
+
+    if (!buffer || !connection) {
+      return;
+    }
+
+    this.isProcessingBuffer.set(deviceId, true);
+
+    try {
+      while (buffer.length > 0) {
+        // 首次收到 Opus 包时发送 start 消息
+        if (!this.ttsStarted.get(deviceId)) {
+          await connection.send({
+            type: "tts",
+            session_id: connection.getSessionId(),
+            state: "start",
+          });
+          this.ttsStarted.set(deviceId, true);
+          logger.info(
+            `[TestVoiceSessionService] 发送 TTS start 消息: deviceId=${deviceId}`
+          );
+        }
+
+        // 从缓冲区取出第一个包
+        const opusPacket = buffer.shift()!;
+
+        // 计算时间戳和时长
+        const timestamp = this.cumulativeTimestamps.get(deviceId) || 0;
+        const duration = this.getPacketDuration(opusPacket);
+
+        logger.info(
+          `[TestVoiceSessionService] 发送 Opus 包: deviceId=${deviceId}, timestamp=${timestamp}, duration=${duration}, opusPacketLength=${opusPacket.length}`
+        );
+
+        // 发送 Opus 包到硬件
+        await connection.sendBinaryProtocol2(opusPacket, timestamp);
+
+        // 更新状态
+        const packetIndex = (this.packetIndices.get(deviceId) || 0) + 1;
+        this.packetIndices.set(deviceId, packetIndex);
+        this.cumulativeTimestamps.set(deviceId, timestamp + duration);
+
+        // 流控：等待硬件处理
+        await new Promise((resolve) => setTimeout(resolve, duration * 0.8));
+      }
+    } finally {
+      this.isProcessingBuffer.set(deviceId, false);
+    }
+  }
+
+  /**
+   * 发送 stop 消息并清理状态
+   * @param deviceId - 设备 ID
+   */
+  private async sendStopAndCleanup(deviceId: string): Promise<void> {
+    const connection = this.deviceConnections.get(deviceId);
+    if (!connection) {
+      this.cleanupDeviceState(deviceId);
+      return;
+    }
+
+    // 等待缓冲区处理完成
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    // 如果缓冲区还有数据，继续处理
+    const buffer = this.opusPacketBuffer.get(deviceId);
+    if (buffer && buffer.length > 0) {
+      await this.processBuffer(deviceId);
+    }
+
+    // 再次检查缓冲区是否已清空
+    if (this.opusPacketBuffer.get(deviceId)?.length === 0) {
+      // 发送 stop 消息
+      await connection.send({
+        type: "tts",
+        session_id: connection.getSessionId(),
+        state: "stop",
+      });
+
+      logger.info(
+        `[TestVoiceSessionService] TTS 音频流发送完成: deviceId=${deviceId}`
+      );
+    }
+
+    // 清理状态
+    this.cleanupDeviceState(deviceId);
   }
 
   /**
@@ -306,6 +390,9 @@ export class TestVoiceSessionService implements IVoiceSessionService {
     this.ttsStarted.delete(deviceId);
     this.ttsTriggered.delete(deviceId);
     this.oggChunks.delete(deviceId);
+    this.opusPacketBuffer.delete(deviceId);
+    this.isProcessingBuffer.delete(deviceId);
+    this.deviceConnections.delete(deviceId);
   }
 
   /**
@@ -382,9 +469,6 @@ export class TestVoiceSessionService implements IVoiceSessionService {
         .on("data", async (opusPacket) => {
           const duration = this.getPacketDuration(opusPacket);
 
-          // 暂停流，等待硬件发送完成
-          demuxer.pause();
-
           try {
             await sendCallback(opusPacket, {
               index: packetIndex,
@@ -401,9 +485,6 @@ export class TestVoiceSessionService implements IVoiceSessionService {
           } catch (error) {
             console.error(`❌ 发送包 ${packetIndex} 失败:`, error);
           }
-
-          // 恢复流
-          demuxer.resume();
         })
         .on("end", () => {
           console.log(
@@ -426,177 +507,177 @@ export class TestVoiceSessionService implements IVoiceSessionService {
    * @param deviceId - 设备 ID
    * @param connection - ESP32 连接实例
    */
-  private async processAndSendAudio(
-    deviceId: string,
-    connection: any
-  ): Promise<void> {
-    const chunks = this.oggChunks.get(deviceId);
-    if (!chunks || chunks.length === 0) {
-      logger.warn(
-        `[TestVoiceSessionService] 无音频数据可处理: deviceId=${deviceId}`
-      );
-      return;
-    }
+  // private async processAndSendAudio(
+  //   deviceId: string,
+  //   connection: any
+  // ): Promise<void> {
+  //   const chunks = this.oggChunks.get(deviceId);
+  //   if (!chunks || chunks.length === 0) {
+  //     logger.warn(
+  //       `[TestVoiceSessionService] 无音频数据可处理: deviceId=${deviceId}`
+  //     );
+  //     return;
+  //   }
 
-    try {
-      // 1. 合并所有 Ogg 数据块
-      const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-      const mergedOgg = new Uint8Array(totalLength);
-      let offset = 0;
-      for (const chunk of chunks) {
-        mergedOgg.set(chunk, offset);
-        offset += chunk.length;
-      }
-      logger.debug(
-        `[TestVoiceSessionService] 合并 Ogg 数据: deviceId=${deviceId}, totalSize=${totalLength}`
-      );
+  //   try {
+  //     // 1. 合并所有 Ogg 数据块
+  //     const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  //     const mergedOgg = new Uint8Array(totalLength);
+  //     let offset = 0;
+  //     for (const chunk of chunks) {
+  //       mergedOgg.set(chunk, offset);
+  //       offset += chunk.length;
+  //     }
+  //     logger.debug(
+  //       `[TestVoiceSessionService] 合并 Ogg 数据: deviceId=${deviceId}, totalSize=${totalLength}`
+  //     );
 
-      // 2. 存储到临时目录
-      const tempDir = PathUtils.getTempDir();
-      logger.info(`[TestVoiceSessionService] 临时目录: ${tempDir}`);
-      const fileName = `tts-${deviceId}-${Date.now()}.ogg`;
-      const filePath = pathJoin(tempDir, fileName);
-      await fs.writeFile(filePath, mergedOgg);
-      logger.info(`[TestVoiceSessionService] 已存储 TTS 音频到: ${filePath}`);
+  //     // 2. 存储到临时目录
+  //     const tempDir = PathUtils.getTempDir();
+  //     logger.info(`[TestVoiceSessionService] 临时目录: ${tempDir}`);
+  //     const fileName = `tts-${deviceId}-${Date.now()}.ogg`;
+  //     const filePath = pathJoin(tempDir, fileName);
+  //     await fs.writeFile(filePath, mergedOgg);
+  //     logger.info(`[TestVoiceSessionService] 已存储 TTS 音频到: ${filePath}`);
 
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      // 3. 发送 TTS start 消息
-      await connection.send({
-        type: "tts",
-        session_id: connection.getSessionId(),
-        state: "start",
-      });
-      logger.debug(
-        `[TestVoiceSessionService] 发送 TTS start 消息: deviceId=${deviceId}`
-      );
+  //     await new Promise((resolve) => setTimeout(resolve, 2000));
+  //     // 3. 发送 TTS start 消息
+  //     await connection.send({
+  //       type: "tts",
+  //       session_id: connection.getSessionId(),
+  //       state: "start",
+  //     });
+  //     logger.debug(
+  //       `[TestVoiceSessionService] 发送 TTS start 消息: deviceId=${deviceId}`
+  //     );
 
-      // 4. 解封装为纯 Opus 数据
-      // const opusData = await demuxOggOpus(mergedOgg);
-      // logger.debug(
-      //   `[TestVoiceSessionService] 解封装 Ogg 数据: deviceId=${deviceId}, opusSize=${opusData.length}`
-      // );
+  //     // 4. 解封装为纯 Opus 数据
+  //     // const opusData = await demuxOggOpus(mergedOgg);
+  //     // logger.debug(
+  //     //   `[TestVoiceSessionService] 解封装 Ogg 数据: deviceId=${deviceId}, opusSize=${opusData.length}`
+  //     // );
 
-      // 5. 分块下发 Opus 数据
-      // @ts-ignore
-      // const oggData = await fs.readFile(filePath);
-      // const oggData = await fs.readFile('~/Downloads/activation.ogg'); // 可以播放 frame_duration:10ms
-      // const oggData = await fs.readFile('~/Downloads/activation-20ms.ogg'); // 可以播放 frame_duration:10ms
-      // const oggData = await fs.readFile('~/Downloads/activation-60ms.ogg'); // 可以播放 frame_duration:10ms
-      // const oggData = await fs.readFile('~/Downloads/activation-24khz-2.ogg'); // 可以播放 frame_duration:10ms
-      // const oggData = await fs.readFile('~/Downloads/activation-60ms-24khz.ogg'); // 可以播放 frame_duration:10ms
-      // const oggData = await fs.readFile('~/Downloads/activation-60ms-16khz.ogg'); // 可以播放 frame_duration:10ms
-      // const oggData = await fs.readFile('~/Downloads/music.ogg'); // 可以播放 frame_duration:10ms ****
-      // const oggData = await fs.readFile('~/Downloads/music-20ms-24khz.ogg'); // 可以播放 frame_duration:10ms ****
-      // const oggData = await fs.readFile('~/Downloads/welcome-ar-sa.ogg'); // 可以播放
-      // const oggData = await fs.readFile('~/Downloads/welcome-ar-sa-20ms.ogg');
-      // const oggData = await fs.readFile('~/Downloads/welcome-ar-sa-24.ogg');
-      // const oggData = await fs.readFile('~/Downloads/tts-24.ogg');
-      // logger.debug(
-      //   `[TestVoiceSessionService] 读取 Ogg 数据: deviceId=${deviceId}, oggSize=${oggData.length}`
-      // );
+  //     // 5. 分块下发 Opus 数据
+  //     // @ts-ignore
+  //     // const oggData = await fs.readFile(filePath);
+  //     // const oggData = await fs.readFile('~/Downloads/activation.ogg'); // 可以播放 frame_duration:10ms
+  //     // const oggData = await fs.readFile('~/Downloads/activation-20ms.ogg'); // 可以播放 frame_duration:10ms
+  //     // const oggData = await fs.readFile('~/Downloads/activation-60ms.ogg'); // 可以播放 frame_duration:10ms
+  //     // const oggData = await fs.readFile('~/Downloads/activation-24khz-2.ogg'); // 可以播放 frame_duration:10ms
+  //     // const oggData = await fs.readFile('~/Downloads/activation-60ms-24khz.ogg'); // 可以播放 frame_duration:10ms
+  //     // const oggData = await fs.readFile('~/Downloads/activation-60ms-16khz.ogg'); // 可以播放 frame_duration:10ms
+  //     // const oggData = await fs.readFile('~/Downloads/music.ogg'); // 可以播放 frame_duration:10ms ****
+  //     // const oggData = await fs.readFile('~/Downloads/music-20ms-24khz.ogg'); // 可以播放 frame_duration:10ms ****
+  //     // const oggData = await fs.readFile('~/Downloads/welcome-ar-sa.ogg'); // 可以播放
+  //     // const oggData = await fs.readFile('~/Downloads/welcome-ar-sa-20ms.ogg');
+  //     // const oggData = await fs.readFile('~/Downloads/welcome-ar-sa-24.ogg');
+  //     // const oggData = await fs.readFile('~/Downloads/tts-24.ogg');
+  //     // logger.debug(
+  //     //   `[TestVoiceSessionService] 读取 Ogg 数据: deviceId=${deviceId}, oggSize=${oggData.length}`
+  //     // );
 
-      // let cumulativeTimestamp = 0;
-      // for (const chunk of chunks) {
-      //   const duration = this.getPacketDuration(Buffer.from(chunk));
-      //   await connection.sendBinaryProtocol2(Buffer.from(chunk), cumulativeTimestamp);
-      //   cumulativeTimestamp += duration;
-      // }
-      // return;
-      // logger.info(`[TestVoiceSessionService] oggData size: ${oggData.length}`);
-      // // 用于收集重新组装的 opus 包
-      // const reassembledPackets: Buffer[] = [];
+  //     // let cumulativeTimestamp = 0;
+  //     // for (const chunk of chunks) {
+  //     //   const duration = this.getPacketDuration(Buffer.from(chunk));
+  //     //   await connection.sendBinaryProtocol2(Buffer.from(chunk), cumulativeTimestamp);
+  //     //   cumulativeTimestamp += duration;
+  //     // }
+  //     // return;
+  //     // logger.info(`[TestVoiceSessionService] oggData size: ${oggData.length}`);
+  //     // // 用于收集重新组装的 opus 包
+  //     // const reassembledPackets: Buffer[] = [];
 
-      // await this.processAudioBuffer(
-      //   Buffer.from(mergedOgg),
-      //   async (opusPacket, metadata) => {
-      //     console.log(metadata, opusPacket.length);
-      //     // if (metadata.index < 30) return;
-      //     // 原有逻辑：发送到硬件
-      //     await connection.sendBinaryProtocol2(opusPacket, metadata.timestamp);
-      //     await new Promise((resolve) =>
-      //       setTimeout(resolve, metadata.duration * 0.8)
-      //     );
+  //     // await this.processAudioBuffer(
+  //     //   Buffer.from(mergedOgg),
+  //     //   async (opusPacket, metadata) => {
+  //     //     console.log(metadata, opusPacket.length);
+  //     //     // if (metadata.index < 30) return;
+  //     //     // 原有逻辑：发送到硬件
+  //     //     await connection.sendBinaryProtocol2(opusPacket, metadata.timestamp);
+  //     //     await new Promise((resolve) =>
+  //     //       setTimeout(resolve, metadata.duration * 0.8)
+  //     //     );
 
-      //     // 新增：收集包用于验证
-      //     // reassembledPackets.push(opusPacket);
-      //   }
-      // );
+  //     //     // 新增：收集包用于验证
+  //     //     // reassembledPackets.push(opusPacket);
+  //     //   }
+  //     // );
 
-      // // 6. 重新封装成 ogg 文件进行验证
-      // if (reassembledPackets.length > 0) {
-      //   const outputPath = pathJoin(
-      //     PathUtils.getTempDir(),
-      //     `reassembled_${Date.now()}.ogg`
-      //   );
-      //   const rawOpusPath = pathJoin(
-      //     PathUtils.getTempDir(),
-      //     `raw_${Date.now()}.opus`
-      //   );
+  //     // // 6. 重新封装成 ogg 文件进行验证
+  //     // if (reassembledPackets.length > 0) {
+  //     //   const outputPath = pathJoin(
+  //     //     PathUtils.getTempDir(),
+  //     //     `reassembled_${Date.now()}.ogg`
+  //     //   );
+  //     //   const rawOpusPath = pathJoin(
+  //     //     PathUtils.getTempDir(),
+  //     //     `raw_${Date.now()}.opus`
+  //     //   );
 
-      //   // 将所有 opus 包合并成一个原始 opus 文件
-      //   const mergedOpus = Buffer.concat(reassembledPackets);
-      //   await fs.writeFile(rawOpusPath, mergedOpus);
+  //     //   // 将所有 opus 包合并成一个原始 opus 文件
+  //     //   const mergedOpus = Buffer.concat(reassembledPackets);
+  //     //   await fs.writeFile(rawOpusPath, mergedOpus);
 
-      //   // 使用 ffmpeg 将原始 opus 转换为 ogg
-      //   try {
-      //     await execAsync(
-      //       `ffmpeg -y -acodec opus -i "${rawOpusPath}" -acodec copy "${outputPath}" 2>/dev/null`
-      //     );
+  //     //   // 使用 ffmpeg 将原始 opus 转换为 ogg
+  //     //   try {
+  //     //     await execAsync(
+  //     //       `ffmpeg -y -acodec opus -i "${rawOpusPath}" -acodec copy "${outputPath}" 2>/dev/null`
+  //     //     );
 
-      //     // 获取文件大小
-      //     const stats = await fs.stat(outputPath);
+  //     //     // 获取文件大小
+  //     //     const stats = await fs.stat(outputPath);
 
-      //     logger.info(
-      //       `[Test] 重新封装 ogg 文件完成: ${outputPath}, 原始文件大小=${oggData.length}, 重新封装后大小=${stats.size}, 包数量=${reassembledPackets.length}`
-      //     );
-      //   } catch (error) {
-      //     logger.warn(
-      //       `[Test] ffmpeg 转换失败，直接使用原始 opus 文件: ${rawOpusPath}`,
-      //       error
-      //     );
-      //   } finally {
-      //     // 清理临时原始 opus 文件
-      //     try {
-      //       await fs.unlink(rawOpusPath);
-      //     } catch {
-      //       // 忽略删除错误
-      //     }
-      //   }
-      // }
-      // await connection.sendBinaryProtocol2(opusData, 3000);
-      // const chunkSize = 1024;
-      // let timestamp = 0;
-      // for (let i = 0; i < opusData.length; i += chunkSize) {
-      //   const chunk = opusData.slice(i, i + chunkSize);
-      //   await connection.sendBinaryProtocol2(chunk, timestamp);
-      //   timestamp += 60; // 每帧间隔 60ms
-      // }
+  //     //     logger.info(
+  //     //       `[Test] 重新封装 ogg 文件完成: ${outputPath}, 原始文件大小=${oggData.length}, 重新封装后大小=${stats.size}, 包数量=${reassembledPackets.length}`
+  //     //     );
+  //     //   } catch (error) {
+  //     //     logger.warn(
+  //     //       `[Test] ffmpeg 转换失败，直接使用原始 opus 文件: ${rawOpusPath}`,
+  //     //       error
+  //     //     );
+  //     //   } finally {
+  //     //     // 清理临时原始 opus 文件
+  //     //     try {
+  //     //       await fs.unlink(rawOpusPath);
+  //     //     } catch {
+  //     //       // 忽略删除错误
+  //     //     }
+  //     //   }
+  //     // }
+  //     // await connection.sendBinaryProtocol2(opusData, 3000);
+  //     // const chunkSize = 1024;
+  //     // let timestamp = 0;
+  //     // for (let i = 0; i < opusData.length; i += chunkSize) {
+  //     //   const chunk = opusData.slice(i, i + chunkSize);
+  //     //   await connection.sendBinaryProtocol2(chunk, timestamp);
+  //     //   timestamp += 60; // 每帧间隔 60ms
+  //     // }
 
-      // 6. 发送 TTS stop 消息
-      await connection.send({
-        type: "tts",
-        session_id: connection.getSessionId(),
-        state: "stop",
-      });
-      logger.debug(
-        `[TestVoiceSessionService] 发送 TTS stop 消息: deviceId=${deviceId}`
-      );
+  //     // 6. 发送 TTS stop 消息
+  //     await connection.send({
+  //       type: "tts",
+  //       session_id: connection.getSessionId(),
+  //       state: "stop",
+  //     });
+  //     logger.debug(
+  //       `[TestVoiceSessionService] 发送 TTS stop 消息: deviceId=${deviceId}`
+  //     );
 
-      // logger.info(
-      //   `[TestVoiceSessionService] TTS 音频下发完成: deviceId=${deviceId}, totalChunks=${Math.ceil(
-      //     getOpusPacketDuration(opusData as Buffer)
-      //   )}`
-      // );
-    } catch (error) {
-      logger.error(
-        `[TestVoiceSessionService] 处理音频数据失败: deviceId=${deviceId}`,
-        error
-      );
-    } finally {
-      // 清理数据
-      this.oggChunks.delete(deviceId);
-    }
-  }
+  //     // logger.info(
+  //     //   `[TestVoiceSessionService] TTS 音频下发完成: deviceId=${deviceId}, totalChunks=${Math.ceil(
+  //     //     getOpusPacketDuration(opusData as Buffer)
+  //     //   )}`
+  //     // );
+  //   } catch (error) {
+  //     logger.error(
+  //       `[TestVoiceSessionService] 处理音频数据失败: deviceId=${deviceId}`,
+  //       error
+  //     );
+  //   } finally {
+  //     // 清理数据
+  //     this.oggChunks.delete(deviceId);
+  //   }
+  // }
 
   /**
    * 销毁服务
@@ -608,6 +689,9 @@ export class TestVoiceSessionService implements IVoiceSessionService {
     this.cumulativeTimestamps.clear();
     this.packetIndices.clear();
     this.ttsStarted.clear();
+    this.opusPacketBuffer.clear();
+    this.isProcessingBuffer.clear();
+    this.deviceConnections.clear();
     logger.debug("[TestVoiceSessionService] 服务已销毁");
   }
 }
