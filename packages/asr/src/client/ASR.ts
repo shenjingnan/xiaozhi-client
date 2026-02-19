@@ -67,6 +67,15 @@ export class ASR extends EventEmitter {
   // Connection state
   private connected = false;
 
+  // Request ID for streaming
+  private reqid = "";
+
+  // Indicates if this is a streaming session
+  private isStreaming = false;
+
+  // Indicates if audio has ended
+  private audioEnded = false;
+
   constructor(options: ASROption) {
     super();
 
@@ -179,39 +188,6 @@ export class ASR extends EventEmitter {
   }
 
   /**
-   * Connect to WebSocket server
-   */
-  private async connect(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const headers = this.getAuthHeaders();
-      this.ws = new WebSocket(this.wsUrl, {
-        headers,
-        handshakeTimeout: 30000,
-      });
-
-      this.ws.on("open", () => {
-        this.connected = true;
-        this.emit("open");
-        resolve();
-      });
-
-      this.ws.on("close", () => {
-        this.connected = false;
-        this.emit("close");
-      });
-
-      this.ws.on("error", (error) => {
-        this.emit("error", error);
-        reject(error);
-      });
-
-      this.ws.on("message", (data: Buffer) => {
-        this.handleMessage(data);
-      });
-    });
-  }
-
-  /**
    * Handle server message
    */
   private handleMessage(data: Buffer): void {
@@ -295,7 +271,7 @@ export class ASR extends EventEmitter {
     compressedPayload.copy(fullRequest, 8);
 
     // Connect
-    await this.connect();
+    await this._connect();
 
     // Send full request
     await this.sendMessage(fullRequest);
@@ -453,7 +429,7 @@ export class ASR extends EventEmitter {
     compressedPayload.copy(fullRequest, 8);
 
     // Connect
-    await this.connect();
+    await this._connect();
 
     // Send full request
     await this.sendMessage(fullRequest);
@@ -507,6 +483,149 @@ export class ASR extends EventEmitter {
    */
   isConnected(): boolean {
     return this.connected;
+  }
+
+  /**
+   * Connect to WebSocket server and send initial configuration request
+   * This method establishes the connection and prepares for streaming audio data
+   */
+  async connect(): Promise<void> {
+    // Validate required parameters
+    if (!this.appid || !this.token) {
+      throw new Error("App ID and Token are required");
+    }
+
+    // Generate request ID
+    this.reqid = uuidv4();
+    this.isStreaming = true;
+    this.audioEnded = false;
+
+    // Construct request
+    const requestParams = this.constructRequest(this.reqid);
+    const payloadBytes = Buffer.from(JSON.stringify(requestParams), "utf-8");
+    const compressedPayload = compressGzipSync(payloadBytes);
+
+    // Build full client request: header + payload size (4 bytes) + payload
+    const fullRequest = Buffer.alloc(compressedPayload.length + 8);
+    generateFullDefaultHeader().copy(fullRequest, 0);
+    fullRequest.writeUInt32BE(compressedPayload.length, 4);
+    compressedPayload.copy(fullRequest, 8);
+
+    // Connect
+    await this._connect();
+
+    // Send full request
+    await this.sendMessage(fullRequest);
+
+    // Receive response (server acknowledgment)
+    await this.receiveMessage();
+  }
+
+  /**
+   * Internal connect method (private)
+   */
+  private async _connect(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const headers = this.getAuthHeaders();
+      this.ws = new WebSocket(this.wsUrl, {
+        headers,
+        handshakeTimeout: 30000,
+      });
+
+      this.ws.on("open", () => {
+        this.connected = true;
+        this.emit("open");
+        resolve();
+      });
+
+      this.ws.on("close", () => {
+        this.connected = false;
+        this.emit("close");
+      });
+
+      this.ws.on("error", (error) => {
+        this.emit("error", error);
+        reject(error);
+      });
+
+      this.ws.on("message", (data: Buffer) => {
+        this.handleMessage(data);
+      });
+    });
+  }
+
+  /**
+   * Send a single audio frame to the server
+   * @param frame - Opus audio frame data (decoded from OGG by the caller)
+   */
+  async sendFrame(frame: Buffer): Promise<void> {
+    if (!this.isStreaming) {
+      throw new Error("Not in streaming mode. Call connect() first.");
+    }
+
+    if (this.audioEnded) {
+      throw new Error("Audio already ended. Call end() to finalize.");
+    }
+
+    // Compress frame data
+    const compressedChunk = compressGzipSync(frame);
+
+    // Generate header (normal audio frame)
+    const header = generateAudioDefaultHeader();
+
+    // Build audio-only request
+    const audioRequest = Buffer.alloc(compressedChunk.length + 8);
+    header.copy(audioRequest, 0);
+    audioRequest.writeUInt32BE(compressedChunk.length, 4);
+    compressedChunk.copy(audioRequest, 8);
+
+    // Send audio
+    await this.sendMessage(audioRequest);
+
+    // Receive server ACK response
+    await this.receiveMessage();
+  }
+
+  /**
+   * Mark audio as complete and wait for final result
+   * @returns The final ASR result
+   */
+  async end(): Promise<ASRResult> {
+    if (!this.isStreaming) {
+      throw new Error("Not in streaming mode. Call connect() first.");
+    }
+
+    if (this.audioEnded) {
+      throw new Error("Audio already ended.");
+    }
+
+    // Send a zero-length last frame to indicate end of audio
+    const compressedChunk = compressGzipSync(Buffer.alloc(0));
+
+    // Generate last audio header (with NEG_SEQUENCE flag)
+    const header = generateLastAudioDefaultHeader();
+
+    // Build audio-only request
+    const audioRequest = Buffer.alloc(compressedChunk.length + 8);
+    header.copy(audioRequest, 0);
+    audioRequest.writeUInt32BE(compressedChunk.length, 4);
+    compressedChunk.copy(audioRequest, 8);
+
+    // Send last frame
+    await this.sendMessage(audioRequest);
+
+    // Mark audio as ended
+    this.audioEnded = true;
+    this.emit("audio_end");
+
+    // Wait for final result
+    const finalResult = await this.receiveMessage();
+
+    // Close connection
+    this.close();
+    this.isStreaming = false;
+
+    return finalResult;
   }
 }
 
