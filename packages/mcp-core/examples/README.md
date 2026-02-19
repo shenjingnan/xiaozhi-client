@@ -43,6 +43,14 @@ pnpm connect:http
 pnpm connect:sse
 ```
 
+### 工具调用示例
+
+展示如何连接到 MCP 服务并调用工具，包括获取工具列表、查看参数结构、传递不同类型参数、处理返回结果和错误：
+
+```bash
+pnpm connect:call-tool
+```
+
 ### streamable-http 示例
 
 演示 streamable-http 服务的连接，展示 type 字段的多种格式兼容性：
@@ -104,6 +112,89 @@ const result = await connection.callTool("calculator", {
 ```
 
 ### 5. 断开连接
+
+```typescript
+await connection.disconnect();
+```
+
+---
+
+## 工具调用示例说明
+
+示例文件 `call-tool.ts` 展示了如何连接到 MCP 服务并调用工具，包括：
+
+### 1. 创建服务配置
+
+```typescript
+const serviceName = "calculator";               // 服务名称
+const config = {
+  type: MCPTransportType.STDIO,                 // 传输类型：stdio
+  command: "npx",
+  args: ["-y", "@xiaozhi-client/calculator-mcp@1.9.7-beta.16"],
+};
+```
+
+### 2. 创建连接并建立连接
+
+```typescript
+const connection = new MCPConnection(serviceName, config);
+await connection.connect();
+```
+
+### 3. 获取工具列表并查看工具参数结构
+
+```typescript
+const tools = connection.getTools();
+console.log("可用工具:", tools.map(t => t.name));
+
+// 查看工具的参数结构
+const tool = tools.find(t => t.name === "calculator");
+console.log("工具参数:", tool?.inputSchema);
+```
+
+### 4. 调用工具并传递不同类型参数
+
+```typescript
+// 调用计算器工具（数字参数）
+const result1 = await connection.callTool("calculator", {
+  expression: "1 + 2",
+});
+console.log("1 + 2 =", result1);
+
+// 调用带对象的参数
+const result2 = await connection.callTool("calculator", {
+  expression: "10 / 2",
+});
+console.log("10 / 2 =", result2);
+```
+
+### 5. 处理工具调用结果
+
+```typescript
+const result = await connection.callTool("calculator", {
+  expression: "3 * 4",
+});
+
+if (result.isError) {
+  console.error("调用错误:", result.content);
+} else {
+  console.log("调用成功:", result.content);
+}
+```
+
+### 6. 处理错误情况
+
+```typescript
+try {
+  const result = await connection.callTool("calculator", {
+    expression: "invalid expression",
+  });
+} catch (error) {
+  console.error("发生错误:", error.message);
+}
+```
+
+### 7. 断开连接
 
 ```typescript
 await connection.disconnect();
