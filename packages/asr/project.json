@@ -1,0 +1,66 @@
+{
+  "name": "asr",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/asr/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter asr run build",
+        "cwd": "packages/asr"
+      },
+      "outputs": ["{workspaceRoot}/packages/asr/dist"]
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter asr run test",
+        "cwd": "packages/asr"
+      },
+      "outputs": ["{workspaceRoot}/coverage"]
+    },
+    "test:watch": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter asr run test:watch",
+        "cwd": "packages/asr"
+      }
+    },
+    "test:coverage": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter asr run test:coverage",
+        "cwd": "packages/asr"
+      },
+      "outputs": ["{workspaceRoot}/coverage"]
+    },
+    "type-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter asr run type-check",
+        "cwd": "packages/asr"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter asr run lint"
+      }
+    },
+    "lint:fix": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter asr run lint:fix"
+      }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter asr run dev",
+        "cwd": "packages/asr"
+      }
+    }
+  },
+  "tags": ["type:lib", "scope:asr"]
+}
