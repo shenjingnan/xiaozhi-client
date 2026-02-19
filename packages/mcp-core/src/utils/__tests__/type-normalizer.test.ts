@@ -145,7 +145,8 @@ describe("TypeFieldNormalizer.normalizeTypeField", () => {
       const config = { type: "http", url: "https://example.com" };
       const result = TypeFieldNormalizer.normalizeTypeField(config);
       expect(result).toEqual(config);
-      expect(result).not.toBe(config); // 应该是深拷贝
+      // 性能优化：如果 type 已经是标准格式，返回同一引用（无需深拷贝）
+      expect(result).toBe(config);
     });
 
     it("应该转换 streamable-http 为 http", () => {
@@ -188,7 +189,8 @@ describe("TypeFieldNormalizer.normalizeTypeField", () => {
       const config = { url: "https://example.com", name: "test" };
       const result = TypeFieldNormalizer.normalizeTypeField(config);
       expect(result).toEqual(config);
-      expect(result).not.toBe(config); // 应该是深拷贝
+      // 性能优化：如果没有 type 字段，返回同一引用（无需深拷贝）
+      expect(result).toBe(config);
     });
   });
 
