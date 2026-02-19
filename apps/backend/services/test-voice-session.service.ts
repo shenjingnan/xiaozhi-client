@@ -121,6 +121,9 @@ export class TestVoiceSessionService implements IVoiceSessionService {
   /** 每个设备是否已发送 start 消息 */
   private readonly ttsStarted = new Map<string, boolean>();
 
+  /** 每个设备是否已完成 TTS（避免重复触发和处理） */
+  private readonly ttsCompleted = new Map<string, boolean>();
+
   /** 每个设备的 Opus 包缓冲区 */
   private readonly opusPacketBuffer = new Map<string, Buffer[]>();
 
@@ -151,6 +154,14 @@ export class TestVoiceSessionService implements IVoiceSessionService {
     logger.debug(
       `[TestVoiceSessionService] 收到音频数据: deviceId=${deviceId}, size=${audioData.length}`
     );
+
+    // 如果 TTS 正在进行中或已完成，忽略新的音频数据
+    if (this.ttsTriggered.get(deviceId) || this.ttsCompleted.get(deviceId)) {
+      logger.debug(
+        `[TestVoiceSessionService] TTS 正在进行或已完成，忽略音频数据: deviceId=${deviceId}`
+      );
+      return;
+    }
 
     // 首次收到音频时触发 TTS
     if (!this.ttsTriggered.get(deviceId)) {
@@ -263,11 +274,8 @@ export class TestVoiceSessionService implements IVoiceSessionService {
     });
 
     demuxer.on("end", () => {
-      // 标记 demuxer 已结束，等待缓冲区处理完成后再发送 stop
-      // 使用 setTimeout 确保缓冲区处理完成
-      setTimeout(() => {
-        this.sendStopAndCleanup(deviceId);
-      }, 100);
+      // 使用轮询机制等待缓冲区处理完成
+      this.waitForBufferDrain(deviceId);
     });
 
     demuxer.on("error", (err: Error) => {
@@ -277,6 +285,51 @@ export class TestVoiceSessionService implements IVoiceSessionService {
       );
       this.sendStopAndCleanup(deviceId);
     });
+  }
+
+  /**
+   * 等待缓冲区排空
+   * 循环检查缓冲区是否处理完成，带超时保护
+   * @param deviceId - 设备 ID
+   */
+  private waitForBufferDrain(deviceId: string): void {
+    const maxWaitTime = 1000; // 最大等待 1 秒
+    const checkInterval = 50; // 每 50ms 检查一次
+    const startTime = Date.now();
+
+    const check = () => {
+      const buffer = this.opusPacketBuffer.get(deviceId);
+      const isProcessing = this.isProcessingBuffer.get(deviceId);
+
+      // 缓冲区已清空且不在处理中
+      if ((!buffer || buffer.length === 0) && !isProcessing) {
+        this.sendStopAndCleanup(deviceId);
+        return true;
+      }
+
+      // 超时，强制发送 stop
+      if (Date.now() - startTime >= maxWaitTime) {
+        logger.warn(
+          `[TestVoiceSessionService] 缓冲区排空超时，强制发送 stop: deviceId=${deviceId}`
+        );
+        this.sendStopAndCleanup(deviceId);
+        return true;
+      }
+
+      return false;
+    };
+
+    // 如果当前不在处理中，立即检查
+    if (!this.isProcessingBuffer.get(deviceId)) {
+      if (check()) return;
+    }
+
+    // 循环检查
+    const intervalId = setInterval(() => {
+      if (check()) {
+        clearInterval(intervalId);
+      }
+    }, checkInterval);
   }
 
   /**
@@ -370,6 +423,9 @@ export class TestVoiceSessionService implements IVoiceSessionService {
         state: "stop",
       });
 
+      // 标记 TTS 完成，防止后续音频数据触发新的 TTS
+      this.ttsCompleted.set(deviceId, true);
+
       logger.info(
         `[TestVoiceSessionService] TTS 音频流发送完成: deviceId=${deviceId}`
       );
@@ -381,6 +437,7 @@ export class TestVoiceSessionService implements IVoiceSessionService {
 
   /**
    * 清理设备状态
+   * 注意：不清理 ttsCompleted，让它保持标记防止重复触发
    * @param deviceId - 设备 ID
    */
   private cleanupDeviceState(deviceId: string) {
@@ -393,6 +450,7 @@ export class TestVoiceSessionService implements IVoiceSessionService {
     this.opusPacketBuffer.delete(deviceId);
     this.isProcessingBuffer.delete(deviceId);
     this.deviceConnections.delete(deviceId);
+    // 注意：不删除 ttsCompleted，让它保持标记防止重复触发
   }
 
   /**
@@ -689,6 +747,7 @@ export class TestVoiceSessionService implements IVoiceSessionService {
     this.cumulativeTimestamps.clear();
     this.packetIndices.clear();
     this.ttsStarted.clear();
+    this.ttsCompleted.clear();
     this.opusPacketBuffer.clear();
     this.isProcessingBuffer.clear();
     this.deviceConnections.clear();
