@@ -2,7 +2,7 @@
  * Token authentication
  */
 
-import { AuthHeaders } from "./types.js";
+import type { AuthHeaders } from "./types.js";
 
 /**
  * Generate Token authentication headers

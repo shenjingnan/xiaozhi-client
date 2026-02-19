@@ -3,9 +3,9 @@
  */
 
 import { execFileSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { randomUUID } from "node:crypto";
 
 /**
  * Convert OGG file to WAV format using ffmpeg
@@ -17,10 +17,14 @@ export function convertOggToWav(oggPath: string, outputPath?: string): string {
   const targetPath = outputPath || join(tmpdir(), `${randomUUID()}.wav`);
 
   const args = [
-    "-i", oggPath,
-    "-ar", "16000",
-    "-ac", "1",
-    "-acodec", "pcm_s16le",
+    "-i",
+    oggPath,
+    "-ar",
+    "16000",
+    "-ac",
+    "1",
+    "-acodec",
+    "pcm_s16le",
     "-y",
     targetPath,
   ];
@@ -29,7 +33,9 @@ export function convertOggToWav(oggPath: string, outputPath?: string): string {
     execFileSync("ffmpeg", args, { stdio: "pipe" });
     return targetPath;
   } catch (error) {
-    throw new Error(`Failed to convert OGG to WAV: ${(error as Error).message}`);
+    throw new Error(
+      `Failed to convert OGG to WAV: ${(error as Error).message}`
+    );
   }
 }
 
@@ -40,11 +46,16 @@ export function convertOggToWav(oggPath: string, outputPath?: string): string {
  */
 export function convertOggToPcm(oggPath: string): Buffer {
   const args = [
-    "-i", oggPath,
-    "-ar", "16000",
-    "-ac", "1",
-    "-acodec", "pcm_s16le",
-    "-f", "s16le",
+    "-i",
+    oggPath,
+    "-ar",
+    "16000",
+    "-ac",
+    "1",
+    "-acodec",
+    "pcm_s16le",
+    "-f",
+    "s16le",
     "-",
   ];
 
@@ -52,7 +63,9 @@ export function convertOggToPcm(oggPath: string): Buffer {
     const result = execFileSync("ffmpeg", args, { stdio: "pipe" });
     return Buffer.from(result);
   } catch (error) {
-    throw new Error(`Failed to convert OGG to PCM: ${(error as Error).message}`);
+    throw new Error(
+      `Failed to convert OGG to PCM: ${(error as Error).message}`
+    );
   }
 }
 
@@ -66,10 +79,14 @@ export function convertMp3ToWav(mp3Path: string, outputPath?: string): string {
   const targetPath = outputPath || join(tmpdir(), `${randomUUID()}.wav`);
 
   const args = [
-    "-i", mp3Path,
-    "-ar", "16000",
-    "-ac", "1",
-    "-acodec", "pcm_s16le",
+    "-i",
+    mp3Path,
+    "-ar",
+    "16000",
+    "-ac",
+    "1",
+    "-acodec",
+    "pcm_s16le",
     "-y",
     targetPath,
   ];
@@ -78,7 +95,9 @@ export function convertMp3ToWav(mp3Path: string, outputPath?: string): string {
     execFileSync("ffmpeg", args, { stdio: "pipe" });
     return targetPath;
   } catch (error) {
-    throw new Error(`Failed to convert MP3 to WAV: ${(error as Error).message}`);
+    throw new Error(
+      `Failed to convert MP3 to WAV: ${(error as Error).message}`
+    );
   }
 }
 
@@ -93,16 +112,20 @@ export function convertMp3ToWav(mp3Path: string, outputPath?: string): string {
 export function convertAudioToWav(
   inputPath: string,
   outputPath?: string,
-  targetSampleRate: number = 16000,
-  targetChannels: number = 1
+  targetSampleRate = 16000,
+  targetChannels = 1
 ): string {
   const targetPath = outputPath || join(tmpdir(), `${randomUUID()}.wav`);
 
   const args = [
-    "-i", inputPath,
-    "-ar", String(targetSampleRate),
-    "-ac", String(targetChannels),
-    "-acodec", "pcm_s16le",
+    "-i",
+    inputPath,
+    "-ar",
+    String(targetSampleRate),
+    "-ac",
+    String(targetChannels),
+    "-acodec",
+    "pcm_s16le",
     "-y",
     targetPath,
   ];
@@ -111,6 +134,8 @@ export function convertAudioToWav(
     execFileSync("ffmpeg", args, { stdio: "pipe" });
     return targetPath;
   } catch (error) {
-    throw new Error(`Failed to convert audio to WAV: ${(error as Error).message}`);
+    throw new Error(
+      `Failed to convert audio to WAV: ${(error as Error).message}`
+    );
   }
 }

@@ -2,12 +2,16 @@
  * Audio processor - unified entry for audio processing
  */
 
-import { readFileSync } from "node:fs";
 import { Buffer } from "node:buffer";
+import { readFileSync } from "node:fs";
+import {
+  convertAudioToWav,
+  convertMp3ToWav,
+  convertOggToWav,
+} from "./OggConverter.js";
+import { createWavFile, readWavInfo } from "./WavParser.js";
 import type { AudioConfig, WavInfo } from "./types.js";
 import { AudioFormat } from "./types.js";
-import { readWavInfo, createWavFile } from "./WavParser.js";
-import { convertOggToWav, convertMp3ToWav, convertAudioToWav } from "./OggConverter.js";
 
 /**
  * Process audio file and return WAV format data
@@ -24,7 +28,10 @@ export class AudioProcessor {
   /**
    * Detect audio format from file extension
    */
-  private detectFormat(path: string, providedFormat?: AudioFormat): AudioFormat {
+  private detectFormat(
+    path: string,
+    providedFormat?: AudioFormat
+  ): AudioFormat {
     if (providedFormat) {
       return providedFormat;
     }
@@ -140,7 +147,8 @@ export class AudioProcessor {
     const info = this.getWavInfo();
 
     return {
-      format: this.format === AudioFormat.WAV ? AudioFormat.WAV : AudioFormat.RAW,
+      format:
+        this.format === AudioFormat.WAV ? AudioFormat.WAV : AudioFormat.RAW,
       sampleRate: info.framerate,
       bits: info.sampwidth * 8,
       channel: info.nchannels,
@@ -150,7 +158,7 @@ export class AudioProcessor {
   /**
    * Calculate segment size based on duration (ms)
    */
-  calculateSegmentSize(durationMs: number = 15000): number {
+  calculateSegmentSize(durationMs = 15000): number {
     const info = this.getWavInfo();
     const bytesPerSecond = info.nchannels * info.sampwidth * info.framerate;
     const segmentSize = Math.floor(bytesPerSecond * (durationMs / 1000));
@@ -179,7 +187,9 @@ export class AudioProcessor {
   /**
    * Slice audio data into chunks
    */
-  *sliceData(chunkSize: number): Generator<{ chunk: Buffer; last: boolean }, void, unknown> {
+  *sliceData(
+    chunkSize: number
+  ): Generator<{ chunk: Buffer; last: boolean }, void, unknown> {
     const data = this.getPcmData();
     const dataLen = data.length;
     let offset = 0;

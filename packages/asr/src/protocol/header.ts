@@ -2,19 +2,17 @@
  * Binary protocol header generation and parsing
  */
 
-import { gzip, gzipSync, gunzipSync } from "node:zlib";
 import { Buffer } from "node:buffer";
+import { gunzipSync, gzip, gzipSync } from "node:zlib";
+import { PROTOCOL_VERSION } from "./constants.js";
 import {
+  CompressionType,
+  type HeaderOptions,
   MessageType,
   MessageTypeSpecificFlags,
+  type ParsedResponse,
   SerializationMethod,
-  CompressionType,
-  HeaderOptions,
-  ParsedResponse,
 } from "./types.js";
-import {
-  PROTOCOL_VERSION,
-} from "./constants.js";
 
 /**
  * Generate protocol header

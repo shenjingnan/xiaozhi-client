@@ -11,11 +11,11 @@ export enum AudioFormat {
 
 // WAV file information
 export interface WavInfo {
-  nchannels: number;    // Number of channels
-  sampwidth: number;   // Sample width in bytes
-  framerate: number;  // Sample rate
-  nframes: number;    // Number of frames
-  dataSize: number;    // Size of audio data
+  nchannels: number; // Number of channels
+  sampwidth: number; // Sample width in bytes
+  framerate: number; // Sample rate
+  nframes: number; // Number of frames
+  dataSize: number; // Size of audio data
 }
 
 // Audio configuration

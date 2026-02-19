@@ -42,6 +42,18 @@
         "cwd": "packages/asr"
       }
     },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "biome check packages/asr"
+      }
+    },
+    "lint:fix": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "biome check --write packages/asr"
+      }
+    },
     "dev": {
       "executor": "nx:run-commands",
       "options": {

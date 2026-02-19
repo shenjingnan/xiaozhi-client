@@ -13,7 +13,7 @@ export class Logger {
   private level: LogLevel;
   private prefix: string;
 
-  constructor(prefix: string = "", level: LogLevel = LogLevel.INFO) {
+  constructor(prefix = "", level: LogLevel = LogLevel.INFO) {
     this.prefix = prefix;
     this.level = level;
   }

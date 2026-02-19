@@ -3,7 +3,7 @@
  */
 
 import { Buffer } from "node:buffer";
-import { WavInfo } from "./types.js";
+import type { WavInfo } from "./types.js";
 
 /**
  * Read WAV file information
@@ -95,9 +95,9 @@ export function readWavData(data: Buffer): Buffer {
  */
 export function createWavFile(
   pcmData: Buffer,
-  sampleRate: number = 16000,
-  channels: number = 1,
-  bitsPerSample: number = 16
+  sampleRate = 16000,
+  channels = 1,
+  bitsPerSample = 16
 ): Buffer {
   const dataSize = pcmData.length;
   const blockAlign = channels * Math.ceil(bitsPerSample / 8);
@@ -114,7 +114,7 @@ export function createWavFile(
   // fmt chunk
   header.write("fmt ", 12);
   header.writeUInt32LE(16, 16); // chunk size
-  header.writeUInt16LE(1, 20);  // audio format (PCM)
+  header.writeUInt16LE(1, 20); // audio format (PCM)
   header.writeUInt16LE(channels, 22);
   header.writeUInt32LE(sampleRate, 24);
   header.writeUInt32LE(byteRate, 28);

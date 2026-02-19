@@ -8,7 +8,8 @@ import { ASR, AudioFormat, AuthMethod } from "../src/index.js";
 const APP_ID = "your-appid";
 const TOKEN = "your-token";
 const CLUSTER = "volcengine_streaming_common";
-const AUDIO_PATH = "/Users/nemo/Projects/shenjingnan/xiaozhi-client/packages/asr/examples/demo-60ms-16khz.ogg";
+const AUDIO_PATH =
+  "/Users/nemo/Projects/shenjingnan/xiaozhi-client/packages/asr/examples/demo-60ms-16khz.ogg";
 const AUDIO_FORMAT = AudioFormat.OGG;
 
 async function main() {

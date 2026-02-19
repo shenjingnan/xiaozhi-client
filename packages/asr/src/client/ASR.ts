@@ -2,24 +2,24 @@
  * ByteDance Streaming ASR WebSocket Client
  */
 
-import WebSocket from "ws";
+import { Buffer } from "node:buffer";
 import { EventEmitter } from "node:events";
 import { v4 as uuidv4 } from "uuid";
-import { Buffer } from "node:buffer";
-import {
-  generateFullDefaultHeader,
-  generateAudioDefaultHeader,
-  generateLastAudioDefaultHeader,
-  parseResponse,
-  compressGzipSync,
-  MessageType,
-} from "../protocol/index.js";
+import WebSocket from "ws";
 import { AudioProcessor } from "../audio/index.js";
 import { AudioFormat } from "../audio/types.js";
-import { TokenAuth } from "../auth/TokenAuth.js";
 import { SignatureAuth } from "../auth/SignatureAuth.js";
+import { TokenAuth } from "../auth/TokenAuth.js";
 import { AuthMethod } from "../auth/types.js";
-import { ASROption, ASRRequestConfig, ASRResult } from "./types.js";
+import {
+  MessageType,
+  compressGzipSync,
+  generateAudioDefaultHeader,
+  generateFullDefaultHeader,
+  generateLastAudioDefaultHeader,
+  parseResponse,
+} from "../protocol/index.js";
+import type { ASROption, ASRRequestConfig, ASRResult } from "./types.js";
 
 /**
  * Streaming ASR WebSocket Client
@@ -67,7 +67,7 @@ export class ASR extends EventEmitter {
   private ws: WebSocket | null = null;
 
   // Connection state
-  private connected: boolean = false;
+  private connected = false;
 
   constructor(options: ASROption) {
     super();
@@ -95,7 +95,9 @@ export class ASR extends EventEmitter {
     // Request config
     this.segDuration = options.segDuration || 15000;
     this.nbest = options.nbest || 1;
-    this.workflow = options.workflow || "audio_in,resample,partition,vad,fe,decode,itn,nlu_punctuate";
+    this.workflow =
+      options.workflow ||
+      "audio_in,resample,partition,vad,fe,decode,itn,nlu_punctuate";
     this.showLanguage = options.showLanguage || false;
     this.showUtterances = options.showUtterances || false;
     this.resultType = options.resultType || "full";
@@ -151,7 +153,12 @@ export class ASR extends EventEmitter {
         sequence: 1,
       },
       audio: {
-        format: this.format === AudioFormat.OGG ? "ogg" : (this.format === AudioFormat.WAV ? "wav" : this.format),
+        format:
+          this.format === AudioFormat.OGG
+            ? "ogg"
+            : this.format === AudioFormat.WAV
+              ? "wav"
+              : this.format,
         rate: this.sampleRate,
         language: this.language,
         bits: this.bits,
@@ -168,7 +175,9 @@ export class ASR extends EventEmitter {
     if (this.authMethod === AuthMethod.TOKEN) {
       return new TokenAuth(this.token).getHeaders();
     } else {
-      return new SignatureAuth(this.token, this.secret, this.wsUrl).getHeaders(requestData);
+      return new SignatureAuth(this.token, this.secret, this.wsUrl).getHeaders(
+        requestData
+      );
     }
   }
 
@@ -213,7 +222,9 @@ export class ASR extends EventEmitter {
 
     // Check for errors
     if (result.code && result.code !== this.successCode) {
-      const error = new Error(`ASR error: code=${result.code}, message=${JSON.stringify(result.payloadMsg)}`);
+      const error = new Error(
+        `ASR error: code=${result.code}, message=${JSON.stringify(result.payloadMsg)}`
+      );
       this.emit("error", error);
       return;
     }
@@ -224,7 +235,10 @@ export class ASR extends EventEmitter {
     }
 
     // Handle ACK
-    if (result.messageType === MessageType.SERVER_ACK || result.messageType === MessageType.SERVER_FULL_RESPONSE) {
+    if (
+      result.messageType === MessageType.SERVER_ACK ||
+      result.messageType === MessageType.SERVER_FULL_RESPONSE
+    ) {
       if (result.payloadMsg) {
         this.emit("result", result.payloadMsg as ASRResult);
       }
@@ -251,7 +265,10 @@ export class ASR extends EventEmitter {
   /**
    * Slice audio data into chunks
    */
-  private *sliceData(data: Buffer, chunkSize: number): Generator<{ chunk: Buffer; last: boolean }, void, unknown> {
+  private *sliceData(
+    data: Buffer,
+    chunkSize: number
+  ): Generator<{ chunk: Buffer; last: boolean }, void, unknown> {
     const dataLen = data.length;
     let offset = 0;
 
@@ -290,14 +307,19 @@ export class ASR extends EventEmitter {
     await this.receiveMessage();
 
     // Process audio chunks
-    const segmentSize = this.format === AudioFormat.MP3 ? this.mp3SegSize : this.calculateSegmentSize(wavData);
+    const segmentSize =
+      this.format === AudioFormat.MP3
+        ? this.mp3SegSize
+        : this.calculateSegmentSize(wavData);
 
     for (const { chunk, last } of this.sliceData(wavData, segmentSize)) {
       // Compress audio data
       const compressedChunk = compressGzipSync(chunk);
 
       // Generate header
-      const header = last ? generateLastAudioDefaultHeader() : generateAudioDefaultHeader();
+      const header = last
+        ? generateLastAudioDefaultHeader()
+        : generateAudioDefaultHeader();
 
       // Build audio-only request
       const audioRequest = Buffer.alloc(compressedChunk.length + 8);
@@ -450,7 +472,9 @@ export class ASR extends EventEmitter {
       const compressedChunk = compressGzipSync(chunk);
 
       // Generate header
-      const header = last ? generateLastAudioDefaultHeader() : generateAudioDefaultHeader();
+      const header = last
+        ? generateLastAudioDefaultHeader()
+        : generateAudioDefaultHeader();
 
       // Build audio-only request
       const audioRequest = Buffer.alloc(compressedChunk.length + 8);
