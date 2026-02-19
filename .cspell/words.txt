@@ -65,8 +65,11 @@ MODELSCOPE
 multistream
 myproject
 mytool
+nbest
+nchannels
 nemo
 nextra
+nframes
 nonexistenttool
 npmjs
 numpy
@@ -86,6 +89,7 @@ retryable
 REUSEPORT
 rollbacked
 rssi
+sampwidth
 Segoe
 shadcn
 Shen
@@ -103,10 +107,12 @@ unmarshal
 unref
 unstub
 unsubscribers
+uuidv
 uvicorn
 vaul
 venv
 verylongstring
+volcengine
 vsize
 webui
 worktrees
