@@ -372,6 +372,10 @@ export class ASR extends EventEmitter {
       this.ws = null;
       this.connected = false;
     }
+    // Reset streaming state
+    this.isStreaming = false;
+    this.audioEnded = false;
+    this.reqid = "";
   }
 
   /**
@@ -548,9 +552,18 @@ export class ASR extends EventEmitter {
         reject(error);
       });
 
-      this.ws.on("message", (data: Buffer) => {
-        this.handleMessage(data);
+      this.ws.on("close", () => {
+        this.connected = false;
+        this.emit("close");
       });
+
+      // Only register global message handler in non-streaming mode
+      // In streaming mode, receiveMessage() handles responses individually
+      if (!this.isStreaming) {
+        this.ws.on("message", (data: Buffer) => {
+          this.handleMessage(data);
+        });
+      }
     });
   }
 
@@ -564,7 +577,9 @@ export class ASR extends EventEmitter {
     }
 
     if (this.audioEnded) {
-      throw new Error("Audio already ended. Call end() to finalize.");
+      throw new Error(
+        "Audio stream has already ended. Cannot send more frames."
+      );
     }
 
     // Compress frame data
@@ -614,16 +629,17 @@ export class ASR extends EventEmitter {
     // Send last frame
     await this.sendMessage(audioRequest);
 
-    // Mark audio as ended
-    this.audioEnded = true;
-    this.emit("audio_end");
-
     // Wait for final result
     const finalResult = await this.receiveMessage();
+
+    // Mark audio as ended after successfully receiving result
+    this.audioEnded = true;
+    this.emit("audio_end");
 
     // Close connection
     this.close();
     this.isStreaming = false;
+    this.reqid = "";
 
     return finalResult;
   }

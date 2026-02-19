@@ -13,11 +13,11 @@
 import { ASR, AudioFormat, AuthMethod } from "../src/index.js";
 
 // Configuration
+// TODO: Replace with your actual credentials
 const APP_ID = "your-appid";
 const TOKEN = "your-token";
 const CLUSTER = "volcengine_streaming_common";
-const AUDIO_PATH =
-  "/Users/nemo/Projects/shenjingnan/xiaozhi-client/packages/asr/examples/demo-60ms-16khz.ogg";
+const AUDIO_PATH = new URL("./demo-60ms-16khz.ogg", import.meta.url).pathname;
 
 async function main() {
   console.log("=== Streaming ASR Frame-by-Frame Demo ===\n");
@@ -102,9 +102,6 @@ async function main() {
 
     // Import required modules for file reading
     const fs = await import("node:fs");
-
-    // Read the OGG file
-    const oggBuffer = fs.readFileSync(AUDIO_PATH);
 
     // For OGG/Opus files, we read the raw Opus data
     // In production, use prism-media to decode OGG to Opus frames
