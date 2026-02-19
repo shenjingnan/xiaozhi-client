@@ -3,7 +3,6 @@
  * 负责ESP32设备的连接管理和消息路由
  */
 
-import { randomBytes } from "node:crypto";
 import { logger } from "@/Logger.js";
 import { ESP32Connection } from "@/lib/esp32/connection.js";
 import type {
@@ -21,30 +20,6 @@ import {
 } from "./voice-session.interface.js";
 
 /**
- * WebSocket认证Token有效期（毫秒）
- */
-const TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24小时
-
-/**
- * 生成认证Token
- * @returns 随机Token
- */
-function generateToken(
-  tokenMap: Map<string, { deviceId: string; expiresAt: number }>
-): string {
-  // 清理过期的 Token
-  const now = Date.now();
-  for (const [token, info] of tokenMap.entries()) {
-    if (now > info.expiresAt) {
-      tokenMap.delete(token);
-    }
-  }
-
-  const randomPart = randomBytes(16).toString("hex");
-  return `${Date.now()}-${randomPart}`;
-}
-
-/**
  * ESP32设备服务
  * 管理所有ESP32设备的连接和通信
  */
@@ -57,9 +32,6 @@ export class ESP32Service {
 
   /** 客户端ID到设备ID的映射 */
   private clientIdToDeviceId: Map<string, string>;
-
-  /** Token到设备ID的映射（用于WebSocket认证） */
-  private tokenToDeviceId: Map<string, { deviceId: string; expiresAt: number }>;
 
   /** 语音会话服务（可选） */
   private voiceSessionService: IVoiceSessionService;
@@ -76,7 +48,6 @@ export class ESP32Service {
     this.deviceRegistry = deviceRegistry;
     this.connections = new Map();
     this.clientIdToDeviceId = new Map();
-    this.tokenToDeviceId = new Map();
 
     // 使用传入的语音会话服务或空实现
     this.voiceSessionService =
@@ -121,11 +92,6 @@ export class ESP32Service {
     // 更新最后活跃时间
     this.deviceRegistry.updateLastSeen(deviceId);
 
-    // 生成新的WebSocket认证Token
-    const token = generateToken(this.tokenToDeviceId);
-    const expiresAt = Date.now() + TOKEN_EXPIRY_MS;
-    this.tokenToDeviceId.set(token, { deviceId, expiresAt });
-
     // 获取服务器地址（从请求中获取）
     if (!host) {
       throw new Error("无法获取服务器地址：缺少 Host 头", {
@@ -146,7 +112,7 @@ export class ESP32Service {
     const response = {
       websocket: {
         url: wsUrl,
-        token,
+        token: "", // 简化为空字符串（向后兼容）
         version: 2,
       },
       serverTime: {
@@ -195,37 +161,11 @@ export class ESP32Service {
       `[ESP32Service] 设备已注册: deviceId=${deviceId}, status=${device.status}`
     );
 
-    // 如果提供了Token，验证Token
+    // 如果提供了 Token，记录警告但继续连接（向后兼容）
     if (token) {
-      const tokenInfo = this.tokenToDeviceId.get(token);
-      if (!tokenInfo) {
-        logger.warn(`[ESP32Service] Token无效，拒绝连接: deviceId=${deviceId}`);
-        ws.close(1008, "Invalid token");
-        return;
-      }
-
-      // 检查Token是否过期
-      if (Date.now() > tokenInfo.expiresAt) {
-        logger.warn(
-          `[ESP32Service] Token已过期，拒绝连接: deviceId=${deviceId}`
-        );
-        this.tokenToDeviceId.delete(token);
-        ws.close(1008, "Token expired");
-        return;
-      }
-
-      // 验证Token对应的设备ID
-      if (tokenInfo.deviceId !== deviceId) {
-        logger.warn(
-          `[ESP32Service] Token与设备ID不匹配，拒绝连接: deviceId=${deviceId}, tokenDeviceId=${tokenInfo.deviceId}`
-        );
-        ws.close(1008, "Token mismatch");
-        return;
-      }
-
-      // Token验证通过，删除Token（一次性使用）
-      this.tokenToDeviceId.delete(token);
-      logger.debug(`[ESP32Service] Token验证通过: deviceId=${deviceId}`);
+      logger.debug(
+        `[ESP32Service] 收到Token（已忽略），设备已通过注册验证: deviceId=${deviceId}`
+      );
     }
 
     // 检查设备是否已有连接
@@ -447,7 +387,6 @@ export class ESP32Service {
 
     this.connections.clear();
     this.clientIdToDeviceId.clear();
-    this.tokenToDeviceId.clear();
 
     // 销毁语音会话服务
     this.voiceSessionService.destroy();
