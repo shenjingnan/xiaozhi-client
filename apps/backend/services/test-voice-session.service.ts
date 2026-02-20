@@ -53,6 +53,9 @@ export class TestVoiceSessionService implements IVoiceSessionService {
   /** 每个设备的连接引用（用于缓冲区处理） */
   private readonly deviceConnections = new Map<string, any>();
 
+  /** 每个设备的缓冲区检查定时器 */
+  private readonly bufferCheckIntervals = new Map<string, NodeJS.Timeout>();
+
   /**
    * 设置 ESP32 服务引用
    * @param esp32Service - ESP32 服务实例
@@ -248,8 +251,12 @@ export class TestVoiceSessionService implements IVoiceSessionService {
     const intervalId = setInterval(() => {
       if (check()) {
         clearInterval(intervalId);
+        this.bufferCheckIntervals.delete(deviceId);
       }
     }, checkInterval);
+
+    // 保存定时器引用，以便在 destroy 时清理
+    this.bufferCheckIntervals.set(deviceId, intervalId);
   }
 
   /**
@@ -660,6 +667,12 @@ export class TestVoiceSessionService implements IVoiceSessionService {
    * 销毁服务
    */
   destroy(): void {
+    // 清理所有缓冲区检查定时器
+    for (const intervalId of this.bufferCheckIntervals.values()) {
+      clearInterval(intervalId);
+    }
+    this.bufferCheckIntervals.clear();
+
     this.ttsTriggered.clear();
     this.audioDemuxers.clear();
     this.cumulativeTimestamps.clear();
