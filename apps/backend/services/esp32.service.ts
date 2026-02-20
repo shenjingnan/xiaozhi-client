@@ -223,7 +223,9 @@ export class ESP32Service {
     // 根据消息类型处理
     switch (message.type) {
       case "hello":
-        // Hello消息在连接层处理
+        debugger;
+        // 设备初始化时预初始化 ASR 服务
+        await this.voiceSessionService.initASR?.(deviceId);
         break;
       case "listen":
         // Listen消息处理（唤醒词检测和监听状态）
@@ -328,6 +330,7 @@ export class ESP32Service {
 
     // 提取音频数据
     const audioData = (message as { data?: Uint8Array }).data;
+    logger.info(`handleAudioMessage 收到音频消息: type=${message.type}`);
     if (!audioData) {
       logger.warn(`音频消息无数据: deviceId=${deviceId}`);
       return;

@@ -186,6 +186,9 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.26.0
         version: 1.26.0(zod@4.3.6)
+      '@xiaozhi-client/asr':
+        specifier: workspace:*
+        version: link:../../packages/asr
       '@xiaozhi-client/config':
         specifier: workspace:*
         version: link:../../packages/config

@@ -12,6 +12,7 @@
 import { Readable } from "node:stream";
 import { logger } from "@/Logger.js";
 import { synthesizeSpeechStream } from "@/lib/tts/binary.js";
+import { ASR, AudioFormat, AuthMethod } from "@xiaozhi-client/asr";
 import { configManager } from "@xiaozhi-client/config";
 import * as prism from "prism-media";
 import type { ESP32Service } from "./esp32.service.js";
@@ -53,6 +54,9 @@ export class TestVoiceSessionService implements IVoiceSessionService {
   /** 每个设备的连接引用（用于缓冲区处理） */
   private readonly deviceConnections = new Map<string, any>();
 
+  /** 每个设备的 ASR 客户端（用于语音识别） */
+  private readonly asrClients = new Map<string, ASR>();
+
   /**
    * 设置 ESP32 服务引用
    * @param esp32Service - ESP32 服务实例
@@ -62,15 +66,46 @@ export class TestVoiceSessionService implements IVoiceSessionService {
   }
 
   /**
-   * 处理音频数据
+   * 开始语音会话
+   * 在会话开始时初始化 ASR
+   * @param deviceId - 设备 ID
+   * @param mode - 监听模式
+   * @returns 会话 ID
+   */
+  async startSession(
+    deviceId: string,
+    mode: "auto" | "manual" | "realtime"
+  ): Promise<string> {
+    const sessionId = `session_${deviceId}_${Date.now()}`;
+    logger.info(
+      `[TestVoiceSessionService] 开始语音会话: deviceId=${deviceId}, mode=${mode}, sessionId=${sessionId}`
+    );
+
+    return sessionId;
+  }
+
+  /**
+   * 中断语音会话
+   * 清理 ASR 资源
+   * @param deviceId - 设备 ID
+   * @param reason - 中断原因
+   */
+  async abortSession(deviceId: string, reason?: string): Promise<void> {
+    logger.info(
+      `[TestVoiceSessionService] 中断语音会话: deviceId=${deviceId}, reason=${reason || "未指定"}`
+    );
+
+    // 清理 ASR 资源
+    await this.endASR(deviceId);
+  }
+
+  /**
+   * 处理 TTS 音频数据
    * 首次收到音频数据时触发流式 TTS
    * @param deviceId - 设备 ID
    * @param audioData - 音频数据
    */
-  async handleAudioData(
-    deviceId: string,
-    audioData: Uint8Array
-  ): Promise<void> {
+  async handleTTSData(deviceId: string, audioData: Uint8Array): Promise<void> {
     logger.debug(
       `[TestVoiceSessionService] 收到音频数据: deviceId=${deviceId}, size=${audioData.length}`
     );
@@ -152,6 +187,147 @@ export class TestVoiceSessionService implements IVoiceSessionService {
           error
         );
         this.cleanupDeviceState(deviceId);
+      }
+    }
+  }
+
+  /**
+   * 处理音频数据（ASR 语音识别）
+   * 接收硬件发送的裸 Opus 音频数据并发送到 ASR 服务识别
+   * @param deviceId - 设备 ID
+   * @param audioData - 裸 Opus 音频数据
+   */
+  async handleAudioData(
+    deviceId: string,
+    audioData: Uint8Array
+  ): Promise<void> {
+    logger.debug(
+      `[TestVoiceSessionService] 收到音频数据(ASR): deviceId=${deviceId}, size=${audioData.length}`
+    );
+
+    // 获取 ASR 客户端
+    const asrClient = this.asrClients.get(deviceId);
+    if (!asrClient) {
+      logger.warn(
+        `[TestVoiceSessionService] ASR 客户端不存在，请先调用 startASR: deviceId=${deviceId}`
+      );
+      return;
+    }
+
+    // 发送音频帧
+    await asrClient.sendFrame(Buffer.from(audioData));
+  }
+
+  /**
+   * 初始化 ASR 语音识别服务
+   * 如果已存在 ASR 客户端且已连接，则跳过初始化
+   * @param deviceId - 设备 ID
+   */
+  async initASR(deviceId: string): Promise<void> {
+    // 检查是否已存在 ASR 客户端且已连接
+    const existingClient = this.asrClients.get(deviceId);
+    if (existingClient?.isConnected()) {
+      logger.debug(
+        `[TestVoiceSessionService] ASR 客户端已存在且已连接，跳过初始化: deviceId=${deviceId}`
+      );
+      return;
+    }
+
+    // 如果已存在但未连接，先关闭
+    if (existingClient) {
+      logger.warn(
+        `[TestVoiceSessionService] ASR 客户端存在但未连接，关闭旧的: deviceId=${deviceId}`
+      );
+      await existingClient.close();
+      this.asrClients.delete(deviceId);
+    }
+
+    const asrConfig = configManager.getASRConfig();
+
+    if (!asrConfig.appid || !asrConfig.accessToken) {
+      logger.error("[TestVoiceSessionService] ASR 配置不完整，请检查配置文件");
+      return;
+    }
+
+    const asrClient = new ASR({
+      wsUrl: asrConfig.wsUrl || "wss://openspeech.bytedance.com/api/v2/asr",
+      cluster: asrConfig.cluster || "volcengine_streaming_common",
+      appid: asrConfig.appid,
+      token: asrConfig.accessToken,
+      format: AudioFormat.RAW, // 裸 Opus 数据
+      authMethod: AuthMethod.TOKEN,
+      sampleRate: 16000,
+      language: "zh-CN",
+      channel: 1,
+      bits: 16,
+      codec: "opus", // Opus 编解码
+      segDuration: 15000,
+      nbest: 1,
+      resultType: "full",
+      workflow: "audio_in,resample,partition,vad,fe,decode,itn,nlu_punctuate",
+      showLanguage: false,
+      showUtterances: false,
+    });
+
+    // 设置事件监听
+    asrClient.on("result", (result) => {
+      logger.info(
+        `[TestVoiceSessionService] ASR 识别结果: ${JSON.stringify(result)}`
+      );
+    });
+
+    asrClient.on("full_response", (response) => {
+      logger.info(
+        `[TestVoiceSessionService] ASR 完整响应: ${JSON.stringify(response)}`
+      );
+    });
+
+    asrClient.on("audio_end", () => {
+      logger.info(
+        `[TestVoiceSessionService] ASR 音频发送完成: deviceId=${deviceId}`
+      );
+    });
+
+    asrClient.on("error", (error: Error) => {
+      logger.error(`[TestVoiceSessionService] ASR 错误: ${error.message}`);
+    });
+
+    asrClient.on("close", () => {
+      logger.info(
+        `[TestVoiceSessionService] ASR 连接关闭: deviceId=${deviceId}`
+      );
+      this.asrClients.delete(deviceId);
+    });
+
+    await asrClient.connect();
+    this.asrClients.set(deviceId, asrClient);
+
+    logger.info(
+      `[TestVoiceSessionService] ASR 客户端已创建: deviceId=${deviceId}`
+    );
+  }
+
+  /**
+   * 结束 ASR 语音识别
+   * 发送结束信号、关闭连接并清理资源
+   * @param deviceId - 设备 ID
+   */
+  async endASR(deviceId: string): Promise<void> {
+    const asrClient = this.asrClients.get(deviceId);
+    if (asrClient) {
+      try {
+        const result = await asrClient.end();
+        logger.info(
+          `[TestVoiceSessionService] ASR 最终识别结果: ${JSON.stringify(result)}`
+        );
+      } catch (error) {
+        logger.error(
+          `[TestVoiceSessionService] ASR 结束失败: deviceId=${deviceId}`,
+          error
+        );
+      } finally {
+        await asrClient.close();
+        this.asrClients.delete(deviceId);
       }
     }
   }
@@ -669,6 +845,11 @@ export class TestVoiceSessionService implements IVoiceSessionService {
     this.opusPacketBuffer.clear();
     this.isProcessingBuffer.clear();
     this.deviceConnections.clear();
+    // 清理 ASR 客户端
+    for (const asrClient of this.asrClients.values()) {
+      asrClient.close();
+    }
+    this.asrClients.clear();
     logger.debug("[TestVoiceSessionService] 服务已销毁");
   }
 }
