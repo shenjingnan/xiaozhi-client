@@ -4,6 +4,7 @@
 
 import { Buffer } from "node:buffer";
 import { gunzipSync, gzip, gzipSync } from "node:zlib";
+import { logger } from "../utils/index.js";
 import { PROTOCOL_VERSION } from "./constants.js";
 import {
   CompressionType,
@@ -146,8 +147,11 @@ export function parseResponse(res: Buffer): ParsedResponse {
   if (messageCompression === CompressionType.GZIP && payloadData.length > 0) {
     try {
       payloadData = gunzipSync(payloadData);
-    } catch {
-      // Keep original if decompression fails
+    } catch (error) {
+      logger.warn("GZIP 解压失败，保留原始数据", {
+        error: error instanceof Error ? error.message : String(error),
+        payloadSize: payloadData.length,
+      });
     }
   }
 
@@ -156,8 +160,13 @@ export function parseResponse(res: Buffer): ParsedResponse {
     try {
       const text = payloadData.toString("utf-8");
       result.payloadMsg = JSON.parse(text);
-    } catch {
-      result.payloadMsg = payloadData.toString("utf-8");
+    } catch (error) {
+      const text = payloadData.toString("utf-8");
+      logger.warn("JSON 解析失败，使用原始文本", {
+        error: error instanceof Error ? error.message : String(error),
+        textLength: text.length,
+      });
+      result.payloadMsg = text;
     }
   } else if (serializationMethod !== SerializationMethod.NO_SERIALIZATION) {
     result.payloadMsg = payloadData.toString("utf-8");
