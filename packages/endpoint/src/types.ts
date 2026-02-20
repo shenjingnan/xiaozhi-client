@@ -1,3 +1,19 @@
+/**
+ * Endpoint 包核心类型定义
+ *
+ * 本模块定义了 @xiaozhi-client/endpoint 包的核心类型，包括：
+ * - 工具调用相关类型（ToolCallResult, ToolCallErrorCode, ToolCallError 等）
+ * - JSON Schema 类型（从 @xiaozhi-client/mcp-core 重新导出）
+ * - 工具信息类型（EnhancedToolInfo）
+ * - 端点连接状态类型（ConnectionState, EndpointConnectionStatus 等）
+ * - MCP 服务管理器接口（IMCPServiceManager）
+ * - MCP 服务器配置类型（MCPServerConfig 及其变体）
+ * - Endpoint 管理器配置类型（EndpointManagerConfig）
+ * - JWT Token 类型（XiaozhiTokenPayload, ParsedEndpointInfo）
+ *
+ * @module @xiaozhi-client/endpoint/types
+ */
+
 // =========================
 // 1. 工具调用相关类型
 // =========================
