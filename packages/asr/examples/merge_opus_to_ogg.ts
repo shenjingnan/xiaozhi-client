@@ -5,7 +5,8 @@ import { Readable } from "node:stream";
 import * as prism from "prism-media";
 
 const sourceDir = new URL("./v2-opus-stream", import.meta.url).pathname;
-const outputFile = new URL("./v2-opus-stream-merged.ogg", import.meta.url).pathname;
+const outputFile = new URL("./v2-opus-stream-merged.ogg", import.meta.url)
+  .pathname;
 const tempDir = path.join(sourceDir, "temp_pcm");
 
 // BinaryProtocol2 格式定义（16字节头部）
