@@ -51,9 +51,11 @@ infile
 iostat
 iotop
 Jingnan
+kbps
 korvo
 ksize
 lhost
+libopus
 logid
 matplotlib
 mcps
@@ -66,12 +68,12 @@ multistream
 myproject
 mytool
 nbest
-NOTW
 nchannels
 nemo
 nextra
 nframes
 nonexistenttool
+NOTW
 npmjs
 numpy
 nums
@@ -116,7 +118,6 @@ verylongstring
 volc
 volcengine
 vsize
-yxxx
 webui
 worktrees
 Xiaoxuan
@@ -125,5 +126,6 @@ Xiaozhi
 XIAOZHI
 XVCJ
 xzcli
+yxxx
 ZHIPU
 zread
