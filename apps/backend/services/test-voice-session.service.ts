@@ -320,10 +320,10 @@ export class TestVoiceSessionService implements IVoiceSessionService {
       codec: "raw", // RAW 编解码（发送PCM数据）
       segDuration: 15000,
       nbest: 1,
-      resultType: "full",
+      resultType: "single", // 设置为 single 以获取 definite 字段
       workflow: "audio_in,resample,partition,vad,fe,decode,itn,nlu_punctuate",
       showLanguage: false,
-      showUtterances: false,
+      showUtterances: true, // 开启分句信息，用于 VAD 检测
     });
 
     // 设置事件监听
@@ -340,7 +340,6 @@ export class TestVoiceSessionService implements IVoiceSessionService {
     });
 
     asrClient.on("audio_end", () => {
-      debugger;
       logger.info(
         `[TestVoiceSessionService] ASR 音频发送完成: deviceId=${deviceId}`
       );
@@ -348,6 +347,22 @@ export class TestVoiceSessionService implements IVoiceSessionService {
 
     asrClient.on("error", (error: Error) => {
       logger.error(`[TestVoiceSessionService] ASR 错误: ${error.message}`);
+    });
+
+    // 监听 VAD 结束事件，检测用户说话结束
+    asrClient.on("vad_end", (finalText: string) => {
+      logger.info(
+        `[TestVoiceSessionService] VAD 检测到用户说话结束: deviceId=${deviceId}, text=${finalText}`
+      );
+
+      // 通知设备端用户已说完话
+      const connection = this.getConnection(deviceId);
+      if (connection) {
+        connection.send({
+          type: "asr_end",
+          text: finalText,
+        });
+      }
     });
 
     asrClient.on("close", () => {

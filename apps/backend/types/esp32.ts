@@ -196,7 +196,8 @@ export type ESP32WSMessageType =
   | "system"
   | "custom"
   | "abort"
-  | "error";
+  | "error"
+  | "asr_end"; // ASR 识别结束，VAD 检测到用户说话结束
 
 /**
  * WebSocket消息基础接口
@@ -395,6 +396,16 @@ export interface ESP32ErrorMessage extends ESP32WSMessageBase {
 }
 
 /**
+ * ASR 结束消息
+ * VAD 检测到用户说话结束，通知设备端
+ */
+export interface ESP32ASREndMessage extends ESP32WSMessageBase {
+  type: "asr_end";
+  /** 识别结果文本 */
+  text: string;
+}
+
+/**
  * WebSocket消息联合类型
  */
 export type ESP32WSMessage =
@@ -410,7 +421,8 @@ export type ESP32WSMessage =
   | ESP32SystemMessage
   | ESP32AbortMessage
   | ESP32CustomMessage
-  | ESP32ErrorMessage;
+  | ESP32ErrorMessage
+  | ESP32ASREndMessage;
 
 /**
  * WebSocket连接状态

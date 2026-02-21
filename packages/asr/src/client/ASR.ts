@@ -157,8 +157,8 @@ export class ASR extends EventEmitter {
         show_language: this.showLanguage,
         show_utterances: this.showUtterances,
         vad_signal: true,
-        start_silence_time: '5000',
-        vad_silence_time: '800',
+        start_silence_time: "5000",
+        vad_silence_time: "800",
         result_type: this.resultType,
         sequence: 1,
       },
@@ -217,7 +217,32 @@ export class ASR extends EventEmitter {
     ) {
       if (result.payloadMsg) {
         this.emit("result", result.payloadMsg as ASRResult);
+
+        // 检测 VAD 结束信号
+        this.checkVADEnd(result.payloadMsg as ASRResult);
       }
+    }
+  }
+
+  /**
+   * 检测 VAD 结束信号
+   * 根据字节跳动 ASR 文档：
+   * 1. sequence < 0 表示最后一包音频
+   * 2. utterances[n].definite = true 表示分句最终结果
+   */
+  private checkVADEnd(asrResult: ASRResult): void {
+    const seq = asrResult.sequence ?? asrResult.seq;
+    const definite = asrResult.result?.some((r) => r.utterances?.some((u) => u.definite === true));
+
+    // 条件1：sequence < 0 表示最后一包音频
+    // 条件2：utterances 中 definite=true 表示分句最终结果
+    const isVADEnd =
+      (seq !== undefined && seq < 0) || definite;
+    console.log(isVADEnd, seq, definite, JSON.stringify(asrResult));
+
+    if (isVADEnd) {
+      const finalText = asrResult.result?.map((r) => r.text).join("") || "";
+      this.emit("vad_end", finalText);
     }
   }
 
@@ -345,7 +370,12 @@ export class ASR extends EventEmitter {
           return;
         }
 
-        resolve(result.payloadMsg as ASRResult);
+        const asrResult = result.payloadMsg as ASRResult;
+
+        // 检测 VAD 结束信号
+        this.checkVADEnd(asrResult);
+
+        resolve(asrResult);
       };
 
       this.ws.on("message", messageHandler);
