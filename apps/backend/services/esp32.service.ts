@@ -196,6 +196,7 @@ export class ESP32Service {
           error
         );
       },
+      voiceSessionService: this.voiceSessionService,
     });
 
     this.connections.set(deviceId, connection);
@@ -223,8 +224,8 @@ export class ESP32Service {
     // 根据消息类型处理
     switch (message.type) {
       case "hello":
-        // 设备初始化时预初始化 ASR 服务
-        await this.voiceSessionService.initASR?.(deviceId);
+        // ASR 初始化现在在 ESP32Connection.handleHello() 中处理
+        // 这里不再需要重复调用
         break;
       case "listen":
         // Listen消息处理（唤醒词检测和监听状态）

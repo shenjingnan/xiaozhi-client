@@ -23,6 +23,9 @@ export interface ASRRequestConfig {
     show_utterances: boolean;
     result_type: string;
     sequence: number;
+    vad_signal: boolean;
+    start_silence_time: string;
+    vad_silence_time: string;
   };
   audio: {
     format: string;

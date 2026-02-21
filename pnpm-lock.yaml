@@ -36,8 +36,8 @@ importers:
         specifier: ^1.26.0
         version: 1.26.0(zod@4.3.6)
       '@xiaozhi-client/asr':
-        specifier: ^0.0.1
-        version: 0.0.1
+        specifier: workspace:*
+        version: link:packages/asr
       '@xiaozhi-client/config':
         specifier: workspace:*
         version: link:packages/config
@@ -3574,9 +3574,6 @@ packages:
 
   '@vitest/utils@3.2.4':
     resolution: {integrity: sha512-fB2V0JFrQSMsCo9HiSq3Ezpdv4iYaXRG1Sx8edX3MwxfyNn83mKiGzOcH+Fkxt4MHxr3y42fQi1oeAInqgX2QA==}
-
-  '@xiaozhi-client/asr@0.0.1':
-    resolution: {integrity: sha512-1GEAvl9LaLiw6CtSN02xBrFBHsX6ykgdm61QAE/MdtinLQ1rPtVCclkiniIIlQlTScpTJ3ozeo2VKKW2POc2+w==}
 
   '@xmldom/xmldom@0.9.8':
     resolution: {integrity: sha512-p96FSY54r+WJ50FIOsCOjyj/wavs8921hG5+kVMmZgKcvIKxMXHTrjNJvRgWa/zuX3B6t2lijLNFaOyuxUH+2A==}
@@ -10466,14 +10463,6 @@ snapshots:
       '@vitest/pretty-format': 3.2.4
       loupe: 3.2.1
       tinyrainbow: 2.0.0
-
-  '@xiaozhi-client/asr@0.0.1':
-    dependencies:
-      uuid: 9.0.1
-      ws: 8.19.0
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
 
   '@xmldom/xmldom@0.9.8': {}
 

@@ -206,11 +206,6 @@ export class TestVoiceSessionService implements IVoiceSessionService {
       `[TestVoiceSessionService] 收到音频数据(ASR): deviceId=${deviceId}, size=${audioData.length}`
     );
 
-    // ASR 相关逻辑：首次收到音频数据时，初始化ASR客户端
-    if (!this.asrClients.has(deviceId)) {
-      await this.initASR(deviceId);
-    }
-
     // 获取 ASR 客户端
     const asrClient = this.asrClients.get(deviceId);
     if (!asrClient) {
@@ -295,6 +290,15 @@ export class TestVoiceSessionService implements IVoiceSessionService {
       this.asrClients.delete(deviceId);
     }
 
+    // 执行初始化
+    await this.doInitASR(deviceId);
+  }
+
+  /**
+   * 执行实际的 ASR 初始化
+   * @param deviceId - 设备 ID
+   */
+  private async doInitASR(deviceId: string): Promise<void> {
     const asrConfig = configManager.getASRConfig();
 
     if (!asrConfig.appid || !asrConfig.accessToken) {
@@ -336,6 +340,7 @@ export class TestVoiceSessionService implements IVoiceSessionService {
     });
 
     asrClient.on("audio_end", () => {
+      debugger;
       logger.info(
         `[TestVoiceSessionService] ASR 音频发送完成: deviceId=${deviceId}`
       );
