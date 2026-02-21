@@ -8,7 +8,9 @@ import { logger } from "@/Logger.js";
 import {
   encodeBinaryProtocol2,
   isBinaryProtocol2,
+  isBinaryProtocol3,
   parseBinaryProtocol2,
+  parseBinaryProtocol3,
 } from "@/lib/esp32/audio-protocol.js";
 import {
   type ESP32ConnectionState,
@@ -175,7 +177,7 @@ export class ESP32Connection {
     } catch (error) {
       // 可能是二进制数据（音频等）
       if (data.length > 0 && !isValidUTF8(data)) {
-        logger.debug(
+        logger.info(
           `收到二进制消息: deviceId=${this.deviceId}, size=${data.length}`
         );
 
@@ -183,8 +185,8 @@ export class ESP32Connection {
         if (isBinaryProtocol2(data)) {
           const parsed = parseBinaryProtocol2(data);
           if (parsed) {
-            logger.debug(
-              `解析音频包成功: type=${parsed.type}, timestamp=${parsed.timestamp}, payloadSize=${parsed.payload.length}`
+            logger.info(
+              `解析音频包成功(协议2): type=${parsed.type}, timestamp=${parsed.timestamp}, payloadSize=${parsed.payload.length}`
             );
             // 处理为解析后的音频消息（附加解析信息）
             await this.config.onMessage({
@@ -199,9 +201,32 @@ export class ESP32Connection {
             } as ESP32WSMessage);
             return;
           }
-          logger.debug("音频协议解析失败，作为原始数据处理");
+          logger.info("协议2解析失败，尝试其他协议");
         }
 
+        // 尝试解析为 BinaryProtocol3 音频协议
+        if (isBinaryProtocol3(data)) {
+          const parsed = parseBinaryProtocol3(data);
+          if (parsed) {
+            logger.info(
+              `解析音频包成功(协议3): type=${parsed.type}, timestamp=${parsed.timestamp}, payloadSize=${parsed.payload.length}`
+            );
+            await this.config.onMessage({
+              type: "audio",
+              data: parsed.payload,
+              _parsed: {
+                protocolVersion: parsed.protocolVersion,
+                dataType: parsed.type,
+                timestamp: parsed.timestamp,
+              },
+            } as ESP32WSMessage);
+            return;
+          }
+          logger.info("协议3解析失败，作为原始数据处理");
+        }
+
+        const version = data.readUInt16BE(0);
+        logger.info(`音频协议解析失败，作为原始数据处理, version=${version}`);
         // 处理为原始音频消息
         await this.config.onMessage({
           type: "audio",

@@ -12,11 +12,11 @@
  * │                      头部 (16 字节)                        │
  */
 
-import { ASR, AudioFormat, AuthMethod } from "../src/index.js";
-import { Readable } from "node:stream";
-import * as prism from "prism-media";
 import fs from "node:fs";
 import path from "node:path";
+import { Readable } from "node:stream";
+import * as prism from "prism-media";
+import { ASR, AudioFormat, AuthMethod } from "../src/index.js";
 
 // V2 协议头部常量
 const PROTOCOL_HEADER_SIZE = 16;
@@ -78,7 +78,8 @@ function readV2OpusFile(filePath: string): Buffer {
  * @returns 裸 Opus 数据数组
  */
 function readAllOpusFiles(dirPath: string): Buffer[] {
-  const files = fs.readdirSync(dirPath)
+  const files = fs
+    .readdirSync(dirPath)
     .filter((f: string) => f.endsWith(".opus"))
     .sort((a: string, b: string) => {
       // 按文件名数字排序

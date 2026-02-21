@@ -193,7 +193,7 @@ export class TestVoiceSessionService implements IVoiceSessionService {
 
   /**
    * 处理音频数据（ASR 语音识别）
-   * 接收硬件发送的裸 Opus 音频数据并发送到 ASR 服务识别
+   * 平滑发送音频到 ASR 服务
    * @param deviceId - 设备 ID
    * @param audioData - 裸 Opus 音频数据
    */
@@ -201,21 +201,74 @@ export class TestVoiceSessionService implements IVoiceSessionService {
     deviceId: string,
     audioData: Uint8Array
   ): Promise<void> {
+    const audioBuffer = Buffer.from(audioData);
     logger.debug(
       `[TestVoiceSessionService] 收到音频数据(ASR): deviceId=${deviceId}, size=${audioData.length}`
     );
+
+    // ASR 相关逻辑：首次收到音频数据时，初始化ASR客户端
+    if (!this.asrClients.has(deviceId)) {
+      await this.initASR(deviceId);
+    }
 
     // 获取 ASR 客户端
     const asrClient = this.asrClients.get(deviceId);
     if (!asrClient) {
       logger.warn(
-        `[TestVoiceSessionService] ASR 客户端不存在，请先调用 startASR: deviceId=${deviceId}`
+        `[TestVoiceSessionService] ASR 客户端初始化失败: deviceId=${deviceId}`
       );
       return;
     }
 
-    // 发送音频帧
-    await asrClient.sendFrame(Buffer.from(audioData));
+    // 解码 Opus 为 PCM 并发送
+    try {
+      const pcmData = await this.decodeOpusToPcm(audioBuffer);
+      await asrClient.sendFrame(pcmData);
+      logger.debug(
+        `[TestVoiceSessionService] 已发送PCM数据: deviceId=${deviceId}, pcmSize=${pcmData.length}`
+      );
+    } catch (error) {
+      logger.error(
+        `[TestVoiceSessionService] PCM解码或发送失败: deviceId=${deviceId}`,
+        error
+      );
+    }
+  }
+
+  /**
+   * 将 Opus 音频数据解码为 PCM
+   * @param opusData - 裸 Opus 数据
+   * @param sampleRate - 采样率（默认16000）
+   * @param channels - 声道数（默认1）
+   * @returns PCM 数据
+   */
+  private async decodeOpusToPcm(
+    opusData: Buffer,
+    sampleRate = 16000,
+    channels = 1
+  ): Promise<Buffer> {
+    const frameSize = Math.floor(sampleRate * 0.02); // 16kHz * 20ms = 320
+    const chunks: Buffer[] = [];
+
+    await new Promise<void>((resolve, reject) => {
+      const stream = Readable.from(opusData);
+      const decoder = new prism.opus.Decoder({
+        rate: sampleRate,
+        channels: channels,
+        frameSize: frameSize,
+      });
+
+      decoder.on("data", (chunk: Buffer) => {
+        chunks.push(chunk);
+      });
+
+      decoder.on("end", () => resolve());
+      decoder.on("error", reject);
+
+      stream.pipe(decoder);
+    });
+
+    return Buffer.concat(chunks);
   }
 
   /**
@@ -260,7 +313,7 @@ export class TestVoiceSessionService implements IVoiceSessionService {
       language: "zh-CN",
       channel: 1,
       bits: 16,
-      codec: "opus", // Opus 编解码
+      codec: "raw", // RAW 编解码（发送PCM数据）
       segDuration: 15000,
       nbest: 1,
       resultType: "full",

@@ -1,11 +1,11 @@
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
-const OpusScript = require('opusscript');
+import { execSync } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
+import OpusScript from "opusscript";
 
-const sourceDir = './v2-opus-stream';
-const outputFile = './v2-opus-stream-merged.ogg';
-const tempDir = path.join(sourceDir, 'temp_pcm');
+const sourceDir = "./v2-opus-stream";
+const outputFile = "./v2-opus-stream-merged.ogg";
+const tempDir = path.join(sourceDir, "temp_pcm");
 
 // BinaryProtocol2 格式定义（16字节头部）
 // | version(2) | type(2) | reserved(4) | timestamp(4) | payload_size(4) | payload(N) |
@@ -43,7 +43,9 @@ function parseProtocol2(filePath) {
   // 验证 payload 大小
   const expectedSize = buffer.length - PROTOCOL_HEADER_SIZE;
   if (payloadSize !== expectedSize) {
-    console.warn(`Warning: payload_size mismatch - header: ${payloadSize}, actual: ${expectedSize}`);
+    console.warn(
+      `Warning: payload_size mismatch - header: ${payloadSize}, actual: ${expectedSize}`
+    );
   }
 
   // 提取 payload（纯 opus 数据）
@@ -55,9 +57,11 @@ const opusDecoder = new OpusScript(SAMPLE_RATE, CHANNELS);
 
 // 生成 1-100 的文件名列表
 const fileNumbers = Array.from({ length: 100 }, (_, i) => i + 1);
-const files = fileNumbers.map(n => `${n}.opus`);
+const files = fileNumbers.map((n) => `${n}.opus`);
 
-console.log(`Processing ${files.length} opus files (1-100) with BinaryProtocol2 format...`);
+console.log(
+  `Processing ${files.length} opus files (1-100) with BinaryProtocol2 format...`
+);
 
 // 创建临时目录
 if (!fs.existsSync(tempDir)) {
@@ -65,7 +69,7 @@ if (!fs.existsSync(tempDir)) {
 }
 
 // 第一步：解析 BinaryProtocol2 格式并解码为 PCM
-console.log('Step 1: Parsing BinaryProtocol2 format and decoding to PCM...');
+console.log("Step 1: Parsing BinaryProtocol2 format and decoding to PCM...");
 
 const allPcmData = [];
 
@@ -91,18 +95,22 @@ files.forEach((file, index) => {
   }
 });
 
-console.log(`\nTotal PCM samples: ${allPcmData.reduce((a, b) => a + b.length, 0)}`);
+console.log(
+  `\nTotal PCM samples: ${allPcmData.reduce((a, b) => a + b.length, 0)}`
+);
 
 // 第二步：合并所有 PCM 数据
-console.log('\nStep 2: Merging PCM data...');
+console.log("\nStep 2: Merging PCM data...");
 
 const mergedPcm = Buffer.concat(allPcmData);
-const mergedPcmPath = path.join(tempDir, 'merged.pcm');
+const mergedPcmPath = path.join(tempDir, "merged.pcm");
 fs.writeFileSync(mergedPcmPath, mergedPcm);
-console.log(`Merged PCM saved to: ${mergedPcmPath} (${mergedPcm.length} bytes)`);
+console.log(
+  `Merged PCM saved to: ${mergedPcmPath} (${mergedPcm.length} bytes)`
+);
 
 // 第三步：使用 ffmpeg 将 PCM 转换为 OGG
-console.log('\nStep 3: Converting PCM to OGG...');
+console.log("\nStep 3: Converting PCM to OGG...");
 
 try {
   // 使用 ffmpeg 将原始 PCM 转换为 OGG (Opus 编码)
@@ -114,16 +122,16 @@ try {
   // -application voip: 优化为语音通话场景（可选）
   execSync(
     `ffmpeg -f s16le -ar ${SAMPLE_RATE} -ac ${CHANNELS} -i "${mergedPcmPath}" ` +
-    `-c:a libopus -b:a 48k -application voip "${outputFile}"`,
-    { stdio: 'inherit' }
+      `-c:a libopus -b:a 48k -application voip "${outputFile}"`,
+    { stdio: "inherit" }
   );
 
   console.log(`\nSuccess! Output: ${outputFile}`);
 } catch (error) {
-  console.error('Error during conversion:', error.message);
+  console.error("Error during conversion:", error.message);
 }
 
 // 清理临时文件
-console.log('\nCleaning up temporary files...');
+console.log("\nCleaning up temporary files...");
 fs.rmSync(tempDir, { recursive: true, force: true });
-console.log('Done!');
+console.log("Done!");

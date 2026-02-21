@@ -223,7 +223,6 @@ export class ESP32Service {
     // 根据消息类型处理
     switch (message.type) {
       case "hello":
-        debugger;
         // 设备初始化时预初始化 ASR 服务
         await this.voiceSessionService.initASR?.(deviceId);
         break;
