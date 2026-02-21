@@ -105,11 +105,7 @@ export class TestVoiceSessionService implements IVoiceSessionService {
    * @param deviceId - 设备 ID
    * @param audioData - 音频数据
    */
-  async handleTTSData(deviceId: string, audioData: Uint8Array): Promise<void> {
-    logger.debug(
-      `[TestVoiceSessionService] 收到音频数据: deviceId=${deviceId}, size=${audioData.length}`
-    );
-
+  async handleTTSData(deviceId: string, text: string): Promise<void> {
     // 如果 TTS 正在进行中或已完成，忽略新的音频数据
     if (this.ttsTriggered.get(deviceId) || this.ttsCompleted.get(deviceId)) {
       logger.debug(
@@ -163,7 +159,7 @@ export class TestVoiceSessionService implements IVoiceSessionService {
             appid: ttsConfig.appid,
             accessToken: ttsConfig.accessToken,
             voice_type: ttsConfig.voice_type,
-            text: "你好啊，我是小智客户端，我正在做测试",
+            text,
             encoding: "ogg_opus",
             cluster: ttsConfig.cluster,
             endpoint: ttsConfig.endpoint,
@@ -351,6 +347,7 @@ export class TestVoiceSessionService implements IVoiceSessionService {
 
     // 监听 VAD 结束事件，检测用户说话结束
     asrClient.on("vad_end", (finalText: string) => {
+      this.handleTTSData(deviceId, finalText);
       logger.info(
         `[TestVoiceSessionService] VAD 检测到用户说话结束: deviceId=${deviceId}, text=${finalText}`
       );
