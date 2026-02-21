@@ -10,6 +10,9 @@ import type {
   XiaozhiTokenPayload,
 } from "./types.js";
 
+// 导出 logger 工具
+export { logger, Logger, LogLevel } from "./utils/logger.js";
+
 /**
  * 截断端点 URL 用于日志显示
  *
