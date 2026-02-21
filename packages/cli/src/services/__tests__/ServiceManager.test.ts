@@ -74,28 +74,6 @@ vi.mock("../../utils/PathUtils.js", () => ({
   },
 }));
 
-// Mock ConfigManager for WebServer
-vi.mock("@/lib/config/manager.js", () => {
-  const mockConfig = {
-    mcpEndpoint: "ws://localhost:3000",
-    mcpServers: {},
-    webServer: { port: 9999 },
-  };
-  const mockConfigManager = {
-    configExists: vi.fn().mockReturnValue(true),
-    getConfig: vi.fn().mockReturnValue(mockConfig),
-    loadConfig: vi.fn().mockResolvedValue(mockConfig),
-    getToolCallLogConfig: vi.fn().mockReturnValue({ enabled: false }),
-    getMcpServers: vi.fn().mockReturnValue({}),
-    getMcpEndpoint: vi.fn().mockReturnValue("ws://localhost:3000"),
-    getConfigDir: vi.fn().mockReturnValue("/mock/config"),
-  };
-  return {
-    configManager: mockConfigManager,
-    ConfigManager: vi.fn().mockImplementation(() => mockConfigManager),
-  };
-});
-
 // Mock fs
 vi.mock("node:fs", () => {
   const mockExistsSync = vi.fn().mockReturnValue(true);

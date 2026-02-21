@@ -47,10 +47,10 @@ packages/cli/
 
 ## 外部依赖
 
-CLI 包通过 external 配置引用 backend 模块：
+CLI 包通过 external 配置引用 backend 模块和 workspace 包：
 
 - `@/WebServer` → `dist/backend/WebServer.js` (通过 WebServerLauncher)
-- `@/lib/config/manager` → `dist/backend/lib/config/manager.js`
+- `@xiaozhi-client/config` → `dist/config/index.js` (配置管理)
 
 ## 导入方式
 
@@ -62,11 +62,14 @@ import { DIContainer } from "./Container";
 import { CommandRegistry } from "./commands/index";
 ```
 
-### 外部依赖（使用路径别名）
+### 外部依赖（使用 workspace 包）
 
 ```typescript
-// 引用 backend 模块
-import { configManager } from "@/lib/config/manager";
+// 引用配置管理（从 workspace 包导入）
+import { configManager } from "@xiaozhi-client/config";
+
+// 引用 WebServer（使用路径别名，运行时解析为 backend 模块）
+import { WebServer } from "@/WebServer";
 ```
 
 ## 开发命令
