@@ -1831,5 +1831,8 @@ export class MCPServiceManager extends EventEmitter {
       "mcp:service:connection:failed",
       this.eventListeners.serviceConnectionFailed
     );
+
+    // 清理缓存管理器，停止定时器
+    this.cacheManager?.cleanup();
   }
 }
