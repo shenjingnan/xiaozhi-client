@@ -48,6 +48,51 @@ interface LegacyAddCustomToolRequest {
 }
 
 /**
+ * 预编译的中文到英文转换正则表达式映射
+ * 避免在每次调用 convertChineseToEnglish 时重复创建 RegExp 对象
+ */
+const CHINESE_TO_ENGLISH_REGEX_MAP: Array<[RegExp, string]> = [
+  [/工作流/g, "workflow"],
+  [/测试/g, "test"],
+  [/数据/g, "data"],
+  [/处理/g, "process"],
+  [/分析/g, "analysis"],
+  [/生成/g, "generate"],
+  [/查询/g, "query"],
+  [/搜索/g, "search"],
+  [/转换/g, "convert"],
+  [/计算/g, "calculate"],
+  [/统计/g, "statistics"],
+  [/报告/g, "report"],
+  [/文档/g, "document"],
+  [/图片/g, "image"],
+  [/视频/g, "video"],
+  [/音频/g, "audio"],
+  [/文本/g, "text"],
+  [/翻译/g, "translate"],
+  [/识别/g, "recognize"],
+  [/检测/g, "detect"],
+  [/监控/g, "monitor"],
+  [/管理/g, "manage"],
+  [/配置/g, "config"],
+  [/设置/g, "setting"],
+  [/用户/g, "user"],
+  [/系统/g, "system"],
+  [/服务/g, "service"],
+  [/接口/g, "api"],
+  [/数据库/g, "database"],
+  [/网络/g, "network"],
+  [/安全/g, "security"],
+  [/备份/g, "backup"],
+  [/恢复/g, "restore"],
+  [/同步/g, "sync"],
+  [/导入/g, "import"],
+  [/导出/g, "export"],
+  [/上传/g, "upload"],
+  [/下载/g, "download"],
+];
+
+/**
  * MCP 工具调用 API 处理器
  */
 export class MCPToolHandler {
@@ -1208,53 +1253,11 @@ export class MCPToolHandler {
    * 简单的中文到英文转换（可以扩展为更复杂的拼音转换）
    */
   private convertChineseToEnglish(text: string): string {
-    // 常见中文词汇的映射
-    const chineseToEnglishMap: Record<string, string> = {
-      工作流: "workflow",
-      测试: "test",
-      数据: "data",
-      处理: "process",
-      分析: "analysis",
-      生成: "generate",
-      查询: "query",
-      搜索: "search",
-      转换: "convert",
-      计算: "calculate",
-      统计: "statistics",
-      报告: "report",
-      文档: "document",
-      图片: "image",
-      视频: "video",
-      音频: "audio",
-      文本: "text",
-      翻译: "translate",
-      识别: "recognize",
-      检测: "detect",
-      监控: "monitor",
-      管理: "manage",
-      配置: "config",
-      设置: "setting",
-      用户: "user",
-      系统: "system",
-      服务: "service",
-      接口: "api",
-      数据库: "database",
-      网络: "network",
-      安全: "security",
-      备份: "backup",
-      恢复: "restore",
-      同步: "sync",
-      导入: "import",
-      导出: "export",
-      上传: "upload",
-      下载: "download",
-    };
-
     let result = text;
 
-    // 替换常见中文词汇
-    for (const [chinese, english] of Object.entries(chineseToEnglishMap)) {
-      result = result.replace(new RegExp(chinese, "g"), english);
+    // 使用预编译的正则表达式替换常见中文词汇
+    for (const [regex, english] of CHINESE_TO_ENGLISH_REGEX_MAP) {
+      result = result.replace(regex, english);
     }
 
     // 如果还有中文字符，用拼音前缀替代
