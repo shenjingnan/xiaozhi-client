@@ -12,7 +12,12 @@
 import { Readable } from "node:stream";
 import { logger } from "@/Logger.js";
 import { synthesizeSpeechStream } from "@/lib/tts/binary.js";
-import { ASR, AudioFormat, AuthMethod, type ASRResult } from "@xiaozhi-client/asr";
+import {
+  ASR,
+  type ASRResult,
+  AudioFormat,
+  AuthMethod,
+} from "@xiaozhi-client/asr";
 import { configManager } from "@xiaozhi-client/config";
 import * as prism from "prism-media";
 import type { ESP32Service } from "./esp32.service.js";
