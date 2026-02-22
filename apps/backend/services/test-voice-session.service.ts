@@ -11,6 +11,7 @@
 
 import { Readable } from "node:stream";
 import { logger } from "@/Logger.js";
+import type { ESP32Connection } from "@/lib/esp32/connection.js";
 import { synthesizeSpeechStream } from "@/lib/tts/binary.js";
 import {
   ASR,
@@ -57,7 +58,7 @@ export class TestVoiceSessionService implements IVoiceSessionService {
   private readonly isProcessingBuffer = new Map<string, boolean>();
 
   /** 每个设备的连接引用（用于缓冲区处理） */
-  private readonly deviceConnections = new Map<string, any>();
+  private readonly deviceConnections = new Map<string, ESP32Connection>();
 
   /** 每个设备的 ASR 客户端（用于语音识别） */
   private readonly asrClients = new Map<string, ASR>();
@@ -412,7 +413,7 @@ export class TestVoiceSessionService implements IVoiceSessionService {
    * @param deviceId - 设备 ID
    * @returns ESP32 连接实例
    */
-  private getConnection(deviceId: string) {
+  private getConnection(deviceId: string): ESP32Connection | undefined {
     if (!this.esp32Service) {
       logger.warn("[TestVoiceSessionService] ESP32 服务未设置");
       return undefined;
@@ -431,7 +432,7 @@ export class TestVoiceSessionService implements IVoiceSessionService {
   private setupDemuxerEvents(
     deviceId: string,
     demuxer: prism.opus.OggDemuxer,
-    connection: any
+    connection: ESP32Connection
   ) {
     demuxer.on("data", (opusPacket: Buffer) => {
       // 只负责将包推入缓冲区，不做异步操作
