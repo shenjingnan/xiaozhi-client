@@ -32,6 +32,9 @@ import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+// 单个正则表达式匹配所有 ANSI 颜色转义序列，避免每次渲染时创建多个正则表达式
+const ANSI_PATTERN = /\[(0|31|32|33|34|35|36|37|90|91|92|93|94|95|96|97)m/g;
+
 interface InstallLogDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -137,32 +140,8 @@ export function InstallLogDialog({
 
   // 格式化日志消息
   const formatLogMessage = (message: string) => {
-    // 简单清理日志消息，移除常见的 ANSI 控制序列
-    let cleanedMessage = message;
-
-    // 移除常见的 ANSI 转义序列
-    const ansiPatterns = [
-      /\[0m/g, // 重置
-      /\[31m/g, // 红色
-      /\[32m/g, // 绿色
-      /\[33m/g, // 黄色
-      /\[34m/g, // 蓝色
-      /\[35m/g, // 紫色
-      /\[36m/g, // 青色
-      /\[37m/g, // 白色
-      /\[90m/g, // 亮黑（灰色）
-      /\[91m/g, // 亮红
-      /\[92m/g, // 亮绿
-      /\[93m/g, // 亮黄
-      /\[94m/g, // 亮蓝
-      /\[95m/g, // 亮紫
-      /\[96m/g, // 亮青
-      /\[97m/g, // 亮白
-    ];
-
-    for (const pattern of ansiPatterns) {
-      cleanedMessage = cleanedMessage.replace(pattern, "");
-    }
+    // 使用单个正则表达式清理所有 ANSI 转义序列
+    const cleanedMessage = message.replace(ANSI_PATTERN, "");
 
     // 分割成行并去除空行
     return cleanedMessage
