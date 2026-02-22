@@ -249,9 +249,9 @@ export function McpServerList({
     // TODO: 用于未来工具切换功能
     try {
       // 首先找到对应的原始工具信息
-      const originalTool = [...enabledTools, ...disabledTools].find(
-        (tool) => tool.name === name
-      );
+      const originalTool =
+        enabledTools.find((tool) => tool.name === name) ||
+        disabledTools.find((tool) => tool.name === name);
 
       if (!originalTool) {
         toast.error("找不到对应的工具信息");

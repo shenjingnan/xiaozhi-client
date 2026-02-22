@@ -337,8 +337,20 @@ export class Logger {
     this.rotateLogFileIfNeeded();
 
     // 确保日志文件存在
-    if (!fs.existsSync(this.logFilePath)) {
-      fs.writeFileSync(this.logFilePath, "");
+    try {
+      if (!fs.existsSync(this.logFilePath)) {
+        fs.writeFileSync(this.logFilePath, "");
+      }
+    } catch (error) {
+      // 如果创建日志文件失败，记录警告但继续执行
+      // 允许应用在没有文件日志的情况下启动
+      console.warn(
+        `[Logger] 无法创建日志文件 ${this.logFilePath}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+      // 清除日志路径，禁用文件日志
+      this.logFilePath = null;
     }
 
     // 重新创建 pino 实例以包含文件流
