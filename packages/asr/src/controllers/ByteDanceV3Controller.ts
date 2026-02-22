@@ -40,6 +40,9 @@ export class ByteDanceV3Controller extends ByteDanceController {
       const result = data as {
         code: number;
         sequence?: number;
+        addition?: {
+          termination?: string;
+        };
         result?: Array<{
           text: string;
           utterances?: Array<{ text: string; definite?: boolean }>;
@@ -50,14 +53,17 @@ export class ByteDanceV3Controller extends ByteDanceController {
       const text = result.result?.[0]?.text || "";
 
       // 判断是否为最终结果
-      // V3: sequence < 0 或 utterances 中 definite=true 表示最终结果
+      // V3: sequence < 0 或 utterances 中 definite=true 或 termination=true 表示最终结果
       const seq = result.sequence;
       const definite = Boolean(
         result.result?.some((r) =>
           r.utterances?.some((u) => u.definite === true)
         )
       );
-      const isFinal = (seq !== undefined && seq < 0) || definite;
+      const isFinal =
+        (seq !== undefined && seq < 0) ||
+        definite ||
+        result.addition?.termination === "true";
 
       const listenResult: ListenResult = {
         text,

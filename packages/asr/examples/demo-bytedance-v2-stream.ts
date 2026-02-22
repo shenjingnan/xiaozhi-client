@@ -19,6 +19,8 @@ import * as prism from "prism-media";
 import { ASR, AudioFormat, AuthMethod } from "../src/index.js";
 
 // 配置凭证（用户提供的值）
+const APP_ID = "your-app-id";
+const TOKEN = "your-token";
 const CLUSTER = "volcengine_streaming_common";
 
 // 音频文件目录
