@@ -12,7 +12,7 @@
 import { Readable } from "node:stream";
 import { logger } from "@/Logger.js";
 import { synthesizeSpeechStream } from "@/lib/tts/binary.js";
-import { ASR, AudioFormat, AuthMethod } from "@xiaozhi-client/asr";
+import { ASR, AudioFormat, AuthMethod, type ASRResult } from "@xiaozhi-client/asr";
 import { configManager } from "@xiaozhi-client/config";
 import * as prism from "prism-media";
 import type { ESP32Service } from "./esp32.service.js";
@@ -323,13 +323,13 @@ export class TestVoiceSessionService implements IVoiceSessionService {
     });
 
     // 设置事件监听
-    asrClient.on("result", (result) => {
+    asrClient.on("result", (result: ASRResult) => {
       logger.info(
         `[TestVoiceSessionService] ASR 识别结果: ${JSON.stringify(result)}`
       );
     });
 
-    asrClient.on("full_response", (response) => {
+    asrClient.on("full_response", (response: ASRResult) => {
       logger.info(
         `[TestVoiceSessionService] ASR 完整响应: ${JSON.stringify(response)}`
       );
