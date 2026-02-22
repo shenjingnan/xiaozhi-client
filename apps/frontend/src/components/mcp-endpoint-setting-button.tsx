@@ -22,6 +22,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import { type EndpointStatusResponse, apiClient } from "@/services/api";
 import { webSocketManager } from "@/services/websocket";
 import { useConfig, useConfigActions, useMcpEndpoint } from "@/stores/config";
@@ -77,6 +78,12 @@ const validateEndpoint = (endpoint: string): string | null => {
 
 export function McpEndpointSettingButton() {
   const [open, setOpen] = useState(false);
+
+  // 使用统一的复制到剪贴板 hook，带 Toast 通知
+  const { copy } = useCopyToClipboard({
+    showToast: true,
+    toastMessage: "接入点地址已复制到剪贴板",
+  });
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [endpointToDelete, setEndpointToDelete] = useState<string>("");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -229,31 +236,8 @@ export function McpEndpointSettingButton() {
   };
 
   // 复制接入点地址到剪贴板
-  const handleCopy = async (endpoint: string) => {
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(endpoint);
-        toast.success("接入点地址已复制到剪贴板");
-      } else {
-        // 降级方案：使用传统的复制方法
-        const textArea = document.createElement("textarea");
-        textArea.value = endpoint;
-        textArea.style.position = "fixed";
-        textArea.style.opacity = "0";
-        document.body.appendChild(textArea);
-        textArea.select();
-        const successful = document.execCommand("copy");
-        document.body.removeChild(textArea);
-        if (successful) {
-          toast.success("接入点地址已复制到剪贴板");
-        } else {
-          throw new Error("复制命令执行失败");
-        }
-      }
-    } catch (error) {
-      console.error("复制失败:", error);
-      toast.error("复制失败，请手动复制");
-    }
+  const handleCopy = (endpoint: string) => {
+    copy(endpoint);
   };
 
   // 删除接入点

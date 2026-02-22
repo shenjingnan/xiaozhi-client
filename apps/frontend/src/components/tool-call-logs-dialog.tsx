@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import {
   formatDuration,
   formatJson,
@@ -43,7 +44,7 @@ import {
   RotateCwIcon,
   XCircle,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export function ToolCallLogsDialog() {
   const [open, setOpen] = useState(false);
@@ -322,36 +323,8 @@ function CopyButton({
   copyContent,
   className = "",
 }: CopyButtonProps) {
-  const [copied, setCopied] = useState(false);
-  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(copyContent);
-      setCopied(true);
-
-      // 清除之前的定时器
-      if (copiedTimerRef.current) {
-        clearTimeout(copiedTimerRef.current);
-      }
-
-      // 保存定时器引用，3秒后自动恢复状态
-      copiedTimerRef.current = setTimeout(() => {
-        setCopied(false);
-      }, 3000);
-    } catch (error) {
-      console.error("复制失败:", error);
-    }
-  };
-
-  // 组件卸载时清理定时器
-  useEffect(() => {
-    return () => {
-      if (copiedTimerRef.current) {
-        clearTimeout(copiedTimerRef.current);
-      }
-    };
-  }, []);
+  // 使用统一的复制到剪贴板 hook
+  const { copied, copy } = useCopyToClipboard({ successDuration: 3000 });
 
   return (
     <Button
@@ -360,7 +333,7 @@ function CopyButton({
       className={`${className} ${
         copied ? "text-green-600 hover:text-green-700" : ""
       }`}
-      onClick={handleCopy}
+      onClick={() => copy(copyContent)}
     >
       {copied ? <CheckIcon /> : <CopyIcon />}
     </Button>
