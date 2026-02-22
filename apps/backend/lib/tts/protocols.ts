@@ -4,6 +4,21 @@ import type WebSocket from "ws";
 import { logger } from "@/Logger.js";
 
 /**
+ * TTS 协议消息类型定义
+ *
+ * 定义与 TTS WebSocket 通信相关的协议消息类型和枚举：
+ * - EventType: 事件类型枚举（连接、会话、音频等事件）
+ * - MsgType: 消息类型枚举
+ * - Message 接口: 协议消息结构
+ * - 消息序列化/反序列化函数
+ * - WebSocket 通信辅助函数
+ *
+ * @module protocols
+ *
+ * @see binary.ts - TTS 二进制协议实现
+ */
+
+/**
  * 事件类型定义，对应 protobuf 生成的事件类型
  */
 export enum EventType {
