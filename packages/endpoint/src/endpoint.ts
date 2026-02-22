@@ -15,8 +15,8 @@ import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import WebSocket from "ws";
 import type { ExtendedMCPMessage, MCPMessage } from "./mcp.js";
 import type {
-  IMCPServiceManager,
   EndpointConnectionStatus,
+  IMCPServiceManager,
   ToolCallResult,
 } from "./types.js";
 import {
@@ -134,7 +134,9 @@ export class Endpoint {
    */
   static async create(config: EndpointCreateConfig): Promise<Endpoint> {
     // 动态导入相关模块
-    const { InternalMCPManagerAdapter } = await import("./internal-mcp-manager.js");
+    const { InternalMCPManagerAdapter } = await import(
+      "./internal-mcp-manager.js"
+    );
 
     // 创建内部 MCP 管理器适配器配置
     const endpointConfig = {
@@ -368,6 +370,32 @@ export class Endpoint {
       case "tools/call": {
         this.handleToolCall(message).catch((error) => {
           console.error("处理工具调用时发生未捕获错误:", error);
+
+          // 兜底：发送错误响应给客户端（防止客户端挂起）
+          let errorResponse: {
+            code: number;
+            message: string;
+            data?: unknown;
+          };
+
+          if (error instanceof ToolCallErrorClass) {
+            errorResponse = {
+              code: error.code,
+              message: error.message,
+              data: error.data,
+            };
+          } else {
+            errorResponse = {
+              code: ToolCallErrorCodeEnum.TOOL_EXECUTION_ERROR,
+              message: error instanceof Error ? error.message : "未知错误",
+              data: { originalError: String(error) || "null" },
+            };
+          }
+
+          // 尝试发送错误响应（如果存在 id）
+          if (message.id !== undefined && message.id !== null) {
+            this.sendErrorResponse(message.id, errorResponse);
+          }
         });
         break;
       }
@@ -474,17 +502,18 @@ export class Endpoint {
    * 处理工具调用请求
    */
   private async handleToolCall(request: MCPMessage): Promise<void> {
-    if (request.id === undefined || request.id === null) {
-      throw new ToolCallErrorClass(
-        ToolCallErrorCodeEnum.INVALID_PARAMS,
-        "请求 ID 不能为空"
-      );
-    }
-
     const requestId = request.id;
     const startTime = Date.now();
 
     try {
+      // 验证请求 ID（移到 try 块内，确保错误能被正确捕获和处理）
+      if (requestId === undefined || requestId === null) {
+        throw new ToolCallErrorClass(
+          ToolCallErrorCodeEnum.INVALID_PARAMS,
+          "请求 ID 不能为空"
+        );
+      }
+
       const params = validateToolCallParams(request.params);
 
       console.info("开始处理工具调用", {
@@ -624,9 +653,10 @@ export class Endpoint {
         console.error("发送错误响应失败:", {
           id,
           errorResponse: error,
-          sendError: sendError instanceof Error
-            ? { message: sendError.message, stack: sendError.stack }
-            : sendError,
+          sendError:
+            sendError instanceof Error
+              ? { message: sendError.message, stack: sendError.stack }
+              : sendError,
         });
       }
     } else {
