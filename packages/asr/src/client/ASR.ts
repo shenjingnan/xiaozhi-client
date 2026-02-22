@@ -242,7 +242,6 @@ export class ASR extends EventEmitter {
     // 条件1：sequence < 0 表示最后一包音频
     // 条件2：utterances 中 definite=true 表示分句最终结果
     const isVADEnd = (seq !== undefined && seq < 0) || definite;
-    console.log(isVADEnd, seq, definite, JSON.stringify(asrResult));
 
     // 防重：避免同一 sequence 重复触发 vad_end
     if (isVADEnd && seq !== undefined) {

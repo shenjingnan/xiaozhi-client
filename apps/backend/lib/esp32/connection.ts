@@ -167,7 +167,7 @@ export class ESP32Connection {
       // 处理Hello消息
       if (message.type === "hello") {
         await this.handleHello(message as ESP32HelloMessage);
-        this.config.onMessage(message);
+        await this.config.onMessage(message);
         return;
       }
 

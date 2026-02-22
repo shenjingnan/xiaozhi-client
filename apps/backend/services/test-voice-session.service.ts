@@ -72,7 +72,7 @@ export class TestVoiceSessionService implements IVoiceSessionService {
 
   /**
    * 开始语音会话
-   * 在会话开始时初始化 ASR
+   * 生成会话 ID，实际 ASR 初始化在 hello 时进行
    * @param deviceId - 设备 ID
    * @param mode - 监听模式
    * @returns 会话 ID
@@ -243,7 +243,7 @@ export class TestVoiceSessionService implements IVoiceSessionService {
     sampleRate = 16000,
     channels = 1
   ): Promise<Buffer> {
-    const frameSize = Math.floor(sampleRate * 0.02); // 16kHz * 20ms = 320
+    const frameSize = Math.floor(sampleRate * 0.06); // 16kHz * 60ms = 960
     const chunks: Buffer[] = [];
 
     await new Promise<void>((resolve, reject) => {
