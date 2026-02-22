@@ -10,6 +10,10 @@ import { AudioFormat } from "../audio";
 import { AudioProcessor } from "../audio/index.js";
 import { AuthMethod, SignatureAuth, TokenAuth } from "../auth";
 import {
+  ByteDanceV2Controller,
+  ByteDanceV3Controller,
+} from "../controllers/index.js";
+import {
   MessageType,
   compressGzipSync,
   generateAudioDefaultHeader,
@@ -30,6 +34,12 @@ import type { ASROption, ASRRequestConfig, ASRResult } from "./types.js";
  * Streaming ASR WebSocket Client
  */
 export class ASR extends EventEmitter {
+  // ByteDance 控制器
+  public readonly bytedance: {
+    v2: ByteDanceV2Controller;
+    v3: ByteDanceV3Controller;
+  };
+
   // API 版本
   private apiVersion: "v2" | "v3" = "v2";
 
@@ -153,6 +163,12 @@ export class ASR extends EventEmitter {
 
     // Success code
     this.successCode = options.successCode || 1000;
+
+    // 初始化 ByteDance 控制器
+    this.bytedance = {
+      v2: new ByteDanceV2Controller(this),
+      v3: new ByteDanceV3Controller(this),
+    };
   }
 
   /**
@@ -590,6 +606,13 @@ export class ASR extends EventEmitter {
   }
 
   /**
+   * Check if in streaming mode
+   */
+  isInStreamingMode(): boolean {
+    return this.isStreaming;
+  }
+
+  /**
    * Connect to WebSocket server and send initial configuration request
    * This method establishes the connection and prepares for streaming audio data
    */
@@ -657,13 +680,11 @@ export class ASR extends EventEmitter {
         this.emit("close");
       });
 
-      // Only register global message handler in non-streaming mode
-      // In streaming mode, receiveMessage() handles responses individually
-      if (!this.isStreaming) {
-        this.ws.on("message", (data: Buffer) => {
-          this.handleMessage(data);
-        });
-      }
+      // Register global message handler for event-driven mode
+      // In streaming mode, this enables result/vad_end events via on()
+      this.ws.on("message", (data: Buffer) => {
+        this.handleMessage(data);
+      });
     });
   }
 
@@ -694,11 +715,8 @@ export class ASR extends EventEmitter {
     audioRequest.writeUInt32BE(compressedChunk.length, 4);
     compressedChunk.copy(audioRequest, 8);
 
-    // Send audio
+    // Send audio (不等待响应，通过事件传递结果)
     await this.sendMessage(audioRequest);
-
-    // Receive server ACK response
-    await this.receiveMessage();
   }
 
   /**

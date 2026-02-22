@@ -11,6 +11,12 @@ export * from "./audio/index.js";
 // Auth exports
 export * from "./auth/index.js";
 
+// Types exports
+export * from "./types/index.js";
+
+// Controllers exports
+export * from "./controllers/index.js";
+
 // Client exports
 export * from "./client/index.js";
 
