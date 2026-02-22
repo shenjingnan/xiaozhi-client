@@ -12,17 +12,14 @@
 
 import { createHash } from "node:crypto";
 import type { MCPToolsCache } from "@/lib/mcp";
+import type {
+  CacheStateTransition,
+  TaskInfo,
+  TaskStatus,
+  TimeoutConfig,
+  ToolCallResult,
+} from "../../../dist/shared-types";
 import type { TimeoutResponse } from "./timeout.js";
-
-// 工具调用结果接口（与 MCPServiceManager 保持一致）
-export interface ToolCallResult {
-  content: Array<{
-    type: string;
-    text: string;
-  }>;
-  isError?: boolean;
-  [key: string]: unknown; // 支持其他未知字段，与 lib/mcp/types 保持兼容
-}
 
 // MCP 消息接口 - 定义 JSON-RPC 2.0 标准消息格式
 export interface MCPMessage {
@@ -70,26 +67,6 @@ export interface EnhancedToolResultCache {
 }
 
 /**
- * 任务状态类型
- */
-export type TaskStatus =
-  | "pending"
-  | "completed"
-  | "failed"
-  | "consumed"
-  | "deleted";
-
-/**
- * 缓存状态转换接口
- */
-export interface CacheStateTransition {
-  from: TaskStatus;
-  to: TaskStatus;
-  reason: string;
-  timestamp: string;
-}
-
-/**
  * 工具调用选项
  */
 export interface ToolCallOptions {
@@ -108,29 +85,6 @@ export interface CacheConfig {
   cleanupInterval?: number; // 清理间隔（毫秒），默认1分钟
   maxCacheSize?: number; // 最大缓存条目数
   enableOneTimeCache?: boolean; // 是否启用一次性缓存
-}
-
-/**
- * 超时配置选项
- */
-export interface TimeoutConfig {
-  timeout?: number; // 超时时间（毫秒），默认8秒
-  enableFriendlyTimeout?: boolean; // 是否启用友好超时响应
-  backgroundProcessing?: boolean; // 是否启用后台处理
-}
-
-/**
- * 任务信息接口
- */
-export interface TaskInfo {
-  taskId: string;
-  toolName: string;
-  arguments: Record<string, unknown>;
-  status: TaskStatus;
-  startTime: string;
-  endTime?: string;
-  error?: string;
-  result?: ToolCallResult;
 }
 
 /**
@@ -274,3 +228,12 @@ export const DEFAULT_CONFIG = {
   MAX_CACHE_SIZE: 1000, // 最大缓存条目数
   ENABLE_ONE_TIME_CACHE: true, // 启用一次性缓存
 } as const;
+
+// 从 shared-types 重新导出类型，保持向后兼容
+export type {
+  CacheStateTransition,
+  TaskInfo,
+  TaskStatus,
+  TimeoutConfig,
+  ToolCallResult,
+};

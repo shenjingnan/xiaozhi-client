@@ -2,6 +2,8 @@
  * MCP 任务相关类型定义
  */
 
+import type { ToolCallResult } from "./cache";
+
 /**
  * 任务状态类型
  */
@@ -28,12 +30,12 @@ export interface CacheStateTransition {
 export interface TaskInfo {
   taskId: string;
   toolName: string;
-  arguments: any;
+  arguments: Record<string, unknown>;
   status: TaskStatus;
   startTime: string;
   endTime?: string;
   error?: string;
-  result?: any;
+  result?: ToolCallResult;
 }
 
 /**

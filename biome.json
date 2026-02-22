@@ -66,6 +66,16 @@
           }
         }
       }
+    },
+    {
+      "include": ["apps/backend/types/**"],
+      "linter": {
+        "rules": {
+          "nursery": {
+            "useImportRestrictions": "off"
+          }
+        }
+      }
     }
   ],
   "javascript": {
