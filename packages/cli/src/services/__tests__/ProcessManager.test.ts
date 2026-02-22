@@ -139,43 +139,23 @@ describe("ProcessManagerImpl", () => {
   });
 
   describe("gracefulKillProcess", () => {
-    let originalKill: typeof process.kill;
-
-    beforeEach(() => {
-      originalKill = process.kill;
-      process.kill = vi.fn();
-    });
-
-    afterEach(() => {
-      process.kill = originalKill;
-    });
-
-    it("should gracefully kill process", async () => {
-      let killCallCount = 0;
-      (process.kill as any).mockImplementation((pid: number, signal: any) => {
-        killCallCount++;
-        if (killCallCount > 1) {
-          throw new Error("ESRCH"); // Process stopped
-        }
-      });
+    it("should delegate to PlatformUtils with SIGTERM signal", async () => {
+      mockPlatformUtils.killProcess.mockResolvedValue();
 
       await processManager.gracefulKillProcess(1234);
 
-      expect(process.kill).toHaveBeenCalledWith(1234, "SIGTERM");
+      expect(mockPlatformUtils.killProcess).toHaveBeenCalledWith(
+        1234,
+        "SIGTERM"
+      );
     });
 
-    it("should force kill if graceful kill fails", async () => {
-      (process.kill as any).mockImplementation((pid: number, signal: any) => {
-        if (signal === "SIGKILL") {
-          throw new Error("ESRCH"); // Process stopped
-        }
-        // Process still running for SIGTERM and signal 0
-      });
+    it("should throw ProcessError when kill fails", async () => {
+      mockPlatformUtils.killProcess.mockRejectedValue(new Error("Kill failed"));
 
-      await processManager.gracefulKillProcess(1234);
-
-      expect(process.kill).toHaveBeenCalledWith(1234, "SIGTERM");
-      expect(process.kill).toHaveBeenCalledWith(1234, "SIGKILL");
+      await expect(processManager.gracefulKillProcess(1234)).rejects.toThrow(
+        "无法停止进程"
+      );
     });
   });
 
