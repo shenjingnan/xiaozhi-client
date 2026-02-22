@@ -28,7 +28,7 @@ import { useToolSearch } from "@/hooks/useToolSearch";
 import { useToolSortPersistence } from "@/hooks/useToolSortPersistence";
 import { cn } from "@/lib/utils";
 import { apiClient } from "@/services/api";
-import type { CustomMCPToolWithStats } from "@xiaozhi-client/shared-types";
+import type { CustomMCPToolWithStats, JSONSchema } from "@xiaozhi-client/shared-types";
 import { CoffeeIcon, Loader2, ZapIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -48,7 +48,7 @@ export interface ToolRowData {
   enabled: boolean;
   usageCount: number;
   lastUsedTime: string;
-  inputSchema: any;
+  inputSchema: JSONSchema;
 }
 
 interface McpToolTableProps {
@@ -109,7 +109,7 @@ export function McpToolTable({
       serverName: string;
       toolName: string;
       description?: string;
-      inputSchema?: any;
+      inputSchema?: JSONSchema;
     };
   }>({ open: false });
 
