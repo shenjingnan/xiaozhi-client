@@ -35,9 +35,45 @@ export interface BinaryProtocol2Parsed {
 }
 
 /**
- * 协议头部大小（字节）
+ * BinaryProtocol3 音频协议实现
+ * 用于 ESP32 设备与服务端之间的音频数据传输
+ *
+ * 协议格式（大端序/网络字节序）：
+ * +--------+--------+--------+--------+
+ * |  Type  | Reserved|   Payload Size   |
+ * +--------+--------+--------+--------+
+ * |          Payload Data...             |
+ * +--------+--------+--------+--------+
+ *
+ * - Type: 0 = Opus 音频, 1 = JSON
+ * - Reserved: 保留字段（0）
+ * - Payload Size: 负载字节数（16位，无符号）
+ * - Payload: 实际音频数据
+ */
+
+/**
+ * BinaryProtocol3 解析结果接口
+ */
+export interface BinaryProtocol3Parsed {
+  /** 协议版本（固定为3） */
+  protocolVersion: number;
+  /** 数据类型 */
+  type: "opus" | "json";
+  /** 时间戳（由于协议3没有时间戳字段，设为0） */
+  timestamp: number;
+  /** 音频载荷 */
+  payload: Uint8Array;
+}
+
+/**
+ * 协议2头部大小（字节）
  */
 const HEADER_SIZE = 16; // 2 + 2 + 4 + 4 + 4
+
+/**
+ * 协议3头部大小（字节）: 1 + 1 + 2 = 4
+ */
+const HEADER_SIZE_PROTOCOL3 = 4;
 
 /**
  * 编码为 BinaryProtocol2 格式
@@ -155,4 +191,146 @@ export function isBinaryProtocol2(data: Buffer): boolean {
   }
 
   return true;
+}
+
+/**
+ * 协议类型
+ */
+export type AudioProtocolType =
+  | "protocol1"
+  | "protocol2"
+  | "protocol3"
+  | "unknown";
+
+/**
+ * 检查是否为 BinaryProtocol3 格式
+ * @param data - 待检查的数据
+ * @returns 是否为 BinaryProtocol3 格式
+ */
+export function isBinaryProtocol3(data: Buffer): boolean {
+  // 数据长度至少4字节
+  if (data.length < HEADER_SIZE_PROTOCOL3) {
+    return false;
+  }
+
+  // 读取 type（第1字节）
+  const typeValue = data[0];
+  if (typeValue !== 0 && typeValue !== 1) {
+    return false;
+  }
+
+  // 读取 payload_size（第3-4字节，网络字节序大端序，16位）
+  const payloadSize = data.readUInt16BE(2);
+
+  // 检查载荷大小是否合理（不超过数据长度）
+  if (data.length < HEADER_SIZE_PROTOCOL3 + payloadSize) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * 解析 BinaryProtocol3 数据
+ * @param data - 待解析的数据
+ * @returns 解析结果，如果数据格式不正确则返回 null
+ */
+export function parseBinaryProtocol3(
+  data: Buffer
+): BinaryProtocol3Parsed | null {
+  // 检查数据长度是否至少包含头部
+  if (data.length < HEADER_SIZE_PROTOCOL3) {
+    return null;
+  }
+
+  // 读取数据类型（第1字节）
+  const typeValue = data[0];
+  const type = typeValue === 0 ? ("opus" as const) : ("json" as const);
+
+  // 读取载荷大小（第3-4字节，16位，大端序）
+  const payloadSize = data.readUInt16BE(2);
+
+  // 检查载荷大小是否与实际数据长度匹配
+  if (data.length < HEADER_SIZE_PROTOCOL3 + payloadSize) {
+    return null;
+  }
+
+  // 提取载荷数据
+  const payload = new Uint8Array(
+    data.buffer,
+    data.byteOffset + HEADER_SIZE_PROTOCOL3,
+    payloadSize
+  );
+
+  return {
+    protocolVersion: 3,
+    type,
+    timestamp: 0, // 协议3没有时间戳字段
+    payload,
+  };
+}
+
+/**
+ * 检查是否为纯 Opus 数据（协议1）
+ *
+ * Opus 数据以 TOC (Table of Contents) 字节开头
+ * TOC 字节的最高2位表示帧类型：
+ * - 0b00: 单帧 (single frame)
+ * - 0b01: 帧数未压缩
+ * - 0b10: 帧数压缩
+ * - 0b11: 扩展
+ *
+ * 对于 Opus 音频，有效的 TOC 字节通常以 0b??开头
+ * 我们检查数据是否为有效的 Opus 数据（不能太短，且第一个字节看起来像 Opus TOC）
+ * @param data - 待检查的数据
+ * @returns 是否可能是有效的 Opus 数据
+ */
+function isValidOpusData(data: Buffer): boolean {
+  // Opus 数据至少需要几个字节
+  if (data.length < 2) {
+    return false;
+  }
+
+  // 检查第一个字节是否为有效的 Opus TOC 字节
+  // Opus TOC 字节格式：config(5) + channels(1) + frame(2)
+  // config 范围 0-23，channels 为 0 或 1，frame 范围 0-3
+  const toc = data[0];
+
+  // 检查 config 是否在有效范围内 (0-23)
+  const config = (toc >> 3) & 0x1f;
+  if (config > 23) {
+    return false;
+  }
+
+  // 检查 channels 是否有效 (0 或 1)
+  const channels = (toc >> 2) & 0x01;
+  if (channels > 1) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * 自动检测协议版本
+ * @param data - 待检测的数据
+ * @returns 检测到的协议类型
+ */
+export function detectAudioProtocol(data: Buffer): AudioProtocolType {
+  // 优先检测协议2（16字节头部）
+  if (isBinaryProtocol2(data)) {
+    return "protocol2";
+  }
+
+  // 检测协议3（4字节头部）
+  if (isBinaryProtocol3(data)) {
+    return "protocol3";
+  }
+
+  // 尝试检测协议1（纯Opus数据）
+  if (isValidOpusData(data)) {
+    return "protocol1";
+  }
+
+  return "unknown";
 }

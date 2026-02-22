@@ -50,6 +50,15 @@ jobs:
     - name: Nx Lint
       run: pnpm run lint
 
+    # 构建（必须在类型检查之前，因为类型定义文件需要通过构建生成）
+    - name: Nx Build
+      uses: nick-invision/retry@v3
+      with:
+        timeout_minutes: 10
+        max_attempts: 2
+        retry_on: error
+        command: pnpm run build
+
     - name: Nx Type Check
       run: pnpm run check:type
 
@@ -63,15 +72,7 @@ jobs:
     - name: 代码重复率检查 (monorepo)
       run: pnpm run check:cpd
 
-    # 构建和测试
-    - name: Nx Build
-      uses: nick-invision/retry@v3
-      with:
-        timeout_minutes: 10
-        max_attempts: 2
-        retry_on: error
-        command: pnpm run build
-
+    # 测试（构建已在类型检查之前完成）
     - name: Nx Test
       uses: nick-invision/retry@v3
       with:

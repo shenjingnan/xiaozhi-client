@@ -8,8 +8,11 @@ import { logger } from "@/Logger.js";
 import {
   encodeBinaryProtocol2,
   isBinaryProtocol2,
+  isBinaryProtocol3,
   parseBinaryProtocol2,
+  parseBinaryProtocol3,
 } from "@/lib/esp32/audio-protocol.js";
+import type { IVoiceSessionService } from "@/services/voice-session.interface.js";
 import {
   type ESP32ConnectionState,
   ESP32ErrorCode,
@@ -32,6 +35,8 @@ interface ESP32ConnectionConfig {
   onError: (error: Error) => void;
   /** 心跳超时时间（毫秒），默认30秒 */
   heartbeatTimeoutMs?: number;
+  /** 语音会话服务（可选） */
+  voiceSessionService?: IVoiceSessionService;
 }
 
 /**
@@ -58,13 +63,16 @@ export class ESP32Connection {
   private sessionId: string;
 
   /** 配置 */
-  private config: Required<ESP32ConnectionConfig>;
+  private config: ESP32ConnectionConfig & { heartbeatTimeoutMs: number };
 
   /** 心跳超时时间（毫秒） */
   private readonly heartbeatTimeoutMs: number;
 
   /** 是否已完成Hello握手 */
   private helloCompleted = false;
+
+  /** 语音会话服务 */
+  private voiceSessionService?: IVoiceSessionService;
 
   /**
    * 构造函数
@@ -93,6 +101,9 @@ export class ESP32Connection {
       onError: config.onError,
       heartbeatTimeoutMs: this.heartbeatTimeoutMs,
     };
+
+    // 保存语音会话服务
+    this.voiceSessionService = config.voiceSessionService;
 
     this.setupWebSocket();
   }
@@ -156,6 +167,7 @@ export class ESP32Connection {
       // 处理Hello消息
       if (message.type === "hello") {
         await this.handleHello(message as ESP32HelloMessage);
+        await this.config.onMessage(message);
         return;
       }
 
@@ -174,7 +186,7 @@ export class ESP32Connection {
     } catch (error) {
       // 可能是二进制数据（音频等）
       if (data.length > 0 && !isValidUTF8(data)) {
-        logger.debug(
+        logger.info(
           `收到二进制消息: deviceId=${this.deviceId}, size=${data.length}`
         );
 
@@ -182,8 +194,8 @@ export class ESP32Connection {
         if (isBinaryProtocol2(data)) {
           const parsed = parseBinaryProtocol2(data);
           if (parsed) {
-            logger.debug(
-              `解析音频包成功: type=${parsed.type}, timestamp=${parsed.timestamp}, payloadSize=${parsed.payload.length}`
+            logger.info(
+              `解析音频包成功(协议2): type=${parsed.type}, timestamp=${parsed.timestamp}, payloadSize=${parsed.payload.length}`
             );
             // 处理为解析后的音频消息（附加解析信息）
             await this.config.onMessage({
@@ -198,9 +210,32 @@ export class ESP32Connection {
             } as ESP32WSMessage);
             return;
           }
-          logger.debug("音频协议解析失败，作为原始数据处理");
+          logger.info("协议2解析失败，尝试其他协议");
         }
 
+        // 尝试解析为 BinaryProtocol3 音频协议
+        if (isBinaryProtocol3(data)) {
+          const parsed = parseBinaryProtocol3(data);
+          if (parsed) {
+            logger.info(
+              `解析音频包成功(协议3): type=${parsed.type}, timestamp=${parsed.timestamp}, payloadSize=${parsed.payload.length}`
+            );
+            await this.config.onMessage({
+              type: "audio",
+              data: parsed.payload,
+              _parsed: {
+                protocolVersion: parsed.protocolVersion,
+                dataType: parsed.type,
+                timestamp: parsed.timestamp,
+              },
+            } as ESP32WSMessage);
+            return;
+          }
+          logger.info("协议3解析失败，作为原始数据处理");
+        }
+
+        const version = data.readUInt16BE(0);
+        logger.info(`音频协议解析失败，作为原始数据处理, version=${version}`);
         // 处理为原始音频消息
         await this.config.onMessage({
           type: "audio",
@@ -235,6 +270,22 @@ export class ESP32Connection {
     logger.info(
       `[HELLO] 特性: mcp=${message.features?.mcp}, transport=${message.transport}`
     );
+
+    // 先初始化 ASR（等待连接完成后再发送 serverHello）
+    // 这样可以确保 ASR 在设备发送音频数据时已经准备好
+    if (this.voiceSessionService?.initASR) {
+      logger.info(`[HELLO] 开始初始化 ASR: deviceId=${this.deviceId}`);
+      try {
+        await this.voiceSessionService.initASR(this.deviceId);
+        logger.info(`[HELLO] ASR 初始化完成: deviceId=${this.deviceId}`);
+      } catch (error) {
+        logger.error(
+          `[HELLO] ASR 初始化失败: deviceId=${this.deviceId}`,
+          error
+        );
+        // ASR 初始化失败不中断流程，继续处理
+      }
+    }
 
     // 发送ServerHello响应
     const serverHello: ESP32ServerHelloMessage = {

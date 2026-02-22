@@ -1,5 +1,8 @@
 packages:
-  - 'apps/*'
-  - 'packages/*'
-  - 'mcps/*'
-  - 'docs'
+  - apps/*
+  - packages/*
+  - mcps/*
+  - docs
+
+onlyBuiltDependencies:
+  - "@discordjs/opus"

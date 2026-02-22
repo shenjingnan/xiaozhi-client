@@ -24,6 +24,7 @@ demux
 demuxer
 Demuxers
 dify
+discordjs
 dotenv
 EACCES
 efgh
@@ -75,6 +76,8 @@ nframes
 nonexistenttool
 NOTW
 npmjs
+ntohl
+ntohs
 numpy
 nums
 oneline

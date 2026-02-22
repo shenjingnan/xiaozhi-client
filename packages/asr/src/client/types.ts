@@ -23,6 +23,9 @@ export interface ASRRequestConfig {
     show_utterances: boolean;
     result_type: string;
     sequence: number;
+    vad_signal: boolean;
+    start_silence_time: string;
+    vad_silence_time: string;
   };
   audio: {
     format: string;
@@ -80,14 +83,22 @@ export interface ASRResult {
   code: number;
   message?: string;
   seq?: number;
-  result?: {
+  sequence?: number; // 服务端返回的包序号，负数表示最后一包
+  result?: Array<{
     text: string;
     segments?: Array<{
       text: string;
       start_time?: number;
       end_time?: number;
     }>;
-  };
+    utterances?: Array<{
+      // 分句信息
+      text: string;
+      definite?: boolean; // true 表示最终结果
+      start_time?: number;
+      end_time?: number;
+    }>;
+  }>;
 }
 
 // Event types
@@ -97,7 +108,8 @@ export type ASREventType =
   | "error"
   | "result"
   | "audio_end"
-  | "full_response";
+  | "full_response"
+  | "vad_end"; // VAD 检测到用户说话结束
 
 // Event data
 export interface ASREventData {

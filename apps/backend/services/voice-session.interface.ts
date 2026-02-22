@@ -39,6 +39,28 @@ export interface IVoiceSessionService {
   handleAudioData?(deviceId: string, audioData: Uint8Array): Promise<void>;
 
   /**
+   * 初始化 ASR 语音识别服务
+   * 在设备连接时（hello消息）调用，提前建立ASR连接
+   * 如果已存在ASR客户端且已连接，则跳过初始化
+   * @param deviceId - 设备ID
+   */
+  initASR?(deviceId: string): Promise<void>;
+
+  /**
+   * 开始 ASR 语音识别
+   * 创建 ASR 实例、设置事件监听并连接
+   * @param deviceId - 设备ID
+   */
+  startASR?(deviceId: string): Promise<void>;
+
+  /**
+   * 结束 ASR 语音识别
+   * 发送结束信号、关闭连接并清理资源
+   * @param deviceId - 设备ID
+   */
+  endASR?(deviceId: string): Promise<void>;
+
+  /**
    * 中断语音会话
    * @param deviceId - 设备ID
    * @param reason - 中断原因

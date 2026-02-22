@@ -122,6 +122,14 @@ export interface TTSConfig {
   endpoint?: string; // WebSocket 端点
 }
 
+// ASR 配置接口
+export interface ASRConfig {
+  appid?: string; // 应用 ID
+  accessToken?: string; // 访问令牌
+  cluster?: string; // 集群类型（默认：volcengine_streaming_common）
+  wsUrl?: string; // WebSocket 端点
+}
+
 export interface ToolCallLogConfig {
   maxRecords?: number; // 最大记录条数，默认 100
   logFilePath?: string; // 自定义日志文件路径（可选）
@@ -270,6 +278,7 @@ export interface AppConfig {
   platforms?: PlatformsConfig; // 平台配置（可选）
   toolCallLog?: ToolCallLogConfig; // 工具调用日志配置（可选）
   tts?: TTSConfig; // TTS 配置（可选）
+  asr?: ASRConfig; // ASR 配置（可选）
 }
 
 /**
@@ -292,7 +301,8 @@ export class ConfigManager {
   private readonly STATS_UPDATE_TIMEOUT = 5000; // 5秒超时
 
   // 事件回调（用于解耦 EventBus 依赖）
-  private eventCallbacks: Map<string, Array<(data: unknown) => void>> = new Map();
+  private eventCallbacks: Map<string, Array<(data: unknown) => void>> =
+    new Map();
 
   private constructor() {
     // 使用模板目录中的默认配置文件
@@ -2306,6 +2316,14 @@ export class ConfigManager {
   public getTTSConfig(): Readonly<TTSConfig> {
     const config = this.getConfig();
     return config.tts || {};
+  }
+
+  /**
+   * 获取 ASR 配置
+   */
+  public getASRConfig(): Readonly<ASRConfig> {
+    const config = this.getConfig();
+    return config.asr || {};
   }
 
   /**
