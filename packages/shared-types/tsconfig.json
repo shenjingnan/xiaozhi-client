@@ -3,7 +3,7 @@
     "target": "ES2022",
     "module": "ESNext",
     "lib": ["ES2022"],
-    "outDir": "./dist",
+    "outDir": "../../dist/shared-types",
     "rootDir": "src",
     "declaration": true,
     "declarationMap": true,
