@@ -4,6 +4,7 @@
 
 import type { AudioFormat } from "../audio";
 import type { AuthMethod } from "../auth";
+import type { ByteDanceOption } from "../schema";
 
 // Request configuration
 export interface ASRRequestConfig {
@@ -39,18 +40,21 @@ export interface ASRRequestConfig {
 
 // Client options
 export interface ASROption {
-  // Server
+  // ByteDance 配置（V2 或 V3）
+  bytedance?: ByteDanceOption;
+
+  // Server（用于旧版兼容）
   wsUrl?: string;
   cluster?: string;
 
-  // App
+  // App（用于旧版兼容）
   appid?: string;
   token?: string;
 
-  // User
+  // User（用于旧版兼容）
   uid?: string;
 
-  // Audio
+  // Audio（用于旧版兼容）
   audioPath?: string;
   format?: AudioFormat;
   sampleRate?: number;
@@ -59,7 +63,7 @@ export interface ASROption {
   channel?: number;
   codec?: string;
 
-  // Request
+  // Request（用于旧版兼容）
   segDuration?: number;
   nbest?: number;
   workflow?: string;
@@ -67,7 +71,7 @@ export interface ASROption {
   showUtterances?: boolean;
   resultType?: string;
 
-  // Auth
+  // Auth（用于旧版兼容）
   authMethod?: AuthMethod;
   secret?: string;
 

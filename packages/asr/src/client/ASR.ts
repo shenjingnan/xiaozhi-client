@@ -17,12 +17,22 @@ import {
   generateLastAudioDefaultHeader,
   parseResponse,
 } from "../protocol/index.js";
+import {
+  BYTEDANCE_V2_DEFAULT_CLUSTER,
+  type ByteDanceV2Config,
+  type ByteDanceV3Config,
+  isV2Config,
+  parseByteDanceConfig,
+} from "../schema/index.js";
 import type { ASROption, ASRRequestConfig, ASRResult } from "./types.js";
 
 /**
  * Streaming ASR WebSocket Client
  */
 export class ASR extends EventEmitter {
+  // API 版本
+  private apiVersion: "v2" | "v3" = "v2";
+
   // Server config
   private wsUrl: string;
   private cluster: string;
@@ -82,16 +92,38 @@ export class ASR extends EventEmitter {
   constructor(options: ASROption) {
     super();
 
-    // Server config
-    this.wsUrl = options.wsUrl || "wss://openspeech.bytedance.com/api/v2/asr";
-    this.cluster = options.cluster || "volcengine_streaming_common";
+    // 解析 ByteDance 配置
+    if (options.bytedance) {
+      // 使用 zod 校验并解析配置
+      const config = parseByteDanceConfig(options.bytedance);
 
-    // App config
-    this.appid = options.appid || "";
-    this.token = options.token || "";
-
-    // User config
-    this.uid = options.uid || "streaming_asr_client";
+      if (isV2Config(options.bytedance)) {
+        // V2 配置
+        const v2Config = config as ByteDanceV2Config;
+        this.apiVersion = "v2";
+        this.wsUrl = "wss://openspeech.bytedance.com/api/v2/asr";
+        this.cluster = v2Config.cluster || BYTEDANCE_V2_DEFAULT_CLUSTER;
+        this.appid = v2Config.appid;
+        this.token = v2Config.token;
+        this.uid = v2Config.uid || "streaming_asr_client";
+      } else {
+        // V3 配置
+        const v3Config = config as ByteDanceV3Config;
+        this.apiVersion = "v3";
+        this.wsUrl = "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel";
+        this.cluster = "";
+        this.appid = v3Config.appKey;
+        this.token = v3Config.accessKey;
+        this.uid = v3Config.user?.uid || "streaming_asr_client";
+      }
+    } else {
+      // 兼容旧版配置
+      this.wsUrl = options.wsUrl || "wss://openspeech.bytedance.com/api/v2/asr";
+      this.cluster = options.cluster || BYTEDANCE_V2_DEFAULT_CLUSTER;
+      this.appid = options.appid || "";
+      this.token = options.token || "";
+      this.uid = options.uid || "streaming_asr_client";
+    }
 
     // Audio config
     this.audioPath = options.audioPath || "";
@@ -185,12 +217,36 @@ export class ASR extends EventEmitter {
    * Get authentication headers
    */
   private getAuthHeaders(requestData?: Buffer): Record<string, string> {
+    // V3 使用不同的认证方式
+    if (this.apiVersion === "v3") {
+      return this.getV3AuthHeaders();
+    }
+
     if (this.authMethod === AuthMethod.TOKEN) {
       return new TokenAuth(this.token).getHeaders();
     }
     return new SignatureAuth(this.token, this.secret, this.wsUrl).getHeaders(
       requestData
     );
+  }
+
+  /**
+   * Get V3 authentication headers
+   * V3 使用 appKey 和 accessKey 进行认证
+   */
+  private getV3AuthHeaders(): Record<string, string> {
+    // V3 认证格式: app_key 和 access_key
+    return {
+      Authorization: `Bearer; ${this.token}`,
+      "X-App-Key": this.appid,
+    };
+  }
+
+  /**
+   * Get API version
+   */
+  getApiVersion(): "v2" | "v3" {
+    return this.apiVersion;
   }
 
   /**
