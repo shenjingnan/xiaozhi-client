@@ -1,3 +1,11 @@
+/**
+ * CLI 全局类型声明
+ *
+ * 扩展 Node.js 全局类型，包含以下内容：
+ * - Express 相关类型
+ * - WebSocket 相关类型
+ * - 环境变量类型扩展
+ */
 /// <reference types="node" />
 /// <reference types="express" />
 /// <reference types="ws" />
