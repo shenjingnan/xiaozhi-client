@@ -1,3 +1,13 @@
+/**
+ * Logger 中间件
+ *
+ * 负责将 logger 实例注入到 Hono Context 中，支持两种访问方式：
+ * - c.get("logger") - Hono 推荐做法
+ * - c.logger - 向后兼容方式
+ *
+ * @module middlewares/logger.middleware
+ */
+
 import { logger } from "@/Logger.js";
 import type { Logger } from "@/Logger.js";
 import type { AppContext } from "@/types/hono.context.js";
