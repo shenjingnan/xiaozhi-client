@@ -131,6 +131,7 @@ export class ASR extends EventEmitter {
           this.bits = v2Config.audio.bits || 16;
           this.channel = v2Config.audio.channel || 1;
           this.codec = v2Config.audio.codec || "raw";
+          this.language = v2Config.audio.language || this.language;
         }
 
         // 从 bytedance.v2.request 读取请求配置

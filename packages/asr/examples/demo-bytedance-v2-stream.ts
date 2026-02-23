@@ -149,27 +149,19 @@ async function main() {
         user: {
           uid: "streaming_asr_client",
         },
-        // 音频配置：通过 v2.audio 传入
         audio: {
           format: AudioFormat.RAW,
-          channel: 1,
-          bits: 16,
-          codec: "raw",
+          // 语言配置
+          language: "zh-CN",
         },
         request: {
           reqid: "uuid",
           sequence: 1,
-          nbest: 1,
-          result_type: "full",
-          workflow:
-            "audio_in,resample,partition,vad,fe,decode,itn,nlu_punctuate",
         },
       },
     },
     // 认证配置
     authMethod: AuthMethod.TOKEN,
-    // 语言配置
-    language: "zh-CN",
   });
 
   // 设置事件监听器
