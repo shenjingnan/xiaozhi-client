@@ -21,9 +21,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 import fs from "node:fs";
-import { Readable } from "node:stream";
-import * as prism from "prism-media";
-import { ASR, AudioFormat, AuthMethod } from "../src/index.js";
+import { ASR, AudioFormat, AuthMethod, OpusDecoder } from "../src/index.js";
 
 // V2 协议头部常量
 const PROTOCOL_HEADER_SIZE = 16;
@@ -95,48 +93,6 @@ function readAllOpusFiles(dirPath: string): Buffer[] {
     });
 
   return files.map((f: string) => readV2OpusFile(path.join(dirPath, f)));
-}
-
-/**
- * 使用 prism-media 将 Opus 数据解码为 PCM
- *
- * @param opusData 裸 Opus 数据
- * @param sampleRate 采样率（默认 16000 Hz）
- * @param channels 声道数（默认 1，单声道）
- * @returns PCM 数据
- */
-async function decodeOpusToPcm(
-  opusData: Buffer,
-  sampleRate = 16000,
-  channels = 1
-): Promise<Buffer> {
-  // 计算帧大小：16kHz * 20ms * 1通道 = 320 样本
-  const frameSize = Math.floor(sampleRate * 0.02);
-
-  const chunks: Buffer[] = [];
-
-  // 使用 prism-media 的 Opus Decoder 解码
-  await new Promise<void>((resolve, reject) => {
-    const stream = Readable.from(opusData);
-
-    const decoder = new prism.opus.Decoder({
-      rate: sampleRate,
-      channels: channels,
-      frameSize: frameSize,
-    });
-
-    decoder.on("data", (chunk: Buffer) => {
-      chunks.push(chunk);
-    });
-
-    decoder.on("end", () => resolve());
-    decoder.on("error", reject);
-
-    stream.pipe(decoder);
-  });
-
-  // 合并所有 PCM 数据块
-  return Buffer.concat(chunks);
 }
 
 async function main() {
@@ -211,7 +167,7 @@ async function main() {
     console.log("正在解码 Opus 为 PCM...");
     const pcmChunks: Buffer[] = [];
     for (let i = 0; i < opusChunks.length; i++) {
-      const pcmData = await decodeOpusToPcm(opusChunks[i], 16000, 1);
+      const pcmData = await OpusDecoder.toPcm(opusChunks[i]);
       pcmChunks.push(pcmData);
 
       if ((i + 1) % 20 === 0) {
