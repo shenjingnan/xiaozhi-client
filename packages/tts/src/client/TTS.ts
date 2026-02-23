@@ -18,6 +18,20 @@ export interface TTSClientOptions {
   platform?: "bytedance";
   /** 平台配置 */
   config?: ByteDanceTTSConfig;
+  /** ByteDance V1 配置 */
+  bytedance?: {
+    v1?: ByteDanceTTSConfig;
+  };
+}
+
+/**
+ * 流式合成结果
+ */
+export interface StreamSpeakResult {
+  /** 音频数据块 */
+  chunk: Uint8Array;
+  /** 是否为最终块 */
+  isFinal: boolean;
 }
 
 /**
@@ -27,6 +41,13 @@ export class TTS extends EventEmitter {
   private controller: ReturnType<typeof createTTSController> | null = null;
   private config: ByteDanceTTSConfig;
   private platform: string;
+
+  // ByteDance V1 控制器
+  public readonly bytedance: {
+    v1: {
+      speak: (text: string) => AsyncGenerator<StreamSpeakResult, void, unknown>;
+    };
+  };
 
   constructor(options: TTSClientOptions) {
     super();
@@ -42,6 +63,110 @@ export class TTS extends EventEmitter {
         encoding: "wav",
       },
     };
+
+    // 初始化 ByteDance V1 控制器
+    const v1Config = options.bytedance?.v1 || this.config;
+    this.bytedance = {
+      v1: {
+        speak: (text: string) => this.createV1StreamIterator(text, v1Config),
+      },
+    };
+  }
+
+  /**
+   * 创建 V1 流式合成迭代器
+   */
+  private async *createV1StreamIterator(
+    text: string,
+    config: ByteDanceTTSConfig
+  ): AsyncGenerator<StreamSpeakResult, void, unknown> {
+    // 使用 V1 端点和 ogg_opus 编码
+    const v1Config: ByteDanceTTSConfig = {
+      ...config,
+      audio: {
+        ...config.audio,
+        encoding: "ogg_opus",
+      },
+    };
+
+    const controller = createTTSController(this.platform, {
+      platform: this.platform,
+      ...v1Config,
+    });
+
+    // 使用回调方式实现异步迭代器
+    const queue: StreamSpeakResult[] = [];
+    let resolveNext: (() => void) | null = null;
+    let streamEnded = false;
+    let error: Error | null = null;
+
+    const onAudioChunk = async (
+      chunk: Uint8Array,
+      isLast: boolean
+    ): Promise<void> => {
+      queue.push({ chunk, isFinal: isLast });
+
+      // 唤醒等待中的迭代器
+      if (resolveNext) {
+        const resolve = resolveNext;
+        resolveNext = null;
+        resolve();
+      }
+
+      // 如果是最终块，标记流结束
+      if (isLast) {
+        streamEnded = true;
+      }
+    };
+
+    // 启动流式合成
+    const synthesisPromise = controller
+      .synthesizeStream(text, onAudioChunk)
+      .catch((e) => {
+        error = e as Error;
+        // 唤醒等待中的迭代器
+        if (resolveNext) {
+          const resolve = resolveNext;
+          resolveNext = null;
+          resolve();
+        }
+      });
+
+    // 迭代返回结果
+    while (!streamEnded) {
+      // 如果队列中有结果，立即 yield
+      while (queue.length > 0) {
+        const result = queue.shift()!;
+        // 如果是最终块，yield 后退出
+        if (result.isFinal) {
+          streamEnded = true;
+        }
+        yield result;
+      }
+
+      // 如果有错误，抛出错误
+      if (error) {
+        throw error;
+      }
+
+      // 如果流已结束，退出
+      if (streamEnded) {
+        break;
+      }
+
+      // 如果没有结果，等待新结果
+      await new Promise<void>((resolve) => {
+        resolveNext = resolve;
+      });
+
+      // 检查是否有错误
+      if (error) {
+        throw error;
+      }
+    }
+
+    // 确保合成完成
+    await synthesisPromise;
   }
 
   /**

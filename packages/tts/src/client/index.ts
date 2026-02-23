@@ -3,4 +3,5 @@
  */
 
 export * from "./TTS.js";
+export type { StreamSpeakResult } from "./TTS.js";
 export * from "./convenience.js";
