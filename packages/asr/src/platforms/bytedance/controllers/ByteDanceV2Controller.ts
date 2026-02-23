@@ -4,9 +4,9 @@
 
 import { Buffer } from "node:buffer";
 import { Readable } from "node:stream";
-import type { ASR as ASRClient } from "../../../client";
-import type { AudioInput, ListenResult } from "../../../types";
-import { ByteDanceController } from "./ByteDanceController.js";
+import type { ASR as ASRClient } from "@/client";
+import { ByteDanceController } from "@/platforms/bytedance/controllers/ByteDanceController.js";
+import type { AudioInput, ListenResult } from "@/types";
 
 /**
  * ByteDance V2 流式 ASR 控制器实现

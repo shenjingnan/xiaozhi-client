@@ -2,7 +2,7 @@
  * ByteDance 控制器基类
  */
 
-import type { AudioInput, ListenResult } from "../../../types";
+import type { AudioInput, ListenResult } from "@/types";
 
 /**
  * ByteDance 流式 ASR 控制器基类

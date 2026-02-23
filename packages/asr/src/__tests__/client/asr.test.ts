@@ -2,10 +2,10 @@
  * ASR 客户端测试
  */
 
+import { AudioFormat } from "@/audio/index.js";
+import { AuthMethod } from "@/auth/index.js";
+import { ASR, executeOne } from "@/client/index.js";
 import { describe, expect, it, vi } from "vitest";
-import { AudioFormat } from "../../audio/index.js";
-import { AuthMethod } from "../../auth/index.js";
-import { ASR, executeOne } from "../../client/index.js";
 
 describe("ASR 客户端", () => {
   describe("构造函数", () => {

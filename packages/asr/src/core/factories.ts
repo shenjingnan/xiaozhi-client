@@ -2,7 +2,7 @@
  * 平台工厂函数
  */
 
-import type { ASRPlatform, PlatformConfig } from "./types.js";
+import type { ASRPlatform, PlatformConfig } from "@/core/types.js";
 
 /**
  * 获取指定平台的实例

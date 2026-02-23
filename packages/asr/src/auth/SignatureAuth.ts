@@ -4,7 +4,7 @@
 
 import { createHmac } from "node:crypto";
 import { URL } from "node:url";
-import type { AuthHeaders } from "./types.js";
+import type { AuthHeaders } from "@/auth/types.js";
 
 /**
  * Generate HMAC256 Signature authentication headers

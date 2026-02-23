@@ -4,22 +4,21 @@
 
 import { Buffer } from "node:buffer";
 import { EventEmitter } from "node:events";
-import { v4 as uuidv4 } from "uuid";
-import WebSocket from "ws";
-import { AudioFormat } from "../audio";
-import { AudioProcessor } from "../audio/index.js";
-import { AuthMethod, SignatureAuth, TokenAuth } from "../auth";
+import { AudioFormat } from "@/audio";
+import { AudioProcessor } from "@/audio/index.js";
+import { AuthMethod, SignatureAuth, TokenAuth } from "@/auth";
+import type { ASROption, ASRRequestConfig, ASRResult } from "@/client/types.js";
 import {
   BYTEDANCE_V2_DEFAULT_CLUSTER,
   type ByteDanceV2Config,
   type ByteDanceV3Config,
   isV2Config,
   parseByteDanceConfig,
-} from "../platforms/index.js";
+} from "@/platforms/index.js";
 import {
   ByteDanceV2Controller,
   ByteDanceV3Controller,
-} from "../platforms/index.js";
+} from "@/platforms/index.js";
 import {
   MessageType,
   compressGzipSync,
@@ -27,8 +26,9 @@ import {
   generateFullDefaultHeader,
   generateLastAudioDefaultHeader,
   parseResponse,
-} from "../platforms/index.js";
-import type { ASROption, ASRRequestConfig, ASRResult } from "./types.js";
+} from "@/platforms/index.js";
+import { v4 as uuidv4 } from "uuid";
+import WebSocket from "ws";
 
 /**
  * Streaming ASR WebSocket Client

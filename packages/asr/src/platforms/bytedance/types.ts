@@ -2,8 +2,8 @@
  * ByteDance 平台类型定义
  */
 
-import type { AudioFormat } from "../../audio";
-import type { AuthMethod } from "../../auth";
+import type { AudioFormat } from "@/audio";
+import type { AuthMethod } from "@/auth";
 
 /**
  * ByteDance 平台配置

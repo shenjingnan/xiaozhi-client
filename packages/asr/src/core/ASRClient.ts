@@ -4,7 +4,7 @@
  */
 
 import { EventEmitter } from "node:events";
-import { platformRegistry } from "./ASRPlatform.js";
+import { platformRegistry } from "@/core/ASRPlatform.js";
 import type {
   ASRController,
   ASRPlatform,
@@ -12,7 +12,7 @@ import type {
   CommonASROptions,
   ListenResult,
   PlatformConfig,
-} from "./types.js";
+} from "@/core/types.js";
 
 /**
  * 统一 ASR 客户端选项

@@ -2,9 +2,9 @@
  * Client type definitions
  */
 
-import type { AudioFormat } from "../audio";
-import type { AuthMethod } from "../auth";
-import type { ByteDanceOption } from "../platforms";
+import type { AudioFormat } from "@/audio";
+import type { AuthMethod } from "@/auth";
+import type { ByteDanceOption } from "@/platforms";
 
 // Request configuration
 export interface ASRRequestConfig {

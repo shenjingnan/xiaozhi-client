@@ -2,8 +2,8 @@
  * UUID 工具测试
  */
 
+import { generateReqId, generateShortId } from "@/utils/index.js";
 import { describe, expect, it } from "vitest";
-import { generateReqId, generateShortId } from "../../utils/index.js";
 
 describe("UUID 工具", () => {
   describe("generateReqId", () => {

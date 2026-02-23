@@ -3,26 +3,26 @@
  * 实现 ASRPlatform 接口，提供统一的平台抽象
  */
 
-import type { ASR as ASRClient } from "../../client";
-import { ASR } from "../../client";
-import type { ASRController, ASRPlatform, PlatformConfig } from "../../core";
+import type { ASR as ASRClient } from "@/client";
+import { ASR } from "@/client";
+import type { ASRController, ASRPlatform, PlatformConfig } from "@/core";
 import {
   ByteDanceV2Controller,
   ByteDanceV3Controller,
-} from "./controllers/index.js";
-import { BYTEDANCE_V2_DEFAULT_CLUSTER } from "./schemas";
+} from "@/platforms/bytedance/controllers/index.js";
+import { BYTEDANCE_V2_DEFAULT_CLUSTER } from "@/platforms/bytedance/schemas";
 
 // 重新导出控制器，供外部使用
 export {
   ByteDanceV2Controller,
   ByteDanceV3Controller,
-} from "./controllers/index.js";
+} from "@/platforms/bytedance/controllers/index.js";
 
 // 重新导出协议，供外部使用
-export * from "./protocol/index.js";
+export * from "@/platforms/bytedance/protocol/index.js";
 
 // 重新导出 Schema，供外部使用
-export * from "./schemas/index.js";
+export * from "@/platforms/bytedance/schemas/index.js";
 
 /**
  * ByteDance 平台实现
@@ -171,4 +171,4 @@ export type {
   ByteDancePlatformConfig,
   ByteDanceV2Config as ByteDanceV2PlatformConfig,
   ByteDanceV3Config as ByteDanceV3PlatformConfig,
-} from "./types.js";
+} from "@/platforms/bytedance/types.js";

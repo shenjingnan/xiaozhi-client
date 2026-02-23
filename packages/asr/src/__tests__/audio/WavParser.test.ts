@@ -3,8 +3,8 @@
  */
 
 import { Buffer } from "node:buffer";
+import { createWavFile, readWavData, readWavInfo } from "@/audio/index.js";
 import { describe, expect, it } from "vitest";
-import { createWavFile, readWavData, readWavInfo } from "../../audio/index.js";
 
 describe("WavParser", () => {
   /**

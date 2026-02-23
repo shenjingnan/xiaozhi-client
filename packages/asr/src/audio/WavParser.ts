@@ -3,7 +3,7 @@
  */
 
 import { Buffer } from "node:buffer";
-import type { WavInfo } from "./types.js";
+import type { WavInfo } from "@/audio/types.js";
 
 /**
  * Read WAV file information
