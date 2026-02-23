@@ -12,7 +12,7 @@ import { AuthMethod, SignatureAuth, TokenAuth } from "../auth";
 import {
   ByteDanceV2Controller,
   ByteDanceV3Controller,
-} from "../controllers/index.js";
+} from "../platforms/index.js";
 import {
   MessageType,
   compressGzipSync,
@@ -20,7 +20,7 @@ import {
   generateFullDefaultHeader,
   generateLastAudioDefaultHeader,
   parseResponse,
-} from "../protocol/index.js";
+} from "../platforms/index.js";
 import {
   BYTEDANCE_V2_DEFAULT_CLUSTER,
   type ByteDanceV2Config,

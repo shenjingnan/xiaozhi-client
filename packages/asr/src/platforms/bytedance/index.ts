@@ -11,11 +11,15 @@ import {
   ByteDanceV2Controller,
   ByteDanceV3Controller,
 } from "./controllers/index.js";
+
 // 重新导出控制器，供外部使用
 export {
   ByteDanceV2Controller,
   ByteDanceV3Controller,
 } from "./controllers/index.js";
+
+// 重新导出协议，供外部使用
+export * from "./protocol/index.js";
 
 /**
  * ByteDance 平台实现

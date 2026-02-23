@@ -1,5 +1,5 @@
 /**
- * Protocol module exports
+ * ByteDance Protocol module exports
  */
 
 export * from "./types.js";

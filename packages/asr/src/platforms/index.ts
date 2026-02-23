@@ -25,3 +25,12 @@ export type {
 
 // 导出平台注册表
 export { platformRegistry } from "../core/index.js";
+
+// 导出协议（ByteDance 二进制协议）- 通过 bytedance/index.js 重新导出
+export * from "./bytedance/index.js";
+
+// 导出控制器（ByteDance 控制器）- 通过 bytedance/index.js 重新导出
+export {
+  ByteDanceV2Controller,
+  ByteDanceV3Controller,
+} from "./bytedance/index.js";

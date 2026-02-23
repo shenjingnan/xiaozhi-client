@@ -10,9 +10,9 @@
  * 3. Calling end() when all frames are sent
  */
 
-import dotenv from "dotenv";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import dotenv from "dotenv";
 
 // 加载 .env 文件
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

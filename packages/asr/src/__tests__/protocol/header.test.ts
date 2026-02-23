@@ -15,7 +15,7 @@ import {
   generateHeader,
   generateLastAudioDefaultHeader,
   parseResponse,
-} from "../../protocol/index.js";
+} from "../../platforms/index.js";
 
 describe("协议头生成", () => {
   it("应生成默认完整请求头", () => {
