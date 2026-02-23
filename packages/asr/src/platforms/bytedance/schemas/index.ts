@@ -1,5 +1,5 @@
 /**
- * Schema 模块导出
+ * ByteDance Schema 模块导出
  */
 
 // V2 Schema
@@ -15,7 +15,7 @@ export {
   type ByteDanceV2User,
   type ByteDanceV2Audio,
   type ByteDanceV2Request,
-} from "./v2.js";
+} from "./api-v2.js";
 
 // V3 Schema
 export {
@@ -29,7 +29,7 @@ export {
   type ByteDanceV3User,
   type ByteDanceV3Audio,
   type ByteDanceV3Request,
-} from "./v3.js";
+} from "./api-v3.js";
 
 // 统一 Schema
 export {

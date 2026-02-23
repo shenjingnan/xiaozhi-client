@@ -4,7 +4,7 @@
 
 import type { AudioFormat } from "../audio";
 import type { AuthMethod } from "../auth";
-import type { ByteDanceOption } from "../schema";
+import type { ByteDanceOption } from "../platforms";
 
 // Request configuration
 export interface ASRRequestConfig {

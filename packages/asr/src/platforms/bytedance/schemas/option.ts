@@ -3,8 +3,8 @@
  */
 
 import { z } from "zod";
-import { type ByteDanceV2Config, ByteDanceV2ConfigSchema } from "./v2.js";
-import { type ByteDanceV3Config, ByteDanceV3ConfigSchema } from "./v3.js";
+import { type ByteDanceV2Config, ByteDanceV2ConfigSchema } from "./api-v2.js";
+import { type ByteDanceV3Config, ByteDanceV3ConfigSchema } from "./api-v3.js";
 
 /**
  * 字节跳动 V2 配置

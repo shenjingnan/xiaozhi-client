@@ -10,6 +10,13 @@ import { AudioFormat } from "../audio";
 import { AudioProcessor } from "../audio/index.js";
 import { AuthMethod, SignatureAuth, TokenAuth } from "../auth";
 import {
+  BYTEDANCE_V2_DEFAULT_CLUSTER,
+  type ByteDanceV2Config,
+  type ByteDanceV3Config,
+  isV2Config,
+  parseByteDanceConfig,
+} from "../platforms/index.js";
+import {
   ByteDanceV2Controller,
   ByteDanceV3Controller,
 } from "../platforms/index.js";
@@ -21,13 +28,6 @@ import {
   generateLastAudioDefaultHeader,
   parseResponse,
 } from "../platforms/index.js";
-import {
-  BYTEDANCE_V2_DEFAULT_CLUSTER,
-  type ByteDanceV2Config,
-  type ByteDanceV3Config,
-  isV2Config,
-  parseByteDanceConfig,
-} from "../schema/index.js";
 import type { ASROption, ASRRequestConfig, ASRResult } from "./types.js";
 
 /**

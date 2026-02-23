@@ -6,11 +6,11 @@
 import type { ASR as ASRClient } from "../../client";
 import { ASR } from "../../client";
 import type { ASRController, ASRPlatform, PlatformConfig } from "../../core";
-import { BYTEDANCE_V2_DEFAULT_CLUSTER } from "../../schema";
 import {
   ByteDanceV2Controller,
   ByteDanceV3Controller,
 } from "./controllers/index.js";
+import { BYTEDANCE_V2_DEFAULT_CLUSTER } from "./schemas";
 
 // 重新导出控制器，供外部使用
 export {
@@ -20,6 +20,9 @@ export {
 
 // 重新导出协议，供外部使用
 export * from "./protocol/index.js";
+
+// 重新导出 Schema，供外部使用
+export * from "./schemas/index.js";
 
 /**
  * ByteDance 平台实现
@@ -163,9 +166,9 @@ export function createByteDancePlatform(config?: PlatformConfig): ASRPlatform {
   );
 }
 
-// 导出类型
+// 导出平台类型（使用别名避免与 Schema 类型冲突）
 export type {
   ByteDancePlatformConfig,
-  ByteDanceV2Config,
-  ByteDanceV3Config,
+  ByteDanceV2Config as ByteDanceV2PlatformConfig,
+  ByteDanceV3Config as ByteDanceV3PlatformConfig,
 } from "./types.js";
