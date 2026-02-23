@@ -12,8 +12,15 @@
  * │                      头部 (16 字节)                        │
  */
 
-import fs from "node:fs";
+import dotenv from "dotenv";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+// 加载 .env 文件
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, ".env") });
+
+import fs from "node:fs";
 import { Readable } from "node:stream";
 import * as prism from "prism-media";
 import { ASR, AudioFormat, AuthMethod } from "../src/index.js";
@@ -21,11 +28,10 @@ import { ASR, AudioFormat, AuthMethod } from "../src/index.js";
 // V2 协议头部常量
 const PROTOCOL_HEADER_SIZE = 16;
 
-// 配置
-// TODO: 替换为您的实际凭证
-const APP_ID = "your-app-id";
-const TOKEN = "your-token";
-const CLUSTER = "volcengine_streaming_common";
+// 从环境变量读取配置
+const APP_ID = process.env.BYTEDANCE_APP_ID || "your-app-id";
+const TOKEN = process.env.BYTEDANCE_TOKEN || "your-token";
+const CLUSTER = process.env.BYTEDANCE_CLUSTER || "volcengine_streaming_common";
 const OPUS_DIR = new URL("./v2-opus-stream", import.meta.url).pathname;
 
 /**
