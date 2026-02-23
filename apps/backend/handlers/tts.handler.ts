@@ -4,9 +4,9 @@
  */
 
 import fs from "node:fs";
-import { type TTSOptions, synthesizeSpeech } from "@/lib/tts/binary.js";
 import type { AppContext } from "@/types/hono.context.js";
 import { configManager } from "@xiaozhi-client/config";
+import { TTS } from "@xiaozhi-client/tts";
 import type { Context } from "hono";
 import { BaseHandler } from "./base.handler.js";
 
@@ -102,22 +102,30 @@ export class TTSApiHandler extends BaseHandler {
         );
       }
 
-      const options: TTSOptions = {
-        appid,
-        accessToken,
-        text: body.text,
-        voice_type,
-        encoding,
-        cluster,
-        endpoint,
-      };
+      // 创建 TTS 客户端
+      const ttsClient = new TTS({
+        bytedance: {
+          v1: {
+            app: {
+              appid: appid!,
+              accessToken: accessToken!,
+            },
+            audio: {
+              voice_type: voice_type!,
+              encoding: encoding || "wav",
+            },
+            cluster,
+            endpoint,
+          },
+        },
+      });
 
       c.get("logger").info(
         `开始语音合成: text=${body.text.substring(0, 20)}..., voice_type=${voice_type}`
       );
 
-      // 调用 TTS 合成
-      const audioData = await synthesizeSpeech(options);
+      // 调用 TTS 合成（非流式）
+      const audioData = await ttsClient.synthesize(body.text);
       fs.writeFileSync("audio.wav", Buffer.from(audioData));
 
       c.get("logger").info(`语音合成成功: audioSize=${audioData.length} bytes`);

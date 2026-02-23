@@ -12,9 +12,9 @@
 import { Readable } from "node:stream";
 import { logger } from "@/Logger.js";
 import type { ESP32Connection } from "@/lib/esp32/connection.js";
-import { synthesizeSpeechStream } from "@/lib/tts/binary.js";
 import { ASR, AudioFormat, AuthMethod, OpusDecoder } from "@xiaozhi-client/asr";
 import { configManager } from "@xiaozhi-client/config";
+import { TTS } from "@xiaozhi-client/tts";
 import * as prism from "prism-media";
 import type { ESP32Service } from "./esp32.service.js";
 import type { IVoiceSessionService } from "./voice-session.interface.js";
@@ -162,31 +162,37 @@ export class TestVoiceSessionService implements IVoiceSessionService {
       const demuxer = this.audioDemuxers.get(deviceId)!;
       this.setupDemuxerEvents(deviceId, demuxer, connection);
 
-      // 调用流式 TTS，边接收边处理
-      try {
-        await synthesizeSpeechStream(
-          {
-            appid: ttsConfig.appid,
-            accessToken: ttsConfig.accessToken,
-            voice_type: ttsConfig.voice_type,
-            text,
-            encoding: "ogg_opus",
+      // 创建 TTS 客户端
+      const ttsClient = new TTS({
+        bytedance: {
+          v1: {
+            app: {
+              appid: ttsConfig.appid!,
+              accessToken: ttsConfig.accessToken!,
+            },
+            audio: {
+              voice_type: ttsConfig.voice_type!,
+              encoding: "ogg_opus",
+            },
             cluster: ttsConfig.cluster,
             endpoint: ttsConfig.endpoint,
           },
-          // 边接收边处理：直接写入 demuxer
-          async (oggOpusChunk, isLast) => {
-            // 直接将数据写入 demuxer 进行解封装
-            demuxer.write(oggOpusChunk);
+        },
+      });
 
-            if (isLast) {
-              demuxer.end();
-              logger.info(
-                `[TestVoiceSessionService] TTS 数据接收完成: deviceId=${deviceId}`
-              );
-            }
+      // 调用流式 TTS，边接收边处理
+      try {
+        for await (const result of ttsClient.bytedance.v1.speak(text)) {
+          // 直接将数据写入 demuxer 进行解封装
+          demuxer.write(Buffer.from(result.chunk));
+
+          if (result.isFinal) {
+            demuxer.end();
+            logger.info(
+              `[TestVoiceSessionService] TTS 数据接收完成: deviceId=${deviceId}`
+            );
           }
-        );
+        }
       } catch (error) {
         logger.error(
           `[TestVoiceSessionService] TTS 调用失败: deviceId=${deviceId}`,
@@ -407,16 +413,16 @@ export class TestVoiceSessionService implements IVoiceSessionService {
         if (result.isFinal) {
           const finalText = result.text;
           if (finalText) {
-            this.handleTTSData(deviceId, finalText);
+            await this.handleTTSData(deviceId, finalText);
 
             // 通知设备端用户已说完话
-            const connection = this.getConnection(deviceId);
-            if (connection) {
-              connection.send({
-                type: "asr_end",
-                text: finalText,
-              });
-            }
+            // const connection = this.getConnection(deviceId);
+            // if (connection) {
+            //   connection.send({
+            //     type: "asr_end",
+            //     text: finalText,
+            //   });
+            // }
           }
         }
       }
