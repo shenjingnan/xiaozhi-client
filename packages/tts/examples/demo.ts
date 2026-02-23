@@ -19,7 +19,8 @@ import { TTS } from "../src/index.js";
 const APP_ID = process.env.BYTEDANCE_APP_ID || "your-app-id";
 const TOKEN = process.env.BYTEDANCE_TOKEN || "your-token";
 const OUTPUT_PATH = path.resolve(__dirname, "output.wav");
-const VOICE_TYPE = process.env.BYTEDANCE_VOICE_TYPE || "zh_female_xiaohe_uranus_bigtts";
+const VOICE_TYPE =
+  process.env.BYTEDANCE_VOICE_TYPE || "zh_female_xiaohe_uranus_bigtts";
 async function main() {
   console.log("=== TTS 非流式合成 Demo ===\n");
 
