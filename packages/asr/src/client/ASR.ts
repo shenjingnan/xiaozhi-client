@@ -112,10 +112,10 @@ export class ASR extends EventEmitter {
         const v2Config = config as ByteDanceV2Config;
         this.apiVersion = "v2";
         this.wsUrl = "wss://openspeech.bytedance.com/api/v2/asr";
-        this.cluster = v2Config.cluster || BYTEDANCE_V2_DEFAULT_CLUSTER;
-        this.appid = v2Config.appid;
-        this.token = v2Config.token;
-        this.uid = v2Config.uid || "streaming_asr_client";
+        this.cluster = v2Config.app.cluster || BYTEDANCE_V2_DEFAULT_CLUSTER;
+        this.appid = v2Config.app.appid;
+        this.token = v2Config.app.token;
+        this.uid = v2Config.user.uid || "streaming_asr_client";
       } else {
         // V3 配置
         const v3Config = config as ByteDanceV3Config;

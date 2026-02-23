@@ -32,7 +32,7 @@ export const ByteDanceOptionSchema = z.union([
   ByteDanceV3OptionSchema,
 ]);
 
-export type ByteDanceOption = ByteDanceV2Option | ByteDanceV3Option;
+export type ByteDanceOption = z.input<typeof ByteDanceOptionSchema>;
 
 /**
  * 判断是否为 V2 配置
