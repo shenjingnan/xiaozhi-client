@@ -1,14 +1,11 @@
 {
   "name": "@xiaozhi-client/cli",
   "version": "1.10.9",
-  "private": false,
+  "private": true,
   "repository": {
     "type": "git",
     "url": "https://github.com/shenjingnan/xiaozhi-client.git",
     "directory": "packages/cli"
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "type": "module",
   "main": "../../dist/cli/index.js",
