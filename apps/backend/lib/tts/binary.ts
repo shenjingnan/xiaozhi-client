@@ -64,16 +64,14 @@ export async function synthesizeSpeechStream(
   const { synthesizeSpeechStream: newSynthesizeSpeechStream } = await import(
     "@xiaozhi-client/tts"
   );
-  await newSynthesizeSpeechStream(
-    {
-      appid: options.appid,
-      accessToken: options.accessToken,
-      voice_type: options.voice_type,
-      text: options.text,
-      encoding: options.encoding,
-      cluster: options.cluster,
-      endpoint: options.endpoint,
-    },
-    onAudioChunk
-  );
+  await newSynthesizeSpeechStream({
+    appid: options.appid,
+    accessToken: options.accessToken,
+    voice_type: options.voice_type,
+    text: options.text,
+    encoding: options.encoding,
+    cluster: options.cluster,
+    endpoint: options.endpoint,
+    onAudioChunk,
+  });
 }
