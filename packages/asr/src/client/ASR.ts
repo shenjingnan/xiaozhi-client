@@ -132,6 +132,19 @@ export class ASR extends EventEmitter {
           this.channel = v2Config.audio.channel || 1;
           this.codec = v2Config.audio.codec || "raw";
         }
+
+        // 从 bytedance.v2.request 读取请求配置
+        // 注意：使用原始 options.bytedance 而非 zod 验证后的 config，
+        // 因为 config 是 snake_case 格式，而用户输入是 camelCase 格式
+        const v2Request = (options.bytedance as { v2?: { request?: Record<string, unknown> } })?.v2?.request;
+        if (v2Request) {
+          this.segDuration = (v2Request.segDuration as number) || this.segDuration;
+          this.nbest = (v2Request.nbest as number) || this.nbest;
+          this.workflow = (v2Request.workflow as string) || this.workflow;
+          this.showLanguage = v2Request.showLanguage !== undefined ? v2Request.showLanguage as boolean : this.showLanguage;
+          this.showUtterances = v2Request.showUtterances !== undefined ? v2Request.showUtterances as boolean : this.showUtterances;
+          this.resultType = (v2Request.resultType as string) || this.resultType;
+        }
       } else {
         // V3 配置
         const v3Config = config as ByteDanceV3Config;

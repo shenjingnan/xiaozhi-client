@@ -3,7 +3,7 @@
  */
 
 import { LogLevel, Logger, logger } from "@/utils/index.js";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("Logger", () => {
   beforeEach(() => {
