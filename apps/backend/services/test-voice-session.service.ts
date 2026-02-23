@@ -13,12 +13,7 @@ import { Readable } from "node:stream";
 import { logger } from "@/Logger.js";
 import type { ESP32Connection } from "@/lib/esp32/connection.js";
 import { synthesizeSpeechStream } from "@/lib/tts/binary.js";
-import {
-  ASR,
-  AudioFormat,
-  AuthMethod,
-  OpusDecoder,
-} from "@xiaozhi-client/asr";
+import { ASR, AudioFormat, AuthMethod, OpusDecoder } from "@xiaozhi-client/asr";
 import { configManager } from "@xiaozhi-client/config";
 import * as prism from "prism-media";
 import type { ESP32Service } from "./esp32.service.js";
@@ -394,7 +389,10 @@ export class TestVoiceSessionService implements IVoiceSessionService {
    * @param deviceId - 设备 ID
    * @param asrClient - ASR 客户端
    */
-  private async startListenTask(deviceId: string, asrClient: ASR): Promise<void> {
+  private async startListenTask(
+    deviceId: string,
+    asrClient: ASR
+  ): Promise<void> {
     try {
       // 创建音频流生成器
       const audioStream = this.createAudioStream(deviceId);
@@ -478,7 +476,9 @@ export class TestVoiceSessionService implements IVoiceSessionService {
     this.audioEnded.delete(deviceId);
     this.listenTasks.delete(deviceId);
 
-    logger.info(`[TestVoiceSessionService] ASR 资源已清理: deviceId=${deviceId}`);
+    logger.info(
+      `[TestVoiceSessionService] ASR 资源已清理: deviceId=${deviceId}`
+    );
   }
 
   /**
