@@ -137,7 +137,7 @@ async function main() {
   console.log("=== ByteDance V2 流式 ASR 示例（listen API）===\n");
 
   // 创建 ASR 客户端
-  // 使用旧版配置方式，确保 audio 和 request 参数正确传递
+  // 使用新版配置方式：音频配置通过 bytedance.v2.audio 传入
   const client = new ASR({
     bytedance: {
       v2: {
@@ -149,29 +149,27 @@ async function main() {
         user: {
           uid: "streaming_asr_client",
         },
+        // 音频配置：通过 v2.audio 传入
         audio: {
-          format: "raw",
+          format: AudioFormat.RAW,
+          channel: 1,
+          bits: 16,
+          codec: "raw",
         },
         request: {
           reqid: "uuid",
           sequence: 1,
+          nbest: 1,
+          result_type: "full",
+          workflow:
+            "audio_in,resample,partition,vad,fe,decode,itn,nlu_punctuate",
         },
       },
     },
-    // 关键：使用 RAW 格式 + raw 编解码器（发送 PCM 数据）
-    format: AudioFormat.RAW,
+    // 认证配置
     authMethod: AuthMethod.TOKEN,
-    // 音频配置
-    sampleRate: 16000,
+    // 语言配置
     language: "zh-CN",
-    channel: 1,
-    bits: 16,
-    codec: "raw",
-    // 请求配置
-    segDuration: 15000,
-    nbest: 1,
-    resultType: "full",
-    workflow: "audio_in,resample,partition,vad,fe,decode,itn,nlu_punctuate",
   });
 
   // 设置事件监听器

@@ -53,34 +53,35 @@ export class ASR extends EventEmitter {
   private token: string;
 
   // User config
-  private uid: string;
+  private uid = "";
 
   // Audio config
-  private audioPath: string;
-  private format: AudioFormat;
-  private sampleRate: number;
-  private language: string;
-  private bits: number;
-  private channel: number;
-  private codec: string;
+  private audioPath = "";
+  private format: AudioFormat = AudioFormat.WAV;
+  private sampleRate = 16000;
+  private language = "zh-CN";
+  private bits = 16;
+  private channel = 1;
+  private codec = "raw";
 
   // Request config
-  private segDuration: number;
-  private nbest: number;
-  private workflow: string;
-  private showLanguage: boolean;
-  private showUtterances: boolean;
-  private resultType: string;
+  private segDuration = 15000;
+  private nbest = 1;
+  private workflow =
+    "audio_in,resample,partition,vad,fe,decode,itn,nlu_punctuate";
+  private showLanguage = false;
+  private showUtterances = false;
+  private resultType = "full";
 
   // Auth config
-  private authMethod: AuthMethod;
-  private secret: string;
+  private authMethod: AuthMethod = AuthMethod.TOKEN;
+  private secret = "";
 
   // MP3 specific
-  private mp3SegSize: number;
+  private mp3SegSize = 10000;
 
   // Success code
-  private successCode: number;
+  private successCode = 1000;
 
   // WebSocket connection
   private ws: WebSocket | null = null;
@@ -119,7 +120,18 @@ export class ASR extends EventEmitter {
         this.cluster = v2Config.app.cluster || BYTEDANCE_V2_DEFAULT_CLUSTER;
         this.appid = v2Config.app.appid;
         this.token = v2Config.app.token;
-        this.uid = v2Config.user.uid || "streaming_asr_client";
+        this.uid = v2Config.user?.uid || "streaming_asr_client";
+
+        // 从 bytedance.v2.audio 读取音频配置
+        // 注意：schema 中 sampleRate 实际是 rate 字段
+        if (v2Config.audio) {
+          this.format =
+            (v2Config.audio.format as AudioFormat) || AudioFormat.WAV;
+          this.sampleRate = (v2Config.audio as { rate?: number }).rate || 16000;
+          this.bits = v2Config.audio.bits || 16;
+          this.channel = v2Config.audio.channel || 1;
+          this.codec = v2Config.audio.codec || "raw";
+        }
       } else {
         // V3 配置
         const v3Config = config as ByteDanceV3Config;
@@ -129,6 +141,17 @@ export class ASR extends EventEmitter {
         this.appid = v3Config.appKey;
         this.token = v3Config.accessKey;
         this.uid = v3Config.user?.uid || "streaming_asr_client";
+
+        // 从 bytedance.v3.audio 读取音频配置
+        // 注意：schema 中 sampleRate 实际是 rate 字段
+        if (v3Config.audio) {
+          this.format =
+            (v3Config.audio.format as AudioFormat) || AudioFormat.WAV;
+          this.sampleRate = (v3Config.audio as { rate?: number }).rate || 16000;
+          this.bits = v3Config.audio.bits || 16;
+          this.channel = v3Config.audio.channel || 1;
+          this.codec = v3Config.audio.codec || "raw";
+        }
       }
     } else {
       // 兼容旧版配置
@@ -139,34 +162,68 @@ export class ASR extends EventEmitter {
       this.uid = options.uid || "streaming_asr_client";
     }
 
-    // Audio config
-    this.audioPath = options.audioPath || "";
-    this.format = options.format || AudioFormat.WAV;
-    this.sampleRate = options.sampleRate || 16000;
-    this.language = options.language || "zh-CN";
-    this.bits = options.bits || 16;
-    this.channel = options.channel || 1;
-    this.codec = options.codec || "raw";
+    // Audio config - 仅保留默认值（外部配置将被废弃）
+    // 注意：当使用 bytedance 配置时，音频参数已在上面从 bytedance.v2.audio / bytedance.v3.audio 读取
+    // 此处仅作为默认值和向后兼容使用
+    if (options.audioPath) {
+      this.audioPath = options.audioPath;
+    }
+    if (options.format) {
+      this.format = options.format;
+    }
+    if (options.sampleRate) {
+      this.sampleRate = options.sampleRate;
+    }
+    if (options.language) {
+      this.language = options.language;
+    }
+    if (options.bits) {
+      this.bits = options.bits;
+    }
+    if (options.channel) {
+      this.channel = options.channel;
+    }
+    if (options.codec) {
+      this.codec = options.codec;
+    }
 
     // Request config
-    this.segDuration = options.segDuration || 15000;
-    this.nbest = options.nbest || 1;
-    this.workflow =
-      options.workflow ||
-      "audio_in,resample,partition,vad,fe,decode,itn,nlu_punctuate";
-    this.showLanguage = options.showLanguage || false;
-    this.showUtterances = options.showUtterances || false;
-    this.resultType = options.resultType || "full";
+    if (options.segDuration) {
+      this.segDuration = options.segDuration;
+    }
+    if (options.nbest) {
+      this.nbest = options.nbest;
+    }
+    if (options.workflow) {
+      this.workflow = options.workflow;
+    }
+    if (options.showLanguage !== undefined) {
+      this.showLanguage = options.showLanguage;
+    }
+    if (options.showUtterances !== undefined) {
+      this.showUtterances = options.showUtterances;
+    }
+    if (options.resultType) {
+      this.resultType = options.resultType;
+    }
 
     // Auth config
-    this.authMethod = options.authMethod || AuthMethod.TOKEN;
-    this.secret = options.secret || "";
+    if (options.authMethod) {
+      this.authMethod = options.authMethod;
+    }
+    if (options.secret) {
+      this.secret = options.secret;
+    }
 
     // MP3 specific
-    this.mp3SegSize = options.mp3SegSize || 10000;
+    if (options.mp3SegSize) {
+      this.mp3SegSize = options.mp3SegSize;
+    }
 
     // Success code
-    this.successCode = options.successCode || 1000;
+    if (options.successCode) {
+      this.successCode = options.successCode;
+    }
 
     // 初始化 V2 请求构造器
     if (this.apiVersion === "v2") {
