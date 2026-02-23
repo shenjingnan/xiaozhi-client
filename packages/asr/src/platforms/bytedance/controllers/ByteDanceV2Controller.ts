@@ -20,7 +20,8 @@ export class ByteDanceV2Controller extends ByteDanceController {
   }
 
   /**
-   * 监听音频流并返回识别结果
+   * 监听音频流并返回识别结果（并行版本）
+   * 发送音频帧时不等待服务器响应，结果通过事件异步返回
    * @param audioStream - 音频流输入
    */
   async *listen(
@@ -31,6 +32,10 @@ export class ByteDanceV2Controller extends ByteDanceController {
     let resolveNext: (() => void) | null = null;
     let settled = false;
     let endCalled = false; // 标记是否已经调用过 end()
+
+    // 背压控制：最大并行发送的帧数
+    const MAX_PENDING_FRAMES = 10;
+    let pendingFrames = 0;
 
     // 监听识别结果事件
     this.asr.on("result", (data) => {
@@ -127,17 +132,43 @@ export class ByteDanceV2Controller extends ByteDanceController {
       }
     });
 
-    // 发送音频帧
+    // 发送音频帧（并行版本）
     try {
       // 将输入转换为异步可迭代对象
       const asyncIterable = this.toAsyncIterable(audioStream);
 
+      // 并行发送音频帧
       for await (const chunk of asyncIterable) {
+        // 背压控制：如果正在等待的帧数过多，等待一下
+        while (pendingFrames >= MAX_PENDING_FRAMES) {
+          // 等待一小段时间
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+
         // 确保是 Buffer 类型
         const frame = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
-        await this.asr.sendFrame(frame);
 
-        // 发送完一帧后，检查并 yield 可用的结果
+        // 增加待处理计数
+        pendingFrames++;
+
+        // 异步发送帧，不等待完成
+        this.asr
+          .sendFrame(frame)
+          .then(() => {
+            // 发送成功，减少待处理计数
+            pendingFrames--;
+          })
+          .catch((error) => {
+            // 发送失败，减少待处理计数
+            pendingFrames--;
+            if (!settled) {
+              settled = true;
+              this.asr.close();
+              throw error;
+            }
+          });
+
+        // 发送帧后立即检查并 yield 可用的结果（不等待帧发送完成）
         while (resultQueue.length > 0) {
           yield resultQueue.shift()!;
         }
@@ -150,7 +181,15 @@ export class ByteDanceV2Controller extends ByteDanceController {
 
     // 发送结束信号
     endCalled = true;
-    await this.asr.end();
+
+    // 如果发送过程没有触发 audio_end（可能是短音频），手动调用 end
+    if (!this.asr.isAudioEnded()) {
+      try {
+        await this.asr.end();
+      } catch {
+        // 可能已经结束，忽略错误
+      }
+    }
 
     // 监听连接关闭事件
     let connectionClosed = false;
@@ -165,6 +204,7 @@ export class ByteDanceV2Controller extends ByteDanceController {
     });
 
     // 现在持续 yield 所有结果，使用 resolveNext 等待新结果
+    // 注意：并行发送时，发送完成不代表结果处理完成，需要等待连接关闭
     while (true) {
       // 如果队列中有结果，立即 yield
       while (resultQueue.length > 0) {
