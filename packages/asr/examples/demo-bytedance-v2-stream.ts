@@ -176,10 +176,25 @@ async function main() {
   // 创建 ASR 客户端
   // 使用旧版配置方式，确保 audio 和 request 参数正确传递
   const client = new ASR({
-    wsUrl: "wss://openspeech.bytedance.com/api/v2/asr",
-    cluster: CLUSTER,
-    appid: APP_ID,
-    token: TOKEN,
+    bytedance: {
+      v2: {
+        app: {
+          appid: APP_ID,
+          token: TOKEN,
+          cluster: CLUSTER,
+        },
+        user: {
+          uid: "streaming_asr_client",
+        },
+        audio: {
+          format: "raw",
+        },
+        request: {
+          reqid: "uuid",
+          sequence: 1,
+        },
+      },
+    },
     // 关键：使用 RAW 格式 + raw 编解码器（发送 PCM 数据）
     format: AudioFormat.RAW,
     authMethod: AuthMethod.TOKEN,

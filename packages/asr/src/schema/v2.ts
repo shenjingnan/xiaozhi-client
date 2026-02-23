@@ -24,7 +24,10 @@ export type ByteDanceV2App = z.infer<typeof ByteDanceV2AppSchema>;
  * V2 用户配置
  */
 export const ByteDanceV2UserSchema = z.object({
-  uid: z.string().min(1, "uid 不能为空").describe("用户标识，建议采用 IMEI 或 MAC"),
+  uid: z
+    .string()
+    .min(1, "uid 不能为空")
+    .describe("用户标识，建议采用 IMEI 或 MAC"),
   device: z.string().optional().describe("设备名称"),
   platform: z
     .string()
@@ -49,10 +52,20 @@ export const ByteDanceV2AudioSchema = z.object({
   codec: z
     .string()
     .optional()
-    .default('raw')
+    .default("raw")
     .describe("音频编码格式：raw / opus，默认为 raw(pcm)"),
-  rate: z.number().int().optional().default(16000).describe("音频采样率，默认为 16000"),
-  bits: z.number().int().optional().default(16).describe("音频采样点位数，默认为 16"),
+  rate: z
+    .number()
+    .int()
+    .optional()
+    .default(16000)
+    .describe("音频采样率，默认为 16000"),
+  bits: z
+    .number()
+    .int()
+    .optional()
+    .default(16)
+    .describe("音频采样点位数，默认为 16"),
   channel: z
     .number()
     .int()
@@ -60,7 +73,6 @@ export const ByteDanceV2AudioSchema = z.object({
     .default(1)
     .describe("音频声道数：1(mono) / 2(stereo)，默认为1"),
 });
-
 
 export type ByteDanceV2Audio = z.infer<typeof ByteDanceV2AudioSchema>;
 
@@ -94,19 +106,14 @@ export const ByteDanceV2RequestSchema = z.object({
   workflow: z
     .string()
     .optional()
-    .describe(
-      "自定义工作流，如 audio_in,resample,partition,vad,fe,decode"
-    ),
+    .describe("自定义工作流，如 audio_in,resample,partition,vad,fe,decode"),
   show_utterance: z
     .boolean()
     .optional()
     .describe(
       "输出语音停顿、分句、分词信息。默认每次返回所有分句结果。如果想每次只返回当前分句结果，则设置 show_utterances=true 和 result_type=single；如果当前分句结果是中间结果则返回的 definite=false，如果是分句最终结果则返回的 definite=true"
     ),
-  result_type: z
-    .string()
-    .optional()
-    .describe("返回结果类型"),
+  result_type: z.string().optional().describe("返回结果类型"),
   boosting_table_name: z
     .string()
     .optional()
@@ -114,7 +121,9 @@ export const ByteDanceV2RequestSchema = z.object({
   correct_table_name: z
     .string()
     .optional()
-    .describe("自学习平台上设置的替换词词表名称，替换词功能和设置方法可以参考文档"),
+    .describe(
+      "自学习平台上设置的替换词词表名称，替换词功能和设置方法可以参考文档"
+    ),
   vad_signal: z.boolean().optional().describe("开启 vad 检测"),
   start_silence_time: z
     .string()
@@ -125,9 +134,7 @@ export const ByteDanceV2RequestSchema = z.object({
   vad_silence_time: z
     .string()
     .optional()
-    .describe(
-      "尾部静音，设置范围在500ms-6000ms之间，推荐常用值800ms或1000ms"
-    ),
+    .describe("尾部静音，设置范围在500ms-6000ms之间，推荐常用值800ms或1000ms"),
 });
 
 export type ByteDanceV2Request = z.infer<typeof ByteDanceV2RequestSchema>;

@@ -2,6 +2,12 @@
  * ByteDance Streaming ASR WebSocket Client for Node.js
  */
 
+// Core exports - 核心抽象层
+export * from "./core/index.js";
+
+// Platforms exports - 平台实现
+export * from "./platforms/index.js";
+
 // Protocol exports
 export * from "./protocol/index.js";
 
