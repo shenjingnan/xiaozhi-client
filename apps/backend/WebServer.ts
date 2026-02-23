@@ -39,7 +39,7 @@ import {
   UpdateApiHandler,
   VersionApiHandler,
 } from "@/handlers/index.js";
-import { MCPServiceManager } from "@/lib/mcp";
+import { MCPServiceManager } from "@/lib/mcp/index.js";
 import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import {

@@ -3,7 +3,7 @@
  * 负责与扣子 API 的交互，包括工作空间和工作流的获取
  */
 
-import type { RunWorkflowData, WorkSpace } from "@/lib/coze";
+import type { RunWorkflowData, WorkSpace } from "@/lib/coze/index.js";
 import type {
   CozeWorkflowsData,
   CozeWorkflowsParams,

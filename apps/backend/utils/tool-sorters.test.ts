@@ -2,7 +2,7 @@
  * toolSorters 工具函数测试
  */
 
-import type { EnhancedToolInfo } from "@/lib/mcp";
+import type { EnhancedToolInfo } from "@/lib/mcp/index.js";
 import { describe, expect, it } from "vitest";
 import { sortTools, toolSorters } from "./toolSorters";
 

@@ -1,8 +1,8 @@
 import { existsSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { InternalMCPServiceConfig } from "@/lib/mcp";
-import { MCPTransportType } from "@/lib/mcp";
+import type { InternalMCPServiceConfig } from "@/lib/mcp/index.js";
+import { MCPTransportType } from "@/lib/mcp/index.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Logger } from "../../Logger.js";
 import type { MCPError } from "../error-helper.js";

@@ -5,7 +5,7 @@
 
 import type { Logger } from "@/Logger.js";
 import type { EndpointHandler } from "@/handlers/index.js";
-import type { MCPServiceManager } from "@/lib/mcp";
+import type { MCPServiceManager } from "@/lib/mcp/index.js";
 import type { HandlerDependencies } from "@/routes/types.js";
 import type { EndpointManager } from "@xiaozhi-client/endpoint";
 import type { Context } from "hono";

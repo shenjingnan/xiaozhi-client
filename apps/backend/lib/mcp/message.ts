@@ -13,8 +13,8 @@ import {
   MCP_SERVER_INFO,
   MCP_SUPPORTED_PROTOCOL_VERSIONS,
 } from "@/constants/index.js";
-import type { EnhancedToolInfo, MCPServiceManager } from "@/lib/mcp";
-import { validateToolCallParams } from "@/lib/mcp";
+import type { EnhancedToolInfo, MCPServiceManager } from "@/lib/mcp/index.js";
+import { validateToolCallParams } from "@/lib/mcp/index.js";
 import type { MCPMessage, MCPResponse } from "@/types/mcp.js";
 import type {
   ClientCapabilities,

@@ -3,7 +3,7 @@
  * 验证两个组件的协同工作和类型推断一致性
  */
 
-import { MCPService, MCPTransportType } from "@/lib/mcp";
+import { MCPService, MCPTransportType } from "@/lib/mcp/index.js";
 import {
   getConfigTypeDescription,
   normalizeServiceConfig,

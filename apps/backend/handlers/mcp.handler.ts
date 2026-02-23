@@ -16,8 +16,8 @@ import {
   MCP_SUPPORTED_PROTOCOL_VERSIONS,
   MESSAGE_SIZE_LIMITS,
 } from "@/constants/index.js";
-import type { MCPServiceManager } from "@/lib/mcp";
-import { MCPMessageHandler } from "@/lib/mcp";
+import type { MCPServiceManager } from "@/lib/mcp/index.js";
+import { MCPMessageHandler } from "@/lib/mcp/index.js";
 import type { AppContext } from "@/types/hono.context.js";
 import type { MCPMessage } from "@/types/mcp.js";
 import type { Context } from "hono";
